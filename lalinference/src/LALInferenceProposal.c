@@ -1679,17 +1679,15 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     INT4 i, j, l;
     INT4 ifo, nifo, timeflag=0;
     REAL8 logPropRatio = 0.0;
-    REAL8 dL, ra, dec, psi;
+    REAL8 ra, dec;
     REAL8 baryTime, gmst;
-    REAL8 newRA, newDec, newTime, newPsi, newDL;
+    REAL8 newRA, newDec, newTime, newPsi;
     REAL8 intpart, decpart;
     REAL8 omega, cosomega, sinomega, c1momega;
     REAL8 IFO1[3], IFO2[3];
     REAL8 IFOX[3], k[3];
     REAL8 normalize;
     REAL8 pForward, pReverse;
-    REAL8 Fx,Fy;
-    REAL8 Fp,Fc;
     REAL8 n[3];
     REAL8 kp[3];
 
@@ -1705,11 +1703,8 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     epoch = (LIGOTimeGPS *)LALInferenceGetVariable(args, "epoch");
     detectors = *(LALDetector **)LALInferenceGetVariable(args, "detectors");
 
-    dL = exp(LALInferenceGetREAL8Variable(proposedParams, "logdistance"));
-
     ra = LALInferenceGetREAL8Variable(proposedParams, "rightascension");
     dec = LALInferenceGetREAL8Variable(proposedParams, "declination");
-    psi = LALInferenceGetREAL8Variable(proposedParams, "polarisation");
 
     if (LALInferenceCheckVariable(proposedParams, "time")){
         baryTime = LALInferenceGetREAL8Variable(proposedParams, "time");
@@ -1819,7 +1814,6 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     newTime = tx + baryTime - ty;
 
     XLALGPSSetREAL8(&GPSlal, newTime);
-    REAL8 newGmst = XLALGreenwichMeanSiderealTime(&GPSlal);
 
     /*
     draw new polarisation angle uniformally
@@ -1827,28 +1821,6 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     MARK: Need to be smarter about psi in sky-ring jump
     */
     newPsi = LAL_PI * gsl_rng_uniform(rng);
-
-    /*
-    compute new luminosity distance,
-    maintaining F+^2 + Fx^2 across the network
-    */
-    Fx=0;
-    Fy=0;
-
-    for (i=0; i<nifo; i++) {
-        XLALComputeDetAMResponse(&Fp, &Fc, (const REAL4(*)[3])detectors[i].response, ra, dec, psi, gmst);
-        Fx += Fp*Fp+Fc*Fc;
-
-        XLALComputeDetAMResponse(&Fp, &Fc, (const REAL4(*)[3])detectors[i].response, newRA, newDec, newPsi, newGmst);
-        Fy += Fp*Fp+Fc*Fc;
-    }
-    newDL = dL*sqrt(Fy/Fx);
-
-    /*
-    update new parameters and exit.  woo!
-    */
-    REAL8 logNewDL = log(newDL);
-    LALInferenceSetVariable(proposedParams, "logdistance", &logNewDL);
 
     LALInferenceSetVariable(proposedParams, "polarisation", &newPsi);
     LALInferenceSetVariable(proposedParams, "rightascension", &newRA);
