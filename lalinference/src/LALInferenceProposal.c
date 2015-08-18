@@ -3894,18 +3894,24 @@ void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceRunState *runState, INT
 }
 
 /**
- * Compute the maximum single-parameter autocorrelation length.
+ * Compute the maximum single-parameter autocorrelation length.  Each
+ * parameter's ACL is the smallest s such that
  *
  * 1 + 2*ACF(1) + 2*ACF(2) + ... + 2*ACF(M*s) < s,
  *
- * the short length so that the sum of the ACF function
- * is smaller than that length over a window of M times
- * that length.
+ * The parameter M controls the length of the window over which we sum
+ * the ACF to estimate the ACL; there must be at least M*ACL samples
+ * summed.  This ensures that we obtain a reliable estimate of the ACL
+ * by incorporating lags that are much longer that the estimated ACL.
+ * 
+ * The maximum window length is also restricted to be N/K as a safety
+ * precaution against relying on data near the extreme of the lags in
+ * the ACF, where there is a lot of noise.
+ * 
+ * By default, safe parameters are M = 5, K = 2.
+ * 
+ * If no estimate can be obtained, then return Infinity.
  *
- * The maximum window length is restricted to be N/K as
- * a safety precaution against relying on data near the
- * extreme of the lags in the ACF, where there is a lot
- * of noise.
  * @param array Array with rows containing samples.
  * @param nPoints UNDOCUMENTED
  * @param nPar UNDOCUMENTED
@@ -3929,19 +3935,18 @@ REAL8 LALInferenceComputeMaxAutoCorrLen(REAL8 *array, INT4 nPoints, INT4 nPar) {
       lag=1;
       ACL=1.0;
       ACF=1.0;
-      s=1.0;
+      s=1.0/(REAL8)M;
       cumACF=1.0;
       while (cumACF >= s) {
         ACF = gsl_stats_correlation(array + par, nPar, array + lag*nPar + par, nPar, nPoints-lag);
         cumACF += 2.0 * ACF;
-        lag++;
         s = (REAL8)lag/(REAL8)M;
+        lag++;
         if (lag > imax) {
-          ACL = INFINITY;
-          break;
+          return INFINITY; /* Short circuit: this parameter has indeterminate ACL */
         }
       }
-      ACL = s;
+      ACL = cumACF;
       if (ACL>maxACL)
         maxACL=ACL;
 
