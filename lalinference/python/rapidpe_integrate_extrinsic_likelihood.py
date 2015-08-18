@@ -533,6 +533,8 @@ if opts.output_file:
     xmldoc = ligolw.Document()
     xmldoc.appendChild(ligolw.LIGO_LW())
     process.register_to_xmldoc(xmldoc, sys.argv[0], opts.__dict__)
+    xmlutils.append_likelihood_result_to_xmldoc(xmldoc, numpy.log(res), neff=neff, **{"mass1": opts.mass1, "mass2": opts.mass2, "event_duration": numpy.sqrt(var)/res, "ttotal": sampler.ntotal})
+    utils.write_filename(xmldoc, opts.output_file, gz=opts.output_file.endswith(".gz"))
     if opts.save_samples:
         samples = sampler._rvs
         samples["distance"] = samples["distance"]
@@ -560,7 +562,6 @@ if opts.output_file:
             samples["psi0"].fill(opts.eff_lambda)
             samples["psi3"].fill(opts.deff_lambda)
         xmlutils.append_samples_to_xmldoc(xmldoc, samples)
-    # FIXME: likelihood or loglikehood
-    # FIXME: How to encode variance?
-    xmlutils.append_likelihood_result_to_xmldoc(xmldoc, numpy.log(res), neff=neff, **{"mass1": opts.mass1, "mass2": opts.mass2, "event_duration": numpy.sqrt(var)/res, "ttotal": sampler.ntotal})
-    utils.write_filename(xmldoc, opts.output_file, gz=opts.output_file.endswith(".gz"))
+        sample_output = opts.output_file.split(".")
+        sample_output = sample_output[0] + ".samples." + ".".join(sample_output[1:])
+        utils.write_filename(xmldoc, sample_output, gz=opts.output_file.endswith(".gz"))
