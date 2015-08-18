@@ -123,7 +123,11 @@ void inject_signal( LALInferenceRunState *runState ){
     if ( !nonGR_search ){
       /* add "nonGR" flag so that pulsar_model() runs in nonGR mode */
       UINT4 nonGRval = 1;
-      LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+      while ( ifo_model ){
+        LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+        ifo_model = ifo_model->next;
+      }
+      ifo_model = runState->model->ifo;
       /* setup nonGR lookup tables */
       LALSource psr;
       psr.equatorialCoords.longitude = injpars.ra;
@@ -138,7 +142,11 @@ void inject_signal( LALInferenceRunState *runState ){
   }
   else {
     /* remove "nonGR" flag so that pulsar_model() runs in GR mode */
-    LALInferenceRemoveVariable(ifo_model->params, "nonGR");
+      while ( ifo_model ){
+        LALInferenceRemoveVariable(ifo_model->params, "nonGR");
+        ifo_model = ifo_model->next;
+      }
+      ifo_model = runState->model->ifo;
   }
 
   pulsar_model( injpars, ifo_model );
@@ -320,11 +328,19 @@ ifo_model = runState->model->ifo;
 if ( nonGR_search ){
   if ( !nonGR_injection ){
     UINT4 nonGRval = 1;
-    LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+      while ( ifo_model ){
+        LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+        ifo_model = ifo_model->next;
+      }
+      ifo_model = runState->model->ifo;
   }
 }
 else {
-  LALInferenceRemoveVariable(ifo_model->params, "nonGR");
+  while ( ifo_model ){
+    LALInferenceRemoveVariable(ifo_model->params, "nonGR");
+    ifo_model = ifo_model->next;
+  }
+  ifo_model = runState->model->ifo;
 }
 }
 
