@@ -50,8 +50,6 @@ optp.add_option("-T", "--template-bank-xml", help="Input template bank as a sim_
 optp.add_option("-D", "--working-directory", default="./", help="Directory in which to stage DAG components.")
 optp.add_option("-l", "--log-directory", default="./", help="Directory in which to place condor logs.")
 optp.add_option("-W", "--web-output", default="./", help="Directory to place web accessible plots and webpages.")
-optp.add_option("--disable-ile-postproc", action="store_true", help="Do not plot mass posteriors via plot_like_contours.")
-optp.add_option("--disable-bayes-postproc", action="store_true", help="Do not plot posteriors via cbcBayesPostProc.")
 optp.add_option("--n-copies", default=1, help="Number of copies of each integrator instance to run per mass point. Default is one.")
 optp.add_option("--write-script", action="store_true", help="In addition to the DAG, write a script to this filename to execute the workflow.")
 optp.add_option("--write-eff-lambda", action="store_true", help="Use psi0 column of template bank XML as effective lambda point to calculate in DAG.")
@@ -119,8 +117,9 @@ if tmplt_bnk is None:
 #
 # Post processing options
 #
-use_ile_postproc = not opts.disable_ile_postproc
-use_bayespe_postproc = not opts.disable_bayes_postproc
+# FIXME: Remove these entirely
+use_ile_postproc = False
+use_bayespe_postproc = False
 
 # initialize the analysis subdag
 dag = pipeline.CondorDAG(log=os.getcwd())
