@@ -9,6 +9,7 @@ int main(void) { return 77; /* don't do any testing */ }
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
+#include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
@@ -26,6 +27,9 @@ int main(void) { return 77; /* don't do any testing */ }
 
 #define EPOCH { 123456789, 987654321 }
 static LIGOTimeGPS epoch = EPOCH;
+static LIGOTimeGPS now;
+
+static UINT2 count;
 
 static int generate_int_data(void)
 {
@@ -46,8 +50,13 @@ static float complex generate_complex_data(void)
 	static int write_ ## type (type *x) { \
 		LALH5File *file; \
 		LALH5File *group; \
+		XLALGPSTimeNow(&now); \
+		++count; \
 		file = XLALH5FileOpen(FNAME, "w"); \
+		XLALH5FileAddLIGOTimeGPSAttribute(file, "creation_time_gps", &now); \
+		XLALH5FileAddScalarAttribute(file, "test_count", &count, LAL_U2_TYPE_CODE); \
 		group = XLALH5GroupOpen(file, GROUP); \
+		XLALH5FileAddStringAttribute(group, "test_data_type", #type); \
 		XLALH5FileWrite ## type (group, DSET, x); \
 		XLALH5FileClose(group); \
 		XLALH5FileClose(file); \
@@ -58,7 +67,28 @@ static float complex generate_complex_data(void)
 	static type * read_ ## type (void) { \
 		type *x; \
 		LALH5File *file; \
+		LALH5File *group; \
+		LIGOTimeGPS creation_time; \
+		UINT2 cnt; \
+		char t[sizeof(#type)]; \
 		file = XLALH5FileOpen(FNAME, "r"); \
+		XLALH5FileQueryLIGOTimeGPSAttributeValue(&creation_time, file, "creation_time_gps"); \
+		if (XLALGPSCmp(&creation_time, &now)) { \
+			fprintf(stderr, " FAIL\n"); \
+			exit(1); /* fail */ \
+		} \
+		XLALH5FileQueryScalarAttributeValue(&cnt, file, "test_count"); \
+		if (cnt != count) { \
+			fprintf(stderr, " FAIL\n"); \
+			exit(1); /* fail */ \
+		} \
+		group = XLALH5GroupOpen(file, GROUP); \
+		XLALH5FileQueryStringAttributeValue(t, sizeof(t), group, "test_data_type"); \
+		XLALH5FileClose(group); \
+		if (strcmp(t, #type)) { \
+			fprintf(stderr, " FAIL\n"); \
+			exit(1); /* fail */ \
+		} \
 		x = XLALH5FileRead ## type (file, GROUP "/" DSET); \
 		XLALH5FileClose(file); \
 		return x; \

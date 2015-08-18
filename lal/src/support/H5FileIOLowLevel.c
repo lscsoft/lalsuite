@@ -301,6 +301,368 @@ static LALH5File * XLALH5FileOpenRead(const char *path)
 	return file;
 }
 
+
+/* adds a scalar attribute */
+static int XLALH5GenericAddScalarAttribute(hid_t hid, const char *key, const void *value, LALTYPECODE dtype)
+{
+	hid_t attr_id;
+	hid_t space_id;
+	hid_t dtype_id;
+
+	dtype_id = XLALH5TypeFromLALType(dtype);
+	if (dtype_id < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	space_id = H5Screate(H5S_SCALAR);
+	if (space_id < 0) {
+		H5Tclose(dtype_id);
+		XLAL_ERROR(XLAL_EIO, "Could not create dataspace for attribute `%s'", key);
+	}
+
+	attr_id = H5Acreate(hid, key, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
+	H5Sclose(space_id);
+	if (attr_id < 0) {
+		H5Tclose(dtype_id);
+		XLAL_ERROR(XLAL_EIO, "Could not create attribute `%s'", key);
+	}
+
+	if (H5Awrite(attr_id, dtype_id, value) < 0) {
+		H5Aclose(attr_id);
+		H5Tclose(dtype_id);
+		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
+	}
+	
+	H5Aclose(attr_id);
+	H5Tclose(dtype_id);
+	return 0;
+}
+
+/* adds a string attribute */
+static int XLALH5GenericAddStringAttribute(hid_t hid, const char *key, const char *value)
+{
+	hid_t attr_id;
+	hid_t space_id;
+	hid_t dtype_id;
+
+	dtype_id = H5Tcopy(H5T_C_S1);
+	if (dtype_id < 0)
+		XLAL_ERROR(XLAL_EIO, "Could not create datatype for attribure `%s'", key);
+	if (H5Tset_size(dtype_id, H5T_VARIABLE) < 0)
+	{
+		H5Tclose(dtype_id);
+		XLAL_ERROR(XLAL_EIO, "Could not create datatype for attribure `%s'", key);
+	}
+
+	space_id = H5Screate(H5S_SCALAR);
+	if (space_id < 0) {
+		H5Tclose(dtype_id);
+		XLAL_ERROR(XLAL_EIO, "Could not create dataspace for attribute `%s'", key);
+	}
+
+	attr_id = H5Acreate(hid, key, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
+	H5Sclose(space_id);
+	if (attr_id < 0) {
+		H5Tclose(dtype_id);
+		XLAL_ERROR(XLAL_EIO, "Could not create attribute `%s'", key);
+	}
+
+	if (H5Awrite(attr_id, dtype_id, &value) < 0) {
+		H5Aclose(attr_id);
+		H5Tclose(dtype_id);
+		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
+	}
+	
+	H5Aclose(attr_id);
+	H5Tclose(dtype_id);
+	return 0;
+}
+
+/* adds a LIGOTimeGPS attribute */
+static int XLALH5GenericAddLIGOTimeGPSAttribute(hid_t hid, const char *key, const LIGOTimeGPS *value)
+{
+	hid_t attr_id;
+	hid_t space_id;
+	hid_t dtype_id;
+
+	dtype_id = XLALH5TypeNativeLIGOTimeGPS();
+	if (dtype_id < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	space_id = H5Screate(H5S_SCALAR);
+	if (space_id < 0) {
+		H5Tclose(dtype_id);
+		XLAL_ERROR(XLAL_EIO, "Could not create dataspace for attribute `%s'", key);
+	}
+
+	attr_id = H5Acreate(hid, key, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
+	H5Sclose(space_id);
+	if (attr_id < 0) {
+		H5Tclose(dtype_id);
+		XLAL_ERROR(XLAL_EIO, "Could not create attribute `%s'", key);
+	}
+
+	if (H5Awrite(attr_id, dtype_id, value) < 0) {
+		H5Aclose(attr_id);
+		H5Tclose(dtype_id);
+		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
+	}
+	
+	H5Aclose(attr_id);
+	H5Tclose(dtype_id);
+	return 0;
+}
+
+/* gets the datatype of an attribute */
+static LALTYPECODE XLALH5GenericQueryScalarAttributeType(hid_t hid, const char *key)
+{
+	LALTYPECODE dtype;
+	hid_t attr_id;
+	hid_t space_id;
+	hid_t dtype_id;
+	hid_t memtype_id;
+
+	attr_id = H5Aopen(hid, key, H5P_DEFAULT);
+	if (attr_id < 0)
+		XLAL_ERROR(XLAL_EIO, "Could not read dataset attribute `%s'", key);
+
+	/* sanity check: make sure this is a scalar attribute */
+	space_id = H5Aget_space(attr_id);
+	if (space_id < 0) {
+		H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Could not read dataspace of dataset attribute `%s'", key);
+	}
+	if (H5Sget_simple_extent_ndims(space_id) != 0 || H5Sget_simple_extent_npoints(space_id) != 1) {
+		H5Sclose(space_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not a scalar attribute", key);
+	}
+
+	dtype_id = H5Aget_type(attr_id);
+	H5Aclose(attr_id);
+	if (attr_id < 0)
+		XLAL_ERROR(XLAL_EIO, "Could not read type of dataset attribute `%s'", key);
+
+	memtype_id = H5Tget_native_type(dtype_id, H5T_DIR_ASCEND);
+	H5Tclose(dtype_id);
+	if (memtype_id < 0)
+		XLAL_ERROR(XLAL_EIO, "Could not get native type of dataset attribute `%s'", key);
+
+	dtype = XLALTypeFromH5Type(memtype_id);
+	H5Tclose(memtype_id);
+	if ((int)dtype < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	return dtype;
+}
+
+/* gets the value of a scalar attribute */
+static int XLALH5GenericQueryScalarAttributeValue(void *value, hid_t hid, const char *key)
+{
+	hid_t attr_id;
+	hid_t space_id;
+	hid_t dtype_id;
+	hid_t memtype_id;
+
+	attr_id = H5Aopen(hid, key, H5P_DEFAULT);
+	if (attr_id < 0)
+		XLAL_ERROR(XLAL_EIO, "Could not read dataset attribute `%s'", key);
+
+	/* sanity check: make sure this is a scalar attribute */
+	space_id = H5Aget_space(attr_id);
+	if (space_id < 0) {
+		H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Could not read dataspace of dataset attribute `%s'", key);
+	}
+	if (H5Sget_simple_extent_ndims(space_id) != 0 || H5Sget_simple_extent_npoints(space_id) != 1) {
+		H5Sclose(space_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not a scalar attribute", key);
+	}
+	H5Sclose(space_id);
+
+	dtype_id = H5Aget_type(attr_id);
+	if (dtype_id < 0) {
+		H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Could not read type of dataset attribute `%s'", key);
+	}
+
+	memtype_id = H5Tget_native_type(dtype_id, H5T_DIR_ASCEND);
+	H5Tclose(dtype_id);
+	if (memtype_id < 0) {
+		H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Could not get native type of dataset attribute `%s'", key);
+	}
+
+	if (H5Aread(attr_id, memtype_id, value) < 0) {
+		H5Tclose(memtype_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Could not read data from dataset attribute `%s'", key);
+	}
+
+	H5Tclose(memtype_id);
+	H5Aclose(attr_id);
+	return 0;
+}
+
+/* gets the value of a string attribute */
+static int XLALH5GenericQueryStringAttributeValue(char *value, size_t size, hid_t hid, const char *key)
+{
+	char *str;
+	hid_t attr_id;
+	hid_t space_id;
+	hid_t dtype_id;
+	hid_t memtype_id;
+	int n;
+
+	attr_id = H5Aopen(hid, key, H5P_DEFAULT);
+	if (attr_id < 0)
+		XLAL_ERROR(XLAL_EIO, "Could not read dataset attribute `%s'", key);
+
+	/* sanity check: make sure this is just one variable-length string */
+	space_id = H5Aget_space(attr_id);
+	if (space_id < 0) {
+		H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Could not read dataspace of dataset attribute `%s'", key);
+	}
+	if (H5Sget_simple_extent_ndims(space_id) != 0) {
+		H5Sclose(space_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not a string", key);
+	}
+
+	dtype_id = H5Aget_type(attr_id);
+	if (dtype_id < 0) {
+		H5Sclose(space_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Could not read type of dataset attribute `%s'", key);
+	}
+	H5Tclose(dtype_id);
+
+	memtype_id = H5Tcopy(H5T_C_S1);
+	if (memtype_id < 0 || H5Tset_size(memtype_id, H5T_VARIABLE)) {
+		H5Sclose(space_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO);
+	}
+
+	if (H5Aread(attr_id, memtype_id, &str) < 0) {
+		H5Tclose(memtype_id);
+		H5Sclose(space_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Could not read data from dataset attribute `%s'", key);
+	}
+
+	n = snprintf(value, value == NULL ? 0 : size, "%s", str);
+
+	H5Dvlen_reclaim(memtype_id, space_id, H5P_DEFAULT, &str);
+
+	H5Tclose(memtype_id);
+	H5Sclose(space_id);
+	H5Aclose(attr_id);
+	return n;
+}
+
+/* gets the value of a LIGOTimeGPS attribute */
+static LIGOTimeGPS * XLALH5GenericQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS *value, hid_t hid, const char *key)
+{
+	char *s;
+	hid_t attr_id;
+	hid_t space_id;
+	hid_t dtype_id;
+	hid_t memtype_id;
+
+	attr_id = H5Aopen(hid, key, H5P_DEFAULT);
+	if (attr_id < 0)
+		XLAL_ERROR_NULL(XLAL_EIO, "Could not read dataset attribute `%s'", key);
+
+	/* sanity check: make sure this is a scalar attribute */
+	space_id = H5Aget_space(attr_id);
+	if (space_id < 0) {
+		H5Aclose(attr_id);
+		XLAL_ERROR_NULL(XLAL_EIO, "Could not read dataspace of dataset attribute `%s'", key);
+	}
+	if (H5Sget_simple_extent_ndims(space_id) != 0 || H5Sget_simple_extent_npoints(space_id) != 1) {
+		H5Sclose(space_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR_NULL(XLAL_EIO, "Attribute `%s' is not a scalar attribute", key);
+	}
+	H5Sclose(space_id);
+
+	/* sanity check the dtype_id */
+
+	dtype_id = H5Aget_type(attr_id);
+	if (dtype_id < 0) {
+		H5Aclose(attr_id);
+		XLAL_ERROR_NULL(XLAL_EIO, "Could not read type of dataset attribute `%s'", key);
+	}
+
+	/* must be compound data type ... */
+	if (H5Tget_class(dtype_id) != H5T_COMPOUND) {
+		H5Tclose(dtype_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for dataset attribute `%s'", key);
+	}
+
+	/* must have 2 members ... */
+	if (H5Tget_nmembers(dtype_id) != 2) {
+		H5Tclose(dtype_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for dataset attribute `%s'", key);
+	}
+
+	/* both members must be integer type ... */
+	if (H5Tget_member_class(dtype_id, 0) != H5T_INTEGER) {
+		H5Tclose(dtype_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for dataset attribute `%s'", key);
+	}
+	if (H5Tget_member_class(dtype_id, 1) != H5T_INTEGER) {
+		H5Tclose(dtype_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for dataset attribute `%s'", key);
+	}
+
+	/* FIXME: should also check member sizes? */
+
+	/* first member name must be "gpsSeconds" ... */
+	s = H5Tget_member_name(dtype_id, 0);
+	if (strcmp(s, "gpsSeconds") != 0) {
+		free(s);
+		H5Tclose(dtype_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for dataset attribute `%s'", key);
+	}
+	free(s);
+
+	/* second member name must be "gpsNanoSeconds" ... */
+	s = H5Tget_member_name(dtype_id, 1);
+	if (strcmp(s, "gpsNanoSeconds") != 0) {
+		free(s);
+		H5Tclose(dtype_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for dataset attribute `%s'", key);
+	}
+	free(s);
+
+	H5Tclose(dtype_id);
+
+	memtype_id = XLALH5TypeNativeLIGOTimeGPS();
+	if (memtype_id < 0) {
+		H5Aclose(attr_id);
+		XLAL_ERROR_NULL(XLAL_EIO, "Could not get native type of dataset attribute `%s'", key);
+	}
+
+	if (H5Aread(attr_id, memtype_id, value) < 0) {
+		H5Tclose(memtype_id);
+		H5Aclose(attr_id);
+		XLAL_ERROR_NULL(XLAL_EIO, "Could not read data from dataset attribute `%s'", key);
+	}
+
+	H5Tclose(memtype_id);
+	H5Aclose(attr_id);
+	return value;
+}
+
 #endif /* HAVE_HDF5 */
 
 /* EXPORTED ROUTINES */
@@ -454,6 +816,218 @@ LALH5File * XLALH5GroupOpen(LALH5File *file, const char *name)
 
 /** @} */
 
+/**
+ * @name File Attribute Routines
+ * @{
+ */
+
+/**
+ * @brief Adds a scalar attribute to a #LALH5File
+ * @details
+ * This routine adds a scalar-valued attribute with name @p key
+ * and value given by the memory addressed by @p value to a
+ * HDF5 file associated with the #LALH5File @p file.
+ * The data type of the scalar value is given by the #LALTYPECODE
+ * @p dtype.
+ * @param file Pointer to a #LALH5File to which the attribute will be added.
+ * @param key Pointer to a string with the name of the new attribute.
+ * @param value Pointer to the value of the scalar attribute to be added.
+ * @param dtype #LALTYPECODE value specifying the data type of the attribute.
+ * @retval 0 Success.
+ * @retval -1 Failure.
+ */
+int XLALH5FileAddScalarAttribute(LALH5File *file, const char *key, const void *value, LALTYPECODE dtype)
+{
+#ifndef HAVE_HDF5
+	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
+#else
+	if (file == NULL || key == NULL || value == NULL)
+		XLAL_ERROR(XLAL_EFAULT);
+	if (XLALH5GenericAddScalarAttribute(file->file_id, key, value, dtype) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+	return 0;
+#endif
+}
+
+/**
+ * @brief Adds a string attribute to a #LALH5File
+ * @details
+ * This routine adds a NUL-terminated variable-length string @p value
+ * attribute with name @p key to a HDF5 file associated with the
+ * #LALH5File @p file.
+ * @param file Pointer to a #LALH5File to which the attribute will be added.
+ * @param key Pointer to a string with the name of the new attribute.
+ * @param value Pointer to a string with the value of the new attribute.
+ * @retval 0 Success.
+ * @retval -1 Failure.
+ */
+int XLALH5FileAddStringAttribute(LALH5File *file, const char *key, const char *value)
+{
+#ifndef HAVE_HDF5
+	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
+#else
+	if (file == NULL || key == NULL || value == NULL)
+		XLAL_ERROR(XLAL_EFAULT);
+	if (XLALH5GenericAddStringAttribute(file->file_id, key, value) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+	return 0;
+#endif
+}
+
+/**
+ * @brief Adds a LIGOTimeGPS attribute to a #LALH5File
+ * @details
+ * This routine adds a LIGOTimeGPS @p value attribute with name @p key to a
+ * HDF5 file associated with the #LALH5File @p file.
+ * @param file Pointer to a #LALH5File to which the attribute will be added.
+ * @param key Pointer to a string with the name of the new attribute.
+ * @param value Pointer to a LIGOTimeGPS structure with the value of the new
+ * attribute.
+ * @retval 0 Success.
+ * @retval -1 Failure.
+ */
+int XLALH5FileAddLIGOTimeGPSAttribute(LALH5File *file, const char *key, const LIGOTimeGPS *value)
+{
+#ifndef HAVE_HDF5
+	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
+#else
+	if (file == NULL || key == NULL || value == NULL)
+		XLAL_ERROR(XLAL_EFAULT);
+	if (XLALH5GenericAddLIGOTimeGPSAttribute(file->file_id, key, value) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+	return 0;
+#endif
+}
+
+/**
+ * @brief Gets the datatype of an attribute in a #LALH5File
+ * @details
+ * This routine queries the datatype of a scalar attribute with
+ * name @p key in a HDF5 file associated with the #LALH5File @p file.
+ * @param file Pointer to a #LALH5File to be queried.
+ * @param key Pointer to a string with the name of the attribute to query.
+ * @returns #LALTYPECODE value of the datatype of the scalar attribute.
+ * @retval -1 Failure.
+ */
+LALTYPECODE XLALH5FileQueryScalarAttributeType(LALH5File *file, const char *key)
+{
+#ifndef HAVE_HDF5
+	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
+#else
+	LALTYPECODE dtype;
+
+	if (file == NULL || key == NULL)
+		XLAL_ERROR(XLAL_EFAULT);
+
+	dtype = XLALH5GenericQueryScalarAttributeType(file->file_id, key);
+	if ((int)(dtype) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	return dtype;
+#endif
+}
+
+/**
+ * @brief Gets the value of a scalar attribute in a #LALH5File
+ * @details
+ * This routine queries the value of a scalar attribute with
+ * name @p key in a HDF5 file associated with the #LALH5File @p file.
+ * The value is stored in memory pointed to by the pointer @p value.
+ *
+ * @attention
+ * This routine does not allocate memory for @p value.  The calling
+ * routine must ensure that the memory addressed by the pointer @p value
+ * is sufficient to hold the value in the attribute.
+ *
+ * @param value Pointer to memory in which the value will be stored.
+ * @param file Pointer to a #LALH5File to be queried.
+ * @param key Pointer to a string with the name of the attribute to query.
+ * @retval 0 Success.
+ * @retval -1 Failure.
+ */
+int XLALH5FileQueryScalarAttributeValue(void *value, LALH5File *file, const char *key)
+{
+#ifndef HAVE_HDF5
+	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
+#else
+	if (value == NULL || file == NULL || key == NULL)
+		XLAL_ERROR(XLAL_EFAULT);
+	if (XLALH5GenericQueryScalarAttributeValue(value, file->file_id, key) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+	return 0;
+#endif
+}
+
+/**
+ * @brief Gets the value of a string attribute in a #LALH5File
+ * @details
+ * This routine queries the value of a string attribute with
+ * name @p key in a HDF5 file associated with the #LALH5File @p file.
+ * The result is written into the buffer pointed to by @p value, the size
+ * of which is @p size bytes.  If @p value is NULL, no data is copied but
+ * the routine returns the length of the string.  Therefore, this routine
+ * can be called once to determine the amount of memory required, the
+ * memory can be allocated, and then it can be called a second time to
+ * read the string.  If the parameter @p size is less than or equal to
+ * the string length then only $p size-1 bytes of the string are copied
+ * to the buffer @p value.
+ * @note The return value is the length of the string, not including the
+ * terminating NUL character; thus the buffer @p value should be allocated
+ * to be one byte larger.
+ * @param value Pointer to a buffer into which the string will be written.
+ * @param size Size in bytes of the buffer into which the string will be
+ * written.
+ * @param file Pointer to a #LALH5File to be queried.
+ * @param key Pointer to a string with the name of the attribute to query.
+ * @returns The number of bytes that would be written to @p value had @p size
+ * been sufficiently large excluding the terminating NUL byte.
+ * @retval NULL Failure.
+ */
+int XLALH5FileQueryStringAttributeValue(char *value, size_t size, LALH5File *file, const char *key)
+{
+#ifndef HAVE_HDF5
+	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
+#else
+	int n;
+
+	if (file == NULL || key == NULL)
+		XLAL_ERROR(XLAL_EFAULT);
+
+	n = XLALH5GenericQueryStringAttributeValue(value, size, file->file_id, key);
+	if (n < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	return n;
+#endif
+}
+
+/**
+ * @brief Gets the value of a LIGOTimeGPS attribute in a #LALH5File
+ * @details
+ * This routine queries the value of a LIGOTimeGPS attribute with
+ * name @p key in a HDF5 file associated with the #LALH5File @p file.
+ * The value is stored in memory pointed to by the pointer @p value.
+ * @param value Pointer to a LIGOTimeGPS structure in which the attribute
+ * value will be stored.
+ * @param file Pointer to a #LALH5File to be queried.
+ * @param key Pointer to a string with the name of the attribute to query.
+ * @returns Pointer to the LIGOTimeGPS structure passed to this routine.
+ * @retval NULL Failure.
+ */
+LIGOTimeGPS * XLALH5FileQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS *value, LALH5File *file, const char *key)
+{
+#ifndef HAVE_HDF5
+	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
+#else
+	if (value == NULL || file == NULL || key == NULL)
+		XLAL_ERROR_NULL(XLAL_EFAULT);
+	if (XLALH5GenericQueryLIGOTimeGPSAttributeValue(value, file->file_id, key) == NULL)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	return value;
+#endif
+}
+
+/** @} */
 
 /**
  * @name Dataset Routines
@@ -902,39 +1476,10 @@ int XLALH5DatasetAddScalarAttribute(LALH5Dataset *dset, const char *key, const v
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
 #else
-	hsize_t one = 1;
-	hid_t attr_id;
-	hid_t space_id;
-	hid_t dtype_id;
-
 	if (dset == NULL || key == NULL || value == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
-
-	dtype_id = XLALH5TypeFromLALType(dtype);
-	if (dtype_id < 0)
+	if (XLALH5GenericAddScalarAttribute(dset->dataset_id, key, value, dtype) < 0)
 		XLAL_ERROR(XLAL_EFUNC);
-
-	space_id = H5Screate_simple(1, &one, NULL);
-	if (space_id < 0) {
-		H5Tclose(dtype_id);
-		XLAL_ERROR(XLAL_EIO, "Could not create dataspace for attribute `%s'", key);
-	}
-
-	attr_id = H5Acreate(dset->dataset_id, key, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
-	H5Sclose(space_id);
-	if (attr_id < 0) {
-		H5Tclose(dtype_id);
-		XLAL_ERROR(XLAL_EIO, "Could not create attribute `%s'", key);
-	}
-
-	if (H5Awrite(attr_id, dtype_id, value) < 0) {
-		H5Aclose(attr_id);
-		H5Tclose(dtype_id);
-		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
-	}
-	
-	H5Aclose(attr_id);
-	H5Tclose(dtype_id);
 	return 0;
 #endif
 }
@@ -956,44 +1501,10 @@ int XLALH5DatasetAddStringAttribute(LALH5Dataset *dset, const char *key, const c
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
 #else
-	hsize_t one = 1;
-	hid_t attr_id;
-	hid_t space_id;
-	hid_t dtype_id;
-
 	if (dset == NULL || key == NULL || value == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
-
-	dtype_id = H5Tcopy(H5T_C_S1);
-	if (dtype_id < 0)
-		XLAL_ERROR(XLAL_EIO, "Could not create datatype for attribure `%s'", key);
-	if (H5Tset_size(dtype_id, H5T_VARIABLE) < 0)
-	{
-		H5Tclose(dtype_id);
-		XLAL_ERROR(XLAL_EIO, "Could not create datatype for attribure `%s'", key);
-	}
-
-	space_id = H5Screate_simple(1, &one, NULL);
-	if (space_id < 0) {
-		H5Tclose(dtype_id);
-		XLAL_ERROR(XLAL_EIO, "Could not create dataspace for attribute `%s'", key);
-	}
-
-	attr_id = H5Acreate(dset->dataset_id, key, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
-	H5Sclose(space_id);
-	if (attr_id < 0) {
-		H5Tclose(dtype_id);
-		XLAL_ERROR(XLAL_EIO, "Could not create attribute `%s'", key);
-	}
-
-	if (H5Awrite(attr_id, dtype_id, &value) < 0) {
-		H5Aclose(attr_id);
-		H5Tclose(dtype_id);
-		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
-	}
-	
-	H5Aclose(attr_id);
-	H5Tclose(dtype_id);
+	if (XLALH5GenericAddStringAttribute(dset->dataset_id, key, value) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
 	return 0;
 #endif
 }
@@ -1015,39 +1526,10 @@ int XLALH5DatasetAddLIGOTimeGPSAttribute(LALH5Dataset *dset, const char *key, co
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
 #else
-	hsize_t one = 1;
-	hid_t attr_id;
-	hid_t space_id;
-	hid_t dtype_id;
-
 	if (dset == NULL || key == NULL || value == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
-
-	dtype_id = XLALH5TypeNativeLIGOTimeGPS();
-	if (dtype_id < 0)
+	if (XLALH5GenericAddLIGOTimeGPSAttribute(dset->dataset_id, key, value) < 0)
 		XLAL_ERROR(XLAL_EFUNC);
-
-	space_id = H5Screate_simple(1, &one, NULL);
-	if (space_id < 0) {
-		H5Tclose(dtype_id);
-		XLAL_ERROR(XLAL_EIO, "Could not create dataspace for attribute `%s'", key);
-	}
-
-	attr_id = H5Acreate(dset->dataset_id, key, dtype_id, space_id, H5P_DEFAULT, H5P_DEFAULT);
-	H5Sclose(space_id);
-	if (attr_id < 0) {
-		H5Tclose(dtype_id);
-		XLAL_ERROR(XLAL_EIO, "Could not create attribute `%s'", key);
-	}
-
-	if (H5Awrite(attr_id, dtype_id, value) < 0) {
-		H5Aclose(attr_id);
-		H5Tclose(dtype_id);
-		XLAL_ERROR(XLAL_EIO, "Could not write attribute `%s'", key);
-	}
-	
-	H5Aclose(attr_id);
-	H5Tclose(dtype_id);
 	return 0;
 #endif
 }
@@ -1068,43 +1550,12 @@ LALTYPECODE XLALH5DatasetQueryScalarAttributeType(LALH5Dataset *dset, const char
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
 #else
 	LALTYPECODE dtype;
-	hid_t attr_id;
-	hid_t space_id;
-	hid_t dtype_id;
-	hid_t memtype_id;
 
 	if (dset == NULL || key == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	attr_id = H5Aopen(dset->dataset_id, key, H5P_DEFAULT);
-	if (attr_id < 0)
-		XLAL_ERROR(XLAL_EIO, "Could not read dataset attribute `%s'", key);
-
-	/* sanity check: make sure this is a scalar attribute */
-	space_id = H5Aget_space(attr_id);
-	if (space_id < 0) {
-		H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Could not read dataspace of dataset attribute `%s'", key);
-	}
-	if (H5Sget_simple_extent_ndims(space_id) != 1 || H5Sget_simple_extent_npoints(space_id) != 1) {
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not a scalar attribute", key);
-	}
-
-	dtype_id = H5Aget_type(attr_id);
-	H5Aclose(attr_id);
-	if (attr_id < 0)
-		XLAL_ERROR(XLAL_EIO, "Could not read type of dataset attribute `%s'", key);
-
-	memtype_id = H5Tget_native_type(dtype_id, H5T_DIR_ASCEND);
-	H5Tclose(dtype_id);
-	if (memtype_id < 0)
-		XLAL_ERROR(XLAL_EIO, "Could not get native type of dataset attribute `%s'", key);
-
-	dtype = XLALTypeFromH5Type(memtype_id);
-	H5Tclose(memtype_id);
-	if ((int)dtype < 0)
+	dtype = XLALH5GenericQueryScalarAttributeType(dset->dataset_id, key);
+	if ((int)(dtype) < 0)
 		XLAL_ERROR(XLAL_EFUNC);
 
 	return dtype;
@@ -1134,52 +1585,10 @@ int XLALH5DatasetQueryScalarAttributeValue(void *value, LALH5Dataset *dset, cons
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
 #else
-	hid_t attr_id;
-	hid_t space_id;
-	hid_t dtype_id;
-	hid_t memtype_id;
-
 	if (value == NULL || dset == NULL || key == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
-
-	attr_id = H5Aopen(dset->dataset_id, key, H5P_DEFAULT);
-	if (attr_id < 0)
-		XLAL_ERROR(XLAL_EIO, "Could not read dataset attribute `%s'", key);
-
-	/* sanity check: make sure this is a scalar attribute */
-	space_id = H5Aget_space(attr_id);
-	if (space_id < 0) {
-		H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Could not read dataspace of dataset attribute `%s'", key);
-	}
-	if (H5Sget_simple_extent_ndims(space_id) != 1 || H5Sget_simple_extent_npoints(space_id) != 1) {
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not a scalar attribute", key);
-	}
-	H5Sclose(space_id);
-
-	dtype_id = H5Aget_type(attr_id);
-	if (dtype_id < 0) {
-		H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Could not read type of dataset attribute `%s'", key);
-	}
-
-	memtype_id = H5Tget_native_type(dtype_id, H5T_DIR_ASCEND);
-	H5Tclose(dtype_id);
-	if (memtype_id < 0) {
-		H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Could not get native type of dataset attribute `%s'", key);
-	}
-
-	if (H5Aread(attr_id, memtype_id, value) < 0) {
-		H5Tclose(memtype_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Could not read data from dataset attribute `%s'", key);
-	}
-
-	H5Tclose(memtype_id);
-	H5Aclose(attr_id);
+	if (XLALH5GenericQueryScalarAttributeValue(value, dset->dataset_id, key) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
 	return 0;
 #endif
 }
@@ -1214,61 +1623,15 @@ int XLALH5DatasetQueryStringAttributeValue(char *value, size_t size, LALH5Datase
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
 #else
-	char *str;
-	hid_t attr_id;
-	hid_t space_id;
-	hid_t dtype_id;
-	hid_t memtype_id;
 	int n;
 
 	if (dset == NULL || key == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
-	attr_id = H5Aopen(dset->dataset_id, key, H5P_DEFAULT);
-	if (attr_id < 0)
-		XLAL_ERROR(XLAL_EIO, "Could not read dataset attribute `%s'", key);
+	n = XLALH5GenericQueryStringAttributeValue(value, size, dset->dataset_id, key);
+	if (n < 0)
+		XLAL_ERROR(XLAL_EFUNC);
 
-	/* sanity check: make sure this is just one variable-length string */
-	space_id = H5Aget_space(attr_id);
-	if (space_id < 0) {
-		H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Could not read dataspace of dataset attribute `%s'", key);
-	}
-	if (H5Sget_simple_extent_ndims(space_id) != 1) {
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not a string", key);
-	}
-
-	dtype_id = H5Aget_type(attr_id);
-	if (dtype_id < 0) {
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Could not read type of dataset attribute `%s'", key);
-	}
-	H5Tclose(dtype_id);
-
-	memtype_id = H5Tcopy(H5T_C_S1);
-	if (memtype_id < 0 || H5Tset_size(memtype_id, H5T_VARIABLE)) {
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO);
-	}
-
-	if (H5Aread(attr_id, memtype_id, &str) < 0) {
-		H5Tclose(memtype_id);
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Could not read data from dataset attribute `%s'", key);
-	}
-
-	n = snprintf(value, value == NULL ? 0 : size, "%s", str);
-
-	H5Dvlen_reclaim(memtype_id, space_id, H5P_DEFAULT, &str);
-
-	H5Tclose(memtype_id);
-	H5Sclose(space_id);
-	H5Aclose(attr_id);
 	return n;
 #endif
 }
@@ -1291,104 +1654,10 @@ LIGOTimeGPS * XLALH5DatasetQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS *value, LA
 #ifndef HAVE_HDF5
 	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
 #else
-	char *s;
-	hid_t attr_id;
-	hid_t space_id;
-	hid_t dtype_id;
-	hid_t memtype_id;
-
 	if (value == NULL || dset == NULL || key == NULL)
 		XLAL_ERROR_NULL(XLAL_EFAULT);
-
-	attr_id = H5Aopen(dset->dataset_id, key, H5P_DEFAULT);
-	if (attr_id < 0)
-		XLAL_ERROR_NULL(XLAL_EIO, "Could not read dataset attribute `%s'", key);
-
-	/* sanity check: make sure this is a scalar attribute */
-	space_id = H5Aget_space(attr_id);
-	if (space_id < 0) {
-		H5Aclose(attr_id);
-		XLAL_ERROR_NULL(XLAL_EIO, "Could not read dataspace of dataset attribute `%s'", key);
-	}
-	if (H5Sget_simple_extent_ndims(space_id) != 1 || H5Sget_simple_extent_npoints(space_id) != 1) {
-		H5Sclose(space_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR_NULL(XLAL_EIO, "Attribute `%s' is not a scalar attribute", key);
-	}
-	H5Sclose(space_id);
-
-	/* sanity check the dtype_id */
-
-	dtype_id = H5Aget_type(attr_id);
-	if (dtype_id < 0) {
-		H5Aclose(attr_id);
-		XLAL_ERROR_NULL(XLAL_EIO, "Could not read type of dataset attribute `%s'", key);
-	}
-
-	/* must be compound data type ... */
-	if (H5Tget_class(dtype_id) != H5T_COMPOUND) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for dataset attribute `%s'", key);
-	}
-
-	/* must have 2 members ... */
-	if (H5Tget_nmembers(dtype_id) != 2) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for dataset attribute `%s'", key);
-	}
-
-	/* both members must be integer type ... */
-	if (H5Tget_member_class(dtype_id, 0) != H5T_INTEGER) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for dataset attribute `%s'", key);
-	}
-	if (H5Tget_member_class(dtype_id, 1) != H5T_INTEGER) {
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for dataset attribute `%s'", key);
-	}
-
-	/* FIXME: should also check member sizes? */
-
-	/* first member name must be "gpsSeconds" ... */
-	s = H5Tget_member_name(dtype_id, 0);
-	if (strcmp(s, "gpsSeconds") != 0) {
-		free(s);
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for dataset attribute `%s'", key);
-	}
-	free(s);
-
-	/* second member name must be "gpsNanoSeconds" ... */
-	s = H5Tget_member_name(dtype_id, 1);
-	if (strcmp(s, "gpsNanoSeconds") != 0) {
-		free(s);
-		H5Tclose(dtype_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR_NULL(XLAL_ETYPE, "Incorrect data type for dataset attribute `%s'", key);
-	}
-	free(s);
-
-	H5Tclose(dtype_id);
-
-	memtype_id = XLALH5TypeNativeLIGOTimeGPS();
-	if (memtype_id < 0) {
-		H5Aclose(attr_id);
-		XLAL_ERROR_NULL(XLAL_EIO, "Could not get native type of dataset attribute `%s'", key);
-	}
-
-	if (H5Aread(attr_id, memtype_id, value) < 0) {
-		H5Tclose(memtype_id);
-		H5Aclose(attr_id);
-		XLAL_ERROR_NULL(XLAL_EIO, "Could not read data from dataset attribute `%s'", key);
-	}
-
-	H5Tclose(memtype_id);
-	H5Aclose(attr_id);
+	if (XLALH5GenericQueryLIGOTimeGPSAttributeValue(value, dset->dataset_id, key) == NULL)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	return value;
 #endif
 }

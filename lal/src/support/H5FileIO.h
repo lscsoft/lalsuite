@@ -103,6 +103,15 @@ LALH5Dataset * XLALH5DatasetAlloc(LALH5File *file, const char *name, LALTYPECODE
 LALH5Dataset * XLALH5DatasetAlloc1D(LALH5File *file, const char *name, LALTYPECODE dtype, size_t length);
 int XLALH5DatasetWrite(LALH5Dataset *dset, void *data);
 
+int XLALH5FileAddScalarAttribute(LALH5File *file, const char *key, const void *value, LALTYPECODE dtype);
+int XLALH5FileAddStringAttribute(LALH5File *file, const char *key, const char *value);
+int XLALH5FileAddLIGOTimeGPSAttribute(LALH5File *file, const char *key, const LIGOTimeGPS *value);
+
+LALTYPECODE XLALH5FileQueryScalarAttributeType(LALH5File *file, const char *key);
+int XLALH5FileQueryScalarAttributeValue(void *value, LALH5File *file, const char *key);
+int XLALH5FileQueryStringAttributeValue(char *value, size_t size, LALH5File *file, const char *key);
+LIGOTimeGPS * XLALH5FileQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS *value, LALH5File *file, const char *key);
+
 LALH5Dataset * XLALH5DatasetRead(LALH5File *file, const char *name);
 size_t XLALH5DatasetQueryNPoints(LALH5Dataset *dset);
 size_t XLALH5DatasetQueryNBytes(LALH5Dataset *dset);
