@@ -38,6 +38,7 @@ bin_PROGRAMS = \
 	lalsim-bh-qnmode \
 	lalsim-bh-ringdown \
 	lalsim-bh-sphwf \
+	lalsim-burst \
 	lalsim-detector-noise \
 	lalsim-detector-strain \
 	lalsim-inject \
@@ -160,6 +161,7 @@ liblalsimulation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 lalsim_bh_qnmode_SOURCES = bh_qnmode.c
 lalsim_bh_sphwf_SOURCES = bh_sphwf.c
 lalsim_bh_ringdown_SOURCES = bh_ringdown.c
+lalsim_burst_SOURCES = burst.c
 lalsim_ns_eos_table_SOURCES = ns-eos-table.c
 lalsim_ns_mass_radius_SOURCES = ns-mass-radius.c
 lalsim_ns_params_SOURCES = ns-params.c
