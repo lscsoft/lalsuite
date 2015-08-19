@@ -1406,7 +1406,7 @@ UINT8 XLALTotalLatticeTilingPoints(
 }
 
 UINT8 XLALCurrentLatticeTilingIndex(
-  LatticeTilingIterator *itr
+  const LatticeTilingIterator *itr
   )
 {
 
