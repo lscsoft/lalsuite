@@ -639,7 +639,7 @@ int XLALSimInspiralChooseTDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimSpinInspiralGenerator(hplus, hcross, phiRef,
 					       deltaT, m1, m2, f_min, f_ref, r, i, S1x, S1y, S1z, S2x, S2y, S2z,
-					       phaseO, amplitudeO, waveFlags, nonGRparams);
+					       phaseO, amplitudeO, lambda1, lambda2, quadparam1, quadparam2, waveFlags, nonGRparams);
 	    break;
 
         case IMRPhenomC:
@@ -668,7 +668,7 @@ int XLALSimInspiralChooseTDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenSpinInspiralRDGenerator(hplus, hcross, phiRef,
 							deltaT, m1, m2, f_min, f_ref, r, i, S1x, S1y, S1z, S2x, S2y, S2z,
-							phaseO, amplitudeO,  waveFlags, nonGRparams);
+							phaseO, amplitudeO, lambda1, lambda2, quadparam1, quadparam2, waveFlags, nonGRparams);
             break;
 
         case SEOBNRv1:
