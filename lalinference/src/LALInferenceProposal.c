@@ -3039,7 +3039,6 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfe
   int timeflag=0;
   REAL8 baryTime, logPropRatio = 0.0;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  LALInferenceCopyVariables(currentParams, proposedParams);
   /* Find the number of distinct-position detectors. */
   /* Exit with same parameters (with a warning the first time) if
    there are not EXACTLY three unique detector locations. */
@@ -3060,18 +3059,18 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfe
 
   DistanceParam distParam;
 
-  if (LALInferenceCheckVariable(proposedParams, "distance")) {
+  if (LALInferenceCheckVariable(currentParams, "distance")) {
     distParam = USES_DISTANCE_VARIABLE;
-  } else if (LALInferenceCheckVariable(proposedParams, "logdistance")) {
+  } else if (LALInferenceCheckVariable(currentParams, "logdistance")) {
     distParam = USES_LOG_DISTANCE_VARIABLE;
   } else {
     XLAL_ERROR_REAL8(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
   }
 
-  REAL8 ra = *(REAL8 *)LALInferenceGetVariable(proposedParams, "rightascension");
-  REAL8 dec = *(REAL8 *)LALInferenceGetVariable(proposedParams, "declination");
-  if(LALInferenceCheckVariable(proposedParams,"time")){
-    baryTime = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
+  REAL8 ra = *(REAL8 *)LALInferenceGetVariable(currentParams, "rightascension");
+  REAL8 dec = *(REAL8 *)LALInferenceGetVariable(currentParams, "declination");
+  if(LALInferenceCheckVariable(currentParams,"time")){
+    baryTime = *(REAL8 *)LALInferenceGetVariable(currentParams, "time");
     timeflag=1;
   }
   else
@@ -3080,18 +3079,18 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfe
   }
   REAL8 iota=0.;
 
-  if(LALInferenceCheckVariable(proposedParams,"costheta_jn"))
-    iota = acos(*(REAL8 *)LALInferenceGetVariable(proposedParams, "costheta_jn"));
+  if(LALInferenceCheckVariable(currentParams,"costheta_jn"))
+    iota = acos(*(REAL8 *)LALInferenceGetVariable(currentParams, "costheta_jn"));
 
 
   else fprintf(stderr,"LALInferenceExtrinsicParamProposal: No  theta_jn parameter!\n");
 
-  REAL8 psi = *(REAL8 *)LALInferenceGetVariable(proposedParams, "polarisation");
+  REAL8 psi = *(REAL8 *)LALInferenceGetVariable(currentParams, "polarisation");
   REAL8 dist;
   if (distParam == USES_DISTANCE_VARIABLE) {
-    dist = *(REAL8 *)LALInferenceGetVariable(proposedParams, "distance");
+    dist = *(REAL8 *)LALInferenceGetVariable(currentParams, "distance");
   } else {
-    dist = exp(*(REAL8 *)LALInferenceGetVariable(proposedParams, "logdistance"));
+    dist = exp(*(REAL8 *)LALInferenceGetVariable(currentParams, "logdistance"));
   }
 
   REAL8 newRA, newDec, newTime, newDist, newIota, newPsi;
@@ -3137,6 +3136,8 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfe
   REAL8 cst = log(1./(sqrt(2.*LAL_PI)));
   pReverse = 6*cst-0.5*(nRefRA*nRefRA+nRefDec*nRefDec+nRefTime*nRefTime+nRefDist*nRefDist+nRefIota*nRefIota+nRefPsi*nRefPsi);
   pForward = 6*cst-0.5*(nRA*nRA+nDec*nDec+nTime*nTime+nDist*nDist+nIota*nIota+nPsi*nPsi);
+
+  LALInferenceCopyVariables(currentParams, proposedParams);
 
   LALInferenceSetVariable(proposedParams, "rightascension", &newRA);
   LALInferenceSetVariable(proposedParams, "declination", &newDec);
