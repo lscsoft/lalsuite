@@ -735,8 +735,6 @@ void initialise_prior( LALInferenceRunState *runState )
  * with the spread of the distribution controlled by the \c temperature. One parameter is evolved during a single draw.
  * \c diffev Drawing a new point by differential evolution of two randomly chosen live points. All parameters are
  * evolved during a single draw.
- * \c kDTree Drawing points from a distributions created from a k-D tree of the current live points, with
- * probabilities of each leaf being inversely their volume. All parameters are evolved during a single draw.
  *
  * Note: also add ability to jump between frequency modes.
  *
@@ -746,7 +744,7 @@ void initialise_prior( LALInferenceRunState *runState )
  */
 void initialise_proposal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL;
-  UINT4 covfrac = 0, defrac = 0, kdfrac = 0, freqfrac = 0, esfrac = 0, ewfrac = 0;
+  UINT4 covfrac = 0, defrac = 0, freqfrac = 0, esfrac = 0, ewfrac = 0;
   REAL8 temperature = 0.;
   const CHAR *defaultPropName = NULL;
   defaultPropName = XLALStringDuplicate( "none" );
@@ -759,10 +757,6 @@ void initialise_proposal( LALInferenceRunState *runState ){
   if( ppt ) { defrac = atoi( ppt->value ); }
   else { defrac = 0; } /* default value */
 
-  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--kDTree" );
-  if( ppt ) { kdfrac = atoi( ppt->value ); }
-  else { kdfrac = 0; } /* default value */
-
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--freqBinJump" );
   if( ppt ) { freqfrac = atoi( ppt->value ); }
 
@@ -774,7 +768,7 @@ void initialise_proposal( LALInferenceRunState *runState ){
   if ( ppt ) { ewfrac = atoi( ppt->value ); }
   else { ewfrac = 1; }
 
-  if( !covfrac && !defrac && !kdfrac && !freqfrac && !ewfrac && !esfrac ){
+  if( !covfrac && !defrac && !freqfrac && !ewfrac && !esfrac ){
     XLALPrintError("All proposal weights are zero!\n");
     XLAL_ERROR_VOID(XLAL_EFAILED);
   }
@@ -836,7 +830,6 @@ void initialise_proposal( LALInferenceRunState *runState ){
   /* set proposal */
   threadState->proposal = LALInferenceCyclicProposal;
   LALInferenceZeroProposalStats(threadState->cycle);
-
 }
 
 
