@@ -735,7 +735,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   }
 
   /* Update the proposal */
-  if(!(iter%(Nlive/4))) {
+  if(!(iter%(Nlive/10))) {
     /* Update the covariance matrix */
     if ( LALInferenceCheckVariable( runState->proposalArgs,"covarianceMatrix" ) ){
       SetupEigenProposals(runState);
