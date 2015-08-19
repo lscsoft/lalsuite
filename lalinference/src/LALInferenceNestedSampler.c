@@ -1266,6 +1266,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
             ifo=0;
             while(data)
             {
+               if(!runState->model->ifo_loglikelihoods) break;
                tmp=runState->model->ifo_loglikelihoods[ifo] - data->nullloglikelihood;
                sprintf(tmpName,"deltalogl%s",data->name);
                LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
