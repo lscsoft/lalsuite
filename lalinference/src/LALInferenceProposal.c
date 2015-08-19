@@ -342,12 +342,16 @@ void LALInferenceSetupDefaultNSProposal(LALInferenceRunState *runState, LALInfer
 
   /* Use ensemble moves unless turned off */
   if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-ensemble")) {
-    LALInferenceAddProposalToCycle(runState, ensembleStretchFullName, &LALInferenceEnsembleStretchFull, BIGWEIGHT);
-    LALInferenceAddProposalToCycle(runState, ensembleStretchIntrinsicName, &LALInferenceEnsembleStretchIntrinsic, SMALLWEIGHT);
-    LALInferenceAddProposalToCycle(runState, ensembleStretchExtrinsicName, &LALInferenceEnsembleStretchExtrinsic, SMALLWEIGHT);
-    LALInferenceAddProposalToCycle(runState, ensembleWalkFullName, &LALInferenceEnsembleWalkFull, BIGWEIGHT);
-    LALInferenceAddProposalToCycle(runState, ensembleWalkIntrinsicName, &LALInferenceEnsembleWalkIntrinsic, SMALLWEIGHT);
-    LALInferenceAddProposalToCycle(runState, ensembleWalkExtrinsicName, &LALInferenceEnsembleWalkExtrinsic, SMALLWEIGHT);
+    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-ensemble-stretch")){
+      LALInferenceAddProposalToCycle(runState, ensembleStretchFullName, &LALInferenceEnsembleStretchFull, BIGWEIGHT);
+      LALInferenceAddProposalToCycle(runState, ensembleStretchIntrinsicName, &LALInferenceEnsembleStretchIntrinsic, SMALLWEIGHT);
+      LALInferenceAddProposalToCycle(runState, ensembleStretchExtrinsicName, &LALInferenceEnsembleStretchExtrinsic, SMALLWEIGHT);
+    }
+    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-ensemble-walk")){
+      LALInferenceAddProposalToCycle(runState, ensembleWalkFullName, &LALInferenceEnsembleWalkFull, BIGWEIGHT);
+      LALInferenceAddProposalToCycle(runState, ensembleWalkIntrinsicName, &LALInferenceEnsembleWalkIntrinsic, SMALLWEIGHT);
+      LALInferenceAddProposalToCycle(runState, ensembleWalkExtrinsicName, &LALInferenceEnsembleWalkExtrinsic, SMALLWEIGHT);
+    }
   }
 
   //Add LALInferencePSDFitJump to the cycle
@@ -964,8 +968,8 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceRunState *runState,
     i = 0;
     while (item != NULL) {
       if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT && item->type==LALINFERENCE_REAL8_t ) {
-	names[i] = item->name;
-	i++;
+            names[i] = item->name;
+            i++;
       }
       item = item->next;
     }
@@ -974,14 +978,13 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceRunState *runState,
 
   size_t Ndim = 0;
   for(Ndim=0,i=0; names[i] != NULL; i++ ) {
-    if(LALInferenceCheckVariableNonFixed(proposedParams,names[i]))
+    if(LALInferenceCheckVariableNonFixed(currentParams,names[i]))
       Ndim++;
   }
 
   LALInferenceVariables **dePts = runState->differentialPoints;
   size_t nPts = runState->differentialPointsLength;
 
-  LALInferenceCopyVariables(currentParams, proposedParams);
 
   if (dePts == NULL || nPts <= 1) {
     logPropRatio = 0.0;
@@ -989,13 +992,10 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceRunState *runState,
   }
 
 
-
-  i = gsl_rng_uniform_int(runState->GSLrandom, nPts);
-
   /* Choose a different sample */
     do {
     i = gsl_rng_uniform_int(runState->GSLrandom, nPts);
-  } while (!LALInferenceCompareVariables(proposedParams,dePts[i]));
+  } while (!LALInferenceCompareVariables(currentParams,dePts[i]));
 
 
   LALInferenceVariables *ptI = dePts[i];
@@ -1011,6 +1011,7 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceRunState *runState,
   REAL8 logmax=log(maxScale);
   REAL8 X=2.0*logmax*Y - logmax;
   REAL8 scale=exp(X);
+  LALInferenceCopyVariables(currentParams, proposedParams);
 
   for (i = 0; names[i] != NULL; i++) {
     /* Ignore variable if it's not in each of the params. */
@@ -1024,7 +1025,7 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceRunState *runState,
   if(scale<maxScale && scale>(1.0/maxScale))
     logPropRatio = log(scale)*((REAL8)Ndim);
   else
-    logPropRatio = -DBL_MAX;
+    logPropRatio = -INFINITY;
 
   return logPropRatio;
 }
