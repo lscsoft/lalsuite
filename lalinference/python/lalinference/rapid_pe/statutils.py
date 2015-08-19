@@ -30,12 +30,12 @@ def cumvar(arr, mean=None, var=None, n=0):
     for algorithm details.
 	"""
 	if mean and var:
-		m, s = numpy.zeros(len(arr)+1), numpy.zeros(len(arr)+1)
+		m, s = numpy.zeros(len(arr)+1), numpy.zeros(len(arr)+1, dtype=numpy.float128)
 		m[0] = mean
 		s[0] = var*(n-1)
 		buf = numpy.array([0])
 	else:
-		m, s = numpy.zeros(arr.shape), numpy.zeros(arr.shape)
+		m, s = numpy.zeros(arr.shape), numpy.zeros(arr.shape, dtype=numpy.float128)
 		m[0] = arr[0]
 		buf = numpy.array([])
 
