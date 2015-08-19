@@ -234,20 +234,13 @@ LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables
   }
 
   /* Call proposal. */
-  REAL8 logPropRatio = (cycle[i])(runState, currentParams, proposedParams);
-
-  /* Call proposals until one succeeds */
-  while (proposedParams->head == NULL) {
-      LALInferenceClearVariables(proposedParams);
-
-      logPropRatio = (cycle[i])(runState, currentParams, proposedParams);
-
-      /* Increment counter for the next time around. */
-      i = (i+1) % length;
-  }
-
-  /* Increment counter for the next time around. */
-  i = (i+1) % length;
+  REAL8 logPropRatio = -INFINITY;
+  do {
+    LALInferenceClearVariables(proposedParams);
+    logPropRatio = (cycle[i])(runState, currentParams, proposedParams);
+    /* Increment counter for the next time around. */
+    i = (i+1) % length;
+  }while (proposedParams->head == NULL);
 
   LALInferenceSetVariable(propArgs, cycleArrayCounterName, &i);
 
@@ -1704,7 +1697,6 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVa
   const char *propName = skyRingProposalName;
   REAL8 baryTime, logPropRatio;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  LALInferenceCopyVariables(currentParams, proposedParams);
 
   LIGOTimeGPS GPSlal;
 
@@ -1713,9 +1705,9 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVa
 
   DistanceParam distParam;
 
-  if (LALInferenceCheckVariable(proposedParams, "distance")) {
+  if (LALInferenceCheckVariable(currentParams, "distance")) {
     distParam = USES_DISTANCE_VARIABLE;
-  } else if (LALInferenceCheckVariable(proposedParams, "logdistance")) {
+  } else if (LALInferenceCheckVariable(currentParams, "logdistance")) {
     distParam = USES_LOG_DISTANCE_VARIABLE;
   } else {
     XLAL_ERROR_REAL8(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
@@ -1723,22 +1715,23 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceRunState *runState, LALInferenceVa
 
   REAL8 dL;
   if (distParam == USES_DISTANCE_VARIABLE) {
-    dL = *(REAL8 *)LALInferenceGetVariable(proposedParams, "distance");
+    dL = *(REAL8 *)LALInferenceGetVariable(currentParams, "distance");
   } else {
-    dL = exp(*(REAL8 *)LALInferenceGetVariable(proposedParams, "logdistance"));
+    dL = exp(*(REAL8 *)LALInferenceGetVariable(currentParams, "logdistance"));
   }
 
-  REAL8 ra       = *(REAL8 *)LALInferenceGetVariable(proposedParams, "rightascension");
-  REAL8 dec      = *(REAL8 *)LALInferenceGetVariable(proposedParams, "declination");
-  REAL8 psi      = *(REAL8 *)LALInferenceGetVariable(proposedParams, "polarisation");
+  REAL8 ra       = *(REAL8 *)LALInferenceGetVariable(currentParams, "rightascension");
+  REAL8 dec      = *(REAL8 *)LALInferenceGetVariable(currentParams, "declination");
+  REAL8 psi      = *(REAL8 *)LALInferenceGetVariable(currentParams, "polarisation");
   if(LALInferenceCheckVariable(proposedParams,"time")){
-    baryTime = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
+    baryTime = *(REAL8 *)LALInferenceGetVariable(currentParams, "time");
     timeflag=1;
   }
   else
   {
     baryTime = XLALGPSGetREAL8(&(runState->data->epoch));
   }
+  LALInferenceCopyVariables(currentParams, proposedParams);
 
   REAL8 newRA, newDec, newTime, newPsi, newDL;
 
@@ -2963,25 +2956,25 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceRunState *runState, LAL
 {
   const char *propName = distanceLikelihoodProposalName;
   LALInferenceSetVariable(runState->proposalArgs,LALInferenceCurrentProposalName,&propName);
-  LALInferenceCopyVariables(currentParams,proposedParams);
   REAL8 old_d=0.0;
   DistanceParam distParam;
   
-  if (LALInferenceCheckVariable(proposedParams, "distance")) {
+  if (LALInferenceCheckVariable(currentParams, "distance")) {
     distParam = USES_DISTANCE_VARIABLE;
-    old_d = LALInferenceGetREAL8Variable(proposedParams,"distance");
-  } else if (LALInferenceCheckVariable(proposedParams, "logdistance")) {
+    old_d = LALInferenceGetREAL8Variable(currentParams,"distance");
+  } else if (LALInferenceCheckVariable(currentParams, "logdistance")) {
     distParam = USES_LOG_DISTANCE_VARIABLE;
-    old_d = exp(LALInferenceGetREAL8Variable(proposedParams,"logdistance"));
+    old_d = exp(LALInferenceGetREAL8Variable(currentParams,"logdistance"));
   } else {
     XLAL_ERROR_REAL8(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
   }
-  if(!LALInferenceCheckVariable(proposedParams,"optimal_snr") || !LALInferenceCheckVariable(proposedParams,"matched_filter_snr"))
+  if(!LALInferenceCheckVariable(currentParams,"optimal_snr") || !LALInferenceCheckVariable(currentParams,"matched_filter_snr"))
     /* Force a likelihood calculation to generate the parameters */
-    runState->likelihood(proposedParams,runState->data,runState->model);
-
-  REAL8 OptimalSNR = LALInferenceGetREAL8Variable(proposedParams,"optimal_snr");
-  REAL8 MatchedFilterSNR = LALInferenceGetREAL8Variable(proposedParams,"matched_filter_snr");
+    runState->likelihood(currentParams,runState->data,runState->model);
+  if(!LALInferenceCheckVariable(currentParams,"optimal_snr") || !LALInferenceCheckVariable(currentParams,"matched_filter_snr"))
+    XLAL_ERROR_REAL8(XLAL_FAILURE,"Could not find optimal_snr or matched_filter_snr for distance likelihood jump\n");
+  REAL8 OptimalSNR = LALInferenceGetREAL8Variable(currentParams,"optimal_snr");
+  REAL8 MatchedFilterSNR = LALInferenceGetREAL8Variable(currentParams,"matched_filter_snr");
   REAL8 d_inner_h = MatchedFilterSNR * OptimalSNR;
 
   /* Get params of sampling distribution */
@@ -3002,6 +2995,8 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceRunState *runState, LAL
   /* Adjust SNRs */
   OptimalSNR*= new_x / old_x;
   
+  
+  LALInferenceCopyVariables(currentParams,proposedParams);
   LALInferenceSetVariable(proposedParams,"optimal_snr",&OptimalSNR);
   
   REAL8 logxdjac;
