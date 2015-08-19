@@ -1355,7 +1355,7 @@ int XLALNextLatticeTilingPoints(
 }
 
 UINT8 XLALLatticeTilingPointsInPass(
-  LatticeTilingIterator *itr,
+  const LatticeTilingIterator *itr,
   const size_t dim
   )
 {
