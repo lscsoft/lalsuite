@@ -1386,6 +1386,9 @@ REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *current
   for (i = 0; i < DIM; i++) {
     sum += xOrig[i]*x[i];
   }
+  gsl_matrix_free(LUCM);
+  gsl_permutation_free(LUCMPerm);
+  
   return -sum/2.0;
 }
 
@@ -1441,6 +1444,8 @@ REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *
     a = exps[1];
     b = exps[0];
   }
+  gsl_matrix_free(LUCM);
+  gsl_permutation_free(LUCMPerm);
 
   /* attempt to keep returned values finite */
   return a + log1p(exp(b-a));
