@@ -140,6 +140,8 @@
 #include <lal/TimeSeries.h>
 #include <lal/LALSimNoise.h>
 
+static LALUnit strainSquaredPerHertzUnit = { 0, { 0, 0, 1, 0, 0, 2, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+
 double (*psdfunc)(double);
 int (*opsdfunc)(REAL8FrequencySeries *, double);
 double srate = 16384; // sampling rate in Hertz
@@ -199,7 +201,7 @@ int main(int argc, char *argv[])
 
 	gsl_rng_env_setup();
 	rng = gsl_rng_alloc(gsl_rng_default);
-	psd = XLALCreateREAL8FrequencySeries(detector, &tstart, 0.0, srate/length, &lalSecondUnit, length/2 + 1);
+	psd = XLALCreateREAL8FrequencySeries(detector, &tstart, 0.0, srate/length, &strainSquaredPerHertzUnit, length/2 + 1);
 	if (official && opsdfunc)
 		opsdfunc(psd, flow);
 	else

@@ -49,13 +49,15 @@ static int XLALSimNoiseSegment(REAL8TimeSeries *s, REAL8FrequencySeries *psd, gs
 	if (! plan)
 		XLAL_ERROR(XLAL_EFUNC);
 
-	stilde = XLALCreateCOMPLEX16FrequencySeries("STILDE", &s->epoch, 0.0, 1.0/(s->data->length * s->deltaT), &lalSecondUnit, s->data->length/2 + 1);
+	stilde = XLALCreateCOMPLEX16FrequencySeries("STILDE", &s->epoch, 0.0, 1.0/(s->data->length * s->deltaT), &lalDimensionlessUnit, s->data->length/2 + 1);
 	if (! stilde) {
 		XLALDestroyREAL8FFTPlan(plan);
 		XLAL_ERROR(XLAL_EFUNC);
 	}
 
-	XLALUnitMultiply(&stilde->sampleUnits, &stilde->sampleUnits, &s->sampleUnits);
+	/* correct units: [stilde] = sqrt([psd] * seconds) */
+	XLALUnitMultiply(&stilde->sampleUnits, &psd->sampleUnits, &lalSecondUnit);
+	XLALUnitSqrt(&stilde->sampleUnits, &stilde->sampleUnits);
 
 	stilde->data->data[0] = 0.0;
 	for (k = 0; k < s->data->length/2 + 1; ++k) {
