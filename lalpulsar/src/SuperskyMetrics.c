@@ -1535,7 +1535,6 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
 
   }
 
-
   // Set the parameter-space bounds on reduced supersky sky coordinates A and B
   XLAL_CHECK(XLALSetLatticeTilingConstantBound(tiling, 0, min_A, max_A) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 1, PhysicalSkyBound, data_len, data_lower, data_upper) == XLAL_SUCCESS, XLAL_EFUNC);
