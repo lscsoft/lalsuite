@@ -114,7 +114,7 @@ static int BasicTest(
   for (size_t i = 0; i < n; ++i) {
 
     // Create lattice tiling iterator and locator over 'i+1' dimensions
-    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator(tiling, i+1, TILING_ITR_DEFAULT);
+    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator(tiling, i+1);
     XLAL_CHECK(itr != NULL, XLAL_EFUNC);
 
     // Count number of points
@@ -167,16 +167,18 @@ static int BasicTest(
 
   for (size_t i = 0; i < n; ++i) {
 
-    // Create lattice tiling iterator (using alternating order) over 'i+1' dimensions
-    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator(tiling, i+1, TILING_ITR_ALT_ORDER);
-    XLAL_CHECK(itr != NULL, XLAL_EFUNC);
+    // Create alternating lattice tiling iterator over 'i+1' dimensions
+    LatticeTilingIterator *itr_alt = XLALCreateLatticeTilingIterator(tiling, i+1);
+    XLAL_CHECK(itr_alt != NULL, XLAL_EFUNC);
+    XLAL_CHECK(XLALSetAlternatingLatticeTilingIterator(itr_alt, true) == XLAL_SUCCESS, XLAL_EFUNC);
 
-    // Count number of points
-    const UINT8 total = XLALTotalLatticeTilingPoints(itr);
-    XLAL_CHECK(total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref (alternating order)", total, total_ref[i]);
+    // Count number of points, check for consistency with non-alternating count
+    UINT8 total = 0;
+    while (XLALNextLatticeTilingPoint(itr_alt, NULL) > 0) ++total;
+    XLAL_CHECK(total == total_ref[i], XLAL_EFUNC, "ERROR: alternating total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref[i]);
 
     // Cleanup
-    XLALDestroyLatticeTilingIterator(itr);
+    XLALDestroyLatticeTilingIterator(itr_alt);
 
   }
 
@@ -202,7 +204,7 @@ static int MismatchTest(
   const size_t n = XLALTotalLatticeTilingDimensions(tiling);
 
   // Create lattice tiling iterator and locator
-  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator(tiling, n, TILING_ITR_DEFAULT);
+  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator(tiling, n);
   XLAL_CHECK(itr != NULL, XLAL_EFUNC);
   LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator(tiling);
   XLAL_CHECK(loc != NULL, XLAL_EFUNC);

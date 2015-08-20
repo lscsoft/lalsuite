@@ -65,15 +65,6 @@ typedef enum tagTilingLattice {
 } TilingLattice;
 
 ///
-/// Flags which determine behaviour of a lattice tiling iterator.
-///
-typedef enum tagTilingIteratorFlags {
-  TILING_ITR_DEFAULT = 0x0,		///< Default iterator behaviour
-  TILING_ITR_ALT_ORDER = 0x1,		///< Alternate between positive and negative order (i.e. upper bound to lower bound) after every pass over each dimension
-  TILING_ITR_MAX = 0x2
-} TilingIteratorFlags;
-
-///
 /// Statistics related to the number/value of lattice tiling points in a dimension.
 ///
 typedef struct tagLatticeTilingStats {
@@ -211,8 +202,7 @@ SWIGLAL(OWNED_BY_1ST_ARG(int, XLALCreateLatticeTilingIterator));
 #endif
 LatticeTilingIterator *XLALCreateLatticeTilingIterator(
   LatticeTiling *tiling,		///< [in] Lattice tiling
-  const size_t itr_ndim,		///< [in] Number of parameter-space dimensions to iterate over
-  const TilingIteratorFlags flags	///< [in] Flags which determine behaviour of iterator
+  const size_t itr_ndim			///< [in] Number of parameter-space dimensions to iterate over
   );
 
 ///
@@ -220,6 +210,15 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
 ///
 void XLALDestroyLatticeTilingIterator(
   LatticeTilingIterator *itr		///< [in] Lattice tiling iterator
+  );
+
+///
+/// Set whether the lattice tiling iterator should alternate its iteration direction (i.e. lower to
+/// upper bound, then upper to lower bound, and so on) after every pass over each dimension.
+///
+int XLALSetAlternatingLatticeTilingIterator(
+  LatticeTilingIterator *itr,		///< [in] Lattice tiling iterator
+  const bool alternating		///< [in] If true, set alternating iterator
   );
 
 ///

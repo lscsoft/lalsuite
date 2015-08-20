@@ -220,7 +220,7 @@ XLALInitDopplerFullScan ( const DopplerFullScanInit *init       /**< [in] initia
         XLAL_CHECK_NULL ( XLALSetTilingLatticeAndMetric(thisScan->spindownTiling, TILING_LATTICE_ANSTAR, metric, init->metricMismatch) == XLAL_SUCCESS, XLAL_EFUNC );
 
         /* Create iterator over flat lattice tiling */
-        XLAL_CHECK_NULL ( (thisScan->spindownTilingItr = XLALCreateLatticeTilingIterator(thisScan->spindownTiling, n, TILING_ITR_DEFAULT)) != NULL, XLAL_EFUNC );
+        XLAL_CHECK_NULL ( (thisScan->spindownTilingItr = XLALCreateLatticeTilingIterator(thisScan->spindownTiling, n)) != NULL, XLAL_EFUNC );
 
         /* Cleanup */
         gsl_matrix_free(metric);

@@ -78,7 +78,7 @@ struct tagLatticeTilingIterator {
   LatticeTiling *tiling;		///< Lattice tiling
   size_t itr_ndim;			///< Number of parameter-space dimensions to iterate over
   size_t tiled_itr_ndim;		///< Number of tiled parameter-space dimensions to iterate over
-  TilingIteratorFlags flags;		///< Flags which determine behaviour of iterator
+  bool alternating;			///< If true, alternate iterator direction after every pass
   int state;				///< Iterator state: 0=initialised, 1=in progress, 2=finished
   gsl_vector *phys_point;		///< Current lattice point in physical coordinates
   INT8 *int_point;			///< Current lattice point in generating integers
@@ -906,7 +906,7 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
     XLAL_CHECK_NULL(tiling->stats != NULL, XLAL_ENOMEM);
 
     // Create iterator over tiling
-    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator(tiling, n, TILING_ITR_DEFAULT);
+    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator(tiling, n);
     XLAL_CHECK_NULL(itr != NULL, XLAL_EFUNC);
 
     // Start iterator at first point
@@ -1045,8 +1045,7 @@ int XLALRandomLatticeTilingPoints(
 
 LatticeTilingIterator *XLALCreateLatticeTilingIterator(
   LatticeTiling *tiling,
-  const size_t itr_ndim,
-  const TilingIteratorFlags flags
+  const size_t itr_ndim
   )
 {
 
@@ -1054,7 +1053,6 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
   XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
   XLAL_CHECK_NULL(tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL);
   XLAL_CHECK_NULL(itr_ndim <= tiling->ndim, XLAL_EINVAL);
-  XLAL_CHECK_NULL(flags < TILING_ITR_MAX, XLAL_EINVAL);
 
   // Allocate memory
   LatticeTilingIterator *itr = XLALCalloc(1, sizeof(*itr));
@@ -1065,7 +1063,6 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
 
   // Set fields
   itr->itr_ndim = itr_ndim;
-  itr->flags = flags;
 
   // Determine the maximum tiled dimension to iterate over
   itr->tiled_itr_ndim = 0;
@@ -1110,6 +1107,23 @@ void XLALDestroyLatticeTilingIterator(
     XLALFree(itr->direction);
     XLALFree(itr);
   }
+}
+
+int XLALSetAlternatingLatticeTilingIterator(
+  LatticeTilingIterator *itr,
+  const bool alternating
+  )
+{
+
+  // Check input
+  XLAL_CHECK(itr != NULL, XLAL_EFAULT);
+  XLAL_CHECK(itr->state == 0, XLAL_EINVAL);
+
+  // Set alternating iterator
+  itr->alternating = alternating;
+
+  return XLAL_SUCCESS;
+
 }
 
 int XLALResetLatticeTilingIterator(
@@ -1159,7 +1173,7 @@ int XLALNextLatticeTilingPoint(
       itr->int_point[ti] = 0;
     }
 
-    // Initialise iteration order to 1 for negative order.
+    // Initialise iteration direction to 1, i.e. lower to upper bound
     for (size_t ti = 0; ti < tn; ++ti) {
       itr->direction[ti] = 1;
     }
@@ -1272,19 +1286,17 @@ int XLALNextLatticeTilingPoint(
       const INT8 int_lower_i = itr->int_lower[ti];
       const INT8 int_upper_i = itr->int_upper[ti];
 
-      // Switch iterator direction, depending on given order
+      // Get iteration direction
       INT8 direction = itr->direction[ti];
-      if (itr->flags & TILING_ITR_ALT_ORDER) {
 
-        // Only switch direction:
-        // - if iterator is in progress
-        // - for iterated-over dimensions
-        // - if there is more than one point in this dimension
-        if ((itr->state > 0) && (ti < itr->tiled_itr_ndim) && (int_lower_i < int_upper_i)) {
-          direction = -direction;
-          itr->direction[ti] = direction;
-        }
-
+      // Only switch iteration direction:
+      // - if this is an alternating iterator
+      // - if iterator is in progress
+      // - for iterated-over dimensions
+      // - if there is more than one point in this dimension
+      if (itr->alternating && (itr->state > 0) && (ti < itr->tiled_itr_ndim) && (int_lower_i < int_upper_i)) {
+        direction = -direction;
+        itr->direction[ti] = direction;
       }
 
       // Set integer point to lower or bound, depending on current direction
@@ -1442,7 +1454,7 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
   if (loc->tiled_ndim > 0) {
 
     // Create iterator over the bounded dimensions
-    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator(tiling, tiling->ndim, TILING_ITR_DEFAULT);
+    LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator(tiling, tiling->ndim);
 
     const size_t n = itr->tiling->ndim;
     const size_t tn = itr->tiling->tiled_ndim;
