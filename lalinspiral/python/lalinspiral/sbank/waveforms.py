@@ -401,6 +401,79 @@ class IMRPhenomCTemplate(IMRPhenomBTemplate):
             self.chieff, self.bank.flow, f_final, 1000000 * PC_SI)
 
 
+class SEOBNRv2Template(AlignedSpinTemplate):
+
+    param_names = ("m1", "m2", "spin1z", "spin2z")
+    param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
+    __slots__ = ("_dur")
+
+    def __init__(self, m1, m2, spin1z, spin2z, bank):
+
+        AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank)
+        self._dur = self._imrdur()
+
+    def _get_f_final(self):
+        return lalsim.SimInspiralGetFrequency(self.m1*lal.MSUN_SI,
+                                self.m2*lal.MSUN_SI, 0., 0., self.spin1z, 0, 0,
+                                self.spin2z, lalsim.fSEOBNRv2RD)
+
+    def _compute_waveform(self, df, f_final):
+        """
+        Since SEOBNRv1 is a time domain waveform, we have to generate it,
+        then FFT to frequency domain.
+        """
+        # need to compute dt from df, duration
+        sample_rate = 2**np.ceil(np.log2(2*f_final))
+        dt = 1. / sample_rate
+        # get hplus
+        hplus, hcross = lalsim.SimIMRSpinAlignedEOBWaveform(
+            0., dt, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
+            self.bank.flow, 1e6*PC_SI, 0., self.spin1z, self.spin2z, 2) # last argument is SEOBNR version
+        # zero-pad up to 1/df
+        N = int(sample_rate / df)
+        hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
+        # taper
+        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.SIM_INSPIRAL_TAPER_START)
+
+        # create vector to hold output and plan
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.HertzUnit, int(N/2 + 1))
+        fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
+
+        # do the fft
+        lal.REAL8TimeFreqFFT(htilde, hplus, fftplan)
+
+        return htilde
+
+    def _imrdur(self):
+        """
+        Following Jolien's suggestion for the duration of an IMR
+        waveform, we compute the chirp time, scale by 10% and pad by
+        one second.
+        """
+        # FIXME: This should be done better when possible!
+        dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chieff,
+            7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
+        # FIXME: Is a minimal time of 1.0s too long?
+        dur = 1.1 * dur + 1.0
+        return dur
+
+
+class SEOBNRv2ROMDoubleSpinTemplate(SEOBNRv2Template):
+    def _compute_waveform(self, df, f_final):
+        """
+        The ROM is a frequency domain waveform, so easier.
+        """
+        # get hptilde
+        approx_enum = lalsim.GetApproximantFromString('SEOBNRv2_ROM_DoubleSpin')
+        flags = lalsim.SimInspiralCreateWaveformFlags()
+        htilde, _ = lalsim.SimInspiralChooseFDWaveform(0, df, self.m1 * MSUN_SI,
+            self.m2 * MSUN_SI, 0., 0., self.spin1z, 0., 0., self.spin2z,
+            self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, 0., 0., 0.,
+            flags, None, 1, 8, approx_enum)
+        return htilde
+
+
 class PrecessingTemplate(Template):
     """
     A generic class for precessing templates. These models require the
@@ -505,78 +578,6 @@ class IMRPhenomPTemplate(PrecessingTemplate):
         # project onto detector
         return project_hplus_hcross(hplus_fd, hcross_fd, self.theta, self.phi, self.psi)
 
-
-class SEOBNRv2Template(AlignedSpinTemplate):
-
-    param_names = ("m1", "m2", "spin1z", "spin2z")
-    param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
-    __slots__ = ("_dur")
-
-    def __init__(self, m1, m2, spin1z, spin2z, bank):
-
-        AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank)
-        self._dur = self._imrdur()
-
-    def _get_f_final(self):
-        return lalsim.SimInspiralGetFrequency(self.m1*lal.MSUN_SI,
-                                self.m2*lal.MSUN_SI, 0., 0., self.spin1z, 0, 0,
-                                self.spin2z, lalsim.fSEOBNRv2RD)
-
-    def _compute_waveform(self, df, f_final):
-        """
-        Since SEOBNRv1 is a time domain waveform, we have to generate it,
-        then FFT to frequency domain.
-        """
-        # need to compute dt from df, duration
-        sample_rate = 2**np.ceil(np.log2(2*f_final))
-        dt = 1. / sample_rate
-        # get hplus
-        hplus, hcross = lalsim.SimIMRSpinAlignedEOBWaveform(
-            0., dt, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
-            self.bank.flow, 1e6*PC_SI, 0., self.spin1z, self.spin2z, 2) # last argument is SEOBNR version
-        # zero-pad up to 1/df
-        N = int(sample_rate / df)
-        hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
-        # taper
-        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.SIM_INSPIRAL_TAPER_START)
-
-        # create vector to hold output and plan
-        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.HertzUnit, int(N/2 + 1))
-        fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
-
-        # do the fft
-        lal.REAL8TimeFreqFFT(htilde, hplus, fftplan)
-
-        return htilde
-
-    def _imrdur(self):
-        """
-        Following Jolien's suggestion for the duration of an IMR
-        waveform, we compute the chirp time, scale by 10% and pad by
-        one second.
-        """
-        # FIXME: This should be done better when possible!
-        dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
-            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chieff,
-            7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
-        # FIXME: Is a minimal time of 1.0s too long?
-        dur = 1.1 * dur + 1.0
-        return dur
-
-
-class SEOBNRv2ROMDoubleSpinTemplate(SEOBNRv2Template):
-    def _compute_waveform(self, df, f_final):
-        """
-        The ROM is a frequency domain waveform, so easier.
-        """
-        # get hptilde
-        approx_enum = lalsim.GetApproximantFromString('SEOBNRv2_ROM_DoubleSpin')
-        flags = lalsim.SimInspiralCreateWaveformFlags()
-        htilde, _ = lalsim.SimInspiralChooseFDWaveform(0, df, self.m1 * MSUN_SI,
-            self.m2 * MSUN_SI, 0., 0., self.spin1z, 0., 0., self.spin2z,
-            self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, 0., 0., 0.,
-            flags, None, 1, 8, approx_enum)
-        return htilde
 
 class EOBNRv2Template(Template):
     param_names = ("m1", "m2")
