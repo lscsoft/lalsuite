@@ -147,6 +147,11 @@ static void LT_GetBounds(
     // Get upper parameter-space bound
     *phys_upper = (bound->func)(bound->data_upper, dim, phys_point_subv);
 
+    // Do not allow upper parameter-space bound to be less than lower parameter-space bound
+    if (*phys_upper < *phys_lower) {
+      *phys_upper = GSL_NAN;
+    }
+
   } else {
 
     // Set upper bound to lower bound
@@ -1278,6 +1283,7 @@ int XLALNextLatticeTilingPoint(
         const INT8 int_lower_i = lround(ceil(dbl_int_lower_i));
         const INT8 int_upper_i = lround(floor(dbl_int_upper_i));
         XLAL_CHECK(fetestexcept(FE_INVALID) == 0, XLAL_EFAILED, "Integer bounds on dimension #%zu are too large: %0.2e to %0.2e", i, dbl_int_lower_i, dbl_int_upper_i);
+        XLAL_CHECK(int_lower_i <= int_upper_i, XLAL_EFAILED, "Integer bounds on dimension #%zu are out of order: %" LAL_INT8_FORMAT " to %" LAL_INT8_FORMAT "", i, int_lower_i, int_upper_i);
 
         // Set integer lower/upper bounds
         itr->int_lower[ti] = int_lower_i;
