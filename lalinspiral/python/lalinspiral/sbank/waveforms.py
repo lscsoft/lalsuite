@@ -377,6 +377,45 @@ class SEOBNRv2ROMDoubleSpinTemplate(SEOBNRv2Template):
         return htilde
 
 
+class EOBNRv2Template(SEOBNRv2Template):
+
+    param_names = ("m1", "m2")
+    param_formats = ("%.2f", "%.2f")
+
+    def __init__(self, m1, m2, bank):
+        # Use everything from SEOBNRv2Template class except for the
+        # _compute_waveform method; call parent __init__ with spins
+        # set to zero
+        SEOBNRv2Template.__init__(self, m1, m2, 0, 0, bank)
+
+    def _compute_waveform(self, df, f_final):
+        """
+        Since EOBNRv2 is a time domain waveform, we have to generate it,
+        then FFT to frequency domain.
+        """
+        # need to compute dt from df, duration
+        sample_rate = 2**np.ceil(np.log2(2*f_final))
+        dt = 1. / sample_rate
+        # get hplus
+        hplus, hcross = lalsim.SimIMREOBNRv2DominantMode(
+            0., dt, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
+            self.bank.flow, 1e6*PC_SI, 0.)
+        # zero-pad up to 1/df
+        N = int(sample_rate / df)
+        hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
+        # taper
+        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.SIM_INSPIRAL_TAPER_START)
+
+        # create vector to hold output and plan
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.HertzUnit, int(N/2 + 1))
+        fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
+
+        # do the fft
+        lal.REAL8TimeFreqFFT(htilde, hplus, fftplan)
+
+        return htilde
+
+
 class TaylorF2RedSpinTemplate(AlignedSpinTemplate):
 
     param_names = ("m1", "m2", "chired")
@@ -545,85 +584,6 @@ class IMRPhenomPTemplate(PrecessingTemplate):
         # project onto detector
         return project_hplus_hcross(hplus_fd, hcross_fd, self.theta, self.phi, self.psi)
 
-
-class EOBNRv2Template(Template):
-    param_names = ("m1", "m2")
-    param_formats = ("%.2f", "%.2f")
-
-    __slots__ = ("m1", "m2", "bank", "_dur", "_mchirp", "_tau0")
-
-    def __init__(self, m1, m2, bank):
-        Template.__init__(self, m1, m2, bank)
-        self.m1 = float(m1)
-        self.m2 = float(m2)
-        self.bank = bank
-
-        # derived quantities
-        # we'll just use the imrphenomb ffinal estimate for f_final
-        self._dur = self._imrdur()
-        self._mchirp = compute_mchirp(m1, m2)
-
-    def _get_f_final(self):
-        return spawaveform.imrffinal(self.m1, self.m2, 0.)
-
-    def _compute_waveform(self, df, f_final):
-        """
-        Since EOBNRv2 is a time domain waveform, we have to generate it,
-        then FFT to frequency domain.
-        """
-        # need to compute dt from df, duration
-        sample_rate = 2**np.ceil(np.log2(2*f_final))
-        dt = 1. / sample_rate
-        # get hplus
-        hplus, hcross = lalsim.SimIMREOBNRv2DominantMode(
-            0., dt, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
-            self.bank.flow, 1e6*PC_SI, 0.)
-        # zero-pad up to 1/df
-        N = int(sample_rate / df)
-        hplus = lal.ResizeREAL8TimeSeries(hplus, 0, N)
-        # taper
-        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.SIM_INSPIRAL_TAPER_START)
-
-        # create vector to hold output and plan
-        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.HertzUnit, int(N/2 + 1))
-        fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
-
-        # do the fft
-        lal.REAL8TimeFreqFFT(htilde, hplus, fftplan)
-
-        return htilde
-
-    def _imrdur(self):
-        """
-        Just using the estimate used for IMRPhenomB here.
-        """
-        return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
-            self.m1 * MSUN_SI, self.m2 * MSUN_SI, 0,
-            7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
-
-    @classmethod
-    def from_sim(cls, sim, bank):
-        return cls(sim.mass1, sim.mass2, bank)
-
-    @classmethod
-    def from_sngl(cls, sngl, bank):
-        return cls(sngl.mass1, sngl.mass2, bank)
-
-    def to_sngl(self):
-        # note that we use the C version; this causes all numerical values to be initiated
-        # as 0 and all strings to be '', which is nice
-        row = SnglInspiralTable()
-        row.mass1 = self.m1
-        row.mass2 = self.m2
-        row.mtotal = self.m1 + self.m2
-        row.mchirp = self._mchirp
-        row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
-        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
-        row.f_final = self.f_final
-        row.template_duration = self._dur
-        row.sigmasq = self.sigmasq
-
-        return row
 
 class SpinTaylorT4Template(Template):
 
