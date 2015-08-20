@@ -221,6 +221,52 @@ class Template(object):
         self._wf = {}
 
 
+class AlignedSpinTemplate(Template):
+    """
+    A convenience class for aligned spin templates. Specific
+    implementations of aligned spin templates should sub-class this
+    class.
+    """
+    param_names = ("m1", "m2", "spin1z", "spin2z")
+    param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
+    __slots__ = ("spin1z", "spin2z", "chieff")
+
+    def __init__(self, m1, m2, spin1z, spin2z, bank):
+
+        Template.__init__(self, m1, m2, bank)
+        self.spin1z = float(spin1z)
+        self.spin2z = float(spin2z)
+        self.chieff = lalsim.SimIMRPhenomBComputeChi(m1, m2, spin1z, spin2z)
+
+    @classmethod
+    def from_sim(cls, sim, bank):
+        return cls(sim.mass1, sim.mass2, sim.spin1z, sim.spin2z, bank)
+
+    @classmethod
+    def from_sngl(cls, sngl, bank):
+        return cls(sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z, bank)
+
+    def to_sngl(self):
+        # note that we use the C version; this causes all numerical
+        # values to be initiated as 0 and all strings to be '', which
+        # is nice
+        row = SnglInspiralTable()
+
+        row.mass1 = self.m1
+        row.mass2 = self.m2
+        row.mtotal = self.m1 + self.m2
+        row.mchirp = self._mchirp
+        row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
+        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
+        row.f_final = self.f_final
+        row.template_duration = self._dur
+        row.spin1z = self.spin1z
+        row.spin2z = self.spin2z
+        row.sigmasq = self.sigmasq
+
+        return row
+
+
 class TaylorF2RedSpinTemplate(Template):
     param_names = ("m1", "m2", "chi")
     param_formats = ("%.5f", "%.5f", "%+.4f")
@@ -318,33 +364,24 @@ class TaylorF2RedSpinTemplate(Template):
         return row
 
 
-class IMRPhenomBTemplate(Template):
-    param_names = ("m1", "m2", "chi")
-    param_formats = ("%.2f", "%.2f", "%+.2f")
+class IMRPhenomBTemplate(AlignedSpinTemplate):
 
-    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "chi", "_dur", "_mchirp", "_tau0")
+    param_names = ("m1", "m2", "chieff")
+    param_formats = ("%.2f", "%.2f", "%+.2f")
+    slots = ("_dur")
 
     def __init__(self, m1, m2, spin1z, spin2z, bank):
-        Template.__init__(self, m1, m2, bank)
-        self.m1 = m1
-        self.m2 = m2
-        self.spin1z = spin1z
-        self.spin2z = spin2z
-        chi = lalsim.SimIMRPhenomBComputeChi( self.m1, self.m2, self.spin1z, self.spin2z )
-        self.chi = chi
-        self.bank = bank
 
-        # derived quantities
+        AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank)
         self._dur = self._imrdur()
-        self._mchirp = compute_mchirp(m1, m2)
 
     def _get_f_final(self):
-        return spawaveform.imrffinal(self.m1, self.m2, self.chi)  # ISCO
+        return spawaveform.imrffinal(self.m1, self.m2, self.chieff)  # ISCO
 
     def _compute_waveform(self, df, f_final):
         return lalsim.SimIMRPhenomBGenerateFD(0, df,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
-            self.chi, self.bank.flow, f_final, 1000000 * PC_SI)
+            self.chieff, self.bank.flow, f_final, 1000000 * PC_SI)
 
     def _imrdur(self):
         """
@@ -352,34 +389,8 @@ class IMRPhenomBTemplate(Template):
         estimate for the length of a full IMR waveform.
         """
         return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
-            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chi,
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chieff,
             7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
-
-    @classmethod
-    def from_sim(cls, sim, bank):
-        return cls(sim.mass1, sim.mass2, sim.spin1z, sim.spin2z, bank)
-
-    @classmethod
-    def from_sngl(cls, sngl, bank):
-        return cls(sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z, bank)
-
-    def to_sngl(self):
-        # note that we use the C version; this causes all numerical values to be initiated
-        # as 0 and all strings to be '', which is nice
-        row = SnglInspiralTable()
-        row.mass1 = self.m1
-        row.mass2 = self.m2
-        row.mtotal = self.m1 + self.m2
-        row.mchirp = self._mchirp
-        row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
-        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
-        row.f_final = self.f_final
-        row.template_duration = self._dur
-        row.spin1z = self.spin1z
-        row.spin2z = self.spin2z
-        row.sigmasq = self.sigmasq
-
-        return row
 
 
 class IMRPhenomCTemplate(IMRPhenomBTemplate):
@@ -387,7 +398,7 @@ class IMRPhenomCTemplate(IMRPhenomBTemplate):
     def _compute_waveform(self, df, f_final):
         return lalsim.SimIMRPhenomCGenerateFD(0, df,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
-            self.chi, self.bank.flow, f_final, 1000000 * PC_SI)
+            self.chieff, self.bank.flow, f_final, 1000000 * PC_SI)
 
 
 class PrecessingTemplate(Template):
@@ -494,24 +505,17 @@ class IMRPhenomPTemplate(PrecessingTemplate):
         # project onto detector
         return project_hplus_hcross(hplus_fd, hcross_fd, self.theta, self.phi, self.psi)
 
-class SEOBNRv2Template(Template):
+
+class SEOBNRv2Template(AlignedSpinTemplate):
+
     param_names = ("m1", "m2", "spin1z", "spin2z")
     param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
-
-    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "_dur", "_mchirp", "_tau0", "_chi")
+    __slots__ = ("_dur")
 
     def __init__(self, m1, m2, spin1z, spin2z, bank):
-        Template.__init__(self, m1, m2, bank)
-        self.m1 = float(m1)
-        self.m2 = float(m2)
-        self.spin1z = float(spin1z)
-        self.spin2z = float(spin2z)
-        self.bank = bank
 
-        # derived quantities
-        self._chi = lalsim.SimIMRPhenomBComputeChi(m1, m2, spin1z, spin2z)
+        AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank)
         self._dur = self._imrdur()
-        self._mchirp = compute_mchirp(m1, m2)
 
     def _get_f_final(self):
         return lalsim.SimInspiralGetFrequency(self.m1*lal.MSUN_SI,
@@ -553,37 +557,12 @@ class SEOBNRv2Template(Template):
         """
         # FIXME: This should be done better when possible!
         dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
-            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self._chi,
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chieff,
             7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
         # FIXME: Is a minimal time of 1.0s too long?
         dur = 1.1 * dur + 1.0
         return dur
 
-    @classmethod
-    def from_sim(cls, sim, bank):
-        return cls(sim.mass1, sim.mass2, sim.spin1z, sim.spin2z, bank)
-
-    @classmethod
-    def from_sngl(cls, sngl, bank):
-        return cls(sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z, bank)
-
-    def to_sngl(self):
-        # note that we use the C version; this causes all numerical values to be initiated
-        # as 0 and all strings to be '', which is nice
-        row = SnglInspiralTable()
-        row.mass1 = self.m1
-        row.mass2 = self.m2
-        row.spin1z = self.spin1z
-        row.spin2z = self.spin2z
-        row.mtotal = self.m1 + self.m2
-        row.mchirp = self._mchirp
-        row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
-        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
-        row.f_final = self.f_final
-        row.template_duration = self._dur
-        row.sigmasq = self.sigmasq
-
-        return row
 
 class SEOBNRv2ROMDoubleSpinTemplate(SEOBNRv2Template):
     def _compute_waveform(self, df, f_final):
@@ -593,7 +572,6 @@ class SEOBNRv2ROMDoubleSpinTemplate(SEOBNRv2Template):
         # get hptilde
         approx_enum = lalsim.GetApproximantFromString('SEOBNRv2_ROM_DoubleSpin')
         flags = lalsim.SimInspiralCreateWaveformFlags()
-        
         htilde, _ = lalsim.SimInspiralChooseFDWaveform(0, df, self.m1 * MSUN_SI,
             self.m2 * MSUN_SI, 0., 0., self.spin1z, 0., 0., self.spin2z,
             self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, 0., 0., 0.,
