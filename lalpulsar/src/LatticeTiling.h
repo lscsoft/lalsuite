@@ -261,7 +261,7 @@ UINT8 XLALLatticeTilingPointsInPass(
   );
 
 ///
-/// Return the total number of points in the lattice tiling.
+/// Return the total number of points covered by the lattice tiling iterator.
 ///
 UINT8 XLALTotalLatticeTilingPoints(
   LatticeTilingIterator *itr		///< [in] Lattice tiling iterator
