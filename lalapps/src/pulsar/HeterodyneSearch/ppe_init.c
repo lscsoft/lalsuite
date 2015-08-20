@@ -683,8 +683,10 @@ void initialise_proposal( LALInferenceRunState *runState ){
   LALInferenceProposalCycle *cycle=threadState->cycle;
   /* add proposals */
   if( defrac ){
-    LALInferenceAddProposalToCycle( runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull,
-                                    defrac );
+    LALInferenceAddProposalToCycle(
+                                   cycle,
+                                   LALInferenceInitProposal(&LALInferenceDifferentialEvolutionFull,differentialEvolutionFullName),
+                                   defrac);
   }
 
   if ( freqfrac ){

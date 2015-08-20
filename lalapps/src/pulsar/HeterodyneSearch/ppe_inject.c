@@ -348,7 +348,7 @@ void inject_signal( LALInferenceRunState *runState ){
         LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
         ifo_model = ifo_model->next;
       }
-      ifo_model = runState->model->ifo;
+      ifo_model = runState->threads[0]->model->ifo;
     }
   }
   else {
@@ -356,7 +356,7 @@ void inject_signal( LALInferenceRunState *runState ){
       LALInferenceRemoveVariable(ifo_model->params, "nonGR");
       ifo_model = ifo_model->next;
     }
-    ifo_model = runState->model->ifo;
+    ifo_model = runState->threads[0]->model->ifo;
   }
 
   PulsarFreeParams( injpars ); /* free memory */
