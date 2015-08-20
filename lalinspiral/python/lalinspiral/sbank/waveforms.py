@@ -126,8 +126,6 @@ class Template(object):
     * Call Template.__init__(self) during __init__.
     * Provide a _compute_waveform method that takes df and f_final to generate
       the frequency-domain waveform as a COMPLEX16FrequencySeries.
-    * Provide a property method params that returns a tuple of parameters
-      described in param_names and param_formats.
     * Provide a classmethod from_sngl, which creates an instance based on
       a sngl_inspiral object.
     * Provide a classmethod to_sngl, which creates a sngl_inspiral object
@@ -136,8 +134,15 @@ class Template(object):
       a sim_inspiral object.
     """
     __slots__ = ("m1", "m2", "bank", "_mchirp", "_tau0", "_wf", "_metric", "sigmasq", "is_seed_point", "_f_final", "_fhigh_max")
+    param_names = ("m1", "m2")
+    param_formats = ("%.2f", "%.2f")
 
     def __init__(self, m1, m2, bank):
+
+        self.m1 = float(m1)
+        self.m2 = float(m2)
+        self.bank = bank
+
         self._wf = {}
         self._metric = None
         self.sigmasq = 0.
@@ -145,6 +150,11 @@ class Template(object):
         self._tau0 = compute_tau0( self._mchirp, bank.flow)
         self._f_final = None
         self._fhigh_max = bank.fhigh_max
+
+
+    @property
+    def params(self):
+        return tuple(getattr(self, k) for k in self.param_names)
 
     @property
     def f_final(self):
@@ -256,10 +266,6 @@ class TaylorF2RedSpinTemplate(Template):
         if isnan(self._metric[0]):
             raise ValueError("g00 is nan")
 
-    @property
-    def params(self):
-        return self.m1, self.m2, self.chi
-
     def _compute_waveform(self, df, f_final):
 
         wf = lalsim.SimInspiralTaylorF2ReducedSpin(
@@ -334,10 +340,6 @@ class IMRPhenomBTemplate(Template):
 
     def _get_f_final(self):
         return spawaveform.imrffinal(self.m1, self.m2, self.chi)  # ISCO
-
-    @property
-    def params(self):
-        return self.m1, self.m2, self.chi
 
     def _compute_waveform(self, df, f_final):
         return lalsim.SimIMRPhenomBGenerateFD(0, df,
@@ -434,10 +436,6 @@ class PrecessingTemplate(Template):
     def _get_f_final(self):
         return spawaveform.imrffinal(self.m1, self.m2, self.chieff)
 
-    @property
-    def params(self):
-        return tuple(getattr(self, attr) for attr in self.param_names)
-
     @classmethod
     def from_sim(cls, sim, bank):
         # theta = polar angle wrt overhead
@@ -519,10 +517,6 @@ class SEOBNRv2Template(Template):
         return lalsim.SimInspiralGetFrequency(self.m1*lal.MSUN_SI,
                                 self.m2*lal.MSUN_SI, 0., 0., self.spin1z, 0, 0,
                                 self.spin2z, lalsim.fSEOBNRv2RD)
-
-    @property
-    def params(self):
-        return self.m1, self.m2, self.spin1z, self.spin2z
 
     def _compute_waveform(self, df, f_final):
         """
@@ -626,10 +620,6 @@ class EOBNRv2Template(Template):
     def _get_f_final(self):
         return spawaveform.imrffinal(self.m1, self.m2, 0.)
 
-    @property
-    def params(self):
-        return self.m1, self.m2
-
     def _compute_waveform(self, df, f_final):
         """
         Since EOBNRv2 is a time domain waveform, we have to generate it,
@@ -718,10 +708,6 @@ class SpinTaylorT4Template(Template):
 
     def _get_f_final(self):
         return 6**-1.5 / (PI * (self.m1 + self.m2) * MTSUN_SI)
-
-    @property
-    def params(self):
-        return self.m1, self.m2, self.s1x, self.s1y, self.s1z, self.s2x, self.s2y, self.s2z, self.inclination, self.theta, self.phi, self.psi
 
     def _compute_waveform(self, df, f_final):
         # Time domain, so compute then FFT
@@ -815,10 +801,6 @@ class SpinTaylorT5Template(Template):
 
     def _get_f_final(self):
         return 6**-1.5 / (PI * (self.m1 + self.m2) * MTSUN_SI)
-
-    @property
-    def params(self):
-        return self.m1, self.m2, self.s1x, self.s1y, self.s1z, self.s2x, self.s2y, self.s2z, self.inclination, self.theta, self.phi, self.psi
 
     def _compute_waveform(self, df, f_final):
         # Time domain, so compute then FFT
