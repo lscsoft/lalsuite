@@ -267,103 +267,6 @@ class AlignedSpinTemplate(Template):
         return row
 
 
-class TaylorF2RedSpinTemplate(Template):
-    param_names = ("m1", "m2", "chi")
-    param_formats = ("%.5f", "%.5f", "%+.4f")
-
-    __slots__ = ("m1", "m2", "spin1z", "spin2z", "bank", "chi", "_dur", "_mchirp", "_tau0", "_eta", "_theta0", "_theta3", "_theta3s")
-
-    def __init__(self, m1, m2, spin1z, spin2z, bank):
-        Template.__init__(self, m1, m2, bank)
-        # don't want numpy scalars; arithmetic with them costs a whole lot of overhead
-        m1 = float(m1)
-        m2 = float(m2)
-        chi = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(m1, m2, spin1z, spin2z)
-
-        self.m1 = m1
-        self.m2 = m2
-        self.spin1z = spin1z
-        self.spin2z = spin2z
-        self.chi = chi
-        self.bank = bank
-
-        # derived quantities
-        self._dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(\
-            bank.flow, m1 * MSUN_SI, m2 * MSUN_SI, chi, 7)
-        self._mchirp = compute_mchirp(m1, m2)
-        self._eta = m1*m2/(m1+m2)**2
-        self._theta0, self._theta3, self._theta3s = compute_chirptimes(self._mchirp, self._eta, self.chi, self.bank.flow)
-
-    def _get_f_final(self):
-        return 6**-1.5 / (PI * (self.m1 + self.m2) * MTSUN_SI)  # ISCO
-
-    def finalize_as_template(self):
-        if not self.bank.use_metric: return
-
-        df, PSD = get_neighborhood_PSD([self], self.bank.flow, self.bank.noise_model)
-
-        if df not in self.bank._moments or len(PSD) - self.bank.flow // df > self.bank._moments[df][0].length:
-            real8vector_psd = CreateREAL8Vector(len(PSD))
-            real8vector_psd.data[:] = PSD
-            self.bank._moments[df] = create_moments(df, self.bank.flow, len(PSD))
-            SimInspiralTaylorF2RedSpinComputeNoiseMoments(*(self.bank._moments[df] + (real8vector_psd, self.bank.flow, df)))
-
-        self._metric = SimInspiralTaylorF2RedSpinMetricChirpTimes(self._theta0, self._theta3, self._theta3s, self.bank.flow, df, *self.bank._moments[df])
-        if isnan(self._metric[0]):
-            raise ValueError("g00 is nan")
-
-    def _compute_waveform(self, df, f_final):
-
-        wf = lalsim.SimInspiralTaylorF2ReducedSpin(
-            0, df, self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chi,
-            self.bank.flow, 0, 1000000 * PC_SI, 7, 7)
-        # have to resize wf to next pow 2 for FFT plan caching
-        wf = lal.ResizeCOMPLEX16FrequencySeries( wf, 0, ceil_pow_2(wf.data.length) )
-        return wf
-
-    def metric_match(self, other, df, **kwargs):
-        g00, g01, g02, g11, g12, g22 = self._metric
-        dx0 = other._theta0 - self._theta0
-        dx1 = other._theta3 - self._theta3
-        dx2 = other._theta3s - self._theta3s
-        match = 1 - (
-            g00 * dx0 * dx0
-          + 2 * g01 * dx0 * dx1
-          + 2 * g02 * dx0 * dx2
-          + g11 * dx1 * dx1
-          + 2 * g12 * dx1 * dx2
-          + g22 * dx2 * dx2
-        )
-
-        return match
-
-    @classmethod
-    def from_sim(cls, sim, bank):
-        return cls(sim.mass1, sim.mass2, sim.spin1z, sim.spin2z, bank)
-
-    @classmethod
-    def from_sngl(cls, sngl, bank):
-        return cls(sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z, bank)
-
-    def to_sngl(self):
-        # note that we use the C version; this causes all numerical values to be initiated
-        # as 0 and all strings to be '', which is nice
-        row = SnglInspiralTable()
-        row.mass1 = self.m1
-        row.mass2 = self.m2
-        row.mtotal = self.m1 + self.m2
-        row.mchirp = self._mchirp
-        row.eta = self._eta
-        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
-        row.f_final = self.f_final
-        row.template_duration = self._dur
-        row.spin1z = self.spin1z
-        row.spin2z = self.spin2z
-        row.sigmasq = self.sigmasq
-
-        return row
-
-
 class IMRPhenomBTemplate(AlignedSpinTemplate):
 
     param_names = ("m1", "m2", "chieff")
@@ -472,6 +375,70 @@ class SEOBNRv2ROMDoubleSpinTemplate(SEOBNRv2Template):
             self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, 0., 0., 0.,
             flags, None, 1, 8, approx_enum)
         return htilde
+
+
+class TaylorF2RedSpinTemplate(AlignedSpinTemplate):
+
+    param_names = ("m1", "m2", "chired")
+    param_formats = ("%.5f", "%.5f", "%+.4f")
+
+    __slots__ = ("chired", "_dur", "_mchirp", "_tau0", "_eta", "_theta0", "_theta3", "_theta3s")
+
+    def __init__(self, m1, m2, spin1z, spin2z, bank):
+
+        AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank)
+        self.chired = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(m1, m2, spin1z, spin2z)
+        self._dur = self._get_dur()
+        self._eta = m1*m2/(m1+m2)**2
+        self._theta0, self._theta3, self._theta3s = compute_chirptimes(self._mchirp, self._eta, self.chired, self.bank.flow)
+
+    def _get_f_final(self):
+        return 6**-1.5 / (PI * (self.m1 + self.m2) * MTSUN_SI)  # ISCO
+
+    def _get_dur(self):
+        return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chired,
+            7)
+
+    def finalize_as_template(self):
+        if not self.bank.use_metric: return
+
+        df, PSD = get_neighborhood_PSD([self], self.bank.flow, self.bank.noise_model)
+
+        if df not in self.bank._moments or len(PSD) - self.bank.flow // df > self.bank._moments[df][0].length:
+            real8vector_psd = CreateREAL8Vector(len(PSD))
+            real8vector_psd.data[:] = PSD
+            self.bank._moments[df] = create_moments(df, self.bank.flow, len(PSD))
+            SimInspiralTaylorF2RedSpinComputeNoiseMoments(*(self.bank._moments[df] + (real8vector_psd, self.bank.flow, df)))
+
+        self._metric = SimInspiralTaylorF2RedSpinMetricChirpTimes(self._theta0, self._theta3, self._theta3s, self.bank.flow, df, *self.bank._moments[df])
+        if isnan(self._metric[0]):
+            raise ValueError("g00 is nan")
+
+    def _compute_waveform(self, df, f_final):
+
+        wf = lalsim.SimInspiralTaylorF2ReducedSpin(
+            0, df, self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chired,
+            self.bank.flow, 0, 1000000 * PC_SI, 7, 7)
+        # have to resize wf to next pow 2 for FFT plan caching
+        wf = lal.ResizeCOMPLEX16FrequencySeries( wf, 0, ceil_pow_2(wf.data.length) )
+        return wf
+
+    def metric_match(self, other, df, **kwargs):
+        g00, g01, g02, g11, g12, g22 = self._metric
+        dx0 = other._theta0 - self._theta0
+        dx1 = other._theta3 - self._theta3
+        dx2 = other._theta3s - self._theta3s
+        match = 1 - (
+            g00 * dx0 * dx0
+          + 2 * g01 * dx0 * dx1
+          + 2 * g02 * dx0 * dx2
+          + g11 * dx1 * dx1
+          + 2 * g12 * dx1 * dx2
+          + g22 * dx2 * dx2
+        )
+
+        return match
 
 
 class PrecessingTemplate(Template):
