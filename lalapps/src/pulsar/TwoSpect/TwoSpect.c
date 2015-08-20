@@ -438,8 +438,9 @@ int main(int argc, char *argv[])
       XLAL_CHECK( CompAntennaPatternWeights2(antweightsforihs2h0, skypos0, multiTimestamps->data[0], lalCachedDetectors[LAL_LHO_4K_DETECTOR], &cosi, &psi) == XLAL_SUCCESS, XLAL_EFUNC );
    }
    REAL4VectorAligned *backgroundScalingForihs2h0 = NULL;
+   XLAL_CHECK( (backgroundScalingForihs2h0 = XLALCreateREAL4VectorAligned(backgroundScaling->length, 32)) != NULL, XLAL_EFUNC );
+   memcpy(backgroundScalingForihs2h0->data, backgroundScaling->data, sizeof(REAL4)*backgroundScaling->length);
    if (detectors->length>1) {
-      XLAL_CHECK( (backgroundScalingForihs2h0 = XLALCreateREAL4VectorAligned(backgroundScaling->length, 32)) != NULL, XLAL_EFUNC );
       MultiSSBtimes *multissb = NULL;
       XLAL_CHECK( (multissb = XLALGetMultiSSBtimes(multiStateSeries, skypos0, refTime, SSBPREC_RELATIVISTICOPT)) != NULL, XLAL_EFUNC );
       MultiAMCoeffs *multiAMcoefficients = NULL;
@@ -901,7 +902,6 @@ int main(int argc, char *argv[])
    //Destroy varaibles
    if (detectors->length>1) {
       XLALDestroyMultiSFTVector(multiSFTvector);
-      XLALDestroyREAL4VectorAligned(backgroundScalingForihs2h0);
    } else {
       XLALDestroyREAL4VectorAligned(usableTFdata);
       if (!uvar.signalOnly) {
@@ -918,6 +918,7 @@ int main(int argc, char *argv[])
    XLALDestroyREAL4VectorAligned(aveNoise);
    XLALDestroyREAL4VectorAligned(expRandVals);
    XLALDestroyREAL4VectorAligned(backgroundScaling);
+   XLALDestroyREAL4VectorAligned(backgroundScalingForihs2h0);
    destroyREAL4VectorAlignedArray(backgroundRatioMeans);
    XLALDestroyINT4Vector(binshifts);
    XLALDestroyMultiTimestamps(multiTimestamps);
