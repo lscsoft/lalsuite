@@ -1036,6 +1036,7 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
   XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
   XLAL_CHECK(rssky_metric->size1 + 1 == rssky_transf->size1, XLAL_ESIZE);
   XLAL_CHECK(rssky_transf->size2 == 3, XLAL_ESIZE);
+  XLAL_CHECK((fabs(alpha1 - alpha2) > 0) == (fabs(delta1 - delta2) > 0), XLAL_EINVAL);
   XLAL_CHECK(fabs(alpha1 - alpha2) <= LAL_PI || (fabs(alpha1 - alpha2) >= LAL_TWOPI && fabs(delta1) >= LAL_PI_2 && fabs(delta2) >= LAL_PI_2), XLAL_EINVAL);
   XLAL_CHECK(-LAL_PI_2 <= delta1 && delta1 <= LAL_PI_2, XLAL_EINVAL);
   XLAL_CHECK(-LAL_PI_2 <= delta2 && delta2 <= LAL_PI_2, XLAL_EINVAL);
