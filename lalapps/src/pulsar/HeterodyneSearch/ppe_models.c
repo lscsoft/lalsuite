@@ -1349,7 +1349,6 @@ void invert_source_params( PulsarParameters *params ){
 
     theta = acos( costheta );
     sintheta = sin( theta );
-    costheta = costheta;
     sin2theta = sin( 2. * theta );
     sintheta2 = SQUARE( sintheta );
     costheta2 = SQUARE( costheta );
