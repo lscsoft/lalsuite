@@ -1000,7 +1000,7 @@ MultiSFTVector * generateSFTdata(UserInput_t *uvar, const MultiLALDetector *dete
    REAL8 TwoSpectBand = round(uvar->fspan*uvar->Tsft + 2.0*uvar->dfmax*uvar->Tsft + (uvar->blksize-1) + (REAL8)(2.0*maxbinshift) + 12.0)/uvar->Tsft;
 
    //Setup the MFD data parameters
-   CWMFDataParams DataParams;
+   CWMFDataParams XLAL_INIT_DECL(DataParams);
    if (XLALUserVarWasSet(&uvar->injFmin) && XLALUserVarWasSet(&uvar->injBand) && uvar->injFmin<=TwoSpectFmin && uvar->injFmin+uvar->injBand>=TwoSpectFmin+TwoSpectBand) {
       DataParams.fMin = uvar->injFmin;
       DataParams.Band = uvar->injBand;
