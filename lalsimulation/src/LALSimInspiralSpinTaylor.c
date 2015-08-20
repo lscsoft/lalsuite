@@ -2428,7 +2428,7 @@ static int XLALSimInspiralSpinTaylorT1Derivatives(
             break;
     }
 
-    domega  =-3.0* (params->Fnewt/params->dEdvnewt) * v11 *(((( 1. + v * v * (  params->Fcoeff[2]
+    domega  =-6.0* (params->Fnewt/params->dEdvnewt) * v11 *(((( 1. + v * v * (  params->Fcoeff[2]
             + v * (  (params->Fcoeff[3]+ Fspin15 )
             + v * (  (params->Fcoeff[4] + Fspin2 )
             + v * (  (params->Fcoeff[5] + Fspin25)
@@ -2578,7 +2578,7 @@ static int XLALSimInspiralSpinTaylorT2Derivatives(
             break;
     }
 
-    domega  = 3.*params->wdotnewt * v11 / ( params->wdotcoeff[0]
+    domega  = params->wdotnewt * v11 / ( params->wdotcoeff[0]
             + v * ( params->wdotcoeff[1]
             + v * ( params->wdotcoeff[2]
             + v * ( params->wdotcoeff[3] + wspin15
