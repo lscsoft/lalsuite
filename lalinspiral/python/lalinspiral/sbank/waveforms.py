@@ -304,6 +304,18 @@ class IMRPhenomCTemplate(IMRPhenomBTemplate):
             self.chieff, self.bank.flow, f_final, 1000000 * PC_SI)
 
 
+class IMRPhenomDTemplate(IMRPhenomBTemplate):
+
+    __slots__ = IMRPhenomBTemplate.__slots__
+
+    def _compute_waveform(self, df, f_final):
+        return lalsim.SimIMRPhenomDGenerateFD(
+            0, df,
+            self.m1 * MSUN_SI, self.m2 * MSUN_SI,
+            self.spin1z, self.spin2z,
+            self.bank.flow, f_final, 1000000 * PC_SI)
+
+
 class SEOBNRv2Template(AlignedSpinTemplate):
 
     param_names = ("m1", "m2", "spin1z", "spin2z")
@@ -762,6 +774,7 @@ waveforms = {
     "TaylorF2RedSpin": TaylorF2RedSpinTemplate,
     "IMRPhenomB": IMRPhenomBTemplate,
     "IMRPhenomC": IMRPhenomCTemplate,
+    "IMRPhenomD": IMRPhenomDTemplate,
     "IMRPhenomP": IMRPhenomPTemplate,
     "SEOBNRv2": SEOBNRv2Template,
     "SEOBNRv2_ROM_DoubleSpin": SEOBNRv2ROMDoubleSpinTemplate,
