@@ -65,6 +65,7 @@ pkginclude_HEADERS = \
 	LALSimSGWB.h \
 	LALSimSphHarmMode.h \
 	LALSimSphHarmSeries.h \
+	LALSimUtils.h \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h \
 	LALSimulationVCSInfoHeader.h
@@ -149,6 +150,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimSphHarmMode.c \
 	LALSimSphHarmSeries.c \
 	LALSimUnicorn.c \
+	LALSimUtils.c \
 	check_series_macros.h \
 	check_waveform_macros.h \
 	unicorn.xpm \
