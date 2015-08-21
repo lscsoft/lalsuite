@@ -1499,7 +1499,7 @@ def retrieve_scisegs(segments_location, dq_name, start, stride, pad=0, sleep=0, 
 
     return good, covered
 
-def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=None, delay=0):
+def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=None, delay=0, verbose=True):
     """
     looks for kwtriggers and includes logic about waiting.
     will wait "sleep" seconds between each check that the file has appeared. Will check "ntrials" times
@@ -1514,32 +1514,36 @@ def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=No
 
     for i in xrange(ntrials):
         if not os.path.exists(kwfilename):  ### kw files may not have appeared yet
-            if logger:
-                logger.info('  missing KW triggers, waiting additional %d seconds' % sleep)
-            else:
-                print '  missing KW triggers, waiting additional %d seconds' % sleep
+            if verbose:
+                if logger:
+                    logger.info('  missing KW triggers, waiting additional %d seconds' % sleep)
+                else:
+                    print '  missing KW triggers, waiting additional %d seconds' % sleep
             time.sleep(sleep)
             if sleep < stride: ### automatically increase sleep to 1 stride if needed
                 sleep = stride
         else:
             break
     else:
-        if logger:
-            logger.warning('  still missing KW triggers, skipping')
-        else:
-            print '  still missing KW triggers, skipping'
+        if verbose:
+            if logger:
+                logger.warning('  still missing KW triggers, skipping')
+            else:
+                print '  still missing KW triggers, skipping'
         return None
 
-    if logger:
-        logger.info('  loading KW triggers : %s'%kwfilename)
-    else:
-        print '  loading KW triggers : %s'%kwfilename
+    if verbose:
+        if logger:
+            logger.info('  loading KW triggers : %s'%kwfilename)
+        else:
+            print '  loading KW triggers : %s'%kwfilename
 
     if delay > 0:
-        if logger:
-            logger.info('    waiting %.3f seconds to ensure file is completely written'%delay)
-        else:
-            print '    waiting %.3f seconds to ensure file is completely written'%delay
+        if verbose:
+            if logger:
+                logger.info('    waiting %.3f seconds to ensure file is completely written'%delay)
+            else:
+                print '    waiting %.3f seconds to ensure file is completely written'%delay
         time.sleep(delay)
 
     return event.loadkwm(kwfilename)
@@ -2591,7 +2595,7 @@ def ovl_evaluate( vetolist, GPS_headers=False, GPStimes=False, allvtrg=False, kw
     gps_tcent = GPS_headers.index('GPS')
     return ovl.predict( vetolist, GPS_headers, GPStimes, gps_tcent, allvtrg=allvtrg, kw_trgfiles=kw_trgfiles, predict_filename=filename, output_dir=output_dir )
 
-def ovl_train(gpsstart, gpsstop, generalD, classifierD, scisegs=False, vetosegs=False, output_dir='./' , padding = 1.0 ):
+def ovl_train(gpsstart, gpsstop, generalD, classifierD, scisegs=False, vetosegs=False, output_dir='./' , padding=numpy.infty ):
     """ 
     builds an ovl.params object and launches ovl training jobs on the specified data.
     pulls many parameters from "cp" config object
@@ -2641,6 +2645,9 @@ def ovl_train(gpsstart, gpsstop, generalD, classifierD, scisegs=False, vetosegs=
 
     # launch training job
     vetolists = ovl.train(params, num_runs=num_runs, incremental=incremental, output_dir=output_dir, verbose=False, write_channels=True )
+
+    ### run safety to get a vetolist file for "independent" application
+    ovl.vetolist_safety(params, output_dir=output_dir, source_dir=output_dir, verbose=False)
 
     return vetolists
 
