@@ -113,6 +113,7 @@ void inject_signal( LALInferenceRunState *runState ){
     invert_source_params( injpars );
   }
   else{
+    PulsarFreeParams( injpars );
     fclose( fpsnr );
     return;
   }
@@ -160,7 +161,11 @@ void inject_signal( LALInferenceRunState *runState ){
   }
   else {
     /* remove "nonGR" flag so that pulsar_model() runs in GR mode */
-    LALInferenceRemoveVariable(ifo_model->params, "nonGR");
+    while ( ifo_model ){
+      LALInferenceRemoveVariable(ifo_model->params, "nonGR");
+      ifo_model = ifo_model->next;
+    }
+    ifo_model = runState->threads[0]->model->ifo;
   }
 
   pulsar_model( injpars, ifo_model );
