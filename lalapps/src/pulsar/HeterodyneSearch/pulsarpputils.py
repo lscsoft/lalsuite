@@ -648,6 +648,25 @@ def upper_limit(pos, upperlimit=0.95, parambounds=[float("-inf"), float("inf")],
   return ulval
 
 
+def upper_limit_greedy(pos, upperlimit=0.95, nbins=100):
+  n, binedges = np.histogram(pos, bins=nbins)
+  dbins = binedges[1]-binedges[0] # width of a histogram bin
+
+  frac = 0.0
+  j = 0
+  for nv in n:
+    prevfrac = frac
+    frac += float(nv)/len(pos)
+    j += 1
+    if frac > upperlimit:
+      break
+
+  # linearly interpolate to get upper limit
+  ul = binedges[j-1] + (upperlimit-prevfrac)*(dbins/(frac-prevfrac))
+
+  return ul
+
+
 # function to plot a posterior chain (be it MCMC chains or nested samples)
 # the input should be a list of posteriors for each IFO, and the parameter
 # required, the list of IFO. grr is a list of dictionaries giving
