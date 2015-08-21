@@ -182,8 +182,9 @@ extern "C" {
                      If not set you can generate fake data (see --fake-data below)\n"\
 " --sample-interval   (REAL8) the time interval bewteen samples (default to 60 s)\n"\
 " --outfile           name of output data file [required]\n"\
-" --non-fixed-only    output only the non-fixed (i.e. variable) parameters\n\
-                     specified in the prior and .par files.\n"\
+" --output-all-params Output all stored parameters, otherwise the default will be\n\
+                     to only output the non-fixed (i.e. variable) parameters\n\
+                     specified in the prior and .par files\n"\
 " --gzip              gzip the output text file\n"\
 " --outXML            name of output XML file [not required]\n"\
 " --chunk-min         (INT4) minimum stationary length of data to be used in\n\
@@ -207,32 +208,22 @@ extern "C" {
                      the data then that will be used in the Gaussian likelihood function,\n\
                      otherwise the noise variance will be calculated from the data.\n"\
 " --nonGR             Set to allow non-GR polarisation modes and/or a variable\n\
-                     speed of gravitational waves.\n"\
+                     speed of gravitational waves\n"\
 " --randomise         Set this to randomise the data (through permutations of the\n\
                      time stamps) for use in Monte-Carlo studies. NOTE: this will not\n\
-                     work if using the code to create injections.\n"\
+                     work if using the code to create injections\n"\
 "\n"\
 " Nested sampling parameters:\n"\
 " --Nlive             (INT4) no. of live points for nested sampling\n"\
 " --Nmcmc             (INT4) no. of for MCMC used to find new live points\n\
                      (if not specified an adaptive number of points is used)\n"\
 " --Nmcmcinitial      (INT4) no. of MCMC points to use in the initial resampling of\n\
-                     the prior (default is to use MAXMCMC).\n"\
+                     the prior (default is to use MAXMCMC)\n"\
 " --Nruns             (INT4) no. of parallel runs\n"\
 " --tolerance         (REAL8) tolerance of nested sampling integrator\n"\
 " --randomseed        seed for random number generator\n"\
 "\n"\
 " MCMC proposal parameters:\n"\
-" --covariance        (UINT4) relative weight of using covariance matrix\n\
-                     of the live points as the proposal (DEFAULT = 0,\n\
-                     e.g. 0%%)\n"\
-" --temperature       (REAL8) temperature for covariance proposal\n\
-                     distribution (DEFAULT = 0.1)\n"\
-" --kDTree            (UINT4) relative weight of using a k-D tree of the live\n\
-                     points to use as a proposal (DEFAULT = 0, e.g. 0%%)\n"\
-" --kDNCell           (INT4) maximum number of samples in a k-D tree cell\n"\
-" --kDUpdateFactor    (REAL8) how often the k-D tree gets updated as a\n\
-                     factor of the number of live points\n"\
 " --diffev            (UINT4) relative weight of using differential evolution\n\
                      of the live points as the proposal (DEFAULT = 0, e.g.\n\
                      0%%)\n"\
@@ -240,23 +231,22 @@ extern "C" {
                      frequency bins as a proposal (DEFAULT = 0, e.g. this is\n\
                      not required unless searching over frequency)\n"\
 " --ensembleStretch   (UINT4) relative weight of the ensemble stretch\n\
-                     proposal (DEFAULT = 15, e.g. 37.5%%)\n"\
+                     proposal (DEFAULT = 0, e.g. 0%%) [NOTE: this proposal\n\
+                     greatly increases the autocorrelation lengths, so in\n\
+                     general should be avoided]\n"\
 " --ensembleWalk      (UINT4) relative weight of the ensemble walk\n\
-                     proposal (DEFAULT = 15, e.g. 37.5%%)\n"\
-" --uniformprop       (UINT4) relative weight of a proposal that draws\n\
-                     points uniformly from any flat prior ranges.\n\
-                     (DEFAULT = 10, e.g. 25%%)\n"\
+                     proposal (DEFAULT = 1, e.g. 100%%)\n"\
 "\n"\
 " Reduced order quadrature parameters:\n"\
 " --roq               Set this to use reduced order quadrature to compute the\n\
-                     likelihood.\n"\
+                     likelihood\n"\
 " --ntraining         (UNIT4) The number of training models used to generate an\n\
-                     orthonormal basis of waveform models.\n"\
+                     orthonormal basis of waveform models\n"\
 " --roq-tolerance     (REAL8) The tolerance used during the basis generation\n\
                      (DEFAULT = 1e-11)\n"\
 " --test-basis        If this is set then the reduced basis set will be tested\n\
                      against another set of waveforms to check they really are\n\
-                     within the required tolerance.\n"\
+                     within the required tolerance\n"\
 " --output-weights    (CHAR) If this is set then the weights will be output to\n\
                      the (binary) file that is named and the programme will\n\
                      exit. These could be read in later instead of being\n\
@@ -265,7 +255,7 @@ extern "C" {
                      parameter estimation can run on a machine with less RAM.\n"\
 " --input-weights     (CHAR) A binary file containing all the weights in a\n\
                      defined format. If this is present then the RQO will\n\
-                     not be recalculated.\n"\
+                     not be recalculated\n"\
 "\n"\
 " Signal injection parameters:\n"\
 " --inject-file       a pulsar parameter (par) file containing the parameters\n\
@@ -280,13 +270,13 @@ extern "C" {
                      For Advanced detectors (e.g Advanced LIGO) prefix the\n\
                      name with an A (e.g. AH1 for an Advanced LIGO detector\n\
                      at Hanford). The noise will be white across the data\n\
-                     band width.\n"\
+                     band width\n"\
 " --fake-psd          if you want to generate fake data with specific power\n\
                      spectral densities for each detector giving in\n\
                      --fake-data then they should be specified here delimited\n\
                      by commas (e.g. for --fake-data H1,L1 then you could use\n\
                      --fake-psd 1e-48,1.5e-48) where values are single-sided\n\
-                     PSDs in Hz^-1.\n"\
+                     PSDs in Hz^-1\n"\
 " --fake-starts       the start times (in GPS seconds) of the fake data for\n\
                      each detector separated by commas (e.g.\n\
                      910000000,910021000). If not specified these will all\n\
@@ -296,9 +286,9 @@ extern "C" {
                      will all default to 86400 (i.e. 1 day)\n"\
 " --fake-dt           the data sample rate (in seconds) for the fake data for\n\
                      each detector. If not specified this will default to\n\
-                     60s.\n"\
+                     60s\n"\
 " --scale-snr         give a (multi-detector) SNR value to which you want to\n\
-                     scale the injection. This is 1 by default.\n"\
+                     scale the injection. This is 1 by default\n"\
 "\n"\
 " Flags for using a Nested sampling file as a prior:\n"\
 " --sample-files     a list of (comma separated) file containing the nested\n\
@@ -309,28 +299,28 @@ extern "C" {
                     this is set this WILL be used as the only prior, but the\n\
                     prior ranges set in the --prior-file and --par-file are\n\
                     still needed (and should be consistent with the variable\n\
-                    parameters in the nested sample file).\n"\
+                    parameters in the nested sample file)\n"\
 " --sample-nlives    a list (comma separated) of the number of live point\n\
                     that where used when creating each nested sample file.\n"\
 " --prior-cell       The number of samples to use in a k-d tree cell for the\n\
-                    prior (the default will be 8).\n"\
+                    prior (the default will be 8)\n"\
 " --Npost            The (approximate) number of posterior samples to be\n\
                     generated from each nested sample file (default = 1000)\n"\
 "\n"\
 " Legacy code flags:\n"\
 " --oldChunks        Set if using fixed chunk sizes for dividing the data as\n\
                     in the old code, rather than the calculating chunks\n\
-                    using the change point method.\n"\
+                    using the change point method\n"\
 " --jones-model      Set if using both 1 and 2 multiples of the frequency and\n\
                     requiring the use of the original signal model parameters\n\
-                    from Jones, MNRAS, 402 (2010).\n"\
+                    from Jones, MNRAS, 402 (2010)\n"\
 "\n"\
 " Benchmarking:\n"\
 " --time-it          Set if wanting to time the various parts of the code.\n\
                     A output file with the \"outfile\" filename appended with\n\
-                    \"_timings\" will contain the timings.\n"\
+                    \"_timings\" will contain the timings\n"\
 " --sampleprior      (UINT4) Set this to be a number of samples generated from\n\
-                    the prior. The nested sampling will not be performed.\n"\
+                    the prior. The nested sampling will not be performed\n"\
 "\n"
 
 /**
