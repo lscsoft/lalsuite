@@ -128,6 +128,7 @@ src/inspiral/posterior/lalapps_compute_roq_weights
 src/inspiral/posterior/lalapps_followupMcmc
 src/inspiral/posterior/lalapps_inspnest
 src/inspiral/posterior/lalapps_merge_nested_sampling_runs
+src/inspiral/posterior/lalapps_merge_posteriors
 src/inspiral/posterior/lalapps_nest2pos
 src/inspiral/posterior/lalapps_nest_pipe
 src/inspiral/posterior/lalapps_vo_nest2pos
