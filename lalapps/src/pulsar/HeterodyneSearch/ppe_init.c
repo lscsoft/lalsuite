@@ -1276,24 +1276,28 @@ static void PrintNonFixedSample(FILE *fp, LALInferenceVariables *sample){
 /**
  * \brief Print out only the variable (i.e. non-fixed) parameters to the file
  *
- * If the command line argument --non-fixed-only is given then this function
- * will only output variables to the nested samples to a file, otherwise all parameters
- * will be output. The parameters will also be rescaled to their original ranges.
+ * If the command line argument \c --output-all-params is given then this function
+ * will output all parameters that have been stored, but by default it will only
+ * output variable parameters to the nested samples to a file.
  */
 void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
-  FILE *outfile=NULL;
-  if( LALInferenceCheckVariable(state->algorithmParams,"outfile") )
-    outfile=*(FILE **)LALInferenceGetVariable(state->algorithmParams,"outfile");
+  FILE *outfile = NULL;
+  if( LALInferenceCheckVariable(state->algorithmParams,"outfile") ){
+    outfile = *(FILE **)LALInferenceGetVariable( state->algorithmParams, "outfile" );
+  }
   /* Write out old sample */
   if( outfile == NULL ) { return; }
   LALInferenceSortVariablesByName(vars);
 
   /* only write out non-fixed samples if required */
-  if ( LALInferenceGetProcParamVal( state->commandLine, "--non-fixed-only" ) ){
+  if ( LALInferenceGetProcParamVal( state->commandLine, "--output-all-params" ) ){
+    LALInferencePrintSample(outfile, vars);
+  }
+  else{
+    /* default to writing out only the non-fixed (i.e. variable) parameters */
     PrintNonFixedSample(outfile, vars);
   }
-  else{ LALInferencePrintSample(outfile, vars); }
   fprintf(outfile,"\n");
 
   return;
@@ -1304,28 +1308,27 @@ void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
  * \brief Print out only the variable (i.e. non-fixed) parameters to the file whilst also creating
  * an array for all parameters
  *
- * If the command line argument --non-fixed-only is given (and the XML library
- * is present) then this function will be used to output the nested samples to a file.
- * Otherwise all parameters will be output.
+ * This function (which is used if the XML library is present) will only output variable
+ * parameters.
  */
 void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
-  LALInferenceVariables **output_array=NULL;
-  UINT4 N_output_array=0;
+  LALInferenceVariables **output_array = NULL;
+  UINT4 N_output_array = 0;
   LALInferenceSortVariablesByName(vars);
 
   LogSampleToFile(state, vars);
 
   /* Set up the array if it is not already allocated */
   if(LALInferenceCheckVariable(state->algorithmParams,"outputarray")){
-    output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(state->algorithmParams,"outputarray");
+    output_array = *(LALInferenceVariables ***)LALInferenceGetVariable(state->algorithmParams,"outputarray");
   }
   else{
     LALInferenceAddVariable(state->algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
   }
 
   if(LALInferenceCheckVariable(state->algorithmParams,"N_outputarray")){
-    N_output_array=*(INT4 *)LALInferenceGetVariable(state->algorithmParams,"N_outputarray");
+    N_output_array = *(INT4 *)LALInferenceGetVariable(state->algorithmParams,"N_outputarray");
   }
   else{
     LALInferenceAddVariable(state->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
@@ -1333,12 +1336,12 @@ void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
 
   /* Expand the array for new sample */
   output_array = XLALRealloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables *));
-  if(!output_array){
+  if( !output_array ){
     XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to allocate array for samples.");
   }
   else{
     /* Save sample and update */
-    output_array[N_output_array]=XLALCalloc(1,sizeof(LALInferenceVariables));
+    output_array[N_output_array] = XLALCalloc(1,sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(vars, output_array[N_output_array]);
     N_output_array++;
 

@@ -620,7 +620,7 @@ void gzip_output( LALInferenceRunState *runState ){
   if( ppt1 ){
     CHAR outfilepars[256] = "", outfileparstmp[256] = "";
     FILE *fppars = NULL, *fpparstmp = NULL;
-    UINT4 nonfixed = 0;
+    UINT4 nonfixed = 1;
 
     outfile = ppt1->value;
 
@@ -637,7 +637,7 @@ void gzip_output( LALInferenceRunState *runState ){
       XLAL_ERROR_VOID(XLAL_EIO);
     }
 
-    if ( LALInferenceGetProcParamVal( runState->commandLine, "--non-fixed-only" ) ){ nonfixed = 1; }
+    if ( LALInferenceGetProcParamVal( runState->commandLine, "--output-all-params" ) ){ nonfixed = 0; }
 
     CHAR v[128] = "";
     while( fscanf(fppars, "%s", v) != EOF ){
