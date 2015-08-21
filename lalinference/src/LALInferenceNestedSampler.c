@@ -1208,8 +1208,8 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceCopyVariables(runState->currentParams,&oldParams);
     REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
     UINT4 Nmcmc=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc");
-    REAL8 sloppyfraction=0.;
     REAL8 maxsloppyfraction=((REAL8)Nmcmc-1)/(REAL8)Nmcmc ;
+    REAL8 sloppyfraction=maxsloppyfraction/2.0;
     REAL8 minsloppyfraction=0.;
     if(Nmcmc==1) maxsloppyfraction=minsloppyfraction=0.0;
     if (LALInferenceCheckVariable(runState->algorithmParams,"sloppyfraction"))
