@@ -44,11 +44,14 @@
  * zero.  The routines defined here adhere to the convention that frequency
  * components in which the psd is 0 are ignored.
  *
+ * @warning If this routines returns a pointer to the original frequency
+ * series, it discards the const qualifier.
+ *
  * @note The calling routine must test if the pointer to the psd returned by
  * this routine is the same as the pointer to the psd passed to this routine to
  * determine if the returned psd needs to be freed separately.
  */
-static REAL8FrequencySeries * create_interpolated_psd(double f0, double deltaF, size_t length, REAL8FrequencySeries *old)
+static REAL8FrequencySeries * create_interpolated_psd(double f0, double deltaF, size_t length, const REAL8FrequencySeries *old)
 {
 	REAL8FrequencySeries *new;
 	size_t k, kmin, kmax;
@@ -59,7 +62,7 @@ static REAL8FrequencySeries * create_interpolated_psd(double f0, double deltaF, 
 
 		/* do we need to do anything? */
 		if (fabs(f0 - old->f0) < LAL_REAL8_EPS && length == old->data->length)
-			return old;
+			return (REAL8FrequencySeries*)(uintptr_t)(old); /* bad: discards const qual */
 
 		/* is this just an integer shift / resize? */
 		first = round(f0 - old->f0) / deltaF;
@@ -146,17 +149,17 @@ static REAL8FrequencySeries * create_interpolated_psd(double f0, double deltaF, 
  * gravitational waves from inspiraling compact binaries", Phys. Rev. D @b 85,
  * 122006 (2012) http://dx.doi.org/10.1103/PhysRevD.85.122006
  *
- * @param psd The one-sided detector strain noise power spectral density.
- * @param f_min The lower bound of the frequency band over which the
+ * @param[in] psd The one-sided detector strain noise power spectral density.
+ * @param[in] f_min The lower bound of the frequency band over which the
  * signal-to-noise ratio will be computed; set to 0 or a negative value for no
  * lower bound.
- * @param f_max The upper bound of the frequency band over which the
+ * @param[in] f_max The upper bound of the frequency band over which the
  * signal-to-noise ratio will be computed; set to a negative value for
  * no upper bound.
  * @returns The sense-monitor range in meters.
  * @retval LAL_REAL8_FAIL_NAN Failure.
  */
-double XLALMeasureStandardSirenSenseMonitorRange(REAL8FrequencySeries *psd, double f_min, double f_max)
+double XLALMeasureStandardSirenSenseMonitorRange(const REAL8FrequencySeries *psd, double f_min, double f_max)
 {
 	double horizon_distance = XLALMeasureStandardSirenHorizonDistance(psd, f_min, f_max);
 	return horizon_distance / LAL_HORIZON_DISTANCE_OVER_SENSEMON_RANGE;
@@ -184,17 +187,17 @@ double XLALMeasureStandardSirenSenseMonitorRange(REAL8FrequencySeries *psd, doub
  * gravitational waves from inspiraling compact binaries", Phys. Rev. D @b 85,
  * 122006 (2012) http://dx.doi.org/10.1103/PhysRevD.85.122006
  *
- * @param psd The one-sided detector strain noise power spectral density.
- * @param f_min The lower bound of the frequency band over which the
+ * @param[in] psd The one-sided detector strain noise power spectral density.
+ * @param[in] f_min The lower bound of the frequency band over which the
  * signal-to-noise ratio will be computed; set to 0 or a negative value for no
  * lower bound.
- * @param f_max The upper bound of the frequency band over which the
+ * @param[in] f_max The upper bound of the frequency band over which the
  * signal-to-noise ratio will be computed; set to a negative value for
  * no upper bound.
  * @returns The horizon distance in meters.
  * @retval LAL_REAL8_FAIL_NAN Failure.
  */
-double XLALMeasureStandardSirenHorizonDistance(REAL8FrequencySeries *psd, double f_min, double f_max)
+double XLALMeasureStandardSirenHorizonDistance(const REAL8FrequencySeries *psd, double f_min, double f_max)
 {
 	double Mpc = 1e6 * LAL_PC_SI;
 	double snr_8 = 8.0;
@@ -224,18 +227,18 @@ double XLALMeasureStandardSirenHorizonDistance(REAL8FrequencySeries *psd, double
  * gravitational waves from inspiraling compact binaries", Phys. Rev. D @b 85,
  * 122006 (2012) http://dx.doi.org/10.1103/PhysRevD.85.122006
  *
- * @param psd The one-sided detector strain noise power spectral density.
- * @param f_min The lower bound of the frequency band over which the
+ * @param[in] psd The one-sided detector strain noise power spectral density.
+ * @param[in] f_min The lower bound of the frequency band over which the
  * signal-to-noise ratio will be computed; set to 0 or a negative value for no
  * lower bound.
- * @param f_max The upper bound of the frequency band over which the
+ * @param[in] f_max The upper bound of the frequency band over which the
  * signal-to-noise ratio will be computed; set to a negative value for
  * no upper bound.
  * @returns The characteristic signal-to-noise ratio of a binary neutron star
  * standard siren at an effective distance of 1 Mpc.
  * @retval LAL_REAL8_FAIL_NAN Failure.
  */
-double XLALMeasureStandardSirenSNR(REAL8FrequencySeries *psd, double f_min, double f_max)
+double XLALMeasureStandardSirenSNR(const REAL8FrequencySeries *psd, double f_min, double f_max)
 {
 	size_t k, k_min, k_max;
 	double e = 0.0;
@@ -385,18 +388,18 @@ double XLALMeasureStandardSirenSNR(REAL8FrequencySeries *psd, double f_min, doub
  * points where the power spectral density is zero are considered to be invalid
  * and are omitted from the sum.
  *
- * @param htilde The Fourier transform of the signal strain.
- * @param psd The one-sided detector strain noise power spectral density.
- * @param f_min The lower bound of the frequency band over which the
+ * @param[in] htilde The Fourier transform of the signal strain.
+ * @param[in] psd The one-sided detector strain noise power spectral density.
+ * @param[in] f_min The lower bound of the frequency band over which the
  * signal-to-noise ratio will be computed; set to 0 or a negative value for no
  * lower bound.
- * @param f_max The upper bound of the frequency band over which the
+ * @param[in] f_max The upper bound of the frequency band over which the
  * signal-to-noise ratio will be computed; set to a negative value for
  * no upper bound.
  * @returns The characteristic signal to noise ratio.
  * @retval LAL_REAL8_FAIL_NAN Failure.
  */
-double XLALMeasureSNRFD(COMPLEX16FrequencySeries *htilde, REAL8FrequencySeries *psd, double f_min, double f_max)
+double XLALMeasureSNRFD(const COMPLEX16FrequencySeries *htilde, const REAL8FrequencySeries *psd, double f_min, double f_max)
 {
 	LALUnit snrUnits;
 	REAL8FrequencySeries *S;
@@ -499,18 +502,18 @@ double XLALMeasureSNRFD(COMPLEX16FrequencySeries *htilde, REAL8FrequencySeries *
  * is then used to compute the characteristic signal-to-noise ratio.  See
  * XLALMeasureSNRFD() for further details.
  *
- * @param h The strain time series of the signal.
- * @param psd The one-sided detector strain noise power spectral density.
- * @param f_min The lower bound of the frequency band over which the
+ * @param[in] h The strain time series of the signal.
+ * @param[in] psd The one-sided detector strain noise power spectral density.
+ * @param[in] f_min The lower bound of the frequency band over which the
  * signal-to-noise ratio will be computed; set to 0 or a negative value for no
  * lower bound.
- * @param f_max The upper bound of the frequency band over which the
+ * @param[in] f_max The upper bound of the frequency band over which the
  * signal-to-noise ratio will be computed; set to a negative value for
  * no upper bound.
  * @returns The characteristic signal to noise ratio.
  * @retval LAL_REAL8_FAIL_NAN Failure.
  */
-double XLALMeasureSNR(REAL8TimeSeries *h, REAL8FrequencySeries *psd, double f_min, double f_max)
+double XLALMeasureSNR(const REAL8TimeSeries *h, const REAL8FrequencySeries *psd, double f_min, double f_max)
 {
 	REAL8FFTPlan *plan;
 	REAL8TimeSeries *hpadded;

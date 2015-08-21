@@ -55,11 +55,11 @@ extern "C" {
  */
 #define LAL_HORIZON_DISTANCE_OVER_SENSEMON_RANGE 2.26478
 
-double XLALMeasureStandardSirenSenseMonitorRange(REAL8FrequencySeries *psd, double f_min, double f_max);
-double XLALMeasureStandardSirenHorizonDistance(REAL8FrequencySeries *psd, double f_min, double f_max);
-double XLALMeasureStandardSirenSNR(REAL8FrequencySeries *psd, double f_min, double f_max);
-double XLALMeasureSNRFD(COMPLEX16FrequencySeries *htilde, REAL8FrequencySeries *psd, double f_min, double f_max);
-double XLALMeasureSNR(REAL8TimeSeries *h, REAL8FrequencySeries *psd, double f_min, double f_max);
+double XLALMeasureStandardSirenSenseMonitorRange(const REAL8FrequencySeries *psd, double f_min, double f_max);
+double XLALMeasureStandardSirenHorizonDistance(const REAL8FrequencySeries *psd, double f_min, double f_max);
+double XLALMeasureStandardSirenSNR(const REAL8FrequencySeries *psd, double f_min, double f_max);
+double XLALMeasureSNRFD(const COMPLEX16FrequencySeries *htilde, const REAL8FrequencySeries *psd, double f_min, double f_max);
+double XLALMeasureSNR(const REAL8TimeSeries *h, const REAL8FrequencySeries *psd, double f_min, double f_max);
 
 /** @} */
 
