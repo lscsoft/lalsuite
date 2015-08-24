@@ -42,16 +42,17 @@
 /**
  * @addtogroup LALSimInspiralTaylorXX_c
  * @{
+ *
+ * @review TaylorF2 routines reviewed by Frank Ohme, Andrew Lundgren, Alex Nitz,
+ * Alex Nielsen, Salvatore Vitale, Jocelyn Read, Sebastian Khan.
+ * The review concluded with git hash 6106138b2140ffb11bc38fc914e0a1de7082dc4d (Nov 2014)
+ *
  * @name Routines for TaylorF2 Waveforms
  * @sa
  * Section IIIF of Alessandra Buonanno, Bala R Iyer, Evan
  * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
  * templates for compact binary inspiral signals in gravitational-wave
  * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
- *
- * @review TaylorF2 routines reviewed by Frank Ohme, Andrew Lundgren, Alex Nitz,
- * Alex Nielsen, Salvatore Vitale, Jocelyn Read, Sebastian Khan.
- * The review concluded with git hash 6106138b2140ffb11bc38fc914e0a1de7082dc4d (Nov 2014)
  *
  * @{
  */
