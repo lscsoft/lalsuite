@@ -372,7 +372,7 @@ def read_channels_from_file(file):
     """
 
     channels = open(file).readlines()
-    channels = [ch.strip() for ch in channels]
+    channels = [ch.strip() for ch in channels if ch.strip()]
     return channels
 
 

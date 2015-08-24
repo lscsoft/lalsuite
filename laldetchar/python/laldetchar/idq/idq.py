@@ -2836,7 +2836,7 @@ def ovl_train(gpsstart, gpsstop, generalD, classifierD, scisegs=False, vetosegs=
     if channels:
         channels = False
     if notused:
-        notused = [l.strip('\n') for l in open(notused, 'r').readlines()]
+        notused = [l.strip('\n') for l in open(notused, 'r').readlines() if l.strip('\n')]
     else:
         notused = []
 
