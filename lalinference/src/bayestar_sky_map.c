@@ -1457,9 +1457,9 @@ static void test_log_radial_integral(
             result, expected, tol,
             "testing toa_phoa_snr_log_radial_integral("
             "r1=%g, r2=%g, p2=%g, b=%g, k=%d)", r1, r2, p2, b, k);
-    }
 
-    log_radial_integrator_free(integrator);
+        log_radial_integrator_free(integrator);
+    }
 }
 
 
@@ -1513,23 +1513,28 @@ int bayestar_test(void)
         const double tol = 1e-5;
         log_radial_integrator *integrator = log_radial_integrator_init(
             r1, r2, k, pmax, default_log_radial_integrator_size);
-        old_handler = gsl_set_error_handler(ignore_underflow);
-        for (double p = 0.01; p <= pmax; p += 0.01)
+
+        gsl_test(!integrator, "testing that integrator object is non-NULL");
+        if (integrator)
         {
-            for (double b = 0.0; b <= 2 * pmax; b += 0.01)
+            old_handler = gsl_set_error_handler(ignore_underflow);
+            for (double p = 0.01; p <= pmax; p += 0.01)
             {
-                const double r0 = 2 * gsl_pow_2(p) / b;
-                const double x = log(p);
-                const double y = log(r0);
-                const double expected = exp(log_radial_integral(r1, r2, p, b, k));
-                const double result = exp(log_radial_integrator_eval(integrator, p, b) - gsl_pow_2(0.5 * b / p));
-                gsl_test_abs(
-                    result, expected, tol, "testing log_radial_integrator_eval("
-                    "r1=%g, r2=%g, p=%g, b=%g, k=%d, x=%g, y=%g)", r1, r2, p, b, k, x, y);
+                for (double b = 0.0; b <= 2 * pmax; b += 0.01)
+                {
+                    const double r0 = 2 * gsl_pow_2(p) / b;
+                    const double x = log(p);
+                    const double y = log(r0);
+                    const double expected = exp(log_radial_integral(r1, r2, p, b, k));
+                    const double result = exp(log_radial_integrator_eval(integrator, p, b) - gsl_pow_2(0.5 * b / p));
+                    gsl_test_abs(
+                        result, expected, tol, "testing log_radial_integrator_eval("
+                        "r1=%g, r2=%g, p=%g, b=%g, k=%d, x=%g, y=%g)", r1, r2, p, b, k, x, y);
+                }
             }
+            gsl_set_error_handler(old_handler);
+            log_radial_integrator_free(integrator);
         }
-        gsl_set_error_handler(old_handler);
-        log_radial_integrator_free(integrator);
     }
 
     return gsl_test_summary();
