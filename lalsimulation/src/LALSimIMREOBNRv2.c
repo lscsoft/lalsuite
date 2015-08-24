@@ -1678,6 +1678,8 @@ XLALSimIMREOBNRv2Generator(
  *
  * @brief Functions to generate the EOBNRv2 waveforms, as defined in
  * Pan et al, PRD84, 124052(2011).
+ * 
+ * @review EOBNRv2 reviewed by Ilya Mandel, Riccardo Sturani, Prayush Kumar, John Whelan, Yi Pan. Review concluded with git hash b29f20ff11e62095dbd44e850b248ecc58b08a13 (April 2013).
  *
  * @{
  */

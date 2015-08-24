@@ -691,6 +691,8 @@ static int SEOBNRv1ROMEffectiveSpinCore(
  * @brief Functions for producing SEOBNRv1 and v2 waveforms
  * using reduced order models.
  *
+ * @review SEOBNRv1/2_ROM_(Effective/Double)Spin reviewed by Frank Ohme, Sarah Caudill, Michael Puerrer, Ian Harry, John Veitch, Gareth Thomas. Review concluded with git hash 9dc5e84583bfe2707ac20638e7b89bf988d4d482 (July 2015).
+ *
  * @{
  *
  * @name SEOBNRv1 Reduced Order Model (Effective Spin)
