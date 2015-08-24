@@ -134,7 +134,7 @@ static double cabs2(double complex z) {
  *     t_2 = 1,  x_2 = x[2],
  *     t_3 = 2,  x_3 = x[3].
  */
-static double complex catrom(
+static double complex complex_catrom(
     double complex x0,
     double complex x1,
     double complex x2,
@@ -145,6 +145,61 @@ static double complex catrom(
         + t*(-0.5*x0 + 0.5*x2
         + t*(x0 - 2.5*x1 + 2.*x2 - 0.5*x3
         + t*(-0.5*x0 + 1.5*x1 - 1.5*x2 + 0.5*x3)));
+}
+
+
+/*
+ * Catmull-Rom cubic spline interpolant of x(t) for regularly gridded
+ * samples x_i(t_i), assuming:
+ *
+ *     t_0 = -1, x_0 = x[0],
+ *     t_1 = 0,  x_1 = x[1],
+ *     t_2 = 1,  x_2 = x[2],
+ *     t_3 = 2,  x_3 = x[3].
+ *
+ * I am careful to handle certain situations where some of
+ * the samples are infinite or not-a-number:
+ *
+ *     * If t <= 0, then return x1.
+ *     * If t >= 1, then return x2.
+ *     * Otherwise, if either x0 or x3 are non-real, then fall back to
+ *       linear interpolation between x1 and x2.
+ *     * Otherwise, if x1 and/or x2 are infinite and both have the same
+ *       then return infinity of that sign.
+ *     * If x1 and x2 are infinities of different signs or if either are
+ *       NaN, then return NaN.
+ *     * Otherwise, if x0, x1, x2, and x3 are all finite, then return
+ *       the standard Catmull-Rom formula.
+ *
+ * ***IMPORTANT NOTE*** I use the ISO C99 function isfinite() instead of
+ * isinf(), the non-standard finite(), or gsl_finite(), because isfinite()
+ * is reliably faster than the alternatives on Mac OS and Scientific Linux.
+ *
+ */
+static double real_catrom(
+    double x0,
+    double x1,
+    double x2,
+    double x3,
+    double t
+) {
+    double result;
+
+    if (t <= 0)
+        result = x1;
+    else if (t >= 1)
+        result = x2;
+    else if (!(isfinite(x0 + x3)))
+        result = x1 + (1 - t) * x2;
+    else if (isfinite(x1) && isfinite(x2))
+        result = x1
+            + t*(-0.5*x0 + 0.5*x2
+            + t*(x0 - 2.5*x1 + 2.*x2 - 0.5*x3
+            + t*(-0.5*x0 + 1.5*x1 - 1.5*x2 + 0.5*x3)));
+    else
+        result = x1 + x2;
+
+    return result;
 }
 
 
@@ -169,9 +224,9 @@ static double complex eval_acor(
     }
 
     if (i == 0)
-        y = catrom(conj(x[1]), x[0], x[1], x[2], f);
+        y = complex_catrom(conj(x[1]), x[0], x[1], x[2], f);
     else if (i < nsamples - 2)
-        y = catrom(x[i-1], x[i], x[i+1], x[i+2], f);
+        y = complex_catrom(x[i-1], x[i], x[i+1], x[i+2], f);
     else
         y = 0;
 
@@ -201,7 +256,7 @@ static double cubic_interp_eval(const cubic_interp *interp, double x)
     const double y3 = interp->y[CLAMP(i + 2)];
     #undef CLAMP
 
-    return catrom(y0, y1, y2, y3, u);
+    return real_catrom(y0, y1, y2, y3, u);
 }
 
 
@@ -228,12 +283,12 @@ static double bicubic_interp_eval(const bicubic_interp *interp, double x, double
         const double z1 = interp->z[ii * interp->xsize + CLAMPY(j)];
         const double z2 = interp->z[ii * interp->xsize + CLAMPY(j + 1)];
         const double z3 = interp->z[ii * interp->xsize + CLAMPY(j + 2)];
-        z[k] = catrom(z0, z1, z2, z3, v);
+        z[k] = real_catrom(z0, z1, z2, z3, v);
     }
     #undef CLAMPX
     #undef CLAMPY
 
-    return catrom(z[0], z[1], z[2], z[3], u);
+    return real_catrom(z[0], z[1], z[2], z[3], u);
 }
 
 
@@ -241,7 +296,8 @@ struct log_radial_integrator_t {
     bicubic_interp *region0;
     cubic_interp *region1;
     cubic_interp *region2;
-    double xmax, ymax, vmax;
+    double xmax, ymax, vmax, r1, r2;
+    int k;
 };
 
 
@@ -286,7 +342,7 @@ static double log_radial_integral(double r1, double r2, double p, double b, int 
     double result, abserr, log_offset = -INFINITY;
     int ret;
 
-    {
+    if (b != 0) {
         /* Calculate the approximate distance at which the integrand attains a
          * maximum (middle) and a fraction eta of the maximum (left and right).
          * This neglects the scaled Bessel function factors and the power-law
@@ -317,6 +373,10 @@ static double log_radial_integral(double r1, double r2, double p, double b, int 
             breakpoints[nbreakpoints++] = middle;
         if(right > breakpoints[nbreakpoints-1] && right < r2)
             breakpoints[nbreakpoints++] = right;
+        breakpoints[nbreakpoints++] = r2;
+    } else {
+        /* Inner breakpoints are undefined because b = 0. */
+        breakpoints[nbreakpoints++] = r1;
         breakpoints[nbreakpoints++] = r2;
     }
 
@@ -470,6 +530,9 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, d
     integrator->xmax = xmax;
     integrator->ymax = ymax;
     integrator->vmax = vmax;
+    integrator->r1 = r1;
+    integrator->r2 = r2;
+    integrator->k = k;
     return integrator;
 }
 
@@ -497,21 +560,34 @@ double log_radial_integrator_eval(const log_radial_integrator *integrator, doubl
     double result;
     assert(x <= integrator->xmax);
 
-    if (y >= integrator->ymax)
-    {
-        result = cubic_interp_eval(integrator->region1, x);
-    } else {
-        const double v = 0.5 * (x + y);
-        if (v <= integrator->vmax)
+    if (p == 0) {
+        /* note: p2 == 0 implies b == 0 */
+        assert(b == 0);
+        int k1 = integrator->k + 1;
+
+        if (k1 == 0)
         {
-            const double u = 0.5 * (x - y);
-            result = cubic_interp_eval(integrator->region2, u);
+            result = log(log(integrator->r2 / integrator->r1));
         } else {
-            result = bicubic_interp_eval(integrator->region0, x, y);
+            result = log((gsl_pow_int(integrator->r2, k1) - gsl_pow_int(integrator->r1, k1)) / k1);
         }
+    } else {
+        if (y >= integrator->ymax) {
+            result = cubic_interp_eval(integrator->region1, x);
+        } else {
+            const double v = 0.5 * (x + y);
+            if (v <= integrator->vmax)
+            {
+                const double u = 0.5 * (x - y);
+                result = cubic_interp_eval(integrator->region2, u);
+            } else {
+                result = bicubic_interp_eval(integrator->region0, x, y);
+            }
+        }
+        result += gsl_pow_2(0.5 * b / p);
     }
 
-    return result + gsl_pow_2(0.5 * b / p);
+    return result;
 }
 
 
@@ -1065,56 +1141,206 @@ static void test_cabs2(double complex z)
 }
 
 
-static void test_catrom(void)
+static void test_complex_catrom(void)
 {
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double complex result = catrom(0, 0, 0, 0, t);
+        double complex result = complex_catrom(0, 0, 0, 0, t);
         double complex expected = 0;
         gsl_test_abs(creal(result), creal(expected), 0,
-            "testing Catmull-rom interpolant for zero input");
+            "testing complex Catmull-rom interpolant for zero input");
         gsl_test_abs(cimag(result), cimag(expected), 0,
-            "testing Catmull-rom interpolant for zero input");
+            "testing complex Catmull-rom interpolant for zero input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double complex result = catrom(1, 1, 1, 1, t);
+        double complex result = complex_catrom(1, 1, 1, 1, t);
         double complex expected = 1;
         gsl_test_abs(creal(result), creal(expected), 0,
-            "testing Catmull-rom interpolant for unit input");
+            "testing complex Catmull-rom interpolant for unit input");
         gsl_test_abs(cimag(result), cimag(expected), 0,
-            "testing Catmull-rom interpolant for unit input");
+            "testing complex Catmull-rom interpolant for unit input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double complex result = catrom(1.0j, 1.0j, 1.0j, 1.0j, t);
+        double complex result = complex_catrom(1.0j, 1.0j, 1.0j, 1.0j, t);
         double complex expected = 1.0j;
         gsl_test_abs(creal(result), creal(expected), 0,
-            "testing Catmull-rom interpolant for unit imaginary input");
+            "testing complex Catmull-rom interpolant for unit imaginary input");
         gsl_test_abs(cimag(result), cimag(expected), 1,
-            "testing Catmull-rom interpolant for unit imaginary input");
+            "testing complex Catmull-rom interpolant for unit imaginary input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double complex result = catrom(1.0+1.0j, 1.0+1.0j, 1.0+1.0j, 1.0+1.0j, t);
+        double complex result = complex_catrom(1.0+1.0j, 1.0+1.0j, 1.0+1.0j, 1.0+1.0j, t);
         double complex expected = 1.0+1.0j;
         gsl_test_abs(creal(result), creal(expected), 0,
-            "testing Catmull-rom interpolant for unit real + imaginary input");
+            "testing complex Catmull-rom interpolant for unit real + imaginary input");
         gsl_test_abs(cimag(result), cimag(expected), 0,
-            "testing Catmull-rom interpolant for unit real + imaginary input");
+            "testing complex Catmull-rom interpolant for unit real + imaginary input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double complex result = catrom(1, 0, 1, 4, t);
+        double complex result = complex_catrom(1, 0, 1, 4, t);
         double complex expected = gsl_pow_2(t);
         gsl_test_abs(creal(result), creal(expected), 0,
-            "testing Catmull-rom interpolant for quadratic real input");
+            "testing complex Catmull-rom interpolant for quadratic real input");
         gsl_test_abs(cimag(result), cimag(expected), 0,
-            "testing Catmull-rom interpolant for quadratic real input");
+            "testing complex Catmull-rom interpolant for quadratic real input");
+    }
+}
+
+
+static void test_real_catrom(void)
+{
+    for (double t = 0; t <= 1; t += 0.01)
+    {
+        double result = real_catrom(0, 0, 0, 0, t);
+        double expected = 0;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for zero input");
+    }
+
+    for (double t = 0; t <= 1; t += 0.01)
+    {
+        double result = real_catrom(1, 1, 1, 1, t);
+        double expected = 1;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for unit input");
+    }
+
+    for (double t = 0; t <= 1; t += 0.01)
+    {
+        double result = real_catrom(1, 0, 1, 4, t);
+        double expected = gsl_pow_2(t);
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for quadratic input");
+    }
+
+    for (double t = 0; t <= 1; t += 0.01)
+    {
+        double result = real_catrom(
+            GSL_POSINF, GSL_POSINF, GSL_POSINF, GSL_POSINF, t);
+        double expected = GSL_POSINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for +inf input");
+    }
+
+    for (double t = 0; t <= 1; t += 0.01)
+    {
+        double result = real_catrom(
+            0, GSL_POSINF, GSL_POSINF, GSL_POSINF, t);
+        double expected = GSL_POSINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for +inf input");
+    }
+
+    for (double t = 0; t <= 1; t += 0.01)
+    {
+        double result = real_catrom(
+            GSL_POSINF, GSL_POSINF, GSL_POSINF, 0, t);
+        double expected = GSL_POSINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for +inf input");
+    }
+
+    for (double t = 0; t <= 1; t += 0.01)
+    {
+        double result = real_catrom(
+            0, GSL_POSINF, GSL_POSINF, 0, t);
+        double expected = GSL_POSINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for +inf input");
+    }
+
+    for (double t = 0.01; t <= 1; t += 0.01)
+    {
+        double result = real_catrom(
+            0, 0, GSL_POSINF, 0, t);
+        double expected = GSL_POSINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for +inf input");
+    }
+
+    {
+        double result = real_catrom(
+            0, GSL_NEGINF, GSL_POSINF, 0, 1);
+        double expected = GSL_POSINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for +inf input");
+    }
+
+    {
+        double result = real_catrom(
+            0, GSL_POSINF, GSL_NEGINF, 0, 0);
+        double expected = GSL_POSINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for +inf input");
+    }
+
+    for (double t = 0; t <= 1; t += 0.01)
+    {
+        double result = real_catrom(
+            0, GSL_NEGINF, GSL_NEGINF, GSL_NEGINF, t);
+        double expected = GSL_NEGINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for -inf input");
+    }
+
+    for (double t = 0; t <= 1; t += 0.01)
+    {
+        double result = real_catrom(
+            GSL_NEGINF, GSL_NEGINF, GSL_NEGINF, 0, t);
+        double expected = GSL_NEGINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for -inf input");
+    }
+
+    for (double t = 0; t <= 1; t += 0.01)
+    {
+        double result = real_catrom(
+            0, GSL_NEGINF, GSL_NEGINF, 0, t);
+        double expected = GSL_NEGINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for -inf input");
+    }
+
+    for (double t = 0.01; t <= 1; t += 0.01)
+    {
+        double result = real_catrom(
+            0, 0, GSL_NEGINF, 0, t);
+        double expected = GSL_NEGINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for -inf input");
+    }
+
+    {
+        double result = real_catrom(
+            0, GSL_NEGINF, GSL_POSINF, 0, 0);
+        double expected = GSL_NEGINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for -inf input");
+    }
+
+    {
+        double result = real_catrom(
+            0, GSL_POSINF, GSL_NEGINF, 0, 1);
+        double expected = GSL_NEGINF;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for -inf input");
+    }
+
+    for (double t = 0.01; t < 1; t += 0.01)
+    {
+        double result = real_catrom(
+            0, GSL_NEGINF, GSL_POSINF, 0, t);
+        double expected = GSL_NAN;
+        gsl_test_abs(result, expected, 0,
+            "testing Catmull-rom interpolant for indeterminate input");
     }
 }
 
@@ -1215,13 +1441,36 @@ static void test_signal_amplitude_model(
 }
 
 
+static void test_log_radial_integral(
+    double expected, double tol, double r1, double r2, double p2, double b, int k)
+{
+    const double p = sqrt(p2);
+    log_radial_integrator *integrator = log_radial_integrator_init(
+        r1, r2, k, p + 0.5, default_log_radial_integrator_size);
+
+    gsl_test(!integrator, "testing that integrator object is non-NULL");
+    if (integrator)
+    {
+        const double result = log_radial_integrator_eval(integrator, p, b);
+
+        gsl_test_rel(
+            result, expected, tol,
+            "testing toa_phoa_snr_log_radial_integral("
+            "r1=%g, r2=%g, p2=%g, b=%g, k=%d)", r1, r2, p2, b, k);
+    }
+
+    log_radial_integrator_free(integrator);
+}
+
+
 int bayestar_test(void)
 {
     for (double re = -1; re < 1; re += 0.1)
         for (double im = -1; im < 1; im += 0.1)
             test_cabs2(re + im * 1.0j);
 
-    test_catrom();
+    test_complex_catrom();
+    test_real_catrom();
     test_eval_acor();
 
     for (double ra = -M_PI; ra <= M_PI; ra += 0.1 * M_PI)
@@ -1232,6 +1481,31 @@ int bayestar_test(void)
                          epoch <= 1000086400000000000;
                          epoch += 3600000000000)
                         test_signal_amplitude_model(ra, dec, inc, pol, epoch, "H1");
+
+    /* Tests of radial integrand with p2=0, b=0. */
+    test_log_radial_integral(0, 0, 0, 1, 0, 0, 0);
+    test_log_radial_integral(0, 0, exp(1), exp(2), 0, 0, -1);
+    test_log_radial_integral(log(63), 0, 3, 6, 0, 0, 2);
+    /* Te integrand with p2>0, b=0 (from Mathematica). */
+    test_log_radial_integral(-0.480238, 1e-3, 1, 2, 1, 0, 0);
+    test_log_radial_integral(0.432919, 1e-3, 1, 2, 1, 0, 2);
+    test_log_radial_integral(-2.76076, 1e-3, 0, 1, 1, 0, 2);
+    test_log_radial_integral(61.07118, 1e-3, 0, 1e9, 1, 0, 2);
+    test_log_radial_integral(-112.23053, 5e-2, 0, 0.1, 1, 0, 2);
+    /* Note: this test underflows, so we test that the log is -inf. */
+    /* test_log_radial_integral(-1.00004e6, 1e-8, 0, 1e-3, 1, 0, 2); */
+    test_log_radial_integral(-INFINITY, 1e-3, 0, 1e-3, 1, 0, 2);
+
+    /* Tests of radial integrand with p2>0, b>0 with ML peak outside
+     * of integration limits (true values from Mathematica NIntegrate). */
+    test_log_radial_integral(2.94548, 1e-4, 0, 4, 1, 1, 2);
+    test_log_radial_integral(2.94545, 1e-4, 0.5, 4, 1, 1, 2);
+    test_log_radial_integral(2.94085, 1e-4, 1, 4, 1, 1, 2);
+    /* Tests of radial integrand with p2>0, b>0 with ML peak outside
+     * of integration limits (true values from Mathematica NIntegrate). */
+    test_log_radial_integral(-2.43264, 1e-5, 0, 1, 1, 1, 2);
+    test_log_radial_integral(-2.43808, 1e-5, 0.5, 1, 1, 1, 2);
+    test_log_radial_integral(-0.707038, 1e-5, 1, 1.5, 1, 1, 2);
 
     {
         const double r1 = 0.0, r2 = 0.25, pmax = 1.0;
