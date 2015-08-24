@@ -51,9 +51,14 @@ import sys
 import numpy
 import random
 
+from glue.ligolw import ligolw
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw import lsctables
+from glue.ligolw import table
+
 from laldetchar import git_version
 
-__author__ = 'Lindy Blackburn <lindy.blackburn@ligo.org>'
+__author__ = 'Lindy Blackburn <lindy.blackburn@ligo.org>, Reed Essick <reed.essick@ligo.org>'
 __version__ = git_version.id
 __date__ = git_version.date
 
@@ -73,7 +78,25 @@ col_kw = {
     'npix': 6,
     'signif': 7,
     }
-col_veto = {'tcent': 0, 'signif': 1}
+col_veto = {
+    'tcent': 0, 
+    'signif': 1,
+}
+
+col_snglBurst = {
+    "tstart":0, 
+    "duration":1, 
+    "tcent":2, 
+    "fpeak":3, 
+    "fcent":4, 
+    "bandwidth":5, 
+    "amplitude":6, 
+    "snr":7, 
+    "conf":8, 
+    "chi2":9, 
+    "chi2_dof":10,
+}
+
 ifo = dict()
 ifo['kwh1'] = {'H1': 2}
 ifo['kwh2'] = {'H2': 2}
@@ -465,9 +488,40 @@ class trigdict(dict):
         for triglist in self.values():
             triglist.sort(key=lambda x: x[tcent])
 
+def loadSingleBurst( files, trigs_dict=None):
+    """
+    loads snglburst tables (produced by Omicron) into trgdict object
+    files - is the list of file names
+    """
+    if type(files) is str:
+        files = [files]
+    if trigs_dict is None:
+        trigs_dict = trigdict()
+    for file in files:
+        for row in table.get_table( ligolw_utils.load_filename(file, contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler)), lsctables.SnglBurstTable.tableName ):
+            channel = "%s-%s_%s"%(row.ifo, row.channel.replace("-","_"), row.search)
+            tcent = row.peak_time + 1e-9*row.peak_time_ns
+            tstart = row.start_time + 1e-9*row.start_time_ns
+            dur = row.duration
+            fpeak = row.peak_frequency
+            fcent = row.central_freq
+            bndwth = row.bandwidth
+            amp = row.amplitude
+            snr = row.snr
+            conf = row.confidence
+            chi2 = row.chisq
+            chi2_dof = row.chisq_dof
+
+            trigger = [tstart, dur, tcent, fpeak, fcent, bndwth, amp, snr, conf, chi2, chi2_dof]
+
+            if channel in trigs_dict.channels():
+                trigs_dict[channel].append( trigger ) ### SingleBurst trigger structure
+            else:
+                trigs_dict[channel] = [ trigger ]
+
+    return trigs_dict
 
 # load in KW multichannel trigger file and merge into trigs_dict
-
 def loadkwm(files, trigs_dict=None):
     """
     Loads multi-channel KW trigger files. Returns a dictionary with channel names used as keys.
