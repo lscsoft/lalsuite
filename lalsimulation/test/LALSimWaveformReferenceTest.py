@@ -90,21 +90,23 @@ def recalculate_waveform(conf):
     
     return [hpref, hcref, hp, hc]
 
-def waveformplots(labels, xnew, ynew, xref=None, yref=None, name='', counter=0):
-    '''create plots of input arrays'''
-    plt.figure()
-    plt.title(' / '.join(labels))
-    if yref is not None:
-        plt.plot(xnew, ynew, 'b', label='current state')
-        plt.plot(xref, yref, 'r--', label='reference')
-        plt.legend(loc='lower left')
-    else:
-        plt.plot(xnew, ynew, 'b')
+if options.plot:
+    def waveformplots(labels, xnew, ynew, xref=None, yref=None, name='', counter=0, \
+                      plot_func = plt.plot):
+        '''create plots of input arrays'''
+        plt.figure()
+        plt.title(' / '.join(labels))
+        if yref is not None:
+            plot_func(xnew, ynew, 'b', label='current state')
+            plot_func(xref, yref, 'r--', label='reference')
+            plt.legend(loc='lower left')
+        else:
+            plot_func(xnew, ynew, 'b')
 
-    plt.xlabel('time [s]')
-    plt.ylabel(name)
-    plt.savefig(labels[0] + '_' + str(counter).zfill(2) + '_' + name + '.png')
-    plt.clf()
+        plt.xlabel('time [s] or frequency [Hz]')
+        plt.ylabel(name)
+        plt.savefig(labels[0] + '_' + str(counter).zfill(2) + '_' + name + '.png')
+        plt.clf()
 
 
 def generateAttributes(datasets, counter = ''):
@@ -147,7 +149,7 @@ def generateAttributes(datasets, counter = ''):
             for conf, wfs in zip(datasets, waveforms):
                 hpref, hcref, hp, hc = wfs
                 approx = conf.get('approximant', 'approximant')
-#                approxstr = conf.get('approximant', 'approximant') + ' / ' + domain
+                domain = conf.get('approximant', 'domain')
                 m1, m2, s1z, s2z = ['%.2g' % conf.getfloat('parameters', name)
                                 for name in ['m1', 'm2', 'spin1z', 'spin2z']]
                 iota = conf.getfloat('parameters', 'inclination')
@@ -155,29 +157,44 @@ def generateAttributes(datasets, counter = ''):
                 pfac = 0.5 * (1. + cfac*cfac);
 
                 href = hpref / pfac + 1.j * hcref / cfac
-                h = hp.data.data / pfac + 1.j * hc.data.data /cfac
-                dt = conf.getfloat('parameters','deltaT')                
-                times, timesref = [np.linspace(0., dt * (x.size - 1), x.size) \
+                h = hp.data.data / pfac + 1.j * hc.data.data / cfac
+                steppar = {'TD': 'deltaT', 'FD': 'deltaF'}
+                dX = conf.getfloat('parameters', steppar[domain])
+                xvals, xvals_ref = [np.linspace(0., dX * (x.size - 1), x.size) \
                                    for x in [h, href]]
-                timesref += conf.getfloat('waveform-data','epoch')
-                times += hp.epoch
                 
                 if counter is not '':
                     num = counter
                 else: 
                     num = i
-                                
-                waveformplots([approx, m1, m2, s1z, s2z], times, np.abs(h), \
-                              timesref, np.abs(href), 'amplitude', num)
-                waveformplots([approx, m1, m2, s1z, s2z], times, np.unwrap(np.angle(h)), \
-                              timesref, np.unwrap(np.angle(href)), 'phase', num)
-                if np.allclose(times, timesref, atol = 1e-6):
-                    waveformplots([approx, m1, m2, s1z, s2z], times, \
+
+                if domain=='TD':
+                    xvals_ref += conf.getfloat('waveform-data','epoch')
+                    xvals += hp.epoch
+                else:
+                    #remove zero frequency entry
+                    xvals = xvals[1:]
+                    xvals_ref = xvals_ref[1:]
+                    h = h[1:]
+                    href = href[1:]
+
+                plotfunc = {'TD': plt.plot, 'FD': plt.loglog}
+                waveformplots([approx, m1, m2, s1z, s2z], xvals, np.abs(h), \
+                              xvals_ref, np.abs(href), 'amplitude', num, \
+                              plotfunc[domain])
+                plotfunc['FD'] = plt.semilogx
+                waveformplots([approx, m1, m2, s1z, s2z], xvals, np.unwrap(np.angle(h)), \
+                              xvals_ref, np.unwrap(np.angle(href)), 'phase', num, \
+                              plotfunc[domain])
+                if np.allclose(xvals, xvals_ref, atol = 1e-6):
+                    waveformplots([approx, m1, m2, s1z, s2z], xvals, \
                       np.unwrap(np.angle(h)) - np.unwrap(np.angle(href)), \
-                              name = 'phase_diff', counter = num)
+                              name = 'phase_diff', counter = num, \
+                              plot_func = plotfunc[domain])
                     sel = (np.abs(href) > 0)
-                    waveformplots([approx, m1, m2, s1z, s2z], times[[sel]], \
-                      np.abs(h[[sel]]) / np.abs(href[[sel]]), name = 'amp_quot', counter = num)
+                    waveformplots([approx, m1, m2, s1z, s2z], xvals[[sel]], \
+                      np.abs(h[[sel]]) / np.abs(href[[sel]]), name = 'amp_quot', \
+                      counter = num, plot_func = plotfunc[domain])
                 
                 i += 1
                 
