@@ -50,9 +50,13 @@ parser.add_option('-s', '--separate', action = 'store_true', dest = 'sep',
 
 
 if options.plot:
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+    except ImportError:
+        lalsim.lal.PrintWarning('WARNING: Cannot import matplotlib. Skip plotting.\n')
+        options.plot = False
 
 def waveformgenerator(domain, arg):
     func = {'TD': lalsim.SimInspiralChooseTDWaveform,
