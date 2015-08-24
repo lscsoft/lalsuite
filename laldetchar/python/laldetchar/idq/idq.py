@@ -1570,15 +1570,89 @@ def retrieve_kwtrigs(gdsdir, kwbasename, t, stride, kwstride, sleep=0, ntrials=1
         return event.trigdict()
 #        return None
 
-def retrieve_DMTOmegaTrig():
-    raise StandardError("WRITE ME")
+def retrieve_DMTOmegaTrig(gdsdir, t, stride, channels, sleep=0, ntrials=1, logger=None, delay=0, verbose=True):
+    """
+    looks for DMT-Omega triggers and includes logic about waiting.
+    will wait "sleep" seconds between each check that the file has appeared. Will check "ntrials" time
+    """
+    if ntrials<1:
+        raise ValueError("ntrials must be >= 1, otherwise we don't do anything....")
+    if sleep < 0:
+        sleep = 0
 
-def retrieve_DMTOmegaTrigs():
-    raise StandardError("WRITE ME")
+    trgdict = event.trigdict()
+    for channel in channels:
+
+        filename = "%s/%d/%s-%d-%d.xml"%(gdsdir, t / 1e5, channel, t, stride)
+
+        for i in xrange(ntrials):
+            if not os.path.exists(filename):  ### kw files may not have appeared yet
+                if verbose:
+                    if logger:
+                        logger.info('  missing DMT-Omega triggers for %s, waiting additional %d seconds' % (channel, sleep) )
+                    else:
+                        print '  missing DMT-Omega triggers for %s, waiting additional %d seconds' % (channel, sleep)
+                time.sleep(sleep)
+                if sleep < stride: ### automatically increase sleep to 1 stride if needed
+                    sleep = stride
+            else:
+                break
+        else:
+            if verbose:
+                if logger:
+                    logger.warning('  still missing DMT-Omega triggers for %s, skipping' % channel )
+                else:
+                    print '  still missing DMT-Omega triggers for %s, skipping' % channel
+
+        if verbose:
+            if logger:
+                logger.info('  loading DMT-Omega triggers for %s : %s'%(channel, filename) )
+            else:
+                print '  loading DMT-Omega triggers for %s : %s'%(channel, filename)
+
+        if delay > 0:
+            if verbose:
+                if logger:
+                    logger.info('    waiting %.3f seconds to ensure file is completely written'%delay)
+                else:
+                    print '    waiting %.3f seconds to ensure file is completely written'%delay
+            time.sleep(delay)
+
+        trgdict.add( event.loadSingleBurst( filename ) )
+
+    return trgdict
+
+
+
+def retrieve_DMTOmegaTrigs(gdsdir, basename, t, stride, dmtostride, channels, sleep=0, ntrials=1, logger=None, segments=None, verbose=True):
+    """
+    discover and read in files from DMT-Omega processes
+    we require the argument "channels" because Omicron triggers are stored in separate files for each file
+      -> we can save significant I/O if we only ever load a subset of these
+    also, the separate single-channel files may appear with different latencies and without a definitive list it is difficult to construct waiting logic
+    """
+    t_start = (int(t) / ostride) * ostride
+
+    trgdicts = []
+    while t_start < t+stride:
+        if (segments==None) or (event.livetime(event.andsegments([[[t_start, t_start+dmtostride]], segments]))): ### only keep if we've got some overlap
+            trigger_dict = retrieve_DMTOmegaTrig(gdsdir, basename, t_start, dmtostride, channels, sleep=sleep, ntrials=ntrials, logger=logger, verbose=verbose)
+            if trigger_dict:
+                trgdicts.append( trigger_dict )
+        t_start += ostride
+
+    if trgdicts:
+        trigger_dict = trgdicts[0]
+        for td in trgdicts[1:]:
+            trigger_dict.add( td )
+        return trigger_dict
+    else:
+        return event.trigdict()
+
 
 def retrieve_OmicronTrig(gdsdir, ifo, t, stride, channels, sleep=0, ntrials=1, logger=None, delay=0, verbose=True):
     """
-    looks for kwtriggers and includes logic about wiating.
+    looks for Omicron triggers and includes logic about wiating.
     will wait "sleep" seconds between each check that the file has appeared. Will check "ntrials" times
     """
 
@@ -1647,7 +1721,7 @@ def retrieve_OmicronTrigs(gdsdir, ifo, t, stride, ostride, channels, sleep=0, nt
    
     trgdicts = []
     while t_start < t+stride:
-        if (segments==None) or (event.livetime(event.andsegments([[[t_start, t_start+kwstride]], segments]))): ### only keep if we've got some overlap
+        if (segments==None) or (event.livetime(event.andsegments([[[t_start, t_start+ostride]], segments]))): ### only keep if we've got some overlap
             trigger_dict = retrieve_OmicronTrig(gdsdir, ifo, t_start, ostride, channels, sleep=sleep, ntrials=ntrials, logger=logger, verbose=verbose)
             if trigger_dict:
                 trgdicts.append( trigger_dict )
@@ -1849,8 +1923,6 @@ def collect_sngl_chan_kw(
                 continue
 
             # build segment list for this day
-            print file, os.path.exists(file)
-
             if os.path.exists(file):
                 if len(segments) == 0:  # first segment
                     segments.append([t, t + stride])
