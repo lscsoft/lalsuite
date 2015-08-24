@@ -3445,12 +3445,12 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
  * Input:
  * x, y, z components S1 and S2 wrt
  * * reference L for axisChoice    = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J
- * * total J for axisChoice         = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
- * * view direction for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW (default)
+ * * total J for axisChoice         = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L (default)
+ * * view direction for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW
  * incl is the angle between
  * * J and N (Jx \f$\propto sin(inc)\f$, Jy=0) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J
- * * L and N (Lx \f$\propto sin(inc)\f$, Ly=0) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L
- *                                                              LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW (default)
+ * * L and N (Lx \f$\propto sin(inc)\f$, Ly=0) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L (default)
+ *                                                              LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW
  * m1, m2, f_ref are the component masses and reference GW frequency,
  * they are needed to compute the magnitude of L_N
  *
@@ -3482,7 +3482,7 @@ int XLALSimInspiralInitialConditionsPrecessingApproxs(
 		const REAL8 m1,	    /**< mass of body 1 (kg) */
 		const REAL8 m2,	    /**< mass of body 2 (kg) */
 		const REAL8 fRef,   /**< reference GW frequency (Hz) */
-		LALSimInspiralFrameAxis axisChoice  /**< Flag to identify axis wrt which spin components are given. Pass in NULL (or None in python) for default (view) */)
+		LALSimInspiralFrameAxis axisChoice  /**< Flag to identify axis wrt which spin components are given. Pass in NULL (or None in python) for default (OrbitalL) */)
 {
   REAL8 LNmag=0.;
   REAL8 LNx,LNy,LNxy2,LNz;
