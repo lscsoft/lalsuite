@@ -1603,6 +1603,7 @@ def retrieve_DMTOmegaTrig(gdsdir, t, stride, channels, sleep=0, ntrials=1, logge
                     logger.warning('  still missing DMT-Omega triggers for %s, skipping' % channel )
                 else:
                     print '  still missing DMT-Omega triggers for %s, skipping' % channel
+            continue
 
         if verbose:
             if logger:
@@ -1691,6 +1692,7 @@ def retrieve_OmicronTrig(gdsdir, ifo, t, stride, channels, sleep=0, ntrials=1, l
                     logger.warning('  still missing Omicront triggers for %s, skipping' % channel )
                 else:
                     print '  still missing Omicron triggers for %s, skipping' % channel
+            continue
 
         if verbose:
             if logger:
