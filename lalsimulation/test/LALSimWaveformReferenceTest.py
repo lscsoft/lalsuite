@@ -17,14 +17,12 @@
 
 import lal
 import lalsimulation as lalsim
-# import math
 import numpy as np
 import unittest
 from optparse import OptionParser
 import ConfigParser
 import io
 import sys, os
-import matplotlib.pyplot as plt
 
 NEW_DATA_STR = '######### NEW DATASET #############\n'
 DEFAULT_FILE = 'reviewed_waveforms.asc'
@@ -49,6 +47,12 @@ parser.add_option('-s', '--separate', action = 'store_true', dest = 'sep',
                   'approximant [default: %default]')
 
 (options, args) = parser.parse_args()
+
+
+if options.plot:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
 
 def waveformgenerator(domain, arg):
     func = {'TD': lalsim.SimInspiralChooseTDWaveform,
