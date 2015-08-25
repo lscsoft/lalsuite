@@ -1521,9 +1521,10 @@ def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=No
                     logger.info('  missing KW triggers, waiting additional %d seconds' % sleep)
                 else:
                     print '  missing KW triggers, waiting additional %d seconds' % sleep
-            time.sleep(sleep)
-            if sleep < stride: ### automatically increase sleep to 1 stride if needed
-                sleep = stride
+            if i < ntrials-1:
+                time.sleep(sleep)
+                if sleep < stride: ### automatically increase sleep to 1 stride if needed
+                    sleep = stride
         else:
             break
     else:
@@ -1592,9 +1593,10 @@ def retrieve_DMTOmegaTrig(gdsdir, t, stride, channels, sleep=0, ntrials=1, logge
                         logger.info('  missing DMT-Omega triggers for %s, waiting additional %d seconds' % (channel, sleep) )
                     else:
                         print '  missing DMT-Omega triggers for %s, waiting additional %d seconds' % (channel, sleep)
-                time.sleep(sleep)
-                if sleep < stride: ### automatically increase sleep to 1 stride if needed
-                    sleep = stride
+                if i < ntrials-1:
+                    time.sleep(sleep)
+                    if sleep < stride: ### automatically increase sleep to 1 stride if needed
+                        sleep = stride
             else:
                 break
         else:
@@ -1628,7 +1630,7 @@ def retrieve_DMTOmegaTrig(gdsdir, t, stride, channels, sleep=0, ntrials=1, logge
 def retrieve_DMTOmegaTrigs(gdsdir, basename, t, stride, dmtostride, channels, sleep=0, ntrials=1, logger=None, segments=None, verbose=True):
     """
     discover and read in files from DMT-Omega processes
-    we require the argument "channels" because Omicron triggers are stored in separate files for each file
+    we require the argument "channels" because DMT-Omega triggers are stored in separate files for each file
       -> we can save significant I/O if we only ever load a subset of these
     also, the separate single-channel files may appear with different latencies and without a definitive list it is difficult to construct waiting logic
     """
@@ -1675,15 +1677,16 @@ def retrieve_OmicronTrig(gdsdir, ifo, t, stride, channels, sleep=0, ntrials=1, l
 #        filename = '%s/%s-%d/%s:%s/%s-%d-%d.xml' % ( gdsdir, ifo[0], t / 1e5, ifo, fancy_channel, channel, t, stride )
 
         for i in xrange(ntrials):
-            if not os.path.exists(filename):  ### kw files may not have appeared yet
+            if not os.path.exists(filename):  ### omicron files may not have appeared yet
                 if verbose:
                     if logger:
                         logger.info('  missing Omicron triggers for %s, waiting additional %d seconds' % (channel, sleep) )
                     else:
                         print '  missing Omicron triggers for %s, waiting additional %d seconds' % (channel, sleep)
-                time.sleep(sleep)
-                if sleep < stride: ### automatically increase sleep to 1 stride if needed
-                    sleep = stride
+                if i < ntrials-1:
+                    time.sleep(sleep)
+                    if sleep < stride: ### automatically increase sleep to 1 stride if needed
+                        sleep = stride
             else:
                 break
         else:
