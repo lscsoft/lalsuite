@@ -137,6 +137,23 @@ static REAL8FrequencySeries * create_interpolated_psd(double f0, double deltaF, 
  * related to the horizon distance \f$D_{\rm hor}\f$ by
  * \f$D_{\rm hor} \approx 2.26478\cal R\f$.
  *
+ * @note
+ * The siren has a maximum gravitational wave frequency equal to twice the
+ * innermost stable cirucluar orbit (ISCO) frequency for a Schwarzschild black
+ * hole of the same total mass as the system.  This upper frequency is
+ * \f[ f_{\rm isco} = \frac{c^3}{\pi 6^{3/2} G M} = 1570 {\rm Hz} \f]
+ * where \f$M=2.8M_\odot\f$.  If @p f_max is above this ISCO frequency, or
+ * negative, then the ISCO frequency is used; otherwise @p f_max is used.
+ *
+ * @note
+ * Other implementations have used a different value for the ISCO frequency.
+ * The SenseMonitor adopts a dimensionless orbital frequency value of
+ * \f$Mf_{\rm orb}=0.0098325\f$ in geometric units for the equal mass case,
+ * while Table I of Kidder, Will, and Wiseman, Physical Review D @b 47 3281
+ * (1993) http://dx.doi.org/10.1103/PhysRevD.47.3281 gives a value of 0.00933.
+ * For comparison, the Schwarzschild ISCO is 16% larger:
+ * \f$Mf_{\rm orb}=1/(2\pi 6^{3/2})=0.0108\f$.
+ *
  * See XLALMeasureStandardSirenHorizonDistance() for a description of the
  * horizon distance.
  *
@@ -162,6 +179,8 @@ static REAL8FrequencySeries * create_interpolated_psd(double f0, double deltaF, 
 double XLALMeasureStandardSirenSenseMonitorRange(const REAL8FrequencySeries *psd, double f_min, double f_max)
 {
 	double horizon_distance = XLALMeasureStandardSirenHorizonDistance(psd, f_min, f_max);
+	if (XLAL_IS_REAL8_FAIL_NAN(horizon_distance))
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 	return horizon_distance / LAL_HORIZON_DISTANCE_OVER_SENSEMON_RANGE;
 }
 
@@ -177,6 +196,23 @@ double XLALMeasureStandardSirenSenseMonitorRange(const REAL8FrequencySeries *psd
  * interferometer's zenith) would induce a characteristic signal-to-noise
  * ratio of 8.  No cosmological effects are included in this horizon distance
  * measure.
+ *
+ * @note
+ * The siren has a maximum gravitational wave frequency equal to twice the
+ * innermost stable cirucluar orbit (ISCO) frequency for a Schwarzschild black
+ * hole of the same total mass as the system.  This upper frequency is
+ * \f[ f_{\rm isco} = \frac{c^3}{\pi 6^{3/2} G M} = 1570 {\rm Hz} \f]
+ * where \f$M=2.8M_\odot\f$.  If @p f_max is above this ISCO frequency, or
+ * negative, then the ISCO frequency is used; otherwise @p f_max is used.
+ *
+ * @note
+ * Other implementations have used a different value for the ISCO frequency.
+ * The SenseMonitor adopts a dimensionless orbital frequency value of
+ * \f$Mf_{\rm orb}=0.0098325\f$ in geometric units for the equal mass case,
+ * while Table I of Kidder, Will, and Wiseman, Physical Review D @b 47 3281
+ * (1993) http://dx.doi.org/10.1103/PhysRevD.47.3281 gives a value of 0.00933.
+ * For comparison, the Schwarzschild ISCO is 16% larger:
+ * \f$Mf_{\rm orb}=1/(2\pi 6^{3/2})=0.0108\f$.
  *
  * See XLALMeasureSNRFD() for further discussion about characteristic
  * signal-to-noise ratios.
@@ -203,6 +239,8 @@ double XLALMeasureStandardSirenHorizonDistance(const REAL8FrequencySeries *psd, 
 	double snr_8 = 8.0;
 	double snr;
 	snr = XLALMeasureStandardSirenSNR(psd, f_min, f_max);
+	if (XLAL_IS_REAL8_FAIL_NAN(snr))
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 	return Mpc * snr / snr_8;
 }
 
@@ -218,8 +256,26 @@ double XLALMeasureStandardSirenHorizonDistance(const REAL8FrequencySeries *psd, 
  * circular inspiral of point particles is also assumed.  No cosmological
  * effects are included in this standard siren.
  *
+ * @note
+ * The siren has a maximum gravitational wave frequency equal to twice the
+ * innermost stable cirucluar orbit (ISCO) frequency for a Schwarzschild black
+ * hole of the same total mass as the system.  This upper frequency is
+ * \f[ f_{\rm isco} = \frac{c^3}{\pi 6^{3/2} G M} = 1570 {\rm Hz} \f]
+ * where \f$M=2.8M_\odot\f$.  If @p f_max is above this ISCO frequency, or
+ * negative, then the ISCO frequency is used; otherwise @p f_max is used.
+ *
+ * @note
+ * Other implementations have used a different value for the ISCO frequency.
+ * The SenseMonitor adopts a dimensionless orbital frequency value of
+ * \f$Mf_{\rm orb}=0.0098325\f$ in geometric units for the equal mass case,
+ * while Table I of Kidder, Will, and Wiseman, Physical Review D @b 47 3281
+ * (1993) http://dx.doi.org/10.1103/PhysRevD.47.3281 gives a value of 0.00933.
+ * For comparison, the Schwarzschild ISCO is 16% larger:
+ * \f$Mf_{\rm orb}=1/(2\pi 6^{3/2})=0.0108\f$.
+ *
  * Implements Eq. (D1) of FINDCHIRP for a 1.4 Msun + 1.4 Msun binary neutron
- * star standard siren at an effective distance 1 Mpc.
+ * star standard siren at an effective distance 1 Mpc, but with the specified
+ * limits on the integral.
  *
  * @sa Appendix D of
  * Bruce Allen, Warren G. Anderson, Patrick R. Brady, Duncan A. Brown, and
@@ -233,13 +289,15 @@ double XLALMeasureStandardSirenHorizonDistance(const REAL8FrequencySeries *psd, 
  * lower bound.
  * @param[in] f_max The upper bound of the frequency band over which the
  * signal-to-noise ratio will be computed; set to a negative value for
- * no upper bound.
+ * the Schwarzschild ISCO upper bound.
  * @returns The characteristic signal-to-noise ratio of a binary neutron star
  * standard siren at an effective distance of 1 Mpc.
  * @retval LAL_REAL8_FAIL_NAN Failure.
  */
 double XLALMeasureStandardSirenSNR(const REAL8FrequencySeries *psd, double f_min, double f_max)
 {
+	LALUnit strainSquaredPerHertzUnit = { 0, { 0, 0, 1, 0, 0, 2, 0}, { 0, 0, 0, 0, 0, 0, 0} };
+	LALUnit snrUnits;
 	size_t k, k_min, k_max;
 	double e = 0.0;
 	double sum = 0.0;
@@ -251,25 +309,38 @@ double XLALMeasureStandardSirenSNR(const REAL8FrequencySeries *psd, double f_min
 	double m2 = 1.4; /* in solar masses */
 	double M = m1 + m2;
 	double mu = m1 * m2 / M;
+	double f_isco = pow(6.0, -1.5) / (LAL_PI * M * LAL_MTSUN_SI);
 	double A_1_Mpc;
 
-	/* find the (inclusive) limits of the summation */
+	/* make sure that the psd has correct units
+	 * and also extract any unit prefactor */
+	XLALUnitDivide(&snrUnits, &strainSquaredPerHertzUnit, &psd->sampleUnits);
+	if (!XLALUnitIsDimensionless(&snrUnits))
+		XLAL_ERROR_REAL8(XLAL_EINVAL, "Incorrect PSD units.");
+	else
+		prefac = XLALUnitPrefactor(&snrUnits);
+
+	/* make sure that f_isco is used by default */
+	if (f_max < 0 || f_max > f_isco)
+		f_max = f_isco;
+
+	/* use smallest possible f_min if f_min is below that value */
 	if (f_min < 0 || f_min <= psd->f0)
+		f_min = psd->f0;
+
+	/* find the (inclusive) limits of the summation */
+	k_min = round((f_min - psd->f0)/psd->deltaF);
+	if (k_min == 0)
 		k_min = 1;
-	else {
-		k_min = round((f_min - psd->f0)/psd->deltaF);
-		if (k_min == 0)
-			k_min = 1;
+
+	k_max = round((f_max - psd->f0)/psd->deltaF);
+	if (k_max > psd->data->length - 2) {
+		k_max = psd->data->length - 2;
 	}
 
-	if (f_max < 0 || f_max >= psd->f0 + psd->data->length * psd->deltaF)
-		k_max = psd->data->length - 2;
-	else {
-		k_max = round((f_max - psd->f0)/psd->deltaF);
-		if (k_max >= psd->data->length - 2) {
-			k_max = psd->data->length - 2;
-		}
-	}
+	/* domain error if integral is empty */
+	if (k_max < k_min)
+		XLAL_ERROR_REAL8(XLAL_EDOM, "Maximum frequency is below minimum frequency");
 
 	/* Kahan's compensated summation algorithm. The summation is done
 	 * from lowest to highest frequency under the assumption that high

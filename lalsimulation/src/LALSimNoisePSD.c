@@ -1020,7 +1020,9 @@ int XLALSimNoisePSD(
 /**
  * Reads file fname containing two-column amplitude spectral density data file
  * and interpolates at the frequencies required to populate the frequency
- * series psd, with a low frequency cutoff flow.
+ * series psd, with a low frequency cutoff @p flow.  If @p flow is zero or
+ * negative, the low frequency cutoff is the first frequency with non-zero
+ * amplitude spectral density in the file.
  */
 int XLALSimNoisePSDFromFile(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
@@ -1032,6 +1034,7 @@ int XLALSimNoisePSDFromFile(
 	double *h;
 	size_t  n;
 	size_t  i;
+	size_t  imin = 0;
 	size_t  kmin;
 	size_t  k;
 	LALFILE *fp;
@@ -1044,22 +1047,32 @@ int XLALSimNoisePSDFromFile(
 	XLALFileClose(fp);
 	if (n == (size_t)(-1))
 		XLAL_ERROR(XLAL_EFUNC);
-	/* take the log of the amplitude spectral density data */
+
+	/* take the log of the amplitude spectral density data 
+	 * and record the first valid index of h */
 	for (i = 0; i < n; ++i)
-		h[i] = log(h[i]);
+		if (h[i] > 0.0) {
+			h[i] = log(h[i]);
+			if (imin == 0)
+				imin = i;
+		}
+		else
+			h[i] = 0.0;
 
 	/* set sample units */
 	psd->sampleUnits = strainSquaredPerHertzUnit;
 
 	/* determine low frequency cutoff */
+	if (flow <= 0.0) /* use lowest non-zero value in data */
+		flow = f[imin];
 	if (flow < psd->f0) 
 		flow = psd->f0;
-	if (psd->f0 == 0.0)
-		kmin = 1; /* will set DC to zero */
-	else
-		kmin = (flow - psd->f0) / psd->deltaF;
 
-	i = 1;
+	kmin = (flow - psd->f0) / psd->deltaF;
+	if (kmin == 0 && psd->f0 == 0.0)
+		kmin = 1; /* will set DC to zero */
+
+	i = imin + 1;
 	for (k = 0; k < kmin; ++k) /* set low frequency components to zero */
 		psd->data->data[k] = 0.0;
 	for (; k < psd->data->length - 1; ++k) {

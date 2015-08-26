@@ -76,6 +76,8 @@
  * <DD>use official data files</DD>
  * <DT>`-P`, `--psd-only`</DT>
  * <DD>output PSD only</DD>
+ * <DT>`-a`, `--asd-file` ASDFILE</DT>
+ * <DD>read amplitude spectrum density file</DD>
  * <DT>`-s`, `--start-time` GPSSTART</DT>
  * <DD>GPS start time (s)</DD>
  * <DT>`-t`, `--duration` DURATION</DT>
@@ -156,6 +158,7 @@ double flow;
 int official;
 int psdonly;
 const char *detector;
+char *asdfile;
 int verbose = 0;
 
 int usage(const char *program);
@@ -205,7 +208,9 @@ int main(int argc, char *argv[])
 	gsl_rng_env_setup();
 	rng = gsl_rng_alloc(gsl_rng_default);
 	psd = XLALCreateREAL8FrequencySeries(detector, &tstart, 0.0, srate/length, &strainSquaredPerHertzUnit, length/2 + 1);
-	if (official && opsdfunc)
+	if (asdfile)
+		XLALSimNoisePSDFromFile(psd, flow, asdfile);
+	else if (official && opsdfunc)
 		opsdfunc(psd, flow);
 	else
 		XLALSimNoisePSD(psd, flow, psdfunc);
@@ -273,6 +278,7 @@ int parseargs( int argc, char **argv )
 			{ "kagra", no_argument, 0, 'K' },
 			{ "official", no_argument, 0, 'O' },
 			{ "psd-only", no_argument, 0, 'P' },
+			{ "psd-file", no_argument, 0, 'p' },
 			{ "start-time", required_argument, 0, 's' },
 			{ "duration", required_argument, 0, 't' },
 			{ "sample-rate", required_argument, 0, 'r' },
@@ -280,7 +286,7 @@ int parseargs( int argc, char **argv )
 			{ "low-frequency", required_argument, 0, 'f' },
 			{ 0, 0, 0, 0 }
 		};
-	char args[] = "h\1I0ABCDEFOPvVgGTKs:t:r:d:f:";
+	char args[] = "h\1I0ABCDEFOPvVgGTKa:s:t:r:d:f:";
 	while (1) {
 		int option_index = 0;
 		int c;
@@ -387,6 +393,11 @@ int parseargs( int argc, char **argv )
 			case 'P': /* start-time */
 				psdonly = 1;
 				break;
+			case 'a': /* asd-file */
+				flow = 0.0;
+				asdfile = LALoptarg;
+				detector = LALoptarg;
+				break;
 			case 's': /* start-time */
 				{
 					char *endp = NULL;
@@ -422,7 +433,7 @@ int parseargs( int argc, char **argv )
 		exit(1);
 	}
 
-	if (! psdfunc || (!psdonly && duration == 0.0)) {
+	if ((!psdfunc && !asdfile) || (!psdonly && duration == 0.0)) {
 		fprintf(stderr, "must select a noise model and a duration\n");
 		usage(argv[0]);
 		exit(1);
@@ -452,6 +463,7 @@ int usage( const char *program )
 	fprintf(stderr, "\t-K, --kagra                  \tKAGRA noise power\n");
 	fprintf(stderr, "\t-O, --official               \tuse official data files\n");
 	fprintf(stderr, "\t-P, --psd-only               \toutput PSD only\n");
+	fprintf(stderr, "\t-a, --asd-file ASDFILE       \tread an ASD file\n");
 	fprintf(stderr, "\t-s, --start-time GPSSTART    \tGPS start time (s)\n");
 	fprintf(stderr, "\t-t, --duration DURATION      \t(required) duration of data to produce (s)\n");
 	fprintf(stderr, "\t-r, --sample-rate SRATE      \tsample rate (Hz) [16384]\n");
