@@ -26,7 +26,7 @@
  * h_\times=a_1\sin\left(2\alpha\right)\cos\left(2\Phi\right)+a_2\cos\left(2\alpha\right)\sin\left(2\Phi\right)
  * \f}
  * with \f$a_i\f$ amplitudes, \f$\alpha\f$ polarization shift, \f$\Phi\f$ phase (Eq. (4.28)-(4.30) of [3] up to leading order (The \f$\Phi\f$ is shifted by \f$\pi\f$ with respect to [3]). We note that \f$\Theta=0\f$ in leading order because we use radiation frame).<br />
- * \f$a_1\f$, \f$a_2\f$ are defined in LALSQTPNGenerator() function, \f$\alpha\f$ and \f$\Phi\f$ phase is defined in LALSQTPNDerivator() function.<br />
+ * \f$a_1\f$, \f$a_2\f$ are defined in LALSQTPNGenerator() function, \f$\alpha\f$ and \f$\Phi\f$ phase is defined in XLALSQTPNDerivator() function.<br />
  * <b>References</b><br />
  * [1] E. Poisson, Phys.Rev. D57 5287 (1998)<br />
  * [2] K. S. Thorne, Rev.Mod.Phys. 52 299 (1980)<br />
