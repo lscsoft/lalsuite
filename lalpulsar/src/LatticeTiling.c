@@ -1430,6 +1430,66 @@ UINT8 XLALCurrentLatticeTilingIndex(
 
 }
 
+int XLALLatticeTilingDimensionBounds(
+  const LatticeTilingIterator *itr,
+  const UINT2 pad_control,
+  const gsl_vector *point,
+  const size_t y_dim,
+  const double x_scale,
+  gsl_vector **y_lower,
+  gsl_vector **y_upper,
+  gsl_vector **x
+  )
+{
+
+  // Check input
+  XLAL_CHECK(itr != NULL, XLAL_EFAULT);
+  XLAL_CHECK(point != NULL, XLAL_EFAULT);
+  XLAL_CHECK(point->size == itr->tiling->ndim, XLAL_ESIZE);
+  XLAL_CHECK(0 < y_dim && y_dim < itr->tiling->ndim, XLAL_EINVAL);
+  XLAL_CHECK(x_scale > 0, XLAL_EINVAL);
+  XLAL_CHECK(y_lower != NULL, XLAL_EFAULT);
+  XLAL_CHECK(y_upper != NULL, XLAL_EFAULT);
+  XLAL_CHECK(x != NULL, XLAL_EFAULT);
+
+  const size_t x_dim = y_dim - 1;
+
+  // Create local copy of 'point'
+  double local_point_array[point->size];
+  gsl_vector_view local_point_view = gsl_vector_view_array(local_point_array, point->size);
+  gsl_vector_memcpy(&local_point_view.vector, point);
+
+  // Get lower and upper bounds on 'x'
+  double x_lower = 0, x_upper = 0;
+  LT_GetExtremalBounds(itr->tiling, pad_control, x_dim, &local_point_view.vector, &x_lower, &x_upper);
+
+  // Calculate step size and number of steps in 'x'
+  const double dx = x_scale * gsl_matrix_get(itr->tiling->phys_from_int, x_dim, x_dim);
+  const double Nx_dbl = 1 + GSL_MAX_DBL(0, floor((x_upper - x_lower) / dx));
+  XLAL_CHECK(Nx_dbl < SIZE_MAX, XLAL_ESIZE);
+  const size_t Nx = (size_t) Nx_dbl;
+
+  // Allocate vectors
+  GFVEC(*y_lower, *y_upper, *x);
+  GAVEC(*y_lower, Nx);
+  GAVEC(*y_upper, Nx);
+  GAVEC(*x, Nx);
+
+  // Get lower and upper bounds on 'y'
+  for (size_t i = 0; i < Nx; ++i) {
+    const double x_i = x_lower + dx*i;
+    gsl_vector_set(&local_point_view.vector, x_dim, x_i);
+    double y_lower_i = 0, y_upper_i = 0;
+    LT_GetExtremalBounds(itr->tiling, pad_control, y_dim, &local_point_view.vector, &y_lower_i, &y_upper_i);
+    gsl_vector_set(*y_lower, i, y_lower_i);
+    gsl_vector_set(*y_upper, i, y_upper_i);
+    gsl_vector_set(*x, i, x_i);
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
 LatticeTilingLocator *XLALCreateLatticeTilingLocator(
   LatticeTiling *tiling
   )

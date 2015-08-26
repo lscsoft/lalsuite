@@ -269,6 +269,21 @@ UINT8 XLALCurrentLatticeTilingIndex(
   );
 
 ///
+/// Allocate and return vectors containing the bounds on neighbouring dimesions of the lattice
+/// tiling parameter space.
+///
+int XLALLatticeTilingDimensionBounds(
+  const LatticeTilingIterator *itr,	///< [in] Lattice tiling iterator
+  const UINT2 pad_control,		///< [in] Controls the amount of padding added to parameter space
+  const gsl_vector *point,		///< [in] Point at which to return bounds
+  const size_t y_dim,			///< [in] Dimension 'y' of which to return bounds
+  const double x_scale,			///< [in] Scale of steps in 'x', in units of lattice step size
+  gsl_vector **y_lower,			///< [in] Lower bounds of dimension 'y' as function of 'x'
+  gsl_vector **y_upper,			///< [in] Upper bounds of dimension 'y' as function of 'x'
+  gsl_vector **x			///< [in] Values 'x' in dimension 'y-1'
+  );
+
+///
 /// Create a new lattice tiling locator. If there are tiled dimensions, an index trie is internally built.
 ///
 #ifdef SWIG // SWIG interface directives
