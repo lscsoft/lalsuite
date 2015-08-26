@@ -116,20 +116,6 @@ int XLALSetLatticeTilingBound(
   );
 
 ///
-/// Set whether the lower or upper bounds on a parameter-space dimension are padded by half of the
-/// metric ellipse bounding box, to ensure complete coverage. This padding may be unnecessary,
-/// however, if the parameter space is being partitioned into subsets to be covered by independent
-/// jobs, since any padding at internal boudaries between subsets will result in parts of the
-/// parameter space being covered more than once.
-///
-int XLALSetLatticeTilingBoundPadding(
-  LatticeTiling *tiling,		///< [in] Lattice tiling
-  const size_t dim,			///< [in] Dimension on which bound applies
-  UINT4 pad_lower,			///< [in] Multiple of lower parameter space bound padding to apply
-  UINT4 pad_upper			///< [in] Multiple of upper parameter space bound padding to apply
-  );
-
-///
 /// Set a constant lattice tiling parameter-space bound, given by the minimum and maximum of the two
 /// supplied bounds, on a dimension of the lattice tiling.
 ///
@@ -138,6 +124,15 @@ int XLALSetLatticeTilingConstantBound(
   const size_t dim,			///< [in] Dimension on which bound applies
   const double bound1,			///< [in] First bound on dimension
   const double bound2			///< [in] Second bound on dimension
+  );
+
+///
+/// Set the amount of padding added to the parameter space of the lattice tiling to account for
+/// boundary effects. The amount of padding generally increases with 'pad_control = 0'.
+///
+int XLALSetLatticeTilingPadding(
+  LatticeTiling *tiling,		///< [in] Lattice tiling
+  const UINT2 pad_control		///< [in] Controls the amount of padding added to parameter space
   );
 
 ///

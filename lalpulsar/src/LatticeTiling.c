@@ -45,8 +45,6 @@ typedef struct tagLT_Bound {
   size_t data_len;			///< Length of arbitrary data describing parameter-space bounds
   void *data_lower;			///< Arbitrary data describing lower parameter-space bound
   void *data_upper;			///< Arbitrary data describing upper parameter-space bound
-  UINT4 pad_lower;			///< Multiple of lower parameter space bound padding to apply
-  UINT4 pad_upper;			///< Multiple of upper parameter space bound padding to apply
 } LT_Bound;
 
 ///
@@ -65,6 +63,7 @@ struct tagLatticeTiling {
   LT_Bound *bounds;			///< Array of parameter-space bound info for each dimension
   size_t tiled_ndim;			///< Number of tiled parameter-space dimensions
   size_t *tiled_idx;			///< Index to tiled parameter-space dimensions
+  UINT2 pad_control;			///< Controls the amount of padding added to parameter space
   TilingLattice lattice;		///< Type of lattice to generate tiling with
   gsl_vector *phys_bbox;		///< Metric ellipse bounding box
   gsl_vector *phys_origin;		///< Parameter-space origin in physical coordinates
@@ -166,6 +165,7 @@ static void LT_GetBounds(
 ///
 static void LT_FindBoundExtrema(
   const LatticeTiling *tiling,		///< [in] Lattice tiling
+  const UINT2 pad_control,		///< [in] Controls the amount of padding added to parameter space
   const size_t i,			///< [in] Current dimension of parameter space
   const size_t dim,			///< [in] Dimension in which to record bound extrema
   gsl_vector *phys_point,		///< [out] Current physical point being bounded
@@ -181,13 +181,14 @@ static void LT_FindBoundExtrema(
       // Get the vector pointing to neighbouring points of the current point in this dimension
       gsl_vector_const_view phys_from_int_i_view = gsl_matrix_const_row(tiling->phys_from_int, i);
 
-      for (int d = -1; d <= 1; ++d) {
+      // Look at neighbouring points; 'pad_control' determines how far to look
+      for (INT2 d = -pad_control; d <= pad_control; ++d) {
 
-        // Move current point half-way towards neighbouring point in the direction 'd'
+        // Move current point towards neighbouring point in the direction 'd'
         gsl_blas_daxpy(0.5 * d, &phys_from_int_i_view.vector, phys_point);
 
         // Find bound extrema in higher dimensions
-        LT_FindBoundExtrema(tiling, i + 1, dim, phys_point, phys_min_lower, phys_max_upper);
+        LT_FindBoundExtrema(tiling, pad_control, i + 1, dim, phys_point, phys_min_lower, phys_max_upper);
 
         // Reset current point back to previous value
         gsl_blas_daxpy(-0.5 * d, &phys_from_int_i_view.vector, phys_point);
@@ -197,7 +198,7 @@ static void LT_FindBoundExtrema(
     } else {
 
       // Find bound extrema in higher dimensions
-      LT_FindBoundExtrema(tiling, i + 1, dim, phys_point, phys_min_lower, phys_max_upper);
+      LT_FindBoundExtrema(tiling, pad_control, i + 1, dim, phys_point, phys_min_lower, phys_max_upper);
 
     }
 
@@ -224,6 +225,7 @@ static void LT_FindBoundExtrema(
 ///
 static void LT_GetExtremalBounds(
   const LatticeTiling *tiling,		///< [in] Lattice tiling
+  const UINT2 pad_control,		///< [in] Controls the amount of padding added to parameter space
   const size_t dim,			///< [in] Dimension on which bound applies
   const gsl_vector *phys_point,		///< [in] Physical point at which to find bounds
   double *phys_lower,			///< [out] Lower parameter-space bound
@@ -234,7 +236,7 @@ static void LT_GetExtremalBounds(
   // Get the physical bounds on the current dimension
   LT_GetBounds(tiling, dim, phys_point, phys_lower, phys_upper);
 
-  if (tiling->bounds[dim].is_tiled) {
+  if (tiling->bounds[dim].is_tiled && pad_control > 0) {
 
     if (dim > 0) {
 
@@ -244,14 +246,15 @@ static void LT_GetExtremalBounds(
       gsl_vector_memcpy(&test_phys_point_view.vector, phys_point);
 
       // Find the extreme values of the physical bounds
-      LT_FindBoundExtrema(tiling, 0, dim, &test_phys_point_view.vector, phys_lower, phys_upper);
+      LT_FindBoundExtrema(tiling, pad_control, 0, dim, &test_phys_point_view.vector, phys_lower, phys_upper);
 
     }
 
     // Add padding of (multiples of) half the metric ellipse bounding box in this dimension
-    const double phys_bbox_dim = 0.5 * gsl_vector_get(tiling->phys_bbox, dim);
-    *phys_lower -= tiling->bounds[dim].pad_lower * phys_bbox_dim;
-    *phys_upper += tiling->bounds[dim].pad_upper * phys_bbox_dim;
+    const double phys_bbox_dim = gsl_vector_get(tiling->phys_bbox, dim);
+    const double phys_padding = 0.5 * pad_control * phys_bbox_dim;
+    *phys_lower -= phys_padding;
+    *phys_upper += phys_padding;
 
   }
 
@@ -439,6 +442,7 @@ LatticeTiling *XLALCreateLatticeTiling(
 
   // Initialise fields
   tiling->ndim = ndim;
+  tiling->pad_control = 1;
   tiling->lattice = TILING_LATTICE_MAX;
 
   return tiling;
@@ -496,33 +500,6 @@ int XLALSetLatticeTilingBound(
   tiling->bounds[dim].data_len = data_len;
   tiling->bounds[dim].data_lower = data_lower;
   tiling->bounds[dim].data_upper = data_upper;
-  tiling->bounds[dim].pad_lower = 1;
-  tiling->bounds[dim].pad_upper = 1;
-
-  return XLAL_SUCCESS;
-
-}
-
-int XLALSetLatticeTilingBoundPadding(
-  LatticeTiling *tiling,
-  const size_t dim,
-  UINT4 pad_lower,
-  UINT4 pad_upper
-  )
-{
-
-  // Check input
-  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL);
-  XLAL_CHECK(dim < tiling->ndim, XLAL_ESIZE);
-
-  // Check that bound has been set and is tiled
-  XLAL_CHECK(tiling->bounds[dim].func != NULL, XLAL_EINVAL, "Lattice tiling dimension #%zu has not been bounded", dim);
-  XLAL_CHECK(tiling->bounds[dim].is_tiled, XLAL_EINVAL, "Lattice tiling dimension #%zu is not tiled, so has no padding", dim);
-
-  // Set the parameter-space bound padding
-  tiling->bounds[dim].pad_lower = pad_lower;
-  tiling->bounds[dim].pad_upper = pad_upper;
 
   return XLAL_SUCCESS;
 
@@ -564,6 +541,23 @@ int XLALSetLatticeTilingConstantBound(
   *data_lower = GSL_MIN(bound1, bound2);
   *data_upper = GSL_MAX(bound1, bound2);
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dim, ConstantBound, data_len, data_lower, data_upper) == XLAL_SUCCESS, XLAL_EFUNC);
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSetLatticeTilingPadding(
+  LatticeTiling *tiling,
+  const UINT2 pad_control
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL);
+
+  // Set padding control
+  tiling->pad_control = pad_control;
 
   return XLAL_SUCCESS;
 
@@ -1251,7 +1245,7 @@ int XLALNextLatticeTilingPoint(
 
     // Get extremal physical bounds
     double phys_lower = 0, phys_upper = 0;
-    LT_GetExtremalBounds(itr->tiling, i, itr->phys_point, &phys_lower, &phys_upper);
+    LT_GetExtremalBounds(itr->tiling, itr->tiling->pad_control, i, itr->phys_point, &phys_lower, &phys_upper);
 
     // If not tiled, set current physical point to non-tiled parameter-space bound
     if (!itr->tiling->bounds[i].is_tiled) {
