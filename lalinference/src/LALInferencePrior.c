@@ -2657,7 +2657,7 @@ REAL8 LALInferenceSineGaussianPrior(LALInferenceRunState *runState, LALInference
     logPrior+=-4.0* log(*(REAL8 *)LALInferenceGetVariable(params,"hrss"));
   if(LALInferenceCheckVariable(params,"declination"))
     logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
- 
+  logPrior += LALInferenceConstantCalibrationPrior(runState, params); 
   return(logPrior);
 }
 

@@ -349,15 +349,16 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     REAL8 hrssMin=1.e-23, hrssMax=1.0e-15;
     REAL8 loghrssMin=log(hrssMin),loghrssMax=log(hrssMax);
     REAL8 dt=0.1;
-    REAL8 timeMin=endtime-0.5*dt; 
-    REAL8 timeMax=endtime+0.5*dt;
+    REAL8 timeMin=endtime-dt; 
+    REAL8 timeMax=endtime+dt;
     REAL8 zero=0.0;
     gsl_rng *GSLrandom=state->GSLrandom;
     REAL8 timeParam = timeMin + (timeMax-timeMin)*gsl_rng_uniform(GSLrandom);
 
     ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
     if (ppt) dt=atof(ppt->value);
-        
+    timeMin=endtime-dt; timeMax=endtime+dt;
+    timeParam = timeMin + (timeMax-timeMin)*gsl_rng_uniform(GSLrandom); 
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
 
     /* Option to use the detector-aligned frame */
