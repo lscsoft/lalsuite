@@ -817,6 +817,14 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
        recurrance relation has the advantage that the error growth is
        O(sqrt(N)) for N repetitions. */
 
+    /* See, for example, 
+
+       Press, Teukolsky, Vetteling & Flannery, 2007.  Numerical
+       Recipes, Third Edition, Chapter 5.4.  
+
+       Singleton, 1967. On computing the fast Fourier
+       transform. Comm. ACM, vol. 10, 647–654. */
+    
     /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
     dim = -sin(twopit*deltaF);
     dre = -2.0*sin(0.5*twopit*deltaF)*sin(0.5*twopit*deltaF);
