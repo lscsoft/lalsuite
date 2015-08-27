@@ -250,9 +250,8 @@ static void LT_GetExtremalBounds(
 
     }
 
-    // Add padding of (multiples of) half the metric ellipse bounding box in this dimension
-    const double phys_bbox_dim = gsl_vector_get(tiling->phys_bbox, dim);
-    const double phys_padding = 0.5 * pad_control * phys_bbox_dim;
+    // Add padding of 'pad_control' multiples of half the metric ellipse bounding box in this dimension
+    const double phys_padding = pad_control * 0.5 * gsl_vector_get(tiling->phys_bbox, dim);
     *phys_lower -= phys_padding;
     *phys_upper += phys_padding;
 
