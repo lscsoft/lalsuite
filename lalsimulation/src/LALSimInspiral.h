@@ -35,6 +35,7 @@ extern "C" {
 /**
  * @addtogroup lalsimulation_inspiral
  * @details
+ *
  * Various types of inspiral approximants are supported for producing
  * waveforms in the time- or frequency-domains.  The high-level routines
  * for generating simulated inspiral waveforms are
@@ -106,6 +107,80 @@ extern "C" {
  * ...
  * XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, phiRef, deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
  * @endcode
+ *
+ * ### Coordinate Systems
+ *
+ * The diagram below illustrates how the source frame (x,y,z) of the binary is
+ * related to the wave frame (X,Y,Z) in which the gravitational waveform is
+ * defined.
+ *
+ * @anchor lalsiminspiral_orbitelements
+ * @image html lalsiminspiral_orbitelements.svg "Orbital Elements"
+ *
+ * The origin of the coordinate systems is the instantaneous center-of-mass
+ * of the binary system.  The orbiting body shown in the diagram is body 1.
+ *
+ * The binary's instantaneous orbital angular momentum @b L at the
+ * reference gravitational wave frequency @p f_ref defines the z-axis of the
+ * binary system, while the direction to the periapsis defines the x-axis of
+ * the binary system.  The x-y-plane is therefore the orbital plane, at least
+ * at the moment the binary system is at the reference gravitational wave
+ * frequency.
+ *
+ * The spin components for body 1, (@p S1x,@p S1y, @p S1z), and for body 2,
+ * (@p S2x,@p S2y, @p S2z), are defined in the source-frame.  Therefore,
+ * when the spins are aligned with the orbital angular momentum,
+ * @p S1x = @p S1y = @p S2x = @p S2y = 0.
+ *
+ * The wave frame is defined by the Z-axis, which points toward the Earth,
+ * and some reference direction, defining the X-axis.  The X-Y-plane is
+ * therefore the plane of the sky.
+ *
+ * The plus- and cross-polarizations of the gravitational waveform are defined
+ * in this wave frame.  Specifically, if \f$ h^{ij} \f$ is computed in the
+ * source frame, then
+ * \f[ h_+ = \frac12 ( \hat{p}_i \hat{p}_j - \hat{q}_i \hat{q}_j ) h^{ij} \f]
+ * and
+ * \f[ h_\times = \frac12 ( \hat{p}_i \hat{q}_j + \hat{q}_i \hat{p}_j ) h^{ij} \f]
+ * where \f$ \hat{p}_i \f$ are the components of the unit vector pointing
+ * along the X-axis and \f$ \hat{q}_i \f$ are the components of the unit
+ * vector pointing along the Y-axis.
+ *
+ * The orbital elements are:
+ *
+ *  * Inclination (&iota;).  The angle between the Z-axis of the wave frame
+ *    and the z-axis of the source frame.
+ *  * Longitude of ascending node (&Omega;).  The angle on the plane of the
+ *    sky from the X-axis of the reference direction in the wave frame to the
+ *    ascending node @htmlonly &#x260A; @endhtmlonly.
+ *    @note This angle is entirely degenerate with the polarization angle &psi;.
+ *  * Argument of pariapsis (&omega;).  The angle on the orbital plane from
+ *    the ascending node @htmlonly &#x260A; @endhtmlonly to the x-axis in the
+ *    source frame.
+ *  * True anomaly (&phi;).  The angle along the orbital plane from the
+ *    periapsis to the present position of the orbiting body (body 1).
+ *    The reference phase @p phiRef is @e twice the true anomaly of body 1
+ *    at the moment when the system reaches the gravitational wave frequency
+ *    @p f_ref which is @e twice the orbital frequency.
+ *
+ * @attention
+ * At present, eccentric orbits are not fully supported, and the x-axis
+ * of the source frame is defined to be the ascending node
+ * @htmlonly &#x260A; @endhtmlonly.  Therefore, &omega;=0 by definition.
+ * 
+ * @attention
+ * In the present implementation, the reference direction in the wave frame,
+ * i.e., the X-axis, is defined to be the ascending node
+ * @htmlonly &#x260A; @endhtmlonly.  Therefore, &Omega;=0 by definition.  At
+ * present, then, the X-axis and the x-axis coincide.
+ *
+ * @sa 
+ * The coordinate systems used here follow those of
+ * > Clifford M. Will and Alan G. Wiseman
+ * > "Gravitational radiation from compact binary systems: Gravitational
+ * > waveforms and energy loss to second post-Newtonian order"
+ * > Phys. Rev. D @b 54, 4813 (1996)
+ * > http://dx.doi.org/10.1103/PhysRevD.54.4813
  *
  */
 
