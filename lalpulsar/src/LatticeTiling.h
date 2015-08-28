@@ -318,7 +318,6 @@ int XLALNearestLatticeTilingPoints(
   UINT8VectorSequence **nearest_idxs	///< [out] Columns are the (sequential) indexes of the nearest points
   );
 
-
 ///
 /// Print the internal index trie of a lattice tiling locator to the given file pointer.
 ///

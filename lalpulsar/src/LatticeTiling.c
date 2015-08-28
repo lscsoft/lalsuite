@@ -699,7 +699,8 @@ int XLALSetTilingLatticeAndMetric(
     double norm_thickness = 0.0;
     switch (lattice) {
 
-    case TILING_LATTICE_CUBIC: {	// Cubic (\f$Z_n\f$) lattice
+    case TILING_LATTICE_CUBIC:		// Cubic (\f$Z_n\f$) lattice
+    {
 
       // Zn lattice generator is the identity
       gsl_matrix_set_identity(tiling->tiled_generator);
@@ -708,9 +709,10 @@ int XLALSetTilingLatticeAndMetric(
       norm_thickness = pow(sqrt(tn)/2.0, tn);
 
     }
-      break;
+    break;
 
-    case TILING_LATTICE_ANSTAR: {	// An-star (\f$A_n^*\f$) lattice
+    case TILING_LATTICE_ANSTAR:		// An-star (\f$A_n^*\f$) lattice
+    {
 
       // An* lattice generator in tn+1 dimensions, given in:
       //   McKilliam et.al., "A linear-time nearest point algorithm for the lattice An*"
@@ -751,7 +753,7 @@ int XLALSetTilingLatticeAndMetric(
       norm_thickness = sqrt(tn+1.0) * pow((1.0*tn* (tn+2.0)) / (12.0* (tn+1.0)), 0.5*tn);
 
     }
-      break;
+    break;
 
     default:
       XLAL_ERROR(XLAL_EINVAL, "Invalid lattice=%u", lattice);
@@ -1698,7 +1700,8 @@ int XLALNearestLatticeTilingPoints(
     INT8 nearest_int[tn];
     switch (loc->tiling->lattice) {
 
-    case TILING_LATTICE_CUBIC: {	// Cubic (\f$Z_n\f$) lattice
+    case TILING_LATTICE_CUBIC:		// Cubic (\f$Z_n\f$) lattice
+    {
 
       // Round each dimension of 'nearest[:,j]' to nearest integer to find the nearest point in Zn
       feclearexcept(FE_ALL_EXCEPT);
@@ -1717,9 +1720,10 @@ int XLALNearestLatticeTilingPoints(
       }
 
     }
-      break;
+    break;
 
-    case TILING_LATTICE_ANSTAR: {	// An-star (\f$A_n^*\f$) lattice
+    case TILING_LATTICE_ANSTAR:		// An-star (\f$A_n^*\f$) lattice
+    {
 
       // The nearest point algorithm used below embeds the An* lattice in tn+1 dimensions,
       // however 'nearest[:,j]' has only 'tn' tiled dimensional. The algorithm is only
@@ -1822,7 +1826,7 @@ int XLALNearestLatticeTilingPoints(
       }
 
     }
-      break;
+    break;
 
     default:
       XLAL_ERROR(XLAL_EINVAL, "Invalid lattice=%u", loc->tiling->lattice);
