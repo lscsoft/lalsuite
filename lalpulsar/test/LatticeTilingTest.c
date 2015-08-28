@@ -98,7 +98,7 @@ static int BasicTest(
         gsl_matrix_set(metric, i, j, jj >= ii ? ii/jj : jj/ii);
       }
     }
-    printf("Lattice type: %u\n", lattice);
+    printf("  Lattice type: %u\n", lattice);
     XLAL_CHECK(XLALSetTilingLatticeAndMetric(tiling, lattice, metric, max_mismatch) == XLAL_SUCCESS, XLAL_EFUNC);
     GFMAT(metric);
   }
@@ -107,7 +107,7 @@ static int BasicTest(
   LatticeTilingLocator *loc = XLALCreateLatticeTilingLocator(tiling);
   XLAL_CHECK(loc != NULL, XLAL_EFUNC);
   if (lalDebugLevel & LALINFOBIT) {
-    printf("Index trie:\n");
+    printf("  Index trie:\n");
     XLAL_CHECK(XLALPrintLatticeTilingIndexTrie(loc, stdout) == XLAL_SUCCESS, XLAL_EFUNC);
   }
 
@@ -128,40 +128,72 @@ static int BasicTest(
     XLAL_CHECK(XLALResetLatticeTilingIterator(itr) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Check tiling statistics
-    printf("Minimum/average/maximum number of points per pass:\n");
+    printf("  Check tiling statistics ...");
     for (size_t j = 0; j < n; ++j) {
       const LatticeTilingStats *stats = XLALLatticeTilingStatistics(tiling, j);
       XLAL_CHECK(stats != NULL, XLAL_EFUNC);
-      printf("   %" LAL_INT8_FORMAT " <= %0.3g <= %" LAL_INT8_FORMAT " (total=%" LAL_UINT8_FORMAT ")\n", stats->min_points_pass, stats->avg_points_pass, stats->max_points_pass, stats->total_points);
-      XLAL_CHECK(stats->total_points == total_ref[j], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", stats->total_points, total_ref[j]);
-      XLAL_CHECK(stats->min_points_pass <= stats->avg_points_pass && stats->avg_points_pass <= stats->max_points_pass, XLAL_EFAILED);
+      XLAL_CHECK(stats->total_points == total_ref[j], XLAL_EFAILED, "\n  ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", stats->total_points, total_ref[j]);
+      XLAL_CHECK(stats->min_points_pass <= stats->avg_points_pass, XLAL_EFAILED, "\n  ERROR: min_points_pass = %" LAL_INT8_FORMAT " > %g = avg_points_pass", stats->min_points_pass, stats->avg_points_pass);
+      XLAL_CHECK(stats->max_points_pass >= stats->avg_points_pass, XLAL_EFAILED, "\n  ERROR: max_points_pass = %" LAL_INT8_FORMAT " < %g = avg_points_pass", stats->max_points_pass, stats->avg_points_pass);
     }
+    printf(" done\n");
 
     // Get all points
     gsl_matrix *GAMAT(points, n, total);
     XLAL_CHECK(XLALNextLatticeTilingPoints(itr, &points) == (int)total, XLAL_EFUNC);
     XLAL_CHECK(XLALNextLatticeTilingPoint(itr, NULL) == 0, XLAL_EFUNC);
 
-    // Get nearest point to each template; should be template itself
-    gsl_matrix *GAMAT(nearest, n, total);
-    UINT8VectorSequence *indexes = XLALCreateUINT8VectorSequence(total, n);
-    XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, points, i+1, &nearest, &indexes) == XLAL_SUCCESS, XLAL_EFUNC);
-    UINT8 failed = 0;
-    for (UINT8 j = 0; j < total; ++j) {
-      const UINT8 index_j = indexes->data[j*n + i];
-      if (index_j != j) {
-        ++failed;
-        XLALPrintError("ERROR: index_j = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", index_j, j);
+    if (i + 1 < n) {
+
+      // Check nearest pass to each template, check for consistency
+      printf("  Testing XLALNearestLatticeTilingPass() ...");
+      gsl_vector *GAVEC(point, n);
+      gsl_vector *GAVEC(first, n);
+      for (UINT8 j = 0; j < total; ++j) {
+        gsl_vector_view point_j = gsl_matrix_column(points, j);
+        gsl_vector_memcpy(point, &point_j.vector);
+        UINT8 seq_idx = 0, pass_idx = 0, pass_len = 0;
+        XLAL_CHECK(XLALNearestLatticeTilingPass(loc, point, i + 1, first, &seq_idx, &pass_idx, &pass_len) == XLAL_SUCCESS, XLAL_EFAILED);
+        gsl_vector_sub(first, &point_j.vector);
+        double err = gsl_blas_dasum(first) / n;
+        XLAL_CHECK(err < 1e-6, XLAL_EFAILED, "\n  ERROR: err[j=%" LAL_UINT8_FORMAT "] = %e < 1e-6", j, err);
+        XLAL_CHECK(seq_idx == j, XLAL_EFAILED, "\n  ERROR: seq_idx = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", seq_idx, j);
       }
+      printf(" done\n");
+
+      // Cleanup
+      GFVEC(point, first);
+
     }
-    if (failed > 0) {
-      XLAL_ERROR(XLAL_EFAILED, "ERROR: number of failed index lookups = %" LAL_UINT8_FORMAT " > 0", failed);
+
+    if (i + 1 == n) {
+
+      // Get nearest points to each template, check for consistency
+      printf("  Testing XLALNearestLatticeTilingPoints() ...");
+      gsl_matrix *nearest = NULL;
+      UINT8Vector *seq_idxs = NULL;
+      XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, points, &nearest, &seq_idxs) == XLAL_SUCCESS, XLAL_EFUNC);
+      gsl_matrix_sub(nearest, points);
+      double err = 0;
+      for (size_t j = 0; j < n; ++j) {
+        gsl_vector_view row = gsl_matrix_row(nearest, j);
+        err += gsl_blas_dasum(&row.vector) / n;
+      }
+      XLAL_CHECK(err < 1e-6, XLAL_EFAILED, "\n  ERROR: err = %e < 1e-6", err);
+      for (UINT8 j = 0; j < total; ++j) {
+        XLAL_CHECK(seq_idxs->data[j] == j, XLAL_EFAILED, "\n  ERROR: seq_idxs[j] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", seq_idxs->data[j], j);
+      }
+      printf(" done\n");
+
+      // Cleanup
+      XLALDestroyUINT8Vector(seq_idxs);
+      GFMAT(nearest);
+
     }
 
     // Cleanup
     XLALDestroyLatticeTilingIterator(itr);
-    XLALDestroyUINT8VectorSequence(indexes);
-    GFMAT(points, nearest);
+    GFMAT(points);
 
   }
 
@@ -235,7 +267,7 @@ static int MismatchTest(
       XLAL_CHECK(XLALRandomLatticeTilingPoints(tiling, 0.0, rng, injections) == XLAL_SUCCESS, XLAL_EFUNC);
 
       // Find nearest lattice template points
-      XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, injections, 0, &nearest, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, injections, &nearest, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
 
       // Compute mismatch between injections
       gsl_matrix_sub(nearest, injections);
@@ -301,8 +333,6 @@ static int MismatchTest(
   {
     gsl_matrix *GAMAT(injections, 3, 10);
     gsl_matrix *GAMAT(nearest, n, total);
-    UINT8VectorSequence *indexes = XLALCreateUINT8VectorSequence(total, n);
-    XLAL_CHECK(indexes != NULL, XLAL_ENOMEM);
     RandomParams *rng = XLALCreateRandomParams(total);
     XLAL_CHECK(rng != NULL, XLAL_EFUNC);
 
@@ -310,11 +340,10 @@ static int MismatchTest(
     XLAL_CHECK(XLALRandomLatticeTilingPoints(tiling, 5.0, rng, injections) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Find nearest lattice template points
-    XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, injections, n, &nearest, &indexes) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, injections, &nearest, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Cleanup
     GFMAT(injections, nearest);
-    XLALDestroyUINT8VectorSequence(indexes);
     XLALDestroyRandomParams(rng);
 
   }
@@ -432,6 +461,9 @@ static int SuperskyTest(
   LatticeTiling *tiling = XLALCreateLatticeTiling(3);
   XLAL_CHECK(tiling != NULL, XLAL_EFUNC);
 
+  // Increase bound padding
+  XLAL_CHECK(XLALSetLatticeTilingPadding(tiling, 2) == XLAL_SUCCESS, XLAL_EFUNC);
+
   // Compute reduced supersky metric
   const double Tspan = T * 86400;
   LIGOTimeGPS ref_time;
@@ -503,9 +535,9 @@ int main(void)
   XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 300, 1.0e-5, 37022, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Perform mismatch tests with the reduced supersky parameter space and metric
-  XLAL_CHECK_MAIN(SuperskyTest(1.5, 0.8, TILING_LATTICE_ANSTAR,  1, 50, 1e-4, 31752, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(SuperskyTest(1.5, 0.8, TILING_LATTICE_ANSTAR,  3, 50, 1e-4, 17754, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(SuperskyTest(1.5, 0.8, TILING_LATTICE_ANSTAR, 17, 50, 1e-4,  7539, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(SuperskyTest(1.5, 0.8, TILING_LATTICE_ANSTAR,  1, 50, 4.0e-5, 69680, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(SuperskyTest(1.5, 0.8, TILING_LATTICE_ANSTAR,  3, 50, 1.5e-5, 50197, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(SuperskyTest(1.5, 0.8, TILING_LATTICE_ANSTAR, 17, 50, 1.0e-5, 24614, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
 
   return EXIT_SUCCESS;
 

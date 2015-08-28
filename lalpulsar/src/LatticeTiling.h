@@ -302,20 +302,34 @@ void XLALDestroyLatticeTilingLocator(
 
 ///
 /// Locate the nearest points in a lattice tiling to a given set of points. Return the nearest
-/// points in \c nearest_point. For dimensions less than \c seqidx_ndim, \c nearest_idxs will
-/// optionally return a sequential index running over parameter space; for dimensions greater to
-/// equal to \c seqidx_ndim, \c nearest_idxs will return an index only into the current pass.
+/// points in \c nearest_point, an optionally unique sequential indexes to the nearest points
+/// in \c nearest_seq_idxs.
 ///
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(INOUT_STRUCTS(gsl_matrix **, nearest_points));
-SWIGLAL(INOUT_STRUCTS(UINT8VectorSequence **, nearest_idxs));
+SWIGLAL(INOUT_STRUCTS(UINT8Vector **, nearest_seq_idxs));
 #endif
 int XLALNearestLatticeTilingPoints(
   const LatticeTilingLocator *loc,	///< [in] Lattice tiling locator
   const gsl_matrix *points,		///< [in] Columns are set of points for which to find nearest points
-  const size_t seqidx_ndim,		///< [in] Number of dimensions in which to return sequential indexes
   gsl_matrix **nearest_points,		///< [out] Columns are the corresponding nearest points
-  UINT8VectorSequence **nearest_idxs	///< [out] Columns are the (sequential) indexes of the nearest points
+  UINT8Vector **nearest_seq_idxs	///< [out] Unique sequential indexes of the nearest points
+  );
+
+///
+/// Locate the nearest point in a lattice tiling to a given point. Return properties of the pass in
+/// dimension \c pass_dim containing this point: the first point of the pass in \c pass_first_point,
+/// the unique sequential index of the pass in \c nearest_seq_idx, the index of the nearest point
+/// within the pass in \c nearest_pass_idx, and the length of the pass in \c nearest_pass_len.
+///
+int XLALNearestLatticeTilingPass(
+  const LatticeTilingLocator *loc,	///< [in] Lattice tiling locator
+  const gsl_vector *point,		///< [in] Point for which to find nearest point
+  const size_t pass_dim,		///< [in] Dimension in which to return pass of nearest point
+  gsl_vector *pass_first_point,		///< [out] First point of the pass containing nearest point
+  UINT8 *nearest_seq_idx,		///< [out] Unique sequential index of pass containing nearest point
+  UINT8 *nearest_pass_idx,		///< [out] Index of nearest point within pass
+  UINT8 *nearest_pass_len		///< [out] Length of pass containing nearest point
   );
 
 ///
