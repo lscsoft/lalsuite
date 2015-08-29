@@ -1303,8 +1303,6 @@ static void PrintNonFixedSample(FILE *fp, LALInferenceVariables *sample){
  */
 void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
-  /* Single thread only */
-  LALInferenceThreadState *threadState = state->threads[0];
 
   FILE *outfile = NULL;
   if( LALInferenceCheckVariable(state->algorithmParams,"outfile") ){
@@ -1338,8 +1336,6 @@ void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
  */
 void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
-  /* Single thread only */
-  LALInferenceThreadState *threadState = state->threads[0];
 
   LALInferenceVariables **output_array = NULL;
   UINT4 N_output_array = 0;
