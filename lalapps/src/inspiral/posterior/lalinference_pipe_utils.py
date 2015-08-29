@@ -503,7 +503,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if cp.has_option('analysis','accounting_group'):
       self.datafind_job.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
     self.datafind_job.set_sub_file(os.path.abspath(os.path.join(self.basepath,'datafind.sub')))
-    self.preengine_job = EngineJob(self.config, os.path.join(self.basepath,'prelalinference.sub'),self.logpath,ispreengine=True,dax=self.is_dax())
+    self.preengine_job = EngineJob(self.config, os.path.join(self.basepath,'prelalinference.sub'),self.logpath,engine='lalinferencedatadump',ispreengine=True,dax=self.is_dax())
     self.preengine_job.set_grid_site('local')
     self.preengine_job.set_universe('vanilla')
     if self.config.has_option('condor','computeroqweights'):
@@ -519,7 +519,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         for a in permutations(self.ifos,N):
             ifocombos.append(a)
     for ifos in ifocombos:
-        self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath ,dax=self.is_dax(), site=site)
+        self.engine_jobs[ifos] = EngineJob(self.config, os.path.join(self.basepath,'engine_%s.sub'%(reduce(lambda x,y:x+y, map(str,ifos)))),self.logpath,engine=self.engine,dax=self.is_dax(), site=site)
     self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath,dax=self.is_dax())
     self.results_page_job.set_grid_site('local')
     self.cotest_results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspagecoherent.sub'),self.logpath,dax=self.is_dax())
@@ -1036,7 +1036,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
     computeroqweightsnode={}
     bayeslinenode={}
-    prenode=self.EngineNode(self.preengine_job)
+    prenode=LALInferenceDataDumpNode(self.preengine_job)
     node=self.EngineNode(self.engine_jobs[tuple(ifos)])
     roqeventpath=os.path.join(self.preengine_job.roqpath,str(event.event_id)+'/')
     if self.config.has_option('condor','bayesline') or self.config.has_option('condor','computeroqweights'):
@@ -1310,9 +1310,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
 
 class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
-  def __init__(self,cp,submitFile,logdir,ispreengine=False,dax=False,site=None):
+  def __init__(self,cp,submitFile,logdir,engine,ispreengine=False,dax=False,site=None):
     self.ispreengine=ispreengine
-    self.engine=get_engine_name(cp)
+    self.engine=engine
     basepath=cp.get('paths','basedir')
     if ispreengine is True:
       roqpath=os.path.join(basepath,'ROQdata')
