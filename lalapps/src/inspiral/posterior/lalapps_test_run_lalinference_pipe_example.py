@@ -63,7 +63,7 @@ path_keys = {'datafind': 'ligo_data_find',
             'lalinferencenest': 'lalinference_nest',
             'lalinferencemcmc': 'lalinference_mcmc',
             'lalinferencebambi': 'lalinference_bambi',
-            'lalinferencedatadump': 'lalinference_datadump'
+            'lalinferencedatadump': 'lalinference_datadump',
             'bayesline': 'BayesLine',
             'skyarea': 'run_sky_area.py',
             'mpirun': 'mpirun',
