@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <lal/LALInference.h>
+#include <lal/LALInferenceInit.h>
 #include <lal/LALInferenceReadData.h>
 
 int main(int argc, char *argv[]){
