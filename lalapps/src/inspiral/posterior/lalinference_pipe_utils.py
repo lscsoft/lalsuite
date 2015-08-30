@@ -1383,12 +1383,18 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         if ispreengine is False:
           self.machine_count=cp.get('mpi','machine-count')
           self.machine_memory=cp.get('mpi','machine-memory')
+          if cp.has_option('mpi','mpi_task_count'):
+            self.mpi_task_count=cp.get('mpi','mpi_task_count')
+          else:
+            self.mpi_task_count=self.machine_count
         else:
           self.machine_count=str(1)
           self.machine_memory=cp.get('mpi','machine-memory')
+          self.mpi_task_count=self.machine_count
       else:
         self.machine_count=str(1)
         self.machine_memory=str(1024) # default value if the user did not specify something
+        self.mpi_task_count=self.machine_count
       #self.add_condor_cmd('machine_count',machine_count)
       #self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
       if hostname=='pcdev1.phys.uwm.edu':
@@ -1697,7 +1703,7 @@ class LALInferenceMCMCNode(EngineNode):
     self.engine='lalinferencemcmc'
     self.outfilearg='outfile'
     self.add_var_opt('mpirun',li_job.mpirun)
-    self.add_var_opt('np',str(li_job.machine_count))
+    self.add_var_opt('np',str(li_job.mpi_task_count))
     self.add_var_opt('executable',li_job.binary)
 
   def set_output_file(self,filename):
