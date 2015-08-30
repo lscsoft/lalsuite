@@ -36,7 +36,8 @@ bin_PROGRAMS = \
 	$(metaio_progs) \
 	$(frame_progs) \
 	$(pulsar_progs) \
-	$(mpi_progs)
+	$(mpi_progs) \
+	lalinference_datadump
 #	bayesline
 
 noinst_PROGRAMS = \
