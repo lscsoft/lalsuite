@@ -891,6 +891,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
     if self.config.has_option('analysis','upload-to-gracedb'):
       if self.config.getboolean('analysis','upload-to-gracedb') and event.GID is not None:
+        self.add_gracedb_start_node(event.GID)
         self.add_gracedb_log_node(respagenode,event.GID)
       elif self.config.has_option('analysis','ugid'):
         # LIB will want to upload info to gracedb but if we pass the gid in the usual way the pipeline
@@ -898,6 +899,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         # To avoid that, LIB will read the gracedDB id to upload info to as an ugid=ID option
         # in the analysis section.
         ugid=self.config.get('analysis','ugid')
+        self.add_gracedb_start_node(ugid)
         self.add_gracedb_log_node(respagenode,ugid)
     return True
 
@@ -934,6 +936,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if event.GID is not None:
       if self.config.has_option('analysis','upload-to-gracedb'):
         if self.config.getboolean('analysis','upload-to-gracedb'):
+          self.add_gracedb_start_node(event.GID)
           self.add_gracedb_log_node(respagenode,event.GID)
 
   def add_full_analysis_lalinferencebambi(self,event):
@@ -964,6 +967,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if event.GID is not None:
       if self.config.has_option('analysis','upload-to-gracedb'):
         if self.config.getboolean('analysis','upload-to-gracedb'):
+          self.add_gracedb_start_node(event.GID)
           self.add_gracedb_log_node(respagenode,event.GID)
 
   def add_science_segments(self):
@@ -1240,12 +1244,19 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.add_node(node)
     return node
 
+  def add_gracedb_start_node(self,gid):
+
+    node=GraceDBNode(self.gracedbjob,parent=None,gid=gid,command='log',tag='pe')
+    node.set_message('LALInference online parameter estimation started.')
+    self.add_node(node)
+    return node
+
   def add_gracedb_log_node(self,respagenode,gid):
     nodes=[]
-    node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='log')
+    node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='log',tag='pe')
     resurl=respagenode.webpath.replace(self.gracedbjob.basepath,self.gracedbjob.baseurl)
     #node.set_message('online parameter estimation results:  '+resurl+'/posplots.html')
-    node.set_message("\\\"\\\"online parameter estimation <a href="+resurl+"/posplots.html>results</a>\\\"\\\" ")
+    node.set_message("LALInference online parameter estimation finished. <a href="+resurl+"/posplots.html>results</a>")
     self.add_node(node)
     nodes.append(node)
 
@@ -1254,10 +1265,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.add_node(node)
     nodes.append(node)
 
-    node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
-    node.set_filename(respagenode.webpath+'/corner/intrinsic.png')
-    self.add_node(node)
-    nodes.append(node)
+    #node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
+    #node.set_filename(respagenode.webpath+'/corner/intrinsic.png')
+    #self.add_node(node)
+    #nodes.append(node)
 
     return nodes
 
