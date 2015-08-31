@@ -299,7 +299,7 @@ int XLALSimInspiralChooseTDWaveform(
     )
 {
     REAL8 LNhatx, LNhaty, LNhatz, E1x, E1y, E1z;
-    REAL8 tmp1, tmp2;
+    //REAL8 tmp1, tmp2;
     int ret;
     /* N.B. the quadrupole of a spinning compact body labeled by A is 
      * Q_A = - quadparam_A chi_A^2 m_A^3 (see gr-qc/9709032)
@@ -606,7 +606,10 @@ int XLALSimInspiralChooseTDWaveform(
                 XLALPrintError("XLAL Error : For the spindominatedwf approximant maximal phase correction is 2 PN\n");
                 XLAL_ERROR(XLAL_EDOM);
                 }
-		ROTATEY(i,S1x,S1y,S1z);
+		spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
+	        spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
+	        iTmp=i;
+	        XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
                 LNhatx = sin(i);
                 LNhaty = 0.;
                 LNhatz = cos(i);
