@@ -148,7 +148,7 @@ static void LT_GetBounds(
 
     // Do not allow upper parameter-space bound to be less than lower parameter-space bound
     if (*phys_upper < *phys_lower) {
-      *phys_upper = GSL_NAN;
+      *phys_upper = *phys_lower;
     }
 
   } else {
