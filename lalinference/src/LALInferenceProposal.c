@@ -55,6 +55,11 @@
 #define UNUSED
 #endif
 
+typedef enum {
+  USES_DISTANCE_VARIABLE,
+  USES_LOG_DISTANCE_VARIABLE
+} DistanceParam;
+
 const char *const cycleArrayName = "Proposal Cycle";
 const char *const cycleArrayLengthName = "Proposal Cycle Length";
 const char *const cycleArrayCounterName = "Proposal Cycle Counter";
@@ -214,7 +219,7 @@ REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
     /* One instance of each proposal object is stored in cycle->proposals.
         cycle->order is a list of elements to call from the proposals */
   
-    REAL8 logPropRatio
+    REAL8 logPropRatio=-INFINITY;
     do
     {
       i = cycle->order[cycle->counter];
@@ -986,7 +991,7 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceThreadState *thread,
 
     /* Choose a different sample */
     do {
-        i = gsl_rng_uniform_int(runState->GSLrandom, nPts);
+        i = gsl_rng_uniform_int(thread->GSLrandom, nPts);
     } while (!LALInferenceCompareVariables(currentParams, dePts[i]));
 
     ptI = dePts[i];
@@ -2887,7 +2892,7 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
   }
   if(!LALInferenceCheckVariable(currentParams,"optimal_snr") || !LALInferenceCheckVariable(currentParams,"matched_filter_snr"))
     /* Force a likelihood calculation to generate the parameters */
-    runState->likelihood(currentParams,thread->parent->data,thread->model);
+    thread->parent->likelihood(currentParams,thread->parent->data,thread->model);
   if(!LALInferenceCheckVariable(currentParams,"optimal_snr") || !LALInferenceCheckVariable(currentParams,"matched_filter_snr"))
     XLAL_ERROR_REAL8(XLAL_FAILURE,"Could not find optimal_snr or matched_filter_snr for distance likelihood jump\n");
   REAL8 OptimalSNR = LALInferenceGetREAL8Variable(currentParams,"optimal_snr");

@@ -1302,8 +1302,8 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
         subchain_length=0;
         for(UINT4 i=0;i<Nnames;i++)
         {
-          if(LALInferenceCheckVariable(runState->currentParams,extra_names[i]))
-            LALInferenceRemoveVariable(runState->currentParams,extra_names[i]);
+          if(LALInferenceCheckVariable(threadState->currentParams,extra_names[i]))
+            LALInferenceRemoveVariable(threadState->currentParams,extra_names[i]);
         }
         /* Draw an independent sample from the prior */
         do{
