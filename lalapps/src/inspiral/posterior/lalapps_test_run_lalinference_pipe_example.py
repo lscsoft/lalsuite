@@ -181,8 +181,6 @@ def replace_GraceDB(line):
         return 'amporder=0\npsdFit=\ndifferential-buffer-limit=1000000\n'
     if 'parname-max' in line:
         return line+'distance-max=300\n'
-    if 'deltaLogL=' in line:
-        return line.replace('#','').strip()+'\n'
     return line
 
 with open(args.output+'/GraceDB/'+os.path.basename(ini_file),'w') as fout:
