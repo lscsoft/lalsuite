@@ -1742,6 +1742,7 @@ class LALInferenceBAMBINode(EngineNode):
     self.add_file_opt(self.outfilearg,self.fileroot,file_is_output_file=True)
     self.add_output_file(self.Bfilename)
     self.add_output_file(self.posfile)
+    self.add_output_file(self.headerfile)
 
   def get_B_file(self):
     return self.Bfilename
