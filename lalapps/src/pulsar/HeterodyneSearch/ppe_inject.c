@@ -150,7 +150,7 @@ void inject_signal( LALInferenceRunState *runState ){
         LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
         ifo_model = ifo_model->next;
       }
-      ifo_model = runState->model->ifo;
+      ifo_model = runState->threads[0]->model->ifo;
       /* setup nonGR lookup tables */
       LALSource psr;
       psr.equatorialCoords.longitude = PulsarGetREAL8ParamOrZero( injpars, "RA" );
