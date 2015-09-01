@@ -250,8 +250,14 @@ log_and_show "Build start `date`"
 
 missing_wine_warning=false
 if [ ."$build_win32" = ."true" ] ; then
-    BUILD="${BUILD}_win32"
-    INSTALL="${INSTALL}_win32"
+    if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
+	platform=x86_64-pc-linux-gnu
+	BUILD="${BUILD}_win64"
+	INSTALL="${INSTALL}_win64"
+    else
+	BUILD="${BUILD}_win32"
+	INSTALL="${INSTALL}_win32"
+    fi
     export CC=${cross_prefix}-gcc
     export CXX=${cross_prefix}-g++
     export AR=${cross_prefix}-ar
@@ -290,6 +296,8 @@ else
 	Darwin)
             if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
 		platform=x86_64-apple-darwin
+		BUILD="${BUILD}_64"
+		INSTALL="${INSTALL}_64"
 	    else
 		platform=i686-apple-darwin
 	    fi
@@ -298,6 +306,8 @@ else
 	    LDFLAGS="-lpthread $LDFLAGS"
 	    if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
 	        platform=x86_64-pc-linux-gnu
+		BUILD="${BUILD}_64"
+		INSTALL="${INSTALL}_64"
 	    else
 	        platform=i686-pc-linux-gnu
 	    fi
@@ -357,6 +367,14 @@ echo BUILD_INFO="\"$BUILD_INFO\"" >> "$LOGFILE"
 if [ ."$missing_wine_warning" = ."true" ] ; then
     log_and_show "WARNING: 'wine' not found, disabling check as it won't work"
 fi
+# augment wine's PATH such that
+#   /usr/lib/gcc/i686-w64-mingw32/4.8/libstdc++-6.dll
+# and
+#   /usr/i686-w64-mingw32/lib/libwinpthread-1.dll
+# are found
+# test -r ~/.wine/system.reg && !fgrep i686-w64-mingw32 ~/.wine/system.reg &&
+#   sed -i~ 's/^\("PATH"=.*\)"$/\1;Z:\\\\usr\\\\i686-w64-mingw32\\\\lib;Z:\\\\usr\\\\lib\\\\gcc\\\\i686-w64-mingw32\\\\4.8/' ~/.wine/system.reg
+# see https://fedoraproject.org/wiki/MinGW/Configure_wine
 
 if ! [ .$check_only = .true ]; then
 
@@ -514,6 +532,7 @@ if test -n "$build_binutils"; then
     log_and_do cd "$SOURCE/$binutils"
     log_and_do mkdir -p "$INSTALL/include/bfd"
     log_and_do cp -r include/* bfd/*.h "$BUILD/$binutils/binutils/config.h" "$INSTALL/include/bfd"
+    log_and_do rm -f "$INSTALL/include/bfd/getopt.h"
     if [ ."$build_win32" = ."true" ] ; then
 	log_and_do cd "$BUILD/$binutils"
 	log_and_do cp "intl/libintl.a" "$INSTALL/lib"
@@ -596,7 +615,7 @@ else
     fi
 fi
 
-lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --disable-lalsimulation --disable-lalxml --enable-boinc --disable-silent-rules --without-simd $shared_copt $cross_copt --prefix=$INSTALL"
+lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --disable-lalsimulation --disable-lalxml --enable-boinc --disable-silent-rules --disable-pthread-lock $shared_copt $cross_copt --prefix=$INSTALL"
 if [ ."$build_win32" = ."true" ] ; then
     export BOINC_EXTRA_LIBS="-lpsapi"
 fi

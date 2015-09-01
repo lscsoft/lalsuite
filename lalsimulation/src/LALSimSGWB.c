@@ -33,70 +33,6 @@
 #include <lal/Units.h>
 #include <lal/LALSimSGWB.h>
 
-
-/**
- * Creates a frequency series that contains a flat SGWB spectrum with the
- * specified power Omega0 above some low frequency cutoff flow.
- */
-REAL8FrequencySeries *XLALSimSGWBOmegaGWFlatSpectrum(
-	double Omega0,	/**< [in] sgwb spectrum power (dimensionless) */
-	double flow,	/**< [in] low frequncy cutoff of SGWB spectrum (Hz) */
-	double deltaF,	/**< [in] frequency bin width (Hz) */
-	size_t length	/**< [in] number of frequency bins */
-)
-{
-	REAL8FrequencySeries *OmegaGW;
-	LIGOTimeGPS epoch = {0, 0};
-	size_t klow = flow / deltaF;
-	size_t k;
-	OmegaGW = XLALCreateREAL8FrequencySeries("OmegaGW", &epoch, 0.0, deltaF, &lalDimensionlessUnit, length);
-	/* zero DC component */
-	OmegaGW->data->data[0] = 0.0;
-	/* zero up to low frequency cutoff */
-	for (k = 1; k < klow; ++k)
-		OmegaGW->data->data[k] = 0.0;
-	/* set remaining components */
-	for (; k < length - 1; ++k)
-		OmegaGW->data->data[k] = Omega0;
-	/* zero Nyquist component */
-	OmegaGW->data->data[length - 1] = 0.0;
-	return OmegaGW;
-}
-
-
-/**
- * Creates a frequency series that contains a power law SGWB spectrum with the
- * specified power Omegaref at reference frequency fref and specified power law
- * power alpha above some low frequency cutoff flow.
- */
-REAL8FrequencySeries *XLALSimSGWBOmegaGWPowerLawSpectrum(
-	double Omegaref,	/**< [in] sgwb spectrum power at reference frequency (dimensionless) */
-	double alpha,		/**< [in] sgwb spectrum power law power */
-	double fref,		/**< [in] reference frequency (Hz) */
-	double flow,		/**< [in] low frequncy cutoff of SGWB spectrum (Hz) */
-	double deltaF,		/**< [in] frequency bin width (Hz) */
-	size_t length		/**< [in] number of frequency bins */
-)
-{
-	REAL8FrequencySeries *OmegaGW;
-	LIGOTimeGPS epoch = {0, 0};
-	size_t klow = flow / deltaF;
-	size_t k;
-	OmegaGW = XLALCreateREAL8FrequencySeries("OmegaGW", &epoch, 0.0, deltaF, &lalDimensionlessUnit, length);
-	/* zero DC component */
-	OmegaGW->data->data[0] = 0.0;
-	/* zero up to low frequency cutoff */
-	for (k = 1; k < klow; ++k)
-		OmegaGW->data->data[k] = 0.0;
-	/* set remaining components */
-	for (; k < length - 1; ++k)
-		OmegaGW->data->data[k] = Omegaref * pow(k * deltaF / fref, alpha);
-	/* zero Nyquist component */
-	OmegaGW->data->data[length - 1] = 0.0;
-	return OmegaGW;
-}
-
-
 /* 
  * This routine generates a single segment of data.  Note that this segment is
  * generated in the frequency domain and is inverse Fourier transformed into
@@ -194,6 +130,76 @@ static int XLALSimSGWBSegment(REAL8TimeSeries **h, const LALDetector *detectors,
 #	undef CLEANUP_AND_RETURN
 }
 
+/**
+ * @addtogroup LALSimSGWB_c
+ * @brief Routines to compute a stochastic gravitational-wave background
+ * power spectrum and to produce a continuous stream of simulated
+ * gravitational-wave detector strain.
+ * @{
+ */
+
+/**
+ * Creates a frequency series that contains a flat SGWB spectrum with the
+ * specified power Omega0 above some low frequency cutoff flow.
+ */
+REAL8FrequencySeries *XLALSimSGWBOmegaGWFlatSpectrum(
+	double Omega0,	/**< [in] sgwb spectrum power (dimensionless) */
+	double flow,	/**< [in] low frequncy cutoff of SGWB spectrum (Hz) */
+	double deltaF,	/**< [in] frequency bin width (Hz) */
+	size_t length	/**< [in] number of frequency bins */
+)
+{
+	REAL8FrequencySeries *OmegaGW;
+	LIGOTimeGPS epoch = {0, 0};
+	size_t klow = flow / deltaF;
+	size_t k;
+	OmegaGW = XLALCreateREAL8FrequencySeries("OmegaGW", &epoch, 0.0, deltaF, &lalDimensionlessUnit, length);
+	/* zero DC component */
+	OmegaGW->data->data[0] = 0.0;
+	/* zero up to low frequency cutoff */
+	for (k = 1; k < klow; ++k)
+		OmegaGW->data->data[k] = 0.0;
+	/* set remaining components */
+	for (; k < length - 1; ++k)
+		OmegaGW->data->data[k] = Omega0;
+	/* zero Nyquist component */
+	OmegaGW->data->data[length - 1] = 0.0;
+	return OmegaGW;
+}
+
+
+/**
+ * Creates a frequency series that contains a power law SGWB spectrum with the
+ * specified power Omegaref at reference frequency fref and specified power law
+ * power alpha above some low frequency cutoff flow.
+ */
+REAL8FrequencySeries *XLALSimSGWBOmegaGWPowerLawSpectrum(
+	double Omegaref,	/**< [in] sgwb spectrum power at reference frequency (dimensionless) */
+	double alpha,		/**< [in] sgwb spectrum power law power */
+	double fref,		/**< [in] reference frequency (Hz) */
+	double flow,		/**< [in] low frequncy cutoff of SGWB spectrum (Hz) */
+	double deltaF,		/**< [in] frequency bin width (Hz) */
+	size_t length		/**< [in] number of frequency bins */
+)
+{
+	REAL8FrequencySeries *OmegaGW;
+	LIGOTimeGPS epoch = {0, 0};
+	size_t klow = flow / deltaF;
+	size_t k;
+	OmegaGW = XLALCreateREAL8FrequencySeries("OmegaGW", &epoch, 0.0, deltaF, &lalDimensionlessUnit, length);
+	/* zero DC component */
+	OmegaGW->data->data[0] = 0.0;
+	/* zero up to low frequency cutoff */
+	for (k = 1; k < klow; ++k)
+		OmegaGW->data->data[k] = 0.0;
+	/* set remaining components */
+	for (; k < length - 1; ++k)
+		OmegaGW->data->data[k] = Omegaref * pow(k * deltaF / fref, alpha);
+	/* zero Nyquist component */
+	OmegaGW->data->data[length - 1] = 0.0;
+	return OmegaGW;
+}
+
 
 /**
  * Routine that may be used to generate sequential segments of stochastic
@@ -210,7 +216,7 @@ static int XLALSimSGWBSegment(REAL8TimeSeries **h, const LALDetector *detectors,
  * stochastic background signals with a "flat" (OmegaGW = const) spectrum for
  * the HLV network.
  *
- * \code
+ * @code
  * #include <stdio.h>
  * #include <gsl/gsl_rng.h>
  * #include <lal/LALStdlib.h>
@@ -249,24 +255,21 @@ static int XLALSimSGWBSegment(REAL8TimeSeries **h, const LALDetector *detectors,
  * 			printf("%.9f\t%e\t%e\t%e\n", XLALGPSGetREAL8(&h[0]->epoch) + j / srate, h[0]->data->data[j], h[1]->data->data[j], h[2]->data->data[j]);
  * 		XLALSimSGWB(h, detectors, 3, stride, Omega0, flow, H0, rng); // make more data
  * 	}
- * \endcode
+ * @endcode
  *
  * If only one single segment of data is required, set stride to be the length
  * of the timeseries data vector.  This will make a single segment of data
  * that is *not* periodic (also, in this case it will not advance the epoch of
  * the timeseries).
  *
- * Note:
+ * @note
+ * - If stride = 0, initialize h by generating one (periodic) realization of
+ *   noise; subsequent calls should have non-zero stride.
+ * - If stride = h->data->length then generate one segment of non-periodic
+ *   noise by generating two different realizations and feathering them
+ *   together.
  *
- * - If stride = 0, initialize h by generating one (periodic)
- * realization of noise; subsequent calls should have non-zero
- * stride.
- *
- * - If stride = h->data->length then generate one segment of
- * non-periodic noise by generating two different realizations
- * and feathering them together.
- *
- * Warning: only the first stride points are valid.
+ * @warning Only the first stride points are valid.
  */
 int XLALSimSGWB(
 	REAL8TimeSeries **h,			/**< [in/out] array of sgwb timeseries for detector network */
@@ -368,7 +371,7 @@ int XLALSimSGWB(
  * stochastic background signals with a "flat" (OmegaGW = const) spectrum for
  * the HLV network.
  *
- * \code
+ * @code
  * #include <stdio.h>
  * #include <gsl/gsl_rng.h>
  * #include <lal/LALStdlib.h>
@@ -405,24 +408,21 @@ int XLALSimSGWB(
  * 			printf("%.9f\t%e\t%e\t%e\n", XLALGPSGetREAL8(&h[0]->epoch) + j / srate, h[0]->data->data[j], h[1]->data->data[j], h[2]->data->data[j]);
  * 		XLALSimSGWBFlatSpectrum(h, detectors, 3, stride, Omega0, flow, H0, rng); // make more data
  * 	}
- * \endcode
+ * @endcode
  *
  * If only one single segment of data is required, set stride to be the length
  * of the timeseries data vector.  This will make a single segment of data
  * that is *not* periodic (also, in this case it will not advance the epoch of
  * the timeseries).
  *
- * Note:
+ * @note
+ * - If stride = 0, initialize h by generating one (periodic) realization of
+ *   noise; subsequent calls should have non-zero stride.
+ * - If stride = h->data->length then generate one segment of non-periodic
+ *   noise by generating two different realizations and feathering them
+ *   together.
  *
- * - If stride = 0, initialize h by generating one (periodic)
- * realization of noise; subsequent calls should have non-zero
- * stride.
- *
- * - If stride = h->data->length then generate one segment of
- * non-periodic noise by generating two different realizations
- * and feathering them together.
- *
- * Warning: only the first stride points are valid.
+ * @warning Only the first stride points are valid.
  */
 int XLALSimSGWBFlatSpectrum(
 	REAL8TimeSeries **h,			/**< [in/out] array of sgwb timeseries for detector network */
@@ -469,7 +469,7 @@ int XLALSimSGWBFlatSpectrum(
  * stochastic background signals with a "flat" (OmegaGW = const) spectrum for
  * the HLV network.
  *
- * \code
+ * @code
  * #include <stdio.h>
  * #include <gsl/gsl_rng.h>
  * #include <lal/LALStdlib.h>
@@ -508,24 +508,21 @@ int XLALSimSGWBFlatSpectrum(
  * 			printf("%.9f\t%e\t%e\t%e\n", XLALGPSGetREAL8(&h[0]->epoch) + j / srate, h[0]->data->data[j], h[1]->data->data[j], h[2]->data->data[j]);
  * 		XLALSimSGWBPowerLawSpectrum(h, detectors, 3, stride, Omegaref, alpha, fref, flow, H0, rng); // make more data
  * 	}
- * \endcode
+ * @endcode
  *
  * If only one single segment of data is required, set stride to be the length
  * of the timeseries data vector.  This will make a single segment of data
  * that is *not* periodic (also, in this case it will not advance the epoch of
  * the timeseries).
  *
- * Note:
+ * @note
+ * - If stride = 0, initialize h by generating one (periodic) realization of
+ *   noise; subsequent calls should have non-zero stride.
+ * - If stride = h->data->length then generate one segment of non-periodic
+ *   noise by generating two different realizations and feathering them
+ *   together.
  *
- * - If stride = 0, initialize h by generating one (periodic)
- * realization of noise; subsequent calls should have non-zero
- * stride.
- *
- * - If stride = h->data->length then generate one segment of
- * non-periodic noise by generating two different realizations
- * and feathering them together.
- *
- * Warning: only the first stride points are valid.
+ * @warning Only the first stride points are valid.
  */
 int XLALSimSGWBPowerLawSpectrum(
 	REAL8TimeSeries **h,			/**< [in/out] array of sgwb timeseries for detector network */
@@ -556,6 +553,7 @@ int XLALSimSGWBPowerLawSpectrum(
 	return 0;
 }
 
+/** @} */
 
 /*
  *

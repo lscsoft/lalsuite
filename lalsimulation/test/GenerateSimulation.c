@@ -80,6 +80,7 @@ const char * usage =
 "                             TaylorT3\n"
 "                             TaylorT4\n"
 "                             TaylorEt\n"
+"                             EccentricTD\n"
 "                             IMRPhenomA\n"
 "                             IMRPhenomB\n"
 "                             IMRPhenomC\n"

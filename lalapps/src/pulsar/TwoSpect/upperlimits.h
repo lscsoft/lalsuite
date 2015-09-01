@@ -29,21 +29,21 @@ struct ncx2cdf_solver_params
    REAL8 ULpercent;
 };
 
-UpperLimitVector * new_UpperLimitVector(UINT4 length);
-UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 length);
-void reset_UpperLimitStruct(UpperLimit *ul);
-void free_UpperLimitVector(UpperLimitVector *vector);
-void free_UpperLimitStruct(UpperLimit *ul);
+UpperLimitVector * createUpperLimitVector(const UINT4 length);
+UpperLimitVector * resizeUpperLimitVector(UpperLimitVector *vector, const UINT4 length);
+void resetUpperLimitStruct(UpperLimit *ul);
+void destroyUpperLimitVector(UpperLimitVector *vector);
+void destroyUpperLimitStruct(UpperLimit *ul);
 
 
-INT4 skypoint95UL(UpperLimit *ul, UserInput_t *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, ihsfarStruct *ihsfar, REAL4Vector *fbinavgs);
-REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p);
-REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p);
-REAL8 gsl_ncx2cdf_withouttinyprob_solver(REAL8 x, void *p);
-REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(REAL8 x, void *p);
-REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver(REAL8 x, void *p);
-REAL8 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver(REAL8 x, void *p);
+INT4 skypoint95UL(UpperLimit *ul, const UserInput_t *params, const ffdataStruct *ffdata, const ihsMaximaStruct *ihsmaxima, const ihsfarStruct *ihsfar, const REAL4VectorAligned *fbinavgs);
+REAL8 gsl_ncx2cdf_solver(const REAL8 x, void *p);
+REAL8 gsl_ncx2cdf_float_solver(const REAL8 x, void *p);
+REAL8 gsl_ncx2cdf_withouttinyprob_solver(const REAL8 x, void *p);
+REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(const REAL8 x, void *p);
+REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver(const REAL8 x, void *p);
+REAL8 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver(const REAL8 x, void *p);
 
-INT4 outputUpperLimitToFile(CHAR *outputfile, UpperLimit ul, INT4 printAllULvalues);
+INT4 outputUpperLimitToFile(const CHAR *outputfile, const UpperLimit ul, const BOOLEAN printAllULvalues);
 
 #endif

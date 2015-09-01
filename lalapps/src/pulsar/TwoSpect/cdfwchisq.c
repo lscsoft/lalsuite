@@ -515,42 +515,16 @@ INT4 fast_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 taus
    XLAL_CHECK( (scaledweightvectorsq = createAlignedREAL8Vector(vars->weights->length, 32)) != NULL, XLAL_EFUNC );
 
    for (INT4 ii=nterm; ii>=0; ii--) uVector->data[ii] = (REAL8)ii;
-   if (vars->vectorMath==1) {
-      XLAL_CHECK( sseAddScalarToREAL8Vector(uVector, uVector, 0.5) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( sseScaleREAL8Vector(oneoverPiTimesiiPlusHalfVector, uVector, LAL_PI) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( sseScaleREAL8Vector(uVector, uVector, interv) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( sseScaleREAL8Vector(uVectorTimesThreshold, uVector, vars->c) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( sseScaleREAL8Vector(twoUvector, uVector, 2.0) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( sseInvertREAL8Vector(oneoverPiTimesiiPlusHalfVector, oneoverPiTimesiiPlusHalfVector) == XLAL_SUCCESS, XLAL_EFUNC );
-   } else if (vars->vectorMath==2) {
-      XLAL_CHECK( avxAddScalarToREAL8Vector(uVector, uVector, 0.5) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( avxScaleREAL8Vector(oneoverPiTimesiiPlusHalfVector, uVector, LAL_PI) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( avxScaleREAL8Vector(uVector, uVector, interv) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( avxScaleREAL8Vector(uVectorTimesThreshold, uVector, vars->c) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( avxScaleREAL8Vector(twoUvector, uVector, 2.0) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( avxInvertREAL8Vector(oneoverPiTimesiiPlusHalfVector, oneoverPiTimesiiPlusHalfVector) == XLAL_SUCCESS, XLAL_EFUNC );
-   } else {
-      for (INT4 ii=nterm; ii>=0; ii--) {
-         uVector->data[ii] = (uVector->data[ii] + 0.5)*interv;
-         uVectorTimesThreshold->data[ii] = uVector->data[ii]*vars->c;
-         twoUvector->data[ii] = 2.0*uVector->data[ii];
-         oneoverPiTimesiiPlusHalfVector->data[ii] = 1.0/(LAL_PI*(ii+0.5));
-      }
-   }
+   XLAL_CHECK( VectorShiftREAL8(uVector, uVector, 0.5, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( VectorScaleREAL8(oneoverPiTimesiiPlusHalfVector, uVector, LAL_PI, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( VectorScaleREAL8(uVector, uVector, interv, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( VectorScaleREAL8(uVectorTimesThreshold, uVector, vars->c, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( VectorScaleREAL8(twoUvector, uVector, 2.0, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( VectorInvertREAL8(oneoverPiTimesiiPlusHalfVector, oneoverPiTimesiiPlusHalfVector, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
 
    for (INT4 ii=nterm; ii>=0; ii--) {
-      if (vars->vectorMath==1) {
-         XLAL_CHECK( sseScaleREAL8Vector(scaledweightvector, vars->weights, twoUvector->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC );
-         XLAL_CHECK( sseDDVectorMultiply(scaledweightvectorsq, scaledweightvector, scaledweightvector) == XLAL_SUCCESS, XLAL_EFUNC );
-      } else if (vars->vectorMath==2) {
-         XLAL_CHECK( avxScaleREAL8Vector(scaledweightvector, vars->weights, twoUvector->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC );
-         XLAL_CHECK( avxDDVectorMultiply(scaledweightvectorsq, scaledweightvector, scaledweightvector) == XLAL_SUCCESS, XLAL_EFUNC );
-      } else {
-         for (UINT4 jj=0; jj<scaledweightvector->length; jj++) {
-            scaledweightvector->data[jj] = vars->weights->data[jj]*twoUvector->data[ii];
-            scaledweightvectorsq->data[jj] = scaledweightvector->data[jj]*scaledweightvector->data[jj];
-         }
-      }
+      XLAL_CHECK( VectorScaleREAL8(scaledweightvector, vars->weights, twoUvector->data[ii], vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( VectorMultiplyREAL8(scaledweightvectorsq, scaledweightvector, scaledweightvector, vars->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
 
       REAL8 logofproductterm = 0.0, sinetermargumentsum = 0.0, sumofabssinesumargs = 0.0;
       for (UINT4 jj=0; jj<scaledweightvector->length; jj++) {

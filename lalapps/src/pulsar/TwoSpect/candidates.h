@@ -23,24 +23,110 @@
 #include <lal/RealFFT.h>
 #include "TwoSpectTypes.h"
 
-candidateVector * new_candidateVector(UINT4 length);
-candidateVector * resize_candidateVector(candidateVector *vector, UINT4 length);
-candidateVector * keepMostSignificantCandidates(candidateVector *input, UserInput_t *params);
-void free_candidateVector(candidateVector *vector);
+candidateVector * createcandidateVector(const UINT4 length);
+candidateVector * resizecandidateVector(candidateVector *vector, const UINT4 length);
+candidateVector * keepMostSignificantCandidates(const candidateVector *input, const UserInput_t *params);
+void destroycandidateVector(candidateVector *vector);
 
-void loadCandidateData(candidate* output, REAL8 fsig, REAL8 period, REAL8 moddepth, REAL4 ra, REAL4 dec, REAL8 statval, REAL8 h0, REAL8 prob, INT4 proberrcode, REAL8 normalization, INT4 templateVectorIndex);
+void loadCandidateData(candidate* output,
+                       const REAL8 fsig,
+                       const REAL8 period,
+                       const REAL8 moddepth,
+                       const REAL4 ra,
+                       const REAL4 dec,
+                       const REAL8 statval,
+                       const REAL8 h0,
+                       const REAL8 prob,
+                       const INT4 proberrcode,
+                       const REAL8 normalization,
+                       const INT4 templateVectorIndex);
 
-INT4 analyzeOneTemplate(candidate *output, candidate *input, ffdataStruct *ffdata, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, UserInput_t *params, INT4Vector *sftexist, REAL4FFTPlan *plan, gsl_rng *rng, BOOLEAN exactflag);
-INT4 bruteForceTemplateSearch(candidate *output, candidate input, TwoSpectParamSpaceSearchVals *paramspace, UserInput_t *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, gsl_rng *rng, BOOLEAN useExactTemplates);
-INT4 bruteForceTemplateTest(candidateVector **output, candidate input, TwoSpectParamSpaceSearchVals *paramspace, UserInput_t *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, gsl_rng *rng, BOOLEAN useExactTemplates);
-INT4 templateSearch_scox1Style(candidateVector **output, REAL8 fminimum, REAL8 fspan, REAL8 period, REAL8 asini, REAL8 asinisigma, SkyPosition skypos, UserInput_t *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, gsl_rng *rng, BOOLEAN useExactTemplates);
-INT4 clusterCandidates(candidateVector **output, candidateVector *input, ffdataStruct *ffdata, UserInput_t *params, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, INT4Vector *sftexist, gsl_rng *rng, INT4 option);
-INT4 testIHScandidates(candidateVector **output, candidateVector *ihsCandidates, ffdataStruct *ffdata, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, SkyPosition pos, UserInput_t *params, gsl_rng *rng);
-INT4 testTwoSpectTemplateVector(candidateVector **output, TwoSpectTemplateVector *templateVec, ffdataStruct *ffdata, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, SkyPosition skypos, UserInput_t *params, gsl_rng *rng);
+INT4 analyzeOneTemplate(candidate *output,
+                        const candidate *input,
+                        const ffdataStruct *ffdata,
+                        const REAL4VectorAligned *aveNoise,
+                        const REAL4VectorAligned *aveTFnoisePerFbinRatio,
+                        const UserInput_t *params,
+                        const INT4Vector *sftexist,
+                        const REAL4FFTPlan *plan,
+                        const gsl_rng *rng,
+                        const BOOLEAN exactflag);
+INT4 bruteForceTemplateSearch(candidate *output,
+                              const candidate input,
+                              const TwoSpectParamSpaceSearchVals *paramspace,
+                              const UserInput_t *params,
+                              const REAL4VectorAligned *ffdata,
+                              const INT4Vector *sftexist,
+                              const REAL4VectorAligned *aveNoise,
+                              const REAL4VectorAligned *aveTFnoisePerFbinRatio,
+                              const REAL4FFTPlan *secondFFTplan,
+                              const gsl_rng *rng,
+                              const BOOLEAN useExactTemplates);
+INT4 bruteForceTemplateTest(candidateVector **output,
+                            const candidate input,
+                            const TwoSpectParamSpaceSearchVals *paramspace,
+                            const UserInput_t *params,
+                            const REAL4VectorAligned *ffdata,
+                            const INT4Vector *sftexist,
+                            const REAL4VectorAligned *aveNoise,
+                            const REAL4VectorAligned *aveTFnoisePerFbinRatio,
+                            const REAL4FFTPlan *secondFFTplan,
+                            const gsl_rng *rng,
+                            const BOOLEAN useExactTemplates);
+INT4 templateSearch_scox1Style(candidateVector **output,
+                               const REAL8 fminimum,
+                               const REAL8 fspan,
+                               const REAL8 period,
+                               const REAL8 asini,
+                               const REAL8 asinisigma,
+                               const SkyPosition skypos,
+                               const UserInput_t *params,
+                               const REAL4VectorAligned *ffdata,
+                               const INT4Vector *sftexist,
+                               const REAL4VectorAligned *aveNoise,
+                               const REAL4VectorAligned *aveTFnoisePerFbinRatio,
+                               const REAL4FFTPlan *secondFFTplan,
+                               const gsl_rng *rng,
+                               const BOOLEAN useExactTemplates);
+INT4 clusterCandidates(candidateVector **output,
+                       const candidateVector *input,
+                       const ffdataStruct *ffdata,
+                       const UserInput_t *params,
+                       const REAL4VectorAligned *ffplanenoise,
+                       const REAL4VectorAligned *fbinaveratios,
+                       const INT4Vector *sftexist,
+                       const gsl_rng *rng,
+                       const BOOLEAN exactflag);
+INT4 testIHScandidates(candidateVector **output,
+                       const candidateVector *ihsCandidates,
+                       const ffdataStruct *ffdata,
+                       const REAL4VectorAligned *aveNoise,
+                       const REAL4VectorAligned *aveTFnoisePerFbinRatio,
+                       const SkyPosition pos,
+                       const UserInput_t *params,
+                       const gsl_rng *rng);
+INT4 testTwoSpectTemplateVector(candidateVector *output,
+                                const TwoSpectTemplateVector *templateVec,
+                                const ffdataStruct *ffdata,
+                                const REAL4VectorAligned *aveNoise,
+                                const REAL4VectorAligned *aveTFnoisePerFbinRatio,
+                                const SkyPosition skypos,
+                                const UserInput_t *params,
+                                const gsl_rng *rng,
+                                const UINT4 templateLen);
+INT4 analyzeCandidatesTemplateFromVector(candidateVector *output,
+                                         const candidateVector *input,
+                                         const TwoSpectTemplateVector *vector,
+                                         const ffdataStruct *ffdata,
+                                         const REAL4VectorAligned *aveNoise,
+                                         const REAL4VectorAligned *aveTFnoisePerFbinRatio,
+                                         const UserInput_t *params,
+                                         const gsl_rng *rng,
+                                         const UINT4 templateLen);
 
-REAL8 maxModDepth(REAL8 period, REAL8 cohtime);
-REAL8 minPeriod(REAL8 moddepth, REAL8 cohtime);
-REAL8 calculateR(REAL4Vector *ffdata, TwoSpectTemplate *template, REAL4Vector *noise, REAL4Vector *fbinaveratios);
+REAL8 maxModDepth(const REAL8 period, const REAL8 cohtime);
+REAL8 minPeriod(const REAL8 moddepth, const REAL8 cohtime);
+REAL8 calculateR(const REAL4VectorAligned *ffdata, const TwoSpectTemplate *template, const REAL4VectorAligned *noise, const REAL4VectorAligned *fbinaveratios);
 
 #endif
 

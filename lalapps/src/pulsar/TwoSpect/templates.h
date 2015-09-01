@@ -23,31 +23,24 @@
 #include <lal/RealFFT.h>
 #include "TwoSpectTypes.h"
 
-TwoSpectTemplate * new_TwoSpectTemplate(INT4 length);
+TwoSpectTemplate * createTwoSpectTemplate(const UINT4 length);
 void resetTwoSpectTemplate(TwoSpectTemplate *template);
-void free_TwoSpectTemplate(TwoSpectTemplate *template);
-TwoSpectTemplateVector * new_TwoSpectTemplateVector(UINT4 numTemplates, UINT4 templateLength);
-void free_TwoSpectTemplateVector(TwoSpectTemplateVector *vector);
-TwoSpectTemplateVector * generateTwoSpectTemplateVector(REAL8 Pmin, REAL8 Pmax, REAL8 dfmin, REAL8 dfmax, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, UINT4 maxvectorlength, UINT4 minTemplateLength, UINT4 maxTemplateLength, UINT4 vectormathflag, BOOLEAN exactflag);
-INT4 writeTwoSpectTemplateVector(TwoSpectTemplateVector *vector, CHAR *filename);
-TwoSpectTemplateVector * readTwoSpectTemplateVector(CHAR *filename);
-INT4 convertTemplateForSpecificFbin(TwoSpectTemplate *output, TwoSpectTemplate *input, REAL8 freq, UserInput_t *params);
+void destroyTwoSpectTemplate(TwoSpectTemplate *template);
+TwoSpectTemplateVector * createTwoSpectTemplateVector(const UINT4 numTemplates, const UINT4 templateLength);
+void destroyTwoSpectTemplateVector(TwoSpectTemplateVector *vector);
+TwoSpectTemplateVector * generateTwoSpectTemplateVector(const REAL8 Pmin, const REAL8 Pmax, const REAL8 dfmin, const REAL8 dfmax, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const UINT4 maxvectorlength, const UINT4 minTemplateLength, const UINT4 maxTemplateLength, const UINT4 vectormathflag, const BOOLEAN exactflag);
+INT4 writeTwoSpectTemplateVector(const TwoSpectTemplateVector *vector, const CHAR *filename);
+TwoSpectTemplateVector * readTwoSpectTemplateVector(const CHAR *filename);
+INT4 convertTemplateForSpecificFbin(TwoSpectTemplate *output, const TwoSpectTemplate *input, const REAL8 freq, const UserInput_t *params);
 
-INT4 makeTemplateGaussians(TwoSpectTemplate *output, candidate input, UserInput_t *params);
-INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, UINT4 minTemplateLength, UINT4 vectormathflag);
-INT4 makeTemplate(TwoSpectTemplate *output, candidate intput, UserInput_t *params, INT4Vector *sftexist, REAL4FFTPlan *plan);
-INT4 makeTemplate2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, UINT4 minTemplateLength, UINT4 vectormathflag, REAL4FFTPlan *plan);
-void insertionSort_template(TwoSpectTemplate *output, REAL4 weight, INT4 pixelloc);
+INT4 makeTemplateGaussians(TwoSpectTemplate *output, const candidate input, const UserInput_t *params);
+INT4 makeTemplateGaussians2(TwoSpectTemplate *output, const REAL8 offset, const REAL8 P, const REAL8 deltaf, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const UINT4 minTemplateLength, const UINT4 vectormathflag);
+INT4 makeTemplate(TwoSpectTemplate *output, const candidate intput, const UserInput_t *params, const INT4Vector *sftexist, const REAL4FFTPlan *plan);
+INT4 makeTemplate2(TwoSpectTemplate *output, const REAL8 offset, const REAL8 P, const REAL8 deltaf, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const UINT4 minTemplateLength, const UINT4 vectormathflag, const REAL4FFTPlan *plan);
+void insertionSort_template(TwoSpectTemplate *output, const REAL4 weight, const INT4 pixelloc);
 
-REAL8 sincxoverxsqminusone(REAL8 overage);
-REAL8 sqsincxoverxsqminusone(REAL8 x);
-
-INT4 truncated_sseScaleREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scale, UINT4 length);
-INT4 truncated_sseAddScalarToREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scalar, UINT4 length);
-INT4 truncated_sseSSVectorMultiply(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2, UINT4 length);
-INT4 truncated_avxScaleREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scale, UINT4 length);
-INT4 truncated_avxAddScalarToREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scalar, UINT4 length);
-INT4 truncated_avxSSVectorMultiply(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2, UINT4 length);
+REAL8 sincxoverxsqminusone(const REAL8 x);
+REAL8 sqsincxoverxsqminusone(const REAL8 x);
 
 #endif
 

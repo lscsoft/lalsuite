@@ -40,6 +40,9 @@
 #include <lal/StringVector.h>
 #include <lal/Units.h>
 #include <lal/ConfigFile.h>
+#include <lal/LFTandTSutils.h>
+#include <fftw3.h>
+#include <lal/FFTWMutex.h>
 
 // ---------- local defines
 
@@ -48,9 +51,11 @@
 // ---------- local type definitions
 
 // ---------- Global variables
+const REAL8 eps = 10 * LAL_REAL8_EPS;
 
 // ---------- local prototypes
 static UINT4 gcd (UINT4 numer, UINT4 denom);
+int XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne );
 
 // ==================== FUNCTION DEFINITIONS ====================
 
@@ -61,7 +66,7 @@ static UINT4 gcd (UINT4 numer, UINT4 denom);
  */
 int
 XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to optional SFT-vector for output
-                          MultiREAL4TimeSeries **multiTseries,		///< [out] pointer to optional timeseries-vector for output
+                          MultiREAL8TimeSeries **multiTseries,		///< [out] pointer to optional timeseries-vector for output
                           const PulsarParamsVector *injectionSources,	///< [in] (optional) array of sources inject
                           const CWMFDataParams *dataParams,		///< [in] parameters specifying the type of data to generate
                           const EphemerisData *edat			///< [in] ephemeris data
@@ -91,7 +96,7 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
 
   // ----- prepare output containers, as required
   MultiSFTVector *outMSFTs = NULL;
-  MultiREAL4TimeSeries *outMTS = NULL;
+  MultiREAL8TimeSeries *outMTS = NULL;
   if ( multiSFTs != NULL )
     {
       XLAL_CHECK ( (outMSFTs = XLALCalloc ( 1, sizeof(*outMSFTs) )) != NULL, XLAL_ENOMEM );
@@ -107,28 +112,15 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
 
   for ( UINT4 X=0; X < numDet; X ++ )
     {
-      /* detector params */
-      CWMFDataParams dataParamsX = (*dataParams); // struct-copy for general settings
-      dataParamsX.multiIFO.length = 1;
-      dataParamsX.multiIFO.sites[0] = dataParams->multiIFO.sites[X];
-      dataParamsX.multiNoiseFloor.length = 1;
-      dataParamsX.multiNoiseFloor.sqrtSn[0] = dataParams->multiNoiseFloor.sqrtSn[X];
-      MultiLIGOTimeGPSVector XLAL_INIT_DECL(mTimestamps);
-      mTimestamps.length = 1;
-      mTimestamps.data = &(multiTimestamps->data[X]); // such that pointer mTimestamps.data[0] = multiTimestamps->data[X]
-      dataParamsX.multiTimestamps = mTimestamps;
-      // NOTE: seed=0 means randomize seed from /dev/urandom, otherwise we'll have to increment it for each detector here
-      dataParamsX.randSeed = (dataParams->randSeed == 0) ? 0 : (dataParams->randSeed + X);
-
       SFTVector **svp = NULL;
-      REAL4TimeSeries **tsp = NULL;
+      REAL8TimeSeries **tsp = NULL;
       if ( outMSFTs != NULL ) {
         svp = &(outMSFTs->data[X]);
       }
       if ( outMTS != NULL ) {
         tsp = &(outMTS->data[X]);
       }
-      XLAL_CHECK ( XLALCWMakeFakeData ( svp, tsp, injectionSources, &dataParamsX, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALCWMakeFakeData ( svp, tsp, injectionSources, dataParams, X, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     } // for X < numDet
 
@@ -147,55 +139,68 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
 
 /**
  * Single-IFO version of XLALCWMakeFakeMultiData(), handling the actual
- * work, but same input API. The input detector-arrays must all contain
- * only a single detector, otherwise an error is returned.
+ * work, but same input API. The 'detectorIndex' has the index of the detector
+ * to be used from the multi-IFO arrays.
  */
 int
 XLALCWMakeFakeData ( SFTVector **SFTvect,
-                     REAL4TimeSeries **Tseries,
+                     REAL8TimeSeries **Tseries,
                      const PulsarParamsVector *injectionSources,
                      const CWMFDataParams *dataParams,
+                     UINT4 detectorIndex,	/* index for current detector in dataParams */
                      const EphemerisData *edat
                      )
 {
   XLAL_CHECK ( (SFTvect == NULL) || ((*SFTvect) == NULL ), XLAL_EINVAL );
   XLAL_CHECK ( (Tseries == NULL) || ((*Tseries) == NULL ), XLAL_EINVAL );
   XLAL_CHECK ( (SFTvect != NULL) || (Tseries != NULL), XLAL_EINVAL );
+  XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
 
   XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( dataParams->multiIFO.length == 1, XLAL_EINVAL );
-  XLAL_CHECK ( dataParams->multiNoiseFloor.length == 1, XLAL_EINVAL );
-  XLAL_CHECK ( dataParams->multiTimestamps.length == 1, XLAL_EINVAL );
-  XLAL_CHECK ( dataParams->multiTimestamps.data[0] != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( detectorIndex < dataParams->multiIFO.length, XLAL_EINVAL );
+  XLAL_CHECK ( detectorIndex < dataParams->multiNoiseFloor.length, XLAL_EINVAL );
+  XLAL_CHECK ( detectorIndex < dataParams->multiTimestamps.length, XLAL_EINVAL );
+  XLAL_CHECK ( (dataParams->inputMultiTS == NULL) || (detectorIndex < dataParams->inputMultiTS->length), XLAL_EINVAL );
+  XLAL_CHECK ( (dataParams->inputMultiTS == NULL) || (dataParams->fMin == 0 && dataParams->Band == 0), XLAL_EINVAL, "If given time-series, must have fMin=Band=0\n");
 
-  // initial default values fMin, sampling rate from caller input
+  // initial default values fMin, sampling rate from caller input or timeseries
   REAL8 fMin  = dataParams->fMin;
   REAL8 fBand = dataParams->Band;
   REAL8 fSamp = 2.0 * fBand;
+  if ( dataParams->inputMultiTS != NULL )
+    {
+      XLAL_CHECK ( (fMin == 0) && (fBand == 0), XLAL_EINVAL, "fMin and fBand must be 0 if input timeseries is given\n");
+      const REAL8TimeSeries *ts = dataParams->inputMultiTS->data[detectorIndex];
+      XLAL_CHECK ( ts != NULL, XLAL_EINVAL );
+      REAL8 dt = ts->deltaT;
+      fMin = ts->f0;
+      fSamp = 1.0 / dt;
+      fBand = 0.5 * fSamp;
+    }
 
-  const LIGOTimeGPSVector *timestamps = dataParams->multiTimestamps.data[0];
-  const LALDetector *site = &dataParams->multiIFO.sites[0];
+  const LIGOTimeGPSVector *timestamps = dataParams->multiTimestamps.data[detectorIndex];
+  const LALDetector *site = &dataParams->multiIFO.sites[detectorIndex];
   REAL8 Tsft = timestamps->deltaT;
 
   // if SFT output requested: need *effective* fMin and Band consistent with SFT bins
   if ( SFTvect )
     {
       UINT4 firstBinEff, numBinsEff;
-      XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBinEff, &numBinsEff, dataParams->fMin, dataParams->Band, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBinEff, &numBinsEff, fMin, fBand, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       REAL8 fBand_eff = (numBinsEff - 1.0) / Tsft;
       REAL8 fMin_eff  = firstBinEff / Tsft;
       REAL8 fMax = fMin + dataParams->Band;
       REAL8 fMax_eff = fMin_eff + fBand_eff;
-      if ( (fMin_eff != fMin) || (fBand_eff != dataParams->Band ) ) {
+      if ( (fMin_eff != fMin) || (fBand_eff != fBand ) ) {
         XLALPrintWarning("Caller asked for Band [%.16g, %.16g] Hz, effective SFT-Band produced is [%.16g, %.16g] Hz\n",
                          fMin, fMax, fMin_eff, fMax_eff );
-      }
-      fMin = fMin_eff;		// (potentially) lower minimal frequency to fit SFT bins
-      fBand = fBand_eff;
-      fSamp = 2.0 * fBand_eff;	// (potentially) higher sampling rate required to fit SFT bins
-    } // if SFT-output
+        XLAL_CHECK ( dataParams->inputMultiTS == NULL, XLAL_EINVAL, "Cannot expand effective frequency band with input timeseries given. Timeseries seems inconsistent with SFTs\n");
+        fMin = fMin_eff;		// (potentially) lower minimal frequency to fit SFT bins
+        fBand = fBand_eff;
+        fSamp = 2.0 * fBand_eff;	// (potentially) higher sampling rate required to fit SFT bins
+      } // if (fMin_eff != fMin) || (fBand_eff != fBand)
+    } // if SFT-output requested
 
   // characterize the output time-series
   UINT4 n0_fSamp = (UINT4) round ( Tsft * fSamp );
@@ -213,6 +218,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       REAL8 fSamp1 = n1_fSamp / Tsft;	// increased sampling rate to fit all gaps
       XLALPrintWarning ( "GAPS: Initial SFT sampling frequency fSamp0= %d/%.0f = %g had to be increased to fSamp1 = %d/%.0f = %g\n",
                          n0_fSamp, Tsft, fSamp, n1_fSamp, Tsft, fSamp1 );
+      XLAL_CHECK ( dataParams->inputMultiTS == NULL, XLAL_EINVAL, "Cannot expand effective frequency band with input timeseries given. Timeseries seems inconsistent with SFT timestamps\n");
       fSamp = fSamp1;
     } // if higher effective sampling rate required
 
@@ -281,37 +287,30 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
     } // for iInj < numSources
 
   /* add Gaussian noise if requested */
-  REAL8 sqrtSn = dataParams->multiNoiseFloor.sqrtSn[0];
+  REAL8 sqrtSn = dataParams->multiNoiseFloor.sqrtSn[detectorIndex];
   if ( sqrtSn > 0)
     {
       REAL8 noiseSigma = sqrtSn * sqrt ( 0.5 * fSamp );
-      XLAL_CHECK ( XLALAddGaussianNoise ( Tseries_sum, noiseSigma, dataParams->randSeed ) == XLAL_SUCCESS, XLAL_EFUNC );
+      INT4 randSeed = (dataParams->randSeed == 0) ? 0 : (dataParams->randSeed + detectorIndex);	// seed=0 means to use /dev/urandom, so don't touch it
+      XLAL_CHECK ( XLALAddGaussianNoise ( Tseries_sum, noiseSigma, randSeed ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
-  /*---------------------------------------------
-   * turn this timeseries into SFTs, if requested
-   *---------------------------------------------*/
-  if ( SFTvect )
+  // convert final signal+Gaussian-noise timeseries into REAL8 precision:
+  REAL8TimeSeries *outTS;
+  XLAL_CHECK ( (outTS = XLALConvertREAL4TimeSeriesToREAL8 ( Tseries_sum )) != NULL, XLAL_EFUNC );
+  XLALDestroyREAL4TimeSeries ( Tseries_sum );
+
+  // add input noise time-series here if given
+  if ( dataParams->inputMultiTS != NULL ) {
+    XLAL_CHECK ( (outTS = XLALAddREAL8TimeSeries ( outTS, dataParams->inputMultiTS->data[detectorIndex] )) != NULL, XLAL_EFUNC );
+  }
+
+  // turn final timeseries into SFTs, if requested
+  if ( SFTvect != NULL )
     {
-      // Prepare windowing of time series for SFTs
-      REAL4Window *window = NULL;
-      if ( dataParams->SFTWindowType )
-        {
-          REAL8 dt = Tseries_sum->deltaT;
-          UINT4 numTimesteps = round ( Tsft / dt );	/* number of time-samples in an Tsft (should be exact integer!) */
-
-          XLAL_CHECK ( (window = XLALCreateNamedREAL4Window ( dataParams->SFTWindowType, dataParams->SFTWindowBeta, numTimesteps )) != NULL, XLAL_EFUNC );
-        } // if uvar->SFTwindowName
-
-      SFTParams XLAL_INIT_DECL(sftParams);
-      sftParams.Tsft = Tsft;
-      sftParams.timestamps = timestamps;
-      sftParams.noiseSFTs = NULL;	// not used here any more!
-      sftParams.window = window;
-
-      /* compute SFTs from timeseries */
+      // compute SFTs from timeseries
       SFTVector *sftVect;
-      XLAL_CHECK ( (sftVect = XLALSignalToSFTs (Tseries_sum, &sftParams)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (sftVect = XLALMakeSFTsFromREAL8TimeSeries ( outTS, timestamps, dataParams->SFTWindowType, dataParams->SFTWindowBeta)) != NULL, XLAL_EFUNC );
 
       // extract effective band from this, if neccessary (ie if faster-sampled output SFTs)
       if ( n1_fSamp != n0_fSamp )
@@ -323,20 +322,14 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
         {
           (*SFTvect) = sftVect;
         }
-
-      XLALDestroyREAL4Window ( window );
-
     } // if SFTvect
 
   // return timeseries if requested
-  if ( Tseries )
-    {
-      (*Tseries) = Tseries_sum;
-    }
-  else
-    {
-      XLALDestroyREAL4TimeSeries ( Tseries_sum );
-    }
+  if ( Tseries != NULL ) {
+    (*Tseries) = outTS;
+  } else {
+    XLALDestroyREAL8TimeSeries ( outTS );
+  }
 
   return XLAL_SUCCESS;
 
@@ -431,6 +424,133 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams,	///< input CW pulsar-
   return Tseries;
 
 } // XLALGenerateCWSignalTS()
+
+
+///
+/// Make SFTs from given REAL8TimeSeries at given timestamps, potentially applying a time-domain window on each timestretch first
+///
+SFTVector *
+XLALMakeSFTsFromREAL8TimeSeries ( const REAL8TimeSeries *timeseries,	//!< input time-series
+                                  const LIGOTimeGPSVector *timestamps, 	//!< timestamps to produce SFTs for (can be NULL), if given must all lies within timeseries' time-span
+                                  const char *windowType,		//!< optional time-domain window function to apply before FFTing
+                                  REAL8 windowBeta			//!< window parameter, if any
+                                  )
+{
+  XLAL_CHECK_NULL ( timeseries != NULL, XLAL_EINVAL, "Invalid NULL input 'timeseries'\n");
+  XLAL_CHECK_NULL ( timestamps != NULL, XLAL_EINVAL, "Invalid NULL input 'timestamps'\n");
+
+  REAL8 dt = timeseries->deltaT;	// timeseries timestep */
+  REAL8 Tsft = timestamps->deltaT;
+  REAL8 df = 1.0 / Tsft;		// SFT frequency spacing
+
+  // make sure that number of timesamples/SFT is an integer (up to possible rounding error 'eps')
+  REAL8 timestepsSFT0 = Tsft / dt;
+  UINT4 timestepsSFT  = lround ( timestepsSFT0 );
+  XLAL_CHECK_NULL ( fabs ( timestepsSFT0 - timestepsSFT ) / timestepsSFT0 < eps, XLAL_ETOL,
+                    "Inconsistent sampling-step (dt=%g) and Tsft=%g: must be integer multiple Tsft/dt = %g >= %g\n",
+                    dt, Tsft, timestepsSFT0, eps );
+
+  // prepare window function if requested
+  REAL8Window *window = NULL;
+  if ( windowType != NULL ) {
+    XLAL_CHECK_NULL ( (window = XLALCreateNamedREAL8Window ( windowType, windowBeta, timestepsSFT )) != NULL, XLAL_EFUNC );
+  }
+
+  // ---------- Prepare FFT ----------
+  REAL8Vector *timeStretchCopy;	// input array of length N
+  XLAL_CHECK_NULL ( (timeStretchCopy = XLALCreateREAL8Vector ( timestepsSFT )) != NULL, XLAL_EFUNC, "XLALCreateREAL4Vector(%d) failed.\n", timestepsSFT );
+  UINT4 numSFTBins = timestepsSFT / 2 + 1;	// number of positive frequency-bins + 'DC' to be stored in SFT
+  fftw_complex *fftOut;	// output array of length N/2 + 1
+  XLAL_CHECK_NULL ( (fftOut = fftw_malloc ( numSFTBins * sizeof(fftOut[0]) )) != NULL, XLAL_ENOMEM, "fftw_malloc(%d*sizeof(complex)) failed\n", numSFTBins );
+  fftw_plan fftplan;	// FFTW plan
+  LAL_FFTW_WISDOM_LOCK;
+  XLAL_CHECK_NULL ( (fftplan = fftw_plan_dft_r2c_1d ( timestepsSFT, timeStretchCopy->data, fftOut, FFTW_ESTIMATE)) != NULL, XLAL_EFUNC );	// FIXME: or try FFTW_MEASURE
+  LAL_FFTW_WISDOM_UNLOCK;
+
+  LIGOTimeGPS tStart = timeseries->epoch;
+
+  // get last possible start-time for an SFT
+  REAL8 duration =  round ( timeseries->data->length * dt ); // rounded to seconds
+  LIGOTimeGPS tLast = tStart;
+  XLALGPSAdd( &tLast, duration - Tsft );
+
+  // check that all timestamps lie within [tStart, tLast]
+  for ( UINT4 i = 0; i < timestamps->length; i ++ )
+    {
+      char buf1[256], buf2[256];
+      XLAL_CHECK_NULL ( XLALGPSDiff ( &tStart, &(timestamps->data[i]) ) <= 0, XLAL_EDOM, "Timestamp i=%d: %s before start-time %s\n",
+                        i, XLALGPSToStr ( buf1, &(timestamps->data[i]) ), XLALGPSToStr ( buf2, &tStart ) );
+      XLAL_CHECK_NULL ( XLALGPSDiff ( &tLast,   &(timestamps->data[i]) ) >=0, XLAL_EDOM, "Timestamp i=%d: %s after last start-time %s\n",
+                        i, XLALGPSToStr ( buf1, &(timestamps->data[i]) ), XLALGPSToStr ( buf2, &tLast ) );
+    }
+
+  UINT4 numSFTs = timestamps->length;
+
+  // prepare output SFT-vector
+  SFTVector *sftvect;
+  XLAL_CHECK_NULL ( (sftvect = XLALCreateSFTVector ( numSFTs, numSFTBins )) != NULL, XLAL_EFUNC,
+                    "XLALCreateSFTVector(numSFTs=%d, numBins=%d) failed.\n", numSFTs, numSFTBins );
+
+  // main loop: apply FFT to the requested time-stretches and store in output SFTs
+  for ( UINT4 iSFT = 0; iSFT < numSFTs; iSFT++ )
+    {
+      SFTtype *thisSFT = &(sftvect->data[iSFT]);	// point to current SFT-slot to store output in
+
+      // find the start-bin for this SFT in the time-series
+      REAL8 offset = XLALGPSDiff ( &(timestamps->data[iSFT]), &tStart );
+      INT4 offsetBins = lround ( offset / dt );
+
+      // copy timeseries-data for that SFT into local buffer
+      memcpy ( timeStretchCopy->data, timeseries->data->data + offsetBins, timeStretchCopy->length * sizeof(timeStretchCopy->data[0]) );
+
+      // window the current time series stretch if required
+      REAL8 sigma_window = 1;
+      if ( window != NULL )
+        {
+	  sigma_window = sqrt ( window->sumofsquares / window->data->length );
+	  for( UINT4 iBin = 0; iBin < timeStretchCopy->length; iBin++ ) {
+            timeStretchCopy->data[iBin] *= window->data->data[iBin];
+          }
+        } // if window
+
+      // FFT this time-stretch
+      fftw_execute ( fftplan );
+
+      // fill the header of the i'th output SFT */
+      strcpy ( thisSFT->name, timeseries->name );
+      thisSFT->epoch = timestamps->data[iSFT];
+      thisSFT->f0 = timeseries->f0;			// SFT starts at heterodyning frequency
+      thisSFT->deltaF = df;
+
+      // normalize DFT-data to conform to v2 specification ==> multiply DFT by (dt/sigma{window})
+      // the SFT normalization in case of windowing follows the conventions detailed in the SFTv2 specification,
+      // namely LIGO-T040164, and in particular Eqs.(3),(4) and (6) in T010095-00.pdf
+      // https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?.submit=Number&docid=T010095
+      // https://dcc.ligo.org/DocDB/0026/T010095/000/T010095-00.pdf
+      REAL8 norm = dt / sigma_window;
+      for ( UINT4 k = 0; k < numSFTBins ; k ++ ) {
+        thisSFT->data->data[k] = (COMPLEX8) ( norm * fftOut[k] );
+      }
+
+      // correct heterodyning-phase, IF NECESSARY: ie if (fHet * tStart) is not an integer, such that phase-corr = multiple of 2pi
+      if ( ( (INT4)timeseries->f0 != timeseries->f0  ) || (timeseries->epoch.gpsNanoSeconds != 0) || (thisSFT->epoch.gpsNanoSeconds != 0) ) {
+        XLAL_CHECK_NULL ( XLALcorrect_phase ( thisSFT, timeseries->epoch) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+
+    } // for iSFT < numSFTs
+
+  // free memory
+  fftw_free ( fftOut );
+  LAL_FFTW_WISDOM_LOCK;
+  fftw_destroy_plan ( fftplan );
+  LAL_FFTW_WISDOM_UNLOCK;
+  XLALDestroyREAL8Vector ( timeStretchCopy );
+  XLALDestroyREAL8Window ( window );
+
+  return sftvect;
+
+} // XLALMakeSFTsFromREAL8TimeSeries()
+
 
 
 /**

@@ -438,15 +438,28 @@ def aligned_spin_param_generator(flow, **kwargs):
     max mass of the total mass and the min and max values for the
     z-axis spin angular momentum.
     """
-    # get args
-    spin1_bounds = kwargs.pop('spin1', (-1., 1.))
-    spin2_bounds = kwargs.pop('spin2', (-1., 1.))
-    # the rest will be checked in the call to urand_tau0tau3_generator
+    if 'ns_bh_boundary_mass' in kwargs and 'bh_spin' in kwargs \
+            and 'ns_spin' in kwargs:
+        # get args
+        bh_spin_bounds = kwargs.pop('bh_spin')
+        ns_spin_bounds = kwargs.pop('ns_spin')
+        ns_bh_boundary = kwargs.pop('ns_bh_boundary_mass')
+        # the rest will be checked in the call to urand_tau0tau3_generator
 
-    for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
-        spin1 = uniform(*spin1_bounds)
-        spin2 = uniform(*spin2_bounds)
-        yield mass1, mass2, spin1, spin2
+        for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
+            spin1 = uniform(*(bh_spin_bounds if mass1 > ns_bh_boundary else ns_spin_bounds))
+            spin2 = uniform(*(bh_spin_bounds if mass2 > ns_bh_boundary else ns_spin_bounds))
+            yield mass1, mass2, spin1, spin2
+    else:
+        # get args
+        spin1_bounds = kwargs.pop('spin1', (-1., 1.))
+        spin2_bounds = kwargs.pop('spin2', (-1., 1.))
+        # the rest will be checked in the call to urand_tau0tau3_generator
+
+        for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
+            spin1 = uniform(*spin1_bounds)
+            spin2 = uniform(*spin2_bounds)
+            yield mass1, mass2, spin1, spin2
 
 
 def SpinTaylorT4_param_generator(flow, **kwargs):
@@ -455,6 +468,7 @@ def SpinTaylorT4_param_generator(flow, **kwargs):
 
 proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
              "IMRPhenomC":IMRPhenomC_param_generator,
+             "IMRPhenomD":aligned_spin_param_generator,
              "TaylorF2RedSpin":aligned_spin_param_generator,
              "EOBNRv2":nonspin_param_generator,
              "SEOBNRv1":aligned_spin_param_generator,

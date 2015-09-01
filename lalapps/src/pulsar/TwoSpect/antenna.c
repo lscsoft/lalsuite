@@ -29,32 +29,13 @@
  * bin shift = f0*v*Tsft, where f0 is frequency, v is velocity in units of c, and Tsft is the SFT coherence length.
  * An optional dopplerMultiplier value could be multiplied if desired (default value is 1.0)
  * \param [out] output            Pointer to INT4Vector of bin shift values
- * \param [in]  freq              Frequency from which to compute the bin shifts
- * \param [in]  velocities        Pointer to REAL4Vector of detector velocities with respect to a sky location
- * \param [in]  Tsft              Coherence length of the SFTs
- * \param [in]  dopplerMultiplier Multiplicative factor to increase or decrease the bin shifts (standard physics = 1.0)
- * \return Status value
- */
-INT4 CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL8 Tsft, REAL4 dopplerMultiplier)
-{
-   XLAL_CHECK( output != NULL && velocities != NULL, XLAL_EINVAL );
-   for (UINT4 ii=0; ii<velocities->length; ii++) output->data[ii] = (INT4)round(dopplerMultiplier*freq*velocities->data[ii]*Tsft);
-   return XLAL_SUCCESS;
-} /* CompBinShifts() */
-
-/**
- * \brief Compute the number of integer bin shifts per SFT
- *
- * bin shift = f0*v*Tsft, where f0 is frequency, v is velocity in units of c, and Tsft is the SFT coherence length.
- * An optional dopplerMultiplier value could be multiplied if desired (default value is 1.0)
- * \param [out] output            Pointer to INT4Vector of bin shift values
  * \param [in]  ssbTimes          Pointer to the interferometer-specific SSBtimes
  * \param [in]  freq              Frequency from which to compute the bin shifts
  * \param [in]  Tsft              Coherence length of the SFTs
  * \param [in]  dopplerMultiplier Multiplicative factor to increase or decrease the bin shifts (standard physics = 1.0)
  * \return Status value
  */
-INT4 CompBinShifts2(INT4Vector *output, SSBtimes *ssbTimes, REAL8 freq, REAL8 Tsft, REAL4 dopplerMultiplier)
+INT4 CompBinShifts(INT4Vector *output, const SSBtimes *ssbTimes, const REAL8 freq, const REAL8 Tsft, const REAL4 dopplerMultiplier)
 {
    for (UINT4 ii=0; ii<output->length; ii++) output->data[ii] = (INT4)round(dopplerMultiplier*(ssbTimes->Tdot->data[ii]-1.0)*freq*Tsft);
    return XLAL_SUCCESS;
@@ -76,7 +57,7 @@ INT4 CompBinShifts2(INT4Vector *output, SSBtimes *ssbTimes, REAL8 freq, REAL8 Ts
  * \param [in]  det        A LALDetector struct
  * \return Status value
  */
-INT4 CompAntennaPatternWeights(REAL4Vector *output, SkyPosition skypos, REAL8 t0, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, BOOLEAN linPolOn, REAL8 polAngle, LALDetector det)
+INT4 CompAntennaPatternWeights(REAL4VectorAligned *output, const SkyPosition skypos, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const BOOLEAN linPolOn, const REAL8 polAngle, const LALDetector det)
 {
 
    XLAL_CHECK( output != NULL, XLAL_EINVAL );
@@ -104,6 +85,40 @@ INT4 CompAntennaPatternWeights(REAL4Vector *output, SkyPosition skypos, REAL8 t0
 
 } /* CompAntennaPatternWeights() */
 
+INT4 CompAntennaPatternWeights2(REAL4VectorAligned *output, const SkyPosition skypos, const LIGOTimeGPSVector *timestamps, const LALDetector det, const REAL8 *cosi, const REAL8 *psi)
+{
+
+   XLAL_CHECK( output != NULL, XLAL_EINVAL );
+
+   REAL8 onePlusCosiSqOver2Sq = 1.0, cosiSq = 1.0;
+   if (cosi!=NULL) {
+      onePlusCosiSqOver2Sq = 0.25*(1.0 + (*cosi)*(*cosi))*(1.0 + (*cosi)*(*cosi));
+      cosiSq = (*cosi)*(*cosi);
+   }
+
+   REAL8 fplus, fcross;
+   for (UINT4 ii=0; ii<timestamps->length; ii++) {
+      REAL8 gmst = XLALGreenwichMeanSiderealTime(&(timestamps->data[ii]));
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+
+      if (psi!=NULL) {
+         XLALComputeDetAMResponse(&fplus, &fcross, det.response, skypos.longitude, skypos.latitude, *psi, gmst);
+         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+         output->data[ii] = fplus*fplus*onePlusCosiSqOver2Sq + fcross*fcross*cosiSq;
+      } else {
+         output->data[ii] = 0.0;
+         for (UINT4 jj=0; jj<16; jj++) {
+            XLALComputeDetAMResponse(&fplus, &fcross, det.response, skypos.longitude, skypos.latitude, 0.0625*LAL_PI*jj, gmst);
+            XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+            output->data[ii] += fplus*fplus*onePlusCosiSqOver2Sq + fcross*fcross*cosiSq;
+         }
+         output->data[ii] *= 0.0625;
+      }
+   }
+
+   return XLAL_SUCCESS;
+
+} // CompAntennaPatternWeights()
 
 /**
  * Compute the antenna velocity
@@ -117,7 +132,7 @@ INT4 CompAntennaPatternWeights(REAL4Vector *output, SkyPosition skypos, REAL8 t0
  * \param [in]  edat       Pointer to EphemerisData
  * \return Status value
  */
-INT4 CompAntennaVelocity(REAL4Vector *output, SkyPosition skypos, REAL8 t0, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
+INT4 CompAntennaVelocity(REAL4VectorAligned *output, const SkyPosition skypos, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat)
 {
 
    XLAL_CHECK( output != NULL && edat != NULL, XLAL_EINVAL );
@@ -154,7 +169,7 @@ INT4 CompAntennaVelocity(REAL4Vector *output, SkyPosition skypos, REAL8 t0, REAL
  * \param [in]  edat       Pointer to EphemerisData
  * \return Maximum change in antenna velocity
  */
-REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
+REAL4 CompDetectorDeltaVmax(const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat)
 {
 
    XLAL_CHECK( edat != NULL, XLAL_EINVAL );
@@ -199,7 +214,7 @@ REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, 
  * \param [in]  edat       Pointer to EphemerisData
  * \return Maximum magnitude of antenna velocity
  */
-REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
+REAL4 CompDetectorVmax(const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat)
 {
 
    XLAL_CHECK( edat != NULL, XLAL_EINVAL );

@@ -32,7 +32,7 @@
  * \param [in] delta The delta value as the arguement
  * \return Complex valued Dirichlet kernel
  */
-COMPLEX16 DirichletKernelLargeN(REAL8 delta)
+COMPLEX16 DirichletKernelLargeN(const REAL8 delta)
 {
    if (fabs(delta)<1.0e-6) return crect(1.0, 0.0);
 
@@ -45,10 +45,12 @@ COMPLEX16 DirichletKernelLargeN(REAL8 delta)
  * \param [in] delta The delta value as the arguement
  * \return Complex valued Dirichlet kernel
  */
-COMPLEX16 DirichletKernelLargeNHann(REAL8 delta)
+COMPLEX16 DirichletKernelLargeNHann(const REAL8 delta)
 {
    //return DirichletKernelLargeN(delta) - 0.5*DirichletKernelLargeN(delta+1.0) - 0.5*DirichletKernelLargeN(delta-1.0);
-   return crect(0.0, 1.0)*(cpolar(1.0, LAL_TWOPI*delta) - 1.0)/(2.0*LAL_TWOPI*delta*(delta*delta - 1.0));
+   if (fabs(delta)<1.0e-6) return crect(0.5, 0.0);
+   else if (fabs(delta*delta - 1.0)<1.0e-6) return crect(-0.25, 0.0);
+   else return crect(0.0, 1.0)*(cpolar(1.0, LAL_TWOPI*delta) - 1.0)/(2.0*LAL_TWOPI*delta*(delta*delta - 1.0));
 }
 
 /**
@@ -61,8 +63,21 @@ COMPLEX16 DirichletKernelLargeNHann(REAL8 delta)
  */
 INT4 DirichletKernalLargeNHannRatio(COMPLEX8 *ratio, const REAL4 delta0, const REAL4 delta1, const REAL4 scaling)
 {
-   if (fabsf((REAL4)delta1)<(REAL4)1.0e-6 || fabsf((REAL4)(delta1*delta1-1.0))<(REAL4)1.0e-6 || fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) return 1;
-   else *ratio = scaling*(cpolarf(1.0, (REAL4)(LAL_TWOPI*delta1))-1.0)/(cpolarf(1.0, (REAL4)(LAL_TWOPI*delta0))-1.0);
+   //if (fabsf((REAL4)delta1)<(REAL4)1.0e-6 || fabsf((REAL4)(delta1*delta1-1.0))<(REAL4)1.0e-6 || fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) return 1;
+   //else *ratio = scaling*(cpolarf(1.0, (REAL4)(LAL_TWOPI*delta1))-1.0)/(cpolarf(1.0, (REAL4)(LAL_TWOPI*delta0))-1.0);
+   *ratio = crectf(0.0, 0.0);
+   if (fabsf(delta1)<(REAL4)1.0e-6) {
+      if (fabsf(delta0)<(REAL4)1.0e-6) *ratio = crectf(1.0, 0.0);
+      else if (fabsf((REAL4)(delta0*delta0 - 1.0))<(REAL4)1.0e-6) *ratio = crectf(-2.0, 0.0);
+      else if (fabsf(delta0 - roundf(delta0))<(REAL4)1.0e-6) return 1;
+      else *ratio = 0.5/(crectf(0.0, 1.0)*(cpolarf(1.0, LAL_TWOPI*delta0) - 1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0 - 1.0)));
+   } else if (fabsf((REAL4)(delta1*delta1 - 1.0))<(REAL4)1.0e-6) {
+      if (fabsf(delta0)<(REAL4)1.0e-6) *ratio = crectf(-0.5, 0.0);
+      else if (fabsf((REAL4)(delta0*delta0 - 1.0))<(REAL4)1.0e-6) *ratio = crectf(1.0, 0.0);
+      else if (fabsf(delta0 - roundf(delta0))<(REAL4)1.0e-6) return 1;
+      else *ratio = -0.25/(crectf(0.0, 1.0)*(cpolarf(1.0, LAL_TWOPI*delta0) - 1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0 - 1.0)));
+   } else if (fabsf(delta0 - roundf(delta0))<(REAL4)1.0e-6) return 1;
+   else *ratio = scaling*sinf((REAL4)LAL_PI*delta1)/sinf((REAL4)LAL_PI*delta0)*cpolarf(1.0, (REAL4)(LAL_PI*(delta1 - delta0)));
    return 0;
 }
 

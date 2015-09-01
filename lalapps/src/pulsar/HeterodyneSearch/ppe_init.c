@@ -1336,7 +1336,6 @@ void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
  */
 void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
-
   LALInferenceVariables **output_array = NULL;
   UINT4 N_output_array = 0;
   LALInferenceSortVariablesByName(vars);

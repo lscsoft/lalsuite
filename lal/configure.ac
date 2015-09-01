@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LAL],[6.14.0.1],[lal-discuss@ligo.org])
+AC_INIT([LAL],[6.15.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALConfig.h])
 AC_CONFIG_SRCDIR([src/std/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -72,7 +72,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[10])
+AC_SUBST([LIBCURRENT],[11])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -91,7 +91,7 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT_SUPPORT],[6])
+AC_SUBST([LIBCURRENT_SUPPORT],[7])
 AC_SUBST([LIBREVISION_SUPPORT],[0])
 AC_SUBST([LIBAGE_SUPPORT],[0])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
@@ -276,6 +276,14 @@ if test "${boinc}" = "true"; then
   AC_SUBST(BOINC_LIBS)
 fi
 
+# check for hdf5 support
+HDF5_ENABLE_VAL="DISABLED"
+AX_LIB_HDF5()
+if test "${with_hdf5}" = "yes"; then
+  AC_DEFINE([LAL_HDF5_ENABLED],[1],[Define if using HDF5 library])
+  HDF5_ENABLE_VAL="ENABLED"
+fi
+
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
 
@@ -321,6 +329,7 @@ LAL has now been successfully configured:
 * Python support is $PYTHON_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
+* HDF5 support is $HDF5_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL

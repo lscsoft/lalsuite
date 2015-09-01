@@ -17,6 +17,82 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalsim_bh_ringdown lalsim-bh-ringdown
+ * @ingroup lalsimulation_programs
+ *
+ * @brief Simulates a gravitational waveform from black hole ringdown.
+ *
+ * ### Synopsis
+ *
+ *     lalsim-bh-ringdown [-h] -M Msolar -a a -r distanceMpc -e fracEnergy -i inclination [-q azimuth] -l l -m m
+ *
+ * ### Description
+ *
+ * The `lalsim-bh-ringdown` utility produces a stream of a simulated
+ * gravitational waveform for ringdown radiation from a quasinormal
+ * mode of a Kerr black hole with mode numbers @p l and @p m.  The
+ * dimensionless Kerr spin parameter @p a, black hole mass in solar
+ * masses @p Msolar, fraction of mass lost in ringdown radiation
+ * @p e, distance to the observer in Mpc @p distanceMpc, and inclination of the
+ * observer relative to the black hole's spin axis @p inclination must be
+ * specified.  The output is written to standard output in three-column ascii
+ * format.  The first column gives the time corresponding to each sample, the
+ * second column gives the value of the plus-polarization of the waveform, and
+ * the third column gives the value of the cross-polarization of the waveform.
+ * 
+ * ### Options
+ *
+ * <DL>
+ * <DT>`-h`, `--help`</DT>
+ * <DD>print a help message and exit</DD>
+ * <DT>`-M` Msolar</DT>
+ * <DD>(required) set black hole mass (solar masses)</DD>
+ * <DT>`-a` a</DT>
+ * <DD>(required) set value of dimensionless spin parameter a/M, |a/M|<1 (Leaver: |a/M|<0.5)</DD>
+ * <DT>`-r` distanceMpc</DT>
+ * <DD>(required) set distance (Mpc)</DD>
+ * <DT>`-e` fracEnergy</DT>
+ * <DD>(required) set energy radiated (fraction of mass)</DD>
+ * <DT>`-i` inclination</DT>
+ * <DD>(required) set inclination angle (degrees)</DD>
+ * <DT>`-q` azimuth</DT>
+ * <DD>(optional: default=0) set azimuth angle (degrees)</DD>
+ * <DT>`-l` l</DT>
+ * <DD>(required) set value of mode number l, l>=0</DD>
+ * <DT>`-m` m</DT>
+ * <DD>(required) set value of mode number m, abs(m)<=l</DD>
+ * </DL>
+ *
+ * ### Environment
+ *
+ * The `LAL_DEBUG_LEVEL` can used to control the error and warning reporting of
+ * `lalsim-bh-ringdown`.  Common values are: `LAL_DEBUG_LEVEL=0` which
+ * suppresses error messages, `LAL_DEBUG_LEVEL=1`  which prints error messages
+ * alone, `LAL_DEBUG_LEVEL=3` which prints both error messages and warning
+ * messages, and `LAL_DEBUG_LEVEL=7` which additionally prints informational
+ * messages.
+ *
+ * ### Exit Status
+ *
+ * The `lalsim-bh-ringdown` utility exits 0 on success, and >0 if an error
+ * occurs.
+ *
+ * ### Example
+ *
+ * The command:
+ *
+ *     lalsim-bh-ringdown -M 10 -a 0.97 -r 1.0 -e 0.01 -i 45.0 -l 2 -m 2
+ *
+ * produces a three-column ascii output to standard output; the rows are
+ * samples (at the rate of 16384 Hz), and the three columns are 1. the
+ * time of each sample, 2. the plus-polarization strain, and 3. the
+ * cross-polarization strain.  The waveform produced is for a 10 solar
+ * mass black hole spinning with Kerr parameter a/M = 0.97 at a distance
+ * of 1 Mpc and inclination of 45 degrees that radiates 1% of its mass in the l
+ * = 2, m = 2 quasinormal mode.
+ */
+
 #include <complex.h>
 #include <limits.h>
 #include <math.h>

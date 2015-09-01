@@ -22,7 +22,7 @@
 /**
  * @author Kipp Cannon, Jolien Creighton
  * @addtogroup LALSimBurst_h Header LALSimBurst.h
- * @ingroup lalsimulation_general
+ * @ingroup lalsimulation_burst
  * @brief Routines to generate burst waveforms.
  * @details
  * These routines generate several burst waveforms used in searches for
@@ -166,7 +166,7 @@ int XLALSimUnicorn(
 );
 
 
-REAL8 XLALMeasureHPeak(const REAL8TimeSeries *);
+COMPLEX16 XLALMeasureHPeak(const REAL8TimeSeries *, const REAL8TimeSeries *, unsigned *);
 REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *, const REAL8TimeSeries *);
 REAL8 XLALMeasureHrss(const REAL8TimeSeries *, const REAL8TimeSeries *);
 REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *);

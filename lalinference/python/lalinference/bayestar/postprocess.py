@@ -301,10 +301,10 @@ def angle_distance(theta0, phi0, theta1, phi1):
 
 # Class to hold return value of find_injection method
 FoundInjection = collections.namedtuple('FoundInjection',
-    'searched_area searched_prob offset searched_modes contour_areas contour_modes')
+    'searched_area searched_prob offset searched_modes contour_areas area_probs contour_modes')
 
 
-def find_injection(sky_map, true_ra, true_dec, contours=(), modes=False, nest=False):
+def find_injection(sky_map, true_ra, true_dec, contours=(), areas=(), modes=False, nest=False):
     """
     Given a sky map and the true right ascension and declination (in radians),
     find the smallest area in deg^2 that would have to be searched to find the
@@ -356,6 +356,11 @@ def find_injection(sky_map, true_ra, true_dec, contours=(), modes=False, nest=Fa
     # smallest region containing that probability.
     contour_areas = (deg2perpix * (ipix + 1)).tolist()
 
+    # For each listed area, find the probability contained within the
+    # smallest credible region of that area.
+    area_probs = cum_sky_map[
+        np.round(np.asarray(areas) / deg2perpix).astype(np.intp)].tolist()
+
     # Find the angular offset between the mode and true locations.
     offset = np.rad2deg(angle_distance(true_theta, true_phi,
         mode_theta, mode_phi))
@@ -370,4 +375,6 @@ def find_injection(sky_map, true_ra, true_dec, contours=(), modes=False, nest=Fa
         contour_modes = None
 
     # Done.
-    return FoundInjection(searched_area, searched_prob, offset, searched_modes, contour_areas, contour_modes)
+    return FoundInjection(
+        searched_area, searched_prob, offset, searched_modes, contour_areas,
+        area_probs, contour_modes)

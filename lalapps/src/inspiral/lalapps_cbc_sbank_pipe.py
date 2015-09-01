@@ -628,11 +628,12 @@ for inj_run in cp.options("injections"):
     inj_name, = inj_node.get_output_files()
     waveform = cp.get(inj_run, "waveform")
     sim_nodes = []
-    for bank_name, bank_node in zip(bank_names, bank_nodes):
-        ind = bank_name.index("-", 3)  # start searching for hyphens after ind 3
-        base, _ = os.path.splitext(bank_name)
-        sim_name = "%s_%s-%s" % (base[:ind], "SIM_%s"%inj_run.upper(), base[ind + 1:])
-        sim_nodes.append(BankSimNode(banksimJob, dag, inj_name, waveform, bank_name, sim_name.replace(".h5",""), [inj_node, bank_node]))
+    for bank_node in bank_nodes:
+        for bank_name in bank_node.get_output_files():
+            ind = bank_name.index("-", 3)  # start searching for hyphens after ind 3
+            base, _ = os.path.splitext(bank_name)
+            sim_name = "%s_%s-%s" % (base[:ind], "SIM_%s"%inj_run.upper(), base[ind + 1:])
+            sim_nodes.append(BankSimNode(banksimJob, dag, inj_name, waveform, bank_name, sim_name.replace(".h5",""), [inj_node, bank_node]))
 
     # merge and plot the partial sims
     sim_names = [node.get_output_files()[0] for node in sim_nodes]

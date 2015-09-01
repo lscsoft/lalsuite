@@ -61,8 +61,8 @@ if opts.run_path is not None:
   cp.set('paths','basedir',os.path.abspath(opts.run_path))
 
 if not cp.has_option('paths','basedir'):
-  print 'Error: Must specify a directory with --run-path DIR'
-  sys.exit(1)
+  print 'Warning: No --run-path specified, using %s'%(os.getcwd())
+  cp.set('paths','basedir',os.path.abspath(os.getcwd()))
 
 if opts.daglog_path is not None:
   cp.set('paths','daglogdir',os.path.abspath(opts.daglog_path))

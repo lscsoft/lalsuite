@@ -253,6 +253,11 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread, LALInf
  */
 REAL8 LALInferenceFrequencyBinJump(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
 
+/** Proposal which draws a sample from the distance likelihood function
+ * Requires the currentParams to have optimal_snr and matched_filter_snr.
+ */
+REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams);
+
 /* Zero out proposal statistics */
 void LALInferenceZeroProposalStats(LALInferenceProposalCycle *cycle);
 

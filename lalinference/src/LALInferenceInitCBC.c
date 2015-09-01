@@ -186,6 +186,9 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
   for (t = 0; t < nthreads; t++) {
     thread = run_state->threads[t];
 
+    /* Link back to run-state */
+    thread->parent = run_state;
+
     /* Set up CBC model and parameter array */
     thread->model = LALInferenceInitCBCModel(run_state);
 
@@ -1151,9 +1154,16 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
         LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   }
 
+  LALSimInspiralFrameAxis frameAxis = LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT;
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--inj-frame-axis"))) {
+    frameAxis = XLALSimInspiralGetFrameAxisFromString(ppt->value);
+  }
+
   model->waveFlags = XLALSimInspiralCreateWaveformFlags();
   XLALSimInspiralSetSpinOrder(model->waveFlags,  spinO);
   XLALSimInspiralSetTidalOrder(model->waveFlags, tideO);
+  XLALSimInspiralSetFrameAxis(model->waveFlags,frameAxis);
+
 
   fprintf(stdout,"\n\n---\t\t ---\n");
   LALInferenceInitSpinVariables(state, model);
@@ -1164,7 +1174,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 
      /* Print info about orders and waveflags used for templates */
 
-     fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i tidal order %i, in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,(int) spinO, (int) tideO, model->domain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
+     fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i tidal order %i, frame axis %i in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,(int) spinO, (int) tideO, (int) frameAxis, model->domain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
      fprintf(stdout,"---\t\t ---\n\n");
   }//end of signal only flag
   else
@@ -1686,7 +1696,6 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
   }
 
   SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approx);
-  LALSimInspiralFrameAxis frame_axis=LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW;
 
   /* Now check what the approx can do and eventually change user's choices to comply.
    * Also change the reference frame -- For the moment use default as the corresponding patch to LALSimulation has not been finished yet */
@@ -1696,13 +1705,7 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
     singleSpin=1;
   else if (spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN){
     spinAligned=1;
-    /* Restore this line when LALSim has routine to convert frames:
-     * frame_axis= LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L;
-     */
   }
-
-  /* Add the frame to waveFlagas */
-  XLALSimInspiralSetFrameAxis(model->waveFlags,frame_axis);
 
   if (spinAligned){
   /* If spin aligned the magnitude is in the range [-1,1] */

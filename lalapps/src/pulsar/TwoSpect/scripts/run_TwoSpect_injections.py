@@ -2,11 +2,12 @@
 
 import argparse, sys, os, shutil, subprocess, math, random
 
-parser = argparse.ArgumentParser(description='Script that generates configuration files for TwoSpect Monte Carlo injections and runs TwoSpect')
+parser = argparse.ArgumentParser(description='Script that generates configuration files for TwoSpect Monte Carlo injections and runs TwoSpect',fromfile_prefix_chars='@')
 parser.add_argument('--twospectExe', required=True, type=str, help='Path to TwoSpect executable')
 parser.add_argument('--dir', required=True, type=str, help='Base directory where the job subdirectories are located')
 parser.add_argument('--jobnum', required=True, type=int, help='Job number, also the base directory/subdirectory path')
 parser.add_argument('--IFO', required=True, type=str, help='Interferometer to use (specify multiple as CSV)')
+parser.add_argument('--sqrtSX', required=True, type=str, help='Noise floor of detectors as sqrt{Sn} (specify multiple as CSV)')
 parser.add_argument('--t0', required=True, type=int, help='Start time of search')
 parser.add_argument('--fmin', required=True, type=float, help='Minimum frequency of injection (Hz)')
 parser.add_argument('--inputSFTs', type=str, help='Input SFT files')
@@ -52,6 +53,7 @@ parser.add_argument('--markBadSFTs', action='store_true', help='Mark and remove 
 parser.add_argument('--keepOnlyTopNumIHS', type=int, help='Keep only the top N number of IHS outliers')
 parser.add_argument('--useCorrectNScosi', action='store_true', help='Use the correct NS cosi orientation for coherent analysis')
 parser.add_argument('--useCorrectNSpsi', action='store_true', help='Use the correct NS psi orientation for coherent analysis')
+parser.add_argument('--unrestrictedCosi', action='store_true', help='Marginalize over cosi=[-1,1] for coherent analysis')
 args = parser.parse_args()
 
 IFOList = args.IFO.split(',')
@@ -121,9 +123,6 @@ if args.scox1:
 random.seed(args.seed+args.jobnum)
 
 for ii in range(0, 10):
-    runNum = 1
-    if numIFOs>1 and not args.useCorrectNScosi: runNum = 2
-
     h0 = 0
     if args.h0val: h0 = args.h0val
     else:
@@ -190,7 +189,7 @@ phi0 {}
 Freq {}
 orbitasini {}
 orbitEcc {}
-orbitTpSSB 900000000
+orbitTp 900000000
 orbitPeriod {}
 orbitArgp {}
 f1dot {}
@@ -201,9 +200,10 @@ refTime 900000000""".format(alpha,delta,h0,cosi,psi,phi0,f0,asini,ecc,P,argp,f1d
     injections.write('{} {} {} {} {} {} {} {} {} {} {} {} {}\n'.format(alpha, delta, h0, cosi, psi, phi0, f0, asini, ecc, P, argp, f1dot, df))
     injections.close()
 
-    while runNum>0:
-        twospectconfig = open('/local/user/egoetz/'+str(scriptPID)+'/twospectconfig','w')
-        twospectconfig.write("""\
+    twospectconfig = open('/local/user/egoetz/'+str(scriptPID)+'/twospectconfig','w')
+    twospectconfig.write("""\
+IFO {}
+avesqrtSh {}
 fmin {}
 fspan {}
 t0 {}
@@ -218,83 +218,71 @@ Pmax {}
 dfmin {}
 dfmax {}
 blksize 101
-avesqrtSh 1.0e-23
 minTemplateLength 1
 maxTemplateLength {}
 outdirectory {}/{}
 FFTplanFlag 1
 fastchisqinv TRUE
 vectorMath 1
-outfilename logfile_{}_{}.txt
-ULfilename uls_{}_{}.dat
-configCopy input_copy_{}_{}.conf
 injectionSources /local/user/egoetz/{}/mfdconfig
 ihsfactor {}
-""".format(args.fmin, args.fspan, args.t0, args.Tobs, args.Tsft, args.SFToverlap, args.ihsfar, args.ihsfomfar, args.tmplfar, Pmin, Pmax, dfmin, dfmax, args.tmplLength, args.dir, args.jobnum, ii, runNum, ii, runNum, ii, runNum, scriptPID, args.ihsfactor))
+""".format(args.IFO, args.sqrtSX, args.fmin, args.fspan, args.t0, args.Tobs, args.Tsft, args.SFToverlap, args.ihsfar, args.ihsfomfar, args.tmplfar, Pmin, Pmax, dfmin, dfmax, args.tmplLength, args.dir, args.jobnum, scriptPID, args.ihsfactor))
 
-        if not args.inputSFTs: twospectconfig.write('injRandSeed '+str(random.randint(1, 1000000))+'\n')
-        if args.markBadSFTs: twospectconfig.write('markBadSFTs TRUE\n')
-        if args.ulonly: twospectconfig.write('IHSonly TRUE\n')
-        if args.keepOnlyTopNumIHS: twospectconfig.write('keepOnlyTopNumIHS {}\n'.format(args.keepOnlyTopNumIHS))
+    if not args.inputSFTs: twospectconfig.write('injRandSeed '+str(random.randint(1, 1000000))+'\n')
+    if args.markBadSFTs: twospectconfig.write('markBadSFTs TRUE\n')
+    if args.ulonly: twospectconfig.write('IHSonly TRUE\n')
+    if args.keepOnlyTopNumIHS: twospectconfig.write('keepOnlyTopNumIHS {}\n'.format(args.keepOnlyTopNumIHS))
 
-        if args.skylocations==0: twospectconfig.write('skyRegion ({},{})\n'.format(alpha, delta))
-        elif args.skylocations>0:
-            RAvalues = []
-            DECvalues = []
-            distances = []
-            skyfile = open(skygridfile,'r')
-            for line in skyfile:
-                values = line.strip()
-                values = values.split()
-                RAvalues.append(float(values[0]))
-                DECvalues.append(float(values[1]))
-                distances.append(math.acos(math.sin(abs(float(values[1])-0.5*math.pi))*math.sin(abs(args.injskydec-0.5*math.pi))*math.cos(float(values[0])-args.injskyra)+math.cos(abs(float(values[1])-0.5*math.pi))*math.cos(abs(args.injskydec-0.5*math.pi))))
-            skyfile.close()
-            sortedindex = [jj[0] for jj in sorted(enumerate(distances), key=lambda x:x[1])]
-            skyfile2 = open('/local/user/egoetz/{}/skygrid2.dat\n'.format(scriptPID),'w')
-            for jj in range(0, args.skylocations-1): skyfile2.write('{} {}\n'.format(RAvalues[sortedindex[jj]], DECvalues[sortedindex[jj]]))
-            skyfile2.close()
-            twospectconfig.write('skyRegionFile /local/user/egoetz/{}/skygrid2.dat\n'.format(scriptPID))
+    if args.skylocations==0: twospectconfig.write('skyRegion ({},{})\n'.format(alpha, delta))
+    elif args.skylocations>0:
+        RAvalues = []
+        DECvalues = []
+        distances = []
+        skyfile = open(skygridfile,'r')
+        for line in skyfile:
+            values = line.strip()
+            values = values.split()
+            RAvalues.append(float(values[0]))
+            DECvalues.append(float(values[1]))
+            distances.append(math.acos(math.sin(abs(float(values[1])-0.5*math.pi))*math.sin(abs(args.injskydec-0.5*math.pi))*math.cos(float(values[0])-args.injskyra)+math.cos(abs(float(values[1])-0.5*math.pi))*math.cos(abs(args.injskydec-0.5*math.pi))))
+        skyfile.close()
+        sortedindex = [jj[0] for jj in sorted(enumerate(distances), key=lambda x:x[1])]
+        skyfile2 = open('/local/user/egoetz/{}/skygrid2.dat\n'.format(scriptPID),'w')
+        for jj in range(0, args.skylocations-1): skyfile2.write('{} {}\n'.format(RAvalues[sortedindex[jj]], DECvalues[sortedindex[jj]]))
+        skyfile2.close()
+        twospectconfig.write('skyRegionFile /local/user/egoetz/{}/skygrid2.dat\n'.format(scriptPID))
 
-        if args.templateTest: twospectconfig.writelines('bruteForceTemplateTest TRUE\n','templateTestF {}\n'.format(f0), 'templateTestP {}\n'.format(P), 'templateTestDf {}\n'.format(df))
-        if args.skyposTest: twospectconfig.writelines('templateTest TRUE\n','templateTestF {}\n'.format(f0), 'templateTestP {}\n'.format(P), 'templateTestDf {}\n'.format(df))
+    if args.templateTest: twospectconfig.writelines('bruteForceTemplateTest TRUE\n','templateTestF {}\n'.format(f0), 'templateTestP {}\n'.format(P), 'templateTestDf {}\n'.format(df))
+    if args.skyposTest: twospectconfig.writelines('templateTest TRUE\n','templateTestF {}\n'.format(f0), 'templateTestP {}\n'.format(P), 'templateTestDf {}\n'.format(df))
 
-        if args.inputSFTs: twospectconfig.write('inputSFTs {}\n'.format(args.inputSFTs))
+    if args.inputSFTs: twospectconfig.write('inputSFTs {}\n'.format(args.inputSFTs))
 
-        if args.gaussianNoiseWithSFTgaps: twospectconfig.write('gaussianNoiseWithSFTgaps TRUE\n')
+    if args.gaussianNoiseWithSFTgaps: twospectconfig.write('gaussianNoiseWithSFTgaps TRUE\n')
 
-        if args.useCorrectNScosi: twospectconfig.write('assumeNScosi {}\n'.format(cosi))
-        if args.useCorrectNSpsi: twospectconfig.write('assumeNSpsi {}\n'.format(psi))
+    if args.useCorrectNScosi: twospectconfig.write('assumeNScosi {}\n'.format(cosi))
+    if args.useCorrectNSpsi: twospectconfig.write('assumeNSpsi {}\n'.format(psi))
 
-        twospectconfig.write('IFO ')
+    if numberTimestampFiles>0:
+        twospectconfig.write('timestampsFile ')
         for jj in range(0, numIFOs):
-            twospectconfig.write(IFOList[jj])
+            twospectconfig.write(timestampsFileList[jj])
             if jj<numIFOs-1: twospectconfig.write(',')
         twospectconfig.write('\n')
-
-        if numberTimestampFiles>0:
-            twospectconfig.write('timestampsFile ')
-            for jj in range(0, numIFOs):
-                twospectconfig.write(timestampsFileList[jj])
-                if jj<numIFOs-1: twospectconfig.write(',')
-            twospectconfig.write('\n')
-        elif numberSegmentFiles>0:
-            twospectconfig.write('segmentFile ')
-            for jj in range(0, numIFOs):
-                twospectconfig.write(segmentFileList[jj])
-                if jj<numIFOs-1: twospectconfig.write(',')
-            twospectconfig.write('\n')
-
-        if numIFOs>1 and runNum==1 and not args.useCorrectNScosi:
-            twospectconfig.write('cosiSignCoherent -1\n')
-            runNum -= 1
-        elif numIFOs>1 and runNum==2 and not args.useCorrectNScosi:
-            twospectconfig.write('cosiSignCoherent 1\n')
-            runNum -= 1
+    elif numberSegmentFiles>0:
+        twospectconfig.write('segmentFile ')
+        for jj in range(0, numIFOs):
+            twospectconfig.write(segmentFileList[jj])
+            if jj<numIFOs-1: twospectconfig.write(',')
+        twospectconfig.write('\n')
     
-        twospectconfig.close()
+    twospectconfig.close()
 
-        subprocess.check_call([args.twospectExe, '@/local/user/egoetz/{}/twospectconfig'.format(scriptPID)])
+    if numIFOs>1 and not args.useCorrectNScosi:
+        if args.unrestrictedCosi: subprocess.check_call([args.twospectExe, '@/local/user/egoetz/{}/twospectconfig'.format(scriptPID), '--outfilename=logfile_{}_0.txt'.format(ii), '--ULfilename=uls_{}_0.dat'.format(ii)])
+        else:
+            subprocess.check_call([args.twospectExe, '@/local/user/egoetz/{}/twospectconfig'.format(scriptPID), '--cosiSignCoherent=-1', '--outfilename=logfile_{}_1.txt'.format(ii), '--ULfilename=uls_{}_1.dat'.format(ii)])
+            subprocess.check_call([args.twospectExe, '@/local/user/egoetz/{}/twospectconfig'.format(scriptPID), '--cosiSignCoherent=1', '--outfilename=logfile_{}_2.txt'.format(ii), '--ULfilename=uls_{}_2.dat'.format(ii)])
+    else: subprocess.check_call([args.twospectExe, '@/local/user/egoetz/{}/twospectconfig'.format(scriptPID), '--outfilename=logfile_{}_0.txt'.format(ii), '--ULfilename=uls_{}_0.dat'.format(ii)])
 
 shutil.rmtree('/local/user/egoetz/{}'.format(scriptPID))
 

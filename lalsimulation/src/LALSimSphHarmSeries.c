@@ -17,7 +17,7 @@
  *  MA  02111-1307  USA
  */
 
-#include <lal/LALSimInspiralSphHarmSeries.h>
+#include <lal/LALSimSphHarmSeries.h>
 #include <lal/LALStdlib.h>
 #include <lal/Sequence.h>
 #include <lal/TimeSeries.h>
@@ -31,6 +31,16 @@
 #else
 #define UNUSED
 #endif
+
+/**
+ * @addtogroup LALSimSphHarmSeries_h
+ * @{
+ */
+
+/**
+ * @name SphHarmTimeSeries Routines
+ * @{
+ */
 
 /**
  * Prepend a node to a linked list of SphHarmTimeSeries, or create a new head
@@ -187,44 +197,6 @@ SphHarmTimeSeries *XLALResizeSphHarmTimeSeries(
     return ts;
 }
 
-/**
- * Create a SphHarmFrequencySeries from a SphHarmTimeSeries
- * by performing an FFT on each mode in the SphHarmTimeSeries.
- */
-SphHarmFrequencySeries *XLALSphHarmFrequencySeriesFromSphHarmTimeSeries(
-        SphHarmTimeSeries *hlms_TD /**< SphHarmTimeSeries to be FFT'd */
-        )
-{
-    UINT4 l, Lmax, length;
-    int m;
-    COMPLEX16TimeSeries *ht;
-    COMPLEX16FrequencySeries *hf;
-    SphHarmFrequencySeries *hlms_FD = NULL;
-    REAL8 deltaF;
-    if( !hlms_TD ) // Check head of linked list is valid
-        XLAL_ERROR_NULL(XLAL_EINVAL);
-
-    Lmax = XLALSphHarmTimeSeriesGetMaxL(hlms_TD);
-    length = hlms_TD->mode->data->length; // N.B. Assuming all hlms same length
-    deltaF = 1./hlms_TD->mode->deltaT/length;
-    COMPLEX16FFTPlan *fwdplan = XLALCreateForwardCOMPLEX16FFTPlan(length, 0);
-    hf = XLALCreateCOMPLEX16FrequencySeries( "FD Mode", &hlms_TD->mode->epoch,
-            0., deltaF, &lalHertzUnit, length);
-    // Loop over TD modes, FFT, add to SphHarmFrequencySeries
-    for(l = 2; l <= Lmax; l++) {
-        for(m = -l; m <= (int) l; m++) {
-            ht = XLALSphHarmTimeSeriesGetMode(hlms_TD, l, m);
-            if( ht ) {
-                XLALCOMPLEX16TimeFreqFFT(hf, ht, fwdplan);
-                hlms_FD = XLALSphHarmFrequencySeriesAddMode(hlms_FD, hf, l, m);
-            }
-        }
-    }
-
-    return hlms_FD;
-
-}
-
 SphHarmTimeSeries *XLALSphHarmTimeSeriesFromSphHarmFrequencySeriesDataAndPSD(
                                                                              SphHarmFrequencySeries *hlms, 
                                                                              COMPLEX16FrequencySeries* data,
@@ -271,6 +243,51 @@ SphHarmTimeSeries *XLALSphHarmTimeSeriesFromSphHarmFrequencySeriesDataAndPSD(
         }
     }
     return rhoTlm;
+}
+
+/** @} */
+
+/**
+ * @name SphHarmFrequencySeries Routines
+ * @{
+ */
+
+/**
+ * Create a SphHarmFrequencySeries from a SphHarmTimeSeries
+ * by performing an FFT on each mode in the SphHarmTimeSeries.
+ */
+SphHarmFrequencySeries *XLALSphHarmFrequencySeriesFromSphHarmTimeSeries(
+        SphHarmTimeSeries *hlms_TD /**< SphHarmTimeSeries to be FFT'd */
+        )
+{
+    UINT4 l, Lmax, length;
+    int m;
+    COMPLEX16TimeSeries *ht;
+    COMPLEX16FrequencySeries *hf;
+    SphHarmFrequencySeries *hlms_FD = NULL;
+    REAL8 deltaF;
+    if( !hlms_TD ) // Check head of linked list is valid
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+
+    Lmax = XLALSphHarmTimeSeriesGetMaxL(hlms_TD);
+    length = hlms_TD->mode->data->length; // N.B. Assuming all hlms same length
+    deltaF = 1./hlms_TD->mode->deltaT/length;
+    COMPLEX16FFTPlan *fwdplan = XLALCreateForwardCOMPLEX16FFTPlan(length, 0);
+    hf = XLALCreateCOMPLEX16FrequencySeries( "FD Mode", &hlms_TD->mode->epoch,
+            0., deltaF, &lalHertzUnit, length);
+    // Loop over TD modes, FFT, add to SphHarmFrequencySeries
+    for(l = 2; l <= Lmax; l++) {
+        for(m = -l; m <= (int) l; m++) {
+            ht = XLALSphHarmTimeSeriesGetMode(hlms_TD, l, m);
+            if( ht ) {
+                XLALCOMPLEX16TimeFreqFFT(hf, ht, fwdplan);
+                hlms_FD = XLALSphHarmFrequencySeriesAddMode(hlms_FD, hf, l, m);
+            }
+        }
+    }
+
+    return hlms_FD;
+
 }
 
 
@@ -403,3 +420,6 @@ UINT4 XLALSphHarmFrequencySeriesGetMaxL( SphHarmFrequencySeries* ts ){
     }
     return maxl;
 }
+
+/** @} */
+/** @} */

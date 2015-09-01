@@ -35,7 +35,7 @@
 #include <lal/LALSimNoise.h>
 #include <lal/ComplexFFT.h>
 
-#include <fftw3.h>
+#include <lal/ComplexFFT.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_math.h>
@@ -65,8 +65,7 @@ REAL8 MatchSI(COMPLEX16FrequencySeries **htilde1, COMPLEX16FrequencySeries **hti
   }
   int n = len1;
 
-  fftw_complex *integrand;
-  integrand = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n);
+  COMPLEX16Vector *integrand = XLALCreateCOMPLEX16Vector(n);
   REAL8 PSDfact = XLALSimNoisePSDaLIGOZeroDetHighPower((fMax-fMin)/4.);
   REAL8 tableS;
   COMPLEX16 h1,h2;
@@ -82,7 +81,7 @@ REAL8 MatchSI(COMPLEX16FrequencySeries **htilde1, COMPLEX16FrequencySeries **hti
     tableS = PSDfact / XLALSimNoisePSDaLIGOZeroDetHighPower(f);
     h1 = ((*htilde1)->data->data)[i];
     h2 = ((*htilde2)->data->data)[i];
-    integrand[i] = h1 * conj(h2) * tableS;
+    integrand->data[i] = h1 * conj(h2) * tableS;
     norm1 += sqr(cabs(h1)) * tableS;
     norm2 += sqr(cabs(h2)) * tableS;
     // printf("f = %g\tnoise(f) = %g\ttableS[i] = %g\tintegrand[i] = %g\n", f, XLALSimNoisePSDaLIGOZeroDetHighPower(f), tableS, creal(integrand[i]));
@@ -93,31 +92,31 @@ REAL8 MatchSI(COMPLEX16FrequencySeries **htilde1, COMPLEX16FrequencySeries **hti
   int zpf = 10;
   int m = n + 2*zpf*n; // zero-pad on both sides
   //printf("Total length %d\n", m);
-  fftw_complex *array;
-  fftw_plan p;
-  array = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m);
-  p = fftw_plan_dft_1d(m, array, array, FFTW_FORWARD, FFTW_ESTIMATE); // prepare in-place FFT
+
+  COMPLEX16FFTPlan *myplan = XLALCreateForwardCOMPLEX16FFTPlan(m, 0);
+  COMPLEX16Vector *array_in = XLALCreateCOMPLEX16Vector(m);
+  COMPLEX16Vector *array_out = XLALCreateCOMPLEX16Vector(m);
 
   // fill input array
   for (int i=0; i<zpf*n; i++)
-    array[i] = 0.0;
+    array_in->data[i] = 0.0;
   for (int i=zpf*n; i<(zpf*n + n); i++)
-    array[i] = integrand[iStart + i-zpf*n];
+    array_in->data[i] = integrand->data[iStart + i-zpf*n];
   for (int i=zpf*n + n; i<m; i++)
-    array[i] = 0.0;
+    array_in->data[i] = 0.0;
 
-  fftw_execute(p);
+  XLALCOMPLEX16VectorFFT(array_out, array_in, myplan);
 
   REAL8 match=0; REAL8 val;
   for (int i=0; i<m; i++) {
-    val = cabs(array[i]);
+    val = cabs(array_out->data[i]);
     if (val > match)
       match = val;
   }
 
-  fftw_destroy_plan(p);
-  fftw_free(array);
-  fftw_free(integrand);
+  XLALFree(array_in);
+  XLALFree(array_out);
+  XLALDestroyCOMPLEX16FFTPlan(myplan);
 
   return match / sqrt(norm1*norm2);
 }

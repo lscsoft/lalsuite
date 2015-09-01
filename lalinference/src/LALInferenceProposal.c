@@ -89,6 +89,7 @@ const char *const ensembleWalkIntrinsicName = "EnsembleWalkIntrinsic";
 const char *const ensembleWalkExtrinsicName = "EnsembleWalkExtrinsic";
 const char *const clusteredKDEProposalName = "ClusteredKDEProposal";
 const char *const splineCalibrationProposalName = "SplineCalibration";
+const char *const distanceLikelihoodProposalName = "DistanceLikelihood";
 
 
 static INT4 same_detector_location(LALDetector *d1, LALDetector *d2) {
@@ -273,6 +274,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     INT4 stretch = 0;
     INT4 walk = 0;
     INT4 skyring = 1;
+    INT4 distance = 1;
     INT4 kde = 0;
     INT4 spline_cal = 0;
     INT4 psdfit = 0;
@@ -387,7 +389,13 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
         psdfit = 1;
 
     if (LALInferenceGetProcParamVal(command_line, "--glitch-fit"))
-       glitchfit = 1;
+        glitchfit = 1;
+
+    /* Convenience option for turning off ensemble moves */
+    if (LALInferenceGetProcParamVal(command_line, "--proposal-no-ensemble")) {
+        stretch = 0;
+        walk = 0;
+    }
 
     /* Check if imposing cyclic reflective bounds */
     if (LALInferenceGetProcParamVal(runState->commandLine, "--cyclic-reflective-kde"))
@@ -410,6 +418,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
         diffevo = 0;
         stretch = 0;
         walk = 0;
+        distance = 0;
         skyring = 0;
         spline_cal = 0;
     }
@@ -441,17 +450,18 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     }
 
     /* Register all proposal functions, check for explicit command-line requests */
-    LALInferenceRegisterProposal(propArgs, "singleadapt", &singleadapt, command_line);
+    LALInferenceRegisterProposal(propArgs, "single-adapt", &singleadapt, command_line);
     LALInferenceRegisterProposal(propArgs, "psiphi", &psiphi, command_line);
-    LALInferenceRegisterProposal(propArgs, "extrinsicparam", &ext_param, command_line);
-    LALInferenceRegisterProposal(propArgs, "skywander", &skywander, command_line);
-    LALInferenceRegisterProposal(propArgs, "skyreflect", &skyreflect, command_line);
-    LALInferenceRegisterProposal(propArgs, "drawprior", &drawprior, command_line);
+    LALInferenceRegisterProposal(propArgs, "extrinsic-param", &ext_param, command_line);
+    LALInferenceRegisterProposal(propArgs, "sky-wander", &skywander, command_line);
+    LALInferenceRegisterProposal(propArgs, "sky-reflect", &skyreflect, command_line);
+    LALInferenceRegisterProposal(propArgs, "draw-prior", &drawprior, command_line);
     LALInferenceRegisterProposal(propArgs, "eigenvectors", &covjump, command_line);
-    LALInferenceRegisterProposal(propArgs, "differentialevolution", &diffevo, command_line);
-    LALInferenceRegisterProposal(propArgs, "stretch", &stretch, command_line);
-    LALInferenceRegisterProposal(propArgs, "walk", &walk, command_line);
-    LALInferenceRegisterProposal(propArgs, "skyring", &skyring, command_line);
+    LALInferenceRegisterProposal(propArgs, "differential-evolution", &diffevo, command_line);
+    LALInferenceRegisterProposal(propArgs, "ensemble-stretch", &stretch, command_line);
+    LALInferenceRegisterProposal(propArgs, "ensemble-walk", &walk, command_line);
+    LALInferenceRegisterProposal(propArgs, "sky-ring", &skyring, command_line);
+    LALInferenceRegisterProposal(propArgs, "distance", &distance, command_line);
     LALInferenceRegisterProposal(propArgs, "kde", &kde, command_line);
     LALInferenceRegisterProposal(propArgs, "spline_cal", &spline_cal, command_line);
     LALInferenceRegisterProposal(propArgs, "psdfit", &psdfit, command_line);
@@ -486,7 +496,7 @@ LALInferenceProposalCycle* LALInferenceSetupDefaultInspiralProposalCycle(LALInfe
 
     LALInferenceProposalCycle *cycle = XLALCalloc(1, sizeof(LALInferenceProposalCycle));
 
-    if (LALInferenceGetINT4Variable(propArgs, "singleadapt")) {
+    if (LALInferenceGetINT4Variable(propArgs, "single-adapt")) {
         prop = LALInferenceInitProposal(&LALInferenceSingleAdaptProposal, singleAdaptProposalName);
         LALInferenceAddProposalToCycle(cycle, prop, BIGWEIGHT);
     }
@@ -496,22 +506,22 @@ LALInferenceProposalCycle* LALInferenceSetupDefaultInspiralProposalCycle(LALInfe
         LALInferenceAddProposalToCycle(cycle, prop, TINYWEIGHT);
     }
 
-    if (LALInferenceGetINT4Variable(propArgs, "extrinsicparam")) {
+    if (LALInferenceGetINT4Variable(propArgs, "extrinsic-param")) {
         prop = LALInferenceInitProposal(&LALInferenceExtrinsicParamProposal, extrinsicParamProposalName);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
-    if (LALInferenceGetINT4Variable(propArgs, "skywander")) {
+    if (LALInferenceGetINT4Variable(propArgs, "sky-wander")) {
         prop = LALInferenceInitProposal(&LALInferenceSkyLocWanderJump, skyLocWanderJumpName);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
-    if (LALInferenceGetINT4Variable(propArgs, "skyreflect")) {
+    if (LALInferenceGetINT4Variable(propArgs, "sky-reflect")) {
         prop = LALInferenceInitProposal(&LALInferenceSkyReflectDetPlane, skyReflectDetPlaneName);
         LALInferenceAddProposalToCycle(cycle, prop, TINYWEIGHT);
     }
 
-    if (LALInferenceGetINT4Variable(propArgs, "drawprior")) {
+    if (LALInferenceGetINT4Variable(propArgs, "draw-prior")) {
         prop = LALInferenceInitProposal(&LALInferenceDrawApproxPrior, drawApproxPriorName);
         LALInferenceAddProposalToCycle(cycle, prop, TINYWEIGHT);
     }
@@ -521,7 +531,7 @@ LALInferenceProposalCycle* LALInferenceSetupDefaultInspiralProposalCycle(LALInfe
         LALInferenceAddProposalToCycle(cycle, prop, BIGWEIGHT);
     }
 
-    if (LALInferenceGetINT4Variable(propArgs, "differentialevolution")) {
+    if (LALInferenceGetINT4Variable(propArgs, "differential-evolution")) {
         prop = LALInferenceInitProposal(&LALInferenceDifferentialEvolutionFull, differentialEvolutionFullName);
         LALInferenceAddProposalToCycle(cycle, prop, BIGWEIGHT);
 
@@ -532,7 +542,7 @@ LALInferenceProposalCycle* LALInferenceSetupDefaultInspiralProposalCycle(LALInfe
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
-    if (LALInferenceGetINT4Variable(propArgs, "stretch")) {
+    if (LALInferenceGetINT4Variable(propArgs, "ensemble-stretch")) {
         prop = LALInferenceInitProposal(&LALInferenceEnsembleStretchFull, ensembleStretchFullName);
         LALInferenceAddProposalToCycle(cycle, prop, BIGWEIGHT);
 
@@ -543,7 +553,7 @@ LALInferenceProposalCycle* LALInferenceSetupDefaultInspiralProposalCycle(LALInfe
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
-    if (LALInferenceGetINT4Variable(propArgs, "walk")) {
+    if (LALInferenceGetINT4Variable(propArgs, "ensemble-walk")) {
         prop = LALInferenceInitProposal(&LALInferenceEnsembleWalkFull, ensembleWalkFullName);
         LALInferenceAddProposalToCycle(cycle, prop, BIGWEIGHT);
 
@@ -554,8 +564,14 @@ LALInferenceProposalCycle* LALInferenceSetupDefaultInspiralProposalCycle(LALInfe
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
-    if (LALInferenceGetINT4Variable(propArgs, "skyring")) {
+    if (LALInferenceGetINT4Variable(propArgs, "sky-ring")) {
         prop = LALInferenceInitProposal(&LALInferenceSkyRingProposal, skyRingProposalName);
+        LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
+    }
+
+    /* Distance proposal */
+    if (LALInferenceGetINT4Variable(propArgs, "distance")) {
+        prop = LALInferenceInitProposal(&LALInferenceDistanceLikelihoodProposal, distanceLikelihoodProposalName);
         LALInferenceAddProposalToCycle(cycle, prop, SMALLWEIGHT);
     }
 
@@ -936,19 +952,15 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceThreadState *thread,
     LALInferenceVariables **dePts;
     LALInferenceVariables *ptI;
 
-    LALInferenceCopyVariables(currentParams, proposedParams);
-
+    N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
+    const char* local_names[N];
     if (names == NULL) {
-        N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
-        names = alloca(N * sizeof(char *)); /* Hope we have alloca---saves
-                                               having to deallocate after
-                                               proposal. */
+        names = local_names;
 
         item = currentParams->head;
         i = 0;
         while (item != NULL) {
-            if (LALInferenceCheckVariableNonFixed(currentParams, item->name) &&
-                item->type==LALINFERENCE_REAL8_t) {
+            if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT && item->type==LALINFERENCE_REAL8_t ) {
                 names[i] = item->name;
                 i++;
             }
@@ -956,6 +968,14 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceThreadState *thread,
         }
         names[i]=NULL; /* Terminate */
     }
+
+    Ndim = 0;
+    for(Ndim=0,i=0; names[i] != NULL; i++ ) {
+        if(LALInferenceCheckVariableNonFixed(currentParams,names[i]))
+        Ndim++;
+    }
+
+    LALInferenceCopyVariables(currentParams, proposedParams);
 
     Ndim = 0;
     for(Ndim=0, i=0; names[i] != NULL; i++ ) {
@@ -971,12 +991,10 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceThreadState *thread,
         return logPropRatio; /* Quit now, since we don't have any points to use. */
     }
 
-    i = gsl_rng_uniform_int(thread->GSLrandom, nPts);
-
     /* Choose a different sample */
     do {
-        i = gsl_rng_uniform_int(thread->GSLrandom, nPts);
-    } while (!LALInferenceCompareVariables(proposedParams, dePts[i]));
+        i = gsl_rng_uniform_int(runState->GSLrandom, nPts);
+    } while (!LALInferenceCompareVariables(currentParams, dePts[i]));
 
     ptI = dePts[i];
 
@@ -996,18 +1014,18 @@ REAL8 LALInferenceEnsembleStretchNames(LALInferenceThreadState *thread,
         /* Ignore variable if it's not in each of the params. */
         if (LALInferenceCheckVariableNonFixed(proposedParams, names[i]) &&
             LALInferenceCheckVariableNonFixed(ptI, names[i])) {
-            cur = LALInferenceGetREAL8Variable(proposedParams, names[i]);
-            other= LALInferenceGetREAL8Variable(ptI, names[i]);
-            x = other + scale*(cur-other);
+                cur = LALInferenceGetREAL8Variable(proposedParams, names[i]);
+                other= LALInferenceGetREAL8Variable(ptI, names[i]);
+                x = other + scale*(cur-other);
 
-            LALInferenceSetVariable(proposedParams, names[i], &x);
+                LALInferenceSetVariable(proposedParams, names[i], &x);
         }
     }
 
-    if (scale<maxScale && scale>(1.0/maxScale))
+    if (scale < maxScale && scale > (1.0/maxScale))
         logPropRatio = log(scale)*((REAL8)Ndim);
     else
-        logPropRatio = -DBL_MAX;
+        logPropRatio = -INFINITY;
 
     return logPropRatio;
 }
@@ -1127,7 +1145,7 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceThreadState *thread,
   double w=0.0;
   double univariate_normals[sample_size];
   for(i=0;i<sample_size;i++) univariate_normals[i] = gsl_ran_ugaussian(thread->GSLrandom);
-  
+
   /* Note: Simplified this loop on master 2015-08-12, take this version when rebasing */
   for(k=0;names[k]!=NULL;k++)
   {
@@ -1679,7 +1697,7 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     INT4 i, j, l;
     INT4 ifo, nifo, timeflag=0;
     REAL8 logPropRatio = 0.0;
-    REAL8 ra, dec;
+    REAL8 ra, dec, dL;
     REAL8 baryTime, gmst;
     REAL8 newRA, newDec, newTime, newPsi;
     REAL8 intpart, decpart;
@@ -1690,12 +1708,27 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     REAL8 pForward, pReverse;
     REAL8 n[3];
     REAL8 kp[3];
+    DistanceParam distParam;
 
     LALInferenceCopyVariables(currentParams, proposedParams);
 
     LIGOTimeGPS GPSlal, *epoch;
     LALDetector *detectors;
     gsl_matrix *IFO;
+
+    if (LALInferenceCheckVariable(currentParams, "distance")) {
+        distParam = USES_DISTANCE_VARIABLE;
+    } else if (LALInferenceCheckVariable(currentParams, "logdistance")) {
+        distParam = USES_LOG_DISTANCE_VARIABLE;
+    } else {
+        XLAL_ERROR_REAL8(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
+    }
+
+    if (distParam == USES_DISTANCE_VARIABLE) {
+        dL = LALInferenceGetREAL8Variable(currentParams, "distance");
+    } else {
+        dL = exp(LALInferenceGetREAL8Variable(currentParams, "logdistance"));
+    }
 
     LALInferenceVariables *args = thread->proposalArgs;
     gsl_rng *rng = thread->GSLrandom;
@@ -2844,6 +2877,87 @@ static void reflected_extrinsic_parameters(LALInferenceThreadState *thread, cons
     }
 }
 
+REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
+                                             LALInferenceVariables *currentParams,
+                                             LALInferenceVariables *proposedParams) {
+  REAL8 old_d=0.0;
+  DistanceParam distParam;
+  
+  if (LALInferenceCheckVariable(currentParams, "distance")) {
+    distParam = USES_DISTANCE_VARIABLE;
+    old_d = LALInferenceGetREAL8Variable(currentParams,"distance");
+  } else if (LALInferenceCheckVariable(currentParams, "logdistance")) {
+    distParam = USES_LOG_DISTANCE_VARIABLE;
+    old_d = exp(LALInferenceGetREAL8Variable(currentParams,"logdistance"));
+  } else {
+    XLAL_ERROR_REAL8(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
+  }
+  if(!LALInferenceCheckVariable(currentParams,"optimal_snr") || !LALInferenceCheckVariable(currentParams,"matched_filter_snr"))
+    /* Force a likelihood calculation to generate the parameters */
+    runState->likelihood(currentParams,thread->parent->data,thread->model);
+  if(!LALInferenceCheckVariable(currentParams,"optimal_snr") || !LALInferenceCheckVariable(currentParams,"matched_filter_snr"))
+    XLAL_ERROR_REAL8(XLAL_FAILURE,"Could not find optimal_snr or matched_filter_snr for distance likelihood jump\n");
+  REAL8 OptimalSNR = LALInferenceGetREAL8Variable(currentParams,"optimal_snr");
+  REAL8 MatchedFilterSNR = LALInferenceGetREAL8Variable(currentParams,"matched_filter_snr");
+  REAL8 d_inner_h = MatchedFilterSNR * OptimalSNR;
+
+  /* Get params of sampling distribution */
+  REAL8 xmean = d_inner_h/(OptimalSNR*OptimalSNR*old_d);
+  REAL8 xsigma = 1.0/(OptimalSNR*old_d);
+  REAL8 old_x = 1.0/old_d;
+  
+  /* Sample new x, cutting off the part of the Gaussian that extends
+     to new_x < 0.  (Since the proposal density remains fixed for new
+     and old x, this just introduces a constant normalisation factor
+     that cancels in the proposal ratio.) */
+  REAL8 new_x;
+  do {
+    new_x = xmean + gsl_ran_gaussian(thread->GSLrandom,xsigma);
+  } while (new_x <= 0.0);
+  REAL8 new_d = 1.0/new_x;
+  
+  /* Adjust SNRs */
+  OptimalSNR*= new_x / old_x;
+  
+  
+  LALInferenceCopyVariables(currentParams,proposedParams);
+  LALInferenceSetVariable(proposedParams,"optimal_snr",&OptimalSNR);
+  
+  REAL8 logxdjac;
+  /* Set distance */
+  if(distParam == USES_DISTANCE_VARIABLE)
+  {
+    /* The natural proposal density is in x, but we need to compute
+       the proposal ratio density in d.  So, we need a factor of 
+       
+       |dx_old/dd_old| / |dx_new/dd_new| = d_new^2 / d_old^2
+
+       to correct the x proposal density.
+    */
+    LALInferenceSetVariable(proposedParams,"distance",&new_d);
+    logxdjac = 2.0*log(new_d) - 2.0*log(old_d);
+  }
+  else
+  {
+    /* The natural proposal density is in x, but we need to compute
+       the proposal ratio in log(d).  So, we need a factor of
+
+       |dx_old/dlog(d_old)| / |dx_new/dlog(d_new)| = d_new / d_old
+
+       to correct the x proposal density.
+     */
+    REAL8 new_logd = log(new_d);
+    LALInferenceSetVariable(proposedParams,"logdistance",&new_logd);
+    logxdjac = log(new_d) - log(old_d);
+  }
+  /* Proposal ratio is not symmetric */
+  /* P.R. = p(xold|xmean,xsigma) / p(xnew|xmean,xsigma) * jacobian */
+  REAL8 log_p_reverse = -0.5*(old_x-xmean)*(old_x-xmean)/(xsigma*xsigma);
+  REAL8 log_p_forward = -0.5*(new_x-xmean)*(new_x-xmean)/(xsigma*xsigma);
+
+  return(log_p_reverse - log_p_forward + logxdjac);
+}
+
 
 REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread,
                                          LALInferenceVariables *currentParams,
@@ -3896,18 +4010,24 @@ void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceThreadState *thread, IN
 }
 
 /**
- * Compute the maximum single-parameter autocorrelation length.
+ * Compute the maximum single-parameter autocorrelation length.  Each
+ * parameter's ACL is the smallest s such that
  *
  * 1 + 2*ACF(1) + 2*ACF(2) + ... + 2*ACF(M*s) < s,
  *
- * the short length so that the sum of the ACF function
- * is smaller than that length over a window of M times
- * that length.
+ * The parameter M controls the length of the window over which we sum
+ * the ACF to estimate the ACL; there must be at least M*ACL samples
+ * summed.  This ensures that we obtain a reliable estimate of the ACL
+ * by incorporating lags that are much longer that the estimated ACL.
+ * 
+ * The maximum window length is also restricted to be N/K as a safety
+ * precaution against relying on data near the extreme of the lags in
+ * the ACF, where there is a lot of noise.
+ * 
+ * By default, safe parameters are M = 5, K = 2.
+ * 
+ * If no estimate can be obtained, then return Infinity.
  *
- * The maximum window length is restricted to be N/K as
- * a safety precaution against relying on data near the
- * extreme of the lags in the ACF, where there is a lot
- * of noise.
  * @param array Array with rows containing samples.
  * @param nPoints UNDOCUMENTED
  * @param nPar UNDOCUMENTED
@@ -3931,7 +4051,7 @@ REAL8 LALInferenceComputeMaxAutoCorrLen(REAL8 *array, INT4 nPoints, INT4 nPar) {
             lag=1;
             ACL=1.0;
             ACF=1.0;
-            s=1.0;
+            s=1.0/(REAL8)M;
             cumACF=1.0;
             while (cumACF >= s) {
                 ACF = gsl_stats_correlation(array + par, nPar, array + lag*nPar + par, nPar, nPoints-lag);
@@ -3939,11 +4059,10 @@ REAL8 LALInferenceComputeMaxAutoCorrLen(REAL8 *array, INT4 nPoints, INT4 nPar) {
                 lag++;
                 s = (REAL8)lag/(REAL8)M;
                 if (lag > imax) {
-                    ACL = INFINITY;
-                    break;
+                    return INFINITY; /* Short circuit: this parameter has indeterminate ACL */
                 }
             }
-            ACL = s;
+            ACL = cumACF;
             if (ACL>maxACL)
                 maxACL=ACL;
 

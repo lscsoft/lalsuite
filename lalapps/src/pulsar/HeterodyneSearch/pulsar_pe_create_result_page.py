@@ -624,10 +624,8 @@ include one posterior sample file for each IFO.")
   else:
     ifos = opts.ifos
 
-  if not opts.__dict__['Bkfiles']:
-    print >> sys.stderr, "Must specify the heterodyned data files"
-    parser.print_help()
-    sys.exit(0)
+  if opts.__dict__['Bkfiles'] is None:
+    Bkfiles = []
   else:
     Bkfiles = opts.Bkfiles
 
@@ -673,10 +671,16 @@ include one posterior sample file for each IFO.")
       ifos = ifostmp
       nifos = len(ifos)
 
+  # if we only want a Joint output then set this flag to true - this will prevent the code requiring Bk files
+  jointonly = False
+  if nifos == 1 and ifos[0] == 'Joint':
+    jointonly = True
+
   # check that number of ifos is the same as the number of data lists (for MCMC)
-  if nifos != ndata:
-    print >> sys.stderr, "Number of IFOs and data lists are not equal"
-    sys.exit(0)
+  if not jointonly: # if we only want a Joint output don't perform this check
+    if nifos != ndata:
+      print >> sys.stderr, "Number of IFOs and data lists are not equal"
+      sys.exit(0)
 
   # check if parfile is a single file or a directory
   if os.path.isfile(opts.parfile):
@@ -710,14 +714,15 @@ include one posterior sample file for each IFO.")
       sys.exit(0)
 
   # check if heterodyned data exists for this pulsar and each detector
-  Bkdata = []
-  for i, ifo in enumerate(ifos):
-    Bkdata.append(os.path.join(Bkfiles[i], 'finehet_' + pname + '_' + ifo))
+  if not jointonly:
+    Bkdata = []
+    for i, ifo in enumerate(ifos):
+      Bkdata.append(os.path.join(Bkfiles[i], 'finehet_' + pname + '_' + ifo))
 
-    # check files exist if not then skip the pulsar
-    if not os.path.isfile(Bkdata[i]) and not os.path.isfile(Bkdata[i]+'.gz'):
-      print >> sys.stderr, "No heterodyne file %s" % Bkdata[i]
-      sys.exit(0)
+      # check files exist if not then skip the pulsar
+      if not os.path.isfile(Bkdata[i]) and not os.path.isfile(Bkdata[i]+'.gz'):
+        print >> sys.stderr, "No heterodyne file %s" % Bkdata[i]
+        sys.exit(0)
 
   # check that MCMC chains exist for this pulsar and each detector (including
   # joint)
@@ -965,46 +970,47 @@ function toggle(id) {
   psrshelf['sdlim'] = sdlim
 
   # get time series and PSD plots
-  Bkdata = []
-  plotpsds = True
-  plotfscan = True
+  if not jointonly:
+    Bkdata = []
+    plotpsds = True
+    plotfscan = True
 
-  for i, ifo in enumerate(ifos):
-    Bkdata.append(Bkfiles[i] + '/finehet_' + pname + '_' + ifo)
-    # check file exists
-    if not os.path.isfile(Bkdata[i]):
-      Bkdata[i] = Bkdata[i]+'.gz' # try gzipped file
+    for i, ifo in enumerate(ifos):
+      Bkdata.append(Bkfiles[i] + '/finehet_' + pname + '_' + ifo)
+      # check file exists
       if not os.path.isfile(Bkdata[i]):
-        print >> sys.stderr, "Error... could not find Bk data file %s" % Bkdata[i]
+        Bkdata[i] = Bkdata[i]+'.gz' # try gzipped file
+        if not os.path.isfile(Bkdata[i]):
+          print >> sys.stderr, "Error... could not find Bk data file %s" % Bkdata[i]
 
-  asdtime = 14400 # set time over which to produce the asds
+    asdtime = 14400 # set time over which to produce the asds
 
-  Bkfigs, psdfigs, fscanfigs, asdlist = pppu.plot_Bks_ASDs( Bkdata, ifos, \
+    Bkfigs, psdfigs, fscanfigs, asdlist = pppu.plot_Bks_ASDs( Bkdata, ifos, \
 asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
 
-  if asdlist:
-    psrshelf['ASD'] = dict(zip(ifos, asdlist)) # convert into dictionary
+    if asdlist:
+      psrshelf['ASD'] = dict(zip(ifos, asdlist)) # convert into dictionary
 
-  # output plots of time series and psd
-  Bkfigname = None
-  psdfigname = None
-  fscanfigname = None
+    # output plots of time series and psd
+    Bkfigname = None
+    psdfigname = None
+    fscanfigname = None
 
-  Bkfigname = []
-  psdfigname = []
-  fscanfigname = []
+    Bkfigname = []
+    psdfigname = []
+    fscanfigname = []
 
-  for i, ifo in enumerate(ifos):
-    figname = output_fig(Bkfigs[i], puldir, 'Bk_'+ifo, ftypes)
-    Bkfigname.append(figname)
+    for i, ifo in enumerate(ifos):
+      figname = output_fig(Bkfigs[i], puldir, 'Bk_'+ifo, ftypes)
+      Bkfigname.append(figname)
 
-    if plotpsds:
-      figname = output_fig(psdfigs[i], puldir, 'ASD_'+ifo, ftypes)
-      psdfigname.append(figname)
+      if plotpsds:
+        figname = output_fig(psdfigs[i], puldir, 'ASD_'+ifo, ftypes)
+        psdfigname.append(figname)
 
-      if plotfscan:
-        figname = output_fig(fscanfigs[i], puldir, 'fscan_'+ifo, ftypes)
-        fscanfigname.append(figname)
+        if plotfscan:
+          figname = output_fig(fscanfigs[i], puldir, 'fscan_'+ifo, ftypes)
+          fscanfigname.append(figname)
 
   # loop over detectors
   poslist = []
@@ -1377,38 +1383,39 @@ priorh0cifigname['png'], priorcifigname['png'], priorcifigname['png']))
   psrshelf['h0prior'] = h0prior
 
   # get analysis statistics
-  analysisstatstext = []
-  analysisstatstext.append('<h2>Analysis statistics</h2>')
+  if not jointonly:
+    analysisstatstext = []
+    analysisstatstext.append('<h2>Analysis statistics</h2>')
 
-  analysisstatstext.append('<table>')
+    analysisstatstext.append('<table>')
 
-  ulestimatetop = [] # list to contain upper limit estimates based on ASDs and data spans
-  ulestimatebot = []
-  lt = [] # length of the data for an IFO
+    ulestimatetop = [] # list to contain upper limit estimates based on ASDs and data spans
+    ulestimatebot = []
+    lt = [] # length of the data for an IFO
 
-  for i, ifo in enumerate(ifos):
-    # get the start time, end time and length from the heterodyned data file
-    st = et = None
-    if '.gz' not in Bkdata[i]: # just use Popen to get data from heterodyne file
-      st = (sp.Popen(['head', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
-      et = (sp.Popen(['tail', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
-      lt.append(float((sp.Popen(['wc', '-l', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0])*60)
-    else: # otherwise if gzipped we'll have to open the file
-      bkd = np.loadtxt(Bkdata[i])
-      st = bkd[0,0]
-      et = bkd[-1,0]
-      lt.append(float(len(bkd))*60.)
+    for i, ifo in enumerate(ifos):
+      # get the start time, end time and length from the heterodyned data file
+      st = et = None
+      if '.gz' not in Bkdata[i]: # just use Popen to get data from heterodyne file
+        st = (sp.Popen(['head', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
+        et = (sp.Popen(['tail', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
+        lt.append(float((sp.Popen(['wc', '-l', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0])*60)
+      else: # otherwise if gzipped we'll have to open the file
+        bkd = np.loadtxt(Bkdata[i])
+        st = bkd[0,0]
+        et = bkd[-1,0]
+        lt.append(float(len(bkd))*60.)
 
-    # duty cycle
-    dc = 100.*lt[i]/(float(et)-float(st))
+      # duty cycle
+      dc = 100.*lt[i]/(float(et)-float(st))
 
-    # get UL estimate based on h95 ~ 7-20 *sqrt(2) * ASD / sqrt(T) - the sqrt(2) is because
-    # the ASD is calulated from a two-sided PSD
-    if asdlist:
-      ulestimatebot.append(7.*math.sqrt(2.)*np.median(asdlist[i])/math.sqrt(lt[i]))
-      ulestimatetop.append((20./7.)*ulestimatebot[i])
+      # get UL estimate based on h95 ~ 7-20 *sqrt(2) * ASD / sqrt(T) - the sqrt(2) is because
+      # the ASD is calulated from a two-sided PSD
+      if asdlist:
+        ulestimatebot.append(7.*math.sqrt(2.)*np.median(asdlist[i])/math.sqrt(lt[i]))
+        ulestimatetop.append((20./7.)*ulestimatebot[i])
 
-    analysisstatstext.append( \
+      analysisstatstext.append( \
 """
   <tr>
     <td style="text-align: center;">
@@ -1439,8 +1446,8 @@ priorh0cifigname['png'], priorcifigname['png'], priorcifigname['png']))
 """ % (ifo, ifo,int(float(st)), int(float(et)), int(float(et)-float(st)), dc, \
 Bkfigname[i]['png'], Bkfigname[i]['png']) )
 
-    if plotpsds and plotfscan:
-      analysisstatstext.append( \
+      if plotpsds and plotfscan:
+        analysisstatstext.append( \
 """
   <tr>
     <td><a href="%s"><img class="asdplot" src="%s"/></a></td>
@@ -1448,21 +1455,21 @@ Bkfigname[i]['png'], Bkfigname[i]['png']) )
   </tr>
 """ % (psdfigname[i]['png'], psdfigname[i]['png'], fscanfigname[i]['png'], \
 fscanfigname[i]['png']) )
-  analysisstatstext.append('</table>')
+    analysisstatstext.append('</table>')
 
-  # get joint upper limit estimate
-  if asdlist:
-    if len(ifos) > 1:
-      uli = []
-      for i, asdv in enumerate(asdlist):
-        uli.append(lt[i]/np.median(asdv)**2)
+    # get joint upper limit estimate
+    if asdlist:
+      if len(ifos) > 1:
+        uli = []
+        for i, asdv in enumerate(asdlist):
+          uli.append(lt[i]/np.median(asdv)**2)
 
-      ulesttmp = math.sqrt(2.)*math.sqrt(1./sum(uli))
-      ulestimatebot.append(7.*ulesttmp)
-      ulestimatetop.append(20.*ulesttmp)
+        ulesttmp = math.sqrt(2.)*math.sqrt(1./sum(uli))
+        ulestimatebot.append(7.*ulesttmp)
+        ulestimatetop.append(20.*ulesttmp)
 
-  psrshelf['ulestimatebot'] = dict(zip(ifosNew, ulestimatebot))
-  psrshelf['ulestimatetop'] = dict(zip(ifosNew, ulestimatetop))
+    psrshelf['ulestimatebot'] = dict(zip(ifosNew, ulestimatebot))
+    psrshelf['ulestimatetop'] = dict(zip(ifosNew, ulestimatetop))
 
   # output MCMC chains and statistics
   mcmctabletext = None

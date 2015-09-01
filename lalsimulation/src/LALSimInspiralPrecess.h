@@ -18,11 +18,12 @@
  */
 
 /**
- * \author Chris Pankow
+ * @defgroup LALSimInspiralPrecess_h Header LALSimInspiralPrecess.h
+ * @ingroup lalsimulation_inspiral
  *
- * \file
+ * @author Chris Pankow
  *
- * \brief Functions to take an arbitrary waveform time series and impose the
+ * @brief Functions to take an arbitrary waveform time series and impose the
  * effects of causing the viewing angle to precess about a cone of L around J.
  * The cone currently has a constant opening angle.
  *
@@ -39,43 +40,8 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_eigen.h>
 
-int XLALSimInspiralPrecessionRotateModes(
-				SphHarmTimeSeries* h_lm,
-				REAL8TimeSeries* alpha,
-				REAL8TimeSeries* beta,
-				REAL8TimeSeries* gam
-);
-
-int XLALSimInspiralConstantPrecessionConeWaveformModes(
-				SphHarmTimeSeries** h_lm_tmp,
-				double precess_freq,
-				double a,
-				double phi_precess,
-				double alpha_0,
-				double beta_0
-);
-
-int XLALSimInspiralConstantPrecessionConeWaveform(
-				REAL8TimeSeries** hp,
-				REAL8TimeSeries** hx,
-				SphHarmTimeSeries* h_lm,
-				double precess_freq,
-				double a,
-				double phi_precess,
-				double alpha_0,
-				double beta_0
-);
-
-int XLALSimInspiralOrientationMatrixForL2(
-				REAL8 mtx[3][3], 
-				COMPLEX16 h22,
-				COMPLEX16 h2m2,
-				COMPLEX16 h21,
-				COMPLEX16 h2m1,
-				COMPLEX16 h20
-);
-
-int XLALSimInspiralOrientationMatrixDirection(
-				REAL8 vec[3],
-				REAL8 mtx[3][3]
-);
+int XLALSimInspiralPrecessionRotateModes(SphHarmTimeSeries* h_lm, REAL8TimeSeries* alpha, REAL8TimeSeries* beta, REAL8TimeSeries* gam);
+int XLALSimInspiralConstantPrecessionConeWaveformModes(SphHarmTimeSeries** h_lm_tmp, double precess_freq, double a, double phi_precess, double alpha_0, double beta_0);
+int XLALSimInspiralConstantPrecessionConeWaveform(REAL8TimeSeries** hp, REAL8TimeSeries** hx, SphHarmTimeSeries* h_lm, double precess_freq, double a, double phi_precess, double alpha_0, double beta_0);
+int XLALSimInspiralOrientationMatrixForL2(REAL8 mtx[3][3], COMPLEX16 h22, COMPLEX16 h2m2, COMPLEX16 h21, COMPLEX16 h2m1, COMPLEX16 h20);
+int XLALSimInspiralOrientationMatrixDirection(REAL8 vec[3], REAL8 mtx[3][3]);

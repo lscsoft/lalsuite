@@ -526,6 +526,8 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
     (--inj-tidalOrder PNorder)  Specify twice the injection PN order (e.g. 10 <==> 5PN)\n\
                                     of tidal effects to use, only for LALSimulation\n\
                                     (default: -1 <==> Use all tidal effects).\n\
+    (--inj-spin-frame FRAME     Specify injection spin frame: choice of TotalJ, OrbitalL, View.\n\
+                                    (Default = OrbitalL).\n\
     (--0noise)                  Sets the noise realisation to be identically zero\n\
                                     (for the fake caches above only)\n\
     \n"
@@ -1559,6 +1561,9 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       }
 
       LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
+
+      /* Set the spin-frame convention */
+
       LALSimInspiralSpinOrder spinO = -1;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-spinOrder")) {
         spinO = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-spinOrder")->value);
@@ -1569,6 +1574,11 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         tideO = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-tidalOrder")->value);
         XLALSimInspiralSetTidalOrder(waveFlags, tideO);
       }
+      LALSimInspiralFrameAxis frameAxis = LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT;
+      if((ppt=LALInferenceGetProcParamVal(commandLine,"--inj-spin-frame"))) {
+        frameAxis = XLALSimInspiralGetFrameAxisFromString(ppt->value);
+      }
+      XLALSimInspiralSetFrameAxis(waveFlags,frameAxis);
       LALSimInspiralTestGRParam *nonGRparams = NULL;
       /* Print a line with information about approximant, amporder, phaseorder, tide order and spin order */
       fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the time domain with a reference frequency of %f.\n",approximant,XLALGetStringFromApproximant(approximant),order,amporder,(int) spinO, (int) tideO, (float) fref);
@@ -2229,6 +2239,17 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
   /* Set up wave flags */
   LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
+
+  /* Set the spin-frame convention */
+  ppt = LALInferenceGetProcParamVal(commandLine,"--inj-spin-frame");
+  if(ppt) {
+      if (!strcmp(ppt->value, "view"))
+          XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW);
+      else if (!strcmp(ppt->value, "orbital-l"))
+          XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L);
+      else if (!strcmp(ppt->value, "total-j"))
+          XLALSimInspiralSetFrameAxis(waveFlags, LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J);
+  }
 
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
   if(LALInferenceGetProcParamVal(commandLine, "--inj-spinOrder")) {

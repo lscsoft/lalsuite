@@ -42,7 +42,7 @@
 #define omp ignore
 #endif
 
-/**
+/*
  * private function prototypes; all internal functions use solar masses.
  *
  */
@@ -64,6 +64,13 @@ static int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
 static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 inclination);
 
 static REAL8 PlanckTaper(const REAL8 t, const REAL8 t1, const REAL8 t2);
+
+/**
+ * @addtogroup LALSimIMRPhenom_c
+ * @{
+ * @name Routines for IMR Phenomenological Model "C"
+ * @{
+ */
 
 /**
  * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
@@ -142,7 +149,7 @@ int XLALSimIMRPhenomCGenerateFD(
   return status;
 }
 
-/*
+/**
  * Convenience function to quickly find the default final
  * frequency.
  */
@@ -275,11 +282,14 @@ int XLALSimIMRPhenomCGenerateTD(
 	return apply_inclination(*hplus, *hcross, inclination);
 }
 
+/** @} */
+/** @} */
 
-/***********************************************************************************/
+
+/* *********************************************************************************/
 /* The following private function generates IMRPhenomC frequency-domain waveforms  */
 /* given coefficients */
-/***********************************************************************************/
+/* *********************************************************************************/
 
 static int IMRPhenomCGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
@@ -463,7 +473,7 @@ static int IMRPhenomCGenerateFDForTD(
   return XLAL_SUCCESS;
 }
 
-/**
+/*
  * Private function to generate time-domain waveforms given coefficients
  */
 static int IMRPhenomCGenerateTD(
@@ -515,12 +525,12 @@ static int IMRPhenomCGenerateTD(
 	return XLAL_SUCCESS;
 }
 
-/***********************************************************************************/
+/* *********************************************************************************/
 /* The following functions are borrowed as-it-is from LALSimIMRPhenom.c, and used  */
 /* to generate the time-domain version of the frequency domain PhenomC approximant */
-/***********************************************************************************/
+/* *********************************************************************************/
 
-/**
+/*
  * Return tau0, the Newtonian chirp length estimate.
  */
 static REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min) {
@@ -529,7 +539,7 @@ static REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min) {
 	return 5. * totalMass * LAL_MTSUN_SI / (256. * eta * pow(LAL_PI * totalMass * LAL_MTSUN_SI * f_min, 8./3.));
 }
 
-/**
+/*
  * Estimate the length of a TD vector that can hold the waveform as the Newtonian
  * chirp time tau0 plus 1000 M.
  */
@@ -537,7 +547,7 @@ static size_t EstimateIMRLength(const REAL8 m1, const REAL8 m2, const REAL8 f_mi
 	return (size_t) floor((ComputeTau0(m1, m2, f_min) + 1000 * (m1 + m2) * LAL_MTSUN_SI) / deltaT);
 }
 
-/**
+/*
  * Find a lower value for f_min (using the definition of Newtonian chirp
  * time) such that the waveform has a minimum length of tau0. This is
  * necessary to avoid FFT artifacts.
@@ -554,7 +564,7 @@ static REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f
 	return temp_f_min;
 }
 
-/**
+/*
  * Find a higher value of f_max so that we can safely apply a window later.
  */
 static REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 deltaT) {
@@ -566,7 +576,7 @@ static REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 deltaT) {
 }
 
 
-/**
+/*
  * Window and IFFT a FD waveform to TD, then window in TD.
  * Requires that the FD waveform be generated outside of f_min and f_max.
  * FD waveform is modified.

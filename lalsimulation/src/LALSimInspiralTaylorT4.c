@@ -40,7 +40,7 @@
 #define UNUSED
 #endif
 
-/**
+/*
  * This structure contains the intrinsic parameters and post-newtonian
  * co-efficients for the energy and angular acceleration expansions.
  * These are computed by XLALSimInspiralTaylorT4Setup routine.
@@ -69,7 +69,7 @@ typedef REAL8 (SimInspiralAngularAcceleration4)(
    expnCoeffsTaylorT4 *ak
 );
 
-/**
+/*
  * This strucuture contains pointers to the functions for calculating
  * the post-newtonian terms at the desired order. They can be set by
  * XLALSimInspiralTaylorT4Setup by passing an appropriate PN order.
@@ -83,7 +83,7 @@ tagexpnFuncTaylorT4
 } expnFuncTaylorT4;
 
 
-/**
+/*
  * Computes the rate of increase of the orbital frequency for a post-Newtonian
  * inspiral.
  *
@@ -303,7 +303,7 @@ XLALSimInspiralTaylorT4PNEvolveOrbitIntegrand(double UNUSED t, const double y[],
 }
 
 
-/**
+/*
  * Set up the expnCoeffsTaylorT4 and expnFuncTaylorT4 structures for
  * generating a TaylorT4 waveform and select the post-newtonian
  * functions corresponding to the desired order.
@@ -420,6 +420,17 @@ XLALSimInspiralTaylorT4Setup(
   return 0;
 }
 
+/**
+ * @addtogroup LALSimInspiralTaylorXX_c
+ * @{
+ * @name Routines for TaylorT4 Waveforms
+ * @sa
+ * Section IIIB of Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ * @{
+ */
 
 /**
  * Evolves a post-Newtonian orbit using the Taylor T4 method.
@@ -805,6 +816,8 @@ int XLALSimInspiralTaylorT4PNRestricted(
 			deltaT, m1, m2, f_min, fRef, r, i, lambda1, lambda2, tideO, 0, O);
 }
 
+/** @} */
+/** @} */
 
 #if 0
 #include <lal/PrintFTSeries.h>

@@ -282,11 +282,11 @@ static void dtdv_from_pncoefficients(
     dtdv->v[7] += XLALSimInspiralTaylorT2dtdv_7PNSOCoeff(m1M)*S1L + XLALSimInspiralTaylorT2dtdv_7PNSOCoeff(m2M)*S2L;
 
     dtdv->v[4] += XLALSimInspiralTaylorT2dtdv_4PNS1S2Coeff(eta)*S1L*S2L;
-    dtdv->v[4] += XLALSimInspiralTaylorT2dtdv_4PNS1S2LCoeff(eta)*S1L*S2L;
-    dtdv->v[4] += XLALSimInspiralTaylorT2dtdv_4PNSSCoeff(m1M, qm_def1)*S1L*S1L;
-    dtdv->v[4] += XLALSimInspiralTaylorT2dtdv_4PNSSLCoeff(m1M, qm_def1)*S1L*S1L;
-    dtdv->v[4] += XLALSimInspiralTaylorT2dtdv_4PNSSCoeff(m2M, qm_def2)*S2L*S2L;
-    dtdv->v[4] += XLALSimInspiralTaylorT2dtdv_4PNSSLCoeff(m2M, qm_def2)*S2L*S2L;
+    dtdv->v[4] += XLALSimInspiralTaylorT2dtdv_4PNS1S2OCoeff(eta)*S1L*S2L;
+    dtdv->v[4] += (XLALSimInspiralTaylorT2dtdv_4PNSelfSSCoeff(m1M)+qm_def1*XLALSimInspiralTaylorT2dtdv_4PNQMCoeff(m1M))*S1L*S1L;
+    dtdv->v[4] += (XLALSimInspiralTaylorT2dtdv_4PNSelfSSOCoeff(m1M)+qm_def1*XLALSimInspiralTaylorT2dtdv_4PNQMSOCoeff(m1M))*S1L*S1L;
+    dtdv->v[4] += (XLALSimInspiralTaylorT2dtdv_4PNSelfSSCoeff(m2M)+qm_def2*XLALSimInspiralTaylorT2dtdv_4PNQMCoeff(m2M))*S2L*S2L;
+    dtdv->v[4] += (XLALSimInspiralTaylorT2dtdv_4PNSelfSSOCoeff(m2M)+qm_def2*XLALSimInspiralTaylorT2dtdv_4PNQMSOCoeff(m2M))*S2L*S2L;
 
     return;
 }
@@ -527,7 +527,7 @@ static int test_consistency_T4(
 /* Testing tidal coefficients. Since they are symmetric with respect to both objects
  * it is sufficient to test only one non-zero coefficient.  */
 
-static int test_tidal(
+static int test_tidal_F2(
     const REAL8 m2M
     )
 {
@@ -554,6 +554,62 @@ static int test_tidal(
     int ret = 0;
     ret += compare(calc_phasing10, phasing10, 10, 0);
     ret += compare(calc_phasing12, phasing12, 12, 0);
+
+    return ret;
+}
+
+static int test_tidal_T4(
+    const REAL8 m2M
+    )
+{
+    REAL8 m1M = 1.L-m2M;
+    REAL8 eta = m1M*m2M;
+
+    REAL8 energy2 = XLALSimInspiralPNEnergy_2PNCoeff(eta);
+    REAL8 flux2 = XLALSimInspiralPNFlux_2PNCoeff(eta);
+    REAL8 energy10 = XLALSimInspiralPNEnergy_10PNTidalCoeff(m2M);
+    REAL8 flux10 = XLALSimInspiralPNFlux_10PNTidalCoeff(m2M);
+    REAL8 energy12 = XLALSimInspiralPNEnergy_12PNTidalCoeff(m2M);
+    REAL8 flux12 = XLALSimInspiralPNFlux_12PNTidalCoeff(m2M);
+
+    REAL8 dvdt2 = flux2 - 2.L*energy2;
+    REAL8 dvdt10 = flux10 - 6.L*energy10;
+    REAL8 dvdt12 = (flux12 -7.L*energy12) - 2.L*energy2*dvdt10 - 6.L*energy10*dvdt2;
+
+    REAL8 phasing10 = XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(m2M);
+    REAL8 phasing12 = XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(m2M);
+
+    int ret = 0;
+    ret += compare(dvdt10, phasing10, 10, 0);
+    ret += compare(dvdt12, phasing12, 12, 0);
+
+    return ret;
+}
+
+static int test_tidal_T2(
+    const REAL8 m2M
+    )
+{
+    REAL8 m1M = 1.L-m2M;
+    REAL8 eta = m1M*m2M;
+
+    REAL8 energy2 = XLALSimInspiralPNEnergy_2PNCoeff(eta);
+    REAL8 flux2 = XLALSimInspiralPNFlux_2PNCoeff(eta);
+    REAL8 energy10 = XLALSimInspiralPNEnergy_10PNTidalCoeff(m2M);
+    REAL8 flux10 = XLALSimInspiralPNFlux_10PNTidalCoeff(m2M);
+    REAL8 energy12 = XLALSimInspiralPNEnergy_12PNTidalCoeff(m2M);
+    REAL8 flux12 = XLALSimInspiralPNFlux_12PNTidalCoeff(m2M);
+
+    REAL8 dtdv2 = 2.L*energy2 - flux2;
+    REAL8 dtdv10 = 6.L*energy10 - flux10;
+    REAL8 dtdv12 = (7.L*energy12 - flux12) - flux2*dtdv10 - flux10*dtdv2;
+
+    REAL8 phasing10 = XLALSimInspiralTaylorT2dtdv_10PNTidalCoeff(m2M);
+    REAL8 phasing12 = XLALSimInspiralTaylorT2dtdv_12PNTidalCoeff(m2M);
+
+    int ret = 0;
+    ret += compare(dtdv10, phasing10, 10, 0);
+    ret += compare(dtdv12, phasing12, 12, 0);
 
     return ret;
 }
@@ -600,16 +656,11 @@ int main (int argc, char **argv)
     ret += test_consistency_T4(0.01, 0.9, -0.9, 4., 4.);
 
     fprintf(stdout, "Testing tidal terms.\n");
-    ret += test_tidal(0.1);
-    ret += test_tidal(0.2);
-    ret += test_tidal(0.3);
-    ret += test_tidal(0.4);
-    ret += test_tidal(0.6);
-    ret += test_tidal(0.7);
-    ret += test_tidal(0.8);
-    ret += test_tidal(0.85);
-    ret += test_tidal(0.95);
-    ret += test_tidal(0.98);
+    for (UINT4 idx=1;idx<=9;idx++) {
+      ret += test_tidal_F2(0.1*((REAL8)idx));
+      ret += test_tidal_T2(0.1*((REAL8)idx));
+      ret += test_tidal_T4(0.1*((REAL8)idx));
+    }
 
     if (ret == 0)
     {

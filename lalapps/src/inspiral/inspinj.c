@@ -4129,29 +4129,31 @@ int main( int argc, char *argv[] )
     }
 
     /* populate spins, if required */
-    if ( (spinInjections) && (spinAligned==1) ) {
-      if ( !strncmp(axisChoiceString,"angmomentum", 11) )
-	alignInj = alongzAxis;
-      else {
-	if ( !strncmp(axisChoiceString,"view", 4) )
-	  alignInj = inxzPlane;
+    if (spinInjections==1) {
+      if ( spinAligned==1 ) {
+	if ( !strncmp(axisChoiceString,"angmomentum", 11) )
+	  alignInj = alongzAxis;
 	else {
-	  fprintf( stderr, "Unknown axis-choice specification: 'angmomentum' and 'view' allowed, %s given.\n",axisChoiceString);
-	  exit( 1 );
+	  if ( !strncmp(axisChoiceString,"view", 4) )
+	    alignInj = inxzPlane;
+	  else {
+	    fprintf( stderr, "Unknown axis-choice specification: 'angmomentum' and 'view' allowed, %s given.\n",axisChoiceString);
+	    exit( 1 );
+	  }
 	}
       }
-    }
-    else
-      alignInj = notAligned;
+      else
+	alignInj = notAligned;
 
-    simTable = XLALRandomInspiralSpins( simTable, randParams,
-					minSpin1, maxSpin1,
-					minSpin2, maxSpin2,
-					minKappa1, maxKappa1,
-					minabsKappa1, maxabsKappa1,
-					alignInj, spinDistr,
-					meanSpin1, Spin1Std,
-					meanSpin2, Spin2Std );
+      simTable = XLALRandomInspiralSpins( simTable, randParams,
+					  minSpin1, maxSpin1,
+					  minSpin2, maxSpin2,
+					  minKappa1, maxKappa1,
+					  minabsKappa1, maxabsKappa1,
+					  alignInj, spinDistr,
+					  meanSpin1, Spin1Std,
+					  meanSpin2, Spin2Std );
+    }
 
     /* adjust SNR to desired distribution using NINJA calculation */
     if ( ifos != NULL && ninjaSNR )

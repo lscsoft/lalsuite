@@ -2,6 +2,34 @@
 /**
 
 \defgroup lalsimulation_general		General Packages
+@{
+   \brief This package provides general-purpose routines for
+   simulation of signals and noise.
+@}
+
+\defgroup lalsimulation_burst  		Burst Simulation Packages
+@{
+   \brief This package provides routines for generating simulated
+   generic burst gravitational waveforms.
+@}
+
+\defgroup lalsimulation_inspiral	Inspiral Simulation Packages
+@{
+   \brief This package provides routines for generating simulated
+   gravitational waveforms from binary inspiral.
+@}
+
+\defgroup lalsimulation_stochastic	Stochastic Background Simulation Packages
+@{
+   \brief This package provides routines for generating simulated
+   gravitational wave stochastic background noise.
+@}
+
+\defgroup lalsimulation_noise		Noise Simulation Packages
+@{
+   \brief This package provides routines for generating simulated
+   gravitational wave detector noise.
+@}
 
 \defgroup lalsimulation_swig		SWIG Interfaces
 @{
@@ -10,5 +38,7 @@
 @}
 
 \defgroup lalsimulation_python		Python Packages
+
+\defgroup lalsimulation_programs	Programs
 
 */

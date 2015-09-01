@@ -17,6 +17,105 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalsim_bh_qnmode lalsim-bh-qnmode
+ * @ingroup lalsimulation_programs
+ *
+ * @brief Computes the quasi-normal modes of a black hole
+ *
+ * ### Synopsis
+ *
+ *     lalsim-bh-qnmode [-h] [-L] [-M Msolar] [-a a] -l l -m m -s s
+ *
+ * ### Description
+ *
+ * The `lalsim-bh-qnmode` utility prints the eigenvalues of a black hole
+ * quasinormal mode with spin weight @p s (use -2 for gravitational quasinormal
+ * modes) and mode numbers @p l and @p m for given black hole dimensionless
+ * spin if the spin @p a is specified using the argument `-a`; or prints a
+ * table of mode eigenvalues if @p a is not specified; or prints frequency and
+ * quality factor if mass @p Msolar is specified.
+ *
+ * The utility uses Leaver's conventions (G = c = 2M = 1) if the option
+ * `--leaver` is used
+ * 
+ * ### Options
+ *
+ * <DL>
+ * <DT>`-h`, `--help`</DT>
+ * <DD>print a help message and exit</DD>
+ * <DT>`-L, --leaver`</DT>
+ * <DD>use Leaver's conventions: G = c = 2M = 1</DD>
+ * <DT>`-M` Msolar</DT>
+ * <DD>(optional) set black hole mass (solar masses)</DD>
+ * <DT>`-a` a</DT>
+ * <DD>(optional) set value of dimensionless spin parameter a/M, |a/M|<1 (Leaver: |a/M|<0.5)</DD>
+ * <DT>`-l` l</DT>
+ * <DD>(required) set value of mode number l, l>=0</DD>
+ * <DT>`-m` m</DT>
+ * <DD>(required) set value of mode number m, abs(m)<=l</DD>
+ * <DT>`-s` s</DT>
+ * <DD>(required) set value of spin weight s, s<=0</DD>
+ * </DL>
+ *
+ * ### Environment
+ *
+ * The `LAL_DEBUG_LEVEL` can used to control the error and warning reporting of
+ * `lalsim-bh-qnmode`.  Common values are: `LAL_DEBUG_LEVEL=0` which suppresses
+ * error messages, `LAL_DEBUG_LEVEL=1`  which prints error messages alone,
+ * `LAL_DEBUG_LEVEL=3` which prints both error messages and warning messages,
+ * and `LAL_DEBUG_LEVEL=7` which additionally prints informational messages.
+ *
+ * ### Exit Status
+ *
+ * The `lalsim-bh-qnmode` utility exits 0 on success, and >0 if an error
+ * occurs.
+ *
+ * ### Example
+ *
+ * The command:
+ *
+ *     lalsim-bh-qnmode -a 0.97 -M 10 -l 2 -m 2 -s -2
+ *
+ * outputs the freqeuency and quality factor for black hole ringdown
+ * gravitational radiation in the l = m = 2 quasinormal mode for a
+ * M = 10 solar mass hole with Kerr spin parameter a = 0.97 M.
+ *
+ * The command:
+ *
+ *     lalsim-bh-qnmode -L -l 2 -m 0 -s -2
+ *
+ * prints a table of Kerr quasinormal frequencies and angular separation
+ * constants for the fundamental mode corresponding to l = 2 and m = 1
+ * for gravitational perturbations (s = -2) in Leaver's conventions:
+ *
+@verbatim
+# quasinormal mode table for l=2 m=0 s=-2 (Leaver's conventions)
+#  a   	        A        	        omega
+0.0000 	(4.00000,+0.00000)	(+0.747343,-0.177925)
+0.1000 	(3.99722,+0.00139)	(+0.750248,-0.177401)
+0.2000 	(3.98856,+0.00560)	(+0.759363,-0.175653)
+0.3000 	(3.97297,+0.01262)	(+0.776108,-0.171989)
+0.4000 	(3.94800,+0.02226)	(+0.803835,-0.164313)
+0.4500 	(3.93038,+0.02763)	(+0.824009,-0.156965)
+0.4900 	(3.91269,+0.03152)	(+0.844509,-0.147065)
+0.4999 	(3.90770,+0.03227)	(+0.850231,-0.143650)
+
+0.0000 	(4.00000,-0.00000)	(-0.747343,-0.177925)
+0.1000 	(3.99722,-0.00139)	(-0.750248,-0.177401)
+0.2000 	(3.98856,-0.00560)	(-0.759363,-0.175653)
+0.3000 	(3.97297,-0.01262)	(-0.776108,-0.171989)
+0.4000 	(3.94800,-0.02226)	(-0.803835,-0.164313)
+0.4500 	(3.93038,-0.02763)	(-0.824009,-0.156965)
+0.4900 	(3.91269,-0.03152)	(-0.844509,-0.147065)
+0.4999 	(3.90770,-0.03227)	(-0.850231,-0.143650)
+@endverbatim
+ *
+ * Compare with Table 3 of E. W. Leaver, "An analytic representation of
+ * quasi-normal modes of Kerr black holes", Proc. R. Soc. Lond. A @b 402 285
+ * (1985).
+ */
+
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
