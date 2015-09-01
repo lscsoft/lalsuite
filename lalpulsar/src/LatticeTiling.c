@@ -176,13 +176,14 @@ static void LT_FindBoundExtrema(
 
   if (i < dim) {
 
-    if (tiling->bounds[i].is_tiled) {
+    if (tiling->bounds[i].is_tiled && pad_control > 0) {
 
       // Get the vector pointing to neighbouring points of the current point in this dimension
       gsl_vector_const_view phys_from_int_i_view = gsl_matrix_const_row(tiling->phys_from_int, i);
 
-      // Look at neighbouring points; 'pad_control' determines how far to look
-      for (INT2 d = -pad_control; d <= pad_control; ++d) {
+      // Look at the bounds on neighbouring points; 'pad_control' determines how far to look
+      const INT2 d_max = 2*pad_control - 1;
+      for (INT2 d = -d_max; d <= d_max; ++d) {
 
         // Move current point towards neighbouring point in the direction 'd'
         gsl_blas_daxpy(0.5 * d, &phys_from_int_i_view.vector, phys_point);
