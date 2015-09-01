@@ -213,24 +213,17 @@ REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
 
     /* One instance of each proposal object is stored in cycle->proposals.
         cycle->order is a list of elements to call from the proposals */
-    i = cycle->order[cycle->counter];
-    REAL8 logPropRatio = cycle->proposals[i]->func(thread, currentParams, proposedParams);
-    strcpy(cycle->last_proposal_name, cycle->proposals[i]->name);
-
-    /* Call proposals until one succeeds */
-    while (proposedParams->head == NULL) {
-        LALInferenceClearVariables(proposedParams);
-
-        i = cycle->order[cycle->counter];
-        logPropRatio = cycle->proposals[i]->func(thread, currentParams, proposedParams);
-        strcpy(cycle->last_proposal_name, cycle->proposals[i]->name);
-
-        /* Increment counter for the next time around. */
-        cycle->counter = (cycle->counter + 1) % cycle->length;
+  
+    REAL8 logPropRatio
+    do
+    {
+      i = cycle->order[cycle->counter];
+      logPropRatio = cycle->proposals[i]->func(thread, currentParams, proposedParams);
+      strcpy(cycle->last_proposal_name, cycle->proposals[i]->name);
+      cycle->counter = (cycle->counter + 1) % cycle->length;
     }
-
-    /* Increment counter for the next time around. */
-    cycle->counter = (cycle->counter + 1) % cycle->length;
+    /* Call proposals until one succeeds */
+    while (proposedParams->head == NULL);
 
     return logPropRatio;
 }
