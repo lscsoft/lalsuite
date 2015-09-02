@@ -2297,6 +2297,8 @@ def read_pulsar_mcmc_file(cf):
 # back into cos(iota), and if only C22 is varying then it is converted back into h0, and phi22
 # is converted back into phi0.
 def pulsar_nest_to_posterior(nestfile):
+  from pylal import bayespputils as bppu
+
   # combine multiple nested sample files for an IFO into a single posterior (copied from lalapps_nest2pos)
   peparser = bppu.PEOutputParser('common')
 
