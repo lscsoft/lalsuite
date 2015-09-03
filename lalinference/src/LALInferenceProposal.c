@@ -1708,8 +1708,6 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     REAL8 pForward, pReverse;
     REAL8 n[3];
     REAL8 kp[3];
-
-
     LIGOTimeGPS GPSlal, *epoch;
     LALDetector *detectors;
     gsl_matrix *IFO;
