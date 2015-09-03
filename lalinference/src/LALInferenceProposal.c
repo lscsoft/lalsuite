@@ -916,7 +916,6 @@ REAL8 LALInferenceEnsembleStretchExtrinsic(LALInferenceThreadState *thread,
     const char *marg_phase_names[] = {"rightascension", "declination", "polarisation","distance", "logdistance",
                                       "time","costheta_jn", "theta", "cosalpha", "t0",  "hrss", "loghrss",NULL};
 
-
     const char *marg_time_phase_names[] = {"rightascension", "declination", "polarisation",  "distance", "logdistance",
                                            "costheta_jn", "theta", "cosalpha", "hrss", "loghrss",  NULL};
 
@@ -1095,7 +1094,6 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceThreadState *thread,
   size_t i;
   LALInferenceVariableItem *item;
   REAL8 logPropRatio = 0.0;
-  LALInferenceCopyVariables(currentParams, proposedParams);
 
   size_t N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
   const char* local_names[N];
@@ -1133,6 +1131,8 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceThreadState *thread,
     logPropRatio = 0.0;
     return logPropRatio; /* Quit now, since we don't have any points to use. */
   }
+
+  LALInferenceCopyVariables(currentParams, proposedParams);
 
   UINT4 indices[sample_size];
   UINT4 all_indices[nPts];
@@ -1179,7 +1179,6 @@ REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceThreadState *thread,
     REAL8 logPropRatio = 0.0;
     REAL8 scale, x;
 
-    LALInferenceCopyVariables(currentParams, proposedParams);
 
     gsl_rng *rng = thread->GSLrandom;
 
@@ -1205,7 +1204,7 @@ REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceThreadState *thread,
 
     Ndim = 0;
     for (Ndim=0, i=0; names[i] != NULL; i++ ) {
-        if (LALInferenceCheckVariableNonFixed(proposedParams, names[i]))
+        if (LALInferenceCheckVariableNonFixed(currentParams, names[i]))
             Ndim++;
     }
 
@@ -1215,6 +1214,9 @@ REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceThreadState *thread,
     if (dePts == NULL || nPts <= 1)
         return logPropRatio; /* Quit now, since we don't have any points to use. */
 
+    LALInferenceCopyVariables(currentParams, proposedParams);
+
+  
     i = gsl_rng_uniform_int(rng, nPts);
     do {
         j = gsl_rng_uniform_int(rng, nPts);
@@ -1235,12 +1237,12 @@ REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceThreadState *thread,
     }
 
     for (i = 0; names[i] != NULL; i++) {
-        if (!LALInferenceCheckVariableNonFixed(proposedParams, names[i]) ||
+        if (!LALInferenceCheckVariableNonFixed(currentParams, names[i]) ||
             !LALInferenceCheckVariable(ptJ, names[i]) ||
             !LALInferenceCheckVariable(ptI, names[i])) {
         /* Ignore variable if it's not in each of the params. */
         } else {
-            x = LALInferenceGetREAL8Variable(proposedParams, names[i]);
+            x = LALInferenceGetREAL8Variable(currentParams, names[i]);
             x += scale * LALInferenceGetREAL8Variable(ptJ, names[i]);
             x -= scale * LALInferenceGetREAL8Variable(ptI, names[i]);
             LALInferenceSetVariable(proposedParams, names[i], &x);
@@ -1708,7 +1710,6 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     REAL8 kp[3];
     DistanceParam distParam;
 
-    LALInferenceCopyVariables(currentParams, proposedParams);
 
     LIGOTimeGPS GPSlal, *epoch;
     LALDetector *detectors;
@@ -1721,6 +1722,8 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     } else {
         XLAL_ERROR_REAL8(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
     }
+  
+    LALInferenceCopyVariables(currentParams, proposedParams);
 
     if (distParam == USES_DISTANCE_VARIABLE) {
         dL = LALInferenceGetREAL8Variable(currentParams, "distance");
@@ -1883,7 +1886,6 @@ REAL8 LALInferenceSkyReflectDetPlane(LALInferenceThreadState *thread,
     INT4 nUniqueDet;
     LIGOTimeGPS *epoch;
 
-    LALInferenceCopyVariables(currentParams, proposedParams);
 
     /* Find the number of distinct-position detectors. */
     /* Exit with same parameters (with a warning the first time) if
@@ -1907,12 +1909,13 @@ REAL8 LALInferenceSkyReflectDetPlane(LALInferenceThreadState *thread,
 
         return logPropRatio;
     }
+    LALInferenceCopyVariables(currentParams, proposedParams);
 
-    ra = LALInferenceGetREAL8Variable(proposedParams, "rightascension");
-    dec = LALInferenceGetREAL8Variable(proposedParams, "declination");
+    ra = LALInferenceGetREAL8Variable(currentParams, "rightascension");
+    dec = LALInferenceGetREAL8Variable(currentParams, "declination");
 
-    if (LALInferenceCheckVariable(proposedParams, "time")){
-        baryTime = LALInferenceGetREAL8Variable(proposedParams, "time");
+    if (LALInferenceCheckVariable(currentParams, "time")){
+        baryTime = LALInferenceGetREAL8Variable(currentParams, "time");
         timeflag=1;
     } else {
         baryTime = XLALGPSGetREAL8(epoch);
@@ -2979,7 +2982,6 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread,
     static INT4 warningDelivered = 0;
     LIGOTimeGPS *epoch;
 
-    LALInferenceCopyVariables(currentParams, proposedParams);
 
     LALInferenceVariables *args = thread->proposalArgs;
     gsl_rng *rng = thread->GSLrandom;
@@ -2997,6 +2999,8 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread,
 
         return logPropRatio;
     }
+    LALInferenceCopyVariables(currentParams, proposedParams);
+
 
     ra = LALInferenceGetREAL8Variable(proposedParams, "rightascension");
     dec = LALInferenceGetREAL8Variable(proposedParams, "declination");
@@ -3285,192 +3289,6 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targ
 }
 
 
-// /**
-//  * Setup all clustered-KDE proposals with samples read from file.
-//  *
-//  * Constructed clustered-KDE proposals from all sample lists provided in
-//  * files given on the command line.
-//  * @param runState The LALInferenceRunState to get command line options from and to the proposal cycle of.
-//  */
-// void LALInferenceSetupClusteredKDEProposalsFromFile(LALInferenceThreadState *thread, FILE *inp) {
-//     LALInferenceVariableItem *item;
-//     INT4 i=0, j=0, k=0;
-//     INT4 nBurnins=0, nWeights=0, nPostEsts=0;
-//     INT4 inChain;
-//     INT4 burnin;
-//     INT4 cyclic_reflective = LALInferenceGetINT4Variable(thread->proposalArgs, "cyclic_reflective_kde");
-//     REAL8 weight;
-//     ProcessParamsTable *command;
-//
-//     /* Loop once to get number of sample files and sanity check.
-//      *   If PTMCMC files, only load this chain's file.  Also check
-//      *   if cyclic/reflective bounds have been requested */
-//     nPostEsts=0;
-//     for(command=runState->commandLine; command; command=command->next) {
-//         if(!strcmp(command->param, "--ptmcmc-samples")) {
-//             inChain = atoi(strrchr(command->value, '.')+1);
-//             if (chain == inChain) nPostEsts++;
-//         } else if (!strcmp(command->param, "--ascii-samples")) {
-//             nPostEsts++;
-//     }
-//
-//     INT4 *burnins = XLALCalloc(nPostEsts, sizeof(INT4));
-//     INT4 *weights = XLALCalloc(nPostEsts, sizeof(INT4));
-//
-//     /* Get burnins and weights */
-//     for(command=runState->commandLine; command; command=command->next) {
-//       if(!strcmp(command->param, "--input-burnin")) {
-//         if (nBurnins < nPostEsts) {
-//           burnins[nBurnins] = atoi(command->value);
-//           nBurnins++;
-//         } else {
-//           nBurnins++;
-//           break;
-//         }
-//       } else if (!strcmp(command->param, "--input-weight")) {
-//         if (nWeights < nPostEsts) {
-//           weights[nWeights] = atoi(command->value);
-//           nWeights++;
-//         } else {
-//           nWeights++;
-//           break;
-//         }
-//       }
-//     }
-//
-//     if (nBurnins > 0 && nBurnins != nPostEsts) { fprintf(stderr, "Inconsistent number of posterior sample files and burnins given!\n"); exit(1); }
-//     if (nWeights > 0 && nWeights != nPostEsts) { fprintf(stderr, "Inconsistent number of posterior sample files and weights given!\n"); exit(1); }
-//
-//     /* Assign equal weighting if none specified. */
-//     if (nWeights == 0) {
-//         weight = 1.;
-//         for (i=0; i<nPostEsts; i++)
-//             weights[i] = weight;
-//     }
-//
-//     i=0;
-//     for(command=runState->commandLine; command; command=command->next) {
-//         if(!strcmp(command->param, "--ptmcmc-samples") || !strcmp(command->param, "--ascii-samples")) {
-//             INT4 ptmcmc = 0;
-//             if (!strcmp(command->param, "--ptmcmc-samples")) {
-//                 inChain = atoi(strrchr(command->value, '.')+1);
-//                 if (inChain != chain)
-//                     continue;
-//
-//                 ptmcmc = 1;
-//             }
-//
-//             LALInferenceClusteredKDE *kde = XLALCalloc(1, sizeof(LALInferenceClusteredKDE));
-//
-//             weight = weights[i];
-//             if (nBurnins > 0)
-//                 burnin = burnins[i];
-//             else
-//                 burnin = 0;
-//
-//             char *infilename = command->value;
-//             FILE *input = fopen(infilename, "r");
-//
-//             char *propName = XLALCalloc(512, sizeof(char));
-//             sprintf(propName, "%s_%s", clusteredKDEProposalName, infilename);
-//
-//             INT4 nInSamps;
-//             INT4 nCols;
-//             REAL8 *sampleArray;
-//
-//             if (ptmcmc)
-//                 LALInferenceDiscardPTMCMCHeader(input);
-//
-//             char params[128][VARNAME_MAX];
-//             LALInferenceReadAsciiHeader(input, params, &nCols);
-//
-//             LALInferenceVariables *backwardClusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
-//
-//             /* Only cluster parameters that are being sampled */
-//             INT4 nValidCols=0;
-//             INT4 *validCols = XLALCalloc(nCols, sizeof(INT4));
-//             for (j=0; j<nCols; j++)
-//                 validCols[j] = 0;
-//
-//             INT4 logl_idx = 0;
-//             for (j=0; j<nCols; j++) {
-//                 if (!strcmp("logl", params[j])) {
-//                     logl_idx = j;
-//                     continue;
-//                 }
-//
-//                 char* internal_param_name = XLALCalloc(512, sizeof(char));
-//                 LALInferenceTranslateExternalToInternalParamName(internal_param_name, params[j]);
-//
-//                 for (item = runState->currentParams->head; item; item = item->next) {
-//                     if (!strcmp(item->name, internal_param_name) &&
-//                         LALInferenceCheckVariableNonFixed(runState->currentParams, item->name)) {
-//                         nValidCols++;
-//                         validCols[j] = 1;
-//                         LALInferenceAddVariable(backwardClusterParams, item->name, item->value, item->type, item->vary);
-//                         break;
-//                     }
-//                 }
-//             }
-//
-//             /* LALInferenceAddVariable() builds the array backwards, so reverse it. */
-//             LALInferenceVariables *clusterParams = XLALCalloc(1, sizeof(LALInferenceVariables));
-//
-//             for (item = backwardClusterParams->head; item; item = item->next)
-//                 LALInferenceAddVariable(clusterParams, item->name, item->value, item->type, item->vary);
-//
-//             /* Burn in samples and parse the remainder */
-//             if (ptmcmc)
-//                 LALInferenceBurninPTMCMC(input, logl_idx, nValidCols);
-//             else
-//                 LALInferenceBurninStream(input, burnin);
-//
-//             sampleArray = LALInferenceParseDelimitedAscii(input, nCols, validCols, &nInSamps);
-//
-//             /* Downsample PTMCMC file to have independent samples */
-//             if (ptmcmc) {
-//                 INT4 acl = (INT4)LALInferenceComputeMaxAutoCorrLen(sampleArray, nInSamps, nValidCols);
-//                 if (acl < 1) acl = 1;
-//                 INT4 downsampled_size = ceil((REAL8)nInSamps/acl);
-//                 REAL8 *downsampled_array = (REAL8 *)XLALCalloc(downsampled_size * nValidCols, sizeof(REAL8));
-//                 printf("Chain %i downsampling to achieve %i samples.\n", chain, downsampled_size);
-//                 for (k=0; k < downsampled_size; k++) {
-//                     for (j=0; j < nValidCols; j++)
-//                         downsampled_array[k*nValidCols + j] = sampleArray[k*nValidCols*acl + j];
-//                 }
-//                 XLALFree(sampleArray);
-//                 sampleArray = downsampled_array;
-//                 nInSamps = downsampled_size;
-//             }
-//
-//             /* Build the KDE estimate and add to the KDE proposal set */
-//             INT4 ntrials = 50;  // Number of trials at fixed-k to find optimal BIC
-//             LALInferenceInitClusteredKDEProposal(runState, kde, sampleArray, nInSamps, clusterParams, propName, weight, LALInferenceOptimizedKmeans, cyclic_reflective, ntrials);
-//
-//             /* If kmeans construction failed, halt the run */
-//             if (!kde->kmeans) {
-//                 fprintf(stderr, "\nERROR: Couldn't build kmeans clustering from the file specified.\n");
-//                 XLALFree(kde);
-//                 XLALFree(burnins);
-//                 XLALFree(weights);
-//                 exit(-1);
-//             }
-//
-//             LALInferenceAddClusteredKDEProposalToSet(runState, kde);
-//
-//             LALInferenceClearVariables(backwardClusterParams);
-//             XLALFree(backwardClusterParams);
-//             XLALFree(propName);
-//             XLALFree(sampleArray);
-//
-//             i++;
-//         }
-//     }
-//
-//     XLALFree(burnins);
-//     XLALFree(weights);
-//     printf("done\n");
-// }
 
 
 /**
