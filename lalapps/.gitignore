@@ -138,6 +138,7 @@ src/inspiral/posterior/lalinference_pipe
 src/inspiral/posterior/lalinference_pp_pipe
 src/inspiral/posterior/lalapps_merge_posteriors
 src/inspiral/posterior/lalapps_test_run_lalinference_pipe_example
+src/inspiral/posterior/lalinference_datadump
 src/lalapps/LALAppsBuildInfo.c
 src/lalapps/LALAppsVCSInfo.c
 src/lalapps/LALAppsVCSInfo.h
