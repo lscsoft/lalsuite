@@ -605,7 +605,7 @@ static int LT_FindNearestPoints(
         //   * No floating-point exception checking needed for lround()
         //     here since its argument will be of order 'tn'.
         for (size_t tt = 1; tt <= tn + 1; ++tt) {
-          const INT8 ti = lround((tn + 1)* (0.5 - z[tt-1]) + 0.5);
+          const INT8 ti = lround((tn + 1)*(0.5 - z[tt-1]) + 0.5);
           link[tt-1] = bucket[ti-1];
           bucket[ti-1] = tt;
         }
@@ -841,7 +841,7 @@ static double ConstantBound(
 {
 
   // Return bound
-  return * ((const double *) data);
+  return *((const double *) data);
 
 }
 
@@ -992,7 +992,7 @@ int XLALSetTilingLatticeAndMetric(
   for (size_t i = 0; i < n; ++i) {
     double phys_lower = 0.0, phys_upper = 0.0;
     LT_GetBounds(tiling, i, tiling->phys_origin, &phys_lower, &phys_upper);
-    gsl_vector_set(tiling->phys_origin, i, 0.5* (phys_lower + phys_upper));
+    gsl_vector_set(tiling->phys_origin, i, 0.5 * (phys_lower + phys_upper));
   }
 
   // Set non-tiled dimensions of physical parameter-space origin back to zero
@@ -1079,7 +1079,7 @@ int XLALSetTilingLatticeAndMetric(
       GFVEC(tau);
 
       // An* normalised thickness
-      norm_thickness = sqrt(tn+1.0) * pow((1.0*tn* (tn+2.0)) / (12.0* (tn+1.0)), 0.5*tn);
+      norm_thickness = sqrt(tn+1.0) * pow((1.0*tn*(tn+2.0)) / (12.0*(tn+1.0)), 0.5*tn);
 
     }
     break;
@@ -1362,7 +1362,7 @@ int XLALRandomLatticeTilingPoints(
       const double u = (1.0 + scale) * (XLALUniformDeviate(rng) - 0.5) + 0.5;
 
       // Set parameter-space point
-      gsl_vector_set(&phys_point.vector, i, phys_lower + u* (phys_upper - phys_lower));
+      gsl_vector_set(&phys_point.vector, i, phys_lower + u * (phys_upper - phys_lower));
 
     }
 
