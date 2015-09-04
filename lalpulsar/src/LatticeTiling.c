@@ -43,8 +43,8 @@ typedef struct tagLT_Bound {
   bool is_tiled;			///< True if the dimension is tiled, false if it is a single point
   LatticeTilingBound func;		///< Parameter space bound function
   size_t data_len;			///< Length of arbitrary data describing parameter-space bounds
-  void *data_lower;			///< Arbitrary data describing lower parameter-space bound
-  void *data_upper;			///< Arbitrary data describing upper parameter-space bound
+  void *data_1;				///< Arbitrary data describing first parameter space bound
+  void *data_2;				///< Arbitrary data describing second parameter space bound
 } LT_Bound;
 
 ///
@@ -124,7 +124,7 @@ static void LT_ReverseOrderRowsCols(gsl_matrix *A)
 ///
 static void LT_GetBounds(
   const LatticeTiling *tiling,		///< [in] Lattice tiling
-  const size_t dim,			///< [in] Dimension on which bound applies
+  const size_t i,			///< [in] Dimension on which bound applies
   const gsl_vector *phys_point,		///< [in] Physical point at which to find bounds
   double *phys_lower,			///< [out] Lower parameter-space bound
   double *phys_upper			///< [out] Upper parameter-space bound
@@ -132,31 +132,21 @@ static void LT_GetBounds(
 {
 
   // Get bound information for this dimension
-  const LT_Bound *bound = &tiling->bounds[dim];
+  const LT_Bound *bound = &tiling->bounds[i];
 
   // Get view of first (dimension) dimensions of physical point
-  gsl_vector_const_view phys_point_subv_view = gsl_vector_const_subvector(phys_point, 0, GSL_MAX(1, dim));
-  const gsl_vector *phys_point_subv = (dim == 0) ? NULL : &phys_point_subv_view.vector;
+  gsl_vector_const_view phys_point_subv_view = gsl_vector_const_subvector(phys_point, 0, GSL_MAX(1, i));
+  const gsl_vector *phys_point_subv = (i == 0) ? NULL : &phys_point_subv_view.vector;
 
-  // Get lower parameter-space bound
-  *phys_lower = (bound->func)(bound->data_lower, dim, phys_point_subv);
+  // Get first parameter-space bound
+  const double first = (bound->func)(bound->data_1, i, phys_point_subv);
 
-  if (bound->is_tiled) {
+  // Get second parameter-space bound
+  const double second = bound->is_tiled ? (bound->func)(bound->data_2, i, phys_point_subv) : first;
 
-    // Get upper parameter-space bound
-    *phys_upper = (bound->func)(bound->data_upper, dim, phys_point_subv);
-
-    // Do not allow upper parameter-space bound to be less than lower parameter-space bound
-    if (*phys_upper < *phys_lower) {
-      *phys_upper = *phys_lower;
-    }
-
-  } else {
-
-    // Set upper bound to lower bound
-    *phys_upper = *phys_lower;
-
-  }
+  // Return lower and upper parameter-space bounds
+  *phys_lower = GSL_MIN(first, second);
+  *phys_upper = GSL_MAX(first, second);
 
 }
 
@@ -792,8 +782,8 @@ void XLALDestroyLatticeTiling(
   if (tiling != NULL) {
     if (tiling->bounds != NULL) {
       for (size_t i = 0; i < tiling->ndim; ++i) {
-        XLALFree(tiling->bounds[i].data_lower);
-        XLALFree(tiling->bounds[i].data_upper);
+        XLALFree(tiling->bounds[i].data_1);
+        XLALFree(tiling->bounds[i].data_2);
       }
       XLALFree(tiling->bounds);
     }
@@ -810,8 +800,8 @@ int XLALSetLatticeTilingBound(
   const size_t dim,
   const LatticeTilingBound func,
   const size_t data_len,
-  void *data_lower,
-  void *data_upper
+  void *data_1,
+  void *data_2
   )
 {
 
@@ -821,21 +811,21 @@ int XLALSetLatticeTilingBound(
   XLAL_CHECK(dim < tiling->ndim, XLAL_ESIZE);
   XLAL_CHECK(func != NULL, XLAL_EFAULT);
   XLAL_CHECK(data_len > 0, XLAL_EFAULT);
-  XLAL_CHECK(data_lower != NULL, XLAL_EFAULT);
-  XLAL_CHECK(data_upper != NULL, XLAL_EFAULT);
+  XLAL_CHECK(data_1 != NULL, XLAL_EFAULT);
+  XLAL_CHECK(data_2 != NULL, XLAL_EFAULT);
 
   // Check that bound has not already been set
   XLAL_CHECK(tiling->bounds[dim].func == NULL, XLAL_EINVAL, "Lattice tiling dimension #%zu is already bounded", dim);
 
   // Determine if this dimension is tiled
-  const bool is_tiled = (memcmp(data_lower, data_upper, data_len) != 0);
+  const bool is_tiled = (memcmp(data_1, data_2, data_len) != 0);
 
   // Set the parameter-space bound
   tiling->bounds[dim].is_tiled = is_tiled;
   tiling->bounds[dim].func = func;
   tiling->bounds[dim].data_len = data_len;
-  tiling->bounds[dim].data_lower = data_lower;
-  tiling->bounds[dim].data_upper = data_upper;
+  tiling->bounds[dim].data_1 = data_1;
+  tiling->bounds[dim].data_2 = data_2;
 
   return XLAL_SUCCESS;
 
@@ -868,15 +858,15 @@ int XLALSetLatticeTilingConstantBound(
 
   // Allocate memory
   const size_t data_len = sizeof(double);
-  double *data_lower = XLALMalloc(data_len);
-  XLAL_CHECK(data_lower != NULL, XLAL_ENOMEM);
-  double *data_upper = XLALMalloc(data_len);
-  XLAL_CHECK(data_upper != NULL, XLAL_ENOMEM);
+  double *data_1 = XLALMalloc(data_len);
+  XLAL_CHECK(data_1 != NULL, XLAL_ENOMEM);
+  double *data_2 = XLALMalloc(data_len);
+  XLAL_CHECK(data_2 != NULL, XLAL_ENOMEM);
 
   // Set the parameter-space bound
-  *data_lower = GSL_MIN(bound1, bound2);
-  *data_upper = GSL_MAX(bound1, bound2);
-  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dim, ConstantBound, data_len, data_lower, data_upper) == XLAL_SUCCESS, XLAL_EFUNC);
+  *data_1 = bound1;
+  *data_2 = bound2;
+  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dim, ConstantBound, data_len, data_1, data_2) == XLAL_SUCCESS, XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 
