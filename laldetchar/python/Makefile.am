@@ -17,9 +17,9 @@ pybin_scripts = \
 	laldetchar-idq-convertkwtosb \
 	laldetchar-idq-evaluate-times \
 	laldetchar-idq-calibration \
-        laldetchar-idq-gdb-alert-handler \
+	laldetchar-idq-gdb-alert-handler \
 	laldetchar-idq-gdb-glitch-tables \
-        laldetchar-idq-gdb-processor \
+	laldetchar-idq-gdb-processor \
 	laldetchar-idq-gdb-timeseries \
 	laldetchar-idq-prepare-training-auxmvc-samples \
 	laldetchar-idq-realtime \
