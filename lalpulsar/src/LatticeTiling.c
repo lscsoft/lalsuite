@@ -319,7 +319,7 @@ static void LT_PollIndexTrie(
   const LatticeTiling *tiling,		///< [in] Lattice tiling
   const LT_IndexTrie *trie,		///< [in] Lattice tiling index trie
   const size_t ti,			///< [in] Current depth of the trie
-  const INT8 *original_int,		///< [in] Original nearest point
+  const gsl_vector *point_int,		///< [in] Original point in generating integers
   INT8 *poll_int,			///< [in] Neighbouring point currently being polled
   double *poll_min_distance,		///< [in] Minimum distance to neighbouring point found so far
   INT8 *nearest_int			///< [in] New nearest point found by polling
@@ -333,24 +333,28 @@ static void LT_PollIndexTrie(
   const INT8 int_upper = trie->int_upper;
 
   // Poll points within 1 of original nearest point, but within bounds
-  const INT8 poll_lower = GSL_MAX(int_lower, GSL_MIN(original_int[ti] - 1, int_upper));
-  const INT8 poll_upper = GSL_MAX(int_lower, GSL_MIN(original_int[ti] + 1, int_upper));
+  const size_t i = tiling->tiled_idx[ti];
+  const double point_int_i = gsl_vector_get(point_int, i);
+  const INT8 poll_lower = GSL_MAX(int_lower, GSL_MIN(floor(point_int_i) - 1, int_upper));
+  const INT8 poll_upper = GSL_MAX(int_lower, GSL_MIN(ceil(point_int_i) + 1, int_upper));
 
   for (poll_int[ti] = poll_lower; poll_int[ti] <= poll_upper; ++poll_int[ti]) {
 
     // Continue polling in higher dimensions
     if (ti + 1 < tn) {
       const LT_IndexTrie *next = &trie->next[poll_int[ti] - trie->int_lower];
-      LT_PollIndexTrie(tiling, next, ti + 1, original_int, poll_int, poll_min_distance, nearest_int);
+      LT_PollIndexTrie(tiling, next, ti + 1, point_int, poll_int, poll_min_distance, nearest_int);
       continue;
     }
 
     // Compute distance between original and poll point with respect to lattice generator
     double poll_distance = 0;
     for (size_t tj = 0; tj < tn; ++tj) {
-      const double diff_j = original_int[tj] - poll_int[tj];
+      const size_t j = tiling->tiled_idx[tj];
+      const double diff_j = gsl_vector_get(point_int, j) - poll_int[tj];
       for (size_t tk = 0; tk < tn; ++tk) {
-        const double diff_k = original_int[tk] - poll_int[tk];
+        const size_t k = tiling->tiled_idx[tk];
+        const double diff_k = gsl_vector_get(point_int, k) - poll_int[tk];
         const double generator_j_k = gsl_matrix_get(tiling->tiled_generator, tj, tk);
         poll_distance += generator_j_k * diff_j * diff_k;
       }
@@ -660,13 +664,17 @@ static int LT_FindNearestPoints(
 
         // If 'nearest_int[ti]' is outside parameter-space bounds
         if (nearest_int[ti] < trie->int_lower || nearest_int[ti] > trie->int_upper) {
+          const size_t i = loc->tiling->tiled_idx[ti];
+          XLALPrintInfo("%s: failed %" LAL_INT8_FORMAT " <= %" LAL_INT8_FORMAT " <= %" LAL_INT8_FORMAT " in dimension #%zu\n",
+                        __func__, trie->int_lower, nearest_int[ti], trie->int_upper, i);
 
           // Find the nearest point within the parameter-space bounds of the lattice tiling
-          INT8 original_int[tn], poll_int[tn];
-          memcpy(original_int, nearest_int, sizeof(original_int));
+          gsl_vector_view point_int_view = gsl_matrix_column(nearest_points, j);
+          INT8 poll_int[tn];
           double poll_min_distance = GSL_POSINF;
-          XLALPrintInfo("%s: calling LT_PollIndexTrie()\n", __func__);
-          LT_PollIndexTrie(loc->tiling, loc->index_trie, 0, original_int, poll_int, &poll_min_distance, nearest_int);
+          feclearexcept(FE_ALL_EXCEPT);
+          LT_PollIndexTrie(loc->tiling, loc->index_trie, 0, &point_int_view.vector, poll_int, &poll_min_distance, nearest_int);
+          XLAL_CHECK(fetestexcept(FE_INVALID) == 0, XLAL_EFAILED, "Rounding failed while calling LT_PollIndexTrie() for nearest point #%zu", j);
 
           // Reset 'trie', given that 'nearest_int' may have changed in any dimension
           trie = loc->index_trie;
