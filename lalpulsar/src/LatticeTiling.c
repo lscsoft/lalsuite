@@ -1438,7 +1438,7 @@ void XLALDestroyLatticeTilingIterator(
   }
 }
 
-int XLALSetAlternatingLatticeTilingIterator(
+int XLALSetLatticeTilingAlternatingIterator(
   LatticeTilingIterator *itr,
   const bool alternating
   )

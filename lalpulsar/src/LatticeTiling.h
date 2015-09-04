@@ -211,7 +211,7 @@ void XLALDestroyLatticeTilingIterator(
 /// Set whether the lattice tiling iterator should alternate its iteration direction (i.e. lower to
 /// upper bound, then upper to lower bound, and so on) after every pass over each dimension.
 ///
-int XLALSetAlternatingLatticeTilingIterator(
+int XLALSetLatticeTilingAlternatingIterator(
   LatticeTilingIterator *itr,		///< [in] Lattice tiling iterator
   const bool alternating		///< [in] If true, set alternating iterator
   );

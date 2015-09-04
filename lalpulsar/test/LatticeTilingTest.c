@@ -202,7 +202,7 @@ static int BasicTest(
     // Create alternating lattice tiling iterator over 'i+1' dimensions
     LatticeTilingIterator *itr_alt = XLALCreateLatticeTilingIterator(tiling, i+1);
     XLAL_CHECK(itr_alt != NULL, XLAL_EFUNC);
-    XLAL_CHECK(XLALSetAlternatingLatticeTilingIterator(itr_alt, true) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(XLALSetLatticeTilingAlternatingIterator(itr_alt, true) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Count number of points, check for consistency with non-alternating count
     UINT8 total = 0;
