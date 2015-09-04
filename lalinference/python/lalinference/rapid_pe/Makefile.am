@@ -16,7 +16,7 @@ pymodule_PYTHON = \
 	xmlutils.py \
 	amrlib.py \
 	common_cl.py \
-	agutils.py \
+	dagutils.py \
 	effectiveFisher.py \
 	$(END_OF_LIST)
 
