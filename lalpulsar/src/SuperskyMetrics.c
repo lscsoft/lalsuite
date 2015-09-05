@@ -1050,10 +1050,21 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
   XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
   XLAL_CHECK(rssky_metric->size1 + 1 == rssky_transf->size1, XLAL_ESIZE);
   XLAL_CHECK(rssky_transf->size2 == 3, XLAL_ESIZE);
-  XLAL_CHECK((fabs(alpha1 - alpha2) > 0) == (fabs(delta1 - delta2) > 0), XLAL_EINVAL);
-  XLAL_CHECK(fabs(alpha1 - alpha2) <= LAL_PI || (fabs(alpha1 - alpha2) >= LAL_TWOPI && fabs(delta1) >= LAL_PI_2 && fabs(delta2) >= LAL_PI_2), XLAL_EINVAL);
-  XLAL_CHECK(-LAL_PI_2 <= delta1 && delta1 <= LAL_PI_2, XLAL_EINVAL);
-  XLAL_CHECK(-LAL_PI_2 <= delta2 && delta2 <= LAL_PI_2, XLAL_EINVAL);
+
+  // Check sky bound ranges
+  XLAL_CHECK((fabs(alpha1 - alpha2) > 0) == (fabs(delta1 - delta2) > 0), XLAL_EINVAL,
+             "|alpha1 - alpha2| and |delta1 - delta2| must either be both zero, or both nonzero");
+  if (fabs(alpha1 - alpha2) >= LAL_TWOPI) {
+    XLAL_CHECK(fabs(delta1) >= LAL_PI_2 && fabs(delta2) >= LAL_PI_2, XLAL_EINVAL,
+               "If |alpha1 - alpha2| covers the whole sky, then |delta1| == |delta2| == PI/2 is required");
+  } else {
+    XLAL_CHECK(fabs(alpha1 - alpha2) <= LAL_PI, XLAL_EINVAL,
+               "If |alpha1 - alpha2| does not cover the whole sky, then |alpha1 - alpha2| <= PI is required");
+    XLAL_CHECK(-LAL_PI_2 <= delta1 && delta1 <= LAL_PI_2, XLAL_EINVAL,
+               "If |alpha1 - alpha2| does not cover the whole sky, then -PI/2 <= delta1 <= PI/2 is required");
+    XLAL_CHECK(-LAL_PI_2 <= delta2 && delta2 <= LAL_PI_2, XLAL_EINVAL,
+               "If |alpha1 - alpha2| does not cover the whole sky, then -PI/2 <= delta2 <= PI/2 is required");
+  }
 
   // If parameter space is a single point:
   if (alpha1 == alpha2 && delta1 == delta2) {
