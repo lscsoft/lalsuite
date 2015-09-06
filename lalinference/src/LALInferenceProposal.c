@@ -1697,7 +1697,7 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     INT4 i, j, l;
     INT4 ifo, nifo, timeflag=0;
     REAL8 logPropRatio = 0.0;
-    REAL8 ra, dec, dL;
+    REAL8 ra, dec;
     REAL8 baryTime, gmst;
     REAL8 newRA, newDec, newTime, newPsi;
     REAL8 intpart, decpart;
@@ -1724,12 +1724,6 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     }
   
     LALInferenceCopyVariables(currentParams, proposedParams);
-
-    if (distParam == USES_DISTANCE_VARIABLE) {
-        dL = LALInferenceGetREAL8Variable(currentParams, "distance");
-    } else {
-        dL = exp(LALInferenceGetREAL8Variable(currentParams, "logdistance"));
-    }
 
     LALInferenceVariables *args = thread->proposalArgs;
     gsl_rng *rng = thread->GSLrandom;
