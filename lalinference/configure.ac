@@ -63,6 +63,7 @@ LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALPULSAR
+LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALXML
 
 # enable SWIG wrapping modules
@@ -172,6 +173,7 @@ LALSUITE_CHECK_LIB([LALFrame],[1.3.0],[LALFrOpen],[lal/LALFrameL.h])
 LALSUITE_CHECK_LIB([LALSimulation],[1.4.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_LIB([LALInspiral],[1.7.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
 LALSUITE_CHECK_LIB([LALPulsar],[1.12.0],[XLALComputeFstat],[lal/ComputeFstat.h])
+LALSUITE_CHECK_LIB([LALBurst],[1.4.0],[XLALEPSearch],[lal/EPSearch.h])
 
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.0],[XLALXMLFilePrintElements],[lal/LALXML.h])

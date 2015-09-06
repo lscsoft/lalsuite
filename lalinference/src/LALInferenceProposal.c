@@ -1708,21 +1708,12 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     REAL8 pForward, pReverse;
     REAL8 n[3];
     REAL8 kp[3];
-    DistanceParam distParam;
 
 
     LIGOTimeGPS GPSlal, *epoch;
     LALDetector *detectors;
     gsl_matrix *IFO;
 
-    if (LALInferenceCheckVariable(currentParams, "distance")) {
-        distParam = USES_DISTANCE_VARIABLE;
-    } else if (LALInferenceCheckVariable(currentParams, "logdistance")) {
-        distParam = USES_LOG_DISTANCE_VARIABLE;
-    } else {
-        XLAL_ERROR_REAL8(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
-    }
-  
     LALInferenceCopyVariables(currentParams, proposedParams);
 
     LALInferenceVariables *args = thread->proposalArgs;
