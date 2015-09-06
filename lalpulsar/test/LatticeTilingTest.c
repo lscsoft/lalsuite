@@ -329,8 +329,13 @@ static int MismatchTest(
     XLAL_ERROR(XLAL_EFAILED, "ERROR: mismatch histogram error exceeds %0.3e\n", mism_hist_error_tol);
   }
 
-  // Print fraction of injections out of histogram range
-  printf("Fraction of points out of histogram range: %0.3e\n", mism_hist_out_of_range / mism_hist_total);
+  // Check fraction of injections out of histogram range
+  const double mism_out_of_range = mism_hist_out_of_range / mism_hist_total;
+  printf("Fraction of points out of histogram range: %0.3e\n", mism_out_of_range);
+  const double mism_out_of_range_tol = 2e-3;
+  if (mism_out_of_range > mism_out_of_range_tol) {
+    XLAL_ERROR(XLAL_EFAILED, "ERROR: fraction of points out of histogram range exceeds %0.3e\n", mism_out_of_range_tol);
+  }
 
   // Perform 10 injections outside parameter space
   {
@@ -464,9 +469,6 @@ static int SuperskyTest(
   LatticeTiling *tiling = XLALCreateLatticeTiling(3);
   XLAL_CHECK(tiling != NULL, XLAL_EFUNC);
 
-  // Increase bound padding
-  XLAL_CHECK(XLALSetLatticeTilingPadding(tiling, 2) == XLAL_SUCCESS, XLAL_EFUNC);
-
   // Compute reduced supersky metric
   const double Tspan = T * 86400;
   LIGOTimeGPS ref_time;
@@ -533,14 +535,14 @@ int main(void)
   XLAL_CHECK_MAIN(MismatchSquareTest(TILING_LATTICE_ANSTAR, 1e-4, -2e-9, 2e-17, 20268, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Perform mismatch tests with an age--braking index parameter space
-  XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 100, 4.0e-5, 37870, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 100, 4.0e-5, 37868, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 200, 1.5e-5, 37230, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(MismatchAgeBrakeTest(TILING_LATTICE_ANSTAR, 300, 1.0e-5, 37022, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Perform mismatch tests with the reduced supersky parameter space and metric
-  XLAL_CHECK_MAIN(SuperskyTest(1.1, 0.8, TILING_LATTICE_ANSTAR,  1, 50, 2.0e-5, 62031, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(SuperskyTest(1.5, 0.8, TILING_LATTICE_ANSTAR,  3, 50, 2.0e-5, 73441, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(SuperskyTest(2.5, 0.8, TILING_LATTICE_ANSTAR, 17, 50, 2.0e-5, 71268, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(SuperskyTest(1.1, 0.8, TILING_LATTICE_ANSTAR,  1, 50, 2.0e-5, 21012, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(SuperskyTest(1.5, 0.8, TILING_LATTICE_ANSTAR,  3, 50, 2.0e-5, 23147, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(SuperskyTest(2.5, 0.8, TILING_LATTICE_ANSTAR, 17, 50, 2.0e-5, 30525, A3s_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);
 
   return EXIT_SUCCESS;
 
