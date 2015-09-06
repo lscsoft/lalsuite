@@ -2892,14 +2892,10 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
   REAL8 xsigma = 1.0/(OptimalSNR*old_d);
   REAL8 old_x = 1.0/old_d;
   
-  /* Sample new x, cutting off the part of the Gaussian that extends
-     to new_x < 0.  (Since the proposal density remains fixed for new
-     and old x, this just introduces a constant normalisation factor
-     that cancels in the proposal ratio.) */
+  /* Sample new x. Do not check for x<0 since that can throw the code
+   * into a difficult-to-terminate loop */
   REAL8 new_x;
-  do {
-    new_x = xmean + gsl_ran_gaussian(thread->GSLrandom,xsigma);
-  } while (new_x <= 0.0);
+  new_x = xmean + gsl_ran_gaussian(thread->GSLrandom,xsigma);
   REAL8 new_d = 1.0/new_x;
   
   /* Adjust SNRs */
