@@ -146,6 +146,17 @@ if opts.dax:
     with open('sites.xml','w') as fout:
       for line in lines:
         fout.write(line)
+  if cp.has_option('analysis','accounting_group_user'):
+    lines=[]
+    with open('sites.xml') as fin:
+      for line in fin:
+        if '<profile namespace="condor" key="getenv">True</profile>' in line:
+          line=line+'    <profile namespace="condor" key="accounting_group_user">'+cp.get('analysis','accounting_group_user')+'</profile>\n'
+        lines.append(line)
+    with open('sites.xml','w') as fout:
+      for line in lines:
+        fout.write(line)
+
 
 dag.write_sub_files()
 dag.write_dag()

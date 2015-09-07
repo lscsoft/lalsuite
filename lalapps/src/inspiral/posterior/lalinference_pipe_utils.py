@@ -502,6 +502,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.datafind_job.add_opt('url-type','file')
     if cp.has_option('analysis','accounting_group'):
       self.datafind_job.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
+    if cp.has_option('analysis','accounting_group_user'):
+      self.datafind_job.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
     self.datafind_job.set_sub_file(os.path.abspath(os.path.join(self.basepath,'datafind.sub')))
     self.preengine_job = EngineJob(self.config, os.path.join(self.basepath,'prelalinference.sub'),self.logpath,engine='lalinferencedatadump',ispreengine=True,dax=self.is_dax())
     self.preengine_job.set_grid_site('local')
@@ -1357,6 +1359,8 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
     if cp.has_option('analysis','accounting_group'):
       self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
+    if cp.has_option('analysis','accounting_group_user'):
+      self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
     try:
       hostname=socket.gethostbyaddr(socket.gethostname())[0]
     except:
@@ -1760,6 +1764,8 @@ class ResultsPageJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax=dax) # Job always runs locally
     if cp.has_option('analysis','accounting_group'):
       self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
+    if cp.has_option('analysis','accounting_group_user'):
+      self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
     self.set_sub_file(os.path.abspath(submitFile))
     self.set_stdout_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).err'))
@@ -1850,6 +1856,8 @@ class CoherenceTestJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       pipeline.AnalysisJob.__init__(self,cp,dax=dax)
       if cp.has_option('analysis','accounting_group'):
         self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
+      if cp.has_option('analysis','accounting_group_user'):
+        self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
       self.add_opt('coherent-incoherent','')
       self.add_condor_cmd('getenv','True')
       self.set_stdout_file(os.path.join(logdir,'coherencetest-$(cluster)-$(process).out'))
@@ -1904,6 +1912,8 @@ class MergeNSJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       pipeline.AnalysisJob.__init__(self,cp,dax=dax)
       if cp.has_option('analysis','accounting_group'):
         self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
+      if cp.has_option('analysis','accounting_group_user'):
+        self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
       self.set_sub_file(os.path.abspath(submitFile))
       self.set_stdout_file(os.path.join(logdir,'merge-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'merge-$(cluster)-$(process).err'))
@@ -1955,6 +1965,8 @@ class GraceDBJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       pipeline.AnalysisJob.__init__(self,cp,dax=dax)
       if cp.has_option('analysis','accounting_group'):
         self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
+      if cp.has_option('analysis','accounting_group_user'):
+        self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
       self.set_sub_file(os.path.abspath(submitFile))
       self.set_stdout_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).err'))
@@ -2013,6 +2025,8 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
     if cp.has_option('analysis','accounting_group'):
       self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
+    if cp.has_option('analysis','accounting_group_user'):
+      self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
     self.set_sub_file(submitFile)
     self.set_stdout_file(os.path.join(logdir,'computeroqweights-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'computeroqweights-$(cluster)-$(process).err'))
@@ -2054,6 +2068,8 @@ class BayesLineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
     if cp.has_option('analysis','accounting_group'):
       self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
+    if cp.has_option('analysis','accounting_group_user'):
+      self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
     self.set_sub_file(submitFile)
     self.set_stdout_file(os.path.join(logdir,'bayesline-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'bayesline-$(cluster)-$(process).err'))
@@ -2125,6 +2141,8 @@ class SkyAreaJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       pipeline.AnalysisJob.__init__(self,cp,dax=dax)
       if cp.has_option('analysis','accounting_group'):
         self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
+      if cp.has_option('analysis','accounting_group_user'):
+        self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
       self.set_sub_file(submitFile)
       self.set_stdout_file(os.path.join(logdir,'skyarea-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'skyarea-$(cluster)-$(process).err'))
