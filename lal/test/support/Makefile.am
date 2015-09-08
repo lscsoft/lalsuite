@@ -3,6 +3,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
 # Add compiled test programs to this variable
 test_programs += ConfigFileTest
+test_programs += H5FileIOTest
 test_programs += LALMath3DPlotTest
 test_programs += LALMathNDPlotTest
 test_programs += PrintFTSeriesTest
@@ -26,6 +27,7 @@ MOSTLYCLEANFILES = \
 	*.dat \
 	*.out \
 	*PrintVector.00* \
+	test.h5 \
 	ConfigFile.cfg \
 	Math3DNotebook.nb \
 	MathNDNotebook.nb \

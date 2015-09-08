@@ -155,9 +155,13 @@ static double dotProduct(double a[3], double b[3]);
 static void crossProduct(double a[3], double b[3], double c[3]);
 static void rotateVector(double a[3], double b[3], double phi, double theta, double psi);
 
+/** 
+ * @addtogroup LALSimInspiralSpinTaylor_c
+ * @{
+ */
 
 /**
- * Generate time-domain generic spinnin PN waveforms in the SpinTaylorT5 approximaton.
+ * Generate time-domain generic spinning PN waveforms in the SpinTaylorT5 approximaton.
  */
 int XLALSimInspiralSpinTaylorT5 (
 		REAL8TimeSeries **hplus,        /**< +-polarization waveform */
@@ -372,7 +376,9 @@ int XLALSimInspiralSpinTaylorT5 (
 	return XLAL_SUCCESS;
 }
 
-/**
+/** @} */
+
+/*
  * Evolution of dynamical variables in the SpinTaylorT5
  */
 static int XLALSimInspiralSpinTaylorT5Derivatives(
@@ -471,7 +477,7 @@ static int XLALSimInspiralSpinTaylorT5Derivatives(
 }
 
 
-/**
+/*
  * Compute the re-expanded (dEnergy/dv)/Flux for generic spinning binaries
  */
 static REAL8 XLALdEnergyByFluxSpinPrec(
@@ -549,7 +555,7 @@ static REAL8 XLALdEnergyByFluxSpinPrec(
 
 }
 
-/**
+/*
  * Compute the GW polarizations in the radiation frame
  */
 static int polarizationsInRadiationFrame(
@@ -661,7 +667,7 @@ static int polarizationsInRadiationFrame(
 	return XLAL_SUCCESS; 
 }
 
-/**
+/*
  * Compute the orbital phase as an explicit function of v (TaylorT2 approximant)
  * Ref. Eq.(3.4) of http://arxiv.org/abs/1107.1267 
  */
@@ -827,7 +833,7 @@ static int spinTaylorT5Init(
 	return XLAL_SUCCESS; 
 }
 
-/**
+/*
  * Internal function called by the integration routine.
  * Stops the integration if
  * 1) The energy decreases with increasing orbital frequency
@@ -911,5 +917,3 @@ static void rotateVector(double a[3], double b[3], double phi, double theta, dou
             + y*(cos(phi)*sin(psi) + cos(psi)*sin(phi)*sin(theta));
 
 }
-
-

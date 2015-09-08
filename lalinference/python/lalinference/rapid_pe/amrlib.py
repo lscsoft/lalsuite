@@ -1,7 +1,11 @@
 import itertools
 import copy
+
 import numpy
+import h5py
+
 import lal
+
 from lalinference.rapid_pe import lalsimutils
 
 m1m2 = numpy.vectorize(lalsimutils.m1m2)
@@ -20,9 +24,9 @@ def ndim_offsets(ndim):
 #
 
 # TODO: Optionally return cells
-def refine_regular_grid(grid, grid_spacing):
+def refine_regular_grid(grid, grid_spacing, return_cntr=False):
     """
-    Given a regular grid in N dimensions with spacing given by grid_spacing, refine the grid by bisection along all dimensions. Returns the new grid and new spacing.
+    Given a regular grid in N dimensions with spacing given by grid_spacing, refine the grid by bisection along all dimensions. Returns the new grid and new spacing. The grid will not contain the center point by default (since it is assumed the point already exists in the unrefined grid, but this behavior can be changed by setting return_cntr to True.
 
     >>> region = Cell(numpy.array([(-1., 1.), (-2., 2.)]))
     >>> grid, spacing = create_regular_grid_from_cell(region, side_pts=2)
@@ -36,7 +40,7 @@ def refine_regular_grid(grid, grid_spacing):
     # FIXME: We can probably allocate space ahead of time
     new_pts = []
     for cells in grid_to_cells(grid, grid_spacing):
-        for cell in cells.refine_full():
+        for cell in cells.refine_full(return_cntr=return_cntr):
             new_pts.append(cell._center)
 
     return new_pts, grid_spacing / 2
@@ -49,13 +53,14 @@ def midpoint(pt1, pt2):
 
 class Cell(object):
     def __init__(self, boundaries, center=None):
-        self._bounds = boundaries
+        self._bounds = boundaries.copy()
         if center is not None:
-            self._center = center
+            self._center = center.copy()
             assert len(self._center) == len(self._bounds)
             assert all([b[0] < c < b[1] for c, b in zip(self._center, self._bounds)])
         else:
-            self._center = [(a+b)/2.0 for a, b in self._bounds]
+            #self._center = [(a+b)/2.0 for a, b in self._bounds]
+            self._center = (self._bounds[:,0] + self._bounds[:,1])/2.0
 
     def area(self):
         return numpy.abs(numpy.diff(self._bounds)).prod()
@@ -105,7 +110,7 @@ class Cell(object):
 
         return daughters
 
-    def refine_full(self):
+    def refine_full(self, return_cntr=True):
         """
         Refine each cell such that new cells are created along all permutations of a displacement vector with unit vectors in each dimension and the 0 vector.
         """
@@ -116,7 +121,14 @@ class Cell(object):
         # new cell and translating it along this offset
         # Note the factor of two required in the offset is preincluded above.
         for offset in ndim_offsets(len(self._center)):
+            if not return_cntr and numpy.abs(offset).sum() == 0.0:
+                continue
             cell = Cell(numpy.copy(self._bounds))
+            # Shrink cell
+            cell._bounds -= cell._center[:,numpy.newaxis]
+            cell._bounds /= 2
+            cell._bounds += cell._center[:,numpy.newaxis]
+            # translate to new offset
             cell.translate(offset * extent)
             cells.append(cell)
 
@@ -229,6 +241,7 @@ def grid_to_indices(pts, region, grid_spacing):
     """
     Convert points in a grid to their 1-D indices according to the grid extent in region, and grid spacing.
     """
+    region = region.copy() # avoid referencing
     region[:,0] = region[:,0] - grid_spacing
     region[:,1] = region[:,1] + grid_spacing
     extent = numpy.diff(region)[:,0]
@@ -324,6 +337,58 @@ def grid_to_cells(grid, grid_spacing):
 # Cell grid serialization and packing routines
 #
 
+def init_grid_hdf(init_region, h5file, overlap_thresh, base_grp="rapidpe_grids"):
+    """
+    Set up a new HDF5 file (h5file), truncating any existing file with this name. A new 'folder' called 'base_grp' is set up and the initial region with attribute 'overlap_thresh' is set up under it.
+    """
+    hfile = h5py.File(h5file, "w")
+    if base_grp not in hfile:
+        hfile.create_group(base_grp)
+    hfile[base_grp].create_dataset("init_region", data=init_region._bounds)
+    hfile[base_grp].attrs.create("overlap_thresh", overlap_thresh)
+    return hfile[base_grp]
+
+def save_grid_cells_hdf(base_grp, cells, check=True):
+    """
+    Under the base_grp, a new level of grid points is saved. It will create a subgroup called "grids" if it does not already exist. Under this subgroup, levels are created sequentially, the function looks for the last level (e.g. the subsubgroup with the largest "level" attribute, and appends a new level with +1 to that number. If check is enabled (that is the default), a safety check against the new level versus the last level is made to ensure the resolution is a factor of two smaller.
+    """
+    if "grids" not in base_grp:
+        grids = base_grp.create_group("grids")
+    else:
+        grids = base_grp["grids"]
+
+    levels = []
+    for name, ds in grids.iteritems():
+        levels.append((ds.attrs["level"], name))
+
+    grid_res = numpy.diff(cells[0]._bounds).flatten()
+    if len(levels) == 0:
+        ds = grids.create_dataset("level_0", data=numpy.array([c._center for c in cells]))
+        ds.attrs.create("level", 0)
+        ds.attrs.create("resolution", grid_res)
+    else:
+        levels.sort()
+        lvl, name = levels[-1]
+        lvl += 1
+        if check:
+            assert numpy.allclose(grids[name].attrs["resolution"] / 2, grid_res)
+
+        ds = grids.create_dataset("level_%d" % lvl, data=numpy.array([c._center for c in cells]))
+        ds.attrs.create("level", lvl)
+        ds.attrs.create("resolution", grid_res)
+
+def load_grid_level(h5file, level, base_grp="rapidpe_grids"):
+    """
+    Load a set grid points (in the form of cells) from h5file. ArgumentError is raised if 'level' is not represented in the attributes of one of the levels stored under base_grp/'grids'
+    """
+    hfile = h5py.File(h5file, "r")
+    grids = hfile[base_grp]["grids"]
+    for name, dat in grids.iteritems():
+        if dat.attrs["level"] == level:
+            grid_res = dat.attrs["resolution"][numpy.newaxis,:]
+            return unpack_grid_cells(numpy.concatenate((grid_res, dat[:])))
+    raise ArgumentError("No grid refinement level %d" % level)
+    
 def pack_grid_cells(cells, resolution):
     """
     Pack the cell centers (grid points) into a convienient numpy array. The resolution of the grid is prepended for later use.

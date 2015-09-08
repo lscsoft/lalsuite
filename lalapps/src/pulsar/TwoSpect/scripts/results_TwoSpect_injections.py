@@ -2,12 +2,13 @@
 
 import argparse, sys, re
 
-parser = argparse.ArgumentParser(description='Script that collects the output files into one file')
+parser = argparse.ArgumentParser(description='Script that collects the output files into one file',fromfile_prefix_chars='@')
 parser.add_argument('--dir', required=True, type=str, help='Base path to output directories')
 parser.add_argument('--jobs', required=True, type=int, help='Number of jobs (also the number of directories)')
 parser.add_argument('--IFO', required=True, type=str, help='Interferometers tested (specify multiple as CSV)')
 parser.add_argument('--ULoutput', type=str, help='Filename for UL file')
 parser.add_argument('--candidateOutput', type=str, help='Filename for candidates file')
+parser.add_argument('--unrestrictedCosi', action='store_true', help='Analysis was done with marginalization over cosi=[-1,1] for coherent analysis')
 args = parser.parse_args()
 
 if args.ULoutput: uloutput = open('{}/{}'.format(args.dir, args.ULoutput), 'w')
@@ -24,14 +25,17 @@ for ii in range(0, len(IFOList)):
 
 for ii in range(0, args.jobs):
     if len(IFOList)>1:
-        errfile = open('{}/{}/logfile_9_1.txt'.format(args.dir, ii),'r')
+        if args.unrestrictedCosi:
+            errfile = open('{}/{}/logfile_9_0.txt'.format(args.dir, ii),'r')
+        else:
+            errfile = open('{}/{}/logfile_9_2.txt'.format(args.dir, ii),'r')
         err = errfile.readlines()
         if not re.match('^Program finished', err[len(err)-1]):
             errfile.close()
             continue
         errfile.close()
     else:
-        errfile = open('{}/{}/logfile_9.txt'.format(args.dir, ii),'r')
+        errfile = open('{}/{}/logfile_9_0.txt'.format(args.dir, ii),'r')
         err = errfile.readlines()
         if not re.match('^Program finished', err[len(err)-1]):
             errfile.close()
@@ -63,25 +67,27 @@ for ii in range(0, args.jobs):
 
         if args.ULoutput:
             if len(IFOList)>1:
-                ulfile = open('{}/{}/uls_{}_1.dat'.format(args.dir, ii, jj),'r')
+                if args.unrestrictedCosi: ulfile = open('{}/{}/uls_{}_0.dat'.format(args.dir, ii, jj),'r')
+                else: ulfile = open('{}/{}/uls_{}_1.dat'.format(args.dir, ii, jj),'r')
                 for line in ulfile:
                     uloutput.write(recentinjections[jj])
                     uloutput.write(line)
                 ulfile.close
-                ulfile = open('{}/{}/uls_{}_2.dat'.format(args.dir, ii, jj),'r')
-                for line in ulfile:
-                    uloutput.write(recentinjections[jj])
-                    uloutput.write(line)
-                ulfile.close
+                if not args.unrestrictedCosi:
+                    ulfile = open('{}/{}/uls_{}_2.dat'.format(args.dir, ii, jj),'r')
+                    for line in ulfile:
+                        uloutput.write(recentinjections[jj])
+                        uloutput.write(line)
+                    ulfile.close
             else:
-                ulfile = open('{}/{}/uls_{}.dat'.format(args.dir, ii, jj),'r')
+                ulfile = open('{}/{}/uls_{}_0.dat'.format(args.dir, ii, jj),'r')
                 for line in ulfile:
                     uloutput.write(recentinjections[jj])
                     uloutput.write(line)
                 ulfile.close
 
         if args.candidateOutput:
-            if len(IFOList)>1:
+            if len(IFOList)>1 and not args.unrestrictedCosi:
                 logfile = open('{}/{}/logfile_{}_1.txt'.format(args.dir, ii, jj),'r')
                 log = logfile.readlines()
                 log = log[::-1]
@@ -114,7 +120,7 @@ for ii in range(0, args.jobs):
 
                 logfile.close()
             else:
-                logfile = open('{}/{}/logfile_{}.txt'.format(args.dir, ii, jj),'r')
+                logfile = open('{}/{}/logfile_{}_0.txt'.format(args.dir, ii, jj),'r')
                 log = logfile.readlines()
                 log = log[::-1]
                 kk = 1

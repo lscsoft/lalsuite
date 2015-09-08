@@ -360,6 +360,10 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
     if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
       return -DBL_MAX;
 
+  if(LALInferenceCheckVariable(priorParams,"MTotMin"))
+    if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMin") > m1+m2)
+      return -DBL_MAX;
+  
   if(model != NULL &&
         LALInferenceCheckVariable(priorParams,"malmquist") &&
         *(UINT4 *)LALInferenceGetVariable(priorParams,"malmquist") &&

@@ -49,6 +49,7 @@ python/lalinference/git_version.py
 python/lalinference/lalinference.py
 python/rapidpe_calculate_overlap
 python/rapidpe_compute_intrinsic_fisher
+python/rapidpe_compute_intrinsic_grid
 python/rapidpe_create_event_dag
 python/rapidpe_integrate_extrinsic_likelihood
 src/LALInferenceBuildInfo.c

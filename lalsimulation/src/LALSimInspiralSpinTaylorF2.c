@@ -56,29 +56,31 @@ typedef struct tagLALSimInspiralSF2Coeffs
 
 // Prototypes
 
-REAL8 safe_atan2(REAL8 val1, REAL8 val2);
+static REAL8 safe_atan2(REAL8 val1, REAL8 val2);
 
-void XLALSimInspiralSF2CalculateOrientation(
+static void XLALSimInspiralSF2CalculateOrientation(
     LALSimInspiralSF2Orientation *orientation,
     REAL8 m1, REAL8 m2, REAL8 v_ref,
     REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz,
     REAL8 s1x, REAL8 s1y, REAL8 s1z);
 
-void XLALSimInspiralSF2CalculateCoeffs(
+static void XLALSimInspiralSF2CalculateCoeffs(
     LALSimInspiralSF2Coeffs *coeffs,
     REAL8 m1, REAL8 m2, REAL8 chi, REAL8 kappa);
 
-REAL8 XLALSimInspiralSF2Alpha(REAL8 v, LALSimInspiralSF2Coeffs coeffs);
-REAL8 XLALSimInspiralSF2Beta(REAL8 v, LALSimInspiralSF2Coeffs coeffs);
-REAL8 XLALSimInspiralSF2Zeta(REAL8 v, LALSimInspiralSF2Coeffs coeffs);
+static REAL8 XLALSimInspiralSF2Alpha(REAL8 v, LALSimInspiralSF2Coeffs coeffs);
+#if 0
+static REAL8 XLALSimInspiralSF2Beta(REAL8 v, LALSimInspiralSF2Coeffs coeffs);
+static REAL8 XLALSimInspiralSF2Zeta(REAL8 v, LALSimInspiralSF2Coeffs coeffs);
+#endif
 
-COMPLEX16 XLALSimInspiralSF2Polarization(
+static COMPLEX16 XLALSimInspiralSF2Polarization(
     REAL8 thetaJ, REAL8 psiJ, int mm);
 
-void XLALSimInspiralSF2Emission(
+static void XLALSimInspiralSF2Emission(
     REAL8 *emission, REAL8 v, LALSimInspiralSF2Coeffs coeffs);
 
-REAL8 safe_atan2(REAL8 val1, REAL8 val2)
+static REAL8 safe_atan2(REAL8 val1, REAL8 val2)
 {
     if (val1 == 0. && val2 == 0.)
     { return 0.; }
@@ -86,7 +88,7 @@ REAL8 safe_atan2(REAL8 val1, REAL8 val2)
     { return atan2(val1, val2); }
 }
 
-void XLALSimInspiralSF2CalculateOrientation(
+static void XLALSimInspiralSF2CalculateOrientation(
     LALSimInspiralSF2Orientation *orientation,
     REAL8 m1, REAL8 m2, REAL8 v_ref,
     REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz,
@@ -110,7 +112,7 @@ void XLALSimInspiralSF2CalculateOrientation(
     orientation->alpha0 = safe_atan2(rotLy, rotLx);
 }
 
-void XLALSimInspiralSF2CalculateCoeffs(
+static void XLALSimInspiralSF2CalculateCoeffs(
     LALSimInspiralSF2Coeffs *coeffs,
     REAL8 m1, REAL8 m2, REAL8 chi, REAL8 kappa )
 {
@@ -157,7 +159,7 @@ void XLALSimInspiralSF2CalculateCoeffs(
     coeffs->zc[6] = dtdv5*gamma0*kappa/3.;
 }
 
-REAL8 XLALSimInspiralSF2Alpha(
+static REAL8 XLALSimInspiralSF2Alpha(
     REAL8 v, LALSimInspiralSF2Coeffs coeffs)
 {
     const REAL8 gam = coeffs.gamma0*v;
@@ -176,7 +178,8 @@ REAL8 XLALSimInspiralSF2Alpha(
                         + (ac[4]+ac[5]*v)*v)*sqrtfac );
 }
 
-REAL8 XLALSimInspiralSF2Zeta(
+#if 0
+static REAL8 XLALSimInspiralSF2Zeta(
     REAL8 v, LALSimInspiralSF2Coeffs coeffs)
 {
     const REAL8 *zc = coeffs.zc;
@@ -185,7 +188,7 @@ REAL8 XLALSimInspiralSF2Zeta(
                         (zc[4]+(zc[5]+zc[6]*v)*v)*v);
 }
 
-REAL8 XLALSimInspiralSF2Beta(
+static REAL8 XLALSimInspiralSF2Beta(
     REAL8 v, LALSimInspiralSF2Coeffs coeffs)
 {
     const REAL8 kappa = coeffs.kappa;
@@ -196,8 +199,9 @@ REAL8 XLALSimInspiralSF2Beta(
 
     return beta;
 }
+#endif
 
-COMPLEX16 XLALSimInspiralSF2Polarization(
+static COMPLEX16 XLALSimInspiralSF2Polarization(
     REAL8 thetaJ, REAL8 psiJ, int mm)
 {
     COMPLEX16 plus_fac, cross_fac;
@@ -231,7 +235,7 @@ COMPLEX16 XLALSimInspiralSF2Polarization(
     return plus_fac*cos(2.*psiJ) + cross_fac*sin(2.*psiJ);
 }
 
-void XLALSimInspiralSF2Emission(
+static void XLALSimInspiralSF2Emission(
     REAL8 *emission, REAL8 v, LALSimInspiralSF2Coeffs coeffs)
 {
     const REAL8 gam = coeffs.gamma0*v;
@@ -252,7 +256,7 @@ void XLALSimInspiralSF2Emission(
 }
 
 
-/** FIXME Is this needed?
+/* FIXME Is this needed?
  * Find the least nonnegative integer power of 2 that is
  * greater than or equal to n.  Inspired by similar routine
  * in gstlal.
@@ -266,6 +270,11 @@ static size_t CeilPow2(double n) {
         exponent -= 1;
     return ((size_t) 1) << exponent;
 } */ 
+
+/**
+ * @addtogroup LALSimInspiralSpinTaylor_c
+ * @{
+ */
 
 /**
  * Computes the stationary phase approximation to the Fourier transform of
@@ -511,3 +520,4 @@ int XLALSimInspiralSpinTaylorF2(
     return XLAL_SUCCESS;
 }
 
+/** @} */

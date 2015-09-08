@@ -51,7 +51,6 @@ void gzip_output( LALInferenceRunState *runState );
 INT4 count_csv( CHAR *csvline );
 INT4 recognised_parameter( CHAR *parname );
 void check_and_add_fixed_variable( LALInferenceVariables *vars, const char *name, void *value, LALInferenceVariableType type );
-void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOModel *data, const CHAR *var );
 
 TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
                                               CHAR *tfile,

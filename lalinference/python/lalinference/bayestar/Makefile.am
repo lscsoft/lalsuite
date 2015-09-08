@@ -12,10 +12,8 @@ pymodule_PYTHON = \
 	command.py \
 	decorator.py \
 	filter.py \
-	fits.py \
 	ligolw.py \
 	ligolw_sky_map.py \
-	plot.py \
 	postprocess.py \
 	timing.py \
 	$(END_OF_LIST)

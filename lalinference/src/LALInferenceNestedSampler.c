@@ -735,7 +735,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   }
 
   /* Update the proposal */
-  if(!(iter%(Nlive/4))) {
+  if(!(iter%(Nlive/10))) {
     /* Update the covariance matrix */
     if ( LALInferenceCheckVariable( runState->proposalArgs,"covarianceMatrix" ) ){
       SetupEigenProposals(runState);
@@ -1208,8 +1208,8 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceCopyVariables(runState->currentParams,&oldParams);
     REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
     UINT4 Nmcmc=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc");
-    REAL8 sloppyfraction=0.;
     REAL8 maxsloppyfraction=((REAL8)Nmcmc-1)/(REAL8)Nmcmc ;
+    REAL8 sloppyfraction=maxsloppyfraction/2.0;
     REAL8 minsloppyfraction=0.;
     if(Nmcmc==1) maxsloppyfraction=minsloppyfraction=0.0;
     if (LALInferenceCheckVariable(runState->algorithmParams,"sloppyfraction"))
@@ -1225,23 +1225,30 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     UINT4 ifo=0;
     REAL8 counter=1.;
     UINT4 BAILOUT=100*testnumber; /* If no acceptance after 100 tries, will exit and the sampler will try a different starting point */
+    const char *extra_names[]={"logL","optimal_snr","matched_filter_snr","deltalogL"}; /* Names for parameters to be stripped when sampling prior */
+    UINT4 Nnames = 4;
     do{
         counter=counter-1.;
         subchain_length=0;
+        for(UINT4 i=0;i<Nnames;i++)
+        {
+          if(LALInferenceCheckVariable(runState->currentParams,extra_names[i]))
+            LALInferenceRemoveVariable(runState->currentParams,extra_names[i]);
+        }
         /* Draw an independent sample from the prior */
         do{
             sub_accepted+=LALInferenceMCMCSamplePrior(runState);
             subchain_length++;
             counter+=(1.-sloppyfraction);
         }while(counter<1);
-	/* Check that there was at least one accepted point */
-	if(sub_accepted==0) {
-	    tries++;
-	    sub_iter+=subchain_length;
-	    mcmc_iter++;
-            LALInferenceCopyVariables(&oldParams,runState->currentParams);
-            runState->currentLikelihood=logLold;
-	    continue;
+        /* Check that there was at least one accepted point */
+        if(sub_accepted==0) {
+          tries++;
+          sub_iter+=subchain_length;
+          mcmc_iter++;
+          LALInferenceCopyVariables(&oldParams,runState->currentParams);
+          runState->currentLikelihood=logLold;
+          continue;
         }
         tries=0;
         mcmc_iter++;
@@ -1259,6 +1266,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
             ifo=0;
             while(data)
             {
+               if(!runState->model->ifo_loglikelihoods) break;
                tmp=runState->model->ifo_loglikelihoods[ifo] - data->nullloglikelihood;
                sprintf(tmpName,"deltalogl%s",data->name);
                LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);

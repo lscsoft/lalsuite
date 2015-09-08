@@ -30,8 +30,9 @@
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-#include <lal/LALSimBurst.h>
 #include <lal/LALConstants.h>
+#include <lal/LALDatatypes.h>
+#include <lal/LALSimBurst.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
 #include <lal/TimeFreqFFT.h>
@@ -96,28 +97,45 @@ static void semi_major_minor_from_e(double e, double *a, double *b)
  * @details
  * The input must have non-zero length.
  *
- * @param[in] series A time series.
+ * @param[in] hplus A time series.
  *
- * @returns The strain of the sample with the largest magnitude.
+ * @param[in] hcross A time series.  Optional.  Pass NULL to disregard.
+ *
+ * @param[out] index The index of the peak sample will be written to this address.  Optional.  NULL to disregard.
+ *
+ * @returns The strain of the sample with the largest magnitude.  The \f$+\f$ polarization amplitude is in the real component, the imaginary component contains the \f$\times\f$ polarization's amplitude (or is 0 if hcross is not supplied).
  *
  * @retval XLAL_REAL8_FAIL_NAN Falure.
  */
 
 
-REAL8 XLALMeasureHPeak(const REAL8TimeSeries *series)
+COMPLEX16 XLALMeasureHPeak(const REAL8TimeSeries *hplus, const REAL8TimeSeries *hcross, unsigned *index)
 {
-	double hpeak;
+	double complex hpeak;
+	double abs_hpeak;
 	unsigned i;
 
-	if(!series->data->length) {
+	/* check input */
+
+	if(hcross) {
+		LAL_CHECK_CONSISTENT_TIME_SERIES(hplus, hcross, XLAL_REAL8_FAIL_NAN);
+	}
+	if(!hplus->data->length) {
 		XLALPrintError("%s(): length must be > 0\n", __func__);
 		XLAL_ERROR_REAL8(XLAL_EBADLEN);
 	}
 
-	hpeak = series->data->data[0];
-	for(i = 1; i < series->data->length; i++)
-		if(fabs(series->data->data[i]) > fabs(hpeak))
-			hpeak = series->data->data[i];
+	/* find peak */
+
+	hpeak = hplus->data->data[0] + I * (hcross ? hcross->data->data[0] : 0.);
+	abs_hpeak = cabs(hpeak);
+	for(i = 1; i < hplus->data->length; i++)
+		if(cabs(hplus->data->data[i] + I * (hcross ? hcross->data->data[i] : 0.)) > abs_hpeak) {
+			hpeak = hplus->data->data[i] + I * (hcross ? hcross->data->data[i] : 0.);
+			abs_hpeak = cabs(hpeak);
+			if(index)
+				*index = i;
+		}
 
 	return hpeak;
 }
@@ -749,7 +767,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	/* check input.  checking if sigma_t_squared < 0 is equivalent to
 	 * checking if duration * bandwidth < LAL_2_PI */
 
-	if(duration < 0 || bandwidth < 0 || eccentricity < 0 || eccentricity > 1 || sigma_t_squared < 0 || int_hdot_squared < 0 || delta_t <= 0) {
+	if(duration < 0 || frequency < 0 || bandwidth < 0 || eccentricity < 0 || eccentricity > 1 || sigma_t_squared < 0 || int_hdot_squared < 0 || delta_t <= 0) {
 		XLALPrintError("%s(): invalid input parameters\n", __func__);
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(XLAL_EINVAL);
@@ -787,10 +805,10 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	gaussian_noise(*hcross, 1, rng);
 
 	/* apply the time-domain Gaussian window.  the window function's
-	 * shape parameter is ((length - 1) * delta_t / 2) / \sigma_{t} where
+	 * shape parameter is ((length - 1) / 2) / (\sigma_{t} / delta_t) where
 	 * \sigma_{t} is the compensated time-domain window duration */
 
-	window = XLALCreateGaussREAL8Window((*hplus)->data->length, (((*hplus)->data->length - 1) * delta_t / 2) / sqrt(sigma_t_squared));
+	window = XLALCreateGaussREAL8Window((*hplus)->data->length, (((*hplus)->data->length - 1) / 2) / (sqrt(sigma_t_squared) / delta_t));
 	if(!window) {
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
@@ -838,22 +856,16 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	 * at this stage (last chance before the overall normalization is
 	 * computed). */
 
-	window = XLALCreateGaussREAL8Window(2 * tilde_hplus->data->length + 1, (tilde_hplus->data->length * tilde_hplus->deltaF) / (bandwidth / 2.0));
-	if(!window) {
-		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
-		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	XLALResizeREAL8Sequence(window->data, tilde_hplus->data->length - (unsigned) floor(frequency / tilde_hplus->deltaF + 0.5), tilde_hplus->data->length);
 	semi_major_minor_from_e(eccentricity, &a, &b);
-	for(i = 0; i < window->data->length; i++) {
-		tilde_hplus->data->data[i] *= a * window->data->data[i];
-		tilde_hcross->data->data[i] *= b * window->data->data[i];
+	{
+	double beta = -0.5 / (bandwidth * bandwidth / 4.);
+	for(i = 0; i < tilde_hplus->data->length; i++) {
+		double f = (tilde_hplus->f0 + i * tilde_hplus->deltaF) - frequency;
+		double w = f == 0. ? 1. : exp(f * f * beta);
+		tilde_hplus->data->data[i] *= a * w;
+		tilde_hcross->data->data[i] *= b * w;
 	}
-	XLALDestroyREAL8Window(window);
+	}
 
 	/* normalize the waveform to achieve the desired \int
 	 * \f$(\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) dt\f$ */

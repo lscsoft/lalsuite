@@ -519,6 +519,103 @@ static PyMethodDef methods[] = {
 };
 
 
+typedef struct {
+    PyObject_HEAD
+    log_radial_integrator *integrator;
+} LogRadialIntegrator;
+
+
+static void LogRadialIntegrator_dealloc(LogRadialIntegrator *self)
+{
+    log_radial_integrator_free(self->integrator);
+    self->ob_type->tp_free((PyObject *)self);
+}
+
+
+static int LogRadialIntegrator_init(
+    LogRadialIntegrator *self, PyObject *args, PyObject *kwargs)
+{
+    static const char *keywords[] = {"r1", "r2", "k", "pmax", "size", NULL};
+    self->integrator = NULL;
+    double r1, r2, pmax;
+    int k, size;
+
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kwargs, "ddidi", keywords, &r1, &r2, &k, &pmax, &size))
+        return -1;
+
+    gsl_error_handler_t *old_handler = gsl_set_error_handler(my_gsl_error);
+    self->integrator = log_radial_integrator_init(r1, r2, k, pmax, size);
+    gsl_set_error_handler(old_handler);
+
+    if (self->integrator)
+        return 0;
+    else
+        return -1;
+}
+
+
+static PyObject *LogRadialIntegrator_call(
+    LogRadialIntegrator *self, PyObject *args, PyObject *kwargs)
+{
+    static const char *keywords[] = {"p", "b", NULL};
+    double p, b, result;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "dd", keywords, &p, &b))
+        return NULL;
+
+    gsl_error_handler_t *old_handler = gsl_set_error_handler(my_gsl_error);
+    result = log_radial_integrator_eval(self->integrator, p, b);
+    gsl_set_error_handler(old_handler);
+
+    if (PyErr_Occurred())
+        return NULL;
+
+    return PyFloat_FromDouble(result);
+}
+
+
+static PyTypeObject LogRadialIntegrator_type = {
+    PyObject_HEAD_INIT(NULL)
+    0,                                      /*ob_size*/
+    "sky_map.LogRadialIntegrator",          /*tp_name*/
+    sizeof(LogRadialIntegrator),            /*tp_basicsize*/
+    0,                                      /*tp_itemsize*/
+    (destructor)LogRadialIntegrator_dealloc,/*tp_dealloc*/
+    0,                                      /*tp_print*/
+    0,                                      /*tp_getattr*/
+    0,                                      /*tp_setattr*/
+    0,                                      /*tp_compare*/
+    0,                                      /*tp_repr*/
+    0,                                      /*tp_as_number*/
+    0,                                      /*tp_as_sequence*/
+    0,                                      /*tp_as_mapping*/
+    0,                                      /*tp_hash */
+    (ternaryfunc)LogRadialIntegrator_call,  /*tp_call*/
+    0,                                      /*tp_str*/
+    0,                                      /*tp_getattro*/
+    0,                                      /*tp_setattro*/
+    0,                                      /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,                     /*tp_flags*/
+    "fill me in",                           /* tp_doc */
+    0,                                      /* tp_traverse */
+    0,                                      /* tp_clear */
+    0,                                      /* tp_richcompare */
+    0,                                      /* tp_weaklistoffset */
+    0,                                      /* tp_iter */
+    0,                                      /* tp_iternext */
+    0,                                      /* tp_methods */
+    0,                                      /* tp_members */
+    0,                                      /* tp_getset */
+    0,                                      /* tp_base */
+    0,                                      /* tp_dict */
+    0,                                      /* tp_descr_get */
+    0,                                      /* tp_descr_set */
+    0,                                      /* tp_dictoffset */
+    (initproc)LogRadialIntegrator_init,     /* tp_init */
+};
+
+
 static const char modulename[] = "sky_map";
 
 
@@ -538,6 +635,7 @@ PyMODINIT_FUNC PyInit_sky_map(void); /* Silence -Wmissing-prototypes */
 PyMODINIT_FUNC PyInit_sky_map(void)
 #endif
 {
+    PyObject *module;
     import_array();
 
     premalloced_type.tp_new = PyType_GenericNew;
@@ -550,9 +648,27 @@ PyMODINIT_FUNC PyInit_sky_map(void)
 #endif
     }
 
+    LogRadialIntegrator_type.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&LogRadialIntegrator_type) < 0)
+    {
 #if PY_MAJOR_VERSION < 3
-    Py_InitModule(modulename, methods);
+        return;
 #else
-    return PyModule_Create(moduledef);
+        return NULL;
+#endif
+    }
+
+#if PY_MAJOR_VERSION < 3
+    module = Py_InitModule(modulename, methods);
+#else
+    module = PyModule_Create(moduledef);
+#endif
+
+    Py_INCREF(&LogRadialIntegrator_type);
+    PyModule_AddObject(
+        module, "LogRadialIntegrator", (PyObject *)&LogRadialIntegrator_type);
+
+#if PY_MAJOR_VERSION >= 3
+    return module;
 #endif
 }

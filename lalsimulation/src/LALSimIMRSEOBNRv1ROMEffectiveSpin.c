@@ -18,37 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Michael Puerrer, John Veitch
- *
- * \file
- *
- * \brief C code for SEOBNRv1 reduced order model (equal spin version).
- * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
- *
- * This is a frequency domain model that approximates the time domain SEOBNRv1 model with equal spins.
- * Note that SEOBNRv2 supersedes SEOBNRv1.
- *
- * The binary data files are available at https://dcc.ligo.org/T1400701-v1.
- * Put the untared data into a location in your LAL_DATA_PATH.
- *
- * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
- * in the peak time that scales with total mass as compared to the time-domain SEOBNRv1 model.
- *
- * @note Due to non-smoothness in SEOBNRv1 at chi1=chi2 ~ -0.8 and 20 <= q <= 40 the
- * ROM deviates from the SEOBNRv1 behavior there. See arXiv:1402.4146, Fig 7,
- * Fig 11, and Fig 13 for details.
- *
- * @note Parameter ranges:
- *   * 1 <= q <= 100
- *   * -1 <= chi <= 0.6
- *   * Mtot >= 1.4Msun
- *
- *  Equal spin chi = chi1 = chi2.
- *  Asymmetric mass-ratio q = max(m1/m2, m2/m1).
- *  Total mass Mtot.
- *
- */
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -243,7 +212,7 @@ static int TP_Spline_interpolation_2d(
 
 /** Setup SEOBNRv1ROMEffectiveSpin model using data files installed in dir
  */
-int SEOBNRv1ROMEffectiveSpin_Init(const char dir[]) {
+static int SEOBNRv1ROMEffectiveSpin_Init(const char dir[]) {
   if(__lalsim_SEOBNRv1ROMSS_data.setup) {
     XLALPrintError("Error: SEOBNRROMdata was already set up!");
     XLAL_ERROR(XLAL_EFAILED);
@@ -260,7 +229,7 @@ int SEOBNRv1ROMEffectiveSpin_Init(const char dir[]) {
 }
 
 /** Helper function to check if the SEOBNRv1ROMEffectiveSpin model has been initialised */
-bool SEOBNRv1ROMEffectiveSpin_IsSetup(void) {
+static bool SEOBNRv1ROMEffectiveSpin_IsSetup(void) {
   if(__lalsim_SEOBNRv1ROMSS_data.setup)
     return true;
   else
@@ -390,7 +359,7 @@ static int TP_Spline_interpolation_2d(
 }
 
 /* Set up a new ROM model, using data contained in dir */
-int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
+static int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
   // set up ROM
   int ncx = 159;    // points in q
   int ncy = 49;     // points in chi
@@ -421,7 +390,7 @@ int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
 
 
 /* Deallocate contents of the given SEOBNRROMdata structure */
-void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata) {
+static void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata) {
   if(romdata->cvec_amp) gsl_vector_free(romdata->cvec_amp);
   if(romdata->cvec_phi) gsl_vector_free(romdata->cvec_phi);
   if(romdata->Bamp) gsl_matrix_free(romdata->Bamp);
@@ -530,12 +499,18 @@ static int SEOBNRv1ROMEffectiveSpinCore(
   // Enforce allowed geometric frequency range
   if (fLow_geom < Mf_ROM_min)
     XLAL_ERROR(XLAL_EDOM, "Starting frequency Mflow=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
-  if (fHigh_geom == 0 || fHigh_geom > Mf_ROM_max)
+  if (fHigh_geom == 0)
     fHigh_geom = Mf_ROM_max;
+  else if (fHigh_geom > Mf_ROM_max) {
+	  XLALPrintWarning("Maximal frequency Mf_high=%g is greater than highest ROM frequency Mf_ROM_Max=%g. Using Mf_high=Mf_ROM_Max.", fHigh_geom, Mf_ROM_max);
+	  fHigh_geom = Mf_ROM_max;
+  }
   else if (fHigh_geom < Mf_ROM_min)
     XLAL_ERROR(XLAL_EDOM, "End frequency %g is smaller than starting frequency %g!\n", fHigh_geom, fLow_geom);
-  if (fRef_geom > Mf_ROM_max)
+  if (fRef_geom > Mf_ROM_max) {
+	  XLALPrintWarning("Reference frequency Mf_ref=%g is greater than maximal frequency in ROM Mf=%g. Starting at maximal frequency in ROM.\n", fRef_geom, Mf_ROM_max);
     fRef_geom = Mf_ROM_max; // If fref > fhigh we reset fref to default value of cutoff frequency.
+  }
   if (fRef_geom < Mf_ROM_min) {
     XLALPrintWarning("Reference frequency Mf_ref=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
     fRef_geom = Mf_ROM_min;
@@ -560,7 +535,7 @@ static int SEOBNRv1ROMEffectiveSpinCore(
 
   if(retcode!=0) {
     SEOBNRROMdata_coeff_Cleanup(romdata_coeff);
-    XLAL_ERROR(retcode);
+    XLAL_ERROR(retcode, "Parameter-space interpolation failed.");
   }
 
   // Compute function values of amplitude an phase on sparse frequency points by evaluating matrix vector products
@@ -625,7 +600,7 @@ static int SEOBNRv1ROMEffectiveSpinCore(
       gsl_vector_free(amp_f);
       gsl_vector_free(phi_f);
       SEOBNRROMdata_coeff_Cleanup(romdata_coeff);
-      XLAL_ERROR(XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC, "Waveform allocation failed.");
   }
   memset((*hptilde)->data->data, 0, npts * sizeof(COMPLEX16));
   memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
@@ -660,11 +635,6 @@ static int SEOBNRv1ROMEffectiveSpinCore(
   }
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
-  /* JV: disable this so as not to clutter logs */
-  /*
-  if (deltaF > 0)
-    XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
-  */
 
   // Get SEOBNRv1 ringdown frequency for 22 mode
   // XLALSimInspiralGetFinalFreq wants masses in SI units, so unfortunately we need to convert back
@@ -693,11 +663,10 @@ static int SEOBNRv1ROMEffectiveSpinCore(
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   // We compute the dimensionless time correction t/M since we use geometric units.
   REAL8 t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI);
-  XLAL_PRINT_INFO("t_corr [s] = %g\n", t_corr * Mtot_sec);
 
   // Now correct phase
   for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
-    double f = freqs->data[i];
+    double f = freqs->data[i] - fRef_geom;
     int j = i + offset; // shift index for frequency series if needed
     pdata[j] *= cexp(-2*LAL_PI * I * f * t_corr);
     cdata[j] *= cexp(-2*LAL_PI * I * f * t_corr);
@@ -715,6 +684,48 @@ static int SEOBNRv1ROMEffectiveSpinCore(
 
   return(XLAL_SUCCESS);
 }
+
+/**
+ * @addtogroup LALSimIMRSEOBNRROM_c
+ *
+ * @brief Functions for producing SEOBNRv1 and v2 waveforms
+ * using reduced order models.
+ *
+ * @review SEOBNRv1/2_ROM_(Effective/Double)Spin reviewed by Frank Ohme, Sarah Caudill, Michael Puerrer, Ian Harry, John Veitch, Gareth Thomas. Review concluded with git hash 9dc5e84583bfe2707ac20638e7b89bf988d4d482 (July 2015).
+ *
+ * @{
+ *
+ * @name SEOBNRv1 Reduced Order Model (Effective Spin)
+ *
+ * @author Michael Puerrer, John Veitch
+ *
+ * @brief C code for SEOBNRv1 reduced order model (equal spin version).
+ * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
+ *
+ * This is a frequency domain model that approximates the time domain SEOBNRv1 model with equal spins.
+ * Note that SEOBNRv2 supersedes SEOBNRv1.
+ *
+ * The binary data files are available at https://dcc.ligo.org/T1400701-v1.
+ * Put the untared data into a location in your LAL_DATA_PATH.
+ *
+ * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
+ * in the peak time that scales with total mass as compared to the time-domain SEOBNRv1 model.
+ *
+ * @note Due to non-smoothness in SEOBNRv1 at chi1=chi2 ~ -0.8 and 20 <= q <= 40 the
+ * ROM deviates from the SEOBNRv1 behavior there. See arXiv:1402.4146, Fig 7,
+ * Fig 11, and Fig 13 for details.
+ *
+ * @note Parameter ranges:
+ *   * 1 <= q <= 100
+ *   * -1 <= chi <= 0.6
+ *   * Mtot >= 1.4Msun
+ *
+ *  Equal spin chi = chi1 = chi2.
+ *  Asymmetric mass-ratio q = max(m1/m2, m2/m1).
+ *  Total mass Mtot.
+ *
+ * @{
+ */
 
 /**
  * Compute waveform in LAL format at specified frequencies for the SEOBNRv1_ROM_EffectiveSpin model.
@@ -736,7 +747,7 @@ static int SEOBNRv1ROMEffectiveSpinCore(
 int XLALSimIMRSEOBNRv1ROMEffectiveSpinFrequencySequence(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
-  const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz) */
+  const REAL8Sequence *freqs,                   /**< Frequency points at which to evaluate the waveform (Hz), need to be strictly monotonically increasing */
   REAL8 phiRef,                                 /**< Orbital phase at reference time */
   REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
   REAL8 distance,                               /**< Distance of source (m) */
@@ -777,12 +788,13 @@ int XLALSimIMRSEOBNRv1ROMEffectiveSpinFrequencySequence(
  *
  * Returns the plus and cross polarizations as a complex frequency series with
  * equal spacing deltaF and contains zeros from zero frequency to the starting
- * frequency fLow and zeros beyond the cutoff frequency in the ringdown.
+ * frequency fLow and zeros beyond the cutoff frequency fHigh to the next power of 2 in
+ * the size of the frequency series.
  */
 int XLALSimIMRSEOBNRv1ROMEffectiveSpin(
   struct tagCOMPLEX16FrequencySeries **hptilde, /**< Output: Frequency-domain waveform h+ */
   struct tagCOMPLEX16FrequencySeries **hctilde, /**< Output: Frequency-domain waveform hx */
-  REAL8 phiRef,                                 /**< Phase at reference time */
+  REAL8 phiRef,                                 /**< Orbital phase at reference time */
   REAL8 deltaF,                                 /**< Sampling frequency (Hz) */
   REAL8 fLow,                                   /**< Starting GW frequency (Hz) */
   REAL8 fHigh,                                  /**< End frequency; 0 defaults to Mf=0.14 */
@@ -813,6 +825,8 @@ int XLALSimIMRSEOBNRv1ROMEffectiveSpin(
   SEOBNRv1ROMEffectiveSpin_Init_LALDATA();
 #endif
 
+  if(!SEOBNRv1ROMEffectiveSpin_IsSetup()) XLAL_ERROR(XLAL_EFAILED,"Error setting up SEOBNRv1ROMEffectiveSpin data - check your $LAL_DATA_PATH\n");
+
   // Use fLow, fHigh, deltaF to compute freqs sequence
   // Instead of building a full sequency we only transfer the boundaries and let
   // the internal core function do the rest (and properly take care of corner cases).
@@ -828,9 +842,12 @@ int XLALSimIMRSEOBNRv1ROMEffectiveSpin(
   return(retcode);
 }
 
+/** @} */
+/** @} */
+
 /** Setup SEOBNRv1ROMEffectiveSpin model using data files installed in $LAL_DATA_PATH
  */
-void SEOBNRv1ROMEffectiveSpin_Init_LALDATA(void)
+static void SEOBNRv1ROMEffectiveSpin_Init_LALDATA(void)
 {
   if (SEOBNRv1ROMEffectiveSpin_IsSetup()) return;
 

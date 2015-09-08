@@ -33,6 +33,12 @@
 #define log4 1.3862943611198906188344642429163531
 
 /**
+ * @addtogroup LALSimInspiralTaylorF2ReducedSpin_c
+ * @brief Routines for generating TaylorF2 reduced spin inspiral waveforms.
+ * @{
+ */
+
+/**
  * Compute the dimensionless, aligned-spin parameter chi as used in the
  * TaylorF2RedSpin waveform. This is different from chi in IMRPhenomB!
  * Reference: http://arxiv.org/abs/1107.1267, paragraph 3.
@@ -312,3 +318,5 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
 
     return tau;
 }
+
+/** @} */

@@ -20,13 +20,6 @@
 
 \defgroup lalburst_timefreq		Time-Frequency Representation Package
 
-\defgroup lalburst_tracksearch		TrackSearch Package
-@{
-   \brief A collection of functions for the implementation of
-   tracksearch analysis. These function can be found in
-   \ref TSData_h, \ref TSSearch_h, and \ref TrackSearch_h.
-@}
-
 \defgroup lalburst_swig			SWIG Interfaces
 @{
    \brief This package provides Octave and Python wrappings of LALBurst

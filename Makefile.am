@@ -14,6 +14,13 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) $(top_srcdir)/configure $(ac_configure_args)
 
+.PHONY: cscopelist-subdirs
+cscopelist-am: cscopelist-subdirs
+cscopelist-subdirs:
+	for subdir in $(SUBDIRS); do \
+		sed "s|^|$${subdir}/|" $${subdir}/cscope.files >> $(top_builddir)/cscope.files; \
+	done
+
 BUILT_SOURCES = $(PACKAGE)rc
 sysconf_DATA = $(PACKAGE)rc
 MOSTLYCLEANFILES = $(PACKAGE)rc

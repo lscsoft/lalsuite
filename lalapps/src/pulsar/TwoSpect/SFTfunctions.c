@@ -29,7 +29,7 @@
  * \param [in] params Pointer to the UserInput_t
  * \return Pointer to SFTCatalog
  */
-SFTCatalog * findSFTdata(UserInput_t *params)
+SFTCatalog * findSFTdata(const UserInput_t *params)
 {
 
    XLAL_CHECK_NULL( params != NULL, XLAL_EINVAL );
@@ -59,8 +59,7 @@ SFTCatalog * findSFTdata(UserInput_t *params)
 
    return catalog;
 
-}
-
+} // findSFTdata()
 
 /**
  * Extract the SFT coefficients from the band of interest
@@ -69,7 +68,7 @@ SFTCatalog * findSFTdata(UserInput_t *params)
  * \param [in] maxfbin Frequency value of the maximum frequency bin
  * \return Pointer to MultiSFTVector
  */
-MultiSFTVector * extractSFTband(SFTCatalog *catalog, REAL8 minfbin, REAL8 maxfbin)
+MultiSFTVector * extractSFTband(const SFTCatalog *catalog, const REAL8 minfbin, const REAL8 maxfbin)
 {
 
    XLAL_CHECK_NULL( catalog != NULL, XLAL_EINVAL );
@@ -86,8 +85,7 @@ MultiSFTVector * extractSFTband(SFTCatalog *catalog, REAL8 minfbin, REAL8 maxfbi
 
    return sftvector;
 
-}
-
+} // extractSFTband()
 
 /**
  * Get a MultiSFTVector from the user-input values
@@ -96,7 +94,7 @@ MultiSFTVector * extractSFTband(SFTCatalog *catalog, REAL8 minfbin, REAL8 maxfbi
  * \param [in] maxfbin Frequency value of the maximum frequency bin
  * \return Pointer to MultiSFTVector
  */
-MultiSFTVector * getMultiSFTVector(UserInput_t *params, REAL8 minfbin, REAL8 maxfbin)
+MultiSFTVector * getMultiSFTVector(UserInput_t *params, const REAL8 minfbin, const REAL8 maxfbin)
 {
    //Get catalog of SFTs
    SFTCatalog *catalog = NULL;
@@ -107,6 +105,7 @@ MultiSFTVector * getMultiSFTVector(UserInput_t *params, REAL8 minfbin, REAL8 max
       //Extract band to get a MultiSFTVector
       MultiSFTVector *tmpsftvector = NULL;
       XLAL_CHECK_NULL( (tmpsftvector = extractSFTband(catalog, minfbin, maxfbin)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_NULL( XLALReorderMultiSFTVector(tmpsftvector, params->IFO) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Get the timestamps of the SFTs applying the KS/Kuipers tests if desired
       MultiLIGOTimeGPSVector *multiTimestamps = NULL;
@@ -119,44 +118,50 @@ MultiSFTVector * getMultiSFTVector(UserInput_t *params, REAL8 minfbin, REAL8 max
       XLALDestroyMultiTimestamps(multiTimestamps);
    } else {
       XLAL_CHECK_NULL( (sftvector = extractSFTband(catalog, minfbin, maxfbin)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_NULL( XLALReorderMultiSFTVector(sftvector, params->IFO) == XLAL_SUCCESS, XLAL_EFUNC );
    }
 
    XLALDestroySFTCatalog(catalog);
 
    return sftvector;
-}
-
+} // getMultiSFTVector()
 
 /**
  * Add SFTs together from a MultiSFTVector
- * \param [in] multiSFTvector      Pointer to a MultiSFTVector containing the SFT data
- * \param [in] multissb            Pointer to a MultiSSBtimes structure
- * \param [in] multiAMcoefficients Pointer to a MultiAMCoeffs structure
- * \param [in] cosiSign            Value of 1, 0, -1 where 1 means average cosi over [0,1], 0 means average over [-1,1], and -1 means average over [-1,0]
- * \param [in] assumeNScosi        Pointer to the assumed cosi value, or NULL if no value assumed
- * \param [in] assumeNSpsi         Pointer to the assumed psi value, or NULL if no value assumed
- * \param [in] params              Pointer to UserInput_t
- * \return REAL4Vector of powers of the coherently combined SFTs
+ * \param [in]  multiSFTvector    Pointer to a MultiSFTVector containing the SFT data
+ * \param [in]  multissb          Pointer to a MultiSSBtimes structure
+ * \param [in]  multiAMcoeffs     Pointer to a MultiAMCoeffs structure
+ * \param [in]  jointTimestamps   Pointer to a LIGOTimeGPSVector of joint SFT times from all detectors
+ * \param [in]  backgroundRatio   Pointer to a REAL4VectorAlignedArray of the running means of each IFO divided by the running mean of IFO_0
+ * \param [in]  cosiSign          Value of 1, 0, -1 where 1 means average cosi over [0,1], 0 means average over [-1,1], and -1 means average over [-1,0]
+ * \param [in]  assumeNScosi      Pointer to the assumed cosi value, or NULL if no value assumed
+ * \param [in]  assumeNSpsi       Pointer to the assumed psi value, or NULL if no value assumed
+ * \param [in]  params            Pointer to UserInput_t
+ * \param [out] backgroundScaling Pointer to REAL4VectorAligned of background scaling values
+ * \return REAL4VectorAligned of powers of the coherently combined SFTs
  */
-REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *multissb, MultiAMCoeffs *multiAMcoefficients, INT4 cosiSign, REAL8 *assumeNScosi, REAL8 *assumeNSpsi, UserInput_t *params) {
+REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, const MultiSSBtimes *multissb, const MultiAMCoeffs *multiAMcoeffs, const LIGOTimeGPSVector *jointTimestamps, const REAL4VectorAlignedArray *backgroundRatio, const INT4 cosiSign, const REAL8 *assumeNScosi, const REAL8 *assumeNSpsi, const UserInput_t *params, REAL4VectorAligned *backgroundScaling) {
 
    //Sanity check the values
-   XLAL_CHECK_NULL( multiSFTvector != NULL, XLAL_EINVAL );
-   XLAL_CHECK_NULL( multissb != NULL, XLAL_EINVAL );
-   XLAL_CHECK_NULL( multiAMcoefficients != NULL, XLAL_EINVAL );
-   XLAL_CHECK_NULL( params != NULL, XLAL_EINVAL );
+   XLAL_CHECK_NULL( multiSFTvector != NULL && multissb != NULL && multiAMcoeffs != NULL && jointTimestamps != NULL && params != NULL, XLAL_EINVAL );
 
    fprintf(stderr, "Coherently adding SFT data... ");
 
-   //Determine length of the largest SFTvector and create an SFTvector large enough to hold this
-   UINT4 maxSFTs = multiSFTvector->data[0]->length;
-   for (UINT4 ii=1; ii<multiSFTvector->length; ii++) {
-      if ( multiSFTvector->data[ii]->length > maxSFTs ) {
-         maxSFTs = multiSFTvector->data[ii]->length;
-      }
-   }
+   //parse noise list
+   MultiNoiseFloor multiNoiseFloor;
+   XLAL_CHECK_NULL( XLALParseMultiNoiseFloor(&multiNoiseFloor, params->avesqrtSh, params->IFO->length) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   //initialize backgroundScaling and normalizationScaling to values of 0
+   memset(backgroundScaling->data, 0, sizeof(REAL4)*backgroundScaling->length);
+
+   //get total number of SFTs possible, number of frequency bins in each FFT of the background, and number of original SFT bins to skip because of background calculation
+   //UINT4 numffts = (UINT4)floor(params->Tobs/(params->Tsft-params->SFToverlap)-1);
+   UINT4 numFbinsInBackground = multiSFTvector->data[0]->data[0].data->length - (params->blksize - 1);
+   UINT4 numSFTbins2skip = (multiSFTvector->data[0]->data[0].data->length - numFbinsInBackground)/2;
+
+   //Allocate the combined SFTs SFTVector
    SFTVector *combinedSFTs = NULL;
-   XLAL_CHECK_NULL( (combinedSFTs = XLALCreateSFTVector(maxSFTs, 0)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (combinedSFTs = XLALCreateSFTVector(jointTimestamps->length, 0)) != NULL, XLAL_EFUNC );
 
    //Create an INT4Vector to determine at which vector we are using in the multiSFTvector
    INT4Vector *whichSFTinMultiSFTvector = NULL, *whichIFOsToBeUsed = NULL;
@@ -165,27 +170,25 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
    memset(whichSFTinMultiSFTvector->data, 0, whichSFTinMultiSFTvector->length * sizeof(INT4));  //All index values are set to zero at the beginning
 
    //Pre-compute the different sin(2*psi) and cos(2*psi) values
-   REAL4VectorAligned *twoPsiVector = NULL, *sin2psiVector = NULL, *cos2psiVector = NULL, *Fplus0s = NULL, *Fcross0s = NULL, *FplusXs = NULL, *FcrossXs = NULL, *aVals = NULL, *bVals = NULL;
-   XLAL_CHECK_NULL( (twoPsiVector = XLALCreateREAL4VectorAligned(16, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (sin2psiVector = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (cos2psiVector = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
-   for (UINT4 ii=0; ii<twoPsiVector->length; ii++) twoPsiVector->data[ii] = 0.0625*ii;
-   XLAL_CHECK_NULL( XLALVectorSinCos2PiREAL4(sin2psiVector->data, cos2psiVector->data, twoPsiVector->data, twoPsiVector->length) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (Fplus0s = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (Fcross0s = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (FplusXs = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (FcrossXs = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (aVals = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (bVals = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *twoPsiVec = NULL, *sin2psiVec = NULL, *cos2psiVec = NULL, *Fplus0s = NULL, *Fcross0s = NULL, *FplusXs = NULL, *FcrossXs = NULL, *aVals = NULL, *bVals = NULL;
+   XLAL_CHECK_NULL( (twoPsiVec = XLALCreateREAL4VectorAligned(16, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (sin2psiVec = XLALCreateREAL4VectorAligned(twoPsiVec->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (cos2psiVec = XLALCreateREAL4VectorAligned(twoPsiVec->length, 32)) != NULL, XLAL_EFUNC );
+   for (UINT4 ii=0; ii<twoPsiVec->length; ii++) twoPsiVec->data[ii] = 0.03125*ii;
+   XLAL_CHECK_NULL( XLALVectorSinCos2PiREAL4(sin2psiVec->data, cos2psiVec->data, twoPsiVec->data, twoPsiVec->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (Fplus0s = XLALCreateREAL4VectorAligned(twoPsiVec->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (Fcross0s = XLALCreateREAL4VectorAligned(twoPsiVec->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (FplusXs = XLALCreateREAL4VectorAligned(twoPsiVec->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (FcrossXs = XLALCreateREAL4VectorAligned(twoPsiVec->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (aVals = XLALCreateREAL4VectorAligned(twoPsiVec->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (bVals = XLALCreateREAL4VectorAligned(twoPsiVec->length, 32)) != NULL, XLAL_EFUNC );
 
    //Pre-compute the frequencies and the bin number of the SFT bins
    alignedREAL8Vector *frequencies = NULL, *frequencyBins = NULL;
    XLAL_CHECK_NULL( (frequencies = createAlignedREAL8Vector(multiSFTvector->data[0]->data[0].data->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (frequencyBins = createAlignedREAL8Vector(multiSFTvector->data[0]->data[0].data->length, 32)) != NULL, XLAL_EFUNC );
    for (UINT4 ii=0; ii<frequencyBins->length; ii++) frequencies->data[ii] = multiSFTvector->data[0]->data[0].f0 + multiSFTvector->data[0]->data[0].deltaF*ii;
-   if (params->vectorMath==1) XLAL_CHECK_NULL( sseScaleREAL8Vector(frequencyBins, frequencies, params->Tsft) == XLAL_SUCCESS, XLAL_EFUNC );
-   else if (params->vectorMath==2) XLAL_CHECK_NULL( avxScaleREAL8Vector(frequencyBins, frequencies, params->Tsft) == XLAL_SUCCESS, XLAL_EFUNC );
-   else for (UINT4 ii=0; ii<frequencyBins->length; ii++) frequencyBins->data[ii] = frequencies->data[ii]*params->Tsft;
+   XLAL_CHECK_NULL( VectorScaleREAL8(frequencyBins, frequencies, params->Tsft, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Pre-allocate delta values for IFO_0 and IFO_X, also 2*pi*f_k*tau
    alignedREAL8Vector *delta0vals = NULL, *deltaXvals = NULL, *TwoPiFrequenciesTau = NULL;
@@ -205,35 +208,14 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
    XLAL_CHECK_NULL( (Tdots = createAlignedREAL8Vector(multissb->data[0]->Tdot->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (DeltaTs = createAlignedREAL8Vector(multissb->data[0]->DeltaT->length, 32)) != NULL, XLAL_EFUNC );
    for (UINT4 ii=0; ii<twoPiTauVals->length; ii++) {
-      if (params->vectorMath==1) {
-         memcpy(Tdots->data, multissb->data[ii]->Tdot->data, sizeof(REAL8)*multissb->data[ii]->Tdot->length);
-         memcpy(DeltaTs->data, multissb->data[ii]->DeltaT->data, sizeof(REAL8)*multissb->data[ii]->DeltaT->length);
-         XLAL_CHECK_NULL( sseScaleREAL8Vector(twoPiTauVals->data[ii], Tdots, -Tmid) == XLAL_SUCCESS, XLAL_EFUNC );
-         XLAL_CHECK_NULL( sseDDVectorSum(twoPiTauVals->data[ii], twoPiTauVals->data[ii], DeltaTs) == XLAL_SUCCESS, XLAL_EFUNC );
-         XLAL_CHECK_NULL( sseAddScalarToREAL8Vector(TdotMinus1s->data[ii], Tdots, -1.0) == XLAL_SUCCESS, XLAL_EFUNC );
-      } else if (params->vectorMath==2) {
-         memcpy(Tdots->data, multissb->data[ii]->Tdot->data, sizeof(REAL8)*multissb->data[ii]->Tdot->length);
-         memcpy(DeltaTs->data, multissb->data[ii]->DeltaT->data, sizeof(REAL8)*multissb->data[ii]->DeltaT->length);
-         XLAL_CHECK_NULL( avxScaleREAL8Vector(twoPiTauVals->data[ii], Tdots, -Tmid) == XLAL_SUCCESS, XLAL_EFUNC );
-         XLAL_CHECK_NULL( avxDDVectorSum(twoPiTauVals->data[ii], twoPiTauVals->data[ii], DeltaTs) == XLAL_SUCCESS, XLAL_EFUNC );
-         XLAL_CHECK_NULL( avxAddScalarToREAL8Vector(TdotMinus1s->data[ii], Tdots, -1.0) == XLAL_SUCCESS, XLAL_EFUNC );
-      } else {
-         for (UINT4 jj=0; jj<Tdots->length; jj++) {
-            twoPiTauVals->data[ii]->data[jj] = multissb->data[ii]->DeltaT->data[jj] - Tmid*multissb->data[ii]->Tdot->data[jj];
-            TdotMinus1s->data[ii]->data[jj] = multissb->data[ii]->Tdot->data[jj] - 1.0;
-         }
-      }
+      memcpy(Tdots->data, multissb->data[ii]->Tdot->data, sizeof(REAL8)*multissb->data[ii]->Tdot->length);
+      memcpy(DeltaTs->data, multissb->data[ii]->DeltaT->data, sizeof(REAL8)*multissb->data[ii]->DeltaT->length);
+      XLAL_CHECK_NULL( VectorScaleREAL8(twoPiTauVals->data[ii], Tdots, -Tmid, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL( VectorAddREAL8(twoPiTauVals->data[ii], twoPiTauVals->data[ii], DeltaTs, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL( VectorShiftREAL8(TdotMinus1s->data[ii], Tdots, -1.0, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
    }
-   for (UINT4 ii=twoPiTauVals->length; ii>0; ii--) {
-      if (params->vectorMath==1) XLAL_CHECK_NULL( sseDDVectorSubtract(twoPiTauVals->data[ii-1], twoPiTauVals->data[ii-1], twoPiTauVals->data[0]) == XLAL_SUCCESS, XLAL_EFUNC );
-      else if (params->vectorMath==2) XLAL_CHECK_NULL( avxDDVectorSubtract(twoPiTauVals->data[ii-1], twoPiTauVals->data[ii-1], twoPiTauVals->data[0]) == XLAL_SUCCESS, XLAL_EFUNC );
-      else for (UINT4 jj=0; jj<Tdots->length; jj++) twoPiTauVals->data[ii-1]->data[jj] -= twoPiTauVals->data[0]->data[jj];
-   }
-   for (UINT4 ii=1; ii<twoPiTauVals->length; ii--) {
-      if (params->vectorMath==1) XLAL_CHECK_NULL( sseScaleREAL8Vector(twoPiTauVals->data[ii], twoPiTauVals->data[ii], LAL_TWOPI) == XLAL_SUCCESS, XLAL_EFUNC );
-      else if (params->vectorMath==2) XLAL_CHECK_NULL( avxScaleREAL8Vector(twoPiTauVals->data[ii], twoPiTauVals->data[ii], LAL_TWOPI) == XLAL_SUCCESS, XLAL_EFUNC );
-      else for (UINT4 jj=0; jj<Tdots->length; jj++) twoPiTauVals->data[ii]->data[jj] *= LAL_TWOPI;
-   }
+   for (UINT4 ii=twoPiTauVals->length; ii>0; ii--) XLAL_CHECK_NULL( VectorSubtractREAL8(twoPiTauVals->data[ii-1], twoPiTauVals->data[ii-1], twoPiTauVals->data[0], params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+   for (UINT4 ii=1; ii<twoPiTauVals->length; ii++) XLAL_CHECK_NULL( VectorScaleREAL8(twoPiTauVals->data[ii], twoPiTauVals->data[ii], LAL_TWOPI, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
    destroyAlignedREAL8Vector(Tdots);
    destroyAlignedREAL8Vector(DeltaTs);
 
@@ -244,47 +226,45 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
    if (cosiSign==1) for (UINT4 ii=0; ii<cosiVals->length; ii++) cosiVals->data[ii] = 1.0 - 0.05*ii;
    else if (cosiSign==-1) for (UINT4 ii=0; ii<cosiVals->length; ii++) cosiVals->data[ii] = -0.05*ii;
    else for (UINT4 ii=0; ii<cosiVals->length; ii++) cosiVals->data[ii] = 1.0 - 0.05*ii*2.0;
-   if (params->vectorMath==1) {
-      XLAL_CHECK_NULL( sseSSVectorMultiply(onePlusCosiSqOver2Vals, cosiVals, cosiVals) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_NULL( sseAddScalarToREAL4Vector(onePlusCosiSqOver2Vals, onePlusCosiSqOver2Vals, -1.0) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_NULL( sseScaleREAL4Vector(onePlusCosiSqOver2Vals, onePlusCosiSqOver2Vals, 0.5) == XLAL_SUCCESS, XLAL_EFUNC );
-   } else if (params->vectorMath==2) {
-      XLAL_CHECK_NULL( avxSSVectorMultiply(onePlusCosiSqOver2Vals, cosiVals, cosiVals) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_NULL( avxAddScalarToREAL4Vector(onePlusCosiSqOver2Vals, onePlusCosiSqOver2Vals, 1.0) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_NULL( avxScaleREAL4Vector(onePlusCosiSqOver2Vals, onePlusCosiSqOver2Vals, 0.5) == XLAL_SUCCESS, XLAL_EFUNC );
-   } else {
-      for (UINT4 ii=0; ii<cosiVals->length; ii++) onePlusCosiSqOver2Vals->data[ii] = 0.5*(cosiVals->data[ii]*cosiVals->data[ii] + 1.0);
-   }
+   XLAL_CHECK_NULL( XLALVectorMultiplyREAL4(onePlusCosiSqOver2Vals->data, cosiVals->data, cosiVals->data, cosiVals->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK_NULL( XLALVectorShiftREAL4(onePlusCosiSqOver2Vals->data, (REAL4)1.0, onePlusCosiSqOver2Vals->data, onePlusCosiSqOver2Vals->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK_NULL( XLALVectorScaleREAL4(onePlusCosiSqOver2Vals->data, (REAL4)0.5, onePlusCosiSqOver2Vals->data, onePlusCosiSqOver2Vals->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Pre-allocate Aplus and Across
    REAL4VectorAligned *Aplus0s = NULL, *AplusXs = NULL, *Across0s = NULL, *AcrossXs = NULL;
-   XLAL_CHECK_NULL( (Aplus0s = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (Across0s = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (AplusXs = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (AcrossXs = XLALCreateREAL4VectorAligned(twoPsiVector->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (Aplus0s = XLALCreateREAL4VectorAligned(twoPsiVec->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (Across0s = XLALCreateREAL4VectorAligned(twoPsiVec->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (AplusXs = XLALCreateREAL4VectorAligned(twoPsiVec->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (AcrossXs = XLALCreateREAL4VectorAligned(twoPsiVec->length, 32)) != NULL, XLAL_EFUNC );
 
    //Pre-allocate DirichletScaling0 and DirichletScaling1
-   alignedREAL8Vector *DirichletScaling0 = NULL, *DirichletScalingX = NULL;
+   alignedREAL8Vector *DirichletScaling0 = NULL, *DirichletScalingX = NULL, *scaling = NULL;
    XLAL_CHECK_NULL( (DirichletScaling0 = createAlignedREAL8Vector(delta0vals->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (DirichletScalingX = createAlignedREAL8Vector(delta0vals->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (scaling = createAlignedREAL8Vector(delta0vals->length, 32)) != NULL, XLAL_EFUNC );
+
+   COMPLEX8Vector *Dratio = NULL;
+   XLAL_CHECK_NULL( (Dratio = XLALCreateCOMPLEX8Vector(delta0vals->length)) != NULL, XLAL_EFUNC );
 
    //Loop over the combinedSFTs vector to fill it with single or coherently combined SFTs
    for (UINT4 ii=0; ii<combinedSFTs->length; ii++) {
-      //Loop over the interferometers, determining which ones to use
+      //Loop over the interferometers, determining which ones to use and don't go off the end of a list
       memset(whichIFOsToBeUsed->data, 0, whichIFOsToBeUsed->length * sizeof(INT4));  //All index values are set to zero each time
-      LIGOTimeGPS smallestGPS = multiSFTvector->data[0]->data[whichSFTinMultiSFTvector->data[0]].epoch;
-      INT4 ifoWithSmallestGPS = 0;
-      for (UINT4 jj=1; jj<multiSFTvector->length; jj++) {
-         INT4 compareT = XLALGPSCmp(&(multiSFTvector->data[ifoWithSmallestGPS]->data[whichSFTinMultiSFTvector->data[ifoWithSmallestGPS]].epoch), &(multiSFTvector->data[jj]->data[whichSFTinMultiSFTvector->data[jj]].epoch));
-         if (compareT>0) {
-            smallestGPS = multiSFTvector->data[jj]->data[whichSFTinMultiSFTvector->data[jj]].epoch;
-            ifoWithSmallestGPS = jj;
+      LIGOTimeGPS currentTimestamp = jointTimestamps->data[ii];
+      BOOLEAN foundAnSFT = 0;
+      for (UINT4 jj=0; jj<multiSFTvector->length; jj++) {
+         if (whichSFTinMultiSFTvector->data[jj]<(INT4)multiSFTvector->data[jj]->length && XLALGPSCmp(&currentTimestamp, &(multiSFTvector->data[jj]->data[whichSFTinMultiSFTvector->data[jj]].epoch)) == 0) {
+            whichIFOsToBeUsed->data[jj] = 1;
+            foundAnSFT = 1;
          }
       }
-      for (UINT4 jj=0; jj<multiSFTvector->length; jj++) {
-         INT4 compareT = XLALGPSCmp(&(smallestGPS), &(multiSFTvector->data[jj]->data[whichSFTinMultiSFTvector->data[jj]].epoch));
-         if (compareT==0) whichIFOsToBeUsed->data[jj] = 1;
-      }
+      XLAL_CHECK_NULL( foundAnSFT == 1, XLAL_EFAILED );
+      REAL8 sftstart2 = XLALGPSGetREAL8(&currentTimestamp);
+      XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
+      INT4 fftnum2 = (INT4)round((sftstart2 - params->t0)/params->SFToverlap);
+
+      //Set backgroundScaling and normalizationScaling to 1 for this SFT, and then we will add to it as more SFTs are coherently summed
+      for (UINT4 jj=0; jj<numFbinsInBackground; jj++) backgroundScaling->data[fftnum2*numFbinsInBackground + jj] = 1.0;
 
       BOOLEAN createSFT = 1, computeAntenna0 = 1, computeDelta0vals = 1;
       for (UINT4 jj=0; jj<multiSFTvector->length; jj++) {
@@ -301,61 +281,28 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
             REAL8 sftstart = XLALGPSGetREAL8(&(sftcopy->epoch));
             XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
             INT4 fftnum = (INT4)round((sftstart - params->t0)/params->SFToverlap);
+            XLAL_CHECK_NULL( fftnum == fftnum2, XLAL_EFAILED );
 
             //First do time of arrival: 2*pi*fk*tau
-            if (params->vectorMath==1) XLAL_CHECK_NULL( sseScaleREAL8Vector(TwoPiFrequenciesTau, frequencies, twoPiTauVals->data[jj]->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-            else if (params->vectorMath==2) XLAL_CHECK_NULL( avxScaleREAL8Vector(TwoPiFrequenciesTau, frequencies, twoPiTauVals->data[jj]->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-            else for (UINT4 kk=0; kk<frequencies->length; kk++) TwoPiFrequenciesTau->data[kk] = frequencies->data[kk]*twoPiTauVals->data[jj]->data[fftnum];
+            XLAL_CHECK_NULL( VectorScaleREAL8(TwoPiFrequenciesTau, frequencies, twoPiTauVals->data[jj]->data[fftnum], params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
 
             //If assumNSpsi is not given compute Fplus and Fcross for detector ratio
             if (assumeNSpsi==NULL) {
-               if (params->vectorMath==1) {
-                  //IFO 0
-                  if (computeAntenna0) {
-                     XLAL_CHECK_NULL( sseScaleREAL4Vector(aVals, cos2psiVector, multiAMcoefficients->data[0]->a->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( sseScaleREAL4Vector(bVals, sin2psiVector, multiAMcoefficients->data[0]->b->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( sseSSVectorSum(Fplus0s, aVals, bVals) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( sseScaleREAL4Vector(bVals, cos2psiVector, multiAMcoefficients->data[0]->b->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( sseScaleREAL4Vector(aVals, sin2psiVector, -multiAMcoefficients->data[0]->a->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( sseSSVectorSum(Fcross0s, bVals, aVals) == XLAL_SUCCESS, XLAL_EFUNC );
-                     computeAntenna0 = 0;
-                  }
-                  //IFO jj
-                  XLAL_CHECK_NULL( sseScaleREAL4Vector(aVals, cos2psiVector, multiAMcoefficients->data[jj]->a->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( sseScaleREAL4Vector(bVals, sin2psiVector, multiAMcoefficients->data[jj]->b->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( sseSSVectorSum(FplusXs, aVals, bVals) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( sseScaleREAL4Vector(bVals, cos2psiVector, multiAMcoefficients->data[jj]->b->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( sseScaleREAL4Vector(aVals, sin2psiVector, -multiAMcoefficients->data[jj]->a->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( sseSSVectorSum(FcrossXs, bVals, aVals) == XLAL_SUCCESS, XLAL_EFUNC );
-               } else if (params->vectorMath==2) {
-                  //IFO 0
-                  if (computeAntenna0) {
-                     XLAL_CHECK_NULL( avxScaleREAL4Vector(aVals, cos2psiVector, multiAMcoefficients->data[0]->a->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( avxScaleREAL4Vector(bVals, sin2psiVector, multiAMcoefficients->data[0]->b->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( avxSSVectorSum(Fplus0s, aVals, bVals) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( avxScaleREAL4Vector(bVals, cos2psiVector, multiAMcoefficients->data[0]->b->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( avxScaleREAL4Vector(aVals, sin2psiVector, -multiAMcoefficients->data[0]->a->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( avxSSVectorSum(Fcross0s, bVals, aVals) == XLAL_SUCCESS, XLAL_EFUNC );
-                     computeAntenna0 = 0;
-                  }
-                  //IFO jj
-                  XLAL_CHECK_NULL( avxScaleREAL4Vector(aVals, cos2psiVector, multiAMcoefficients->data[jj]->a->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( avxScaleREAL4Vector(bVals, sin2psiVector, multiAMcoefficients->data[jj]->b->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( avxSSVectorSum(FplusXs, aVals, bVals) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( avxScaleREAL4Vector(bVals, cos2psiVector, multiAMcoefficients->data[jj]->b->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( avxScaleREAL4Vector(aVals, sin2psiVector, -multiAMcoefficients->data[jj]->a->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( avxSSVectorSum(FcrossXs, bVals, aVals) == XLAL_SUCCESS, XLAL_EFUNC );
-               } else {
-                  for (UINT4 kk=0; kk<Fplus0s->length; kk++) {
-                     if (computeAntenna0) {
-                        Fplus0s->data[kk] = multiAMcoefficients->data[0]->a->data[fftnum]*cos2psiVector->data[kk] + multiAMcoefficients->data[0]->b->data[fftnum]*sin2psiVector->data[kk];
-                        Fcross0s->data[kk] = multiAMcoefficients->data[0]->b->data[fftnum]*cos2psiVector->data[kk] - multiAMcoefficients->data[0]->a->data[fftnum]*sin2psiVector->data[kk];
-                     }
-                     FplusXs->data[kk] = multiAMcoefficients->data[jj]->a->data[fftnum]*cos2psiVector->data[kk] + multiAMcoefficients->data[jj]->b->data[fftnum]*sin2psiVector->data[kk];
-                     FcrossXs->data[kk] = multiAMcoefficients->data[jj]->b->data[fftnum]*cos2psiVector->data[kk] - multiAMcoefficients->data[jj]->a->data[fftnum]*sin2psiVector->data[kk];
-                  }
-                  if (computeAntenna0) computeAntenna0 = 0;
+               if (computeAntenna0) {
+                  XLAL_CHECK_NULL( XLALVectorScaleREAL4(aVals->data, multiAMcoeffs->data[0]->a->data[fftnum], cos2psiVec->data, cos2psiVec->length) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK_NULL( XLALVectorScaleREAL4(bVals->data, multiAMcoeffs->data[0]->b->data[fftnum], sin2psiVec->data, sin2psiVec->length) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK_NULL( XLALVectorAddREAL4(Fplus0s->data, aVals->data, bVals->data, aVals->length) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK_NULL( XLALVectorScaleREAL4(bVals->data, multiAMcoeffs->data[0]->b->data[fftnum], cos2psiVec->data, cos2psiVec->length) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK_NULL( XLALVectorScaleREAL4(aVals->data, -multiAMcoeffs->data[0]->a->data[fftnum], sin2psiVec->data, sin2psiVec->length) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK_NULL( XLALVectorAddREAL4(Fcross0s->data, bVals->data, aVals->data, bVals->length) == XLAL_SUCCESS, XLAL_EFUNC );
+                  computeAntenna0 = 0;
                }
+               XLAL_CHECK_NULL( XLALVectorScaleREAL4(aVals->data, multiAMcoeffs->data[jj]->a->data[fftnum], cos2psiVec->data, cos2psiVec->length) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK_NULL( XLALVectorScaleREAL4(bVals->data, multiAMcoeffs->data[jj]->b->data[fftnum], sin2psiVec->data, sin2psiVec->length) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK_NULL( XLALVectorAddREAL4(FplusXs->data, aVals->data, bVals->data, aVals->length) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK_NULL( XLALVectorScaleREAL4(bVals->data, multiAMcoeffs->data[jj]->b->data[fftnum], cos2psiVec->data, cos2psiVec->length) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK_NULL( XLALVectorScaleREAL4(aVals->data, -multiAMcoeffs->data[jj]->a->data[fftnum], sin2psiVec->data, sin2psiVec->length) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK_NULL( XLALVectorAddREAL4(FcrossXs->data, bVals->data, aVals->data, bVals->length) == XLAL_SUCCESS, XLAL_EFUNC );
             }
 
             //Average of detector-signal phase relation, unless assumed NS orientation and GW polarization angle
@@ -365,25 +312,11 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
             if (assumeNScosi==NULL && assumeNSpsi==NULL) {
                BOOLEAN loopbroken = 0;
                for (UINT4 kk=0; kk<cosiVals->length && !loopbroken; kk++) {
-                  if (params->vectorMath==1) {
-                     XLAL_CHECK_NULL( sseScaleREAL4Vector(AplusXs, FplusXs, onePlusCosiSqOver2Vals->data[kk]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( sseScaleREAL4Vector(AcrossXs, FcrossXs, cosiVals->data[kk]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( sseScaleREAL4Vector(Aplus0s, Fplus0s, onePlusCosiSqOver2Vals->data[kk]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( sseScaleREAL4Vector(Across0s, Fcross0s, cosiVals->data[kk]) == XLAL_SUCCESS, XLAL_EFUNC );
-                  } else if (params->vectorMath==2) {
-                     XLAL_CHECK_NULL( avxScaleREAL4Vector(AplusXs, FplusXs, onePlusCosiSqOver2Vals->data[kk]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( avxScaleREAL4Vector(AcrossXs, FcrossXs, cosiVals->data[kk]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( avxScaleREAL4Vector(Aplus0s, Fplus0s, onePlusCosiSqOver2Vals->data[kk]) == XLAL_SUCCESS, XLAL_EFUNC );
-                     XLAL_CHECK_NULL( avxScaleREAL4Vector(Across0s, Fcross0s, cosiVals->data[kk]) == XLAL_SUCCESS, XLAL_EFUNC );
-                  } else {
-                     for (UINT4 ll=0; ll<cos2psiVector->length; ll++) {
-                        AplusXs->data[ll] = onePlusCosiSqOver2Vals->data[kk]*FplusXs->data[ll];
-                        AcrossXs->data[ll] = cosiVals->data[kk]*FcrossXs->data[ll];
-                        Aplus0s->data[ll] = onePlusCosiSqOver2Vals->data[kk]*Fplus0s->data[ll];
-                        Across0s->data[ll] = cosiVals->data[kk]*Fcross0s->data[ll];
-                     }
-                  }
-                  for (UINT4 ll=0; ll<cos2psiVector->length && !loopbroken; ll++) {
+                  XLAL_CHECK_NULL( XLALVectorScaleREAL4(AplusXs->data, onePlusCosiSqOver2Vals->data[kk], FplusXs->data, FplusXs->length) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK_NULL( XLALVectorScaleREAL4(AcrossXs->data, cosiVals->data[kk], FcrossXs->data, FcrossXs->length) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK_NULL( XLALVectorScaleREAL4(Aplus0s->data, onePlusCosiSqOver2Vals->data[kk], Fplus0s->data, Fplus0s->length) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK_NULL( XLALVectorScaleREAL4(Across0s->data, cosiVals->data[kk], Fcross0s->data, Fcross0s->length) == XLAL_SUCCESS, XLAL_EFUNC );
+                  for (UINT4 ll=0; ll<cos2psiVec->length && !loopbroken; ll++) {
                      COMPLEX8 complexnumerator = crectf(AplusXs->data[ll], AcrossXs->data[ll]);
                      COMPLEX8 complexdenominator = crectf(Aplus0s->data[ll], Across0s->data[ll]);
                      if (cabsf(complexdenominator)>1.0e-6) {
@@ -397,34 +330,20 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
                      }
                   }
                }
-               detPhaseMag /= (REAL4)(cosiVals->length*cos2psiVector->length);
-               detPhaseArg /= (REAL4)(cosiVals->length*cos2psiVector->length);
+               detPhaseMag /= (REAL4)(cosiVals->length*cos2psiVec->length);
+               detPhaseArg /= (REAL4)(cosiVals->length*cos2psiVec->length);
             } else if (assumeNScosi!=NULL && assumeNSpsi==NULL) {
                BOOLEAN loopbroken = 0;
                REAL4 cosi = *assumeNScosi;
                REAL4 onePlusCosiSqOver2 = 0.5*(1.0 + cosi*cosi);
-               if (params->vectorMath==1) {
-                  XLAL_CHECK_NULL( sseScaleREAL4Vector(AplusXs, FplusXs, onePlusCosiSqOver2) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( sseScaleREAL4Vector(AcrossXs, FcrossXs, cosi) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( sseScaleREAL4Vector(Aplus0s, Fplus0s, onePlusCosiSqOver2) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( sseScaleREAL4Vector(Across0s, Fcross0s, cosi) == XLAL_SUCCESS, XLAL_EFUNC );
-               } else if (params->vectorMath==2) {
-                  XLAL_CHECK_NULL( avxScaleREAL4Vector(AplusXs, FplusXs, onePlusCosiSqOver2) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( avxScaleREAL4Vector(AcrossXs, FcrossXs, cosi) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( avxScaleREAL4Vector(Aplus0s, Fplus0s, onePlusCosiSqOver2) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( avxScaleREAL4Vector(Across0s, Fcross0s, cosi) == XLAL_SUCCESS, XLAL_EFUNC );
-               } else {
-                  for (UINT4 kk=0; kk<cos2psiVector->length; kk++) {
-                     AplusXs->data[kk] = onePlusCosiSqOver2*FplusXs->data[kk];
-                     AcrossXs->data[kk] = cosi*FcrossXs->data[kk];
-                     Aplus0s->data[kk] = onePlusCosiSqOver2*Fplus0s->data[kk];
-                     Across0s->data[kk] = cosi*Fcross0s->data[kk];
-                  }
-               }
-               for (UINT4 kk=0; kk<cos2psiVector->length && !loopbroken; kk++) {
+               XLAL_CHECK_NULL( XLALVectorScaleREAL4(AplusXs->data, onePlusCosiSqOver2, FplusXs->data, FplusXs->length) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK_NULL( XLALVectorScaleREAL4(AcrossXs->data, cosi, FcrossXs->data, FcrossXs->length) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK_NULL( XLALVectorScaleREAL4(Aplus0s->data, onePlusCosiSqOver2, Fplus0s->data, Fplus0s->length) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK_NULL( XLALVectorScaleREAL4(Across0s->data, cosi, Fcross0s->data, Fcross0s->length) == XLAL_SUCCESS, XLAL_EFUNC );
+               for (UINT4 kk=0; kk<cos2psiVec->length && !loopbroken; kk++) {
                   COMPLEX16 complexnumerator = crect(AplusXs->data[kk], AcrossXs->data[kk]);
                   COMPLEX16 complexdenominator = crect(Aplus0s->data[kk], Across0s->data[kk]);
-                  if (cabs(complexdenominator)>1.0e-7) {
+                  if (cabs(complexdenominator)>1.0e-6) {
                      COMPLEX16 complexval = complexnumerator/complexdenominator;
                      detPhaseMag += fmin(cabs(complexval), 10.0);  //fmin here because sometimes the magnitude value is being divided by a small value and causing biases
                      detPhaseArg += gsl_sf_angle_restrict_pos(carg(complexval));
@@ -434,8 +353,8 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
                      detPhaseArg = 0.0;
                   }
                }
-               detPhaseMag /= (REAL4)(cos2psiVector->length);
-               detPhaseArg /= (REAL4)(cos2psiVector->length);
+               detPhaseMag /= (REAL4)(cos2psiVec->length);
+               detPhaseArg /= (REAL4)(cos2psiVec->length);
             } else if (assumeNScosi==NULL && assumeNSpsi!=NULL) {
                REAL4 psi = *assumeNSpsi;
                REAL4 sin2psi = 0.0, cos2psi = 0.0;
@@ -444,15 +363,15 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
                if (sin2psi<-1.0) sin2psi = -1.0;
                if (cos2psi>1.0) cos2psi = 1.0;
                if (cos2psi<-1.0) cos2psi = -1.0;
-               REAL4 Fplus0 = multiAMcoefficients->data[0]->a->data[fftnum]*cos2psi + multiAMcoefficients->data[0]->b->data[fftnum]*sin2psi;
-               REAL4 Fcross0 = multiAMcoefficients->data[0]->b->data[fftnum]*cos2psi - multiAMcoefficients->data[0]->a->data[fftnum]*sin2psi;
-               REAL4 FplusX = multiAMcoefficients->data[jj]->a->data[fftnum]*cos2psi + multiAMcoefficients->data[jj]->b->data[fftnum]*sin2psi;
-               REAL4 FcrossX = multiAMcoefficients->data[jj]->b->data[fftnum]*cos2psi - multiAMcoefficients->data[jj]->a->data[fftnum]*sin2psi;
+               REAL4 Fplus0 = multiAMcoeffs->data[0]->a->data[fftnum]*cos2psi + multiAMcoeffs->data[0]->b->data[fftnum]*sin2psi;
+               REAL4 Fcross0 = multiAMcoeffs->data[0]->b->data[fftnum]*cos2psi - multiAMcoeffs->data[0]->a->data[fftnum]*sin2psi;
+               REAL4 FplusX = multiAMcoeffs->data[jj]->a->data[fftnum]*cos2psi + multiAMcoeffs->data[jj]->b->data[fftnum]*sin2psi;
+               REAL4 FcrossX = multiAMcoeffs->data[jj]->b->data[fftnum]*cos2psi - multiAMcoeffs->data[jj]->a->data[fftnum]*sin2psi;
                BOOLEAN loopbroken = 0;
                for (UINT4 kk=0; kk<cosiVals->length && !loopbroken; kk++) {
                   COMPLEX16 complexnumerator = crect(FplusX*onePlusCosiSqOver2Vals->data[kk], FcrossX*cosiVals->data[kk]);
                   COMPLEX16 complexdenominator = crect(Fplus0*onePlusCosiSqOver2Vals->data[kk], Fcross0*cosiVals->data[kk]);
-                  if (cabs(complexdenominator)>1.0e-7) {
+                  if (cabs(complexdenominator)>1.0e-6) {
                      COMPLEX16 complexval = complexnumerator/complexdenominator;
                      detPhaseMag += fmin(cabs(complexval), 10.0);  //fmin here because sometimes the magnitude value is being divided by a small value and causing biases
                      detPhaseArg += gsl_sf_angle_restrict_pos(carg(complexval));
@@ -466,79 +385,63 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
                detPhaseArg /= (REAL4)(cosiVals->length);
             } else {
                REAL4 psi = *assumeNSpsi;
-               REAL4 sin2psi = 0.0, cos2psi = 0.0;
-               XLAL_CHECK_NULL( XLALSinCosLUT(&sin2psi, &cos2psi, 2.0*psi) == XLAL_SUCCESS, XLAL_EFUNC );
-               if (sin2psi>1.0) sin2psi = 1.0;
-               else if (sin2psi<-1.0) sin2psi = -1.0;
-               if (cos2psi>1.0) cos2psi = 1.0;
-               else if (cos2psi<-1.0) cos2psi = -1.0;
-               REAL4 Fplus0 = multiAMcoefficients->data[0]->a->data[fftnum]*cos2psi + multiAMcoefficients->data[0]->b->data[fftnum]*sin2psi;
-               REAL4 Fcross0 = multiAMcoefficients->data[0]->b->data[fftnum]*cos2psi - multiAMcoefficients->data[0]->a->data[fftnum]*sin2psi;
-               REAL4 FplusX = multiAMcoefficients->data[jj]->a->data[fftnum]*cos2psi + multiAMcoefficients->data[jj]->b->data[fftnum]*sin2psi;
-               REAL4 FcrossX = multiAMcoefficients->data[jj]->b->data[fftnum]*cos2psi - multiAMcoefficients->data[jj]->a->data[fftnum]*sin2psi;
+               REAL8 sin2psi = sin(2.0*psi), cos2psi = cos(2.0*psi);
+               REAL8 Fplus0 = multiAMcoeffs->data[0]->a->data[fftnum]*cos2psi + multiAMcoeffs->data[0]->b->data[fftnum]*sin2psi;
+               REAL8 Fcross0 = multiAMcoeffs->data[0]->b->data[fftnum]*cos2psi - multiAMcoeffs->data[0]->a->data[fftnum]*sin2psi;
+               REAL8 FplusX = multiAMcoeffs->data[jj]->a->data[fftnum]*cos2psi + multiAMcoeffs->data[jj]->b->data[fftnum]*sin2psi;
+               REAL8 FcrossX = multiAMcoeffs->data[jj]->b->data[fftnum]*cos2psi - multiAMcoeffs->data[jj]->a->data[fftnum]*sin2psi;
                REAL4 cosi = *assumeNScosi;
-               REAL4 onePlusCosiSqOver2 = 0.5*(1.0 + cosi*cosi);
+               REAL8 onePlusCosiSqOver2 = 0.5*(1.0 + cosi*cosi);
                COMPLEX16 complexnumerator = crect(FplusX*onePlusCosiSqOver2, FcrossX*cosi);
                COMPLEX16 complexdenominator = crect(Fplus0*onePlusCosiSqOver2, Fcross0*cosi);
-               if (cabs(complexdenominator)>1.0e-7) {
+               if (cabs(complexdenominator)>1.0e-6) {
                   COMPLEX16 complexval = complexnumerator/complexdenominator;
-                  detPhaseMag = fmin(cabs(complexval), 10.0);  //fmin here because sometimes the magnitude value is being divided by a small value and causing biases
-                  detPhaseArg = gsl_sf_angle_restrict_pos(carg(complexval));
+                  detPhaseMag = (REAL4)fmin(cabs(complexval), 10.0);  //fmin here because sometimes the magnitude value is being divided by a small value and causing biases
+                  detPhaseArg = (REAL4)gsl_sf_angle_restrict_pos(carg(complexval));
                } else {
                   detPhaseMag = 0.0;
                   detPhaseArg = 0.0;
                }
             }
 
-            //When reference detector is off, don't add data that is less sensitive than the reference detector
+            //When reference detector is off, don't add data that is less sensitive than if the reference detector data would be when it is on
             if (detPhaseMag!=0.0 && whichIFOsToBeUsed->data[0]==0 && detPhaseMag<1.0) {
                detPhaseMag = 0.0;
                detPhaseArg = 0.0;
             }
 
             //Compute delta values for the frequency difference for the Dirichlet kernel: fk*Tsft*[Tdot(jj) - 1] where jj=0,...,N-1
-            if (params->vectorMath==1) {
-               if (computeDelta0vals) {
-                  XLAL_CHECK_NULL( sseScaleREAL8Vector(delta0vals, frequencyBins, TdotMinus1s->data[0]->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( sseDDVectorMultiply(DirichletScaling0, delta0vals, delta0vals) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( sseAddScalarToREAL8Vector(DirichletScaling0, DirichletScaling0, -1.0) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( sseDDVectorMultiply(DirichletScaling0, DirichletScaling0, delta0vals) == XLAL_SUCCESS, XLAL_EFUNC );
-               }
-               XLAL_CHECK_NULL( sseScaleREAL8Vector(deltaXvals, frequencyBins, TdotMinus1s->data[jj]->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-               XLAL_CHECK_NULL( sseDDVectorMultiply(DirichletScalingX, deltaXvals, deltaXvals) == XLAL_SUCCESS, XLAL_EFUNC );
-               XLAL_CHECK_NULL( sseAddScalarToREAL8Vector(DirichletScalingX, DirichletScalingX, -1.0) == XLAL_SUCCESS, XLAL_EFUNC );
-               XLAL_CHECK_NULL( sseDDVectorMultiply(DirichletScalingX, DirichletScalingX, deltaXvals) == XLAL_SUCCESS, XLAL_EFUNC );
-            } else if (params->vectorMath==2) {
-               if (computeDelta0vals) {
-                  XLAL_CHECK_NULL( avxScaleREAL8Vector(delta0vals, frequencyBins, TdotMinus1s->data[0]->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( avxDDVectorMultiply(DirichletScaling0, delta0vals, delta0vals) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( avxAddScalarToREAL8Vector(DirichletScaling0, DirichletScaling0, -1.0) == XLAL_SUCCESS, XLAL_EFUNC );
-                  XLAL_CHECK_NULL( avxDDVectorMultiply(DirichletScaling0, DirichletScaling0, delta0vals) == XLAL_SUCCESS, XLAL_EFUNC );
-               }
-               XLAL_CHECK_NULL( avxScaleREAL8Vector(deltaXvals, frequencyBins, TdotMinus1s->data[jj]->data[fftnum]) == XLAL_SUCCESS, XLAL_EFUNC );
-               XLAL_CHECK_NULL( avxDDVectorMultiply(DirichletScalingX, deltaXvals, deltaXvals) == XLAL_SUCCESS, XLAL_EFUNC );
-               XLAL_CHECK_NULL( avxAddScalarToREAL8Vector(DirichletScalingX, DirichletScalingX, -1.0) == XLAL_SUCCESS, XLAL_EFUNC );
-               XLAL_CHECK_NULL( avxDDVectorMultiply(DirichletScalingX, DirichletScalingX, deltaXvals) == XLAL_SUCCESS, XLAL_EFUNC );
-            } else {
-               for (UINT4 kk=0; kk<frequencyBins->length; kk++) {
-                  if (computeDelta0vals) {
-                     delta0vals->data[kk] = frequencyBins->data[kk]*TdotMinus1s->data[0]->data[fftnum];
-                     DirichletScaling0->data[kk] = delta0vals->data[kk]*(delta0vals->data[kk]*delta0vals->data[kk] - 1.0);
-                  }
-                  deltaXvals->data[kk] = frequencyBins->data[kk]*TdotMinus1s->data[jj]->data[fftnum];
-                  DirichletScalingX->data[kk] = deltaXvals->data[kk]*(deltaXvals->data[kk]*deltaXvals->data[kk] - 1.0);
-               }
+            if (computeDelta0vals) {
+               XLAL_CHECK_NULL( VectorScaleREAL8(delta0vals, frequencyBins, TdotMinus1s->data[0]->data[fftnum], params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK_NULL( VectorMultiplyREAL8(DirichletScaling0, delta0vals, delta0vals, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK_NULL( VectorShiftREAL8(DirichletScaling0, DirichletScaling0, -1.0, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK_NULL( VectorMultiplyREAL8(DirichletScaling0, DirichletScaling0, delta0vals, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
             }
+            XLAL_CHECK_NULL( VectorScaleREAL8(deltaXvals, frequencyBins, TdotMinus1s->data[jj]->data[fftnum], params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK_NULL( VectorMultiplyREAL8(DirichletScalingX, deltaXvals, deltaXvals, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK_NULL( VectorShiftREAL8(DirichletScalingX, DirichletScalingX, -1.0, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK_NULL( VectorMultiplyREAL8(DirichletScalingX, DirichletScalingX, deltaXvals, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
             if (computeDelta0vals) computeDelta0vals = 0;
+
+            for (UINT4 kk=0; kk<scaling->length; kk++) scaling->data[kk] = DirichletScaling0->data[kk]/DirichletScalingX->data[kk];
+            XLAL_CHECK_NULL( DirichletRatioVector(Dratio, delta0vals, deltaXvals, scaling, params) == XLAL_SUCCESS, XLAL_EFUNC );
 
             //Now finish the computation with the Dirichlet kernel ratio and final correction
             for (UINT4 kk=0; kk<sftcopy->data->length; kk++) {
                //COMPLEX16 DirichletRatio = conj(DirichletKernelLargeNHann(deltaXvals->data[kk])/DirichletKernelLargeNHann(delta0vals->data[kk]));
                //REAL8 detArgVal = (carg(DirichletRatio));
                REAL4 detArgVal = 0.0;
-               COMPLEX8 DirichletRatio;
+               /* COMPLEX8 DirichletRatio;
                if (DirichletKernalLargeNHannRatio(&DirichletRatio, delta0vals->data[kk], deltaXvals->data[kk], DirichletScaling0->data[kk]/DirichletScalingX->data[kk]) == 0) {
                   detArgVal = (REAL4)gsl_sf_angle_restrict_pos((REAL8)cargf(conjf(DirichletRatio)));
+               } else {
+                  detPhaseMag = 0.0;
+                  detArgVal = 0.0;
+               }
+               */
+
+               if (cabsf(Dratio->data[kk])!=0.0) {
+                  detArgVal = (REAL4)gsl_sf_angle_restrict_pos((REAL8)cargf(conjf(Dratio->data[kk])));
                } else {
                   detPhaseMag = 0.0;
                   detArgVal = 0.0;
@@ -547,8 +450,17 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
                //When signals are offset by a bin
                if (llabs((INT8)delta0vals->data[kk]-(INT8)deltaXvals->data[kk])>=1) detArgVal += LAL_PI;
 
+               //The complex coefficient to scale SFT bins
                COMPLEX8 complexfactor = cpolarf(detPhaseMag, detArgVal+detPhaseArg-TwoPiFrequenciesTau->data[kk]);
-               sftcopy->data->data[kk] *= complexfactor;
+
+               REAL4 noiseWeighting = 1.0;
+               if (kk>=numSFTbins2skip && kk<numFbinsInBackground+numSFTbins2skip && !createSFT) {
+                  noiseWeighting = backgroundRatio->data[jj]->data[fftnum];
+                  REAL4 absVal = cabsf(complexfactor);
+                  backgroundScaling->data[fftnum2*numFbinsInBackground + (kk-numSFTbins2skip)] += noiseWeighting*(absVal*absVal);
+               }
+
+               sftcopy->data->data[kk] *= noiseWeighting*complexfactor;
             }
 
             if (createSFT) {
@@ -559,16 +471,19 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
             XLALDestroySFT(sftcopy);
             whichSFTinMultiSFTvector->data[jj]++;
          }
-      }
+      } //loop over detectors
+
+      //Take the square of the backgroundScaling values
+      //for (UINT4 jj=0; jj<numFbinsInBackground; jj++) backgroundScaling->data[fftnum2*numFbinsInBackground + jj] *= backgroundScaling->data[fftnum2*numFbinsInBackground + jj];
    }
 
    XLALDestroyINT4Vector(whichSFTinMultiSFTvector);
    XLALDestroyINT4Vector(whichIFOsToBeUsed);
    XLALDestroyREAL4VectorAligned(cosiVals);
    XLALDestroyREAL4VectorAligned(onePlusCosiSqOver2Vals);
-   XLALDestroyREAL4VectorAligned(twoPsiVector);
-   XLALDestroyREAL4VectorAligned(sin2psiVector);
-   XLALDestroyREAL4VectorAligned(cos2psiVector);
+   XLALDestroyREAL4VectorAligned(twoPsiVec);
+   XLALDestroyREAL4VectorAligned(sin2psiVec);
+   XLALDestroyREAL4VectorAligned(cos2psiVec);
    XLALDestroyREAL4VectorAligned(aVals);
    XLALDestroyREAL4VectorAligned(bVals);
    XLALDestroyREAL4VectorAligned(Fplus0s);
@@ -588,25 +503,28 @@ REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTvector, MultiSSBtimes *m
    XLALDestroyREAL4VectorAligned(AcrossXs);
    destroyAlignedREAL8Vector(DirichletScaling0);
    destroyAlignedREAL8Vector(DirichletScalingX);
+   destroyAlignedREAL8Vector(scaling);
+   XLALDestroyCOMPLEX8Vector(Dratio);
 
    fprintf(stderr, "done\n");
 
-   REAL4Vector *tfdata = NULL;
-   XLAL_CHECK_NULL( (tfdata = convertSFTdataToPowers(combinedSFTs, params, 2.0/params->Tsft/(params->avesqrtSh*params->avesqrtSh))) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *tfdata = NULL;
+   //XLAL_CHECK_NULL( (tfdata = convertSFTdataToPowers(combinedSFTs, params, 2.0/params->Tsft/(params->avesqrtSh*params->avesqrtSh))) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (tfdata = convertSFTdataToPowers(combinedSFTs, params, 2.0/params->Tsft/(multiNoiseFloor.sqrtSn[0]*multiNoiseFloor.sqrtSn[0]))) != NULL, XLAL_EFUNC );
    XLALDestroySFTVector(combinedSFTs);
 
    return tfdata;
-}
 
+} // coherentlyAddSFTs()
 
 /**
  * Convert a SFTVector of sfts into powers
  * \param [in] sfts          Pointer to the SFTVector
  * \param [in] params        Pointer to the UserInput_t
  * \param [in] normalization Normalization value to prevent underflow
- * \return Pointer to REAL4Vector containing powers
+ * \return Pointer to REAL4VectorAligned containing powers
  */
-REAL4Vector * convertSFTdataToPowers(SFTVector *sfts, UserInput_t *params, REAL8 normalization)
+REAL4VectorAligned * convertSFTdataToPowers(const SFTVector *sfts, const UserInput_t *params, const REAL8 normalization)
 {
 
    XLAL_CHECK_NULL( sfts != NULL && params != NULL, XLAL_EINVAL );
@@ -619,8 +537,8 @@ REAL4Vector * convertSFTdataToPowers(SFTVector *sfts, UserInput_t *params, REAL8
    XLAL_CHECK_NULL( sftlength != 0, XLAL_EINVAL, "SFT has length of 0!\n" );
 
    //Allocate output
-   REAL4Vector *tfdata = NULL;
-   XLAL_CHECK_NULL( (tfdata = XLALCreateREAL4Vector(numffts*sftlength)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *tfdata = NULL;
+   XLAL_CHECK_NULL( (tfdata = XLALCreateREAL4VectorAligned(numffts*sftlength, 32)) != NULL, XLAL_EFUNC );
 
    //Non-existant SFT counter
    UINT4 nonexistantsft = 0;
@@ -661,8 +579,7 @@ REAL4Vector * convertSFTdataToPowers(SFTVector *sfts, UserInput_t *params, REAL8
 
    return tfdata;
 
-}
-
+} // convertSFTdataToPowers()
 
 /**
  * Read in the data SFTs in one function
@@ -670,9 +587,9 @@ REAL4Vector * convertSFTdataToPowers(SFTVector *sfts, UserInput_t *params, REAL8
  * \param [in] normalization Normalization value determined from expected noise background
  * \param [in] minfbin       Frequency value of the minimum frequency bin
  * \param [in] maxfbin       Frequency value of the maximum frequency bin
- * \return REAL4Vector of SFT powers
+ * \return REAL4VectorAligned of SFT powers
  */
-REAL4Vector * readInSFTs(UserInput_t *params, REAL8 normalization, REAL8 minfbin, REAL8 maxfbin)
+REAL4VectorAligned * readInSFTs(UserInput_t *params, const REAL8 normalization, const REAL8 minfbin, const REAL8 maxfbin)
 {
 
    XLAL_CHECK_NULL( params != NULL, XLAL_EINVAL );
@@ -680,7 +597,7 @@ REAL4Vector * readInSFTs(UserInput_t *params, REAL8 normalization, REAL8 minfbin
    MultiSFTVector *sftvector = NULL;
    XLAL_CHECK_NULL( (sftvector = getMultiSFTVector(params, minfbin, maxfbin)) != NULL, XLAL_EFUNC );
 
-   REAL4Vector *tfdata = NULL;
+   REAL4VectorAligned *tfdata = NULL;
    XLAL_CHECK_NULL( (tfdata = convertSFTdataToPowers(sftvector->data[0], params, normalization)) != NULL, XLAL_EFUNC );
 
    //Destroy stuff
@@ -688,15 +605,14 @@ REAL4Vector * readInSFTs(UserInput_t *params, REAL8 normalization, REAL8 minfbin
 
    return tfdata;
 
-} /* readInSFTs() */
-
+} // readInSFTs()
 
 /**
  * Create a list of timestamps from an SFTCatalog
  * \param [in] catalog Pointer to an SFTCatalog
  * \return Pointer to a list of GPS timestamps in a MultiLIGOTimeGPSVector
  */
-MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTCatalog(SFTCatalog *catalog)
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTCatalog(const SFTCatalog *catalog)
 {
 
    XLAL_CHECK_NULL( catalog != NULL, XLAL_EINVAL );
@@ -712,8 +628,7 @@ MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTCatalog(SFTCatalog *catalog)
 
    return multiTimestamps;
 
-}
-
+} // getMultiTimeStampsFromSFTCatalog()
 
 /**
  * Create a list of timestamps from SFTs that might be a subset from those in an SFTCatalog, applying KS/Kuipers test if desired
@@ -721,21 +636,28 @@ MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTCatalog(SFTCatalog *catalog)
  * \param [in] params         Pointer to UserInput_t
  * \return Pointer to a list of GPS timestamps in a MultiLIGOTimeGPSVector
  */
-MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(MultiSFTVector *multiSFTvector, UserInput_t *params)
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(const MultiSFTVector *multiSFTvector, const UserInput_t *params)
 {
 
    XLAL_CHECK_NULL( params != NULL, XLAL_EINVAL );
 
    MultiLIGOTimeGPSVector *multiTimestamps = NULL;
-   XLAL_CHECK_NULL( (multiTimestamps = XLALCalloc(1, sizeof(*multiTimestamps))) != NULL, XLAL_ENOMEM );
-   XLAL_CHECK_NULL( (multiTimestamps->data = XLALCalloc(multiSFTvector->length, sizeof(*multiTimestamps->data))) != NULL, XLAL_ENOMEM );
-   multiTimestamps->length = multiSFTvector->length;
+
+   //parse noise list
+   MultiNoiseFloor multiNoiseFloor;
+   XLAL_CHECK_NULL( XLALParseMultiNoiseFloor(&multiNoiseFloor, params->avesqrtSh, params->IFO->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
    if (params->markBadSFTs && !params->signalOnly) {
-      REAL8 tfnormval = 2.0/(params->Tsft*(params->avesqrtSh*params->avesqrtSh));
+      //REAL8 tfnormval = 2.0/(params->Tsft*(params->avesqrtSh*params->avesqrtSh));
+
+      XLAL_CHECK_NULL( (multiTimestamps = XLALCalloc(1, sizeof(*multiTimestamps))) != NULL, XLAL_ENOMEM );
+      XLAL_CHECK_NULL( (multiTimestamps->data = XLALCalloc(multiSFTvector->length, sizeof(*multiTimestamps->data))) != NULL, XLAL_ENOMEM );
+      multiTimestamps->length = multiSFTvector->length;
 
       for (UINT4 ii=0; ii<multiSFTvector->length; ii++) {
-         REAL4Vector *tfdata = NULL;
+         REAL8 tfnormval = 2.0/(params->Tsft*(multiNoiseFloor.sqrtSn[ii]*multiNoiseFloor.sqrtSn[ii]));
+
+         REAL4VectorAligned *tfdata = NULL;
          XLAL_CHECK_NULL( (tfdata = convertSFTdataToPowers(multiSFTvector->data[ii], params, tfnormval)) != NULL, XLAL_EFUNC );
 
          INT4Vector *removeTheseSFTs = NULL;
@@ -758,17 +680,15 @@ MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(MultiSFTVector *multiSFTvect
          multiTimestamps->data[ii]->deltaT = params->Tsft;
 
          XLALDestroyINT4Vector(removeTheseSFTs);
-         XLALDestroyREAL4Vector(tfdata);
+         XLALDestroyREAL4VectorAligned(tfdata);
       }
-      params->markBadSFTs = 0;
    } else {
       XLAL_CHECK_NULL( (multiTimestamps = XLALExtractMultiTimestampsFromSFTs(multiSFTvector)) != NULL, XLAL_EFUNC );
    }
 
    return multiTimestamps;
 
-}
-
+} // getMultiTimeStampsFromSFTs()
 
 /**
  * Create a list of timestamps from a segment list
@@ -779,7 +699,7 @@ MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(MultiSFTVector *multiSFTvect
  * \param [in] dur        Duration of the search in seconds
  * \return Pointer to a list of GPS timestamps in a MultiLIGOTimeGPSVector
  */
-MultiLIGOTimeGPSVector * getMultiTimeStampsFromSegmentsFile(LALStringVector *filenames, REAL8 t0, REAL8 Tsft, REAL8 SFToverlap, REAL8 dur)
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromSegmentsFile(const LALStringVector *filenames, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 dur)
 {
 
    XLAL_CHECK_NULL( filenames != NULL, XLAL_EINVAL );
@@ -814,8 +734,119 @@ MultiLIGOTimeGPSVector * getMultiTimeStampsFromSegmentsFile(LALStringVector *fil
 
    return multiTimestamps;
 
+} // getMultiTimeStampsFromSegmentsFile
+
+LIGOTimeGPSVector * jointTimestampsFromMultiTimestamps(const MultiLIGOTimeGPSVector *multiTimestamps)
+{
+   XLAL_CHECK_NULL( multiTimestamps!=NULL, XLAL_EINVAL );
+
+   //First determine the earliest of the timestamps and the last of the timestamps, adding one timestride to the last of the timestamps
+   LIGOTimeGPS earliestTimestamp, lastTimesample, currentTimestamp;
+   LIGOTimeGPS smallestGPS = LIGOTIMEGPSZERO, largestGPS = LIGOTIMEGPSZERO;
+   INT4 ifoWithSmallestGPS = -1, ifoWithLargestGPS = -1;
+   for (UINT4 ii=0; ii<multiTimestamps->length; ii++) {
+      if (ifoWithSmallestGPS < 0) {
+         smallestGPS = multiTimestamps->data[ii]->data[0];
+         ifoWithSmallestGPS = ii;
+      } else if (XLALGPSCmp(&(multiTimestamps->data[ifoWithSmallestGPS]->data[0]), &(multiTimestamps->data[ii]->data[0]))>0) {
+         smallestGPS = multiTimestamps->data[ii]->data[0];
+         ifoWithSmallestGPS = ii;
+      }
+      if (ifoWithLargestGPS < 0) {
+         largestGPS = multiTimestamps->data[ii]->data[multiTimestamps->data[ii]->length-1];
+         ifoWithLargestGPS = ii;
+      } else if (XLALGPSCmp(&(multiTimestamps->data[ifoWithLargestGPS]->data[multiTimestamps->data[ifoWithLargestGPS]->length-1]), &(multiTimestamps->data[ii]->data[multiTimestamps->data[ii]->length-1]))<0) {
+         largestGPS = multiTimestamps->data[ii]->data[multiTimestamps->data[ii]->length-1];
+         ifoWithLargestGPS = ii;
+      }
+   }
+   earliestTimestamp = smallestGPS;
+   lastTimesample = largestGPS;
+   XLAL_CHECK_NULL( XLALGPSAdd(&lastTimesample, multiTimestamps->data[0]->deltaT) != NULL, XLAL_EFUNC );
+   currentTimestamp = earliestTimestamp;
+
+   //Now determine the number of unique timestamps for the length of the output vector
+   UINT4Vector *indexInTimestampVector = NULL;
+   XLAL_CHECK_NULL( (indexInTimestampVector = XLALCreateUINT4Vector(multiTimestamps->length)) != NULL, XLAL_EFUNC );
+   memset(indexInTimestampVector->data, 0, sizeof(UINT4)*indexInTimestampVector->length);
+   UINT4 totalnumTimestamps = 0;
+   while ( XLALGPSCmp(&currentTimestamp, &lastTimesample) < 0 ) {
+      BOOLEAN foundTimestamp = 0;
+      for (UINT4 ii=0; ii<multiTimestamps->length; ii++) {
+         if (indexInTimestampVector->data[ii]<multiTimestamps->data[ii]->length && XLALGPSCmp(&currentTimestamp, &(multiTimestamps->data[ii]->data[indexInTimestampVector->data[ii]]))==0 && !foundTimestamp) {
+            foundTimestamp = 1;
+            totalnumTimestamps++;
+            (indexInTimestampVector->data[ii])++;
+         } else if (indexInTimestampVector->data[ii]<multiTimestamps->data[ii]->length && XLALGPSCmp(&currentTimestamp, &(multiTimestamps->data[ii]->data[indexInTimestampVector->data[ii]]))==0 && foundTimestamp) {
+            (indexInTimestampVector->data[ii])++;
+         }
+      }
+      XLAL_CHECK_NULL( XLALGPSAdd(&currentTimestamp, 0.5*multiTimestamps->data[0]->deltaT) != NULL, XLAL_EFUNC );
+   }
+
+   //Reset index vector
+   memset(indexInTimestampVector->data, 0, sizeof(UINT4)*indexInTimestampVector->length);
+
+   //Populate the output vector
+   LIGOTimeGPSVector *output = NULL;
+   XLAL_CHECK_NULL( (output = XLALCreateTimestampVector(totalnumTimestamps)) != NULL, XLAL_EFUNC );
+   output->deltaT = multiTimestamps->data[0]->deltaT;
+   for (UINT4 ii=0; ii<output->length; ii++) {
+      smallestGPS.gpsSeconds = 0;
+      smallestGPS.gpsNanoSeconds = 0;
+      ifoWithSmallestGPS = -1;
+      for (UINT4 jj=0; jj<multiTimestamps->length; jj++) {
+         if (indexInTimestampVector->data[jj]<multiTimestamps->data[jj]->length && ifoWithSmallestGPS < 0) {
+            smallestGPS = multiTimestamps->data[jj]->data[indexInTimestampVector->data[jj]];
+            ifoWithSmallestGPS = jj;
+         } else if (indexInTimestampVector->data[jj]<multiTimestamps->data[jj]->length && XLALGPSCmp(&(multiTimestamps->data[ifoWithSmallestGPS]->data[indexInTimestampVector->data[ifoWithSmallestGPS]]), &(multiTimestamps->data[jj]->data[indexInTimestampVector->data[jj]]))>0) {
+            smallestGPS = multiTimestamps->data[jj]->data[indexInTimestampVector->data[jj]];
+            ifoWithSmallestGPS = jj;
+         }
+      }
+      output->data[ii] = smallestGPS;
+      for (UINT4 jj=0; jj<multiTimestamps->length; jj++) {
+         if (indexInTimestampVector->data[jj]<multiTimestamps->data[jj]->length && XLALGPSCmp(&(multiTimestamps->data[jj]->data[indexInTimestampVector->data[jj]]), &smallestGPS)==0) (indexInTimestampVector->data[jj])++;
+      }
+   }
+
+   XLALDestroyUINT4Vector(indexInTimestampVector);
+
+   return output;
 }
 
+/**
+ * \param [in] multiSFTvector Pointer to MultiSFTVector of the SFTs
+ * \param [in] params         Pointer to the user input
+ * \return Status value
+ */
+INT4 printSFTtimestamps2File(const MultiSFTVector *multiSFTvector, const UserInput_t *params)
+{
+   XLAL_CHECK( multiSFTvector!=NULL && params!=NULL, XLAL_EINVAL );
+
+   MultiLIGOTimeGPSVector *GPStimes = NULL;
+   XLAL_CHECK( (GPStimes = getMultiTimeStampsFromSFTs(multiSFTvector, params)) != NULL, XLAL_EFUNC );
+
+   CHARVector *outputfile = NULL;
+   XLAL_CHECK( (outputfile = XLALCreateCHARVector(strlen(params->outdirectory)+25)) != NULL, XLAL_EFUNC );
+
+   for (UINT4 ii=0; ii<GPStimes->length; ii++) {
+      memset(outputfile->data, 0, sizeof(CHAR)*outputfile->length);
+      sprintf(outputfile->data, "%s/%s-%s", params->outdirectory, params->IFO->data[ii], "timestamps.dat");
+
+      FILE *INSFTTIMES = NULL;
+      XLAL_CHECK( (INSFTTIMES = fopen(outputfile->data, "w")) != NULL, XLAL_EIO, "Couldn't fopen %s", outputfile->data );
+
+      for (UINT4 jj=0; jj<GPStimes->data[ii]->length; jj++) fprintf(INSFTTIMES, "%d 0\n", GPStimes->data[ii]->data[jj].gpsSeconds);
+
+      fclose(INSFTTIMES);
+   }
+
+   XLALDestroyMultiTimestamps(GPStimes);
+   XLALDestroyCHARVector(outputfile);
+
+   return XLAL_SUCCESS;
+}
 
 /* Critical values of KS test (from Bickel and Doksum). Does not apply directly (mean determined from distribution)
 alpha=0.01
@@ -857,11 +888,11 @@ n                                                               n>80
 */
 /**
  * Mark the non-Gaussian SFTs using K-S and Kuiper's tests
- * \param [in] tfdata Pointer to REAL4Vector of SFT powers
+ * \param [in] tfdata Pointer to REAL4VectorAligned of SFT powers
  * \param [in] params Pointer to UserInput_t
  * \return Pointer to an INT4Vector with marked SFTs to be removed with 1 and keep SFT with 0
  */
-INT4Vector * markBadSFTs(REAL4Vector *tfdata, UserInput_t *params)
+INT4Vector * markBadSFTs(const REAL4VectorAligned *tfdata, const UserInput_t *params)
 {
 
    XLAL_CHECK_NULL( tfdata != NULL && params != NULL, XLAL_EINVAL );
@@ -876,8 +907,8 @@ INT4Vector * markBadSFTs(REAL4Vector *tfdata, UserInput_t *params)
    INT4Vector *output = NULL;
    XLAL_CHECK_NULL( (output = XLALCreateINT4Vector(numffts)) != NULL, XLAL_EFUNC );
    memset(output->data, 0, sizeof(INT4)*output->length);
-   REAL4Vector *tempvect = NULL;
-   XLAL_CHECK_NULL( (tempvect = XLALCreateREAL4Vector(numfbins)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *tempvect = NULL;
+   XLAL_CHECK_NULL( (tempvect = XLALCreateREAL4VectorAligned(numfbins, 32)) != NULL, XLAL_EFUNC );
 
    //Do the KS and Kuiper test on each SFT
    REAL8 ksthreshold = 1.358/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));
@@ -902,40 +933,42 @@ INT4Vector * markBadSFTs(REAL4Vector *tfdata, UserInput_t *params)
    }
 
    //Destroy stuff
-   XLALDestroyREAL4Vector(tempvect);
+   XLALDestroyREAL4VectorAligned(tempvect);
 
    fprintf(stderr, "done\n");
    fprintf(stderr, "Fraction excluded in K-S and Kuiper's tests = %f\n", (REAL4)badsfts/(REAL4)totalsfts);
 
    return output;
 
-}
-
+} // markBadSFTs()
 
 /**
  * Remove the marked SFTs as bad by setting values to 0
- * \param [in,out] tfdata  Pointer to REAL4Vector of SFT powers
+ * \param [in,out] tfdata  Pointer to REAL4VectorAligned of SFT powers
  * \param [in]     badsfts Poienter to INT4Vector of bad SFTs
  */
-void removeBadSFTs(REAL4Vector *tfdata, INT4Vector *badsfts)
+void removeBadSFTs(REAL4VectorAligned *tfdata, const INT4Vector *badsfts)
 {
 
    XLAL_CHECK_VOID( tfdata != NULL && badsfts != NULL, XLAL_EINVAL );
-
    fprintf(stderr, "Removing bad SFTs... ");
-
-   INT4 numfbins_tfdata = tfdata->length/badsfts->length;
-
+   UINT4 numfbins_tfdata = tfdata->length/badsfts->length;
    for (UINT4 ii=0; ii<badsfts->length; ii++) if (badsfts->data[ii]==1) memset(&(tfdata->data[ii*numfbins_tfdata]), 0, sizeof(REAL4)*numfbins_tfdata);
-
    fprintf(stderr, "done.\n");
 
-}
+} // removeBadSFTs()
 
-MultiSFTVector * generateSFTdata(UserInput_t *uvar, MultiLALDetector *detectors, EphemerisData *edat, INT4 maxbinshift, gsl_rng *rng)
+MultiSFTVector * generateSFTdata(UserInput_t *uvar, const MultiLALDetector *detectors, const EphemerisData *edat, const INT4 maxbinshift, const gsl_rng *rng)
 {
+
+   XLAL_CHECK_NULL( uvar!=NULL && detectors!=NULL && edat!=NULL && rng!=NULL, XLAL_EINVAL );
+
    MultiSFTVector *multiSFTvector = NULL;
-   
+
+   //parse noise list
+   MultiNoiseFloor multiNoiseFloor;
+   XLAL_CHECK_NULL( XLALParseMultiNoiseFloor(&multiNoiseFloor, uvar->avesqrtSh, uvar->IFO->length) == XLAL_SUCCESS, XLAL_EFUNC );
+
    //Determine band size to get the SFT data (remember to get extra bins because of the running median and the bin shifts due to detector velocity) with nudge of 0.1/Tsft for rounding issues
    REAL8 minfbin = round(uvar->fmin*uvar->Tsft - uvar->dfmax*uvar->Tsft - 0.5*(uvar->blksize-1) - (REAL8)(maxbinshift) - 6.0)/uvar->Tsft + 0.1/uvar->Tsft;
    REAL8 maxfbin = round((uvar->fmin + uvar->fspan)*uvar->Tsft + uvar->dfmax*uvar->Tsft + 0.5*(uvar->blksize-1) + (REAL8)(maxbinshift) + 6.0)/uvar->Tsft - 0.1/uvar->Tsft;
@@ -967,7 +1000,7 @@ MultiSFTVector * generateSFTdata(UserInput_t *uvar, MultiLALDetector *detectors,
    REAL8 TwoSpectBand = round(uvar->fspan*uvar->Tsft + 2.0*uvar->dfmax*uvar->Tsft + (uvar->blksize-1) + (REAL8)(2.0*maxbinshift) + 12.0)/uvar->Tsft;
 
    //Setup the MFD data parameters
-   CWMFDataParams DataParams;
+   CWMFDataParams XLAL_INIT_DECL(DataParams);
    if (XLALUserVarWasSet(&uvar->injFmin) && XLALUserVarWasSet(&uvar->injBand) && uvar->injFmin<=TwoSpectFmin && uvar->injFmin+uvar->injBand>=TwoSpectFmin+TwoSpectBand) {
       DataParams.fMin = uvar->injFmin;
       DataParams.Band = uvar->injBand;
@@ -1003,7 +1036,7 @@ MultiSFTVector * generateSFTdata(UserInput_t *uvar, MultiLALDetector *detectors,
    //If not signal only, create sfts that include noise or extract a band from real data
    if (!uvar->signalOnly) {
       if (uvar->gaussNoiseWithSFTgaps || XLALUserVarWasSet(&uvar->timestampsFile) || XLALUserVarWasSet(&uvar->segmentFile) || !XLALUserVarWasSet(&uvar->inputSFTs)) {
-         for (UINT4 ii=0; ii<detectors->length; ii++) DataParams.multiNoiseFloor.sqrtSn[ii] = uvar->avesqrtSh;
+         for (UINT4 ii=0; ii<detectors->length; ii++) DataParams.multiNoiseFloor.sqrtSn[ii] = multiNoiseFloor.sqrtSn[ii];
 
          fprintf(stderr, "Generating noise SFTs... ");
 
@@ -1094,18 +1127,18 @@ MultiSFTVector * generateSFTdata(UserInput_t *uvar, MultiLALDetector *detectors,
    XLALDestroyMultiTimestamps(multiTimestamps);
 
    return multiSFTvector;
-}
 
+} // generateSFTdata()
 
 /**
  * Slide the time-frequency data to account for detector motion
- * \param [out] output    Pointer to REAL4Vector of SFT powers that have been corrected
+ * \param [out] output    Pointer to REAL4VectorAligned of SFT powers that have been corrected
  * \param [in]  params    Pointer to UserInput_t
- * \param [in]  tfdata    Pointer to REAL4Vector of SFT powers
+ * \param [in]  tfdata    Pointer to REAL4VectorAligned of SFT powers
  * \param [in]  binshifts Pointer to INT4Vector of bin shift values
  * \return Status value
  */
-INT4 slideTFdata(REAL4Vector *output, UserInput_t *params, REAL4Vector *tfdata, INT4Vector *binshifts)
+INT4 slideTFdata(REAL4VectorAligned *output, const UserInput_t *params, const REAL4VectorAligned *tfdata, const INT4Vector *binshifts)
 {
 
    XLAL_CHECK( output != NULL && params != NULL && tfdata != NULL && binshifts != NULL, XLAL_EINVAL );
@@ -1117,27 +1150,28 @@ INT4 slideTFdata(REAL4Vector *output, UserInput_t *params, REAL4Vector *tfdata, 
    UINT4 maxbinshift = (tfdata->length/numffts - numfbins)/2;
 
    for (UINT4 ii=0; ii<numffts; ii++) {
-      XLAL_CHECK( binshifts->data[ii]<=(INT4)maxbinshift, XLAL_EFAILED, "SFT slide value %d is greater than maximum value predicted (%d)", binshifts->data[ii], maxbinshift );
+      XLAL_CHECK( abs(binshifts->data[ii])<(INT4)maxbinshift, XLAL_EFAILED, "SFT slide value %d is greater than maximum value predicted (%d)", binshifts->data[ii], maxbinshift );
       memcpy(&(output->data[ii*numfbins]), &(tfdata->data[ii*(numfbins+2*maxbinshift) + maxbinshift + binshifts->data[ii]]), sizeof(REAL4)*numfbins);
    }
+
+   //fprintf(stderr, "Mean = %g ", calcMean(output));
 
    fprintf(stderr, "done\n");
 
    return XLAL_SUCCESS;
 
-} /* slideTFdata() */
-
+} // slideTFdata()
 
 /**
  * Determine the running mean of each SFT
- * \param [out] output   Pointer to REAL4Vector of running mean values of each SFT
- * \param [in]  tfdata   Pointer to REAL4Vector of SFT powers
+ * \param [out] output   Pointer to REAL4VectorAligned of running mean values of each SFT
+ * \param [in]  tfdata   Pointer to REAL4VectorAligned of SFT powers
  * \param [in]  numffts  Number of SFTs in the observation time
  * \param [in]  numfbins Number of frequency bins
  * \param [in]  blksize  Number of bins in the running median
  * \return Status value
  */
-INT4 tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize)
+INT4 tfRngMeans(REAL4VectorAligned *output, const REAL4VectorAligned *tfdata, const UINT4 numffts, const UINT4 numfbins, const UINT4 blksize)
 {
 
    XLAL_CHECK( output != NULL && tfdata != NULL && numffts > 0  && numfbins > 0 && blksize > 0, XLAL_EINVAL );
@@ -1147,7 +1181,7 @@ INT4 tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
 
    LALStatus XLAL_INIT_DECL(status);
    REAL8 bias;
-   INT4 totalfbins = numfbins + blksize - 1;
+   UINT4 totalfbins = numfbins + blksize - 1;
 
    //Blocksize of running median
    LALRunningMedianPar block = {blksize};
@@ -1161,32 +1195,33 @@ INT4 tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
    REAL8 invbias = 1.0/bias;
 
    //Allocate for a single SFT data and the medians out of each SFT
-   REAL4Vector *inpsd = NULL, *mediansout = NULL;
-   XLAL_CHECK( (inpsd = XLALCreateREAL4Vector(totalfbins)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (mediansout = XLALCreateREAL4Vector(numfbins)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *inpsd = NULL, *mediansout = NULL;
+   XLAL_CHECK( (inpsd = XLALCreateREAL4VectorAligned(totalfbins, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (mediansout = XLALCreateREAL4VectorAligned(numfbins, 32)) != NULL, XLAL_EFUNC );
 
    //Now do the running median
-   for (INT4 ii=0; ii<numffts; ii++) {
+   for (UINT4 ii=0; ii<numffts; ii++) {
       //If the SFT values were not zero, then compute the running median
       if (tfdata->data[ii*totalfbins]!=0.0) {
          //Determine running median value, convert to mean value
          memcpy(inpsd->data, &(tfdata->data[ii*inpsd->length]), sizeof(REAL4)*inpsd->length);
 
          //calculate running median
-         LALSRunningMedian2(&status, mediansout, inpsd, block);
+         LALSRunningMedian2(&status, (REAL4Vector*)mediansout, (REAL4Vector*)inpsd, block);
          XLAL_CHECK( status.statusCode == 0, XLAL_EFUNC );
 
          //Now make the output medians into means by multiplying by 1/bias
          for (UINT4 jj=0; jj<mediansout->length; jj++) output->data[ii*numfbins + jj] = (REAL4)(mediansout->data[jj]*invbias);
       } else {
          //Otherwise, set means to zero
-         for (UINT4 jj=0; jj<mediansout->length; jj++) output->data[ii*numfbins + jj] = 0.0;
+         //for (UINT4 jj=0; jj<mediansout->length; jj++) output->data[ii*numfbins + jj] = 0.0;
+         memset(&(output->data[ii*numfbins]), 0, sizeof(REAL4)*mediansout->length);
       }
    } /* for ii < numffts */
 
    //Destroy stuff
-   XLALDestroyREAL4Vector(inpsd);
-   XLALDestroyREAL4Vector(mediansout);
+   XLALDestroyREAL4VectorAligned(inpsd);
+   XLALDestroyREAL4VectorAligned(mediansout);
 
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");
@@ -1194,47 +1229,67 @@ INT4 tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
 
    return XLAL_SUCCESS;
 
-} /* tfRngMeans() */
+} // tfRngMeans()
 
+/**
+ * \param [in,out] tfdataarray Pointer to a REAL4VectorAlignedArray that has the time-frequency data of powers
+ * \param [in]     numffts     Number of FFTs in the total observation time
+ * \return Status value
+ */
+INT4 replaceTFdataWithSubsequentTFdata(REAL4VectorAlignedArray *tfdataarray, const UINT4 numffts)
+{
+   XLAL_CHECK( tfdataarray!=NULL && numffts>0, XLAL_EINVAL );
+   if (tfdataarray->length==1) return XLAL_SUCCESS;
+   UINT4 sftlength = tfdataarray->data[0]->length/numffts;
+   for (UINT4 ii=0; ii<numffts; ii++) {
+      if (tfdataarray->data[0]->data[ii*sftlength] == 0.0) {
+         for (UINT4 jj=1; jj<tfdataarray->length; jj++) {
+            if (tfdataarray->data[jj]->data[ii*sftlength] != 0.0) {
+               memcpy(&(tfdataarray->data[0]->data[ii*sftlength]), &(tfdataarray->data[jj]->data[ii*sftlength]), sizeof(REAL4)*sftlength);
+               break;
+            }
+         }
+      }
+   }
+   return XLAL_SUCCESS;
+}
 
 /**
  * Subtract running mean values from the SFT data, modifying input time-frequency data
- * \param [in,out] tfdata   Pointer to REAL4Vector time-frequency data (modified by this function!)
- * \param [in]     rngMeans Pointer to REAL4Vector of running mean values
- * \param [in]     numffts  Number of SFTs from observation time
- * \param [in]     numfbins Number of SFT frequency bins
+ * \param [in,out] tfdata            Pointer to REAL4VectorAligned time-frequency data (modified by this function!)
+ * \param [in]     rngMeans          Pointer to REAL4VectorAligned of running mean values
+ * \param [in]     backgroundScaling Pointer to REAL4VectorAligned of background scaling values
+ * \param [in]     numffts           Number of SFTs from observation time
+ * \param [in]     numfbins          Number of SFT frequency bins
  * \return Status value
  */
-INT4 tfMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, INT4 numffts, INT4 numfbins)
+INT4 tfMeanSubtract(REAL4VectorAligned *tfdata, const REAL4VectorAligned *rngMeans, const REAL4VectorAligned *backgroundScaling, const UINT4 numffts, const UINT4 numfbins)
 {
 
-   XLAL_CHECK( tfdata != NULL && rngMeans != NULL && numffts > 0 && numfbins > 0, XLAL_EINVAL );
-
+   XLAL_CHECK( tfdata != NULL && rngMeans != NULL && backgroundScaling != NULL && numffts > 0 && numfbins > 0, XLAL_EINVAL );
    fprintf(stderr, "Subtracting expected background... ");
-
-   for (INT4 ii=0; ii<numffts; ii++) if (rngMeans->data[ii*numfbins]!=0.0) for (INT4 jj=0; jj<numfbins; jj++) tfdata->data[ii*numfbins+jj] -= rngMeans->data[ii*numfbins+jj];
-
+   for (UINT4 ii=0; ii<numffts; ii++) if (rngMeans->data[ii*numfbins]!=0.0) for (UINT4 jj=0; jj<numfbins; jj++) tfdata->data[ii*numfbins+jj] -= rngMeans->data[ii*numfbins+jj]*backgroundScaling->data[ii*numfbins+jj];
+   //fprintf(stderr, "TF mean after subtraction = %g ", calcMean(tfdata));
    fprintf(stderr, "done\n");
-
    return XLAL_SUCCESS;
 
-} /* tfMeanSubtract() */
-
+} // tfMeanSubtract()
 
 /**
  * Weight the SFTs based on antenna pattern and noise variance (Equation 11, assuming the input time-frequency data is already mean subtracted)
- * \param [out] output                    Pointer to REAL4Vector of mean subtracted, noise and antenna pattern weighted SFTs
- * \param [in]  tfdata                    Pointer to REAL4Vector of mean subtracted SFTs
- * \param [in]  rngMeans                  Pointer to REAL4Vector of running mean values
+ * \param [out] output                    Pointer to REAL4VectorAligned of mean subtracted, noise and antenna pattern weighted SFTs
+ * \param [in]  tfdata                    Pointer to REAL4VectorAligned of mean subtracted SFTs
+ * \param [in]  rngMeans                  Pointer to REAL4VectorAligned of running mean values
  * \param [in]  antPatternWeights         Pointer to REAL4VectorAligned of antenna pattern weights
+ * \param [in]  backgroundScaling         Pointer to REAL4VectorAligned of background scaling values
  * \param [in]  indexValuesOfExistingSFTs Pointer to INT4Vector of the index values of the existing SFTs
  * \param [in]  params                    Pointer to UserInput_t
  * \return Status value
  */
-INT4 tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4VectorAligned *antPatternWeights, INT4Vector *indexValuesOfExistingSFTs, UserInput_t *params)
+INT4 tfWeight(REAL4VectorAligned *output, const REAL4VectorAligned *tfdata, REAL4VectorAligned *rngMeans, REAL4VectorAligned *antPatternWeights, const REAL4VectorAligned *backgroundScaling, const INT4Vector *indexValuesOfExistingSFTs, const UserInput_t *params)
 {
 
-   XLAL_CHECK( output != NULL && tfdata != NULL && rngMeans != NULL && antPatternWeights != NULL && indexValuesOfExistingSFTs != NULL && params != NULL, XLAL_EINVAL );
+   XLAL_CHECK( output!=NULL && tfdata!=NULL && rngMeans!=NULL && antPatternWeights!=NULL && backgroundScaling!=NULL && indexValuesOfExistingSFTs != NULL && params != NULL, XLAL_EINVAL );
 
    fprintf(stderr, "Applying weighting to SFT data... ");
 
@@ -1244,37 +1299,40 @@ INT4 tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
    //Initially set output to zero
    memset(output->data, 0, sizeof(REAL4)*output->length);
 
-   REAL4VectorAligned *antweightssq = NULL;
-   REAL4Vector *rngMeanssq = NULL;
+   REAL4VectorAligned *antweightssq0 = NULL, *antweightssq = NULL, *rngMeanssq = NULL, *backgroundScalingSq = NULL;
+   XLAL_CHECK( (antweightssq0 = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (antweightssq = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (rngMeanssq = XLALCreateREAL4Vector(numffts)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (rngMeanssq = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (backgroundScalingSq = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
 
    //If user specified that SFTs contain signal only, then the values of the backgrnd vector will be zeros.
    //We must set them equal to 1.0 here, then return them to zeros at the end
    if (params->signalOnly) {
       for (UINT4 ii=0; ii<indexValuesOfExistingSFTs->length; ii++) {
-         for (UINT4 jj=0; jj<numfbins; jj++) rngMeans->data[numfbins*indexValuesOfExistingSFTs->data[ii] + jj] = params->avesqrtSh;
+         for (UINT4 jj=0; jj<numfbins; jj++) rngMeans->data[numfbins*indexValuesOfExistingSFTs->data[ii] + jj] = 1.0;
       }
    }
 
-   //User specifies whether to use SSE to do the multiplication or not
-   if (params->vectorMath==1) XLAL_CHECK( sseSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights) == XLAL_SUCCESS, XLAL_EFUNC );
-   else if (params->vectorMath==2) XLAL_CHECK( avxSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights) == XLAL_SUCCESS, XLAL_EFUNC );
-   else {
-      XLAL_CHECK( XLALSSVectorMultiply((REAL4Vector*)antweightssq, (REAL4Vector*)antPatternWeights, (REAL4Vector*)antPatternWeights) != NULL, XLAL_EFUNC );
-      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-   }
+   //Determine antenna pattern weights squared
+   XLAL_CHECK( XLALVectorMultiplyREAL4(antweightssq0->data, antPatternWeights->data, antPatternWeights->data, antPatternWeights->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
-   //Loop through the SFT frequency bins and weight the data
+
+   //Loop through the SFT frequency bins and weight the data and normalize
    for (UINT4 ii=0; ii<numfbins; ii++) {
 
+      //scale antenna pattern weights by the right SFT frequency bin value in backgroundScaling**2
+      fastSSVectorMultiply_with_stride_and_offset(backgroundScalingSq, backgroundScaling, backgroundScaling, numfbins, numfbins, ii, ii);
+      memcpy(antweightssq->data, antweightssq0->data, sizeof(REAL4)*antweightssq0->length);
+      XLAL_CHECK( XLALVectorMultiplyREAL4(antweightssq->data, antweightssq->data, backgroundScalingSq->data, antweightssq->length) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      //get the background squared
       fastSSVectorMultiply_with_stride_and_offset(rngMeanssq, rngMeans, rngMeans, numfbins, numfbins, ii, ii);
 
       //If noiseWeightOff is given, then set all the noise weights to be 1.0
       if (params->noiseWeightOff) for (UINT4 jj=0; jj<rngMeanssq->length; jj++) if (rngMeanssq->data[jj]!=0.0) rngMeanssq->data[jj] = 1.0;
 
       //Get sum of antenna pattern weight/variances for each frequency bin as a function of time (only for existant SFTs)
-      REAL8 sumofweights = determineSumOfWeights((REAL4Vector*)antweightssq, rngMeanssq);
+      REAL8 sumofweights = determineSumOfWeights(antweightssq, rngMeanssq);
       REAL8 invsumofweights = 1.0/sumofweights;
 
       //Now do noise weighting, antenna pattern weighting
@@ -1287,15 +1345,16 @@ INT4 tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
    if (params->signalOnly) memset(rngMeans->data, 0, sizeof(REAL4)*rngMeans->length);
 
    //Destroy stuff
+   XLALDestroyREAL4VectorAligned(antweightssq0);
    XLALDestroyREAL4VectorAligned(antweightssq);
-   XLALDestroyREAL4Vector(rngMeanssq);
+   XLALDestroyREAL4VectorAligned(rngMeanssq);
+   XLALDestroyREAL4VectorAligned(backgroundScalingSq);
 
    fprintf(stderr,"done\n");
 
    return XLAL_SUCCESS;
 
-} /* tfWeight() */
-
+} // tfWeight()
 
 /**
  * Determine the sum of the weights
@@ -1303,7 +1362,7 @@ INT4 tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
  * \param [in] rngMeanssq   Running mean values squared
  * \return Sum of the weights
  */
-REAL8 determineSumOfWeights(REAL4Vector *antweightssq, REAL4Vector *rngMeanssq)
+REAL8 determineSumOfWeights(const REAL4VectorAligned *antweightssq, const REAL4VectorAligned *rngMeanssq)
 {
 
    XLAL_CHECK_REAL8( antweightssq != NULL && rngMeanssq != NULL, XLAL_EINVAL );
@@ -1318,11 +1377,11 @@ REAL8 determineSumOfWeights(REAL4Vector *antweightssq, REAL4Vector *rngMeanssq)
 
 /**
  * Determine if the SFTs are existing based on whether the first data point of power in each SFT is 0
- * \param [in] tfdata   Pointer to REAL4Vector of time-frequency data
+ * \param [in] tfdata   Pointer to REAL4VectorAligned of time-frequency data
  * \param [in] numffts  Number of SFTs from the observation time
  * \return Pointer to INT4Vector containing 0 for non-present SFT or 1 for present SFT
  */
-INT4Vector * existingSFTs(REAL4Vector *tfdata, UINT4 numffts)
+INT4Vector * existingSFTs(const REAL4VectorAligned *tfdata, const UINT4 numffts)
 {
 
    XLAL_CHECK_NULL( tfdata != NULL && numffts > 0, XLAL_EINVAL );

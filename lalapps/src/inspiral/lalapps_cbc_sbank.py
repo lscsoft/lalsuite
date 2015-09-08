@@ -99,6 +99,23 @@ lalapps_cbc_sbank --approximant TaylorF2RedSpin --aligned-spin --use-metric \\
         --user-tag BNS-TaylorF2RedSpin-aLIGOZeroDetHighPower --verbose
 
 
+** Example (not necessarily effectual ;) aligned-spin template bank covering
+BNS, NSBH and BBH systems. Objects lighter than 2 solar masses are considered
+neutron stars. Objects heavier than 2 solar masses are considered black holes.
+Use appropriate spin limits based on the type of the object.
+
+lalapps_cbc_sbank --approximant TaylorF2RedSpin --aligned-spin --use-metric \\
+        --mass1-min 1 --mass1-max 10 \\
+        --mass2-min 1 --mass2-max 10 \\
+        --mtotal-max 10 \\
+        --ns-bh-boundary-mass 2 \\
+        --bh-spin-min -0.98 --bh-spin-max 0.98 \\
+        --ns-spin-min -0.4 --ns-spin-max 0.4 \\
+        --match-min 0.97 --flow 30 --noise-model aLIGOZeroDetHighPower \\
+        --instrument H1 --gps-start-time 961545543 --gps-end-time 962150343 \\
+        --user-tag combined-TaylorF2RedSpin-aLIGOZeroDetHighPower --verbose
+
+
 For large parameter spaces with many templates, it is recommended that
 you split the space into smaller sub-regions and ligolw_add the
 resulting banks. One can also seed the template placement process with
@@ -152,11 +169,16 @@ def parse_command_line():
     #
     # spin parameter options
     #
-    parser.add_option("--spin1-min", help="Set minimum allowed value for the spin of the first component. If spins are aligned, this parameter is interpreted as the projection of the spin vector along the orbital angualr momentum and can be positive or negative. If the spins are not aligned, this parameter is interpreted as the magnitude of the spin vector and must be positive.", type="float", default = -1.0, metavar="SPIN")
-    parser.add_option("--spin1-max", help="Set maximum allowed value for the spin of the first component.", type="float", default = 1.0, metavar="SPIN")
+    parser.add_option("--spin1-min", help="Set minimum allowed value for the spin of the first component. If spins are aligned, this parameter is interpreted as the projection of the spin vector along the orbital angualr momentum and can be positive or negative. If the spins are not aligned, this parameter is interpreted as the magnitude of the spin vector and must be positive.", type="float", default = None, metavar="SPIN")
+    parser.add_option("--spin1-max", help="Set maximum allowed value for the spin of the first component.", type="float", default = None, metavar="SPIN")
     parser.add_option("--spin2-min", help="Set minimum allowed value for the spin of the second component. If not specified, the spin2 limits will equal the spin1 limits.", type="float", default = None, metavar="SPIN")
     parser.add_option("--spin2-max", help="Set maximum allowed value for the spin of the second component.", type="float", default = None, metavar="SPIN")
     parser.add_option("--aligned-spin", action="store_true", default=False, help="Only generate templates whose spins are parallel to the orbital angular momentum.")
+    parser.add_option("--ns-bh-boundary-mass", type=float, metavar="MASS", help="Use spin bounds based on whether the object is a black hole or a neutron star. Objects with mass smaller (larger) than the given value are considered NSs (BHs) and use spin bounds given by --ns-spin-{min,max} (--bh-spin-{min,max}) rather than --spin{1,2}-{min,max}.")
+    parser.add_option("--bh-spin-min", type=float, metavar="SPIN", help="Minimum spin for black holes when using --ns-bh-boundary-mass.")
+    parser.add_option("--bh-spin-max", type=float, metavar="SPIN", help="Maximum spin for black holes when using --ns-bh-boundary-mass.")
+    parser.add_option("--ns-spin-min", type=float, metavar="SPIN", help="Minimum spin for neutron stars when using --ns-bh-boundary-mass.")
+    parser.add_option("--ns-spin-max", type=float, metavar="SPIN", help="Maximum spin for neutron stars when using --ns-bh-boundary-mass.")
 
     #
     # initial condition options
@@ -168,7 +190,7 @@ def parse_command_line():
     # noise model options
     #
     parser.add_option("--noise-model", choices=noise_models.keys(), metavar='|'.join(noise_models.keys()), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model.")
-    parser.add_option("--reference-psd", help="Read PSD from an xml file instead of using analytical noise model.", metavar="FILE")
+    parser.add_option("--reference-psd", help="Read PSD from an xml file instead of using analytical noise model. The PSD is assumed to be infinite beyond the maximum frequency contained in the file. This effectively sets the upper frequency cutoff to that frequency, unless a smaller frequency is given via --fhigh-max.", metavar="FILE")
 
     #
     # match calculation options
@@ -180,6 +202,7 @@ def parse_command_line():
     parser.add_option("--cache-waveforms", default = False, action="store_true", help="A given waveform in the template bank will be used many times throughout the bank generation process. You can save a considerable amount of CPU by caching the waveform from the first time it is generated; however, do so only if you are sure that storing the waveforms in memory will not overload the system memory.")
     parser.add_option("--coarse-match-df", type="float", default=None, help="If given, use this value of df to quickly test if the mismatch is less than 4 times the minimal mismatch. This can quickly reject points at high values of df, that will not have high overlaps at smaller df values. This can be used to speed up the sbank process.")
     parser.add_option("--iterative-match-df-max", type="float", default=None, help="If this option is given it will enable sbank using larger df values than 1 / data length when computing overlaps. Sbank will then compute a match at this value, and at half this value, if the two values agree to 0.1% the value obtained will be taken as the actual value. If the values disagree the match will be computed again using a df another factor of 2 smaller until convergence or a df of 1/ data_length, is reached.")
+    parser.add_option("--fhigh-max", type="float", default=None, help="If given, generate waveforms and compute matches only to this frequency. The number will be rounded up to the nearest power of 2.")
     parser.add_option("--neighborhood-size", metavar="N", default = 0.25, type="float", help="Specify the window size in seconds to define \"nearby\" templates used to compute the match against each proposed template. The neighborhood is chosen symmetric about the proposed template; \"nearby\" is defined using the option --neighborhood-type. The default value of 0.25 is *not a guarantee of performance*. Choosing the neighborhood too small will lead to larger banks (but also higher bank coverage).")
     parser.add_option("--neighborhood-param", default="tau0", choices=["tau0","dur"], help="Choose how the neighborhood is sorted for match calculations.")
     parser.add_option("--checkpoint", default=0, metavar="N", help="Periodically save the bank to disk every N templates (set to 0 to disable).", type="int", action="store")
@@ -214,17 +237,43 @@ def parse_command_line():
     if opts.qmin < 1:
         parser.error("Mass ratio is assumed to be >= 1.")
 
-    if not opts.spin2_min:
-        opts.spin2_min = opts.spin1_min
+    numeric_spin_opt_presence = [getattr(opts, x + '_' + y) is not None \
+                                 for x in ['spin1', 'spin2'] for y in ['min', 'max']]
+    all_numeric_spin_opts = False not in numeric_spin_opt_presence
+    any_numeric_spin_opts = True in numeric_spin_opt_presence
 
-    if not opts.spin2_max:
-        opts.spin2_max = opts.spin1_max
+    nsbh_spin_opt_presence = [getattr(opts, x + '_' + y) is not None \
+                              for x in ['bh_spin', 'ns_spin'] for y in ['min', 'max']]
+    all_nsbh_spin_opts = False not in nsbh_spin_opt_presence
+    any_nsbh_spin_opts = True in nsbh_spin_opt_presence
 
-    if not -1 <= opts.spin1_min <= opts.spin1_max <=1:
-        raise ValueError("unphysical spin bounds: [%.2f, %.2f]" % (opts.spin1_min, opts.spin1_max))
+    if any_numeric_spin_opts and any_nsbh_spin_opts:
+        parser.error("conflicting specification of spin bounds")
+    if any_nsbh_spin_opts and opts.ns_bh_boundary_mass is None:
+        parser.error("NSBH spin bounds require --ns-bh-boundary-mass")
+    if opts.ns_bh_boundary_mass is not None and not any_nsbh_spin_opts:
+        parser.error("--ns-bh-boundary-mass requires NSBH spin bounds (--bh-spin-* etc)")
 
-    if not -1 <= opts.spin2_min <= opts.spin2_max <=1:
-        raise ValueError("unphysical spin bounds: [%.2f, %.2f]" % (opts.spin2_min, opts.spin2_max))
+    if all_numeric_spin_opts:
+        if not -1 <= opts.spin1_min <= opts.spin1_max <=1:
+            parser.error("unphysical spin1 bounds: [%.2f, %.2f]" % (opts.spin1_min, opts.spin1_max))
+        if not -1 <= opts.spin2_min <= opts.spin2_max <=1:
+            parser.error("unphysical spin2 bounds: [%.2f, %.2f]" % (opts.spin2_min, opts.spin2_max))
+    elif all_nsbh_spin_opts:
+        if not -1 <= opts.bh_spin_min <= opts.bh_spin_max <= 1:
+            parser.error("unphysical BH spin bounds: [%.2f, %.2f]" % (opts.bh_spin_min, opts.bs_spin_max))
+        if not -1 <= opts.ns_spin_min <= opts.ns_spin_max <= 1:
+            parser.error("unphysical NS spin bounds: [%.2f, %.2f]" % (opts.ns_spin_min, opts.ns_spin_max))
+    else:
+        # default spin bounds
+        if opts.spin1_min is None:
+            opts.spin1_min = -1
+        if opts.spin1_max is None:
+            opts.spin1_max = 1
+        if opts.spin2_min is None:
+            opts.spin2_min = opts.spin1_min
+        if opts.spin2_max is None:
+            opts.spin2_max = opts.spin1_max
 
     if opts.approximant in ["TaylorF2RedSpin", "IMRPhenomB","SEOBNRv1"] and not opts.aligned_spin:
         parser.error("--aligned-spin is required for the %s approximant" % opts.approximant)
@@ -272,8 +321,22 @@ waveform = waveforms[opts.approximant]
 if opts.reference_psd is not None:
     psd = read_psd(opts.reference_psd)[opts.instrument]
     f_orig = psd.f0 + np.arange(len(psd.data)) * psd.deltaF
+    f_max_orig = max(f_orig)
+    if opts.fhigh_max:
+        if opts.fhigh_max > f_max_orig:
+            print >> sys.stderr, "Warning: requested fhigh-max (%.3f Hz) exceeds limits of PSD (%.3f Hz). Using PSD limit instead!" \
+                    % (opts.fhigh_max, f_max_orig)
+            opts.fhigh_max = float(f_max_orig)
+    else:
+        print >> sys.stderr, "Warning: fhigh-max not specified, using maximum frequency in the PSD (%.3f Hz)" \
+                % f_max_orig
+        opts.fhigh_max = float(f_max_orig)
+
     interpolator = UnivariateSpline(f_orig, np.log(psd.data), s=0)
-    noise_model = lambda g: np.exp(interpolator(g))
+
+    # spline extrapolation may lead to unexpected results,
+    # so set the PSD to infinity above the max original frequency
+    noise_model = lambda g: np.where(g < f_max_orig, np.exp(interpolator(g)), np.inf)
 else:
     noise_model = noise_models[opts.noise_model]
 
@@ -288,21 +351,18 @@ psd = REAL8FrequencySeries(name="psd", f0=0., deltaF=1., data=get_PSD(1., opts.f
 if opts.bank_seed is None:
     # seed the process with an empty bank
     # the first proposal will always be accepted
-    bank = Bank(waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max)
+    bank = Bank(waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)
 else:
     # seed bank with input bank. we do not prune the bank
     # for overcoverage, but take it as is
-    if opts.verbose:
-        print>>sys.stdout,"Seeding the template bank..."
     tmpdoc = utils.load_filename(opts.bank_seed, contenthandler=ContentHandler)
     sngl_inspiral = table.get_table(tmpdoc, lsctables.SnglInspiralTable.tableName)
-    bank = Bank.from_sngls(sngl_inspiral, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max)
+    bank = Bank.from_sngls(sngl_inspiral, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)
 
     tmpdoc.unlink()
     del sngl_inspiral, tmpdoc
     if opts.verbose:
-        print>>sys.stdout,"\tseed bank size: %d"%len(bank)
-        print>>sys.stdout,"Filling regions of parameter space not covered by bank seed..."
+        print>>sys.stdout,"Initialized the template bank to seed file %s with %d precomputed templates." % (opts.bank_seed, len(bank))
 
 
 #
@@ -312,10 +372,10 @@ if opts.checkpoint and os.path.exists( fout + "_checkpoint.gz" ):
 
     xmldoc = utils.load_filename(fout + "_checkpoint.gz", contenthandler=ContentHandler)
     tbl = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
-    [bank.insort(t) for t in Bank.from_sngls(tbl, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param)]
+    [bank.insort(t) for t in Bank.from_sngls(tbl, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)]
 
     if opts.verbose:
-        print >>sys.stdout,"Found checkpoint file with %d precomputed templates." % len(tbl)
+        print >>sys.stdout,"Found checkpoint file %s with %d precomputed templates." % (fout + "_checkpoint.gz", len(tbl))
         print >>sys.stdout, "Resuming from checkpoint with %d total templates..." % len(bank)
 
     # reset rng state
@@ -351,14 +411,20 @@ process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
 #
 # populate params dictionary to be passed to the generators
 #
+
 params = {'mass1': (opts.mass1_min, opts.mass1_max),
           'mass2': (opts.mass2_min, opts.mass2_max),
           'mtotal': (opts.mtotal_min, opts.mtotal_max),
           'mratio': (opts.qmin, opts.qmax),
-          'mchirp': (opts.mchirp_min, opts.mchirp_max),
-	  'spin1': (opts.spin1_min, opts.spin1_max),
-	  'spin2': (opts.spin2_min, opts.spin2_max)
-	  }
+          'mchirp': (opts.mchirp_min, opts.mchirp_max)}
+
+if opts.ns_bh_boundary_mass is not None:
+    params['ns_bh_boundary_mass'] = opts.ns_bh_boundary_mass
+    params['bh_spin'] = (opts.bh_spin_min, opts.bh_spin_max)
+    params['ns_spin'] = (opts.ns_spin_min, opts.ns_spin_max)
+else:
+    params['spin1'] = (opts.spin1_min, opts.spin1_max)
+    params['spin2'] = (opts.spin2_min, opts.spin2_max)
 
 # get the correct generator for the chosen approximant
 proposal = proposals[opts.approximant](opts.flow, **params)
@@ -366,19 +432,23 @@ proposal = proposals[opts.approximant](opts.flow, **params)
 
 # For robust convergence, ensure that an average of kmax/len(ks) of
 # the last len(ks) proposals have been rejected by SBank.
-ks = deque(10*[0], maxlen=10)
+ks = deque(10*[1], maxlen=10)
 k = 0 # k is nprop per iteration
 nprop = 1  # count total number of proposed templates
-status_format = "bank size: %d\tproposed: %d\t" + "\t".join("%s: %s" % name_format for name_format in zip(waveform.param_names, waveform.param_formats))
+status_format = "\t".join("%s: %s" % name_format for name_format in zip(waveform.param_names, waveform.param_formats))
 while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) < opts.templates_max:
     tmplt = waveform(*proposal.next(), bank=bank)
     k += 1
     nprop += 1
-    if not bank.covers(tmplt, opts.match_min):
+    match, matcher = bank.covers(tmplt, opts.match_min)
+    if match < opts.match_min:
         bank.insort(tmplt)
-        if opts.verbose:
-            print >>sys.stdout, status_format % ((len(bank), k) + tmplt.params)
         ks.append(k)
+        if opts.verbose:
+            print "\nbank size: %d\t\tproposed: %d\trejection rate: %.6f / (%.6f)" % (len(bank), k, 1 - float(len(ks))/float(sum(ks)), 1 - 1./opts.convergence_threshold )
+            print >>sys.stdout, "accepted:\t\t", status_format % tmplt.params
+            if matcher is not None:
+                print >>sys.stdout, "max match (%.4f):\t" % match, status_format % matcher.params
         k = 0
 
         # Add to single inspiral table. Do not store templates that
@@ -402,9 +472,10 @@ while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) 
         tmplt.clear()
 
 
-print "total number of proposed templates: %d" % nprop
-print "total number of match calculations: %d" % bank._nmatch
-print "final bank size: %d" % len(bank)
+if opts.verbose:
+    print "\ntotal number of proposed templates: %d" % nprop
+    print "total number of match calculations: %d" % bank._nmatch
+    print "final bank size: %d" % len(bank)
 
 bank.clear()  # clear caches
 

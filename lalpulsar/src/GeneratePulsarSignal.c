@@ -41,7 +41,7 @@
 /* Internal helper functions */
 static int XLALcheck_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1);
 static int XLALcheckNoiseSFTs ( const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF );
-static int XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne );
+int XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne );
 
 /*----------------------------------------------------------------------*/
 
@@ -1063,6 +1063,29 @@ XLALDestroyMultiREAL4TimeSeries ( MultiREAL4TimeSeries *multiTS )
   return;
 
 } // XLALDestroyMultiREAL4TimeSeries()
+
+/**
+ * Destroy a MultiREAL8TimeSeries, NULL-robust
+ */
+void
+XLALDestroyMultiREAL8TimeSeries ( MultiREAL8TimeSeries *multiTS )
+{
+  if ( !multiTS ) {
+    return;
+  }
+
+  UINT4 numDet = multiTS->length;
+  for ( UINT4 X=0; X < numDet; X ++ )
+    {
+      XLALDestroyREAL8TimeSeries ( multiTS->data[X] );
+    }
+
+  XLALFree ( multiTS->data );
+  XLALFree ( multiTS );
+
+  return;
+
+} // XLALDestroyMultiREAL8TimeSeries()
 
 
 /* ***********************************************************************

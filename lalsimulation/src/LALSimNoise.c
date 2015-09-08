@@ -49,13 +49,15 @@ static int XLALSimNoiseSegment(REAL8TimeSeries *s, REAL8FrequencySeries *psd, gs
 	if (! plan)
 		XLAL_ERROR(XLAL_EFUNC);
 
-	stilde = XLALCreateCOMPLEX16FrequencySeries("STILDE", &s->epoch, 0.0, 1.0/(s->data->length * s->deltaT), &lalSecondUnit, s->data->length/2 + 1);
+	stilde = XLALCreateCOMPLEX16FrequencySeries("STILDE", &s->epoch, 0.0, 1.0/(s->data->length * s->deltaT), &lalDimensionlessUnit, s->data->length/2 + 1);
 	if (! stilde) {
 		XLALDestroyREAL8FFTPlan(plan);
 		XLAL_ERROR(XLAL_EFUNC);
 	}
 
-	XLALUnitMultiply(&stilde->sampleUnits, &stilde->sampleUnits, &s->sampleUnits);
+	/* correct units: [stilde] = sqrt([psd] * seconds) */
+	XLALUnitMultiply(&stilde->sampleUnits, &psd->sampleUnits, &lalSecondUnit);
+	XLALUnitSqrt(&stilde->sampleUnits, &stilde->sampleUnits);
 
 	stilde->data->data[0] = 0.0;
 	for (k = 0; k < s->data->length/2 + 1; ++k) {
@@ -71,10 +73,16 @@ static int XLALSimNoiseSegment(REAL8TimeSeries *s, REAL8FrequencySeries *psd, gs
 	return 0;
 }
 
+/**
+ * @addtogroup LALSimNoise_c
+ * @brief Routines to produce a continuous stream of simulated
+ * gravitational-wave detector noise.
+ * @{
+ */
 
 /**
- * Routine that may be used to generate sequential segments of data with a
- * specified stride from one segment to the next.
+ * @brief Routine that may be used to generate sequential segments of data with
+ * a specified stride from one segment to the next.
  *
  * Calling instructions: for the first call, set stride = 0; subsequent calls
  * should pass the same time series and have non-zero stride.  This routine
@@ -83,7 +91,7 @@ static int XLALSimNoiseSegment(REAL8TimeSeries *s, REAL8FrequencySeries *psd, gs
  * next.  For example: the following routine will output a continuous stream of
  * detector noise with an Initial LIGO spectrum above 40 Hz:
  *
- * \code
+ * @code
  * #include <stdio.h>
  * #include <gsl/gsl_rng.h>
  * #include <lal/LALStdlib.h>
@@ -116,24 +124,22 @@ static int XLALSimNoiseSegment(REAL8TimeSeries *s, REAL8FrequencySeries *psd, gs
  *		XLALSimNoise(seg, stride, psd, rng); // make more data
  * 	}
  * }
- * \endcode
+ * @endcode
  *
  * If only one single segment of data is required, set stride to be the length
  * of the timeseries data vector.  This will make a single segment of data
  * that is *not* periodic (also, in this case it will not advance the epoch of
  * the timeseries).
  *
- * Note:
+ * @note
+ * - If stride = 0, initialize h by generating one (periodic) realization of
+ *   noise; subsequent calls should have non-zero stride.
  *
- * - If stride = 0, initialize h by generating one (periodic)
- * realization of noise; subsequent calls should have non-zero
- * stride.
+ * - If stride = h->data->length then generate one segment of non-periodic
+ *   noise by generating two different realizations and feathering them
+ *   together.
  *
- * - If stride = h->data->length then generate one segment of
- * non-periodic noise by generating two different realizations
- * and feathering them together.
- *
- * Warning: only the first stride points are valid.
+ * @warning Only the first stride points are valid.
  */
 int XLALSimNoise(
 	REAL8TimeSeries *s,		/**< [in/out] noise time series */
@@ -191,6 +197,7 @@ int XLALSimNoise(
 	return 0;
 }
 
+/** @} */
 
 /*
  *

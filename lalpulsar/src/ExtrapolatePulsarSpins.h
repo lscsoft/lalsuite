@@ -105,6 +105,9 @@ extern "C" {
 /*---------- exported prototypes [API] ----------*/
 int XLALExtrapolatePulsarSpinRange(  PulsarSpinRange *range1, const PulsarSpinRange *range0, const REAL8 dtau );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(OUTPUT_ARRAY_1D(PulsarSpins, fkdot1));
+#endif // SWIG
 int XLALExtrapolatePulsarSpins ( PulsarSpins fkdot1, const PulsarSpins fkdot0, REAL8 dtau );
 
 int XLALExtrapolatePulsarPhase ( REAL8 *phi1, const PulsarSpins fkdot1, const REAL8 phi0, const REAL8 dtau );

@@ -28,10 +28,7 @@ extern "C" {
 }       /* so that editors will match preceding brace */
 #endif
 
-/**
- * \defgroup FrameCalibration_h Header FrameCalibration.h
- * \ingroup lalframe_general
- *
+/*
  * \author Brown, D. A.
  *
  * \brief High-level routines for exctracting calibration data from frames.
@@ -112,9 +109,9 @@ extern "C" {
  * SenseMon frames are used in preference.
  *
  */
-/**@{*/
+/*@{*/
 
-/**
+/*
  *
  * ### Error conditions ###
  *
@@ -131,8 +128,8 @@ extern "C" {
  * of the functions used to update the reference calibration.
  *
  */
-/**\name Error Codes */
-/**@{*/
+/*\name Error Codes */
+/*@{*/
 #define FRAMECALIBRATIONH_ENULL 1
 #define FRAMECALIBRATIONH_ENNUL 2
 #define FRAMECALIBRATIONH_EMCHE 3
@@ -154,7 +151,7 @@ extern "C" {
 #define FRAMECALIBRATIONH_MSGECFAC "Calibration not updated: no update factor frames in cache"
 #define FRAMECALIBRATIONH_MSGEDTMM "Calibration not updated: mismatch between sample rate of alpha and alpha*beta"
 #define FRAMECALIBRATIONH_MSGEMETH "Calibration cache must either be read from a file or globbed"
-/**@}*/
+/*@}*/
 
 void
 LALExtractFrameResponse(LALStatus * status,
@@ -167,7 +164,7 @@ LALCreateCalibFrCache(LALStatus * status,
     const CHAR * calCacheName,
     const CHAR * dirstr, const CHAR * calGlobPattern);
 
-/**@}*/
+/*@}*/
 
 #if 0
 {       /* so that editors will match succeeding brace */

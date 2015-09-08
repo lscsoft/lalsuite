@@ -43,6 +43,7 @@ src/config.h.in
 src/lalsim-bh-qnmode
 src/lalsim-bh-ringdown
 src/lalsim-bh-sphwf
+src/lalsim-burst
 src/lalsim-detector-noise
 src/lalsim-detector-strain
 src/lalsim-inject

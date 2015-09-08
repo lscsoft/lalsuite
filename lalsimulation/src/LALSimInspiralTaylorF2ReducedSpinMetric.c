@@ -44,7 +44,7 @@
 #define tenbyPi_p2by3 2.1638812222639821850478371484217674
 #define twoPi_p2by3 3.4050219214767547368607032470366207
 
-/**
+/*
  * Function to compute the metric elements using waveform derivatives
  */
 static REAL8 MetricCoeffs(REAL8Vector *A, REAL8Vector *dPsii, REAL8Vector *dPsij,
@@ -58,7 +58,7 @@ static REAL8 MetricCoeffs(REAL8Vector *A, REAL8Vector *dPsii, REAL8Vector *dPsij
     return 4.*df*gij/(2.*hSqr);
 }
 
-/**
+/*
  * Frequency domain amplitude of the TaylorF2 Reduced Spin waveforms
  */
 static REAL8 XLALSimInspiralTaylorF2RedSpinAofF(
@@ -105,7 +105,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinAofF(
         (2.*pow(f,1.1666666666666667)*Pi_p4by3);
 }
 
-/**
+/*
  * Derivative of the amplitude with respect to \f$\chi\f$ (reduced-spin parameter)
  */
 static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAChi(
@@ -130,7 +130,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAChi(
     (32256.*pow(f,1.1666666666666667));
 }
 
-/**
+/*
  * Derivative of the amplitude with respect to \f$\eta\f$ (symm. mass ratio)
  */
 static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAEta(
@@ -186,7 +186,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAEta(
         eta_fac);
 }
 
-/**
+/*
  * Derivative of the amplitude with respect to the chirp mass
  */
 static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAMChirp(
@@ -238,7 +238,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAMChirp(
     pow(mc/eta_three_fifths,0.16666666666666666)*pow(eta,0.1));
 }
 
-/**
+/*
  * Derivative of the phasae with respect to \f$\chi\f$ (reduced spin parameter)
  */
 static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiChi(
@@ -264,7 +264,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiChi(
     pow((f*mc)/eta_three_fifths,1.6666666666666667)*eta);
 }
 
-/**
+/*
  * Derivative of the phasae with respect to \f$\eta\f$ (symmetric mass ratio)
  */
 static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiEta(
@@ -325,7 +325,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiEta(
     (5.007163392e11*f*mc*LAL_PI*etap2*eta_fac * eta_fac * eta_fac);
 }
 
-/**
+/*
  * Derivative of the phase with respect to the chirp mass
  */
 static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiMChirp(
@@ -371,8 +371,12 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiMChirp(
     pow(113 - 76*eta,2)*eta);
 }
 
-
 /**
+ * @addtogroup LALSimInspiralTaylorF2ReducedSpin_c
+ * @{
+ */
+
+/*
  * Compute the template-space metric of "reduced-spin" PN templates in
  * Mchirp-eta-chi parameter space.
  */
@@ -1400,3 +1404,5 @@ void XLALSimInspiralTaylorF2RedSpinMchirpEtaChiFromChirpTimes(
     *eta = cbrt(16.*pow(LAL_PI,5.)*theta0*theta0/ (25.*pow(theta3,5.)));
     *chi = 48.*LAL_PI*theta3s/(113.*theta3);
 }
+
+/** @} */

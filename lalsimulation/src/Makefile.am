@@ -38,6 +38,7 @@ bin_PROGRAMS = \
 	lalsim-bh-qnmode \
 	lalsim-bh-ringdown \
 	lalsim-bh-sphwf \
+	lalsim-burst \
 	lalsim-detector-noise \
 	lalsim-detector-strain \
 	lalsim-inject \
@@ -51,19 +52,20 @@ bin_PROGRAMS = \
 pkginclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
+	LALSimIMR.h \
+	LALSimInspiral.h \
 	LALSimInspiralPrecess.h \
 	LALSimInspiralWaveformFlags.h \
 	LALSimInspiralTestGRParams.h \
-	LALSimIMR.h \
-	LALSimInspiral.h \
-	LALSimInspiralSphHarmSeries.h \
 	LALSimInspiralWaveformCache.h \
 	LALSimulation.h \
 	LALSimNeutronStar.h \
 	LALSimNoise.h \
 	LALSimReadData.h \
 	LALSimSGWB.h \
-	LALSimIMRPhenomD.h \
+	LALSimSphHarmMode.h \
+	LALSimSphHarmSeries.h \
+	LALSimUtils.h \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h \
 	LALSimulationVCSInfoHeader.h
@@ -89,6 +91,7 @@ noinst_HEADERS = \
 	LALSimNeutronStarEOSTabular.c \
 	LALSimIMRPhenomC_internals.c \
 	LALSimIMRPhenomD_internals.c \
+	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomP.c \
 	LALSimIMRSEOBNRROMUtilities.c
 
@@ -114,10 +117,11 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTestGRParams.c \
 	LALSimInspiralPrecess.c \
 	LALSimInspiral.c \
-	LALSimInspiralSphHarmSeries.c \
 	LALSimInspiralPNMode.c \
 	LALSimInspiralSpinTaylor.c \
 	LALSimInspiralSpinTaylorF2.c \
+	LALSimInspiralEccentricityFD.c \
+	LALSimInspiralOptimizedCoefficientsEccentricityFD.c \
 	LALSimInspiralTaylorEt.c \
 	LALSimInspiralTaylorF2.c \
 	LALSimInspiralTaylorF2ReducedSpin.c \
@@ -127,6 +131,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTaylorT2.c \
 	LALSimInspiralTaylorT3.c \
 	LALSimInspiralTaylorT4.c \
+	LALSimInspiralEccentricTD.c \
 	LALSimInspiralSpinTaylorT5.c \
 	LALSimInspiralSpinDominatedWaveform.c \
 	LALSimInspiralTaylorLength.c \
@@ -142,8 +147,12 @@ liblalsimulation_la_SOURCES = \
 	LALSimReadData.c \
 	LALSimSGWB.c \
 	LALSimSGWBORF.c \
+	LALSimSphHarmMode.c \
+	LALSimSphHarmSeries.c \
 	LALSimUnicorn.c \
+	LALSimUtils.c \
 	check_series_macros.h \
+	check_waveform_macros.h \
 	unicorn.xpm \
 	LALSimInspiralHGimri.c
 
@@ -154,6 +163,7 @@ liblalsimulation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 lalsim_bh_qnmode_SOURCES = bh_qnmode.c
 lalsim_bh_sphwf_SOURCES = bh_sphwf.c
 lalsim_bh_ringdown_SOURCES = bh_ringdown.c
+lalsim_burst_SOURCES = burst.c
 lalsim_ns_eos_table_SOURCES = ns-eos-table.c
 lalsim_ns_mass_radius_SOURCES = ns-mass-radius.c
 lalsim_ns_params_SOURCES = ns-params.c
@@ -174,6 +184,8 @@ EXTRA_DIST = \
 	lalsimburst_btlwnbexamples.svg \
 	lalsimburst_sinegaussianexamples.svg \
 	lalsimburst_stringcuspexamples.svg \
+	lalsiminspiral_orbitelements.svg \
+	lalsimulation_inject.svg \
 	$(NOISEPSDFILES) \
 	$(EOSDATAFILES)
 

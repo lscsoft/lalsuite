@@ -609,9 +609,7 @@ XLALSimInspiralTaylorT2dtdv_7PNSOCoeff(
 
 /* At 2 PN there are several spin^2 terms; see arXiv:astro-ph/0504538
  * The dt/dv spin^2 term at 2 PN is just -sigma (Eq. 9b-9d)
- * The terms 4PNSS and 4PNSSL are spin1-spin1 terms, and also depend
- * on qm_def, the dimensionless quadrupole-monopole deformation
- * parameter (1 for BH, larger for NS
+ * The terms 4PNSS and 4PNSSL are spin1-spin1 terms.
  */
 static REAL8 UNUSED
 XLALSimInspiralTaylorT2dtdv_4PNS1S2Coeff(
@@ -621,26 +619,53 @@ XLALSimInspiralTaylorT2dtdv_4PNS1S2Coeff(
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNS1S2LCoeff(
+XLALSimInspiralTaylorT2dtdv_4PNS1S2OCoeff(
     REAL8 eta)
 {
     return -721./48./eta;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNSSCoeff(
-    REAL8 mByM, REAL8 qm_def)
+XLALSimInspiralTaylorT2dtdv_4PNSelfSSCoeff(
+    REAL8 mByM)
 {
-    return (5.*qm_def/2. - 7./96.)/mByM/mByM;
+    return - 7./96./mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNSSLCoeff(
-    REAL8 mByM, REAL8 qm_def)
+XLALSimInspiralTaylorT2dtdv_4PNSelfSSOCoeff(
+        REAL8 mByM)
 {
-    return (-15.*qm_def/2. + 1./96.)/mByM/mByM;
+    return 1./96./mByM/mByM;
 }
 
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNQMCoeff(
+        REAL8 mByM)
+{
+        return 2.5/mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNQMSOCoeff(
+	REAL8 mByM)
+{
+	return -7.5/mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_10PNTidalCoeff(
+        REAL8 mByM)
+{
+        return 6.*mByM*mByM*mByM*mByM * (-12.+11.*mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_12PNTidalCoeff(
+        REAL8 mByM)
+{
+        return mByM*mByM*mByM*mByM * (-3179/8. + 919/8.*mByM + 1143/4.*mByM*mByM - 65./2.*mByM*mByM*mByM);
+}
 
 /*
  * Tidal correction coefficients to Phasing
@@ -1004,32 +1029,27 @@ static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeff(
 	return 721. / 48. / eta;
 }
 
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4wdot_4PNSelfSSCoeff(
-	REAL8 mByM)
+static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNSelfSSCoeff(
+        REAL8 mByM)
 {
-	return 7./96./mByM/mByM;
+        return 7./96./mByM/mByM;
 }
 
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4wdot_4PNSelfSSOCoeff(
-	REAL8 mByM)
+static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNSelfSSOCoeff(
+        REAL8 mByM)
 {
-	return -1./96./mByM/mByM;
+        return -1./96./mByM/mByM;
+}
+static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNQMCoeff(
+        REAL8 mByM)
+{
+        return -5./2./mByM/mByM;
 }
 
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4wdot_4PNQMCoeff(
-	REAL8 mByM)
+static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNQMSOCoeff(
+        REAL8 mByM)
 {
-	return -5./2./mByM/mByM;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT4wdot_4PNQMSOCoeff(
-	REAL8 mByM)
-{
-	return 15./2./mByM/mByM;
+        return 15./2./mByM/mByM;
 }
 
 static REAL8 UNUSED
@@ -1129,6 +1149,59 @@ XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(
         return mByM*mByM*mByM*mByM * (4421./56. - 12263./56.*mByM + 1893./4.*mByM*mByM - 661./2.*mByM*mByM*mByM);
 }
 
+/*
+ * dLNh
+ *
+ * \f$d \hat{L_N}/d \hat{t} = M * d\hat{L_N} / dt = \Omega_L x \hat{L_N}\f$
+ * This is Eq. (10) of gr-qc/0405090 ( times M b/c we use \f$\hat{t}\f$)
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralLNhdot_3PNSOCoeff(
+        REAL8 mByM)
+{
+        return 0.5+1.5/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralLNhdot_4PNS1S2Coeff(
+        REAL8 eta)
+{
+        return -1.5/eta;
+}
+
+/* Using spin-self^2 derivatives at v^6 from
+ * eq. 2.23 of Blanchet et al. 0812.4413
+ * and relating to LNh derivative through (4.25)
+ * of arXiv:0812.4413.
+ */
+static REAL8 UNUSED
+XLALSimInspiralLNhdot_4PNQMSSCoeff(
+        REAL8 mByM)
+{
+        return (1.5-1.5/mByM)/mByM/(1.-mByM);
+}
+
+/* Using spin derivatives at v^7 from
+ * eq. 7.8 of Blanchet et al. gr-qc/0605140
+ * and relating to LNh derivative through (4.25)
+ * of arXiv:0812.4413.
+ */
+static REAL8 UNUSED
+XLALSimInspiralLNhdot_5PNSOCoeff(
+        REAL8 mByM)
+{
+  return ( 9./16./mByM + 5./16 + 29./48.*mByM +mByM*mByM/48.);
+}
+
+/*
+ * dS1
+ * d S_1 / d \hat{t} = M * d S_1 / dt = \Omega_{S1,S2,LN,v} x S_1
+ * However, that paper uses spin variables which are M^2 times our spins
+ */
+
+/* dS1, 1.5PN: eq. (8) of gr-qc/0405090.
+ */
 static REAL8 UNUSED
 XLALSimInspiralSpinDot_3PNCoeff(
 	REAL8 mByM)
@@ -1136,24 +1209,33 @@ XLALSimInspiralSpinDot_3PNCoeff(
 	return 3./2. -mByM - mByM*mByM/2.;
 }
 
+/* S1S2 contribution
+ * see. eq. 2.23 of arXiv:0812.4413
+ */
 static const REAL8 UNUSED
-XLALSimInspiralSpinDot_4PNCoeffS1S2=0.5;
+XLALSimInspiralSpinDot_4PNS1S2Coeff=0.5;
 
 static const REAL8 UNUSED
-XLALSimInspiralSpinDot_4PNCoeffLS1LS2=-1.5;
+XLALSimInspiralSpinDot_4PNS1OS2OCoeff=-1.5;
 
+/* S1S1 contribution
+ * again eq. 2.23 of arXiv:0812.4413
+ */
 static REAL8 UNUSED
-XLALSimInspiralSpinDot_4PNCoeffLSOSself(
+XLALSimInspiralSpinDot_4PNSOSOselfCoeff(
 	REAL8 mByM)
 {
-	return 1.5 * (1./mByM - 1.);
+	return 1.5 * (1. - 1./mByM);
 }
 
+/* dS1, 2.5PN
+ * eq. 7.8 of Blanchet et al. gr-qc/0605140
+ */
 static REAL8 UNUSED
 XLALSimInspiralSpinDot_5PNCoeff(
 	REAL8 mByM)
 {
-	return 9./8. - mByM/2. + 7.*mByM*mByM/12. - 7.*mByM*mByM*mByM/6. - mByM*mByM*mByM*mByM/24.;
+	return 9./16. - mByM/4. + 7.*mByM*mByM/24. - 7.*mByM*mByM*mByM/12. - mByM*mByM*mByM*mByM/48.;
 }
 
 

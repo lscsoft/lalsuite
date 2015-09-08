@@ -18,8 +18,9 @@
 
 
 #include <math.h>
-#include <lal/LALAtomicDatatypes.h>
 #include <lal/Date.h>
+#include <lal/LALAtomicDatatypes.h>
+#include <lal/LALStdio.h>
 #include <lal/XLALError.h>
 
 /**
@@ -38,23 +39,37 @@ INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch )
 }
 
 
-/** Converts nano seconds stored as an INT8 to GPS time. */
+/**
+ * Converts nano seconds stored as an INT8 to GPS time.  Returns epoch on
+ * success, NULL on error.
+ */
 LIGOTimeGPS * XLALINT8NSToGPS( LIGOTimeGPS *epoch, INT8 ns )
 {
-  epoch->gpsSeconds     = ns / XLAL_BILLION_INT8;
+  INT8 gpsSeconds = ns / XLAL_BILLION_INT8;
+  epoch->gpsSeconds     = gpsSeconds;
   epoch->gpsNanoSeconds = ns % XLAL_BILLION_INT8;
+  if( (INT8) epoch->gpsSeconds != gpsSeconds ) {
+    XLALPrintError( "%s(): overflow: %" LAL_INT8_FORMAT, __func__, ns );
+    XLAL_ERROR_NULL( XLAL_EDOM );
+  }
   return epoch;
 }
 
 
-/** Sets GPS time given GPS integer seconds and residual nanoseconds. */
+/**
+ * Sets GPS time given GPS integer seconds and residual nanoseconds.
+ * Returns epoch on success, or NULL on error.
+ */
 LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT8 gpsnan )
 {
   return XLALINT8NSToGPS( epoch, XLAL_BILLION_INT8 * gpssec + gpsnan );
 }
 
 
-/** Sets GPS time given GPS seconds as a REAL8. */
+/**
+ * Sets GPS time given GPS seconds as a REAL8.  Returns epoch on success,
+ * NULL on error.
+ */
 LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
 {
   INT4 gpssec = floor(t);
@@ -64,8 +79,8 @@ LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
     XLAL_ERROR_NULL(XLAL_EFPINVAL);
   }
   if(fabs(t) > 0x7fffffff) {
-    XLALPrintError("%s(): overflow %g", __func__, t);
-    XLAL_ERROR_NULL(XLAL_EFPINVAL);
+    XLALPrintError("%s(): overflow %.17g", __func__, t);
+    XLAL_ERROR_NULL(XLAL_EDOM);
   }
   /* use XLALGPSSet() to normalize the nanoseconds */
   return XLALGPSSet(epoch, gpssec, gpsnan);
@@ -94,19 +109,25 @@ REAL8 XLALGPSModf( REAL8 *iptr, const LIGOTimeGPS *epoch )
   return (REAL8)(rem) / XLAL_BILLION_REAL8;
 }
 
-/*
- * general purpose functions
+
+/**
+ * Adds two GPS times.  Computes epoch + dt and places the result in epoch.
+ * Returns epoch on success, NULL on error.
  */
-
-
-/** Adds two GPS times. */
 LIGOTimeGPS * XLALGPSAddGPS( LIGOTimeGPS *epoch, const LIGOTimeGPS *dt )
 {
+  /* when GPS times are converted to 8-byte counts of nanoseconds their sum
+   * cannot overflow, however it might not be possible to convert the sum
+   * back to a LIGOTimeGPS without overflowing.  that is caught by the
+   * XLALINT8NSToGPS() function */
   return XLALINT8NSToGPS( epoch, XLALGPSToINT8NS( epoch ) + XLALGPSToINT8NS( dt ) );
 }
 
 
-/** Adds a double to a GPS time. */
+/**
+ * Adds a double to a GPS time.  Computes epoch + dt and places the result
+ * in epoch.  Returns epoch on success, NULL on error.
+ */
 LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt )
 {
   LIGOTimeGPS dt_gps;
@@ -116,19 +137,28 @@ LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt )
 }
 
 
-/** Difference between two GPS times.  Computes t1 - t0. */
+/**
+ * Difference between two GPS times.  Computes t1 - t0 and places the
+ * result in t1.  Returns t1 on success, NULL on error.
+ */
 LIGOTimeGPS * XLALGPSSubGPS( LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
 {
+  /* when GPS times are converted to 8-byte counts of nanoseconds their
+   * difference cannot overflow, however it might not be possible to
+   * convert the difference back to a LIGOTimeGPS without overflowing.
+   * that is caught by the XLALINT8NSToGPS() function */
   return XLALINT8NSToGPS(t1, XLALGPSToINT8NS(t1) - XLALGPSToINT8NS(t0));
 }
 
 
-/** Difference between two GPS times as double.  Computes t1 - t0. */
+/**
+ * Difference between two GPS times as double.  Returns t1 - t0.
+ */
 REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
 {
-  LIGOTimeGPS diff = *t1;
-
-  return XLALGPSGetREAL8(XLALGPSSubGPS(&diff, t0));
+  double hi = t1->gpsSeconds - t0->gpsSeconds;
+  double lo = t1->gpsNanoSeconds - t0->gpsNanoSeconds;
+  return hi + lo / XLAL_BILLION_REAL8;
 }
 
 
@@ -154,7 +184,7 @@ int XLALGPSCmp( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 )
 }
 
 
-/**
+/*
  * Split a double-precision float into "large" and "small" parts.  The
  * results are stored in the hi and lo arguments, respectively.  hi and lo
  * are such that
@@ -191,11 +221,13 @@ static void split_double(double x, double *hi, double *lo)
 }
 
 
-/** Multiply a GPS time by a number. */
+/**
+ * Multiply a GPS time by a number.  Computes gps * x and places the result
+ * in gps.  Returns gps on success, NULL on failure.
+ */
 LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 {
-  int seconds = gps->gpsSeconds;
-  int nanoseconds = gps->gpsNanoSeconds;
+  LIGOTimeGPS workspace = *gps;
   double slo, shi;
   double xlo, xhi;
   double addendlo[4], addendhi[4];
@@ -208,19 +240,19 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
   /* ensure the seconds and nanoseconds components have the same sign so
    * that the addend fragments we compute below all have the same sign */
 
-  if(seconds < 0 && nanoseconds > 0) {
-    seconds += 1;
-    nanoseconds -= 1000000000;
-  } else if(seconds > 0 && nanoseconds < 0) {
-    seconds -= 1;
-    nanoseconds += 1000000000;
+  if(workspace.gpsSeconds < 0 && workspace.gpsNanoSeconds > 0) {
+    workspace.gpsSeconds += 1;
+    workspace.gpsNanoSeconds -= 1000000000;
+  } else if(workspace.gpsSeconds > 0 && workspace.gpsNanoSeconds < 0) {
+    workspace.gpsSeconds -= 1;
+    workspace.gpsNanoSeconds += 1000000000;
   }
 
   /* split seconds and multiplicand x into leading-order and low-order
    * components */
 
-  slo = seconds % (1<<16);
-  shi = seconds - slo;
+  slo = workspace.gpsSeconds % (1<<16);
+  shi = workspace.gpsSeconds - slo;
   split_double(x, &xhi, &xlo);
 
   /* the count of seconds and the multiplicand x have each been split into
@@ -241,20 +273,23 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 
   /* initialize result with the sum of components that contribute to the
    * fractional part */
-  XLALINT8NSToGPS(gps, nearbyint((addendlo[0] + addendlo[1] + addendlo[2] + addendlo[3]) * XLAL_BILLION_REAL8 + nanoseconds * x));
+  if(!XLALGPSSetREAL8(gps, addendlo[0] + addendlo[1] + addendlo[2] + addendlo[3] + workspace.gpsNanoSeconds * x / XLAL_BILLION_REAL8))
+    XLAL_ERROR_NULL(XLAL_EFUNC);
   /* now add the components that contribute only to the integer seconds
    * part */
-  gps->gpsSeconds += addendhi[0] + addendhi[1] + addendhi[2] + addendhi[3];
-
-  return gps;
+  if(!XLALGPSSetREAL8(&workspace, addendhi[0] + addendhi[1] + addendhi[2] + addendhi[3]))
+    XLAL_ERROR_NULL(XLAL_EFUNC);
+  return XLALGPSAddGPS(gps, &workspace);
 }
 
 
-/** Divide a GPS time by a number. */
+/**
+ * Divide a GPS time by a number.  Computes gps / x and places the result
+ * in gps.  Returns gps on success, NULL on failure.
+ */
 LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
 {
   LIGOTimeGPS quotient;
-  int keep_going;
   double residual;
 
   if(isnan(x)) {
@@ -267,17 +302,19 @@ LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
   }
 
   /* initial guess */
-  XLALGPSSetREAL8(&quotient, XLALGPSGetREAL8(gps) / x);
-  /* use Newton's method to iteratively solve for quotient */
-  keep_going = 100;
+  if(!XLALGPSSetREAL8(&quotient, XLALGPSGetREAL8(gps) / x))
+    XLAL_ERROR_NULL(XLAL_EFUNC);
+  /* use Newton's method to iteratively solve for quotient.  strictly
+   * speaking we're using Newton's method to solve for the inverse of
+   * XLALGPSMultiply(), which we assume implements multiplication. */
   do {
     LIGOTimeGPS workspace = quotient;
-    residual = XLALGPSDiff(gps, XLALGPSMultiply(&workspace, x)) / x;
-    XLALGPSAdd(&quotient, residual);
-    /* FIXME:  should check for overflow instead of too many iterations;
-     * would require error checking to be added to several other arithmetic
-     * functions first */
-  } while(fabs(residual) > 0.5e-9 && --keep_going);
+    if(!XLALGPSMultiply(&workspace, x))
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+    residual = XLALGPSDiff(gps, &workspace) / x;
+    if(!XLALGPSAdd(&quotient, residual))
+      XLAL_ERROR_NULL(XLAL_EFUNC);
+  } while(fabs(residual) > 0.5e-9);
   *gps = quotient;
 
   return gps;

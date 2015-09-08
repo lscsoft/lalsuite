@@ -29,27 +29,32 @@
 #include "TwoSpectTypes.h"
 #include "vectormath.h"
 
-SFTCatalog * findSFTdata(UserInput_t *params);
-MultiSFTVector * extractSFTband(SFTCatalog *catalog, REAL8 minfbin, REAL8 maxfbin);
-MultiSFTVector * getMultiSFTVector(UserInput_t *params, REAL8 minfbin, REAL8 maxfbin);
-MultiSFTVector * generateSFTdata(UserInput_t *uvar, MultiLALDetector *detectors, EphemerisData *edat, INT4 maxbinshift, gsl_rng *rng);
-REAL4Vector * coherentlyAddSFTs(MultiSFTVector *multiSFTs, MultiSSBtimes *multissb, MultiAMCoeffs *multiAMcoefficients, INT4 cosiSign, REAL8 *assumeNScosi, REAL8 *assumeNSpsi, UserInput_t *params);
-REAL4Vector * convertSFTdataToPowers(SFTVector *sfts, UserInput_t *params, REAL8 normalization);
-REAL4Vector * readInSFTs(UserInput_t *params, REAL8 normalization, REAL8 minfbin, REAL8 maxfbin);
+SFTCatalog * findSFTdata(const UserInput_t *params);
+MultiSFTVector * extractSFTband(const SFTCatalog *catalog, const REAL8 minfbin, const REAL8 maxfbin);
+MultiSFTVector * getMultiSFTVector(UserInput_t *params, const REAL8 minfbin, const REAL8 maxfbin);
+MultiSFTVector * generateSFTdata(UserInput_t *uvar, const MultiLALDetector *detectors, const EphemerisData *edat, const INT4 maxbinshift, const gsl_rng *rng);
+REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, const MultiSSBtimes *multissb, const MultiAMCoeffs *multiAMcoeffs, const LIGOTimeGPSVector *jointTimestamps, const REAL4VectorAlignedArray *backgroundRatio, const INT4 cosiSign, const REAL8 *assumeNScosi, const REAL8 *assumeNSpsi, const UserInput_t *params, REAL4VectorAligned *backgroundScaling);
+REAL4VectorAligned * convertSFTdataToPowers(const SFTVector *sfts, const UserInput_t *params, const REAL8 normalization);
+REAL4VectorAligned * readInSFTs(UserInput_t *params, const REAL8 normalization, const REAL8 minfbin, const REAL8 maxfbin);
 
-MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTCatalog(SFTCatalog *catalog);
-MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(MultiSFTVector *multiSFTvector, UserInput_t *params);
-MultiLIGOTimeGPSVector * getMultiTimeStampsFromSegmentsFile(LALStringVector *filenames, REAL8 t0, REAL8 Tsft, REAL8 SFToverlap, REAL8 dur);
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTCatalog(const SFTCatalog *catalog);
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(const MultiSFTVector *multiSFTvector, const UserInput_t *params);
+MultiLIGOTimeGPSVector * getMultiTimeStampsFromSegmentsFile(const LALStringVector *filenames, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 dur);
 
-INT4Vector * markBadSFTs(REAL4Vector *tfdata, UserInput_t *params);
-INT4Vector * existingSFTs(REAL4Vector *tfdata, UINT4 numffts);
-void removeBadSFTs(REAL4Vector *tfdata, INT4Vector *badsfts);
+LIGOTimeGPSVector * jointTimestampsFromMultiTimestamps(const MultiLIGOTimeGPSVector *multiTimestamps);
 
-INT4 slideTFdata(REAL4Vector *output, UserInput_t *params, REAL4Vector *tfdata, INT4Vector *binshifts);
-INT4 tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
-INT4 tfMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, INT4 numffts, INT4 numfbins);
-INT4 tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4VectorAligned *antPatternWeights, INT4Vector *indexValuesOfExistingSFTs, UserInput_t *params);
+INT4Vector * markBadSFTs(const REAL4VectorAligned *tfdata, const UserInput_t *params);
+INT4Vector * existingSFTs(const REAL4VectorAligned *tfdata, const UINT4 numffts);
+void removeBadSFTs(REAL4VectorAligned *tfdata, const INT4Vector *badsfts);
 
-REAL8 determineSumOfWeights(REAL4Vector *antweightssq, REAL4Vector *rngMeanssq);
+INT4 slideTFdata(REAL4VectorAligned *output, const UserInput_t *params, const REAL4VectorAligned *tfdata, const INT4Vector *binshifts);
+INT4 tfRngMeans(REAL4VectorAligned *output, const REAL4VectorAligned *tfdata, const UINT4 numffts, const UINT4 numfbins, const UINT4 blksize);
+INT4 tfMeanSubtract(REAL4VectorAligned *tfdata, const REAL4VectorAligned *rngMeans, const REAL4VectorAligned *backgroundScaling, const UINT4 numffts, const UINT4 numfbins);
+INT4 tfWeight(REAL4VectorAligned *output, const REAL4VectorAligned *tfdata, REAL4VectorAligned *rngMeans, REAL4VectorAligned *antPatternWeights, const REAL4VectorAligned *backgroundScaling, const INT4Vector *indexValuesOfExistingSFTs, const UserInput_t *params);
+INT4 replaceTFdataWithSubsequentTFdata(REAL4VectorAlignedArray *tfdataarray, const UINT4 numffts);
+
+REAL8 determineSumOfWeights(const REAL4VectorAligned *antweightssq, const REAL4VectorAligned *rngMeanssq);
+
+INT4 printSFTtimestamps2File(const MultiSFTVector *multiSFTvector, const UserInput_t *params);
 
 #endif

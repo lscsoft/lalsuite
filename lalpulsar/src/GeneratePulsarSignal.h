@@ -353,7 +353,8 @@ int XLALConvertSSB2GPS ( LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSig
 int XLALAddGaussianNoise ( REAL4TimeSeries *inSeries, REAL4 sigma, INT4 seed );
 
 void XLALDestroyMultiREAL4TimeSeries ( MultiREAL4TimeSeries *multiTS );
-
+void XLALDestroyMultiREAL8TimeSeries ( MultiREAL8TimeSeries *multiTS );
+  
 // ----- obsolete and deprecated LAL interface
 void LALGeneratePulsarSignal (LALStatus *, REAL4TimeSeries **signalvec, const PulsarSignalParams *params);
 void LALSignalToSFTs (LALStatus *, SFTVector **outputSFTs, const REAL4TimeSeries *signalvec, const SFTParams *params);

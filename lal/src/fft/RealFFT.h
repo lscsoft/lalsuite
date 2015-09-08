@@ -196,10 +196,10 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
 #define RealFFTPlan REAL4FFTPlan
 
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(VIEWIN_STRUCTS(REAL4Vector, output, spec));
-SWIGLAL(VIEWIN_STRUCTS(REAL8Vector, output, spec));
-SWIGLAL(VIEWIN_STRUCTS(COMPLEX8Vector, output));
-SWIGLAL(VIEWIN_STRUCTS(COMPLEX16Vector, output));
+SWIGLAL(VIEWIN_ARRAYS(REAL4Vector, output, spec));
+SWIGLAL(VIEWIN_ARRAYS(REAL8Vector, output, spec));
+SWIGLAL(VIEWIN_ARRAYS(COMPLEX8Vector, output));
+SWIGLAL(VIEWIN_ARRAYS(COMPLEX16Vector, output));
 #endif /* SWIG */
 
 /*
