@@ -56,16 +56,16 @@ typedef enum {
 } LALInferenceMPIcomm;
 
 /* Standard parallel temperature swap proposal function */
-void LALInferencePTswap(LALInferenceRunState *runState, INT4 i, FILE *swapfile);
+void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile);
 
 /* Metropolis-coupled MCMC swap proposal, when the likelihood is not identical between chains */
-UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, FILE *swapfile);
+//UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, FILE *swapfile);
 
 /* Functions for controlling adaptation */
 void acknowledgePhase(LALInferenceRunState *runState);
-void LALInferenceAdaptation(LALInferenceThreadState *thread, INT4 cycle);
-void LALInferenceAdaptationRestart(LALInferenceThreadState *thread, INT4 cycle);
-REAL8 LALInferenceAdaptationEnvelope(INT4 cycle, INT4 start, INT4 length, INT4 tau, INT4 reset);
+void LALInferenceAdaptation(LALInferenceThreadState *thread);
+void LALInferenceAdaptationRestart(LALInferenceThreadState *thread);
+REAL8 LALInferenceAdaptationEnvelope(INT4 step, INT4 tau, INT4 fix_adapt_len);
 void LALInferenceShutdownLadder(void);
 void LALInferenceFlushPTswap(void);
 void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag, INT4 cycle);

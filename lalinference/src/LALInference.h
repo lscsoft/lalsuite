@@ -466,7 +466,7 @@ typedef REAL8 (*LALInferenceLikelihoodFunction) (LALInferenceVariables *currentP
 typedef INT4 (*LALInferenceEvolveOneStepFunction) (struct tagLALInferenceRunState *runState);
 
 /** Propose a swap between chain locations */
-typedef void (*LALInferenceSwapRoutine) (struct tagLALInferenceRunState *runState, INT4, FILE *);
+typedef void (*LALInferenceSwapRoutine) (struct tagLALInferenceRunState *runState, FILE *);
 
 /**
  * Type declaration for an algorithm function which is called by the driver code
@@ -515,6 +515,7 @@ typedef struct
 tagLALInferenceThreadState
 {
     INT4 id; /** Unique integer ID of this thread.  Handy of I/O. */
+    INT4 step; /** Step counter for this thread.  Negative numbers indicate burnin*/
     LALInferenceProposalFunction proposal; /** The proposal cycle */
     LALInferenceProposalCycle *cycle; /** Cycle of proposals to call */
     LALInferenceModel *model; /** Stucture containing model buffers and parameters */

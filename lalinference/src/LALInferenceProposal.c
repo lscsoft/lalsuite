@@ -3110,7 +3110,7 @@ void LALInferenceSetupDifferentialEvolutionProposal(LALInferenceThreadState *thr
 /** Setup adaptive proposals. Should be called when state->currentParams is already filled with an initial sample */
 void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInferenceVariables *params) {
     INT4 no_adapt, adapting;
-    INT4 adaptTau, adaptableStep, adaptLength, adaptResetBuffer, adaptStart;
+    INT4 adaptTau, adaptableStep, adaptLength, adaptResetBuffer;
     REAL8 sigma, s_gamma;
     REAL8 logLAtAdaptStart = -DBL_MAX;
 
@@ -3152,13 +3152,11 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInfe
     adaptLength = pow(10, adaptTau);  // Number of iterations to adapt before turning off
     adaptResetBuffer = 100; // Number of iterations before adapting after a restart
     s_gamma = 1.0; // Sets the size of changes to jump size during adaptation
-    adaptStart = 0; // Keeps track of last iteration adaptation was restarted
 
     LALInferenceAddINT4Variable(propArgs, "adaptableStep", adaptableStep, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddINT4Variable(propArgs, "adaptLength", adaptLength, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddINT4Variable(propArgs, "adaptResetBuffer", adaptResetBuffer, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddREAL8Variable(propArgs, "s_gamma", s_gamma, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddINT4Variable(propArgs, "adaptStart", adaptStart, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddREAL8Variable(propArgs, "logLAtAdaptStart", logLAtAdaptStart, LALINFERENCE_PARAM_LINEAR);
 
     return;

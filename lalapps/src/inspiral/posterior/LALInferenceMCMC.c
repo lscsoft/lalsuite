@@ -168,9 +168,6 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     /* Store flags to keep from checking the command line all the time */
     LALInferenceVariables *algorithm_params = runState->algorithmParams;
 
-    /* Step counter */
-    INT4 step = 0;
-
     /* Print more stuff */
     INT4 verbose = 0;
     if (LALInferenceGetProcParamVal(command_line, "--verbose"))
@@ -268,12 +265,10 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
         outputSNRs = 1;
 
     /* Save everything in the run state */
-    LALInferenceAddINT4Variable(algorithm_params, "step", step, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "verbose", verbose, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "prop_verbose", propVerbose, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "prop_track", propTrack, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "benchmark", benchmark, LALINFERENCE_PARAM_OUTPUT);
-    LALInferenceAddINT4Variable(algorithm_params, "step", step, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "nsteps", nsteps, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "skip", skip, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "neff", neff, LALINFERENCE_PARAM_OUTPUT);
@@ -337,6 +332,10 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
 
     LALInferenceAddINT4Variable(algorithm_params, "adaptLength",
                                 adaptLength, LALINFERENCE_PARAM_OUTPUT);
+
+    /* Set counters to negative numbers, indicating adaptation is happening */
+    for (i=0; i<runState->nthreads; i++)
+        runState->threads[i]->step = -adaptLength;
 
     XLALFree(ladder);
     return XLAL_SUCCESS;
