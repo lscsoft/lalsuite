@@ -286,6 +286,10 @@ REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables *currentParams,
       LALInferenceAddVariable(currentParams,"declination",&dec,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
       LALInferenceAddVariable(currentParams,"time",&GPSdouble,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     }
+
+  REAL8 zero = 0.0;
+  LALInferenceAddVariable(currentParams,"optimal_snr",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  LALInferenceAddVariable(currentParams,"matched_filter_snr",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
   return 0.0;
 }
 
