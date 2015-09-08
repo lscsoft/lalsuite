@@ -134,6 +134,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     LALInferenceVariables *algorithm_params;
     LALInferenceVariableItem *ptr;
     LALInferenceThreadState *thread;
+    INT4 prop_files_created = 0;
 
     memset(&status, 0, sizeof(status));
 
@@ -296,12 +297,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
             mcmc_step(runState, thread); //evolve the chain at temperature ladder[t]
 
-            if (propVerbose)
+            if (propVerbose) {
                 LALInferenceTrackProposalAcceptance(thread);
 
-            /* Print proposal tracking headers now that the proposal cycle should be built. */
-            if (thread->step==1){
-                if (propVerbose) {
+                if (!prop_files_created) {
                     sprintf(propstatfilename, "PTMCMC.propstats.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
                     propstatfile = fopen(propstatfilename, "w");
 
@@ -317,6 +316,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                         LALInferencePrintProposalTrackingHeader(proptrackfile, thread->currentParams);
                         fclose(proptrackfile);
                     }
+
+                    prop_files_created = 1;
                 }
             }
 
