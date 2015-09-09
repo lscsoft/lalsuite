@@ -204,8 +204,10 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
     LALInferenceSetupROQ(run_state->data, thread->model, run_state->commandLine);
 
     LALInferenceCopyVariables(thread->model->params, thread->currentParams);
-    LALInferenceCopyVariables(run_state->priorArgs, thread->priorArgs);
     LALInferenceCopyVariables(run_state->proposalArgs, thread->proposalArgs);
+
+    /* Link thread-state prior-args to the parent run-state's */
+    thread->priorArgs = run_state->priorArgs;
 
     /* Use clocktime if seed isn't provided */
     thread->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
