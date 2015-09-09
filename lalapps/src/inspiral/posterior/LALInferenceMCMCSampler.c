@@ -286,8 +286,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
             if (thread->step % (100*Nskip) == 0) {
                 if (adapting)
                     iEff = 0;
-                else
+                else {
                     iEff = LALInferenceComputeEffectiveSampleSize(thread);
+                    if (verbose && thread->temperature == 1.)
+                        printf("Cold thread has collected %i samples.\n", iEff);
+                }
             }
 
             if (MPIrank == 0 && t == 0 && iEff > Neff) {
