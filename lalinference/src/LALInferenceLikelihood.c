@@ -1117,7 +1117,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       REAL8 t0 = XLALGPSGetREAL8(&(data->freqData->epoch));
       int istart = (UINT4)round((time_low - t0)/deltaT);
       int iend = (UINT4)round((time_high - t0)/deltaT);
-      if(iend >= (int) dh_S->length || istart < 0 ) {
+      if(iend > (int) dh_S->length || istart < 0 ) {
               fprintf(stderr,"ERROR: integration over time extends past end of buffer! Is your time prior too wide?\n");
               exit(1);
       }
