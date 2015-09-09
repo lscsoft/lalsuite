@@ -103,7 +103,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     ----------------------------------------------\n\
     (--temp-skip N)     Number of steps between temperature swap proposals (100)\n\
     (--tempKill N)      Iteration number to stop temperature swapping (Niter)\n\
-    (--ntemp N)         Number of temperature chains in ladder (as many as needed)\n\
+    (--ntemps N)         Number of temperature chains in ladder (as many as needed)\n\
     (--temp-min T)      Lowest temperature for parallel tempering (1.0)\n\
     (--temp-max T)      Highest temperature for parallel tempering (50.0)\n\
     (--anneal)          Anneal hot temperature linearly to T=1.0\n\
@@ -131,7 +131,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
                             (PTMCMC.output.<random_seed>.<mpi_thread>)\n\
     \n";
     INT4 mpi_rank, mpi_size;
-    INT4 ntemp_per_thread;
+    INT4 ntemps_per_thread;
     INT4 noAdapt, adaptTau, adaptLength;
     INT4 i, ndim;
     ProcessParamsTable *command_line = NULL, *ppt = NULL;
@@ -217,10 +217,14 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
         Tskip = atoi(ppt->value);
 
     /* Allow user to restrict size of temperature ladder */
-    INT4 ntemp = 0;
+    INT4 ntemps = 0;
     ppt = LALInferenceGetProcParamVal(command_line, "--ntemp");
     if (ppt)
-        ntemp = atoi(ppt->value);
+        printf("WARNING: --ntemp has been deprecated in favor of --ntemps\n");
+    else
+        ppt = LALInferenceGetProcParamVal(command_line, "--ntemps");
+    if (ppt)
+        ntemps = atoi(ppt->value);
 
     /* Starting temperature of the ladder */
     REAL8 tempMin = 1.0;
@@ -275,7 +279,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     LALInferenceAddINT4Variable(algorithm_params, "tskip", Tskip, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "mpirank", mpi_rank, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "mpisize", mpi_size, LALINFERENCE_PARAM_OUTPUT);
-    LALInferenceAddINT4Variable(algorithm_params, "ntemp", ntemp, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "ntemps", ntemps, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddREAL8Variable(algorithm_params, "temp_min", tempMin, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddREAL8Variable(algorithm_params, "temp_max", tempMax, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "de_buffer_limit", de_buffer_limit, LALINFERENCE_PARAM_OUTPUT);
@@ -290,14 +294,14 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
 
     /* Build the temperature ladder */
     ladder = LALInferenceBuildHybridTempLadder(runState, ndim);
-    ntemp_per_thread = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp_per_thread");
+    ntemps_per_thread = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemps_per_thread");
 
     /* Add some settings settings to runstate proposal args so their copied to threads */
     LALInferenceAddINT4Variable(runState->proposalArgs, "de_skip", skip, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(runState->proposalArgs, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
     /* Parse proposal args for runSTate and initialize the walkers on this MPI thread */
-    LALInferenceInitCBCThreads(runState, ntemp_per_thread);
+    LALInferenceInitCBCThreads(runState, ntemps_per_thread);
 
     /* Establish the random state across MPI threads */
     init_mpi_randomstate(runState);
@@ -306,7 +310,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     for (i=0; i<runState->nthreads; i++) {
         thread = runState->threads[i];
 
-        thread->id = mpi_rank*ntemp_per_thread + i;
+        thread->id = mpi_rank*ntemps_per_thread + i;
         thread->temperature = ladder[thread->id];
 
         thread->proposal = &LALInferenceCyclicProposal;
@@ -348,14 +352,14 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
     REAL8 trigSNR, networkSNRsqrd=0.0;
     REAL8 *ladder=NULL;
     INT4 flexible_tempmax=0;
-    INT4 ntemp, ntemp_per_thread;
+    INT4 ntemps, ntemps_per_thread;
     INT4 mpi_size;
     INT4 t;
     LALInferenceIFOData *ifo;
 
     mpi_size = LALInferenceGetINT4Variable(runState->algorithmParams, "mpisize");
 
-    ntemp = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp");
+    ntemps = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemps");
     tempMin = LALInferenceGetREAL8Variable(runState->algorithmParams, "temp_min");
     tempMax = LALInferenceGetREAL8Variable(runState->algorithmParams, "temp_max");
     trigSNR = LALInferenceGetREAL8Variable(runState->algorithmParams, "trigger_snr");
@@ -408,9 +412,9 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
 
     /* Construct temperature ladder */
 
-    /* If ntemp wasn't specified, figure out how big the ladder should be
+    /* If ntemps wasn't specified, figure out how big the ladder should be
         to fill between the min and max with the calculated tempDelta */
-    if (ntemp == 0) {
+    if (ntemps == 0) {
         flexible_tempmax = 1;
         tempDelta = 1. + sqrt(2./(REAL8)ndim);
 
@@ -421,30 +425,30 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
             temp = tempMin * pow(tempDelta, t);
         }
 
-        ntemp = t;
+        ntemps = t;
     }
 
-    ntemp_per_thread = ntemp / mpi_size;
+    ntemps_per_thread = ntemps / mpi_size;
 
-    /* Increase ntemp to distribute evenly across MPI threads */
-    if (ntemp % mpi_size != 0.0) {
+    /* Increase ntemps to distribute evenly across MPI threads */
+    if (ntemps % mpi_size != 0.0) {
         /* Round up to have consistent number of walkers across MPI threads */
-        ntemp_per_thread = (INT4)ceil((REAL8)ntemp / (REAL8)mpi_size);
-        ntemp = mpi_size * ntemp_per_thread;
+        ntemps_per_thread = (INT4)ceil((REAL8)ntemps / (REAL8)mpi_size);
+        ntemps = mpi_size * ntemps_per_thread;
     }
 
-    LALInferenceAddINT4Variable(runState->algorithmParams, "ntemp",
-                                ntemp, LALINFERENCE_PARAM_OUTPUT);
-    LALInferenceAddINT4Variable(runState->algorithmParams, "ntemp_per_thread",
-                                ntemp_per_thread, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(runState->algorithmParams, "ntemps",
+                                ntemps, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(runState->algorithmParams, "ntemps_per_thread",
+                                ntemps_per_thread, LALINFERENCE_PARAM_OUTPUT);
 
     if (flexible_tempmax)
         tempDelta = 1. + sqrt(2./(REAL8)ndim);
     else
-        tempDelta = pow(tempMax/tempMin, 1.0/(REAL8)(ntemp-1));
+        tempDelta = pow(tempMax/tempMin, 1.0/(REAL8)(ntemps-1));
 
-    ladder = XLALCalloc(ntemp, sizeof(REAL8));
-    for (t=0; t<ntemp; ++t)
+    ladder = XLALCalloc(ntemps, sizeof(REAL8));
+    for (t=0; t<ntemps; ++t)
         ladder[t] = tempMin * pow(tempDelta, t);
 
     return ladder;

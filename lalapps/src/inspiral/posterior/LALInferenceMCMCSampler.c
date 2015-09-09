@@ -1040,7 +1040,7 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInfere
 
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
-    nthreads = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemp");
+    nthreads = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemps");
 
     randomseed = LALInferenceGetINT4Variable(runState->algorithmParams, "random_seed");
     nPar = LALInferenceGetVariableDimensionNonFixed(thread->currentParams);
