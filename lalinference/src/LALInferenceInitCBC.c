@@ -625,6 +625,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--trigtime time)  Center of the prior for the time variable\n\
     (--comp-min min)   Minimum component mass (1.0)\n\
     (--comp-max max)   Maximum component mass (30.0)\n\
+    (--mass1-min min, --mass1-max max)      Min and max for mass1 (default: same as comp-min,comp-max, will over-ride these.\n\
+    (--mass2-min min, --mass2-max max)      Min and max for mass2 (default: same as comp-min,comp-max, will over-ride these.\n\
     (--mtotal-min min) Minimum total mass (2.0)\n\
     (--mtotal-max max) Maximum total mass (35.0)\n\
     (--dt time)        Width of time prior, centred around trigger (0.2s)\n\
@@ -830,11 +832,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
    * The prior for other parameters are now read in in RegisterUniformVariable, if given by the user. */
   LALInferenceInitMassVariables(state);
   /* now we need to update the chirp mass and q limits accordingly */
-  REAL8 comp_min = *(REAL8 *)LALInferenceGetVariable(state->priorArgs,"component_min");
-  REAL8 comp_max = *(REAL8 *)LALInferenceGetVariable(state->priorArgs,"component_max");
+  REAL8 m2_min=LALInferenceGetREAL8Variable(state->priorArgs,"mass2_min");
+  REAL8 m1_max=LALInferenceGetREAL8Variable(state->priorArgs,"mass1_max");
   REAL8 mtot_min = *(REAL8 *)LALInferenceGetVariable(state->priorArgs,"MTotMin");
   REAL8 mtot_max = *(REAL8 *)LALInferenceGetVariable(state->priorArgs,"MTotMax");
-  qMin = comp_min/comp_max;
+  qMin = m2_min / m1_max;
   mcMin =mtot_min*pow(qMin/pow(1.+qMin,2.),3./5.);
   mcMax =mtot_max*pow(0.25,3./5.);
 
@@ -1782,36 +1784,62 @@ void LALInferenceInitMassVariables(LALInferenceRunState *state){
   ProcessParamsTable *ppt=NULL;
   LALInferenceVariables *priorArgs=state->priorArgs;
 
-  REAL8 mMin=1.0,mMax=30.0;
+  REAL8 m1_min=1.0,m2_min=1.0;
+  REAL8 m1_max=30.0,m2_max=30.0;
   REAL8 MTotMax=35.0;
   REAL8 MTotMin=2.0;
 
   /* Over-ride component masses */
-  ppt=LALInferenceGetProcParamVal(commandLine,"--comp-min");
-  //if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
-  if(ppt){
-          mMin=atof(ppt->value);
-          MTotMin=2.0*mMin;
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--comp-min")))
+  {
+    m1_min=m2_min=atof(ppt->value);
   }
 
-  ppt=LALInferenceGetProcParamVal(commandLine,"--comp-max");
-  //if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--compmax");
-  if(ppt){
-          mMax=atof(ppt->value);
-          MTotMax=2.0*mMax;
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--comp-max")))
+  {
+    m1_max=m2_max=atof(ppt->value);
   }
 
-  ppt=LALInferenceGetProcParamVal(commandLine,"--mtotal-max");
-  if(ppt)	MTotMax=atof(ppt->value);
+  /* optional limits on individual masses */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--mass1-min")))
+  {
+    m1_min=atof(ppt->value);
+  }
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--mass1-max")))
+  {
+    m1_max = atof(ppt->value);
+  }
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--mass2-min")))
+  {
+    m2_min=atof(ppt->value);
+  }
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--mass2-max")))
+  {
+    m2_max=atof(ppt->value);
+  }
 
-  ppt=LALInferenceGetProcParamVal(commandLine,"--mtotal-min");
-  if(ppt)	MTotMin=atof(ppt->value);
+  /* Set the total mass bounds based on m1,m2 */
+  MTotMin=m1_min + m2_min;
+  MTotMax=m1_max + m2_max;
 
-  LALInferenceAddVariable(priorArgs,"component_min",&mMin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(priorArgs,"component_max",&mMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+  /* Over-ride Mtotal bounds if requested */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--mtotal-max")))
+  {
+    MTotMax=atof(ppt->value);
+  }
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--mtotal-min")))
+  {
+    MTotMin=atof(ppt->value);
+  }
+  
+  LALInferenceAddREAL8Variable(priorArgs,"mass1_min",m1_min,LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddREAL8Variable(priorArgs,"mass1_max",m1_max,LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddREAL8Variable(priorArgs,"mass2_min",m2_min,LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddREAL8Variable(priorArgs,"mass2_max",m2_max,LALINFERENCE_PARAM_FIXED);
+
   LALInferenceAddVariable(priorArgs,"MTotMax",&MTotMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(priorArgs,"MTotMin",&MTotMin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-
+  
   return;
 
 }
