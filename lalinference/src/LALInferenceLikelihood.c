@@ -200,8 +200,8 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
            i++;
        }
 
-       LALInferenceSetParamVaryType(thread->currentParams, "logdistance", logd_type);
        LALInferenceSetREAL8Variable(thread->currentParams, "logdistance", logd);
+       LALInferenceSetParamVaryType(thread->currentParams, "logdistance", logd_type);
    }
 
    INT4 t;
