@@ -325,7 +325,10 @@ void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALIn
 
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,minopt))) min=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,maxopt))) max=atof(ppt->value);
-  if((ppt=LALInferenceGetProcParamVal(state->commandLine,fixopt))) varytype=LALINFERENCE_PARAM_FIXED;
+  if((ppt=LALInferenceGetProcParamVal(state->commandLine,fixopt))) {
+		  varytype=LALINFERENCE_PARAM_FIXED;
+		  startval=atof(ppt->value);
+  }
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,valopt))) startval=atof(ppt->value);
   else if(varytype!=LALINFERENCE_PARAM_FIXED) startval=min+(max-min)*gsl_rng_uniform(state->GSLrandom);
 
@@ -452,8 +455,8 @@ Component masses, total mass and time have dedicated options listed here:\n\n\
 ------------------------------------------------------------------------------------------------------------------\n\
 --- Fix Parameters ----------------------------------------------------------------------------------------------\n\
 ------------------------------------------------------------------------------------------------------------------\n\
-You can generally fix a parameter to be fixed to a given values by using both --paramname VALUE and --fix-paramname\n\
-where the known names have been listed above\n\
+You can generally fix a parameter to be fixed to a given values by using --fix-paramname VALUE\n\
+where the known names have been listed above.\n\
 \n";
 
   /* Print command line arguments if state was not allocated */
