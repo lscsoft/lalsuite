@@ -818,9 +818,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     enginenodes=[]
     for i in range(Npar):
       n=self.add_engine_node(event)
-      if i>0:
-        n.add_var_arg('--dont-dump-extras')
-      if n is not None: enginenodes.append(n)
+      if n is not None:
+        enginenodes.append(n)
+        if i>0:
+          n.add_var_arg('--dont-dump-extras')
     if len(enginenodes)==0:
       return False
     myifos=enginenodes[0].get_ifos()
