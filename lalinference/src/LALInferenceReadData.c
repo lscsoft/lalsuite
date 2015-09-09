@@ -350,7 +350,7 @@ static INT4 getNamedDataOptionsByDetectors(ProcessParamsTable *commandLine, char
         }
     }
     *out=XLALCalloc(*N,sizeof(char *));
-    
+
     UINT4 found=0;
     /* For each IFO, fetch the other options if available */
     for(i=0;i<*N;i++)
@@ -360,7 +360,7 @@ static INT4 getNamedDataOptionsByDetectors(ProcessParamsTable *commandLine, char
         this=LALInferenceGetProcParamVal(commandLine,tmp);
         (*out)[i]=this?XLALStringDuplicate(this->value):NULL;
 	if (this) found++;
-     
+
     }
     if (found==*N)
       return(1);
@@ -2938,12 +2938,12 @@ void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOD
         exit(1);
 
     }
-    
+
     REAL8 tmp=0.0;
     REAL8 net_snr=0.0;
     while (data) {nIFO++; data=data->next;}
     UINT4 Nmdc=0,Nchannel=0;
-    
+
     char mdc_caches_name[] = "injcache";
     char mdc_channels_name[] = "injchannel";
     char **IFOnames=NULL;
@@ -2952,7 +2952,7 @@ void LALInferenceInjectFromMDC(ProcessParamsTable *commandLine, LALInferenceIFOD
       fprintf(stderr,"Must provide a --IFO-injcache option for each IFO if --inject_from_mdc is given\n");
       exit(1);
     }
-    
+
     rlceops= getNamedDataOptionsByDetectors(commandLine, &IFOnames,&mdc_channels ,mdc_channels_name, &Nchannel);
     if (!rlceops){
         fprintf(stdout,"WARNING: You did not provide the name(s) of channel(s) to use with the injection mdc. Using the default which may not be what you want!\n");

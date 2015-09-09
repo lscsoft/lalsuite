@@ -334,8 +334,26 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
   }
 
   /* determine source's sky location & orientation parameters: */
-  ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
-  dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
+  INT4 SKY_FRAME=0;
+  if(LALInferenceCheckVariable(currentParams,"SKY_FRAME"))
+    SKY_FRAME=*(INT4 *)LALInferenceGetVariable(currentParams,"SKY_FRAME");
+
+  if(SKY_FRAME==0){
+    /* determine source's sky location & orientation parameters: */
+    ra        = *(REAL8*) LALInferenceGetVariable(currentParams, "rightascension"); /* radian      */
+    dec       = *(REAL8*) LALInferenceGetVariable(currentParams, "declination");    /* radian      */
+  }
+  else
+  {
+    REAL8 t0=LALInferenceGetREAL8Variable(currentParams,"t0");
+    REAL8 alph=acos(LALInferenceGetREAL8Variable(currentParams,"cosalpha"));
+    REAL8 theta=LALInferenceGetREAL8Variable(currentParams,"azimuth");
+    LALInferenceDetFrameToEquatorial(data->detector,data->next->detector,
+                                     t0,alph,theta,&GPSdouble,&ra,&dec);
+    LALInferenceAddVariable(currentParams,"rightascension",&ra,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(currentParams,"declination",&dec,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(currentParams,"time",&GPSdouble,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+  }
   psi       = *(REAL8*) LALInferenceGetVariable(currentParams, "polarisation");   /* radian      */
   GPSdouble = *(REAL8*) LALInferenceGetVariable(currentParams, "time");           /* GPS seconds */
 
@@ -866,14 +884,14 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
        recurrance relation has the advantage that the error growth is
        O(sqrt(N)) for N repetitions. */
 
-    /* See, for example, 
+    /* See, for example,
 
        Press, Teukolsky, Vetteling & Flannery, 2007.  Numerical
-       Recipes, Third Edition, Chapter 5.4.  
+       Recipes, Third Edition, Chapter 5.4.
 
        Singleton, 1967. On computing the fast Fourier
        transform. Comm. ACM, vol. 10, 647–654. */
-    
+
     /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
     dim = -sin(twopit*deltaF);
     dre = -2.0*sin(0.5*twopit*deltaF)*sin(0.5*twopit*deltaF);
@@ -978,7 +996,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       S+=TwoDeltaToverN*templatesq/sigmasq;
       COMPLEX16 dhstar = TwoDeltaToverN*d*conj(template)/sigmasq;
       Rcplx+=dhstar;
-      
+
       switch(marginalisationflags)
       {
         case GAUSSIAN:
@@ -1125,7 +1143,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
       REAL8 max_time=t0+((REAL8) imax + istart)*deltaT;
       REAL8 mean_time=t0+(imean+(double)istart)*deltaT;
-      
+
       if(margphi){
         REAL8 phase_maxL=angMax;
         if(phase_maxL<0.0) phase_maxL=LAL_TWOPI+phase_maxL;
@@ -1370,7 +1388,7 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
   /* Burst templates are generated at hrss=1, thus need to rescale amplitude */
   double amp_prefactor=1.0;
 
-  REAL8 chisq=0.0;  
+  REAL8 chisq=0.0;
   LALStatus status;
   memset(&status,0,sizeof(status));
 
