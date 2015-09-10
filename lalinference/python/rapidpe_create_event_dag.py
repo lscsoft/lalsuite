@@ -50,7 +50,7 @@ optp.add_option("-T", "--template-bank-xml", help="Input template bank as a sim_
 optp.add_option("-D", "--working-directory", default="./", help="Directory in which to stage DAG components.")
 optp.add_option("-l", "--log-directory", default="./", help="Directory in which to place condor logs.")
 optp.add_option("-W", "--web-output", default="./", help="Directory to place web accessible plots and webpages.")
-optp.add_option("-o", "--output-name", default="marginalize_extrinsic_parameters", help="Filename (without extension) to write DAG to.")
+optp.add_option("-O", "--output-name", default="marginalize_extrinsic_parameters", help="Filename (without extension) to write DAG to.")
 optp.add_option("--n-copies", default=1, help="Number of copies of each integrator instance to run per mass point. Default is one.")
 optp.add_option("--write-script", action="store_true", help="In addition to the DAG, write a script to this filename to execute the workflow.")
 optp.add_option("--write-eff-lambda", action="store_true", help="Use psi0 column of template bank XML as effective lambda point to calculate in DAG.")
