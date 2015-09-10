@@ -256,10 +256,14 @@ intr_prms = intr_prms.keys()
 xmldoc = utils.load_filename(opts.tmplt_bank, contenthandler=ligolw.LIGOLWContentHandler)
 tmplt_bank = lsctables.SnglInspiralTable.get_table(xmldoc)
 
-results = None
+results = []
 if opts.result_file:
-    xmldoc = utils.load_filename(opts.result_file, contenthandler=ligolw.LIGOLWContentHandler)
-    results = lsctables.SnglInspiralTable.get_table(xmldoc)
+    for arg in glob.glob(opts.result_file):
+        # FIXME: Bad hardcode
+        if "samples" in arg:
+            continue
+        xmldoc = utils.load_filename(arg, contenthandler=ligolw.LIGOLWContentHandler)
+        results.extend(lsctables.SnglInspiralTable.get_table(xmldoc))
 
     # Normalize
     # FIXME: If we have more than 1 copies -- This is tricky because we need to
