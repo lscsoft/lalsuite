@@ -122,6 +122,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SEOBNRv1_ROM_DoubleSpin),
     INITIALIZE_NAME(SEOBNRv2_ROM_EffectiveSpin),
     INITIALIZE_NAME(SEOBNRv2_ROM_DoubleSpin),
+    INITIALIZE_NAME(SEOBNRv2_ROM_DoubleSpin_HI),
     INITIALIZE_NAME(HGimri),
     INITIALIZE_NAME(IMRPhenomA),
     INITIALIZE_NAME(IMRPhenomB),
@@ -1131,6 +1132,19 @@ int XLALSimInspiralChooseFDWaveform(
 
             ret = XLALSimIMRSEOBNRv2ROMDoubleSpin(hptilde, hctilde,
                     phiRef, deltaF, f_min, f_max, f_ref, r, i, m1, m2, S1z, S2z);
+            break;
+
+        case SEOBNRv2_ROM_DoubleSpin_HI:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+
+            ret = XLALSimIMRSEOBNRv2ROMDoubleSpinHI(hptilde, hctilde,
+                    phiRef, deltaF, f_min, f_max, f_ref, r, i, m1, m2, S1z, S2z, -1);
             break;
 
 
@@ -3592,6 +3606,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case SEOBNRv1_ROM_DoubleSpin:
         case SEOBNRv2_ROM_EffectiveSpin:
         case SEOBNRv2_ROM_DoubleSpin:
+        case SEOBNRv2_ROM_DoubleSpin_HI:
         //case TaylorR2F4:
         case TaylorF2:
 	case EccentricFD:
@@ -4003,6 +4018,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
     case SEOBNRv2_ROM_DoubleSpin:
+    case SEOBNRv2_ROM_DoubleSpin_HI:
     case TaylorR2F4:
     case IMRPhenomFB:
     case FindChirpSP:
@@ -4077,6 +4093,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
     case SEOBNRv2_ROM_DoubleSpin:
+    case SEOBNRv2_ROM_DoubleSpin_HI:
     case IMRPhenomA:
     case IMRPhenomB:
     case IMRPhenomFA:
