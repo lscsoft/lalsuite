@@ -438,11 +438,6 @@ while gpsstart < gpsstop:
             if gwchannel not in trigger_dict:
                 trigger_dict[gwchannel] = []
 
-            ### keep only relevant gchs
-            if len(trigger_dict[gwchannel]) > max_gch_samples:
-                trgdict.resort() ### make sure they're in the correct order
-                trigger_dict[gwchannel] = trigger_dict[gwchannel][-max_gch_samples:]
-
             if not identical_trgfile: ### add AUX triggers
                 logger.info('looking for additional AUX triggers')
                 aux_trgdict = idq.retrieve_kwtrigs(AUXgdsdir, AUXkwbasename, gpsstart-lookback-padding, lookback+stride+padding, AUXkwstride, sleep=0, ntrials=1, logger=logger, segments=scisegs) ### find AUX kwtrgs
@@ -466,10 +461,6 @@ while gpsstart < gpsstop:
                 clean_gps = sorted(event.randomrate(clean_rate, [[gpsstart-lookback, gpsstart + stride]])) ### generate random clean times as a poisson time series within analysis range
             clean_gps = [ l[0] for l in event.exclude( [[gps] for gps in clean_gps], dirtyseg, tcent=0)] ### keep only those gps times that are outside of dirtyseg
 
-            ### keep only the most relevant cleans
-            if len(clean_gps) > max_cln_samples:
-                clean_gps = clean_gps[-max_cln_samples:]
-
             ### keep only times that are within science time
             if not opts.ignore_science_segments:
                 logger.info('  filtering trigger_dict through scisegs')
@@ -479,7 +470,8 @@ while gpsstart < gpsstop:
             logger.info('  writting %s'%pat)
             idq.build_auxmvc_vectors(trigger_dict, gwchannel, auxmvc_coinc_window, auxmc_gw_signif_thr, pat, gps_start_time=gpsstart-lookback,
                                 gps_end_time=gpsstart + stride,  channels=auxmvc_selected_channels, unsafe_channels=auxmvc_unsafe_channels, clean_times=clean_gps,
-                                clean_window=clean_window, filter_out_unclean=False )
+                                clean_window=clean_window, filter_out_unclean=False, max_glitch_samples=max_gch_samples, max_clean_samples=max_cln_samples ,
+                                science_segments=None ) ### we handle scisegs in this script rather than delegating to idq.build_auxmvc_vectors, so science_segments=None is appropriate
 
             ptas_exit_status = 0 ### used to check for success
 

@@ -95,6 +95,8 @@ classifiers = config.get('general', 'classifiers').split(' ')
 usertag = config.get('general', 'usertag')
 idq_dir = config.get('general', 'idqdir')
 
+realtimedir = config.get('general', 'realtimedir')
+
 if usertag:
     usertag = "_%s"%usertag
 
@@ -267,7 +269,8 @@ for classifier in classifiers:
     ### run idq-gdb-glitch-tables for each classifier
     logger.info("    Begin: executing idq-gdb-glitch-tables for " + classifier + " ...")
 
-    tables_cmd = "%s -s %f -e %f -g %s --ifo %s -c %s -i %s -t %s"%(tables_script, gps_start, gps_end, gdb_id, ifo, classifier, idq_dir, usertag)
+#    tables_cmd = "%s -s %f -e %f -g %s --ifo %s -c %s -i %s -t %s"%(tables_script, gps_start, gps_end, gdb_id, ifo, classifier, idq_dir, usertag)
+    tables_cmd = "%s -s %f -e %f -g %s --ifo %s -c %s -i %s -t %s"%(tables_script, gps_start, gps_end, gdb_id, ifo, classifier, realtimedir, usertag)
     if config.has_option("general","gdb_url"):
         tables_cmd += " --gdb-url %s"%config.get('general','gdb_url')
     for option, value in config.items("gdb-glitch-tables"):
@@ -296,7 +299,8 @@ for classifier in classifiers:
     ### run idq-gdb-timeseries for each classifier
     logger.info("    Begin: executing idq-gdb-timeseries for " + classifier + " ...")
 
-    timeseries_cmd = "%s -s %f -e %f --gps %f -g %s --ifo %s -c %s -i %s -t %s --plotting-gps-start %f --plotting-gps-end %f"%(timeseries_script, gps_start, gps_end, event_gps_time, gdb_id, ifo, classifier, idq_dir, usertag, plotting_gps_start, plotting_gps_end)
+#    timeseries_cmd = "%s -s %f -e %f --gps %f -g %s --ifo %s -c %s -i %s -t %s --plotting-gps-start %f --plotting-gps-end %f"%(timeseries_script, gps_start, gps_end, event_gps_time, gdb_id, ifo, classifier, idq_dir, usertag, plotting_gps_start, plotting_gps_end)
+    timeseries_cmd = "%s -s %f -e %f --gps %f -g %s --ifo %s -c %s -i %s -t %s --plotting-gps-start %f --plotting-gps-end %f"%(timeseries_script, gps_start, gps_end, event_gps_time, gdb_id, ifo, classifier, realtimedir, usertag, plotting_gps_start, plotting_gps_end)
 
     if config.has_option("general","gdb_url"):
         timeseries_cmd += " --gdb-url %s"%config.get("general", "gdb_url")

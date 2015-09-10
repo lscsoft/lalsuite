@@ -793,9 +793,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     enginenodes=[]
     for i in range(Npar):
       n=self.add_engine_node(event)
-      if i>0:
-        n.add_var_arg('--dont-dump-extras')
-      if n is not None: enginenodes.append(n)
+      if n is not None:
+        enginenodes.append(n)
+        if i>0:
+          n.add_var_arg('--dont-dump-extras')
     if len(enginenodes)==0:
       return False
     myifos=enginenodes[0].get_ifos()
@@ -836,7 +837,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             par_mergenodes.append(pmergenode)
             presultsdir=os.path.join(pagedir,ifo)
             mkdirs(presultsdir)
-            pzipfilename='postproc_'+evstring+'_'+ifo+'.tar.gz'
+            if self.site!='local':
+              pzipfilename='postproc_'+evstring+'_'+ifo+'.tar.gz'
+            else:
+              pzipfilename=None
             subresnode=self.add_results_page_node(outdir=presultsdir,parent=pmergenode, gzip_output=pzipfilename,ifos=ifo)
             subresnode.set_psd_files(cotest_nodes[0].get_psd_files())
             subresnode.set_snr_file(cotest_nodes[0].get_snr_file())
