@@ -505,13 +505,13 @@ void mcmc_step(LALInferenceRunState *runState, LALInferenceThreadState *thread) 
 void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile) {
     INT4 MPIrank, MPIsize;
     MPI_Status MPIstatus;
-    INT4 nPar, adjNPar, n_local_threads, ntemps, Tskip;
+    INT4 nPar, adjNPar, n_local_threads, ntemps;
     INT4 low;
     INT4 ind, cold_ind, hot_ind;
     INT4 cold_rank, hot_rank;
     INT4 swapAccepted;
     INT4 *cold_inds;
-    INT4 step;
+    INT4 *nsteps_until_swap;
     REAL8 adjCurrentLikelihood, adjCurrentPrior;
     REAL8 logThreadSwap, temp_prior, temp_like, cold_temp;
     LALInferenceThreadState *cold_thread = runState->threads[0];
@@ -522,13 +522,16 @@ void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile) {
     MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 
     n_local_threads = runState->nthreads;
-    Tskip = LALInferenceGetINT4Variable(runState->algorithmParams, "tskip");
-    step = runState->threads[0]->step;
+    nsteps_until_swap = (INT4 *)LALInferenceGetVariable(runState->algorithmParams, "nsteps_until_swap");
 
     /* Return if no swap should be proposed */
     ntemps = MPIsize*n_local_threads;
-    if((step % Tskip) != 0 || ntemps<2)
+    if(*nsteps_until_swap != 0 || ntemps<2) {
+        *nsteps_until_swap -= 1;
         return;
+    } else {
+        *nsteps_until_swap = LALInferenceGetINT4Variable(runState->algorithmParams, "tskip");
+    }
 
     cold_inds = XLALCalloc(ntemps-1, sizeof(INT4));
 
@@ -960,7 +963,6 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
     ProcessParamsTable *ppt;
     INT4 randomseed;
     INT4 MPIrank, t, n_local_threads;
-    INT4 step;
     char *outFileName = NULL;
     FILE *threadoutput = NULL;
     FILE **threadoutputs = NULL;
@@ -1002,8 +1004,7 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
                 XLAL_ERROR_NULL(XLAL_EIO);
             }
 
-            step = LALInferenceMCMCResumeRead(thread, threadoutput);
-            LALInferenceSetVariable(runState->algorithmParams, "step", &step);
+            LALInferenceMCMCResumeRead(thread, threadoutput);
 
             fclose(threadoutput);
 
@@ -1471,13 +1472,12 @@ void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model) {
     }
 }
 
-INT4 LALInferenceMCMCResumeRead(LALInferenceThreadState *thread, FILE *resumeFile) {
+void LALInferenceMCMCResumeRead(LALInferenceThreadState *thread, FILE *resumeFile) {
     /* Hope that the line is shorter than 16K! */
     const long len = 16384;
     char linebuf[len];
     char *last_line = NULL;
     long flen, line_length;
-    int cycle;
     float loglike, logprior;
 
     fseek(resumeFile, 0L, SEEK_END);
@@ -1500,9 +1500,9 @@ INT4 LALInferenceMCMCResumeRead(LALInferenceThreadState *thread, FILE *resumeFil
     /* Go to the beginning of the last line. */
     fseek(resumeFile, -line_length, SEEK_END);
 
-    fscanf(resumeFile, "%d %f %f", &cycle, &loglike, &logprior);
+    fscanf(resumeFile, "%d %f %f", &(thread->step), &loglike, &logprior);
 
     LALInferenceReadSampleNonFixed(resumeFile, thread->currentParams);
 
-    return cycle;
+    return;
 }

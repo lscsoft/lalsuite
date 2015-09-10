@@ -216,6 +216,9 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     if (ppt)
         Tskip = atoi(ppt->value);
 
+    /* Counter for triggering PT swaps */
+    INT4 nsteps_until_swap = Tskip;
+
     /* Allow user to restrict size of temperature ladder */
     INT4 ntemps = 0;
     ppt = LALInferenceGetProcParamVal(command_line, "--ntemp");
@@ -277,6 +280,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     LALInferenceAddINT4Variable(algorithm_params, "skip", skip, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "neff", neff, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "tskip", Tskip, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "nsteps_until_swap", nsteps_until_swap, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "mpirank", mpi_rank, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "mpisize", mpi_size, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "ntemps", ntemps, LALINFERENCE_PARAM_OUTPUT);
