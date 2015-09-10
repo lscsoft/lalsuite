@@ -93,7 +93,7 @@ config.read(options.config_file)
 ifo = config.get('general', 'ifo')
 classifiers = config.get('general', 'classifiers').split(' ')
 usertag = config.get('general', 'usertag')
-idq_dir = config.get('general', 'idqdir')
+#idq_dir = config.get('general', 'idqdir')
 
 realtimedir = config.get('general', 'realtimedir')
 
