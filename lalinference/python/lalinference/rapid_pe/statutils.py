@@ -13,8 +13,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+import math
 
 import numpy
+from pylal.rate import BinnedArray, NDBins, IrregularBins, LinearBins
 
 __author__ = "Chris Pankow <chris.pankow@ligo.org>"
 
@@ -59,3 +61,25 @@ def int_var(samples):
     mean = numpy.mean(samples)
     sq_mean = numpy.mean(samples**2)
     return (sq_mean-mean**2)/(len(samples)-1)
+
+def neff(weights):
+    neff = reduce(numpy.logaddexp, w) - max(w)
+    return math.exp(neff)
+
+def neff_frac(weights, ntotal):
+    return neff / ntotal
+
+#
+# Histogramming utilities
+#
+def get_adaptive_binning(samples, edges, nbins=100, bintype='linear'):
+    ordering = numpy.argsort(samples)
+    
+    stride = len(samples) / nbins
+    bins = [samples[ordering[i]] for i in xrange(stride, nbins*stride, stride)]
+    bins.insert(0, edges[0])
+    bins.append(edges[1])
+    if bintype == "linear":
+        return BinnedArray(NDBins((LinearBins(edges[0], edges[-1], nbins),)))
+    else:
+        return BinnedArray(NDBins((IrregularBins(bins),)))
