@@ -247,7 +247,7 @@ static REAL8TimeSeries *readTseries(LALCache *cache, CHAR *channel, LIGOTimeGPS 
 			sleep(delay);
 	}
 	if(out==NULL) fprintf(stderr,"readTseries ERROR: unable to read channel %s at times %i - %f\nCheck the specified data duration is not too long\n",channel,start.gpsSeconds,start.gpsSeconds+length);
-	XLALFrStreamClose(&stream);
+	XLALFrStreamClose(stream);
 	return out;
 }
 
