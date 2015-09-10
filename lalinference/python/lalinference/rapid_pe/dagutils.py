@@ -19,9 +19,6 @@ A collection of routines to manage Condor workflows (DAGs).
 """
 
 import os
-import numpy as np
-from time import time
-from hashlib import md5
 
 from glue import pipeline
 
@@ -43,15 +40,6 @@ def which(program):
             if is_exe(exe_file): return exe_file
 
     return None
-
-def generate_job_id():
-    """
-    Generate a unique md5 hash for use as a job ID.
-    Borrowed and modified from the LAL code in glue/glue/pipeline.py
-    """
-    t = str( long( time() * 1000 ) )
-    r = str( long( np.random.random() * 100000000000000000L ) )
-    return md5(t + r).hexdigest()
 
 # FIXME: Keep in sync with arguments of integrate_likelihood_extrinsic
 def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=None, ncopies=1, **kwargs):
