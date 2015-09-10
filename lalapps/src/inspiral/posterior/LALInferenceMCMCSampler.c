@@ -412,11 +412,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         if (tempVerbose)
             fclose(swapfile);
 
-        /* Broadcast the root's decision on run completion */
-        MPI_Bcast(&runComplete, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
         if (runState->threads[0]->step > Niter)
             runComplete=1;
+
+        /* Broadcast the root's decision on run completion */
+        MPI_Bcast(&runComplete, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }// while (!runComplete)
 }
 
