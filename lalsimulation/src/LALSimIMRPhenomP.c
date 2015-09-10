@@ -304,7 +304,7 @@ int XLALSimIMRPhenomP(
 
   int retcode = PhenomPCore(hptilde, hctilde,
       chi_eff, chip, eta, thetaJ, Mtot_SI, distance, alpha0, phic, f_ref, freqs, deltaF);
-
+  XLALDestroyREAL8Sequence(freqs);
   return (retcode);
 }
 
