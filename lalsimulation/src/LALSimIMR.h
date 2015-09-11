@@ -22,6 +22,7 @@
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALSimInspiral.h>
+#include "LALSimSphHarmMode.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -86,7 +87,31 @@ SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(const REAL8 phiRef, const REAL8 deltaT
 
 double XLALSimIMRSpinAlignedEOBPeakFrequency(REAL8 m1SI, REAL8 m2SI, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion);
 int XLALSimIMRSpinAlignedEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion);
-//int XLALSimIMRSpinEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1[], const REAL8 spin2[]);
+int XLALSimIMRSpinEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1[], const REAL8 spin2[]);
+
+int XLALSimIMRSpinEOBWaveformAll(
+        REAL8TimeSeries **hplus,
+        REAL8TimeSeries **hcross,
+        REAL8Vector     **dynamicsHi, /**<< Here we store and return the seob dynamics for high sampling (end of inspiral) */
+        SphHarmTimeSeries **hlmPTSout, /**<< Here we store and return the PWave (high sampling) */
+        SphHarmTimeSeries **hlmPTSHi, /**<< Here we store and return the JWave (high sampling) */
+        SphHarmTimeSeries **hIMRlmJTSHi, /**<< Here we store and return the JWaveIMR (high sampling) */
+        REAL8Vector     **AttachParams,   /**<< Parameters of RD attachment: */
+        //LIGOTimeGPS     *tc,
+        const REAL8      phiC,
+        const REAL8     deltaT,
+        const REAL8     m1SI,
+        const REAL8     m2SI,
+        const REAL8     fMin,
+        const REAL8     r,
+        const REAL8     inc,
+        const REAL8     INspin1x,
+        const REAL8     INspin1y,
+        const REAL8     INspin1z,
+        const REAL8     INspin2x,
+        const REAL8     INspin2y,
+        const REAL8     INspin2z
+     );
 
 
 /* in module LALSimIMRSEOBNRv1ROMEffectiveSpin.c */

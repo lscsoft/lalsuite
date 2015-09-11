@@ -703,8 +703,6 @@ int XLALSimInspiralChooseTDWaveform(
                     deltaT, m1, m2, f_min, r, i, S1z, S2z, SpinAlignedEOBversion);
             break;
 
-#if 0
-        DISABLE UNTIL SEOBNRV3 IS USABLE
         case SEOBNRv3:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
@@ -724,7 +722,6 @@ int XLALSimInspiralChooseTDWaveform(
             //ret = XLALSimIMRSpinEOBWaveform(hplus, hcross, phiRef,
             //        deltaT, m1, m2, f_min, r, i, spin1, spin2 );
             break;
-#endif
 
 	case HGimri:
 	     /* Waveform-specific sanity checks */
@@ -3561,7 +3558,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case SEOBNRv1:
         case SpinDominatedWf:
         case SEOBNRv2:
-        // case SEOBNRv3:
+        case SEOBNRv3:
             return 1;
 
         default:
