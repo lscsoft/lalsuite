@@ -99,9 +99,9 @@ int computePriorMassNormTest(void)
 	McMax = -2;
 	massRatioMin = 1;
 	massRatioMax = 10;
-	//XLAL_TRY(result = LALInferenceComputePriorMassNorm(MMin, MMax, MTotMax, McMin, McMax, massRatioMin, massRatioMax, massRatioName), errnum);
-	//if (!XLAL_IS_REAL8_FAIL_NAN(result) || errnum == XLAL_SUCCESS)
-	//	TEST_FAIL("Unphysical masses given but appropriate error not generated.");
+	XLAL_TRY(result = LALInferenceComputePriorMassNorm(MMin, MMax, MTotMax, McMin, McMax, massRatioMin, massRatioMax, massRatioName), errnum);
+	if (!XLAL_IS_REAL8_FAIL_NAN(result) || errnum == XLAL_SUCCESS)
+		TEST_FAIL("Unphysical masses given but appropriate error not generated.");
 
 	TEST_FOOTER();
 }
@@ -479,7 +479,8 @@ int LALInferenceInspiralPriorTest(void)
 	min = log(min); max = log(max);
 	LALInferenceAddMinMaxPrior(priorArgs, "logmc", &min, &max, LALINFERENCE_REAL8_t);
 	min = 1.0; max = 30.0;
-	LALInferenceAddMinMaxPrior(priorArgs, "component", &min, &max, LALINFERENCE_REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "mass1", &min, &max, LALINFERENCE_REAL8_t);
+	LALInferenceAddMinMaxPrior(priorArgs, "mass2", &min, &max, LALINFERENCE_REAL8_t);
 	/*max *= 2;*/
 	/*LALInferenceAddVariable(priorArgs, "MTotMax", &max, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);*/
 	min = -LAL_PI; max = LAL_PI;
@@ -530,7 +531,7 @@ int LALInferenceInspiralPriorTest(void)
 	// but the chirp mass and symmetric mass ratio are still OK; this should be picked up and a
 	// zero prior returned.
 	LALInferenceDrawFromPrior(params, priorArgs, rng);
-	LALInferenceGetMinMaxPrior(priorArgs, "component", &min, &max);
+	LALInferenceGetMinMaxPrior(priorArgs, "mass1", &min, &max);
 	REAL8 m2 = 0.5;
 	REAL8 m1 = 3.82;
 	REAL8 eta = m1 * m2 / pow(m1 + m2, 2);
