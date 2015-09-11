@@ -446,7 +446,7 @@ Component masses, total mass and time have dedicated options listed here:\n\n\
 (--comp-min min)                        Minimum component mass (1.0).\n\
 (--comp-max max)                        Maximum component mass (30.0).\n\
 (--mass1-min min, --mass1-max max)      Min and max for mass1 (default: same as comp-min,comp-max, will over-ride these.\n\
-(--mass2-min min, --mass2-max max)      Min and max for mass1 (default: same as comp-min,comp-max, will over-ride these.\n\
+(--mass2-min min, --mass2-max max)      Min and max for mass2 (default: same as comp-min,comp-max, will over-ride these.\n\
 (--mtotal-min min)                      Minimum total mass (2.0).\n\
 (--mtotal-max max)                      Maximum total mass (35.0).\n\
 (--dt time)                             Width of time prior, centred around trigger (0.2s).\n\
