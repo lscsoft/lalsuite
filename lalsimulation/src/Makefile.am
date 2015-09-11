@@ -53,6 +53,7 @@ pkginclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
 	LALSimIMR.h \
+	LALSimIMRSpinEOBHcapNumericalDerivative.h \
 	LALSimInspiral.h \
 	LALSimInspiralPrecess.h \
 	LALSimInspiralTestGRParams.h \
@@ -88,6 +89,7 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBAuxFuncs.c \
 	LALSimIMRSpinEOBFactorizedFlux.c \
 	LALSimIMRSpinEOBFactorizedWaveform.c \
+	LALSimIMRSpinEOBFactorizedWaveformCoefficients.c \
 	LALSimIMRSpinEOBHamiltonian.c \
 	LALSimIMRSpinEOBHcapNumericalDerivative.c \
 	LALSimIMRSpinEOBInitialConditions.c \
