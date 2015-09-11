@@ -2230,7 +2230,7 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
       break;
     }*/
     default:
-      XLAL_ERROR_VOID(XLAL_EINVAL, "Trying to randomise a non-numeric parameter!");
+      XLALPrintWarning("Trying to randomise a non-numeric parameter %s!\n",name);
       break;
   }
 }
