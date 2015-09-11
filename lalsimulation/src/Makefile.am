@@ -55,9 +55,10 @@ pkginclude_HEADERS = \
 	LALSimIMR.h \
 	LALSimInspiral.h \
 	LALSimInspiralPrecess.h \
+	LALSimInspiralWaveformFlags.h \
 	LALSimInspiralTestGRParams.h \
 	LALSimInspiralWaveformCache.h \
-	LALSimInspiralWaveformFlags.h \
+	LALSimulation.h \
 	LALSimNeutronStar.h \
 	LALSimNoise.h \
 	LALSimReadData.h \
@@ -65,86 +66,85 @@ pkginclude_HEADERS = \
 	LALSimSphHarmMode.h \
 	LALSimSphHarmSeries.h \
 	LALSimUtils.h \
-	LALSimulation.h \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h \
 	LALSimulationVCSInfoHeader.h
 
 noinst_HEADERS = \
-	LALSimFindAttachTime.h \
-	LALSimIMREOBFactorizedFlux.c \
 	LALSimIMREOBFactorizedWaveform.c \
 	LALSimIMREOBHybridRingdown.c \
 	LALSimIMREOBNQCCorrection.c \
 	LALSimIMREOBNRv2.h \
 	LALSimIMREOBNewtonianMultipole.c \
-	LALSimIMRPhenomC_internals.c \
-	LALSimIMRPhenomD.h \
-	LALSimIMRPhenomD_internals.c \
-	LALSimIMRPhenomP.c \
-	LALSimIMRSEOBNRROMUtilities.c \
-	LALSimIMRSpinAlignedEOBHcapDerivative.c \
-	LALSimIMRSpinEOB.h \
-	LALSimIMRSpinEOBAuxFuncs.c \
-	LALSimIMRSpinEOBFactorizedFlux.c \
-	LALSimIMRSpinEOBFactorizedWaveform.c \
-	LALSimIMRSpinEOBHamiltonian.c \
-	LALSimIMRSpinEOBHcapNumericalDerivative.c \
-	LALSimIMRSpinEOBInitialConditions.c \
 	LALSimInspiralPNCoefficients.c \
 	LALSimInspiraldEnergyFlux.c \
+	LALSimIMRSpinEOBHamiltonian.c \
+	LALSimIMRSpinEOBHcapNumericalDerivative.c \
+	LALSimIMRSpinAlignedEOBHcapDerivative.c \
+	LALSimIMRSpinEOB.h \
+	LALSimIMRSpinEOBInitialConditions.c \
+	LALSimIMRSpinEOBAuxFuncs.c \
+	LALSimIMRSpinEOBFactorizedWaveform.c \
+	LALSimIMRSpinEOBFactorizedFlux.c \
+	LALSimIMREOBFactorizedFlux.c \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
-	LALSimNeutronStarEOSTabular.c
+	LALSimNeutronStarEOSTabular.c \
+	LALSimIMRPhenomC_internals.c \
+	LALSimIMRPhenomD_internals.c \
+	LALSimIMRPhenomD.h \
+	LALSimIMRPhenomP.c \
+	LALSimFindAttachTime.h \
+	LALSimIMRSEOBNRROMUtilities.c
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
 	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \
 	LALSimBurstImg.c \
-	LALSimFindAttachTime.c \
 	LALSimIMREOBNRv2.c \
-	LALSimIMRPSpinInspiralRD.c \
+	LALSimIMRSpinAlignedEOB.c \
+	LALSimIMRSEOBNRv1ROMEffectiveSpin.c \
+	LALSimIMRSEOBNRv1ROMDoubleSpin.c \
+	LALSimIMRSEOBNRv2ROMEffectiveSpin.c \
+	LALSimIMRSEOBNRv2ROMDoubleSpin.c \
+	LALSimIMRSEOBNRv2ChirpTime.c \
 	LALSimIMRPhenom.c \
 	LALSimIMRPhenomC.c \
 	LALSimIMRPhenomD.c \
 	LALSimIMRPhenomP.c \
-	LALSimIMRSEOBNRv1ROMDoubleSpin.c \
-	LALSimIMRSEOBNRv1ROMEffectiveSpin.c \
-	LALSimIMRSEOBNRv2ChirpTime.c \
-	LALSimIMRSEOBNRv2ROMDoubleSpin.c \
-	LALSimIMRSEOBNRv2ROMEffectiveSpin.c \
-	LALSimIMRSpinAlignedEOB.c \
-	LALSimInspiral.c \
-	LALSimInspiralEccentricTD.c \
-	LALSimInspiralEccentricityFD.c \
-	LALSimInspiralHGimri.c \
-	LALSimInspiralOptimizedCoefficientsEccentricityFD.c \
-	LALSimInspiralPNMode.c \
+	LALSimIMRPSpinInspiralRD.c \
+	LALSimPhenSpinRingDown.c \
+	LALSimInspiralWaveformFlags.c \
+	LALSimInspiralTestGRParams.c \
 	LALSimInspiralPrecess.c \
-	LALSimInspiralSpinDominatedWaveform.c \
+	LALSimInspiral.c \
+	LALSimInspiralPNMode.c \
 	LALSimInspiralSpinTaylor.c \
 	LALSimInspiralSpinTaylorF2.c \
-	LALSimInspiralSpinTaylorT5.c \
+	LALSimInspiralEccentricityFD.c \
+	LALSimInspiralOptimizedCoefficientsEccentricityFD.c \
 	LALSimInspiralTaylorEt.c \
 	LALSimInspiralTaylorF2.c \
 	LALSimInspiralTaylorF2ReducedSpin.c \
 	LALSimInspiralTaylorF2ReducedSpinMetric.c \
 	LALSimInspiralTaylorF2ReducedSpinTidal.c \
-	LALSimInspiralTaylorLength.c \
 	LALSimInspiralTaylorT1.c \
 	LALSimInspiralTaylorT2.c \
 	LALSimInspiralTaylorT3.c \
 	LALSimInspiralTaylorT4.c \
-	LALSimInspiralTestGRParams.c \
+	LALSimInspiralEccentricTD.c \
+	LALSimInspiralSpinTaylorT5.c \
+	LALSimInspiralSpinDominatedWaveform.c \
+	LALSimInspiralTaylorLength.c \
 	LALSimInspiralWaveformCache.c \
-	LALSimInspiralWaveformFlags.c \
 	LALSimInspiralWaveformTaper.c \
+	LALSimulation.c \
+	LALSimulationVCSInfo.c \
 	LALSimNeutronStarEOS.c \
 	LALSimNeutronStarFamily.c \
 	LALSimNeutronStarTOV.c \
-	LALSimNoise.c \
 	LALSimNoisePSD.c \
-	LALSimPhenSpinRingDown.c \
+	LALSimNoise.c \
 	LALSimReadData.c \
 	LALSimSGWB.c \
 	LALSimSGWBORF.c \
@@ -152,37 +152,37 @@ liblalsimulation_la_SOURCES = \
 	LALSimSphHarmSeries.c \
 	LALSimUnicorn.c \
 	LALSimUtils.c \
-	LALSimulation.c \
-	LALSimulationVCSInfo.c \
 	check_series_macros.h \
 	check_waveform_macros.h \
-	unicorn.xpm
+	unicorn.xpm \
+	LALSimFindAttachTime.c \
+	LALSimInspiralHGimri.c
 
 nodist_liblalsimulation_la_SOURCES = LALSimulationBuildInfo.c
 
 liblalsimulation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 lalsim_bh_qnmode_SOURCES = bh_qnmode.c
-lalsim_bh_ringdown_SOURCES = bh_ringdown.c
 lalsim_bh_sphwf_SOURCES = bh_sphwf.c
+lalsim_bh_ringdown_SOURCES = bh_ringdown.c
 lalsim_burst_SOURCES = burst.c
-lalsim_detector_noise_SOURCES = detector_noise.c
-lalsim_detector_strain_SOURCES = detector_strain.c
-lalsim_inject_SOURCES = inject.c
-lalsim_inspiral_SOURCES = inspiral.c
 lalsim_ns_eos_table_SOURCES = ns-eos-table.c
 lalsim_ns_mass_radius_SOURCES = ns-mass-radius.c
 lalsim_ns_params_SOURCES = ns-params.c
 lalsim_sgwb_SOURCES = sgwb.c
 lalsim_unicorn_SOURCES = unicorn.c
+lalsim_detector_noise_SOURCES = detector_noise.c
+lalsim_detector_strain_SOURCES = detector_strain.c
+lalsim_inspiral_SOURCES = inspiral.c
+lalsim_inject_SOURCES = inject.c
 
 pkgdata_DATA = \
 	$(NOISEPSDFILES) \
 	$(EOSDATAFILES)
 
 EXTRA_DIST = \
-	LALSimulationConfig.h.in \
 	config.h.in \
+	LALSimulationConfig.h.in \
 	lalsimburst_btlwnbexamples.svg \
 	lalsimburst_sinegaussianexamples.svg \
 	lalsimburst_stringcuspexamples.svg \
