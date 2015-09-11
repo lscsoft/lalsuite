@@ -4,6 +4,7 @@ import shutil
 import distutils.spawn
 import os
 import subprocess
+import glob
 import lalinference
 
 parser = argparse.ArgumentParser(description="Runs test runs of lalinference using lalinference_pipe_example.ini.")
@@ -23,6 +24,10 @@ parser.add_argument('-e','--engine', type=str, nargs='?',
 parser.add_argument('-o','--output', type=str, nargs='?',
                     default=None,
                     help='output directory.')
+
+parser.add_argument('--pegasus-submit', action='store_true',
+                    default=False,
+                    help='submits the test suite.')
 
 args = parser.parse_args()
 
@@ -109,7 +114,7 @@ def replace_fiducial(line):
     if 'webdir=' in line:
         return line.replace(line.split('=')[-1],os.getcwd()+'/webdir/')
     if 'baseurl=' in line:
-        return line.replace(line.split('=')[-1],'file://'+os.getcwd()+'./webdir/')
+        return line.replace(line.split('=')[-1],'file://'+os.getcwd()+'/webdir/')
     if 'fake-cache=' in line:
         return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     if 'ignore-science-segments=' in line:
@@ -142,8 +147,10 @@ lalinferenceargs = [ 'lalinference_pipe'
 		     , '--dax'
 		     , '--grid-site'
 		     , 'local'
-		     , '--pegasus-submit'
-		     ]
+                     ]
+
+if args.pegasus_submit:
+    lalinferenceargs.append('--pegasus-submit')
 
 subprocess.call(lalinferenceargs)
 
@@ -152,7 +159,6 @@ subprocess.call(lalinferenceargs)
 os.makedirs(args.output+'/GraceDB/')
 os.chdir(args.output+'/GraceDB/')
 
-shutil.copy(args.injection_file,args.output+'/GraceDB/')
 shutil.copy(ini_file,args.output+'/GraceDB/'+os.path.basename(ini_file)+'.bak')
 shutil.copy(ini_file,args.output+'/GraceDB/')
 
@@ -160,7 +166,7 @@ def replace_GraceDB(line):
     if 'webdir=' in line:
         return line.replace(line.split('=')[-1],os.getcwd()+'/webdir/')
     if 'baseurl=' in line:
-        return line.replace(line.split('=')[-1],'file://'+os.getcwd()+'./webdir/')
+        return line.replace(line.split('=')[-1],'file://'+os.getcwd()+'/webdir/')
     if 'ifos=' in line:
         return "ifos=['H1','L1']\n"
     if 'upload-to-gracedb=' in line:
@@ -199,7 +205,9 @@ lalinferenceargs = [ 'lalinference_pipe'
 		     , '--dax'
 		     , '--grid-site'
 		     , 'local'
-		     , '--pegasus-submit'
-		     ]
+                     ]
+
+if args.pegasus_submit:
+    lalinferenceargs.append('--pegasus-submit')
 
 subprocess.call(lalinferenceargs)
