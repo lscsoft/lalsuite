@@ -48,6 +48,10 @@ main_cp=ConfigParser.ConfigParser()
 main_cp.optionxform = str
 main_cp.readfp(open(inifile))
 
+# Remove gps start and end time options
+for option in ['gps-start-time','gps-end-time']:
+  if main_cp.has_option('input',option):
+    main_cp.remove_option('input',option)
 
 rundir=os.path.abspath(opts.run_path)
 
@@ -96,7 +100,6 @@ elif prior_cp.get('analysis','engine')=='lalinferencebambimpi':
 for option in 'margphi','margtime','margtimephi':
   if prior_cp.has_option('engine',option):
         prior_cp.remove_option('engine',option)
-
 
 # Create a DAG to contain the other scripts
 outerdaglog=os.path.join(daglogdir,'lalinference_injection_test_'+str(uuid.uuid1())+'.log')
