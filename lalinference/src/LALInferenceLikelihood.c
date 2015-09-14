@@ -1582,6 +1582,7 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
   double mc;
   LALStatus status;
   memset(&status,0,sizeof(status));
+  INT4 remove_time = 0;
 
   int signalFlag = 1;   //flag for including signal model
 
@@ -1589,6 +1590,10 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
   for(dataPtr=data;dataPtr;dataPtr=dataPtr->next) Nifos++;
   void *generatedFreqModels[1+Nifos];
   for(i=0;i<=Nifos;i++) generatedFreqModels[i]=NULL;
+
+  // If time isn't in current params, remove it at the end
+  if(!LALInferenceCheckVariable(currentParams, "time"))
+      remove_time = 1;
 
   //check if signal model is being used
   signalFlag=1;
@@ -1728,6 +1733,9 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
     ifo++; //increment IFO counter for noise parameters
     dataPtr = dataPtr->next;
   }
+
+  if (remove_time && LALInferenceCheckVariable(currentParams, "time"))
+    LALInferenceRemoveVariable(currentParams, "time");
 
   model->SNR = sqrt(model->SNR);
 }
