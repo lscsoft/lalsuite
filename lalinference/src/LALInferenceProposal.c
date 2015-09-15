@@ -333,7 +333,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
         ifo_names[i] = XLALCalloc(DETNAMELEN, sizeof(char));
         strcpy(ifo_names[i], ifo->name);
     }
-    LALInferenceAddVariable(propArgs, "detector_names", ifo_names, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(propArgs, "detector_names", &ifo_names, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
 
     INT4 marg_timephi = 0;
     if (LALInferenceGetProcParamVal(command_line, "--margtimephi"))
