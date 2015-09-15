@@ -137,7 +137,7 @@ try:
             runtime=elapsed_time, instruments=instruments,
             origin='LIGO/Virgo', nest=True)
         gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
-            filename=fitspath, tagname="sky_loc")
+            filename=fitspath, tagname=("sky_loc", "lvem"))
     finally:
         shutil.rmtree(fitsdir)
 except:
