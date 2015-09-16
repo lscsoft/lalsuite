@@ -18,6 +18,16 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * \author Craig Robinson
+ *
+ * \file
+ *
+ * \brief Functions to generate the EOBNRv2 waveforms, as defined in
+ * Pan et al, PRD84, 124052(2011).
+ *
+ */
+
 #include <complex.h>
 #include <lal/Units.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
@@ -27,10 +37,9 @@
 #include <lal/LALSimIMR.h>
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
-#include <lal/LALSimSphHarmMode.h>
-#include <lal/LALSimBlackHoleRingdown.h>
 #include <gsl/gsl_sf_gamma.h>
 #include "LALSimIMREOBNRv2.h"
+#include "LALSimBlackHoleRingdown.h"
 
 /* Include all the static function files we need */
 #include "LALSimIMREOBFactorizedWaveform.c"
@@ -39,6 +48,8 @@
 #include "LALSimIMREOBNewtonianMultipole.c"
 #include "LALSimIMREOBHybridRingdown.c"
 #include "LALSimInspiraldEnergyFlux.c"
+
+/*#include "LALSimIMRSpinEOB.h"*/
 
 /**
  * The maximum number of modes available to us in this model
@@ -113,10 +124,10 @@ size_t find_instant_freq_hlm(const COMPLEX16TimeSeries *hlm,
 /*                      pseudo-4PN functions                         */
 /*-------------------------------------------------------------------*/
 
-/*
+/**
  * Calculates the initial orbital momentum.
  */
-static REAL8
+REAL8
 XLALpphiInitP4PN(
             const REAL8 r,                     /**<< Initial orbital separation */
             EOBACoefficients * restrict coeffs /**<< Pre-computed EOB A coefficients */
@@ -137,7 +148,7 @@ XLALpphiInitP4PN(
 }
 
 
-/*
+/**
  * The name of this function is slightly misleading, as it does
  * not computs the initial pr directly. It instead calculated
  * dH/dpr - vr for the given values of vr and p. This function is
@@ -145,7 +156,7 @@ XLALpphiInitP4PN(
  * value of pr which makes this function zero. That value is then
  * the initial pr.
  */
-static REAL8
+REAL8
 XLALprInitP4PN(
              REAL8 p,     /**<< The pr value we are currently testing */
              void *params /**<< The pr3In structure containing necessary parameters */
@@ -191,7 +202,7 @@ XLALprInitP4PN(
 
 /*-------------------------------------------------------------------*/
 
-/*
+/**
  * This function calculates the initial omega for a given value of r.
  */
 static REAL8
@@ -222,11 +233,11 @@ omegaofrP4PN (
 
 /*-------------------------------------------------------------------*/
 
-/*
+/**
  * Function called within a root-finding algorithm used to determine
  * the initial radius for a given value of omega.
  */
-static REAL8
+REAL8
 XLALrOfOmegaP4PN(
             REAL8 r,     /**<< Test value of the initial radius */
             void *params /**<< pr3In structure, containing useful parameters, including omega */
@@ -249,12 +260,12 @@ XLALrOfOmegaP4PN(
 
 /*-------------------------------------------------------------------*/
 
-/*
+/**
  * This function computes the derivatives of the EOB Hamiltonian w.r.t. the dynamical
  * variables, and therefore the derivatives of the dynamical variables w.r.t. time.
  * As such this gets called in the Runge-Kutta integration of the orbit.
  */
-static int
+int
 LALHCapDerivativesP4PN( double UNUSED t,        /**<< Current time (GSL requires it to be a parameter, but it's irrelevant) */
                         const REAL8 values[],   /**<< The dynamics r, phi, pr, pphi */
                         REAL8       dvalues[],  /**<< The derivatives dr/dt, dphi/dt. dpr/dt and dpphi/dt */
@@ -337,7 +348,7 @@ LALHCapDerivativesP4PN( double UNUSED t,        /**<< Current time (GSL requires
   return GSL_SUCCESS;
 }
 
-/*
+/**
  * Function which calculates omega = dphi/dt
  */
 static
@@ -359,7 +370,7 @@ REAL8 XLALCalculateOmega(   REAL8 eta,                /**<< Symmetric mass ratio
   return pPhi * A / (HeffHreal*r*r);
 }
 
-/*
+/**
  * Function which will determine whether to stop the evolution for the initial,
  * user-requested sample rate. We stop in this case when we have reached the peak
  * orbital frequency.
@@ -384,7 +395,7 @@ XLALFirstStoppingCondition(double UNUSED t,              /**<< Current time (req
   return GSL_SUCCESS;
 }
 
-/*
+/**
  * Function which will determine whether to stop the evolution for the high sample rate.
  * In this case, the data obtained will be used to attach the ringdown, so to make sure
  * we won't be interpolating data too near the final points, we push this integration
@@ -417,10 +428,10 @@ XLALHighSRStoppingCondition(double UNUSED t,       /**<< Current time (required 
 
 /*-------------------------------------------------------------------*/
 
-/*
+/**
  * Calculates the initial radial velocity
  */
-static REAL8 XLALvrP4PN( const REAL8 r,    /**<< Orbital separation (in units of total mass M) */
+REAL8 XLALvrP4PN( const REAL8 r,    /**<< Orbital separation (in units of total mass M) */
                  const REAL8 omega, /**<< Orbital frequency (dimensionless: M*omega)*/
                  pr3In *params      /**<< pr3In structure containing some necessary parameters */
                 )
@@ -492,7 +503,7 @@ static REAL8 XLALvrP4PN( const REAL8 r,    /**<< Orbital separation (in units of
   return (FDIS * x1);
 }
 
-/*
+/**
  * Calculates the time window over which the ringdown attachment takes
  * place. These values were calibrated to numerical relativity simulations,
  * and come from Pan et al, PRD84, 124052(2011).
@@ -563,7 +574,7 @@ GetRingdownAttachCombSize(
 
 }
 
-/*
+/**
  * Sets up the various PN coefficients which are needed to calculate
  * the flux. This is only used in setting the initial conditions, as in
  * the waveform evolution, the flux comes from the waveform itself.
@@ -1570,7 +1581,7 @@ XLALSimIMREOBNRv2Generator(
      rdMatchPoint->data[1] -= fmod( rdMatchPoint->data[1], dt/m );
  
      xlalStatus = XLALSimIMREOBHybridAttachRingdown(sigReHi, sigImHi,
-                   modeL, modeM, dt, mass1, mass2, 0, 0, 0, 0, 0, 0, &tVecHi, rdMatchPoint, EOBNRv2 );
+                   modeL, modeM, dt, mass1, mass2, 0, 0, 0, 0, 0, 0, &tVecHi, rdMatchPoint, EOBNRv2, 1.0 );
      if (xlalStatus != XLAL_SUCCESS )
      {
        XLALDestroyREAL8Vector( rdMatchPoint );
@@ -1672,19 +1683,6 @@ XLALSimIMREOBNRv2Generator(
 }
 
 /**
- * @addtogroup LALSimIMREOBNRv2_c
- *
- * @author Craig Robinson
- *
- * @brief Functions to generate the EOBNRv2 waveforms, as defined in
- * Pan et al, PRD84, 124052(2011).
- * 
- * @review EOBNRv2 reviewed by Ilya Mandel, Riccardo Sturani, Prayush Kumar, John Whelan, Yi Pan. Review concluded with git hash b29f20ff11e62095dbd44e850b248ecc58b08a13 (April 2013).
- *
- * @{
- */
-
-/**
  * This function generates the plus and cross polarizations for the dominant
  * (2,2) mode of the EOBNRv2 approximant. This model is defined in Pan et al,
  * PRD84, 124052(2011).
@@ -1764,5 +1762,3 @@ SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(
 
   return hlms;
 }
-
-/** @} */

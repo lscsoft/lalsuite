@@ -16,6 +16,7 @@
 #define TINY LAL_REAL4_MIN
 #define MAXITER 16384
 
+
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -305,6 +306,70 @@ static int XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(COMPLEX16 *A, COMPLEX
 }
 
 
+/**
+ * Low-level routine that computes the black hole quasinormal mode
+ * eigenefrequency, omega, and angular separation constant A for a given
+ * (l,m) mode and spin-weight s (s=-2 for gravitational perturbations).
+ *
+ * Implements Leaver's method by simultaneously
+ * solving the continued fraction equations Eq. (21) and Eq. (27)
+ * of Leaver (1985):
+ * E. W. Leaver "An analyitic representation for the quasi-normal
+ * modes of Kerr black holes", Proc. R. Soc. Lond. A 402 285-298 (1985).
+ *
+ * \warning The variables are represented in Leaver's conventions
+ * in which G = c = 2M = 1.  In particular this means, |a| < 0.5.
+ *
+ * \todo Extend so that overtones can be computed too.
+ */
+int XLALSimBlackHoleRingdownModeEigenvaluesLeaver(
+	COMPLEX16 *A,		/**< angular separation constant [returned] */
+	COMPLEX16 *omega,		/**< eigenfrequency [returned] */
+	double a,		/**< spin parameter (note: |a| < 0.5) */
+	int l,			/**< mode value l */
+	int m,			/**< mode value m */
+	int s			/**< spin weight (s = -2 for gravitational perturbations) */
+)
+{
+	double fac = 1.0/sqrt(27.0);
+	double atry;
+	int aneg = 0;
+
+	/* negative values of a can be obtained from positive values by an identity */
+	if (signbit(a)) {
+		aneg = 1;
+		a = fabs(a);
+		m = -m;
+	}
+
+	if (a >= 0.5 || l < abs(s) || abs(m) > l || s > 0 || s < -2)
+		XLAL_ERROR(XLAL_EINVAL);
+
+	/* start at Schwarzschild values */
+  	*A = l*(l+1) - s*(s+1);
+	*omega = fac*(2*l+1-I); /* asymptotic value for large l */
+	if (XLALSimBlackHoleRingdownModeEigenvalueSolveSchwarzschild(omega, l, m, s) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* step towards requested value of a */
+  	for (atry = 0; atry < a; atry += 0.1 * (0.5 - atry))
+		if (XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(A, omega, atry, l, m, s) < 0)
+			XLAL_ERROR(XLAL_EFUNC);
+
+  	/* now use the current guess to get value at requested a */
+  	if (XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(A, omega, a, l, m, s) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+  	/* if a was negative, apply the identity */
+  	if (aneg) {
+    		*A = conj(*A);
+    		*omega = I*conj(-I*(*omega));
+  	}
+
+	return 0;
+}
+
+
 /* Equations 18 and 19 of Leaver (1985) */
 static COMPLEX16 XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(double mu, double a, int l, int m, int s, COMPLEX16 A, COMPLEX16 omega)
 {
@@ -409,81 +474,6 @@ static COMPLEX16 XLALSimBlackHoleRingdownSpheroidalWaveFunctionNormLeaver(double
 	return norm;
 }
 
-/**
- * @addtogroup LALSimBlackHoleRingdown_h
- * @{
- */
-
-/**
- * @name Low-Level Routines
- * @attention The variables are represented in Leaver's conventions
- * in which G = c = 2M = 1.  In particular this means, |a| < 0.5.
- * @{
- */
-
-/**
- * Low-level routine that computes the black hole quasinormal mode
- * eigenefrequency, omega, and angular separation constant A for a given
- * (l,m) mode and spin-weight s (s=-2 for gravitational perturbations).
- *
- * Implements Leaver's method by simultaneously
- * solving the continued fraction equations Eq. (21) and Eq. (27)
- * of Leaver (1985):
- * E. W. Leaver "An analyitic representation for the quasi-normal
- * modes of Kerr black holes", Proc. R. Soc. Lond. A 402 285-298 (1985).
- *
- * \attention The variables are represented in Leaver's conventions
- * in which G = c = 2M = 1.  In particular this means, |a| < 0.5.
- *
- * \todo Extend so that overtones can be computed too.
- */
-int XLALSimBlackHoleRingdownModeEigenvaluesLeaver(
-	COMPLEX16 *A,		/**< angular separation constant [returned] */
-	COMPLEX16 *omega,		/**< eigenfrequency [returned] */
-	double a,		/**< spin parameter (note: |a| < 0.5) */
-	int l,			/**< mode value l */
-	int m,			/**< mode value m */
-	int s			/**< spin weight (s = -2 for gravitational perturbations) */
-)
-{
-	double fac = 1.0/sqrt(27.0);
-	double atry;
-	int aneg = 0;
-
-	/* negative values of a can be obtained from positive values by an identity */
-	if (signbit(a)) {
-		aneg = 1;
-		a = fabs(a);
-		m = -m;
-	}
-
-	if (a >= 0.5 || l < abs(s) || abs(m) > l || s > 0 || s < -2)
-		XLAL_ERROR(XLAL_EINVAL);
-
-	/* start at Schwarzschild values */
-  	*A = l*(l+1) - s*(s+1);
-	*omega = fac*(2*l+1-I); /* asymptotic value for large l */
-	if (XLALSimBlackHoleRingdownModeEigenvalueSolveSchwarzschild(omega, l, m, s) < 0)
-		XLAL_ERROR(XLAL_EFUNC);
-
-	/* step towards requested value of a */
-  	for (atry = 0; atry < a; atry += 0.1 * (0.5 - atry))
-		if (XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(A, omega, atry, l, m, s) < 0)
-			XLAL_ERROR(XLAL_EFUNC);
-
-  	/* now use the current guess to get value at requested a */
-  	if (XLALSimBlackHoleRingdownModeEigenvalueSolveKerr(A, omega, a, l, m, s) < 0)
-		XLAL_ERROR(XLAL_EFUNC);
-
-  	/* if a was negative, apply the identity */
-  	if (aneg) {
-    		*A = conj(*A);
-    		*omega = I*conj(-I*(*omega));
-  	}
-
-	return 0;
-}
-
 
 /**
  * Low-level routine that evaluates the spheroidal wave function at a
@@ -499,7 +489,7 @@ int XLALSimBlackHoleRingdownModeEigenvaluesLeaver(
  * E. W. Leaver "An analyitic representation for the quasi-normal
  * modes of Kerr black holes", Proc. R. Soc. Lond. A 402 285-298 (1985).
  *
- * \attention The variables are represented in Leaver's conventions
+ * \warning The variables are represented in Leaver's conventions
  * in which G = c = 2M = 1.  In particular this means, |a| < 0.5.
  *
  * \todo Extend so that overtones can be computed too.
@@ -532,12 +522,6 @@ COMPLEX16 XLALSimBlackHoleRingdownSpheroidalWaveFunctionLeaver(
 	return sphwf;
 }
 
-/** @} */
-
-/**
- * @name High-Level Routines
- * @{
- */
 
 /**
  * Computes the frequency and quality factor of a specified quasinormal
@@ -679,6 +663,177 @@ int XLALSimBlackHoleRingdown(
 	return 0;
 }
 
+
+/* TEST CODE */
+
+#if 0 /* TEST CODE */
+
+#include <stdio.h>
+int ringdown_waveform(void)
+{
+	static LIGOTimeGPS epoch;
+	const double M = 10.0*LAL_MSUN_SI;
+	const double a = 0.98;
+	const double r = 1e6*LAL_PC_SI;
+	const double i = LAL_PI/6;
+	const double dt = 1.0/16384.0;
+	const double eps = 0.01;
+	const int l = 2;
+	const int m = 2;
+	const char *fname = "ringdown_waveform.dat";
+	REAL8TimeSeries *hplus = NULL;
+	REAL8TimeSeries *hcross = NULL;
+	size_t j;
+	FILE *fp;
+
+	fp = fopen(fname, "w");
+	XLALSimBlackHoleRingdown(&hplus, &hcross, &epoch, 0.0, dt, M, a, eps, r, i, l, m);
+	for (j = 0; j < hplus->data->length; ++j)
+		fprintf(fp, "%f\t%e\t%e\n", j*dt, hplus->data->data[j], hcross->data->data[j]);
+	fclose(fp);
+
+	XLALDestroyREAL8TimeSeries(hcross);
+	XLALDestroyREAL8TimeSeries(hplus);
+
+	return 0;
+}
+
+int grasp_spherical_table(void)
+{
+	const double a = 0.0;
+	const int l = 2;
+	const int m = 2;
+	const int s = -2;
+	const char *fname = "grasp_spherical_table.txt";
+	FILE *fp;
+	COMPLEX16 A, omega;
+	COMPLEX16 norm;
+	COMPLEX16 sphwf;
+	double fac = 1.0/sqrt(2.0*M_PI);
+	double exactfac = sqrt(5.0/(64.0*M_PI));
+	double muvec[] = {-0.99,-0.95,-0.75,-0.55,-0.35,-0.15,0.15,0.35,0.55,0.75,0.95,0.99};
+	size_t i;
+
+	fp = fopen(fname, "w");
+	/* note: multiply a by 0.5 for Leaver conventions */
+	XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, 0.5*a, l, m, s);
+	norm = XLALSimBlackHoleRingdownSpheroidalWaveFunctionNormLeaver(0.5*a, l, m, s, A, omega);
+	for (i = 0; i < sizeof(muvec)/sizeof(*muvec); ++i) {
+		double mu = muvec[i];
+		sphwf = norm * XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver( mu, a, l, m, s, A, omega );
+		fprintf(fp, "%+e\t%e\t%e\n", mu, fac*creal(sphwf), exactfac*pow(1.0+mu,2));
+	}
+	fclose(fp);
+
+	return 0;
+}
+
+int grasp_spheroid_figure(void) 
+{
+	const double a = 0.98;
+	const int l = 2;
+	const int m = 2;
+	const int s = -2;
+	const char *fname = "grasp_spheroid_figure.dat";
+	FILE *fp;
+	COMPLEX16 A, omega;
+	COMPLEX16 norm;
+	COMPLEX16 sphwf;
+	double mu;
+
+	fp = fopen(fname, "w");
+	/* note: multiply a by 0.5 for Leaver conventions */
+	XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, 0.5*a, l, m, s);
+	norm = XLALSimBlackHoleRingdownSpheroidalWaveFunctionNormLeaver(0.5*a, l, m, s, A, omega);
+	for (mu = -1.0; mu <= 1.0; mu += 0.01) {
+		sphwf = norm * XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(mu, 0.5*a, l, m, s, A, omega);
+		fprintf(fp, "%e\t%e\t%e\n", mu, creal(sphwf), cimag(sphwf));
+	}
+	fclose(fp);
+
+	return 0;
+}
+
+int leaver_table_2(void)
+{
+	const int l = 2;
+	const int m = 0;
+	const int s = -2;
+	const char *fname = "leaver_table_2.txt";
+	FILE *fp;
+	COMPLEX16 A, omega;
+	double avec[] = {0.0,0.1,0.2,0.3,0.4,0.45,0.49,0.4999};
+	size_t i;
+
+	fp = fopen(fname, "w");
+
+	/* positive values of a */
+	for ( i = 0; i < sizeof(avec)/sizeof(*avec); ++i ) {
+		double a = avec[i];
+		XLALSimBlackHoleRingdownModeEigenvaluesLeaver( &A, &omega, a, l, m, s);
+		fprintf(fp, "%+.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega));
+	}
+
+	fprintf(fp, "\n");
+
+	/* negative values of a */
+	for (i = 0; i < sizeof(avec)/sizeof(*avec); ++i) {
+		double a = -avec[i];
+		XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s);
+		fprintf(fp, "%+.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega));
+	}
+
+	fclose(fp);
+	return 0;
+}
+
+int leaver_table_3(void)
+{
+	const int l = 2;
+	const int m = 1;
+	const int s = -2;
+	const char *fname = "leaver_table_3.txt";
+	FILE *fp;
+	COMPLEX16 A, omega;
+	double avec[] = {0.0,0.1,0.2,0.3,0.4,0.45,0.49,0.4999};
+	size_t i;
+
+	fp = fopen(fname, "w");
+
+	/* positive values of a */
+	for (i = 0; i < sizeof(avec)/sizeof(*avec); ++i) {
+		double a = avec[i];
+		XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s);
+		fprintf(fp, "%+.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega));
+	}
+
+	fprintf(fp, "\n");
+
+	/* negative values of a */
+	for (i = 0; i < sizeof(avec)/sizeof(*avec); ++i) {
+		double a = -avec[i];
+		XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s);
+		fprintf(fp, "%+.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega));
+	}
+
+	fclose(fp);
+	return 0;
+}
+
+int main(void)
+{
+	XLALSetErrorHandler(XLALAbortErrorHandler);
+	leaver_table_2();
+	leaver_table_3();
+	grasp_spherical_table();
+	grasp_spheroid_figure();
+	ringdown_waveform();
+	return 0;
+}
+
+#endif /* TEST CODE */
+
+
 /**
  * Computes the final mass and spin of the black hole resulting from merger.
  * They are given by fittings of NR simulations results. Specifically,
@@ -718,15 +873,16 @@ INT4 XLALSimIMREOBFinalMassSpin(
   static const REAL8 s4v2 = -0.27506210736300474;
   static const REAL8 t0v2 = -2.649826989941522;
   static const REAL8 t3v2 = 3.910637513328723;
-  static const REAL8 t2v2 = -3.850983155206041;
+  static const REAL8 t2v2 = 16.* (-0.17958273605461628 - 0.015625*t3v2);
+  /*static const REAL8 t2v2 = -3.850983155206041;*/
 
-
+  INT4 debugout=0;
   REAL8 totalMass;
   REAL8 eta, eta2, eta3;
   REAL8 a1, a2, chiS, q;
   REAL8 z1, z2, rISCO, eISCO, atl, tmpVar;
-  REAL8 cosa, cosb, cosg, a1a2norm, a1a2L, lnorm;
-  REAL8 q2, chi1, chi2, theta1, theta2, phi1, phi2, swapvar;
+  REAL8 UNUSED cosa, cosb, cosg, a1a2norm, a1a2L, lnorm;
+  REAL8 UNUSED q2, chi1, chi2, theta1, theta2, phi1, phi2, swapvar;
  
   /* get a local copy of the intrinsic parameters */
   totalMass = mass1 + mass2;
@@ -805,6 +961,29 @@ INT4 XLALSimIMREOBFinalMassSpin(
         swapvar = phi1;   phi1   = phi2;   phi2   = swapvar;
       }
       q2 = q * q;
+      /* Stas: this is v2 appraoch applied to s1.J s2.J az z-components of spin1/2*/
+      q      = mass1 / mass2;
+      a1 = spin1[2];
+      a2 = spin2[2];
+      atl    = ( a1 + a2 /q/q) / (1.+1./q)/(1.+ 1./q);
+      tmpVar = ( a1 + a2 /q/q) / (1.+1./q/q);
+      z1 = 1. + pow( 1.-atl*atl, 1./3.) * ( pow( 1.+atl, 1./3. ) + pow( 1.-atl, 1./3. ) );
+      z2 = sqrt( 3.*atl*atl + z1*z1 );
+      rISCO = 3. + z2 - ( atl<0. ? -1. : 1. ) * sqrt( (3.-z1) * (3.+z1+2.*z2) );
+      eISCO = sqrt( 1. - 2./(3.*rISCO) );
+      *finalMass = 1. - ( (1.-eISCO)*eta
+                 + 16.*eta*eta*( 0.00258 - 0.0773/(1./((1.+1/q/q)/(1.+1/q)/(1.+1/q))*atl-1.6939) - 0.25*(1.-eISCO)) );
+      *finalSpin = tmpVar + tmpVar*eta*( s9*eta*tmpVar*tmpVar + s8*eta*eta*tmpVar + s7*eta*tmpVar
+                 + s6*tmpVar*tmpVar + s4v2*tmpVar + s5v2*eta + t0v2)
+                 + eta*( 2.*sqrt(3.) + t2v2*eta + t3v2 *eta*eta );
+      
+      
+      
+      /* Stas: Below is original Rez.-Bar. implementation, 
+      Above I use the aligned case fit because spin1 and spin2 
+      currently have only z-components equal to projection of the spins on 
+      J at light ring */
+      /* 
       cosa = sin(theta1)*cos(phi1)*sin(theta2)*cos(phi2)
            + sin(theta1)*sin(phi1)*sin(theta2)*sin(phi2)
            + cos(theta1)*cos(theta2);
@@ -814,10 +993,11 @@ INT4 XLALSimIMREOBFinalMassSpin(
       a1a2L    = chi1*cosb+chi2*q2*cosg;
       lnorm    = 2.*sqrt(3.)+t2*eta+t3*eta*eta+s4/(1.+q2)/(1.+q2)*a1a2norm
                + (s5*eta+t0+2.)/(1.+q2) * a1a2L;
-      *finalMass = 1. + (0.9515 - 1.0)*4.*eta - 0.013*16.*eta2*(chi1+chi2);
+      *finalMass = 1. + (0.9515 - 1.0)*4.*eta - 0.013*16.*eta2*(chi1*cosb+chi2*cosg);
       *finalSpin = 1. / (1.+q) / (1.+q)
-               * sqrt(a1a2norm +2.*a1a2L*lnorm*q+lnorm*lnorm*q2);
-      printf("final spin variables: %e, %e, %e, %e, %e, %e\n",chi1,chi2,theta1,theta2,phi1,phi2);
+               * sqrt(a1a2norm +2.*a1a2L*lnorm*q+lnorm*lnorm*q2);*/
+      if (debugout)
+          printf("final spin variables: %e, %e, %e, %e, %e, %e\n",chi1,chi2,theta1,theta2,phi1,phi2);
     break;
     default:
       XLALPrintError( "XLAL Error %s - Unsupported approximant.\n", __func__ );
@@ -2386,6 +2566,8 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2(
       break;
   }
 
+  spline = gsl_spline_alloc( gsl_interp_cspline, 107 );
+  acc    = gsl_interp_accel_alloc();
 
   totalMass = mass1 + mass2;
 
@@ -2394,9 +2576,6 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2(
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
-  
-  spline = gsl_spline_alloc( gsl_interp_cspline, 107 );
-  acc    = gsl_interp_accel_alloc();
 
   /* finalSpin interpolation is available only between -0.9996 and 0.9996 */
   /* Set finalSpin to +/- 0.9996 if it is out of this range */
@@ -2425,175 +2604,4 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2(
   return XLAL_SUCCESS;
 }
 
-/** @} */
 
-/** @} */
-
-/* TEST CODE */
-
-#if 0 /* TEST CODE */
-
-#include <stdio.h>
-int ringdown_waveform(void)
-{
-	static LIGOTimeGPS epoch;
-	const double M = 10.0*LAL_MSUN_SI;
-	const double a = 0.98;
-	const double r = 1e6*LAL_PC_SI;
-	const double i = LAL_PI/6;
-	const double dt = 1.0/16384.0;
-	const double eps = 0.01;
-	const int l = 2;
-	const int m = 2;
-	const char *fname = "ringdown_waveform.dat";
-	REAL8TimeSeries *hplus = NULL;
-	REAL8TimeSeries *hcross = NULL;
-	size_t j;
-	FILE *fp;
-
-	fp = fopen(fname, "w");
-	XLALSimBlackHoleRingdown(&hplus, &hcross, &epoch, 0.0, dt, M, a, eps, r, i, l, m);
-	for (j = 0; j < hplus->data->length; ++j)
-		fprintf(fp, "%f\t%e\t%e\n", j*dt, hplus->data->data[j], hcross->data->data[j]);
-	fclose(fp);
-
-	XLALDestroyREAL8TimeSeries(hcross);
-	XLALDestroyREAL8TimeSeries(hplus);
-
-	return 0;
-}
-
-int grasp_spherical_table(void)
-{
-	const double a = 0.0;
-	const int l = 2;
-	const int m = 2;
-	const int s = -2;
-	const char *fname = "grasp_spherical_table.txt";
-	FILE *fp;
-	COMPLEX16 A, omega;
-	COMPLEX16 norm;
-	COMPLEX16 sphwf;
-	double fac = 1.0/sqrt(2.0*M_PI);
-	double exactfac = sqrt(5.0/(64.0*M_PI));
-	double muvec[] = {-0.99,-0.95,-0.75,-0.55,-0.35,-0.15,0.15,0.35,0.55,0.75,0.95,0.99};
-	size_t i;
-
-	fp = fopen(fname, "w");
-	/* note: multiply a by 0.5 for Leaver conventions */
-	XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, 0.5*a, l, m, s);
-	norm = XLALSimBlackHoleRingdownSpheroidalWaveFunctionNormLeaver(0.5*a, l, m, s, A, omega);
-	for (i = 0; i < XLAL_NUM_ELEM(muvec); ++i) {
-		double mu = muvec[i];
-		sphwf = norm * XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver( mu, a, l, m, s, A, omega );
-		fprintf(fp, "%+e\t%e\t%e\n", mu, fac*creal(sphwf), exactfac*pow(1.0+mu,2));
-	}
-	fclose(fp);
-
-	return 0;
-}
-
-int grasp_spheroid_figure(void) 
-{
-	const double a = 0.98;
-	const int l = 2;
-	const int m = 2;
-	const int s = -2;
-	const char *fname = "grasp_spheroid_figure.dat";
-	FILE *fp;
-	COMPLEX16 A, omega;
-	COMPLEX16 norm;
-	COMPLEX16 sphwf;
-	double mu;
-
-	fp = fopen(fname, "w");
-	/* note: multiply a by 0.5 for Leaver conventions */
-	XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, 0.5*a, l, m, s);
-	norm = XLALSimBlackHoleRingdownSpheroidalWaveFunctionNormLeaver(0.5*a, l, m, s, A, omega);
-	for (mu = -1.0; mu <= 1.0; mu += 0.01) {
-		sphwf = norm * XLALSimBlackHoleRingdownSpheroidalWaveFunction1Leaver(mu, 0.5*a, l, m, s, A, omega);
-		fprintf(fp, "%e\t%e\t%e\n", mu, creal(sphwf), cimag(sphwf));
-	}
-	fclose(fp);
-
-	return 0;
-}
-
-int leaver_table_2(void)
-{
-	const int l = 2;
-	const int m = 0;
-	const int s = -2;
-	const char *fname = "leaver_table_2.txt";
-	FILE *fp;
-	COMPLEX16 A, omega;
-	double avec[] = {0.0,0.1,0.2,0.3,0.4,0.45,0.49,0.4999};
-	size_t i;
-
-	fp = fopen(fname, "w");
-
-	/* positive values of a */
-	for ( i = 0; i < XLAL_NUM_ELEM(avec); ++i ) {
-		double a = avec[i];
-		XLALSimBlackHoleRingdownModeEigenvaluesLeaver( &A, &omega, a, l, m, s);
-		fprintf(fp, "%+.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega));
-	}
-
-	fprintf(fp, "\n");
-
-	/* negative values of a */
-	for (i = 0; i < XLAL_NUM_ELEM(avec); ++i) {
-		double a = -avec[i];
-		XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s);
-		fprintf(fp, "%+.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega));
-	}
-
-	fclose(fp);
-	return 0;
-}
-
-int leaver_table_3(void)
-{
-	const int l = 2;
-	const int m = 1;
-	const int s = -2;
-	const char *fname = "leaver_table_3.txt";
-	FILE *fp;
-	COMPLEX16 A, omega;
-	double avec[] = {0.0,0.1,0.2,0.3,0.4,0.45,0.49,0.4999};
-	size_t i;
-
-	fp = fopen(fname, "w");
-
-	/* positive values of a */
-	for (i = 0; i < XLAL_NUM_ELEM(avec); ++i) {
-		double a = avec[i];
-		XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s);
-		fprintf(fp, "%+.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega));
-	}
-
-	fprintf(fp, "\n");
-
-	/* negative values of a */
-	for (i = 0; i < XLAL_NUM_ELEM(avec); ++i) {
-		double a = -avec[i];
-		XLALSimBlackHoleRingdownModeEigenvaluesLeaver(&A, &omega, a, l, m, s);
-		fprintf(fp, "%+.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega));
-	}
-
-	fclose(fp);
-	return 0;
-}
-
-int main(void)
-{
-	XLALSetErrorHandler(XLALAbortErrorHandler);
-	leaver_table_2();
-	leaver_table_3();
-	grasp_spherical_table();
-	grasp_spheroid_figure();
-	ringdown_waveform();
-	return 0;
-}
-
-#endif /* TEST CODE */

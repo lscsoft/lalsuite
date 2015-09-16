@@ -37,10 +37,12 @@
 #ifndef LALSIMIMRSPINALIGNEDEOBHCAPDERIVATIVE_C
 #define LALSIMIMRSPINALIGNEDEOBHCAPDERIVATIVE_C
 
+#include <unistd.h>
+
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 
-#include "LALSimIMRSpinEOB.h"
+/*#include "LALSimIMRSpinEOB.h"*/
 #include "LALSimIMRSpinEOBHamiltonian.c"
 #include "LALSimIMRSpinEOBFactorizedFlux.c"
 
@@ -81,7 +83,7 @@ static int XLALSpinAlignedHcapDerivative(
                   REAL8         dvalues[],  /**< time derivative of dynamical variables */
                   void         *funcParams  /**< EOB parameters */
                   )
-{
+{ 
 
   static const REAL8 STEP_SIZE = 1.0e-4;
 
@@ -237,14 +239,18 @@ static int XLALSpinAlignedHcapDerivative(
   dvalues[2] = dvalues[2] * csi - ( values[2] / values[3] ) * flux / omega;
   dvalues[3] = - flux / omega;
 
-  //if ( values[0] > 1.3 && values[0] < 3.9 ) printf("Values:\n%f %f %f %f\n", values[0], values[1], values[2], values[3] );
+  if ( 0 && (values[0] > 1.3 && values[0] < 3.9) ) 
+    printf("Values:\n%f %f %f %f\n", values[0], values[1], values[2], values[3] );
 
-  //if ( values[0] > 1.3 && values[0] < 3.9 ) printf("Derivatives:\n%f %f %f %f\n", dvalues[0], r*dvalues[1], dvalues[2], dvalues[3] );
+  if ( 0 && (values[0] > 1.3 && values[0] < 3.9) )
+    printf("Derivatives:\n%f %f %f %f\n", dvalues[0], r*dvalues[1], dvalues[2], dvalues[3] );
 
   if ( isnan( dvalues[0] ) || isnan( dvalues[1] ) || isnan( dvalues[2] ) || isnan( dvalues[3] ) )
   {
     //printf( "Deriv is nan: %e %e %e %e\n", dvalues[0], dvalues[1], dvalues[2], dvalues[3] );
-    return 1;
+      //XLALPrintError( "XLAL Error - %s: some dvalue is nan \n", __func__);
+      //XLAL_ERROR( XLAL_EINVAL );
+      return 1;
   }
 
   return XLAL_SUCCESS;
