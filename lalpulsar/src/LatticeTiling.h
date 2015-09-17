@@ -108,18 +108,19 @@ int XLALSetLatticeTilingBoundPadding(
   );
 
 ///
-/// Set a parameter-space bound on a dimension of the lattice tiling. The bound is described by a
-/// function \c func, and two data of length \c data_len, \c data_1 and \c data_2, describing the
-/// two parameter space bounds respectively. If \c data_1 and \c data_2 are identical, this
-/// parameter-space dimension will be treated as a single point, and will not be tiled.
+/// Set a parameter-space bound on a dimension of the lattice tiling.  The bound is described by a
+/// function \c func, and two data of length \c data_len, \c data_lower and \c data_upper,
+/// describing the lower and upper parameter space bounds respectively. If \c data_lower and \c
+/// data_upper are identical, this parameter-space dimension will be treated as a single point, and
+/// will not be tiled.
 ///
 int XLALSetLatticeTilingBound(
   LatticeTiling *tiling,		///< [in] Lattice tiling
   const size_t dim,			///< [in] Dimension on which bound applies
   const LatticeTilingBound func,	///< [in] Parameter space bound function
   const size_t data_len,		///< [in] Length of arbitrary data describing parameter space bounds
-  void *data_1,				///< [in] Arbitrary data describing first parameter space bound
-  void *data_2				///< [in] Arbitrary data describing second parameter space bound
+  void *data_lower,			///< [in] Arbitrary data describing lower parameter space bound
+  void *data_upper			///< [in] Arbitrary data describing upper parameter space bound
   );
 
 ///
