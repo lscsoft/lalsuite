@@ -1135,7 +1135,7 @@ static REAL8 XLALSimIMRSpinEOBCalcOmega(
   /* ********************************************************************* */
   
   /** the polarvalues, respectively, are 
-   * {r, $\theta$, $\phi$, $p_r$, $p_\theta$, $p_\phi$} */
+   * \f$\{r, \theta, \phi, p_r, p_\theta, p_\phi}\f$ */
   polarvalues[0] = sqrt(inner_product(rvecprime,rvecprime));
   polarvalues[1] = acos(rvecprime[0] / polarvalues[0]);
   polarvalues[2] = atan2(-rvecprime[1], rvecprime[2]);

@@ -1441,14 +1441,14 @@ int XLALSimIMRSpinAlignedEOBWaveform(
  * Currently, only h2m harmonics will be generated. 
  * 
  * Input conventions:
- * Cartesian coordinate system: initial $\vec{L}$ is along the z-axis
+ * Cartesian coordinate system: initial \f$\vec{L}\f$ is along the z-axis
  * phiC       : in radians
  * deltaT     : in SI units (Hz)
  * m1SI, m2SI : in SI units (kg)
  * fMin       : in SI units (Hz)
  * r          : in SI units (m)
  * inc        : in radians
- * INspin{1,2}: in dimensionless units of m{1,2}^2
+ * INspin{1,2}: in dimensionless units of \f$m{1,2}^2\f$
  * 
  * Evolution conventions:
  * values[0-2]: r in units of total mass
@@ -1541,27 +1541,27 @@ int XLALSimIMRSpinEOBWaveform(
 
 
 int XLALSimIMRSpinEOBWaveformAll(
-        REAL8TimeSeries **hplus,
-        REAL8TimeSeries **hcross,
+        REAL8TimeSeries **hplus,  /**<< output: hplus GW polarization */
+        REAL8TimeSeries **hcross, /**<< output: hcross GW polarization */
         REAL8Vector      **dynHi, /**<< Here we store and return the seob dynamics for high sampling (end of inspiral) */
         SphHarmTimeSeries **hlmPTSoutput, /**<< Here we store and return the PWave (high sampling) */
         SphHarmTimeSeries **hlmPTSHiOutput, /**<< Here we store and return the JWave (high sampling) */
         SphHarmTimeSeries **hIMRlmJTSHiOutput, /**<< Here we store and return the JWaveIMR (high sampling) */
         REAL8Vector     **AttachPars,   /**<< Parameters of RD attachment: */ 
         //LIGOTimeGPS     *tc,
-        const REAL8      phiC,
-        const REAL8     deltaT,
-        const REAL8     m1SI,
-        const REAL8     m2SI,
-        const REAL8     fMin,
-        const REAL8     r,
-        const REAL8     inc,
-        const REAL8     INspin1x,
-        const REAL8     INspin1y,
-        const REAL8     INspin1z,
-        const REAL8     INspin2x,
-        const REAL8     INspin2y,
-        const REAL8     INspin2z
+        const REAL8      phiC,      /**<< intitial orbital phase */
+        const REAL8     deltaT,     /**<< sampling time step */
+        const REAL8     m1SI,       /**<< mass of first object in SI */
+        const REAL8     m2SI,       /**<< mass of second object in SI */
+        const REAL8     fMin,       /**<< fMin */
+        const REAL8     r,          /**<< initial separation */
+        const REAL8     inc,        /**<< inclination */
+        const REAL8     INspin1x,   /**<< spin1 x-component */
+        const REAL8     INspin1y,   /**<< spin1 y-component */
+        const REAL8     INspin1z,   /**<< spin1 z-component */
+        const REAL8     INspin2x,   /**<< spin2 x-component */
+        const REAL8     INspin2y,   /**<< spin2 y-component */
+        const REAL8     INspin2z    /**<< spin2 z-component */
      )
 
 {
