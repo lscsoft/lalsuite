@@ -64,8 +64,6 @@ const char *const cycleArrayName = "Proposal Cycle";
 const char *const cycleArrayLengthName = "Proposal Cycle Length";
 const char *const cycleArrayCounterName = "Proposal Cycle Counter";
 
-const char *const LALInferenceCurrentProposalName = "Current Proposal";
-
 /* Proposal Names */
 const char *const nullProposalName = "NULL";
 const char *const singleAdaptProposalName = "Single";
@@ -3925,7 +3923,6 @@ void LALInferencePrintProposalTracking(FILE *fp, LALInferenceProposalCycle *cycl
 }
 
 REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
-  const char *proposalName = splineCalibrationProposalName;
   char **ifo_names;
   INT4 ifo;
   INT4 nifo = LALInferenceGetINT4Variable(thread->proposalArgs, "nDet");
@@ -3933,7 +3930,6 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LAL
   REAL8 phaseWidth = *(REAL8 *)LALInferenceGetVariable(thread->priorArgs, "spcal_phase_uncertainty");
 
   LALInferenceCopyVariables(currentParams, proposedParams);
-  LALInferenceSetVariable(thread->proposalArgs, LALInferenceCurrentProposalName, &proposalName);
 
   ifo_names = *(char ***)LALInferenceGetVariable(thread->proposalArgs, "detector_names");
   for (ifo=0; ifo<nifo; ifo++) {

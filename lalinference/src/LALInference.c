@@ -3956,7 +3956,7 @@ void LALInferencePrintSplineCalibration(FILE *output, LALInferenceThreadState *t
             fprintf(output, "%g\t", amp->data[j]);
         }
 
-        for (j = 0; j < phase->length; i++) {
+        for (j = 0; j < phase->length; j++) {
             fprintf(output, "%g\t", phase->data[j]);
         }
     }
