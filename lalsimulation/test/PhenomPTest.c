@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2013 Michael Puerrer
- *  Test code for LALSimIMRPhenomP
+ *  Test code for LALSimIMRPhenomP(v1)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@
 
 #include "../src/LALSimIMRPhenomP.c" /* Include source directly so we can carry out unit tests for internal functions */
 
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#define MYUNUSED(expr) do { (void)(expr); } while (0)
 
 void prC(const char *name, COMPLEX16 x);
 void prC(const char *name, COMPLEX16 x) {
@@ -346,6 +346,10 @@ static void Test_PhenomPCore(void) {
   COMPLEX16 hp, hc;
   REAL8 phasing;
   REAL8 fHz = 40.6051; // Mf = 0.01 for M=50Msun
+  const UINT4 version = 1;
+  IMRPhenomDAmplitudeCoefficients *pAmp = NULL;
+  IMRPhenomDPhaseCoefficients *pPhi = NULL;
+
   int ret = PhenomPCoreOneFrequency(
     fHz,                     /**< frequency (Hz) */
     0.16,                    /**< symmetric mass ratio */
@@ -354,15 +358,18 @@ static void Test_PhenomPCore(void) {
     100 * 1e6 * LAL_PC_SI,   /**< distance of source (m) */
     50,                      /**< total mass (Solar masses) */
     0,                       /**< orbital coalescence phase (rad) */
+    pAmp,                    /**< Internal IMRPhenomD amplitude coefficients */
+    pPhi,                    /**< Internal IMRPhenomD phase coefficients */
     PCparams,                /**< internal PhenomC parameters */
     &angcoeffs,              /**< struct with PN coeffs for the NNLO angles */
     &Y2m,                    /**< struct of l=2 spherical harmonics of spin weight -2 */
     0,0,
     &hp,                     /**< output: \f$\tilde h_+\f$ */
     &hc,                     /**< output: \f$\tilde h_+\f$ */
-    &phasing);               /**< Output: overall phasing */
+    &phasing,                /**< Output: overall phasing */
+    version);
 
-  UNUSED(ret);
+  MYUNUSED(ret);
   prC("hp", hp);
   prC("hc", hc);
 
@@ -424,6 +431,7 @@ static void Test_XLALSimIMRPhenomP(void) {
   REAL8 deltaF = 0.06;
   REAL8 f_max = 0; // 8000;
   REAL8 distance = 100 * 1e6 * LAL_PC_SI;
+  const UINT4 version = 1;
 
   int ret = XLALSimIMRPhenomP(
     &hptilde,                 /**< Frequency-domain waveform h+ */
@@ -439,10 +447,11 @@ static void Test_XLALSimIMRPhenomP(void) {
     deltaF,                   /**< Sampling frequency (Hz) */
     f_min,                    /**< Starting GW frequency (Hz) */
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
-    f_ref);                   /**< Reference frequency */
+    f_ref,                    /**< Reference frequency */
+    version);
 
   dump_file("PhenomP_Test1.dat", hptilde, hctilde, m1+m2);
-  UNUSED(ret);
+  MYUNUSED(ret);
   COMPLEX16 hp = (hptilde->data->data)[1000];
   COMPLEX16 hc = (hctilde->data->data)[1000];
   prC("hp", hp);
@@ -489,6 +498,7 @@ static void Test_PhenomC_PhenomP(void) {
   REAL8 lnhatx = 0;
   REAL8 lnhaty = 0;
   REAL8 lnhatz = 1;
+  const UINT4 version = 1;
 
   REAL8 chi_eff, chip, thetaJ, alpha0;
 
@@ -530,7 +540,8 @@ static void Test_PhenomC_PhenomP(void) {
     deltaF,                   /**< Sampling frequency (Hz) */
     f_min,                    /**< Starting GW frequency (Hz) */
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
-    f_ref);                   /**< Reference frequency */
+    f_ref,                    /**< Reference frequency */
+    version);
 
   int wflen = hptilde->data->length;
   REAL8 f_max_prime = 0;
@@ -584,7 +595,7 @@ static void Test_PhenomC_PhenomP(void) {
   );
 
   printf("match(PhenomP_aligned, PhenomC) = %g\n", match);
-  UNUSED(ret);
+  MYUNUSED(ret);
 }
 
 static void Test_XLALSimIMRPhenomP_f_ref(void);
@@ -635,6 +646,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   REAL8 deltaF = 0.06;
   REAL8 f_max = 0; // 8000;
   REAL8 distance = 100 * 1e6 * LAL_PC_SI;
+  const UINT4 version = 1;
 
   int ret = XLALSimIMRPhenomP(
     &hptilde,                 /**< Frequency-domain waveform h+ */
@@ -650,10 +662,11 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
     deltaF,                   /**< Sampling frequency (Hz) */
     f_min,                    /**< Starting GW frequency (Hz) */
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
-    f_ref);                   /**< Reference frequency */
+    f_ref,                    /**< Reference frequency */
+    version);
 
   dump_file("PhenomP_Test_f_ref1.dat", hptilde, hctilde, m1+m2);
-  UNUSED(ret);
+  MYUNUSED(ret);
   COMPLEX16 hp = (hptilde->data->data)[1000];
   COMPLEX16 hc = (hctilde->data->data)[1000];
   printf("f_ref = %g\n", f_ref);
@@ -699,10 +712,12 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
     deltaF,                   /**< Sampling frequency (Hz) */
     f_min,                    /**< Starting GW frequency (Hz) */
     f_max,                    /**< End frequency; 0 defaults to ringdown cutoff freq */
-    f_ref);                   /**< Reference frequency */
+    f_ref,                    /**< Reference frequency */
+    version);
+
 
   dump_file("PhenomP_Test_f_ref2.dat", hptilde2, hctilde2, m1+m2);
-  UNUSED(ret);
+  MYUNUSED(ret);
   COMPLEX16 hp2 = (hptilde2->data->data)[1000];
   COMPLEX16 hc2 = (hctilde2->data->data)[1000];
   printf("f_ref = %g\n", f_ref);
@@ -719,8 +734,8 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
 }
 
 int main(int argc, char *argv[]) {
-  UNUSED(argc);
-  UNUSED(argv);
+  MYUNUSED(argc);
+  MYUNUSED(argv);
 
 #ifndef _OPENMP
   Test_alpha_epsilon();
@@ -731,13 +746,13 @@ int main(int argc, char *argv[]) {
   Test_PhenomC_PhenomP();
   Test_XLALSimIMRPhenomP_f_ref();
 #else
-  UNUSED(Test_alpha_epsilon);
-  UNUSED(Test_XLALSimIMRPhenomPCalculateModelParameters);
-  UNUSED(Test_PhenomC);
-  UNUSED(Test_PhenomPCore);
-  UNUSED(Test_XLALSimIMRPhenomP);
-  UNUSED(Test_PhenomC_PhenomP);
-  UNUSED(Test_XLALSimIMRPhenomP_f_ref);
+  MYUNUSED(Test_alpha_epsilon);
+  MYUNUSED(Test_XLALSimIMRPhenomPCalculateModelParameters);
+  MYUNUSED(Test_PhenomC);
+  MYUNUSED(Test_PhenomPCore);
+  MYUNUSED(Test_XLALSimIMRPhenomP);
+  MYUNUSED(Test_PhenomC_PhenomP);
+  MYUNUSED(Test_XLALSimIMRPhenomP_f_ref);
 #endif
 
   printf("\nAll done!\n");

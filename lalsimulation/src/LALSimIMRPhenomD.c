@@ -18,7 +18,6 @@
  */
 
 
-
 #include <math.h>
 #include <complex.h>
 #include <gsl/gsl_errno.h>
@@ -64,7 +63,7 @@ static int IMRPhenomDGenerateFD(
  * @author Michael Puerrer, Sebastian Khan, Frank Ohme
  *
  * @brief C code for IMRPhenomD phenomenological waveform model.
- * See ... for details.
+ * See Husa et al, arXiv:1508.07250 and Kahn et al, arXiv:1508.07253 for details.
  *
  * This is an aligned-spin frequency domain model.
  *
@@ -205,8 +204,9 @@ static int IMRPhenomDGenerateFD(
   size_t ind_max = (size_t) (f_max / deltaF);
 
   // Calculate phenomenological parameters
-  IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2);
-  IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2);
+  REAL8 finspin = FinalSpin0714(eta, chi1, chi2);
+  IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2, finspin);
+  IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin);
   if (!pAmp || !pPhi) XLAL_ERROR(XLAL_EFUNC);
 
   // Compute coefficients to make phase C^1
