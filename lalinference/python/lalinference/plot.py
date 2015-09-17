@@ -493,7 +493,8 @@ def heatmap(func, *args, **kwargs):
 
     # Plot bitmap using imshow.
     aximg = plt.imshow(zz.reshape(xx.shape), aspect=ax.get_aspect(),
-        extent=(xmin, xmax, ymax, ymin), *args, **kwargs)
+        origin='upper', extent=(xmin, xmax, ymax, ymin),
+        *args, **kwargs)
 
     # Hide masked-out values by displaying them in transparent white.
     aximg.cmap.set_bad('w', alpha=0.)
