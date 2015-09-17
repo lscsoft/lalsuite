@@ -100,14 +100,6 @@ void XLALDestroyLatticeTiling(
   );
 
 ///
-/// Set whether padding is added to the parameter-space bounds of the lattice tiling.
-///
-int XLALSetLatticeTilingBoundPadding(
-  LatticeTiling *tiling,		///< [in] Lattice tiling
-  const bool padding			///< [in] Whether padding is added to parameter space bounds
-  );
-
-///
 /// Set a parameter-space bound on a dimension of the lattice tiling.  The bound is described by a
 /// function \c func, and two data of length \c data_len, \c data_lower and \c data_upper,
 /// describing the lower and upper parameter space bounds respectively. If \c data_lower and \c

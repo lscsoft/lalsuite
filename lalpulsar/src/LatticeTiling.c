@@ -63,7 +63,6 @@ struct tagLatticeTiling {
   LT_Bound *bounds;			///< Array of parameter-space bound info for each dimension
   size_t tiled_ndim;			///< Number of tiled parameter-space dimensions
   size_t *tiled_idx;			///< Index to tiled parameter-space dimensions
-  bool padding;				///< Whether padding is added to parameter space bounds
   TilingLattice lattice;		///< Type of lattice to generate tiling with
   gsl_vector *phys_bbox;		///< Metric ellipse bounding box
   gsl_vector *phys_origin;		///< Parameter-space origin in physical coordinates
@@ -239,7 +238,7 @@ static void LT_GetBounds(
   LT_CallBoundFunc(tiling, i, phys_point, phys_lower, phys_upper);
 
   // If dimension is not tiled or padding is not required, we're done
-  if (!tiling->bounds[i].is_tiled || !tiling->padding || !padding) {
+  if (!tiling->bounds[i].is_tiled || !padding) {
     return;
   }
 
@@ -813,7 +812,6 @@ LatticeTiling *XLALCreateLatticeTiling(
 
   // Initialise fields
   tiling->ndim = ndim;
-  tiling->padding = true;
   tiling->lattice = TILING_LATTICE_MAX;
 
   return tiling;
@@ -838,23 +836,6 @@ void XLALDestroyLatticeTiling(
     GFVEC(tiling->phys_bbox, tiling->phys_origin);
     XLALFree(tiling);
   }
-}
-
-int XLALSetLatticeTilingBoundPadding(
-  LatticeTiling *tiling,
-  const bool padding
-  )
-{
-
-  // Check input
-  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL);
-
-  // Set parameter-space padding
-  tiling->padding = padding;
-
-  return XLAL_SUCCESS;
-
 }
 
 int XLALSetLatticeTilingBound(
@@ -1444,7 +1425,7 @@ int XLALLatticeTilingDimensionBounds(
   gsl_vector_view local_point_view = gsl_vector_view_array(local_point_array, point->size);
   gsl_vector_memcpy(&local_point_view.vector, point);
 
-  // Get lower and upper bounds on 'x'; padding is determined by 'padding'
+  // Get lower and upper bounds on 'x'; with/without padding is determined by 'padding'
   double x_lower = 0, x_upper = 0;
   LT_GetBounds(tiling, padding, x_dim, &local_point_view.vector, &x_lower, &x_upper);
 
@@ -1460,7 +1441,7 @@ int XLALLatticeTilingDimensionBounds(
   GAVEC(*y_upper, Nx);
   GAVEC(*x, Nx);
 
-  // Get lower and upper bounds on 'y'; padding is determined by 'padding'
+  // Get lower and upper bounds on 'y'; with/without padding is determined by 'padding'
   for (size_t i = 0; i < Nx; ++i) {
     const double x_i = x_lower + dx*i;
     gsl_vector_set(&local_point_view.vector, x_dim, x_i);
