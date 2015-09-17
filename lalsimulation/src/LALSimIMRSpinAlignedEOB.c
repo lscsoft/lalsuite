@@ -1441,7 +1441,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
  * Currently, only h2m harmonics will be generated. 
  * 
  * Input conventions:
- * Cartesian coordinate system: initial \vec{L} is along the z-axis
+ * Cartesian coordinate system: initial $\vec{L}$ is along the z-axis
  * phiC       : in radians
  * deltaT     : in SI units (Hz)
  * m1SI, m2SI : in SI units (kg)
