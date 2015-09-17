@@ -148,37 +148,23 @@ INT4 DirichletRatioVector(COMPLEX8Vector *output, alignedREAL8Vector *delta0, al
 
    for (UINT4 ii=0; ii<output->length; ii++) {
       if (fabsf(delta1_int->data[ii])<(REAL4)1.0e-6) {
-         if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) {
-            output->data[ii] = 1.0;
-         } else if (fabsf((REAL4)(delta0_int->data[ii]*delta0_int->data[ii]-1.0))<(REAL4)1.0e-6) {
-            output->data[ii] = -2.0;
-         } else if (fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) {
-            output->data[ii] = 0.0;
-         } else {
-            output->data[ii] = 0.5/(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta0_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta0_int->data[ii]*(delta0_int->data[ii]*delta0_int->data[ii]-1.0)));
-         }
+         if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = 1.0;
+         else if (fabsf((REAL4)(delta0_int->data[ii]*delta0_int->data[ii]-1.0))<(REAL4)1.0e-6) output->data[ii] = -2.0;
+         else if (fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) output->data[ii] = 0.0;
+         else output->data[ii] = 0.5/(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta0_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta0_int->data[ii]*(delta0_int->data[ii]*delta0_int->data[ii]-1.0)));
       } else if (fabsf((REAL4)(delta1_int->data[ii]*delta1_int->data[ii]-1.0))<(REAL4)1.0e-6) {
-         if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) {
-            output->data[ii] = -0.5;
-         } else if (fabsf((REAL4)(delta0_int->data[ii]*delta0_int->data[ii]-1.0))<(REAL4)1.0e-6) {
-            output->data[ii] = 1.0;
-         } else if (fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) {
-            output->data[ii] = 0.0;
-         } else {
-            output->data[ii] = -0.25/(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta0_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta0_int->data[ii]*(delta0_int->data[ii]*delta0_int->data[ii]-1.0)));
-         }
-      } else if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) {
-         output->data[ii] = 2.0*(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta1_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta1_int->data[ii]*(delta1_int->data[ii]*delta1_int->data[ii]-1.0)));
-      } else if (fabsf((REAL4)(delta0_int->data[ii] - 1.0))<(REAL4)1.0e-6) {
-         output->data[ii] = -4.0*(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta1_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta1_int->data[ii]*(delta1_int->data[ii]*delta1_int->data[ii]-1.0)));
-      } else if (fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) {
-         output->data[ii] = 0.0;
-      } else {
-         output->data[ii] = scaling->data[ii]*sinPiDelta1->data[ii]/sinPiDelta0->data[ii]*crectf(realTerms->data[ii], imagTerms->data[ii]);
-      }
+         if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = -0.5;
+         else if (fabsf((REAL4)(delta0_int->data[ii]*delta0_int->data[ii]-1.0))<(REAL4)1.0e-6) output->data[ii] = 1.0;
+         else if (fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) output->data[ii] = 0.0;
+         else output->data[ii] = -0.25/(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta0_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta0_int->data[ii]*(delta0_int->data[ii]*delta0_int->data[ii]-1.0)));
+      } else if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = 2.0*(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta1_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta1_int->data[ii]*(delta1_int->data[ii]*delta1_int->data[ii]-1.0)));
+      else if (fabsf((REAL4)(delta0_int->data[ii] - 1.0))<(REAL4)1.0e-6) output->data[ii] = -4.0*(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta1_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta1_int->data[ii]*(delta1_int->data[ii]*delta1_int->data[ii]-1.0)));
+      else if (fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) output->data[ii] = 0.0;
+      else output->data[ii] = scaling->data[ii]*sinPiDelta1->data[ii]/sinPiDelta0->data[ii]*crectf(realTerms->data[ii], imagTerms->data[ii]);
    }
 
    XLALDestroyREAL4VectorAligned(delta0_int);
+   XLALDestroyREAL4VectorAligned(delta1_int);
    XLALDestroyREAL4VectorAligned(sinPiDelta0);
    XLALDestroyREAL4VectorAligned(sinPiDelta1);
    XLALDestroyREAL4VectorAligned(cosPiDelta0);

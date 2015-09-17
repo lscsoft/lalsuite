@@ -291,6 +291,8 @@ LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
 {
   LIGOTimeGPS quotient;
   double residual;
+  /* see below */
+  double threshold = 0.5e-9 * (1. + fabs(1. / x));
 
   if(isnan(x)) {
     XLALPrintError("%s(): NaN", __func__);
@@ -309,12 +311,24 @@ LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
    * XLALGPSMultiply(), which we assume implements multiplication. */
   do {
     LIGOTimeGPS workspace = quotient;
+    /* NOTE:  this computes the exactly (we hope) rounded result, not the
+     * exact result */
     if(!XLALGPSMultiply(&workspace, x))
       XLAL_ERROR_NULL(XLAL_EFUNC);
+    /* NOTE:  workspace can differ from gps by up to .5 nanoseconds even if
+     * quotient is exactly correct because workspace has been rounded.
+     * therefore we expect |residual| to be as large as (.5 ns / x) when
+     * quotient is exactly correct */
     residual = XLALGPSDiff(gps, &workspace) / x;
+    /* if residual is < 0.5 ns this will not change the estimate of
+     * quotient */
     if(!XLALGPSAdd(&quotient, residual))
       XLAL_ERROR_NULL(XLAL_EFUNC);
-  } while(fabs(residual) > 0.5e-9);
+    /* threshold (precomputed above) is 0.5 ns because if residual is
+     * smaller than this it can't change the answer, but plus an additional
+     * |0.5 ns / x| to accomodate error in computing residual with finite
+     * precision (see above) */
+  } while(fabs(residual) > threshold);
   *gps = quotient;
 
   return gps;

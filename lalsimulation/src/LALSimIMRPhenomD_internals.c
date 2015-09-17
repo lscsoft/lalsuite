@@ -43,6 +43,12 @@
  *
  */
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -59,10 +65,6 @@
 #include <lal/LALSimInspiral.h>
 
 #include "LALSimIMRPhenomD.h"
-
-// Constants in Mathematica CForm expressions
-const double Pi = LAL_PI;
-const double EulerGamma = LAL_GAMMA;
 
 // NOTE: At the moment we have separate functions for each Phenom coefficient;
 // these could be collected together
@@ -174,11 +176,11 @@ static size_t NextPow2(const size_t n);
 //////////////////////// Final spin, final mass, fring, fdamp ///////////////////////
 
 static double FinalSpin0714_s(double eta, double s);
-static double FinalSpin0714(double eta, double chi1, double chi2);
+UNUSED static double FinalSpin0714(double eta, double chi1, double chi2);
 static double EradRational_s(double eta, double s);
 static double EradRational(double eta, double chi1, double chi2);
-static double fring(double eta, double chi1, double chi2);
-static double fdamp(double eta, double chi1, double chi2);
+static double fring(double eta, double chi1, double chi2, double finspin);
+static double fdamp(double eta, double chi1, double chi2, double finspin);
 
 /******************************* Amplitude functions *******************************/
 
@@ -214,7 +216,7 @@ static void ComputeDeltasFromCollocation(IMRPhenomDAmplitudeCoefficients* p);
 
 ///////////////////////////// Amplitude: glueing function ////////////////////////////
 
-static IMRPhenomDAmplitudeCoefficients* ComputeIMRPhenomDAmplitudeCoefficients(double eta, double chi1, double chi2);
+static IMRPhenomDAmplitudeCoefficients* ComputeIMRPhenomDAmplitudeCoefficients(double eta, double chi1, double chi2, double finspin);
 static double IMRPhenDAmplitude(double f, IMRPhenomDAmplitudeCoefficients *p);
 
 /********************************* Phase functions *********************************/
@@ -249,7 +251,7 @@ static double DPhiInsAnsatzInt(double ff, IMRPhenomDPhaseCoefficients *p);
 
 ////////////////////////////// Phase: glueing function //////////////////////////////
 
-static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2);
+static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin);
 static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p);
 static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p);
 
@@ -337,27 +339,27 @@ static double EradRational(double eta, double chi1, double chi2) {
   return EradRational_s(eta, s);
 }
 
-static double fring(double eta, double chi1, double chi2) {
+static double fring(double eta, double chi1, double chi2, double finspin) {
   double return_val;
 
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
   gsl_spline *iFring = gsl_spline_alloc(gsl_interp_cspline, QNMData_length);
   gsl_spline_init(iFring, QNMData_a, QNMData_fring, QNMData_length);
 
-  return_val = gsl_spline_eval(iFring, FinalSpin0714(eta, chi1, chi2), acc) / (1.0 - EradRational(eta, chi1, chi2));
+  return_val = gsl_spline_eval(iFring, finspin, acc) / (1.0 - EradRational(eta, chi1, chi2));
 
   gsl_spline_free(iFring);
   gsl_interp_accel_free(acc);
   return return_val;
 }
 
-static double fdamp(double eta, double chi1, double chi2) {
+static double fdamp(double eta, double chi1, double chi2, double finspin) {
   double return_val;
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
   gsl_spline *iFdamp = gsl_spline_alloc(gsl_interp_cspline, QNMData_length);
   gsl_spline_init(iFdamp, QNMData_a, QNMData_fdamp, QNMData_length);
 
-  return_val = gsl_spline_eval(iFdamp, FinalSpin0714(eta, chi1, chi2), acc) / (1.0 - EradRational(eta, chi1, chi2));
+  return_val = gsl_spline_eval(iFdamp, finspin, acc) / (1.0 - EradRational(eta, chi1, chi2));
 
   gsl_spline_free(iFdamp);
   gsl_interp_accel_free(acc);
@@ -367,7 +369,7 @@ static double fdamp(double eta, double chi1, double chi2) {
 /******************************* Amplitude functions *******************************/
 
 static double amp0Func(double eta) {
-  return (sqrt(0.6666666666666666)*sqrt(eta))/pow(Pi,0.16666666666666666);
+  return (sqrt(0.6666666666666666)*sqrt(eta))/pow(LAL_PI,0.16666666666666666);
 }
 
 ///////////////////////////// Amplitude: Inspiral functions /////////////////////////
@@ -429,6 +431,7 @@ static double AmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
   double eta3 = eta*eta2;
   double Mf2 = Mf*Mf;
   double Mf3 = Mf*Mf2;
+  double Pi = LAL_PI;
   double Pi2 = Pi*Pi;
   double Seta = sqrt(1.0 - 4.0*eta);
 
@@ -458,6 +461,7 @@ static double DAmpInsAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p) {
   double rho1 = p->rho1;
   double rho2 = p->rho2;
   double rho3 = p->rho3;
+  double Pi = LAL_PI;
 
   return ((-969 + 1804*eta)*pow(Pi,0.6666666666666666))/(1008.*pow(f,0.3333333333333333)) +
    ((chi1*(81*(1 + sqrt(1 - 4*eta)) - 44*eta) + chi2*(81 - 81*sqrt(1 - 4*eta) - 44*eta))*Pi)/48. +
@@ -793,7 +797,7 @@ static void ComputeDeltasFromCollocation(IMRPhenomDAmplitudeCoefficients* p) {
 
 ///////////////////////////// Amplitude: glueing function ////////////////////////////
 
-static IMRPhenomDAmplitudeCoefficients* ComputeIMRPhenomDAmplitudeCoefficients(double eta, double chi1, double chi2) {
+static IMRPhenomDAmplitudeCoefficients* ComputeIMRPhenomDAmplitudeCoefficients(double eta, double chi1, double chi2, double finspin) {
   IMRPhenomDAmplitudeCoefficients *p = (IMRPhenomDAmplitudeCoefficients *) XLALMalloc(sizeof(IMRPhenomDAmplitudeCoefficients));
 
   p->eta = eta;
@@ -803,8 +807,8 @@ static IMRPhenomDAmplitudeCoefficients* ComputeIMRPhenomDAmplitudeCoefficients(d
   p->q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta) / (2.0*eta);
   p->chi = chiPN(eta, chi1, chi2);
 
-  p->fRD = fring(eta, chi1, chi2);
-  p->fDM = fdamp(eta, chi1, chi2);
+  p->fRD = fring(eta, chi1, chi2, finspin);
+  p->fDM = fdamp(eta, chi1, chi2, finspin);
 
   // Compute gamma_i's, rho_i's first then delta_i's
   p->gamma1 = gamma1_fun(eta, p->chi);
@@ -1042,6 +1046,7 @@ static double PhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p) {
   double sigma2 = p->sigma2;
   double sigma3 = p->sigma3;
   double sigma4 = p->sigma4;
+  double Pi = LAL_PI;
 
   // Obtain LAL TaylorF2 phasing coefficients which are tested in ../test/PNCoefficients.c.
   // FIXME: MP: we probably only want to call XLALSimInspiralTaylorF2AlignedPhasing() once per waveform
@@ -1101,7 +1106,7 @@ chi2,2))/(1024.*v) + 15293365/(2.1676032e7*eta*v) - (1215*pow(chi1 \
 - (1215*(chi1 - chi2)*(chi1 + chi2)*sqrt(1 - 4*eta))/(2048.*eta*v) + \
 (3085*eta)/(3072.*v) - (15737765635*v)/1.30056192e8 + \
 (11583231236531*v)/(2.0028653568e11*eta) + (76055*eta*v)/73728. - \
-(127825*eta2*v)/55296. - (107*EulerGamma*v)/(14.*eta) - (195*(chi1 + \
+(127825*eta2*v)/55296. - (107*LAL_GAMMA*v)/(14.*eta) - (195*(chi1 + \
 chi2)*Pi*v)/32. + (1135*(chi1 + chi2)*Pi*v)/(128.*eta) + (1135*(chi1 \
 - chi2)*sqrt(1 - 4*eta)*Pi*v)/(128.*eta) + (2255*Pi2*v)/512. - \
 (5*Pi2*v)/eta + (10566655595*(chi1 + chi2)*v2)/6.5028096e7 + \
@@ -1132,6 +1137,7 @@ static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p) {
   double sigma2 = p->sigma2;
   double sigma3 = p->sigma3;
   double sigma4 = p->sigma4;
+  double Pi = LAL_PI;
 
   // Obtain LAL TaylorF2 phasing coefficients which are tested in ../test/PNCoefficients.c.
   // FIXME: MP: we probably only want to call XLALSimInspiralTaylorF2AlignedPhasing() once per waveform
@@ -1197,7 +1203,7 @@ chi2,2)*Pi)/(4096.*eta*v4) + (405*(chi1 - chi2)*(chi1 + chi2)*sqrt(1 \
 (38645*Pi2)/(32256.*eta*v3) - (15737765635*Pi)/(3.90168576e8*v2) + \
 (10052469856691*Pi)/(6.0085960704e11*eta*v2) + \
 (76055*eta*Pi)/(221184.*v2) - (127825*eta2*Pi)/(165888.*v2) - \
-(107*EulerGamma*Pi)/(42.*eta*v2) - (65*(chi1 + chi2)*Pi2)/(32.*v2) + \
+(107*LAL_GAMMA*Pi)/(42.*eta*v2) - (65*(chi1 + chi2)*Pi2)/(32.*v2) + \
 (1135*(chi1 + chi2)*Pi2)/(384.*eta*v2) + (1135*(chi1 - chi2)*sqrt(1 - \
 4*eta)*Pi2)/(384.*eta*v2) + (2255*Pi3)/(1536.*v2) - \
 (5*Pi3)/(3.*eta*v2) + (10566655595*(chi1 + chi2)*Pi)/(9.7542144e7*v) \
@@ -1217,7 +1223,7 @@ chi2)*eta2*Pi)/(4608.*v) + (378515*Pi2)/(96768.*v) + \
 
 ///////////////////////////////// Phase: glueing function ////////////////////////////////
 
-static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2) {
+static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin) {
   IMRPhenomDPhaseCoefficients *p = (IMRPhenomDPhaseCoefficients *) XLALMalloc(sizeof(IMRPhenomDPhaseCoefficients));
 
   // Convention m1 >= m2
@@ -1243,8 +1249,8 @@ static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double et
   p->alpha4 = alpha4Fit(eta, p->chi);
   p->alpha5 = alpha5Fit(eta, p->chi);
 
-  p->fRD = fring(eta, chi1, chi2);
-  p->fDM = fdamp(eta, chi1, chi2);
+  p->fRD = fring(eta, chi1, chi2, finspin);
+  p->fDM = fdamp(eta, chi1, chi2, finspin);
 
   return p;
 }

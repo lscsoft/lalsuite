@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 80
+# serial 81
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -112,7 +112,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       ],[
         AC_MSG_ERROR([SWIG version ${swig_min_version} or later is required ${swig_min_version_info}])
       ])
-      SWIG="${ac_cv_path_SWIG}"
+      SWIG="env CCACHE_DISABLE=1 ${ac_cv_path_SWIG}"
     ])
 
     # extract -I and -D flags from LALSuite library preprocessor flags

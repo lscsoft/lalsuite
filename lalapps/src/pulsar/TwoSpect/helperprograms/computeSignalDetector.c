@@ -23,6 +23,7 @@ typedef struct
    CHAR *ephemEarth;
    CHAR *ephemSun;
    BOOLEAN unrestrictedCosi;
+   BOOLEAN rectWindow;
 } UserVariables_t;
 
 INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[]);
@@ -156,74 +157,86 @@ int main(int argc, char *argv[])
 
          REAL8 delta0_0 = (multissb->data[0]->Tdot->data[ii]*frequency0-frequency)*uvar.Tsft - signalFrequencyBin;
          REAL8 delta1_0 = (multissb->data[1]->Tdot->data[ii]*frequency0-frequency)*uvar.Tsft - signalFrequencyBin;
-         COMPLEX16 dirichlet0;
-         if (fabsf((REAL4)delta1_0)<(REAL4)1.0e-6) {
-            if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) {
-               dirichlet0 = crect(1.0, 0.0);
-            } else if (fabsf((REAL4)(delta0_0*delta0_0-1.0))<(REAL4)1.0e-6) {
-               dirichlet0 = crect(-2.0, 0.0);
-            } else if (fabsf((REAL4)(delta0_0-roundf(delta0_0)))<(REAL4)1.0e-6) {
-               dirichlet0 = crect(0.0, 0.0);
-               continue;
-            } else {
-               dirichlet0 = conj(0.5/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/(2.0*LAL_TWOPI*delta0_0*(delta0_0*delta0_0-1.0))));
-            }
-         } else if (fabsf((REAL4)(delta1_0*delta1_0-1.0))<(REAL4)1.0e-6) {
-            if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) {
-               dirichlet0 = crect(-0.5, 0.0);
-            } else if (fabsf((REAL4)(delta0_0*delta0_0-1.0))<(REAL4)1.0e-6) {
-               dirichlet0 = crect(1.0, 0.0);
-            } else if (fabsf((REAL4)(delta0_0-roundf(delta0_0)))<(REAL4)1.0e-6) {
-               dirichlet0 = crect(0.0, 0.0);
-               continue;
-            } else {
-               dirichlet0 = conj(-0.25/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/(2.0*LAL_TWOPI*delta0_0*(delta0_0*delta0_0-1.0))));
-            }
-         } else if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) {
-            dirichlet0 = conj(2.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/(2.0*LAL_TWOPI*delta1_0*(delta1_0*delta1_0-1.0))));
-         } else if (fabsf((REAL4)(delta0_0-1.0))<(REAL4)1.0e-6) {
-            dirichlet0 = conj(-4.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/(2.0*LAL_TWOPI*delta1_0*(delta1_0*delta1_0-1.0))));
-         } else if (fabsf((REAL4)(delta0_0-roundf(delta0_0)))<(REAL4)1.0e-6) {
-            dirichlet0 = crect(0.0, 0.0);
-            continue;
-         } else {
-            dirichlet0 = conj((crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/(2.0*LAL_TWOPI*delta1_0*(delta1_0*delta1_0-1.0)))/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/(2.0*LAL_TWOPI*delta0_0*(delta0_0*delta0_0-1.0))));     //real Dirichlet ratio
-         }
-
+         REAL8 realSigBinDiff = round(delta0_0) - round(delta1_0);
+         delta1_0 += realSigBinDiff;
          REAL8 delta0 = round(multissb->data[0]->Tdot->data[ii]*frequency0*uvar.Tsft)*(multissb->data[0]->Tdot->data[ii] - 1.0);
          REAL8 delta1 = round(multissb->data[0]->Tdot->data[ii]*frequency0*uvar.Tsft)*(multissb->data[1]->Tdot->data[ii] - 1.0);
-         COMPLEX16 dirichlet;
-         if (fabsf((REAL4)delta1)<(REAL4)1.0e-6) {
-            if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) {
-               dirichlet = crect(1.0, 0.0);
-            } else if (fabsf((REAL4)(delta0*delta0-1.0))<(REAL4)1.0e-6) {
-               dirichlet = crect(-2.0, 0.0);
-            } else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) {
-               dirichlet = crect(0.0, 0.0);
-            } else {
-               dirichlet = conj(0.5/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0)-1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0-1.0))));
+         REAL8 estSigBinDiff = round(delta0) - round(delta1);
+         delta1 += estSigBinDiff;
+         COMPLEX16 dirichlet0;
+         if (!uvar.rectWindow) {
+            if (fabsf((REAL4)delta1_0)<(REAL4)1.0e-6) {
+               if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = crect(1.0, 0.0);
+               else if (fabsf((REAL4)(delta0_0*delta0_0-1.0))<(REAL4)1.0e-6) dirichlet0 = crect(-2.0, 0.0);
+               else if (fabsf((REAL4)(delta0_0-roundf(delta0_0)))<(REAL4)1.0e-6) {
+                  dirichlet0 = crect(0.0, 0.0);
+                  continue;
+               }
+               else dirichlet0 = conj(0.5/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/(2.0*LAL_TWOPI*delta0_0*(delta0_0*delta0_0-1.0))));
             }
-         } else if (fabsf((REAL4)(delta1*delta1-1.0))<(REAL4)1.0e-6) {
-            if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) {
-               dirichlet = crect(-0.5, 0.0);
-            } else if (fabsf((REAL4)(delta0*delta0-1.0))<(REAL4)1.0e-6) {
-               dirichlet = crect(1.0, 0.0);
-            } else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) {
-               dirichlet = crect(0.0, 0.0);
-            } else {
-               dirichlet = conj(-0.25/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0)-1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0-1.0))));
+            else if (fabsf((REAL4)(delta1_0*delta1_0-1.0))<(REAL4)1.0e-6) {
+               if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = crect(-0.5, 0.0);
+               else if (fabsf((REAL4)(delta0_0*delta0_0-1.0))<(REAL4)1.0e-6) dirichlet0 = crect(1.0, 0.0);
+               else if (fabsf((REAL4)(delta0_0-roundf(delta0_0)))<(REAL4)1.0e-6) {
+                  dirichlet0 = crect(0.0, 0.0);
+                  continue;
+               }
+               else dirichlet0 = conj(-0.25/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/(2.0*LAL_TWOPI*delta0_0*(delta0_0*delta0_0-1.0))));
             }
-         } else if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) {
-            dirichlet = conj(2.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1)-1.0)/(2.0*LAL_TWOPI*delta1*(delta1*delta1-1.0))));
-         } else if (fabsf((REAL4)(delta0-1.0))<(REAL4)1.0e-6) {
-            dirichlet = conj(-4.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1)-1.0)/(2.0*LAL_TWOPI*delta1*(delta1*delta1-1.0))));
-         } else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) {
-            dirichlet = crect(0.0, 0.0);
+            else if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = conj(2.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/(2.0*LAL_TWOPI*delta1_0*(delta1_0*delta1_0-1.0))));
+            else if (fabsf((REAL4)(delta0_0-1.0))<(REAL4)1.0e-6) dirichlet0 = conj(-4.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/(2.0*LAL_TWOPI*delta1_0*(delta1_0*delta1_0-1.0))));
+            else if (fabsf((REAL4)(delta0_0-roundf(delta0_0)))<(REAL4)1.0e-6) {
+               dirichlet0 = crect(0.0, 0.0);
+               continue;
+            }
+            else dirichlet0 = conj((crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/(2.0*LAL_TWOPI*delta1_0*(delta1_0*delta1_0-1.0)))/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/(2.0*LAL_TWOPI*delta0_0*(delta0_0*delta0_0-1.0))));     //real Dirichlet ratio
          } else {
-            dirichlet = conj((crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1)-1.0)/(2.0*LAL_TWOPI*delta1*(delta1*delta1-1.0)))/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0)-1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0-1.0))));     //estimated Dirichlet ratio
-            dirichlet = cpolar(1.0, carg(dirichlet));
+            if (fabsf((REAL4)delta1_0)<(REAL4)1.0e-6) {
+               if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = crect(1.0, 0.0);
+               else if (fabsf((REAL4)(delta0_0-roundf(delta0_0)))<(REAL4)1.0e-6) {
+                  dirichlet0 = crect(0.0, 0.0);
+                  continue;
+               }
+               else dirichlet0 = conj(1.0/((cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/crect(0.0,LAL_TWOPI*delta0_0)));
+            }
+            else if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = conj((cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/crect(0.0,LAL_TWOPI*delta1_0));
+            else if (fabsf((REAL4)(delta0_0-roundf(delta0_0)))<(REAL4)1.0e-6) {
+               dirichlet0 = crect(0.0, 0.0);
+               continue;
+            }
+            else dirichlet0 = conj(((cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/crect(0.0,LAL_TWOPI*delta1_0))/((cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/crect(0.0,LAL_TWOPI*delta0_0)));
          }
-         if (llabs((INT8)delta0-(INT8)delta1)>=1) dirichlet *= -1.0;
+
+         COMPLEX16 dirichlet;
+         if (!uvar.rectWindow) {
+            if (fabsf((REAL4)delta1)<(REAL4)1.0e-6) {
+               if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = crect(1.0, 0.0);
+               else if (fabsf((REAL4)(delta0*delta0-1.0))<(REAL4)1.0e-6) dirichlet = crect(-2.0, 0.0);
+               else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) dirichlet = crect(0.0, 0.0);
+               else dirichlet = conj(0.5/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0)-1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0-1.0))));
+            }
+            else if (fabsf((REAL4)(delta1*delta1-1.0))<(REAL4)1.0e-6) {
+               if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = crect(-0.5, 0.0);
+               else if (fabsf((REAL4)(delta0*delta0-1.0))<(REAL4)1.0e-6) dirichlet = crect(1.0, 0.0);
+               else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) dirichlet = crect(0.0, 0.0);
+               else dirichlet = conj(-0.25/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0)-1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0-1.0))));
+            }
+            else if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = conj(2.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1)-1.0)/(2.0*LAL_TWOPI*delta1*(delta1*delta1-1.0))));
+            else if (fabsf((REAL4)(delta0-1.0))<(REAL4)1.0e-6) dirichlet = conj(-4.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1)-1.0)/(2.0*LAL_TWOPI*delta1*(delta1*delta1-1.0))));
+            else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) dirichlet = crect(0.0, 0.0);
+            else dirichlet = conj((crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1)-1.0)/(2.0*LAL_TWOPI*delta1*(delta1*delta1-1.0)))/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0)-1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0-1.0))));     //estimated Dirichlet ratio
+         } else {
+            if (fabsf((REAL4)delta1)<(REAL4)1.0e-6) {
+               if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = crect(1.0, 0.0);
+               else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) dirichlet = crect(0.0, 0.0);
+               else dirichlet = conj(1.0/((cpolar(1.0,LAL_TWOPI*delta0)-1.0)/crect(0.0,LAL_TWOPI*delta0)));
+            }
+            else if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = conj((cpolar(1.0,LAL_TWOPI*delta1)-1.0)/crect(0.0,LAL_TWOPI*delta1));
+            else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) dirichlet = crect(0.0, 0.0);
+            else dirichlet = conj(((cpolar(1.0,LAL_TWOPI*delta1)-1.0)/crect(0.0,LAL_TWOPI*delta1))/((cpolar(1.0,LAL_TWOPI*delta0)-1.0)/crect(0.0,LAL_TWOPI*delta0)));
+         }
+         dirichlet = cpolar(1.0, carg(dirichlet));
+         if (fabs(floor(delta0)-floor(delta1))>=1.0) dirichlet *= -1.0;
 
          COMPLEX16 realRatio = RatioTerm0*phaseshift0*dirichlet0;
          COMPLEX16 estRatio = RatioTerm*phaseshift*dirichlet;
@@ -256,6 +269,7 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    uvar->SFToverlap = 900;
    uvar->skylocations = 1;
    uvar->unrestrictedCosi = 0;
+   uvar->rectWindow = 0;
 
    XLALregBOOLUserStruct(  help,            'h', UVAR_HELP     , "Print this help/usage message");
    XLALregREALUserStruct(  Tsft,             0 , UVAR_OPTIONAL , "SFT coherence time");
@@ -272,6 +286,7 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    XLALregSTRINGUserStruct(ephemEarth,       0 , UVAR_OPTIONAL , "Earth ephemeris file");
    XLALregSTRINGUserStruct(ephemSun,         0 , UVAR_OPTIONAL , "Sun ephemeris file");
    XLALregBOOLUserStruct(  unrestrictedCosi, 0 , UVAR_OPTIONAL , "Marginalize over cos(iota) from -1 to 1");
+   XLALregBOOLUserStruct(  rectWindow,       0 , UVAR_OPTIONAL , "Use rectangular window function instead of Hann windowing");
 
    XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
 

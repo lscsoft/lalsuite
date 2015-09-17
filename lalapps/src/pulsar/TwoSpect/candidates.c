@@ -735,7 +735,7 @@ INT4 clusterCandidates(candidateVector **output, const candidateVector *input, c
 
             INT4 proberrcode = 0;
 
-            if (loc2 > 1 && aveperiod >= params->Pmin && aveperiod <= params->Pmax) {
+            if (loc2 > 1 && aveperiod >= params->Pmin-1.0 && aveperiod <= params->Pmax+1.0) {
                UINT4 numofmoddepths = (UINT4)floorf(2*(maxdf-mindf)*params->Tsft)+1;
                candidate cand;
                TwoSpectTemplate *template = NULL;
@@ -879,7 +879,7 @@ INT4 testIHScandidates(candidateVector **output, const candidateVector *ihsCandi
             REAL8 periodfact = 0.0;
             for (UINT4 jj=0; jj<=1; jj++) {
                //Shift by harmonics
-               for (INT4 kk=1; kk<=params->periodHarmToCheck; kk++) {
+               for (INT4 kk=2; kk<=params->periodHarmToCheck; kk++) {
                   if (jj==0) periodfact = 1.0/(REAL8)kk;
                   else periodfact = (REAL8)kk;
                   if (ihsCandidates->data[ii].period*periodfact>=fmax(params->Pmin, minPeriod(ihsCandidates->data[ii].moddepth, params->Tsft)) && ihsCandidates->data[ii].period*periodfact<=fmin(params->Pmax, params->Tobs*0.2)) {

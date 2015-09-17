@@ -22,6 +22,7 @@
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALSimInspiral.h>
+#include "LALSimSphHarmMode.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -71,8 +72,8 @@ double XLALSimIMRPhenomCGetFinalFreq(const REAL8 m1, const REAL8 m2, const REAL8
 int XLALSimIMRPhenomCGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phiPeak, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi, const REAL8 f_min, const REAL8 f_max, const REAL8 distance);
 int XLALSimIMRPhenomCGenerateTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiPeak, const REAL8 deltaT, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const REAL8 inclination);
 int XLALSimIMRPhenomDGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phi0, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance);
-int XLALSimIMRPhenomP(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8 chi_eff, const REAL8 chip, const REAL8 eta, const REAL8 thetaJ, const REAL8 Mtot_SI, const REAL8 distance, const REAL8 alpha0, const REAL8 phic, const REAL8 deltaF, const REAL8 f_min, const REAL8 f_max, const REAL8 f_ref);
-int XLALSimIMRPhenomPFrequencySequence(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, const REAL8 chi_eff, const REAL8 chip, const REAL8 eta, const REAL8 thetaJ, const REAL8 Mtot_SI, const REAL8 distance, const REAL8 alpha0, const REAL8 phic, const REAL8 f_ref);
+int XLALSimIMRPhenomP(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8 chi_eff, const REAL8 chip, const REAL8 eta, const REAL8 thetaJ, const REAL8 Mtot_SI, const REAL8 distance, const REAL8 alpha0, const REAL8 phic, const REAL8 deltaF, const REAL8 f_min, const REAL8 f_max, const REAL8 f_ref, const UINT4 IMRPhenomP_version);
+int XLALSimIMRPhenomPFrequencySequence(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, const REAL8 chi_eff, const REAL8 chip, const REAL8 eta, const REAL8 thetaJ, const REAL8 Mtot_SI, const REAL8 distance, const REAL8 alpha0, const REAL8 phic, const REAL8 f_ref, const UINT4 IMRPhenomP_version);
 int XLALSimIMRPhenomPCalculateModelParameters(REAL8 *chi_eff, REAL8 *chip, REAL8 *eta, REAL8 *thetaJ, REAL8 *alpha0, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 f_ref, const REAL8 lnhatx, const REAL8 lnhaty, const REAL8 lnhatz, const REAL8 s1x, const REAL8 s1y, const REAL8 s1z, const REAL8 s2x, const REAL8 s2y, const REAL8 s2z);
 
 /* in module LALSimIMREOBNRv2.c */
@@ -86,7 +87,31 @@ SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(const REAL8 phiRef, const REAL8 deltaT
 
 double XLALSimIMRSpinAlignedEOBPeakFrequency(REAL8 m1SI, REAL8 m2SI, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion);
 int XLALSimIMRSpinAlignedEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion);
-//int XLALSimIMRSpinEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1[], const REAL8 spin2[]);
+int XLALSimIMRSpinEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1[], const REAL8 spin2[]);
+
+int XLALSimIMRSpinEOBWaveformAll(
+        REAL8TimeSeries **hplus,
+        REAL8TimeSeries **hcross,
+        REAL8Vector     **dynamicsHi, /**<< Here we store and return the seob dynamics for high sampling (end of inspiral) */
+        SphHarmTimeSeries **hlmPTSout, /**<< Here we store and return the PWave (high sampling) */
+        SphHarmTimeSeries **hlmPTSHi, /**<< Here we store and return the JWave (high sampling) */
+        SphHarmTimeSeries **hIMRlmJTSHi, /**<< Here we store and return the JWaveIMR (high sampling) */
+        REAL8Vector     **AttachParams,   /**<< Parameters of RD attachment: */
+        //LIGOTimeGPS     *tc,
+        const REAL8      phiC,
+        const REAL8     deltaT,
+        const REAL8     m1SI,
+        const REAL8     m2SI,
+        const REAL8     fMin,
+        const REAL8     r,
+        const REAL8     inc,
+        const REAL8     INspin1x,
+        const REAL8     INspin1y,
+        const REAL8     INspin1z,
+        const REAL8     INspin2x,
+        const REAL8     INspin2y,
+        const REAL8     INspin2z
+     );
 
 
 /* in module LALSimIMRSEOBNRv1ROMEffectiveSpin.c */
@@ -114,6 +139,14 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpin(struct tagCOMPLEX16FrequencySeries **hptilde
 int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2);
 int XLALSimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency(REAL8 *t, REAL8 frequency, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2);
 int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencyOfTime(REAL8 *frequency, REAL8 t, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2);
+
+
+/* in module LALSimIMRSEOBNRv2ROMDoubleSpinHI.c */
+
+int XLALSimIMRSEOBNRv2ROMDoubleSpinHI(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, UINT4 nk_max);
+int XLALSimIMRSEOBNRv2ROMDoubleSpinHIFrequencySequence(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, UINT4 nk_max);
+int XLALSimIMRSEOBNRv2ROMDoubleSpinHITimeOfFrequency(REAL8 *t, REAL8 frequency, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2);
+int XLALSimIMRSEOBNRv2ROMDoubleSpinHIFrequencyOfTime(REAL8 *frequency, REAL8 t, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2);
 
 
 /* in module LALSimIMRSEOBNRv2ChirpTime.c */

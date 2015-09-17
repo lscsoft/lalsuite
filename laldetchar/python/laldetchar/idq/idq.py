@@ -1825,6 +1825,7 @@ def collect_sngl_chan_kw(
     verbose=False,
     chans=None,
     scisegs=None,
+    include_all_found_channels=False
     ):
     """ 
 ....replicates the action of collect.py in that it moves KW triggers from multi-channel (low-latency) files to single channel files. These files will be written in to output_dir in a subdirecitory titled `gpsstart`_`gpsstop`
@@ -1958,13 +1959,16 @@ def collect_sngl_chan_kw(
                         fields = line.strip().split()
                         if len(fields) == 9 and fields[-1] != '':
                             tag = fields[-1]
-                            if not triggers.has_key(tag):
+                            if triggers.has_key(tag):
+                                triggers[tag].append(line.strip()[:-len(tag)
+                                    - 2])
+                            elif include_all_found_channels:
                                 if verbose:
                                     print ' -> WARNING: triggers ' \
     + tag + ' not in configuration file (t=' + repr(t) \
     + '). Adding it to the list of channels.'
                                 triggers[tag] = []
-                            triggers[tag].append(line.strip()[:-len(tag)
+                                triggers[tag].append(line.strip()[:-len(tag)
                                     - 2])
                         else:
                             if verbose:

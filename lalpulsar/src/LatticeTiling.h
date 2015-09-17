@@ -100,6 +100,14 @@ void XLALDestroyLatticeTiling(
   );
 
 ///
+/// Set whether padding is added to the parameter-space bounds of the lattice tiling.
+///
+int XLALSetLatticeTilingBoundPadding(
+  LatticeTiling *tiling,		///< [in] Lattice tiling
+  const bool padding			///< [in] Whether padding is added to parameter space bounds
+  );
+
+///
 /// Set a parameter-space bound on a dimension of the lattice tiling.  The bound is described by a
 /// function \c func, and two data of length \c data_len, \c data_lower and \c data_upper,
 /// describing the lower and upper parameter space bounds respectively. If \c data_lower and \c
@@ -124,15 +132,6 @@ int XLALSetLatticeTilingConstantBound(
   const size_t dim,			///< [in] Dimension on which bound applies
   const double bound1,			///< [in] First bound on dimension
   const double bound2			///< [in] Second bound on dimension
-  );
-
-///
-/// Set the amount of padding added to the parameter space of the lattice tiling to account for
-/// boundary effects. The amount of padding generally increases with 'pad_control = 0'.
-///
-int XLALSetLatticeTilingPadding(
-  LatticeTiling *tiling,		///< [in] Lattice tiling
-  const UINT2 pad_control		///< [in] Controls the amount of padding added to parameter space
   );
 
 ///
@@ -190,6 +189,21 @@ int XLALRandomLatticeTilingPoints(
   );
 
 ///
+/// Allocate and return vectors containing the bounds on neighbouring dimesions of the lattice
+/// tiling parameter space.
+///
+int XLALLatticeTilingDimensionBounds(
+  const LatticeTiling *tiling,		///< [in] Lattice tiling
+  const bool padding,			///< [in] Whether padding is added to parameter space bounds
+  const gsl_vector *point,		///< [in] Point at which to return bounds
+  const size_t y_dim,			///< [in] Dimension 'y' of which to return bounds
+  const double x_scale,			///< [in] Scale of steps in 'x', in units of lattice step size
+  gsl_vector **y_lower,			///< [in] Lower bounds of dimension 'y' as function of 'x'
+  gsl_vector **y_upper,			///< [in] Upper bounds of dimension 'y' as function of 'x'
+  gsl_vector **x			///< [in] Values 'x' in dimension 'y-1'
+  );
+
+///
 /// Create a new lattice tiling iterator.
 ///
 #ifdef SWIG // SWIG interface directives
@@ -211,7 +225,7 @@ void XLALDestroyLatticeTilingIterator(
 /// Set whether the lattice tiling iterator should alternate its iteration direction (i.e. lower to
 /// upper bound, then upper to lower bound, and so on) after every pass over each dimension.
 ///
-int XLALSetAlternatingLatticeTilingIterator(
+int XLALSetLatticeTilingAlternatingIterator(
   LatticeTilingIterator *itr,		///< [in] Lattice tiling iterator
   const bool alternating		///< [in] If true, set alternating iterator
   );
@@ -266,21 +280,6 @@ UINT8 XLALTotalLatticeTilingPoints(
 ///
 UINT8 XLALCurrentLatticeTilingIndex(
   const LatticeTilingIterator *itr	///< [in] Lattice tiling iterator
-  );
-
-///
-/// Allocate and return vectors containing the bounds on neighbouring dimesions of the lattice
-/// tiling parameter space.
-///
-int XLALLatticeTilingDimensionBounds(
-  const LatticeTilingIterator *itr,	///< [in] Lattice tiling iterator
-  const UINT2 pad_control,		///< [in] Controls the amount of padding added to parameter space
-  const gsl_vector *point,		///< [in] Point at which to return bounds
-  const size_t y_dim,			///< [in] Dimension 'y' of which to return bounds
-  const double x_scale,			///< [in] Scale of steps in 'x', in units of lattice step size
-  gsl_vector **y_lower,			///< [in] Lower bounds of dimension 'y' as function of 'x'
-  gsl_vector **y_upper,			///< [in] Upper bounds of dimension 'y' as function of 'x'
-  gsl_vector **x			///< [in] Values 'x' in dimension 'y-1'
   );
 
 ///

@@ -105,6 +105,7 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
   INT4 amplitudeO = LAL_PNORDER_THREE_POINT_FIVE;
 
   REAL8 eta, chi_eff, chip, thetaJ, alpha0;
+  UINT4 IMRPhenomP_version = 2;
 
   switch (wf) {
     case OMP_TaylorF2:
@@ -152,7 +153,8 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
           deltaF,             /**< Sampling frequency (Hz) */
           f_min,              /**< Starting GW frequency (Hz) */
           f_max,              /**< End frequency; 0 defaults to ringdown cutoff freq */
-          f_ref);             /**< Reference frequency */
+          f_ref,              /**< Reference frequency */
+          IMRPhenomP_version);/**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
       break;
     default:
       XLALPrintError("Error: waveform %d not listed under OpenMPCapableWaveforms.\n", wf);
