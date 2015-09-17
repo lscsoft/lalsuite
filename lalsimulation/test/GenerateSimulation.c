@@ -101,6 +101,8 @@ const char * usage =
 "                             IMRPhenomC\n"
 "                             IMRPhenomP\n"
 "                             IMRPhenomPv2\n"
+"                             EOBNRv2_ROM\n"
+"                             EOBNRv2HM_ROM\n"
 "                             SEOBNRv1_ROM_EffectiveSpin\n"
 "                             SEOBNRv1_ROM_DoubleSpin\n"
 "                             SEOBNRv2_ROM_EffectiveSpin\n"
