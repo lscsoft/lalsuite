@@ -464,9 +464,9 @@ static int PhenomPCore(
 
 
   /* Phenomenological parameters */
-  IMRPhenomDAmplitudeCoefficients *pAmp;
-  IMRPhenomDPhaseCoefficients *pPhi;
-  BBHPhenomCParams *PCparams;
+  IMRPhenomDAmplitudeCoefficients *pAmp = NULL;
+  IMRPhenomDPhaseCoefficients *pPhi = NULL;
+  BBHPhenomCParams *PCparams = NULL;
 
   REAL8 fCut = 0.0;
   REAL8 finspin = 0.0;
