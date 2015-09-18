@@ -134,6 +134,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     INT4 ntemps_per_thread;
     INT4 noAdapt, adaptTau, adaptLength;
     INT4 i, ndim;
+    INT4 count_vectors = 0;
     ProcessParamsTable *command_line = NULL, *ppt = NULL;
     LALInferenceThreadState *thread = NULL;
     LALInferenceModel *model;
@@ -294,7 +295,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
 
     /* Make a single model just to count dimensions */
     model = LALInferenceInitCBCModel(runState);
-    ndim = LALInferenceGetVariableDimensionNonFixed(model->params);
+    ndim = LALInferenceGetVariableDimensionNonFixedChooseVectors(model->params, count_vectors);
 
     /* Build the temperature ladder */
     ladder = LALInferenceBuildHybridTempLadder(runState, ndim);

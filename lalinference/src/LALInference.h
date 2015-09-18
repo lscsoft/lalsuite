@@ -231,6 +231,10 @@ INT4 LALInferenceGetVariableDimension(LALInferenceVariables *vars);
 /** Get number of dimensions in \c vars which are not fixed to a certain value */
 INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars);
 
+/** Get number of dimensions in \c vars which are not fixed to a certain value,
+ *    with a flag for skipping counting vectors */
+INT4 LALInferenceGetVariableDimensionNonFixedChooseVectors(LALInferenceVariables *vars, INT4 count_vectors);
+
 /**
  * Get the LALInferenceVariableType of the \c idx -th item in the \c vars
  * Indexing starts at 1

@@ -211,8 +211,12 @@ INT4 LALInferenceGetVariableDimension(LALInferenceVariables *vars)
   return(vars->dimension);
 }
 
+INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars) {
+    INT4 count_vectors = 1;
+    return LALInferenceGetVariableDimensionNonFixedChooseVectors(vars, count_vectors);
+}
 
-INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
+INT4 LALInferenceGetVariableDimensionNonFixedChooseVectors(LALInferenceVariables *vars, INT4 count_vectors)
 {
   INT4 count=0;
   gsl_matrix *m=NULL;
@@ -230,30 +234,40 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
         //Generalize to allow for other data types
         if(ptr->type == LALINFERENCE_gslMatrix_t)
         {
-          m = *((gsl_matrix **)ptr->value);
-          count += (INT4)( (m->size1)*(m->size2) );
+          if (count_vectors) {
+              m = *((gsl_matrix **)ptr->value);
+              count += (INT4)( (m->size1)*(m->size2) );
+          }
         }
         else if(ptr->type == LALINFERENCE_UINT4Vector_t)
         {
-          UINT4Vector *v=NULL;
-          v = *((UINT4Vector **)ptr->value);
-          count += (INT4)( v->length );
+          if (count_vectors) {
+              UINT4Vector *v=NULL;
+              v = *((UINT4Vector **)ptr->value);
+              count += (INT4)( v->length );
+          }
         }
         else if(ptr->type == LALINFERENCE_INT4Vector_t)
         {
-          INT4Vector *v=NULL;
-          v = *((INT4Vector **)ptr->value);
-          count += (INT4)( v->length );
+          if (count_vectors) {
+              INT4Vector *v=NULL;
+              v = *((INT4Vector **)ptr->value);
+              count += (INT4)( v->length );
+          }
         }
 	else if(ptr->type == LALINFERENCE_REAL8Vector_t)
 	{
-	  v8 = *(REAL8Vector **)ptr->value;
-	  count += (int)(v8->length);
+          if (count_vectors) {
+              v8 = *(REAL8Vector **)ptr->value;
+              count += (int)(v8->length);
+          }
 	}
 	else if(ptr->type == LALINFERENCE_COMPLEX16Vector_t)
         {
-          v16 = *(COMPLEX16Vector **)ptr->value;
-          count += (int)(v16->length);
+          if (count_vectors) {
+              v16 = *(COMPLEX16Vector **)ptr->value;
+              count += (int)(v16->length);
+          }
         }
         else count++;
       }
