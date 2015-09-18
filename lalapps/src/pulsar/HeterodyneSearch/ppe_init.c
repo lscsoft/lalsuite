@@ -654,8 +654,6 @@ void initialise_proposal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL;
   UINT4 defrac = 0, freqfrac = 0, esfrac = 0, ewfrac = 0;
   REAL8 temperature = 0.;
-  const CHAR *defaultPropName = NULL;
-  defaultPropName = XLALStringDuplicate( "none" );
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--diffev" );
   if( ppt ) { defrac = atoi( ppt->value ); }
@@ -719,10 +717,6 @@ void initialise_proposal( LALInferenceRunState *runState ){
 
   LALInferenceAddVariable( runState->proposalArgs, "temperature", &temperature, LALINFERENCE_REAL8_t,
                            LALINFERENCE_PARAM_FIXED );
-
-  /* add default proposal name */
-  LALInferenceAddVariable( runState->proposalArgs, LALInferenceCurrentProposalName, &defaultPropName,
-                           LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT );
 
   /* set proposal */
   threadState->proposal = LALInferenceCyclicProposal;
