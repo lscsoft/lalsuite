@@ -123,13 +123,6 @@ extern const char *const ensembleWalkIntrinsicName;
 extern const char *const ensembleWalkExtrinsicName;
 extern const char *const clusteredKDEProposalName;
 
-/**
- * The name of the variable that will store the name of the current
- * proposal function.
- */
-extern const char *const LALInferenceCurrentProposalName;
-
-
 /** Creates a new proposal object from the given func pointer and name
  */
 
