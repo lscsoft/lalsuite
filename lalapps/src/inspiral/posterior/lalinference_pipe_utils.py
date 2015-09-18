@@ -897,6 +897,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 
     if self.config.has_option('analysis','upload-to-gracedb'):
       if self.config.getboolean('analysis','upload-to-gracedb') and event.GID is not None:
+        self.add_gracedb_start_node(event.GID,'LALInference',[sciseg.get_df_node() for sciseg in enginenodes[0].scisegs.values()])
         self.add_gracedb_log_node(respagenode,event.GID)
       elif self.config.has_option('analysis','ugid'):
         # LIB will want to upload info to gracedb but if we pass the gid in the usual way the pipeline
@@ -904,6 +905,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         # To avoid that, LIB will read the gracedDB id to upload info to as an ugid=ID option
         # in the analysis section.
         ugid=self.config.get('analysis','ugid')
+        self.add_gracedb_start_node(ugid,'LIB',[sciseg.get_df_node() for sciseg in enginenodes[0].scisegs.values()])
         self.add_gracedb_log_node(respagenode,ugid)
     return True
 
@@ -940,6 +942,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if event.GID is not None:
       if self.config.has_option('analysis','upload-to-gracedb'):
         if self.config.getboolean('analysis','upload-to-gracedb'):
+          self.add_gracedb_start_node(event.GID,'LALInference',[sciseg.get_df_node() for sciseg in enginenodes[0].scisegs.values()])
           self.add_gracedb_log_node(respagenode,event.GID)
 
   def add_full_analysis_lalinferencebambi(self,event):
@@ -970,6 +973,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if event.GID is not None:
       if self.config.has_option('analysis','upload-to-gracedb'):
         if self.config.getboolean('analysis','upload-to-gracedb'):
+          self.add_gracedb_start_node(event.GID,'LALInference',[sciseg.get_df_node() for sciseg in enginenodes[0].scisegs.values()])
           self.add_gracedb_log_node(respagenode,event.GID)
 
   def add_science_segments(self):
@@ -1247,10 +1251,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.add_node(node)
     return node
 
-  def add_gracedb_start_node(self,gid):
+  def add_gracedb_start_node(self,gid,name='',parent=None):
 
-    node=GraceDBNode(self.gracedbjob,parent=None,gid=gid,command='log',tag='pe')
-    node.set_message('LALInference online parameter estimation started.')
+    node=GraceDBNode(self.gracedbjob,parent=parent,gid=gid,command='log',tag='pe')
+    node.set_message(name+' online parameter estimation started.')
     self.add_node(node)
     return node
 
@@ -1984,7 +1988,12 @@ class GraceDBNode(pipeline.CondorDAGNode):
         # Upfile is the full path of the file to be uploaded
         pipeline.CondorDAGNode.__init__(self,gracedb_job)
         if gid: self.set_gid(gid)
-        if parent: self.add_parent(parent)
+        if parent:
+          if isinstance(parent, list):
+            for p in parent:
+              self.add_parent(p)
+          else:
+            self.add_parent(parent)
         self.message=message
         self.filename=upfile
         self.command=command
