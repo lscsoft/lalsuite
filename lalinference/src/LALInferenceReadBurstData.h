@@ -37,8 +37,8 @@
 /** \brief Read IFO data according to command line arguments.
  * This function reads command line arguments and returns a \c LALInferenceIFOData linked
  * list.
+ * \param IFOdata [out] A new \c LALInferenceIFOData linked list containing the data, or NULL upon error
  * \param commandLine [in] Pointer to a ProcessParamsTable containing command line arguments
- * \return Pointer to a new \c LALInferenceIFOData linked list containing the data, or NULL upon error.
  * \author John Veitch
  */
 void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);

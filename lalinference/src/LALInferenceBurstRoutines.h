@@ -289,7 +289,7 @@ int XLALSimBurstChooseFDWaveformFromCache(
         REAL8 deltaF,                           /**< sampling interval (Hz) */
         REAL8 deltaT,                           /**< time step corresponding to consec */
         REAL8 f0,                               /**< central frequency (Hz) */
-        REAL8 q,                                /**< Q (==sqrt(2) \pi f0 tau ) [dless]*/
+        REAL8 q,                                /**< Q (==sqrt(2) \f$\pi\f$ f0 tau ) [dless]*/
         REAL8 tau,                              /**< Duration [s] */
         REAL8 f_min,                            /**< starting GW frequency (Hz) */
         REAL8 f_max,                            /**< ending GW frequency (Hz) (0 for Nyquist) */
@@ -309,7 +309,7 @@ int XLALSimBurstChooseFDWaveform(
     REAL8 deltaF,                           /**< sampling interval (Hz) */
     REAL8 deltaT,                           /**< time step corresponding to consec */
     REAL8 f0,                               /**< central frequency (Hz) */
-    REAL8 q,                                /**< Q (==sqrt(2) \pi f0 tau ) [dless]*/
+    REAL8 q,                                /**< Q (==sqrt(2) \f$\pi\f$ f0 tau ) [dless]*/
     REAL8 tau,                              /**< Duration [s] */
     REAL8 f_min,                            /**< starting GW frequency (Hz) */
     REAL8 f_max,                            /**< ending GW frequency (Hz) (0 for Nyquist) */
@@ -325,7 +325,7 @@ int XLALSimBurstChooseTDWaveform(
     REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
     REAL8 deltaT,                           /**< time step corresponding to consec */
     REAL8 f0,                               /**< central frequency (Hz) */
-    REAL8 q,                                /**< Q (==sqrt(2) \pi f0 tau ) [dless]*/
+    REAL8 q,                                /**< Q (==sqrt(2) \f$\pi\f$ f0 tau ) [dless]*/
     REAL8 tau,                              /**< Duration [s] */
     REAL8 f_min,                            /**< starting GW frequency (Hz) */
     REAL8 f_max,                            /**< ending GW frequency (Hz) (0 for Nyquist) */

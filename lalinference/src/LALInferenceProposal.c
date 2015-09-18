@@ -3272,6 +3272,10 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targ
  * Constructed clustered-KDE proposals from all sample lists provided in
  * files given on the command line.
  * @param thread The LALInferenceThreadState to get command line options from and to the proposal cycle of.
+ * @param input The input file pointer
+ * @param burnin The number of burn-in points
+ * @param weight The weight?
+ * @param ptmcmc Flag to determine if using parallel tempering MCMC
  */
 void LALInferenceSetupClusteredKDEProposalsFromASCII(LALInferenceThreadState *thread, FILE *input, INT4 burnin, REAL8 weight, INT4 ptmcmc) {
     LALInferenceVariableItem *item;
@@ -3614,9 +3618,9 @@ void LALInferenceSetupClusteredKDEProposalFromDEBuffer(LALInferenceThreadState *
  *
  * Reads the samples currently in the differential evolution buffer and construct a
  * jump proposal from its clustered kernel density estimate.
- * @param runState The LALInferenceRunState to get the buffer from and add the proposal to.
+ * @param thread The LALInferenceThreadState to get the buffer from and add the proposal to.
  * @param samples  The samples to estimate the distribution of.  Column order expected to match
- *                     the order in \a runState->currentParams.
+ *                     the order in \a thread->currentParams.
  * @param size     Number of samples in \a samples.
  * @param cyclic_reflective Flag to check for cyclic/reflective bounds.
  * @param ntrials  Number of tirals at fixed-k to find optimal BIC

@@ -173,7 +173,7 @@ int XLALSimBurstChooseFDWaveform(
     REAL8 deltaF,                           /**< sampling interval (Hz) */
     REAL8 deltaT,                           /**< time step corresponding to consec */
     REAL8 f0,                               /**< central frequency (Hz) */
-    REAL8 q,                                /**< Q (==sqrt(2) \pi f0 tau ) [dless]*/
+    REAL8 q,                                /**< Q (==sqrt(2) \f$\pi\f$ f0 tau ) [dless]*/
     REAL8 tau,                              /**< Duration [s] */
     REAL8 f_min,                            /**< starting GW frequency (Hz) */
     REAL8 f_max,                            /**< ending GW frequency (Hz) (0 for Nyquist) */
@@ -270,7 +270,7 @@ int XLALSimBurstChooseTDWaveform(
     REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
     REAL8 deltaT,                           /**< time step corresponding to consec */
     REAL8 f0,                               /**< central frequency (Hz) */
-    REAL8 q,                                /**< Q (==sqrt(2) \pi f0 tau ) [dless]*/
+    REAL8 q,                                /**< Q (==sqrt(2) \f$\pi\f$ f0 tau ) [dless]*/
     REAL8 tau,                              /**< Duration [s] */
     REAL8 f_min,                            /**< starting GW frequency (Hz) */
     REAL8 f_max,                            /**< ending GW frequency (Hz) (0 for Nyquist) */
@@ -1220,7 +1220,7 @@ int XLALSimBurstChooseFDWaveformFromCache(
         REAL8 deltaF,                           /**< sampling interval (Hz) */
         REAL8 deltaT,                           /**< time step corresponding to consec */
         REAL8 f0,                               /**< central frequency (Hz) */
-        REAL8 q,                                /**< Q (==sqrt(2) \pi f0 tau ) [dless]*/
+        REAL8 q,                                /**< Q (==sqrt(2) \f$\pi\f$ f0 tau ) [dless]*/
         REAL8 tau,                              /**< Duration [s] */
         REAL8 f_min,                            /**< starting GW frequency (Hz) */
         REAL8 f_max,                            /**< ending GW frequency (Hz) (0 for Nyquist) */
@@ -1346,10 +1346,10 @@ void XLALDestroySimBurstWaveformCache(LALSimBurstWaveformCache *cache)
  */
 static CacheVariableDiffersBitmask CacheArgsDifferenceBitmask(
     LALSimBurstWaveformCache *cache ,     /**< waveform cache structure; use NULL for no caching */
-    REAL8 deltaT,
-    REAL8 deltaF,
+    REAL8 deltaT,                           /**< time steps */
+    REAL8 deltaF,                           /**< frequency steps */
     REAL8 f0,                               /**< central frequency (Hz) */
-    REAL8 q,                                /**< Q (==sqrt(2) \pi f0 tau ) [dless]*/
+    REAL8 q,                                /**< Q (==sqrt(2) \f$\pi\f$ f0 tau ) [dless]*/
     REAL8 tau,                              /**< Duration [s] */
     REAL8 f_min,                            /**< starting GW frequency (Hz) */
     REAL8 f_max,                            /**< ending GW frequency (Hz) (0 for Nyquist) */
@@ -1383,12 +1383,12 @@ static CacheVariableDiffersBitmask CacheArgsDifferenceBitmask(
 
 /** Store the output TD hplus and hcross in the cache. */
 static int StoreTDHCache(
-        LALSimBurstWaveformCache *cache,
-        REAL8TimeSeries *hplus,
-        REAL8TimeSeries *hcross,
+        LALSimBurstWaveformCache *cache,        /**< the cache */
+        REAL8TimeSeries *hplus,                 /**< the plus polarisation time series */
+        REAL8TimeSeries *hcross,                /**< the cross polarisation time series */
         REAL8 deltaT,                           /**< time step corresponding to consec */
         REAL8 f0,                               /**< central frequency (Hz) */
-        REAL8 q,                                /**< Q (==sqrt(2) \pi f0 tau ) [dless]*/
+        REAL8 q,                                /**< Q (==sqrt(2) \f$\pi\f$ f0 tau ) [dless]*/
         REAL8 tau,                              /**< Duration [s] */
         REAL8 f_min,                            /**< starting GW frequency (Hz) */
         REAL8 f_max,                            /**< ending GW frequency (Hz) (0 for Nyquist) */
@@ -1448,13 +1448,13 @@ static int StoreTDHCache(
 }
 
 /** Store the output FD hptilde and hctilde in cache. */
-static int StoreFDHCache(LALSimBurstWaveformCache *cache,
-        COMPLEX16FrequencySeries *hptilde,
-        COMPLEX16FrequencySeries *hctilde,
+static int StoreFDHCache(LALSimBurstWaveformCache *cache, /**< the cache */
+        COMPLEX16FrequencySeries *hptilde,      /**< the plus polarisation frequency series */
+        COMPLEX16FrequencySeries *hctilde,      /**< the cross polarisation frequency series */
         REAL8 deltaF,                           /**< sampling interval (Hz) */
         REAL8 deltaT,                           /**< time step corresponding to consec */
         REAL8 f0,                               /**< central frequency (Hz) */
-        REAL8 q,                                /**< Q (==sqrt(2) \pi f0 tau ) [dless]*/
+        REAL8 q,                                /**< Q (==sqrt(2) \f$\pi\f$ f0 tau ) [dless]*/
         REAL8 tau,                              /**< Duration [s] */
         REAL8 f_min,                            /**< starting GW frequency (Hz) */
         REAL8 f_max,                            /**< ending GW frequency (Hz) (0 for Nyquist) */
