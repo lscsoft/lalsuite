@@ -383,16 +383,30 @@ LALSimulateCoherentGW( LALStatus        *stat,
   /* Define temporary variables to access the data of CWsignal->a,
      CWsignal->f, and CWsignal->phi. */
   aData = CWsignal->a->data->data;
+  INT4 aLen = CWsignal->a->data->length * CWsignal->a->data->vectorLength;
   phiData = CWsignal->phi->data->data;
+  INT4 phiLen = CWsignal->phi->data->length;
   outData = output->data->data;
+  INT4 fLen=0, shiftLen=0;
   if ( CWsignal->f )
-    fData = CWsignal->f->data->data;
+    {
+      fData = CWsignal->f->data->data;
+      fLen = CWsignal->f->data->length;
+    }
   else
-    fData = NULL;
+    {
+      fData = NULL;
+    }
+
   if ( CWsignal->shift )
-    shiftData = CWsignal->shift->data->data;
+    {
+      shiftData = CWsignal->shift->data->data;
+      shiftLen = CWsignal->shift->data->length;
+    }
   else
-    shiftData = NULL;
+    {
+      shiftData = NULL;
+    }
 
   /* Convert source position to equatorial coordinates, if
      required. */
@@ -519,6 +533,13 @@ LALSimulateCoherentGW( LALStatus        *stat,
   } ENDFAIL( stat );
   plusData = polResponse.pPlus->data->data;
   crossData = polResponse.pCross->data->data;
+  INT4 plusLen = polResponse.pPlus->data->length;
+  INT4 crossLen = polResponse.pCross->data->length;
+  if ( plusLen != crossLen ) {
+    XLALPrintError ("plusLen = %d != crossLen = %d\n", plusLen, crossLen );
+    ABORT ( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+  }
+
   if ( detector->site ) {
     LALSource polSource;     /* position and polarization angle */
     LALDetAndSource input;            /* response input structure */
@@ -563,6 +584,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
 
   /* Decompose the transfer function into an amplitude and phase
      response. */
+  INT4 phiTransLen = 0, aTransLen = 0;
   if ( transfer ) {
     nMax = detector->transfer->data->length;
     LALSCreateVector( stat->statusPtr, &phiTemp, nMax );
@@ -636,7 +658,13 @@ LALSimulateCoherentGW( LALStatus        *stat,
       LALFree( polResponse.pCross );
     } ENDFAIL( stat );
     phiTransData = phiTransfer->data;
+    phiTransLen = phiTransfer->length;
     aTransData = aTransfer->data;
+    aTransLen = aTransfer->length;
+  }
+  if ( aTransLen != phiTransLen ) {
+    XLALPrintError ("aTransLen = %d != phiTransLen = %d\n", aTransLen, phiTransLen );
+    ABORT ( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
   }
 
   /* Compute offsets for interpolating the signal, delay, and
@@ -702,9 +730,9 @@ LALSimulateCoherentGW( LALStatus        *stat,
   /* Compute final value of i, ensuring that we will never index
      CWsignal->a or CWsignal->phi above their range. */
   n = output->data->length - 1;
-  nMax = CWsignal->a->data->length - 1;
-  if ( aOff + ( n + delayMax )*aDt > nMax ) {
-    INT4 j = (INT4)( ( nMax - aOff )/aDt - delayMin + 1.0 );
+  INT4 nMax_a = CWsignal->a->data->length - 1;
+  if ( aOff + ( n + delayMax )*aDt > nMax_a ) {
+    INT4 j = (INT4)( ( nMax_a - aOff )/aDt - delayMin + 1.0 );
     if ( n > j )
       n = j;
     while ( ( n >= 0 ) &&
@@ -810,13 +838,10 @@ LALSimulateCoherentGW( LALStatus        *stat,
     j = (INT4)floor( x );
     frac = (REAL8)( x - j );
     j *= 2;
-
-    /* Handle special case where output lands on final sample - no interpolation */
-    if(i==n){
-      a1=aData[j];
-      a2=aData[j+1];
+    if ( j + 3 >= aLen ) {
+      XLALPrintError ( "Interpolation error: no point at or after last sample for {a1,a2}: i = %d, n = %d, j = %d, aLen = %d", i, n, j, aLen );
+      ABORT( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
     }
-    else
     {
       a1 = frac*aData[j+2] + ( 1.0 - frac )*aData[j];
       a2 = frac*aData[j+3] + ( 1.0 - frac )*aData[j+1];
@@ -829,14 +854,23 @@ LALSimulateCoherentGW( LALStatus        *stat,
       x = shiftOff + iCentre*shiftDt;
       j = (INT4)floor( x );
       frac = (REAL8)( x - j );
-      if(i==n) shift=shiftData[j];
-      else     shift = frac*shiftData[j+1] + ( 1.0 - frac )*shiftData[j];
+
+      if ( j + 1 >= shiftLen ) {
+        XLALPrintError ( "Interpolation error: no point at or after last sample for 'shift'" );
+        ABORT( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+      }
+      shift = frac*shiftData[j+1] + ( 1.0 - frac )*shiftData[j];
     }
 
     /* Interpolate the signal phase, and apply any heterodyning. */
     x = phiOff + iCentre*phiDt;
     j = (INT4)floor( x );
     frac = (REAL8)( x - j );
+
+    if ( j + 1 >= phiLen ) {
+      XLALPrintError ( "Interpolation error: no point at or after last sample for 'phi'" );
+      ABORT( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+    }
     phi = frac*phiData[j+1] + ( 1.0 - frac )*phiData[j];
     phi -= heteroFac*i + phi0;
 
@@ -849,8 +883,11 @@ LALSimulateCoherentGW( LALStatus        *stat,
         x = fOff + iCentre*fDt;
         j = (INT4)floor( x );
         frac = (REAL8)( x - j );
-        if(i==n) f=fData[j];
-        else     f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
+        if ( j + 1 >= fLen ) {
+          XLALPrintError ( "Interpolation error: no point at or after last sample for 'f'" );
+          ABORT( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+        }
+        f = frac*fData[j+1] + ( 1.0 - frac )*fData[j];
         f *= fFac;
       }
       x = f - f0;
@@ -861,11 +898,10 @@ LALSimulateCoherentGW( LALStatus        *stat,
       } else  {
         j = (INT4)floor( x );
         frac = (REAL8)( x - j );
-        if(i==n)
-        {
-          aTrans=aTransData[j];
-          phiTrans=phiTransData[j];
-        } else
+        if ( j + 1 >= aTransLen ) {
+          XLALPrintError ( "Interpolation error: no point at or after last sample for '{aTrans,phiTrans}'" );
+          ABORT( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+        }
         {
           aTrans = frac*aTransData[j+1] + ( 1.0 - frac )*aTransData[j];
           phiTrans = frac*phiTransData[j+1] + ( 1.0 - frac )*phiTransData[j];
@@ -891,11 +927,11 @@ LALSimulateCoherentGW( LALStatus        *stat,
     x = polOff + i*polDt;
     j = (INT4)floor( x );
     frac = (REAL8)( x - j );
-    if(i==n)
+    if ( j + 1 >= plusLen ) {
+      XLALPrintError ( "Interpolation error: no point at or after last sample for '{oPlus,oCross}'" );
+      ABORT( stat, SIMULATECOHERENTGWH_EBAD, SIMULATECOHERENTGWH_MSGEBAD );
+    }
     {
-      oPlus*=plusData[j];
-      oCross*=crossData[j];
-    } else {
       oPlus *= frac*plusData[j+1] + ( 1.0 - frac )*plusData[j];
       oCross *= frac*crossData[j+1] + ( 1.0 - frac )*crossData[j];
     }
