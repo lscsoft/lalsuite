@@ -1135,7 +1135,7 @@ static REAL8 XLALSimIMRSpinEOBCalcOmega(
   /* ********************************************************************* */
   
   /** the polarvalues, respectively, are 
-   * {r, $\theta$, $\phi$, $p_r$, $p_\theta$, $p_\phi$} */
+   * {r, \theta, \phi, p_r, p_\theta, p_\phi} */
   polarvalues[0] = sqrt(inner_product(rvecprime,rvecprime));
   polarvalues[1] = acos(rvecprime[0] / polarvalues[0]);
   polarvalues[2] = atan2(-rvecprime[1], rvecprime[2]);
@@ -1152,7 +1152,7 @@ static REAL8 XLALSimIMRSpinEOBCalcOmega(
   polarvalues[5] = -inner_product(rvecprime_x_xhat, pvecprime);
 
      
-  /* ********************************************************************* */  /* Finally, Differentiate Hamiltonian w.r.t. $p_\phi$, keeping $p_r$ = 0 */
+  /* ********************************************************************* */  /* Finally, Differentiate Hamiltonian w.r.t. p_\phi, keeping p_r = 0 */
   /* ********************************************************************* */
   
   /* Populate the vector specifying the dynamical variables in mixed frames */

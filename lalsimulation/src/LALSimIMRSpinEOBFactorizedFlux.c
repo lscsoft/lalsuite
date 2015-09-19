@@ -63,7 +63,7 @@ XLALInspiralSpinFactorizedFlux(
 
 static REAL8 
 XLALInspiralPrecSpinFactorizedFlux(
-				   REAL8Vector * polvalues,	/**< (r,$\phi$,$p_r$,$p_\phi$) */
+				   REAL8Vector * polvalues,	/**< (r,\phi,p_r,p_\phi) */
 				   REAL8Vector * values,	/**< dynamical variables */
 				   EOBNonQCCoeffs * nqcCoeffs,	/**< pre-computed NQC coefficients */
 				   const REAL8 omega,	/**< orbital frequency */
@@ -246,7 +246,7 @@ XLALInspiralSpinFactorizedFlux(
 
 static REAL8 
 XLALInspiralPrecSpinFactorizedFlux(
-				   REAL8Vector * polvalues,	/**< (r,$\phi$,$p_r$,$p_\phi$) */
+				   REAL8Vector * polvalues,	/**< (r,\phi,p_r,p_\phi) */
 				   REAL8Vector * values,	/**< dynamical variables */
 				   EOBNonQCCoeffs * nqcCoeffs,	/**< pre-computed NQC coefficients */
 				   const REAL8 omega,	/**< orbital frequency */
