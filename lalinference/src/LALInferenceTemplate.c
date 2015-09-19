@@ -68,6 +68,11 @@
 static void q2eta(double q, double *eta);
 static void q2masses(double mc, double q, double *m1, double *m2);
 
+/* list of testing GR parameters to be passed to the waveform */
+
+const char list_extra_parameters[32][16] = {"dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6"};
+
+const UINT4 N_extra_params = 22;
 
 void LALInferenceTemplateNullFreqdomain(LALInferenceModel *model)
 /**********************************************/
@@ -681,7 +686,33 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
   /* Only use GR templates */
   LALSimInspiralTestGRParam *nonGRparams = NULL;
-  
+
+  /* Fill in the extra parameters for testing GR, if necessary */
+  for (UINT4 k=0; k<N_extra_params; k++)
+  {
+      if(LALInferenceCheckVariable(model->params,list_extra_parameters[k]))
+      {
+          XLALSimInspiralAddTestGRParam(&nonGRparams,list_extra_parameters[k],*(REAL8 *)LALInferenceGetVariable(model->params,list_extra_parameters[k]));
+      }
+  }
+  char aPPEparam[64]="";
+  char alphaPPEparam[64]="";
+  /* phase parameters */
+  char bPPEparam[64]="";
+  char betaPPEparam[64]="";
+  int counters[4]={0};
+  do
+  {
+      sprintf(aPPEparam, "%s%d","aPPE",++counters[0]);
+      if(LALInferenceCheckVariable(model->params,aPPEparam)) XLALSimInspiralAddTestGRParam(&nonGRparams,aPPEparam,*(REAL8 *)LALInferenceGetVariable(model->params,aPPEparam));
+      sprintf(alphaPPEparam, "%s%d","alphaPPE",++counters[1]);
+      if(LALInferenceCheckVariable(model->params,alphaPPEparam)) XLALSimInspiralAddTestGRParam(&nonGRparams,alphaPPEparam,*(REAL8 *)LALInferenceGetVariable(model->params,alphaPPEparam));
+      sprintf(bPPEparam, "%s%d","bPPE",++counters[2]);
+      if(LALInferenceCheckVariable(model->params,bPPEparam)) XLALSimInspiralAddTestGRParam(&nonGRparams,bPPEparam,*(REAL8 *)LALInferenceGetVariable(model->params,bPPEparam));
+      sprintf(betaPPEparam, "%s%d","betaPPE",++counters[3]);
+      if(LALInferenceCheckVariable(model->params,betaPPEparam)) XLALSimInspiralAddTestGRParam(&nonGRparams,betaPPEparam,*(REAL8 *)LALInferenceGetVariable(model->params,betaPPEparam));
+      
+  } while((LALInferenceCheckVariable(model->params,aPPEparam))||(LALInferenceCheckVariable(model->params,alphaPPEparam))||(LALInferenceCheckVariable(model->params,bPPEparam))||(LALInferenceCheckVariable(model->params,betaPPEparam)));
   
 
   /* ==== Call the waveform generator ==== */
