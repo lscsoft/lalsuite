@@ -41,6 +41,7 @@
 static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTable *commline);
 static void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceModel *model);
 static void LALInferenceInitMassVariables(LALInferenceRunState *state);
+static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenceModel *model);
 static void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approximant approx);
 
 
@@ -575,6 +576,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 (--spinAligned or --aligned-spin)  template will assume spins aligned with the orbital angular momentum.\n\
 (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
 (--noSpin, --disable-spin)      template will assume no spins (giving this will void spinOrder!=0) \n\
+(--grtest-parameters dchi0,..dchi7 template will assume deformations in the corresponding PN coefficients.\n\
+(--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
 ***(--detector-frame)              model will use detector-centred coordinates instead of RA,dec\n\
 \n\
 ------------------------------------------------------------------------------------------------------------------\n\
@@ -1102,6 +1105,11 @@ where the known names have been listed above.\n\
 	  }
   }
 
+    /* If requested by the user populate the testing GR or PPE model parameters */
+  if (LALInferenceGetProcParamVal(commandLine,"--grtest-parameters") || LALInferenceGetProcParamVal(commandLine,"--ppe-parameters"))
+  {
+    LALInferenceInitNonGRParams(state, model);
+  }
   /* PPE parameters */
 
   ppt=LALInferenceGetProcParamVal(commandLine, "--TaylorF2ppE");
@@ -1274,6 +1282,9 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *sta
 		{.name="theta_spin2", .val=LAL_PI/2., .min=1.4086158267948965, .max=1.7329768267948966},
 		{.name="phi_spin1", .val=LAL_PI, .min=2.781852653589793, .max=3.501332653589793},
 		{.name="phi_spin2", .val=LAL_PI, .min=2.777215653589793, .max=3.5059696535897933},
+        {.name="dchi1", .val=0.2, .min=0.0031817421, .max=0.3968182579},
+        {.name="dchi2", .val=-0.1, .min=-0.3797921571, .max=0.1797921571},
+        {.name="dchi3", .val=0.28, .min=0.0413704169, .max=0.5186295831},
 		{.name="END", .val=0., .min=0., .max=0.}
 	};
 
@@ -1340,6 +1351,9 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_bimod(LALInferenceRunStat
     {.name="theta_spin2", .val=0.9151425634, .min=0.6232176634, .max=1.2070674634},
     {.name="phi_spin1", .val=1.8585883268, .min=1.2110563268, .max=2.5061203268},
     {.name="phi_spin2", .val=1.8622979268, .min=1.2064193268, .max=2.5181765268},
+    {.name="dchi1", .val=-0.2, .min=-0.446818, .max=0.261727},
+    {.name="dchi2", .val=-0., .min=-0.279792, .max=0.727460},
+    {.name="dchi3", .val=0.11, .min=-0.128630, .max=0.730437},
     {.name="END", .val=0., .min=0., .max=0.}
   };
 
@@ -1856,3 +1870,68 @@ void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approximant a
   (void) max;
   return;
 }
+
+/*******************************************************************
+ * LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenceModel *model)
+ * Function to initialise either the TaylorF2Test of SpinTaylorT4Test waveform models
+ * or the PPE waveform model
+ *******************************************************************/
+static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenceModel *model)
+{
+    ProcessParamsTable *commandLine = state->commandLine;
+    ProcessParamsTable *ppt=NULL;
+    /* check that the user does not request both a TaylorF2Test and a PPE waveform model */
+    if (LALInferenceGetProcParamVal(commandLine,"--grtest-parameters") && LALInferenceGetProcParamVal(commandLine,"--ppe-parameters"))
+    {
+        fprintf(stderr,"--grtest-parameters and --ppe-parameters are not simultaneously supported. Please choose one. Aborting\n");
+        exit(-1);
+    }
+    ppt=LALInferenceGetProcParamVal(commandLine,"--grtest-parameters");
+    if (ppt)
+    {
+        REAL8 testParameter_max=1.;
+        REAL8 testParameter_min=-1.;
+        REAL8 tmpVal=0.0;
+        if (checkParamInList(ppt->value,"dchi0")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi0", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi1", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi2", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi3", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi4")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi4", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi5")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi5l")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5l", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi6")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi6", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi6l")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi6l", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi7")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi7", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
+    }
+    ppt=LALInferenceGetProcParamVal(commandLine,"--ppe-parameters");
+    if (ppt)
+    {
+        /* amplitude parameters */
+        REAL8 appe_min = -5.0,appe_max=5.0;
+        REAL8 alphappe_min = -1000.0,alphappe_max=1000.0;
+        REAL8 bppe_min = -5.0,bppe_max=5.0;
+        REAL8 betappe_min = -1000.0,betappe_max=1000.0;
+        char aPPEparam[64]="";
+        char alphaPPEparam[64]="";
+        /* phase parameters */
+        char bPPEparam[64]="";
+        char betaPPEparam[64]="";
+        int counters[4]={0};
+        do
+        {
+            sprintf(aPPEparam, "%s%d","aPPE",++counters[0]);
+            if (checkParamInList(ppt->value,aPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, aPPEparam, 0.0, appe_min, appe_max, LALINFERENCE_PARAM_LINEAR);
+            sprintf(alphaPPEparam, "%s%d","alphaPPE",++counters[1]);
+            if (checkParamInList(ppt->value,alphaPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, alphaPPEparam, 0.0, alphappe_min, alphappe_max, LALINFERENCE_PARAM_LINEAR);
+            sprintf(bPPEparam, "%s%d","bPPE",++counters[2]);
+            if (checkParamInList(ppt->value,bPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, bPPEparam, 0.0, bppe_min, bppe_max, LALINFERENCE_PARAM_LINEAR);
+            sprintf(betaPPEparam, "%s%d","betaPPE",++counters[3]);
+            if (checkParamInList(ppt->value,betaPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, betaPPEparam, 0.0, betappe_min, betappe_max, LALINFERENCE_PARAM_LINEAR);
+            
+        } while((checkParamInList(ppt->value,aPPEparam))||(checkParamInList(ppt->value,alphaPPEparam))||(checkParamInList(ppt->value,bPPEparam))||(checkParamInList(ppt->value,betaPPEparam)));
+        if ((counters[0]!=counters[1])||(counters[2]!=counters[3])) {fprintf(stderr,"Unequal number of PPE parameters detected! Check your command line!\n"); exit(-1);}
+    }
+    
+}
+
+
