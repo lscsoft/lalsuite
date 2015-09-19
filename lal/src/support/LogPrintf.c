@@ -33,6 +33,7 @@
 #include <lal/XLALError.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALDebugLevel.h>
+#include <lal/Date.h>
 
 #ifdef _MSC_VER
 #include <Windows.h>
@@ -468,13 +469,15 @@ XLALdumpREAL4TimeSeries ( const char *fname, const REAL4TimeSeries *series )
   FILE *fp;
   XLAL_CHECK ( (fp = fopen (fname, "wb")) != NULL, XLAL_ESYS );
 
-  REAL8 t0 = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
   REAL8 dt = series->deltaT;
   UINT4 numSamples = series->data->length;
+  char buf[256];
   for ( UINT4 i = 0; i < numSamples; i++ )
   {
-    REAL8 ti = t0 + i * dt;
-    fprintf( fp, "%16.9f %20.16g\n", ti, series->data->data[i] );
+    LIGOTimeGPS ti = series->epoch;
+    XLALGPSAdd ( &ti, i * dt );
+    XLALGPSToStr ( buf, &ti );
+    fprintf( fp, "%20s %20.16g\n", buf, series->data->data[i] );
   }
   fclose ( fp );
 
@@ -492,13 +495,15 @@ XLALdumpREAL8TimeSeries ( const char *fname, const REAL8TimeSeries *series )
   FILE *fp;
   XLAL_CHECK ( (fp = fopen (fname, "wb")) != NULL, XLAL_ESYS );
 
-  REAL8 t0 = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
   REAL8 dt = series->deltaT;
   UINT4 numSamples = series->data->length;
+  char buf[256];
   for ( UINT4 i = 0; i < numSamples; i++ )
   {
-    REAL8 ti = t0 + i * dt;
-    fprintf( fp, "%16.9f %20.16g\n", ti, series->data->data[i] );
+    LIGOTimeGPS ti = series->epoch;
+    XLALGPSAdd ( &ti, i * dt );
+    XLALGPSToStr ( buf, &ti );
+    fprintf( fp, "%20s %20.16g\n", buf, series->data->data[i] );
   }
   fclose ( fp );
 
@@ -517,13 +522,15 @@ XLALdumpCOMPLEX8TimeSeries ( const char *fname, const COMPLEX8TimeSeries *series
   FILE *fp;
   XLAL_CHECK ( (fp = fopen (fname, "wb")) != NULL, XLAL_ESYS );
 
-  REAL8 t0 = 1.0*series->epoch.gpsSeconds + series->epoch.gpsNanoSeconds * 1.0e-9;
   REAL8 dt = series->deltaT;
   UINT4 numSamples = series->data->length;
+  char buf[256];
   for ( UINT4 i = 0; i < numSamples; i++ )
   {
-    REAL8 ti = t0 + i * dt;
-    fprintf( fp, "%16.9f %20.16g %20.16g\n", ti, crealf(series->data->data[i]), cimagf(series->data->data[i]) );
+    LIGOTimeGPS ti = series->epoch;
+    XLALGPSAdd ( &ti, i * dt );
+    XLALGPSToStr ( buf, &ti );
+    fprintf( fp, "%20s %20.16g %20.16g\n", buf, crealf(series->data->data[i]), cimagf(series->data->data[i]) );
   }
   fclose ( fp );
 

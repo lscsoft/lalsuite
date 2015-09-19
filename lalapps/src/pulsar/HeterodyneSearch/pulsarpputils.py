@@ -38,9 +38,6 @@ from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 from scipy.stats import hmean
 
-#from pylal import date
-from pylal import bayespputils as bppu
-
 from types import StringType, FloatType
 
 # some common constants taken from psr_constants.py in PRESTO
@@ -2117,6 +2114,8 @@ def gelman_rubins(chains):
 #  - the original length of each chain
 # Th input is a list of MCMC chain files
 def pulsar_mcmc_to_posterior(chainfiles):
+  from pylal import bayespputils as bppu
+
   cl = []
   neffs = []
   grr = {}
