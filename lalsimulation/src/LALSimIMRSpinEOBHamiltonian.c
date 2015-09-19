@@ -260,18 +260,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
     e3_y = 0.;
     e3_z = 1.;	  
   }
-    
-    if (e3_x*nx + e3_y*ny + e3_z*nz == 1.) {
-        //        printf("BEFORE e3_x*nx + e3_y*ny + e3_z*nz, e3_x, e3_y, e3_z  = %.16e %.16e %.16e %.16e\n", e3_x*nx + e3_y*ny + e3_z*nz, e3_x, e3_y, e3_z );
-        e3_x = e3_x+0.000001;
-        e3_y = e3_y+0.000001;
-        double norm = sqrt(e3_x*e3_x + e3_y*e3_y + e3_z*e3_z);
-        e3_x = e3_x/norm;
-        e3_y = e3_y/norm;
-        e3_z = e3_z/norm;
-        //        printf("AFTER e3_x*nx + e3_y*ny + e3_z*nz, e3_x, e3_y, e3_z  = %.16e %.16e %.16e %.16e\n", e3_x*nx + e3_y*ny + e3_z*nz, e3_x, e3_y, e3_z );
-    }
-
+       
   costheta = e3_x*nx + e3_y*ny + e3_z*nz; 
     
   xi2=1. - costheta*costheta; 

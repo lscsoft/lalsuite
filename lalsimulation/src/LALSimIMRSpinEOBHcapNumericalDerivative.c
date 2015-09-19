@@ -702,7 +702,7 @@ XLALSpinHcapNumericalDerivative(
     }
 
 
-    if(debugPK){
+
   for(i=0; i<14; i++)
     if(dvalues[i] > 1e3){
       printf("\nIn XLALSpinHcapNumericalDerivative:\n");
@@ -711,8 +711,7 @@ XLALSpinHcapNumericalDerivative(
       printf("Flux = %3.12f\n\n", flux);
       break;
     }
-    }
-    
+      
   return XLAL_SUCCESS;
 }
 
