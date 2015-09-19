@@ -1243,7 +1243,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
           nodes=[]
           for sk in skynodes:
             if len(sk.ifos)>1:
-              node=GraceDBNode(self.gracedbjob,parent=sk,gid=gid)
+              node=GraceDBNode(self.gracedbjob,parent=sk,gid=gid,tag='sky_loc,lvem')
               #for p in sk.__parents:
               #  if isinstance(p,ResultPageNode):
               #    resultpagenode=p
