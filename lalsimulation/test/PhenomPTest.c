@@ -205,7 +205,7 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void);
 static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
   printf("\n** Test_XLALSimIMRPhenomPCalculateModelParameters: **\n");
 
-  REAL8 eta, chi_eff, chip, thetaJ, alpha0;
+  REAL8 eta, chi1_l, chi2_l, chi_eff, chip, thetaJ, alpha0;
 
   REAL8 m1_SI = 10 * LAL_MSUN_SI;
   REAL8 m2_SI = 40 * LAL_MSUN_SI;
@@ -222,7 +222,8 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
   REAL8 f_ref = f_min;
 
   XLALSimIMRPhenomPCalculateModelParameters(
-      &chi_eff,           /**< Output: Effective aligned spin */
+      &chi1_l,            /**< Output: aligned spin on companion 1 */
+      &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
       &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
@@ -239,6 +240,8 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
       s2x,                /**< Initial value of s2x: dimensionless spin of larger BH */
       s2y,                /**< Initial value of s2y: dimensionless spin of larger BH */
       s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
+
+  chi_eff = (m1_SI*chi1_l + m2_SI*chi2_l) / (m1_SI + m2_SI); /* Effective aligned spin */
 
   REAL8 eta_expected = 0.16;
   REAL8 chi_eff_expected = 0.4378425;
@@ -388,7 +391,7 @@ static void Test_XLALSimIMRPhenomP(void);
 static void Test_XLALSimIMRPhenomP(void) {
   printf("\n** Test_XLALSimIMRPhenomP: **\n");
 
-  REAL8 eta, chi_eff, chip, thetaJ, alpha0;
+  REAL8 eta, chi1_l, chi2_l, chip, thetaJ, alpha0;
 
   REAL8 m1 = 10;
   REAL8 m2 = 40;
@@ -407,7 +410,8 @@ static void Test_XLALSimIMRPhenomP(void) {
   REAL8 f_ref = f_min;
 
   XLALSimIMRPhenomPCalculateModelParameters(
-      &chi_eff,           /**< Output: Effective aligned spin */
+      &chi1_l,            /**< Output: aligned spin on companion 1 */
+      &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
       &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
@@ -436,7 +440,8 @@ static void Test_XLALSimIMRPhenomP(void) {
   int ret = XLALSimIMRPhenomP(
     &hptilde,                 /**< Frequency-domain waveform h+ */
     &hctilde,                 /**< Frequency-domain waveform hx */
-    chi_eff,                  /**< Effective aligned spin */
+    chi1_l,                   /**< aligned spin on companion 1 */
+    chi2_l,                   /**< aligned spin on companion 2 */
     chip,                     /**< Effective spin in the orbital plane */
     eta,                      /**< Symmetric mass-ratio */
     thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
@@ -500,10 +505,11 @@ static void Test_PhenomC_PhenomP(void) {
   REAL8 lnhatz = 1;
   const UINT4 version = 1;
 
-  REAL8 chi_eff, chip, thetaJ, alpha0;
+  REAL8 chi1_l, chi2_l, chip, thetaJ, alpha0;
 
   XLALSimIMRPhenomPCalculateModelParameters(
-      &chi_eff,           /**< Output: Effective aligned spin */
+      &chi1_l,            /**< Output: aligned spin on companion 1 */
+      &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
       &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
@@ -521,7 +527,7 @@ static void Test_PhenomC_PhenomP(void) {
       s2y,                /**< Initial value of s2y: dimensionless spin of larger BH */
       s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
 
-  printf("chi_eff = %g\n", chi_eff);
+//  printf("chi_eff = %g\n", chi_eff);
   printf("chip = %g\n", chip);
   printf("eta = %g\n", eta);
   printf("thetaJ = %g\n", thetaJ);
@@ -529,7 +535,8 @@ static void Test_PhenomC_PhenomP(void) {
   int ret = XLALSimIMRPhenomP(
     &hptilde,                 /**< Frequency-domain waveform h+ */
     &hctilde,                 /**< Frequency-domain waveform hx */
-    chi_eff,                  /**< Effective aligned spin */
+    chi1_l,                   /**< aligned spin on companion 1 */
+    chi2_l,                   /**< aligned spin on companion 2 */
     chip,                     /**< Effective spin in the orbital plane */
     eta,                      /**< Symmetric mass-ratio */
     thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
@@ -603,7 +610,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   // For aligned spins f_ref should not change the waveform
   printf("\n** Test_XLALSimIMRPhenomP_f_ref: **\n");
 
-  REAL8 eta, chi_eff, chip, thetaJ, alpha0;
+  REAL8 eta, chi1_l, chi2_l, chip, thetaJ, alpha0;
 
   REAL8 m1 = 10;
   REAL8 m2 = 40;
@@ -622,7 +629,8 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   REAL8 f_ref = f_min;
 
   XLALSimIMRPhenomPCalculateModelParameters(
-      &chi_eff,           /**< Output: Effective aligned spin */
+      &chi1_l,            /**< Output: aligned spin on companion 1 */
+      &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
       &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
@@ -651,7 +659,8 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   int ret = XLALSimIMRPhenomP(
     &hptilde,                 /**< Frequency-domain waveform h+ */
     &hctilde,                 /**< Frequency-domain waveform hx */
-    chi_eff,                  /**< Effective aligned spin */
+    chi1_l,                   /**< aligned spin on companion 1 */
+    chi2_l,                   /**< aligned spin on companion 2 */
     chip,                     /**< Effective spin in the orbital plane */
     eta,                      /**< Symmetric mass-ratio */
     thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
@@ -677,7 +686,8 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   f_ref = 5;
 
   XLALSimIMRPhenomPCalculateModelParameters(
-      &chi_eff,           /**< Output: Effective aligned spin */
+      &chi1_l,            /**< Output: aligned spin on companion 1 */
+      &chi2_l,            /**< Output: aligned spin on companion 2 */
       &chip,              /**< Output: Effective spin in the orbital plane */
       &eta,               /**< Output: Symmetric mass-ratio */
       &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
@@ -701,7 +711,8 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   ret = XLALSimIMRPhenomP(
     &hptilde2,                /**< Frequency-domain waveform h+ */
     &hctilde2,                /**< Frequency-domain waveform hx */
-    chi_eff,                  /**< Effective aligned spin */
+    chi1_l,                   /**< aligned spin on companion 1 */
+    chi2_l,                   /**< aligned spin on companion 2 */
     chip,                     /**< Effective spin in the orbital plane */
     eta,                      /**< Symmetric mass-ratio */
     thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
