@@ -786,26 +786,26 @@ int XLALSimAdjustRDattachmentTime(
     REAL8Vector * signal2,	/**<< Output Imag of inspiral waveform to which we attach ringdown */
     COMPLEX16TimeSeries* h22,   /**<< input time series (inspiral) */
     COMPLEX16TimeSeries* h2m2,  /**<< input time series (inspiral) */
-    REAL8* ratio22,          /**<< output ratio for 2,2 mode */
-    REAL8* ratio2m2,        /**<< output ratio  for 2,-2 mode*/
-    REAL8* tAttach,         /**<< output/input time of RD attachment */
+    REAL8* ratio22,      /**<< output ratio for 2,2 mode */
+    REAL8* ratio2m2,     /**<< output ratio  for 2,-2 mode*/
+    REAL8* tAttach,       /**<< output/input time of RD attachment */
     const REAL8 thr,        /**<< threshold on the ratio */
-    const REAL8 dt,	        /**<< Sample time step (in seconds) */
-    const REAL8 m1,        	/**<< First component mass (in Solar masses) */
-    const REAL8 m2,	       /**<< Second component mass (in Solar masses) */
+    const REAL8 dt,	/**<< Sample time step (in seconds) */
+    const REAL8 m1,	/**<< First component mass (in Solar masses) */
+    const REAL8 m2,	/**<< Second component mass (in Solar masses) */
     const REAL8 spin1x,	/**<<The spin of the first object; only needed for spin waveforms */
     const REAL8 spin1y,	/**<<The spin of the first object; only needed for spin waveforms */
     const REAL8 spin1z,	/**<<The spin of the first object; only needed for spin waveforms */
     const REAL8 spin2x,	/**<<The spin of the second object; only needed for spin waveforms */
     const REAL8 spin2y,	/**<<The spin of the second object; only needed for spin waveforms */
     const REAL8 spin2z,	/**<<The spin of the second object; only needed for spin waveforms */
-    REAL8Vector * timeVec,	    /**<< Vector containing the time values */
+    REAL8Vector * timeVec,	/**<< Vector containing the time values */
     REAL8Vector * matchrange,	/**<< Time values chosen as points for performing comb matching */
     Approximant approximant,	/**<<The waveform approximant being used */
     const REAL8 JLN,            /**<< cosine of the angle between J and LN at the light ring */
-    const REAL8 combSize,       /**<< combsize for RD attachment */
-    const REAL8 tMaxOmega,     /**<< time at which max of Omega(orb freq) is achieved */
-    const REAL8 tMaxAmp        /**<< time at which max of amplitude of 2,2 mode is achieved */ 
+    const REAL8 combSize,        /**<< combsize for RD attachment */
+    const REAL8 tMaxOmega,
+    const REAL8 tMaxAmp
     )
 {
     int debugPK = 0;
