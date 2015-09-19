@@ -104,7 +104,7 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
   INT4 phaseO = LAL_PNORDER_THREE_POINT_FIVE;
   INT4 amplitudeO = LAL_PNORDER_THREE_POINT_FIVE;
 
-  REAL8 eta, chi_eff, chip, thetaJ, alpha0;
+  REAL8 eta, chi1_l, chi2_l, chip, thetaJ, alpha0;
   UINT4 IMRPhenomP_version = 2;
 
   switch (wf) {
@@ -124,7 +124,8 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
       m1 = 5.6;
       m2 = 22.4;
       XLALSimIMRPhenomPCalculateModelParameters(
-          &chi_eff,           /**< Output: Effective aligned spin */
+          &chi1_l,            /**< Output: aligned spin on companion 1 */
+          &chi2_l,            /**< Output: aligned spin on companion 2 */
           &chip,              /**< Output: Effective spin in the orbital plane */
           &eta,               /**< Output: Symmetric mass-ratio */
           &thetaJ,            /**< Output: Angle between J0 and line of sight (z-direction) */
@@ -144,7 +145,8 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
         XLALSimIMRPhenomP(
           &hptilde,           /**< Frequency-domain waveform h+ */
           &hctilde,           /**< Frequency-domain waveform hx */
-          chi_eff,            /**< Effective aligned spin */
+          chi1_l,             /**< aligned spin on companion 1 */
+          chi2_l,             /**< aligned spin on companion 2 */
           chip,               /**< Effective spin in the orbital plane */
           eta,                /**< Symmetric mass-ratio */
           thetaJ,             /**< Angle between J0 and line of sight (z-direction) */
