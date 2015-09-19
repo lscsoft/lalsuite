@@ -887,7 +887,7 @@ int XLALSimInspiralChooseFDWaveform(
                     quadparam1, quadparam2, lambda1, lambda2,
                     XLALSimInspiralGetSpinOrder(waveFlags),
                     XLALSimInspiralGetTidalOrder(waveFlags),
-                    phaseO, amplitudeO);
+                    phaseO, amplitudeO, nonGRparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
@@ -4091,7 +4091,6 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case TaylorT2:
     case TaylorT3:
     case TaylorF1:
-    case TaylorF2:
     case TaylorR2F4:
     case TaylorF2RedSpin:
     case TaylorF2RedSpinTidal:
@@ -4145,6 +4144,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case NumApproximants:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
+    case TaylorF2:
     case SpinTaylorF2:
     case EccentricFD:
     case Eccentricity:

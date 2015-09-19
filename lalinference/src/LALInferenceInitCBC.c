@@ -37,6 +37,28 @@
 #include <lal/LALInferenceInit.h>
 #include <lal/LALInferenceCalibrationErrors.h>
 
+static int checkParamInList(const char *list, const char *param);
+static int checkParamInList(const char *list, const char *param)
+{
+  /* Check for param in comma-seperated list */
+  char *post=NULL,*pos=NULL;
+  if (list==NULL) return 0;
+  if (param==NULL) return 0;
+  
+  if(!(pos=strstr(list,param))) return 0;
+  
+  /* The string is a substring. Check that it is a token */
+  /* Check the character before and after */
+  if(pos!=list)
+  if(*(pos-1)!=',')
+  return 0;
+  
+  post=&(pos[strlen(param)]);
+  if(*post!='\0')
+  if(*post!=',')
+  return 0;
+  return 1;
+}
 
 static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTable *commline);
 static void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceModel *model);

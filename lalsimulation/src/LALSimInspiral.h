@@ -591,9 +591,9 @@ int XLALHGimriGenerator(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8
 /* TaylorF2 functions */
 /* in module LALSimInspiralTaylorF2.c */
 
-int XLALSimInspiralTaylorF2AlignedPhasing(PNPhasingSeries **pfa, const REAL8 m1, const REAL8 m2, const REAL8 chi1, const REAL8 chi2, const REAL8 qm_def1, const REAL8 qm_def2, const LALSimInspiralSpinOrder spinO);
-int XLALSimInspiralTaylorF2Core(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi_ref, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 f_ref, const REAL8 shft, const REAL8 r, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 lambda1, const REAL8 lambda2, const LALSimInspiralSpinOrder spinO, const LALSimInspiralTidalOrder tideO, const INT4 phaseO, const INT4 amplitudeO);
-int XLALSimInspiralTaylorF2(COMPLEX16FrequencySeries **htilde, const REAL8 phi_ref, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 lambda1, const REAL8 lambda2, const LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, const INT4 phaseO, const INT4 amplitudeO);
+int XLALSimInspiralTaylorF2AlignedPhasing(PNPhasingSeries **pfa, const REAL8 m1, const REAL8 m2, const REAL8 chi1, const REAL8 chi2, const REAL8 qm_def1, const REAL8 qm_def2, const LALSimInspiralSpinOrder spinO, const LALSimInspiralTestGRParam *nonGRparams);
+int XLALSimInspiralTaylorF2Core(COMPLEX16FrequencySeries **htilde, const REAL8Sequence *freqs, const REAL8 phi_ref, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 f_ref, const REAL8 shft, const REAL8 r, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 lambda1, const REAL8 lambda2, const LALSimInspiralSpinOrder spinO, const LALSimInspiralTidalOrder tideO, const INT4 phaseO, const INT4 amplitudeO, const LALSimInspiralTestGRParam *nonGRparams);
+int XLALSimInspiralTaylorF2(COMPLEX16FrequencySeries **htilde, const REAL8 phi_ref, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 S1z, const REAL8 S2z, const REAL8 fStart, const REAL8 fEnd, const REAL8 f_ref, const REAL8 r, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 lambda1, const REAL8 lambda2, const LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, const INT4 phaseO, const INT4 amplitudeO, const LALSimInspiralTestGRParam *nonGRparams);
 
 
 /* SpinTaylor precessing waveform functions */
