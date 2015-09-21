@@ -121,6 +121,8 @@ static void GenerateOMPWaveform(OpenMPCapableWaveforms wf, COMPLEX16FrequencySer
           amplitudeO);
       break;
     case OMP_IMRPhenomP:
+      m1 = 5.6;
+      m2 = 22.4;
       XLALSimIMRPhenomPCalculateModelParameters(
           &chi_eff,           /**< Output: Effective aligned spin */
           &chip,              /**< Output: Effective spin in the orbital plane */

@@ -360,28 +360,28 @@ static void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live
 void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
 {
   char help[]="\
-               ---------------------------------------------------------------------------------------------------\n\
-               --- Nested Sampling Algorithm Parameters ----------------------------------------------------------\n\
-               ---------------------------------------------------------------------------------------------------\n\
-               --Nlive N                        Number of live points to use\n\
-               (--Nmcmc M)                      Over-ride auto chain length determination and use <M> MCMC samples\n\
-               (--maxmcmc M)                    Use at most M MCMC points when autodetermining the chain (5000)\n\
-               (--Nmcmcinitial M)               Use M MCMC points when initially resampling from the prior\n\
-                                                (otherwise default is to use maxmcmc)\n\
-               (--sloppyratio S)                Number of sub-samples of the prior for every sample from the\n\
-                                                limited prior\n\
-               (--Nruns R)                      Number of parallel samples from logt to use(1)\n\
-               (--tolerance dZ)                 Tolerance of nested sampling algorithm (0.1)\n\
-               (--randomseed seed)              Random seed of sampling distribution\n\
-               (--prior )                       Set the prior to use (InspiralNormalised,SkyLoc,malmquist)\n\
-                                                (default: InspiralNormalised)\n\
-               (--sampleprior N)                For Testing: Draw N samples from the prior, will not perform the\n\
-                                                nested sampling integral\n\
-               (--progress)                     Output some progress information at each iteration\n\
-               (--verbose)                      Output more info. N=1: errors, N=2 (default): warnings, N=3: info\n\
-               (--resume)                       Allow non-condor checkpointing every 4 hours. If given will check \n\
-                                                for OUTFILE_resume and continue if possible\n\
-               \n";
+    ----------------------------------------------\n\
+    --- Nested Sampling Algorithm Parameters -----\n\
+    ----------------------------------------------\n\
+    --Nlive N                        Number of live points to use\n\
+    (--Nmcmc M)                      Over-ride auto chain length determination and use <M> MCMC samples\n\
+    (--maxmcmc M)                    Use at most M MCMC points when autodetermining the chain (5000)\n\
+    (--Nmcmcinitial M)               Use M MCMC points when initially resampling from the prior\n\
+                                     (otherwise default is to use maxmcmc)\n\
+    (--sloppyratio S)                Number of sub-samples of the prior for every sample from the\n\
+                                     limited prior\n\
+    (--Nruns R)                      Number of parallel samples from logt to use(1)\n\
+    (--tolerance dZ)                 Tolerance of nested sampling algorithm (0.1)\n\
+    (--randomseed seed)              Random seed of sampling distribution\n\
+    (--prior )                       Set the prior to use (InspiralNormalised,SkyLoc,malmquist)\n\
+                                     (default: InspiralNormalised)\n\
+    (--sampleprior N)                For Testing: Draw N samples from the prior, will not perform the\n\
+                                     nested sampling integral\n\
+    (--progress)                     Output some progress information at each iteration\n\
+    (--verbose)                      Output more info. N=1: errors, N=2 (default): warnings, N=3: info\n\
+    (--resume)                       Allow non-condor checkpointing every 4 hours. If given will check \n\
+                                     or OUTFILE_resume and continue if possible\n\
+    \n";
 
   ProcessParamsTable *ppt=NULL;
   /* Print command line arguments if help requested */
@@ -1619,7 +1619,7 @@ static int syncLivePointsDifferentialPoints(LALInferenceRunState *state, LALInfe
 {
     INT4 N = LALInferenceGetINT4Variable(state->algorithmParams,"Nlive");
     if(!thread->differentialPoints) thread->differentialPoints=XLALCalloc(N,sizeof(LALInferenceVariables *));
-    
+
     for(INT4 i=0;i<N;i++)
     {
         if(!thread->differentialPoints[i]) thread->differentialPoints[i]=XLALCalloc(1,sizeof(LALInferenceVariables));
