@@ -162,59 +162,50 @@ static void LT_CallBoundFunc(
 ///
 /// Find the extrema of the parameter-space bounds, by sampling the bounds around the current point.
 ///
-static void LT_SampleBounds(
+static void LT_FindBoundExtrema(
   const LatticeTiling *tiling,		///< [in] Lattice tiling
-  const size_t i,			///< [in] Current dimension of parameter space
-  const size_t imax,			///< [in] Dimension in which to record bound extrema
-  const double start,			///< [in] Starting offset in this dimension
-  const double incr,			///< [in] Increment to apply to offset
-  const size_t count,			///< [in] Number of increments to sample
-  gsl_vector *phys_point,		///< [out] Current physical point being bounded
-  double *phys_min_lower,		///< [out] Minimum lower bound on parameter space
-  double *phys_max_upper		///< [out] Maximum upper bound on parameter space
+  const size_t i,			///< [in] Current dimension in LT_FindBoundExtrema() iteration
+  const size_t dim,			///< [in] Dimension on which bound applies
+  gsl_vector *phys_point,		///< [in] Physical point at which to find bounds
+  double *phys_lower_minimum,		///< [out] Minimum lower parameter-space bound
+  double *phys_upper_maximum		///< [out] Maximum upper parameter-space bound
   )
 {
 
-  // If dimension is not tiled, continue to higher dimensions
-  if (!tiling->bounds[i].is_tiled) {
-    LT_SampleBounds(tiling, i + 1, imax, start, incr, count, phys_point, phys_min_lower, phys_max_upper);
+  // If 'i' equals target dimension 'dim', get parameter-space bounds in this dimension
+  if (i == dim) {
+    LT_CallBoundFunc(tiling, dim, phys_point, phys_lower_minimum, phys_upper_maximum);
     return;
   }
-
-  // Half the extent of metric ellipse bounding box in this dimension
-  const double phys_hbbox_i = 0.5 * gsl_vector_get(tiling->phys_bbox, i);
 
   // Original value of physical point in this dimension
   const double phys_point_i = gsl_vector_get(phys_point, i);
 
-  // Sample the bounds on the current point in this dimension
-  for (size_t k = 0; k < count; ++k) {
-
-    // Move physical point in this dimension by amount relative to size of bounding box
-    gsl_vector_set(phys_point, i, phys_point_i + phys_hbbox_i * (start + incr * k));
-
-    if (i + 1 < imax) {
-
-      // Continue to higher dimensions
-      LT_SampleBounds(tiling, i + 1, imax, start, incr, count, phys_point, phys_min_lower, phys_max_upper);
-
-    } else {
-
-      // Get the physical bounds on the next dimension 'imax'
-      double phys_lower = 0.0, phys_upper = 0.0;
-      LT_CallBoundFunc(tiling, imax, phys_point, &phys_lower, &phys_upper);
-
-      // Record the minimum lower bound and maximum upper bound
-      if (phys_lower < *phys_min_lower) {
-        *phys_min_lower = phys_lower;
-      }
-      if (phys_upper > *phys_max_upper) {
-        *phys_max_upper = phys_upper;
-      }
-
-    }
-
+  // Sample parameter-space bounds at offset 'x' from original physical point
+#define LT_FindBoundExtrema_SAMPLE_BOUNDS(x) { \
+    gsl_vector_set(phys_point, i, phys_point_i + (x)); \
+    double phys_lower = *phys_lower_minimum; \
+    double phys_upper = *phys_upper_maximum; \
+    LT_FindBoundExtrema(tiling, i + 1, dim, phys_point, &phys_lower, &phys_upper); \
+    *phys_lower_minimum = GSL_MIN(*phys_lower_minimum, phys_lower); \
+    *phys_upper_maximum = GSL_MAX(*phys_upper_maximum, phys_upper); \
   }
+
+  // Sample parameter-space bounds at original physical point
+  LT_FindBoundExtrema_SAMPLE_BOUNDS(0);
+
+  // Sample parameter-space bounds at +/- half the extext of the metric ellipse bounding box
+  const double phys_hbbox_i = 0.5 * gsl_vector_get(tiling->phys_bbox, i);
+  LT_FindBoundExtrema_SAMPLE_BOUNDS(-phys_hbbox_i);
+  LT_FindBoundExtrema_SAMPLE_BOUNDS(+phys_hbbox_i);
+
+  // Sample parameter-space bounds at +/- half the lattice tiling step size
+  const double phys_hstep_i = 0.5 * gsl_matrix_get(tiling->phys_from_int, i, i);
+  LT_FindBoundExtrema_SAMPLE_BOUNDS(-phys_hstep_i);
+  LT_FindBoundExtrema_SAMPLE_BOUNDS(+phys_hstep_i);
+
+  // Clear macro LT_FindBoundExtrema_SAMPLE_BOUNDS()
+#undef LT_FindBoundExtrema_SAMPLE_BOUNDS
 
   // Reset physical point in this dimension to original value
   gsl_vector_set(phys_point, i, phys_point_i);
@@ -227,70 +218,37 @@ static void LT_SampleBounds(
 static void LT_GetBounds(
   const LatticeTiling *tiling,		///< [in] Lattice tiling
   const bool padding,			///< [in] Whether padding is added to parameter space bounds
-  const size_t i,			///< [in] Dimension on which bound applies
+  const size_t dim,			///< [in] Dimension on which bound applies
   const gsl_vector *phys_point,		///< [in] Physical point at which to find bounds
   double *phys_lower,			///< [out] Lower parameter-space bound
   double *phys_upper			///< [out] Upper parameter-space bound
   )
 {
 
-  // Get the physical bounds on the current dimension
-  LT_CallBoundFunc(tiling, i, phys_point, phys_lower, phys_upper);
+  // Get parameter-space bounds in dimension 'dim'
+  LT_CallBoundFunc(tiling, dim, phys_point, phys_lower, phys_upper);
 
-  // If dimension is not tiled or padding is not required, we're done
-  if (!tiling->bounds[i].is_tiled || !padding) {
-    return;
-  }
+  if (padding) {
 
-  // Half the extent of metric ellipse bounding box in this dimension
-  const double phys_hbbox_i = 0.5 * gsl_vector_get(tiling->phys_bbox, i);
+    if (dim > 0) {
 
-  if (i > 0) {
-
-    // Find the extreme values of the physical bounds, by sampling the bounding box at increasingly fine levels
-    double phys_sampl_lower = *phys_lower, phys_sampl_upper = *phys_upper;
-    const size_t level_max = 3;
-    for (size_t level = 0; level <= level_max; ++level) {
-
-      // Determine which and how many offsets to sample based on level:
-      //  - level 0: offsets -1.0, 1.0
-      //  - level 1: offsets -0.5, 0.5
-      //  - level 2: offsets -0.75, -0.25, 0.25, 0.75
-      //  - level 3: offsets -0.875, -0.625, -0.375, -0.125, 0.125, 0.375, 0.625, 0.875
-      const double start = -1.0 + ((level == 0) ? 0 : 2.0 / (2 << level));
-      const double incr = 4.0 / (2 << level);
-      const size_t count = (level == 0) ? 2 : 2 << (level - 1);
-
-      // Create a local copy of current physical point for use in sampling bounds
+      // Create a local copy of current physical point
       double local_phys_point_array[phys_point->size];
       gsl_vector_view local_phys_point_view = gsl_vector_view_array(local_phys_point_array, phys_point->size);
-      gsl_vector_memcpy(&local_phys_point_view.vector, phys_point);
+      gsl_vector *const local_phys_point = &local_phys_point_view.vector;
+      gsl_vector_memcpy(local_phys_point, phys_point);
 
-      // Sample the bounds around the current point to find the bound extrema
-      double phys_sampl_new_lower = phys_sampl_lower, phys_sampl_new_upper = phys_sampl_upper;
-      LT_SampleBounds(tiling, 0, i, start, incr, count, &local_phys_point_view.vector, &phys_sampl_new_lower, &phys_sampl_new_upper);
-
-      // Break if the bounds have changed by less than 'tol' after this level of sampling
-      const double tol = 0.1 * phys_hbbox_i;
-      if ( fabs(phys_sampl_lower - phys_sampl_new_lower) < tol && fabs(phys_sampl_new_upper - phys_sampl_upper) < tol ) {
-        break;
-      }
-
-      // Update bounds
-      phys_sampl_lower = phys_sampl_new_lower;
-      phys_sampl_upper = phys_sampl_new_upper;
+      // Find the extrema of the parameter-space bounds
+      LT_FindBoundExtrema(tiling, 0, dim, local_phys_point, phys_lower, phys_upper);
 
     }
 
-    // Set bounds to extrema found by sampling, rounded down/up to nearest half of the metric ellipse bounding box
-    *phys_lower -= ceil((*phys_lower - phys_sampl_lower) / phys_hbbox_i) * phys_hbbox_i;
-    *phys_upper += ceil((phys_sampl_upper - *phys_upper) / phys_hbbox_i) * phys_hbbox_i;
+    // Add padding of half the extext of the metric ellipse bounding box
+    const double phys_hbbox_dim = 0.5 * gsl_vector_get(tiling->phys_bbox, dim);
+    *phys_lower -= phys_hbbox_dim;
+    *phys_upper += phys_hbbox_dim;
 
   }
-
-  // Add padding of half the metric ellipse bounding box
-  *phys_lower -= phys_hbbox_i;
-  *phys_upper += phys_hbbox_i;
 
 }
 
