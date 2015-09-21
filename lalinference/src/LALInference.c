@@ -1290,6 +1290,9 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
 /*  actually comparable. For example, "gslMatrix" type entries   */
 /*  cannot (yet?) be checked for equality.                       */
 {
+  /* Short-circuit for pointer equality */
+  if (var1 == var2) return 0;
+
   int result = 0;
   LALInferenceVariableItem *ptr1 = var1->head;
   LALInferenceVariableItem *ptr2 = NULL;
