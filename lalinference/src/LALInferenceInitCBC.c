@@ -197,6 +197,10 @@ static void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState,
     REAL8 phaseUncertaintyPrior = 5*M_PI/180.0; /* 5 degrees phase */
     if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, "--spcal-nodes"))) {
       ncal = atoi(ppt->value);
+      if (ncal < 3) { /* Cannot do spline with fewer than 3 points! */
+	fprintf(stderr, "ERROR: given '--spcal-nodes %d', but cannot spline with fewer than 3\n", ncal);
+	exit(1);
+      }
     }
 
     if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, "--spcal-amp-uncertainty"))) {
