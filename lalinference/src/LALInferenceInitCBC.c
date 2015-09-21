@@ -1069,7 +1069,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
 
   /* Option to use the detector-aligned frame */
-  if(!LALInferenceGetProcParamVal(commandLine,"--no-detector-frame"))
+  if(!LALInferenceGetProcParamVal(commandLine,"--no-detector-frame") && nifo >1)
   {
         printf("Using detector-based sky frame\n");
         LALInferenceRegisterUniformVariableREAL8(state,model->params,"t0",timeParam,timeMin,timeMax,LALINFERENCE_PARAM_LINEAR);
