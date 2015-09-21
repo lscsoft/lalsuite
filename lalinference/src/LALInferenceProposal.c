@@ -1271,16 +1271,16 @@ REAL8 LALInferenceDifferentialEvolutionExtrinsic(LALInferenceThreadState *thread
     LALInferenceVariables *args = thread->proposalArgs;
 
     const char *names[] = {"rightascension", "declination", "cosalpha", "azimuth", "polarisation", "distance",
-                           "logdistance", "time", "costheta_jn", "cosalpha", "t0", "theta","hrss", "loghrss", NULL};
+                           "logdistance", "time", "costheta_jn", "t0", "theta","hrss", "loghrss", NULL};
 
     const char *marg_time_names[] = {"rightascension", "declination", "cosalpha", "azimuth", "polarisation", "distance",
-                                     "logdistance", "costheta_jn","cosalpha", "theta","hrss", "loghrss", NULL};
+                                     "logdistance", "costheta_jn", "theta","hrss", "loghrss", NULL};
 
     const char *marg_phase_names[] = {"rightascension", "declination", "cosalpha", "azimuth", "polarisation", "distance",
-                                      "logdistance", "time", "costheta_jn", "cosalpha", "t0", "theta","hrss", "loghrss", NULL};
+                                      "logdistance", "time", "costheta_jn", "t0", "theta","hrss", "loghrss", NULL};
 
     const char *marg_time_phase_names[] = {"rightascension", "declination", "cosalpha", "azimuth", "polarisation", "distance",
-                                           "logdistance", "costheta_jn", "cosalpha", "theta","hrss", "loghrss", NULL};
+                                           "logdistance", "costheta_jn", "theta","hrss", "loghrss", NULL};
 
     margtime = LALInferenceGetINT4Variable(args, "marg_time");
     margphi = LALInferenceGetINT4Variable(args, "marg_phi");
