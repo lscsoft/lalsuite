@@ -1418,6 +1418,9 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
 /*  actually comparable. For example, "gslMatrix" type entries   */
 /*  cannot (yet?) be checked for equality.                       */
 {
+  /* Short-circuit for pointer equality */
+  if (var1 == var2) return 0;
+
   int result = 0;
   UINT4 i;
   LALInferenceVariableItem *ptr1 = var1->head;
@@ -1459,7 +1462,8 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
             break;
           case LALINFERENCE_REAL8Vector_t:
           {
-            REAL8Vector *v1=ptr1->value,*v2=ptr2->value;
+            REAL8Vector *v1=*(REAL8Vector **)ptr1->value;
+	    REAL8Vector *v2=*(REAL8Vector **)ptr2->value;
             if(v1->length!=v2->length) result=1;
             else
               for(i=0;i<v1->length;i++)
@@ -1473,7 +1477,8 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
           }
           case LALINFERENCE_UINT4Vector_t:
           {
-            UINT4Vector *v1=ptr1->value,*v2=ptr2->value;
+            UINT4Vector *v1=*(UINT4Vector **)ptr1->value;
+	    UINT4Vector *v2=*(UINT4Vector **)ptr2->value;
             if(v1->length!=v2->length) result=1;
             else
               for(i=0;i<v1->length;i++)
@@ -1487,7 +1492,8 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
           }
           case LALINFERENCE_INT4Vector_t:
           {
-            INT4Vector *v1=ptr1->value,*v2=ptr2->value;
+            INT4Vector *v1=*(INT4Vector **)ptr1->value;
+	    INT4Vector *v2=*(INT4Vector **)ptr2->value;
             if(v1->length!=v2->length) result=1;
             else
               for(i=0;i<v1->length;i++)
