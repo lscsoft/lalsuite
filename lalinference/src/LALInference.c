@@ -700,6 +700,9 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
         case LALINFERENCE_UINT4Vector_t:
           fprintf(stdout, "'UINT4Vector'");
           break;
+        case LALINFERENCE_REAL8Vector_t:
+          fprintf(stdout, "'REAL8Vector'");
+          break;
         case LALINFERENCE_gslMatrix_t:
           fprintf(stdout, "'gslMatrix'");
           break;
@@ -742,6 +745,11 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
           //fprintf(stdout,"%iD matrix", (int)((UINT4Vector **)ptr->value)->size);
           fprintf(stdout,"[");
           fprintf(stdout,"%i]",(int)(*(UINT4Vector **)ptr->value)->length);
+          break;
+        case LALINFERENCE_REAL8Vector_t:
+          //fprintf(stdout,"%iD matrix", (int)((REAL8Vector **)ptr->value)->size);
+          fprintf(stdout,"[");
+          fprintf(stdout,"%i]",(int)(*(REAL8Vector **)ptr->value)->length);
           break;
         case LALINFERENCE_gslMatrix_t:
           fprintf(stdout,"[");
