@@ -226,7 +226,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     }
 
     /* This is mangling currentParams */
-    FILE **threadoutputs = LALInferencePrintPTMCMCHeadersOrResume(runState);
+    FILE **threadoutputs = NULL;
+    FILE **resumeoutputs = NULL;
+    LALInferencePrintPTMCMCHeadersOrResume(runState, &threadoutputs, &resumeoutputs);
     if (MPIrank == 0)
         LALInferencePrintInjectionSample(runState);
 
@@ -346,6 +348,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                     timestamp = tv.tv_sec + tv.tv_usec/1E6 - timestamp_epoch;
                 }
 
+                LALInferenceSaveSample(thread, resumeoutputs[t]);
                 LALInferencePrintMCMCSample(thread, runState->data, thread->step, timestamp, threadoutputs[t]);
 
                 if (adaptVerbose && !no_adapt) {
@@ -959,13 +962,14 @@ REAL8 LALInferenceAdaptationEnvelope(INT4 step, INT4 tau, INT4 fix_adapt_len) {
 //-----------------------------------------
 // file output routines:
 //-----------------------------------------
-FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
+void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE ***threadoutputs, FILE ***resumeoutputs) {
     ProcessParamsTable *ppt;
     INT4 randomseed;
     INT4 MPIrank, t, n_local_threads;
     char *outFileName = NULL;
+    char *outBinFileName = NULL;
     FILE *threadoutput = NULL;
-    FILE **threadoutputs = NULL;
+    FILE *resumeoutput = NULL;
     LALInferenceThreadState *thread;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -973,7 +977,8 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
     n_local_threads = runState->nthreads;
     randomseed = LALInferenceGetINT4Variable(runState->algorithmParams,"random_seed");
 
-    threadoutputs = XLALCalloc(n_local_threads, sizeof(FILE*));
+    *threadoutputs = XLALCalloc(n_local_threads, sizeof(FILE*));
+    *resumeoutputs = XLALCalloc(n_local_threads, sizeof(FILE*));
 
     for (t = 0; t < n_local_threads; t++) {
         thread = runState->threads[t];
@@ -981,34 +986,50 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
         ppt = LALInferenceGetProcParamVal(runState->commandLine, "--outfile");
         if (ppt) {
             outFileName = (char*)XLALCalloc(strlen(ppt->value)+255, sizeof(char*));
+            outBinFileName = (char*)XLALCalloc(strlen(ppt->value)+255, sizeof(char*));
             if (n_local_threads*MPIrank+t == 0) {
                 sprintf(outFileName,"%s",ppt->value);
+                sprintf(outBinFileName,"%s.resume",ppt->value);
                 //Because of the way Pegasus handles file names, it needs exact match between --output and filename
             } else {
                 sprintf(outFileName, "%s.%2.2d", ppt->value, n_local_threads*MPIrank+t);
+                sprintf(outBinFileName, "%s.%2.2d.resume", ppt->value, n_local_threads*MPIrank+t);
             }
 
         } else {
             outFileName = (char*)XLALCalloc(255, sizeof(char*));
+            outBinFileName = (char*)XLALCalloc(255, sizeof(char*));
             sprintf(outFileName, "PTMCMC.output.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
+            sprintf(outBinFileName, "PTMCMC.output.%u.%2.2d.resume", randomseed, n_local_threads*MPIrank+t);
         }
 
-        if (LALInferenceGetProcParamVal(runState->commandLine, "--resume") && access(outFileName, R_OK) == 0) {
+        if (LALInferenceGetProcParamVal(runState->commandLine, "--resume") &&
+                access(outFileName, R_OK) == 0 &&
+                access(outBinFileName, R_OK) == 0) {
             /* Then file already exists for reading, and we're going to resume
             from it, so don't write the header. */
 
-            threadoutput = fopen(outFileName, "r");
+            threadoutput = fopen(outFileName, "a");
             if (threadoutput == NULL) {
+                XLALErrorHandler = XLALExitErrorHandler;
+                XLALPrintError("Error reading output file (in %s, line %d)\n", __FILE__, __LINE__);
+                XLAL_ERROR_NULL(XLAL_EIO);
+            }
+
+            resumeoutput = fopen(outBinFileName, "r");
+            if (resumeoutput == NULL) {
                 XLALErrorHandler = XLALExitErrorHandler;
                 XLALPrintError("Error reading resume file (in %s, line %d)\n", __FILE__, __LINE__);
                 XLAL_ERROR_NULL(XLAL_EIO);
             }
 
-            LALInferenceMCMCResumeRead(thread, threadoutput);
+            LALInferenceMCMCResumeRead(thread, resumeoutput);
+            fclose(resumeoutput);
 
-            fclose(threadoutput);
+            resumeoutput = fopen(outBinFileName, "w");
 
-            threadoutput = fopen(outFileName, "a");
+            thread->currentPrior = runState->prior(runState, thread->currentParams, thread->model);
+            thread->currentLikelihood = runState->likelihood(thread->currentParams, runState->data, thread->model);
         } else {
             threadoutput = fopen(outFileName,"w");
             if(threadoutput == NULL){
@@ -1018,17 +1039,26 @@ FILE **LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState) {
             }
 
             LALInferencePrintPTMCMCHeaderFile(runState, thread, threadoutput);
+
+            resumeoutput = fopen(outBinFileName,"w");
+            if(resumeoutput == NULL){
+                XLALErrorHandler = XLALExitErrorHandler;
+                XLALPrintError("Resume file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
+                XLAL_ERROR_NULL(XLAL_EIO);
+            }
         }
 
         if(setvbuf(threadoutput,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
           fprintf(stderr,"Warning: Unable to set output file buffer!");
 
-        threadoutputs[t] = threadoutput;
+        (*threadoutputs)[t] = threadoutput;
+        (*resumeoutputs)[t] = resumeoutput;
 
         XLALFree(outFileName);
+        XLALFree(outBinFileName);
     }
 
-    return threadoutputs;
+    return;
 }
 
 void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInferenceThreadState *thread, FILE *threadoutput) {
@@ -1349,6 +1379,13 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     }
 }
 
+void LALInferenceSaveSample(LALInferenceThreadState *thread, FILE *output) {
+    LALInferenceWriteVariablesBinary(output, thread->currentParams);
+    rewind(output);
+
+    return;
+}
+
 void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIFOData *data, INT4 iteration, REAL8 timestamp, FILE *threadoutput) {
     UINT4 ifo = 0;
     LALInferenceIFOData *headIFO;
@@ -1473,36 +1510,8 @@ void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model) {
 }
 
 void LALInferenceMCMCResumeRead(LALInferenceThreadState *thread, FILE *resumeFile) {
-    /* Hope that the line is shorter than 16K! */
-    const long len = 16384;
-    char linebuf[len];
-    char *last_line = NULL;
-    long flen, line_length;
-    float loglike, logprior;
-
-    fseek(resumeFile, 0L, SEEK_END);
-    flen = ftell(resumeFile);
-
-    if (flen < len) {
-        fseek(resumeFile, 0L, SEEK_SET);
-        fread(linebuf, flen, 1, resumeFile);
-        linebuf[flen-1] = '\0'; /* Strip off trailing newline. */
-    } else {
-        fseek(resumeFile, -len, SEEK_END);
-        fread(linebuf, len, 1, resumeFile);
-        linebuf[len-1] = '\0'; /* Strip off trailing newline.... */
-    }
-
-    last_line = strrchr(linebuf, '\n'); /* Last occurence of '\n' */
-
-    line_length = strlen(last_line);
-
-    /* Go to the beginning of the last line. */
-    fseek(resumeFile, -line_length, SEEK_END);
-
-    fscanf(resumeFile, "%d %f %f", &(thread->step), &loglike, &logprior);
-
-    LALInferenceReadSampleNonFixed(resumeFile, thread->currentParams);
+    LALInferenceClearVariables(thread->currentParams);
+    thread->currentParams = LALInferenceReadVariablesBinary(resumeFile);
 
     return;
 }
