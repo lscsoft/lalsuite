@@ -58,19 +58,19 @@
 #include <lal/LALString.h>
 #include <lal/StringVector.h>
 
-#include <gsl/gsl_rng.h>           /* for random number generation */ 
-#include <gsl/gsl_randist.h>       /* for random number generation */ 
+#include <gsl/gsl_rng.h>           /* for random number generation */
+#include <gsl/gsl_randist.h>       /* for random number generation */
 
 #include "SemiCoherent.h"
 
-/** A structure that stores user input variables 
+/** A structure that stores user input variables
  */
-typedef struct { 
+typedef struct {
   BOOLEAN help;		            /**< trigger output of help string */
   CHAR *outLabel;                   /**< 'misc' entry in SFT-filenames or 'description' entry of frame filenames */
   CHAR *outputdir;                  /**< the output directory */
   CHAR *cachefile;                  /**< the name of the input cache file */
-  CHAR *binfile;                    /**< the input binary file */ 
+  CHAR *binfile;                    /**< the input binary file */
   REAL8 tsamp;                      /**< the sampling time of the data */
   INT4 Tmin;                        /**< the minimum length of the SFTs */
   INT4 Tmax;                        /**< the maximum length of the SFTs */
@@ -83,7 +83,7 @@ typedef struct {
   REAL8 maxasini;                   /**< the maximum orbital semi-major axis value */
   REAL8 tasc;                       /**< the best guess orbital time of ascension */
   REAL8 deltaorbphase;              /**< the orbital phase uncertainty (cycles) */
-  REAL8 mismatch;                   /**< the grid mismatch */      
+  REAL8 mismatch;                   /**< the grid mismatch */
   INT4 blocksize;                   /**< the running median blocksize */
   REAL8 thresh;                     /**< the number of results to output */
   CHAR *tempdir;                    /**< a temporary directory for keeping the results */
@@ -99,7 +99,7 @@ int XLALInitgslrand(gsl_rng **gslrnd,INT8 seed);
 int XLALCopySFT (SFTtype *dest, const SFTtype *src);
 int XLALAppendSFT2Vector (SFTVector *vect,const SFTtype *sft);
 int XLALDefineBinaryParameterSpace(REAL8Space**,LIGOTimeGPS,REAL8,UserInput_t*);
-int XLALOpenIntermittentResultsFile(FILE **,CHAR *,CHAR *,CHAR *,UserInput_t *uvar,LIGOTimeGPS *start); 
+int XLALOpenIntermittentResultsFile(FILE **,CHAR *,CHAR *,CHAR *,UserInput_t *uvar,LIGOTimeGPS *start);
 
 /***********************************************************************************************/
 /* global variables */
@@ -142,7 +142,7 @@ int main( int argc, char *argv[] )  {
     }
 
     INT4 id = (INT4)(1e9*gsl_rng_uniform(q));
-    sprintf(newtemp,"%s/%09d",uvar.tempdir,id); 
+    sprintf(newtemp,"%s/%09d",uvar.tempdir,id);
     fprintf(stdout,"temp dir = %s\n",newtemp);
     if (mkdir(newtemp,0755)) {
       if (uvar.verbose) fprintf(stdout,"%s : Unable to make temporary directory %s.  Might be a problem.\n",__func__,newtemp);
@@ -202,7 +202,7 @@ int main( int argc, char *argv[] )  {
     NT++;
   }
   if (uvar.verbose) fprintf(stdout,"%s : Going to do %d different coherent lengths.\n",__func__,NT);
- 
+
   /**********************************************************************************/
   /* OPEN INTERMEDIATE RESULTS FILE */
   /**********************************************************************************/
@@ -225,7 +225,7 @@ int main( int argc, char *argv[] )  {
     REAL8 fmin_read = MINBAND*floor((uvar.freq - WINGS_FACTOR*uvar.freq*wings - (REAL8)uvar.blocksize/(REAL8)uvar.Tmin)/MINBAND);
     REAL8 fmax_read = MINBAND*ceil((uvar.freq + (REAL8)uvar.blocksize/(REAL8)uvar.Tmin + uvar.freqband + WINGS_FACTOR*(uvar.freq + uvar.freqband)*wings)/MINBAND);
     REAL8 fband_read = fmax_read - fmin_read;
-    if (uvar.verbose) fprintf(stdout,"%s : reading in SFT frequency band [%f -> %f]\n",__func__,fmin_read,fmax_read); 
+    if (uvar.verbose) fprintf(stdout,"%s : reading in SFT frequency band [%f -> %f]\n",__func__,fmin_read,fmax_read);
 
     /* define the number of different start times */
     INT4 Ns = ceil(1.0/uvar.mismatch);
@@ -266,7 +266,7 @@ int main( int argc, char *argv[] )  {
       XLALDestroyINT8Vector(np);
       XLALDestroyREAL8Vector(R);
       if (uvar.verbose) fprintf(stdout,"%s : generated SFTs for file %s\n",__func__,filename);
-      
+
       /* if we have any SFTs */
       if (sftvec->length>0) {
 
@@ -393,7 +393,7 @@ int main( int argc, char *argv[] )  {
 /** Read in input user arguments
  *
  */
-int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */ 
+int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */
 		     char *argv[],        /**< [in] the command line arguments */
 		     UserInput_t *uvar    /**< [out] the user input structure */
 		     )
@@ -401,7 +401,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
 
   /* initialise user variables */
-  uvar->outLabel = NULL; 
+  uvar->outLabel = NULL;
   uvar->outputdir = NULL;
   uvar->cachefile = NULL;
   uvar->binfile = NULL;
@@ -419,11 +419,11 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
   /* ---------- register all user-variables ---------- */
   XLALregBOOLUserStruct(help, 		        'h', UVAR_HELP,     "Print this message");
-  XLALregSTRINGUserStruct(outLabel, 	        'n', UVAR_REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames"); 
-  XLALregSTRINGUserStruct(outputdir, 	        'o', UVAR_REQUIRED, "The output directory name"); 
-  XLALregSTRINGUserStruct(binfile, 	        'i', UVAR_REQUIRED, "The input binary file name"); 
+  XLALregSTRINGUserStruct(outLabel, 	        'n', UVAR_REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
+  XLALregSTRINGUserStruct(outputdir, 	        'o', UVAR_REQUIRED, "The output directory name");
+  XLALregSTRINGUserStruct(binfile, 	        'i', UVAR_REQUIRED, "The input binary file name");
   XLALregSTRINGUserStruct(cachefile,            'e', UVAR_REQUIRED, "The input cache file name");
-  XLALregSTRINGUserStruct(tempdir, 	        'x', UVAR_OPTIONAL, "The temporary directory"); 
+  XLALregSTRINGUserStruct(tempdir, 	        'x', UVAR_OPTIONAL, "The temporary directory");
   XLALregREALUserStruct(freq,                   'f', UVAR_REQUIRED, "The starting frequency (Hz)");
   XLALregREALUserStruct(freqband,   	        'b', UVAR_REQUIRED, "The frequency band (Hz)");
   XLALregINTUserStruct(Tmin,                    't', UVAR_OPTIONAL, "The min length of segemnts (sec)");
@@ -452,7 +452,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
-  
+
 }
 
 
@@ -484,7 +484,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 /*     LogPrintf(LOG_CRITICAL,"%s: Invalid input, ParameterSpace structure == NULL.\n",__func__); */
 /*     XLAL_ERROR(XLAL_EINVAL); */
 /*   } */
-  
+
 /*   /\* define the output filename *\/ */
 /*   /\* the format we adopt is the following SemiCoherentResults-<SOURCE>-<START>_<END>-<MIN_FREQ_INT>_<MIN_FREQ_mHZ>_ <MAX_FREQ_INT>_<MAX_FREQ_mHZ>.txt *\/ */
 /*   { */
@@ -505,7 +505,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 /*     LogPrintf(LOG_CRITICAL,"%s: Error, failed to open file %s for writing.  Exiting.\n",__func__,outputfile); */
 /*     XLAL_ERROR(XLAL_EINVAL); */
 /*   } */
- 
+
 /*   /\* Convert time to local time representation *\/ */
 /*   { */
 /*     struct tm *loctime = localtime(&curtime); */
@@ -514,7 +514,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 /*     time_string = XLALCalloc(n,sizeof(CHAR)); */
 /*     snprintf(time_string,n-1,"%s",temp_time); */
 /*   } */
- 
+
 /*   /\* get GIT version information *\/ */
 /*   { */
 /*     CHAR *temp_version = XLALGetVersionString(0); */
@@ -523,7 +523,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 /*     snprintf(version_string,n-1,"%s",temp_version); */
 /*     XLALFree(temp_version); */
 /*   } */
-  
+
 /*   /\* output header information *\/ */
 /*   fprintf((*fp),"%s \n",version_string); */
 /*   fprintf((*fp),"%%%% command line args\t\t= %s\n",clargs); */
@@ -581,7 +581,7 @@ int XLALOpenIntermittentResultsFile(FILE **fp,                  /**< [in] filepo
     UINT4 max_freq_mhz = (UINT4)floor(0.5 + (uvar->freq + uvar->freqband - (REAL8)max_freq_int)*1e3);
     snprintf(outputfile,LONGSTRINGLENGTH,"%s/IntermittentResults-%s-%d-%04d_%03d_%04d_%03d.txt",
 			   outputdir,(CHAR*)uvar->outLabel,start->gpsSeconds,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
-    
+
   }
   LogPrintf(LOG_DEBUG,"%s : output %s\n",__func__,*outputfile);
 
@@ -590,7 +590,7 @@ int XLALOpenIntermittentResultsFile(FILE **fp,                  /**< [in] filepo
     LogPrintf(LOG_CRITICAL,"%s: Error, failed to open file %s for writing.  Exiting.\n",__func__,outputfile);
     XLAL_ERROR(XLAL_EINVAL);
   }
- 
+
   /* Convert time to local time representation */
   {
     struct tm *loctime = localtime(&curtime);
@@ -599,7 +599,7 @@ int XLALOpenIntermittentResultsFile(FILE **fp,                  /**< [in] filepo
     time_string = XLALCalloc(n,sizeof(CHAR));
     snprintf(time_string,n-1,"%s",temp_time);
   }
- 
+
   /* get GIT version information */
   {
     CHAR *temp_version = XLALGetVersionString(0);
@@ -608,7 +608,7 @@ int XLALOpenIntermittentResultsFile(FILE **fp,                  /**< [in] filepo
     snprintf(version_string,n-1,"%s",temp_version);
     XLALFree(temp_version);
   }
-  
+
   /* output header information */
   fprintf((*fp),"%s \n",version_string);
   fprintf((*fp),"%%%% command line args\t\t= %s\n",clargs);
@@ -686,7 +686,7 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
   /* the midpoint is defined in the detector frame and the time of */
   /* ascension is in the SSB frame but we only need to be roughly */
   /* correct in the number of orbits we shift by */
-  if (uvar->tasc>0) {    
+  if (uvar->tasc>0) {
     REAL8 meanperiod = 0.5*(uvar->maxorbperiod + uvar->minorbperiod);
     INT4 n = (INT4)floor(0.5 + (midpoint - uvar->tasc)/meanperiod);
     REAL8 newtasc = uvar->tasc + n*meanperiod;
@@ -698,7 +698,7 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
     mintasc = midpoint - 0.5*uvar->maxorbperiod;
     maxtasc = midpoint + 0.5*uvar->maxorbperiod;
   }
-  
+
   /* this represents a hyper-cubic parameter space */
   /* we make sure that parameter ranges are consistent i.e asini > 0 etc.. */
   /* frequency */
@@ -712,13 +712,13 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
   (*space)->data[1].min = uvar->minasini;
   (*space)->data[1].max = uvar->maxasini;
   (*space)->data[1].span = (*space)->data[1].max - (*space)->data[1].min;
-  
+
   /* orbphase */
   snprintf((*space)->data[2].name,LALNameLength,"tasc");
   (*space)->data[2].min = mintasc;
   (*space)->data[2].max = maxtasc;
   (*space)->data[2].span = (*space)->data[2].max - (*space)->data[2].min;
-  
+
   /* omega */
   snprintf((*space)->data[3].name,LALNameLength,"omega");
   (*space)->data[3].min = LAL_TWOPI/uvar->maxorbperiod;
@@ -731,7 +731,7 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
   LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[1].name,(*space)->data[1].min,(*space)->data[1].max);
   LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[2].name,(*space)->data[2].min,(*space)->data[2].max);
   LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[3].name,(*space)->data[3].min,(*space)->data[3].max);
- 
+
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 

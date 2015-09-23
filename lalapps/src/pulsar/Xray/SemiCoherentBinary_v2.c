@@ -21,10 +21,10 @@
  * \file
  * \brief
  * This code is designed to compute the Bayes factor for a semi-coherent analysis
- * of input SFT data specific to searching for continuous signals in a binary system. 
+ * of input SFT data specific to searching for continuous signals in a binary system.
  *
- * It generates likelihood samples from a coarse grid of templates placed on each SFT and 
- * combines them using a fine binary template band.  The parameter space is integrated over 
+ * It generates likelihood samples from a coarse grid of templates placed on each SFT and
+ * combines them using a fine binary template band.  The parameter space is integrated over
  * and a Bayes factor is produced.
  *
  */
@@ -61,9 +61,9 @@
 /***********************************************************************************************/
 /* define internal structures */
 
-/** A structure that stores user input variables 
+/** A structure that stores user input variables
  */
-typedef struct { 
+typedef struct {
   BOOLEAN help;		            /**< trigger output of help string */
   CHAR *sftbasename;                /**< basename of input SFT files */
   CHAR *outputdir;                  /**< the output directory */
@@ -168,7 +168,7 @@ int main( int argc, char *argv[] )  {
 
     CHAR newtemp[LONGSTRINGLENGTH];
     INT4 id = (INT4)(1e9*gsl_rng_uniform(q));
-    sprintf(newtemp,"%s/%09d",uvar.tempdir,id); 
+    sprintf(newtemp,"%s/%09d",uvar.tempdir,id);
     if (mkdir(newtemp,0755)) {
       LogPrintf(LOG_DEBUG,"%s : Unable to make temporary directory %s.  Might be a problem.\n",__func__,newtemp);
     }
@@ -191,9 +191,9 @@ int main( int argc, char *argv[] )  {
     fmin_read = MINBAND*floor((uvar.freq - WINGS_FACTOR*uvar.freq*wings - (REAL8)uvar.blocksize/(REAL8)uvar.tsft)/MINBAND);
     fmax_read = MINBAND*ceil((uvar.freq + (REAL8)uvar.blocksize/(REAL8)uvar.tsft + uvar.freqband + WINGS_FACTOR*(uvar.freq + uvar.freqband)*wings)/MINBAND);
     fband_read = fmax_read - fmin_read;
-    LogPrintf(LOG_DEBUG,"%s : reading in SFT frequency band [%f -> %f]\n",__func__,fmin_read,fmax_read); 
+    LogPrintf(LOG_DEBUG,"%s : reading in SFT frequency band [%f -> %f]\n",__func__,fmin_read,fmax_read);
   }
- 
+
   /* initialise the random number generator */
   if (XLALInitgslrand(&r,uvar.seed)) {
     LogPrintf(LOG_CRITICAL,"%s: XLALinitgslrand() failed with error = %d\n",__func__,xlalErrno);
@@ -203,14 +203,14 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
   /* READ THE SFT DATA */
   /**********************************************************************************/
-  
+
   /* load in the SFTs - also fill in the segment parameters structure */
   if (XLALReadSFTs(&sftvec,uvar.sftbasename,fmin_read,fband_read,uvar.gpsstart,uvar.gpsend,uvar.tsft)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALReadSFTs() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   LogPrintf(LOG_DEBUG,"%s : read in SFTs\n",__func__);
-  
+
   /* define SFT length and the start and span of the observations plus the definitive segment time */
   pspace.tseg = 1.0/sftvec->data[0].deltaF;
   memcpy(&(pspace.epoch),&(sftvec->data[0].epoch),sizeof(LIGOTimeGPS));
@@ -246,7 +246,7 @@ int main( int argc, char *argv[] )  {
       }
     }
     XLALDestroyREAL8Vector(means);
-  } 
+  }
   LogPrintf(LOG_DEBUG,"%s : normalised the SFTs\n",__func__);
 
   /* for (i=0;i<sftvec->length;i++) {
@@ -260,7 +260,7 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
   /* DEFINE THE BINARY PARAMETER SPACE */
   /**********************************************************************************/
-  
+
   /* define the binary parameter space */
   if (XLALDefineBinaryParameterSpace(&(pspace.space),pspace.epoch,pspace.span,&uvar)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALDefineBinaryParameterSpace() failed with error = %d\n",__func__,xlalErrno);
@@ -281,18 +281,18 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
   /* COMPUTE THE FINE GRID PARAMETERS */
   /**********************************************************************************/
-  
+
   /* compute the fine grid on the binary parameters */
   if (XLALComputeBinaryGridParams(&bingridparams,pspace.space,pspace.span,pspace.tseg,uvar.mismatch,uvar.coverage)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryGridParams() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
   LogPrintf(LOG_DEBUG,"%s : computed the binary parameter space grid\n",__func__);
-  
+
   /**********************************************************************************/
   /* CONVERT ALL SFTS TO DOWNSAMPLED TIMESERIES */
   /**********************************************************************************/
-  
+
   /* convert sfts to downsample dtimeseries */
   if (XLALSFTVectorToCOMPLEX8TimeSeriesArray(&dstimevec,sftvec)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALSFTVectorToCOMPLEX8TimeSeriesArray() failed with error = %d\n",__func__,xlalErrno);
@@ -303,7 +303,7 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
   /* OPEN INTERMEDIATE RESULTS FILE */
   /**********************************************************************************/
-  
+
   /* if (XLALOpenSemiCoherentResultsFile(&cfp,newnewtemp,&pspace,clargs,&uvar,1)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALOpenCoherentResultsFile() failed with error = %d\n",__func__,xlalErrno);
     return 1;
@@ -325,7 +325,7 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
   /* OPEN RESULTS FILE */
   /**********************************************************************************/
-  
+
   if (XLALOpenSemiCoherentResultsFile(&sfp,newnewtemp,&pspace,clargs,&uvar)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALOutputBayesResults() failed with error = %d\n",__func__,xlalErrno);
     return 1;
@@ -365,7 +365,7 @@ int main( int argc, char *argv[] )  {
     return 1;
   }
   LogPrintf(LOG_DEBUG,"%s : freed the parameter space\n",__func__);
- 
+
   /* clean up the demodulated power */
   if (XLALFreeREAL4DemodulatedPowerVector(dmpower)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALFreeREAL4DemodulatedPowerVector() failed with error = %d\n",__func__,xlalErrno);
@@ -403,14 +403,14 @@ int main( int argc, char *argv[] )  {
 
   LogPrintf(LOG_DEBUG,"%s : successfully completed.\n",__func__);
   return 0;
-  
+
 } /* end of main */
 
 /*******************************************************************************/
 /** Read in input user arguments
  *
  */
-int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */ 
+int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */
 		     char *argv[],        /**< [in] the command line arguments */
 		     UserInput_t *uvar,   /**< [out] the user input structure */
 		     CHAR **clargs        /**< [out] the command line args string */
@@ -420,7 +420,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   INT4 i;
 
   /* initialise user variables */
-  uvar->sftbasename = NULL; 
+  uvar->sftbasename = NULL;
   uvar->comment = NULL;
   uvar->gpsstart = -1;
   uvar->gpsend = -1;
@@ -443,9 +443,9 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
   /* ---------- register all user-variables ---------- */
   XLALregBOOLUserStruct(help, 		        'h', UVAR_HELP,     "Print this message");
-  XLALregSTRINGUserStruct(sftbasename, 	        'i', UVAR_REQUIRED, "The basename of the input SFT files"); 
-  XLALregSTRINGUserStruct(outputdir, 	        'o', UVAR_REQUIRED, "The output directory name"); 
-  XLALregSTRINGUserStruct(comment, 	        'C', UVAR_REQUIRED, "An analysis descriptor string"); 
+  XLALregSTRINGUserStruct(sftbasename, 	        'i', UVAR_REQUIRED, "The basename of the input SFT files");
+  XLALregSTRINGUserStruct(outputdir, 	        'o', UVAR_REQUIRED, "The output directory name");
+  XLALregSTRINGUserStruct(comment, 	        'C', UVAR_REQUIRED, "An analysis descriptor string");
   XLALregSTRINGUserStruct(tempdir,              'z', UVAR_OPTIONAL, "A temporary directory");
   XLALregREALUserStruct(freq,                   'f', UVAR_REQUIRED, "The starting frequency (Hz)");
   XLALregREALUserStruct(freqband,   	        'b', UVAR_OPTIONAL, "The frequency band (Hz)");
@@ -478,7 +478,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
     XLALPrintError("XLALGetVersionString(0) failed.\n");
     exit(1);
   }
-  
+
   if (uvar->version) {
     printf("%s\n",version_string);
     exit(0);
@@ -496,7 +496,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
-  
+
 }
 
 
@@ -524,7 +524,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   UINT4 i,j;                                          /* counters */
   UINT4 percent = 0;                                  /* counter for status update */
   REAL8 mean = 0.0;
-  REAL8 var = 0.0; 
+  REAL8 var = 0.0;
 
   /* validate input parameters */
  /*  if ((*SemiCo) != NULL) { */
@@ -740,7 +740,7 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
     LogPrintf(LOG_CRITICAL,"%s: Invalid input, ParameterSpace structure == NULL.\n",__func__);
     XLAL_ERROR(XLAL_EINVAL);
   }
-  
+
   /* define the output filename */
   /* the format we adopt is the following SemiCoherentResults-<SOURCE>-<START>_<END>-<MIN_FREQ_INT>_<MIN_FREQ_mHZ>_ <MAX_FREQ_INT>_<MAX_FREQ_mHZ>.txt */
   {
@@ -762,7 +762,7 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
     LogPrintf(LOG_CRITICAL,"%s: Error, failed to open file %s for writing.  Exiting.\n",__func__,outputfile);
     XLAL_ERROR(XLAL_EINVAL);
   }
- 
+
   /* Convert time to local time representation */
   {
     struct tm *loctime = localtime(&curtime);
@@ -771,7 +771,7 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
     time_string = XLALCalloc(n,sizeof(CHAR));
     snprintf(time_string,n-1,"%s",temp_time);
   }
- 
+
   /* get GIT version information */
   {
     CHAR *temp_version = XLALGetVersionString(0);
@@ -780,7 +780,7 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
     snprintf(version_string,n-1,"%s",temp_version);
     XLALFree(temp_version);
   }
-  
+
   /* output header information */
   fprintf((*fp),"%s \n",version_string);
   fprintf((*fp),"%%%% command line args\t\t= %s\n",clargs);
@@ -858,7 +858,7 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
 /*       for (j=0;j<fs->data->length;j++) fprintf(fp,"%.12f %.12f %.12f\n",fs->f0 + j*fs->deltaF,crealf(fs->data->data[j]),cimagf(fs->data->data[j])); */
 /*       fclose(fp); */
 /*       LogPrintf(LOG_DEBUG,"%s : output converted frequency series\n",__func__); */
-      
+
 /*       XLALDestroyCOMPLEX8TimeSeries(ts); */
 /*       XLALDestroyCOMPLEX8FrequencySeries(fs); */
 
@@ -918,7 +918,7 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
   /* the midpoint is defined in the detector frame and the time of */
   /* ascension is in the SSB frame but we only need to be roughly */
   /* correct in the number of orbits we shift by */
-  if (uvar->tasc>0) {    
+  if (uvar->tasc>0) {
     REAL8 meanperiod = 0.5*(uvar->maxorbperiod + uvar->minorbperiod);
     INT4 n = (INT4)floor(0.5 + (midpoint - uvar->tasc)/meanperiod);
     REAL8 newtasc = uvar->tasc + n*meanperiod;
@@ -930,7 +930,7 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
     mintasc = midpoint - 0.5*uvar->maxorbperiod;
     maxtasc = midpoint + 0.5*uvar->maxorbperiod;
   }
-  
+
   /* this represents a hyper-cubic parameter space */
   /* we make sure that parameter ranges are consistent i.e asini > 0 etc.. */
   /* frequency */
@@ -944,13 +944,13 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
   (*space)->data[1].min = uvar->minasini;
   (*space)->data[1].max = uvar->maxasini;
   (*space)->data[1].span = (*space)->data[1].max - (*space)->data[1].min;
-  
+
   /* orbphase */
   snprintf((*space)->data[2].name,LALNameLength,"tasc");
   (*space)->data[2].min = mintasc;
   (*space)->data[2].max = maxtasc;
   (*space)->data[2].span = (*space)->data[2].max - (*space)->data[2].min;
-  
+
   /* omega */
   snprintf((*space)->data[3].name,LALNameLength,"omega");
   (*space)->data[3].min = LAL_TWOPI/uvar->maxorbperiod;
@@ -963,7 +963,7 @@ int XLALDefineBinaryParameterSpace(REAL8Space **space,                 /**< [out
   LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[1].name,(*space)->data[1].min,(*space)->data[1].max);
   LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[2].name,(*space)->data[2].min,(*space)->data[2].max);
   LogPrintf(LOG_DEBUG,"%s : parameter space, %s = [%e -> %e]\n",__func__,(*space)->data[3].name,(*space)->data[3].min,(*space)->data[3].max);
- 
+
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 

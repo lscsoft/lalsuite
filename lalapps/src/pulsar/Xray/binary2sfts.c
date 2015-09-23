@@ -58,14 +58,14 @@
 #include <lal/LALString.h>
 #include <lal/StringVector.h>
 
-#include <gsl/gsl_rng.h>           /* for random number generation */ 
-#include <gsl/gsl_randist.h>       /* for random number generation */ 
+#include <gsl/gsl_rng.h>           /* for random number generation */
+#include <gsl/gsl_randist.h>       /* for random number generation */
 
 #include "SemiCoherent.h"
 
-/** A structure that stores user input variables 
+/** A structure that stores user input variables
  */
-typedef struct { 
+typedef struct {
   BOOLEAN help;		            /**< trigger output of help string */
   CHAR *outLabel;                   /**< 'misc' entry in SFT-filenames or 'description' entry of frame filenames */
   CHAR *outputdir;                  /**< the output directory */
@@ -147,7 +147,7 @@ int main( int argc, char *argv[] )  {
   if (XLALInitgslrand(&r,uvar.seed)) {
     LogPrintf(LOG_CRITICAL,"%s: XLALinitgslrand() failed with error = %d\n",__func__,xlalErrno);
     XLAL_ERROR(XLAL_EFAULT);
-  }  
+  }
 
   /* setup the binaryToSFT parameters */
   BinaryToSFTparams par;
@@ -201,14 +201,14 @@ int main( int argc, char *argv[] )  {
 
   /**********************************************************************************/
   /* create a noise string */
-   
+
 
   /**********************************************************************************/
   /* generate comment string */
   char *VCSInfoString = XLALGetVersionString(0);
   XLAL_CHECK ( VCSInfoString != NULL, XLAL_EFUNC, "XLALGetVersionString(0) failed.\n" );
   CHAR *logstr;
-  size_t len; 
+  size_t len;
   XLAL_CHECK ( (logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
   char *comment = XLALCalloc ( 1, len = strlen ( logstr ) + strlen(VCSInfoString) + strlen(noisestr) + 512 );
   XLAL_CHECK ( comment != NULL, XLAL_ENOMEM, "XLALCalloc(1,%d) failed.\n", len );
@@ -221,7 +221,7 @@ int main( int argc, char *argv[] )  {
   } else {	/* or as individual SFT-files */
     XLAL_CHECK ( XLALWriteSFTVector2Dir( SFTvect, uvar.outputdir, comment, uvar.outLabel ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
-  
+
   /**********************************************************************************/
   /* free memory */
   XLALDestroySFTVector(SFTvect);
@@ -240,7 +240,7 @@ int main( int argc, char *argv[] )  {
 /** Read in input user arguments
  *
  */
-int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */ 
+int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */
 		     char *argv[],        /**< [in] the command line arguments */
 		     UserInput_t *uvar    /**< [out] the user input structure */
 		     )
@@ -248,7 +248,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
 
   /* initialise user variables */
-  uvar->outLabel = NULL; 
+  uvar->outLabel = NULL;
   uvar->outputdir = NULL;
   uvar->cachefile = NULL;
   uvar->tsamp = 1.0/8192;
@@ -267,9 +267,9 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
   /* ---------- register all user-variables ---------- */
   XLALregBOOLUserStruct(help, 		        'h', UVAR_HELP,     "Print this message");
-  XLALregSTRINGUserStruct(outLabel, 	        'n', UVAR_REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames"); 
-  XLALregSTRINGUserStruct(outputdir, 	        'o', UVAR_REQUIRED, "The output directory name"); 
-  XLALregSTRINGUserStruct(cachefile, 	        'i', UVAR_REQUIRED, "The input binary file name"); 
+  XLALregSTRINGUserStruct(outLabel, 	        'n', UVAR_REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
+  XLALregSTRINGUserStruct(outputdir, 	        'o', UVAR_REQUIRED, "The output directory name");
+  XLALregSTRINGUserStruct(cachefile, 	        'i', UVAR_REQUIRED, "The input binary file name");
   XLALregREALUserStruct(freq,                   'f', UVAR_OPTIONAL, "The starting frequency (Hz)");
   XLALregREALUserStruct(freqband,   	        'b', UVAR_OPTIONAL, "The frequency band (Hz)");
   XLALregINTUserStruct(tsft,                    't', UVAR_OPTIONAL, "The length of SFTs (sec)");
@@ -295,11 +295,5 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
-  
+
 }
-
-
-
-
-
-

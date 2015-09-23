@@ -85,15 +85,15 @@
 #include <lal/StringVector.h>
 #include <lal/NormalizeSFTRngMed.h>
 
-#include <gsl/gsl_rng.h>           /* for random number generation */ 
-#include <gsl/gsl_randist.h>       /* for random number generation */ 
+#include <gsl/gsl_rng.h>           /* for random number generation */
+#include <gsl/gsl_randist.h>       /* for random number generation */
 
 
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
 #endif
-  
+
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -102,20 +102,20 @@ extern "C" {
 
   /***********************************************************************************************/
   /* some global constants */
-  
+
   /* #define STRINGLENGTH 256              /\* the length of general string *\/ */
 #define MINBAND 0.1                    /* the minimum amnount of bandwidth to read in */
 /* #define SAMPFREQ 8192                    /\* the orginal sampling frequency *\/ */
 #define LONGSTRINGLENGTH 1024         /* the length of general string */
 #define NFREQMAX 4                    /* the max dimensionality of the frequency derivitive grid */
-#define NBINMAX 4                        /* the number of binary parameter dimensions */ 
+#define NBINMAX 4                        /* the number of binary parameter dimensions */
 #define NBINS 4                       /* the number of bins to add to each side of the fft for safety */
 #define WINGS_FACTOR 2                /* the safety factor in reading extra frequency from SFTs */
 #define MAXNTSERIES 1073741824        /* the max number of samples in a timeseries at one time */
- 
+
   /***********************************************************************************************/
   /* structure definitions */
-  
+
   /** A single parameter dimensions boundaries
    */
   typedef struct {
@@ -124,14 +124,14 @@ extern "C" {
     REAL8 span;                       /**< the parameter space span */
     CHAR name[LALNameLength];         /**< string containing the name of the dimension */
   } REAL8Dimension;
-  
+
   /** A vector of parameter space boundary information
    */
   typedef struct {
     REAL8Dimension *data;             /**< the boundaries, span, etc for a single dimension */
     UINT4 ndim;                       /**< the number of dimensions */
   } REAL8Space;
-  
+
   /** Stores the gridding parameters for a single dimension
    */
   typedef struct {
@@ -141,7 +141,7 @@ extern "C" {
     UINT4 length;                     /**< the number of templates in each dimension */
     CHAR name[LALNameLength];         /**< string containing the name of the dimension */
   } Grid;
-  
+
   /** Stores the current location in a hyper-cubic parameter space
    */
   typedef struct {
@@ -150,7 +150,7 @@ extern "C" {
     UINT4 ndim;                       /**< the dimension of the parameter space */
     UINT4 currentidx;                 /**< the current index value of the template */
   } Template;
-  
+
   /** Stores the gridding parameters for a hypercubic grid of templates
    */
   typedef struct {
@@ -161,7 +161,7 @@ extern "C" {
     REAL8 mismatch;                   /**< the mismatch */
     INT4 Nr;
   } GridParameters;
-  
+
    /** Stores the gridding parameters for a hypercubic grid of templates
    */
   typedef struct {
@@ -189,7 +189,7 @@ extern "C" {
     REAL4DemodulatedPower **segment;             /**< stores the parameters defining a single dimension */
     UINT4 length;                        /**< the number of dimensions */
   } REAL4DemodulatedPowerVector;
-  
+
   /** Stores the gridding parameters for a hypercubic grid of templates
    */
   typedef struct {
@@ -204,7 +204,7 @@ extern "C" {
   typedef struct {
     REAL4Vector **data;                  /**< stores REAL4 Vectors */
     UINT4 length;                        /**< the number of vectors */
-  } REAL4VectorArray;  
+  } REAL4VectorArray;
 
   /** Parameters for BinaryToSFT function
    */
@@ -221,7 +221,7 @@ extern "C" {
     REAL8 asini_inj;
     LIGOTimeGPS tasc_inj;
     REAL8 P_inj;
-    REAL8 phi_inj;  
+    REAL8 phi_inj;
     gsl_rng *r;
   } BinaryToSFTparams;
 
@@ -251,7 +251,7 @@ extern "C" {
   int XLALNormalizeSFTMedian ( SFTtype  *sft, REAL8 *mean, INT4 flag);
 #ifdef  __cplusplus
 }
-#endif  
+#endif
 /* C++ protection. */
 
 #endif  /* Double-include protection. */
