@@ -3408,7 +3408,9 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 {
   UINT4 j;
   UINT4 dim;
+  LALInferenceVariableItem *item;
   LALInferenceVariables *vars=XLALCalloc(1,sizeof(LALInferenceVariables));
+  LALInferenceVariables *ret_vars = XLALCalloc(1, sizeof(LALInferenceVariables));
 
   /* Number of variables to read */
   if(1!=fread(&dim, sizeof(vars->dimension), 1, stream)) XLAL_ERROR_NULL(XLAL_EIO);
@@ -3502,7 +3504,13 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
       }
     }
   }
-  return vars;
+
+  /* LALInferenceAddVariable() builds the array backwards, so reverse it. */
+  item = vars->head;
+  for (item = vars->head; item; item = item->next)
+      LALInferenceAddVariable(ret_vars, item->name, item->value, item->type, item->vary);
+
+  return ret_vars;
 }
 
 int LALInferenceWriteVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N)
