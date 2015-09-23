@@ -630,14 +630,13 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, const REAL8 offset, const 
  * \param [out] output   Pointer to TwoSpectTemplate
  * \param [in]  input    An input candidate structure
  * \param [in]  params   Pointer to UserInput_t
- * \param [in]  sftexist Pointer to INT4Vector of existing SFTs
  * \param [in]  plan     Pointer to REAL4FFTPlan
  * \return Status value
  */
-INT4 makeTemplate(TwoSpectTemplate *output, const candidate input, const UserInput_t *params, const INT4Vector *sftexist, const REAL4FFTPlan *plan)
+INT4 makeTemplate(TwoSpectTemplate *output, const candidate input, const UserInput_t *params, const REAL4FFTPlan *plan)
 {
 
-   XLAL_CHECK( output != NULL && params != NULL && sftexist != NULL && plan != NULL, XLAL_EINVAL );
+   XLAL_CHECK( output != NULL && params != NULL && plan != NULL, XLAL_EINVAL );
 
    REAL8 freqbin = input.fsig*params->Tsft;
    INT4 roundedbinval = (INT4)round(freqbin);
