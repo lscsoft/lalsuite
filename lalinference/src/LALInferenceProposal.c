@@ -367,7 +367,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     LALInferenceAddINT4Variable(propArgs, "adapting", adapting, LALINFERENCE_PARAM_LINEAR);
 
     INT4 tau = 5;
-    ppt = LALInferenceGetProcParamVal(command_line, "--adaptTau");
+    ppt = LALInferenceGetProcParamVal(command_line, "--adapt-tau");
     if (ppt)
         tau = atof(ppt->value);
     LALInferenceAddINT4Variable(propArgs, "adaptTau", tau, LALINFERENCE_PARAM_FIXED);
