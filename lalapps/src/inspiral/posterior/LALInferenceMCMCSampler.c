@@ -1051,6 +1051,9 @@ void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE
         if(setvbuf(threadoutput,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
           fprintf(stderr,"Warning: Unable to set output file buffer!");
 
+        if(setvbuf(resumeoutput,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
+          fprintf(stderr,"Warning: Unable to set resume file buffer!");
+
         (*threadoutputs)[t] = threadoutput;
         (*resumeoutputs)[t] = resumeoutput;
 
