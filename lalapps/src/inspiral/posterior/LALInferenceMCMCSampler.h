@@ -71,10 +71,11 @@ void LALInferenceFlushPTswap(void);
 void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag, INT4 cycle);
 
 /* Data IO routines */
-FILE** LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState);
+void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE ***threadoutputs, FILE ***resumeoutputs);
 void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInferenceThreadState *thread, FILE *threadoutput);
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState);
 void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model);
+void LALInferenceSaveSample(LALInferenceThreadState *thread, FILE *output);
 void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIFOData *data, INT4 iteration, REAL8 timestamp, FILE *threadoutput);
 
 /** Reads final parameter values from the given output file, and

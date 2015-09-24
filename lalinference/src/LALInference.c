@@ -700,6 +700,9 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
         case LALINFERENCE_UINT4Vector_t:
           fprintf(stdout, "'UINT4Vector'");
           break;
+        case LALINFERENCE_REAL8Vector_t:
+          fprintf(stdout, "'REAL8Vector'");
+          break;
         case LALINFERENCE_gslMatrix_t:
           fprintf(stdout, "'gslMatrix'");
           break;
@@ -742,6 +745,11 @@ void LALInferencePrintVariables(LALInferenceVariables *var)
           //fprintf(stdout,"%iD matrix", (int)((UINT4Vector **)ptr->value)->size);
           fprintf(stdout,"[");
           fprintf(stdout,"%i]",(int)(*(UINT4Vector **)ptr->value)->length);
+          break;
+        case LALINFERENCE_REAL8Vector_t:
+          //fprintf(stdout,"%iD matrix", (int)((REAL8Vector **)ptr->value)->size);
+          fprintf(stdout,"[");
+          fprintf(stdout,"%i]",(int)(*(REAL8Vector **)ptr->value)->length);
           break;
         case LALINFERENCE_gslMatrix_t:
           fprintf(stdout,"[");
@@ -3400,7 +3408,9 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 {
   UINT4 j;
   UINT4 dim;
+  LALInferenceVariableItem *item;
   LALInferenceVariables *vars=XLALCalloc(1,sizeof(LALInferenceVariables));
+  LALInferenceVariables *ret_vars = XLALCalloc(1, sizeof(LALInferenceVariables));
 
   /* Number of variables to read */
   if(1!=fread(&dim, sizeof(vars->dimension), 1, stream)) XLAL_ERROR_NULL(XLAL_EIO);
@@ -3494,7 +3504,13 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
       }
     }
   }
-  return vars;
+
+  /* LALInferenceAddVariable() builds the array backwards, so reverse it. */
+  item = vars->head;
+  for (item = vars->head; item; item = item->next)
+      LALInferenceAddVariable(ret_vars, item->name, item->value, item->type, item->vary);
+
+  return ret_vars;
 }
 
 int LALInferenceWriteVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N)
