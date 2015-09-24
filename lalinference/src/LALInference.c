@@ -3508,7 +3508,17 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
   /* LALInferenceAddVariable() builds the array backwards, so reverse it. */
   item = vars->head;
   for (item = vars->head; item; item = item->next)
+  {
       LALInferenceAddVariable(ret_vars, item->name, item->value, item->type, item->vary);
+  }
+  /* Free the memory for the original (reversed) vars */
+  while(vars->head)
+  {
+		item=LALInferencePopVariableItem(vars,vars->head->name);
+		if(item->value) XLALFree(item->value);
+		XLALFree(item);
+  }
+  XLALFree(vars);
 
   return ret_vars;
 }
