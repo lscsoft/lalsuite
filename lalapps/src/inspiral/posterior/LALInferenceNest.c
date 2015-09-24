@@ -38,6 +38,7 @@
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceInit.h>
+#include <LALAppsVCSInfo.h>
 
 
 /*************** MAIN **********************/
@@ -59,7 +60,9 @@ int main(int argc, char *argv[]){
   {
     fprintf(stdout,"%s",help);
   }
-
+  /* write down git information */
+  fprintf(stdout,"\n\nLALInference version:%s,%s,%s,%s,%s\n\n", lalAppsVCSId,lalAppsVCSDate,lalAppsVCSBranch,lalAppsVCSAuthor,lalAppsVCSStatus);
+  
   /* initialise runstate based on command line */
   /* This includes reading in the data */
   /* And performing any injections specified */
