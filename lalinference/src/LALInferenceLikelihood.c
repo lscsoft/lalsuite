@@ -855,7 +855,8 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     COMPLEX16 diff=0.0;
     COMPLEX16 template=0.0;
     REAL8 templatesq=0.0;
-
+    REAL8 this_ifo_S=0.0;
+    
     for (i=lower,chisq=0.0,re = cos(twopit*deltaF*i),im = -sin(twopit*deltaF*i);
          i<=upper;
          i++, psd++, hptilde++, hctilde++, dtilde++,
@@ -926,7 +927,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       templatesq=creal(template)*creal(template) + cimag(template)*cimag(template);
       REAL8 datasq = creal(d)*creal(d)+cimag(d)*cimag(d);
       D+=TwoDeltaToverN*datasq/sigmasq;
-      S+=TwoDeltaToverN*templatesq/sigmasq;
+      this_ifo_S+=TwoDeltaToverN*templatesq/sigmasq;
       COMPLEX16 dhstar = TwoDeltaToverN*d*conj(template)/sigmasq;
       Rcplx+=dhstar;
       
@@ -995,7 +996,12 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     default:
       break;
     }
-
+    S+=this_ifo_S;
+    
+    char varname[VARNAME_MAX];
+    sprintf(varname,"%s_optimal_snr",dataPtr->name);
+    LALInferenceAddREAL8Variable(currentParams,varname,sqrt(2.0*this_ifo_S),LALINFERENCE_PARAM_OUTPUT);
+    
    /* Clean up calibration if necessary */
     if (!(calFactor == NULL)) {
       XLALDestroyCOMPLEX16FrequencySeries(calFactor);
