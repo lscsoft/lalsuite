@@ -644,12 +644,16 @@ void LALInferencePrintVariableItem(char *out,const LALInferenceVariableItem *con
           break;
         case LALINFERENCE_UINT4Vector_t:
           sprintf(out, "<can't print vector>");
+		  break;
         case LALINFERENCE_INT4Vector_t:
           sprintf(out, "<can't print vector>");
-        break;
+          break;
         case LALINFERENCE_gslMatrix_t:
           sprintf(out, "<can't print matrix>");
           break;
+		case LALINFERENCE_REAL8Vector_t:
+		  sprintf(out, "<can't print REAL8Vector>");
+		  break;
         default:
           sprintf(out, "<can't print>");
       }
@@ -785,6 +789,7 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
   UINT4 i;
   UINT4Vector *u=NULL;
   INT4Vector *v=NULL;
+  REAL8Vector *v8=NULL;
   //gsl_matrix *m=NULL;
   if(sample==NULL) return;
   LALInferenceVariableItem *ptr=sample->head;
@@ -825,6 +830,10 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
         v=*((INT4Vector **)ptr->value);
         for(i=0;i<v->length;i++) fprintf(fp,"%"LAL_INT4_FORMAT" ",v->data[i]);
         break;
+      case LALINFERENCE_REAL8Vector_t:
+		v8=*(REAL8Vector **)ptr->value;
+		for(i=0;i<v8->length;i++) fprintf(fp,"%"LAL_REAL8_FORMAT" ",v8->data[i]);
+		break;
 	  case LALINFERENCE_gslMatrix_t:
         /*
         m = *((gsl_matrix **)ptr->value);
@@ -852,6 +861,7 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
     UINT4 i;
     UINT4Vector *u=NULL;
     INT4Vector *v=NULL;
+	REAL8Vector *v8=NULL;
   //gsl_matrix *m=NULL;
 	if(sample==NULL) return;
 	LALInferenceVariableItem *ptr=sample->head;
@@ -898,6 +908,13 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
                         if( i!=(v->length-1) )fprintf(fp,"\t");
                     }
                     break;
+				case LALINFERENCE_REAL8Vector_t:
+				    v8=*(REAL8Vector **)ptr->value;
+				    for(i=0;i<v8->length;i++){
+							fprintf(fp,"%11.7"LAL_REAL8_FORMAT,v8->data[i]);
+							if(i!=(v8->length-1))fprintf(fp,"\t");
+					}
+				    break;
           /*
 				case LALINFERENCE_gslMatrix_t:
                     m = *((gsl_matrix **)ptr->value);
@@ -1336,6 +1353,11 @@ int LALInferenceFprintParameterHeaders(FILE *out, LALInferenceVariables *params)
         vector = *((INT4Vector **)head->value);
         for(i=0; i<(int)vector->length; i++) fprintf(out, "%s%i\t", LALInferenceTranslateInternalToExternalParamName(head->name),i);
       }
+      else if(head->type==LALINFERENCE_REAL8Vector_t)
+      {
+		REAL8Vector *vector = *(REAL8Vector **)head->value;
+		for(i=0;i<(int)vector->length;i++) fprintf(out,"%s%i\t",LALInferenceTranslateInternalToExternalParamName(head->name),i);
+      }
       else fprintf(out, "%s\t", LALInferenceTranslateInternalToExternalParamName(head->name));
       head = head->next;
   }
@@ -1382,7 +1404,8 @@ int LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables 
       }
       else if(head->type==LALINFERENCE_REAL8Vector_t)
       {
-        // Handle this manually with routines like LALInferenceFprintSplineCalibrationHeader() for now
+		REAL8Vector *vector = *(REAL8Vector **)head->value;
+		for(i=0;i<(int)vector->length;i++) fprintf(out,"%s%i\t",LALInferenceTranslateInternalToExternalParamName(head->name),i);
       }
       else fprintf(out, "%s\t", LALInferenceTranslateInternalToExternalParamName(head->name));
     }
