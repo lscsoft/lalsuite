@@ -1013,14 +1013,14 @@ void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE
             if (threadoutput == NULL) {
                 XLALErrorHandler = XLALExitErrorHandler;
                 XLALPrintError("Error reading output file (in %s, line %d)\n", __FILE__, __LINE__);
-                XLAL_ERROR_NULL(XLAL_EIO);
+                XLAL_ERROR_VOID(XLAL_EIO);
             }
 
             resumeoutput = fopen(outBinFileName, "r");
             if (resumeoutput == NULL) {
                 XLALErrorHandler = XLALExitErrorHandler;
                 XLALPrintError("Error reading resume file (in %s, line %d)\n", __FILE__, __LINE__);
-                XLAL_ERROR_NULL(XLAL_EIO);
+                XLAL_ERROR_VOID(XLAL_EIO);
             }
 
             LALInferenceMCMCResumeRead(thread, resumeoutput);
@@ -1035,7 +1035,7 @@ void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE
             if(threadoutput == NULL){
                 XLALErrorHandler = XLALExitErrorHandler;
                 XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
-                XLAL_ERROR_NULL(XLAL_EIO);
+                XLAL_ERROR_VOID(XLAL_EIO);
             }
 
             LALInferencePrintPTMCMCHeaderFile(runState, thread, threadoutput);
@@ -1044,7 +1044,7 @@ void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE
             if(resumeoutput == NULL){
                 XLALErrorHandler = XLALExitErrorHandler;
                 XLALPrintError("Resume file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
-                XLAL_ERROR_NULL(XLAL_EIO);
+                XLAL_ERROR_VOID(XLAL_EIO);
             }
         }
 
