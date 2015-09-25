@@ -141,6 +141,9 @@ typedef struct tagDetectorState
  */
 typedef struct tagDetectorStateSeries
 {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(DetectorStateSeries, DetectorState, data, UINT4, length));
+#endif /* SWIG */
   UINT4 length;			/**< total number of entries */
   DetectorState *data;		/**< array of DetectorState entries */
   LALDetector detector;		/**< detector-info corresponding to this timeseries */
@@ -151,6 +154,9 @@ typedef struct tagDetectorStateSeries
 /** Multi-IFO time-series of DetectorStates */
 typedef struct tagMultiDetectorStateSeries
 {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiDetectorStateSeries, DetectorStateSeries*, data, UINT4, length));
+#endif /* SWIG */
   UINT4 length;			/**< number of detectors */
   DetectorStateSeries **data;	/**< vector of pointers to DetectorStateSeries */
   LIGOTimeGPS startTime;	/**< (earliest) startTime of the observation */

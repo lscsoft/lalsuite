@@ -130,14 +130,14 @@ try:
     # upload FITS file
     fitsdir = tempfile.mkdtemp()
     try:
-        fitspath = os.path.join(fitsdir, "skymap.fits.gz")
+        fitspath = os.path.join(fitsdir, "bayestar.fits.gz")
         fits.write_sky_map(fitspath, sky_map, gps_time=float(epoch),
             creator=parser.get_prog_name(), objid=str(graceid),
             url='https://gracedb.ligo.org/events/{0}'.format(graceid),
             runtime=elapsed_time, instruments=instruments,
             origin='LIGO/Virgo', nest=True)
         gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
-            filename=fitspath, tagname="sky_loc")
+            filename=fitspath, tagname=("sky_loc", "lvem"))
     finally:
         shutil.rmtree(fitsdir)
 except:

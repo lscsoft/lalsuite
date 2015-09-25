@@ -122,6 +122,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SEOBNRv1_ROM_DoubleSpin),
     INITIALIZE_NAME(SEOBNRv2_ROM_EffectiveSpin),
     INITIALIZE_NAME(SEOBNRv2_ROM_DoubleSpin),
+    INITIALIZE_NAME(SEOBNRv2_ROM_DoubleSpin_HI),
     INITIALIZE_NAME(HGimri),
     INITIALIZE_NAME(IMRPhenomA),
     INITIALIZE_NAME(IMRPhenomB),
@@ -130,6 +131,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomC),
     INITIALIZE_NAME(IMRPhenomD),
     INITIALIZE_NAME(IMRPhenomP),
+    INITIALIZE_NAME(IMRPhenomPv2),
     INITIALIZE_NAME(IMRPhenomFC),
     INITIALIZE_NAME(TaylorEt),
     INITIALIZE_NAME(TaylorT4),
@@ -246,6 +248,7 @@ static double fixReferenceFrequency(double f_ref, double f_min, Approximant appr
         case SpinTaylorT4Fourier:
         case SpinTaylorF2:
         case IMRPhenomP:
+        case IMRPhenomPv2:
             return f_min;
         default:
             break;
@@ -299,7 +302,7 @@ int XLALSimInspiralChooseTDWaveform(
     )
 {
     REAL8 LNhatx, LNhaty, LNhatz, E1x, E1y, E1z;
-    REAL8 tmp1, tmp2;
+    //REAL8 tmp1, tmp2;
     int ret;
     /* N.B. the quadrupole of a spinning compact body labeled by A is 
      * Q_A = - quadparam_A chi_A^2 m_A^3 (see gr-qc/9709032)
@@ -606,7 +609,10 @@ int XLALSimInspiralChooseTDWaveform(
                 XLALPrintError("XLAL Error : For the spindominatedwf approximant maximal phase correction is 2 PN\n");
                 XLAL_ERROR(XLAL_EDOM);
                 }
-		ROTATEY(i,S1x,S1y,S1z);
+		spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
+	        spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
+	        iTmp=i;
+	        XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
                 LNhatx = sin(i);
                 LNhaty = 0.;
                 LNhatz = cos(i);
@@ -792,6 +798,9 @@ int XLALSimInspiralChooseFDWaveform(
     /* Support variables for precessing wfs*/
     REAL8 iTmp;
     REAL8 spin1[3],spin2[3];
+
+    /* Variables for IMRPhenomP and IMRPhenomPv2 */
+    REAL8 chi1_l, chi2_l, chip, eta, thetaJ, alpha0;
 
     /* General sanity checks that will abort
      *
@@ -1130,13 +1139,26 @@ int XLALSimInspiralChooseFDWaveform(
                     phiRef, deltaF, f_min, f_max, f_ref, r, i, m1, m2, S1z, S2z);
             break;
 
+        case SEOBNRv2_ROM_DoubleSpin_HI:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+
+            ret = XLALSimIMRSEOBNRv2ROMDoubleSpinHI(hptilde, hctilde,
+                    phiRef, deltaF, f_min, f_max, f_ref, r, i, m1, m2, S1z, S2z, -1);
+            break;
+
 
         case IMRPhenomP:
             /* Waveform-specific sanity checks */
-	    spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
-	    spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
-	    iTmp=i;
-	    XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
+            spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
+            spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
+            iTmp=i;
+            XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
             if( !XLALSimInspiralModesChoiceIsDefault(          /* Default is (2,2) or l=2 modes. */
                     XLALSimInspiralGetModesChoice(waveFlags) ) )
                 ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
@@ -1146,19 +1168,48 @@ int XLALSimInspiralChooseFDWaveform(
             LNhaty = 0.;
             LNhatz = cos(i);
             /* Tranform to model parameters */
-            REAL8 chi_eff, chip, eta, thetaJ, alpha0;
             if(f_ref==0.0)
                 f_ref = f_min; /* Default reference frequency is minimum frequency */
             XLALSimIMRPhenomPCalculateModelParameters(
-                &chi_eff, &chip, &eta, &thetaJ, &alpha0,
+                &chi1_l, &chi2_l, &chip, &eta, &thetaJ, &alpha0,
                 m1, m2, f_ref,
                 LNhatx, LNhaty, LNhatz,
                 S1x, S1y, S1z,
                 S2x, S2y, S2z);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
-              chi_eff, chip, eta, thetaJ,
-              m1+m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref);
+              chi1_l, chi2_l, chip, eta, thetaJ,
+              m1+m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, 1);
+            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            break;
+
+        case IMRPhenomPv2:
+            /* Waveform-specific sanity checks */
+            spin1[0]=S1x; spin1[1]=S1y; spin1[2]=S1z;
+            spin2[0]=S2x; spin2[1]=S2y; spin2[2]=S2z;
+            iTmp=i;
+            XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
+            if( !XLALSimInspiralModesChoiceIsDefault(          /* Default is (2,2) or l=2 modes. */
+                    XLALSimInspiralGetModesChoice(waveFlags) ) )
+                ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+            LNhatx = sin(i);
+            LNhaty = 0.;
+            LNhatz = cos(i);
+            /* Tranform to model parameters */
+            if(f_ref==0.0)
+                f_ref = f_min; /* Default reference frequency is minimum frequency */
+            XLALSimIMRPhenomPCalculateModelParameters(
+                &chi1_l, &chi2_l, &chip, &eta, &thetaJ, &alpha0,
+                m1, m2, f_ref,
+                LNhatx, LNhaty, LNhatz,
+                S1x, S1y, S1z,
+                S2x, S2y, S2z);
+            /* Call the waveform driver routine */
+            ret = XLALSimIMRPhenomP(hptilde, hctilde,
+              chi1_l, chi2_l, chip, eta, thetaJ,
+              m1+m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, 2);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
@@ -3585,10 +3636,12 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomC:
         case IMRPhenomD:
         case IMRPhenomP:
+        case IMRPhenomPv2:
         case SEOBNRv1_ROM_EffectiveSpin:
         case SEOBNRv1_ROM_DoubleSpin:
         case SEOBNRv2_ROM_EffectiveSpin:
         case SEOBNRv2_ROM_DoubleSpin:
+        case SEOBNRv2_ROM_DoubleSpin_HI:
         //case TaylorR2F4:
         case TaylorF2:
 	case EccentricFD:
@@ -3978,6 +4031,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case PhenSpinTaylorRD:
     case SpinTaylorT3:
     case IMRPhenomP:
+    case IMRPhenomPv2:
     case SpinTaylorT2Fourier:
     case SpinTaylorT4Fourier:
     case SpinDominatedWf:
@@ -4000,6 +4054,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
     case SEOBNRv2_ROM_DoubleSpin:
+    case SEOBNRv2_ROM_DoubleSpin_HI:
     case TaylorR2F4:
     case IMRPhenomFB:
     case FindChirpSP:
@@ -4074,6 +4129,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
     case SEOBNRv2_ROM_DoubleSpin:
+    case SEOBNRv2_ROM_DoubleSpin_HI:
     case IMRPhenomA:
     case IMRPhenomB:
     case IMRPhenomFA:
@@ -4081,6 +4137,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomC:
     case IMRPhenomD:
     case IMRPhenomP:
+    case IMRPhenomPv2:
     case IMRPhenomFC:
     case SpinTaylorT2Fourier:
     case SpinTaylorT4Fourier:

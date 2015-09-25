@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2014 Michael Puerrer, John Veitch
+ *  Copyright (C) 2014, 2015 Michael Puerrer, John Veitch
  *  Reduced Order Model for SEOBNR
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -26,11 +26,11 @@
  * \brief Auxiliary functions for SEOBNRv1/v2 reduced order modeling codes in
  * LALSimIMRSEOBNRv2ROMDoubleSpin.c, LALSimIMRSEOBNRv1ROMDoubleSpin.c,
  * LALSimIMRSEOBNRv2ROMEffectiveSpin.c, LALSimIMRSEOBNRv1ROMEffectiveSpin.c,
- * LALSimIMRSEOBNRv2ChirpTime.c.
+ * LALSimIMRSEOBNRv2ChirpTime.c, LALSimIMRSEOBNRv2ROMDoubleSpinHI.c.
  *
  * Here I collect common auxiliary functions pertaining to reading
- * data stored in gsl binary vectors and matrices,
- * parameter space interpolation with B-splines,
+ * data stored in gsl binary vectors and matrices, HDF5 files using the LAL interface,
+ * parameter space interpolation with B-splines, fitting to a cubic,
  * a custom gsl error handler and adjustment of nearby parameter values.
  */
 
@@ -38,11 +38,23 @@
 #include <lal/XLALError.h>
 #include <stdbool.h>
 #include <gsl/gsl_math.h>
+#include <gsl/gsl_multifit.h>
 
+#ifdef LAL_HDF5_ENABLED
+#include <lal/H5FileIO.h>
+#endif
 
 static void err_handler(const char *reason, const char *file, int line, int gsl_errno);
-static int read_vector(const char dir[], const char fname[], gsl_vector *v);
+UNUSED static int read_vector(const char dir[], const char fname[], gsl_vector *v);
 UNUSED static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
+
+#ifdef LAL_HDF5_ENABLED
+UNUSED static int CheckVectorFromHDF5(LALH5File *file, const char name[], const double *v, size_t n);
+UNUSED static int ReadHDF5RealVectorDataset(LALH5File *file, const char *name, gsl_vector **data);
+UNUSED static int ReadHDF5RealMatrixDataset(LALH5File *file, const char *name, gsl_matrix **data);
+UNUSED static void PrintInfoStringAttribute(LALH5File *file, const char attribute[]);
+UNUSED static int ROM_check_version_number(LALH5File *file, 	INT4 version_major_in, INT4 version_minor_in, INT4 version_micro_in);
+#endif
 
 UNUSED static REAL8 Interpolate_Coefficent_Tensor(
   gsl_vector *v,
@@ -66,6 +78,8 @@ UNUSED static REAL8 Interpolate_Coefficent_Matrix(
   gsl_bspline_workspace *bwy
 );
 
+UNUSED static gsl_vector *Fit_cubic(const gsl_vector *xi, const gsl_vector *yi);
+
 static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
 static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
 
@@ -81,15 +95,15 @@ static int read_vector(const char dir[], const char fname[], gsl_vector *v) {
   size_t size = strlen(dir) + strlen(fname) + 2;
   char *path = XLALMalloc(size);
   snprintf(path, size, "%s/%s", dir, fname);
-  
+
   FILE *f = fopen(path, "rb");
-  if (!f) 
+  if (!f)
     XLAL_ERROR(XLAL_EIO, "Could not find ROM data file at path `%s'", path);
   int ret = gsl_vector_fread(f, v);
   if (ret != 0)
      XLAL_ERROR(XLAL_EIO, "Error reading data from `%s'", path);
   fclose(f);
-  
+
   XLAL_PRINT_INFO("Sucessfully read data file `%s'", path);
   XLALFree(path);
   return(XLAL_SUCCESS);
@@ -101,17 +115,165 @@ static int read_matrix(const char dir[], const char fname[], gsl_matrix *m) {
   snprintf(path, size, "%s/%s", dir, fname);
 
   FILE *f = fopen(path, "rb");
-  if (!f) 
+  if (!f)
     XLAL_ERROR(XLAL_EIO, "Could not find ROM data file at path `%s'", path);
   int ret = gsl_matrix_fread(f, m);
   if (ret != 0)
      XLAL_ERROR(XLAL_EIO, "Error reading data from `%s'", path);
   fclose(f);
-  
+
   XLAL_PRINT_INFO("Sucessfully read data file `%s'", path);
   XLALFree(path);
   return(XLAL_SUCCESS);
 }
+
+#ifdef LAL_HDF5_ENABLED
+static int CheckVectorFromHDF5(LALH5File *file, const char name[], const double *v, size_t n) {
+  gsl_vector *temp = NULL;
+  ReadHDF5RealVectorDataset(file, name, &temp);
+
+  if (temp->size != n)
+    XLAL_ERROR(XLAL_EIO, "Length of data %s disagrees", name);
+
+  for (size_t i=0; i<temp->size; i++)
+    if (gsl_vector_get(temp, i) != v[i])
+      XLAL_ERROR(XLAL_EIO, "Data %s disagrees", name);
+  gsl_vector_free(temp);
+  return XLAL_SUCCESS;
+}
+
+static int ReadHDF5RealVectorDataset(LALH5File *file, const char *name, gsl_vector **data) {
+	LALH5Dataset *dset;
+	UINT4Vector *dimLength;
+	size_t n;
+
+	if (file == NULL || name == NULL || data == NULL)
+		XLAL_ERROR(XLAL_EFAULT);
+
+	dset = XLALH5DatasetRead(file, name);
+	if (dset == NULL)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	if (XLALH5DatasetQueryType(dset) != LAL_D_TYPE_CODE) {
+		XLALH5DatasetFree(dset);
+		XLAL_ERROR(XLAL_ETYPE, "Dataset `%s' is wrong type", name);
+	}
+
+	dimLength = XLALH5DatasetQueryDims(dset);
+	if (dimLength == NULL) {
+		XLALH5DatasetFree(dset);
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+	if (dimLength->length != 1) {
+		XLALH5DatasetFree(dset);
+		XLAL_ERROR(XLAL_EDIMS, "Dataset `%s' must be 1-dimensional", name);
+	}
+
+	n = dimLength->data[0];
+	XLALDestroyUINT4Vector(dimLength);
+
+	if (*data == NULL) {
+		*data = gsl_vector_alloc(n);
+		if (*data == NULL) {
+			XLALH5DatasetFree(dset);
+			XLAL_ERROR(XLAL_ENOMEM, "gsl_vector_alloc(%zu) failed", n);
+		}
+	}
+	else if ((*data)->size != n) {
+		XLALH5DatasetFree(dset);
+		XLAL_ERROR(XLAL_EINVAL, "Expected gsl_vector `%s' of size %zu", name, n);
+	}
+
+  // Now read the data
+	if (XLALH5DatasetQueryData((*data)->data, dset) < 0) {
+		XLALH5DatasetFree(dset);
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+
+	XLALH5DatasetFree(dset);
+	return 0;
+}
+
+static int ReadHDF5RealMatrixDataset(LALH5File *file, const char *name, gsl_matrix **data) {
+	LALH5Dataset *dset;
+	UINT4Vector *dimLength;
+	size_t n1, n2;
+
+	if (file == NULL || name == NULL || data == NULL)
+		XLAL_ERROR(XLAL_EFAULT);
+
+	dset = XLALH5DatasetRead(file, name);
+	if (dset == NULL)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	if (XLALH5DatasetQueryType(dset) != LAL_D_TYPE_CODE) {
+		XLALH5DatasetFree(dset);
+		XLAL_ERROR(XLAL_ETYPE, "Dataset `%s' is wrong type", name);
+	}
+
+	dimLength = XLALH5DatasetQueryDims(dset);
+	if (dimLength == NULL) {
+		XLALH5DatasetFree(dset);
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+	if (dimLength->length != 2) {
+		XLALH5DatasetFree(dset);
+		XLAL_ERROR(XLAL_EDIMS, "Dataset `%s' must be 2-dimensional", name);
+	}
+
+	n1 = dimLength->data[0];
+	n2 = dimLength->data[1];
+	XLALDestroyUINT4Vector(dimLength);
+
+	if (*data == NULL) {
+		*data = gsl_matrix_alloc(n1, n2);
+		if (*data == NULL) {
+			XLALH5DatasetFree(dset);
+			XLAL_ERROR(XLAL_ENOMEM, "gsl_matrix_alloc(%zu, %zu) failed", n1, n2);
+		}
+	}
+	else if ((*data)->size1 != n1 || (*data)->size2 != n2) {
+		XLALH5DatasetFree(dset);
+		XLAL_ERROR(XLAL_EINVAL, "Expected gsl_matrix `%s' of size %zu x %zu", name, n1, n2);
+	}
+
+  // Now read the data
+	if (XLALH5DatasetQueryData((*data)->data, dset) < 0) {
+		XLALH5DatasetFree(dset);
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+
+	XLALH5DatasetFree(dset);
+	return 0;
+}
+
+static void PrintInfoStringAttribute(LALH5File *file, const char attribute[]) {
+  int len = XLALH5FileQueryStringAttributeValue(NULL, 0, file, attribute) + 1;
+  char *str = XLALMalloc(len);
+  XLALH5FileQueryStringAttributeValue(str, len, file, attribute);
+  XLALPrintInfo("%s\n", str);
+  LALFree(str);
+}
+
+static int ROM_check_version_number(LALH5File *file, 	INT4 version_major_in, INT4 version_minor_in, INT4 version_micro_in) {
+  INT4 version_major;
+  INT4 version_minor;
+  INT4 version_micro;
+
+  XLALH5FileQueryScalarAttributeValue(&version_major, file, "version_major");
+  XLALH5FileQueryScalarAttributeValue(&version_minor, file, "version_minor");
+  XLALH5FileQueryScalarAttributeValue(&version_micro, file, "version_micro");
+
+  if ((version_major_in != version_major) || (version_minor_in != version_minor) || (version_micro_in != version_micro)) {
+    XLAL_ERROR(XLAL_EIO, "Expected ROM data version %d.%d.%d, but got version %d.%d.%d.",
+    version_major_in, version_minor_in, version_micro_in, version_major, version_minor, version_micro);
+  }
+  else {
+    XLALPrintInfo("Reading ROM data version %d.%d.%d.\n", version_major, version_minor, version_micro);
+    return XLAL_SUCCESS;
+  }
+}
+#endif
 
 // Helper function to perform tensor product spline interpolation with gsl
 // The gsl_vector v contains the ncx x ncy x ncz dimensional coefficient tensor in vector form
@@ -205,6 +367,42 @@ static REAL8 Interpolate_Coefficent_Matrix(
   gsl_vector_free(By4);
 
   return sum;
+}
+
+// Returns fitting coefficients for cubic y = c[0] + c[1]*x + c[2]*x**2 + c[3]*x**3
+static gsl_vector *Fit_cubic(const gsl_vector *xi, const gsl_vector *yi) {
+  const int n = xi->size; // how many data points are we fitting
+  const int p = 4;        // order of fitting polynomial
+
+  gsl_matrix *X = gsl_matrix_alloc(n, p); // design matrix
+  gsl_vector *y = gsl_vector_alloc(n);    // data vector
+  gsl_vector *c = gsl_vector_alloc(p);    // coefficient vector
+  gsl_matrix *cov = gsl_matrix_alloc(p, p);
+  double chisq;
+
+  for (int i=0; i < n; i++) {
+      double xval = gsl_vector_get(xi, i);
+      double xval2 = xval*xval;
+      double xval3 = xval2*xval;
+      gsl_matrix_set(X, i, 0, 1.0);
+      gsl_matrix_set(X, i, 1, xval);
+      gsl_matrix_set(X, i, 2, xval2);
+      gsl_matrix_set(X, i, 3, xval3);
+
+      double yval = gsl_vector_get(yi, i);
+      gsl_vector_set (y, i, yval);
+    }
+
+  gsl_multifit_linear_workspace *work = gsl_multifit_linear_alloc(n, p);
+  gsl_multifit_linear(X, y, c, cov, &chisq, work); // perform linear least-squares fit
+
+  // clean up
+  gsl_multifit_linear_free(work);
+  gsl_matrix_free(X);
+  gsl_matrix_free(cov);
+  gsl_vector_free(y);
+
+  return c;
 }
 
 // This function determines whether x and y are approximately equal to a relative accuracy epsilon.

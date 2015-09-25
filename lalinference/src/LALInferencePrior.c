@@ -345,16 +345,20 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
       logPrior+=log(((m1+m2)*(m1+m2))/((m1-m2)*pow(eta,3.0/5.0)));
   }
 
-  /* Check for component masses in range, if specified */
-  if(LALInferenceCheckVariable(priorParams,"component_min"))
-    if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m1
-       || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m2)
-      return -DBL_MAX;
+  /* Check for individual mass priors */
+  if(LALInferenceCheckVariable(priorParams,"mass1_min"))
+		  if(LALInferenceGetREAL8Variable(priorParams,"mass1_min") > m1)
+				  return -DBL_MAX;
+  if(LALInferenceCheckVariable(priorParams,"mass1_max"))
+		  if(LALInferenceGetREAL8Variable(priorParams,"mass1_max") < m1)
+				  return -DBL_MAX;
+  if(LALInferenceCheckVariable(priorParams,"mass2_min"))
+		  if(LALInferenceGetREAL8Variable(priorParams,"mass2_min") > m2)
+				  return -DBL_MAX;
+  if(LALInferenceCheckVariable(priorParams,"mass2_max"))
+		  if(LALInferenceGetREAL8Variable(priorParams,"mass2_max") < m2)
+				  return -DBL_MAX;
 
-  if(LALInferenceCheckVariable(priorParams,"component_max"))
-    if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m1
-       || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
-      return -DBL_MAX;
 
   if(LALInferenceCheckVariable(priorParams,"MTotMax"))
     if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
@@ -534,89 +538,6 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
       }
     }
 
-    /***** OLD INCORRECT MASS PRIOR
-    // mchirp
-    double mc=0.0;
-    if( LALInferenceCheckVariable(params,"logmc") )
-    {
-        item = LALInferenceGetItem(params, "logmc");
-        if(item->vary != LALINFERENCE_PARAM_FIXED)
-        {
-            LALInferenceGetMinMaxPrior(runState->priorArgs, "logmc", (void *)&min, (void *)&max);
-            min = exp(min); max = exp(max);
-            mc = LALInferenceCubeToPowerPrior(-5.0/6.0, Cube[i], min, max);
-            double logmc = log(mc);
-            LALInferenceSetVariable(params, "logmc", &logmc);
-            Cube[i] = mc;
-            logPrior -= 5.0/6.0*logmc;
-            i++;
-            strcat(header,"mc ");
-        }
-        else
-        {
-            mc = exp(*(REAL8 *)LALInferenceGetVariable(params, "logmc"));
-        }
-    }
-    else if( LALInferenceCheckVariable(params,"chirpmass") )
-    {
-        item = LALInferenceGetItem(params, "chirpmass");
-        if(item->vary != LALINFERENCE_PARAM_FIXED)
-        {
-            LALInferenceGetMinMaxPrior(runState->priorArgs, "chirpmass", (void *)&min, (void *)&max);
-            mc = LALInferenceCubeToPowerPrior(-5.0/6.0, Cube[i], min, max);
-            LALInferenceSetVariable(params, "chirpmass", &mc);
-            Cube[i] = mc;
-            logPrior -= 5.0/6.0*log(mc);
-            i++;
-            strcat(header,"mc ");
-        }
-        else
-        {
-            mc = *(REAL8 *)LALInferenceGetVariable(params, "chirpmass");
-        }
-    }
-
-    // eta
-    double eta=0.25, q=1.0, m1=0.0, m2=0.0;
-    if( LALInferenceCheckVariable(params,"eta") )
-    {
-        item = LALInferenceGetItem(params, "eta");
-        if(item->vary != LALINFERENCE_PARAM_FIXED)
-        {
-            LALInferenceGetMinMaxPrior(runState->priorArgs, "eta", (void *)&min, (void *)&max);
-            eta = LALInferenceCubeToFlatPrior(Cube[i], min, max);
-            Cube[i]=eta;
-            i++;
-            strcat(header,"eta ");
-            LALInferenceSetVariable(params, "eta", &eta);
-        }
-        else
-        {
-            eta = *(REAL8 *)LALInferenceGetVariable(params, "eta");
-        }
-        LALInferenceMcEta2Masses(mc,eta,&m1,&m2);
-    }
-    else if( LALInferenceCheckVariable(params,"q") )
-    {
-        item = LALInferenceGetItem(params, "q");
-        if(item->vary != LALINFERENCE_PARAM_FIXED)
-        {
-            min = 0.0, max = 0.25;
-            eta = LALInferenceCubeToFlatPrior(Cube[i], min, max);
-            LALInferenceMcEta2Masses(mc,eta,&m1,&m2);
-            q=m2/m1;
-            Cube[i]=q;
-            i++;
-            strcat(header,"q ");
-            LALInferenceSetVariable(params, "q", &q);
-        }
-        else
-        {
-            q = *(REAL8 *)LALInferenceGetVariable(params, "q");
-            LALInferenceMcQ2Masses(mc,q,&m1,&m2);
-        }
-    }
-    ****/
 
     // mass variables
     double mc = 0.0, eta = 0.0, q = 0.0, m1 = 0.0, m2 = 0.0, m = 0.0;
@@ -656,20 +577,24 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
     //m1 & m2
     if( m1 == 0.0 && m2 == 0.0 )
     {
-        min = *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
-        max = *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
-        if( min == max )
+        REAL8 m1_min = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass1_min");
+        REAL8 m2_min = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass2_min");
+        REAL8 m1_max = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass1_max");
+        REAL8 m2_max = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass2_max");
+      
+        if( m1_min == m1_max && m2_min==m2_max)
         {
-            m1 = m2 = min;
-            m = m1 + m2;
-            eta = m1 * m2 / (m*m);
-            mc = pow(eta,0.6) * m;
-            q = m2 / m1; // asymmetric mass ratio, m1 >= m2
+          m1 = m1_min;
+          m2 = m2_min;
+          m = m1 + m2;
+          eta = m1 * m2 / (m*m);
+          mc = pow(eta,0.6) * m;
+          q = m2 / m1; // asymmetric mass ratio, m1 >= m2
         }
         else
         {
-            m1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
-            m2 = LALInferenceCubeToFlatPrior(Cube[i+1], min, max);
+            m1 = LALInferenceCubeToFlatPrior(Cube[i], m1_min, m1_max);
+            m2 = LALInferenceCubeToFlatPrior(Cube[i+1], m2_min, m2_max);
             if(m1<m2)
             {
                 double temp = m2;
@@ -903,17 +828,6 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
            || *(REAL8 *)LALInferenceGetVariable(params,"q") > 1.0)
             return 0;
 
-    /* Check for component masses in range, if specified */
-    if(LALInferenceCheckVariable(priorParams,"component_min"))
-        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m1
-           || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m2)
-            return 0;
-
-    if(LALInferenceCheckVariable(priorParams,"component_max"))
-        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m1
-           || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
-            return 0;
-
     if(LALInferenceCheckVariable(priorParams,"MTotMin"))
         if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMin") > m1+m2)
             return 0;
@@ -921,6 +835,20 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
     if(LALInferenceCheckVariable(priorParams,"MTotMax"))
         if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
             return 0;
+
+	/* Check for individual mass priors */
+	if(LALInferenceCheckVariable(priorParams,"mass1_min"))
+			if(LALInferenceGetREAL8Variable(priorParams,"mass1_min") > m1)
+					return 0;
+	if(LALInferenceCheckVariable(priorParams,"mass1_max"))
+			if(LALInferenceGetREAL8Variable(priorParams,"mass1_max") < m1)
+					return 0;
+	if(LALInferenceCheckVariable(priorParams,"mass2_min"))
+			if(LALInferenceGetREAL8Variable(priorParams,"mass2_min") > m2)
+					return 0;
+	if(LALInferenceCheckVariable(priorParams,"mass2_max"))
+			if(LALInferenceGetREAL8Variable(priorParams,"mass2_max") < m2)
+					return 0;
 
     if(model != NULL &&
         LALInferenceCheckVariable(priorParams,"malmquist") &&
@@ -1145,17 +1073,6 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
     }
   }
 
-  /* Check for component masses in range, if specified */
-  if(LALInferenceCheckVariable(priorParams,"component_min"))
-    if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m1
-       || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m2)
-      return -DBL_MAX;
-
-  if(LALInferenceCheckVariable(priorParams,"component_max"))
-    if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m1
-       || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
-      return -DBL_MAX;
-
   if(LALInferenceCheckVariable(priorParams,"MTotMax"))
     if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
       return -DBL_MAX;
@@ -1163,6 +1080,19 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
   if(LALInferenceCheckVariable(priorParams,"MTotMin"))
     if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMin") > m1+m2)
       return -DBL_MAX;
+  /* Check for individual mass priors */
+  if(LALInferenceCheckVariable(priorParams,"mass1_min"))
+		  if(LALInferenceGetREAL8Variable(priorParams,"mass1_min") > m1)
+				  return -DBL_MAX;
+  if(LALInferenceCheckVariable(priorParams,"mass1_max"))
+		  if(LALInferenceGetREAL8Variable(priorParams,"mass1_max") < m1)
+				  return -DBL_MAX;
+  if(LALInferenceCheckVariable(priorParams,"mass2_min"))
+		  if(LALInferenceGetREAL8Variable(priorParams,"mass2_min") > m2)
+				  return -DBL_MAX;
+  if(LALInferenceCheckVariable(priorParams,"mass2_max"))
+		  if(LALInferenceGetREAL8Variable(priorParams,"mass2_max") < m2)
+				  return -DBL_MAX;
 
   //PSD priors are Gaussian
   if(LALInferenceCheckVariable(params, "psdscale"))
@@ -1389,11 +1319,14 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
     //m1 & m2
     if( m1 == 0.0 && m2 == 0.0 )
     {
-        min = *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
-        max = *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
-        if( min == max )
+      REAL8 m1_min = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass1_min");
+      REAL8 m1_max = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass1_max");
+      REAL8 m2_min = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass2_min");
+      REAL8 m2_max = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass2_max");
+      if( m1_min == m1_max && m2_min == m2_max)
         {
-            m1 = m2 = min;
+            m1 = m1_min;
+            m2 = m2_min;
             m = m1 + m2;
             eta = m1 * m2 / (m*m);
             mc = pow(eta,0.6) * m;
@@ -1401,8 +1334,8 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
         }
         else
         {
-            m1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
-            m2 = LALInferenceCubeToFlatPrior(Cube[i+1], min, max);
+            m1 = LALInferenceCubeToFlatPrior(Cube[i], m1_min, m1_max);
+            m2 = LALInferenceCubeToFlatPrior(Cube[i+1], m2_min, m2_max);
             if(m1<m2)
             {
                 double temp = m2;
@@ -1637,17 +1570,6 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
            || *(REAL8 *)LALInferenceGetVariable(params,"q") > 1.0)
             return 0;
 
-    /* Check for component masses in range, if specified */
-    if(LALInferenceCheckVariable(priorParams,"component_min"))
-        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m1
-           || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_min") > m2)
-            return 0;
-
-    if(LALInferenceCheckVariable(priorParams,"component_max"))
-        if(*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m1
-           || *(REAL8 *)LALInferenceGetVariable(priorParams,"component_max") < m2)
-            return 0;
-
     if(LALInferenceCheckVariable(priorParams,"MTotMin"))
         if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMin") > m1+m2)
             return 0;
@@ -1655,6 +1577,19 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
     if(LALInferenceCheckVariable(priorParams,"MTotMax"))
         if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax") < m1+m2)
             return 0;
+  /* Check for individual mass priors */
+  if(LALInferenceCheckVariable(priorParams,"mass1_min"))
+		  if(LALInferenceGetREAL8Variable(priorParams,"mass1_min") > m1)
+				  return 0;
+  if(LALInferenceCheckVariable(priorParams,"mass1_max"))
+		  if(LALInferenceGetREAL8Variable(priorParams,"mass1_max") < m1)
+				  return 0;
+  if(LALInferenceCheckVariable(priorParams,"mass2_min"))
+		  if(LALInferenceGetREAL8Variable(priorParams,"mass2_min") > m2)
+				  return 0;
+  if(LALInferenceCheckVariable(priorParams,"mass2_max"))
+		  if(LALInferenceGetREAL8Variable(priorParams,"mass2_max") < m2)
+				  return 0;
 
     return 1;
 }

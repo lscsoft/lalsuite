@@ -30,6 +30,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
+#include <lal/Date.h>
 
 #define c ((REAL8)(LAL_C_SI))
 #define G ((REAL8)(LAL_G_SI))
@@ -1096,7 +1097,7 @@ static INT4 HGimri_start(REAL8 m, REAL8 M, REAL8 q, REAL8 D, REAL8 Sdotn, REAL8 
 
 		}
 
-	return 0;
+	return i_lightring;
 
 	}
 
@@ -1218,13 +1219,18 @@ INT4 XLALHGimriGenerator(
 
 	REAL8 fDyne = 0.0;
 	size_t length = 1000/dt;
-	static LIGOTimeGPS epoch;
-	*hplus = XLALCreateREAL8TimeSeries("h_plus",&epoch,fDyne,dt,&lalStrainUnit,length);
-	*hcross = XLALCreateREAL8TimeSeries("h_cross",&epoch,fDyne,dt,&lalStrainUnit,length);
+	LIGOTimeGPS tc = LIGOTIMEGPSZERO;
+	*hplus = XLALCreateREAL8TimeSeries("h_plus",&tc,fDyne,dt,&lalStrainUnit,length);
+	*hcross = XLALCreateREAL8TimeSeries("h_cross",&tc,fDyne,dt,&lalStrainUnit,length);
 	if (*hplus == NULL || *hcross == NULL)
 		XLAL_ERROR(XLAL_EFUNC);
 
-	HGimri_start(m*Msun_sec,M*Msun_sec,q,dist*GPC_sec,Sdotn,phi0,p0,(*hplus)->data,(*hcross)->data,dt/((m+M)*Msun_sec),length);
+	INT4 i_ref = 0;
+	i_ref = HGimri_start(m*Msun_sec,M*Msun_sec,q,dist*GPC_sec,Sdotn,phi0,p0,(*hplus)->data,(*hcross)->data,dt/((m+M)*Msun_sec),length);
+
+	//Redefine reference epoch to beginning of ringdown
+	XLALGPSAdd(&(*hplus)->epoch,-1.*i_ref*dt);
+	XLALGPSAdd(&(*hcross)->epoch,-1.*i_ref*dt);
 
 	return 0;
 

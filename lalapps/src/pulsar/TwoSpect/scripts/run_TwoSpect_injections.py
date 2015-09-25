@@ -157,6 +157,16 @@ for ii in range(0, 10):
         asini = scoX1asini + random.gauss(0, 0.18)
         df = 2*math.pi*f0*asini/P
     else:
+        #New style for the future
+        #if args.periodDist==0: P = (args.injPmax - args.injPmin)*random.random() + args.injPmin
+        #elif args.periodDist==1: P = 10**((math.log10(args.injPmax)-math.log10(args.injPmin))*random.random()) * args.injPmin
+        #else: P = (args.injPmax + args.injPmin) - 10**((math.log10(args.injPmax)-math.log10(args.injPmin))*random.random()) * args.injPmin
+        #upperDfLimit = args.injDfmax
+        #if upperDfLimit>P/(2*args.Tsft*args.Tsft): upperDfLimit = P/(2*args.Tsft*args.Tsft)
+        #lowerDfLimit = 0.5/args.Tsft
+        #if args.injDfmin>lowerDfLimit: lowerDfLimit = args.injDfmin
+        #df = (upperDfLimit - lowerDfLimit)*random.random() + lowerDfLimit
+
         if args.periodDist==0: P = (args.injPmax - args.injPmin)*random.random() + args.injPmin
         elif args.periodDist==1: P = 10**((math.log10(args.injPmax)-math.log10(args.injPmin))*random.random()) * args.injPmin
         else: P = (args.injPmax + args.injPmin) - 10**((math.log10(args.injPmax)-math.log10(args.injPmin))*random.random()) * args.injPmin

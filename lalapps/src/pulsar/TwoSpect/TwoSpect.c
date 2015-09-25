@@ -160,6 +160,7 @@ int main(int argc, char *argv[])
 
    //Assume maximum possible bin shift
    INT4 maxbinshift = (INT4)round(Vmax * (uvar.fmin+uvar.fspan) * uvar.Tsft) + 1;
+   if (detectors->length > 1) maxbinshift += 10; //Add 10 bins for when there is more than 1 detector
 
    //Parameters for the sky-grid from a point/polygon or a sky-grid file
    DopplerSkyScanInit XLAL_INIT_DECL(scanInit);
@@ -191,7 +192,7 @@ int main(int argc, char *argv[])
    XLAL_CHECK( XLALNextDopplerSkyPos(&dopplerpos, &scan) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Basic units
-   REAL4 tempfspan = uvar.fspan + 2.0*uvar.dfmax + (uvar.blksize-1 + 12)/uvar.Tsft;     //= fspan+2*dfmax+extrabins + running median blocksize-1 (Hz)
+   REAL8 tempfspan = uvar.fspan + 2.0*uvar.dfmax + (uvar.blksize-1 + 12)/uvar.Tsft;     //= fspan + 2*dfmax + running median blocksize-1 + extra bins (Hz)
    INT4 tempnumfbins = (INT4)round(tempfspan*uvar.Tsft)+1;                        //= number of bins in tempfspan
    
    //Determine band size to get the SFT data (remember to get extra bins because of the running median and the bin shifts due to detector velocity) with nudge of 0.1/Tsft for rounding issues
@@ -238,13 +239,15 @@ int main(int argc, char *argv[])
    REAL4VectorAlignedArray *backgrounds = NULL, *backgroundRatioMeans = NULL;
    XLAL_CHECK( (oneSFTbackgroundRatio = XLALCreateREAL4VectorAligned(ffdata->numfbins+2*maxbinshift, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (backgrounds = createREAL4VectorAlignedArray(detectors->length, ffdata->numffts*(ffdata->numfbins+2*maxbinshift), 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (backgroundRatioMeans = createREAL4VectorAlignedArray(detectors->length, ffdata->numffts, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (backgroundRatioMeans = createREAL4VectorAlignedArray(detectors->length, ffdata->numffts, 32)) != NULL, XLAL_EFUNC ); //mean value of background ratio, 1 per SFT
    for (ii=0; ii<(INT4)detectors->length; ii++) {
       memset(backgrounds->data[ii]->data, 0, sizeof(REAL4)*backgrounds->data[ii]->length);
       memset(backgroundRatioMeans->data[ii]->data, 0, sizeof(REAL4)*backgroundRatioMeans->data[ii]->length);
 
+      //Convert SFT data to powers
       REAL4VectorAligned *tmpTFdata = NULL;
       XLAL_CHECK( (tmpTFdata = convertSFTdataToPowers(multiSFTvector->data[ii], &uvar, 2.0/(multiNoiseFloor.sqrtSn[0]*multiNoiseFloor.sqrtSn[0])/uvar.Tsft)) != NULL, XLAL_EFUNC );
+      //Determine running means
       if (!uvar.signalOnly) XLAL_CHECK( tfRngMeans(backgrounds->data[ii], tmpTFdata, ffdata->numffts, ffdata->numfbins+2*maxbinshift, uvar.blksize) == XLAL_SUCCESS, XLAL_EFUNC );
       else memset(backgrounds->data[ii]->data, 0, sizeof(REAL4)*backgrounds->data[ii]->length);
       if (detectors->length==1) {
@@ -281,6 +284,20 @@ int main(int argc, char *argv[])
    }
    XLALDestroyREAL4VectorAligned(oneSFTbackgroundRatio);
    destroyREAL4VectorAlignedArray(backgrounds);
+   //Need to do a little data manipulation here for the extra background data
+   if (detectors->length>1) {
+      XLALDestroyREAL4VectorAligned(background);
+      XLAL_CHECK( (background = XLALCreateREAL4VectorAligned(ffdata->numffts*(ffdata->numfbins+2*(maxbinshift-10)), 32)) != NULL, XLAL_EFUNC );
+      for (ii=0; ii<ffdata->numffts; ii++) {
+         if (background0->data[(ffdata->numfbins+2*maxbinshift)*ii]!=0.0) memcpy(&(background->data[(ffdata->numfbins+2*(maxbinshift-10))*ii]), &(background0->data[(ffdata->numfbins+2*maxbinshift)*ii + 10]), sizeof(REAL4)*(ffdata->numfbins+2*(maxbinshift-10)));
+         else memset(&(background->data[(ffdata->numfbins+2*(maxbinshift-10))*ii]), 0, sizeof(REAL4)*(ffdata->numfbins+2*(maxbinshift-10)));
+      }
+      XLALDestroyREAL4VectorAligned(background0);
+      XLAL_CHECK( (background0 = XLALCreateREAL4VectorAligned(background->length, 32)) != NULL, XLAL_EFUNC );
+      memcpy(background0->data, background->data, sizeof(REAL4)*background->length);
+   }
+
+   if (detectors->length>1) maxbinshift -= 10;
 
    //Background scaling and normalization
    REAL4VectorAligned *backgroundScaling = NULL;

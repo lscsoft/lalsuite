@@ -208,10 +208,9 @@ if __name__=='__main__':
 
   if len(ifosr) > 1 and nesteddirs:
     # there's no Bk dir for joint data, so check that one less directory exists if a Joint IFO is given
-    for ifo in ifosr:
-      if ifo == 'Joint':
-        nifos = len(ifosr)-1
-        break
+    nifos = len(ifosr)
+    if 'Joint' in ifosr:
+      nifos = len(ifosr)-1
 
     if len(bkdirs) != nifos:
       print >> sys.stderr, "Heterodyned data directories and IFOs not consistent!"
