@@ -56,6 +56,7 @@ src/frametools/lalapps_frview
 src/hwinjection/lalapps_psinject
 src/hwinjection/online_psinject
 src/inspiral/ihope_ssipe.ini
+src/inspiral/lalapps_bank_plotter
 src/inspiral/lalapps_bbhinj
 src/inspiral/lalapps_blindinj
 src/inspiral/lalapps_calcexpsnr
