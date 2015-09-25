@@ -48,6 +48,10 @@ main_cp=ConfigParser.ConfigParser()
 main_cp.optionxform = str
 main_cp.readfp(open(inifile))
 
+# Remove gps start and end time options
+for option in ['gps-start-time','gps-end-time']:
+  if main_cp.has_option('input',option):
+    main_cp.remove_option('input',option)
 
 rundir=os.path.abspath(opts.run_path)
 
@@ -97,7 +101,6 @@ for option in 'margphi','margtime','margtimephi':
   if prior_cp.has_option('engine',option):
         prior_cp.remove_option('engine',option)
 
-
 # Create a DAG to contain the other scripts
 outerdaglog=os.path.join(daglogdir,'lalinference_injection_test_'+str(uuid.uuid1())+'.log')
 outerdag=pipeline.CondorDAG(outerdaglog,dax=opts.dax)
@@ -115,8 +118,6 @@ prior_cp.set('input','gps-time-file',tfpath)
 priordag=pipe_utils.LALInferencePipelineDAG(prior_cp,dax=opts.dax,site=opts.grid_site)
 priordag.set_dag_file(os.path.join(priordir,'lalinference_priorsample'))
 priordagjob=pipeline.CondorDAGManJob(priordag.get_dag_file(),dir=priordir)
-if prior_cp.has_option('analysis','accounting_group'):
-  priordagjob.add_condor_cmd('accounting_group',prior_cp.get('analysis','accounting_group'))
 priordagnode=pipeline.CondorDAGManNode(priordagjob)
 # Find the output file
 pagenode=filter(lambda n:isinstance(n,pipe_utils.ResultsPageNode), priordag.get_nodes())[0]
@@ -138,6 +139,8 @@ prior2injjob.set_sub_file(convertsub)
 prior2injjob.set_stderr_file(converterr)
 prior2injjob.set_stdout_file(convertout)
 prior2injjob.add_condor_cmd('getenv','True')
+if main_cp.has_option('analysis','accounting_group'):
+  prior2injjob.add_condor_cmd('accounting_group',main_cp.get('analysis','accounting_group'))
 prior2injnode=pipeline.CondorDAGNode(prior2injjob)
 prior2injnode.add_var_opt('output',injfile)
 prior2injnode.add_var_opt('num-of-injs',str(opts.trials))
@@ -159,8 +162,6 @@ main_cp.set('input','gps-end-time',str(trig_time+1000))
 maindag=pipe_utils.LALInferencePipelineDAG(main_cp,dax=opts.dax,site=opts.grid_site)
 maindag.set_dag_file(os.path.join(maindir,'lalinference_pipeline'))
 maindagjob=pipeline.CondorDAGManJob(maindag.get_dag_file(),dir=maindir)
-if main_cp.has_option('analysis','accounting_group'):
-  maindagjob.add_condor_cmd('accounting_group',main_cp.get('analysis','accounting_group'))
 maindagnode=pipeline.CondorDAGManNode(maindagjob)
 maindag.config.set('input','injection-file',injfile)
 for i in range(int(opts.trials)):
@@ -187,6 +188,8 @@ ppjob.set_sub_file(ppsub)
 ppjob.set_stderr_file(pperr)
 ppjob.set_stdout_file(ppout)
 ppjob.add_condor_cmd('getenv','True')
+if main_cp.has_option('analysis','accounting_group'):
+  ppjob.add_condor_cmd('accounting_group',main_cp.get('analysis','accounting_group'))
 
 ppnode=pipeline.CondorDAGNode(ppjob)
 ppnode.add_var_opt('injXML',injfile)

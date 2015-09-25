@@ -941,7 +941,7 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out,		///< [out] outpu
 } // XLALSincInterpolateCOMPLEX8TimeSeries()
 
 /** Interpolate a given regularly-spaced COMPLEX8 frequency-series 'fs_in = x_in( k * df)' onto new samples
- *  'y_out(f_out)' using Dirichlet interpolation in large-N limit, truncated to (2*Dterms+1) terms, namely
+ *  'y_out(f_out)' using (complex) Sinc interpolation (obtained from Dirichlet kernel in large-N limit), truncated to (2*Dterms+1) terms, namely
  *
  * \f{equation}{
  * \widetilde{x}(f) = \sum_{k = k^* - \Delta k}^{k^* + \Delta k} \widetilde{x}_k \, \frac{ 1 - e^{-i 2\pi\,\delta_k} }{ i 2\pi\,\delta_k}\,,
@@ -958,10 +958,10 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out,		///< [out] outpu
  * NOTE2: frequencies *outside* the original frequency band are returned as 0
  */
 int
-XLALDirichletInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector *y_out,		///< [out] output series of interpolated y-values [must be alloc'ed already]
+XLALSincInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector *y_out,			///< [out] output series of interpolated y-values [must be alloc'ed already]
                                                   const REAL8Vector *f_out,		///< [in] output frequency-values to interpolate input to
                                                   const COMPLEX8FrequencySeries *fs_in,	///< [in] regularly-spaced input frequency-series
-                                                  UINT4 Dterms				///< [in] truncate Dirichlet kernel sum to +-Dterms around max
+                                                  UINT4 Dterms				///< [in] truncate interpolation kernel sum to +-Dterms around max
                                                   )
 {
   XLAL_CHECK ( y_out != NULL, XLAL_EINVAL );
@@ -1019,19 +1019,19 @@ XLALDirichletInterpolateCOMPLEX8FrequencySeries ( COMPLEX8Vector *y_out,		///< [
 
   return XLAL_SUCCESS;
 
-} // XLALDirichletInterpolateCOMPLEX8FrequencySeries()
+} // XLALSincInterpolateCOMPLEX8FrequencySeries()
 
 
-/** Dirichlet interpolate an input SFT to an output SFT.
- * This is a simple convenience wrapper to XLALDirichletInterpolateCOMPLEX8FrequencySeries()
+/** (Complex)Sinc-interpolate an input SFT to an output SFT.
+ * This is a simple convenience wrapper to XLALSincInterpolateCOMPLEX8FrequencySeries()
  * for the special case of interpolating onto new SFT frequency bins
  */
 SFTtype *
-XLALDirichletInterpolateSFT ( const SFTtype *sft_in,	///< [in] input SFT
+XLALSincInterpolateSFT ( const SFTtype *sft_in,		///< [in] input SFT
                               REAL8 f0Out,		///< [in] new start frequency
                               REAL8 dfOut,		///< [in] new frequency step-size
                               UINT4 numBinsOut,		///< [in] new number of bins
-                              UINT4 Dterms		///< [in] truncate Dirichlet kernel sum to +-Dterms around max
+                              UINT4 Dterms		///< [in] truncate interpolation kernel sum to +-Dterms around max
                               )
 {
   XLAL_CHECK_NULL ( sft_in != NULL, XLAL_EINVAL );
@@ -1052,10 +1052,10 @@ XLALDirichletInterpolateSFT ( const SFTtype *sft_in,	///< [in] input SFT
   out->deltaF = dfOut;
   XLAL_CHECK_NULL ( (out->data = XLALCreateCOMPLEX8Vector ( numBinsOut )) != NULL, XLAL_EFUNC );
 
-  XLAL_CHECK_NULL ( XLALDirichletInterpolateCOMPLEX8FrequencySeries ( out->data, f_out, sft_in, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL ( XLALSincInterpolateCOMPLEX8FrequencySeries ( out->data, f_out, sft_in, Dterms ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroyREAL8Vector ( f_out );
 
   return out;
 
-} // XLALDirichletInterpolateSFT()
+} // XLALSincInterpolateSFT()

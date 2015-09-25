@@ -21,6 +21,12 @@
 /* The paper refered to here as the Main paper, is Phys. Rev. D 82, 064016 (2010)
  * */
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #include <math.h>
 #include <complex.h>
 #include <gsl/gsl_errno.h>
@@ -42,7 +48,7 @@
 #define omp ignore
 #endif
 
-/**
+/*
  * private function prototypes; all internal functions use solar masses.
  *
  */
@@ -64,6 +70,13 @@ static int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
 static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 inclination);
 
 static REAL8 PlanckTaper(const REAL8 t, const REAL8 t1, const REAL8 t2);
+
+/**
+ * @addtogroup LALSimIMRPhenom_c
+ * @{
+ * @name Routines for IMR Phenomenological Model "C"
+ * @{
+ */
 
 /**
  * Driver routine to compute the spin-aligned, inspiral-merger-ringdown
@@ -134,7 +147,7 @@ int XLALSimIMRPhenomCGenerateFD(
   if (f_max_prime < f_max) {
     // The user has requested a higher f_max than Mf=params->fCut.
     // Resize the frequency series to fill with zeros to fill with zeros beyond the cutoff frequency.
-    size_t n_full = NextPow2(f_max / deltaF) + 1; // we actually want to have the length be a power of 2 + 1
+        size_t n_full = NextPow2_PC(f_max / deltaF) + 1; // we actually want to have the length be a power of 2 + 1 power of 2 + 1
     *htilde = XLALResizeCOMPLEX16FrequencySeries(*htilde, 0, n_full);
   }
 
@@ -142,7 +155,7 @@ int XLALSimIMRPhenomCGenerateFD(
   return status;
 }
 
-/*
+/**
  * Convenience function to quickly find the default final
  * frequency.
  */
@@ -275,11 +288,14 @@ int XLALSimIMRPhenomCGenerateTD(
 	return apply_inclination(*hplus, *hcross, inclination);
 }
 
+/** @} */
+/** @} */
 
-/***********************************************************************************/
+
+/* *********************************************************************************/
 /* The following private function generates IMRPhenomC frequency-domain waveforms  */
 /* given coefficients */
-/***********************************************************************************/
+/* *********************************************************************************/
 
 static int IMRPhenomCGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
@@ -315,7 +331,7 @@ static int IMRPhenomCGenerateFD(
   REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
 
   /* allocate htilde */
-  size_t n = NextPow2(f_max / deltaF) + 1;
+  size_t n = NextPow2_PC(f_max / deltaF) + 1;
   /* coalesce at t=0 */
   XLALGPSAdd(&ligotimegps_zero, -1. / deltaF); // shift by overall length in time
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0,
@@ -432,7 +448,7 @@ static int IMRPhenomCGenerateFDForTD(
   REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
 
   /* allocate htilde */
-  size_t n = NextPow2(f_max / deltaF) + 1;
+  size_t n = NextPow2_PC(f_max / deltaF) + 1;
   if ( n > nf )
     XLAL_ERROR(XLAL_EDOM, "The required length passed as input wont fit the FD waveform\n");
   else
@@ -463,7 +479,7 @@ static int IMRPhenomCGenerateFDForTD(
   return XLAL_SUCCESS;
 }
 
-/**
+/*
  * Private function to generate time-domain waveforms given coefficients
  */
 static int IMRPhenomCGenerateTD(
@@ -490,7 +506,7 @@ static int IMRPhenomCGenerateTD(
 	if (EstimateSafeFMaxForTD(f_max, deltaT) > f_max_wide)
 		XLAL_PRINT_WARNING("Warning: sampling rate (%" LAL_REAL8_FORMAT " Hz) too low for expected spectral content (%" LAL_REAL8_FORMAT " Hz) \n", deltaT, EstimateSafeFMaxForTD(f_max, deltaT));
 
-    const size_t nt = NextPow2(EstimateIMRLength(m1, m2, f_min_wide, deltaT));
+    const size_t nt = NextPow2_PC(EstimateIMRLength(m1, m2, f_min_wide, deltaT));
     const size_t ne = EstimateIMRLength(m1, m2, params->fRingDown, deltaT);
     *ind_t0 = ((nt - EstimateIMRLength(m1, m2, f_min_wide, deltaT)) > (4 * ne)) ? (nt -(2* ne)) : (nt - (1 * ne));
 	deltaF = 1. / (deltaT * (REAL8) nt);
@@ -515,12 +531,12 @@ static int IMRPhenomCGenerateTD(
 	return XLAL_SUCCESS;
 }
 
-/***********************************************************************************/
+/* *********************************************************************************/
 /* The following functions are borrowed as-it-is from LALSimIMRPhenom.c, and used  */
 /* to generate the time-domain version of the frequency domain PhenomC approximant */
-/***********************************************************************************/
+/* *********************************************************************************/
 
-/**
+/*
  * Return tau0, the Newtonian chirp length estimate.
  */
 static REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min) {
@@ -529,7 +545,7 @@ static REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min) {
 	return 5. * totalMass * LAL_MTSUN_SI / (256. * eta * pow(LAL_PI * totalMass * LAL_MTSUN_SI * f_min, 8./3.));
 }
 
-/**
+/*
  * Estimate the length of a TD vector that can hold the waveform as the Newtonian
  * chirp time tau0 plus 1000 M.
  */
@@ -537,7 +553,7 @@ static size_t EstimateIMRLength(const REAL8 m1, const REAL8 m2, const REAL8 f_mi
 	return (size_t) floor((ComputeTau0(m1, m2, f_min) + 1000 * (m1 + m2) * LAL_MTSUN_SI) / deltaT);
 }
 
-/**
+/*
  * Find a lower value for f_min (using the definition of Newtonian chirp
  * time) such that the waveform has a minimum length of tau0. This is
  * necessary to avoid FFT artifacts.
@@ -546,7 +562,7 @@ static REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f
 	const REAL8 totalMass = m1 + m2;
 	const REAL8 eta = m1 * m2 / (totalMass * totalMass);
 	const REAL8 fISCO = 0.022 / (totalMass * LAL_MTSUN_SI);
-	REAL8 tau0 = deltaT * NextPow2(1.5 * EstimateIMRLength(m1, m2, f_min, deltaT));
+	REAL8 tau0 = deltaT * NextPow2_PC(1.5 * EstimateIMRLength(m1, m2, f_min, deltaT));
 	REAL8 temp_f_min = pow((tau0 * 256. * eta * pow(totalMass * LAL_MTSUN_SI, 5./3.) / 5.), -3./8.) / LAL_PI;
 	if (temp_f_min > f_min) temp_f_min = f_min;
 	if (temp_f_min < 0.5) temp_f_min = 0.5;
@@ -554,7 +570,7 @@ static REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f
 	return temp_f_min;
 }
 
-/**
+/*
  * Find a higher value of f_max so that we can safely apply a window later.
  */
 static REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 deltaT) {
@@ -566,7 +582,7 @@ static REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 deltaT) {
 }
 
 
-/**
+/*
  * Window and IFFT a FD waveform to TD, then window in TD.
  * Requires that the FD waveform be generated outside of f_min and f_max.
  * FD waveform is modified.

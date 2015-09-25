@@ -226,7 +226,7 @@ XLALCreateSingularPDF1D ( REAL8 x0	/**< domain of pdf is a single point: x0 */
   pdf1D_t *ret;
 
   if ( ( ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %lu)\n", __func__, sizeof(*ret) );
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %zu)\n", __func__, sizeof(*ret) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
@@ -263,7 +263,7 @@ XLALCreateUniformPDF1D ( REAL8 xMin,	/**< lower boundary of domain interval */
   pdf1D_t *ret;
 
   if ( ( ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %lu)\n", __func__, sizeof(*ret) );
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %zu)\n", __func__, sizeof(*ret) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
@@ -308,7 +308,7 @@ XLALCreateDiscretePDF1D ( REAL8 xMin,	/**< lower boundary of domain interval */
   pdf1D_t *ret;
 
   if ( ( ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %lu)\n", __func__, sizeof(*ret) );
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %zu)\n", __func__, sizeof(*ret) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 

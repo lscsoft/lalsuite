@@ -105,7 +105,7 @@ XLALInitTimeCorrections ( const CHAR *timeCorrectionFile /**< File containing Ea
   /* prepare output ephemeris struct for returning */
   TimeCorrectionData *tdat;
   if ( ( tdat = XLALCalloc ( 1, sizeof(*tdat) ) ) == NULL )
-    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc ( 1, %lu ) failed.\n", sizeof(*tdat) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc ( 1, %zu ) failed.\n", sizeof(*tdat) );
 
   numLines = flines->lines->nTokens;
 
@@ -249,7 +249,7 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   /* prepare output ephemeris struct for returning */
   EphemerisData *edat;
   if ( ( edat = XLALCalloc ( 1, sizeof(*edat) ) ) == NULL )
-    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc ( 1, %lu ) failed.\n", sizeof(*edat) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc ( 1, %zu ) failed.\n", sizeof(*edat) );
 
   /* store in ephemeris-struct */
   edat->nentriesE = ephemV->length;
@@ -331,12 +331,12 @@ XLALCreateEphemerisVector ( UINT4 length )
 {
   EphemerisVector * ret;
   if ( ( ret = XLALCalloc ( 1, sizeof (*ret) )) == NULL )
-    XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to XLALCalloc(1, %lu)\n", sizeof (*ret) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to XLALCalloc(1, %zu)\n", sizeof (*ret) );
 
   if ( ( ret->data = XLALCalloc ( length, sizeof(*ret->data) ) ) == NULL )
     {
       XLALFree ( ret );
-      XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to XLALCalloc (%d, %lu)\n", length, sizeof(*ret->data) );
+      XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to XLALCalloc (%d, %zu)\n", length, sizeof(*ret->data) );
     }
 
   ret->length = length;

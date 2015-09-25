@@ -17,6 +17,36 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalfr_paste lalfr-paste
+ * @ingroup lalframe_programs
+ *
+ * @brief Merge channels in corresponding frames together
+ *
+ * ### Synopsis
+ *
+ *     lalfr-paste [file ...]
+ *
+ * ### Description
+ *
+ * The `lalfr-paste` utility concatenates the corresponding frames of the given
+ * input files, producing frames containing the merged channels and detector
+ * structures that are written to the standard output.  If `file` is a single
+ * dash (`-`) for one of the input files, the standard input is used.
+ *
+ * ### Examples
+ *
+ * The command:
+ *
+ *     lalfr-paste file1.gwf file2.gwf > file3.gwf
+ *
+ * merges the channels in the frames contained in `file1.gwf` with the channels
+ * in the frames contained in `file2.gwf` and writes the resulting set of
+ * frames to `file3.gwf`.
+ *
+ * @sa @ref lalfr_cut
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

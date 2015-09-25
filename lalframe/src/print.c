@@ -17,6 +17,53 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalfr_print lalfr-print
+ * @ingroup lalframe_programs
+ *
+ * @brief Prints channel data from frame files
+ *
+ * ### Synopsis
+ *
+ *     lalfr-print [file ...]
+ *
+ * ### Description
+ *
+ * The `lalfr-print` utility reads the contents of the channels from each
+ * `file` and prints the data to the standard output.  If `file` is a single
+ * dash (`-`) or absent, `lalfr-print` reads from the standard input.
+ *
+ * For each channel contained in `file`, the output is written in two-column
+ * format where the first column is the GPS time of each sample and the second
+ * column contains the corresponding sample values.  The columns are separated
+ * by a tab character (`\t`) and each line is separated by a newline character
+ * (`\n`).
+ *
+ * Each channel in `file` is written sequentially and are separated by a line
+ * containing a separator consisting of the character `#` followed by the name
+ * of the next channel to be written.  If more than one file argument is
+ * present then the separate files are processed sequentially and separated in
+ * the output by a line containing the separator `==> file <==` where `file` is
+ * the name of the current file being processed.
+ *
+ * ### Examples
+ *
+ * The command:
+ *
+ *     lalfr-print file.gwf
+ *
+ * prints to standard output all the channels contained in `file.gwf`.  If
+ * there are more than one channel present in that file, they can be split into
+ * separate files, each containing a single channel's data, with the command:
+ *
+ *     lalfr-print file.gwf | split -p '#'
+ *
+ * and the resulting files `xaa`, `xab`, etc., contain the data from each of
+ * the channels in `file.gwf`.
+ *
+ * @sa @ref lalfr_dump, @ref lalfr_fmt
+ */
+
 #include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
@@ -29,7 +76,7 @@
 
 #define FAILURE(...) do { fprintf(stderr, __VA_ARGS__); exit(1); } while (0)
 
-int printchannel(LALFrameUFrChan * channel, double t0);
+int printchannel(LALFrameUFrChan * channel, double x0, int fdom);
 int printval(void *data, size_t i, int dtype);
 
 int main(int argc, char *argv[])
@@ -76,13 +123,19 @@ int main(int argc, char *argv[])
             LALFrameUFrChan *channel;
             const char *name;
             name = XLALFrameUFrTOCQueryAdcName(toc, chan);
-            printf("#%s\n", name);
+            printf("# time (s)\t%s", name);
             for (pos = 0; pos < nframe; ++pos) {
                 double tip;
                 double tfp;
                 tfp = XLALFrameUFrTOCQueryGTimeModf(&tip, toc, pos);
                 channel = XLALFrameUFrChanRead(frfile, name, pos);
-                printchannel(channel, tip + tfp);
+                if (pos == 0) {
+                    const char *unit = XLALFrameUFrChanVectorQueryUnitY(channel);
+                    if (unit && strlen(unit))
+                        printf(" (%s)", unit);
+                    printf("\n");
+                }
+                printchannel(channel, tip + tfp, 0);
                 XLALFrameUFrChanFree(channel);
             }
         }
@@ -91,13 +144,19 @@ int main(int argc, char *argv[])
             LALFrameUFrChan *channel;
             const char *name;
             name = XLALFrameUFrTOCQuerySimName(toc, chan);
-            printf("#%s\n", name);
+            printf("# time (s)\t%s", name);
             for (pos = 0; pos < nframe; ++pos) {
                 double tip;
                 double tfp;
                 tfp = XLALFrameUFrTOCQueryGTimeModf(&tip, toc, pos);
                 channel = XLALFrameUFrChanRead(frfile, name, pos);
-                printchannel(channel, tip + tfp);
+                if (pos == 0) {
+                    const char *unit = XLALFrameUFrChanVectorQueryUnitY(channel);
+                    if (unit && strlen(unit))
+                        printf(" (%s)", unit);
+                    printf("\n");
+                }
+                printchannel(channel, tip + tfp, 0);
                 XLALFrameUFrChanFree(channel);
             }
         }
@@ -105,14 +164,39 @@ int main(int argc, char *argv[])
         for (chan = 0; chan < nproc; ++chan) {
             LALFrameUFrChan *channel;
             const char *name;
+            int fdom = 0;
             name = XLALFrameUFrTOCQueryProcName(toc, chan);
-            printf("#%s\n", name);
             for (pos = 0; pos < nframe; ++pos) {
                 double tip;
                 double tfp;
                 tfp = XLALFrameUFrTOCQueryGTimeModf(&tip, toc, pos);
                 channel = XLALFrameUFrChanRead(frfile, name, pos);
-                printchannel(channel, tip + tfp);
+                if (pos == 0) {
+                    const char *unit;
+                    unit = XLALFrameUFrChanVectorQueryUnitX(channel, 0);
+                    if (unit && strcmp(unit, "s") == 0)
+                        printf("# time (s)\t%s", name);
+                    else if (unit && strcmp(unit, "s^-1") == 0) {
+                        printf("# freq (s^-1)\t%s", name);
+                        fdom = 1;
+                    }
+                    else if (unit && strlen(unit)) {
+                        printf("# sample (%s)\t%s", unit, name);
+                        fdom = 1;
+                    }
+                    else {
+                        printf("# sample\t%s", name);
+                        fdom = 1;
+                    }
+                    unit = XLALFrameUFrChanVectorQueryUnitY(channel);
+                    if (unit && strlen(unit))
+                        printf(" (%s)", unit);
+                    printf("\n");
+                }
+                if (fdom)
+                    printchannel(channel, 0.0, fdom);
+                else
+                    printchannel(channel, tip + tfp, 0);
                 XLALFrameUFrChanFree(channel);
             }
         }
@@ -124,11 +208,11 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int printchannel(LALFrameUFrChan * channel, double t0)
+int printchannel(LALFrameUFrChan * channel, double x0, int fdom)
 {
     /* const char *name; */
-    double t0ip, t0fp;
-    double dt;
+    double x0ip, x0fp;
+    double dx;
     void *data;
     int dtype;
     size_t ndata;
@@ -140,20 +224,21 @@ int printchannel(LALFrameUFrChan * channel, double t0)
     XLALFrameUFrChanVectorExpand(channel);
 
     /* name = XLALFrameUFrChanQueryName(channel); */
-    t0 += XLALFrameUFrChanQueryTimeOffset(channel);
+    if (!fdom)
+        x0 += XLALFrameUFrChanQueryTimeOffset(channel);
 
     ndata = XLALFrameUFrChanVectorQueryNData(channel);
-    t0 += XLALFrameUFrChanVectorQueryStartX(channel, 0);
-    dt = XLALFrameUFrChanVectorQueryDx(channel, 0);
+    x0 += XLALFrameUFrChanVectorQueryStartX(channel, 0);
+    dx = XLALFrameUFrChanVectorQueryDx(channel, 0);
     data = XLALFrameUFrChanVectorQueryData(channel);
     dtype = XLALFrameUFrChanVectorQueryType(channel);
 
-    t0fp = modf(t0, &t0ip);
+    x0fp = modf(x0, &x0ip);
     for (i = 0; i < ndata; ++i) {
-        double tip, tfp;
-        tfp = modf(t0fp + i * dt, &tip);
-	tip += t0ip;
-        printf("%ld.%09ld", (long)tip, (long)(1e9 * tfp));
+        double xip, xfp;
+        xfp = modf(x0fp + i * dx, &xip);
+        xip += x0ip;
+        printf("%ld.%09ld", (long)xip, (long)fabs(1e9 * xfp));
         fputs(FS, stdout);
         printval(data, i, dtype);
         fputs(RS, stdout);

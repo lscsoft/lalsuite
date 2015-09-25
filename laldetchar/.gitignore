@@ -18,6 +18,7 @@ doxygen/autogen.dox
 doxygen/doxygen.cfg
 doxygen/filter
 doxygen/out/
+doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
@@ -31,6 +32,9 @@ octave/
 python/laldetchar-hveto
 python/laldetchar-hveto-summary-page
 python/laldetchar-idq-add-excluded-vars
+python/laldetchar-idq-ann-convert
+python/laldetchar-idq-ann-evaluate
+python/laldetchar-idq-ann-train
 python/laldetchar-idq-build-auxmvc-vectors
 python/laldetchar-idq-calibration
 python/laldetchar-idq-convertkwtosb
@@ -40,6 +44,9 @@ python/laldetchar-idq-gdb-alert-handler
 python/laldetchar-idq-gdb-glitch-tables
 python/laldetchar-idq-gdb-processor
 python/laldetchar-idq-gdb-timeseries
+python/laldetchar-idq-gst-listener
+python/laldetchar-idq-gst-relay
+python/laldetchar-idq-gst-sender
 python/laldetchar-idq-prepare-training-auxmvc-samples
 python/laldetchar-idq-realtime
 python/laldetchar-idq-select-channels-from-kw-config

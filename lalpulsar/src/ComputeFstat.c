@@ -943,7 +943,7 @@ XLALFstatMethodHelpString ( void )
           separator = '|';
         } // for i < FMETHOD_LAST
 
-      XLAL_CHECK_NULL ( XLAL_LAST_ELEM ( helpstr ) == '\0', XLAL_EBADLEN, "FstatMethod help-string exceeds buffer length (%lu)\n", sizeof(helpstr) );
+      XLAL_CHECK_NULL ( XLAL_LAST_ELEM ( helpstr ) == '\0', XLAL_EBADLEN, "FstatMethod help-string exceeds buffer length (%zu)\n", sizeof(helpstr) );
 
       firstCall = 0;
 

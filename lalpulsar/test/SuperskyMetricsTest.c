@@ -31,17 +31,32 @@
 
 #define NUM_POINTS 10
 
+#define REF_TIME { 900100100, 0 }
+
 const PulsarDopplerParams phys_points[NUM_POINTS] = {
-  { .Alpha = 0.00000000000000, .Delta =  0.000000000000000, .fkdot = {100.0000000000000,  0.00000000000000e-00} },
-  { .Alpha = 4.88014010120016, .Delta = -0.954446475246007, .fkdot = { 99.9999983978492,  1.48957780038094e-09} },
-  { .Alpha = 0.52587274931672, .Delta =  0.685297319257976, .fkdot = { 99.9999923150006, -1.41365319702693e-09} },
-  { .Alpha = 3.53542175437611, .Delta = -1.502778038590950, .fkdot = {100.0000064863180, -1.28748375084384e-09} },
-  { .Alpha = 1.36054903961191, .Delta =  0.241343663657163, .fkdot = { 99.9999901679571,  3.37107171004537e-10} },
-  { .Alpha = 2.85470536965808, .Delta = 1.1575340928032900, .fkdot = {100.0000074463050,  2.46412240438217e-09} },
-  { .Alpha = 1.82755817952460, .Delta =  0.667995269285982, .fkdot = { 99.9999897239871,  1.79900370692270e-10} },
-  { .Alpha = 1.70734223243163, .Delta = -1.213787405673430, .fkdot = {100.0000026535270, -1.07122135891104e-09} },
-  { .Alpha = 2.30597131157246, .Delta =  0.348657791621429, .fkdot = {100.0000133749770, -5.43309003215614e-10} },
-  { .Alpha = 3.31129323970275, .Delta = -1.225892709583030, .fkdot = {100.0000062524320,  8.07713885739405e-10} }
+  { .refTime = REF_TIME, .Alpha = 0.00000000000000, .Delta =  0.000000000000000, .fkdot = {100.0000000000000,  0.00000000000000e-00} },
+  { .refTime = REF_TIME, .Alpha = 4.88014010120016, .Delta = -0.954446475246007, .fkdot = { 99.9999983978492,  1.48957780038094e-09} },
+  { .refTime = REF_TIME, .Alpha = 0.52587274931672, .Delta =  0.685297319257976, .fkdot = { 99.9999923150006, -1.41365319702693e-09} },
+  { .refTime = REF_TIME, .Alpha = 3.53542175437611, .Delta = -1.502778038590950, .fkdot = {100.0000064863180, -1.28748375084384e-09} },
+  { .refTime = REF_TIME, .Alpha = 1.36054903961191, .Delta =  0.241343663657163, .fkdot = { 99.9999901679571,  3.37107171004537e-10} },
+  { .refTime = REF_TIME, .Alpha = 2.85470536965808, .Delta = 1.1575340928032900, .fkdot = {100.0000074463050,  2.46412240438217e-09} },
+  { .refTime = REF_TIME, .Alpha = 1.82755817952460, .Delta =  0.667995269285982, .fkdot = { 99.9999897239871,  1.79900370692270e-10} },
+  { .refTime = REF_TIME, .Alpha = 1.70734223243163, .Delta = -1.213787405673430, .fkdot = {100.0000026535270, -1.07122135891104e-09} },
+  { .refTime = REF_TIME, .Alpha = 2.30597131157246, .Delta =  0.348657791621429, .fkdot = {100.0000133749770, -5.43309003215614e-10} },
+  { .refTime = REF_TIME, .Alpha = 3.31129323970275, .Delta = -1.225892709583030, .fkdot = {100.0000062524320,  8.07713885739405e-10} }
+};
+
+const double phys_mismatches[NUM_POINTS][NUM_POINTS] = {
+  {  0.0000000000e+00,  2.8764538705e+07,  1.7369679160e+05,  2.8451027863e+07,  3.4148114879e+06,  2.7431945400e+07,  1.3229228239e+07,  2.1651786947e+07,  3.3466651446e+07,  4.2532446390e+07 },
+  {  2.8764538705e+07,  0.0000000000e+00,  2.4471879340e+07,  1.7793534479e+03,  1.2362486311e+07,  1.9460081514e+04,  2.9815077312e+06,  5.0457978267e+05,  1.7846091686e+05,  1.3420016910e+06 },
+  {  1.7369679160e+05,  2.4471879340e+07,  0.0000000000e+00,  2.4182611494e+07,  2.0496514361e+06,  2.3244047105e+07,  1.0373862422e+07,  1.7950270301e+07,  2.8822526810e+07,  3.7274957328e+07 },
+  {  2.8451027863e+07,  1.7793534479e+03,  2.4182611494e+07,  0.0000000000e+00,  1.2159740027e+07,  1.7226320532e+04,  2.8838705301e+06,  4.6363967921e+05,  2.0619676630e+05,  1.4120605271e+06 },
+  {  3.4148114879e+06,  1.2362486311e+07,  2.0496514361e+06,  1.2159740027e+07,  0.0000000000e+00,  1.1490795829e+07,  3.2024152317e+06,  7.8746153787e+06,  1.5504363899e+07,  2.1849636064e+07 },
+  {  2.7431945400e+07,  1.9460081514e+04,  2.3244047105e+07,  1.7226320532e+04,  1.1490795829e+07,  0.0000000000e+00,  2.5611895406e+06,  3.4663900394e+05,  3.0146103485e+05,  1.6529327758e+06 },
+  {  1.3229228239e+07,  2.9815077312e+06,  1.0373862422e+07,  2.8838705301e+06,  3.2024152317e+06,  2.5611895406e+06,  0.0000000000e+00,  1.0352316575e+06,  4.6141065584e+06,  8.3226021460e+06 },
+  {  2.1651786947e+07,  5.0457978267e+05,  1.7950270301e+07,  4.6363967921e+05,  7.8746153787e+06,  3.4663900394e+05,  1.0352316575e+06,  0.0000000000e+00,  1.2824844254e+06,  3.4919141748e+06 },
+  {  3.3466651446e+07,  1.7846091686e+05,  2.8822526810e+07,  2.0619676630e+05,  1.5504363899e+07,  3.0146103485e+05,  4.6141065584e+06,  1.2824844254e+06,  0.0000000000e+00,  5.4308661488e+05 },
+  {  4.2532446390e+07,  1.3420016910e+06,  3.7274957328e+07,  1.4120605271e+06,  2.1849636064e+07,  1.6529327758e+06,  8.3226021460e+06,  3.4919141748e+06,  5.4308661488e+05,  0.0000000000e+00 },
 };
 
 const double ussky_metric_ref[5][5] = {
@@ -50,19 +65,6 @@ const double ussky_metric_ref[5][5] = {
   { 2.921605097922917e+06,  1.037930347967158e+06,  4.504649325079115e+05,  3.154935665162594e+08,  1.815805951797570e+11},
   { 2.046904385910545e+09,  7.269432686412601e+08,  3.154935665162594e+08,  2.210286062098680e+11, -5.119042942971644e-01},
   {-1.656990342031264e+11,  4.092485067498952e+11,  1.815805951797570e+11, -5.119042942971644e-01,  2.474954556318625e+20},
-};
-
-const double ussky_mismatches[NUM_POINTS][NUM_POINTS] = {
-  {  0.0000000000e+00,  2.8764539641e+07,  1.7339193295e+05,  2.8451029480e+07,  3.4146745049e+06,  2.7431796599e+07,  1.3229138543e+07,  2.1651788499e+07,  3.3466633515e+07,  4.2532448208e+07 },
-  {  2.8764539641e+07,  0.0000000000e+00,  2.4471638891e+07,  1.7793497533e+03,  1.2362377917e+07,  1.9343156763e+04,  2.9814372830e+06,  5.0457966981e+05,  1.7844672448e+05,  1.3420018117e+06 },
-  {  1.7339193295e+05,  2.4471638891e+07,  0.0000000000e+00,  2.4182449487e+07,  2.0496517155e+06,  2.3244046454e+07,  1.0373862571e+07,  1.7950144640e+07,  2.8822527465e+07,  3.7274828956e+07 },
-  {  2.8451029480e+07,  1.7793497533e+03,  2.4182449487e+07,  0.0000000000e+00,  1.2159667072e+07,  1.7147004362e+04,  2.8838230958e+06,  4.6363965844e+05,  2.0618704546e+05,  1.4120604982e+06 },
-  {  3.4146745049e+06,  1.2362377917e+07,  2.0496517155e+06,  1.2159667072e+07,  0.0000000000e+00,  1.1490794709e+07,  3.2024149649e+06,  7.8745587587e+06,  1.5504363611e+07,  2.1849578253e+07 },
-  {  2.7431796599e+07,  1.9343156763e+04,  2.3244046454e+07,  1.7147004362e+04,  1.1490794709e+07,  0.0000000000e+00,  2.5611892506e+06,  3.4657692079e+05,  3.0146117597e+05,  1.6528701940e+06 },
-  {  1.3229138543e+07,  2.9814372830e+06,  1.0373862571e+07,  2.8838230958e+06,  3.2024149649e+06,  2.5611892506e+06,  0.0000000000e+00,  1.0351946794e+06,  4.6141067214e+06,  8.3225648673e+06 },
-  {  2.1651788499e+07,  5.0457966981e+05,  1.7950144640e+07,  4.6363965844e+05,  7.8745587587e+06,  3.4657692079e+05,  1.0351946794e+06,  0.0000000000e+00,  1.2824765725e+06,  3.4919140724e+06 },
-  {  3.3466633515e+07,  1.7844672448e+05,  2.8822527465e+07,  2.0618704546e+05,  1.5504363611e+07,  3.0146117597e+05,  4.6141067214e+06,  1.2824765725e+06,  0.0000000000e+00,  5.4307920777e+05 },
-  {  4.2532448208e+07,  1.3420018117e+06,  3.7274828956e+07,  1.4120604982e+06,  2.1849578253e+07,  1.6528701940e+06,  8.3225648673e+06,  3.4919140724e+06,  5.4307920777e+05,  0.0000000000e+00 }
 };
 
 const double rssky_metric_ref[4][4] = {
@@ -80,19 +82,6 @@ const double rssky_transf_ref[5][3] = {
   { 5.337970249571395e-03,  8.252674722491856e-03,  1.420014590206618e-03},
 };
 
-const double rssky_mismatches[NUM_POINTS][NUM_POINTS] = {
-  {  0.0000000000e+00,  1.6479386809e+20,  9.9138389085e+19,  2.4635218573e+20,  1.4138082659e+19,  2.0757894095e+20,  9.4957310660e+19,  2.1726843923e+20,  2.8886583299e+19,  2.1920285214e+20 },
-  {  1.6479386809e+20,  0.0000000000e+00,  5.1956792459e+20,  8.1704734243e+18,  2.7546939071e+20,  7.4227948167e+20,  5.0993816904e+20,  3.6207318308e+18,  3.3167076696e+20,  3.8741826153e+18 },
-  {  9.9138389085e+19,  5.1956792459e+20,  0.0000000000e+00,  6.5804750622e+20,  3.8399860188e+19,  1.9809387909e+19,  4.5038208620e+16,  6.0993463322e+20,  2.0996577377e+19,  6.1317283819e+20 },
-  {  2.4635218573e+20,  8.1704734243e+18,  6.5804750622e+20,  0.0000000000e+00,  3.7852327335e+20,  9.0620328287e+20,  6.4720451781e+20,  9.1313682359e+17,  4.4395477816e+20,  7.9229520300e+17 },
-  {  1.4138082659e+19,  2.7546939071e+20,  3.8399860188e+19,  3.7852327335e+20,  0.0000000000e+00,  1.1337002134e+20,  3.5814719000e+19,  3.4225342808e+20,  2.6068034507e+18,  3.4468020087e+20 },
-  {  2.0757894095e+20,  7.4227948167e+20,  1.9809387909e+19,  9.0620328287e+20,  1.1337002134e+20,  0.0000000000e+00,  2.1743531033e+19,  8.4958425175e+20,  8.1594657153e+19,  8.5340526127e+20 },
-  {  9.4957310660e+19,  5.0993816904e+20,  4.5038208620e+16,  6.4720451781e+20,  3.5814719000e+19,  2.1743531033e+19,  0.0000000000e+00,  5.9949723598e+20,  1.9096726661e+19,  6.0270765163e+20 },
-  {  2.1726843923e+20,  3.6207318308e+18,  6.0993463322e+20,  9.1313682359e+17,  3.4225342808e+20,  8.4958425175e+20,  5.9949723598e+20,  0.0000000000e+00,  4.0459924448e+20,  4.2866183279e+15 },
-  {  2.8886583299e+19,  3.3167076696e+20,  2.0996577377e+19,  4.4395477816e+20,  2.6068034507e+18,  8.1594657153e+19,  1.9096726661e+19,  4.0459924448e+20,  0.0000000000e+00,  4.0723743508e+20 },
-  {  2.1920285214e+20,  3.8741826153e+18,  6.1317283819e+20,  7.9229520300e+17,  3.4468020087e+20,  8.5340526127e+20,  6.0270765163e+20,  4.2866183279e+15,  4.0723743508e+20,  0.0000000000e+00 }
-};
-
 #define CHECK_RELERR(A, B, TOL) do { \
     const double lhs = fabs( (A) - (B) ); \
     const double tol = (TOL); \
@@ -101,131 +90,132 @@ const double rssky_mismatches[NUM_POINTS][NUM_POINTS] = {
     XLAL_CHECK_MAIN( lhs <= tol * rhs, XLAL_ETOL, "|"#A" - "#B"| = %0.5e > %0.5e = %0.5e * |"#A" + "#B"|", lhs, tol * rhs, tol ); \
   } while(0)
 
-static int CompareDoppler(const PulsarDopplerParams *a, const PulsarDopplerParams *b) {
-  CHECK_RELERR( cos(a->Alpha), cos(b->Alpha), 1e-10 );
-  CHECK_RELERR( sin(a->Alpha), sin(b->Alpha), 1e-10 );
-  CHECK_RELERR( a->Delta, b->Delta, 1e-10 );
-  CHECK_RELERR( a->fkdot[0], b->fkdot[0], 1e-10 );
-  CHECK_RELERR( a->fkdot[1], b->fkdot[1], 1e-10 );
+static int CompareDoppler(const PulsarDopplerParams *a, const PulsarDopplerParams *b)
+{
+  XLAL_CHECK(XLALGPSCmp(&a->refTime, &b->refTime) == 0, XLAL_ETOL, "Reference time mismatch!");
+  CHECK_RELERR(cos(a->Alpha), cos(b->Alpha), 1e-10);
+  CHECK_RELERR(sin(a->Alpha), sin(b->Alpha), 1e-10);
+  CHECK_RELERR(a->Delta, b->Delta, 1e-10);
+  CHECK_RELERR(a->fkdot[0], b->fkdot[0], 1e-10);
+  CHECK_RELERR(a->fkdot[1], b->fkdot[1], 1e-10);
   return EXIT_SUCCESS;
 }
 
-int main( void )
+int main(void)
 {
 
   // Compute supersky metrics
   const double Tspan = 3 * 86400;
-  LIGOTimeGPS ref_time;
-  XLALGPSSetREAL8( &ref_time, 900100100 );
+  LIGOTimeGPS ref_time = REF_TIME;
   LALSegList segments;
   {
-    XLAL_CHECK_MAIN( XLALSegListInit( &segments ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN(XLALSegListInit(&segments) == XLAL_SUCCESS, XLAL_EFUNC);
     LALSeg segment;
     LIGOTimeGPS start_time = ref_time, end_time = ref_time;
-    XLALGPSAdd( &start_time, -0.5 * Tspan );
-    XLALGPSAdd( &end_time, 0.5 * Tspan );
-    XLAL_CHECK_MAIN( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLALGPSAdd(&start_time, -0.5 * Tspan);
+    XLALGPSAdd(&end_time, 0.5 * Tspan);
+    XLAL_CHECK_MAIN(XLALSegSet(&segment, &start_time, &end_time, 0) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN(XLALSegListAppend(&segments, &segment) == XLAL_SUCCESS, XLAL_EFUNC);
   }
   MultiLALDetector detectors = {
     .length = 1,
     .sites = { lalCachedDetectors[LAL_LLO_4K_DETECTOR] }
   };
-  EphemerisData *edat =  XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
-                                             TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
-  XLAL_CHECK_MAIN( edat != NULL, XLAL_EFUNC );
+  EphemerisData *edat =  XLALInitBarycenter(TEST_DATA_DIR "earth00-19-DE405.dat.gz",
+                                            TEST_DATA_DIR "sun00-19-DE405.dat.gz");
+  XLAL_CHECK_MAIN(edat != NULL, XLAL_EFUNC);
   gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL, *ussky_metric = NULL;
-  XLAL_CHECK_MAIN( XLALComputeSuperskyMetrics( &rssky_metric, &rssky_transf, &ussky_metric, 1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLALSegListClear( &segments );
-  XLALDestroyEphemerisData( edat );
+  XLAL_CHECK_MAIN(XLALComputeSuperskyMetrics(&rssky_metric, &rssky_transf, &ussky_metric, 1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLALSegListClear(&segments);
+  XLALDestroyEphemerisData(edat);
 
   // Check supersky metrics
   {
-    gsl_matrix_const_view ussky_metric_ref_view = gsl_matrix_const_view_array( (const double*)ussky_metric_ref, 5, 5 );
-    const double err = XLALCompareMetrics( ussky_metric, &ussky_metric_ref_view.matrix ), err_tol = 5e-9;
-    XLAL_CHECK_MAIN( err <= err_tol, XLAL_ETOL, "'ussky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol );
+    gsl_matrix_const_view ussky_metric_ref_view = gsl_matrix_const_view_array((const double *)ussky_metric_ref, 5, 5);
+    const double err = XLALCompareMetrics(ussky_metric, &ussky_metric_ref_view.matrix), err_tol = 5e-9;
+    XLAL_CHECK_MAIN(err <= err_tol, XLAL_ETOL, "'ussky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol);
   }
   {
-    gsl_matrix_const_view rssky_metric_ref_view = gsl_matrix_const_view_array( (const double*)rssky_metric_ref, 4, 4 );
-    const double err = XLALCompareMetrics( rssky_metric, &rssky_metric_ref_view.matrix ), err_tol = 5e-9;
-    XLAL_CHECK_MAIN( err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol );
+    gsl_matrix_const_view rssky_metric_ref_view = gsl_matrix_const_view_array((const double *)rssky_metric_ref, 4, 4);
+    const double err = XLALCompareMetrics(rssky_metric, &rssky_metric_ref_view.matrix), err_tol = 5e-9;
+    XLAL_CHECK_MAIN(err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol);
   }
   {
     double max_err = 0;
-    for( size_t i = 0; i < 5; ++i ) {
-      for( size_t j = 0; j < 3; ++j ) {
-        const double rssky_transf_ij = gsl_matrix_get( rssky_transf, i, j );
+    for (size_t i = 0; i < 5; ++i) {
+      for (size_t j = 0; j < 3; ++j) {
+        const double rssky_transf_ij = gsl_matrix_get(rssky_transf, i, j);
         const double rssky_transf_ref_ij = rssky_transf_ref[i][j];
-        const double err_ij = fabs( ( rssky_transf_ij - rssky_transf_ref_ij ) / rssky_transf_ref_ij );
-        if( err_ij > max_err ) {
+        const double err_ij = fabs((rssky_transf_ij - rssky_transf_ref_ij) / rssky_transf_ref_ij);
+        if (err_ij > max_err) {
           max_err = err_ij;
         }
       }
     }
     const double err_tol = 1e-6;
-    XLAL_CHECK_MAIN( max_err <= err_tol, XLAL_ETOL, "'rssky_transf' check failed: max(err) = %0.3e > %0.3e = err_tol", max_err, err_tol );
+    XLAL_CHECK_MAIN(max_err <= err_tol, XLAL_ETOL, "'rssky_transf' check failed: max(err) = %0.3e > %0.3e = err_tol", max_err, err_tol);
   }
 
   // Check round-trip conversions of each test point
   {
-    gsl_vector *GAVEC( ussky_point, 5 );
-    for( size_t i = 0; i < NUM_POINTS; ++i ) {
+    gsl_vector *GAVEC(ussky_point, 5);
+    for (size_t i = 0; i < NUM_POINTS; ++i) {
       PulsarDopplerParams XLAL_INIT_DECL(point);
-      XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_USSKY, ussky_point, &phys_points[i], NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALConvertSuperskyToPhysical( &point, SC_USSKY, ussky_point, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( CompareDoppler( &phys_points[i], &point ) == EXIT_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN(XLALConvertPhysicalToSupersky(SC_USSKY, ussky_point, &phys_points[i], NULL, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK_MAIN(XLALConvertSuperskyToPhysical(&point, SC_USSKY, ussky_point, NULL, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK_MAIN(CompareDoppler(&phys_points[i], &point) == EXIT_SUCCESS, XLAL_EFUNC);
     }
-    GFVEC( ussky_point );
+    GFVEC(ussky_point);
   }
   {
-    gsl_vector *GAVEC( rssky_point, 4 );
-    for( size_t i = 0; i < NUM_POINTS; ++i ) {
+    gsl_vector *GAVEC(rssky_point, 4);
+    for (size_t i = 0; i < NUM_POINTS; ++i) {
       PulsarDopplerParams XLAL_INIT_DECL(point);
-      XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_RSSKY, rssky_point, &phys_points[i], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLALConvertSuperskyToPhysical( &point, SC_RSSKY, rssky_point, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( CompareDoppler( &phys_points[i], &point ) == EXIT_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN(XLALConvertPhysicalToSupersky(SC_RSSKY, rssky_point, &phys_points[i], rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK_MAIN(XLALConvertSuperskyToPhysical(&point, SC_RSSKY, rssky_point, rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK_MAIN(CompareDoppler(&phys_points[i], &point) == EXIT_SUCCESS, XLAL_EFUNC);
     }
-    GFVEC( rssky_point );
+    GFVEC(rssky_point);
   }
 
   // Check mismatches between pairs of points
   {
-    gsl_vector *GAVEC( ussky_point_i, 5 );
-    gsl_vector *GAVEC( ussky_point_j, 5 );
-    gsl_vector *GAVEC( temp, 5 );
-    for( size_t i = 0; i < NUM_POINTS; ++i ) {
-      XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_USSKY, ussky_point_i, &phys_points[i], NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-      for( size_t j = 0; j < NUM_POINTS; ++j ) {
-        XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_USSKY, ussky_point_j, &phys_points[j], NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-        gsl_vector_sub( ussky_point_j, ussky_point_i );
-        gsl_blas_dgemv( CblasNoTrans, 1.0, ussky_metric, ussky_point_j, 0.0, temp );
+    gsl_vector *GAVEC(ussky_point_i, 5);
+    gsl_vector *GAVEC(ussky_point_j, 5);
+    gsl_vector *GAVEC(temp, 5);
+    for (size_t i = 0; i < NUM_POINTS; ++i) {
+      XLAL_CHECK_MAIN(XLALConvertPhysicalToSupersky(SC_USSKY, ussky_point_i, &phys_points[i], NULL, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+      for (size_t j = 0; j < NUM_POINTS; ++j) {
+        XLAL_CHECK_MAIN(XLALConvertPhysicalToSupersky(SC_USSKY, ussky_point_j, &phys_points[j], NULL, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+        gsl_vector_sub(ussky_point_j, ussky_point_i);
+        gsl_blas_dgemv(CblasNoTrans, 1.0, ussky_metric, ussky_point_j, 0.0, temp);
         double mismatch = 0.0;
-        gsl_blas_ddot( ussky_point_j, temp, &mismatch );
-        CHECK_RELERR( mismatch, ussky_mismatches[i][j], 1e-5 );
+        gsl_blas_ddot(ussky_point_j, temp, &mismatch);
+        CHECK_RELERR(mismatch, phys_mismatches[i][j], 8e-3);
       }
     }
-    GFVEC( ussky_point_i, ussky_point_j, temp );
+    GFVEC(ussky_point_i, ussky_point_j, temp);
   }
   {
-    gsl_vector *GAVEC( rssky_point_i, 4 );
-    gsl_vector *GAVEC( rssky_point_j, 4 );
-    gsl_vector *GAVEC( temp, 4 );
-    for( size_t i = 0; i < NUM_POINTS; ++i ) {
-      XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_USSKY, rssky_point_i, &phys_points[i], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-      for( size_t j = 0; j < NUM_POINTS; ++j ) {
-        XLAL_CHECK_MAIN( XLALConvertPhysicalToSupersky( SC_USSKY, rssky_point_j, &phys_points[j], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-        gsl_vector_sub( rssky_point_j, rssky_point_i );
-        gsl_blas_dgemv( CblasNoTrans, 1.0, rssky_metric, rssky_point_j, 0.0, temp );
+    gsl_vector *GAVEC(rssky_point_i, 4);
+    gsl_vector *GAVEC(rssky_point_j, 4);
+    gsl_vector *GAVEC(temp, 4);
+    for (size_t i = 0; i < NUM_POINTS; ++i) {
+      XLAL_CHECK_MAIN(XLALConvertPhysicalToSupersky(SC_RSSKY, rssky_point_i, &phys_points[i], rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+      for (size_t j = 0; j < NUM_POINTS; ++j) {
+        XLAL_CHECK_MAIN(XLALConvertPhysicalToSupersky(SC_RSSKY, rssky_point_j, &phys_points[j], rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+        gsl_vector_sub(rssky_point_j, rssky_point_i);
+        gsl_blas_dgemv(CblasNoTrans, 1.0, rssky_metric, rssky_point_j, 0.0, temp);
         double mismatch = 0.0;
-        gsl_blas_ddot( rssky_point_j, temp, &mismatch );
-        CHECK_RELERR( mismatch, rssky_mismatches[i][j], 1e-5 );
+        gsl_blas_ddot(rssky_point_j, temp, &mismatch);
+        CHECK_RELERR(mismatch, phys_mismatches[i][j], 8e-3);
       }
     }
-    GFVEC( rssky_point_i, rssky_point_j, temp );
+    GFVEC(rssky_point_i, rssky_point_j, temp);
   }
 
   // Cleanup
-  GFMAT( rssky_metric, rssky_transf, ussky_metric );
+  GFMAT(rssky_metric, rssky_transf, ussky_metric);
   LALCheckMemoryLeaks();
 
   return EXIT_SUCCESS;

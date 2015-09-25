@@ -19,6 +19,12 @@
 #include  <lal/LALSimInspiralTestGRParams.h>
 
 /**
+ * @addtogroup LALSimInspiralTestGRParams_c
+ * @brief Routines to manipulate non-GR parameter key-value pairs.
+ * @{
+ */
+
+/**
  * Function that creates the head node of the test GR parameters linked list.
  * It is initialized with a single parameter with given name and value
  */
@@ -179,3 +185,5 @@ void XLALSimInspiralDestroyTestGRParam(
 	parameter=tmp;
 	}
 }
+
+/** @} */

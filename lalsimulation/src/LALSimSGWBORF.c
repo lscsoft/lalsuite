@@ -24,6 +24,12 @@
 #include <lal/Units.h>
 #include <lal/LALSimSGWB.h>
 
+/**
+ * @addtogroup LALSimSGWBORF_c
+ * @brief Routines to compute the Overlap Reduction Function for stochastic
+ * background gravitational waves between two detectors.
+ * @{
+ */
 
 /**
  * Computes the overlap reduction function between two detectors at a specified
@@ -105,6 +111,7 @@ double XLALSimSGWBOverlapReductionFunction(
 	return gam;
 }
 
+/** @} */
 
 /*
  *

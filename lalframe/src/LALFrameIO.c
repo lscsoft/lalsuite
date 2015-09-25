@@ -20,9 +20,8 @@
 #include <config.h>
 
 #ifdef HAVE_UNISTD_H
-#define _BSD_SOURCE   /* for gethostname() */
+#define _GNU_SOURCE   /* for gethostname() */
 #include <unistd.h>
-#undef _BSD_SOURCE
 #endif
 
 #include <ctype.h>
@@ -45,10 +44,12 @@
 #define localtime_r(timep, result) memcpy((result), localtime(timep), sizeof(struct tm))
 #endif
 
+/** @cond */
 struct tagLALFrFile {
     LALFrameUFrFile *file;
     LALFrameUFrTOC *toc;
 };
+/** @endcond */
 
 int XLALFrFileClose(LALFrFile * frfile)
 {

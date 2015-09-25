@@ -22,28 +22,28 @@
 
 #include "TwoSpectTypes.h"
 
-ihsMaximaStruct *new_ihsMaxima(INT4 fbins, INT4 rows);
-void free_ihsMaxima(ihsMaximaStruct *data);
-INT4 runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarinput, UserInput_t *params, INT4 rows, REAL4Vector *aveNoise, REAL4Vector *FbinMean);
+ihsMaximaStruct *createihsMaxima(const UINT4 fbins, const UINT4 rows);
+void destroyihsMaxima(ihsMaximaStruct *data);
+INT4 runIHS(ihsMaximaStruct *output, const ffdataStruct *input, const ihsfarStruct *ihsfarinput, const UserInput_t *params, UINT4 rows, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *FbinMean);
 
-ihsVals * new_ihsVals(void);
-void free_ihsVals(ihsVals *ihsvals);
-INT4 incHarmSum(ihsVals *output, REAL4Vector *input, INT4 ihsfactor);
-INT4 incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor);
-INT4 incHarmSumVectorWeighted(REAL4Vector *output, REAL4Vector *input, REAL4Vector *aveNoise, INT4 ihsfactor);
+ihsVals * createihsVals(void);
+void destroyihsVals(ihsVals *ihsvals);
+INT4 incHarmSum(ihsVals *output, const REAL4VectorAligned *input, const UINT4 ihsfactor);
+INT4 incHarmSumVector(REAL4VectorAligned *output, const REAL4VectorAligned *input, const UINT4 ihsfactor);
+INT4 incHarmSumVectorWeighted(REAL4VectorAligned *output, const REAL4VectorAligned *input, const REAL4VectorAligned *aveNoise, const UINT4 ihsfactor);
 
-ihsfarStruct * new_ihsfarStruct(INT4 rows, UserInput_t *params);
-void free_ihsfarStruct(ihsfarStruct *ihsfarstruct);
-INT4 genIhsFar(ihsfarStruct *output, UserInput_t *params, INT4 rows, REAL4Vector *aveNoise, gsl_rng *rng);
+ihsfarStruct * createihsfarStruct(const UINT4 rows, const UserInput_t *params);
+void destroyihsfarStruct(ihsfarStruct *ihsfarstruct);
+INT4 genIhsFar(ihsfarStruct *output, const UserInput_t *params, UINT4 rows, const REAL4VectorAligned *aveNoise, const gsl_rng *rng);
 
-INT4 sumIHSarrayFAR(ihsfarStruct *outputfar, alignedREAL4VectorArray *ihsvectorarray, INT4 rows, REAL4Vector *FbinMean, UserInput_t *params, gsl_rng *rng);
-INT4 sumIHSarray(ihsMaximaStruct *output, ihsfarStruct *inputfar, alignedREAL4VectorArray *ihsvectorarray, INT4 rows, REAL4Vector *FbinMean, UserInput_t *params);
+INT4 sumIHSarrayFAR(ihsfarStruct *outputfar, REAL4VectorAlignedArray *ihsvectorarray, const UINT4 rows, const REAL4VectorAligned *FbinMean, const UserInput_t *params, const gsl_rng *rng);
+INT4 sumIHSarray(ihsMaximaStruct *output, const ihsfarStruct *inputfar, REAL4VectorAlignedArray *ihsvectorarray, const UINT4 rows, const REAL4VectorAligned *FbinMean, const UserInput_t *params);
 
-INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, UserInput_t *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *fbinavgs, REAL4VectorSequence *trackedlines);
+INT4 findIHScandidates(candidateVector **candlist, const ihsfarStruct *ihsfarstruct, const UserInput_t *params, const ffdataStruct *ffdata, const ihsMaximaStruct *ihsmaxima, const REAL4VectorAligned *fbinavgs, const REAL4VectorSequence *trackedlines);
 
-REAL4 ihsFOM(INT4Vector *locs, INT4 fomnorm);
+REAL4 ihsFOM(const INT4Vector *locs, const INT4 fomnorm);
 
-REAL8 ihs2h0(REAL8 ihsval, UserInput_t *params);
+REAL8 ihs2h0(const REAL8 ihsval, const UserInput_t *params);
 
 #endif
 

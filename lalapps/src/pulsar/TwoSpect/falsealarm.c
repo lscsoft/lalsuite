@@ -29,26 +29,28 @@
  * Allocate memory for farStruct
  * \return Pointer to a farStruct
  */
-farStruct * new_farStruct(void)
+farStruct * createfarStruct(void)
 {
    farStruct *farstruct = NULL;
    XLAL_CHECK_NULL( (farstruct = XLALMalloc(sizeof(*farstruct))) != NULL, XLAL_ENOMEM );
    farstruct->far = 1.0;
    farstruct->topRvalues = NULL;
    return farstruct;
-} /* new_farStruct() */
+} // createfarStruct()
 
 
 /**
  * Destroy an farStruct
  * \param [in] farstruct Pointer to a farStruct
  */
-void free_farStruct(farStruct *farstruct)
+void destroyfarStruct(farStruct *farstruct)
 {
-   XLALDestroyREAL4Vector(farstruct->topRvalues);
-   farstruct->topRvalues = NULL;
-   XLALFree((farStruct*)farstruct);
-} /* free_farStruct() */
+   if (farstruct) {
+      XLALDestroyREAL4VectorAligned(farstruct->topRvalues);
+      farstruct->topRvalues = NULL;
+      XLALFree((farStruct*)farstruct);
+   }
+} // destroyfarStruct()
 
 
 /**
@@ -57,12 +59,13 @@ void free_farStruct(farStruct *farstruct)
  * \param [in]  template Pointer to a TwoSpectTemplate containing a template
  * \param [in]  trials         Number of trials to estimate the FAR
  * \param [in]  thresh         Threshold value
- * \param [in]  ffplanenoise   Pointer to REAL4Vector containing the expected 2nd FFT background estimates
- * \param [in]  fbinaveratios  Pointer to REAL4Vector containing the noise floor variations
+ * \param [in]  ffplanenoise   Pointer to REAL4VectorAligned containing the expected 2nd FFT background estimates
+ * \param [in]  fbinaveratios  Pointer to REAL4VectorAligned containing the noise floor variations
  * \return Status value
  */
-INT4 estimateFAR(farStruct *output, TwoSpectTemplate *template, INT4 trials, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios)
+INT4 estimateFAR(farStruct *output, const TwoSpectTemplate *template, const UINT4 trials, const REAL8 thresh, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios)
 {
+   XLAL_CHECK( output!=NULL && template!=NULL && ffplanenoise!=NULL && fbinaveratios!=NULL, XLAL_EINVAL );
 
    UINT4 numofweights = 0;
    for (UINT4 ii=0; ii<template->templatedata->length; ii++) if (template->templatedata->data[ii]!=0.0) numofweights++;
@@ -71,8 +74,8 @@ INT4 estimateFAR(farStruct *output, TwoSpectTemplate *template, INT4 trials, REA
    for (UINT4 ii=0; ii<numofweights; ii++) sumofsqweights += (template->templatedata->data[ii]*template->templatedata->data[ii]);
    REAL8 sumofsqweightsinv = 1.0/sumofsqweights;
 
-   REAL4Vector *Rs = NULL;
-   XLAL_CHECK( (Rs = XLALCreateREAL4Vector(trials)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *Rs = NULL;
+   XLAL_CHECK( (Rs = XLALCreateREAL4VectorAligned(trials, 32)) != NULL, XLAL_EFUNC );
 
    gsl_rng *rng = NULL;
    XLAL_CHECK( (rng = gsl_rng_alloc(gsl_rng_mt19937)) != NULL, XLAL_EFUNC );
@@ -83,7 +86,7 @@ INT4 estimateFAR(farStruct *output, TwoSpectTemplate *template, INT4 trials, REA
 
    UINT4 numfprbins = ffplanenoise->length;
 
-   for (INT4 ii=0; ii<trials; ii++) {
+   for (UINT4 ii=0; ii<trials; ii++) {
       //Create noise value and R value
       REAL8 R = 0.0;
       for (UINT4 jj=0; jj<numofweights; jj++) {
@@ -100,7 +103,7 @@ INT4 estimateFAR(farStruct *output, TwoSpectTemplate *template, INT4 trials, REA
    XLAL_CHECK( calcStddev(&sigma, Rs) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Do an insertion sort. At best this is O(thresh*trials), at worst this is O(thresh*trials*trials).
-   if (output->topRvalues == NULL) XLAL_CHECK( (output->topRvalues = XLALCreateREAL4Vector((INT4)round(thresh*trials)+1)) != NULL, XLAL_EFUNC );
+   if (output->topRvalues == NULL) XLAL_CHECK( (output->topRvalues = XLALCreateREAL4VectorAligned((INT4)round(thresh*trials)+1, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( gsl_sort_float_largest((float*)output->topRvalues->data, output->topRvalues->length, (float*)Rs->data, 1, Rs->length) == 0, XLAL_EFUNC );
 
    output->far = output->topRvalues->data[output->topRvalues->length - 1];
@@ -108,7 +111,7 @@ INT4 estimateFAR(farStruct *output, TwoSpectTemplate *template, INT4 trials, REA
    output->distSigma = sigma;
 
    //Destroy
-   XLALDestroyREAL4Vector(Rs);
+   XLALDestroyREAL4VectorAligned(Rs);
    gsl_rng_free(rng);
 
    return XLAL_SUCCESS;
@@ -121,17 +124,17 @@ INT4 estimateFAR(farStruct *output, TwoSpectTemplate *template, INT4 trials, REA
  * \param [out] output         Pointer to a farStruct
  * \param [in]  template       Pointer to a TwoSpectTemplate containing a template
  * \param [in]  thresh         Threshold value
- * \param [in]  ffplanenoise   Pointer to REAL4Vector containing the expected 2nd FFT background estimates
- * \param [in]  fbinaveratios  Pointer to REAL4Vector containing the noise floor variations
+ * \param [in]  ffplanenoise   Pointer to REAL4VectorAligned containing the expected 2nd FFT background estimates
+ * \param [in]  fbinaveratios  Pointer to REAL4VectorAligned containing the noise floor variations
  * \param [in]  inputParams    Pointer to UserInput_t
  * \param [in]  rng            Pointer to gsl_rng
  * \param [in]  method         Integer value of 0 (Brent's method) or 1 (Newton's method)
  * \return Status value
  */
-INT4 numericFAR(farStruct *output, TwoSpectTemplate *template, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, UserInput_t *inputParams, gsl_rng *rng, INT4 method)
+INT4 numericFAR(farStruct *output, const TwoSpectTemplate *template, const REAL8 thresh, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios, const UserInput_t *inputParams, const gsl_rng *rng, const INT4 method)
 {
 
-   XLAL_CHECK( output != NULL && template != NULL && ffplanenoise != NULL && fbinaveratios != NULL && inputParams != NULL, XLAL_EINVAL );
+   XLAL_CHECK( output != NULL && template != NULL && ffplanenoise != NULL && fbinaveratios != NULL && inputParams != NULL && rng != NULL, XLAL_EINVAL );
 
    INT4 ii;
    INT4 errcode = 0;
@@ -235,7 +238,7 @@ INT4 numericFAR(farStruct *output, TwoSpectTemplate *template, REAL8 thresh, REA
  * \param [in] param A gsl_probR_pars struct
  * \return Difference between the false alarm probability and the log10 threshold value
  */
-REAL8 gsl_probR(REAL8 R, void *param)
+REAL8 gsl_probR(const REAL8 R, void *param)
 {
 
    struct gsl_probR_pars *pars = (struct gsl_probR_pars*)param;
@@ -264,7 +267,7 @@ REAL8 gsl_probR(REAL8 R, void *param)
  * \param [in] param A gsl_probR_pars struct
  * \return The slope of the inverse distribution function
  */
-REAL8 gsl_dprobRdR(REAL8 R, void *param)
+REAL8 gsl_dprobRdR(const REAL8 R, void *param)
 {
 
    struct gsl_probR_pars *pars = (struct gsl_probR_pars*)param;
@@ -304,7 +307,7 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
  * \param [out] dprobRdR     The slope of the inverse cumulative distribution function
  * \return The slope of the inverse distribution function
  */
-void gsl_probRandDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dprobRdR)
+void gsl_probRandDprobRdR(const REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dprobRdR)
 {
 
    struct gsl_probR_pars *pars = (struct gsl_probR_pars*)param;
@@ -319,18 +322,18 @@ void gsl_probRandDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dpro
 /**
  * Analytically calculate the probability of a true signal using the Davies' method
  * \param [in]  template      Pointer to a TwoSpectTemplate with a template
- * \param [in]  ffplanenoise  Pointer to a REAL4Vector with an estimate of the background of 2nd FFT powers
- * \param [in]  fbinaveratios Pointer to a REAL4Vector of frequency bin average ratios
+ * \param [in]  ffplanenoise  Pointer to a REAL4VectorAligned with an estimate of the background of 2nd FFT powers
+ * \param [in]  fbinaveratios Pointer to a REAL4VectorAligned of frequency bin average ratios
  * \param [in]  R             The value of R for a given template
  * \param [in]  params        Pointer to UserInput_t
  * \param [in]  rng           Pointer to gsl_rng
  * \param [out] errcode       Pointer to the error code value from the Davies algorithm
  * \return log10 false alarm probability value
  */
-REAL8 probR(TwoSpectTemplate *template, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, REAL8 R, UserInput_t *params, gsl_rng *rng, INT4 *errcode)
+REAL8 probR(const TwoSpectTemplate *template, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios, const REAL8 R, const UserInput_t *params, const gsl_rng *rng, INT4 *errcode)
 {
 
-   XLAL_CHECK_REAL8( template != NULL && ffplanenoise != NULL && fbinaveratios != NULL && params != NULL, XLAL_EINVAL );
+   XLAL_CHECK_REAL8( template != NULL && ffplanenoise != NULL && fbinaveratios != NULL && params != NULL && rng != NULL && errcode != NULL, XLAL_EINVAL );
 
    REAL8 prob = 0.0;
    REAL8 sumwsq = 0.0;

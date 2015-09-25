@@ -52,12 +52,16 @@ cp=ConfigParser.ConfigParser()
 cp.optionxform = str
 cp.readfp(open(inifile))
 
+if opts.condor_submit and opts.pegasus_submit:
+    print 'Error: Please only specify one of --condor-submit or --pegasus-submit'
+    sys.exit(1)
+
 if opts.run_path is not None:
   cp.set('paths','basedir',os.path.abspath(opts.run_path))
 
 if not cp.has_option('paths','basedir'):
-  print 'Error: Must specify a directory with --run-path DIR'
-  sys.exit(1)
+  print 'Warning: No --run-path specified, using %s'%(os.getcwd())
+  cp.set('paths','basedir',os.path.abspath(os.getcwd()))
 
 if opts.daglog_path is not None:
   cp.set('paths','daglogdir',os.path.abspath(opts.daglog_path))
@@ -111,11 +115,28 @@ else:
 # Create the DAX scripts
 if opts.dax:
   dag.prepare_dax(tmp_exec_dir=execdir,grid_site=site,peg_frame_cache=peg_frame_cache)
+  # Ugly hack to replace pegasus.transfer.links=true in the pegasus.properties files created by pipeline.py
+  # Turns off the creation of links for files on the local file system. We use pegasus.transfer.links=false
+  # to make sure we have a copy of the data in the runing directory (useful when the data comes from temporary
+  # low latency buffer).
+  if cp.has_option('analysis','pegasus.transfer.links'):
+    if cp.get('analysis','pegasus.transfer.links')=='false':
+      lines=[]
+      with open('pegasus.properties') as fin:
+        for line in fin:
+          line = line.replace('pegasus.transfer.links=true', 'pegasus.transfer.links=false')
+          lines.append(line)
+      with open('pegasus.properties','w') as fout:
+        for line in lines:
+          fout.write(line)
+
 dag.write_sub_files()
 dag.write_dag()
 dag.write_script()
 os.chdir(olddir)
-# End of program
+
+# Tell user about output, and submit it if requested
+
 print 'Successfully created DAG file.'
 fulldagpath=os.path.join(cp.get('paths','basedir'),dag.get_dag_file())
 if not opts.dax:

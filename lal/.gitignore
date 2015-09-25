@@ -22,6 +22,7 @@ doxygen/autogen.dox
 doxygen/doxygen.cfg
 doxygen/filter
 doxygen/out/
+doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
@@ -63,6 +64,7 @@ test/date/JulianDayTest
 test/date/LMST2Test
 test/date/LMSTTest
 test/date/LeapSecsTest
+test/date/MultiplyGPSTest
 test/date/StrToGPSTest
 test/date/UTCtoGPSTest
 test/factories/ArrayFactoriesTest
@@ -89,6 +91,7 @@ test/std/LALVersionTest
 test/std/StringConvertTest
 test/support/ConfigFileTest
 test/support/GzipTest
+test/support/H5FileIOTest
 test/support/LALMath3DPlotTest
 test/support/LALMathNDPlotTest
 test/support/Math3DNotebook.nb
@@ -105,6 +108,7 @@ test/support/TranslateAnglesTest
 test/support/TranslateMJDTest
 test/support/UserInputParseTest
 test/support/UserInputTest
+test/support/test.h5
 test/tdfilter/BandPassTest
 test/tdfilter/IIRFilterTest
 test/tools/ComputeTransferTest

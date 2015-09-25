@@ -106,6 +106,14 @@ class auxmvc_analysis_job(pipeline.AnalysisJob, pipeline.CondorDAGJob):
         self.add_condor_cmd('environment',
                             'KMP_LIBRARY=serial;MKL_SERIAL=yes')
         self.__use_gpus = cp.has_option('condor', 'use-gpus')
+
+        ### accounting tags
+        if cp.has_option('condor', 'accounting_group'):
+            self.add_condor_cmd('accounting_group', cp.get('condor', 'accounting_group') )
+
+        if cp.has_option('condor', 'accounting_group_user'):
+            self.add_condor_cmd('accounting_group_user', cp.get('condor', 'accounting_group_user') )
+
         for sec in sections:
             if cp.has_section(sec):
                 if short_opts:

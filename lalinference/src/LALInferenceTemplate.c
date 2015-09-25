@@ -517,7 +517,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   INT4 order=-1;
   INT4 amporder;
 
-  unsigned long	i;
   static int sizeWarning = 0;
   int ret=0;
   INT4 errnum=0;
@@ -651,12 +650,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       if(fTemp==0.0)
         fTemp = f_start;
 
-      XLAL_TRY(ret=XLALSimInspiralTransformPrecessingInitialConditions(
+      XLAL_TRY(ret=XLALSimInspiralTransformPrecessingNewInitialConditions(
                     &inclination, &spin1x, &spin1y, &spin1z, &spin2x, &spin2y, &spin2z,
                     thetaJN, phiJL, tilt1, tilt2, phi12, a_spin1, a_spin2, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, fTemp), errnum);
       if (ret == XLAL_FAILURE)
       {
-        XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingInitialConditions(): error converting angles. errnum=%d\n",errnum );
+        XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingNewInitialConditions(): error converting angles. errnum=%d\n",errnum );
         return;
       }
   }
@@ -692,6 +691,20 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
             spin2x, spin2y, spin2z, f_start, f_max, f_ref, distance, inclination,lambda1, lambda2, model->waveFlags, nonGRparams, amporder, order,
             approximant,model->waveformCache, NULL), errnum);
 
+     
+    /* if the waveform failed to generate, fill the buffer with zeros
+     * so that the previous waveform is not left there
+     */
+    if (ret != XLAL_SUCCESS || hptilde == NULL || hctilde == NULL)
+    {
+	    XLALPrintError(" ERROR in XLALSimInspiralChooseWaveformFromCache(): error generating waveform. errnum=%d\n",errnum );
+	    memset(model->freqhPlus->data->data,0,sizeof(model->freqhPlus->data->data[0])*model->freqhPlus->data->length);
+	    memset(model->freqhCross->data->data,0,sizeof(model->freqhCross->data->data[0])*model->freqhCross->data->length);
+        if ( hptilde ) XLALDestroyCOMPLEX16FrequencySeries(hptilde);
+        if ( hctilde ) XLALDestroyCOMPLEX16FrequencySeries(hctilde);
+        XLALSimInspiralDestroyTestGRParam(nonGRparams);
+	    XLAL_ERROR_VOID(XLAL_FAILURE);
+    }
 	if (hptilde==NULL || hptilde->data==NULL || hptilde->data->data==NULL ) {
 	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hptilde'.\n");
 	  XLAL_ERROR_VOID(XLAL_EFAULT);
@@ -700,25 +713,19 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 	  XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hctilde'.\n");
 	  XLAL_ERROR_VOID(XLAL_EFAULT);
 	}
-      
-	COMPLEX16 *dataPtr = hptilde->data->data;
 
-    for (i=0; i<model->freqhPlus->data->length; ++i) {
-      dataPtr = hptilde->data->data;
-      if(i < hptilde->data->length){
-        model->freqhPlus->data->data[i] = dataPtr[i];
-      }else{
-        model->freqhPlus->data->data[i] = 0.0;
-      }
-    }
-    for (i=0; i<model->freqhCross->data->length; ++i) {
-      dataPtr = hctilde->data->data;
-      if(i < hctilde->data->length){
-        model->freqhCross->data->data[i] = dataPtr[i];
-      }else{
-        model->freqhCross->data->data[i] = 0.0;
-      }
-    }
+    INT4 rem=0;
+    UINT4 size=hptilde->data->length;
+    if(size>model->freqhPlus->data->length) size=model->freqhPlus->data->length;
+    memcpy(model->freqhPlus->data->data,hptilde->data->data,sizeof(hptilde->data->data[0])*size);
+    if( (rem=(model->freqhPlus->data->length - size)) > 0)
+        memset(&(model->freqhPlus->data->data[size]),0, rem*sizeof(hptilde->data->data[0]) );
+
+    size=hctilde->data->length;
+    if(size>model->freqhCross->data->length) size=model->freqhCross->data->length;
+    memcpy(model->freqhCross->data->data,hctilde->data->data,sizeof(hctilde->data->data[0])*size);
+    if( (rem=(model->freqhCross->data->length - size)) > 0)
+        memset(&(model->freqhCross->data->data[size]),0, rem*sizeof(hctilde->data->data[0]) );
     
     
     /* Destroy the nonGr params */
@@ -736,14 +743,15 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
             amporder, order, approximant,model->waveformCache), errnum);
     XLALSimInspiralDestroyTestGRParam(nonGRparams);
     if (ret == XLAL_FAILURE || hplus == NULL || hcross == NULL)
-      {
-	XLALPrintError(" ERROR in XLALSimInspiralChooseWaveformFromCache(): error generating waveform. errnum=%d\n",errnum );
-	for (i=0; i<model->timehPlus->data->length; i++){
-	  model->timehPlus->data->data[i] = 0.0;
-	  model->timehCross->data->data[i] = 0.0;
-	}
-	return;
-      }
+    {
+            XLALPrintError(" ERROR in XLALSimInspiralChooseWaveformFromCache(): error generating waveform. errnum=%d\n",errnum );
+            memset(model->timehPlus->data->data,0,sizeof(model->timehPlus->data->data[0]) * model->timehPlus->data->length);
+            memset(model->timehCross->data->data,0,sizeof(model->timehCross->data->data[0]) * model->timehCross->data->length);
+            if ( hplus ) XLALDestroyREAL8TimeSeries(hplus);
+            if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
+            XLALSimInspiralDestroyTestGRParam(nonGRparams);
+            XLAL_ERROR_VOID(XLAL_FAILURE);
+    }
 
     /* The following complicated mess is a result of the following considerations:
        
@@ -863,6 +871,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
     LALInferenceSetVariable(model->params, "time", &injTc);
   }
+
   if ( hplus ) XLALDestroyREAL8TimeSeries(hplus);
   if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
   if ( hptilde ) XLALDestroyCOMPLEX16FrequencySeries(hptilde);

@@ -847,13 +847,13 @@ XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, 	/**<
   /* prepare output vector */
   MultiAMCoeffs *ret;
   if ( ( ret = XLALCalloc( 1, sizeof( *ret ) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc( 1, %lu)\n", __func__, sizeof( *ret ) );
+    XLALPrintError ("%s: failed to XLALCalloc( 1, %zu)\n", __func__, sizeof( *ret ) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   ret->length = numDetectors;
   if ( ( ret->data = XLALCalloc ( numDetectors, sizeof ( *ret->data ) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc(%d, %lu)\n", __func__, numDetectors, sizeof ( *ret->data ) );
+    XLALPrintError ("%s: failed to XLALCalloc(%d, %zu)\n", __func__, numDetectors, sizeof ( *ret->data ) );
     XLALFree ( ret );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
@@ -893,7 +893,7 @@ XLALCreateAMCoeffs ( UINT4 numSteps )
   AMCoeffs *ret;
 
   if ( ( ret = XLALCalloc ( 1, sizeof (*ret) ) ) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %lu )\n", __func__, sizeof (*ret) );
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %zu )\n", __func__, sizeof (*ret) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 

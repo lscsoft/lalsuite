@@ -32,10 +32,6 @@ int STREAMGETSERIES(STYPE * series, LALFrStream * stream)
 {
     STYPE *tmpser;
 
-    /* seek to the relevant point in the stream */
-    if (XLALFrStreamSeek(stream, &series->epoch))
-        XLAL_ERROR(XLAL_EFUNC);
-
     tmpser = READSERIES(stream->file, series->name, stream->pos);
     if (!tmpser)
         XLAL_ERROR(XLAL_EFUNC);

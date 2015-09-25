@@ -225,103 +225,6 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkM
 }
 
 
-/** \brief Randomise the data for use in Monte-Carlo studies
- *
- * Randomly permute the data whilst keeping noise stationarity properties. For each stationary chunk
- * randomise the time position within the start and end data times (a random time interval taken from
- * the difference between the total chunk length and the full data span will be inserted between each
- * randomised chunk to keep the same total data length), and within each chunk
- * perform a random permutation of the data.
- */
-/*void randomise_data( LALInferenceIFOData *data, LALInferenceIFOModel *model, gsl_rng *r ){ */
-void randomise_data( LALInferenceIFOModel *model, gsl_rng *r ){
-  UINT4Vector *chunkLengths = NULL;
-  chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( model->params, "chunkLength" );
-  UINT4 nchunks = chunkLengths->length;
-  UINT4 length = model->times->length;
-  UINT4 count = 0, i = 0, j = 0, k = 0, chunkLength = 0;
-
-  /* get start and end times of data */
-  REAL8 starttime = XLALGPSGetREAL8( &model->times->data[0] );
-  REAL8 endtime = XLALGPSGetREAL8( &model->times->data[model->times->length-1] );
-  REAL8 dur = endtime - starttime;
-
-  REAL8 dt = LALInferenceGetREAL8Variable( model->params, "dt" ); /* time steps for data */
-  REAL8Vector *chunkstarts = NULL, *chunkdurs = NULL; /* original start times and durations of each chunk */
-  chunkstarts = XLALCreateREAL8Vector( nchunks );
-  chunkdurs = XLALCreateREAL8Vector( nchunks );
-
-  /* randomise the times within each chunk (this is simpler than randomising the data) */
-  for( i = 0, count = 0 ; i < length ; i += chunkLength, count++ ){
-    chunkLength = chunkLengths->data[count];
-    chunkstarts->data[count] = XLALGPSGetREAL8( &model->times->data[i] );
-    chunkdurs->data[count] = XLALGPSGetREAL8( &model->times->data[i+chunkLength-1] ) - chunkstarts->data[count];
-
-    gsl_ran_shuffle( r, &model->times->data[i], (size_t)chunkLength, sizeof(LIGOTimeGPS) );
-  }
-
-  if ( nchunks > 1 ){
-    /* randomise the stationary chunks */
-    gsl_permutation *p = gsl_permutation_alloc(nchunks);
-    gsl_permutation_init( p );
-    gsl_ran_shuffle(r, p->data, nchunks, sizeof(size_t));
-
-    /* total length of chunks */
-    REAL8 totLength = (REAL8)(i-1)*dt;
-    fprintf(stderr, "totlength = %lf, dur = %lf\n", totLength, dur);
-    /* split remaining times up randomly to get intervals between chunks */
-    REAL8 tremaining = dur - totLength;
-    fprintf(stderr, "t remaining = %lf\n", tremaining);
-    REAL8Vector *timeintervals = NULL;
-    timeintervals = XLALCreateREAL8Vector( nchunks );
-    timeintervals->data[0] = 0.;
-    for ( i = 1; i < nchunks; i++ ){ timeintervals->data[i] = floor(tremaining*gsl_rng_uniform( r )); }
-
-    /* work through chunks and alter their times */
-    REAL8 sumlengths = 0.;
-    for ( i = 0; i < nchunks; i++ ){
-      chunkLength = chunkLengths->data[p->data[i]];
-      UINT4 chunkpos = 0;
-
-      for ( k = 0; k < p->data[i]; k++ ){ chunkpos += chunkLengths->data[k]; }
-
-      fprintf(stderr, "p->data[%d] = %zu, chunkstarts = %lf, chunksdurs = %lf\n", i, p->data[i], chunkstarts->data[p->data[i]], chunkdurs->data[p->data[i]]);
-
-      for ( j = chunkpos; j < chunkpos+chunkLength ; j++ ){
-        REAL8 tmptime = XLALGPSGetREAL8( &model->times->data[j] );
-        tmptime -= chunkstarts->data[p->data[i]];
-        tmptime += starttime;
-        tmptime += sumlengths;
-
-        XLALGPSSetREAL8( &model->times->data[j], tmptime );
-      }
-
-      if ( i < nchunks-1 ){
-        sumlengths += chunkdurs->data[p->data[i]];
-        /* add randomly distributed time interval between chunks */
-        sumlengths += (timeintervals->data[i+1]-timeintervals->data[i]);
-      }
-    }
-
-    gsl_permutation_free( p );
-    XLALDestroyREAL8Vector( timeintervals );
-  }
-
-  XLALDestroyREAL8Vector( chunkstarts );
-  XLALDestroyREAL8Vector( chunkdurs );
-
-  /*FILE *fp = NULL;
-  fp = fopen("randomiseddata.txt", "w");
-  for ( i = 0; i < length; i++ ){
-    fprintf(fp, "%lf\t%le\t%le\n",  XLALGPSGetREAL8( &model->times->data[i]), creal(data->compTimeData->data->data[i]), cimag(data->compTimeData->data->data[i]) );
-  }
-  fclose(fp);
-
-  fprintf(stderr, "Data has been randomised!\n");
-  exit(0);*/
-}
-
-
 /**
  * \brief Subtract the running median from complex data
  *
@@ -717,7 +620,7 @@ void gzip_output( LALInferenceRunState *runState ){
   if( ppt1 ){
     CHAR outfilepars[256] = "", outfileparstmp[256] = "";
     FILE *fppars = NULL, *fpparstmp = NULL;
-    UINT4 nonfixed = 0;
+    UINT4 nonfixed = 1;
 
     outfile = ppt1->value;
 
@@ -734,7 +637,7 @@ void gzip_output( LALInferenceRunState *runState ){
       XLAL_ERROR_VOID(XLAL_EIO);
     }
 
-    if ( LALInferenceGetProcParamVal( runState->commandLine, "--non-fixed-only" ) ){ nonfixed = 1; }
+    if ( LALInferenceGetProcParamVal( runState->commandLine, "--output-all-params" ) ){ nonfixed = 0; }
 
     CHAR v[128] = "";
     while( fscanf(fppars, "%s", v) != EOF ){
@@ -779,8 +682,6 @@ void gzip_output( LALInferenceRunState *runState ){
     XLAL_ERROR_VOID( XLAL_EIO );
   }
 
-  /* rescale parameters held in array and recreate XML output - we don't need
-     to remove any variables. */
   if( ppt2 ){
     outVOTable = ppt2->value;
 
@@ -980,59 +881,4 @@ void check_and_add_fixed_variable( LALInferenceVariables *vars, const char *name
      if ( LALInferenceGetVariableVaryType( vars, name ) == LALINFERENCE_PARAM_FIXED ) { LALInferenceRemoveVariable( vars, name ); }
    }
    LALInferenceAddVariable( vars, name, value, type, LALINFERENCE_PARAM_FIXED );
-}
-
-
-/**
- * \brief Remove a variable from the current parameters and remove it's scaling and prior values
- *
- * This function will clear out a variable from the \c currentParams and also remove it's scale
- * factors and prior ranges.
- *
- * \param runState [in] The analysis information structure
- * \param ifo [in] The IFO data structure
- * \param var [in] The variable to remove
- *
- */
-void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOModel *ifo, const CHAR *var ){
-  /* remove variable from currentParams */
-  if( LALInferenceCheckVariable( runState->currentParams, var ) ){
-    LALInferenceRemoveVariable( runState->currentParams, var );
-  }
-  else{
-    fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", var);
-    exit(3);
-  }
-
-  /* remove variable scale parameters from data */
-  LALInferenceIFOModel *ifotemp = ifo;
-  while ( ifotemp ){
-    CHAR *varscale = XLALStringDuplicate( var );
-    varscale = XLALStringAppend( varscale, "_scale" );
-
-    if( LALInferenceCheckVariable( ifotemp->params, varscale ) ){
-      LALInferenceRemoveVariable( ifotemp->params, varscale );
-    }
-    else{
-      fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", varscale);
-      exit(3);
-    }
-
-    varscale = XLALStringAppend( varscale, "_min" );
-    if( LALInferenceCheckVariable( ifotemp->params, varscale ) ){
-      LALInferenceRemoveVariable( ifotemp->params, varscale );
-    }
-    else{
-      fprintf(stderr, "Error... variable %s cannot be removed as it does not exist!\n", varscale);
-      exit(3);
-    }
-
-    ifotemp = ifotemp->next;
-  }
-
-  /* remove prior */
-  if ( LALInferenceCheckGaussianPrior( runState->priorArgs, var ) ){
-    LALInferenceRemoveGaussianPrior( runState->priorArgs, var );
-  }
-  else { LALInferenceRemoveMinMaxPrior( runState->priorArgs, var ); }
 }

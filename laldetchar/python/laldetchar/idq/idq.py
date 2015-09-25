@@ -38,6 +38,8 @@ import math
 import subprocess
 import tempfile
 
+from collections import defaultdict
+
 import ConfigParser
 
 from glue.ligolw import ligolw
@@ -274,11 +276,17 @@ def classifier_specific_config( config, classifier, flavor ):
         raise ValueError('classifier=%s section has no option=condor'%classifier)
     condor_section = config.get(classifier, 'condor')
     if not config.has_section(condor_section):
-        raise ValueError('config has not section=%s'%condor_section)
+        raise ValueError('config has no section=%s'%condor_section)
 
     cp.add_section('condor')
     for option, value in config.items(condor_section):
         cp.set('condor', option, value)
+
+    ### add accounting tags if present
+    if config.has_option('general', 'accounting_group'):
+        cp.set('condor', 'accounting_group', config.get('general', 'accounting_group') )
+    if config.has_option('general', 'accounting_group_user'):
+        cp.set('condor', 'accounting_group_user', config.get('general', 'accounting_group_user') )
 
     cp.add_section('idq_train')
     cp.set('idq_train', 'condorlogs', config.get('train', 'condorlogs'))
@@ -1493,7 +1501,7 @@ def retrieve_scisegs(segments_location, dq_name, start, stride, pad=0, sleep=0, 
 
     return good, covered
 
-def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=None, delay=0):
+def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=None, delay=0, verbose=True):
     """
     looks for kwtriggers and includes logic about waiting.
     will wait "sleep" seconds between each check that the file has appeared. Will check "ntrials" times
@@ -1508,43 +1516,48 @@ def retrieve_kwtrig(gdsdir, kwbasename, t, stride, sleep=0, ntrials=1, logger=No
 
     for i in xrange(ntrials):
         if not os.path.exists(kwfilename):  ### kw files may not have appeared yet
-            if logger:
-                logger.info('  missing KW triggers, waiting additional %d seconds' % sleep)
-            else:
-                print '  missing KW triggers, waiting additional %d seconds' % sleep
-            time.sleep(sleep)
-            if sleep < stride: ### automatically increase sleep to 1 stride if needed
-                sleep = stride
+            if verbose:
+                if logger:
+                    logger.info('  missing KW triggers, waiting additional %d seconds' % sleep)
+                else:
+                    print '  missing KW triggers, waiting additional %d seconds' % sleep
+            if i < ntrials-1:
+                time.sleep(sleep)
+                if sleep < stride: ### automatically increase sleep to 1 stride if needed
+                    sleep = stride
         else:
             break
     else:
-        if logger:
-            logger.warning('  still missing KW triggers, skipping')
-        else:
-            print '  still missing KW triggers, skipping'
+        if verbose:
+            if logger:
+                logger.warning('  still missing KW triggers, skipping')
+            else:
+                print '  still missing KW triggers, skipping'
         return None
 
-    if logger:
-        logger.info('  loading KW triggers : %s'%kwfilename)
-    else:
-        print '  loading KW triggers : %s'%kwfilename
+    if verbose:
+        if logger:
+            logger.info('  loading KW triggers : %s'%kwfilename)
+        else:
+            print '  loading KW triggers : %s'%kwfilename
 
     if delay > 0:
-        if logger:
-            logger.info('    waiting %.3f seconds to ensure file is completely written'%delay)
-        else:
-            print '    waiting %.3f seconds to ensure file is completely written'%delay
+        if verbose:
+            if logger:
+                logger.info('    waiting %.3f seconds to ensure file is completely written'%delay)
+            else:
+                print '    waiting %.3f seconds to ensure file is completely written'%delay
         time.sleep(delay)
 
     return event.loadkwm(kwfilename)
 
-def retrieve_kwtrigs(gdsdir, kwbasename, t, stride, kwstride, sleep=0, ntrials=1, logger=None, segments=None):
-    t_start = (t / kwstride) * kwstride
+def retrieve_kwtrigs(gdsdir, kwbasename, t, stride, kwstride, sleep=0, ntrials=1, logger=None, segments=None, verbose=True):
+    t_start = (int(t) / kwstride) * kwstride
 
     trgdicts = []
     while t_start < t+stride:
         if (segments==None) or (event.livetime(event.andsegments([[[t_start, t_start+kwstride]], segments]))): ### only keep if we've got some overlap
-            trigger_dict = retrieve_kwtrig(gdsdir, kwbasename, t_start, kwstride, sleep=sleep, ntrials=ntrials, logger=logger)
+            trigger_dict = retrieve_kwtrig(gdsdir, kwbasename, t_start, kwstride, sleep=sleep, ntrials=ntrials, logger=logger, verbose=verbose)
             if trigger_dict:
                 trgdicts.append( trigger_dict )
         t_start += kwstride
@@ -1557,7 +1570,218 @@ def retrieve_kwtrigs(gdsdir, kwbasename, t, stride, kwstride, sleep=0, ntrials=1
     else:
         return event.trigdict()
 #        return None
-    
+
+def retrieve_DMTOmegaTrig(gdsdir, t, stride, channels, sleep=0, ntrials=1, logger=None, delay=0, verbose=True):
+    """
+    looks for DMT-Omega triggers and includes logic about waiting.
+    will wait "sleep" seconds between each check that the file has appeared. Will check "ntrials" time
+    """
+    if ntrials<1:
+        raise ValueError("ntrials must be >= 1, otherwise we don't do anything....")
+    if sleep < 0:
+        sleep = 0
+
+    trgdict = event.trigdict()
+    for channel in channels:
+
+        filename = "%s/%d/%s-%d-%d.xml"%(gdsdir, t / 1e5, channel, t, stride)
+
+        for i in xrange(ntrials):
+            if not os.path.exists(filename):  ### kw files may not have appeared yet
+                if verbose:
+                    if logger:
+                        logger.info('  missing DMT-Omega triggers for %s, waiting additional %d seconds' % (channel, sleep) )
+                    else:
+                        print '  missing DMT-Omega triggers for %s, waiting additional %d seconds' % (channel, sleep)
+                if i < ntrials-1:
+                    time.sleep(sleep)
+                    if sleep < stride: ### automatically increase sleep to 1 stride if needed
+                        sleep = stride
+            else:
+                break
+        else:
+            if verbose:
+                if logger:
+                    logger.warning('  still missing DMT-Omega triggers for %s, skipping' % channel )
+                else:
+                    print '  still missing DMT-Omega triggers for %s, skipping' % channel
+            continue
+
+        if verbose:
+            if logger:
+                logger.info('  loading DMT-Omega triggers for %s : %s'%(channel, filename) )
+            else:
+                print '  loading DMT-Omega triggers for %s : %s'%(channel, filename)
+
+        if delay > 0:
+            if verbose:
+                if logger:
+                    logger.info('    waiting %.3f seconds to ensure file is completely written'%delay)
+                else:
+                    print '    waiting %.3f seconds to ensure file is completely written'%delay
+            time.sleep(delay)
+
+        trgdict.add( event.loadSingleBurst( filename ) )
+
+    return trgdict
+
+
+
+def retrieve_DMTOmegaTrigs(gdsdir, basename, t, stride, dmtostride, channels, sleep=0, ntrials=1, logger=None, segments=None, verbose=True):
+    """
+    discover and read in files from DMT-Omega processes
+    we require the argument "channels" because DMT-Omega triggers are stored in separate files for each file
+      -> we can save significant I/O if we only ever load a subset of these
+    also, the separate single-channel files may appear with different latencies and without a definitive list it is difficult to construct waiting logic
+    """
+    t_start = (int(t) / ostride) * ostride
+
+    trgdicts = []
+    while t_start < t+stride:
+        if (segments==None) or (event.livetime(event.andsegments([[[t_start, t_start+dmtostride]], segments]))): ### only keep if we've got some overlap
+            trigger_dict = retrieve_DMTOmegaTrig(gdsdir, basename, t_start, dmtostride, channels, sleep=sleep, ntrials=ntrials, logger=logger, verbose=verbose)
+            if trigger_dict:
+                trgdicts.append( trigger_dict )
+        t_start += ostride
+
+    if trgdicts:
+        trigger_dict = trgdicts[0]
+        for td in trgdicts[1:]:
+            trigger_dict.add( td )
+        return trigger_dict
+    else:
+        return event.trigdict()
+
+
+def retrieve_OmicronTrig(gdsdir, ifo, t, stride, channels, sleep=0, ntrials=1, logger=None, delay=0, verbose=True):
+    """
+    looks for Omicron triggers and includes logic about wiating.
+    will wait "sleep" seconds between each check that the file has appeared. Will check "ntrials" times
+    """
+
+    if ntrials < 1:
+        raise ValueError("ntrials must be >= 1, otherwise we don't do anything....")
+    if sleep < 0:
+        sleep = 0
+
+    trgdict = event.trigdict()
+    for channel in channels:
+        ### check if Omicron file is there
+        # /home/reed.essick/Omicron/test/triggers/H-11242/H1:GDS-CALIB_STRAIN/H1-GDS_CALIB_STRAIN_Omicron-1124203561-30.xml
+
+        ### fancy channel name used to predict filename directory structure...
+        fancy_channel = channel.split("-")[-1].split("_")[:-1] ### get rid of ifo and trailing _Omicron
+        fancy_channel = "%s-%s"%(fancy_channel[0], "_".join(fancy_channel[1:])) ### only "-" is after the subsys (for all channels?
+
+        filename = '%s/%s-%d/%s:%s/%s-%d-%d.xml' % ( gdsdir, ifo[0], t / 1e5, ifo, fancy_channel, channel, t+1, stride ) ### +1 is due to the way Omicron pads segments... this is fragile but should be relatively safe for the online Omicron processes managed by R. Essick (reed.essick@ligo.org)
+#        filename = '%s/%s-%d/%s:%s/%s-%d-%d.xml' % ( gdsdir, ifo[0], t / 1e5, ifo, fancy_channel, channel, t, stride )
+
+        for i in xrange(ntrials):
+            if not os.path.exists(filename):  ### omicron files may not have appeared yet
+                if verbose:
+                    if logger:
+                        logger.info('  missing Omicron triggers for %s, waiting additional %d seconds' % (channel, sleep) )
+                    else:
+                        print '  missing Omicron triggers for %s, waiting additional %d seconds' % (channel, sleep)
+                if i < ntrials-1:
+                    time.sleep(sleep)
+                    if sleep < stride: ### automatically increase sleep to 1 stride if needed
+                        sleep = stride
+            else:
+                break
+        else:
+            if verbose:
+                if logger:
+                    logger.warning('  still missing Omicront triggers for %s, skipping' % channel )
+                else:
+                    print '  still missing Omicron triggers for %s, skipping' % channel
+            continue
+
+        if verbose:
+            if logger:
+                logger.info('  loading Omicron triggers for %s : %s'%(channel, filename) )
+            else:
+                print '  loading Omicron triggers for %s : %s'%(channel, filename)
+
+        if delay > 0:
+            if verbose:
+                if logger:
+                    logger.info('    waiting %.3f seconds to ensure file is completely written'%delay)
+                else:
+                    print '    waiting %.3f seconds to ensure file is completely written'%delay
+            time.sleep(delay)
+
+        trgdict.add( event.loadSingleBurst( filename ) )
+
+    return trgdict
+
+def retrieve_OmicronTrigs(gdsdir, ifo, t, stride, ostride, channels, sleep=0, ntrials=1, logger=None, segments=None, verbose=True):
+    """
+    discover and read in files from "online" omicron processes
+    we require the argument "channels" because Omicron triggers are stored in separate files for each file
+      -> we can save significant I/O if we only ever load a subset of these
+    also, the separate single-channel files may appear with different latencies and without a definitive list it is difficult to construct waiting logic
+    """
+    t_start = (int(t) / ostride) * ostride
+   
+    trgdicts = []
+    while t_start < t+stride:
+        if (segments==None) or (event.livetime(event.andsegments([[[t_start, t_start+ostride]], segments]))): ### only keep if we've got some overlap
+            trigger_dict = retrieve_OmicronTrig(gdsdir, ifo, t_start, ostride, channels, sleep=sleep, ntrials=ntrials, logger=logger, verbose=verbose)
+            if trigger_dict:
+                trgdicts.append( trigger_dict )
+        t_start += ostride
+
+    if trgdicts:
+        trigger_dict = trgdicts[0]
+        for td in trgdicts[1:]:
+            trigger_dict.add( td )
+        return trigger_dict
+    else:
+        return event.trigdict()
+
+def retrieve_OfflineOmicronTrigs(gdsdir, ifo, t, stride, channels=None, logger=None, segments=None, verbose=True):
+    """
+    discover and read in files from "standard" /home/detchar/triggers directory structure
+    we allow the keyword argument "channels" because OfflienOmicron triggers are stored in separate files for each file
+      -> we can save significant I/O if we only ever load a subset of these
+    if we request a specific set of channels, this method will only load the necessary files and will ensure that trgdict has a key,value pair for every requested channel, even if no triggers are found.
+    """
+    xmlfiles = defaultdict( list )
+    for xmlfile in get_all_files_in_range("%s/%s/"%(gdsdir, ifo), t, t+stride, suffix=".xml.gz"):
+        if (segments==None) or (event.livetime(event.andsegments([ extract_start_stop(xmlfile, suffix=".xml.gz"), segments ] ))):
+            xmlfiles[ extract_OfflineOmicron_name( xmlfile ) ].append( xmlfile )
+
+    if channels!=None: ### only keep the relevant channels
+        for key in xmlfiles.keys():
+            if key not in channels:
+                xmlfiles.pop( key )
+
+    trgdict = event.trigdict()    
+    for chan in sorted(xmlfiles.keys()):
+        if verbose:
+            if logger:
+                logger.info('  loading OfflineOmicron triggers for : %s'%chan)
+            else:
+                print '  loading OfflineOmicron triggers for : %s'%chan
+        for xmlfile in sorted(xmlfiles[chan]):
+            if verbose:
+                if logger:
+                    logger.info("    loading Omicron triggers : %s"%xmlfile)
+                else:
+                    print "    loading Omicron triggers : %s"%xmlfile
+            trgdict.add( event.loadSingleBurst( xmlfile ) )
+
+    if channels!=None: ### ensure that we have a key,value pair for every requested channel
+        for chan in channels:
+            if not trgdict.has_key(chan):
+                trgdict[chan] = []
+
+    return trgdict
+
+
+def extract_Omicron_name( filename ):
+    return "-".join(filename.split("/")[-1].split("-")[:1])
 
 #=================================================
 # trigger generation algorithm interfaces
@@ -1601,6 +1825,7 @@ def collect_sngl_chan_kw(
     verbose=False,
     chans=None,
     scisegs=None,
+    include_all_found_channels=False
     ):
     """ 
 ....replicates the action of collect.py in that it moves KW triggers from multi-channel (low-latency) files to single channel files. These files will be written in to output_dir in a subdirecitory titled `gpsstart`_`gpsstop`
@@ -1657,7 +1882,7 @@ def collect_sngl_chan_kw(
     f.close()
     
     if chans: ### if supplied, only keep those channels that are specified
-        channels = [chan for chan in channels if chan in chans]
+        channels = [chan for chan in channels if chan[1] in chans]
 
     if not stride:
         print 'stride not defined in ' + config.kwconfig
@@ -1734,13 +1959,16 @@ def collect_sngl_chan_kw(
                         fields = line.strip().split()
                         if len(fields) == 9 and fields[-1] != '':
                             tag = fields[-1]
-                            if not triggers.has_key(tag):
+                            if triggers.has_key(tag):
+                                triggers[tag].append(line.strip()[:-len(tag)
+                                    - 2])
+                            elif include_all_found_channels:
                                 if verbose:
                                     print ' -> WARNING: triggers ' \
     + tag + ' not in configuration file (t=' + repr(t) \
     + '). Adding it to the list of channels.'
                                 triggers[tag] = []
-                            triggers[tag].append(line.strip()[:-len(tag)
+                                triggers[tag].append(line.strip()[:-len(tag)
                                     - 2])
                         else:
                             if verbose:
@@ -2585,7 +2813,7 @@ def ovl_evaluate( vetolist, GPS_headers=False, GPStimes=False, allvtrg=False, kw
     gps_tcent = GPS_headers.index('GPS')
     return ovl.predict( vetolist, GPS_headers, GPStimes, gps_tcent, allvtrg=allvtrg, kw_trgfiles=kw_trgfiles, predict_filename=filename, output_dir=output_dir )
 
-def ovl_train(gpsstart, gpsstop, generalD, classifierD, scisegs=False, vetosegs=False, output_dir='./' , padding = 1.0 ):
+def ovl_train(gpsstart, gpsstop, generalD, classifierD, scisegs=False, vetosegs=False, output_dir='./' , padding=numpy.infty ):
     """ 
     builds an ovl.params object and launches ovl training jobs on the specified data.
     pulls many parameters from "cp" config object
@@ -2617,7 +2845,7 @@ def ovl_train(gpsstart, gpsstop, generalD, classifierD, scisegs=False, vetosegs=
     if channels:
         channels = False
     if notused:
-        notused = [l.strip('\n') for l in open(notused, 'r').readlines()]
+        notused = [l.strip('\n') for l in open(notused, 'r').readlines() if l.strip('\n')]
     else:
         notused = []
 
@@ -2635,6 +2863,9 @@ def ovl_train(gpsstart, gpsstop, generalD, classifierD, scisegs=False, vetosegs=
 
     # launch training job
     vetolists = ovl.train(params, num_runs=num_runs, incremental=incremental, output_dir=output_dir, verbose=False, write_channels=True )
+
+    ### run safety to get a vetolist file for "independent" application
+    ovl.vetolist_safety(params, output_dir=output_dir+"/ovl/", source_dir=output_dir+"/ovl/", verbose=False)
 
     return vetolists
 

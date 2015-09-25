@@ -514,7 +514,7 @@ XLALSimInspiralPhasing3_7PN (
 }
 
 
-/**
+/*
  * Returns the sum of chirp times to a specified order.
  *
  * Computes the sum of the chirp times to a specified order. Inputs given in SI
@@ -622,7 +622,7 @@ static REAL8 XLALSimInspiralChirpLength(
 }
 
 
-/**
+/*
  * Set up the expnCoeffsTaylorT3 and expnFuncTaylorT3 structures for
  * generating a TaylorT3 waveform.
  *
@@ -754,6 +754,17 @@ static int XLALSimInspiralTaylorT3Setup(
   return XLAL_SUCCESS;
 }
 
+/**
+ * @addtogroup LALSimInspiralTaylorXX_c
+ * @{
+ * @name Routines for TaylorT3 Waveforms
+ * @sa
+ * Section IIID of Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ * @{
+ */
 
 /**
  * Computes a post-Newtonian orbit using the Taylor T3 method.
@@ -1188,3 +1199,6 @@ int XLALSimInspiralTaylorT3PNRestricted(
 			deltaT, m1, m2, f_min, fRef, r, i, lambda1, lambda2,
 			tideO, 0, O);
 }
+
+/** @} */
+/** @} */

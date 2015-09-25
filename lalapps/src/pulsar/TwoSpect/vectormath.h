@@ -29,26 +29,28 @@ alignedREAL8Vector * createAlignedREAL8Vector(UINT4 length, const size_t align);
 void destroyAlignedREAL8Vector(alignedREAL8Vector *vector);
 alignedREAL8VectorArray * createAlignedREAL8VectorArray(const UINT4 length, const UINT4 vectorLength, const size_t align);
 void destroyAlignedREAL8VectorArray(alignedREAL8VectorArray *array);
-alignedREAL4VectorArray * createAlignedREAL4VectorArray(const UINT4 length, const UINT4 vectorLength, const size_t align);
-void destroyAlignedREAL4VectorArray(alignedREAL4VectorArray *array);
+REAL4VectorAlignedArray * createREAL4VectorAlignedArray(const UINT4 length, const UINT4 vectorLength, const size_t align);
+void destroyREAL4VectorAlignedArray(REAL4VectorAlignedArray *array);
 
-INT4 sseSSVectorArraySum(alignedREAL4VectorArray *output, alignedREAL4VectorArray *input1, alignedREAL4VectorArray *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors);
-INT4 avxSSVectorArraySum(alignedREAL4VectorArray *output, alignedREAL4VectorArray *input1, alignedREAL4VectorArray *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors);
+INT4 DirichletRatioVector(COMPLEX8Vector *output, alignedREAL8Vector *delta0, alignedREAL8Vector *delta1, alignedREAL8Vector *scaling, const UserInput_t *params);
+
+INT4 VectorArraySum(REAL4VectorAlignedArray *output, REAL4VectorAlignedArray *input1, REAL4VectorAlignedArray *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors);
 
 INT4 sse_exp_REAL8Vector(alignedREAL8Vector *output, alignedREAL8Vector *input);
 //INT4 sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input);
 
-INT4 fastSSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2);
-INT4 sseSSVectorSum(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2);
-INT4 avxSSVectorSum(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2);
+INT4 fastSSVectorMultiply_with_stride_and_offset(REAL4VectorAligned *output, const REAL4VectorAligned *input1, const REAL4VectorAligned *input2, const INT4 stride1, const INT4 stride2, const INT4 offset1, const INT4 offset2);
+
+INT4 VectorSubtractREAL4(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2, INT4 vectorMath);
+INT4 VectorScaleREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, REAL8 scale, INT4 vectorMath);
+INT4 VectorShiftREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, REAL8 shift, INT4 vectorMath);
+INT4 VectorAddREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input1, alignedREAL8Vector *input2, INT4 vectorMath);
+INT4 VectorSubtractREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input1, alignedREAL8Vector *input2, INT4 vectorMath);
+INT4 VectorMultiplyREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input1, alignedREAL8Vector *input2, INT4 vectorMath);
+INT4 VectorInvertREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, INT4 vectorMath);
+
 INT4 sseSSVectorSubtract(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2);
 INT4 avxSSVectorSubtract(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2);
-INT4 sseSSVectorMultiply(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2);
-INT4 avxSSVectorMultiply(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2);
-INT4 sseAddScalarToREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scalar);
-INT4 avxAddScalarToREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scalar);
-INT4 sseScaleREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scale);
-INT4 avxScaleREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scale);
 
 INT4 sseAddScalarToREAL8Vector(alignedREAL8Vector *output, alignedREAL8Vector *input, REAL8 scalar);
 INT4 avxAddScalarToREAL8Vector(alignedREAL8Vector *output, alignedREAL8Vector *input, REAL8 scalar);

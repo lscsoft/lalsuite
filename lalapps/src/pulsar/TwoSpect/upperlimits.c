@@ -28,7 +28,7 @@
  * \param [in] length Length of the vector
  * \return Pointer to newly allocated UpperLimitVector
  */
-UpperLimitVector * new_UpperLimitVector(UINT4 length)
+UpperLimitVector * createUpperLimitVector(const UINT4 length)
 {
 
    UpperLimitVector *vector = NULL;
@@ -38,12 +38,12 @@ UpperLimitVector * new_UpperLimitVector(UINT4 length)
    if (length==0) vector->data = NULL;
    else {
       XLAL_CHECK_NULL( (vector->data = XLALMalloc( length*sizeof(*vector->data) )) != NULL, XLAL_ENOMEM );
-      for (UINT4 ii=0; ii<length; ii++) reset_UpperLimitStruct(&(vector->data[ii]));
+      for (UINT4 ii=0; ii<length; ii++) resetUpperLimitStruct(&(vector->data[ii]));
    }
 
    return vector;
 
-} /* new_UpperLimitVector() */
+} // createUpperLimitVector()
 
 
 /**
@@ -52,12 +52,12 @@ UpperLimitVector * new_UpperLimitVector(UINT4 length)
  * \param [in]     length New length of the vector
  * \return Pointer to reallocated UpperLimitVector
  */
-UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 length)
+UpperLimitVector * resizeUpperLimitVector(UpperLimitVector *vector, const UINT4 length)
 {
 
-   if (vector==NULL) return new_UpperLimitVector(length);
+   if (vector==NULL) return createUpperLimitVector(length);
    if (length==0) {
-      free_UpperLimitVector(vector);
+      destroyUpperLimitVector(vector);
       return NULL;
    }
 
@@ -65,59 +65,57 @@ UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 lengt
 
    XLAL_CHECK_NULL( (vector->data = XLALRealloc(vector->data, length*sizeof(*vector->data))) != NULL, XLAL_ENOMEM );
    vector->length = length;
-   for (UINT4 ii=oldlength; ii<length; ii++) reset_UpperLimitStruct(&(vector->data[ii]));
+   for (UINT4 ii=oldlength; ii<length; ii++) resetUpperLimitStruct(&(vector->data[ii]));
 
    return vector;
 
-} /* resize_UpperLimitVector() */
+} // resizeUpperLimitVector()
 
 
 /**
  * Free an UpperLimitVector
  * \param [in] vector Pointer to an UpperLimitVector
  */
-void free_UpperLimitVector(UpperLimitVector *vector)
+void destroyUpperLimitVector(UpperLimitVector *vector)
 {
-
    if (vector==NULL) return;
    if ((!vector->length || !vector->data) && (vector->length || vector->data)) XLAL_ERROR_VOID(XLAL_EINVAL);
    if (vector->data) {
-      for (UINT4 ii=0; ii<vector->length; ii++) free_UpperLimitStruct(&(vector->data[ii]));
+      for (UINT4 ii=0; ii<vector->length; ii++) destroyUpperLimitStruct(&(vector->data[ii]));
       XLALFree((UpperLimit*)vector->data);
    }
    vector->data = NULL;
    XLALFree((UpperLimitVector*)vector);
    return;
-
-} /* free_UpperLimitVector() */
+} // destroyUpperLimitVector()
 
 
 /**
  * Reset an UpperLimitStruct
  * \param [in] ul Pointer to an UpperLimit structure
  */
-void reset_UpperLimitStruct(UpperLimit *ul)
+void resetUpperLimitStruct(UpperLimit *ul)
 {
    ul->fsig = NULL;
    ul->period = NULL;
    ul->moddepth = NULL;
    ul->ULval = NULL;
    ul->effSNRval = NULL;
-} /* reset_UpperLimitStruct() */
+} // resetUpperLimitStruct()
 
 
 /**
  * Free an UpperLimit structure
  * \param [in] ul Pointer to an UpperLimit structure
  */
-void free_UpperLimitStruct(UpperLimit *ul)
+void destroyUpperLimitStruct(UpperLimit *ul)
 {
    if (ul->fsig) XLALDestroyREAL8Vector(ul->fsig);
    if (ul->period) XLALDestroyREAL8Vector(ul->period);
    if (ul->moddepth) XLALDestroyREAL8Vector(ul->moddepth);
    if (ul->ULval) XLALDestroyREAL8Vector(ul->ULval);
    if (ul->effSNRval) XLALDestroyREAL8Vector(ul->effSNRval);
-} /* free_UpperLimitStruct() */
+} // destroyUpperLimitStruct()
 
 
 /**
@@ -127,15 +125,15 @@ void free_UpperLimitStruct(UpperLimit *ul)
  * \param [in]  ffdata    Pointer to ffdataStruct
  * \param [in]  ihsmaxima Pointer to an ihsMaximaStruct
  * \param [in]  ihsfar    Pointer to an ihsfarStruct
- * \param [in]  fbinavgs  Pointer to a REAL4Vector of the 2nd FFT background powers
+ * \param [in]  fbinavgs  Pointer to a REAL4VectorAligned of the 2nd FFT background powers
  * \return Status value
  */
-INT4 skypoint95UL(UpperLimit *ul, UserInput_t *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, ihsfarStruct *ihsfar, REAL4Vector *fbinavgs)
+INT4 skypoint95UL(UpperLimit *ul, const UserInput_t *params, const ffdataStruct *ffdata, const ihsMaximaStruct *ihsmaxima, const ihsfarStruct *ihsfar, const REAL4VectorAligned *fbinavgs)
 {
 
    XLAL_CHECK( ul != NULL && params != NULL && ffdata != NULL && ihsmaxima != NULL && ihsfar!= NULL && fbinavgs != NULL, XLAL_EINVAL );
 
-   INT4 ULdetermined = 0;
+   BOOLEAN ULdetermined = 0;
 
    INT4 minrows = (INT4)round(2.0*params->dfmin*params->Tsft)+1;
 
@@ -259,7 +257,7 @@ INT4 skypoint95UL(UpperLimit *ul, UserInput_t *params, ffdataStruct *ffdata, ihs
 
 //The non-central chi-square CDF solver used in the GSL root finding algorithm
 //Double precision
-REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p)
+REAL8 gsl_ncx2cdf_solver(const REAL8 x, void *p)
 {
 
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
@@ -271,7 +269,7 @@ REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p)
 
 //The non-central chi-square CDF solver used in the GSL root finding algorithm
 //Float precision (although output is in double precision for GSL)
-REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p)
+REAL8 gsl_ncx2cdf_float_solver(const REAL8 x, void *p)
 {
 
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
@@ -283,7 +281,7 @@ REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p)
 
 //The non-central chi-square CDF solver used in the GSL root finding algorithm
 //Double precision, without the tiny probability
-REAL8 gsl_ncx2cdf_withouttinyprob_solver(REAL8 x, void *p)
+REAL8 gsl_ncx2cdf_withouttinyprob_solver(const REAL8 x, void *p)
 {
 
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
@@ -295,7 +293,7 @@ REAL8 gsl_ncx2cdf_withouttinyprob_solver(REAL8 x, void *p)
 
 //The non-central chi-square CDF solver used in the GSL root finding algorithm
 //Float precision (although output is in double precision for GSL), without the tiny probability
-REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(REAL8 x, void *p)
+REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(const REAL8 x, void *p)
 {
 
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
@@ -307,7 +305,7 @@ REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(REAL8 x, void *p)
 
 //The non-central chi-square CDF solver used in the GSL root finding algorithm, using a Matlab-based chi2cdf function
 //Double precision, without the tiny probability
-REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver(REAL8 x, void *p)
+REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver(const REAL8 x, void *p)
 {
 
    struct ncx2cdf_solver_params *params = (struct ncx2cdf_solver_params*)p;
@@ -337,8 +335,9 @@ REAL8 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver(REAL8 x, void *p)
  * \param [in] printAllULvalues Option flag to print all UL values from a sky location (1) or only the largest (0)
  * \return Status value
  */
-INT4 outputUpperLimitToFile(CHAR *outputfile, UpperLimit ul, INT4 printAllULvalues)
+INT4 outputUpperLimitToFile(const CHAR *outputfile, const UpperLimit ul, const BOOLEAN printAllULvalues)
 {
+   XLAL_CHECK( outputfile!=NULL, XLAL_EINVAL );
 
    FILE *ULFILE = NULL;
    XLAL_CHECK( (ULFILE = fopen(outputfile, "a")) != NULL, XLAL_EIO, "Couldn't fopen file %s to output upper limits\n", outputfile );

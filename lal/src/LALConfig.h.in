@@ -37,6 +37,9 @@
 /* Define if using CUDA library */
 #undef LAL_CUDA_ENABLED
 
+/* Define if using HDF5 library */
+#undef LAL_HDF5_ENABLED
+
 /* Define if using qthread library */
 #undef LAL_QTHREAD
 

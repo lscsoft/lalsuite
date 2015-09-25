@@ -17,6 +17,34 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalfr_cut lalfr-cut
+ * @ingroup lalframe_programs
+ *
+ * @brief Cut channels from frames in frame files
+ *
+ * ### Synopsis
+ *
+ *     lalfr-cut list [file ...]
+ *
+ * ### Description
+ *
+ * The `lalfr-cut` utility cuts out selected channels (as specified by `list`)
+ * from each `file` and writes frames containing these channels only to the
+ * standard output.  If no `file` argument is specified, or if a file argument
+ * is a single dash (`-`), `lalfr-cut` reads from the standard input.  The
+ * channels specified by list are comma-delimited channel names.
+ *
+ * ### Example
+ *
+ * To cut the channels `chan1` and `chan2` from file `framefile.gwf` and output
+ * frames to standard output:
+ *
+ *     lalfr-cut chan1,chan2 framefile.gwf
+ *
+ * @sa @ref lalfr_paste
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

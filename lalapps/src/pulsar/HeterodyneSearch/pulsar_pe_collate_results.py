@@ -501,7 +501,7 @@ table."""
 
   # if no particular outputs are specified default to h0 ul, ell ul and spin-down ratio ul
   if not opts.outputlims:
-    outputlims = ['h0', 'ell', 'sdrat']
+    outputlims = ['h95', 'ell', 'sdrat']
   else:
     outputlims = list(opts.outputlims)
 

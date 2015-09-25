@@ -649,7 +649,7 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
   /* ----- pepare return container ----- */
   transientFstatMap_t *ret;
   if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc(1,%lu) failed.\n", __func__, sizeof(*ret) );
+    XLALPrintError ("%s: XLALCalloc(1,%zu) failed.\n", __func__, sizeof(*ret) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 

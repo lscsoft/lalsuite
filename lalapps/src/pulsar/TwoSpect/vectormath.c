@@ -90,9 +90,9 @@ void destroyAlignedREAL8VectorArray(alignedREAL8VectorArray *array)
    XLALFree(array->data);
    XLALFree(array);
 }
-alignedREAL4VectorArray * createAlignedREAL4VectorArray(const UINT4 length, const UINT4 vectorLength, const size_t align)
+REAL4VectorAlignedArray * createREAL4VectorAlignedArray(const UINT4 length, const UINT4 vectorLength, const size_t align)
 {
-   alignedREAL4VectorArray *array = NULL;
+   REAL4VectorAlignedArray *array = NULL;
    XLAL_CHECK_NULL( (array = XLALMalloc(sizeof(*array))) != NULL, XLAL_ENOMEM );
    array->length = length;
    XLAL_CHECK_NULL( (array->data = XLALMalloc(sizeof(*(array->data))*array->length)) != NULL, XLAL_ENOMEM );
@@ -101,7 +101,7 @@ alignedREAL4VectorArray * createAlignedREAL4VectorArray(const UINT4 length, cons
    }
    return array;
 }
-void destroyAlignedREAL4VectorArray(alignedREAL4VectorArray *array)
+void destroyREAL4VectorAlignedArray(REAL4VectorAlignedArray *array)
 {
    if (!array) return;
    for (UINT4 ii=0; ii<array->length; ii++) {
@@ -111,21 +111,130 @@ void destroyAlignedREAL4VectorArray(alignedREAL4VectorArray *array)
    XLALFree(array);
 }
 
+INT4 DirichletRatioVector(COMPLEX8Vector *output, alignedREAL8Vector *delta0, alignedREAL8Vector *delta1, alignedREAL8Vector *scaling, const UserInput_t *params)
+{
+
+   XLAL_CHECK( output!=NULL && delta0!=NULL && delta1!=NULL && scaling!=NULL && params!=NULL, XLAL_EFUNC );
+
+   REAL4VectorAligned *delta0_int = NULL, *delta1_int = NULL, *sinPiDelta0 = NULL, *sinPiDelta1 = NULL, *PiDelta = NULL, *cosPiDelta0 = NULL, *cosPiDelta1 = NULL, *realTerms = NULL, *realTerms2 = NULL, *imagTerms = NULL, *imagTerms2 = NULL;
+   XLAL_CHECK( (delta0_int = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (delta1_int = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (sinPiDelta0 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (sinPiDelta1 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (cosPiDelta0 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (cosPiDelta1 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (PiDelta = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (realTerms = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (realTerms2 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (imagTerms = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (imagTerms2 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+
+   for (UINT4 ii=0; ii<delta0_int->length; ii++) {
+      delta0_int->data[ii] = (REAL4)(delta0->data[ii]);
+      delta1_int->data[ii] = (REAL4)(delta1->data[ii]);
+   }
+
+   XLAL_CHECK( XLALVectorScaleREAL4(PiDelta->data, (REAL4)LAL_PI, delta0_int->data, delta0_int->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorSinCosREAL4(sinPiDelta0->data, cosPiDelta0->data, PiDelta->data, PiDelta->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorScaleREAL4(PiDelta->data, (REAL4)LAL_PI, delta1_int->data, delta1_int->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorSinCosREAL4(sinPiDelta1->data, cosPiDelta1->data, PiDelta->data, PiDelta->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorMultiplyREAL4(realTerms->data, cosPiDelta1->data, cosPiDelta0->data, cosPiDelta1->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorMultiplyREAL4(realTerms2->data, sinPiDelta1->data, sinPiDelta0->data, sinPiDelta1->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorAddREAL4(realTerms->data, realTerms->data, realTerms2->data, realTerms->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorMultiplyREAL4(imagTerms->data, sinPiDelta1->data, cosPiDelta0->data, sinPiDelta1->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorMultiplyREAL4(imagTerms2->data, cosPiDelta1->data, sinPiDelta0->data, cosPiDelta1->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorScaleREAL4(imagTerms2->data, -1.0, imagTerms2->data, imagTerms2->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorAddREAL4(imagTerms->data, imagTerms->data, imagTerms2->data, imagTerms->length) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   for (UINT4 ii=0; ii<output->length; ii++) {
+      if (fabsf(delta1_int->data[ii])<(REAL4)1.0e-6) {
+         if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = 1.0;
+         else if (fabsf((REAL4)(delta0_int->data[ii]*delta0_int->data[ii]-1.0))<(REAL4)1.0e-6) output->data[ii] = -2.0;
+         else if (fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) output->data[ii] = 0.0;
+         else output->data[ii] = 0.5/(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta0_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta0_int->data[ii]*(delta0_int->data[ii]*delta0_int->data[ii]-1.0)));
+      } else if (fabsf((REAL4)(delta1_int->data[ii]*delta1_int->data[ii]-1.0))<(REAL4)1.0e-6) {
+         if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = -0.5;
+         else if (fabsf((REAL4)(delta0_int->data[ii]*delta0_int->data[ii]-1.0))<(REAL4)1.0e-6) output->data[ii] = 1.0;
+         else if (fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) output->data[ii] = 0.0;
+         else output->data[ii] = -0.25/(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta0_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta0_int->data[ii]*(delta0_int->data[ii]*delta0_int->data[ii]-1.0)));
+      } else if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = 2.0*(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta1_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta1_int->data[ii]*(delta1_int->data[ii]*delta1_int->data[ii]-1.0)));
+      else if (fabsf((REAL4)(delta0_int->data[ii] - 1.0))<(REAL4)1.0e-6) output->data[ii] = -4.0*(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta1_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta1_int->data[ii]*(delta1_int->data[ii]*delta1_int->data[ii]-1.0)));
+      else if (fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) output->data[ii] = 0.0;
+      else output->data[ii] = scaling->data[ii]*sinPiDelta1->data[ii]/sinPiDelta0->data[ii]*crectf(realTerms->data[ii], imagTerms->data[ii]);
+   }
+
+   XLALDestroyREAL4VectorAligned(delta0_int);
+   XLALDestroyREAL4VectorAligned(delta1_int);
+   XLALDestroyREAL4VectorAligned(sinPiDelta0);
+   XLALDestroyREAL4VectorAligned(sinPiDelta1);
+   XLALDestroyREAL4VectorAligned(cosPiDelta0);
+   XLALDestroyREAL4VectorAligned(cosPiDelta1);
+   XLALDestroyREAL4VectorAligned(PiDelta);
+   XLALDestroyREAL4VectorAligned(realTerms);
+   XLALDestroyREAL4VectorAligned(realTerms2);
+   XLALDestroyREAL4VectorAligned(imagTerms);
+   XLALDestroyREAL4VectorAligned(imagTerms2);
+
+   return XLAL_SUCCESS;
+
+   /* XLAL_CHECK( output!=NULL && delta0!=NULL && delta1!=NULL && scaling!=NULL && params!=NULL, XLAL_EFUNC );
+
+   REAL4VectorAligned *delta0_int = NULL, *delta1_int = NULL, *sinVecSum = NULL, *cosVecDiff = NULL, *sinVec = NULL, *cosVec = NULL, *TwoPiDelta1minusPiDelta0 = NULL, *PiDelta0 = NULL;
+   XLAL_CHECK( (delta0_int = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (delta1_int = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (sinVecSum = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (cosVecDiff = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (sinVec = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (cosVec = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (PiDelta0 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (TwoPiDelta1minusPiDelta0 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+
+   for (UINT4 ii=0; ii<delta0_int->length; ii++) {
+      delta0_int->data[ii] = (REAL4)(delta0->data[ii]);
+      delta1_int->data[ii] = (REAL4)(delta1->data[ii]);
+   }
+
+   XLAL_CHECK( XLALVectorScaleREAL4(TwoPiDelta1minusPiDelta0->data, (REAL4)LAL_TWOPI, delta1_int->data, delta1_int->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorScaleREAL4(PiDelta0->data, (REAL4)LAL_PI, delta0_int->data, delta0_int->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( VectorSubtractREAL4(TwoPiDelta1minusPiDelta0, TwoPiDelta1minusPiDelta0, PiDelta0, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorSinCosREAL4(sinVecSum->data, cosVecDiff->data, TwoPiDelta1minusPiDelta0->data, TwoPiDelta1minusPiDelta0->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorSinCosREAL4(sinVec->data, cosVec->data, PiDelta0->data, PiDelta0->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorAddREAL4(sinVecSum->data, sinVecSum->data, sinVec->data, sinVecSum->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( VectorSubtractREAL4(cosVecDiff, cosVec, cosVecDiff, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   for (UINT4 ii=0; ii<output->length; ii++) {
+      if (fabsf(delta1_int->data[ii])<(REAL4)1.0e-6 || fabsf((REAL4)(delta1_int->data[ii]*delta1_int->data[ii]-1.0))<(REAL4)1.0e-6 || fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) output->data[ii] = crectf(0.0, 0.0);
+      else output->data[ii] = scaling->data[ii]/(2.0*sinVec->data[ii])*crectf(sinVecSum->data[ii], cosVecDiff->data[ii]);
+   }
+
+   XLALDestroyREAL4VectorAligned(delta0_int);
+   XLALDestroyREAL4VectorAligned(delta1_int);
+   XLALDestroyREAL4VectorAligned(sinVec);
+   XLALDestroyREAL4VectorAligned(cosVec);
+   XLALDestroyREAL4VectorAligned(sinVecSum);
+   XLALDestroyREAL4VectorAligned(cosVecDiff);
+   XLALDestroyREAL4VectorAligned(PiDelta0);
+   XLALDestroyREAL4VectorAligned(TwoPiDelta1minusPiDelta0);
+
+   return XLAL_SUCCESS;
+   */
+
+}
 
 /**
  * \brief Computes a multiplication of two vectors with a stride and initial offset
  *
  * Be sure you know what you are doing or this could go wrong (no error checking for speed!)
- * \param [out] output  Pointer to REAL4Vector output
- * \param [in]  input1  Pointer to first REAL4Vector input
- * \param [in]  input2  Pointer to second REAL4Vector input
+ * \param [out] output  Pointer to REAL4VectorAligned output
+ * \param [in]  input1  Pointer to first REAL4VectorAligned input
+ * \param [in]  input2  Pointer to second REAL4VectorAligned input
  * \param [in]  stride1 Skip stride1 number of elements in input1
  * \param [in]  stride2 Skip stride2 number of elements in input2
  * \param [in]  offset1 Start at offset1 number of elements from the beginning of input1
  * \param [in]  offset2 Start at offset2 number of elements from the beginning of input2
  * \return Status value
  */
-INT4 fastSSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2)
+INT4 fastSSVectorMultiply_with_stride_and_offset(REAL4VectorAligned *output, const REAL4VectorAligned *input1, const REAL4VectorAligned *input2, const INT4 stride1, const INT4 stride2, const INT4 offset1, const INT4 offset2)
 {
 
    REAL4 *a, *b, *c;
@@ -147,91 +256,67 @@ INT4 fastSSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vecto
 
 } /* SSVectorMultiply_with_stride_and_offset() */
 
-/**
- * Sum two REAL4VectorAligned using SSE
- * \param [out] output Pointer to a REAL4VectorAligned
- * \param [in]  input1 Pointer to a REAL4VectorAligned
- * \param [in]  input2 Pointer to a REAL4VectorAligned
- * \return Status value
- */
-INT4 sseSSVectorSum(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2)
+INT4 VectorSubtractREAL4(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2, INT4 vectorMath)
 {
-
-#ifdef __SSE__
-   INT4 roundedvectorlength = (INT4)input1->length / 4;
-
-   __m128 *arr1, *arr2, *result;
-   arr1 = (__m128*)(void*)input1->data;
-   arr2 = (__m128*)(void*)input2->data;
-   result = (__m128*)(void*)output->data;
-
-   //add the two vectors into the output
-   for (INT4 ii=0; ii<roundedvectorlength; ii++) {
-      *result = _mm_add_ps(*arr1, *arr2);
-      arr1++;
-      arr2++;
-      result++;
-   }
-
-   //Finish up the remaining part
-   for (INT4 ii=4*roundedvectorlength; ii<(INT4)input1->length; ii++) output->data[ii] = input1->data[ii] + input2->data[ii];
-
+   XLAL_CHECK( output!=NULL && input1!=NULL && input2!=NULL, XLAL_EINVAL );
+   if (vectorMath==1) XLAL_CHECK( sseSSVectorSubtract(output, input1, input2) == XLAL_SUCCESS, XLAL_EFUNC );
+   else if (vectorMath==2) XLAL_CHECK( avxSSVectorSubtract(output, input1, input2) == XLAL_SUCCESS, XLAL_EFUNC );
+   else for (UINT4 ii=0; ii<input1->length; ii++) output->data[ii] = input1->data[ii] - input2->data[ii];
    return XLAL_SUCCESS;
-#else
-   (void)output;
-   (void)input1;
-   (void)input2;
-   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR(XLAL_EFAILED);
-#endif
-
 }
 
-
-/**
- * Sum two REAL4VectorAligned using AVX
- * \param [out] output Pointer to a REAL4VectorAligned
- * \param [in]  input1 Pointer to a REAL4VectorAligned
- * \param [in]  input2 Pointer to a REAL4VectorAligned
- * \return Status value
- */
-INT4 avxSSVectorSum(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2)
+INT4 VectorScaleREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, REAL8 scale, INT4 vectorMath)
 {
-
-#ifdef __AVX__
-   //Need to zero the upper 128 bits in case of an SSE function call after this AVX function
-   _mm256_zeroupper();
-   
-   INT4 roundedvectorlength = (INT4)input1->length / 8;
-
-   __m256 *arr1, *arr2, *result;
-   arr1 = (__m256*)(void*)input1->data;
-   arr2 = (__m256*)(void*)input2->data;
-   result = (__m256*)(void*)output->data;
-
-   //add the two vectors into the output
-   for (INT4 ii=0; ii<roundedvectorlength; ii++) {
-      *result = _mm256_add_ps(*arr1, *arr2);
-      arr1++;
-      arr2++;
-      result++;
-   }
-
-   //Finish up the remaining part
-   for (INT4 ii=8*roundedvectorlength; ii<(INT4)input1->length; ii++) output->data[ii] = input1->data[ii] + input2->data[ii];
-
-   //Need to zero the upper 128 bits in case of an SSE function call after this AVX function
-   _mm256_zeroupper();
-
+   XLAL_CHECK( output!=NULL && input!=NULL, XLAL_EINVAL );
+   if (vectorMath==1) XLAL_CHECK( sseScaleREAL8Vector(output, input, scale) == XLAL_SUCCESS, XLAL_EFUNC );
+   else if (vectorMath==2) XLAL_CHECK( avxScaleREAL8Vector(output, input, scale) == XLAL_SUCCESS, XLAL_EFUNC );
+   else for (UINT4 ii=0; ii<input->length; ii++) output->data[ii] = input->data[ii] * scale;
    return XLAL_SUCCESS;
-#else
-   (void)output;
-   (void)input1;
-   (void)input2;
-   fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR(XLAL_EFAILED);
-#endif
+}
 
+INT4 VectorShiftREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, REAL8 shift, INT4 vectorMath)
+{
+   XLAL_CHECK( output!=NULL && input!=NULL, XLAL_EINVAL );
+   if (vectorMath==1) XLAL_CHECK( sseAddScalarToREAL8Vector(output, input, shift) == XLAL_SUCCESS, XLAL_EFUNC );
+   else if (vectorMath==2) XLAL_CHECK( avxAddScalarToREAL8Vector(output, input, shift) == XLAL_SUCCESS, XLAL_EFUNC );
+   else for (UINT4 ii=0; ii<input->length; ii++) output->data[ii] = input->data[ii] + shift;
+   return XLAL_SUCCESS;
+}
+
+INT4 VectorAddREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input1, alignedREAL8Vector *input2, INT4 vectorMath)
+{
+   XLAL_CHECK( output!=NULL && input1!=NULL && input2!=NULL, XLAL_EINVAL );
+   if (vectorMath==1) XLAL_CHECK( sseDDVectorSum(output, input1, input2) == XLAL_SUCCESS, XLAL_EFUNC );
+   else if (vectorMath==2) XLAL_CHECK( avxDDVectorSum(output, input1, input2) == XLAL_SUCCESS, XLAL_EFUNC );
+   else for (UINT4 ii=0; ii<input1->length; ii++) output->data[ii] = input1->data[ii] + input2->data[ii];
+   return XLAL_SUCCESS;
+}
+
+INT4 VectorSubtractREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input1, alignedREAL8Vector *input2, INT4 vectorMath)
+{
+   XLAL_CHECK( output!=NULL && input1!=NULL && input2!=NULL, XLAL_EINVAL );
+   if (vectorMath==1) XLAL_CHECK( sseDDVectorSubtract(output, input1, input2) == XLAL_SUCCESS, XLAL_EFUNC );
+   else if (vectorMath==2) XLAL_CHECK( avxDDVectorSubtract(output, input1, input2) == XLAL_SUCCESS, XLAL_EFUNC );
+   else for (UINT4 ii=0; ii<input1->length; ii++) output->data[ii] = input1->data[ii] - input2->data[ii];
+   return XLAL_SUCCESS;
+}
+
+INT4 VectorMultiplyREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input1, alignedREAL8Vector *input2, INT4 vectorMath)
+{
+   XLAL_CHECK( output!=NULL && input1!=NULL && input2!=NULL, XLAL_EINVAL );
+   if (vectorMath==1) XLAL_CHECK( sseDDVectorMultiply(output, input1, input2) == XLAL_SUCCESS, XLAL_EFUNC );
+   else if (vectorMath==2) XLAL_CHECK( avxDDVectorMultiply(output, input1, input2) == XLAL_SUCCESS, XLAL_EFUNC );
+   else for (UINT4 ii=0; ii<input1->length; ii++) output->data[ii] = input1->data[ii] * input2->data[ii];
+   return XLAL_SUCCESS;
+}
+
+INT4 VectorInvertREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, INT4 vectorMath)
+{
+   XLAL_CHECK( output!=NULL && input!=NULL, XLAL_EINVAL );
+   if (vectorMath==1) XLAL_CHECK( sseInvertREAL8Vector(output, input) == XLAL_SUCCESS, XLAL_EFUNC );
+   else if (vectorMath==2) XLAL_CHECK( avxInvertREAL8Vector(output, input) == XLAL_SUCCESS, XLAL_EFUNC );
+   else for (UINT4 ii=0; ii<input->length; ii++) output->data[ii] = 1.0/input->data[ii];
+   return XLAL_SUCCESS;
 }
 
 /**
@@ -494,93 +579,6 @@ INT4 avxDDVectorSubtract(alignedREAL8Vector *output, alignedREAL8Vector *input1,
 }
 
 /**
- * Multiply two REAL4VectorAligned using SSE
- * \param [out] output Pointer to a REAL4VectorAligned
- * \param [in]  input1 Pointer to a REAL4VectorAligned
- * \param [in]  input2 Pointer to a REAL4VectorAligned
- * \return Status value
- */
-INT4 sseSSVectorMultiply(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2)
-{
-
-#ifdef __SSE__
-   INT4 roundedvectorlength = (INT4)input1->length / 4;
-
-   __m128 *arr1, *arr2, *result;
-   arr1 = (__m128*)(void*)input1->data;
-   arr2 = (__m128*)(void*)input2->data;
-   result = (__m128*)(void*)output->data;
-
-   //multiply the two vectors into the output
-   for (INT4 ii=0; ii<roundedvectorlength; ii++) {
-      *result = _mm_mul_ps(*arr1, *arr2);
-      arr1++;
-      arr2++;
-      result++;
-   }
-
-   //Finish up the remaining part
-   for (INT4 ii=4*roundedvectorlength; ii<(INT4)input1->length; ii++) output->data[ii] = input1->data[ii] * input2->data[ii];
-
-   return XLAL_SUCCESS;
-#else
-   (void)output;
-   (void)input1;
-   (void)input2;
-   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR(XLAL_EFAILED);
-#endif
-
-}
-
-
-/**
- * Multiply two REAL4VectorAligned using AVX
- * \param [out] output Pointer to a REAL4VectorAligned
- * \param [in]  input1 Pointer to a REAL4VectorAligned
- * \param [in]  input2 Pointer to a REAL4VectorAligned
- * \return Status value
- */
-INT4 avxSSVectorMultiply(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2)
-{
-
-#ifdef __AVX__
-   //Need to zero the upper 128 bits in case of an SSE function call after this AVX function
-   _mm256_zeroupper();
-
-   INT4 roundedvectorlength = (INT4)input1->length / 8;
-
-   __m256 *arr1, *arr2, *result;
-   arr1 = (__m256*)(void*)input1->data;
-   arr2 = (__m256*)(void*)input2->data;
-   result = (__m256*)(void*)output->data;
-
-   //multiply the two vectors into the output
-   for (INT4 ii=0; ii<roundedvectorlength; ii++) {
-      *result = _mm256_mul_ps(*arr1, *arr2);
-      arr1++;
-      arr2++;
-      result++;
-   }
-
-   //Finish up the remaining part
-   for (INT4 ii=8*roundedvectorlength; ii<(INT4)input1->length; ii++) output->data[ii] = input1->data[ii] * input2->data[ii];
-
-   //Need to zero the upper 128 bits in case of an SSE function call after this AVX function
-   _mm256_zeroupper();
-
-   return XLAL_SUCCESS;
-#else
-   (void)output;
-   (void)input1;
-   (void)input2;
-   fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR(XLAL_EFAILED);
-#endif
-
-}
-
-/**
  * Multiply two alignedREAL8Vector using SSE
  * \param [out] output Pointer to a alignedREAL8Vector
  * \param [in]  input1 Pointer to a alignedREAL8Vector
@@ -751,94 +749,6 @@ INT4 avxInvertREAL8Vector(alignedREAL8Vector *output, alignedREAL8Vector *input1
 }
 
 /**
- * Add a REAL4 scalar value to the elements of a REAL4VectorAligned using SSE
- * \param [out] output Pointer to a REAL4VectorAligned
- * \param [in]  input  Pointer to a REAL4VectorAligned
- * \param [in]  scalar Value to add to the elements of input
- * \return Status value
- */
-INT4 sseAddScalarToREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scalar)
-{
-
-#ifdef __SSE__
-   INT4 roundedvectorlength = (INT4)input->length / 4;
-
-   __m128 *arr1, *result;
-   arr1 = (__m128*)(void*)input->data;
-   result = (__m128*)(void*)output->data;
-
-   __m128 scalefactor = _mm_set1_ps(scalar);
-
-   //Add the value to the vector and put in the output
-   for (INT4 ii=0; ii<roundedvectorlength; ii++) {
-      *result = _mm_add_ps(*arr1, scalefactor);
-      arr1++;
-      result++;
-   }
-
-   //Finish up the remaining part
-   for (INT4 ii=4*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[ii] = input->data[ii] + scalar;
-
-   return XLAL_SUCCESS;
-#else
-   (void)output;
-   (void)input;
-   (void)scalar;
-   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR(XLAL_EFAILED);
-#endif
-
-}
-
-
-/**
- * Add a REAL4 scalar value to the elements of a REAL4VectorAligned using AVX
- * \param [out] output Pointer to a REAL4VectorAligned
- * \param [in]  input  Pointer to a REAL4VectorAligned
- * \param [in]  scalar Value to add to the elements of input
- * \return Status value
- */
-INT4 avxAddScalarToREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scalar)
-{
-
-#ifdef __AVX__
-   //Need to zero the upper 128 bits in case of an SSE function call after this AVX function
-   _mm256_zeroupper();
-
-   INT4 roundedvectorlength = (INT4)input->length / 8;
-
-   __m256 *arr1, *result;
-   arr1 = (__m256*)(void*)input->data;
-   result = (__m256*)(void*)output->data;
-
-   __m256 scalefactor = _mm256_set1_ps(scalar);
-
-   //Add the value to the vector and put in the output
-   for (INT4 ii=0; ii<roundedvectorlength; ii++) {
-      *result = _mm256_add_ps(*arr1, scalefactor);
-      arr1++;
-      result++;
-   }
-
-   //Finish up the remaining part
-   for (INT4 ii=8*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[ii] = input->data[ii] + scalar;
-
-   //Need to zero the upper 128 bits in case of an SSE function call after this AVX function
-   _mm256_zeroupper();
-
-   return XLAL_SUCCESS;
-#else
-   (void)output;
-   (void)input;
-   (void)scalar;
-   fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR(XLAL_EFAILED);
-#endif
-
-}
-
-
-/**
  * Add a REAL8 scalar value to the elements of a alignedREAL8Vector using SSE
  * \param [out] output Pointer to a alignedREAL8Vector
  * \param [in]  input  Pointer to a alignedREAL8Vector
@@ -924,95 +834,6 @@ INT4 avxAddScalarToREAL8Vector(alignedREAL8Vector *output, alignedREAL8Vector *i
 #endif
 
 }
-
-
-/**
- * Scale the elements of a REAL4VectorAligned by a REAL4 value using SSE
- * \param [out] output Pointer to a REAL4VectorAligned
- * \param [in]  input  Pointer to a REAL4VectorAligned
- * \param [in]  scale  Value to scale the elements of input
- * \return Status value
- */
-INT4 sseScaleREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scale)
-{
-
-#ifdef __SSE__
-   INT4 roundedvectorlength = (INT4)input->length / 4;
-
-   __m128 *arr1, *result;
-   arr1 = (__m128*)(void*)input->data;
-   result = (__m128*)(void*)output->data;
-
-   __m128 scalefactor = _mm_set1_ps(scale);
-
-   //multiply the vector into the output
-   for (INT4 ii=0; ii<roundedvectorlength; ii++) {
-      *result = _mm_mul_ps(*arr1, scalefactor);
-      arr1++;
-      result++;
-   }
-
-   //Finish up the remaining part
-   for (INT4 ii=4*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[ii] = input->data[ii] * scale;
-
-   return XLAL_SUCCESS;
-#else
-   (void)output;
-   (void)input;
-   (void)scale;
-   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR(XLAL_EFAILED);
-#endif
-
-}
-
-
-/**
- * Scale the elements of a REAL4Vector by a REAL4 value using AVX
- * \param [out] output Pointer to a REAL4VectorAligned
- * \param [in]  input  Pointer to a REAL4VectorAligned
- * \param [in]  scale  Value to scale the elements of input
- * \return Status value
- */
-INT4 avxScaleREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scale)
-{
-
-#ifdef __AVX__
-   //Need to zero the upper 128 bits in case of an SSE function call after this AVX function
-   _mm256_zeroupper();
-
-   INT4 roundedvectorlength = (INT4)input->length / 8;
-
-   __m256 *arr1, *result;
-   arr1 = (__m256*)(void*)input->data;
-   result = (__m256*)(void*)output->data;
-
-   __m256 scalefactor = _mm256_set1_ps(scale);
-
-   //multiply the vector into the output
-   for (INT4 ii=0; ii<roundedvectorlength; ii++) {
-      *result = _mm256_mul_ps(*arr1, scalefactor);
-      arr1++;
-      result++;
-   }
-
-   //Finish up the remaining part
-   for (INT4 ii=8*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[ii] = input->data[ii] * scale;
-
-   //Need to zero the upper 128 bits in case of an SSE function call after this AVX function
-   _mm256_zeroupper();
-
-   return XLAL_SUCCESS;
-#else
-   (void)output;
-   (void)input;
-   (void)scale;
-   fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR(XLAL_EFAILED);
-#endif
-
-}
-
 
 /**
  * Scale the elements of a alignedREAL8Vector by a REAL8 value using SSE
@@ -1102,44 +923,21 @@ INT4 avxScaleREAL8Vector(alignedREAL8Vector *output, alignedREAL8Vector *input, 
 }
 
 /**
- * Sum vectors from alignedREAL4VectorArrays into an output alignedREAL4VectorArray using SSE
- * \param [out] output          Pointer to alignedREAL4VectorArray
- * \param [in]  input1          Pointer to alignedREAL4VectorArray
- * \param [in]  input2          Pointer to alignedREAL4VectorArray
+ * Sum vectors from REAL4VectorAlignedArrays into an output REAL4VectorAlignedArray using SIMD
+ * \param [out] output          Pointer to REAL4VectorAlignedArray
+ * \param [in]  input1          Pointer to REAL4VectorAlignedArray
+ * \param [in]  input2          Pointer to REAL4VectorAlignedArray
  * \param [in]  vectorpos1      Starting vector index for input1
  * \param [in]  vectorpos2      Starting vector index for input2
  * \param [in]  outputvectorpos Starting vector index for output
  * \param [in]  numvectors      Number of vectors to sum, incrementing vectorpos1, vectorpos2, and outputvectorpos by 1 each time
  * \return Status value
  */
-INT4 sseSSVectorArraySum(alignedREAL4VectorArray *output, alignedREAL4VectorArray *input1, alignedREAL4VectorArray *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors)
+INT4 VectorArraySum(REAL4VectorAlignedArray *output, REAL4VectorAlignedArray *input1, REAL4VectorAlignedArray *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors)
 {
    INT4 vec1 = vectorpos1, vec2 = vectorpos2, outvec = outputvectorpos;
    for (INT4 ii=0; ii<numvectors; ii++) {
-      XLAL_CHECK( sseSSVectorSum(output->data[outvec], input1->data[vec1], input2->data[vec2]) == XLAL_SUCCESS, XLAL_EFUNC );
-      vec1++;
-      vec2++;
-      outvec++;
-   }
-   return XLAL_SUCCESS;
-}
-
-/**
- * Sum vectors from alignedREAL4VectorArrays into an output alignedREAL4VectorArray using AVX
- * \param [out] output          Pointer to alignedREAL4VectorArray
- * \param [in]  input1          Pointer to alignedREAL4VectorArray
- * \param [in]  input2          Pointer to alignedREAL4VectorArray
- * \param [in]  vectorpos1      Starting vector index for input1
- * \param [in]  vectorpos2      Starting vector index for input2
- * \param [in]  outputvectorpos Starting vector index for output
- * \param [in]  numvectors      Number of vectors to sum, incrementing vectorpos1, vectorpos2, and outputvectorpos by 1 each time
- * \return Status value
- */
-INT4 avxSSVectorArraySum(alignedREAL4VectorArray *output, alignedREAL4VectorArray *input1, alignedREAL4VectorArray *input2, INT4 vectorpos1, INT4 vectorpos2, INT4 outputvectorpos, INT4 numvectors)
-{
-   INT4 vec1 = vectorpos1, vec2 = vectorpos2, outvec = outputvectorpos;
-   for (INT4 ii=0; ii<numvectors; ii++) {
-      XLAL_CHECK( avxSSVectorSum(output->data[outvec], input1->data[vec1], input2->data[vec2]) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALVectorAddREAL4(output->data[outvec]->data, input1->data[vec1]->data, input2->data[vec2]->data, input1->data[vec1]->length) == XLAL_SUCCESS, XLAL_EFUNC );
       vec1++;
       vec2++;
       outvec++;

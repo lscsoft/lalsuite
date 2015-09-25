@@ -32,7 +32,7 @@
  * \param [in] length Length of the template
  * \return Pointer to TwoSpectTemplate
  */
-TwoSpectTemplate * new_TwoSpectTemplate(INT4 length)
+TwoSpectTemplate * createTwoSpectTemplate(const UINT4 length)
 {
 
    TwoSpectTemplate *template = NULL;
@@ -50,7 +50,7 @@ TwoSpectTemplate * new_TwoSpectTemplate(INT4 length)
 
    return template;
 
-} /* new_TwoSpectTemplate() */
+} /* createTwoSpectTemplate() */
 
 
 /**
@@ -75,12 +75,14 @@ void resetTwoSpectTemplate(TwoSpectTemplate *template)
  * Free a TwoSpectTemplate
  * \param [in] template Pointer to a TwoSpectTemplate
  */
-void free_TwoSpectTemplate(TwoSpectTemplate *template)
+void destroyTwoSpectTemplate(TwoSpectTemplate *template)
 {
-   XLALDestroyREAL4VectorAligned(template->templatedata);
-   XLALDestroyINT4Vector(template->pixellocations);
-   XLALFree((TwoSpectTemplate*)template);
-} /* free_TwoSpectTemplate() */
+   if (template) {
+      XLALDestroyREAL4VectorAligned(template->templatedata);
+      XLALDestroyINT4Vector(template->pixellocations);
+      XLALFree((TwoSpectTemplate*)template);
+   }
+} /* destroyTwoSpectTemplate() */
 
 
 /**
@@ -89,7 +91,7 @@ void free_TwoSpectTemplate(TwoSpectTemplate *template)
  * \param [in] templateLength The maximum number of pixels in a template
  * \return Pointer to a TwoSpectTemplateVector
  */
-TwoSpectTemplateVector * new_TwoSpectTemplateVector(UINT4 length, UINT4 templateLength)
+TwoSpectTemplateVector * createTwoSpectTemplateVector(const UINT4 length, const UINT4 templateLength)
 {
    TwoSpectTemplateVector *vector = NULL;
    XLAL_CHECK_NULL( (vector = XLALMalloc(sizeof(*vector))) != NULL, XLAL_ENOMEM );
@@ -98,7 +100,7 @@ TwoSpectTemplateVector * new_TwoSpectTemplateVector(UINT4 length, UINT4 template
    vector->data = NULL;
    if (vector->length>0) {
       XLAL_CHECK_NULL( (vector->data = XLALMalloc(vector->length*sizeof(*vector->data))) != NULL, XLAL_ENOMEM );
-      for (UINT4 ii=0; ii<vector->length; ii++) XLAL_CHECK_NULL( (vector->data[ii] = new_TwoSpectTemplate(templateLength)) != NULL, XLAL_EFUNC );
+      for (UINT4 ii=0; ii<vector->length; ii++) XLAL_CHECK_NULL( (vector->data[ii] = createTwoSpectTemplate(templateLength)) != NULL, XLAL_EFUNC );
    }
 
    vector->Tsft = 0.0;
@@ -113,12 +115,12 @@ TwoSpectTemplateVector * new_TwoSpectTemplateVector(UINT4 length, UINT4 template
  * Free a TwoSpectTemplateVector
  * \param [in] vector Pointer to the TwoSpectTemplateVector
  */
-void free_TwoSpectTemplateVector(TwoSpectTemplateVector *vector)
+void destroyTwoSpectTemplateVector(TwoSpectTemplateVector *vector)
 {
    if (vector==NULL) return;
    if ((!vector->length || !vector->data) && (vector->length || vector->data)) XLAL_ERROR_VOID(XLAL_EINVAL);
    if (vector->data) {
-      for (UINT4 ii=0; ii<vector->length; ii++) free_TwoSpectTemplate(vector->data[ii]);
+      for (UINT4 ii=0; ii<vector->length; ii++) destroyTwoSpectTemplate(vector->data[ii]);
       XLALFree((TwoSpectTemplate*)vector->data);
    }
    vector->data = NULL;
@@ -143,10 +145,10 @@ void free_TwoSpectTemplateVector(TwoSpectTemplateVector *vector)
  * \param [in] exactflag         Flag specifying to use exact templates: 1 = enabled, 0 = disabled
  * \return Pointer to a TwoSpectTemplateVector
  */
-TwoSpectTemplateVector * generateTwoSpectTemplateVector(REAL8 Pmin, REAL8 Pmax, REAL8 dfmin, REAL8 dfmax, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, UINT4 maxvectorlength, UINT4 minTemplateLength, UINT4 maxTemplateLength, UINT4 vectormathflag, BOOLEAN exactflag)
+TwoSpectTemplateVector * generateTwoSpectTemplateVector(const REAL8 Pmin, const REAL8 Pmax, const REAL8 dfmin, const REAL8 dfmax, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const UINT4 maxvectorlength, const UINT4 minTemplateLength, const UINT4 maxTemplateLength, const UINT4 vectormathflag, const BOOLEAN exactflag)
 {
    TwoSpectTemplateVector *vector = NULL;
-   XLAL_CHECK_NULL( (vector = new_TwoSpectTemplateVector(maxvectorlength, maxTemplateLength)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (vector = createTwoSpectTemplateVector(maxvectorlength, maxTemplateLength)) != NULL, XLAL_EFUNC );
 
    vector->Tsft = Tsft;
    vector->SFToverlap = SFToverlap;
@@ -195,8 +197,10 @@ TwoSpectTemplateVector * generateTwoSpectTemplateVector(REAL8 Pmin, REAL8 Pmax, 
  * \param [in] filename String of the filename
  * \return Status value
  */
-INT4 writeTwoSpectTemplateVector(TwoSpectTemplateVector *vector, CHAR *filename)
+INT4 writeTwoSpectTemplateVector(const TwoSpectTemplateVector *vector, const CHAR *filename)
 {
+   XLAL_CHECK( vector!=NULL && filename!=NULL, XLAL_EINVAL );
+
    FILE *fp = NULL;
    XLAL_CHECK( (fp = fopen(filename, "wb")) != NULL, XLAL_EIO, "Couldn't fopen %s for writing\n", filename );
    XLAL_CHECK( fwrite(&(vector->length), sizeof(UINT4), 1, fp) == 1, XLAL_EIO );
@@ -216,14 +220,15 @@ INT4 writeTwoSpectTemplateVector(TwoSpectTemplateVector *vector, CHAR *filename)
    return XLAL_SUCCESS;
 }
 
-
 /**
  * Read a TwoSpectTemplateVector from a binary file
  * \param [in] filename String of the filename
  * \return Pointer to a new TwoSpectTemplateVector
  */
-TwoSpectTemplateVector * readTwoSpectTemplateVector(CHAR *filename)
+TwoSpectTemplateVector * readTwoSpectTemplateVector(const CHAR *filename)
 {
+   XLAL_CHECK_NULL( filename!=NULL, XLAL_EINVAL );
+
    TwoSpectTemplateVector *vector = NULL;
    UINT4 vectorlength, templatelength;
    FILE *fp = NULL;
@@ -231,7 +236,7 @@ TwoSpectTemplateVector * readTwoSpectTemplateVector(CHAR *filename)
    
    XLAL_CHECK_NULL( fread(&vectorlength, sizeof(UINT4), 1, fp) == 1, XLAL_EIO );
    XLAL_CHECK_NULL( fread(&templatelength, sizeof(UINT4), 1, fp) == 1, XLAL_EIO );
-   XLAL_CHECK_NULL( (vector = new_TwoSpectTemplateVector(vectorlength, templatelength)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (vector = createTwoSpectTemplateVector(vectorlength, templatelength)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( fread(&(vector->Tsft), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
    XLAL_CHECK_NULL( fread(&(vector->SFToverlap), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
    XLAL_CHECK_NULL( fread(&(vector->Tobs), sizeof(REAL8), 1, fp) == 1, XLAL_EIO );
@@ -259,7 +264,7 @@ TwoSpectTemplateVector * readTwoSpectTemplateVector(CHAR *filename)
  * \param [in]  params     Pointer to UserInput_t
  * \return Status value
  */
-INT4 makeTemplateGaussians(TwoSpectTemplate *output, candidate input, UserInput_t *params)
+INT4 makeTemplateGaussians(TwoSpectTemplate *output, const candidate input, const UserInput_t *params)
 {
    XLAL_CHECK( output != NULL && params != NULL, XLAL_EINVAL );
    XLAL_CHECK( input.period != 0.0 && input.moddepth != 0.0, XLAL_EINVAL, "Invalid input (%f, %f, %f)\n", input.fsig, input.period, input.moddepth );
@@ -291,15 +296,16 @@ INT4 makeTemplateGaussians(TwoSpectTemplate *output, candidate input, UserInput_
 /**
  * \brief Convert an arbitrary frequency bin template into a template for a specific frequency bin.
  *
- * When using this function, the input template should be generated first using mateTemplate*2 functions. 
+ * When using this function, the input template should be generated first using makeTemplate*2 functions. 
  * Then call this function with a specific bin center frequency. 
  * The input template can contain an offset up to half a frequency bin in order to generate any frequency of a template.
+ * The output template must be at most as long as the input template. For shorter lengths, only the first output->templatedata->length values are kept
  * \param [in,out] output Pointer to a TwoSpectTemplate for a specific frequency bin
  * \param [in]     input  Pointer to a TwoSpectTemplate for an arbitrary frequency bin
  * \param [in]     freq   Frequency of a bin centered signal
  * \param [in]     params Pointer to a UserInput_t struct
  */
-INT4 convertTemplateForSpecificFbin(TwoSpectTemplate *output, TwoSpectTemplate *input, REAL8 freq, UserInput_t *params)
+INT4 convertTemplateForSpecificFbin(TwoSpectTemplate *output, const TwoSpectTemplate *input, const REAL8 freq, const UserInput_t *params)
 {
    XLAL_CHECK( output != NULL && input != NULL && params != NULL && freq>=params->fmin && freq<params->fmin+params->fspan, XLAL_EINVAL );
 
@@ -308,8 +314,8 @@ INT4 convertTemplateForSpecificFbin(TwoSpectTemplate *output, TwoSpectTemplate *
    UINT4 numffts = (UINT4)floor(params->Tobs/(params->Tsft-params->SFToverlap)-1);
    UINT4 numfprbins = (UINT4)floorf(0.5*numffts) + 1;
 
-   memcpy(output->templatedata->data, input->templatedata->data, sizeof(REAL4)*input->templatedata->length);
-   memcpy(output->pixellocations->data, input->pixellocations->data, sizeof(INT4)*input->pixellocations->length);
+   memcpy(output->templatedata->data, input->templatedata->data, sizeof(REAL4)*output->templatedata->length);
+   memcpy(output->pixellocations->data, input->pixellocations->data, sizeof(INT4)*output->pixellocations->length);
    output->f0 = freq + input->f0/params->Tsft;
    output->period = input->period;
    output->moddepth = input->moddepth;
@@ -318,7 +324,7 @@ INT4 convertTemplateForSpecificFbin(TwoSpectTemplate *output, TwoSpectTemplate *
    INT4 roundedbinval = (INT4)round(freqbin);
    INT4 ffdatabin0 = (INT4)round((params->fmin-params->dfmax)*params->Tsft) - 6;
    INT4 sigbin0 = roundedbinval - ffdatabin0;
-   for (UINT4 ii=0; ii<input->pixellocations->length; ii++) output->pixellocations->data[ii] += sigbin0*numfprbins;
+   for (UINT4 ii=0; ii<output->pixellocations->length; ii++) output->pixellocations->data[ii] += sigbin0*numfprbins;
 
    return XLAL_SUCCESS;
 }
@@ -341,7 +347,7 @@ INT4 convertTemplateForSpecificFbin(TwoSpectTemplate *output, TwoSpectTemplate *
  * \param [in]     vectormathflag    Flag indicating to use vector math: 0 = none, 1 = SSE, 2 = AVX (must compile for vector math appropriately and CPU must have those instructions)
  * \return Status value
  */
-INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, UINT4 minTemplateLength, UINT4 vectormathflag)
+INT4 makeTemplateGaussians2(TwoSpectTemplate *output, const REAL8 offset, const REAL8 P, const REAL8 deltaf, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const UINT4 minTemplateLength, const UINT4 vectormathflag)
 {
 
    XLAL_CHECK( output != NULL, XLAL_EINVAL );
@@ -374,18 +380,8 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REA
    XLAL_CHECK( (cos_ratio = XLALCreateREAL4VectorAligned(fpr->length, 32)) != NULL, XLAL_EFUNC );
 
    //Doing the precomputation of the useful values
-   if (vectormathflag==1) {
-      XLAL_CHECK( sseScaleREAL4Vector(omegapr, fpr, (REAL4)LAL_TWOPI) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( sseSSVectorMultiply(omegapr_squared, omegapr, omegapr) == XLAL_SUCCESS, XLAL_EFUNC );
-   } else if (vectormathflag==2) {
-      XLAL_CHECK( avxScaleREAL4Vector(omegapr, fpr, (REAL4)LAL_TWOPI) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( avxSSVectorMultiply(omegapr_squared, omegapr, omegapr) == XLAL_SUCCESS, XLAL_EFUNC );
-   } else {
-      for (UINT4 ii=0; ii<fpr->length; ii++) {
-         omegapr->data[ii] = (REAL4)LAL_TWOPI*fpr->data[ii];
-         omegapr_squared->data[ii] = omegapr->data[ii]*omegapr->data[ii];
-      }
-   }
+   XLAL_CHECK( XLALVectorScaleREAL4(omegapr->data, (REAL4)LAL_TWOPI, fpr->data, fpr->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorMultiplyREAL4(omegapr_squared->data, omegapr->data, omegapr->data, omegapr->length) == XLAL_SUCCESS, XLAL_EFUNC );
    if (N*P*omegapr->data[omegapr->length-1]<2.147483647e9) {
       for (UINT4 ii=0; ii<fpr->length; ii++) {
          REAL4 tempSinValue = 0.0, cos_omegapr_times_period = 0.0, cos_N_times_omegapr_times_period = 0.0;
@@ -448,9 +444,9 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REA
    REAL8 disttominbin = binmin - templatemin, disttomaxbin = templatemax - binmax, disttomidbin = offset - templatemin;
 
    //Determine the weighting scale for the leakage bins and the distance between Gaussians := phi_actual
-   REAL4Vector *scale = NULL, *phi_actual = NULL;
-   XLAL_CHECK( (scale = XLALCreateREAL4Vector(templatespan)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (phi_actual = XLALCreateREAL4Vector(templatespan)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *scale = NULL, *phi_actual = NULL;
+   XLAL_CHECK( (scale = XLALCreateREAL4VectorAligned(templatespan, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (phi_actual = XLALCreateREAL4VectorAligned(templatespan, 32)) != NULL, XLAL_EFUNC );
    memset(scale->data, 0, templatespan*sizeof(REAL4));
    memset(phi_actual->data, 0, templatespan*sizeof(REAL4));
    for (UINT4 ii=0; ii<scale->length; ii++) {
@@ -469,11 +465,11 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REA
 
    //Make sigmas for each frequency
    //First, allocate vectors
-   REAL4Vector *sigmas = NULL, *wvals = NULL, *allsigmas = NULL, *weightvals = NULL;
-   XLAL_CHECK( (sigmas = XLALCreateREAL4Vector(templatespan)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (wvals = XLALCreateREAL4Vector((UINT4)floor(30.0*P/Tsft))) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (allsigmas = XLALCreateREAL4Vector(wvals->length * sigmas->length)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (weightvals = XLALCreateREAL4Vector(wvals->length * sigmas->length)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *sigmas = NULL, *wvals = NULL, *allsigmas = NULL, *weightvals = NULL;
+   XLAL_CHECK( (sigmas = XLALCreateREAL4VectorAligned(templatespan, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (wvals = XLALCreateREAL4VectorAligned((UINT4)floor(30.0*P/Tsft), 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (allsigmas = XLALCreateREAL4VectorAligned(wvals->length * sigmas->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (weightvals = XLALCreateREAL4VectorAligned(wvals->length * sigmas->length, 32)) != NULL, XLAL_EFUNC );
 
    //Here is where the sigmas are computed. It is a weighted average. t = (ii+1)*in->Tsft*0.5
    REAL4 sin2pix = 0.0, cos2pix = 0.0;
@@ -537,23 +533,17 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REA
 
       if (vectormathflag==1 || vectormathflag==2) {
          //Compute exp(log(4*pi*s*s*exp(-s*s*omegapr_squared))) = exp(log(4*pi*s*s)-s*s*omegapr_squared)
-         if (vectormathflag==1) {
-            XLAL_CHECK( sseScaleREAL4Vector(exp_neg_sigma_sq_times_omega_pr_sq, omegapr_squared, -sigmas->data[ii]*sigmas->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC );
-            XLAL_CHECK( sseAddScalarToREAL4Vector(exp_neg_sigma_sq_times_omega_pr_sq, exp_neg_sigma_sq_times_omega_pr_sq, prefact0) == XLAL_SUCCESS, XLAL_EFUNC );
-         } else {
-            XLAL_CHECK( avxScaleREAL4Vector(exp_neg_sigma_sq_times_omega_pr_sq, omegapr_squared, -sigmas->data[ii]*sigmas->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC );
-            XLAL_CHECK( avxAddScalarToREAL4Vector(exp_neg_sigma_sq_times_omega_pr_sq, exp_neg_sigma_sq_times_omega_pr_sq, prefact0) == XLAL_SUCCESS, XLAL_EFUNC );
-         }
+         XLAL_CHECK( XLALVectorScaleREAL4(exp_neg_sigma_sq_times_omega_pr_sq->data, -sigmas->data[ii]*sigmas->data[ii], omegapr_squared->data, omegapr_squared->length) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( XLALVectorShiftREAL4(exp_neg_sigma_sq_times_omega_pr_sq->data, prefact0, exp_neg_sigma_sq_times_omega_pr_sq->data, exp_neg_sigma_sq_times_omega_pr_sq->length) == XLAL_SUCCESS, XLAL_EFUNC );
          UINT4 truncationLength = 1;
          while (truncationLength<omegapr_squared->length && exp_neg_sigma_sq_times_omega_pr_sq->data[truncationLength]>-88.0) truncationLength++;
          XLAL_CHECK( XLALVectorExpREAL4(exp_neg_sigma_sq_times_omega_pr_sq->data, exp_neg_sigma_sq_times_omega_pr_sq->data, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
 
          //Compute phi_actual*fpr
-         if (vectormathflag==1) XLAL_CHECK( truncated_sseScaleREAL4Vector(phi_times_fpr, fpr, phi_actual->data[ii], truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
-         else XLAL_CHECK( truncated_avxScaleREAL4Vector(phi_times_fpr, fpr, phi_actual->data[ii], truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( XLALVectorScaleREAL4(phi_times_fpr->data, phi_actual->data[ii], fpr->data, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
 
          //Start computing the datavector values
-         INT4 maxindex = max_index_in_range((REAL4Vector*)phi_times_fpr, 0, truncationLength-1);
+         INT4 maxindex = max_index_in_range(phi_times_fpr, 0, truncationLength-1);
          if (phi_times_fpr->data[maxindex]<=2.147483647e9) {
             //Compute cos(2*pi*phi_actual*fpr) using LUT and SSE
             XLAL_CHECK( XLALVectorSinCos2PiREAL4(sin_phi_times_omega_pr->data, cos_phi_times_omega_pr->data, phi_times_fpr->data, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -562,17 +552,13 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REA
             for (UINT4 jj=0; jj<truncationLength; jj++) cos_phi_times_omega_pr->data[jj] = cosf((REAL4)LAL_TWOPI*phi_times_fpr->data[jj]);
          }
          //datavector = cos(phi_actual*omega_pr) + 1.0
-         if (vectormathflag==1) XLAL_CHECK( truncated_sseAddScalarToREAL4Vector(datavector, cos_phi_times_omega_pr, 1.0, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
-         else XLAL_CHECK( truncated_avxAddScalarToREAL4Vector(datavector, cos_phi_times_omega_pr, 1.0, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( XLALVectorShiftREAL4(datavector->data, 1.0, cos_phi_times_omega_pr->data, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
          //datavector = prefact0 * exp(-s*s*omega_pr*omega_pr) * [cos(phi_actual*omega_pr) + 1.0]
-         if (vectormathflag==1) XLAL_CHECK( truncated_sseSSVectorMultiply(datavector, datavector, exp_neg_sigma_sq_times_omega_pr_sq, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
-         else XLAL_CHECK( truncated_avxSSVectorMultiply(datavector, datavector, exp_neg_sigma_sq_times_omega_pr_sq, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( XLALVectorMultiplyREAL4(datavector->data, datavector->data, exp_neg_sigma_sq_times_omega_pr_sq->data, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
          //datavector = scale * exp(-s*s*omega_pr*omega_pr) * [cos(phi_actual*omega_pr) + 1.0]
-         if (vectormathflag==1) XLAL_CHECK( truncated_sseScaleREAL4Vector(datavector, datavector, scale->data[ii], truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
-         else XLAL_CHECK( truncated_avxScaleREAL4Vector(datavector, datavector, scale->data[ii], truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( XLALVectorScaleREAL4(datavector->data, scale->data[ii], datavector->data, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
          //datavector *= cos_ratio
-         if (vectormathflag==1) XLAL_CHECK( truncated_sseSSVectorMultiply(datavector, datavector, cos_ratio, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
-         else XLAL_CHECK( truncated_avxSSVectorMultiply(datavector, datavector, cos_ratio, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( XLALVectorMultiplyREAL4(datavector->data, datavector->data, cos_ratio->data, truncationLength) == XLAL_SUCCESS, XLAL_EFUNC );
       } else {
          for (UINT4 jj=0; jj<omegapr_squared->length; jj++) {
             //Do all or nothing if the exponential is too negative
@@ -603,9 +589,7 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REA
 
    //Normalize
    REAL4 invsum = (REAL4)(1.0/sum);
-   if (vectormathflag==1) XLAL_CHECK( sseScaleREAL4Vector(output->templatedata, output->templatedata, invsum) == XLAL_SUCCESS, XLAL_EFUNC );
-   else if (vectormathflag==2) XLAL_CHECK( avxScaleREAL4Vector(output->templatedata, output->templatedata, invsum) == XLAL_SUCCESS, XLAL_EFUNC );
-   else for (UINT4 ii=0; ii<output->templatedata->length; ii++) if (output->templatedata->data[ii]!=0.0) output->templatedata->data[ii] *= invsum;
+   XLAL_CHECK( XLALVectorScaleREAL4(output->templatedata->data, invsum, output->templatedata->data, output->templatedata->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Truncate weights when they don't add much to the total sum of weights
    sum = 0.0;
@@ -618,12 +602,12 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REA
    for (/* last counter val */; counter<output->templatedata->length; counter++) output->templatedata->data[counter] = 0.0;
 
    //Destroy variables
-   XLALDestroyREAL4Vector(phi_actual);
-   XLALDestroyREAL4Vector(scale);
-   XLALDestroyREAL4Vector(sigmas);
-   XLALDestroyREAL4Vector(allsigmas);
-   XLALDestroyREAL4Vector(weightvals);
-   XLALDestroyREAL4Vector(wvals);
+   XLALDestroyREAL4VectorAligned(phi_actual);
+   XLALDestroyREAL4VectorAligned(scale);
+   XLALDestroyREAL4VectorAligned(sigmas);
+   XLALDestroyREAL4VectorAligned(allsigmas);
+   XLALDestroyREAL4VectorAligned(weightvals);
+   XLALDestroyREAL4VectorAligned(wvals);
    XLALDestroyREAL4VectorAligned(fpr);
    XLALDestroyREAL4VectorAligned(omegapr);
    XLALDestroyREAL4VectorAligned(omegapr_squared);
@@ -639,98 +623,6 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REA
 } /* makeTemplateGaussians() */
 
 
-INT4 truncated_sseScaleREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scale, UINT4 length)
-{
-
-   XLAL_CHECK( output != NULL && input != NULL && length > 0 && length<=input->length , XLAL_EINVAL );
-
-   REAL4VectorAligned *truncatedVector = NULL;
-   XLAL_CHECK( (truncatedVector = XLALCreateREAL4VectorAligned(length, 16)) != NULL, XLAL_EFUNC );
-   memcpy(truncatedVector->data, input->data, sizeof(REAL4)*length);
-   XLAL_CHECK( sseScaleREAL4Vector(output, truncatedVector, scale) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLALDestroyREAL4VectorAligned(truncatedVector);
-
-   return XLAL_SUCCESS;
-
-}
-INT4 truncated_avxScaleREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scale, UINT4 length)
-{
-
-   XLAL_CHECK( output != NULL && input != NULL && length > 0 && length<=input->length , XLAL_EINVAL );
-
-   REAL4VectorAligned *truncatedVector = NULL;
-   XLAL_CHECK( (truncatedVector = XLALCreateREAL4VectorAligned(length, 32)) != NULL, XLAL_EFUNC );
-   memcpy(truncatedVector->data, input->data, sizeof(REAL4)*length);
-   XLAL_CHECK( avxScaleREAL4Vector(output, truncatedVector, scale) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLALDestroyREAL4VectorAligned(truncatedVector);
-
-   return XLAL_SUCCESS;
-
-}
-INT4 truncated_sseAddScalarToREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scalar, UINT4 length)
-{
-
-   XLAL_CHECK( output != NULL && input != NULL && length > 0 && length<=input->length , XLAL_EINVAL );
-
-   REAL4VectorAligned *truncatedVector = NULL;
-   XLAL_CHECK( (truncatedVector = XLALCreateREAL4VectorAligned(length, 16)) != NULL, XLAL_EFUNC );
-   memcpy(truncatedVector->data, input->data, sizeof(REAL4)*length);
-   XLAL_CHECK( sseAddScalarToREAL4Vector(output, truncatedVector, scalar) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLALDestroyREAL4VectorAligned(truncatedVector);
-
-   return XLAL_SUCCESS;
-
-}
-INT4 truncated_avxAddScalarToREAL4Vector(REAL4VectorAligned *output, REAL4VectorAligned *input, REAL4 scalar, UINT4 length)
-{
-
-   XLAL_CHECK( output != NULL && input != NULL && length > 0 && length<=input->length , XLAL_EINVAL );
-
-   REAL4VectorAligned *truncatedVector = NULL;
-   XLAL_CHECK( (truncatedVector = XLALCreateREAL4VectorAligned(length, 32)) != NULL, XLAL_EFUNC );
-   memcpy(truncatedVector->data, input->data, sizeof(REAL4)*length);
-   XLAL_CHECK( avxAddScalarToREAL4Vector(output, truncatedVector, scalar) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLALDestroyREAL4VectorAligned(truncatedVector);
-
-   return XLAL_SUCCESS;
-
-}
-INT4 truncated_sseSSVectorMultiply(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2, UINT4 length)
-{
-
-   XLAL_CHECK( output != NULL && input1 != NULL && input2 != NULL && length > 0 && length<=input1->length && input1->length==input2->length , XLAL_EINVAL );
-
-   REAL4VectorAligned *truncatedVector1 = NULL, *truncatedVector2 = NULL;
-   XLAL_CHECK( (truncatedVector1 = XLALCreateREAL4VectorAligned(length, 16)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (truncatedVector2 = XLALCreateREAL4VectorAligned(length, 16)) != NULL, XLAL_EFUNC );
-   memcpy(truncatedVector1->data, input1->data, sizeof(REAL4)*length);
-   memcpy(truncatedVector2->data, input2->data, sizeof(REAL4)*length);
-   XLAL_CHECK( sseSSVectorMultiply(output, truncatedVector1, truncatedVector2) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLALDestroyREAL4VectorAligned(truncatedVector1);
-   XLALDestroyREAL4VectorAligned(truncatedVector2);
-
-   return XLAL_SUCCESS;
-
-}
-INT4 truncated_avxSSVectorMultiply(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2, UINT4 length)
-{
-
-   XLAL_CHECK( output != NULL && input1 != NULL && input2 != NULL && length > 0 && length<=input1->length && input1->length==input2->length , XLAL_EINVAL );
-
-   REAL4VectorAligned *truncatedVector1 = NULL, *truncatedVector2 = NULL;
-   XLAL_CHECK( (truncatedVector1 = XLALCreateREAL4VectorAligned(length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (truncatedVector2 = XLALCreateREAL4VectorAligned(length, 32)) != NULL, XLAL_EFUNC );
-   memcpy(truncatedVector1->data, input1->data, sizeof(REAL4)*length);
-   memcpy(truncatedVector2->data, input2->data, sizeof(REAL4)*length);
-   XLAL_CHECK( avxSSVectorMultiply(output, truncatedVector1, truncatedVector2) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLALDestroyREAL4VectorAligned(truncatedVector1);
-   XLALDestroyREAL4VectorAligned(truncatedVector2);
-
-   return XLAL_SUCCESS;
-
-}
-
-
 /**
  * \brief Make an template based on FFT of sinc squared functions
  *
@@ -742,7 +634,7 @@ INT4 truncated_avxSSVectorMultiply(REAL4VectorAligned *output, REAL4VectorAligne
  * \param [in]  plan     Pointer to REAL4FFTPlan
  * \return Status value
  */
-INT4 makeTemplate(TwoSpectTemplate *output, candidate input, UserInput_t *params, INT4Vector *sftexist, REAL4FFTPlan *plan)
+INT4 makeTemplate(TwoSpectTemplate *output, const candidate input, const UserInput_t *params, const INT4Vector *sftexist, const REAL4FFTPlan *plan)
 {
 
    XLAL_CHECK( output != NULL && params != NULL && sftexist != NULL && plan != NULL, XLAL_EINVAL );
@@ -786,8 +678,10 @@ INT4 makeTemplate(TwoSpectTemplate *output, candidate input, UserInput_t *params
  * \param [in]     plan              Pointer to REAL4FFTPlan
  * \return Status value
  */
-INT4 makeTemplate2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, UINT4 minTemplateLength, UINT4 vectormathflag, REAL4FFTPlan *plan)
+INT4 makeTemplate2(TwoSpectTemplate *output, const REAL8 offset, const REAL8 P, const REAL8 deltaf, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const UINT4 minTemplateLength, const UINT4 vectormathflag, const REAL4FFTPlan *plan)
 {
+   XLAL_CHECK( output!=NULL && plan!=NULL, XLAL_EINVAL );
+
    output->f0 = offset;
    output->period = P;
    output->moddepth = deltaf;
@@ -811,9 +705,9 @@ INT4 makeTemplate2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf
 
    REAL8 periodf = 1.0/P;
 
-   REAL4Vector *psd1 = NULL;
+   REAL4VectorAligned *psd1 = NULL;
    alignedREAL8Vector *freqbins = NULL, *bindiffs = NULL;
-   XLAL_CHECK( (psd1 = XLALCreateREAL4Vector(templatespan*numffts)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (psd1 = XLALCreateREAL4VectorAligned(templatespan*numffts, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (freqbins = createAlignedREAL8Vector(templatespan, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (bindiffs = createAlignedREAL8Vector(templatespan, 32)) != NULL, XLAL_EFUNC );
    memset(psd1->data, 0, sizeof(REAL4)*psd1->length);
@@ -829,31 +723,15 @@ INT4 makeTemplate2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf
    XLAL_CHECK( (sigbin_sin2PiPeriodfT = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC  );
    XLAL_CHECK( (cos2PiPeriodfT = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC  );
    for (UINT4 ii=0; ii<numffts; ii++) t->data[ii] = 0.5*Tsft*(ii+1); //Assumed 50% overlapping SFTs
-   if (vectormathflag==1) {
-      XLAL_CHECK( sseScaleREAL4Vector(t, t, periodf) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLALVectorSinCos2PiREAL4(sigbin_sin2PiPeriodfT->data, cos2PiPeriodfT->data, t->data, t->length) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( sseScaleREAL4Vector(sigbin_sin2PiPeriodfT, sigbin_sin2PiPeriodfT, binamplitude) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( sseAddScalarToREAL4Vector(sigbin_sin2PiPeriodfT, sigbin_sin2PiPeriodfT, offset) == XLAL_SUCCESS, XLAL_EFUNC );
-   } else if (vectormathflag==2) {
-      XLAL_CHECK( avxScaleREAL4Vector(t, t, periodf) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLALVectorSinCos2PiREAL4(sigbin_sin2PiPeriodfT->data, cos2PiPeriodfT->data, t->data, t->length) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( avxScaleREAL4Vector(sigbin_sin2PiPeriodfT, sigbin_sin2PiPeriodfT, binamplitude) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( avxAddScalarToREAL4Vector(sigbin_sin2PiPeriodfT, sigbin_sin2PiPeriodfT, offset) == XLAL_SUCCESS, XLAL_EFUNC );
-   } else {
-      for (UINT4 ii=0; ii<numffts; ii++) t->data[ii] *= periodf;
-      XLAL_CHECK( XLALVectorSinCos2PiREAL4(sigbin_sin2PiPeriodfT->data, cos2PiPeriodfT->data, t->data, t->length) == XLAL_SUCCESS, XLAL_EFUNC );
-      for (UINT4 ii=0; ii<numffts; ii++) {
-         sigbin_sin2PiPeriodfT->data[ii] *= binamplitude;
-         sigbin_sin2PiPeriodfT->data[ii] += offset;
-      }
-   }
+   XLAL_CHECK( XLALVectorScaleREAL4(t->data, periodf, t->data, t->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorSinCos2PiREAL4(sigbin_sin2PiPeriodfT->data, cos2PiPeriodfT->data, t->data, t->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorScaleREAL4(sigbin_sin2PiPeriodfT->data, binamplitude, sigbin_sin2PiPeriodfT->data, sigbin_sin2PiPeriodfT->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorShiftREAL4(sigbin_sin2PiPeriodfT->data, offset, sigbin_sin2PiPeriodfT->data, sigbin_sin2PiPeriodfT->length) == XLAL_SUCCESS, XLAL_EFUNC );
    XLALDestroyREAL4VectorAligned(t);
    XLALDestroyREAL4VectorAligned(cos2PiPeriodfT);
    for (UINT4 ii=0; ii<numffts; ii++) {
       REAL8 sigbin = sigbin_sin2PiPeriodfT->data[ii];
-      if (vectormathflag==1) XLAL_CHECK( sseAddScalarToREAL8Vector(bindiffs, freqbins, -sigbin) == XLAL_SUCCESS, XLAL_EFUNC );
-      else if (vectormathflag==2) XLAL_CHECK( avxAddScalarToREAL8Vector(bindiffs, freqbins, -sigbin) == XLAL_SUCCESS, XLAL_EFUNC );
-      else for (UINT4 jj=0; jj<templatespan; jj++) bindiffs->data[jj] = freqbins->data[jj] - sigbin;
+      XLAL_CHECK( VectorShiftREAL8(bindiffs, freqbins, -sigbin, vectormathflag) == XLAL_SUCCESS, XLAL_EFUNC );
       for (UINT4 jj=0; jj<templatespan; jj++) {
          //Create PSD values organized by f0 => psd1->data[0...numffts-1], sft1 => psd1->data[numffts...2*numffts-1]
          //Restricting to +/- 1.75 bins means >99.9% of the total power is included in the template calculation
@@ -892,21 +770,14 @@ INT4 makeTemplate2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf
       if (doSecondFFT) {
          //Obtain and window the time series
          memcpy(x->data, &(psd1->data[ii*numffts]), sizeof(REAL4)*x->length);
-         if (vectormathflag==1) XLAL_CHECK( sseSSVectorMultiply(x, x, windowdata) == XLAL_SUCCESS, XLAL_EFUNC );
-         else if (vectormathflag==2) XLAL_CHECK( avxSSVectorMultiply(x, x, windowdata) == XLAL_SUCCESS, XLAL_EFUNC );
-         else {
-            XLAL_CHECK( XLALSSVectorMultiply((REAL4Vector*)x, (REAL4Vector*)x, win->data) != NULL, XLAL_EFUNC );
-            XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-         }
+         XLAL_CHECK( XLALVectorMultiplyREAL4(x->data, x->data, windowdata->data, x->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
          //Do the FFT
          XLAL_CHECK( XLALREAL4PowerSpectrum((REAL4Vector*)psd, (REAL4Vector*)x, plan) == XLAL_SUCCESS, XLAL_EFUNC );
 
          //Scale the data points by 1/N and window factor and (1/fs)
          //Order of vector is by second frequency then first frequency
-         if (vectormathflag==1) XLAL_CHECK( sseScaleREAL4Vector(psd, psd, secPSDfactor) == XLAL_SUCCESS, XLAL_EFUNC );
-         else if (vectormathflag==2) XLAL_CHECK( avxScaleREAL4Vector(psd, psd, secPSDfactor) == XLAL_SUCCESS, XLAL_EFUNC );
-         else for (UINT4 jj=0; jj<psd->length; jj++) psd->data[jj] *= secPSDfactor;
+         XLAL_CHECK( XLALVectorScaleREAL4(psd->data, secPSDfactor, psd->data, psd->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
          //Ignore the DC to 3rd frequency bins in sum
          for (UINT4 jj=4; jj<psd->length; jj++) {
@@ -920,9 +791,7 @@ INT4 makeTemplate2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf
 
    //Normalize
    REAL4 invsum = (REAL4)(1.0/sum);
-   if (vectormathflag==1) XLAL_CHECK( sseScaleREAL4Vector(output->templatedata, output->templatedata, invsum) == XLAL_SUCCESS, XLAL_EFUNC );
-   else if (vectormathflag==2) XLAL_CHECK( avxScaleREAL4Vector(output->templatedata, output->templatedata, invsum) == XLAL_SUCCESS, XLAL_EFUNC );
-   else for (UINT4 ii=0; ii<output->templatedata->length; ii++) if (output->templatedata->data[ii]!=0.0) output->templatedata->data[ii] *= invsum;
+   XLAL_CHECK( XLALVectorScaleREAL4(output->templatedata->data, invsum, output->templatedata->data, output->templatedata->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Truncate weights if they don't contribute much to the sum
    sum = 0.0;
@@ -935,7 +804,7 @@ INT4 makeTemplate2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf
    for (/* last counter val */; counter<output->templatedata->length; counter++) output->templatedata->data[counter] = 0.0;
 
    //Destroy stuff
-   XLALDestroyREAL4Vector(psd1);
+   XLALDestroyREAL4VectorAligned(psd1);
    destroyAlignedREAL8Vector(freqbins);
    destroyAlignedREAL8Vector(bindiffs);
    XLALDestroyREAL4Window(win);
@@ -952,9 +821,9 @@ INT4 makeTemplate2(TwoSpectTemplate *output, REAL8 offset, REAL8 P, REAL8 deltaf
  * Insertion sort for the template weights
  * \param [out] output        Pointer to TwoSpectTemplate
  * \param [in]  weight        Pixel weight
- * \param [in]  pixelloc      Index of the pixel in the REAL4Vector of the frequency-frequency plane
+ * \param [in]  pixelloc      Index of the pixel in the REAL4VectorAligned of the frequency-frequency plane
  */
-void insertionSort_template(TwoSpectTemplate *output, REAL4 weight, INT4 pixelloc)
+void insertionSort_template(TwoSpectTemplate *output, const REAL4 weight, const INT4 pixelloc)
 {
 
    INT4 insertionpoint = output->templatedata->length-1;
@@ -979,7 +848,7 @@ void insertionSort_template(TwoSpectTemplate *output, REAL4 weight, INT4 pixello
  * Calculate sin(pi*x)/(pi*x)/(x^2-1)
  * \param x Value from which to compute
  */
-REAL8 sincxoverxsqminusone(REAL8 x)
+REAL8 sincxoverxsqminusone(const REAL8 x)
 {
    if (fabs(x*x-1.0)<1.0e-8) return -0.5;
    if (fabs(x)<1.0e-8) return -1.0;
@@ -997,7 +866,7 @@ REAL8 sincxoverxsqminusone(REAL8 x)
  * Calculate [sin(pi*x)/(pi*x)/(x^2-1)]^2
  * \param x Value from which to compute
  */
-REAL8 sqsincxoverxsqminusone(REAL8 x)
+REAL8 sqsincxoverxsqminusone(const REAL8 x)
 {
    REAL8 val = sincxoverxsqminusone(x);
    XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );

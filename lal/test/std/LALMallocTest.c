@@ -209,6 +209,14 @@ static int testPadding( void )
   /* changed behaviour: LALFree is a no-op when passed NULL */
   // trial( LALFree( NULL ), SIGSEGV, "error: tried to free NULL pointer" );
 
+  /* double free */
+  /* actually, this cannot be done robustly -- system can change values
+   * in unallocated space at will */
+  //trial( p = LALMalloc( 2 * sizeof( *p ) ), 0, "" );
+  //trial( LALFree( p ), 0, "" );
+  //trial( LALFree( p ), SIGSEGV, "error: tried to free a freed pointer" );
+  //trial( LALCheckMemoryLeaks(), 0, "" );
+
   /* wrong magic */
   trial( p = LALMalloc( 2 * sizeof( *p ) ), 0, "" );
   p[-1] = 4;
@@ -220,7 +228,7 @@ static int testPadding( void )
   /* corrupt size */
   trial( p = LALMalloc( 4 * sizeof( *p ) ), 0, "");
   n = p[-2];
-  p[-2] = -1;
+  p[-2] = -2;
   trial( LALFree( p ), SIGSEGV, "error: corrupt size descriptor" );
   p[-2] = n;
   trial( LALFree( p ), 0, "" );

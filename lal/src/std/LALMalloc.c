@@ -325,13 +325,8 @@ static void *PadAlloc(size_t * p, size_t n, int keep, const char *func)
     }
 
     if (lalDebugLevel & LALMEMINFOBIT) {
-        XLALPrintError("%s meminfo: allocating %ld bytes at address %p\n",
+        XLALPrintError("%s meminfo: allocating %zu bytes at address %p\n",
                       func, n, p + nprefix);
-    }
-
-    if (lalDebugLevel & LALWARNING && n == 0) {
-        XLALPrintError("%s warning: zero size allocation at address %p\n",
-                      func, p + nprefix);
     }
 
     /* store the size in a known position */
@@ -374,14 +369,15 @@ static void *UnPadAlloc(void *p, int keep, const char *func)
     s = (char *) q;
 
     if (lalDebugLevel & LALMEMINFOBIT) {
-        XLALPrintError("%s meminfo: freeing %ld bytes at address %p\n",
+        XLALPrintError("%s meminfo: freeing %zu bytes at address %p\n",
                       func, n, p);
     }
 
-    if (lalDebugLevel & LALWARNING && n == 0) {
-        XLALPrintError
-            ("%s warning: tried to free a freed pointer at address %p\n",
-             func, p);
+    if (n == (size_t)(-1)) {
+        lalRaiseHook(SIGSEGV,
+                     "%s error: tried to free a freed pointer at address %p\n",
+                     func, p);
+        return NULL;
     }
 
     if (q[1] != magic) {

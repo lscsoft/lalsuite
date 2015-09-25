@@ -197,6 +197,10 @@ static void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState,
     REAL8 phaseUncertaintyPrior = 5*M_PI/180.0; /* 5 degrees phase */
     if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, "--spcal-nodes"))) {
       ncal = atoi(ppt->value);
+      if (ncal < 3) { /* Cannot do spline with fewer than 3 points! */
+	fprintf(stderr, "ERROR: given '--spcal-nodes %d', but cannot spline with fewer than 3\n", ncal);
+	exit(1);
+      }
     }
 
     if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, "--spcal-amp-uncertainty"))) {
@@ -269,7 +273,15 @@ static void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState,
         LALInferenceRegisterUniformVariableREAL8(runState, currentParams, CA_A, zero, camp_min_A, camp_max_A, LALINFERENCE_PARAM_LINEAR);
         dataPtr = dataPtr->next;
       }
+
       LALInferenceAddVariable(currentParams, "constantcal_active", &calOn, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+      /*If user specifies a width for the error prior, a gaussian prior will be used, otherwise a flat prior will be used*/
+      REAL8 ampUncertaintyPrior=-1.0;
+      ppt = LALInferenceGetProcParamVal(runState->commandLine, "--constcal_ampsigma");
+      if (ppt) {
+        ampUncertaintyPrior = atof(ppt->value);
+      }
+      LALInferenceAddVariable(runState->priorArgs, "constcal_amp_uncertainty", &ampUncertaintyPrior, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     }
     if (LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")){
       /* Add linear calibration phase errors to the measurement. For the moment the prior ranges are the same for the three IFOs */
@@ -285,6 +297,15 @@ static void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState,
         dataPtr = dataPtr->next;
       }
       LALInferenceAddVariable(currentParams, "constantcal_active", &calOn, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+     /*If user specifies a width for the error prior, a gaussian prior will be used, otherwise a flat prior will be used*/
+      REAL8 phaseUncertaintyPrior=-1.0;
+      ppt = LALInferenceGetProcParamVal(runState->commandLine, "--constcal_phasigma");
+      if (ppt) {
+        phaseUncertaintyPrior = M_PI/180.0*atof(ppt->value); /* CL arg in degrees, variable in radians */
+      }
+      LALInferenceAddVariable(runState->priorArgs, "constcal_phase_uncertainty", &phaseUncertaintyPrior, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
     }
   }
   else{
@@ -308,7 +329,10 @@ void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALIn
 
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,minopt))) min=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,maxopt))) max=atof(ppt->value);
-  if((ppt=LALInferenceGetProcParamVal(state->commandLine,fixopt))) varytype=LALINFERENCE_PARAM_FIXED;
+  if((ppt=LALInferenceGetProcParamVal(state->commandLine,fixopt))) {
+		  varytype=LALINFERENCE_PARAM_FIXED;
+		  startval=atof(ppt->value);
+  }
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,valopt))) startval=atof(ppt->value);
   else if(varytype!=LALINFERENCE_PARAM_FIXED) startval=min+(max-min)*gsl_rng_uniform(state->GSLrandom);
 
@@ -425,6 +449,8 @@ Component masses, total mass and time have dedicated options listed here:\n\n\
 (--trigtime time)                       Center of the prior for the time variable.\n\
 (--comp-min min)                        Minimum component mass (1.0).\n\
 (--comp-max max)                        Maximum component mass (30.0).\n\
+(--mass1-min min, --mass1-max max)      Min and max for mass1 (default: same as comp-min,comp-max, will over-ride these.\n\
+(--mass2-min min, --mass2-max max)      Min and max for mass2 (default: same as comp-min,comp-max, will over-ride these.\n\
 (--mtotal-min min)                      Minimum total mass (2.0).\n\
 (--mtotal-max max)                      Maximum total mass (35.0).\n\
 (--dt time)                             Width of time prior, centred around trigger (0.2s).\n\
@@ -435,8 +461,8 @@ Component masses, total mass and time have dedicated options listed here:\n\n\
 ------------------------------------------------------------------------------------------------------------------\n\
 --- Fix Parameters ----------------------------------------------------------------------------------------------\n\
 ------------------------------------------------------------------------------------------------------------------\n\
-You can generally fix a parameter to be fixed to a given values by using both --paramname VALUE and --fix-paramname\n\
-where the known names have been listed above\n\
+You can generally fix a parameter to be fixed to a given values by using --fix-paramname VALUE\n\
+where the known names have been listed above.\n\
 \n";
 
   /* Print command line arguments if state was not allocated */
@@ -626,11 +652,11 @@ where the known names have been listed above\n\
    * The prior for other parameters are now read in in RegisterUniformVariable, if given by the user. */
   LALInferenceInitMassVariables(state);
   /* now we need to update the chirp mass and q limits accordingly */
-  REAL8 comp_min = *(REAL8 *)LALInferenceGetVariable(state->priorArgs,"component_min");
-  REAL8 comp_max = *(REAL8 *)LALInferenceGetVariable(state->priorArgs,"component_max");
+  REAL8 m2_min=LALInferenceGetREAL8Variable(state->priorArgs,"mass2_min");
+  REAL8 m1_max=LALInferenceGetREAL8Variable(state->priorArgs,"mass1_max");
   REAL8 mtot_min = *(REAL8 *)LALInferenceGetVariable(state->priorArgs,"MTotMin");
   REAL8 mtot_max = *(REAL8 *)LALInferenceGetVariable(state->priorArgs,"MTotMax");
-  qMin = comp_min/comp_max;
+  qMin = m2_min / m1_max;
   mcMin =mtot_min*pow(qMin/pow(1.+qMin,2.),3./5.);
   mcMax =mtot_max*pow(0.25,3./5.);
 
@@ -958,9 +984,16 @@ where the known names have been listed above\n\
         LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   }
 
+  LALSimInspiralFrameAxis frameAxis = LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT;
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--inj-frame-axis"))) {
+    frameAxis = XLALSimInspiralGetFrameAxisFromString(ppt->value);
+  }
+
   model->waveFlags = XLALSimInspiralCreateWaveformFlags();
   XLALSimInspiralSetSpinOrder(model->waveFlags,  spinO);
   XLALSimInspiralSetTidalOrder(model->waveFlags, tideO);
+  XLALSimInspiralSetFrameAxis(model->waveFlags,frameAxis);
+
 
   fprintf(stdout,"\n\n---\t\t ---\n");
   LALInferenceInitSpinVariables(state, model);
@@ -971,7 +1004,7 @@ where the known names have been listed above\n\
 
      /* Print info about orders and waveflags used for templates */
 
-     fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i tidal order %i, in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,(int) spinO, (int) tideO, model->domain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
+     fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i tidal order %i, frame axis %i in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,(int) spinO, (int) tideO, (int) frameAxis, model->domain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
      fprintf(stdout,"---\t\t ---\n\n");
   }//end of signal only flag
   else
@@ -1457,7 +1490,6 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
   }
 
   SpinSupport spin_support=XLALSimInspiralGetSpinSupportFromApproximant(approx);
-  LALSimInspiralFrameAxis frame_axis=LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW;
 
   /* Now check what the approx can do and eventually change user's choices to comply.
    * Also change the reference frame -- For the moment use default as the corresponding patch to LALSimulation has not been finished yet */
@@ -1467,13 +1499,7 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
     singleSpin=1;
   else if (spin_support==LAL_SIM_INSPIRAL_ALIGNEDSPIN){
     spinAligned=1;
-    /* Restore this line when LALSim has routine to convert frames:
-     * frame_axis= LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L;
-     */
   }
-
-  /* Add the frame to waveFlagas */
-  XLALSimInspiralSetFrameAxis(model->waveFlags,frame_axis);
 
   if (spinAligned){
   /* If spin aligned the magnitude is in the range [-1,1] */
@@ -1545,36 +1571,62 @@ void LALInferenceInitMassVariables(LALInferenceRunState *state){
   ProcessParamsTable *ppt=NULL;
   LALInferenceVariables *priorArgs=state->priorArgs;
 
-  REAL8 mMin=1.0,mMax=30.0;
+  REAL8 m1_min=1.0,m2_min=1.0;
+  REAL8 m1_max=30.0,m2_max=30.0;
   REAL8 MTotMax=35.0;
   REAL8 MTotMin=2.0;
 
   /* Over-ride component masses */
-  ppt=LALInferenceGetProcParamVal(commandLine,"--comp-min");
-  //if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
-  if(ppt){
-          mMin=atof(ppt->value);
-          MTotMin=2.0*mMin;
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--comp-min")))
+  {
+    m1_min=m2_min=atof(ppt->value);
   }
 
-  ppt=LALInferenceGetProcParamVal(commandLine,"--comp-max");
-  //if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--compmax");
-  if(ppt){
-          mMax=atof(ppt->value);
-          MTotMax=2.0*mMax;
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--comp-max")))
+  {
+    m1_max=m2_max=atof(ppt->value);
   }
 
-  ppt=LALInferenceGetProcParamVal(commandLine,"--mtotal-max");
-  if(ppt)	MTotMax=atof(ppt->value);
+  /* optional limits on individual masses */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--mass1-min")))
+  {
+    m1_min=atof(ppt->value);
+  }
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--mass1-max")))
+  {
+    m1_max = atof(ppt->value);
+  }
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--mass2-min")))
+  {
+    m2_min=atof(ppt->value);
+  }
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--mass2-max")))
+  {
+    m2_max=atof(ppt->value);
+  }
 
-  ppt=LALInferenceGetProcParamVal(commandLine,"--mtotal-min");
-  if(ppt)	MTotMin=atof(ppt->value);
+  /* Set the total mass bounds based on m1,m2 */
+  MTotMin=m1_min + m2_min;
+  MTotMax=m1_max + m2_max;
 
-  LALInferenceAddVariable(priorArgs,"component_min",&mMin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(priorArgs,"component_max",&mMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+  /* Over-ride Mtotal bounds if requested */
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--mtotal-max")))
+  {
+    MTotMax=atof(ppt->value);
+  }
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--mtotal-min")))
+  {
+    MTotMin=atof(ppt->value);
+  }
+  
+  LALInferenceAddREAL8Variable(priorArgs,"mass1_min",m1_min,LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddREAL8Variable(priorArgs,"mass1_max",m1_max,LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddREAL8Variable(priorArgs,"mass2_min",m2_min,LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddREAL8Variable(priorArgs,"mass2_max",m2_max,LALINFERENCE_PARAM_FIXED);
+
   LALInferenceAddVariable(priorArgs,"MTotMax",&MTotMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(priorArgs,"MTotMin",&MTotMin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-
+  
   return;
 
 }

@@ -1094,6 +1094,9 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->posepochErr=0.0;
   output->pepochErr=0.0;
 
+  output->startTime=0.0;
+  output->finishTime=1./0.;
+
   output->xpbdotErr=0.0;  /* (10^-12) */
 
   output->eps1Err=0.0;        /* e*sin(w) */
@@ -1320,6 +1323,17 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i],"posepoch") || !strcmp(val[i],"POSEPOCH")){
       output->posepoch = XLALTTMJDtoGPS(atof(val[i+1]));
+      j++;
+      /* position epoch in GPS seconds TDB */
+    }
+    else if(!strcmp(val[i],"start") || !strcmp(val[i],"START")) {
+      output->startTime = XLALTTMJDtoGPS(atof(val[i+1])); /* convert all epochs to
+        from MJD to GPS seconds in TDB */
+      j++;
+
+    }
+    else if( !strcmp(val[i],"finish") || !strcmp(val[i],"FINISH")){
+      output->finishTime = XLALTTMJDtoGPS(atof(val[i+1]));
       j++;
       /* position epoch in GPS seconds TDB */
     }

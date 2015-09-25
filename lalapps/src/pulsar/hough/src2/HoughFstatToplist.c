@@ -217,7 +217,7 @@ int read_houghFstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 
 	}
 	else if (line[len-1] != '\n') {
 	  LogPrintf (LOG_CRITICAL, 
-		     "Line %d is too long or has no NEWLINE. First %lu chars are:\n'%s'\n",
+		     "Line %d is too long or has no NEWLINE. First %zu chars are:\n'%s'\n",
 		     lines,sizeof(line)-1, line);
 	  return -1;
 	}
@@ -255,7 +255,7 @@ int read_houghFstat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 
 	    ) {
 	    LogPrintf (LOG_CRITICAL, 
 		       "Line %d has invalid values.\n"
-		       "First %lu chars are:\n"
+		       "First %zu chars are:\n"
 		       "%s\n"
 		       "All fields should be finite\n"
 		       "1st field should be positive.\n" 
@@ -321,7 +321,7 @@ static int print_houghFstatline_to_str(HoughFstatOutputEntry fline, char* buf, i
           snprintf ( buf0, sizeof(buf0), " %7.6f", fline.sumTwoFX->data[X] );
           UINT4 len1 = strlen ( extraFStr ) + strlen ( buf0 ) + 1;
           if ( len1 > sizeof ( extraFStr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %lu)\n", fn, len1, sizeof(extraFStr ));
+            XLALPrintError ("%s: assembled output string too long! (%d > %zu)\n", fn, len1, sizeof(extraFStr ));
             break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
           }
           strcat ( extraFStr, buf0 );

@@ -131,6 +131,11 @@ def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=
     ile_job.add_var_opt("mass1")
     ile_job.add_var_opt("mass2")
 
+    if kwargs.has_key("write_eff_lambda") and kwargs["write_eff_lambda"]:
+        ile_job.add_var_opt("eff-lambda")
+    if kwargs.has_key("write_deff_lambda") and kwargs["write_deff_lambda"]:
+        ile_job.add_var_opt("deff-lambda")
+
     ile_job.add_condor_cmd('getenv', 'True')
     ile_job.add_condor_cmd('request_memory', '2048')
     

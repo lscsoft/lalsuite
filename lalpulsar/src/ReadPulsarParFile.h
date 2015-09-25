@@ -140,6 +140,9 @@ tagBinaryPulsarParams
   REAL8 posepoch; /**< position epoch */
   REAL8 pepoch;   /**< period/frequency epoch */
 
+  REAL8 startTime; /**< start of parfile applicable time */
+  REAL8 finishTime;   /**< finish of parfile applicable time */
+
   /* all parameters will be in the same units as used in TEMPO */
 
   /* Keplerian parameters */

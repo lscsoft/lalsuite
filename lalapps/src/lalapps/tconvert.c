@@ -17,12 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-#define _BSD_SOURCE     /* for setenv() */
-#define _XOPEN_SOURCE   /* for putenv() */
-#include <stdlib.h>
-#undef _BSD_SOURCE
-#undef _XOPEN_SOURCE
+#define _GNU_SOURCE     /* for setenv() and putenv() */
 
+#include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
 #include <math.h>

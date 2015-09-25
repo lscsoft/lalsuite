@@ -339,8 +339,18 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			row->pol_ellipse_angle = env.ligo_lw.table.elt[column_pos.pol_ellipse_angle].data.real_8;
 			row->pol_ellipse_e = env.ligo_lw.table.elt[column_pos.pol_ellipse_e].data.real_8;
 			row->hrss = env.ligo_lw.table.elt[column_pos.hrss].data.real_8;
+		} else if(!strcmp(row->waveform, "Gaussian")) {
+			if(column_pos.duration < 0 || column_pos.hrss < 0) {
+				XLALDestroySimBurst(row);
+				XLALDestroySimBurstTable(head);
+				MetaioAbort(&env);
+				XLALPrintError("%s(): failure reading %s table: missing required column\n", __func__, table_name);
+				XLAL_ERROR_NULL(XLAL_EIO);
+			}
+			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
+			row->hrss = env.ligo_lw.table.elt[column_pos.hrss].data.real_8;
 		} else if(!strcmp(row->waveform, "BTLWNB")) {
-			if(column_pos.duration < 0 || column_pos.frequency < 0 || column_pos.bandwidth < 0 || column_pos.egw_over_rsquared < 0 || column_pos.waveform_number < 0) {
+			if(column_pos.duration < 0 || column_pos.frequency < 0 || column_pos.bandwidth < 0 || column_pos.pol_ellipse_e < 0 || column_pos.egw_over_rsquared < 0 || column_pos.waveform_number < 0) {
 				XLALDestroySimBurst(row);
 				XLALDestroySimBurstTable(head);
 				MetaioAbort(&env);
@@ -350,6 +360,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_8;
 			row->frequency = env.ligo_lw.table.elt[column_pos.frequency].data.real_8;
 			row->bandwidth = env.ligo_lw.table.elt[column_pos.bandwidth].data.real_8;
+			row->pol_ellipse_e = env.ligo_lw.table.elt[column_pos.pol_ellipse_e].data.real_8;
 			row->egw_over_rsquared = env.ligo_lw.table.elt[column_pos.egw_over_rsquared].data.real_8;
 			row->waveform_number = env.ligo_lw.table.elt[column_pos.waveform_number].data.int_8u;
 		} else if(!strcmp(row->waveform, "Impulse")) {

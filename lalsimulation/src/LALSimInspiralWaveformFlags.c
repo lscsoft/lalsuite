@@ -37,6 +37,12 @@ struct tagLALSimInspiralWaveformFlags
 };
 
 /**
+ * @addtogroup LALSimInspiralWaveformFlags_c
+ * @brief Routines to manipulate inspiral waveform flags structures.
+ * @{
+ */
+
+/**
  * Create a new LALSimInspiralWaveformFlags struct
  * with all flags set to their default values.
  *
@@ -284,3 +290,4 @@ bool XLALSimInspiralModesChoiceIsDefault(
         return false;
 }
 
+/** @} */

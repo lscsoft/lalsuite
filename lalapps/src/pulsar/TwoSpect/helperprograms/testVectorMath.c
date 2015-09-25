@@ -37,9 +37,10 @@ int main(void)
    //struct timespec st,end,st2,end2;
 
    INT4 ii, length = 100000;
-   REAL4VectorAligned *floatvalues1 = NULL, *floatvalues2 = NULL, *floatvalues3 = NULL;
+   REAL4VectorAligned *floatvalues0 = NULL, *floatvalues1 = NULL, *floatvalues2 = NULL, *floatvalues3 = NULL;
    alignedREAL8Vector *doublevalues1 = NULL, *doublevalues2 = NULL, *doublevalues3 = NULL;
    alignedREAL4VectorArray *floatvalues = NULL;
+   XLAL_CHECK( (floatvalues0 = XLALCreateREAL4VectorAligned(length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (floatvalues1 = XLALCreateREAL4VectorAligned(length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (floatvalues2 = XLALCreateREAL4VectorAligned(length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (floatvalues3 = XLALCreateREAL4VectorAligned(length, 32)) != NULL, XLAL_EFUNC );
@@ -58,6 +59,7 @@ int main(void)
    }
    memcpy(floatvalues->data[0]->data, floatvalues1->data, sizeof(REAL4)*length);
    memcpy(floatvalues->data[1]->data, floatvalues2->data, sizeof(REAL4)*length);
+   memcpy(floatvalues0->data, floatvalues1->data, sizeof(REAL4)*length);
 
    REAL4VectorAligned *floatresult_vecsum = NULL, *floatresult_vecmult = NULL, *floatresult_addscalar = NULL, *floatresult_scale = NULL;
    alignedREAL8Vector *doubleresult_exp = NULL, *doubleresult_addscalar = NULL, *doubleresult_scale = NULL;
@@ -76,10 +78,10 @@ int main(void)
    //clock_gettime(CLOCK_REALTIME, &st);
 
    XLAL_CHECK( sse_exp_REAL8Vector(doubleresult_exp, doublevalues3) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( sseSSVectorSum(floatresult_vecsum, floatvalues1, floatvalues2) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( sseSSVectorMultiply(floatresult_vecmult, floatvalues1, floatvalues2) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( sseAddScalarToREAL4Vector(floatresult_addscalar, floatvalues1, (REAL4)100.0) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( sseScaleREAL4Vector(floatresult_scale, floatvalues1, (REAL4)100.0) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorAddREAL4(floatvalues1->data, floatvalues1->data, floatvalues1->data, floatvalues1->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorMultiplyREAL4(floatresult_vecmult->data, floatvalues1->data, floatvalues2->data, floatvalues1->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorShiftREAL4(floatresult_addscalar->data, (REAL4)100.0, floatvalues1->data, floatvalues1->length) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALVectorScaleREAL4(floatresult_scale->data, (REAL4)100.0, floatvalues1->data, floatvalues1->length) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( sseAddScalarToREAL8Vector(doubleresult_addscalar, doublevalues1, 100.0) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( sseScaleREAL8Vector(doubleresult_scale, doublevalues1, 100.0) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( sseSSVectorArraySum(arraysumresult, floatvalues, floatvalues, 0, 1, 0, 1) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -95,8 +97,8 @@ int main(void)
       maxdoubleerr_exp = fmax(doubleerr, maxdoubleerr_exp);
       maxdoublerelerr_exp = fmax(doublerelerr, maxdoublerelerr_exp);
 
-      REAL4 sumval = (REAL4)(floatvalues1->data[ii] + floatvalues2->data[ii]);
-      REAL4 floaterr = fabsf(floatresult_vecsum->data[ii] - sumval);
+      REAL4 sumval = (REAL4)(floatvalues0->data[ii] + floatvalues0->data[ii]);
+      REAL4 floaterr = fabsf(floatvalues1->data[ii] - sumval);
       REAL4 floatrelerr = Relfloaterr( floaterr, sumval );
       maxfloaterr_vecsum = fmaxf(floaterr, maxfloaterr_vecsum);
       maxfloatrelerr_vecsum = fmaxf(floatrelerr, maxfloatrelerr_vecsum);
@@ -129,8 +131,8 @@ int main(void)
       maxdoubleerr_scale = fmax(doubleerr, maxdoubleerr_scale);
       maxdoublerelerr_scale = fmax(doublerelerr, maxdoublerelerr_scale);
 
-      floaterr = fabsf(arraysumresult->data[0]->data[ii] - (REAL4)(floatvalues1->data[ii]+floatvalues2->data[ii]));
-      floatrelerr = Relfloaterr(floaterr, (REAL4)(floatvalues1->data[ii]+floatvalues2->data[ii]));
+      floaterr = fabsf(arraysumresult->data[0]->data[ii] - (REAL4)(floatvalues0->data[ii]+floatvalues2->data[ii]));
+      floatrelerr = Relfloaterr(floaterr, (REAL4)(floatvalues0->data[ii]+floatvalues2->data[ii]));
       maxfloaterr_seqsum = fmaxf(floaterr, maxfloaterr_seqsum);
       maxfloatrelerr_seqsum = fmaxf(floatrelerr, maxfloatrelerr_seqsum);
    }
@@ -209,6 +211,7 @@ int main(void)
    //fprintf(stderr, "Time elapsed: %li\n", (end2.tv_sec-st2.tv_sec)*GIGA+(end2.tv_nsec-st2.tv_nsec));
 #endif
 
+   XLALDestroyREAL4VectorAligned(floatvalues0);
    XLALDestroyREAL4VectorAligned(floatvalues1);
    destroyAlignedREAL8Vector(doublevalues1);
    XLALDestroyREAL4VectorAligned(floatvalues2);

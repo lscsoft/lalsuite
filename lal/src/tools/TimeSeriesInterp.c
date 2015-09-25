@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kipp Cannon
+ * Copyright (C) 2014,2015 Kipp Cannon
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -110,15 +110,19 @@ void XLALREAL8SequenceInterpDestroy(LALREAL8SequenceInterp *interp)
 
 
 /**
- * Evaluate a LALREAL8SequenceInterp at the real-valued index x.  Raises a
- * XLAL_EDOM domain error if x is not in [0, length) where length is the
- * sample count of the sequence to which the interpolator is attached.
+ * Evaluate a LALREAL8SequenceInterp at the real-valued index x.  The data
+ * beyond the domain of the input sequence are assumed to be 0 when
+ * computing results near (or beyond) the boundaries.  An XLAL_EDOM domain
+ * error is raised if x is not finite.  If bounds_check is non-zero then an
+ * XLAL_EDOM domain error is also raised if x is not in [0, length) where
+ * length is the sample count of the sequence to which the interpolator is
+ * attached.
  *
  * A Welch-windowed sinc interpolating kernel is used.  See
  *
- * Smith, Julius O. Digital Audio Resampling Home Page
- * Center for Computer Research in Music and Acoustics (CCRMA), Stanford
- * University, 2014-01-10.  Web published at
+ * Smith, Julius O. Digital Audio Resampling Home Page Center for Computer
+ * Research in Music and Acoustics (CCRMA), Stanford University,
+ * 2014-01-10.  Web published at
  * http://www-ccrma.stanford.edu/~jos/resample/.
  *
  * for more information, but note that that reference uses a Kaiser window
@@ -140,13 +144,7 @@ void XLALREAL8SequenceInterpDestroy(LALREAL8SequenceInterp *interp)
  */
 
 
-static int min(int a, int b)
-{
-	return a <= b ? a : b;
-}
-
-
-REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *interp, double x)
+REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *interp, double x, int bounds_check)
 {
 	const REAL8 *data = interp->s->data;
 	double *cached_kernel = interp->cached_kernel;
@@ -159,15 +157,15 @@ REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *interp, double x)
 	 * and only recompute the kernel if this quantity differs from the
 	 * one for which the kernel was computed by more than the no-op
 	 * threshold */
-	int start = min(lround(x), interp->s->length - 1);
+	int start = lround(x);
 	double residual = start - x;
 	REAL8 val;
 
-	if(x < 0 || x >= interp->s->length)
+	if(!isfinite(x) || (bounds_check && (x < 0 || x >= interp->s->length)))
 		XLAL_ERROR_REAL8(XLAL_EDOM);
 
 	if(fabs(residual) < interp->noop_threshold)
-		return data[start];
+		return 0 <= start && start < (int) interp->s->length ? data[start] : 0.0;
 
 	start -= (interp->kernel_length - 1) / 2;
 
@@ -305,7 +303,7 @@ void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *interp)
  */
 
 
-REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGOTimeGPS *t)
+REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *interp, const LIGOTimeGPS *t, int bounds_check)
 {
-	return XLALREAL8SequenceInterpEval(interp->seqinterp, XLALGPSDiff(t, &interp->series->epoch) / interp->series->deltaT);
+	return XLALREAL8SequenceInterpEval(interp->seqinterp, XLALGPSDiff(t, &interp->series->epoch) / interp->series->deltaT, bounds_check);
 }

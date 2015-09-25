@@ -531,13 +531,13 @@ XLALCreateDetectorStateSeries ( UINT4 length )		/**< number of entries */
   DetectorStateSeries *ret = NULL;
 
   if ( (ret = LALCalloc(1, sizeof(DetectorStateSeries) )) == NULL ) {
-    XLALPrintError ("%s: failed to LALCalloc(1, %lu)\n", __func__, sizeof(DetectorStateSeries) );
+    XLALPrintError ("%s: failed to LALCalloc(1, %zu)\n", __func__, sizeof(DetectorStateSeries) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( (ret->data = LALCalloc (length, sizeof(DetectorState) )) == NULL ) {
     XLALFree (ret);
-    XLALPrintError ("%s: failed to LALCalloc(%d, %lu)\n", __func__, length, sizeof(DetectorState) );
+    XLALPrintError ("%s: failed to LALCalloc(%d, %zu)\n", __func__, length, sizeof(DetectorState) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
@@ -691,12 +691,12 @@ XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] mul
   /* prepare return-structure */
   MultiDetectorStateSeries *ret = NULL;
   if ( ( ret = LALCalloc ( 1, sizeof( *ret ) )) == NULL ) {
-    XLALPrintError ("%s: LALCalloc ( 1, %lu ) failed\n", __func__, sizeof(*ret) );
+    XLALPrintError ("%s: LALCalloc ( 1, %zu ) failed\n", __func__, sizeof(*ret) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   if ( ( ret->data = LALCalloc ( numDetectors, sizeof( *(ret->data) ) )) == NULL ) {
     XLALFree ( ret );
-    XLALPrintError ("%s: LALCalloc ( %d, %lu ) failed\n", __func__, numDetectors, sizeof(*(ret->data)) );
+    XLALPrintError ("%s: LALCalloc ( %d, %zu ) failed\n", __func__, numDetectors, sizeof(*(ret->data)) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   ret->length = numDetectors;

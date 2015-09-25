@@ -25,6 +25,7 @@ pkginclude_HEADERS = \
 	GenerateInspiral.h \
 	GeneratePPNInspiral.h \
 	GenerateRing.h \
+	Inject.h \
 	InspiralInjectionParams.h \
 	LALEOBNRv2Waveform.h \
 	LALInspiral.h \
@@ -57,6 +58,7 @@ lib_LTLIBRARIES = liblalinspiral.la
 liblalinspiral_la_SOURCES = \
 	BandPassInspiralTemplate.c \
 	Chisq_CPU.c \
+	InjectTimeSeries.c \
 	LALInspiralPyCBCTemplate.c \
 	CoherentInspiralFilter.c \
 	CoherentInspiralInput.c \

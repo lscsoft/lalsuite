@@ -17,24 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Michael Puerrer
- *
- * \file
- *
- * \brief C code for SEOBNRv2 chirp time interpolant
- *
- * Parameter ranges:
- *   0.01 <= eta <= 0.25
- *   -1 <= chi <= 0.99
- *   Mtot >= 12Msun
- *   10 <= fmin <= 1823
- *
- * Download the data file SEOBNRv2ChirpTimeSS.dat from 
- * https://dcc.ligo.org/LIGO-G1500097 and point LAL_DATA_PATH to it.
- *
- */
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -392,6 +374,25 @@ static void Init_LALDATA(void)
 }
 
 /**
+ * @addtogroup LALSimIMRSEOBNRv2ChirpTime_c
+ *
+ * @author Michael Puerrer
+ *
+ * @brief C code for SEOBNRv2 chirp time interpolant
+ *
+ * Parameter ranges:
+ *   0.01 <= eta <= 0.25
+ *   -1 <= chi <= 0.99
+ *   Mtot >= 12Msun
+ *   10 <= fmin <= 1823
+ *
+ * Download the data file SEOBNRv2ChirpTimeSS.dat from 
+ * https://dcc.ligo.org/LIGO-G1500097 and point LAL_DATA_PATH to it.
+ *
+ * @{
+ */
+
+/**
  * Compute SEOBNRv2 chirp time from an interpolant assuming a single-spin.
  *
  * The chirp time is currently measured from the starting frequency f_min
@@ -400,13 +401,20 @@ static void Init_LALDATA(void)
 REAL8 XLALSimIMRSEOBNRv2ChirpTimeSingleSpin(
   const REAL8 m1_SI,    /**< Mass of companion 1 [kg] */
   const REAL8 m2_SI,    /**< Mass of companion 2 [kg] */
-  const REAL8 chi,      /**< Effective aligned spin */
+  const REAL8 chi_in,   /**< Effective aligned spin */
   const REAL8 f_min     /**< Starting frequency [Hz] */
 ) {
   const REAL8 m1 = m1_SI / LAL_MSUN_SI;
   const REAL8 m2 = m2_SI / LAL_MSUN_SI;
   const REAL8 Mtot = m1 + m2;
-  const REAL8 eta = m1*m2 / (Mtot*Mtot);
+  REAL8 eta = m1*m2 / (Mtot*Mtot);
+  REAL8 chi = chi_in;
+
+  // 'Nudge' parameter values to allowed boundary values if close by
+  nudge(&eta, 0.25, 1e-6);
+  nudge(&eta, 0.01, 1e-6);
+  nudge(&chi, -1.0, 1e-6);
+  nudge(&chi, 0.99, 1e-6);
 
   XLAL_PRINT_INFO("XLALSimIMRSEOBNRv2ChirpTimeSingleSpin(): (Mtot / Mtot0) * f_min = %g\n", (Mtot / Mtot0) * f_min);
 
@@ -446,3 +454,5 @@ REAL8 XLALSimIMRSEOBNRv2ChirpTimeSingleSpin(
     fmin_pts
   );
 }
+
+/** @} */

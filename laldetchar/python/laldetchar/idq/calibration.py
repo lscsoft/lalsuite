@@ -114,9 +114,26 @@ known_weights = {"uniform":uniform_weights, "pareto":pareto_weights, "sigmoid":s
 #===================================================================================================
 # calibration 
 #===================================================================================================
+def timeseries_to_livetime(dt, ts, thr):
+    """
+    computes the livetime using truth arrays, rather than by creating segments. This should be faster than creating segments if you don't actually care about the segments
+    assumes dt is constant for all samples in ts
+    """
+    truth = ts >= thr
+    N = np.sum(truth)
+    if N:
+        return dt*N, np.min( ts[truth] )
+    else:
+        return dt*N, None
+
+
+###
 def check_calibration( segs, times, timeseries, FAPthrs):
     """
     checks the pipeline's calibration at each "FAPthr in FAPThrs"
+
+    this may be sped up with a call to timeseries_to_livetime() instead of idq.timeseries_to_segments() -> event.livetime
+    however, we currently use some segment logic and it is not clear that we can avoid actually generating segments
     """
     idq_livetime = event.livetime(segs)
 

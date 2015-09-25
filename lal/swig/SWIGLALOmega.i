@@ -352,7 +352,7 @@ typedef struct {
   /// is the name of the Python operator and OP is the C operator. The correct comparison NAME is
   /// obtained by comparing the result of XLALGPSCmp() against zero using OP.
   %define %swiglal_LIGOTimeGPS_comparison_operator(NAME, OP)
-    bool __##NAME##__(LIGOTimeGPS *gps) {
+    bool __##NAME##__(LIGOTimeGPS *gps, int SWIGLAL_CMP_OP_RETN_HACK) {
       return XLALGPSCmp($self, gps) OP 0;
     }
   %enddef
@@ -508,10 +508,10 @@ typedef struct {
   /// </li><li>
 
   /// Comparison operators between two ::LALUnit.
-  bool __eq__(LALUnit* unit) {
+  bool __eq__(LALUnit* unit, int SWIGLAL_CMP_OP_RETN_HACK) {
     return XLALUnitCompare($self, unit) == 0;
   }
-  bool __ne__(LALUnit* unit) {
+  bool __ne__(LALUnit* unit, int SWIGLAL_CMP_OP_RETN_HACK) {
     return XLALUnitCompare($self, unit) != 0;
   }
 

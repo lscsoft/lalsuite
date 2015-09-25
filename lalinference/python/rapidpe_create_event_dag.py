@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (C) 2012 Chris Pankow
 #
 # This program is free software; you can redistribute it and/or modify it
@@ -56,6 +54,8 @@ optp.add_option("--disable-ile-postproc", action="store_true", help="Do not plot
 optp.add_option("--disable-bayes-postproc", action="store_true", help="Do not plot posteriors via cbcBayesPostProc.")
 optp.add_option("--n-copies", default=1, help="Number of copies of each integrator instance to run per mass point. Default is one.")
 optp.add_option("--write-script", action="store_true", help="In addition to the DAG, write a script to this filename to execute the workflow.")
+optp.add_option("--write-eff-lambda", action="store_true", help="Use psi0 column of template bank XML as effective lambda point to calculate in DAG.")
+optp.add_option("--write-deff-lambda", action="store_true", help="Use psi3 column of template bank XML as delta effective lambda point to calculate in DAG.")
 
 for cat, val in MAXJOBS.iteritems():
     optname = "--maxjobs-%s" % cat.lower().replace("_", "-")
@@ -162,7 +162,9 @@ ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         convergence_tests_on=opts.convergence_tests_on,
         adapt_floor_level=opts.adapt_floor_level,
         adapt_weight_exponent=opts.adapt_weight_exponent,
-        skymap_file=opts.skymap_file
+        skymap_file=opts.skymap_file,
+        write_eff_lambda=opts.write_eff_lambda,
+        write_deff_lambda=opts.write_deff_lambda 
         )
 ile_job_type.write_sub_file()
 
@@ -193,14 +195,18 @@ sql_job_type, sql_job_name = dagutils.write_result_coalescence_sub(tag="coalesce
 sql_job_type.write_sub_file()
 
 # TODO: Mass index table
-# FIXME: Expanding intrinsic set will require modification here
-for i, (m1, m2) in enumerate([(tmplt.mass1, tmplt.mass2) for tmplt in tmplt_bnk]):
+#for i, (m1, m2) in enumerate([(tmplt.mass1, tmplt.mass2) for tmplt in tmplt_bnk]):
+for i, tmplt in enumerate(tmplt_bnk):
     mass_grouping = "MASS_SET_%d" % i
 
     ile_node = pipeline.CondorDAGNode(ile_job_type)
     ile_node.set_priority(JOB_PRIORITIES["ILE"])
-    ile_node.add_macro("macromass1", m1)
-    ile_node.add_macro("macromass2", m2)
+    ile_node.add_macro("macromass1", tmplt.mass1)
+    ile_node.add_macro("macromass2", tmplt.mass2)
+    if opts.write_eff_lambda:
+        ile_node.add_macro("macroefflambda", tmplt.psi0)
+    if opts.write_deff_lambda:
+        ile_node.add_macro("macrodefflambda", tmplt.psi3)
     if use_bayespe_postproc:
         # If we're using the Bayesian PE post processing script, dump the data
         ile_node.set_post_script(dagutils.which("process_ile_output"))
@@ -265,4 +271,4 @@ if use_bayespe_postproc:
     if opts.write_script:
         ppdag.write_script()
 
-print "Created a postprocessing DAG named %s\n" % ppdag_name
+    print "Created a postprocessing DAG named %s\n" % ppdag_name

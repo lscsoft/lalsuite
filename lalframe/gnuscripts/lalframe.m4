@@ -1,6 +1,6 @@
 # lalframe.m4 - lalframe specific macros
 #
-# serial 5
+# serial 6
 
 AC_DEFUN([LALFRAME_ENABLE_FRAMEC],
 [AC_ARG_ENABLE(
@@ -10,7 +10,7 @@ AC_DEFUN([LALFRAME_ENABLE_FRAMEC],
             [yes],[framec="true"],
             [no],[framec="false"],
             [AC_MSG_ERROR([bad value ${enableval} for --enable-framec])])
-    ],[framec="true"])
+    ],[framec="false"])
 ])
 
 AC_DEFUN([LALFRAME_ENABLE_FRAMEL],

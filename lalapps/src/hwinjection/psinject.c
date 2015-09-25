@@ -40,12 +40,9 @@
               by YYY.
 */
 
-#define _BSD_SOURCE   /* for SA_RESTART */
-#include <signal.h>
-#undef _BSD_SOURCE
+#define _GNU_SOURCE   /* for SA_RESTART */
 
 #include <config.h>
-
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -55,6 +52,7 @@
 #include <strings.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <time.h>

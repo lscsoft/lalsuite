@@ -53,7 +53,7 @@ typedef enum {
 /// the unrestricted supersky metric (3-dimensional sky).
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL( INOUT_STRUCTS( gsl_matrix **, p_rssky_metric, p_rssky_transf, p_ussky_metric ) );
+SWIGLAL(INOUT_STRUCTS(gsl_matrix **, p_rssky_metric, p_rssky_transf, p_ussky_metric));
 #endif
 int XLALComputeSuperskyMetrics(
   gsl_matrix **p_rssky_metric,			///< [out] Output reduced supersky metric, appropriately averaged over segments
@@ -73,7 +73,7 @@ int XLALComputeSuperskyMetrics(
 /// Convert a series of points between supersky coordinate systems.
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL( INOUT_STRUCTS( gsl_matrix **, out_points ) );
+SWIGLAL(INOUT_STRUCTS(gsl_matrix **, out_points));
 #endif
 int XLALConvertSuperskyCoordinates(
   const SuperskyCoordinates out,		///< [in] Coordinate system of the output points
@@ -90,7 +90,8 @@ int XLALConvertPhysicalToSupersky(
   const SuperskyCoordinates out,		///< [in] Coordinate system of the output point
   gsl_vector *out_point,			///< [in/out] Output point in supersky coordinates
   const PulsarDopplerParams *in_phys,		///< [in] Input point in physical coordinates
-  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
+  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
+  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
   );
 
 ///
@@ -100,32 +101,47 @@ int XLALConvertSuperskyToPhysical(
   PulsarDopplerParams *out_phys,		///< [in/out] Output point in physical coordinates
   const SuperskyCoordinates in,			///< [in] Coordinate system of the input point
   const gsl_vector *in_point,			///< [in] Input point in supersky coordinates
-  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
-  );
-
-///
-/// Set all-sky parameter-space bounds on a lattice tiling using the reduced supersky metric.
-///
-/// The sky may be divided into \c patch_count patches of approximately equal area. Each patch is
-/// indexed by \c patch_index, from 0 to \c patch_count - 1. If possible, the extent of each patch
-/// in the reduced supersky coordinate \f$n_b\f$ will be set to \c patch_B_extent.
-///
-int XLALSetSuperskyLatticeTilingAllSkyBounds(
-  LatticeTiling *tiling,			///< [in] Lattice tiling
-  const double patch_B_extent,			///< [in] Ideal extent of sky patch in \f$n_b\f$ coordinate
-  const UINT8 patch_count,			///< [in] Divide sky into this number of patches
-  const UINT8 patch_index			///< [in] Set bounds corresponding to this sky patch
-  );
-
-///
-/// Set a sky point parameter-space bound on a lattice tiling using the reduced supersky metric.
-///
-int XLALSetSuperskyLatticeTilingSkyPointBounds(
-  LatticeTiling *tiling,			///< [in] Lattice tiling
   const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
-  const double alpha,				///< [in] Sky point right ascension
-  const double delta				///< [in] Sky point declination
+  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
   );
+
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
+#endif // SWIG
+
+///
+/// Set parameter-space bounds on the physical sky position \f$(\alpha, \delta)\f$ for a lattice
+/// tiling using the reduced supersky metric. The metric and coordinate transform data must be supplied,
+/// since they will be transformed such that the physical sky region maps to a region in the reduced
+/// supersky coordinates \f$(n_a,n_b)\f$ which may be covered by the lattice tiling.
+///
+int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
+  LatticeTiling *tiling,			///< [in] Lattice tiling
+  gsl_matrix *rssky_metric,			///< [in] Reduced supersky metric
+  gsl_matrix *rssky_transf,			///< [in] Reduced supersky metric coordinate transform data
+  const double alpha1,				///< [in] First bound on sky position right ascension
+  const double alpha2,				///< [in] Second bound on sky position right ascension
+  const double delta1,				///< [in] First bound on sky position declination
+  const double delta2				///< [in] Second bound on sky position declination
+  );
+
+///
+/// Set parameter-space bounds on an equal-area fraction of the physical sky \f$(\alpha, \delta)\f$
+/// for a lattice tiling using the reduced supersky metric. The metric and coordinate transform data
+/// must be supplied, since they will be transformed such that the physical sky patch maps to a region
+/// in the reduced supersky coordinates \f$(n_a,n_b)\f$ which may be covered by the lattice tiling.
+///
+int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
+  LatticeTiling *tiling,			///< [in] Lattice tiling
+  gsl_matrix *rssky_metric,			///< [in] Reduced supersky metric
+  gsl_matrix *rssky_transf,			///< [in] Reduced supersky metric coordinate transform data
+  const UINT4 patch_count,			///< [in] Number of equal-area patches to divide sky into
+  const UINT4 patch_index			///< [in] Index of the patch for which to set bounds
+  );
+
+#ifdef SWIG // SWIG interface directives
+SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
+#endif // SWIG
 
 ///
 /// Set parameter-space bounds on the physical frequency/spindowns \f$f^{(s)}\f$ for a lattice
@@ -150,6 +166,17 @@ int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
   const size_t s,				///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
   const double bound1,				///< [in] First bound on frequency/spindown
   const double bound2				///< [in] Second bound on frequency/spindown
+  );
+
+///
+/// Fill a PulsarSpinRange with the physical frequency/spindown ranges covered by a reduced supersky
+/// lattice tiling.
+///
+int XLALSuperskyLatticePulsarSpinRange(
+  PulsarSpinRange *spin_range,			///< [in,out] Physical frequency/spindown range
+  LatticeTiling *tiling,			///< [in] Lattice tiling
+  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
+  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
   );
 
 /// @}

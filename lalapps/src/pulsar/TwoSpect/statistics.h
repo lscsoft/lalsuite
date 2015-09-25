@@ -23,33 +23,33 @@
 #include <lal/AVFactories.h>
 #include "TwoSpectTypes.h"
 
-INT4 sampleREAL4Vector(REAL4Vector *output, REAL4Vector *input, gsl_rng *rng);
-REAL4Vector * sampleAlignedREAL4VectorArray_nozerosaccepted(alignedREAL4VectorArray *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng);
+INT4 sampleREAL4VectorAligned(REAL4VectorAligned *output, const REAL4VectorAligned *input, const gsl_rng *rng);
+REAL4VectorAligned * sampleREAL4VectorAlignedArray_nozerosaccepted(const REAL4VectorAlignedArray *input, const UINT4 numberofvectors, const UINT4 sampleSize, const gsl_rng *rng);
 
-REAL8 calcMeanD(REAL8Vector *vector);
-REAL8 calcStddevD(REAL8Vector *vector);
-REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator);
+REAL8 calcMeanD(const REAL8Vector *vector);
+REAL8 calcStddevD(const REAL8Vector *vector);
+REAL8 expRandNum(const REAL8 mu, const gsl_rng *ptrToGenerator);
+REAL4VectorAligned * expRandNumVector(const UINT4 length, const REAL8 mu, const gsl_rng *ptrToGenerator);
 
-INT4 ks_test_exp(REAL8 *ksvalue, REAL4Vector *vector);
-INT4 kuipers_test_exp(REAL8 *kuipervalue, REAL4Vector *vector);
+INT4 ks_test_exp(REAL8 *ksvalue, const REAL4VectorAligned *vector);
+INT4 kuipers_test_exp(REAL8 *kuipervalue, const REAL4VectorAligned *vector);
 
-REAL4 calcMean(REAL4Vector *vector);
-REAL4 calcMean_ignoreZeros(REAL4Vector *vector);
-INT4 calcHarmonicMean(REAL4 *harmonicMean, REAL4Vector *vector, INT4 numfbins, INT4 numffts);
-INT4 calcStddev(REAL4 *sigma, REAL4Vector *vector);
-INT4 calcStddev_ignoreZeros(REAL4 *sigma, REAL4Vector *vector);
-INT4 calcRms(REAL4 *rms, REAL4Vector *vector);
-INT4 calcMedian(REAL4 *median, REAL4Vector *vector);
+REAL4 calcMean(const REAL4VectorAligned *vector);
+REAL4 calcMean_ignoreZeros(const REAL4VectorAligned *vector);
+INT4 calcHarmonicMean(REAL4 *harmonicMean, const REAL4VectorAligned *vector, UINT4 numfbins, UINT4 numffts);
+INT4 calcStddev(REAL4 *sigma, const REAL4VectorAligned *vector);
+INT4 calcStddev_ignoreZeros(REAL4 *sigma, const REAL4VectorAligned *vector);
+INT4 calcRms(REAL4 *rms, const REAL4VectorAligned *vector);
+INT4 calcMedian(REAL4 *median, const REAL4VectorAligned *vector);
 
-INT4 sort_float_smallest(REAL4Vector *output, REAL4Vector *input);
+INT4 sort_float_smallest(REAL4VectorAligned *output, const REAL4VectorAligned *input);
 void sort_double_ascend(REAL8Vector *vector);
-void sort_float_ascend(REAL4Vector *vector);
+void sort_float_ascend(REAL4VectorAligned *vector);
 
-INT4 max_index(REAL4Vector *vector);
-INT4 max_index_double(REAL8Vector *vector);
-INT4 max_index_in_range(REAL4Vector *vector, INT4 startlocation, INT4 lastlocation);
-INT4 min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4 *max_index_out);
-INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorsequence, INT4 vectornum);
+UINT4 max_index(const REAL4VectorAligned *vector);
+UINT4 max_index_double(const REAL8Vector *vector);
+UINT4 max_index_in_range(const REAL4VectorAligned *vector, const UINT4 startlocation, const UINT4 lastlocation);
+INT4 min_max_index_INT4Vector(const INT4Vector *inputvector, UINT4 *min_index_out, UINT4 *max_index_out);
 
 INT4 qsort_REAL4_compar(const void *a, const void *b);
 INT4 qsort_REAL8_compar(const void *a, const void *b);

@@ -17,6 +17,37 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalfr_cksum lalfr-cksum
+ * @ingroup lalframe_programs
+ *
+ * @brief Validates the checksum of a frame file
+ *
+ * ### Synopsis
+ *
+ *     lalfr-cksum file [files ...]
+ *
+ * ### Description
+ *
+ * The `lalfr-cksum` utility validates the checksum on the specified files to
+ * the standard output.	The file operands are processed in command-line order.
+ * If file is a single dash (`-`) or absent, `lalfr-cksum` reads from the
+ * standard input.
+ *
+ * ### Exit Status
+ *
+ * The `lalfr-cksum` utility exits 0 on success, and >0 if one or more of the
+ * frame files have invalid checksums.
+ *
+ * ### Example
+ *
+ * The command:
+ *
+ *     lalfr-cksum file1.gwf file2.gwf
+ *
+ * will validate frame files `file1.gwf` and `file2.gwf`.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALFrameU.h>

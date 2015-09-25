@@ -39,19 +39,36 @@
 #define omp ignore
 #endif
 
+/**
+ * @addtogroup LALSimInspiralTaylorXX_c
+ * @{
+ *
+ * @review TaylorF2 routines reviewed by Frank Ohme, Andrew Lundgren, Alex Nitz,
+ * Alex Nielsen, Salvatore Vitale, Jocelyn Read, Sebastian Khan.
+ * The review concluded with git hash 6106138b2140ffb11bc38fc914e0a1de7082dc4d (Nov 2014)
+ *
+ * @name Routines for TaylorF2 Waveforms
+ * @sa
+ * Section IIIF of Alessandra Buonanno, Bala R Iyer, Evan
+ * Ochsner, Yi Pan, and B S Sathyaprakash, "Comparison of post-Newtonian
+ * templates for compact binary inspiral signals in gravitational-wave
+ * detectors", Phys. Rev. D 80, 084043 (2009), arXiv:0907.0700v1
+ *
+ * @{
+ */
 
-/* This function allows SWIG to wrap the TaylorF2 phasing coefficients
- * for use in external Python code
+/** \brief Returns structure containing TaylorF2 phasing coefficients for given
+ *  physical parameters.
  */
 int XLALSimInspiralTaylorF2AlignedPhasing(
-        PNPhasingSeries **pn,
-        const REAL8 m1,
-        const REAL8 m2,
-        const REAL8 chi1,
-        const REAL8 chi2,
-        const REAL8 qm_def1,
-        const REAL8 qm_def2,
-        const LALSimInspiralSpinOrder spinO
+        PNPhasingSeries **pn,   /**< phasing coefficients (output) */
+        const REAL8 m1,         /**< mass of body 1 */
+        const REAL8 m2,		/**< mass of body 2 */
+        const REAL8 chi1,	/**< aligned spin parameter of body 1 */
+        const REAL8 chi2,	/**< aligned spin parameter of body 2 */
+        const REAL8 qm_def1,	/**< quadrupole-monopole parameter of body 1 (set 1 for BH) */
+        const REAL8 qm_def2,	/**< quadrupole-monopole parameter of body 2 (set 1 for BH) */
+        const LALSimInspiralSpinOrder spinO  /**< PN order for spin contributions */
 	)
 {
     PNPhasingSeries *pfa;
@@ -118,7 +135,7 @@ int XLALSimInspiralTaylorF2Core(
     else { //otherwise allocate memory here
 	    htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, freqs->data[0], 0., &lalStrainUnit, freqs->length);
 	    if (!htilde) XLAL_ERROR(XLAL_EFUNC);
-	    XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
+	    XLALUnitMultiply(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
     }
 
     /* phasing coefficients */
@@ -344,11 +361,10 @@ int XLALSimInspiralTaylorF2Core(
 
 /**
  * Computes the stationary phase approximation to the Fourier transform of
- * a chirp waveform with phase given by \eqref{eq_InspiralFourierPhase_f2}
- * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
- * set to -1, then the highest implemented order is used.
+ * a chirp waveform. The amplitude is given by expanding \f$1/\sqrt{\dot{F}}\f$.
+ * If the PN order is set to -1, then the highest implemented order is used.
  *
- * N.B. f_ref is the GW frequency at which phi_ref is defined. The most common
+ * @note f_ref is the GW frequency at which phi_ref is defined. The most common
  * choice in the literature is to choose the reference point as "coalescence",
  * when the frequency becomes infinite. This is the behavior of the code when
  * f_ref==0. If f_ref > 0, phi_ref sets the orbital phase at that GW frequency.
@@ -422,7 +438,7 @@ int XLALSimInspiralTaylorF2(
     htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, n);
     if (!htilde) XLAL_ERROR(XLAL_EFUNC);
     memset(htilde->data->data, 0, n * sizeof(COMPLEX16));
-    XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
+    XLALUnitMultiply(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
 
     /* Fill with non-zero vals from fStart to f_max */
     iStart = (INT4) ceil(fStart / deltaF);
@@ -447,3 +463,6 @@ int XLALSimInspiralTaylorF2(
 
     return ret;
 }
+
+/** @} */
+/** @} */

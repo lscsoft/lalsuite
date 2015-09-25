@@ -331,7 +331,7 @@ void XLALDetCharRemoveTrigs( LALGSequence* trig_sequence, LALGSequence** tbd, co
 	size_t vetoed_events = 0;
 	size_t de_vetoed_events = 0;
 	size_t nevents = XLALGetGSequenceLength(trig_sequence);
-	XLALPrintInfo( "nevents: %lu\n", nevents );
+	XLALPrintInfo( "nevents: %zu\n", nevents );
 	XLALPrintInfo( "Channel to veto: %s\n", vchan );
 
 	// Pointer to the current position in the trigger list
@@ -426,12 +426,12 @@ void XLALDetCharRemoveTrigs( LALGSequence* trig_sequence, LALGSequence** tbd, co
 		// FIXME: Add to veto list
 		XLALFree( trig_veto );
 
-		XLALPrintInfo( "%lu events deleted so far.\n", vetoed_events );
+		XLALPrintInfo( "%zu events deleted so far.\n", vetoed_events );
 		nevents = XLALGetGSequenceLength(trig_sequence);
-		XLALPrintInfo( "%lu events remain\n", nevents );
+		XLALPrintInfo( "%zu events remain\n", nevents );
 	}
-	XLALPrintInfo( "Done, total events removed %lu\n", vetoed_events );
-	XLALPrintInfo( "Done, ref channel total events removed %lu\n", de_vetoed_events );
+	XLALPrintInfo( "Done, total events removed %zu\n", vetoed_events );
+	XLALPrintInfo( "Done, ref channel total events removed %zu\n", de_vetoed_events );
 
 }
 

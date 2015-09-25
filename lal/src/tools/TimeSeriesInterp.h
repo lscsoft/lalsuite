@@ -41,7 +41,7 @@ typedef struct tagLALREAL8SequenceInterp LALREAL8SequenceInterp;
 
 LALREAL8SequenceInterp *XLALREAL8SequenceInterpCreate(const REAL8Sequence *, int);
 void XLALREAL8SequenceInterpDestroy(LALREAL8SequenceInterp *);
-REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *, double);
+REAL8 XLALREAL8SequenceInterpEval(LALREAL8SequenceInterp *, double, int);
 
 
 /**
@@ -53,7 +53,7 @@ typedef struct tagLALREAL8TimeSeriesInterp LALREAL8TimeSeriesInterp;
 
 LALREAL8TimeSeriesInterp *XLALREAL8TimeSeriesInterpCreate(const REAL8TimeSeries *, int);
 void XLALREAL8TimeSeriesInterpDestroy(LALREAL8TimeSeriesInterp *);
-REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *, const LIGOTimeGPS *);
+REAL8 XLALREAL8TimeSeriesInterpEval(LALREAL8TimeSeriesInterp *, const LIGOTimeGPS *, int);
 
 
 #if 0

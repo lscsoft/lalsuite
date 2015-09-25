@@ -18,8 +18,8 @@
  */
 
 
-#ifndef __FASTCHISQINV_H__
-#define __FASTCHISQINV_H__
+#ifndef __TWOSPECTSPECFUNC_H__
+#define __TWOSPECTSPECFUNC_H__
 
 #include <lal/LALStdlib.h>
 
@@ -32,8 +32,8 @@ struct cheb_series_struct {
 };
 typedef struct cheb_series_struct cheb_series;
 
-COMPLEX16 DirichletKernelLargeN(REAL8 delta);
-COMPLEX16 DirichletKernelLargeNHann(REAL8 delta);
+COMPLEX16 DirichletKernelLargeN(const REAL8 delta);
+COMPLEX16 DirichletKernelLargeNHann(const REAL8 delta);
 INT4 DirichletKernalLargeNHannRatio(COMPLEX8 *ratio, const REAL4 delta0, const REAL4 delta1, const REAL4 scaling);
 
 REAL8 twospect_small(REAL8 q);

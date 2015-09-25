@@ -42,8 +42,6 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data );
 /* functions for finding change points in the data */
 UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, INT4 chunkMax );
 UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkMax );
-void randomise_data( LALInferenceIFOModel *model, gsl_rng *r );
-/* void randomise_data( LALInferenceIFOData *data, LALInferenceIFOModel *model, gsl_rng *r ); */
 UINT4Vector *chop_data( gsl_vector_complex *data, INT4 chunkMin );
 UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, INT4 chunkMin );
 void rechop_data( UINT4Vector *segs, INT4 chunkMax, INT4 chunkMin );
@@ -53,7 +51,6 @@ void gzip_output( LALInferenceRunState *runState );
 INT4 count_csv( CHAR *csvline );
 INT4 recognised_parameter( CHAR *parname );
 void check_and_add_fixed_variable( LALInferenceVariables *vars, const char *name, void *value, LALInferenceVariableType type );
-void remove_variable_and_prior( LALInferenceRunState *runState, LALInferenceIFOModel *data, const CHAR *var );
 
 TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
                                               CHAR *tfile,

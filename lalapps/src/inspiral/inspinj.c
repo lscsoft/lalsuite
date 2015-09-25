@@ -409,6 +409,8 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 #define UNUSED
 #endif
 
+#define AXIS_MAX 12
+
 /*
  *  *********************************
  *  Definition of the prototypes
@@ -1081,7 +1083,8 @@ static void print_usage(char *program)
       "                           One of these is required.\n"\
       "  [--spin-gaussian]        enable gaussian spin distribution\n"\
       "  --aligned                enforces the spins to be along the direction\n"\
-      "                           of orbital angular momentum.\n"\
+      "                           of orbital angular momentum. Spin z-components are the only non-vanishing (unless '--axis-choice view' convention is chosen)\n"\
+      "  [--axis-choice] choice   frame axis choice: 'angmomentum' (default) or 'view' to define convention for spin aligned case\n"\
       "  [--min-spin1] spin1min   Set the minimum spin1 to spin1min (0.0)\n"\
       "  [--max-spin1] spin1max   Set the maximum spin1 to spin1max (0.0)\n"\
       "  [--mean-spin1] spin1mean Set the mean for |spin1| distribution\n"\
@@ -1831,6 +1834,7 @@ int main( int argc, char *argv[] )
 
   /* waveform */
   CHAR waveform[LIGOMETA_WAVEFORM_MAX];
+  CHAR axisChoiceString[]="angmomentum";
   CHAR dummy[256];
   INT4 amp_order = -1;
   /* xml output data */
@@ -1949,6 +1953,7 @@ int main( int argc, char *argv[] )
     {"enable-spin",             no_argument,       0,                'T'},
     {"disable-spin",            no_argument,       0,                'W'},
     {"aligned",                 no_argument,       0,                '@'},
+    {"axis-choice",             required_argument, 0,               1009},
     {"write-compress",          no_argument,       &outCompress,       1},
     {"taper-injection",         required_argument, 0,                '*'},
     {"band-pass-injection",     no_argument,       0,                '}'},
@@ -3018,6 +3023,14 @@ int main( int argc, char *argv[] )
         spinAligned = 1;
         break;
 
+      case 1009:
+        /* frame axis choice */
+        snprintf( axisChoiceString, AXIS_MAX, "%s", LALoptarg );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
+              "%s", LALoptarg );
+        break;
+
       case '}':
         /* enable band-passing */
         this_proc_param = this_proc_param->next =
@@ -3746,16 +3759,6 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if ( spinInjections==1 && spinAligned==1 && strncmp(waveform, "IMRPhenomB", 10)
-    && strncmp(waveform, "IMRPhenomC", 10) && strncmp(waveform, "SpinTaylor", 10)
-    && strncmp(waveform, "IMRPhenomP", 10) && strncmp(waveform, "SEOBNR", 6) )
-  {
-    fprintf( stderr,
-        "Sorry, I only know to make spin aligned injections for SEOBNR, \n"
-        "IMRPhenomB/C/P, SpinTaylor and SpinTaylorFrameless waveforms.\n" );
-    exit( 1 );
-  }
-
   if ( spinInjections==1 )
   {
     if ( spinDistr == unknownSpinDist ) /* Not currently used */
@@ -4126,35 +4129,30 @@ int main( int argc, char *argv[] )
     }
 
     /* populate spins, if required */
-    if (spinInjections)
-    {
-      if (spinAligned==1)
-      {
-        if ( !strncmp(waveform, "IMRPhenomB", 10) || 
-             !strncmp(waveform, "IMRPhenomC", 10) ||
-             !strncmp(waveform, "TaylorF2", 8) ||
-             !strncmp(waveform, "SpinTaylorT5", 12) ||
-             !strncmp(waveform, "SEOBNR", 6) )
-          alignInj = alongzAxis;
-        else if ( !strncmp(waveform, "SpinTaylor", 10) ||
-                  !strncmp(waveform, "IMRPhenomP", 10) )
-          alignInj = inxzPlane;
-        else
-        {
-          fprintf( stderr, "Unknown waveform type for aligned spin injections.\n" );
-          exit( 1 );
-        }
+    if (spinInjections==1) {
+      if ( spinAligned==1 ) {
+	if ( !strncmp(axisChoiceString,"angmomentum", 11) )
+	  alignInj = alongzAxis;
+	else {
+	  if ( !strncmp(axisChoiceString,"view", 4) )
+	    alignInj = inxzPlane;
+	  else {
+	    fprintf( stderr, "Unknown axis-choice specification: 'angmomentum' and 'view' allowed, %s given.\n",axisChoiceString);
+	    exit( 1 );
+	  }
+	}
       }
-      else alignInj = notAligned;
+      else
+	alignInj = notAligned;
 
       simTable = XLALRandomInspiralSpins( simTable, randParams,
-          minSpin1, maxSpin1,
-          minSpin2, maxSpin2,
-          minKappa1, maxKappa1,
-          minabsKappa1, maxabsKappa1,
-          alignInj, spinDistr,
-          meanSpin1, Spin1Std,
-          meanSpin2, Spin2Std );
+					  minSpin1, maxSpin1,
+					  minSpin2, maxSpin2,
+					  minKappa1, maxKappa1,
+					  minabsKappa1, maxabsKappa1,
+					  alignInj, spinDistr,
+					  meanSpin1, Spin1Std,
+					  meanSpin2, Spin2Std );
     }
 
     /* adjust SNR to desired distribution using NINJA calculation */

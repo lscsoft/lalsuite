@@ -34,7 +34,7 @@
  * \param [in] rows  Number of neighboring rows to be summed
  * \return Pointer to a newly created ihsMaximaStruct
  */
-ihsMaximaStruct * new_ihsMaxima(INT4 fbins, INT4 rows)
+ihsMaximaStruct * createihsMaxima(const UINT4 fbins, const UINT4 rows)
 {
 
    XLAL_CHECK_NULL( fbins > 0 && rows > 0, XLAL_EINVAL );
@@ -44,35 +44,35 @@ ihsMaximaStruct * new_ihsMaxima(INT4 fbins, INT4 rows)
 
    //The number of ihs maxima = Sum[fbins - (i-1), {i, 2, rows}]
    // = fbins*rows - fbins - (rows**2 - rows)/2
-   INT4 numberofmaxima = fbins*rows - fbins - (INT4)((rows*rows-rows)/2);
+   UINT4 numberofmaxima = fbins*rows - fbins - (UINT4)((rows*rows-rows)/2);
 
-   XLAL_CHECK_NULL( (ihsmaxima->maxima = XLALCreateREAL4Vector(numberofmaxima)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (ihsmaxima->maxima = XLALCreateREAL4VectorAligned(numberofmaxima, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (ihsmaxima->locations = XLALCreateINT4Vector(numberofmaxima)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (ihsmaxima->foms = XLALCreateREAL4Vector(numberofmaxima)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (ihsmaxima->maximaForEachFbin = XLALCreateREAL4Vector(fbins)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (ihsmaxima->foms = XLALCreateREAL4VectorAligned(numberofmaxima, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (ihsmaxima->maximaForEachFbin = XLALCreateREAL4VectorAligned(fbins, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (ihsmaxima->locationsForEachFbin = XLALCreateINT4Vector(fbins)) != NULL, XLAL_EFUNC );
    ihsmaxima->rows = rows;
 
    return ihsmaxima;
 
-} /* new_ihsMaxima() */
+} /* createihsMaxima() */
 
 
 /**
  * Destroy vectors and the IHS maxima struct
  * \param [in] data Pointer to an ihsMaximaStruct to be freed
  */
-void free_ihsMaxima(ihsMaximaStruct *data)
+void destroyihsMaxima(ihsMaximaStruct *data)
 {
-
-   XLALDestroyREAL4Vector(data->maxima);
-   XLALDestroyINT4Vector(data->locations);
-   XLALDestroyREAL4Vector(data->foms);
-   XLALDestroyREAL4Vector(data->maximaForEachFbin);
-   XLALDestroyINT4Vector(data->locationsForEachFbin);
-   XLALFree((ihsMaximaStruct*)data);
-
-} /* free_ihsMaxima() */
+   if (data) {
+      XLALDestroyREAL4VectorAligned(data->maxima);
+      XLALDestroyINT4Vector(data->locations);
+      XLALDestroyREAL4VectorAligned(data->foms);
+      XLALDestroyREAL4VectorAligned(data->maximaForEachFbin);
+      XLALDestroyINT4Vector(data->locationsForEachFbin);
+      XLALFree((ihsMaximaStruct*)data);
+   }
+} /* destroyihsMaxima() */
 
 
 /**
@@ -82,11 +82,11 @@ void free_ihsMaxima(ihsMaximaStruct *data)
  * \param [in]  ihsfarinput Pointer to the ihsfarStruct
  * \param [in]  params      Pointer to UserInput_t
  * \param [in]  rows        Number of neighboring rows to be summed
- * \param [in]  aveNoise    Pointer to a REAL4Vector of 2nd FFT background powers
- * \param [in]  FbinMean    Pointer to a REAL4Vector of normalized SFT background powers
+ * \param [in]  aveNoise    Pointer to a REAL4VectorAligned of 2nd FFT background powers
+ * \param [in]  FbinMean    Pointer to a REAL4VectorAligned of normalized SFT background powers
  * \return Status value
  */
-INT4 runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarinput, UserInput_t *params, INT4 rows, REAL4Vector *aveNoise, REAL4Vector *FbinMean)
+INT4 runIHS(ihsMaximaStruct *output, const ffdataStruct *input, const ihsfarStruct *ihsfarinput, const UserInput_t *params, const UINT4 rows, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *FbinMean)
 {
 
    XLAL_CHECK( output != NULL && input != NULL && ihsfarinput != NULL && params != NULL && rows > 0 && aveNoise != NULL && FbinMean != NULL, XLAL_EINVAL );
@@ -95,16 +95,16 @@ INT4 runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarin
    INT4 numfprbins = input->numfprbins;
 
    //Allocate memory for the necessary vectors
-   REAL4Vector *row = NULL, *ihss = NULL, *ihsvector = NULL;
+   REAL4VectorAligned *row = NULL, *ihss = NULL, *ihsvector = NULL;
    INT4Vector *locs = NULL;
    ihsVals *ihsvals = NULL;
-   alignedREAL4VectorArray *ihsvectorarray = NULL;
-   XLAL_CHECK( (row = XLALCreateREAL4Vector(numfprbins)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (ihss = XLALCreateREAL4Vector(numfbins)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (ihsvector = XLALCreateREAL4Vector((INT4)floor((1.0/(REAL8)params->ihsfactor)*numfprbins)-5)) != NULL, XLAL_EFUNC );
+   REAL4VectorAlignedArray *ihsvectorarray = NULL;
+   XLAL_CHECK( (row = XLALCreateREAL4VectorAligned(numfprbins, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ihss = XLALCreateREAL4VectorAligned(numfbins, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ihsvector = XLALCreateREAL4VectorAligned((INT4)floor((1.0/(REAL8)params->ihsfactor)*numfprbins)-5, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (locs = XLALCreateINT4Vector(numfbins)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (ihsvals = new_ihsVals()) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (ihsvectorarray = createAlignedREAL4VectorArray(numfbins, ihsvector->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ihsvals = createihsVals()) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ihsvectorarray = createREAL4VectorAlignedArray(numfbins, ihsvector->length, 32)) != NULL, XLAL_EFUNC );
 
    //We want to ignore daily and sidereal harmonics, so mark the values
    REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
@@ -141,13 +141,13 @@ INT4 runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarin
    XLAL_CHECK( sumIHSarray(output, ihsfarinput, ihsvectorarray, rows, FbinMean, params) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Destroy stuff
-   destroyAlignedREAL4VectorArray(ihsvectorarray);
-   XLALDestroyREAL4Vector(row);
-   XLALDestroyREAL4Vector(ihss);
-   XLALDestroyREAL4Vector(ihsvector);
+   destroyREAL4VectorAlignedArray(ihsvectorarray);
+   XLALDestroyREAL4VectorAligned(row);
+   XLALDestroyREAL4VectorAligned(ihss);
+   XLALDestroyREAL4VectorAligned(ihsvector);
    XLALDestroyINT4Vector(locs);
    XLALDestroyINT4Vector(markedharmonics);
-   free_ihsVals(ihsvals);
+   destroyihsVals(ihsvals);
 
    return XLAL_SUCCESS;
 
@@ -158,40 +158,40 @@ INT4 runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarin
  * Allocate memory for ihsVals struct
  * \return Pointer to a newly created ihsVals structure
  */
-ihsVals * new_ihsVals(void)
+ihsVals * createihsVals(void)
 {
    ihsVals *ihsvals = NULL;
    XLAL_CHECK_NULL( (ihsvals = XLALMalloc(sizeof(*ihsvals))) != NULL, XLAL_ENOMEM );
    return ihsvals;
-} /* new_ihsVals() */
+} /* createihsVals() */
 
 
 /**
  * Destroy ihsVals struct
  * \param [in] ihsvals Pointer to an ihsVals structure to be freed
  */
-void free_ihsVals(ihsVals *ihsvals)
+void destroyihsVals(ihsVals *ihsvals)
 {
-   XLALFree((ihsVals*)ihsvals);
-} /* free_ihsVals() */
+   if (ihsvals) XLALFree((ihsVals*)ihsvals);
+} /* destroyihsVals() */
 
 
 /**
  * Compute the IHS sum maximum
  * \param [out] output    Pointer to the ihsVals structure
- * \param [in]  input     Pointer to a REAL4Vector
+ * \param [in]  input     Pointer to a REAL4VectorAligned
  * \param [in]  ihsfactor Number of folds of the 2nd FFT
  * \return Status value
  */
-INT4 incHarmSum(ihsVals *output, REAL4Vector *input, INT4 ihsfactor)
+INT4 incHarmSum(ihsVals *output, const REAL4VectorAligned *input, const UINT4 ihsfactor)
 {
 
    XLAL_CHECK( output != NULL && input != NULL && ihsfactor > 0, XLAL_EINVAL );
 
    output->ihs = 0.0;
 
-   REAL4Vector *tempvect = NULL;
-   XLAL_CHECK( (tempvect = XLALCreateREAL4Vector((INT4)floor((1.0/(REAL8)ihsfactor)*input->length)-5)) != NULL, XLAL_EFUNC );
+   REAL4VectorAligned *tempvect = NULL;
+   XLAL_CHECK( (tempvect = XLALCreateREAL4VectorAligned((INT4)floor((1.0/(REAL8)ihsfactor)*input->length)-5, 32)) != NULL, XLAL_EFUNC );
 
    XLAL_CHECK( incHarmSumVector(tempvect, input, ihsfactor) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -202,7 +202,7 @@ INT4 incHarmSum(ihsVals *output, REAL4Vector *input, INT4 ihsfactor)
       }
    } /* for ii < tempvect->length */
 
-   XLALDestroyREAL4Vector(tempvect);
+   XLALDestroyREAL4VectorAligned(tempvect);
 
    return XLAL_SUCCESS;
 
@@ -211,12 +211,12 @@ INT4 incHarmSum(ihsVals *output, REAL4Vector *input, INT4 ihsfactor)
 
 /**
  * Compute the IHS vector -- does not compute the maximum value
- * \param [out] output    Pointer to a REAL4Vector to contain the folded values
- * \param [in]  input     Pointer to a REAL4Vector for the input to the IHS
+ * \param [out] output    Pointer to a REAL4VectorAligned to contain the folded values
+ * \param [in]  input     Pointer to a REAL4VectorAligned for the input to the IHS
  * \param [in]  ihsfactor Number of folds of the 2nd FFT
  * \return Status value
  */
-INT4 incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor)
+INT4 incHarmSumVector(REAL4VectorAligned *output, const REAL4VectorAligned *input, const UINT4 ihsfactor)
 {
 
    XLAL_CHECK( output != NULL && input != NULL && ihsfactor > 0, XLAL_EINVAL );
@@ -226,10 +226,10 @@ INT4 incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor)
    //From 5 up to the highval
    for (INT4 ii=5; ii<highval; ii++) {
       output->data[ii-5] = 0.0;  //first set the value to zero
-      for (INT4 jj=1; jj<=ihsfactor; jj++) output->data[ii-5] += input->data[ii*jj];
+      for (UINT4 jj=1; jj<=ihsfactor; jj++) output->data[ii-5] += input->data[ii*jj];
 
       //check that we're not going outside of the allowed limits
-      XLAL_CHECK( ihsfactor*(ii-1)<=(INT4)input->length-1, XLAL_EBADLEN );
+      XLAL_CHECK( ihsfactor*(ii-1)<=input->length-1, XLAL_EBADLEN );
    } /* for ii=5 --> highval */
 
    return XLAL_SUCCESS;
@@ -239,13 +239,13 @@ INT4 incHarmSumVector(REAL4Vector *output, REAL4Vector *input, INT4 ihsfactor)
 
 /**
  * Compute the noise weighted IHS vector -- does not compute the maximum value
- * \param [out] output    Pointer to a REAL4Vector to contain the folded values
- * \param [in]  input     Pointer to a REAL4Vector for the input to the IHS
- * \param [in]  aveNoise  Pointer to a REAL4Vector of 2nd FFT background powers
+ * \param [out] output    Pointer to a REAL4VectorAligned to contain the folded values
+ * \param [in]  input     Pointer to a REAL4VectorAligned for the input to the IHS
+ * \param [in]  aveNoise  Pointer to a REAL4VectorAligned of 2nd FFT background powers
  * \param [in]  ihsfactor Number of folds of the 2nd FFT
  * \return Status value
  */
-INT4 incHarmSumVectorWeighted(REAL4Vector *output, REAL4Vector *input, REAL4Vector *aveNoise, INT4 ihsfactor)
+INT4 incHarmSumVectorWeighted(REAL4VectorAligned *output, const REAL4VectorAligned *input, const REAL4VectorAligned *aveNoise, const UINT4 ihsfactor)
 {
 
    XLAL_CHECK( output != NULL && input != NULL && aveNoise != NULL && ihsfactor > 0, XLAL_EINVAL );
@@ -255,18 +255,18 @@ INT4 incHarmSumVectorWeighted(REAL4Vector *output, REAL4Vector *input, REAL4Vect
    //From 5 up to the highval
    for (INT4 ii=5; ii<highval; ii++) {
       output->data[ii-5] = 0.0;  //first set the value to zero
-      for (INT4 jj=1; jj<=ihsfactor; jj++) {
+      for (UINT4 jj=1; jj<=ihsfactor; jj++) {
          REAL4 weight = 1.0/(aveNoise->data[ii*jj]*aveNoise->data[ii*jj]);
          output->data[ii-5] += input->data[ii*jj]*weight;
       }
 
       //check that we're not going outside of the allowed limits
-      XLAL_CHECK( ihsfactor*(ii-1)<=(INT4)input->length-1, XLAL_EBADLEN );
+      XLAL_CHECK( ihsfactor*(ii-1)<=input->length-1, XLAL_EBADLEN );
    } /* for ii=5 --> highval */
 
    return XLAL_SUCCESS;
 
-} /* incHarmSumVectorWeighted() */
+} // incHarmSumVectorWeighted()
 
 
 /**
@@ -275,7 +275,7 @@ INT4 incHarmSumVectorWeighted(REAL4Vector *output, REAL4Vector *input, REAL4Vect
  * \param [in] params Pointer to UserInput_t
  * \return Pointer to a newly allocated ihsfarStruct
  */
-ihsfarStruct * new_ihsfarStruct(INT4 rows, UserInput_t *params)
+ihsfarStruct * createihsfarStruct(const UINT4 rows, const UserInput_t *params)
 {
 
    XLAL_CHECK_NULL( rows > 0 && params != NULL, XLAL_EINVAL );
@@ -283,36 +283,38 @@ ihsfarStruct * new_ihsfarStruct(INT4 rows, UserInput_t *params)
    ihsfarStruct *ihsfarstruct = NULL;
    XLAL_CHECK_NULL( (ihsfarstruct = XLALMalloc(sizeof(*ihsfarstruct))) != NULL, XLAL_ENOMEM );
 
-   XLAL_CHECK_NULL( (ihsfarstruct->ihsfar = XLALCreateREAL4Vector(rows-1)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (ihsfarstruct->ihsdistMean = XLALCreateREAL4Vector(rows-1)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (ihsfarstruct->ihsdistSigma = XLALCreateREAL4Vector(rows-1)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (ihsfarstruct->fomfarthresh = XLALCreateREAL4Vector(rows-1)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (ihsfarstruct->ihsfomdistMean = XLALCreateREAL4Vector(rows-1)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (ihsfarstruct->ihsfomdistSigma = XLALCreateREAL4Vector(rows-1)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (ihsfarstruct->ihsfar = XLALCreateREAL4VectorAligned(rows-1, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (ihsfarstruct->ihsdistMean = XLALCreateREAL4VectorAligned(rows-1, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (ihsfarstruct->ihsdistSigma = XLALCreateREAL4VectorAligned(rows-1, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (ihsfarstruct->fomfarthresh = XLALCreateREAL4VectorAligned(rows-1, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (ihsfarstruct->ihsfomdistMean = XLALCreateREAL4VectorAligned(rows-1, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (ihsfarstruct->ihsfomdistSigma = XLALCreateREAL4VectorAligned(rows-1, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (ihsfarstruct->expectedIHSVector = XLALCreateREAL4VectorAligned((INT4)floor((1.0/(REAL8)params->ihsfactor)*((INT4)floor(floor(params->Tobs/(params->Tsft-params->SFToverlap)-1)*0.5)+1))-5, 32)) != NULL, XLAL_EFUNC );
 
    memset(ihsfarstruct->expectedIHSVector->data, 0, sizeof(REAL4)*ihsfarstruct->expectedIHSVector->length);
 
    return ihsfarstruct;
 
-} /* new_ihsfarStruct() */
+} // createihsfarStruct()
 
 
 /**
  * Destroy ihsfarStruct struct
  * \param [in] ihsfarstruct Pointer to the ihsfarStruct to be destroyed
  */
-void free_ihsfarStruct(ihsfarStruct *ihsfarstruct)
+void destroyihsfarStruct(ihsfarStruct *ihsfarstruct)
 {
-   XLALDestroyREAL4Vector(ihsfarstruct->ihsfar);
-   XLALDestroyREAL4Vector(ihsfarstruct->ihsdistMean);
-   XLALDestroyREAL4Vector(ihsfarstruct->ihsdistSigma);
-   XLALDestroyREAL4Vector(ihsfarstruct->fomfarthresh);
-   XLALDestroyREAL4Vector(ihsfarstruct->ihsfomdistMean);
-   XLALDestroyREAL4Vector(ihsfarstruct->ihsfomdistSigma);
-   XLALDestroyREAL4VectorAligned(ihsfarstruct->expectedIHSVector);
-   XLALFree((ihsfarStruct*)ihsfarstruct);
-} /* free_ihsfarStruct() */
+   if (ihsfarstruct) {
+      XLALDestroyREAL4VectorAligned(ihsfarstruct->ihsfar);
+      XLALDestroyREAL4VectorAligned(ihsfarstruct->ihsdistMean);
+      XLALDestroyREAL4VectorAligned(ihsfarstruct->ihsdistSigma);
+      XLALDestroyREAL4VectorAligned(ihsfarstruct->fomfarthresh);
+      XLALDestroyREAL4VectorAligned(ihsfarstruct->ihsfomdistMean);
+      XLALDestroyREAL4VectorAligned(ihsfarstruct->ihsfomdistSigma);
+      XLALDestroyREAL4VectorAligned(ihsfarstruct->expectedIHSVector);
+      XLALFree((ihsfarStruct*)ihsfarstruct);
+   }
+} /* destroyihsfarStruct() */
 
 
 /**
@@ -320,11 +322,11 @@ void free_ihsfarStruct(ihsfarStruct *ihsfarstruct)
  * \param [out] output   Pointer to the output ihsfarStruct
  * \param [in]  params   Pointer to UserInput_t
  * \param [in]  rows     Number of neighbors to sum
- * \param [in]  aveNoise Pointer to REAL4Vector of 2nd FFT background powers
+ * \param [in]  aveNoise Pointer to REAL4VectorAligned of 2nd FFT background powers
  * \param [in]  rng      Pointer to GSL random number generator
  * \return Status value
  */
-INT4 genIhsFar(ihsfarStruct *output, UserInput_t *params, INT4 rows, REAL4Vector *aveNoise, gsl_rng *rng)
+INT4 genIhsFar(ihsfarStruct *output, const UserInput_t *params, const UINT4 rows, const REAL4VectorAligned *aveNoise, const gsl_rng *rng)
 {
 
    XLAL_CHECK( output != NULL && params != NULL && rows > 0 && aveNoise != NULL, XLAL_EINVAL );
@@ -334,7 +336,7 @@ INT4 genIhsFar(ihsfarStruct *output, UserInput_t *params, INT4 rows, REAL4Vector
 
    REAL8 Tobs = params->Tobs;
 
-   INT4 trials = 5*rows;
+   UINT4 trials = 5*rows;
    if (trials<1000) {
       trials = 1000;
    }
@@ -344,14 +346,13 @@ INT4 genIhsFar(ihsfarStruct *output, UserInput_t *params, INT4 rows, REAL4Vector
    }
 
    //Allocations for IHS values for the number of trials
-   REAL4Vector *ihsvector = NULL, *ihss = NULL;
-   REAL4VectorAligned *noise = NULL;
-   alignedREAL4VectorArray *ihsvectorarray = NULL;
+   REAL4VectorAligned *ihsvector = NULL, *ihss = NULL, *noise = NULL;
+   REAL4VectorAlignedArray *ihsvectorarray = NULL;
    INT4Vector *locs = NULL;
    XLAL_CHECK( (noise = XLALCreateREAL4VectorAligned(aveNoise->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (ihsvector = XLALCreateREAL4Vector((INT4)floor((1.0/(REAL8)params->ihsfactor)*aveNoise->length)-5)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (ihss = XLALCreateREAL4Vector(trials)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (ihsvectorarray = createAlignedREAL4VectorArray(trials, ihsvector->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ihsvector = XLALCreateREAL4VectorAligned((INT4)floor((1.0/(REAL8)params->ihsfactor)*aveNoise->length)-5, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ihss = XLALCreateREAL4VectorAligned(trials, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ihsvectorarray = createREAL4VectorAlignedArray(trials, ihsvector->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (locs = XLALCreateINT4Vector(trials)) != NULL, XLAL_EFUNC );
 
    //Determine the locations of the harmonics of the earth's rotation in the IHS vector
@@ -372,11 +373,11 @@ INT4 genIhsFar(ihsfarStruct *output, UserInput_t *params, INT4 rows, REAL4Vector
    //Do the expected IHS values from the expected background here
    memcpy(noise->data, aveNoise->data, sizeof(REAL4)*aveNoise->length);
    for (UINT4 ii=0; ii<aveNoise->length; ii++) if (markedharmonics->data[ii]==1) noise->data[ii] = 0.0;
-   if (!params->weightedIHS) XLAL_CHECK( incHarmSumVector((REAL4Vector*)output->expectedIHSVector, (REAL4Vector*)noise, params->ihsfactor) == XLAL_SUCCESS, XLAL_EFUNC );
-   else XLAL_CHECK( incHarmSumVectorWeighted((REAL4Vector*)output->expectedIHSVector, (REAL4Vector*)noise, aveNoise, params->ihsfactor) == XLAL_SUCCESS, XLAL_EFUNC );
+   if (!params->weightedIHS) XLAL_CHECK( incHarmSumVector(output->expectedIHSVector, noise, params->ihsfactor) == XLAL_SUCCESS, XLAL_EFUNC );
+   else XLAL_CHECK( incHarmSumVectorWeighted(output->expectedIHSVector, noise, aveNoise, params->ihsfactor) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Now do a number of trials
-   for (INT4 ii=0; ii<trials; ii++) {
+   for (UINT4 ii=0; ii<trials; ii++) {
       //Make exponential noise, removing harmonics of 24 hours to match with the same method as real analysis
       for (UINT4 jj=0; jj<aveNoise->length; jj++) {
          if (markedharmonics->data[jj]==0) noise->data[jj] = (REAL4)(gsl_ran_exponential(rng, aveNoise->data[jj]));
@@ -390,13 +391,11 @@ INT4 genIhsFar(ihsfarStruct *output, UserInput_t *params, INT4 rows, REAL4Vector
       while (randval<=0.0 || randval>=2.0) randval = 1.0 + gsl_ran_gaussian(rng, 0.2);     //limit range of variation
 
       //scale the exponential noise
-      if (params->vectorMath==1)  XLAL_CHECK( sseScaleREAL4Vector(noise, noise, randval) == XLAL_SUCCESS, XLAL_EFUNC );
-      else if (params->vectorMath==2) XLAL_CHECK( avxScaleREAL4Vector(noise, noise, randval) == XLAL_SUCCESS, XLAL_EFUNC );
-      else for (UINT4 jj=0; jj<noise->length; jj++) noise->data[jj] *= randval;
+      XLAL_CHECK( XLALVectorScaleREAL4(noise->data, randval, noise->data, noise->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Compute IHS value on exponential noise
-      if (!params->weightedIHS) XLAL_CHECK( incHarmSumVector(ihsvector, (REAL4Vector*)noise, params->ihsfactor) == XLAL_SUCCESS, XLAL_EFUNC );
-      else XLAL_CHECK( incHarmSumVectorWeighted(ihsvector, (REAL4Vector*)noise, aveNoise, params->ihsfactor) == XLAL_SUCCESS, XLAL_EFUNC );
+      if (!params->weightedIHS) XLAL_CHECK( incHarmSumVector(ihsvector, noise, params->ihsfactor) == XLAL_SUCCESS, XLAL_EFUNC );
+      else XLAL_CHECK( incHarmSumVectorWeighted(ihsvector, noise, aveNoise, params->ihsfactor) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Copy the result into the IHS vector array
       memcpy(ihsvectorarray->data[ii]->data, ihsvector->data, sizeof(REAL4)*ihsvector->length);
@@ -404,21 +403,21 @@ INT4 genIhsFar(ihsfarStruct *output, UserInput_t *params, INT4 rows, REAL4Vector
 
    //Destroy stuff
    XLALDestroyREAL4VectorAligned(noise);
-   XLALDestroyREAL4Vector(ihsvector);
+   XLALDestroyREAL4VectorAligned(ihsvector);
    XLALDestroyINT4Vector(markedharmonics);
 
    //Create a fake vector with the same average value in each bin = 1.0
-   REAL4Vector *FbinMean = NULL;
-   XLAL_CHECK( (FbinMean = XLALCreateREAL4Vector(trials)) != NULL, XLAL_EFUNC );
-   for (INT4 ii=0; ii<trials; ii++) FbinMean->data[ii] = 1.0;
+   REAL4VectorAligned *FbinMean = NULL;
+   XLAL_CHECK( (FbinMean = XLALCreateREAL4VectorAligned(trials, 32)) != NULL, XLAL_EFUNC );
+   for (UINT4 ii=0; ii<trials; ii++) FbinMean->data[ii] = 1.0;
 
    //Calculate the IHS sum values for the IHS trials
    XLAL_CHECK( sumIHSarrayFAR(output, ihsvectorarray, rows, FbinMean, params, rng) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Destroy stuff
-   destroyAlignedREAL4VectorArray(ihsvectorarray);
-   XLALDestroyREAL4Vector(ihss);
-   XLALDestroyREAL4Vector(FbinMean);
+   destroyREAL4VectorAlignedArray(ihsvectorarray);
+   XLALDestroyREAL4VectorAligned(ihss);
+   XLALDestroyREAL4VectorAligned(FbinMean);
    XLALDestroyINT4Vector(locs);
 
    fprintf(stderr, "done\n");
@@ -432,14 +431,14 @@ INT4 genIhsFar(ihsfarStruct *output, UserInput_t *params, INT4 rows, REAL4Vector
 /**
  * Compute the IHS sums for a number of rows used for the FAR calculation
  * \param [out] outputfar      Pointer to the output ihsfarStruct
- * \param [in]  ihsvectorarray Pointer to alignedREAL4VectorArray to be summed
+ * \param [in]  ihsvectorarray Pointer to REAL4VectorAlignedArray to be summed
  * \param [in]  rows           Number of neighbors to sum
- * \param [in]  FbinMean       Pointer to REAL4Vector of normalized SFT background powers
+ * \param [in]  FbinMean       Pointer to REAL4VectorAligned of normalized SFT background powers
  * \param [in]  params         Pointer to UserInput_t
  * \param [in]  rng            Pointer to random number generator
  * \return Status value
  */
-INT4 sumIHSarrayFAR(ihsfarStruct *outputfar, alignedREAL4VectorArray *ihsvectorarray, INT4 rows, REAL4Vector *FbinMean, UserInput_t *params, gsl_rng *rng)
+INT4 sumIHSarrayFAR(ihsfarStruct *outputfar, REAL4VectorAlignedArray *ihsvectorarray, const UINT4 rows, const REAL4VectorAligned *FbinMean, const UserInput_t *params, const gsl_rng *rng)
 {
 
    XLAL_CHECK( outputfar != NULL && ihsvectorarray != NULL && rows > 0 && FbinMean != NULL && params != NULL, XLAL_EINVAL );
@@ -451,15 +450,15 @@ INT4 sumIHSarrayFAR(ihsfarStruct *outputfar, alignedREAL4VectorArray *ihsvectora
    //Allocate a vector array that holds the summed values of at least two nearest neighbor rows
    //On the first iteration this holds the nearest neighbor sums, but on subsequent iterations, this holds nearest 3 neighbors
    //sums, then nearest 4 neighbor sums, and so on.
-   alignedREAL4VectorArray *tworows = NULL;
-   XLAL_CHECK( (tworows = createAlignedREAL4VectorArray(ihsvectorarray->length-1, ihsvectorarray->data[0]->length, 32)) != NULL, XLAL_EFUNC );
+   REAL4VectorAlignedArray *tworows = NULL;
+   XLAL_CHECK( (tworows = createREAL4VectorAlignedArray(ihsvectorarray->length-1, ihsvectorarray->data[0]->length, 32)) != NULL, XLAL_EFUNC );
    for (UINT4 ii=0; ii<tworows->length; ii++) memset(tworows->data[ii]->data, 0, sizeof(REAL4)*tworows->data[ii]->length);  //Set everything to 0 at the start
 
    //Allocate vectors of the ihs values and locations of the maximums
    //Vectors for values above the noise and scaling the noise
-   REAL4Vector *ihsvalues = NULL;
+   REAL4VectorAligned *ihsvalues = NULL;
    INT4Vector *ihslocations = NULL;
-   XLAL_CHECK( (ihsvalues = XLALCreateREAL4Vector(ihsvectorarray->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ihsvalues = XLALCreateREAL4VectorAligned(ihsvectorarray->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (ihslocations = XLALCreateINT4Vector(ihsvectorarray->length)) != NULL, XLAL_EFUNC );
    REAL4VectorAligned *excessabovenoise = NULL, *scaledExpectedIHSVectorValues = NULL;
    XLAL_CHECK( (excessabovenoise = XLALCreateREAL4VectorAligned(ihsvectorarray->data[0]->length, 32)) != NULL, XLAL_EFUNC );
@@ -467,44 +466,33 @@ INT4 sumIHSarrayFAR(ihsfarStruct *outputfar, alignedREAL4VectorArray *ihsvectora
 
    //Finding the maximum for each IHS vector and the location
    for (UINT4 ii=0; ii<ihsvalues->length; ii++) {
-      //Use SSE or not
-      if (params->vectorMath==1) {
-         XLAL_CHECK( sseScaleREAL4Vector(scaledExpectedIHSVectorValues, outputfar->expectedIHSVector, FbinMean->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC ); //Scale the expected IHS vector by the value in FbinMean (in this function, it is 1.0)
-         XLAL_CHECK( sseSSVectorSubtract(excessabovenoise, ihsvectorarray->data[ii], scaledExpectedIHSVectorValues) == XLAL_SUCCESS, XLAL_EFUNC );  //subtract the noise from the data
-      } else if (params->vectorMath==2) {
-         XLAL_CHECK( avxScaleREAL4Vector(scaledExpectedIHSVectorValues, outputfar->expectedIHSVector, FbinMean->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC ); //Scale the expected IHS vector by the value in FbinMean (in this function, it is 1.0)
-         XLAL_CHECK( avxSSVectorSubtract(excessabovenoise, ihsvectorarray->data[ii], scaledExpectedIHSVectorValues) == XLAL_SUCCESS, XLAL_EFUNC );  //subtract the noise from the data
-      } else {
-         //If not using SSE, do the scaling and subtraction
-         for (UINT4 jj=0; jj<scaledExpectedIHSVectorValues->length; jj++) {
-            scaledExpectedIHSVectorValues->data[jj] = FbinMean->data[ii]*outputfar->expectedIHSVector->data[jj];
-            excessabovenoise->data[jj] = ihsvectorarray->data[ii]->data[jj] - scaledExpectedIHSVectorValues->data[jj];
-         }
-      }
-      ihslocations->data[ii] = max_index_in_range((REAL4Vector*)excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;  //Find the location of the maximum IHS value
-      ihsvalues->data[ii] = ihsvectorarray->data[ii]->data[ihslocations->data[ii]-5];  //And get the value
+      //Scale the expected IHS vector by the value in FbinMean (in this function, it is 1.0)
+      XLAL_CHECK( XLALVectorScaleREAL4(scaledExpectedIHSVectorValues->data, FbinMean->data[ii], outputfar->expectedIHSVector->data, outputfar->expectedIHSVector->length) == XLAL_SUCCESS, XLAL_EFUNC );
+      //subtract the noise from the data
+      XLAL_CHECK( VectorSubtractREAL4(excessabovenoise, ihsvectorarray->data[ii], scaledExpectedIHSVectorValues, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+      //Find the location of the maximum IHS value
+      ihslocations->data[ii] = max_index_in_range(excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
+      //And get the value
+      ihsvalues->data[ii] = ihsvectorarray->data[ii]->data[ihslocations->data[ii]-5];
       //fprintf(stderr, "%d %f\n", ihslocations->data[ii], ihsvalues->data[ii]);
    } /* for ii=0 --> ihsvalues->length */
 
    //Some useful variables
    INT4Vector *rowarraylocs = NULL;
-   REAL4Vector *foms = NULL;
+   REAL4VectorAligned *foms = NULL;
 
    //Starting from a minimum of 2 rows, start determining the FAR for each nearest neighbor sum, up to the maximum number of
    //rows to be summed
-   for (INT4 ii=2; ii<=rows; ii++) {
+   for (UINT4 ii=2; ii<=rows; ii++) {
       //First allocate the necessary vectors
       XLAL_CHECK( (rowarraylocs = XLALCreateINT4Vector(ii)) != NULL, XLAL_EFUNC );
-      XLAL_CHECK( (foms = XLALCreateREAL4Vector(ihsvectorarray->length-(ii-1))) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( (foms = XLALCreateREAL4VectorAligned(ihsvectorarray->length-(ii-1), 32)) != NULL, XLAL_EFUNC );
 
       //If the user has specified that we should use SSE operations, then do the nearest neighbor summing.
       //The result is in the tworows variable
-      if (params->vectorMath==1) {
-         if (ii>2) XLAL_CHECK( sseSSVectorArraySum(tworows, tworows, ihsvectorarray, 0, ii-1, 0, (INT4)ihsvectorarray->length-(ii-1)) == XLAL_SUCCESS, XLAL_EFUNC );
-         else XLAL_CHECK( sseSSVectorArraySum(tworows, ihsvectorarray, ihsvectorarray, 0, ii-1, 0, (INT4)ihsvectorarray->length-(ii-1)) == XLAL_SUCCESS, XLAL_EFUNC );
-      } else if (params->vectorMath==2) {
-         if (ii>2) XLAL_CHECK( avxSSVectorArraySum(tworows, tworows, ihsvectorarray, 0, ii-1, 0, (INT4)ihsvectorarray->length-(ii-1)) == XLAL_SUCCESS, XLAL_EFUNC );
-         else XLAL_CHECK( avxSSVectorArraySum(tworows, ihsvectorarray, ihsvectorarray, 0, ii-1, 0, (INT4)ihsvectorarray->length-(ii-1)) == XLAL_SUCCESS, XLAL_EFUNC );
+      if (params->vectorMath!=0) {
+         if (ii>2) XLAL_CHECK( VectorArraySum(tworows, tworows, ihsvectorarray, 0, ii-1, 0, (INT4)(ihsvectorarray->length-(ii-1))) == XLAL_SUCCESS, XLAL_EFUNC );
+         else XLAL_CHECK( VectorArraySum(tworows, ihsvectorarray, ihsvectorarray, 0, ii-1, 0, (INT4)(ihsvectorarray->length-(ii-1))) == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
       //Now we are going to loop through the input ihsvectorarray up to the number of rows-1
@@ -524,17 +512,17 @@ INT4 sumIHSarrayFAR(ihsfarStruct *outputfar, alignedREAL4VectorArray *ihsvectora
       //Sample the IHS values that have been summed to compute mean, standard deviation, and FAR threshold values.
       //We have an if-else statement for when there are fewer than 10000 entries that will be in the tworows varaible
       //(only considering the number of rows we have summed together).
-      REAL4Vector *sampledtempihsvals = NULL;
+      REAL4VectorAligned *sampledtempihsvals = NULL;
       if ((ihsvectorarray->length-(ii-1))*ihsvectorarray->data[0]->length>10000) {
          //We sample the tworows array (up to the number of rows-1) without accepting any zeros
          //because zeros would come from the notched harmonics, which we won't want anyway
-         sampledtempihsvals = sampleAlignedREAL4VectorArray_nozerosaccepted(tworows, ihsvectorarray->length-(ii-1), 10000, rng);
+         sampledtempihsvals = sampleREAL4VectorAlignedArray_nozerosaccepted(tworows, ihsvectorarray->length-(ii-1), 10000, rng);
          outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);  //And then calculate the mean value
          XLAL_CHECK( calcStddev(&(outputfar->ihsdistSigma->data[ii-2]), sampledtempihsvals) == XLAL_SUCCESS, XLAL_EFUNC );  //We also calculate the standard deviation
       } else {
          //If there were fewer than 10000 entries, then we will keep all those that are part of the nearest neighbor
          //sum up to this point
-         XLAL_CHECK( (sampledtempihsvals = XLALCreateREAL4Vector((ihsvectorarray->length-(ii-1))*ihsvectorarray->data[0]->length)) != NULL, XLAL_EFUNC );
+         XLAL_CHECK( (sampledtempihsvals = XLALCreateREAL4VectorAligned((ihsvectorarray->length-(ii-1))*ihsvectorarray->data[0]->length, 32)) != NULL, XLAL_EFUNC );
          for (UINT4 jj=0; jj<(ihsvectorarray->length-(ii-1)); jj++) memcpy(sampledtempihsvals->data, tworows->data[jj]->data, sizeof(REAL4)*tworows->data[0]->length);
          outputfar->ihsdistMean->data[ii-2] = calcMean_ignoreZeros(sampledtempihsvals);  //Calculate the mean value (remember, don't accept zeros)
          XLAL_CHECK( calcStddev_ignoreZeros(&(outputfar->ihsdistSigma->data[ii-2]), sampledtempihsvals) == XLAL_SUCCESS, XLAL_EFUNC );  //We also calculate the standard deviation
@@ -562,29 +550,29 @@ INT4 sumIHSarrayFAR(ihsfarStruct *outputfar, alignedREAL4VectorArray *ihsvectora
          outputfar->ihsfar->data[ii-2] = 0.0;
       }
 
-      XLALDestroyREAL4Vector(sampledtempihsvals);
+      XLALDestroyREAL4VectorAligned(sampledtempihsvals);
 
       //FOM part
       outputfar->ihsfomdistMean->data[ii-2] = calcMean(foms);
       XLAL_CHECK( calcStddev(&(outputfar->ihsfomdistSigma->data[ii-2]), foms) == XLAL_SUCCESS, XLAL_EFUNC );
       //We need to find the smallest values
       if (params->ihsfomfar!=1.0 && params->ihsfom==0.0) {
-         REAL4Vector *smallestfomvals = NULL;
-         XLAL_CHECK( (smallestfomvals = XLALCreateREAL4Vector((INT4)round((ihsvalues->length-ii+1)*params->ihsfomfar)+1)) != NULL, XLAL_EFUNC );
+         REAL4VectorAligned *smallestfomvals = NULL;
+         XLAL_CHECK( (smallestfomvals = XLALCreateREAL4VectorAligned((INT4)round((ihsvalues->length-ii+1)*params->ihsfomfar)+1, 32)) != NULL, XLAL_EFUNC );
          XLAL_CHECK( sort_float_smallest(smallestfomvals, foms) == XLAL_SUCCESS, XLAL_EFUNC );  //Sort, finding the smallest values
          outputfar->fomfarthresh->data[ii-2] = smallestfomvals->data[smallestfomvals->length-1];  //Pick off the last element
-         XLALDestroyREAL4Vector(smallestfomvals);
+         XLALDestroyREAL4VectorAligned(smallestfomvals);
       } else if (params->ihsfom!=0.0) outputfar->fomfarthresh->data[ii-2] = params->ihsfom;
       else outputfar->fomfarthresh->data[ii-2] = -1.0;
 
       XLALDestroyINT4Vector(rowarraylocs);
       rowarraylocs = NULL;
-      XLALDestroyREAL4Vector(foms);
+      XLALDestroyREAL4VectorAligned(foms);
       foms = NULL;
    } /* for ii <= rows */
 
-   destroyAlignedREAL4VectorArray(tworows);
-   XLALDestroyREAL4Vector(ihsvalues);
+   destroyREAL4VectorAlignedArray(tworows);
+   XLALDestroyREAL4VectorAligned(ihsvalues);
    XLALDestroyREAL4VectorAligned(excessabovenoise);
    XLALDestroyREAL4VectorAligned(scaledExpectedIHSVectorValues);
    XLALDestroyINT4Vector(ihslocations);
@@ -601,28 +589,27 @@ INT4 sumIHSarrayFAR(ihsfarStruct *outputfar, alignedREAL4VectorArray *ihsvectora
  *
  * \param [out] output         Pointer to the output ihsMaximaStruct
  * \param [in]  inputfar       Pointer to ihsfarStruct
- * \param [in]  ihsvectorarray Pointer to alignedREAL4VectorArray to be summed
+ * \param [in]  ihsvectorarray Pointer to REAL4VectorAlignedArray to be summed
  * \param [in]  rows           Number of neighbors to sum
- * \param [in]  FbinMean       Pointer to REAL4Vector of normalized SFT background powers
+ * \param [in]  FbinMean       Pointer to REAL4VectorAligned of normalized SFT background powers
  * \param [in]  params         Pointer to UserInput_t
  * \return Status value
  */
-INT4 sumIHSarray(ihsMaximaStruct *output, ihsfarStruct *inputfar, alignedREAL4VectorArray *ihsvectorarray, INT4 rows, REAL4Vector *FbinMean, UserInput_t *params)
+INT4 sumIHSarray(ihsMaximaStruct *output, const ihsfarStruct *inputfar, REAL4VectorAlignedArray *ihsvectorarray, const UINT4 rows, const REAL4VectorAligned *FbinMean, const UserInput_t *params)
 {
 
    XLAL_CHECK( output != NULL && inputfar != NULL && ihsvectorarray != NULL && rows > 0 && FbinMean != NULL && params != NULL, XLAL_EINVAL );
 
    //Again, we start off by allocating a "tworows" vector array of IHS nearest neighbor sums
-   alignedREAL4VectorArray *tworows = NULL;
-   XLAL_CHECK( (tworows = createAlignedREAL4VectorArray(ihsvectorarray->length-1, ihsvectorarray->data[0]->length, 32)) != NULL, XLAL_EFUNC );
+   REAL4VectorAlignedArray *tworows = NULL;
+   XLAL_CHECK( (tworows = createREAL4VectorAlignedArray(ihsvectorarray->length-1, ihsvectorarray->data[0]->length, 32)) != NULL, XLAL_EFUNC );
    for (UINT4 ii=0; ii<tworows->length; ii++) memset(tworows->data[ii]->data, 0, sizeof(REAL4)*tworows->data[0]->length);      //Set everything to 0.0
 
    //Allocation of ihs values and locations
    //Vectors for values above the noise and scaling the noise
-   REAL4Vector *ihsvalues = NULL;
+   REAL4VectorAligned *ihsvalues = NULL, *excessabovenoise = NULL, *scaledExpectedIHSVectorValues = NULL;
    INT4Vector *ihslocations = NULL;
-   REAL4VectorAligned *excessabovenoise = NULL, *scaledExpectedIHSVectorValues = NULL;
-   XLAL_CHECK( (ihsvalues = XLALCreateREAL4Vector(ihsvectorarray->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (ihsvalues = XLALCreateREAL4VectorAligned(ihsvectorarray->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (excessabovenoise = XLALCreateREAL4VectorAligned(ihsvectorarray->data[0]->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (scaledExpectedIHSVectorValues = XLALCreateREAL4VectorAligned(ihsvectorarray->data[0]->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (ihslocations = XLALCreateINT4Vector(ihsvectorarray->length)) != NULL, XLAL_EFUNC );
@@ -633,26 +620,18 @@ INT4 sumIHSarray(ihsMaximaStruct *output, ihsfarStruct *inputfar, alignedREAL4Ve
 
    //Finding the maximum for each IHS vector and the location using SSE or not
    for (UINT4 ii=0; ii<ihsvalues->length; ii++) {
-      if (params->vectorMath==1) {
-         XLAL_CHECK( sseScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, FbinMean->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC );  //Scale the expected IHS vector by the FbinMean data value
-         XLAL_CHECK( sseSSVectorSubtract(excessabovenoise, ihsvectorarray->data[ii], scaledExpectedIHSVectorValues) == XLAL_SUCCESS, XLAL_EFUNC );  //subtract the noise from the data
-      } else if (params->vectorMath==2) {
-         XLAL_CHECK( avxScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, FbinMean->data[ii]) == XLAL_SUCCESS, XLAL_EFUNC );  //Scale the expected IHS vector by the FbinMean data value
-         XLAL_CHECK( avxSSVectorSubtract(excessabovenoise, ihsvectorarray->data[ii], scaledExpectedIHSVectorValues) == XLAL_SUCCESS, XLAL_EFUNC );  //subtract the noise from the data
-      } else {
-         for (UINT4 jj=0; jj<scaledExpectedIHSVectorValues->length; jj++) {
-            scaledExpectedIHSVectorValues->data[jj] = FbinMean->data[ii]*inputfar->expectedIHSVector->data[jj];
-            excessabovenoise->data[jj] = ihsvectorarray->data[ii]->data[jj] - scaledExpectedIHSVectorValues->data[jj];
-         }
-      }
+      //Scale the expected IHS vector by the FbinMean data value
+      XLAL_CHECK( XLALVectorScaleREAL4(scaledExpectedIHSVectorValues->data, FbinMean->data[ii], inputfar->expectedIHSVector->data, inputfar->expectedIHSVector->length) == XLAL_SUCCESS, XLAL_EFUNC );
+      //subtract the noise from the data
+      XLAL_CHECK( VectorSubtractREAL4(excessabovenoise, ihsvectorarray->data[ii], scaledExpectedIHSVectorValues, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //search over the range of Pmin-->Pmax and higher harmonics the user has specified
       for (INT4 jj=0; jj<params->harmonicNumToSearch; jj++) {
          if (jj==0) {
-            ihslocations->data[ii] = max_index_in_range((REAL4Vector*)excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
+            ihslocations->data[ii] = max_index_in_range(excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
             ihsvalues->data[ii] = ihsvectorarray->data[ii]->data[ihslocations->data[ii]-5];
          } else {
-            INT4 newIHSlocation = max_index_in_range((REAL4Vector*)excessabovenoise, (jj+1)*minIndexForIHS, (jj+1)*maxIndexForIHS) + 5;
+            INT4 newIHSlocation = max_index_in_range(excessabovenoise, (jj+1)*minIndexForIHS, (jj+1)*maxIndexForIHS) + 5;
             REAL4 newIHSvalue = ihsvectorarray->data[ii]->data[newIHSlocation-5];
             if (newIHSvalue > ihsvalues->data[ii]) {
                ihslocations->data[ii] = newIHSlocation;
@@ -666,7 +645,7 @@ INT4 sumIHSarray(ihsMaximaStruct *output, ihsfarStruct *inputfar, alignedREAL4Ve
    INT4Vector *rowarraylocs = NULL;
 
    //Start with the single IHS vector and march up with nearest neighbor sums up to the total number of row sums
-   for (INT4 ii=1; ii<=rows; ii++) {
+   for (UINT4 ii=1; ii<=rows; ii++) {
       if (ii==1) {
          //Copy the data into the output
          memcpy(output->maximaForEachFbin->data, ihsvalues->data, sizeof(REAL4)*ihsvalues->length);
@@ -682,13 +661,10 @@ INT4 sumIHSarray(ihsMaximaStruct *output, ihsfarStruct *inputfar, alignedREAL4Ve
          INT4 endloc = ((ii-1)*(ii-1)-(ii-1))/2;
 
          //Sum up the IHS vectors using SSE functions
-         if (params->vectorMath==1) {
-            if (ii>2) XLAL_CHECK( sseSSVectorArraySum(tworows, tworows, ihsvectorarray, 0, ii-1, 0, (INT4)ihsvectorarray->length-(ii-1)) == XLAL_SUCCESS, XLAL_EFUNC );
-            else XLAL_CHECK( sseSSVectorArraySum(tworows, ihsvectorarray, ihsvectorarray, 0, ii-1, 0, (INT4)ihsvectorarray->length-(ii-1)) == XLAL_SUCCESS, XLAL_EFUNC );
-         } else if (params->vectorMath==2) {
-            if (ii>2) XLAL_CHECK( avxSSVectorArraySum(tworows, tworows, ihsvectorarray, 0, ii-1, 0, (INT4)ihsvectorarray->length-(ii-1)) == XLAL_SUCCESS, XLAL_EFUNC );
-            else XLAL_CHECK( avxSSVectorArraySum(tworows, ihsvectorarray, ihsvectorarray, 0, ii-1, 0, (INT4)ihsvectorarray->length-(ii-1)) == XLAL_SUCCESS, XLAL_EFUNC );
-         } /* use SSE or AVX code */
+         if (params->vectorMath!=0) {
+            if (ii>2) XLAL_CHECK( VectorArraySum(tworows, tworows, ihsvectorarray, 0, ii-1, 0, (INT4)(ihsvectorarray->length-(ii-1))) == XLAL_SUCCESS, XLAL_EFUNC );
+            else XLAL_CHECK( VectorArraySum(tworows, ihsvectorarray, ihsvectorarray, 0, ii-1, 0, (INT4)(ihsvectorarray->length-(ii-1))) == XLAL_SUCCESS, XLAL_EFUNC );
+         }
 
          //Loop through the IHS vector neighbor sums
          for (UINT4 jj=0; jj<ihsvectorarray->length-(ii-1); jj++) {
@@ -699,33 +675,24 @@ INT4 sumIHSarray(ihsMaximaStruct *output, ihsfarStruct *inputfar, alignedREAL4Ve
             }
 
             //To scale the background efficiently
-            if (jj==0) for (INT4 kk=0; kk<ii; kk++) sumofnoise += FbinMean->data[kk];
+            if (jj==0) for (UINT4 kk=0; kk<ii; kk++) sumofnoise += FbinMean->data[kk];
             else {
                sumofnoise -= FbinMean->data[jj-1];
                sumofnoise += FbinMean->data[jj+(ii-1)];
             }
 
             //If using SSE, scale the expected IHS vector, subtract the noise from the data
-            if (params->vectorMath==1) {
-               XLAL_CHECK( sseScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, sumofnoise) == XLAL_SUCCESS, XLAL_EFUNC );
-               XLAL_CHECK( sseSSVectorSubtract(excessabovenoise, tworows->data[jj], scaledExpectedIHSVectorValues) == XLAL_SUCCESS, XLAL_EFUNC );
-            } else if (params->vectorMath==2) {
-               XLAL_CHECK( avxScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, sumofnoise) == XLAL_SUCCESS, XLAL_EFUNC );
-               XLAL_CHECK( avxSSVectorSubtract(excessabovenoise, tworows->data[jj], scaledExpectedIHSVectorValues) == XLAL_SUCCESS, XLAL_EFUNC );
-            } else {
-               REAL4 scaleval = sumofnoise;
-               for (UINT4 kk=0; kk<inputfar->expectedIHSVector->length; kk++) scaledExpectedIHSVectorValues->data[kk] = scaleval*inputfar->expectedIHSVector->data[kk];
-               for (UINT4 kk=0; kk<excessabovenoise->length; kk++) excessabovenoise->data[kk] = tworows->data[jj]->data[kk] - scaledExpectedIHSVectorValues->data[kk];
-            }
+            XLAL_CHECK( XLALVectorScaleREAL4(scaledExpectedIHSVectorValues->data, sumofnoise, inputfar->expectedIHSVector->data, inputfar->expectedIHSVector->length) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK( VectorSubtractREAL4(excessabovenoise, tworows->data[jj], scaledExpectedIHSVectorValues, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
 
             //Compute the maximum IHS value in the second FFT frequency direction
             //search over the range of Pmin-->Pmax and higher harmonics the user has specified
             for (INT4 kk=0; kk<params->harmonicNumToSearch; kk++) {
                if (kk==0) {
-                  output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index_in_range((REAL4Vector*)excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
+                  output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index_in_range(excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
                   output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj] = tworows->data[jj]->data[(output->locations->data[(ii-2)*ihsvalues->length-endloc+jj]-5)];
                } else {
-                  INT4 newIHSlocation = max_index_in_range((REAL4Vector*)excessabovenoise, (kk+1)*minIndexForIHS, (kk+1)*maxIndexForIHS) + 5;
+                  INT4 newIHSlocation = max_index_in_range(excessabovenoise, (kk+1)*minIndexForIHS, (kk+1)*maxIndexForIHS) + 5;
                   REAL4 newIHSvalue = tworows->data[ii]->data[newIHSlocation-5];
                   if (newIHSvalue > output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj]) {
                      output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = newIHSlocation;
@@ -745,10 +712,10 @@ INT4 sumIHSarray(ihsMaximaStruct *output, ihsfarStruct *inputfar, alignedREAL4Ve
 
    } /* for ii <= rows */
 
-   destroyAlignedREAL4VectorArray(tworows);
+   destroyREAL4VectorAlignedArray(tworows);
    XLALDestroyREAL4VectorAligned(scaledExpectedIHSVectorValues);
    XLALDestroyREAL4VectorAligned(excessabovenoise);
-   XLALDestroyREAL4Vector(ihsvalues);
+   XLALDestroyREAL4VectorAligned(ihsvalues);
    XLALDestroyINT4Vector(ihslocations);
 
    return XLAL_SUCCESS;
@@ -762,7 +729,7 @@ INT4 sumIHSarray(ihsMaximaStruct *output, ihsfarStruct *inputfar, alignedREAL4Ve
  * \param [in] fomnorm Normalization value and is the number of XXX
  * \return IHS FOM value
  */
-REAL4 ihsFOM(INT4Vector *locs, INT4 fomnorm)
+REAL4 ihsFOM(const INT4Vector *locs, const INT4 fomnorm)
 {
 
    XLAL_CHECK_REAL4( locs != NULL && fomnorm > 0.0, XLAL_EINVAL );
@@ -783,11 +750,11 @@ REAL4 ihsFOM(INT4Vector *locs, INT4 fomnorm)
  * \param [in]  params       Pointer to UserInput_t
  * \param [in]  ffdata       Pointer to ffdataStruct
  * \param [in]  ihsmaxima    Pointer to ihsMaximaStruct containing the data to be tested above thresholds
- * \param [in]  fbinavgs     Pointer to REAL4Vector of normalized SFT background powers
+ * \param [in]  fbinavgs     Pointer to REAL4VectorAligned of normalized SFT background powers
  * \param [in]  trackedlines Pointer to REAL4VectorSequence of lines (allowed to be NULL if no lines)
  * \return Status value
  */
-INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, UserInput_t *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, REAL4Vector *fbinavgs, REAL4VectorSequence *trackedlines)
+INT4 findIHScandidates(candidateVector **candlist, const ihsfarStruct *ihsfarstruct, const UserInput_t *params, const ffdataStruct *ffdata, const ihsMaximaStruct *ihsmaxima, const REAL4VectorAligned *fbinavgs, const REAL4VectorSequence *trackedlines)
 {
 
    XLAL_CHECK( ihsfarstruct != NULL && params != NULL && ffdata != NULL && ihsmaxima != NULL && fbinavgs != NULL, XLAL_EINVAL );
@@ -798,15 +765,15 @@ INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, U
    INT4 numfbins = ffdata->numfbins;  //number of fbins
    INT4 minrows = (INT4)round(2.0*params->dfmin*params->Tsft)+1;  //minimum number of sequential rows to search
 
-   REAL4Vector *ihss = NULL, *avgsinrange = NULL;
+   REAL4VectorAligned *ihss = NULL, *avgsinrange = NULL;
    INT4Vector *locs = NULL;
 
    //Check the IHS values against the FAR, checking between IHS width values
    //FILE *IHSVALSOUTPUT = fopen("./output/allihsvalspassthresh.dat","w");
    for (UINT4 ii=minrows; ii<=ihsfarstruct->ihsfar->length+1; ii++) {
-      XLAL_CHECK( (ihss = XLALCreateREAL4Vector(ii)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( (ihss = XLALCreateREAL4VectorAligned(ii, 32)) != NULL, XLAL_EFUNC );
       XLAL_CHECK( (locs = XLALCreateINT4Vector(ii)) != NULL, XLAL_EFUNC );
-      XLAL_CHECK( (avgsinrange = XLALCreateREAL4Vector(ii)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( (avgsinrange = XLALCreateREAL4VectorAligned(ii, 32)) != NULL, XLAL_EFUNC );
 
       REAL8 highestval = 0.0, highestsignificance = 0.0; //highestvalnoise = 0.0
       INT4 highestvalloc = -1, jjloc = 0;
@@ -888,14 +855,14 @@ INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, U
          per0 = params->Tobs/loc;                                                        //Candidate period
          REAL8 h0 = ihs2h0(2.0*highestval, params);  //Candidate h0, need factor of 2 for the degrees of freedom counting
 
-         if ((*candlist)->numofcandidates == (*candlist)->length-1) XLAL_CHECK( (*candlist = resize_candidateVector(*candlist, 2*(*candlist)->length)) != NULL, XLAL_EFUNC );
+         if ((*candlist)->numofcandidates == (*candlist)->length-1) XLAL_CHECK( (*candlist = resizecandidateVector(*candlist, 2*(*candlist)->length)) != NULL, XLAL_EFUNC );
          loadCandidateData(&((*candlist)->data[(*candlist)->numofcandidates]), fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, highestsignificance, 0, ffdata->tfnormalization, -1);
          (*candlist)->numofcandidates++;
       }
 
       //Destroy
-      XLALDestroyREAL4Vector(ihss);
-      XLALDestroyREAL4Vector(avgsinrange);
+      XLALDestroyREAL4VectorAligned(ihss);
+      XLALDestroyREAL4VectorAligned(avgsinrange);
       XLALDestroyINT4Vector(locs);
       ihss = NULL;
       locs = NULL;
@@ -1027,9 +994,9 @@ INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, U
          //fprintf(stderr, "%d %d %f\n", ii, jjloc, significance);     //remove this
 
          if (candlist->numofcandidates == candlist->length-1) {
-            candlist = resize_candidateVector(candlist, 2*(candlist->length));
+            candlist = resizecandidateVector(candlist, 2*(candlist->length));
             if (candlist->data==NULL) {
-               fprintf(stderr,"%s: resize_candidateVector() failed.\n", __func__);
+               fprintf(stderr,"%s: resizecandidateVector() failed.\n", __func__);
                XLAL_ERROR_VOID(XLAL_EFUNC);
             }
          }
@@ -1057,7 +1024,7 @@ INT4 findIHScandidates(candidateVector **candlist, ihsfarStruct *ihsfarstruct, U
  * \param [in] params Pointer to UserInput_t
  * \return Estimated h0
  */
-REAL8 ihs2h0(REAL8 ihsval, UserInput_t *params)
+REAL8 ihs2h0(const REAL8 ihsval, const UserInput_t *params)
 {
 
    if (ihsval<=0.0) return 0.0;

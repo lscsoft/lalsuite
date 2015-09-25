@@ -782,13 +782,13 @@ XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors )
   MultiLIGOTimeGPSVector *ret;
 
   if ( (ret = XLALMalloc ( sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: XLALMalloc(%lu) failed.\n", __func__, sizeof(*ret) );
+    XLALPrintError ("%s: XLALMalloc(%zu) failed.\n", __func__, sizeof(*ret) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   ret->length = numDetectors;
   if ( (ret->data = XLALCalloc ( numDetectors, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc(%d, %lu) failed.\n", __func__, numDetectors, sizeof(*ret->data) );
+    XLALPrintError ("%s: XLALCalloc(%d, %zu) failed.\n", __func__, numDetectors, sizeof(*ret->data) );
     XLALFree ( ret );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
@@ -819,7 +819,7 @@ write_BSGL_candidate_to_fp ( FILE *fp, const BSGLComponents *stats, const LALStr
     for ( UINT4 X = 0; X < IFOs->length ; X ++ ) {
       snprintf ( buf0, sizeof(buf0), "    2F_%s", IFOs->data[X] );
       UINT4 len1 = strlen ( stat_header_string ) + strlen ( buf0 ) + 1;
-      XLAL_CHECK ( len1 <= sizeof ( stat_header_string ), XLAL_EBADLEN, "Assembled output string too long! (%d > %lu)", len1, sizeof(stat_header_string));
+      XLAL_CHECK ( len1 <= sizeof ( stat_header_string ), XLAL_EBADLEN, "Assembled output string too long! (%d > %zu)", len1, sizeof(stat_header_string));
       strcat ( stat_header_string, buf0 );
     }
     if ( haveBSGL ) {
@@ -843,7 +843,7 @@ write_BSGL_candidate_to_fp ( FILE *fp, const BSGLComponents *stats, const LALStr
   for ( UINT4 X = 0; X < IFOs->length ; X ++ ) {
     snprintf ( buf0, sizeof(buf0), " %.6f", stats->TwoFX[X] );
     UINT4 len1 = strlen ( statString ) + strlen ( buf0 ) + 1;
-    XLAL_CHECK ( len1 <= sizeof ( statString ), XLAL_EBADLEN, "Assembled output string too long! (%d > %lu)", len1, sizeof(statString));
+    XLAL_CHECK ( len1 <= sizeof ( statString ), XLAL_EBADLEN, "Assembled output string too long! (%d > %zu)", len1, sizeof(statString));
     strcat ( statString, buf0 );
   } /* for X < IFOs->length */
   if ( haveBSGL ) {
@@ -881,8 +881,8 @@ XLALComputeConstantMultiNoiseWeightsFromNoiseFloor ( const MultiNoiseFloor *mult
 
   /* create multi noise weights for output */
   MultiNoiseWeights *multiWeights = NULL;
-  XLAL_CHECK_NULL ( (multiWeights = XLALCalloc(1, sizeof(*multiWeights))) != NULL, XLAL_ENOMEM, "Failed call to XLALCalloc ( 1, %lu )\n", sizeof(*multiWeights) );
-  XLAL_CHECK_NULL ( (multiWeights->data = XLALCalloc(numDet, sizeof(*multiWeights->data))) != NULL, XLAL_ENOMEM, "Failed call to XLALCalloc ( %d, %lu )\n", numDet, sizeof(*multiWeights->data) );
+  XLAL_CHECK_NULL ( (multiWeights = XLALCalloc(1, sizeof(*multiWeights))) != NULL, XLAL_ENOMEM, "Failed call to XLALCalloc ( 1, %zu )\n", sizeof(*multiWeights) );
+  XLAL_CHECK_NULL ( (multiWeights->data = XLALCalloc(numDet, sizeof(*multiWeights->data))) != NULL, XLAL_ENOMEM, "Failed call to XLALCalloc ( %d, %zu )\n", numDet, sizeof(*multiWeights->data) );
   multiWeights->length = numDet;
 
   REAL8 sqrtSnTotal = 0;

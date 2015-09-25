@@ -34,6 +34,7 @@
 #include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
+#include <lal/LALSimSphHarmMode.h>
 #include <lal/Date.h>
 
 //#include "LALSimIMRPhenSpin.h"
@@ -77,36 +78,36 @@ typedef struct tagLALSimInspiralPhenSpinTaylorT4Coeffs {
   REAL8 wdotlogcoeff; ///< coefficient of log term in wdot
   REAL8 Enewt; ///< coeffs. of PN corrections to energy
   REAL8 Ecoeff[LAL_MAX_PN_ORDER]; ///< coeffs. of PN corrections to energy
-  REAL8 wdotSO15s1, wdotSO15s2; ///< non-dynamical 1.5PN SO corrections
-  REAL8 wdotSS2; ///< non-dynamical 2PN SS correction
-  REAL8 wdotSSO2; ///< non-dynamical 2PN SS correction
-  REAL8 wdotQM2S1; ///< non-dynamical S1^2 2PN quadrupole-monopole correction
-  REAL8 wdotQM2S1L; ///< non-dynamical (S1.L)^2 2PN quadrupole-monopole correction
-  REAL8 wdotQM2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
-  REAL8 wdotQM2S2L; ///< non-dynamical (S2.L)^2 2PN quadrupole-monopole correction
-  REAL8 wdotSSselfS1; ///< non-dynamical S1^2 2PN self-spin correction
-  REAL8 wdotSSselfS1L; ///< non-dynamical (S1.L)^2 self-spin correction
-  REAL8 wdotSSselfS2; ///< non-dynamical S2^2 2PN self-spin correction
-  REAL8 wdotSSselfS2L; ///< non-dynamical (S2.L)^2 self-spin correction
-  REAL8 wdotSO25s1, wdotSO25s2; ///< non-dynamical 2.5PN SO corrections
-  REAL8 wdotSO3s1, wdotSO3s2; ///< non-dynamical 3PN SO corrections
-  REAL8 ESO15s1, ESO15s2; ///< non-dynamical 1.5PN SO corrections
-  REAL8 ESS2,ESSO2; ///< non-dynamical 2PN SS correction
-  REAL8 EQM2S1; ///< non-dynamical S1^2 2PN quadrupole-monopole correction
-  REAL8 EQM2S1L;///< non-dynamical (S1.L)^2 2PN quadrupole-monopole correction
-  REAL8 EQM2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
-  REAL8 EQM2S2L;///< non-dynamical (S2.L)^2 2PN quadrupole-monopole correction
-  REAL8 ESO25s1, ESO25s2; ///< non-dynamical 2.5PN SO corrections
-  REAL8 LNhatSO15s1, LNhatSO15s2; ///< non-dynamical 1.5PN SO corrections
-  REAL8 LNhatSS2; ///< non-dynamical 2PN SS correction
+  REAL8 wdot3S1O, wdot3S2O; ///< non-dynamical 1.5PN SO corrections
+  REAL8 wdot4S1S2; ///< non-dynamical 2PN SS correction
+  REAL8 wdot4S1OS2O; ///< non-dynamical 2PN SS correction
+  REAL8 wdot4S1S1,wdot4S2S2; ///< non-dynamical 2PN SS correction
+  REAL8 wdot4S1OS1O,wdot4S2OS2O; ///< non-dynamical 2PN SS correction
+  REAL8 wdot4QMS1; ///< non-dynamical S1^2 2PN quadrupole-monopole correction
+  REAL8 wdot4QMS1O; ///< non-dynamical (S1.L)^2 2PN quadrupole-monopole correction
+  REAL8 wdot4QMS2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
+  REAL8 wdot4QMS2O; ///< non-dynamical (S2.L)^2 2PN quadrupole-monopole correction
+  REAL8 wdot5S1O, wdot5S2O; ///< non-dynamical 2.5PN SO corrections
+  REAL8 wdot6S1O, wdot6S2O; ///< non-dynamical 3PN SO corrections
+  REAL8 E3S1O, E3S2O; ///< non-dynamical 1.5PN SO corrections
+  REAL8 E4S1S2,E4S1OS2O; ///< non-dynamical 2PN SS correction
+  REAL8 E4QMS1; ///< non-dynamical S1^2 2PN quadrupole-monopole correction
+  REAL8 E4QMS1O;///< non-dynamical (S1.L)^2 2PN quadrupole-monopole correction
+  REAL8 E4QMS2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
+  REAL8 E4QMS2O;///< non-dynamical (S2.L)^2 2PN quadrupole-monopole correction
+  REAL8 E5S1O, E5S2O; ///< non-dynamical 2.5PN SO corrections
+  REAL8 E6S1O, E6S2O; ///< non-dynamical 2.5PN SO corrections
+  REAL8 LNhat3S1O, LNhat3S2O; ///< non-dynamical 1.5PN SO corrections
+  REAL8 LNhat4SS; ///< non-dynamical 2PN SS correction
   REAL8 wdottidal5pn;	///< leading order tidal correction
   REAL8 wdottidal6pn;	///< next to leading order tidal correction
   REAL8 Etidal5pn; ///< leading order tidal correction to energy
   REAL8 Etidal6pn; ///< next to leading order tidal correction to energy
-  REAL8 S1dot15, S2dot15;  ///< UNDOCUMENTED
-  REAL8 Sdot2S1S2,Sdot2LS1LS2;  ///< UNDOCUMENTED
-  REAL8 S1dot2LS1LS1,S2dot2LS2LS2;  ///< UNDOCUMENTED
-  REAL8 S1dot25, S2dot25;  ///< UNDOCUMENTED
+  REAL8 S1dot3, S2dot3;  ///< UNDOCUMENTED
+  REAL8 Sdot4S1S2,Sdot4S1OS2O;  ///< UNDOCUMENTED
+  REAL8 S1dot4QMS1O,S2dot4QMS2O;  ///< UNDOCUMENTED
+  REAL8 S1dot5, S2dot5;  ///< UNDOCUMENTED
+  REAL8 S1dot6, S2dot6;  ///< UNDOCUMENTED
   REAL8 fStart; ///< starting GW frequency of integration
   REAL8 fEnd; ///< ending GW frequency of integration
 } LALSimInspiralPhenSpinTaylorT4Coeffs;
@@ -162,7 +163,12 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
                                          REAL8 fEnd,                                    /**< Ending frequency of integration*/
                                          REAL8 mass1,                                   /**< Mass 1 in solar mass units */
                                          REAL8 mass2,                                   /**< Mass 2 in solar mass units */
-                                         LALSimInspiralSpinOrder spinO,                 /**< Spin interaction */
+					 REAL8 lambda1,      /**< Tidal par1*/
+                                         REAL8 lambda2,      /**< Tidal par2*/
+                                         REAL8 quadparam1,   /**< Quad-monop par1*/
+					 REAL8 quadparam2,   /**< Quad-monop par2*/
+					 LALSimInspiralSpinOrder spinO,                 /**< Spin interaction */
+                                         LALSimInspiralTidalOrder tideO,                /**< Tidal iteraction interaction */
                                          LALSimInspiralTestGRParam *testGR,             /**< Test GR param */
                                          UINT4 order                                    /**< twice PN Order in Phase */
 )
@@ -200,48 +206,52 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->Ecoeff[6]     = XLALSimInspiralPNEnergy_6PNCoeff(params->eta);
       params->wdotcoeff[6]  = XLALSimInspiralTaylorT4wdot_6PNCoeff(params->eta);
       params->wdotlogcoeff  = XLALSimInspiralTaylorT4wdot_6PNLogCoeff(params->eta);
-      params->wdotSO3s1   = XLALSimInspiralTaylorT4wdot_6PNSOCoeff(params->m1ByM);
-      params->wdotSO3s2   = XLALSimInspiralTaylorT4wdot_6PNSOCoeff(params->m2ByM);
+      params->wdot6S1O   = XLALSimInspiralTaylorT4wdot_6PNSOCoeff(params->m1ByM);
+      params->wdot6S2O   = XLALSimInspiralTaylorT4wdot_6PNSOCoeff(params->m2ByM);
 
     case 5:
       params->Ecoeff[5]     = 0.;
       params->wdotcoeff[5]  = XLALSimInspiralTaylorT4wdot_5PNCoeff(params->eta);
-      params->ESO25s1     = XLALSimInspiralPNEnergy_5PNSOCoeff(params->m1ByM);
-      params->ESO25s2     = XLALSimInspiralPNEnergy_5PNSOCoeff(params->m1ByM);
-      params->wdotSO25s1  = XLALSimInspiralTaylorT4wdot_5PNSOCoeff(params->m1ByM);
-      params->wdotSO25s2  = XLALSimInspiralTaylorT4wdot_5PNSOCoeff(params->m2ByM);
-      params->S1dot25     = XLALSimInspiralSpinDot_5PNCoeff(params->m1ByM);
-      params->S2dot25     = XLALSimInspiralSpinDot_5PNCoeff(params->m2ByM);
+      params->E5S1O     = XLALSimInspiralPNEnergy_5PNSOCoeff(params->m1ByM);
+      params->E5S2O     = XLALSimInspiralPNEnergy_5PNSOCoeff(params->m1ByM);
+      params->wdot5S1O  = XLALSimInspiralTaylorT4wdot_5PNSOCoeff(params->m1ByM);
+      params->wdot5S2O  = XLALSimInspiralTaylorT4wdot_5PNSOCoeff(params->m2ByM);
+      params->S1dot5    = XLALSimInspiralSpinDot_5PNCoeff(params->m1ByM);
+      params->S2dot5    = XLALSimInspiralSpinDot_5PNCoeff(params->m2ByM);
 
     case 4:
       params->wdotcoeff[4]  = XLALSimInspiralTaylorT4wdot_4PNCoeff(params->eta)+phi4;
-      params->Ecoeff[4]   = XLALSimInspiralPNEnergy_4PNCoeff(params->eta);
-      params->wdotSS2     = XLALSimInspiralTaylorT4wdot_4PNS1S2Coeff(params->eta);
-      params->wdotSSO2    = XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeff(params->eta);
-      params->ESS2        = XLALSimInspiralPNEnergy_4PNS1S2Coeff(params->eta);
-      params->ESSO2       = XLALSimInspiralPNEnergy_4PNS1S2OCoeff(params->eta);
-      params->wdotSSselfS1 = XLALSimInspiralTaylorT4wdot_4PNSelfSSCoeff(params->m1ByM);
-      params->wdotSSselfS1L= XLALSimInspiralTaylorT4wdot_4PNSelfSSOCoeff(params->m1ByM);
-      params->wdotSSselfS2 = XLALSimInspiralTaylorT4wdot_4PNSelfSSCoeff(params->m2ByM);
-      params->wdotSSselfS2L= XLALSimInspiralTaylorT4wdot_4PNSelfSSOCoeff(params->m2ByM);
-      params->EQM2S1  = XLALSimInspiralPNEnergy_4PNQM2SCoeff(params->m1ByM);
-      params->EQM2S2  = XLALSimInspiralPNEnergy_4PNQM2SCoeff(params->m2ByM);
-      params->EQM2S1L = XLALSimInspiralPNEnergy_4PNQM2SOCoeff(params->m1ByM);
-      params->EQM2S2L = XLALSimInspiralPNEnergy_4PNQM2SOCoeff(params->m2ByM);
-      params->Sdot2S1S2   = XLALSimInspiralSpinDot_4PNCoeffS1S2;
-      params->Sdot2LS1LS2 = XLALSimInspiralSpinDot_4PNCoeffLS1LS2;
-      params->S1dot2LS1LS1 = XLALSimInspiralSpinDot_4PNCoeffLSOSself(params->m1ByM);
-      params->S2dot2LS2LS2 = XLALSimInspiralSpinDot_4PNCoeffLSOSself(params->m2ByM);
+      params->Ecoeff[4]     = XLALSimInspiralPNEnergy_4PNCoeff(params->eta);
+      params->wdot4S1S2     = XLALSimInspiralTaylorT4wdot_4PNS1S2Coeff(params->eta);
+      params->wdot4S1OS2O   = XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeff(params->eta);
+      params->E4S1S2      = XLALSimInspiralPNEnergy_4PNS1S2Coeff(params->eta);
+      params->E4S1OS2O    = XLALSimInspiralPNEnergy_4PNS1S2OCoeff(params->eta);
+      params->wdot4S1S1     = XLALSimInspiralTaylorT4wdot_4PNSelfSSCoeff(params->m1ByM);
+      params->wdot4S1OS1O   = XLALSimInspiralTaylorT4wdot_4PNSelfSSOCoeff(params->m1ByM);
+      params->wdot4S2S2     = XLALSimInspiralTaylorT4wdot_4PNSelfSSCoeff(params->m2ByM);
+      params->wdot4S2OS2O   = XLALSimInspiralTaylorT4wdot_4PNSelfSSOCoeff(params->m2ByM);
+      params->wdot4QMS1     = quadparam1*XLALSimInspiralTaylorT4wdot_4PNQMCoeff(params->m1ByM);
+      params->wdot4QMS1O    = quadparam1*XLALSimInspiralTaylorT4wdot_4PNQMSOCoeff(params->m1ByM);
+      params->wdot4QMS2     = quadparam2*XLALSimInspiralTaylorT4wdot_4PNQMCoeff(params->m2ByM);
+      params->wdot4QMS2O    = quadparam2*XLALSimInspiralTaylorT4wdot_4PNQMSOCoeff(params->m2ByM);
+      params->E4QMS1      = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SCoeff(params->m1ByM);
+      params->E4QMS2      = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SCoeff(params->m2ByM);
+      params->E4QMS1O     = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(params->m1ByM);
+      params->E4QMS2O     = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(params->m2ByM);
+      params->Sdot4S1S2    = XLALSimInspiralSpinDot_4PNS1S2Coeff;
+      params->Sdot4S1OS2O  = XLALSimInspiralSpinDot_4PNS1OS2OCoeff;
+      params->S1dot4QMS1O  = quadparam1*XLALSimInspiralSpinDot_4PNSOSOselfCoeff(params->m1ByM);
+      params->S2dot4QMS2O  = quadparam2*XLALSimInspiralSpinDot_4PNSOSOselfCoeff(params->m2ByM);
 
     case 3:
       params->Ecoeff[3]      = 0.;
       params->wdotcoeff[3]   = XLALSimInspiralTaylorT4wdot_3PNCoeff(params->eta)+phi3;
-      params->wdotSO15s1 = XLALSimInspiralTaylorT4wdot_3PNSOCoeff(params->m1ByM);
-      params->wdotSO15s2 = XLALSimInspiralTaylorT4wdot_3PNSOCoeff(params->m1ByM);
-      params->ESO15s1    = XLALSimInspiralPNEnergy_3PNSOCoeff(params->m1ByM);
-      params->ESO15s2    = XLALSimInspiralPNEnergy_3PNSOCoeff(params->m1ByM);
-      params->S1dot15    = XLALSimInspiralSpinDot_3PNCoeff(params->m1ByM);
-      params->S2dot15    = XLALSimInspiralSpinDot_3PNCoeff(params->m2ByM);
+      params->wdot3S1O  = XLALSimInspiralTaylorT4wdot_3PNSOCoeff(params->m1ByM);
+      params->wdot3S2O  = XLALSimInspiralTaylorT4wdot_3PNSOCoeff(params->m1ByM);
+      params->E3S1O     = XLALSimInspiralPNEnergy_3PNSOCoeff(params->m1ByM);
+      params->E3S2O     = XLALSimInspiralPNEnergy_3PNSOCoeff(params->m1ByM);
+      params->S1dot3    = XLALSimInspiralSpinDot_3PNCoeff(params->m1ByM);
+      params->S2dot3    = XLALSimInspiralSpinDot_3PNCoeff(params->m2ByM);
 
     case 2:
       params->Ecoeff[2]  = XLALSimInspiralPNEnergy_2PNCoeff(params->eta);
@@ -274,40 +284,59 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
     case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
       /*This kills all spin effects in the phase. Still there are spin effects
         in the waveform due to orbital plane precession*/
-      params->ESO15s1     = 0.;
-      params->ESO15s2     = 0.;
-      params->wdotSO15s1  = 0.;
-      params->wdotSO15s1  = 0.;
-      params->S1dot15     = 0.;
-      params->S2dot15     = 0.;
+      params->E6S1O      = 0.;
+      params->E6S2O      = 0.;
+      params->wdot6S1O   = 0.;
+      params->wdot6S1O   = 0.;
+      params->S1dot6     = 0.;
+      params->S2dot6     = 0.;
 
     case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
       /* This keeps only the leading spin-orbit interactions*/
-      params->wdotSS2 = 0.;
-      params->EQM2S1  = 0.;
-      params->EQM2S2  = 0.;
-      params->EQM2S1L = 0.;
-      params->EQM2S2L = 0.;
+      params->wdot4S1S2   = 0.;
+      params->wdot4S1OS2O = 0.;
+      params->E4QMS1  = 0.;
+      params->E4QMS2  = 0.;
+      params->E4QMS1O = 0.;
+      params->E4QMS2O = 0.;
 
     case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
       /* This kills all spin interaction intervening at 2.5PN order or higher*/
-      params->ESO25s1       = 0.;
-      params->ESO25s2       = 0.;
-      params->wdotSO25s1    = 0.;
-      params->wdotSO25s1    = 0.;
-      params->S1dot25       = 0.;
-      params->S2dot25       = 0.;
+      params->E5S1O       = 0.;
+      params->E5S2O       = 0.;
+      params->wdot5S1O    = 0.;
+      params->wdot5S2O    = 0.;
+      params->S1dot5      = 0.;
+      params->S2dot5      = 0.;
 
     case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
       /* This kills all spin interaction intervening at 3PN order or higher*/
-      params->wdotSO3s1   = 0.;
-      params->wdotSO3s2   = 0.;
+      params->wdot6S1O   = 0.;
+      params->wdot6S2O   = 0.;
 
     case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
     case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
     default:
       break;
   }
+
+  switch( tideO ) {
+    case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+    case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
+      params->wdottidal6pn = lambda1 * XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(params->m1ByM) + lambda2 * XLALSimInspiralTaylorT4wdot_12PNTidalCoeff(params->m2ByM);
+      params->Etidal6pn =  lambda1*XLALSimInspiralPNEnergy_12PNTidalCoeff(params->m1ByM) + lambda2*XLALSimInspiralPNEnergy_12PNTidalCoeff(params->m2ByM);
+    case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
+      params->wdottidal5pn = lambda1 * XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(params->m1ByM) + lambda2 * XLALSimInspiralTaylorT4wdot_10PNTidalCoeff(params->m2ByM);
+      params->Etidal5pn = lambda1*XLALSimInspiralPNEnergy_10PNTidalCoeff(params->m1ByM) + lambda2*XLALSimInspiralPNEnergy_10PNTidalCoeff(params->m2ByM);
+    case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
+      break;
+    default:
+      XLALPrintError("XLAL Error - %s: Invalid tidal PN order %d\n",
+		     __func__, tideO );
+      XLAL_ERROR(XLAL_EINVAL);
+      break;
+  }
+
   return XLAL_SUCCESS;
 } /* End of XLALSimIMRPhenSpinParamsSetup */
 
@@ -374,32 +403,35 @@ static INT4 XLALSpinInspiralDerivatives(UNUSED double t,
                                       v2 * (params->Ecoeff[4] +
                                             v2 * params->Ecoeff[6])));
 
+  domega+= omega*v7* ( params->wdottidal5pn + v2 * ( params->wdottidal6pn ) );
+  energy+= omega*v7* ( params->Etidal5pn + v2 * params->Etidal6pn);
+
   // Adding spin effects
   // L dot S1,2
   LNhS1 = (LNhx * S1x + LNhy * S1y + LNhz * S1z);
   LNhS2 = (LNhx * S2x + LNhy * S2y + LNhz * S2z);
 
   // wdotSO15si = -1/12 (...)
-  domega += omega * (params->wdotSO15s1 * LNhS1 + params->wdotSO15s2 * LNhS2); // see e.g. Buonanno et al. gr-qc/0211087
+  domega += omega * (params->wdot3S1O * LNhS1 + params->wdot3S2O * LNhS2); // see e.g. Buonanno et al. gr-qc/0211087
 
-  energy += omega * (params->ESO15s1 * LNhS1 + params->ESO15s2 * LNhS2);  // see e.g. Blanchet et al. gr-qc/0605140
+  energy += omega * (params->E3S1O * LNhS1 + params->E3S2O * LNhS2);  // see e.g. Blanchet et al. gr-qc/0605140
 
   // wdotSS2 = -1/48 eta ...
   S1S1 = (S1x * S1x + S1y * S1y + S1z * S1z);
   S2S2 = (S2x * S2x + S2y * S2y + S2z * S2z);
   S1S2 = (S1x * S2x + S1y * S2y + S1z * S2z);
-  domega += v4 * ( params->wdotSS2 * S1S2 + params->wdotSSO2 * LNhS1 * LNhS2);  // see e.g. Buonanno et al. arXiv:0810.5336
-  domega += v4 * ( params->wdotSSselfS1L * LNhS1*LNhS1 + params->wdotSSselfS1L * LNhS2*LNhS2 + params->wdotSSselfS1 * S1S1 + params->wdotSSselfS2 * S2S2 );
+  domega += v4 * ( params->wdot4S1S2 * S1S2 + params->wdot4S1OS2O * LNhS1 * LNhS2);  // see e.g. Buonanno et al. arXiv:0810.5336
+  domega += v4 * ( params->wdot4QMS1O * LNhS1*LNhS1 + params->wdot4QMS2O * LNhS2*LNhS2 + params->wdot4QMS1 * S1S1 + params->wdot4QMS2 * S2S2 );
   // see Racine et al. arXiv:0812.4413
 
-  energy += v4 * (params->ESS2 * S1S2 + params->ESSO2 * LNhS1 * LNhS2);    // see e.g. Buonanno et al. as above
-  energy += v4 * (params->EQM2S1 * S1S1 + params->EQM2S2 * S2S2 + params->EQM2S1L * LNhS1 * LNhS1 + params->EQM2S2L * LNhS2 * LNhS2);   // see Racine et al. as above
+  energy += v4 * (params->E4S1S2 * S1S2 + params->E4S1OS2O * LNhS1 * LNhS2);    // see e.g. Buonanno et al. as above
+  energy += v4 * (params->E4QMS1 * S1S1 + params->E4QMS2 * S2S2 + params->E4QMS1O * LNhS1 * LNhS1 + params->E4QMS2O * LNhS2 * LNhS2);   // see Racine et al. as above
 
   // wdotspin25SiLNh = see below
-  domega += v5 * (params->wdotSO25s1 * LNhS1 + params->wdotSO25s2 * LNhS2);   //see (8.3) of Blanchet et al.
-  energy += v5 * (params->ESO25s1 * LNhS1 + params->ESO25s2 * LNhS2);    //see (7.9) of Blanchet et al.
+  domega += v5 * (params->wdot5S1O * LNhS1 + params->wdot5S2O * LNhS2);   //see (8.3) of Blanchet et al.
+  energy += v5 * (params->E5S1O * LNhS1 + params->E5S2O * LNhS2);    //see (7.9) of Blanchet et al.
 
-  domega += omega*omega * (params->wdotSO3s1 * LNhS1 + params->wdotSO3s2 * LNhS2); // see (6.5) of arXiv:1104.5659
+  domega += omega*omega * (params->wdot6S1O * LNhS1 + params->wdot6S2O * LNhS2); // see (6.5) of arXiv:1104.5659
 
   // Setting the right pre-factor
   domega *= params->wdotnewt * v5 * v6;
@@ -412,9 +444,9 @@ static INT4 XLALSpinInspiralDerivatives(UNUSED double t,
   cross1y = (LNhz * S1x - LNhx * S1z);
   cross1z = (LNhx * S1y - LNhy * S1x);
 
-  dS1x = params->S1dot15 * v5 * cross1x;
-  dS1y = params->S1dot15 * v5 * cross1y;
-  dS1z = params->S1dot15 * v5 * cross1z;
+  dS1x = params->S1dot3 * v5 * cross1x;
+  dS1y = params->S1dot3 * v5 * cross1y;
+  dS1z = params->S1dot3 * v5 * cross1z;
 
   /* dS1, 2PN */
   tmpx = S1z * S2y - S1y * S2z;
@@ -422,41 +454,41 @@ static INT4 XLALSpinInspiralDerivatives(UNUSED double t,
   tmpz = S1y * S2x - S1x * S2y;
 
   // S1S2 contribution see. eq. 2.23 of arXiv:0812.4413
-  dS1x += v6 * (params->Sdot2S1S2*tmpx + params->Sdot2LS1LS2 * LNhS2 * cross1x);
-  dS1y += v6 * (params->Sdot2S1S2*tmpy + params->Sdot2LS1LS2 * LNhS2 * cross1y);
-  dS1z += v6 * (params->Sdot2S1S2*tmpz + params->Sdot2LS1LS2 * LNhS2 * cross1z);
+  dS1x += v6 * (params->Sdot4S1S2*tmpx + params->Sdot4S1OS2O * LNhS2 * cross1x);
+  dS1y += v6 * (params->Sdot4S1S2*tmpy + params->Sdot4S1OS2O * LNhS2 * cross1y);
+  dS1z += v6 * (params->Sdot4S1S2*tmpz + params->Sdot4S1OS2O * LNhS2 * cross1z);
   // S1S1 contribution
-  dS1x += v6 * LNhS1 * cross1x * params->S1dot2LS1LS1;
-  dS1y += v6 * LNhS1 * cross1y * params->S1dot2LS1LS1;
-  dS1z += v6 * LNhS1 * cross1z * params->S1dot2LS1LS1;
+  dS1x += v6 * LNhS1 * cross1x * params->S1dot4QMS1O;
+  dS1y += v6 * LNhS1 * cross1y * params->S1dot4QMS1O;
+  dS1z += v6 * LNhS1 * cross1z * params->S1dot4QMS1O;
 
   // dS1, 2.5PN, eq. 7.8 of Blanchet et al. gr-qc/0605140
-  dS1x += params->S1dot25 * v7 * cross1x;
-  dS1y += params->S1dot25 * v7 * cross1y;
-  dS1z += params->S1dot25 * v7 * cross1z;
+  dS1x += params->S1dot5 * v7 * cross1x;
+  dS1y += params->S1dot5 * v7 * cross1y;
+  dS1z += params->S1dot5 * v7 * cross1z;
 
   /* dS2, 1.5PN */
   cross2x = (LNhy * S2z - LNhz * S2y);
   cross2y = (LNhz * S2x - LNhx * S2z);
   cross2z = (LNhx * S2y - LNhy * S2x);
 
-  dS2x = params->S2dot15 * v5 * cross2x;
-  dS2y = params->S2dot15 * v5 * cross2y;
-  dS2z = params->S2dot15 * v5 * cross2z;
+  dS2x = params->S2dot3 * v5 * cross2x;
+  dS2y = params->S2dot3 * v5 * cross2y;
+  dS2z = params->S2dot3 * v5 * cross2z;
 
   /* dS2, 2PN */
-  dS2x += v6 * (-params->Sdot2S1S2*tmpx + params->Sdot2LS1LS2 * LNhS1 * cross2x);
-  dS2y += v6 * (-params->Sdot2S1S2*tmpy + params->Sdot2LS1LS2 * LNhS1 * cross2y);
-  dS2z += v6 * (-params->Sdot2S1S2*tmpz + params->Sdot2LS1LS2 * LNhS1 * cross2z);
+  dS2x += v6 * (-params->Sdot4S1S2*tmpx + params->Sdot4S1OS2O * LNhS1 * cross2x);
+  dS2y += v6 * (-params->Sdot4S1S2*tmpy + params->Sdot4S1OS2O * LNhS1 * cross2y);
+  dS2z += v6 * (-params->Sdot4S1S2*tmpz + params->Sdot4S1OS2O * LNhS1 * cross2z);
   // S2S2 contribution
-  dS2x += v6 * LNhS2 * cross2x * params->S2dot2LS2LS2;
-  dS2y += v6 * LNhS2 * cross2y * params->S2dot2LS2LS2;
-  dS2z += v6 * LNhS2 * cross2z * params->S2dot2LS2LS2;
+  dS2x += v6 * LNhS2 * cross2x * params->S2dot4QMS2O;
+  dS2y += v6 * LNhS2 * cross2y * params->S2dot4QMS2O;
+  dS2z += v6 * LNhS2 * cross2z * params->S2dot4QMS2O;
 
   // dS2, 2.5PN, eq. 7.8 of Blanchet et al. gr-qc/0605140
-  dS2x += params->S2dot25 * v7 * cross2x;
-  dS2y += params->S2dot25 * v7 * cross2y;
-  dS2z += params->S2dot25 * v7 * cross2z;
+  dS2x += params->S2dot5 * v7 * cross2x;
+  dS2y += params->S2dot5 * v7 * cross2y;
+  dS2z += params->S2dot5 * v7 * cross2z;
 
   dLNhx = -(dS1x + dS2x) * v / params->eta;
   dLNhy = -(dS1y + dS2y) * v / params->eta;
@@ -1032,20 +1064,26 @@ static INT4 XLALSimInspiralComputeAlpha(LALSimInspiralPhenSpinTaylorT4Coeffs par
  * the coordinates of the spin vectors spin1,2 and the inclination
  * variable refers to different physical parameters according to the value of
  * axisChoice:
- * * LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L: inclination denotes the angle
- * between the view direction N and the initial L
- * (initial L//z, N in the x-z plane) and the spin
- * coordinates are given with respect to initial L.
- * * LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J:   inclination denotes the angle
- * between the view direction and J (J is constant during the
- * evolution, J//z, both N and initial L are in the x-z plane)
- * and the spin coordinates are given wrt initial L.
- * * LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW:     inclination denotes the angle
- * between the initial L and N (N//z, initial L in the x-z plane)
- * and the spin coordinates are given with respect to N.
  *
- * In order to reproduce the results of the SpinTaylor code View must be chosen.
- * The spin magnitude are normalized to the individual mass^2, i.e.
+ * * LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J:   inclination denotes the angle
+ * between reference J and the view direction N
+ * (for N=(0,0,1), Jhat=(sin(inc),0,cos(inc)) )
+ * and the spins are given with respect to initial J.
+ * Note that not all values of the spin will correspond
+ * to physically well defined configurations.
+ *
+ * * LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L: inclination denotes the angle
+ * between the reference L and the view direction N
+ * (for N=(0,0,1), LNhat=(sin(inc),0,cos(inc)) )
+ * and the spins are given wrt initial L.
+ *
+ * * LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW:      inclination denotes the angle
+ * between the reference L and the view direction N
+ * (for N=(0,0,1), LNhat=(sin(inc),0,cos(inc)) )
+ * and the spins are given wrt to N.
+ * (default)
+ *
+ * The spin magnitudes are normalized to the individual mass^2, i.e.
  * they are dimension-less.
  * The modulus of the initial angular momentum is fixed by m1,m2 and
  * initial frequency.
@@ -1088,108 +1126,138 @@ static void rotateZ(REAL8 phi,REAL8 *vx, REAL8 *vy, REAL8 *vz){
   }
 }
 
-static INT4 XLALSimIMRPhenSpinInspiralSetAxis(REAL8 mass1, /* in MSun units */
-                                             REAL8 mass2, /* in MSun units */
-                                             REAL8 *iota, /* input/output */
-                                             REAL8 *yinit,/* RETURNED */
-                                             LALSimInspiralFrameAxis axisChoice)
+static INT4 XLALSimIMRPhenSpinInspiralSetAxis(REAL8 **yinitOut,        /* [returned] */
+                                              REAL8 *iota,             /* [returned] */
+					      REAL8 *phiN,             /* azimuthal angle of the view direction [returned]*/
+					      REAL8 *yinitIn,          /* initial values of dynamical variables */
+					      const REAL8 inclination, /* input*/
+					      const REAL8 mass1,       /* in MSun units */
+                                              const REAL8 mass2,       /* in MSun units */
+                                              LALSimInspiralFrameAxis axisChoice)
 {
   // Magnitude of the Newtonian orbital angular momentum
-  REAL8 omega=yinit[1];
-  REAL8 Mass=mass1+mass2;
-  REAL8 Lmag = mass1*mass2 / cbrt(omega);
-  REAL8 Jmag;
-  REAL8 S1[3],S2[3],J[3],LNh[3],N[3];
-  REAL8 inc;
-  REAL8 phiJ,thetaJ,phiN;
+  REAL8 omega=yinitIn[1];
+  REAL8 LNmag = mass1*mass2 / cbrt(omega);
+  REAL8 Mass  = mass1 + mass2;
+  REAL8 S1[3],S2[3];
+  REAL8 phiJ=0.;
+  REAL8 thetaJ=0.;
+  REAL8 LNh[3],N[3],J[3];
+  REAL8 Jmag=0.;
+  INT4 idx;
 
   // Physical values of the spins
-  inc=*iota;
-  S1[0] =  yinit[5] * mass1 * mass1;
-  S1[1] =  yinit[6] * mass1 * mass1;
-  S1[2] =  yinit[7] * mass1 * mass1;
-  S2[0] =  yinit[8] * mass2 * mass2;
-  S2[1] =  yinit[9] * mass2 * mass2;
-  S2[2] = yinit[10] * mass2 * mass2;
+  S1[0] =  yinitIn[5] * mass1 * mass1;
+  S1[1] =  yinitIn[6] * mass1 * mass1;
+  S1[2] =  yinitIn[7] * mass1 * mass1;
+  S2[0] =  yinitIn[8] * mass2 * mass2;
+  S2[1] =  yinitIn[9] * mass2 * mass2;
+  S2[2] = yinitIn[10] * mass2 * mass2;
 
   switch (axisChoice) {
+
+  case LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J:
+    LNh[0] = -(S1[0]+S2[0])/LNmag;
+    LNh[1] = -(S1[1]+S2[1])/LNmag;
+    REAL8 LNhxy2  = LNh[0]*LNh[0]+LNh[1]*LNh[1];
+    LNh[2]=0.;
+    if (LNhxy2<=1.) {
+      LNh[2]=sqrt(1.-sqrt(LNhxy2));
+      if ( (LNh[2]*LNmag)<(S1[2]+S2[2]) ) {
+	XLALPrintError("** LALSimIMRPSpinInspiralRD error *** for s1 (%12.4e  %12.4e  %12.4e)\n",S1[0],S1[1],S1[2]);
+	XLALPrintError("                                          s2 (%12.4e  %12.4e  %12.4e)\n",S2[0],S2[1],S2[2]);
+	XLALPrintError(" wrt to J for m: (%12.4e  %12.4e) and v= %12.4e\n",mass1,mass2,cbrt(omega));
+	XLALPrintError(" it is impossible to determine the sign of LNhz\n");
+	XLAL_ERROR(XLAL_EDOM);
+      }
+    }
+    else {
+      XLALPrintError("** LALSimIMRPSpinInspiralRD error *** unphysical values of s1 (%12.4e  %12.4e  %12.4e)\n",S1[0],S1[1],S1[2]);
+      XLALPrintError("                                                           s2 (%12.4e  %12.4e  %12.4e)\n",S2[0],S2[1],S2[2]);
+      XLALPrintError(" wrt to J for m: (%12.4e  %12.4e) and v= %12.4e\n",mass1,mass2,cbrt(omega));
+      XLAL_ERROR(XLAL_EDOM);
+    }
+    *iota=inclination;
+    *phiN=LAL_PI;
+    break;
 
   case LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L:
     J[0]=S1[0]+S2[0];
     J[1]=S1[1]+S2[1];
-    J[2]=S1[2]+S2[2]+Lmag;
-    N[0]=sin(inc);
+    J[2]=S1[2]+S2[2]+LNmag;
+    N[0]=-sin(inclination);
     N[1]=0.;
-    N[2]=cos(inc);
+    N[2]=cos(inclination);
     LNh[0]=0.;
     LNh[1]=0.;
     LNh[2]=1.;
     Jmag=sqrt(J[0]*J[0]+J[1]*J[1]+J[2]*J[2]);
-    if (Jmag>0.) phiJ=atan2(J[1],J[0]);
-    else phiJ=0.;
-    thetaJ=acos(J[2]/Jmag);
+    if (Jmag>0.) {
+      phiJ=atan2(J[1],J[0]);
+      thetaJ=acos(J[2]/Jmag);
+    }
     rotateZ(-phiJ,&N[0],&N[1],&N[2]);
     rotateY(-thetaJ,&N[0],&N[1],&N[2]);
-    break;
+    *iota=acos(N[2]);
+    *phiN=atan2(N[1],N[0]);
 
-  case LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J:
-    J[0]=S1[0]+S2[0];
-    J[1]=S1[1]+S2[1];
-    J[2]=S1[2]+S2[2]+Lmag;
-    LNh[0]=0.;
-    LNh[1]=0.;
-    LNh[2]=1.;
-    N[0]=sin(inc);
-    N[1]=0.;
-    N[2]=cos(inc);
-    Jmag=sqrt(J[0]*J[0]+J[1]*J[1]+J[2]*J[2]);
-    if (Jmag>0.) phiJ=atan2(J[1],J[0]);
-    else phiJ=0.;
-    thetaJ=acos(J[2]/Jmag);
+    rotateZ(-phiJ,&J[0],&J[1],&J[2]);
+    rotateY(-thetaJ,&J[0],&J[1],&J[2]);
+    printf("Check J: %12.4e %12.4e %12.4e\n",J[0],J[1],J[2]);
+    printf("Check Jmag: %12.4e\n",Jmag);
+
     break;
 
   case LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW:
   default:
-    LNh[0] = sin(inc);
+    LNh[0] = sin(inclination);
     LNh[1] = 0.;
-    LNh[2] = cos(inc);
-    J[0]=S1[0]+S2[0]+LNh[0]*Lmag;
-    J[1]=S1[1]+S2[1]+LNh[1]*Lmag;
-    J[2]=S1[2]+S2[2]+LNh[2]*Lmag;
+    LNh[2] = cos(inclination);
+    J[0]=S1[0]+S2[0]+LNh[0]*LNmag;
+    J[1]=S1[1]+S2[1];
+    J[2]=S1[2]+S2[2]+LNh[2]*LNmag;
     N[0]=0.;
     N[1]=0.;
     N[2]=1.;
     Jmag=sqrt(J[0]*J[0]+J[1]*J[1]+J[2]*J[2]);
-    if (Jmag>0.) phiJ=atan2(J[1],J[0]);
-    else phiJ=0.;
-    thetaJ=acos(J[2]/Jmag);
+    if (Jmag>0.) {
+      phiJ=atan2(J[1],J[0]);
+      thetaJ=acos(J[2]/Jmag);
+    }
     rotateZ(-phiJ,&N[0],&N[1],&N[2]);
     rotateY(-thetaJ,&N[0],&N[1],&N[2]);
+    *iota=acos(N[2]);
+    *phiN=atan2(N[1],N[0]);
+
+    rotateZ(-phiJ,&J[0],&J[1],&J[2]);
+    rotateY(-thetaJ,&J[0],&J[1],&J[2]);
+    printf("Check J: %12.4e %12.4e %12.4e\n",J[0],J[1],J[2]);
+    printf("Check Jmag: %12.4e\n",Jmag);
+
     break;
   }
 
-  rotateZ(-phiJ,&S1[0],&S1[1],&S1[2]);
-  rotateZ(-phiJ,&S2[0],&S2[1],&S2[2]);
-  rotateZ(-phiJ,&LNh[0],&LNh[1],&LNh[2]);
-  rotateY(-thetaJ,&S1[0],&S1[1],&S1[2]);
-  rotateY(-thetaJ,&S2[0],&S2[1],&S2[2]);
+  rotateZ(-phiJ,  &S1[0], &S1[1], &S1[2]);
+  rotateZ(-phiJ,  &S2[0], &S2[1], &S2[2]);
+  rotateZ(-phiJ,  &LNh[0],&LNh[1],&LNh[2]);
+  rotateY(-thetaJ,&S1[0], &S1[1], &S1[2]);
+  rotateY(-thetaJ,&S2[0], &S2[1], &S2[2]);
   rotateY(-thetaJ,&LNh[0],&LNh[1],&LNh[2]);
-  phiN=atan2(N[1],N[0]);
-  rotateZ(-phiN,&S1[0],&S1[1],&S1[2]);
-  rotateZ(-phiN,&S2[0],&S2[1],&S2[2]);
-  rotateZ(-phiN,&LNh[0],&LNh[1],&LNh[2]);
-  rotateZ(-phiN,&N[0],&N[1],&N[2]);
-  inc = acos(N[2]);
-  *iota=inc;
-  yinit[2] = LNh[0];
-  yinit[3] = LNh[1];
-  yinit[4] = LNh[2];
-  yinit[5] = S1[0]/Mass/Mass;
-  yinit[6] = S1[1]/Mass/Mass;
-  yinit[7] = S1[2]/Mass/Mass;
-  yinit[8] = S2[0]/Mass/Mass;
-  yinit[9] = S2[1]/Mass/Mass;
-  yinit[10]= S2[2]/Mass/Mass;
+
+  *yinitOut = (REAL8 *) LALMalloc(sizeof(REAL8) * LAL_NUM_PST4_VARIABLES);
+  *yinitOut[0]=yinitIn[0];
+  *yinitOut[1]=yinitIn[1];
+  *yinitOut[2]=LNh[0];
+  *yinitOut[3]=LNh[1];
+  *yinitOut[4]=LNh[2];
+  *yinitOut[5]=S1[0]/Mass/Mass;
+  *yinitOut[6]=S1[1]/Mass/Mass;
+  *yinitOut[7]=S1[2]/Mass/Mass;
+  *yinitOut[8]=S2[0]/Mass/Mass;
+  *yinitOut[9]=S2[1]/Mass/Mass;
+  *yinitOut[10]=S2[2]/Mass/Mass;
+  for (idx=11;idx<LAL_NUM_PST4_VARIABLES;idx++)
+    *yinitOut[idx]=yinitIn[idx];
 
   return XLAL_SUCCESS;
 
@@ -1199,17 +1267,21 @@ static INT4 XLALSimIMRPhenSpinInspiralSetAxis(REAL8 mass1, /* in MSun units */
  * PhenSpin Initialization
  */
 
-static INT4 XLALSimIMRPhenSpinInitialize(REAL8 mass1,                              /* in Msun units */
-                                        REAL8 mass2,                              /* in Msun units */
-                                        REAL8 *yinit,
-                                        REAL8 fStart,                             /* in Hz*/
-                                        REAL8 fEnd,                               /* in Hz*/
-                                        REAL8 deltaT,
-                                        INT4 phaseO,
-                                        LALSimInspiralPhenSpinTaylorT4Coeffs *params,
-                                        LALSimInspiralWaveformFlags      *waveFlags,
-                                        LALSimInspiralTestGRParam        *testGRparams,
-                                        Approximant approx)
+static INT4 XLALSimIMRPhenSpinInitialize(REAL8 mass1,                              /**< in Msun units */
+                                         REAL8 mass2,                              /**< in Msun units */
+                                         REAL8 lambda1,       /**< Tidal par1*/
+                                         REAL8 lambda2,       /**< Tidal par2*/
+                                         REAL8 quadparam1,    /**< Quad-monopole  par1*/
+                                         REAL8 quadparam2,    /**< Quad-monopole  par2*/
+					 REAL8 *yinit,        /**< Initial values*/
+                                         REAL8 fStart,                             /**< in Hz*/
+                                         REAL8 fEnd,                               /**< in Hz*/
+					 REAL8 deltaT,        /**< sampling time (sec)*/
+                                         INT4 phaseO,         /**< (twice) phase order*/
+                                         LALSimInspiralPhenSpinTaylorT4Coeffs *params,        /**< Coefficient holder*/
+                                         LALSimInspiralWaveformFlags      *waveFlags,         /**< Flags*/
+                                         LALSimInspiralTestGRParam        *testGRparams,      /**< Extra pars container*/
+                                         Approximant approx    /**< Approximant*/)
 {
   if (fStart<=0.) {
     XLALPrintError("** LALSimIMRPSpinInspiralRD error *** non >ve value of fMin %12.4e\n",fStart);
@@ -1248,7 +1320,7 @@ static INT4 XLALSimIMRPhenSpinInitialize(REAL8 mass1,                           
   }
 
   /* setup coefficients for PN equations */
-  if(XLALSimIMRPhenSpinParamsSetup(params,deltaT,fStart,fEnd,mass1,mass2,XLALSimInspiralGetSpinOrder(waveFlags),testGRparams,phaseO)) {
+  if(XLALSimIMRPhenSpinParamsSetup(params,deltaT,fStart,fEnd,mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,XLALSimInspiralGetSpinOrder(waveFlags),XLALSimInspiralGetTidalOrder(waveFlags),testGRparams,phaseO)) {
     XLAL_ERROR(XLAL_ENOMEM);
   }
 
@@ -1274,364 +1346,6 @@ static REAL8TimeSeries *appendTSandFree(REAL8TimeSeries *start, REAL8TimeSeries 
     return start;
 }
 
-/**
- * Driver routine to compute the PhenSpin Inspiral waveform
- * without ring-down
- *
- * All units are SI units.
- */
-INT4 XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-polarization waveform [returned] */
-                                 REAL8TimeSeries **hCross,              /**< x-polarization waveform [returned] */
-                                 REAL8 phi_start,                       /**< start phase */
-                                 REAL8 deltaT,                          /**< sampling interval */
-                                 REAL8 m1,                              /**< mass of companion 1 */
-                                 REAL8 m2,                              /**< mass of companion 2 */
-                                 REAL8 f_start,                         /**< start frequency */
-                                 REAL8 f_ref,                           /**< reference frequency */
-                                 REAL8 r,                               /**< distance of source */
-                                 REAL8 iota,                            /**< incination of source (rad) */
-                                 REAL8 s1x,                             /**< x-component of dimensionless spin for object 1 */
-                                 REAL8 s1y,                             /**< y-component of dimensionless spin for object 1 */
-                                 REAL8 s1z,                             /**< z-component of dimensionless spin for object 1 */
-                                 REAL8 s2x,                             /**< x-component of dimensionless spin for object 2 */
-                                 REAL8 s2y,                             /**< y-component of dimensionless spin for object 2 */
-                                 REAL8 s2z,                             /**< z-component of dimensionless spin for object 2 */
-                                 INT4 phaseO,                            /**< twice post-Newtonian phase order */
-                                 INT4 UNUSED ampO,                       /**< twice post-Newtonian amplitude order */
-                                 LALSimInspiralWaveformFlags *waveFlags,/**< Choice of axis for input spin params */
-                                 LALSimInspiralTestGRParam *testGRparams/**< Non-GR params */)
-{
-
-  INT4 errcode=0;
-  INT4 errcodeInt=0;
-  INT4 intLen;         /* Length of arrays after integration*/
-  INT4 lengthH;
-  INT4 idx,kdx;
-  LALSimInspiralPhenSpinTaylorT4Coeffs params;
-  REAL8 mass1=m1/LAL_MSUN_SI;
-  REAL8 mass2=m2/LAL_MSUN_SI;
-
-  REAL8 yinit[LAL_NUM_PST4_VARIABLES];
-  yinit[0] = phi_start;
-  yinit[1] = 0.;
-  yinit[2] = 0.;
-  yinit[3] = 0.;
-  yinit[4] = cos(iota);
-  yinit[5] = s1x;
-  yinit[6] = s1y;
-  yinit[7] = s1z;
-  yinit[8] = s2x;
-  yinit[9] = s2y;
-  yinit[10]= s2z;
-  yinit[11]= 0.;
-
-  REAL8 tn = XLALSimInspiralTaylorLength(deltaT, m1, m2, f_start, phaseO);
-  REAL8 x  = 1.1 * (tn + 1. ) / deltaT;
-  INT4 length = ceil(log10(x)/log10(2.));
-  lengthH    = pow(2, length);
-  REAL8TimeSeries *omega=NULL;
-  REAL8TimeSeries *Phi=NULL;
-  REAL8TimeSeries *LNhatx=NULL;
-  REAL8TimeSeries *LNhaty=NULL;
-  REAL8TimeSeries *LNhatz=NULL;
-  REAL8TimeSeries *S1x=NULL;
-  REAL8TimeSeries *S1y=NULL;
-  REAL8TimeSeries *S1z=NULL;
-  REAL8TimeSeries *S2x=NULL;
-  REAL8TimeSeries *S2y=NULL;
-  REAL8TimeSeries *S2z=NULL;
-  REAL8TimeSeries *Energy=NULL;
-
-  if (f_ref<=f_start) {
-    errcode=XLALSimIMRPhenSpinInitialize(mass1,mass2,yinit,f_start,-1.,deltaT,phaseO,&params,waveFlags,testGRparams,XLALGetApproximantFromString("PhenSpinTaylor"));
-    if(errcode) XLAL_ERROR(XLAL_EFUNC);
-    if(XLALSimIMRPhenSpinInspiralSetAxis(mass1,mass2,&iota,yinit,XLALSimInspiralGetFrameAxis(waveFlags))) {
-      XLAL_ERROR(XLAL_EFUNC);
-    }
-    errcodeInt=XLALSimInspiralSpinTaylorT4Engine(&omega,&Phi,&LNhatx,&LNhaty,&LNhatz,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,&Energy,yinit,lengthH,PhenSpinTaylor,&params);
-    intLen=Phi->data->length;
-  }
-  else {
-    REAL8TimeSeries *Phi1,*omega1,*LNhatx1,*LNhaty1,*LNhatz1,*S1x1,*S1y1,*S1z1,*S2x1,*S2y1,*S2z1,*Energy1;
-    errcode=XLALSimIMRPhenSpinInitialize(mass1,mass2,yinit,f_ref,f_start,deltaT,phaseO,&params,waveFlags,testGRparams,XLALGetApproximantFromString("PhenSpinTaylor"));
-    if(errcode) XLAL_ERROR(XLAL_EFUNC);
-    if(XLALSimIMRPhenSpinInspiralSetAxis(mass1,mass2,&iota,yinit,XLALSimInspiralGetFrameAxis(waveFlags))) {
-      XLAL_ERROR(XLAL_EFUNC);
-    }
-
-    REAL8 dyTmp[LAL_NUM_PST4_VARIABLES];
-    REAL8 energy;
-    XLALSpinInspiralDerivatives(0., yinit,dyTmp,&params);
-    energy=dyTmp[11]*params.dt/params.M+yinit[11];
-    yinit[11]=energy;
-
-    errcodeInt=XLALSimInspiralSpinTaylorT4Engine(&omega1,&Phi1,&LNhatx1,&LNhaty1,&LNhatz1,&S1x1,&S1y1,&S1z1,&S2x1,&S2y1,&S2z1,&Energy1,yinit,lengthH,PhenSpinTaylor,&params);
-
-    INT4 intLen1=Phi1->data->length;
-    /* report on abnormal termination*/
-    if ( (errcodeInt != LALSIMINSPIRAL_PST4_TEST_FREQBOUND ) ) {
-      XLALPrintError("** LALSimIMRPSpinInspiralRD WARNING **: integration terminated with code %d.\n",errcode);
-      XLALPrintError("   1025: Energy increases\n  1026: Omegadot -ve\n  1028: Omega NAN\n  1029: Freqbound\n  1030: Omega -ve\n");
-      XLALPrintError("  Waveform parameters were m1 = %14.6e, m2 = %14.6e, inc = %10.6f,  fref %10.4f Hz\n", m1, m2, iota, f_ref);
-      XLALPrintError("                           S1 = (%10.6f,%10.6f,%10.6f)\n", s1x, s1y, s1z);
-      XLALPrintError("                           S2 = (%10.6f,%10.6f,%10.6f)\n", s2x, s2y, s2z);
-    }
-
-    yinit[0] = Phi1->data->data[intLen1-1];
-    yinit[1] = omega1->data->data[intLen1-1];
-    yinit[2] = LNhatx1->data->data[intLen1-1];
-    yinit[3] = LNhaty1->data->data[intLen1-1];
-    yinit[4] = LNhatz1->data->data[intLen1-1];
-    yinit[5] = S1x1->data->data[intLen1-1];
-    yinit[6] = S1y1->data->data[intLen1-1];
-    yinit[7] = S1z1->data->data[intLen1-1];
-    yinit[8] = S2x1->data->data[intLen1-1];
-    yinit[9] = S2y1->data->data[intLen1-1];
-    yinit[10]= S2z1->data->data[intLen1-1];
-    yinit[11]= Energy1->data->data[intLen1-1];
-
-    REAL8TimeSeries *omega2,*Phi2,*LNhatx2,*LNhaty2,*LNhatz2,*S1x2,*S1y2,*S1z2,*S2x2,*S2y2,*S2z2,*Energy2;
-
-    params.fEnd=-1.;
-    params.dt*=-1.;
-    errcodeInt=XLALSimInspiralSpinTaylorT4Engine(&omega2,&Phi2,&LNhatx2,&LNhaty2,&LNhatz2,&S1x2,&S1y2,&S1z2,&S2x2,&S2y2,&S2z2,&Energy2,yinit,lengthH,PhenSpinTaylor,&params);
-
-    REAL8 phiRef=Phi1->data->data[Phi1->data->length-1];
-
-    omega =appendTSandFree(omega1,omega2);
-    Phi   =appendTSandFree(Phi1,Phi2);
-    LNhatx=appendTSandFree(LNhatx1,LNhatx2);
-    LNhaty=appendTSandFree(LNhaty1,LNhaty2);
-    LNhatz=appendTSandFree(LNhatz1,LNhatz2);
-    S1x   =appendTSandFree(S1x1,S1x2);
-    S1y   =appendTSandFree(S1y1,S1y2);
-    S1z   =appendTSandFree(S1z1,S1z2);
-    S2x   =appendTSandFree(S2x1,S2x2);
-    S2y   =appendTSandFree(S2y1,S2y2);
-    S2z   =appendTSandFree(S2z1,S2z2);
-    Energy=appendTSandFree(Energy1,Energy2);
-    intLen=Phi->data->length;
-    for (idx=0;idx<intLen;idx++) Phi->data->data[idx]-=phiRef;
-
-  }
-
-  /* report on abnormal termination*/
-  if ( (errcodeInt !=  LALSIMINSPIRAL_PST4_TEST_ENERGY) ) {
-    XLALPrintWarning("** LALSimIMRPSpinInspiralRD WARNING **: integration terminated with code %d.\n",errcode);
-    XLALPrintWarning("  Waveform parameters were m1 = %14.6e, m2 = %14.6e, inc = %10.6f,\n", m1, m2, iota);
-    XLALPrintWarning("                           S1 = (%10.6f,%10.6f,%10.6f)\n", s1x, s1y, s1z);
-    XLALPrintWarning("                           S2 = (%10.6f,%10.6f,%10.6f)\n", s2x, s2y, s2z);
-  }
-
-  LIGOTimeGPS tStart=LIGOTIMEGPSZERO;
-  COMPLEX16Vector* hL2tmp=XLALCreateCOMPLEX16Vector(5);
-  COMPLEX16Vector* hL3tmp=XLALCreateCOMPLEX16Vector(7);
-  COMPLEX16Vector* hL4tmp=XLALCreateCOMPLEX16Vector(9);
-  COMPLEX16TimeSeries* hL2=XLALCreateCOMPLEX16TimeSeries( "hL2", &tStart, 0., deltaT, &lalDimensionlessUnit, 5*intLen);
-  COMPLEX16TimeSeries* hL3=XLALCreateCOMPLEX16TimeSeries( "hL3", &tStart, 0., deltaT, &lalDimensionlessUnit, 7*intLen);
-  COMPLEX16TimeSeries* hL4=XLALCreateCOMPLEX16TimeSeries( "hL4", &tStart, 0., deltaT, &lalDimensionlessUnit, 9*intLen);
-  for (idx=0;idx<(int)hL2->data->length;idx++) hL2->data->data[idx]=0.;
-  for (idx=0;idx<(int)hL3->data->length;idx++) hL3->data->data[idx]=0.;
-  for (idx=0;idx<(int)hL4->data->length;idx++) hL4->data->data[idx]=0.;
-
-  REAL8TimeSeries *hPtmp=XLALCreateREAL8TimeSeries( "hPtmp", &tStart, 0., deltaT, &lalDimensionlessUnit, intLen);
-  REAL8TimeSeries *hCtmp=XLALCreateREAL8TimeSeries( "hCtmp", &tStart, 0., deltaT, &lalDimensionlessUnit, intLen);
-  COMPLEX16TimeSeries *hLMtmp=XLALCreateCOMPLEX16TimeSeries( "hLMtmp", &tStart, 0., deltaT, &lalDimensionlessUnit, intLen);
-  for (idx=0;idx<(int)hPtmp->data->length;idx++) {
-    hPtmp->data->data[idx]=0.;
-    hCtmp->data->data[idx]=0.;
-    hLMtmp->data->data[idx]=0.;
-  }
-
-  LALSimInspiralInclAngle trigAngle;
-
-  REAL8 amp22ini = -2.0 * m1*m2/(m1+m2) * LAL_G_SI/pow(LAL_C_SI,2.) / r * sqrt(16. * LAL_PI / 5.);
-  REAL8 amp33ini = -amp22ini * sqrt(5./42.)/4.;
-  REAL8 amp44ini = amp22ini * sqrt(5./7.) * 2./9.;
-  REAL8 alpha,v,v2,Psi,om;
-  REAL8 eta=mass1*mass2/(mass1+mass2)/(mass1+mass2);
-  REAL8 dm=(mass1-mass2)/(mass1+mass2);
-
-  for (idx=0;idx<intLen;idx++) {
-    om=omega->data->data[idx];
-    v=cbrt(om);
-    v2=v*v;
-    Psi=Phi->data->data[idx] -2.*om*(1.-eta*v2)*log(om);
-    errcode =XLALSimInspiralComputeAlpha(params,LNhatx->data->data[idx],LNhaty->data->data[idx],S1x->data->data[idx],S1y->data->data[idx],S2x->data->data[idx],S2y->data->data[idx],&alpha);
-
-    errcode+=XLALSimInspiralComputeInclAngle(LNhatz->data->data[idx],&trigAngle);
-    errcode+=XLALSimSpinInspiralFillL2Modes(hL2tmp,v,eta,dm,Psi,alpha,&trigAngle);
-    for (kdx=0;kdx<5;kdx++) hL2->data->data[5*idx+kdx]=hL2tmp->data[kdx]*amp22ini*v2;
-    errcode+=XLALSimSpinInspiralFillL3Modes(hL3tmp,v,eta,dm,Psi,alpha,&trigAngle);
-    for (kdx=0;kdx<7;kdx++) hL3->data->data[7*idx+kdx]=hL3tmp->data[kdx]*amp33ini*v2;
-    errcode+=XLALSimSpinInspiralFillL4Modes(hL4tmp,v,eta,dm,Psi,alpha,&trigAngle);
-    for (kdx=0;kdx<9;kdx++) hL4->data->data[9*idx+kdx]=hL4tmp->data[kdx]*amp44ini*v2*v2;
-  }
-  XLALDestroyCOMPLEX16Vector(hL2tmp);
-  XLALDestroyCOMPLEX16Vector(hL3tmp);
-  XLALDestroyCOMPLEX16Vector(hL4tmp);
-
-  XLALDestroyREAL8TimeSeries(omega);
-  XLALDestroyREAL8TimeSeries(Phi);
-  XLALDestroyREAL8TimeSeries(LNhatx);
-  XLALDestroyREAL8TimeSeries(LNhaty);
-  XLALDestroyREAL8TimeSeries(LNhatz);
-  XLALDestroyREAL8TimeSeries(S1x);
-  XLALDestroyREAL8TimeSeries(S1y);
-  XLALDestroyREAL8TimeSeries(S1z);
-  XLALDestroyREAL8TimeSeries(S2x);
-  XLALDestroyREAL8TimeSeries(S2y);
-  XLALDestroyREAL8TimeSeries(S2z);
-  XLALDestroyREAL8TimeSeries(Energy);
-
-  INT4 m,l;
-  LALSimInspiralModesChoice modesChoice=XLALSimInspiralGetModesChoice(waveFlags);
-  if ( ( modesChoice &  LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED) ==  LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED ) {
-    l=2;
-    for (m=-l;m<=l;m++) {
-      for (idx=0;idx<intLen;idx++) hLMtmp->data->data[idx]=hL2->data->data[(m+l)+idx*(2*l+1)];
-      XLALSimAddMode(hPtmp,hCtmp,hLMtmp,iota,0.,l,m,0);
-    }
-  }
-  XLALDestroyCOMPLEX16TimeSeries(hL2);
-  if ( ( modesChoice &  LAL_SIM_INSPIRAL_MODES_CHOICE_3L) ==  LAL_SIM_INSPIRAL_MODES_CHOICE_3L ) {
-    l=3;
-    for (m=-l;m<=l;m++) {
-      for (idx=0;idx<intLen;idx++)
-      hLMtmp->data->data[idx]=hL3->data->data[(m+l)+idx*(2*l+1)];
-      XLALSimAddMode(hPtmp,hCtmp,hLMtmp,iota,0.,l,m,0);
-    }
-  }
-  XLALDestroyCOMPLEX16TimeSeries(hL3);
-  if ( ( modesChoice &  LAL_SIM_INSPIRAL_MODES_CHOICE_3L) ==  LAL_SIM_INSPIRAL_MODES_CHOICE_3L ) {
-    l=4;
-    for (m=-l;m<=l;m++) {
-      for (idx=0;idx<intLen;idx++)
-        hLMtmp->data->data[idx]=hL4->data->data[(m+l)+idx*(2*l+1)];
-      XLALSimAddMode(hPtmp,hCtmp,hLMtmp,iota,0.,l,m,0);
-    }
-  }
-  XLALDestroyCOMPLEX16TimeSeries(hL4);
-  XLALDestroyCOMPLEX16TimeSeries(hLMtmp);
-
-  REAL8 tPeak=intLen*deltaT;
-  if ((*hPlus) && (*hCross)) {
-    if ((*hPlus)->data->length!=(*hCross)->data->length) {
-      XLALPrintError("*** LALSimIMRPSpinInspiralRD ERROR: h+ and hx differ in length: %d vs. %d\n",(*hPlus)->data->length,(*hCross)->data->length);
-      XLAL_ERROR(XLAL_EFAILED);
-    }
-    else {
-      if ((int)(*hPlus)->data->length<intLen) {
-        XLALPrintError("*** LALSimIMRPSpinInspiralRD ERROR: h+ and hx too short: %d vs. %d\n",(*hPlus)->data->length,intLen);
-        XLAL_ERROR(XLAL_EFAILED);
-      }
-      else {
-        XLALGPSAdd(&((*hPlus)->epoch),-tPeak);
-        XLALGPSAdd(&((*hCross)->epoch),-tPeak);
-      }
-    }
-  }
-  else {
-    XLALGPSAdd(&tStart,-tPeak);
-    *hPlus  = XLALCreateREAL8TimeSeries("H+", &tStart, 0.0, deltaT, &lalDimensionlessUnit, intLen);
-    *hCross = XLALCreateREAL8TimeSeries("Hx", &tStart, 0.0, deltaT, &lalDimensionlessUnit, intLen);
-    if(*hPlus == NULL || *hCross == NULL)
-      XLAL_ERROR(XLAL_ENOMEM);
-  }
-
-  INT4 minLen=hPtmp->data->length < (*hPlus)->data->length ? hPtmp->data->length : (*hPlus)->data->length;
-  for (idx=0;idx<minLen;idx++) {
-    (*hPlus)->data->data[idx] =hPtmp->data->data[idx];
-    (*hCross)->data->data[idx]=hCtmp->data->data[idx];
-  }
-  for (idx=minLen;idx<(int)(*hPlus)->data->length;idx++) {
-    (*hPlus)->data->data[idx] =0.;
-    (*hCross)->data->data[idx]=0.;
-  }
-
-  XLALDestroyREAL8TimeSeries(hPtmp);
-  XLALDestroyREAL8TimeSeries(hCtmp);
-
-  return errcode;
-
-} /* End of XLALSimSpinInspiralGenerator*/
-
-INT4 XLALSimIMRPhenSpinFinalMassSpin(REAL8 *finalMass,
-                                    REAL8 *finalSpin,
-                                    REAL8 mass1,
-                                    REAL8 mass2,
-                                    REAL8 s1s1,
-                                    REAL8 s2s2,
-                                    REAL8 s1L,
-                                    REAL8 s2L,
-                                    REAL8 s1s2,
-                                    REAL8 energy)
-{
-  /* XLAL error handling */
-  INT4 errcode = XLAL_SUCCESS;
-  REAL8 qq,ll,eta;
-
-  /* See eq.(6) in arXiv:0904.2577 */
-  REAL8 ma1,ma2,a12,a12l;
-  REAL8 cosa1=0.;
-  REAL8 cosa2=0.;
-  REAL8 cosa12=0.;
-
-  REAL8 t0=-2.9;
-  REAL8 t3=2.6;
-  REAL8 s4=-0.123;
-  REAL8 s5=0.45;
-  REAL8 t2=16.*(0.6865-t3/64.-sqrt(3.)/2.);
-
-  /* get a local copy of the intrinstic parameters */
-  qq = mass2/mass1;
-  eta = mass1*mass2/((mass1+mass2)*(mass1+mass2));
-  /* done */
-  ma1 = sqrt( s1s1 );
-  ma2 = sqrt( s2s2 );
-
-  if (ma1>0.) cosa1 = s1L/ma1;
-  else cosa1=0.;
-  if (ma2>0.) cosa2 = s2L/ma2;
-  else cosa2=0.;
-  if ((ma1>0.)&&(ma2>0.)) {
-    cosa12  = s1s2/ma1/ma2;
-  }
-  else cosa12=0.;
-
-  a12  = ma1*ma1 + ma2*ma2*qq*qq*qq*qq + 2.*ma1*ma2*qq*qq*cosa12 ;
-  a12l = ma1*cosa1 + ma2*cosa2*qq*qq ;
-  ll = 2.*sqrt(3.)+ t2*eta + t3*eta*eta + s4*a12/(1.+qq*qq)/(1.+qq*qq) + (s5*eta+t0+2.)/(1.+qq*qq)*a12l;
-
-  /* Estimate final mass by adding the negative binding energy to the rest mass*/
-  *finalMass = 1. + energy;
-
-  /* Estimate final spin */
-  *finalSpin = sqrt( a12 + 2.*ll*qq*a12l + ll*ll*qq*qq)/(1.+qq)/(1.+qq);
-
-  /* Check value of finalMass */
-  if (*finalMass < 0.) {
-    XLALPrintWarning("*** LALSimIMRPSpinInspiralRD ERROR: Estimated final mass <0 : %12.6f\n ",*finalMass);
-    XLAL_ERROR( XLAL_ERANGE);
-  }
-
-  /* Check value of finalSpin */
-  if ((*finalSpin > 1.)||(*finalSpin < 0.)) {
-    if ((*finalSpin>=1.)&&(*finalSpin<1.01)) {
-      XLALPrintWarning("*** LALSimIMRPSpinInspiralRD WARNING: Estimated final Spin slightly >1 : %11.3e\n ",*finalSpin);
-      XLALPrintWarning("    (m1=%8.3f  m2=%8.3f  s1sq=%8.3f  s2sq=%8.3f  s1L=%8.3f  s2L=%8.3f  s1s2=%8.3f ) final spin set to 1 and code goes on\n",mass1,mass2,s1s1,s2s2,s1L,s2L,s1s2);
-      *finalSpin = .99999;
-    }
-    else {
-      XLALPrintError("*** LALSimIMRPSpinInspiralRD ERROR: Unphysical estimation of final Spin : %11.3e\n ",*finalSpin);
-      XLALPrintWarning("    (m1=%8.3f  m2=%8.3f  s1sq=%8.3f  s2sq=%8.3f  s1L=%8.3f  s2L=%8.3f  s1s2=%8.3f )\n",mass1,mass2,s1s1,s2s2,s1L,s2L,s1s2);
-      XLALPrintError("***                                    Code aborts\n");
-      XLAL_ERROR( XLAL_ERANGE);
-    }
-  }
-
-  return errcode;
-} /* End of XLALSimIMRPhenSpinFinalMassSpin*/
 
 static INT4 XLALSimIMRHybridRingdownWave(
     REAL8Vector                 *rdwave1,   /**< Real part of ringdown */
@@ -1909,10 +1623,382 @@ static INT4 XLALUpSampling(REAL8Vector* vHi, REAL8 dtHi, REAL8Vector* v, REAL8 d
   return 0;
 }
 
+
+/**
+ * @addtogroup LALSimIMRPSpinInspiralRD_c
+ * @{
+ */
+
+/**
+ * Driver routine to compute the PhenSpin Inspiral waveform
+ * without ring-down
+ *
+ * All units are SI units.
+ */
+INT4 XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus,               /**< +-polarization waveform [returned] */
+                                 REAL8TimeSeries **hCross,              /**< x-polarization waveform [returned] */
+                                 REAL8 phi_start,                       /**< start phase */
+                                 REAL8 deltaT,                          /**< sampling interval */
+                                 REAL8 m1,                              /**< mass of companion 1 */
+                                 REAL8 m2,                              /**< mass of companion 2 */
+                                 REAL8 f_start,                         /**< start frequency */
+                                 REAL8 f_ref,                           /**< reference frequency */
+                                 REAL8 r,                               /**< distance of source */
+                                 REAL8 iota,                            /**< incination of source (rad) */
+                                 REAL8 s1x,                             /**< x-component of dimensionless spin for object 1 */
+                                 REAL8 s1y,                             /**< y-component of dimensionless spin for object 1 */
+                                 REAL8 s1z,                             /**< z-component of dimensionless spin for object 1 */
+                                 REAL8 s2x,                             /**< x-component of dimensionless spin for object 2 */
+                                 REAL8 s2y,                             /**< y-component of dimensionless spin for object 2 */
+                                 REAL8 s2z,                             /**< z-component of dimensionless spin for object 2 */
+                                 INT4 phaseO,                            /**< twice post-Newtonian phase order */
+                                 INT4 UNUSED ampO,                       /**< twice post-Newtonian amplitude order */
+                                 REAL8 lambda1,        /**< Tidal  par1*/
+				 REAL8 lambda2,        /**< Tidal  par2*/
+				 REAL8 quadparam1,     /**< Quad-monopole  par1*/
+				 REAL8 quadparam2,     /**< Quad-monopole  par1*/
+                                 LALSimInspiralWaveformFlags *waveFlags,/**< Choice of axis for input spin params */
+                                 LALSimInspiralTestGRParam *testGRparams/**< Non-GR params */)
+{
+
+  INT4 errcode=0;
+  INT4 errcodeInt=0;
+  INT4 intLen;         /* Length of arrays after integration*/
+  INT4 lengthH;
+  INT4 idx,kdx;
+  LALSimInspiralPhenSpinTaylorT4Coeffs params;
+  REAL8 mass1=m1/LAL_MSUN_SI;
+  REAL8 mass2=m2/LAL_MSUN_SI;
+  REAL8 phiN=0.;
+
+  REAL8 *yinitOut=NULL;
+  REAL8 yinit[LAL_NUM_PST4_VARIABLES];
+  yinit[0] = phi_start;
+  yinit[1] = 0.;
+  yinit[2] = 0.;
+  yinit[3] = 0.;
+  yinit[4] = cos(iota);
+  yinit[5] = s1x;
+  yinit[6] = s1y;
+  yinit[7] = s1z;
+  yinit[8] = s2x;
+  yinit[9] = s2y;
+  yinit[10]= s2z;
+  yinit[11]= 0.;
+
+  REAL8 tn = XLALSimInspiralTaylorLength(deltaT, m1, m2, f_start, phaseO);
+  REAL8 x  = 1.1 * (tn + 1. ) / deltaT;
+  INT4 length = ceil(log10(x)/log10(2.));
+  lengthH    = pow(2, length);
+  REAL8TimeSeries *omega=NULL;
+  REAL8TimeSeries *Phi=NULL;
+  REAL8TimeSeries *LNhatx=NULL;
+  REAL8TimeSeries *LNhaty=NULL;
+  REAL8TimeSeries *LNhatz=NULL;
+  REAL8TimeSeries *S1x=NULL;
+  REAL8TimeSeries *S1y=NULL;
+  REAL8TimeSeries *S1z=NULL;
+  REAL8TimeSeries *S2x=NULL;
+  REAL8TimeSeries *S2y=NULL;
+  REAL8TimeSeries *S2z=NULL;
+  REAL8TimeSeries *Energy=NULL;
+
+  REAL8 iotaTmp=iota;
+  if (f_ref<=f_start) {
+    if (XLALSimIMRPhenSpinInitialize(mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,yinit,f_start,-1.,deltaT,phaseO,&params,waveFlags,testGRparams,XLALGetApproximantFromString("PhenSpinTaylor")))
+      XLAL_ERROR(XLAL_EFUNC);
+    if(XLALSimIMRPhenSpinInspiralSetAxis(&yinitOut,&iota,&phiN,yinit,iotaTmp,mass1,mass2,XLALSimInspiralGetFrameAxis(waveFlags)))
+      XLAL_ERROR(XLAL_EFUNC);
+    for (idx=0;idx<LAL_NUM_PST4_VARIABLES;idx++)
+      yinit[idx] = yinitOut[idx];
+    errcodeInt=XLALSimInspiralSpinTaylorT4Engine(&omega,&Phi,&LNhatx,&LNhaty,&LNhatz,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,&Energy,yinit,lengthH,PhenSpinTaylor,&params);
+    intLen=Phi->data->length;
+  }
+  else {
+    REAL8TimeSeries *Phi1,*omega1,*LNhatx1,*LNhaty1,*LNhatz1,*S1x1,*S1y1,*S1z1,*S2x1,*S2y1,*S2z1,*Energy1;
+    if (XLALSimIMRPhenSpinInitialize(mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,yinit,f_ref,f_start,deltaT,phaseO,&params,waveFlags,testGRparams,XLALGetApproximantFromString("PhenSpinTaylor")))
+      XLAL_ERROR(XLAL_EFUNC);
+    if(XLALSimIMRPhenSpinInspiralSetAxis(&yinitOut,&iota,&phiN,yinit,iotaTmp,mass1,mass2,XLALSimInspiralGetFrameAxis(waveFlags)))
+      XLAL_ERROR(XLAL_EFUNC);
+    for (idx=0;idx<LAL_NUM_PST4_VARIABLES;idx++)
+      yinit[idx] = yinitOut[idx];
+    REAL8 dyTmp[LAL_NUM_PST4_VARIABLES];
+    REAL8 energy;
+    XLALSpinInspiralDerivatives(0., yinit,dyTmp,&params);
+    energy=dyTmp[11]*params.dt/params.M+yinit[11];
+    yinit[11]=energy;
+
+    errcodeInt=XLALSimInspiralSpinTaylorT4Engine(&omega1,&Phi1,&LNhatx1,&LNhaty1,&LNhatz1,&S1x1,&S1y1,&S1z1,&S2x1,&S2y1,&S2z1,&Energy1,yinit,lengthH,PhenSpinTaylor,&params);
+
+    INT4 intLen1=Phi1->data->length;
+    /* report on abnormal termination*/
+    if ( (errcodeInt != LALSIMINSPIRAL_PST4_TEST_FREQBOUND ) ) {
+      XLALPrintError("** LALSimIMRPSpinInspiralRD WARNING **: integration terminated with code %d.\n",errcode);
+      XLALPrintError("   1025: Energy increases\n  1026: Omegadot -ve\n  1028: Omega NAN\n  1029: Freqbound\n  1030: Omega -ve\n");
+      XLALPrintError("  Waveform parameters were m1 = %14.6e, m2 = %14.6e, inc = %10.6f,  fref %10.4f Hz\n", m1, m2, iota, f_ref);
+      XLALPrintError("                           S1 = (%10.6f,%10.6f,%10.6f)\n", s1x, s1y, s1z);
+      XLALPrintError("                           S2 = (%10.6f,%10.6f,%10.6f)\n", s2x, s2y, s2z);
+    }
+
+    yinit[0] = Phi1->data->data[intLen1-1];
+    yinit[1] = omega1->data->data[intLen1-1];
+    yinit[2] = LNhatx1->data->data[intLen1-1];
+    yinit[3] = LNhaty1->data->data[intLen1-1];
+    yinit[4] = LNhatz1->data->data[intLen1-1];
+    yinit[5] = S1x1->data->data[intLen1-1];
+    yinit[6] = S1y1->data->data[intLen1-1];
+    yinit[7] = S1z1->data->data[intLen1-1];
+    yinit[8] = S2x1->data->data[intLen1-1];
+    yinit[9] = S2y1->data->data[intLen1-1];
+    yinit[10]= S2z1->data->data[intLen1-1];
+    yinit[11]= Energy1->data->data[intLen1-1];
+
+    REAL8TimeSeries *omega2,*Phi2,*LNhatx2,*LNhaty2,*LNhatz2,*S1x2,*S1y2,*S1z2,*S2x2,*S2y2,*S2z2,*Energy2;
+
+    params.fEnd=-1.;
+    params.dt*=-1.;
+    errcodeInt=XLALSimInspiralSpinTaylorT4Engine(&omega2,&Phi2,&LNhatx2,&LNhaty2,&LNhatz2,&S1x2,&S1y2,&S1z2,&S2x2,&S2y2,&S2z2,&Energy2,yinit,lengthH,PhenSpinTaylor,&params);
+
+    REAL8 phiRef=Phi1->data->data[Phi1->data->length-1];
+
+    omega =appendTSandFree(omega1,omega2);
+    Phi   =appendTSandFree(Phi1,Phi2);
+    LNhatx=appendTSandFree(LNhatx1,LNhatx2);
+    LNhaty=appendTSandFree(LNhaty1,LNhaty2);
+    LNhatz=appendTSandFree(LNhatz1,LNhatz2);
+    S1x   =appendTSandFree(S1x1,S1x2);
+    S1y   =appendTSandFree(S1y1,S1y2);
+    S1z   =appendTSandFree(S1z1,S1z2);
+    S2x   =appendTSandFree(S2x1,S2x2);
+    S2y   =appendTSandFree(S2y1,S2y2);
+    S2z   =appendTSandFree(S2z1,S2z2);
+    Energy=appendTSandFree(Energy1,Energy2);
+    intLen=Phi->data->length;
+    for (idx=0;idx<intLen;idx++) Phi->data->data[idx]-=phiRef;
+
+  }
+
+  /* report on abnormal termination*/
+  if ( (errcodeInt !=  LALSIMINSPIRAL_PST4_TEST_ENERGY) ) {
+    XLALPrintWarning("** LALSimIMRPSpinInspiralRD WARNING **: integration terminated with code %d.\n",errcode);
+    XLALPrintWarning("  Waveform parameters were m1 = %14.6e, m2 = %14.6e, inc = %10.6f,\n", m1, m2, iota);
+    XLALPrintWarning("                           S1 = (%10.6f,%10.6f,%10.6f)\n", s1x, s1y, s1z);
+    XLALPrintWarning("                           S2 = (%10.6f,%10.6f,%10.6f)\n", s2x, s2y, s2z);
+  }
+
+  LIGOTimeGPS tStart=LIGOTIMEGPSZERO;
+  COMPLEX16Vector* hL2tmp=XLALCreateCOMPLEX16Vector(5);
+  COMPLEX16Vector* hL3tmp=XLALCreateCOMPLEX16Vector(7);
+  COMPLEX16Vector* hL4tmp=XLALCreateCOMPLEX16Vector(9);
+  COMPLEX16TimeSeries* hL2=XLALCreateCOMPLEX16TimeSeries( "hL2", &tStart, 0., deltaT, &lalDimensionlessUnit, 5*intLen);
+  COMPLEX16TimeSeries* hL3=XLALCreateCOMPLEX16TimeSeries( "hL3", &tStart, 0., deltaT, &lalDimensionlessUnit, 7*intLen);
+  COMPLEX16TimeSeries* hL4=XLALCreateCOMPLEX16TimeSeries( "hL4", &tStart, 0., deltaT, &lalDimensionlessUnit, 9*intLen);
+  for (idx=0;idx<(int)hL2->data->length;idx++) hL2->data->data[idx]=0.;
+  for (idx=0;idx<(int)hL3->data->length;idx++) hL3->data->data[idx]=0.;
+  for (idx=0;idx<(int)hL4->data->length;idx++) hL4->data->data[idx]=0.;
+
+  REAL8TimeSeries *hPtmp=XLALCreateREAL8TimeSeries( "hPtmp", &tStart, 0., deltaT, &lalDimensionlessUnit, intLen);
+  REAL8TimeSeries *hCtmp=XLALCreateREAL8TimeSeries( "hCtmp", &tStart, 0., deltaT, &lalDimensionlessUnit, intLen);
+  COMPLEX16TimeSeries *hLMtmp=XLALCreateCOMPLEX16TimeSeries( "hLMtmp", &tStart, 0., deltaT, &lalDimensionlessUnit, intLen);
+  for (idx=0;idx<(int)hPtmp->data->length;idx++) {
+    hPtmp->data->data[idx]=0.;
+    hCtmp->data->data[idx]=0.;
+    hLMtmp->data->data[idx]=0.;
+  }
+
+  LALSimInspiralInclAngle trigAngle;
+
+  REAL8 amp22ini = -2.0 * m1*m2/(m1+m2) * LAL_G_SI/pow(LAL_C_SI,2.) / r * sqrt(16. * LAL_PI / 5.);
+  REAL8 amp33ini = -amp22ini * sqrt(5./42.)/4.;
+  REAL8 amp44ini = amp22ini * sqrt(5./7.) * 2./9.;
+  REAL8 alpha,v,v2,Psi,om;
+  REAL8 eta=mass1*mass2/(mass1+mass2)/(mass1+mass2);
+  REAL8 dm=(mass1-mass2)/(mass1+mass2);
+
+  for (idx=0;idx<intLen;idx++) {
+    om=omega->data->data[idx];
+    v=cbrt(om);
+    v2=v*v;
+    Psi=Phi->data->data[idx] -2.*om*(1.-eta*v2)*log(om);
+    errcode =XLALSimInspiralComputeAlpha(params,LNhatx->data->data[idx],LNhaty->data->data[idx],S1x->data->data[idx],S1y->data->data[idx],S2x->data->data[idx],S2y->data->data[idx],&alpha);
+
+    errcode+=XLALSimInspiralComputeInclAngle(LNhatz->data->data[idx],&trigAngle);
+    errcode+=XLALSimSpinInspiralFillL2Modes(hL2tmp,v,eta,dm,Psi,alpha,&trigAngle);
+    for (kdx=0;kdx<5;kdx++) hL2->data->data[5*idx+kdx]=hL2tmp->data[kdx]*amp22ini*v2;
+    errcode+=XLALSimSpinInspiralFillL3Modes(hL3tmp,v,eta,dm,Psi,alpha,&trigAngle);
+    for (kdx=0;kdx<7;kdx++) hL3->data->data[7*idx+kdx]=hL3tmp->data[kdx]*amp33ini*v2;
+    errcode+=XLALSimSpinInspiralFillL4Modes(hL4tmp,v,eta,dm,Psi,alpha,&trigAngle);
+    for (kdx=0;kdx<9;kdx++) hL4->data->data[9*idx+kdx]=hL4tmp->data[kdx]*amp44ini*v2*v2;
+  }
+  XLALDestroyCOMPLEX16Vector(hL2tmp);
+  XLALDestroyCOMPLEX16Vector(hL3tmp);
+  XLALDestroyCOMPLEX16Vector(hL4tmp);
+
+  XLALDestroyREAL8TimeSeries(omega);
+  XLALDestroyREAL8TimeSeries(Phi);
+  XLALDestroyREAL8TimeSeries(LNhatx);
+  XLALDestroyREAL8TimeSeries(LNhaty);
+  XLALDestroyREAL8TimeSeries(LNhatz);
+  XLALDestroyREAL8TimeSeries(S1x);
+  XLALDestroyREAL8TimeSeries(S1y);
+  XLALDestroyREAL8TimeSeries(S1z);
+  XLALDestroyREAL8TimeSeries(S2x);
+  XLALDestroyREAL8TimeSeries(S2y);
+  XLALDestroyREAL8TimeSeries(S2z);
+  XLALDestroyREAL8TimeSeries(Energy);
+
+  INT4 m,l;
+  LALSimInspiralModesChoice modesChoice=XLALSimInspiralGetModesChoice(waveFlags);
+  if ( ( modesChoice &  LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED) ==  LAL_SIM_INSPIRAL_MODES_CHOICE_RESTRICTED ) {
+    l=2;
+    for (m=-l;m<=l;m++) {
+      for (idx=0;idx<intLen;idx++) hLMtmp->data->data[idx]=hL2->data->data[(m+l)+idx*(2*l+1)];
+      XLALSimAddMode(hPtmp,hCtmp,hLMtmp,iota,phiN,l,m,0);
+    }
+  }
+  XLALDestroyCOMPLEX16TimeSeries(hL2);
+  if ( ( modesChoice &  LAL_SIM_INSPIRAL_MODES_CHOICE_3L) ==  LAL_SIM_INSPIRAL_MODES_CHOICE_3L ) {
+    l=3;
+    for (m=-l;m<=l;m++) {
+      for (idx=0;idx<intLen;idx++)
+      hLMtmp->data->data[idx]=hL3->data->data[(m+l)+idx*(2*l+1)];
+      XLALSimAddMode(hPtmp,hCtmp,hLMtmp,iota,phiN,l,m,0);
+    }
+  }
+  XLALDestroyCOMPLEX16TimeSeries(hL3);
+  if ( ( modesChoice &  LAL_SIM_INSPIRAL_MODES_CHOICE_3L) ==  LAL_SIM_INSPIRAL_MODES_CHOICE_3L ) {
+    l=4;
+    for (m=-l;m<=l;m++) {
+      for (idx=0;idx<intLen;idx++)
+        hLMtmp->data->data[idx]=hL4->data->data[(m+l)+idx*(2*l+1)];
+      XLALSimAddMode(hPtmp,hCtmp,hLMtmp,iota,phiN,l,m,0);
+    }
+  }
+  XLALDestroyCOMPLEX16TimeSeries(hL4);
+  XLALDestroyCOMPLEX16TimeSeries(hLMtmp);
+
+  REAL8 tPeak=intLen*deltaT;
+  if ((*hPlus) && (*hCross)) {
+    if ((*hPlus)->data->length!=(*hCross)->data->length) {
+      XLALPrintError("*** LALSimIMRPSpinInspiralRD ERROR: h+ and hx differ in length: %d vs. %d\n",(*hPlus)->data->length,(*hCross)->data->length);
+      XLAL_ERROR(XLAL_EFAILED);
+    }
+    else {
+      if ((int)(*hPlus)->data->length<intLen) {
+        XLALPrintError("*** LALSimIMRPSpinInspiralRD ERROR: h+ and hx too short: %d vs. %d\n",(*hPlus)->data->length,intLen);
+        XLAL_ERROR(XLAL_EFAILED);
+      }
+      else {
+        XLALGPSAdd(&((*hPlus)->epoch),-tPeak);
+        XLALGPSAdd(&((*hCross)->epoch),-tPeak);
+      }
+    }
+  }
+  else {
+    XLALGPSAdd(&tStart,-tPeak);
+    *hPlus  = XLALCreateREAL8TimeSeries("H+", &tStart, 0.0, deltaT, &lalDimensionlessUnit, intLen);
+    *hCross = XLALCreateREAL8TimeSeries("Hx", &tStart, 0.0, deltaT, &lalDimensionlessUnit, intLen);
+    if(*hPlus == NULL || *hCross == NULL)
+      XLAL_ERROR(XLAL_ENOMEM);
+  }
+
+  INT4 minLen=hPtmp->data->length < (*hPlus)->data->length ? hPtmp->data->length : (*hPlus)->data->length;
+  for (idx=0;idx<minLen;idx++) {
+    (*hPlus)->data->data[idx] =hPtmp->data->data[idx];
+    (*hCross)->data->data[idx]=hCtmp->data->data[idx];
+  }
+  for (idx=minLen;idx<(int)(*hPlus)->data->length;idx++) {
+    (*hPlus)->data->data[idx] =0.;
+    (*hCross)->data->data[idx]=0.;
+  }
+
+  XLALDestroyREAL8TimeSeries(hPtmp);
+  XLALDestroyREAL8TimeSeries(hCtmp);
+
+  return errcode;
+
+} /* End of XLALSimSpinInspiralGenerator*/
+
+INT4 XLALSimIMRPhenSpinFinalMassSpin(REAL8 *finalMass,
+                                    REAL8 *finalSpin,
+                                    REAL8 mass1,
+                                    REAL8 mass2,
+                                    REAL8 s1s1,
+                                    REAL8 s2s2,
+                                    REAL8 s1L,
+                                    REAL8 s2L,
+                                    REAL8 s1s2,
+                                    REAL8 energy)
+{
+  /* XLAL error handling */
+  INT4 errcode = XLAL_SUCCESS;
+  REAL8 qq,ll,eta;
+
+  /* See eq.(6) in arXiv:0904.2577 */
+  REAL8 ma1,ma2,a12,a12l;
+  REAL8 cosa1=0.;
+  REAL8 cosa2=0.;
+  REAL8 cosa12=0.;
+
+  REAL8 t0=-2.9;
+  REAL8 t3=2.6;
+  REAL8 s4=-0.123;
+  REAL8 s5=0.45;
+  REAL8 t2=16.*(0.6865-t3/64.-sqrt(3.)/2.);
+
+  /* get a local copy of the intrinstic parameters */
+  qq = mass2/mass1;
+  eta = mass1*mass2/((mass1+mass2)*(mass1+mass2));
+  /* done */
+  ma1 = sqrt( s1s1 );
+  ma2 = sqrt( s2s2 );
+
+  if (ma1>0.) cosa1 = s1L/ma1;
+  else cosa1=0.;
+  if (ma2>0.) cosa2 = s2L/ma2;
+  else cosa2=0.;
+  if ((ma1>0.)&&(ma2>0.)) {
+    cosa12  = s1s2/ma1/ma2;
+  }
+  else cosa12=0.;
+
+  a12  = ma1*ma1 + ma2*ma2*qq*qq*qq*qq + 2.*ma1*ma2*qq*qq*cosa12 ;
+  a12l = ma1*cosa1 + ma2*cosa2*qq*qq ;
+  ll = 2.*sqrt(3.)+ t2*eta + t3*eta*eta + s4*a12/(1.+qq*qq)/(1.+qq*qq) + (s5*eta+t0+2.)/(1.+qq*qq)*a12l;
+
+  /* Estimate final mass by adding the negative binding energy to the rest mass*/
+  *finalMass = 1. + energy;
+
+  /* Estimate final spin */
+  *finalSpin = sqrt( a12 + 2.*ll*qq*a12l + ll*ll*qq*qq)/(1.+qq)/(1.+qq);
+
+  /* Check value of finalMass */
+  if (*finalMass < 0.) {
+    XLALPrintWarning("*** LALSimIMRPSpinInspiralRD ERROR: Estimated final mass <0 : %12.6f\n ",*finalMass);
+    XLAL_ERROR( XLAL_ERANGE);
+  }
+
+  /* Check value of finalSpin */
+  if ((*finalSpin > 1.)||(*finalSpin < 0.)) {
+    if ((*finalSpin>=1.)&&(*finalSpin<1.01)) {
+      XLALPrintWarning("*** LALSimIMRPSpinInspiralRD WARNING: Estimated final Spin slightly >1 : %11.3e\n ",*finalSpin);
+      XLALPrintWarning("    (m1=%8.3f  m2=%8.3f  s1sq=%8.3f  s2sq=%8.3f  s1L=%8.3f  s2L=%8.3f  s1s2=%8.3f ) final spin set to 1 and code goes on\n",mass1,mass2,s1s1,s2s2,s1L,s2L,s1s2);
+      *finalSpin = .99999;
+    }
+    else {
+      XLALPrintError("*** LALSimIMRPSpinInspiralRD ERROR: Unphysical estimation of final Spin : %11.3e\n ",*finalSpin);
+      XLALPrintWarning("    (m1=%8.3f  m2=%8.3f  s1sq=%8.3f  s2sq=%8.3f  s1L=%8.3f  s2L=%8.3f  s1s2=%8.3f )\n",mass1,mass2,s1s1,s2s2,s1L,s2L,s1s2);
+      XLALPrintError("***                                    Code aborts\n");
+      XLAL_ERROR( XLAL_ERANGE);
+    }
+  }
+
+  return errcode;
+} /* End of XLALSimIMRPhenSpinFinalMassSpin*/
+
 /**
  * Driver routine for generating PhenSpinRD waveforms
  */
-
 INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,               /**< +-polarization waveform [returned] */
                                           REAL8TimeSeries **hCross,              /**< x-polarization waveform [returned] */
                                           REAL8 phi_start,                       /**< start phase */
@@ -1929,7 +2015,12 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
                                           REAL8 s2x,                             /**< x-component of dimensionless spin for object 2 */
                                           REAL8 s2y,                             /**< y-component of dimensionless spin for object 2 */
                                           REAL8 s2z,                             /**< z-component of dimensionless spin for object 2 */
-                                          INT4 phaseO,                            /**< twice post-Newtonian phase order */                                                     INT4 UNUSED ampO,                       /**< twice post-Newtonian amplitude order */
+                                          INT4 phaseO,                            /**< twice post-Newtonian phase order */
+                                          INT4 UNUSED ampO,                       /**< twice post-Newtonian amplitude order */
+                                          REAL8 lambda1,        /**< Tidal  par1*/
+                                          REAL8 lambda2,        /**< Tidal  par2*/
+                                          REAL8 quadparam1,     /**< Quad-monopole par1*/
+                                          REAL8 quadparam2,     /**< Quad-monopole par2*/
                                           LALSimInspiralWaveformFlags *waveFlags,/**< Choice of axis for input spin params */                                                 LALSimInspiralTestGRParam *testGRparams/**< Non-GR params */)
 {
 
@@ -1950,7 +2041,9 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
   REAL8 mass2=m2/LAL_MSUN_SI;
   REAL8 Mass=mass1+mass2;
   REAL8 Mtime=Mass*LAL_MTSUN_SI;
+  REAL8 phiN=0.;
 
+  REAL8 *yinitOut=NULL;
   REAL8 yinit[LAL_NUM_PST4_VARIABLES];
   yinit[0] = phi_start;
   yinit[1] = 0.;
@@ -1973,24 +2066,26 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
   INT4 length = ceil(log10(x)/log10(2.));
   lengthH    = pow(2, length);
 
+  REAL8 iotaTmp=iota;
   if (f_ref<=f_start) {
-    errcode=XLALSimIMRPhenSpinInitialize(mass1,mass2,yinit,f_start,-1.,deltaT,phaseO,&params,waveFlags,testGRparams,XLALGetApproximantFromString("PhenSpinTaylorRD"));
-    if(errcode) XLAL_ERROR(XLAL_EFUNC);
-    if(XLALSimIMRPhenSpinInspiralSetAxis(mass1,mass2,&iota,yinit,XLALSimInspiralGetFrameAxis(waveFlags))) {
+    if (XLALSimIMRPhenSpinInitialize(mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,yinit,f_start,-1.,deltaT,phaseO,&params,waveFlags,testGRparams,XLALGetApproximantFromString("PhenSpinTaylorRD")))
       XLAL_ERROR(XLAL_EFUNC);
-    }
+    if(XLALSimIMRPhenSpinInspiralSetAxis(&yinitOut,&iota,&phiN,yinit,iotaTmp,mass1,mass2,XLALSimInspiralGetFrameAxis(waveFlags)))
+      XLAL_ERROR(XLAL_EFUNC);
+    for (idx=0;idx<LAL_NUM_PST4_VARIABLES;idx++)
+      yinit[idx]=yinitOut[idx];
     errcodeInt=XLALSimInspiralSpinTaylorT4Engine(&omega,&Phi,&LNhatx,&LNhaty,&LNhatz,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,&Energy,yinit,lengthH,PhenSpinTaylorRD,&params);
     intLen=Phi->data->length;
   }
   else /* do both forward and backward integration*/ {
     REAL8TimeSeries *Phi1, *omega1, *LNhatx1, *LNhaty1, *LNhatz1;
     REAL8TimeSeries *S1x1, *S1y1, *S1z1, *S2x1, *S2y1, *S2z1, *Energy1;
-    errcode=XLALSimIMRPhenSpinInitialize(mass1,mass2,yinit,f_ref,f_start,deltaT,phaseO,&params,waveFlags,testGRparams,XLALGetApproximantFromString("PhenSpinTaylorRD"));
-    if(errcode) XLAL_ERROR(XLAL_EFUNC);
-    if(XLALSimIMRPhenSpinInspiralSetAxis(mass1,mass2,&iota,yinit,XLALSimInspiralGetFrameAxis(waveFlags))) {
+    if (XLALSimIMRPhenSpinInitialize(mass1,mass2,lambda1,lambda2,quadparam1,quadparam2,yinit,f_ref,f_start,deltaT,phaseO,&params,waveFlags,testGRparams,XLALGetApproximantFromString("PhenSpinTaylorRD")))
       XLAL_ERROR(XLAL_EFUNC);
-    }
-
+    if(XLALSimIMRPhenSpinInspiralSetAxis(&yinitOut,&iota,&phiN,yinit,iotaTmp,mass1,mass2,XLALSimInspiralGetFrameAxis(waveFlags)))
+      XLAL_ERROR(XLAL_EFUNC);
+    for (idx=0;idx<LAL_NUM_PST4_VARIABLES;idx++)
+      yinit[idx]=yinitOut[idx];
     REAL8 dyTmp[LAL_NUM_PST4_VARIABLES];
     REAL8 energy;
     XLALSpinInspiralDerivatives(0., yinit,dyTmp,&params);
@@ -2477,7 +2572,7 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
           for (idx=count; idx<count+nRDWave-1;idx++) {
 	    hLMtmp->data->data[idx]=rdwave1l2->data[idx-count+1]+I*rdwave2l2->data[idx-count+1];
 	  }
-          XLALSimAddMode(hPtmp,hCtmp,hLMtmp,iota,0.,l,m,0);
+          XLALSimAddMode(hPtmp,hCtmp,hLMtmp,iota,phiN,l,m,0);
 	}
         XLALDestroyREAL8Vector(rdwave1l2);
         XLALDestroyREAL8Vector(rdwave2l2);
@@ -2509,7 +2604,7 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
           errcode+=XLALSimIMRHybridRingdownWave(rdwave1l3,rdwave2l3,deltaT,mass1,mass2,inspWaveR,inspWaveI,modefreqs,matchrange);
           for (idx=intLen;idx<count;idx++)  hLMtmp->data->data[idx]=hL3->data->data[7*idx+(l+m)];
           for (idx=count;idx<nRDWave;idx++) hLMtmp->data->data[idx]=rdwave1l3->data[idx-count]+I*rdwave2l3->data[idx-count];
-          XLALSimAddMode(hPtmp,hCtmp,hLMtmp,iota,0.,l,m,0);
+          XLALSimAddMode(hPtmp,hCtmp,hLMtmp,iota,phiN,l,m,0);
         }
         XLALDestroyREAL8Vector(rdwave1l3);
         XLALDestroyREAL8Vector(rdwave2l3);
@@ -2542,7 +2637,7 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
                                                  inspWaveI,modefreqs,matchrange);
           for (idx=intLen;idx<count;idx++) hLMtmp->data->data[idx-intLen]=hL4->data->data[9*idx+(l+m)];
           for (idx=0;idx<nRDWave;idx++)    hLMtmp->data->data[count-intLen+idx]=rdwave1l4->data[idx]+I*rdwave2l4->data[idx];
-          XLALSimAddMode(hPtmp,hCtmp,hLMtmp,iota,0.,l,m,0);
+          XLALSimAddMode(hPtmp,hCtmp,hLMtmp,iota,phiN,l,m,0);
         }
         XLALDestroyREAL8Vector(rdwave1l4);
         XLALDestroyREAL8Vector(rdwave2l4);
@@ -2625,3 +2720,5 @@ INT4 XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hPlus,             
 
   return count;
 } /* End of XLALSimIMRPhenSpinInspiralRDGenerator*/
+
+/** @} */

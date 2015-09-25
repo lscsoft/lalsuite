@@ -48,24 +48,24 @@ int MPIrank, MPIsize;
 
 static INT4 readSquareMatrix(gsl_matrix *m, UINT4 N, FILE *inp) {
   UINT4 i, j;
-  
+
   for (i = 0; i < N; i++) {
     for (j = 0; j < N; j++) {
       REAL8 value;
       INT4 nread;
-      
+
       nread = fscanf(inp, " %lg ", &value);
-      
+
       if (nread != 1) {
 	fprintf(stderr, "Cannot read from matrix file (in %s, line %d)\n",
 		__FILE__, __LINE__);
 	exit(1);
       }
-      
+
       gsl_matrix_set(m, i, j, value);
     }
   }
-  
+
   return 0;
 }
 
@@ -81,7 +81,7 @@ REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *in
 void LALInferenceInitMCMCState(LALInferenceRunState *state);
 void LALInferenceInitMCMCState(LALInferenceRunState *state)
 {
-  
+
   if(state==NULL)
   {
     return;
@@ -91,7 +91,7 @@ void LALInferenceInitMCMCState(LALInferenceRunState *state)
   ProcessParamsTable *commandLine=state->commandLine;
   ProcessParamsTable *ppt=NULL;
   UINT4 i=0;
-  
+
   /* Initialize variable that will store the name of the last proposal function used */
   const char *initPropName = "INITNAME";
   LALInferenceAddVariable(state->proposalArgs, LALInferenceCurrentProposalName, &initPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_LINEAR);
@@ -123,7 +123,7 @@ void LALInferenceInitMCMCState(LALInferenceRunState *state)
   /* Make sure that our initial value is within the
    *     prior-supported volume. */
   LALInferenceCyclicReflectiveBound(currentParams, priorArgs);
-  
+
   /* Replace distance prior if changed for initial sample draw */
   if (changed_dist) {
       LALInferenceRemoveMinMaxPrior(state->priorArgs, "distance");
@@ -140,54 +140,54 @@ void LALInferenceInitMCMCState(LALInferenceRunState *state)
     gsl_matrix *covM = gsl_matrix_alloc(N,N);
     gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
     REAL8Vector *sigmaVec = XLALCreateREAL8Vector(N);
-    
-    
+
+
     if (readSquareMatrix(covM, N, inp)) {
       fprintf(stderr, "Error reading covariance matrix (in %s, line %d)\n",
 	      __FILE__, __LINE__);
       exit(1);
     }
-    
+
     gsl_matrix_memcpy(covCopy, covM);
-    
+
     for (i = 0; i < N; i++) {
       sigmaVec->data[i] = sqrt(gsl_matrix_get(covM, i, i)); /* Single-parameter sigma. */
     }
-    
+
     /* Set up eigenvectors and eigenvalues. */
     gsl_matrix *eVectors = gsl_matrix_alloc(N,N);
     gsl_vector *eValues = gsl_vector_alloc(N);
     REAL8Vector *eigenValues = XLALCreateREAL8Vector(N);
     gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(N);
     int gsl_status;
-    
+
     if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
       fprintf(stderr, "Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n",
 	      __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
       exit(1);
     }
-    
+
     for (i = 0; i < N; i++) {
       eigenValues->data[i] = gsl_vector_get(eValues,i);
     }
-    
+
     LALInferenceAddVariable(state->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(state->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
-    
+
     fprintf(stdout, "Jumping with correlated jumps in %d dimensions from file %s.\n",
 	    N, ppt->value);
-    
+
     fclose(inp);
     gsl_eigen_symmv_free(ws);
     gsl_matrix_free(covCopy);
     gsl_vector_free(eValues);
   }
-  
+
   /* Differential Evolution? */
   ppt=LALInferenceGetProcParamVal(commandLine, "--noDifferentialEvolution");
   if (!ppt) {
     fprintf(stderr, "Using differential evolution.\nEvery Nskip parameters will be stored for use in the d.e. jump proposal.\n");
-    
+
     state->differentialPoints = XLALCalloc(1, sizeof(LALInferenceVariables *));
     state->differentialPointsLength = 0;
     state->differentialPointsSize = 1;
@@ -197,7 +197,7 @@ void LALInferenceInitMCMCState(LALInferenceRunState *state)
     state->differentialPointsLength = 0;
     state->differentialPointsSize = 0;
   }
-  
+
   /* kD Tree NCell parameter. */
   ppt=LALInferenceGetProcParamVal(commandLine, "--kDNCell");
   if (ppt) {
@@ -217,10 +217,10 @@ void LALInferenceInitMCMCState(LALInferenceRunState *state)
     LALInferenceVariables *template = XLALCalloc(1,sizeof(LALInferenceVariables));
     size_t ndim = LALInferenceGetVariableDimensionNonFixed(currentParams);
     LALInferenceVariableItem *currentItem;
-    
+
     low = XLALMalloc(ndim*sizeof(REAL8));
     high = XLALMalloc(ndim*sizeof(REAL8));
-    
+
     currentItem = currentParams->head;
     i = 0;
     while (currentItem != NULL) {
@@ -230,20 +230,20 @@ void LALInferenceInitMCMCState(LALInferenceRunState *state)
       }
       currentItem = currentItem->next;
     }
-    
+
     tree = LALInferenceKDEmpty(low, high, ndim);
     LALInferenceCopyVariables(currentParams, template);
-    
+
     LALInferenceAddVariable(state->proposalArgs, "kDTree", &tree, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(state->proposalArgs, "kDTreeVariableTemplate", &template, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
   }
-  
+
   INT4 Neff = 0;
   ppt = LALInferenceGetProcParamVal(commandLine, "--Neff");
   if (ppt)
     Neff = atoi(ppt->value);
   LALInferenceAddVariable(state->algorithmParams, "Neff", &Neff, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
-  
+
   return;
 }
 
@@ -258,7 +258,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
   UINT4 nifo = 0;
   unsigned int n_basis, n_samples, time_steps;
   n_basis = 965;//TODO: have it read from file or from command line.
-  
+
   ProcessParamsTable *ppt=NULL;
   FILE *tempfp;
   if(LALInferenceGetProcParamVal(commandLine,"--roqtime_steps")){
@@ -267,7 +267,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
     fscanf (tempfp, "%u", &time_steps);
     fscanf (tempfp, "%u", &n_basis);
     fscanf (tempfp, "%u", &n_samples);
-  }  
+  }
 
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
@@ -456,7 +456,7 @@ void initializeMCMC(LALInferenceRunState *runState)
   UINT4 malmquist = 0;
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
     runState->prior=&LALInferenceInspiralSkyLocPrior;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") || 
+  } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") ||
              LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood") ||
              LALInferenceGetProcParamVal(commandLine, "--rosenbrockLikelihood") ||
              LALInferenceGetProcParamVal(commandLine, "--analyticnullprior")) {
@@ -591,7 +591,7 @@ void initializeMCMC(LALInferenceRunState *runState)
   ppt=LALInferenceGetProcParamVal(commandLine, "--noDifferentialEvolution");
   if (!ppt) {
     fprintf(stderr, "Using differential evolution.\nEvery Nskip parameters will be stored for use in the d.e. jump proposal.\n");
-    
+
     runState->differentialPoints = XLALCalloc(1, sizeof(LALInferenceVariables *));
     runState->differentialPointsLength = 0;
     runState->differentialPointsSize = 1;
@@ -603,13 +603,13 @@ void initializeMCMC(LALInferenceRunState *runState)
     runState->differentialPointsSize = 0;
     runState->differentialPointsSkip = 0;
   }
-  
+
   INT4 Neff = 0;
   ppt = LALInferenceGetProcParamVal(commandLine, "--Neff");
   if (ppt)
     Neff = atoi(ppt->value);
   LALInferenceAddVariable(runState->algorithmParams, "Neff", &Neff, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
-  
+
   return;
 
 }
@@ -631,13 +631,13 @@ REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *in
     strcpy(header, str);
     word = strtok(header, " \t");
     // Find column headers
-    while (strcmp(word,"cycle") && str != NULL) {
+    while (strcmp(word,"cycle") && strcmp(str,"") != 0) {
         fgets(str, 999, infile);
         strcpy(header, str);
         word = strtok(header, " \t");
     }
 
-    if (str == NULL) {
+    if (strcmp(str,"") == 0) {
         fprintf(stderr, "Couldn't find column headers in file %s\n",infileName);
         exit(1);
     }
@@ -716,7 +716,7 @@ REAL8 **parseMCMCoutput(char ***params, UINT4 *nInPar, UINT4 *nInSamps, char *in
     // Read in samples
     REAL8 **sampleArray;
     sampleArray = (REAL8**) XLALMalloc(nSamples * sizeof(REAL8*));
-    
+
     for (i = 0; i < nSamples; i++) {
         sampleArray[i] = XLALMalloc(nPar * sizeof(REAL8));
 
@@ -841,10 +841,10 @@ int main(int argc, char *argv[]){
 
   /* Choose the likelihood */
   LALInferenceInitLikelihood(runState);
- 
+
   /* Call the extra code that was removed from previous function */
   LALInferenceInitMCMCState(runState);
- 
+
   if(runState==NULL) {
     fprintf(stderr, "runState not allocated (%s, line %d).\n",
             __FILE__, __LINE__);

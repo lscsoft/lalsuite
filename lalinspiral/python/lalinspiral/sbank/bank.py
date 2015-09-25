@@ -20,6 +20,8 @@ from __future__ import division
 import bisect
 from operator import attrgetter
 
+import numpy as np
+
 try:
     from glue.iterutils import inorder, uniq
 except ImportError:
@@ -43,7 +45,7 @@ class lazy_nhoods(object):
 
 class Bank(object):
 
-    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0", coarse_match_df=None, iterative_match_df_max=None):
+    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0", coarse_match_df=None, iterative_match_df_max=None, fhigh_max=None):
         self.tmplt_class = tmplt_class
         self.noise_model = noise_model
         self.flow = flow
@@ -55,6 +57,11 @@ class Bank(object):
         if self.coarse_match_df and self.iterative_match_df_max and self.coarse_match_df < self.iterative_match_df_max:
             # If this case occurs coarse_match_df offers no improvement, turn off
             self.coarse_match_df = None
+
+        if fhigh_max is not None:
+            self.fhigh_max = (2**(np.ceil(np.log2( fhigh_max ))))
+        else:
+            self.fhigh_max = fhigh_max
 
         self.nhood_size = nhood_size
         self.nhood_param = "_" + nhood_param
@@ -122,14 +129,19 @@ class Bank(object):
 
     def covers(self, proposal, min_match):
         """
-        Return True if any template in the bank has match with proposal
-        greater than min_match.
+        Return (max_match, template) where max_match is either (i) the
+        best found match if max_match < min_match or (ii) the match of
+        the first template found with match >= min_match.  template is
+        the Template() object which yields max_match.
         """
+        max_match = 0
+        template = None
+
         # find templates in the bank "near" this tmplt
         prop_nhd = getattr(proposal, self.nhood_param)
         low, high = _find_neighborhood(self._nhoods, prop_nhd, self.nhood_size)
         tmpbank = self._templates[low:high]
-        if not tmpbank: return False
+        if not tmpbank: return (max_match, template)
 
         # sort the bank by its nearness to tmplt in mchirp
         # NB: This sort comes up as a dominating cost if you profile,
@@ -139,6 +151,8 @@ class Bank(object):
 
         # set parameters of match calculation that are optimized for this block
         df_end, f_max = get_neighborhood_df_fmax(tmpbank + [proposal], self.flow)
+        if self.fhigh_max:
+            f_max = min(f_max, self.fhigh_max)
         df_start = max(df_end, self.iterative_match_df_max)
 
         # find and test matches
@@ -162,6 +176,11 @@ class Bank(object):
                 PSD = get_PSD(df, self.flow, f_max, self.noise_model)
                 match = self.compute_match(tmplt, proposal, df, PSD=PSD)
 
+                # record match and template params for highest match
+                if match > max_match:
+                    max_match = match
+                    template = tmplt
+
                 # if the result is a really bad match, trust it isn't
                 # misrepresenting a good match
                 if (1 - match) > 4.0*(1 - min_match):
@@ -176,9 +195,9 @@ class Bank(object):
                 df /= 2.0
 
             if match > min_match:
-                return True
+                return (match, tmplt)
 
-        return False
+        return (max_match, template)
 
     def max_match(self, proposal):
         match, best_tmplt_ind = self.argmax_match(proposal)

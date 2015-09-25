@@ -20,16 +20,16 @@
 #ifndef __ANTENNA_H__
 #define __ANTENNA_H__
 
-#include <lal/AVFactories.h>
+#include <lal/VectorMath.h>
 #include <lal/DetectorStates.h>
 
-INT4 CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL8 Tsft, REAL4 dopplerMultiplier);
-INT4 CompBinShifts2(INT4Vector *output, SSBtimes *ssbTimes, REAL8 freq, REAL8 Tsft, REAL4 dopplerMultiplier);
-INT4 CompAntennaPatternWeights(REAL4Vector *output, SkyPosition skypos, REAL8 t0, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, BOOLEAN linPolOn, REAL8 polAngle, LALDetector det);
-INT4 CompAntennaVelocity(REAL4Vector *output, SkyPosition skypos, REAL8 t0, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat);
+INT4 CompBinShifts(INT4Vector *output, const SSBtimes *ssbTimes, const REAL8 freq, const REAL8 Tsft, const REAL4 dopplerMultiplier);
+INT4 CompAntennaPatternWeights(REAL4VectorAligned *output, const SkyPosition skypos, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const BOOLEAN linPolOn, const REAL8 polAngle, const LALDetector det);
+INT4 CompAntennaPatternWeights2(REAL4VectorAligned *output, const SkyPosition skypos, const LIGOTimeGPSVector *timestamps, const LALDetector det, const REAL8 *cosi, const REAL8 *psi);
+INT4 CompAntennaVelocity(REAL4VectorAligned *output, const SkyPosition skypos, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat);
 
-REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat);
-REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tsft, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat);
+REAL4 CompDetectorDeltaVmax(const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat);
+REAL4 CompDetectorVmax(const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat);
 
 #endif
 

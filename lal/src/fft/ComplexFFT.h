@@ -84,8 +84,8 @@ typedef struct tagCOMPLEX16FFTPlan COMPLEX16FFTPlan;
 #define ComplexFFTPlan COMPLEX8FFTPlan
 
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(VIEWIN_STRUCTS(COMPLEX8Vector, output));
-SWIGLAL(VIEWIN_STRUCTS(COMPLEX16Vector, output));
+SWIGLAL(VIEWIN_ARRAYS(COMPLEX8Vector, output));
+SWIGLAL(VIEWIN_ARRAYS(COMPLEX16Vector, output));
 #endif /* SWIG */
 
 /*

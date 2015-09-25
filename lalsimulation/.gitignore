@@ -18,6 +18,7 @@ doxygen/autogen.dox
 doxygen/doxygen.cfg
 doxygen/filter
 doxygen/out/
+doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
@@ -42,6 +43,7 @@ src/config.h.in
 src/lalsim-bh-qnmode
 src/lalsim-bh-ringdown
 src/lalsim-bh-sphwf
+src/lalsim-burst
 src/lalsim-detector-noise
 src/lalsim-detector-strain
 src/lalsim-inject

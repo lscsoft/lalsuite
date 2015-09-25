@@ -17,6 +17,192 @@
 *  MA  02111-1307  USA
 */
 
+/**
+ * @defgroup lalfr_vis lalfr-vis
+ * @ingroup lalframe_programs
+ *
+ * @brief Visualize frame data
+ *
+ * ### Synopsis
+ *
+ *     lalfr-vis --channel=channel --frame-cache=cachefile --start-time=tstart --duration=deltat [--output=outfile] [--highpass=minfreq] [--lowpass=maxfreq] [--pad=padding] [--resample=srate] [--spectrum=resolution]
+ *
+ *     lalfr-vis --channel=channel --frame-glob=globstring --start-time=tstart --duration=deltat [--output=outfile] [--highpass=minfreq] [--lowpass=maxfreq] [--pad=padding] [--resample=srate] [--spectrum=resolution]
+ *
+ *
+ * ### Description
+ *
+ * The `lalfr-vis` utility reads a requested interval
+ * [`tstart`,`tstart+deltat`) of `channel` data from frame files that are
+ * either indexed in the `cachefile` or matching the pattern `globstring` as
+ * described by `glob(3)`.  The output is written to `outfile` and the format
+ * of the output is deter- mined by extension of `outfile` as described below.
+ * If `outfile` is not specified, the output is written to the standard output
+ * in two-column ascii format data.
+ *
+ * The `lalfr-vis` can optionally perform certain manipulations of the data
+ * that is read, including:
+ *
+ * * High-pass filtering of the data.
+ * * Low-pass filtering of the data.
+ * * Resampling of the data.
+ * * Computing the power spectrum of the data.
+ *
+ * If any of the filtering or resampling operations are performed, it is
+ * recommended additional `padding` is used.  This additional data, before and
+ * after the requested interval, will be discarded before output (or before
+ * computing the power spectrum) which will remove filter transients.  Note
+ * that data will be read for the entire interval
+ * [`tstart-padding`,`tstart+deltat+padding`) and must be available.
+ * 
+ *
+ * ### Options
+ *
+ * <DL>
+ * <DT>`-h`, `--help`</DT>
+ * <DD>Prints the help message.</DD>
+ * <DT>`-c channel`, `--channel=channel`</DT>
+ * <DD>The channel name that is to be read.</DD>
+ * <DT>`-f cachefile`, `--frame-cache=cachefile`</DT>
+ * <DD>The cachefile indexing the frame files to be used.</DD>
+ * <DT>`-g globstring `, `--frame-glob=globstring`</DT>
+ * <DD>The globstring identifying the frame files to be used.</DD>
+ * <DT>`-o outfile`, `--output=outfile`</DT>
+ * <DD>The  `outfile` to use.  The extension of `outfile` is used to determine
+ * the format of the output.  The output formats are described below. </DD>
+ * <DT>`-s tstart`, `--start-time=tstart`</DT>
+ * <DD>The time `tstart` GPS seconds of the data to read.  If padding is
+ * specified with the `-P` option or the `--pad` option, an additional amount
+ * of data preceding `tstart` is also read, and discarded after any requested
+ * filtering of the data is complete.</DD>
+ * <DT>`-t deltat`, `--duration=deltat`</DT>
+ * <DD>The duration `deltat` in seconds of data to read.  If padding is
+ * specified with the `-P` option or the `--pad` option, an additional amount
+ * of data is also read, and discarded after  any  requested filtering of the
+ * data is complete.</DD>
+ * <DT>`-H minfreq`, `--highpass=minfreq`</DT>
+ * <DD>High-pass filter the data at `minfreq` Hertz.  An additional amount of
+ * data, which will be discarded after the filtering, should be specified with
+ * the `-P` option or the `--pad` option to remove filter transients.</DD>
+ * <DT>`-L maxfreq`, `--lowpass=maxfreq`</DT>
+ * <DD>Low-pass filter the data at `maxfreq` Hertz.  An additional amount of
+ * data, which will be discarded after the filtering, should be specified with
+ * the `-P` option or the `--pad` option to remove filter transients.</DD>
+ * <DT>`-P padding`, `--pad=padding`</DT>
+ * <DD>Read padding additional seconds of data before and after the requested
+ * interval.  This data is then dropped after all requested filtering has been
+ * performed in order to remove filter transients.</DD> 
+ * <DT>`-R srate`, `--resample=srate`</DT>
+ * <DD>Resample the data to sampling rate `srate` Hertz.  An additional amount
+ * of data, which will be discarded after the filtering, should be specified
+ * with the `-P` option or the `--pad` option to remove filter transients.</DD> 
+ * <DT>`-S resolution`, `--spectrum=resolution`</DT>
+ * <DD>Compute the power spectrum of the data at the requested `resolution` in
+ * Hertz.  Depending on the output format, either the amplitude spectral
+ * density or the power spectral density is output.</DD>
+ * </DL>
+ *
+ * ### Output Formats
+ *
+ * If the -o or --output option is used to specify an output file, the
+ * extension  of that file is used to determine the output format.  Supported
+ * output formats include:
+ * <DL>
+ * <DT>`.au`</DT>
+ * <DD>Au audio file format.  This format is for time-series data only and may
+ * not be used if the `-S` or the `--spectrum` option is used.</DD>
+ * <DT>`.eps`</DT>
+ * <DD>Encapsulated PostScript (EPS) graphical file format.  A plot of the data
+ * values as a function of time is produced using the `gnuplot(1)` program, if
+ * available.  If the `-S` or the `--spectrum` option is used, a log-log plot
+ * of the amplitude spectrum is produced instead.</DD>
+ * <DT>`.gif`</DT>
+ * <DD>Graphics Interchange Format (GIF) graphical file format.  A plot of the
+ * data values as a function of time is produced using the `gnuplot(1)`
+ * program, if available.  If the `-S` or the `--spectrum` option is used, a
+ * log-log plot of the amplitude spectrum is produced instead.</DD>
+ * <DT>`.jpg`</DT>
+ * <DD>JPEG graphical file format.  A plot of the data values as a function of
+ * time is produced using the `gnuplot(1)` program, if available.  If the `-S`
+ * or the `--spectrum` option is used, a log-log plot of the amplitude spectrum
+ * is produced instead.</DD>
+ * <DT>`.pdf`</DT>
+ * <DD>Portable Document Format (PDF) graphical file format.  A plot of the
+ * data values as a function of time is produced using the `gnuplot(1)`
+ * program, if available.  If the `-S` or the `--spectrum` option is used, a
+ * log-log plot of the amplitude spectrum is produced instead.</DD>
+ * <DT>`.png`</DT>
+ * <DD>Portable Network Graphics (PNG) graphical file format.  A plot of the
+ * data values as a function of time is produced using the `gnuplot(1)`
+ * program, if available.  If the `-S` or the `--spectrum` option is used, a
+ * log-log plot of the amplitude spectrum is produced instead.</DD>
+ * <DT>`.ps`</DT>
+ * <DD>PostScript (PS) graphical file format.  A plot of the data values as a
+ * function of time is produced using the `gnuplot(1)` program, if available.
+ * If the `-S` or the `--spectrum` option is used, a log-log plot of the
+ * amplitude spectrum is produced instead.</DD>
+ * <DT>`.svg`</DT>
+ * <DD>Scalable Vector Graphics (SVG) graphical file format.  A plot of the
+ * data values as a function of time is produced using the `gnuplot(1)`
+ * program, if available.  If the `-S` or the `--spectrum` optione used, a
+ * log-log plot of the amplitude spectrum is produced instead.</DD>
+ * <DT>`.wav`</DT>
+ * <DD>Waveform Audio File Format (WAVE) audio file format.  This format is for
+ * time-series data only and may not be used if the `-S` or the `--spectrum`
+ * option is used.</DD>
+ * <DT>`.xml`</DT>
+ * <DD>XML-based LIGO-lightweight (LIGOLw) file format.  If the `-S` or the
+ * `--spectrum` option is used, the power spectral density data is written to
+ * the file.</DD>
+ * </DL>
+ *
+ * If none of these extensions are used then the output will be in two-column
+ * ascii format.  The first column will be the GPS time of each sample of data
+ * and the second column will be the sample values.  However, if the `-S` or
+ * the `--spectrum` option is used, the first column will be the frequency of
+ * each sample of the spectrum and the second column will be the value of the
+ * power spectral density at that frequency.
+ * 
+ *
+ * ### Environment
+ * 
+ * The `LAL_DEBUG_LEVEL` can used to control the error and warning reporting of
+ * `lalfr-vis`.  Common values are: `LAL_DEBUG_LEVEL=0` which suppresses error
+ * messages, `LAL_DEBUG_LEVEL=1`  which prints error messages alone,
+ * `LAL_DEBUG_LEVEL=3` which prints both error messages and warning messages,
+ * and `LAL_DEBUG_LEVEL=7` which additionally prints informational messages.
+ *
+ *
+ * ### Exit Status
+ *
+ * The `lalfr-vis` utility exits 0 on success, and >0 if an error occurs.
+ *
+ * ### Examples
+ * 
+ * The command:
+ * 
+ *     lalfr-vis -c H1:LSC-STRAIN -g "H-*.gwf" -s 1000000000 -t 16 -o out.wav
+ *
+ * will read 16 seconds beginning at GPS time 1000000000 of `H1:LSC-STRAIN`
+ * data from frame files matching `H-*.gwf` in the current directory and output
+ * the data as a WAVE audio file `out.wav`.
+ *
+ * The command:
+ *
+ *     lalfr-vis -c L1:LSC-STRAIN -f LLO.cache -s 1000000001 -t 64 -R 2048 -H 10 -L 1000 -P 1 -S 0.25 -o out.png
+ *
+ * will read 66 seconds beginning at GPS time 1000000000 of `L1:LSC-STRAIN`
+ * data from frame files indexed in `LLO.cache`, and the following
+ * manipulations will be performed: the data will be resampled to a sampling
+ * rate of 2048 Hz, the data will be high-pass filtered at 10 Hz, the data will
+ * be low-pass filtered at 1000 Hz, the first and last 1 second of data will be
+ * dropped (to remove filter transients), a power spectrum will be computed
+ * with 0.25 Hz resolution, and a PNG file displaying a log-log plot of the
+ * amplitude spectral density will output in file `out.pnd`.
+ *
+ * @sa lalfr_stream
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
