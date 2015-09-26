@@ -609,6 +609,33 @@ void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariab
   return;
 }
 
+
+void LALInferenceCopyUnsetREAL8Variables(LALInferenceVariables *origin, LALInferenceVariables *target, ProcessParamsTable *commandLine) {
+/*  Copy REAL8s from "origin" to "target" if they weren't set on the command line */
+    LALInferenceVariableItem *ptr;
+    char valopt[VARNAME_MAX+3];
+
+    /* Check that the source and origin differ */
+    if (origin==target)
+        return;
+
+    if (!origin)
+        XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to access origin pointer.");
+
+    /* Make sure the structure is initialised */
+    if (!target)
+        XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to copy to uninitialised LALInferenceVariables structure.");
+
+    for (ptr = origin->head; ptr; ptr = ptr->next) {
+        if (LALInferenceGetVariableType(origin, ptr->name) == LALINFERENCE_REAL8_t) {
+            sprintf(valopt, "--%s", ptr->name);
+
+            if (!LALInferenceGetProcParamVal(commandLine, valopt))
+                LALInferenceSetREAL8Variable(target, ptr->name, *(REAL8 *)ptr->value);
+        }
+    }
+}
+
 /** Prints a variable item to a string (must be pre-allocated!) */
 void LALInferencePrintVariableItem(char *out,const LALInferenceVariableItem *const ptr)
 {

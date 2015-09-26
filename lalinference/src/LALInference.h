@@ -309,6 +309,9 @@ void LALInferenceClearVariables(LALInferenceVariables *vars);
 /** Deep copy the variables from one to another LALInferenceVariables structure */
 void LALInferenceCopyVariables(LALInferenceVariables *origin, LALInferenceVariables *target);
 
+/*  Copy REAL8s from "origin" to "target" if they weren't set on the command line */
+void LALInferenceCopyUnsetREAL8Variables(LALInferenceVariables *origin, LALInferenceVariables *target, ProcessParamsTable *commandLine);
+
 /** Print variables to stdout */
 void LALInferencePrintVariables(LALInferenceVariables *var);
 
