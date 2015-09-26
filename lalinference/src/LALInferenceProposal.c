@@ -2900,13 +2900,12 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
   MatchedFilterSNR *= new_x/old_x;
   LALInferenceSetREAL8Variable(proposedParams,"optimal_snr",OptimalSNR);
   LALInferenceSetREAL8Variable(proposedParams,"matched_filter_snr",MatchedFilterSNR);
-  REAL8 *snr_ptr=NULL;
-  if((snr_ptr=LALInferenceGetVariable(currentParams,"H1_optimal_snr")))
-    LALInferenceSetREAL8Variable(proposedParams,"H1_optimal_snr",*snr_ptr * (new_x/old_x));
-  if((snr_ptr=LALInferenceGetVariable(currentParams,"L1_optimal_snr")))
-    LALInferenceSetREAL8Variable(proposedParams,"L1_optimal_snr",*snr_ptr * (new_x/old_x));
-  if((snr_ptr=LALInferenceGetVariable(currentParams,"V1_optimal_snr")))
-    LALInferenceSetREAL8Variable(proposedParams,"V1_optimal_snr",*snr_ptr * (new_x/old_x));
+  if(LALInferenceCheckVariable(currentParams,"H1_optimal_snr"))
+    LALInferenceSetREAL8Variable(proposedParams,"H1_optimal_snr",LALInferenceGetREAL8Variable(currentParams,"H1_optimal_snr") * (new_x/old_x));
+  if(LALInferenceCheckVariable(currentParams,"L1_optimal_snr"))
+    LALInferenceSetREAL8Variable(proposedParams,"L1_optimal_snr",LALInferenceGetREAL8Variable(currentParams,"L1_optimal_snr") * (new_x/old_x));
+  if(LALInferenceCheckVariable(currentParams,"V1_optimal_snr"))
+    LALInferenceSetREAL8Variable(proposedParams,"V1_optimal_snr",LALInferenceGetREAL8Variable(currentParams,"V1_optimal_snr") * (new_x/old_x));
   
   
   REAL8 logxdjac;
