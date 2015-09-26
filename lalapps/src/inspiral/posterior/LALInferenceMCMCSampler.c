@@ -861,7 +861,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     /* Excute swap proposal. */
     if (*runPhase_p == LALINFERENCE_ONLY_PT || *runPhase_p == LALINFERENCE_TEMP_PT) {
       swapReturn = parallelSwap(runState, ladder, i, swapfile);
-      if (propStats) {
+      if (propStats && MPIrank < nChain-1) {
         if (swapReturn != NO_SWAP_PROPOSED) {
           propStat = ((LALInferenceProposalStatistics *)LALInferenceGetVariable(propStats, parallelSwapProposalName));
           propStat->proposed++;
