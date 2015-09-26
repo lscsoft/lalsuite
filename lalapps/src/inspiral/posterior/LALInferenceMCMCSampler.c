@@ -182,15 +182,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     char swapfilename[256];
 
     if (tempVerbose) {
-        for (t = 0; t < n_local_threads; t++) {
-            sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
-            swapfile = fopen(swapfilename, "w");
+        sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
+        swapfile = fopen(swapfilename, "w");
 
-            fprintf(swapfile,
-                "cycle\tlog(chain_swap)\tlow_temp_likelihood\thigh_temp_likelihood\tswap_accepted\n");
+        fprintf(swapfile,
+            "cycle\tlow_temp\thigh_temp\tlog(chain_swap)\tlow_temp_likelihood\thigh_temp_likelihood\tswap_accepted\n");
 
-            fclose(swapfile);
-        }
+        fclose(swapfile);
     }
 
     if (adaptVerbose) {
@@ -405,8 +403,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
         /* Open swap file if going verbose */
         if (tempVerbose) {
-            sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
-            swapfile = fopen(swapfilename, "w");
+            sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
+            swapfile = fopen(swapfilename, "a");
         }
 
         /* Excute swap proposal. */
@@ -571,13 +569,11 @@ void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile) {
                     swapAccepted = 0;
 
                 /* Print to file if verbose is chosen */
-                if (swapfile != NULL) {
+                if (swapfile != NULL)
                     fprintf(swapfile, "%d\t%f\t%f\t%f\t%f\t%f\t%i\n",
                             hot_thread->step, cold_thread->temperature, hot_thread->temperature,
                             logThreadSwap, cold_thread->currentLikelihood,
                             hot_thread->currentLikelihood, swapAccepted);
-                    fflush(swapfile);
-                }
 
                 if (swapAccepted) {
                     temp_params = hot_thread->currentParams;
