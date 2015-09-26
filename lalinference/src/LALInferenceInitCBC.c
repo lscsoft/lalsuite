@@ -108,6 +108,8 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
         XLAL_ERROR_VOID(XLAL_EINVAL);
     }
 
+    LALInferenceVariables *priorDraw = XLALCalloc(1, sizeof(LALInferenceVariables));
+
     LALInferenceThreadState *thread = run_state->threads[0];
     INT4 t;
 
@@ -134,9 +136,11 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
     for (t = 0; t < run_state->nthreads; t++) {
         thread = run_state->threads[t];
 
-        LALInferenceDrawApproxPrior(thread,
-                                    thread->currentParams,
-                                    thread->currentParams);
+        /* Try not to clobber values given on the command line */
+        LALInferenceCopyVariables(thread->currentParams, priorDraw);
+        LALInferenceDrawApproxPrior(thread, priorDraw, priorDraw);
+        LALInferenceCopyUnsetREAL8Variables(priorDraw, thread->currentParams,
+                                            run_state->commandLine);
 
         while (run_state->prior(run_state,
                                 thread->currentParams,
