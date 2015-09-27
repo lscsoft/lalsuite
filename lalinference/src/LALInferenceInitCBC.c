@@ -1048,7 +1048,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   LALInferenceAddVariable(priorArgs, "psdGaussianPrior", &psdGaussianPrior,  LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
 
   ppt = LALInferenceGetProcParamVal(commandLine, "--glitchFit");
-  if (ppt) {
+  if (ppt)
       printf("WARNING: --glitchFit has been deprecated in favor of --glitch-fit\n");
   else
       ppt = LALInferenceGetProcParamVal(commandLine, "--glitch-fit");
