@@ -164,7 +164,9 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 
     //null log likelihood logic doesn't work with noise parameters
     } else if (LALInferenceGetProcParamVal(runState->commandLine,"--psdFit") ||
-       LALInferenceGetProcParamVal(runState->commandLine,"--glitchFit")) {
+       LALInferenceGetProcParamVal(runState->commandLine,"--psd-fit") ||
+       LALInferenceGetProcParamVal(runState->commandLine,"--glitchFit") ||
+       LALInferenceGetProcParamVal(runState->commandLine,"--glitch-fit")) {
            nullLikelihood = 0.0;
            ifo = runState->data;
            while (ifo != NULL) {

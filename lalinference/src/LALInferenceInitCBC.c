@@ -945,6 +945,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   UINT4 j = 0;
 
   ppt = LALInferenceGetProcParamVal(commandLine, "--psdFit");
+  if (ppt) {
+      printf("WARNING: --psdFit has been deprecated in favor of --psd-fit\n");
+  } else {
+      ppt = LALInferenceGetProcParamVal(commandLine, "--psd-fit");
+  }
   if(ppt)//MARK: Here is where noise PSD parameters are being added to the model
   {
 
@@ -1042,7 +1047,13 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   if(ppt)psdGaussianPrior=0;
   LALInferenceAddVariable(priorArgs, "psdGaussianPrior", &psdGaussianPrior,  LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
 
-  if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state, model->params);
+  ppt = LALInferenceGetProcParamVal(commandLine, "--glitchFit");
+  if (ppt) {
+      printf("WARNING: --glitchFit has been deprecated in favor of --glitch-fit\n");
+  else
+      ppt = LALInferenceGetProcParamVal(commandLine, "--glitch-fit");
+  if (ppt)
+      LALInferenceInitGlitchVariables(state, model->params);
 
   /* Handle, if present, requests for calibration parameters. */
   LALInferenceInitCalibrationVariables(state, model->params);

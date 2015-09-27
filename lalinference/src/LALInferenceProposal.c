@@ -381,7 +381,10 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     if (LALInferenceGetProcParamVal(command_line, "--enable-spline-calibration"))
         spline_cal = 1;
 
-    if (LALInferenceGetProcParamVal(command_line, "--psd-fit"))
+    ppt = LALInferenceGetProcParamVal(command_line, "--psd-fit");
+    if (!ppt)
+        ppt = LALInferenceGetProcParamVal(command_line, "--psdFit");
+    if (ppt)
         psdfit = 1;
 
     if (LALInferenceGetProcParamVal(command_line, "--glitch-fit"))
