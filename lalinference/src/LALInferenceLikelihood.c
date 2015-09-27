@@ -206,7 +206,7 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 
    INT4 t;
    for(t=0; t < runState->nthreads; t++)
-       thread->nullLikelihood = nullLikelihood;
+       runState->threads[t]->nullLikelihood = nullLikelihood;
 
    LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood,
                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
