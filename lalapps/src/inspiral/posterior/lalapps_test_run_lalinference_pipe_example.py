@@ -17,6 +17,10 @@ parser.add_argument('-x','--injection_file', type=str, nargs='?',
                     default='fiducialBNS.xml',
                     help='injection file.')
 
+parser.add_argument('--gracedb', action='store_true',
+                    default=False,
+                    help='Runs the analysis for the GraceDB test event T169545.')
+
 parser.add_argument('-e','--engine', type=str, nargs='?',
                     default='lalinferencemcmc',
                     help='lalinference engine to run with.')
@@ -156,12 +160,6 @@ subprocess.call(lalinferenceargs)
 
 ###################################################
 
-os.makedirs(args.output+'/GraceDB/')
-os.chdir(args.output+'/GraceDB/')
-
-shutil.copy(ini_file,args.output+'/GraceDB/'+os.path.basename(ini_file)+'.bak')
-shutil.copy(ini_file,args.output+'/GraceDB/')
-
 def replace_GraceDB(line):
     if 'webdir=' in line:
         return line.replace(line.split('=')[-1],os.getcwd()+'/webdir/')
@@ -189,25 +187,34 @@ def replace_GraceDB(line):
         return line+'distance-max=300\n'
     return line
 
-with open(args.output+'/GraceDB/'+os.path.basename(ini_file),'w') as fout:
-    with open(args.output+'/GraceDB/'+os.path.basename(ini_file)+'.bak','r') as fin:
-        for line in fin:
-            fout.write(replace_GraceDB(line))
+if args.gracedb:
 
-lalinferenceargs = [ 'lalinference_pipe'
-		     , '--gid'
-		     , 'T169545'
-		     , '-r'
-		     , './run'
-		     , '-p'
-		     , './daglog'
-		     , args.output+'/GraceDB/'+os.path.basename(ini_file)
-		     , '--dax'
-		     , '--grid-site'
-		     , 'local'
-                     ]
+    os.makedirs(args.output+'/GraceDB/')
+    os.chdir(args.output+'/GraceDB/')
 
-if args.pegasus_submit:
-    lalinferenceargs.append('--pegasus-submit')
+    shutil.copy(ini_file,args.output+'/GraceDB/'+os.path.basename(ini_file)+'.bak')
+    shutil.copy(ini_file,args.output+'/GraceDB/')
 
-subprocess.call(lalinferenceargs)
+
+    with open(args.output+'/GraceDB/'+os.path.basename(ini_file),'w') as fout:
+        with open(args.output+'/GraceDB/'+os.path.basename(ini_file)+'.bak','r') as fin:
+            for line in fin:
+                fout.write(replace_GraceDB(line))
+
+    lalinferenceargs = [ 'lalinference_pipe'
+                         , '--gid'
+                         , 'T169545'
+                         , '-r'
+                         , './run'
+                         , '-p'
+                         , './daglog'
+                         , args.output+'/GraceDB/'+os.path.basename(ini_file)
+                         , '--dax'
+                         , '--grid-site'
+                         , 'local'
+                         ]
+
+    if args.pegasus_submit:
+        lalinferenceargs.append('--pegasus-submit')
+
+    subprocess.call(lalinferenceargs)
