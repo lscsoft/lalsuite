@@ -1143,11 +1143,6 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInfere
     fprintf(threadoutput, "cycle\tlogpost\tlogprior\t");
     LALInferenceFprintParameterNonFixedHeaders(threadoutput, thread->currentParams);
 
-    /* Check for spline calibration parameters */
-    if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
-        (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active")))
-        LALInferenceFprintSplineCalibrationHeader(threadoutput, thread);
-
     /* Print the likelihood and SNR of each individual detector */
     fprintf(threadoutput, "logl\t");
     fprintf(threadoutput, "deltalogl\t");
@@ -1180,9 +1175,6 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInfere
             thread->currentPrior);
 
     LALInferencePrintSampleNonFixed(threadoutput, thread->currentParams);
-    if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
-        (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active")))
-        LALInferencePrintSplineCalibration(threadoutput, thread);
 
     fprintf(threadoutput, "%f\t", thread->currentLikelihood);
     fprintf(threadoutput, "%f\t", thread->currentLikelihood - thread->nullLikelihood);
@@ -1395,11 +1387,6 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
             iteration, (thread->currentLikelihood - thread->nullLikelihood) + thread->currentPrior, thread->currentPrior);
 
     LALInferencePrintSampleNonFixed(threadoutput, thread->currentParams);
-
-    if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
-        (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active"))) {
-        LALInferencePrintSplineCalibration(threadoutput, thread);
-    }
 
     fprintf(threadoutput,"%f\t", thread->currentLikelihood);
     fprintf(threadoutput,"%f\t", thread->currentLikelihood - thread->nullLikelihood);
