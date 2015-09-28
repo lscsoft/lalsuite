@@ -414,10 +414,12 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
 	  // Remove time variable so it can be over-written (if it was pinned)
 	  if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
       LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-      model->templt(model);
-      LALInferenceTemplateROQ_amp_squared(model);
-      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+      INT4 errnum=0;
+      XLAL_TRY(model->templt(model),errnum);
+      if(errnum==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
         return(-DBL_MAX);
+
+      LALInferenceTemplateROQ_amp_squared(model);
 
       if (model->domain == LAL_SIM_DOMAIN_TIME) {
         /* TD --> FD. */
@@ -797,8 +799,9 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 				if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
 				LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
 
-				model->templt(model);
-				if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+                INT4 errnum=0;
+				XLAL_TRY(model->templt(model),errnum);
+				if(errnum==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
 						return(-DBL_MAX);
 
 				if (model->domain == LAL_SIM_DOMAIN_TIME) {
@@ -1484,8 +1487,9 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
       if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
       LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
 
-      model->templt(model);
-      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+      INT4 errnum=0;
+      XLAL_TRY(model->templt(model),errnum);
+      if(errnum==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
           return(-DBL_MAX);
     }
         /* Template is now in model->timeFreqhPlus and hCross */
@@ -1700,7 +1704,10 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
 					double pi2 = M_PI / 2.0;
 					LALInferenceAddVariable(model->params, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 			}
-			model->templt(model);
+            INT4 errnum=0;
+            XLAL_TRY(model->templt(model),errnum);
+            if(errnum==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+                 return;
 
 			if (model->domain == LAL_SIM_DOMAIN_TIME) {
 					/* TD --> FD. */
