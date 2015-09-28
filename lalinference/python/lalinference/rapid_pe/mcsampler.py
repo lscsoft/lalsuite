@@ -22,6 +22,7 @@ import sys
 import math
 import bisect
 import itertools
+import time
 from collections import defaultdict
 
 import numpy
@@ -115,7 +116,7 @@ class MCSampler(object):
         self.rlim = {}
         self.adaptive = []
 
-    def add_parameter(self, params, pdf,  cdf_inv=None, left_limit=None, right_limit=None, prior_pdf=None, adaptive_sampling=False):
+    def add_parameter(self, params, pdf, cdf_inv=None, left_limit=None, right_limit=None, prior_pdf=None, adaptive_sampling=False):
         """
         Add one (or more) parameters to sample dimensions. params is either a string describing the parameter, or a tuple of strings. The tuple will indicate to the sampler that these parameters must be sampled together. left_limit and right_limit are on the infinite interval by default, but can and probably should be specified. If several params are given, left_limit, and right_limit must be a set of tuples with corresponding length. Sampling PDF is required, and if not provided, the cdf inverse function will be determined numerically from the sampling PDF.
         """
@@ -141,6 +142,7 @@ class MCSampler(object):
             else:
                 self.rlim[params] = right_limit
         self.pdf[params] = pdf
+            
         # FIXME: This only works automagically for the 1d case currently
         self.cdf_inv[params] = cdf_inv or self.cdf_inverse(params)
         if not isinstance(params, tuple):
@@ -326,14 +328,14 @@ class MCSampler(object):
 
         int_val1 = numpy.float128(0)
         self.ntotal = 0
-        maxval = -float("Inf")
+        old_maxval, maxval = -float("Inf"), -float("Inf")
         maxlnL = -float("Inf")
         eff_samp = 0
         mean, var = None, None
         last_convergence_test = defaultdict(lambda: False)   # initialize record of tests
 
         if show_evaluation_log:
-            print "iteration Neff  sqrt(2*lnLmax) sqrt(2*lnLmarg) ln(Z/Lmax) int_var"
+            print "walltime : iteration Neff  ln(maxweight) lnLmarg ln(Z/Lmax) int_var"
 
         while (eff_samp < neff and self.ntotal < nmax): #  and (not bConvergenceTests):
             # Draw our sample points
@@ -434,7 +436,7 @@ class MCSampler(object):
                 raise NanOrInf("maxlnL = inf")
 
             if show_evaluation_log:
-                print " :",  self.ntotal, eff_samp, numpy.sqrt(2*maxlnL), numpy.sqrt(2*numpy.log(int_val1/self.ntotal)), numpy.log(int_val1/self.ntotal)-maxlnL, numpy.sqrt(var*self.ntotal)/int_val1
+                print int(time.time()), ": ", self.ntotal, eff_samp, math.log(maxval), numpy.log(int_val1/self.ntotal), numpy.log(int_val1/self.ntotal)-maxlnL, numpy.sqrt(var*self.ntotal)/int_val1
 
             if (not convergence_tests) and self.ntotal >= nmax and neff != float("inf"):
                 print >>sys.stderr, "WARNING: User requested maximum number of samples reached... bailing."
