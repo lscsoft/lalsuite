@@ -88,12 +88,12 @@ typedef struct tagSpinWeightedSphericalHarmonic_l2 {
 static int PhenomPCore(
   COMPLEX16FrequencySeries **hptilde,   /**< Output: Frequency-domain waveform h+ */
   COMPLEX16FrequencySeries **hctilde,   /**< Output: Frequency-domain waveform hx */
-  const REAL8 chi1_l,                   /**< Dimensionless aligned spin on companion 1 */
-  const REAL8 chi2_l,                   /**< Dimensionless aligned spin on companion 2 */
+  const REAL8 chi1_l_in,                /**< Dimensionless aligned spin on companion 1 */
+  const REAL8 chi2_l_in,                /**< Dimensionless aligned spin on companion 2 */
   const REAL8 chip,                     /**< Effective spin in the orbital plane */
-  const REAL8 eta,                      /**< Symmetric mass-ratio */
   const REAL8 thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-  const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
+  const REAL8 m1_SI_in,                 /**< Mass of companion 1 (kg) */
+  const REAL8 m2_SI_in,                 /**< Mass of companion 2 (kg) */
   const REAL8 distance,                 /**< Distance of source (m) */
   const REAL8 alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
   const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
@@ -192,7 +192,6 @@ int XLALSimIMRPhenomPCalculateModelParameters(
     REAL8 *chi1_l,                  /**< Output: Dimensionless aligned spin on companion 1 */
     REAL8 *chi2_l,                  /**< Output: Dimensionless aligned spin on companion 2 */
     REAL8 *chip,                    /**< Output: Effective spin in the orbital plane */
-    REAL8 *eta,                     /**< Output: Symmetric mass-ratio */
     REAL8 *thetaJ,                  /**< Output: Angle between J0 and line of sight (z-direction) */
     REAL8 *alpha0,                  /**< Output: Initial value of alpha angle (azimuthal precession angle) */
     const REAL8 m1_SI,              /**< Mass of companion 1 (kg) */
@@ -215,7 +214,6 @@ int XLALSimIMRPhenomPCalculateModelParameters(
   if (!chi1_l)  XLAL_ERROR(XLAL_EFAULT);
   if (!chi2_l)  XLAL_ERROR(XLAL_EFAULT);
   if (!chip)    XLAL_ERROR(XLAL_EFAULT);
-  if (!eta)     XLAL_ERROR(XLAL_EFAULT);
   if (!thetaJ)  XLAL_ERROR(XLAL_EFAULT);
   if (!alpha0)  XLAL_ERROR(XLAL_EFAULT);
 
@@ -227,7 +225,7 @@ int XLALSimIMRPhenomPCalculateModelParameters(
   const REAL8 M = m1+m2;
   const REAL8 m1_2 = m1*m1;
   const REAL8 m2_2 = m2*m2;
-  *eta = m1 * m2 / (M*M);    /* Symmetric mass-ratio */
+  const REAL8 eta = m1 * m2 / (M*M);    /* Symmetric mass-ratio */
 
   /* Aligned spins */
   *chi1_l = lnhatx*s1x + lnhaty*s1y + lnhatz*s1z; /* Dimensionless aligned spin on BH 1 */
@@ -256,7 +254,7 @@ int XLALSimIMRPhenomPCalculateModelParameters(
   const REAL8 piM = LAL_PI * m_sec;
   const REAL8 v_ref = cbrt(piM * f_ref);
 
-  const REAL8 L0 = M*M * L2PNR(v_ref, *eta); /* Use 2PN approximation for L. */
+  const REAL8 L0 = M*M * L2PNR(v_ref, eta); /* Use 2PN approximation for L. */
   const REAL8 Jx0 = L0 * lnhatx + m1_2*s1x + m2_2*s2x;
   const REAL8 Jy0 = L0 * lnhaty + m1_2*s1y + m2_2*s2y;
   const REAL8 Jz0 = L0 * lnhatz + m1_2*s1z + m2_2*s2z;
@@ -296,9 +294,9 @@ int XLALSimIMRPhenomP(
   const REAL8 chi1_l,                   /**< Dimensionless aligned spin on companion 1 */
   const REAL8 chi2_l,                   /**< Dimensionless aligned spin on companion 2 */
   const REAL8 chip,                     /**< Effective spin in the orbital plane */
-  const REAL8 eta,                      /**< Symmetric mass-ratio */
   const REAL8 thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-  const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
+  const REAL8 m1_SI,                    /**< Mass of companion 1 (kg) */
+  const REAL8 m2_SI,                    /**< Mass of companion 2 (kg) */
   const REAL8 distance,                 /**< Distance of source (m) */
   const REAL8 alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
   const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
@@ -320,7 +318,7 @@ int XLALSimIMRPhenomP(
   freqs->data[1] = f_max;
 
   int retcode = PhenomPCore(hptilde, hctilde,
-      chi1_l, chi2_l, chip, eta, thetaJ, Mtot_SI, distance, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version);
+      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version);
   XLALDestroyREAL8Sequence(freqs);
   return (retcode);
 }
@@ -332,9 +330,9 @@ int XLALSimIMRPhenomPFrequencySequence(
   const REAL8 chi1_l,                   /**< Dimensionless aligned spin on companion 1 */
   const REAL8 chi2_l,                   /**< Dimensionless aligned spin on companion 2 */
   const REAL8 chip,                     /**< Effective spin in the orbital plane */
-  const REAL8 eta,                      /**< Symmetric mass-ratio */
   const REAL8 thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-  const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
+  const REAL8 m1_SI,                    /**< Mass of companion 1 (kg) */
+  const REAL8 m2_SI,                    /**< Mass of companion 2 (kg) */
   const REAL8 distance,                 /**< Distance of source (m) */
   const REAL8 alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
   const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
@@ -348,7 +346,7 @@ int XLALSimIMRPhenomPFrequencySequence(
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = PhenomPCore(hptilde, hctilde,
-      chi1_l, chi2_l, chip, eta, thetaJ, Mtot_SI, distance, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version);
+      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version);
 
   return(retcode);
 }
@@ -360,12 +358,12 @@ int XLALSimIMRPhenomPFrequencySequence(
 static int PhenomPCore(
   COMPLEX16FrequencySeries **hptilde,   /**< Output: Frequency-domain waveform h+ */
   COMPLEX16FrequencySeries **hctilde,   /**< Output: Frequency-domain waveform hx */
-  const REAL8 chi1_l,                   /**< Dimensionless aligned spin on companion 1 */
-  const REAL8 chi2_l,                   /**< Dimensionless aligned spin on companion 2 */
+  const REAL8 chi1_l_in,                /**< Dimensionless aligned spin on companion 1 */
+  const REAL8 chi2_l_in,                /**< Dimensionless aligned spin on companion 2 */
   const REAL8 chip,                     /**< Effective spin in the orbital plane */
-  const REAL8 eta,                      /**< Symmetric mass-ratio */
   const REAL8 thetaJ,                   /**< Angle between J0 and line of sight (z-direction) */
-  const REAL8 Mtot_SI,                  /**< Total mass of binary (kg) */
+  const REAL8 m1_SI_in,                 /**< Mass of companion 1 (kg) */
+  const REAL8 m2_SI_in,                 /**< Mass of companion 2 (kg) */
   const REAL8 distance,                 /**< Distance of source (m) */
   const REAL8 alpha0,                   /**< Initial value of alpha angle (azimuthal precession angle) */
   const REAL8 phic,                     /**< Orbital phase at the peak of the underlying non precessing model (rad) */
@@ -384,16 +382,35 @@ static int PhenomPCore(
 
   XLAL_PRINT_INFO("*** PhenomPCore() ***");
 
+  // Enforce convention m2 >= m1
+  REAL8 chi1_l, chi2_l;
+  REAL8 m1_SI, m2_SI;
+  if (m2_SI_in >= m1_SI_in) {
+    m1_SI = m1_SI_in;
+    m2_SI = m2_SI_in;
+    chi1_l = chi1_l_in;
+    chi2_l = chi2_l_in;
+  }
+  else { // swap bodies 1 <-> 2
+    m1_SI = m2_SI_in;
+    m2_SI = m1_SI_in;
+    chi1_l = chi2_l_in;
+    chi2_l = chi1_l_in;
+  }
+
   /* Find frequency bounds */
   if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
   double f_min = freqs_in->data[0];
   double f_max = freqs_in->data[freqs_in->length - 1];
 
-  const REAL8 M = Mtot_SI / LAL_MSUN_SI;  /* External units: SI; internal units: solar masses */
+  /* External units: SI; internal units: solar masses */
+  const REAL8 m1 = m1_SI / LAL_MSUN_SI;
+  const REAL8 m2 = m2_SI / LAL_MSUN_SI;
+  const REAL8 M = m1 + m2;
   const REAL8 m_sec = M * LAL_MTSUN_SI;   /* Total mass in seconds */
-  const REAL8 q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta)/(2.0*eta); /* Mass-ratio */
-  const REAL8 m1 = M * 1.0 / (1+q);
-  const REAL8 m2 = M * q / (1+q);
+  const REAL8 q = m2 / m1; /* q >= 1 */
+  const REAL8 eta = m1 * m2 / (M*M);    /* Symmetric mass-ratio */
+
   const REAL8 piM = LAL_PI * m_sec;
   const REAL8 v0 = cbrt(piM * f_ref);
 
@@ -417,7 +434,7 @@ static int PhenomPCore(
   const REAL8 chi_eff = (m1*chi1_l + m2*chi2_l) / M; /* Effective aligned spin */
   const REAL8 chil = (1.0+q)/q * chi_eff; /* dimensionless aligned spin of the largest BH */
 
-  switch (IMRPhenomP_version) {
+switch (IMRPhenomP_version) {
     case 1:
       if (eta < 0.0453515) /* q = 20 */
           XLAL_ERROR(XLAL_EDOM, "Mass ratio is way outside the calibration range. m1/m2 should be <= 20.\n");
@@ -495,8 +512,9 @@ static int PhenomPCore(
       // PhenomD uses FinalSpin0714() to calculate the final spin if the spins are aligned.
       // We use the more general Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009 here.
       finspin = FinalSpinBarausse2009_all_spin_on_larger_BH(eta, chi_eff, chip);
-      pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1_l, chi2_l, finspin);
-      pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1_l, chi2_l, finspin);
+      // IMRPhenomD assumes that m1 >= m2.
+      pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi2_l, chi1_l, finspin);
+      pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi2_l, chi1_l, finspin);
       if (!pAmp || !pPhi) XLAL_ERROR(XLAL_EFUNC);
       ComputeIMRPhenDPhaseConnectionCoefficients(pPhi);
       fCut = 0.3 / m_sec;
