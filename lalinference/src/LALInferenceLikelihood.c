@@ -1139,6 +1139,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
               double x = sqrt(dh_S->data[i]*dh_S->data[i] + dh_S_phase->data[i]*dh_S_phase->data[i]);
               if (x > xMax) { /* Store the phase angle at max L */
                   angMax = atan2(dh_S_phase->data[i], dh_S->data[i]);
+                  xMax=x;
               }
               double I0=log(gsl_sf_bessel_I0_scaled(x)) + fabs(x);
               dh_S->data[i] = I0;
