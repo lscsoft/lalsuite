@@ -944,7 +944,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
     REAL8 spin1[3],spin2[3];
 
     /* Variables for IMRPhenomP and IMRPhenomPv2 */
-    REAL8 chi1_l, chi2_l, chip, eta, thetaJ, alpha0;
+    REAL8 chi1_l, chi2_l, chip, thetaJ, alpha0;
 
     /* General sanity checks that will abort
      *
@@ -1102,15 +1102,15 @@ int XLALSimInspiralChooseFDWaveformSequence(
             if(f_ref==0.0)
                 f_ref = f_min; /* Default reference frequency is minimum frequency */
             XLALSimIMRPhenomPCalculateModelParameters(
-                &chi1_l, &chi2_l, &chip, &eta, &thetaJ, &alpha0,
+                &chi1_l, &chi2_l, &chip, &thetaJ, &alpha0,
                 m1, m2, f_ref,
                 LNhatx, LNhaty, LNhatz,
                 S1x, S1y, S1z,
                 S2x, S2y, S2z);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
-              chi1_l, chi2_l, chip, eta, thetaJ,
-              m1+m2, r, alpha0, phiRef, f_ref, 1);
+              chi1_l, chi2_l, chip, thetaJ,
+              m1, m2, r, alpha0, phiRef, f_ref, 1);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
@@ -1136,15 +1136,15 @@ int XLALSimInspiralChooseFDWaveformSequence(
             if(f_ref==0.0)
                 f_ref = f_min; /* Default reference frequency is minimum frequency */
             XLALSimIMRPhenomPCalculateModelParameters(
-                &chi1_l, &chi2_l, &chip, &eta, &thetaJ, &alpha0,
+                &chi1_l, &chi2_l, &chip, &thetaJ, &alpha0,
                 m1, m2, f_ref,
                 LNhatx, LNhaty, LNhatz,
                 S1x, S1y, S1z,
                 S2x, S2y, S2z);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
-              chi1_l, chi2_l, chip, eta, thetaJ,
-              m1+m2, r, alpha0, phiRef, f_ref, 2);
+              chi1_l, chi2_l, chip, thetaJ,
+              m1, m2, r, alpha0, phiRef, f_ref, 2);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
