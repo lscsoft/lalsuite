@@ -169,15 +169,15 @@ void LALInferenceAddProposalToCycle(LALInferenceProposalCycle *cycle, LALInferen
         cycle->order[i] = cycle->nProposals;
     }
 
+    cycle->nProposals += 1;
     cycle->proposals = XLALRealloc(cycle->proposals, (cycle->nProposals)*sizeof(LALInferenceProposal));
     if (cycle->proposals == NULL) {
         XLALError(fname, __FILE__, __LINE__, XLAL_ENOMEM);
         exit(1);
     }
-    cycle->proposals[cycle->nProposals] = prop;
+    cycle->proposals[cycle->nProposals-1] = prop;
 
     cycle->length += weight;
-    cycle->nProposals += 1;
 }
 
 
