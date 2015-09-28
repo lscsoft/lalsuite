@@ -32,7 +32,8 @@ import functools
 
 import healpy
 
-from lalinference.rapid_pe.statutils import cumvar
+from lalinference.rapid_pe import statutils
+from pylal import rate
 
 class NanOrInf(Exception):
     def __init__(self, value):
@@ -418,7 +419,7 @@ class MCSampler(object):
                 maxval.append( v if v > maxval[-1] and v != 0 else maxval[-1] )
 
             # running variance
-            var = cumvar(int_val, mean, var, self.ntotal)[-1]
+            var = statutils.cumvar(int_val, mean, var, self.ntotal)[-1]
             # running integral
             int_val1 += int_val.sum()
             # running number of evaluations
@@ -458,8 +459,10 @@ class MCSampler(object):
             # The total number of adaptive steps is reached
             #
             # FIXME: We need a better stopping condition here
-            if self.ntotal > n_adapt:
+            #if self.ntotal > n_adapt or maxval == old_maxval:
+            if self.ntotal > n_adapt and maxval == old_maxval:
                 continue
+            old_maxval = maxval
 
             #
             # Iterate through each of the parameters, updating the sampling
@@ -471,26 +474,22 @@ class MCSampler(object):
                 if p not in self.adaptive or p in kwargs.keys():
                     continue
                 points = self._rvs[p][-n_history:]
-                weights = (self._rvs["integrand"][-n_history:]/self._rvs["joint_s_prior"][-n_history:]*self._rvs["joint_prior"][-n_history:])**tempering_exp
+                weights = (self._rvs["integrand"][-n_history:]*self._rvs["joint_prior"][-n_history:])**tempering_exp
 
-                self._hist[p], edges = numpy.histogram(points, bins = 100, range = (self.llim[p], self.rlim[p]), weights = weights, normed = True)
-                # FIXME: numpy.hist can't normalize worth a damn
-                self._hist[p] /= self._hist[p].sum()
+                self._hist[p] = statutils.get_adaptive_binning(points, (self.llim[p], self.rlim[p]))
+                for pt, w in zip(points, weights):
+                    self._hist[p][pt,] += w
+                #self._hist[p].array = (1-floor_integrated_probability)*self._hist[p].array + numpy.ones(len(self._hist[p].array))*floor_integrated_probability/len(self._hist[p].array)
+                self._hist[p].array += self._hist[p].array.mean()
+                rate.to_moving_mean_density(self._hist[p], rate.tophat_window(3))
+                norm = numpy.sum(self._hist[p].array * self._hist[p].bins.volumes())
+                self._hist[p].array /= norm
+                # FIXME: Stupid pet trick while numpy version is lacking
+                self.pdf[p] = numpy.frompyfunc(rate.InterpBinnedArray(self._hist[p]), 1, 1)
+                #with open("%s_%d_hist.txt" % (p, self.ntotal), "w") as fout:
+                    #for c, pdf in zip(self._hist[p].centres()[0], self._hist[p].array):
+                        #print >>fout, "%f %g" % (c, pdf)
 
-                # Mix with uniform distribution
-                self._hist[p] = (1-floor_integrated_probability)*self._hist[p] + numpy.ones(len(self._hist[p]))*floor_integrated_probability/len(self._hist[p])
-
-                # FIXME: These should be called the bin centers
-                edges = [(e0+e1)/2.0 for e0, e1 in zip(edges[:-1], edges[1:])]
-                edges.append(edges[-1] + (edges[-1] - edges[-2]))
-                edges.insert(0, edges[0] - (edges[-1] - edges[-2]))
-
-                # FIXME: KS test probably has a place here. Not sure yet where.
-                #from scipy.stats import kstest
-                #d, pval = kstest(self._rvs[p][-n_history:], self.cdf[p])
-                #print p, d, pval
-
-                self.pdf[p] = interpolate.interp1d(edges, [0] + list(self._hist[p]) + [0])
                 self.cdf[p] = self.cdf_function(p)
                 self.cdf_inv[p] = self.cdf_inverse(p)
 
