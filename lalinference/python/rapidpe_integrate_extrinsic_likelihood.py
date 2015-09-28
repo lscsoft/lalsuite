@@ -208,11 +208,6 @@ for inst, psdf in map(lambda c: c.split("="), opts.psd_file):
     psd_dict[inst] = lalsimutils.get_psd_series_from_xmldoc(psdf, inst)
 
     deltaF = data_dict[inst].deltaF
-    psd_dict[inst] = lalsimutils.resample_psd_series(psd_dict[inst], deltaF)
-    print "PSD deltaF after interpolation %f" % psd_dict[inst].deltaF
-
-    assert psd_dict[inst].deltaF == deltaF
-
     # Highest freq. at which PSD is defined
     if isinstance(psd_dict[inst],
             pylal.xlal.datatypes.real8frequencyseries.REAL8FrequencySeries):
@@ -225,6 +220,12 @@ for inst, psdf in map(lambda c: c.split("="), opts.psd_file):
     # Allow us to target a smaller upper limit than provided by the PSD. Important for numerical PSDs that turn over at high frequency
     if opts.fmax and opts.fmax < fmax:
         fmax = opts.fmax # fmax is now the upper freq. of IP integral
+
+    psd_dict[inst] = lalsimutils.resample_psd_series(psd_dict[inst], deltaF)
+    print "PSD deltaF after interpolation %f" % psd_dict[inst].deltaF
+
+    assert psd_dict[inst].deltaF == deltaF
+
 
 # Ensure data and PSDs keyed to same detectors
 if sorted(psd_dict.keys()) != sorted(data_dict.keys()):
