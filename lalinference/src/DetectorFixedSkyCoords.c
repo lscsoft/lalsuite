@@ -72,7 +72,7 @@ void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
   horiz.system=COORDINATESYSTEM_GEOGRAPHIC;
   
   LALStatus status;
-  INITSTATUS(&status);
+  memset(&status,0,sizeof(status));
   LIGOTimeGPS gpstime;
   
   XLALGPSSetREAL8(&gpstime,t0);
