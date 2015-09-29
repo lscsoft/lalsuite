@@ -108,8 +108,6 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
         XLAL_ERROR_VOID(XLAL_EINVAL);
     }
 
-    LALInferenceVariables *priorDraw = XLALCalloc(1, sizeof(LALInferenceVariables));
-
     LALInferenceThreadState *thread = run_state->threads[0];
     INT4 t;
 
@@ -134,6 +132,8 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
      *   LALInferenceCyclicReflectiveBound() is not enough) */
     #pragma omp parallel for private(thread)
     for (t = 0; t < run_state->nthreads; t++) {
+        LALInferenceVariables *priorDraw = XLALCalloc(1, sizeof(LALInferenceVariables));
+
         thread = run_state->threads[t];
 
         /* Try not to clobber values given on the command line */
@@ -162,6 +162,9 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
         thread->currentLikelihood = run_state->likelihood(thread->currentParams,
                                                           run_state->data,
                                                           thread->model);
+
+        LALInferenceClearVariables(priorDraw);
+        XLALFree(priorDraw);
     }
 
     /* Replace distance prior if changed for initial sample draw */
