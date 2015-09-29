@@ -1141,7 +1141,7 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInfere
     /* Print column header */
     fprintf(threadoutput, "\n\n%31s\n","");
     fprintf(threadoutput, "cycle\tlogpost\tlogprior\t");
-    LALInferenceFprintParameterNonFixedHeaders(threadoutput, thread->currentParams);
+    LALInferenceFprintParameterHeaders(threadoutput, thread->currentParams);
 
     /* Print the likelihood and SNR of each individual detector */
     fprintf(threadoutput, "logl\t");
@@ -1174,7 +1174,7 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInfere
             (thread->currentLikelihood - thread->nullLikelihood) + thread->currentPrior,
             thread->currentPrior);
 
-    LALInferencePrintSampleNonFixed(threadoutput, thread->currentParams);
+    LALInferencePrintSample(threadoutput, thread->currentParams);
 
     fprintf(threadoutput, "%f\t", thread->currentLikelihood);
     fprintf(threadoutput, "%f\t", thread->currentLikelihood - thread->nullLikelihood);
@@ -1386,7 +1386,7 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
     fprintf(threadoutput, "%d\t%f\t%f\t",
             iteration, (thread->currentLikelihood - thread->nullLikelihood) + thread->currentPrior, thread->currentPrior);
 
-    LALInferencePrintSampleNonFixed(threadoutput, thread->currentParams);
+    LALInferencePrintSample(threadoutput, thread->currentParams);
 
     fprintf(threadoutput,"%f\t", thread->currentLikelihood);
     fprintf(threadoutput,"%f\t", thread->currentLikelihood - thread->nullLikelihood);
