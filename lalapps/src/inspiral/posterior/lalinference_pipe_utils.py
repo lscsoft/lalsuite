@@ -106,7 +106,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",basepath="./
   #ifos = search_summary[0].ifos.split(",")
   #coinc_table = lsctables.getTablesByType(xmldoc, lsctables.CoincTable)[0]
   #ifos = coinc_table[0].instruments.split(",")
-  trigSNR = coinctable[0].snr
+  trigSNR = 2.0*coinctable[0].snr #The factor of 2.0 is because detection pipelines recover SNR lower than PE can recover.
   # Parse PSD
   srate_psdfile=16384
   ifos=None
