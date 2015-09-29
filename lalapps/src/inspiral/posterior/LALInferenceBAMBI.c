@@ -61,7 +61,7 @@ void initializeMN(LALInferenceRunState *runState);
 
 /******** Defined for BAMBI (start) **********/
 
-#define BAMBI_STRLEN 200
+#define BAMBI_STRLEN 1000
 
 extern float *omicron,tol,thL[3],logLRange;
 extern double *maxsigma,logZero;
