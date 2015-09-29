@@ -896,7 +896,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     }
     if(output_array && outVOTable && N_output_array>0){
       xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array, "Nested Samples");
-      xmlNewProp(votable, CAST_CONST_XMLCHAR("utype"), CAST_CONST_XMLCHAR("lalinference:nestedsampling:samples"));
+      xmlNewProp(votable, CAST_CONST_XMLCHAR("utype"), votype_nested_samples); /*CAST_CONST_XMLCHAR("lalinference:nestedsampling:samples")); */
 
     xmlNodePtr stateResource=XLALInferenceStateVariables2VOTResource(runState, "Run State Configuration");
 

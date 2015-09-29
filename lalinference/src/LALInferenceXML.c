@@ -27,6 +27,12 @@
 #define REAL8STR_MAXLEN         25
 #define NAMESTR_MAXLEN          256
 
+
+const xmlChar votype_nested_samples[]="lalinference:nestedsampling:samples";
+const xmlChar votype_posterior_samples[]="lalinference:posterior:samples";
+
+
+
 /**
  * \brief Serializes an array of \c LALInferenceVariables into a VOTable XML %node
  *
@@ -61,8 +67,8 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(LALInferenceVariables * const *c
   xmlNodePtr tmpNode=NULL;
   xmlNodePtr field_ptr,param_ptr;
   LALInferenceVariableItem *varitem=NULL;
-  void **valuearrays=NULL;
-  UINT4 Nfields=0,i,j;
+  UINT4 Nfields=0;
+  UINT4 bufsize=1024;
   int err;
 
 
@@ -75,10 +81,12 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(LALInferenceVariables * const *c
 
 	field_ptr=fieldNodeList;
 	param_ptr=paramNodeList;
+    char *field_names[varsArray[0]->dimension];
 
     /* Build a list of PARAM and FIELD elements */
     for(varitem=varsArray[0]->head;varitem;varitem=varitem->next)
 	{
+		tmpNode=NULL;
 		switch(varitem->vary){
 			case LALINFERENCE_PARAM_LINEAR:
 			case LALINFERENCE_PARAM_CIRCULAR:
@@ -92,6 +100,7 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(LALInferenceVariables * const *c
 				}
 				if(field_ptr) field_ptr=xmlAddNextSibling(field_ptr,tmpNode);
 				else {field_ptr=tmpNode; fieldNodeList=field_ptr;}
+				field_names[Nfields]=varitem->name;
 				Nfields++;
 				break;
 			}
@@ -111,29 +120,6 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(LALInferenceVariables * const *c
 			{
 				XLALPrintWarning("Unknown param vary type");
 			}
-		}
-	}
-    valuearrays=XLALCalloc(Nfields,sizeof(void *));
-    VOTABLE_DATATYPE *dataTypes=XLALCalloc(Nfields,sizeof(VOTABLE_DATATYPE));
-    /* Build array of DATA for fields */
-	xmlNodePtr node;
-	for(j=0,node=fieldNodeList;node;node=xmlNextElementSibling(node))
-	{
-		varitem=LALInferenceGetItem(varsArray[0],(char *)xmlGetProp(node,CAST_CONST_XMLCHAR("name")));
-		switch(varitem->vary){
-			case LALINFERENCE_PARAM_LINEAR:
-			case LALINFERENCE_PARAM_CIRCULAR:
-			case LALINFERENCE_PARAM_OUTPUT:
-			{
-				UINT4 typesize = LALInferenceTypeSize[LALInferenceGetVariableType(varsArray[0],varitem->name)];
-				valuearrays[j]=XLALCalloc(N,typesize);
-				dataTypes[j]=LALInferenceVariableType2VOT(varitem->type);
-				for(i=0;i<N;i++)
-					memcpy((char *)valuearrays[j]+i*typesize,LALInferenceGetVariable(varsArray[i],varitem->name),typesize);
-				j++;
-			}
-			default:
-				continue;
 		}
 	}
 
@@ -178,24 +164,30 @@ xmlNodePtr XLALInferenceVariablesArray2VOTTable(LALInferenceVariables * const *c
 									goto failed;
 							}
 
-							const char* tmptxt;
-							if ( (tmptxt = XLALVOTprintfFromArray ( dataTypes[col], NULL, valuearrays[col], row )) == NULL ){
-									XLALPrintError ("%s: XLALVOTprintfFromArray() failed for row = %d, col = %d. errno = %d.\n", __func__, row, col, xlalErrno );
-									err = XLAL_EFUNC;
-									goto failed;
+							char *valuestr=XLALCalloc(bufsize,sizeof(char));
+							varitem = LALInferenceGetItem(varsArray[row],field_names[col]);
+							UINT4 required_size=LALInferencePrintNVariableItem(valuestr,bufsize,varitem);
+							if(required_size>bufsize)
+							{
+								bufsize=required_size;
+								valuestr=XLALRealloc(valuestr,required_size*sizeof(char));
+								required_size=LALInferencePrintNVariableItem(valuestr,bufsize,varitem);
 							}
 
-							xmlNodePtr xmlTextNode;
-							if ( (xmlTextNode = xmlNewText (CAST_CONST_XMLCHAR(tmptxt) )) == NULL ) {
-									XLALPrintError("%s: xmlNewText() failed to turn text '%s' into node\n", __func__, tmptxt );
+							xmlNodePtr xmlTextNode= xmlNewText (CAST_CONST_XMLCHAR(valuestr) );
+							if ( xmlTextNode  == NULL ) {
+									XLALPrintError("%s: xmlNewText() failed to turn text '%s' into node\n", __func__, valuestr );
 									err = XLAL_EFAILED;
+									XLALFree(valuestr);
 									goto failed;
 							}
 							if ( xmlAddChild(xmlThisEntryNode, xmlTextNode ) == NULL ) {
 									XLALPrintError ("%s: failed to insert text-node node into 'TD' node.\n", __func__ );
 									err = XLAL_EFAILED;
+									XLALFree(valuestr);
 									goto failed;
 							}
+							XLALFree(valuestr);
 
 					} /* for col < numFields */
 
@@ -310,46 +302,93 @@ xmlNodePtr LALInferenceVariableItem2VOTFieldNode(LALInferenceVariableItem *const
   VOTABLE_DATATYPE vo_type;
   CHAR *unitName={0};
 
-  /* Special case for matrix */
-  if(varitem->type==LALINFERENCE_gslMatrix_t)
-    return(XLALgsl_matrix2VOTNode(*(gsl_matrix **)varitem->value, varitem->name, unitName));
-
-	/* Special case for string */
-	if(varitem->type==LALINFERENCE_string_t)
-		return(XLALCreateVOTFieldNode(varitem->name,unitName,VOT_CHAR,"*"));
-
-  /* Check the type of the item */
-  vo_type=LALInferenceVariableType2VOT(varitem->type);
-  if(vo_type>=VOT_DATATYPE_LAST){
-    XLALPrintError("%s: Unsupported LALInferenceType %i\n",__func__,(int)varitem->type);
-    return NULL;
+  switch(varitem->type)
+  {
+		/* Special case for matrix */
+		case LALINFERENCE_gslMatrix_t:
+				return(XLALgsl_matrix2VOTNode(*(gsl_matrix **)varitem->value, varitem->name, unitName));
+		/* Special case for string */
+		case LALINFERENCE_string_t:
+				return(XLALCreateVOTFieldNode(varitem->name,unitName,VOT_CHAR,"*"));
+		case LALINFERENCE_REAL8Vector_t:
+		{
+				char arraysize[32];
+				REAL8Vector *vec=*(REAL8Vector **)varitem->value;
+				snprintf(arraysize,32,"%i",vec->length);
+				return(XLALCreateVOTFieldNode(varitem->name,unitName,VOT_REAL8,arraysize));
+		}
+		case LALINFERENCE_INT4Vector_t:
+		{
+				char arraysize[32];
+				INT4Vector *vec=*(INT4Vector **)varitem->value;
+				snprintf(arraysize,32,"%i",vec->length);
+				return(XLALCreateVOTFieldNode(varitem->name,unitName,VOT_INT4,arraysize));
+		}
+		default:
+		{
+				/* Check the type of the item */
+				vo_type=LALInferenceVariableType2VOT(varitem->type);
+				if(vo_type>=VOT_DATATYPE_LAST){
+						XLALPrintError("%s: Unsupported LALInferenceType %i\n",__func__,(int)varitem->type);
+						return NULL;
+				}
+				return(XLALCreateVOTFieldNode(varitem->name,unitName,vo_type,NULL));
+		}
   }
-  return(XLALCreateVOTFieldNode(varitem->name,unitName,vo_type,NULL));
 }
 
 xmlNodePtr LALInferenceVariableItem2VOTParamNode(LALInferenceVariableItem *const varitem)
 {
   VOTABLE_DATATYPE vo_type;
   CHAR *unitName={0};
-  CHAR valString[VARVALSTRINGSIZE_MAX]="";
+  UINT4 bufsize=1024;
+  UINT4 required_size=0;
+  CHAR *valString=XLALCalloc(bufsize,sizeof(CHAR));
+  CHAR arraysize[32]="";
 
-  /* Special case for matrix */
-  if(varitem->type==LALINFERENCE_gslMatrix_t)
-    return(XLALgsl_matrix2VOTNode(*(gsl_matrix **)varitem->value, varitem->name, unitName));
+  switch(varitem->type)
+  {
+		  /* Special case for matrix */
+		  case LALINFERENCE_gslMatrix_t:
+				  return(XLALgsl_matrix2VOTNode(*(gsl_matrix **)varitem->value, varitem->name, unitName));
+				  break;
 
-	/* Special case for string */
-	if(varitem->type==LALINFERENCE_string_t)
-		return(XLALCreateVOTParamNode(varitem->name,unitName,VOT_CHAR,"*",*(char **)varitem->value));
+		  /* Special case for string */
+		  case LALINFERENCE_string_t:
+				  return(XLALCreateVOTParamNode(varitem->name,unitName,VOT_CHAR,"*",*(char **)varitem->value));
+				  break;
 
-  /* Check the type of the item */
-  vo_type=LALInferenceVariableType2VOT(varitem->type);
-  if(vo_type>=VOT_DATATYPE_LAST){
-    XLALPrintError("%s: Unsupported LALInferenceVariableType %i\n",__func__,(int)varitem->type);
-    return NULL;
+		  case LALINFERENCE_REAL8Vector_t:
+		  {
+				  REAL8Vector *vec=*(REAL8Vector **)varitem->value;
+				  snprintf(arraysize,32,"%i",vec->length);
+				  vo_type=VOT_REAL8;
+				  break;
+		  }
+		  case LALINFERENCE_INT4Vector_t:
+		  {
+				  INT4Vector *vec=*(INT4Vector **)varitem->value;
+				  snprintf(arraysize,32,"%i",vec->length);
+				  vo_type=VOT_INT4;
+				  break;
+		  }
+		  default:
+		  /* Check the type of the item */
+		  vo_type=LALInferenceVariableType2VOT(varitem->type);
   }
-  LALInferencePrintVariableItem(valString, varitem);
-
-  return(XLALCreateVOTParamNode(varitem->name,unitName,vo_type,NULL,valString));
+  if(vo_type>=VOT_DATATYPE_LAST){
+		  XLALPrintError("%s: Unsupported LALInferenceVariableType %i\n",__func__,(int)varitem->type);
+		  return NULL;
+  }
+  required_size=LALInferencePrintNVariableItem(valString, bufsize, varitem);
+  if(required_size>bufsize){
+		  bufsize=required_size;
+		  valString=XLALRealloc(valString,bufsize*sizeof(CHAR));
+		  required_size=LALInferencePrintNVariableItem(valString, bufsize, varitem);
+  }
+  xmlNodePtr node = XLALCreateVOTParamNode(varitem->name,unitName,vo_type,arraysize,valString);
+  XLALFree(valString);
+  return(node);
 }
 
 /**

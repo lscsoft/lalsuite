@@ -215,8 +215,9 @@ INT4 LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables
  */
 INT4 LALInferenceFprintParameterNonFixedHeadersWithSuffix(FILE *out, LALInferenceVariables *params, const char *suffix);
 
-/** Prints a variable item to a string (must be pre-allocated!) */
-void LALInferencePrintVariableItem(char *out, const LALInferenceVariableItem *const ptr);
+/** Prints a variable item to a string. Print at most N characters. Returns the number of characters actually required
+ * to store the output (can be more or less than N) */
+UINT4 LALInferencePrintNVariableItem(char *out, UINT4 N, const LALInferenceVariableItem *const ptr);
 
 /**
  * Return a pointer to the memory the variable \c vars is stored in specified by \c name
