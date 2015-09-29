@@ -462,6 +462,8 @@ REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *
     b = exps[0];
   }
   /* attempt to keep returned values finite */
+  if(LUCM) gsl_matrix_free(LUCM);
+  if(LUCMPerm) gsl_permutation_free(LUCMPerm);
   return a + log1p(exp(b-a));
 }
 
