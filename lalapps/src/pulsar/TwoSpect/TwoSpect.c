@@ -457,7 +457,6 @@ int main(int argc, char *argv[])
    REAL4VectorAligned *backgroundScalingForihs2h0 = NULL;
    XLAL_CHECK( (backgroundScalingForihs2h0 = XLALCreateREAL4VectorAligned(backgroundScaling->length, 32)) != NULL, XLAL_EFUNC );
    memcpy(backgroundScalingForihs2h0->data, backgroundScaling->data, sizeof(REAL4)*backgroundScaling->length);
-   INT4Vector *sftexistForihs2h0 = NULL;
    if (detectors->length>1) {
       MultiSSBtimes *multissb = NULL;
       XLAL_CHECK( (multissb = XLALGetMultiSSBtimes(multiStateSeries, skypos0, refTime, SSBPREC_RELATIVISTICOPT)) != NULL, XLAL_EFUNC );
@@ -468,19 +467,9 @@ int main(int argc, char *argv[])
       if (XLALUserVarWasSet(&uvar.assumeNScosi)) cosi = &uvar.assumeNScosi;
       if (XLALUserVarWasSet(&uvar.assumeNSpsi)) psi = &uvar.assumeNSpsi;
       XLAL_CHECK( (tmpTFdata = coherentlyAddSFTs(multiSFTvector, multissb, multiAMcoefficients, jointSFTtimestamps, backgroundRatioMeans, uvar.cosiSignCoherent, cosi, psi, &uvar, backgroundScalingForihs2h0)) != NULL, XLAL_EFUNC );
-      XLAL_CHECK( (sftexistForihs2h0 = existingSFTs(tmpTFdata, (UINT4)ffdata->numffts)) != NULL, XLAL_EFUNC );
-      INT4 totalincludedsftnumber = 0;
-      for (ii=0; ii<(INT4)sftexistForihs2h0->length; ii++) if (sftexistForihs2h0->data[ii]==1) totalincludedsftnumber++;
-      frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexistForihs2h0->length;
-      fprintf(LOG, "Duty factor of usable SFTs = %f\n", frac_tobs_complete);
-      fprintf(stderr, "Duty factor of usable SFTs = %f\n", frac_tobs_complete);
-      XLAL_CHECK( checkBackgroundScaling(backgroundScalingForihs2h0, sftexistForihs2h0) == XLAL_SUCCESS, XLAL_EFUNC );
       XLALDestroyREAL4VectorAligned(tmpTFdata);
       XLALDestroyMultiAMCoeffs(multiAMcoefficients);
       XLALDestroyMultiSSBtimes(multissb);
-   } else {
-      XLAL_CHECK( (sftexistForihs2h0 = XLALCreateINT4Vector(sftexist->length)) != NULL, XLAL_EFUNC );
-      memcpy(sftexistForihs2h0->data, sftexist->data, sizeof(INT4)*sftexist->length);
    }
 
    //Set skycounter to -1 at the start
@@ -557,7 +546,6 @@ int main(int argc, char *argv[])
 
          if (!uvar.signalOnly) {
             XLAL_CHECK( (sftexist = existingSFTs(tfdata, (UINT4)ffdata->numffts)) != NULL, XLAL_EFUNC );
-            XLAL_CHECK( checkBackgroundScaling(backgroundScaling, sftexist) == XLAL_SUCCESS, XLAL_EFUNC );
             INT4 totalincludedsftnumber = 0;
             for (ii=0; ii<(INT4)sftexist->length; ii++) if (sftexist->data[ii]==1) totalincludedsftnumber++;
             frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexist->length;
@@ -646,7 +634,7 @@ int main(int argc, char *argv[])
 
       //Antenna normalization for different sky locations
       REAL8 skypointffnormalization = 1.0;
-      XLAL_CHECK( ffPlaneNoise(aveNoise, &uvar, sftexistForihs2h0, background_slided, antweightsforihs2h0, backgroundScalingForihs2h0_slided, secondFFTplan, expRandVals, rng, &(skypointffnormalization)) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( ffPlaneNoise(aveNoise, &uvar, sftexist, background_slided, antweightsforihs2h0, backgroundScalingForihs2h0_slided, secondFFTplan, expRandVals, rng, &(skypointffnormalization)) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Average noise floor of FF plane for each 1st FFT frequency bin
       ffdata->ffnormalization = 1.0;
@@ -707,7 +695,7 @@ int main(int argc, char *argv[])
          if (exactCandidates2->numofcandidates == exactCandidates2->length-1) XLAL_CHECK( (exactCandidates2 = resizecandidateVector(exactCandidates2, 2*exactCandidates2->length)) != NULL, XLAL_EFUNC );
 
          //Analyze the template stored in the test candidate
-         XLAL_CHECK( analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &(exactCandidates1->data[0]), ffdata, aveNoise, aveTFnoisePerFbinRatio, &uvar, secondFFTplan, rng, !uvar.gaussTemplatesOnly) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( analyzeOneTemplate(&(exactCandidates2->data[exactCandidates2->numofcandidates]), &(exactCandidates1->data[0]), ffdata, aveNoise, aveTFnoisePerFbinRatio, &uvar, sftexist, secondFFTplan, rng, !uvar.gaussTemplatesOnly) == XLAL_SUCCESS, XLAL_EFUNC );
          (exactCandidates2->numofcandidates)++;
 
          //Rescale the h0 output from the normaliztions and amount of observation time present
@@ -718,14 +706,14 @@ int main(int argc, char *argv[])
          loadCandidateData(&cand, uvar.templateTestF, uvar.templateTestP, uvar.templateTestDf, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0, -1);
          TwoSpectParamSpaceSearchVals paramspace = {uvar.templateTestF-2.0/uvar.Tsft, uvar.templateTestF+2.0/uvar.Tsft, 21, 5, 5, 0.5, uvar.templateTestDf-2.0/uvar.Tsft,
                                                     uvar.templateTestDf+2.0/uvar.Tsft, 21};
-         XLAL_CHECK( bruteForceTemplateTest(&(exactCandidates2), cand, &paramspace, &uvar, ffdata->ffdata, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( bruteForceTemplateTest(&(exactCandidates2), cand, &paramspace, &uvar, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
          for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
       }
 
       //If the user wants to do a template search, that is done here
       if (uvar.templateSearch) {
          //fprintf(stderr, "Calling templateSearch\n (in development, last edited 2014-06-09)\n");
-         XLAL_CHECK( templateSearch_scox1Style(&exactCandidates2, uvar.fmin, uvar.fspan, uvar.templateSearchP, uvar.templateSearchAsini, uvar.templateSearchAsiniSigma, skypos, &uvar, ffdata->ffdata, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( templateSearch_scox1Style(&exactCandidates2, uvar.fmin, uvar.fspan, uvar.templateSearchP, uvar.templateSearchAsini, uvar.templateSearchAsiniSigma, skypos, &uvar, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
          //fprintf(stderr, "Done calling templateSearch\n");
          for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
       }
@@ -808,7 +796,7 @@ int main(int argc, char *argv[])
       //Search the candidates further if the number of candidates passing the first Gaussian template test is greater than 0
       if (gaussCandidates1->numofcandidates>0) {
          //Start clustering! Note that the clustering algorithm takes care of the period range of parameter space
-         XLAL_CHECK( clusterCandidates(&gaussCandidates2, gaussCandidates1, ffdata, &uvar, aveNoise, aveTFnoisePerFbinRatio, rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( clusterCandidates(&gaussCandidates2, gaussCandidates1, ffdata, &uvar, aveNoise, aveTFnoisePerFbinRatio, sftexist, rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
 
          for (ii=0; ii<(INT4)gaussCandidates2->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates2->data[ii].fsig, gaussCandidates2->data[ii].period, gaussCandidates2->data[ii].moddepth);
 
@@ -823,7 +811,7 @@ int main(int argc, char *argv[])
             TwoSpectParamSpaceSearchVals paramspace = {gaussCandidates2->data[ii].fsig-1.0/uvar.Tsft, gaussCandidates2->data[ii].fsig+1.0/uvar.Tsft,5, 2, 2, 1.0,
                                                        gaussCandidates2->data[ii].moddepth-1.0/uvar.Tsft, gaussCandidates2->data[ii].moddepth+1.0/uvar.Tsft, 5};
             XLAL_CHECK( bruteForceTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], &paramspace, &uvar, ffdata->ffdata, 
-                                                 aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
+                                                 sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
             gaussCandidates3->numofcandidates++;
 
          } /* for ii < numofcandidates */
@@ -834,7 +822,7 @@ int main(int argc, char *argv[])
          gaussCandidates2->numofcandidates = 0;
 
          //Start clustering!
-         XLAL_CHECK( clusterCandidates(&gaussCandidates4, gaussCandidates3, ffdata, &uvar, aveNoise, aveTFnoisePerFbinRatio, rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( clusterCandidates(&gaussCandidates4, gaussCandidates3, ffdata, &uvar, aveNoise, aveTFnoisePerFbinRatio, sftexist, rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
 
          for (ii=0; ii<(INT4)gaussCandidates4->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates4->data[ii].fsig, gaussCandidates4->data[ii].period, gaussCandidates4->data[ii].moddepth);
 
@@ -844,7 +832,7 @@ int main(int argc, char *argv[])
          //Initial check using "exact" template
          for (ii=0; ii<(INT4)gaussCandidates4->numofcandidates; ii++) {
             candidate cand;
-            XLAL_CHECK( analyzeOneTemplate(&cand, &(gaussCandidates4->data[ii]), ffdata, aveNoise, aveTFnoisePerFbinRatio, &uvar, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK( analyzeOneTemplate(&cand, &(gaussCandidates4->data[ii]), ffdata, aveNoise, aveTFnoisePerFbinRatio, &uvar, sftexist, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
 
             //Check that we are above threshold before storing the candidate
             if (cand.prob<log10(uvar.tmplfar)) {
@@ -868,8 +856,8 @@ int main(int argc, char *argv[])
 
             TwoSpectParamSpaceSearchVals paramspace = {exactCandidates1->data[ii].fsig-0.5/uvar.Tsft, exactCandidates1->data[ii].fsig+0.5/uvar.Tsft, 3, 1, 1, 1.0,
                                                        exactCandidates1->data[ii].moddepth-0.5/uvar.Tsft, exactCandidates1->data[ii].moddepth+0.5/uvar.Tsft, 3};
-            if (!uvar.gaussTemplatesOnly) XLAL_CHECK( bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], &paramspace,&uvar, ffdata->ffdata, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
-            else XLAL_CHECK( bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], &paramspace, &uvar, ffdata->ffdata, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan,rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
+            if (!uvar.gaussTemplatesOnly) XLAL_CHECK( bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], &paramspace,&uvar, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
+            else XLAL_CHECK( bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], &paramspace, &uvar, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan,rng, 0) == XLAL_SUCCESS, XLAL_EFUNC );
             exactCandidates2->data[exactCandidates2->numofcandidates].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);  //Scaling here
             exactCandidates2->numofcandidates++;
 
@@ -944,7 +932,6 @@ int main(int argc, char *argv[])
    XLALDestroyREAL4VectorAligned(background);
    XLALDestroyREAL4VectorAligned(background0);
    XLALDestroyREAL4VectorAligned(antweightsforihs2h0);
-   XLALDestroyINT4Vector(sftexistForihs2h0);
    XLALDestroyREAL4VectorAligned(aveNoise);
    XLALDestroyREAL4VectorAligned(expRandVals);
    XLALDestroyREAL4VectorAligned(backgroundScaling);
@@ -1213,7 +1200,7 @@ REAL4VectorAligned * calcAveTFnoisePerFbinRatio(const REAL4VectorAligned *backgr
    for (UINT4 ii=0; ii<numfbins; ii++) {
       REAL4 totalweightval = 0.0;
       for (UINT4 jj=0; jj<numffts; jj++) {
-         if (background->data[jj*numfbins + ii]!=0.0 && backgroundScaling->data[jj*numfbins+ii]!=0.0) {
+         if (background->data[jj*numfbins + ii]!=0.0) {
             TSofPowers->data[jj] = 1.0/(background->data[jj*numfbins + ii]*backgroundScaling->data[jj*numfbins+ii]);
             totalweightval += 1.0/(background->data[jj*numfbins + ii]*background->data[jj*numfbins + ii]*backgroundScaling->data[jj*numfbins+ii]*backgroundScaling->data[jj*numfbins+ii]);
          }
@@ -1727,11 +1714,11 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    if (uvar->help) exit(0);
 
    //Check analysis parameters
-   /* if (ceil(uvar->t0/uvar->Tsft)*uvar->Tsft - uvar->t0 != 0.0) {
+   if (ceil(uvar->t0/uvar->Tsft)*uvar->Tsft - uvar->t0 != 0.0) {
       REAL8 oldstart = uvar->t0;
       uvar->t0 = ceil(uvar->t0/uvar->Tsft)*uvar->Tsft;
       fprintf(stderr, "WARNING! Adjusting start time from %f to %f\n", oldstart, uvar->t0);
-   } */
+   }
    XLAL_CHECK( uvar->Pmax >= uvar->Pmin, XLAL_EINVAL, "Pmax is smaller than Pmin\n" );
    XLAL_CHECK( uvar->dfmax >= uvar->dfmin, XLAL_EINVAL, "dfmax is smaller than dfmin\n" );
    if (uvar->Pmax > 0.2*uvar->Tobs) {

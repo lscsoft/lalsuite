@@ -261,15 +261,16 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    for (UINT4 ii=0; ii<combinedSFTs->length; ii++) {
       //Loop over the interferometers, determining which ones to use and don't go off the end of a list
       memset(whichIFOsToBeUsed->data, 0, whichIFOsToBeUsed->length * sizeof(INT4));  //All index values are set to zero each time
+      LIGOTimeGPS currentTimestamp = jointTimestamps->data[ii];
       BOOLEAN foundAnSFT = 0;
       for (UINT4 jj=0; jj<multiSFTvector->length; jj++) {
-         if (whichSFTinMultiSFTvector->data[jj]<(INT4)multiSFTvector->data[jj]->length && XLALGPSCmp(&(jointTimestamps->data[ii]), &(multiSFTvector->data[jj]->data[whichSFTinMultiSFTvector->data[jj]].epoch)) == 0) {
+         if (whichSFTinMultiSFTvector->data[jj]<(INT4)multiSFTvector->data[jj]->length && XLALGPSCmp(&currentTimestamp, &(multiSFTvector->data[jj]->data[whichSFTinMultiSFTvector->data[jj]].epoch)) == 0) {
             whichIFOsToBeUsed->data[jj] = 1;
             foundAnSFT = 1;
          }
       }
       XLAL_CHECK_NULL( foundAnSFT == 1, XLAL_EFAILED );
-      REAL8 sftstart2 = XLALGPSGetREAL8(&(jointTimestamps->data[ii]));
+      REAL8 sftstart2 = XLALGPSGetREAL8(&currentTimestamp);
       XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
       INT4 fftnum2 = (INT4)round((sftstart2 - params->t0)/params->SFToverlap);
 
@@ -460,10 +461,7 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
                COMPLEX8 complexfactor = cpolarf(detPhaseMag, detArgVal+detPhaseArg-TwoPiFrequenciesTau->data[kk+10]);
 
                REAL4 noiseWeighting = 1.0;
-               if (kk>=numSFTbins2skip && kk<numFbinsInBackground+numSFTbins2skip && createSFT) {
-                  REAL4 absVal = cabsf(complexfactor);
-                  backgroundScaling->data[fftnum2*numFbinsInBackground + (kk-numSFTbins2skip)] = absVal*absVal;
-               } else if (kk>=numSFTbins2skip && kk<numFbinsInBackground+numSFTbins2skip && !createSFT) {
+               if (kk>=numSFTbins2skip && kk<numFbinsInBackground+numSFTbins2skip && !createSFT) {
                   noiseWeighting = backgroundRatio->data[jj]->data[fftnum];
                   REAL4 absVal = cabsf(complexfactor);
                   backgroundScaling->data[fftnum2*numFbinsInBackground + (kk-numSFTbins2skip)] += noiseWeighting*(absVal*absVal);
@@ -1412,16 +1410,3 @@ INT4Vector * existingSFTs(const REAL4VectorAligned *tfdata, const UINT4 numffts)
    return sftexist;
 
 } /* existingSFTs() */
-
-INT4 checkBackgroundScaling(const REAL4VectorAligned *backgroundScaling, const INT4Vector *existingSFTs)
-{
-   XLAL_CHECK( backgroundScaling != NULL && existingSFTs != NULL, XLAL_EINVAL );
-
-   UINT4 numfbins = backgroundScaling->length/existingSFTs->length;
-   for (UINT4 ii=0; ii<existingSFTs->length; ii++) {
-      if (existingSFTs->data[ii]==0 && backgroundScaling->data[ii*numfbins]!=0.0) {
-         memset(&(backgroundScaling->data[ii*numfbins]), 0, sizeof(REAL4)*numfbins);
-      }
-   }
-   return XLAL_SUCCESS;
-}
