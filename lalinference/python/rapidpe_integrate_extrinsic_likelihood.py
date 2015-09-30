@@ -335,7 +335,7 @@ sampler.add_parameter("phi_orb", pdf = phi_sampler, cdf_inv = None, left_limit =
 # sampler: cos(incl) uniform in [-1, 1)
 #
 incl_sampler = mcsampler.cos_samp_vector # this is NOT dec_samp_vector, because the angular zero point is different!
-sampler.add_parameter("inclination", pdf = incl_sampler, cdf_inv = None, left_limit = param_limits["inclination"][0], right_limit = param_limits["inclination"][1], prior_pdf = mcsampler.uniform_samp_theta)
+sampler.add_parameter("inclination", pdf = incl_sampler, cdf_inv = None, left_limit = param_limits["inclination"][0], right_limit = param_limits["inclination"][1], prior_pdf = mcsampler.uniform_samp_theta, adaptive_sampling = not opts.no_adapt)
 
 #
 # Distance - luminosity distance to source in parsecs
