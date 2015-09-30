@@ -10,6 +10,7 @@ if HAVE_PYTHON
 pybin_scripts = \
 	bayestar_aggregate_found_injections \
 	bayestar_bin_samples \
+	bayestar_contour_allsky \
 	bayestar_lattice_tmpltbank \
 	bayestar_localize_coincs \
 	bayestar_localize_lvalert \
