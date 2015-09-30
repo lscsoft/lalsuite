@@ -92,20 +92,6 @@ elif opts.event_time is not None:
 else:
     raise ValueError("Either --coinc-xml or --event-time must be provided to parse event time.")
 
-# get masses from sngl_inspiral_table
-if opts.mass1 is not None and opts.mass2 is not None:
-    m1, m2 = opts.mass1, opts.mass2
-elif xmldoc is not None:
-    sngl_inspiral_table = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
-    assert len(sngl_inspiral_table) == len(coinc_row.ifos.split(","))
-    m1, m2 = None, None
-    for sngl_row in sngl_inspiral_table:
-        # NOTE: gstlal is exact match, but other pipelines may not be
-        assert m1 is None or (sngl_row.mass1 == m1 and sngl_row.mass2 == m2)
-        m1, m2 = sngl_row.mass1, sngl_row.mass2
-else:
-    raise ValueError("Need either --mass1 --mass2 or --coinc-xml to retrieve masses.")
-
 xmldoc, tmplt_bnk = utils.load_filename(opts.template_bank_xml, contenthandler=ligolw.LIGOLWContentHandler), None
 try:
     tmplt_bnk = lsctables.SimInspiralTable.get_table(xmldoc)
@@ -160,6 +146,7 @@ ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         coinc_xml=opts.coinc_xml,
         reference_freq=opts.reference_freq,
         fmax=opts.fmax,
+        fmin_template=opts.fmin_template,
 		approximant=opts.approximant,
 		amp_order=opts.amp_order,
 		l_max=opts.l_max,
