@@ -207,10 +207,12 @@ static int IMRPhenomDGenerateFD(
   REAL8 finspin = FinalSpin0815(eta, chi1, chi2);
   IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2, finspin);
   IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin);
-  if (!pAmp || !pPhi) XLAL_ERROR(XLAL_EFUNC);
+  PNPhasingSeries *pn = NULL;
+  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_in, chi2_in, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
+  if (!pAmp || !pPhi || !pn) XLAL_ERROR(XLAL_EFUNC);
 
   // Compute coefficients to make phase C^1
-  ComputeIMRPhenDPhaseConnectionCoefficients(pPhi);
+  ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
 
   /* Now generate the waveform */
   #pragma omp parallel for
@@ -219,7 +221,7 @@ static int IMRPhenomDGenerateFD(
     REAL8 Mf = M_sec * i * deltaF; // geometric frequency
 
     REAL8 amp = IMRPhenDAmplitude(Mf, pAmp);
-    REAL8 phi = IMRPhenDPhase(Mf, pPhi);
+    REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn);
 
     phi -= 2.*phi0; // factor of 2 b/c phi0 is orbital phase
 
@@ -228,6 +230,7 @@ static int IMRPhenomDGenerateFD(
 
   LALFree(pAmp);
   LALFree(pPhi);
+  LALFree(pn);
 
   return XLAL_SUCCESS;
 }

@@ -347,6 +347,7 @@ static void Test_PhenomPCore(void) {
   const UINT4 version = 1;
   IMRPhenomDAmplitudeCoefficients *pAmp = NULL;
   IMRPhenomDPhaseCoefficients *pPhi = NULL;
+  PNPhasingSeries *PNparams = NULL;
 
   int ret = PhenomPCoreOneFrequency(
     fHz,                     /**< frequency (Hz) */
@@ -359,6 +360,7 @@ static void Test_PhenomPCore(void) {
     pAmp,                    /**< Internal IMRPhenomD amplitude coefficients */
     pPhi,                    /**< Internal IMRPhenomD phase coefficients */
     PCparams,                /**< internal PhenomC parameters */
+    PNparams,                /**< PN inspiral phase coefficients */
     &angcoeffs,              /**< struct with PN coeffs for the NNLO angles */
     &Y2m,                    /**< struct of l=2 spherical harmonics of spin weight -2 */
     0,0,
