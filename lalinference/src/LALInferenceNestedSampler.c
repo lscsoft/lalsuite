@@ -1335,6 +1335,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
                LALInferenceAddVariable(threadState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
             }
             ifo=0;
+            data=runState->data;
             while(data)
             {
                if(!threadState->model->ifo_loglikelihoods) break;
@@ -1364,6 +1365,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
                LALInferenceAddVariable(threadState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
             }
             ifo=0;
+            data=runState->data;
             while(data && threadState->model->ifo_loglikelihoods)
             {
               tmp=threadState->model->ifo_loglikelihoods[ifo] - data->nullloglikelihood;
