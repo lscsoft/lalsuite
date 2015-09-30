@@ -176,8 +176,14 @@ P = lalsimutils.ChooseWaveformParams(
 if opts.coinc_xml is not None:
     xmldoc = utils.load_filename(opts.coinc_xml, contenthandler=ligolw.LIGOLWContentHandler)
     sngl_inspiral_table = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
-    for a in ("spin1x","spin1y","spin1z","spin2x","spin2y","spin2z"):
-        setattr(P, a, getattr(sngl_inspiral_table[0], a))
+    for a in ("spin1z", "spin2z"):
+        if getattr(opts, a):
+            setattr(P, a, getattr(opts, a))
+        elif hasattr(sngl_inspiral_table[0], a):
+            setattr(P, a, getattr(sngl_inspiral_table[0], a))
+        else:
+            setattr(P, a, 0.0)
+        
 
 # User requested bounds for data segment
 if opts.data_start_time is not None and opts.data_end_time is not None:
@@ -529,11 +535,22 @@ else: # Sum over time for every point in other extrinsic params
 print " lnLmarg is ", numpy.log(res), " with expected relative error ", numpy.sqrt(var)/res
 print " note neff is ", neff
 
+# FIXME: This is turning into a mess
 if opts.output_file:
     xmldoc = ligolw.Document()
     xmldoc.appendChild(ligolw.LIGO_LW())
     process.register_to_xmldoc(xmldoc, sys.argv[0], opts.__dict__)
-    xmlutils.append_likelihood_result_to_xmldoc(xmldoc, numpy.log(res), neff=neff, **{"mass1": opts.mass1, "mass2": opts.mass2, "event_duration": numpy.sqrt(var)/res, "ttotal": sampler.ntotal})
+    result_dict = {"mass1": opts.mass1, "mass2": opts.mass2, "event_duration": numpy.sqrt(var)/res, "ttotal": sampler.ntotal}
+    if opts.spin1z is not None or sngl_inspiral_table:
+        result_dict["spin1z"] = opts.spin1z or sngl_inspiral_table[0].spin1z or 0.0
+    if opts.spin2z is not None or sngl_inspiral_table:
+        result_dict["spin2z"] = opts.spin2z or sngl_inspiral_table[0].spin2z or 0.0
+    if opts.eff_lambda is not None:
+        result_dict["psi0"] = opts.eff_lambda
+    if opts.deff_lambda is not None:
+        result_dict["psi3"] = opts.deff_lambda
+
+    xmlutils.append_likelihood_result_to_xmldoc(xmldoc, numpy.log(res), neff=neff, **result_dict)
     utils.write_filename(xmldoc, opts.output_file, gz=opts.output_file.endswith(".gz"))
     if opts.save_samples:
         samples = sampler._rvs
@@ -554,6 +571,10 @@ if opts.output_file:
         samples["mass2"] = numpy.empty(samples["psi"].shape)
         samples["mass1"].fill(opts.mass1)
         samples["mass2"].fill(opts.mass2)
+        samples["spin1z"] = numpy.empty(samples["psi"].shape)
+        samples["spin2z"] = numpy.empty(samples["psi"].shape)
+        samples["spin1z"].fill(opts.spin1z or sngl_inspiral_table[0].spin1z or 0.0)
+        samples["spinz2"].fill(opts.spin2z or sngl_inspiral_table[0].spin2z or 0.0)
         if opts.eff_lambda is not None or opts.deff_lambda is not None:
             # FIXME: the column mapping isn't working right, we need to fix that
             # rather than give these weird names
