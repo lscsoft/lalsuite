@@ -134,6 +134,8 @@ def add_intrinsic_params(optp):
     intrinsic_params.add_option("--pin-to-sim", help="Pin values to sim_inspiral table entry.")
     intrinsic_params.add_option("--mass1", type=float, help="Value of first component mass, in solar masses. Required if not providing coinc tables.")
     intrinsic_params.add_option("--mass2", type=float, help="Value of second component mass, in solar masses. Required if not providing coinc tables.")
+    intrinsic_params.add_option("--spin1z", type=float, help="Value of first component spin (aligned with angular momentum), dimensionless.")
+    intrinsic_params.add_option("--spin2z", type=float, help="Value of second component spin (aligned with angular momentum), dimensionless.")
     intrinsic_params.add_option("--eff-lambda", type=float, help="Value of effective tidal parameter. Optional, ignored if not given.")
     intrinsic_params.add_option("--deff-lambda", type=float, help="Value of second effective tidal parameter. Optional, ignored if not given.")
     optp.add_option_group(intrinsic_params)
