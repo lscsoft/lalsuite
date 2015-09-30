@@ -1413,13 +1413,13 @@ INT4Vector * existingSFTs(const REAL4VectorAligned *tfdata, const UINT4 numffts)
 
 } /* existingSFTs() */
 
-INT4 checkBackgroundScaling(const REAL4VectorAligned *backgroundScaling, const INT4Vector *sftExist)
+INT4 checkBackgroundScaling(const REAL4VectorAligned *backgroundScaling, const INT4Vector *existingSFTs)
 {
-   XLAL_CHECK( backgroundScaling != NULL && sftExist != NULL, XLAL_EINVAL );
+   XLAL_CHECK( backgroundScaling != NULL && existingSFTs != NULL, XLAL_EINVAL );
 
-   UINT4 numfbins = backgroundScaling->length/sftExist->length;
-   for (UINT4 ii=0; ii<sftExist->length; ii++) {
-      if (sftExist->data[ii]==0 && backgroundScaling->data[ii*numfbins]!=0.0) {
+   UINT4 numfbins = backgroundScaling->length/existingSFTs->length;
+   for (UINT4 ii=0; ii<existingSFTs->length; ii++) {
+      if (existingSFTs->data[ii]==0 && backgroundScaling->data[ii*numfbins]!=0.0) {
          memset(&(backgroundScaling->data[ii*numfbins]), 0, sizeof(REAL4)*numfbins);
       }
    }
