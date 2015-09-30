@@ -118,6 +118,7 @@ static int PhenomPCoreOneFrequency(
   IMRPhenomDAmplitudeCoefficients *pAmp,  /**< Internal IMRPhenomD amplitude coefficients */
   IMRPhenomDPhaseCoefficients *pPhi,      /**< Internal IMRPhenomD phase coefficients */
   BBHPhenomCParams *PCparams,             /**< Internal PhenomC parameters */
+  PNPhasingSeries *PNparams,              /**< PN inspiral phase coefficients */
   NNLOanglecoeffs *angcoeffs,             /**< Struct with PN coeffs for the NNLO angles */
   SpinWeightedSphericalHarmonic_l2 *Y2m,  /**< Struct of l=2 spherical harmonics of spin weight -2 */
   const REAL8 alphaoffset,                /**< f_ref dependent offset for alpha angle (azimuthal precession angle) */
@@ -493,6 +494,7 @@ switch (IMRPhenomP_version) {
   IMRPhenomDAmplitudeCoefficients *pAmp = NULL;
   IMRPhenomDPhaseCoefficients *pPhi = NULL;
   BBHPhenomCParams *PCparams = NULL;
+  PNPhasingSeries *pn = NULL;
 
   REAL8 fCut = 0.0;
   REAL8 finspin = 0.0;
@@ -515,8 +517,9 @@ switch (IMRPhenomP_version) {
       // IMRPhenomD assumes that m1 >= m2.
       pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi2_l, chi1_l, finspin);
       pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi2_l, chi1_l, finspin);
-      if (!pAmp || !pPhi) XLAL_ERROR(XLAL_EFUNC);
-      ComputeIMRPhenDPhaseConnectionCoefficients(pPhi);
+      XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
+      if (!pAmp || !pPhi || !pn) XLAL_ERROR(XLAL_EFUNC);
+      ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
       fCut = 0.3 / m_sec;
       f_final = pAmp->fRD / m_sec;
       break;
@@ -628,7 +631,7 @@ switch (IMRPhenomP_version) {
 
     /* Generate the waveform */
     per_thread_errcode = PhenomPCoreOneFrequency(f, eta, chi_eff, chip, distance, M, phic,
-                              pAmp, pPhi, PCparams, &angcoeffs, &Y2m,
+                              pAmp, pPhi, PCparams, pn, &angcoeffs, &Y2m,
                               alphaNNLOoffset - alpha0, epsilonNNLOoffset,
                               &hp_val, &hc_val, &phasing, IMRPhenomP_version);
 
@@ -693,6 +696,7 @@ switch (IMRPhenomP_version) {
     case 2:
       XLALFree(pAmp);
       XLALFree(pPhi);
+      XLALFree(pn);
       break;
     default:
       XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
@@ -721,6 +725,7 @@ static int PhenomPCoreOneFrequency(
   IMRPhenomDAmplitudeCoefficients *pAmp,  /**< Internal IMRPhenomD amplitude coefficients */
   IMRPhenomDPhaseCoefficients *pPhi,      /**< Internal IMRPhenomD phase coefficients */
   BBHPhenomCParams *PCparams,             /**< Internal PhenomC parameters */
+  PNPhasingSeries *PNparams,              /**< PN inspiral phase coefficients */
   NNLOanglecoeffs *angcoeffs,  		        /**< Struct with PN coeffs for the NNLO angles */
   SpinWeightedSphericalHarmonic_l2 *Y2m,  /**< Struct of l=2 spherical harmonics of spin weight -2 */
   const REAL8 alphaoffset,                /**< f_ref dependent offset for alpha angle (azimuthal precession angle) */
@@ -743,7 +748,7 @@ static int PhenomPCoreOneFrequency(
       break;
     case 2:
       aPhenom = IMRPhenDAmplitude(f, pAmp);
-      phPhenom = IMRPhenDPhase(f, pPhi);
+      phPhenom = IMRPhenDPhase(f, pPhi, PNparams);
       break;
     default:
       XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);

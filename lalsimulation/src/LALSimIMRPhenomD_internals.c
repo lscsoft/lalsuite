@@ -297,14 +297,14 @@ static double sigma1Fit(double eta, double chiPN);
 static double sigma2Fit(double eta, double chiPN);
 static double sigma3Fit(double eta, double chiPN);
 static double sigma4Fit(double eta, double chiPN);
-static double PhiInsAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p);
-static double DPhiInsAnsatzInt(double ff, IMRPhenomDPhaseCoefficients *p);
+static double PhiInsAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
+static double DPhiInsAnsatzInt(double ff, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
 
 ////////////////////////////// Phase: glueing function //////////////////////////////
 
 static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin);
-static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p);
-static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p);
+static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
+static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
 
 /**
  *
@@ -1138,26 +1138,13 @@ static double sigma4Fit(double eta, double chi) {
   + (-85360.30079034246 - 570025.3441737515*eta + 4.396844346849777e6*eta2)*xi3;
 }
 
-static double PhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p) {
+static double PhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn) {
   // Equation 27 and 28 arXiv:1508.07253
-  double eta = p->eta;
-  double chi1 = p->chi1;
-  double chi2 = p->chi2;
   double sigma1 = p->sigma1;
   double sigma2 = p->sigma2;
   double sigma3 = p->sigma3;
   double sigma4 = p->sigma4;
   double Pi = LAL_PI;
-
-  // Obtain LAL TaylorF2 phasing coefficients which are tested in /LALSimInspiralPNCoefficients.c.
-  // FIXME: MP: we probably only want to call XLALSimInspiralTaylorF2AlignedPhasing() once per waveform
-  // and save the coefficients somewhere.
-  // E.g., we could just store the pointer to the PNPhasingSeries struct in IMRPhenomDPhaseCoefficients!
-  PNPhasingSeries *pn = NULL;
-  // Convention m1 >= m2
-  double m1 = 0.5 * (1.0 + sqrt(1.0 - 4.0*eta));
-  double m2 = 0.5 * (1.0 - sqrt(1.0 - 4.0*eta));
-  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, 1, 1, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
 
   // Assemble PN phasing series
   const double v = cbrt(Pi*Mf);
@@ -1179,7 +1166,6 @@ static double PhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p) {
   phasing += pn->v[0]; // * v^0
   phasing /= v5;
   phasing -= LAL_PI_4;
-  LALFree(pn);
 
   // Now add higher order terms that were calibrated for PhenomD
   phasing += (
@@ -1187,31 +1173,18 @@ static double PhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p) {
           + (3.0/(4.0*pow(Pi,4.0/3.0))*sigma2) * v4
           + (3.0/(5.0*pow(Pi,5.0/3.0))*sigma3) * v5
           + (1.0/(2.0*Pi*Pi)*sigma4) * v6
-          ) / eta;
+          ) / p->eta;
 
   return phasing;
 }
 
-static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p) {
+static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn) {
   // First frequency derivative of PhiInsAnsatzInt
-  double eta = p->eta;
-  double chi1 = p->chi1;
-  double chi2 = p->chi2;
   double sigma1 = p->sigma1;
   double sigma2 = p->sigma2;
   double sigma3 = p->sigma3;
   double sigma4 = p->sigma4;
   double Pi = LAL_PI;
-
-  // Obtain LAL TaylorF2 phasing coefficients which are tested in /LALSimInspiralPNCoefficients.c.
-  // FIXME: MP: we probably only want to call XLALSimInspiralTaylorF2AlignedPhasing() once per waveform
-  // and save the coefficients somewhere.
-  // E.g., we could just store the pointer to the PNPhasingSeries struct in IMRPhenomDPhaseCoefficients!
-  PNPhasingSeries *pn = NULL;
-  // Convention m1 >= m2
-  double m1 = 0.5 * (1.0 + sqrt(1.0 - 4.0*eta));
-  double m2 = 0.5 * (1.0 - sqrt(1.0 - 4.0*eta));
-  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, 1, 1, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
 
   // Assemble PN phasing series
   const double v = cbrt(Pi*Mf);
@@ -1235,7 +1208,6 @@ static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p) {
   Dphasing += -3.0 * pn->v[2] * v2;
   Dphasing += -5.0 * pn->v[0];
   Dphasing /= v8 * 3.0/Pi;
-  LALFree(pn);
 
   // Now add higher order terms that were calibrated for PhenomD
   Dphasing += (
@@ -1243,7 +1215,7 @@ static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p) {
         + (pow(Pi, -1.0/3.0)*sigma2) * v
         + (pow(Pi, -2.0/3.0)*sigma3) * v2
         + (sigma4/Pi) * v3
-        ) / eta;
+        ) / p->eta;
 
   return Dphasing;
 }
@@ -1282,7 +1254,7 @@ static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double et
   return p;
 }
 
-static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p) {
+static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn) {
   double eta = p->eta;
 
   // Transition frequencies
@@ -1296,10 +1268,10 @@ static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficien
   // Joining at fInsJoin
   // PhiIns (fInsJoin)  =   PhiInt (fInsJoin) + C1Int + C2Int fInsJoin
   // PhiIns'(fInsJoin)  =   PhiInt'(fInsJoin) + C2Int
-  double DPhiIns = DPhiInsAnsatzInt(p->fInsJoin, p);
+  double DPhiIns = DPhiInsAnsatzInt(p->fInsJoin, p, pn);
   double DPhiInt = DPhiIntAnsatz(p->fInsJoin, p);
   p->C2Int = DPhiIns - DPhiInt;
-  p->C1Int = PhiInsAnsatzInt(p->fInsJoin, p)
+  p->C1Int = PhiInsAnsatzInt(p->fInsJoin, p, pn)
     - 1.0/eta * PhiIntAnsatz(p->fInsJoin, p) - p->C2Int * p->fInsJoin;
 
   // Compute C1MRD and C2MRD coeffs
@@ -1317,11 +1289,11 @@ static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficien
   p->C1MRD = PhiIntTempVal - 1.0/eta * PhiMRDAnsatzInt(p->fMRDJoin, p) - p->C2MRD*p->fMRDJoin;
 }
 
-static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p) {
+static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn) {
   // Defined in VIII. Full IMR Waveforms arXiv:1508.07253
   // The inspiral, intermendiate and merger-ringdown phase parts
   // FIXME: could avoid evaluating two of those when we are far enough away from one of the transition frequencies
-  double PhiIns = PhiInsAnsatzInt(f, p);
+  double PhiIns = PhiInsAnsatzInt(f, p, pn);
   double PhiInt = 1.0/p->eta * PhiIntAnsatz(f, p) + p->C1Int + p->C2Int * f;
   double PhiMRD = 1.0/p->eta * PhiMRDAnsatzInt(f, p) + p->C1MRD + p->C2MRD * f;
 
