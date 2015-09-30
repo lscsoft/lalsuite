@@ -137,8 +137,22 @@ ppdag.add_maxjobs_category("PLOT", MAXJOBS["PLOT"])
 if not os.path.exists(opts.log_directory):
     os.makedirs(opts.log_directory) # Make a directory to hold log files of jobs
 
+# All the intrinsic parameters we're gridding in
+intr_prms = ("mass1", "mass2")
+for p in ("spin1z", "spin2z"): # FIXME: Add all
+    if hasattr(tmplt_bnk[0], p):
+        intr_prms.add(p)
+
+# These have explicit options because they map to non-standard columns and I
+# want the user to explicity use these columns if they've written them
+if opts.write_eff_lambda:
+    intr_prms.add("eff_lambda")
+if opts.write_deff_lambda:
+    intr_prms.add("deff_lambda")
+
 ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         tag='integrate',
+        intr_prms=intr_prms,
         log_dir=opts.log_directory,
         cache_file=opts.cache_file,
         channel_name=opts.channel_name,
@@ -162,9 +176,7 @@ ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         convergence_tests_on=opts.convergence_tests_on,
         adapt_floor_level=opts.adapt_floor_level,
         adapt_weight_exponent=opts.adapt_weight_exponent,
-        skymap_file=opts.skymap_file,
-        write_eff_lambda=opts.write_eff_lambda,
-        write_deff_lambda=opts.write_deff_lambda 
+        skymap_file=opts.skymap_file
         )
 ile_job_type.write_sub_file()
 
@@ -195,7 +207,6 @@ sql_job_type, sql_job_name = dagutils.write_result_coalescence_sub(tag="coalesce
 sql_job_type.write_sub_file()
 
 # TODO: Mass index table
-#for i, (m1, m2) in enumerate([(tmplt.mass1, tmplt.mass2) for tmplt in tmplt_bnk]):
 for i, tmplt in enumerate(tmplt_bnk):
     mass_grouping = "MASS_SET_%d" % i
 
@@ -207,6 +218,10 @@ for i, tmplt in enumerate(tmplt_bnk):
         ile_node.add_macro("macroefflambda", tmplt.psi0)
     if opts.write_deff_lambda:
         ile_node.add_macro("macrodefflambda", tmplt.psi3)
+    if hasattr(tmplt, "spin1z"):
+        ile_node.add_macro("macrospin1z", tmplt.spin1z)
+    if hasattr(tmplt, "spin2z"):
+        ile_node.add_macro("macrospin2z", tmplt.spin2z)
     if use_bayespe_postproc:
         # If we're using the Bayesian PE post processing script, dump the data
         ile_node.set_post_script(dagutils.which("process_ile_output"))
