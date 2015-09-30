@@ -1740,7 +1740,7 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
   if (approx==IMRPhenomD && (a1max>0.99 || a2max>0.99)){
     a1max=0.99;
     a2max=0.99;
-    XLALPrintWarning("WARNING: IMRPhenoD only supports aligned spins within [ -1.0, 0.99 ]. Changing the a1max=a2max=0.99.\n");
+    XLALPrintWarning("WARNING: IMRPhenomD only supports aligned spins within [ -1.0, 0.99 ]. Changing the a1max=a2max=0.99.\n");
   }
 
   /* IMRPhenomPv2 preliminary only supports spins up to 0.99 and q > 1/20. Set prior consequently*/
