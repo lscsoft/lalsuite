@@ -1355,7 +1355,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       elif self.engine=='lalinferencebambimpi':
         exe=cp.get('condor','mpiwrapper')
         universe="vanilla"
-      elif self.engine=='lalinferencenest' or self.engine=='lalinferenceburst':
+      elif self.engine=='lalinferencenest' or self.engine=='lalinferenceburst' or self.engine=='lalinferencebambi':
         exe=cp.get('condor',self.engine)
         if site is not None and site!='local':
           universe='vanilla'
@@ -1434,7 +1434,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     """
     Over-load base class method to choose condor universe properly
     """
-    if self.engine=='lalinferencenest' or self.engine=='lalinferenceburst':
+    if self.engine=='lalinferencenest' or self.engine=='lalinferenceburst' or self.engine=='lalinferencebambi':
       if site is not None and site!='local':
         self.set_universe('vanilla')
       else:
