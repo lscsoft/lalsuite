@@ -487,8 +487,11 @@ static int SuperskyTest(
   EphemerisData *edat =  XLALInitBarycenter(TEST_DATA_DIR "earth00-19-DE405.dat.gz",
                                             TEST_DATA_DIR "sun00-19-DE405.dat.gz");
   XLAL_CHECK(edat != NULL, XLAL_EFUNC);
-  gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL;
-  XLAL_CHECK(XLALComputeSuperskyMetrics(&rssky_metric, &rssky_transf, NULL, 0, &ref_time, &segments, freq, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat) == XLAL_SUCCESS, XLAL_EFUNC);
+  SuperskyMetrics *metrics = XLALComputeSuperskyMetrics(0, &ref_time, &segments, freq, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat);
+  XLAL_CHECK(metrics != NULL, XLAL_EFUNC);
+  gsl_matrix *rssky_metric = metrics->rssky_metric_avg, *rssky_transf = metrics->rssky_transf_avg;
+  metrics->rssky_metric_avg = metrics->rssky_transf_avg = NULL;
+  XLALDestroySuperskyMetrics(metrics);
   XLALSegListClear(&segments);
   XLALDestroyEphemerisData(edat);
 

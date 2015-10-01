@@ -49,16 +49,37 @@ typedef enum {
 } SuperskyCoordinates;
 
 ///
-/// Compute the reduced supersky metric (2-dimensional sky) and coordinate transform data, and/or
-/// the unrestricted supersky metric (3-dimensional sky).
+/// Computed supersky metrics, returned by XLALComputeSuperskyMetrics().
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(INOUT_STRUCTS(gsl_matrix **, p_rssky_metric, p_rssky_transf, p_ussky_metric));
-#endif
-int XLALComputeSuperskyMetrics(
-  gsl_matrix **p_rssky_metric,			///< [out] Output reduced supersky metric, appropriately averaged over segments
-  gsl_matrix **p_rssky_transf,			///< [out] Output reduced supersky metric coordinate transform data
-  gsl_matrix **p_ussky_metric,			///< [out] Output unrestricted supersky metric, appropriately averaged over segments
+SWIGLAL(ARRAY_MULTIPLE_LENGTHS(tagSuperskyMetrics, num_segments));
+#endif // SWIG
+typedef struct tagSuperskyMetrics {
+  size_t num_segments;				///< Number of segments
+
+#ifdef SWIG // SWIG interface directives
+  SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, ussky_metric_seg, size_t, num_segments));
+#endif // SWIG
+  gsl_matrix **ussky_metric_seg;		///< Unrestricted supersky metric (3-dimensional sky), for each segment
+#ifdef SWIG // SWIG interface directives
+  SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, rssky_metric_seg, size_t, num_segments));
+#endif // SWIG
+  gsl_matrix **rssky_metric_seg;		///< Reduced supersky metric (2-dimensional sky), for each segment
+#ifdef SWIG // SWIG interface directives
+  SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, rssky_transf_seg, size_t, num_segments));
+#endif // SWIG
+  gsl_matrix **rssky_transf_seg;		///< Coordinate transform data of reduced supersky metric, for each segment
+
+  gsl_matrix *ussky_metric_avg;			///< Unrestricted supersky metric (3-dimensional sky), averaged over segments
+  gsl_matrix *rssky_metric_avg;			///< Reduced supersky metric (2-dimensional sky), averaged over segments
+  gsl_matrix *rssky_transf_avg;			///< Coordinate transform data of reduced supersky metric, averaged over segments
+
+} SuperskyMetrics;
+
+///
+/// Compute the various supersky metrics, which are returned in a #SuperskyMetrics struct.
+///
+SuperskyMetrics *XLALComputeSuperskyMetrics(
   const size_t spindowns,			///< [in] Number of frequency+spindown coordinates
   const LIGOTimeGPS *ref_time,			///< [in] Reference time for the metrics
   const LALSegList *segments,			///< [in] List of segments to average metrics over
@@ -67,6 +88,13 @@ int XLALComputeSuperskyMetrics(
   const MultiNoiseFloor *detector_weights,	///< [in] Weights used to combine single-detector metrics (default: unit weights)
   const DetectorMotionType detector_motion,	///< [in] Which detector motion to use
   const EphemerisData *ephemerides		///< [in] Earth/Sun ephemerides
+  );
+
+///
+/// Destroy a #SuperskyMetrics struct.
+///
+void XLALDestroySuperskyMetrics(
+  SuperskyMetrics *metrics			/// [in] Supersky metrics struct
   );
 
 ///
@@ -118,7 +146,7 @@ SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
 int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
   LatticeTiling *tiling,			///< [in] Lattice tiling
   gsl_matrix *rssky_metric,			///< [in] Reduced supersky metric
-  gsl_matrix *rssky_transf,			///< [in] Reduced supersky metric coordinate transform data
+  gsl_matrix *rssky_transf,			///< [in] Coordinate transform data of reduced supersky metric
   const double alpha1,				///< [in] First bound on sky position right ascension
   const double alpha2,				///< [in] Second bound on sky position right ascension
   const double delta1,				///< [in] First bound on sky position declination
@@ -134,7 +162,7 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
 int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
   LatticeTiling *tiling,			///< [in] Lattice tiling
   gsl_matrix *rssky_metric,			///< [in] Reduced supersky metric
-  gsl_matrix *rssky_transf,			///< [in] Reduced supersky metric coordinate transform data
+  gsl_matrix *rssky_transf,			///< [in] Coordinate transform data of reduced supersky metric
   const UINT4 patch_count,			///< [in] Number of equal-area patches to divide sky into
   const UINT4 patch_index			///< [in] Index of the patch for which to set bounds
   );

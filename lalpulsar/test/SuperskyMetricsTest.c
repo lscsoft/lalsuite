@@ -317,76 +317,45 @@ int main(void)
                                             TEST_DATA_DIR "sun00-19-DE405.dat.gz");
   XLAL_CHECK_MAIN(edat != NULL, XLAL_EFUNC);
 
+  // Create segment list
+  LALSegList segments;
+  XLAL_CHECK_MAIN(XLALSegListInit(&segments) == XLAL_SUCCESS, XLAL_EFUNC);
+  for (size_t n = 0; n < NUM_SEGS; ++n) {
+    LALSeg segment;
+    LIGOTimeGPS start_time = ref_time, end_time = ref_time;
+    XLALGPSAdd(&start_time, deltat[n] - 0.5 * Tspan);
+    XLALGPSAdd(&end_time, deltat[n] + 0.5 * Tspan);
+    XLAL_CHECK_MAIN(XLALSegSet(&segment, &start_time, &end_time, 0) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN(XLALSegListAppend(&segments, &segment) == XLAL_SUCCESS, XLAL_EFUNC);
+  }
+
+  // Compute supersky metrics
+  const MultiLALDetector detectors = { .length = 1, .sites = { lalCachedDetectors[LAL_LLO_4K_DETECTOR] } };
+  SuperskyMetrics *metrics = XLALComputeSuperskyMetrics(1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat);
+  XLAL_CHECK_MAIN(metrics != NULL, XLAL_EFUNC);
+
   // Check coherent metrics
   for (size_t n = 0; n < NUM_SEGS; ++n) {
-
-    // Create segment list
-    LALSegList segments;
-    XLAL_CHECK_MAIN(XLALSegListInit(&segments) == XLAL_SUCCESS, XLAL_EFUNC);
-    {
-      LALSeg segment;
-      LIGOTimeGPS start_time = ref_time, end_time = ref_time;
-      XLALGPSAdd(&start_time, deltat[n] - 0.5 * Tspan);
-      XLALGPSAdd(&end_time, deltat[n] + 0.5 * Tspan);
-      XLAL_CHECK_MAIN(XLALSegSet(&segment, &start_time, &end_time, 0) == XLAL_SUCCESS, XLAL_EFUNC);
-      XLAL_CHECK_MAIN(XLALSegListAppend(&segments, &segment) == XLAL_SUCCESS, XLAL_EFUNC);
-    }
-
-    // Compute supersky metrics
-    gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL, *ussky_metric = NULL;
-    const MultiLALDetector detectors = { .length = 1, .sites = { lalCachedDetectors[LAL_LLO_4K_DETECTOR] } };
-    XLAL_CHECK_MAIN(XLALComputeSuperskyMetrics(&rssky_metric, &rssky_transf, &ussky_metric, 1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat) == XLAL_SUCCESS, XLAL_EFUNC);
-
-    // Check supersky metrics
     XLAL_CHECK_MAIN(CheckSuperskyMetrics(
-                      ussky_metric, coh_ussky_metric_refs[n],
-                      rssky_metric, coh_rssky_metric_refs[n],
-                      rssky_transf, coh_rssky_transf_refs[n],
+                      metrics->ussky_metric_seg[n], coh_ussky_metric_refs[n],
+                      metrics->rssky_metric_seg[n], coh_rssky_metric_refs[n],
+                      metrics->rssky_transf_seg[n], coh_rssky_transf_refs[n],
                       coh_phys_mismatches[n], 1e-2, 1e-2
                       ) == XLAL_SUCCESS, XLAL_EFUNC);
-
-    // Cleanup
-    XLALSegListClear(&segments);
-    GFMAT(rssky_metric, rssky_transf, ussky_metric);
-
   }
 
   // Check semicoherent metric
-  {
-
-    // Create segment list
-    LALSegList segments;
-    XLAL_CHECK_MAIN(XLALSegListInit(&segments) == XLAL_SUCCESS, XLAL_EFUNC);
-    for (size_t n = 0; n < NUM_SEGS; ++n) {
-      LALSeg segment;
-      LIGOTimeGPS start_time = ref_time, end_time = ref_time;
-      XLALGPSAdd(&start_time, deltat[n] - 0.5 * Tspan);
-      XLALGPSAdd(&end_time, deltat[n] + 0.5 * Tspan);
-      XLAL_CHECK_MAIN(XLALSegSet(&segment, &start_time, &end_time, 0) == XLAL_SUCCESS, XLAL_EFUNC);
-      XLAL_CHECK_MAIN(XLALSegListAppend(&segments, &segment) == XLAL_SUCCESS, XLAL_EFUNC);
-    }
-
-    // Compute supersky metrics
-    gsl_matrix *rssky_metric = NULL, *rssky_transf = NULL, *ussky_metric = NULL;
-    const MultiLALDetector detectors = { .length = 1, .sites = { lalCachedDetectors[LAL_LLO_4K_DETECTOR] } };
-    XLAL_CHECK_MAIN(XLALComputeSuperskyMetrics(&rssky_metric, &rssky_transf, &ussky_metric, 1, &ref_time, &segments, 100.0, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat) == XLAL_SUCCESS, XLAL_EFUNC);
-
-    // Check supersky metrics
-    XLAL_CHECK_MAIN(CheckSuperskyMetrics(
-                      ussky_metric, semi_ussky_metric_ref,
-                      rssky_metric, semi_rssky_metric_ref,
-                      rssky_transf, semi_rssky_transf_ref,
-                      semi_phys_mismatch, 1e-2, 3e-2
-                      ) == XLAL_SUCCESS, XLAL_EFUNC);
-
-    // Cleanup
-    XLALSegListClear(&segments);
-    GFMAT(rssky_metric, rssky_transf, ussky_metric);
-
-  }
+  XLAL_CHECK_MAIN(CheckSuperskyMetrics(
+                    metrics->ussky_metric_avg, semi_ussky_metric_ref,
+                    metrics->rssky_metric_avg, semi_rssky_metric_ref,
+                    metrics->rssky_transf_avg, semi_rssky_transf_ref,
+                    semi_phys_mismatch, 1e-2, 3e-2
+                    ) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Cleanup
   XLALDestroyEphemerisData(edat);
+  XLALSegListClear(&segments);
+  XLALDestroySuperskyMetrics(metrics);
   LALCheckMemoryLeaks();
 
   return EXIT_SUCCESS;
