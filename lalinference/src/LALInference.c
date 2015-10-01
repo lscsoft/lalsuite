@@ -712,9 +712,12 @@ UINT4 LALInferencePrintNVariableItem(char *out, UINT4 strsize, const LALInferenc
 				  snprintf(out,strsize,"%s",arrstr);
 				  break;
 		  }
-        case LALINFERENCE_gslMatrix_t:
+        /* TODO: Implement gsl_matrix output */
+		/*
+		case LALINFERENCE_gslMatrix_t:
           snprintf(out, strsize,"<can't print matrix>");
           break;
+		*/
 		case LALINFERENCE_REAL8Vector_t:
 		  {
 				  REAL8Vector *vec=*(REAL8Vector **)ptr->value;
@@ -736,7 +739,8 @@ UINT4 LALInferencePrintNVariableItem(char *out, UINT4 strsize, const LALInferenc
 				  break;
 		  }
         default:
-          sprintf(out, "<can't print>");
+		  XLALPrintWarning("%s: Can't print variable of type %i\n",__func__,ptr->type);
+          /* sprintf(out, "<can't print>");*/
       }
   return(strlen(out));
 }
