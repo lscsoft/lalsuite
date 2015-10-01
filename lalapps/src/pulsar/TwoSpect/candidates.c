@@ -127,16 +127,15 @@ void loadCandidateData(candidate *output, const REAL8 fsig, const REAL8 period, 
  * \param [in]  aveNoise               Pointer to REAL4VectorAligned of expected 2nd FFT background powers
  * \param [in]  aveTFnoisePerFbinRatio Pointer to REAL4VectorAligned of normalized power across the frequency band
  * \param [in]  params                 Pointer to UserInput_t
- * \param [in]  sftexist               Pointer to INT4Vector of existing SFTs
  * \param [in]  plan                   Pointer to REAL4FFTPlan
  * \param [in]  rng                    Pointer to gsl_rng
  * \param [in]  exactflag              Boolean value to indicate using exact templates
  * \return Status value
  */
-INT4 analyzeOneTemplate(candidate *output, const candidate *input, const ffdataStruct *ffdata, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *aveTFnoisePerFbinRatio, const UserInput_t *params, const INT4Vector *sftexist, const REAL4FFTPlan *plan, const gsl_rng *rng, const BOOLEAN exactflag)
+INT4 analyzeOneTemplate(candidate *output, const candidate *input, const ffdataStruct *ffdata, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *aveTFnoisePerFbinRatio, const UserInput_t *params, const REAL4FFTPlan *plan, const gsl_rng *rng, const BOOLEAN exactflag)
 {
 
-   XLAL_CHECK( output!=NULL && input!=NULL && ffdata!=NULL && aveNoise!=NULL && aveTFnoisePerFbinRatio!=NULL && params!=NULL && sftexist!=NULL && plan!=NULL && rng!=NULL, XLAL_EINVAL );
+   XLAL_CHECK( output!=NULL && input!=NULL && ffdata!=NULL && aveNoise!=NULL && aveTFnoisePerFbinRatio!=NULL && params!=NULL && plan!=NULL && rng!=NULL, XLAL_EINVAL );
 
    INT4 proberrcode = 0;
 
@@ -144,7 +143,7 @@ INT4 analyzeOneTemplate(candidate *output, const candidate *input, const ffdataS
    TwoSpectTemplate *template = NULL;
    XLAL_CHECK( (template = createTwoSpectTemplate(params->maxTemplateLength)) != NULL, XLAL_EFUNC );
    resetTwoSpectTemplate(template);
-   if (exactflag) XLAL_CHECK( makeTemplate(template, *input, params, sftexist, plan) == XLAL_SUCCESS, XLAL_EFUNC );
+   if (exactflag) XLAL_CHECK( makeTemplate(template, *input, params, plan) == XLAL_SUCCESS, XLAL_EFUNC );
    else XLAL_CHECK( makeTemplateGaussians(template, *input, params) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Calculate R from the template and the data
@@ -214,7 +213,6 @@ INT4 analyzeCandidatesTemplateFromVector(candidateVector *output, const candidat
  * \param [in]  paramspace             Pointer to TwoSpectParamSpaceSearchVals containing the parameter space to be searched
  * \param [in]  params                 Pointer to UserInput_t
  * \param [in]  ffdata                 Pointer to ffdataStruct
- * \param [in]  sftexist               Pointer to INT4Vector of existing SFTs
  * \param [in]  aveNoise               Pointer to REAL4VectorAligned of 2nd FFT background powers
  * \param [in]  aveTFnoisePerFbinRatio Pointer to REAL4VectorAligned of normalized power across the frequency band
  * \param [in]  secondFFTplan          Pointer to REAL4FFTPlan
@@ -222,10 +220,10 @@ INT4 analyzeCandidatesTemplateFromVector(candidateVector *output, const candidat
  * \param [in]  useExactTemplates      Boolean of 0 (use Gaussian templates) or 1 (use exact templates)
  * \return Status value
  */
-INT4 bruteForceTemplateSearch(candidate *output, const candidate input, const TwoSpectParamSpaceSearchVals *paramspace, const UserInput_t *params, const REAL4VectorAligned *ffdata, const INT4Vector *sftexist, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *aveTFnoisePerFbinRatio, const REAL4FFTPlan *secondFFTplan, const gsl_rng *rng, const BOOLEAN useExactTemplates)
+INT4 bruteForceTemplateSearch(candidate *output, const candidate input, const TwoSpectParamSpaceSearchVals *paramspace, const UserInput_t *params, const REAL4VectorAligned *ffdata, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *aveTFnoisePerFbinRatio, const REAL4FFTPlan *secondFFTplan, const gsl_rng *rng, const BOOLEAN useExactTemplates)
 {
 
-   XLAL_CHECK( output != NULL && params != NULL && sftexist != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL, XLAL_EINVAL );
+   XLAL_CHECK( output != NULL && params != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL, XLAL_EINVAL );
 
    fprintf(stderr, "Performing brute force template search... ");
 
@@ -311,7 +309,7 @@ INT4 bruteForceTemplateSearch(candidate *output, const candidate input, const Tw
 
                resetTwoSpectTemplate(template);
 
-               if (useExactTemplates) XLAL_CHECK( makeTemplate(template, cand, params, sftexist, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
+               if (useExactTemplates) XLAL_CHECK( makeTemplate(template, cand, params, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
                else XLAL_CHECK( makeTemplateGaussians(template, cand, params) == XLAL_SUCCESS, XLAL_EFUNC );
 
                if (params->calcRthreshold && bestProb==0.0) XLAL_CHECK( numericFAR(farval, template, params->tmplfar, aveNoise, aveTFnoisePerFbinRatio, params, rng, params->BrentsMethod) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -368,7 +366,6 @@ INT4 bruteForceTemplateSearch(candidate *output, const candidate input, const Tw
  * \param [in]  paramspace             Pointer to TwoSpectParamSpaceSearchVals containing the parameter space to be searched
  * \param [in]  params                 Pointer to UserInput_t
  * \param [in]  ffdata                 Pointer to ffdataStruct
- * \param [in]  sftexist               Pointer to INT4Vector of existing SFTs
  * \param [in]  aveNoise               Pointer to REAL4VectorAligned of 2nd FFT background powers
  * \param [in]  aveTFnoisePerFbinRatio Pointer to REAL4VectorAligned of normalized power across the frequency band
  * \param [in]  secondFFTplan          Pointer to REAL4FFTPlan
@@ -376,10 +373,10 @@ INT4 bruteForceTemplateSearch(candidate *output, const candidate input, const Tw
  * \param [in]  useExactTemplates      Boolean of 0 (use Gaussian templates) or 1 (use exact templates)
  * \return Status value
  */
-INT4 bruteForceTemplateTest(candidateVector **output, const candidate input, const TwoSpectParamSpaceSearchVals *paramspace, const UserInput_t *params, const REAL4VectorAligned *ffdata, const INT4Vector *sftexist, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *aveTFnoisePerFbinRatio, const REAL4FFTPlan *secondFFTplan, const gsl_rng *rng, const BOOLEAN useExactTemplates)
+INT4 bruteForceTemplateTest(candidateVector **output, const candidate input, const TwoSpectParamSpaceSearchVals *paramspace, const UserInput_t *params, const REAL4VectorAligned *ffdata, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *aveTFnoisePerFbinRatio, const REAL4FFTPlan *secondFFTplan, const gsl_rng *rng, const BOOLEAN useExactTemplates)
 {
 
-   XLAL_CHECK( *output != NULL && paramspace!=NULL && params != NULL && ffdata!=NULL && sftexist != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL && rng!=NULL, XLAL_EINVAL );
+   XLAL_CHECK( *output != NULL && paramspace!=NULL && params != NULL && ffdata!=NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL && rng!=NULL, XLAL_EINVAL );
 
    REAL8Vector *trialf, *trialb, *trialp;
    REAL8 fstepsize, dfstepsize;
@@ -454,7 +451,7 @@ INT4 bruteForceTemplateTest(candidateVector **output, const candidate input, con
 
                resetTwoSpectTemplate(template);
 
-               if (useExactTemplates) XLAL_CHECK( makeTemplate(template, cand, params, sftexist, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
+               if (useExactTemplates) XLAL_CHECK( makeTemplate(template, cand, params, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
                else XLAL_CHECK( makeTemplateGaussians(template, cand, params) == XLAL_SUCCESS, XLAL_EFUNC );
 
                REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
@@ -495,7 +492,6 @@ INT4 bruteForceTemplateTest(candidateVector **output, const candidate input, con
  * \param [in]  skypos                 SkyPosition struct of the sky position (in RA and DEC) being searched
  * \param [in]  params                 Pointer to UserInput_t
  * \param [in]  ffdata                 Pointer to ffdataStruct
- * \param [in]  sftexist               Pointer to INT4Vector of existing SFTs
  * \param [in]  aveNoise               Pointer to REAL4VectorAligned of 2nd FFT background powers
  * \param [in]  aveTFnoisePerFbinRatio Pointer to REAL4VectorAligned of normalized power across the frequency band
  * \param [in]  secondFFTplan          Pointer to REAL4FFTPlan
@@ -503,10 +499,10 @@ INT4 bruteForceTemplateTest(candidateVector **output, const candidate input, con
  * \param [in]  useExactTemplates      Boolean of 0 (use Gaussian templates) or 1 (use exact templates)
  * \return Status value
  */
-INT4 templateSearch_scox1Style(candidateVector **output, const REAL8 fminimum, const REAL8 fspan, const REAL8 period, const REAL8 asini, const REAL8 asinisigma, const SkyPosition skypos, const UserInput_t *params, const REAL4VectorAligned *ffdata, const INT4Vector *sftexist, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *aveTFnoisePerFbinRatio, const REAL4FFTPlan *secondFFTplan, const gsl_rng *rng, BOOLEAN useExactTemplates)
+INT4 templateSearch_scox1Style(candidateVector **output, const REAL8 fminimum, const REAL8 fspan, const REAL8 period, const REAL8 asini, const REAL8 asinisigma, const SkyPosition skypos, const UserInput_t *params, const REAL4VectorAligned *ffdata, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *aveTFnoisePerFbinRatio, const REAL4FFTPlan *secondFFTplan, const gsl_rng *rng, BOOLEAN useExactTemplates)
 {
 
-   XLAL_CHECK( *output != NULL && params != NULL && ffdata != NULL && sftexist != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL && rng != NULL, XLAL_EINVAL );
+   XLAL_CHECK( *output != NULL && params != NULL && ffdata != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL && rng != NULL, XLAL_EINVAL );
 
    REAL8Vector *trialf;
    REAL8Vector *trialdf;
@@ -571,11 +567,8 @@ INT4 templateSearch_scox1Style(candidateVector **output, const REAL8 fminimum, c
 
          //Make the template
          resetTwoSpectTemplate(template);
-         if (useExactTemplates!=0) {
-            XLAL_CHECK( makeTemplate(template, cand, params, sftexist, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
-         } else {
-            XLAL_CHECK( makeTemplateGaussians(template, cand, params) == XLAL_SUCCESS, XLAL_EFUNC );
-         }
+         if (useExactTemplates!=0) XLAL_CHECK( makeTemplate(template, cand, params, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
+         else XLAL_CHECK( makeTemplateGaussians(template, cand, params) == XLAL_SUCCESS, XLAL_EFUNC );
 
          REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
          XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC);
@@ -614,15 +607,14 @@ INT4 templateSearch_scox1Style(candidateVector **output, const REAL8 fminimum, c
  * \param [in]  params        Pointer to UserInput_t
  * \param [in]  ffplanenoise  Pointer to REAL4VectorAligned of 2nd FFT background powers
  * \param [in]  fbinaveratios Pointer to REAL4VectorAligned of normalized SFT background
- * \param [in]  sftexist      Pointer to INT4Vector of existing SFTs
  * \param [in]  rng           Pointer to gsl_rng
  * \param [in]  exactflag     Flag to use Gaussian templates (0) or exact templates (1)
  * \return Status value
  */
-INT4 clusterCandidates(candidateVector **output, const candidateVector *input, const ffdataStruct *ffdata, const UserInput_t *params, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios, const INT4Vector *sftexist, const gsl_rng *rng, const BOOLEAN exactflag)
+INT4 clusterCandidates(candidateVector **output, const candidateVector *input, const ffdataStruct *ffdata, const UserInput_t *params, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios, const gsl_rng *rng, const BOOLEAN exactflag)
 {
 
-   XLAL_CHECK( *output != NULL && input != NULL && ffdata != NULL && params != NULL && ffplanenoise != NULL && fbinaveratios != NULL && sftexist != NULL && rng != NULL, XLAL_EINVAL );
+   XLAL_CHECK( *output != NULL && input != NULL && ffdata != NULL && params != NULL && ffplanenoise != NULL && fbinaveratios != NULL && rng != NULL, XLAL_EINVAL );
 
    UINT4 loc, loc2, numcandoutlist;
    REAL8 avefsig, aveperiod, mindf, maxdf;
@@ -746,7 +738,7 @@ INT4 clusterCandidates(candidateVector **output, const candidateVector *input, c
 
                      loadCandidateData(&cand, avefsig, aveperiod, mindf + kk*0.5/params->Tsft, input->data[0].ra, input->data[0].dec, 0, 0, 0.0, 0, 0.0, -1);
 
-                     if (exactflag==1) XLAL_CHECK( makeTemplate(template, cand, params, sftexist, plan) == XLAL_SUCCESS, XLAL_EFUNC );
+                     if (exactflag==1) XLAL_CHECK( makeTemplate(template, cand, params, plan) == XLAL_SUCCESS, XLAL_EFUNC );
                      else XLAL_CHECK( makeTemplateGaussians(template, cand, params) == XLAL_SUCCESS, XLAL_EFUNC );
 
                      REAL8 R = calculateR(ffdata->ffdata, template, ffplanenoise, fbinaveratios);
