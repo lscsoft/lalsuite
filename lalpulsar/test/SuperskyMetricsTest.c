@@ -319,7 +319,6 @@ int main(void)
 
   // Check coherent metrics
   for (size_t n = 0; n < NUM_SEGS; ++n) {
-    break;
 
     // Create segment list
     LALSegList segments;
