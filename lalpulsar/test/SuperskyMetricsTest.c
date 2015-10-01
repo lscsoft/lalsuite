@@ -243,7 +243,7 @@ static int CheckSuperskyMetrics(
         }
       }
     }
-    const double err_tol = 1e-6;
+    const double err_tol = 2e-4;
     XLAL_CHECK(max_err <= err_tol, XLAL_ETOL, "'rssky_transf' check failed: max(err) = %0.3e > %0.3e = err_tol", max_err, err_tol);
   }
 
