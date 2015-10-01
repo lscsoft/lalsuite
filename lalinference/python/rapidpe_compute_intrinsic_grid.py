@@ -216,6 +216,7 @@ grid_section.add_option("--setup", help="Set up the initial grid based on templa
 grid_section.add_option("-t", "--tmplt-bank", help="XML file with template bank.")
 grid_section.add_option("-O", "--use-overlap", help="Use overlap information to define 'closeness'.")
 grid_section.add_option("-T", "--overlap-threshold", type=float, help="Threshold on overlap value.")
+grid_section.add_option("-N", "--no-deactivate", action="store_true", help="Do not deactivate cells initially which have no template within them.")
 optp.add_option_group(grid_section)
 
 refine_section = OptionGroup(optp, "refine options", "Options for refining a pre-existing grid.")
@@ -349,10 +350,13 @@ grid, spacing = amrlib.create_regular_grid_from_cell(init_region, side_pts=5, re
 # FIXME: This gets more and more dangerous in higher dimensions
 # FIXME: Move to function
 tree = BallTree(grid)
-get_idx = set()
-for pt in pts[idx:]:
-    get_idx.add(tree.query(pt, k=1, return_distance=False)[0][0])
-selected = grid[numpy.array(list(get_idx))]
+if not opts.no_deactivate:
+    get_idx = set()
+    for pt in pts[idx:]:
+        get_idx.add(tree.query(pt, k=1, return_distance=False)[0][0])
+    selected = grid[numpy.array(list(get_idx))]
+else:
+    selected = grid
 
 #### BEGIN REFINEMENT OF RESULTS #########
 
