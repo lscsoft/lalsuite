@@ -675,13 +675,13 @@ UINT4 LALInferencePrintNVariableItem(char *out, UINT4 strsize, const LALInferenc
         case LALINFERENCE_UINT4Vector_t:
 		  {
 				  UINT4Vector *vec=*(UINT4Vector **)ptr->value;
-				  char arrstr[21*vec->length +1]; /* Enough space for 20 chars per entry */
+				  char arrstr[31*vec->length +1]; /* Enough space for 20 chars per entry */
 				  sprintf(arrstr,"");
 				  for(UINT4 i=0;i<vec->length;i++)
 				  {
-						  char this[21];
-						  snprintf(this,21,"%"LAL_UINT4_FORMAT" ",vec->data[i]);
-						  strncat(arrstr,this,21);
+						  char this[31];
+						  snprintf(this,30,"%"LAL_UINT4_FORMAT" ",vec->data[i]);
+						  strncat(arrstr,this,30);
 				  }
 				  size_t actual_len=strlen(arrstr) +1;
 				  if(actual_len > strsize)
@@ -695,13 +695,13 @@ UINT4 LALInferencePrintNVariableItem(char *out, UINT4 strsize, const LALInferenc
         case LALINFERENCE_INT4Vector_t:
 		  {
 				  INT4Vector *vec=*(INT4Vector **)ptr->value;
-				  char arrstr[21*vec->length +1]; /* Enough space for 20 chars per entry */
+				  char arrstr[31*vec->length +1]; /* Enough space for 20 chars per entry */
 				  sprintf(arrstr,"");
 				  for(UINT4 i=0;i<vec->length;i++)
 				  {
-						  char this[21];
-						  snprintf(this,21,"%"LAL_INT4_FORMAT" ",vec->data[i]);
-						  strncat(arrstr,this,21);
+						  char this[31];
+						  snprintf(this,30,"%"LAL_INT4_FORMAT" ",vec->data[i]);
+						  strncat(arrstr,this,30);
 				  }
 				  size_t actual_len=strlen(arrstr) +1;
 				  if(actual_len > strsize)
@@ -726,8 +726,8 @@ UINT4 LALInferencePrintNVariableItem(char *out, UINT4 strsize, const LALInferenc
 				  for(UINT4 i=0;i<vec->length;i++)
 				  {
 						  char this[31];
-						  snprintf(this,31,"%.20"LAL_REAL8_FORMAT" ",vec->data[i]);
-						  strncat(arrstr,this,31);
+						  snprintf(this,30,"%.20"LAL_REAL8_FORMAT" ",vec->data[i]);
+						  strncat(arrstr,this,30);
 				  }
 				  size_t actual_len=strlen(arrstr) +1;
 				  if(actual_len > strsize)
