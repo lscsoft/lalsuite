@@ -223,12 +223,12 @@ static int CheckSuperskyMetrics(
   // Check supersky metrics
   {
     gsl_matrix_const_view ussky_metric_ref_view = gsl_matrix_const_view_array((const double *)ussky_metric_ref, 5, 5);
-    const double err = XLALCompareMetrics(ussky_metric, &ussky_metric_ref_view.matrix), err_tol = 5e-9;
+    const double err = XLALCompareMetrics(ussky_metric, &ussky_metric_ref_view.matrix), err_tol = 1e-7;
     XLAL_CHECK(err <= err_tol, XLAL_ETOL, "'ussky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol);
   }
   {
     gsl_matrix_const_view rssky_metric_ref_view = gsl_matrix_const_view_array((const double *)rssky_metric_ref, 4, 4);
-    const double err = XLALCompareMetrics(rssky_metric, &rssky_metric_ref_view.matrix), err_tol = 5e-9;
+    const double err = XLALCompareMetrics(rssky_metric, &rssky_metric_ref_view.matrix), err_tol = 1e-7;
     XLAL_CHECK(err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol);
   }
   {
