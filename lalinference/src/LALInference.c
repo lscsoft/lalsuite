@@ -721,13 +721,13 @@ UINT4 LALInferencePrintNVariableItem(char *out, UINT4 strsize, const LALInferenc
 		case LALINFERENCE_REAL8Vector_t:
 		  {
 				  REAL8Vector *vec=*(REAL8Vector **)ptr->value;
-				  char arrstr[21*vec->length +1]; /* Enough space for 20 chars per entry */
+				  char arrstr[31*vec->length +1]; /* Enough space for 20 chars per entry */
 				  sprintf(arrstr,"");
 				  for(UINT4 i=0;i<vec->length;i++)
 				  {
-						  char this[21];
-						  snprintf(this,21,"%.15"LAL_REAL8_FORMAT" ",vec->data[i]);
-						  strncat(arrstr,this,21);
+						  char this[31];
+						  snprintf(this,31,"%.20"LAL_REAL8_FORMAT" ",vec->data[i]);
+						  strncat(arrstr,this,31);
 				  }
 				  size_t actual_len=strlen(arrstr) +1;
 				  if(actual_len > strsize)
