@@ -137,9 +137,9 @@ static int BasicTest(
       XLAL_CHECK(stats->total_points == total_ref[j], XLAL_EFAILED, "\n  "
                  "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", stats->total_points, total_ref[j]);
       XLAL_CHECK(stats->min_points_pass <= stats->avg_points_pass, XLAL_EFAILED, "\n  "
-                 "ERROR: min_points_pass = %" LAL_INT8_FORMAT " > %g = avg_points_pass", stats->min_points_pass, stats->avg_points_pass);
+                 "ERROR: min_points_pass = %" LAL_INT4_FORMAT " > %g = avg_points_pass", stats->min_points_pass, stats->avg_points_pass);
       XLAL_CHECK(stats->max_points_pass >= stats->avg_points_pass, XLAL_EFAILED, "\n  "
-                 "ERROR: max_points_pass = %" LAL_INT8_FORMAT " < %g = avg_points_pass", stats->max_points_pass, stats->avg_points_pass);
+                 "ERROR: max_points_pass = %" LAL_INT4_FORMAT " < %g = avg_points_pass", stats->max_points_pass, stats->avg_points_pass);
     }
     printf(" done\n");
 
@@ -153,9 +153,9 @@ static int BasicTest(
     gsl_vector *GAVEC(nearest, n);
     UINT8Vector *nearest_seq_idxs = XLALCreateUINT8Vector(n);
     XLAL_CHECK(nearest_seq_idxs != NULL, XLAL_ENOMEM);
-    UINT8Vector *nearest_pass_idxs = XLALCreateUINT8Vector(n);
+    UINT4Vector *nearest_pass_idxs = XLALCreateUINT4Vector(n);
     XLAL_CHECK(nearest_pass_idxs != NULL, XLAL_ENOMEM);
-    UINT8Vector *nearest_pass_lens = XLALCreateUINT8Vector(n);
+    UINT4Vector *nearest_pass_lens = XLALCreateUINT4Vector(n);
     XLAL_CHECK(nearest_pass_lens != NULL, XLAL_ENOMEM);
     for (UINT8 k = 0; k < total; ++k) {
       gsl_vector_const_view point_view = gsl_matrix_const_column(points, k);
@@ -169,7 +169,7 @@ static int BasicTest(
                  "ERROR: nearest_seq_idxs[%zu] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", i, nearest_seq_idxs->data[i], k);
       for (size_t j = 0; j < n; ++j) {
         XLAL_CHECK(nearest_pass_idxs->data[j] < nearest_pass_lens->data[j], XLAL_EFAILED, "\n  "
-                   "ERROR: nearest_pass_idxs[%zu] = %" LAL_UINT8_FORMAT " >= %" LAL_UINT8_FORMAT "\n", j, nearest_pass_idxs->data[i], nearest_pass_lens->data[j]);
+                   "ERROR: nearest_pass_idxs[%zu] = %" LAL_UINT4_FORMAT " >= %" LAL_UINT4_FORMAT "\n", j, nearest_pass_idxs->data[i], nearest_pass_lens->data[j]);
       }
       if (0 < i) {
         UINT8 nearest_seq_idx = 0;
@@ -191,8 +191,8 @@ static int BasicTest(
     GFMAT(points);
     GFVEC(nearest);
     XLALDestroyUINT8Vector(nearest_seq_idxs);
-    XLALDestroyUINT8Vector(nearest_pass_idxs);
-    XLALDestroyUINT8Vector(nearest_pass_lens);
+    XLALDestroyUINT4Vector(nearest_pass_idxs);
+    XLALDestroyUINT4Vector(nearest_pass_lens);
 
   }
 
