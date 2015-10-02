@@ -39,9 +39,6 @@
  *
  */
 
-
-#define _XOPEN_SOURCE 500
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -53,16 +50,17 @@
 #include <math.h>
 #include <complex.h>
 #include <time.h>
-#include <unistd.h>
-#include <getopt.h>
 #include <stdbool.h>
+#include <alloca.h>
 #include <string.h>
+#include <libgen.h>
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_bspline.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_min.h>
 #include <gsl/gsl_spline.h>
+#include <gsl/gsl_poly.h>
 #include <lal/Units.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALConstants.h>
@@ -70,12 +68,18 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Date.h>
 #include <lal/StringInput.h>
+#include <lal/Sequence.h>
+#include <lal/LALStdio.h>
+#include <lal/FileIO.h>
 
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 #include <lal/SphericalHarmonics.h>
 
+#include "LALSimIMRSEOBNRROMUtilities.c"
 #include "LALSimIMREOBNRv2HMROMUtilities.c"
+
+
 
 /*****************************************************************************/
 /**************************** General definitions ****************************/
@@ -191,7 +195,7 @@ static REAL8 ModeAmpFactor(const INT4 l, const INT4 m, const REAL8 q) {
 /* Function interpolating the data in matrix/vector form produces an interpolated data in the form of SplineLists */
 static INT4 Interpolate_Spline_Data(const EOBNRHMROMdata *data, EOBNRHMROMdata_interp *data_interp) {
 
-  gsl_set_error_handler(&Err_Handler);
+  gsl_set_error_handler(&err_handler);
   SplineList* splinelist;
   gsl_spline* spline;
   gsl_interp_accel* accel;
@@ -656,3 +660,4 @@ INT4 XLALSimIMREOBNRv2HMROM(
 
   return(retcode);
 }
+

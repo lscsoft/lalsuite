@@ -111,10 +111,7 @@ typedef struct tagListmodesEOBNRHMROMdata_interp
 /****************************************************************************/
 /******************************** Prototypes ********************************/
 
-/* Functions to read data from files */
-static void Err_Handler(const char *reason, const char *file, int line, int gsl_errno);
-static INT4 Read_Vector(const char dir[], const char fname[], gsl_vector *v);
-static INT4 Read_Matrix(const char dir[], const char fname[], gsl_matrix *m);
+/* Function to read data from files */
 static INT4 Read_Data_Mode(const char dir[], const INT4 mode[2], EOBNRHMROMdata *data);
 
 /* Functions to initialize and cleanup data structures */
@@ -174,77 +171,35 @@ static ListmodesEOBNRHMROMdata_interp* ListmodesEOBNRHMROMdata_interp_GetMode(
 /************************************************************************************/
 /******************************** Internal functions ********************************/
 
-/********************* Functions to read data from files ********************/
-
-/* Error handler for GSL */
-static void Err_Handler(const char *reason, const char *file, int line, int gsl_errno) {
-  XLALPrintError("gsl: %s:%d: %s - %d\n", file, line, reason, gsl_errno);
-}
-
-/* Helper functions to read gsl_vector and gsl_matrix data with error checking */
-static INT4 Read_Vector(const char dir[], const char fname[], gsl_vector *v) {
-  char *path=XLALMalloc(strlen(dir)+64);
-
-  sprintf(path,"%s/%s", dir, fname);
-  FILE *f = fopen(path, "rb");
-  if (!f) {
-      return(XLAL_FAILURE);
-  }
-  INT4 ret = gsl_vector_fread(f, v);
-  if (ret != 0) {
-      fprintf(stderr, "Error reading data from %s.\n",path);
-      return(XLAL_FAILURE);
-  }
-  fclose(f);
-  XLALFree(path);
-  return(XLAL_SUCCESS);
-}
-static INT4 Read_Matrix(const char dir[], const char fname[], gsl_matrix *m) {
-  char *path=XLALMalloc(strlen(dir)+64);
-
-  sprintf(path,"%s/%s", dir, fname);
-  FILE *f = fopen(path, "rb");
-  if (!f) {
-      return(XLAL_FAILURE);
-  }
-  INT4 ret = gsl_matrix_fread(f, m);
-  if (ret != 0) {
-      fprintf(stderr, "Error reading data from %s.\n",path);
-      return(XLAL_FAILURE);
-  }
-  fclose(f);
-  XLALFree(path);
-  return(XLAL_SUCCESS);
-}
-
 /* Read binary ROM data for frequency vectors, coefficients matrices, basis functions matrices, and shiftvectors in time and phase */
 static INT4 Read_Data_Mode(const char dir[], const INT4 mode[2], EOBNRHMROMdata *data) {
   /* Load binary data for amplitude and phase spline coefficients as computed in Mathematica */
   INT4 ret = XLAL_SUCCESS;
-  char *file_q = XLALMalloc(strlen(dir)+64);
-  char *file_freq = XLALMalloc(strlen(dir)+64);
-  char *file_Camp = XLALMalloc(strlen(dir)+64);
-  char *file_Cphi = XLALMalloc(strlen(dir)+64);
-  char *file_Bamp = XLALMalloc(strlen(dir)+64);
-  char *file_Bphi = XLALMalloc(strlen(dir)+64);
-  char *file_shifttime = XLALMalloc(strlen(dir)+64);
-  char *file_shiftphase = XLALMalloc(strlen(dir)+64);
-  sprintf(file_q, "%s", "EOBNRv2HMROM_q.dat"); /* The q vector is the same for all modes */
-  sprintf(file_freq, "%s%d%d%s", "EOBNRv2HMROM_freq_", mode[0], mode[1], ".dat");
-  sprintf(file_Camp, "%s%d%d%s", "EOBNRv2HMROM_Camp_", mode[0], mode[1], ".dat");
-  sprintf(file_Cphi, "%s%d%d%s", "EOBNRv2HMROM_Cphi_", mode[0], mode[1], ".dat");
-  sprintf(file_Bamp, "%s%d%d%s", "EOBNRv2HMROM_Bamp_", mode[0], mode[1], ".dat");
-  sprintf(file_Bphi, "%s%d%d%s", "EOBNRv2HMROM_Bphi_", mode[0], mode[1], ".dat");
-  sprintf(file_shifttime, "%s%d%d%s", "EOBNRv2HMROM_shifttime_", mode[0], mode[1], ".dat");
-  sprintf(file_shiftphase, "%s%d%d%s", "EOBNRv2HMROM_shiftphase_", mode[0], mode[1], ".dat");
-  ret |= Read_Vector(dir, file_q, data->q);
-  ret |= Read_Vector(dir, file_freq, data->freq);
-  ret |= Read_Matrix(dir, file_Camp, data->Camp);
-  ret |= Read_Matrix(dir, file_Cphi, data->Cphi);
-  ret |= Read_Matrix(dir, file_Bamp, data->Bamp);
-  ret |= Read_Matrix(dir, file_Bphi, data->Bphi);
-  ret |= Read_Vector(dir, file_shifttime, data->shifttime);
-  ret |= Read_Vector(dir, file_shiftphase, data->shiftphase);
+  size_t size = strlen(dir) + 64;
+  char *file_q = XLALMalloc(size);
+  char *file_freq = XLALMalloc(size);
+  char *file_Camp = XLALMalloc(size);
+  char *file_Cphi = XLALMalloc(size);
+  char *file_Bamp = XLALMalloc(size);
+  char *file_Bphi = XLALMalloc(size);
+  char *file_shifttime = XLALMalloc(size);
+  char *file_shiftphase = XLALMalloc(size);
+  snprintf(file_q, size, "%s", "EOBNRv2HMROM_q.dat"); /* The q vector is the same for all modes */
+  snprintf(file_freq, size, "%s%d%d%s", "EOBNRv2HMROM_freq_", mode[0], mode[1], ".dat");
+  snprintf(file_Camp, size, "%s%d%d%s", "EOBNRv2HMROM_Camp_", mode[0], mode[1], ".dat");
+  snprintf(file_Cphi, size, "%s%d%d%s", "EOBNRv2HMROM_Cphi_", mode[0], mode[1], ".dat");
+  snprintf(file_Bamp, size, "%s%d%d%s", "EOBNRv2HMROM_Bamp_", mode[0], mode[1], ".dat");
+  snprintf(file_Bphi, size, "%s%d%d%s", "EOBNRv2HMROM_Bphi_", mode[0], mode[1], ".dat");
+  snprintf(file_shifttime, size, "%s%d%d%s", "EOBNRv2HMROM_shifttime_", mode[0], mode[1], ".dat");
+  snprintf(file_shiftphase, size, "%s%d%d%s", "EOBNRv2HMROM_shiftphase_", mode[0], mode[1], ".dat");
+  ret |= read_vector(dir, file_q, data->q);
+  ret |= read_vector(dir, file_freq, data->freq);
+  ret |= read_matrix(dir, file_Camp, data->Camp);
+  ret |= read_matrix(dir, file_Cphi, data->Cphi);
+  ret |= read_matrix(dir, file_Bamp, data->Bamp);
+  ret |= read_matrix(dir, file_Bphi, data->Bphi);
+  ret |= read_vector(dir, file_shifttime, data->shifttime);
+  ret |= read_vector(dir, file_shiftphase, data->shiftphase);
   XLALFree(file_q);
   XLALFree(file_freq);
   XLALFree(file_Camp);
@@ -266,7 +221,7 @@ static void EOBNRHMROMdata_Init(EOBNRHMROMdata **data) {
   {
     EOBNRHMROMdata_Cleanup(*data);
   }
-  gsl_set_error_handler(&Err_Handler);
+  gsl_set_error_handler(&err_handler);
   (*data)->q = gsl_vector_alloc(nbwf);
   (*data)->freq = gsl_vector_alloc(nbfreq);
   (*data)->Camp = gsl_matrix_alloc(nk_amp,nbwf);
@@ -297,7 +252,7 @@ static void EOBNRHMROMdata_coeff_Init(EOBNRHMROMdata_coeff **data_coeff) {
   {
     EOBNRHMROMdata_coeff_Cleanup(*data_coeff);
   }
-  gsl_set_error_handler(&Err_Handler);
+  gsl_set_error_handler(&err_handler);
   (*data_coeff)->Camp_coeff = gsl_vector_alloc(nk_amp);
   (*data_coeff)->Cphi_coeff = gsl_vector_alloc(nk_phi);
   (*data_coeff)->shifttime_coeff = XLALMalloc(sizeof(double));

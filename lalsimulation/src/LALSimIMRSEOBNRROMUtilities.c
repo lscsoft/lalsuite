@@ -44,7 +44,7 @@
 #include <lal/H5FileIO.h>
 #endif
 
-static void err_handler(const char *reason, const char *file, int line, int gsl_errno);
+UNUSED static void err_handler(const char *reason, const char *file, int line, int gsl_errno);
 UNUSED static int read_vector(const char dir[], const char fname[], gsl_vector *v);
 UNUSED static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
 
@@ -80,8 +80,8 @@ UNUSED static REAL8 Interpolate_Coefficent_Matrix(
 
 UNUSED static gsl_vector *Fit_cubic(const gsl_vector *xi, const gsl_vector *yi);
 
-static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
-static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
+UNUSED static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
+UNUSED static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
 
 
 // Definitions
