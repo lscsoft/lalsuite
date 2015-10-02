@@ -75,8 +75,6 @@ noinst_HEADERS = \
 	LALSimIMREOBHybridRingdown.c \
 	LALSimIMREOBNQCCorrection.c \
 	LALSimIMREOBNRv2.h \
-	LALSimIMREOBNRv2HMROM.h \
-	LALSimIMREOBNRv2HMROMstruct.h \
 	LALSimIMREOBNewtonianMultipole.c \
 	LALSimInspiralPNCoefficients.c \
 	LALSimInspiraldEnergyFlux.c \
@@ -95,7 +93,8 @@ noinst_HEADERS = \
 	LALSimIMRPhenomD_internals.c \
 	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomP.c \
-	LALSimIMRSEOBNRROMUtilities.c
+	LALSimIMRSEOBNRROMUtilities.c \
+	LALSimIMREOBNRv2HMROMUtilities.c
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
@@ -111,7 +110,6 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv2ROMDoubleSpinHI.c \
 	LALSimIMRSEOBNRv2ChirpTime.c \
 	LALSimIMREOBNRv2HMROM.c \
-	LALSimIMREOBNRv2HMROMstruct.c \
 	LALSimIMRPhenom.c \
 	LALSimIMRPhenomC.c \
 	LALSimIMRPhenomD.c \

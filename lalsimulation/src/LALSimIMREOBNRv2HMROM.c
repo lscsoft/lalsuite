@@ -33,9 +33,9 @@
  * Put the untared data into a location in your LAL_DATA_PATH.
  *
  * Parameter ranges:
- *   q = 1-6
+ *   q = 1-11.98
  *   No spin
- *   Mtot >= 20Msun for fstart=9Hz
+ *   Mtot >= 8Msun for fstart=10Hz
  *
  */
 
@@ -75,21 +75,17 @@
 #include <lal/LALSimIMR.h>
 #include <lal/SphericalHarmonics.h>
 
-#include "LALSimIMREOBNRv2HMROMstruct.h"
-#include "LALSimIMREOBNRv2HMROM.h"
+#include "LALSimIMREOBNRv2HMROMUtilities.c"
 
-#include <time.h> /* for testing */
+/*****************************************************************************/
+/**************************** General definitions ****************************/
 
-/*************************************************/
-/********* Some general definitions **************/
-
-#define nk_amp 10  /* number of SVD-modes == number of basis functions for amplitude */
-#define nk_phi 20  /* number of SVD-modes == number of basis functions for phase */
+/* NOTE: some integer constants #define statements are in LALSimIMREOBNRv2HMROMUtilities.c */
 
 /* Number and list of modes to generate - to be modified ultimately to allow for a selection of the desired mode(s) */
 /* By convention the first mode of the list, assumed to be the 22, is used to set phiRef */
 #define EOBNRV2_ROM_NUM_MODES_MAX 5
-INT4 nbmode = EOBNRV2_ROM_NUM_MODES_MAX;
+static INT4 nbmode = EOBNRV2_ROM_NUM_MODES_MAX;
 static const INT4 listmode[EOBNRV2_ROM_NUM_MODES_MAX][2] = { {2,2}, {2,1}, {3,3}, {4,4}, {5,5} };
 
 /* Maximal mass ratio covered by the model - q=12 (almost) for now */
@@ -101,25 +97,54 @@ static const REAL8 Mf_ROM_max = 0.285;
 /* Total mass (in units of solar mass) used to generate the ROM - used to restore the correct amplitude (global factor M) when coming back to physical units */
 static const REAL8 M_ROM = 10.;
 
-/* Contrarily to SEOBNR, the frequencies used by the SVD for each mode are to be loaded as data in the mode-by-mode loop (like the coefficients and reduced basis) */
-/* Define the number of points in frequency used by the SVD, identical for all modes */
-static const INT4 nbfreq = 300;
-/* Define the number of training waveforms used by the SVD, identical for all modes */
-static const INT4 nbwf = 301;
 
 /******************************************************************/
 /********* Definitions for the persistent structures **************/
 
 /* SEOBNR-ROM structures are generalized to lists */
-ListmodesEOBNRHMROMdata* __lalsim_EOBNRv2HMROM_data_init = NULL; /* for initialization only */
-ListmodesEOBNRHMROMdata** const __lalsim_EOBNRv2HMROM_data = &__lalsim_EOBNRv2HMROM_data_init;
-/*ListmodesEOBNRHMROMdata_coeff** const __lalsim_EOBNRv2HMROM_coeff;*/
-ListmodesEOBNRHMROMdata_interp* __lalsim_EOBNRv2HMROM_interp_init = NULL; /* for initialization only */
-ListmodesEOBNRHMROMdata_interp** const __lalsim_EOBNRv2HMROM_interp = &__lalsim_EOBNRv2HMROM_interp_init;
+static ListmodesEOBNRHMROMdata* __lalsim_EOBNRv2HMROM_data_init = NULL; /* for initialization only */
+static ListmodesEOBNRHMROMdata** const __lalsim_EOBNRv2HMROM_data = &__lalsim_EOBNRv2HMROM_data_init;
+static ListmodesEOBNRHMROMdata_interp* __lalsim_EOBNRv2HMROM_interp_init = NULL; /* for initialization only */
+static ListmodesEOBNRHMROMdata_interp** const __lalsim_EOBNRv2HMROM_interp = &__lalsim_EOBNRv2HMROM_interp_init;
 /* Tag indicating whether the data has been loaded and interpolated */
-INT4 __lalsim_EOBNRv2HMROM_setup = XLAL_FAILURE; /* To be set to XLAL_SUCCESS after initialization*/
+static INT4 __lalsim_EOBNRv2HMROM_setup = XLAL_FAILURE; /* To be set to XLAL_SUCCESS after initialization*/
 
-/********************* Miscellaneous ********************/
+
+/****************************************************************************/
+/******************************** Prototypes ********************************/
+
+/* Functions to interpolate the data and to evaluate the interpolated data for a given q */
+static INT4 Evaluate_Spline_Data(
+  const REAL8 q,                           /* Input: q-value for which projection coefficients should be evaluated */
+  const EOBNRHMROMdata_interp* data_interp,  /* Input: data in interpolated form */
+  EOBNRHMROMdata_coeff* data_coeff           /* Output: vectors of projection coefficients and shifts in time and phase */
+);
+static INT4 Interpolate_Spline_Data(
+  const EOBNRHMROMdata *data,           /* Input: data in vector/matrix form to interpolate */
+  EOBNRHMROMdata_interp *data_interp    /* Output: interpolated data */
+);
+
+/* Functions to load and initalize ROM data */
+static INT4 EOBNRv2HMROM_Init_LALDATA(void);
+static INT4 EOBNRv2HMROM_Init(const char dir[]);
+
+/* Core functions for waveform reconstruction */
+static INT4 EOBNRv2HMROMCore(
+  COMPLEX16FrequencySeries **hptilde,
+  COMPLEX16FrequencySeries **hctilde,
+  REAL8 phiRef,
+  REAL8 deltaF,
+  REAL8 fLow,
+  REAL8 fHigh,
+  REAL8 fRef,
+  REAL8 distance,
+  REAL8 inclination,
+  REAL8 Mtot_sec,
+  REAL8 q);
+
+
+/************************************************************************************/
+/******************************** Internal functions ********************************/
 
 /* Return the closest higher power of 2 */
 static size_t NextPow2(const size_t n) {
@@ -163,160 +188,8 @@ static REAL8 ModeAmpFactor(const INT4 l, const INT4 m, const REAL8 q) {
   }
 }
 
-/********************* Functions to initialize and cleanup contents of data structures ********************/
-void EOBNRHMROMdata_Init(EOBNRHMROMdata **data) {
-  if(!data) exit(1);
-  /* Create storage for structures */
-  if(!*data) *data=XLALMalloc(sizeof(EOBNRHMROMdata));
-  else
-  {
-    EOBNRHMROMdata_Cleanup(*data);
-  }
-  gsl_set_error_handler(&Err_Handler);
-  (*data)->q = gsl_vector_alloc(nbwf);
-  (*data)->freq = gsl_vector_alloc(nbfreq);
-  (*data)->Camp = gsl_matrix_alloc(nk_amp,nbwf);
-  (*data)->Cphi = gsl_matrix_alloc(nk_phi,nbwf);
-  (*data)->Bamp = gsl_matrix_alloc(nbfreq,nk_amp);
-  (*data)->Bphi = gsl_matrix_alloc(nbfreq,nk_phi);
-  (*data)->shifttime = gsl_vector_alloc(nbwf);
-  (*data)->shiftphase = gsl_vector_alloc(nbwf);
-}
-void EOBNRHMROMdata_interp_Init(EOBNRHMROMdata_interp **data_interp) {
-  if(!data_interp) exit(1);
-  /* Create storage for structures */
-  if(!*data_interp) *data_interp=XLALMalloc(sizeof(EOBNRHMROMdata_interp));
-  else
-  {
-    EOBNRHMROMdata_interp_Cleanup(*data_interp);
-  }
-  (*data_interp)->Camp_interp = NULL;
-  (*data_interp)->Cphi_interp = NULL;
-  (*data_interp)->shifttime_interp = NULL;
-  (*data_interp)->shiftphase_interp = NULL;
-}
-void EOBNRHMROMdata_coeff_Init(EOBNRHMROMdata_coeff **data_coeff) {
-  if(!data_coeff) exit(1);
-  /* Create storage for structures */
-  if(!*data_coeff) *data_coeff=XLALMalloc(sizeof(EOBNRHMROMdata_coeff));
-  else
-  {
-    EOBNRHMROMdata_coeff_Cleanup(*data_coeff);
-  }
-  gsl_set_error_handler(&Err_Handler);
-  (*data_coeff)->Camp_coeff = gsl_vector_alloc(nk_amp);
-  (*data_coeff)->Cphi_coeff = gsl_vector_alloc(nk_phi);
-  (*data_coeff)->shifttime_coeff = XLALMalloc(sizeof(double));
-  (*data_coeff)->shiftphase_coeff = XLALMalloc(sizeof(double));
-}
-void EOBNRHMROMdata_Cleanup(EOBNRHMROMdata *data /* data to destroy */) {
-  if(data->q) gsl_vector_free(data->q);
-  if(data->freq) gsl_vector_free(data->freq);
-  if(data->Camp) gsl_matrix_free(data->Camp);
-  if(data->Cphi) gsl_matrix_free(data->Cphi);
-  if(data->Bamp) gsl_matrix_free(data->Bamp);
-  if(data->Bphi) gsl_matrix_free(data->Bphi);
-  if(data->shifttime) gsl_vector_free(data->shifttime);
-  if(data->shiftphase) gsl_vector_free(data->shiftphase);
-  XLALFree(data);
-}
-void EOBNRHMROMdata_coeff_Cleanup(EOBNRHMROMdata_coeff *data_coeff) {
-  if(data_coeff->Camp_coeff) gsl_vector_free(data_coeff->Camp_coeff);
-  if(data_coeff->Cphi_coeff) gsl_vector_free(data_coeff->Cphi_coeff);
-  if(data_coeff->shifttime_coeff) free(data_coeff->shifttime_coeff);
-  if(data_coeff->shiftphase_coeff) free(data_coeff->shiftphase_coeff);
-  XLALFree(data_coeff);
-}
-void EOBNRHMROMdata_interp_Cleanup(EOBNRHMROMdata_interp *data_interp) {
-  if(data_interp->Camp_interp) SplineList_Destroy(data_interp->Camp_interp);
-  if(data_interp->Cphi_interp) SplineList_Destroy(data_interp->Cphi_interp);
-  if(data_interp->shifttime_interp) SplineList_Destroy(data_interp->shifttime_interp);
-  if(data_interp->shiftphase_interp) SplineList_Destroy(data_interp->shiftphase_interp);
-  XLALFree(data_interp);
-}
-
-/* Error handler for GSL */
-void Err_Handler(const char *reason, const char *file, int line, int gsl_errno) {
-  XLALPrintError("gsl: %s:%d: %s - %d\n", file, line, reason, gsl_errno);
-}
-
-/* Helper functions to read gsl_vector and gsl_matrix data with error checking */
-INT4 Read_Vector(const char dir[], const char fname[], gsl_vector *v) {
-  char *path=XLALMalloc(strlen(dir)+64);
-
-  sprintf(path,"%s/%s", dir, fname);
-  FILE *f = fopen(path, "rb");
-  if (!f) {
-      return(XLAL_FAILURE);
-  }
-  INT4 ret = gsl_vector_fread(f, v);
-  if (ret != 0) {
-      fprintf(stderr, "Error reading data from %s.\n",path);
-      return(XLAL_FAILURE);
-  }
-  fclose(f);
-  XLALFree(path);
-  return(XLAL_SUCCESS);
-}
-INT4 Read_Matrix(const char dir[], const char fname[], gsl_matrix *m) {
-  char *path=XLALMalloc(strlen(dir)+64);
-
-  sprintf(path,"%s/%s", dir, fname);
-  FILE *f = fopen(path, "rb");
-  if (!f) {
-      return(XLAL_FAILURE);
-  }
-  INT4 ret = gsl_matrix_fread(f, m);
-  if (ret != 0) {
-      fprintf(stderr, "Error reading data from %s.\n",path);
-      return(XLAL_FAILURE);
-  }
-  fclose(f);
-  XLALFree(path);
-  return(XLAL_SUCCESS);
-}
-
-/* Read binary ROM data for frequency vectors, coefficients matrices, basis functions matrices, and shiftvectors in time and phase */
-INT4 Read_Data_Mode(const char dir[], const INT4 mode[2], EOBNRHMROMdata *data) {
-  /* Load binary data for amplitude and phase spline coefficients as computed in Mathematica */
-  INT4 ret = XLAL_SUCCESS;
-  char *file_q = XLALMalloc(strlen(dir)+64);
-  char *file_freq = XLALMalloc(strlen(dir)+64);
-  char *file_Camp = XLALMalloc(strlen(dir)+64);
-  char *file_Cphi = XLALMalloc(strlen(dir)+64);
-  char *file_Bamp = XLALMalloc(strlen(dir)+64);
-  char *file_Bphi = XLALMalloc(strlen(dir)+64);
-  char *file_shifttime = XLALMalloc(strlen(dir)+64);
-  char *file_shiftphase = XLALMalloc(strlen(dir)+64);
-  sprintf(file_q, "%s", "EOBNRv2HMROM_q.dat"); /* The q vector is the same for all modes */
-  sprintf(file_freq, "%s%d%d%s", "EOBNRv2HMROM_freq_", mode[0], mode[1], ".dat");
-  sprintf(file_Camp, "%s%d%d%s", "EOBNRv2HMROM_Camp_", mode[0], mode[1], ".dat");
-  sprintf(file_Cphi, "%s%d%d%s", "EOBNRv2HMROM_Cphi_", mode[0], mode[1], ".dat");
-  sprintf(file_Bamp, "%s%d%d%s", "EOBNRv2HMROM_Bamp_", mode[0], mode[1], ".dat");
-  sprintf(file_Bphi, "%s%d%d%s", "EOBNRv2HMROM_Bphi_", mode[0], mode[1], ".dat");
-  sprintf(file_shifttime, "%s%d%d%s", "EOBNRv2HMROM_shifttime_", mode[0], mode[1], ".dat");
-  sprintf(file_shiftphase, "%s%d%d%s", "EOBNRv2HMROM_shiftphase_", mode[0], mode[1], ".dat");
-  ret |= Read_Vector(dir, file_q, data->q);
-  ret |= Read_Vector(dir, file_freq, data->freq);
-  ret |= Read_Matrix(dir, file_Camp, data->Camp);
-  ret |= Read_Matrix(dir, file_Cphi, data->Cphi);
-  ret |= Read_Matrix(dir, file_Bamp, data->Bamp);
-  ret |= Read_Matrix(dir, file_Bphi, data->Bphi);
-  ret |= Read_Vector(dir, file_shifttime, data->shifttime);
-  ret |= Read_Vector(dir, file_shiftphase, data->shiftphase);
-  XLALFree(file_q);
-  XLALFree(file_freq);
-  XLALFree(file_Camp);
-  XLALFree(file_Cphi);
-  XLALFree(file_Bamp);
-  XLALFree(file_Bphi);
-  XLALFree(file_shifttime);
-  XLALFree(file_shiftphase);
-  return(ret);
-}
-
 /* Function interpolating the data in matrix/vector form produces an interpolated data in the form of SplineLists */
-INT4 Interpolate_Spline_Data(const EOBNRHMROMdata *data, EOBNRHMROMdata_interp *data_interp) {
+static INT4 Interpolate_Spline_Data(const EOBNRHMROMdata *data, EOBNRHMROMdata_interp *data_interp) {
 
   gsl_set_error_handler(&Err_Handler);
   SplineList* splinelist;
@@ -384,7 +257,7 @@ INT4 Interpolate_Spline_Data(const EOBNRHMROMdata *data, EOBNRHMROMdata_interp *
 /* Function taking as input interpolated data in the form of SplineLists
  * evaluates for a given q the projection coefficients and shifts in time and phase
 */
-INT4 Evaluate_Spline_Data(const REAL8 q, const EOBNRHMROMdata_interp* data_interp, EOBNRHMROMdata_coeff* data_coeff){
+static INT4 Evaluate_Spline_Data(const REAL8 q, const EOBNRHMROMdata_interp* data_interp, EOBNRHMROMdata_coeff* data_coeff){
   INT4 j;
   SplineList* splinelist;
 
@@ -414,7 +287,7 @@ INT4 Evaluate_Spline_Data(const REAL8 q, const EOBNRHMROMdata_interp* data_inter
  * Construct 1D splines for amplitude and phase.
  * Compute strain waveform from amplitude and phase.
 */
-INT4 EOBNRv2HMROMCore(
+static INT4 EOBNRv2HMROMCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   REAL8 phiRef,
@@ -664,6 +537,72 @@ INT4 EOBNRv2HMROMCore(
   return(XLAL_SUCCESS);
 }
 
+/* Setup EOBNRv2HMROM model using data files installed in $LAL_DATA_PATH */
+static INT4 EOBNRv2HMROM_Init_LALDATA(void) {
+  if (!__lalsim_EOBNRv2HMROM_setup) return XLAL_SUCCESS;
+
+  INT4 ret=XLAL_FAILURE;
+  char *envpath=NULL;
+  char path[32768];
+  char *brkt,*word;
+  envpath=getenv("LAL_DATA_PATH");
+  if(!envpath) {
+    XLALPrintError("XLAL Error: the environment variable LAL_DATA_PATH, giving the path to the ROM data, seems undefined\n");
+    return(XLAL_FAILURE);
+  }
+  strncpy(path,envpath,sizeof(path));
+
+  for(word=strtok_r(path,":",&brkt); word; word=strtok_r(NULL,":",&brkt))
+  {
+    ret = EOBNRv2HMROM_Init(word);
+    if(ret == XLAL_SUCCESS) break;
+  }
+  if(ret!=XLAL_SUCCESS) {
+    XLALPrintError("Unable to find EOBNRv2HMROM data files in $LAL_DATA_PATH\n");
+    exit(XLAL_FAILURE);
+  }
+  __lalsim_EOBNRv2HMROM_setup = ret;
+  return(ret);
+}
+
+/* Setup EOBNRv2HMROM model using data files installed in dir */
+static INT4 EOBNRv2HMROM_Init(const char dir[]) {
+  if(!__lalsim_EOBNRv2HMROM_setup) {
+    XLALPrintError("Error: EOBNRHMROMdata was already set up!");
+    XLAL_ERROR(XLAL_EFAILED);
+  }
+
+  INT4 ret = XLAL_SUCCESS;
+  ListmodesEOBNRHMROMdata* listdata = *__lalsim_EOBNRv2HMROM_data;
+  ListmodesEOBNRHMROMdata_interp* listdata_interp = *__lalsim_EOBNRv2HMROM_interp;
+
+  for (UINT4 j=0; j<EOBNRV2_ROM_NUM_MODES_MAX; j++) {
+
+    EOBNRHMROMdata* data = NULL;
+    EOBNRHMROMdata_Init(&data);
+    ret |= Read_Data_Mode( dir, listmode[j], data);
+    if (!ret) {
+      listdata = ListmodesEOBNRHMROMdata_AddModeNoCopy( listdata, data, listmode[j][0], listmode[j][1]);
+
+      EOBNRHMROMdata_interp* data_interp = NULL;
+      EOBNRHMROMdata_interp_Init(&data_interp);
+      ret |= Interpolate_Spline_Data(data, data_interp);
+      if (!ret) listdata_interp = ListmodesEOBNRHMROMdata_interp_AddModeNoCopy( listdata_interp, data_interp, listmode[j][0], listmode[j][1]);
+    }
+  }
+
+  __lalsim_EOBNRv2HMROM_setup = ret;
+  if (!ret) {
+    *__lalsim_EOBNRv2HMROM_data = listdata;
+    *__lalsim_EOBNRv2HMROM_interp = listdata_interp;
+  }
+  return(ret);
+}
+
+
+/******************************************************************************************/
+/****************************** Waveform generation function ******************************/
+
 /* Compute waveform in LAL format */
 INT4 XLALSimIMREOBNRv2HMROM(
   struct tagCOMPLEX16FrequencySeries **hptilde, /* Output: Frequency-domain waveform h+ */
@@ -716,66 +655,4 @@ INT4 XLALSimIMREOBNRv2HMROM(
             phiRef, deltaF, fLow, fHigh, fRef, distance, inclination, Mtot_sec, q);
 
   return(retcode);
-}
-
-/* Setup EOBNRv2HMROM model using data files installed in $LAL_DATA_PATH */
-INT4 EOBNRv2HMROM_Init_LALDATA(void) {
-  if (!__lalsim_EOBNRv2HMROM_setup) return XLAL_SUCCESS;
-
-  INT4 ret=XLAL_FAILURE;
-  char *envpath=NULL;
-  char path[32768];
-  char *brkt,*word;
-  envpath=getenv("LAL_DATA_PATH");
-  if(!envpath) {
-    XLALPrintError("XLAL Error: the environment variable LAL_DATA_PATH, giving the path to the ROM data, seems undefined\n");
-    return(XLAL_FAILURE);
-  }
-  strncpy(path,envpath,sizeof(path));
-
-  for(word=strtok_r(path,":",&brkt); word; word=strtok_r(NULL,":",&brkt))
-  {
-    ret = EOBNRv2HMROM_Init(word);
-    if(ret == XLAL_SUCCESS) break;
-  }
-  if(ret!=XLAL_SUCCESS) {
-    XLALPrintError("Unable to find EOBNRv2HMROM data files in $LAL_DATA_PATH\n");
-    exit(XLAL_FAILURE);
-  }
-  __lalsim_EOBNRv2HMROM_setup = ret;
-  return(ret);
-}
-
-/* Setup EOBNRv2HMROM model using data files installed in dir */
-INT4 EOBNRv2HMROM_Init(const char dir[]) {
-  if(!__lalsim_EOBNRv2HMROM_setup) {
-    XLALPrintError("Error: EOBNRHMROMdata was already set up!");
-    XLAL_ERROR(XLAL_EFAILED);
-  }
-
-  INT4 ret = XLAL_SUCCESS;
-  ListmodesEOBNRHMROMdata* listdata = *__lalsim_EOBNRv2HMROM_data;
-  ListmodesEOBNRHMROMdata_interp* listdata_interp = *__lalsim_EOBNRv2HMROM_interp;
-
-  for (UINT4 j=0; j<EOBNRV2_ROM_NUM_MODES_MAX; j++) {
-
-    EOBNRHMROMdata* data = NULL;
-    EOBNRHMROMdata_Init(&data);
-    ret |= Read_Data_Mode( dir, listmode[j], data);
-    if (!ret) {
-      listdata = ListmodesEOBNRHMROMdata_AddModeNoCopy( listdata, data, listmode[j][0], listmode[j][1]);
-
-      EOBNRHMROMdata_interp* data_interp = NULL;
-      EOBNRHMROMdata_interp_Init(&data_interp);
-      ret |= Interpolate_Spline_Data(data, data_interp);
-      if (!ret) listdata_interp = ListmodesEOBNRHMROMdata_interp_AddModeNoCopy( listdata_interp, data_interp, listmode[j][0], listmode[j][1]);
-    }
-  }
-
-  __lalsim_EOBNRv2HMROM_setup = ret;
-  if (!ret) {
-    *__lalsim_EOBNRv2HMROM_data = listdata;
-    *__lalsim_EOBNRv2HMROM_interp = listdata_interp;
-  }
-  return(ret);
 }
