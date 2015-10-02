@@ -956,6 +956,7 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
         }
 
       }
+      XLAL_CHECK_NULL(xlalErrno == 0, XLAL_EFAILED);
 
       // Store statistics
       for (size_t tj = 0; tj < tn; ++tj) {
