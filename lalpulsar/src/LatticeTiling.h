@@ -202,7 +202,7 @@ int XLALLatticeTilingDimensionBounds(
 SWIGLAL(OWNED_BY_1ST_ARG(int, XLALCreateLatticeTilingIterator));
 #endif
 LatticeTilingIterator *XLALCreateLatticeTilingIterator(
-  LatticeTiling *tiling,		///< [in] Lattice tiling
+  const LatticeTiling *tiling,		///< [in] Lattice tiling
   const size_t itr_ndim			///< [in] Number of parameter-space dimensions to iterate over
   );
 
@@ -281,7 +281,7 @@ UINT8 XLALCurrentLatticeTilingIndex(
 SWIGLAL(OWNED_BY_1ST_ARG(int, XLALCreateLatticeTilingLocator));
 #endif
 LatticeTilingLocator *XLALCreateLatticeTilingLocator(
-  LatticeTiling *tiling			///< [in] Lattice tiling
+  const LatticeTiling *tiling		///< [in] Lattice tiling
   );
 
 ///

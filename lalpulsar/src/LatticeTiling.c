@@ -73,7 +73,7 @@ struct tagLatticeTiling {
 };
 
 struct tagLatticeTilingIterator {
-  LatticeTiling *tiling;		///< Lattice tiling
+  const LatticeTiling *tiling;		///< Lattice tiling
   size_t itr_ndim;			///< Number of parameter-space dimensions to iterate over
   size_t tiled_itr_ndim;		///< Number of tiled parameter-space dimensions to iterate over
   bool alternating;			///< If true, alternate iterator direction after every pass
@@ -84,10 +84,11 @@ struct tagLatticeTilingIterator {
   INT4 *int_upper;			///< Current upper parameter-space bound in generating integers
   INT4 *direction;			///< Direction of iteration in each tiled parameter-space dimension
   UINT8 index;				///< Index of current lattice tiling point
+  UINT8 count;				///< Total number of lattice tiling points
 };
 
 struct tagLatticeTilingLocator {
-  LatticeTiling *tiling;		///< Lattice tiling
+  const LatticeTiling *tiling;		///< Lattice tiling
   size_t ndim;				///< Number of parameter-space dimensions
   size_t tiled_ndim;			///< Number of tiled parameter-space dimensions
   LT_IndexTrie *index_trie;		///< Trie for locating unique index of nearest point
@@ -1085,7 +1086,7 @@ int XLALLatticeTilingDimensionBounds(
 }
 
 LatticeTilingIterator *XLALCreateLatticeTilingIterator(
-  LatticeTiling *tiling,
+  const LatticeTiling *tiling,
   const size_t itr_ndim
   )
 {
@@ -1104,6 +1105,7 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
 
   // Set fields
   itr->itr_ndim = itr_ndim;
+  itr->count = 0;
 
   // Determine the maximum tiled dimension to iterate over
   itr->tiled_itr_ndim = 0;
@@ -1238,6 +1240,9 @@ int XLALNextLatticeTilingPoint(
 
       // If dimension index is now zero, we're done
       if (ti == 0) {
+
+        // Store number of points
+        itr->count = itr->index + 1;
 
         // Iterator is now finished
         itr->state = 2;
@@ -1445,16 +1450,27 @@ UINT8 XLALTotalLatticeTilingPoints(
   // Check input
   XLAL_CHECK_VAL(0, itr != NULL, XLAL_EFAULT);
 
-  // Return 1 if iterator or tiling contains only a single point
-  if (itr->tiled_itr_ndim == 0 || itr->tiling->tiled_ndim == 0) {
-    return 1;
+  // Count number of lattice tiling points
+  if (itr->count == 0) {
+
+    // Clone iterator
+    LatticeTilingIterator *itr_clone = XLALCreateLatticeTilingIterator(itr->tiling, itr->itr_ndim);
+    XLAL_CHECK_VAL(0, itr_clone != NULL, XLAL_EFUNC);
+
+    // Iterate over all points
+    xlalErrno = 0;
+    while (XLALNextLatticeTilingPoint(itr_clone, NULL) > 0) LT_FastForwardIterator(itr_clone);
+    XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFAILED);
+
+    // Record count
+    itr->count = itr_clone->count;
+
+    // Cleanup
+    XLALDestroyLatticeTilingIterator(itr_clone);
+
   }
 
-  // Get lattice tiling statistics for highest iterated dimension
-  const LatticeTilingStats *stats = XLALLatticeTilingStatistics(itr->tiling, itr->itr_ndim - 1);
-  XLAL_CHECK_VAL(0, stats != NULL, XLAL_EFUNC);
-
-  return stats->total_points;
+  return itr->count;
 
 }
 
@@ -1472,7 +1488,7 @@ UINT8 XLALCurrentLatticeTilingIndex(
 }
 
 LatticeTilingLocator *XLALCreateLatticeTilingLocator(
-  LatticeTiling *tiling
+  const LatticeTiling *tiling
   )
 {
 
