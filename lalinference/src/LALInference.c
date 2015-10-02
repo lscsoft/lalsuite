@@ -739,7 +739,11 @@ UINT4 LALInferencePrintNVariableItem(char *out, UINT4 strsize, const LALInferenc
 				  break;
 		  }
         default:
-		  XLALPrintWarning("%s: Can't print variable of type %i\n",__func__,ptr->type);
+          {
+            /* Throw a warning and return 0, buffer won't be writen */
+            XLALPrintWarning("%s: Can't print variable of type %i\n",__func__,ptr->type);
+            return 0;
+          }
           /* sprintf(out, "<can't print>");*/
       }
   return(strlen(out));
@@ -887,7 +891,8 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample){
 				if(!buffer) XLAL_ERROR_VOID(XLAL_ENOMEM);
 				required_size=LALInferencePrintNVariableItem(buffer,bufsize,ptr);
 		}
-		fprintf(fp,"%s\t",buffer);
+                if (required_size>0)
+                  fprintf(fp,"%s\t",buffer);
 		ptr=ptr->next;
   }
   XLALFree(buffer);
