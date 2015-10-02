@@ -261,8 +261,13 @@ static INT4 LT_FastForwardIterator(
   )
 {
 
-  // Get indexes of highest tiled dimension
-  const size_t tj = itr->tiling->tiled_ndim - 1;
+  // Return if there are no tiled dimensions
+  if (itr->tiled_itr_ndim == 0) {
+    return 0;
+  }
+
+  // Get indexes of highest tiled dimension being iterated over
+  const size_t tj = itr->tiled_itr_ndim - 1;
   const size_t j = itr->tiling->tiled_idx[tj];
 
   // Get current iteration direction in highest tiled dimension
