@@ -124,7 +124,7 @@ if not os.path.exists(opts.log_directory):
     os.makedirs(opts.log_directory) # Make a directory to hold log files of jobs
 
 # All the intrinsic parameters we're gridding in
-intr_prms = ("mass1", "mass2")
+intr_prms = set(("mass1", "mass2"))
 for p in ("spin1z", "spin2z"): # FIXME: Add all
     if hasattr(tmplt_bnk[0], p):
         intr_prms.add(p)
