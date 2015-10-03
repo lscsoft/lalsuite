@@ -1277,15 +1277,20 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.add_node(node)
     nodes.append(node)
 
-    node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
+    tag='pe'
+    if self.config.has_option('analysis','add-lvem-tag'):
+      if self.config.getboolean('analysis','add-lvem-tag'):
+        tag='pe,lvem'
+
+    node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag=tag)
     node.set_filename(respagenode.webpath+'/corner/extrinsic.png')
     self.add_node(node)
     nodes.append(node)
 
-    #node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
-    #node.set_filename(respagenode.webpath+'/corner/intrinsic.png')
-    #self.add_node(node)
-    #nodes.append(node)
+    node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
+    node.set_filename(respagenode.webpath+'/corner/intrinsic.png')
+    self.add_node(node)
+    nodes.append(node)
 
     return nodes
 
@@ -1303,11 +1308,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('condor','skyarea'):
       if self.config.has_option('analysis','upload-to-gracedb'):
         if self.config.getboolean('analysis','upload-to-gracedb'):
+          tag='sky_loc'
+          if self.config.has_option('analysis','add-lvem-tag'):
+            if self.config.getboolean('analysis','add-lvem-tag'):
+              tag='sky_loc,lvem'
           skynodes=filter(lambda x: isinstance(x,SkyAreaNode) ,self.get_nodes())
           nodes=[]
           for sk in skynodes:
             if len(sk.ifos)>1:
-              node=GraceDBNode(self.gracedbjob,parent=sk,gid=gid,tag='sky_loc,lvem')
+              node=GraceDBNode(self.gracedbjob,parent=sk,gid=gid,tag=tag)
               #for p in sk.__parents:
               #  if isinstance(p,ResultPageNode):
               #    resultpagenode=p
