@@ -88,6 +88,8 @@ int main(int argc, char *argv[]){
     /* Set up the appropriate functions for the nested sampling algorithm */
     state->algorithm=&LALInferenceNestedSamplingAlgorithm;
     state->evolve=&LALInferenceNestedSamplingOneStep;
+    INT4 one=1;
+    LALInferenceAddVariable(state->algorithmParams,"LIB",&one, LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
     state->proposalArgs = LALInferenceParseProposalArgs(state);
   }
 

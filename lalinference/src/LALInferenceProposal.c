@@ -293,6 +293,8 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
         psdfit = 0;
         glitchfit = 0;
     }
+    if (LALInferenceCheckVariable(runState->algorithmParams, "LIB"))
+      distance=0;
 
     ProcessParamsTable *command_line = runState->commandLine;
 
