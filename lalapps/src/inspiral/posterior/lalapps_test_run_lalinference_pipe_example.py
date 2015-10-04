@@ -37,9 +37,9 @@ args = parser.parse_args()
 
 
 if 'UNCLEAN' in lalinference.InferenceVCSId:
-    default_outputdir=os.getenv('HOME')+'/public_html/lalinference_testrun/'+lalinference.InferenceVCSId+'_UNCLEAN/'+args.engine+'/'
+    default_outputdir=os.getenv('HOME')+'/lalinference_testrun/'+lalinference.InferenceVCSId+'_UNCLEAN/'+args.engine+'/'
 else:
-    default_outputdir=os.getenv('HOME')+'/public_html/lalinference_testrun/'+lalinference.InferenceVCSId+'/'+args.engine+'/'
+    default_outputdir=os.getenv('HOME')+'/lalinference_testrun/'+lalinference.InferenceVCSId+'/'+args.engine+'/'
 
 
 if args.output == None:
