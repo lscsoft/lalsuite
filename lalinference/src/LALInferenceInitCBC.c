@@ -598,7 +598,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
                                                        PhenSpinTaylorRD, NumRel.\n\
                          default modeldomain=\"frequency\": TaylorF1, TaylorF2, TaylorF2RedSpin,\n\
                                                        TaylorF2RedSpinTidal, IMRPhenomA,\n\
-                                                       IMRPhenomB, IMRPhenomP.\n\
+                                                       IMRPhenomB, IMRPhenomP, IMRPhenomPv2.\n\
     (--amporder PNorder)            Specify a PN order in amplitude to use (defaults: LALSimulation: max available; LALInspiral: newtownian).\n\
     (--fref f_ref)                  Specify a reference frequency at which parameters are defined (default 100).\n\
     (--use-tidal)                   Enables tidal corrections, only with LALSimulation.\n\
@@ -610,7 +610,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
     (--noSpin, --disable-spin)      template will assume no spins (giving this will void spinOrder!=0) \n\
     (--no-detector-frame)              model will NOT use detector-centred coordinates and instead RA,dec\n\
-  (--grtest-parameters dchi0,..dchi7 template will assume deformations in the corresponding PN coefficients.\n\
+  (--grtest-parameters dchi0,..,dxi1,..,dalpha1,..) template will assume deformations in the corresponding phase coefficients.\n\
   (--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
 \n\
     ----------------------------------------------\n\
@@ -1980,19 +1980,37 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
     ppt=LALInferenceGetProcParamVal(commandLine,"--grtest-parameters");
     if (ppt)
     {
-        REAL8 testParameter_max=1.;
-        REAL8 testParameter_min=-1.;
+        REAL8 dchi_max=1.;
+        REAL8 dchi_min=-1.;
+        REAL8 dxi_max=1.;
+        REAL8 dxi_min=-1.;
+        REAL8 dalpha_max=1.;
+        REAL8 dalpha_min=-1.;
         REAL8 tmpVal=0.0;
-        if (checkParamInList(ppt->value,"dchi0")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi0", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
-        if (checkParamInList(ppt->value,"dchi1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi1", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
-        if (checkParamInList(ppt->value,"dchi2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi2", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
-        if (checkParamInList(ppt->value,"dchi3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi3", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
-        if (checkParamInList(ppt->value,"dchi4")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi4", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
-        if (checkParamInList(ppt->value,"dchi5")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
-        if (checkParamInList(ppt->value,"dchi5l")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5l", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
-        if (checkParamInList(ppt->value,"dchi6")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi6", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
-        if (checkParamInList(ppt->value,"dchi6l")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi6l", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
-        if (checkParamInList(ppt->value,"dchi7")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi7", tmpVal, testParameter_min, testParameter_max, LALINFERENCE_PARAM_LINEAR);
+	/* Relative shifts for inspiral phase PN coefficients (absolute value for dchi1) */
+        if (checkParamInList(ppt->value,"dchi0")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi0", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi1", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi2", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi3", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi4")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi4", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi5")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi5l")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5l", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi6")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi6", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi6l")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi6l", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi7")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi7", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+	/* Relative shifts for pre-merger phase coefficients */
+        if (checkParamInList(ppt->value,"dxi1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dxi1", tmpVal, dxi_min, dxi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dxi2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dxi2", tmpVal, dxi_min, dxi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dxi3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dxi3", tmpVal, dxi_min, dxi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dxi4")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dxi4", tmpVal, dxi_min, dxi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dxi5")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dxi5", tmpVal, dxi_min, dxi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dxi6")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dxi6", tmpVal, dxi_min, dxi_max, LALINFERENCE_PARAM_LINEAR);
+	/* Relative shifts for merger-ringdown phase coefficients */
+        if (checkParamInList(ppt->value,"dalpha1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dalpha1", tmpVal, dalpha_min, dalpha_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dalpha2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dalpha2", tmpVal, dalpha_min, dalpha_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dalpha3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dalpha3", tmpVal, dalpha_min, dalpha_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dalpha4")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dalpha4", tmpVal, dalpha_min, dalpha_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dalpha5")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dalpha5", tmpVal, dalpha_min, dalpha_max, LALINFERENCE_PARAM_LINEAR);
     }
     ppt=LALInferenceGetProcParamVal(commandLine,"--ppe-parameters");
     if (ppt)
