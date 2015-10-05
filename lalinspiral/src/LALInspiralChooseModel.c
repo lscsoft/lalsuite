@@ -546,6 +546,7 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
+         case SpinTaylorT4:
          case PhenSpinTaylorRD:
 		 case SpinQuadTaylor:
          case IMRPhenomA:
@@ -598,6 +599,7 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
+         case SpinTaylorT4:
          case PhenSpinTaylorRD:
 		 case SpinQuadTaylor:
          case IMRPhenomA:
@@ -647,6 +649,7 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
+         case SpinTaylorT4:
          case PhenSpinTaylorRD:
 		 case SpinQuadTaylor:
          case IMRPhenomA:
@@ -699,6 +702,7 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
+         case SpinTaylorT4:
          case PhenSpinTaylorRD:
 		 case SpinQuadTaylor:
 /*
@@ -755,6 +759,7 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
+         case SpinTaylorT4:
          case PhenSpinTaylorRD:
 		 case SpinQuadTaylor:
 /*
@@ -810,6 +815,7 @@ XLALInspiralChooseModel(
          case TaylorF2RedSpin:
          case SpinTaylorFrameless:
          case SpinTaylorT3:
+         case SpinTaylorT4:
          case SpinTaylor:
          case PhenSpinTaylorRD:
 	     case SpinQuadTaylor:
@@ -867,6 +873,7 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
+         case SpinTaylorT4:
          case PhenSpinTaylorRD:
 		 case SpinQuadTaylor:
             ak->vn = ak->vlso = vlso = ak->vlsoT2;
@@ -936,6 +943,7 @@ XLALInspiralChooseModel(
          case SpinTaylorFrameless:
          case SpinTaylorT3:
          case SpinTaylor:
+         case SpinTaylorT4:
          case PhenSpinTaylorRD:
          case SpinQuadTaylor:
          case PadeT1:
@@ -973,6 +981,7 @@ XLALInspiralChooseModel(
       case SpinTaylorFrameless:
       case SpinTaylorT3:
       case SpinTaylor:
+      case SpinTaylorT4:
       case PhenSpinTaylorRD:
       case SpinQuadTaylor:
       case TaylorEt:
