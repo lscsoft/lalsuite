@@ -192,11 +192,17 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    XLAL_CHECK_NULL( VectorScaleREAL8(frequencyBins, frequencies, params->Tsft, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Pre-allocate delta values for IFO_0 and IFO_X, also 2*pi*f_k*tau
-   alignedREAL8Vector *delta0vals = NULL, *deltaXvals = NULL, *delta0valsSubset = NULL, *deltaXvalsSubset = NULL, *TwoPiFrequenciesTau = NULL;
+   alignedREAL8Vector *delta0vals = NULL, *deltaXvals = NULL, *delta0valsSubset = NULL, *deltaXvalsSubset = NULL, *floorDelta0valsSubset = NULL, *floorDeltaXvalsSubset = NULL, *diffFloorDeltaValsSubset = NULL, *roundDelta0valsSubset = NULL, *roundDeltaXvalsSubset = NULL, *diffRoundDeltaValsSubset = NULL, *TwoPiFrequenciesTau = NULL;
    XLAL_CHECK_NULL( (delta0vals = createAlignedREAL8Vector(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (deltaXvals = createAlignedREAL8Vector(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (delta0valsSubset = createAlignedREAL8Vector(frequencyBins->length - 20, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK_NULL( (deltaXvalsSubset = createAlignedREAL8Vector(frequencyBins->length - 20, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (deltaXvalsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (floorDelta0valsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (floorDeltaXvalsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (roundDelta0valsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (roundDeltaXvalsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (diffFloorDeltaValsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (diffRoundDeltaValsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (TwoPiFrequenciesTau = createAlignedREAL8Vector(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
 
    INT4Vector *shiftVector = NULL;
@@ -421,21 +427,28 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
             }
 
             //Compute delta values for the frequency difference for the Dirichlet kernel: fk*Tsft*[Tdot(jj) - 1] where jj=0,...,N-1
+            //Also do shifting and computing floor(delta) and round(delta)
             if (computeDelta0vals) {
                XLAL_CHECK_NULL( VectorScaleREAL8(delta0vals, frequencyBins, TdotMinus1s->data[0]->data[fftnum], params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
                memcpy(delta0valsSubset->data, &(delta0vals->data[10]), sizeof(REAL8)*delta0valsSubset->length);
+               XLAL_CHECK_NULL( VectorFloorREAL8(floorDelta0valsSubset, delta0valsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+               XLAL_CHECK_NULL( VectorRoundREAL8(roundDelta0valsSubset, delta0valsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
                XLAL_CHECK_NULL( VectorMultiplyREAL8(DirichletScaling0, delta0valsSubset, delta0valsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
                XLAL_CHECK_NULL( VectorShiftREAL8(DirichletScaling0, DirichletScaling0, -1.0, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
                XLAL_CHECK_NULL( VectorMultiplyREAL8(DirichletScaling0, DirichletScaling0, delta0valsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
             }
             if (computeDelta0vals) computeDelta0vals = 0;
             XLAL_CHECK_NULL( VectorScaleREAL8(deltaXvals, frequencyBins, TdotMinus1s->data[jj]->data[fftnum], params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
-            for (UINT4 kk=0; kk<delta0valsSubset->length; kk++) {
-               REAL8 diffDeltaVals = round(delta0valsSubset->data[kk]) - round(deltaXvals->data[kk+10]);
-               INT4 shiftVal = (INT4)diffDeltaVals;
+            memcpy(deltaXvalsSubset->data, &(deltaXvals->data[10]), sizeof(REAL8)*deltaXvalsSubset->length);
+            XLAL_CHECK_NULL( VectorRoundREAL8(roundDeltaXvalsSubset, deltaXvalsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK_NULL( VectorSubtractREAL8(diffRoundDeltaValsSubset, roundDelta0valsSubset, roundDeltaXvalsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK_NULL( VectorAddREAL8(deltaXvalsSubset, deltaXvalsSubset, diffRoundDeltaValsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+            for (UINT4 kk=0; kk<diffRoundDeltaValsSubset->length; kk++) {
+               INT4 shiftVal = (INT4)diffRoundDeltaValsSubset->data[kk];
                shiftVector->data[kk] = shiftVal;
-               deltaXvalsSubset->data[kk] = deltaXvals->data[kk+10] + diffDeltaVals;
             }
+            XLAL_CHECK_NULL( VectorFloorREAL8(floorDeltaXvalsSubset, deltaXvalsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK_NULL( VectorSubtractREAL8(diffFloorDeltaValsSubset, floorDelta0valsSubset, floorDeltaXvalsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
             XLAL_CHECK_NULL( VectorMultiplyREAL8(DirichletScalingX, deltaXvalsSubset, deltaXvalsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
             XLAL_CHECK_NULL( VectorShiftREAL8(DirichletScalingX, DirichletScalingX, -1.0, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
             XLAL_CHECK_NULL( VectorMultiplyREAL8(DirichletScalingX, DirichletScalingX, deltaXvalsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -446,7 +459,7 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
             //Now finish the computation with the Dirichlet kernel ratio and final correction
             for (UINT4 kk=0; kk<sftcopySubset->data->length; kk++) {
                REAL4 detArgVal = 0.0;
-               if (cabsf(Dratio->data[kk])!=0.0) {
+               if (crealf(Dratio->data[kk])!=0.0 && cimagf(Dratio->data[kk])!=0.0) {
                   detArgVal = (REAL4)gsl_sf_angle_restrict_pos((REAL8)cargf(conjf(Dratio->data[kk])));
                } else {
                   detPhaseMag = 0.0;
@@ -454,7 +467,8 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
                }
 
                //When signals are on different "sides" of a bin, there can be error > pi, so we add pi to reduce this error, improving detection efficiency
-               if (fabs(floor(delta0valsSubset->data[kk])-floor(deltaXvalsSubset->data[kk]))>=1.0) detArgVal += LAL_PI;
+               //if (fabs(floor(delta0valsSubset->data[kk])-floor(deltaXvalsSubset->data[kk]))>=1.0) detArgVal += LAL_PI;
+               if (fabs(diffFloorDeltaValsSubset->data[kk])>=1.0) detArgVal += LAL_PI;
 
                //The complex coefficient to scale SFT bins
                COMPLEX8 complexfactor = cpolarf(detPhaseMag, detArgVal+detPhaseArg-TwoPiFrequenciesTau->data[kk+10]);
@@ -505,6 +519,12 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    destroyAlignedREAL8Vector(deltaXvals);
    destroyAlignedREAL8Vector(delta0valsSubset);
    destroyAlignedREAL8Vector(deltaXvalsSubset);
+   destroyAlignedREAL8Vector(floorDelta0valsSubset);
+   destroyAlignedREAL8Vector(floorDeltaXvalsSubset);
+   destroyAlignedREAL8Vector(roundDelta0valsSubset);
+   destroyAlignedREAL8Vector(roundDeltaXvalsSubset);
+   destroyAlignedREAL8Vector(diffFloorDeltaValsSubset);
+   destroyAlignedREAL8Vector(diffRoundDeltaValsSubset);
    XLALDestroyINT4Vector(shiftVector);
    destroyAlignedREAL8Vector(TwoPiFrequenciesTau);
    XLALDestroyREAL4VectorAligned(Aplus0s);
@@ -555,14 +575,16 @@ REAL4VectorAligned * convertSFTdataToPowers(const SFTVector *sfts, const UserInp
    REAL8 starttime = params->t0;
 
    //Load the data into the output vector, roughly normalizing as we go along from the input value
-   REAL8 sqrtnorm = sqrt(normalization);
+   //REAL8 sqrtnorm = sqrt(normalization);
    for (UINT4 ii=0; ii<numffts; ii++) {
       if (ii-nonexistantsft < sfts->length) {
          SFTtype *sft = &(sfts->data[ii - nonexistantsft]);
          if (sft->epoch.gpsSeconds == (INT4)round(ii*(params->Tsft-params->SFToverlap)+starttime)) {
             for (UINT4 jj=0; jj<sftlength; jj++) {
                COMPLEX8 sftcoeff = sft->data->data[jj];
-               tfdata->data[ii*sftlength + jj] = (REAL4)((sqrtnorm*crealf(sftcoeff))*(sqrtnorm*crealf(sftcoeff)) + (sqrtnorm*cimagf(sftcoeff))*(sqrtnorm*cimagf(sftcoeff)));  //power, normalized
+               //tfdata->data[ii*sftlength + jj] = (REAL4)((sqrtnorm*crealf(sftcoeff))*(sqrtnorm*crealf(sftcoeff)) + (sqrtnorm*cimagf(sftcoeff))*(sqrtnorm*cimagf(sftcoeff)));  //power, normalized
+               REAL8 absSFTcoeff = cabs(sftcoeff);
+               tfdata->data[ii*sftlength + jj] = (REAL4)(normalization*absSFTcoeff*absSFTcoeff);
             } /* for jj < sftLength */
          } else {
             memset(&(tfdata->data[ii*sftlength]), 0, sizeof(REAL4)*sftlength);
@@ -580,11 +602,11 @@ REAL4VectorAligned * convertSFTdataToPowers(const SFTVector *sfts, const UserInp
    fprintf(LOG, "Duty factor = %f\n", 1.0-(REAL4)nonexistantsft/(REAL4)numffts);
    fprintf(stderr, "Duty factor = %f\n", 1.0-(REAL4)nonexistantsft/(REAL4)numffts);
 
-   REAL4 meanTFdata = calcMean(tfdata);
-   REAL4 stddev = 0.0;
-   XLAL_CHECK_NULL( calcStddev(&stddev, tfdata) == XLAL_SUCCESS, XLAL_EFUNC );
-   fprintf(LOG, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", meanTFdata, stddev);
-   fprintf(stderr, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", meanTFdata, stddev);
+   //REAL4 meanTFdata = calcMean(tfdata);
+   //REAL4 stddev = 0.0;
+   //XLAL_CHECK_NULL( calcStddev(&stddev, tfdata) == XLAL_SUCCESS, XLAL_EFUNC );
+   //fprintf(LOG, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", meanTFdata, stddev);
+   //fprintf(stderr, "TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", meanTFdata, stddev);
 
    return tfdata;
 

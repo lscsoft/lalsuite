@@ -465,11 +465,16 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, const REAL8 offset, const 
 
    //Make sigmas for each frequency
    //First, allocate vectors
-   REAL4VectorAligned *sigmas = NULL, *wvals = NULL, *allsigmas = NULL, *weightvals = NULL;
+   REAL4VectorAligned *sigmas = NULL, *wvals = NULL, *binvals = NULL, *bindiffvals = NULL, *absbindiffvals = NULL;
+   REAL4VectorAlignedArray *allsigmas = NULL, *weightvals = NULL;
    XLAL_CHECK( (sigmas = XLALCreateREAL4VectorAligned(templatespan, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (wvals = XLALCreateREAL4VectorAligned((UINT4)floor(30.0*P/Tsft), 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (allsigmas = XLALCreateREAL4VectorAligned(wvals->length * sigmas->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (weightvals = XLALCreateREAL4VectorAligned(wvals->length * sigmas->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (allsigmas = createREAL4VectorAlignedArray(wvals->length, sigmas->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (weightvals = createREAL4VectorAlignedArray(wvals->length, sigmas->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (binvals = XLALCreateREAL4VectorAligned(sigmas->length, 32)) != NULL, XLAL_EFUNC );
+   for (UINT4 jj=0; jj<binvals->length; jj++) binvals->data[jj] = -((REAL4)jj + templatemin);
+   XLAL_CHECK( (bindiffvals = XLALCreateREAL4VectorAligned(binvals->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (absbindiffvals = XLALCreateREAL4VectorAligned(binvals->length, 32)) != NULL, XLAL_EFUNC );
 
    //Here is where the sigmas are computed. It is a weighted average. t = (ii+1)*in->Tsft*0.5
    REAL4 sin2pix = 0.0, cos2pix = 0.0;
@@ -481,28 +486,37 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, const REAL8 offset, const 
       REAL4 sigbin = (deltaf*cos2pix)*Tsft + offset;
       REAL4 sigbinvelocity = fabs(-deltaf*sin2pix*Tsft*Tsft*LAL_PI*periodf);
 
+      //Compute bin diff values
+      XLAL_CHECK( XLALVectorShiftREAL4(bindiffvals->data, sigbin, binvals->data, bindiffvals->length) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( VectorAbsREAL4(absbindiffvals, bindiffvals, vectormathflag) == XLAL_SUCCESS, XLAL_EFUNC );
+
       //if the velocity approaches zero, the sigma calculation will diverge (which it should do) but this is bad numerically, so we cap it
       if (sigbinvelocity<1.0e-4) sigbinvelocity = 1.0e-4;
 
       //REAL4 sigma = 0.5*Tsft * (0.5346 * powf(sigbinvelocity, -1.0213f));   //Derived fit from simulation
       REAL4 sigma = 0.5*Tsft * (0.5979 / (sigbinvelocity - 3.2895e-5));  //Could think about using this fit in the future
 
+      //set all weightvals in each vector to zero
+      memset(weightvals->data[ii]->data, 0, sizeof(REAL4)*weightvals->data[ii]->length);
+
+      REAL4 threshold = 1.75;
       for (UINT4 jj=0; jj<sigmas->length; jj++) {
-         REAL4 bindiff = sigbin-((REAL4)jj+templatemin);
-         if (fabs(bindiff)<1.75) {
-            weightvals->data[ii*sigmas->length + jj] = sqsincxoverxsqminusone(bindiff);
+         if (absbindiffvals->data[jj]<threshold) {
+            weightvals->data[ii]->data[jj] = sqsincxoverxsqminusone(bindiffvals->data[jj]);
             XLAL_CHECK( xlalErrno==0, XLAL_EFUNC );
-         } else weightvals->data[ii*sigmas->length + jj] = 0.0;
-         allsigmas->data[ii*sigmas->length + jj] = weightvals->data[ii*sigmas->length + jj]*sigma;
+         }
       }
+      XLAL_CHECK( XLALVectorScaleREAL4(allsigmas->data[ii]->data, sigma, weightvals->data[ii]->data, sigmas->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
    } /* for ii < wvals->length */
    for (UINT4 ii=0; ii<sigmas->length; ii++) {
       REAL8 wavesigma = 0.0;
       REAL8 totalw = 0.0;
       for (UINT4 jj=0; jj<wvals->length; jj++) {
-         wavesigma += allsigmas->data[ii + jj*sigmas->length];
-         totalw += weightvals->data[ii + jj*sigmas->length];
+         if (weightvals->data[jj]->data[ii] != 0.0) {
+            wavesigma += allsigmas->data[jj]->data[ii];
+            totalw += weightvals->data[jj]->data[ii];
+         }
       }
       sigmas->data[ii] = (REAL4)(wavesigma/totalw);
    } /* for ii < sigmas->length */
@@ -581,7 +595,6 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, const REAL8 offset, const 
 
          //Compare with weakest top bins and if larger, launch a search to find insertion spot (insertion sort)
          if (datavector->data[jj] > output->templatedata->data[output->templatedata->length-1]) {
-            //insertionSort_template(output, datavector->data[jj], bins2middlebin*fpr->length+jj, bins2middlebin, jj);
             insertionSort_template(output, datavector->data[jj], bins2middlebin*fpr->length+jj);
          }
       } /* for jj < omegapr->length */
@@ -605,8 +618,11 @@ INT4 makeTemplateGaussians2(TwoSpectTemplate *output, const REAL8 offset, const 
    XLALDestroyREAL4VectorAligned(phi_actual);
    XLALDestroyREAL4VectorAligned(scale);
    XLALDestroyREAL4VectorAligned(sigmas);
-   XLALDestroyREAL4VectorAligned(allsigmas);
-   XLALDestroyREAL4VectorAligned(weightvals);
+   XLALDestroyREAL4VectorAligned(binvals);
+   XLALDestroyREAL4VectorAligned(bindiffvals);
+   XLALDestroyREAL4VectorAligned(absbindiffvals);
+   destroyREAL4VectorAlignedArray(allsigmas);
+   destroyREAL4VectorAlignedArray(weightvals);
    XLALDestroyREAL4VectorAligned(wvals);
    XLALDestroyREAL4VectorAligned(fpr);
    XLALDestroyREAL4VectorAligned(omegapr);
