@@ -302,7 +302,7 @@ static double DPhiInsAnsatzInt(double ff, IMRPhenomDPhaseCoefficients *p, PNPhas
 
 ////////////////////////////// Phase: glueing function //////////////////////////////
 
-static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin);
+static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin, const LALSimInspiralTestGRParam *extraParams);
 static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
 static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
 
@@ -1222,7 +1222,7 @@ static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhas
 
 ///////////////////////////////// Phase: glueing function ////////////////////////////////
 
-static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin) {
+static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin, const LALSimInspiralTestGRParam *extraParams) {
   IMRPhenomDPhaseCoefficients *p = (IMRPhenomDPhaseCoefficients *) XLALMalloc(sizeof(IMRPhenomDPhaseCoefficients));
 
   // Convention m1 >= m2
@@ -1250,6 +1250,22 @@ static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double et
 
   p->fRD = fring(eta, chi1, chi2, finspin);
   p->fDM = fdamp(eta, chi1, chi2, finspin);
+
+  if (extraParams!=NULL)
+    {
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dsigma1")) p->sigma1*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dsigma1"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dsigma2")) p->sigma2*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dsigma2"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dsigma3")) p->sigma3*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dsigma3"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dsigma4")) p->sigma4*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dsigma4"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dbeta1")) p->beta1*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dbeta1"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dbeta2")) p->beta2*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dbeta2"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dbeta3")) p->beta3*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dbeta3"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha1")) p->alpha1*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha1"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha2")) p->alpha2*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha2"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha3")) p->alpha3*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha3"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha4")) p->alpha4*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha4"));
+      if (XLALSimInspiralTestGRParamExists(extraParams,"dalpha5")) p->alpha5*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dalpha5"));
+    }
 
   return p;
 }

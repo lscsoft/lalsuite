@@ -50,7 +50,8 @@ static int IMRPhenomDGenerateFD(
     const REAL8 chi2,                  /**< aligned-spin of companion 2 */
     const REAL8 f_min,                 /**< start frequency */
     const REAL8 f_max,                 /**< end frequency */
-    const REAL8 distance               /**< distance to source (m) */
+    const REAL8 distance,              /**< distance to source (m) */
+    const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 );
 
 /**
@@ -102,7 +103,8 @@ int XLALSimIMRPhenomDGenerateFD(
     const REAL8 chi2,                  /**< Aligned-spin of companion 2 */
     const REAL8 f_min,                 /**< Starting GW frequency (Hz) */
     const REAL8 f_max,                 /**< End frequency; 0 defaults to ringdown cutoff freq */
-    const REAL8 distance               /**< Distance of source (m) */
+    const REAL8 distance,              /**< Distance of source (m) */
+    const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
   /* external: SI; internal: solar masses */
   const REAL8 m1 = m1_SI / LAL_MSUN_SI;
@@ -139,7 +141,7 @@ int XLALSimIMRPhenomDGenerateFD(
 
   REAL8 status = IMRPhenomDGenerateFD(htilde, phi0, deltaF,
                                       m1, m2, chi1, chi2,
-                                      f_min, f_max_prime, distance);
+                                      f_min, f_max_prime, distance, extraParams);
 
   if (f_max_prime < f_max) {
     // The user has requested a higher f_max than Mf=params->fCut.
@@ -170,7 +172,8 @@ static int IMRPhenomDGenerateFD(
     const REAL8 chi2_in,               /**< aligned-spin of companion 2 */
     const REAL8 f_min,                 /**< start frequency */
     const REAL8 f_max,                 /**< end frequency */
-    const REAL8 distance               /**< distance to source (m) */
+    const REAL8 distance,              /**< distance to source (m) */
+    const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
 ) {
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
 
@@ -206,9 +209,9 @@ static int IMRPhenomDGenerateFD(
   // Calculate phenomenological parameters
   REAL8 finspin = FinalSpin0815(eta, chi1, chi2);
   IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2, finspin);
-  IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin);
+  IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin, extraParams);
   PNPhasingSeries *pn = NULL;
-  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_in, chi2_in, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
+  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_in, chi2_in, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
   if (!pAmp || !pPhi || !pn) XLAL_ERROR(XLAL_EFUNC);
 
   // Compute coefficients to make phase C^1
