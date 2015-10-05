@@ -47,6 +47,7 @@ from subprocess import Popen, PIPE
 from sys import exit, stdout, version_info, float_info
 from time import time
 from numpy import sqrt, array, empty, hstack, min, max, reshape, shape, loadtxt, vstack, append, arange, random, column_stack, concatenate, savetxt, log, exp, size, zeros, argmax, argsort, sort, sum, subtract, array_split
+from re import findall
 
 py_version = version_info[:2]
 if py_version < (2, 7):
@@ -156,7 +157,10 @@ def TigerPostProcess(configfile):
 	engine=config.get('run','engine').split(',')
 	runid = config.get('run','runid')
 	labels=config.get('fetch','labels').split(',')
-	latexlabels = config.get('fetch','latexlabels').split(',')
+	
+	latexlabels_str = config.get('fetch','latexlabels')
+	matches=findall(r'\$(.+?)\$',latexlabels_str)
+	latexlabels=["$%s$"%s for s in matches]
 
 	# CREATE DESTINATION DIRECTOR
 	ensure(localdest)

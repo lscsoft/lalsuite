@@ -121,7 +121,8 @@ parser.add_argument("-P", dest='postproc', type=str, help="Path to post-processi
 parser.add_argument("-I", dest='injfile', type=str, help="Path to a pre-existing injection .xml file (optional)", default=None)
 parser.add_argument("-L", dest='logdir', type=str, help="Path to log directory (optional)", default=None)
 parser.add_argument("-S", dest='scratchdir', type=str, help="Path to scratch directory (optional)", default=None)
-
+parser.add_argument("-g",'--gid', dest='gid', help="run from a graceID id (optional)", default=None)
+parser.add_argument("--condor-submit",action="store_true",default=False,help="Automatically submit the condor dag")
 args = parser.parse_args()
 
 config_file = args.config
@@ -194,8 +195,10 @@ if webdir is None:
 webdir = os.path.join(webdir, tiger_tag, str(inspinj_seed)) 
 baseurl = os.path.join(cp.get('paths', 'baseurl'), tiger_tag, str(inspinj_seed))
 
-# This has to be either GR or MG for modified gravity
+# This has to be either GR or MG for modified gravity, or NO for analyzing pure data
 type_inj = cp.get('tiger','type-inj') 
+gpstimefile = None
+gid=None
 # The injection approximant string, and PN order, e.g. inj_approx=TaylorF2  inj_pnorder=threePointFivePN
 inj_approx = cp.get('tiger', 'inj-approx') 
 inj_PNorder = cp.get('tiger', 'inj-pnorder')
@@ -211,10 +214,11 @@ else:
 
 # This is the number of signals created in the xml file. Inspnest will analize all of them.
 num_events = cp.getint('tiger', 'num-events') 
-# GPS start time before the 1st injection
-sta_time = cp.getint('input','gps-start-time') 
-# GPS end time after the last injection
-end_time = cp.getint('input','gps-end-time') 
+if type_inj!='NO':
+  # GPS start time before the 1st injection
+  sta_time = cp.getint('input','gps-start-time') 
+  # GPS end time after the last injection
+  end_time = cp.getint('input','gps-end-time') 
 
 timeslides=False
 # Check if timeslides should be used for injections
@@ -257,7 +261,14 @@ if type_inj == 'MG':
     else:
       print 'Error: Gaussian distribution requested but no mg-sigmas provided'
       sys.exit(1)
-
+elif type_inj == 'NO':
+    if not cp.has_option('input','gps-time-file') and not args.gid:
+        print "Error: TIGER called without injections but no gps-time-file provided"
+        sys.exit(1)
+    if cp.has_option('input','gps-time-file'):
+      gpstimefile = cp.get('input','gps-time-file')
+    elif args.gid is not None:
+      gid=args.gid 
 # FIXME: What calibration options are used and where? ([calibration]?)
 #CALIB_SEED = cp.getint('calibration', 'calib-seed')
 
@@ -332,7 +343,7 @@ if cp.has_option('lalinference','seglen'):
 if cp.has_option('input','max-psd-length'):
     psdlen = cp.getint('input','max-psd-length')
 
-if injfile is None and not cp.has_option('lalinference', 'fake-cache'):
+if injfile is None and gpstimefile is None and gid is None and not cp.has_option('lalinference', 'fake-cache'):
   from lalinference.tiger import make_injtimes
   print 'TIGER: Generating science and veto segment files for real data'
   if not (cp.has_option('input','gps-start-time') and cp.has_option('input','gps-end-time')):
@@ -393,8 +404,8 @@ if injfile is None and not cp.has_option('lalinference', 'fake-cache'):
     injtimesfile = os.path.join(basefolder, 'injtimes', 'injtimes_%s_%s.dat'%(compIFO._name, str(num_events)))
     compIFO.getTrigTimes(whereInj=whereinj, interval=inj_every, lmargin=seglen, n=num_events, outfile=injtimesfile)
   dic_inj.update({"t-distr":"file", "time-file":injtimesfile})
-    
-else:
+
+elif gpstimefile is None and gid is None:
   time_step=((end_time-2-sta_time-seglen)/(num_events-1))
   dic_inj.update({"time-step":time_step,})
 
@@ -405,7 +416,7 @@ else:
 #
 ################################################################################
 
-if injfile is None:
+if injfile is None and gpstimefile is None and gid is None:
 
   print "TIGER: Creating the xml file\n"
   print tiger_tag
@@ -438,7 +449,7 @@ if injfile is None:
   print string+"\n"
   os.system(string)
 
-else:
+elif injfile is not None:
   dic_inj.update({"output":injfile})
 
 
@@ -482,13 +493,24 @@ for run in allcombinations:
     
 
 #foldernames=foldernames[:-1]
+if type_inj == "NO":
+    pipestring="%s "%cp.get('tiger','lalinference_multi_pipe')
+    if gid is not None:
+      pipestring+="--gid %s"%gid
+    condor_s=""
+    if args.condor_submit:
+      condor_s=" --condor-submit "
+    pipestring+=condor_s
 
-pipestring="%s -I %s -F %s -r %s" %(cp.get('tiger','lalinference_multi_pipe'), dic_inj['output'], foldernames, basefolder)
+    pipestring+=" -F %s -r %s" %(foldernames, basefolder)
+ 
+else:
+    pipestring="%s -I %s -F %s -r %s" %(cp.get('tiger','lalinference_multi_pipe'), dic_inj['output'], foldernames, basefolder)
 
 if logdir is not None:
-    pipestring+= "-p %s "%logdir
-if scratchdir is not None:
-    pipestring+= "-l %s "%scratchdir
+    pipestring+= " -p %s "%logdir
+#if scratchdir is not None:
+#    pipestring+= " -l %s "%scratchdir
 pipestring+=" %s "%parser_paths
 
 print pipestring
