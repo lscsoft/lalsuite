@@ -126,28 +126,6 @@ LALFindChirpTDTemplate (
   /* check that the input exists */
   ASSERT( tmplt, status, FINDCHIRPTDH_ENULL, FINDCHIRPTDH_MSGENULL );
 
-  /* check that the parameter structure is set to a time domain approximant */
-  switch ( params->approximant )
-  {
-    case TaylorT1:
-    case TaylorT2:
-    case TaylorT3:
-    case TaylorT4:
-    case GeneratePPN:
-    case PadeT1:
-    case EOB:
-    case EOBNR:
-    case FindChirpPTF:
-    case EOBNRv2:
-    case IMRPhenomB:
-    case IMRPhenomC:
-      break;
-
-    default:
-      ABORT( status, FINDCHIRPTDH_EMAPX, FINDCHIRPTDH_MSGEMAPX );
-      break;
-  }
-
   /* store deltaT and zero out the time domain waveform vector */
   deltaT = params->deltaT;
   sampleRate = 1.0 / deltaT;
@@ -269,12 +247,19 @@ LALFindChirpTDTemplate (
       tmplt->distance      = 1.0;
       tmplt->spin1[2]      = 2 * tmplt->chi/(1. + sqrt(1.-4.*tmplt->eta));
     }
+    else
+    {
+      tmplt->distance      = -1.0;
+    }
 
     /* compute the tau parameters from the input template */
     LALInspiralParameterCalc( status->statusPtr, tmplt );
     CHECKSTATUSPTR( status );
 
     /* determine the length of the chirp in sample points */
+    /* This call implicitely checks that a valid approximant+order combination
+       was fed in, because LALInspiralWaveLength calls XLALInspiralChooseModel
+       which is what ultimately limits the available choices. */
     LALInspiralWaveLength( status->statusPtr, &waveLength, *tmplt );
     CHECKSTATUSPTR( status );
 

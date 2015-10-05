@@ -52,8 +52,8 @@ typedef struct tagLT_Bound {
 ///
 typedef struct tagLT_IndexTrie LT_IndexTrie;
 struct tagLT_IndexTrie {
-  INT8 int_lower;			///< Lower integer point bound in this dimension
-  INT8 int_upper;			///< Upper integer point bound in this dimension
+  INT4 int_lower;			///< Lower integer point bound in this dimension
+  INT4 int_upper;			///< Upper integer point bound in this dimension
   UINT8 seq_idx;			///< Sequential lattice tiling index up to this dimension
   LT_IndexTrie *next;			///< Pointer to array of index tries for the next-highest dimension
 };
@@ -73,21 +73,22 @@ struct tagLatticeTiling {
 };
 
 struct tagLatticeTilingIterator {
-  LatticeTiling *tiling;		///< Lattice tiling
+  const LatticeTiling *tiling;		///< Lattice tiling
   size_t itr_ndim;			///< Number of parameter-space dimensions to iterate over
   size_t tiled_itr_ndim;		///< Number of tiled parameter-space dimensions to iterate over
   bool alternating;			///< If true, alternate iterator direction after every pass
   int state;				///< Iterator state: 0=initialised, 1=in progress, 2=finished
   gsl_vector *phys_point;		///< Current lattice point in physical coordinates
-  INT8 *int_point;			///< Current lattice point in generating integers
-  INT8 *int_lower;			///< Current lower parameter-space bound in generating integers
-  INT8 *int_upper;			///< Current upper parameter-space bound in generating integers
-  INT8 *direction;			///< Direction of iteration in each tiled parameter-space dimension
+  INT4 *int_point;			///< Current lattice point in generating integers
+  INT4 *int_lower;			///< Current lower parameter-space bound in generating integers
+  INT4 *int_upper;			///< Current upper parameter-space bound in generating integers
+  INT4 *direction;			///< Direction of iteration in each tiled parameter-space dimension
   UINT8 index;				///< Index of current lattice tiling point
+  UINT8 count;				///< Total number of lattice tiling points
 };
 
 struct tagLatticeTilingLocator {
-  LatticeTiling *tiling;		///< Lattice tiling
+  const LatticeTiling *tiling;		///< Lattice tiling
   size_t ndim;				///< Number of parameter-space dimensions
   size_t tiled_ndim;			///< Number of tiled parameter-space dimensions
   LT_IndexTrie *index_trie;		///< Trie for locating unique index of nearest point
@@ -256,20 +257,25 @@ static void LT_GetBounds(
 /// Fast-forward a lattice tiling iterator over its highest tiled dimension.
 /// Return the number of points fast-forwarded over.
 ///
-static INT8 LT_FastForwardIterator(
+static INT4 LT_FastForwardIterator(
   LatticeTilingIterator *itr		///< [in] Lattice tiling iterator
   )
 {
 
-  // Get indexes of highest tiled dimension
-  const size_t tj = itr->tiling->tiled_ndim - 1;
+  // Return if there are no tiled dimensions
+  if (itr->tiled_itr_ndim == 0) {
+    return 0;
+  }
+
+  // Get indexes of highest tiled dimension being iterated over
+  const size_t tj = itr->tiled_itr_ndim - 1;
   const size_t j = itr->tiling->tiled_idx[tj];
 
   // Get current iteration direction in highest tiled dimension
-  const INT8 direction = itr->direction[tj];
+  const INT4 direction = itr->direction[tj];
 
   // Get difference from integer point to upper/lower bound, depending on direction
-  const INT8 d = ((direction > 0) ? itr->int_upper[tj] : itr->int_lower[tj]) - itr->int_point[tj];
+  const INT4 d = ((direction > 0) ? itr->int_upper[tj] : itr->int_lower[tj]) - itr->int_point[tj];
 
   // Set point in highest tiled dimension to upper/lower bound, so that the next call
   // to XLALNextLatticeTilingPoint() will advance the next-highest tiled dimension
@@ -296,7 +302,7 @@ static void LT_FreeIndexTrie(
 {
   LT_IndexTrie *next = trie->next;
   if (next != NULL) {
-    for (INT8 i = trie->int_lower; i <= trie->int_upper; ++i) {
+    for (INT4 i = trie->int_lower; i <= trie->int_upper; ++i) {
       LT_FreeIndexTrie(next++);
     }
     XLALFree(trie->next);
@@ -312,23 +318,23 @@ static void LT_PollIndexTrie(
   const LT_IndexTrie *trie,		///< [in] Lattice tiling index trie
   const size_t ti,			///< [in] Current depth of the trie
   const gsl_vector *point_int,		///< [in] Original point in generating integers
-  INT8 *poll_int,			///< [in] Neighbouring point currently being polled
+  INT4 *poll_int,			///< [in] Neighbouring point currently being polled
   double *poll_min_distance,		///< [in] Minimum distance to neighbouring point found so far
-  INT8 *nearest_int			///< [in] New nearest point found by polling
+  INT4 *nearest_int			///< [in] New nearest point found by polling
   )
 {
 
   const size_t tn = tiling->tiled_ndim;
 
   // Get integer lower and upper bounds
-  const INT8 int_lower = trie->int_lower;
-  const INT8 int_upper = trie->int_upper;
+  const INT4 int_lower = trie->int_lower;
+  const INT4 int_upper = trie->int_upper;
 
   // Poll points within 1 of original nearest point, but within bounds
   const size_t i = tiling->tiled_idx[ti];
   const double point_int_i = gsl_vector_get(point_int, i);
-  const INT8 poll_lower = GSL_MAX(int_lower, GSL_MIN(floor(point_int_i) - 1, int_upper));
-  const INT8 poll_upper = GSL_MAX(int_lower, GSL_MIN(ceil(point_int_i) + 1, int_upper));
+  const INT4 poll_lower = GSL_MAX(int_lower, GSL_MIN(floor(point_int_i) - 1, int_upper));
+  const INT4 poll_upper = GSL_MAX(int_lower, GSL_MIN(ceil(point_int_i) + 1, int_upper));
 
   for (poll_int[ti] = poll_lower; poll_int[ti] <= poll_upper; ++poll_int[ti]) {
 
@@ -370,7 +376,7 @@ static void LT_PrintIndexTrie(
   const LT_IndexTrie *trie,		///< [in] Lattice tiling index trie
   const size_t ti,			///< [in] Current depth of the trie
   FILE *file,				///< [in] File pointer to print trie to
-  INT8 int_lower[]			///< [in] Current integer lower bound
+  INT4 int_lower[]			///< [in] Current integer lower bound
   )
 {
 
@@ -403,7 +409,7 @@ static void LT_PrintIndexTrie(
   double phys_upper = phys_lower + phys_from_int_i_i * (trie->int_upper - trie->int_lower);
 
   // Print information on the current trie trie dimension
-  fprintf(file, "dim: #%zu/%zu   int: [%+5" LAL_INT8_FORMAT ",%+5" LAL_INT8_FORMAT "]   phys: [%+10g,%+10g]   seq_idx:%" LAL_UINT8_FORMAT "\n",
+  fprintf(file, "dim: #%zu/%zu   int: [%+5" LAL_INT4_FORMAT ",%+5" LAL_INT4_FORMAT "]   phys: [%+10g,%+10g]   seq_idx:%" LAL_UINT8_FORMAT "\n",
           ti + 1, tn, trie->int_lower, trie->int_upper, phys_lower, phys_upper, trie->seq_idx);
 
   // If this is not the highest dimension, loop over this dimension
@@ -907,13 +913,11 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
 
       // Allocate and initialise arrays for computing statistics
       UINT8 t_num_points[tn];
-      INT8 t_num_passes[tn], t_min_points[tn], t_max_points[tn];
+      UINT4 t_num_passes[tn], t_min_points[tn], t_max_points[tn];
       double t_min_value[tn], t_max_value[tn];
       for (size_t tj = 0; tj < tn; ++tj) {
         const size_t j = itr->tiling->tiled_idx[tj];
-        const INT8 int_lower = itr->int_lower[tj];
-        const INT8 int_upper = itr->int_upper[tj];
-        const INT8 num_points = int_upper - int_lower + 1;
+        const UINT4 num_points = itr->int_upper[tj] - itr->int_lower[tj] + 1;
         t_num_points[tj] = 1;
         t_num_passes[tj] = 1;
         t_min_points[tj] = num_points;
@@ -933,9 +937,7 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
         t_num_points[ti] += 1;
         for (size_t tj = ti + 1; tj < tn; ++tj) {
           const size_t j = itr->tiling->tiled_idx[tj];
-          const INT8 int_lower = itr->int_lower[tj];
-          const INT8 int_upper = itr->int_upper[tj];
-          const INT8 num_points = int_upper - int_lower + 1;
+          const UINT4 num_points = itr->int_upper[tj] - itr->int_lower[tj] + 1;
           const double phys_point = gsl_vector_get(itr->phys_point, j);
           t_num_points[tj] += 1;
           t_num_passes[tj] += 1;
@@ -955,6 +957,7 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
         }
 
       }
+      XLAL_CHECK_NULL(xlalErrno == 0, XLAL_EFAILED);
 
       // Store statistics
       for (size_t tj = 0; tj < tn; ++tj) {
@@ -1083,7 +1086,7 @@ int XLALLatticeTilingDimensionBounds(
 }
 
 LatticeTilingIterator *XLALCreateLatticeTilingIterator(
-  LatticeTiling *tiling,
+  const LatticeTiling *tiling,
   const size_t itr_ndim
   )
 {
@@ -1102,6 +1105,7 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
 
   // Set fields
   itr->itr_ndim = itr_ndim;
+  itr->count = 0;
 
   // Determine the maximum tiled dimension to iterate over
   itr->tiled_itr_ndim = 0;
@@ -1237,6 +1241,9 @@ int XLALNextLatticeTilingPoint(
       // If dimension index is now zero, we're done
       if (ti == 0) {
 
+        // Store number of points
+        itr->count = itr->index + 1;
+
         // Iterator is now finished
         itr->state = 2;
 
@@ -1248,8 +1255,8 @@ int XLALNextLatticeTilingPoint(
       --ti;
 
       // Increment integer point in this dimension, in current direction
-      const INT8 direction = itr->direction[ti];
-      const INT8 int_point_ti = itr->int_point[ti] + direction;
+      const INT4 direction = itr->direction[ti];
+      const INT4 int_point_ti = itr->int_point[ti] + direction;
       itr->int_point[ti] = int_point_ti;
 
       // Increment physical point in this dimension, in current direction
@@ -1258,8 +1265,8 @@ int XLALNextLatticeTilingPoint(
       gsl_blas_daxpy(direction, &phys_from_int_i.vector, itr->phys_point);
 
       // If point is not out of bounds, we have found the next lattice point
-      const INT8 int_lower_ti = itr->int_lower[ti];
-      const INT8 int_upper_ti = itr->int_upper[ti];
+      const INT4 int_lower_ti = itr->int_lower[ti];
+      const INT4 int_upper_ti = itr->int_upper[ti];
       if ((direction > 0 && int_point_ti <= int_upper_ti) || (direction < 0 && int_point_ti >= int_lower_ti)) {
         break;
       }
@@ -1314,19 +1321,19 @@ int XLALNextLatticeTilingPoint(
 
         // Compute integer lower/upper bounds, rounded up/down to avoid extra boundary points
         feclearexcept(FE_ALL_EXCEPT);
-        const INT8 int_lower_i = lround(ceil(dbl_int_lower_i));
-        const INT8 int_upper_i = lround(floor(dbl_int_upper_i));
+        const INT4 int_lower_i = lround(ceil(dbl_int_lower_i));
+        const INT4 int_upper_i = lround(floor(dbl_int_upper_i));
         XLAL_CHECK(fetestexcept(FE_INVALID) == 0, XLAL_EFAILED, "Integer bounds on dimension #%zu are too large: %0.2e to %0.2e", i, dbl_int_lower_i, dbl_int_upper_i);
 
         // Set integer lower/upper bounds
         itr->int_lower[ti] = int_lower_i;
         itr->int_upper[ti] = GSL_MAX(int_lower_i, int_upper_i);
       }
-      const INT8 int_lower_i = itr->int_lower[ti];
-      const INT8 int_upper_i = itr->int_upper[ti];
+      const INT4 int_lower_i = itr->int_lower[ti];
+      const INT4 int_upper_i = itr->int_upper[ti];
 
       // Get iteration direction
-      INT8 direction = itr->direction[ti];
+      INT4 direction = itr->direction[ti];
 
       // Only switch iteration direction:
       // - if this is an alternating iterator
@@ -1346,7 +1353,7 @@ int XLALNextLatticeTilingPoint(
       for (size_t tj = 0; tj < tn; ++tj) {
         const size_t j = itr->tiling->tiled_idx[tj];
         const double phys_from_int_i_j = gsl_matrix_get(itr->tiling->phys_from_int, i, j);
-        const INT8 int_point_tj = itr->int_point[tj];
+        const INT4 int_point_tj = itr->int_point[tj];
         phys_point_i += phys_from_int_i_j * int_point_tj;
       }
       gsl_vector_set(itr->phys_point, i, phys_point_i);
@@ -1405,7 +1412,7 @@ int XLALNextLatticeTilingPoints(
 
 }
 
-UINT8 XLALLatticeTilingPointsInPass(
+UINT4 XLALLatticeTilingPointsInPass(
   const LatticeTilingIterator *itr,
   const size_t dim
   )
@@ -1443,16 +1450,27 @@ UINT8 XLALTotalLatticeTilingPoints(
   // Check input
   XLAL_CHECK_VAL(0, itr != NULL, XLAL_EFAULT);
 
-  // Return 1 if iterator or tiling contains only a single point
-  if (itr->tiled_itr_ndim == 0 || itr->tiling->tiled_ndim == 0) {
-    return 1;
+  // Count number of lattice tiling points
+  if (itr->count == 0) {
+
+    // Clone iterator
+    LatticeTilingIterator *itr_clone = XLALCreateLatticeTilingIterator(itr->tiling, itr->itr_ndim);
+    XLAL_CHECK_VAL(0, itr_clone != NULL, XLAL_EFUNC);
+
+    // Iterate over all points
+    xlalErrno = 0;
+    while (XLALNextLatticeTilingPoint(itr_clone, NULL) > 0) LT_FastForwardIterator(itr_clone);
+    XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFAILED);
+
+    // Record count
+    itr->count = itr_clone->count;
+
+    // Cleanup
+    XLALDestroyLatticeTilingIterator(itr_clone);
+
   }
 
-  // Get lattice tiling statistics for highest iterated dimension
-  const LatticeTilingStats *stats = XLALLatticeTilingStatistics(itr->tiling, itr->itr_ndim - 1);
-  XLAL_CHECK_VAL(0, stats != NULL, XLAL_EFUNC);
-
-  return stats->total_points;
+  return itr->count;
 
 }
 
@@ -1470,7 +1488,7 @@ UINT8 XLALCurrentLatticeTilingIndex(
 }
 
 LatticeTilingLocator *XLALCreateLatticeTilingLocator(
-  LatticeTiling *tiling
+  const LatticeTiling *tiling
   )
 {
 
@@ -1603,8 +1621,8 @@ int XLALNearestLatticeTilingPoint(
   const gsl_vector *point,
   gsl_vector *nearest_point,
   UINT8Vector *nearest_seq_idxs,
-  UINT8Vector *nearest_pass_idxs,
-  UINT8Vector *nearest_pass_lens
+  UINT4Vector *nearest_pass_idxs,
+  UINT4Vector *nearest_pass_lens
   )
 {
 
@@ -1648,9 +1666,9 @@ int XLALNearestLatticeTilingPoint(
   }
 
   // Create local vector sequence view of 'nearest_pass_idxs', if required
-  UINT8VectorSequence nearest_passes_idxs;
-  UINT8VectorSequence *p_nearest_passes_idxs = &nearest_passes_idxs;
-  UINT8VectorSequence **pp_nearest_passes_idxs = NULL;
+  UINT4VectorSequence nearest_passes_idxs;
+  UINT4VectorSequence *p_nearest_passes_idxs = &nearest_passes_idxs;
+  UINT4VectorSequence **pp_nearest_passes_idxs = NULL;
   if (nearest_pass_idxs != NULL) {
     nearest_passes_idxs.vectorLength = n;
     nearest_passes_idxs.length = 1;
@@ -1659,9 +1677,9 @@ int XLALNearestLatticeTilingPoint(
   }
 
   // Create local vector sequence view of 'nearest_pass_lens', if required
-  UINT8VectorSequence nearest_passes_lens;
-  UINT8VectorSequence *p_nearest_passes_lens = &nearest_passes_lens;
-  UINT8VectorSequence **pp_nearest_passes_lens = NULL;
+  UINT4VectorSequence nearest_passes_lens;
+  UINT4VectorSequence *p_nearest_passes_lens = &nearest_passes_lens;
+  UINT4VectorSequence **pp_nearest_passes_lens = NULL;
   if (nearest_pass_lens != NULL) {
     nearest_passes_lens.vectorLength = n;
     nearest_passes_lens.length = 1;
@@ -1686,8 +1704,8 @@ int XLALNearestLatticeTilingPass(
   const size_t dim,
   gsl_vector *nearest_point,
   UINT8 *nearest_seq_idx,
-  UINT8 *nearest_pass_idx,
-  UINT8 *nearest_pass_len
+  UINT4 *nearest_pass_idx,
+  UINT4 *nearest_pass_len
   )
 {
 
@@ -1702,10 +1720,10 @@ int XLALNearestLatticeTilingPass(
   // Create local vectors
   UINT8 nearest_seq_idxs_data[n];
   UINT8Vector nearest_seq_idxs = { .length = n, .data = &nearest_seq_idxs_data[0] };
-  UINT8 nearest_pass_idxs_data[n];
-  UINT8Vector nearest_pass_idxs = { .length = n, .data = &nearest_pass_idxs_data[0] };
-  UINT8 nearest_pass_lens_data[n];
-  UINT8Vector nearest_pass_lens = { .length = n, .data = &nearest_pass_lens_data[0] };
+  UINT4 nearest_pass_idxs_data[n];
+  UINT4Vector nearest_pass_idxs = { .length = n, .data = &nearest_pass_idxs_data[0] };
+  UINT4 nearest_pass_lens_data[n];
+  UINT4Vector nearest_pass_lens = { .length = n, .data = &nearest_pass_lens_data[0] };
 
   // Call XLALNearestLatticeTilingPoint()
   XLAL_CHECK(XLALNearestLatticeTilingPoint(loc, point, nearest_point, &nearest_seq_idxs, &nearest_pass_idxs, &nearest_pass_lens) == XLAL_SUCCESS, XLAL_EFUNC);
@@ -1730,8 +1748,8 @@ int XLALNearestLatticeTilingPoints(
   const gsl_matrix *points,
   gsl_matrix **nearest_points,
   UINT8VectorSequence **nearest_seqs_idxs,
-  UINT8VectorSequence **nearest_passes_idxs,
-  UINT8VectorSequence **nearest_passes_lens
+  UINT4VectorSequence **nearest_passes_idxs,
+  UINT4VectorSequence **nearest_passes_lens
   )
 {
 
@@ -1776,12 +1794,12 @@ int XLALNearestLatticeTilingPoints(
   if (nearest_passes_idxs != NULL) {
     if (*nearest_passes_idxs != NULL) {
       if ((*nearest_passes_idxs)->vectorLength != n || (*nearest_passes_idxs)->length < num_points) {
-        XLALDestroyUINT8VectorSequence(*nearest_passes_idxs);
+        XLALDestroyUINT4VectorSequence(*nearest_passes_idxs);
         *nearest_passes_idxs = NULL;
       }
     }
     if (*nearest_passes_idxs == NULL) {
-      *nearest_passes_idxs = XLALCreateUINT8VectorSequence(n, num_points);
+      *nearest_passes_idxs = XLALCreateUINT4VectorSequence(n, num_points);
       XLAL_CHECK(*nearest_passes_idxs != NULL, XLAL_ENOMEM);
     }
   }
@@ -1790,12 +1808,12 @@ int XLALNearestLatticeTilingPoints(
   if (nearest_passes_lens != NULL) {
     if (*nearest_passes_lens != NULL) {
       if ((*nearest_passes_lens)->vectorLength != n || (*nearest_passes_lens)->length < num_points) {
-        XLALDestroyUINT8VectorSequence(*nearest_passes_lens);
+        XLALDestroyUINT4VectorSequence(*nearest_passes_lens);
         *nearest_passes_lens = NULL;
       }
     }
     if (*nearest_passes_lens == NULL) {
-      *nearest_passes_lens = XLALCreateUINT8VectorSequence(n, num_points);
+      *nearest_passes_lens = XLALCreateUINT4VectorSequence(n, num_points);
       XLAL_CHECK(*nearest_passes_lens != NULL, XLAL_ENOMEM);
     }
   }
@@ -1851,7 +1869,7 @@ int XLALNearestLatticeTilingPoints(
   for (size_t j = 0; j < num_points; ++j) {
 
     // Find the nearest point to 'nearest[:,j]', the tiled dimensions of which are generating integers
-    INT8 nearest_int[tn];
+    INT4 nearest_int[tn];
     switch (loc->tiling->lattice) {
 
     case TILING_LATTICE_CUBIC:		// Cubic (\f$Z_n\f$) lattice
@@ -1902,7 +1920,7 @@ int XLALNearestLatticeTilingPoints(
       //   * Line 6 in Algorithm 2 as written in the paper is in error, see correction below.
       //   * We are only interested in 'k', the generating integers of the nearest point
       //     'x = Q * k', therefore line 26 in Algorithm 2 is not included.
-      INT8 k[tn+1];
+      INT4 k[tn+1];
       {
 
         // Lines 1--4, 20
@@ -1939,7 +1957,7 @@ int XLALNearestLatticeTilingPoints(
         //   * No floating-point exception checking needed for lround()
         //     here since its argument will be of order 'tn'.
         for (size_t tt = 1; tt <= tn + 1; ++tt) {
-          const INT8 ti = lround((tn + 1)*(0.5 - z[tt-1]) + 0.5);
+          const INT4 ti = lround((tn + 1)*(0.5 - z[tt-1]) + 0.5);
           link[tt-1] = bucket[ti-1];
           bucket[ti-1] = tt;
         }
@@ -1995,12 +2013,12 @@ int XLALNearestLatticeTilingPoints(
         // If 'nearest_int[ti]' is outside parameter-space bounds
         if (nearest_int[ti] < trie->int_lower || nearest_int[ti] > trie->int_upper) {
           const size_t i = loc->tiling->tiled_idx[ti];
-          XLALPrintInfo("%s: failed %" LAL_INT8_FORMAT " <= %" LAL_INT8_FORMAT " <= %" LAL_INT8_FORMAT " in dimension #%zu\n",
+          XLALPrintInfo("%s: failed %" LAL_INT4_FORMAT " <= %" LAL_INT4_FORMAT " <= %" LAL_INT4_FORMAT " in dimension #%zu\n",
                         __func__, trie->int_lower, nearest_int[ti], trie->int_upper, i);
 
           // Find the nearest point within the parameter-space bounds of the lattice tiling
           gsl_vector_view point_int_view = gsl_matrix_column(nearest, j);
-          INT8 poll_int[tn];
+          INT4 poll_int[tn];
           double poll_min_distance = GSL_POSINF;
           feclearexcept(FE_ALL_EXCEPT);
           LT_PollIndexTrie(loc->tiling, loc->index_trie, 0, &point_int_view.vector, poll_int, &poll_min_distance, nearest_int);
@@ -2107,7 +2125,7 @@ int XLALPrintLatticeTilingIndexTrie(
   }
 
   // Print index trie
-  INT8 int_lower[tn];
+  INT4 int_lower[tn];
   LT_PrintIndexTrie(loc->tiling, loc->index_trie, 0, file, int_lower);
 
   return XLAL_SUCCESS;

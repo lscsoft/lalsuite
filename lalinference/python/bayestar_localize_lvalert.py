@@ -56,6 +56,7 @@ from lalinference.bayestar import command
 import logging
 import ligo.lvalert.utils
 import sys
+import os
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('BAYESTAR')
@@ -93,7 +94,12 @@ import ligo.gracedb.logging
 import ligo.gracedb.rest
 
 # Fire up a GraceDb client
-gracedb = ligo.gracedb.rest.GraceDb()
+# FIXME: Mimic the behavior of the GraceDb command line client, where the
+# environment variable GRACEDB_SERVICE_URL overrides the default service URL.
+# It would be nice to get this behavior into the gracedb package itself.
+gracedb = ligo.gracedb.rest.GraceDb(
+    os.environ.get('GRACEDB_SERVICE_URL',
+    ligo.gracedb.rest.DEFAULT_SERVICE_URL))
 
 # Send log messages to GraceDb too
 handler = ligo.gracedb.logging.GraceDbLogHandler(gracedb, graceid)

@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 23
+# serial 24
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],[
   # $0: enable GCC warning flags
@@ -35,10 +35,6 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
 
     # check for Mac OS X specific flags
     AS_IF([test "x${MACOSX_VERSION}" != "x"],[
-      LALSUITE_CHECK_COMPILE_FLAGS([
-        -mmacosx-version-min=10.4
-        ],[gcc_cflags="${gcc_cflags} ${flag}"]
-      )
       LALSUITE_CHECK_LINK_FLAGS([
         -Wl[,]-no_compact_unwind
         ],[gcc_ldflags="${gcc_ldflags} ${flag}"]
