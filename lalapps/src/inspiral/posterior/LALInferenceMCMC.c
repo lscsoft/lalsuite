@@ -113,10 +113,10 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     ----------------------------------------------\n\
     --- Noise Model ------------------------------\n\
     ----------------------------------------------\n\
-    (--psdFit)          Run with PSD fitting\n\
+    (--psd-fit)         Run with PSD fitting\n\
     (--psdNblock)       Number of noise parameters per IFO channel (8)\n\
     (--psdFlatPrior)    Use flat prior on psd parameters (Gaussian)\n\
-    (--glitchFit)       Run with glitch fitting\n\
+    (--glitch-fit)       Run with glitch fitting\n\
     (--glitchNmax)      Maximum number of glitch basis functions per IFO (20)\n\
     \n\
     ----------------------------------------------\n\

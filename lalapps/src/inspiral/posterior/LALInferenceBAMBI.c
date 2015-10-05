@@ -61,7 +61,7 @@ void initializeMN(LALInferenceRunState *runState);
 
 /******** Defined for BAMBI (start) **********/
 
-#define BAMBI_STRLEN 200
+#define BAMBI_STRLEN 1000
 
 extern float *omicron,tol,thL[3],logLRange;
 extern double *maxsigma,logZero;
@@ -403,7 +403,7 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     char **info;
     info=(char **)malloc(3*sizeof(char *));
     info[0]=(char *)malloc(BAMBI_STRLEN*sizeof(char));
-    info[1]=(char *)malloc(150*sizeof(char));
+    info[1]=(char *)malloc(1000*sizeof(char));
     info[2]=(char *)malloc(5*sizeof(char));
     strcpy(&info[0][0],outfilestr);
     strcpy(&info[1][0],"DONOTWRITE");

@@ -41,6 +41,9 @@ extern "C" {
 #include <lal/LALDatatypes.h>
 #include <lal/LALInference.h>
 
+extern const xmlChar votype_nested_samples[];
+extern const xmlChar votype_posterior_samples[];
+
 xmlNodePtr XLALInferenceStateVariables2VOTResource(LALInferenceRunState *const state, const char *name);
 
 xmlNodePtr XLALInferenceVariablesArray2VOTTable(LALInferenceVariables *const *const varsArray, UINT4 N, const char *name);

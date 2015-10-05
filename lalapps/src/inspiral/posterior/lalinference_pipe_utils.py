@@ -73,7 +73,7 @@ class Event():
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
-def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath="./",downloadpsd=True):
+def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",basepath="./",downloadpsd=True):
   """
   Parse LV alert file, containing coinc, sngl, coinc_event_map.
   and create a list of Events as input for pipeline
@@ -92,6 +92,8 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath=
   import numpy as np
   import subprocess
   from subprocess import Popen, PIPE
+  cwd=os.getcwd()
+  os.chdir(basepath)
   print "%s download %s coinc.xml"%(gracedb,gid)
   subprocess.call([gracedb,"download", gid ,"coinc.xml"])
   xmldoc=utils.load_filename("coinc.xml",contenthandler = LIGOLWContentHandler)
@@ -104,11 +106,9 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",savepsdpath=
   #ifos = search_summary[0].ifos.split(",")
   #coinc_table = lsctables.getTablesByType(xmldoc, lsctables.CoincTable)[0]
   #ifos = coinc_table[0].instruments.split(",")
-  trigSNR = coinctable[0].snr
+  trigSNR = 2.0*coinctable[0].snr #The factor of 2.0 is because detection pipelines recover SNR lower than PE can recover.
   # Parse PSD
   srate_psdfile=16384
-  cwd=os.getcwd()
-  os.chdir(savepsdpath)
   ifos=None
   if downloadpsd:
     print "gracedb download %s psd.xml.gz" % gid
@@ -760,7 +760,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if self.config.has_option('input','ignore-gracedb-psd'):
         if self.config.getboolean('input','ignore-gracedb-psd'):
           downloadgracedbpsd=False
-      events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),savepsdpath=self.basepath,downloadpsd=downloadgracedbpsd)
+      events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),basepath=self.basepath,downloadpsd=downloadgracedbpsd)
     else: gid=None
     # pipedown-database
     if self.config.has_option('input','gstlal-db'):
@@ -844,6 +844,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         respagenode=self.add_results_page_node(resjob=self.cotest_results_page_job,outdir=pagedir,parent=mergenode,gzip_output=zipfilename,ifos=enginenodes[0].ifos)
         respagenode.set_psd_files(enginenodes[0].get_psd_files())
         respagenode.set_snr_file(enginenodes[0].get_snr_file())
+        if os.path.exists(self.basepath+'/coinc.xml'):
+          respagenode.set_coinc_file(self.basepath+'/coinc.xml')
         mkdirs(os.path.join(self.basepath,'coherence_test'))
         par_mergenodes=[]
         for ifo in enginenodes[0].ifos:
@@ -869,6 +871,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             subresnode=self.add_results_page_node(outdir=presultsdir,parent=pmergenode, gzip_output=pzipfilename,ifos=ifo)
             subresnode.set_psd_files(cotest_nodes[0].get_psd_files())
             subresnode.set_snr_file(cotest_nodes[0].get_snr_file())
+            if os.path.exists(self.basepath+'/coinc.xml'):
+              subresnode.set_coinc_file(self.basepath+'/coinc.xml')
             subresnode.set_bayes_coherent_noise(pmergenode.get_B_file())
             if self.config.has_option('input','injection-file') and event.event_id is not None:
                 subresnode.set_injection(self.config.get('input','injection-file'),event.event_id)
@@ -889,6 +893,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode,gzip_output=None,ifos=enginenodes[0].ifos)
         respagenode.set_psd_files(enginenodes[0].get_psd_files())
         respagenode.set_snr_file(enginenodes[0].get_snr_file())
+        if os.path.exists(self.basepath+'/coinc.xml'):
+          respagenode.set_coinc_file(self.basepath+'/coinc.xml')
     respagenode.set_bayes_coherent_noise(mergenode.get_B_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
@@ -934,6 +940,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode=self.add_results_page_node(outdir=pagedir,ifos=enginenodes[0].ifos)
     respagenode.set_psd_files(enginenodes[0].get_psd_files())
     respagenode.set_snr_file(enginenodes[0].get_snr_file())
+    if os.path.exists(self.basepath+'/coinc.xml'):
+        respagenode.set_coinc_file(self.basepath+'/coinc.xml')
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     if self.config.has_option('input','burst-injection-file') and event.event_id is not None:
@@ -963,6 +971,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode=self.add_results_page_node(outdir=pagedir,ifos=enginenodes[0].ifos)
     respagenode.set_psd_files(enginenodes[0].get_psd_files())
     respagenode.set_snr_file(enginenodes[0].get_snr_file())
+    if os.path.exists(self.basepath+'/coinc.xml'):
+      respagenode.set_coinc_file(self.basepath+'/coinc.xml')
     respagenode.set_bayes_coherent_noise(enginenodes[0].get_B_file())
     respagenode.set_header_file(enginenodes[0].get_header_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
@@ -1267,15 +1277,20 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.add_node(node)
     nodes.append(node)
 
-    node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
+    tag='pe'
+    if self.config.has_option('analysis','add-lvem-tag'):
+      if self.config.getboolean('analysis','add-lvem-tag'):
+        tag='pe,lvem'
+
+    node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag=tag)
     node.set_filename(respagenode.webpath+'/corner/extrinsic.png')
     self.add_node(node)
     nodes.append(node)
 
-    #node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
-    #node.set_filename(respagenode.webpath+'/corner/intrinsic.png')
-    #self.add_node(node)
-    #nodes.append(node)
+    node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
+    node.set_filename(respagenode.webpath+'/corner/intrinsic.png')
+    self.add_node(node)
+    nodes.append(node)
 
     return nodes
 
@@ -1293,11 +1308,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('condor','skyarea'):
       if self.config.has_option('analysis','upload-to-gracedb'):
         if self.config.getboolean('analysis','upload-to-gracedb'):
+          tag='sky_loc'
+          if self.config.has_option('analysis','add-lvem-tag'):
+            if self.config.getboolean('analysis','add-lvem-tag'):
+              tag='sky_loc,lvem'
           skynodes=filter(lambda x: isinstance(x,SkyAreaNode) ,self.get_nodes())
           nodes=[]
           for sk in skynodes:
             if len(sk.ifos)>1:
-              node=GraceDBNode(self.gracedbjob,parent=sk,gid=gid,tag='sky_loc,lvem')
+              node=GraceDBNode(self.gracedbjob,parent=sk,gid=gid,tag=tag)
               #for p in sk.__parents:
               #  if isinstance(p,ResultPageNode):
               #    resultpagenode=p
@@ -1345,7 +1364,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       elif self.engine=='lalinferencebambimpi':
         exe=cp.get('condor','mpiwrapper')
         universe="vanilla"
-      elif self.engine=='lalinferencenest' or self.engine=='lalinferenceburst':
+      elif self.engine=='lalinferencenest' or self.engine=='lalinferenceburst' or self.engine=='lalinferencebambi':
         exe=cp.get('condor',self.engine)
         if site is not None and site!='local':
           universe='vanilla'
@@ -1424,7 +1443,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     """
     Over-load base class method to choose condor universe properly
     """
-    if self.engine=='lalinferencenest' or self.engine=='lalinferenceburst':
+    if self.engine=='lalinferencenest' or self.engine=='lalinferenceburst' or self.engine=='lalinferencebambi':
       if site is not None and site!='local':
         self.set_universe('vanilla')
       else:
@@ -1830,6 +1849,11 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         return
       self.add_file_opt('snr',st)
 
+    def set_coinc_file(self,coinc):
+      if coinc is None:
+        return
+      self.add_var_arg('--trig '+coinc)
+
     def add_engine_parent(self,node):
       """
       Add a parent node which is one of the engine nodes
@@ -1838,9 +1862,8 @@ class ResultsPageNode(pipeline.CondorDAGNode):
       self.add_parent(node)
       self.add_file_arg(node.get_pos_file())
       if isinstance(node,LALInferenceMCMCNode):
-	      self.add_var_opt('lalinfmcmc','')
-      if os.path.exists("coinc.xml"):
-        self.add_var_opt('trig','coinc.xml')
+        self.add_var_opt('lalinfmcmc','')
+
     def get_pos_file(self): return self.posfile
     def set_bayes_coherent_incoherent(self,bcifile):
         self.add_file_opt('bci',bcifile)

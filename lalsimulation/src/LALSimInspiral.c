@@ -115,6 +115,8 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(EOBNR),
     INITIALIZE_NAME(EOBNRv2),
     INITIALIZE_NAME(EOBNRv2HM),
+    INITIALIZE_NAME(EOBNRv2_ROM),
+    INITIALIZE_NAME(EOBNRv2HM_ROM),
     INITIALIZE_NAME(SEOBNRv1),
     INITIALIZE_NAME(SEOBNRv2),
     INITIALIZE_NAME(SEOBNRv3),
@@ -800,7 +802,7 @@ int XLALSimInspiralChooseFDWaveform(
     REAL8 spin1[3],spin2[3];
 
     /* Variables for IMRPhenomP and IMRPhenomPv2 */
-    REAL8 chi1_l, chi2_l, chip, eta, thetaJ, alpha0;
+    REAL8 chi1_l, chi2_l, chip, thetaJ, alpha0;
 
     /* General sanity checks that will abort
      *
@@ -1079,6 +1081,32 @@ int XLALSimInspiralChooseFDWaveform(
             }
             break;
 
+        case EOBNRv2_ROM:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+
+            ret = XLALSimIMREOBNRv2HMROM(hptilde, hctilde,
+		phiRef, deltaF, f_min, f_max, f_ref, r, i, m1, m2, 0);
+            break;
+
+        case EOBNRv2HM_ROM:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+                ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+            if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
+                ABORT_NONZERO_SPINS(waveFlags);
+            if( !checkTidesZero(lambda1, lambda2) )
+                ABORT_NONZERO_TIDES(waveFlags);
+
+            ret = XLALSimIMREOBNRv2HMROM(hptilde, hctilde,
+		phiRef, deltaF, f_min, f_max, f_ref, r, i, m1, m2, 1);
+            break;
+
         case SEOBNRv1_ROM_EffectiveSpin:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
@@ -1171,15 +1199,15 @@ int XLALSimInspiralChooseFDWaveform(
             if(f_ref==0.0)
                 f_ref = f_min; /* Default reference frequency is minimum frequency */
             XLALSimIMRPhenomPCalculateModelParameters(
-                &chi1_l, &chi2_l, &chip, &eta, &thetaJ, &alpha0,
+                &chi1_l, &chi2_l, &chip, &thetaJ, &alpha0,
                 m1, m2, f_ref,
                 LNhatx, LNhaty, LNhatz,
                 S1x, S1y, S1z,
                 S2x, S2y, S2z);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
-              chi1_l, chi2_l, chip, eta, thetaJ,
-              m1+m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, 1);
+              chi1_l, chi2_l, chip, thetaJ,
+              m1, m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, 1);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
@@ -1201,15 +1229,15 @@ int XLALSimInspiralChooseFDWaveform(
             if(f_ref==0.0)
                 f_ref = f_min; /* Default reference frequency is minimum frequency */
             XLALSimIMRPhenomPCalculateModelParameters(
-                &chi1_l, &chi2_l, &chip, &eta, &thetaJ, &alpha0,
+                &chi1_l, &chi2_l, &chip, &thetaJ, &alpha0,
                 m1, m2, f_ref,
                 LNhatx, LNhaty, LNhatz,
                 S1x, S1y, S1z,
                 S2x, S2y, S2z);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
-              chi1_l, chi2_l, chip, eta, thetaJ,
-              m1+m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, 2);
+              chi1_l, chi2_l, chip, thetaJ,
+              m1, m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, 2);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
@@ -3637,6 +3665,8 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomD:
         case IMRPhenomP:
         case IMRPhenomPv2:
+        case EOBNRv2_ROM:
+        case EOBNRv2HM_ROM:
         case SEOBNRv1_ROM_EffectiveSpin:
         case SEOBNRv1_ROM_DoubleSpin:
         case SEOBNRv2_ROM_EffectiveSpin:
@@ -4069,7 +4099,9 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case EccentricFD:
     case IMRPhenomA:
     case EOBNRv2HM:
+    case EOBNRv2HM_ROM:
     case EOBNRv2:
+    case EOBNRv2_ROM:
     case EOBNR:
     case EOB:
     case IMRPhenomFA:
@@ -4120,7 +4152,9 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case NumRelNinja2:
     case EOBNR:
     case EOBNRv2:
+    case EOBNRv2_ROM:
     case EOBNRv2HM:
+    case EOBNRv2HM_ROM:
     case SEOBNRv1:
     case SEOBNRv2:
     case SEOBNRv3:
@@ -4568,7 +4602,6 @@ double XLALSimInspiralGetFinalFreq(
             }
             freqFunc = fIMRPhenomCFinal;
             break;
-
 
         // FIXME: Following I don't know how to calculate */
         /* Spinning inspiral-only time domain */

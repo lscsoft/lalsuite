@@ -61,6 +61,26 @@ static const INT4 ROMDataHDF5_VERSION_MICRO = 0;
 
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
+
+// Helper functions to read gsl_vector and gsl_matrix data with error checking
+UNUSED static int read_vector_test(const char dir[], const char fname[], gsl_vector *v) {
+  size_t size = strlen(dir) + strlen(fname) + 2;
+  char *path = XLALMalloc(size);
+  snprintf(path, size, "%s/%s", dir, fname);
+
+  FILE *f = fopen(path, "rb");
+  if (!f)
+    XLAL_ERROR(XLAL_EIO, "Could not find ROM data file at path `%s'", path);
+  int ret = gsl_vector_fread(f, v);
+  if (ret != 0)
+     XLAL_ERROR(XLAL_EIO, "Error reading data from `%s'", path);
+  fclose(f);
+
+  XLAL_PRINT_INFO("Sucessfully read data file `%s'", path);
+  XLALFree(path);
+  return(XLAL_SUCCESS);
+}
+
 #include "LALSimIMRSEOBNRROMUtilities.c"
 
 #include <lal/LALConfig.h>

@@ -93,7 +93,8 @@ noinst_HEADERS = \
 	LALSimIMRPhenomD_internals.c \
 	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomP.c \
-	LALSimIMRSEOBNRROMUtilities.c
+	LALSimIMRSEOBNRROMUtilities.c \
+	LALSimIMREOBNRv2HMROMUtilities.c
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
@@ -108,6 +109,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv2ROMDoubleSpin.c \
 	LALSimIMRSEOBNRv2ROMDoubleSpinHI.c \
 	LALSimIMRSEOBNRv2ChirpTime.c \
+	LALSimIMREOBNRv2HMROM.c \
 	LALSimIMRPhenom.c \
 	LALSimIMRPhenomC.c \
 	LALSimIMRPhenomD.c \

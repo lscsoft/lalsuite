@@ -182,15 +182,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     char swapfilename[256];
 
     if (tempVerbose) {
-        for (t = 0; t < n_local_threads; t++) {
-            sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
-            swapfile = fopen(swapfilename, "w");
+        sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
+        swapfile = fopen(swapfilename, "w");
 
-            fprintf(swapfile,
-                "cycle\tlog(chain_swap)\tlow_temp_likelihood\thigh_temp_likelihood\tswap_accepted\n");
+        fprintf(swapfile,
+            "cycle\tlow_temp\thigh_temp\tlog(chain_swap)\tlow_temp_likelihood\thigh_temp_likelihood\tswap_accepted\n");
 
-            fclose(swapfile);
-        }
+        fclose(swapfile);
     }
 
     if (adaptVerbose) {
@@ -405,8 +403,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
         /* Open swap file if going verbose */
         if (tempVerbose) {
-            sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
-            swapfile = fopen(swapfilename, "w");
+            sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
+            swapfile = fopen(swapfilename, "a");
         }
 
         /* Excute swap proposal. */
@@ -571,13 +569,11 @@ void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile) {
                     swapAccepted = 0;
 
                 /* Print to file if verbose is chosen */
-                if (swapfile != NULL) {
+                if (swapfile != NULL)
                     fprintf(swapfile, "%d\t%f\t%f\t%f\t%f\t%f\t%i\n",
                             hot_thread->step, cold_thread->temperature, hot_thread->temperature,
                             logThreadSwap, cold_thread->currentLikelihood,
                             hot_thread->currentLikelihood, swapAccepted);
-                    fflush(swapfile);
-                }
 
                 if (swapAccepted) {
                     temp_params = hot_thread->currentParams;
@@ -1013,14 +1009,14 @@ void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE
             if (threadoutput == NULL) {
                 XLALErrorHandler = XLALExitErrorHandler;
                 XLALPrintError("Error reading output file (in %s, line %d)\n", __FILE__, __LINE__);
-                XLAL_ERROR_NULL(XLAL_EIO);
+                XLAL_ERROR_VOID(XLAL_EIO);
             }
 
             resumeoutput = fopen(outBinFileName, "r");
             if (resumeoutput == NULL) {
                 XLALErrorHandler = XLALExitErrorHandler;
                 XLALPrintError("Error reading resume file (in %s, line %d)\n", __FILE__, __LINE__);
-                XLAL_ERROR_NULL(XLAL_EIO);
+                XLAL_ERROR_VOID(XLAL_EIO);
             }
 
             LALInferenceMCMCResumeRead(thread, resumeoutput);
@@ -1035,7 +1031,7 @@ void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE
             if(threadoutput == NULL){
                 XLALErrorHandler = XLALExitErrorHandler;
                 XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
-                XLAL_ERROR_NULL(XLAL_EIO);
+                XLAL_ERROR_VOID(XLAL_EIO);
             }
 
             LALInferencePrintPTMCMCHeaderFile(runState, thread, threadoutput);
@@ -1044,12 +1040,15 @@ void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE
             if(resumeoutput == NULL){
                 XLALErrorHandler = XLALExitErrorHandler;
                 XLALPrintError("Resume file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
-                XLAL_ERROR_NULL(XLAL_EIO);
+                XLAL_ERROR_VOID(XLAL_EIO);
             }
         }
 
         if(setvbuf(threadoutput,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
           fprintf(stderr,"Warning: Unable to set output file buffer!");
+
+        if(setvbuf(resumeoutput,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
+          fprintf(stderr,"Warning: Unable to set resume file buffer!");
 
         (*threadoutputs)[t] = threadoutput;
         (*resumeoutputs)[t] = resumeoutput;
@@ -1142,12 +1141,7 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInfere
     /* Print column header */
     fprintf(threadoutput, "\n\n%31s\n","");
     fprintf(threadoutput, "cycle\tlogpost\tlogprior\t");
-    LALInferenceFprintParameterNonFixedHeaders(threadoutput, thread->currentParams);
-
-    /* Check for spline calibration parameters */
-    if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
-        (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active")))
-        LALInferenceFprintSplineCalibrationHeader(threadoutput, thread);
+    LALInferenceFprintParameterHeaders(threadoutput, thread->currentParams);
 
     /* Print the likelihood and SNR of each individual detector */
     fprintf(threadoutput, "logl\t");
@@ -1180,10 +1174,7 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInfere
             (thread->currentLikelihood - thread->nullLikelihood) + thread->currentPrior,
             thread->currentPrior);
 
-    LALInferencePrintSampleNonFixed(threadoutput, thread->currentParams);
-    if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
-        (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active")))
-        LALInferencePrintSplineCalibration(threadoutput, thread);
+    LALInferencePrintSample(threadoutput, thread->currentParams);
 
     fprintf(threadoutput, "%f\t", thread->currentLikelihood);
     fprintf(threadoutput, "%f\t", thread->currentLikelihood - thread->nullLikelihood);
@@ -1395,12 +1386,7 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
     fprintf(threadoutput, "%d\t%f\t%f\t",
             iteration, (thread->currentLikelihood - thread->nullLikelihood) + thread->currentPrior, thread->currentPrior);
 
-    LALInferencePrintSampleNonFixed(threadoutput, thread->currentParams);
-
-    if (LALInferenceCheckVariable(thread->currentParams, "spcal_active") &&
-        (LALInferenceGetUINT4Variable(thread->currentParams, "spcal_active"))) {
-        LALInferencePrintSplineCalibration(threadoutput, thread);
-    }
+    LALInferencePrintSample(threadoutput, thread->currentParams);
 
     fprintf(threadoutput,"%f\t", thread->currentLikelihood);
     fprintf(threadoutput,"%f\t", thread->currentLikelihood - thread->nullLikelihood);

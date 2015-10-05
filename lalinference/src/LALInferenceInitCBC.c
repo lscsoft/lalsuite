@@ -155,11 +155,15 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
      *   LALInferenceCyclicReflectiveBound() is not enough) */
     #pragma omp parallel for private(thread)
     for (t = 0; t < run_state->nthreads; t++) {
+        LALInferenceVariables *priorDraw = XLALCalloc(1, sizeof(LALInferenceVariables));
+
         thread = run_state->threads[t];
 
-        LALInferenceDrawApproxPrior(thread,
-                                    thread->currentParams,
-                                    thread->currentParams);
+        /* Try not to clobber values given on the command line */
+        LALInferenceCopyVariables(thread->currentParams, priorDraw);
+        LALInferenceDrawApproxPrior(thread, priorDraw, priorDraw);
+        LALInferenceCopyUnsetREAL8Variables(priorDraw, thread->currentParams,
+                                            run_state->commandLine);
 
         while (run_state->prior(run_state,
                                 thread->currentParams,
@@ -181,6 +185,9 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
         thread->currentLikelihood = run_state->likelihood(thread->currentParams,
                                                           run_state->data,
                                                           thread->model);
+
+        LALInferenceClearVariables(priorDraw);
+        XLALFree(priorDraw);
     }
 
     /* Replace distance prior if changed for initial sample draw */
@@ -966,6 +973,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   UINT4 j = 0;
 
   ppt = LALInferenceGetProcParamVal(commandLine, "--psdFit");
+  if (ppt) {
+      printf("WARNING: --psdFit has been deprecated in favor of --psd-fit\n");
+  } else {
+      ppt = LALInferenceGetProcParamVal(commandLine, "--psd-fit");
+  }
   if(ppt)//MARK: Here is where noise PSD parameters are being added to the model
   {
 
@@ -1063,7 +1075,13 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   if(ppt)psdGaussianPrior=0;
   LALInferenceAddVariable(priorArgs, "psdGaussianPrior", &psdGaussianPrior,  LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
 
-  if(LALInferenceGetProcParamVal(commandLine, "--glitchFit")) LALInferenceInitGlitchVariables(state, model->params);
+  ppt = LALInferenceGetProcParamVal(commandLine, "--glitchFit");
+  if (ppt)
+      printf("WARNING: --glitchFit has been deprecated in favor of --glitch-fit\n");
+  else
+      ppt = LALInferenceGetProcParamVal(commandLine, "--glitch-fit");
+  if (ppt)
+      LALInferenceInitGlitchVariables(state, model->params);
 
   /* Handle, if present, requests for calibration parameters. */
   LALInferenceInitCalibrationVariables(state, model->params);
@@ -1743,7 +1761,7 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
     a2min=-1.0;
   }
 
-  /* IMRPhenomP only supports spins up to 0.9 and q > 1/20. Set prior consequently*/
+  /* IMRPhenomP only supports spins up to 0.9 and q > 1/10. Set prior consequently*/
   if (approx==IMRPhenomP && (a1max>0.9 || a2max>0.9)){
     a1max=0.9;
     a2max=0.9;
@@ -1752,6 +1770,25 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
       a2min=-0.9;
       }
     XLALPrintWarning("WARNING: IMRPhenomP only supports spin magnitude up to 0.9. Changing the a1max=a2max=0.9.\n");
+  }
+
+  /* IMRPhenomD only supports aligned spins within [ -1.0, 0.99 ] and q > 1/50. Set prior consequently*/
+  if (approx==IMRPhenomD && (a1max>0.99 || a2max>0.99)){
+    a1max=0.99;
+    a2max=0.99;
+    XLALPrintWarning("WARNING: IMRPhenomD only supports aligned spins within [ -1.0, 0.99 ]. Changing the a1max=a2max=0.99.\n");
+  }
+
+  /* IMRPhenomPv2 preliminary only supports spins up to 0.99 and q > 1/20. Set prior consequently*/
+  if (approx==IMRPhenomPv2 && (a1max>0.99 || a2max>0.99)){
+    a1max=0.99;
+    a2max=0.99;
+    /* If spin-aligned, IMRPhenomPv2 should reduce to IMRPhenomD with a lower spin magnitude of -1.0*/
+    if (spinAligned){
+      a1min=-1.0;
+      a2min=-1.0;
+      }
+    XLALPrintWarning("WARNING: IMRPhenomPv2 preliminary only supports spin magnitude up to 0.99. Changing the a1max=a2max=0.99.\n");
   }
 
   /* Start with parameters that are free (or pinned if the user wants so). The if...else below may force some of them to be fixed or ignore some of them, depending on the spin configuration*/
@@ -1891,6 +1928,34 @@ void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approximant a
      LALInferenceRemoveVariable(state->priorArgs,"eta_min");
      LALInferenceAddVariable(state->priorArgs,"eta_min",&min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
      fprintf(stdout,"WARNING: IMRPhenomP only supports mass ratios up to 10 ( suggested max: 4). Changing the min prior for eta to 0.083\n");
+  }
+
+  /* IMRPhenomD only supports q > 1/50. Set prior consequently  */
+  if (q==1 && approx==IMRPhenomD && min<1./50.){
+    min=1.0/50.;
+    LALInferenceRemoveVariable(state->priorArgs,"q_min");
+    LALInferenceAddVariable(state->priorArgs,"q_min",&min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    fprintf(stdout,"WARNING: IMRPhenomD only supports mass ratios up to 50 ( suggested max: 18). Changing the min prior for q to 1/50\n");
+  }
+  if (q==0 && approx==IMRPhenomD && min<0.01922337563){
+    min=0.01922337563;  //(that is eta for a 1-50 system)
+    LALInferenceRemoveVariable(state->priorArgs,"eta_min");
+    LALInferenceAddVariable(state->priorArgs,"eta_min",&min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    fprintf(stdout,"WARNING: IMRPhenomD only supports mass ratios up to 50 ( suggested max: 18). Changing the min prior for eta to 0.019\n");
+  }
+
+  /* IMRPhenomPv2 only supports q > 1/20. Set prior consequently  */
+  if (q==1 && approx==IMRPhenomPv2 && min<1./20.){
+    min=1.0/20.;
+    LALInferenceRemoveVariable(state->priorArgs,"q_min");
+    LALInferenceAddVariable(state->priorArgs,"q_min",&min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    fprintf(stdout,"WARNING: IMRPhenomPv2 preliminary only supports mass ratios up to 20 ( suggested max: 18). Changing the min prior for q to 1/20\n");
+  }
+  if (q==0 && approx==IMRPhenomPv2 && min<0.04535147392){
+     min=0.04535147392;  //(that is eta for a 1-20 system)
+     LALInferenceRemoveVariable(state->priorArgs,"eta_min");
+     LALInferenceAddVariable(state->priorArgs,"eta_min",&min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+     fprintf(stdout,"WARNING: IMRPhenomPv2 preliminary only supports mass ratios up to 20 ( suggested max: 20). Changing the min prior for eta to 0.045\n");
   }
 
   (void) max;

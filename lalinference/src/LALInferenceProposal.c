@@ -169,15 +169,15 @@ void LALInferenceAddProposalToCycle(LALInferenceProposalCycle *cycle, LALInferen
         cycle->order[i] = cycle->nProposals;
     }
 
+    cycle->nProposals += 1;
     cycle->proposals = XLALRealloc(cycle->proposals, (cycle->nProposals)*sizeof(LALInferenceProposal));
     if (cycle->proposals == NULL) {
         XLALError(fname, __FILE__, __LINE__, XLAL_ENOMEM);
         exit(1);
     }
-    cycle->proposals[cycle->nProposals] = prop;
+    cycle->proposals[cycle->nProposals-1] = prop;
 
     cycle->length += weight;
-    cycle->nProposals += 1;
 }
 
 
@@ -293,6 +293,8 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
         psdfit = 0;
         glitchfit = 0;
     }
+    if (LALInferenceCheckVariable(runState->algorithmParams, "LIB"))
+      distance=0;
 
     ProcessParamsTable *command_line = runState->commandLine;
 
@@ -381,7 +383,10 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
     if (LALInferenceGetProcParamVal(command_line, "--enable-spline-calibration"))
         spline_cal = 1;
 
-    if (LALInferenceGetProcParamVal(command_line, "--psd-fit"))
+    ppt = LALInferenceGetProcParamVal(command_line, "--psd-fit");
+    if (!ppt)
+        ppt = LALInferenceGetProcParamVal(command_line, "--psdFit");
+    if (ppt)
         psdfit = 1;
 
     if (LALInferenceGetProcParamVal(command_line, "--glitch-fit"))
@@ -2893,13 +2898,20 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
   REAL8 new_x;
   new_x = xmean + gsl_ran_gaussian(thread->GSLrandom,xsigma);
   REAL8 new_d = 1.0/new_x;
-  
-  /* Adjust SNRs */
-  OptimalSNR*= new_x / old_x;
-  
-  
+
   LALInferenceCopyVariables(currentParams,proposedParams);
-  LALInferenceSetVariable(proposedParams,"optimal_snr",&OptimalSNR);
+  /* Adjust SNRs */
+  OptimalSNR *= new_x / old_x;
+  MatchedFilterSNR *= new_x/old_x;
+  LALInferenceSetREAL8Variable(proposedParams,"optimal_snr",OptimalSNR);
+  LALInferenceSetREAL8Variable(proposedParams,"matched_filter_snr",MatchedFilterSNR);
+  if(LALInferenceCheckVariable(currentParams,"H1_optimal_snr"))
+    LALInferenceSetREAL8Variable(proposedParams,"H1_optimal_snr",LALInferenceGetREAL8Variable(currentParams,"H1_optimal_snr") * (new_x/old_x));
+  if(LALInferenceCheckVariable(currentParams,"L1_optimal_snr"))
+    LALInferenceSetREAL8Variable(proposedParams,"L1_optimal_snr",LALInferenceGetREAL8Variable(currentParams,"L1_optimal_snr") * (new_x/old_x));
+  if(LALInferenceCheckVariable(currentParams,"V1_optimal_snr"))
+    LALInferenceSetREAL8Variable(proposedParams,"V1_optimal_snr",LALInferenceGetREAL8Variable(currentParams,"V1_optimal_snr") * (new_x/old_x));
+  
   
   REAL8 logxdjac;
   /* Set distance */

@@ -164,7 +164,9 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 
     //null log likelihood logic doesn't work with noise parameters
     } else if (LALInferenceGetProcParamVal(runState->commandLine,"--psdFit") ||
-       LALInferenceGetProcParamVal(runState->commandLine,"--glitchFit")) {
+       LALInferenceGetProcParamVal(runState->commandLine,"--psd-fit") ||
+       LALInferenceGetProcParamVal(runState->commandLine,"--glitchFit") ||
+       LALInferenceGetProcParamVal(runState->commandLine,"--glitch-fit")) {
            nullLikelihood = 0.0;
            ifo = runState->data;
            while (ifo != NULL) {
@@ -206,7 +208,7 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 
    INT4 t;
    for(t=0; t < runState->nthreads; t++)
-       thread->nullLikelihood = nullLikelihood;
+       runState->threads[t]->nullLikelihood = nullLikelihood;
 
    LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood,
                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
@@ -412,10 +414,12 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
 	  // Remove time variable so it can be over-written (if it was pinned)
 	  if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
       LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-      model->templt(model);
-      LALInferenceTemplateROQ_amp_squared(model);
-      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+      INT4 errnum=0;
+      XLAL_TRY(model->templt(model),errnum);
+      if(errnum==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
         return(-DBL_MAX);
+
+      LALInferenceTemplateROQ_amp_squared(model);
 
       if (model->domain == LAL_SIM_DOMAIN_TIME) {
         /* TD --> FD. */
@@ -795,8 +799,9 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 				if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
 				LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
 
-				model->templt(model);
-				if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+                INT4 errnum=0;
+				XLAL_TRY(model->templt(model),errnum);
+				if(errnum==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
 						return(-DBL_MAX);
 
 				if (model->domain == LAL_SIM_DOMAIN_TIME) {
@@ -922,7 +927,8 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     COMPLEX16 diff=0.0;
     COMPLEX16 template=0.0;
     REAL8 templatesq=0.0;
-
+    REAL8 this_ifo_S=0.0;
+    
     for (i=lower,chisq=0.0,re = cos(twopit*deltaF*i),im = -sin(twopit*deltaF*i);
          i<=upper;
          i++, psd++, hptilde++, hctilde++, dtilde++,
@@ -993,7 +999,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       templatesq=creal(template)*creal(template) + cimag(template)*cimag(template);
       REAL8 datasq = creal(d)*creal(d)+cimag(d)*cimag(d);
       D+=TwoDeltaToverN*datasq/sigmasq;
-      S+=TwoDeltaToverN*templatesq/sigmasq;
+      this_ifo_S+=TwoDeltaToverN*templatesq/sigmasq;
       COMPLEX16 dhstar = TwoDeltaToverN*d*conj(template)/sigmasq;
       Rcplx+=dhstar;
 
@@ -1062,7 +1068,12 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     default:
       break;
     }
-
+    S+=this_ifo_S;
+    
+    char varname[VARNAME_MAX];
+    sprintf(varname,"%s_optimal_snr",dataPtr->name);
+    LALInferenceAddREAL8Variable(currentParams,varname,sqrt(2.0*this_ifo_S),LALINFERENCE_PARAM_OUTPUT);
+    
    /* Clean up calibration if necessary */
     if (!(calFactor == NULL)) {
       XLALDestroyCOMPLEX16FrequencySeries(calFactor);
@@ -1131,6 +1142,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
               double x = sqrt(dh_S->data[i]*dh_S->data[i] + dh_S_phase->data[i]*dh_S_phase->data[i]);
               if (x > xMax) { /* Store the phase angle at max L */
                   angMax = atan2(dh_S_phase->data[i], dh_S->data[i]);
+                  xMax=x;
               }
               double I0=log(gsl_sf_bessel_I0_scaled(x)) + fabs(x);
               dh_S->data[i] = I0;
@@ -1475,8 +1487,9 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
       if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
       LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
 
-      model->templt(model);
-      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+      INT4 errnum=0;
+      XLAL_TRY(model->templt(model),errnum);
+      if(errnum==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
           return(-DBL_MAX);
     }
         /* Template is now in model->timeFreqhPlus and hCross */
@@ -1691,7 +1704,10 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
 					double pi2 = M_PI / 2.0;
 					LALInferenceAddVariable(model->params, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 			}
-			model->templt(model);
+            INT4 errnum=0;
+            XLAL_TRY(model->templt(model),errnum);
+            if(errnum==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+                 return;
 
 			if (model->domain == LAL_SIM_DOMAIN_TIME) {
 					/* TD --> FD. */
