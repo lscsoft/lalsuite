@@ -512,6 +512,9 @@ static int SM_ExtractReducedSuperskyMetric(
     XLAL_CHECK(det_s > 0, XLAL_EFAILED, "Reduced supersky metric is not positive definite (s=%zu, det_s=%0.3e)", s, det_s);
   }
 
+  // Cleanup
+  GFMAT(aln_metric);
+
   return XLAL_SUCCESS;
 
 }
