@@ -64,7 +64,11 @@ log = logging.getLogger('BAYESTAR')
 parser = OptionParser(
     formatter=command.NewlinePreservingHelpFormatter(),
     description=__doc__,
-    usage="%prog [options] [GRACEID]"
+    usage="%prog [options] [GRACEID]",
+    option_list=[
+        Option("--dry-run", default=False, action="store_true",
+            help="Dry run; do not update GraceDB entry [default: %default]")
+    ]
 )
 opts, args = parser.parse_args()
 
@@ -102,9 +106,10 @@ gracedb = ligo.gracedb.rest.GraceDb(
     ligo.gracedb.rest.DEFAULT_SERVICE_URL))
 
 # Send log messages to GraceDb too
-handler = ligo.gracedb.logging.GraceDbLogHandler(gracedb, graceid)
-handler.setLevel(logging.INFO)
-logging.root.addHandler(handler)
+if not opts.dry_run:
+    handler = ligo.gracedb.logging.GraceDbLogHandler(gracedb, graceid)
+    handler.setLevel(logging.INFO)
+    logging.root.addHandler(handler)
 
 
 #
@@ -142,8 +147,11 @@ try:
             url='https://gracedb.ligo.org/events/{0}'.format(graceid),
             runtime=elapsed_time, instruments=instruments,
             origin='LIGO/Virgo', nest=True)
-        gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
-            filename=fitspath, tagname=("sky_loc", "lvem"))
+        if not opts.dry_run:
+            gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
+                filename=fitspath, tagname=("sky_loc", "lvem"))
+        else:
+            shutil.move(fitspath, '.')
     finally:
         shutil.rmtree(fitsdir)
 except:
