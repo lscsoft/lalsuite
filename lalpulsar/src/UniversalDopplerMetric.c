@@ -1323,10 +1323,10 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
       if ( tries >= 8  ) {
         intparams.epsabs = intparams.epsabs * 0.9;
       }
-      /* reduce the length of integration time units, but stop at 1800s,
+      /* reduce the length of integration time units, but stop at 900s,
          and ensure that 'intT' does NOT become divisible by 1/day, for
          the same reason given at the initialisation of 'intT' above */
-      intparams.intT = MYMAX(1800, intparams.intT * 0.9);
+      intparams.intT = MYMAX(900, intparams.intT * 0.9);
 
     }
     XLAL_CHECK_NULL( tries <= max_tries, XLAL_EMAXITER, "%s: convergence of phase metric failed (n=%zu)", __func__, n );
