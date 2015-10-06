@@ -177,6 +177,7 @@ static int IMRPhenomDGenerateFD(
   const REAL8 M = m1 + m2;
   REAL8 eta = m1 * m2 / (M * M);
   const REAL8 M_sec = M * LAL_MTSUN_SI;
+  REAL8 t0;
 
   REAL8 chi1, chi2;
   if (m1>m2) { // swap spins
@@ -214,6 +215,9 @@ static int IMRPhenomDGenerateFD(
   // Compute coefficients to make phase C^1
   ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
 
+  //time shift so that peak amplitude is approximately at t=0
+  t0 = DPhiMRD(0.8*(pPhi->fRD), pPhi);
+
   /* Now generate the waveform */
   #pragma omp parallel for
   for (size_t i = ind_min; i < ind_max; i++) {
@@ -223,7 +227,9 @@ static int IMRPhenomDGenerateFD(
     REAL8 amp = IMRPhenDAmplitude(Mf, pAmp);
     REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn);
 
-    phi -= 2.*phi0; // factor of 2 b/c phi0 is orbital phase
+    phi -= 2.*phi0 + t0*Mf; // factor of 2 b/c phi0 is orbital phase
+
+
 
     ((*htilde)->data->data)[i] = amp0 * amp * cexp(-I * phi);
   }
