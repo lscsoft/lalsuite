@@ -73,11 +73,13 @@ def chainglob(patterns):
 waveform_parser = argparse.ArgumentParser(add_help=False)
 group = waveform_parser.add_argument_group(
     'waveform options', 'Options that affect template waveform generation')
-group.add_argument('--f-low', type=float, metavar='Hz', default=10,
+# FIXME: The O1 uberbank high-mass template, SEOBNRv2_ROM_DoubleSpin, does
+# not support frequencies less than 30 Hz.
+group.add_argument('--f-low', type=float, metavar='Hz', default=30,
     help='Low frequency cutoff [default: %(default)s]')
-group.add_argument('--waveform', default='TaylorF2threePointFivePN',
+group.add_argument('--waveform', default='o1-uberbank',
     help='Template waveform approximant (e.g., TaylorF2threePointFivePN) '
-    '[default: %(default)s]')
+    '[default: O1 uberbank mass-dependent waveform]')
 del group
 
 

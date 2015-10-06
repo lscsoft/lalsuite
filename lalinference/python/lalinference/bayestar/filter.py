@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 #
-# Copyright (C) 2013  Leo Singer
+# Copyright (C) 2013-2015  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -24,6 +24,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # General imports
+import logging
 import numpy as np
 import math
 from scipy import optimize
@@ -34,6 +35,9 @@ import lalsimulation
 
 # My own imports
 from .decorator import memoized
+
+
+log = logging.getLogger('BAYESTAR')
 
 
 # Useful sample units
@@ -325,65 +329,125 @@ def truncated_ifft(y, nsamples_out=None):
     return x
 
 
-def autocorrelation(
-        mass1, mass2, S, f_low, out_duration,
-        approximant, amplitude_order, phase_order
-    ):
+def get_approximant_and_orders_from_string(s):
+    """Determine the approximant, amplitude order, and phase order for a string
+    of the form "TaylorT4threePointFivePN". In this example, the waveform is
+    "TaylorT4" and the phase order is 7 (twice 3.5). If the input contains the
+    substring "restricted" or "Restricted", then the amplitude order is taken to
+    be 0. Otherwise, the amplitude order is the same as the phase order."""
+    # SWIG-wrapped functions apparently do not understand Unicode, but
+    # often the input argument will come from a Unicode XML file.
+    s = str(s)
+    approximant = lalsimulation.GetApproximantFromString(s)
+    try:
+        phase_order = lalsimulation.GetOrderFromString(s)
+    except RuntimeError:
+        phase_order = -1
+    if 'restricted' in s or 'Restricted' in s:
+        amplitude_order = 0
+    else:
+        amplitude_order = phase_order
+    return approximant, amplitude_order, phase_order
+
+
+def get_f_lso(mass1, mass2):
+    """Calculate the GW frequency during the last stable orbit of a compact binary."""
+    return 1 / (6 ** 1.5 * np.pi * (mass1 + mass2) * lal.MTSUN_SI)
+
+
+def sngl_inspiral_psd(sngl, waveform, f_min=10, f_max=2048, f_ref=0):
+    # FIXME: uberbank mass criterion. Should find a way to get this from
+    # pipeline output metadata.
+    if waveform == 'o1-uberbank':
+        log.warn('Template is unspecified; using ER8/O1 uberbank criterion')
+        if sngl.mass1 + sngl.mass2 < 4:
+            waveform = 'TaylorF2threePointFivePN'
+        else:
+            waveform = 'SEOBNRv2_ROM_DoubleSpin'
+    approx, ampo, phaseo = get_approximant_and_orders_from_string(waveform)
+    log.info('Selected template: %s', waveform)
+
+    # Generate conditioned template.
+    hplus, hcross = lalsimulation.SimInspiralFD(
+        phiRef=0, deltaF=0,
+        m1=sngl.mass1*lal.MSUN_SI, m2=sngl.mass2*lal.MSUN_SI,
+        S1x=getattr(sngl, 'spin1x', 0),
+        S1y=getattr(sngl, 'spin1y', 0),
+        S1z=getattr(sngl, 'spin1z', 0),
+        S2x=getattr(sngl, 'spin2x', 0),
+        S2y=getattr(sngl, 'spin2y', 0),
+        S2z=getattr(sngl, 'spin2z', 0),
+        f_min=f_min, f_max=f_max, f_ref=f_ref,
+        r=1e6*lal.PC_SI, z=0, i=0,
+        lambda1=0, lambda2=0, waveFlags=None, nonGRparams=None,
+        amplitudeO=ampo, phaseO=phaseo, approximant=approx)
+
+    # Force `plus' and `cross' waveform to be in quadrature.
+    h = 0.5 * (hplus.data.data + 1j * hcross.data.data)
+
+    # For inspiral-only waveforms, nullify frequencies beyond ISCO.
+    # FIXME: the waveform generation functions pick the end frequency
+    # automatically. Shouldn't SimInspiralFD?
+    inspiral_only_waveforms = (
+        lalsimulation.TaylorF2,
+        lalsimulation.SpinTaylorF2,
+        lalsimulation.TaylorF2RedSpin,
+        lalsimulation.TaylorF2RedSpinTidal,
+        lalsimulation.SpinTaylorT4Fourier)
+    if approx in inspiral_only_waveforms:
+        h[abscissa(hplus) >= get_f_lso(sngl.mass1, sngl.mass2)] = 0
+
+    # Drop Nyquist frequency.
+    if len(h) % 2:
+        h = h[:-1]
+
+    # Create output frequency series.
+    psd = lal.CreateREAL8FrequencySeries(
+        'signal PSD', 0, hplus.f0, hcross.deltaF, hplus.sampleUnits**2, len(h))
+    psd.data.data = abs2(h)
+
+    # Done!
+    return psd
+
+
+def signal_psd_series(H, S):
+    n = H.data.data.size
+    f = H.f0 + np.arange(1, n) * H.deltaF
+    ret = lal.CreateREAL8FrequencySeries(
+        'signal PSD / noise PSD', 0, H.f0, H.deltaF, lal.DimensionlessUnit, n)
+    ret.data.data[0] = 0
+    ret.data.data[1:] = H.data.data[1:] / S(f)
+    return ret
+
+
+def autocorrelation(H, out_duration):
     """
     Calculate the complex autocorrelation sequence a(t), for t >= 0, of an
     inspiral signal.
 
     Parameters
     ----------
-    mass1 : float
-        Mass of component 1 (solar masses).
-    mass2 : float
-        Mass of component 1 (solar masses).
+    H : lal.REAL8FrequencySeries
+        Signal PSD series.
     S : callable
         Noise power spectral density function.
-    f_low : float
-        Low frequency cutoff (Hz).
-    out_duration : float
-        Compute the autocorrelation function from time t=0 to t=output_duration.
-    approximant : int
-        Post-Newtonian approximant (e.g. lalsimulation.TaylorF2).
-    amplitude_order : int
-        Twice the post-Newtonian amplitude order (e.g. 3).
-    phase_order : int
-        Twice the post-Newtonian phase order (e.g. 3).
 
     Returns
     -------
     acor : `numpy.ndarray`
         The complex-valued autocorrelation sequence.
-    sample_rate : float
-        Sample rate in Hz.
     """
 
     # Compute duration of template, rounded up to a power of 2.
-    duration = ceil_pow_2(lalsimulation.SimInspiralTaylorF2ReducedSpinChirpTime(
-        f_low, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI, 0, phase_order))
-
-    # Evaluate waveform. Terminates at ISCO.
-    hplus, hcross = lalsimulation.SimInspiralChooseFDWaveform(
-        0, 1/duration, mass1*lal.MSUN_SI, mass2*lal.MSUN_SI,
-        0, 0, 0, 0, 0, 0, f_low, 0, 0, 1e6 * lal.PC_SI, 0, 0, 0,
-        None, None, amplitude_order, phase_order, approximant)
-
-    # Force `plus' and `cross' waveform to be in quadrature.
-    h = 0.5 * (hplus.data.data + 1j * hcross.data.data)
-
-    # Determine length of IFFT; round up to a power of 2.
-    nsamples = 2 * int(ceil_pow_2(len(h)))
+    H_len = H.data.data.size
+    nsamples = 2 * H_len
+    sample_rate = nsamples * H.deltaF
+    duration = 1 / H.deltaF
 
     # Compute autopower spectral density.
-    power = np.empty(nsamples, dtype=hplus.data.data.dtype)
-    power[0] = 0
-    f = np.arange(1, len(h)) / duration
-    power[1:len(h)] = abs2(h[1:]) / S(f)
-    power[len(h):] = 0
-
-    sample_rate = nsamples / duration
+    power = np.empty(nsamples, H.data.data.dtype)
+    power[:H_len] = H.data.data
+    power[H_len:] = 0
 
     # Determine length of output FFT.
     nsamples_out = int(np.ceil(out_duration * sample_rate))
