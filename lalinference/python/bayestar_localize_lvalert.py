@@ -67,7 +67,13 @@ parser = OptionParser(
     usage="%prog [options] [GRACEID]",
     option_list=[
         Option("--dry-run", default=False, action="store_true",
-            help="Dry run; do not update GraceDB entry [default: %default]")
+            help="Dry run; do not update GraceDB entry [default: %default]"),
+        Option("--f-low", type=float, metavar="Hz", default=10,
+            help="Low frequency cutoff [default: %default]"),
+        Option("--waveform", default="TaylorF2threePointFivePN",
+            help="Waveform to use for determining parameter estimation accuracy from signal model [default: %default]"),
+        Option("-o", "--output", default="bayestar.fits.gz",
+            help="Name for uploaded file [default: %default]")
     ]
 )
 opts, args = parser.parse_args()
@@ -135,13 +141,13 @@ try:
     # perform sky localization
     log.info("starting sky localization")
     sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(
-        coinc_file, psd_file, "TaylorF2threePointFivePN", 10)
+        coinc_file, psd_file, opts.waveform, opts.f_low)
     log.info("sky localization complete")
 
     # upload FITS file
     fitsdir = tempfile.mkdtemp()
     try:
-        fitspath = os.path.join(fitsdir, "bayestar.fits.gz")
+        fitspath = os.path.join(fitsdir, opts.output)
         fits.write_sky_map(fitspath, sky_map, gps_time=float(epoch),
             creator=parser.get_prog_name(), objid=str(graceid),
             url='https://gracedb.ligo.org/events/{0}'.format(graceid),
