@@ -99,7 +99,7 @@ waveform = options.waveform
 N_bins = 201
 
 # create output directory and copy the script 
-#os.system('mkdir -p %s' %out_dir)
+os.system('mkdir -p %s' %out_dir)
 os.system('mkdir -p %s/data' %out_dir)
 os.system('mkdir -p %s/img' %out_dir)
 os.system('cp %s %s' %(__file__, out_dir))
@@ -266,6 +266,13 @@ for i, v2 in enumerate(dafbyaf_vec):
 	for j, v1 in enumerate(dMfbyMf_vec):
 		P_dMfbyMf_dafbyaf[i,j] = tgr.calc_sum(Mf_intp, af_intp, v1, v2, P_dMfdaf_interp_object, P_Mfaf_imr_interp_object)*dx*dy
 
+# normalization
+P_dMfbyMf_dafbyaf /= np.sum(P_dMfbyMf_dafbyaf) * dx * dy
+
+# Marginalization to one-dimensional joint_posteriors
+P_dMfbyMf = np.sum(P_dMfbyMf_dafbyaf, axis=0) * dy
+P_dafbyaf = np.sum(P_dMfbyMf_dafbyaf, axis=1) * dx
+
 # save results 
 np.savetxt(out_dir+'/data/Mfaf.dat', (Mf_bins,af_bins))
 np.savetxt(out_dir+'/data/P_Mfaf_i.dat', P_Mfaf_i)
@@ -275,6 +282,9 @@ np.savetxt(out_dir+'/data/P_dMfdaf.dat', P_dMfdaf)
 np.savetxt(out_dir+'/data/dMfbyMf_vec.dat', dMfbyMf_vec)
 np.savetxt(out_dir+'/data/dafbyaf_vec.dat', dafbyaf_vec)
 np.savetxt(out_dir+'/data/P_dMfbyMf_dafbyaf.dat', P_dMfbyMf_dafbyaf)
+np.savetxt(out_dir+'/data/P_dMfbyMf.dat', P_dMfbyMf)
+np.savetxt(out_dir+'/data/P_dafbyaf.dat', P_dafbyaf)
+
 #########################################################################################
 
 #########################################################################################
@@ -586,7 +596,38 @@ plt.savefig('%s/img/dMfdaf_thumb.png'%(out_dir), dpi=72)
 s1_v1v2 = ba.nsigma_value(tgr.gf(P_dMfbyMf_dafbyaf), 0.68)
 s2_v1v2 = ba.nsigma_value(tgr.gf(P_dMfbyMf_dafbyaf), 0.95)
 
+s1_v1 = ba.nsigma_value(P_dMfbyMf, 0.68)
+s2_v1 = ba.nsigma_value(P_dMfbyMf, 0.95)
+
+s1_v2 = ba.nsigma_value(P_dafbyaf, 0.68)
+s2_v2 = ba.nsigma_value(P_dafbyaf, 0.95)
+
+# Calculation of condifence edges
+
+left1_v1 = min(dMfbyMf_vec[np.where(P_dMfbyMf>=s1_v1)[0]])
+right1_v1 = max(dMfbyMf_vec[np.where(P_dMfbyMf>=s1_v1)[0]])
+
+left2_v1 = min(dMfbyMf_vec[np.where(P_dMfbyMf>=s2_v1)[0]])
+right2_v1 = max(dMfbyMf_vec[np.where(P_dMfbyMf>=s2_v1)[0]])
+
+left1_v2 = min(dafbyaf_vec[np.where(P_dafbyaf>s1_v2)[0]])
+right1_v2 = max(dafbyaf_vec[np.where(P_dafbyaf>s1_v2)[0]])
+
+left2_v2 = min(dafbyaf_vec[np.where(P_dafbyaf>s2_v2)[0]])
+right2_v2 = max(dafbyaf_vec[np.where(P_dafbyaf>s2_v2)[0]])
+
 plt.figure(figsize=(5,5))
+plt.subplot2grid((3,3), (0,0), colspan=2)
+plt.plot(dMfbyMf_vec, P_dMfbyMf, color='k', lw=1)
+plt.axvline(x=left1_v1, color='c', lw=0.5, ls='-.')
+plt.axvline(x=right1_v1, color='c', lw=0.5, ls='-.')
+plt.axvline(x=left2_v1, color='b', lw=0.5, ls='-.')
+plt.axvline(x=right2_v1, color='b', lw=0.5, ls='-.')
+#plt.xlabel('$\Delta M_f/M_f$')
+plt.ylabel('$P(\Delta M_f/M_f)$')
+#plt.grid()
+
+plt.subplot2grid((3,3), (1,0), colspan=2, rowspan=2)
 plt.pcolormesh(dMfbyMf_vec,dafbyaf_vec,P_dMfbyMf_dafbyaf, cmap='YlOrBr')
 plt.contour(dMfbyMf_vec,dafbyaf_vec,tgr.gf(P_dMfbyMf_dafbyaf), levels=(s1_v1v2,s2_v1v2), linewidths=(1,1.5))
 plt.plot(0, 0, 'k+', ms=12, mew=2)
@@ -595,6 +636,17 @@ plt.ylabel('$\Delta a_f/a_f$')
 plt.xlim([-1.,1.])
 plt.ylim([-1.,1.])
 plt.grid()
+
+plt.subplot2grid((3,3), (1,2), rowspan=2)
+plt.plot(P_dafbyaf, dafbyaf_vec,'k', lw=1)
+plt.axhline(y=left1_v2, color='c', lw=0.5, ls='-.')
+plt.axhline(y=right1_v2, color='c', lw=0.5, ls='-.')
+plt.axhline(y=left2_v2, color='b', lw=0.5, ls='-.')
+plt.axhline(y=right2_v2, color='b', lw=0.5, ls='-.')
+#plt.ylabel('$\Delta a_f/a_f$')
+plt.xlabel('$P(\Delta a_f/a_f)$')
+#plt.grid()
+
 plt.savefig('%s/img/dMfbyMfdafbyaf.png' %(out_dir), dpi=300)
 plt.savefig('%s/img/dMfbyMfdafbyaf_thumb.png' %(out_dir), dpi=72)
 
