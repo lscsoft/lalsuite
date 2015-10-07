@@ -94,7 +94,7 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
 /// Destroy a #SuperskyMetrics struct.
 ///
 void XLALDestroySuperskyMetrics(
-  SuperskyMetrics *metrics			/// [in] Supersky metrics struct
+  SuperskyMetrics *metrics			///< [in] Supersky metrics struct
   );
 
 ///
