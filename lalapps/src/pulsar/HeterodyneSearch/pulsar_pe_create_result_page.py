@@ -1417,7 +1417,7 @@ priorh0cifigname['png'], priorcifigname['png'], priorcifigname['png']))
       if '.gz' not in Bkdata[i]: # just use Popen to get data from heterodyne file
         st = (sp.Popen(['head', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
         et = (sp.Popen(['tail', '-1', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0]
-        lt.append(float((sp.Popen(['wc', '-l', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0])*60)
+        lt.append(float((sp.Popen(['wc', '-l', Bkdata[i]], stdout=sp.PIPE).communicate()[0]).split()[0])*sampledt[i])
       else: # otherwise if gzipped we'll have to open the file
         bkd = np.loadtxt(Bkdata[i])
         st = bkd[0,0]
