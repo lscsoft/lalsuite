@@ -985,7 +985,7 @@ function toggle(id) {
 
     asdtime = 14400 # set time over which to produce the asds
 
-    Bkfigs, psdfigs, fscanfigs, asdlist = pppu.plot_Bks_ASDs( Bkdata, ifos, \
+    Bkfigs, psdfigs, fscanfigs, asdlist, sampledt = pppu.plot_Bks_ASDs( Bkdata, ifos, \
 asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
 
     if asdlist:
@@ -1422,7 +1422,7 @@ priorh0cifigname['png'], priorcifigname['png'], priorcifigname['png']))
         bkd = np.loadtxt(Bkdata[i])
         st = bkd[0,0]
         et = bkd[-1,0]
-        lt.append(float(len(bkd))*60.)
+        lt.append(float(len(bkd))*sampledt[i])
 
       # duty cycle
       dc = 100.*lt[i]/(float(et)-float(st))
