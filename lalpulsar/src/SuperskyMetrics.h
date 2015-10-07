@@ -56,6 +56,7 @@ SWIGLAL(ARRAY_MULTIPLE_LENGTHS(tagSuperskyMetrics, num_segments));
 #endif // SWIG
 typedef struct tagSuperskyMetrics {
   size_t num_segments;				///< Number of segments
+  double fiducial_freq;				///< Fiducial frequency at which metrics were calculated
 
 #ifdef SWIG // SWIG interface directives
   SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, ussky_metric_seg, size_t, num_segments));
@@ -95,6 +96,14 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
 ///
 void XLALDestroySuperskyMetrics(
   SuperskyMetrics *metrics			///< [in] Supersky metrics struct
+  );
+
+///
+/// Scale all supersky metrics to match the given fiducial frequency.
+///
+int XLALScaleSuperskyMetricsFiducialFreq(
+  SuperskyMetrics *metrics,			///< [in] Supersky metrics struct
+  const double fiducial_freq			///< [in] Fiducial frequency for sky-position coordinates
   );
 
 ///
