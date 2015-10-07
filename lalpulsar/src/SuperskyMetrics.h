@@ -107,6 +107,16 @@ int XLALScaleSuperskyMetricsFiducialFreq(
   );
 
 ///
+/// Project and rescale the averaged reduced supersky metrics in the frequency dimension, such that
+/// all reduced supersky metrics have the same frequency spacing for the given maximum mismatches.
+///
+int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
+  SuperskyMetrics *metrics,			///< [in] Supersky metrics struct
+  const double coh_max_mismatch,		///< [in] Maximum coherent mismatch, for per-segment metrics
+  const double semi_max_mismatch		///< [in] Maximum semicoherent mismatch, for averaged metrics
+  );
+
+///
 /// Convert a series of points between supersky coordinate systems.
 ///
 #ifdef SWIG // SWIG interface directives

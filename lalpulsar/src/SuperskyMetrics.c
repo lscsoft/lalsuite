@@ -764,6 +764,42 @@ int XLALScaleSuperskyMetricsFiducialFreq(
 
 }
 
+int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
+  SuperskyMetrics *metrics,
+  const double coh_max_mismatch,
+  const double semi_max_mismatch
+  )
+{
+
+  // Check input
+  XLAL_CHECK(metrics != NULL, XLAL_EFAULT);
+  XLAL_CHECK(metrics->num_segments > 0, XLAL_EINVAL);
+  XLAL_CHECK(metrics->fiducial_freq > 0, XLAL_EINVAL);
+  XLAL_CHECK(metrics->rssky_metric_avg != NULL && metrics->rssky_metric_avg->size1 > 2, XLAL_EINVAL);
+  XLAL_CHECK(coh_max_mismatch > 0, XLAL_EINVAL);
+  XLAL_CHECK(semi_max_mismatch > 0, XLAL_EINVAL);
+
+  // Index of reduced supersky frequency dimension
+  const size_t ifreq = metrics->rssky_metric_avg->size1 - 1;
+
+  // Check frequency-frequency elements of per-segment reduced supersky metrics are the same
+  const double rssky_metric_seg_ff = gsl_matrix_get(metrics->rssky_metric_seg[0], ifreq, ifreq);
+  for (size_t n = 1; n < metrics->num_segments; ++n) {
+    const double rssky_metric_seg_ff_n = gsl_matrix_get(metrics->rssky_metric_seg[n], ifreq, ifreq);
+    const double tol = 1e-8;
+    XLAL_CHECK(fabs(rssky_metric_seg_ff - rssky_metric_seg_ff_n) < tol * rssky_metric_seg_ff, XLAL_ETOL, "%s: Frequency-frequency elements outside tol=%g: segment #1=%0.15e, segment #%zu=%0.15e", __func__, tol, rssky_metric_seg_ff, n, rssky_metric_seg_ff_n);
+  }
+
+  // Project averaged reduced supersky metrics
+  XLAL_CHECK(XLALProjectMetric(&metrics->rssky_metric_avg, metrics->rssky_metric_avg, ifreq) == XLAL_SUCCESS, XLAL_EFUNC);
+
+  // Rescale frequency-frequency element of averaged reduced supersky metric
+  gsl_matrix_set(metrics->rssky_metric_avg, ifreq, ifreq, rssky_metric_seg_ff * semi_max_mismatch / coh_max_mismatch);
+
+  return XLAL_SUCCESS;
+
+}
+
 /**
  * Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky
  * coordinates.
