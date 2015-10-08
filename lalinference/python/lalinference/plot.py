@@ -656,10 +656,16 @@ class PPPlot(Axes):
     @staticmethod
     def _make_series(p_values):
         for ps in p_values:
-            ps = np.sort(np.atleast_1d(ps))
-            n = len(ps)
-            xs = np.concatenate(([0.], ps, [1.]))
-            ys = np.concatenate(([0.], np.arange(1, n + 1) / n, [1.]))
+            if np.ndim(ps) == 1:
+                ps = np.sort(np.atleast_1d(ps))
+                n = len(ps)
+                xs = np.concatenate(([0.], ps, [1.]))
+                ys = np.concatenate(([0.], np.arange(1, n + 1) / n, [1.]))
+            elif np.ndim(ps) == 2:
+                xs = np.concatenate(([0.], ps[0], [1.]))
+                ys = np.concatenate(([0.], ps[1], [1.]))
+            else:
+                raise ValueError('All series must be 1- or 2-dimensional')
             yield xs
             yield ys
 
@@ -669,8 +675,17 @@ class PPPlot(Axes):
         Parameters
         ----------
 
-        p_values:
-            One or more lists of P-values
+        p_values: list or `np.ndarray`
+            One or more lists of P-values.
+
+            If an entry in the list is one-dimensional, then it is interpreted
+            as an unordered list of P-values. The ranked values will be plotted
+            on the horizontal axis, and the cumulative fraction will be plotted
+            on the vertical axis.
+
+            If an entry in the list is two-dimensional, then the first subarray
+            is plotted on the horizontal axis and the second subarray is plotted
+            on the vertical axis.
 
         drawstyle: ``steps`` or ``lines`` or ``default``
             Plotting style. If ``steps``, then plot steps to represent a
@@ -697,6 +712,35 @@ class PPPlot(Axes):
             kwargs['drawstyle'] = 'steps-post'
 
         return self.plot(*args, **kwargs)
+
+    def add_worst(self, *p_values):
+        """
+        Mark the point at which the deviation is largest.
+
+        Parameters
+        ----------
+
+        p_values: list or `np.ndarray`
+            Same as in `add_series`.
+        """
+        series = list(self._make_series(p_values))
+        for xs, ys in zip(series[0::2], series[1::2]):
+            i = np.argmax(np.abs(ys - xs))
+            x = xs[i]
+            y = ys[i]
+            if y == x:
+                continue
+            self.plot([x, x, 0], [0, y, y], '--', color='black', linewidth=0.5)
+            if y < x:
+                self.plot([x, y], [y, y], '-', color='black', linewidth=1)
+                self.text(
+                    x, y, ' {0:.02f} '.format(np.around(x - y, 2)),
+                    ha='left', va='top')
+            else:
+                self.plot([x, x], [x, y], '-', color='black', linewidth=1)
+                self.text(
+                    x, y, ' {0:.02f} '.format(np.around(y - x, 2)),
+                    ha='right', va='bottom')
 
     def add_diagonal(self, *args, **kwargs):
         """Add a diagonal line to the plot, running from (0, 0) to (1, 1).
