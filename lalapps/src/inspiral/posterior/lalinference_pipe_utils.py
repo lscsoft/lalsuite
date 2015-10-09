@@ -1861,8 +1861,6 @@ class ResultsPageNode(pipeline.CondorDAGNode):
       """
       self.add_parent(node)
       self.add_file_arg(node.get_pos_file())
-      if isinstance(node,LALInferenceBAMBINode):
-              self.add_input_file(node,
       if isinstance(node,LALInferenceMCMCNode):
         self.add_var_opt('lalinfmcmc','')
 
@@ -1872,7 +1870,7 @@ class ResultsPageNode(pipeline.CondorDAGNode):
     def set_bayes_coherent_noise(self,bsnfile):
         self.add_file_opt('bsn',bsnfile)
     def set_header_file(self,headerfile):
-        self.add_file_opt('header',headerfile)
+        self.add_var_arg('--header '+headerfile)
     def set_ifos(self,ifos):
         self.ifos=ifos
 
