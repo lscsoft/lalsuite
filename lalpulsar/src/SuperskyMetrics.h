@@ -59,10 +59,6 @@ typedef struct tagSuperskyMetrics {
   double fiducial_freq;				///< Fiducial frequency at which metrics were calculated
 
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, ussky_metric_seg, size_t, num_segments));
-#endif // SWIG
-  gsl_matrix **ussky_metric_seg;		///< Unrestricted supersky metric (3-dimensional sky), for each segment
-#ifdef SWIG // SWIG interface directives
   SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, rssky_metric_seg, size_t, num_segments));
 #endif // SWIG
   gsl_matrix **rssky_metric_seg;		///< Reduced supersky metric (2-dimensional sky), for each segment
@@ -71,14 +67,13 @@ typedef struct tagSuperskyMetrics {
 #endif // SWIG
   gsl_matrix **rssky_transf_seg;		///< Coordinate transform data of reduced supersky metric, for each segment
 
-  gsl_matrix *ussky_metric_avg;			///< Unrestricted supersky metric (3-dimensional sky), averaged over segments
   gsl_matrix *rssky_metric_avg;			///< Reduced supersky metric (2-dimensional sky), averaged over segments
   gsl_matrix *rssky_transf_avg;			///< Coordinate transform data of reduced supersky metric, averaged over segments
 
 } SuperskyMetrics;
 
 ///
-/// Compute the various supersky metrics, which are returned in a #SuperskyMetrics struct.
+/// Compute the supersky metrics, which are returned in a #SuperskyMetrics struct.
 ///
 SuperskyMetrics *XLALComputeSuperskyMetrics(
   const size_t spindowns,			///< [in] Number of frequency+spindown coordinates

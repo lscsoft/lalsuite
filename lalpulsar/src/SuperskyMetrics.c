@@ -520,12 +520,12 @@ static int SM_ExtractReducedSuperskyMetric(
 }
 
 ///
-/// Compute the various supersky metrics
+/// Compute the reduced supersky metric
 ///
 static int SM_ComputeSuperskyMetrics(
-  gsl_matrix *ussky_metric,			///< [out] Unrestricted supersky metric
   gsl_matrix *rssky_metric,			///< [out] Reduced supersky metric
   gsl_matrix *rssky_transf,			///< [out] Coordinate transform data of reduced supersky metric
+  const gsl_matrix *ussky_metric,		///< [in] Unrestricted supersky metric
   const gsl_matrix *orbital_metric,		///< [in] Orbital metric in ecliptic coordinates
   const DopplerCoordinateSystem *ocoords,	///< [in] Coordinate system of orbital metric
   const size_t spindowns,			///< [in] Number of frequency+spindown coordinates
@@ -629,15 +629,13 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   metrics->fiducial_freq = fiducial_calc_freq;
 
   // Allocate memory for arrays of per-segment metrics
-  metrics->ussky_metric_seg = XLALCalloc(metrics->num_segments, sizeof(*metrics->ussky_metric_seg));
-  XLAL_CHECK_NULL(metrics->ussky_metric_seg != NULL, XLAL_ENOMEM);
   metrics->rssky_metric_seg = XLALCalloc(metrics->num_segments, sizeof(*metrics->rssky_metric_seg));
   XLAL_CHECK_NULL(metrics->rssky_metric_seg != NULL, XLAL_ENOMEM);
   metrics->rssky_transf_seg = XLALCalloc(metrics->num_segments, sizeof(*metrics->rssky_transf_seg));
   XLAL_CHECK_NULL(metrics->rssky_transf_seg != NULL, XLAL_ENOMEM);
 
   // Allocate memory for averaged metrics
-  GAMAT_NULL(metrics->ussky_metric_avg, 3 + fsize, 3 + fsize);
+  gsl_matrix *GAMAT_NULL(ussky_metric_avg, 3 + fsize, 3 + fsize);
   gsl_matrix *GAMAT_NULL(orbital_metric_avg, 2 + fsize, 2 + fsize);
 
   // Compute the supersky metrics, for each segment
@@ -646,29 +644,29 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
     const LIGOTimeGPS *end_time_seg = &segments->segs[n].end;
 
     // Compute the unrestricted supersky metric
-    metrics->ussky_metric_seg[n] = SM_ComputePhaseMetric(&ucoords, ref_time, start_time_seg, end_time_seg, detectors, detector_weights, detector_motion, ephemerides);
-    XLAL_CHECK_NULL(metrics->ussky_metric_seg[n] != NULL, XLAL_EFUNC);
-    gsl_matrix_add(metrics->ussky_metric_avg, metrics->ussky_metric_seg[n]);
+    gsl_matrix *ussky_metric_seg = SM_ComputePhaseMetric(&ucoords, ref_time, start_time_seg, end_time_seg, detectors, detector_weights, detector_motion, ephemerides);
+    XLAL_CHECK_NULL(ussky_metric_seg != NULL, XLAL_EFUNC);
+    gsl_matrix_add(ussky_metric_avg, ussky_metric_seg);
 
     // Compute the orbital metric in ecliptic coordinates
-    gsl_matrix *orbital_metric = SM_ComputePhaseMetric(&ocoords, ref_time, start_time_seg, end_time_seg, detectors, detector_weights, detector_motion, ephemerides);
-    XLAL_CHECK_NULL(orbital_metric != NULL, XLAL_EFUNC);
-    gsl_matrix_add(orbital_metric_avg, orbital_metric);
+    gsl_matrix *orbital_metric_seg = SM_ComputePhaseMetric(&ocoords, ref_time, start_time_seg, end_time_seg, detectors, detector_weights, detector_motion, ephemerides);
+    XLAL_CHECK_NULL(orbital_metric_seg != NULL, XLAL_EFUNC);
+    gsl_matrix_add(orbital_metric_avg, orbital_metric_seg);
 
     // Allocate memory for per-segment metrics
     GAMAT_NULL(metrics->rssky_metric_seg[n], 2 + fsize, 2 + fsize);
     GAMAT_NULL(metrics->rssky_transf_seg[n], 3 + fsize, 3);
 
     // Compute the supersky metrics, for each segment
-    XLAL_CHECK_NULL(SM_ComputeSuperskyMetrics(metrics->ussky_metric_seg[n], metrics->rssky_metric_seg[n], metrics->rssky_transf_seg[n], orbital_metric, &ocoords, spindowns, ref_time, start_time_seg, end_time_seg, fiducial_freq) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_NULL(SM_ComputeSuperskyMetrics(metrics->rssky_metric_seg[n], metrics->rssky_transf_seg[n], ussky_metric_seg, orbital_metric_seg, &ocoords, spindowns, ref_time, start_time_seg, end_time_seg, fiducial_freq) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Cleanup
-    GFMAT(orbital_metric);
+    GFMAT(ussky_metric_seg, orbital_metric_seg);
 
   }
 
   // Normalise averaged metric by number of segments
-  gsl_matrix_scale(metrics->ussky_metric_avg, 1.0 / metrics->num_segments);
+  gsl_matrix_scale(ussky_metric_avg, 1.0 / metrics->num_segments);
   gsl_matrix_scale(orbital_metric_avg, 1.0 / metrics->num_segments);
 
   // Allocate memory for averaged metrics
@@ -679,14 +677,14 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   {
     const LIGOTimeGPS *start_time = &segments->segs[0].start;
     const LIGOTimeGPS *end_time = &segments->segs[segments->length - 1].end;
-    XLAL_CHECK_NULL(SM_ComputeSuperskyMetrics(metrics->ussky_metric_avg, metrics->rssky_metric_avg, metrics->rssky_transf_avg, orbital_metric_avg, &ocoords, spindowns, ref_time, start_time, end_time, fiducial_freq) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_NULL(SM_ComputeSuperskyMetrics(metrics->rssky_metric_avg, metrics->rssky_transf_avg, ussky_metric_avg, orbital_metric_avg, &ocoords, spindowns, ref_time, start_time, end_time, fiducial_freq) == XLAL_SUCCESS, XLAL_EFUNC);
   }
 
   // Rescale metrics to input fiducial frequency
   XLALScaleSuperskyMetricsFiducialFreq(metrics, fiducial_freq);
 
   // Cleanup
-  GFMAT(orbital_metric_avg);
+  GFMAT(ussky_metric_avg, orbital_metric_avg);
 
   return metrics;
 
@@ -698,10 +696,9 @@ void XLALDestroySuperskyMetrics(
 {
   if (metrics != NULL) {
     for (size_t n = 0; n < metrics->num_segments; ++n) {
-      GFMAT(metrics->ussky_metric_seg[n], metrics->rssky_metric_seg[n], metrics->rssky_transf_seg[n]);
+      GFMAT(metrics->rssky_metric_seg[n], metrics->rssky_transf_seg[n]);
     }
-    GFMAT(metrics->ussky_metric_avg, metrics->rssky_metric_avg, metrics->rssky_transf_avg);
-    XLALFree(metrics->ussky_metric_seg);
+    GFMAT(metrics->rssky_metric_avg, metrics->rssky_transf_avg);
     XLALFree(metrics->rssky_metric_seg);
     XLALFree(metrics->rssky_transf_seg);
     XLALFree(metrics);
@@ -727,28 +724,10 @@ int XLALScaleSuperskyMetricsFiducialFreq(
   // Rescale metrics to 'fiducial_freq' based on known scalings
   const double fiducial_scale = fiducial_freq / metrics->fiducial_freq;
   for (size_t n = 0; n < metrics->num_segments; ++n) {
-    {
-      gsl_matrix_view sky_sky = gsl_matrix_submatrix(metrics->ussky_metric_seg[n], 0, 0, 3, 3);
-      gsl_matrix_scale(&sky_sky.matrix, SQR(fiducial_scale));
-      gsl_matrix_view sky_freq = gsl_matrix_submatrix(metrics->ussky_metric_seg[n], 0, 3, 3, fsize);
-      gsl_matrix_scale(&sky_freq.matrix, fiducial_scale);
-      gsl_matrix_view freq_sky = gsl_matrix_submatrix(metrics->ussky_metric_seg[n], 3, 0, fsize, 3);
-      gsl_matrix_scale(&freq_sky.matrix, fiducial_scale);
-    }
-    {
-      gsl_matrix_view sky_sky = gsl_matrix_submatrix(metrics->rssky_metric_seg[n], 0, 0, 2, 2);
-      gsl_matrix_scale(&sky_sky.matrix, SQR(fiducial_scale));
-      gsl_matrix_view sky_offsets = gsl_matrix_submatrix(metrics->rssky_transf_seg[n], 3, 0, fsize, 3);
-      gsl_matrix_scale(&sky_offsets.matrix, fiducial_scale);
-    }
-  }
-  {
-    gsl_matrix_view sky_sky = gsl_matrix_submatrix(metrics->ussky_metric_avg, 0, 0, 3, 3);
+    gsl_matrix_view sky_sky = gsl_matrix_submatrix(metrics->rssky_metric_seg[n], 0, 0, 2, 2);
     gsl_matrix_scale(&sky_sky.matrix, SQR(fiducial_scale));
-    gsl_matrix_view sky_freq = gsl_matrix_submatrix(metrics->ussky_metric_avg, 0, 3, 3, fsize);
-    gsl_matrix_scale(&sky_freq.matrix, fiducial_scale);
-    gsl_matrix_view freq_sky = gsl_matrix_submatrix(metrics->ussky_metric_avg, 3, 0, fsize, 3);
-    gsl_matrix_scale(&freq_sky.matrix, fiducial_scale);
+    gsl_matrix_view sky_offsets = gsl_matrix_submatrix(metrics->rssky_transf_seg[n], 3, 0, fsize, 3);
+    gsl_matrix_scale(&sky_offsets.matrix, fiducial_scale);
   }
   {
     gsl_matrix_view sky_sky = gsl_matrix_submatrix(metrics->rssky_metric_avg, 0, 0, 2, 2);
