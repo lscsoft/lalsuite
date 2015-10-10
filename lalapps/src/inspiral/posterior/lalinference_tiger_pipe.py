@@ -338,8 +338,8 @@ if type_inj=="MG":
 
 seglen = 300
 psdlen = 1024
-if cp.has_option('lalinference','seglen'):
-    seglen = cp.getint('lalinference','seglen')
+if cp.has_option('engine','seglen'):
+    seglen = cp.getint('engine','seglen')
 if cp.has_option('input','max-psd-length'):
     psdlen = cp.getint('input','max-psd-length')
 
