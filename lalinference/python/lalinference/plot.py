@@ -266,11 +266,11 @@ def cut_dateline(vertices):
                 ], vertices[i:, :]))]
                 break
     elif dateline_crossings:
-        frame_poly = geos.Polygon(np.array([[-np.pi, np.pi/2], [-np.pi, -np.pi/2], [np.pi, -np.pi/2], [np.pi, np.pi/2]]))
-        poly = geos.Polygon(np.vstack((vertices[:, 0] % (2 * np.pi), vertices[:, 1])).T)
+        frame_poly = geos.Polygon(np.asarray([[-np.pi, np.pi/2], [-np.pi, -np.pi/2], [np.pi, -np.pi/2], [np.pi, np.pi/2]]))
+        poly = geos.Polygon(np.column_stack((vertices[:, 0] % (2 * np.pi), vertices[:, 1])))
         if poly.intersects(frame_poly):
             out_vertices += [p.get_coords() for p in poly.intersection(frame_poly)]
-        poly = geos.Polygon(np.vstack((vertices[:, 0] % (-2 * np.pi), vertices[:, 1])).T)
+        poly = geos.Polygon(np.column_stack((vertices[:, 0] % (-2 * np.pi), vertices[:, 1])))
         if poly.intersects(frame_poly):
             out_vertices += [p.get_coords() for p in poly.intersection(frame_poly)]
     else:
@@ -294,7 +294,7 @@ def cut_prime_meridian(vertices):
         vertices = vertices[:-1, :]
 
     # Ensure that the longitudes are wrapped from 0 to 2*pi.
-    vertices = np.vstack((wrapped_angle(vertices[:, 0]), vertices[:, 1])).T
+    vertices = np.column_stack((wrapped_angle(vertices[:, 0]), vertices[:, 1]))
 
     def count_meridian_crossings(phis):
         n = 0
@@ -355,15 +355,15 @@ def cut_prime_meridian(vertices):
         # algorithms.
 
         # Construct polygon representing map boundaries in longitude and latitude.
-        frame_poly = geos.Polygon(np.array([[0., np.pi/2], [0., -np.pi/2], [2*np.pi, -np.pi/2], [2*np.pi, np.pi/2]]))
+        frame_poly = geos.Polygon(np.asarray([[0., np.pi/2], [0., -np.pi/2], [2*np.pi, -np.pi/2], [2*np.pi, np.pi/2]]))
 
         # Intersect with polygon re-wrapped to lie in [pi, 3*pi).
-        poly = geos.Polygon(np.vstack((reference_angle(vertices[:, 0]) + 2 * np.pi, vertices[:, 1])).T)
+        poly = geos.Polygon(np.column_stack((reference_angle(vertices[:, 0]) + 2 * np.pi, vertices[:, 1])))
         if poly.intersects(frame_poly):
             out_vertices += [p.get_coords() for p in poly.intersection(frame_poly)]
 
         # Intersect with polygon re-wrapped to lie in [-pi, pi).
-        poly = geos.Polygon(np.vstack((reference_angle(vertices[:, 0]), vertices[:, 1])).T)
+        poly = geos.Polygon(np.column_stack((reference_angle(vertices[:, 0]), vertices[:, 1])))
         if poly.intersects(frame_poly):
             out_vertices += [p.get_coords() for p in poly.intersection(frame_poly)]
     else:
@@ -384,13 +384,13 @@ def make_rect_poly(width, height, theta, phi, subdivisions=10):
     h = np.sin(np.deg2rad(height))
 
     # Generate vertices of rectangle.
-    v = np.array([[-w, -h], [w, -h], [w, h], [-w, h]])
+    v = np.asarray([[-w, -h], [w, -h], [w, h], [-w, h]])
 
     # Subdivide.
     v = subdivide_vertices(v, subdivisions)
 
     # Project onto sphere by calculating z-coord from normalization condition.
-    v = np.hstack((v, np.sqrt(1. - np.expand_dims((v * v).sum(1), 1))))
+    v = np.hstack((v, np.sqrt(1. - np.expand_dims(np.square(v).sum(1), 1))))
 
     # Transform vertices.
     v = np.dot(v, hp.rotator.euler_matrix_new(phi, theta, 0, Y=True))
@@ -401,10 +401,10 @@ def make_rect_poly(width, height, theta, phi, subdivisions=10):
     # FIXME: Remove this after all Matplotlib monkeypatches are obsolete.
     if mpl_version < '1.2.0':
         # Return list of vertices as longitude, latitude pairs.
-        return np.vstack((reference_angle(phis), 0.5 * np.pi - thetas)).T
+        return np.column_stack((reference_angle(phis), 0.5 * np.pi - thetas))
     else:
         # Return list of vertices as longitude, latitude pairs.
-        return np.vstack((wrapped_angle(phis), 0.5 * np.pi - thetas)).T
+        return np.column_stack((wrapped_angle(phis), 0.5 * np.pi - thetas))
 
 
 def heatmap(func, *args, **kwargs):
@@ -427,7 +427,7 @@ def heatmap(func, *args, **kwargs):
     itrans = ax.transData.inverted()
 
     # Get the longitude and latitude of every point in the bounding box.
-    lons, lats = itrans.transform(np.vstack((xx.flatten(), yy.flatten())).T).T
+    lons, lats = itrans.transform(np.column_stack((xx.ravel(), yy.ravel()))).T
 
     # Create a mask that selects only the pixels that fall inside the map boundary.
     mask = np.isfinite(lons) & np.isfinite(lats) & (lons >= xmin) & (lons <= xmax)
