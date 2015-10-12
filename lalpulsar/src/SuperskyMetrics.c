@@ -1775,8 +1775,6 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
   // Check input
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
   XLAL_CHECK(rssky_metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK(gsl_matrix_get(rssky_metric, 0, 1) == 0, XLAL_EINVAL);
-  XLAL_CHECK(gsl_matrix_get(rssky_metric, 1, 0) == 0, XLAL_EINVAL);
   XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
   XLAL_CHECK(rssky_metric->size1 + 1 == rssky_transf->size1, XLAL_ESIZE);
   XLAL_CHECK(rssky_transf->size2 == 3, XLAL_ESIZE);
