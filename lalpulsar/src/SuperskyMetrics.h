@@ -39,16 +39,6 @@ extern "C" {
 ///
 
 ///
-/// Coordinate systems associated with the supersky metrics.
-///
-typedef enum {
-  SC_PHYS,					///< Physical coordinates, in order: right ascension, declination, frequency, spindowns
-  SC_USSKY,					///< Unrestricted supersky (equatorial) coordinates, in order: 3-dimensional sky, frequency, spindowns
-  SC_RSSKY,					///< Reduced supersky coordinates, in order: 2-dimensional sky, reduced spindowns, <b>frequency last</b>
-  SC_MAX
-} SuperskyCoordinates;
-
-///
 /// Computed supersky metrics, returned by XLALComputeSuperskyMetrics().
 ///
 #ifdef SWIG // SWIG interface directives
@@ -112,37 +102,47 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   );
 
 ///
-/// Convert a series of points between supersky coordinate systems.
+/// Convert a point from physical to supersky coordinates.
 ///
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(INOUT_STRUCTS(gsl_matrix **, out_points));
-#endif
-int XLALConvertSuperskyCoordinates(
-  const SuperskyCoordinates out,		///< [in] Coordinate system of the output points
-  gsl_matrix **out_points,			///< [in/out] Matrix whose columns are the output points
-  const SuperskyCoordinates in,			///< [in] Coordinate system of the input points
-  const gsl_matrix *in_points,			///< [in] Matrix whose columns are the input points
-  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
-  );
-
-///
-/// Convert a single point from physical to supersky coordinates.
-///
-int XLALConvertPhysicalToSupersky(
-  const SuperskyCoordinates out,		///< [in] Coordinate system of the output point
-  gsl_vector *out_point,			///< [in/out] Output point in supersky coordinates
+int XLALConvertPhysicalToSuperskyPoint(
+  gsl_vector *out_rssky,			///< [out] Output point in supersky coordinates
   const PulsarDopplerParams *in_phys,		///< [in] Input point in physical coordinates
   const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
   const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
   );
 
 ///
-/// Convert a single point from supersky to physical coordinates.
+/// Convert a point from supersky to physical coordinates.
 ///
-int XLALConvertSuperskyToPhysical(
-  PulsarDopplerParams *out_phys,		///< [in/out] Output point in physical coordinates
-  const SuperskyCoordinates in,			///< [in] Coordinate system of the input point
-  const gsl_vector *in_point,			///< [in] Input point in supersky coordinates
+int XLALConvertSuperskyToPhysicalPoint(
+  PulsarDopplerParams *out_phys,		///< [out] Output point in physical coordinates
+  const gsl_vector *in_rssky,			///< [in] Input point in supersky coordinates
+  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
+  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
+  );
+
+///
+/// Convert a set of points from physical to supersky coordinates.
+///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(INOUT_STRUCTS(gsl_matrix **, out_rssky));
+#endif
+int XLALConvertPhysicalToSuperskyPoints(
+  gsl_matrix **out_rssky,			///< [out] Columns are output point in supersky coordinates
+  const gsl_matrix *in_phys,			///< [in] Columns are input point in physical coordinates
+  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
+  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
+  );
+
+///
+/// Convert a set of points from supersky to physical coordinates.
+///
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(INOUT_STRUCTS(gsl_matrix **, out_phys));
+#endif
+int XLALConvertSuperskyToPhysicalPoints(
+  gsl_matrix **out_phys,			///< [out] Columns are output point in physical coordinates
+  const gsl_matrix *in_rssky,			///< [in] Columns are input point in supersky coordinates
   const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
   const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
   );
@@ -160,7 +160,7 @@ SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
 int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
   LatticeTiling *tiling,			///< [in] Lattice tiling
   gsl_matrix *rssky_metric,			///< [in] Reduced supersky metric
-  gsl_matrix *rssky_transf,			///< [in] Coordinate transform data of reduced supersky metric
+  gsl_matrix *rssky_transf,			///< [in] Reduced supersky coordinate transform data
   const double alpha1,				///< [in] First bound on sky position right ascension
   const double alpha2,				///< [in] Second bound on sky position right ascension
   const double delta1,				///< [in] First bound on sky position declination
@@ -176,7 +176,7 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
 int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
   LatticeTiling *tiling,			///< [in] Lattice tiling
   gsl_matrix *rssky_metric,			///< [in] Reduced supersky metric
-  gsl_matrix *rssky_transf,			///< [in] Coordinate transform data of reduced supersky metric
+  gsl_matrix *rssky_transf,			///< [in] Reduced supersky coordinate transform data
   const UINT4 patch_count,			///< [in] Number of equal-area patches to divide sky into
   const UINT4 patch_index			///< [in] Index of the patch for which to set bounds
   );

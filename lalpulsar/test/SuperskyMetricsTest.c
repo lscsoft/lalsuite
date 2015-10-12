@@ -213,14 +213,34 @@ static int CheckSuperskyMetrics(
 
   // Check round-trip conversions of each test point
   {
-    gsl_vector *GAVEC(rssky_point, 4);
-    for (size_t i = 0; i < NUM_POINTS; ++i) {
-      PulsarDopplerParams XLAL_INIT_DECL(point);
-      XLAL_CHECK(XLALConvertPhysicalToSupersky(SC_RSSKY, rssky_point, &phys_points[i], rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
-      XLAL_CHECK(XLALConvertSuperskyToPhysical(&point, SC_RSSKY, rssky_point, rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
-      XLAL_CHECK(CompareDoppler(&phys_points[i], &point) == EXIT_SUCCESS, XLAL_EFUNC);
+    gsl_matrix *GAMAT(rssky_points, 4, NUM_POINTS);
+    for (size_t j = 0; j < NUM_POINTS; ++j) {
+      gsl_vector_view rssky_point = gsl_matrix_column(rssky_points, j);
+      PulsarDopplerParams XLAL_INIT_DECL(new_phys_point);
+      XLAL_CHECK(XLALConvertPhysicalToSuperskyPoint(&rssky_point.vector, &phys_points[j], rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK(XLALConvertSuperskyToPhysicalPoint(&new_phys_point, &rssky_point.vector, rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK(CompareDoppler(&phys_points[j], &new_phys_point) == EXIT_SUCCESS, XLAL_EFUNC);
     }
-    GFVEC(rssky_point);
+    gsl_matrix *intm_phys_points = NULL;
+    gsl_matrix *new_rssky_points = NULL;
+    XLAL_CHECK(XLALConvertSuperskyToPhysicalPoints(&intm_phys_points, rssky_points, rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(XLALConvertPhysicalToSuperskyPoints(&new_rssky_points, intm_phys_points, rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+    {
+      double max_err = 0;
+      for (size_t i = 0; i < 4; ++i) {
+        for (size_t j = 0; j < NUM_POINTS; ++j) {
+          const double rssky_points_ij = gsl_matrix_get(rssky_points, i, j);
+          const double new_rssky_points_ij = gsl_matrix_get(new_rssky_points, i, j);
+          const double err_ij = fabs((new_rssky_points_ij - rssky_points_ij) / rssky_points_ij);
+          if (err_ij > max_err) {
+            max_err = err_ij;
+          }
+        }
+      }
+      const double err_tol = 1e-7;
+      XLAL_CHECK(max_err <= err_tol, XLAL_ETOL, "'rssky_points' check failed: max(err) = %0.3e > %0.3e = err_tol", max_err, err_tol);
+    }
+    GFMAT(rssky_points, intm_phys_points, new_rssky_points);
   }
 
   // Check mismatches between pairs of points
@@ -229,9 +249,9 @@ static int CheckSuperskyMetrics(
     gsl_vector *GAVEC(rssky_point_j, 4);
     gsl_vector *GAVEC(temp, 4);
     for (size_t i = 0; i < NUM_POINTS; ++i) {
-      XLAL_CHECK(XLALConvertPhysicalToSupersky(SC_RSSKY, rssky_point_i, &phys_points[i], rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK(XLALConvertPhysicalToSuperskyPoint(rssky_point_i, &phys_points[i], rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
       for (size_t j = 0; j < NUM_POINTS; ++j) {
-        XLAL_CHECK(XLALConvertPhysicalToSupersky(SC_RSSKY, rssky_point_j, &phys_points[j], rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+        XLAL_CHECK(XLALConvertPhysicalToSuperskyPoint(rssky_point_j, &phys_points[j], rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
         gsl_vector_sub(rssky_point_j, rssky_point_i);
         gsl_blas_dgemv(CblasNoTrans, 1.0, rssky_metric, rssky_point_j, 0.0, temp);
         double mismatch = 0.0;
