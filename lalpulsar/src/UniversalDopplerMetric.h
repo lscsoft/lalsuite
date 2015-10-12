@@ -281,6 +281,7 @@ void XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms );
 int XLALParseDetectorMotionString ( const CHAR *detMotionString );
 int XLALParseDopplerCoordinateString ( const CHAR *coordName );
 int XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *coordSys, const LALStringVector *coordNames );
+int XLALFindDopplerCoordinateInSystem ( const DopplerCoordinateSystem *coordSys, const DopplerCoordinateID coordID );
 
 const CHAR *XLALDetectorMotionName ( DetectorMotionType detType );
 const CHAR *XLALDopplerCoordinateName ( DopplerCoordinateID coordID );

@@ -1951,6 +1951,24 @@ XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *coordSys,	/**< [out
 
 
 /**
+ * Given a coordinate ID 'coordID', return its dimension within the given coordinate system 'coordSys',
+ * or return -1 if 'coordID' is not found
+ */
+int XLALFindDopplerCoordinateInSystem ( const DopplerCoordinateSystem *coordSys, const DopplerCoordinateID coordID )
+{
+  for ( int i = 0; i < ((int)coordSys->dim); ++i )
+    {
+      if ( coordSys->coordIDs[i] == coordID )
+        {
+          return i;
+        }
+    }
+  return -1;
+}
+
+
+
+/**
  * Provide a pointer to a static string containing the DopplerCoordinate-name
  * cooresponding to the enum DopplerCoordinateID
  */
