@@ -293,34 +293,10 @@ int main(void)
     double semi_rssky_metric_rescale[4][4];
     memcpy(semi_rssky_metric_rescale, semi_rssky_metric_ref, sizeof(semi_rssky_metric_ref));
     gsl_matrix_view semi_rssky_metric_rescale_view = gsl_matrix_view_array((double *)semi_rssky_metric_rescale, 4, 4);
-    double semi_rssky_transf_rescale[5][3];
-    memcpy(semi_rssky_transf_rescale, semi_rssky_transf_ref, sizeof(semi_rssky_transf_ref));
-    gsl_matrix_view semi_rssky_transf_rescale_view = gsl_matrix_view_array((double *)semi_rssky_transf_rescale, 5, 3);
-    {
-      gsl_matrix_view sky_sky = gsl_matrix_submatrix(&semi_rssky_metric_rescale_view.matrix, 0, 0, 2, 2);
-      gsl_matrix_scale(&sky_sky.matrix, (257.52 / fiducial_freq) * (257.52 / fiducial_freq));
-      gsl_matrix_view sky_offsets = gsl_matrix_submatrix(&semi_rssky_transf_rescale_view.matrix, 3, 0, 2, 3);
-      gsl_matrix_scale(&sky_offsets.matrix, 257.52 / fiducial_freq);
-    }
-    {
-      const double err = XLALCompareMetrics(metrics->rssky_metric_avg, &semi_rssky_metric_rescale_view.matrix), err_tol = 1e-7;
-      XLAL_CHECK(err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol);
-    }
-    {
-      double max_err = 0;
-      for (size_t i = 0; i < 5; ++i) {
-        for (size_t j = 0; j < 3; ++j) {
-          const double rssky_transf_ij = gsl_matrix_get(metrics->rssky_transf_avg, i, j);
-          const double rssky_transf_ref_ij = gsl_matrix_get(&semi_rssky_transf_rescale_view.matrix, i, j);
-          const double err_ij = fabs((rssky_transf_ij - rssky_transf_ref_ij) / rssky_transf_ref_ij);
-          if (err_ij > max_err) {
-            max_err = err_ij;
-          }
-        }
-      }
-      const double err_tol = 2e-4;
-      XLAL_CHECK(max_err <= err_tol, XLAL_ETOL, "'rssky_transf' check failed: max(err) = %0.3e > %0.3e = err_tol", max_err, err_tol);
-    }
+    gsl_matrix_view sky_sky = gsl_matrix_submatrix(&semi_rssky_metric_rescale_view.matrix, 0, 0, 2, 2);
+    gsl_matrix_scale(&sky_sky.matrix, (257.52 / fiducial_freq) * (257.52 / fiducial_freq));
+    const double err = XLALCompareMetrics(metrics->rssky_metric_avg, &semi_rssky_metric_rescale_view.matrix), err_tol = 1e-7;
+    XLAL_CHECK(err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol);
   }
   XLAL_CHECK_MAIN(XLALScaleSuperskyMetricsFiducialFreq(metrics, fiducial_freq) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(CheckSuperskyMetrics(

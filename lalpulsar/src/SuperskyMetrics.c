@@ -53,6 +53,22 @@
 #define DOT2(x,y)    ((x)[0]*(y)[0] + (x)[1]*(y)[1])
 #define DOT3(x,y)    ((x)[0]*(y)[0] + (x)[1]*(y)[1] + (x)[2]*(y)[2])
 
+// Check reduced supersky coordinate metric and/or transform data
+#define CHECK_RSSKY_METRIC_TRANSF(M, RT) \
+  ((M) != NULL && CHECK_RSSKY_TRANSF(RT) && (M)->size1 == (RT)->size1 - 1)
+#define CHECK_RSSKY_TRANSF(RT) \
+  ((RT) != NULL && (RT)->size1 > 3 && (RT)->size2 == 3)
+
+// Decompose reduced supersky coordinate transform data
+#define _DECOMPOSE_RSSKY_TRANSF(RT, GSLMAT) \
+  UNUSED const size_t ndim = (RT)->size1 - 1; \
+  UNUSED const size_t smax = ndim - 3; \
+  UNUSED GSLMAT##_view align_sky = GSLMAT##_submatrix((RT), 0, 0, 3, 3); \
+  UNUSED GSLMAT##_view sky_offsets = GSLMAT##_submatrix((RT), 3, 0, 1 + smax, 3); \
+  do { } while(0)
+#define DECOMPOSE_RSSKY_TRANSF(RT)         _DECOMPOSE_RSSKY_TRANSF(RT, gsl_matrix)
+#define DECOMPOSE_CONST_RSSKY_TRANSF(RT)   _DECOMPOSE_RSSKY_TRANSF(RT, gsl_matrix_const)
+
 ///
 /// Fiducial frequency at which to numerically calculate metrics, which
 /// are then rescaled to user-requested frequency based on known scalings
@@ -146,7 +162,6 @@ static int SM_ComputeFittedSuperskyMetric(
   const gsl_matrix *ussky_metric,		///< [in] Unrestricted supersky metric
   const gsl_matrix *orbital_metric,		///< [in] Orbital metric in ecliptic coordinates
   const DopplerCoordinateSystem *ocoords,	///< [in] Coordinate system of orbital metric
-  const size_t spindowns,			///< [in] Number of frequency+spindown coordinates
   const LIGOTimeGPS *ref_time,			///< [in] Reference time of the metrics
   const LIGOTimeGPS *start_time,		///< [in] Start time of the metrics
   const LIGOTimeGPS *end_time			///< [in] End time of the metrics
@@ -155,7 +170,7 @@ static int SM_ComputeFittedSuperskyMetric(
 
   // Check input
   XLAL_CHECK(fitted_ssky_metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
+  XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(ussky_metric != NULL, XLAL_EFAULT);
   XLAL_CHECK(orbital_metric != NULL, XLAL_EFAULT);
   XLAL_CHECK(ocoords != NULL, XLAL_EFAULT);
@@ -163,12 +178,12 @@ static int SM_ComputeFittedSuperskyMetric(
   XLAL_CHECK(start_time != NULL, XLAL_EFAULT);
   XLAL_CHECK(end_time != NULL, XLAL_EFAULT);
 
-  // Size of the frequency+spindowns block
-  const size_t fsize = 1 + spindowns;
+  // Decompose coordinate transform data
+  DECOMPOSE_RSSKY_TRANSF(rssky_transf);
 
   // Allocate memory
-  gsl_matrix *GAMAT(tmp, 2 + fsize, 2 + fsize);
-  gsl_vector *GAVEC(tmpv, fsize);
+  gsl_matrix *GAMAT(tmp, 3 + smax, 3 + smax);
+  gsl_vector *GAVEC(tmpv, 1 + smax);
 
   // Compute mid-time of segment list
   LIGOTimeGPS mid_time = *start_time;
@@ -185,27 +200,27 @@ static int SM_ComputeFittedSuperskyMetric(
   XLAL_CHECK(XLALDiagNormalizeMetric(&orb_metric, &diag_norm_transf, orb_metric) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // 'fitA' contains the frequency and spindown elements of the orbital metric, used for fitting
-  gsl_matrix *GAMAT(fitA, 2 + fsize, fsize);
+  gsl_matrix *GAMAT(fitA, 3 + smax, 1 + smax);
   {
-    gsl_matrix_view orb_metric_fspin = gsl_matrix_submatrix(orb_metric, 0, 2, 2 + fsize, fsize);
+    gsl_matrix_view orb_metric_fspin = gsl_matrix_submatrix(orb_metric, 0, 2, 3 + smax, 1 + smax);
     gsl_matrix_memcpy(fitA, &orb_metric_fspin.matrix);
   }
 
   // Compute 'fitA^T * fitA'
-  gsl_matrix *GAMAT(fitAt_fitA, fsize, fsize);
+  gsl_matrix *GAMAT(fitAt_fitA, 1 + smax, 1 + smax);
   gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, fitA, fitA, 0.0, fitAt_fitA);
 
   // Find the singular value decomposition of 'fitA^T * fitA'
-  gsl_matrix *GAMAT(svd_U, fsize, fsize);
-  gsl_matrix *GAMAT(svd_V, fsize, fsize);
-  gsl_vector *GAVEC(svd_S, fsize);
+  gsl_matrix *GAMAT(svd_U, 1 + smax, 1 + smax);
+  gsl_matrix *GAMAT(svd_V, 1 + smax, 1 + smax);
+  gsl_vector *GAVEC(svd_S, 1 + smax);
   gsl_matrix_memcpy(svd_U, fitAt_fitA);
   GCALL(gsl_linalg_SV_decomp(svd_U, svd_V, svd_S, tmpv));
 
   // The columns of 'fitc' contain the least-square fitting coefficients for the orbital X and Y metric elements:
   //    fitc(:,j) = inv(fitA^T * fitA) * fitA^T * orb_metric(:,j)
   // The singular decomposition of fitA^T * fitA is used for the inverse
-  gsl_matrix *GAMAT(fitc, fsize, 2);
+  gsl_matrix *GAMAT(fitc, 1 + smax, 2);
   for (size_t j = 0; j < 2; ++j) {
     gsl_vector_view orb_metric_j = gsl_matrix_column(orb_metric, j);
     gsl_vector_view fitc_j = gsl_matrix_column(fitc, j);
@@ -226,10 +241,10 @@ static int SM_ComputeFittedSuperskyMetric(
   //   |                     |         |
   //   #---------------------#---------#
   //
-  gsl_matrix *GAMAT(subtract_orb, 2 + fsize, 2 + fsize);
+  gsl_matrix *GAMAT(subtract_orb, 3 + smax, 3 + smax);
   {
     gsl_matrix_set_identity(subtract_orb);
-    gsl_matrix_view subtract_orb_fspin_sky = gsl_matrix_submatrix(subtract_orb, 2, 0, fsize, 2);
+    gsl_matrix_view subtract_orb_fspin_sky = gsl_matrix_submatrix(subtract_orb, 2, 0, 1 + smax, 2);
     gsl_matrix_memcpy(&subtract_orb_fspin_sky.matrix, fitc);
     gsl_matrix_scale(&subtract_orb_fspin_sky.matrix, -1.0);
   }
@@ -253,11 +268,11 @@ static int SM_ComputeFittedSuperskyMetric(
   //   #------------------------------------------------------------------#---------#
   //
   // where 'sub_o' denotes 'subtract_orb'.
-  gsl_matrix *GAMAT(subtract_ussky, 3 + fsize, 3 + fsize);
+  gsl_matrix *GAMAT(subtract_ussky, 4 + smax, 4 + smax);
   {
     gsl_matrix_set_identity(subtract_ussky);
-    gsl_matrix_view subtract_ussky_fspin_sky = gsl_matrix_submatrix(subtract_ussky, 3, 0, fsize, 3);
-    gsl_matrix_view subtract_orb_fspin_sky = gsl_matrix_submatrix(subtract_orb, 2, 0, fsize, 2);
+    gsl_matrix_view subtract_ussky_fspin_sky = gsl_matrix_submatrix(subtract_ussky, 3, 0, 1 + smax, 3);
+    gsl_matrix_view subtract_orb_fspin_sky = gsl_matrix_submatrix(subtract_orb, 2, 0, 1 + smax, 2);
     {
       gsl_vector_view subtract_ussky_fspin_sky_col = gsl_matrix_column(&subtract_ussky_fspin_sky.matrix, 0);
       gsl_vector_view subtract_orb_fspin_sky_col = gsl_matrix_column(&subtract_orb_fspin_sky.matrix, 0);
@@ -282,8 +297,7 @@ static int SM_ComputeFittedSuperskyMetric(
 
   // Extract the sky offset vectors from 'subtract_ussky', and subtract them from the reduced supersky coordinate transform data
   {
-    gsl_matrix_view subtract_ussky_fspin_sky = gsl_matrix_submatrix(subtract_ussky, 3, 0, fsize, 3);
-    gsl_matrix_view sky_offsets = gsl_matrix_submatrix(rssky_transf, 3, 0, fsize, 3);
+    gsl_matrix_view subtract_ussky_fspin_sky = gsl_matrix_submatrix(subtract_ussky, 3, 0, 1 + smax, 3);
     gsl_matrix_sub(&sky_offsets.matrix, &subtract_ussky_fspin_sky.matrix);
   }
 
@@ -303,36 +317,35 @@ static int SM_ComputeFittedSuperskyMetric(
 static int SM_ComputeDecoupledSuperskyMetric(
   gsl_matrix *decoupled_ssky_metric,		///< [out] Decoupled supersky metric
   gsl_matrix *rssky_transf,			///< [in,out] Coordinate transform data of reduced supersky metric
-  const gsl_matrix *fitted_ssky_metric,		///< [in] Fitted supersky metric
-  const size_t spindowns			///< [in] Number of frequency+spindown coordinates
+  const gsl_matrix *fitted_ssky_metric		///< [in] Fitted supersky metric
   )
 {
 
   // Check input
   XLAL_CHECK(decoupled_ssky_metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
+  XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(fitted_ssky_metric != NULL, XLAL_EFAULT);
 
-  // Size of the frequency+spindowns block
-  const size_t fsize = 1 + spindowns;
+  // Decompose coordinate transform data
+  DECOMPOSE_RSSKY_TRANSF(rssky_transf);
 
   // Copy fitted metric to decoupled metric
   gsl_matrix_memcpy(decoupled_ssky_metric, fitted_ssky_metric);
 
   // Create views of the sky--sky, freq+spin--freq+spin, and off-diagonal blocks
   gsl_matrix_view sky_sky     = gsl_matrix_submatrix(decoupled_ssky_metric, 0, 0, 3, 3);
-  gsl_matrix_view sky_fspin   = gsl_matrix_submatrix(decoupled_ssky_metric, 0, 3, 3, fsize);
-  gsl_matrix_view fspin_sky   = gsl_matrix_submatrix(decoupled_ssky_metric, 3, 0, fsize, 3);
-  gsl_matrix_view fspin_fspin = gsl_matrix_submatrix(decoupled_ssky_metric, 3, 3, fsize, fsize);
+  gsl_matrix_view sky_fspin   = gsl_matrix_submatrix(decoupled_ssky_metric, 0, 3, 3, 1 + smax);
+  gsl_matrix_view fspin_sky   = gsl_matrix_submatrix(decoupled_ssky_metric, 3, 0, 1 + smax, 3);
+  gsl_matrix_view fspin_fspin = gsl_matrix_submatrix(decoupled_ssky_metric, 3, 3, 1 + smax, 1 + smax);
 
   // Diagonal-normalise the freq+spin--freq+spin block
   gsl_matrix *fspin_fspin_dnorm = NULL, *fspin_fspin_dnorm_transf = NULL;
   XLAL_CHECK(XLALDiagNormalizeMetric(&fspin_fspin_dnorm, &fspin_fspin_dnorm_transf, &fspin_fspin.matrix) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Invert the freq+spin--freq+spin block
-  gsl_matrix *GAMAT(fspin_fspin_dnorm_LU, fsize, fsize);
-  gsl_matrix *GAMAT(fspin_fspin_dnorm_inv, fsize, fsize);
-  gsl_permutation *GAPERM(fspin_fspin_dnorm_LU_perm, fsize);
+  gsl_matrix *GAMAT(fspin_fspin_dnorm_LU, 1 + smax, 1 + smax);
+  gsl_matrix *GAMAT(fspin_fspin_dnorm_inv, 1 + smax, 1 + smax);
+  gsl_permutation *GAPERM(fspin_fspin_dnorm_LU_perm, 1 + smax);
   int fspin_fspin_dnorm_LU_sign = 0;
   gsl_matrix_memcpy(fspin_fspin_dnorm_LU, fspin_fspin_dnorm);
   GCALL(gsl_linalg_LU_decomp(fspin_fspin_dnorm_LU, fspin_fspin_dnorm_LU_perm, &fspin_fspin_dnorm_LU_sign));
@@ -341,13 +354,12 @@ static int SM_ComputeDecoupledSuperskyMetric(
   // Compute the additional sky offsets required to decouple the sky--sky and frequency blocks:
   //   decouple_sky_offsets = fspin_fspin_dnorm_transf * inv(fspin_fspin_dnorm) * fspin_fspin_dnorm_transf * fspin_sky
   // Uses fspin_sky as a temporary matrix, since it will be zeroed out anyway
-  gsl_matrix *GAMAT(decouple_sky_offsets, fsize, 3);
+  gsl_matrix *GAMAT(decouple_sky_offsets, 1 + smax, 3);
   gsl_blas_dtrmm(CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1.0, fspin_fspin_dnorm_transf, &fspin_sky.matrix);
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, fspin_fspin_dnorm_inv, &fspin_sky.matrix, 0.0, decouple_sky_offsets);
   gsl_blas_dtrmm(CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit, 1.0, fspin_fspin_dnorm_transf, decouple_sky_offsets);
 
   // Add the additional sky offsets to the reduced supersky coordinate transform data
-  gsl_matrix_view sky_offsets = gsl_matrix_submatrix(rssky_transf, 3, 0, fsize, 3);
   gsl_matrix_add(&sky_offsets.matrix, decouple_sky_offsets);
 
   // Apply the decoupling transform to the sky--sky block:
@@ -374,21 +386,20 @@ static int SM_ComputeDecoupledSuperskyMetric(
 static int SM_ComputeAlignedSuperskyMetric(
   gsl_matrix *aligned_ssky_metric,		///< [out] Aligned supersky metric
   gsl_matrix *rssky_transf,			///< [in,out] Coordinate transform data of reduced supersky metric
-  const gsl_matrix *decoupled_ssky_metric,	///< [in] Decoupled supersky metric
-  const size_t spindowns			///< [in] Number of frequency+spindown coordinates
+  const gsl_matrix *decoupled_ssky_metric	///< [in] Decoupled supersky metric
   )
 {
 
   // Check input
   XLAL_CHECK(aligned_ssky_metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
+  XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(decoupled_ssky_metric != NULL, XLAL_EFAULT);
 
-  // Size of the frequency+spindowns block
-  const size_t fsize = 1 + spindowns;
+  // Decompose coordinate transform data
+  DECOMPOSE_RSSKY_TRANSF(rssky_transf);
 
   // Allocate memory
-  gsl_matrix *GAMAT(tmp, fsize, 3);
+  gsl_matrix *GAMAT(tmp, 1 + smax, 3);
 
   // Copy decoupled metric to aligned metric
   gsl_matrix_memcpy(aligned_ssky_metric, decoupled_ssky_metric);
@@ -418,7 +429,6 @@ static int SM_ComputeAlignedSuperskyMetric(
   }
 
   // Store the alignment transform in the reduced supersky coordinate transform data
-  gsl_matrix_view align_sky = gsl_matrix_submatrix(rssky_transf, 0, 0, 3, 3);
   gsl_matrix_transpose_memcpy(&align_sky.matrix, sky_evec);
 
   // Ensure that the alignment transform has a positive determinant,
@@ -433,9 +443,8 @@ static int SM_ComputeAlignedSuperskyMetric(
 
   // Multiply the sky offsets by the alignment transform to transform to aligned sky coordinates:
   //   aligned_sky_off = sky_offsets * alignsky^T;
-  gsl_matrix_view aligned_sky_offsets = gsl_matrix_submatrix(rssky_transf, 3, 0, fsize, 3);
-  gsl_matrix_memcpy(tmp, &aligned_sky_offsets.matrix);
-  gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, tmp, &align_sky.matrix, 0.0, &aligned_sky_offsets.matrix);
+  gsl_matrix_memcpy(tmp, &sky_offsets.matrix);
+  gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, tmp, &align_sky.matrix, 0.0, &sky_offsets.matrix);
 
   // Cleanup
   gsl_eigen_symmv_free(wksp);
@@ -458,8 +467,7 @@ static int SM_ExtractReducedSuperskyMetric(
 {
 
   // Check input
-  XLAL_CHECK(rssky_metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
+  XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(rssky_metric, rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(aligned_ssky_metric != NULL, XLAL_EFAULT);
   const size_t n = aligned_ssky_metric->size1;
   const size_t m = rssky_metric->size1;
@@ -537,9 +545,8 @@ static int SM_ComputeSuperskyMetrics(
 {
 
   // Check input
+  XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(rssky_metric, rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(ussky_metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
   XLAL_CHECK(orbital_metric != NULL, XLAL_EFAULT);
   XLAL_CHECK(ocoords != NULL, XLAL_EFAULT);
   XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
@@ -547,16 +554,13 @@ static int SM_ComputeSuperskyMetrics(
   XLAL_CHECK(end_time != NULL, XLAL_EFAULT);
   XLAL_CHECK(fiducial_freq > 0, XLAL_EINVAL);
 
-  // Size of the frequency+spindowns block
-  const size_t fsize = 1 + spindowns;
-
   // Allocate memory
-  gsl_matrix *GAMAT(interm_ssky_metric, 3 + fsize, 3 + fsize);
+  gsl_matrix *GAMAT(interm_ssky_metric, 4 + spindowns, 4 + spindowns);
 
   // Compute the reduced supersky metric from the unrestricted supersky metric and the orbital metric
-  XLAL_CHECK(SM_ComputeFittedSuperskyMetric(interm_ssky_metric, rssky_transf, ussky_metric, orbital_metric, ocoords, spindowns, ref_time, start_time, end_time) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK(SM_ComputeDecoupledSuperskyMetric(interm_ssky_metric, rssky_transf, interm_ssky_metric, spindowns) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK(SM_ComputeAlignedSuperskyMetric(interm_ssky_metric, rssky_transf, interm_ssky_metric, spindowns) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(SM_ComputeFittedSuperskyMetric(interm_ssky_metric, rssky_transf, ussky_metric, orbital_metric, ocoords, ref_time, start_time, end_time) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(SM_ComputeDecoupledSuperskyMetric(interm_ssky_metric, rssky_transf, interm_ssky_metric) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(SM_ComputeAlignedSuperskyMetric(interm_ssky_metric, rssky_transf, interm_ssky_metric) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK(SM_ExtractReducedSuperskyMetric(rssky_metric, rssky_transf, interm_ssky_metric) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Cleanup
@@ -589,9 +593,6 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   XLAL_CHECK_NULL(detectors->length > 0, XLAL_EINVAL);
   XLAL_CHECK_NULL(detector_motion > 0, XLAL_EINVAL);
   XLAL_CHECK_NULL(ephemerides != NULL, XLAL_EINVAL);
-
-  // Size of the frequency+spindowns block
-  const size_t fsize = 1 + spindowns;
 
   // Build coordinate system for the unrestricted supersky metric and orbital metric
   DopplerCoordinateSystem XLAL_INIT_DECL(ucoords);
@@ -635,8 +636,8 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   XLAL_CHECK_NULL(metrics->rssky_transf_seg != NULL, XLAL_ENOMEM);
 
   // Allocate memory for averaged metrics
-  gsl_matrix *GAMAT_NULL(ussky_metric_avg, 3 + fsize, 3 + fsize);
-  gsl_matrix *GAMAT_NULL(orbital_metric_avg, 2 + fsize, 2 + fsize);
+  gsl_matrix *GAMAT_NULL(ussky_metric_avg, 4 + spindowns, 4 + spindowns);
+  gsl_matrix *GAMAT_NULL(orbital_metric_avg, 3 + spindowns, 3 + spindowns);
 
   // Compute the supersky metrics, for each segment
   for (size_t n = 0; n < metrics->num_segments; ++n) {
@@ -654,8 +655,8 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
     gsl_matrix_add(orbital_metric_avg, orbital_metric_seg);
 
     // Allocate memory for per-segment metrics
-    GAMAT_NULL(metrics->rssky_metric_seg[n], 2 + fsize, 2 + fsize);
-    GAMAT_NULL(metrics->rssky_transf_seg[n], 3 + fsize, 3);
+    GAMAT_NULL(metrics->rssky_metric_seg[n], 3 + spindowns, 3 + spindowns);
+    GAMAT_NULL(metrics->rssky_transf_seg[n], 4 + spindowns, 3);
 
     // Compute the supersky metrics, for each segment
     XLAL_CHECK_NULL(SM_ComputeSuperskyMetrics(metrics->rssky_metric_seg[n], metrics->rssky_transf_seg[n], ussky_metric_seg, orbital_metric_seg, &ocoords, spindowns, ref_time, start_time_seg, end_time_seg, fiducial_freq) == XLAL_SUCCESS, XLAL_EFUNC);
@@ -670,8 +671,8 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   gsl_matrix_scale(orbital_metric_avg, 1.0 / metrics->num_segments);
 
   // Allocate memory for averaged metrics
-  GAMAT_NULL(metrics->rssky_metric_avg, 2 + fsize, 2 + fsize);
-  GAMAT_NULL(metrics->rssky_transf_avg, 3 + fsize, 3);
+  GAMAT_NULL(metrics->rssky_metric_avg, 3 + spindowns, 3 + spindowns);
+  GAMAT_NULL(metrics->rssky_transf_avg, 4 + spindowns, 3);
 
   // Compute the supersky metrics, averged over segments
   {
@@ -715,25 +716,39 @@ int XLALScaleSuperskyMetricsFiducialFreq(
   XLAL_CHECK(metrics != NULL, XLAL_EFAULT);
   XLAL_CHECK(metrics->num_segments > 0, XLAL_EINVAL);
   XLAL_CHECK(metrics->fiducial_freq > 0, XLAL_EINVAL);
-  XLAL_CHECK(metrics->rssky_metric_avg != NULL && metrics->rssky_metric_avg->size1 > 2, XLAL_EINVAL);
+  for (size_t n = 0; n < metrics->num_segments; ++n) {
+    XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(metrics->rssky_metric_seg[n], metrics->rssky_transf_seg[n]), XLAL_EINVAL);
+  }
+  XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(metrics->rssky_metric_avg, metrics->rssky_transf_avg), XLAL_EINVAL);
   XLAL_CHECK(fiducial_freq > 0, XLAL_EINVAL);
-
-  // Size of the frequency+spindowns block
-  const size_t fsize = metrics->rssky_metric_avg->size1 - 2;
 
   // Rescale metrics to 'fiducial_freq' based on known scalings
   const double fiducial_scale = fiducial_freq / metrics->fiducial_freq;
   for (size_t n = 0; n < metrics->num_segments; ++n) {
+
+    // Decompose coordinate transform data
+    DECOMPOSE_RSSKY_TRANSF(metrics->rssky_transf_seg[n]);
+
+    // Scale sky-sky block of metric
     gsl_matrix_view sky_sky = gsl_matrix_submatrix(metrics->rssky_metric_seg[n], 0, 0, 2, 2);
     gsl_matrix_scale(&sky_sky.matrix, SQR(fiducial_scale));
-    gsl_matrix_view sky_offsets = gsl_matrix_submatrix(metrics->rssky_transf_seg[n], 3, 0, fsize, 3);
+
+    // Scale sky offsets of coordinate transform data
     gsl_matrix_scale(&sky_offsets.matrix, fiducial_scale);
+
   }
   {
+
+    // Decompose coordinate transform data
+    DECOMPOSE_RSSKY_TRANSF(metrics->rssky_transf_avg);
+
+    // Scale sky-sky block of metric
     gsl_matrix_view sky_sky = gsl_matrix_submatrix(metrics->rssky_metric_avg, 0, 0, 2, 2);
     gsl_matrix_scale(&sky_sky.matrix, SQR(fiducial_scale));
-    gsl_matrix_view sky_offsets = gsl_matrix_submatrix(metrics->rssky_transf_avg, 3, 0, fsize, 3);
+
+    // Scale sky offsets of coordinate transform data
     gsl_matrix_scale(&sky_offsets.matrix, fiducial_scale);
+
   }
 
   // Set new fiducial frequency
@@ -754,7 +769,10 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   XLAL_CHECK(metrics != NULL, XLAL_EFAULT);
   XLAL_CHECK(metrics->num_segments > 0, XLAL_EINVAL);
   XLAL_CHECK(metrics->fiducial_freq > 0, XLAL_EINVAL);
-  XLAL_CHECK(metrics->rssky_metric_avg != NULL && metrics->rssky_metric_avg->size1 > 2, XLAL_EINVAL);
+  for (size_t n = 0; n < metrics->num_segments; ++n) {
+    XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(metrics->rssky_metric_seg[n], metrics->rssky_transf_seg[n]), XLAL_EINVAL);
+  }
+  XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(metrics->rssky_metric_avg, metrics->rssky_transf_avg), XLAL_EINVAL);
   XLAL_CHECK(coh_max_mismatch > 0, XLAL_EINVAL);
   XLAL_CHECK(semi_max_mismatch > 0, XLAL_EINVAL);
 
@@ -1194,12 +1212,9 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
 
   // Check input
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_metric != NULL, XLAL_EFAULT);
+  XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(rssky_metric, rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(gsl_matrix_get(rssky_metric, 0, 1) == 0, XLAL_EINVAL);
   XLAL_CHECK(gsl_matrix_get(rssky_metric, 1, 0) == 0, XLAL_EINVAL);
-  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_metric->size1 + 1 == rssky_transf->size1, XLAL_ESIZE);
-  XLAL_CHECK(rssky_transf->size2 == 3, XLAL_ESIZE);
 
   // Check sky bound ranges
   XLAL_CHECK((fabs(alpha1 - alpha2) > 0) == (fabs(delta1 - delta2) > 0), XLAL_EINVAL,
@@ -1753,10 +1768,7 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
 
   // Check input
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_metric->size1 + 1 == rssky_transf->size1, XLAL_ESIZE);
-  XLAL_CHECK(rssky_transf->size2 == 3, XLAL_ESIZE);
+  XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(rssky_metric, rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(patch_count > 0, XLAL_EINVAL);
   XLAL_CHECK(patch_index < patch_count, XLAL_EINVAL);
 
@@ -1855,9 +1867,7 @@ int XLALSetSuperskyLatticeTilingPhysicalSpinBound(
 
   // Check input
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_transf->size1 > 3, XLAL_ESIZE);
-  XLAL_CHECK(rssky_transf->size2 == 3, XLAL_ESIZE);
+  XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
   XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
   const size_t smax = rssky_transf->size1 - 4;
@@ -1896,9 +1906,7 @@ int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
 
   // Check input
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_transf->size1 > 3, XLAL_ESIZE);
-  XLAL_CHECK(rssky_transf->size2 == 3, XLAL_ESIZE);
+  XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
   XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
   const size_t smax = rssky_transf->size1 - 4;
@@ -1923,9 +1931,7 @@ int XLALSuperskyLatticePulsarSpinRange(
   // Check input
   XLAL_CHECK(spin_range != NULL, XLAL_EFAULT);
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_transf != NULL, XLAL_EFAULT);
-  XLAL_CHECK(rssky_transf->size1 > 3, XLAL_ESIZE);
-  XLAL_CHECK(rssky_transf->size2 == 3, XLAL_ESIZE);
+  XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
 
   // Create arrays for minimum/maximum physical frequency/spindowns
