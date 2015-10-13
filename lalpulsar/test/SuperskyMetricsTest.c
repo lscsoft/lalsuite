@@ -196,19 +196,15 @@ static int CheckSuperskyMetrics(
     XLAL_CHECK(err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol);
   }
   {
-    double max_err = 0;
-    for (size_t i = 0; i < 5; ++i) {
-      for (size_t j = 0; j < 3; ++j) {
+    XLAL_CHECK(rssky_transf->size1 == 5 && rssky_transf->size2 == 3, XLAL_ESIZE);
+    const double err_tol = 1e-7;
+    for (size_t i = 0; i < rssky_transf->size1; ++i) {
+      for (size_t j = 0; j < rssky_transf->size2; ++j) {
         const double rssky_transf_ij = gsl_matrix_get(rssky_transf, i, j);
         const double rssky_transf_ref_ij = rssky_transf_ref[i][j];
-        const double err_ij = fabs((rssky_transf_ij - rssky_transf_ref_ij) / rssky_transf_ref_ij);
-        if (err_ij > max_err) {
-          max_err = err_ij;
-        }
+        CHECK_RELERR(rssky_transf_ij, rssky_transf_ref_ij, err_tol);
       }
     }
-    const double err_tol = 2e-4;
-    XLAL_CHECK(max_err <= err_tol, XLAL_ETOL, "'rssky_transf' check failed: max(err) = %0.3e > %0.3e = err_tol", max_err, err_tol);
   }
 
   // Check round-trip conversions of each test point
@@ -225,20 +221,13 @@ static int CheckSuperskyMetrics(
     gsl_matrix *new_rssky_points = NULL;
     XLAL_CHECK(XLALConvertSuperskyToPhysicalPoints(&intm_phys_points, rssky_points, rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK(XLALConvertPhysicalToSuperskyPoints(&new_rssky_points, intm_phys_points, rssky_transf, &ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
-    {
-      double max_err = 0;
-      for (size_t i = 0; i < 4; ++i) {
-        for (size_t j = 0; j < NUM_POINTS; ++j) {
-          const double rssky_points_ij = gsl_matrix_get(rssky_points, i, j);
-          const double new_rssky_points_ij = gsl_matrix_get(new_rssky_points, i, j);
-          const double err_ij = fabs((new_rssky_points_ij - rssky_points_ij) / rssky_points_ij);
-          if (err_ij > max_err) {
-            max_err = err_ij;
-          }
-        }
+    const double err_tol = 1e-7;
+    for (size_t i = 0; i < 4; ++i) {
+      for (size_t j = 0; j < NUM_POINTS; ++j) {
+        const double rssky_points_ij = gsl_matrix_get(rssky_points, i, j);
+        const double new_rssky_points_ij = gsl_matrix_get(new_rssky_points, i, j);
+        CHECK_RELERR(rssky_points_ij, new_rssky_points_ij, err_tol);
       }
-      const double err_tol = 1e-7;
-      XLAL_CHECK(max_err <= err_tol, XLAL_ETOL, "'rssky_points' check failed: max(err) = %0.3e > %0.3e = err_tol", max_err, err_tol);
     }
     GFMAT(rssky_points, intm_phys_points, new_rssky_points);
   }
