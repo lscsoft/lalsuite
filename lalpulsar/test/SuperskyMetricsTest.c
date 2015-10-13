@@ -197,7 +197,7 @@ static int CheckSuperskyMetrics(
   }
   {
     XLAL_CHECK(rssky_transf->size1 == 5 && rssky_transf->size2 == 3, XLAL_ESIZE);
-    const double err_tol = 1e-7;
+    const double err_tol = 1e-5;
     for (size_t i = 0; i < rssky_transf->size1; ++i) {
       for (size_t j = 0; j < rssky_transf->size2; ++j) {
         const double rssky_transf_ij = gsl_matrix_get(rssky_transf, i, j);
