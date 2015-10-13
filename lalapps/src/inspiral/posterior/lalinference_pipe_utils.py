@@ -1878,7 +1878,7 @@ class ResultsPageNode(pipeline.CondorDAGNode):
     def set_bayes_coherent_noise(self,bsnfile):
         self.add_file_opt('bsn',bsnfile)
     def set_header_file(self,headerfile):
-        self.add_var_arg('--header '+headerfile)
+        self.add_file_opt('header',headerfile)
     def set_ifos(self,ifos):
         self.ifos=ifos
 
