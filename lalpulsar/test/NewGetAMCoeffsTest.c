@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
   REAL8 tolerance = 1e-2;	/* be generous: allow 1% error */
   struct tms buf;
 
-  const CHAR *sites[]   = {"H1", "L1", "V2", "G1", "T1" };
+  const CHAR *sites[]   = {"H1", "L1", "K1", "G1", "T1" };
   REAL8 sinzeta;	/* zeta = IFO opening angle */
   UINT4 pickedSite;
   BOOLEAN ignoreErrors = 0; /* Don't fail if tolerance exceeded */
