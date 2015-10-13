@@ -53,18 +53,26 @@
 #define DOT2(x,y)    ((x)[0]*(y)[0] + (x)[1]*(y)[1])
 #define DOT3(x,y)    ((x)[0]*(y)[0] + (x)[1]*(y)[1] + (x)[2]*(y)[2])
 
+// Dimensions/indexes into reduced supersky coordinate transform data
+#define _RSSKY_TRANSF_XTRADIM   2
+#define _RSSKY_TRANSF_REFTIME   0, 0
+#define _RSSKY_TRANSF_FIDFREQ   0, 1
+
 // Check reduced supersky coordinate metric and/or transform data
 #define CHECK_RSSKY_METRIC_TRANSF(M, RT) \
-  ((M) != NULL && CHECK_RSSKY_TRANSF(RT) && (M)->size1 == (RT)->size1 - 1)
+  ((M) != NULL && CHECK_RSSKY_TRANSF(RT) && (M)->size1 == (RT)->size1 - _RSSKY_TRANSF_XTRADIM)
 #define CHECK_RSSKY_TRANSF(RT) \
-  ((RT) != NULL && (RT)->size1 > 3 && (RT)->size2 == 3)
+  ((RT) != NULL && (RT)->size1 > (2 + _RSSKY_TRANSF_XTRADIM) && (RT)->size2 == 3)
 
 // Decompose reduced supersky coordinate transform data
 #define _DECOMPOSE_RSSKY_TRANSF(RT, GSLMAT) \
-  UNUSED const size_t ndim = (RT)->size1 - 1; \
+  UNUSED const size_t ndim = (RT)->size1 - _RSSKY_TRANSF_XTRADIM; \
   UNUSED const size_t smax = ndim - 3; \
-  UNUSED GSLMAT##_view align_sky = GSLMAT##_submatrix((RT), 0, 0, 3, 3); \
-  UNUSED GSLMAT##_view sky_offsets = GSLMAT##_submatrix((RT), 3, 0, 1 + smax, 3); \
+  LIGOTimeGPS _decomposed_ref_time; \
+  UNUSED const LIGOTimeGPS *ref_time = XLALGPSSetREAL8(&_decomposed_ref_time, gsl_matrix_get((RT), _RSSKY_TRANSF_REFTIME)); \
+  UNUSED const double fiducial_freq = gsl_matrix_get((RT), _RSSKY_TRANSF_FIDFREQ); \
+  UNUSED GSLMAT##_view align_sky = GSLMAT##_submatrix((RT), 1, 0, 3, 3); \
+  UNUSED GSLMAT##_view sky_offsets = GSLMAT##_submatrix((RT), 2 + _RSSKY_TRANSF_XTRADIM, 0, 1 + smax, 3); \
   do { } while(0)
 #define DECOMPOSE_RSSKY_TRANSF(RT)         _DECOMPOSE_RSSKY_TRANSF(RT, gsl_matrix)
 #define DECOMPOSE_CONST_RSSKY_TRANSF(RT)   _DECOMPOSE_RSSKY_TRANSF(RT, gsl_matrix_const)
@@ -166,7 +174,6 @@ static int SM_ComputeFittedSuperskyMetric(
   const gsl_matrix *ussky_metric,		///< [in] Unrestricted supersky metric
   const gsl_matrix *orbital_metric,		///< [in] Orbital metric in ecliptic coordinates
   const DopplerCoordinateSystem *ocoords,	///< [in] Coordinate system of orbital metric
-  const LIGOTimeGPS *ref_time,			///< [in] Reference time of the metrics
   const LIGOTimeGPS *start_time,		///< [in] Start time of the metrics
   const LIGOTimeGPS *end_time			///< [in] End time of the metrics
   )
@@ -178,12 +185,12 @@ static int SM_ComputeFittedSuperskyMetric(
   XLAL_CHECK(ussky_metric != NULL, XLAL_EFAULT);
   XLAL_CHECK(orbital_metric != NULL, XLAL_EFAULT);
   XLAL_CHECK(ocoords != NULL, XLAL_EFAULT);
-  XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
   XLAL_CHECK(start_time != NULL, XLAL_EFAULT);
   XLAL_CHECK(end_time != NULL, XLAL_EFAULT);
 
   // Decompose coordinate transform data
   DECOMPOSE_RSSKY_TRANSF(rssky_transf);
+  XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
 
   // Allocate memory
   gsl_matrix *GAMAT(tmp, 3 + smax, 3 + smax);
@@ -491,23 +498,27 @@ static int SM_ComputeReducedSuperskyMetric(
 
   // Allocate memory
   GAMAT(*rssky_metric, orbital_metric->size1, orbital_metric->size1);
-  GAMAT(*rssky_transf, 1 + orbital_metric->size1, 3);
+  GAMAT(*rssky_transf, _RSSKY_TRANSF_XTRADIM + orbital_metric->size1, 3);
   gsl_matrix *GAMAT(assky_metric, 1 + orbital_metric->size1, 1 + orbital_metric->size1);
 
+  // Set coordinate transform metadata
+  gsl_matrix_set(*rssky_transf, _RSSKY_TRANSF_REFTIME, XLALGPSGetREAL8(ref_time));
+  gsl_matrix_set(*rssky_transf, _RSSKY_TRANSF_FIDFREQ, fiducial_calc_freq);
+
   // Compute the aligned supersky metric from the unrestricted supersky metric and the orbital metric
-  XLAL_CHECK(SM_ComputeFittedSuperskyMetric(assky_metric, *rssky_transf, ussky_metric, orbital_metric, ocoords, ref_time, start_time, end_time) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(SM_ComputeFittedSuperskyMetric(assky_metric, *rssky_transf, ussky_metric, orbital_metric, ocoords, start_time, end_time) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK(SM_ComputeDecoupledSuperskyMetric(assky_metric, *rssky_transf, assky_metric) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK(SM_ComputeAlignedSuperskyMetric(assky_metric, *rssky_transf, assky_metric) == XLAL_SUCCESS, XLAL_EFUNC);
 
-  // Move the row/column of the aligned supersky metric corresponding to the frequency to the last row/column
-  // Move the row of the coordinate transform data corresponding to the frequency to the last row
   {
+    // Move the row/column of the aligned supersky metric corresponding to the frequency to the last row/column
+    // Move the row of the coordinate transform data corresponding to the frequency to the last row
     const int ifreq = XLALFindDopplerCoordinateInSystem(ucoords, DOPPLERCOORD_FREQ);
     XLAL_CHECK(0 <= ifreq, XLAL_EFAILED);
     for (size_t i = ifreq; i + 1 < assky_metric->size1; ++i) {
       gsl_matrix_swap_rows(assky_metric, i, i + 1);
       gsl_matrix_swap_columns(assky_metric, i, i + 1);
-      gsl_matrix_swap_rows(*rssky_transf, i, i + 1);
+      gsl_matrix_swap_rows(*rssky_transf, i + _RSSKY_TRANSF_XTRADIM - 1, i + _RSSKY_TRANSF_XTRADIM);
     }
 
     {
@@ -606,9 +617,6 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   XLAL_CHECK_NULL(metrics != NULL, XLAL_ENOMEM);
   metrics->num_segments = segments->length;
 
-  // Set fiducial frequency at which metrics are numerically calculated
-  metrics->fiducial_freq = fiducial_calc_freq;
-
   // Allocate memory for arrays of coherent metrics
   metrics->coh_rssky_metric = XLALCalloc(metrics->num_segments, sizeof(*metrics->coh_rssky_metric));
   XLAL_CHECK_NULL(metrics->coh_rssky_metric != NULL, XLAL_ENOMEM);
@@ -676,53 +684,54 @@ void XLALDestroySuperskyMetrics(
   }
 }
 
+int XLALScaleSuperskyMetricFiducialFreq(
+  gsl_matrix *rssky_metric,
+  gsl_matrix *rssky_transf,
+  const double new_fiducial_freq
+  )
+{
+
+  // Check input
+  XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(rssky_metric, rssky_transf), XLAL_EINVAL);
+  XLAL_CHECK(new_fiducial_freq > 0, XLAL_EINVAL);
+
+  // Decompose coordinate transform data
+  DECOMPOSE_RSSKY_TRANSF(rssky_transf);
+  XLAL_CHECK(fiducial_freq > 0, XLAL_EINVAL);
+
+  // Rescale metrics to 'new_fiducial_freq' based on known scalings
+  const double fiducial_scale = new_fiducial_freq / fiducial_freq;
+  gsl_matrix_view sky_sky = gsl_matrix_submatrix(rssky_metric, 0, 0, 2, 2);
+  gsl_matrix_scale(&sky_sky.matrix, SQR(fiducial_scale));
+  gsl_matrix_scale(&sky_offsets.matrix, fiducial_scale);
+
+  // Set new fiducial frequency
+  gsl_matrix_set(rssky_transf, _RSSKY_TRANSF_FIDFREQ, new_fiducial_freq);
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALScaleSuperskyMetricsFiducialFreq(
   SuperskyMetrics *metrics,
-  const double fiducial_freq
+  const double new_fiducial_freq
   )
 {
 
   // Check input
   XLAL_CHECK(metrics != NULL, XLAL_EFAULT);
   XLAL_CHECK(metrics->num_segments > 0, XLAL_EINVAL);
-  XLAL_CHECK(metrics->fiducial_freq > 0, XLAL_EINVAL);
   for (size_t n = 0; n < metrics->num_segments; ++n) {
     XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n]), XLAL_EINVAL);
   }
   XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(metrics->semi_rssky_metric, metrics->semi_rssky_transf), XLAL_EINVAL);
-  XLAL_CHECK(fiducial_freq > 0, XLAL_EINVAL);
+  XLAL_CHECK(new_fiducial_freq > 0, XLAL_EINVAL);
 
-  // Rescale metrics to 'fiducial_freq' based on known scalings
-  const double fiducial_scale = fiducial_freq / metrics->fiducial_freq;
+  // Rescale all metrics to 'new_fiducial_freq'
   for (size_t n = 0; n < metrics->num_segments; ++n) {
-
-    // Decompose coordinate transform data
-    DECOMPOSE_RSSKY_TRANSF(metrics->coh_rssky_transf[n]);
-
-    // Scale sky-sky block of metric
-    gsl_matrix_view sky_sky = gsl_matrix_submatrix(metrics->coh_rssky_metric[n], 0, 0, 2, 2);
-    gsl_matrix_scale(&sky_sky.matrix, SQR(fiducial_scale));
-
-    // Scale sky offsets of coordinate transform data
-    gsl_matrix_scale(&sky_offsets.matrix, fiducial_scale);
-
+    XLAL_CHECK(XLALScaleSuperskyMetricFiducialFreq(metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n], new_fiducial_freq) == XLAL_SUCCESS, XLAL_EFUNC);
   }
-  {
-
-    // Decompose coordinate transform data
-    DECOMPOSE_RSSKY_TRANSF(metrics->semi_rssky_transf);
-
-    // Scale sky-sky block of metric
-    gsl_matrix_view sky_sky = gsl_matrix_submatrix(metrics->semi_rssky_metric, 0, 0, 2, 2);
-    gsl_matrix_scale(&sky_sky.matrix, SQR(fiducial_scale));
-
-    // Scale sky offsets of coordinate transform data
-    gsl_matrix_scale(&sky_offsets.matrix, fiducial_scale);
-
-  }
-
-  // Set new fiducial frequency
-  metrics->fiducial_freq = fiducial_freq;
+  XLAL_CHECK(XLALScaleSuperskyMetricFiducialFreq(metrics->semi_rssky_metric, metrics->semi_rssky_transf, new_fiducial_freq) == XLAL_SUCCESS, XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 
@@ -738,7 +747,6 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   // Check input
   XLAL_CHECK(metrics != NULL, XLAL_EFAULT);
   XLAL_CHECK(metrics->num_segments > 0, XLAL_EINVAL);
-  XLAL_CHECK(metrics->fiducial_freq > 0, XLAL_EINVAL);
   for (size_t n = 0; n < metrics->num_segments; ++n) {
     XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n]), XLAL_EINVAL);
   }
@@ -831,8 +839,7 @@ static void SM_AlignedToReduced(
 int XLALConvertPhysicalToSuperskyPoint(
   gsl_vector *out_rssky,
   const PulsarDopplerParams *in_phys,
-  const gsl_matrix *rssky_transf,
-  const LIGOTimeGPS *ref_time
+  const gsl_matrix *rssky_transf
   )
 {
 
@@ -840,10 +847,10 @@ int XLALConvertPhysicalToSuperskyPoint(
   XLAL_CHECK(out_rssky != NULL, XLAL_EFAULT);
   XLAL_CHECK(in_phys != NULL, XLAL_EFAULT);
   XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EFAULT);
-  XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
 
   // Decompose coordinate transform data
   DECOMPOSE_CONST_RSSKY_TRANSF(rssky_transf);
+  XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
   XLAL_CHECK(out_rssky->size == ndim, XLAL_ESIZE);
 
   // Transform input physical point to reference time of coordinate transform data
@@ -902,8 +909,7 @@ int XLALConvertPhysicalToSuperskyPoint(
 int XLALConvertSuperskyToPhysicalPoint(
   PulsarDopplerParams *out_phys,
   const gsl_vector *in_rssky,
-  const gsl_matrix *rssky_transf,
-  const LIGOTimeGPS *ref_time
+  const gsl_matrix *rssky_transf
   )
 {
 
@@ -911,10 +917,10 @@ int XLALConvertSuperskyToPhysicalPoint(
   XLAL_CHECK(out_phys != NULL, XLAL_EFAULT);
   XLAL_CHECK(in_rssky != NULL, XLAL_EFAULT);
   XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EFAULT);
-  XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
 
   // Decompose coordinate transform data
   DECOMPOSE_CONST_RSSKY_TRANSF(rssky_transf);
+  XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
   XLAL_CHECK(in_rssky->size == ndim, XLAL_ESIZE);
 
   // Set output physical point reference time to that of of coordinate transform data
@@ -966,8 +972,7 @@ int XLALConvertSuperskyToPhysicalPoint(
 int XLALConvertPhysicalToSuperskyPoints(
   gsl_matrix **out_rssky,
   const gsl_matrix *in_phys,
-  const gsl_matrix *rssky_transf,
-  const LIGOTimeGPS *ref_time
+  const gsl_matrix *rssky_transf
   )
 {
 
@@ -975,10 +980,10 @@ int XLALConvertPhysicalToSuperskyPoints(
   XLAL_CHECK(out_rssky != NULL, XLAL_EFAULT);
   XLAL_CHECK(in_phys != NULL, XLAL_EFAULT);
   XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EFAULT);
-  XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
 
   // Decompose coordinate transform data
   DECOMPOSE_CONST_RSSKY_TRANSF(rssky_transf);
+  XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
   XLAL_CHECK(in_phys->size1 == ndim, XLAL_ESIZE);
 
   // Resize or allocate output matrix, if required
@@ -1006,7 +1011,7 @@ int XLALConvertPhysicalToSuperskyPoints(
 
     // Convert point from physical to supersky coordinates
     gsl_vector_view out_rssky_j = gsl_matrix_column(*out_rssky, j);
-    XLAL_CHECK(XLALConvertPhysicalToSuperskyPoint(&out_rssky_j.vector, &in_phys_j, rssky_transf, ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(XLALConvertPhysicalToSuperskyPoint(&out_rssky_j.vector, &in_phys_j, rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
 
   }
 
@@ -1017,8 +1022,7 @@ int XLALConvertPhysicalToSuperskyPoints(
 int XLALConvertSuperskyToPhysicalPoints(
   gsl_matrix **out_phys,
   const gsl_matrix *in_rssky,
-  const gsl_matrix *rssky_transf,
-  const LIGOTimeGPS *ref_time
+  const gsl_matrix *rssky_transf
   )
 {
 
@@ -1026,10 +1030,10 @@ int XLALConvertSuperskyToPhysicalPoints(
   XLAL_CHECK(out_phys != NULL, XLAL_EFAULT);
   XLAL_CHECK(in_rssky != NULL, XLAL_EFAULT);
   XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EFAULT);
-  XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
 
   // Decompose coordinate transform data
   DECOMPOSE_CONST_RSSKY_TRANSF(rssky_transf);
+  XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
   XLAL_CHECK(in_rssky->size1 == ndim, XLAL_ESIZE);
 
   // Resize or allocate output matrix, if required
@@ -1049,7 +1053,7 @@ int XLALConvertSuperskyToPhysicalPoints(
     // Convert point from supersky to physical coordinates
     gsl_vector_const_view in_rssky_j = gsl_matrix_const_column(in_rssky, j);
     PulsarDopplerParams XLAL_INIT_DECL(out_phys_j);
-    XLAL_CHECK(XLALConvertSuperskyToPhysicalPoint(&out_phys_j, &in_rssky_j.vector, rssky_transf, ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(XLALConvertSuperskyToPhysicalPoint(&out_phys_j, &in_rssky_j.vector, rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Fill output point from PulsarDopplerParams struct
     gsl_matrix_set(*out_phys, 0, j, out_phys_j.Alpha);
@@ -1192,7 +1196,7 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
     PulsarDopplerParams XLAL_INIT_DECL(phys_point);
     phys_point.Alpha = alpha1;
     phys_point.Delta = delta1;
-    XLAL_CHECK(XLALConvertPhysicalToSuperskyPoint(&rssky_point_view.vector, &phys_point, rssky_transf, &phys_point.refTime) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(XLALConvertPhysicalToSuperskyPoint(&rssky_point_view.vector, &phys_point, rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Set the parameter-space bounds on reduced supersky sky coordinates A and B
     for (size_t dim = 0; dim < 2; ++dim) {
@@ -1393,7 +1397,7 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
       PulsarDopplerParams XLAL_INIT_DECL(phys_point);
       phys_point.Alpha = alphas[i];
       phys_point.Delta = deltas[j];
-      XLAL_CHECK(XLALConvertPhysicalToSuperskyPoint(&rssky_point_view.vector, &phys_point, rssky_transf, &phys_point.refTime) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK(XLALConvertPhysicalToSuperskyPoint(&rssky_point_view.vector, &phys_point, rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
       corner_A[i][j] = rssky_point[0];
       corner_B[i][j] = rssky_point[1];
     }
@@ -1877,8 +1881,7 @@ int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
 int XLALSuperskyLatticePulsarSpinRange(
   PulsarSpinRange *spin_range,
   LatticeTiling *tiling,
-  const gsl_matrix *rssky_transf,
-  const LIGOTimeGPS *ref_time
+  const gsl_matrix *rssky_transf
   )
 {
 
@@ -1886,10 +1889,10 @@ int XLALSuperskyLatticePulsarSpinRange(
   XLAL_CHECK(spin_range != NULL, XLAL_EFAULT);
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
   XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EINVAL);
-  XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
 
   // Decompose coordinate transform data
   DECOMPOSE_CONST_RSSKY_TRANSF(rssky_transf);
+  XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
 
   // Create arrays for minimum/maximum physical frequency/spindowns
   PulsarSpins fkdotMin, fkdotMax;
@@ -1910,7 +1913,7 @@ int XLALSuperskyLatticePulsarSpinRange(
   while (XLALNextLatticeTilingPoint(itr, in_rssky) > 0) {
 
     // Convert reduced supersky point to physical coordinates
-    XLAL_CHECK(XLALConvertSuperskyToPhysicalPoint(&out_phys, in_rssky, rssky_transf, ref_time) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(XLALConvertSuperskyToPhysicalPoint(&out_phys, in_rssky, rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Store minimum/maximum physical frequency/spindowns
     for (size_t s = 0; s <= smax; ++s) {

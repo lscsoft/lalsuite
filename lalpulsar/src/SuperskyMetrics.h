@@ -46,7 +46,6 @@ SWIGLAL(ARRAY_MULTIPLE_LENGTHS(tagSuperskyMetrics, num_segments));
 #endif // SWIG
 typedef struct tagSuperskyMetrics {
   size_t num_segments;				///< Number of segments
-  double fiducial_freq;				///< Fiducial frequency at which metrics were calculated
 
 #ifdef SWIG // SWIG interface directives
   SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, coh_rssky_metric, size_t, num_segments));
@@ -83,12 +82,29 @@ void XLALDestroySuperskyMetrics(
   SuperskyMetrics *metrics			///< [in] Supersky metrics struct
   );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
+#endif // SWIG
+
 ///
-/// Scale all supersky metrics to match the given fiducial frequency.
+/// Scale a given supersky metric and its coordinate transform data to a new fiducial frequency.
+///
+int XLALScaleSuperskyMetricFiducialFreq(
+  gsl_matrix *rssky_metric,			///< [in] Reduced supersky metric
+  gsl_matrix *rssky_transf,			///< [in] Reduced supersky metric coordinate transform data
+  const double new_fiducial_freq		///< [in] New fiducial frequency
+  );
+
+#ifdef SWIG // SWIG interface directives
+SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
+#endif // SWIG
+
+///
+/// Scale all supersky metrics and their coordinate transform data to a new fiducial frequency.
 ///
 int XLALScaleSuperskyMetricsFiducialFreq(
   SuperskyMetrics *metrics,			///< [in] Supersky metrics struct
-  const double fiducial_freq			///< [in] Fiducial frequency for sky-position coordinates
+  const double new_fiducial_freq		///< [in] New fiducial frequency
   );
 
 ///
@@ -107,8 +123,7 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
 int XLALConvertPhysicalToSuperskyPoint(
   gsl_vector *out_rssky,			///< [out] Output point in supersky coordinates
   const PulsarDopplerParams *in_phys,		///< [in] Input point in physical coordinates
-  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
-  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
+  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
   );
 
 ///
@@ -117,8 +132,7 @@ int XLALConvertPhysicalToSuperskyPoint(
 int XLALConvertSuperskyToPhysicalPoint(
   PulsarDopplerParams *out_phys,		///< [out] Output point in physical coordinates
   const gsl_vector *in_rssky,			///< [in] Input point in supersky coordinates
-  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
-  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
+  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
   );
 
 ///
@@ -130,8 +144,7 @@ SWIGLAL(INOUT_STRUCTS(gsl_matrix **, out_rssky));
 int XLALConvertPhysicalToSuperskyPoints(
   gsl_matrix **out_rssky,			///< [out] Columns are output point in supersky coordinates
   const gsl_matrix *in_phys,			///< [in] Columns are input point in physical coordinates
-  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
-  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
+  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
   );
 
 ///
@@ -143,8 +156,7 @@ SWIGLAL(INOUT_STRUCTS(gsl_matrix **, out_phys));
 int XLALConvertSuperskyToPhysicalPoints(
   gsl_matrix **out_phys,			///< [out] Columns are output point in physical coordinates
   const gsl_matrix *in_rssky,			///< [in] Columns are input point in supersky coordinates
-  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
-  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
+  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
   );
 
 #ifdef SWIG // SWIG interface directives
@@ -217,8 +229,7 @@ int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
 int XLALSuperskyLatticePulsarSpinRange(
   PulsarSpinRange *spin_range,			///< [in,out] Physical frequency/spindown range
   LatticeTiling *tiling,			///< [in] Lattice tiling
-  const gsl_matrix *rssky_transf,		///< [in] Reduced supersky coordinate transform data
-  const LIGOTimeGPS *ref_time			///< [in] Reference time for the coordinate transform data
+  const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
   );
 
 /// @}
