@@ -283,16 +283,16 @@ int main(void)
   // Check coherent metrics
   for (size_t n = 0; n < NUM_SEGS; ++n) {
     XLAL_CHECK_MAIN(CheckSuperskyMetrics(
-                      metrics->rssky_metric_seg[n], coh_rssky_metric_refs[n],
-                      metrics->rssky_transf_seg[n], coh_rssky_transf_refs[n],
+                      metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
+                      metrics->coh_rssky_transf[n], coh_rssky_transf_refs[n],
                       coh_phys_mismatches[n], 1e-2
                       ) == XLAL_SUCCESS, XLAL_EFUNC);
   }
 
   // Check semicoherent metric
   XLAL_CHECK_MAIN(CheckSuperskyMetrics(
-                    metrics->rssky_metric_avg, semi_rssky_metric_ref,
-                    metrics->rssky_transf_avg, semi_rssky_transf_ref,
+                    metrics->semi_rssky_metric, semi_rssky_metric_ref,
+                    metrics->semi_rssky_transf, semi_rssky_transf_ref,
                     semi_phys_mismatch, 3e-2
                     ) == XLAL_SUCCESS, XLAL_EFUNC);
 
@@ -304,13 +304,13 @@ int main(void)
     gsl_matrix_view semi_rssky_metric_rescale_view = gsl_matrix_view_array((double *)semi_rssky_metric_rescale, 4, 4);
     gsl_matrix_view sky_sky = gsl_matrix_submatrix(&semi_rssky_metric_rescale_view.matrix, 0, 0, 2, 2);
     gsl_matrix_scale(&sky_sky.matrix, (257.52 / fiducial_freq) * (257.52 / fiducial_freq));
-    const double err = XLALCompareMetrics(metrics->rssky_metric_avg, &semi_rssky_metric_rescale_view.matrix), err_tol = 1e-7;
+    const double err = XLALCompareMetrics(metrics->semi_rssky_metric, &semi_rssky_metric_rescale_view.matrix), err_tol = 1e-7;
     XLAL_CHECK(err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol);
   }
   XLAL_CHECK_MAIN(XLALScaleSuperskyMetricsFiducialFreq(metrics, fiducial_freq) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(CheckSuperskyMetrics(
-                    metrics->rssky_metric_avg, semi_rssky_metric_ref,
-                    metrics->rssky_transf_avg, semi_rssky_transf_ref,
+                    metrics->semi_rssky_metric, semi_rssky_metric_ref,
+                    metrics->semi_rssky_transf, semi_rssky_transf_ref,
                     semi_phys_mismatch, 3e-2
                     ) == XLAL_SUCCESS, XLAL_EFUNC);
 

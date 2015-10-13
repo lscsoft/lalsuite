@@ -49,16 +49,16 @@ typedef struct tagSuperskyMetrics {
   double fiducial_freq;				///< Fiducial frequency at which metrics were calculated
 
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, rssky_metric_seg, size_t, num_segments));
+  SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, coh_rssky_metric, size_t, num_segments));
 #endif // SWIG
-  gsl_matrix **rssky_metric_seg;		///< Reduced supersky metric (2-dimensional sky), for each segment
+  gsl_matrix **coh_rssky_metric;		///< Coherent reduced supersky metric (2-dimensional sky) for each segment
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, rssky_transf_seg, size_t, num_segments));
+  SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, coh_rssky_transf, size_t, num_segments));
 #endif // SWIG
-  gsl_matrix **rssky_transf_seg;		///< Coordinate transform data of reduced supersky metric, for each segment
+  gsl_matrix **coh_rssky_transf;		///< Coherent reduced supersky metric coordinate transform data for each segment
 
-  gsl_matrix *rssky_metric_avg;			///< Reduced supersky metric (2-dimensional sky), averaged over segments
-  gsl_matrix *rssky_transf_avg;			///< Coordinate transform data of reduced supersky metric, averaged over segments
+  gsl_matrix *semi_rssky_metric;		///< Semicoherent reduced supersky metric (2-dimensional sky)
+  gsl_matrix *semi_rssky_transf;		///< Semicoherent reduced supersky metric coordinate transform data
 
 } SuperskyMetrics;
 
@@ -68,7 +68,7 @@ typedef struct tagSuperskyMetrics {
 SuperskyMetrics *XLALComputeSuperskyMetrics(
   const size_t spindowns,			///< [in] Number of frequency+spindown coordinates
   const LIGOTimeGPS *ref_time,			///< [in] Reference time for the metrics
-  const LALSegList *segments,			///< [in] List of segments to average metrics over
+  const LALSegList *segments,			///< [in] List of segments to compute metrics over
   const double fiducial_freq,			///< [in] Fiducial frequency for sky-position coordinates
   const MultiLALDetector *detectors,		///< [in] List of detectors to average metrics over
   const MultiNoiseFloor *detector_weights,	///< [in] Weights used to combine single-detector metrics (default: unit weights)
@@ -92,13 +92,13 @@ int XLALScaleSuperskyMetricsFiducialFreq(
   );
 
 ///
-/// Project and rescale the averaged reduced supersky metrics in the frequency dimension, such that
+/// Project and rescale the semicoherent reduced supersky metric in the frequency dimension, such that
 /// all reduced supersky metrics have the same frequency spacing for the given maximum mismatches.
 ///
 int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   SuperskyMetrics *metrics,			///< [in] Supersky metrics struct
-  const double coh_max_mismatch,		///< [in] Maximum coherent mismatch, for per-segment metrics
-  const double semi_max_mismatch		///< [in] Maximum semicoherent mismatch, for averaged metrics
+  const double coh_max_mismatch,		///< [in] Maximum coherent mismatch
+  const double semi_max_mismatch		///< [in] Maximum semicoherent mismatch
   );
 
 ///
