@@ -69,6 +69,10 @@
 #define DECOMPOSE_RSSKY_TRANSF(RT)         _DECOMPOSE_RSSKY_TRANSF(RT, gsl_matrix)
 #define DECOMPOSE_CONST_RSSKY_TRANSF(RT)   _DECOMPOSE_RSSKY_TRANSF(RT, gsl_matrix_const)
 
+// Determine which dimension stores the reduced supersky frequency/spindown of order 's'
+#define RSSKY_FKDOT_OFFSET(s)   (((s) == 0) ? (smax) : ((size_t)((s) - 1)))
+#define RSSKY_FKDOT_DIM(s)      (2 + RSSKY_FKDOT_OFFSET(s))
+
 ///
 /// Fiducial frequency at which to numerically calculate metrics, which
 /// are then rescaled to user-requested frequency based on known scalings
@@ -463,6 +467,7 @@ static int SM_ComputeReducedSuperskyMetric(
   gsl_matrix **rssky_metric,			///< [out] Reduced supersky metric
   gsl_matrix **rssky_transf,			///< [out] Coordinate transform data of reduced supersky metric
   const gsl_matrix *ussky_metric,		///< [in] Unrestricted supersky metric
+  const DopplerCoordinateSystem *ucoords,	///< [in] Coordinate system of unrestricted supersky metric
   const gsl_matrix *orbital_metric,		///< [in] Orbital metric in ecliptic coordinates
   const DopplerCoordinateSystem *ocoords,	///< [in] Coordinate system of orbital metric
   const LIGOTimeGPS *ref_time,			///< [in] Reference time of the metrics
@@ -476,6 +481,7 @@ static int SM_ComputeReducedSuperskyMetric(
   XLAL_CHECK(rssky_transf != NULL && *rssky_transf == NULL, XLAL_EFAULT);
   XLAL_CHECK(ussky_metric != NULL, XLAL_EFAULT);
   XLAL_CHECK(ussky_metric->size1 == ussky_metric->size2, XLAL_ESIZE);
+  XLAL_CHECK(ucoords != NULL, XLAL_EFAULT);
   XLAL_CHECK(orbital_metric != NULL, XLAL_EFAULT);
   XLAL_CHECK(orbital_metric->size1 == orbital_metric->size2, XLAL_ESIZE);
   XLAL_CHECK(ocoords != NULL, XLAL_EFAULT);
@@ -493,26 +499,31 @@ static int SM_ComputeReducedSuperskyMetric(
   XLAL_CHECK(SM_ComputeDecoupledSuperskyMetric(assky_metric, *rssky_transf, assky_metric) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK(SM_ComputeAlignedSuperskyMetric(assky_metric, *rssky_transf, assky_metric) == XLAL_SUCCESS, XLAL_EFUNC);
 
-  // Move the 3rd row/column of the aligned supersky metric, which is the 'n_c' sky coordinate with the smallest eigenvalue, to the last row/column so it can be dropped
-  for (size_t i = 2; i + 1 < assky_metric->size1; ++i) {
-    gsl_matrix_swap_rows(assky_metric, i, i + 1);
-    gsl_matrix_swap_columns(assky_metric, i, i + 1);
-  }
+  // Move the row/column of the aligned supersky metric corresponding to the frequency to the last row/column
+  // Move the row of the coordinate transform data corresponding to the frequency to the last row
+  {
+    const int ifreq = XLALFindDopplerCoordinateInSystem(ucoords, DOPPLERCOORD_FREQ);
+    XLAL_CHECK(0 <= ifreq, XLAL_EFAILED);
+    for (size_t i = ifreq; i + 1 < assky_metric->size1; ++i) {
+      gsl_matrix_swap_rows(assky_metric, i, i + 1);
+      gsl_matrix_swap_columns(assky_metric, i, i + 1);
+      gsl_matrix_swap_rows(*rssky_transf, i, i + 1);
+    }
 
-  // Move the 3rd row/column of the aligned supersky metric, which is *now* the frequency, to the second-to-last row/column, i.e. still before 'n_c'
-  for (size_t i = 2; i + 2 < assky_metric->size1; ++i) {
-    gsl_matrix_swap_rows(assky_metric, i, i + 1);
-    gsl_matrix_swap_columns(assky_metric, i, i + 1);
+    {
+      // Move the row/column of the aligned supersky metric corresponding to the 'n_c' sky coordinate to the last row/column, so it can be easily dropped
+      const int inc = XLALFindDopplerCoordinateInSystem(ucoords, DOPPLERCOORD_N3Z_EQU);
+      XLAL_CHECK(0 <= inc && inc < ifreq, XLAL_EFAILED);
+      for (size_t i = inc; i + 1 < assky_metric->size1; ++i) {
+        gsl_matrix_swap_rows(assky_metric, i, i + 1);
+        gsl_matrix_swap_columns(assky_metric, i, i + 1);
+      }
+    }
   }
 
   // Copy all but the last row/column to the aligned supersky metric to the reduced supersky metric, dropping 'n_c'
   gsl_matrix_view extract_rssky_metric = gsl_matrix_submatrix(assky_metric, 0, 0, (*rssky_metric)->size1, (*rssky_metric)->size1);
   gsl_matrix_memcpy(*rssky_metric, &extract_rssky_metric.matrix);
-
-  // Move the 4th row of the coordinate transform data, which corresponds to frequency, to the last row
-  for (size_t i = 3; i + 1 < (*rssky_transf)->size1; ++i) {
-    gsl_matrix_swap_rows(*rssky_transf, i, i + 1);
-  }
 
   // Ensure reduced supersky metric is symmetric
   for (size_t i = 0; i < (*rssky_metric)->size1; ++i) {
@@ -570,11 +581,11 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
     ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_N3X_EQU;
     ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_N3Y_EQU;
     ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_N3Z_EQU;
-    ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_FREQ;
-  }
-  {
     ocoords.coordIDs[ocoords.dim++] = DOPPLERCOORD_N3OX_ECL;
     ocoords.coordIDs[ocoords.dim++] = DOPPLERCOORD_N3OY_ECL;
+  }
+  {
+    ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_FREQ;
     ocoords.coordIDs[ocoords.dim++] = DOPPLERCOORD_FREQ;
   }
   if (spindowns >= 1) {
@@ -624,7 +635,7 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
     gsl_matrix_add(orbital_metric_avg, orbital_metric_seg);
 
     // Compute the reduced supersky metric, for each segment
-    XLAL_CHECK_NULL(SM_ComputeReducedSuperskyMetric(&metrics->rssky_metric_seg[n], &metrics->rssky_transf_seg[n], ussky_metric_seg, orbital_metric_seg, &ocoords, ref_time, start_time_seg, end_time_seg) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_NULL(SM_ComputeReducedSuperskyMetric(&metrics->rssky_metric_seg[n], &metrics->rssky_transf_seg[n], ussky_metric_seg, &ucoords, orbital_metric_seg, &ocoords, ref_time, start_time_seg, end_time_seg) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Cleanup
     GFMAT(ussky_metric_seg, orbital_metric_seg);
@@ -638,7 +649,7 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   // Compute the supersky metrics, averged over segments
   const LIGOTimeGPS *start_time_avg = &segments->segs[0].start;
   const LIGOTimeGPS *end_time_avg = &segments->segs[segments->length - 1].end;
-  XLAL_CHECK_NULL(SM_ComputeReducedSuperskyMetric(&metrics->rssky_metric_avg, &metrics->rssky_transf_avg, ussky_metric_avg, orbital_metric_avg, &ocoords, ref_time, start_time_avg, end_time_avg) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_NULL(SM_ComputeReducedSuperskyMetric(&metrics->rssky_metric_avg, &metrics->rssky_transf_avg, ussky_metric_avg, &ucoords, orbital_metric_avg, &ocoords, ref_time, start_time_avg, end_time_avg) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Rescale metrics to input fiducial frequency
   XLALScaleSuperskyMetricsFiducialFreq(metrics, fiducial_freq);
@@ -735,10 +746,11 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   XLAL_CHECK(coh_max_mismatch > 0, XLAL_EINVAL);
   XLAL_CHECK(semi_max_mismatch > 0, XLAL_EINVAL);
 
-  // Index of reduced supersky frequency dimension
-  const size_t ifreq = metrics->rssky_metric_avg->size1 - 1;
+  // Decompose coordinate transform data
+  DECOMPOSE_RSSKY_TRANSF(metrics->rssky_transf_avg);
 
   // Check frequency-frequency elements of per-segment reduced supersky metrics are the same
+  const size_t ifreq = RSSKY_FKDOT_DIM(0);
   const double rssky_metric_seg_ff = gsl_matrix_get(metrics->rssky_metric_seg[0], ifreq, ifreq);
   for (size_t n = 1; n < metrics->num_segments; ++n) {
     const double rssky_metric_seg_ff_n = gsl_matrix_get(metrics->rssky_metric_seg[n], ifreq, ifreq);
@@ -1153,6 +1165,9 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
   XLAL_CHECK(gsl_matrix_get(rssky_metric, 0, 1) == 0, XLAL_EINVAL);
   XLAL_CHECK(gsl_matrix_get(rssky_metric, 1, 0) == 0, XLAL_EINVAL);
 
+  // Decompose coordinate transform data
+  DECOMPOSE_RSSKY_TRANSF(rssky_transf);
+
   // Check sky bound ranges
   XLAL_CHECK((fabs(alpha1 - alpha2) > 0) == (fabs(delta1 - delta2) > 0), XLAL_EINVAL,
              "|alpha1 - alpha2| and |delta1 - delta2| must either be both zero, or both nonzero");
@@ -1251,10 +1266,10 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
     const double alpha = GSL_MIN(alpha1, alpha2);
     const double cos_alpha = cos(alpha);
     const double sin_alpha = sin(alpha);
-    const double Q_na_0 = gsl_matrix_get(rssky_transf, 0, 0);
-    const double Q_na_1 = gsl_matrix_get(rssky_transf, 0, 1);
-    const double Q_nb_0 = gsl_matrix_get(rssky_transf, 1, 0);
-    const double Q_nb_1 = gsl_matrix_get(rssky_transf, 1, 1);
+    const double Q_na_0 = gsl_matrix_get(&align_sky.matrix, 0, 0);
+    const double Q_na_1 = gsl_matrix_get(&align_sky.matrix, 0, 1);
+    const double Q_nb_0 = gsl_matrix_get(&align_sky.matrix, 1, 0);
+    const double Q_nb_1 = gsl_matrix_get(&align_sky.matrix, 1, 1);
     const double na = Q_na_0*cos_alpha + Q_na_1*sin_alpha;
     const double nb = Q_nb_0*cos_alpha + Q_nb_1*sin_alpha;
     phi = atan2(-nb, na);
@@ -1276,20 +1291,20 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
   // The correct transformation to apply is:
   //   Q^T ==> R * Q^T, Delta^s ==> Delta^s . R^T
   for (size_t j = 0; j < 3; ++j) {
-    const double Q_na_j = gsl_matrix_get(rssky_transf, 0, j);
-    const double Q_nb_j = gsl_matrix_get(rssky_transf, 1, j);
+    const double Q_na_j = gsl_matrix_get(&align_sky.matrix, 0, j);
+    const double Q_nb_j = gsl_matrix_get(&align_sky.matrix, 1, j);
     const double Q_na_j_rot = Q_na_j*cos_phi - Q_nb_j*sin_phi;
     const double Q_nb_j_rot = Q_nb_j*cos_phi + Q_na_j*sin_phi;
-    gsl_matrix_set(rssky_transf, 0, j, Q_na_j_rot);
-    gsl_matrix_set(rssky_transf, 1, j, Q_nb_j_rot);
+    gsl_matrix_set(&align_sky.matrix, 0, j, Q_na_j_rot);
+    gsl_matrix_set(&align_sky.matrix, 1, j, Q_nb_j_rot);
   }
-  for (size_t i = 3; i < rssky_transf->size1; ++i) {
-    const double Delta_0 = gsl_matrix_get(rssky_transf, i, 0);
-    const double Delta_1 = gsl_matrix_get(rssky_transf, i, 1);
+  for (size_t i = 0; i < sky_offsets.matrix.size1; ++i) {
+    const double Delta_0 = gsl_matrix_get(&sky_offsets.matrix, i, 0);
+    const double Delta_1 = gsl_matrix_get(&sky_offsets.matrix, i, 1);
     const double Delta_0_rot = Delta_0*cos_phi - Delta_1*sin_phi;
     const double Delta_1_rot = Delta_1*cos_phi + Delta_0*sin_phi;
-    gsl_matrix_set(rssky_transf, i, 0, Delta_0_rot);
-    gsl_matrix_set(rssky_transf, i, 1, Delta_1_rot);
+    gsl_matrix_set(&sky_offsets.matrix, i, 0, Delta_0_rot);
+    gsl_matrix_set(&sky_offsets.matrix, i, 1, Delta_1_rot);
   }
 
   // Apply 'R' to the sky-sky block of the reduced supersky metric
@@ -1314,9 +1329,9 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
   }
 
   // Get components of the vectors 'Q_na', 'Q_nb', and 'Q_nc' from coordinate transform data
-  const double Q_na[3] = { gsl_matrix_get(rssky_transf, 0, 0), gsl_matrix_get(rssky_transf, 0, 1), gsl_matrix_get(rssky_transf, 0, 2) };
-  const double Q_nb[3] = { gsl_matrix_get(rssky_transf, 1, 0), gsl_matrix_get(rssky_transf, 1, 1), gsl_matrix_get(rssky_transf, 1, 2) };
-  const double Q_nc[3] = { gsl_matrix_get(rssky_transf, 2, 0), gsl_matrix_get(rssky_transf, 2, 1), gsl_matrix_get(rssky_transf, 2, 2) };
+  const double Q_na[3] = { gsl_matrix_get(&align_sky.matrix, 0, 0), gsl_matrix_get(&align_sky.matrix, 0, 1), gsl_matrix_get(&align_sky.matrix, 0, 2) };
+  const double Q_nb[3] = { gsl_matrix_get(&align_sky.matrix, 1, 0), gsl_matrix_get(&align_sky.matrix, 1, 1), gsl_matrix_get(&align_sky.matrix, 1, 2) };
+  const double Q_nc[3] = { gsl_matrix_get(&align_sky.matrix, 2, 0), gsl_matrix_get(&align_sky.matrix, 2, 1), gsl_matrix_get(&align_sky.matrix, 2, 2) };
 
   // Determine the minimum and maximum right ascension and declination
   const double alphas[2] = { GSL_MIN(alpha1, alpha2), GSL_MAX(alpha1, alpha2) };
@@ -1807,9 +1822,10 @@ int XLALSetSuperskyLatticeTilingPhysicalSpinBound(
   XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
   XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
-  const size_t smax = rssky_transf->size1 - 4;
+
+  // Decompose coordinate transform data
+  DECOMPOSE_CONST_RSSKY_TRANSF(rssky_transf);
   XLAL_CHECK(s <= smax, XLAL_ESIZE);
-  const size_t dim = (s == 0) ? (2 + smax) : (1 + s);
 
   // Allocate memory
   const size_t data_len = 4 * sizeof(double);
@@ -1820,13 +1836,13 @@ int XLALSetSuperskyLatticeTilingPhysicalSpinBound(
 
   // Copy the sky offset vector to bounds data
   for (size_t j = 0; j < 3; ++j) {
-    data_lower[j] = data_upper[j] = gsl_matrix_get(rssky_transf, dim + 1, j);
+    data_lower[j] = data_upper[j] = gsl_matrix_get(&sky_offsets.matrix, RSSKY_FKDOT_OFFSET(s), j);
   }
 
   // Set the parameter-space bound on physical frequency/spindown coordinate
   data_lower[3] = GSL_MIN(bound1, bound2);
   data_upper[3] = GSL_MAX(bound1, bound2);
-  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dim, PhysicalSpinBound, data_len, data_lower, data_upper) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, RSSKY_FKDOT_DIM(s), PhysicalSpinBound, data_len, data_lower, data_upper) == XLAL_SUCCESS, XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 
@@ -1846,12 +1862,13 @@ int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
   XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
   XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
-  const size_t smax = rssky_transf->size1 - 4;
+
+  // Decompose coordinate transform data
+  DECOMPOSE_CONST_RSSKY_TRANSF(rssky_transf);
   XLAL_CHECK(s <= smax, XLAL_ESIZE);
-  const size_t dim = (s == 0) ? (2 + smax) : (1 + s);
 
   // Set the parameter-space bound on reduced supersky frequency/spindown coordinate
-  XLAL_CHECK(XLALSetLatticeTilingConstantBound(tiling, dim, bound1, bound2) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALSetLatticeTilingConstantBound(tiling, RSSKY_FKDOT_DIM(s), bound1, bound2) == XLAL_SUCCESS, XLAL_EFUNC);
 
   return XLAL_SUCCESS;
 
@@ -1871,8 +1888,10 @@ int XLALSuperskyLatticePulsarSpinRange(
   XLAL_CHECK(CHECK_RSSKY_TRANSF(rssky_transf), XLAL_EINVAL);
   XLAL_CHECK(ref_time != NULL, XLAL_EFAULT);
 
+  // Decompose coordinate transform data
+  DECOMPOSE_CONST_RSSKY_TRANSF(rssky_transf);
+
   // Create arrays for minimum/maximum physical frequency/spindowns
-  const size_t smax = rssky_transf->size1 - 4;
   PulsarSpins fkdotMin, fkdotMax;
   for (size_t s = 0; s <= smax; ++s) {
     fkdotMin[s] = GSL_POSINF;
@@ -1903,8 +1922,7 @@ int XLALSuperskyLatticePulsarSpinRange(
 
   // Include width of supersky frequency/spindown parameter space
   for (size_t s = 0; s <= smax; ++s) {
-    const size_t dim = (s == 0) ? (2 + smax) : (1 + s);
-    const LatticeTilingStats *stats = XLALLatticeTilingStatistics(tiling, dim);
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics(tiling, RSSKY_FKDOT_DIM(s));
     XLAL_CHECK(stats != NULL, XLAL_EFUNC);
     fkdotMax[s] += stats->max_value_pass - stats->min_value_pass;
   }
