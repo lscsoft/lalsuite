@@ -484,9 +484,6 @@ int XLALSimInspiralChooseFDWaveformFromCache(
     COMPLEX16 exp_dphi;
     CacheVariableDiffersBitmask changedParams;
 
-    // Specifying the sequence of frequencies only works with TaylorF2 (for now).
-    if ( frequencies != NULL && approximant != TaylorF2 )
-        return XLAL_EINVAL;
 
     // If nonGRparams are not NULL, don't even try to cache.
     if ( nonGRparams != NULL || (!cache) ){
