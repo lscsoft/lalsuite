@@ -49,7 +49,7 @@ from matplotlib import pyplot as plt
 from matplotlib import rcParams
 import scipy.stats
 import os
-import subprocess
+from distutils.dir_util import mkpath
 import numpy as np
 from glue.text_progress_bar import ProgressBar
 import lalinference.plot
@@ -129,7 +129,7 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
 
     # Create and change to a subdirectory for the plots for this
     # false alarm rate bin.
-    subprocess.check_call(['mkdir', '-p', subdir])
+    mkpath(subdir)
     os.chdir(subdir)
 
     # Set up figure 1.
