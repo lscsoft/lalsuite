@@ -87,6 +87,13 @@ XLALNormalizeSFT ( REAL8FrequencySeries *rngmed, 	/**< [out] rng-median smoothed
     }
   else
     {
+      // copy whole SFT header info to be on the safe side (deltaF definitely needed for Tsft=1/deltaF later)
+      strcpy ( rngmed->name, sft->name );
+      rngmed->epoch 	 = sft->epoch;
+      rngmed->f0 	 = sft->f0;
+      rngmed->deltaF 	 = sft->deltaF;
+      rngmed->sampleUnits= sft->sampleUnits;
+
       /* set PSD to constant value: Tsft * S / 2 = Tsft * (sqrt(S))^2 / 2 */
       const REAL8 Tsft = 1.0 / sft->deltaF;
       const REAL8 assume_Tsft_Sn_b2 = Tsft * assumeSqrtS*assumeSqrtS / 2;
