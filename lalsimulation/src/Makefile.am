@@ -75,6 +75,7 @@ noinst_HEADERS = \
 	LALSimIMREOBHybridRingdown.c \
 	LALSimIMREOBNQCCorrection.c \
 	LALSimIMREOBNRv2.h \
+	LALSimFindAttachTime.h\
 	LALSimIMREOBNewtonianMultipole.c \
 	LALSimInspiralPNCoefficients.c \
 	LALSimInspiraldEnergyFlux.c \
@@ -94,7 +95,17 @@ noinst_HEADERS = \
 	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomP.c \
 	LALSimIMRSEOBNRROMUtilities.c \
-	LALSimIMREOBNRv2HMROMUtilities.c
+	LALSimIMREOBNRv2HMROMUtilities.c \
+	LALSimBlackHoleRingdownPrec.c \
+	LALSimBlackHoleRingdownPrec.h \
+	LALSimIMRSpinEOBFactorizedWaveformPrec.c \
+	LALSimIMRSpinEOBHamiltonianPrec.c \
+	LALSimIMRSpinEOBAuxFuncsPrec.c \
+	LALSimIMRSpinEOBFactorizedWaveformCoefficientsPrec.c \
+	LALSimIMREOBHybridRingdownPrec.c \
+	LALSimIMRSpinEOBFactorizedFluxPrec.c \
+	LALSimIMRSpinEOBHcapNumericalDerivativePrec.c \
+	LALSimIMRSpinEOBInitialConditionsPrec.c
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
@@ -103,6 +114,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimBurstImg.c \
 	LALSimIMREOBNRv2.c \
 	LALSimIMRSpinAlignedEOB.c \
+	LALSimIMRSpinPrecEOB.c \
 	LALSimIMRSEOBNRv1ROMEffectiveSpin.c \
 	LALSimIMRSEOBNRv1ROMDoubleSpin.c \
 	LALSimIMRSEOBNRv2ROMEffectiveSpin.c \
@@ -157,7 +169,8 @@ liblalsimulation_la_SOURCES = \
 	check_series_macros.h \
 	check_waveform_macros.h \
 	unicorn.xpm \
-	LALSimInspiralHGimri.c
+	LALSimInspiralHGimri.c \
+	LALSimFindAttachTime.c
 
 nodist_liblalsimulation_la_SOURCES = LALSimulationBuildInfo.c
 

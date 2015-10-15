@@ -232,7 +232,7 @@ static int delete_substring_in_list_from_string(char *string, const char *list[]
 }
 
 
-/* 
+/*
  * certain approximants adopt the convention that f_ref=0 refers to the start
  * of the waveform while other approximants adopt the convention that f_ref=0
  * refers to the end of the waveform. in the former case, this routine will
@@ -313,7 +313,7 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 LNhatx, LNhaty, LNhatz, E1x, E1y, E1z;
     //REAL8 tmp1, tmp2;
     int ret;
-    /* N.B. the quadrupole of a spinning compact body labeled by A is 
+    /* N.B. the quadrupole of a spinning compact body labeled by A is
      * Q_A = - quadparam_A chi_A^2 m_A^3 (see gr-qc/9709032)
      * where quadparam = 1 for BH ~= 4-8 for NS.
      * This affects the quadrupole-monopole interaction.
@@ -365,7 +365,7 @@ int XLALSimInspiralChooseTDWaveform(
      * if that approximate interprets f_ref==0 to be f_min, set f_ref=f_min;
      * otherwise do nothing */
     f_ref = fixReferenceFrequency(f_ref, f_min, approximant);
- 
+
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
@@ -459,10 +459,10 @@ int XLALSimInspiralChooseTDWaveform(
 	    if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
     		ABORT_NONZERO_SPINS(waveFlags);
 	    if( !checkTidesZero(lambda1, lambda2) )
-    		ABORT_NONZERO_TIDES(waveFlags);
+		ABORT_NONZERO_TIDES(waveFlags);
 	    /* Call the waveform driver routine */
 	    ret = XLALSimInspiralEccentricTDPNGenerator(hplus, hcross, phiRef,
-        	    deltaT, m1, m2, f_min, f_ref, r, i, (REAL8) XLALSimInspiralGetTestGRParam( nonGRparams, "e_min"), 
+		    deltaT, m1, m2, f_min, f_ref, r, i, (REAL8) XLALSimInspiralGetTestGRParam( nonGRparams, "e_min"),
 		    amplitudeO, phaseO);
 	    if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
 	    break;
@@ -529,9 +529,9 @@ int XLALSimInspiralChooseTDWaveform(
             E1x = cos(i);
             E1y = 0.;
             E1z = - sin(i);
-            /* Maximum PN amplitude order for precessing waveforms is 
+            /* Maximum PN amplitude order for precessing waveforms is
              * MAX_PRECESSING_AMP_PN_ORDER */
-            amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? 
+            amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ?
                     amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
             /* Call the waveform driver routine */
             ret = XLALSimInspiralSpinTaylorT2(hplus, hcross, phiRef, v0, deltaT,
@@ -545,9 +545,9 @@ int XLALSimInspiralChooseTDWaveform(
 
         // need to make a consistent choice for SpinTaylorT4 and PSpinInspiralRD waveform inputs
         // proposal: TotalJ frame of PSpinInspiralRD
-        // inclination denotes the angle between the view direction 
-        // and J (J is constant during the evolution, J//z, both N and initial 
-        // L are in the x-z plane) and the spin coordinates are given wrt 
+        // inclination denotes the angle between the view direction
+        // and J (J is constant during the evolution, J//z, both N and initial
+        // L are in the x-z plane) and the spin coordinates are given wrt
         // initial ** L **.
         case SpinTaylorT4:
             /* Waveform-specific sanity checks */
@@ -562,9 +562,9 @@ int XLALSimInspiralChooseTDWaveform(
             E1x = cos(i);
             E1y = 0.;
             E1z = - sin(i);
-            /* Maximum PN amplitude order for precessing waveforms is 
+            /* Maximum PN amplitude order for precessing waveforms is
              * MAX_PRECESSING_AMP_PN_ORDER */
-            amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? 
+            amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ?
                     amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
             /* Call the waveform driver routine */
             ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, phiRef, v0, deltaT,
@@ -714,12 +714,10 @@ int XLALSimInspiralChooseTDWaveform(
                 XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
             /* Call the waveform driver routine */
             SpinAlignedEOBversion = 2;
-            ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef, 
+            ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
                     deltaT, m1, m2, f_min, r, i, S1z, S2z, SpinAlignedEOBversion);
             break;
 
-#if 0
-        DISABLE UNTIL SEOBNRV3 IS USABLE
         case SEOBNRv3:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
@@ -731,15 +729,11 @@ int XLALSimInspiralChooseTDWaveform(
             /* Call the waveform driver routine */
             spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
             spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
+            iTmp=i;
+            XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
             ret = XLALSimIMRSpinEOBWaveform(hplus, hcross, /*&epoch,*/ phiRef,
                     deltaT, m1, m2, f_min, r, i, spin1, spin2);
-            //SpinAlignedEOBversion = 2;
-            //ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
-            //        deltaT, m1, m2, f_min, r, i, S1z, S2z, SpinAlignedEOBversion);
-            //ret = XLALSimIMRSpinEOBWaveform(hplus, hcross, phiRef,
-            //        deltaT, m1, m2, f_min, r, i, spin1, spin2 );
             break;
-#endif
 
 	case HGimri:
 	     /* Waveform-specific sanity checks */
@@ -951,9 +945,9 @@ int XLALSimInspiralChooseFDWaveform(
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
-            /* Maximum PN amplitude order for precessing waveforms is 
+            /* Maximum PN amplitude order for precessing waveforms is
              * MAX_PRECESSING_AMP_PN_ORDER */
-            amplitudeO = 0; /* amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? 
+            amplitudeO = 0; /* amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ?
                     amplitudeO : MAX_PRECESSING_AMP_PN_ORDER */;
             /* Call the waveform driver routine */
             ret = XLALSimInspiralSpinTaylorF2(hptilde, hctilde, phiRef, deltaF,
@@ -1680,7 +1674,7 @@ int XLALSimInspiralTD(
  * applied cosmological "corrections" to m1 and m2 and regards r as a luminosity distance
  * then the redshift factor should again be set to zero.
  *
- * 
+ *
  * @note The parameters passed must be in SI units.
  */
 int XLALSimInspiralFD(
@@ -1752,7 +1746,7 @@ int XLALSimInspiralFD(
         fisco = 1.0 / (pow(9.0, 1.5) * LAL_PI * (m1 + m2) * LAL_MTSUN_SI / LAL_MSUN_SI);
         if (f_min > fisco)
             f_min = fisco;
-    
+
         /* upper bound on the chirp time starting at f_min */
         tchirp = XLALSimInspiralChirpTimeBound(f_min, m1, m2, S1z, S2z);
 
@@ -1799,7 +1793,7 @@ int XLALSimInspiralFD(
             deltaF = 1.0 / (chirplen * deltaT);
         else if (deltaF > 1.0 / (chirplen * deltaT))
             XLAL_PRINT_WARNING("Specified frequency interval of %g Hz is too large for a chirp of duration %g s", deltaF, chirplen * deltaT);
-        
+
         /* generate the waveform in the frequency domain starting at fstart */
         retval = XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef, deltaF, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, f_max, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
         if (retval < 0)
@@ -1942,7 +1936,7 @@ int XLALSimInspiralChooseWaveform(
 /** @} */
 
 /**
- * @name General Waveform Switching Mode Generation Routines 
+ * @name General Waveform Switching Mode Generation Routines
  * @{
  */
 
@@ -2203,7 +2197,7 @@ SphHarmTimeSeries *XLALSimInspiralModesTD(REAL8 phiRef, REAL8 deltaT, REAL8 m1, 
         ntaper = round((extra_time_fraction * tchirp + textra) / deltaT);
         for (j = 0; j < ntaper; ++j)
              hlm->mode->data->data[j] *= 0.5 - 0.5 * cos(j * LAL_PI / ntaper);
-    
+
         /* now high-pass filter the data at the original f_min value so that
          * the modes have negligible frequency content below that frequency;
          * note: this will cut off the low-frequency content of the m=1 mode */
@@ -2421,15 +2415,15 @@ int XLALSimInspiralPNPolarizationWaveforms(
     LAL_CHECK_CONSISTENT_TIME_SERIES(V, Phi, XLAL_FAILURE);
 
     /* Allocate polarization vectors and set to 0 */
-    *hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &V->epoch, 0.0, 
+    *hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &V->epoch, 0.0,
             V->deltaT, &lalStrainUnit, V->data->length );
-    *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &V->epoch, 0.0, 
+    *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &V->epoch, 0.0,
             V->deltaT, &lalStrainUnit, V->data->length );
     if ( ! hplus || ! hcross )
         XLAL_ERROR(XLAL_EFUNC);
-    memset((*hplus)->data->data, 0, (*hplus)->data->length 
+    memset((*hplus)->data->data, 0, (*hplus)->data->length
             * sizeof(*(*hplus)->data->data));
-    memset((*hcross)->data->data, 0, (*hcross)->data->length 
+    memset((*hcross)->data->data, 0, (*hcross)->data->length
             * sizeof(*(*hcross)->data->data));
 
     M = m1 + m2;
@@ -2439,9 +2433,9 @@ int XLALSimInspiralPNPolarizationWaveforms(
     dist = r / LAL_C_SI;   // r (m) / c (m/s) --> dist in units of seconds
     /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
     ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
-    
-    /* 
-     * cosines and sines of inclination between 
+
+    /*
+     * cosines and sines of inclination between
      * line of sight (N) and binary orbital angular momentum (L_N)
      */
     ci = cos(i);  	si = sin(i);
@@ -2453,12 +2447,12 @@ int XLALSimInspiralPNPolarizationWaveforms(
     for(idx = 0; idx < len; idx++)
     {
         /* Abbreviated names in lower case for time series at this sample */
-        phi = Phi->data->data[idx]; 	v = V->data->data[idx];   
+        phi = Phi->data->data[idx]; 	v = V->data->data[idx];
         v2 = v * v; 	v3 = v * v2;
 
-        /* 
-         * As explained in Blanchet et al, a phase shift can be applied 
-         * to make log terms vanish which would appear in the amplitude 
+        /*
+         * As explained in Blanchet et al, a phase shift can be applied
+         * to make log terms vanish which would appear in the amplitude
          * at 1.5PN and 2.5PN orders. This shift is given in Eq. (8.8)
          * We apply the shift only for the PN orders which need it.
          */
@@ -2494,7 +2488,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
 		 * These should match arXiv:0802.1249v3, which has the fix. */
                 hp3 = LAL_PI*dm*si*cos(phi)*(19./64. + ci2*5./16. - ci4/192.
                         + eta*(-19./96. + ci2*3./16. + ci4/96.)) + cos(2.*phi)
-                        * (-465497./11025. + (LAL_GAMMA*856./105. 
+                        * (-465497./11025. + (LAL_GAMMA*856./105.
                         - 2.*LAL_PI*LAL_PI/3. + log(16.*v2)*428./105.)
                         * (1. + ci2) - ci2*3561541./88200. - ci4*943./720.
                         + ci6*169./720. - ci8/360. + eta*(2209./360.
@@ -2506,122 +2500,122 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         + ci8*7./360.)) + LAL_PI*dm*si*cos(3.*phi)*(-1971./128.
                         - ci2*135./16. + ci4*243./128. + eta*(567./64.
                         - ci2*81./16. - ci4*243./64.)) + si2*cos(4.*phi)
-                        * (-2189./210. + ci2*1123./210. + ci4*56./9. 
+                        * (-2189./210. + ci2*1123./210. + ci4*56./9.
                         - ci6*16./45. + eta*(6271./90. - ci2*1969./90.
                         - ci4*1432./45. + ci6*112./45.) + eta2*(-3007./27.
                         + ci2*3493./135. + ci4*1568./45. - ci6*224./45.)
                         + eta3*(161./6. - ci2*1921./90. - ci4*184./45.
                         + ci6*112./45.)) + dm*cos(5.*phi)*(LAL_PI*3125./384.
                         * si3*(1. + ci2)*(1. - 2.*eta)) + si4*cos(6.*phi)
-                        * (1377./80. + ci2*891./80. - ci4*729./280. 
+                        * (1377./80. + ci2*891./80. - ci4*729./280.
                         + eta*(-7857./80. - ci2*891./16. + ci4*729./40.)
                         + eta2*(567./4. + ci2*567./10. - ci4*729./20.)
-                        + eta3*(-729./16. - ci2*243./80. + ci4*729./40.)) 
-                        + cos(8.*phi)*(-1024./315.*si6*(1. + ci2)*(1. - 7.*eta 
+                        + eta3*(-729./16. - ci2*243./80. + ci4*729./40.))
+                        + cos(8.*phi)*(-1024./315.*si6*(1. + ci2)*(1. - 7.*eta
                         + 14.*eta2 - 7.*eta3)) + dm*si*sin(phi)*(-2159./40320.
                         - log(2.)*19./32. + (-95./224. - log(2.)*5./8.)*ci2
                         + (181./13440. + log(2.)/96.)*ci4 + eta*(1369./160.
                         + log(2.)*19./48. + (-41./48. - log(2.)*3./8.)*ci2
                         + (-313./480. - log(2.)/48.)*ci4)) + sin(2.*phi)
                         * (-428.*LAL_PI/105.*(1. + ci2)) + dm*si*sin(3.*phi)
-                        * (205119./8960. - log(3./2.)*1971./64. 
+                        * (205119./8960. - log(3./2.)*1971./64.
                         + (1917./224. - log(3./2.)*135./8.)*ci2
                         + (-43983./8960. + log(3./2.)*243./64.)*ci4 + eta
-                        * (-54869./960. + log(3./2.)*567./32. 
-                        + (-923./80. - log(3./2.)*81./8.)*ci2 
-                        + (41851./2880. - log(3./2.)*243./32.)*ci4)) 
-                        + dm*si3*(1. + ci2)*sin(5.*phi)*(-113125./5376. 
-                        + log(5./2.)*3125./192. 
+                        * (-54869./960. + log(3./2.)*567./32.
+                        + (-923./80. - log(3./2.)*81./8.)*ci2
+                        + (41851./2880. - log(3./2.)*243./32.)*ci4))
+                        + dm*si3*(1. + ci2)*sin(5.*phi)*(-113125./5376.
+                        + log(5./2.)*3125./192.
                         + eta*(17639./320. - log(5./2.)*3125./96.));
                 hc3 = dm*si*ci*cos(phi)*(11617./20160. + log(2.)*21./16.
-                        + (-251./2240. - log(2.)*5./48.)*ci2 
+                        + (-251./2240. - log(2.)*5./48.)*ci2
                         + eta*(-2419./240. - log(2.)*5./24.
                         + (727./240. + log(2.)*5./24.)*ci2)) + ci*cos(2.*phi)
                         * (LAL_PI*856./105.) + dm*si*ci*cos(3.*phi)
                         * (-36801./896. + log(3./2.)*1809./32.
-                        + (65097./4480. - log(3./2.)*405./32.)*ci2 
-                        + eta*(28445./288. - log(3./2.)*405./16. 
-                        + (-7137./160. + log(3./2.)*405./16.)*ci2)) 
-                        + dm*si3*ci*cos(5.*phi)*(113125./2688. 
-                        - log(5./2.)*3125./96. + eta*(-17639./160. 
+                        + (65097./4480. - log(3./2.)*405./32.)*ci2
+                        + eta*(28445./288. - log(3./2.)*405./16.
+                        + (-7137./160. + log(3./2.)*405./16.)*ci2))
+                        + dm*si3*ci*cos(5.*phi)*(113125./2688.
+                        - log(5./2.)*3125./96. + eta*(-17639./160.
                         + log(5./2.)*3125./48.)) + LAL_PI*dm*si*ci*sin(phi)
                         * (21./32. - ci2*5./96. + eta*(-5./48. + ci2*5./48.))
-                        + ci*sin(2.*phi)*(-3620761./44100. 
+                        + ci*sin(2.*phi)*(-3620761./44100.
                         + LAL_GAMMA*1712./105. - 4.*LAL_PI*LAL_PI/3.
-                        + log(16.*v2)*856./105. - ci2*3413./1260. 
-                        + ci4*2909./2520. - ci6/45. + eta*(743./90. 
-                        - 41.*LAL_PI*LAL_PI/48. + ci2*3391./180. 
+                        + log(16.*v2)*856./105. - ci2*3413./1260.
+                        + ci4*2909./2520. - ci6/45. + eta*(743./90.
+                        - 41.*LAL_PI*LAL_PI/48. + ci2*3391./180.
                         - ci4*2287./360. + ci6*7./45.) + eta2*(7919./270.
-                        - ci2*5426./135. + ci4*382./45. - ci6*14./45.) 
+                        - ci2*5426./135. + ci4*382./45. - ci6*14./45.)
                         + eta3*(-6457./1620. + ci2*1109./180. - ci4*281./120.
                         + ci6*7./45.)) + LAL_PI*dm*si*ci*sin(3.*phi)
-                        * (-1809./64. + ci2*405./64. + eta*(405./32. 
+                        * (-1809./64. + ci2*405./64. + eta*(405./32.
                         - ci2*405./32.)) + si2*ci*sin(4.*phi)*(-1781./105.
-                        + ci2*1208./63. - ci4*64./45. + eta*(5207./45. 
+                        + ci2*1208./63. - ci4*64./45. + eta*(5207./45.
                         - ci2*536./5. + ci4*448./45.) + eta2*(-24838./135.
                         + ci2*2224./15. - ci4*896./45.) + eta3*(1703./45.
                         - ci2*1976./45. + ci4*448./45.)) + dm*sin(5.*phi)
-                        * (3125.*LAL_PI/192.*si3*ci*(1. - 2.*eta)) 
-                        + si4*ci*sin(6.*phi)*(9153./280. - ci2*243./35. 
-                        + eta*(-7371./40. + ci2*243./5.) + eta2*(1296./5. 
+                        * (3125.*LAL_PI/192.*si3*ci*(1. - 2.*eta))
+                        + si4*ci*sin(6.*phi)*(9153./280. - ci2*243./35.
+                        + eta*(-7371./40. + ci2*243./5.) + eta2*(1296./5.
                         - ci2*486./5.) + eta3*(-3159./40. + ci2*243./5.))
-                        + sin(8.*phi)*(-2048./315.*si6*ci*(1. - 7.*eta 
+                        + sin(8.*phi)*(-2048./315.*si6*ci*(1. - 7.*eta
                         + 14.*eta2 - 7.*eta3));
             /* case LAL_PNORDER_TWO_POINT_FIVE: */
             case 5:
-                hp25 = cos(phi)*si*dm*(1771./5120. - ci2*1667./5120. 
-                        + ci4*217./9216. - ci6/9126. + eta*(681./256. 
+                hp25 = cos(phi)*si*dm*(1771./5120. - ci2*1667./5120.
+                        + ci4*217./9216. - ci6/9126. + eta*(681./256.
                         + ci2*13./768. - ci4*35./768. + ci6/2304.)
                         + eta2*(-3451./9216. + ci2*673./3072. - ci4*5./9216.
-                        - ci6/3072.)) + cos(2.*phi)*LAL_PI*(19./3. + 3.*ci2 
+                        - ci6/3072.)) + cos(2.*phi)*LAL_PI*(19./3. + 3.*ci2
                         - ci4*2./3. + eta*(-16./3. + ci2*14./3. + 2.*ci4))
-                        + cos(3.*phi)*si*dm*(3537./1024. - ci2*22977./5120. 
-                        - ci4*15309./5120. + ci6*729./5120. 
-                        + eta*(-23829./1280. + ci2*5529./1280. 
-                        + ci4*7749./1280. - ci6*729./1280.) 
-                        + eta2*(29127./5120. - ci2*27267./5120. 
+                        + cos(3.*phi)*si*dm*(3537./1024. - ci2*22977./5120.
+                        - ci4*15309./5120. + ci6*729./5120.
+                        + eta*(-23829./1280. + ci2*5529./1280.
+                        + ci4*7749./1280. - ci6*729./1280.)
+                        + eta2*(29127./5120. - ci2*27267./5120.
                         - ci4*1647./5120. + ci6*2187./5120.)) + cos(4.*phi)
                         * (-16.*LAL_PI/3.*(1. + ci2)*si2*(1. - 3.*eta))
-                        + cos(5.*phi)*si*dm*(-108125./9216. + ci2*40625./9216. 
-                        + ci4*83125./9216. - ci6*15625./9216. 
+                        + cos(5.*phi)*si*dm*(-108125./9216. + ci2*40625./9216.
+                        + ci4*83125./9216. - ci6*15625./9216.
                         + eta*(8125./256. - ci2*40625./2304. - ci4*48125./2304.
-                        + ci6*15625./2304.) + eta2*(-119375./9216. 
-                        + ci2*40625./3072. + ci4*44375./9216. 
+                        + ci6*15625./2304.) + eta2*(-119375./9216.
+                        + ci2*40625./3072. + ci4*44375./9216.
                         - ci6*15625./3072.)) + cos(7.*phi)*dm
-                        * (117649./46080.*si5*(1. + ci2)*(1. - 4.*eta 
-                        + 3.*eta2)) + sin(2.*phi)*(-9./5. + ci2*14./5. 
-                        + ci4*7./5. + eta*(32. + ci2*56./5. - ci4*28./5.)) 
-                        + sin(4.*phi)*si2*(1. + ci2)*(56./5. - 32.*log(2.)/3. 
+                        * (117649./46080.*si5*(1. + ci2)*(1. - 4.*eta
+                        + 3.*eta2)) + sin(2.*phi)*(-9./5. + ci2*14./5.
+                        + ci4*7./5. + eta*(32. + ci2*56./5. - ci4*28./5.))
+                        + sin(4.*phi)*si2*(1. + ci2)*(56./5. - 32.*log(2.)/3.
                         + eta*(-1193./30. + 32.*log(2.)));
                 /* below would have a constant memory term of si2*ci*eta*6./5. */
-                hc25 = cos(2.*phi)*ci*(2. - ci2*22./5. + eta*(-282./5. 
-                        + ci2*94./5.)) + cos(4.*phi)*ci*si2*(-112./5. 
+                hc25 = cos(2.*phi)*ci*(2. - ci2*22./5. + eta*(-282./5.
+                        + ci2*94./5.)) + cos(4.*phi)*ci*si2*(-112./5.
                         + 64.*log(2.)/3. + eta*(1193./15. - 64.*log(2.)))
-                        + sin(phi)*si*ci*dm*(-913./7680. + ci2*1891./11520. 
-                        - ci4*7./4608. + eta*(1165./384. - ci2*235./576. 
+                        + sin(phi)*si*ci*dm*(-913./7680. + ci2*1891./11520.
+                        - ci4*7./4608. + eta*(1165./384. - ci2*235./576.
                         + ci4*7./1152.) + eta2*(-1301./4608. + ci2*301./2304.
-                        - ci4*7./1536.)) + sin(2.*phi)*LAL_PI*ci*(34./3. 
-                        - ci2*8./3. + eta*(-20./3. + 8.*ci2)) 
+                        - ci4*7./1536.)) + sin(2.*phi)*LAL_PI*ci*(34./3.
+                        - ci2*8./3. + eta*(-20./3. + 8.*ci2))
                         + sin(3.*phi)*si*ci*dm*(12501./2560. - ci2*12069./1280.
                         + ci4*1701./2560. + eta*(-19581./640. + ci2*7821./320.
-                        - ci4*1701./640.) + eta2*(18903./2560. 
-                        - ci2*11403./1280. + ci4*5103./2560.)) 
+                        - ci4*1701./640.) + eta2*(18903./2560.
+                        - ci2*11403./1280. + ci4*5103./2560.))
                         + sin(4.*phi)*si2*ci*(-32.*LAL_PI/3.*(1. - 3.*eta))
                         + sin(5.*phi)*si*ci*dm*(-101875./4608. + ci2*6875./256.
-                        - ci4*21875./4608. + eta*(66875./1152. 
-                        - ci2*44375./576. + ci4*21875./1152.) 
-                        + eta2*(-100625./4608. + ci2*83125./2304. 
+                        - ci4*21875./4608. + eta*(66875./1152.
+                        - ci2*44375./576. + ci4*21875./1152.)
+                        + eta2*(-100625./4608. + ci2*83125./2304.
                         - ci4*21875./1536.)) + sin(7.*phi)*si5*ci*dm
                         * (117649./23040.*(1. - 4.*eta + 3.*eta2));
             /* case LAL_PNORDER_TWO: */
             case 4:
-                hp2 = cos(phi)*LAL_PI*si*dm*(-5./8. - ci2/8.) 
-                        + cos(2.*phi)*(11./60. + ci2*33./10. + ci4*29./24. 
-                        - ci6/24. + eta*(353./36. - 3.*ci2 - ci4*251./72. 
-                        + ci6*5./24.) + eta2*(-49./12. + ci2*9./2. 
+                hp2 = cos(phi)*LAL_PI*si*dm*(-5./8. - ci2/8.)
+                        + cos(2.*phi)*(11./60. + ci2*33./10. + ci4*29./24.
+                        - ci6/24. + eta*(353./36. - 3.*ci2 - ci4*251./72.
+                        + ci6*5./24.) + eta2*(-49./12. + ci2*9./2.
                         - ci4*7./24. - ci6*5./24.)) + cos(3.*phi)*LAL_PI*si*dm
-                        * (27./8.*(1 + ci2)) + cos(4.*phi)*si2*2./15.*(59. 
-                        + ci2*35. - ci4*8. 
+                        * (27./8.*(1 + ci2)) + cos(4.*phi)*si2*2./15.*(59.
+                        + ci2*35. - ci4*8.
                         - eta*5./3.*(131. + 59.*ci2 + 24.*ci4)
                         + eta2*5.*(21. - 3.*ci2 - 8.*ci4))
                         + cos(6.*phi)*(-81./40.*si4*(1. + ci2)
@@ -2629,44 +2623,44 @@ int XLALSimInspiralPNPolarizationWaveforms(
                         * (11./40. + 5.*log(2)/4. + ci2*(7./40. + log(2)/4.))
                         + sin(3.*phi)*si*dm*((-189./40. + 27./4.*log(3./2.))
                         * (1. + ci2));
-                hc2 = cos(phi)*si*ci*dm*(-9./20. - 3./2.*log(2.)) 
+                hc2 = cos(phi)*si*ci*dm*(-9./20. - 3./2.*log(2.))
                         + cos(3.*phi)*si*ci*dm*(189./20. - 27./2.*log(3./2.))
-                        - sin(phi)*si*ci*dm*3.*LAL_PI/4. 
+                        - sin(phi)*si*ci*dm*3.*LAL_PI/4.
                         + sin(2.*phi)*ci*(17./15. + ci2*113./30. - ci4/4.
                         + eta*(143./9. - ci2*245./18. + ci4*5./4.)
                         + eta2*(-14./3. + ci2*35./6. - ci4*5./4.))
                         + sin(3.*phi)*si*ci*dm*27.*LAL_PI/4.
-                        + sin(4.*phi)*ci*si2*4./15.*(55. - 12.*ci2 
+                        + sin(4.*phi)*ci*si2*4./15.*(55. - 12.*ci2
                         - eta*5./3.*(119. - 36.*ci2)
                         + eta2*5.*(17. - 12.*ci2))
                         + sin(6.*phi)*ci*(-81./20.*si4
                         * (1. - 5.*eta + 5.*eta2));
             /* case LAL_PNORDER_ONE_POINT_FIVE: */
             case 3:
-                hp15 = cos(phi)*si*dm*(19./64. + ci2*5./16. - ci4/192. 
+                hp15 = cos(phi)*si*dm*(19./64. + ci2*5./16. - ci4/192.
                         + eta*(-49./96. + ci2/8. + ci4/96.))
                         + cos(2.*phi)*(-2.*LAL_PI*(1. + ci2))
-                        + cos(3.*phi)*si*dm*(-657./128. - ci2*45./16. 
-                        + ci4*81./128. + eta*(225./64. - ci2*9./8. 
+                        + cos(3.*phi)*si*dm*(-657./128. - ci2*45./16.
+                        + ci4*81./128. + eta*(225./64. - ci2*9./8.
                         - ci4*81./64.)) + cos(5.*phi)*si*dm*(625./384.*si2
                         * (1. + ci2)*(1. - 2.*eta));
-                hc15 = sin(phi)*si*ci*dm*(21./32. - ci2*5./96. 
-                        + eta*(-23./48. + ci2*5./48.)) 
+                hc15 = sin(phi)*si*ci*dm*(21./32. - ci2*5./96.
+                        + eta*(-23./48. + ci2*5./48.))
                         - 4.*LAL_PI*ci*sin(2.*phi) + sin(3.*phi)*si*ci*dm
-                        * (-603./64. + ci2*135./64. 
-                        + eta*(171./32. - ci2*135./32.)) 
+                        * (-603./64. + ci2*135./64.
+                        + eta*(171./32. - ci2*135./32.))
                         + sin(5.*phi)*si*ci*dm*(625./192.*si2*(1. - 2.*eta));
             /* case LAL_PNORDER_ONE: */
             case 2:
-                hp1 = cos(2.*phi)*(19./6. + 3./2.*ci2 - ci4/3. 
-                        + eta*(-19./6. + ci2*11./6. + ci4)) 
+                hp1 = cos(2.*phi)*(19./6. + 3./2.*ci2 - ci4/3.
+                        + eta*(-19./6. + ci2*11./6. + ci4))
                         - cos(4.*phi) * (4./3.*si2*(1. + ci2)*(1. - 3.*eta));
-                hc1 = sin(2.*phi)*ci*(17./3. - ci2*4./3. 
-                        + eta*(-13./3. + 4.*ci2)) 
+                hc1 = sin(2.*phi)*ci*(17./3. - ci2*4./3.
+                        + eta*(-13./3. + 4.*ci2))
                         + sin(4.*phi)*ci*si2*(-8./3.*(1. - 3.*eta));
             /*case LAL_PNORDER_HALF:*/
             case 1:
-                hp05 = - si*dm*(cos(phi)*(5./8. + ci2/8.) 
+                hp05 = - si*dm*(cos(phi)*(5./8. + ci2/8.)
                         - cos(3.*phi)*(9./8. + 9.*ci2/8.));
                 hc05 = si*ci*dm*(-sin(phi)*3./4. + sin(3.*phi)*9./4.);
             case 0:
@@ -2683,11 +2677,11 @@ int XLALSimInspiralPNPolarizationWaveforms(
         } /* End switch on ampO */
 
         /* Fill the output polarization arrays */
-        (*hplus)->data->data[idx] = ampfac * v2 * ( hp0 + v * ( hp05 
-                + v * ( hp1 + v * ( hp15 + v * ( hp2 + v * ( hp25 + v * hp3 
+        (*hplus)->data->data[idx] = ampfac * v2 * ( hp0 + v * ( hp05
+                + v * ( hp1 + v * ( hp15 + v * ( hp2 + v * ( hp25 + v * hp3
                 ) ) ) ) ) );
-        (*hcross)->data->data[idx] = ampfac * v2 * ( hc0 + v * ( hc05 
-                + v * ( hc1 + v * ( hc15 + v * ( hc2 + v * ( hc25 + v * hc3 
+        (*hcross)->data->data[idx] = ampfac * v2 * ( hc0 + v * ( hc05
+                + v * ( hc1 + v * ( hc15 + v * ( hc2 + v * ( hc25 + v * hc3
                 ) ) ) ) ) );
 
     } /* end loop over time series samples idx */
@@ -2793,16 +2787,16 @@ int XLALSimInspiralPolarizationsFromSphHarmTimeSeries(
  *
  * Implements Equations (3.7a) - (3.7c) and Equations (B2a) - (B2d), (B4a), (B4b) of:
  * Sashwat Tanay, Maria Haney, and Achamveedu Gopakumar,
- * \"Frequency and time domain inspiral waveforms from comparable 
+ * \"Frequency and time domain inspiral waveforms from comparable
  * mass compact binaries in eccentric orbits\", (2015);
  * arXiv:TBD
  * https://dcc.ligo.org/P1500148-v1
- * 
+ *
  * (note that above equations use x = v^2 as the PN expansion parameter)
- * 
+ *
  * as well as Equations (6a) and (6b) of:
  * Thibault Damour, Achamveedu Gopakumar, and Bala R. Iyer,
- * \"Phasing of gravitational waves from inspiralling eccentric 
+ * \"Phasing of gravitational waves from inspiralling eccentric
  * binaries\", Phys. Rev. D 70 064028 (2004);
  * arXiv:gr-qc/0404128.
  */
@@ -2838,17 +2832,17 @@ int XLALSimInspiralPNPolarizationWaveformsEccentric(
     LAL_CHECK_CONSISTENT_TIME_SERIES(V, Ecc, XLAL_FAILURE);
     LAL_CHECK_CONSISTENT_TIME_SERIES(V, U, XLAL_FAILURE);
     LAL_CHECK_CONSISTENT_TIME_SERIES(V, Phi, XLAL_FAILURE);
-    
+
     /* Allocate polarization vectors and set to 0 */
-    *hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &V->epoch, 0.0, 
+    *hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &V->epoch, 0.0,
             V->deltaT, &lalStrainUnit, V->data->length );
-    *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &V->epoch, 0.0, 
+    *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &V->epoch, 0.0,
             V->deltaT, &lalStrainUnit, V->data->length );
     if ( ! hplus || ! hcross )
         XLAL_ERROR(XLAL_EFUNC);
-    memset((*hplus)->data->data, 0, (*hplus)->data->length 
+    memset((*hplus)->data->data, 0, (*hplus)->data->length
             * sizeof(*(*hplus)->data->data));
-    memset((*hcross)->data->data, 0, (*hcross)->data->length 
+    memset((*hcross)->data->data, 0, (*hcross)->data->length
             * sizeof(*(*hcross)->data->data));
 
     mt = (m1 + m2)/LAL_MSUN_SI;
@@ -2856,42 +2850,42 @@ int XLALSimInspiralPNPolarizationWaveformsEccentric(
     dist = r / LAL_C_SI;   // r (m) / c (m/s) --> dist in units of seconds
     /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
     ampfac = mt * LAL_MTSUN_SI * eta / dist;
-    
-    /* 
-     * cosines and sines of inclination between 
+
+    /*
+     * cosines and sines of inclination between
      * line of sight (N) and binary orbital angular momentum (L_N)
      */
     ci = cos(i);  	si = sin(i);
     ci2 = ci*ci;
     si2 = si*si;
 
-    /* loop over time steps and compute first radial and angular orbital variables, 
+    /* loop over time steps and compute first radial and angular orbital variables,
      * then the waveform polarizations h+ and hx */
     len = V->data->length;
     for(idx = 0; idx < len; idx++)
     {
         /* Abbreviated names in lower case for time series at this sample */
-        phi = Phi->data->data[idx]; 	et = Ecc->data->data[idx];	u = U->data->data[idx];	v = V->data->data[idx];   
+        phi = Phi->data->data[idx]; 	et = Ecc->data->data[idx];	u = U->data->data[idx];	v = V->data->data[idx];
 
 	/* Some abbreviated functions in terms of u and et. */
 	dt	= 1. - et * cos(u);
 	OTS	= sqrt(1. - et * et);
-	
+
 	/*
-         * First set the functions for the dimensionless orbital variables 
-	 * (1/c)*dr/dt, (r/c)*dphi/dt, Z = G*m/(r*c^2) to 0. 
-	 * Then use a switch to set proper non-zero values 
+         * First set the functions for the dimensionless orbital variables
+	 * (1/c)*dr/dt, (r/c)*dphi/dt, Z = G*m/(r*c^2) to 0.
+	 * Then use a switch to set proper non-zero values
          * up to order ph_O for the contributions to the dimensionless variables. Note we
          * fall through the PN orders and break only after Newt. order
          */
-	
+
 	rdot = rphidot = Z = 0;
-	
+
 	/* Common factors in PN accurate expressions for orbital variables */
 	CF_rdot = et * v*sin(u)/dt;
 	CF_rphidot = OTS * v / dt;
 	CF_Z = pow(v, 2.0) / dt;
-	
+
 	switch( ph_O )
         {
 	    /* case LAL_PNORDER_FOUR: */
@@ -2923,57 +2917,57 @@ int XLALSimInspiralPNPolarizationWaveformsEccentric(
             case 4:
 		r_sc 	= 1.
 			  //==============================================================================
-			  + ((-24. + dt * (18. - 7. * eta) + 9. * eta + pow(et, 2.0) * (24. - 9. * eta 
+			  + ((-24. + dt * (18. - 7. * eta) + 9. * eta + pow(et, 2.0) * (24. - 9. * eta
 			  + dt * (-6. + 7. * eta))) * pow(v, 2.0)) / (6. * dt * pow(OTS, 2.0))
 			  //==============================================================================
-			  + ((-288. + 765. * eta - 27. * pow(eta,  2.0) 
-			  + pow(et, 4.0) * (261. * eta - 27 * pow(eta, 2.0)) 
-			  + pow(et, 2.0) * (288. - 1026. * eta + 54. * pow(eta, 2.0)) 
-			  + (-540. + pow(et, 2.0) * (540. - 216. * eta) 
-			  + 216. * eta) * OTS + dt * (648. - 567. * eta + 35. * pow(eta, 2.0) 
-			  + pow(et, 2.0) * (468. + 150. * eta - 70. * pow(eta, 2.0)) 
-			  + pow(et, 4.0) * (72. - 231. * eta + 35. * pow(eta, 2.0)) 
-			  + (180. - 72. * eta + pow(et, 2.0) * (-180. + 72. * eta)) * OTS)) * pow(v, 4.0)) 
+			  + ((-288. + 765. * eta - 27. * pow(eta,  2.0)
+			  + pow(et, 4.0) * (261. * eta - 27 * pow(eta, 2.0))
+			  + pow(et, 2.0) * (288. - 1026. * eta + 54. * pow(eta, 2.0))
+			  + (-540. + pow(et, 2.0) * (540. - 216. * eta)
+			  + 216. * eta) * OTS + dt * (648. - 567. * eta + 35. * pow(eta, 2.0)
+			  + pow(et, 2.0) * (468. + 150. * eta - 70. * pow(eta, 2.0))
+			  + pow(et, 4.0) * (72. - 231. * eta + 35. * pow(eta, 2.0))
+			  + (180. - 72. * eta + pow(et, 2.0) * (-180. + 72. * eta)) * OTS)) * pow(v, 4.0))
 			  / (72. * dt * pow(OTS, 4.0));
 			  //==============================================================================
 		phidot = 1.
 			  //===========================================================================================
 			  + (-1. + dt + pow(et, 2.0)) * (-4. + eta) * pow(v, 2.0) / (dt * pow(OTS, 2.0))
 			  //===========================================================================================
-			  + (-6. * pow(1. - pow(et, 2.0), 3.0) * eta * (3. + 2. * eta) 
+			  + (-6. * pow(1. - pow(et, 2.0), 3.0) * eta * (3. + 2. * eta)
 			  + pow(dt, 3.0) * (42. + 22. * eta + 8.* pow(eta, 2.0)
-			  + pow(et, 2.0) * (-147. + 8. * eta - 14. * pow(eta, 2.0))) 
-			  + dt * (108. + 63. * eta + 33. * pow(eta, 2.0) 
-			  + pow(et, 2.0) * (-216. - 126. * eta - 66. * pow(eta, 2.0)) 
-			  + pow(et, 4.0) * (108. + 63. * eta + 33. * pow(eta, 2.0))) 
-			  + pow(dt, 2.0) * (-240. - 31. * eta - 29. * pow(eta, 2.0) 
-			  + pow(et, 4.0) * (-48. + 17. * eta - 17. * pow(eta, 2.0)) 
-			  + pow(et, 2.0) * (288. + 14. * eta + 46. * pow(eta,2))) 
-			  + 18. * pow(dt, 2.0) * (-2. + dt + 2. * pow(et, 2.0)) * (-5. + 2. * eta) * OTS) * pow(v, 4.0) 
+			  + pow(et, 2.0) * (-147. + 8. * eta - 14. * pow(eta, 2.0)))
+			  + dt * (108. + 63. * eta + 33. * pow(eta, 2.0)
+			  + pow(et, 2.0) * (-216. - 126. * eta - 66. * pow(eta, 2.0))
+			  + pow(et, 4.0) * (108. + 63. * eta + 33. * pow(eta, 2.0)))
+			  + pow(dt, 2.0) * (-240. - 31. * eta - 29. * pow(eta, 2.0)
+			  + pow(et, 4.0) * (-48. + 17. * eta - 17. * pow(eta, 2.0))
+			  + pow(et, 2.0) * (288. + 14. * eta + 46. * pow(eta,2)))
+			  + 18. * pow(dt, 2.0) * (-2. + dt + 2. * pow(et, 2.0)) * (-5. + 2. * eta) * OTS) * pow(v, 4.0)
 			  / (12. * pow(dt, 3.0) * pow(OTS, 4.0));
 			  //===========================================================================================
 		rdot_sc = 1.
 			  //==========================================================================================
 			  + (-7. * eta + pow(et, 2.0) * (-6. + 7. * eta)) * pow(v, 2.0) / (6. * pow(OTS, 2.0))
 			  //==========================================================================================
-			  + (-135. * eta + 9. * pow(eta, 2.0) + pow(et, 2.0) * (405. * eta - 27. * pow(eta, 2.0)) 
-			  + pow(et, 6.0) * (135. * eta - 9. * pow(eta, 2.0)) 
-			  + pow(et, 4.0) * (-405. * eta + 27 * pow(eta, 2.0)) 
-			  + dt * (-540. + 351. * eta - 9. * pow(eta, 2.0) 
+			  + (-135. * eta + 9. * pow(eta, 2.0) + pow(et, 2.0) * (405. * eta - 27. * pow(eta, 2.0))
+			  + pow(et, 6.0) * (135. * eta - 9. * pow(eta, 2.0))
+			  + pow(et, 4.0) * (-405. * eta + 27 * pow(eta, 2.0))
+			  + dt * (-540. + 351. * eta - 9. * pow(eta, 2.0)
 			  + pow(et, 4.0) * (-540. + 351. * eta - 9. * pow(eta, 2.0))
-			  + pow(et, 2.0) * (1080. - 702. * eta + 18. * pow(eta, 2.0))) 
-			  + pow(dt, 3.0) * (-324. + 189. * eta + 35. * pow(eta, 2.0) 
-			  + pow(et, 2.0) * (-234. + 366. * eta - 70. * pow(eta, 2.0)) 
-			  + pow(et, 4.0) * (72. - 231. * eta + 35. * pow(eta, 2.0))) 
-			  - 36 * pow(dt, 2.0) * (3. + dt) * (1 - pow(et, 2.0)) * (-5. + 2. * eta) * OTS) * pow(v, 4.0) 
+			  + pow(et, 2.0) * (1080. - 702. * eta + 18. * pow(eta, 2.0)))
+			  + pow(dt, 3.0) * (-324. + 189. * eta + 35. * pow(eta, 2.0)
+			  + pow(et, 2.0) * (-234. + 366. * eta - 70. * pow(eta, 2.0))
+			  + pow(et, 4.0) * (72. - 231. * eta + 35. * pow(eta, 2.0)))
+			  - 36 * pow(dt, 2.0) * (3. + dt) * (1 - pow(et, 2.0)) * (-5. + 2. * eta) * OTS) * pow(v, 4.0)
 			  / (72. * pow(dt, 3.0) * pow(OTS, 4.0));
-			  //==========================================================================================		
+			  //==========================================================================================
                 break;
             /* case LAL_PNORDER_ONE_POINT_FIVE: */
             case 3:
 		r_sc 	= 1.
 			  //===========================================================================
-			  + ((-24. + dt * (18. - 7. * eta) + 9. * eta + pow(et, 2.0) * (24. - 9. * eta 
+			  + ((-24. + dt * (18. - 7. * eta) + 9. * eta + pow(et, 2.0) * (24. - 9. * eta
 			  + dt * (-6. + 7. * eta))) * pow(v, 2.0)) / (6. * dt * pow(OTS, 2.0));
 			  //===========================================================================
 		phidot	= 1.
@@ -2989,7 +2983,7 @@ int XLALSimInspiralPNPolarizationWaveformsEccentric(
             case 2:
 		r_sc 	= 1.
 			  //===========================================================================
-			  + ((-24. + dt * (18. - 7. * eta) + 9. * eta + pow(et, 2.0) * (24. - 9. * eta 
+			  + ((-24. + dt * (18. - 7. * eta) + 9. * eta + pow(et, 2.0) * (24. - 9. * eta
 			  + dt * (-6. + 7. * eta))) * pow(v, 2.0)) / (6. * dt * pow(OTS, 2.0));
 			  //===========================================================================
 		phidot	= 1.
@@ -3019,12 +3013,12 @@ int XLALSimInspiralPNPolarizationWaveformsEccentric(
                 XLAL_ERROR(XLAL_EINVAL);
                 break;
         }
-        
+
         /* Dimensionless rdot/c, (r/c)*phidot, Z = G*m/(r*c^2) entering the h+/x coefficients*/
         rdot = CF_rdot * rdot_sc;
 	rphidot = CF_rphidot * r_sc * phidot;
         Z = CF_Z/r_sc;
-	
+
         /*
          * First set all h+/x coefficients to 0. Then use a switch to
          * set proper non-zero values up to order ampO. Note we
@@ -3151,7 +3145,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
     REAL8 nx2, ny2, nz2, nz3, lx2, ly2, lz2, lz3;
     REAL8 hplus0, hcross0, hplus05, hcross05, hplus1, hcross1;
     REAL8 hplus15, hcross15, hplusSpin1, hcrossSpin1;
-    REAL8 hplusSpin15, hcrossSpin15, hplusTail15, hcrossTail15; 
+    REAL8 hplusSpin15, hcrossSpin15, hplusTail15, hcrossTail15;
     REAL8 M, eta, dm, phi, v, v2, dist, ampfac, logfac = 0.;
     INT4 idx, len;
 
@@ -3185,15 +3179,15 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
     LAL_CHECK_CONSISTENT_TIME_SERIES(V, E1z, 	XLAL_FAILURE);
 
     /* Allocate polarization vectors and set to 0 */
-    *hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &V->epoch, 
+    *hplus = XLALCreateREAL8TimeSeries( "H_PLUS", &V->epoch,
             0.0, V->deltaT, &lalStrainUnit, V->data->length );
-    *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &V->epoch, 
+    *hcross = XLALCreateREAL8TimeSeries( "H_CROSS", &V->epoch,
             0.0, V->deltaT, &lalStrainUnit, V->data->length );
     if ( ! hplus || ! hcross )
         XLAL_ERROR(XLAL_EFUNC);
-    memset((*hplus)->data->data, 0, 
+    memset((*hplus)->data->data, 0,
             (*hplus)->data->length*sizeof(*(*hplus)->data->data));
-    memset((*hcross)->data->data, 0, 
+    memset((*hcross)->data->data, 0,
             (*hcross)->data->length*sizeof(*(*hcross)->data->data));
 
     M = m1 + m2;
@@ -3202,7 +3196,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
     dist = r / LAL_C_SI;   // r (m) / c (m/s) --> dist in units of seconds
     /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
     ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
-    
+
     /* loop over time steps and compute polarizations h+ and hx */
     len = V->data->length;
     for(idx = 0; idx < len; idx++)
@@ -3235,7 +3229,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
         nx2 = nx*nx;	ny2 = ny*ny;	nz2 = nz*nz;	nz3 = nz*nz2;
         lx2 = lx*lx;	ly2 = ly*ly;	lz2 = lz*lz;	lz3 = lz*lz2;
 
-        /* 
+        /*
          * First set all h+/x coefficients to 0. Then use a switch to
          * set proper non-zero values up to order ampO. Note we
          * fall through the PN orders and break only after Newt. order
@@ -3265,92 +3259,92 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
             /*case LAL_PNORDER_ONE_POINT_FIVE:*/
             case 3:
                 /* 1.5PN non-spinning amp. corrections */
-                hplus15 = (dm*(2*lx*nx*nz*(-95 + 90*lz2 - 65*nz2 
+                hplus15 = (dm*(2*lx*nx*nz*(-95 + 90*lz2 - 65*nz2
                         - 2*eta*(-9 + 90*lz2 - 65*nz2)) - 2*ly*ny*nz
                         * (-95 + 90*lz2 - 65*nz2 - 2*eta*(-9 + 90*lz2 - 65*nz2))
-                        + 6*lx2*lz*(13 - 4*lz2 + 29*nz2 + eta*(-2 + 8*lz2 
+                        + 6*lx2*lz*(13 - 4*lz2 + 29*nz2 + eta*(-2 + 8*lz2
                         - 58*nz2)) - 6*ly2*lz*(13 - 4*lz2 + 29*nz2 + eta
-                        * (-2 + 8*lz2 - 58*nz2)) - lz*(nx2 - ny2)*(83 - 6*lz2 
+                        * (-2 + 8*lz2 - 58*nz2)) - lz*(nx2 - ny2)*(83 - 6*lz2
                         + 111*nz2 + 6*eta*(-1 + 2*lz2 - 37*nz2))))/24.;
                 hcross15 = (dm*(lz*(6*(19 - 4*eta)*lx*ly + (-101 + 12*eta)
-                        * nx*ny) + (-149 + 36*eta) * (ly*nx + lx*ny)*nz 
-                        + 6*(-3 + eta) * (2*lx*ly*lz - lz*nx*ny - 3*ly*nx*nz 
-                        - 3*lx*ny*nz) + (1 - 2*eta) * (6*lz3*(-4*lx*ly + nx*ny) 
-                        + 90*lz2*(ly*nx + lx*ny)*nz + 3*lz*(58*lx*ly 
+                        * nx*ny) + (-149 + 36*eta) * (ly*nx + lx*ny)*nz
+                        + 6*(-3 + eta) * (2*lx*ly*lz - lz*nx*ny - 3*ly*nx*nz
+                        - 3*lx*ny*nz) + (1 - 2*eta) * (6*lz3*(-4*lx*ly + nx*ny)
+                        + 90*lz2*(ly*nx + lx*ny)*nz + 3*lz*(58*lx*ly
                         - 37*nx*ny)*nz2 - 65*(ly*nx + lx*ny)*nz3)))/12.;
                 /* 1.5PN spinning amp. corrections */
-                hplusSpin15 = (6*lz*ny*s1x + 6*dm*lz*ny*s1x - 3*eta*lz*ny*s1x 
-                        + 2*ly2*lnhy*s1y + 2*dm*ly2*lnhy*s1y 
-                        + 2*eta*ly2*lnhy*s1y + 6*lz*nx*s1y + 6*dm*lz*nx*s1y 
-                        - 3*eta*lz*nx*s1y + 8*lnhy*nx2*s1y + 8*dm*lnhy*nx2*s1y 
+                hplusSpin15 = (6*lz*ny*s1x + 6*dm*lz*ny*s1x - 3*eta*lz*ny*s1x
+                        + 2*ly2*lnhy*s1y + 2*dm*ly2*lnhy*s1y
+                        + 2*eta*ly2*lnhy*s1y + 6*lz*nx*s1y + 6*dm*lz*nx*s1y
+                        - 3*eta*lz*nx*s1y + 8*lnhy*nx2*s1y + 8*dm*lnhy*nx2*s1y
                         - eta*lnhy*nx2*s1y - 8*lnhy*ny2*s1y - 8*dm*lnhy*ny2*s1y
                         + eta*lnhy*ny2*s1y + 2*ly2*lnhz*s1z + 2*dm*ly2*lnhz*s1z
-                        + 2*eta*ly2*lnhz*s1z - 6*ly*nx*s1z - 6*dm*ly*nx*s1z 
-                        - 9*eta*ly*nx*s1z + 8*lnhz*nx2*s1z + 8*dm*lnhz*nx2*s1z 
+                        + 2*eta*ly2*lnhz*s1z - 6*ly*nx*s1z - 6*dm*ly*nx*s1z
+                        - 9*eta*ly*nx*s1z + 8*lnhz*nx2*s1z + 8*dm*lnhz*nx2*s1z
                         - eta*lnhz*nx2*s1z - 8*lnhz*ny2*s1z - 8*dm*lnhz*ny2*s1z
-                        + eta*lnhz*ny2*s1z + 6*lz*ny*s2x - 6*dm*lz*ny*s2x 
-                        - 3*eta*lz*ny*s2x + lnhx*(2*ly2*((1 + dm + eta)*s1x 
+                        + eta*lnhz*ny2*s1z + 6*lz*ny*s2x - 6*dm*lz*ny*s2x
+                        - 3*eta*lz*ny*s2x + lnhx*(2*ly2*((1 + dm + eta)*s1x
                         + (1 - dm + eta)*s2x) + (nx2 - ny2)*((8 + 8*dm - eta)
-                        * s1x - (-8 + 8*dm + eta)*s2x)) + 2*ly2*lnhy*s2y 
-                        - 2*dm*ly2*lnhy*s2y + 2*eta*ly2*lnhy*s2y + 6*lz*nx*s2y 
-                        - 6*dm*lz*nx*s2y - 3*eta*lz*nx*s2y + 8*lnhy*nx2*s2y 
-                        - 8*dm*lnhy*nx2*s2y - eta*lnhy*nx2*s2y - 8*lnhy*ny2*s2y 
-                        + 8*dm*lnhy*ny2*s2y + eta*lnhy*ny2*s2y + 2*ly2*lnhz*s2z 
-                        - 2*dm*ly2*lnhz*s2z + 2*eta*ly2*lnhz*s2z - 6*ly*nx*s2z 
-                        + 6*dm*ly*nx*s2z - 9*eta*ly*nx*s2z + 8*lnhz*nx2*s2z 
-                        - 8*dm*lnhz*nx2*s2z - eta*lnhz*nx2*s2z - 8*lnhz*ny2*s2z 
-                        + 8*dm*lnhz*ny2*s2z + eta*lnhz*ny2*s2z - 3*lx*ny 
+                        * s1x - (-8 + 8*dm + eta)*s2x)) + 2*ly2*lnhy*s2y
+                        - 2*dm*ly2*lnhy*s2y + 2*eta*ly2*lnhy*s2y + 6*lz*nx*s2y
+                        - 6*dm*lz*nx*s2y - 3*eta*lz*nx*s2y + 8*lnhy*nx2*s2y
+                        - 8*dm*lnhy*nx2*s2y - eta*lnhy*nx2*s2y - 8*lnhy*ny2*s2y
+                        + 8*dm*lnhy*ny2*s2y + eta*lnhy*ny2*s2y + 2*ly2*lnhz*s2z
+                        - 2*dm*ly2*lnhz*s2z + 2*eta*ly2*lnhz*s2z - 6*ly*nx*s2z
+                        + 6*dm*ly*nx*s2z - 9*eta*ly*nx*s2z + 8*lnhz*nx2*s2z
+                        - 8*dm*lnhz*nx2*s2z - eta*lnhz*nx2*s2z - 8*lnhz*ny2*s2z
+                        + 8*dm*lnhz*ny2*s2z + eta*lnhz*ny2*s2z - 3*lx*ny
                         * ((2 + 2*dm + 3*eta)*s1z + (2 - 2*dm + 3*eta)*s2z)
-                        - 2*lx2*(lnhx*((1 + dm + eta)*s1x + (1 - dm + eta)*s2x) 
-                        + lnhy*((1 + dm + eta)*s1y + (1 - dm + eta)*s2y) 
+                        - 2*lx2*(lnhx*((1 + dm + eta)*s1x + (1 - dm + eta)*s2x)
+                        + lnhy*((1 + dm + eta)*s1y + (1 - dm + eta)*s2y)
                         + lnhz*((1 + dm + eta)*s1z + (1 - dm + eta)*s2z)))/3.;
-                hcrossSpin15 = (-3*lz*(nx*((2 + 2*dm - eta)*s1x 
-                        - (-2 + 2*dm + eta)*s2x) + ny*((-2 - 2*dm + eta)*s1y 
-                        + (-2 + 2*dm + eta)*s2y)) + ny*(-6*ly*s1z - 6*dm*ly*s1z 
-                        - 9*eta*ly*s1z + 16*lnhz*nx*s1z + 16*dm*lnhz*nx*s1z 
-                        - 2*eta*lnhz*nx*s1z + 2*lnhx*nx*((8 + 8*dm - eta)*s1x 
+                hcrossSpin15 = (-3*lz*(nx*((2 + 2*dm - eta)*s1x
+                        - (-2 + 2*dm + eta)*s2x) + ny*((-2 - 2*dm + eta)*s1y
+                        + (-2 + 2*dm + eta)*s2y)) + ny*(-6*ly*s1z - 6*dm*ly*s1z
+                        - 9*eta*ly*s1z + 16*lnhz*nx*s1z + 16*dm*lnhz*nx*s1z
+                        - 2*eta*lnhz*nx*s1z + 2*lnhx*nx*((8 + 8*dm - eta)*s1x
                         - (-8 + 8*dm + eta)*s2x) + 2*lnhy*nx*((8 + 8*dm - eta)
-                        * s1y - (-8 + 8*dm + eta)*s2y) - 6*ly*s2z + 6*dm*ly*s2z 
-                        - 9*eta*ly*s2z + 16*lnhz*nx*s2z - 16*dm*lnhz*nx*s2z 
+                        * s1y - (-8 + 8*dm + eta)*s2y) - 6*ly*s2z + 6*dm*ly*s2z
+                        - 9*eta*ly*s2z + 16*lnhz*nx*s2z - 16*dm*lnhz*nx*s2z
                         - 2*eta*lnhz*nx*s2z) - lx*(4*lnhx*ly*((1 + dm + eta)*s1x
-                        + (1 - dm + eta)*s2x) - 3*nx*((2 + 2*dm + 3*eta)*s1z 
+                        + (1 - dm + eta)*s2x) - 3*nx*((2 + 2*dm + 3*eta)*s1z
                         + (2 - 2*dm + 3*eta)*s2z) + 4*ly*(lnhy*((1 + dm + eta)
-                        * s1y + (1 - dm + eta)*s2y) + lnhz*((1 + dm + eta)*s1z 
+                        * s1y + (1 - dm + eta)*s2y) + lnhz*((1 + dm + eta)*s1z
                         + (1 - dm + eta)*s2z))))/3.;
                 /* 1.5PN tail amp. corrections */
                 logfac = log(v/v0);
-                hplusTail15 = 2*((lx2 - ly2 - nx2 + ny2)*LAL_PI 
+                hplusTail15 = 2*((lx2 - ly2 - nx2 + ny2)*LAL_PI
                         + 12*(lx*nx - ly*ny)*logfac);
-                hcrossTail15 = 4*((lx*ly - nx*ny)*LAL_PI 
+                hcrossTail15 = 4*((lx*ly - nx*ny)*LAL_PI
                         + 6*(ly*nx + lx*ny)*logfac);
 
             /*case LAL_PNORDER_ONE:*/
             case 2:
                 /* 1PN non-spinning amp. corrections */
-                hplus1 = (-13*lx2 + 13*ly2 + 6*lx2*lz2 - 6*ly2*lz2 
-                        + 13*(nx2 - ny2) - 2*lz2*(nx2 - ny2) - 32*lx*lz*nx*nz 
-                        + 32*ly*lz*ny*nz - 14*lx2*nz2 + 14*ly2*nz2 
-                        + 10*(nx2 - ny2)*nz2)/6. + (eta*(lx2 - 18*lx2*lz2 
-                        + 96*lx*lz*nx*nz - 96*ly*lz*ny*nz + 42*lx2*nz2 
-                        + ly2*(-1 + 18*lz2 - 42*nz2) + (nx2 - ny2) 
+                hplus1 = (-13*lx2 + 13*ly2 + 6*lx2*lz2 - 6*ly2*lz2
+                        + 13*(nx2 - ny2) - 2*lz2*(nx2 - ny2) - 32*lx*lz*nx*nz
+                        + 32*ly*lz*ny*nz - 14*lx2*nz2 + 14*ly2*nz2
+                        + 10*(nx2 - ny2)*nz2)/6. + (eta*(lx2 - 18*lx2*lz2
+                        + 96*lx*lz*nx*nz - 96*ly*lz*ny*nz + 42*lx2*nz2
+                        + ly2*(-1 + 18*lz2 - 42*nz2) + (nx2 - ny2)
                         * (-1 + 6*lz2 - 30*nz2)))/6.;
-                hcross1 = (eta*(lx*ly - nx*ny - 6*(lz2*(3*lx*ly - nx*ny) 
-                        - 8*lz*(ly*nx + lx*ny)*nz + (-7*lx*ly 
-                        + 5*nx*ny)*nz2)))/3. + (-13*(lx*ly - nx*ny) 
-                        + 2*(lz2*(3*lx*ly - nx*ny) - 8*lz*(ly*nx + lx*ny)*nz 
+                hcross1 = (eta*(lx*ly - nx*ny - 6*(lz2*(3*lx*ly - nx*ny)
+                        - 8*lz*(ly*nx + lx*ny)*nz + (-7*lx*ly
+                        + 5*nx*ny)*nz2)))/3. + (-13*(lx*ly - nx*ny)
+                        + 2*(lz2*(3*lx*ly - nx*ny) - 8*lz*(ly*nx + lx*ny)*nz
                         + (-7*lx*ly + 5*nx*ny)*nz2))/3.;
                 /* 1PN spinning amp. corrections */
-                hplusSpin1 = (-(ny*((1 + dm)*s1x + (-1 + dm)*s2x)) 
+                hplusSpin1 = (-(ny*((1 + dm)*s1x + (-1 + dm)*s2x))
                         - nx*((1 + dm)*s1y + (-1 + dm)*s2y))/2.;
-                hcrossSpin1 = (nx*((1 + dm)*s1x + (-1 + dm)*s2x) 
+                hcrossSpin1 = (nx*((1 + dm)*s1x + (-1 + dm)*s2x)
                         - ny*((1 + dm)*s1y + (-1 + dm)*s2y))/2.;
 
             /*case LAL_PNORDER_HALF:*/
             case 1:
                 /* 0.5PN non-spinning amp. corrections */
-                hplus05 = (dm*(-2*lx2*lz + 2*ly2*lz + lz*(nx2 - ny2) 
+                hplus05 = (dm*(-2*lx2*lz + 2*ly2*lz + lz*(nx2 - ny2)
                         + 6*lx*nx*nz - 6*ly*ny*nz))/2.;
-                hcross05 = dm*(-2*lx*ly*lz + lz*nx*ny 
+                hcross05 = dm*(-2*lx*ly*lz + lz*nx*ny
 					+ 3*ly*nx*nz + 3*lx*ny*nz);
 
             /*case LAL_PNORDER_NEWTONIAN:*/
@@ -3359,7 +3353,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
                 hplus0 = lx2 - ly2 - nx2 + ny2;
                 hcross0 = 2*lx*ly - 2*nx*ny;
                 break;
-            default: 
+            default:
                 XLALPrintError("XLAL Error - %s: Invalid amp. PN order %d\n",
                         __func__, ampO );
                 XLAL_ERROR(XLAL_EINVAL);
@@ -3367,11 +3361,11 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
         } /* End switch on ampO */
 
         /* Fill the output polarization arrays */
-        (*hplus)->data->data[idx] = ampfac * v2 * ( hplus0 
-                + v * ( hplus05 + v * ( hplus1 + hplusSpin1 
+        (*hplus)->data->data[idx] = ampfac * v2 * ( hplus0
+                + v * ( hplus05 + v * ( hplus1 + hplusSpin1
                 + v * ( hplus15 + hplusSpin15 + hplusTail15 ) ) ) );
-        (*hcross)->data->data[idx] = ampfac * v2 * ( hcross0 
-                + v * ( hcross05 + v * ( hcross1 + hcrossSpin1 
+        (*hcross)->data->data[idx] = ampfac * v2 * ( hcross0
+                + v * ( hcross05 + v * ( hcross1 + hcrossSpin1
                 + v * ( hcross15 + hcrossSpin15 + hcrossTail15 ) ) ) );
     } /* end of loop over time samples, idx */
     return XLAL_SUCCESS;
@@ -3722,7 +3716,7 @@ int XLALSimInspiralPrecessingPolarizationWaveformHarmonic(
 /** @} */
 
 /**
- * @name Routines for Handling Approximants, Order, Axis, Mode Information 
+ * @name Routines for Handling Approximants, Order, Axis, Mode Information
  * @{
  */
 
@@ -3757,7 +3751,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case SEOBNRv1:
         case SpinDominatedWf:
         case SEOBNRv2:
-        // case SEOBNRv3:
+        case SEOBNRv3:
             return 1;
 
         default:
@@ -4516,7 +4510,7 @@ double XLALSimInspiralGetFrequency(
 
     switch (freqFunc)
     {
-        case fSchwarzISCO: 
+        case fSchwarzISCO:
             /* Schwarzschild ISCO */
 	        freq = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_G_SI);
             break;
@@ -4628,7 +4622,7 @@ double XLALSimInspiralGetFinalFreq(
 	case EccentricTD:
 	    /* Check that spins are zero */
 	    if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
-	    {	
+	    {
 		XLALPrintError("Non-zero spins were given, but this is a non-spinning approximant.\n");
 		XLAL_ERROR(XLAL_EINVAL);
 	    }
@@ -4759,7 +4753,7 @@ double XLALSimInspiralGetFinalFreq(
  * before it reaches f_min and apply a taper over this duration textra; follow
  * this up by high-pass filtering the data at frequency f_min; finally, if the
  * original waveform was zero-padded, strip off this padding.
- * 
+ *
  * 2. The high-pass filtered waveform might have transients remaining at the
  * beginning and at the end; furthermore, the waveform might end at a non-zero
  * value (especially for non-IMR waveforms).  The second stage tapers one
@@ -4821,7 +4815,7 @@ int XLALSimInspiralTDConditionStage1(REAL8TimeSeries *hplus, REAL8TimeSeries *hc
  * before it reaches f_min and apply a taper over this duration textra; follow
  * this up by high-pass filtering the data at frequency f_min; finally, if the
  * original waveform was zero-padded, strip off this padding.
- * 
+ *
  * 2. The high-pass filtered waveform might have transients remaining at the
  * beginning and at the end; furthermore, the waveform might end at a non-zero
  * value (especially for non-IMR waveforms).  The second stage tapers one

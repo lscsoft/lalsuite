@@ -57,10 +57,10 @@
 #endif
 
 static int UNUSED
-XLALEOBSpinStopCondition(double UNUSED t,
-                           const double values[],
-                           double dvalues[],
-                           void *funcParams
+XLALEOBSpinStopCondition(double UNUSED t, /**<< UNUSED */
+                           const double values[], /**<< Dynamical variables */
+                           double dvalues[],  /**<<1st time-derivatives of dynamical variables */
+                           void *funcParams /**<< physical parameters*/
                           )
 {
 
@@ -2316,4 +2316,3 @@ int XLALSimIMRSpinEOBWaveform(
 } 
 
 #endif
-

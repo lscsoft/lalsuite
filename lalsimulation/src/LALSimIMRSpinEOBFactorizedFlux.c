@@ -43,7 +43,7 @@
 #include "LALSimIMRSpinEOBFactorizedWaveform.c"
 
 
-int UsePrec = 0;
+static int UsePrec = 0;
 
 /*------------------------------------------------------------------------------------------
  *
