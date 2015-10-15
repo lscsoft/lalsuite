@@ -94,6 +94,7 @@ typedef struct tagLALH5Dataset LALH5Dataset;
 void XLALH5FileClose(LALH5File *file);
 LALH5File * XLALH5FileOpen(const char *path, const char *mode);
 LALH5File * XLALH5GroupOpen(LALH5File *file, const char *name);
+int XLALH5CheckGroupExists(LALH5File *file, const char *name);
 
 /* LOW-LEVEL ROUTINES */
 
