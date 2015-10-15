@@ -877,6 +877,7 @@ void LALInferenceAdaptation(LALInferenceThreadState *thread) {
     /* if maximum logL has increased by more than nParam/2, restart it */
     INT4 adapting = LALInferenceGetINT4Variable(thread->proposalArgs, "adapting");
     INT4 adaptTau = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptTau");
+    INT4 length = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptLength");
     INT4 adaptRestartBuffer = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptResetBuffer");
     REAL8 logLAtAdaptStart = LALInferenceGetREAL8Variable(thread->proposalArgs, "logLAtAdaptStart");
 
@@ -894,7 +895,7 @@ void LALInferenceAdaptation(LALInferenceThreadState *thread) {
 
         /* Else set adaptation envelope */
         } else {
-            s_gamma = LALInferenceAdaptationEnvelope(thread->step, adaptTau, adaptRestartBuffer);
+            s_gamma = LALInferenceAdaptationEnvelope(thread->step, adaptTau, length, adaptRestartBuffer);
             LALInferenceSetVariable(thread->proposalArgs, "s_gamma", &s_gamma);
         }
     }
@@ -910,14 +911,15 @@ void LALInferenceAdaptationRestart(LALInferenceThreadState *thread) {
     INT4 bigACL = INT_MAX;
 
     for (item=thread->currentParams->head; item; item=item->next) {
-        if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT) {
+        if (LALInferenceCheckVariableNonFixed(thread->currentParams, item->name) &&
+                item->type == LALINFERENCE_REAL8_t) {
             char tmpname[MAX_STRLEN]="";
 
             sprintf(tmpname, "%s_%s", item->name, ACCEPTSUFFIX);
             REAL8 *accepted = (REAL8 *)LALInferenceGetVariable(thread->proposalArgs, tmpname);
             *accepted = 0;
 
-            sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
+            sprintf(tmpname,"%s_%s", item->name, PROPOSEDSUFFIX);
             REAL8 *proposed = (REAL8 *)LALInferenceGetVariable(thread->proposalArgs, tmpname);
             *proposed = 0;
         }
@@ -926,7 +928,7 @@ void LALInferenceAdaptationRestart(LALInferenceThreadState *thread) {
     INT4 length = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptLength");
     INT4 tau = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptTau");
     INT4 adaptRestartBuffer = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptResetBuffer");
-    REAL8 s_gamma = LALInferenceAdaptationEnvelope(thread->step, tau, adaptRestartBuffer);
+    REAL8 s_gamma = LALInferenceAdaptationEnvelope(thread->step, tau, length, adaptRestartBuffer);
     LALInferenceAddVariable(thread->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
 
     LALInferenceSetVariable(thread->proposalArgs, "adapting", &adapting);
@@ -939,14 +941,14 @@ void LALInferenceAdaptationRestart(LALInferenceThreadState *thread) {
 //-----------------------------------------
 // Adaptation envelope function:
 //-----------------------------------------
-REAL8 LALInferenceAdaptationEnvelope(INT4 step, INT4 tau, INT4 fix_adapt_len) {
+REAL8 LALInferenceAdaptationEnvelope(INT4 step, INT4 tau, INT4 length, INT4 fix_adapt_len) {
     REAL8 s_gamma = 0.0;
 
-    if (step <= -fix_adapt_len) {
-        s_gamma=((REAL8)(-step)/(REAL8)fix_adapt_len);
+    if (step <= -length + fix_adapt_len) {
+        s_gamma=((REAL8)(length + step)/(REAL8)fix_adapt_len);
         s_gamma *= s_gamma;
     } else if (step < 0) {
-        s_gamma = 10.0*exp(-(1.0/tau)*log((REAL8)(-step)))-1;
+        s_gamma = 10.0*exp(-(1.0/tau)*log((REAL8)(length + step)))-1;
     } else {
         s_gamma = 0.0;
     }
