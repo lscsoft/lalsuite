@@ -609,10 +609,9 @@ REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread,
     gsl_matrix *m=NULL;
     INT4Vector *v=NULL;
     INT4 dim, varNr;
-    INT4 i = 0;
     REAL8 logPropRatio, sqrttemp, sigma;
     char tmpname[MAX_STRLEN] = "";
-    LALInferenceVariableItem *param = NULL, *dummyParam = NULL;
+    LALInferenceVariableItem *param = NULL;
 
     LALInferenceCopyVariables(currentParams, proposedParams);
     LALInferenceVariables *args = thread->proposalArgs;
@@ -629,31 +628,6 @@ REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread,
             varNr = 1 + gsl_rng_uniform_int(rng, dim);
             param = LALInferenceGetItemNr(proposedParams, varNr);
         } while (!LALInferenceCheckVariableNonFixed(proposedParams, param->name) || param->type != LALINFERENCE_REAL8_t);
-
-        for (dummyParam = proposedParams->head; dummyParam != NULL; dummyParam = dummyParam->next) {
-            if (!strcmp(dummyParam->name, param->name)) {
-                /* Found it; i = index into sigma vector. */
-                break;
-            } else if (!LALInferenceCheckVariableNonFixed(proposedParams, dummyParam->name)) {
-                /* Don't increment i, since we're not dealing with a "real" parameter. */
-                continue;
-            } else if (param->type == LALINFERENCE_gslMatrix_t) {
-                /*increment i by number of noise parameters, since they aren't included in adaptive jumps*/
-                m = *((gsl_matrix **)dummyParam->value);
-                i += (int)( m->size1*m->size2 );
-            } else if (param->type == LALINFERENCE_INT4Vector_t) {
-                /*
-                 increment i by number of size of vectors --
-                 number of wavelets in glitch model is not
-                 part of adaptive proposal
-                 */
-                v = *((INT4Vector **)dummyParam->value);
-                i += (int)( v->length );
-            } else {
-                i++;
-                continue;
-            }
-        }
 
         if (param->type != LALINFERENCE_REAL8_t) {
             fprintf(stderr, "Attempting to set non-REAL8 parameter with numerical sigma (in %s, %d)\n",
@@ -702,7 +676,7 @@ REAL8 LALInferenceSingleProposal(LALInferenceThreadState *thread,
     LALInferenceVariables *args = thread->proposalArgs;
     gsl_rng * GSLrandom = thread->GSLrandom;
     REAL8 sigma, big_sigma;
-    INT4 i, dim, varNr;
+    INT4 dim, varNr;
 
     LALInferenceCopyVariables(currentParams, proposedParams);
 
@@ -720,20 +694,6 @@ REAL8 LALInferenceSingleProposal(LALInferenceThreadState *thread,
         varNr = 1 + gsl_rng_uniform_int(GSLrandom, dim);
         param = LALInferenceGetItemNr(proposedParams, varNr);
     } while (!LALInferenceCheckVariableNonFixed(proposedParams, param->name) || param->type != LALINFERENCE_REAL8_t);
-
-    i = 0;
-    for (dummyParam = proposedParams->head; dummyParam != NULL; dummyParam = dummyParam->next) {
-        if (!strcmp(dummyParam->name, param->name)) {
-            /* Found it; i = index into sigma vector. */
-            break;
-        } else if (!LALInferenceCheckVariableNonFixed(proposedParams, param->name) || param->type != LALINFERENCE_REAL8_t) {
-            /* Don't increment i, since we're not dealing with a "real" parameter. */
-            continue;
-        } else {
-            i++;
-            continue;
-        }
-    }
 
     /* Scale jumps proposal appropriately for prior sampling */
     if (LALInferenceGetINT4Variable(args, "sampling_prior")) {
