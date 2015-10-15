@@ -1438,6 +1438,9 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.add_ini_opts(cp,'engine')
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
+    # For LALInferenceNest demand only 1 thread (to be tuned later)
+    if self.engine=='lalinferencenest':
+            self.add_condor_cmd('environment','OMP_NUM_THREADS=1')
 
   def set_grid_site(self,site=None):
     """
