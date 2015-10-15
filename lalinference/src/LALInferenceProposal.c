@@ -3087,27 +3087,29 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInfe
     LALInferenceVariableItem *this;
 
     for(this=params->head; this; this=this->next) {
-        char *name = this->name;
+        if (LALInferenceCheckVariableNonFixed(params, this->name) && this->type == LALINFERENCE_REAL8_t) {
+            char *name = this->name;
 
-        if (!strcmp(name, "eta") || !strcmp(name, "q") || !strcmp(name, "time") || !strcmp(name, "a_spin2") || !strcmp(name, "a_spin1") || !strcmp(name,"t0")){
-            sigma = 0.001;
-        } else if (!strcmp(name, "polarisation") || !strcmp(name, "phase") || !strcmp(name, "costheta_jn")){
-            sigma = 0.1;
-        } else {
-            sigma = 0.01;
+            if (!strcmp(name, "eta") || !strcmp(name, "q") || !strcmp(name, "time") || !strcmp(name, "a_spin2") || !strcmp(name, "a_spin1") || !strcmp(name,"t0")){
+                sigma = 0.001;
+            } else if (!strcmp(name, "polarisation") || !strcmp(name, "phase") || !strcmp(name, "costheta_jn")){
+                sigma = 0.1;
+            } else {
+                sigma = 0.01;
+            }
+
+            /* Set up variables to store current sigma, proposed and accepted */
+            char varname[MAX_STRLEN] = "";
+            sprintf(varname, "%s_%s", name, ADAPTSUFFIX);
+            LALInferenceAddREAL8Variable(propArgs, varname, sigma, LALINFERENCE_PARAM_LINEAR);
+
+            sigma = 0.0;
+            sprintf(varname, "%s_%s", name, ACCEPTSUFFIX);
+            LALInferenceAddREAL8Variable(propArgs, varname, sigma, LALINFERENCE_PARAM_LINEAR);
+
+            sprintf(varname, "%s_%s", name, PROPOSEDSUFFIX);
+            LALInferenceAddREAL8Variable(propArgs, varname, sigma, LALINFERENCE_PARAM_LINEAR);
         }
-
-        /* Set up variables to store current sigma, proposed and accepted */
-        char varname[MAX_STRLEN] = "";
-        sprintf(varname, "%s_%s", name, ADAPTSUFFIX);
-        LALInferenceAddREAL8Variable(propArgs, varname, sigma, LALINFERENCE_PARAM_LINEAR);
-
-        sigma = 0.0;
-        sprintf(varname, "%s_%s", name, ACCEPTSUFFIX);
-        LALInferenceAddREAL8Variable(propArgs, varname, sigma, LALINFERENCE_PARAM_LINEAR);
-
-        sprintf(varname, "%s_%s", name, PROPOSEDSUFFIX);
-        LALInferenceAddREAL8Variable(propArgs, varname, sigma, LALINFERENCE_PARAM_LINEAR);
     }
 
     no_adapt = LALInferenceGetINT4Variable(propArgs, "no_adapt");
