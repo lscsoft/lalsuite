@@ -132,9 +132,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     INT4 MPIrank, MPIsize;
     LALStatus status;
     LALInferenceVariables *algorithm_params;
-    LALInferenceVariableItem *ptr;
     LALInferenceThreadState *thread;
-    INT4 prop_files_created = 0;
 
     memset(&status, 0, sizeof(status));
 
@@ -176,50 +174,50 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     INT4 adaptLength = LALInferenceGetINT4Variable(runState->algorithmParams, "adaptLength"); // Number of iterations to adapt before turning off
 
     /* File outputs */
-    FILE *statfile = NULL;
-    FILE *swapfile = NULL;
-    char statfilename[256];
-    char swapfilename[256];
+    FILE *verbose_file = NULL;
+    char verbose_filename[256];
 
     if (tempVerbose) {
-        sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
-        swapfile = fopen(swapfilename, "w");
+        sprintf(verbose_filename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
+        verbose_file = fopen(verbose_filename, "w");
 
-        fprintf(swapfile,
+        fprintf(verbose_file,
             "cycle\tlow_temp\thigh_temp\tlog(chain_swap)\tlow_temp_likelihood\thigh_temp_likelihood\tswap_accepted\n");
 
-        fclose(swapfile);
+        fclose(verbose_file);
     }
 
-    if (adaptVerbose) {
-        for (t = 0; t < n_local_threads; t++) {
-            thread = runState->threads[t];
-            if (!no_adapt) {
-                sprintf(statfilename, "PTMCMC.statistics.%u.%2.2d",
-                        randomseed, n_local_threads*MPIrank+t);
-                statfile = fopen(statfilename, "w");
+    for (t = 0; t < n_local_threads; t++) {
+        thread = runState->threads[t];
 
-                fprintf(statfile, "cycle\ts_gamma");
-                ptr = thread->currentParams->head;
-                while (ptr != NULL) {
-                    if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-                        fprintf(statfile, "\tsigma_%s",
-                                LALInferenceTranslateInternalToExternalParamName(ptr->name));
-                    }
-                    ptr = ptr->next;
-                }
-                ptr = thread->currentParams->head;
-                while ( ptr != NULL) {
-                    if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-                        fprintf(statfile, "\tPaccept_%s",
-                                LALInferenceTranslateInternalToExternalParamName(ptr->name));
-                    }
-                    ptr=ptr->next;
-                }
-                fprintf(statfile,"\n");
+        if (adaptVerbose & !no_adapt) {
+            sprintf(verbose_filename, "PTMCMC.statistics.%u.%2.2d",
+                    randomseed, n_local_threads*MPIrank+t);
+            verbose_file = fopen(verbose_filename, "w");
 
-                fclose(statfile);
-            }
+            fprintf(verbose_file, "cycle\ts_gamma");
+            LALInferencePrintAdaptationHeader(verbose_file, thread);
+            fclose(verbose_file);
+        }
+
+        if (propVerbose) {
+            sprintf(verbose_filename, "PTMCMC.propstats.%u.%2.2d",
+                    randomseed, n_local_threads*MPIrank+t);
+            verbose_file = fopen(verbose_filename, "w");
+
+            fprintf(verbose_file, "cycle\t");
+            LALInferencePrintProposalStatsHeader(verbose_file, thread->cycle);
+            fclose(verbose_file);
+        }
+
+        if (propTrack) {
+            sprintf(verbose_filename, "PTMCMC.proptrack.%u.%2.2d",
+                    randomseed, n_local_threads*MPIrank+t);
+            verbose_file = fopen(verbose_filename, "w");
+
+            fprintf(verbose_file, "cycle\t");
+            LALInferencePrintProposalTrackingHeader(verbose_file, thread->currentParams);
+            fclose(verbose_file);
         }
     }
 
@@ -264,10 +262,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     while (!runComplete) {
         #pragma omp parallel for private(thread)
         for (t = 0; t < n_local_threads; t++) {
-            FILE *propstatfile = NULL;
-            FILE *proptrackfile = NULL;
-            char propstatfilename[256];
-            char proptrackfilename[256];
+            FILE *outfile = NULL;
+            char outfilename[256];
             struct timeval tv;
             REAL8 timestamp=-1.0;
 
@@ -300,29 +296,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
             mcmc_step(runState, thread); //evolve the chain at temperature ladder[t]
 
-            if (propVerbose) {
+            if (propVerbose)
                 LALInferenceTrackProposalAcceptance(thread);
-
-                if (!prop_files_created) {
-                    sprintf(propstatfilename, "PTMCMC.propstats.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
-                    propstatfile = fopen(propstatfilename, "w");
-
-                    fprintf(propstatfile, "cycle\t");
-                    LALInferencePrintProposalStatsHeader(propstatfile, thread->cycle);
-                    fclose(propstatfile);
-
-                    if (propTrack) {
-                        sprintf(proptrackfilename, "PTMCMC.proptrack.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
-                        proptrackfile = fopen(proptrackfilename, "w");
-
-                        fprintf(proptrackfile, "cycle\t");
-                        LALInferencePrintProposalTrackingHeader(proptrackfile, thread->currentParams);
-                        fclose(proptrackfile);
-                    }
-
-                    prop_files_created = 1;
-                }
-            }
 
             if ((thread->step % Nskip) == 0) {
                 /* Update clustered-KDE proposal every time the buffer is expanded */
@@ -350,68 +325,47 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                 LALInferencePrintMCMCSample(thread, runState->data, thread->step, timestamp, threadoutputs[t]);
 
                 if (adaptVerbose && !no_adapt) {
-                    REAL8 s_gamma = 0.0;
-
-                    sprintf(statfilename, "PTMCMC.statistics.%u.%2.2d",
+                    sprintf(outfilename, "PTMCMC.statistics.%u.%2.2d",
                             randomseed, n_local_threads*MPIrank+t);
-                    statfile = fopen(statfilename, "a");
-
-                    fprintf(statfile, "%d\t", thread->step);
-
-                    if (LALInferenceCheckVariable(thread->proposalArgs, "s_gamma"))
-                        s_gamma = LALInferenceGetREAL8Variable(thread->proposalArgs, "s_gamma");
-                    fprintf(statfile,"%f\t",s_gamma);
-
-                    for(LALInferenceVariableItem *item=thread->currentParams->head;item;item=item->next){
-                        char tmpname[MAX_STRLEN]="";
-                        sprintf(tmpname,"%s_%s",item->name,ADAPTSUFFIX);
-                        REAL8 *sigma=(REAL8 *)LALInferenceGetVariable(thread->proposalArgs,tmpname);
-                        fprintf(statfile,"%g\t",*sigma);
-                    }
-
-                    for(LALInferenceVariableItem *item=thread->currentParams->head;item;item=item->next){
-                        char tmpname[MAX_STRLEN]="";
-                        sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
-                        REAL8 *naccepted=(REAL8 *)LALInferenceGetVariable(thread->proposalArgs,tmpname);
-                        sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
-                        REAL8 *nproposed=(REAL8 *)LALInferenceGetVariable(thread->proposalArgs,tmpname);
-                        fprintf(statfile,"%f\t",*naccepted/( *nproposed==0 ? 1.0 : *nproposed ));
-                    }
-
-                    fprintf(statfile,"\n");
-                    fclose(statfile);
+                    outfile = fopen(outfilename, "a");
+                    fprintf(outfile, "%d\t", thread->step);
+                    LALInferencePrintAdaptationSettings(outfile, thread);
+                    fclose(outfile);
                 }
 
                 if (propVerbose){
-                    sprintf(propstatfilename, "PTMCMC.propstats.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
-                    propstatfile = fopen(propstatfilename, "w");
-                    fprintf(propstatfile, "%d\t", thread->step);
-                    LALInferencePrintProposalStats(propstatfile, thread->cycle);
-                    fclose(propstatfile);
+                    sprintf(outfilename, "PTMCMC.propstats.%u.%2.2d", randomseed,
+                            n_local_threads*MPIrank+t);
+                    outfile = fopen(outfilename, "a");
+                    fprintf(outfile, "%d\t", thread->step);
+                    LALInferencePrintProposalStats(outfile, thread->cycle);
+                    fclose(outfile);
                 }
 
                 if (propTrack) {
                     REAL8 logProposalRatio = LALInferenceGetREAL8Variable(thread->proposalArgs, "logProposalRatio");
-                    sprintf(proptrackfilename, "PTMCMC.proptrack.%u.%2.2d", randomseed, n_local_threads*MPIrank+t);
-                    proptrackfile = fopen(proptrackfilename, "w");
-                    fprintf(proptrackfile, "%d\t", thread->step);
-                    LALInferencePrintProposalTracking(proptrackfile, thread->cycle, thread->preProposalParams, thread->proposedParams, logProposalRatio, thread->accepted);
-                    fclose(proptrackfile);
+                    sprintf(outfilename, "PTMCMC.proptrack.%u.%2.2d", randomseed,
+                            n_local_threads*MPIrank+t);
+                    outfile = fopen(outfilename, "w");
+                    fprintf(outfile, "%d\t", thread->step);
+                    LALInferencePrintProposalTracking(outfile, thread->cycle, thread->preProposalParams, thread->proposedParams, logProposalRatio, thread->accepted);
+                    fclose(outfile);
                 }
             }
         }
 
         /* Open swap file if going verbose */
+        verbose_file = NULL;
         if (tempVerbose) {
-            sprintf(swapfilename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
-            swapfile = fopen(swapfilename, "a");
+            sprintf(verbose_filename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
+            verbose_file = fopen(verbose_filename, "a");
         }
 
         /* Excute swap proposal. */
-        runState->parallelSwap(runState, swapfile);
+        runState->parallelSwap(runState, verbose_file);
 
         if (tempVerbose)
-            fclose(swapfile);
+            fclose(verbose_file);
 
         if (runState->threads[0]->step > Niter)
             runComplete=1;
@@ -1065,9 +1019,7 @@ void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE
 void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInferenceThreadState *thread, FILE *threadoutput) {
     INT4 MPIrank, nthreads;
     INT4 randomseed, nPar, Niter;
-    REAL8 timestamp;
     LALInferenceIFOData *ifodata1;
-    struct timeval tv;
     char *arg_str;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -1170,30 +1122,30 @@ void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInfere
     if (benchmark)
         fprintf(threadoutput, "timestamp\t");
     fprintf(threadoutput,"\n");
+}
 
-    /* Print the starting values */
-    fprintf(threadoutput, "%d\t%f\t%f\t", thread->step,
-            (thread->currentLikelihood - thread->nullLikelihood) + thread->currentPrior,
-            thread->currentPrior);
+void LALInferencePrintAdaptationHeader(FILE *outfile, LALInferenceThreadState *thread) {
+    LALInferenceVariableItem *item;
 
-    LALInferencePrintSample(threadoutput, thread->currentParams);
-
-    fprintf(threadoutput, "%f\t", thread->currentLikelihood);
-    fprintf(threadoutput, "%f\t", thread->currentLikelihood - thread->nullLikelihood);
-    headIFO = runState->data;
-    UINT4 i = 0;
-    while (headIFO != NULL) {
-        fprintf(threadoutput, "%f\t", thread->currentIFOLikelihoods[i] - headIFO->nullloglikelihood);
-        headIFO = headIFO->next;
-        i++;
+    for (item=thread->currentParams->head; item; item=item->next) {
+        if (LALInferenceCheckVariableNonFixed(thread->currentParams, item->name) &&
+                item->type == LALINFERENCE_REAL8_t) {
+            fprintf(outfile, "\tsigma_%s",
+                    LALInferenceTranslateInternalToExternalParamName(item->name));
+        }
     }
-    if(benchmark) {
-        gettimeofday(&tv, NULL);
-        timestamp = tv.tv_sec + tv.tv_usec/1E6;
-        LALInferenceAddVariable(runState->algorithmParams, "timestamp_epoch", &timestamp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-        fprintf(threadoutput, "%f\t", 0.0);
+
+    for (item=thread->currentParams->head; item; item=item->next) {
+        if (LALInferenceCheckVariableNonFixed(thread->currentParams, item->name) &&
+                item->type == LALINFERENCE_REAL8_t) {
+            fprintf(outfile, "\tPaccept_%s",
+                    LALInferenceTranslateInternalToExternalParamName(item->name));
+        }
     }
-    fprintf(threadoutput,"\n");
+
+    fprintf(outfile,"\n");
+
+    return;
 }
 
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
@@ -1417,6 +1369,44 @@ void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIF
 
     fprintf(threadoutput,"\n");
     fflush(threadoutput);
+    return;
+}
+
+void LALInferencePrintAdaptationSettings(FILE *outfile, LALInferenceThreadState *thread) {
+    LALInferenceVariableItem *item;
+    REAL8 s_gamma = 0.;
+    REAL8 sigma, naccepted, nproposed;
+
+    if (LALInferenceCheckVariable(thread->proposalArgs, "s_gamma"))
+        s_gamma = LALInferenceGetREAL8Variable(thread->proposalArgs, "s_gamma");
+    fprintf(outfile,"%f\t",s_gamma);
+
+    for (item=thread->currentParams->head; item; item=item->next) {
+        if (LALInferenceCheckVariableNonFixed(thread->currentParams, item->name) &&
+                item->type == LALINFERENCE_REAL8_t) {
+            char tmpname[MAX_STRLEN]="";
+            sprintf(tmpname, "%s_%s", item->name, ADAPTSUFFIX);
+            sigma = LALInferenceGetREAL8Variable(thread->proposalArgs, tmpname);
+            fprintf(outfile, "%g\t", sigma);
+        }
+    }
+
+    for (item=thread->currentParams->head; item; item=item->next) {
+        if (LALInferenceCheckVariableNonFixed(thread->currentParams, item->name) &&
+                item->type == LALINFERENCE_REAL8_t) {
+            char tmpname[MAX_STRLEN]="";
+
+            sprintf(tmpname, "%s_%s", item->name, ACCEPTSUFFIX);
+            naccepted = LALInferenceGetREAL8Variable(thread->proposalArgs, tmpname);
+
+            sprintf(tmpname, "%s_%s", item->name, PROPOSEDSUFFIX);
+            nproposed = LALInferenceGetREAL8Variable(thread->proposalArgs, tmpname);
+
+            fprintf(outfile, "%f\t", naccepted/( nproposed==0 ? 1.0 : nproposed ));
+        }
+    }
+
+    fprintf(outfile,"\n");
     return;
 }
 
