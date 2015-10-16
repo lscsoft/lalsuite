@@ -188,8 +188,8 @@ int XLALComputeBinaryFreqDerivitives(Template *fdots,                        /**
  */
 int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**< [out] the signal model template parameters */
 				    GridParameters *gridparams,             /**< [in] the parameter space grid params */
-				    ParameterSpace *space,
-				    void *r
+				    ParameterSpace *space,		/**< UNDOCUMENTED */
+				    void *r		/**< UNDOCUMENTED */
 				    )
 {
 
@@ -272,8 +272,8 @@ int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**<
  */
 int XLALGetNextTemplate(Template **temp,                        /**< [out] the signal model template parameters */
 			GridParameters *gridparams,              /**< [in] the parameter space grid params */
-			ParameterSpace *space,
-			UNUSED void *r
+			ParameterSpace *space,		/**< UNDOCUMENTED */
+			UNUSED void *r		/**< UNDOCUMENTED */
 			)
 {
   UINT4 idx;                             /* the index variable */
@@ -509,7 +509,7 @@ int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs
 int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **power,     /**< [out] the spin derivitive demodulated power */
 						  COMPLEX8TimeSeriesArray *dsdata,         /**< [in] the downsampled SFT data */
 						  GridParametersVector *gridparams,        /**< [in/out] the spin derivitive gridding parameters */
-	                                          FILE *fp
+	                                          FILE *fp		/**< UNDOCUMENTED */
 						)
 {
   UINT4 i;
@@ -1040,7 +1040,7 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
 		 REAL8 freqband,            /**< [in] the bandwidth to read */
 		 INT4 start,                /**< [in] the min GPS time of the input data */
 		 INT4 end,                  /**< [in] the max GPS time of the input data*/
-		 INT4 tsft
+		 INT4 tsft		/**< UNDOCUMENTED */
   		 )
 {
   static SFTConstraints constraints;
@@ -1143,7 +1143,7 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
 				REAL8 T,                            /**< [in] the duration of the observation */
 				REAL8 DT,                           /**< [in] the length of the coherent segments */
 				REAL8 mu,                           /**< [in] the mismatch */
-				REAL8 coverage
+				REAL8 coverage		/**< UNDOCUMENTED */
 				)
 {
   REAL8 gnn[NBINMAX];                    /* stores the diagonal metric elements */

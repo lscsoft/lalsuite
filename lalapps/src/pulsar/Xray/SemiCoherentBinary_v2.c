@@ -511,10 +511,9 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [in] the output file pointer */
 				REAL4DemodulatedPowerVector *power,      /**< [in] the input data in the form of power */
 				ParameterSpace *pspace,                  /**< [in] the parameter space */
-				GridParametersVector *fgrid,
+				GridParametersVector *fgrid,		/**< UNDOCUMENTED */
 				GridParameters *bingrid,                 /**< [in] the grid parameters */
-				/* REAL4VectorArray *background, */
-				INT4 ntoplist
+				INT4 ntoplist		/**< UNDOCUMENTED */
 				)
 {
 
@@ -722,7 +721,7 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
 				    CHAR *outputdir,            /**< [in] the output directory name */
 				    ParameterSpace *pspace,     /**< [in] the parameter space */
 				    CHAR *clargs,               /**< [in] the command line args */
-				    UserInput_t *uvar
+				    UserInput_t *uvar		/**< UNDOCUMENTED */
 				    )
 {
   CHAR outputfile[LONGSTRINGLENGTH];    /* the output filename */

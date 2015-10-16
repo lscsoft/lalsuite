@@ -558,8 +558,8 @@ int XLALOpenIntermittentResultsFile(FILE **fp,                  /**< [in] filepo
 				    CHAR *outputfile,           /**< [out] the name of the output file */
 				    CHAR *outputdir,            /**< [in] the output directory name */
 				    CHAR *clargs,               /**< [in] the command line args */
-				    UserInput_t *uvar,
-				    LIGOTimeGPS *start
+				    UserInput_t *uvar,		/**< UNDOCUMENTED */
+				    LIGOTimeGPS *start		/**< UNDOCUMENTED */
 				    )
 {
   time_t curtime = time(NULL);          /* get the current time */
