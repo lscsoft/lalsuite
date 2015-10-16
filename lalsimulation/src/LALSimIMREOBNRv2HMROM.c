@@ -660,4 +660,3 @@ INT4 XLALSimIMREOBNRv2HMROM(
 
   return(retcode);
 }
-

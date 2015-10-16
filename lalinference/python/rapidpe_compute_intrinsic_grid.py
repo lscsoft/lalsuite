@@ -216,10 +216,11 @@ grid_section.add_option("--setup", help="Set up the initial grid based on templa
 grid_section.add_option("-t", "--tmplt-bank", help="XML file with template bank.")
 grid_section.add_option("-O", "--use-overlap", help="Use overlap information to define 'closeness'.")
 grid_section.add_option("-T", "--overlap-threshold", type=float, help="Threshold on overlap value.")
+grid_section.add_option("-N", "--no-deactivate", action="store_true", help="Do not deactivate cells initially which have no template within them.")
 optp.add_option_group(grid_section)
 
 refine_section = OptionGroup(optp, "refine options", "Options for refining a pre-existing grid.")
-grid_section.add_option("--refine", help="Refine a prexisting grid. Pass this option the grid points from previous levels (or the --setup) option.")
+refine_section.add_option("--refine", help="Refine a prexisting grid. Pass this option the grid points from previous levels (or the --setup) option.")
 refine_section.add_option("-r", "--result-file", help="XML file containing newest result to refine.")
 optp.add_option_group(refine_section)
 
@@ -256,10 +257,14 @@ intr_prms = intr_prms.keys()
 xmldoc = utils.load_filename(opts.tmplt_bank, contenthandler=ligolw.LIGOLWContentHandler)
 tmplt_bank = lsctables.SnglInspiralTable.get_table(xmldoc)
 
-results = None
+results = []
 if opts.result_file:
-    xmldoc = utils.load_filename(opts.result_file, contenthandler=ligolw.LIGOLWContentHandler)
-    results = lsctables.SnglInspiralTable.get_table(xmldoc)
+    for arg in glob.glob(opts.result_file):
+        # FIXME: Bad hardcode
+        if "samples" in arg:
+            continue
+        xmldoc = utils.load_filename(arg, contenthandler=ligolw.LIGOLWContentHandler)
+        results.extend(lsctables.SnglInspiralTable.get_table(xmldoc))
 
     # Normalize
     # FIXME: If we have more than 1 copies -- This is tricky because we need to
@@ -345,14 +350,17 @@ grid, spacing = amrlib.create_regular_grid_from_cell(init_region, side_pts=5, re
 # FIXME: This gets more and more dangerous in higher dimensions
 # FIXME: Move to function
 tree = BallTree(grid)
-get_idx = set()
-for pt in pts[idx:]:
-    get_idx.add(tree.query(pt, k=1, return_distance=False)[0][0])
-selected = grid[numpy.array(list(get_idx))]
+if not opts.no_deactivate:
+    get_idx = set()
+    for pt in pts[idx:]:
+        get_idx.add(tree.query(pt, k=1, return_distance=False)[0][0])
+    selected = grid[numpy.array(list(get_idx))]
+else:
+    selected = grid
 
 #### BEGIN REFINEMENT OF RESULTS #########
 
-if opts.refine and opts.result_file is not None:
+if opts.result_file is not None:
     # FIXME: temporary -- we shouldn't need to know the spacing of the initial
     # region
     prev_cells, spacing = amrlib.deserialize_grid_cells(opts.refine)
@@ -367,13 +375,15 @@ if opts.refine and opts.result_file is not None:
     for res in res_pts:
         dist, idx = grid_tree.query(res, k=1)
         # Stupid floating point inexactitude...
-        #assert all([numpy.isclose(a, b) for a, b in zip(res, selected[idx[0][0]])])
+        #print res, selected[idx[0][0]]
+        #assert numpy.allclose(res, selected[idx[0][0]])
         grid_idx.append(idx[0][0])
-    selected = get_cr_from_grid(selected[grid_idx], results, cr_thr=0.9)
-    print "Selected %d cells from %.2f%% confidence region" % (len(selected), 0.9)
-####
 
-grid, spacing = amrlib.refine_regular_grid(selected, spacing)
+    if opts.refine:
+        selected = get_cr_from_grid(selected[grid_idx], results, cr_thr=opts.overlap_threshold)
+        print "Selected %d cells from %3.2f%% confidence region" % (len(selected), opts.overlap_threshold*100)
+
+grid, spacing = amrlib.refine_regular_grid(selected, spacing, return_cntr=opts.setup)
 print "%d cells after refinement" % len(grid)
 grid = amrlib.prune_duplicate_pts(grid, init_region._bounds, spacing)
 
@@ -399,7 +409,9 @@ if opts.setup:
     amrlib.serialize_grid_cells({1: npy_grid}, opts.setup)
 else:
     npy_grid = amrlib.pack_grid_cells(cells, spacing)
-    amrlib.serialize_grid_cells({2: npy_grid}, opts.refine)
+    # FIXME: -1 will mean "whatever the next level is"
+    #amrlib.serialize_grid_cells({-1: npy_grid}, opts.refine)
+    amrlib.serialize_grid_cells({1: npy_grid}, opts.refine)
 
 overlaps = eval_grid(t1, cells, intr_prms)
 

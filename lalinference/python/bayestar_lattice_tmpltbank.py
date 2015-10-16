@@ -140,7 +140,7 @@ delta_theta0_theta3 = np.dot(metric_eigenvectors, np.diag(1 / np.sqrt(metric_eig
 # boundaries.
 n = 800
 i0, i1 = np.mgrid[-n:n+1, -n:n+1]
-i = np.column_stack((i0.flatten(), i1.flatten()))
+i = np.column_stack((i0.ravel(), i1.ravel()))
 
 # FIXME: Come up with a more natural way to specify the template spacing.
 skip = 10

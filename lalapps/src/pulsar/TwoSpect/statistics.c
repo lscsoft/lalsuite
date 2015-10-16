@@ -215,7 +215,7 @@ void sort_float_ascend(REAL4VectorAligned *vector)
 INT4 sampleREAL4VectorAligned(REAL4VectorAligned *output, const REAL4VectorAligned *input, const gsl_rng *rng)
 {
    XLAL_CHECK( output!=NULL && input!=NULL && output->length<input->length, XLAL_EINVAL );
-   for (UINT4 ii=0; ii<output->length; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*input->length)];
+   for (UINT4 ii=0; ii<output->length; ii++) output->data[ii] = input->data[gsl_rng_uniform_int(rng, input->length)];
    return XLAL_SUCCESS;
 } /* sampleREAL4VectorAligned() */
 

@@ -1192,9 +1192,23 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  * @brief Routines to produce IMRPhenom-family of phenomenological
  * inspiral-merger-ringdown waveforms.
  *
+ * These are frequency-domain models for compact binaries at comparable masses,
+ * tuned to numerical-relativity simulations.
+ *  * IMRPhenomA models non-spinning binaries.
+ *  * IMRPhenomB/C/D model spinning, but non-precessing binaries. IMRPhenomD is the most
+ *    up-to-date model and should be used unless there are specific reasons to use an
+ *    older version.
+ *  * IMRPhenomP models precessing binaries, based on IMRPhenomC.
+ *  * IMRPhenomPv2 models precessing binaries, based on IMRPhenomD, and should be used to
+ *    instead of IMRPhenomP (unless there are good reasons not to).
+ *
  * @review IMRPhenomB routines reviewed by Frank Ohme, P. Ajith, Alex Nitz
  * and Riccardo Sturani. The review concluded with git hash
  * 43ce3b0a8753eb266d75a43ba94b6fb6412121d0 (May 2014).
+ *
+ * @review IMRPhenomD routines are currently under review by Alex Nielsen, Carl Haster,
+ * Sebastian Khan, Sascha Husa, Frank Ohme, Mark Hannam, Ofek Brinholtz, Lionel London and
+ * David Keitel.
  * @{
  */
 

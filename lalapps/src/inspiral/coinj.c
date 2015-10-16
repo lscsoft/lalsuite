@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   CHAR            adjustedfile[FILENAME_MAX+10];
   CHAR                injtype[30];
   CHAR                det_name[10];
-  INT4                detectorFlags;
+  INT8                detectorFlags;
   LIGOTimeGPS inj_epoch;
   REAL8                deltaT= 1.0/16384.0;
   REAL8                injLength=100.0; /* Ten seconds at end */

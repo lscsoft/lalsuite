@@ -418,7 +418,7 @@ void XLALFrameFree(LALFrameH * frame)
 }
 
 LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration,
-    const char *project, int run, int frnum, int detectorFlags)
+    const char *project, int run, int frnum, long detectorFlags)
 {
     LALFrameH *frame = NULL;
     int detind;
@@ -436,7 +436,7 @@ LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration,
 
     /* add detectors */
     for (detind = 0; detind < LAL_NUM_DETECTORS; ++detind) {
-        int detflg = 1 << 2 * detind;
+        long detflg = 1 << 2 * detind;
         if ((detflg & detectorFlags))   /* yes, one ampersand! */
             XLALFrameAddFrDetector(frame,
                 &lalCachedDetectors[detind].frDetector);

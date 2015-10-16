@@ -574,6 +574,9 @@ static int SEOBNRv1ROMEffectiveSpinCore(
     UINT4 iStart = (UINT4) ceil(fLow_geom / deltaF_geom);
     UINT4 iStop = (UINT4) ceil(fHigh_geom / deltaF_geom);
     freqs = XLALCreateREAL8Sequence(iStop - iStart);
+    if (!freqs) {
+      XLAL_ERROR(XLAL_EFUNC, "Frequency array allocation failed.");
+    }
     for (UINT4 i=iStart; i<iStop; i++)
       freqs->data[i-iStart] = i*deltaF_geom;
 
@@ -585,6 +588,9 @@ static int SEOBNRv1ROMEffectiveSpinCore(
     offset = 0;
 
     freqs = XLALCreateREAL8Sequence(freqs_in->length);
+    if (!freqs) {
+      XLAL_ERROR(XLAL_EFUNC, "Frequency array allocation failed.");
+    }
     for (UINT4 i=0; i<freqs_in->length; i++)
       freqs->data[i] = freqs_in->data[i] * Mtot_sec;
   }

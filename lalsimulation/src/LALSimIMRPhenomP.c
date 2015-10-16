@@ -562,6 +562,9 @@ switch (IMRPhenomP_version) {
     size_t i_min = (size_t) (f_min / deltaF);
     size_t i_max = (size_t) (f_max_prime / deltaF);
     freqs = XLALCreateREAL8Sequence(i_max - i_min);
+    if (!freqs) {
+      XLAL_ERROR(XLAL_EFUNC, "Frequency array allocation failed.");
+    }
     for (UINT4 i=i_min; i<i_max; i++, L_fCut++)
       freqs->data[i-i_min] = i*deltaF;
 
@@ -580,6 +583,9 @@ switch (IMRPhenomP_version) {
         XLAL_ERROR(XLAL_EDOM, "Frequency sequence must be strictly increasing!\n");
 
     freqs = XLALCreateREAL8Sequence(n);
+    if (!freqs) {
+      XLAL_ERROR(XLAL_EFUNC, "Frequency array allocation failed.");
+    }
     // Restrict sequence to frequencies <= fCut
     for (UINT4 i=0; i<n; i++)
       if (freqs_in->data[i] <= fCut) {

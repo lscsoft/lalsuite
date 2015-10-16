@@ -63,7 +63,9 @@ static int IMRPhenomDGenerateFD(
  * @author Michael Puerrer, Sebastian Khan, Frank Ohme
  *
  * @brief C code for IMRPhenomD phenomenological waveform model.
- * See Husa et al, arXiv:1508.07250 and Khan et al, arXiv:1508.07253 for details.
+ * See Husa et al \cite Husa:2015iqa, and Khan et al \cite Khan:2015jqa
+ * for details. Any studies that use this waveform model should include
+ * a reference to both of these papers.
  *
  * This is an aligned-spin frequency domain model.
  *
@@ -74,7 +76,7 @@ static int IMRPhenomDGenerateFD(
  * * Along the mass-ratio 1:18 line it was calibrated to spins [-0.8, +0.4].
  * The calibration points will be given in forthcoming papers.
  *
- * @note The model is usable outside this parameter range,
+ * @attention The model is usable outside this parameter range,
  * and in tests to date gives sensible physical results,
  * but conclusive statements on the physical fidelity of
  * the model for these parameters await comparisons against further
@@ -177,6 +179,7 @@ static int IMRPhenomDGenerateFD(
   const REAL8 M = m1 + m2;
   REAL8 eta = m1 * m2 / (M * M);
   const REAL8 M_sec = M * LAL_MTSUN_SI;
+  REAL8 t0;
 
   REAL8 chi1, chi2;
   if (m1>m2) { // swap spins
@@ -214,6 +217,9 @@ static int IMRPhenomDGenerateFD(
   // Compute coefficients to make phase C^1
   ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
 
+  //time shift so that peak amplitude is approximately at t=0
+  t0 = DPhiMRD(pAmp->fmaxCalc, pPhi);
+
   /* Now generate the waveform */
   #pragma omp parallel for
   for (size_t i = ind_min; i < ind_max; i++) {
@@ -223,7 +229,9 @@ static int IMRPhenomDGenerateFD(
     REAL8 amp = IMRPhenDAmplitude(Mf, pAmp);
     REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn);
 
-    phi -= 2.*phi0; // factor of 2 b/c phi0 is orbital phase
+    phi -= 2.*phi0 + t0*Mf; // factor of 2 b/c phi0 is orbital phase
+
+
 
     ((*htilde)->data->data)[i] = amp0 * amp * cexp(-I * phi);
   }

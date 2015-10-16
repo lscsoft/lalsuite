@@ -606,8 +606,6 @@ LALInferenceProposalCycle* LALInferenceSetupDefaultInspiralProposalCycle(LALInfe
 REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread,
                                       LALInferenceVariables *currentParams,
                                       LALInferenceVariables *proposedParams) {
-    gsl_matrix *m=NULL;
-    INT4Vector *v=NULL;
     INT4 dim, varNr;
     REAL8 logPropRatio, sqrttemp, sigma;
     char tmpname[MAX_STRLEN] = "";
@@ -672,7 +670,7 @@ REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread,
 REAL8 LALInferenceSingleProposal(LALInferenceThreadState *thread,
                                  LALInferenceVariables *currentParams,
                                  LALInferenceVariables *proposedParams) {
-    LALInferenceVariableItem *param=NULL, *dummyParam=NULL;
+    LALInferenceVariableItem *param=NULL;
     LALInferenceVariables *args = thread->proposalArgs;
     gsl_rng * GSLrandom = thread->GSLrandom;
     REAL8 sigma, big_sigma;

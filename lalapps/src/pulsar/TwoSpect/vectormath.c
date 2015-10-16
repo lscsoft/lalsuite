@@ -116,9 +116,10 @@ INT4 DirichletRatioVector(COMPLEX8Vector *output, alignedREAL8Vector *delta0, al
 
    XLAL_CHECK( output!=NULL && delta0!=NULL && delta1!=NULL && scaling!=NULL && params!=NULL, XLAL_EFUNC );
 
-   REAL4VectorAligned *delta0_int = NULL, *delta1_int = NULL, *sinPiDelta0 = NULL, *sinPiDelta1 = NULL, *PiDelta = NULL, *cosPiDelta0 = NULL, *cosPiDelta1 = NULL, *realTerms = NULL, *realTerms2 = NULL, *imagTerms = NULL, *imagTerms2 = NULL;
+   REAL4VectorAligned *delta0_int = NULL, *delta1_int = NULL, *roundedDelta0_int = NULL, *sinPiDelta0 = NULL, *sinPiDelta1 = NULL, *PiDelta = NULL, *cosPiDelta0 = NULL, *cosPiDelta1 = NULL, *realTerms = NULL, *realTerms2 = NULL, *imagTerms = NULL, *imagTerms2 = NULL;
    XLAL_CHECK( (delta0_int = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (delta1_int = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (roundedDelta0_int = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (sinPiDelta0 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (sinPiDelta1 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK( (cosPiDelta0 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
@@ -134,6 +135,7 @@ INT4 DirichletRatioVector(COMPLEX8Vector *output, alignedREAL8Vector *delta0, al
       delta1_int->data[ii] = (REAL4)(delta1->data[ii]);
    }
 
+   XLAL_CHECK( VectorRoundREAL4(roundedDelta0_int, delta0_int, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( XLALVectorScaleREAL4(PiDelta->data, (REAL4)LAL_PI, delta0_int->data, delta0_int->length) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( XLALVectorSinCosREAL4(sinPiDelta0->data, cosPiDelta0->data, PiDelta->data, PiDelta->length) == XLAL_SUCCESS, XLAL_EFUNC );
    XLAL_CHECK( XLALVectorScaleREAL4(PiDelta->data, (REAL4)LAL_PI, delta1_int->data, delta1_int->length) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -150,21 +152,22 @@ INT4 DirichletRatioVector(COMPLEX8Vector *output, alignedREAL8Vector *delta0, al
       if (fabsf(delta1_int->data[ii])<(REAL4)1.0e-6) {
          if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = 1.0;
          else if (fabsf((REAL4)(delta0_int->data[ii]*delta0_int->data[ii]-1.0))<(REAL4)1.0e-6) output->data[ii] = -2.0;
-         else if (fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) output->data[ii] = 0.0;
+         else if (fabsf((REAL4)(delta0_int->data[ii]-roundedDelta0_int->data[ii]))<(REAL4)1.0e-6) output->data[ii] = 0.0;
          else output->data[ii] = 0.5/(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta0_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta0_int->data[ii]*(delta0_int->data[ii]*delta0_int->data[ii]-1.0)));
       } else if (fabsf((REAL4)(delta1_int->data[ii]*delta1_int->data[ii]-1.0))<(REAL4)1.0e-6) {
          if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = -0.5;
          else if (fabsf((REAL4)(delta0_int->data[ii]*delta0_int->data[ii]-1.0))<(REAL4)1.0e-6) output->data[ii] = 1.0;
-         else if (fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) output->data[ii] = 0.0;
+         else if (fabsf((REAL4)(delta0_int->data[ii]-roundedDelta0_int->data[ii]))<(REAL4)1.0e-6) output->data[ii] = 0.0;
          else output->data[ii] = -0.25/(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta0_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta0_int->data[ii]*(delta0_int->data[ii]*delta0_int->data[ii]-1.0)));
       } else if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = 2.0*(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta1_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta1_int->data[ii]*(delta1_int->data[ii]*delta1_int->data[ii]-1.0)));
       else if (fabsf((REAL4)(delta0_int->data[ii] - 1.0))<(REAL4)1.0e-6) output->data[ii] = -4.0*(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta1_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta1_int->data[ii]*(delta1_int->data[ii]*delta1_int->data[ii]-1.0)));
-      else if (fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) output->data[ii] = 0.0;
+      else if (fabsf((REAL4)(delta0_int->data[ii]-roundedDelta0_int->data[ii]))<(REAL4)1.0e-6) output->data[ii] = 0.0;
       else output->data[ii] = scaling->data[ii]*sinPiDelta1->data[ii]/sinPiDelta0->data[ii]*crectf(realTerms->data[ii], imagTerms->data[ii]);
    }
 
    XLALDestroyREAL4VectorAligned(delta0_int);
    XLALDestroyREAL4VectorAligned(delta1_int);
+   XLALDestroyREAL4VectorAligned(roundedDelta0_int);
    XLALDestroyREAL4VectorAligned(sinPiDelta0);
    XLALDestroyREAL4VectorAligned(sinPiDelta1);
    XLALDestroyREAL4VectorAligned(cosPiDelta0);
@@ -176,48 +179,6 @@ INT4 DirichletRatioVector(COMPLEX8Vector *output, alignedREAL8Vector *delta0, al
    XLALDestroyREAL4VectorAligned(imagTerms2);
 
    return XLAL_SUCCESS;
-
-   /* XLAL_CHECK( output!=NULL && delta0!=NULL && delta1!=NULL && scaling!=NULL && params!=NULL, XLAL_EFUNC );
-
-   REAL4VectorAligned *delta0_int = NULL, *delta1_int = NULL, *sinVecSum = NULL, *cosVecDiff = NULL, *sinVec = NULL, *cosVec = NULL, *TwoPiDelta1minusPiDelta0 = NULL, *PiDelta0 = NULL;
-   XLAL_CHECK( (delta0_int = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (delta1_int = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (sinVecSum = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (cosVecDiff = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (sinVec = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (cosVec = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (PiDelta0 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( (TwoPiDelta1minusPiDelta0 = XLALCreateREAL4VectorAligned(delta0->length, 32)) != NULL, XLAL_EFUNC );
-
-   for (UINT4 ii=0; ii<delta0_int->length; ii++) {
-      delta0_int->data[ii] = (REAL4)(delta0->data[ii]);
-      delta1_int->data[ii] = (REAL4)(delta1->data[ii]);
-   }
-
-   XLAL_CHECK( XLALVectorScaleREAL4(TwoPiDelta1minusPiDelta0->data, (REAL4)LAL_TWOPI, delta1_int->data, delta1_int->length) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( XLALVectorScaleREAL4(PiDelta0->data, (REAL4)LAL_PI, delta0_int->data, delta0_int->length) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( VectorSubtractREAL4(TwoPiDelta1minusPiDelta0, TwoPiDelta1minusPiDelta0, PiDelta0, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( XLALVectorSinCosREAL4(sinVecSum->data, cosVecDiff->data, TwoPiDelta1minusPiDelta0->data, TwoPiDelta1minusPiDelta0->length) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( XLALVectorSinCosREAL4(sinVec->data, cosVec->data, PiDelta0->data, PiDelta0->length) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( XLALVectorAddREAL4(sinVecSum->data, sinVecSum->data, sinVec->data, sinVecSum->length) == XLAL_SUCCESS, XLAL_EFUNC );
-   XLAL_CHECK( VectorSubtractREAL4(cosVecDiff, cosVec, cosVecDiff, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
-
-   for (UINT4 ii=0; ii<output->length; ii++) {
-      if (fabsf(delta1_int->data[ii])<(REAL4)1.0e-6 || fabsf((REAL4)(delta1_int->data[ii]*delta1_int->data[ii]-1.0))<(REAL4)1.0e-6 || fabsf((REAL4)(delta0_int->data[ii]-roundf(delta0_int->data[ii])))<(REAL4)1.0e-6) output->data[ii] = crectf(0.0, 0.0);
-      else output->data[ii] = scaling->data[ii]/(2.0*sinVec->data[ii])*crectf(sinVecSum->data[ii], cosVecDiff->data[ii]);
-   }
-
-   XLALDestroyREAL4VectorAligned(delta0_int);
-   XLALDestroyREAL4VectorAligned(delta1_int);
-   XLALDestroyREAL4VectorAligned(sinVec);
-   XLALDestroyREAL4VectorAligned(cosVec);
-   XLALDestroyREAL4VectorAligned(sinVecSum);
-   XLALDestroyREAL4VectorAligned(cosVecDiff);
-   XLALDestroyREAL4VectorAligned(PiDelta0);
-   XLALDestroyREAL4VectorAligned(TwoPiDelta1minusPiDelta0);
-
-   return XLAL_SUCCESS;
-   */
 
 }
 
@@ -316,6 +277,134 @@ INT4 VectorInvertREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, IN
    if (vectorMath==1) XLAL_CHECK( sseInvertREAL8Vector(output, input) == XLAL_SUCCESS, XLAL_EFUNC );
    else if (vectorMath==2) XLAL_CHECK( avxInvertREAL8Vector(output, input) == XLAL_SUCCESS, XLAL_EFUNC );
    else for (UINT4 ii=0; ii<input->length; ii++) output->data[ii] = 1.0/input->data[ii];
+   return XLAL_SUCCESS;
+}
+
+INT4 VectorFloorREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, INT4 vectorMath)
+{
+   XLAL_CHECK( output!=NULL && input!=NULL, XLAL_EINVAL );
+   if (vectorMath==2) {
+#ifdef __AVX__
+      _mm256_zeroupper();
+      INT4 roundedvectorlength = (INT4)input->length / 4;
+      __m256d *arr, *result;
+      arr = (__m256d*)(void*)input->data;
+      result = (__m256d*)(void*)output->data;
+      for (INT4 ii=0; ii<roundedvectorlength; ii++) {
+         *result = _mm256_floor_pd(*arr);
+         arr++;
+         result++;
+      }
+      for (UINT4 ii=4*roundedvectorlength; ii<input->length; ii++) output->data[ii] = floor(input->data[ii]);
+      _mm256_zeroupper();
+#else
+      (void)output;
+      (void)input;
+      fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+#endif
+   } else for (UINT4 ii=0; ii<input->length; ii++) output->data[ii] = floor(input->data[ii]);
+   return XLAL_SUCCESS;
+}
+
+INT4 VectorRoundREAL4(REAL4VectorAligned *output, REAL4VectorAligned *input, INT4 vectorMath)
+{
+   XLAL_CHECK( output!=NULL && input!=NULL, XLAL_EINVAL );
+   if (vectorMath==2) {
+#ifdef __AVX__
+      _mm256_zeroupper();
+      INT4 roundedvectorlength = (INT4)input->length / 8;
+      __m256 *arr, *result;
+      arr = (__m256*)(void*)input->data;
+      result = (__m256*)(void*)output->data;
+      for (INT4 ii=0; ii<roundedvectorlength; ii++) {
+         *result = _mm256_round_ps(*arr, _MM_FROUND_TO_NEAREST_INT);
+         arr++;
+         result++;
+      }
+      for (UINT4 ii=8*roundedvectorlength; ii<input->length; ii++) output->data[ii] = roundf(input->data[ii]);
+      _mm256_zeroupper();
+#else
+      (void)output;
+      (void)input;
+      fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+#endif
+   } else for (UINT4 ii=0; ii<input->length; ii++) output->data[ii] = round(input->data[ii]);
+   return XLAL_SUCCESS;
+}
+
+INT4 VectorRoundREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, INT4 vectorMath)
+{
+   XLAL_CHECK( output!=NULL && input!=NULL, XLAL_EINVAL );
+   if (vectorMath==2) {
+#ifdef __AVX__
+      _mm256_zeroupper();
+      INT4 roundedvectorlength = (INT4)input->length / 4;
+      __m256d *arr, *result;
+      arr = (__m256d*)(void*)input->data;
+      result = (__m256d*)(void*)output->data;
+      for (INT4 ii=0; ii<roundedvectorlength; ii++) {
+         *result = _mm256_round_pd(*arr, _MM_FROUND_TO_NEAREST_INT);
+         arr++;
+         result++;
+      }
+      for (UINT4 ii=4*roundedvectorlength; ii<input->length; ii++) output->data[ii] = round(input->data[ii]);
+      _mm256_zeroupper();
+#else
+      (void)output;
+      (void)input;
+      fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+#endif
+   } else for (UINT4 ii=0; ii<input->length; ii++) output->data[ii] = round(input->data[ii]);
+   return XLAL_SUCCESS;
+}
+
+INT4 VectorAbsREAL4(REAL4VectorAligned *output, REAL4VectorAligned *input, INT4 vectorMath)
+{
+   XLAL_CHECK( output!=NULL && input!=NULL, XLAL_EINVAL );
+   if (vectorMath==2) {
+#ifdef __AVX__
+      _mm256_zeroupper();
+      INT4 roundedvectorlength = (INT4)input->length / 8;
+      __m256 *arr, *result;
+      __m256i mask = _mm256_set1_epi32(~0x80000000);
+      arr = (__m256*)(void*)input->data;
+      result = (__m256*)(void*)output->data;
+      for (INT4 ii=0; ii<roundedvectorlength; ii++) {
+         *result = _mm256_and_ps(*arr, (__m256)mask);
+         arr++;
+         result++;
+      }
+      for (UINT4 ii=8*roundedvectorlength; ii<input->length; ii++) output->data[ii] = fabsf(input->data[ii]);
+      _mm256_zeroupper();
+#else
+      (void)output;
+      (void)input;
+      fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+#endif
+   } else if (vectorMath==1) {
+#ifdef __SSE2__
+      INT4 roundedvectorlength = (INT4)input->length / 4;
+      __m128 *arr, *result;
+      __m128i mask = _mm_set1_epi32(~0x80000000);
+      arr = (__m128*)(void*)input->data;
+      result = (__m128*)(void*)output->data;
+      for (INT4 ii=0; ii<roundedvectorlength; ii++) {
+         *result = _mm_and_ps(*arr, (__m128)mask);
+         arr++;
+         result++;
+      }
+      for (UINT4 ii=4*roundedvectorlength; ii<input->length; ii++) output->data[ii] = fabsf(input->data[ii]);
+#else
+      (void)output;
+      (void)input;
+      fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+#endif
+   } else for (UINT4 ii=0; ii<input->length; ii++) output->data[ii] = fabsf(input->data[ii]);
    return XLAL_SUCCESS;
 }
 
