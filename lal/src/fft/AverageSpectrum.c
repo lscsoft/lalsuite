@@ -1441,23 +1441,23 @@ REAL8 XLALLogMedianBiasGeometric( UINT4 nn )
  * the application of certain correction factors that have been derived
  * from the assumption that the underlying statistics are Gaussian.  If the
  * noise is not Gaussian then the resulting PSD estimate will be biased ---
- * it will differ from the true arithmetic mean of spectrum by some unknown
- * factor.
+ * it will differ from the true arithmetic mean of the spectrum by some
+ * unknown factor.
  *
  * Two parameters control the behaviour of the LALPSDRegressor object:  the
  * average_samples and median_samples.  When new data is supplied, the
- * median of the most recent median_samples frequency series object is used
- * to update the moving average.  For each update, the new PSD estimate is
- * computed from 1 part the new data and (average_samples - 1) parts the
- * old data.  This makes the regressor implement a moving
+ * median of the most recent median_samples frequency series objects is
+ * used to update the moving average.  For each update, the new PSD
+ * estimate is computed from 1 part the new data and (average_samples - 1)
+ * parts the old data.  This makes the regressor implement a moving
  * exponentially-distributed weighted average, with average_samples setting
  * the scale of the distribution.
  *
- * Changes to the PSD must persist for approximately 1/2 the number of median
- * samples before they begin to be reflected in the running average, and so
- * the median_samples parameter controls the robustness of the PSD estimate
- * to glitches.  Increasing the median_samples also increases the time
- * required for the PSD to converge.
+ * Changes to the PSD must persist for approximately 1/2 the number of
+ * median samples before they begin to be reflected in the running average,
+ * and so the median_samples parameter controls the robustness of the PSD
+ * estimate to glitches.  Increasing the median_samples also increases the
+ * time required for the PSD to converge.
  *
  * Increasing the average_samples parameter decreases the sample noise in
  * the resulting PSD by averaging over more frequency series samples but
