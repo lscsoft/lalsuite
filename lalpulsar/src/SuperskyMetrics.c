@@ -1939,14 +1939,20 @@ int XLALSuperskyLatticePulsarSpinRange(
     fkdotMax[s] += stats->max_value_pass - stats->min_value_pass;
   }
 
+  // Initialise 'spin_range' to zero
+  XLAL_INIT_MEM(*spin_range);
+
+  // Set reference time of 'spin_range' to that of coordinate transform data
+  spin_range->refTime = *ref_time;
+
   // Set spindown range
   for (size_t s = 0; s <= smax; ++s) {
     spin_range->fkdot[s] = fkdotMin[s];
     spin_range->fkdotBand[s] = fkdotMax[s] - fkdotMin[s];
   }
 
-  // Set reference time of 'spin_range' to that of coordinate transform data
-  spin_range->refTime = *ref_time;
+  // Cleanup
+  XLALDestroyLatticeTilingIterator(itr);
 
   return XLAL_SUCCESS;
 
