@@ -756,21 +756,30 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
 
   // Decompose coordinate transform data
   DECOMPOSE_RSSKY_TRANSF(metrics->semi_rssky_transf);
-
-  // Check frequency-frequency elements of coherent reduced supersky metrics are the same
   const size_t ifreq = RSSKY_FKDOT_DIM(0);
-  const double coh_rssky_metric_ff = gsl_matrix_get(metrics->coh_rssky_metric[0], ifreq, ifreq);
-  for (size_t n = 1; n < metrics->num_segments; ++n) {
-    const double coh_rssky_metric_ff_n = gsl_matrix_get(metrics->coh_rssky_metric[n], ifreq, ifreq);
-    const double tol = 1e-8;
-    XLAL_CHECK(fabs(coh_rssky_metric_ff - coh_rssky_metric_ff_n) < tol * coh_rssky_metric_ff, XLAL_ETOL, "%s: Frequency-frequency elements outside tol=%g: segment #1=%0.15e, segment #%zu=%0.15e", __func__, tol, coh_rssky_metric_ff, n, coh_rssky_metric_ff_n);
+
+  // Find the maximum, over both coherent and semicoherent metrics, of 'g_{ff} / mu',
+  // where 'g_{ff}' is the frequency-frequency metric element, and mu is the mismatch
+  double max_rssky_metric_ff_d_mu = 0;
+  for (size_t n = 0; n < metrics->num_segments; ++n) {
+    const double coh_rssky_metric_ff_d_mu = gsl_matrix_get(metrics->coh_rssky_metric[n], ifreq, ifreq) / coh_max_mismatch;
+    max_rssky_metric_ff_d_mu = GSL_MAX(max_rssky_metric_ff_d_mu, coh_rssky_metric_ff_d_mu);
+  }
+  {
+    const double semi_rssky_metric_ff_d_mu = gsl_matrix_get(metrics->semi_rssky_metric, ifreq, ifreq) / semi_max_mismatch;
+    max_rssky_metric_ff_d_mu = GSL_MAX(max_rssky_metric_ff_d_mu, semi_rssky_metric_ff_d_mu);
   }
 
-  // Project semicoherent reduced supersky metric
-  XLAL_CHECK(XLALProjectMetric(&metrics->semi_rssky_metric, metrics->semi_rssky_metric, ifreq) == XLAL_SUCCESS, XLAL_EFUNC);
-
-  // Rescale frequency-frequency element of semicoherent reduced supersky metric
-  gsl_matrix_set(metrics->semi_rssky_metric, ifreq, ifreq, coh_rssky_metric_ff * semi_max_mismatch / coh_max_mismatch);
+  // Project all metrics in the frequency dimension, and set frequency-frequency
+  // metric element to 'max_rssky_metric_ff_d_mu' * 'mu', where mu is the mismatch
+  for (size_t n = 0; n < metrics->num_segments; ++n) {
+    XLAL_CHECK(XLALProjectMetric(&metrics->coh_rssky_metric[n], metrics->coh_rssky_metric[n], ifreq) == XLAL_SUCCESS, XLAL_EFUNC);
+    gsl_matrix_set(metrics->coh_rssky_metric[n], ifreq, ifreq, max_rssky_metric_ff_d_mu * coh_max_mismatch);
+  }
+  {
+    XLAL_CHECK(XLALProjectMetric(&metrics->semi_rssky_metric, metrics->semi_rssky_metric, ifreq) == XLAL_SUCCESS, XLAL_EFUNC);
+    gsl_matrix_set(metrics->semi_rssky_metric, ifreq, ifreq, max_rssky_metric_ff_d_mu * semi_max_mismatch);
+  }
 
   return XLAL_SUCCESS;
 
