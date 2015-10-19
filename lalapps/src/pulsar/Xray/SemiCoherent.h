@@ -35,6 +35,7 @@
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_cdf.h>
 #include <gsl/gsl_sort.h>
+#include <gsl/gsl_sort_vector.h>
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_sf_log.h>        /* for log computation */
 #include <gsl/gsl_complex_math.h>
@@ -110,7 +111,8 @@ extern "C" {
 #define NBINMAX 4                        /* the number of binary parameter dimensions */ 
 #define NBINS 4                       /* the number of bins to add to each side of the fft for safety */
 #define WINGS_FACTOR 2                /* the safety factor in reading extra frequency from SFTs */
-  
+#define MAXNTSERIES 1073741824        /* the max number of samples in a timeseries at one time */
+ 
   /***********************************************************************************************/
   /* structure definitions */
   
@@ -200,15 +202,16 @@ extern "C" {
   /** Stores an array of REAL4 vectors
    */
   typedef struct {
-    REAL4Vector **data;             /**< stores REAL4 Vectors */
+    REAL4Vector **data;                  /**< stores REAL4 Vectors */
     UINT4 length;                        /**< the number of vectors */
   } REAL4VectorArray;  
 
   /** Parameters for BinaryToSFT function
    */
   typedef struct {
-    REAL8 fsamp;                      /**< the sampling frequency of the data */
+    REAL8 tsamp;                      /**< the sampling time of the data */
     INT4 tsft;                        /**< the length of the SFTs */
+    LIGOTimeGPS tstart;               /**< the first sft time stamp */
     REAL8 freq;                       /**< the starting frequency */
     REAL8 freqband;                   /**< the band width */
     REAL8 highpassf;                  /**< the high pass filter frequency */
@@ -228,7 +231,7 @@ extern "C" {
   int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, SFTVector *sftvec);
   int XLALSFTToCOMPLEX8TimeSeries(COMPLEX8TimeSeries **ts, COMPLEX8FrequencySeries *sft,COMPLEX8FFTPlan **plan);
   int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs,const COMPLEX8TimeSeries *ts,GridParameters **gridparams);
-  int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector**,COMPLEX8TimeSeriesArray*,GridParametersVector*,FILE*);
+  int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector**,COMPLEX8TimeSeriesArray*,GridParametersVector*,FILE *fp);
   int XLALApplyPhaseCorrection(COMPLEX8TimeSeries **outts, COMPLEX8TimeSeries *ints, Template *fn);
   /* int XLALNormaliseSFTs(SFTVector **sftvec,UINT4 blocksize); */
   int XLALComputeBinaryGridParams(GridParameters **binarygridparams,REAL8Space *space,REAL8 T,REAL8 DT,REAL8 mu,REAL8 coverage);
@@ -241,9 +244,11 @@ extern "C" {
   int XLALInitgslrand(gsl_rng **gslrnd,INT8 seed);
   int XLALCopySFT (SFTtype *dest, const SFTtype *src);
   int XLALAppendSFT2Vector (SFTVector *vect,const SFTtype *sft);
-  int XLALBinaryToSFTVector(SFTVector **SFTvect,CHAR *filename,LIGOTimeGPS *fileStart,BinaryToSFTparams *par,long int *nphotons);
-  
-  
+  int XLALBinaryToSFTVector(SFTVector **SFTvect,CHAR *filename,LIGOTimeGPS *fileStart,BinaryToSFTparams *par,INT8Vector **np, REAL8Vector **R);
+  int XLALNormalizeSFTVectMean ( SFTVector *sftVect, REAL8Vector *means, INT4 flag);
+  int XLALNormalizeSFTMean ( SFTtype  *sft, REAL8 *mean, INT4 flag);
+  int XLALNormalizeSFTVectMedian ( SFTVector *sftVect, REAL8Vector *means, INT4 flag);
+  int XLALNormalizeSFTMedian ( SFTtype  *sft, REAL8 *mean, INT4 flag);
 #ifdef  __cplusplus
 }
 #endif  

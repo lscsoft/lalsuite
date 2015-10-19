@@ -36,6 +36,10 @@
 #include <time.h>
 #include <stdio.h>
 #include <sys/stat.h>
+
+
+
+
 #include <gsl/gsl_interp.h>        /* needed for the gsl interpolation */
 #include <gsl/gsl_spline.h>        /* needed for the gsl interpolation */
 #include <gsl/gsl_rng.h>           /* for random number generation */
@@ -335,103 +339,6 @@ int XLALGetNextTemplate(Template **temp,                        /**< [out] the s
 
 }
 
-/** Compute the background photon flux for each SFT
- *
- * This computes the median of the power to obtain the average counts per second
- *
- */
-/* int XLALNormaliseSFTs(SFTVector **sftvec,             /\**< [in/out] the SFTs *\/ */
-/* 		      UINT4 blocksize                 /\**< [in] the running median block size *\/ */
-/* 		      ) */
-/* { */
-/*   LALStatus status = blank_status;        /\* for use wih non-XLAL functions *\/ */
-/*   UINT4 i,j;                               /\* counters *\/ */
-/*   LALRunningMedianPar param; */
-/*   param.blocksize = blocksize; */
-
-/*   /\* validate input arguments *\/ */
-/*   if (*sftvec == NULL) { */
-/*     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input SFTVector structure == NULL.\n",__func__); */
-/*     XLAL_ERROR(XLAL_EINVAL); */
-/*   } */
-
-/*   /\* loop over each SFT *\/ */
-/*   for (i=0;i<(*sftvec)->length;i++) { */
-
-/*     /\* COMPLEX8Sequence *sft = (*sftvec)->data[i].data; *\/ */
-/*     SFTtype *sft = (*sftvec)->data[i].data; */
-/*     REAL8 medianbias;                       /\* the bias from computing the median *\/ */
-/*     REAL4Sequence *background = NULL; */
-
-/*     /\* define the length of the running median vector *\/ */
-/*     UINT4 medianlength = sft->length - param.blocksize + 1; */
-
-/*     /\* allocate memory for the power input *\/ */
-/*     REAL4Sequence *P = NULL; */
-/*     P = XLALCreateREAL4Vector(sft->length); */
-
-/*     /\* loop over each element in the SFT and record the power *\/ */
-/*     for (j=0;j<sft->length;j++) { */
-/*       P->data[j] = (crealf(sft->data[j])*crealf(sft->data[j]) + cimagf(sft->data[j])*cimagf(sft->data[j])); */
-/*       /\* fprintf(stdout,"%.12f %.12f %.12f\n",sftvec->data[0].f0 + j*sftvec->data[i].deltaF,crealf(sft->data[j]),cimagf(sft->data[j])); *\/ */
-/*     }    */
-
-/*     /\* allocate memory for the running median results *\/ */
-/*     background = XLALCreateREAL4Vector(medianlength); */
-
-/*     /\* call running median *\/       */
-/*     LAL_CALL(LALSRunningMedian2(&status,background, P, param ),&status); */
-/*     LogPrintf(LOG_CRITICAL,"%s: LALRunningMedian failed.\n",__func__); */
-      
-/*     /\* compute the median bias *\/ */
-/*     LAL_CALL ( LALRngMedBias( &status, &medianbias, sft->length ), &status); */
-
-/*     /\* normalise the data by the running median *\/ */
-/*     for (j=0;j<background->length;j++) { */
-/*       REAL8 norm = 1.0/sqrt(background->data[j]/medianbias); */
-/*       /\* COMPLEX8 dum = sft->data[j+param.blocksize/2] + _Complex_I*norm; *\/ */
-/*       sft->data[j+param.blocksize/2] *= ((REAL4)norm); */
-/*       /\* sft->data[j+param.blocksize/2].im /= norm; *\/ */
-/*       /\* fprintf(stdout,"%.12f %.12f\n",P->data[j+param.blocksize/2],background->data[j]); *\/ */
-/*     } */
-/*     /\* make sure that the values in the wings are set to zero *\/ */
-/*     /\* for (j=0;j<param.blocksize/2;j++) { *\/ */
-/*     /\*   sft->data[j] = 0 + sqrt(-1)*0.0; *\/ */
-/*     /\*   /\\* sft->data[j].im = 0.0; *\\/ *\/ */
-/*     /\* } *\/ */
-/*     /\* for (j=medianlength+param.blocksize;j<sft->length;j++) { *\/ */
-/*     /\*   sft->data[j] = 0.0; *\/ */
-/*     /\*   /\\* sft->data[j].im = 0.0; *\\/ *\/ */
-/*     /\* } *\/ */
-/*     for (j=0;j<sft->length;j++) { */
-/*       fprintf(stdout,"%.12f\n",(crealf(sft->data[j])*crealf(sft->data[j]) + cimagf(sft->data[j])*cimagf(sft->data[j]))); */
-/*     } */
-/*     exit(0); */
-   
-    
-   
-/*     /\* record estimate - this is the expected mean of the power spectrum *\/ */
-/*     /\* it is actually equal to R*T*(1+R*dt)*dt^2 ~ R*T*dt^2 since it is the average of a squared Poisson variable *\/ */
-/*     /\* R = (median/medianbias); *\/ */
-/*     /\* (*background)->data[i] = R; /\\* T*R/pow((REAL8)SAMPFREQ,2.0); *\\/ *\/ */
-/*     /\* LogPrintf(LOG_DEBUG,"%s : Estimated the background for SFT starting at %d as %.3e cnts/s.\n",__func__,sftvec->data[i].epoch.gpsSeconds,R); *\/ */
-
-/*     /\* if (isinf(R)) { *\/ */
-/*     /\*   for (j=0;j<sft->length;j++) fprintf(stdout,"%.12f %.12e %.12e\n",sftvec->data[i].f0 + j*sftvec->data[i].deltaF,crealf(sft->data[j]),cimagf(sft->data[j])); *\/ */
-/*     /\*   exit(0); *\/ */
-/*     /\* } *\/ */
-/*     /\* free the power *\/ */
-/*     XLALDestroyREAL4Vector(P); */
-/*     XLALDestroyREAL4Vector(background); */
-/*     /\* XLALFree(P); *\/ */
-    
-/*   } */
-
-/*   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__); */
-/*   return XLAL_SUCCESS; */
-
-/* } */
-
 /** Compute the demodulated power for a single SFT
  *
  * This involves taking the downsampled SFT timeseries and multiplying by the
@@ -479,8 +386,6 @@ int XLALApplyPhaseCorrection(COMPLEX8TimeSeries **outts,            /**< [out] t
     
     /* multiply data by phase correction - leave the zero-padding */
     (*outts)->data->data[j] = ints->data->data[j]*x;
-    /* (*outts)->data->data[j].realf_FIXME = crealf(ints->data->data[j])*xr - cimagf(ints->data->data[j])*xi; */
-    /* (*outts)->data->data[j].imagf_FIXME = crealf(ints->data->data[j])*xi + cimagf(ints->data->data[j])*xr; */
     
   }
   
@@ -527,7 +432,6 @@ int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs
   REAL8 deltaF = 1.0/(ts->deltaT*ts->data->length);   /* the intrinsic deltaF */
   /* define new deltaF accounting for the fixed deltaT */
   REAL8 newdeltaF = (*gridparams)->grid[0].delta;
-/*   REAL8 oldmaxf = (*gridparams)->grid[0].min + (*gridparams)->grid[0].length*(*gridparams)->grid[0].delta; */
   UINT4 newN = ceil((T*deltaF/newdeltaF)/deltaT);
   REAL8 newT = deltaT*newN;
   newdeltaF = 1/newT;
@@ -555,7 +459,6 @@ int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs
   /* put the input data into the temporary input structure and normalise it with deltaT */
   for (j=0;j<N;j++) {
     temp_input->data[j] = ts->data->data[j]*deltaT;
-    /* temp_input->data[j].imagf_FIXME = ts->data->data[j].imagf_FIXME*deltaT; */
   }
 
   /* FFT the data */
@@ -585,8 +488,6 @@ int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs
   for (j=0;j<(*gridparams)->grid[0].length;j++) {
     INT4 k = j + binoffset;
     (*fs)->data->data[j] = temp_output->data[k];
-    /* (*fs)->data->data[j].realf_FIXME = temp_output->data[k].realf_FIXME; */
-    /* (*fs)->data->data[j].imagf_FIXME = temp_output->data[k].imagf_FIXME; */
   }
 
   /* free memory */
@@ -607,10 +508,9 @@ int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs
  */
 int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **power,     /**< [out] the spin derivitive demodulated power */
 						  COMPLEX8TimeSeriesArray *dsdata,         /**< [in] the downsampled SFT data */
-						  GridParametersVector *gridparams,         /**< [in/out] the spin derivitive gridding parameters */
-                                                  /* REAL4VectorArray *background, */
-					          FILE *fp
-	                                          )
+						  GridParametersVector *gridparams,        /**< [in/out] the spin derivitive gridding parameters */
+	                                          FILE *fp
+						)
 {
   UINT4 i;
   REAL8 maxspintemp[NFREQMAX];
@@ -628,10 +528,6 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
     LogPrintf(LOG_CRITICAL,"%s: Invalid input, input GridParametersVector structure == NULL.\n",__func__);
     XLAL_ERROR(XLAL_EINVAL);
   }
-  /* if (background == NULL) { */
-  /*   LogPrintf(LOG_CRITICAL,"%s: Invalid input, input REAL8Vector structure == NULL.\n",__func__); */
-  /*   XLAL_ERROR(XLAL_EINVAL); */
-  /* } */
   if (dsdata->length != gridparams->length) {
     LogPrintf(LOG_CRITICAL,"%s: Invalid input, length of downsampled data vector and grid parameters vector not equal.\n",__func__);
     XLAL_ERROR(XLAL_EINVAL);
@@ -701,22 +597,12 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
       /* reinitilaise the reused complex timeseries */
       fs = NULL;
 
-      /* for (j=0;j<temp_ts->data->length;j++) {
-        fprintf(stdout,"ts = %e %e\n",crealf(ts->data->data[j]),cimagf(ts->data->data[j]));
-      }
-      exit(0); */
-
       /* apply phase correction to complex timeseries */
       if (XLALApplyPhaseCorrection(&temp_ts,ts,spintemp)) {
 	LogPrintf(LOG_CRITICAL,"%s : XLALApplyPhseCorrection() failed with error = %d\n",__func__,xlalErrno);
 	XLAL_ERROR(XLAL_EINVAL);
       }
       LogPrintf(LOG_DEBUG,"%s : applied phase correction for template index %d/%d on segment %d/%d\n",__func__,spintemp->currentidx,tempgrid.max,i,dsdata->length);
-
-      /* for (j=0;j<temp_ts->data->length;j++) {
-        fprintf(stdout,"temp_ts = %e %e\n",crealf(temp_ts->data->data[j]),cimagf(temp_ts->data->data[j]));
-      }
-      exit(0); */
 
       /* convert to the complex frequency domain - on the frequency grid specified */
       if (XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(&fs,temp_ts,&(gridparams->segment[i]))) {
@@ -730,12 +616,14 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
 	(*power)->segment[i]->data->data[idx] = crealf(fs->data->data[j])*crealf(fs->data->data[j]) + cimagf(fs->data->data[j])*cimagf(fs->data->data[j]);
 
         /* find maximum for this segment */
-        if ((*power)->segment[i]->data->data[idx]>maxpower) {
-          maxpower = (*power)->segment[i]->data->data[idx];
-          maxdim = spintemp->ndim + 1;
-          UINT4 k;
-          maxspintemp[0] = fs->f0 + j*fs->deltaF;
-          for (k=0;k<spintemp->ndim;k++) maxspintemp[k+1] = spintemp->x[k];
+        if (fp!=NULL) {
+          if ((*power)->segment[i]->data->data[idx]>maxpower) {
+            maxpower = (*power)->segment[i]->data->data[idx];
+            maxdim = spintemp->ndim + 1;
+            UINT4 k;
+            maxspintemp[0] = fs->f0 + j*fs->deltaF;
+            for (k=0;k<spintemp->ndim;k++) maxspintemp[k+1] = spintemp->x[k];
+          }
         }
 	idx++;
       }
@@ -748,12 +636,17 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
     } /* end loop over spin derivitive templates */
 
     /* output loudest segment candidate - normalise to be a chi-squared variable */
-    fprintf(fp,"%d\t%d\t",ts->epoch.gpsSeconds,ts->epoch.gpsNanoSeconds);
-    for (j=0;j<maxdim;j++) fprintf(fp,"%.12f\t",maxspintemp[j]);
-    fprintf(fp,"%.12f\n",2.0*maxpower); /*/background->data[i]); */
+    if (fp!=NULL) {
+      fprintf(fp,"%d\t%d\t%d\t",ts->epoch.gpsSeconds,ts->epoch.gpsNanoSeconds,(INT4)floor(ts->deltaT*ts->data->length+0.5));
+      for (j=0;j<maxdim;j++) fprintf(fp,"%.12f\t",maxspintemp[j]);
+      for (j=maxdim;j<NFREQMAX;j++) fprintf(fp,"0.0\t");
+      fprintf(fp,"%.12f\n",2.0*maxpower); /*/background->data[i]); */
+    }
 
     /* free memory */
     XLALDestroyCOMPLEX8TimeSeries(temp_ts);
+    XLALFree(tempgrid.grid);
+    XLALFree(tempgrid.prod);
 
   } /* end the loop over segments */
 
@@ -835,18 +728,18 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
    for (i=0;i<2;i++) {     /* nu */
      if (i==0) bintemp.x[0] = space->data[0].min;
      else bintemp.x[0] = space->data[0].max;
-     
+
      for (j=0;j<2;j++) {    /* a */
        if (j==0) bintemp.x[1] = space->data[1].min;
        else bintemp.x[1] = space->data[1].max;
-       
+
        /* tasc and omega are the problematic ones so we'll perform a fine grid search over them */
        for (k=0;k<ngrid;k++) {   /* tasc */
 	 bintemp.x[2] = space->data[2].min + k*(space->data[2].max-space->data[2].min)/(ngrid-1);
-	 
+
 	 for (l=0;l<ngrid;l++) {  /* omega */
 	   bintemp.x[3] = space->data[3].min + l*(space->data[3].max-space->data[3].min)/(ngrid-1);
-	   
+
 	   if (XLALComputeBinaryFreqDerivitives(&fdots,&bintemp,tmid)) {
 	     LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryFreqDerivitives() failed with error = %d\n",__func__,xlalErrno);
 	     XLAL_ERROR(XLAL_EFAULT);
@@ -1019,8 +912,7 @@ int XLALSFTToCOMPLEX8TimeSeries(COMPLEX8TimeSeries **ts,           /**< [out] th
 				COMPLEX8FFTPlan **plan             /**< [in/out] the FFT plan */ 
 				)
 {
-  /* INT4 i;                                /\* counter *\/ */
- /*  COMPLEX8FFTPlan *plan = NULL;          /\* inverse FFT plan *\/ */
+
   UINT4 N;                               /* the length of the SFTs */
 
   /* validate input arguments */
@@ -1075,9 +967,6 @@ int XLALSFTToCOMPLEX8TimeSeries(COMPLEX8TimeSeries **ts,           /**< [out] th
   /* normalise outputs by multiplying by df */
   for (j=0;j<N;j++) {
     temp_output.data[j] *= deltaF;
-    /* temp_output.data[j].realf_FIXME = temp_output.data[j].realf_FIXME*deltaF; */
-    /* temp_output.data[j].imagf_FIXME = temp_output.data[j].imagf_FIXME*deltaF; */
-    /* fprintf(stdout,"%.12f %.12f %.12f\n",j*deltaT,temp_output.data[j].realf_FIXME,temp_output.data[j].imagf_FIXME); */
   }
   
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
@@ -1156,12 +1045,12 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
 {
   static SFTConstraints constraints;
   SFTCatalog *catalog = NULL;
-  INT4 sft_check_result = 0;
+  /* INT4 sft_check_result = 0; */
   REAL8 freqmin,freqmax;
   LIGOTimeGPS *dummy_gpsstart = NULL;
   LIGOTimeGPS *dummy_gpsend = NULL;
   LIGOTimeGPS gpsstart, gpsend;
-  LALStatus status = blank_status;              /* for use wih non-XLAL functions */
+  /* LALStatus status = blank_status; */             /* for use wih non-XLAL functions */
   
   /* validate input variables */
   if (*sftvec != NULL) {
@@ -1195,7 +1084,10 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   }
   constraints.startTime = dummy_gpsstart;
   constraints.endTime = dummy_gpsend;
-  LAL_CALL( LALSFTdataFind( &status, &catalog, sftbasename, &constraints), &status);
+  if ((catalog = XLALSFTdataFind(sftbasename, &constraints))==NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : Null pointer returned from XLALSFTdataFind.  Exiting.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
+  }
   LogPrintf(LOG_DEBUG,"%s : found %d SFTs\n",__func__,catalog->length);
   
   /* define actual frequency range to read in */
@@ -1203,19 +1095,22 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   freqmax = freqmin + freqband;
   
   /* check CRC sums of SFTs */
-  LAL_CALL ( LALCheckSFTCatalog ( &status, &sft_check_result, catalog ), &status );
+  /* LAL_CALL ( LALCheckSFTCatalog ( &status, &sft_check_result, catalog ), &status );
   if (sft_check_result) {
     LogPrintf(LOG_CRITICAL,"%s : LALCheckSFTCatalogSFT() validity check failed with error = %d\n", sft_check_result);
     return 1;
   }
-  LogPrintf(LOG_DEBUG,"%s : checked the SFTs\n",__func__);
+  LogPrintf(LOG_DEBUG,"%s : checked the SFTs\n",__func__); */
   
   /* load the SFT-vectors */
-  LAL_CALL( LALLoadSFTs ( &status, sftvec, catalog, freqmin, freqmax ), &status);
+  if ((*sftvec = XLALLoadSFTs (catalog, freqmin, freqmax))==NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : Null pointer returned from XLALLoadSFTs.  Exiting.\n",__func__);
+    XLAL_ERROR(XLAL_EINVAL);
+  }
   LogPrintf(LOG_DEBUG,"%s : loaded the sfts\n",__func__);
   
   /* we don't need the original catalog anymore */
-  LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
+  XLALDestroySFTCatalog(catalog);
   LogPrintf(LOG_DEBUG,"%s : destroyed the catalogue(s)\n",__func__);
   
   /* check if we found any SFTs */
@@ -1446,17 +1341,18 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	   /**< [out] copied SFT (needs 
 			  CHAR *filename,          /**< [in] the input filename */
 			  LIGOTimeGPS *fileStart,  /**< [in] the file start time */
  			  BinaryToSFTparams *par,  /**< [in] the required parameters  */
-			  long int *nphotons
-			  )
+			  INT8Vector **np,         /**< [out] the number of photons in each SFT */
+			  REAL8Vector **R          /**< [out] the estimated photon rate per bin */
+			 )
 {
 
   INT4 i,k;
   static const LALUnit empty_LALUnit;
-  LogPrintf(LOG_DEBUG,"%s : working on file %s\n",__func__,filename);
-  
+  fprintf(stdout,"---> working on file %s\n",filename);
+
   /* initialise results vector */
   if ((*SFTvect)==NULL) {
-    if (((*SFTvect) = LALCalloc(1,sizeof(SFTVector)))==NULL) {
+    if (((*SFTvect) = XLALCalloc(1,sizeof(SFTVector)))==NULL) {
       LogPrintf(LOG_CRITICAL,"%s: Unable to allocate memory for SFTVector\n",__func__);
       XLAL_ERROR(XLAL_ENOMEM);
     }
@@ -1472,123 +1368,304 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	   /**< [out] copied SFT (needs 
   }
   i = 0;
   while (fread(&dummy,sizeof(REAL4),1,binfp)) i++;
-  INT4 N = i;
+  INT8 N = i;
   fclose(binfp);
-  LogPrintf(LOG_DEBUG,"%s : counted %d samples in the file.\n",__func__,N);
-  
-  /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
-  REAL8 dt = 1.0/par->fsamp;
-  LIGOTimeGPS startTimeGPS;                     /* the start time of the observation */
-  startTimeGPS.gpsSeconds = fileStart->gpsSeconds;
-  startTimeGPS.gpsNanoSeconds = fileStart->gpsNanoSeconds;
-  LIGOTimeGPS endTimeGPS = startTimeGPS;
-  XLALGPSAdd(&endTimeGPS,N*dt);
-  REAL4TimeSeries *Tseries = XLALCreateREAL4TimeSeries ( "X1", &(startTimeGPS), 0, dt, &empty_LALUnit, N);
-  REAL8 sum = 0;
-  
-  /* read in the data to the timeseries */
+  fprintf(stdout,"---> %s : counted %ld samples in the file.\n",__func__,N);
+
+  /* return if file has no length */
+  if (N==0) {
+    LogPrintf(LOG_CRITICAL,"%s : found no time samples in file %s.\n",__func__,filename);
+    return XLAL_SUCCESS;
+  }
+
+  /* open the file for reading */
   if ((binfp = fopen(filename,"r")) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,filename);
     return 1;
   }
-  i = 0;
-  while (fread(&dummy,sizeof(REAL4),1,binfp)) {
+
+  /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
+  REAL8 dt = par->tsamp;
+  LIGOTimeGPS startTimeGPS, endTimeGPS;                     /* the start and end time of the observation */
+  fprintf(stdout,"---> the filestart time is %d %d\n",fileStart->gpsSeconds,fileStart->gpsNanoSeconds);
+  memcpy(&startTimeGPS,fileStart,sizeof(LIGOTimeGPS));
+  memcpy(&endTimeGPS,&startTimeGPS,sizeof(LIGOTimeGPS));
+  XLALGPSAdd(&endTimeGPS,N*dt);
+  fprintf(stdout,"---> input binary file has start and end [%d %d - %d %d]\n",startTimeGPS.gpsSeconds,startTimeGPS.gpsNanoSeconds,endTimeGPS.gpsSeconds,endTimeGPS.gpsNanoSeconds);
+  fprintf(stdout,"---> input binary file has length %.12f sec\n",N*dt);
+  REAL4TimeSeries *Tseries = XLALCreateREAL4TimeSeries ( "X1", &(startTimeGPS), 0, dt, &empty_LALUnit, N);
+  fprintf(stdout,"---> made timeseries with length %f sec\n",Tseries->deltaT*Tseries->data->length);
+  INT8 sum = 0;
+
+  /* read in the data to the timeseries - max of MAXNTSERIES values */
+  for (i=0;i<N;i++) {
+    fread(&dummy,sizeof(REAL4),1,binfp);
     Tseries->data->data[i] = (REAL4)dummy;
-    sum += Tseries->data->data[i];
-    i++;
+    sum += (INT8)Tseries->data->data[i];
   }
-  *nphotons = sum;
-  fprintf(stdout,"the total number of photons in this file = %.2f\n",sum);
-  sum /= (REAL8)N;
-  fclose(binfp);
-  
+
+  /* check for zero data */
+  if (sum == 0) {
+    LogPrintf(LOG_CRITICAL,"%s : found no photons in file %s.\n",__func__,filename);
+    return XLAL_SUCCESS;
+  }
+  fprintf(stdout,"---> the total number of photons in the binary file = %ld\n",sum);
+
   /* inject signal if requested */
   if (par->amp_inj>0) {
-    LogPrintf(LOG_DEBUG,"%s : injecting signal into the data with fractional amplitude %f.\n",__func__,par->amp_inj);
+    fprintf(stdout,"%s : injecting signal into the data with fractional amplitude %f.\n",__func__,par->amp_inj);
     REAL8 Om = LAL_TWOPI/par->P_inj;
+    REAL8 bg = (REAL8)sum/(REAL8)N;
     for (i=0;i<N;i++) {
-      LIGOTimeGPS t = startTimeGPS;
+      LIGOTimeGPS t;
+      memcpy(&t,&startTimeGPS,sizeof(LIGOTimeGPS));
       XLALGPSAdd(&t,dt*i);                              /* the current sample GPS time */
       REAL8 tmtref = XLALGPSDiff(&t,&(par->tref));         /* t - t_ref */
       REAL8 tmtasc = XLALGPSDiff(&t,&(par->tasc_inj));     /* t - t_asc */
       REAL8 phase = par->phi_inj + LAL_TWOPI*par->f_inj*(tmtref - par->asini_inj*sin(Om*tmtasc));
-      REAL8 x = sum*(1.0 + par->amp_inj*sin(phase));
+      REAL8 x = bg*(1.0 + par->amp_inj*sin(phase));
       Tseries->data->data[i] = (REAL4)gsl_ran_poisson(par->r,x);
       /* fprintf(stdout,"%d %d %.12f %.12f %.12f %.12f %d %.2f\n",t.gpsSeconds,t.gpsNanoSeconds,tmtref,tmtasc,phase,x,y,Tseries->data->data[i]); */
     }
   }
 
-  /* TESTING */
-  /* for (i=0;i<100;i++) fprintf(stdout,"%.0f ",Tseries->data->data[i]); */
-  /* fprintf(stdout,"\n"); */
-  /* exit(0); */
-
- /*  fprintf(stdout,"hello\n"); */
-/*   { */
-/*     FILE *tempfp = NULL; */
-/*     if ((tempfp = fopen("/Users/chrismessenger/temp/badfile.txt","w"))==NULL) { */
-/*       fprintf(stdout,"ERROR\n"); */
-/*       exit(0); */
-/*     } */
-/*     for (i=0;i<N;i++) fprintf(tempfp,"%.12e\n",(REAL8)Tseries->data->data[i]); */
-/*     fclose(tempfp); */
-/*     exit(0); */
-/*   } */
-  
   /**********************************************************************************/
   /* make timestamps */
   LIGOTimeGPSVector timestamps;
-  INT4 Nsft = (INT4)floor(N*dt/par->tsft);        /* compute the number of SFTs */
-  timestamps.length = Nsft;
- /*  fprintf(stdout,"Nsft = %d\n",Nsft); */
-  /* only continue if we have any data in this SFT */
-  if (Nsft>0) {
-    
-    timestamps.data = LALCalloc(Nsft,sizeof(LIGOTimeGPS));
-    for (i=0;i<Nsft;i++) {
-      timestamps.data[i] = startTimeGPS;
-      XLALGPSAdd(&(timestamps.data[i]),i*par->tsft);
-     /*  fprintf(stdout,"timestamps = %d %d\n",timestamps.data[i].gpsSeconds,timestamps.data[i].gpsNanoSeconds); */
-    }
-    
-    /**********************************************************************************/
-    /* define the high pass filter params and high pass filter the data */
-    PassBandParamStruc filterpar;
-    char tmpname[] = "Butterworth High Pass";
-    filterpar.name  = tmpname;
-    filterpar.nMax  = 10;
-    filterpar.f2    = par->highpassf;
-    filterpar.a2    = 0.5;
-    filterpar.f1    = -1.0;
-    filterpar.a1    = -1.0;
-    XLALButterworthREAL4TimeSeries(Tseries, &filterpar);
-    
-    /**********************************************************************************/
-    /* compute SFTs from timeseries */
-    SFTParams sftParams = empty_SFTParams;
-    sftParams.Tsft = par->tsft;
-    sftParams.timestamps = &timestamps;
-    sftParams.noiseSFTs = NULL;       // not used here any more!
-    sftParams.window = NULL;
-    SFTVector *sftvect = NULL;
-    XLAL_CHECK ( (sftvect = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
-    
-    /**********************************************************************************/
-    /* extract effective band from this, if neccessary (ie if faster-sampled output SFTs) */
-    SFTVector *tempSFTvect = XLALExtractBandFromSFTVector ( sftvect, par->freq, par->freqband );
-    XLALDestroySFTVector(sftvect); 
-    
-    /**********************************************************************************/
-    /* append these SFTs to the full list of SFTs */
-    for (k=0;k<Nsft;k++) XLALAppendSFT2Vector((*SFTvect),&(tempSFTvect->data[k]));
-    
-    /**********************************************************************************/
-    
-    XLALFree(timestamps.data);
-    XLALDestroySFTVector (tempSFTvect);
-    
+  fprintf(stdout,"---> requested starttime = %d %d endtime = %d %d\n",par->tstart.gpsSeconds,par->tstart.gpsNanoSeconds,endTimeGPS.gpsSeconds,endTimeGPS.gpsNanoSeconds);
+  INT4 tspan = (INT4)XLALGPSDiff(&endTimeGPS,&(par->tstart));
+  fprintf(stdout,"---> requested time span = %d sec\n",tspan);
+  if (tspan<0) {
+    LogPrintf(LOG_CRITICAL,"%s : requested sft start time after end of data!\n",__func__);
+    return XLAL_SUCCESS;
   }
-  
+  INT4 maxsft = (INT4)floor((REAL8)tspan/par->tsft);        /* compute the max number of SFTs */
+  timestamps.length = maxsft;
+  fprintf(stdout,"---> initial estimate of %d SFTs will be made\n",maxsft);
+  *np = XLALCreateINT8Vector(maxsft);
+
+  /* if we have one or more SFTs to make */
+  if (maxsft>0) {
+
+    INT4 cnt = 0;
+    INT4 Nsft = 0;
+    INT4 Ndt = (INT4)(par->tsft/par->tsamp);
+    fprintf(stdout,"---> number of samples per SFT = %d\n",Ndt);
+    timestamps.data = XLALCalloc(maxsft,sizeof(LIGOTimeGPS));
+    for (i=0;i<maxsft;i++) {
+
+      /* test if the SFT has photons */
+      sum = 0;
+      INT4 j;
+      for (j=0;j<Ndt;j++) sum += (INT8)Tseries->data->data[cnt++];
+      fprintf(stdout,"---> the photon sum for the current SFT is %ld\n",sum);
+      if (sum > 0) {
+        memcpy(&(timestamps.data[Nsft]),&(par->tstart),sizeof(LIGOTimeGPS));
+        fprintf(stdout,"---> about to add %f to %d %d\n",(REAL8)(i*par->tsft),timestamps.data[Nsft].gpsSeconds,timestamps.data[Nsft].gpsNanoSeconds);
+        XLALGPSAdd(&(timestamps.data[Nsft]),(REAL8)(i*par->tsft));
+	(*np)->data[Nsft] = sum;
+        fprintf(stdout,"np->data[%d] = %ld\n",Nsft,(*np)->data[Nsft]);
+        Nsft++;
+      }
+
+    }
+
+    /* if after testing the individual SFT photon counts we still have valid SFTs */
+    if (Nsft>0) {
+
+      timestamps.data = LALRealloc(timestamps.data,Nsft*sizeof(LIGOTimeGPS));
+      timestamps.length = Nsft;
+      (*np)->data = XLALRealloc((*np)->data,Nsft*sizeof(INT8));
+      (*np)->length = Nsft;
+      *R = XLALCreateREAL8Vector(Nsft);
+      fprintf(stdout,"---> start SFT [%d %d - %d %d]\n",timestamps.data[0].gpsSeconds,timestamps.data[0].gpsNanoSeconds,timestamps.data[0].gpsSeconds+par->tsft,timestamps.data[0].gpsNanoSeconds);
+      fprintf(stdout,"---> end SFT [%d %d - %d %d]\n",timestamps.data[Nsft-1].gpsSeconds,timestamps.data[Nsft-1].gpsNanoSeconds,timestamps.data[Nsft-1].gpsSeconds+par->tsft,timestamps.data[Nsft-1].gpsNanoSeconds);
+
+      /**********************************************************************************/
+      /* define the high pass filter params and high pass filter the data */
+      PassBandParamStruc filterpar;
+      char tmpname[] = "Butterworth High Pass";
+      filterpar.name  = tmpname;
+      filterpar.nMax  = 10;
+      filterpar.f2    = par->highpassf;
+      filterpar.a2    = 0.5;
+      filterpar.f1    = -1.0;
+      filterpar.a1    = -1.0;
+      XLALButterworthREAL4TimeSeries(Tseries, &filterpar);
+      fprintf(stdout,"---> Filtered time-series now has length %f sec\n",Tseries->deltaT*Tseries->data->length);
+
+      /**********************************************************************************/
+      /* compute SFTs from timeseries */
+      SFTParams sftParams = empty_SFTParams;
+      sftParams.Tsft = par->tsft;
+      sftParams.timestamps = &timestamps;
+      sftParams.noiseSFTs = NULL;       // not used here any more!
+      sftParams.window = NULL;
+      SFTVector *sftvect = NULL;
+      fprintf(stdout,"---> timeseries prior to making SFTs has length %f sec\n",Tseries->deltaT*Tseries->data->length);
+      XLAL_CHECK ( (sftvect = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
+
+      /**********************************************************************************/
+      /* extract effective band from this, if neccessary (ie if faster-sampled output SFTs) */
+      SFTVector *tempSFTvect = XLALExtractBandFromSFTVector ( sftvect, par->freq, par->freqband-1.0/par->tsft );    /* the last bin has to be avoided */
+      XLALDestroySFTVector(sftvect);
+
+      /**********************************************************************************/
+      /* append these SFTs to the full list of SFTs */
+      for (k=0;k<Nsft;k++) {
+        XLALAppendSFT2Vector((*SFTvect),&(tempSFTvect->data[k]));
+        XLALNormalizeSFTMedian(&(tempSFTvect->data[k]),&((*R)->data[k]),0);
+      }
+      fprintf(stdout,"---> appended SFTs\n");
+
+      /**********************************************************************************/
+
+      XLALDestroySFTVector(tempSFTvect);
+
+    }
+
+    XLALFree(timestamps.data);
+    XLALDestroyREAL4TimeSeries(Tseries);
+
+  }
+
+  fclose(binfp);
+  fprintf(stdout,"---> completed analysis of file %s\n",filename); 
+
   return XLAL_SUCCESS;
 
 }
+
+/**
+  * Normalize an sft based on median estimate PSD
+  */
+  int
+  XLALNormalizeSFTMedian (SFTtype *sft,           /**< SFT to be normalized */
+                          REAL8 *mean,            /**< [out] the mean computed from the median */
+                          INT4 flag               /**< [in] flag for normalising, 0 = no normalising */
+			)
+  {
+    /* check input argments */
+    XLAL_CHECK (sft && sft->data && sft->data->data && sft->data->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input in 'sft'" ); 
+    UINT4 length = sft->data->length;
+
+    /* allocate memory for power */
+    gsl_vector *P = gsl_vector_alloc(length); 
+    REAL8 *s = XLALCalloc(length,sizeof(REAL8));
+
+    /* compute power */
+    for (UINT4 j = 0; j < length; j++) {
+      gsl_vector_set(P,j,crealf(sft->data->data[j])*crealf(sft->data->data[j]) + cimagf(sft->data->data[j])*cimagf(sft->data->data[j]));
+    }
+
+    /* sort the power vector */
+    gsl_sort_vector(P);
+    for (UINT4 j = 0; j < length; j++) s[j] = gsl_vector_get(P,j);
+
+    /* compute the median and the median bias */
+    REAL8 med = gsl_stats_median_from_sorted_data (s,1,length);
+    REAL8 medianBias = XLALRngMedBias (length);
+    *mean = med/medianBias;
+
+    /* free memory */
+    gsl_vector_free(P);
+    XLALFree(s);
+
+    /* loop over sft and normalize by the median */
+    if (flag) {
+      for (UINT4 j = 0; j < length; j++) {
+        sft->data->data[j] *= (REAL4)(sqrt(medianBias/med));
+      } // for j < length 
+    }
+    return XLAL_SUCCESS;
+
+
+  } /* XLALNormalizeSFTMedian() */
+   
+ 
+ /**
+  * Function for normalizing a vector of SFTs.
+  */
+  int
+  XLALNormalizeSFTVectMedian ( SFTVector  *sftVect,            /**< [in/out] pointer to a vector of SFTs which will be normalized */
+                               REAL8Vector *mean,              /**< [out] a vector of mean estimates based on the median */
+			       INT4 flag                       /**< [in] flag for normalising, 0 = no normalising */
+			     )
+  {
+    /* check input argments */
+    XLAL_CHECK ( sftVect && sftVect->data && sftVect->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input in 'sftVect'");
+    XLAL_CHECK ( mean && mean->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input in 'mean'");
+
+    /* loop over sfts and normalize them */
+    for (UINT4 j = 0; j < sftVect->length; j++)
+      {
+        SFTtype *sft = &sftVect->data[j];
+
+        /* call sft normalization function */
+        XLAL_CHECK ( XLALNormalizeSFTMedian ( sft, &(mean->data[j]), flag ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALNormalizeSFTMedian() failed." );
+
+      } /* for j < sftVect->length */
+
+    return XLAL_SUCCESS;
+
+  } /* XLALNormalizeSFTVectMedian() */
+
+
+/**
+  * Normalize an sft based on mean estimate PSD
+  */
+  int
+  XLALNormalizeSFTMean (SFTtype *sft,          /**< SFT to be normalized */
+                        REAL8 *mean,           /**< [out] the mean power */
+			INT4 flag              /**< [in] flag for normalising, 0 = no normalising */  
+		       )
+  {
+    /* check input argments */
+    XLAL_CHECK (sft && sft->data && sft->data->data && sft->data->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input in 'sft'" ); 
+    UINT4 length = sft->data->length;
+
+    /* find mean psd */
+    REAL4 sum = 0.0;
+    for (UINT4 j = 0; j < length; j++) {
+      sum += crealf(sft->data->data[j])*crealf(sft->data->data[j]) + cimagf(sft->data->data[j])*cimagf(sft->data->data[j]);
+    }
+    sum /= (REAL4)length;
+    *mean = sum;
+
+    /* loop over sft and normalize */
+    if (flag) {
+      for (UINT4 j = 0; j < length; j++) {
+        sft->data->data[j] /= ((REAL4)sqrt(sum));
+      } // for j < length 
+    }
+    return XLAL_SUCCESS;
+
+  } /* XLALNormalizeSFTMean() */
+  
+ 
+ /**
+  * Function for normalizing a vector of SFTs.
+  */
+  int
+  XLALNormalizeSFTVectMean ( SFTVector  *sftVect,            /**< [in/out] pointer to a vector of SFTs which will be normalized */
+                             REAL8Vector *mean,              /**< [out] a vector of means estimating the noise floor */
+ 		             INT4 flag                       /**< [in] flag for normalising, 0 = no normalising */
+                           )
+  {
+    /* check input argments */
+    XLAL_CHECK ( sftVect && sftVect->data && sftVect->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input in 'sftVect'");
+    XLAL_CHECK ( mean && mean->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input in 'mean'");
+
+    /* loop over sfts and normalize them */
+    for (UINT4 j = 0; j < sftVect->length; j++)
+      {
+        SFTtype *sft = &sftVect->data[j];
+
+        /* call sft normalization function */
+        XLAL_CHECK ( XLALNormalizeSFTMean ( sft, &(mean->data[j]), flag ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALNormalizeSFT() failed." );
+
+      } /* for j < sftVect->length */
+
+    return XLAL_SUCCESS;
+
+  } /* XLALNormalizeSFTVectMean() */
