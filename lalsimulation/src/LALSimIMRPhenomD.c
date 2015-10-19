@@ -64,11 +64,11 @@ static int IMRPhenomDGenerateFD(
  * @author Michael Puerrer, Sebastian Khan, Frank Ohme
  *
  * @brief C code for IMRPhenomD phenomenological waveform model.
+ *
+ * This is an aligned-spin frequency domain model.
  * See Husa et al \cite Husa:2015iqa, and Khan et al \cite Khan:2015jqa
  * for details. Any studies that use this waveform model should include
  * a reference to both of these papers.
- *
- * This is an aligned-spin frequency domain model.
  *
  * @note The model was calibrated to mass-ratios [1:1,1:4,1:8,1:18].
  * * Along the mass-ratio 1:1 line it was calibrated to spins  [-0.95, +0.98].
@@ -230,8 +230,23 @@ static int IMRPhenomDGenerateFD(
   IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin);
   if (!pPhi) XLAL_ERROR(XLAL_EFUNC);
   PNPhasingSeries *pn = NULL;
-  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_in, chi2_in, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
+  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
   if (!pn) XLAL_ERROR(XLAL_EFUNC);
+
+  // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
+  // (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
+  // was not available as PhenomD was tuned.
+  REAL8 chi1L = chi1_in;
+  REAL8 chi2L = chi2_in;
+  REAL8 chi1sq = chi1L * chi1L;
+  REAL8 chi2sq = chi2L * chi2L;
+  REAL8 m1M = m1 / M;
+  REAL8 m2M = m2 / M;
+  REAL8 pn_ss3 =  (326.75L/1.12L + 557.5L/1.8L*eta)*eta*chi1L*chi2L;
+  pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m1M-120.L*m1M*m1M) + (-4108.25L/6.72L-108.5L/1.2L*m1M+125.5L/3.6L*m1M*m1M)) *m1M*m1M * chi1sq;
+  pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m2M-120.L*m2M*m2M) + (-4108.25L/6.72L-108.5L/1.2L*m2M+125.5L/3.6L*m2M*m2M)) *m2M*m2M * chi2sq;
+
+  pn->v[6] -= (pn_ss3 * pn->v[0]);
 
   // Compute coefficients to make phase C^1 continuous (phase and first derivative)
   ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);

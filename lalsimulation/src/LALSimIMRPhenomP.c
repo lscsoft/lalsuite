@@ -519,6 +519,22 @@ switch (IMRPhenomP_version) {
       pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi2_l, chi1_l, finspin);
       XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
       if (!pAmp || !pPhi || !pn) XLAL_ERROR(XLAL_EFUNC);
+
+      // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
+      // (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
+      // was not available as PhenomD was tuned.
+      REAL8 chi1L = chi1_l;
+      REAL8 chi2L = chi2_l;
+      REAL8 chi1sq = chi1_l * chi1_l;
+      REAL8 chi2sq = chi2_l * chi2_l;
+      REAL8 m1M = m1 / M;
+      REAL8 m2M = m2 / M;
+      REAL8 pn_ss3 =  (326.75L/1.12L + 557.5L/1.8L*eta)*eta*chi1L*chi2L;
+      pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m1M-120.L*m1M*m1M) + (-4108.25L/6.72L-108.5L/1.2L*m1M+125.5L/3.6L*m1M*m1M)) *m1M*m1M * chi1sq;
+      pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m2M-120.L*m2M*m2M) + (-4108.25L/6.72L-108.5L/1.2L*m2M+125.5L/3.6L*m2M*m2M)) *m2M*m2M * chi2sq;
+
+      pn->v[6] -= (pn_ss3 * pn->v[0]);
+
       ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
       fCut = 0.3 / m_sec;
       f_final = pAmp->fRD / m_sec;
