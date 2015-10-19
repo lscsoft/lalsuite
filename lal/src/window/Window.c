@@ -375,7 +375,7 @@ REAL8Window *XLALCreateHannREAL8Window(UINT4 length)
 
 	/* cos^2, zero at both end points, 1 in the middle */
 	for(i = 0; i < (length + 1) / 2; i++)
-		sequence->data[i] = sequence->data[length - 1 - i] = pow(cos(LAL_PI_2 * Y(length, i)), 2);
+		sequence->data[i] = sequence->data[length - 1 - i] = pow(sin(LAL_PI_2 * (Y(length, i) + 1)), 2);
 
 	return XLALCreateREAL8WindowFromSequence(sequence);
 }
