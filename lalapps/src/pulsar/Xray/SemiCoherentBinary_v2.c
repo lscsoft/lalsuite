@@ -224,7 +224,7 @@ int main( int argc, char *argv[] )  {
 
   if (uvar.blocksize>0) {
     /* compute the background noise using the sfts - this routine uses the running median at the edges to normalise the wings */
-    if (XLALNormalizeSFTVect(sftvec,uvar.blocksize)) {
+    if (XLALNormalizeSFTVect(sftvec,uvar.blocksize,0)) {
       LogPrintf(LOG_CRITICAL,"%s : XLALNormaliseSFTVect() failed with error = %d\n",__func__,xlalErrno);
       return 1;
     }
@@ -353,7 +353,7 @@ int main( int argc, char *argv[] )  {
     CHAR newoutputdir[LONGSTRINGLENGTH];
     sprintf(newoutputdir,"%s/%.3f-%.3f",uvar.outputdir,uvar.freq,uvar.freq+uvar.freqband);
     if (rename(newnewtemp,newoutputdir)) {
-      LogPrintf(LOG_CRITICAL,"%s : unable to move final results directory %s -> %s.  Exiting.\n",newnewtemp,newoutputdir);
+      LogPrintf(LOG_CRITICAL,"%s : unable to move final results directory %s -> %s.  Exiting.\n",__func__,newnewtemp,newoutputdir);
       return 1;
     }
   }
@@ -439,7 +439,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->minasini = 0.0;
   uvar->maxasini = 0.0;
   uvar->tasc = -1.0;
-  uvar->deltaorbphase = 2.0*M_PI;
+  uvar->deltaorbphase = 2.0*LAL_PI;
 
   /* ---------- register all user-variables ---------- */
   XLALregBOOLUserStruct(help, 		        'h', UVAR_HELP,     "Print this message");

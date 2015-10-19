@@ -875,7 +875,7 @@ int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /*
     XLAL_ERROR(XLAL_ENOMEM);
   }
   if (((*freqgridparams)->segment = (GridParameters**)XLALCalloc(sftvec->length,sizeof(GridParameters*))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for a COMPLEX8TimeSeriesArray structure\n",__func__,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for a COMPLEX8TimeSeriesArray structure\n",__func__);
     XLAL_ERROR(XLAL_ENOMEM);
   }
   (*freqgridparams)->length = sftvec->length;
@@ -1000,11 +1000,11 @@ int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, 
 
   /* allocate memory for output */
   if (((*dstimevec) = (COMPLEX8TimeSeriesArray*)XLALCalloc(1,sizeof(COMPLEX8TimeSeriesArray))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for a COMPLEX8TimeSeriesArray structure\n",__func__,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for a COMPLEX8TimeSeriesArray structure\n",__func__);
     return XLAL_ENOMEM;
   }
   if (((*dstimevec)->data = (COMPLEX8TimeSeries**)XLALCalloc(sftvec->length,sizeof(COMPLEX8TimeSeries *))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for a vector of COMPLEX8TimeSeries pointers\n",__func__,xlalErrno);
+    LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for a vector of COMPLEX8TimeSeries pointers\n",__func__);
     return XLAL_ENOMEM;
   }
   (*dstimevec)->length = sftvec->length;                       /* the number of timeseries */
@@ -1082,8 +1082,8 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
     XLALGPSSetREAL8(&gpsend,(REAL8)end);
     dummy_gpsend = &gpsend;
   }
-  constraints.startTime = dummy_gpsstart;
-  constraints.endTime = dummy_gpsend;
+  constraints.minStartTime = dummy_gpsstart;
+  constraints.maxStartTime = dummy_gpsend;
   if ((catalog = XLALSFTdataFind(sftbasename, &constraints))==NULL) {
     LogPrintf(LOG_CRITICAL,"%s : Null pointer returned from XLALSFTdataFind.  Exiting.\n",__func__);
     XLAL_ERROR(XLAL_EINVAL);
@@ -1303,36 +1303,6 @@ int XLALAppendSFT2Vector (SFTVector *vect,		/**< destinatino SFTVector to append
 
 } /* XLALAppendSFT2Vector() */
 
-/** Copy an entire SFT-type into another.
- * We require the destination-SFT to have a NULL data-entry, as the
- * corresponding data-vector will be allocated here and copied into
- *
- * Note: the source-SFT is allowed to have a NULL data-entry,
- * in which case only the header is copied.
- */
-int XLALCopySFT (SFTtype *dest, 	/**< [out] copied SFT (needs to be allocated already) */
-		 const SFTtype *src	/**< input-SFT to be copied */
-		 )
-{
-
-  /* copy complete head (including data-pointer, but this will be separately alloc'ed and copied in the next step) */
-  memcpy ( dest, src, sizeof(*dest) );
-
-  /* copy data (if there's any )*/
-  if ( src->data )
-    {
-      UINT4 numBins = src->data->length;
-      if ( (dest->data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL ) {
-	LogPrintf(LOG_CRITICAL,"%s: Error, unable to allocate memory\n",__func__);
-	XLAL_ERROR(XLAL_EINVAL);
-      }
-      memcpy (dest->data->data, src->data->data, numBins * sizeof (src->data->data[0]));
-    }
-
-   return XLAL_SUCCESS;
-
-} /* XLALCopySFT() */
-
 /** Convert an input binary file into an SFTVector
  *
  *
@@ -1496,7 +1466,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	   /**< [out] copied SFT (needs 
 
       /**********************************************************************************/
       /* compute SFTs from timeseries */
-      SFTParams sftParams = empty_SFTParams;
+      SFTParams XLAL_INIT_DECL(sftParams);
       sftParams.Tsft = par->tsft;
       sftParams.timestamps = &timestamps;
       sftParams.noiseSFTs = NULL;       // not used here any more!

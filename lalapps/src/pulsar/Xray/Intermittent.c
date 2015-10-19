@@ -108,7 +108,6 @@ extern int vrbflg;	 	/**< defined in lalapps.c */
 /***********************************************************************************************/
 /* empty initializers */
 UserInput_t empty_UserInput;
-static const LALUnit empty_LALUnit;
 ParameterSpace empty_ParameterSpace;
 
 /** The main function of Intermittent.c
@@ -284,7 +283,7 @@ int main( int argc, char *argv[] )  {
         /**********************************************************************************/
 
         /* compute the background noise using the sfts - this routine uses the running median at the edges to normalise the wings */
-        if (XLALNormalizeSFTVect(sftvec,uvar.blocksize)) {
+        if (XLALNormalizeSFTVect(sftvec,uvar.blocksize, 0)) {
     	  LogPrintf(LOG_CRITICAL,"%s : XLALNormaliseSFTVect() failed with error = %d\n",__func__,xlalErrno);
           return 1;
         }
@@ -583,7 +582,7 @@ int XLALOpenIntermittentResultsFile(FILE **fp,                  /**< [in] filepo
 			   outputdir,(CHAR*)uvar->outLabel,start->gpsSeconds,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
 
   }
-  LogPrintf(LOG_DEBUG,"%s : output %s\n",__func__,*outputfile);
+  LogPrintf(LOG_DEBUG,"%s : output %s\n",__func__, outputfile);
 
   /* open the output file */
   if (((*fp) = fopen(outputfile,"w")) == NULL) {
