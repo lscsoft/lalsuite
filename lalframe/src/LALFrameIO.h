@@ -866,7 +866,7 @@ void XLALFrameFree(LALFrameH * frame);
  * Gravitational Wave Detectors (IGWD)</em>
  * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
  */
-LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration, const char *project, int run, int frnum, int detectorFlags);
+LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration, const char *project, int run, int frnum, long detectorFlags);
 
 /**
  * @brief Adds a history structure to a frame.

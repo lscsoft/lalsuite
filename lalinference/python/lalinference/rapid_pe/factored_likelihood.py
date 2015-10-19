@@ -155,7 +155,7 @@ def factored_log_likelihood(extr_params, rholms_intp, crossTerms, Lmax):
     # there *could* be different l,m pairs for different detectors. This never
     # happens in practice, so it's pulled out here, and we use the first
     # detector as a reference.
-    Ylms = compute_spherical_harmonics(Lmax, incl, -phiref, rholms_intrp[rholms.keys()[0]])
+    Ylms = compute_spherical_harmonics(Lmax, incl, -phiref, rholms_intp[rholms_intp.keys()[0]])
 
     lnL = 0.
     for det in detectors:

@@ -38,7 +38,7 @@ import pylal
 from lalinference.rapid_pe import lalsimutils, factored_likelihood, mcsampler, xmlutils, common_cl
 from lalinference.rapid_pe.common_cl import param_limits
 
-from lalinference.bayestar import fits as bfits
+from lalinference import fits as bfits
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gravity.phys.uwm.edu>, R. O'Shaughnessy"
 
@@ -124,6 +124,7 @@ else:
 #
 # Set masses
 #
+sngl_inspiral_table = None
 if opts.mass1 is not None and opts.mass2 is not None:
     m1, m2 = opts.mass1, opts.mass2
 elif opts.coinc_xml is not None:
@@ -171,6 +172,22 @@ P = lalsimutils.ChooseWaveformParams(
     lambda2 = lambda2
 )
 
+# Set spin values if appropriate
+if opts.spin1z is not None or opts.spin2z is not None:
+    for a in ("spin1z", "spin2z"):
+        if getattr(opts, a) is not None:
+            setattr(P, a, getattr(opts, a))
+        else:
+            setattr(P, a, 0.0)
+elif opts.coinc_xml is not None:
+    xmldoc = utils.load_filename(opts.coinc_xml, contenthandler=ligolw.LIGOLWContentHandler)
+    sngl_inspiral_table = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+    for a in ("spin1z", "spin2z"):
+        if hasattr(sngl_inspiral_table[0], a):
+            setattr(P, a, getattr(sngl_inspiral_table[0], a))
+        else:
+            setattr(P, a, 0.0)
+
 # User requested bounds for data segment
 if opts.data_start_time is not None and opts.data_end_time is not None:
     start_time =  opts.data_start_time
@@ -208,11 +225,6 @@ for inst, psdf in map(lambda c: c.split("="), opts.psd_file):
     psd_dict[inst] = lalsimutils.get_psd_series_from_xmldoc(psdf, inst)
 
     deltaF = data_dict[inst].deltaF
-    psd_dict[inst] = lalsimutils.resample_psd_series(psd_dict[inst], deltaF)
-    print "PSD deltaF after interpolation %f" % psd_dict[inst].deltaF
-
-    assert psd_dict[inst].deltaF == deltaF
-
     # Highest freq. at which PSD is defined
     if isinstance(psd_dict[inst],
             pylal.xlal.datatypes.real8frequencyseries.REAL8FrequencySeries):
@@ -225,6 +237,12 @@ for inst, psdf in map(lambda c: c.split("="), opts.psd_file):
     # Allow us to target a smaller upper limit than provided by the PSD. Important for numerical PSDs that turn over at high frequency
     if opts.fmax and opts.fmax < fmax:
         fmax = opts.fmax # fmax is now the upper freq. of IP integral
+
+    psd_dict[inst] = lalsimutils.resample_psd_series(psd_dict[inst], deltaF)
+    print "PSD deltaF after interpolation %f" % psd_dict[inst].deltaF
+
+    assert psd_dict[inst].deltaF == deltaF
+
 
 # Ensure data and PSDs keyed to same detectors
 if sorted(psd_dict.keys()) != sorted(data_dict.keys()):
@@ -320,7 +338,7 @@ sampler.add_parameter("phi_orb", pdf = phi_sampler, cdf_inv = None, left_limit =
 # sampler: cos(incl) uniform in [-1, 1)
 #
 incl_sampler = mcsampler.cos_samp_vector # this is NOT dec_samp_vector, because the angular zero point is different!
-sampler.add_parameter("inclination", pdf = incl_sampler, cdf_inv = None, left_limit = param_limits["inclination"][0], right_limit = param_limits["inclination"][1], prior_pdf = mcsampler.uniform_samp_theta)
+sampler.add_parameter("inclination", pdf = incl_sampler, cdf_inv = None, left_limit = param_limits["inclination"][0], right_limit = param_limits["inclination"][1], prior_pdf = mcsampler.uniform_samp_theta, adaptive_sampling = not opts.no_adapt)
 
 #
 # Distance - luminosity distance to source in parsecs
@@ -357,7 +375,7 @@ else:
         left_limit = param_limits["right_ascension"][0], \
         right_limit =  param_limits["right_ascension"][1], \
         prior_pdf = mcsampler.uniform_samp_phase, \
-        adaptive_sampling = True or not opts.no_adapt)
+        adaptive_sampling = not opts.no_adapt)
 
     #
     # declination - angle in radians from the north pole piercing the celestial
@@ -370,7 +388,7 @@ else:
         left_limit = param_limits["declination"][0], \
         right_limit = param_limits["declination"][1], \
         prior_pdf = mcsampler.uniform_samp_dec, \
-        adaptive_sampling = True or not opts.no_adapt)
+        adaptive_sampling = not opts.no_adapt)
 
 #
 # Determine pinned and non-pinned parameters
@@ -520,13 +538,25 @@ else: # Sum over time for every point in other extrinsic params
 print " lnLmarg is ", numpy.log(res), " with expected relative error ", numpy.sqrt(var)/res
 print " note neff is ", neff
 
+# FIXME: This is turning into a mess
 if opts.output_file:
     xmldoc = ligolw.Document()
     xmldoc.appendChild(ligolw.LIGO_LW())
     process.register_to_xmldoc(xmldoc, sys.argv[0], opts.__dict__)
+    result_dict = {"mass1": opts.mass1, "mass2": opts.mass2, "event_duration": numpy.sqrt(var)/res, "ttotal": sampler.ntotal}
+    if opts.spin1z is not None or sngl_inspiral_table:
+        result_dict["spin1z"] = opts.spin1z or 0.0
+    if opts.spin2z is not None or sngl_inspiral_table:
+        result_dict["spin2z"] = opts.spin2z or 0.0
+    if opts.eff_lambda is not None:
+        result_dict["psi0"] = opts.eff_lambda
+    if opts.deff_lambda is not None:
+        result_dict["psi3"] = opts.deff_lambda
+
+    xmlutils.append_likelihood_result_to_xmldoc(xmldoc, numpy.log(res), neff=neff, **result_dict)
+    utils.write_filename(xmldoc, opts.output_file, gz=opts.output_file.endswith(".gz"))
     if opts.save_samples:
         samples = sampler._rvs
-        # FIXME: Does sim insp do kpc or mpc
         samples["distance"] = samples["distance"]
         if not opts.time_marginalization:
             samples["t_ref"] += float(fiducial_epoch)
@@ -540,15 +570,22 @@ if opts.output_file:
             samples["latitude"] = samples["declination"]
             samples["longitude"] = samples["right_ascension"]
         samples["loglikelihood"] = numpy.log(samples["integrand"])
-        samples["mass1"] = numpy.ones(samples["psi"].shape)*opts.mass1
-        samples["mass2"] = numpy.ones(samples["psi"].shape)*opts.mass2
+        samples["mass1"] = numpy.empty(samples["psi"].shape)
+        samples["mass2"] = numpy.empty(samples["psi"].shape)
+        samples["mass1"].fill(opts.mass1)
+        samples["mass2"].fill(opts.mass2)
+        samples["spin1z"] = numpy.empty(samples["psi"].shape)
+        samples["spin2z"] = numpy.empty(samples["psi"].shape)
+        samples["spin1z"].fill(opts.spin1z or 0.0)
+        samples["spin2z"].fill(opts.spin2z or 0.0)
         if opts.eff_lambda is not None or opts.deff_lambda is not None:
             # FIXME: the column mapping isn't working right, we need to fix that
             # rather than give these weird names
-            samples["psi0"] = numpy.ones(samples["psi"].shape)*opts.eff_lambda
-            samples["psi3"] = numpy.ones(samples["psi"].shape)*(opts.deff_lambda or 0)
+            samples["psi0"] = numpy.ones(samples["psi"].shape)
+            samples["psi3"] = numpy.ones(samples["psi"].shape)
+            samples["psi0"].fill(opts.eff_lambda)
+            samples["psi3"].fill(opts.deff_lambda)
         xmlutils.append_samples_to_xmldoc(xmldoc, samples)
-    # FIXME: likelihood or loglikehood
-    # FIXME: How to encode variance?
-    xmlutils.append_likelihood_result_to_xmldoc(xmldoc, numpy.log(res), neff=neff, **{"mass1": opts.mass1, "mass2": opts.mass2, "event_duration": numpy.sqrt(var)/res, "ttotal": sampler.ntotal})
-    utils.write_filename(xmldoc, opts.output_file, gz=opts.output_file.endswith(".gz"))
+        sample_output = opts.output_file.split(".")
+        sample_output = sample_output[0] + ".samples." + ".".join(sample_output[1:])
+        utils.write_filename(xmldoc, sample_output, gz=opts.output_file.endswith(".gz"))

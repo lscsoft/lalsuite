@@ -163,7 +163,7 @@ def _interpolate_level(m):
 
         if len(ipix):
             ipix = (4 * ipix +
-                np.expand_dims(np.arange(4, dtype=np.intp), 1)).T.flatten()
+                np.expand_dims(np.arange(4, dtype=np.intp), 1)).T.ravel()
 
             nside = hp.npix2nside(npix)
 

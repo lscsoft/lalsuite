@@ -228,7 +228,7 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   INT4 t0;
   INT4 dt;
   INT4 FrDuration;
-  int detectorFlags;
+  long detectorFlags;
   char hostnameanduser[4096];
   char hostname[1024];
   char domainname[1024];

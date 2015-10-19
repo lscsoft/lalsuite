@@ -35,7 +35,7 @@ INT4 convertTemplateForSpecificFbin(TwoSpectTemplate *output, const TwoSpectTemp
 
 INT4 makeTemplateGaussians(TwoSpectTemplate *output, const candidate input, const UserInput_t *params);
 INT4 makeTemplateGaussians2(TwoSpectTemplate *output, const REAL8 offset, const REAL8 P, const REAL8 deltaf, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const UINT4 minTemplateLength, const UINT4 vectormathflag);
-INT4 makeTemplate(TwoSpectTemplate *output, const candidate intput, const UserInput_t *params, const INT4Vector *sftexist, const REAL4FFTPlan *plan);
+INT4 makeTemplate(TwoSpectTemplate *output, const candidate intput, const UserInput_t *params, const REAL4FFTPlan *plan);
 INT4 makeTemplate2(TwoSpectTemplate *output, const REAL8 offset, const REAL8 P, const REAL8 deltaf, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const UINT4 minTemplateLength, const UINT4 vectormathflag, const REAL4FFTPlan *plan);
 void insertionSort_template(TwoSpectTemplate *output, const REAL4 weight, const INT4 pixelloc);
 

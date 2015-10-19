@@ -58,8 +58,8 @@ class ChooseWaveformParams:
             in a frame centered at the detector
     """
     def __init__(self, phiref=0., deltaT=1./4096., m1=10.*lal.MSUN_SI,
-            m2=10.*lal.MSUN_SI, s1x=0., s1y=0., s1z=0.,
-            s2x=0., s2y=0., s2z=0., fmin=40., fref=0., dist=1.e6*lal.PC_SI,
+            m2=10.*lal.MSUN_SI, spin1x=0., spin1y=0., spin1z=0.,
+            spin2x=0., spin2y=0., spin2z=0., fmin=40., fref=0., dist=1.e6*lal.PC_SI,
             incl=0., lambda1=0., lambda2=0., waveFlags=None, nonGRparams=None,
             ampO=0, phaseO=7, approx=lalsim.TaylorT4, 
             theta=0., phi=0., psi=0., tref=0., radec=False, detector="H1",
@@ -70,12 +70,12 @@ class ChooseWaveformParams:
         self.deltaT = deltaT
         self.m1 = m1
         self.m2 = m2
-        self.s1x = s1x
-        self.s1y = s1y
-        self.s1z = s1z
-        self.s2x = s2x
-        self.s2y = s2y
-        self.s2z = s2z
+        self.spin1x = spin1x
+        self.spin1y = spin1y
+        self.spin1z = spin1z
+        self.spin2x = spin2x
+        self.spin2y = spin2y
+        self.spin2z = spin2z
         self.fmin = fmin
         self.fref = fref
         self.dist = dist
@@ -110,12 +110,12 @@ class ChooseWaveformParams:
         print "This ChooseWaveformParams has the following parameter values:"
         print "m1 =", self.m1 / lal.MSUN_SI, "(Msun)"
         print "m2 =", self.m2 / lal.MSUN_SI, "(Msun)"
-        print "s1x =", self.s1x
-        print "s1y =", self.s1y
-        print "s1z =", self.s1z
-        print "s2x =", self.s2x
-        print "s2y =", self.s2y
-        print "s2z =", self.s2z
+        print "spin1x =", self.spin1x
+        print "spin1y =", self.spin1y
+        print "spin1z =", self.spin1z
+        print "spin2x =", self.spin2x
+        print "spin2y =", self.spin2y
+        print "spin2z =", self.spin2z
         print "lambda1 =", self.lambda1
         print "lambda2 =", self.lambda2
         print "inclination =", self.incl
@@ -168,12 +168,12 @@ class ChooseWaveformParams:
         self.phiref = row.coa_phase
         self.m1 = row.mass1 * lal.MSUN_SI
         self.m2 = row.mass2 * lal.MSUN_SI
-        self.s1x = row.spin1x
-        self.s1y = row.spin1y
-        self.s1z = row.spin1z
-        self.s2x = row.spin2x
-        self.s2y = row.spin2y
-        self.s2z = row.spin2z
+        self.spin1x = row.spin1x
+        self.spin1y = row.spin1y
+        self.spin1z = row.spin1z
+        self.spin2x = row.spin2x
+        self.spin2y = row.spin2y
+        self.spin2z = row.spin2z
         self.fmin = row.f_lower
         self.dist = row.distance * lal.PC_SI * 1.e6
         self.incl = row.inclination
@@ -679,8 +679,8 @@ def generate_waveform_from_tmplt(tmplt, approximant, delta_f=0.125, f_low=40, am
     params = ChooseWaveformParams(
         deltaF = delta_f,
         m1 = lal.MSUN_SI * tmplt.mass1, m2 = lal.MSUN_SI * tmplt.mass2,
-        s1x = tmplt.spin1x, s1y = tmplt.spin1y, s1z = tmplt.spin1z,
-        s2x = tmplt.spin2x, s2y = tmplt.spin2y, s2z = tmplt.spin2z,
+        spin1x = tmplt.spin1x, spin1y = tmplt.spin1y, spin1z = tmplt.spin1z,
+        spin2x = tmplt.spin2x, spin2y = tmplt.spin2y, spin2z = tmplt.spin2z,
         fmin = f_low, fref = 0,
         dist = 1.e6 * lal.PC_SI, # distance
         ampO = amporder, phaseO = phaseorder,
@@ -888,9 +888,9 @@ def hoft(P, Fp=None, Fc=None):
     Returns a REAL8TimeSeries object
     """
     hp, hc = lalsim.SimInspiralChooseTDWaveform(P.phiref, P.deltaT, P.m1, P.m2, 
-            P.s1x, P.s1y, P.s1z, P.s2x, P.s2y, P.s2z, P.fmin, P.fref, P.dist, 
-            P.incl, P.lambda1, P.lambda2, P.waveFlags, P.nonGRparams,
-            P.ampO, P.phaseO, P.approx)
+            P.spin1x, P.spin1y, P.spin1z, P.spin2x, P.spin2y, P.spin2z, P.fmin,
+            P.fref, P.dist, P.incl, P.lambda1, P.lambda2, P.waveFlags,
+            P.nonGRparams, P.ampO, P.phaseO, P.approx)
 
     if Fp!=None and Fc!=None:
         hp.data.data *= Fp
@@ -997,7 +997,7 @@ def hoff_FD(P, Fp=None, Fc=None):
         raise ValueError('None given for freq. bin size P.deltaF')
 
     hptilde, hctilde = lalsim.SimInspiralChooseFDWaveform(P.phiref, P.deltaF,
-            P.m1, P.m2, P.s1x, P.s1y, P.s1z, P.s2x, P.s2y, P.s2z, P.fmin,
+            P.m1, P.m2, P.spin1x, P.spin1y, P.spin1z, P.spin2x, P.spin2y, P.spin2z, P.fmin,
             P.fmax, P.fref, P.dist, P.incl, P.lambda1, P.lambda2, P.waveFlags,
             P.nonGRparams, P.ampO, P.phaseO, P.approx)
     if Fp is not None and Fc is not None:
@@ -1238,9 +1238,9 @@ def complex_hoft(P, sgn=-1):
     """
     assert sgn == 1 or sgn == -1
     hp, hc = lalsim.SimInspiralChooseTDWaveform(P.phiref, P.deltaT, P.m1, P.m2, 
-            P.s1x, P.s1y, P.s1z, P.s2x, P.s2y, P.s2z, P.fmin, P.fref, P.dist, 
-            P.incl, P.lambda1, P.lambda2, P.waveFlags, P.nonGRparams,
-            P.ampO, P.phaseO, P.approx)
+            P.spin1x, P.spin1y, P.spin1z, P.spin2x, P.spin2y, P.spin2z, 
+            P.fmin, P.fref, P.dist, P.incl, P.lambda1, P.lambda2, P.waveFlags, 
+            P.nonGRparams, P.ampO, P.phaseO, P.approx)
     if P.taper != lalsim.SIM_INSPIRAL_TAPER_NONE: # Taper if requested
         lalsim.SimInspiralREAL8WaveTaper(hp.data, P.taper)
         lalsim.SimInspiralREAL8WaveTaper(hc.data, P.taper)

@@ -118,7 +118,7 @@ my_gsl_error (const char * reason, const char * file, int line, int gsl_errno)
 
 #define INPUT_LIST_OF_ARRAYS(NAME, NPYTYPE, DEPTH, CHECK) \
 { \
-    const Py_ssize_t n = PySequence_Length(acors_obj); \
+    const Py_ssize_t n = PySequence_Length(NAME##_obj); \
     if (n < 0) \
         goto fail; \
     else if (n != nifos) { \

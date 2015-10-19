@@ -551,10 +551,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Set up the segments
     if not (self.config.has_option('input','gps-start-time') and self.config.has_option('input','gps-end-time')) and len(self.times)>0:
       (mintime,maxtime)=self.get_required_data(self.times)
-    if not self.config.has_option('input','gps-start-time'):
-      self.config.set('input','gps-start-time',str(int(floor(mintime))))
-    if not self.config.has_option('input','gps-end-time'):
-      self.config.set('input','gps-end-time',str(int(ceil(maxtime))))
+      if not self.config.has_option('input','gps-start-time'):
+        self.config.set('input','gps-start-time',str(int(floor(mintime))))
+      if not self.config.has_option('input','gps-end-time'):
+        self.config.set('input','gps-end-time',str(int(ceil(maxtime))))
     self.add_science_segments()
 
     # Save the final configuration that is being used
@@ -1446,6 +1446,9 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.add_ini_opts(cp,'engine')
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
+    # For LALInferenceNest demand only 1 thread (to be tuned later)
+    if self.engine=='lalinferencenest':
+            self.add_condor_cmd('environment','OMP_NUM_THREADS=1')
 
   def set_grid_site(self,site=None):
     """

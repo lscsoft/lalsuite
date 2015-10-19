@@ -1205,7 +1205,7 @@ def tukey_window(N, alpha=0.5):
 # create a function for plotting the absolute value of Bk data (read in from
 # data files) and an averaged 1 day "two-sided" amplitude spectral density
 # spectrogram for each IFO
-def plot_Bks_ASDs( Bkdata, ifos, delt=86400, sampledt=60., plotpsds=True,
+def plot_Bks_ASDs( Bkdata, ifos, delt=86400, plotpsds=True,
                    plotfscan=False, removeoutlier=None, mplparams=False ):
   import matplotlib
   from matplotlib.mlab import specgram
@@ -1217,6 +1217,7 @@ def plot_Bks_ASDs( Bkdata, ifos, delt=86400, sampledt=60., plotpsds=True,
   psdfigs = []
   fscanfigs = []
   asdlist = []
+  sampledt = []
 
   # set some matplotlib defaults for amplitude spectral density
   if not mplparams:
@@ -1275,6 +1276,7 @@ Bk[:,2])))), 50)
 
     # minimum time step between points (should generally be 60 seconds)
     mindt = min(np.diff(gpstime))
+    sampledt.append(mindt)
 
     Bkabs = np.sqrt(Bk[:,1]**2 + Bk[:,2]**2)
 
@@ -1305,18 +1307,18 @@ Bk[:,2])))), 50)
       count = 0
 
       # zero pad the data and bin each point in the nearest 60s bin
-      datazeropad = np.zeros(int(math.ceil(totlen/sampledt))+1, dtype=complex)
+      datazeropad = np.zeros(int(math.ceil(totlen/mindt))+1, dtype=complex)
 
-      idx = map(lambda x: int(math.floor((x/sampledt)+0.5)), tms)
+      idx = map(lambda x: int(math.floor((x/mindt)+0.5)), tms)
       for i in range(0, len(idx)):
         datazeropad[idx[i]] = complex(Bk[i,1], Bk[i,2])
 
-      win = tukey_window(math.floor(delt/sampledt), alpha=0.1)
+      win = tukey_window(math.floor(delt/mindt), alpha=0.1)
 
-      Fs = 1./sampledt # sample rate in Hz
+      Fs = 1./mindt # sample rate in Hz
 
-      fscan, freqs, t = specgram(datazeropad, NFFT=int(math.floor(delt/sampledt)), \
-Fs=Fs, window=win, noverlap=int(math.floor(delt/(2.*sampledt))))
+      fscan, freqs, t = specgram(datazeropad, NFFT=int(math.floor(delt/mindt)), \
+Fs=Fs, window=win, noverlap=int(math.floor(delt/(2.*mindt))))
 
       if plotpsds:
         fshape = fscan.shape
@@ -1392,7 +1394,7 @@ Fs=Fs, window=win, noverlap=int(math.floor(delt/(2.*sampledt))))
 
         fscanfigs.append(fscanfig)
 
-  return Bkfigs, psdfigs, fscanfigs, asdlist
+  return Bkfigs, psdfigs, fscanfigs, asdlist, sampledt
 
 
 # a function to create a histogram of log10(results) for a list of a given parameter

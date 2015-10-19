@@ -1,9 +1,20 @@
+/**
+ *
+ * \file
+ * \brief Tabulated Quasi-Normal Mode Information for Ringdown
+ *
+ * This file contains listed final spin values, and corresponding Quasi-Normal-Mode(QNM) central frequencies and decay rates. The spins are on [-1,1] where values are the dimensionless Kerr parameters S/M^2. The frequencies and decay rates are in units of 1/(s*pi*M), where M is 1. To compare values with tables given at, for example, www.phy.olemiss.edu/~berti/ringdown/, multiply by 2*pi, and note that the decay rate corresponds to the imaginary part of the QNM frequency.
+ *
+ * Values for spins between -0.994 and 0.994 where sourced from the above website (2014), while qualitatively accurate values for the remaining spins where sourced from the implementation used in arxiv:1404:3197. Both references use the analytic representation of QNMs developed by Leaver in 1986, and for spin values within +-0.994, have identical values within numerical error.
+ *
+ * */
+
 #ifndef _LALSIM_IMR_PHENOMD_H
 #define _LALSIM_IMR_PHENOMD_H
 
 
-static const int QNMData_length = 996;
-static const double QNMData_a[] = {-0.996, -0.994, -0.992, -0.99, -0.988, -0.986, -0.984, -0.982, \
+static const int QNMData_length = 1003;
+static const double QNMData_a[] = { -1.0, -0.999, -0.998,-0.996,         -0.994, -0.992, -0.99, -0.988, -0.986, -0.984, -0.982, \
 -0.98, -0.978, -0.976, -0.974, -0.972, -0.97, -0.968, -0.966, -0.964, \
 -0.962, -0.96, -0.958, -0.956, -0.954, -0.952, -0.95, -0.948, -0.946, \
 -0.944, -0.942, -0.94, -0.938, -0.936, -0.934, -0.932, -0.93, -0.928, \
@@ -109,9 +120,9 @@ static const double QNMData_a[] = {-0.996, -0.994, -0.992, -0.99, -0.988, -0.986
 0.932, 0.934, 0.936, 0.938, 0.94, 0.942, 0.944, 0.946, 0.948, 0.95, \
 0.952, 0.954, 0.956, 0.958, 0.96, 0.962, 0.964, 0.966, 0.968, 0.97, \
 0.972, 0.974, 0.976, 0.978, 0.98, 0.982, 0.984, 0.986, 0.988, 0.99, \
-0.992, 0.994};
+0.992, 0.994,       0.996, 0.998, 0.999, 1.0};
 
-static const double QNMData_fring[] = {0.0464189, 0.0464526, 0.046473, 0.0464909, 0.0465084, 0.0465259, \
+static const double QNMData_fring[] = {0.0464014,0.0464110,0.0464197,0.0464373,       0.0464526, 0.046473, 0.0464909, 0.0465084, 0.0465259, \
 0.0465435, 0.0465611, 0.0465789, 0.0465966, 0.0466144, 0.0466322, \
 0.0466501, 0.0466679, 0.0466858, 0.0467038, 0.0467217, 0.0467397, \
 0.0467577, 0.0467757, 0.0467937, 0.0468117, 0.0468298, 0.0468479, \
@@ -275,9 +286,9 @@ static const double QNMData_fring[] = {0.0464189, 0.0464526, 0.046473, 0.0464909
 0.118781, 0.119418, 0.120076, 0.120754, 0.121454, 0.122179, 0.12293, \
 0.123709, 0.124519, 0.125362, 0.126243, 0.127165, 0.128132, 0.129151, \
 0.130228, 0.131371, 0.132592, 0.133904, 0.135325, 0.136881, 0.138607, \
-0.14056, 0.142833};
+0.14056, 0.142833,      0.1456111,0.1493707,0.1521282,0.1579619};
 
-static const double QNMData_fdamp[] = {0.014021, 0.0140177, 0.0140154, 0.0140148, 0.014015, 0.0140156, \
+static const double QNMData_fdamp[] = {0.0140098,0.0140102,0.0140106,0.0140114,       0.0140177, 0.0140154, 0.0140148, 0.014015, 0.0140156, \
 0.0140164, 0.0140172, 0.0140181, 0.0140189, 0.0140198, 0.0140206, \
 0.0140214, 0.0140223, 0.0140231, 0.0140239, 0.0140247, 0.0140256, \
 0.0140264, 0.0140272, 0.014028, 0.0140288, 0.0140296, 0.0140305, \
@@ -443,6 +454,6 @@ static const double QNMData_fdamp[] = {0.014021, 0.0140177, 0.0140154, 0.0140148
 0.00834985, 0.00823651, 0.0081186, 0.00799576, 0.0078676, 0.00773366, \
 0.00759343, 0.00744631, 0.00729164, 0.00712861, 0.00695629, \
 0.00677358, 0.00657914, 0.00637134, 0.00614819, 0.00590712, \
-0.00564485, 0.00535699, 0.0050375, 0.00467763, 0.00426389, 0.00377349};
+0.00564485, 0.00535699, 0.0050375, 0.00467763, 0.00426389, 0.00377349,    0.0031618,0.0023131,0.0016762,0.0002908};
 
 #endif /* _LALSIM_IMR_PHENOMD_H */

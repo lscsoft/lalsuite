@@ -79,6 +79,8 @@ elif mpl_version < '1.2.0':
                 return np.concatenate((longitude, latitude), 1)
             transform.__doc__ = Transform.transform.__doc__
 
+            transform_non_affine = transform
+
         def _get_core_transform(self, resolution):
             return self.FixedMollweideTransform(resolution)
 else:
@@ -117,129 +119,72 @@ else:
             return self.FixedMollweideTransform(resolution)
 
 
-# FIXME: Remove this after all Matplotlib monkeypatches are obsolete.
-if mpl_version < '1.2.0':
-    class AstroMollweideAxes(FixedMollweideAxes):
-        """Mollweide axes with phi axis flipped and in hours instead of degrees."""
+class AstroMollweideAxes(FixedMollweideAxes):
+    """Mollweide axes with phi axis flipped and in hours from 24 to 0 instead of
+    in degrees from -180 to 180."""
 
-        name = 'astro mollweide'
+    name = 'astro mollweide'
 
-        class RaFormatter(Formatter):
-            # Copied from matplotlib.geo.GeoAxes.ThetaFormatter and modified
-            def __init__(self, round_to=1.0):
-                self._round_to = round_to
+    def cla(self):
+        super(AstroMollweideAxes, self).cla()
+        self.set_xlim(0, 2*np.pi)
 
-            def __call__(self, x, pos=None):
-                hours = (x / np.pi) * 12.
-                hours = round(15 * hours / self._round_to) * self._round_to / 15
-                return r"%0.0f$^\mathrm{h}$" % hours
+    def set_xlim(self, *args, **kwargs):
+        Axes.set_xlim(self, 0., 2*np.pi)
+        Axes.set_ylim(self, -np.pi / 2.0, np.pi / 2.0)
 
-        def set_longitude_grid(self, degrees):
-            # Copied from matplotlib.geo.GeoAxes.set_longitude_grid and modified
-            number = (360.0 / degrees) + 1
-            self.xaxis.set_major_locator(
-                FixedLocator(
-                    np.linspace(-np.pi, np.pi, number, True)[1:-1]))
-            self._longitude_degrees = degrees
-            self.xaxis.set_major_formatter(self.RaFormatter(degrees))
+    def _get_core_transform(self, resolution):
+        return Affine2D().translate(-np.pi, 0.) + super(AstroMollweideAxes, self)._get_core_transform(resolution)
 
-        def _set_lim_and_transforms(self):
-            # Copied from matplotlib.geo.GeoAxes._set_lim_and_transforms and modified
-            FixedMollweideAxes._set_lim_and_transforms(self)
+    class RaFormatter(Formatter):
+        # Copied from matplotlib.geo.GeoAxes.ThetaFormatter and modified
+        def __init__(self, round_to=1.0):
+            self._round_to = round_to
 
-            # This is the transform for latitude ticks.
-            yaxis_stretch = Affine2D().scale(np.pi * 2.0, 1.0).translate(-np.pi, 0.0)
-            yaxis_space = Affine2D().scale(-1.0, 1.1)
-            self._yaxis_transform = \
-                yaxis_stretch + \
-                self.transData
-            yaxis_text_base = \
-                yaxis_stretch + \
-                self.transProjection + \
-                (yaxis_space + \
-                 self.transAffine + \
-                 self.transAxes)
-            self._yaxis_text1_transform = \
-                yaxis_text_base + \
-                Affine2D().translate(-8.0, 0.0)
-            self._yaxis_text2_transform = \
-                yaxis_text_base + \
-                Affine2D().translate(8.0, 0.0)
+        def __call__(self, x, pos=None):
+            hours = (x / np.pi) * 12.
+            hours = round(15 * hours / self._round_to) * self._round_to / 15
+            return r"%0.0f$^\mathrm{h}$" % hours
 
-        def _get_affine_transform(self):
-            transform = self._get_core_transform(1)
-            xscale, _ = transform.transform_point((-np.pi, 0))
-            _, yscale = transform.transform_point((0, np.pi / 2.0))
-            return Affine2D() \
-                .scale(0.5 / xscale, 0.5 / yscale) \
-                .translate(0.5, 0.5)
-else:
-    class AstroMollweideAxes(FixedMollweideAxes):
-        """Mollweide axes with phi axis flipped and in hours from 24 to 0 instead of
-        in degrees from -180 to 180."""
+    def set_longitude_grid(self, degrees):
+        # Copied from matplotlib.geo.GeoAxes.set_longitude_grid and modified
+        number = (360.0 / degrees) + 1
+        self.xaxis.set_major_locator(
+            FixedLocator(
+                np.linspace(0, 2*np.pi, number, True)[1:-1]))
+        self._longitude_degrees = degrees
+        self.xaxis.set_major_formatter(self.RaFormatter(degrees))
 
-        name = 'astro mollweide'
+    def _set_lim_and_transforms(self):
+        # Copied from matplotlib.geo.GeoAxes._set_lim_and_transforms and modified
+        super(AstroMollweideAxes, self)._set_lim_and_transforms()
 
-        def cla(self):
-            super(AstroMollweideAxes, self).cla()
-            self.set_xlim(0, 2*np.pi)
+        # This is the transform for latitude ticks.
+        yaxis_stretch = Affine2D().scale(np.pi * 2.0, 1.0)
+        yaxis_space = Affine2D().scale(-1.0, 1.1)
+        self._yaxis_transform = \
+            yaxis_stretch + \
+            self.transData
+        yaxis_text_base = \
+            yaxis_stretch + \
+            self.transProjection + \
+            (yaxis_space + \
+             self.transAffine + \
+             self.transAxes)
+        self._yaxis_text1_transform = \
+            yaxis_text_base + \
+            Affine2D().translate(-8.0, 0.0)
+        self._yaxis_text2_transform = \
+            yaxis_text_base + \
+            Affine2D().translate(8.0, 0.0)
 
-        def set_xlim(self, *args, **kwargs):
-            Axes.set_xlim(self, 0., 2*np.pi)
-            Axes.set_ylim(self, -np.pi / 2.0, np.pi / 2.0)
-
-        def _get_core_transform(self, resolution):
-            return Affine2D().translate(-np.pi, 0.) + super(AstroMollweideAxes, self)._get_core_transform(resolution)
-
-        class RaFormatter(Formatter):
-            # Copied from matplotlib.geo.GeoAxes.ThetaFormatter and modified
-            def __init__(self, round_to=1.0):
-                self._round_to = round_to
-
-            def __call__(self, x, pos=None):
-                hours = (x / np.pi) * 12.
-                hours = round(15 * hours / self._round_to) * self._round_to / 15
-                return r"%0.0f$^\mathrm{h}$" % hours
-
-        def set_longitude_grid(self, degrees):
-            # Copied from matplotlib.geo.GeoAxes.set_longitude_grid and modified
-            number = (360.0 / degrees) + 1
-            self.xaxis.set_major_locator(
-                FixedLocator(
-                    np.linspace(0, 2*np.pi, number, True)[1:-1]))
-            self._longitude_degrees = degrees
-            self.xaxis.set_major_formatter(self.RaFormatter(degrees))
-
-        def _set_lim_and_transforms(self):
-            # Copied from matplotlib.geo.GeoAxes._set_lim_and_transforms and modified
-            super(AstroMollweideAxes, self)._set_lim_and_transforms()
-
-            # This is the transform for latitude ticks.
-            yaxis_stretch = Affine2D().scale(np.pi * 2.0, 1.0)
-            yaxis_space = Affine2D().scale(-1.0, 1.1)
-            self._yaxis_transform = \
-                yaxis_stretch + \
-                self.transData
-            yaxis_text_base = \
-                yaxis_stretch + \
-                self.transProjection + \
-                (yaxis_space + \
-                 self.transAffine + \
-                 self.transAxes)
-            self._yaxis_text1_transform = \
-                yaxis_text_base + \
-                Affine2D().translate(-8.0, 0.0)
-            self._yaxis_text2_transform = \
-                yaxis_text_base + \
-                Affine2D().translate(8.0, 0.0)
-
-        def _get_affine_transform(self):
-            transform = self._get_core_transform(1)
-            xscale, _ = transform.transform_point((0, 0))
-            _, yscale = transform.transform_point((0, np.pi / 2.0))
-            return Affine2D() \
-                .scale(0.5 / xscale, 0.5 / yscale) \
-                .translate(0.5, 0.5)
+    def _get_affine_transform(self):
+        transform = self._get_core_transform(1)
+        xscale, _ = transform.transform_point((0, 0))
+        _, yscale = transform.transform_point((0, np.pi / 2.0))
+        return Affine2D() \
+            .scale(0.5 / xscale, 0.5 / yscale) \
+            .translate(0.5, 0.5)
 
 
 projection_registry.register(AstroMollweideAxes)
@@ -321,11 +266,11 @@ def cut_dateline(vertices):
                 ], vertices[i:, :]))]
                 break
     elif dateline_crossings:
-        frame_poly = geos.Polygon(np.array([[-np.pi, np.pi/2], [-np.pi, -np.pi/2], [np.pi, -np.pi/2], [np.pi, np.pi/2]]))
-        poly = geos.Polygon(np.vstack((vertices[:, 0] % (2 * np.pi), vertices[:, 1])).T)
+        frame_poly = geos.Polygon(np.asarray([[-np.pi, np.pi/2], [-np.pi, -np.pi/2], [np.pi, -np.pi/2], [np.pi, np.pi/2]]))
+        poly = geos.Polygon(np.column_stack((vertices[:, 0] % (2 * np.pi), vertices[:, 1])))
         if poly.intersects(frame_poly):
             out_vertices += [p.get_coords() for p in poly.intersection(frame_poly)]
-        poly = geos.Polygon(np.vstack((vertices[:, 0] % (-2 * np.pi), vertices[:, 1])).T)
+        poly = geos.Polygon(np.column_stack((vertices[:, 0] % (-2 * np.pi), vertices[:, 1])))
         if poly.intersects(frame_poly):
             out_vertices += [p.get_coords() for p in poly.intersection(frame_poly)]
     else:
@@ -349,7 +294,7 @@ def cut_prime_meridian(vertices):
         vertices = vertices[:-1, :]
 
     # Ensure that the longitudes are wrapped from 0 to 2*pi.
-    vertices = np.vstack((wrapped_angle(vertices[:, 0]), vertices[:, 1])).T
+    vertices = np.column_stack((wrapped_angle(vertices[:, 0]), vertices[:, 1]))
 
     def count_meridian_crossings(phis):
         n = 0
@@ -410,15 +355,15 @@ def cut_prime_meridian(vertices):
         # algorithms.
 
         # Construct polygon representing map boundaries in longitude and latitude.
-        frame_poly = geos.Polygon(np.array([[0., np.pi/2], [0., -np.pi/2], [2*np.pi, -np.pi/2], [2*np.pi, np.pi/2]]))
+        frame_poly = geos.Polygon(np.asarray([[0., np.pi/2], [0., -np.pi/2], [2*np.pi, -np.pi/2], [2*np.pi, np.pi/2]]))
 
         # Intersect with polygon re-wrapped to lie in [pi, 3*pi).
-        poly = geos.Polygon(np.vstack((reference_angle(vertices[:, 0]) + 2 * np.pi, vertices[:, 1])).T)
+        poly = geos.Polygon(np.column_stack((reference_angle(vertices[:, 0]) + 2 * np.pi, vertices[:, 1])))
         if poly.intersects(frame_poly):
             out_vertices += [p.get_coords() for p in poly.intersection(frame_poly)]
 
         # Intersect with polygon re-wrapped to lie in [-pi, pi).
-        poly = geos.Polygon(np.vstack((reference_angle(vertices[:, 0]), vertices[:, 1])).T)
+        poly = geos.Polygon(np.column_stack((reference_angle(vertices[:, 0]), vertices[:, 1])))
         if poly.intersects(frame_poly):
             out_vertices += [p.get_coords() for p in poly.intersection(frame_poly)]
     else:
@@ -439,13 +384,13 @@ def make_rect_poly(width, height, theta, phi, subdivisions=10):
     h = np.sin(np.deg2rad(height))
 
     # Generate vertices of rectangle.
-    v = np.array([[-w, -h], [w, -h], [w, h], [-w, h]])
+    v = np.asarray([[-w, -h], [w, -h], [w, h], [-w, h]])
 
     # Subdivide.
     v = subdivide_vertices(v, subdivisions)
 
     # Project onto sphere by calculating z-coord from normalization condition.
-    v = np.hstack((v, np.sqrt(1. - np.expand_dims((v * v).sum(1), 1))))
+    v = np.hstack((v, np.sqrt(1. - np.expand_dims(np.square(v).sum(1), 1))))
 
     # Transform vertices.
     v = np.dot(v, hp.rotator.euler_matrix_new(phi, theta, 0, Y=True))
@@ -456,10 +401,10 @@ def make_rect_poly(width, height, theta, phi, subdivisions=10):
     # FIXME: Remove this after all Matplotlib monkeypatches are obsolete.
     if mpl_version < '1.2.0':
         # Return list of vertices as longitude, latitude pairs.
-        return np.vstack((reference_angle(phis), 0.5 * np.pi - thetas)).T
+        return np.column_stack((reference_angle(phis), 0.5 * np.pi - thetas))
     else:
         # Return list of vertices as longitude, latitude pairs.
-        return np.vstack((wrapped_angle(phis), 0.5 * np.pi - thetas)).T
+        return np.column_stack((wrapped_angle(phis), 0.5 * np.pi - thetas))
 
 
 def heatmap(func, *args, **kwargs):
@@ -482,7 +427,7 @@ def heatmap(func, *args, **kwargs):
     itrans = ax.transData.inverted()
 
     # Get the longitude and latitude of every point in the bounding box.
-    lons, lats = itrans.transform(np.vstack((xx.flatten(), yy.flatten())).T).T
+    lons, lats = itrans.transform(np.column_stack((xx.ravel(), yy.ravel()))).T
 
     # Create a mask that selects only the pixels that fall inside the map boundary.
     mask = np.isfinite(lons) & np.isfinite(lats) & (lons >= xmin) & (lons <= xmax)
@@ -656,10 +601,16 @@ class PPPlot(Axes):
     @staticmethod
     def _make_series(p_values):
         for ps in p_values:
-            ps = np.sort(np.atleast_1d(ps))
-            n = len(ps)
-            xs = np.concatenate(([0.], ps, [1.]))
-            ys = np.concatenate(([0.], np.arange(1, n + 1) / n, [1.]))
+            if np.ndim(ps) == 1:
+                ps = np.sort(np.atleast_1d(ps))
+                n = len(ps)
+                xs = np.concatenate(([0.], ps, [1.]))
+                ys = np.concatenate(([0.], np.arange(1, n + 1) / n, [1.]))
+            elif np.ndim(ps) == 2:
+                xs = np.concatenate(([0.], ps[0], [1.]))
+                ys = np.concatenate(([0.], ps[1], [1.]))
+            else:
+                raise ValueError('All series must be 1- or 2-dimensional')
             yield xs
             yield ys
 
@@ -669,8 +620,17 @@ class PPPlot(Axes):
         Parameters
         ----------
 
-        p_values:
-            One or more lists of P-values
+        p_values: list or `np.ndarray`
+            One or more lists of P-values.
+
+            If an entry in the list is one-dimensional, then it is interpreted
+            as an unordered list of P-values. The ranked values will be plotted
+            on the horizontal axis, and the cumulative fraction will be plotted
+            on the vertical axis.
+
+            If an entry in the list is two-dimensional, then the first subarray
+            is plotted on the horizontal axis and the second subarray is plotted
+            on the vertical axis.
 
         drawstyle: ``steps`` or ``lines`` or ``default``
             Plotting style. If ``steps``, then plot steps to represent a
@@ -697,6 +657,35 @@ class PPPlot(Axes):
             kwargs['drawstyle'] = 'steps-post'
 
         return self.plot(*args, **kwargs)
+
+    def add_worst(self, *p_values):
+        """
+        Mark the point at which the deviation is largest.
+
+        Parameters
+        ----------
+
+        p_values: list or `np.ndarray`
+            Same as in `add_series`.
+        """
+        series = list(self._make_series(p_values))
+        for xs, ys in zip(series[0::2], series[1::2]):
+            i = np.argmax(np.abs(ys - xs))
+            x = xs[i]
+            y = ys[i]
+            if y == x:
+                continue
+            self.plot([x, x, 0], [0, y, y], '--', color='black', linewidth=0.5)
+            if y < x:
+                self.plot([x, y], [y, y], '-', color='black', linewidth=1)
+                self.text(
+                    x, y, ' {0:.02f} '.format(np.around(x - y, 2)),
+                    ha='left', va='top')
+            else:
+                self.plot([x, x], [x, y], '-', color='black', linewidth=1)
+                self.text(
+                    x, y, ' {0:.02f} '.format(np.around(y - x, 2)),
+                    ha='right', va='bottom')
 
     def add_diagonal(self, *args, **kwargs):
         """Add a diagonal line to the plot, running from (0, 0) to (1, 1).
