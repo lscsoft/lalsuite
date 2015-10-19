@@ -87,7 +87,7 @@ extern "C"
 #define XLAL_EPOCH_GPS_JD 2444244.5             /**< Julian Day (UTC) of the GPS epoch (1980 JAN 6 0h UTC) */
 #define XLAL_EPOCH_GPS_TAI_UTC 19               /**< Leap seconds (TAI-UTC) on the GPS epoch (1980 JAN 6 0h UTC) */
 #define XLAL_MJD_REF 2400000.5                  /**< Reference Julian Day for Mean Julian Day. */
-#define XLAL_JD_TO_MJD(jd) (jd - XLAL_MJD_REF) /**< Modified Julian Day for specified civil time structure. */
+#define XLAL_JD_TO_MJD(jd) ((jd) - XLAL_MJD_REF) /**< Modified Julian Day for specified civil time structure. */
 
 /**
  * This structure stores pointers to a ::LALDetector and a
