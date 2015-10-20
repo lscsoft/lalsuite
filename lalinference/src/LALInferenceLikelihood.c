@@ -547,7 +547,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   int i, j, lower, upper, ifo;
   LALInferenceIFOData *dataPtr;
   double ra=0.0, dec=0.0, psi=0.0, gmst=0.0;
-  double GPSdouble=0.0;
+  double GPSdouble=0.0, t0=0.0;
   LIGOTimeGPS GPSlal;
   double chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
@@ -656,6 +656,22 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   if(LALInferenceCheckVariable(currentParams, "signalModelFlag"))
     signalFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "signalModelFlag"));
 
+  int freq_length=0,time_length=0;
+  COMPLEX16Vector * dh_S_tilde=NULL;
+  COMPLEX16Vector * dh_S_phase_tilde = NULL;
+  REAL8Vector *dh_S=NULL;
+  REAL8Vector *dh_S_phase = NULL;
+  /* Setup times to integrate over */
+  freq_length = data->freqData->data->length;
+  time_length = 2*(freq_length-1);
+
+  /* Desired tc == 2 seconds before buffer end.  Only used during
+     margtime{phi} to try to place the waveform in a reasonable
+     place before time-shifting */
+  deltaT = data->timeData->deltaT;
+  REAL8 epoch = XLALGPSGetREAL8(&(data->freqData->epoch));
+  desired_tc = epoch + (time_length-1)*deltaT - 2.0;
+  
   if(signalFlag)
   {
     if(LALInferenceCheckVariable(currentParams,"logmc")){
@@ -684,7 +700,14 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 		    fprintf(stderr,"ERROR: Cannot use --detector-frame with less than 2 detectors!\n");
 		    exit(1);
 	    }
-      REAL8 t0=LALInferenceGetREAL8Variable(currentParams,"t0");
+      if(!margtime)
+      {
+         t0=LALInferenceGetREAL8Variable(currentParams,"t0");
+      }
+      else /* Use the desired end time to compute the mapping to ra,dec */
+      {
+              t0=desired_tc;
+      }
       REAL8 alph=acos(LALInferenceGetREAL8Variable(currentParams,"cosalpha"));
       REAL8 theta=LALInferenceGetREAL8Variable(currentParams,"azimuth");
       LALInferenceDetFrameToEquatorial(data->detector,data->next->detector,
@@ -708,21 +731,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     }
   }
 
-  int freq_length=0,time_length=0;
-  COMPLEX16Vector * dh_S_tilde=NULL;
-  COMPLEX16Vector * dh_S_phase_tilde = NULL;
-  REAL8Vector *dh_S=NULL;
-  REAL8Vector *dh_S_phase = NULL;
-  /* Setup times to integrate over */
-  freq_length = data->freqData->data->length;
-  time_length = 2*(freq_length-1);
-
-  /* Desired tc == 2 seconds before buffer end.  Only used during
-     margtime{phi} to try to place the waveform in a reasonable
-     place before time-shifting */
-  deltaT = data->timeData->deltaT;
-  REAL8 epoch = XLALGPSGetREAL8(&(data->freqData->epoch));
-  desired_tc = epoch + (time_length-1)*deltaT - 2.0;
 
   if(margtime)
   {
@@ -1152,7 +1160,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
       REAL8 time_low,time_high;
       LALInferenceGetMinMaxPrior(currentParams,"time",&time_low,&time_high);
-      REAL8 t0 = XLALGPSGetREAL8(&(data->freqData->epoch));
+      t0 = XLALGPSGetREAL8(&(data->freqData->epoch));
       int istart = (UINT4)round((time_low - t0)/deltaT);
       int iend = (UINT4)round((time_high - t0)/deltaT);
       if(iend > (int) dh_S->length || istart < 0 ) {
