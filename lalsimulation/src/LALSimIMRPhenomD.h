@@ -5,13 +5,33 @@
  *
  * This file contains listed final spin values, and corresponding Quasi-Normal-Mode(QNM) central frequencies and decay rates. The spins are on [-1,1] where values are the dimensionless Kerr parameters S/M^2. The frequencies and decay rates are in units of 1/(s*pi*M), where M is 1. To compare values with tables given at, for example, www.phy.olemiss.edu/~berti/ringdown/, multiply by 2*pi, and note that the decay rate corresponds to the imaginary part of the QNM frequency.
  *
- * Values for spins between -0.994 and 0.994 where sourced from the above website (2014), while qualitatively accurate values for the remaining spins where sourced from the implementation used in arxiv:1404:3197. Both references use the analytic representation of QNMs developed by Leaver in 1986, and for spin values within +-0.994, have identical values within numerical error.
+ * Values for spins between -0.994 and 0.994 were sourced from the above website (2014), while qualitatively accurate values for the remaining spins where sourced from the implementation used in arxiv:1404:3197. Both references use the analytic representation of QNMs developed by Leaver in 1986, and for spin values within +-0.994, have identical values within numerical error.
  *
  * */
 
 #ifndef _LALSIM_IMR_PHENOMD_H
 #define _LALSIM_IMR_PHENOMD_H
 
+/* CONSTANTS */
+
+/**
+ * Dimensionless frequency (Mf) at which define the end of the waveform
+ */
+#define f_CUT 0.3
+
+/**
+ * Dimensionless frequency (Mf) at which the inspiral amplitude
+ * switches to the intermediate amplitude
+ */
+#define AMP_fJoin_INS 0.014
+
+/**
+ * Dimensionless frequency (Mf) at which the inspiral phase
+ * switches to the intermediate phase
+ */
+#define PHI_fJoin_INS 0.018
+
+/* QNM data */
 
 static const int QNMData_length = 1003;
 static const double QNMData_a[] = { -1.0, -0.999, -0.998,-0.996,         -0.994, -0.992, -0.99, -0.988, -0.986, -0.984, -0.982, \

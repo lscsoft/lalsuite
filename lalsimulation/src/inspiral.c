@@ -61,7 +61,7 @@
  * <DD>approximant [TaylorT1]</DD>
  * <DT>`-w` WAVEFORM, `--waveform=`WAVEFORM 
  * <DD>waveform string giving both approximant and order</DD>
- * <DT>`-d` domain, `--domain=`DOMAIN      
+ * <DT>`-D` domain, `--domain=`DOMAIN      
  * <DD>domain for waveform generation when both are available {"time", "freq"}
  * [use natural domain for output]</DD>
  * <DT>`-O` PHASEO, `--phase-order=`PHASEO 
@@ -687,7 +687,7 @@ int usage(const char *program)
     fprintf(stderr, "\t-Q, --amp-phase          \toutput data as amplitude and phase\n");
     fprintf(stderr, "\t-a APPROX, --approximant=APPROX \n\t\tapproximant [%s]\n", DEFAULT_APPROX);
     fprintf(stderr, "\t-w WAVEFORM, --waveform=WAVEFORM \n\t\twaveform string giving both approximant and order\n");
-    fprintf(stderr, "\t-d domain, --domain=DOMAIN      \n\t\tdomain for waveform generation when both are available\n\t\t{\"time\", \"freq\"} [use natural domain for output]\n");
+    fprintf(stderr, "\t-D domain, --domain=DOMAIN      \n\t\tdomain for waveform generation when both are available\n\t\t{\"time\", \"freq\"} [use natural domain for output]\n");
     fprintf(stderr, "\t-O PHASEO, --phase-order=PHASEO \n\t\ttwice pN order of phase (-1 == highest) [%d]\n", DEFAULT_PHASEO);
     fprintf(stderr, "\t-o AMPO, --amp-order=AMPO       \n\t\ttwice pN order of amplitude (-1 == highest) [%d]\n", DEFAULT_AMPO);
     fprintf(stderr, "\t-q PHIREF, --phiRef=PHIREF      \n\t\treference phase in degrees [%g]\n", DEFAULT_PHIREF);
