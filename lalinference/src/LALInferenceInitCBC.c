@@ -227,7 +227,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
 /* Defaults to using LALSimulation */
 LALInferenceTemplateFunction LALInferenceInitCBCTemplate(LALInferenceRunState *runState)
 {
-  char help[]="(--template [LAL,PhenSpin,LALGenerateInspiral,LALSim]\tSpecify template (default LAL)\n";
+  char help[]="(--template [LAL,PhenSpin,LALGenerateInspiral,LALSim,multiband]\tSpecify template (default LAL)\n";
   ProcessParamsTable *ppt=NULL;
   ProcessParamsTable *commandLine=runState->commandLine;
   /* Print command line arguments if help requested */
