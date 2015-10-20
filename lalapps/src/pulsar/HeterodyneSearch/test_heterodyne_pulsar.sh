@@ -136,10 +136,9 @@ if [ -f segfile ]; then
 fi
 
 # make 1 segment of two minutes length
-SEGNUM=1
 SEGSTART=$DATASTART
 SEGEND=`expr $SEGSTART + 120`
-echo $SEGNUM $SEGSTART $SEGEND 120 >> segfile
+echo $SEGSTART $SEGEND >> segfile
 
 if [ $? != "0" ]; then
   echo Could not create the segment file!

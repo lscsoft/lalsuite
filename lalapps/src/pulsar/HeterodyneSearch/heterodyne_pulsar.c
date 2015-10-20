@@ -1688,7 +1688,7 @@ INT4 heterodyneflag){
   INT4 i=0;
   long offset;
   CHAR jnkstr[256]; /* junk string to contain comment lines */
-  INT4 num, dur; /* variable to contain the segment number and duration */
+  INT4 dur; /* variable to contain the segment number and duration */
   INT4 linecount=0; /* number of lines in the segment file */
   INT4 ch=0;
 
@@ -1728,9 +1728,9 @@ INT4 heterodyneflag){
     else{
       fseek(fp, offset, SEEK_SET); /* if line doesn't start with a # then it is
                                       data */
-      if( fscanf(fp, "%d%d%d%d", &num, &starts->data[i],
-                 &stops->data[i], &dur) == EOF ) break;
-      /*format is segwizard type: num starts stops dur */
+      if( fscanf(fp, "%d%d", &starts->data[i], &stops->data[i]) == EOF ) break;
+      /* format is: starts stops */
+      dur = stops->data[i] - starts->data[i];
 
       /* if performing a fine heterodyne remove the first 60 secs at the start
          of a segment to remove the filter response - if the segment is less
