@@ -168,18 +168,18 @@ The current version of this specification may be found
     <table>
       <tr><td>"A1",</td><td>ALLEGRO</td></tr>
       <tr><td>"B1",</td><td>NIOBE</td></tr>
-      <tr><td>"E1",</td><td>EXPLORER</td></tr>
+      <tr><td>"E1",</td><td>ET</td></tr>
       <tr><td>"G1",</td><td>GEO_600</td></tr>
       <tr><td>"H1",</td><td>LHO_4k</td></tr>
       <tr><td>"H2",</td><td>LHO_2k</td></tr>
-      <tr><td>"K1",</td><td>ACIGA</td></tr>
+      <tr><td>"K1",</td><td>KAGRA</td></tr>
       <tr><td>"L1",</td><td>LLO_4k</td></tr>
       <tr><td>"N1",</td><td>Nautilus</td></tr>
       <tr><td>"O1",</td><td>AURIGA</td></tr>
       <tr><td>"P1",</td><td>CIT_40</td></tr>
       <tr><td>"T1",</td><td>TAMA_300</td></tr>
-      <tr><td>"V1",</td><td>Virgo_CITF</td></tr>
-      <tr><td>"V2",</td><td>Virgo (3km)</td></tr>
+      <tr><td>"V1",</td><td>Virgo (3km)</td></tr>
+      <tr><td>"V2",</td><td>Virgo_CITF</td></tr>
     </table>
 
   <li> padding:
