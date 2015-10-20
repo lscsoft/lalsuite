@@ -101,7 +101,7 @@ extern "C" {
                           cache format) or previously heterodyned data\n\
                           file\n"\
 " --channel (-c)           frame data channel (i.e. LSC-DARM_ERR)\n"\
-" --output-dir (-o)        directory for output data files\n"\
+" --output-file (-o)       full path and filename for the output data\n"\
 " --seg-file (-l)          name of file containing science segment list\n"\
 " --calibrate (-A)         if specified calibrate data (no argument)\n"\
 " --response-file (-R)     name of file containing the response function\n"\
@@ -167,7 +167,7 @@ typedef struct tagInputParams{
   CHAR datafile[256];
   CHAR channel[128];
 
-  CHAR outputdir[256];
+  CHAR outputfile[256];
   CHAR segfile[256];
 
   INT4 calibrate;

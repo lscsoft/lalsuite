@@ -87,8 +87,6 @@ int main(int argc, char *argv[]){
 
   FilterResponse *filtresp=NULL; /* variable for the filter response function */
 
-  CHAR *pos=NULL;
-
   /* set error handler */
   XLALSetErrorHandler(XLALAbortErrorHandler);
 
@@ -295,26 +293,8 @@ data!\n");
     if(verbose){  fprintf(stderr, "I've set up the filters.\n");  }
   }
 
-  /* the outputdir string contains the GPS start and end time of the analysis
-     so use this in the filename */
-  if((pos = strrchr(inputParams.outputdir, '/'))==NULL){
-    fprintf(stderr, "Error... output directory path must contain a final \
-directory of the form /GPS_START_TIME-GPS_END_TIME!\n");
-    return 1;
-  }
-
-  if(inputParams.heterodyneflag == 0){
-    snprintf(outputfile, sizeof(outputfile), "%s/coarsehet_%s_%s_%s",
-      inputParams.outputdir, psrname, inputParams.ifo, pos+1);
-    if(verbose){  fprintf(stderr, "I'm performing a coarse \
-heterodyne.\n");  }
-  }
-  else{
-    snprintf(outputfile, sizeof(outputfile), "%s/finehet_%s_%s",
-      inputParams.outputdir, psrname, inputParams.ifo);
-    if(verbose){  fprintf(stderr, "I'm performing a fine \
-heterodyne.\n");  }
-  }
+  /* set output file */
+  snprintf(outputfile, sizeof(outputfile), "%s", inputParams.outputfile);
 
   remove(outputfile); /* if output file already exists remove it */
   snprintf(channel, sizeof(channel), "%s", inputParams.channel);
@@ -717,7 +697,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "resample-rate",            required_argument,  0, 'r' },
     { "data-file",                required_argument,  0, 'd' },
     { "channel",                  required_argument,  0, 'c' },
-    { "output-dir",               required_argument,  0, 'o' },
+    { "output-file",              required_argument,  0, 'o' },
     { "ephem-earth-file",         required_argument,  0, 'e' },
     { "ephem-sun-file",           required_argument,  0, 'S' },
     { "ephem-time-file",          required_argument,  0, 't' },
@@ -884,7 +864,7 @@ the pulsar parameter file */
           LALoptarg);
         break;
       case 'o': /* output data directory */
-        snprintf(inputParams->outputdir, sizeof(inputParams->outputdir), "%s",
+        snprintf(inputParams->outputfile, sizeof(inputParams->outputfile), "%s",
           LALoptarg);
         break;
       case 'e': /* earth ephemeris file */

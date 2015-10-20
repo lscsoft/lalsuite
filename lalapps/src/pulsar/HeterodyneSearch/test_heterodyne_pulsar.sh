@@ -164,7 +164,8 @@ fi
 
 # run code in coarse heterodyne mode (outputing to a text file)
 echo Performing coarse heterodyne - mode 0 - and outputting to text file
-$CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE1 --resample-rate $SRATE2 --filter-knee $FKNEE --data-file $LOCATION/cachefile --seg-file $LOCATION/segfile --channel $CHANNEL --output-dir $OUTDIR --freq-factor 2
+COARSEFILE=$OUTDIR/coarsehet_${PSRNAME}_${DETECTOR}_${DATASTART}-${DATAEND}
+$CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE1 --resample-rate $SRATE2 --filter-knee $FKNEE --data-file $LOCATION/cachefile --seg-file $LOCATION/segfile --channel $CHANNEL --output-file $COARSEFILE --freq-factor 2
 
 # check the exit status of the code
 ret_code=$?
@@ -174,7 +175,6 @@ if [ $ret_code != "0" ]; then
 fi
 
 # check that the expected file got output
-COARSEFILE=$OUTDIR/coarsehet_${PSRNAME}_${DETECTOR}_${DATASTART}-${DATAEND}
 if [ ! -f $COARSEFILE ]; then
   echo Error! Code has not output a coarse heterodyne file
   exit 2
@@ -185,7 +185,7 @@ mv $COARSEFILE $COARSEFILE.txt
 
 # run code in coarse heterodyne mode again (outputing to a binary file)
 echo Performing coarse heterodyne - mode 0 - and outputting to binary file
-$CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE1 --resample-rate $SRATE2 --filter-knee $FKNEE --data-file $LOCATION/cachefile --seg-file $LOCATION/segfile --channel $CHANNEL --output-dir $OUTDIR --binary-output --freq-factor 2
+$CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE1 --resample-rate $SRATE2 --filter-knee $FKNEE --data-file $LOCATION/cachefile --seg-file $LOCATION/segfile --channel $CHANNEL --output-file $COARSEFILE --binary-output --freq-factor 2
 
 # check the exit status of the code
 ret_code=$?
@@ -204,7 +204,7 @@ mv $COARSEFILE $COARSEFILE.bin
 
 # run code in coarse heterodyne mode again, but this time with the offset par file
 echo Performing coarse heterodyne - mode 0 - with offset parameter file
-$CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --sample-rate $SRATE1 --resample-rate $SRATE2 --filter-knee $FKNEE --data-file $LOCATION/cachefile --seg-file $LOCATION/segfile --channel $CHANNEL --output-dir $OUTDIR --freq-factor 2
+$CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --sample-rate $SRATE1 --resample-rate $SRATE2 --filter-knee $FKNEE --data-file $LOCATION/cachefile --seg-file $LOCATION/segfile --channel $CHANNEL --output-file $COARSEFILE --freq-factor 2
 
 # check the exit status of the code
 ret_code=$?
@@ -228,7 +228,8 @@ RESPFILE=${srcdir}/H1response.txt
 
 # now perform the fine heterodyne (first using the txt file)
 echo Performing fine heterodyne - mode 1 - using text file
-$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 1 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.txt --output-dir $OUTDIR --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
+FINEFILE=$OUTDIR/finehet_${PSRNAME}_${DETECTOR}
+$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 1 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.txt --output-file $FINEFILE --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
 
 # check the exit status of the code
 ret_code=$?
@@ -238,7 +239,6 @@ if [ $ret_code != "0" ]; then
 fi
 
 # check that it produced the right file
-FINEFILE=$OUTDIR/finehet_${PSRNAME}_${DETECTOR}
 if [ ! -f $FINEFILE ]; then
   echo Error! Code has not output a fine heterodyned file
   exit 2
@@ -249,7 +249,7 @@ mv $FINEFILE $FINEFILE.txt
 
 # now perform the fine heterodyne (first using the binary file)
 echo Performing fine heterodyne - mode 1 - using binary file
-$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 1 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.bin --binary-input --output-dir $OUTDIR --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
+$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 1 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.bin --binary-input --output-file $FINEFILE --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
 
 # check the exit status of the code
 ret_code=$?
@@ -269,7 +269,7 @@ mv $FINEFILE $FINEFILE.bin
 
 # now perform the fine heterodyne with the updating that with offset parameter file
 echo Performing fine heterodyne - mode 2 - using update from offset parameter file
-$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 2 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --param-file-update $PFILE --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.off --output-dir $OUTDIR --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
+$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 2 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --param-file-update $PFILE --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.off --output-file $FINEFILE --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
 
 # check the exit status of the code
 ret_code=$?
@@ -289,7 +289,7 @@ mv $FINEFILE $FINEFILE.off
 
 # now perform the fine heterodyne with the offset parameter file (no update)
 echo Performing fine heterodyne - mode 1 - using offset parameter file
-$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 1 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.off --output-dir $OUTDIR --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
+$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 1 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.off --output-file $FINEFILE --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
 
 # check the exit status of the code
 ret_code=$?
@@ -310,7 +310,7 @@ mv $FINEFILE $FINEFILE.off2
 ################### HETERODYNE ALL IN ONE #############
 # now perform the heterodyne in one go (mode 3)
 echo Performing entire heterodyne in one go - mode 3
-$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 3 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE1 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $LOCATION/cachefile --output-dir $OUTDIR --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
+$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 3 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE1 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $LOCATION/cachefile --output-file $FINEFILE --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
 
 # check the exit status of the code
 ret_code=$?
@@ -330,7 +330,7 @@ mv $FINEFILE $FINEFILE.full
 
 ################### REHETERODYNE THE ALREADY FINE HETERODYNED FILE #####
 echo Performing updating heterodyne of already fine heterodyned data
-$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 4 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --param-file-update $PFILE --sample-rate $SRATE3 --resample-rate $SRATE3 --filter-knee 0 --data-file $FINEFILE.off2 --output-dir $OUTDIR --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --stddev-thresh 5
+$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 4 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --param-file-update $PFILE --sample-rate $SRATE3 --resample-rate $SRATE3 --filter-knee 0 --data-file $FINEFILE.off2 --output-file $FINEFILE --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --stddev-thresh 5
 
 # check the exit status of the code
 ret_code=$?
