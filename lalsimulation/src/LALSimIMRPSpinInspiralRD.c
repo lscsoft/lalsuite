@@ -104,7 +104,7 @@ typedef struct tagLALSimInspiralPhenSpinTaylorT4Coeffs {
   REAL8 Etidal5pn; ///< leading order tidal correction to energy
   REAL8 Etidal6pn; ///< next to leading order tidal correction to energy
   REAL8 S1dot3, S2dot3;  ///< UNDOCUMENTED
-  REAL8 Sdot4S1S2,Sdot4S1OS2O;  ///< UNDOCUMENTED
+  REAL8 Sdot4S2,Sdot4S2O;  ///< UNDOCUMENTED
   REAL8 S1dot4QMS1O,S2dot4QMS2O;  ///< UNDOCUMENTED
   REAL8 S1dot5, S2dot5;  ///< UNDOCUMENTED
   REAL8 S1dot6, S2dot6;  ///< UNDOCUMENTED
@@ -226,22 +226,22 @@ static INT4 XLALSimIMRPhenSpinParamsSetup(LALSimInspiralPhenSpinTaylorT4Coeffs  
       params->wdot4S1OS2O   = XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeff(params->eta);
       params->E4S1S2      = XLALSimInspiralPNEnergy_4PNS1S2Coeff(params->eta);
       params->E4S1OS2O    = XLALSimInspiralPNEnergy_4PNS1S2OCoeff(params->eta);
-      params->wdot4S1S1     = XLALSimInspiralTaylorT4wdot_4PNSelfSSCoeff(params->m1ByM);
-      params->wdot4S1OS1O   = XLALSimInspiralTaylorT4wdot_4PNSelfSSOCoeff(params->m1ByM);
-      params->wdot4S2S2     = XLALSimInspiralTaylorT4wdot_4PNSelfSSCoeff(params->m2ByM);
-      params->wdot4S2OS2O   = XLALSimInspiralTaylorT4wdot_4PNSelfSSOCoeff(params->m2ByM);
-      params->wdot4QMS1     = quadparam1*XLALSimInspiralTaylorT4wdot_4PNQMCoeff(params->m1ByM);
-      params->wdot4QMS1O    = quadparam1*XLALSimInspiralTaylorT4wdot_4PNQMSOCoeff(params->m1ByM);
-      params->wdot4QMS2     = quadparam2*XLALSimInspiralTaylorT4wdot_4PNQMCoeff(params->m2ByM);
-      params->wdot4QMS2O    = quadparam2*XLALSimInspiralTaylorT4wdot_4PNQMSOCoeff(params->m2ByM);
+      params->wdot4S1S1     = XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeff(params->m1ByM);
+      params->wdot4S1OS1O   = XLALSimInspiralTaylorT4wdot_4PNSelf2SOCoeff(params->m1ByM);
+      params->wdot4S2S2     = XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeff(params->m2ByM);
+      params->wdot4S2OS2O   = XLALSimInspiralTaylorT4wdot_4PNSelf2SOCoeff(params->m2ByM);
+      params->wdot4QMS1     = quadparam1*XLALSimInspiralTaylorT4wdot_4PNQM2SCoeff(params->m1ByM);
+      params->wdot4QMS1O    = quadparam1*XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeff(params->m1ByM);
+      params->wdot4QMS2     = quadparam2*XLALSimInspiralTaylorT4wdot_4PNQM2SCoeff(params->m2ByM);
+      params->wdot4QMS2O    = quadparam2*XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeff(params->m2ByM);
       params->E4QMS1      = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SCoeff(params->m1ByM);
       params->E4QMS2      = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SCoeff(params->m2ByM);
       params->E4QMS1O     = quadparam1*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(params->m1ByM);
       params->E4QMS2O     = quadparam2*XLALSimInspiralPNEnergy_4PNQM2SOCoeff(params->m2ByM);
-      params->Sdot4S1S2    = XLALSimInspiralSpinDot_4PNS1S2Coeff;
-      params->Sdot4S1OS2O  = XLALSimInspiralSpinDot_4PNS1OS2OCoeff;
-      params->S1dot4QMS1O  = quadparam1*XLALSimInspiralSpinDot_4PNSOSOselfCoeff(params->m1ByM);
-      params->S2dot4QMS2O  = quadparam2*XLALSimInspiralSpinDot_4PNSOSOselfCoeff(params->m2ByM);
+      params->Sdot4S2     = XLALSimInspiralSpinDot_4PNS2Coeff;
+      params->Sdot4S2O    = XLALSimInspiralSpinDot_4PNS2OCoeff;
+      params->S1dot4QMS1O  = quadparam1*XLALSimInspiralSpinDot_4PNQMSOCoeff(params->m1ByM);
+      params->S2dot4QMS2O  = quadparam2*XLALSimInspiralSpinDot_4PNQMSOCoeff(params->m2ByM);
 
     case 3:
       params->Ecoeff[3]      = 0.;
@@ -454,9 +454,9 @@ static INT4 XLALSpinInspiralDerivatives(UNUSED double t,
   tmpz = S1y * S2x - S1x * S2y;
 
   // S1S2 contribution see. eq. 2.23 of arXiv:0812.4413
-  dS1x += v6 * (params->Sdot4S1S2*tmpx + params->Sdot4S1OS2O * LNhS2 * cross1x);
-  dS1y += v6 * (params->Sdot4S1S2*tmpy + params->Sdot4S1OS2O * LNhS2 * cross1y);
-  dS1z += v6 * (params->Sdot4S1S2*tmpz + params->Sdot4S1OS2O * LNhS2 * cross1z);
+  dS1x += v6 * (params->Sdot4S2*tmpx + params->Sdot4S2O * LNhS2 * cross1x);
+  dS1y += v6 * (params->Sdot4S2*tmpy + params->Sdot4S2O * LNhS2 * cross1y);
+  dS1z += v6 * (params->Sdot4S2*tmpz + params->Sdot4S2O * LNhS2 * cross1z);
   // S1S1 contribution
   dS1x += v6 * LNhS1 * cross1x * params->S1dot4QMS1O;
   dS1y += v6 * LNhS1 * cross1y * params->S1dot4QMS1O;
@@ -477,9 +477,9 @@ static INT4 XLALSpinInspiralDerivatives(UNUSED double t,
   dS2z = params->S2dot3 * v5 * cross2z;
 
   /* dS2, 2PN */
-  dS2x += v6 * (-params->Sdot4S1S2*tmpx + params->Sdot4S1OS2O * LNhS1 * cross2x);
-  dS2y += v6 * (-params->Sdot4S1S2*tmpy + params->Sdot4S1OS2O * LNhS1 * cross2y);
-  dS2z += v6 * (-params->Sdot4S1S2*tmpz + params->Sdot4S1OS2O * LNhS1 * cross2z);
+  dS2x += v6 * (-params->Sdot4S2*tmpx + params->Sdot4S2O * LNhS1 * cross2x);
+  dS2y += v6 * (-params->Sdot4S2*tmpy + params->Sdot4S2O * LNhS1 * cross2y);
+  dS2z += v6 * (-params->Sdot4S2*tmpz + params->Sdot4S2O * LNhS1 * cross2z);
   // S2S2 contribution
   dS2x += v6 * LNhS2 * cross2x * params->S2dot4QMS2O;
   dS2y += v6 * LNhS2 * cross2y * params->S2dot4QMS2O;

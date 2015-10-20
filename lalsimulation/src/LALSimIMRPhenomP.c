@@ -380,6 +380,17 @@ static int PhenomPCore(
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
   // and alpha0 are degenerate. Therefore phiJ is not passed to this function.
+  /* Phenomenological parameters */
+  IMRPhenomDAmplitudeCoefficients *pAmp = NULL;
+  IMRPhenomDPhaseCoefficients *pPhi = NULL;
+  BBHPhenomCParams *PCparams = NULL;
+  PNPhasingSeries *pn = NULL;
+  gsl_interp_accel *acc = NULL;
+  gsl_spline *phiI = NULL;
+  REAL8Sequence *freqs = NULL;
+  REAL8 *phis=NULL;
+  int errcode = XLAL_SUCCESS;
+
 
   XLAL_PRINT_INFO("*** PhenomPCore() ***");
 
@@ -435,7 +446,7 @@ static int PhenomPCore(
   const REAL8 chi_eff = (m1*chi1_l + m2*chi2_l) / M; /* Effective aligned spin */
   const REAL8 chil = (1.0+q)/q * chi_eff; /* dimensionless aligned spin of the largest BH */
 
-switch (IMRPhenomP_version) {
+  switch (IMRPhenomP_version) {
     case 1:
       if (eta < 0.0453515) /* q = 20 */
           XLAL_ERROR(XLAL_EDOM, "Mass ratio is way outside the calibration range. m1/m2 should be <= 20.\n");
@@ -490,12 +501,6 @@ switch (IMRPhenomP_version) {
   Y2m.Y22  = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2,  2);
 
 
-  /* Phenomenological parameters */
-  IMRPhenomDAmplitudeCoefficients *pAmp = NULL;
-  IMRPhenomDPhaseCoefficients *pPhi = NULL;
-  BBHPhenomCParams *PCparams = NULL;
-  PNPhasingSeries *pn = NULL;
-
   REAL8 fCut = 0.0;
   REAL8 finspin = 0.0;
   REAL8 f_final = 0.0;
@@ -505,7 +510,10 @@ switch (IMRPhenomP_version) {
       XLAL_PRINT_INFO("*** IMRPhenomP version 1: based on IMRPhenomC ***");
       // PhenomC with ringdown using Barausse 2009 formula for final spin
       PCparams = ComputeIMRPhenomCParamsRDmod(m1, m2, chi_eff, chip);
-      if (!PCparams) XLAL_ERROR(XLAL_EFUNC);
+      if (!PCparams) {
+        errcode=XLAL_EFUNC;
+        goto cleanup;
+      }
       fCut = PCparams->fCut;
       f_final = PCparams->fRingDown;
       break;
@@ -518,14 +526,35 @@ switch (IMRPhenomP_version) {
       pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi2_l, chi1_l, finspin);
       pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi2_l, chi1_l, finspin);
       XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
-      if (!pAmp || !pPhi || !pn) XLAL_ERROR(XLAL_EFUNC);
+      if (!pAmp || !pPhi || !pn)
+      {
+        errcode=XLAL_EFUNC;
+        goto cleanup;
+      }
+
+      // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
+      // (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
+      // was not available as PhenomD was tuned.
+      REAL8 chi1L = chi1_l;
+      REAL8 chi2L = chi2_l;
+      REAL8 chi1sq = chi1_l * chi1_l;
+      REAL8 chi2sq = chi2_l * chi2_l;
+      REAL8 m1M = m1 / M;
+      REAL8 m2M = m2 / M;
+      REAL8 pn_ss3 =  (326.75L/1.12L + 557.5L/1.8L*eta)*eta*chi1L*chi2L;
+      pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m1M-120.L*m1M*m1M) + (-4108.25L/6.72L-108.5L/1.2L*m1M+125.5L/3.6L*m1M*m1M)) *m1M*m1M * chi1sq;
+      pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m2M-120.L*m2M*m2M) + (-4108.25L/6.72L-108.5L/1.2L*m2M+125.5L/3.6L*m2M*m2M)) *m2M*m2M * chi2sq;
+
+      pn->v[6] -= (pn_ss3 * pn->v[0]);
+
       ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
       fCut = 0.3 / m_sec;
       f_final = pAmp->fRD / m_sec;
       break;
     default:
       XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
-      XLAL_ERROR( XLAL_EINVAL );
+      errcode=XLAL_EINVAL;
+      goto cleanup;
       break;
   }
   if (fCut <= f_min)
@@ -534,8 +563,11 @@ switch (IMRPhenomP_version) {
   /* Default f_max to params->fCut */
   REAL8 f_max_prime = f_max ? f_max : fCut;
   f_max_prime = (f_max_prime > fCut) ? fCut : f_max_prime;
-  if (f_max_prime <= f_min)
-      XLAL_ERROR(XLAL_EDOM, "f_max <= f_min\n");
+  if (f_max_prime <= f_min){
+    XLALPrintError("f_max <= f_min\n");
+    errcode=XLAL_EDOM;
+    goto cleanup;
+  }
   XLAL_PRINT_INFO("f_max_prime = %g\tfcut = %g\tv = %g\n", f_max_prime, fCut, cbrt(piM * f_max_prime));
 
 
@@ -545,7 +577,6 @@ switch (IMRPhenomP_version) {
   UINT4 L_fCut = 0; // number of frequency points before we hit fCut
   size_t n = 0;
   UINT4 offset = 0; // Index shift between freqs and the frequency series
-  REAL8Sequence *freqs = NULL;
   if (deltaF > 0)  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
     /* Set up output array with size closest power of 2 */
     n = NextPow2(f_max_prime / deltaF) + 1;
@@ -563,7 +594,9 @@ switch (IMRPhenomP_version) {
     size_t i_max = (size_t) (f_max_prime / deltaF);
     freqs = XLALCreateREAL8Sequence(i_max - i_min);
     if (!freqs) {
-      XLAL_ERROR(XLAL_EFUNC, "Frequency array allocation failed.");
+      errcode=XLAL_EFUNC;
+      XLALPrintError("Frequency array allocation failed.");
+      goto cleanup;
     }
     for (UINT4 i=i_min; i<i_max; i++, L_fCut++)
       freqs->data[i-i_min] = i*deltaF;
@@ -574,17 +607,30 @@ switch (IMRPhenomP_version) {
 
     *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
     *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
+    if(!*hptilde || !*hctilde)
+    {
+      errcode=XLAL_ENOMEM;
+      goto cleanup;
+    }
     offset = 0;
 
     // Enforce that FS is strictly increasing
     // (This is needed for phase correction towards the end of this function.)
     for (UINT4 i=1; i<n; i++)
+    {
       if (!(freqs_in->data[i] > freqs_in->data[i-1]))
-        XLAL_ERROR(XLAL_EDOM, "Frequency sequence must be strictly increasing!\n");
+      {
+        XLALPrintError("Frequency sequence must be strictly increasing!\n");
+        errcode=XLAL_EDOM;
+        goto cleanup;
+      }
+    }
 
     freqs = XLALCreateREAL8Sequence(n);
     if (!freqs) {
-      XLAL_ERROR(XLAL_EFUNC, "Frequency array allocation failed.");
+      XLALPrintError( "Frequency array allocation failed.");
+      errcode=XLAL_ENOMEM;
+      goto cleanup;
     }
     // Restrict sequence to frequencies <= fCut
     for (UINT4 i=0; i<n; i++)
@@ -600,8 +646,11 @@ switch (IMRPhenomP_version) {
   XLALUnitMultiply(&((*hptilde)->sampleUnits), &((*hptilde)->sampleUnits), &lalSecondUnit);
   XLALUnitMultiply(&((*hctilde)->sampleUnits), &((*hctilde)->sampleUnits), &lalSecondUnit);
   if (!(*hptilde) || !(*hctilde))
-    XLAL_ERROR(XLAL_EFUNC);
-
+  {
+    errcode=XLAL_EFUNC;
+    goto cleanup;
+  }
+    
   /* Test output */
   XLAL_PRINT_INFO("eta: %g", eta);
   XLAL_PRINT_INFO("m1: %g", m1);
@@ -612,9 +661,13 @@ switch (IMRPhenomP_version) {
   XLAL_PRINT_INFO("ind_mix = (int)(f_mix / deltaF) = %d", (int)(f_min / deltaF));
   XLAL_PRINT_INFO("ind_max = (int)(f_max / deltaF) = %d", (int)(f_max_prime / deltaF));
 
-  int errcode = XLAL_SUCCESS;
 
-  REAL8 *phis = XLALMalloc(L_fCut*sizeof(REAL8)); // array for waveform phase
+  phis = XLALMalloc(L_fCut*sizeof(REAL8)); // array for waveform phase
+  if(!phis)
+  {
+    errcode=XLAL_ENOMEM;
+    goto cleanup;
+  }
   REAL8 phasing = 0;
 
   /*
@@ -658,8 +711,8 @@ switch (IMRPhenomP_version) {
   /* We apply the same time shift to hptilde and hctilde based on the overall phasing returned by PhenomPCoreOneFrequency */
   if (deltaF>0) {
     /* Set up spline for phase */
-    gsl_interp_accel *acc = gsl_interp_accel_alloc();
-    gsl_spline *phiI = gsl_spline_alloc(gsl_interp_cspline, L_fCut);
+    acc = gsl_interp_accel_alloc();
+    phiI = gsl_spline_alloc(gsl_interp_cspline, L_fCut);
 
     gsl_spline_init(phiI, freqs->data, phis, L_fCut);
 
@@ -670,12 +723,9 @@ switch (IMRPhenomP_version) {
       f_final = freqs->data[L_fCut-1];
     if (f_final < freqs->data[0])
     {
-      gsl_spline_free(phiI);
-      gsl_interp_accel_free(acc);
-      XLALFree(phis);
-      XLALFree(PCparams);
-      XLALDestroyREAL8Sequence(freqs);
-      XLAL_ERROR(XLAL_EDOM, "f_ringdown < f_min\n");
+      XLALPrintError("f_ringdown < f_min\n");
+      errcode=XLAL_EDOM;
+      goto cleanup;
     }
 
     /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
@@ -690,27 +740,20 @@ switch (IMRPhenomP_version) {
       ((*hctilde)->data->data)[j] *= cexp(-2*LAL_PI * I * f * t_corr);
     }
 
-    gsl_spline_free(phiI);
-    gsl_interp_accel_free(acc);
-    XLALFree(phis);
   }
 
-  switch (IMRPhenomP_version) {
-    case 1:
-      XLALFree(PCparams);
-      break;
-    case 2:
-      XLALFree(pAmp);
-      XLALFree(pPhi);
-      XLALFree(pn);
-      break;
-    default:
-      XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
-      XLAL_ERROR( XLAL_EINVAL );
-      break;
-  }
-  XLALDestroyREAL8Sequence(freqs);
+  cleanup:
+  if(phis) XLALFree(phis);
+  if(phiI) gsl_spline_free(phiI);
+  if(acc) gsl_interp_accel_free(acc);
 
+  if(PCparams) XLALFree(PCparams);
+  if(pAmp) XLALFree(pAmp);
+  if(pPhi) XLALFree(pPhi);
+  if(pn) XLALFree(pn);
+
+  if(freqs) XLALDestroyREAL8Sequence(freqs);
+  
   if( errcode != XLAL_SUCCESS )
     XLAL_ERROR(errcode);
   else
