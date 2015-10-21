@@ -202,6 +202,23 @@ fi
 
 mv $COARSEFILE $COARSEFILE.bin
 
+# run code in coarse heterodyne mode again (outputing to a gzipped file)
+echo Performing coarse heterodyne - mode 0 - and outputting to gzipped file
+$CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE1 --resample-rate $SRATE2 --filter-knee $FKNEE --data-file $LOCATION/cachefile --seg-file $LOCATION/segfile --channel $CHANNEL --output-file $COARSEFILE --gzip-output --freq-factor 2
+
+# check the exit status of the code
+ret_code=$?
+if [ $ret_code != "0" ]; then
+        echo lalapps_heterodyne_pulsar exited with error $ret_code!
+        exit 2
+fi
+
+# check that the expected file got output
+if [ ! -f $COARSEFILE.gz ]; then
+        echo Error! Code has not output a coarse heterodyne file
+        exit 2
+fi
+
 # run code in coarse heterodyne mode again, but this time with the offset par file
 echo Performing coarse heterodyne - mode 0 - with offset parameter file
 $CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILEOFF --sample-rate $SRATE1 --resample-rate $SRATE2 --filter-knee $FKNEE --data-file $LOCATION/cachefile --seg-file $LOCATION/segfile --channel $CHANNEL --output-file $COARSEFILE --freq-factor 2
@@ -247,7 +264,7 @@ fi
 # move file
 mv $FINEFILE $FINEFILE.txt
 
-# now perform the fine heterodyne (first using the binary file)
+# now perform the fine heterodyne (using the binary file)
 echo Performing fine heterodyne - mode 1 - using binary file
 $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 1 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.bin --binary-input --output-file $FINEFILE --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
 
@@ -266,6 +283,26 @@ fi
 
 # move file
 mv $FINEFILE $FINEFILE.bin
+
+# now perform the fine heterodyne (using the gzipped file)
+echo Performing fine heterodyne - mode 1 - using gzipped file
+$CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file $TEPHEM --heterodyne-flag 1 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PFILE --sample-rate $SRATE2 --resample-rate $SRATE3 --filter-knee $FKNEE --data-file $COARSEFILE.gz --output-file $FINEFILE --channel $CHANNEL --seg-file $LOCATION/segfile --freq-factor 2 --calibrate --response-file $RESPFILE --stddev-thresh 5
+
+# check the exit status of the code
+ret_code=$?
+if [ $ret_code != "0" ]; then
+        echo lalapps_heterodyne_pulsar exited with error $ret_code!
+        exit 2
+fi
+
+# check that it produced the right file
+if [ ! -f $FINEFILE ]; then
+        echo Error! Code has not output a fine heterodyned file
+        exit 2
+fi
+
+# move file
+mv $FINEFILE $FINEFILE.gzipped
 
 # now perform the fine heterodyne with the updating that with offset parameter file
 echo Performing fine heterodyne - mode 2 - using update from offset parameter file
@@ -366,6 +403,11 @@ f1=875206560-875206680/finehet_J0000+0000_H1.bin
 val=0
 while read line
 do
+  # ignore header lines starting with "%%"
+  if [ ${line:0:2} == "%%" ]; then
+    continue
+  fi
+
   for args in $line; do
     # pass lines through said and convert any exponents
     # expressed as e's to E's and then convert to decimal format (for bc)
@@ -410,6 +452,60 @@ f2=875206560-875206680/finehet_J0000+0000_H1.txt
 val=0
 while read line
 do
+        # ignore header lines starting with "%%"
+        if [ ${line:0:2} == "%%" ]; then
+          continue
+        fi
+
+        for args in $line; do
+                # pass lines through said and convert any exponents
+                # expressed as e's to E's and then convert to decimal format (for bc)
+                tempval=`echo $args | sed 's/e/E/g'`
+                if [ $val == 0 ]; then
+                        arrvals[$val]=$tempval
+                else
+                        arrvals[$val]=`echo "$tempval" | LC_ALL=C awk -F"E" 'BEGIN{OFMT="%10.35f"} {print $1 * (10 ^ $2)}'`
+                fi
+                ((val++))
+        done
+done < $f2
+
+if (( ${#arrvals[@]} != 3 )); then
+        echo Error! Wrong number of data in the file
+        exit 2
+fi
+
+fail1=`echo "if (${arrvals[0]} != $REALT) 1" | bc`;
+if [ "$fail1" = "1" ]; then
+    echo "Error! Time in data file is wrong!"
+    echo "arrvals[0] = ${arrvals[0]}, REALT = ${REALT}"
+    exit 2
+fi
+
+fail2=`echo "a=(${arrvals[1]} - $REALR);if(a<0)a*=-1;if (a > $RPER) 1" | bc`
+if [ "$fail2" = "1" ]; then
+    echo "Error! Real data point in data file is wrong!"
+    echo "arrvals[1] = ${arrvals[1]}, REALR = ${REALR}, RPER = $RPER"
+    exit 2
+fi
+
+fail3=`echo "a=(${arrvals[2]} - $REALI);if(a<0)a*=-1;if (a > $IPER) 1" | bc`
+if [ "$fail3" = "1" ]; then
+    echo "Error! Real data point in data file is wrong!"
+    echo "arrvals[2] = ${arrvals[2]}, REALI = ${REALI}, IPER = $IPER"
+    exit 2
+fi
+
+# file from coarse heterodyne output as gzipped file
+f2=875206560-875206680/finehet_J0000+0000_H1.gzipped
+val=0
+while read line
+do
+        # ignore header lines starting with "%%"
+        if [ ${line:0:2} == "%%" ]; then
+          continue
+        fi
+
         for args in $line; do
                 # pass lines through said and convert any exponents
                 # expressed as e's to E's and then convert to decimal format (for bc)
@@ -455,7 +551,12 @@ val=0
 skip=0
 while read line
 do
-        # this file has an extra line, so skip the first one
+  # ignore header lines starting with "%%"
+  if [ ${line:0:2} == "%%" ]; then
+    continue
+  fi
+
+  # this file has an extra line, so skip the first one
   if [ $skip == 0 ]; then
     ((skip++))
     continue
@@ -505,6 +606,11 @@ f4=875206560-875206680/finehet_J0000+0000_H1.off
 val=0
 while read line
 do
+        # ignore header lines starting with "%%"
+        if [ ${line:0:2} == "%%" ]; then
+          continue
+        fi
+
         for args in $line; do
                 # pass lines through said and convert any exponents
                 # expressed as e's to E's and then convert to decimal format (for bc)
@@ -549,6 +655,11 @@ f5=875206560-875206680/finehet_J0000+0000_H1
 val=0
 while read line
 do
+        # ignore header lines starting with "%%"
+        if [ ${line:0:2} == "%%" ]; then
+          continue
+        fi
+
         for args in $line; do
                 # pass lines through said and convert any exponents
                 # expressed as e's to E's and then convert to decimal format (for bc)

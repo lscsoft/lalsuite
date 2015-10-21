@@ -32,12 +32,19 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 #include <sys/types.h>
 
-#include <lal/BinaryPulsarTiming.h>
-#include <lal/LALgetopt.h>
+// definition taken from lal/src/support/LogPrintf.c
+#ifndef HAVE_LOCALTIME_R
+#define localtime_r(timep, result) memcpy((result), localtime(timep), sizeof(struct tm))
+#endif
 
 /* LAL headers */
+#include <lal/BinaryPulsarTiming.h>
+#include <lal/LALgetopt.h>
+#include <lal/LogPrintf.h>
+#include <lal/FileIO.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
@@ -117,6 +124,10 @@ extern "C" {
 " --binary-input (-B)      read in input data from binary file (for fine and\n\
                           update heterodynes only)\n"\
 " --binary-output (-b)     output data to a binary file\n"\
+" --gzip-output (-Z)       if not outputting in binary format then gzip the\n\
+                          output file. This will be done by default if the\n\
+                          --output-file specified has the \".gz\" suffix, but\n\
+                          if not this suffix will be appended\n"\
 "\n"
 
 #define MAXDATALENGTH 256 /* maximum length of data to be read from frames */
@@ -127,6 +138,8 @@ extern "C" {
 #define ALPHAMAX 2.0 /* maximum acceptable value of alpha calib coefficient */
 
 #define FILTERFFTTIME 200
+
+#define HEADERSIZE 2048 /* number of bytes in header for output files */
 
 /* define structures */
 
@@ -182,6 +195,7 @@ typedef struct tagInputParams{
 
   INT4 binaryinput;
   INT4 binaryoutput;
+  INT4 gzipoutput;
 }InputParams;
 
 typedef struct tagHeterodyneParams{
