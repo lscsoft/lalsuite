@@ -149,7 +149,7 @@ int XLALSimIMRPhenomDGenerateFD(
   if (f_max_prime <= f_min)
     XLAL_ERROR(XLAL_EDOM, "f_max <= f_min\n");
 
-  REAL8 status = IMRPhenomDGenerateFD(htilde, phi0, deltaF,
+  REAL8 status = IMRPhenomDGenerateFD(htilde, phi0, fRef, deltaF,
                                       m1, m2, chi1, chi2,
                                       f_min, f_max_prime, distance, extraParams);
 

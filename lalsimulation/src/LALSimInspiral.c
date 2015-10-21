@@ -1068,7 +1068,7 @@ int XLALSimInspiralChooseFDWaveform(
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(waveFlags);
             /* Call the waveform driver routine */
-            ret = XLALSimIMRPhenomDGenerateFD(hptilde, phiRef, deltaF, m1, m2,
+            ret = XLALSimIMRPhenomDGenerateFD(hptilde, phiRef, f_ref, deltaF, m1, m2,
                   S1z, S2z, f_min, f_max, r, nonGRparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
