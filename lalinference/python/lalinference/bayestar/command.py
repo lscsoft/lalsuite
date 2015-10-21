@@ -67,16 +67,6 @@ def chainglob(patterns):
     return itertools.chain.from_iterable(glob.iglob(s) for s in patterns)
 
 
-def sqlite3_connect_nocreate(dbfilename):
-    """Open an SQLite database, or fail if it does not exist.
-    FIXME: use SQLite URI when we drop support for Python < 3.4.
-    See: https://docs.python.org/3.4/whatsnew/3.4.html#sqlite3"""
-    import sqlite3
-    with open(dbfilename, 'rb') as testfile:
-        pass
-    return sqlite3.connect(dbfilename)
-
-
 waveform_parser = argparse.ArgumentParser(add_help=False)
 group = waveform_parser.add_argument_group(
     'Waveform options', 'Options that affect template waveform generation')
@@ -133,3 +123,30 @@ class ArgumentParser(argparse.ArgumentParser):
                  argument_default=argument_default,
                  conflict_handler=conflict_handler,
                  add_help=add_help)
+
+
+class SQLiteType(argparse.FileType):
+    """Open an SQLite database, or fail if it does not exist.
+    FIXME: use SQLite URI when we drop support for Python < 3.4.
+    See: https://docs.python.org/3.4/whatsnew/3.4.html#sqlite3"""
+
+    def __init__(self, mode='r'):
+        super(SQLiteType, self).__init__(mode + 'b')
+
+    def __call__(self, string):
+        if string == '-':
+            raise argparse.ArgumentTypeError(
+                'Cannot open stdin/stdout as an SQLite database')
+        with super(SQLiteType, self).__call__(string):
+            import sqlite3
+            return sqlite3.connect(string)
+
+
+def sqlite_get_filename(connection):
+    """Get the name of the file associated with an SQLite connection"""
+    result = connection.execute('pragma database_list').fetchall()
+    try:
+        (_, _, filename), = result
+    except ValueError:
+        raise RuntimeError('Expected exactly one attached database')
+    return filename
