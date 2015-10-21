@@ -81,7 +81,8 @@ static int IMRPhenomDGenerateFD(
  * and in tests to date gives sensible physical results,
  * but conclusive statements on the physical fidelity of
  * the model for these parameters await comparisons against further
- * numerical-relativity simulations.
+ * numerical-relativity simulations. For more information, see the review wiki
+ * under https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview
  */
 
 
@@ -122,13 +123,8 @@ int XLALSimIMRPhenomDGenerateFD(
   if (f_max < 0) XLAL_ERROR(XLAL_EDOM, "f_max must be greater than 0\n");
   if (distance <= 0) XLAL_ERROR(XLAL_EDOM, "distance must be positive\n");
 
-  const REAL8 q = (m1 > m2) ? (m1 / m2) : (m2 / m1);
-
   if (chi1 > 1.0 || chi1 < -1.0 || chi2 > 1.0 || chi2 < -1.0)
     XLAL_ERROR(XLAL_EDOM, "Spins outside the range [-1,1] are not supported\n");
-
-  if (q > 18.0)
-    XLAL_PRINT_WARNING("Warning: The model is calibrated up to m1/m2 <= 18.\n");
 
   // if no reference frequency given, set it to the starting GW frequency
   REAL8 fRef = (fRef_in == 0.0) ? f_min : fRef_in;
@@ -225,6 +221,11 @@ static int IMRPhenomDGenerateFD(
 
   // Calculate phenomenological parameters
   REAL8 finspin = FinalSpin0815(eta, chi1, chi2); //FinalSpin0815 - 0815 is like a version number
+
+  if (finspin < MIN_FINAL_SPIN)
+	  XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
+			  the model might misbehave here.", finspin);
+
   IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2, finspin);
   if (!pAmp) XLAL_ERROR(XLAL_EFUNC);
   IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin);
