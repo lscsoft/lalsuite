@@ -40,6 +40,7 @@ AC_CONFIG_FILES([\
   src/pulsar/hough/Makefile \
   src/pulsar/hough/src/Makefile \
   src/pulsar/hough/src2/Makefile \
+  src/pulsar/Xray/Makefile \
   src/ring/Makefile \
   src/stochastic/Makefile \
   src/string/Makefile \

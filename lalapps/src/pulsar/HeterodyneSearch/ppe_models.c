@@ -1317,7 +1317,9 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps
  * Convert the physical source parameters into the amplitude and phase notation given in Eqns
  * 62-65 of \cite Jones:2015 .
  *
- * Note that \c phi0 is essentially the rotational phase of the pulsar.
+ * Note that \c phi0 is essentially the rotational phase of the pulsar. Also, note that if using \f$h_0\f$,
+ * and therefore the convention for a signal as defined in \cite JKS98 , the sign of the waveform model is
+ * the opposite of that in \cite Jones:2015 , and therefore a sign flip is required in the amplitudes.
  */
 void invert_source_params( PulsarParameters *params ){
   REAL8 sinlambda, coslambda, sinlambda2, coslambda2, sin2lambda;
@@ -1337,7 +1339,8 @@ void invert_source_params( PulsarParameters *params ){
     phi22 = 2.*phi0;
     phi22 = phi22 - LAL_TWOPI*floor(phi22/LAL_TWOPI);
     PulsarAddParam( params, "PHI22", &phi22, PULSARTYPE_REAL8_t );
-    C22 = 0.5*h0;
+
+    C22 = -0.5*h0; /* note the change in sign so that the triaxial model conforms to the convertion in JKS98 */
     PulsarAddParam( params, "C22", &C22, PULSARTYPE_REAL8_t );
   }
   else if ( ( I21 != 0. || I31 != 0. ) && ( C22 == 0. && C21 == 0. ) ) {

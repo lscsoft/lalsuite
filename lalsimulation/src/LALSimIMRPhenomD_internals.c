@@ -212,7 +212,7 @@ typedef struct tagdeltaUtility {
   double f35;
 } DeltaUtility;
 
-/**
+/*
  *
  * Internal function prototypes; f stands for geometric frequency "Mf"
  *
@@ -257,7 +257,7 @@ static double fmaxCalc(IMRPhenomDAmplitudeCoefficients* p);
 //////////////////////////// Amplitude: Intermediate functions ///////////////////////
 
 static double AmpIntAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
-static double AmpIntColFitCoeff(double eta, double chiPN);
+static double AmpIntColFitCoeff(double eta, double chiPN); //this is the v2 value
 static double delta0_fun(IMRPhenomDAmplitudeCoefficients* p, DeltaUtility* d);
 static double delta1_fun(IMRPhenomDAmplitudeCoefficients* p, DeltaUtility* d);
 static double delta2_fun(IMRPhenomDAmplitudeCoefficients* p, DeltaUtility* d);
@@ -306,29 +306,36 @@ static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double et
 static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
 static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
 
-/**
+/*
  *
  * Internal function definitions
  *
- * */
+ */
 
 ////////////////////////////// Miscellaneous functions //////////////////////////////
 
-// PN reduced spin parameter
-// See Eq 5.9 in http://arxiv.org/pdf/1107.1267v2.pdf
+/**
+ * PN reduced spin parameter
+ * See Eq 5.9 in http://arxiv.org/pdf/1107.1267v2.pdf
+ */
 static double chiPN(double eta, double chi1, double chi2) {
   // Convention m1 >= m2 and chi1 is the spin on m1
   double delta = sqrt(1.0 - 4.0*eta);
   double chi_s = (chi1 + chi2) / 2.0;
   double chi_a = (chi1 - chi2) / 2.0;
-  return chi_s * (1.0 - 76.0/113.0*eta) + delta*chi_a;
+  return chi_s * (1.0 - eta*76.0/113.0) + delta*chi_a;
 }
 
-// Return the closest higher power of 2
+/**
+ * Return the closest higher power of 2
+ */
 static size_t NextPow2(const size_t n) {
   return 1 << (size_t) ceil(log2(n));
 }
 
+/**
+ * Step function
+ */
 static double StepFunc(const double t, const double t1) {
   if (t < t1)
     return 0.0;
@@ -338,10 +345,13 @@ static double StepFunc(const double t, const double t1) {
 
 //////////////////////// Final spin, final mass, fring, fdamp ////////////////////////
 
-// Final Spin and Radiated Energy formulas described in Husa et al paper
+// Final Spin and Radiated Energy formulas described in 1508.07250
 
+/**
+ * Formula to predict the final spin. Equation 3.6 arXiv:1508.07250
+ * s defined around Equation 3.6.
+ */
 static double FinalSpin0815_s(double eta, double s) {
-  // Equation 3.6 arXiv:1508.07250
   double eta2 = eta*eta;
   double eta3 = eta2*eta;
   double eta4 = eta3*eta;
@@ -357,18 +367,25 @@ return 3.4641016151377544*eta - 4.399247300629289*eta2 +
    (-0.8676969352555539*eta + 2.064046835273906*eta2)*s4;
 }
 
+/**
+ * Wrapper function for FinalSpin0815_s.
+ */
 static double FinalSpin0815(double eta, double chi1, double chi2) {
   // Convention m1 >= m2
   double m1 = 0.5 * (1.0 + sqrt(1.0 - 4.0*eta));
   double m2 = 0.5 * (1.0 - sqrt(1.0 - 4.0*eta));
   double m1s = m1*m1;
   double m2s = m2*m2;
+  // s defined around Equation 3.6 arXiv:1508.07250
   double s = (m1s * chi1 + m2s * chi2);
   return FinalSpin0815_s(eta, s);
 }
 
+/**
+ * Formula to predict the total radiated energy. Equation 3.7 and 3.8 arXiv:1508.07250
+ * s defined around Equation 3.7 and 3.8.
+ */
 static double EradRational0815_s(double eta, double s) {
-  //Equation 3.7 and 3.8 arXiv:1508.07250
   double eta2 = eta*eta;
   double eta3 = eta2*eta;
   double eta4 = eta3*eta;
@@ -377,17 +394,25 @@ static double EradRational0815_s(double eta, double s) {
     (1. + (-0.0030302335878845507 - 2.0066110851351073*eta + 7.7050567802399215*eta2)*s))/(1. + (-0.6714403054720589 - 1.4756929437702908*eta + 7.304676214885011*eta2)*s);
 }
 
+/**
+ * Wrapper function for EradRational0815_s.
+ */
 static double EradRational0815(double eta, double chi1, double chi2) {
   // Convention m1 >= m2
   double m1 = 0.5 * (1.0 + sqrt(1.0 - 4.0*eta));
   double m2 = 0.5 * (1.0 - sqrt(1.0 - 4.0*eta));
   double m1s = m1*m1;
   double m2s = m2*m2;
+  // arXiv:1508.07250
   double s = (m1s * chi1 + m2s * chi2) / (m1s + m2s);
 
   return EradRational0815_s(eta, s);
 }
 
+/**
+ * fring is the real part of the ringdown frequency
+ * 1508.07250 figure 9
+ */
 static double fring(double eta, double chi1, double chi2, double finspin) {
   double return_val;
 
@@ -402,6 +427,10 @@ static double fring(double eta, double chi1, double chi2, double finspin) {
   return return_val;
 }
 
+/**
+ * fdamp is the complex part of the ringdown frequency
+ * 1508.07250 figure 9
+ */
 static double fdamp(double eta, double chi1, double chi2, double finspin) {
   double return_val;
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
@@ -417,8 +446,11 @@ static double fdamp(double eta, double chi1, double chi2, double finspin) {
 
 /******************************* Amplitude functions *******************************/
 
+/**
+ * amplitude scaling factor defined by eq. 17 in 1508.07253
+ */
 static double amp0Func(double eta) {
-  return (sqrt(0.6666666666666666)*sqrt(eta))/pow(LAL_PI,0.16666666666666666);
+  return (sqrt(2.0/3.0)*sqrt(eta))/pow(LAL_PI,1.0/6.0);
 }
 
 ///////////////////////////// Amplitude: Inspiral functions /////////////////////////
@@ -426,8 +458,10 @@ static double amp0Func(double eta) {
 // Phenom coefficients rho1, ..., rho3 from direct fit
 // AmpInsDFFitCoeffChiPNFunc[eta, chiPN]
 
+/**
+ * rho_1 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double rho1_fun(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -439,8 +473,10 @@ static double rho1_fun(double eta, double chi) {
   + (-60017.52423652596 + 803515.1181825735*eta - 2.091710365941658e6*eta2)*xi3;
 }
 
+/**
+ * rho_2 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double rho2_fun(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -452,8 +488,10 @@ static double rho2_fun(double eta, double chi) {
   + (596226.612472288 - 7.4277901143564405e6*eta + 1.8928977514040343e7*eta2)*xi3;
 }
 
+/**
+ * rho_3 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double rho3_fun(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -467,9 +505,12 @@ static double rho3_fun(double eta, double chi) {
 
 // The Newtonian term in LAL is fine and we should use exactly the same (either hardcoded or call).
 // We just use the Mathematica expression for convenience.
-// Amplitude is a re-expansion. See Khan et al for details
+/**
+ * Inspiral amplitude plus rho phenom coefficents. rho coefficients computed
+ * in rho1_fun, rho2_fun, rho3_fun functions.
+ * Amplitude is a re-expansion. See 1508.07253 and Equation 29, 30 and Appendix B arXiv:1508.07253 for details
+ */
 static double AmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
-  //Equation 29, 30 and Appendix B arXiv:1508.07253
   double eta = p->eta;
   double chi1 = p->chi1;
   double chi2 = p->chi2;
@@ -487,12 +528,12 @@ static double AmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
   double Pi2 = Pi*Pi;
   double Seta = sqrt(1.0 - 4.0*eta);
 
-  return 1 + ((-969 + 1804*eta)*pow(Pi*Mf,0.6666666666666666))/672.
+  return 1 + ((-969 + 1804*eta)*pow(Pi*Mf,2.0/3.0))/672.
   + ((chi1*(81*(1 + Seta) - 44*eta) + chi2*(81 - 81*Seta - 44*eta))*Mf*Pi)/48.
   + ((-27312085 - 10287648*chi22 - 10287648*chi12*(1 + Seta) + 10287648*chi22*Seta
   + 24*(-1975055 + 857304*chi12 - 994896*chi1*chi2 + 857304*chi22)*eta + 35371056*eta2)
-  *pow(Pi*Mf,1.3333333333333333))/8.128512e6
-  + (pow(Pi*Mf,1.6666666666666667)*(chi2*(-285197*(-1 + Seta) + 4*(-91902 + 1579*Seta)*eta - 35632*eta2)
+  *pow(Pi*Mf,4.0/3.0))/8.128512e6
+  + (pow(Pi*Mf,5.0/3.0)*(chi2*(-285197*(-1 + Seta) + 4*(-91902 + 1579*Seta)*eta - 35632*eta2)
   + chi1*(285197*(1 + Seta) - 4*(91902 + 1579*Seta)*eta - 35632*eta2)
   + 42840*(-1 + 4*eta)*Pi))/32256. - (Mf2*Pi2*(-336*(-3248849057 + 2943675504*chi12
   - 3339284256*chi1*chi2 + 2943675504*chi22)*eta2 - 324322727232*eta3
@@ -501,12 +542,14 @@ static double AmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
   - chi2*Seta)*Pi) + 12*eta*(-545384828789 - 176491177632*chi1*chi2
   + 202603761360*chi22 + 77616*chi12*(2610335 + 995766*Seta)
   - 77287373856*chi22*Seta + 5841690624*(chi1 + chi2)*Pi + 21384760320*Pi2)))/6.0085960704e10
-  + pow(Mf,2.333333333333333)*rho1 + pow(Mf,2.6666666666666665)*rho2 + Mf3*rho3;
+  + pow(Mf,7.0/3.0)*rho1 + pow(Mf,8.0/3.0)*rho2 + Mf3*rho3;
 }
 
+/**
+ * Take the AmpInsAnsatz expression and compute the first derivative
+ * with respect to frequency to get the expression below.
+ */
 static double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
-  // Take the AmpInsAnsatz expression and compute the first derivative
-  // with respect to frequency to get the expression below.
   double eta = p->eta;
   double chi1 = p->chi1;
   double chi2 = p->chi2;
@@ -523,12 +566,12 @@ static double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
   double Pi2 = Pi*Pi;
   double Seta = sqrt(1.0 - 4.0*eta);
 
-   return ((-969 + 1804*eta)*pow(Pi,0.6666666666666666))/(1008.*pow(Mf,0.3333333333333333))
+   return ((-969 + 1804*eta)*pow(Pi,2.0/3.0))/(1008.*pow(Mf,1.0/3.0))
    + ((chi1*(81*(1 + Seta) - 44*eta) + chi2*(81 - 81*Seta - 44*eta))*Pi)/48.
    + ((-27312085 - 10287648*chi22 - 10287648*chi12*(1 + Seta)
    + 10287648*chi22*Seta + 24*(-1975055 + 857304*chi12 - 994896*chi1*chi2 + 857304*chi22)*eta
-   + 35371056*eta2)*pow(Mf,0.3333333333333333)*pow(Pi,1.3333333333333333))/6.096384e6
-   + (5*pow(Mf,0.6666666666666666)*pow(Pi,1.6666666666666667)*(chi2*(-285197*(-1 + Seta)
+   + 35371056*eta2)*pow(Mf,1.0/3.0)*pow(Pi,4.0/3.0))/6.096384e6
+   + (5*pow(Mf,2.0/3.0)*pow(Pi,5.0/3.0)*(chi2*(-285197*(-1 + Seta)
    + 4*(-91902 + 1579*Seta)*eta - 35632*eta2) + chi1*(285197*(1 + Seta)
    - 4*(91902 + 1579*Seta)*eta - 35632*eta2) + 42840*(-1 + 4*eta)*Pi))/96768.
    - (Mf*Pi2*(-336*(-3248849057 + 2943675504*chi12 - 3339284256*chi1*chi2 + 2943675504*chi22)*eta2 - 324322727232*eta3
@@ -536,7 +579,7 @@ static double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
    + 11087290368*(chi1 + chi2 + chi1*Seta - chi2*Seta)*Pi)
    + 12*eta*(-545384828789 - 176491177632*chi1*chi2 + 202603761360*chi22 + 77616*chi12*(2610335 + 995766*Seta)
    - 77287373856*chi22*Seta + 5841690624*(chi1 + chi2)*Pi + 21384760320*Pi2)))/3.0042980352e10
-   + 2.333333333333333*pow(Mf,1.333333333333333)*rho1 + 2.6666666666666665*pow(Mf,1.6666666666666665)*rho2 + 3*Mf2*rho3;
+   + (7.0/3.0)*pow(Mf,4.0/3.0)*rho1 + (8.0/3.0)*pow(Mf,5.0/3.0)*rho2 + 3*Mf2*rho3;
 }
 
 /////////////////////////// Amplitude: Merger-Ringdown functions ///////////////////////
@@ -544,8 +587,10 @@ static double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
 // Phenom coefficients gamma1, ..., gamma3
 // AmpMRDAnsatzFunc[]
 
+/**
+ * gamma 1 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double gamma1_fun(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -557,8 +602,10 @@ static double gamma1_fun(double eta, double chi) {
   + (0.0007374185938559283 - 0.02749621038376281*eta + 0.0733150789135702*eta2)*xi3;
 }
 
+/**
+ * gamma 2 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double gamma2_fun(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -570,8 +617,10 @@ static double gamma2_fun(double eta, double chi) {
   + (0.03093202475605892 - 2.6924023896851663*eta + 9.609374464684983*eta2)*xi3;
 }
 
+/**
+ * gamma 3 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double gamma3_fun(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -583,43 +632,44 @@ static double gamma3_fun(double eta, double chi) {
   + (-0.006134139870393713 - 0.38429253308696365*eta + 1.7561754421985984*eta2)*xi3;
 }
 
+/**
+ * Ansatz for the merger-ringdown amplitude. Equation 19 arXiv:1508.07253
+ */
 static double AmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p) {
-  // Equation 19 arXiv:1508.07253
   double fRD = p->fRD;
   double fDM = p->fDM;
   double gamma1 = p->gamma1;
   double gamma2 = p->gamma2;
   double gamma3 = p->gamma3;
-  //SK: should remove the fabs
   return exp( -(f - fRD)*gamma2 / (fDM*gamma3) )
-    * (fDM*gamma3*fabs(gamma1)) / (pow(f - fRD,2) + pow(fDM,2)*pow(gamma3,2));
+    * (fDM*gamma3*gamma1) / (pow(f - fRD,2) + pow(fDM,2)*pow(gamma3,2));
 }
 
+/**
+ * first frequency derivative of AmpMRDAnsatz
+ */
 static double DAmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p) {
-  // first frequency derivative of AmpMRDAnsatz
   double fRD = p->fRD;
   double fDM = p->fDM;
   double gamma1 = p->gamma1;
   double gamma2 = p->gamma2;
   double gamma3 = p->gamma3;
-  //SK: should remove the fabs
-  return (-2*fDM*(f - fRD)*gamma3*fabs(gamma1)) / ( exp(((f - fRD)*gamma2)/(fDM*gamma3)) * pow(pow(f - fRD,2) + pow(fDM,2)*pow(gamma3,2),2)) -
-   (gamma2*fabs(gamma1)) / ( exp(((f - fRD)*gamma2)/(fDM*gamma3)) * (pow(f - fRD,2) + pow(fDM,2)*pow(gamma3,2)));
+  return (-2*fDM*(f - fRD)*gamma3*gamma1) / ( exp(((f - fRD)*gamma2)/(fDM*gamma3)) * pow(pow(f - fRD,2) + pow(fDM,2)*pow(gamma3,2),2)) -
+   (gamma2*gamma1) / ( exp(((f - fRD)*gamma2)/(fDM*gamma3)) * (pow(f - fRD,2) + pow(fDM,2)*pow(gamma3,2)));
 }
 
+/**
+ * Equation 20 arXiv:1508.07253 (called f_peak in paper)
+ * analytic location of maximum of AmpMRDAnsatz
+ */
 static double fmaxCalc(IMRPhenomDAmplitudeCoefficients* p) {
-  // Equation 20 arXiv:1508.07253 (called f_peak in paper)
-  // analytic location of maximum of AmpMRDAnsatz
   double fRD = p->fRD;
   double fDM = p->fDM;
   double gamma2 = p->gamma2;
   double gamma3 = p->gamma3;
 
-  // NOTE: There's a problem with this expression becoming imaginary if the spin is large.
-  //return fabs(fRD + (fDM*(-1 + sqrt(1 - pow(gamma2,2)))*gamma3)/gamma2);
-  //return fabs(fRD + (fDM*(-1 + sqrt( fabs(1 - pow(gamma2,2))))*gamma3)/gamma2);
-
-  // Possible fix: if gamma2 >= 1 then set the square root term to zero.
+  // NOTE: There's a problem with this expression from the paper becoming imaginary if gamma2>=1
+  // Fix: if gamma2 >= 1 then set the square root term to zero.
   if (gamma2 <= 1)
     return fabs(fRD + (fDM*(-1 + sqrt(1 - pow(gamma2,2)))*gamma3)/gamma2);
   else
@@ -632,19 +682,21 @@ static double fmaxCalc(IMRPhenomDAmplitudeCoefficients* p) {
 // (constraining 3 values and 2 derivatives)
 // AmpIntAnsatzFunc[]
 
-
+/**
+ * Ansatz for the intermediate amplitude. Equation 21 arXiv:1508.07253
+ */
 static double AmpIntAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
-  // Equation 21 arXiv:1508.07253
   double Mf2 = Mf*Mf;
   double Mf3 = Mf*Mf2;
   double Mf4 = Mf*Mf3;
   return p->delta0 + p->delta1*Mf + p->delta2*Mf2 + p->delta3*Mf3 + p->delta4*Mf4;
 }
 
-// AmpIntColFitCoeff\[Chi]PNFunc[eta, chiPN][[2]] // CForm
+/**
+ * The function name stands for 'Amplitude Intermediate Collocation Fit Coefficient'
+ * This is the 'v2' value in Table 5 of arXiv:1508.07253
+ */
 static double AmpIntColFitCoeff(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
-  // This is the 'v2' coefficient in that table
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -656,14 +708,15 @@ static double AmpIntColFitCoeff(double eta, double chi) {
   + (0.1766934149293479 - 0.7978690983168183*eta + 2.1162391502005153*eta2)*xi3;
 }
 
-  // The following functions (delta{0,1,2,3,4}_fun) were derived
-  // in mathematica according to
-  // the constraints detailed in arXiv:1508.07253,
-  // section 'Region IIa - intermediate'.
-  // These are not given in the paper.
-  // Can be rederived by solving Equation 21 for the constraints
-  // given in Equations 22-26 in arXiv:1508.07253
-
+  /**
+  * The following functions (delta{0,1,2,3,4}_fun) were derived
+  * in mathematica according to
+  * the constraints detailed in arXiv:1508.07253,
+  * section 'Region IIa - intermediate'.
+  * These are not given in the paper.
+  * Can be rederived by solving Equation 21 for the constraints
+  * given in Equations 22-26 in arXiv:1508.07253
+  */
 static double delta0_fun(IMRPhenomDAmplitudeCoefficients* p, DeltaUtility* d) {
   double f1 = p->f1;
   double f2 = p->f2;
@@ -817,26 +870,26 @@ static double delta4_fun(IMRPhenomDAmplitudeCoefficients* p, DeltaUtility* d) {
   / (pow(f1 - f2,2)*pow(f1 - f3,3)*pow(-f2 + f3,2)));
 }
 
-// Calculates delta_i's
+/**
+ * Calculates delta_i's
+ * Method described in arXiv:1508.07253 section 'Region IIa - intermediate'
+ */
 static void ComputeDeltasFromCollocation(IMRPhenomDAmplitudeCoefficients* p) {
-  // method described in arXiv:1508.07253 section 'Region IIa - intermediate'
-
   // Three evenly spaced collocation points in the interval [f1,f3].
-  double f1 = 0.014;
+  double f1 = AMP_fJoin_INS;
   double f3 = p->fmaxCalc;
   double dfx = (f3 - f1)/2.0;
   double f2 = f1 + dfx;
 
   // v1 is inspiral model evaluated at f1
   // d1 is derivative of inspiral model evaluated at f1
-  double v1 = AmpInsAnsatz(f1, p); // FIXME: depends on rho_i's
-  double d1 = DAmpInsAnsatz(f1, p); // FIXME: depends on rho_i's
+  double v1 = AmpInsAnsatz(f1, p);
+  double d1 = DAmpInsAnsatz(f1, p);
 
   // v3 is merger-ringdown model evaluated at f3
   // d2 is derivative of merger-ringdown model evaluated at f3
-  //
-  double v3 = AmpMRDAnsatz(f3, p); // FIXME: depends on gamma_i's
-  double d2 = DAmpMRDAnsatz(f3, p); // FIXME: depends on gamma_i's
+  double v3 = AmpMRDAnsatz(f3, p);
+  double d2 = DAmpMRDAnsatz(f3, p);
 
   // v2 is the value of the amplitude evaluated at f2
   // they come from the fit of the collocation points in the intermediate region
@@ -875,6 +928,10 @@ static void ComputeDeltasFromCollocation(IMRPhenomDAmplitudeCoefficients* p) {
 
 ///////////////////////////// Amplitude: glueing function ////////////////////////////
 
+/**
+ * A struct containing all the parameters that need to be calculated
+ * to compute the phenomenological amplitude
+ */
 static IMRPhenomDAmplitudeCoefficients* ComputeIMRPhenomDAmplitudeCoefficients(double eta, double chi1, double chi2, double finspin) {
   IMRPhenomDAmplitudeCoefficients *p = (IMRPhenomDAmplitudeCoefficients *) XLALMalloc(sizeof(IMRPhenomDAmplitudeCoefficients));
 
@@ -893,7 +950,7 @@ static IMRPhenomDAmplitudeCoefficients* ComputeIMRPhenomDAmplitudeCoefficients(d
   p->gamma2 = gamma2_fun(eta, p->chi);
   p->gamma3 = gamma3_fun(eta, p->chi);
 
-  p->fmaxCalc = fmaxCalc(p); // NOTE: needs the MR gamma_i coeffs already calculated in p!
+  p->fmaxCalc = fmaxCalc(p);
 
   p->rho1 = rho1_fun(eta, p->chi);
   p->rho2 = rho2_fun(eta, p->chi);
@@ -906,13 +963,16 @@ static IMRPhenomDAmplitudeCoefficients* ComputeIMRPhenomDAmplitudeCoefficients(d
 }
 
 // Call ComputeIMRPhenomDAmplitudeCoefficients() first!
+/**
+ * This function computes the IMR amplitude given phenom coefficients.
+ * Defined in VIII. Full IMR Waveforms arXiv:1508.07253
+ */
 static double IMRPhenDAmplitude(double f, IMRPhenomDAmplitudeCoefficients *p) {
   // Defined in VIII. Full IMR Waveforms arXiv:1508.07253
   // The inspiral, intermediate and merger-ringdown amplitude parts
-  // FIXME: could avoid evaluating two of those when we are far enough away from one of the transition frequencies
 
   // Transition frequencies
-  p->fInsJoin = 0.014;
+  p->fInsJoin = AMP_fJoin_INS;
   p->fMRDJoin = p->fmaxCalc;
 
   double AmpPreFac = amp0Func(p->eta) * pow(f, -7.0/6.0);
@@ -933,8 +993,10 @@ static double IMRPhenDAmplitude(double f, IMRPhenomDAmplitudeCoefficients *p) {
 // alpha_i i=1,2,3,4,5 are the phenomenological intermediate coefficients depending on eta and chiPN
 // PhiRingdownAnsatz is the ringdown phasing in terms of the alpha_i coefficients
 
+/**
+ * alpha 1 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double alpha1Fit(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -946,8 +1008,10 @@ static double alpha1Fit(double eta, double chi) {
     + (-21.571435779762044 + 981.2158224673428*eta - 3239.5664895930286*eta2)*xi3;
 }
 
+/**
+ * alpha 2 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double alpha2Fit(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -959,8 +1023,10 @@ static double alpha2Fit(double eta, double chi) {
   + (-0.049983437357548705 + 0.6062072055948309*eta - 1.682769616644546*eta2)*xi3;
 }
 
+/**
+ * alpha 3 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double alpha3Fit(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -972,8 +1038,10 @@ static double alpha3Fit(double eta, double chi) {
   + (11.175710130033895 - 577.7999423177481*eta + 1808.730762932043*eta2)*xi3;
 }
 
+/**
+ * alpha 4 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double alpha4Fit(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -985,8 +1053,10 @@ static double alpha4Fit(double eta, double chi) {
   + (-0.015507437354325743 + 0.15750322779277187*eta + 0.21076815715176228*eta2)*xi3;
 }
 
+/**
+ * alpha 5 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double alpha5Fit(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -998,13 +1068,17 @@ static double alpha5Fit(double eta, double chi) {
   + (-0.017945336522161195 + 0.5965097794825992*eta - 2.0608879367971804*eta2)*xi3;
 }
 
+/**
+ * Ansatz for the merger-ringdown phase Equation 14 arXiv:1508.07253
+ */
 static double PhiMRDAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p) {
-  // Equation 14 arXiv:1508.07253
   return -(p->alpha2/f) + (4*p->alpha3*pow(f,0.75))/3. + p->alpha1*f + p->alpha4*atan((f - p->alpha5*p->fRD)/p->fDM);
 }
 
+/**
+ * First frequency derivative of PhiMRDAnsatzInt
+ */
 static double DPhiMRD(double f, IMRPhenomDPhaseCoefficients *p) {
-  // First frequency derivative of PhiMRDAnsatzInt
   return (p->alpha1 + p->alpha2/pow(f,2) + p->alpha3/pow(f,0.25) + p->alpha4/(p->fDM*(1 + pow(f - p->alpha5*p->fRD,2)/pow(p->fDM,2)))) / p->eta;
 }
 
@@ -1016,8 +1090,10 @@ static double DPhiMRD(double f, IMRPhenomDPhaseCoefficients *p) {
 
 // \[Beta]1Fit = PhiIntFitCoeff\[Chi]PNFunc[\[Eta], \[Chi]PN][[1]]
 
+/**
+ * beta 1 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double beta1Fit(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -1029,8 +1105,10 @@ static double beta1Fit(double eta, double chi) {
   + (41.025109467376126 - 423.680737974639*eta + 850.3594335657173*eta2)*xi3;
 }
 
+/**
+ * beta 2 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double beta2Fit(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -1042,8 +1120,10 @@ static double beta2Fit(double eta, double chi) {
   + (-3.4129261592393263 + 25.572377569952536*eta - 54.408036707740465*eta2)*xi3;
 }
 
+/**
+ * beta 3 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double beta3Fit(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -1055,23 +1135,29 @@ static double beta3Fit(double eta, double chi) {
   + (5.447166261464217e-6 - 0.00003220610095021982*eta + 0.00007974016714984341*eta2)*xi3;
 }
 
+/**
+ * ansatz for the intermediate phase defined by Equation 16 arXiv:1508.07253
+ */
 static double PhiIntAnsatz(double Mf, IMRPhenomDPhaseCoefficients *p) {
-  // Equation 16 arXiv:1508.07253
   // 1./eta in paper omitted and put in when need in the functions:
   // ComputeIMRPhenDPhaseConnectionCoefficients
   // IMRPhenDPhase
   return  p->beta1*Mf - p->beta3/(3.*pow(Mf,3)) + p->beta2*log(Mf);
 }
 
+/**
+ * First frequency derivative of PhiIntAnsatz
+ * (this time with 1./eta explicitly factored in)
+ */
 static double DPhiIntAnsatz(double Mf, IMRPhenomDPhaseCoefficients *p) {
-  // First frequency derivative of PhiIntAnsatz
-  // (this time with 1./eta explicitly factored in)
   return (p->beta1 + p->beta3/pow(Mf,4) + p->beta2/Mf) / p->eta;
 }
 
+/**
+ * temporary instance of DPhiIntAnsatz used when computing
+ * coefficients to make the phase C(1) continuous between regions.
+ */
 static double DPhiIntTemp(double ff, IMRPhenomDPhaseCoefficients *p) {
-  // temporary instance of DPhiIntAnsatz used when computing
-  // coefficients to make the phase C(1) continuous between regions.
   double eta = p->eta;
   double beta1 = p->beta1;
   double beta2 = p->beta2;
@@ -1086,8 +1172,10 @@ static double DPhiIntTemp(double ff, IMRPhenomDPhaseCoefficients *p) {
 // sigma_i i=1,2,3,4 are the phenomenological inspiral coefficients depending on eta and chiPN
 // PhiInsAnsatzInt is a souped up TF2 phasing which depends on the sigma_i coefficients
 
+/**
+ * sigma 1 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double sigma1Fit(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -1099,8 +1187,10 @@ static double sigma1Fit(double eta, double chi) {
   + (452.25136398112204 + 8353.439546391714*eta - 44531.3250037322*eta2)*xi3;
 }
 
+/**
+ * sigma 2 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double sigma2Fit(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -1112,8 +1202,10 @@ static double sigma2Fit(double eta, double chi) {
   + (-7462.648563007646 - 114585.25177153319*eta + 674402.4689098676*eta2)*xi3;
 }
 
+/**
+ * sigma 3 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double sigma3Fit(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -1125,8 +1217,10 @@ static double sigma3Fit(double eta, double chi) {
   + (42738.22871475411 + 467502.018616601*eta - 3.064853498512499e6*eta2)*xi3;
 }
 
+/**
+ * sigma 4 phenom coefficient. See corresponding row in Table 5 arXiv:1508.07253
+ */
 static double sigma4Fit(double eta, double chi) {
-  // Coefficients Table 5 arXiv:1508.07253
   double xi = -1 + chi;
   double xi2 = xi*xi;
   double xi3 = xi2*xi;
@@ -1138,8 +1232,14 @@ static double sigma4Fit(double eta, double chi) {
   + (-85360.30079034246 - 570025.3441737515*eta + 4.396844346849777e6*eta2)*xi3;
 }
 
+/**
+ * Ansatz for the inspiral phase.
+ * We call the LAL TF2 coefficients here.
+ * The exact values of the coefficients used are given
+ * as comments in the top of this file
+ * Defined by Equation 27 and 28 arXiv:1508.07253
+ */
 static double PhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn) {
-  // Equation 27 and 28 arXiv:1508.07253
   double sigma1 = p->sigma1;
   double sigma2 = p->sigma2;
   double sigma3 = p->sigma3;
@@ -1178,8 +1278,10 @@ static double PhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhasi
   return phasing;
 }
 
+/**
+ * First frequency derivative of PhiInsAnsatzInt
+ */
 static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn) {
-  // First frequency derivative of PhiInsAnsatzInt
   double sigma1 = p->sigma1;
   double sigma2 = p->sigma2;
   double sigma3 = p->sigma3;
@@ -1222,7 +1324,12 @@ static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhas
 
 ///////////////////////////////// Phase: glueing function ////////////////////////////////
 
+/**
+ * A struct containing all the parameters that need to be calculated
+ * to compute the phenomenological phase
+ */
 static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double eta, double chi1, double chi2, double finspin, const LALSimInspiralTestGRParam *extraParams) {
+
   IMRPhenomDPhaseCoefficients *p = (IMRPhenomDPhaseCoefficients *) XLALMalloc(sizeof(IMRPhenomDPhaseCoefficients));
 
   // Convention m1 >= m2
@@ -1270,12 +1377,17 @@ static IMRPhenomDPhaseCoefficients* ComputeIMRPhenomDPhaseCoefficients(double et
   return p;
 }
 
+/**
+ * This function aligns the three phase parts (inspiral, intermediate and merger-rindown)
+ * such that they are c^1 continuous at the transition frequencies
+ * Defined in VIII. Full IMR Waveforms arXiv:1508.07253
+ */
 static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn) {
   double eta = p->eta;
 
   // Transition frequencies
   // Defined in VIII. Full IMR Waveforms arXiv:1508.07253
-  p->fInsJoin=0.018;
+  p->fInsJoin=PHI_fJoin_INS;
   p->fMRDJoin=0.5*p->fRD;
 
   // Compute C1Int and C2Int coeffs
@@ -1305,10 +1417,13 @@ static void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficien
   p->C1MRD = PhiIntTempVal - 1.0/eta * PhiMRDAnsatzInt(p->fMRDJoin, p) - p->C2MRD*p->fMRDJoin;
 }
 
+/**
+ * This function computes the IMR phase given phenom coefficients.
+ * Defined in VIII. Full IMR Waveforms arXiv:1508.07253
+ */
 static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn) {
   // Defined in VIII. Full IMR Waveforms arXiv:1508.07253
   // The inspiral, intermendiate and merger-ringdown phase parts
-  // FIXME: could avoid evaluating two of those when we are far enough away from one of the transition frequencies
   double PhiIns = PhiInsAnsatzInt(f, p, pn);
   double PhiInt = 1.0/p->eta * PhiIntAnsatz(f, p) + p->C1Int + p->C2Int * f;
   double PhiMRD = 1.0/p->eta * PhiMRDAnsatzInt(f, p) + p->C1MRD + p->C2MRD * f;

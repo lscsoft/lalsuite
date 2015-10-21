@@ -78,7 +78,7 @@
  * monitoring UT1.
  *
  * Another way of representing the civil time in in terms of Julian days.
- * There is a routine for converting a UTC time into Julian days [in UTC time system].
+ * There is a routine for converting a civil time into Julian days [in the same time system].
  * The inverse conversion is not attempted.
  *
  */
@@ -160,7 +160,7 @@ int XLALLeapSecondsUTC( const struct tm *utc /**< [In] UTC as a broken down time
   REAL8 jd;
   int leap;
 
-  jd = XLALJulianDayUTC( utc );
+  jd = XLALConvertCivilTimeToJD( utc );
   if ( XLAL_IS_REAL8_FAIL_NAN( jd ) )
     XLAL_ERROR( XLAL_EFUNC );
 
@@ -236,8 +236,10 @@ struct tm * XLALGPSToUTC(
 
 
 /**
- * Returns the Julian Day (JD) corresponding to the date given in a broken
- * down time structure.
+ * Returns the Julian Day (JD) corresponding to the civil date and time given
+ * in a broken down time structure.
+ *
+ * The time system of the returned JD is the same as that of the input time.
  *
  * See \cite esaa1992 and \cite green1985 for details.  First, some
  * definitions:
@@ -283,72 +285,62 @@ struct tm * XLALGPSToUTC(
  * analyzable data from before 1900 March.
  *
  */
-REAL8 XLALJulianDayUTC( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
+REAL8 XLALConvertCivilTimeToJD( const struct tm *civil /**< [In] civil time in a broken down time structure. */ )
 {
   const int sec_per_day = 60 * 60 * 24; /* seconds in a day */
   int year, month, day, sec;
   REAL8 jd;
 
   /* this routine only works for dates after 1900 */
-  if ( utc->tm_year <= 0 )
+  if ( civil->tm_year <= 0 )
   {
     XLALPrintError( "XLAL Error - Year must be after 1900\n" );
     XLAL_ERROR_REAL8( XLAL_EDOM );
   }
 
-  year  = utc->tm_year + 1900;
-  month = utc->tm_mon + 1;     /* month is in range 1-12 */
-  day   = utc->tm_mday;        /* day is in range 1-31 */
-  sec   = utc->tm_sec + 60*(utc->tm_min + 60*(utc->tm_hour)); /* seconds since midnight */
+  year  = civil->tm_year + 1900;
+  month = civil->tm_mon + 1;     /* month is in range 1-12 */
+  day   = civil->tm_mday;        /* day is in range 1-31 */
+  sec   = civil->tm_sec + 60*(civil->tm_min + 60*(civil->tm_hour)); /* seconds since midnight */
 
   jd = 367*year - 7*(year + (month + 9)/12)/4 + 275*month/9 + day + 1721014;
   /* note: Julian days start at noon: subtract half a day */
   jd += (REAL8)sec/(REAL8)sec_per_day - 0.5;
+
   return jd;
-}
+} // XLALConvertCivilTimeToJD()
 
 /**
- * Returns the Modified Julian Day MJD(UTC) [in UTC time system] corresponding to the date given
- * in a broken down time structure.
+ * Returns the Modified Julian Day MJD corresponding to the civil date and time given
+ * in a broken down time structure (using the same time system as the input).
  *
  * Note:
- * - By convention, MJD is an integer.
- * - MJD number starts at midnight rather than noon.
+ * - MJD numbers starts at midnight rather than noon.
  *
- * If you want a Modified Julian Day that has a fractional part, simply use
- * the macro:
- *
- * \#define XLAL_MODIFIED_JULIAN_DAY_UTC(utc) (XLALJulianDayUTC(utc)-XLAL_MJD_REF)
  */
-INT4 XLALModifiedJulianDayUTC( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
+REAL8 XLALConvertCivilTimeToMJD( const struct tm *civil /**< [In] civil time in a broken down time structure. */ )
 {
-  REAL8 jd;
-  INT4 mjd;
-  jd = XLALJulianDayUTC( utc );
-  if ( XLAL_IS_REAL8_FAIL_NAN( jd ) )
-    XLAL_ERROR( XLAL_EFUNC );
-  mjd = floor( jd - XLAL_MJD_REF );
-  return mjd;
+  return XLAL_JD_TO_MJD ( XLALConvertCivilTimeToJD ( civil ) );
 }
 
-/** \deprecated Use XLALJulianDayUTC() instead, this is only provided for pylal backwards compatibility.
+/** \deprecated Use XLALConvertCivilTimeToJD() instead, this is only provided for pylal backwards compatibility.
  * (see #1856)
  */
 REAL8
-XLALJulianDay ( const struct tm *utc )
+XLALJulianDay ( const struct tm *civil )
 {
-  XLAL_PRINT_DEPRECATION_WARNING ( "XLALJulianDayUTC" );
-  return XLALJulianDayUTC ( utc );
+  XLAL_PRINT_DEPRECATION_WARNING ( "XLALConvertCivilTimeToJD" );
+  return XLALConvertCivilTimeToJD ( civil );
 } // XLALJulianDay()
 
-/** \deprecated Use XLALModifiedJulianDayUTC() instead, this is only provided for pylal backwards compatibility.
+/** \deprecated Use XLALConvertCivilTimeToJD() instead, this is only provided for pylal backwards compatibility.
  * (see #1856)
  */
 INT4
-XLALModifiedJulianDay ( const struct tm *utc )
+XLALModifiedJulianDay ( const struct tm *civil )
 {
-  XLAL_PRINT_DEPRECATION_WARNING ( "XLALModifiedJulianDayUTC" );
-  return XLALModifiedJulianDayUTC ( utc );
+  XLAL_PRINT_DEPRECATION_WARNING ( "XLALConvertCivilTimeToJD" );
+  return XLALConvertCivilTimeToJD ( civil );
 } // XLALModifiedJulianDay()
 
 

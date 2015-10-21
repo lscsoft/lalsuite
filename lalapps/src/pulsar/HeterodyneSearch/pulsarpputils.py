@@ -1672,6 +1672,13 @@ def heterodyned_triaxial_pulsar(starttime, duration, dt, detector, pardict):
 # amplitude parameters C22, phi22, C21 and phi21 and the orientation parameters cos(iota)
 # and psi. If both C22 and C21 are non-zero then a signal at both the rotation frequency
 # and twice the rotation frequency will be generated.
+#
+# Note that for the purely triaxial signal the waveform, as defined in Jones (2015)
+# http://arxiv.org/abs/1501.05832 (and subsequently Pitkin et al (2015) http://arxiv.org/abs/1508.00416),
+# has the opposite sign to the convention in e.g. JKS (which is used for signal generation in hardware
+# injections). Hence, when converting h0, from the conventional model, to C22 a minus sign needs to be
+# introduced. Also, phi0 here is defined as the rotational phase of the source, so when converting to phi22
+# a factor of 2 is needed.
 def heterodyned_pulsar_signal(starttime, duration, dt, detector, pardict):
   if 'cosiota' in pardict:
     cosiota = pardict['cosiota']
@@ -1691,7 +1698,7 @@ def heterodyned_pulsar_signal(starttime, duration, dt, detector, pardict):
     C22 = pardict['C22']
   else:
     if 'h0' in pardict:
-      C22 = pardict['h0']/2.
+      C22 = -pardict['h0']/2.
     else:
       C22 = 0.
 
@@ -1699,7 +1706,7 @@ def heterodyned_pulsar_signal(starttime, duration, dt, detector, pardict):
     phi22 = pardict['phi22']
   else:
     if 'phi0' in pardict:
-      phi22 = pardict['phi0'] - math.pi
+      phi22 = 2.*pardict['phi0']
     else:
       phi22 = 0.
 
