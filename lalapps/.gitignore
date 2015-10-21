@@ -215,6 +215,9 @@ src/pulsar/Tools/lalapps_GetSFTVelocities
 src/pulsar/Tools/lalapps_PrintDetectorState
 src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/TwoSpect/lalapps_TwoSpectTemplateBank
+src/pulsar/Xray/lalapps_Intermittent
+src/pulsar/Xray/lalapps_SemiCoherentBinary_v2
+src/pulsar/Xray/lalapps_binary2sfts
 src/pulsar/crosscorr/gsldata.dat
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr_v2
