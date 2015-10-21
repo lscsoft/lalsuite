@@ -208,7 +208,7 @@ def iso8601_to_gps(iso8601):
 def gps_to_mjd(gps_time):
     """Convert a floating-point GPS time in seconds to a modified Julian day."""
     gps_seconds_fraction, gps_seconds = math.modf(gps_time)
-    jd = lal.JulianDayUTC(lal.GPSToUTC(int(gps_seconds)))
+    jd = lal.ConvertCivilTimeToMJD(lal.GPSToUTC(int(gps_seconds)))
     return jd - lal.MJD_REF + gps_seconds_fraction / 86400.
 
 
