@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013  Leo Singer
+# Copyright (C) 2013-2015  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -21,9 +21,13 @@ Functions that support the command line interface.
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
+import argparse
 from optparse import IndentedHelpFormatter
 import glob
+import inspect
 import itertools
+import os
+import sys
 
 
 class NewlinePreservingHelpFormatter(IndentedHelpFormatter):
@@ -71,3 +75,61 @@ def sqlite3_connect_nocreate(dbfilename):
     with open(dbfilename, 'rb') as testfile:
         pass
     return sqlite3.connect(dbfilename)
+
+
+waveform_parser = argparse.ArgumentParser(add_help=False)
+group = waveform_parser.add_argument_group(
+    'Waveform options', 'Options that affect template waveform generation')
+group.add_argument('--f-low', type=float, metavar='Hz', default=10,
+    help='Low frequency cutoff [default: %(default)s]')
+group.add_argument('--waveform', default='o1-uberbank',
+    help='Template waveform approximant (e.g., TaylorF2threePointFivePN) '
+    '[default: O1 uberbank mass-dependent waveform]')
+del group
+
+
+prior_parser = argparse.ArgumentParser(add_help=False)
+group = prior_parser.add_argument_group(
+    'Prior options', 'Options that affect the BAYESTAR prior')
+group.add_argument('--min-distance', type=float, metavar='Mpc',
+    help='Minimum distance of prior in megaparsecs '
+    '[default: infer from effective distance]')
+group.add_argument('--max-distance', type=float, metavar='Mpc',
+    help='Maximum distance of prior in megaparsecs '
+    '[default: infer from effective distance]')
+group.add_argument('--prior-distance-power', type=int, metavar='-1|2',
+    default=2, help='Distance prior '
+    '[-1 for uniform in log, 2 for uniform in volume, default: %(default)s]')
+del group
+
+
+class ArgumentParser(argparse.ArgumentParser):
+    def __init__(self,
+                 prog=None,
+                 usage=None,
+                 description=None,
+                 epilog=None,
+                 parents=[],
+                 formatter_class=argparse.RawDescriptionHelpFormatter,
+                 prefix_chars='-',
+                 fromfile_prefix_chars=None,
+                 argument_default=None,
+                 conflict_handler='error',
+                 add_help=True):
+        if prog is None:
+            prog = os.path.basename(sys.argv[0]).replace('.py', '')
+        if description is None:
+            parent_frame = inspect.currentframe().f_back
+            description = parent_frame.f_locals.get('__doc__', None)
+        super(ArgumentParser, self).__init__(
+                 prog=prog,
+                 usage=usage,
+                 description=description,
+                 epilog=epilog,
+                 parents=parents,
+                 formatter_class=argparse.RawDescriptionHelpFormatter,
+                 prefix_chars=prefix_chars,
+                 fromfile_prefix_chars=fromfile_prefix_chars,
+                 argument_default=argument_default,
+                 conflict_handler=conflict_handler,
+                 add_help=add_help)

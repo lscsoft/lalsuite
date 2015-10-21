@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013  Leo Singer
+# Copyright (C) 2013-2015  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -43,7 +43,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.
-from optparse import Option, OptionParser
+import argparse
 from lalinference.bayestar import command
 
 methods = '''
@@ -53,40 +53,22 @@ methods = '''
     toa_snr_mcmc_kde
     toa_phoa_snr_mcmc_kde
     '''.split()
-default_method = "toa_phoa_snr"
-parser = OptionParser(
-    formatter = command.NewlinePreservingHelpFormatter(),
-    description = __doc__,
-    usage = '%prog [options] [INPUT.xml[.gz]]',
-    option_list = [
-        Option("--nside", "-n", type=int, default=-1,
-            help="HEALPix lateral resolution [default: auto]"),
-        Option("--f-low", type=float, metavar="Hz",
-            help="Low frequency cutoff [required]"),
-        Option("--waveform",
-            help="Waveform to use for determining parameter estimation accuracy from signal model [required]"),
-        Option("--min-distance", type=float, metavar="Mpc",
-            help="Minimum distance of prior in megaparsec [default: infer from effective distance]"),
-        Option("--max-distance", type=float, metavar="Mpc",
-            help="Maximum distance of prior in megaparsecs [default: infer from effective distance]"),
-        Option("--prior-distance-power", type=int, metavar="-1|2",
-            help="Distance prior [-1 for uniform in log, 2 for uniform in volume, default: 2]"),
-        Option("--method", choices=methods, metavar='|'.join(methods), default=[], action="append",
-            help="Sky localization method [may be specified multiple times, default: "
-            + default_method + "]"),
-        Option("--chain-dump", default=False, action="store_true",
-            help="For MCMC methods, dump the sample chain to disk [default: no]"),
-        Option("--keep-going", "-k", default=False, action="store_true",
-            help="Keep processing events if a sky map fails to converge [default: no].")
-    ]
-)
-opts, args = parser.parse_args()
-infilename = command.get_input_filename(parser, args)
-command.check_required_arguments(parser, opts, "f_low", "waveform")
-
-if not opts.method:
-    opts.method.append(default_method)
-
+default_method = 'toa_phoa_snr'
+parser = command.ArgumentParser(
+    parents=[command.waveform_parser, command.prior_parser])
+parser.add_argument('--nside', '-n', type=int, default=-1,
+    help='HEALPix resolution [default: auto]')
+parser.add_argument('--method', choices=methods, metavar='|'.join(methods),
+    default=[default_method], nargs='*',
+    help='Sky localization methods [default: %s]' % default_method)
+parser.add_argument('--chain-dump', default=False, action='store_true',
+    help='For MCMC methods, dump the sample chain to disk [default: no]')
+parser.add_argument('--keep-going', '-k', default=False, action='store_true',
+    help='Keep processing events if a sky map fails to converge [default: no]')
+parser.add_argument('input', metavar='INPUT.xml[.gz]', default='-', nargs='?',
+    type=argparse.FileType('rb'),
+    help='Input LIGO-LW XML file [default: stdin]')
+opts = parser.parse_args()
 
 #
 # Logging
@@ -114,8 +96,8 @@ import numpy as np
 
 # Read coinc file.
 log.info('%s:reading input XML file', infilename)
-xmldoc = ligolw_utils.load_filename(
-    infilename, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
+xmldoc = ligolw_utils.load_fileobj(
+    opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 reference_psd_filenames_by_process_id = ligolw_bayestar.psd_filenames_by_process_id_for_xmldoc(xmldoc)
 
