@@ -401,9 +401,9 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
     logPrior+=log(*(REAL8 *)LALInferenceGetVariable(params,"flow"));
 
   if(LALInferenceCheckVariable(params,"logdistance"))
-    logPrior+=3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
-  else if(LALInferenceCheckVariable(params,"distance"))
-    logPrior+=2.0*log(*(REAL8 *)LALInferenceGetVariable(params,"distance"));
+    logPrior+=1.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
+  //else if(LALInferenceCheckVariable(params,"distance"))
+  //  logPrior+=2.0*log(*(REAL8 *)LALInferenceGetVariable(params,"distance"));
   if(LALInferenceCheckVariable(params,"declination"))
   {
     /* Check that this is not an output variable */
@@ -732,7 +732,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             dist = LALInferenceCubeToPowerPrior(2.0, Cube[i], min, max);
             double logdist = log(dist);
             LALInferenceSetVariable(params, "logdistance", &logdist);
-            logPrior += 2.0*logdist;
+            //logPrior += 2.0*logdist;
             i++;
         }
     }
@@ -744,7 +744,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", (void *)&min, (void *)&max);
             dist = LALInferenceCubeToPowerPrior(2.0, Cube[i], min, max);
             LALInferenceSetVariable(params, "distance", &dist);
-            logPrior += 2.0*log(dist);
+            //logPrior += 2.0*log(dist);
             i++;
         }
     }
