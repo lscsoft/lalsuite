@@ -69,7 +69,7 @@ def chainglob(patterns):
 
 waveform_parser = argparse.ArgumentParser(add_help=False)
 group = waveform_parser.add_argument_group(
-    'Waveform options', 'Options that affect template waveform generation')
+    'waveform options', 'Options that affect template waveform generation')
 group.add_argument('--f-low', type=float, metavar='Hz', default=10,
     help='Low frequency cutoff [default: %(default)s]')
 group.add_argument('--waveform', default='o1-uberbank',
@@ -80,7 +80,7 @@ del group
 
 prior_parser = argparse.ArgumentParser(add_help=False)
 group = prior_parser.add_argument_group(
-    'Prior options', 'Options that affect the BAYESTAR prior')
+    'prior options', 'Options that affect the BAYESTAR prior')
 group.add_argument('--min-distance', type=float, metavar='Mpc',
     help='Minimum distance of prior in megaparsecs '
     '[default: infer from effective distance]')
