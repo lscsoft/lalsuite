@@ -59,10 +59,9 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	$(DOXYGEN) doxygen.cfg $(doxygen_redir) 2>&1; \
 	$(PYTHON) $(abs_srcdir)/check_tags.py $(abs_builddir)/out/$(PACKAGE).tag >> warnings.log || exit 1; \
 	$(SED) $(DOXYGEN_WARNING_REGEX) warnings.log > errors.log; \
-	rm -f warnings.log || exit 1; \
 	cat errors.log >&2 || exit 1; \
 	test `cat errors.log | wc -l` -eq 0 || exit 1; \
-	rm -f errors.log doxygen_objdb_*.tmp doxygen_sqlite3.db; \
+	rm -f doxygen_objdb_*.tmp doxygen_sqlite3.db; \
 	echo "=== Doxygen documentation was built successfully!"; \
 	echo "=== $(PACKAGE_NAME) main page is at file://$(abs_builddir)/out/index.html"
 
