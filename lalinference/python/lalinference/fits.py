@@ -187,7 +187,21 @@ def write_map(filename,m,nest=False,dtype=np.float32,fits_IDL=True,coord=None,co
 
 
 def gps_to_iso8601(gps_time):
-    """Convert a floating-point GPS time in seconds to an ISO 8601 date string."""
+    """
+    Convert a floating-point GPS time in seconds to an ISO 8601 date string.
+
+    Parameters
+    ----------
+
+    gps : float
+        Time in seconds since GPS epoch
+
+    Returns
+    -------
+
+    iso8601 : str
+        ISO 8601 date string (with fractional seconds)
+    """
     gps_seconds_fraction, gps_seconds = math.modf(gps_time)
     year, month, day, hour, minute, second, _, _, _ = lal.GPSToUTC(int(gps_seconds))
     ret = '{0:04d}-{1:02d}-{2:02d}T{3:02d}:{4:02d}:{5:02d}'.format(year, month, day, hour, minute, second, gps_seconds_fraction)
@@ -197,7 +211,29 @@ def gps_to_iso8601(gps_time):
 
 
 def iso8601_to_gps(iso8601):
-    """Convert an ISO 8601 date string to a floating-point GPS time in seconds."""
+    """
+    Convert an ISO 8601 date string to a floating-point GPS time in seconds.
+
+    Parameters
+    ----------
+
+    iso8601 : str
+        ISO 8601 date string (with fractional seconds)
+
+    Returns
+    -------
+
+    gps : float
+        Time in seconds since GPS epoch
+
+    Example
+    -------
+
+    >>> gps_to_iso8601(1129501781.2)
+    '2015-10-21T22:29:24.2'
+    >>> iso8601_to_gps('2015-10-21T22:29:24.2')
+    1129501781.2
+    """
     iso8601, _, second_fraction = iso8601.partition('.')
     second_fraction = float('0.' + second_fraction)
     tm = time.strptime(iso8601, "%Y-%m-%dT%H:%M:%S")
