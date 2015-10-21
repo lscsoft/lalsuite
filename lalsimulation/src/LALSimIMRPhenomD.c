@@ -98,14 +98,14 @@ static int IMRPhenomDGenerateFD(
 int XLALSimIMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
     const REAL8 phi0,                  /**< Orbital phase at fRef (rad) */
-    const REAL8 fRef_in,                  /**< reference frequency [Hz] */
+    const REAL8 fRef_in,                  /**< reference frequency (Hz) */
     const REAL8 deltaF,                /**< Sampling frequency (Hz) */
     const REAL8 m1_SI,                 /**< Mass of companion 1 (kg) */
     const REAL8 m2_SI,                 /**< Mass of companion 2 (kg) */
-    const REAL8 chi1,                  /**< Aligned-spin of companion 1 */
-    const REAL8 chi2,                  /**< Aligned-spin of companion 2 */
+    const REAL8 chi1,                  /**< Aligned-spin parameter of companion 1 */
+    const REAL8 chi2,                  /**< Aligned-spin parameter of companion 2 */
     const REAL8 f_min,                 /**< Starting GW frequency (Hz) */
-    const REAL8 f_max,                 /**< End frequency; 0 defaults to ringdown cutoff freq */
+    const REAL8 f_max,                 /**< End frequency; 0 defaults to Mf = 0.3 */
     const REAL8 distance               /**< Distance of source (m) */
 ) {
   /* external: SI; internal: solar masses */
