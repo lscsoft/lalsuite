@@ -114,6 +114,9 @@ int (*bambi2)(int *, int *, double **, double *), void *context)
 void getLogLike(double *Cube, UNUSED int *ndim, UNUSED int *npars, double *lnew, void *context);
 void getphysparams(double *Cube, UNUSED int *ndim, UNUSED int *nPar, void *context);
 void getallparams(double *Cube, UNUSED int *ndim, UNUSED int *nPar, void *context);
+void setParams(double *Cube, LALInferenceVariables *params, void *context, bool allparams);
+void runTestLikelihood(LALInferenceRunState *runState);
+void countDimensions(LALInferenceVariables *params, int *nsamp, int *nextra);
 
 void getLogLike(double *Cube, UNUSED int *ndim, UNUSED int *npars, double *lnew, void *context)
 {
@@ -136,6 +139,7 @@ void getLogLike(double *Cube, UNUSED int *ndim, UNUSED int *npars, double *lnew,
     // calculate the loglike
     *lnew=runStateGlobal->likelihood(newParams, runStateGlobal->data, runStateGlobal->threads[0]->model);
     *lnew -= (*(REAL8 *)LALInferenceGetVariable(runStateGlobal->algorithmParams, "logZnoise"));
+    setParams(Cube, newParams, context, true);
     LALInferenceClearVariables(newParams);
     free(newParams);
 }
@@ -183,6 +187,7 @@ void getphysparams(double *Cube, UNUSED int *ndim, UNUSED int *nPar, void *conte
     newParams=calloc(1,sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(runStateGlobal->threads[0]->currentParams,newParams);
     runStateGlobal->CubeToPrior(runStateGlobal, newParams, runStateGlobal->threads[0]->model, Cube, context);
+    setParams(Cube, newParams, context, false);
     free(newParams);
 
     // Adjust time if necessary
@@ -202,7 +207,201 @@ void getallparams(double *Cube, UNUSED int *ndim, UNUSED int *nPar, void *contex
     newParams=calloc(1,sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(runStateGlobal->threads[0]->currentParams,newParams);
     runStateGlobal->CubeToPrior(runStateGlobal, newParams, runStateGlobal->threads[0]->model, Cube, context);
+    setParams(Cube, newParams, context, true);
     free(newParams);
+}
+
+void setParams(double *Cube, LALInferenceVariables *params, void *context, bool allparams)
+{
+    char **info = (char **)context;
+    char *header = &info[1][0];
+    strcpy(header, "");
+
+    UINT4 i = 0, j, k;
+    char name[100];
+    LALInferenceVariableItem *item=params->head;
+    for(;item;item=item->next)
+    {
+        if (allparams || item->vary == LALINFERENCE_PARAM_LINEAR || item->vary == LALINFERENCE_PARAM_CIRCULAR)
+        {
+            switch (item->type)
+            {
+                case LALINFERENCE_INT4_t:
+                    Cube[i++] = (double) (*(INT4 *) item->value);
+                    strcat(header, LALInferenceTranslateInternalToExternalParamName(item->name));
+                    strcat(header, " ");
+                    break;
+                case LALINFERENCE_INT8_t:
+                    Cube[i++] = (double) (*(INT8 *) item->value);
+                    strcat(header, LALInferenceTranslateInternalToExternalParamName(item->name));
+                    strcat(header, " ");
+                    break;
+                case LALINFERENCE_UINT4_t:
+                    Cube[i++] = (double) (*(UINT4 *) item->value);
+                    strcat(header, LALInferenceTranslateInternalToExternalParamName(item->name));
+                    strcat(header, " ");
+                    break;
+                case LALINFERENCE_REAL4_t:
+                    Cube[i++] = (double) (*(REAL4 *) item->value);
+                    strcat(header, LALInferenceTranslateInternalToExternalParamName(item->name));
+                    strcat(header, " ");
+                    break;
+                case LALINFERENCE_REAL8_t:
+                    Cube[i++] = (double) (*(REAL8 *) item->value);
+                    strcat(header, LALInferenceTranslateInternalToExternalParamName(item->name));
+                    strcat(header, " ");
+                    break;
+                case LALINFERENCE_COMPLEX8_t: ; // empty statement
+                    COMPLEX8 temp1 = *(COMPLEX8 *) item->value;
+                    Cube[i++] = (double) creal(temp1);
+                    Cube[i++] = (double) cimag(temp1);
+                    sprintf(name, "%s_real %s_imag", LALInferenceTranslateInternalToExternalParamName(item->name),
+                        LALInferenceTranslateInternalToExternalParamName(item->name));
+                    strcat(header, name);
+                    strcat(header, " ");
+                    break;
+                case LALINFERENCE_COMPLEX16_t: ; // empty statement
+                    COMPLEX16 temp2 = *(COMPLEX16 *) item->value;
+                    Cube[i++] = (double) creal(temp2);
+                    Cube[i++] = (double) cimag(temp2);
+                    sprintf(name, "%s_real %s_imag", LALInferenceTranslateInternalToExternalParamName(item->name),
+                        LALInferenceTranslateInternalToExternalParamName(item->name));
+                    strcat(header, name);
+                    strcat(header, " ");
+                    break;
+                case LALINFERENCE_gslMatrix_t: ; // empty statement
+                    gsl_matrix *nparams = *((gsl_matrix **)LALInferenceGetVariable(params,"psdscale"));
+                    for (j=0; j<(UINT4)nparams->size1; j++) {
+                        for (k=0; k<(UINT4)nparams->size2; k++) {
+                            Cube[i++] = gsl_matrix_get(nparams, j, k);
+                            sprintf(name,"%s_%d_%d",LALInferenceTranslateInternalToExternalParamName(item->name),j,k);
+                            strcat(header,name);
+                            strcat(header, " ");
+                        }
+                    }
+                    break;
+                case LALINFERENCE_REAL8Vector_t: ; // empty statement
+                    REAL8Vector *vector1 = *((REAL8Vector **)item->value);
+                    for (j=0; j<(UINT4)vector1->length; j++) {
+                        Cube[i++] = (double) vector1->data[j];
+                        sprintf(name, "%s_%d", LALInferenceTranslateInternalToExternalParamName(item->name), j);
+                        strcat(header,name);
+                        strcat(header, " ");
+                    }
+                    break;
+                case LALINFERENCE_INT4Vector_t: ; // empty statement
+                    INT4Vector *vector2 = *((INT4Vector **)item->value);
+                    for (j=0; j<(UINT4)vector2->length; j++) {
+                        Cube[i++] = (double) vector2->data[j];
+                        sprintf(name, "%s_%d", LALInferenceTranslateInternalToExternalParamName(item->name), j);
+                        strcat(header,name);
+                        strcat(header, " ");
+                    }
+                    break;
+                case LALINFERENCE_UINT4Vector_t: ; // empty statement
+                    UINT4Vector *vector3 = *((UINT4Vector **)item->value);
+                    for (j=0; j<(UINT4)vector3->length; j++) {
+                        Cube[i++] = (double) vector3->data[j];
+                        sprintf(name, "%s_%d", LALInferenceTranslateInternalToExternalParamName(item->name), j);
+                        strcat(header,name);
+                        strcat(header, " ");
+                    }
+                    break;
+                case LALINFERENCE_COMPLEX16Vector_t: ; // empty statement
+                    COMPLEX16Vector *vector4 = *((COMPLEX16Vector **)item->value);
+                    for (j=0; j<(UINT4)vector4->length; j++) {
+                        Cube[i++] = (double) creal(vector4->data[j]);
+                        Cube[i++] = (double) cimag(vector4->data[j]);
+                        sprintf(name, "%s_%d_real %s_%d_imag", LALInferenceTranslateInternalToExternalParamName(item->name), j,
+                            LALInferenceTranslateInternalToExternalParamName(item->name), j);
+                        strcat(header,name);
+                        strcat(header, " ");
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    // add prior
+    Cube[i++] = runStateGlobal->prior(runStateGlobal, params, runStateGlobal->threads[0]->model);
+    strcat(header, "logprior ");
+
+    // add logL
+    strcat(header,"logl");
+}
+
+void runTestLikelihood(LALInferenceRunState *runState)
+{
+    // create and allocated params struct
+    LALInferenceVariables *params=runState->threads[0]->currentParams;
+
+    // count number of sampling dimensions
+    int nd = 0, ne = 0;
+    countDimensions(params, &nd, &ne);
+
+    // create and allocate Cube[] of zeros
+    double *Cube = NULL;
+    Cube = (double *)malloc(nd*sizeof(double));
+    int i;
+    for (i=0; i<nd; i++) Cube[i] = 0.0;
+
+    // create context var
+    char **info=(char **)malloc(3*sizeof(char *));
+    info[0]=(char *)malloc(5*sizeof(char));
+    info[1]=(char *)malloc(5*sizeof(char));
+    info[2]=(char *)malloc(5*sizeof(char));
+    strcpy(&info[0][0],"");
+    strcpy(&info[1][0],"");
+    strcpy(&info[2][0],"-1");
+    void *context = (void *)info;
+
+    // run CubeToPrior
+    runState->CubeToPrior(runState, params, runState->threads[0]->model, Cube, context);
+
+    // do logLikelihood
+    runState->likelihood(params, runState->data, runState->threads[0]->model);
+
+    // free context var
+    free(info[2]);free(info[1]);free(info[0]);free(info);
+
+    // free temp Cube
+    free(Cube);
+}
+
+void countDimensions(LALInferenceVariables *params, int *nsamp, int *nextra)
+{
+    *nsamp = 0;
+    *nextra = 0;
+
+    LALInferenceVariableItem *item=params->head;
+    for(;item;item=item->next)
+    {
+        if(item->vary==LALINFERENCE_PARAM_LINEAR || item->vary==LALINFERENCE_PARAM_CIRCULAR)
+        {
+            if (item->type == LALINFERENCE_gslMatrix_t)
+            {
+                gsl_matrix *nparams = *((gsl_matrix **)item->value);
+                INT4 numdims = nparams->size1 * nparams->size2;
+                *nsamp += numdims;
+            }
+            else
+                (*nsamp)++;
+        }
+        else
+        {
+            if (item->type == LALINFERENCE_gslMatrix_t)
+            {
+                gsl_matrix *nparams = *((gsl_matrix **)item->value);
+                INT4 numdims = nparams->size1 * nparams->size2;
+                *nextra += numdims;
+            }
+            else
+                (*nextra)++;
+        }
+    }
+    printf("%d sampled parameters, %d extra parameters\n", *nsamp, *nextra);
 }
 
 /* MultiNestAlgorithm implements the MultiNest algorithm*/
@@ -297,9 +496,24 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
 
     runStateGlobal = runState;
 
+    // run a likelihood before counting dimensions
+    runTestLikelihood(runState);
+
     // find out the dimensionality of the problem
-    int ND = 0;
-    LALInferenceVariableItem *item=runState->threads[0]->currentParams->head;
+    int ND = 0, Nextra = 0;
+    countDimensions(runState->threads[0]->currentParams, &ND, &Nextra);
+    /*if (LALInferenceGetProcParamVal(runState->commandLine,"--psd-fit") || LALInferenceGetProcParamVal(runState->commandLine,"--psdFit")) {
+        Nextra += 2;  // start with 2 for optimal SNR and matched filter SNR
+        LALInferenceIFOData *tmpifo = runStateGlobal->data;
+        while (tmpifo != NULL) {
+            Nextra++;  // for optimal SNR in detector
+            tmpifo = tmpifo->next;
+        }
+        if (SKY_FRAME == 1) {
+            Nextra += 3;  // for RA, dec, time
+        }
+    }*/
+    /*LALInferenceVariableItem *item=runState->threads[0]->currentParams->head;
     for(;item;item=item->next)
     {
         if(item->vary==LALINFERENCE_PARAM_LINEAR || item->vary==LALINFERENCE_PARAM_CIRCULAR)
@@ -313,7 +527,18 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
             else
                 ND++;
         }
-    }
+        else
+        {
+            if (item->type == LALINFERENCE_gslMatrix_t)
+            {
+                gsl_matrix *nparams = *((gsl_matrix **)item->value);
+                INT4 numdims = nparams->size1 * nparams->size2;
+                Nextra += numdims;
+            }
+            else
+                Nextra++;
+        }
+    }*/
 
     if( ND==0 )
     {
@@ -338,13 +563,15 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     double efr = eff;
     double mntol = MNTol;
     int ndims = ND;
-    int nPar = ndims + 3;
-    if (LALInferenceCheckVariable(runState->threads[0]->currentParams,"f_ref")) nPar++;  // add space for f_ref
-    if (SKY_FRAME==1) nPar += 3;
+    int nPar = ND + Nextra + 1; // one extra for logprior
+    printf("ndims = %d, nPar = %d\n", ndims, nPar);
+    //if (LALInferenceCheckVariable(runState->threads[0]->currentParams,"f_ref")) nPar++;  // add space for f_ref
+    //if (SKY_FRAME==1) nPar += 3;
     int nClsPar = fmin(2,ND);
     int updInt = Ntrain;
     double Ztol = -1.e90;
     int pWrap[ndims];
+    LALInferenceVariableItem *item = NULL;
     item=runState->threads[0]->currentParams->head;
     int k = -1;
     for(;item;item=item->next)
@@ -403,7 +630,7 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     char **info;
     info=(char **)malloc(3*sizeof(char *));
     info[0]=(char *)malloc(BAMBI_STRLEN*sizeof(char));
-    info[1]=(char *)malloc(1000*sizeof(char));
+    info[1]=(char *)malloc(nPar*15*sizeof(char));
     info[2]=(char *)malloc(5*sizeof(char));
     strcpy(&info[0][0],outfilestr);
     strcpy(&info[1][0],"DONOTWRITE");

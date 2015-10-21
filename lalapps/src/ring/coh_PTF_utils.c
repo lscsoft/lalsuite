@@ -2546,7 +2546,7 @@ MultiInspiralTable* coh_PTF_create_multi_event(
 {
   LIGOTimeGPS trigTime;
   UINT4 numDOF = 4;
-  if ( params->singlePolFlag || params->faceOnStatistic )
+  if (params->singlePolFlag || params->faceOnStatistic || params->numIFO == 1)
     numDOF = 2;
 
   MultiInspiralTable *currEvent;
@@ -2593,26 +2593,56 @@ MultiInspiralTable* coh_PTF_create_multi_event(
       if (bankVeto[LAL_IFO_G1])
       {
         currEvent->bank_chisq_g = bankVeto[LAL_IFO_G1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->bank_chisq = bankVeto[LAL_IFO_G1]->data->data[currPos];
+          currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
+        }
       }
       if (bankVeto[LAL_IFO_H1])
       {
         currEvent->bank_chisq_h1 = bankVeto[LAL_IFO_H1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->bank_chisq = bankVeto[LAL_IFO_H1]->data->data[currPos];
+          currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
+        }
       }
       if (bankVeto[LAL_IFO_H2])
       {
         currEvent->bank_chisq_h2 = bankVeto[LAL_IFO_H2]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->bank_chisq = bankVeto[LAL_IFO_H2]->data->data[currPos];
+          currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
+        }
       }
       if (bankVeto[LAL_IFO_L1])
       {
         currEvent->bank_chisq_l = bankVeto[LAL_IFO_L1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->bank_chisq = bankVeto[LAL_IFO_L1]->data->data[currPos];
+          currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
+        }
       }
       if (bankVeto[LAL_IFO_T1])
       {
         currEvent->bank_chisq_t = bankVeto[LAL_IFO_T1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->bank_chisq = bankVeto[LAL_IFO_T1]->data->data[currPos];
+          currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
+        }
       }
       if (bankVeto[LAL_IFO_V1])
       {
         currEvent->bank_chisq_v = bankVeto[LAL_IFO_V1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->bank_chisq = bankVeto[LAL_IFO_V1]->data->data[currPos];
+          currEvent->bank_chisq_dof = numDOF * params->BVsubBankSize;
+        }
       }
     }
   }
@@ -2628,26 +2658,56 @@ MultiInspiralTable* coh_PTF_create_multi_event(
       if (autoVeto[LAL_IFO_G1])
       {
         currEvent->cont_chisq_g = autoVeto[LAL_IFO_G1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->cont_chisq = autoVeto[LAL_IFO_G1]->data->data[currPos];
+          currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
+        }
       }
       if (autoVeto[LAL_IFO_H1])
       {
         currEvent->cont_chisq_h1 = autoVeto[LAL_IFO_H1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->cont_chisq = autoVeto[LAL_IFO_H1]->data->data[currPos];
+          currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
+        }
       }
       if (autoVeto[LAL_IFO_H2])
       {
         currEvent->cont_chisq_h2 = autoVeto[LAL_IFO_H2]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->cont_chisq = autoVeto[LAL_IFO_H2]->data->data[currPos];
+          currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
+        }
       }
       if (autoVeto[LAL_IFO_L1])
       {
         currEvent->cont_chisq_l = autoVeto[LAL_IFO_L1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->cont_chisq = autoVeto[LAL_IFO_L1]->data->data[currPos];
+          currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
+        }
       }
       if (autoVeto[LAL_IFO_T1])
       {
         currEvent->cont_chisq_t = autoVeto[LAL_IFO_T1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->cont_chisq = autoVeto[LAL_IFO_T1]->data->data[currPos];
+          currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
+        }
       }
       if (autoVeto[LAL_IFO_V1])
       {
         currEvent->cont_chisq_v = autoVeto[LAL_IFO_V1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->cont_chisq = autoVeto[LAL_IFO_V1]->data->data[currPos];
+          currEvent->cont_chisq_dof = numDOF * params->numAutoPoints;
+        }
       }
     }
   }
@@ -2663,26 +2723,56 @@ MultiInspiralTable* coh_PTF_create_multi_event(
       if (chiSquare[LAL_IFO_G1])
       {
         currEvent->chisq_g = chiSquare[LAL_IFO_G1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->chisq = chiSquare[LAL_IFO_G1]->data->data[currPos];
+          currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
+        }
       }
       if (chiSquare[LAL_IFO_H1])
       {
         currEvent->chisq_h1 = chiSquare[LAL_IFO_H1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->chisq = chiSquare[LAL_IFO_H1]->data->data[currPos];
+          currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
+        }
       }
       if (chiSquare[LAL_IFO_H2])
       {
         currEvent->chisq_h2 = chiSquare[LAL_IFO_H2]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->chisq = chiSquare[LAL_IFO_H2]->data->data[currPos];
+          currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
+        }
       }
       if (chiSquare[LAL_IFO_L1])
       {
         currEvent->chisq_l = chiSquare[LAL_IFO_L1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->chisq = chiSquare[LAL_IFO_L1]->data->data[currPos];
+          currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
+        }
       }
       if (chiSquare[LAL_IFO_T1])
       {
         currEvent->chisq_t = chiSquare[LAL_IFO_T1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->chisq = chiSquare[LAL_IFO_T1]->data->data[currPos];
+          currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
+        }
       }
       if (chiSquare[LAL_IFO_V1])
       {
         currEvent->chisq_v = chiSquare[LAL_IFO_V1]->data->data[currPos];
+        if (params->numIFO == 1)
+        {
+          currEvent->chisq = chiSquare[LAL_IFO_V1]->data->data[currPos];
+          currEvent->chisq_dof = numDOF * (params->numChiSquareBins - 1);
+        }
       }
     }
   }

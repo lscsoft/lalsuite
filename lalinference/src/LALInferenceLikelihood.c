@@ -416,8 +416,22 @@ REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams,
       LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       INT4 errnum=0;
       XLAL_TRY(model->templt(model),errnum);
-      if(errnum==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
-        return(-DBL_MAX);
+      errnum&=~XLAL_EFUNC;
+      if(errnum!=XLAL_SUCCESS)
+      {
+        switch(errnum)
+        {
+          case XLAL_FAILURE: /* Template generation failed in a known way, set -Inf likelihood */
+            return (-DBL_MAX);
+            break;
+          default: /* Panic! */
+            fprintf(stderr,"Unhandled error in template generation - exiting!\n");
+            fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
+            exit(1);
+            break;
+        }
+        
+      }
 
       LALInferenceTemplateROQ_amp_squared(model);
 
@@ -533,7 +547,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   int i, j, lower, upper, ifo;
   LALInferenceIFOData *dataPtr;
   double ra=0.0, dec=0.0, psi=0.0, gmst=0.0;
-  double GPSdouble=0.0;
+  double GPSdouble=0.0, t0=0.0;
   LIGOTimeGPS GPSlal;
   double chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
@@ -642,6 +656,22 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   if(LALInferenceCheckVariable(currentParams, "signalModelFlag"))
     signalFlag = *((INT4 *)LALInferenceGetVariable(currentParams, "signalModelFlag"));
 
+  int freq_length=0,time_length=0;
+  COMPLEX16Vector * dh_S_tilde=NULL;
+  COMPLEX16Vector * dh_S_phase_tilde = NULL;
+  REAL8Vector *dh_S=NULL;
+  REAL8Vector *dh_S_phase = NULL;
+  /* Setup times to integrate over */
+  freq_length = data->freqData->data->length;
+  time_length = 2*(freq_length-1);
+
+  /* Desired tc == 2 seconds before buffer end.  Only used during
+     margtime{phi} to try to place the waveform in a reasonable
+     place before time-shifting */
+  deltaT = data->timeData->deltaT;
+  REAL8 epoch = XLALGPSGetREAL8(&(data->freqData->epoch));
+  desired_tc = epoch + (time_length-1)*deltaT - 2.0;
+  
   if(signalFlag)
   {
     if(LALInferenceCheckVariable(currentParams,"logmc")){
@@ -670,7 +700,14 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 		    fprintf(stderr,"ERROR: Cannot use --detector-frame with less than 2 detectors!\n");
 		    exit(1);
 	    }
-      REAL8 t0=LALInferenceGetREAL8Variable(currentParams,"t0");
+      if(!margtime)
+      {
+         t0=LALInferenceGetREAL8Variable(currentParams,"t0");
+      }
+      else /* Use the desired end time to compute the mapping to ra,dec */
+      {
+              t0=desired_tc;
+      }
       REAL8 alph=acos(LALInferenceGetREAL8Variable(currentParams,"cosalpha"));
       REAL8 theta=LALInferenceGetREAL8Variable(currentParams,"azimuth");
       LALInferenceDetFrameToEquatorial(data->detector,data->next->detector,
@@ -694,21 +731,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     }
   }
 
-  int freq_length=0,time_length=0;
-  COMPLEX16Vector * dh_S_tilde=NULL;
-  COMPLEX16Vector * dh_S_phase_tilde = NULL;
-  REAL8Vector *dh_S=NULL;
-  REAL8Vector *dh_S_phase = NULL;
-  /* Setup times to integrate over */
-  freq_length = data->freqData->data->length;
-  time_length = 2*(freq_length-1);
-
-  /* Desired tc == 2 seconds before buffer end.  Only used during
-     margtime{phi} to try to place the waveform in a reasonable
-     place before time-shifting */
-  deltaT = data->timeData->deltaT;
-  REAL8 epoch = XLALGPSGetREAL8(&(data->freqData->epoch));
-  desired_tc = epoch + (time_length-1)*deltaT - 2.0;
 
   if(margtime)
   {
@@ -780,35 +802,49 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     }
 
     if(signalFlag){
-
-        /* Check to see if this buffer has already been filled with the signal.
-           Different dataPtrs can share the same signal buffer to avoid repeated
-           calls to template */
-        if(!checkItemAndAdd((void *)(model->freqhPlus), generatedFreqModels))
-		{
-				/* Compare parameter values with parameter values corresponding  */
-				/* to currently stored template; ignore "time" variable:         */
-				if (LALInferenceCheckVariable(model->params, "time")) {
-						timeTmp = *(REAL8 *) LALInferenceGetVariable(model->params, "time");
-						LALInferenceRemoveVariable(model->params, "time");
-				}
-				else timeTmp = GPSdouble;
-
-				LALInferenceCopyVariables(currentParams, model->params);
-				// Remove time variable so it can be over-written (if it was pinned)
-				if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
-				LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-
-                INT4 errnum=0;
-				XLAL_TRY(model->templt(model),errnum);
-				if(errnum==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
-						return(-DBL_MAX);
-
-				if (model->domain == LAL_SIM_DOMAIN_TIME) {
-						/* TD --> FD. */
-						LALInferenceExecuteFT(model);
-				}
-		}
+      
+      /* Check to see if this buffer has already been filled with the signal.
+       Different dataPtrs can share the same signal buffer to avoid repeated
+       calls to template */
+      if(!checkItemAndAdd((void *)(model->freqhPlus), generatedFreqModels))
+      {
+        /* Compare parameter values with parameter values corresponding  */
+        /* to currently stored template; ignore "time" variable:         */
+        if (LALInferenceCheckVariable(model->params, "time")) {
+          timeTmp = *(REAL8 *) LALInferenceGetVariable(model->params, "time");
+          LALInferenceRemoveVariable(model->params, "time");
+        }
+        else timeTmp = GPSdouble;
+        
+        LALInferenceCopyVariables(currentParams, model->params);
+        // Remove time variable so it can be over-written (if it was pinned)
+        if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
+        LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+        
+        INT4 errnum=0;
+        XLAL_TRY(model->templt(model),errnum);
+        errnum&=~XLAL_EFUNC;
+        if(errnum!=XLAL_SUCCESS)
+        {
+          switch(errnum)
+          {
+            case XLAL_FAILURE: /* Template generation failed in a known way, set -Inf likelihood */
+              return (-DBL_MAX);
+              break;
+            default: /* Panic! */
+              fprintf(stderr,"Unhandled error in template generation - exiting!\n");
+              fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
+              exit(1);
+              break;
+          }
+          
+        }
+        
+        if (model->domain == LAL_SIM_DOMAIN_TIME) {
+          /* TD --> FD. */
+          LALInferenceExecuteFT(model);
+        }
+      }
 
         /* Template is now in model->timeFreqhPlus and hCross */
 
@@ -1124,7 +1160,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
       REAL8 time_low,time_high;
       LALInferenceGetMinMaxPrior(currentParams,"time",&time_low,&time_high);
-      REAL8 t0 = XLALGPSGetREAL8(&(data->freqData->epoch));
+      t0 = XLALGPSGetREAL8(&(data->freqData->epoch));
       int istart = (UINT4)round((time_low - t0)/deltaT);
       int iend = (UINT4)round((time_high - t0)/deltaT);
       if(iend > (int) dh_S->length || istart < 0 ) {
@@ -1489,8 +1525,23 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
 
       INT4 errnum=0;
       XLAL_TRY(model->templt(model),errnum);
-      if(errnum==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
-          return(-DBL_MAX);
+      errnum&=~XLAL_EFUNC;
+      if(errnum!=XLAL_SUCCESS)
+      {
+        switch(errnum)
+        {
+          case XLAL_FAILURE: /* Template generation failed in a known way, set -Inf likelihood */
+            return (-DBL_MAX);
+            break;
+          default: /* Panic! */
+            fprintf(stderr,"Unhandled error in template generation - exiting!\n");
+            fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
+            exit(1);
+            break;
+        }
+        
+      }
+
     }
         /* Template is now in model->timeFreqhPlus and hCross */
 
@@ -1688,32 +1739,46 @@ void LALInferenceNetworkSNR(LALInferenceVariables *currentParams,
      Different dataPtrs can share the same signal buffer to avoid repeated
      calls to template */
     if(!checkItemAndAdd((void *)(model->freqhPlus), generatedFreqModels))
-	{
-			/* to currently stored template; ignore "time" variable:         */
-			if (LALInferenceCheckVariable(model->params, "time")) {
-					timeTmp = *(REAL8 *) LALInferenceGetVariable(model->params, "time");
-					LALInferenceRemoveVariable(model->params, "time");
-			}
-			else timeTmp = GPSdouble;
-
-			LALInferenceCopyVariables(currentParams, model->params);
-			// Remove time variable so it can be over-written (if it was pinned)
-			if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
-			LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-			if (!LALInferenceCheckVariable(model->params, "phase")) {
-					double pi2 = M_PI / 2.0;
-					LALInferenceAddVariable(model->params, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-			}
-            INT4 errnum=0;
-            XLAL_TRY(model->templt(model),errnum);
-            if(errnum==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
-                 return;
-
-			if (model->domain == LAL_SIM_DOMAIN_TIME) {
-					/* TD --> FD. */
-					LALInferenceExecuteFT(model);
-			}
-	}
+    {
+      /* to currently stored template; ignore "time" variable:         */
+      if (LALInferenceCheckVariable(model->params, "time")) {
+        timeTmp = *(REAL8 *) LALInferenceGetVariable(model->params, "time");
+        LALInferenceRemoveVariable(model->params, "time");
+      }
+      else timeTmp = GPSdouble;
+      
+      LALInferenceCopyVariables(currentParams, model->params);
+      // Remove time variable so it can be over-written (if it was pinned)
+      if(LALInferenceCheckVariable(model->params,"time")) LALInferenceRemoveVariable(model->params,"time");
+      LALInferenceAddVariable(model->params, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
+      if (!LALInferenceCheckVariable(model->params, "phase")) {
+        double pi2 = M_PI / 2.0;
+        LALInferenceAddVariable(model->params, "phase", &pi2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+      }
+      INT4 errnum=0;
+      XLAL_TRY(model->templt(model),errnum);
+      errnum&=~XLAL_EFUNC;
+      if(errnum!=XLAL_SUCCESS)
+      {
+        switch(errnum)
+        {
+          case XLAL_FAILURE: /* Template generation failed in a known way, set -Inf likelihood */
+            return;
+            break;
+          default: /* Panic! */
+            fprintf(stderr,"Unhandled error in template generation - exiting!\n");
+            fprintf(stderr,"XLALError: %d, %s\n",errnum,XLALErrorString(errnum));
+            exit(1);
+            break;
+        }
+        
+      }
+      
+      if (model->domain == LAL_SIM_DOMAIN_TIME) {
+        /* TD --> FD. */
+        LALInferenceExecuteFT(model);
+      }
+    }
 
     /* Template is now in dataPtr->timeFreqModelhPlus and hCross */
 

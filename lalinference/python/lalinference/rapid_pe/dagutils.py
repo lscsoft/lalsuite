@@ -19,9 +19,6 @@ A collection of routines to manage Condor workflows (DAGs).
 """
 
 import os
-import numpy as np
-from time import time
-from hashlib import md5
 
 from glue import pipeline
 
@@ -44,17 +41,8 @@ def which(program):
 
     return None
 
-def generate_job_id():
-    """
-    Generate a unique md5 hash for use as a job ID.
-    Borrowed and modified from the LAL code in glue/glue/pipeline.py
-    """
-    t = str( long( time() * 1000 ) )
-    r = str( long( np.random.random() * 100000000000000000L ) )
-    return md5(t + r).hexdigest()
-
 # FIXME: Keep in sync with arguments of integrate_likelihood_extrinsic
-def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=None, ncopies=1, **kwargs):
+def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=None, intr_prms=("mass1", "mass2"), ncopies=1, **kwargs):
     """
     Write a submit file for launching jobs to marginalize the likelihood over
     extrinsic parameters.
@@ -130,13 +118,11 @@ def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=
     #
     ile_job.add_var_opt("mass1")
     ile_job.add_var_opt("mass2")
-
-    if kwargs.has_key("write_eff_lambda") and kwargs["write_eff_lambda"]:
-        ile_job.add_var_opt("eff-lambda")
-    if kwargs.has_key("write_deff_lambda") and kwargs["write_deff_lambda"]:
-        ile_job.add_var_opt("deff-lambda")
+    for p in intr_prms:
+        ile_job.add_var_opt(p.replace("_", "-"))
 
     ile_job.add_condor_cmd('getenv', 'True')
+    ile_job.add_condor_cmd('accounting_group', 'cgca.cbc.rapidpe.devel')
     ile_job.add_condor_cmd('request_memory', '2048')
     
     return ile_job, ile_sub_name

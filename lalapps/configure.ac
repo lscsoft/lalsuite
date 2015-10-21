@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALApps],[6.17.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALApps],[6.17.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -40,6 +40,7 @@ AC_CONFIG_FILES([\
   src/pulsar/hough/Makefile \
   src/pulsar/hough/src/Makefile \
   src/pulsar/hough/src2/Makefile \
+  src/pulsar/Xray/Makefile \
   src/ring/Makefile \
   src/stochastic/Makefile \
   src/string/Makefile \

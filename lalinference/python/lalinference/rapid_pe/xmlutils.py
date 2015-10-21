@@ -208,6 +208,29 @@ def db_to_samples(db_fname, tbltype, cols):
 
     return samples
 
+#
+# HDF5 I/O
+#
+def append_samples_to_hdf5_group(grp, samples):
+    samp_grp = grp.create_group("samples")
+    cols = set(samples.validcolumns.keys()) & set(dir(samples[0]))
+    for col in cols:
+        try:
+            getattr(samples[0], col)
+        except AttributeError:
+            continue
+
+        ds = samp_grp.create_dataset(col, (len(samples),))
+        for i, row in enumerate(samples):
+            if samples.validcolumns[col] in ("ilwd:char",):
+                ds[i] = int(getattr(samples[i], col))
+            else:
+                ds[i] = getattr(samples[i], col)
+
+def append_metadata_to_hdf5_group(grp, metadata):
+    for name, val in metadata.iteritems():
+        grp.attrs[name] = val
+
 # TESTING
 import sys
 if __file__ == sys.argv[0]:

@@ -182,26 +182,28 @@ enum {
 	LAL_ET2_DETECTOR	=	13,
 	LAL_ET3_DETECTOR	=	14,
 	LAL_ET0_DETECTOR	=	15,
-	LAL_NUM_DETECTORS	=	16
+	LAL_KAGRA_DETECTOR	=	16,
+	LAL_NUM_DETECTORS	=	17
 };
 
 /** Detector DQ bit assignments (2 bits per detector) */
 enum {
-	LAL_TAMA_300_DETECTOR_BIT	=	1 << 2 * LAL_TAMA_300_DETECTOR,
-	LAL_VIRGO_DETECTOR_BIT   	=	1 << 2 * LAL_VIRGO_DETECTOR,
-	LAL_GEO_600_DETECTOR_BIT 	=	1 << 2 * LAL_GEO_600_DETECTOR,
-	LAL_LHO_2K_DETECTOR_BIT  	=	1 << 2 * LAL_LHO_2K_DETECTOR,
-	LAL_LHO_4K_DETECTOR_BIT  	=	1 << 2 * LAL_LHO_4K_DETECTOR,
-	LAL_LLO_4K_DETECTOR_BIT  	=	1 << 2 * LAL_LLO_4K_DETECTOR,
-	LAL_CIT_40_DETECTOR_BIT  	=	1 << 2 * LAL_CIT_40_DETECTOR,
-	LAL_ALLEGRO_DETECTOR_BIT 	=	1 << 2 * LAL_ALLEGRO_DETECTOR,
-	LAL_AURIGA_DETECTOR_BIT  	=	1 << 2 * LAL_AURIGA_DETECTOR,
-	LAL_NIOBE_DETECTOR_BIT   	=	1 << 2 * LAL_NIOBE_DETECTOR,
-	LAL_NAUTILUS_DETECTOR_BIT	=	1 << 2 * LAL_NAUTILUS_DETECTOR,
-	LAL_ET1_DETECTOR_BIT     	=	1 << 2 * LAL_ET1_DETECTOR,
-	LAL_ET2_DETECTOR_BIT     	=	1 << 2 * LAL_ET2_DETECTOR,
-	LAL_ET3_DETECTOR_BIT     	=	1 << 2 * LAL_ET3_DETECTOR,
-	LAL_ET0_DETECTOR_BIT     	=	1 << 2 * LAL_ET0_DETECTOR
+	LAL_TAMA_300_DETECTOR_BIT	=	LAL_INT8_C(1) << 2 * LAL_TAMA_300_DETECTOR,
+	LAL_VIRGO_DETECTOR_BIT   	=	LAL_INT8_C(1) << 2 * LAL_VIRGO_DETECTOR,
+	LAL_GEO_600_DETECTOR_BIT 	=	LAL_INT8_C(1) << 2 * LAL_GEO_600_DETECTOR,
+	LAL_LHO_2K_DETECTOR_BIT  	=	LAL_INT8_C(1) << 2 * LAL_LHO_2K_DETECTOR,
+	LAL_LHO_4K_DETECTOR_BIT  	=	LAL_INT8_C(1) << 2 * LAL_LHO_4K_DETECTOR,
+	LAL_LLO_4K_DETECTOR_BIT  	=	LAL_INT8_C(1) << 2 * LAL_LLO_4K_DETECTOR,
+	LAL_CIT_40_DETECTOR_BIT  	=	LAL_INT8_C(1) << 2 * LAL_CIT_40_DETECTOR,
+	LAL_ALLEGRO_DETECTOR_BIT 	=	LAL_INT8_C(1) << 2 * LAL_ALLEGRO_DETECTOR,
+	LAL_AURIGA_DETECTOR_BIT  	=	LAL_INT8_C(1) << 2 * LAL_AURIGA_DETECTOR,
+	LAL_NIOBE_DETECTOR_BIT   	=	LAL_INT8_C(1) << 2 * LAL_NIOBE_DETECTOR,
+	LAL_NAUTILUS_DETECTOR_BIT	=	LAL_INT8_C(1) << 2 * LAL_NAUTILUS_DETECTOR,
+	LAL_ET1_DETECTOR_BIT     	=	LAL_INT8_C(1) << 2 * LAL_ET1_DETECTOR,
+	LAL_ET2_DETECTOR_BIT     	=	LAL_INT8_C(1) << 2 * LAL_ET2_DETECTOR,
+	LAL_ET3_DETECTOR_BIT     	=	LAL_INT8_C(1) << 2 * LAL_ET3_DETECTOR,
+	LAL_ET0_DETECTOR_BIT     	=	LAL_INT8_C(1) << 2 * LAL_ET0_DETECTOR,
+	LAL_KAGRA_DETECTOR_BIT     	=	LAL_INT8_C(1) << 2 * LAL_KAGRA_DETECTOR
 };
 
 
@@ -303,6 +305,13 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  * <li> Data for the TAMA detector is provided by Masa-Katsu Fujimoto
  *
  * <li> Data for the Caltech detector is taken from \cite Allen_1996
+ *
+ * <li> Data for the KAGRA detector was provided by Yousuke Itoh
+ * and is derived from data from
+ *
+ * > Yoshio Saito, "KAGRA location", KAGRA Technical Document JGW-G1503824
+ * > http://gwdoc.icrr.u-tokyo.ac.jp/cgi-bin/DocDB/ShowDocument?docid=3824
+ *
  * </ul>
  *
  * See the technical document \cite ABCCRW_2001 for details.
@@ -523,7 +532,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  * Einstein Telescop detector as well as the theoretical null stream.
  * See T1400308 
  */
-/*@}*/
+/*@{*/
 #define LAL_ET1_DETECTOR_NAME                  	"ET1_T1400308"	/**< ET1 detector name string */
 #define LAL_ET1_DETECTOR_PREFIX                	"E1"	/**< ET1 detector prefix string */
 #define LAL_ET1_DETECTOR_LONGITUDE_RAD         	0.18333805213	/**< ET1 vertex longitude (rad) */
@@ -544,9 +553,8 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_ET1_ARM_Y_DIRECTION_X              	-0.39681482542	/**< ET1 x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_ET1_ARM_Y_DIRECTION_Y              	-0.73500471881	/**< ET1 y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_ET1_ARM_Y_DIRECTION_Z              	0.54982366052	/**< ET1 z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
 
-/*@}*/
+
 #define LAL_ET2_DETECTOR_NAME                  	"ET2_T1400308"	/**< ET2 detector name string */
 #define LAL_ET2_DETECTOR_PREFIX                	"E2"	/**< ET2 detector prefix string */
 #define LAL_ET2_DETECTOR_LONGITUDE_RAD         	0.18405858870	/**< ET2 vertex longitude (rad) */
@@ -567,9 +575,8 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_ET2_ARM_Y_DIRECTION_X              	0.70045821479	/**< ET2 x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_ET2_ARM_Y_DIRECTION_Y              	-0.20848948619	/**< ET2 y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_ET2_ARM_Y_DIRECTION_Z              	-0.68256166277	/**< ET2 z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
 
-/*@}*/
+
 #define LAL_ET3_DETECTOR_NAME                  	"ET3_T1400308"	/**< ET3 detector name string */
 #define LAL_ET3_DETECTOR_PREFIX                	"E3"	/**< ET3 detector prefix string */
 #define LAL_ET3_DETECTOR_LONGITUDE_RAD         	0.18192996730	/**< ET3 vertex longitude (rad) */
@@ -590,9 +597,8 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_ET3_ARM_Y_DIRECTION_X              	-0.30364338937	/**< ET3 x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_ET3_ARM_Y_DIRECTION_Y              	0.94349420500	/**< ET3 y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_ET3_ARM_Y_DIRECTION_Z              	0.13273800225	/**< ET3 z-component of unit vector pointing along y arm in Earth-centered frame */
-/*@}*/
 
-/*@}*/
+
 #define LAL_ET0_DETECTOR_NAME                  	"ET0_T1400308"	/**< ET0 detector name string */
 #define LAL_ET0_DETECTOR_PREFIX                	"E0"	/**< ET0 detector prefix string */
 #define LAL_ET0_DETECTOR_LONGITUDE_RAD         	0.18192996730	/**< ET0 vertex longitude (rad) */
@@ -613,6 +619,37 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
 #define LAL_ET0_ARM_Y_DIRECTION_X              	0.00000000000	/**< ET0 x-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_ET0_ARM_Y_DIRECTION_Y              	0.00000000000	/**< ET0 y-component of unit vector pointing along y arm in Earth-centered frame */
 #define LAL_ET0_ARM_Y_DIRECTION_Z              	0.00000000000	/**< ET0 z-component of unit vector pointing along y arm in Earth-centered frame */
+/*@}*/
+
+/**
+ * \name KAGRA Interferometric Detector constants
+ * The following constants describe the location and geometry of the
+ * KAGRA Interferometric Detector.
+ * \sa
+ * > Yoshio Saito, "KAGRA location", KAGRA Technical Document JGW-G1503824
+ * > http://gwdoc.icrr.u-tokyo.ac.jp/cgi-bin/DocDB/ShowDocument?docid=3824
+ */
+/*@{*/
+#define LAL_KAGRA_DETECTOR_NAME               	"KAGRA"	/**< KAGRA detector name string */
+#define LAL_KAGRA_DETECTOR_PREFIX             	"K1"	/**< KAGRA detector prefix string */
+#define LAL_KAGRA_DETECTOR_LONGITUDE_RAD      	2.396441015	/**< KAGRA vertex longitude (rad) */
+#define LAL_KAGRA_DETECTOR_LATITUDE_RAD       	0.6355068497	/**< KAGRA vertex latitude (rad) */
+#define LAL_KAGRA_DETECTOR_ELEVATION_SI       	414.181	/**< KAGRA vertex elevation (m) */
+#define LAL_KAGRA_DETECTOR_ARM_X_AZIMUTH_RAD  	1.054113	/**< KAGRA x arm azimuth (rad) */
+#define LAL_KAGRA_DETECTOR_ARM_Y_AZIMUTH_RAD  	-0.5166798	/**< KAGRA y arm azimuth (rad) */
+#define LAL_KAGRA_DETECTOR_ARM_X_ALTITUDE_RAD 	0.0031414	/**< KAGRA x arm altitude (rad) */
+#define LAL_KAGRA_DETECTOR_ARM_Y_ALTITUDE_RAD 	-0.0036270	/**< KAGRA y arm altitude (rad) */
+#define LAL_KAGRA_DETECTOR_ARM_X_MIDPOINT_SI  	1513.2535	/**< KAGRA x arm midpoint (m) */
+#define LAL_KAGRA_DETECTOR_ARM_Y_MIDPOINT_SI  	1511.611	/**< KAGRA y arm midpoint (m) */
+#define LAL_KAGRA_VERTEX_LOCATION_X_SI        	-3777336.024	/**< KAGRA x-component of vertex location in Earth-centered frame (m) */
+#define LAL_KAGRA_VERTEX_LOCATION_Y_SI        	3484898.411	/**< KAGRA y-component of vertex location in Earth-centered frame (m) */
+#define LAL_KAGRA_VERTEX_LOCATION_Z_SI        	3765313.697	/**< KAGRA z-component of vertex location in Earth-centered frame (m) */
+#define LAL_KAGRA_ARM_X_DIRECTION_X           	-0.3759040	/**< KAGRA x-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_KAGRA_ARM_X_DIRECTION_Y           	-0.8361583	/**< KAGRA y-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_KAGRA_ARM_X_DIRECTION_Z           	0.3994189	/**< KAGRA z-component of unit vector pointing along x arm in Earth-centered frame */
+#define LAL_KAGRA_ARM_Y_DIRECTION_X           	0.7164378	/**< KAGRA x-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_KAGRA_ARM_Y_DIRECTION_Y           	0.01114076	/**< KAGRA y-component of unit vector pointing along y arm in Earth-centered frame */
+#define LAL_KAGRA_ARM_Y_DIRECTION_Z           	0.6975620	/**< KAGRA z-component of unit vector pointing along y arm in Earth-centered frame */
 /*@}*/
 
 

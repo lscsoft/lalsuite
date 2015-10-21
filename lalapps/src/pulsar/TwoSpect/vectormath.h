@@ -49,6 +49,11 @@ INT4 VectorSubtractREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input1,
 INT4 VectorMultiplyREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input1, alignedREAL8Vector *input2, INT4 vectorMath);
 INT4 VectorInvertREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, INT4 vectorMath);
 
+INT4 VectorFloorREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, INT4 vectorMath);
+INT4 VectorRoundREAL4(REAL4VectorAligned *output, REAL4VectorAligned *input, INT4 vectorMath);
+INT4 VectorRoundREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, INT4 vectorMath);
+INT4 VectorAbsREAL4(REAL4VectorAligned *output, REAL4VectorAligned *input, INT4 vectorMath);
+
 INT4 sseSSVectorSubtract(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2);
 INT4 avxSSVectorSubtract(REAL4VectorAligned *output, REAL4VectorAligned *input1, REAL4VectorAligned *input2);
 

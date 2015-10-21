@@ -84,7 +84,7 @@ REAL8 XLALGreenwichSiderealTime(
 	 * seconds.
 	 */
 
-	julian_day = XLALJulianDayUTC(&utc);
+	julian_day = XLALConvertCivilTimeToJD(&utc);
 	if(XLAL_IS_REAL8_FAIL_NAN(julian_day))
 		XLAL_ERROR_REAL8(XLAL_EFUNC);
 

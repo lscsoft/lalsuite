@@ -42,7 +42,8 @@
 
 static int IMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    const REAL8 phi0,                  /**< phase at peak */
+    const REAL8 phi0,                  /**< phase at fRef */
+    const REAL8 fRef,                  /**< reference frequency [Hz] */
     const REAL8 deltaF,                /**< frequency resolution */
     const REAL8 m1,                    /**< mass of companion 1 [solar masses] */
     const REAL8 m2,                    /**< mass of companion 2 [solar masses] */
@@ -63,9 +64,11 @@ static int IMRPhenomDGenerateFD(
  * @author Michael Puerrer, Sebastian Khan, Frank Ohme
  *
  * @brief C code for IMRPhenomD phenomenological waveform model.
- * See Husa et al, arXiv:1508.07250 and Khan et al, arXiv:1508.07253 for details.
  *
  * This is an aligned-spin frequency domain model.
+ * See Husa et al \cite Husa:2015iqa, and Khan et al \cite Khan:2015jqa
+ * for details. Any studies that use this waveform model should include
+ * a reference to both of these papers.
  *
  * @note The model was calibrated to mass-ratios [1:1,1:4,1:8,1:18].
  * * Along the mass-ratio 1:1 line it was calibrated to spins  [-0.95, +0.98].
@@ -74,7 +77,7 @@ static int IMRPhenomDGenerateFD(
  * * Along the mass-ratio 1:18 line it was calibrated to spins [-0.8, +0.4].
  * The calibration points will be given in forthcoming papers.
  *
- * @note The model is usable outside this parameter range,
+ * @attention The model is usable outside this parameter range,
  * and in tests to date gives sensible physical results,
  * but conclusive statements on the physical fidelity of
  * the model for these parameters await comparisons against further
@@ -94,7 +97,8 @@ static int IMRPhenomDGenerateFD(
  */
 int XLALSimIMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    const REAL8 phi0,                  /**< Orbital phase at peak (rad) */
+    const REAL8 phi0,                  /**< Orbital phase at fRef (rad) */
+    const REAL8 fRef_in,                  /**< reference frequency [Hz] */
     const REAL8 deltaF,                /**< Sampling frequency (Hz) */
     const REAL8 m1_SI,                 /**< Mass of companion 1 (kg) */
     const REAL8 m2_SI,                 /**< Mass of companion 2 (kg) */
@@ -107,48 +111,55 @@ int XLALSimIMRPhenomDGenerateFD(
   /* external: SI; internal: solar masses */
   const REAL8 m1 = m1_SI / LAL_MSUN_SI;
   const REAL8 m2 = m2_SI / LAL_MSUN_SI;
-  const REAL8 q = (m1 > m2) ? (m1 / m2) : (m2 / m1);
 
   /* check inputs for sanity */
+  XLAL_CHECK(0 != htilde, XLAL_EFAULT, "htilde is null");
   if (*htilde) XLAL_ERROR(XLAL_EFAULT);
-  if (deltaF <= 0) XLAL_ERROR(XLAL_EDOM);
-  if (m1 <= 0) XLAL_ERROR(XLAL_EDOM);
-  if (m2 <= 0) XLAL_ERROR(XLAL_EDOM);
-  if (fabs(chi1) > 1 || fabs(chi2) > 1) XLAL_ERROR(XLAL_EDOM);
-  if (f_min <= 0) XLAL_ERROR(XLAL_EDOM);
-  if (f_max < 0) XLAL_ERROR(XLAL_EDOM);
-  if (distance <= 0) XLAL_ERROR(XLAL_EDOM);
+  if (deltaF <= 0) XLAL_ERROR(XLAL_EDOM, "deltaF must be positive\n");
+  if (m1 <= 0) XLAL_ERROR(XLAL_EDOM, "m1 must be positive\n");
+  if (m2 <= 0) XLAL_ERROR(XLAL_EDOM, "m2 must be positive\n");
+  if (f_min <= 0) XLAL_ERROR(XLAL_EDOM, "f_min must be positive\n");
+  if (f_max < 0) XLAL_ERROR(XLAL_EDOM, "f_max must be greater than 0\n");
+  if (distance <= 0) XLAL_ERROR(XLAL_EDOM, "distance must be positive\n");
 
-  if (chi1 > 0.99 || chi1 < -1.0 || chi2 > 0.99 || chi2 < -1.0)
-    XLAL_ERROR(XLAL_EDOM, "Spins outside the range [-1,0.99] are not supported\n");
+  const REAL8 q = (m1 > m2) ? (m1 / m2) : (m2 / m1);
+
+  if (chi1 > 1.0 || chi1 < -1.0 || chi2 > 1.0 || chi2 < -1.0)
+    XLAL_ERROR(XLAL_EDOM, "Spins outside the range [-1,1] are not supported\n");
 
   if (q > 18.0)
     XLAL_PRINT_WARNING("Warning: The model is calibrated up to m1/m2 <= 18.\n");
 
-  const REAL8 M_sec = (m1+m2) * LAL_MTSUN_SI;
-  const REAL8 fCut = 0.3/M_sec;
-  if (fCut <= f_min)
-    XLAL_ERROR(XLAL_EDOM, "(fCut = %gM) <= f_min = %g\n", fCut, f_min);
+  // if no reference frequency given, set it to the starting GW frequency
+  REAL8 fRef = (fRef_in == 0.0) ? f_min : fRef_in;
 
-  /* default f_max to params->fCut */
+  const REAL8 M_sec = (m1+m2) * LAL_MTSUN_SI; // Conversion factor Hz -> dimensionless frequency
+  const REAL8 fCut = f_CUT/M_sec; // convert Mf -> Hz
+  // Somewhat arbitrary end point for the waveform.
+  // Chosen so that the end of the waveform the well after the ringdown.
+  if (fCut <= f_min)
+    XLAL_ERROR(XLAL_EDOM, "(fCut = %g Hz) <= f_min = %g\n", fCut, f_min);
+
+    /* default f_max to Cut */
   REAL8 f_max_prime = f_max;
   f_max_prime = f_max ? f_max : fCut;
   f_max_prime = (f_max_prime > fCut) ? fCut : f_max_prime;
   if (f_max_prime <= f_min)
     XLAL_ERROR(XLAL_EDOM, "f_max <= f_min\n");
 
-  REAL8 status = IMRPhenomDGenerateFD(htilde, phi0, deltaF,
-                                      m1, m2, chi1, chi2,
-                                      f_min, f_max_prime, distance);
+  REAL8 status = IMRPhenomDGenerateFD(htilde, phi0, fRef, deltaF,
+                                       m1, m2, chi1, chi2,
+                                       f_min, f_max_prime, distance);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
 
   if (f_max_prime < f_max) {
-    // The user has requested a higher f_max than Mf=params->fCut.
-    // Resize the frequency series to fill with zeros to fill with zeros beyond the cutoff frequency.
+    // The user has requested a higher f_max than Mf=fCut.
+    // Resize the frequency series to fill with zeros beyond the cutoff frequency.
     size_t n_full = NextPow2(f_max / deltaF) + 1; // we actually want to have the length be a power of 2 + 1
     *htilde = XLALResizeCOMPLEX16FrequencySeries(*htilde, 0, n_full);
   }
 
-  return status;
+  return XLAL_SUCCESS;
 }
 
 /** @} */
@@ -162,10 +173,11 @@ int XLALSimIMRPhenomDGenerateFD(
 
 static int IMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-    const REAL8 phi0,                  /**< phase at peak */
+    const REAL8 phi0,                  /**< phase at fRef */
+    const REAL8 fRef,                  /**< reference frequency [Hz] */
     const REAL8 deltaF,                /**< frequency resolution */
-    const REAL8 m1,                    /**< mass of companion 1 [solar masses] */
-    const REAL8 m2,                    /**< mass of companion 2 [solar masses] */
+    const REAL8 m1_in,                 /**< mass of companion 1 [solar masses] */
+    const REAL8 m2_in,                 /**< mass of companion 2 [solar masses] */
     const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
     const REAL8 chi2_in,               /**< aligned-spin of companion 2 */
     const REAL8 f_min,                 /**< start frequency */
@@ -174,18 +186,26 @@ static int IMRPhenomDGenerateFD(
 ) {
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
 
+  REAL8 chi1, chi2, m1, m2;
+  if (m1_in>m2_in) {
+     chi1 = chi1_in;
+     chi2 = chi2_in;
+     m1   = m1_in;
+     m2   = m2_in;
+  } else { // swap spins and masses
+     chi1 = chi2_in;
+     chi2 = chi1_in;
+     m1   = m2_in;
+     m2   = m1_in;
+   }
+
   const REAL8 M = m1 + m2;
   REAL8 eta = m1 * m2 / (M * M);
-  const REAL8 M_sec = M * LAL_MTSUN_SI;
 
-  REAL8 chi1, chi2;
-  if (m1>m2) { // swap spins
-    chi1 = chi1_in;
-    chi2 = chi2_in;
-  } else {
-    chi1 = chi2_in;
-    chi2 = chi1_in;
-  }
+  if (eta > 0.25 || eta < 0.0)
+    XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
+
+  const REAL8 M_sec = M * LAL_MTSUN_SI;
 
   /* Compute the amplitude pre-factor */
   REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
@@ -204,15 +224,36 @@ static int IMRPhenomDGenerateFD(
   size_t ind_max = (size_t) (f_max / deltaF);
 
   // Calculate phenomenological parameters
-  REAL8 finspin = FinalSpin0815(eta, chi1, chi2);
+  REAL8 finspin = FinalSpin0815(eta, chi1, chi2); //FinalSpin0815 - 0815 is like a version number
   IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2, finspin);
+  if (!pAmp) XLAL_ERROR(XLAL_EFUNC);
   IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin);
+  if (!pPhi) XLAL_ERROR(XLAL_EFUNC);
   PNPhasingSeries *pn = NULL;
-  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_in, chi2_in, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
-  if (!pAmp || !pPhi || !pn) XLAL_ERROR(XLAL_EFUNC);
+  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
+  if (!pn) XLAL_ERROR(XLAL_EFUNC);
 
-  // Compute coefficients to make phase C^1
+  // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
+  // (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
+  // was not available as PhenomD was tuned.
+  REAL8 chi1L = chi1_in;
+  REAL8 chi2L = chi2_in;
+  REAL8 chi1sq = chi1L * chi1L;
+  REAL8 chi2sq = chi2L * chi2L;
+  REAL8 m1M = m1 / M;
+  REAL8 m2M = m2 / M;
+  REAL8 pn_ss3 =  (326.75L/1.12L + 557.5L/1.8L*eta)*eta*chi1L*chi2L;
+  pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m1M-120.L*m1M*m1M) + (-4108.25L/6.72L-108.5L/1.2L*m1M+125.5L/3.6L*m1M*m1M)) *m1M*m1M * chi1sq;
+  pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m2M-120.L*m2M*m2M) + (-4108.25L/6.72L-108.5L/1.2L*m2M+125.5L/3.6L*m2M*m2M)) *m2M*m2M * chi2sq;
+
+  pn->v[6] -= (pn_ss3 * pn->v[0]);
+
+  // Compute coefficients to make phase C^1 continuous (phase and first derivative)
   ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
+
+  //time shift so that peak amplitude is approximately at t=0
+  //For details see https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/timedomain
+  REAL8 t0 = DPhiMRD(0.8*(pPhi->fRD), pPhi);
 
   /* Now generate the waveform */
   #pragma omp parallel for
@@ -223,7 +264,10 @@ static int IMRPhenomDGenerateFD(
     REAL8 amp = IMRPhenDAmplitude(Mf, pAmp);
     REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn);
 
-    phi -= 2.*phi0; // factor of 2 b/c phi0 is orbital phase
+    // incorporating fRef
+    REAL8 MfRef = M_sec * fRef;
+    REAL8 phifRef = IMRPhenDPhase(MfRef, pPhi, pn);
+    phi -= 2.*phi0 + t0*(Mf-MfRef) + phifRef; // factor of 2 b/c phi0 is orbital phase
 
     ((*htilde)->data->data)[i] = amp0 * amp * cexp(-I * phi);
   }

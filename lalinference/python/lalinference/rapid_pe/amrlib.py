@@ -242,8 +242,15 @@ def grid_to_indices(pts, region, grid_spacing):
     Convert points in a grid to their 1-D indices according to the grid extent in region, and grid spacing.
     """
     region = region.copy() # avoid referencing
-    region[:,0] = region[:,0] - grid_spacing
-    region[:,1] = region[:,1] + grid_spacing
+    #region[:,0] = region[:,0] - grid_spacing
+    #region[:,1] = region[:,1] + grid_spacing
+    # FIXME: This is not really exact. Because the information about how much
+    # the initial region is expanded by the refinement is lost, we'll assume
+    # our region extends in 3x in all directions.
+    # This shouldn't affect anything since the absolute index relative to the
+    # original region doesn't matter so much as the relative position
+    region[:,0] -= numpy.diff(region).flatten()
+    region[:,1] += numpy.diff(region).flatten()
     extent = numpy.diff(region)[:,0]
     pt_stride = numpy.round(extent / grid_spacing).astype(int)
     # Necessary for additional point on the right edge

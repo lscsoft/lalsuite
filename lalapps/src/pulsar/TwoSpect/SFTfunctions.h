@@ -52,6 +52,7 @@ INT4 tfRngMeans(REAL4VectorAligned *output, const REAL4VectorAligned *tfdata, co
 INT4 tfMeanSubtract(REAL4VectorAligned *tfdata, const REAL4VectorAligned *rngMeans, const REAL4VectorAligned *backgroundScaling, const UINT4 numffts, const UINT4 numfbins);
 INT4 tfWeight(REAL4VectorAligned *output, const REAL4VectorAligned *tfdata, REAL4VectorAligned *rngMeans, REAL4VectorAligned *antPatternWeights, const REAL4VectorAligned *backgroundScaling, const INT4Vector *indexValuesOfExistingSFTs, const UserInput_t *params);
 INT4 replaceTFdataWithSubsequentTFdata(REAL4VectorAlignedArray *tfdataarray, const UINT4 numffts);
+INT4 checkBackgroundScaling(const REAL4VectorAligned *backgroundScaling, const INT4Vector *SFTexistVector);
 
 REAL8 determineSumOfWeights(const REAL4VectorAligned *antweightssq, const REAL4VectorAligned *rngMeanssq);
 

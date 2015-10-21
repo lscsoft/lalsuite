@@ -307,7 +307,7 @@ static void output_jd( int gps_sec )
   struct tm utc;
   double jd;
   utc = *XLALGPSToUTC( &utc, gps_sec );
-  jd = XLALJulianDayUTC( &utc );
+  jd = XLALConvertCivilTimeToJD( &utc );
   if ( verbose )
     printf( "Julian Day (UTC)  = " );
   printf( "%.6f\n", jd );
@@ -317,11 +317,9 @@ static void output_jd( int gps_sec )
 static void output_mjd( int gps_sec )
 {
   struct tm utc;
-  double jd;
   double mjd;
   utc = *XLALGPSToUTC( &utc, gps_sec );
-  jd = XLALJulianDayUTC( &utc );
-  mjd = jd - XLAL_MJD_REF;
+  mjd = XLALConvertCivilTimeToMJD( &utc );
   if ( verbose )
     printf( "Modified Julian Day (UTC) = " );
   printf( "%.6f\n", mjd );

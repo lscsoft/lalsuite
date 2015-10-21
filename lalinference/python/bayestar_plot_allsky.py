@@ -138,9 +138,8 @@ if opts.geo:
 # Add markers (e.g., for injections or external triggers).
 for ra, dec in np.deg2rad(opts.radec):
     # Convert the right ascension to either a reference angle from -pi to pi
-    # or a wrapped angle from 0 to 2 pi, depending on the version of Matplotlib.
-    # FIXME: Remove this after all Matplotlib monkeypatches are obsolete.
-    if opts.geo or plot.mpl_version < '1.2.0':
+    # or a wrapped angle from 0 to 2 pi.
+    if opts.geo:
         ra = plot.reference_angle(ra + dlon)
     else:
         ra = plot.wrapped_angle(ra + dlon)

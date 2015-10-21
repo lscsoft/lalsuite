@@ -11,4 +11,5 @@ SUBDIRS = \
 	SFTReferenceLibrary \
 	SidebandSearch \
 	CreateEphemeris \
-	Tools
+	Tools \
+	Xray

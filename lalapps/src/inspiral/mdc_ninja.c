@@ -904,7 +904,7 @@ static void output_frame(CHAR *ifo,
 {
   CHAR fname[FILENAME_MAX];
   INT4 duration;
-  INT4 detectorFlags;
+  INT8 detectorFlags;
   LALFrameH *frame;
   CHAR creator[HISTORY_COMMENT];
   CHAR channel[LALNameLength];
@@ -979,7 +979,7 @@ static void output_frame_real8(CHAR *ifo,
 {
   CHAR fname[FILENAME_MAX];
   INT4 duration;
-  INT4 detectorFlags;
+  INT8 detectorFlags;
   LALFrameH *frame;
   CHAR creator[HISTORY_COMMENT];
   CHAR channel[LALNameLength];
@@ -1053,7 +1053,7 @@ static void output_multi_channel_frame(INT4 num_ifos,
 {
   CHAR fname[FILENAME_MAX];
   INT4 duration;
-  INT4 detectorFlags;
+  INT8 detectorFlags;
   LALFrameH *frame;
   INT4 i;
   CHAR creator[HISTORY_COMMENT];
@@ -1117,7 +1117,7 @@ static void output_multi_channel_frame_real8(INT4 num_ifos,
 {
   CHAR fname[FILENAME_MAX];
   INT4 duration;
-  INT4 detectorFlags;
+  INT8 detectorFlags;
   LALFrameH *frame;
   INT4 i;
   CHAR creator[HISTORY_COMMENT];

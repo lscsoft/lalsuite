@@ -65,7 +65,7 @@ void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile);
 void acknowledgePhase(LALInferenceRunState *runState);
 void LALInferenceAdaptation(LALInferenceThreadState *thread);
 void LALInferenceAdaptationRestart(LALInferenceThreadState *thread);
-REAL8 LALInferenceAdaptationEnvelope(INT4 step, INT4 tau, INT4 fix_adapt_len);
+REAL8 LALInferenceAdaptationEnvelope(INT4 step, INT4 tau, INT4 length, INT4 fix_adapt_len);
 void LALInferenceShutdownLadder(void);
 void LALInferenceFlushPTswap(void);
 void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag, INT4 cycle);
@@ -73,9 +73,11 @@ void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFl
 /* Data IO routines */
 void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE ***threadoutputs, FILE ***resumeoutputs);
 void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInferenceThreadState *thread, FILE *threadoutput);
+void LALInferencePrintAdaptationHeader(FILE *outfile, LALInferenceThreadState *thread);
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState);
 void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model);
 void LALInferenceSaveSample(LALInferenceThreadState *thread, FILE *output);
+void LALInferencePrintAdaptationSettings(FILE *outfile, LALInferenceThreadState *thread);
 void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIFOData *data, INT4 iteration, REAL8 timestamp, FILE *threadoutput);
 
 /** Reads final parameter values from the given output file, and
