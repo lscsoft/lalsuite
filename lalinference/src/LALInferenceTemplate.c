@@ -769,10 +769,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     if( (rem=(model->freqhCross->data->length - size)) > 0)
         memset(&(model->freqhCross->data->data[size]),0, rem*sizeof(hctilde->data->data[0]) );
     
-    
-    /* Destroy the nonGr params */
-    XLALSimInspiralDestroyTestGRParam(nonGRparams);
-    
     REAL8 instant = model->freqhPlus->epoch.gpsSeconds + 1e-9*model->freqhPlus->epoch.gpsNanoSeconds;
     LALInferenceSetVariable(model->params, "time", &instant);
     
