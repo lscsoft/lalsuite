@@ -31,6 +31,14 @@
  */
 #define PHI_fJoin_INS 0.018
 
+/**
+ * Minimal final spin value below which the waveform might behave pathological
+ * because the ISCO frequency is too low. For more details, see the review wiki
+ * page https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/PhenD_LargeNegativeSpins
+ */
+#define MIN_FINAL_SPIN -0.717
+
+
 /* QNM data */
 
 static const int QNMData_length = 1003;
