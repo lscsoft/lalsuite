@@ -23,23 +23,8 @@
  *
  * \file
  *
- * \brief C code for IMRPhenomD phenomenological waveform model.
- * See Husa et al, arXiv:1508.07250 and Khan et al, arXiv:1508.07253 for details.
- *
- * This is an aligned-spin frequency domain model.
- *
- * @note The model was calibrated to mass-ratios [1:1,1:4,1:8,1:18].
- * * Along the mass-ratio 1:1 line it was calibrated to spins  [-0.95, +0.98].
- * * Along the mass-ratio 1:4 line it was calibrated to spins  [-0.75, +0.75].
- * * Along the mass-ratio 1:8 line it was calibrated to spins  [-0.85, +0.85].
- * * Along the mass-ratio 1:18 line it was calibrated to spins [-0.8, +0.4].
- * The calibration points will be given in forthcoming papers.
- *
- * @note The model is usable outside this parameter range,
- * and in tests to date gives sensible physical results,
- * but conclusive statements on the physical fidelity of
- * the model for these parameters await comparisons against further
- * numerical-relativity simulations.
+ * \brief Internal function for IMRPhenomD phenomenological waveform model.
+ * See \ref LALSimIMRPhenom_c for more details.
  *
  */
 
@@ -120,6 +105,9 @@ of this waveform.
 // NOTE: At the moment we have separate functions for each Phenom coefficient;
 // these could be collected together
 
+/**
+ * Structure holding all coefficients for the amplitude
+ */
 typedef struct tagIMRPhenomDAmplitudeCoefficients {
   double eta;         // symmetric mass-ratio
   double chi1, chi2;  // dimensionless aligned spins, convention m1 >= m2.
@@ -159,6 +147,9 @@ typedef struct tagIMRPhenomDAmplitudeCoefficients {
 }
 IMRPhenomDAmplitudeCoefficients;
 
+/**
+ * Structure holding all coefficients for the phase
+ */
 typedef struct tagIMRPhenomDPhaseCoefficients {
   double eta;         // symmetric mass-ratio
   double chi1, chi2;  // dimensionless aligned spins, convention m1 >= m2.
@@ -198,6 +189,10 @@ typedef struct tagIMRPhenomDPhaseCoefficients {
 }
 IMRPhenomDPhaseCoefficients;
 
+
+/**
+ * Structure holding all additional coefficients needed for the delta amplitude functions.
+ */
 typedef struct tagdeltaUtility {
   double f12;
   double f13;
@@ -382,8 +377,8 @@ static double FinalSpin0815(double eta, double chi1, double chi2) {
 }
 
 /**
- * Formula to predict the total radiated energy. Equation 3.7 and 3.8 arXiv:1508.07250
- * s defined around Equation 3.7 and 3.8.
+ * Formula to predict the total radiated energy. Equation 3.7 and 3.8 arXiv:1508.07250.
+ * Input parameter s defined around Equation 3.7 and 3.8.
  */
 static double EradRational0815_s(double eta, double s) {
   double eta2 = eta*eta;
@@ -447,7 +442,7 @@ static double fdamp(double eta, double chi1, double chi2, double finspin) {
 /******************************* Amplitude functions *******************************/
 
 /**
- * amplitude scaling factor defined by eq. 17 in 1508.07253
+ * amplitude scaling factor defined by Eq.17 in 1508.07253.
  */
 static double amp0Func(double eta) {
   return (sqrt(2.0/3.0)*sqrt(eta))/pow(LAL_PI,1.0/6.0);
@@ -1147,7 +1142,7 @@ static double PhiIntAnsatz(double Mf, IMRPhenomDPhaseCoefficients *p) {
 
 /**
  * First frequency derivative of PhiIntAnsatz
- * (this time with 1./eta explicitly factored in)
+ * (this time with 1/eta explicitly factored in)
  */
 static double DPhiIntAnsatz(double Mf, IMRPhenomDPhaseCoefficients *p) {
   return (p->beta1 + p->beta3/pow(Mf,4) + p->beta2/Mf) / p->eta;
