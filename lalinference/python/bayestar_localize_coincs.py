@@ -151,7 +151,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
             log.info("%s:method '%s':saving sky map", coinc.coinc_event_id, method)
             fits.write_sky_map('%s.%s.fits.gz' % (int(coinc.coinc_event_id), method),
                 sky_map, objid=str(coinc.coinc_event_id), gps_time=float(epoch),
-                creator=parser.get_prog_name(), runtime=elapsed_time,
+                creator=parser.prog, runtime=elapsed_time,
                 instruments=instruments, nest=True)
 
 
