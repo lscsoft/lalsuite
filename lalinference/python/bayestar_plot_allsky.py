@@ -55,7 +55,6 @@ parser.add_argument(
     'input', metavar='INPUT.fits[.gz]', type=argparse.FileType('rb'),
     default='-', nargs='?', help='Input FITS file [default: stdin]')
 opts = parser.parse_args()
-infilename = opts.input.name
 
 # Late imports
 
@@ -73,7 +72,7 @@ fig = plt.figure(frameon=False)
 ax = plt.axes(projection='mollweide' if opts.geo else 'astro mollweide')
 ax.grid()
 
-skymap, metadata = fits.read_sky_map(infilename, nest=None)
+skymap, metadata = fits.read_sky_map(opts.input.name, nest=None)
 nside = hp.npix2nside(len(skymap))
 
 if opts.geo:
