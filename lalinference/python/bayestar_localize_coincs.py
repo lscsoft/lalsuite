@@ -96,7 +96,7 @@ import numpy as np
 
 # Read coinc file.
 log.info('%s:reading input XML file', opts.input.name)
-xmldoc = ligolw_utils.load_fileobj(
+xmldoc, _ = ligolw_utils.load_fileobj(
     opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 reference_psd_filenames_by_process_id = ligolw_bayestar.psd_filenames_by_process_id_for_xmldoc(xmldoc)
