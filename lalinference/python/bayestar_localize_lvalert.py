@@ -143,7 +143,7 @@ try:
     try:
         fitspath = os.path.join(fitsdir, opts.output)
         fits.write_sky_map(fitspath, sky_map, gps_time=float(epoch),
-            creator=parser.get_prog_name(), objid=str(graceid),
+            creator=parser.prog, objid=str(graceid),
             url='https://gracedb.ligo.org/events/{0}'.format(graceid),
             runtime=elapsed_time, instruments=instruments,
             origin='LIGO/Virgo', nest=True)
