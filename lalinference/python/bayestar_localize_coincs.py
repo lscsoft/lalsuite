@@ -113,7 +113,6 @@ def reference_psds_for_filename(filename):
 def reference_psd_for_ifo_and_filename(ifo, filename):
     return reference_psds_for_filename(filename)[ifo]
 
-f_low = opts.f_low
 approximant, amplitude_order, phase_order = timing.get_approximant_and_orders_from_string(opts.waveform)
 
 count_sky_maps_failed = 0
@@ -139,7 +138,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
             chain_dump = None
         try:
             sky_map, epoch, elapsed_time = ligolw_sky_map.ligolw_sky_map(
-                sngl_inspirals, approximant, amplitude_order, phase_order, f_low,
+                sngl_inspirals, approximant, amplitude_order, phase_order, opts.f_low,
                 opts.min_distance, opts.max_distance, opts.prior_distance_power,
                 psds=psds, method=method, nside=opts.nside, chain_dump=chain_dump)
         except (ArithmeticError, ValueError):
