@@ -350,7 +350,7 @@ LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwX
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
 LALSUITE_CHECK_OPT_LIB([LALSimulation],[1.4.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_OPT_LIB([LALBurst],[1.4.0],[XLALEPSearch],[lal/EPSearch.h])
-LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.7.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.7.3],[LALInspiralParameterCalc],[lal/LALInspiral.h])
 LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.12.0],[XLALComputeFstat],[lal/ComputeFstat.h])
 LALSUITE_CHECK_OPT_LIB([LALInference],[1.5.0],[LALInferenceAddVariable],[lal/LALInference.h])
 LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.4],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
