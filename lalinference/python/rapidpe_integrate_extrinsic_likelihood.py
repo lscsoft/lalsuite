@@ -142,7 +142,7 @@ lambda1, lambda2 = 0, 0
 if opts.eff_lambda is not None:
     lambda1, lambda2 = lalsimutils.tidal_lambda_from_tilde(opts.mass1, opts.mass2, opts.eff_lambda, opts.deff_lambda or 0)
 
-print "Performing integration for intrinsic parameters mass 1: %f, mass 2 %f, lambda1: %f, lambda2: %f" % (m1, m2, lambda1, lambda2)
+print "Performing integration for intrinsic parameters mass 1: %f, mass 2 %f, lambda1: %f, lambda2: %f, spin1z: %1.3f, spin2z: %1.3f" % (m1, m2, lambda1, lambda2, opts.spin1z or 0, opts.spin2z or 0)
 
 #
 # Template descriptors
@@ -179,6 +179,8 @@ if opts.spin1z is not None or opts.spin2z is not None:
             setattr(P, a, getattr(opts, a))
         else:
             setattr(P, a, 0.0)
+# FIXME: We need to somehow be consistent here. Either use SpinTaylorT4, or set spins explicitly to zero.
+"""
 elif opts.coinc_xml is not None:
     xmldoc = utils.load_filename(opts.coinc_xml, contenthandler=ligolw.LIGOLWContentHandler)
     sngl_inspiral_table = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
@@ -187,6 +189,7 @@ elif opts.coinc_xml is not None:
             setattr(P, a, getattr(sngl_inspiral_table[0], a))
         else:
             setattr(P, a, 0.0)
+"""
 
 # User requested bounds for data segment
 if opts.data_start_time is not None and opts.data_end_time is not None:
@@ -228,9 +231,9 @@ for inst, psdf in map(lambda c: c.split("="), opts.psd_file):
     # Highest freq. at which PSD is defined
     if isinstance(psd_dict[inst],
             pylal.xlal.datatypes.real8frequencyseries.REAL8FrequencySeries):
-        fmax = psd_dict[inst].f0 + deltaF * (len(psd_dict[inst].data) - 1)
+        fmax = psd_dict[inst].f0 + psd_dict[inst].deltaF * (len(psd_dict[inst].data) - 1)
     elif isinstance(psd_dict[inst], lal.REAL8FrequencySeries):
-        fmax = psd_dict[inst].f0 + deltaF * (psd_dict[inst].data.length - 1)
+        fmax = psd_dict[inst].f0 + psd_dict[inst].deltaF * (psd_dict[inst].data.length - 1)
 
     # Assert upper limit of IP integral does not go past where PSD defined
     assert opts.fmax is None or opts.fmax<= fmax
