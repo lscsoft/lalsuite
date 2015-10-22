@@ -1258,6 +1258,7 @@ static double PhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhasi
   phasing += pn->v[4] * v4;
   phasing += pn->v[3] * v3;
   phasing += pn->v[2] * v2;
+  phasing += pn->v[1] * v;
   phasing += pn->v[0]; // * v^0
   phasing /= v5;
   phasing -= LAL_PI_4;
@@ -1303,6 +1304,7 @@ static double DPhiInsAnsatzInt(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhas
   Dphasing += -1.0 * pn->v[4] * v4;
   Dphasing += -2.0 * pn->v[3] * v3;
   Dphasing += -3.0 * pn->v[2] * v2;
+  Dphasing += -4.0 * pn->v[1] * v;
   Dphasing += -5.0 * pn->v[0];
   Dphasing /= v8 * 3.0/Pi;
 
