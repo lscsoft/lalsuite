@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2014  Leo Singer
+# Copyright (C) 2014-2015  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -19,14 +19,15 @@
 detectors by evaluating a model power noise sensitivity curve."""
 
 import glue.ligolw.utils
-import glue.text_progress_bar
 import lal
 import lal.series
 import lalsimulation
 import inspect
 import optparse
 import os.path
+import numpy as np
 from lalinference.bayestar import command
+from lalinference.bayestar.timing import vectorize_swig_psd_func
 
 # Get names of PSD functions.
 psd_name_prefix = 'SimNoisePSD'
@@ -78,27 +79,18 @@ if args:
 
 psds = {}
 
-unit = lal.Unit()
-unit = lal.UnitInvert(unit, lal.HertzUnit)
 n = int(opts.f_max // opts.df)
-epoch = lal.LIGOTimeGPS()
-
-progress = glue.text_progress_bar.ProgressBar()
+f = np.arange(n) * opts.df
 
 for detector in detectors:
     psd_name = getattr(opts, detector)
     if psd_name is None:
         continue
     psd_func = getattr(lalsimulation, psd_name_prefix + psd_name)
-    series = lal.CreateREAL8FrequencySeries(None, epoch, 0, opts.df, unit, n)
-    fmt = '%s (%%d / %d)' % (detector, n)
-    for i in progress.iterate(range(1, n), format=fmt):
-        f = i * opts.df
-        series.data.data[i] = psd_func(f)
-    series.data.data[0] = series.data.data[1]
+    series = lal.CreateREAL8FrequencySeries(None, 0, 0, opts.df, lal.SecondUnit, n)
+    series.data.data = vectorize_swig_psd_func(psd_func)(f)
     psds[detector] = series
 
-progress.update(-1, 'writing ' + opts.output)
 glue.ligolw.utils.write_filename(
     lal.series.make_psd_xmldoc(psds), opts.output,
     gz=(os.path.splitext(opts.output)[-1]==".gz"))

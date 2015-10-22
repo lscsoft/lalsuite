@@ -43,16 +43,26 @@ def get_f_lso(mass1, mass2):
 _noise_psd_funcs = {}
 
 
-class _vectorize_swig_psd_func(object):
+class vectorize_swig_psd_func(object):
     """Create a vectorized Numpy function from a SWIG-wrapped PSD function.
     SWIG does not provide enough information for Numpy to determine the number
     of input arguments, so we can't just use np.vectorize."""
 
     def __init__(self, func):
-        self._npyfunc = np.frompyfunc(func, 1, 1)
+        self.__func = func
+        self.__npyfunc = np.frompyfunc(func, 1, 1)
 
     def __call__(self, f):
-        ret = self._npyfunc(f)
+        fa = np.asarray(f)
+        df = np.diff(fa)
+        if fa.ndim == 1 and df.size > 1 and np.all(df[0] == df[1:]):
+            fa = np.concatenate((fa, [fa[-1] + df[0]]))
+            ret = lal.CreateREAL8FrequencySeries(
+                None, 0, fa[0], df[0], lal.DimensionlessUnit, fa.size)
+            lalsimulation.SimNoisePSD(ret, 0, self.__func)
+            ret = ret.data.data[:-1]
+        else:
+            ret = self.__npyfunc(f)
         if not np.isscalar(ret):
             ret = ret.astype(float)
         return ret
@@ -63,7 +73,7 @@ for _ifos, _func in (
     (("V1",), lalsimulation.SimNoisePSDAdvVirgo),
     (("K1"), lalsimulation.SimNoisePSDKAGRA)
 ):
-    _func = _vectorize_swig_psd_func(_func)
+    _func = vectorize_swig_psd_func(_func)
     for _ifo in _ifos:
         _noise_psd_funcs[_ifo] = _func
 
