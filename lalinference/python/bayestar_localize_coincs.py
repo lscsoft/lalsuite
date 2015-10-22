@@ -95,7 +95,7 @@ import healpy as hp
 import numpy as np
 
 # Read coinc file.
-log.info('%s:reading input XML file', infilename)
+log.info('%s:reading input XML file', opts.input.name)
 xmldoc = ligolw_utils.load_fileobj(
     opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
