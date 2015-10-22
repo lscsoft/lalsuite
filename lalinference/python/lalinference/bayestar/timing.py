@@ -97,11 +97,6 @@ class InterpolatedPSD(interpolate.interp1d):
         return np.exp(super(InterpolatedPSD, self).__call__(np.log(f)))
 
 
-def sign(x):
-    """Works like np.sign, except that 0 is considered to be positive."""
-    return np.where(np.asarray(x) >= 0, 1, -1)
-
-
 def get_approximant_and_orders_from_string(s):
     """Determine the approximant, amplitude order, and phase order for a string
     of the form "TaylorT4threePointFivePN". In this example, the waveform is
