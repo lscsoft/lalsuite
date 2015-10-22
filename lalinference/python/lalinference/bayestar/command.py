@@ -75,9 +75,9 @@ group = waveform_parser.add_argument_group(
     'waveform options', 'Options that affect template waveform generation')
 group.add_argument('--f-low', type=float, metavar='Hz', default=10,
     help='Low frequency cutoff [default: %(default)s]')
-group.add_argument('--waveform', default='o1-uberbank',
+group.add_argument('--waveform', default='TaylorF2threePointFivePN',
     help='Template waveform approximant (e.g., TaylorF2threePointFivePN) '
-    '[default: O1 uberbank mass-dependent waveform]')
+    '[default: %(default)s]')
 del group
 
 
