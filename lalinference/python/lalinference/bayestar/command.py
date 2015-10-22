@@ -28,6 +28,9 @@ import inspect
 import itertools
 import os
 import sys
+from matplotlib import cm
+from .. import cmap
+
 
 
 class NewlinePreservingHelpFormatter(IndentedHelpFormatter):
@@ -90,6 +93,85 @@ group.add_argument('--max-distance', type=float, metavar='Mpc',
 group.add_argument('--prior-distance-power', type=int, metavar='-1|2',
     default=2, help='Distance prior '
     '[-1 for uniform in log, 2 for uniform in volume, default: %(default)s]')
+del group
+
+
+class MatplotlibFigureType(argparse.FileType):
+    def __init__(self):
+        super(MatplotlibFigureType, self).__init__('wb')
+
+    @staticmethod
+    def __show():
+        from matplotlib import pyplot as plt
+        return plt.show()
+
+    def __save(self):
+        from matplotlib import pyplot as plt
+        return plt.savefig(self.string)
+
+    def __call__(self, string):
+        if string == '-':
+            return self.__show
+        else:
+            with super(MatplotlibFigureType, self).__call__(string):
+                pass
+            import matplotlib
+            matplotlib.use('agg')
+            self.string = string
+            return self.__save
+
+def type_with_sideeffect(type):
+    def decorator(sideeffect):
+        def func(value):
+            ret = type(value)
+            sideeffect(ret)
+            return ret
+        return func
+    return decorator
+
+@type_with_sideeffect(str)
+def colormap(value):
+    from matplotlib import rcParams
+    rcParams['image.cmap'] = value
+
+@type_with_sideeffect(float)
+def figwith(value):
+    from matplotlib import rcParams
+    rcParams['figure.figsize'][0] = value
+
+@type_with_sideeffect(float)
+def figheight(value):
+    from matplotlib import rcParams
+    rcParams['figure.figsize'][1] = value
+
+@type_with_sideeffect(int)
+def dpi(value):
+    from matplotlib import rcParams
+    rcParams['figure.dpi'] = rcParams['savefig.dpi'] = value
+
+figure_parser = argparse.ArgumentParser(add_help=False)
+colormap_choices = sorted(cm.cmap_d.keys())
+group = figure_parser.add_argument_group(
+    'figure options', 'Options that affect figure output format')
+group.add_argument(
+    '-o', '--output', metavar='FILE.{pdf,png}',
+    default='-', type=MatplotlibFigureType(),
+    help='name of output file [default: plot to screen]')
+group.add_argument(
+    '--colormap', default='cylon', choices=colormap_choices, type=colormap,
+    metavar='|'.join(_ for _ in colormap_choices if not _.endswith('_r')),
+    help='name of matplotlib colormap; append "_r" to reverse'
+    ' [default: %(default)s]')
+group.add_argument(
+    '--figure-width', metavar='INCHES', type=figwith, default=8.,
+    help='width of figure in inches [default: %(default)s]')
+group.add_argument(
+    '--figure-height', metavar='INCHES', type=figheight, default=6.,
+    help='height of figure in inches [default: %(default)s]')
+group.add_argument(
+    '--dpi', metavar='PIXELS', type=dpi, default=300,
+    help='resolution of figure in dots per inch [default: %(default)s]')
+del colormap_choices
 del group
 
 

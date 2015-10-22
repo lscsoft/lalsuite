@@ -30,50 +30,34 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 # Command line interface
 
-from optparse import Option, OptionParser
+import argparse
 from lalinference.bayestar import command
-import lalinference.cmap
-from matplotlib import cm
-colormap_choices = sorted(cm.cmap_d.keys())
-parser = OptionParser(
-    description = __doc__,
-    usage = "%prog [options] [INPUT]",
-    option_list = [
-        Option("-o", "--output", metavar="FILE.{pdf,png}",
-            help="name of output file [default: plot to screen]"),
-        Option("--colormap", default="cylon", choices=colormap_choices,
-            metavar='|'.join(colormap_choices),
-            help="name of matplotlib colormap [default: %default]"),
-        Option("--figure-width", metavar="INCHES", type=float, default=8.,
-            help="width of figure in inches [default: %default]"),
-        Option("--figure-height", metavar="INCHES", type=float, default=6.,
-            help="height of figure in inches [default: %default]"),
-        Option("--dpi", metavar="PIXELS", type=int, default=300,
-            help="resolution of figure in dots per inch [default: %default]"),
-        Option("--contour", metavar="PERCENT", type=float, action="append",
-            default=[], help="plot contour enclosing this percentage of"
-            + " probability mass [may be specified multiple times, default: none]"),
-        Option("--colorbar", default=False, action="store_true",
-            help="Show colorbar [default: %default]"),
-        Option("--radec", nargs=2, metavar="RA Dec", type=float, action="append",
-            default=[], help="right ascension (deg) and declination (deg) to mark"
-            + " [may be specified multiple times, default: none]"),
-        Option("--geo", action="store_true", default=False,
-            help="Plot in geographic coordinates, (lat, lon) instead of (RA, Dec) [default: %default]"),
-        Option("--transparent", action="store_true", default=False,
-            help="Save image with transparent background [default: %default]")
-    ]
-)
-opts, args = parser.parse_args()
-infilename = command.get_input_filename(parser, args)
+parser = command.ArgumentParser(parents=[command.figure_parser])
+parser.add_argument(
+    '--contour', metavar='PERCENT', type=float, nargs='+',
+    help='plot contour enclosing this percentage of'
+    ' probability mass [may be specified multiple times, default: none]')
+parser.add_argument(
+    '--colorbar', default=False, action='store_true',
+    help='Show colorbar [default: %(default)s]')
+parser.add_argument(
+    '--radec', nargs=2, metavar='deg deg', type=float, action='append',
+    default=[], help='right ascension (deg) and declination (deg) to mark'
+    ' [may be specified multiple times, default: none]')
+parser.add_argument(
+    '--geo', action='store_true', default=False,
+    help='Plot in geographic coordinates, (lat, lon) instead of (RA, Dec)'
+    ' [default: %(default)s]')
+parser.add_argument(
+    '--transparent', action='store_true', default=False,
+    help='Save image with transparent background [default: %(default)s]')
+parser.add_argument(
+    'input', metavar='INPUT.fits[.gz]', type=argparse.FileType('rb'),
+    default='-', nargs='?', help='Input FITS file [default: stdin]')
+opts = parser.parse_args()
+infilename = opts.input.name
 
 # Late imports
-
-# Choose a matplotlib backend that is suitable for headless
-# rendering if output to file is requested
-import matplotlib
-if opts.output is not None:
-    matplotlib.use('agg')
 
 import os
 import json
@@ -85,10 +69,8 @@ import lal
 from lalinference import fits
 from lalinference import plot
 
-fig = plt.figure(figsize=(opts.figure_width, opts.figure_height), frameon=False)
-ax = plt.subplot(111,
-    projection='mollweide' if opts.geo else 'astro mollweide')
-ax.cla()
+fig = plt.figure(frameon=False)
+ax = plt.axes(projection='mollweide' if opts.geo else 'astro mollweide')
 ax.grid()
 
 skymap, metadata = fits.read_sky_map(infilename, nest=None)
@@ -105,14 +87,11 @@ probperdeg2 = skymap / hp.nside2pixarea(nside, degrees=True)
 # Plot sky map.
 vmax = probperdeg2.max()
 plot.healpix_heatmap(
-    probperdeg2, dlon=dlon, nest=metadata['nest'],
-    vmin=0., vmax=vmax, cmap=plt.get_cmap(opts.colormap))
+    probperdeg2, dlon=dlon, nest=metadata['nest'], vmin=0., vmax=vmax)
 
+# Add colorbar.
 if opts.colorbar:
-    # Plot colorbar.
     cb = plot.colorbar()
-
-    # Set colorbar label.
     cb.set_label(r'prob. per deg$^2$')
 
 # Add contours.
@@ -126,6 +105,7 @@ if opts.contour:
     fmt = r'%g\%%' if rcParams['text.usetex'] else '%g%%'
     plt.clabel(cs, fmt=fmt, fontsize=6, inline=True)
 
+# Add continents.
 if opts.geo:
     geojson_filename = os.path.join(os.path.dirname(plot.__file__),
         'ne_simplified_coastline.json')
@@ -149,12 +129,11 @@ for ra, dec in np.deg2rad(opts.radec):
 # add a white outline to all text to make it stand out from the background.
 plot.outline_text(ax)
 
+# Make transparent.
 if opts.transparent:
     fig.patch.set_alpha(0.)
     ax.patch.set_alpha(0.)
     ax.set_alpha(0.)
 
-if opts.output is None:
-    plt.show()
-else:
-    plt.savefig(opts.output, dpi=opts.dpi)
+# Show or save output.
+opts.output()
