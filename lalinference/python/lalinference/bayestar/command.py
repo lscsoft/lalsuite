@@ -175,6 +175,15 @@ del colormap_choices
 del group
 
 
+# Defer loading SWIG bindings until version string is needed.
+class VersionAction(argparse._VersionAction):
+    def __call__(self, parser, namespace, values, option_string=None):
+        from .. import InferenceVCSVersion
+        self.version = 'LALInference ' + InferenceVCSVersion
+        super(VersionAction, self).__call__(
+            parser, namespace, values, option_string)
+
+
 class ArgumentParser(argparse.ArgumentParser):
     def __init__(self,
                  prog=None,
@@ -205,6 +214,7 @@ class ArgumentParser(argparse.ArgumentParser):
                  argument_default=argument_default,
                  conflict_handler=conflict_handler,
                  add_help=add_help)
+        self.add_argument('--version', action=VersionAction)
 
 
 class SQLiteType(argparse.FileType):
