@@ -185,6 +185,20 @@ class VersionAction(argparse._VersionAction):
 
 
 class ArgumentParser(argparse.ArgumentParser):
+    """
+    An ArgumentParser subclass with some sensible defaults.
+
+    - Any ``.py`` suffix is stripped from the program name, because the
+      program is probably being invoked from the stub shell script.
+
+    - The description is taken from the docstring of the file in which the
+      ArgumentParser is created.
+
+    - If the description is taken from the docstring, then whitespace in
+      the description is preserved.
+
+    - A ``--version`` option is added that prints the version of LALInference.
+    """
     def __init__(self,
                  prog=None,
                  usage=None,
