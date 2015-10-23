@@ -252,7 +252,7 @@ static int IMRPhenomDGenerateFD(
 
   //time shift so that peak amplitude is approximately at t=0
   //For details see https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/timedomain
-  REAL8 t0 = DPhiMRD(0.8*(pPhi->fRD), pPhi);
+  REAL8 t0 = DPhiMRD(pAmp->fmaxCalc, pPhi);
 
   /* Now generate the waveform */
   #pragma omp parallel for
