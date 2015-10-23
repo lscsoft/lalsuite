@@ -191,7 +191,7 @@ class ArgumentParser(argparse.ArgumentParser):
                  description=None,
                  epilog=None,
                  parents=[],
-                 formatter_class=argparse.RawDescriptionHelpFormatter,
+                 formatter_class=None,
                  prefix_chars='-',
                  fromfile_prefix_chars=None,
                  argument_default=None,
@@ -202,6 +202,10 @@ class ArgumentParser(argparse.ArgumentParser):
         if description is None:
             parent_frame = inspect.currentframe().f_back
             description = parent_frame.f_locals.get('__doc__', None)
+            if formatter_class is None:
+                formatter_class = argparse.RawDescriptionHelpFormatter
+        if formatter_class is None:
+            formatter_class = HelpFormatter
         super(ArgumentParser, self).__init__(
                  prog=prog,
                  usage=usage,
