@@ -290,7 +290,7 @@ extern "C" {
 " --scale-snr         give a (multi-detector) SNR value to which you want to\n\
                      scale the injection. This is 1 by default\n"\
 "\n"\
-" Flags for using a Nested sampling file as a prior:\n"\
+" Flags for using a Nested sampling file as a prior (DO NOT USE!):\n"\
 " --sample-files     a list of (comma separated) file containing the nested\n\
                     samples from a previous run of the code (these should\n\
                     contain samples in ascending likelihood order and be\n\

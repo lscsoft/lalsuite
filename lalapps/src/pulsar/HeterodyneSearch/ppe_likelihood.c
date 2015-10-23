@@ -728,7 +728,10 @@ void ns_to_posterior( LALInferenceRunState *runState ){
  * the prior range is set from 0 to 1e-22 then new samples drawn from a k-D tree produced with the full range in h0
  * yields a broader distribution than required.
  *
- * [NOTE: it is not obvious how this would affect evidence comparisons!]
+ * [WARNING: Do NOT use this function. As the k-d tree is a binned, rather than smooth, version of the posterior
+ * there will be areas of zero probability that actually should contain some probability. This will end up
+ * severely biasing any result. Instead some sort of smooth form should be used such as a Gaussian Mixture Model,
+ * maybe found though a DPGMM approach!]
  *
  * \param runState [in] A pointer to the LALInferenceRunState
  */
