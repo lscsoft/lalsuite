@@ -21,7 +21,7 @@
 #include <lal/PulsarCrossCorr_v2.h>
 
 #define SQUARE(x) ((x)*(x))
-
+#define QUAD(x) (x*x*x*x)
 /** Calculate the Doppler-shifted frequency associated with each SFT in a list */
 /* This is according to Eqns 2.11 and 2.12 of Dhurandhar et al 2008 */
 /* Also returns the signal phase according to eqn 2.4 */
@@ -544,39 +544,37 @@ int XLALCalculateLMXBCrossCorrDiagMetric
    REAL8                       *g_ff, /* Output: Diagonal frequency metric element */
    REAL8                       *g_aa, /* Output: Diagonal binary projected semimajor axis metric element*/
    REAL8                       *g_TT, /* Output: Diagonal reference time metric element*/
+   REAL8                       *g_pp, /* Output: Diagonal orbital period metric element */
    PulsarDopplerParams DopplerParams, /*  Input: pulsar/binary orbit paramaters*/
    REAL8Vector              *G_alpha, /*  Input: vector of curlyGunshifted values */
    SFTPairIndexList   *pairIndexList, /*  Input: list of SFT pairs */
    SFTIndexList           *indexList, /*  Input: list of SFTs */
    MultiSFTVector              *sfts, /*  Input: set of per-detector SFT vectors */
    MultiNoiseWeights   *multiWeights  /*  Input: Input: nomalizeation factor S^-1 & weights for each SFT*/
-   /* REAL8Vector     *kappaValues */ /*  Input: Fractional offset of signal freq from best bin center */
-   /*REAL8                 *devTsq,*/ /* Output: mean time deviation^2*/
-   /*REAL8                   *g_pp,*/ /* Output: Diagonal orbital period metric element */
    )
+
 {
-  UINT8 sftNum1=0;
-  UINT8 sftNum2=0;
-  UINT8 j=0;
-  REAL8 T=0;
-  REAL8 denom=0;
-  REAL8 TSquaWeightedAve=0;
-  REAL8 SinSquaWeightedAve=0;
-  REAL8 sinSquare=0;
-  REAL8 tSquare=0;
-  REAL8 rhosum=0;
-  LIGOTimeGPS *T1=NULL;
-  LIGOTimeGPS *T2=NULL;
-   /*  REAL8 hfT=0;
-      REAL8 Tmean=0;
-      REAL8 muT=0;
-      REAL8 sumDev=0;
-      UINT8 k=0*/
+  UINT8 sftNum1 = 0;
+  UINT8 sftNum2 = 0;
+  REAL8 TDiff = 0;
+  REAL8 TMean = 0;
+  REAL8 denom = 0;
+  REAL8 TSquaWeightedAve = 0;
+  REAL8 SinSquaWeightedAve = 0;
+  REAL8 muT = 0;
+  REAL8 muTSqr = 0;
+  REAL8 muTAve = 0;
+  REAL8 muTAveSqr = 0;
+  REAL8 muTSqrAve = 0;
+  REAL8 sinSquare = 0;
+  REAL8 tSquare = 0;
+  REAL8 rhosum = 0;
+  LIGOTimeGPS *T1 = NULL;
+  LIGOTimeGPS *T2 = NULL;
+  UINT8 numalpha = G_alpha->length;
 
-   UINT8 numalpha = G_alpha->length;
 
-
-   for (j=0; j < numalpha; j++) {
+  for (UINT8 j = 0; j < numalpha; j++) {
     sftNum1 = pairIndexList->data[j].sftNum[0];
     sftNum2 = pairIndexList->data[j].sftNum[1];
     UINT8 detInd1 = indexList->data[sftNum1].detInd;
@@ -585,38 +583,31 @@ int XLALCalculateLMXBCrossCorrDiagMetric
     UINT8 sftInd2 = indexList->data[sftNum2].sftInd;
     T1 = &(sfts->data[detInd1]->data[sftInd1].epoch);
     T2 = &(sfts->data[detInd2]->data[sftInd2].epoch);
-    T = XLALGPSDiff(T1, T2);
-    REAL8 sqrG_alpha = SQUARE(G_alpha->data[j]); /*(curlyG_\alpha)^2*/
-    sinSquare += sqrG_alpha*SQUARE(sin(LAL_PI*T/(DopplerParams.period))); /*(G_\alpha)^2*(sin(\pi*T/T_orbit))^2*/
-    tSquare += sqrG_alpha*SQUARE(T); /*(\curlyg_alpha*)^2*T^2*/
+    TDiff = XLALGPSDiff(T1, T2);
+    TMean = 0.5 * (XLALGPSGetREAL8(T1) + XLALGPSGetREAL8(T2));
+    REAL8 sqrG_alpha = SQUARE(G_alpha->data[j]); /*(curlyG_{\alpha})^2*/
+    muT +=  sqrG_alpha * TMean; /*(curlyG_\alpha)^2 * \bar{t}_{\alpha}*/
+    muTSqr += sqrG_alpha * SQUARE(TMean); /*(curlyG_\alpha)^2 * (\bar{t}_{\alpha})^2*/
+    sinSquare += sqrG_alpha * SQUARE(sin(LAL_PI * TDiff/(DopplerParams.period))); /*(G_{\alpha})^2*(sin(\pi*T/T_orbit))^2*/
+    tSquare += sqrG_alpha * SQUARE(TDiff); /*(\curlyg_{\alpha}*)^2*T^2*/
     denom += sqrG_alpha; /*calculate the denominator*/
     rhosum += 2*sqrG_alpha;
-    /*hfT=0.5*T;
-      Tmean=XLALGPSAdd(&T2, hfT);*/
-    /*muT +=Tmean/numalpha;*/ /*calculate the average of Tmean*/
-      }
-  TSquaWeightedAve =(tSquare/denom);
-  SinSquaWeightedAve =(sinSquare/denom);
+  }
+
+  muTAve = muT / denom;
+  muTAveSqr = SQUARE(muTAve);
+  muTSqrAve = muTSqr / denom;
+  REAL8 sigmaTSqr = muTSqrAve -  muTAveSqr;
+  TSquaWeightedAve = tSquare / denom;
+  SinSquaWeightedAve = sinSquare / denom;
   *hSens = 4 * SQUARE(multiWeights->Sinv_Tsft) * rhosum;
   *g_ff = TSquaWeightedAve * 2 * SQUARE(LAL_PI);
-  *g_aa = SinSquaWeightedAve * SQUARE(2.*LAL_PI * DopplerParams.fkdot[0]);
-  *g_TT = SinSquaWeightedAve * SQUARE(SQUARE(2.*LAL_PI) * (DopplerParams.fkdot[0]) * (DopplerParams.asini)/(DopplerParams.period));
-
+  *g_aa = SinSquaWeightedAve * SQUARE(2. * LAL_PI * DopplerParams.fkdot[0]);
+  *g_TT = SinSquaWeightedAve * SQUARE(SQUARE(2. * LAL_PI) * (DopplerParams.fkdot[0]) * (DopplerParams.asini) / (DopplerParams.period));
+  *g_pp = SinSquaWeightedAve * sigmaTSqr * 16 * QUAD(LAL_PI) * SQUARE(DopplerParams.fkdot[0]) * SQUARE(DopplerParams.asini) / (QUAD(DopplerParams.period));
 
   return XLAL_SUCCESS;
 
-
-
-  /* *g_pp=SQUARE(2*SQUARE(LAL_PI)*f*aPro/SQUARE(pOrb))*devTsq*SinSquaWeightedAve;*/
-  /*for(k=0;k < numalpha;k++){
-    sftNum1 = pairIndexList->data[k].sftNum[0];
-    sftNum2 = pairIndexList->data[k].sftNum[1];
-    T1 = sfts->data[indexList->data[sftNum1].detInd]->data[indexList->data[sftNum1].sftInd].epoch;
-    T2 = sfts->data[indexList->data[sftNum2].detInd]->data[indexList->data[sftNum2].sftInd].epoch;
-    Tmean=XLALGPSAdd(&T2, hfT);*/
-  /*sumDev +=SQUARE (G_alpha->data[k]*(Tmean-muT));  */      /*calculate the mean time deviation squared*/
-    /* }  */
-  /**devTsq=sumDev/denom;*/
 }
 
 /* ===== Object destruction functions ===== */
