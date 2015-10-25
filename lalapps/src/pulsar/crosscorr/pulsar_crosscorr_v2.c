@@ -145,7 +145,7 @@ int main(int argc, char *argv[]){
   REAL8 diagff = 0; /*diagonal metric components*/
   REAL8 diagaa = 0;
   REAL8 diagTT = 0;
-  REAL8 diagpp = 1;
+  REAL8 diagpp = 0;
   REAL8 ccStat = 0;
   REAL8 evSquared=0;
   REAL8 estSens=0; /*estimated sensitivity(4.13)*/
@@ -497,7 +497,7 @@ int main(int argc, char *argv[]){
   thisBinaryTemplate.fkdot[0]=0.5*(minBinaryTemplate.fkdot[0] + maxBinaryTemplate.fkdot[0]);
 
   /*Get metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
-  if ( (XLALCalculateLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, thisBinaryTemplate, GammaAve, sftPairs, sftIndices, inputSFTs, multiWeights /*, kappaValues*/)  != XLAL_SUCCESS ) ) {
+  if ( (XLALCalculateLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, &diagpp, thisBinaryTemplate, GammaAve, sftPairs, sftIndices, inputSFTs, multiWeights /*, kappaValues*/)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -697,6 +697,7 @@ int main(int argc, char *argv[]){
     fprintf(fp, "g_ff = %.9f\n", diagff );
     fprintf(fp, "g_aa = %.9f\n", diagaa );
     fprintf(fp, "g_TT = %.9f\n", diagTT );
+    fprintf(fp, "g_pp = %.9f\n", diagpp );
     fprintf(fp, "FSpacing = %.9g\n", binaryTemplateSpacings.fkdot[0]);
     fprintf(fp, "ASpacing = %.9g\n", binaryTemplateSpacings.asini);
     fprintf(fp, "TSpacing = %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));

@@ -1,6 +1,6 @@
 # -*- coding: utf-8
 #
-# Copyright (C) 2013  Leo Singer
+# Copyright (C) 2013-2015  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -43,16 +43,26 @@ def get_f_lso(mass1, mass2):
 _noise_psd_funcs = {}
 
 
-class _vectorize_swig_psd_func(object):
+class vectorize_swig_psd_func(object):
     """Create a vectorized Numpy function from a SWIG-wrapped PSD function.
     SWIG does not provide enough information for Numpy to determine the number
     of input arguments, so we can't just use np.vectorize."""
 
     def __init__(self, func):
-        self._npyfunc = np.frompyfunc(func, 1, 1)
+        self.__func = func
+        self.__npyfunc = np.frompyfunc(func, 1, 1)
 
     def __call__(self, f):
-        ret = self._npyfunc(f)
+        fa = np.asarray(f)
+        df = np.diff(fa)
+        if fa.ndim == 1 and df.size > 1 and np.all(df[0] == df[1:]):
+            fa = np.concatenate((fa, [fa[-1] + df[0]]))
+            ret = lal.CreateREAL8FrequencySeries(
+                None, 0, fa[0], df[0], lal.DimensionlessUnit, fa.size)
+            lalsimulation.SimNoisePSD(ret, 0, self.__func)
+            ret = ret.data.data[:-1]
+        else:
+            ret = self.__npyfunc(f)
         if not np.isscalar(ret):
             ret = ret.astype(float)
         return ret
@@ -63,7 +73,7 @@ for _ifos, _func in (
     (("V1",), lalsimulation.SimNoisePSDAdvVirgo),
     (("K1"), lalsimulation.SimNoisePSDKAGRA)
 ):
-    _func = _vectorize_swig_psd_func(_func)
+    _func = vectorize_swig_psd_func(_func)
     for _ifo in _ifos:
         _noise_psd_funcs[_ifo] = _func
 
@@ -97,11 +107,6 @@ class InterpolatedPSD(interpolate.interp1d):
         return np.exp(super(InterpolatedPSD, self).__call__(np.log(f)))
 
 
-def sign(x):
-    """Works like np.sign, except that 0 is considered to be positive."""
-    return np.where(np.asarray(x) >= 0, 1, -1)
-
-
 def get_approximant_and_orders_from_string(s):
     """Determine the approximant, amplitude order, and phase order for a string
     of the form "TaylorT4threePointFivePN". In this example, the waveform is
@@ -125,7 +130,46 @@ def get_approximant_and_orders_from_string(s):
 
 class SignalModel(object):
     """Class to speed up computation of signal/noise-weighted integrals and
-    Barankin and Cramér-Rao lower bounds on time and phase estimation."""
+    Barankin and Cramér-Rao lower bounds on time and phase estimation.
+
+
+    Note that the autocorrelation series and the moments are related,
+    as shown below.
+
+    Create signal model:
+    >>> mass1 = mass2 = 1.4
+    >>> S = get_noise_psd_func('H1')
+    >>> f_low = 40.0
+    >>> out_duration = 0.1
+    >>> waveform = 'TaylorF2threePointFivePN'
+    >>> waveformargs = get_approximant_and_orders_from_string(waveform)
+    >>> sm = SignalModel(mass1, mass2, S, f_low, *waveformargs)
+
+    Compute one-sided autocorrelation function:
+    >>> from . import filter
+    >>> a, sample_rate = filter.autocorrelation(mass1, mass2, S, f_low,
+    ...                  out_duration, *waveformargs)
+
+    Restore negative time lags using symmetry:
+    >>> a = np.concatenate((a[:0:-1].conj(), a))
+
+    Compute the first 2 frequency moments by taking derivatives of the
+    autocorrelation sequence using centered finite differences.
+    The nth frequency moment should be given by (-1j)^n a^(n)(t).
+    >>> acor_moments = []
+    >>> for i in range(2):
+    ...     acor_moments.append(a[len(a) // 2])
+    ...     a = -0.5j * sample_rate * (a[2:] - a[:-2])
+    >>> assert np.all(np.isreal(acor_moments))
+    >>> acor_moments = np.real(acor_moments)
+
+    Compute the first 2 frequency moments using this class.
+    >>> quad_moments = [sm.get_sn_moment(i) for i in range(3)]
+
+    Compare them.
+    >>> for i, (am, qm) in enumerate(zip(acor_moments, quad_moments)):
+    ...     np.testing.assert_allclose(am, qm, rtol=0.05)
+    """
 
     def __init__(self, mass1, mass2, S, f_low, approximant, amplitude_order, phase_order):
         """Create a TaylorF2 signal model with the given masses, PSD function

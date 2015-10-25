@@ -611,15 +611,12 @@ def interpolate_max_nearest_neighbor(imax, y, window_length):
 #
 
 
+__interpolants = {
+    'catmull-rom': interpolate_max_catmull_rom,
+    'lanczos': interpolate_max_lanczos,
+    'nearest-neighbor': interpolate_max_nearest_neighbor,
+    'quadratic-fit': interpolate_max_quadratic_fit}
+
+
 def interpolate_max(imax, y, window_length, method='catmull-rom'):
-    if method == 'catmull-rom':
-        func = interpolate_max_catmull_rom
-    elif method == 'lanczos':
-        func = interpolate_max_lanczos
-    elif method == 'nearest-neighbor':
-        func = interpolate_max_nearest_neighbor
-    elif method == 'quadratic-fit':
-        func = interpolate_max_quadratic_fit
-    else:
-        raise ValueError('unrecognized method: %s' % method)
-    return func(imax, y, window_length)
+    return __interpolants[method](imax, y, window_length)

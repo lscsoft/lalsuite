@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013  Leo Singer
+# Copyright (C) 2013-2015  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -15,11 +15,11 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-"""
+r"""
 Listen for new events from LVAlert and perform sky localization.
 
-`bayestar_localize_lvalert` supports two modes of operation. You can explicitly
-specify the GraceDb ID on the command line, as in:
+`bayestar_localize_lvalert` supports two modes of operation. You can
+explicitly specify the GraceDb ID on the command line, as in:
 
     $ bayestar_localize_lvalert T90713
 
@@ -28,8 +28,10 @@ stdin. This is handy for quickly setting up automatic processing of events in
 response to LVAlert notifications. To do this, first subscribe to events of
 types that you are interested in (probably `cbc_lowmass` or `test_lowmass`):
 
-    $ lvalert_admin --username albert.einstein --password supersecret --subscribe --node cbc_lowmass
-    $ lvalert_admin --username albert.einstein --password supersecret --subscribe --node test_lowmass
+    $ lvalert_admin --username albert.einstein --password supersecret \
+      --subscribe --node cbc_lowmass
+    $ lvalert_admin --username albert.einstein --password supersecret \
+      --subscribe --node test_lowmass
 
 Create a configuration file that will tell `lvalert_listen` what to do in
 response to those event types. For example, you might create a file called
@@ -42,7 +44,8 @@ response to those event types. For example, you might create a file called
 
 Finally, start `lvalert_listen`:
 
-    $ lvalert_listen  --username albert.einstein --password supersecret --config-file lvalert_listen.ini
+    $ lvalert_listen  --username albert.einstein --password supersecret \
+      --config-file lvalert_listen.ini
 """
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
@@ -51,7 +54,6 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 # Command line interface
 #
 
-from optparse import Option, OptionParser
 from lalinference.bayestar import command
 import logging
 import ligo.lvalert.utils
@@ -61,15 +63,19 @@ import os
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('BAYESTAR')
 
-parser = OptionParser(
-    formatter=command.NewlinePreservingHelpFormatter(),
-    description=__doc__,
-    usage="%prog [options] [GRACEID]"
-)
-opts, args = parser.parse_args()
+parser = command.ArgumentParser(
+    parents=[command.waveform_parser, command.prior_parser])
+parser.add_argument('-N', '--dry-run', default=False, action='store_true',
+    help='Dry run; do not update GraceDB entry [default: %(default)s]')
+parser.add_argument('-o', '--output', metavar='FILE.fits[.gz]',
+    default='bayestar.fits.gz',
+    help='Name for uploaded file [default: %(default)s]')
+parser.add_argument('graceid', metavar='G123456', nargs='?',
+    help='Run on this GraceDB ID [default: listen to lvalert]')
+opts = parser.parse_args()
 
-if len(args) == 0:
-    # No command line arguments; read LVAlert data from stdin
+if opts.graceid is None:
+    # No GraceDB ID; read LVAlert data from stdin
     lvadata = ligo.lvalert.utils.get_LVAdata_from_stdin(sys.stdin, as_dict=True)
     log.info("received lvalert event of type='%s' for uid='%s' and file='%s'",
         lvadata['alert_type'], lvadata['uid'], lvadata['file'])
@@ -78,12 +84,9 @@ if len(args) == 0:
     else:
         log.info('ignoring')
         raise SystemExit
-elif len(args) == 1:
-    # One command line argument; manual start from GraceDB id
-    graceid, = args
 else:
-    # Too many command line arguments
-    parser.error("expected at most one command line argument")
+    # One command line argument; manual start from GraceDB id
+    graceid = opts.graceid
 
 
 #
@@ -102,9 +105,10 @@ gracedb = ligo.gracedb.rest.GraceDb(
     ligo.gracedb.rest.DEFAULT_SERVICE_URL))
 
 # Send log messages to GraceDb too
-handler = ligo.gracedb.logging.GraceDbLogHandler(gracedb, graceid)
-handler.setLevel(logging.INFO)
-logging.root.addHandler(handler)
+if not opts.dry_run:
+    handler = ligo.gracedb.logging.GraceDbLogHandler(gracedb, graceid)
+    handler.setLevel(logging.INFO)
+    logging.root.addHandler(handler)
 
 
 #
@@ -130,20 +134,24 @@ try:
     # perform sky localization
     log.info("starting sky localization")
     sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(
-        coinc_file, psd_file, "TaylorF2threePointFivePN", 10)
+        coinc_file, psd_file, opts.waveform, opts.f_low,
+        opts.min_distance, opts.max_distance, opts.prior_distance_power)
     log.info("sky localization complete")
 
     # upload FITS file
     fitsdir = tempfile.mkdtemp()
     try:
-        fitspath = os.path.join(fitsdir, "bayestar.fits.gz")
+        fitspath = os.path.join(fitsdir, opts.output)
         fits.write_sky_map(fitspath, sky_map, gps_time=float(epoch),
-            creator=parser.get_prog_name(), objid=str(graceid),
+            creator=parser.prog, objid=str(graceid),
             url='https://gracedb.ligo.org/events/{0}'.format(graceid),
             runtime=elapsed_time, instruments=instruments,
             origin='LIGO/Virgo', nest=True)
-        gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
-            filename=fitspath, tagname=("sky_loc", "lvem"))
+        if not opts.dry_run:
+            gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
+                filename=fitspath, tagname=("sky_loc", "lvem"))
+        else:
+            shutil.move(fitspath, '.')
     finally:
         shutil.rmtree(fitsdir)
 except:

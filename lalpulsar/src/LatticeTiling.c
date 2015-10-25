@@ -869,6 +869,26 @@ REAL8 XLALLatticeTilingStepSizes(
 
 }
 
+REAL8 XLALLatticeTilingBoundingBox(
+  const LatticeTiling *tiling,
+  const size_t dim
+  )
+{
+
+  // Check input
+  XLAL_CHECK_REAL8(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK_REAL8(tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL);
+  XLAL_CHECK_REAL8(dim < tiling->ndim, XLAL_ESIZE);
+
+  // Return 0 for non-tiled dimensions
+  if (!tiling->bounds[dim].is_tiled) {
+    return 0.0;
+  }
+
+  return gsl_vector_get(tiling->phys_bbox, dim);
+
+}
+
 const LatticeTilingStats *XLALLatticeTilingStatistics(
   LatticeTiling *tiling,
   const size_t dim

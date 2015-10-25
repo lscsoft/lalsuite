@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # Copyright (C) 2008  Kipp Cannon
-#               2013  Leo Singer
+#               2015  Leo Singer
 #
 # Adapted from original pylal.series module to return SWIG lal datatypes
 # instead of pylal datatypes.
@@ -64,7 +64,7 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     else:
         data = np.row_stack((np.arange(len(series.data.data)) * delta, series.data.data))
     a = ligolw_array.from_array(series.name, data, dim_names=dim_names)
-    a.Unit = lal.UnitToString(series.sampleUnits)
+    a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
     dim0.Start = series.f0
