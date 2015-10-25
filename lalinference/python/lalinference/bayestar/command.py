@@ -120,6 +120,28 @@ class MatplotlibFigureType(argparse.FileType):
             self.string = string
             return self.__save
 
+class HelpChoicesAction(argparse.Action):
+    def __init__(self,
+                 option_strings,
+                 choices=(),
+                 dest=argparse.SUPPRESS,
+                 default=argparse.SUPPRESS):
+        name = option_strings[0].replace('--help-', '')
+        super(HelpChoicesAction, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            default=default,
+            nargs=0,
+            help='show support values for --' + name + ' and exit')
+        self._name = name
+        self._choices = choices
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        print('Supported values for --' + self._name + ':')
+        for choice in self._choices:
+            print(choice)
+        parser.exit()
+
 def type_with_sideeffect(type):
     def decorator(sideeffect):
         def func(value):
@@ -158,10 +180,11 @@ group.add_argument(
     default='-', type=MatplotlibFigureType(),
     help='name of output file [default: plot to screen]')
 group.add_argument(
-    '--colormap', default='cylon', choices=colormap_choices, type=colormap,
-    metavar='|'.join(_ for _ in colormap_choices if not _.endswith('_r')),
-    help='name of matplotlib colormap; append "_r" to reverse'
-    ' [default: %(default)s]')
+    '--colormap', default='cylon', choices=colormap_choices,
+    type=colormap, metavar='CMAP',
+    help='name of matplotlib colormap [default: %(default)s]')
+group.add_argument(
+    '--help-colormap', action=HelpChoicesAction, choices=colormap_choices)
 group.add_argument(
     '--figure-width', metavar='INCHES', type=figwith, default=8.,
     help='width of figure in inches [default: %(default)s]')
