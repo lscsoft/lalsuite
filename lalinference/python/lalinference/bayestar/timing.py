@@ -168,7 +168,7 @@ class SignalModel(object):
 
     Compare them.
     >>> for i, (am, qm) in enumerate(zip(acor_moments, quad_moments)):
-    ...     np.testing.assert_allclose(am, qm, rtol=0.05)
+    ...     assert np.allclose(am, qm, rtol=0.05)
     """
 
     def __init__(self, mass1, mass2, S, f_low, approximant, amplitude_order, phase_order):
