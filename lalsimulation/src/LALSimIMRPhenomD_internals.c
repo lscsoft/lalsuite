@@ -1025,9 +1025,15 @@ static void ComputeDeltasFromCollocation(IMRPhenomDAmplitudeCoefficients* p) {
 
   UsefulPowers powers_of_f1;
   int status = init_useful_powers(&powers_of_f1, f1);
+  if (XLAL_SUCCESS != status){
+    XLAL_PRINT_WARNING("return status is not XLAL_SUCCESS");
+  };
 
   AmpInsPrefactors prefactors;
   status = init_amp_ins_prefactors(&prefactors, p);
+  if (XLAL_SUCCESS != status){
+    XLAL_PRINT_WARNING("return status is not XLAL_SUCCESS");
+  };
 
   // v1 is inspiral model evaluated at f1
   // d1 is derivative of inspiral model evaluated at f1
