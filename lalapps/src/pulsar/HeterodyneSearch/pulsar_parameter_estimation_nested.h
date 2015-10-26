@@ -141,7 +141,7 @@ extern "C" {
  *
  * Note: These should be increased if additional model parameters are added.
  */
-#define NUMAMPPARS 24
+#define NUMAMPPARS 26
 
 /**
  * The total number of frequency parameters that can defined a signal e.g.
@@ -330,7 +330,7 @@ extern "C" {
 static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "H0", "PHI0", "PSI",
 "COSIOTA", "C22", "C21", "PHI22", "PHI21", "HSCALARB", "HSCALARL", "HVECTORX",
 "HVECTORY", "PSIVECTOR", "PHI0VECTOR", "PSISCALAR", "PHI0SCALAR", "PSITENSOR",
-"PHI0TENSOR", "I21", "I31", "LAMBDA", "COSTHETA", "IOTA", "THETA" };
+"PHI0TENSOR", "I21", "I31", "LAMBDA", "COSTHETA", "IOTA", "THETA", "Q22", "DIST" };
 
 /**
  * A list of the frequency parameters. The names given here are those that are
