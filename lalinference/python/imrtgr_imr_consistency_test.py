@@ -246,8 +246,6 @@ print '... computed P(delta_Mf, delta_af)'
 # compute the posterior of (delta_Mf/Mf, delta_af/af)
 ################################################################################################
 # compute interpolation objects for the Mf,af posterior and delta_Mf and delta_af posterior 
-P_dMfdaf = P_dMfdaf.T
-
 Mf_intp = (Mf_bins[:-1] + Mf_bins[1:])/2.
 af_intp = (af_bins[:-1] + af_bins[1:])/2.
 P_dMfdaf_interp_object = scipy.interpolate.interp2d(Mf_intp, af_intp, P_dMfdaf, fill_value=0., bounds_error=False)
