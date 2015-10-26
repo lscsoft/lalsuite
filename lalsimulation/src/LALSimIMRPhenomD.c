@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Michael Puerrer, Sebastian Khan, Frank Ohme
+ * Copyright (C) 2015 Michael Puerrer, Sebastian Khan, Frank Ohme, Ofek Birnholtz, Lionel London
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 
 #include <math.h>
-#include <complex.h>
+/*#include <complex.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 
@@ -28,8 +28,9 @@
 #include <lal/LALConstants.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
-
+*/
 #include "LALSimIMRPhenomD_internals.c"
+UsefulPowers powers_of_pi;    // declared in LALSimIMRPhenomD_internals.c
 
 #ifndef _OPENMP
 #define omp ignore
@@ -123,6 +124,11 @@ int XLALSimIMRPhenomDGenerateFD(
   if (f_max < 0) XLAL_ERROR(XLAL_EDOM, "f_max must be greater than 0\n");
   if (distance <= 0) XLAL_ERROR(XLAL_EDOM, "distance must be positive\n");
 
+  const REAL8 q = (m1 > m2) ? (m1 / m2) : (m2 / m1);
+
+  if (q > MAX_ALLOWED_MASS_RATIO)
+    XLAL_PRINT_WARNING("Warning: The model is not supported for high mass ratio, see MAX_ALLOWED_MASS_RATIO\n");
+
   if (chi1 > 1.0 || chi1 < -1.0 || chi2 > 1.0 || chi2 < -1.0)
     XLAL_ERROR(XLAL_EDOM, "Spins outside the range [-1,1] are not supported\n");
 
@@ -193,7 +199,10 @@ static int IMRPhenomDGenerateFD(
      chi2 = chi1_in;
      m1   = m2_in;
      m2   = m1_in;
-   }
+  }
+
+  int status = init_useful_powers(&powers_of_pi, LAL_PI);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
 
   const REAL8 M = m1 + m2;
   REAL8 eta = m1 * m2 / (M * M);
@@ -223,8 +232,8 @@ static int IMRPhenomDGenerateFD(
   REAL8 finspin = FinalSpin0815(eta, chi1, chi2); //FinalSpin0815 - 0815 is like a version number
 
   if (finspin < MIN_FINAL_SPIN)
-	  XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
-			  the model might misbehave here.", finspin);
+          XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
+                          the model might misbehave here.", finspin);
 
   IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2, finspin);
   if (!pAmp) XLAL_ERROR(XLAL_EFUNC);
@@ -254,13 +263,17 @@ static int IMRPhenomDGenerateFD(
   //For details see https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/timedomain
   REAL8 t0 = DPhiMRD(pAmp->fmaxCalc, pPhi);
 
+  AmpInsPrefactors prefactors;
+  status = init_amp_ins_prefactors(&prefactors, pAmp);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+
   /* Now generate the waveform */
   #pragma omp parallel for
   for (size_t i = ind_min; i < ind_max; i++) {
 
     REAL8 Mf = M_sec * i * deltaF; // geometric frequency
 
-    REAL8 amp = IMRPhenDAmplitude(Mf, pAmp);
+    REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &prefactors);
     REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn);
 
     // incorporating fRef
