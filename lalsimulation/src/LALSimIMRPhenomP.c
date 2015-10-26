@@ -410,6 +410,9 @@ static int PhenomPCore(
     chi2_l = chi1_l_in;
   }
 
+  int status = init_useful_powers(&powers_of_pi, LAL_PI);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+
   /* Find frequency bounds */
   if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
   double f_min = freqs_in->data[0];
@@ -546,7 +549,8 @@ static int PhenomPCore(
       pn->v[6] -= (pn_ss3 * pn->v[0]);
 
       ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
-      fCut = 0.3 / m_sec;
+      // This should be the same as the ending frequency in PhenomD
+      fCut = 0.2 / m_sec;
       f_final = pAmp->fRD / m_sec;
       break;
     default:
@@ -648,7 +652,7 @@ static int PhenomPCore(
     errcode=XLAL_EFUNC;
     goto cleanup;
   }
-    
+
   /* Test output */
   XLAL_PRINT_INFO("eta: %g", eta);
   XLAL_PRINT_INFO("m1: %g", m1);
@@ -751,7 +755,7 @@ static int PhenomPCore(
   if(pn) XLALFree(pn);
 
   if(freqs) XLALDestroyREAL8Sequence(freqs);
-  
+
   if( errcode != XLAL_SUCCESS )
     XLAL_ERROR(errcode);
   else
@@ -787,6 +791,11 @@ static int PhenomPCoreOneFrequency(
   REAL8 aPhenom = 0.0;
   REAL8 phPhenom = 0.0;
   int errcode = XLAL_SUCCESS;
+
+  AmpInsPrefactors prefactors;
+  int status = XLAL_SUCCESS;
+
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
   /* Calculate Phenom amplitude and phase for a given frequency. */
   switch (IMRPhenomP_version) {
     case 1:
@@ -794,7 +803,9 @@ static int PhenomPCoreOneFrequency(
       if( errcode != XLAL_SUCCESS ) XLAL_ERROR(XLAL_EFUNC);
       break;
     case 2:
-      aPhenom = IMRPhenDAmplitude(f, pAmp);
+      status = init_amp_ins_prefactors(&prefactors, pAmp);
+      XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+      aPhenom = IMRPhenDAmplitude(f, pAmp, &prefactors);
       phPhenom = IMRPhenDPhase(f, pPhi, PNparams);
       break;
     default:
