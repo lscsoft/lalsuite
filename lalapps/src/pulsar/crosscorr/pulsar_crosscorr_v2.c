@@ -694,14 +694,14 @@ int main(int argc, char *argv[]){
     fprintf(fp, "[UserInput]\n\n");
     fprintf(fp, "%s\n", CMDInputStr);
     fprintf(fp, "[CalculatedValues]\n\n");
-    fprintf(fp, "g_ff = %.9f\n", diagff );
-    fprintf(fp, "g_aa = %.9f\n", diagaa );
-    fprintf(fp, "g_TT = %.9f\n", diagTT );
-    fprintf(fp, "g_pp = %.9f\n", diagpp );
+    fprintf(fp, "g_ff = %.9f\n", diagff);
+    fprintf(fp, "g_aa = %.9f\n", diagaa);
+    fprintf(fp, "g_TT = %.9f\n", diagTT);
+    fprintf(fp, "g_pp = %.9f\n", diagpp);
     fprintf(fp, "FSpacing = %.9g\n", binaryTemplateSpacings.fkdot[0]);
     fprintf(fp, "ASpacing = %.9g\n", binaryTemplateSpacings.asini);
     fprintf(fp, "TSpacing = %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
-    /* fprintf(fp, "PSpacing = %.9g\n", binaryTemplateSpacings.period );*/
+    fprintf(fp, "PSpacing = %.9g\n", binaryTemplateSpacings.period);
     fprintf(fp, "TemplatenumF = %" LAL_UINT8_FORMAT "\n", (fSpacingNum + 1));
     fprintf(fp, "TemplatenumA = %" LAL_UINT8_FORMAT "\n", (aSpacingNum + 1));
     fprintf(fp, "TemplatenumT = %" LAL_UINT8_FORMAT "\n", (tSpacingNum + 1));
@@ -709,9 +709,9 @@ int main(int argc, char *argv[]){
     fprintf(fp, "TemplatenumTotal = %" LAL_UINT8_FORMAT "\n",(fSpacingNum + 1) * (aSpacingNum + 1) * (tSpacingNum + 1) * (pSpacingNum + 1));
     fprintf(fp, "Sens = %.9g\n", estSens);/*(E[rho]/h0^2)^2*/
     fprintf(fp, "h0_min_SNR10 = %.9g\n", h0Sens);/*for rho = 10 in our pipeline*/
-    fprintf(fp, "startTime = %" LAL_INT4_FORMAT "\n", computingStartGPSTime.gpsSeconds );/*start time in GPS-time*/
-    fprintf(fp, "endTime = %" LAL_INT4_FORMAT "\n", computingEndGPSTime.gpsSeconds );/*end time in GPS-time*/
-    fprintf(fp, "computingTime = %" LAL_UINT4_FORMAT "\n", computingTime );/*total time in sec*/
+    fprintf(fp, "startTime = %" LAL_INT4_FORMAT "\n", computingStartGPSTime.gpsSeconds);/*start time in GPS-time*/
+    fprintf(fp, "endTime = %" LAL_INT4_FORMAT "\n", computingEndGPSTime.gpsSeconds);/*end time in GPS-time*/
+    fprintf(fp, "computingTime = %" LAL_UINT4_FORMAT "\n", computingTime);/*total time in sec*/
     fprintf(fp, "SFTnum = %" LAL_UINT4_FORMAT "\n", sftIndices->length);/*total number of SFT*/
     fprintf(fp, "pairnum = %" LAL_UINT4_FORMAT "\n", sftPairs->length);/*total number of pair of SFT*/
     fprintf(fp, "Tsft = %.6g\n", Tsft);/*SFT duration*/

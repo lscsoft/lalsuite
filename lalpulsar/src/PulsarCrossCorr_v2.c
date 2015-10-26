@@ -597,7 +597,7 @@ int XLALCalculateLMXBCrossCorrDiagMetric
   muTAve = muT / denom;
   muTAveSqr = SQUARE(muTAve);
   muTSqrAve = muTSqr / denom;
-  REAL8 sigmaTSqr = muTSqrAve -  muTAveSqr;
+  REAL8 sigmaTSqr = muTSqrAve - muTAveSqr;
   TSquaWeightedAve = tSquare / denom;
   SinSquaWeightedAve = sinSquare / denom;
   *hSens = 4 * SQUARE(multiWeights->Sinv_Tsft) * rhosum;
