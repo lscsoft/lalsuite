@@ -186,6 +186,53 @@ static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState
   return logPrior;
 }
 
+UINT4 LALInferenceCubeToConstantCalibrationPrior(LALInferenceRunState *runState, LALInferenceVariables *params, INT4 *idx, double *Cube, void UNUSED *context)
+{
+  LALInferenceIFOData *ifo = NULL;
+  REAL8 ampWidth = -1.0;
+  REAL8 phaseWidth = -1.0;
+
+  if (runState->commandLine == NULL || !(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp")) ||
+      !(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")))
+  {
+    return 1;
+  }
+
+  ifo = runState->data;
+  do {
+
+    if((LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp")))
+    {
+      ampWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "constcal_amp_uncertainty");
+      if (ampWidth>0)
+      {
+        char ampVarName[VARNAME_MAX];
+        REAL8 amp = 0.0;
+        snprintf(ampVarName, VARNAME_MAX, "calamp_%s", ifo->name);
+        amp = LALInferenceCubeToGaussianPrior(Cube[(*idx)++], 0.0, ampWidth);
+        LALInferenceSetVariable(params, ampVarName, &amp);
+      }
+    }
+    if((LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")))
+    {
+      phaseWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "constcal_phase_uncertainty");
+      if (phaseWidth>0)
+      {
+        char phaseVarName[VARNAME_MAX];
+        REAL8 phase = 0.0;
+        snprintf(phaseVarName, VARNAME_MAX, "calpha_%s", ifo->name);
+        phase = LALInferenceCubeToGaussianPrior(Cube[(*idx)++], 0.0, phaseWidth);
+        LALInferenceSetVariable(params, phaseVarName, &phase);
+      }
+    }
+
+    ifo = ifo->next;
+  } while (ifo);
+
+  return 1;
+
+}
+
 static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, LALInferenceVariables *params) {
   LALInferenceIFOData *ifo = NULL;
   REAL8 ampWidth = -1.0;
@@ -224,6 +271,48 @@ static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, 
   } while (ifo);
 
   return logPrior;
+}
+
+UINT4 LALInferenceCubeToSplineCalibrationPrior(LALInferenceRunState *runState, LALInferenceVariables *params, INT4 *idx, double *Cube, void UNUSED *context)
+{
+  LALInferenceIFOData *ifo = NULL;
+  REAL8 ampWidth = -1.0;
+  REAL8 phaseWidth = -1.0;
+
+  if (runState->commandLine == NULL || !(LALInferenceGetProcParamVal(runState->commandLine, "--enable-spline-calibration")))
+  {
+    return 1;
+  }
+
+  ampWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_amp_uncertainty");
+  phaseWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_phase_uncertainty");
+
+  ifo = runState->data;
+  do {
+    size_t i;
+
+    char ampVarName[VARNAME_MAX];
+    char phaseVarName[VARNAME_MAX];
+
+    REAL8Vector *amps = NULL;
+    REAL8Vector *phase = NULL;
+
+    snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", ifo->name);
+    snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", ifo->name);
+
+    amps = *(REAL8Vector **)LALInferenceGetVariable(params, ampVarName);
+    phase = *(REAL8Vector **)LALInferenceGetVariable(params, phaseVarName);
+
+    for (i = 0; i < amps->length; i++)
+    {
+      amps->data[i] = LALInferenceCubeToGaussianPrior(Cube[(*idx)++], 0.0, ampWidth);
+      phase->data[i] = LALInferenceCubeToGaussianPrior(Cube[(*idx)++], 0.0, phaseWidth);
+    }
+
+    ifo = ifo->next;
+  } while (ifo);
+
+  return 1;
 }
 
 /* Return the log Prior for the glitch amplitude */
@@ -839,16 +928,18 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
         }
     }
 
-    INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
+    UINT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
+    UINT4 ConstCalib = LALInferenceCubeToConstantCalibrationPrior(runState, params, &i, Cube, context);
+    UINT4 SplineCalib = LALInferenceCubeToSplineCalibrationPrior(runState, params, &i, Cube, context);
 
     /* Check boundaries */
-    if (ScaleTest==0) return 0;
+    if (ScaleTest==0 || ConstCalib==0 || SplineCalib==0) return 0;
     item=params->head;
     for(;item;item=item->next)
     {
         if(item->vary==LALINFERENCE_PARAM_FIXED || item->vary==LALINFERENCE_PARAM_OUTPUT)
                         continue;
-        else if (item->type != LALINFERENCE_gslMatrix_t)
+        else if (item->type != LALINFERENCE_gslMatrix_t && item->type != LALINFERENCE_REAL8Vector_t)
         {
             LALInferenceGetMinMaxPrior(priorParams, item->name, (void *)&min, (void *)&max);
             if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return 0 ;
@@ -1519,9 +1610,11 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
     }
 
     INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
+    UINT4 ConstCalib = LALInferenceCubeToConstantCalibrationPrior(runState, params, &i, Cube, context);
+    UINT4 SplineCalib = LALInferenceCubeToSplineCalibrationPrior(runState, params, &i, Cube, context);
 
     /* Check boundaries */
-    if (ScaleTest==0) return 0;
+    if (ScaleTest==0 || ConstCalib==0 || SplineCalib==0) return 0;
     item=params->head;
     for(;item;item=item->next)
     {
@@ -2320,8 +2413,10 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
 
     LALInferenceVariables *priorParams=runState->priorArgs;
     INT4 ScaleTest = LALInferenceCubeToPSDScaleParams(priorParams, params, &i, Cube, context);
+    UINT4 ConstCalib = LALInferenceCubeToConstantCalibrationPrior(runState, params, &i, Cube, context);
+    UINT4 SplineCalib = LALInferenceCubeToSplineCalibrationPrior(runState, params, &i, Cube, context);
 
-    if (ScaleTest==0) return 0;
+    if (ScaleTest==0 || ConstCalib==0 || SplineCalib==0) return 0;
     else return 1;
 }
 
@@ -2347,7 +2442,7 @@ REAL8 LALInferenceNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceV
   return 0.0;
 }
 
-UINT4 LALInferenceCubeToPSDScaleParams(LALInferenceVariables *priorParams, LALInferenceVariables *params, INT4 *idx, double *Cube, UNUSED void *context)
+UINT4 LALInferenceCubeToPSDScaleParams(LALInferenceVariables *priorParams, LALInferenceVariables *params, INT4 *idx, double *Cube, void UNUSED *context)
 {
   //char **info = (char **)context;
   //char *header = &info[1][0];
