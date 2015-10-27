@@ -100,7 +100,7 @@ static int IMRPhenomDGenerateFD(
 int XLALSimIMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
     const REAL8 phi0,                  /**< Orbital phase at fRef (rad) */
-    const REAL8 fRef_in,                  /**< reference frequency (Hz) */
+    const REAL8 fRef_in,               /**< reference frequency (Hz) */
     const REAL8 deltaF,                /**< Sampling frequency (Hz) */
     const REAL8 m1_SI,                 /**< Mass of companion 1 (kg) */
     const REAL8 m2_SI,                 /**< Mass of companion 2 (kg) */
@@ -117,6 +117,7 @@ int XLALSimIMRPhenomDGenerateFD(
   /* check inputs for sanity */
   XLAL_CHECK(0 != htilde, XLAL_EFAULT, "htilde is null");
   if (*htilde) XLAL_ERROR(XLAL_EFAULT);
+  if (fRef_in <= 0) XLAL_ERROR(XLAL_EDOM, "fRef_in must be positive\n");
   if (deltaF <= 0) XLAL_ERROR(XLAL_EDOM, "deltaF must be positive\n");
   if (m1 <= 0) XLAL_ERROR(XLAL_EDOM, "m1 must be positive\n");
   if (m2 <= 0) XLAL_ERROR(XLAL_EDOM, "m2 must be positive\n");
@@ -149,16 +150,14 @@ int XLALSimIMRPhenomDGenerateFD(
   if (f_max_prime <= f_min)
     XLAL_ERROR(XLAL_EDOM, "f_max <= f_min\n");
 
-  REAL8 status = IMRPhenomDGenerateFD(htilde, phi0, fRef, deltaF,
-                                       m1, m2, chi1, chi2,
-                                       f_min, f_max_prime, distance);
-  XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+  XLAL_CHECK ( IMRPhenomDGenerateFD(htilde, phi0, fRef, deltaF, m1, m2, chi1, chi2, f_min, f_max_prime, distance) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomD waveform.");
 
   if (f_max_prime < f_max) {
     // The user has requested a higher f_max than Mf=fCut.
     // Resize the frequency series to fill with zeros beyond the cutoff frequency.
+    size_t n = (*htilde)->data->length;
     size_t n_full = NextPow2(f_max / deltaF) + 1; // we actually want to have the length be a power of 2 + 1
-    *htilde = XLALResizeCOMPLEX16FrequencySeries(*htilde, 0, n_full);
+    XLAL_CHECK ( *htilde = XLALResizeCOMPLEX16FrequencySeries(*htilde, 0, n_full), XLAL_ENOMEM, "Failed to resize waveform COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, fCut, n_full, f_max );
   }
 
   return XLAL_SUCCESS;
@@ -201,8 +200,7 @@ static int IMRPhenomDGenerateFD(
      m2   = m1_in;
   }
 
-  int status = init_useful_powers(&powers_of_pi, LAL_PI);
-  XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+  XLAL_CHECK ( init_useful_powers(&powers_of_pi, LAL_PI) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to initiate useful powers of pi.");
 
   const REAL8 M = m1 + m2;
   REAL8 eta = m1 * m2 / (M * M);
@@ -215,18 +213,19 @@ static int IMRPhenomDGenerateFD(
   /* Compute the amplitude pre-factor */
   REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
 
+  /* Coalesce at t=0, shifting by overall length in time */
+  XLAL_CHECK ( XLALGPSAdd(&ligotimegps_zero, -1. / deltaF), XLAL_EFUNC, "Failed to shift coalescence time to t=0, tried to apply shift of -1.0/deltaF with deltaF=%g.", deltaF);
+
   /* Allocate htilde */
   size_t n = NextPow2(f_max / deltaF) + 1;
-  /* Coalesce at t=0 */
-  XLALGPSAdd(&ligotimegps_zero, -1. / deltaF); // shift by overall length in time
-  *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0,
-      deltaF, &lalStrainUnit, n);
+  XLAL_CHECK ( *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n), XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu for f_max=%f, deltaF=%g.", n, f_max, deltaF);
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
   XLALUnitMultiply(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
-  if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
 
+  /* range that will have actual non-zero waveform values generated */
   size_t ind_min = (size_t) (f_min / deltaF);
   size_t ind_max = (size_t) (f_max / deltaF);
+  XLAL_CHECK ( (ind_max<=n) && (ind_min<=ind_max), XLAL_EDOM, "minimum freq index %zu and maximum freq index %zu do not fulfill 0<=ind_min<=ind_max<=htilde->data>length=%zu.", ind_min, ind_max, n);
 
   // Calculate phenomenological parameters
   REAL8 finspin = FinalSpin0815(eta, chi1, chi2); //FinalSpin0815 - 0815 is like a version number
@@ -264,8 +263,7 @@ static int IMRPhenomDGenerateFD(
   REAL8 t0 = DPhiMRD(pAmp->fmaxCalc, pPhi);
 
   AmpInsPrefactors prefactors;
-  status = init_amp_ins_prefactors(&prefactors, pAmp);
-  XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+  XLAL_CHECK ( init_amp_ins_prefactors(&prefactors, pAmp) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to initialize amplitude prefactors.");
 
   /* Now generate the waveform */
   #pragma omp parallel for
