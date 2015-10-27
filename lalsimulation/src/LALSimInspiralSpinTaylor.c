@@ -662,6 +662,13 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
   *dS2y += params->S2dot7S1 * omega3 * S1cS2[1];
   *dS2z += params->S2dot7S1 * omega3 * S1cS2[2];
 
+  XLALFree(dLNhat);
+  XLALFree(LNcS1);
+  XLALFree(LNcS2);
+  XLALFree(S1cS2);
+  XLALFree(dL);
+  XLALFree(OmegaLN);
+
   return XLAL_SUCCESS;
 
 }
