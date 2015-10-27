@@ -151,7 +151,7 @@ try:
             gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
                 filename=fitspath, tagname=("sky_loc", "lvem"))
         else:
-            shutil.move(fitspath, '.')
+            os.rename(fitspath, os.path.join('.', opts.output))
     finally:
         shutil.rmtree(fitsdir)
 except:
