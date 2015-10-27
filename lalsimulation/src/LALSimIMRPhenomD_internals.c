@@ -397,7 +397,8 @@ static double chiPN(double eta, double chi1, double chi2) {
  * Return the closest higher power of 2
  */
 static size_t NextPow2(const size_t n) {
-  return 1 << (size_t) ceil(log2(n));
+  // use pow here, not bit-wise shift, as the latter seems to run against an upper cutoff long before SIZE_MAX, at least on some platforms
+  return (size_t) pow(2,ceil(log2(n)));
 }
 
 ///**
