@@ -137,7 +137,7 @@ int main(int argc, char *argv[]){
   SkyPosition XLAL_INIT_DECL(skyPos);
   MultiSSBtimes *multiBinaryTimes = NULL;
 
-  UINT4 k;
+  INT4  k;
   UINT4 j;
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
   REAL8 deltaF; /* frequency resolution associated with time baseline of SFTs */
@@ -153,17 +153,6 @@ int main(int argc, char *argv[]){
   toplist_t *ccToplist=NULL;
   CrossCorrBinaryOutputEntry thisCandidate;
   UINT4 checksum;
-  fullMetric actualMetic;
-  actualMetic.mff = 0; /* initialize the metric struct*/
-  actualMetic.mfa = 0;
-  actualMetic.maa = 0;
-  actualMetic.mat = 0;
-  actualMetic.mtt = 0;
-  actualMetic.mtp = 0;
-  actualMetic.mpp = 0;
-  actualMetic.mft = 0;
-  actualMetic.mfp = 0;
-  actualMetic.map = 0;
 
   LogPrintf (LOG_CRITICAL, "Starting time\n"); /*for debug convenience to record calculating time*/
   /* initialize and register user variables */
@@ -508,7 +497,7 @@ int main(int argc, char *argv[]){
   thisBinaryTemplate.fkdot[0]=0.5*(minBinaryTemplate.fkdot[0] + maxBinaryTemplate.fkdot[0]);
 
   /*Get metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
-  if ( (XLALCalculateLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, &diagpp, &actualMetic, thisBinaryTemplate, GammaAve, sftPairs, sftIndices, inputSFTs, multiWeights /*, kappaValues*/)  != XLAL_SUCCESS ) ) {
+  if ( (XLALCalculateLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, &diagpp, thisBinaryTemplate, GammaAve, sftPairs, sftIndices, inputSFTs, multiWeights /*, kappaValues*/)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -709,7 +698,6 @@ int main(int argc, char *argv[]){
     fprintf(fp, "g_aa = %.9f\n", diagaa);
     fprintf(fp, "g_TT = %.9f\n", diagTT);
     fprintf(fp, "g_pp = %.9f\n", diagpp);
-    fprintf(fp, "g_fa = %.9" LAL_REAL8_FORMAT "\n", actualMetic.mfa);
     fprintf(fp, "FSpacing = %.9g\n", binaryTemplateSpacings.fkdot[0]);
     fprintf(fp, "ASpacing = %.9g\n", binaryTemplateSpacings.asini);
     fprintf(fp, "TSpacing = %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));

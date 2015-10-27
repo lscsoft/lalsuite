@@ -545,7 +545,6 @@ int XLALCalculateLMXBCrossCorrDiagMetric
    REAL8                       *g_aa, /* Output: Diagonal binary projected semimajor axis metric element*/
    REAL8                       *g_TT, /* Output: Diagonal reference time metric element*/
    REAL8                       *g_pp, /* Output: Diagonal orbital period metric element */
-   fullMetric           *actualMetic, /* Output: parameter space metric*/
    PulsarDopplerParams DopplerParams, /*  Input: pulsar/binary orbit paramaters*/
    REAL8Vector              *G_alpha, /*  Input: vector of curlyGunshifted values */
    SFTPairIndexList   *pairIndexList, /*  Input: list of SFT pairs */
@@ -606,7 +605,6 @@ int XLALCalculateLMXBCrossCorrDiagMetric
   *g_aa = SinSquaWeightedAve * SQUARE(2. * LAL_PI * DopplerParams.fkdot[0]);
   *g_TT = SinSquaWeightedAve * SQUARE(SQUARE(2. * LAL_PI) * (DopplerParams.fkdot[0]) * (DopplerParams.asini) / (DopplerParams.period));
   *g_pp = SinSquaWeightedAve * sigmaTSqr * 16 * QUAD(LAL_PI) * SQUARE(DopplerParams.fkdot[0]) * SQUARE(DopplerParams.asini) / (QUAD(DopplerParams.period));
-  (*actualMetic).mfa = SinSquaWeightedAve * 4 * SQUARE(LAL_PI) * DopplerParams.fkdot[0] * DopplerParams.asini;
 
   return XLAL_SUCCESS;
 
