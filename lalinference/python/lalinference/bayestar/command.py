@@ -83,7 +83,10 @@ del group
 
 prior_parser = argparse.ArgumentParser(add_help=False)
 group = prior_parser.add_argument_group(
-    'prior options', 'Options that affect the BAYESTAR prior')
+    'prior options', 'Options that affect the BAYESTAR likelihood')
+group.add_argument('--phase-convention', default='antifindchirp',
+    choices=('findchirp', 'antifindchirp'),
+    help='Phase convention [default: %(default)s]')
 group.add_argument('--min-distance', type=float, metavar='Mpc',
     help='Minimum distance of prior in megaparsecs '
     '[default: infer from effective distance]')

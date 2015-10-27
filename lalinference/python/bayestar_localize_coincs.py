@@ -140,7 +140,8 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
             sky_map, epoch, elapsed_time = ligolw_sky_map.ligolw_sky_map(
                 sngl_inspirals, approximant, amplitude_order, phase_order, opts.f_low,
                 opts.min_distance, opts.max_distance, opts.prior_distance_power,
-                psds=psds, method=method, nside=opts.nside, chain_dump=chain_dump)
+                psds=psds, method=method, nside=opts.nside, chain_dump=chain_dump,
+                phase_convention=opts.phase_convention)
         except (ArithmeticError, ValueError):
             log.exception("%s:method '%s':sky localization failed", coinc.coinc_event_id, method)
             count_sky_maps_failed += 1

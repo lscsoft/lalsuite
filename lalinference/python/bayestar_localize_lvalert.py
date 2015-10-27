@@ -135,7 +135,8 @@ try:
     log.info("starting sky localization")
     sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(
         coinc_file, psd_file, opts.waveform, opts.f_low,
-        opts.min_distance, opts.max_distance, opts.prior_distance_power)
+        opts.min_distance, opts.max_distance, opts.prior_distance_power,
+        phase_convention=opts.phase_convention)
     log.info("sky localization complete")
 
     # upload FITS file

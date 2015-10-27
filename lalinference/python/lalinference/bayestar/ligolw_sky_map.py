@@ -23,6 +23,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 import itertools
+import logging
 import time
 import numpy as np
 import healpy as hp
@@ -31,6 +32,8 @@ from . import postprocess
 from . import timing
 from . import sky_map
 import lal, lalsimulation
+
+log = logging.getLogger('BAYESTAR')
 
 
 def toa_phoa_snr_log_prior(
@@ -114,7 +117,8 @@ def emcee_sky_map(
 def ligolw_sky_map(
         sngl_inspirals, approximant, amplitude_order, phase_order, f_low,
         min_distance=None, max_distance=None, prior_distance_power=None,
-        method="toa_phoa_snr", psds=None, nside=-1, chain_dump=None):
+        method="toa_phoa_snr", psds=None, nside=-1, chain_dump=None,
+        phase_convention='antifindchirp'):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
     min_distance and max_distance should be in Mpc.
 
@@ -141,6 +145,13 @@ def ligolw_sky_map(
     # Retrieve phases on arrival from table.
     phoas = np.asarray([sngl_inspiral.coa_phase
         for sngl_inspiral in sngl_inspirals])
+
+    # If using 'findchirp' phase convention rather than gstlal/mbta,
+    # then flip signs of phases.
+    if phase_convention.lower() == 'findchirp':
+        phoas = -phoas
+    else:
+        log.warn('Using anti-FINDCHIRP phase convention; flipping phases')
 
     # Extract SNRs from table.
     snrs = np.asarray([sngl_inspiral.snr
@@ -281,7 +292,8 @@ def ligolw_sky_map(
 
 def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
-        max_distance=None, prior_distance_power=None, nside=-1):
+        max_distance=None, prior_distance_power=None, nside=-1,
+        phase_convention='antifindchirp'):
     # LIGO-LW XML imports.
     from . import ligolw
     from glue.ligolw import table as ligolw_table
@@ -333,6 +345,6 @@ def gracedb_sky_map(
     prob, epoch, elapsed_time = ligolw_sky_map(sngl_inspirals, approximant,
         amplitude_order, phase_order, f_low,
         min_distance, max_distance, prior_distance_power,
-        nside=nside, psds=psds)
+        nside=nside, psds=psds, phase_convention=phase_convention)
 
     return prob, epoch, elapsed_time, instruments
