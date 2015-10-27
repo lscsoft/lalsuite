@@ -117,7 +117,7 @@ int XLALSimIMRPhenomDGenerateFD(
   /* check inputs for sanity */
   XLAL_CHECK(0 != htilde, XLAL_EFAULT, "htilde is null");
   if (*htilde) XLAL_ERROR(XLAL_EFAULT);
-  if (fRef_in <= 0) XLAL_ERROR(XLAL_EDOM, "fRef_in must be positive\n");
+  if (fRef_in < 0) XLAL_ERROR(XLAL_EDOM, "fRef_in must be nonnegative\n");
   if (deltaF <= 0) XLAL_ERROR(XLAL_EDOM, "deltaF must be positive\n");
   if (m1 <= 0) XLAL_ERROR(XLAL_EDOM, "m1 must be positive\n");
   if (m2 <= 0) XLAL_ERROR(XLAL_EDOM, "m2 must be positive\n");
