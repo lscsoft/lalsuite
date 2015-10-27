@@ -101,6 +101,20 @@ extern "C" {
     SFTPairIndex *data; /**< array of SFT Pair indices */
   } SFTPairIndexList;
 
+/*full sets of parameter space metric components */
+  typedef struct{
+    REAL8 mff;
+    REAL8 mfa;
+    REAL8 maa;
+    REAL8 mat;
+    REAL8 mtt;
+    REAL8 mtp;
+    REAL8 mpp;
+    REAL8 mft;
+    REAL8 mfp;
+    REAL8 map;
+  } fullMetric;
+
 /*
  *  Functions Declarations (i.e., prototypes).
  */
@@ -193,6 +207,7 @@ int XLALCalculateLMXBCrossCorrDiagMetric
    REAL8                       *g_aa,
    REAL8                       *g_TT,
    REAL8                       *g_pp,
+   fullMetric           *actualMetic,
    PulsarDopplerParams DopplerParams,
    REAL8Vector              *G_alpha,
    SFTPairIndexList   *pairIndexList,
