@@ -472,4 +472,5 @@ proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
              "SEOBNRv1":aligned_spin_param_generator,
              "SEOBNRv2":aligned_spin_param_generator,
              "SEOBNRv2_ROM_DoubleSpin":aligned_spin_param_generator,
+             "SEOBNRv2_ROM_DoubleSpin_HI":aligned_spin_param_generator,
              "SpinTaylorT4":SpinTaylorT4_param_generator}
