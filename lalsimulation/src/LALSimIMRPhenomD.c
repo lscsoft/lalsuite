@@ -30,7 +30,7 @@
 #include <lal/Units.h>
 */
 #include "LALSimIMRPhenomD_internals.c"
-UsefulPowers powers_of_pi;    // declared in LALSimIMRPhenomD_internals.c
+UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
 
 #ifndef _OPENMP
 #define omp ignore
@@ -100,7 +100,7 @@ static int IMRPhenomDGenerateFD(
 int XLALSimIMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
     const REAL8 phi0,                  /**< Orbital phase at fRef (rad) */
-    const REAL8 fRef_in,               /**< reference frequency (Hz) */
+    const REAL8 fRef_in,                  /**< reference frequency (Hz) */
     const REAL8 deltaF,                /**< Sampling frequency (Hz) */
     const REAL8 m1_SI,                 /**< Mass of companion 1 (kg) */
     const REAL8 m2_SI,                 /**< Mass of companion 2 (kg) */
@@ -117,7 +117,7 @@ int XLALSimIMRPhenomDGenerateFD(
   /* check inputs for sanity */
   XLAL_CHECK(0 != htilde, XLAL_EFAULT, "htilde is null");
   if (*htilde) XLAL_ERROR(XLAL_EFAULT);
-  if (fRef_in < 0) XLAL_ERROR(XLAL_EDOM, "fRef_in must be nonnegative\n");
+  if (fRef_in < 0) XLAL_ERROR(XLAL_EDOM, "fRef_in must be positive (or 0 for 'ignore')\n");
   if (deltaF <= 0) XLAL_ERROR(XLAL_EDOM, "deltaF must be positive\n");
   if (m1 <= 0) XLAL_ERROR(XLAL_EDOM, "m1 must be positive\n");
   if (m2 <= 0) XLAL_ERROR(XLAL_EDOM, "m2 must be positive\n");
@@ -150,14 +150,18 @@ int XLALSimIMRPhenomDGenerateFD(
   if (f_max_prime <= f_min)
     XLAL_ERROR(XLAL_EDOM, "f_max <= f_min\n");
 
-  XLAL_CHECK ( IMRPhenomDGenerateFD(htilde, phi0, fRef, deltaF, m1, m2, chi1, chi2, f_min, f_max_prime, distance) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomD waveform.");
+  int status = IMRPhenomDGenerateFD(htilde, phi0, fRef, deltaF,
+                                    m1, m2, chi1, chi2,
+                                    f_min, f_max_prime, distance);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to generate IMRPhenomD waveform.");
 
   if (f_max_prime < f_max) {
     // The user has requested a higher f_max than Mf=fCut.
     // Resize the frequency series to fill with zeros beyond the cutoff frequency.
     size_t n = (*htilde)->data->length;
     size_t n_full = NextPow2(f_max / deltaF) + 1; // we actually want to have the length be a power of 2 + 1
-    XLAL_CHECK ( *htilde = XLALResizeCOMPLEX16FrequencySeries(*htilde, 0, n_full), XLAL_ENOMEM, "Failed to resize waveform COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, fCut, n_full, f_max );
+    *htilde = XLALResizeCOMPLEX16FrequencySeries(*htilde, 0, n_full);
+    XLAL_CHECK ( *htilde, XLAL_ENOMEM, "Failed to resize waveform COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, fCut, n_full, f_max );
   }
 
   return XLAL_SUCCESS;
@@ -200,7 +204,8 @@ static int IMRPhenomDGenerateFD(
      m2   = m1_in;
   }
 
-  XLAL_CHECK ( init_useful_powers(&powers_of_pi, LAL_PI) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to initiate useful powers of pi.");
+  int status = init_useful_powers(&powers_of_pi, LAL_PI);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initiate useful powers of pi.");
 
   const REAL8 M = m1 + m2;
   REAL8 eta = m1 * m2 / (M * M);
@@ -213,12 +218,17 @@ static int IMRPhenomDGenerateFD(
   /* Compute the amplitude pre-factor */
   REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
 
-  /* Coalesce at t=0, shifting by overall length in time */
+  /* Coalesce at t=0 */
+  // shift by overall length in time
   XLAL_CHECK ( XLALGPSAdd(&ligotimegps_zero, -1. / deltaF), XLAL_EFUNC, "Failed to shift coalescence time to t=0, tried to apply shift of -1.0/deltaF with deltaF=%g.", deltaF);
 
   /* Allocate htilde */
   size_t n = NextPow2(f_max / deltaF) + 1;
-  XLAL_CHECK ( *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n), XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu for f_max=%f, deltaF=%g.", n, f_max, deltaF);
+
+  *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0,
+      deltaF, &lalStrainUnit, n);
+  XLAL_CHECK ( *htilde, XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu for f_max=%f, deltaF=%g.", n, f_max, deltaF);
+
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
   XLALUnitMultiply(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
 
@@ -255,15 +265,20 @@ static int IMRPhenomDGenerateFD(
 
   pn->v[6] -= (pn_ss3 * pn->v[0]);
 
+  PhiInsPrefactors phi_prefactors;
+  status = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "init_phi_ins_prefactors failed");
+
   // Compute coefficients to make phase C^1 continuous (phase and first derivative)
-  ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
+  ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors);
 
   //time shift so that peak amplitude is approximately at t=0
   //For details see https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/timedomain
   REAL8 t0 = DPhiMRD(pAmp->fmaxCalc, pPhi);
 
-  AmpInsPrefactors prefactors;
-  XLAL_CHECK ( init_amp_ins_prefactors(&prefactors, pAmp) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to initialize amplitude prefactors.");
+  AmpInsPrefactors amp_prefactors;
+  status = init_amp_ins_prefactors(&amp_prefactors, pAmp);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "init_amp_ins_prefactors failed");
 
   /* Now generate the waveform */
   #pragma omp parallel for
@@ -271,12 +286,19 @@ static int IMRPhenomDGenerateFD(
 
     REAL8 Mf = M_sec * i * deltaF; // geometric frequency
 
-    REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &prefactors);
-    REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn);
+	UsefulPowers powers_of_f;
+	status = init_useful_powers(&powers_of_f, Mf);
+	XLAL_CHECK(XLAL_SUCCESS == status, status, "init_useful_powers failed for Mf");
+
+	REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &powers_of_f, &amp_prefactors);
+    REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn, &powers_of_f, &phi_prefactors);
 
     // incorporating fRef
     REAL8 MfRef = M_sec * fRef;
-    REAL8 phifRef = IMRPhenDPhase(MfRef, pPhi, pn);
+	UsefulPowers powers_of_fRef;
+	status = init_useful_powers(&powers_of_fRef, MfRef);
+	XLAL_CHECK(XLAL_SUCCESS == status, status, "init_useful_powers failed for MfRef");
+    REAL8 phifRef = IMRPhenDPhase(MfRef, pPhi, pn, &powers_of_fRef, &phi_prefactors);
     phi -= 2.*phi0 + t0*(Mf-MfRef) + phifRef; // factor of 2 b/c phi0 is orbital phase
 
     ((*htilde)->data->data)[i] = amp0 * amp * cexp(-I * phi);
