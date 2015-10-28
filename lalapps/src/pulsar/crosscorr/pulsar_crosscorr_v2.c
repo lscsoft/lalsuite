@@ -147,12 +147,13 @@ int main(int argc, char *argv[]){
   REAL8 diagTT = 0;
   REAL8 diagpp = 0;
   REAL8 ccStat = 0;
-  REAL8 evSquared=0;
-  REAL8 estSens=0; /*estimated sensitivity(4.13)*/
+  REAL8 evSquared = 0;
+  REAL8 estSens = 0; /*estimated sensitivity(4.13)*/
   BOOLEAN dopplerShiftFlag = TRUE;
   toplist_t *ccToplist=NULL;
   CrossCorrBinaryOutputEntry thisCandidate;
   UINT4 checksum;
+  CHARVector *dimName = NULL;
 
   LogPrintf (LOG_CRITICAL, "Starting time\n"); /*for debug convenience to record calculating time*/
   /* initialize and register user variables */
@@ -597,6 +598,12 @@ int main(int argc, char *argv[]){
   diagTT = gsl_matrix_get(g_ij, 2, 2);
   diagpp = gsl_matrix_get(g_ij, 3, 3);
 
+  dimName = XLALCreateCHARVector(coordSys.dim);
+  dimName->data[0] = 'f';
+  dimName->data[1] = 'a';
+  dimName->data[2] = 'T';
+  dimName->data[3] = 'p';
+
   /* spacing in frequency from diagff */ /* set spacings in new dopplerparams struct */
   if (XLALUserVarWasSet(&uvar.spacingF)) /* If spacing was given by CMD line, use it, else calculate spacing by mismatch*/
     binaryTemplateSpacings.fkdot[0] = uvar.spacingF;
@@ -699,10 +706,27 @@ int main(int argc, char *argv[]){
     fprintf(fp, "[UserInput]\n\n");
     fprintf(fp, "%s\n", CMDInputStr);
     fprintf(fp, "[CalculatedValues]\n\n");
-    fprintf(fp, "g_ff = %.9f\n", diagff);
-    fprintf(fp, "g_aa = %.9f\n", diagaa);
-    fprintf(fp, "g_TT = %.9f\n", diagTT);
-    fprintf(fp, "g_pp = %.9f\n", diagpp);
+    REAL8 g_lm, eps_n;
+    for (UINT4 l = 0; l < coordSys.dim; l++){
+      for (UINT4 m = 0; m < coordSys.dim; m++){
+	if (l == m){
+	  g_lm = gsl_matrix_get(g_ij, l, m);
+	  fprintf(fp, "g_%c%c = %.9"LAL_REAL8_FORMAT"\n", dimName->data[l], dimName->data[m], g_lm);
+	}
+      }
+    }
+    for (UINT4 l = 0; l < coordSys.dim; l++){
+      for (UINT4 m = 0; m < coordSys.dim; m++){
+	if (l < m){
+	  g_lm = gsl_matrix_get(g_ij, l, m);
+	  fprintf(fp, "g_%c%c = %.9"LAL_REAL8_FORMAT"\n", dimName->data[l], dimName->data[m], g_lm);
+	}
+      }
+    }
+    for (UINT4 n = 0; n < coordSys.dim; n++){
+      eps_n = gsl_vector_get(eps_i, n);
+      fprintf(fp, "eps_%c = %.9"LAL_REAL8_FORMAT"\n", dimName->data[n], eps_n);
+    }
     fprintf(fp, "FSpacing = %.9g\n", binaryTemplateSpacings.fkdot[0]);
     fprintf(fp, "ASpacing = %.9g\n", binaryTemplateSpacings.asini);
     fprintf(fp, "TSpacing = %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
@@ -712,14 +736,14 @@ int main(int argc, char *argv[]){
     fprintf(fp, "TemplatenumT = %" LAL_UINT8_FORMAT "\n", (tSpacingNum + 1));
     fprintf(fp, "TemplatenumP = %" LAL_UINT8_FORMAT "\n", (pSpacingNum + 1));
     fprintf(fp, "TemplatenumTotal = %" LAL_UINT8_FORMAT "\n",(fSpacingNum + 1) * (aSpacingNum + 1) * (tSpacingNum + 1) * (pSpacingNum + 1));
-    fprintf(fp, "Sens = %.9g\n", estSens);/*(E[rho]/h0^2)^2*/
-    fprintf(fp, "h0_min_SNR10 = %.9g\n", h0Sens);/*for rho = 10 in our pipeline*/
-    fprintf(fp, "startTime = %" LAL_INT4_FORMAT "\n", computingStartGPSTime.gpsSeconds);/*start time in GPS-time*/
-    fprintf(fp, "endTime = %" LAL_INT4_FORMAT "\n", computingEndGPSTime.gpsSeconds);/*end time in GPS-time*/
-    fprintf(fp, "computingTime = %" LAL_UINT4_FORMAT "\n", computingTime);/*total time in sec*/
-    fprintf(fp, "SFTnum = %" LAL_UINT4_FORMAT "\n", sftIndices->length);/*total number of SFT*/
-    fprintf(fp, "pairnum = %" LAL_UINT4_FORMAT "\n", sftPairs->length);/*total number of pair of SFT*/
-    fprintf(fp, "Tsft = %.6g\n", Tsft);/*SFT duration*/
+    fprintf(fp, "Sens = %.9g\n", estSens); /*(E[rho]/h0^2)^2*/
+    fprintf(fp, "h0_min_SNR10 = %.9g\n", h0Sens); /*for rho = 10 in our pipeline*/
+    fprintf(fp, "startTime = %" LAL_INT4_FORMAT "\n", computingStartGPSTime.gpsSeconds); /*start time in GPS-time*/
+    fprintf(fp, "endTime = %" LAL_INT4_FORMAT "\n", computingEndGPSTime.gpsSeconds); /*end time in GPS-time*/
+    fprintf(fp, "computingTime = %" LAL_UINT4_FORMAT "\n", computingTime); /*total time in sec*/
+    fprintf(fp, "SFTnum = %" LAL_UINT4_FORMAT "\n", sftIndices->length); /*total number of SFT*/
+    fprintf(fp, "pairnum = %" LAL_UINT4_FORMAT "\n", sftPairs->length); /*total number of pair of SFT*/
+    fprintf(fp, "Tsft = %.6g\n", Tsft); /*SFT duration*/
     fprintf(fp, "\n[Version]\n\n");
     fprintf(fp, "%s",  VCSInfoString);
     fclose(fp);
@@ -742,7 +766,7 @@ int main(int argc, char *argv[]){
   XLALDestroyMultiNoiseWeights ( multiWeights );
   XLALDestroyMultiPSDVector ( multiPSDs );
   XLALDestroyMultiSFTVector ( inputSFTs );
-
+  XLALDestroyCHARVector ( dimName );
   /* de-allocate memory for configuration variables */
   XLALDestroyConfigVars ( &config );
 
