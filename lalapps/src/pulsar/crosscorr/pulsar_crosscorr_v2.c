@@ -502,42 +502,6 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  /* spacing in frequency from diagff */ /* set spacings in new dopplerparams struct */
-  if (XLALUserVarWasSet(&uvar.spacingF)) /* If spacing was given by CMD line, use it, else calculate spacing by mismatch*/
-    binaryTemplateSpacings.fkdot[0] = uvar.spacingF;
-  else
-    binaryTemplateSpacings.fkdot[0] = sqrt(uvar.mismatchF / diagff);
-
-  if (XLALUserVarWasSet(&uvar.spacingA))
-    binaryTemplateSpacings.asini = uvar.spacingA;
-  else
-    binaryTemplateSpacings.asini = sqrt(uvar.mismatchA / diagaa);
-  /* this is annoying: tp is a GPS time while we want a difference
-     in time which should be just REAL8 */
-  if (XLALUserVarWasSet(&uvar.spacingT))
-    XLALGPSSetREAL8( &binaryTemplateSpacings.tp, uvar.spacingT);
-  else
-    XLALGPSSetREAL8( &binaryTemplateSpacings.tp, sqrt(uvar.mismatchT / diagTT));
-
-  if (XLALUserVarWasSet(&uvar.spacingP))
-    binaryTemplateSpacings.period = uvar.spacingP;
-  else
-    binaryTemplateSpacings.period = sqrt(uvar.mismatchP / diagpp);
-
-  /* metric elements for eccentric case not considered? */
-
-  UINT8 fCount = 0, aCount = 0, tCount = 0 , pCount = 0;
-  const UINT8 fSpacingNum = floor( uvar.fBand / binaryTemplateSpacings.fkdot[0]);
-  const UINT8 aSpacingNum = floor( uvar.orbitAsiniSecBand / binaryTemplateSpacings.asini);
-  const UINT8 tSpacingNum = floor( uvar.orbitTimeAscBand / XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
-  const UINT8 pSpacingNum = floor( uvar.orbitPSecBand / binaryTemplateSpacings.period);
-
-  /*reset minbinaryOrbitParams to shift the first point a factor so as to make the center of all seaching points centers at the center of searching band*/
-  minBinaryTemplate.fkdot[0] = uvar.fStart + 0.5 * (uvar.fBand - fSpacingNum * binaryTemplateSpacings.fkdot[0]);
-  minBinaryTemplate.asini = uvar.orbitAsiniSec + 0.5 * (uvar.orbitAsiniSecBand - aSpacingNum * binaryTemplateSpacings.asini);
-  XLALGPSSetREAL8( &minBinaryTemplate.tp, uvar.orbitTimeAsc + 0.5 * (uvar.orbitTimeAscBand - tSpacingNum * XLALGPSGetREAL8(&binaryTemplateSpacings.tp)));
-  minBinaryTemplate.period = uvar.orbitPSec + 0.5 * (uvar.orbitPSecBand - pSpacingNum * binaryTemplateSpacings.period);
-
   /* initialize the doppler scan struct which stores the current template information */
   XLALGPSSetREAL8(&dopplerpos.refTime, config.refTime);
   dopplerpos.Alpha = uvar.alphaRad;
@@ -567,7 +531,32 @@ int main(int argc, char *argv[]){
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  /* "New" general metric computation */
+  /* Allocate structure for binary doppler-shifting information */
+  if ((multiBinaryTimes = XLALDuplicateMultiSSBtimes ( multiSSBTimes )) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALDuplicateMultiSSBtimes() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  UINT8 numSFTs = sftIndices->length;
+  if ((shiftedFreqs = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+  if ((lowestBins = XLALCreateUINT4Vector ( numSFTs ) ) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateUINT4Vector() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  if ((expSignalPhases = XLALCreateCOMPLEX8Vector ( numSFTs ) ) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+  if ((sincList = XLALCreateREAL8VectorSequence ( numSFTs, uvar.numBins ) ) == NULL){
+    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8VectorSequence() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+   /* "New" general metric computation */
   /* For now hard-code circular parameter space */
 
   const DopplerCoordinateSystem coordSys = {
@@ -595,38 +584,54 @@ int main(int argc, char *argv[]){
   XLALDestroyREAL8VectorSequence ( phaseDerivs );
   XLALDestroyREAL8Vector ( GammaCirc );
 
-  if ((fp = fopen("gsldata.dat","w"))==NULL){
+  /*  if ((fp = fopen("gsldata.dat","w"))==NULL){
     LogPrintf ( LOG_CRITICAL, "Can't write in gsl matrix file");
     XLAL_ERROR( XLAL_EFUNC );
   }
 
   XLALfprintfGSLvector(fp, "%g", eps_i);
-  XLALfprintfGSLmatrix(fp, "%g", g_ij);
+  XLALfprintfGSLmatrix(fp, "%g", g_ij);*/
 
-  /* Allocate structure for binary doppler-shifting information */
-  if ((multiBinaryTimes = XLALDuplicateMultiSSBtimes ( multiSSBTimes )) == NULL){
-    LogPrintf ( LOG_CRITICAL, "%s: XLALDuplicateMultiSSBtimes() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+  diagff = gsl_matrix_get(g_ij, 0, 0);
+  diagaa = gsl_matrix_get(g_ij, 1, 1);
+  diagTT = gsl_matrix_get(g_ij, 2, 2);
+  diagpp = gsl_matrix_get(g_ij, 3, 3);
 
-  UINT8 numSFTs = sftIndices->length;
-  if ((shiftedFreqs = XLALCreateREAL8Vector ( numSFTs ) ) == NULL){
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-  if ((lowestBins = XLALCreateUINT4Vector ( numSFTs ) ) == NULL){
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateUINT4Vector() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+  /* spacing in frequency from diagff */ /* set spacings in new dopplerparams struct */
+  if (XLALUserVarWasSet(&uvar.spacingF)) /* If spacing was given by CMD line, use it, else calculate spacing by mismatch*/
+    binaryTemplateSpacings.fkdot[0] = uvar.spacingF;
+  else
+    binaryTemplateSpacings.fkdot[0] = sqrt(uvar.mismatchF / diagff);
 
-  if ((expSignalPhases = XLALCreateCOMPLEX8Vector ( numSFTs ) ) == NULL){
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-  if ((sincList = XLALCreateREAL8VectorSequence ( numSFTs, uvar.numBins ) ) == NULL){
-    LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8VectorSequence() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+  if (XLALUserVarWasSet(&uvar.spacingA))
+    binaryTemplateSpacings.asini = uvar.spacingA;
+  else
+    binaryTemplateSpacings.asini = sqrt(uvar.mismatchA / diagaa);
+  /* this is annoying: tp is a GPS time while we want a difference
+     in time which should be just REAL8 */
+  if (XLALUserVarWasSet(&uvar.spacingT))
+    XLALGPSSetREAL8( &binaryTemplateSpacings.tp, uvar.spacingT);
+  else
+    XLALGPSSetREAL8( &binaryTemplateSpacings.tp, sqrt(uvar.mismatchT / diagTT));
+
+  if (XLALUserVarWasSet(&uvar.spacingP))
+    binaryTemplateSpacings.period = uvar.spacingP;
+  else
+    binaryTemplateSpacings.period = sqrt(uvar.mismatchP / diagpp);
+
+  /* metric elements for eccentric case not considered? */
+
+    UINT8 fCount = 0, aCount = 0, tCount = 0 , pCount = 0;
+  const UINT8 fSpacingNum = floor( uvar.fBand / binaryTemplateSpacings.fkdot[0]);
+  const UINT8 aSpacingNum = floor( uvar.orbitAsiniSecBand / binaryTemplateSpacings.asini);
+  const UINT8 tSpacingNum = floor( uvar.orbitTimeAscBand / XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
+  const UINT8 pSpacingNum = floor( uvar.orbitPSecBand / binaryTemplateSpacings.period);
+
+  /*reset minbinaryOrbitParams to shift the first point a factor so as to make the center of all seaching points centers at the center of searching band*/
+  minBinaryTemplate.fkdot[0] = uvar.fStart + 0.5 * (uvar.fBand - fSpacingNum * binaryTemplateSpacings.fkdot[0]);
+  minBinaryTemplate.asini = uvar.orbitAsiniSec + 0.5 * (uvar.orbitAsiniSecBand - aSpacingNum * binaryTemplateSpacings.asini);
+  XLALGPSSetREAL8( &minBinaryTemplate.tp, uvar.orbitTimeAsc + 0.5 * (uvar.orbitTimeAscBand - tSpacingNum * XLALGPSGetREAL8(&binaryTemplateSpacings.tp)));
+  minBinaryTemplate.period = uvar.orbitPSec + 0.5 * (uvar.orbitPSecBand - pSpacingNum * binaryTemplateSpacings.period);
 
   /* args should be : spacings, min and max doppler params */
   BOOLEAN firstPoint = TRUE; /* a boolean to help to search at the beginning point in parameter space, after the search it is set to be FALSE to end the loop*/
