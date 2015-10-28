@@ -148,10 +148,12 @@ def ligolw_sky_map(
 
     # If using 'findchirp' phase convention rather than gstlal/mbta,
     # then flip signs of phases.
-    if phase_convention.lower() == 'findchirp':
+    if phase_convention.lower() == 'antifindchirp':
+        log.warn('Using anti-FINDCHIRP phase convention; inverting phases. '
+                 'This is currently the default and it is appropriate for '
+                 'gstlal and MBTA but not pycbc as of observing run 1 ("O1"). '
+                 'The default setting is likely to change in the future.')
         phoas = -phoas
-    else:
-        log.warn('Using anti-FINDCHIRP phase convention; flipping phases')
 
     # Extract SNRs from table.
     snrs = np.asarray([sngl_inspiral.snr
