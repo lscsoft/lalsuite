@@ -126,7 +126,9 @@ static int PhenomPCoreOneFrequency(
   COMPLEX16 *hp,                          /**< Output: \f$\tilde h_+\f$ */
   COMPLEX16 *hc,                          /**< Output: \f$\tilde h_+\f$ */
   REAL8 *phasing,                         /**< Output: overall phasing */
-  const UINT4 IMRPhenomP_version          /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
+  const UINT4 IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
+  AmpInsPrefactors * amp_prefactors,
+  PhiInsPrefactors * phi_prefactors
 );
 
 /* Simple 2PN version of L, without any spin terms expressed as a function of v */
@@ -548,7 +550,11 @@ static int PhenomPCore(
 
       pn->v[6] -= (pn_ss3 * pn->v[0]);
 
-      ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
+	  PhiInsPrefactors phi_prefactors;
+	  status = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
+	  XLAL_CHECK(XLAL_SUCCESS == status, status, "init_phi_ins_prefactors failed");
+
+      ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors);
       // This should be the same as the ending frequency in PhenomD
       fCut = 0.2 / m_sec;
       f_final = pAmp->fRD / m_sec;
@@ -672,6 +678,17 @@ static int PhenomPCore(
   }
   REAL8 phasing = 0;
 
+  AmpInsPrefactors amp_prefactors;
+  PhiInsPrefactors phi_prefactors;
+
+  if (2 == IMRPhenomP_version)
+  {
+	status = init_amp_ins_prefactors(&amp_prefactors, pAmp);
+	XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+	status = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
+	XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+  }
+
   /*
     We can't call XLAL_ERROR() directly with OpenMP on.
     Keep track of return codes for each thread and in addition use flush to get out of
@@ -694,7 +711,7 @@ static int PhenomPCore(
     per_thread_errcode = PhenomPCoreOneFrequency(f, eta, chi_eff, chip, distance, M, phic,
                               pAmp, pPhi, PCparams, pn, &angcoeffs, &Y2m,
                               alphaNNLOoffset - alpha0, epsilonNNLOoffset,
-                              &hp_val, &hc_val, &phasing, IMRPhenomP_version);
+                              &hp_val, &hc_val, &phasing, IMRPhenomP_version, &amp_prefactors, &phi_prefactors);
 
     if (per_thread_errcode != XLAL_SUCCESS) {
       errcode = per_thread_errcode;
@@ -784,18 +801,18 @@ static int PhenomPCoreOneFrequency(
   COMPLEX16 *hp,                          /**< Output: \tilde h_+ */
   COMPLEX16 *hc,                          /**< Output: \tilde h_+ */
   REAL8 *phasing,                         /**< Output: overall phasing */
-  const UINT4 IMRPhenomP_version)         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
+  const UINT4 IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
+  AmpInsPrefactors * amp_prefactors,
+  PhiInsPrefactors * phi_prefactors)
 {
   REAL8 f = fHz*LAL_MTSUN_SI*M; /* Frequency in geometric units */
 
   REAL8 aPhenom = 0.0;
   REAL8 phPhenom = 0.0;
   int errcode = XLAL_SUCCESS;
-
-  AmpInsPrefactors prefactors;
   int status = XLAL_SUCCESS;
+  UsefulPowers powers_of_f;
 
-  XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
   /* Calculate Phenom amplitude and phase for a given frequency. */
   switch (IMRPhenomP_version) {
     case 1:
@@ -803,10 +820,10 @@ static int PhenomPCoreOneFrequency(
       if( errcode != XLAL_SUCCESS ) XLAL_ERROR(XLAL_EFUNC);
       break;
     case 2:
-      status = init_amp_ins_prefactors(&prefactors, pAmp);
-      XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
-      aPhenom = IMRPhenDAmplitude(f, pAmp, &prefactors);
-      phPhenom = IMRPhenDPhase(f, pPhi, PNparams);
+      status = init_useful_powers(&powers_of_f, f);
+      XLAL_CHECK(status == XLAL_SUCCESS, status, "init_useful_powers failed for f");
+      aPhenom = IMRPhenDAmplitude(f, pAmp, &powers_of_f, amp_prefactors);
+      phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors);
       break;
     default:
       XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
