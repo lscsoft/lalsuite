@@ -220,6 +220,10 @@ static size_t NextPow2(const size_t n);
 // static double StepFunc(const double t, const double t1);
 static bool StepFunc_boolean(const double t, const double t1);
 
+inline double pow_2_of(double number);
+inline double pow_3_of(double number);
+inline double pow_4_of(double number);
+
 /******************************* Constants to save floating-point pow calculations *******************************/
 
 /**
@@ -306,7 +310,7 @@ static int init_phi_ins_prefactors(PhiInsPrefactors * prefactors, IMRPhenomDPhas
 /**
  * calc square of number without floating point 'pow'
  */
-static double pow_2_of(double number)
+inline double pow_2_of(double number)
 {
 	return (number*number);
 }
@@ -314,7 +318,7 @@ static double pow_2_of(double number)
 /**
  * calc cube of number without floating point 'pow'
  */
-static double pow_3_of(double number)
+inline double pow_3_of(double number)
 {
 	return (number*number*number);
 }
@@ -322,7 +326,7 @@ static double pow_3_of(double number)
 /**
  * calc fourth power of number without floating point 'pow'
  */
-static double pow_4_of(double number)
+inline double pow_4_of(double number)
 {
 	double pow2 = pow_2_of(number);
 	return pow2 * pow2;
@@ -1056,9 +1060,14 @@ static void ComputeDeltasFromCollocation(IMRPhenomDAmplitudeCoefficients* p) {
 
   UsefulPowers powers_of_f1;
   int status = init_useful_powers(&powers_of_f1, f1);
+  if (status != XLAL_SUCCESS)
+    XLAL_PRINT_WARNING("status != XLAL_SUCCESS\n");
 
   AmpInsPrefactors prefactors;
   status = init_amp_ins_prefactors(&prefactors, p);
+  if (status != XLAL_SUCCESS)
+    XLAL_PRINT_WARNING("status != XLAL_SUCCESS\n");
+
 
   // v1 is inspiral model evaluated at f1
   // d1 is derivative of inspiral model evaluated at f1
