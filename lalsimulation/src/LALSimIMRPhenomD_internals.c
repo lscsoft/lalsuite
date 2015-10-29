@@ -220,9 +220,9 @@ static size_t NextPow2(const size_t n);
 // static double StepFunc(const double t, const double t1);
 static bool StepFunc_boolean(const double t, const double t1);
 
-inline double pow_2_of(double number);
-inline double pow_3_of(double number);
-inline double pow_4_of(double number);
+static inline double pow_2_of(double number);
+static inline double pow_3_of(double number);
+static inline double pow_4_of(double number);
 
 /******************************* Constants to save floating-point pow calculations *******************************/
 
@@ -310,7 +310,7 @@ static int init_phi_ins_prefactors(PhiInsPrefactors * prefactors, IMRPhenomDPhas
 /**
  * calc square of number without floating point 'pow'
  */
-inline double pow_2_of(double number)
+static inline double pow_2_of(double number)
 {
 	return (number*number);
 }
@@ -318,7 +318,7 @@ inline double pow_2_of(double number)
 /**
  * calc cube of number without floating point 'pow'
  */
-inline double pow_3_of(double number)
+static inline double pow_3_of(double number)
 {
 	return (number*number*number);
 }
@@ -326,7 +326,7 @@ inline double pow_3_of(double number)
 /**
  * calc fourth power of number without floating point 'pow'
  */
-inline double pow_4_of(double number)
+static inline double pow_4_of(double number)
 {
 	double pow2 = pow_2_of(number);
 	return pow2 * pow2;
