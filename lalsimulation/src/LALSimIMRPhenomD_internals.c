@@ -1060,13 +1060,11 @@ static void ComputeDeltasFromCollocation(IMRPhenomDAmplitudeCoefficients* p) {
 
   UsefulPowers powers_of_f1;
   int status = init_useful_powers(&powers_of_f1, f1);
-  if (status != XLAL_SUCCESS)
-    XLAL_PRINT_WARNING("status != XLAL_SUCCESS\n");
+  XLAL_CHECK_VOID ( status == XLAL_SUCCESS, XLAL_EFUNC, "Failed to initialize useful powers of f1.");
 
   AmpInsPrefactors prefactors;
   status = init_amp_ins_prefactors(&prefactors, p);
-  if (status != XLAL_SUCCESS)
-    XLAL_PRINT_WARNING("status != XLAL_SUCCESS\n");
+  XLAL_CHECK_VOID ( status == XLAL_SUCCESS, XLAL_EFUNC, "Failed to initialize amplitude prefactors for inspiral range.");
 
 
   // v1 is inspiral model evaluated at f1
