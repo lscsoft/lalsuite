@@ -11,7 +11,8 @@
 
 #ifdef  __cplusplus
 extern "C" {
-#pragma }
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
 extern int newswitch;
@@ -24,8 +25,9 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
                 							 InspiralTemplate *params,InspiralInit *paramsInit
 														 );
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 
