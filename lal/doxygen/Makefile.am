@@ -91,7 +91,7 @@ uninstall-local:
 
 clean-local:
 	-rm -rf out/
-	-rm -f autogen.dox test_doxygen.sh
+	-rm -f autogen.dox errors.log warnings.log test_doxygen.sh
 
 EXTRA_DIST = \
 	check_tags.py \
