@@ -127,8 +127,8 @@ static int PhenomPCoreOneFrequency(
   COMPLEX16 *hc,                          /**< Output: \f$\tilde h_+\f$ */
   REAL8 *phasing,                         /**< Output: overall phasing */
   const UINT4 IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
-  AmpInsPrefactors * amp_prefactors,
-  PhiInsPrefactors * phi_prefactors
+  AmpInsPrefactors * amp_prefactors,      /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
+  PhiInsPrefactors * phi_prefactors       /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/
 );
 
 /* Simple 2PN version of L, without any spin terms expressed as a function of v */
@@ -802,8 +802,8 @@ static int PhenomPCoreOneFrequency(
   COMPLEX16 *hc,                          /**< Output: \tilde h_+ */
   REAL8 *phasing,                         /**< Output: overall phasing */
   const UINT4 IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
-  AmpInsPrefactors * amp_prefactors,
-  PhiInsPrefactors * phi_prefactors)
+  AmpInsPrefactors * amp_prefactors,      /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
+  PhiInsPrefactors * phi_prefactors       /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/)
 {
   REAL8 f = fHz*LAL_MTSUN_SI*M; /* Frequency in geometric units */
 
