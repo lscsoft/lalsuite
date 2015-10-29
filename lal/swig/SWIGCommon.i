@@ -1077,7 +1077,7 @@ if (strides[I-1] == 0) {
 /// - If the input argument is a SWIG-wrapped \c NAME*, just unwrap it and return a reference.
 /// - If the input argument is a native scripting-language array, make an internal copy of it,
 ///   use the copy, and return a native scripting-language array copy of the internal copy.
-%typemap(in, noblock=1) NAME* SWIGLAL_COPYINOUT_ARRAY (void *argp = 0, int res = 0, NAME temp, void *swig_obj = 0, void *temp_data = 0) %{
+%typemap(in, noblock=1) NAME* SWIGLAL_COPYINOUT_ARRAY (void *argp = 0, int res = 0, NAME temp, SWIG_Object input_ref, void *temp_data = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     typedef struct { SIZET NI; TYPE* DATA; } sizchk_t;
@@ -1109,7 +1109,7 @@ if (strides[I-1] == 0) {
       %argument_fail(res, "$type", $symname, $argnum);
     }
   } else {
-    swig_obj = %reinterpret_cast(&$input, void*);
+    input_ref = $input;
   }
   $1 = %reinterpret_cast(argp, $ltype);
 %}
@@ -1123,7 +1123,7 @@ if (strides[I-1] == 0) {
                                                  $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                                  SWIG_POINTER_OWN | %newpointer_flags));
   } else {
-    %append_output(swiglal_get_reference(*%reinterpret_cast(swig_obj$argnum, SWIG_Object*)));
+    %append_output(swiglal_get_reference(input_ref$argnum));
   }
 %}
 %typemap(freearg, match="in", noblock=1) NAME* SWIGLAL_COPYINOUT_ARRAY %{
@@ -1222,7 +1222,7 @@ if (strides[I-1] == 0) {
 /// - If the input argument is a SWIG-wrapped \c NAME*, just unwrap it and return a reference.
 /// - If the input argument is a native scripting-language array, make an internal copy of it,
 ///   use the copy, and return a native scripting-language array copy of the internal copy.
-%typemap(in, noblock=1) NAME* SWIGLAL_COPYINOUT_ARRAY (void *argp = 0, int res = 0, NAME temp, void *swig_obj = 0, void *temp_data = 0) %{
+%typemap(in, noblock=1) NAME* SWIGLAL_COPYINOUT_ARRAY (void *argp = 0, int res = 0, NAME temp, SWIG_Object input_ref, void *temp_data = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
     typedef struct { SIZET NI; SIZET NJ; TYPE* DATA; } sizchk_t;
@@ -1255,7 +1255,7 @@ if (strides[I-1] == 0) {
       %argument_fail(res, "$type", $symname, $argnum);
     }
   } else {
-    swig_obj = %reinterpret_cast(&$input, void*);
+    input_ref = $input;
   }
   $1 = %reinterpret_cast(argp, $ltype);
 %}
@@ -1269,7 +1269,7 @@ if (strides[I-1] == 0) {
                                                  $typemap(swiglal_dynarr_isptr, TYPE), $typemap(swiglal_dynarr_tinfo, TYPE),
                                                  SWIG_POINTER_OWN | %newpointer_flags));
   } else {
-    %append_output(swiglal_get_reference(*%reinterpret_cast(swig_obj$argnum, SWIG_Object*)));
+    %append_output(swiglal_get_reference(input_ref$argnum));
   }
 %}
 %typemap(freearg, match="in", noblock=1) NAME* SWIGLAL_COPYINOUT_ARRAY %{
