@@ -306,7 +306,7 @@ static int init_phi_ins_prefactors(PhiInsPrefactors * prefactors, IMRPhenomDPhas
 /**
  * calc square of number without floating point 'pow'
  */
-inline double pow_2_of(double number)
+static double pow_2_of(double number)
 {
 	return (number*number);
 }
@@ -314,7 +314,7 @@ inline double pow_2_of(double number)
 /**
  * calc cube of number without floating point 'pow'
  */
-inline double pow_3_of(double number)
+static double pow_3_of(double number)
 {
 	return (number*number*number);
 }
@@ -322,7 +322,7 @@ inline double pow_3_of(double number)
 /**
  * calc fourth power of number without floating point 'pow'
  */
-inline double pow_4_of(double number)
+static double pow_4_of(double number)
 {
 	double pow2 = pow_2_of(number);
 	return pow2 * pow2;
