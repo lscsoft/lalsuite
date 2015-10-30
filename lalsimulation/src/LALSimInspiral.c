@@ -674,6 +674,43 @@ int XLALSimInspiralChooseTDWaveform(
                     f_min, 0., r, i);
             break;
 
+	case IMRPhenomD:
+	    if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
+		    ABORT_NONDEFAULT_WAVEFORM_FLAGS(waveFlags);
+	    if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+		    ABORT_NONZERO_TRANSVERSE_SPINS(waveFlags);
+	    if( !checkTidesZero(lambda1, lambda2) )
+		    ABORT_NONZERO_TIDES(waveFlags);
+	    // generate TD waveforms with zero inclincation so that amplitude can be
+	    // calculated from hplus and hcross, apply inclination-dependent factors
+	    // in loop below
+	    ret = XLALSimInspiralTDFromFD(hplus, hcross, phiRef, deltaT, m1, m2, S1x, S1y, S1z,
+			    S2x, S2y, S2z, f_min, f_ref, r, 0, 0, lambda1, lambda2,
+			    waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+	    REAL8 maxamp=0;
+	    REAL8TimeSeries *hp = *hplus;
+	    REAL8TimeSeries *hc = *hcross;
+	    INT4 maxind=hp->data->length - 1;
+	    INT4 loopi;
+	    const REAL8 cfac=cos(i);
+	    const REAL8 pfac = 0.5 * (1. + cfac*cfac);
+
+	    for (loopi=hp->data->length - 1; loopi > -1; loopi--)
+	    {
+		    REAL8 ampsqr = (hp->data->data[loopi])*(hp->data->data[loopi]) +
+			   (hc->data->data[loopi])*(hc->data->data[loopi]);
+		    if (ampsqr > maxamp)
+		    {
+			    maxind=loopi;
+			    maxamp=ampsqr;
+		    }
+		    hp->data->data[loopi] *= pfac;
+		    hc->data->data[loopi] *= cfac;
+	    }
+	    XLALGPSSetREAL8(&(hp->epoch), (-1.) * deltaT * maxind);
+	    XLALGPSSetREAL8(&(hc->epoch), (-1.) * deltaT * maxind);
+	    break;
+
         case PhenSpinTaylorRD:
             /* Waveform-specific sanity checks */
             if( !checkTidesZero(lambda1, lambda2) )
@@ -3747,6 +3784,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case IMRPhenomB:
         case PhenSpinTaylor:
         case IMRPhenomC:
+	case IMRPhenomD:
         case PhenSpinTaylorRD:
         case SEOBNRv1:
         case SpinDominatedWf:
