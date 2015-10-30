@@ -477,13 +477,13 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
   REAL8 OmegaLNz = params->Ldot3S1O * S1z + params->Ldot3S2O * S2z;
 
   /* Here we use the above \Omega_LN/omega2 at leading order to compute the
-   * extra terms in domega given by eq. (7) of arXiv:1507.00406.
+   * extra terms in dphi given by eq. (7) of arXiv:1507.00406.
    * Actually what is coded here is the time average of this equation,
    * which involves subtracting the projection of \Omega_LN over LN.
    */
   REAL8 tmp=OmegaLNx*LNhx+OmegaLNy*LNhy+OmegaLNz*LNhz;
   // This is a 3.5PN term in the phasing
-  *dphiExtra=-(OmegaLNx*OmegaLNx+OmegaLNy*OmegaLNy+OmegaLNz*OmegaLNz-tmp*tmp)*v7/4.;
+  *dphiExtra=-(OmegaLNx*OmegaLNx+OmegaLNy*OmegaLNy+OmegaLNz*OmegaLNz-tmp*tmp)*omega2/4.;
 
   /* Now we multiply by the appropriate v factor*/
   OmegaLNx*=omega2;
