@@ -29,7 +29,8 @@ print('Running Python unit tests.')
 modules = [
     lalinference.bayestar.filter,
     lalinference.fits,
-    lalinference.bayestar.timing]
+    lalinference.bayestar.timing,
+]
 for module in modules:
     failures, tests = doctest.testmod(module, verbose=True)
     total_failures += failures
