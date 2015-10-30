@@ -280,33 +280,47 @@ static int IMRPhenomDGenerateFD(
   status = init_amp_ins_prefactors(&amp_prefactors, pAmp);
   XLAL_CHECK(XLAL_SUCCESS == status, status, "init_amp_ins_prefactors failed");
 
+  int status_in_for = XLAL_SUCCESS;
   /* Now generate the waveform */
   #pragma omp parallel for
-  for (size_t i = ind_min; i < ind_max; i++) {
-
-    REAL8 Mf = M_sec * i * deltaF; // geometric frequency
+  for (size_t i = ind_min; i < ind_max; i++)
+  {
+	REAL8 Mf = M_sec * i * deltaF; // geometric frequency
 
 	UsefulPowers powers_of_f;
-	status = init_useful_powers(&powers_of_f, Mf);
-	XLAL_CHECK(XLAL_SUCCESS == status, status, "init_useful_powers failed for Mf");
+	status_in_for = init_useful_powers(&powers_of_f, Mf);
+	if (XLAL_SUCCESS != status_in_for)
+	{
+		XLALPrintError("init_useful_powers failed for Mf, status_in_for=%d", status_in_for);
+		status = status_in_for;
+	}
+	else
+	{
+		 REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &powers_of_f, &amp_prefactors);
+		 REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn, &powers_of_f, &phi_prefactors);
 
-	REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &powers_of_f, &amp_prefactors);
-    REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn, &powers_of_f, &phi_prefactors);
+		 // incorporating fRef
+		 REAL8 MfRef = M_sec * fRef;
+		 UsefulPowers powers_of_fRef;
+		 status_in_for = init_useful_powers(&powers_of_fRef, MfRef);
+		 if (XLAL_SUCCESS != status_in_for)
+		 {
+			 XLALPrintError("init_useful_powers failed for MfRef, status_in_for=%d", status_in_for);
+			 status = status_in_for;
+		 }
+		 else
+		 {
+			 REAL8 phifRef = IMRPhenDPhase(MfRef, pPhi, pn, &powers_of_fRef, &phi_prefactors);
+			 phi -= 2.*phi0 + t0*(Mf-MfRef) + phifRef; // factor of 2 b/c phi0 is orbital phase
 
-    // incorporating fRef
-    REAL8 MfRef = M_sec * fRef;
-	UsefulPowers powers_of_fRef;
-	status = init_useful_powers(&powers_of_fRef, MfRef);
-	XLAL_CHECK(XLAL_SUCCESS == status, status, "init_useful_powers failed for MfRef");
-    REAL8 phifRef = IMRPhenDPhase(MfRef, pPhi, pn, &powers_of_fRef, &phi_prefactors);
-    phi -= 2.*phi0 + t0*(Mf-MfRef) + phifRef; // factor of 2 b/c phi0 is orbital phase
-
-    ((*htilde)->data->data)[i] = amp0 * amp * cexp(-I * phi);
+			 ((*htilde)->data->data)[i] = amp0 * amp * cexp(-I * phi);
+		 }
+	}
   }
 
   LALFree(pAmp);
   LALFree(pPhi);
   LALFree(pn);
 
-  return XLAL_SUCCESS;
+  return status;
 }
