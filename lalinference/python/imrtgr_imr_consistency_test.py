@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 import scipy.signal as ss
+from scipy import interpolate
 from optparse import OptionParser
-import bayesian as ba
 import time, os 
 import imrtestgr as tgr 
 import pickle, gzip
@@ -286,7 +286,7 @@ if __name__ == '__main__':
   
   # injection confidence
   conf_v1v2 = confidence(P_dMfbyMf_dafbyaf)
-  inj_height = P_dMfbyMf_dafbyaf[argmin(abs(dMfbyMf_vec)), argmin(abs(dafbyaf_vec))]
+  inj_height = P_dMfbyMf_dafbyaf[np.argmin(abs(dMfbyMf_vec)), np.argmin(abs(dafbyaf_vec))]
   inj_level = conf_v1v2.level_from_height(inj_height)
   print 'GR is consistent with %.1f%% confidence level'%(100.*inj_level)
 
@@ -301,7 +301,7 @@ if __name__ == '__main__':
   np.savetxt(out_dir+'/data/P_dMfbyMf_dafbyaf.dat', P_dMfbyMf_dafbyaf)
   np.savetxt(out_dir+'/data/P_dMfbyMf.dat', P_dMfbyMf)
   np.savetxt(out_dir+'/data/P_dafbyaf.dat', P_dafbyaf)
-  np.savetxt(out_dir+'/data/GR_confidence.txt', inj_level)
+  np.savetxt(out_dir+'/data/GR_confidence.txt', [inj_level])
 
   #########################################################################################
 
