@@ -628,7 +628,6 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--mtotal-min min)                      Minimum total mass (2.0).\n\
     (--mtotal-max max)                      Maximum total mass (35.0).\n\
     (--dt time)                             Width of time prior, centred around trigger (0.2s).\n\
-    (--malmquistPrior)                      Rejection sample based on SNR of template \n\
 \n\
     (--varyFlow, --flowMin, --flowMax)       Allow the lower frequency bound of integration to vary in given range.\n\
     (--pinparams)                            List of parameters to set to injected values [mchirp,asym_massratio,etc].\n\
@@ -719,12 +718,6 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   ppt = LALInferenceGetProcParamVal(commandLine, "--noiseonly");
   if(ppt)signal_flag=0;
   LALInferenceAddVariable(model->params, "signalModelFlag", &signal_flag,  LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
-
-  if(LALInferenceGetProcParamVal(commandLine,"--malmquistPrior"))
-  {
-    UINT4 malmquistflag=1;
-    LALInferenceAddVariable(model->params, "malmquistPrior",&malmquistflag,LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  }
 
   /* Read injection XML file for parameters if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
