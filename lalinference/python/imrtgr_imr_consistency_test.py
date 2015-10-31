@@ -49,6 +49,30 @@ def set_tick_sizes(ax, major, minor):
   ax.xaxis.LABELPAD=10.
   ax.xaxis.OFFSETTEXTPAD=10.
 
+# Module for confidence calculations
+class confidence(object):
+  def __init__(self, counts):
+    # Sort in descending order in frequency
+    self.counts_sorted = np.sort(counts.flatten())[::-1]
+    # Get a normalized cumulative distribution from the mode
+    self.norm_cumsum_counts_sorted = np.cumsum(self.counts_sorted) / np.sum(counts)
+    # Set interpolations between heights, bins and levels
+    self._set_interp()
+  def _set_interp(self):
+    self._length = len(self.counts_sorted)
+    # height from index
+    self._height_from_idx = interpolate.interp1d(np.arange(self._length), self.counts_sorted, bounds_error=False, fill_value=0.)
+    # index from height
+    self._idx_from_height = interpolate.interp1d(self.counts_sorted[::-1], np.arange(self._length)[::-1], bounds_error=False, fill_value=self._length)
+    # level from index
+    self._level_from_idx = interpolate.interp1d(np.arange(self._length), self.norm_cumsum_counts_sorted, bounds_error=False, fill_value=1.)
+    # index from level
+    self._idx_from_level = interpolate.interp1d(self.norm_cumsum_counts_sorted, np.arange(self._length), bounds_error=False, fill_value=self._length)
+  def level_from_height(self, height):
+    return self._level_from_idx(self._idx_from_height(height))
+  def height_from_level(self, level):
+    return self._height_from_idx(self._idx_from_level(level))
+
 ######################################################################################
 ################################# MAIN PROGRAM #######################################
 ######################################################################################
@@ -259,6 +283,12 @@ if __name__ == '__main__':
   # Marginalization to one-dimensional joint_posteriors
   P_dMfbyMf = np.sum(P_dMfbyMf_dafbyaf, axis=0) * dy
   P_dafbyaf = np.sum(P_dMfbyMf_dafbyaf, axis=1) * dx
+  
+  # injection confidence
+  conf_v1v2 = confidence(P_dMfbyMf_dafbyaf)
+  inj_height = P_dMfbyMf_dafbyaf[argmin(abs(dMfbyMf_vec)), argmin(abs(dafbyaf_vec))]
+  inj_level = conf_v1v2.level_from_height(inj_height)
+  print 'GR is consistent with %.1f%% confidence level'%(100.*inj_level)
 
   # save results 
   np.savetxt(out_dir+'/data/Mfaf.dat', (Mf_bins,af_bins))
@@ -271,6 +301,7 @@ if __name__ == '__main__':
   np.savetxt(out_dir+'/data/P_dMfbyMf_dafbyaf.dat', P_dMfbyMf_dafbyaf)
   np.savetxt(out_dir+'/data/P_dMfbyMf.dat', P_dMfbyMf)
   np.savetxt(out_dir+'/data/P_dafbyaf.dat', P_dafbyaf)
+  np.savetxt(out_dir+'/data/GR_confidence.txt', inj_level)
 
   #########################################################################################
 
@@ -283,15 +314,18 @@ if __name__ == '__main__':
 
   P_m1m2_i = P_m1m2_i.T
   P_chi1chi2_i = P_chi1chi2_i.T
-
-  s1_m1m2_i = ba.nsigma_value(tgr.gf(P_m1m2_i), 0.68)
-  s2_m1m2_i = ba.nsigma_value(tgr.gf(P_m1m2_i), 0.95)
-
-  s1_chi1chi2_i = ba.nsigma_value(tgr.gf(P_chi1chi2_i), 0.68)
-  s2_chi1chi2_i = ba.nsigma_value(tgr.gf(P_chi1chi2_i), 0.95)
-
-  s1_Mfaf_i = ba.nsigma_value(tgr.gf(P_Mfaf_i), 0.68)
-  s2_Mfaf_i = ba.nsigma_value(tgr.gf(P_Mfaf_i), 0.95)
+  
+  conf_m1m2_i = confidence(P_m1m2_i)
+  s1_m1m2_i = conf_m1m2_i.height_from_level(0.68) 
+  s2_m1m2_i = conf_m1m2_i.height_from_level(0.95)
+  
+  conf_chi1chi2_i = confidence(P_chi1chi2_i)
+  s1_chi1chi2_i = conf_chi1chi2_i.height_from_level(0.68)
+  s2_chi1chi2_i = conf_chi1chi2_i.height_from_level(0.95)
+  
+  conf_Mfaf_i = confidence(P_Mfaf_i)
+  s1_Mfaf_i = conf_Mfaf_i.height_from_level(0.68)
+  s2_Mfaf_i = conf_Mfaf_i.height_from_level(0.95)
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(m1_bins_i, m2_bins_i, tgr.gf(P_m1m2_i), cmap='YlOrBr')
@@ -368,15 +402,18 @@ if __name__ == '__main__':
 
   P_m1m2_r = P_m1m2_r.T
   P_chi1chi2_r = P_chi1chi2_r.T
-
-  s1_m1m2_r = ba.nsigma_value(tgr.gf(P_m1m2_r), 0.68)
-  s2_m1m2_r = ba.nsigma_value(tgr.gf(P_m1m2_r), 0.95)
-
-  s1_chi1chi2_r = ba.nsigma_value(tgr.gf(P_chi1chi2_r), 0.68)
-  s2_chi1chi2_r = ba.nsigma_value(tgr.gf(P_chi1chi2_r), 0.95)
-
-  s1_Mfaf_r = ba.nsigma_value(tgr.gf(P_Mfaf_r), 0.68)
-  s2_Mfaf_r = ba.nsigma_value(tgr.gf(P_Mfaf_r), 0.95)
+  
+  conf_m1m2_r = confidence(P_m1m2_r)
+  s1_m1m2_r = conf_m1m2_r.height_from_level(0.68) 
+  s2_m1m2_r = conf_m1m2_r.height_from_level(0.95)
+  
+  conf_chi1chi2_r = confidence(P_chi1chi2_r)
+  s1_chi1chi2_r = conf_chi1chi2_r.height_from_level(0.68)
+  s2_chi1chi2_r = conf_chi1chi2_r.height_from_level(0.95)
+  
+  conf_Mfaf_r = confidence(P_Mfaf_r)
+  s1_Mfaf_r = conf_Mfaf_r.height_from_level(0.68)
+  s2_Mfaf_r = conf_Mfaf_r.height_from_level(0.95)
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(m1_bins_r, m2_bins_r, tgr.gf(P_m1m2_r), cmap='YlOrBr')
@@ -452,15 +489,18 @@ if __name__ == '__main__':
 
   P_m1m2_imr = P_m1m2_imr.T
   P_chi1chi2_imr = P_chi1chi2_imr.T
-
-  s1_m1m2_imr = ba.nsigma_value(tgr.gf(P_m1m2_imr), 0.68)
-  s2_m1m2_imr = ba.nsigma_value(tgr.gf(P_m1m2_imr), 0.95)
-
-  s1_chi1chi2_imr = ba.nsigma_value(tgr.gf(P_chi1chi2_imr), 0.68)
-  s2_chi1chi2_imr = ba.nsigma_value(tgr.gf(P_chi1chi2_imr), 0.95)
-
-  s1_Mfaf_imr = ba.nsigma_value(tgr.gf(P_Mfaf_imr), 0.68)
-  s2_Mfaf_imr = ba.nsigma_value(tgr.gf(P_Mfaf_imr), 0.95)
+  
+  conf_m1m2_imr = confidence(P_m1m2_imr)
+  s1_m1m2_imr = conf_m1m2_imr.height_from_level(0.68) 
+  s2_m1m2_imr = conf_m1m2_imr.height_from_level(0.95)
+  
+  conf_chi1chi2_imr = confidence(P_chi1chi2_imr)
+  s1_chi1chi2_imr = conf_chi1chi2_imr.height_from_level(0.68)
+  s2_chi1chi2_imr = conf_chi1chi2_imr.height_from_level(0.95)
+  
+  conf_Mfaf_imr = confidence(P_Mfaf_imr)
+  s1_Mfaf_imr = conf_Mfaf_imr.height_from_level(0.68)
+  s2_Mfaf_imr = conf_Mfaf_imr.height_from_level(0.95)
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(m1_bins_imr, m2_bins_imr, tgr.gf(P_m1m2_imr), cmap='YlOrBr')
@@ -566,8 +606,9 @@ if __name__ == '__main__':
   plt.savefig('%s/img/IMR_overlap_thumb.png'%(out_dir), dpi=72)
 
   #(dMf, daf)
-  s1_dMfdaf = ba.nsigma_value(tgr.gf(P_dMfdaf), 0.68)
-  s2_dMfdaf = ba.nsigma_value(tgr.gf(P_dMfdaf), 0.95)
+  conf_dMfdaf = confidence(P_dMfdaf)
+  s1_dMfdaf = conf_dMfdaf.height_from_level(0.68)
+  s2_dMfdaf = conf_dMfdaf.height_from_level(0.95)
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(Mf_bins, af_bins, tgr.gf(P_dMfdaf), cmap='YlOrBr')
@@ -580,14 +621,17 @@ if __name__ == '__main__':
   plt.savefig('%s/img/dMfdaf_thumb.png'%(out_dir), dpi=72)
 
   #(dMf/Mf, daf/af)
-  s1_v1v2 = ba.nsigma_value(tgr.gf(P_dMfbyMf_dafbyaf), 0.68)
-  s2_v1v2 = ba.nsigma_value(tgr.gf(P_dMfbyMf_dafbyaf), 0.95)
+  conf_v1v2 = confidence(P_dMfbyMf_dafbyaf)
+  s1_v1v2 = conf_v1v2.height_from_level(0.68)
+  s2_v1v2 = conf_v1v2.height_from_level(0.95)
+  
+  conf_v1 = confidence(P_dMfbyMf)
+  s1_v1 = conf_v1.height_from_level(0.68)
+  s2_v1 = conf_v1.height_from_level(0.95)
 
-  s1_v1 = ba.nsigma_value(P_dMfbyMf, 0.68)
-  s2_v1 = ba.nsigma_value(P_dMfbyMf, 0.95)
-
-  s1_v2 = ba.nsigma_value(P_dafbyaf, 0.68)
-  s2_v2 = ba.nsigma_value(P_dafbyaf, 0.95)
+  conf_v2 = confidence(P_dafbyaf)
+  s1_v2 = conf_v2.height_from_level(0.68)
+  s2_v2 = conf_v2.height_from_level(0.95)
 
   # Calculation of condifence edges
 
