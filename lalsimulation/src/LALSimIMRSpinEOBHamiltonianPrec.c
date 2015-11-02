@@ -241,7 +241,7 @@ static REAL8 XLALSimIMRSpinPrecEOBHamiltonian(
     e3_z = 1./sqrt(3.);
   }
 //   XLAL_PRINT_INFO("e3_x*nx + e3_y*ny + e3_z*nz %e = \n",e3_x*nx + e3_y*ny + e3_z*nz);
-    if (1. - fabs(e3_x*nx + e3_y*ny + e3_z*nz) <= 1.e-4) {
+    if (1. - fabs(e3_x*nx + e3_y*ny + e3_z*nz) <= 1.e-8) {
 //        XLAL_PRINT_INFO("BEFORE e3_x*nx + e3_y*ny + e3_z*nz, e3_x, e3_y, e3_z  = %.16e %.16e %.16e %.16e\n", e3_x*nx + e3_y*ny + e3_z*nz, e3_x, e3_y, e3_z );
         e3_x = e3_x+0.1;
         e3_y = e3_y+0.1;
