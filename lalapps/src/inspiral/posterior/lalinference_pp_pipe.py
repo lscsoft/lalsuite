@@ -87,7 +87,7 @@ if prior_cp.get('analysis','engine')=='lalinferencenest':
   prior_cp.set('engine','zeroLogLike','')
   prior_cp.set('engine','nlive',str(20*opts.trials))
 elif prior_cp.get('analysis','engine')=='lalinferencemcmc':
-  prior_cp.set('engine','Neff',str(opts.trials))
+  prior_cp.set('engine','neff',str(max(opts.trials,1000))) # miminum of 1000 effective samples
   prior_cp.set('engine','zeroLogLike','')
 elif prior_cp.get('analysis','engine')=='lalinferencebambi':
   prior_cp.set('engine','zeroLogLike','')

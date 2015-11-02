@@ -628,7 +628,6 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--mtotal-min min)                      Minimum total mass (2.0).\n\
     (--mtotal-max max)                      Maximum total mass (35.0).\n\
     (--dt time)                             Width of time prior, centred around trigger (0.2s).\n\
-    (--malmquistPrior)                      Rejection sample based on SNR of template \n\
 \n\
     (--varyFlow, --flowMin, --flowMax)       Allow the lower frequency bound of integration to vary in given range.\n\
     (--pinparams)                            List of parameters to set to injected values [mchirp,asym_massratio,etc].\n\
@@ -719,12 +718,6 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   ppt = LALInferenceGetProcParamVal(commandLine, "--noiseonly");
   if(ppt)signal_flag=0;
   LALInferenceAddVariable(model->params, "signalModelFlag", &signal_flag,  LALINFERENCE_INT4_t,  LALINFERENCE_PARAM_FIXED);
-
-  if(LALInferenceGetProcParamVal(commandLine,"--malmquistPrior"))
-  {
-    UINT4 malmquistflag=1;
-    LALInferenceAddVariable(model->params, "malmquistPrior",&malmquistflag,LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-  }
 
   /* Read injection XML file for parameters if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
@@ -1737,13 +1730,6 @@ void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceMode
     XLALPrintWarning("WARNING: IMRPhenomP only supports spin magnitude up to 0.9. Changing the a1max=a2max=0.9.\n");
   }
 
-  /* IMRPhenomD only supports aligned spins within [ -1.0, 0.99 ] and q > 1/50. Set prior consequently*/
-  if (approx==IMRPhenomD && (a1max>0.99 || a2max>0.99)){
-    a1max=0.99;
-    a2max=0.99;
-    XLALPrintWarning("WARNING: IMRPhenomD only supports aligned spins within [ -1.0, 0.99 ]. Changing the a1max=a2max=0.99.\n");
-  }
-
   /* IMRPhenomPv2 preliminary only supports spins up to 0.99 and q > 1/20. Set prior consequently*/
   if (approx==IMRPhenomPv2 && (a1max>0.99 || a2max>0.99)){
     a1max=0.99;
@@ -1872,6 +1858,7 @@ void LALInferenceInitMassVariables(LALInferenceRunState *state){
 void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approximant approx){
 
   REAL8 min,max;
+  REAL8 a1min,a1max,a2min,a2max;
   UINT4 q=0;
 
   if (LALInferenceCheckVariable(state->priorArgs,"q_min")){
@@ -1895,18 +1882,21 @@ void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approximant a
      fprintf(stdout,"WARNING: IMRPhenomP only supports mass ratios up to 10 ( suggested max: 4). Changing the min prior for eta to 0.083\n");
   }
 
-  /* IMRPhenomD only supports q > 1/50. Set prior consequently  */
-  if (q==1 && approx==IMRPhenomD && min<1./50.){
-    min=1.0/50.;
-    LALInferenceRemoveVariable(state->priorArgs,"q_min");
-    LALInferenceAddVariable(state->priorArgs,"q_min",&min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-    fprintf(stdout,"WARNING: IMRPhenomD only supports mass ratios up to 50 ( suggested max: 18). Changing the min prior for q to 1/50\n");
-  }
-  if (q==0 && approx==IMRPhenomD && min<0.01922337563){
-    min=0.01922337563;  //(that is eta for a 1-50 system)
-    LALInferenceRemoveVariable(state->priorArgs,"eta_min");
-    LALInferenceAddVariable(state->priorArgs,"eta_min",&min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-    fprintf(stdout,"WARNING: IMRPhenomD only supports mass ratios up to 50 ( suggested max: 18). Changing the min prior for eta to 0.019\n");
+  /* In the IMRPhenomD review a region with possible issues  (q < 1/10 for maximal spins) was identified */
+  /* This is not cause to restrict the waveform to exclude this region, but caution should be exercised */
+  if (approx==IMRPhenomD){
+     LALInferenceGetMinMaxPrior(state->priorArgs, "a_spin1", &a1min, &a1max);
+     LALInferenceGetMinMaxPrior(state->priorArgs, "a_spin2", &a2min, &a2max);
+     if (q==1 && min<1./10 && ((a1max==1.0 || a2max==1.0) || (a1min==-1.0 || a2min==-1.0))){
+        fprintf(stdout,"WARNING: Based on the allowed prior volume (q < 1/10 for maximal spins), please consult\n");
+        fprintf(stdout,"IMRPhenomD review wiki for further discussion on reliable parameter spaces\n");
+        fprintf(stdout,"https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/PhenD_LargeNegativeSpins\n");
+     }
+     if (q==0 && min<0.082644628 && ((a1max==1.0 || a2max==1.0) || (a1min==-1.0 || a2min==-1.0))){
+        fprintf(stdout,"WARNING: Based on the allowed prior volume (q < 1/10 for maximal spins), please consult\n");
+        fprintf(stdout,"IMRPhenomD review wiki for further discussion on reliable parameter spaces\n");
+        fprintf(stdout,"https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/PhenD_LargeNegativeSpins\n");
+     }
   }
 
   /* IMRPhenomPv2 only supports q > 1/20. Set prior consequently  */

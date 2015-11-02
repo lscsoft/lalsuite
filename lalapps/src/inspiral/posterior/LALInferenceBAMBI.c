@@ -341,11 +341,11 @@ void runTestLikelihood(LALInferenceRunState *runState)
     int nd = 0, ne = 0;
     countDimensions(params, &nd, &ne);
 
-    // create and allocate Cube[] of zeros
+    // create and allocate Cube[] of 0.5 (middle of prior)
     double *Cube = NULL;
     Cube = (double *)malloc(nd*sizeof(double));
     int i;
-    for (i=0; i<nd; i++) Cube[i] = 0.0;
+    for (i=0; i<nd; i++) Cube[i] = 0.5;
 
     // create context var
     char **info=(char **)malloc(3*sizeof(char *));
@@ -386,6 +386,11 @@ void countDimensions(LALInferenceVariables *params, int *nsamp, int *nextra)
                 INT4 numdims = nparams->size1 * nparams->size2;
                 *nsamp += numdims;
             }
+            else if (item->type == LALINFERENCE_REAL8Vector_t)
+            {
+                REAL8Vector *vector1 = *((REAL8Vector **)item->value);
+                *nsamp += vector1->length;
+            }
             else
                 (*nsamp)++;
         }
@@ -396,6 +401,11 @@ void countDimensions(LALInferenceVariables *params, int *nsamp, int *nextra)
                 gsl_matrix *nparams = *((gsl_matrix **)item->value);
                 INT4 numdims = nparams->size1 * nparams->size2;
                 *nextra += numdims;
+            }
+            else if (item->type == LALINFERENCE_REAL8Vector_t)
+            {
+                REAL8Vector *vector1 = *((REAL8Vector **)item->value);
+                *nextra += vector1->length;
             }
             else
                 (*nextra)++;
@@ -502,43 +512,6 @@ void LALInferenceMultiNestAlgorithm(LALInferenceRunState *runState)
     // find out the dimensionality of the problem
     int ND = 0, Nextra = 0;
     countDimensions(runState->threads[0]->currentParams, &ND, &Nextra);
-    /*if (LALInferenceGetProcParamVal(runState->commandLine,"--psd-fit") || LALInferenceGetProcParamVal(runState->commandLine,"--psdFit")) {
-        Nextra += 2;  // start with 2 for optimal SNR and matched filter SNR
-        LALInferenceIFOData *tmpifo = runStateGlobal->data;
-        while (tmpifo != NULL) {
-            Nextra++;  // for optimal SNR in detector
-            tmpifo = tmpifo->next;
-        }
-        if (SKY_FRAME == 1) {
-            Nextra += 3;  // for RA, dec, time
-        }
-    }*/
-    /*LALInferenceVariableItem *item=runState->threads[0]->currentParams->head;
-    for(;item;item=item->next)
-    {
-        if(item->vary==LALINFERENCE_PARAM_LINEAR || item->vary==LALINFERENCE_PARAM_CIRCULAR)
-        {
-            if (item->type == LALINFERENCE_gslMatrix_t)
-            {
-                gsl_matrix *nparams = *((gsl_matrix **)item->value);
-                INT4 numdims = nparams->size1 * nparams->size2;
-                ND += numdims;
-            }
-            else
-                ND++;
-        }
-        else
-        {
-            if (item->type == LALINFERENCE_gslMatrix_t)
-            {
-                gsl_matrix *nparams = *((gsl_matrix **)item->value);
-                INT4 numdims = nparams->size1 * nparams->size2;
-                Nextra += numdims;
-            }
-            else
-                Nextra++;
-        }
-    }*/
 
     if( ND==0 )
     {
@@ -655,8 +628,8 @@ void initializeMN(LALInferenceRunState *runState)
                ---------------------------------------------------------------------------------------------------\n\
                --Nlive N                        Number of live points to use.\n\
                (--Ntrain N)                     Number of training points to use for NN (default=Nlive).\n\
-               (--eff e)                        Target efficiency (0.1)\n\
-               (--tol tol)                      Tolerance on evidence calculation (0.5)\n\
+               (--eff e)                        Target efficiency (0.01)\n\
+               (--tol tol)                      Tolerance on evidence calculation (1.0)\n\
                (--multimodal maxModes)          Enables multimodal sampling with specified maximum number of modes\n\
                                                   (default is turned off with 1 mode)\
                (--progress)                     Produce progress information.\n\
@@ -730,7 +703,7 @@ void initializeMN(LALInferenceRunState *runState)
     if(ppt)
         tmpd=fabs(atof(ppt->value));
     else {
-        tmpd=0.1;
+        tmpd=0.01;
     }
     LALInferenceAddVariable(runState->algorithmParams,"eff",&tmpd, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
@@ -739,7 +712,7 @@ void initializeMN(LALInferenceRunState *runState)
     if(ppt)
 	tmpd=fabs(atof(ppt->value));
     else {
-	tmpd=0.5;
+	tmpd=1.0;
     }
     LALInferenceAddVariable(runState->algorithmParams,"evidencetol",&tmpd, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 

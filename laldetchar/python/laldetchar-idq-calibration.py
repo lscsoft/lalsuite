@@ -240,7 +240,7 @@ while gpsstart < gpsstop:
 
     logger.info('----------------------------------------------------')
 
-    wait = gpsstart + stride + delay - t
+    wait = gpsstart + stride + delay - idq.nowgps()
     if wait > 0:
         logger.info('waiting %.1f seconds to reach gpsstart+stride+delay=%d' %(wait, gpsstart+stride+delay))
         time.sleep(wait)

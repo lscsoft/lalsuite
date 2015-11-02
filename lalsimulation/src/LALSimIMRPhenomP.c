@@ -126,7 +126,9 @@ static int PhenomPCoreOneFrequency(
   COMPLEX16 *hp,                          /**< Output: \f$\tilde h_+\f$ */
   COMPLEX16 *hc,                          /**< Output: \f$\tilde h_+\f$ */
   REAL8 *phasing,                         /**< Output: overall phasing */
-  const UINT4 IMRPhenomP_version          /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
+  const UINT4 IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
+  AmpInsPrefactors * amp_prefactors,      /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
+  PhiInsPrefactors * phi_prefactors       /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/
 );
 
 /* Simple 2PN version of L, without any spin terms expressed as a function of v */
@@ -410,6 +412,9 @@ static int PhenomPCore(
     chi2_l = chi1_l_in;
   }
 
+  int status = init_useful_powers(&powers_of_pi, LAL_PI);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+
   /* Find frequency bounds */
   if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
   double f_min = freqs_in->data[0];
@@ -535,20 +540,23 @@ static int PhenomPCore(
       // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
       // (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
       // was not available as PhenomD was tuned.
-      REAL8 chi1L = chi1_l;
-      REAL8 chi2L = chi2_l;
       REAL8 chi1sq = chi1_l * chi1_l;
       REAL8 chi2sq = chi2_l * chi2_l;
       REAL8 m1M = m1 / M;
       REAL8 m2M = m2 / M;
-      REAL8 pn_ss3 =  (326.75L/1.12L + 557.5L/1.8L*eta)*eta*chi1L*chi2L;
+      REAL8 pn_ss3 =  (326.75L/1.12L + 557.5L/1.8L*eta)*eta*chi1_l*chi2_l;
       pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m1M-120.L*m1M*m1M) + (-4108.25L/6.72L-108.5L/1.2L*m1M+125.5L/3.6L*m1M*m1M)) *m1M*m1M * chi1sq;
       pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m2M-120.L*m2M*m2M) + (-4108.25L/6.72L-108.5L/1.2L*m2M+125.5L/3.6L*m2M*m2M)) *m2M*m2M * chi2sq;
 
       pn->v[6] -= (pn_ss3 * pn->v[0]);
 
-      ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
-      fCut = 0.3 / m_sec;
+	  PhiInsPrefactors phi_prefactors;
+	  status = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
+	  XLAL_CHECK(XLAL_SUCCESS == status, status, "init_phi_ins_prefactors failed");
+
+      ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors);
+      // This should be the same as the ending frequency in PhenomD
+      fCut = 0.2 / m_sec;
       f_final = pAmp->fRD / m_sec;
       break;
     default:
@@ -650,7 +658,7 @@ static int PhenomPCore(
     errcode=XLAL_EFUNC;
     goto cleanup;
   }
-    
+
   /* Test output */
   XLAL_PRINT_INFO("eta: %g", eta);
   XLAL_PRINT_INFO("m1: %g", m1);
@@ -669,6 +677,17 @@ static int PhenomPCore(
     goto cleanup;
   }
   REAL8 phasing = 0;
+
+  AmpInsPrefactors amp_prefactors;
+  PhiInsPrefactors phi_prefactors;
+
+  if (2 == IMRPhenomP_version)
+  {
+	status = init_amp_ins_prefactors(&amp_prefactors, pAmp);
+	XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+	status = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
+	XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+  }
 
   /*
     We can't call XLAL_ERROR() directly with OpenMP on.
@@ -692,7 +711,7 @@ static int PhenomPCore(
     per_thread_errcode = PhenomPCoreOneFrequency(f, eta, chi_eff, chip, distance, M, phic,
                               pAmp, pPhi, PCparams, pn, &angcoeffs, &Y2m,
                               alphaNNLOoffset - alpha0, epsilonNNLOoffset,
-                              &hp_val, &hc_val, &phasing, IMRPhenomP_version);
+                              &hp_val, &hc_val, &phasing, IMRPhenomP_version, &amp_prefactors, &phi_prefactors);
 
     if (per_thread_errcode != XLAL_SUCCESS) {
       errcode = per_thread_errcode;
@@ -753,7 +772,7 @@ static int PhenomPCore(
   if(pn) XLALFree(pn);
 
   if(freqs) XLALDestroyREAL8Sequence(freqs);
-  
+
   if( errcode != XLAL_SUCCESS )
     XLAL_ERROR(errcode);
   else
@@ -782,13 +801,18 @@ static int PhenomPCoreOneFrequency(
   COMPLEX16 *hp,                          /**< Output: \tilde h_+ */
   COMPLEX16 *hc,                          /**< Output: \tilde h_+ */
   REAL8 *phasing,                         /**< Output: overall phasing */
-  const UINT4 IMRPhenomP_version)         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
+  const UINT4 IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
+  AmpInsPrefactors * amp_prefactors,      /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
+  PhiInsPrefactors * phi_prefactors       /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/)
 {
   REAL8 f = fHz*LAL_MTSUN_SI*M; /* Frequency in geometric units */
 
   REAL8 aPhenom = 0.0;
   REAL8 phPhenom = 0.0;
   int errcode = XLAL_SUCCESS;
+  int status = XLAL_SUCCESS;
+  UsefulPowers powers_of_f;
+
   /* Calculate Phenom amplitude and phase for a given frequency. */
   switch (IMRPhenomP_version) {
     case 1:
@@ -796,8 +820,10 @@ static int PhenomPCoreOneFrequency(
       if( errcode != XLAL_SUCCESS ) XLAL_ERROR(XLAL_EFUNC);
       break;
     case 2:
-      aPhenom = IMRPhenDAmplitude(f, pAmp);
-      phPhenom = IMRPhenDPhase(f, pPhi, PNparams);
+      status = init_useful_powers(&powers_of_f, f);
+      XLAL_CHECK(status == XLAL_SUCCESS, status, "init_useful_powers failed for f");
+      aPhenom = IMRPhenDAmplitude(f, pAmp, &powers_of_f, amp_prefactors);
+      phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors);
       break;
     default:
       XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
