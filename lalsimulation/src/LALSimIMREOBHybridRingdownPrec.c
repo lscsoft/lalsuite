@@ -804,6 +804,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
             // FIXME
 			//if (m < 0) {
 			//if (m > 0) {
+            //printf("Stas: J.L = %f, J.L*m = %f  Re(mode) = %f \n", JLN, JLN*m, creal(modefreqs->data[0]));
             if (JLN*m < 0.0){
 				modefreqs->data[6] = (-3. / 4. * NRPeakOmega22 / finalMass) + (1. / 4. * creal(modefreqs->data[0]));
 				modefreqs->data[7] = (-2. / 3. * NRPeakOmega22 / finalMass) + (1. / 3. * creal(modefreqs->data[0]));
@@ -921,7 +922,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
              //modefreqs->data[5] = modefreqs_xtr->data[1];
              XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -2, nmodes, approximant);
              //XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, -1, nmodes, approximant);
-             if (JLN > 0.0 && JLN < 0.98){
+             if ((JLN > 0.0 && JLN < 0.98) || eta*JLN < eJL_thr){
                  modefreqs->data[5] =  modefreqs_xtr->data[0];
                  //modefreqs->data[7] =  modefreqs_xtr->data[1];
                  //modefreqs->data[5] =  modefreqs_xtr->data[2];
@@ -948,7 +949,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
                  //modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[0]);
              //    modefreqs->data[7] =  conjl(-1.0 *  modefreqs_xtr->data[0]);
              //}
-             if (JLN < 0.0 && JLN > -0.98){
+             if ((JLN < 0.0 && JLN > -0.98) || fabs(eta*JLN) < eJL_thr){
                  XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l,  2, nmodes, approximant);
                  modefreqs->data[5] =  modefreqs_xtr->data[0];
                  //modefreqs->data[6] =  modefreqs_xtr->data[1];
