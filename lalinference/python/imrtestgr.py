@@ -8,27 +8,24 @@ $Id:$
 
 import numpy as np 
 import scipy.ndimage.filters as filter
-import nr_fits as nr
 from multiprocessing import Pool
 from functools import partial
 import time 
+from pylal import bayespputils as bppu
 
 """ calculate the mass and spin of the final black hole using an NR-inspired fitting formula """
 def calc_final_mass_spin(m1, m2, chi1, chi2, fit_formula):
-
-  mtot = m1+m2
-  eta = m1*m2/mtot**2. 
-
+  
   if fit_formula == 'nospin_Pan2011':
-    Mf = mtot*(1. + (np.sqrt(8./9.)-1.)*eta - 0.4333*(eta**2.) - 0.4392*(eta**3.))
-    af = eta*np.sqrt(12.) - 3.871*(eta**2.) + 4.028*(eta**3.)
+    af = bppu.bbh_final_spin_non_spinning(m1, m2)
+    mf = bppu.bbh_final_mass_non_spinning(m1, m2)
   elif fit_formula == 'nonprecspin_Healy2014':
-    Mf, af = nr.bbh_final_mass_and_spin_non_precessing(m1, m2, chi1, chi2)
+    af = bppu.bbh_final_spin_non_precessing(m1, m2, chi1, chi2)
+    mf = bppu.bbh_final_mass_non_precessing(m1, m2, chi1, chi2, af)
   else:
     print '# unknown spin fit formula'
     exit()
-  #return np.array([Mf]), np.array([af])
-  return Mf, af
+  return mf, af
 
 """ compute the integrant of P(dMf/Mf, daf/af). """
 def P_integrant(af, Mf, v1, v2, P_dMfdaf_interp_object, P_Mfaf_imr_interp_object):
