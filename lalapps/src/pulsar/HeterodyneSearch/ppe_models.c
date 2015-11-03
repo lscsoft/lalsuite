@@ -54,8 +54,8 @@ void get_pulsar_model( LALInferenceModel *model ){
         XLAL_ERROR_VOID( XLAL_EINVAL );
       }
     }
-    else{
-      XLALPrintError("%s: Error... cannot have both h0 and Q22 as variables.", __func__);
+    else if ( LALInferenceCheckVariableNonFixed( model->params, "Q22" ) && LALInferenceCheckVariableNonFixed( model->params, "H0" ) ) {
+      XLALPrintError("%s: Error... cannot have both h0 and Q22 as variables.\n", __func__);
       XLAL_ERROR_VOID( XLAL_EINVAL );
     }
 
