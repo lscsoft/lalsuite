@@ -25,7 +25,11 @@
 #include <math.h>
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_cdf.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_roots.h>
 #include <lal/LALSimBurst.h>
+
+#include "logaddexp.h"
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -43,6 +47,12 @@ static REAL8 REAL8max(REAL8 a, REAL8 b)
 {
   return (a>b?a:b);
 }
+
+/* Fermi-Dirac distribution helper function prototypes */
+static double FermiDiracCDF( double h, void *params );
+static double FermiDiracCDF_deriv( double h, void *params );
+static void FermiDiracCDF_fdf( double h, void *params, double *hnew, double *dh );
+static double FermiDiracCDFRoot( double cp, double mu, double sigma );
 
 void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
 {
@@ -145,7 +155,7 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
 }
 
 void LALInferenceInitLIBPrior(LALInferenceRunState *runState)
-{   
+{
     /*Call CBC prior first, in case CBC approx is used, then check for burst approx and eventually overwrite runState->prior */
     LALInferenceInitCBCPrior(runState);
     /*LIB specific call in case of burst approximant */
@@ -165,7 +175,7 @@ void LALInferenceInitLIBPrior(LALInferenceRunState *runState)
            runState->prior = &LALInferenceSineGaussianPrior;
          }
       }
-    }  
+    }
 }
 
 static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState, LALInferenceVariables *params) {
@@ -199,12 +209,12 @@ static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState
       if (phaseWidth>0){
 	      char phaseVarName[VARNAME_MAX];
 	      REAL8 phase = 0.0;
-	      snprintf(phaseVarName, VARNAME_MAX, "calpha_%s", ifo->name);   
+	      snprintf(phaseVarName, VARNAME_MAX, "calpha_%s", ifo->name);
 	      phase = *(REAL8 *)LALInferenceGetVariable(params, phaseVarName);
 	      logPrior += -0.5*log(2.0*M_PI) - log(phaseWidth) - 0.5*phase*phase/phaseWidth/phaseWidth;
       }
     }
-   
+
     ifo = ifo->next;
   } while (ifo);
 
@@ -594,7 +604,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
   if(LALInferenceCheckVariable(priorParams,"MTotMin"))
     if(*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMin") > m1+m2)
       return -DBL_MAX;
-  
+
   if(model != NULL &&
         LALInferenceCheckVariable(priorParams,"malmquist") &&
         *(UINT4 *)LALInferenceGetVariable(priorParams,"malmquist") &&
@@ -813,7 +823,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
         REAL8 m2_min = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass2_min");
         REAL8 m1_max = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass1_max");
         REAL8 m2_max = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass2_max");
-      
+
         if( m1_min == m1_max && m2_min==m2_max)
         {
           m1 = m1_min;
@@ -2038,6 +2048,66 @@ int LALInferenceCheckCorrelatedPrior(LALInferenceVariables *priorArgs,
           LALInferenceCheckVariable(priorArgs,idxName));
 }
 
+/* Check for a Fermi-Dirac Prior */
+int LALInferenceCheckFermiDiracPrior(LALInferenceVariables *priorArgs, const char *name)
+{
+  char rName[VARNAME_MAX];
+  char sigmaName[VARNAME_MAX];
+  sprintf(rName,"%s_fermi_r",name);
+  sprintf(sigmaName,"%s_fermi_sigma",name);
+  return (LALInferenceCheckVariable(priorArgs,rName) && LALInferenceCheckVariable(priorArgs,sigmaName));
+}
+
+/* Function to add the r and sigma values for the prior onto the priorArgs */
+void LALInferenceAddFermiDiracPrior( LALInferenceVariables *priorArgs,
+                                   const char *name, REAL8 *sigma, REAL8 *r,
+                                   LALInferenceVariableType type ){
+  char rName[VARNAME_MAX];
+  char sigmaName[VARNAME_MAX];
+
+  sprintf(rName,"%s_fermi_r",name);
+  sprintf(sigmaName,"%s_fermi_sigma",name);
+
+  LALInferenceAddVariable(priorArgs,rName,r,type,LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(priorArgs,sigmaName,sigma,type,LALINFERENCE_PARAM_FIXED);
+  return;
+}
+
+/* Function to remove the r and sigma values for the prior onto the priorArgs */
+void LALInferenceRemoveFermiDiracPrior(LALInferenceVariables *priorArgs, const char *name){
+  char rName[VARNAME_MAX];
+  char sigmaName[VARNAME_MAX];
+
+  sprintf(rName,"%s_fermi_r",name);
+  sprintf(sigmaName,"%s_fermi_sigma",name);
+
+  LALInferenceRemoveVariable(priorArgs, rName);
+  LALInferenceRemoveVariable(priorArgs, sigmaName);
+  return;
+}
+
+/* Get the r and sigma values of the prior from the priorArgs list, given a name */
+void LALInferenceGetFermiDiracPrior(LALInferenceVariables *priorArgs,
+                                    const char *name, REAL8 *sigma, REAL8 *r)
+{
+  char rName[VARNAME_MAX];
+  char sigmaName[VARNAME_MAX];
+  void *ptr=NULL;
+
+  sprintf(rName,"%s_fermi_r",name);
+  sprintf(sigmaName,"%s_fermi_sigma",name);
+
+  ptr = LALInferenceGetVariable(priorArgs, rName);
+  if ( ptr ) *r = *(REAL8*)ptr;
+  else XLAL_ERROR_VOID(XLAL_EFAILED);
+
+  ptr = LALInferenceGetVariable(priorArgs, sigmaName);
+  if ( ptr ) *sigma = *(REAL8*)ptr;
+  else XLAL_ERROR_VOID(XLAL_EFAILED);
+
+  return;
+}
+
 void LALInferenceDrawFromPrior( LALInferenceVariables *output,
                                 LALInferenceVariables *priorArgs,
                                 gsl_rng *rdm) {
@@ -2105,6 +2175,19 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
 
     LALInferenceGetMinMaxPrior(priorArgs, name, &min, &max);
     tmp = min + (max-min)*gsl_rng_uniform( rdm );
+  }
+  /* test for a Fermi-Dirac prior */
+  else if( LALInferenceCheckFermiDiracPrior( priorArgs, name ) ){
+    REAL8 r = 0., sigma = 0., cp;
+
+    LALInferenceGetFermiDiracPrior(priorArgs, name, &sigma, &r);
+
+    /* use the inverse sampling transform to draw a new sample */
+    cp = gsl_rng_uniform( rdm ); /* draw a point uniformly between 0 and 1 */
+
+    /* find the root of the CDF function and this value */
+    tmp = FermiDiracCDFRoot( cp, r, 1.0 ); /* work in values normalised to sigma=1 to stop precision issues */
+    tmp *= sigma; /* scale to correct range */
   }
   /* test for a prior drawn from correlated values */
   else if( LALInferenceCheckCorrelatedPrior( priorArgs, name ) ){
@@ -2579,7 +2662,7 @@ REAL8 LALInferenceSineGaussianPrior(LALInferenceRunState *runState, LALInference
     logPrior+=-4.0* log(*(REAL8 *)LALInferenceGetVariable(params,"hrss"));
   if(LALInferenceCheckVariable(params,"declination"))
     logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
-  logPrior += LALInferenceConstantCalibrationPrior(runState, params); 
+  logPrior += LALInferenceConstantCalibrationPrior(runState, params);
   return(logPrior);
 }
 
@@ -2630,4 +2713,117 @@ REAL8 LALInferenceCubeToGaussianPrior(double r, double mean, double sigma)
 REAL8 LALInferenceCubeToSinPrior(double r, double x1, double x2)
 {
     return acos((1.0-r)*cos(x1)+r*cos(x2));
+}
+
+/* Functions for Fermi-Dirac prior distribution */
+
+/** \brief Return the Fermi-Dirac distribution log prior
+ *
+ * The function returns the log of the prior for a Fermi-Dirac distribution
+ * \f[p(h|\sigma, r, I) = \frac{1}{\sigma\log{\left(1+e^{r} \right)}}\left(e^{((h/\sigma) - r)} + 1\right)^{-1},\f]
+ * where \f$r = \mu/\sigma\f$ to give a more familiar form of the function. Given how it is used the function
+ * does not actually compute the normalisation factor in the prior.
+ */
+REAL8 LALInferenceFermiDiracPrior(double h, double sigma, double r){
+  if ( h < 0. ){ return -DBL_MAX; } /* value must be positive */
+  else{ return -logaddexp((h/sigma)-r, 0.); } /* log of Fermi-Dirac distribution (normalisation not required) */
+}
+
+
+typedef struct
+tagfermidirac_params{
+  double cp; /* cumulative probability value between 0 and 1 sampled from a uniform distribution */
+  double mu;
+  double sigma;
+} fermidirac_params;
+
+/**
+ * \brief Function defining the Fermi-Dirac cumulative probability distribution.
+ *
+ * This function returns the Fermi-Dirac cumulative probability distribution with the cumulative probability
+ * value substracted:
+ * \f[\frac{1}{\log{(1+e^{\mu/\sigma})}}\Big[ \frac{h}{\sigma} + \log{(1+e^{-\mu/sigma})} -\log{(1+e^{(h-\mu)/\sigma})} \Big] - \textrm{CDF}(h) \f]
+ * where \f$\mu\f$ is like a chemical potential, \f$\sigma\f$ is like a temperature and \f$h\f$ is like an energy.
+ * This can be used to find the root of the function when using inverse transform sampling to draw random
+ * values from a Fermi-Dirac PDF.
+ *
+ * \param h [in] Equivalent to the energy of the distribution
+ * \param params [in] A structure containing the \c mu, \c sigma and cumulative probability values
+ *
+ */
+static double FermiDiracCDF( double h, void *params ){
+  fermidirac_params *p = (fermidirac_params *)params;
+
+  double u = p->cp;
+  double m = p->mu;
+  double s = p->sigma;
+
+  return (((h/s) + log(1.+exp(-m/s)) - log(1.+exp((h-m)/s)))/log(1.+exp(m/s))) - u;
+}
+
+/* derivative of Fermi-Dirac CDF */
+static double FermiDiracCDF_deriv( double h, void *params ){
+  fermidirac_params *p = (fermidirac_params *)params;
+
+  double m = p->mu;
+  double s = p->sigma;
+
+  return (1. - 1./(1. + exp(-(h-m)/s)))/(s*log(1. + exp(m/s)));
+}
+
+/* the Fermi-Dirac CDF and derivative */
+static void FermiDiracCDF_fdf( double h, void *params, double *hnew, double *dh ){
+  fermidirac_params *p = (fermidirac_params *)params;
+
+  double u = p->cp;
+  double m = p->mu;
+  double s = p->sigma;
+
+  *hnew = (((h/s) + log(1.+exp(-m/s)) - log(1.+exp((h-m)/s)))/log(1.+exp(m/s))) - u;
+  *dh = (1. - 1./(1. + exp(-(h-m)/s)))/(s*log(1. + exp(m/s)));
+}
+
+/** \brief Find the root of the Fermi-Dirac CDF for a given cumulative probability
+ *
+ * Use the Steffenson method to find the root of the function defined in \c FermiDiracCDF.
+ */
+static double FermiDiracCDFRoot( double cp, double mu, double sigma ){
+  int gslstatus;
+  int iter = 0, max_iter = 100;
+  const gsl_root_fdfsolver_type *T;
+  gsl_root_fdfsolver *s;
+  double epsrel = 1e-4; /* relative error tolerance */
+
+  gsl_function_fdf FDF;
+  fermidirac_params params = {cp, mu, sigma};
+
+  double h = mu/sigma; /* first guess of value */
+  double hprev;
+
+  FDF.f = &FermiDiracCDF;
+  FDF.df = &FermiDiracCDF_deriv;
+  FDF.fdf = &FermiDiracCDF_fdf;
+  FDF.params = &params;
+
+  T = gsl_root_fdfsolver_steffenson; /* use Steffenson method */
+  s = gsl_root_fdfsolver_alloc(T);
+  gsl_root_fdfsolver_set(s, &FDF, h);
+
+  do{
+    iter++;
+    gslstatus = gsl_root_fdfsolver_iterate( s );
+    hprev = h;
+    h = gsl_root_fdfsolver_root( s );
+
+    /* test relative error */
+    gslstatus = gsl_root_test_delta (h, hprev, epsrel, 0.);
+  }
+  while( gslstatus == GSL_CONTINUE && iter < max_iter );
+
+  if ( gslstatus != GSL_SUCCESS ){
+    XLALPrintError("%s: Failed to converge when drawing from Fermi-Dirac distribution.", __func__);
+    XLAL_ERROR_REAL8(XLAL_EFAILED);
+  }
+
+  return h;
 }
