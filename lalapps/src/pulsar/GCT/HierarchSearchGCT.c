@@ -150,6 +150,7 @@ typedef struct {
   UINT4 nf3dot;			/**< number of 3rd spindown Fstat bins */
   SSBprecision SSBprec;            /**< SSB transform precision */
   FstatMethodType Fmethod;         //!< which Fstat-method/algorithm to use
+  BOOLEAN recalcToplistStats;	   //!< do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
   FstatMethodType FmethodRecalc;   //!< which Fstat-method/algorithm to use for the recalc step
   REAL8 mismatch1;                 /**< 'mismatch1' user-input needed here internally ... */
   UINT4 nSFTs;                     /**< total number of SFTs */
@@ -750,6 +751,7 @@ int MAIN( int argc, char *argv[]) {
 
   XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &usefulParams.Fmethod, uvar_FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &usefulParams.FmethodRecalc, uvar_FstatMethodRecalc ) == XLAL_SUCCESS, XLAL_EFUNC );
+  usefulParams.recalcToplistStats = uvar_recalcToplistStats;
 
   usefulParams.mismatch1 = uvar_mismatch1;
 
@@ -2029,7 +2031,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     ABORT ( status, HIERARCHICALSEARCH_EMEM, HIERARCHICALSEARCH_MSGEMEM );
   }
   // if using different Fstat-method for main search and recalc: set-up separate Fstat input
-  if ( in->Fmethod != in->FmethodRecalc )
+  if ( in->recalcToplistStats && (in->Fmethod != in->FmethodRecalc) )
     {
       in->Fstat_in_vec_recalc = XLALCreateFstatInputVector( in->nStacks );
       if ( in->Fstat_in_vec == NULL ) {
@@ -2079,7 +2081,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
     // ----- if recalc uses a different Fstat-method from main search, we'll setup its own Fstat setup struct
-    if ( in->Fstat_in_vec_recalc != NULL )
+    if ( in->recalcToplistStats && (in->Fstat_in_vec_recalc != NULL) )
       {
         optionalArgsRecalc = optionalArgs;
         optionalArgsRecalc.FstatMethod = in->FmethodRecalc;
