@@ -643,11 +643,7 @@ static int SEOBNRv1ROMEffectiveSpinCore(
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
 
   // Get SEOBNRv1 ringdown frequency for 22 mode
-  // XLALSimInspiralGetFinalFreq wants masses in SI units, so unfortunately we need to convert back
-  double Mtot_SI = Mtot_sec / LAL_MTSUN_SI * LAL_MSUN_SI;
-  double m1_SI = Mtot_SI * 1.0/(1.0+q);
-  double m2_SI = Mtot_SI * q/(1.0+q);
-  double Mf_final = XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0,0,chi, 0,0,chi, SEOBNRv1) * Mtot_sec;
+  double Mf_final = SEOBNRROM_Ringdown_Mf_From_Mtot_q(Mtot_sec, q, chi, chi, SEOBNRv1);
 
   UINT4 L = freqs->length;
   // prevent gsl interpolation errors
