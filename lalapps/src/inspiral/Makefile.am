@@ -154,6 +154,8 @@ pybin_scripts = \
 	lalapps_cbc_sbank_pipe \
 	lalapps_cbc_sbank_plot_sim \
 	lalapps_cbc_sbank_sim \
+	lalapps_cbc_sbank_sim_pipe \
+	lalapps_cbc_sbank_injsplitter \
 	lalapps_bank_plotter
 
 pkgpython_PYTHON = \
