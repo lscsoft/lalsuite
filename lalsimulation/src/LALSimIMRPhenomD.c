@@ -139,7 +139,7 @@ int XLALSimIMRPhenomDGenerateFD(
   const REAL8 M_sec = (m1+m2) * LAL_MTSUN_SI; // Conversion factor Hz -> dimensionless frequency
   const REAL8 fCut = f_CUT/M_sec; // convert Mf -> Hz
   // Somewhat arbitrary end point for the waveform.
-  // Chosen so that the end of the waveform the well after the ringdown.
+  // Chosen so that the end of the waveform is well after the ringdown.
   if (fCut <= f_min)
     XLAL_ERROR(XLAL_EDOM, "(fCut = %g Hz) <= f_min = %g\n", fCut, f_min);
 
