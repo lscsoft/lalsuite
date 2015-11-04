@@ -295,8 +295,8 @@ INT4 VectorFloorREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, INT
          arr++;
          result++;
       }
-      for (UINT4 ii=4*roundedvectorlength; ii<input->length; ii++) output->data[ii] = floor(input->data[ii]);
       _mm256_zeroupper();
+      for (UINT4 ii=4*roundedvectorlength; ii<input->length; ii++) output->data[ii] = floor(input->data[ii]);
 #else
       (void)output;
       (void)input;
@@ -322,8 +322,8 @@ INT4 VectorRoundREAL4(REAL4VectorAligned *output, REAL4VectorAligned *input, INT
          arr++;
          result++;
       }
-      for (UINT4 ii=8*roundedvectorlength; ii<input->length; ii++) output->data[ii] = roundf(input->data[ii]);
       _mm256_zeroupper();
+      for (UINT4 ii=8*roundedvectorlength; ii<input->length; ii++) output->data[ii] = roundf(input->data[ii]);
 #else
       (void)output;
       (void)input;
@@ -349,8 +349,8 @@ INT4 VectorRoundREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, INT
          arr++;
          result++;
       }
-      for (UINT4 ii=4*roundedvectorlength; ii<input->length; ii++) output->data[ii] = round(input->data[ii]);
       _mm256_zeroupper();
+      for (UINT4 ii=4*roundedvectorlength; ii<input->length; ii++) output->data[ii] = round(input->data[ii]);
 #else
       (void)output;
       (void)input;
@@ -377,8 +377,8 @@ INT4 VectorAbsREAL4(REAL4VectorAligned *output, REAL4VectorAligned *input, INT4 
          arr++;
          result++;
       }
-      for (UINT4 ii=8*roundedvectorlength; ii<input->length; ii++) output->data[ii] = fabsf(input->data[ii]);
       _mm256_zeroupper();
+      for (UINT4 ii=8*roundedvectorlength; ii<input->length; ii++) output->data[ii] = fabsf(input->data[ii]);
 #else
       (void)output;
       (void)input;
