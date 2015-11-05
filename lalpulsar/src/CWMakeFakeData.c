@@ -226,8 +226,8 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   LIGOTimeGPS firstGPS = timestamps->data[0];
   REAL8 firstGPS_REAL8 = XLALGPSGetREAL8 ( &firstGPS );
   LIGOTimeGPS lastGPS  = timestamps->data [ timestamps->length - 1 ];
-  REAL8 lastGPS_REAL8 = XLALGPSGetREAL8 ( &lastGPS );
   XLALGPSAdd( &lastGPS, Tsft );
+  REAL8 lastGPS_REAL8 = XLALGPSGetREAL8 ( &lastGPS );
   REAL8 duration = XLALGPSDiff ( &lastGPS, &firstGPS );
 
   // start with an empty output time-series
