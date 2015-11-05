@@ -260,7 +260,7 @@ def gps_to_mjd(gps_time):
     Example
     -------
 
-    >>> gps_to_mjd(1129501781.2)
+    >>> round(gps_to_mjd(1129501781.2), 11)
     57316.93708564808
     """
     gps_seconds_fraction, gps_seconds = math.modf(gps_time)
