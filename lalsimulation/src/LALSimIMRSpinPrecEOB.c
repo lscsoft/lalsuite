@@ -239,7 +239,6 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
   /* **************************************************************** */
   /*                         Omega related                            */
   /* **************************************************************** */
-
   /* Terminate when omega reaches peak, and separation is < 4M */
   if ( r2 < 16. && omega < params->eobParams->omega )
     params->eobParams->omegaPeaked = 1;
@@ -298,6 +297,19 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
     return 1;
   }
 
+  /* If rdot inclreases, break */
+   if ( r2 < 16.){
+    if ( rdot>params->prev_dr ) {
+      if(debugPK){
+	XLAL_PRINT_INFO("\n Integration stopping, dp_r increasing!\n");
+	fflush(NULL);
+      return 1;
+    }
+  }
+    else {
+    params->prev_dr=rdot;
+    }
+   }
   /* **************************************************************** */
   /*              Last resort conditions                              */
   /* **************************************************************** */
@@ -1392,7 +1404,7 @@ int XLALSimIMRSpinEOBWaveform(
                         phiC, deltaT, m1SI, m2SI, fMin, r, inc, INspin1[0],
                         INspin1[1], INspin1[2], INspin2[0], INspin2[1],
                         INspin2[2]);
-
+    
     //int i;
 
     //XLAL_PRINT_INFO("Stas: checking \n");
@@ -4503,7 +4515,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
   }
   *dynHi = tmp_vec;
   XLALDestroyREAL8Array( dynamicsHi );
-
 
   return XLAL_SUCCESS;
 }

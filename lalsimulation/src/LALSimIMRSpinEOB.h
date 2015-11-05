@@ -98,6 +98,7 @@ tagSpinEOBParams
   REAL8                   a;
   REAL8                   chi1;
   REAL8                   chi2;
+  REAL8                   prev_dr;
   int                     alignedSpins;
   int                     tortoise;
 }
