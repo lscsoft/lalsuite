@@ -1853,7 +1853,7 @@ if (strides[I-1] == 0) {
 /// <b>swiglal_specialised_<i>TAGNAME</i>(INPUT, OUTPUT)</b>, to try to convert \c INPUT from some
 /// other value, and if successful store it in <tt>struct TAGNAME OUTPUT</tt>.  Otherwise, raise a
 /// SWIG error. Separate typemaps are needed for <tt>struct TAGNAME</tt> and pointers to <tt>struct
-/// TAGNAME</tt>.
+/// TAGNAME</tt>. Typecheck typemaps are used by overloaded functions, e.g. constructors.
 ///
 %define %swiglal_specialised_typemaps(TAGNAME, FRAGMENT)
 %typemap(in, noblock=1, fragment=FRAGMENT)
@@ -1896,6 +1896,25 @@ if (strides[I-1] == 0) {
   }
 }
 %typemap(freearg) struct TAGNAME*, const struct TAGNAME* "";
+%typemap(typecheck, fragment=FRAGMENT, precedence=SWIG_TYPECHECK_SWIGOBJECT) struct TAGNAME, const struct TAGNAME {
+  void *argp = 0;
+  int res = SWIG_ConvertPtr($input, &argp, $&descriptor, 0);
+  $1 = SWIG_CheckState(res);
+  if (!$1) {
+    res = swiglal_specialised_##TAGNAME($input, &$1);
+    $1 = SWIG_CheckState(res);
+  }
+}
+%typemap(typecheck, fragment=FRAGMENT, precedence=SWIG_TYPECHECK_SWIGOBJECT) struct TAGNAME*, const struct TAGNAME* {
+  struct TAGNAME tmp;
+  void *argp = 0;
+  int res = SWIG_ConvertPtr($input, &argp, $descriptor, 0);
+  $1 = SWIG_CheckState(res);
+  if (!$1) {
+    res = swiglal_specialised_##TAGNAME($input, &tmp);
+    $1 = SWIG_CheckState(res);
+  }
+}
 %enddef
 
 ///
