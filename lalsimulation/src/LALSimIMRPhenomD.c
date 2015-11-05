@@ -244,11 +244,17 @@ static int IMRPhenomDGenerateFD(
   REAL8 chi2sq = chi2 * chi2;
   REAL8 m1M = m1 / M;
   REAL8 m2M = m2 / M;
+  const REAL8 pfaN = 3.L/(128.L * eta);
+  REAL8 testGRcor = 1.;
   REAL8 pn_ss3 =  (326.75L/1.12L + 557.5L/1.8L*eta)*eta*chi1*chi2;
   pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m1M-120.L*m1M*m1M) + (-4108.25L/6.72L-108.5L/1.2L*m1M+125.5L/3.6L*m1M*m1M)) *m1M*m1M * chi1sq;
   pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m2M-120.L*m2M*m2M) + (-4108.25L/6.72L-108.5L/1.2L*m2M+125.5L/3.6L*m2M*m2M)) *m2M*m2M * chi2sq;
 
-  pn->v[6] -= (pn_ss3 * pn->v[0]);
+  if (extraParams!=NULL)
+  {
+	  if (XLALSimInspiralTestGRParamExists(extraParams,"dchi6"))  testGRcor += XLALSimInspiralGetTestGRParam(extraParams,"dchi6");
+  }
+  pn->v[6] -= (pn_ss3 * pfaN * testGRcor);
 
   // Compute coefficients to make phase C^1 continuous (phase and first derivative)
   ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
