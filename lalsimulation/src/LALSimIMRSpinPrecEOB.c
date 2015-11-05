@@ -303,8 +303,8 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
       if(debugPK){
 	XLAL_PRINT_INFO("\n Integration stopping, dp_r increasing!\n");
 	fflush(NULL);
+      }
       return 1;
-    }
   }
     else {
     params->prev_dr=rdot;
