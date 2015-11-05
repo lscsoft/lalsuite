@@ -32,7 +32,7 @@ modules = [
     lalinference.bayestar.timing,
 ]
 for module in modules:
-    failures, tests = doctest.testmod(module, verbose=True)
+    failures, tests = doctest.testmod(module)
     total_failures += failures
 
 if total_failures > 0:
