@@ -927,8 +927,8 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
       XLAL_CHECK ( transientStartTime >= 0, XLAL_EDOM );
       XLAL_CHECK ( transientTauDays > 0, XLAL_EDOM );
 
-      pulsarParams->Transient.t0   = (UINT4) transientStartTime;
-      pulsarParams->Transient.tau  = (UINT4) ( transientTauDays * 86400 );
+      pulsarParams->Transient.t0   = (UINT4) round ( transientStartTime );
+      pulsarParams->Transient.tau  = (UINT4) round ( transientTauDays * 86400 );
     } /* if transient window != none */
   else
     {
