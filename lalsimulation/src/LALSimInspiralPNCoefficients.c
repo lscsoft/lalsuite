@@ -500,7 +500,21 @@ XLALSimInspiralPNPhasing_F2(
     pfa->v[7] = LAL_PI * ( 77096675.L/254016.L
                      + 378515.L/1512.L * eta - 74045.L/756.L * eta*eta);
 
-
+    /* modify the PN coefficients if a non null LALSimInspiralTestGRParam structure is passed */
+    if (p!=NULL)
+    {
+      if (XLALSimInspiralTestGRParamExists(p,"dchi0")) pfa->v[0]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi0"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi1")) pfa->v[1] = XLALSimInspiralGetTestGRParam(p,"dchi1");
+      if (XLALSimInspiralTestGRParamExists(p,"dchi2")) pfa->v[2]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi2"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi3")) pfa->v[3]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi3"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi4")) pfa->v[4]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi4"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi5")) pfa->v[5]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi5"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi5l")) pfa->vlogv[5]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi5l"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi6")) pfa->v[6]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi6"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi6l")) pfa->vlogv[6]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi6l"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi7")) pfa->v[7]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi7"));
+    }
+    
     /* Compute 2.0PN SS, QM, and self-spin */
     // See Eq. (6.24) in arXiv:0810.5336
     // 9b,c,d in arXiv:astro-ph/0504538
@@ -539,21 +553,6 @@ XLALSimInspiralPNPhasing_F2(
                     __func__, spinO );
             XLAL_ERROR_VOID(XLAL_EINVAL);
             break;
-    }
-
-    /* modify the PN coefficients if a non null LALSimInspiralTestGRParam structure is passed */
-    if (p!=NULL)
-    {
-      if (XLALSimInspiralTestGRParamExists(p,"dchi0")) pfa->v[0]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi0"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi1")) pfa->v[1] = XLALSimInspiralGetTestGRParam(p,"dchi1");
-      if (XLALSimInspiralTestGRParamExists(p,"dchi2")) pfa->v[2]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi2"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi3")) pfa->v[3]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi3"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi4")) pfa->v[4]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi4"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi5")) pfa->v[5]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi5"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi5l")) pfa->vlogv[5]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi5l"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi6")) pfa->v[6]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi6"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi6l")) pfa->vlogv[6]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi6l"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi7")) pfa->v[7]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi7"));
     }
 
     /* At the very end, multiply everything in the series by pfaN */
