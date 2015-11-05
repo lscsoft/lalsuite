@@ -1901,16 +1901,17 @@ if (strides[I-1] == 0) {
   int res = SWIG_ConvertPtr($input, &argp, $&descriptor, 0);
   $1 = SWIG_CheckState(res);
   if (!$1) {
-    res = swiglal_specialised_##TAGNAME($input, &$1);
+    struct TAGNAME tmp;
+    res = swiglal_specialised_##TAGNAME($input, &tmp);
     $1 = SWIG_CheckState(res);
   }
 }
 %typemap(typecheck, fragment=FRAGMENT, precedence=SWIG_TYPECHECK_SWIGOBJECT) struct TAGNAME*, const struct TAGNAME* {
-  struct TAGNAME tmp;
   void *argp = 0;
   int res = SWIG_ConvertPtr($input, &argp, $descriptor, 0);
   $1 = SWIG_CheckState(res);
   if (!$1) {
+    struct TAGNAME tmp;
     res = swiglal_specialised_##TAGNAME($input, &tmp);
     $1 = SWIG_CheckState(res);
   }
