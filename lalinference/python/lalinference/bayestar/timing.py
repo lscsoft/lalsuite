@@ -164,7 +164,7 @@ class SignalModel(object):
     >>> acor_moments = np.real(acor_moments)
 
     Compute the first 2 frequency moments using this class.
-    >>> quad_moments = [sm.get_sn_moment(i) for i in range(3)]
+    >>> quad_moments = [sm.get_sn_moment(i) for i in range(2)]
 
     Compare them.
     >>> for i, (am, qm) in enumerate(zip(acor_moments, quad_moments)):
