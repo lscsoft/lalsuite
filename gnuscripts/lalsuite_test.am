@@ -32,7 +32,7 @@ EXTRA_DIST += $(test_script_runner)
 
 SH_LOG_COMPILER = $(SHELL)
 M_LOG_COMPILER = $(test_script_compiler) "$(OCTAVE)" -fH
-PY_LOG_COMPILER = $(test_script_compiler) "$(PYTHON)"
+PY_LOG_COMPILER = $(test_script_compiler) "$(PYTHON)" -u
 
 .PHONY: run-octave
 run-octave: $(octexec_LTLIBRARIES)

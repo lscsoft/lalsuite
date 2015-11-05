@@ -28,8 +28,6 @@ if not lal.NoDebug:
     mem3 = lal.CreateREAL8Vector(3)
     mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lal.DimensionlessUnit, 10)
     print("*** below should be an error message from CheckMemoryLeaks() ***")
-    sys.stdout.flush()
-    sys.stderr.flush()
     try:
         lal.CheckMemoryLeaks()
         expected_exception = True
