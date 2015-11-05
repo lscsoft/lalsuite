@@ -1549,12 +1549,31 @@ int XLALSimIMRSpinEOBWaveformAll(
 
     if (spin1Norm <= 1.0e-5) {INspin1[0]=0.;INspin1[1]=0.;INspin1[2]=0.;}
     if (spin2Norm <= 1.0e-5) {INspin2[0]=0.;INspin2[1]=0.;INspin2[2]=0.;}
-
+  REAL8 acosarg1 = 0, acosarg2 = 0;
   if( spin1Norm > 1.0e-5 && (INspin1[0] != 0 || INspin1[1] != 0 || INspin1[2] != 0) ) {
-    theta1Ini = acos( (InitLhat[0]*INspin1[0] + InitLhat[1]*INspin1[1] + InitLhat[2]*INspin1[2])/ spin1Norm );
+      acosarg1 = (InitLhat[0]*INspin1[0] + InitLhat[1]*INspin1[1] + InitLhat[2]*INspin1[2])/ spin1Norm ;
+      if (acosarg1 > 1.) {
+          theta1Ini = 0.;
+      }
+      else if (acosarg1 < -1.) {
+          theta1Ini = LAL_PI;
+      }
+      else {
+          theta1Ini = acos( acosarg1 );
+      }
     }
+  
   if( spin2Norm > 1.0e-5 && (INspin2[0] != 0 || INspin2[1] != 0 || INspin2[2] != 0) ) {
-    theta2Ini = acos( (InitLhat[0]*INspin2[0] + InitLhat[1]*INspin2[1] + InitLhat[2]*INspin2[2]) / spin2Norm );
+      acosarg2 = (InitLhat[0]*INspin2[0] + InitLhat[1]*INspin2[1] + InitLhat[2]*INspin2[2])/ spin2Norm ;
+      if (acosarg2 > 1.) {
+          theta2Ini = 0.;
+      }
+      else if (acosarg2 < -1.) {
+          theta2Ini = LAL_PI;
+      }
+      else {
+          theta2Ini = acos( acosarg2 );
+      }
   }
     if ( INspin1[0] == 0. && INspin1[1] == 0. && INspin1[2] == 0. ) {
         spin1Norm = 0.;
