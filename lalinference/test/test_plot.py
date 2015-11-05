@@ -57,7 +57,7 @@ try:
 except AttributeError:
     pass
 else:
-    class TestPlot(unittest.TestCase):
+    class TestPPPlot(unittest.TestCase):
 
         def setUp(self):
             # Re-initialize the random seed to make the unit test repeatable
