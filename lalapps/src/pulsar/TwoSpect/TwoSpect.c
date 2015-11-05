@@ -170,6 +170,7 @@ int main(int argc, char *argv[])
 
    //Assume maximum possible bin shift
    INT4 maxbinshift = (INT4)round(Vmax * (uvar.fmin+uvar.fspan) * uvar.Tsft) + 1;
+   if (uvar.dopplerMultiplier>1.0) maxbinshift = (INT4)round(Vmax * (uvar.fmin+uvar.fspan) * uvar.Tsft * uvar.dopplerMultiplier) + 1;
    if (detectors->length > 1) maxbinshift += 10; //Add 10 bins for when there is more than 1 detector
 
    //Parameters for the sky-grid from a point/polygon or a sky-grid file
