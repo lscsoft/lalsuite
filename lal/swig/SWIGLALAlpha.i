@@ -443,13 +443,28 @@ typedef struct {
 
 ///
 /// Specialised input typemaps for ::LIGOTimeGPS structs.  Accepts a SWIG-wrapped ::LIGOTimeGPS or a
-/// double as input.
+/// double as input; in Python, also accepts any object with .gpsSeconds and .gpsNanoSeconds attributes.
 ///
-%fragment("swiglal_specialised_tagLIGOTimeGPS", "header", fragment=SWIG_AsVal_frag(double)) {
+%fragment("swiglal_specialised_tagLIGOTimeGPS", "header", fragment=SWIG_AsVal_frag(double), fragment=SWIG_AsVal_frag(int32_t)) {
   int swiglal_specialised_tagLIGOTimeGPS(SWIG_Object in, LIGOTimeGPS *out) {
     double val = 0;
     int res = SWIG_AsVal(double)(in, &val);
     if (!SWIG_IsOK(res)) {
+#ifdef SWIGPYTHON
+      if (PyObject_HasAttrString(in, "gpsSeconds") && PyObject_HasAttrString(in, "gpsNanoSeconds")) {
+        int32_t gpsSeconds = 0, gpsNanoSeconds = 0;
+        res = SWIG_AsVal(int32_t)(PyObject_GetAttrString(in, "gpsSeconds"), &gpsSeconds);
+        if (!SWIG_IsOK(res)) {
+          return res;
+        }
+        res = SWIG_AsVal(int32_t)(PyObject_GetAttrString(in, "gpsNanoSeconds"), &gpsNanoSeconds);
+        if (!SWIG_IsOK(res)) {
+          return res;
+        }
+        XLALGPSSet(out, gpsSeconds, gpsNanoSeconds);
+        return SWIG_OK;
+      }
+#endif
       return res;
     }
     XLALGPSSetREAL8(out, val);
