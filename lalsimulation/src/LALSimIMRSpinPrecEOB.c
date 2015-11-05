@@ -1,4 +1,4 @@
-    /*
+/*
 *  Copyright (C) 2011 Craig Robinson, Enrico Barausse, Yi Pan,
 *                2014 Prayush Kumar, Stas Babak, Andrea Taracchini (Precessing EOB)
 *
@@ -2316,6 +2316,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     fflush(NULL);
   }
 
+  REAL8Array              *dynamicsV2   = NULL;
   if(debugPK) { XLAL_PRINT_INFO("\n\n BEGINNING THE EVOLUTION\n\n"); fflush(NULL); }
 
     REAL8Vector rVec, phiVec, prVec, pPhiVec;
@@ -2324,7 +2325,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   /* Call the integrator */
     /* If spins are almost aligned with LNhat, use SEOBNRv2 dynamics */
     if (( fabs(theta1Ini) <= EPS_ALIGN  || fabs(theta1Ini) >= LAL_PI - EPS_ALIGN) && ( fabs(theta2Ini) <= EPS_ALIGN || fabs(theta2Ini) >= LAL_PI - EPS_ALIGN) ) {
-        REAL8Array              *dynamicsV2   = NULL;
         seobParams.alignedSpins = 1;
         seobParams.chi1 = spin1Norm*cos(theta1Ini)/fabs(cos(theta1Ini));
         seobParams.chi2 = spin2Norm*cos(theta2Ini)/fabs(cos(theta2Ini));
@@ -4533,6 +4533,13 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
   }
   *dynHi = tmp_vec;
   XLALDestroyREAL8Array( dynamicsHi );
+  XLALDestroyREAL8Vector( valuesV2 );
+  if (dynamicsV2 != NULL){
+      XLALDestroyREAL8Array( dynamicsV2 );
+  }
+  if (dynamicsV2Hi != NULL){
+      XLALDestroyREAL8Array( dynamicsV2Hi );
+  }
 
   return XLAL_SUCCESS;
 }
