@@ -296,20 +296,18 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
     }
     return 1;
   }
-
   /* If rdot inclreases, break */
    if ( r2 < 16.){
     if ( rdot>params->prev_dr ) {
       if(debugPK){
-	XLAL_PRINT_INFO("\n Integration stopping, dp_r increasing!\n");
-	fflush(NULL);
-      }
+          XLAL_PRINT_INFO("\n Integration stopping, dr/dt increasing!\n");
+          fflush(NULL);
+        }
       return 1;
-  }
-    else {
-    params->prev_dr=rdot;
     }
    }
+    params->prev_dr=rdot;
+
   /* **************************************************************** */
   /*              Last resort conditions                              */
   /* **************************************************************** */
