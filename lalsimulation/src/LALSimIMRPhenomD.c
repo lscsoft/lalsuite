@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Michael Puerrer, Sebastian Khan, Frank Ohme
+ * Copyright (C) 2015 Michael Puerrer, Sebastian Khan, Frank Ohme, Ofek Birnholtz, Lionel London
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 
 #include <math.h>
-#include <complex.h>
+/*#include <complex.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 
@@ -28,8 +28,9 @@
 #include <lal/LALConstants.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
-
+*/
 #include "LALSimIMRPhenomD_internals.c"
+UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
 
 #ifndef _OPENMP
 #define omp ignore
@@ -82,7 +83,8 @@ static int IMRPhenomDGenerateFD(
  * and in tests to date gives sensible physical results,
  * but conclusive statements on the physical fidelity of
  * the model for these parameters await comparisons against further
- * numerical-relativity simulations.
+ * numerical-relativity simulations. For more information, see the review wiki
+ * under https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview
  */
 
 
@@ -117,6 +119,7 @@ int XLALSimIMRPhenomDGenerateFD(
   /* check inputs for sanity */
   XLAL_CHECK(0 != htilde, XLAL_EFAULT, "htilde is null");
   if (*htilde) XLAL_ERROR(XLAL_EFAULT);
+  if (fRef_in < 0) XLAL_ERROR(XLAL_EDOM, "fRef_in must be positive (or 0 for 'ignore')\n");
   if (deltaF <= 0) XLAL_ERROR(XLAL_EDOM, "deltaF must be positive\n");
   if (m1 <= 0) XLAL_ERROR(XLAL_EDOM, "m1 must be positive\n");
   if (m2 <= 0) XLAL_ERROR(XLAL_EDOM, "m2 must be positive\n");
@@ -126,11 +129,11 @@ int XLALSimIMRPhenomDGenerateFD(
 
   const REAL8 q = (m1 > m2) ? (m1 / m2) : (m2 / m1);
 
+  if (q > MAX_ALLOWED_MASS_RATIO)
+    XLAL_PRINT_WARNING("Warning: The model is not supported for high mass ratio, see MAX_ALLOWED_MASS_RATIO\n");
+
   if (chi1 > 1.0 || chi1 < -1.0 || chi2 > 1.0 || chi2 < -1.0)
     XLAL_ERROR(XLAL_EDOM, "Spins outside the range [-1,1] are not supported\n");
-
-  if (q > 18.0)
-    XLAL_PRINT_WARNING("Warning: The model is calibrated up to m1/m2 <= 18.\n");
 
   // if no reference frequency given, set it to the starting GW frequency
   REAL8 fRef = (fRef_in == 0.0) ? f_min : fRef_in;
@@ -149,17 +152,18 @@ int XLALSimIMRPhenomDGenerateFD(
   if (f_max_prime <= f_min)
     XLAL_ERROR(XLAL_EDOM, "f_max <= f_min\n");
 
-  REAL8 status = IMRPhenomDGenerateFD(htilde, phi0, fRef, deltaF,
-                                      m1, m2, chi1, chi2,
-                                      f_min, f_max_prime, distance, extraParams);
-
-  XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+  int status = IMRPhenomDGenerateFD(htilde, phi0, fRef, deltaF,
+                                    m1, m2, chi1, chi2,
+                                    f_min, f_max_prime, distance, extraParams);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to generate IMRPhenomD waveform.");
 
   if (f_max_prime < f_max) {
     // The user has requested a higher f_max than Mf=fCut.
     // Resize the frequency series to fill with zeros beyond the cutoff frequency.
+    size_t n = (*htilde)->data->length;
     size_t n_full = NextPow2(f_max / deltaF) + 1; // we actually want to have the length be a power of 2 + 1
     *htilde = XLALResizeCOMPLEX16FrequencySeries(*htilde, 0, n_full);
+    XLAL_CHECK ( *htilde, XLAL_ENOMEM, "Failed to resize waveform COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, fCut, n_full, f_max );
   }
 
   return XLAL_SUCCESS;
@@ -201,7 +205,10 @@ static int IMRPhenomDGenerateFD(
      chi2 = chi1_in;
      m1   = m2_in;
      m2   = m1_in;
-   }
+  }
+
+  int status = init_useful_powers(&powers_of_pi, LAL_PI);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initiate useful powers of pi.");
 
   const REAL8 M = m1 + m2;
   REAL8 eta = m1 * m2 / (M * M);
@@ -214,21 +221,32 @@ static int IMRPhenomDGenerateFD(
   /* Compute the amplitude pre-factor */
   REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
 
+  /* Coalesce at t=0 */
+  // shift by overall length in time
+  XLAL_CHECK ( XLALGPSAdd(&ligotimegps_zero, -1. / deltaF), XLAL_EFUNC, "Failed to shift coalescence time to t=0, tried to apply shift of -1.0/deltaF with deltaF=%g.", deltaF);
+
   /* Allocate htilde */
   size_t n = NextPow2(f_max / deltaF) + 1;
-  /* Coalesce at t=0 */
-  XLALGPSAdd(&ligotimegps_zero, -1. / deltaF); // shift by overall length in time
+
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0,
       deltaF, &lalStrainUnit, n);
+  XLAL_CHECK ( *htilde, XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu for f_max=%f, deltaF=%g.", n, f_max, deltaF);
+
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
   XLALUnitMultiply(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
-  if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
 
+  /* range that will have actual non-zero waveform values generated */
   size_t ind_min = (size_t) (f_min / deltaF);
   size_t ind_max = (size_t) (f_max / deltaF);
+  XLAL_CHECK ( (ind_max<=n) && (ind_min<=ind_max), XLAL_EDOM, "minimum freq index %zu and maximum freq index %zu do not fulfill 0<=ind_min<=ind_max<=htilde->data>length=%zu.", ind_min, ind_max, n);
 
   // Calculate phenomenological parameters
   REAL8 finspin = FinalSpin0815(eta, chi1, chi2); //FinalSpin0815 - 0815 is like a version number
+
+  if (finspin < MIN_FINAL_SPIN)
+          XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
+                          the model might misbehave here.", finspin);
+
   IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2, finspin);
   if (!pAmp) XLAL_ERROR(XLAL_EFUNC);
   IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin, extraParams);
@@ -256,33 +274,62 @@ static int IMRPhenomDGenerateFD(
   }
   pn->v[6] -= (pn_ss3 * pfaN * testGRcor);
 
+  PhiInsPrefactors phi_prefactors;
+  status = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "init_phi_ins_prefactors failed");
+
   // Compute coefficients to make phase C^1 continuous (phase and first derivative)
-  ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn);
+  ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors);
 
   //time shift so that peak amplitude is approximately at t=0
   //For details see https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/timedomain
-  REAL8 t0 = DPhiMRD(0.8*(pPhi->fRD), pPhi);
+  REAL8 t0 = DPhiMRD(pAmp->fmaxCalc, pPhi);
 
+  AmpInsPrefactors amp_prefactors;
+  status = init_amp_ins_prefactors(&amp_prefactors, pAmp);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "init_amp_ins_prefactors failed");
+
+  int status_in_for = XLAL_SUCCESS;
   /* Now generate the waveform */
   #pragma omp parallel for
-  for (size_t i = ind_min; i < ind_max; i++) {
+  for (size_t i = ind_min; i < ind_max; i++)
+  {
+	REAL8 Mf = M_sec * i * deltaF; // geometric frequency
 
-    REAL8 Mf = M_sec * i * deltaF; // geometric frequency
+	UsefulPowers powers_of_f;
+	status_in_for = init_useful_powers(&powers_of_f, Mf);
+	if (XLAL_SUCCESS != status_in_for)
+	{
+		XLALPrintError("init_useful_powers failed for Mf, status_in_for=%d", status_in_for);
+		status = status_in_for;
+	}
+	else
+	{
+		 REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &powers_of_f, &amp_prefactors);
+		 REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn, &powers_of_f, &phi_prefactors);
 
-    REAL8 amp = IMRPhenDAmplitude(Mf, pAmp);
-    REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn);
+		 // incorporating fRef
+		 REAL8 MfRef = M_sec * fRef;
+		 UsefulPowers powers_of_fRef;
+		 status_in_for = init_useful_powers(&powers_of_fRef, MfRef);
+		 if (XLAL_SUCCESS != status_in_for)
+		 {
+			 XLALPrintError("init_useful_powers failed for MfRef, status_in_for=%d", status_in_for);
+			 status = status_in_for;
+		 }
+		 else
+		 {
+			 REAL8 phifRef = IMRPhenDPhase(MfRef, pPhi, pn, &powers_of_fRef, &phi_prefactors);
+			 phi -= 2.*phi0 + t0*(Mf-MfRef) + phifRef; // factor of 2 b/c phi0 is orbital phase
 
-    // incorporating fRef
-    REAL8 MfRef = M_sec * fRef;
-    REAL8 phifRef = IMRPhenDPhase(MfRef, pPhi, pn);
-    phi -= 2.*phi0 + t0*(Mf-MfRef) + phifRef; // factor of 2 b/c phi0 is orbital phase
-
-    ((*htilde)->data->data)[i] = amp0 * amp * cexp(-I * phi);
+			 ((*htilde)->data->data)[i] = amp0 * amp * cexp(-I * phi);
+		 }
+	}
   }
 
   LALFree(pAmp);
   LALFree(pPhi);
   LALFree(pn);
 
-  return XLAL_SUCCESS;
+  return status;
 }

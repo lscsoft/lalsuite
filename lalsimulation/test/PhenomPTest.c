@@ -350,6 +350,8 @@ static void Test_PhenomPCore(void) {
   IMRPhenomDAmplitudeCoefficients *pAmp = NULL;
   IMRPhenomDPhaseCoefficients *pPhi = NULL;
   PNPhasingSeries *PNparams = NULL;
+  AmpInsPrefactors * amp_prefactors = NULL;
+  PhiInsPrefactors * phi_prefactors = NULL;
 
   int ret = PhenomPCoreOneFrequency(
     fHz,                     /**< frequency (Hz) */
@@ -369,7 +371,10 @@ static void Test_PhenomPCore(void) {
     &hp,                     /**< output: \f$\tilde h_+\f$ */
     &hc,                     /**< output: \f$\tilde h_+\f$ */
     &phasing,                /**< Output: overall phasing */
-    version);
+    version,
+    amp_prefactors,
+    phi_prefactors
+);
 
   MYUNUSED(ret);
   prC("hp", hp);

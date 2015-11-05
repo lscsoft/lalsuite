@@ -17,7 +17,7 @@
 /**
  * Dimensionless frequency (Mf) at which define the end of the waveform
  */
-#define f_CUT 0.3
+#define f_CUT 0.2
 
 /**
  * Dimensionless frequency (Mf) at which the inspiral amplitude
@@ -30,6 +30,20 @@
  * switches to the intermediate phase
  */
 #define PHI_fJoin_INS 0.018
+
+/**
+  * Minimal final spin value below which the waveform might behave pathological
+  * because the ISCO frequency is too low. For more details, see the review wiki
+  * page https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/PhenD_LargeNegativeSpins
+  */
+#define MIN_FINAL_SPIN -0.717
+
+/**
+  * A large mass ratio causes memory over-runs.
+  * We test and put the limit an order of magnitude above that of previous waveform models (which were around q=100).
+  */
+#define MAX_ALLOWED_MASS_RATIO 5000
+
 
 /* QNM data */
 
