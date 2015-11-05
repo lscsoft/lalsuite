@@ -17,7 +17,7 @@ endif
 if SWIG_BUILD_PYTHON
 #test_scripts += test_plot.py
 if HAVE_CHEALPIX
-#test_scripts += test_bayestar.py
+test_scripts += test_bayestar.py
 endif
 endif
 
