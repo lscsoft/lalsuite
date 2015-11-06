@@ -592,17 +592,17 @@ if __name__ == '__main__':
   fmt_i = {}
   fmt_r = {}
   fmt_imr = {}
-  for l,s in zip(CSi.levels, strs_i):
-    fmt_i[l] = s
-  for l,s in zip(CSr.levels, strs_r):
-    fmt_r[l] = s
-  for l,s in zip(CSimr.levels, strs_imr):
-    fmt_imr[l] = s
+  #for l,s in zip(CSi.levels, strs_i):
+    #fmt_i[l] = s
+  #for l,s in zip(CSr.levels, strs_r):
+    #fmt_r[l] = s
+  #for l,s in zip(CSimr.levels, strs_imr):
+    #fmt_imr[l] = s
 
-  # Label every other level using strings
-  plt.clabel(CSi,CSi.levels[::2],inline=True,fmt=fmt_i,fontsize=14, use_clabeltext=True)
-  plt.clabel(CSr,CSr.levels[::2],inline=True,fmt=fmt_r,fontsize=14, use_clabeltext=True)
-  plt.clabel(CSimr,CSimr.levels[::2],inline=True,fmt=fmt_imr,fontsize=10)
+  ## Label every other level using strings
+  #plt.clabel(CSi,CSi.levels[::2],inline=True,fmt=fmt_i,fontsize=14, use_clabeltext=True)
+  #plt.clabel(CSr,CSr.levels[::2],inline=True,fmt=fmt_r,fontsize=14, use_clabeltext=True)
+  #plt.clabel(CSimr,CSimr.levels[::2],inline=True,fmt=fmt_imr,fontsize=10)
 
   plt.savefig('%s/img/IMR_overlap.png'%(out_dir), dpi=300)
   plt.savefig('%s/img/IMR_overlap_thumb.png'%(out_dir), dpi=72)
