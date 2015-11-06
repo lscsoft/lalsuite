@@ -362,7 +362,8 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
         skyframe = 0;
 
     INT4 noAdapt = 0;
-    if (LALInferenceGetProcParamVal(command_line, "--no-adapt"))
+    if (LALInferenceGetProcParamVal(command_line, "--no-adapt") ||
+        LALInferenceGetProcParamVal(command_line, "--noiseonly"))
         noAdapt = 1;
     INT4 adapting = !noAdapt;
     LALInferenceAddINT4Variable(propArgs, "no_adapt", noAdapt, LALINFERENCE_PARAM_LINEAR);
