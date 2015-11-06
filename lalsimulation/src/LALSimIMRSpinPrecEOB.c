@@ -2940,6 +2940,8 @@ int XLALSimIMRSpinEOBWaveformAll(
     }
 
     //exit(0);
+  /* Having found the time of peak, we set the time of coalescence */
+  XLALGPSAdd(&tc, -mTScaled * (tPeakOmega + HiSRstart) );
 
   /* Calculate J at merger */
   spline = gsl_spline_alloc( gsl_interp_cspline, retLen );
