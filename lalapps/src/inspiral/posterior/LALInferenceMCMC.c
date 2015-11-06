@@ -132,7 +132,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     \n";
     INT4 mpi_rank, mpi_size;
     INT4 ntemps_per_thread;
-    INT4 noAdapt, adaptTau, adaptLength;
+    INT4 noAdapt;
     INT4 i, ndim;
     INT4 count_vectors = 0;
     ProcessParamsTable *command_line = NULL, *ppt = NULL;
@@ -330,17 +330,23 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
 
     /* Grab adaptation settings from the last thread and add to algorithm params */
     noAdapt = LALInferenceGetINT4Variable(thread->proposalArgs, "no_adapt");
-    adaptTau = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptTau");
-    adaptLength = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptLength");
 
-    LALInferenceAddINT4Variable(algorithm_params, "no_adapt",
-                                noAdapt, LALINFERENCE_PARAM_OUTPUT);
+    INT4 adaptTau = 0;
+    if (LALInferenceCheckVariable(thread->proposalArgs, "adaptTau"))
+        adaptTau = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptTau");
 
     LALInferenceAddINT4Variable(algorithm_params, "adaptTau",
                                 adaptTau, LALINFERENCE_PARAM_OUTPUT);
 
+    INT4 adaptLength = 0;
+    if (LALInferenceCheckVariable(thread->proposalArgs, "adaptLength"))
+        adaptLength = LALInferenceGetINT4Variable(thread->proposalArgs, "adaptLength");
+
     LALInferenceAddINT4Variable(algorithm_params, "adaptLength",
                                 adaptLength, LALINFERENCE_PARAM_OUTPUT);
+
+    LALInferenceAddINT4Variable(algorithm_params, "no_adapt",
+                                noAdapt, LALINFERENCE_PARAM_OUTPUT);
 
     /* Set counters to negative numbers, indicating adaptation is happening */
     for (i=0; i<runState->nthreads; i++)
