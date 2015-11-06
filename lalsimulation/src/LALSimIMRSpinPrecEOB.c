@@ -131,7 +131,7 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
                            void UNUSED *funcParams
                           )
 {
-  int debugPK = 0; int debugPKverbose = 0;
+  int debugPK = 01; int debugPKverbose = 0;
   INT4 i;
   SpinEOBParams UNUSED *params = (SpinEOBParams *)funcParams;
 
@@ -297,15 +297,14 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
     return 1;
   }
   /* If rdot inclreases, break */
-   if ( r2 < 16.){
-    if ( rdot>params->prev_dr ) {
+   if ( r2 < 16. && rdot>params->prev_dr ) {
       if(debugPK){
           XLAL_PRINT_INFO("\n Integration stopping, dr/dt increasing!\n");
           fflush(NULL);
         }
+      params->prev_dr=rdot;
       return 1;
     }
-   }
     params->prev_dr=rdot;
 
   /* **************************************************************** */
@@ -2464,7 +2463,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     for( i=0; i<12; i++)XLAL_PRINT_INFO("%.16e\n", values->data[i]);
     fflush(NULL);
   }
-
+    seobParams.prev_dr=0.;
   /* For HiSR evolution, we stop at FIXME */
   integrator->stop = XLALEOBSpinPrecStopConditionBasedOnPR;
 
