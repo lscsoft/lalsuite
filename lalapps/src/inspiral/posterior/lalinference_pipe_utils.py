@@ -1292,6 +1292,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.add_node(node)
     nodes.append(node)
 
+    node=GraceDBNode(self.gracedbjob,parent=respagenode,gid=gid,command='upload',tag='pe')
+    node.set_filename(respagenode.webpath+'/corner/sourceFrame.png')
+    self.add_node(node)
+    nodes.append(node)
+
     return nodes
 
   def add_gracedb_FITSskymap_upload(self,event,engine=None):
