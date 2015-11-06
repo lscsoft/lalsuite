@@ -707,7 +707,7 @@ int main(int argc, char *argv[])
          fprintf(LOG, "Testing template f=%f, P=%f, Df=%f\n", uvar.templateTestF, uvar.templateTestP, uvar.templateTestDf);
 
          //Load template quantities into a test candidate
-         loadCandidateData(&(exactCandidates1->data[0]), uvar.templateTestF, uvar.templateTestP, uvar.templateTestDf, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0, -1);
+         loadCandidateData(&(exactCandidates1->data[0]), uvar.templateTestF, uvar.templateTestP, uvar.templateTestDf, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0, -1, 0);
 
          //Resize the output candidate vector if necessary
          if (exactCandidates2->numofcandidates == exactCandidates2->length-1) XLAL_CHECK( (exactCandidates2 = resizecandidateVector(exactCandidates2, 2*exactCandidates2->length)) != NULL, XLAL_EFUNC );
@@ -721,7 +721,7 @@ int main(int argc, char *argv[])
 
       } else if (uvar.bruteForceTemplateTest) {
          candidate cand;
-         loadCandidateData(&cand, uvar.templateTestF, uvar.templateTestP, uvar.templateTestDf, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0, -1);
+         loadCandidateData(&cand, uvar.templateTestF, uvar.templateTestP, uvar.templateTestDf, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0, -1, 0);
          TwoSpectParamSpaceSearchVals paramspace = {uvar.templateTestF-2.0/uvar.Tsft, uvar.templateTestF+2.0/uvar.Tsft, 21, 5, 5, 0.5, uvar.templateTestDf-2.0/uvar.Tsft,
                                                     uvar.templateTestDf+2.0/uvar.Tsft, 21};
          XLAL_CHECK( bruteForceTemplateTest(&(exactCandidates2), cand, &paramspace, &uvar, ffdata->ffdata, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -731,7 +731,7 @@ int main(int argc, char *argv[])
       //If the user wants to do a template search, that is done here
       if (uvar.templateSearch) {
          //fprintf(stderr, "Calling templateSearch\n (in development, last edited 2014-06-09)\n");
-         XLAL_CHECK( templateSearch_scox1Style(&exactCandidates2, uvar.fmin, uvar.fspan, uvar.templateSearchP, uvar.templateSearchAsini, uvar.templateSearchAsiniSigma, skypos, &uvar, ffdata->ffdata, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
+         XLAL_CHECK( templateSearch_scox1Style(&exactCandidates2, uvar.fmin, uvar.fspan, uvar.templateSearchP, uvar.templateSearchAsini, uvar.templateSearchAsiniSigma, skypos, &uvar, ffdata->ffdata, aveNoise, aveTFnoisePerFbinRatio, trackedlines, secondFFTplan, rng, 1) == XLAL_SUCCESS, XLAL_EFUNC );
          //fprintf(stderr, "Done calling templateSearch\n");
          for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) exactCandidates2->data[ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25);
       }
@@ -747,7 +747,7 @@ int main(int argc, char *argv[])
             if (exactCandidates2->numofcandidates==exactCandidates2->length) {
                XLAL_CHECK( (exactCandidates2 = resizecandidateVector(exactCandidates2, 2*exactCandidates2->length)) != NULL, XLAL_EFUNC );
             }
-            loadCandidateData(&(exactCandidates2->data[exactCandidates2->numofcandidates]), subsetVec->data[ii].fsig, subsetVec->data[ii].period, subsetVec->data[ii].moddepth, subsetVec->data[ii].ra, subsetVec->data[ii].dec, subsetVec->data[ii].stat, subsetVec->data[ii].h0, subsetVec->data[ii].prob, subsetVec->data[ii].proberrcode, subsetVec->data[ii].normalization, subsetVec->data[ii].templateVectorIndex);
+            loadCandidateData(&(exactCandidates2->data[exactCandidates2->numofcandidates]), subsetVec->data[ii].fsig, subsetVec->data[ii].period, subsetVec->data[ii].moddepth, subsetVec->data[ii].ra, subsetVec->data[ii].dec, subsetVec->data[ii].stat, subsetVec->data[ii].h0, subsetVec->data[ii].prob, subsetVec->data[ii].proberrcode, subsetVec->data[ii].normalization, subsetVec->data[ii].templateVectorIndex, subsetVec->data[ii].lineContamination);
             exactCandidates2->data[exactCandidates2->numofcandidates+ii].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //Scaling here
             (exactCandidates2->numofcandidates)++;
          }
@@ -777,7 +777,7 @@ int main(int argc, char *argv[])
             //Put ihsCandidates_reduced back into a reset ihsCandidates
             ihsCandidates->numofcandidates = 0;
             for (ii=0; ii<(INT4)ihsCandidates_reduced->numofcandidates; ii++) {
-               loadCandidateData(&(ihsCandidates->data[ii]), ihsCandidates_reduced->data[ii].fsig, ihsCandidates_reduced->data[ii].period, ihsCandidates_reduced->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates_reduced->data[ii].stat, ihsCandidates_reduced->data[ii].h0, ihsCandidates_reduced->data[ii].prob, 0, ihsCandidates_reduced->data[ii].normalization, ihsCandidates_reduced->data[ii].templateVectorIndex);
+               loadCandidateData(&(ihsCandidates->data[ii]), ihsCandidates_reduced->data[ii].fsig, ihsCandidates_reduced->data[ii].period, ihsCandidates_reduced->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates_reduced->data[ii].stat, ihsCandidates_reduced->data[ii].h0, ihsCandidates_reduced->data[ii].prob, 0, ihsCandidates_reduced->data[ii].normalization, ihsCandidates_reduced->data[ii].templateVectorIndex, ihsCandidates_reduced->data[ii].lineContamination);
                (ihsCandidates->numofcandidates)++;
             }
             destroycandidateVector(ihsCandidates_reduced);
@@ -794,7 +794,7 @@ int main(int argc, char *argv[])
          //Use the typical list
          INT4 numofcandidatesalready = exactCandidates2->numofcandidates;
          for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
-            loadCandidateData(&(exactCandidates2->data[ii+numofcandidatesalready]), ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates->data[ii].stat, ihsCandidates->data[ii].h0, ihsCandidates->data[ii].prob, 0, ihsCandidates->data[ii].normalization, ihsCandidates->data[ii].templateVectorIndex);
+            loadCandidateData(&(exactCandidates2->data[ii+numofcandidatesalready]), ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates->data[ii].stat, ihsCandidates->data[ii].h0, ihsCandidates->data[ii].prob, 0, ihsCandidates->data[ii].normalization, ihsCandidates->data[ii].templateVectorIndex, ihsCandidates->data[ii].lineContamination);
             exactCandidates2->data[ii+numofcandidatesalready].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //Scaling here
             (exactCandidates2->numofcandidates)++;
          }
@@ -855,7 +855,7 @@ int main(int argc, char *argv[])
             //Check that we are above threshold before storing the candidate
             if (cand.prob<log10(uvar.tmplfar)) {
                if (exactCandidates1->numofcandidates == exactCandidates1->length-1) XLAL_CHECK( (exactCandidates1 = resizecandidateVector(exactCandidates1, 2*exactCandidates1->length)) != NULL, XLAL_EFUNC );
-               loadCandidateData(&exactCandidates1->data[exactCandidates1->numofcandidates], cand.fsig, cand.period, cand.moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, cand.stat, cand.h0, cand.prob, cand.proberrcode, cand.normalization, cand.templateVectorIndex);
+               loadCandidateData(&exactCandidates1->data[exactCandidates1->numofcandidates], cand.fsig, cand.period, cand.moddepth, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, cand.stat, cand.h0, cand.prob, cand.proberrcode, cand.normalization, cand.templateVectorIndex, cand.lineContamination);
                exactCandidates1->numofcandidates++;
             }
          } /* for ii < numofcandidates */
@@ -922,8 +922,8 @@ int main(int argc, char *argv[])
       fprintf(stderr, "\n**Report of candidates:**\n");
 
       for (ii=0; ii<(INT4)exactCandidates2->numofcandidates; ii++) {
-         fprintf(LOG, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %g, Prob = %.4f, TF norm = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0, exactCandidates2->data[ii].prob, ffdata->tfnormalization);
-         fprintf(stderr, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %g, Prob = %.4f, TF norm = %g\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0, exactCandidates2->data[ii].prob, ffdata->tfnormalization);
+         fprintf(LOG, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %g, Prob = %.4f, TF norm = %g, template vec num = %d, line contamination = %d\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0, exactCandidates2->data[ii].prob, ffdata->tfnormalization, exactCandidates2->data[ii].templateVectorIndex, exactCandidates2->data[ii].lineContamination);
+         fprintf(stderr, "fsig = %.6f, period = %.6f, df = %.7f, RA = %.4f, DEC = %.4f, R = %.4f, h0 = %g, Prob = %.4f, TF norm = %g, template vec num = %d, line contamination = %d\n", exactCandidates2->data[ii].fsig, exactCandidates2->data[ii].period, exactCandidates2->data[ii].moddepth, exactCandidates2->data[ii].ra, exactCandidates2->data[ii].dec, exactCandidates2->data[ii].stat, exactCandidates2->data[ii].h0, exactCandidates2->data[ii].prob, ffdata->tfnormalization, exactCandidates2->data[ii].templateVectorIndex, exactCandidates2->data[ii].lineContamination);
       } /* for ii < exactCandidates2->numofcandidates */
    } /* if exactCandidates2->numofcandidates != 0 */
 

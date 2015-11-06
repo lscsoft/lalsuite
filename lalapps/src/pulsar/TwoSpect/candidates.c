@@ -101,8 +101,9 @@ void destroycandidateVector(candidateVector *vector)
  * \param [in]  proberrcode         Davies' method error code
  * \param [in]  normalization       Time-frequency normalization
  * \param [in]  templateVectorIndex Index value of the template in a templateVector (can be -1 if not from a vector)
+ * \param [in]  lineContamination   Boolean flag to indicate 0 = no contamination from lines or 1 = likely contaminated by one or more lines
  */
-void loadCandidateData(candidate *output, const REAL8 fsig, const REAL8 period, const REAL8 moddepth, const REAL4 ra, const REAL4 dec, const REAL8 statval, const REAL8 h0, const REAL8 prob, const INT4 proberrcode, const REAL8 normalization, const INT4 templateVectorIndex)
+void loadCandidateData(candidate *output, const REAL8 fsig, const REAL8 period, const REAL8 moddepth, const REAL4 ra, const REAL4 dec, const REAL8 statval, const REAL8 h0, const REAL8 prob, const INT4 proberrcode, const REAL8 normalization, const INT4 templateVectorIndex, const BOOLEAN lineContamination)
 {
    XLAL_CHECK_VOID( output != NULL, XLAL_EINVAL );
    output->fsig = fsig;
@@ -116,6 +117,7 @@ void loadCandidateData(candidate *output, const REAL8 fsig, const REAL8 period, 
    output->proberrcode = proberrcode;
    output->normalization = normalization;
    output->templateVectorIndex = templateVectorIndex;
+   output->lineContamination = lineContamination;
 } // loadCandidateData()
 
 
@@ -158,7 +160,7 @@ INT4 analyzeOneTemplate(candidate *output, const candidate *input, const ffdataS
    REAL8 h0 = 0.0;
    if ( R > 0.0 ) h0 = 2.7426*pow(R/(params->Tsft*params->Tobs),0.25);
 
-   loadCandidateData(output, input->fsig, input->period, input->moddepth, input->ra, input->dec, R, h0, prob, proberrcode, 1.0, -1);
+   loadCandidateData(output, input->fsig, input->period, input->moddepth, input->ra, input->dec, R, h0, prob, proberrcode, 1.0, -1, 0);
 
    destroyTwoSpectTemplate(template);
 
@@ -195,8 +197,8 @@ INT4 analyzeCandidatesTemplateFromVector(candidateVector *output, const candidat
       if (prob < output->data[output->length-1].prob) {
          UINT4 insertionPoint = output->length - 1;
          while(insertionPoint>0 && prob<output->data[insertionPoint - 1].prob) insertionPoint--;
-         for (INT4 kk=(INT4)output->length-2; kk>=(INT4)insertionPoint; kk--) loadCandidateData(&(output->data[kk+1]), output->data[kk].fsig, output->data[kk].period, output->data[kk].moddepth, output->data[kk].ra, output->data[kk].dec, output->data[kk].stat, output->data[kk].h0, output->data[kk].prob, output->data[kk].proberrcode, output->data[kk].normalization, output->data[kk].templateVectorIndex);
-         loadCandidateData(&(output->data[insertionPoint]), template->f0, template->period, template->moddepth, input->data[ii].ra, input->data[ii].dec, R, h0, prob, proberrcode, ffdata->tfnormalization, input->data[ii].templateVectorIndex);
+         for (INT4 kk=(INT4)output->length-2; kk>=(INT4)insertionPoint; kk--) loadCandidateData(&(output->data[kk+1]), output->data[kk].fsig, output->data[kk].period, output->data[kk].moddepth, output->data[kk].ra, output->data[kk].dec, output->data[kk].stat, output->data[kk].h0, output->data[kk].prob, output->data[kk].proberrcode, output->data[kk].normalization, output->data[kk].templateVectorIndex, 0);
+         loadCandidateData(&(output->data[insertionPoint]), template->f0, template->period, template->moddepth, input->data[ii].ra, input->data[ii].dec, R, h0, prob, proberrcode, ffdata->tfnormalization, input->data[ii].templateVectorIndex, 0);
          if (output->numofcandidates<output->length) output->numofcandidates++;
       }
    }
@@ -305,7 +307,7 @@ INT4 bruteForceTemplateSearch(candidate *output, const candidate input, const Tw
                 trialp->data[kk]<=params->Pmax &&
                 trialp->data[kk]>=params->Pmin ) {
 
-               loadCandidateData(&cand, trialf->data[ii], trialp->data[kk], trialb->data[jj], input.ra, input.dec, 0, 0, 0.0, 0, 0.0, -1);
+               loadCandidateData(&cand, trialf->data[ii], trialp->data[kk], trialb->data[jj], input.ra, input.dec, 0, 0, 0.0, 0, 0.0, -1, 0);
 
                resetTwoSpectTemplate(template);
 
@@ -350,8 +352,8 @@ INT4 bruteForceTemplateSearch(candidate *output, const candidate input, const Tw
    trialb = NULL;
    trialp = NULL;
 
-   if (bestProb==0.0) loadCandidateData(output, input.fsig, input.period, input.moddepth, input.ra, input.dec, input.stat, input.h0, input.prob, input.proberrcode, input.normalization, input.templateVectorIndex);
-   else loadCandidateData(output, bestf, bestp, bestdf, input.ra, input.dec, bestR, besth0, bestProb, bestproberrcode, input.normalization, input.templateVectorIndex);
+   if (bestProb==0.0) loadCandidateData(output, input.fsig, input.period, input.moddepth, input.ra, input.dec, input.stat, input.h0, input.prob, input.proberrcode, input.normalization, input.templateVectorIndex, input.lineContamination);
+   else loadCandidateData(output, bestf, bestp, bestdf, input.ra, input.dec, bestR, besth0, bestProb, bestproberrcode, input.normalization, input.templateVectorIndex, input.lineContamination);
 
    fprintf(stderr, "done\n");
 
@@ -447,7 +449,7 @@ INT4 bruteForceTemplateTest(candidateVector **output, const candidate input, con
                 trialp->data[kk]<=params->Pmax &&
                 trialp->data[kk]>=params->Pmin ) {
 
-               loadCandidateData(&cand, trialf->data[ii], trialp->data[kk], trialb->data[jj], input.ra, input.dec, 0, 0, 0.0, 0, 0.0, -1);
+               loadCandidateData(&cand, trialf->data[ii], trialp->data[kk], trialb->data[jj], input.ra, input.dec, 0, 0, 0.0, 0, 0.0, -1, 0);
 
                resetTwoSpectTemplate(template);
 
@@ -464,7 +466,7 @@ INT4 bruteForceTemplateTest(candidateVector **output, const candidate input, con
                //Resize the output candidate vector if necessary
                if ((*output)->numofcandidates == (*output)->length-1) XLAL_CHECK( (*output = resizecandidateVector(*output, 2*(*output)->length)) != NULL, XLAL_EFUNC );
 
-               loadCandidateData(&((*output)->data[(*output)->numofcandidates]), trialf->data[ii], trialp->data[kk], trialb->data[jj], input.ra, input.dec, R, h0, prob, proberrcode, input.normalization, input.templateVectorIndex);
+               loadCandidateData(&((*output)->data[(*output)->numofcandidates]), trialf->data[ii], trialp->data[kk], trialb->data[jj], input.ra, input.dec, R, h0, prob, proberrcode, input.normalization, input.templateVectorIndex, input.lineContamination);
                (*output)->numofcandidates++;
 
             } /* if within boundaries */
@@ -494,12 +496,13 @@ INT4 bruteForceTemplateTest(candidateVector **output, const candidate input, con
  * \param [in]  ffdata                 Pointer to ffdataStruct
  * \param [in]  aveNoise               Pointer to REAL4VectorAligned of 2nd FFT background powers
  * \param [in]  aveTFnoisePerFbinRatio Pointer to REAL4VectorAligned of normalized power across the frequency band
+ * \param [in]  trackedlines           Pointer to REAL4VectorSequence of lines (allowed to be NULL if no lines)
  * \param [in]  secondFFTplan          Pointer to REAL4FFTPlan
  * \param [in]  rng                    Pointer to gsl_rng
  * \param [in]  useExactTemplates      Boolean of 0 (use Gaussian templates) or 1 (use exact templates)
  * \return Status value
  */
-INT4 templateSearch_scox1Style(candidateVector **output, const REAL8 fminimum, const REAL8 fspan, const REAL8 period, const REAL8 asini, const REAL8 asinisigma, const SkyPosition skypos, const UserInput_t *params, const REAL4VectorAligned *ffdata, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *aveTFnoisePerFbinRatio, const REAL4FFTPlan *secondFFTplan, const gsl_rng *rng, BOOLEAN useExactTemplates)
+INT4 templateSearch_scox1Style(candidateVector **output, const REAL8 fminimum, const REAL8 fspan, const REAL8 period, const REAL8 asini, const REAL8 asinisigma, const SkyPosition skypos, const UserInput_t *params, const REAL4VectorAligned *ffdata, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *aveTFnoisePerFbinRatio, const REAL4VectorSequence *trackedlines, const REAL4FFTPlan *secondFFTplan, const gsl_rng *rng, BOOLEAN useExactTemplates)
 {
 
    XLAL_CHECK( *output != NULL && params != NULL && ffdata != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL && rng != NULL, XLAL_EINVAL );
@@ -563,7 +566,7 @@ INT4 templateSearch_scox1Style(candidateVector **output, const REAL8 fminimum, c
 
          //load candidate
          //printf(stderr,"Loading candidate. Remember to get the RA and dec from outside in production run\n");
-         loadCandidateData(&cand, trialf->data[ii], period, trialdf->data[jj], skypos.longitude, skypos.latitude, 0, 0, 0.0, 0, 0.0, -1);
+         loadCandidateData(&cand, trialf->data[ii], period, trialdf->data[jj], skypos.longitude, skypos.latitude, 0, 0, 0.0, 0, 0.0, -1, 0);
 
          //Make the template
          resetTwoSpectTemplate(template);
@@ -577,13 +580,34 @@ INT4 templateSearch_scox1Style(candidateVector **output, const REAL8 fminimum, c
          REAL8 h0 = 0.0;
          if ( R > 0.0 ) h0 = 2.7426*pow(R/(params->Tsft*params->Tobs),0.25);
 
+         //Line contamination?
+         BOOLEAN lineContamination = 0;
+         if (trackedlines!=NULL) {
+            UINT4 kk = 0;
+            while (kk<trackedlines->length && lineContamination==0) {
+               if (2.0*trialdf->data[jj]>=(trackedlines->data[kk*3+2]-trackedlines->data[kk*3+1])) {
+                  if ((trackedlines->data[kk*3+2]>=(REAL4)(trialf->data[ii]-trialdf->data[jj]) && trackedlines->data[kk*3+2]<=(REAL4)(trialf->data[ii]+trialdf->data[jj])) ||
+                      (trackedlines->data[kk*3+1]>=(REAL4)(trialf->data[ii]-trialdf->data[jj]) && trackedlines->data[kk*3+1]<=(REAL4)(trialf->data[ii]+trialdf->data[jj]))) {
+                     lineContamination = 1;
+                  }
+               } // if the band spanned by the line is smaller than the band spanned by the signal
+               else {
+                  if (((REAL4)(trialf->data[ii]+trialdf->data[jj])>=trackedlines->data[kk*3+1] && (REAL4)(trialf->data[ii]+trialdf->data[jj])<=trackedlines->data[kk*3+2]) ||
+                      ((REAL4)(trialf->data[ii]-trialdf->data[jj])>=trackedlines->data[kk*3+1] && (REAL4)(trialf->data[ii]-trialdf->data[jj])<=trackedlines->data[kk*3+2])) {
+                     lineContamination = 1;
+                  }
+               } // instead if the band spanned by the line is larger than the band spanned by the signal
+               kk++;
+            } // while kk < trackedlines->length && lineContamination==0
+         } // if trackedlines != NULL
+
          //Resize the output candidate vector if necessary
          if ((*output)->numofcandidates == (*output)->length-1) {
             *output = resizecandidateVector(*output, 2*((*output)->length));
             XLAL_CHECK( *output != NULL, XLAL_EFUNC);
          }
 
-         loadCandidateData(&((*output)->data[(*output)->numofcandidates]), trialf->data[ii], period, trialdf->data[jj], skypos.longitude, skypos.latitude, R, h0, prob, proberrcode, 0.0, -1);
+         loadCandidateData(&((*output)->data[(*output)->numofcandidates]), trialf->data[ii], period, trialdf->data[jj], skypos.longitude, skypos.latitude, R, h0, prob, proberrcode, 0.0, -1, lineContamination);
          (*output)->numofcandidates++;
       } /* for jj < trialdf */   
       XLALDestroyREAL8Vector(trialdf);
@@ -736,7 +760,7 @@ INT4 clusterCandidates(candidateVector **output, const candidateVector *input, c
                for (UINT4 kk=0; kk<numofmoddepths; kk++) {
                   if ((mindf+kk*0.5/params->Tsft)>=params->dfmin && (mindf+kk*0.5/params->Tsft)<=params->dfmax) {
 
-                     loadCandidateData(&cand, avefsig, aveperiod, mindf + kk*0.5/params->Tsft, input->data[0].ra, input->data[0].dec, 0, 0, 0.0, 0, 0.0, -1);
+                     loadCandidateData(&cand, avefsig, aveperiod, mindf + kk*0.5/params->Tsft, input->data[0].ra, input->data[0].dec, 0, 0, 0.0, 0, 0.0, -1, 0);
 
                      if (exactflag==1) XLAL_CHECK( makeTemplate(template, cand, params, plan) == XLAL_SUCCESS, XLAL_EFUNC );
                      else XLAL_CHECK( makeTemplateGaussians(template, cand, params) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -764,7 +788,7 @@ INT4 clusterCandidates(candidateVector **output, const candidateVector *input, c
                else besth0 = 0.0;
 
                if ((*output)->numofcandidates == (*output)->length-1) XLAL_CHECK( (*output = resizecandidateVector(*output, 2*(*output)->length)) != NULL, XLAL_EFUNC );
-               loadCandidateData(&((*output)->data[(*output)->numofcandidates]), avefsig, aveperiod, bestmoddepth, input->data[0].ra, input->data[0].dec, bestR, besth0, bestProb, bestproberrcode, input->data[0].normalization, -1);
+               loadCandidateData(&((*output)->data[(*output)->numofcandidates]), avefsig, aveperiod, bestmoddepth, input->data[0].ra, input->data[0].dec, bestR, besth0, bestProb, bestproberrcode, input->data[0].normalization, -1, 0);
                numcandoutlist++;
                (*output)->numofcandidates++;
             }
@@ -920,7 +944,7 @@ INT4 testIHScandidates(candidateVector **output, const candidateVector *ihsCandi
                if (bestR > 0.0) h0 = 2.7426*sqrt(sqrt(bestR/(params->Tsft*params->Tobs)));  //Now compute the h0 value
 
                if ((*output)->numofcandidates == (*output)->length-1) XLAL_CHECK( (*output = resizecandidateVector(*output, 2*(*output)->length)) != NULL, XLAL_EFUNC );
-               loadCandidateData(&((*output)->data[(*output)->numofcandidates]), ihsCandidates->data[ii].fsig, bestPeriod, ihsCandidates->data[ii].moddepth, pos.longitude, pos.latitude, bestR, h0, bestProb, bestproberrcode, ihsCandidates->data[ii].normalization, -1);
+               loadCandidateData(&((*output)->data[(*output)->numofcandidates]), ihsCandidates->data[ii].fsig, bestPeriod, ihsCandidates->data[ii].moddepth, pos.longitude, pos.latitude, bestR, h0, bestProb, bestproberrcode, ihsCandidates->data[ii].normalization, -1, ihsCandidates->data[ii].lineContamination);
                (*output)->numofcandidates++;
 
             } /* if bestR != 0.0, add candidate or replace if something better is found */
@@ -997,8 +1021,8 @@ INT4 testTwoSpectTemplateVector(candidateVector *output, const TwoSpectTemplateV
          if (prob < output->data[output->length-1].prob) {
             UINT4 insertionPoint = output->length - 1;
             while(insertionPoint>0 && prob<output->data[insertionPoint - 1].prob) insertionPoint--;
-            for (INT4 kk=(INT4)output->length-2; kk>=(INT4)insertionPoint; kk--) loadCandidateData(&(output->data[kk+1]), output->data[kk].fsig, output->data[kk].period, output->data[kk].moddepth, output->data[kk].ra, output->data[kk].dec, output->data[kk].stat, output->data[kk].h0, output->data[kk].prob, output->data[kk].proberrcode, output->data[kk].normalization, output->data[kk].templateVectorIndex);
-            loadCandidateData(&(output->data[insertionPoint]), template->f0, template->period, template->moddepth, skypos.longitude, skypos.latitude, R, h0, prob, proberrcode, ffdata->tfnormalization, jj);
+            for (INT4 kk=(INT4)output->length-2; kk>=(INT4)insertionPoint; kk--) loadCandidateData(&(output->data[kk+1]), output->data[kk].fsig, output->data[kk].period, output->data[kk].moddepth, output->data[kk].ra, output->data[kk].dec, output->data[kk].stat, output->data[kk].h0, output->data[kk].prob, output->data[kk].proberrcode, output->data[kk].normalization, output->data[kk].templateVectorIndex, output->data[kk].lineContamination);
+            loadCandidateData(&(output->data[insertionPoint]), template->f0, template->period, template->moddepth, skypos.longitude, skypos.latitude, R, h0, prob, proberrcode, ffdata->tfnormalization, jj, 0);
             if (output->numofcandidates<output->length) output->numofcandidates++;
          }
       }
@@ -1037,7 +1061,7 @@ candidateVector * keepMostSignificantCandidates(const candidateVector *input, co
       XLAL_CHECK_NULL( (output = createcandidateVector(input->numofcandidates)) != NULL, XLAL_EFUNC );
 
       for (UINT4 ii=0; ii<input->numofcandidates; ii++) {
-         loadCandidateData(&(output->data[ii]), input->data[ii].fsig, input->data[ii].period, input->data[ii].moddepth, input->data[ii].ra, input->data[ii].dec, input->data[ii].stat, input->data[ii].h0, input->data[ii].prob, input->data[ii].proberrcode, input->data[ii].normalization, input->data[ii].templateVectorIndex);
+         loadCandidateData(&(output->data[ii]), input->data[ii].fsig, input->data[ii].period, input->data[ii].moddepth, input->data[ii].ra, input->data[ii].dec, input->data[ii].stat, input->data[ii].h0, input->data[ii].prob, input->data[ii].proberrcode, input->data[ii].normalization, input->data[ii].templateVectorIndex, input->data[ii].lineContamination);
       }
       output->numofcandidates = input->numofcandidates;
 
@@ -1056,7 +1080,7 @@ candidateVector * keepMostSignificantCandidates(const candidateVector *input, co
             }
          }
 
-         loadCandidateData(&(output->data[ii]), input->data[candidateWithHighestSignificance].fsig, input->data[candidateWithHighestSignificance].period, input->data[candidateWithHighestSignificance].moddepth, input->data[candidateWithHighestSignificance].ra, input->data[candidateWithHighestSignificance].dec, input->data[candidateWithHighestSignificance].stat, input->data[candidateWithHighestSignificance].h0, input->data[candidateWithHighestSignificance].prob, input->data[candidateWithHighestSignificance].proberrcode, input->data[candidateWithHighestSignificance].normalization, input->data[candidateWithHighestSignificance].templateVectorIndex);
+         loadCandidateData(&(output->data[ii]), input->data[candidateWithHighestSignificance].fsig, input->data[candidateWithHighestSignificance].period, input->data[candidateWithHighestSignificance].moddepth, input->data[candidateWithHighestSignificance].ra, input->data[candidateWithHighestSignificance].dec, input->data[candidateWithHighestSignificance].stat, input->data[candidateWithHighestSignificance].h0, input->data[candidateWithHighestSignificance].prob, input->data[candidateWithHighestSignificance].proberrcode, input->data[candidateWithHighestSignificance].normalization, input->data[candidateWithHighestSignificance].templateVectorIndex, input->data[candidateWithHighestSignificance].lineContamination);
 
          input->data[candidateWithHighestSignificance].prob = 0.0;
 

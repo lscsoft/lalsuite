@@ -39,7 +39,8 @@ void loadCandidateData(candidate* output,
                        const REAL8 prob,
                        const INT4 proberrcode,
                        const REAL8 normalization,
-                       const INT4 templateVectorIndex);
+                       const INT4 templateVectorIndex,
+                       const BOOLEAN lineContamination);
 
 INT4 analyzeOneTemplate(candidate *output,
                         const candidate *input,
@@ -81,6 +82,7 @@ INT4 templateSearch_scox1Style(candidateVector **output,
                                const REAL4VectorAligned *ffdata,
                                const REAL4VectorAligned *aveNoise,
                                const REAL4VectorAligned *aveTFnoisePerFbinRatio,
+                               const REAL4VectorSequence *trackedlines,
                                const REAL4FFTPlan *secondFFTplan,
                                const gsl_rng *rng,
                                const BOOLEAN useExactTemplates);
