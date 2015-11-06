@@ -1826,6 +1826,8 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   REAL8Sequence *tlistHi        = NULL;
   REAL8Sequence *tlistRDPatchHi = NULL;
+  REAL8Sequence *timeJFull = NULL;
+  REAL8Sequence *timeIFull = NULL;
 
   /* Memory for ringdown attachment */
   REAL8Vector *rdMatchPoint = XLALCreateREAL8Vector( 3 );
@@ -3202,8 +3204,20 @@ int XLALSimIMRSpinEOBWaveformAll(
   {
     XLAL_ERROR(  XLAL_ENOMEM );
   }
+  // timeJFullHi will be a copy  of tlistRDPatchHi which will be  returned together with J-frame modes
+  if ( !(timeJFull = XLALCreateREAL8Vector( retLen + retLenRDPatchLow )) )
+  {
+    XLAL_ERROR(  XLAL_ENOMEM );
+  }
+  // timeIFullHi will be a copy  of tlistRDPatchHi which will be  returned together with I-frame modes
+  if ( !(timeIFull = XLALCreateREAL8Vector( retLen + retLenRDPatchLow )) )
+  {
+    XLAL_ERROR(  XLAL_ENOMEM );
+  }
   memset( tlist->data, 0, tlist->length * sizeof( REAL8 ));
   memset( tlistRDPatch->data, 0, tlistRDPatch->length * sizeof( REAL8 ));
+  memset( timeJFull->data, 0, timeJFull->length * sizeof( REAL8 ));
+  memset( timeIFull->data, 0, timeIFull->length * sizeof( REAL8 ));
   for ( i = 0; i < retLen; i++ )
   {
     tlist->data[i] = i * deltaT/mTScaled;
@@ -4138,6 +4152,7 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     hIMRlmJTSHi = XLALSphHarmTimeSeriesAddMode( hIMRlmJTSHi, hIMRJTSHi, 2, k );
   }
   XLALSphHarmTimeSeriesSetTData( hIMRlmJTSHi, tlistRDPatchHi );
+  //XLALSphHarmTimeSeriesSetTData( hIMRlmJTSHi, timeJFullHi );
   if (debugPK){ XLAL_PRINT_INFO("YP: J wave RD attachment done.\n"); fflush(NULL); }
 
   hIMR22JTSHi  = XLALSphHarmTimeSeriesGetMode( hIMRlmJTSHi, 2, 2 );
@@ -4221,7 +4236,11 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
      hIMRlmJTS = XLALSphHarmTimeSeriesAddMode( hIMRlmJTS, hIMRJTS, 2, k );
      /*if (k==1) exit(0);*/
   }
-  XLALSphHarmTimeSeriesSetTData( hIMRlmJTS, tlistRDPatch );
+  for (i=0; i<(int)tlistRDPatch->length; i++){
+      timeJFull->data[i] = tlistRDPatch->data[i];    
+  }
+  //XLALSphHarmTimeSeriesSetTData( hIMRlmJTS, tlistRDPatch );
+  XLALSphHarmTimeSeriesSetTData( hIMRlmJTS, timeJFull );
   if (debugPK){ XLAL_PRINT_INFO("Stas: J-wave with RD  generated.\n"); fflush(NULL); }
 
   hIMR22JTS  = XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 2 );
@@ -4295,13 +4314,17 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
       betI->data->data[i] = betJtoI;
       gamI->data->data[i] = -gamJtoI;
   }
+  for (i=0; i<(int)tlistRDPatch->length; i++){
+      timeIFull->data[i] = tlistRDPatch->data[i];    
+  }
 
   hIMRlmITS = XLALSphHarmTimeSeriesAddMode( hIMRlmITS, hIMR22JTS, 2, 2 );
   hIMRlmITS = XLALSphHarmTimeSeriesAddMode( hIMRlmITS, hIMR21JTS, 2, 1 );
   hIMRlmITS = XLALSphHarmTimeSeriesAddMode( hIMRlmITS, hIMR20JTS, 2, 0 );
   hIMRlmITS = XLALSphHarmTimeSeriesAddMode( hIMRlmITS, hIMR2m1JTS, 2, -1 );
   hIMRlmITS = XLALSphHarmTimeSeriesAddMode( hIMRlmITS, hIMR2m2JTS, 2, -2 );
-  XLALSphHarmTimeSeriesSetTData( hIMRlmITS, tlistRDPatch );
+  XLALSphHarmTimeSeriesSetTData( hIMRlmITS, timeIFull );
+  //XLALSphHarmTimeSeriesSetTData( hIMRlmITS, tlistRDPatch );
 
   /* Rotate J-frame modes */
   if (debugPK){ XLAL_PRINT_INFO("Rotation to inertial I-frame\n"); fflush(NULL); }
@@ -4422,27 +4445,28 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
   //XLAL_PRINT_INFO("Memory cleanup 2 done.\n"); fflush(NULL);
   XLALDestroySphHarmTimeSeries(hlmPTS);
   // XLAL_PRINT_INFO("Memory cleanup 2.5 done.\n"); fflush(NULL);
+  
   //XLALDestroySphHarmTimeSeries(hIMRlmJTS);
-  XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 2 ));
-  XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 1 ));
-  XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 0 ));
-  XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, -1 ));
-  XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, -2 ));
+  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 2 ));
+  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 1 ));
+  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 0 ));
+  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, -1 ));
+  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, -2 ));
 
   //XLAL_PRINT_INFO("Memory cleanup 2.6 done.\n"); fflush(NULL);
-  //XLALDestroySphHarmTimeSeries(hIMRlmJTS);
-  //XLALDestroySphHarmTimeSeries(hIMRlmITS);
+  XLALDestroySphHarmTimeSeries(hIMRlmJTS);
   //XLALDestroyCOMPLEX16TimeSeries(hIMR22ITS);
   //XLALDestroyCOMPLEX16TimeSeries(hIMR21ITS);
   //XLALDestroyCOMPLEX16TimeSeries(hIMR20ITS);
   //XLALDestroyCOMPLEX16TimeSeries(hIMR2m1ITS);
   //XLALDestroyCOMPLEX16TimeSeries(hIMR2m2ITS);
 
-  XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, 2 ));
-  XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, 1 ));
-  XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, 0 ));
-  XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, -1 ));
-  XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, -2 ));
+  XLALDestroySphHarmTimeSeries(hIMRlmITS);
+  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, 2 ));
+  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, 1 ));
+  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, 0 ));
+  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, -1 ));
+  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, -2 ));
   //XLAL_PRINT_INFO("Memory cleanup 2.7 done.\n"); fflush(NULL);
 
   //XLALDestroyCOMPLEX16TimeSeries(hIMR22JTS);
