@@ -1333,8 +1333,10 @@ static REAL8 draw_chirp(LALInferenceThreadState *thread) {
 static REAL8 approxLogPrior(LALInferenceVariables *params) {
     REAL8 logP = 0.0;
 
-    REAL8 Mc = *(REAL8 *)LALInferenceGetVariable(params, "chirpmass");
-    logP += -11.0/6.0*log(Mc);
+    if(LALInferenceCheckVariable(params, "chirpmass")) {
+        REAL8 Mc = *(REAL8 *)LALInferenceGetVariable(params, "chirpmass");
+        logP += -11.0/6.0*log(Mc);
+    }
 
     /* Flat in time, ra, psi, phi. */
 
