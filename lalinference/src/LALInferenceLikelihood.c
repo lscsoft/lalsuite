@@ -1000,6 +1000,8 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       }
 
       //subtract GW model from residual
+      diff = d;
+
       if(signalFlag){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
       COMPLEX16 plainTemplate = Fplus*(*hptilde)+Fcross*(*hctilde);
@@ -1012,7 +1014,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
           template = template*calF;
       }
 
-      diff = (d - template);
+      diff -= template;
 
       }//end signal subtraction
 
