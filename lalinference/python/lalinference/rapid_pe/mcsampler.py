@@ -313,7 +313,6 @@ class MCSampler(object):
         n_history = int(kwargs["history_mult"]*n) if kwargs.has_key("history_mult") else None
         tempering_exp = kwargs["tempering_exp"] if kwargs.has_key("tempering_exp") else 0.0
         n_adapt = int(kwargs["n_adapt"]*n) if kwargs.has_key("n_adapt") else 0
-        floor_integrated_probability = kwargs["floor_level"] if kwargs.has_key("floor_level") else 0
         nmax = kwargs["nmin"] if kwargs.has_key("nmin") else n_adapt
 
         save_intg = kwargs["save_intg"] if kwargs.has_key("save_intg") else False
@@ -481,7 +480,6 @@ class MCSampler(object):
                 self._hist[p] = statutils.get_adaptive_binning(points, (self.llim[p], self.rlim[p]))
                 for pt, w in zip(points, weights):
                     self._hist[p][pt,] += w
-                #self._hist[p].array = (1-floor_integrated_probability)*self._hist[p].array + numpy.ones(len(self._hist[p].array))*floor_integrated_probability/len(self._hist[p].array)
                 self._hist[p].array += self._hist[p].array.mean()
                 rate.to_moving_mean_density(self._hist[p], rate.tophat_window(3))
                 norm = numpy.sum(self._hist[p].array * self._hist[p].bins.volumes())
