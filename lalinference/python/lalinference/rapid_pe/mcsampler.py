@@ -233,9 +233,9 @@ class MCSampler(object):
         # Cache the samples we chose
         #
         if len(self._rvs) == 0:
-            self._rvs = dict(zip(args, rvs_tmp.astype(numpy.float64)))
+            self._rvs = dict(zip(args, rvs_tmp))
         else:
-            rvs_tmp = dict(zip(args, rvs_tmp.astype(numpy.float64)))
+            rvs_tmp = dict(zip(args, rvs_tmp))
             #for p, ar in self._rvs.iteritems():
             for p in self.params:
                 self._rvs[p] = numpy.hstack( (self._rvs[p], rvs_tmp[p]) ).astype(numpy.float64)
@@ -261,6 +261,7 @@ class MCSampler(object):
 
         kwargs:
         nmax -- total allowed number of sample points, will throw a warning if this number is reached before neff.
+        nmin -- minimum number of samples to allow, by default will be set to the end of the 'burnin' at n_adapt * n
         neff -- Effective samples to collect before terminating. If not given, assume infinity
         n -- Number of samples to integrate in a 'chunk' -- default is 1000
         save_integrand -- Save the evaluated value of the integrand at the sample points with the sample point
@@ -313,6 +314,7 @@ class MCSampler(object):
         tempering_exp = kwargs["tempering_exp"] if kwargs.has_key("tempering_exp") else 0.0
         n_adapt = int(kwargs["n_adapt"]*n) if kwargs.has_key("n_adapt") else 0
         floor_integrated_probability = kwargs["floor_level"] if kwargs.has_key("floor_level") else 0
+        nmax = kwargs["nmin"] if kwargs.has_key("nmin") else n_adapt
 
         save_intg = kwargs["save_intg"] if kwargs.has_key("save_intg") else False
         # FIXME: The adaptive step relies on the _rvs cache, so this has to be
@@ -338,7 +340,7 @@ class MCSampler(object):
         if show_evaluation_log:
             print "walltime : iteration Neff  ln(maxweight) lnLmarg ln(Z/Lmax) int_var"
 
-        while (eff_samp < neff and self.ntotal < nmax): #  and (not bConvergenceTests):
+        while self.ntotal < nmin or (eff_samp < neff and self.ntotal < nmax):
             # Draw our sample points
             p_s, p_prior, rv = self.draw(n, *self.params)
                         
@@ -439,7 +441,7 @@ class MCSampler(object):
             if show_evaluation_log:
                 print int(time.time()), ": ", self.ntotal, eff_samp, math.log(maxval), numpy.log(int_val1/self.ntotal), numpy.log(int_val1/self.ntotal)-maxlnL, numpy.sqrt(var*self.ntotal)/int_val1
 
-            if (not convergence_tests) and self.ntotal >= nmax and neff != float("inf"):
+            if (not convergence_tests) and self.ntotal >= nmin and self.ntotal >= nmax and neff != float("inf"):
                 print >>sys.stderr, "WARNING: User requested maximum number of samples reached... bailing."
 
             #
