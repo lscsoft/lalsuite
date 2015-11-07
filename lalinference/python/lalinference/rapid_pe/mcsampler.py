@@ -267,9 +267,9 @@ class MCSampler(object):
         save_integrand -- Save the evaluated value of the integrand at the sample points with the sample point
         history_mult -- Number of chunks (of size n) to use in the adaptive histogramming: only useful if there are parameters with adaptation enabled
         tempering_exp -- Exponent to raise the weights of the 1-D marginalized histograms for adaptive sampling prior generation, by default it is 0 which will turn off adaptive sampling regardless of other settings
-        floor_level -- *total probability* of a uniform distribution, averaged with the weighted sampled distribution, to generate a new sampled distribution
         n_adapt -- number of chunks over which to allow the pdf to adapt. Default is zero, which will turn off adaptive sampling regardless of other settings
         convergence_tests - dictionary of function pointers, each accepting self._rvs and self.params as arguments. CURRENTLY ONLY USED FOR REPORTING
+        maxval - Guess at the maximum value of the integrand -- used as a seed for the maxval counter
 
         Pinning a value: By specifying a kwarg with the same of an existing parameter, it is possible to "pin" it. The sample draws will always be that value, and the sampling prior will use a delta function at that value.
         """
@@ -330,7 +330,8 @@ class MCSampler(object):
 
         int_val1 = numpy.float128(0)
         self.ntotal = 0
-        old_maxval, maxval = -float("Inf"), -float("Inf")
+        maxval = kwargs["maxval"] if "maxval" in kwargs else -float("Inf")
+        old_maxval = maxval
         maxlnL = -float("Inf")
         eff_samp = 0
         mean, var = None, None
