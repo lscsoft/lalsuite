@@ -811,7 +811,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
   ApplyRotationMatrix( rotMatrix2, tmpS2Norm );
   ApplyRotationMatrix( rotMatrix2, qCart );
   ApplyRotationMatrix( rotMatrix2, pCart );
-
+ 
   /* STEP 4) In the L0-N0 frame, we calculate (dE/dr)|sph using Eq. (4.14), then initial dr/dt using Eq. (4.10),
    *         and finally pr0 using Eq. (4.15).
    */
@@ -966,6 +966,12 @@ static int XLALSimIMRSpinEOBInitialConditions(
   memcpy( initConds->data+3, pCart, sizeof(pCart) );
   memcpy( initConds->data+6, tmpS1Norm, sizeof(tmpS1Norm) );
   memcpy( initConds->data+9, tmpS2Norm, sizeof(tmpS2Norm) );
+  
+  gsl_matrix_free(rotMatrix2);
+  gsl_matrix_free(invMatrix2);
+  
+  gsl_matrix_free(rotMatrix);
+  gsl_matrix_free(invMatrix);
 
   //printf( "THE FINAL INITIAL CONDITIONS:\n");
   /*printf( " %.16e %.16e %.16e\n%.16e %.16e %.16e\n%.16e %.16e %.16e\n%.16e %.16e %.16e\n", initConds->data[0], initConds->data[1], initConds->data[2],
