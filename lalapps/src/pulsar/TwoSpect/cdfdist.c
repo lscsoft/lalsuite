@@ -37,8 +37,8 @@ REAL8 cdf_chisq_Pinv(REAL8 P, REAL8 nu)
 }
 REAL8 cdf_chisq_Qinv(REAL8 Q, REAL8 nu)
 {
-   REAL8 val = cdf_gamma_Qinv(Q, 0.5*nu, 2.0);
-   XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
+   REAL8 val;
+   XLAL_CHECK_REAL8( cdf_gamma_Qinv(&val, Q, 0.5*nu, 2.0) == XLAL_SUCCESS, XLAL_EFUNC );
    return val;
 }
 REAL8 cdf_gamma_Pinv(REAL8 P, REAL8 a, REAL8 b)
@@ -107,12 +107,15 @@ REAL8 cdf_gamma_Pinv(REAL8 P, REAL8 a, REAL8 b)
    return b * x;
 
 }
-REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b)
+INT4 cdf_gamma_Qinv(REAL8 *out, REAL8 Q, REAL8 a, REAL8 b)
 {
    REAL8 x;
 
-   if (Q == 1.0) return 0.0;
-   XLAL_CHECK_REAL8( Q > 0.0 && Q < 1.0, XLAL_EFPOVRFLW, "Input P of 0.0 returns infinity\n" );
+   if (Q == 1.0) {
+      *out = 0.0;
+      return XLAL_SUCCESS;
+   }
+   XLAL_CHECK( Q > 0.0 && Q < 1.0, XLAL_EFPOVRFLW, "Input P of 0.0 returns infinity\n" );
 
    /* Consider, small, large and intermediate cases separately.  The
     boundaries at 0.05 and 0.95 have not been optimised, but seem ok
@@ -121,8 +124,8 @@ REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b)
    if (Q < 0.05) x = -log(Q) + lgamma(a);
    else if (Q > 0.95) x = exp((lgamma(a) + log1p(-Q)) / a);
    else {
-      REAL8 xg = cdf_ugaussian_Qinv(Q);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
+      REAL8 xg;
+      XLAL_CHECK( cdf_ugaussian_Qinv(&xg, Q) == XLAL_SUCCESS, XLAL_EFUNC );
       x = (xg < -0.5*sqrt (a)) ? a : sqrt (a) * xg + a;
    }
 
@@ -135,14 +138,17 @@ REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b)
    REAL8 lambda, dQ, phi;
    UINT4 n = 0;
 
-   INT4 keepgoing = 1;
+   BOOLEAN keepgoing = 1;
    while (keepgoing == 1) {
-      REAL8 val = cdf_gamma_Q(x, a, 1.0);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
+      REAL8 val;
+      XLAL_CHECK( cdf_gamma_Q(&val, x, a, 1.0) == XLAL_SUCCESS, XLAL_EFUNC );
       dQ = Q - val;
       phi = ran_gamma_pdf(x, a, 1.0);
 
-      if (dQ == 0.0 || n++ > 32) return b * x;
+      if (dQ == 0.0 || n++ > 32) {
+         *out = b * x;
+         return XLAL_SUCCESS;
+      }
 
       lambda = -dQ / fmax (2 * fabs (dQ / x), phi);
 
@@ -159,7 +165,8 @@ REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b)
       else keepgoing = 0;
    }
 
-   return b * x;
+   *out = b * x;
+   return XLAL_SUCCESS;
 }
 REAL8 cdf_ugaussian_Pinv(REAL8 P)
 {
@@ -186,18 +193,19 @@ REAL8 cdf_ugaussian_Pinv(REAL8 P)
    else return x;
 
 }
-REAL8 cdf_ugaussian_Qinv(REAL8 Q)
+INT4 cdf_ugaussian_Qinv(REAL8 *out, REAL8 Q)
 {
    REAL8 r, x, pp;
 
    REAL8 dQ = Q - 0.5;
 
-   XLAL_CHECK_REAL8( Q != 1.0, XLAL_EFPOVRFLW );
-   XLAL_CHECK_REAL8( Q != 0.0, XLAL_EFPOVRFLW );
+   XLAL_CHECK( Q != 1.0, XLAL_EFPOVRFLW );
+   XLAL_CHECK( Q != 0.0, XLAL_EFPOVRFLW );
 
    if (fabs(dQ) <= 0.425) {
       x = twospect_small(dQ);
-      return -x;
+      *out = -x;
+      return XLAL_SUCCESS;
    }
 
    pp = (Q < 0.5) ? Q : 1.0 - Q;
@@ -207,8 +215,9 @@ REAL8 cdf_ugaussian_Qinv(REAL8 Q)
    if (r <= 5.0) x = twospect_intermediate(r);
    else x = twospect_tail(r);
 
-   if (Q < 0.5) return x;
-   else return -x;
+   if (Q < 0.5) *out = x;
+   else *out = -x;
+   return XLAL_SUCCESS;
 }
 REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b)
 {
@@ -218,12 +227,11 @@ REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b)
    if (x <= 0.0) return 0.0;
 
    if (y > a) {
-      REAL8 val = sf_gamma_inc_Q(a, y);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
+      REAL8 val;
+      XLAL_CHECK_REAL8( sf_gamma_inc_Q(&val, a, y) == XLAL_SUCCESS, XLAL_EFUNC );
       P = 1.0 - val;
    } else {
-      P = sf_gamma_inc_P(a, y);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
+      XLAL_CHECK_REAL8( sf_gamma_inc_P(&P, a, y) == XLAL_SUCCESS, XLAL_EFUNC );
    }
 
    return P;
@@ -245,7 +253,7 @@ REAL8 cdf_gamma_P_usingmatlab(REAL8 x, REAL8 a, REAL8 b)
 
    return P;
 }
-REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b)
+INT4 cdf_gamma_Q(REAL8 *out, REAL8 x, REAL8 a, REAL8 b)
 {
    REAL8 Q;
    REAL8 y = x / b;
@@ -253,15 +261,15 @@ REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b)
    if (x <= 0.0) return 1.0;
 
    if (y < a) {
-      REAL8 val = sf_gamma_inc_P(a, y);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
+      REAL8 val;
+      XLAL_CHECK( sf_gamma_inc_P(&val, a, y) == XLAL_SUCCESS, XLAL_EFUNC );
       Q = 1.0 - val;
    } else {
-      Q = sf_gamma_inc_Q(a, y);
-      XLAL_CHECK_REAL8( xlalErrno == 0, XLAL_EFUNC );
+      XLAL_CHECK( sf_gamma_inc_Q(&Q, a, y) == XLAL_SUCCESS, XLAL_EFUNC );
    }
 
-   return Q;
+   *out = Q;
+   return XLAL_SUCCESS;
 }
 REAL8 cdf_gamma_Q_usingmatlab(REAL8 x, REAL8 a, REAL8 b)
 {

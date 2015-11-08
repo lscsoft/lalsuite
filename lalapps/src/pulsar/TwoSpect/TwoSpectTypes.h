@@ -161,6 +161,7 @@ typedef struct
    INT4 proberrcode;
    REAL8 normalization;
    INT4 templateVectorIndex;
+   BOOLEAN lineContamination;
 } candidate;
 
 typedef struct
