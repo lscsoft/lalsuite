@@ -89,12 +89,14 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBHcapNumericalDerivative.c \
 	LALSimIMRSpinEOBHcapExactDerivative.c \
 	LALSimIMRSpinAlignedEOBHcapDerivative.c \
+	LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
 	LALSimIMRSpinEOB.h \
 	LALSimIMRSpinEOBInitialConditions.c \
 	LALSimIMRSpinEOBAuxFuncs.c \
 	LALSimIMRSpinEOBFactorizedWaveform.c \
 	LALSimIMRSpinEOBFactorizedFlux.c \
+	LALSimIMRSpinEOBFactorizedFluxOptimized.c \
 	LALSimIMREOBFactorizedFlux.c \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
