@@ -85,6 +85,7 @@ noinst_HEADERS = \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimIMRSpinEOBHamiltonian.c \
 	LALSimIMRSpinEOBHamiltonianOptimized.c \
+	LALSimIMRSpinEOBComputeAmpPhasefromEOMSoln.c \
 	LALSimIMRSpinEOBHcapNumericalDerivative.c \
 	LALSimIMRSpinEOBHcapExactDerivative.c \
 	LALSimIMRSpinAlignedEOBHcapDerivative.c \
