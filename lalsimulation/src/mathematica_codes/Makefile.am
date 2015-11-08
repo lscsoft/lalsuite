@@ -19,4 +19,5 @@ noinst_HEADERS = \
 	SEOBNRv2_opt_dx0tortoise.h \
 	SEOBNRv2_opt_pdata1.h \
 	SEOBNRv2_opt_pdata1tortoise.h \
+	SEOBNRv2_opt_.h \
 	SEOBNRv2_opt_tortoise.h
