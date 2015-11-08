@@ -230,32 +230,32 @@ static REAL8 XLALSpinHcapExactDerivWRTParam(
   /* Now calculate derivatives w.r.t. the required parameter */
   if (funcParams->tortoise==1){
     if (paramIdx==4){
-#include "mathematica_codes/mathematica_expressionv3_dp1tortoise-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_dp1tortoise.h"
       result = dHdp1/eta;
     } else if (paramIdx==3){
-#include "mathematica_codes/mathematica_expressionv3_dp0tortoise-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_dp0tortoise.h"
       result = dHdp0/eta;
     } else if (paramIdx==5){
-#include "mathematica_codes/mathematica_expressionv3_dp2tortoise-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_dp2tortoise.h"
       result = dHdp2/eta;
     } else if (paramIdx==0){
-#include "mathematica_codes/mathematica_expressionv3_dx0tortoise-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_dx0tortoise.h"
       result = dHdx0/eta;
     } else {
       XLAL_ERROR( XLAL_EFUNC );
     }
   }else if(funcParams->tortoise==0) {
     if (paramIdx==4){
-#include "mathematica_codes/mathematica_expressionv3_dp1-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_dp1.h"
       result = dHdp1/eta;
     } else if (paramIdx==3){
-#include "mathematica_codes/mathematica_expressionv3_dp0-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_dp0.h"
       result = dHdp0/eta;
     } else if (paramIdx==5){
-#include "mathematica_codes/mathematica_expressionv3_dp2-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_dp2.h"
       result = dHdp2/eta;
     } else if (paramIdx==0){
-#include "mathematica_codes/mathematica_expressionv3_dx0-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_dx0.h"
       result = dHdx0/eta;
     } else {
       XLAL_ERROR( XLAL_EFUNC );
@@ -289,7 +289,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian_ExactDeriv(
     switch(which_to_vary) {
     case 4:
       {
-#include "mathematica_codes/mathematica_expressionv3pdata1tortoise-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_pdata1tortoise.h"
 	return Hreal;
       }
       break;
@@ -303,7 +303,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian_ExactDeriv(
     switch(which_to_vary) {
     case 4:
       {
-#include "mathematica_codes/mathematica_expressionv3pdata1-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_pdata1.h"
 	return Hreal;
       }
       break;
@@ -427,7 +427,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian_derivs_allatonce(
   REAL8 e3z = (0.0 <= sigmaKerr->data[2]) - (sigmaKerr->data[2] < 0.0); // This is a modified sign function: e3z = 1 if sigmaKerr->data[2]>=0, -1 otherwise
   if(tortoise==1) {
     // FASTEST OPTION. Note that it sets g2=[xdata2 derivative]=0.
-#include "mathematica_codes/mathematica_expressionv3_3derivstortoise-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_3derivstortoise.h"
     output[0]=g0;
     output[1]=g1;
     output[2]=g2;
@@ -435,7 +435,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian_derivs_allatonce(
     output[4]=g4;
     output[5]=g5;
   } else {
-#include "mathematica_codes/mathematica_expressionv3_3derivs-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_3derivs.h"
     output[0]=g0;
     output[1]=g1;
     output[2]=g2;

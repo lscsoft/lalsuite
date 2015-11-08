@@ -3,6 +3,10 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
+SUBDIRS = \
+	mathematica_codes \
+	$(END_OF_LIST)
+
 LDADD = liblalsimulation.la
 
 NOISEPSDFILES = \

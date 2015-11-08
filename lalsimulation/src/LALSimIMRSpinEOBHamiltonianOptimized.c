@@ -112,12 +112,12 @@ REAL8 XLALSimIMRSpinEOBHamiltonianOptimized(
 
   if(tortoise==1) {
     {
-#include "mathematica_codes/mathematica_expressionv3tortoise-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_tortoise.h"
       return Hreal;
     }
   } else if(tortoise==0) {
     {
-#include "mathematica_codes/mathematica_expressionv3-parsedfinal.h"
+#include "mathematica_codes/SEOBNRv2_opt_.h"
       return Hreal;
     }
   } else {
