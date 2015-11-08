@@ -182,7 +182,7 @@ static int SEOBNRv2OptimizedInterpolatorIncludeAmpPhase(REAL8Array *yin, REAL8 t
 
       vector = output->data + outputlen * i;
       unsigned int index_old=0;
-      double x_lo_old,y_lo_old,b_i_old,c_i_old,d_i_old;
+      double x_lo_old=0,y_lo_old=0,b_i_old=0,c_i_old=0,d_i_old=0;
       for (int j = 0; j < outputlen; j++) {
         optimized_gsl_spline_eval_e(interp,times[j],accel, &(vector[j]),&index_old,&x_lo_old,&y_lo_old,&b_i_old,&c_i_old,&d_i_old);
       }
