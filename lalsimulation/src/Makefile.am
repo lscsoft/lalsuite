@@ -80,8 +80,11 @@ noinst_HEADERS = \
 	LALSimInspiralPNCoefficients.c \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimIMRSpinEOBHamiltonian.c \
+	LALSimIMRSpinEOBHamiltonianOptimized.c \
 	LALSimIMRSpinEOBHcapNumericalDerivative.c \
+	LALSimIMRSpinEOBHcapExactDerivative.c \
 	LALSimIMRSpinAlignedEOBHcapDerivative.c \
+	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
 	LALSimIMRSpinEOB.h \
 	LALSimIMRSpinEOBInitialConditions.c \
 	LALSimIMRSpinEOBAuxFuncs.c \

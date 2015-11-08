@@ -28,8 +28,8 @@
  * unless otherwise specified.
  */
 
-#ifndef _LALSIMIMRSPINEOBFACTORIZEDFLUX_C
-#define _LALSIMIMRSPINEOBFACTORIZEDFLUX_C
+#ifndef _OPTIMIZEDLALSIMIMRSPINEOBFACTORIZEDFLUX_C
+#define _OPTIMIZEDLALSIMIMRSPINEOBFACTORIZEDFLUX_C
 
 #include <complex.h>
 #include <lal/LALSimInspiral.h>
@@ -42,8 +42,10 @@
 #include "LALSimIMREOBNQCCorrection.c"
 #include "LALSimIMRSpinEOBFactorizedWaveform.c"
 
-
-static int UsePrec = 0;
+/* OPTIMIZATION NOTE: UsePrec is declared global in LALSimIMRSpinEOBFactorizedFlux.c. Better to use ifndef like this: */
+#ifndef USEPREC
+#define USEPREC 0
+#endif
 
 /*------------------------------------------------------------------------------------------
  *
@@ -52,7 +54,7 @@ static int UsePrec = 0;
  *------------------------------------------------------------------------------------------
  */
 
-static REAL8 XLALInspiralSpinFactorizedFlux(
+static REAL8 XLALInspiralSpinFactorizedFluxOptimized(
                       REAL8Vector           *values,
                       EOBNonQCCoeffs        *nqcCoeffs,
                       const REAL8           omega,
@@ -74,7 +76,7 @@ static REAL8 XLALInspiralSpinFactorizedFlux(
  * for given dynamical variables.
  */
 
-static REAL8 XLALInspiralSpinFactorizedFlux(
+static REAL8 XLALInspiralSpinFactorizedFluxOptimized(
                       REAL8Vector           *values,    /**< dynamical variables */
                       EOBNonQCCoeffs        *nqcCoeffs, /**< pre-computed NQC coefficients */
                       const REAL8           omega,      /**< orbital frequency */
@@ -112,7 +114,7 @@ static REAL8 XLALInspiralSpinFactorizedFlux(
   v = cbrt( omega );
 
   /* Update the factorized multipole coefficients, w.r.t. new spins */
-  if ( UsePrec )
+  if ( USEPREC )
   {
 	/* Assume that initial conditions are available at this point, to
 	 * compute the chiS and chiA parameters.
@@ -172,14 +174,22 @@ static REAL8 XLALInspiralSpinFactorizedFlux(
 	}
   }
 
+  /* BEGIN OPTIMIZED */
+  /* OPTIMIZATION NOTE: Pre-compute vPhi, since
+   * 1) It's expensive (calls deriv of Hamiltonian)
+   * 2) It doesn't depend on l or m!
+   */
+  REAL8 vPhi = XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized( values->data, ak );
+  /* END OPTIMIZED */
+
 //  printf( "v = %.16e\n", v );
   for ( l = 2; l <= lMax; l++ )
   {
     for ( m = 1; m <= l; m++ )
     {
-      INT4 use_optimized_v2 = 0;
+      INT4  use_optimized_v2 = 1;
       if ( XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform( &hLM, values, v, H,
-            l, m, ak, use_optimized_v2, NULL ) == XLAL_FAILURE )
+                    l, m, ak, use_optimized_v2, &vPhi ) == XLAL_FAILURE )
       {
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
@@ -213,4 +223,4 @@ static REAL8 XLALInspiralSpinFactorizedFlux(
   return flux * LAL_1_PI / 8.0;
 }
 
-#endif /* _LALSIMIMRSPINEOBFACTORIZEDFLUX_C */
+#endif /* _OPTIMIZEDLALSIMIMRSPINEOBFACTORIZEDFLUX_C */

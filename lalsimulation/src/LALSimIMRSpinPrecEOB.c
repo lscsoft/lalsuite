@@ -808,7 +808,7 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
   /* No problem setting inc to zero in solving spin-aligned initial conditions. */
   /* inc is not zero in generating the final h+ and hx */
   if ( XLALSimIMRSpinEOBInitialConditions
-( tmpValues, m1, m2, fMin, 0, s1Data, s2Data, &seobParams ) == XLAL_FAILURE )
+( tmpValues, m1, m2, fMin, 0, s1Data, s2Data, &seobParams, /* use_optimized_v2 = */ 0 ) == XLAL_FAILURE )
   {
     XLALDestroyREAL8Vector( tmpValues );
     XLALDestroyREAL8Vector( sigmaKerr );
@@ -997,7 +997,7 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
 
     ham = XLALSimIMRSpinPrecEOBHamiltonian( eta, &cartPosVec, &cartMomVec, &s1VecOverMtMt, &s2VecOverMtMt, sigmaKerr, sigmaStar, seobParams.tortoise, &seobCoeffs );
 
-    if ( XLALSimIMRSpinEOBGetSpinFactorizedWaveform( &hLM, values, v, ham, 2, 2, &seobParams )
+    if ( XLALSimIMRSpinEOBGetSpinFactorizedWaveform( &hLM, values, v, ham, 2, 2, &seobParams, /* use_optimized_v2 = */ 0 )
            == XLAL_FAILURE )
     {
       /* TODO: Clean-up */
@@ -1287,7 +1287,7 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
 
     ham = XLALSimIMRSpinPrecEOBHamiltonian( eta, &cartPosVec, &cartMomVec, &s1VecOverMtMt, &s2VecOverMtMt, sigmaKerr, sigmaStar, seobParams.tortoise, &seobCoeffs );
 
-    if ( XLALSimIMRSpinEOBGetSpinFactorizedWaveform( &hLM, values, v, ham, 2, 2, &seobParams )
+    if ( XLALSimIMRSpinEOBGetSpinFactorizedWaveform( &hLM, values, v, ham, 2, 2, &seobParams, /* use_optimized_v2 = */ 0 )
            == XLAL_FAILURE )
     {
       /* TODO: Clean-up */
@@ -2035,7 +2035,7 @@ int XLALSimIMRSpinEOBWaveformAll(
         seobParams.chi1 = spin1Norm*cos(theta1Ini)/fabs(cos(theta1Ini));
         seobParams.chi2 = spin2Norm*cos(theta2Ini)/fabs(cos(theta2Ini));
         if ( XLALSimIMRSpinEOBInitialConditions( tmpValues2, m1, m2, fMin, incA,
-                                                mSpin1, mSpin2, &seobParams ) == XLAL_FAILURE )
+                                                mSpin1, mSpin2, &seobParams, /* use_optimized_v2 = */ 0 ) == XLAL_FAILURE )
         {
             XLAL_ERROR( XLAL_EFUNC );
         }
