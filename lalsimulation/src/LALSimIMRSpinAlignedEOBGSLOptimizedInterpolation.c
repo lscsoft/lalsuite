@@ -32,7 +32,7 @@
 /* static inline size_t optimized_gsl_interp_accel_find(gsl_interp_accel * a, const double xa[], size_t len, double x); */
 /* static inline void optimized_coeff_calc (const double c_array[], double dy, double dx, size_t index, double * b, double * c, double * d); */
 /* static int optimized_cspline_eval (const void * vstate, const double x_array[], const double y_array[], size_t size, double x, gsl_interp_accel * a, double *y,unsigned int *index_old, double *x_lo_old,double *y_lo_old,double *b_i_old,double *c_i_old,double *d_i_old); */
-/* static int optimized_gsl_spline_eval_e(const gsl_spline * spline, double time, gsl_interp_accel * accel, double * output,unsigned int *index_old, double *x_lo_old,double *y_lo_old,double *b_i_old,double *c_i_old,double *d_i_old){ */
+/* static int optimized_gsl_spline_eval_e(const gsl_spline * spline, double interptime, gsl_interp_accel * accel, double * output,unsigned int *index_old, double *x_lo_old,double *y_lo_old,double *b_i_old,double *c_i_old,double *d_i_old){ */
 
 typedef struct
 {
@@ -134,8 +134,8 @@ static int optimized_cspline_eval (const void * vstate, const double x_array[], 
   return GSL_SUCCESS;
 }
 
-static int optimized_gsl_spline_eval_e(const gsl_spline * spline, double time, gsl_interp_accel * accel, double * output,unsigned int *index_old, double *x_lo_old,double *y_lo_old,double *b_i_old,double *c_i_old,double *d_i_old){
-  return optimized_cspline_eval(spline->interp->state, spline->x, spline->y, spline->interp->size, time, accel, output,index_old,x_lo_old,y_lo_old,b_i_old,c_i_old,d_i_old);
+static int optimized_gsl_spline_eval_e(const gsl_spline * spline, double interptime, gsl_interp_accel * accel, double * output,unsigned int *index_old, double *x_lo_old,double *y_lo_old,double *b_i_old,double *c_i_old,double *d_i_old){
+  return optimized_cspline_eval(spline->interp->state, spline->x, spline->y, spline->interp->size, interptime, accel, output,index_old,x_lo_old,y_lo_old,b_i_old,c_i_old,d_i_old);
 }
 
 
