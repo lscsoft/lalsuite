@@ -201,13 +201,37 @@ def gps_to_iso8601(gps_time):
 
     iso8601 : str
         ISO 8601 date string (with fractional seconds)
+
+    Example
+    -------
+
+    >>> gps_to_iso8601(1000000000.01)
+    '2011-09-14T01:46:25.00999999'
+    >>> gps_to_iso8601(1000000000)
+    '2011-09-14T01:46:25'
+    >>> gps_to_iso8601(1000000000.999999)
+    '2011-09-14T01:46:25.999999'
+    >>> gps_to_iso8601(1000000000.9999999)
+    '2011-09-14T01:46:26'
+    >>> gps_to_iso8601(1000000814.999999)
+    '2011-09-14T01:59:59.999999'
+    >>> gps_to_iso8601(1000000814.9999999)
+    '2011-09-14T02:00:00'
     """
     gps_seconds_fraction, gps_seconds = math.modf(gps_time)
-    year, month, day, hour, minute, second, _, _, _ = lal.GPSToUTC(int(gps_seconds))
-    ret = '{0:04d}-{1:02d}-{2:02d}T{3:02d}:{4:02d}:{5:02d}'.format(year, month, day, hour, minute, second, gps_seconds_fraction)
     if gps_seconds_fraction:
-        ret += '{0:g}'.format(gps_seconds_fraction).lstrip('0')
-    return ret
+        gps_seconds_fraction = '{0:g}'.format(gps_seconds_fraction)
+        if gps_seconds_fraction == '1':
+            gps_seconds_fraction = ''
+            gps_seconds += 1
+        else:
+            assert gps_seconds_fraction.startswith('0.')
+            gps_seconds_fraction = gps_seconds_fraction[1:]
+    else:
+        gps_seconds_fraction = ''
+    year, month, day, hour, minute, second, _, _, _ = lal.GPSToUTC(int(gps_seconds))
+    return '{0:04d}-{1:02d}-{2:02d}T{3:02d}:{4:02d}:{5:02d}{6:s}'.format(
+        year, month, day, hour, minute, second, gps_seconds_fraction)
 
 
 def iso8601_to_gps(iso8601):
