@@ -1382,12 +1382,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
   //   XLAL_PRINT_WARNING("Warning: Depending on specified frequency sequence correction to time of coalescence may not be accurate.\n");
 
   // Get SEOBNRv2 ringdown frequency for 22 mode
-  // XLALSimInspiralGetFinalFreq wants masses in SI units, so unfortunately we need to convert back
-  double q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta) / (2.0*eta);
-  double Mtot_SI = Mtot_sec / LAL_MTSUN_SI * LAL_MSUN_SI;
-  double m1_SI = Mtot_SI * 1.0/(1.0+q);
-  double m2_SI = Mtot_SI * q/(1.0+q);
-  double Mf_final = XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0,0,chi1, 0,0,chi2, SEOBNRv2) * Mtot_sec;
+  double Mf_final = SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(Mtot_sec, eta, chi1, chi2, SEOBNRv2);
 
   UINT4 L = freqs->length;
   // prevent gsl interpolation errors
@@ -1731,11 +1726,7 @@ static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
   );
 
   // Get SEOBNRv2 ringdown frequency for 22 mode
-  double q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta) / (2.0*eta);
-  double Mtot_SI = *Mtot_sec / LAL_MTSUN_SI * LAL_MSUN_SI;
-  double m1_SI = Mtot_SI * 1.0/(1.0+q);
-  double m2_SI = Mtot_SI * q/(1.0+q);
-  *Mf_final = XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0,0,chi1, 0,0,chi2, SEOBNRv2) * (*Mtot_sec);
+  *Mf_final = SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(*Mtot_sec, eta, chi1, chi2, SEOBNRv2);
 
   SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff_lo);
   SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff_hi);
