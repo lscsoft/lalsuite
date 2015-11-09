@@ -76,10 +76,10 @@ static REAL8 GSLSpinAlignedHamiltonianWrapper_derivs_allatonce( REAL8 output[6],
 static double GSLSpinAlignedHamiltonianWrapper_ExactDeriv( double x, void *params );
 
 static REAL8 XLALSimIMRSpinEOBHamiltonian_ExactDeriv(
-                                                     INT4 which_to_vary,
+                                                     INT4 which_to_vary,                  /**<< Take a derivative with respect to "which_to_vary" variable */
                                                      const REAL8    eta,                  /**<< Symmetric mass ratio */
                                                      REAL8Vector    * restrict x,         /**<< Position vector */
-                                                     REAL8Vector    * restrict p,	    /**<< Momentum vector (tortoise radial component pr*) */
+                                                     REAL8Vector    * restrict p,         /**<< Momentum vector (tortoise radial component pr*) */
                                                      REAL8Vector    * restrict s1Vec,     /**<< Spin vector 1 */
                                                      REAL8Vector    * restrict s2Vec,     /**<< Spin vector 2 */
                                                      REAL8Vector    * restrict sigmaKerr, /**<< Spin vector sigma_kerr */
@@ -89,10 +89,10 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian_ExactDeriv(
                                                      );
 
 static REAL8 XLALSimIMRSpinEOBHamiltonian_derivs_allatonce(
-							   REAL8 output[6],
+							   REAL8 output[6],                     /**<< Output vector (contains all derivatives, though WARNING: known unused derivatives may be set to zero) */
 							   const REAL8    eta,                  /**<< Symmetric mass ratio */
 							   REAL8Vector    * restrict x,         /**<< Position vector */
-							   REAL8Vector    * restrict p,	    /**<< Momentum vector (tortoise radial component pr*) */
+							   REAL8Vector    * restrict p,	        /**<< Momentum vector (tortoise radial component pr*) */
 							   REAL8Vector    * restrict s1Vec,     /**<< Spin vector 1 */
 							   REAL8Vector    * restrict s2Vec,     /**<< Spin vector 2 */
 							   REAL8Vector    * restrict sigmaKerr, /**<< Spin vector sigma_kerr */
