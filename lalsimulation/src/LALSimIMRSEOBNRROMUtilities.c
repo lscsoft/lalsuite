@@ -83,6 +83,21 @@ UNUSED static gsl_vector *Fit_cubic(const gsl_vector *xi, const gsl_vector *yi);
 UNUSED static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
 UNUSED static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
 
+UNUSED static double SEOBNRROM_Ringdown_Mf_From_Mtot_q(
+  const double Mtot_sec,
+  const double q,
+  const double chi1,
+  const double chi2,
+  Approximant apx
+);
+UNUSED static double SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(
+  const double Mtot_sec,
+  const double eta,
+  const double chi1,
+  const double chi2,
+  Approximant apx
+);
+
 
 // Definitions
 
@@ -424,4 +439,32 @@ static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
     if (fabs(*x - X) < epsilon)
       *x = X;
   }
+}
+
+/* compute ringdown frequency for (2,2) mode from total mass and mass ratio */
+static double SEOBNRROM_Ringdown_Mf_From_Mtot_q(
+  const double Mtot_sec,
+  const double q,
+  const double chi1,
+  const double chi2,
+  Approximant apx
+)
+{
+  double Mtot_SI = Mtot_sec / LAL_MTSUN_SI * LAL_MSUN_SI;
+  double m1_SI = Mtot_SI * q / (1. + q);
+  double m2_SI = Mtot_SI * 1. / (1. + q);
+  return XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0, 0, chi1, 0, 0, chi2, apx) * Mtot_sec;
+}
+
+/* compute ringdown frequency for (2,2) mode from total mass and eta */
+static double SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(
+  const double Mtot_sec,
+  const double eta,
+  const double chi1,
+  const double chi2,
+  Approximant apx
+)
+{
+  double q = (1. + sqrt(1. - 4. * eta) - 2. * eta) / (2. * eta);
+  return SEOBNRROM_Ringdown_Mf_From_Mtot_q(Mtot_sec, q, chi1, chi2, apx);
 }

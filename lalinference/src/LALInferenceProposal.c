@@ -362,7 +362,8 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
         skyframe = 0;
 
     INT4 noAdapt = 0;
-    if (LALInferenceGetProcParamVal(command_line, "--no-adapt"))
+    if (LALInferenceGetProcParamVal(command_line, "--no-adapt") ||
+        LALInferenceGetProcParamVal(command_line, "--noiseonly"))
         noAdapt = 1;
     INT4 adapting = !noAdapt;
     LALInferenceAddINT4Variable(propArgs, "no_adapt", noAdapt, LALINFERENCE_PARAM_LINEAR);
@@ -1332,8 +1333,10 @@ static REAL8 draw_chirp(LALInferenceThreadState *thread) {
 static REAL8 approxLogPrior(LALInferenceVariables *params) {
     REAL8 logP = 0.0;
 
-    REAL8 Mc = *(REAL8 *)LALInferenceGetVariable(params, "chirpmass");
-    logP += -11.0/6.0*log(Mc);
+    if(LALInferenceCheckVariable(params, "chirpmass")) {
+        REAL8 Mc = *(REAL8 *)LALInferenceGetVariable(params, "chirpmass");
+        logP += -11.0/6.0*log(Mc);
+    }
 
     /* Flat in time, ra, psi, phi. */
 
@@ -1345,9 +1348,23 @@ static REAL8 approxLogPrior(LALInferenceVariables *params) {
     if(LALInferenceCheckVariable(params,"declination"))
       logP += log(cos(*(REAL8 *)LALInferenceGetVariable(params, "declination")));
 
+    if (LALInferenceCheckVariable(params, "tilt_spin1")) {
+      logP += log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params, "tilt_spin1"))));
+    }
+
+    if (LALInferenceCheckVariable(params, "tilt_spin2")) {
+      logP += log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params, "tilt_spin2"))));
+    }
+
     return logP;
 }
 
+/* WARNING: If you add any non-flat draws to this proposal, you MUST
+   update the above approxLogPrior function with the corresponding
+   density.  The proposal ratio is calculated using approxLogPrior, so
+   non-flat proposals that do not have a corresponding density term in
+   approxLogPrior will result in a failure to sample from the
+   posterior density! */
 REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
                                   LALInferenceVariables *currentParams,
                                   LALInferenceVariables *proposedParams) {
