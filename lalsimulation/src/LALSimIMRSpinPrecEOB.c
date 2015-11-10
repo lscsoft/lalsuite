@@ -44,7 +44,6 @@
 #include "LALSimIMREOBNRv2.h"
 #include "LALSimIMRSpinEOB.h"
 #include "LALSimInspiralPrecess.h"
-//#include "LALSimBlackHoleRingdown.h"
 #include "LALSimBlackHoleRingdownPrec.c"
 #include "LALSimFindAttachTime.h"
 
@@ -56,7 +55,6 @@
 #include "LALSimIMRSpinEOBFactorizedWaveformPrec.c"
 #include "LALSimIMREOBHybridRingdownPrec.c"
 #include "LALSimIMRSpinEOBAuxFuncs.c"
-//#include "LALSimIMRSpinEOBFactorizedWaveformCoefficients.c"
 #include "LALSimIMRSpinEOBFactorizedWaveformCoefficientsPrec.c"
 #include "LALSimIMRSpinEOBHamiltonianPrec.c"
 #include "LALSimIMRSpinEOBHamiltonian.c"
@@ -111,7 +109,6 @@ XLALEOBSpinPrecStopCondition(double UNUSED t,
   omega = sqrt(inner_product( omega_xyz, omega_xyz )) / r2;
 
   /* Terminate when omega reaches peak, and separation is < 6M */
-  //if ( omega < params->eobParams->omega )
   if ( r2 < 36. && omega < params->eobParams->omega )
   {
     return 1;
@@ -213,17 +210,6 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
     return 1;
   }
 
-//  /* Terminate if dL/dt > 0, i.e. angular momentum is increasing */
-//  if(r2 < 16. && LMagdot > 0. )
-//  {
-//    if(debugPK){
-//        XLAL_PRINT_INFO("\n Integration stopping as d|L|/dt = %lf at r = %lf\n",
-//                LMagdot, sqrt(r2));
-//        fflush(NULL);
-//    }
-//    return 1;
-//  }
-
     if(r2 < 16. && ( sqrt(values[3]*values[3] + values[4]*values[4] + values[5]*values[5]) > 10. )) {
         if(debugPK)XLAL_PRINT_INFO("\n Integration stopping |pvec|> 10\n");
         fflush(NULL);
@@ -311,26 +297,12 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
   /*              Last resort conditions                              */
   /* **************************************************************** */
 
-//  if(r2 < 1.747*1.747) {
-//    if(debugPK) {
-//      XLAL_PRINT_INFO("\n Integration stopping, r<2M\n");
-//      fflush(NULL);
-//    }
-//    return 1;
-//  }
-//
   /* Very verbose output */
   if(debugPKverbose && r2 < 16.) {
-//    XLAL_PRINT_INFO("\n Integration continuing, r = %f, omega = %f, rdot = %f, pr = %f, prDot = %f\n",
-//      sqrt(r2), omega, rdot, pDotr, prDot);
     XLAL_PRINT_INFO("%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
       t, values[0], values[1], values[2], values[3], values[4], values[5],
       values[6], values[7], values[8], values[9], values[10], values[11],
       values[12], values[13], omega);
-//    XLAL_PRINT_INFO("%f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
-//    dvalues[0], dvalues[1], dvalues[2], dvalues[3], dvalues[4], dvalues[5],
-//    dvalues[6],  dvalues[7], dvalues[8], dvalues[9], dvalues[10], dvalues[11],
-//    dvalues[12], dvalues[13]);
   }
 
   return GSL_SUCCESS;
@@ -359,7 +331,6 @@ XLALEOBSpinPrecAlignedStopCondition(double UNUSED t,  /**< UNUSED */
   omega = dvalues[1];
     if (debugPK){  XLAL_PRINT_INFO("XLALEOBSpinPrecAlignedStopCondition:: r = %e\n", r);}
 
-  //if ( omega < params->eobParams->omega )
   if ( r < 6. && omega < params->eobParams->omega )
   {
     return 1;
@@ -392,8 +363,6 @@ XLALSpinPrecAlignedHiSRStopCondition(double UNUSED t,  /**< UNUSED */
 
   if ( dvalues[2] >= 0. || isnan( dvalues[3] ) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) )
   {
-      //XLALPrintError( "XLAL Error - %s: nan in dvalues \n", __func__);
-      //XLAL_ERROR( XLAL_EINVAL );
       return 1;
   }
   return GSL_SUCCESS;
@@ -431,7 +400,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
         UINT4           SpinAlignedEOBversion /**<< 1 for SEOBNRv1, 2 for SEOBNRv2 */
      )
 {
-//    XLAL_PRINT_INFO("spin1z, spin2z = %e %e\n", spin1z, spin2z);
   /* If the EOB version flag is neither 1 nor 2, exit */
   if (SpinAlignedEOBversion != 1 && SpinAlignedEOBversion != 2)
   {
@@ -589,7 +557,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
   /* If deltaT > Mtot/50, reduce deltaT by the smallest power of two for which deltaT < Mtot/50 */
   resampEstimate = 50. * deltaT / mTScaled;
   resampFac = 1;
-  //resampFac = 1 << (UINT4)ceil(log2(resampEstimate));
 
   if ( resampEstimate > 1. )
   {
@@ -732,11 +699,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
        XLAL_ERROR( XLAL_EINVAL );
        break;
   }
-  /*for ( i = 0; i < 3; i++ )
-  {
-    a += sigmaKerr->data[i]*sigmaKerr->data[i];
-  }
-  a = sqrt( a );*/
   seobParams.a = a = sigmaKerr->data[2];
   seobParams.chi1 = spin1[2];
   seobParams.chi2 = spin2[2];
@@ -817,42 +779,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  /*fprintf( stderr, "ICs = %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n", tmpValues->data[0], tmpValues->data[1], tmpValues->data[2],
-      tmpValues->data[3], tmpValues->data[4], tmpValues->data[5], tmpValues->data[6], tmpValues->data[7], tmpValues->data[8],
-      tmpValues->data[9], tmpValues->data[10], tmpValues->data[11] );*/
-
-  /* Taken from Andrea's code */
-/*  memset( tmpValues->data, 0, tmpValues->length*sizeof(tmpValues->data[0]));*/
-#if 0
-  tmpValues->data[0] = 4.84796591370541;
-  tmpValues->data[3] = -0.0186210227887131;
-  tmpValues->data[4] = 0.5499544739926464;//tmpValues->data[0]; // q=1
-  fprintf( stderr, "ICs = %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n", tmpValues->data[0], tmpValues->data[1], tmpValues->data[2],
-      tmpValues->data[3], tmpValues->data[4], tmpValues->data[5], tmpValues->data[6], tmpValues->data[7], tmpValues->data[8],
-      tmpValues->data[9], tmpValues->data[10], tmpValues->data[11] );
-
-#endif
-#if 0
-  tmpValues->data[0] = 19.9982539582;
-  tmpValues->data[3] = -0.000390702473305;
-  tmpValues->data[4] = 4.71107185264/tmpValues->data[0]; // q=1, chi1=chi2=0.98
-#endif
-#if 0
-  tmpValues->data[0] = 19.996332305;
-  tmpValues->data[3] = -0.000176807206312;
-  tmpValues->data[4] = 4.84719922687/tmpValues->data[0]; // q=8
-#endif
-#if 0
-  tmpValues->data[0] = 6.22645094958;
-  tmpValues->data[3] = -0.00851784427559;
-  tmpValues->data[4] = 3.09156589713/tmpValues->data[0]; // q=8 chi1=0.5 TEST DYNAMICS
-#endif
-#if 0
-  tmpValues->data[0] = 19.9996712714;
-  tmpValues->data[3] = -0.00016532905477;
-  tmpValues->data[4] = 4.77661989696/tmpValues->data[0]; // q=8 chi1=0.5
-#endif
-
   /* Now convert to Spherical */
   /* The initial conditions code returns Cartesian components of four vectors x, p, S1 and S2,
    * in the special case that the binary starts on the x-axis and the two spins are aligned
@@ -864,8 +790,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
   values->data[1] = 0.;
   values->data[2] = tmpValues->data[3];
   values->data[3] = tmpValues->data[0] * tmpValues->data[4];
-
-  //fprintf( stderr, "Spherical initial conditions: %e %e %e %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
 
   /*
    * STEP 2) Evolve EOB trajectory until reaching the peak of orbital frequency
@@ -893,8 +817,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
   phiVec.data  = dynamics->data+2*retLen;
   prVec.data   = dynamics->data+3*retLen;
   pPhiVec.data = dynamics->data+4*retLen;
-
-  //XLAL_PRINT_INFO( "We think we hit the peak at time %e\n", dynamics->data[retLen-1] );
 
   /* TODO : Insert high sampling rate / ringdown here */
   #if debugOutput
@@ -940,8 +862,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
-
-  //fprintf( stderr, "We got %d points at high SR\n", retLen );
 
   /* Set up pointers to the dynamics */
   rHi.length = phiHi.length = prHi.length = pPhiHi.length = timeHi.length = retLen;
@@ -1017,12 +937,10 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
 
     if ( omega <= omegaOld && !peakIdx )
     {
-      //XLAL_PRINT_INFO( "Have we got the peak? omegaOld = %.16e, omega = %.16e\n", omegaOld, omega );
       peakIdx = i;
     }
     omegaOld = omega;
   }
-  //XLAL_PRINT_INFO( "We now think the peak is at %d\n", peakIdx );
   finalIdx = retLen - 1;
 
   /*
@@ -1048,11 +966,9 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
   if ( omegaDeriv1 > 0. )
   {
     time2 = dynamicsHi->data[peakIdx+1];
-    //omegaDeriv2 = gsl_spline_eval_deriv( spline, time2, acc );
   }
   else
   {
-    //omegaDeriv2 = omegaDeriv1;
     time2 = time1;
     time1 = dynamicsHi->data[peakIdx-1];
     peakIdx--;
@@ -1066,7 +982,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
 
     if ( omegaDerivMid * omegaDeriv1 < 0.0 )
     {
-      //omegaDeriv2 = omegaDerivMid;
       time2 = timePeak;
     }
     else
@@ -1076,12 +991,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
     }
   }
   while ( time2 - time1 > 1.0e-5 );
-
-  /*gsl_spline_free( spline );
-  gsl_interp_accel_free( acc );
-  */
-
-  //XLALPrintInfo( "Estimation of the peak is now at time %.16e\n", timePeak );
 
   /* Having located the peak of orbital frequency, we set time and phase of coalescence */
   XLALGPSAdd( &tc, -mTScaled * (dynamics->data[hiSRndx] + timePeak));
@@ -1104,27 +1013,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
   /*
    * STEP 5) Calculate NQC correction using hi-sampling data
    */
-
-  /* Calculate nonspin and amplitude NQC coefficients from fits and interpolation table */
-  /*switch ( SpinAlignedEOBversion )
-  {
-     case 1:
-       if ( XLALSimIMRGetEOBCalibratedSpinNQC( &nqcCoeffs, 2, 2, eta, a ) == XLAL_FAILURE )
-       {
-         XLAL_ERROR( XLAL_EFUNC );
-       }
-       break;
-     case 2:
-       if ( XLALSimIMRGetEOBCalibratedSpinNQC3D( &nqcCoeffs, 2, 2, eta, a, chiA ) == XLAL_FAILURE )
-       {
-         XLAL_ERROR( XLAL_EFUNC );
-       }
-       break;
-     default:
-       XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
-       XLAL_ERROR( XLAL_EINVAL );
-       break;
-  }*/
 
   /* Calculate phase NQC coefficients */
   if ( XLALSimIMRSpinEOBCalculateNQCCoefficients( ampNQC, phaseNQC, &rHi, &prHi, omegaHi,
@@ -1188,7 +1076,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
   #endif
   if (timewavePeak < 1.0e-16 || peakCount == 0)
   {
-    //XLAL_PRINT_INFO("YP::warning: could not locate mode peak, use calibrated time shift of amplitude peak instead.\n");
     /* NOTE: instead of looking for the actual peak, use the calibrated value,    */
     /*       ignoring the error in using interpolated NQC instead of iterated NQC */
     timewavePeak = timePeak - timewavePeak;
@@ -1197,13 +1084,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
   /*
    * STEP 6) Calculate QNM excitation coefficients using hi-sampling data
    */
-
-  /*out = fopen( "saInspWaveHi.dat", "w" );
-  for ( i = 0; i < retLen; i++ )
-  {
-    fprintf( out, "%.16e %.16e %.16e\n", timeHi.data[i], sigReHi->data[i], sigImHi->data[i] );
-  }
-  fclose( out );*/
 
   /* Attach the ringdown at the time of amplitude peak */
   REAL8 combSize = 7.5; /* Eq. 34 */
@@ -1225,10 +1105,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
   {
     timeshiftPeak = (timePeak - timewavePeak) > 0. ? (timePeak - timewavePeak) : 0.;
   }
-
-  /*XLAL_PRINT_INFO("YP::timePeak and timewavePeak: %.16e and %.16e\n",timePeak,timewavePeak);
-  XLAL_PRINT_INFO("YP::timeshiftPeak and combSize: %.16e and %.16e\n",timeshiftPeak,combSize);
-  XLAL_PRINT_INFO("PK::chi and SpinAlignedEOBversion: %.16e and %u\n\n", chi,SpinAlignedEOBversion);*/
 
   REAL8Vector *rdMatchPoint = XLALCreateREAL8Vector( 3 );
   if ( !rdMatchPoint )
@@ -1377,7 +1253,6 @@ UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
 int XLALSimIMRSpinEOBWaveform(
         REAL8TimeSeries **hplus, /**<< OUTPUT, +-polarization waveform */
          REAL8TimeSeries **hcross, /**<< OUTPUT, x-polarization waveform */
-        //LIGOTimeGPS     *tc,
         const REAL8      phiC, /**<< coalescence orbital phase (rad) */
         const REAL8     deltaT, /**<< sampling time step */
         const REAL8     m1SI, /**<< mass-1 in SI unit (kg) */
@@ -1401,41 +1276,16 @@ int XLALSimIMRSpinEOBWaveform(
                         phiC, deltaT, m1SI, m2SI, fMin, r, inc, INspin1[0],
                         INspin1[1], INspin1[2], INspin2[0], INspin2[1],
                         INspin2[2]);
-    
-    //int i;
-
-    //XLAL_PRINT_INFO("Stas: checking \n");
-    //for (i=0; i<5; i++){
-    //    XLAL_PRINT_INFO("AttachPars: %d, %f \n", i, AttachPars->data[i]);
-    //    XLAL_PRINT_INFO("dyn: %d, %f \n", i, dynamicsHi->data[i]);
-    //}
-
-
-    //XLAL_PRINT_INFO("cleaning memory... \n");
-    //if (dynamicsHi == NULL){
-    //    XLAL_PRINT_INFO("dy is already null\n");
-    //}else{
-    //    XLAL_PRINT_INFO("Stas: dynamics is cleaned \n");
-    //}
-    //if (AttachPars == NULL){
-    //    XLAL_PRINT_INFO("att pars is already null\n");
-    //}else{
-    //    XLAL_PRINT_INFO("Stas: attach pars is cleaned \n");
-    //}
 
     XLALDestroyREAL8Vector( dynamicsHi );
 
     XLALDestroyREAL8Vector( AttachPars );
 
     XLALDestroySphHarmTimeSeries(hlmPTSout);
-    //XLAL_PRINT_INFO("Stas: Pwave is cleaned \n");
-
 
     XLALDestroySphHarmTimeSeries(hlmPTSHi);
-    //XLAL_PRINT_INFO("Stas:  J wave is cleaned \n");
 
     XLALDestroySphHarmTimeSeries(hIMRlmJTSHi);
-    //XLAL_PRINT_INFO("Stas: J wave IMR is cleaned \n");
 
     XLALDestroySphHarmTimeSeries(hIMR);
 
@@ -1488,7 +1338,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         SphHarmTimeSeries **hIMRlmJTSHiOutput, /**<< Here we store and return the JWaveIMR (high sampling) */
         SphHarmTimeSeries **hIMRoutput,       /**<< Here we store and return the IWave (full) */
         REAL8Vector     **AttachPars,   /**<< Parameters of RD attachment: */
-        //LIGOTimeGPS     *tc,
         const REAL8      phiC,      /**<< intitial orbital phase */
         const REAL8     deltaT,     /**<< sampling time step */
         const REAL8     m1SI,       /**<< mass of first object in SI */
@@ -1559,7 +1408,7 @@ int XLALSimIMRSpinEOBWaveformAll(
           theta1Ini = acos( acosarg1 );
       }
     }
-  
+
   if( spin2Norm > 1.0e-5 && (INspin2[0] != 0 || INspin2[1] != 0 || INspin2[2] != 0) ) {
       acosarg2 = (InitLhat[0]*INspin2[0] + InitLhat[1]*INspin2[1] + InitLhat[2]*INspin2[2])/ spin2Norm ;
       if (acosarg2 > 1.) {
@@ -1605,18 +1454,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     XLAL_PRINT_INFO( "spin1 = {%3.10f, %3.10f, %3.10f}\n", spin1[0], spin1[1], spin1[2] );
     XLAL_PRINT_INFO( "spin2 = {%3.10f, %3.10f, %3.10f}\n", spin2[0], spin2[1], spin2[2] );
   }
-//  if (( fabs(theta1Ini) <= 1.0e-5  || fabs(theta1Ini) >= LAL_PI - 1.0e-5) && ( fabs(theta2Ini) <= 1.0e-5 || fabs(theta2Ini) >= LAL_PI - 1.0e-5) ) {
-//    ret = XLALSimIMRSpinPrecAlignedEOBWaveform(
-//          hplus, hcross, phiC, deltaT, m1SI, m2SI, fMin, r, inc,
-//          spin1Norm*cos(theta1Ini), spin2Norm*cos(theta2Ini), SpinAlignedEOBversion);
-//    return ret;
-//  }
-//  if ( INspin1[0] == 0. && INspin1[1] == 0. && INspin1[2] == 0. && INspin2[0] == 0. && INspin2[1] == 0. && INspin2[2] == 0. ) {
-//        ret = XLALSimIMRSpinPrecAlignedEOBWaveform(
-//                                               hplus, hcross, phiC, deltaT, m1SI, m2SI, fMin, r, inc,
-//                                               0., 0., SpinAlignedEOBversion);
-//        return ret;
-//    }
+
   /* *******************************************************************/
   /* ********************** Memory Allocation **************************/
   /* *******************************************************************/
@@ -1698,7 +1536,6 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   /* Signal mode */
   COMPLEX16   hLM = 0.0 + 0.0*j;
-  /* COMPLEX16 *sigReVec = NULL, *sigImVec = NULL;*/
 
   /* Non-quasicircular correction */
   COMPLEX16      hNQC = 0.0 + 0.0*j;
@@ -1713,7 +1550,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   COMPLEX16  Y22 = 0.0 + 0.0j, Y2m2 = 0.0 + 0.0j, Y21 = 0.0 + 0.0j, Y2m1 = 0.0 + 0.0j;
   COMPLEX16  Y20 = 0.0 + 0.0j;
   /* (2,2) and (2,-2) spherical harmonics needed in (h+,hx) */
-  /*REAL8  y_1, y_2, z1, z2;*/
 
   /*Parameters for the portion of the orbit we integrate at high sampling rate*/
   REAL8 deltaTHigh = 0, resampEstimate = 0;
@@ -1730,7 +1566,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   REAL8Vector posVecxHi, posVecyHi, posVeczHi, momVecxHi, momVecyHi, momVeczHi;
   REAL8Vector s1VecxHi,  s1VecyHi,  s1VeczHi,  s2VecxHi,  s2VecyHi,  s2VeczHi;
   REAL8Vector *sigReHi = NULL, *sigImHi = NULL;
-  //REAL8Vector * = NULL;
 
   /* Indices of peak frequency and final point           */
   /* Needed to attach ringdown at the appropriate point  */
@@ -1754,7 +1589,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   /* Miscellaneous memory for Ringdown attachment        */
   REAL8 tPeakOmega = 0, tAttach = 0, combSize = 0,/*longCombSize,*/ deltaNQC =0;
   REAL8 UNUSED sh  = 0;
-  REAL8 vX = 0, vY = 0, vZ = 0;//, rCrossV_x = 0, rCrossV_y = 0, rCrossV_z = 0;
+  REAL8 vX = 0, vY = 0, vZ = 0;
   REAL8 UNUSED vOmega = 0, omegasav = 0, omegasav2 = 0;
   REAL8 magR = 0, Lx   = 0, Ly   = 0, Lz = 0, magL = 0, magJ = 0,
         LNhx = 0, LNhy = 0, LNhz = 0, magLN =0, Jx = 0, Jy   = 0, Jz = 0;
@@ -1768,10 +1603,9 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   /* Variables for the integrator */
   LALAdaptiveRungeKutta4Integrator       *integrator = NULL;
-  REAL8Array              *dynamics   = NULL;//, *dynamicsHi = NULL;
+  REAL8Array              *dynamics   = NULL;
   INT4                    retLen = 0, retLenLow = 0, retLenHi = 0;
   INT4                    retLenRDPatch = 0, retLenRDPatchLow = 0;
-  //REAL8                   tMax;
 
   /* Interpolation spline */
   gsl_spline    *spline = NULL;
@@ -1781,10 +1615,10 @@ int XLALSimIMRSpinEOBWaveformAll(
    REAL8 EPS_ABS = 1.0e-8;
   const REAL8 EPS_REL = 1.0e-8;
   /* Relax abs accuracy in case of highly symmetric case that would otherwise slow down significantly */
-  if (/*fabs(theta1Ini - LAL_PI/2.) < 1.0e-6 && fabs(theta2Ini - LAL_PI/2.) < 1.0e-6 && */sqrt((INspin1[0] + INspin2[0])*(INspin1[0] + INspin2[0]) + (INspin1[1] + INspin2[1])*(INspin1[1] + INspin2[1]) + 0*(INspin1[2] + INspin2[2])*(INspin1[2] + INspin2[2])) < 1.0e-10 && (theta1Ini >= 1e-4 && theta2Ini >= 1e-4))
+  if (sqrt((INspin1[0] + INspin2[0])*(INspin1[0] + INspin2[0]) + (INspin1[1] + INspin2[1])*(INspin1[1] + INspin2[1]) + 0*(INspin1[2] + INspin2[2])*(INspin1[2] + INspin2[2])) < 1.0e-10 && (theta1Ini >= 1e-4 && theta2Ini >= 1e-4))
   {
       if (debugPK) XLAL_PRINT_INFO("EPS_ABS is decreased!\n");
-      EPS_ABS = 1.0e-4;//abort();
+      EPS_ABS = 1.0e-4;
   }
 
     /* Memory for the calculation of the alpha(t) and beta(t) angles */
@@ -1805,11 +1639,8 @@ int XLALSimIMRSpinEOBWaveformAll(
 
 
   /* Stuff to find the actual peak time */
-  //REAL8 omegaDeriv = 0, time1 = 0, time2 = 0;
   UNUSED REAL8  timewavePeak = 0.;
-  //REAL8  omegaDerivMid=0.0;
   REAL8 UNUSED sigAmpSqHi = 0., oldsigAmpSqHi = 0.;
-  /*INT4   peakCount = 0;*/
 
   /* Memory to help with rotation of dynamics */
   REAL8 JExnorm = 0;
@@ -1821,7 +1652,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   SphHarmTimeSeries *hlmPTSHi = NULL;
   SphHarmTimeSeries *hlmPTSout = NULL;
   SphHarmTimeSeries *hIMRlmJTSHi = NULL;
-  //SphHarmTimeSeries *hIMRlmout = NULL;
 
 
   REAL8Sequence *tlistHi        = NULL;
@@ -1848,8 +1678,6 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   /* Initialize amplitude scaling parameter */
   amp0 = mTotal * LAL_MRSUN_SI / r;
-  //amp0 = 4. * mTotal * LAL_MRSUN_SI * eta / r;
-
 
   if (debugPK) {
     XLAL_PRINT_INFO("Stas, here is the passes functions\n");
@@ -2560,17 +2388,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         phiModHi.data = dynamicsHi->data+14*retLen;
 
 
-
-//  /* Call the integrator */
-//  retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data,
-//									0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsHi );
-//  retLenHi = retLen;
-
-//  if ( retLen == XLAL_FAILURE )
-//  {
-//    XLAL_ERROR( XLAL_EFUNC );
-//  }
-
   if(debugPK) { XLAL_PRINT_INFO( "Finished high SR integration... \n" ); fflush(NULL); }
 
    if (debugPK){
@@ -2667,7 +2484,6 @@ int XLALSimIMRSpinEOBWaveformAll(
 		if( i && Beta->data[i] > Beta->data[i-1] )
 		{
 			phaseCounterB--;
-			//Beta->data[i] -= LAL_TWOPI;
 		}
 
     if(debugPK) {
@@ -2682,14 +2498,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   /* Integrate \dot{\alpha} \cos{\beta} to get the final Euler angle
       Eq. 20 of PRD 89, 084006 (2014) */
-  //gsl_spline_free(x_spline);
-  //gsl_interp_accel_free(x_acc);
-  //x_spline = gsl_spline_alloc( gsl_interp_cspline, retLenLow );
-  //x_acc = gsl_interp_accel_alloc();
   gsl_spline_init( x_spline, tVec.data, Alpha->data, retLenLow );
-
-  //y_spline = gsl_spline_alloc( gsl_interp_cspline, retLenLow );
-  //y_acc = gsl_interp_accel_alloc();
   gsl_spline_init( y_spline, tVec.data, Beta->data, retLenLow );
 
   Gamma = XLALCreateREAL8Vector( retLenLow );
@@ -2794,7 +2603,6 @@ int XLALSimIMRSpinEOBWaveformAll(
 		if( i && BetaHi->data[i] > BetaHi->data[i-1] )
 		{
 			phaseCounterB--;
-			//Beta->data[i] -= LAL_TWOPI;
 		}
 
     if (debugPK){
@@ -2809,12 +2617,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   if (debugPK) fclose(out);
 
   /* Integrate \dot{\alpha} \cos{\beta} to get the final Euler angle*/
-  //x_spline = gsl_spline_alloc( gsl_interp_cspline, retLenHi );
-  //x_acc = gsl_interp_accel_alloc();
   gsl_spline_init( x_spline, timeHi.data, AlphaHi->data, retLenHi );
-
-  //y_spline = gsl_spline_alloc( gsl_interp_cspline, retLenHi );
-  //y_acc = gsl_interp_accel_alloc();
   gsl_spline_init( y_spline, timeHi.data, BetaHi->data, retLenHi );
 
   GammaHi = XLALCreateREAL8Vector( retLenHi );
@@ -2830,7 +2633,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   precEulerw = gsl_integration_workspace_alloc (1000);
   precEulerresult = 0, precEulererror = 0;
 
-  //gsl_function precEulerF;
   precEulerF.function = &f_alphadotcosi;
   precEulerF.params = &precEulerparams;
 
@@ -2877,19 +2679,6 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   retLenRDPatch = (UINT4)ceil( 40 / ( cimag(modeFreq) * deltaTHigh ));
   retLenRDPatchLow = (UINT4)ceil( 40 / ( cimag(modeFreq) * deltaT ));
-  //XLAL_PRINT_INFO("Stas modeFreq = %f, retLenRDPatch = %d EOB_RD_EFOLDS = %f \n", cimag(modeFreq)*deltaTHigh, retLenRDPatch, EOB_RD_EFOLDS);
-
-  /* Allocate the high sample rate vectors */
-  //sigReHi  = XLALCreateREAL8Vector( retLen + retLenRDPatch );
-  //sigImHi  = XLALCreateREAL8Vector( retLen + retLenRDPatch );
-  //omegaHi  = XLALCreateREAL8Vector( retLenHi + retLenRDPatch);
-  //if (!omegaHi )
-  //{
-    //XLAL_ERROR( XLAL_ENOMEM );
-  //}
-
-  /*memset( sigReHi->data, 0, sigReHi->length * sizeof( sigReHi->data[0] ));
-  memset( sigImHi->data, 0, sigImHi->length * sizeof( sigImHi->data[0] ));*/
 
 /* *********************************************************************************
  * *********************************************************************************
@@ -2902,10 +2691,6 @@ int XLALSimIMRSpinEOBWaveformAll(
     REAL8 *radiusVec;
     REAL8 radiusData[retLenHi];
     radiusVec = &radiusData[0];
-//    REAL8Vector timeHiV;
-//    timeHiV.length = retLenHi;
-//    timeHiV.data = dynamicsHi->data;
-//    XLAL_PRINT_INFO("(retLen, retLenHi, dt, tTot, tTotHi)=(%d,%d,%f,%f,%f) \n", retLen, retLenHi, timeHiV.data[1]-timeHiV.data[0], ( timeHiV.data[1]-timeHiV.data[0])*retLen,( timeHiV.data[1]-timeHiV.data[0])*retLenHi);
 
     for ( i = 0; i < retLenHi; i++ )
     {
@@ -2940,7 +2725,6 @@ int XLALSimIMRSpinEOBWaveformAll(
       fflush(NULL);
     }
 
-    //exit(0);
   /* Having found the time of peak, we set the time of coalescence */
   XLALGPSAdd(&tc, -mTScaled * (tPeakOmega + HiSRstart) );
 
@@ -2978,9 +2762,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   Jx = eta*Lx + values->data[6] + values->data[9];
   Jy = eta*Ly + values->data[7] + values->data[10];
   Jz = eta*Lz + values->data[8] + values->data[11];
-//    Jx = eta*Lx ;
-//    Jy = eta*Ly ;
-//    Jz = eta*Lz ;
   magJ = sqrt( Jx*Jx + Jy*Jy + Jz*Jz );
 
   if(debugPK){
@@ -2998,7 +2779,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   kappaJL = (Lx*Jx + Ly*Jy + Lz*Jz) / magL / magJ;
   magLN = sqrt(inner_product(rcrossrdot, rcrossrdot));
   JLN =  (Jx*rcrossrdot[0] + Jy*rcrossrdot[1] + Jz*rcrossrdot[2])/magLN/magJ;
-  // Stas: here is the second option which we will use: projection of the spin on 
+  // Stas: here is the second option which we will use: projection of the spin on
   // L at l.r. projection on J doesn't work for anti-aligned system
   chi1L = values->data[6]*Lx + values->data[7] *Ly + values->data[8] *Lz;
   chi2L = values->data[9]*Lx + values->data[10]*Ly + values->data[11]*Lz;
@@ -3038,18 +2819,9 @@ int XLALSimIMRSpinEOBWaveformAll(
       if (chiL >= 0.9 && eta < 30./(31.*31.)) combSize = 12.0;
       if (chiL >= 0.8 && eta > 10./121.) combSize = 8.5;
       deltaNQC = XLALSimIMREOBGetNRSpinPeakDeltaTv2(2, 2, m1, m2, chi1L, chi2L );
-      //if ( chi1J == 0. && chi2J == 0. ) combSize = 11.;
-      //if (chiJ >= 0.8 && eta >30.0/(31.*31) && eta <10.0/121.) combSize = 13.5;
-      //if (chiJ >= 0.9 && eta < 30./(31.*31.)) combSize = 12.0;
-      //if (chiJ >= 0.8 && eta > 10./121.) combSize = 8.5;
-      //deltaNQC = XLALSimIMREOBGetNRSpinPeakDeltaTv2(2, 2, m1, m2, chi1J, chi2J );
       if ( debugPK ) {
         XLAL_PRINT_INFO("v2 RD prescriptions are used! %3.10f %3.10f\n",
                 combSize, deltaNQC);
-        //if (deltaNQC > 2.5) {
-        //    deltaNQC = 1.0;
-        //    XLAL_PRINT_INFO("WARNING!!!!!!! ----->> DELTANQC WAS SET TO 2.5 !!!!!\n");
-        //}
         fflush(NULL);
       }
       break;
@@ -3086,10 +2858,10 @@ int XLALSimIMRSpinEOBWaveformAll(
   JframeEz[0] = Jx / magJ;
   JframeEz[1] = Jy / magJ;
   JframeEz[2] = Jz / magJ;
-  
+
   if ( fabs(1.+ JframeEz[2]) <= 1.0e-13 )
-  { JframeEx[0] = -1.; JframeEx[1] = 0.; JframeEx[2] = 0.; } // anti-aligned 
-  else { 
+  { JframeEx[0] = -1.; JframeEx[1] = 0.; JframeEx[2] = 0.; } // anti-aligned
+  else {
       if ( fabs(1. - JframeEz[2]) <= 1.0e-13 )
           { JframeEx[0] = 1.; JframeEx[1] = 0.; JframeEx[2] = 0.; }  // aligned
       else {
@@ -3105,8 +2877,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   //}
 
   JExnorm = sqrt(JframeEx[0]*JframeEx[0] + JframeEx[1]*JframeEx[1]);
-  //JframeEx[0] /= sqrt( JframeEz[0]*JframeEz[0] + JframeEz[1]*JframeEz[1] );
-  //JframeEx[1] /= sqrt( JframeEz[0]*JframeEz[0] + JframeEz[1]*JframeEz[1] );
 
   JframeEx[0] /= JExnorm;
   JframeEx[1] /= JExnorm;
@@ -3177,18 +2947,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   COMPLEX16TimeSeries *hIMR20JTS  = NULL;
   COMPLEX16TimeSeries *hIMR2m1JTS = NULL;
   COMPLEX16TimeSeries *hIMR2m2JTS = NULL;
-
-  //COMPLEX16TimeSeries *h22PTS  = XLALCreateCOMPLEX16TimeSeries( "HP_22",
-  //                                &tc, 0.0, deltaT, &lalStrainUnit, retLen );
-
-  //COMPLEX16TimeSeries *h22JTS  = XLALCreateCOMPLEX16TimeSeries( "HJ_22",
-  //                                &tc, 0.0, deltaT, &lalStrainUnit, retLen );
-
-  //COMPLEX16TimeSeries *hJTS    = XLALCreateCOMPLEX16TimeSeries( "HJ",
-  //                                &tc, 0.0, deltaT, &lalStrainUnit, retLen );
-
-  //COMPLEX16TimeSeries *hIMR22JTS  = XLALCreateCOMPLEX16TimeSeries( "HIMRJ_22",
-  //            &tc, 0.0, deltaT, &lalStrainUnit, retLen + retLenRDPatchLow );
 
   COMPLEX16TimeSeries *hIMRJTS    = XLALCreateCOMPLEX16TimeSeries( "HIMRJ",
               &tc, 0.0, deltaT, &lalStrainUnit, retLen + retLenRDPatchLow );
@@ -3277,9 +3035,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     LNhy  = LNhy / magLN;
     LNhz  = LNhz / magLN;
 
-    /*aI2P = atan2( LNhy, LNhx );
-    bI2P = acos( LNhz );
-    gI2P = -phiMod.data[i]; */ /* this one is defined w.r.t. L not LN*/
+    /* this one is defined w.r.t. L not LN*/
     aI2P = Alpha->data[i];
     bI2P = Beta->data[i];
     gI2P = Gamma->data[i];
@@ -3299,11 +3055,6 @@ int XLALSimIMRSpinEOBWaveformAll(
           gP2J = atan2(  JframeEy[0]*LframeEz[0]+JframeEy[1]*LframeEz[1]+JframeEy[2]*LframeEz[2],
                  -(JframeEx[0]*LframeEz[0]+JframeEx[1]*LframeEz[1]+JframeEx[2]*LframeEz[2]));
 
-/*if (i==0||i==1900) XLAL_PRINT_INFO("{{%f,%f,%f},{%f,%f,%f},{%f,%f,%f}}\n",JframeEx[0],JframeEx[1],JframeEx[2],JframeEy[0],JframeEy[1],JframeEy[2],JframeEz[0],JframeEz[1],JframeEz[2]);
-if (i==0||i==1900) XLAL_PRINT_INFO("{{%f,%f,%f},{%f,%f,%f},{%f,%f,%f}}\n",LframeEx[0],LframeEx[1],LframeEx[2],LframeEy[0],LframeEy[1],LframeEy[2],LframeEz[0],LframeEz[1],LframeEz[2]);
-if (i==0||i==1900) XLAL_PRINT_INFO("YP: study time = %f\n",i*deltaT/mTScaled);
-if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz[0]+JframeEy[1]*LframeEz[1]+JframeEy[2]*LframeEz[2], JframeEx[0]*LframeEz[0]+JframeEx[1]*LframeEz[1]+JframeEx[2]*LframeEz[2], gP2J, atan2(-0.365446,-0.378524));
-    */
     /* I2P Euler angles are stored only for debugging purposes */
       if ( fabs(bP2J-LAL_PI) < 1.e-10){
           gP2J = 0.0;
@@ -3327,11 +3078,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     /* Calculate the value of the Hamiltonian */
     memcpy( cartPosVec.data, values->data,   3*sizeof(REAL8) );
     memcpy( cartMomVec.data, values->data+3, 3*sizeof(REAL8) );
-
-    /*if (i == 287)
-    {
-      XLAL_PRINT_INFO("%f, %f %f %f, %f %f %f\n",eta, cartPosVec.data[0], cartPosVec.data[1], cartPosVec.data[2], cartMomVec.data[0], cartMomVec.data[1], cartMomVec.data[2]);
-    }*/
 
     /* Update Hamiltonian coefficients as per |Skerr| */
     for( k = 0; k < 3; k++ )
@@ -3423,8 +3169,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     if (debugPK) {
       fprintf( out, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e ",
              i*deltaT/mTScaled, aI2P, bI2P, gI2P, aP2J, bP2J, gP2J );
-      //fprintf( out, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
-      //     vX, vY, vZ, LNhx, LNhy, LNhz, creal(hLM), cimag(hLM) );
       fprintf( out, "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
                       polData[0], polData[1], polData[2], polData[3], ham, v,
                       creal(hLM), cimag(hLM), creal(hLM/hNQC), cimag(hLM/hNQC) );
@@ -3439,25 +3183,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     h21TS->data->data[i]  = hLM;
     h2m1TS->data->data[i] = conjl(hLM);
     h20TS->data->data[i]  = 0.0;
-
-    /*if (i == 95 )
-    {
-      XLAL_PRINT_INFO("%.16e %.16e %.16e\n",ham, omega, v);
-      XLAL_PRINT_INFO("%.16e %.16e %.16e\n",values->data[0],values->data[1],values->data[2]);
-      XLAL_PRINT_INFO("%.16e %.16e %.16e\n",values->data[3],values->data[4],values->data[5]);
-      XLAL_PRINT_INFO("%.16e %.16e %.16e\n",values->data[6],values->data[7],values->data[8]);
-      XLAL_PRINT_INFO("%.16e %.16e %.16e\n",values->data[9],values->data[10],values->data[11]);
-      XLAL_PRINT_INFO("%.16e %.16e %.16e %.16e %.16e %.16e\n",nqcCoeffs.a1,nqcCoeffs.a2,nqcCoeffs.a3,nqcCoeffs.a3S,nqcCoeffs.a4,nqcCoeffs.a5);
-      XLAL_PRINT_INFO("%.16e %.16e %.16e %.16e\n",nqcCoeffs.b1,nqcCoeffs.b2,nqcCoeffs.b3,nqcCoeffs.b4);
-      XLAL_PRINT_INFO("%.16e %.16e, %.16e %.16e\n",creal(hLM),cimag(hLM),creal(hNQC),cimag(hNQC));
-    }*/
-
-    /*hPlusTS->data->data[i]  = - 0.5 * amp * cos( 2.*vphi[i]) * cos(2.*alpha) * (1. + LNhz*LNhz)
-                            + amp * sin(2.*vphi[i]) * sin(2.*alpha)*LNhz;
-
-    hCrossTS->data->data[i] = - 0.5 * amp * cos( 2.*vphi[i]) * sin(2.*alpha) * (1. + LNhz*LNhz)
-                            - amp * sin(2.*vphi[i]) * cos(2.*alpha) * LNhz;*/
-
   }
   if(debugPK) {
       fclose( out );
@@ -3546,15 +3271,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
   COMPLEX16TimeSeries *hIMR2m1JTSHi = NULL;
   COMPLEX16TimeSeries *hIMR2m2JTSHi = NULL;
 
-  //COMPLEX16TimeSeries *h22PTSHi  = XLALCreateCOMPLEX16TimeSeries( "HP_22",
-  //                              &tc, 0.0, deltaTHigh, &lalStrainUnit, retLen );
-
-  //COMPLEX16TimeSeries *h22JTSHi  = XLALCreateCOMPLEX16TimeSeries( "HJ_22",
-  //                              &tc, 0.0, deltaTHigh, &lalStrainUnit, retLen );
-
-  //COMPLEX16TimeSeries *hIMR22JTSHi  = XLALCreateCOMPLEX16TimeSeries(
-  // "HIMRJ_22Hi",  &tc, 0.0, deltaTHigh, &lalStrainUnit, retLen + retLenRDPatch);
-
   COMPLEX16TimeSeries *hIMRJTSHi    = XLALCreateCOMPLEX16TimeSeries(
    "HIMRJHi",     &tc, 0.0, deltaTHigh, &lalStrainUnit, retLen + retLenRDPatch);
 
@@ -3588,7 +3304,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     for ( j = 0; j < values->length; j++ )
     {
       values->data[j] = dynamicsHi->data[(j+1)*retLen + i];
-      /*if ( i == 0 ) XLAL_PRINT_INFO("value (length=%d) %d: %.16e\n", values->length, j,values->data[j]);*/
     }
 
     /* Calculate dr/dt */
@@ -3624,9 +3339,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     LNhy  = rcrossrdot[1] / magLN;
     LNhz  = rcrossrdot[2] / magLN;
 
-    /*aI2P = atan2( LNhy, LNhx );
-    bI2P = acos( LNhz );
-    gI2P = -phiModHi.data[i]; */
     aI2P = AlphaHi->data[i];
     bI2P = BetaHi->data[i];
     gI2P = GammaHi->data[i];
@@ -3639,10 +3351,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     LframeEz[0] =  LNhx;
     LframeEz[1] =  LNhy;
     LframeEz[2] =  LNhz;
-    //if(debugPK) {
-    //   XLAL_PRINT_INFO("L-frameEx = [%e\t%e\t%e]\n", LframeEx[0], LframeEx[1], LframeEx[2]);XLAL_PRINT_INFO("L-frameEy = [%e\t%e\t%e]\n", LframeEy[0], LframeEy[1], LframeEy[2]);
-    //   XLAL_PRINT_INFO("L-frameEz = [%e\t%e\t%e]\n", LframeEz[0], LframeEz[1], LframeEz[2]);fflush(NULL);
-    //}
 
     aP2J = atan2(JframeEz[0]*LframeEy[0]+JframeEz[1]*LframeEy[1]+JframeEz[2]*LframeEy[2],
                  JframeEz[0]*LframeEx[0]+JframeEz[1]*LframeEx[1]+JframeEz[2]*LframeEx[2]);
@@ -3660,10 +3368,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
           aP2J = atan2( JframeEx[1], JframeEx[0]);
       }
 
-/*if (i==0||i==1900) XLAL_PRINT_INFO("{{%f,%f,%f},{%f,%f,%f},{%f,%f,%f}}\n",JframeEx[0],JframeEx[1],JframeEx[2],JframeEy[0],JframeEy[1],JframeEy[2],JframeEz[0],JframeEz[1],JframeEz[2]);
-if (i==0||i==1900) XLAL_PRINT_INFO("{{%f,%f,%f},{%f,%f,%f},{%f,%f,%f}}\n",LframeEx[0],LframeEx[1],LframeEx[2],LframeEy[0],LframeEy[1],LframeEy[2],LframeEz[0],LframeEz[1],LframeEz[2]);
-if (i==0||i==1900) XLAL_PRINT_INFO("YP: study time = %f\n",i*deltaTHigh/mTScaled);
-if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz[0]+JframeEy[1]*LframeEz[1]+JframeEy[2]*LframeEz[2], JframeEx[0]*LframeEz[0]+JframeEx[1]*LframeEz[1]+JframeEx[2]*LframeEz[2], gP2J, atan2(-0.365446,-0.378524));*/
     /* I2P Euler angles are stored only for debugging purposes */
     alphaI2PTSHi->data->data[i] = -aI2P;
      betaI2PTSHi->data->data[i] = bI2P;
@@ -3777,25 +3481,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     h21TSHi->data->data[i]  = hLM;
     h2m1TSHi->data->data[i] = conjl(hLM);
     h20TSHi->data->data[i]  = 0.0;
-
-    /*if (i == 95 )
-    {
-      XLAL_PRINT_INFO("%.16e %.16e %.16e\n",ham, omega, v);
-      XLAL_PRINT_INFO("%.16e %.16e %.16e\n",values->data[0],values->data[1],values->data[2]);
-      XLAL_PRINT_INFO("%.16e %.16e %.16e\n",values->data[3],values->data[4],values->data[5]);
-      XLAL_PRINT_INFO("%.16e %.16e %.16e\n",values->data[6],values->data[7],values->data[8]);
-      XLAL_PRINT_INFO("%.16e %.16e %.16e\n",values->data[9],values->data[10],values->data[11]);
-      XLAL_PRINT_INFO("%.16e %.16e %.16e %.16e %.16e %.16e\n",nqcCoeffs.a1,nqcCoeffs.a2,nqcCoeffs.a3,nqcCoeffs.a3S,nqcCoeffs.a4,nqcCoeffs.a5);
-      XLAL_PRINT_INFO("%.16e %.16e %.16e %.16e\n",nqcCoeffs.b1,nqcCoeffs.b2,nqcCoeffs.b3,nqcCoeffs.b4);
-      XLAL_PRINT_INFO("%.16e %.16e, %.16e %.16e\n\n",creal(hLM),cimag(hLM),creal(hNQC),cimag(hNQC));
-    }*/
-
-    /*hPlusTS->data->data[i]  = - 0.5 * amp * cos( 2.*vphi[i]) * cos(2.*alpha) * (1. + LNhz*LNhz)
-                            + amp * sin(2.*vphi[i]) * sin(2.*alpha)*LNhz;
-
-    hCrossTS->data->data[i] = - 0.5 * amp * cos( 2.*vphi[i]) * sin(2.*alpha) * (1. + LNhz*LNhz)
-                            - amp * sin(2.*vphi[i]) * cos(2.*alpha) * LNhz;*/
-
   }
   if (debugPK){
       fclose( out );
@@ -3815,7 +3500,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
   hlmPTSout = XLALSphHarmTimeSeriesAddMode( hlmPTSout, h20TSHi, 2, 0 );
   hlmPTSout = XLALSphHarmTimeSeriesAddMode( hlmPTSout, h2m1TSHi, 2, -1 );
   hlmPTSout = XLALSphHarmTimeSeriesAddMode( hlmPTSout, h2m2TSHi, 2, -2 );
-  //XLALSphHarmTimeSeriesSetTData( hlmPTSout, tlistHi );
   *hlmPTSoutput = hlmPTSout;
 
   h22PTSHi  = XLALSphHarmTimeSeriesGetMode( hlmPTSHi, 2, 2 );
@@ -3843,21 +3527,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
      fflush(NULL);
   }
 
-//  // Find tAmpMax to determin the tAttachment
-//    REAL8 *radiusVec;
-//    REAL8 radiusData[retLen];
-//    radiusVec = &radiusData[0];
-//    for ( i = 0; i < retLen; i++ )
-//    {
-//        for ( j = 0; j < 3; j++ )
-//        {
-//            values->data[j] = dynamicsHi->data[(j+1)*retLen + i];
-//        }
-//        radiusData[i] = sqrt(values->data[0]*values->data[0] + values->data[1]*values->data[1] + values->data[2]*values->data[2]);
-//    }
-//    if (debugPK){
-//        XLAL_PRINT_INFO("Andrea the attachment time based on Omega is %f \n", tAttach);
-//    }
   int foundAmp = 0;
     REAL8 tMaxAmp;
   double tAmpMax =  XLALSimLocateAmplTime(&timeHi, h22PTSHi->data, radiusVec, &foundAmp, &tMaxAmp);
@@ -3885,26 +3554,10 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
       }
       tAttach = tAmpMax;
   }
-  // FIXME
-//  tAttach = 142.;
-//  tAttach  = tAttach - 6.0;
-
-
-    //for (i=0; i<5; i++){
-    //    XLAL_PRINT_INFO("AttachPars stas: %d, %f \n", i, AttachParams->data[i]);
-    //}
-
 
   if (debugPK){
       XLAL_PRINT_INFO("Stas: the final decision on the attachment time is %f \n", tAttach);
   }
-  //exit(0);
-
-  /*if(debugPK) {
-    XLAL_PRINT_INFO( "Estimation of the peak is now at time %.16e, %.16e \n",
-          tPeakOmega, tPeakOmega+HiSRstart);
-    fflush(NULL);
-  }*/
 
   /* Changing retLen back to the Low SR value */
   retLen = retLenLow;
@@ -3965,7 +3618,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     {
       fprintf( out,
         "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
-        /*timeHi.data[i]+HiSRstart, creal(h22JTSHi->data->data[i]), cimag(h22JTSHi->data->data[i]),*/
         timeHi.data[i]+HiSRstart,
         creal(h22JTSHi->data->data[i]), cimag(h22JTSHi->data->data[i]),
         creal(h21JTSHi->data->data[i]), cimag(h21JTSHi->data->data[i]),
@@ -4034,10 +3686,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
       REAL8 thr = 1.;
       REAL8 ratio22 = 1.0;
       REAL8 ratio2m2 = 1.0;
-
-      //hJTSHi  = XLALSphHarmTimeSeriesGetMode( hlmPTSHi, 2, 2 );
-
-      //XLAL_PRINT_INFO("Stas check tmieHi-> %d, sigReHi -> %d \n", timeHi.length, sigReHi->length);
       for ( i = 0; i < retLenHi; i++ )
         {
           sigReHi->data[i] = creal(h22JTSHi->data->data[i]);
@@ -4053,9 +3701,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
 
       memset( sigReHi->data, 0, sigReHi->length * sizeof( sigReHi->data[0] ));
       memset( sigImHi->data, 0, sigImHi->length * sizeof( sigImHi->data[0] ));
-
-
-      //hJTSHi  = XLALSphHarmTimeSeriesGetMode( hlmPTSHi, 2, -2 );
 
       for ( i = 0; i < retLenHi; i++ )
         {
@@ -4139,7 +3784,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     if ( XLALSimIMREOBHybridAttachRingdownPrec( sigReHi, sigImHi, 2, k,
                 deltaTHigh, m1, m2, 0.0, 0.0, chi1L, 0.0, 0.0, chi2L,
                 &timeHi, rdMatchPoint, spinEOBApproximant, kappaJL )
-                //&timeHi, rdMatchPoint, spinEOBApproximant, JLN )
             == XLAL_FAILURE )
     {
       XLAL_ERROR( XLAL_EFUNC );
@@ -4203,9 +3847,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
      spline = gsl_spline_alloc( gsl_interp_cspline, retLenHi + retLenRDPatch );
      acc    = gsl_interp_accel_alloc();
      gsl_spline_init( spline, tlistRDPatchHi->data, sigReHi->data, retLenHi + retLenRDPatch );
-//     for (i = retLenLow-4; i< retLenLow+retLenRDPatchLow; i++){
-//          hIMRJTS->data->data[i] = gsl_spline_eval( spline, tlistRDPatch->data[i], acc );
-      //Andrea
       for (i = idxRD; i< retLenLow+retLenRDPatchLow; i++){
           if( i*deltaT/mTScaled <= tlistRDPatchHi->data[ retLenHi + retLenRDPatch - 1]) {
               hIMRJTS->data->data[i] = gsl_spline_eval( spline, tlistRDPatch->data[i], acc );
@@ -4234,7 +3875,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
      gsl_interp_accel_free(acc);
 
      hIMRlmJTS = XLALSphHarmTimeSeriesAddMode( hIMRlmJTS, hIMRJTS, 2, k );
-     /*if (k==1) exit(0);*/
   }
   for (i=0; i<(int)tlistRDPatch->length; i++){
       timeJFull->data[i] = tlistRDPatch->data[i];    
@@ -4276,7 +3916,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
  /* Euler Angles to go from final-J-frame to initial inertial frame  */
   gamJtoI = atan2(JframeEz[1], -JframeEz[0]);
   betJtoI = acos(JframeEz[2]);
-    //alJtoI = atan2(JframeEy[2], -JframeEx[2]);
     alJtoI = atan2(JframeEy[2], JframeEx[2]);
     if (fabs(betJtoI - LAL_PI) < 1.e-10){
         gamJtoI = 0.0;
@@ -4292,16 +3931,12 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     fflush(NULL);
   }
 
-  /*COMPLEX16TimeSeries *hITS    = XLALCreateCOMPLEX16TimeSeries( "HJ",     &tc, 0.0, deltaT, &lalStrainUnit, retLen );*/
   COMPLEX16TimeSeries *hIMR22ITS  = NULL;
   COMPLEX16TimeSeries *hIMR21ITS  = NULL;
   COMPLEX16TimeSeries *hIMR20ITS  = NULL;
   COMPLEX16TimeSeries *hIMR2m1ITS = NULL;
   COMPLEX16TimeSeries *hIMR2m2ITS = NULL;
 
-
-  //COMPLEX16TimeSeries *hIMR22ITS  = XLALCreateCOMPLEX16TimeSeries( "HIMRI_22",
-  //  &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
   REAL8TimeSeries *alpI        = XLALCreateREAL8TimeSeries( "alphaJ2I",
         &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
   REAL8TimeSeries *betI        = XLALCreateREAL8TimeSeries( "betaaJ2I",
@@ -4344,12 +3979,7 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
   *hIMRoutput = XLALSphHarmTimeSeriesAddMode( *hIMRoutput, hIMR20ITS, 2, 0 );
   *hIMRoutput = XLALSphHarmTimeSeriesAddMode( *hIMRoutput, hIMR2m1ITS, 2, -1 );
   *hIMRoutput = XLALSphHarmTimeSeriesAddMode( *hIMRoutput, hIMR2m2ITS, 2, -2 );
-  //hIMRlmout = XLALSphHarmTimeSeriesAddMode( hIMRlmout, hIMR20ITS, 2, 0 );
-  //hIMRlmout = XLALSphHarmTimeSeriesAddMode( hIMRlmout, hIMR2m1ITS, 2, -1 );
-  //hIMRlmout = XLALSphHarmTimeSeriesAddMode( hIMRlmout, hIMR2m2ITS, 2, -2 );
-  //XLALSphHarmTimeSeriesSetTData( hIMRlmout, tlistRDPatch );
   XLALSphHarmTimeSeriesSetTData( *hIMRoutput, tlistRDPatch );
-  //*hIMRoutput = hIMRlmout;
 
   if (debugPK){
     out = fopen( "IWaves.dat", "w" );
@@ -4357,7 +3987,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     {
       fprintf( out,
         "%.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
-        /*timeHi.data[i]+HiSRstart, creal(h22JTSHi->data->data[i]), cimag(h22JTSHi->data->data[i]),*/
         tlistRDPatch->data[i],
         creal(hIMR22ITS->data->data[i]), cimag(hIMR22ITS->data->data[i]),
         creal(hIMR21ITS->data->data[i]), cimag(hIMR21ITS->data->data[i]),
@@ -4395,7 +4024,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     x11 = Y22*hIMR22ITS->data->data[i] + Y21*hIMR21ITS->data->data[i]
           + Y20*hIMR20ITS->data->data[i] + Y2m1*hIMR2m1ITS->data->data[i]
           + Y2m2*hIMR2m2ITS->data->data[i];
-//      XLAL_PRINT_INFO("h+,x %e %e\n",creal(x11), cimag(x11));
     hPlusTS->data->data[i]  = amp0*creal(x11);
     hCrossTS->data->data[i] = -amp0*cimag(x11);
   }
@@ -4408,8 +4036,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
     XLAL_PRINT_INFO("plus and cross are computed, freeing the memory\n");
     fflush(NULL);
   }
-  /*hplus =  XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 2 );
-  hcross =  XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 2 );*/
 
   XLALDestroyREAL8TimeSeries(alphaI2PTS);
   XLALDestroyREAL8TimeSeries(betaI2PTS);
@@ -4436,49 +4062,12 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
   XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
   XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
 
-  //XLALDestroyCOMPLEX16TimeSeries(h22PTS);
-  //XLALDestroyCOMPLEX16TimeSeries(h21PTS);
-  //XLALDestroyCOMPLEX16TimeSeries(h20PTS);
-  //XLALDestroyCOMPLEX16TimeSeries(h2m1PTS);
-  //XLALDestroyCOMPLEX16TimeSeries(h2m2PTS);
-
-  //XLAL_PRINT_INFO("Memory cleanup 2 done.\n"); fflush(NULL);
   XLALDestroySphHarmTimeSeries(hlmPTS);
-  // XLAL_PRINT_INFO("Memory cleanup 2.5 done.\n"); fflush(NULL);
-  
-  //XLALDestroySphHarmTimeSeries(hIMRlmJTS);
-  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 2 ));
-  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 1 ));
-  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, 0 ));
-  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, -1 ));
-  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmJTS, 2, -2 ));
-
-  //XLAL_PRINT_INFO("Memory cleanup 2.6 done.\n"); fflush(NULL);
   XLALDestroySphHarmTimeSeries(hIMRlmJTS);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR22ITS);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR21ITS);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR20ITS);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR2m1ITS);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR2m2ITS);
-
   XLALDestroySphHarmTimeSeries(hIMRlmITS);
-  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, 2 ));
-  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, 1 ));
-  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, 0 ));
-  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, -1 ));
-  //XLALDestroyCOMPLEX16TimeSeries(XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, -2 ));
-  //XLAL_PRINT_INFO("Memory cleanup 2.7 done.\n"); fflush(NULL);
-
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR22JTS);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR21JTS);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR20JTS);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR2m1JTS);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR2m2JTS);
 
   XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
   if(debugPK){ XLAL_PRINT_INFO("Memory cleanup 2 done.\n"); fflush(NULL); }
-  //XLAL_PRINT_INFO("Memory cleanup 2.8 done.\n"); fflush(NULL);
-
 
 
   XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
@@ -4486,17 +4075,6 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
   XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
   XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
   XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
-
-  //XLALDestroyCOMPLEX16TimeSeries(h22PTSHi);
-  //XLALDestroyCOMPLEX16TimeSeries(h21PTSHi);
-  //XLALDestroyCOMPLEX16TimeSeries(h20PTSHi);
-  //XLALDestroyCOMPLEX16TimeSeries(h2m1PTSHi);
-  //XLALDestroyCOMPLEX16TimeSeries(h2m2PTSHi);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR22JTSHi);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR21JTSHi);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR20JTSHi);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR2m1JTSHi);
-  //XLALDestroyCOMPLEX16TimeSeries(hIMR2m2JTSHi);
 
   XLALDestroyCOMPLEX16TimeSeries(hIMRJTSHi);
 
@@ -4507,13 +4085,10 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
   XLALDestroyREAL8Vector( sigmaKerr );
   XLALDestroyREAL8Vector( sigReHi );
   XLALDestroyREAL8Vector( sigImHi );
-  //XLALDestroyREAL8Vector( omegaHi );
 
   if(debugPK){ XLAL_PRINT_INFO("Memory cleanup 3 done.\n"); fflush(NULL); }
-  //XLAL_PRINT_INFO("Memory cleanup 3 done.\n"); fflush(NULL);
   XLALAdaptiveRungeKutta4Free(integrator);
   XLALDestroyREAL8Array( dynamics );
-  //XLALDestroyREAL8Array( dynamicsHi );
 
   XLALDestroyREAL8Vector( LN_x );
   XLALDestroyREAL8Vector( LN_y );
@@ -4533,17 +4108,8 @@ if (i==1900) XLAL_PRINT_INFO("YP: gamma: %f, %f, %f, %f\n", JframeEy[0]*LframeEz
 
 
   XLALDestroyREAL8Vector( rdMatchPoint );
-  //XLALDestroyREAL8Vector( AttachParams );
   XLALDestroyREAL8Vector( tmpValues2 );
-  //XLAL_PRINT_INFO("Memory cleanup 4 done.\n"); fflush(NULL);
 
-
-  //XLALDestroyREAL8Vector( tlist );
-  //XLALDestroyREAL8Vector( tlistHi );
-  //XLALDestroyREAL8Vector( tlistRDPatch );
-  //XLALDestroyREAL8Vector( tlistRDPatchHi );
-
-  //XLAL_PRINT_INFO("Memory cleanup ALL done.\n"); fflush(NULL);
   if(debugPK){ XLAL_PRINT_INFO("Memory cleanup ALL done.\n"); fflush(NULL); }
 
   /* FIXME: Temporary code to convert REAL8Array to REAL8Vector because SWIG
