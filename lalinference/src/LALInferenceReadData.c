@@ -526,7 +526,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
     (--inj-tidalOrder PNorder)  Specify twice the injection PN order (e.g. 10 <==> 5PN)\n\
                                     of tidal effects to use, only for LALSimulation\n\
                                     (default: -1 <==> Use all tidal effects).\n\
-    (--inj-spin-frame FRAME     Specify injection spin frame: choice of TotalJ, OrbitalL, View.\n\
+    (--inj-spin-frame FRAME     Specify injection spin frame: choice of total-j, orbital-l, view.\n\
                                     (Default = OrbitalL).\n\
     (--0noise)                  Sets the noise realisation to be identically zero\n\
                                     (for the fake caches above only)\n\
