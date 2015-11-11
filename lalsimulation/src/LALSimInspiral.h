@@ -309,6 +309,8 @@ typedef enum {
                          * @remarks Implemented in lalsimulation (time domain). */
    SEOBNRv2,		/**< Spin-aligned EOBNR model v2
                          * @remarks Implemented in lalsimulation (time domain). */
+   SEOBNRv2_opt,	/**< Optimized Spin-aligned EOBNR model v2
+                         * @remarks Implemented in lalsimulation (time domain). */
    SEOBNRv3,		/**< Spin precessing EOBNR model v3
                          * @todo Fix implementation in lalsimulation (time domain). */
    SEOBNRv1_ROM_EffectiveSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza]

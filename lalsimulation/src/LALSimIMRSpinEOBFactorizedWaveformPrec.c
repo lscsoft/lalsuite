@@ -1,7 +1,7 @@
 /**
  * \author Craig Robinson, Yi Pan, Prayush Kumar, Stas Babak, Andrea Taracchini
  *
- * \brief Function to compute the factorized waveform as uses in the SEOBNRv1 model.
+ * \brief Function to compute the factorized waveform as used in the SEOBNRv1 model.
  * Waveform expressions are given by
  * Taracchini et al. ( PRD 86, 024011 (2012), arXiv 1202.0790 ).
  * All equation numbers in this file refer to equations of this paper,
@@ -269,15 +269,15 @@ XLALSimIMRSpinEOBFluxGetPrecSpinFactorizedWaveform(
 														      + v * (hCoeffs->rho22v8 + hCoeffs->rho22v8l * eulerlogxabs
 															     + (hCoeffs->rho22v10 + hCoeffs->rho22v10l * eulerlogxabs) * v2)))))));
 					//FIXME
-						if (debugPK)
-						XLAL_PRINT_INFO("PK:: rho22v2 = %.12e, rho22v3 = %.12e, rho22v4 = %.12e,\n rho22v5 = %.16e, rho22v6 = %.16e, rho22v6LOG = %.16e, \n rho22v7 = %.12e, rho22v8 = %.16e, rho22v8LOG = %.16e, \n rho22v10 = %.16e, rho22v10LOG = %.16e\n, rho22v6 = %.12e, rho22v8 = %.12e, rho22v10 = %.12e\n",
+						if (debugPK){
+                            XLAL_PRINT_INFO("PK:: rho22v2 = %.12e, rho22v3 = %.12e, rho22v4 = %.12e,\n rho22v5 = %.16e, rho22v6 = %.16e, rho22v6LOG = %.16e, \n rho22v7 = %.12e, rho22v8 = %.16e, rho22v8LOG = %.16e, \n rho22v10 = %.16e, rho22v10LOG = %.16e\n, rho22v6 = %.12e, rho22v8 = %.12e, rho22v10 = %.12e\n",
 						       hCoeffs->rho22v2, hCoeffs->rho22v3, hCoeffs->rho22v4,
 						       hCoeffs->rho22v5, hCoeffs->rho22v6, hCoeffs->rho22v6l,
 						       hCoeffs->rho22v7, hCoeffs->rho22v8, hCoeffs->rho22v8l,
 						       hCoeffs->rho22v10, hCoeffs->rho22v10l,
 						       hCoeffs->rho22v6 + hCoeffs->rho22v6l * eulerlogxabs,
 						       hCoeffs->rho22v8 + hCoeffs->rho22v8l * eulerlogxabs,
-						       hCoeffs->rho22v10 + hCoeffs->rho22v10l * eulerlogxabs);
+						       hCoeffs->rho22v10 + hCoeffs->rho22v10l * eulerlogxabs);}
 					break;
 				case 1:
 					{
@@ -536,7 +536,7 @@ XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform(
 	INT4		i;
 
 	REAL8		eta;
-	REAL8 UNUSED	r , pp, Omega, v2, vh, vh3, k, hathatk, eulerlogxabs;
+	REAL8 UNUSED	r , pp, Omega, v2, Omegav2, vh, vh3, k, hathatk, eulerlogxabs;
 	//pr
 		REAL8 UNUSED rcrossp_x, rcrossp_y, rcrossp_z;
 	REAL8		Slm     , deltalm, rholm, rholmPwrl;
@@ -583,6 +583,7 @@ XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform(
 
 	v2 = v * v;
 	Omega = v2 * v;
+    Omegav2 = Omega*v2;
 	vh3 = Hreal * Omega;
 	vh = cbrt(vh3);
 	eulerlogxabs = LAL_GAMMA + log(2.0 * (REAL8) m * v);
@@ -636,7 +637,7 @@ XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform(
 	if (status == XLAL_FAILURE) {
 		XLAL_ERROR(XLAL_EFUNC);
 	}
-	/* Calculate the source term, 2nd term in Eq. 17, given by Eq. A5 */
+	/* Calculate the source term, 2nd term in Eq. 17, given by Eq. A5, Hreal is given by Eq.5 and Heff is in Eq.2 */
 	if (((l + m) % 2) == 0) {
 		Slm = (Hreal * Hreal - 1.) / (2. * eta) + 1.;
 	} else {
@@ -647,9 +648,9 @@ XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform(
 		XLAL_PRINT_INFO("In XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform: Hreal = %e, Slm = %e, eta = %e\n", Hreal, Slm, eta);
 
 	/*
-	 * Calculate the absolute value of the Tail term, 3rd term in Eq. 17,
+	 * Calculate the Tail term, 3rd term in Eq. 17,
 	 * given by Eq. A6, and Eq. (42) of
-	 * http://arxiv.org/pdf/1212.4357.pdf
+	 * http://arxiv.org/pdf/1212.4357.pdf (or PRD 87 084035 (2013))
 	 */
 	k = m * Omega;
 	hathatk = Hreal * k;
@@ -669,21 +670,22 @@ XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform(
 		    arg1.val + 2.0 * hathatk * log(4.0 * k / sqrt(LAL_E))));
 	Tlm /= z2.val;
 
-	hathatksq4 = 4. * hathatk * hathatk;
-	hathatk4pi = 4. * LAL_PI * hathatk;
 
-	/* Calculating the prefactor of Tlm, outside the multiple product */
-	Tlmprefac = sqrt(hathatk4pi / (1. - exp(-hathatk4pi))) / z2.val;
 
-	/* Calculating the multiple product factor */
-	for (Tlmprodfac = 1., i = 1; i <= l; i++)
-		Tlmprodfac *= (hathatksq4 + (REAL8) i * i);
+	if (debugPK){
+        hathatksq4 = 4. * hathatk * hathatk;
+        hathatk4pi = 4. * LAL_PI * hathatk;
+        /* Calculating the prefactor of Tlm, outside the multiple product */
+        Tlmprefac = sqrt(hathatk4pi / (1. - exp(-hathatk4pi))) / z2.val;
 
-	REAL8		Tlmold;
-	Tlmold = Tlmprefac * sqrt(Tlmprodfac);
+        /* Calculating the multiple product factor */
+        for (Tlmprodfac = 1., i = 1; i <= l; i++)
+            Tlmprodfac *= (hathatksq4 + (REAL8) i * i);
 
-	if (debugPK)
+        REAL8		Tlmold;
+        Tlmold = Tlmprefac * sqrt(Tlmprodfac);
 		XLAL_PRINT_INFO("Tlm = %e + i%e, |Tlm| = %.16e (should be %.16e)\n", creal(Tlm), cimag(Tlm), cabs(Tlm), Tlmold);
+    }
 
 	/* Calculate the residue phase and amplitude terms */
 	/*
@@ -696,8 +698,8 @@ XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform(
 	 * A15
 	 */
 	/*
-	 * Actual values of the coefficients are defined in the next function
-	 * of this file
+	 * Actual values of the coefficients are defined in the another function
+	 * see file LALSimIMRSpinEOBFactorizedWaveformCoefficientsPrec.c 
 	 */
 	switch (l) {
 	case 2:
@@ -705,7 +707,7 @@ XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform(
 		case 2:
 			deltalm = vh3 * (hCoeffs->delta22vh3 + vh3 * (hCoeffs->delta22vh6
 				    + vh * vh * (hCoeffs->delta22vh9 * vh)))
-				+ hCoeffs->delta22v5 * v * v2 * v2 + hCoeffs->delta22v6 * v2 * v2 * v2 + hCoeffs->delta22v8 * v2 * v2 * v2 * v2;
+				+ Omega*(hCoeffs->delta22v5 * v2 + Omega*(hCoeffs->delta22v6  + hCoeffs->delta22v8 *v2));
 			rholm = 1. + v2 * (hCoeffs->rho22v2 + v * (hCoeffs->rho22v3
 						     + v * (hCoeffs->rho22v4
 			     + v * (hCoeffs->rho22v5 + v * (hCoeffs->rho22v6
@@ -713,21 +715,21 @@ XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform(
 												      + v * (hCoeffs->rho22v8 + hCoeffs->rho22v8l * eulerlogxabs
 													     + (hCoeffs->rho22v10 + hCoeffs->rho22v10l * eulerlogxabs) * v2)))))));
 			//FIXME
-				if (debugPK)
-				XLAL_PRINT_INFO("PK:: rho22v2 = %.12e, rho22v3 = %.12e, rho22v4 = %.12e,\n rho22v5 = %.16e, rho22v6 = %.16e, rho22v6LOG = %.16e, \n rho22v7 = %.12e, rho22v8 = %.16e, rho22v8LOG = %.16e, \n rho22v10 = %.16e, rho22v10LOG = %.16e\n, rho22v6 = %.12e, rho22v8 = %.12e, rho22v10 = %.12e\n",
+				if (debugPK){
+                    XLAL_PRINT_INFO("PK:: rho22v2 = %.12e, rho22v3 = %.12e, rho22v4 = %.12e,\n rho22v5 = %.16e, rho22v6 = %.16e, rho22v6LOG = %.16e, \n rho22v7 = %.12e, rho22v8 = %.16e, rho22v8LOG = %.16e, \n rho22v10 = %.16e, rho22v10LOG = %.16e\n, rho22v6 = %.12e, rho22v8 = %.12e, rho22v10 = %.12e\n",
 				       hCoeffs->rho22v2, hCoeffs->rho22v3, hCoeffs->rho22v4,
 				       hCoeffs->rho22v5, hCoeffs->rho22v6, hCoeffs->rho22v6l,
 				       hCoeffs->rho22v7, hCoeffs->rho22v8, hCoeffs->rho22v8l,
 				       hCoeffs->rho22v10, hCoeffs->rho22v10l,
 				       hCoeffs->rho22v6 + hCoeffs->rho22v6l * eulerlogxabs,
 				       hCoeffs->rho22v8 + hCoeffs->rho22v8l * eulerlogxabs,
-				       hCoeffs->rho22v10 + hCoeffs->rho22v10l * eulerlogxabs);
+				       hCoeffs->rho22v10 + hCoeffs->rho22v10l * eulerlogxabs);}
 			break;
 		case 1:
 			{
 				deltalm = vh3 * (hCoeffs->delta21vh3 + vh3 * (hCoeffs->delta21vh6
 									      + vh * (hCoeffs->delta21vh7 + (hCoeffs->delta21vh9) * vh * vh)))
-					+ hCoeffs->delta21v5 * v * v2 * v2 + hCoeffs->delta21v7 * v2 * v2 * v2 * v;
+					+ Omegav2*(hCoeffs->delta21v5  + hCoeffs->delta21v7 * v2);
 				rholm = 1. + v * (hCoeffs->rho21v1
 						  + v * (hCoeffs->rho21v2 + v * (hCoeffs->rho21v3 + v * (hCoeffs->rho21v4
 													 + v * (hCoeffs->rho21v5 + v * (hCoeffs->rho21v6 + hCoeffs->rho21v6l * eulerlogxabs
