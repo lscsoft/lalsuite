@@ -3722,7 +3722,12 @@ int XLALSimIMRSpinEOBWaveformAll(
 
       if (pass == 0){
 
-           if (debugPK) XLAL_PRINT_INFO("Adjusting RD attachment point... \n");fflush(NULL);
+           if (debugPK){
+               XLAL_PRINT_INFO("Adjusting RD attachment point... \n");fflush(NULL);
+               XLAL_PRINT_INFO("initial ratios: %f,  %f \n", ratio22,  ratio2m2);
+               fflush(NULL);
+           }
+               
            memset( sigReHi->data, 0, sigReHi->length * sizeof( sigReHi->data[0] ));
            memset( sigImHi->data, 0, sigImHi->length * sizeof( sigImHi->data[0] ));
 
