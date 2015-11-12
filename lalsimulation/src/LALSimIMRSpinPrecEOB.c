@@ -1364,7 +1364,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   INspin2[2] = INspin2z;
 
   INT4 UNUSED ret;
-  INT4 debugPK = 1, debugCustomIC = 0, debugNoNQC = 0;
+  INT4 debugPK = 01, debugCustomIC = 0, debugNoNQC = 0;
   INT4 debugRD = 0;
   FILE *out = NULL;
   INT4 i=0;
@@ -3684,7 +3684,7 @@ int XLALSimIMRSpinEOBWaveformAll(
       rdMatchPoint->data[0] -= fmod( rdMatchPoint->data[0], deltaTHigh/mTScaled );
       rdMatchPoint->data[1] -= fmod( rdMatchPoint->data[1], deltaTHigh/mTScaled );
 
-      REAL8 thr = 1.;
+      REAL8 thr = 1.01;
       REAL8 ratio22 = 1.0;
       REAL8 ratio2m2 = 1.0;
       for ( i = 0; i < retLenHi; i++ )
