@@ -52,7 +52,7 @@
 #include "LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c"
 /* END OPTIMIZED */
 
-#define debugOutput 0
+#define debugOutput 1
 
 //static int debugPK = 0;
 
@@ -1148,7 +1148,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   rdMatchPoint->data[1] = timePeak - timeshiftPeak;
   rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
   #if debugOutput
-  printf("YP::comb range: %f, %f\n",rdMatchPoint->data[0],rdMatchPoint->data[1]);
+  printf("YP::comb range: %f, %f,  %f, %f\n",rdMatchPoint->data[0],rdMatchPoint->data[1], timePeak, timeshiftPeak);
   #endif
   rdMatchPoint->data[0] -= fmod( rdMatchPoint->data[0], deltaTHigh/mTScaled );
   rdMatchPoint->data[1] -= fmod( rdMatchPoint->data[1], deltaTHigh/mTScaled );
