@@ -25,6 +25,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_odeiv.h>
 
+#include <lal/SphericalHarmonics.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 #include <lal/LALSimSphHarmMode.h>
@@ -1383,6 +1384,88 @@ int XLALSimInspiralChooseFDWaveform(
     if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
 
     return ret;
+}
+ 
+/**
+ * @brief Generates an time domain inspiral waveform using the specified approximant; the
+ * resulting waveform is appropriately conditioned, suitable for injection into data, 
+ * and decomposed into the (2, \pm 2), spin -2 weighted spherical harmonic modes.
+ * NOTE: This is an algebraic decomposition, and will only be correct for approximants
+ * which use only the dominant 2, \pm 2 mode.
+ *
+ * For spinning waveforms, all known spin effects up to given PN order are included
+ *
+ * This routine can generate FD approximants and transform them into the time domain.
+ * Waveforms are generated beginning at a slightly lower starting frequency and tapers
+ * are put in this early region so that the waveform smoothly turns on.  Artifacts at
+ * the very end of the waveform are also tapered.  The resulting waveform is high-pass
+ * filtered at frequency f_min so that it should have little content at lower frequencies.
+ *
+ * This routine has one additional parameter relative to XLALSimInspiralChooseTDWaveform.
+ * The additional parameter is the redshift, z, of the waveform.  This should be set to
+ * zero for sources in the nearby universe (that are nearly at rest relative to the
+ * earth).  For sources at cosmological distances, the mass parameters m1 and m2 should
+ * be interpreted as the physical (source frame) masses of the bodies and the distance
+ * parameter r is the comoving (transverse) distance.  If the calling routine has already
+ * applied cosmological "corrections" to m1 and m2 and regards r as a luminosity distance
+ * then the redshift factor should again be set to zero.
+ * 
+ * @note The parameters passed must be in SI units.
+ */
+SphHarmTimeSeries* XLALSimInspiralTDModesFromPolarizations(
+    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
+    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
+    REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+    REAL8 r,                                    /**< distance of source (m) */
+    REAL8 z,                                    /**< redshift of source frame relative to observer frame */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
+    )
+{
+    REAL8TimeSeries *hplus, *hcross;
+    COMPLEX16TimeSeries *h22,*h2m2;
+    SphHarmTimeSeries *hlm;
+    UINT4 j;
+    int retval;
+    float fac = XLALSpinWeightedSphericalHarmonic(0., 0., -2, 2,2); 
+
+    // Generate waveform via on-axis emission. Assumes only (2,2) and (2,-2) emission
+    retval = XLALSimInspiralTD(&hplus, &hcross, 0.0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, z, 0.0, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
+    if (retval < 0)
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+
+    // Step 1: Create COMPLEX16 TimeSeries and populate them
+    h22 = XLALCreateCOMPLEX16TimeSeries("h22", &(hplus)->epoch, 0, deltaT, &lalStrainUnit, (hplus)->data->length);
+    h2m2 = XLALCreateCOMPLEX16TimeSeries("h2m2", &(hplus)->epoch, 0, deltaT, &lalStrainUnit, (hplus)->data->length);
+    for (j=0; j< (hplus)->data->length; j++) {
+      h22->data->data[j] = ((hplus)->data->data[j] - I*((hcross)->data->data[j]))/fac;
+      h2m2->data->data[j] = ((hplus)->data->data[j] + I*((hcross)->data->data[j]))/fac;
+    }
+
+    // Step 2: Add them into the data 
+    hlm = XLALSphHarmTimeSeriesAddMode(NULL, h22, 2, 2);
+    hlm = XLALSphHarmTimeSeriesAddMode(hlm, h2m2, 2, -2);
+
+    // Step 3: Clean up
+    XLALDestroyREAL8TimeSeries(hplus);
+    XLALDestroyREAL8TimeSeries(hcross);
+    XLALDestroyCOMPLEX16TimeSeries(h22);
+    XLALDestroyCOMPLEX16TimeSeries(h2m2);
+    
+    return hlm;
 }
 
 /** Helper routines for XLALSimInspiralTD(): performs conditioning of a TD waveform */
