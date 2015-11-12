@@ -18,7 +18,7 @@ import scipy.signal as ss
 from scipy import interpolate
 from optparse import OptionParser
 import time, os 
-import imrtestgr as tgr 
+import lalinference.imrtgr.imrtgrutils as tgr
 import pickle, gzip
 import sys 
 
@@ -89,7 +89,7 @@ if __name__ == '__main__':
   parser.add_option("-r", "--ring-post", dest="ring_post", help="file containing the posterior samples from the lalinference ringdown run")
   parser.add_option("-m", "--imr-post", dest="imr_post", help="file containing the posterior samples from the full lalinference IMR run")
   parser.add_option("-f", "--fit-formula", dest="fit_formula", help="fitting formula to be used for the calculation of final mass/spin [options: 'nospin_Pan2011', 'nonprecspin_Healy2014'")
-  parser.add_option("-p", "--mf-af-prior", dest="prior_Mfaf_file", help="pickle file containing the interpolation object of the prior in (Mf,af) used in the lalinference runs")
+  parser.add_option("-p", "--mf-af-prior", dest="prior_Mfaf_file", help="pickle file containing the interpolation object of the prior in (Mf,af) used in the lalinference runs", default=None)
   parser.add_option("-o", "--out-dir", dest="out_dir", help="output directory")
   parser.add_option("--insp-fhigh", dest="insp_fhigh", help="Upper cutoff freq for the inspiral analysis")
   parser.add_option("--ring-flow", dest="ring_flow", help="Lower cutoff freq for the ringdown analysis")
@@ -112,16 +112,18 @@ if __name__ == '__main__':
   ring_flow = float(options.ring_flow)
   waveform = options.waveform
   N_bins = 201
+  
+  lalinference_datadir = os.getenv('LALINFERENCE_DATADIR')
+  if prior_Mfaf_file is None:
+    prior_Mfaf_file = os.path.join(lalinference_datadir, 'imrtgr_prior_data', 'Prior_Mfaf_nonprecspin_Healy2014_comp_mass_min1.0_comp_mass_max500.0_comp_spin_min-1.0_comp_spin_max1.0.pklz')
 
   # create output directory and copy the script 
   os.system('mkdir -p %s' %out_dir)
   os.system('mkdir -p %s/data' %out_dir)
   os.system('mkdir -p %s/img' %out_dir)
   os.system('cp %s %s' %(__file__, out_dir))
-  os.system('cp ../src/imrtestgr.py %s' %(out_dir))
-  os.system('cp ../templates/*.html %s' %(out_dir)) # this assumes that we are running the script from the scripts directory FIXME 
-  os.system('cp ../templates/*.css %s' %(out_dir))
-  os.system('cp ../templates/*.js %s' %(out_dir))
+  #os.system('cp ../src/imrtestgr.py %s' %(out_dir))
+  os.system('cp %s %s/'%(os.path.join(lalinference_datadir, 'imrtgr_webpage_templates/*.*'), out_dir))
   os.system('cp %s %s/data'%(prior_Mfaf_file, out_dir))
 
   # creating file to save the run command
