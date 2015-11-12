@@ -834,6 +834,18 @@ int XLALSimAdjustRDattachmentTime(
     if(tMax > tAtt + 5.0){
         tMax = tAtt + 5.0;
     }
+    REAL8 eta = m1*m2/(m1+m2)/(m1+m2);
+    REAL8 chiS = 0.5*(spin1z + spin2z);
+    REAL8 chiA = 0.5*(spin1z - spin2z);
+    REAL8 chi = chiS + chiA*sqrt(fabs(1. - 4.*eta))/(1. - 2.*eta);
+    if ( chi >= 0.8 ) {
+        if (tMaxAmp < tMaxOmega) {
+            tMax = tMaxAmp;
+        }
+        else {
+            tMax = tMaxOmega;
+        }
+    }
     if (debugPK){
         XLAL_PRINT_INFO("tmax = %f, tAtt = %f, tmaxAmp = %f, tmaxOm = %f\n", tMax, tAtt, tMaxAmp, tMaxOmega);
     }
