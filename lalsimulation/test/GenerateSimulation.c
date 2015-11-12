@@ -198,6 +198,12 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             printf("%s", usage);
             XLALFree(params);
             exit(0);
+        } else if (strcmp(argv[i], "--verbose") == 0) {
+            params->verbose = 1;
+        } else if (strcmp(argv[i], "--amp-phase") == 0) {
+            params->ampPhase = 1;
+        } else if ( ( i == argc ) || ( !argv[i+1] ) ) {
+          XLALPrintError("Error: value required for option %s\n", argv[i]);
         } else if (strcmp(argv[i], "--approximant") == 0) {
             params->approximant = XLALSimInspiralGetApproximantFromString(argv[++i]);
             if ( (int) params->approximant == XLAL_FAILURE) {
@@ -277,16 +283,15 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         } else if (strcmp(argv[i], "--nonGRpar") == 0) {
 	    char name[100];
 	    strcpy(name,argv[++i]);
-	    if (params->nonGRparams==NULL)
+            if ( ( i == argc ) || ( !argv[i+1] ) ) {
+              XLALPrintError("Error: 'name value' pair required for option %s\n", argv[i-1]);
+            } else if (params->nonGRparams==NULL) {
 	      params->nonGRparams=XLALSimInspiralCreateTestGRParam(name,atof(argv[++i]));
-	    else
+            } else {
 	      XLALSimInspiralAddTestGRParam(&params->nonGRparams,name,atof(argv[++i]));
+            }
         } else if (strcmp(argv[i], "--outname") == 0) {
             strncpy(params->outname, argv[++i], 256);
-        } else if (strcmp(argv[i], "--verbose") == 0) {
-            params->verbose = 1;
-        } else if (strcmp(argv[i], "--amp-phase") == 0) {
-            params->ampPhase = 1;
         } else {
             XLALPrintError("Error: invalid option: %s\n", argv[i]);
             goto fail;
