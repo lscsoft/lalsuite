@@ -980,7 +980,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
 //                     modefreqs->data[6] =  modefreqs_xtr->data[1];
 //                 }
                  if (m == -2){
-                     modefreqs->data[5] =  conjl(-1.0 * modefreqs_xtr->data[0]);
+                     modefreqs->data[5] =  conjl(-1.0 * modefreqs->data[5]);
 //                     if (JLN > -1.0*kappa_thr || fabs(eta*JLN) < eJL_thr){
 //                        modefreqs->data[6] =  conjl(-1.0 * modefreqs_xtr->data[1]);
  //                    }
@@ -1043,7 +1043,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
                 XLAL_ERROR(XLAL_ENOMEM);
             }
             
-            if ( JLN < 0.0 && eta <= 0.1){
+            if ( 1==1 || (JLN < 0.0 && eta <= 0.1)){
                 spin1[0] *= -1;
                 spin1[1] *= -1;
                 spin1[2] *= -1;
@@ -1058,10 +1058,11 @@ XLALSimIMREOBHybridAttachRingdownPrec(
                 spin2[1] *= -1;
                 spin2[2] *= -1;
                 modefreqs->data[7] =  modefreqs_xtr->data[0];
-                modefreqs->data[7] = NRPeakOmega22 + I/mTot/((1./cimag(modefreqs->data[0])/mTot)/2.);
+                modefreqs->data[6] = NRPeakOmega22 + I/mTot/((1./cimag(modefreqs->data[0])/mTot)/2.);
 
                 if (m == -1){
-                    modefreqs->data[7] =  conjl(-1.0 * modefreqs_xtr->data[0]);
+                    modefreqs->data[6] =  conjl(-1.0 * modefreqs->data[6]);
+                    modefreqs->data[7] =  conjl(-1.0 * modefreqs->data[7]);
                 }
             }
  //           modefreqs->data[7] = 0.5*(NRPeakOmega22 + modefreqs->data[0]) + I/mTot/((1./cimag(modefreqs->data[0])/mTot)/3.);
