@@ -1058,12 +1058,13 @@ XLALSimIMREOBHybridAttachRingdownPrec(
                 spin2[1] *= -1;
                 spin2[2] *= -1;
                 modefreqs->data[7] =  modefreqs_xtr->data[0];
+                modefreqs->data[7] = NRPeakOmega22 + I/mTot/((1./cimag(modefreqs->data[0])/mTot)/2.);
+
                 if (m == -1){
                     modefreqs->data[7] =  conjl(-1.0 * modefreqs_xtr->data[0]);
                 }
             }
  //           modefreqs->data[7] = 0.5*(NRPeakOmega22 + modefreqs->data[0]) + I/mTot/((1./cimag(modefreqs->data[0])/mTot)/3.);
-            modefreqs->data[7] = NRPeakOmega22 + I/mTot/((1./cimag(modefreqs->data[0])/mTot)/2.);
 	if (debugout) {
             XLAL_PRINT_INFO("l,m = %d %d\n",l,m);
             XLAL_PRINT_INFO("finalSpin = %f\n",finalSpin);
