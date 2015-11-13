@@ -283,7 +283,7 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
     return 1;
   }
   /* If rdot inclreases, break */
-   if ( r2 < 16. && rdot>params->prev_dr ) {
+   if ( r2 < 9. && rdot>params->prev_dr ) {
       if(debugPK){
           XLAL_PRINT_INFO("\n Integration stopping, dr/dt increasing!\n");
           fflush(NULL);
@@ -1364,7 +1364,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   INspin2[2] = INspin2z;
 
   INT4 UNUSED ret;
-  INT4 debugPK = 01, debugCustomIC = 0, debugNoNQC = 0;
+  INT4 debugPK = 0, debugCustomIC = 0, debugNoNQC = 0;
   INT4 debugRD = 0;
   FILE *out = NULL;
   INT4 i=0;
