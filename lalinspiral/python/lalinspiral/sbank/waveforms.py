@@ -312,7 +312,7 @@ class IMRPhenomDTemplate(IMRPhenomBTemplate):
 
     def _compute_waveform(self, df, f_final):
         return lalsim.SimIMRPhenomDGenerateFD(
-            0, df,
+            0, 0, df,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
             self.spin1z, self.spin2z,
             self.bank.flow, f_final, 1000000 * PC_SI)
