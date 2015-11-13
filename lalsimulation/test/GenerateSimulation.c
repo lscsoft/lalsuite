@@ -480,25 +480,27 @@ int main (int argc , char **argv) {
     }
 
     /* dump file */
-    f = fopen(params->outname, "w");
-    if (f==NULL) {
-      printf("**ERROR** Impossible to write file %s\n",params->outname);
-      exit(1);
-    }
-    else {
-      if (params->domain == LAL_SIM_DOMAIN_FREQUENCY)
-        if (params->ampPhase == 1)
-	  status = dump_FD2(f, hptilde, hctilde);
+    if ( params->outname && ( strlen(params->outname) > 0 ) ) {
+      f = fopen(params->outname, "w");
+      if (f==NULL) {
+        printf("**ERROR** Impossible to write file %s\n",params->outname);
+        exit(1);
+      }
+      else {
+        if (params->domain == LAL_SIM_DOMAIN_FREQUENCY)
+          if (params->ampPhase == 1)
+            status = dump_FD2(f, hptilde, hctilde);
+          else
+            status = dump_FD(f, hptilde, hctilde);
         else
-	  status = dump_FD(f, hptilde, hctilde);
-      else
-        if (params->ampPhase == 1)
-	  status = dump_TD2(f, hplus, hcross);
-        else
-	  status = dump_TD(f, hplus, hcross);
-      fclose(f);
+          if (params->ampPhase == 1)
+            status = dump_TD2(f, hplus, hcross);
+          else
+            status = dump_TD(f, hplus, hcross);
+        fclose(f);
+      }
+      if (status) goto fail;
     }
-    if (status) goto fail;
 
     /* clean up */
     XLALSimInspiralDestroyWaveformFlags(params->waveFlags);
