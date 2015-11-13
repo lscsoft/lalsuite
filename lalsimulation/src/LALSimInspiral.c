@@ -1389,9 +1389,9 @@ int XLALSimInspiralChooseFDWaveform(
 /**
  * @brief Generates an time domain inspiral waveform using the specified approximant; the
  * resulting waveform is appropriately conditioned, suitable for injection into data, 
- * and decomposed into the (2, \pm 2), spin -2 weighted spherical harmonic modes.
+ * and decomposed into the (2, \f$\pm\f$ 2), spin -2 weighted spherical harmonic modes.
  * NOTE: This is an algebraic decomposition, and will only be correct for approximants
- * which use only the dominant 2, \pm 2 mode.
+ * which use only the dominant 2, \f$\pm\f$ 2 mode.
  *
  * For spinning waveforms, all known spin effects up to given PN order are included
  *
@@ -1442,12 +1442,12 @@ SphHarmTimeSeries* XLALSimInspiralTDModesFromPolarizations(
     int retval;
     float fac = XLALSpinWeightedSphericalHarmonic(0., 0., -2, 2,2); 
 
-    // Generate waveform via on-axis emission. Assumes only (2,2) and (2,-2) emission
+    /* Generate waveform via on-axis emission. Assumes only (2,2) and (2,-2) emission */
     retval = XLALSimInspiralTD(&hplus, &hcross, 0.0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, z, 0.0, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
     if (retval < 0)
         XLAL_ERROR_NULL(XLAL_EFUNC);
 
-    // Step 1: Create COMPLEX16 TimeSeries and populate them
+    /* Step 1: Create COMPLEX16 TimeSeries and populate them */
     h22 = XLALCreateCOMPLEX16TimeSeries("h22", &(hplus)->epoch, 0, deltaT, &lalStrainUnit, (hplus)->data->length);
     h2m2 = XLALCreateCOMPLEX16TimeSeries("h2m2", &(hplus)->epoch, 0, deltaT, &lalStrainUnit, (hplus)->data->length);
     for (j=0; j< (hplus)->data->length; j++) {
@@ -1455,11 +1455,11 @@ SphHarmTimeSeries* XLALSimInspiralTDModesFromPolarizations(
       h2m2->data->data[j] = ((hplus)->data->data[j] + I*((hcross)->data->data[j]))/fac;
     }
 
-    // Step 2: Add them into the data 
+    /* Step 2: Add them into the data */
     hlm = XLALSphHarmTimeSeriesAddMode(NULL, h22, 2, 2);
     hlm = XLALSphHarmTimeSeriesAddMode(hlm, h2m2, 2, -2);
 
-    // Step 3: Clean up
+    /* Step 3: Clean up */
     XLALDestroyREAL8TimeSeries(hplus);
     XLALDestroyREAL8TimeSeries(hcross);
     XLALDestroyCOMPLEX16TimeSeries(h22);
