@@ -1130,9 +1130,16 @@ def hlmoft(P, Lmax=2, Fp=None, Fc=None):
     and all values of m for these l.
     """
     assert Lmax >= 2
-    hlms = lalsim.SimInspiralChooseTDModes(P.phiref, P.deltaT, P.m1, P.m2,
+    try:
+        hlms = lalsim.SimInspiralChooseTDModes(P.phiref, P.deltaT, P.m1, P.m2,
             P.fmin, P.fref, P.dist, P.lambda1, P.lambda2, P.waveFlags,
             P.nonGRparams, P.ampO, P.phaseO, Lmax, P.approx)
+    except RuntimeError:
+        hlms = lalsim.SimInspiralTDModesFromPolarizations(P.deltaT,
+            P.m1, P.m2, P.spin1x, P.spin1y, P.spin1z, 
+            P.spin2x, P.spin2y, P.spin2z, 
+            P.fmin, P.fref, P.dist, P.lambda1, P.lambda2, 0.0, P.waveFlags,
+            P.nonGRparams, P.ampO, P.phaseO, P.approx)
     # FIXME: Add ability to taper
     # COMMENT: Add ability to generate hlmoft at a nonzero GPS time directly.
     #      USUALLY we will use the hlms in template-generation mode, so will want the event at zero GPS time

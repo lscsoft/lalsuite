@@ -86,7 +86,7 @@ parser.add_option("", "--dont-cluster", default=False, action="store_true")
 
 parser.add_option("", "--no-robot-cert", default=False, action="store_true")
 
-parser.add_option('', '--FAPthr', default=[], action="append", type='float', help='check calibration at this FAP value. This argument can be supplied multiple times to check multiple values.')
+parser.add_option('-F', '--FAPthr', default=[], action="append", type='float', help='check calibration at this FAP value. This argument can be supplied multiple times to check multiple values.')
 
 opts, args = parser.parse_args()
 

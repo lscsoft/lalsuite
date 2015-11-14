@@ -2995,13 +2995,19 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceRunState *runState, LAL
   MatchedFilterSNR *= new_x/old_x;
   LALInferenceSetREAL8Variable(proposedParams,"optimal_snr",OptimalSNR);
   LALInferenceSetREAL8Variable(proposedParams,"matched_filter_snr",MatchedFilterSNR);
-  REAL8 *snr_ptr=NULL;
-  if((snr_ptr=LALInferenceGetVariable(currentParams,"H1_optimal_snr")))
-    LALInferenceSetREAL8Variable(proposedParams,"H1_optimal_snr",*snr_ptr * (new_x/old_x));
-  if((snr_ptr=LALInferenceGetVariable(currentParams,"L1_optimal_snr")))
-    LALInferenceSetREAL8Variable(proposedParams,"L1_optimal_snr",*snr_ptr * (new_x/old_x));
-  if((snr_ptr=LALInferenceGetVariable(currentParams,"V1_optimal_snr")))
-    LALInferenceSetREAL8Variable(proposedParams,"V1_optimal_snr",*snr_ptr * (new_x/old_x));
+    REAL8 *snr_ptr=NULL;
+    char ifo_names[5][2] = {"H1", "L1", "V1", "I1", "J1"};
+    char comp_string[MAX_STRLEN]="";
+    UINT4 i=0;
+    for (i=0; i<5; i++)
+    {
+        sprintf(comp_string,"%s_%s",ifo_names[i],"_optimal_snr");
+        if(LALInferenceCheckVariable(currentParams,comp_string))
+        {
+            if((snr_ptr=LALInferenceGetVariable(currentParams,comp_string)))
+                LALInferenceSetREAL8Variable(proposedParams,comp_string,*snr_ptr * (new_x/old_x));
+        }
+    }
   
   
   REAL8 logxdjac;
