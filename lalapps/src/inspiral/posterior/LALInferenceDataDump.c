@@ -24,6 +24,7 @@
 #include <lal/LALInference.h>
 #include <lal/LALInferenceInit.h>
 #include <lal/LALInferenceReadData.h>
+#include <lal/LALInferenceCalibrationErrors.h>
 
 int main(int argc, char *argv[]){
   ProcessParamsTable *procParams = NULL;
@@ -33,7 +34,10 @@ int main(int argc, char *argv[]){
 
   runState = LALInferenceInitRunState(procParams);
 
-  if(runState)
+  if(runState) {
     LALInferenceInjectInspiralSignal(runState->data,runState->commandLine);
 
+    /* Simulate calibration errors */
+    LALInferenceApplyCalibrationErrors(runState->data,runState->commandLine);
+  }
 }

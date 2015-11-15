@@ -69,9 +69,6 @@ LALInferenceRunState *LALInferenceInitRunState(ProcessParamsTable *command_line)
     if (run_state->data == NULL)
         return(NULL);
 
-    /* Apply calibration errors if desired*/
-    LALInferenceApplyCalibrationErrors(run_state, command_line);
-
     /* Setup the random number generator */
     gsl_rng_env_setup();
     run_state->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
