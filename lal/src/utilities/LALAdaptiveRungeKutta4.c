@@ -412,6 +412,7 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
     REAL8 t, tnew, h0;
     REAL8Array *buffers = NULL;
     REAL8 *temp = NULL, *y, *y0, *dydt_in, *dydt_in0, *dydt_out, *yerr; /* aliases */
+    REAL8Array *output = NULL; /* This is where we'll store the pointer for the output. */
 
     /* note: for speed, this replaces the single CALLGSL wrapper applied before each GSL call */
     XLAL_BEGINGSL;
@@ -423,7 +424,8 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
     bufferlength = (int)((tend - tinit) / deltat_or_h0) + 2;   /* allow for the initial value and possibly a final semi-step */
     buffers = XLALCreateREAL8ArrayL(2, dim + 1, bufferlength); /* 2-dimensional array, ((dim+1)) x bufferlength */
     temp = LALCalloc(6 * dim, sizeof(REAL8));
-    if (!temp) {
+
+    if (!buffers || !temp) {
         errnum = XLAL_ENOMEM;
         goto bail_out;
     }
@@ -552,20 +554,20 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
     if (outputlength == 0)
         goto bail_out;
 
-    (*t_and_y_out) = XLALCreateREAL8ArrayL(2,(dim + 3),outputlength); // dim=4 (4 evolved variables) plus one for time, plus two for amp&phase.
+    output = XLALCreateREAL8ArrayL(2,(dim + 3),outputlength); // dim=4 by default (4 evolved variables) plus one for time, plus two for amp&phase.
 
-    if (!(*t_and_y_out)) {
+    if (!output) {
         errnum = XLAL_ENOMEM;   /* ouch again, ran out of memory */
-        if (*t_and_y_out)
-            XLALDestroyREAL8Array(*t_and_y_out);
+        if (output)
+            XLALDestroyREAL8Array(output);
         outputlength = 0;
         goto bail_out;
     }
 
     for(UINT8 j=0;j<outputlength;j++) {
-      (*t_and_y_out)->data[j] = buffers->data[j];
+      output->data[j] = buffers->data[j];
       for(UINT8 i=1;i<=dim;i++) {
-        (*t_and_y_out)->data[i*outputlength + j] = buffers->data[i*bufferlength + j];
+        output->data[i*outputlength + j] = buffers->data[i*bufferlength + j];
       }
     }
     /* deallocate stuff and return */
@@ -573,12 +575,15 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
 
     XLAL_ENDGSL;
 
+    if (buffers)
+        XLALDestroyREAL8Array(buffers); /* let's be careful, although all these checks may not be needed */
     if (temp)
         LALFree(temp);
 
     if (errnum)
         XLAL_ERROR(errnum);
 
+    *t_and_y_out = output;
     return outputlength;
 }
 

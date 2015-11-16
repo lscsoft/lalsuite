@@ -191,9 +191,6 @@ static int SEOBNRv2OptimizedInterpolatorIncludeAmpPhase(REAL8Array *yin, REAL8 t
     /* deallocate stuff and return */
   bail_out:
 
-    if (yin)
-        XLALDestroyREAL8Array(yin); /* let's be careful, although all these checks may not be needed */
-
     if (interp)
         XLAL_CALLGSL(gsl_spline_free(interp));
     if (accel)

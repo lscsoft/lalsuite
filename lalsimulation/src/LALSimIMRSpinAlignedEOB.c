@@ -397,6 +397,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   LALAdaptiveRungeKutta4Integrator       *integrator = NULL;
   REAL8Array              *dynamics   = NULL;
   REAL8Array              *dynamicsHi = NULL;
+
   INT4                    retLen;
   REAL8  UNUSED           tMax;
 
@@ -748,11 +749,11 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   integrator->retries = 1;
 
   if(use_optimized_v2) {
-    /* OPTIMIZED: */
-    REAL8Array *dynamicstmp = NULL;
+    REAL8Array              *dynamicstmp   = NULL;
     retLen = XLALAdaptiveRungeKutta4NoInterpolate( integrator, &seobParams, values->data, 0., 20./mTScaled, deltaT/mTScaled, &dynamicstmp );
     GenerateAmpPhaseFromEOMSoln(retLen,dynamicstmp->data,&seobParams);
     retLen = SEOBNRv2OptimizedInterpolatorIncludeAmpPhase(dynamicstmp, 0., deltaT/mTScaled, retLen, &dynamics);
+    XLALDestroyREAL8Array( dynamicstmp );
     /* END OPTIMIZED */
   } else {
     retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data, 0., 20./mTScaled, deltaT/mTScaled, &dynamics );
@@ -817,10 +818,11 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
   if(use_optimized_v2) {
     /* OPTIMIZED: */
-    REAL8Array *dynamicstmp = NULL;
-    retLen = XLALAdaptiveRungeKutta4NoInterpolate( integrator, &seobParams, values->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicstmp );
-    GenerateAmpPhaseFromEOMSoln(retLen,dynamicstmp->data,&seobParams);
-    retLen = SEOBNRv2OptimizedInterpolatorIncludeAmpPhase(dynamicstmp, 0., deltaTHigh/mTScaled, retLen, &dynamicsHi);
+    REAL8Array              *dynamicsHitmp = NULL;
+    retLen = XLALAdaptiveRungeKutta4NoInterpolate( integrator, &seobParams, values->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsHitmp );
+    GenerateAmpPhaseFromEOMSoln(retLen,dynamicsHitmp->data,&seobParams);
+    retLen = SEOBNRv2OptimizedInterpolatorIncludeAmpPhase(dynamicsHitmp, 0., deltaTHigh/mTScaled, retLen, &dynamicsHi);
+    XLALDestroyREAL8Array( dynamicsHitmp );
     /* END OPTIMIZED */
   } else {
     retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsHi );
@@ -1275,6 +1277,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   XLALAdaptiveRungeKutta4Free( integrator );
   XLALDestroyREAL8Array( dynamics );
   XLALDestroyREAL8Array( dynamicsHi );
+
   XLALDestroyREAL8Vector( sigReHi );
   XLALDestroyREAL8Vector( sigImHi );
   XLALDestroyREAL8Vector( omegaHi );
