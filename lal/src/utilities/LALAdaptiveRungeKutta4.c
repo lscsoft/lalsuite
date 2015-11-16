@@ -408,7 +408,7 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
     int status; /* used throughout */
 
     /* needed for the integration */
-    size_t dim, outputlength, bufferlength, retries;
+    size_t dim, outputlength=0, bufferlength, retries;
     REAL8 t, tnew, h0;
     REAL8Array *buffers = NULL;
     REAL8 *temp = NULL, *y, *y0, *dydt_in, *dydt_in0, *dydt_out, *yerr; /* aliases */
@@ -442,7 +442,6 @@ int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * inte
 
     integrator->returncode = 0;
 
-    outputlength = 0;
     retries = integrator->retries;
 
     t = tinit;
