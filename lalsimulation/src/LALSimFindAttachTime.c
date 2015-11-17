@@ -757,10 +757,12 @@ INT4 XLALSimCheckRDattachment(
     REAL8 timemaxR = timeVec->data[0], timemaxL = 0.;
 
     REAL8 maxL = Amp[0];
+    UINT4 maxLidx = i_att - 1;
     for (i=0; i<i_att; i++){
         if (Amp[i] >= maxL){
            maxL = Amp[i];
             timemaxL = timeVec->data[i];
+            maxLidx = i;
             if (debugPK){
                 XLAL_PRINT_INFO("i, timemaxL, maxL = %d %f %f\n",i,timemaxL,maxL);fflush(NULL);
             }
@@ -780,7 +782,12 @@ INT4 XLALSimCheckRDattachment(
             }
         }
     }
-    *timediff = timemaxR - timemaxL;
+    if ( maxLidx == i_att - 1 ) {
+        *timediff = timemaxR - timemaxL;
+    }
+    else {
+        *timediff = 0.;
+    }
     if (debugPK){
         XLAL_PRINT_INFO(" the ratio of amplitudes = %f  , ampls = %f, %f \n", maxR/maxL, maxR, maxL);fflush(NULL);
         XLAL_PRINT_INFO(" timemaxR, timemaxL = %f %f \n", timemaxR,timemaxL);fflush(NULL);
