@@ -329,19 +329,16 @@ def gracedb_sky_map(
     instruments = set(sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
 
     # Read PSDs.
-    if psd_file is None:
-        psds = None
-    else:
-        xmldoc, _ = ligolw_utils.load_fileobj(
-            psd_file, contenthandler=lal.series.PSDContentHandler)
-        psds = lal.series.read_psd_xmldoc(xmldoc)
+    xmldoc, _ = ligolw_utils.load_fileobj(
+        psd_file, contenthandler=lal.series.PSDContentHandler)
+    psds = lal.series.read_psd_xmldoc(xmldoc)
 
-        # Rearrange PSDs into the same order as the sngl_inspirals.
-        psds = [psds[sngl_inspiral.ifo] for sngl_inspiral in sngl_inspirals]
+    # Rearrange PSDs into the same order as the sngl_inspirals.
+    psds = [psds[sngl_inspiral.ifo] for sngl_inspiral in sngl_inspirals]
 
-        # Interpolate PSDs.
-        psds = [timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data)
-            for psd in psds]
+    # Interpolate PSDs.
+    psds = [timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data)
+        for psd in psds]
 
     # TOA+SNR sky localization
     prob, epoch, elapsed_time = ligolw_sky_map(sngl_inspirals, approximant,
