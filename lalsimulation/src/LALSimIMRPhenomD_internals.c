@@ -535,6 +535,8 @@ static double EradRational0815(double eta, double chi1, double chi2) {
 static double fring(double eta, double chi1, double chi2, double finspin) {
   double return_val;
 
+  if (finspin > 1.0) XLAL_ERROR(XLAL_EDOM, "PhenomD fring function: final spin > 1.0 not supported\n");
+
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
   gsl_spline *iFring = gsl_spline_alloc(gsl_interp_cspline, QNMData_length);
   gsl_spline_init(iFring, QNMData_a, QNMData_fring, QNMData_length);
@@ -552,6 +554,9 @@ static double fring(double eta, double chi1, double chi2, double finspin) {
  */
 static double fdamp(double eta, double chi1, double chi2, double finspin) {
   double return_val;
+
+  if (finspin > 1.0) XLAL_ERROR(XLAL_EDOM, "PhenomD fdamp function: final spin > 1.0 not supported\n");
+
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
   gsl_spline *iFdamp = gsl_spline_alloc(gsl_interp_cspline, QNMData_length);
   gsl_spline_init(iFdamp, QNMData_a, QNMData_fdamp, QNMData_length);
