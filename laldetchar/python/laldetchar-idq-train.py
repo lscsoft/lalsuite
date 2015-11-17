@@ -450,7 +450,7 @@ while gpsstart < gpsstop:
 
             trigger_dict.include([[gpsstart-lookback-padding, gpsstart + stride+padding]])
             trigger_dict.include([[gpsstart-lookback, gpsstart + stride]], channels=[gwchannel])
-               
+                
             ### define cleans
             logger.info('  constructing cleans')
             dirtyseg = event.vetosegs(trigger_dict[gwchannel], clean_window, clean_threshold)
@@ -465,7 +465,6 @@ while gpsstart < gpsstop:
             if not opts.ignore_science_segments:
                 logger.info('  filtering trigger_dict through scisegs')
                 trigger_dict.include(scisegs) ### already loaded into memory above here
-                clean_gps = [ l[0] for l in event.include( [[gps] for gps in clean_gps], scisegs, tcent=0)] ### filter clean times through scisegs
 
             ### build vectors, also writes them into pat
             logger.info('  writting %s'%pat)

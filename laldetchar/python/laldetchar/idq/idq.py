@@ -361,11 +361,6 @@ def kdename(directory, classifier, ifo, tag, t, stride):
 def gdb_summary(directory, classifier, ifo, tag, t, stride):
     return "%s/%s_idq_%s_summary%s-%d-%d.txt"%(directory, ifo, classifier, tag, t, stride)
 
-#def frame2segment( directory, classifier, ifo, FAPthr, tag, right_padding, left_padding, t_lag, widen, t, stride ):
-#    return "%s/%s_%s_FAP-%.3e_rp-%.3f_lp-%.3f_tl-%.3f_wd-%.3f%s-%s-%d.seg"%(directory, ifo, classifier, FAPthr, right_padding, left_padding, t_lag, widen, tag, t, stride)
-def frame2segment( directory, classifier, ifo, FAPthr, tag, right_padding, left_padding, t_lag, t, stride ):
-    return "%s/%s_%s_FAP-%.3e_rp-%.3f_lp-%.3f_tl-%.3f%s-%d-%d.seg"%(directory, ifo, classifier, FAPthr, right_padding, left_padding, t_lag, tag, t, stride)
-
 #=================================================
 # extract start/dur
 #=================================================
@@ -2423,69 +2418,6 @@ def timeseries_to_segments(t, ts, thr):
         return (segs, min_TS)
     else:
         return ([], None)
-
-def combine_gwf(filenames, channels):
-    """
-    combine mutliple frame files into a single time-series. Assumes filenames have the standard LIGO naming convention : *-start-dur.suffix
-    Also assumes that filenames are sorted into chronological order
-
-    returns a list of arrays, with each array consisting of only contiguous data
-        return timeseries, times
-
-    channels is a list of channel names that are to be read from the frames.
-    channels will be stored in timeseries[i] in the order in which they appear in "channels"
-    """
-
-    n = len(channels)
-    if n < 1:
-        return numpy.array([]), numpy.array([])
-    elif n > 1:
-        ts = numpy.array([[]]*n)
-    else:
-        ts = numpy.array([[]])
-
-    t = numpy.array([])
-
-    times = []
-    timeseries = []
-
-    end = False
-    for filename in filenames:
-        _start, _end = extract_start_stop(filename, suffix='.gwf')
-        _dur = _end-_start
-
-        if not end or end==_start: # beginning of data
-            end = _end
-            
-            _ts = []
-            for ind, channel in enumerate(channels):
-                _ts.append( Fr.frgetvect1d( filename, channel )[0] )
-            _ts = numpy.array( _ts )
-
-            ts = numpy.concatenate((ts, _ts), axis=1)
-            len_ts = len(_ts[0])
-            t = numpy.concatenate( (t, numpy.arange(_start, _end, 1.0*_dur/len_ts) ) )
-
-        else:
-            # gap in the data!
-            times.append(t)  # put old continuous data into lists
-            timeseries.append(ts)
-
-            ts = []
-            for ind, channel in enumerate(channels):
-                ts.append( Fr.frgetvect1d( filename, channel )[0] )
-            ts = numpy.array( ts )
-            len_ts = len(ts[0])
-            t = numpy.arange(_start, _end, 1.0*_dur/len_ts)
-            end = _end
-
-    times.append(t)
-    timeseries.append(ts)
-
-    if n > 1:
-        return (times, timeseries)
-    else:
-        return (times, [ts[0] for ts in timeseries])
 
 def combine_ts(filenames, n=1):
     """ 

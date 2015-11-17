@@ -448,7 +448,7 @@ f_ax.set_ylabel('%s FAP' % opts.classifier, color='b')
 #r_ax.set_ylabel("$\mathrm{rank}_{\mathrm{%s}}$" % opts.classifier)
 #f_ax.set_ylabel("$\mathrm{FAP}_{\mathrm{%s}}$" % opts.classifier)
 
-r_ax.set_xlabel('time [seconds after %.3f]' % opts.plotting_gps_start)
+r_ax.set_xlabel('time [seconds after %d]' % opts.plotting_gps_start)
 
 r_ax.set_xlim(xmin=0, xmax=opts.plotting_gps_end - opts.plotting_gps_start)
 f_ax.set_xlim(r_ax.get_xlim())

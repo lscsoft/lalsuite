@@ -35,7 +35,6 @@ pybin_scripts = \
 	laldetchar-idq-gst-sender \
 	laldetchar-idq-gst-relay \
 	laldetchar-idq-gst-listener \
-	laldetchar-idq-frames-to-segments
 	$(END_OF_LIST)
 
 endif
