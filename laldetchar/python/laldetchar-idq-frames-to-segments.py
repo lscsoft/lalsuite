@@ -303,7 +303,6 @@ for classifier in opts.classifier:
             print "\t\tFAPthr : %.6e"%(FAPthr)
        
             ### generate segments for this threshold
-#            T, TS = idq.timeseries_in_segments( T, TS, modified_scisegs )
             segs, min_TS = idq.timeseries_to_segments(T[:], -TS[:], -FAPthr)
 
             ### transform segments if requested
@@ -339,9 +338,8 @@ for classifier in opts.classifier:
             logger.info('taking intersection of vetosegs and scisegs')
             segs = event.andsegments( [scisegs, segs] )
 
-            this_start = max( scisegs[0][0], int(T[0]+opts.t_lag) )
-            this_end = min( scisegs[-1][1], int(round(T[-1]+opts.t_lag, 0)))
-            this_dur = this_end - this_start
+            this_start = int(T[0])
+            this_dur = len(T)*(T[1]-T[0])
 #            filename = idq.frame2segment( opts.output_dir, classifier, ifo, FAPthr, usertag, opts.right_padding, opts.left_padding, opts.t_lag, opts.widen, this_start, this_dur )
             filename = idq.frame2segment( opts.output_dir, classifier, ifo, FAPthr, usertag, opts.right_padding, opts.left_padding, opts.t_lag, this_start, this_dur )
             logger.info('\t\twriting segments -> %s'%(filename))
