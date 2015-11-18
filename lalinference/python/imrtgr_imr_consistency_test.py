@@ -21,6 +21,7 @@ import time, os
 import lalinference.imrtgr.imrtgrutils as tgr
 import pickle, gzip
 import sys 
+from pylal import git_version
 
 from matplotlib import rc
 import matplotlib
@@ -129,15 +130,11 @@ if __name__ == '__main__':
   # creating file to save the run command
   run_command = open('%s/command.txt'%(out_dir),'w')
   for arg in sys.argv:
-    run_command.write('%s ' %arg)
+    run_command.write('%s\n' %arg)
+  run_command.write("\n")
+  run_command.write("\n")
+  run_command.write("%s"%git_version.verbose_msg)
   run_command.close()
-
-  # creating the parameter table
-  param_table = [['Upper cutoff freq for the inspiral analysis: %s Hz'%insp_fhigh],
-                ['Lower cutoff freq for the ringdown analysis: %s Hz'%ring_flow],
-                ['Waveform approximant: %s'%(waveform)],
-                ['Final mass/spin fitting formula: %s'%(fit_formula)]]
-  np.savetxt('%s/summary_table.txt'%(out_dir), np.array(param_table), delimiter='\t', fmt='%s')
 
   # creating soft links for lalinference results
   insp_posplots = insp_post.replace("/posterior_samples.dat"," ")
@@ -172,24 +169,24 @@ if __name__ == '__main__':
   ###############################################################################################
   insp_data = np.genfromtxt(insp_post, dtype=None, names=True)
   m1_i, m2_i = insp_data['m1'], insp_data['m2']
-  if ('a1' in insp_data.dtype.names) and ('a2' in insp_data.dtype.names):
-    chi1_i, chi2_i = insp_data['a1'], insp_data['a2']
+  if ('a1z' in insp_data.dtype.names) and ('a2z' in insp_data.dtype.names):
+    chi1_i, chi2_i = insp_data['a1z'], insp_data['a2z']
   else:
     chi1_i, chi2_i = np.zeros(len(m1_i)), np.zeros(len(m2_i))
   Mf_i, af_i = tgr.calc_final_mass_spin(m1_i, m2_i, chi1_i, chi2_i, fit_formula)
 
   ring_data = np.genfromtxt(ring_post, dtype=None, names=True)
   m1_r, m2_r = ring_data['m1'], ring_data['m2']
-  if ('a1' in ring_data.dtype.names) and ('a2' in ring_data.dtype.names):
-    chi1_r, chi2_r = ring_data['a1'], ring_data['a2']
+  if ('a1z' in ring_data.dtype.names) and ('a2z' in ring_data.dtype.names):
+    chi1_r, chi2_r = ring_data['a1z'], ring_data['a2z']
   else:
     chi1_r, chi2_r = np.zeros(len(m1_r)), np.zeros(len(m2_r))
   Mf_r, af_r = tgr.calc_final_mass_spin(m1_r, m2_r, chi1_r, chi2_r, fit_formula)
 
   imr_data = np.genfromtxt(imr_post, dtype=None, names=True)
   m1_imr, m2_imr = imr_data['m1'], imr_data['m2']
-  if ('a1' in imr_data.dtype.names) and ('a2' in imr_data.dtype.names):
-    chi1_imr, chi2_imr = imr_data['a1'], imr_data['a2']
+  if ('a1z' in imr_data.dtype.names) and ('a2z' in imr_data.dtype.names):
+    chi1_imr, chi2_imr = imr_data['a1z'], imr_data['a2z']
   else:
     chi1_imr, chi2_imr = np.zeros(len(m1_imr)), np.zeros(len(m2_imr))
   Mf_imr, af_imr = tgr.calc_final_mass_spin(m1_imr, m2_imr, chi1_imr, chi2_imr, fit_formula)
@@ -288,11 +285,19 @@ if __name__ == '__main__':
   P_dMfbyMf = np.sum(P_dMfbyMf_dafbyaf, axis=0) * dy
   P_dafbyaf = np.sum(P_dMfbyMf_dafbyaf, axis=1) * dx
   
-  # injection confidence
+  # GR confidence
   conf_v1v2 = confidence(P_dMfbyMf_dafbyaf)
-  inj_height = P_dMfbyMf_dafbyaf[np.argmin(abs(dMfbyMf_vec)), np.argmin(abs(dafbyaf_vec))]
-  inj_level = conf_v1v2.level_from_height(inj_height)
-  print 'GR is consistent with %.1f%% confidence level'%(100.*inj_level)
+  gr_height = P_dMfbyMf_dafbyaf[np.argmin(abs(dMfbyMf_vec)), np.argmin(abs(dafbyaf_vec))]
+  gr_conf_level = conf_v1v2.level_from_height(gr_height)
+  print 'GR is consistent with %.1f%% confidence level'%(100.*gr_conf_level)
+
+  # creating the parameter table
+  param_table = [['Upper cutoff freq for the inspiral analysis: %s Hz'%insp_fhigh],
+                ['Lower cutoff freq for the ringdown analysis: %s Hz'%ring_flow],
+                ['Waveform approximant: %s'%(waveform)],
+                ['Final mass/spin fitting formula: %s'%(fit_formula)],
+		['No deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level)]]
+  np.savetxt('%s/summary_table.txt'%(out_dir), np.array(param_table), delimiter='\t', fmt='%s')
 
   # save results 
   np.savetxt(out_dir+'/data/Mfaf.dat', (Mf_bins,af_bins))
@@ -305,7 +310,7 @@ if __name__ == '__main__':
   np.savetxt(out_dir+'/data/P_dMfbyMf_dafbyaf.dat', P_dMfbyMf_dafbyaf)
   np.savetxt(out_dir+'/data/P_dMfbyMf.dat', P_dMfbyMf)
   np.savetxt(out_dir+'/data/P_dafbyaf.dat', P_dafbyaf)
-  np.savetxt(out_dir+'/data/GR_confidence.txt', [inj_level])
+  np.savetxt(out_dir+'/data/GR_confidence.txt', [gr_conf_level])
 
   #########################################################################################
 
