@@ -128,7 +128,7 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
                            void UNUSED *funcParams
                           )
 {
-  int debugPK = 01; int debugPKverbose = 0;
+  int debugPK = 0; int debugPKverbose = 0;
   INT4 i;
   SpinEOBParams UNUSED *params = (SpinEOBParams *)funcParams;
 
@@ -1801,6 +1801,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   /* Spin-EOB parameters */
   seobParams.alignedSpins = 0;
   seobParams.tortoise     = 1;
+  seobParams.ignoreflux = 0;
   seobParams.sigmaStar    = sigmaStar;
   seobParams.sigmaKerr    = sigmaKerr;
   seobParams.seobCoeffs   = &seobCoeffs;

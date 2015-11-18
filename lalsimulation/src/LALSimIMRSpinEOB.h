@@ -101,6 +101,7 @@ tagSpinEOBParams
   REAL8                   prev_dr;
   int                     alignedSpins;
   int                     tortoise;
+  int ignoreflux;
 }
 SpinEOBParams;
 

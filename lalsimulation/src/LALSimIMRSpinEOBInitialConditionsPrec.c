@@ -346,7 +346,10 @@ XLALFindSphericalOrbitPrec(
 		rootParams->values[i + 6] /= mTotal * mTotal;
 		rootParams->values[i + 9] /= mTotal * mTotal;
 	}
-	status = XLALSpinPrecHcapNumericalDerivativeNoFlux(0, rootParams->values, tmpDValues, rootParams->params);
+    UINT4 oldignoreflux = rootParams->params->ignoreflux;
+    rootParams->params->ignoreflux = 1;
+	status = XLALSpinPrecHcapNumericalDerivative(0, rootParams->values, tmpDValues, rootParams->params);
+    rootParams->params->ignoreflux = oldignoreflux;
 	for (int i = 0; i < 3; i++) {
 		rootParams->values[i + 6] *= mTotal * mTotal;
 		rootParams->values[i + 9] *= mTotal * mTotal;
@@ -464,7 +467,10 @@ GSLSpinHamiltonianDerivWrapperPrec(double x,	/**<< Derivative at x */
 		cartValues[i + 6] /= mTotal * mTotal;
 		cartValues[i + 9] /= mTotal * mTotal;
 	}
-	status = XLALSpinPrecHcapNumericalDerivativeNoFlux(0, cartValues, tmpDValues, dParams->params);
+    UINT4 oldignoreflux = dParams->params->ignoreflux;
+    dParams->params->ignoreflux = 1;
+	status = XLALSpinPrecHcapNumericalDerivative(0, cartValues, tmpDValues, dParams->params);
+    dParams->params->ignoreflux = oldignoreflux;
 	for (int i = 0; i < 3; i++) {
 		cartValues[i + 6] *= mTotal * mTotal;
 		cartValues[i + 9] *= mTotal * mTotal;
@@ -1135,7 +1141,10 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 		cartValues[i + 6] /= mTotal * mTotal;
 		cartValues[i + 9] /= mTotal * mTotal;
 	}
-	status = XLALSpinPrecHcapNumericalDerivativeNoFlux(0, cartValues, tmpDValues, params);
+    UINT4 oldignoreflux = params->ignoreflux;
+    params->ignoreflux = 1;
+	status = XLALSpinPrecHcapNumericalDerivative(0, cartValues, tmpDValues, params);
+    params->ignoreflux = oldignoreflux;
 	for (i = 0; i < 3; i++) {
 		cartValues[i + 6] *= mTotal * mTotal;
 		cartValues[i + 9] *= mTotal * mTotal;
@@ -1236,7 +1245,11 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 			cartValues[i + 6] /= mTotal * mTotal;
 			cartValues[i + 9] /= mTotal * mTotal;
 		}
-		status = XLALSpinPrecHcapNumericalDerivativeNoFlux(0, cartValues, tmpDValues, params);
+        oldignoreflux = params->ignoreflux;
+        params->ignoreflux = 1;
+        params->seobCoeffs->updateHCoeffs = 1;
+		status = XLALSpinPrecHcapNumericalDerivative(0, cartValues, tmpDValues, params);
+        params->ignoreflux = oldignoreflux;
 		for (i = 0; i < 3; i++) {
 			cartValues[i + 6] *= mTotal * mTotal;
 			cartValues[i + 9] *= mTotal * mTotal;
