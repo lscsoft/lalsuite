@@ -103,7 +103,7 @@ XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
 
 	/*
 	 * l = 2, Eqs. A8a and A8b for rho, Eq. A15a for f, Eqs. 20 and 21 of
-	 * DIN and Eqs. 27a and 27b of PBFRT for delta
+	 * DIN and Eqs. 27a and 27b of PBFRT for delta as well as eqns 28-29 of PBRT 
 	 */
 
 	coeffs->delta22vh3 = 7. / 3.;
@@ -241,7 +241,7 @@ XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
 			break;
 		}
 	} else {
-		coeffs->f21v1 = -3. * chiA / 2.;
+		coeffs->f21v1 = -3. * chiA / 2.; // Odd modes in dm->0 limit, note that there is a typo in Taracchini et.al. discussion after A7 (even->odd)
 		switch (SpinAlignedEOBversion) {
 		case 1:
 			coeffs->f21v3 = 0.0;
@@ -331,7 +331,7 @@ XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
 	}
 
 	/*
-	 * l = 4, Eqs. A10a - A10d for delta, Eq. A15d for f Eqs. 25 - 28 of
+	 * l = 4, Eqs. A10a - A10d for rho, Eq. A15d for f Eqs. 25 - 28 of
 	 * DIN and Eqs. 27f - 27i of PBFRT for delta
 	 */
 

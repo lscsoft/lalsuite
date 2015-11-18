@@ -100,7 +100,7 @@ XLALInspiralPrecSpinFactorizedFlux(
 	if (lMax < 2) {
 		XLAL_ERROR_REAL8(XLAL_EINVAL);
 	}
-	/* Omegs is the derivative of phi */
+	/* Omega is the derivative of phi */
 	omegaSq = omega * omega;
 
 	v = cbrt(omega);
@@ -114,10 +114,9 @@ XLALInspiralPrecSpinFactorizedFlux(
 		 * Assume that initial conditions are available at this
 		 * point, to compute the chiS and chiA parameters. Calculate
 		 * the values of chiS and chiA, as given in Eq.16 of
-		 * Precessing EOB paper. Assuming \vec{L} to be pointing in
+		 * Precessing EOB paper Pan et.al. arXiv:1307.6232 (or PRD 89, 084006 (2014)). Assuming \vec{L} to be pointing in
 		 * the direction of \vec{r}\times\vec{p}
 		 */
-		/* TODO: Check the mass scaling of spins */
 		REAL8		rcrossp  [3], rcrosspMag, s1dotL, s2dotL;
 		REAL8		chiS    , chiA, tplspin;
 
@@ -143,7 +142,6 @@ XLALInspiralPrecSpinFactorizedFlux(
 		 * Compute the test-particle limit spin of the deformed-Kerr
 		 * background
 		 */
-		/* TODO: Check this is actually the way it works in LAL */
 		switch (SpinAlignedEOBversion) {
 		case 1:
 			tplspin = 0.0;
