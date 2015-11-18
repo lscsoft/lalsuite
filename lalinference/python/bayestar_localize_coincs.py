@@ -68,6 +68,8 @@ parser.add_argument('--keep-going', '-k', default=False, action='store_true',
 parser.add_argument('input', metavar='INPUT.xml[.gz]', default='-', nargs='?',
     type=argparse.FileType('rb'),
     help='Input LIGO-LW XML file [default: stdin]')
+parser.add_argument('--psd-files', nargs='*',
+    help='pycbc-style merged HDF5 PSD files')
 opts = parser.parse_args()
 
 #
@@ -99,19 +101,70 @@ log.info('%s:reading input XML file', opts.input.name)
 xmldoc, _ = ligolw_utils.load_fileobj(
     opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
-reference_psd_filenames_by_process_id = ligolw_bayestar.psd_filenames_by_process_id_for_xmldoc(xmldoc)
+if opts.psd_files: # read pycbc psds here
+    import lal
+    from glue.segments import segment, segmentlist
+    import h5py
 
-@memoized
-def reference_psds_for_filename(filename):
-    xmldoc = ligolw_utils.load_filename(
-        filename, contenthandler=lal.series.PSDContentHandler)
-    psds = lal.series.read_psd_xmldoc(xmldoc)
-    return dict(
-        (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
-        for key, psd in psds.iteritems() if psd is not None)
+    # FIXME: This should be imported from pycbc.
+    DYN_RANGE_FAC =  5.9029581035870565e+20
 
-def reference_psd_for_ifo_and_filename(ifo, filename):
-    return reference_psds_for_filename(filename)[ifo]
+    class psd_segment(segment):
+        def __new__(cls, psd, *args):
+            return segment.__new__(cls, *args)
+        def __init__(self, psd, *args):
+            self.psd = psd
+
+    psdseglistdict = {}
+    for psd_file in opts.psd_files:
+        (ifo, group), = h5py.File(psd_file, 'r').items()
+        psd = [group['psds'][str(i)] for i in range(len(group['psds'].keys()))]
+        psdseglistdict[ifo] = segmentlist(
+            psd_segment(*segargs) for segargs in zip(
+            psd, group['start_time'], group['end_time']))
+
+    def reference_psd_for_sngl(sngl):
+        psd = psdseglistdict[sngl.ifo]
+        try:
+            psd = psd[psd.find(sngl.get_end())].psd
+        except ValueError:
+            raise ValueError(
+                'No PSD found for detector {0} at GPS time {1}'.format(
+                sngl.ifo, sngl.get_end()))
+
+        flow = psd.file.attrs['low_frequency_cutoff']
+        df = psd.attrs['delta_f']
+        kmin = int(flow / df)
+
+        fseries = lal.CreateREAL8FrequencySeries(
+            'psd', psd.attrs['epoch'], kmin * df, df,
+            lal.StrainUnit**2 / lal.HertzUnit, len(psd.value) - kmin)
+        fseries.data.data = psd.value[kmin:] / np.square(DYN_RANGE_FAC)
+
+        return timing.InterpolatedPSD(filter.abscissa(fseries), fseries.data.data)
+
+    def reference_psds_for_sngls(sngl_inspirals):
+        return [reference_psd_for_sngl(sngl) for sngl in sngl_inspirals]
+else:
+    reference_psd_filenames_by_process_id = ligolw_bayestar.psd_filenames_by_process_id_for_xmldoc(xmldoc)
+
+    @memoized
+    def reference_psds_for_filename(filename):
+        xmldoc = ligolw_utils.load_filename(
+            filename, contenthandler=lal.series.PSDContentHandler)
+        psds = lal.series.read_psd_xmldoc(xmldoc)
+        return dict(
+            (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
+            for key, psd in psds.iteritems() if psd is not None)
+
+    def reference_psd_for_ifo_and_filename(ifo, filename):
+        return reference_psds_for_filename(filename)[ifo]
+
+    def reference_psds_for_sngls(sngl_inspirals):
+        return tuple(
+            reference_psd_for_ifo_and_filename(sngl_inspiral.ifo,
+            reference_psd_filenames_by_process_id[sngl_inspiral.process_id])
+            for sngl_inspiral in sngl_inspirals)
 
 approximant, amplitude_order, phase_order = timing.get_approximant_and_orders_from_string(opts.waveform)
 
@@ -124,10 +177,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
 
     # Look up PSDs
     log.info('%s:reading PSDs', coinc.coinc_event_id)
-    psds = tuple(
-        reference_psd_for_ifo_and_filename(sngl_inspiral.ifo,
-        reference_psd_filenames_by_process_id[sngl_inspiral.process_id])
-        for sngl_inspiral in sngl_inspirals)
+    psds = reference_psds_for_sngls(sngl_inspirals)
 
     # Loop over sky localization methods
     for method in opts.method:
