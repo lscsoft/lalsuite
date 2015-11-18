@@ -217,6 +217,10 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
       swig_min_version=2.0.12
       swig_min_version_info="for Octave version ${octave_version}"
     ])
+    LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.0.0],[
+      swig_min_version=3.0.7
+      swig_min_version_info="for Octave version ${octave_version}"
+    ])
 
     # determine where to install Octave bindings: take versioned site .oct file
     # directory given by octave-config, and strip off prefix; thus, if LALSuite
