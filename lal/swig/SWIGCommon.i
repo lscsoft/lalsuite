@@ -1022,11 +1022,11 @@ if (strides[I-1] == 0) {
         if (!SWIG_IsOK(res)) {
           %argument_fail(res, "$type", $symname, $argnum);
         } else {
-          temp.NI = dims[0];
+          temp.NI = %reinterpret_cast(dims[0], SIZET);
           argp = &temp;
         }
       } else {
-        temp.NI = dims[0];
+        temp.NI = %reinterpret_cast(dims[0], SIZET);
         argp = &temp;
       }
     } else {
@@ -1060,7 +1060,7 @@ if (strides[I-1] == 0) {
       if (!SWIG_IsOK(res)) {
         %argument_fail(res, "$type", $symname, $argnum);
       } else {
-        temp.NI = dims[0];
+        temp.NI = %reinterpret_cast(dims[0], SIZET);
         argp = &temp;
       }
     } else {
@@ -1099,7 +1099,7 @@ if (strides[I-1] == 0) {
         if (!SWIG_IsOK(res)) {
           %argument_fail(res, "$type", $symname, $argnum);
         } else {
-          temp.NI = dims[0];
+          temp.NI = %reinterpret_cast(dims[0], SIZET);
           argp = &temp;
         }
       } else {
@@ -1164,13 +1164,13 @@ if (strides[I-1] == 0) {
         if (!SWIG_IsOK(res)) {
           %argument_fail(res, "$type", $symname, $argnum);
         } else {
-          temp.NI = dims[0];
-          temp.NJ = dims[1];
+          temp.NI = %reinterpret_cast(dims[0], SIZET);
+          temp.NJ = %reinterpret_cast(dims[1], SIZET);
           argp = &temp;
         }
       } else {
-        temp.NI = dims[0];
-        temp.NJ = dims[1];
+        temp.NI = %reinterpret_cast(dims[0], SIZET);
+        temp.NJ = %reinterpret_cast(dims[1], SIZET);
         argp = &temp;
       }
     } else {
@@ -1204,8 +1204,8 @@ if (strides[I-1] == 0) {
       if (!SWIG_IsOK(res)) {
         %argument_fail(res, "$type", $symname, $argnum);
       } else {
-        temp.NI = dims[0];
-        temp.NJ = dims[1];
+        temp.NI = %reinterpret_cast(dims[0], SIZET);
+        temp.NJ = %reinterpret_cast(dims[1], SIZET);
         argp = &temp;
       }
     } else {
@@ -1244,8 +1244,8 @@ if (strides[I-1] == 0) {
         if (!SWIG_IsOK(res)) {
           %argument_fail(res, "$type", $symname, $argnum);
         } else {
-          temp.NI = dims[0];
-          temp.NJ = dims[1];
+          temp.NI = %reinterpret_cast(dims[0], SIZET);
+          temp.NJ = %reinterpret_cast(dims[1], SIZET);
           argp = &temp;
         }
       } else {
