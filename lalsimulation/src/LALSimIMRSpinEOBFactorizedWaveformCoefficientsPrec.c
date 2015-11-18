@@ -293,9 +293,9 @@ XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
 	coeffs->rho32v = (4. * chiS * eta) / (-3. * m1Plus3eta);
 	coeffs->rho32v2 = (-4. * a2 * eta2) / (9. * m1Plus3eta2) + (328. - 1115. * eta
 				       + 320. * eta2) / (270. * m1Plus3eta);
-	coeffs->rho32v3 = (2. * (45. * a * m1Plus3eta3
-	     - a * eta * (328. - 2099. * eta + 5. * (733. + 20. * a2) * eta2
-			  - 960. * eta3))) / (405. * m1Plus3eta3);
+	//coeffs->rho32v3 = (2. * (45. * a * m1Plus3eta3
+	//     - a * eta * (328. - 2099. * eta + 5. * (733. + 20. * a2) * eta2
+	//		  - 960. * eta3))) / (405. * m1Plus3eta3);
 	coeffs->rho32v3 = 2. / 9. * a;
 	coeffs->rho32v4 = a2 / 3. + (-1444528.
 		       + 8050045. * eta - 4725605. * eta2 - 20338960. * eta3
