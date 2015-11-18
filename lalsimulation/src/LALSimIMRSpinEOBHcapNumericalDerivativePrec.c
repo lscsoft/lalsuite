@@ -128,7 +128,7 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
 	REAL8		polData  [4];
 
 	REAL8		mass1   , mass2, eta;
-	REAL8 	rrTerm2, pDotS1, pDotS2;
+	UNUSED REAL8 	rrTerm2, pDotS1, pDotS2;
 	REAL8Vector	s1 , s2, s1norm, s2norm, sKerr, sStar;
 	REAL8		s1Data   [3], s2Data[3], s1DataNorm[3], s2DataNorm[3];
 	REAL8		sKerrData[3], sStarData[3];
@@ -518,7 +518,7 @@ static REAL8 XLALSpinPrecHcapNumDerivWRTParam(
             flux = 0.;
     }
     else {
-        XLALPrintError("Wrong ignorflux option in XLALSpinPrecHcapNumericalDerivative!\n",__func__);
+        XLAL_PRINT_INFO("Wrong ignorflux option in XLALSpinPrecHcapNumericalDerivative!\n");
         XLAL_ERROR(XLAL_EFUNC);
     }
 	/*
