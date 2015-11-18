@@ -38,6 +38,7 @@
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceInit.h>
+#include <lal/LALInferenceCalibrationErrors.h>
 #include <LALAppsVCSInfo.h>
 
 
@@ -53,6 +54,7 @@ int main(int argc, char *argv[]){
 
   LALInferenceRunState *state;
   ProcessParamsTable *procParams=NULL;
+  LALInferenceIFOData *data = NULL;
 
   /* Read command line and parse */
   procParams=LALInferenceParseCommandLine(argc,argv);
@@ -68,10 +70,25 @@ int main(int argc, char *argv[]){
   /* And performing any injections specified */
   /* And allocating memory */
   state = LALInferenceInitRunState(procParams);
+
+  if (state == NULL) {
+      if (!LALInferenceGetProcParamVal(procParams, "--help")) {
+          fprintf(stderr, "run state not allocated (%s, line %d).\n",
+                  __FILE__, __LINE__);
+      }
+  } else {
+      data = state->data;
+  }
+
   /* Perform injections if data successful read or created */
   if (state){
-    LALInferenceInjectInspiralSignal(state->data, state->commandLine);
+    LALInferenceInjectInspiralSignal(data, state->commandLine);
   }
+
+  /* Simulate calibration errors. 
+  * NOTE: this must be called after both ReadData and (if relevant) 
+  * injectInspiralTD/FD are called! */
+  LALInferenceApplyCalibrationErrors(data, procParams);
 
   /* Set up the appropriate functions for the nested sampling algorithm */
   if (state){

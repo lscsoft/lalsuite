@@ -39,6 +39,7 @@
 #include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceInit.h>
 #include <lal/LALInferenceReadBurstData.h>
+#include <lal/LALInferenceCalibrationErrors.h>
 #include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/GenerateBurst.h>
 #include <lal/LALSimBurst.h>
@@ -82,6 +83,11 @@ int main(int argc, char *argv[]){
       fprintf(stdout,"WARNING: Injecting a signal from MDC has not been carefully tested yet! \n"); 
       LALInferenceInjectFromMDC(state->commandLine, state->data);
   }
+
+  /* Simulate calibration errors. 
+  * NOTE: this must be called after both ReadData and (if relevant) 
+  * injectInspiralTD/FD are called! */
+  LALInferenceApplyCalibrationErrors(state->data, state->commandLine);
 
   /* Set up the appropriate functions for the nested sampling algorithm */
   if (state){
