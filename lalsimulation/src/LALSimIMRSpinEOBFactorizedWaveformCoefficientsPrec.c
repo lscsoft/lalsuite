@@ -70,7 +70,8 @@ XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients(
 	REAL8		aDelta  , a2, a3;
 
 	/* Combination which appears a lot */
-	REAL8		m1Plus3eta, m1Plus3eta2, m1Plus3eta3;
+	REAL8		m1Plus3eta, m1Plus3eta2;
+    REAL8 UNUSED m1Plus3eta3;
 
 	dM2 = 1. - 4. * eta;
 
