@@ -162,8 +162,10 @@ static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState
   REAL8 phaseWidth = -1.0;
   REAL8 logPrior = 0.0;
 
-  if (runState->commandLine == NULL || !(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp"))|| !(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha"))) {
-    return logPrior;
+  if (runState->commandLine == NULL || (!LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp") &&
+      !LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")))
+  {
+    return 1;
   }
 
   ifo = runState->data;
@@ -202,12 +204,11 @@ UINT4 LALInferenceCubeToConstantCalibrationPrior(LALInferenceRunState *runState,
   REAL8 ampWidth = -1.0;
   REAL8 phaseWidth = -1.0;
 
-  if (runState->commandLine == NULL || !(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp")) ||
-      !(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")))
+  if (runState->commandLine == NULL || (!LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp") &&
+      !LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")))
   {
     return 1;
   }
-
   ifo = runState->data;
   do {
 
