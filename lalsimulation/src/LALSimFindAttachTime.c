@@ -707,7 +707,8 @@ INT4 XLALSimCheckRDattachment(
     REAL8Vector * timeVec,	/**<< Vector containing the time values */
     REAL8Vector * matchrange,	/**<< Time values chosen as points for performing comb matching */
     Approximant approximant,	/**<<The waveform approximant being used */
-    const REAL8 JLN           /**<< cosine of the angle between J and LN at the light ring */
+    const REAL8 JLN,           /**<< cosine of the angle between J and LN at the light ring */
+    REAL8 * timediff /**<< Time diff b/w peaks */
     )
 {
     int debugPK = 0;
@@ -753,21 +754,36 @@ INT4 XLALSimCheckRDattachment(
             }
         }
     }
+    REAL8 timemaxR = timeVec->data[0], timemaxL = 0.;
+
     REAL8 maxL = Amp[0];
     for (i=0; i<i_att; i++){
         if (Amp[i] >= maxL){
            maxL = Amp[i];
-        }
-    }
-    REAL8 maxR = Amp[i_att];
-    for (i=i_att; i<signal1->length; i++){
-        if (Amp[i] >= maxR){
-           maxR = Amp[i];
+            timemaxL = timeVec->data[i];
+            if (debugPK){
+                XLAL_PRINT_INFO("i, timemaxL, maxL = %d %f %f\n",i,timemaxL,maxL);fflush(NULL);
+            }
         }
     }
 
+    timemaxR = timeVec->data[i_att];
+    REAL8 timemaxRtmp = timemaxR;
+    REAL8 maxR = Amp[i_att];
+    for (i=i_att; i<signal1->length; i++){
+        timemaxRtmp = timemaxRtmp + dt;
+        if (Amp[i] >= maxR){
+           maxR = Amp[i];
+           timemaxR = timemaxRtmp;
+            if (debugPK){
+                XLAL_PRINT_INFO("i, timemaxR, maxR = %d %f %f\n",i, timemaxR,maxR);fflush(NULL);
+            }
+        }
+    }
+    *timediff = timemaxR - timemaxL;
     if (debugPK){
         XLAL_PRINT_INFO(" the ratio of amplitudes = %f  , ampls = %f, %f \n", maxR/maxL, maxR, maxL);fflush(NULL);
+        XLAL_PRINT_INFO(" timemaxR, timemaxL = %f %f \n", timemaxR,timemaxL);fflush(NULL);
     }
 
     *ratio = maxR/maxL;
@@ -810,6 +826,8 @@ int XLALSimAdjustRDattachmentTime(
     )
 {
     int debugPK = 0;
+    REAL8 timediff = 0.;
+    REAL8 timediffStore = 0.;
     unsigned int retLenHi = h22->data->length;
     unsigned int i;
     int pass = 0;
@@ -867,7 +885,7 @@ int XLALSimAdjustRDattachmentTime(
         if (debugPK) XLAL_PRINT_INFO("left 2,2 mode tAtt = %f     ", tAtt);
         if( XLALSimCheckRDattachment(signal1, signal2, ratio22, tAtt, 2, 2,
                         dt, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-                        timeVec, matchrange, approximant, JLN ) == XLAL_FAILURE )
+                        timeVec, matchrange, approximant, JLN, &timediff ) == XLAL_FAILURE )
         {
               XLAL_ERROR( XLAL_EFUNC );
         }
@@ -883,16 +901,18 @@ int XLALSimAdjustRDattachmentTime(
         if (debugPK) XLAL_PRINT_INFO("left 2,-2 mode tAtt = %f     ", tAtt);
         if( XLALSimCheckRDattachment(signal1, signal2, ratio2m2, tAtt, 2, -2,
                         dt, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-                        timeVec, matchrange, approximant, JLN ) == XLAL_FAILURE )
+                        timeVec, matchrange, approximant, JLN, &timediff ) == XLAL_FAILURE )
         {
               XLAL_ERROR( XLAL_EFUNC );
         }
         if (debugPK) XLAL_PRINT_INFO("Quality  %f\n", (*ratio22 - thr)*(*ratio22 - thr) + (*ratio2m2 - thr)*(*ratio2m2 - thr));
+        if (debugPK) XLAL_PRINT_INFO("timediff  %f\n", timediff);
 
         if ( thrStore22L != 0. && thrStore2m2L != 0. ) {
-            if ( (*ratio22 - thr)*(*ratio22 - thr) + (*ratio2m2 - thr)*(*ratio2m2 - thr) < (thrStore22L - thr)*(thrStore22L - thr) + (thrStore2m2L - thr)*(thrStore2m2L - thr)  ) {
+            if ( (*ratio22 - thr)*(*ratio22 - thr) + (*ratio2m2 - thr)*(*ratio2m2 - thr) + timediff < (thrStore22L - thr)*(thrStore22L - thr) + (thrStore2m2L - thr)*(thrStore2m2L - thr)  + timediffStore ) {
                 thrStore22L = *ratio22;
                 thrStore2m2L = *ratio2m2;
+                timediffStore = timediff;
                 tLBest = tAtt;
                 if(debugPK)XLAL_PRINT_INFO("tLBest is now %f %f %f %f\n", tLBest, *ratio22 ,*ratio2m2, (*ratio22 - thr)*(*ratio22 - thr) + (*ratio2m2 - thr)*(*ratio2m2 - thr));
             }
@@ -900,6 +920,7 @@ int XLALSimAdjustRDattachmentTime(
         else {
             thrStore22L = *ratio22;
             thrStore2m2L = *ratio2m2;
+            timediffStore = timediff;
             tLBest = tAtt;
         }
 
@@ -927,6 +948,7 @@ int XLALSimAdjustRDattachmentTime(
 
     pass = 0;
     tAtt = *tAttach;
+    timediffStore = 0.;
     while(pass == 0 && (tAtt < tMax-0.5)){
 //        XLAL_PRINT_INFO("tAtt tMax %f %f\n", tAtt, tMax);
         tAtt = tAtt + 0.5;
@@ -966,7 +988,7 @@ int XLALSimAdjustRDattachmentTime(
         if (matchrange->data[1] < iBad){
             if( XLALSimCheckRDattachment(signal1, signal2, ratio22, tAtt, 2, 2,
                             dt, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-                            timeVec, matchrange, approximant, JLN ) == XLAL_FAILURE )
+                            timeVec, matchrange, approximant, JLN, &timediff ) == XLAL_FAILURE )
             {
                   XLAL_ERROR( XLAL_EFUNC );
             }
@@ -983,16 +1005,19 @@ int XLALSimAdjustRDattachmentTime(
             if (debugPK) XLAL_PRINT_INFO("right 2,-2 mode tAtt = %f     ", tAtt);
             if( XLALSimCheckRDattachment(signal1, signal2, ratio2m2, tAtt, 2, -2,
                             dt, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-                            timeVec, matchrange, approximant, JLN ) == XLAL_FAILURE )
+                            timeVec, matchrange, approximant, JLN, &timediff ) == XLAL_FAILURE )
             {
                   XLAL_ERROR( XLAL_EFUNC );
             }
             if (debugPK) XLAL_PRINT_INFO("Quality  %f\n", (*ratio22 - thr)*(*ratio22 - thr) + (*ratio2m2 - thr)*(*ratio2m2 - thr));
+            if (debugPK) XLAL_PRINT_INFO("timediff  %f\n", timediff);
+
 
             if ( thrStore22R != 0. && thrStore2m2R != 0. ) {
-                if ( tRBest < timeVec->data[iBad] && (*ratio22 - thr)*(*ratio22 - thr) + (*ratio2m2 - thr)*(*ratio2m2 - thr) < (thrStore22R - thr)*(thrStore22R - thr) + (thrStore2m2R - thr)*(thrStore2m2R - thr)  ) {
+                if ( tRBest < timeVec->data[iBad] && (*ratio22 - thr)*(*ratio22 - thr) + (*ratio2m2 - thr)*(*ratio2m2 - thr) + timediff < (thrStore22R - thr)*(thrStore22R - thr) + (thrStore2m2R - thr)*(thrStore2m2R - thr) + timediffStore  ) {
                     thrStore22R = *ratio22;
                     thrStore2m2R = *ratio2m2;
+                    timediffStore = timediff;
                     tRBest = tAtt;
                     if(debugPK)XLAL_PRINT_INFO("tRBest is now %f %f %f %f\n", tRBest, *ratio22 , *ratio2m2, (*ratio22 - thr)*(*ratio22 - thr) + (*ratio2m2 - thr)*(*ratio2m2 - thr));
                 }
@@ -1000,6 +1025,7 @@ int XLALSimAdjustRDattachmentTime(
             else {
                 thrStore22R = *ratio22;
                 thrStore2m2R = *ratio2m2;
+                timediffStore = timediff;
                 tRBest = tAtt;
             }
         }

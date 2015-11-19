@@ -96,7 +96,8 @@ INT4 XLALSimCheckRDattachment(
     REAL8Vector * timeVec,
     REAL8Vector * matchrange,
     Approximant approximant,
-    const REAL8 JLN
+    const REAL8 JLN,
+    REAL8 * timediff
 );
 
 int XLALSimAdjustRDattachmentTime(

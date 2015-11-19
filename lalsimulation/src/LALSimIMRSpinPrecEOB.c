@@ -3687,6 +3687,9 @@ int XLALSimIMRSpinEOBWaveformAll(
       REAL8 thr = 1.01;
       REAL8 ratio22 = 1.0;
       REAL8 ratio2m2 = 1.0;
+
+      REAL8 timediff = 0.;
+
       for ( i = 0; i < retLenHi; i++ )
         {
           sigReHi->data[i] = creal(h22JTSHi->data->data[i]);
@@ -3695,7 +3698,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
       if( XLALSimCheckRDattachment(sigReHi, sigImHi, &ratio22, tAttach, 2, 2,
                     deltaTHigh, m1, m2, 0.0, 0.0, chi1L, 0.0, 0.0, chi2L,
-                    &timeHi, rdMatchPoint, spinEOBApproximant, kappaJL ) == XLAL_FAILURE )
+                    &timeHi, rdMatchPoint, spinEOBApproximant, kappaJL, &timediff) == XLAL_FAILURE )
       {
           XLAL_ERROR( XLAL_EFUNC );
       }
@@ -3711,7 +3714,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
       if( XLALSimCheckRDattachment(sigReHi, sigImHi, &ratio2m2, tAttach, 2, -2,
                     deltaTHigh, m1, m2, 0.0, 0.0, chi1L, 0.0, 0.0, chi2L,
-                    &timeHi, rdMatchPoint, spinEOBApproximant, kappaJL ) == XLAL_FAILURE )
+                    &timeHi, rdMatchPoint, spinEOBApproximant, kappaJL, &timediff ) == XLAL_FAILURE )
       {
           XLAL_ERROR( XLAL_EFUNC );
       }
@@ -3719,7 +3722,7 @@ int XLALSimIMRSpinEOBWaveformAll(
       if(ratio22 <= thr && ratio2m2 <=thr){
           pass = 1;
       }
-
+      thr = 1.;
       if (pass == 0){
 
            if (debugPK){
