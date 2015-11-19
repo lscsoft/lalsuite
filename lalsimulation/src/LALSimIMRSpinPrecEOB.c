@@ -89,34 +89,6 @@ static double f_alphadotcosi( double x, void * inparams )
 
 }
 
-/**
- * Stopping condition for dynamics integration based on decrease in omega (NOT USED)
- */
-static int UNUSED
-XLALEOBSpinPrecStopCondition(double UNUSED t,
-                           const double values[],
-                           double dvalues[],
-                           void *funcParams
-                          )
-{
-
-  SpinEOBParams *params = (SpinEOBParams *)funcParams;
-  REAL8 omega, omega_xyz[3];
-  double r2;
-
-  r2 = values[0]*values[0] + values[1]*values[1] + values[2]*values[2];
-  cross_product( values, dvalues, omega_xyz );
-  omega = sqrt(inner_product( omega_xyz, omega_xyz )) / r2;
-
-  /* Terminate when omega reaches peak, and separation is < 6M */
-  if ( r2 < 36. && omega < params->eobParams->omega )
-  {
-    return 1;
-  }
-
-  params->eobParams->omega = omega;
-  return GSL_SUCCESS;
-}
 
 /**
  * Stopping conditions for dynamics integration for SEOBNRv3
