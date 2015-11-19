@@ -51,17 +51,17 @@
 #include "LALSimIMREOBNQCCorrection.c"
 #include "LALSimInspiraldEnergyFlux.c"
 #include "LALSimIMREOBNewtonianMultipole.c"
-#include "LALSimIMREOBFactorizedWaveform.c"
+//#include "LALSimIMREOBFactorizedWaveform.c"
 #include "LALSimIMRSpinEOBFactorizedWaveformPrec.c"
 #include "LALSimIMREOBHybridRingdownPrec.c"
 #include "LALSimIMRSpinEOBAuxFuncs.c"
 #include "LALSimIMRSpinEOBFactorizedWaveformCoefficientsPrec.c"
 #include "LALSimIMRSpinEOBHamiltonianPrec.c"
 #include "LALSimIMRSpinEOBHamiltonian.c"
-#include "LALSimIMRSpinEOBFactorizedWaveform.c"
-#include "LALSimIMRSpinEOBFactorizedFlux.c"
+//#include "LALSimIMRSpinEOBFactorizedWaveform.c"
+//#include "LALSimIMRSpinEOBFactorizedFlux.c"
 #include "LALSimIMRSpinEOBFactorizedFluxPrec.c"
-#include "LALSimIMRSpinEOBHcapNumericalDerivative.c"
+//#include "LALSimIMRSpinEOBHcapNumericalDerivative.c"
 #include "LALSimIMRSpinEOBHcapNumericalDerivativePrec.c"
 #include "LALSimIMRSpinAlignedEOBHcapDerivative.c"
 #include "LALSimIMRSpinEOBInitialConditions.c"
@@ -121,7 +121,9 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
     if (debugPK){  XLAL_PRINT_INFO("XLALEOBSpinPrecStopConditionBasedOnPR:: values = %e %e %e %e %e %e\n", values[6], values[7], values[8], values[9], values[10], values[11]);}
     if (debugPK){  XLAL_PRINT_INFO("XLALEOBSpinPrecStopConditionBasedOnPR:: dvalues = %e %e %e %e %e %e\n",dvalues[6], dvalues[7], dvalues[8], dvalues[9], dvalues[10], dvalues[11]);}
   REAL8 rdot;
+  // this is d(r)/dt obtained by differentiating r2 (see above)
   rdot = inner_product(rdotVec, r) / sqrt(r2);
+  // This is d/dt(pDotr) see pDotr above.
   double prDot = - inner_product( p, r )*rdot/r2
                 + inner_product( pdotVec, r )/sqrt(r2)
                 + inner_product( rdotVec, p )/sqrt(r2);
@@ -161,7 +163,7 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
     return 1;
   }
 
-  /* Terminate if rdot is >0 (OUTspiraling) */
+  /* Terminate if rdot is >0 (OUTspiraling) for separation <4M */
   if ( r2 < 16 && rdot >= 0  )
   {
     if(debugPK){
@@ -171,7 +173,7 @@ XLALEOBSpinPrecStopConditionBasedOnPR(double UNUSED t,
     return 1;
   }
 
-  /* Terminate if dp_R/dt > 0, i.e. radial momentum is increasing */
+  /* Terminate if dp_R/dt > 0, i.e. radial momentum is increasing for separation <2M */
   if(r2 < 4. && prDot > 0. )
   {
     if(debugPK){
@@ -342,884 +344,6 @@ XLALSpinPrecAlignedHiSRStopCondition(double UNUSED t,  /**< UNUSED */
 
 
 /**
- * This function generates spin-aligned SEOBNRv2 waveforms h+ and hx.
- * Currently, only the h22 harmonic is available.
- * STEP 0) Prepare parameters, including pre-computed coefficients
- * for EOB Hamiltonian, flux and waveform
- * STEP 1) Solve for initial conditions
- * STEP 2) Evolve EOB trajectory until reaching the peak of orbital frequency
- * STEP 3) Step back in time by tStepBack and volve EOB trajectory again
- * using high sampling rate, stop at 0.3M out of the "EOB horizon".
- * STEP 4) Locate the peak of orbital frequency for NQC and QNM calculations
- * STEP 5) Calculate NQC correction using hi-sampling data
- * STEP 6) Calculate QNM excitation coefficients using hi-sampling data
- * STEP 7) Generate full inspiral waveform using desired sampling frequency
- * STEP 8) Generate full IMR modes -- attaching ringdown to inspiral
- * STEP 9) Generate full IMR hp and hx waveforms
- */
-UNUSED static int XLALSimIMRSpinPrecAlignedEOBWaveform(
-        REAL8TimeSeries **hplus,     /**<< OUTPUT, +-polarization waveform */
-        REAL8TimeSeries **hcross,    /**<< OUTPUT, x-polarization waveform */
-        const REAL8     phiC,        /**<< coalescence orbital phase (rad) */
-        REAL8           deltaT,      /**<< sampling time step */
-        const REAL8     m1SI,        /**<< mass-1 in SI unit */
-        const REAL8     m2SI,        /**<< mass-2 in SI unit */
-        const REAL8     fMin,        /**<< starting frequency (Hz) */
-        const REAL8     r,           /**<< distance in SI unit */
-        const REAL8     inc,         /**<< inclination angle */
-        const REAL8     spin1z,      /**<< z-component of spin-1, dimensionless */
-        const REAL8     spin2z,       /**<< z-component of spin-2, dimensionless */
-        UINT4           SpinAlignedEOBversion /**<< 1 for SEOBNRv1, 2 for SEOBNRv2 */
-     )
-{
-  /* If the EOB version flag is neither 1 nor 2, exit */
-  if (SpinAlignedEOBversion != 1 && SpinAlignedEOBversion != 2)
-  {
-    XLALPrintError("XLAL Error - %s: SEOBNR version flag incorrectly set to %u\n",
-        __func__, SpinAlignedEOBversion);
-    XLAL_ERROR( XLAL_EERR );
-  }
-
-  Approximant SpinAlignedEOBapproximant = (SpinAlignedEOBversion == 1) ? SEOBNRv1 : SEOBNRv2;
-
-  /*
-   * Check spins
-   */
-  if ( spin1z < -1.0 || spin2z < -1.0 )
-  {
-    XLALPrintError( "XLAL Error - %s: Component spin less than -1!\n", __func__);
-    XLAL_ERROR( XLAL_EINVAL );
-  }
-  /* If either spin > 0.6, model not available, exit */
-  if ( SpinAlignedEOBversion == 1 && ( spin1z > 0.6 || spin2z > 0.6 ) )
-  {
-    XLALPrintError( "XLAL Error - %s: Component spin larger than 0.6!\nSEOBNRv1 is only available for spins in the range -1 < a/M < 0.6.\n", __func__);
-    XLAL_ERROR( XLAL_EINVAL );
-  }
- /* For v2 the upper bound is 0.99 */
-  if ( SpinAlignedEOBversion == 2 && ( spin1z > 0.99 || spin2z > 0.99 ))
-  {
-    XLALPrintError( "XLAL Error - %s: Component spin larger than 0.99!\nSEOBNRv2 is only available for spins in the range -1 < a/M < 0.99.\n", __func__);
-    XLAL_ERROR( XLAL_EINVAL );
-  }
-
-  INT4 i;
-
-  REAL8Vector *values = NULL;
-
-  /* EOB spin vectors used in the Hamiltonian */
-  REAL8Vector *sigmaStar = NULL;
-  REAL8Vector *sigmaKerr = NULL;
-  REAL8       a, tplspin;
-  REAL8       chiS, chiA;
-
-  /* Wrapper spin vectors used to calculate sigmas */
-  REAL8Vector s1Vec, s1VecOverMtMt;
-  REAL8Vector s2Vec, s2VecOverMtMt;
-  REAL8       spin1[3] = {0, 0, spin1z};
-  REAL8       spin2[3] = {0, 0, spin2z};
-  REAL8       s1Data[3], s2Data[3], s1DataNorm[3], s2DataNorm[3];
-
-  /* Parameters of the system */
-  REAL8 m1, m2, mTotal, eta, mTScaled;
-  REAL8 amp0;
-  REAL8 sSub = 0.0;
-  LIGOTimeGPS tc = LIGOTIMEGPSZERO;
-
-  /* Dynamics of the system */
-  REAL8Vector rVec, phiVec, prVec, pPhiVec;
-  REAL8       omega, v, ham;
-
-  /* Cartesian vectors needed to calculate Hamiltonian */
-  REAL8Vector cartPosVec, cartMomVec;
-  REAL8       cartPosData[3], cartMomData[3];
-
-  /* Signal mode */
-  COMPLEX16   hLM;
-  REAL8Vector *sigReVec = NULL, *sigImVec = NULL;
-
-  /* Non-quasicircular correction */
-  EOBNonQCCoeffs nqcCoeffs;
-  COMPLEX16      hNQC;
-  REAL8Vector    *ampNQC = NULL, *phaseNQC = NULL;
-
-  /* Ringdown freq used to check the sample rate */
-  COMPLEX16Vector modefreqVec;
-  COMPLEX16      modeFreq;
-
-  /* Spin-weighted spherical harmonics */
-  COMPLEX16  MultSphHarmP;
-  COMPLEX16  MultSphHarmM;
-
-  /* We will have to switch to a high sample rate for ringdown attachment */
-  REAL8 deltaTHigh;
-  UINT4 resampFac;
-  UINT4 resampPwr;
-  REAL8 resampEstimate;
-
-  /* How far will we have to step back to attach the ringdown? */
-  REAL8 tStepBack;
-  INT4  nStepBack;
-
-  /* Dynamics and details of the high sample rate part used to attach the ringdown */
-  UINT4 hiSRndx;
-  REAL8Vector timeHi, rHi, phiHi, prHi, pPhiHi;
-  REAL8Vector *sigReHi = NULL, *sigImHi = NULL;
-  REAL8Vector *omegaHi = NULL;
-
-  /* Indices of peak frequency and final point */
-  /* Needed to attach ringdown at the appropriate point */
-  UINT4 peakIdx = 0, finalIdx = 0;
-
-  /* (2,2) and (2,-2) spherical harmonics needed in (h+,hx) */
-  REAL8 y_1, y_2, z1, z2;
-
-  /* Variables for the integrator */
-  LALAdaptiveRungeKutta4Integrator       *integrator = NULL;
-  REAL8Array              *dynamics   = NULL;
-  REAL8Array              *dynamicsHi = NULL;
-  INT4                    retLen;
-  REAL8  UNUSED           tMax;
-
-  /* Accuracies of adaptive Runge-Kutta integrator */
-  const REAL8 EPS_ABS = 1.0e-10;
-  const REAL8 EPS_REL = 1.0e-9;
-
-  /*
-   * STEP 0) Prepare parameters, including pre-computed coefficients
-   *         for EOB Hamiltonian, flux and waveform
-   */
-
-  /* Parameter structures containing important parameters for the model */
-  SpinEOBParams           seobParams;
-  SpinEOBHCoeffs          seobCoeffs;
-  EOBParams               eobParams;
-  FacWaveformCoeffs       hCoeffs;
-  NewtonMultipolePrefixes prefixes;
-
-  /* Initialize parameters */
-  m1 = m1SI / LAL_MSUN_SI;
-  m2 = m2SI / LAL_MSUN_SI;
-  mTotal = m1 + m2;
-  mTScaled = mTotal * LAL_MTSUN_SI;
-  eta    = m1 * m2 / (mTotal*mTotal);
-
-    /* For v2 the upper bound is mass ratio 100 */
-    if ( SpinAlignedEOBversion == 2 && eta < 100./101./101.)
-    {
-        XLALPrintError( "XLAL Error - %s: Mass ratio larger than 100!\nSEOBNRv2 is only available for mass ratios up to 100.\n", __func__);
-        XLAL_ERROR( XLAL_EINVAL );
-    }
-
-  amp0 = mTotal * LAL_MRSUN_SI / r;
-
-  if (pow(LAL_PI*fMin*mTScaled,-2./3.) < 10.0)
-  {
-    XLAL_PRINT_WARNING("Waveform generation may fail due to high starting frequency. The starting frequency corresponds to a small initial radius of %.2fM. We recommend a lower starting frequency that corresponds to an estimated starting radius > 10M.", pow(LAL_PI*fMin*mTScaled,-2.0/3.0));
-  }
-
-  /* TODO: Insert potentially necessary checks on the arguments */
-
-  /* Calculate the time we will need to step back for ringdown */
-  tStepBack = 100. * mTScaled;
-  nStepBack = ceil( tStepBack / deltaT );
-
-  /* Calculate the resample factor for attaching the ringdown */
-  /* We want it to be a power of 2 */
-  /* If deltaT > Mtot/50, reduce deltaT by the smallest power of two for which deltaT < Mtot/50 */
-  resampEstimate = 50. * deltaT / mTScaled;
-  resampFac = 1;
-
-  if ( resampEstimate > 1. )
-  {
-    resampPwr = (UINT4)ceil( log2( resampEstimate ) );
-    while ( resampPwr-- )
-    {
-      resampFac *= 2u;
-    }
-  }
-
-
-  /* Allocate the values vector to contain the initial conditions */
-  /* Since we have aligned spins, we can use the 4-d vector as in the non-spin case */
-  if ( !(values = XLALCreateREAL8Vector( 4 )) )
-  {
-    XLAL_ERROR( XLAL_ENOMEM );
-  }
-  memset ( values->data, 0, values->length * sizeof( REAL8 ));
-
-  /* Set up structures and calculate necessary PN parameters */
-  /* Unlike the general case, we only need to calculate these once */
-  memset( &seobParams, 0, sizeof(seobParams) );
-  memset( &seobCoeffs, 0, sizeof(seobCoeffs) );
-  memset( &eobParams, 0, sizeof(eobParams) );
-  memset( &hCoeffs, 0, sizeof( hCoeffs ) );
-  memset( &prefixes, 0, sizeof( prefixes ) );
-
-  /* Before calculating everything else, check sample freq is high enough */
-  modefreqVec.length = 1;
-  modefreqVec.data   = &modeFreq;
-
-  if ( XLALSimIMREOBGenerateQNMFreqV2Prec( &modefreqVec, m1, m2, spin1, spin2, 2, 2, 1, SpinAlignedEOBapproximant ) == XLAL_FAILURE )
-  {
-    XLALDestroyREAL8Vector( values );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  /* If Nyquist freq < 220 QNM freq, exit */
-  if ( deltaT > LAL_PI / creal(modeFreq) )
-  {
-    XLALPrintError( "XLAL Error - %s: Ringdown frequency > Nyquist frequency!\nAt present this situation is not supported.\n", __func__);
-    XLALDestroyREAL8Vector( values );
-    XLAL_ERROR( XLAL_EINVAL );
-  }
-
-  if ( !(sigmaStar = XLALCreateREAL8Vector( 3 )) )
-  {
-    XLALDestroyREAL8Vector( values );
-    XLAL_ERROR( XLAL_ENOMEM );
-  }
-
-  if ( !(sigmaKerr = XLALCreateREAL8Vector( 3 )) )
-  {
-    XLALDestroyREAL8Vector( sigmaStar );
-    XLALDestroyREAL8Vector( values );
-    XLAL_ERROR( XLAL_ENOMEM );
-  }
-
-  seobParams.alignedSpins = 1;
-  seobParams.tortoise     = 1;
-  seobParams.sigmaStar    = sigmaStar;
-  seobParams.sigmaKerr    = sigmaKerr;
-  seobParams.seobCoeffs   = &seobCoeffs;
-  seobParams.eobParams    = &eobParams;
-  seobParams.nqcCoeffs    = &nqcCoeffs;
-  eobParams.hCoeffs       = &hCoeffs;
-  eobParams.prefixes      = &prefixes;
-
-  eobParams.m1  = m1;
-  eobParams.m2  = m2;
-  eobParams.eta = eta;
-
-  s1Vec.length = s2Vec.length = 3;
-  s1VecOverMtMt.length = s2VecOverMtMt.length = 3;
-  s1Vec.data   = s1Data;
-  s2Vec.data   = s2Data;
-  s1VecOverMtMt.data   = s1DataNorm;
-  s2VecOverMtMt.data   = s2DataNorm;
-
-  /* copy the spins into the appropriate vectors, and scale them by the mass */
-  memcpy( s1Data, spin1, sizeof( s1Data ) );
-  memcpy( s2Data, spin2, sizeof( s2Data ) );
-  memcpy( s1DataNorm, spin1, sizeof( s1DataNorm ) );
-  memcpy( s2DataNorm, spin2, sizeof( s2DataNorm ) );
-
-  /* Calculate chiS and chiA */
-
-  chiS = 0.5 * (spin1[2] + spin2[2]);
-  chiA = 0.5 * (spin1[2] - spin2[2]);
-
-  for( i = 0; i < 3; i++ )
-  {
-    s1Data[i] *= m1*m1;
-    s2Data[i] *= m2*m2;
-  }
- for ( i = 0; i < 3; i++ )
-  {
-    s1DataNorm[i] = s1Data[i]/mTotal/mTotal;
-    s2DataNorm[i] = s2Data[i]/mTotal/mTotal;
-  }
-  seobParams.s1Vec    = &s1VecOverMtMt;
-  seobParams.s2Vec    = &s2VecOverMtMt;
-
-  cartPosVec.length = cartMomVec.length = 3;
-  cartPosVec.data = cartPosData;
-  cartMomVec.data = cartMomData;
-  memset( cartPosData, 0, sizeof( cartPosData ) );
-  memset( cartMomData, 0, sizeof( cartMomData ) );
-
-  /* Populate the initial structures */
-  if ( XLALSimIMRSpinEOBCalculateSigmaStar( sigmaStar, m1, m2, &s1Vec, &s2Vec ) == XLAL_FAILURE )
-  {
-    XLALDestroyREAL8Vector( sigmaKerr );
-    XLALDestroyREAL8Vector( sigmaStar );
-    XLALDestroyREAL8Vector( values );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  if ( XLALSimIMRSpinEOBCalculateSigmaKerr( sigmaKerr, m1, m2, &s1Vec, &s2Vec ) == XLAL_FAILURE )
-  {
-    XLALDestroyREAL8Vector( sigmaKerr );
-    XLALDestroyREAL8Vector( sigmaStar );
-    XLALDestroyREAL8Vector( values );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  /* Calculate the value of a */
-  /* XXX I am assuming that, since spins are aligned, it is okay to just use the z component XXX */
-  /* TODO: Check this is actually the way it works in LAL */
-  switch ( SpinAlignedEOBversion )
-  {
-     case 1:
-       tplspin = 0.0;
-       break;
-     case 2:
-       tplspin = (1.-2.*eta) * chiS + (m1 - m2)/(m1 + m2) * chiA;
-       break;
-     default:
-       XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
-       XLAL_ERROR( XLAL_EINVAL );
-       break;
-  }
-  seobParams.a = a = sigmaKerr->data[2];
-  seobParams.chi1 = spin1[2];
-  seobParams.chi2 = spin2[2];
-
-  /* Now compute the spinning H coefficients and store them in seobCoeffs */
-  if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs( &seobCoeffs, eta, a, SpinAlignedEOBversion ) == XLAL_FAILURE )
-  {
-    XLALDestroyREAL8Vector( sigmaKerr );
-    XLALDestroyREAL8Vector( sigmaStar );
-    XLALDestroyREAL8Vector( values );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  if ( XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients( &hCoeffs, m1, m2, eta, tplspin, chiS, chiA, SpinAlignedEOBversion ) == XLAL_FAILURE )
-  {
-    XLALDestroyREAL8Vector( sigmaKerr );
-    XLALDestroyREAL8Vector( sigmaStar );
-    XLALDestroyREAL8Vector( values );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  if ( XLALSimIMREOBComputeNewtonMultipolePrefixes( &prefixes, eobParams.m1, eobParams.m2 )
-         == XLAL_FAILURE )
-  {
-    XLALDestroyREAL8Vector( sigmaKerr );
-    XLALDestroyREAL8Vector( sigmaStar );
-    XLALDestroyREAL8Vector( values );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  switch ( SpinAlignedEOBversion )
-  {
-     case 1:
-       if ( XLALSimIMRGetEOBCalibratedSpinNQC( &nqcCoeffs, 2, 2, eta, a ) == XLAL_FAILURE )
-       {
-         XLAL_ERROR( XLAL_EFUNC );
-       }
-       break;
-     case 2:
-       if ( XLALSimIMRGetEOBCalibratedSpinNQC3D( &nqcCoeffs, 2, 2, m1, m2, a, chiA ) == XLAL_FAILURE )
-       {
-         XLAL_ERROR( XLAL_EFUNC );
-       }
-       break;
-     default:
-       XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
-       XLAL_ERROR( XLAL_EINVAL );
-       break;
-  }
-
-  /*
-   * STEP 1) Solve for initial conditions
-   */
-
-  /* Set the initial conditions. For now we use the generic case */
-  /* Can be simplified if spin-aligned initial conditions solver available. The cost of generic code is negligible though. */
-  REAL8Vector *tmpValues = XLALCreateREAL8Vector( 14 );
-  if ( !tmpValues )
-  {
-    XLALDestroyREAL8Vector( sigmaKerr );
-    XLALDestroyREAL8Vector( sigmaStar );
-    XLALDestroyREAL8Vector( values );
-    XLAL_ERROR( XLAL_ENOMEM );
-  }
-
-  memset( tmpValues->data, 0, tmpValues->length * sizeof( REAL8 ) );
-
-  /* We set inc zero here to make it easier to go from Cartesian to spherical coords */
-  /* No problem setting inc to zero in solving spin-aligned initial conditions. */
-  /* inc is not zero in generating the final h+ and hx */
-  if ( XLALSimIMRSpinEOBInitialConditions
-( tmpValues, m1, m2, fMin, 0, s1Data, s2Data, &seobParams, /* use_optimized_v2 = */ 0 ) == XLAL_FAILURE )
-  {
-    XLALDestroyREAL8Vector( tmpValues );
-    XLALDestroyREAL8Vector( sigmaKerr );
-    XLALDestroyREAL8Vector( sigmaStar );
-    XLALDestroyREAL8Vector( values );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  /* Now convert to Spherical */
-  /* The initial conditions code returns Cartesian components of four vectors x, p, S1 and S2,
-   * in the special case that the binary starts on the x-axis and the two spins are aligned
-   * with the orbital angular momentum along the z-axis.
-   * Therefore, in spherical coordinates the initial conditions are
-   * r = x; phi = 0.; pr = px; pphi = r * py.
-   */
-  values->data[0] = tmpValues->data[0];
-  values->data[1] = 0.;
-  values->data[2] = tmpValues->data[3];
-  values->data[3] = tmpValues->data[0] * tmpValues->data[4];
-
-  /*
-   * STEP 2) Evolve EOB trajectory until reaching the peak of orbital frequency
-   */
-
-  /* Now we have the initial conditions, we can initialize the adaptive integrator */
-  if (!(integrator = XLALAdaptiveRungeKutta4Init(4, XLALSpinAlignedHcapDerivative, XLALEOBSpinPrecAlignedStopCondition, EPS_ABS, EPS_REL)))
-  {
-    XLALDestroyREAL8Vector( values );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  integrator->stopontestonly = 1;
-  integrator->retries = 1;
-
-  retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data, 0., 20./mTScaled, deltaT/mTScaled, &dynamics );
-  if ( retLen == XLAL_FAILURE || dynamics == NULL )
-  {
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  /* Set up pointers to the dynamics */
-  rVec.length = phiVec.length = prVec.length = pPhiVec.length = retLen;
-  rVec.data    = dynamics->data+retLen;
-  phiVec.data  = dynamics->data+2*retLen;
-  prVec.data   = dynamics->data+3*retLen;
-  pPhiVec.data = dynamics->data+4*retLen;
-
-  /* TODO : Insert high sampling rate / ringdown here */
-  #if debugOutput
-  FILE *out = fopen( "saDynamics.dat", "w" );
-  for ( i = 0; i < retLen; i++ )
-  {
-    fprintf( out, "%.16e %.16e %.16e %.16e %.16e\n", dynamics->data[i], rVec.data[i], phiVec.data[i], prVec.data[i], pPhiVec.data[i] );
-  }
-  fclose( out );
-  #endif
-
-  if (tStepBack > retLen*deltaT)
-  {
-    tStepBack = 0.5*retLen*deltaT; //YPnote: if 100M of step back > actual time of evolution, step back 50% of the later
-    nStepBack = ceil( tStepBack / deltaT );
-  }
-
-  /*
-   * STEP 3) Step back in time by tStepBack and volve EOB trajectory again
-   *         using high sampling rate, stop at 0.3M out of the "EOB horizon".
-   */
-
-  /* Set up the high sample rate integration */
-  hiSRndx = retLen - nStepBack;
-  deltaTHigh = deltaT / (REAL8)resampFac;
-
-  #if debugOutput
-  fprintf( stderr, "Stepping back %d points - we expect %d points at high SR\n", nStepBack, nStepBack*resampFac );
-  fprintf( stderr, "Commencing high SR integration... from %.16e %.16e %.16e %.16e %.16e\n",
-     (dynamics->data)[hiSRndx],rVec.data[hiSRndx], phiVec.data[hiSRndx], prVec.data[hiSRndx], pPhiVec.data[hiSRndx] );
-  #endif
-
-  values->data[0] = rVec.data[hiSRndx];
-  values->data[1] = phiVec.data[hiSRndx];
-  values->data[2] = prVec.data[hiSRndx];
-  values->data[3] = pPhiVec.data[hiSRndx];
-  /* For HiSR evolution, we stop at a radius 0.3M from the deformed Kerr singularity,
-   * or when any derivative of Hamiltonian becomes nan */
-  integrator->stop = XLALSpinPrecAlignedHiSRStopCondition;
-
-  retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsHi );
-  if ( retLen == XLAL_FAILURE || dynamicsHi == NULL )
-  {
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  /* Set up pointers to the dynamics */
-  rHi.length = phiHi.length = prHi.length = pPhiHi.length = timeHi.length = retLen;
-  timeHi.data = dynamicsHi->data;
-  rHi.data    = dynamicsHi->data+retLen;
-  phiHi.data  = dynamicsHi->data+2*retLen;
-  prHi.data   = dynamicsHi->data+3*retLen;
-  pPhiHi.data = dynamicsHi->data+4*retLen;
-
-  #if debugOutput
-  out = fopen( "saDynamicsHi.dat", "w" );
-  for ( i = 0; i < retLen; i++ )
-  {
-    fprintf( out, "%.16e %.16e %.16e %.16e %.16e\n", timeHi.data[i], rHi.data[i], phiHi.data[i], prHi.data[i], pPhiHi.data[i] );
-  }
-  fclose( out );
-  #endif
-
-  /* Allocate the high sample rate vectors */
-  sigReHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( cimag(modeFreq) * deltaTHigh )) );
-  sigImHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( cimag(modeFreq) * deltaTHigh )) );
-  omegaHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( cimag(modeFreq) * deltaTHigh )) );
-  ampNQC   = XLALCreateREAL8Vector( retLen );
-  phaseNQC = XLALCreateREAL8Vector( retLen );
-
-  if ( !sigReHi || !sigImHi || !omegaHi || !ampNQC || !phaseNQC )
-  {
-    XLAL_ERROR( XLAL_ENOMEM );
-  }
-
-  memset( sigReHi->data, 0, sigReHi->length * sizeof( sigReHi->data[0] ));
-  memset( sigImHi->data, 0, sigImHi->length * sizeof( sigImHi->data[0] ));
-
-  /* Populate the high SR waveform */
-  REAL8 omegaOld = 0.0;
-  INT4  phaseCounter = 0;
-  for ( i = 0; i < retLen; i++ )
-  {
-    values->data[0] = rHi.data[i];
-    values->data[1] = phiHi.data[i];
-    values->data[2] = prHi.data[i];
-    values->data[3] = pPhiHi.data[i];
-
-    omega = XLALSimIMRSpinAlignedEOBCalcOmega( values->data, &seobParams );
-    if (omega < 1.0e-15) omega = 1.0e-9; //YPnote: make sure omega>0 during very-late evolution when numerical errors are huge.
-    omegaHi->data[i] = omega;            //YPnote: omega<0 is extremely rare and had only happenned after relevant time interval.
-    v = cbrt( omega );
-
-    /* Calculate the value of the Hamiltonian */
-    cartPosVec.data[0] = values->data[0];
-    cartMomVec.data[0] = values->data[2];
-    cartMomVec.data[1] = values->data[3] / values->data[0];
-
-    ham = XLALSimIMRSpinPrecEOBHamiltonian( eta, &cartPosVec, &cartMomVec, &s1VecOverMtMt, &s2VecOverMtMt, sigmaKerr, sigmaStar, seobParams.tortoise, &seobCoeffs );
-
-    if ( XLALSimIMRSpinEOBGetSpinFactorizedWaveform( &hLM, values, v, ham, 2, 2, &seobParams, /* use_optimized_v2 = */ 0 )
-           == XLAL_FAILURE )
-    {
-      /* TODO: Clean-up */
-      XLAL_ERROR( XLAL_EFUNC );
-    }
-
-    ampNQC->data[i]  = cabs( hLM );
-    sigReHi->data[i] = (REAL4)(amp0 * creal(hLM));
-    sigImHi->data[i] = (REAL4)(amp0 * cimag(hLM));
-    phaseNQC->data[i]= carg( hLM ) + phaseCounter * LAL_TWOPI;
-
-    if ( i && phaseNQC->data[i] > phaseNQC->data[i-1] )
-    {
-      phaseCounter--;
-      phaseNQC->data[i] -= LAL_TWOPI;
-    }
-
-    if ( omega <= omegaOld && !peakIdx )
-    {
-      peakIdx = i;
-    }
-    omegaOld = omega;
-  }
-  finalIdx = retLen - 1;
-
-  /*
-   * STEP 4) Locate the peak of orbital frequency for NQC and QNM calculations
-   */
-
-  /* Stuff to find the actual peak time */
-  gsl_spline    *spline = NULL;
-  gsl_interp_accel *acc = NULL;
-  REAL8 omegaDeriv1; //, omegaDeriv2;
-  REAL8 time1, time2;
-  REAL8 timePeak, timewavePeak = 0., omegaDerivMid;
-  REAL8 sigAmpSqHi = 0., oldsigAmpSqHi = 0.;
-  INT4  peakCount = 0;
-
-  spline = gsl_spline_alloc( gsl_interp_cspline, retLen );
-  acc    = gsl_interp_accel_alloc();
-
-  time1 = dynamicsHi->data[peakIdx];
-
-  gsl_spline_init( spline, dynamicsHi->data, omegaHi->data, retLen );
-  omegaDeriv1 = gsl_spline_eval_deriv( spline, time1, acc );
-  if ( omegaDeriv1 > 0. )
-  {
-    time2 = dynamicsHi->data[peakIdx+1];
-  }
-  else
-  {
-    time2 = time1;
-    time1 = dynamicsHi->data[peakIdx-1];
-    peakIdx--;
-    omegaDeriv1 = gsl_spline_eval_deriv( spline, time1, acc );
-  }
-
-  do
-  {
-    timePeak = ( time1 + time2 ) / 2.;
-    omegaDerivMid = gsl_spline_eval_deriv( spline, timePeak, acc );
-
-    if ( omegaDerivMid * omegaDeriv1 < 0.0 )
-    {
-      time2 = timePeak;
-    }
-    else
-    {
-      omegaDeriv1 = omegaDerivMid;
-      time1 = timePeak;
-    }
-  }
-  while ( time2 - time1 > 1.0e-5 );
-
-  /* Having located the peak of orbital frequency, we set time and phase of coalescence */
-  XLALGPSAdd( &tc, -mTScaled * (dynamics->data[hiSRndx] + timePeak));
-  gsl_spline_init( spline, dynamicsHi->data, phiHi.data, retLen );
-  sSub = gsl_spline_eval( spline, timePeak, acc ) - phiC;
-  gsl_spline_free( spline );
-  gsl_interp_accel_free( acc );
-  /* Apply phiC to hi-sampling waveforms */
-  REAL8 thisReHi, thisImHi;
-  REAL8 csSub2 = cos(2.0 * sSub);
-  REAL8 ssSub2 = sin(2.0 * sSub);
-  for ( i = 0; i < retLen; i++)
-  {
-    thisReHi = sigReHi->data[i];
-    thisImHi = sigImHi->data[i];
-    sigReHi->data[i] =   thisReHi * csSub2 - thisImHi * ssSub2;
-    sigImHi->data[i] =   thisReHi * ssSub2 + thisImHi * csSub2;
-  }
-
-  /*
-   * STEP 5) Calculate NQC correction using hi-sampling data
-   */
-
-  /* Calculate phase NQC coefficients */
-  if ( XLALSimIMRSpinEOBCalculateNQCCoefficients( ampNQC, phaseNQC, &rHi, &prHi, omegaHi,
-          2, 2, timePeak, deltaTHigh/mTScaled, m1, m2, a, chiA, chiS, &nqcCoeffs, SpinAlignedEOBversion ) == XLAL_FAILURE )
-  {
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  /* Calculate the time of amplitude peak. Despite the name, this is in fact the shift in peak time from peak orb freq time */
-  switch ( SpinAlignedEOBversion )
-  {
-     case 1:
-     timewavePeak = XLALSimIMREOBGetNRSpinPeakDeltaT(2, 2, eta,  a);
-       break;
-     case 2:
-     timewavePeak = XLALSimIMREOBGetNRSpinPeakDeltaTv2(2, 2, m1, m2, spin1z, spin2z );
-       break;
-     default:
-       XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
-       XLAL_ERROR( XLAL_EINVAL );
-       break;
-  }
-
-  /* Apply to the high sampled part */
-  #if debugOutput
-  out = fopen( "saWavesHi.dat", "w" );
-  #endif
-  for ( i = 0; i < retLen; i++ )
-  {
-    values->data[0] = rHi.data[i];
-    values->data[1] = phiHi.data[i] - sSub;
-    values->data[2] = prHi.data[i];
-    values->data[3] = pPhiHi.data[i];
-
-    if ( XLALSimIMREOBNonQCCorrection( &hNQC, values, omegaHi->data[i], &nqcCoeffs ) == XLAL_FAILURE )
-    {
-      XLAL_ERROR( XLAL_EFUNC );
-    }
-
-    hLM = sigReHi->data[i];
-    hLM += I * sigImHi->data[i];
-    #if debugOutput
-    fprintf( out, "%.16e %.16e %.16e %.16e %.16e\n", timeHi.data[i], creal(hLM), cimag(hLM), creal(hNQC), cimag(hNQC) );
-    #endif
-
-    hLM *= hNQC;
-    sigReHi->data[i] = (REAL4) creal(hLM);
-    sigImHi->data[i] = (REAL4) cimag(hLM);
-    sigAmpSqHi = creal(hLM)*creal(hLM)+cimag(hLM)*cimag(hLM);
-    if (sigAmpSqHi < oldsigAmpSqHi && peakCount == 0 && (i-1)*deltaTHigh/mTScaled < timePeak - timewavePeak)
-    {
-      timewavePeak = (i-1)*deltaTHigh/mTScaled;
-      peakCount += 1;
-    }
-    oldsigAmpSqHi = sigAmpSqHi;
-  }
-  #if debugOutput
-  fclose(out);
-  XLAL_PRINT_INFO("NQCs entering hNQC: %f, %f, %f, %f, %f, %f\n", nqcCoeffs.a1, nqcCoeffs.a2,nqcCoeffs.a3, nqcCoeffs.a3S, nqcCoeffs.a4, nqcCoeffs.a5 );
-  XLAL_PRINT_INFO("NQCs entering hNQC: %f, %f, %f, %f\n", nqcCoeffs.b1, nqcCoeffs.b2,nqcCoeffs.b3, nqcCoeffs.b4 );
-  #endif
-  if (timewavePeak < 1.0e-16 || peakCount == 0)
-  {
-    /* NOTE: instead of looking for the actual peak, use the calibrated value,    */
-    /*       ignoring the error in using interpolated NQC instead of iterated NQC */
-    timewavePeak = timePeak - timewavePeak;
-  }
-
-  /*
-   * STEP 6) Calculate QNM excitation coefficients using hi-sampling data
-   */
-
-  /* Attach the ringdown at the time of amplitude peak */
-  REAL8 combSize = 7.5; /* Eq. 34 */
-  REAL8 chi = (spin1[2] + spin2[2]) / 2. + ((spin1[2] - spin2[2]) / 2.) * ((m1 - m2)/(m1+m2)) / (1. - 2. * eta);
-
-  /* Modify the combsize for SEOBNRv2 */
-  /* If chi1=chi2=0, comb = 11. if chi < 0.8, comb = 12. if chi >= 0.8, comb =
-   * 13.5 */
-  if( SpinAlignedEOBversion == 2 )
-  {
-    combSize = (spin1[2] == 0. && spin2[2] == 0.) ? 11. : (( eta > 10./121. && chi >= 0.8 ) ? 8.5 : 12.);
-    if ( (eta > 30./31./31. && eta <= 10./121. && chi >= 0.8) || (eta <= 30./31./31. && chi >= 0.8 && chi < 0.9) )
-      combSize = 13.5;
-  }
-
-  REAL8 timeshiftPeak;
-  timeshiftPeak = timePeak - timewavePeak;
-  if ( SpinAlignedEOBversion == 2)
-  {
-    timeshiftPeak = (timePeak - timewavePeak) > 0. ? (timePeak - timewavePeak) : 0.;
-  }
-
-  REAL8Vector *rdMatchPoint = XLALCreateREAL8Vector( 3 );
-  if ( !rdMatchPoint )
-  {
-    XLAL_ERROR( XLAL_ENOMEM );
-  }
-
-  if ( combSize > timePeak - timeshiftPeak )
-  {
-    XLALPrintError( "The comb size looks to be too big!!!\n" );
-  }
-
-  rdMatchPoint->data[0] = combSize < timePeak - timeshiftPeak ? timePeak - timeshiftPeak - combSize : 0;
-  rdMatchPoint->data[1] = timePeak - timeshiftPeak;
-  rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
-  #if debugOutput
-  XLAL_PRINT_INFO("YP::comb range: %f, %f\n",rdMatchPoint->data[0],rdMatchPoint->data[1]);
-  #endif
-  rdMatchPoint->data[0] -= fmod( rdMatchPoint->data[0], deltaTHigh/mTScaled );
-  rdMatchPoint->data[1] -= fmod( rdMatchPoint->data[1], deltaTHigh/mTScaled );
-  if ( XLALSimIMREOBHybridAttachRingdownPrec( sigReHi, sigImHi, 2, 2,
-              deltaTHigh, m1, m2, spin1[0], spin1[1], spin1[2], spin2[0], spin2[1], spin2[2],
-              &timeHi, rdMatchPoint, SpinAlignedEOBapproximant, 1.0 )
-          == XLAL_FAILURE )
-  {
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  /*
-   * STEP 7) Generate full inspiral waveform using desired sampling frequency
-   */
-
-  /* Now create vectors at the correct sample rate, and compile the complete waveform */
-  sigReVec = XLALCreateREAL8Vector( rVec.length + ceil( sigReHi->length / resampFac ) );
-  sigImVec = XLALCreateREAL8Vector( sigReVec->length );
-
-  memset( sigReVec->data, 0, sigReVec->length * sizeof( REAL8 ) );
-  memset( sigImVec->data, 0, sigImVec->length * sizeof( REAL8 ) );
-
-  /* Generate full inspiral waveform using desired sampling frequency */
-  /* TODO - Check vectors were allocated */
-  for ( i = 0; i < (INT4)rVec.length; i++ )
-  {
-    values->data[0] = rVec.data[i];
-    values->data[1] = phiVec.data[i] - sSub;
-    values->data[2] = prVec.data[i];
-    values->data[3] = pPhiVec.data[i];
-
-    omega = XLALSimIMRSpinAlignedEOBCalcOmega( values->data, &seobParams );
-    v = cbrt( omega );
-
-    /* Calculate the value of the Hamiltonian */
-    cartPosVec.data[0] = values->data[0];
-    cartMomVec.data[0] = values->data[2];
-    cartMomVec.data[1] = values->data[3] / values->data[0];
-
-    ham = XLALSimIMRSpinPrecEOBHamiltonian( eta, &cartPosVec, &cartMomVec, &s1VecOverMtMt, &s2VecOverMtMt, sigmaKerr, sigmaStar, seobParams.tortoise, &seobCoeffs );
-
-    if ( XLALSimIMRSpinEOBGetSpinFactorizedWaveform( &hLM, values, v, ham, 2, 2, &seobParams, /* use_optimized_v2 = */ 0 )
-           == XLAL_FAILURE )
-    {
-      /* TODO: Clean-up */
-      XLAL_ERROR( XLAL_EFUNC );
-    }
-
-    if ( XLALSimIMREOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs ) == XLAL_FAILURE )
-    {
-      XLAL_ERROR( XLAL_EFUNC );
-    }
-
-    hLM *= hNQC;
-
-    sigReVec->data[i] = amp0 * creal(hLM);
-    sigImVec->data[i] = amp0 * cimag(hLM);
-  }
-
-  /*
-   * STEP 8) Generate full IMR modes -- attaching ringdown to inspiral
-   */
-
-  /* Attach the ringdown part to the inspiral */
-  for ( i = 0; i < (INT4)(sigReHi->length / resampFac); i++ )
-  {
-    sigReVec->data[i+hiSRndx] = sigReHi->data[i*resampFac];
-    sigImVec->data[i+hiSRndx] = sigImHi->data[i*resampFac];
-  }
-
-  /*
-   * STEP 9) Generate full IMR hp and hx waveforms
-   */
-
-  /* For now, let us just try to create a waveform */
-  REAL8TimeSeries *hPlusTS  = XLALCreateREAL8TimeSeries( "H_PLUS", &tc, 0.0, deltaT, &lalStrainUnit, sigReVec->length );
-  REAL8TimeSeries *hCrossTS = XLALCreateREAL8TimeSeries( "H_CROSS", &tc, 0.0, deltaT, &lalStrainUnit, sigImVec->length );
-
-  /* TODO change to using XLALSimAddMode function to combine modes */
-  /* For now, calculate -2Y22 * h22 + -2Y2-2 * h2-2 directly (all terms complex) */
-  /* Compute spin-weighted spherical harmonics and generate waveform */
-  REAL8 coa_phase = 0.0;
-
-  MultSphHarmP = XLALSpinWeightedSphericalHarmonic( inc, coa_phase, -2, 2, 2 );
-  MultSphHarmM = XLALSpinWeightedSphericalHarmonic( inc, coa_phase, -2, 2, -2 );
-
-  y_1 =   creal(MultSphHarmP) + creal(MultSphHarmM);
-  y_2 =   cimag(MultSphHarmM) - cimag(MultSphHarmP);
-  z1 = - cimag(MultSphHarmM) - cimag(MultSphHarmP);
-  z2 =   creal(MultSphHarmM) - creal(MultSphHarmP);
-
-  for ( i = 0; i < (INT4)sigReVec->length; i++ )
-  {
-    REAL8 x1 = sigReVec->data[i];
-    REAL8 x2 = sigImVec->data[i];
-
-    hPlusTS->data->data[i]  = (x1 * y_1) + (x2 * y_2);
-    hCrossTS->data->data[i] = (x1 * z1) + (x2 * z2);
-  }
-
-  /* Point the output pointers to the relevant time series and return */
-  (*hplus)  = hPlusTS;
-  (*hcross) = hCrossTS;
-
-  /* Free memory */
-  XLALDestroyREAL8Vector( tmpValues );
-  XLALDestroyREAL8Vector( sigmaKerr );
-  XLALDestroyREAL8Vector( sigmaStar );
-  XLALDestroyREAL8Vector( values );
-  XLALDestroyREAL8Vector( rdMatchPoint );
-  XLALDestroyREAL8Vector( ampNQC );
-  XLALDestroyREAL8Vector( phaseNQC );
-  XLALDestroyREAL8Vector( sigReVec );
-  XLALDestroyREAL8Vector( sigImVec );
-  XLALAdaptiveRungeKutta4Free( integrator );
-  XLALDestroyREAL8Array( dynamics );
-  XLALDestroyREAL8Array( dynamicsHi );
-  XLALDestroyREAL8Vector( sigReHi );
-  XLALDestroyREAL8Vector( sigImHi );
-  XLALDestroyREAL8Vector( omegaHi );
-
-  return XLAL_SUCCESS;
-}
-
-
-/**
  * Standard interface for SEOBNRv3 waveform generator: calls XLALSimIMRSpinEOBWaveformAll
  */
 int XLALSimIMRSpinEOBWaveform(
@@ -1239,9 +363,13 @@ int XLALSimIMRSpinEOBWaveform(
 {
     REAL8Vector   *dynamicsHi = NULL;
     REAL8Vector  *AttachPars = NULL;
+    /** This time series contains harmonics in precessing (P) frame, no RD, for the end of the signal (high samling part)*/
     SphHarmTimeSeries *hlmPTSHi = NULL;
+    /** This stores harmonics in J-frame, no RD, for the end of the signal (high samling part) */ 
     SphHarmTimeSeries *hlmPTSout = NULL;
+    /** Stores harmonics in J-frame with RD,  for the end of the signal (high samling part)  */
     SphHarmTimeSeries *hIMRlmJTSHi = NULL;
+    /** stores harmonics of the full waveform in I-frame */
     SphHarmTimeSeries *hIMR = NULL;
 
     XLALSimIMRSpinEOBWaveformAll(hplus, hcross, &dynamicsHi, &hlmPTSout, &hlmPTSHi, &hIMRlmJTSHi, &hIMR, &AttachPars,
@@ -1285,7 +413,7 @@ int XLALSimIMRSpinEOBWaveform(
  * values[3-5]: pstar vector in units of reduced mass
  * values[6-8]: S1 vector in units of (total mass)^2
  * values[9-11]: S2 vector in units of (total mass)^2
- * values[12-13]: phases in rads
+ * values[12-13]: phases (carrier and precession (Thomas)) in rads
  *
  * STEP 0) Prepare parameters, including pre-computed coefficients
  * for EOB Hamiltonian, flux and waveform
@@ -1335,14 +463,12 @@ int XLALSimIMRSpinEOBWaveformAll(
   INspin2[1] = INspin2y;
   INspin2[2] = INspin2z;
 
-  INT4 UNUSED ret;
-  INT4 debugPK = 0, debugCustomIC = 0, debugNoNQC = 0;
-  INT4 debugRD = 0;
+  INT4 debugPK = 1, debugCustomIC = 0, debugNoNQC = 0;
+  INT4 debugRD = 1;
   FILE *out = NULL;
   INT4 i=0;
   INT4 k=0;
   UINT4 j=0;
-  INT4 UNUSED status;
   LIGOTimeGPS tc = LIGOTIMEGPSZERO;
 
   REAL8Vector *AttachParams;
@@ -1353,7 +479,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   INT4 SpinAlignedEOBversion = 2;
 
   /* Vector to store the initial spins */
-    REAL8 spin1[3] = {0,0,0}, spin2[3] = {0,0,0}, InitLhat[3] = {sin(inc),0.,cos(inc)};
+  REAL8 spin1[3] = {0,0,0}, spin2[3] = {0,0,0}, InitLhat[3] = {sin(inc),0.,cos(inc)};
   memcpy( spin1, INspin1, 3*sizeof(REAL8));
   memcpy( spin2, INspin2, 3*sizeof(REAL8));
 
@@ -1364,11 +490,18 @@ int XLALSimIMRSpinEOBWaveformAll(
   REAL8 spin1Norm = -1, spin2Norm = -1;
   spin1Norm = sqrt( INspin1[0]*INspin1[0] + INspin1[1]*INspin1[1] + INspin1[2]*INspin1[2] );
   spin2Norm = sqrt( INspin2[0]*INspin2[0] + INspin2[1]*INspin2[1] + INspin2[2]*INspin2[2] );
+  if ( INspin1[0] == 0. && INspin1[1] == 0. && INspin1[2] == 0. ) {
+        spin1Norm = 0.;
+  }
+  if ( INspin2[0] == 0. && INspin2[1] == 0. && INspin2[2] == 0. ) {
+        spin2Norm = 0.;
+  }
 
-    if (spin1Norm <= 1.0e-5) {INspin1[0]=0.;INspin1[1]=0.;INspin1[2]=0.;}
-    if (spin2Norm <= 1.0e-5) {INspin2[0]=0.;INspin2[1]=0.;INspin2[2]=0.;}
+  /** NOTE: if the spin amgnitude is less than 1.e-5 we put them explicitely to zero! */ 
+  if (spin1Norm <= 1.0e-5) {INspin1[0]=0.;INspin1[1]=0.;INspin1[2]=0.;}
+  if (spin2Norm <= 1.0e-5) {INspin2[0]=0.;INspin2[1]=0.;INspin2[2]=0.;}
   REAL8 acosarg1 = 0, acosarg2 = 0;
-  if( spin1Norm > 1.0e-5 && (INspin1[0] != 0 || INspin1[1] != 0 || INspin1[2] != 0) ) {
+  if( spin1Norm > 1.0e-5){// && (INspin1[0] != 0 || INspin1[1] != 0 || INspin1[2] != 0) ) {
       acosarg1 = (InitLhat[0]*INspin1[0] + InitLhat[1]*INspin1[1] + InitLhat[2]*INspin1[2])/ spin1Norm ;
       if (acosarg1 > 1.) {
           theta1Ini = 0.;
@@ -1381,7 +514,7 @@ int XLALSimIMRSpinEOBWaveformAll(
       }
     }
 
-  if( spin2Norm > 1.0e-5 && (INspin2[0] != 0 || INspin2[1] != 0 || INspin2[2] != 0) ) {
+  if( spin2Norm > 1.0e-5){// && (INspin2[0] != 0 || INspin2[1] != 0 || INspin2[2] != 0) ) {
       acosarg2 = (InitLhat[0]*INspin2[0] + InitLhat[1]*INspin2[1] + InitLhat[2]*INspin2[2])/ spin2Norm ;
       if (acosarg2 > 1.) {
           theta2Ini = 0.;
@@ -1393,13 +526,9 @@ int XLALSimIMRSpinEOBWaveformAll(
           theta2Ini = acos( acosarg2 );
       }
   }
-    if ( INspin1[0] == 0. && INspin1[1] == 0. && INspin1[2] == 0. ) {
-        spin1Norm = 0.;
-    }
-    if ( INspin2[0] == 0. && INspin2[1] == 0. && INspin2[2] == 0. ) {
-        spin2Norm = 0.;
-    }
 
+    /** If the misalignment angle of spins with orbital angular momentum is less than <1.e-4 we treat them as aligned for evolution of the 
+     * orbital dynamics  */
     REAL8 EPS_ALIGN = 1.0e-4, incA = inc;
     if ( (fabs(theta1Ini) <= EPS_ALIGN  || fabs(theta1Ini) >= LAL_PI - EPS_ALIGN) && (fabs(theta2Ini) <= EPS_ALIGN || fabs(theta2Ini) >= LAL_PI - EPS_ALIGN) ) {
         if (debugPK) {XLAL_PRINT_INFO("Both spins are almost aligned/antialigned to initial LNhat: we use V2 dynamics\n");
@@ -1451,6 +580,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   REAL8Vector *dvalues = NULL;
   if ( !(dvalues = XLALCreateREAL8Vector( 14 )) )
   {
+    XLALDestroyREAL8Vector( values );
     XLAL_ERROR(  XLAL_ENOMEM );
   }
   REAL8       rdotvec[3] = {0,0,0};
@@ -1465,12 +595,14 @@ int XLALSimIMRSpinEOBWaveformAll(
   {
     XLALDestroyREAL8Vector( sigmaStar );
     XLALDestroyREAL8Vector( values );
+    XLALDestroyREAL8Vector( dvalues );
     XLAL_ERROR( XLAL_ENOMEM );
   }
   if ( !(sigmaKerr = XLALCreateREAL8Vector( 3 )) )
   {
     XLALDestroyREAL8Vector( sigmaStar );
     XLALDestroyREAL8Vector( values );
+    XLALDestroyREAL8Vector( dvalues );
     XLAL_ERROR( XLAL_ENOMEM );
   }
 
@@ -1486,7 +618,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   /* Parameters of the system */
   REAL8 m1 = 0, m2 = 0, mTotal = 0, eta = 0, mTScaled = 0;
   REAL8 amp0 = 0;
-  REAL8 UNUSED amp = 0;
+  REAL8 amp = 0;
 
   /* Dynamics of the system */
   REAL8Vector tVec, phiDMod, phiMod;
@@ -1500,10 +632,10 @@ int XLALSimIMRSpinEOBWaveformAll(
   REAL8 rcrossrdotNorm = 0, rvec[3]    = {0,0,0}, rcrossrdot[3] = {0,0,0};
   REAL8 pvec[3] = {0,0,0},  rcrossp[3] = {0,0,0}, rcrosspMag    = 0;
   REAL8 s1dotLN = 0, s2dotLN = 0;
-  REAL8 UNUSED s1dotL = 0, s2dotL = 0;
+  REAL8  s1dotL = 0, s2dotL = 0;
 
   /* Polar vectors needed for waveform modes calculation */
-  REAL8Vector UNUSED polarDynamics, cartDynamics;
+  REAL8Vector  polarDynamics;
   REAL8 polData[4] = {0,0,0,0};
 
   /* Signal mode */
@@ -1539,9 +671,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   REAL8Vector s1VecxHi,  s1VecyHi,  s1VeczHi,  s2VecxHi,  s2VecyHi,  s2VeczHi;
   REAL8Vector *sigReHi = NULL, *sigImHi = NULL;
 
-  /* Indices of peak frequency and final point           */
-  /* Needed to attach ringdown at the appropriate point  */
-  UINT4 UNUSED peakIdx = 0, finalIdx = 0;
 
   /* Set up structures and calculate necessary PN parameters */
   /* Due to precession, these need to get calculated in every step */
@@ -1560,15 +689,15 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   /* Miscellaneous memory for Ringdown attachment        */
   REAL8 tPeakOmega = 0, tAttach = 0, combSize = 0,/*longCombSize,*/ deltaNQC =0;
-  REAL8 UNUSED sh  = 0;
+  REAL8  sh  = 0;
   REAL8 vX = 0, vY = 0, vZ = 0;
-  REAL8 UNUSED vOmega = 0, omegasav = 0, omegasav2 = 0;
+  REAL8  vOmega = 0;
   REAL8 magR = 0, Lx   = 0, Ly   = 0, Lz = 0, magL = 0, magJ = 0,
         LNhx = 0, LNhy = 0, LNhz = 0, magLN =0, Jx = 0, Jy   = 0, Jz = 0;
   REAL8 aI2P = 0, bI2P = 0, gI2P = 0, aP2J = 0, bP2J = 0, gP2J = 0;
   REAL8 chi1J= 0, chi2J= 0, chiJ = 0;
   REAL8 chi1L= 0.0, chi2L = 0.0, chiL = 0.0;
-  REAL8 UNUSED kappaJL = 0;
+  REAL8 kappaJL = 0;
   REAL8 JLN = 0.0;
   REAL8 JframeEx[3] = {0,0,0}, JframeEy[3] = {0,0,0}, JframeEz[3] = {0,0,0};
   REAL8 LframeEx[3] = {0,0,0}, LframeEy[3] = {0,0,0}, LframeEz[3] = {0,0,0};
@@ -1610,9 +739,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   PrecEulerAnglesIntegration precEulerparams;
 
 
-  /* Stuff to find the actual peak time */
-  UNUSED REAL8  timewavePeak = 0.;
-  REAL8 UNUSED sigAmpSqHi = 0., oldsigAmpSqHi = 0.;
 
   /* Memory to help with rotation of dynamics */
   REAL8 JExnorm = 0;
@@ -1725,6 +851,8 @@ int XLALSimIMRSpinEOBWaveformAll(
     XLALDestroyREAL8Vector( sigmaKerr );
     XLALDestroyREAL8Vector( sigmaStar );
     XLALDestroyREAL8Vector( values );
+    XLALDestroyREAL8Vector( dvalues );
+    XLALDestroyREAL8Vector( rdMatchPoint );
     XLAL_ERROR( XLAL_EFUNC );
   }
   if ( XLALSimIMRSpinEOBCalculateSigmaKerr(
@@ -1733,6 +861,8 @@ int XLALSimIMRSpinEOBWaveformAll(
     XLALDestroyREAL8Vector( sigmaKerr );
     XLALDestroyREAL8Vector( sigmaStar );
     XLALDestroyREAL8Vector( values );
+    XLALDestroyREAL8Vector( dvalues );
+    XLALDestroyREAL8Vector( rdMatchPoint );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -1755,6 +885,8 @@ int XLALSimIMRSpinEOBWaveformAll(
     XLALDestroyREAL8Vector( sigmaKerr );
     XLALDestroyREAL8Vector( sigmaStar );
     XLALDestroyREAL8Vector( values );
+    XLALDestroyREAL8Vector( dvalues );
+    XLALDestroyREAL8Vector( rdMatchPoint );
     XLAL_ERROR( XLAL_ENOMEM );
   }
   *AttachPars = AttachParams;
@@ -1794,6 +926,9 @@ int XLALSimIMRSpinEOBWaveformAll(
     XLALDestroyREAL8Vector( sigmaKerr );
     XLALDestroyREAL8Vector( sigmaStar );
     XLALDestroyREAL8Vector( values );
+    XLALDestroyREAL8Vector( dvalues );
+    XLALDestroyREAL8Vector( rdMatchPoint );
+    XLALDestroyREAL8Vector( AttachParams );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -1805,6 +940,9 @@ int XLALSimIMRSpinEOBWaveformAll(
     XLALDestroyREAL8Vector( sigmaKerr );
     XLALDestroyREAL8Vector( sigmaStar );
     XLALDestroyREAL8Vector( values );
+    XLALDestroyREAL8Vector( dvalues );
+    XLALDestroyREAL8Vector( rdMatchPoint );
+    XLALDestroyREAL8Vector( AttachParams );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -1838,6 +976,13 @@ int XLALSimIMRSpinEOBWaveformAll(
         if ( XLALSimIMRSpinEOBInitialConditions( tmpValues2, m1, m2, fMin, incA,
                                                 mSpin1, mSpin2, &seobParams, /* use_optimized_v2 = */ 0 ) == XLAL_FAILURE )
         {
+            XLALDestroyREAL8Vector( sigmaKerr );
+            XLALDestroyREAL8Vector( sigmaStar );
+            XLALDestroyREAL8Vector( values );
+            XLALDestroyREAL8Vector( dvalues );
+            XLALDestroyREAL8Vector( rdMatchPoint );
+            XLALDestroyREAL8Vector( AttachParams );
+            XLALDestroyREAL8Vector( tmpValues2 );
             XLAL_ERROR( XLAL_EFUNC );
         }
         seobParams.alignedSpins = 0;
@@ -1848,6 +993,13 @@ int XLALSimIMRSpinEOBWaveformAll(
     if ( XLALSimIMRSpinEOBInitialConditionsPrec( tmpValues2, m1, m2, fMin, incl_temp,
 	mSpin1, mSpin2, &seobParams ) == XLAL_FAILURE )
         {
+            XLALDestroyREAL8Vector( sigmaKerr );
+            XLALDestroyREAL8Vector( sigmaStar );
+            XLALDestroyREAL8Vector( values );
+            XLALDestroyREAL8Vector( dvalues );
+            XLALDestroyREAL8Vector( rdMatchPoint );
+            XLALDestroyREAL8Vector( AttachParams );
+            XLALDestroyREAL8Vector( tmpValues2 );
             XLAL_ERROR( XLAL_EFUNC );
         }
   }
@@ -1888,6 +1040,13 @@ int XLALSimIMRSpinEOBWaveformAll(
   if( XLALSpinPrecHcapRvecDerivative( 0, values->data, dvalues->data,
           (void*) &seobParams) == XLAL_FAILURE )
   {
+    XLALDestroyREAL8Vector( sigmaKerr );
+    XLALDestroyREAL8Vector( sigmaStar );
+    XLALDestroyREAL8Vector( values );
+    XLALDestroyREAL8Vector( dvalues );
+    XLALDestroyREAL8Vector( rdMatchPoint );
+    XLALDestroyREAL8Vector( AttachParams );
+    XLALDestroyREAL8Vector( tmpValues2 );
     XLAL_ERROR( XLAL_EFUNC );
   }
   if(debugPK)XLAL_PRINT_INFO("\nCalculated Rdot\n");
@@ -1934,6 +1093,13 @@ int XLALSimIMRSpinEOBWaveformAll(
       break;
     default:
       XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
       XLAL_ERROR( XLAL_EINVAL );
       break;
   }
@@ -1953,6 +1119,10 @@ int XLALSimIMRSpinEOBWaveformAll(
     XLALDestroyREAL8Vector( sigmaKerr );
     XLALDestroyREAL8Vector( sigmaStar );
     XLALDestroyREAL8Vector( values );
+    XLALDestroyREAL8Vector( dvalues );
+    XLALDestroyREAL8Vector( rdMatchPoint );
+    XLALDestroyREAL8Vector( AttachParams );
+    XLALDestroyREAL8Vector( tmpValues2 );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -1991,10 +1161,13 @@ int XLALSimIMRSpinEOBWaveformAll(
   }
   if (fMin > f_star){
       XLALPrintError("XLAL Error - %s: Intitial frequency is too high, the limit is %4.10f \n", __func__, f_star);
-      XLALDestroyREAL8Vector( sigmaKerr );
-      XLALDestroyREAL8Vector( sigmaStar );
-      XLALDestroyREAL8Vector( values );
-      XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
 
       XLAL_ERROR (XLAL_EINVAL );
   }
@@ -2011,6 +1184,13 @@ int XLALSimIMRSpinEOBWaveformAll(
 	    break;
 	  default:
 	    XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
 	    XLAL_ERROR( XLAL_EINVAL );
 	    break;
   }
@@ -2078,6 +1258,13 @@ int XLALSimIMRSpinEOBWaveformAll(
     REAL8Vector *valuesV2 = NULL;
     if ( !(valuesV2 = XLALCreateREAL8Vector( 4 )) )
     {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
         XLAL_ERROR(  XLAL_ENOMEM );
     }
     memset( valuesV2->data, 0, valuesV2->length * sizeof( REAL8 ));
@@ -2093,6 +1280,13 @@ int XLALSimIMRSpinEOBWaveformAll(
         seobParams.chi2 = spin2Norm*cos(theta2Ini)/fabs(cos(theta2Ini));
         if (!(integrator = XLALAdaptiveRungeKutta4Init(4, XLALSpinAlignedHcapDerivative, XLALEOBSpinPrecAlignedStopCondition, EPS_ABS, EPS_REL)))
         {
+            XLALDestroyREAL8Vector( sigmaKerr );
+            XLALDestroyREAL8Vector( sigmaStar );
+            XLALDestroyREAL8Vector( values );
+            XLALDestroyREAL8Vector( dvalues );
+            XLALDestroyREAL8Vector( rdMatchPoint );
+            XLALDestroyREAL8Vector( AttachParams );
+            XLALDestroyREAL8Vector( tmpValues2 );
             XLALDestroyREAL8Vector( valuesV2 );
             XLAL_ERROR( XLAL_EFUNC );
         }
@@ -2103,7 +1297,14 @@ int XLALSimIMRSpinEOBWaveformAll(
                                                        XLALSpinPrecHcapNumericalDerivative, XLALEOBSpinPrecStopConditionBasedOnPR,
                                                        EPS_ABS, EPS_REL)))
         {
+            XLALDestroyREAL8Vector( sigmaKerr );
+            XLALDestroyREAL8Vector( sigmaStar );
             XLALDestroyREAL8Vector( values );
+            XLALDestroyREAL8Vector( dvalues );
+            XLALDestroyREAL8Vector( rdMatchPoint );
+            XLALDestroyREAL8Vector( AttachParams );
+            XLALDestroyREAL8Vector( tmpValues2 );
+            XLALDestroyREAL8Vector( valuesV2 );
             XLAL_ERROR( XLAL_EFUNC );
         }
     }
@@ -2138,6 +1339,17 @@ int XLALSimIMRSpinEOBWaveformAll(
         retLenLow = retLen;
         if ( retLen == XLAL_FAILURE )
         {
+            XLALDestroyREAL8Vector( sigmaKerr );
+            XLALDestroyREAL8Vector( sigmaStar );
+            XLALDestroyREAL8Vector( values );
+            XLALDestroyREAL8Vector( dvalues );
+            XLALDestroyREAL8Vector( rdMatchPoint );
+            XLALDestroyREAL8Vector( AttachParams );
+            XLALDestroyREAL8Vector( tmpValues2 );
+            XLALDestroyREAL8Vector( valuesV2 );
+            if (dynamicsV2 != NULL){
+                XLALDestroyREAL8Array( dynamicsV2 );
+            }
             XLAL_ERROR( XLAL_EFUNC );
         }
         tVec.length=rVec.length = phiVec.length = prVec.length = pPhiVec.length = retLen;
@@ -2153,6 +1365,17 @@ int XLALSimIMRSpinEOBWaveformAll(
         retLenLow = retLen;
         if ( retLen == XLAL_FAILURE )
         {
+            XLALDestroyREAL8Vector( sigmaKerr );
+            XLALDestroyREAL8Vector( sigmaStar );
+            XLALDestroyREAL8Vector( values );
+            XLALDestroyREAL8Vector( dvalues );
+            XLALDestroyREAL8Vector( rdMatchPoint );
+            XLALDestroyREAL8Vector( AttachParams );
+            XLALDestroyREAL8Vector( tmpValues2 );
+            XLALDestroyREAL8Vector( valuesV2 );
+            if (dynamicsV2 != NULL){
+                XLALDestroyREAL8Array( dynamicsV2 );
+            }
             XLAL_ERROR( XLAL_EFUNC );
         }
         tVec.length = retLen;
@@ -2295,6 +1518,20 @@ int XLALSimIMRSpinEOBWaveformAll(
         retLenHi = retLen;
         if ( retLen == XLAL_FAILURE )
         {
+            XLALDestroyREAL8Vector( sigmaKerr );
+            XLALDestroyREAL8Vector( sigmaStar );
+            XLALDestroyREAL8Vector( values );
+            XLALDestroyREAL8Vector( dvalues );
+            XLALDestroyREAL8Vector( rdMatchPoint );
+            XLALDestroyREAL8Vector( AttachParams );
+            XLALDestroyREAL8Vector( tmpValues2 );
+            XLALDestroyREAL8Vector( valuesV2 );
+            if (dynamicsV2 != NULL){
+                XLALDestroyREAL8Array( dynamicsV2 );
+            }
+            if (dynamicsV2Hi != NULL){
+                XLALDestroyREAL8Array( dynamicsV2Hi );
+            }
             XLAL_ERROR( XLAL_EFUNC );
         }
         timeHi.length = phiVecHi.length = prVecHi.length = pPhiVecHi.length = retLen;
@@ -2309,6 +1546,26 @@ int XLALSimIMRSpinEOBWaveformAll(
                                          0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsHi );
         if ( retLen == XLAL_FAILURE )
         {
+            XLALDestroyREAL8Vector( sigmaKerr );
+            XLALDestroyREAL8Vector( sigmaStar );
+            XLALDestroyREAL8Vector( values );
+            XLALDestroyREAL8Vector( dvalues );
+            XLALDestroyREAL8Vector( rdMatchPoint );
+            XLALDestroyREAL8Vector( AttachParams );
+            XLALDestroyREAL8Vector( tmpValues2 );
+            XLALDestroyREAL8Vector( valuesV2 );
+            if (dynamicsV2 != NULL){
+                XLALDestroyREAL8Array( dynamicsV2 );
+            }
+            if (dynamicsV2Hi != NULL){
+                XLALDestroyREAL8Array( dynamicsV2Hi );
+            }
+            if (dynamics != NULL){
+                XLALDestroyREAL8Array( dynamics );
+            }
+            if (dynamicsHi != NULL){
+                XLALDestroyREAL8Array( dynamicsHi );
+            }
             XLAL_ERROR( XLAL_EFUNC );
         }
         timeHi.length = retLen;
@@ -2646,7 +1903,38 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   if ( XLALSimIMREOBGenerateQNMFreqV2Prec( &modefreqVec, m1, m2, spin1, spin2, 2, 2, 1, spinEOBApproximant ) == XLAL_FAILURE )
   {
+    XLALDestroyREAL8Vector( sigmaKerr );
+    XLALDestroyREAL8Vector( sigmaStar );
     XLALDestroyREAL8Vector( values );
+    XLALDestroyREAL8Vector( dvalues );
+    XLALDestroyREAL8Vector( rdMatchPoint );
+    XLALDestroyREAL8Vector( AttachParams );
+    XLALDestroyREAL8Vector( tmpValues2 );
+    XLALDestroyREAL8Vector( valuesV2 );
+    if (dynamicsV2 != NULL){
+        XLALDestroyREAL8Array( dynamicsV2 );
+    }
+    if (dynamicsV2Hi != NULL){
+        XLALDestroyREAL8Array( dynamicsV2Hi );
+    }
+    if (dynamics != NULL){
+        XLALDestroyREAL8Array( dynamics );
+    }
+    if (dynamicsHi != NULL){
+        XLALDestroyREAL8Array( dynamicsHi );
+    }
+    XLALDestroyREAL8Vector( LN_x );
+    XLALDestroyREAL8Vector( LN_y );
+    XLALDestroyREAL8Vector( LN_z );
+    XLALDestroyREAL8Vector( LN_xHi );
+    XLALDestroyREAL8Vector( LN_yHi );
+    XLALDestroyREAL8Vector( LN_zHi );
+    XLALDestroyREAL8Vector( Alpha );
+    XLALDestroyREAL8Vector( Beta );
+    XLALDestroyREAL8Vector( AlphaHi );
+    XLALDestroyREAL8Vector( BetaHi );
+    XLALDestroyREAL8Vector( Gamma );
+    XLALDestroyREAL8Vector( GammaHi );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -2719,6 +2007,38 @@ int XLALSimIMRSpinEOBWaveformAll(
         &seobParams) != XLAL_SUCCESS )
   {
     XLAL_PRINT_INFO( " Calculation of dr/dt at t = tPeakOmega \n");
+    XLALDestroyREAL8Vector( sigmaKerr );
+    XLALDestroyREAL8Vector( sigmaStar );
+    XLALDestroyREAL8Vector( values );
+    XLALDestroyREAL8Vector( dvalues );
+    XLALDestroyREAL8Vector( rdMatchPoint );
+    XLALDestroyREAL8Vector( AttachParams );
+    XLALDestroyREAL8Vector( tmpValues2 );
+    XLALDestroyREAL8Vector( valuesV2 );
+    if (dynamicsV2 != NULL){
+        XLALDestroyREAL8Array( dynamicsV2 );
+    }
+    if (dynamicsV2Hi != NULL){
+        XLALDestroyREAL8Array( dynamicsV2Hi );
+    }
+    if (dynamics != NULL){
+        XLALDestroyREAL8Array( dynamics );
+    }
+    if (dynamicsHi != NULL){
+        XLALDestroyREAL8Array( dynamicsHi );
+    }
+    XLALDestroyREAL8Vector( LN_x );
+    XLALDestroyREAL8Vector( LN_y );
+    XLALDestroyREAL8Vector( LN_z );
+    XLALDestroyREAL8Vector( LN_xHi );
+    XLALDestroyREAL8Vector( LN_yHi );
+    XLALDestroyREAL8Vector( LN_zHi );
+    XLALDestroyREAL8Vector( Alpha );
+    XLALDestroyREAL8Vector( Beta );
+    XLALDestroyREAL8Vector( AlphaHi );
+    XLALDestroyREAL8Vector( BetaHi );
+    XLALDestroyREAL8Vector( Gamma );
+    XLALDestroyREAL8Vector( GammaHi );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -2800,6 +2120,38 @@ int XLALSimIMRSpinEOBWaveformAll(
       break;
     default:
       XLALPrintError( "XLAL Error - %s: wrong SpinAlignedEOBversion value, must be 1 or 2!\n", __func__ );
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
       XLAL_ERROR( XLAL_EINVAL );
       break;
   }
@@ -2981,6 +2333,64 @@ int XLALSimIMRSpinEOBWaveformAll(
           &seobParams) != XLAL_SUCCESS )
     {
       XLAL_PRINT_INFO( " Calculation of dr/dt at t = tPeakOmega \n");
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlist );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
+
+
       XLAL_ERROR( XLAL_EFUNC );
     }
 
@@ -3039,7 +2449,9 @@ int XLALSimIMRSpinEOBWaveformAll(
           gP2J = 0.0;
           aP2J = atan2( JframeEx[1], JframeEx[0]);
       }
-      /* Euler angles to go from precessing to J-frame */
+      /** Euler angles to go from precessing to J-frame. Note that we follow in this code passive rotation Z-Y-Z and notations
+       * of Arun et al. arXiv 0810.5336, however the Wiegner D-matrix and mode rotation coded up in LAL for active rotation 
+       * We make the angle transformation here in order to match two conventions  */
     alphaI2PTS->data->data[i] = -aI2P;
      betaI2PTS->data->data[i] = bI2P;
     gammaI2PTS->data->data[i] = -gI2P;
@@ -3095,6 +2507,62 @@ int XLALSimIMRSpinEOBWaveformAll(
      default:
        XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
        XLAL_ERROR( XLAL_EINVAL );
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlist );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
        break;
     }
 
@@ -3129,11 +2597,123 @@ int XLALSimIMRSpinEOBWaveformAll(
     if ( XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform( &hLM,
           &polarDynamics, values, v, ham, 2, 2, &seobParams ) == XLAL_FAILURE )
     {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlist );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EFUNC );
     }
     if ( XLALSimIMRSpinEOBNonQCCorrection( &hNQC,
           values, omega, &nqcCoeffs ) == XLAL_FAILURE )
     {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlist );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EFUNC );
     }
     hLM *= hNQC;
@@ -3152,6 +2732,62 @@ int XLALSimIMRSpinEOBWaveformAll(
     if ( XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform( &hLM,
         &polarDynamics, values, v, ham, 2, 1, &seobParams ) == XLAL_FAILURE )
     {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlist );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EFUNC );
     }
     h21TS->data->data[i]  = hLM;
@@ -3286,6 +2922,63 @@ int XLALSimIMRSpinEOBWaveformAll(
           &seobParams) != XLAL_SUCCESS )
     {
       XLAL_PRINT_INFO( " Calculation of dr/dt at t = tPeakOmega \n");
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( tlistHi );
+        XLALDestroyREAL8Vector( tlistRDPatchHi );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EFUNC );
     }
 
@@ -3430,10 +3123,124 @@ int XLALSimIMRSpinEOBWaveformAll(
     if ( XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform( &hLM, &polarDynamics, values, v, ham, 2, 2, &seobParams )
            == XLAL_FAILURE )
     {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( tlistHi );
+        XLALDestroyREAL8Vector( tlistRDPatchHi );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EFUNC );
     }
     if ( XLALSimIMRSpinEOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs ) == XLAL_FAILURE )
     {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( tlistHi );
+        XLALDestroyREAL8Vector( tlistRDPatchHi );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EFUNC );
     }
     hLM *= hNQC;
@@ -3516,7 +3323,64 @@ int XLALSimIMRSpinEOBWaveformAll(
       }
   }
   if( foundAmp==0 && found == 0){
-      XLALPrintError("Houston, we've got a problem SOS, SOS, SOS, cannot find the RD attachment point...\n");
+      XLALPrintError("Houston, we've got a problem SOS, SOS, SOS, cannot find the RD attachment point... m1 = %.16e, m2 = %.16e, fMin = %.16e, inclination = %.16e,  Mtotal = %.16e, eta = %.16e, spin1 = {%.16e, %.16e, %.16e},   spin2 = {%.16e, %.16e, %.16e} \n", 
+               m1, m2, (double)fMin, (double)inc, mTotal, eta, spin1[0], spin1[1], spin1[2], spin2[0], spin2[1], spin2[2]);
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( tlistRDPatchHi );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EINVAL );
 
   }
@@ -3543,6 +3407,62 @@ int XLALSimIMRSpinEOBWaveformAll(
  * **********************************************************************************/
   if ( XLALSimInspiralPrecessionRotateModes( hlmPTS, alphaP2JTS, betaP2JTS, gammaP2JTS ) == XLAL_FAILURE )
   {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( tlistRDPatchHi );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
     XLAL_ERROR( XLAL_EFUNC );
   }
   h22JTS  = XLALSphHarmTimeSeriesGetMode( hlmPTS, 2, 2 );
@@ -3576,6 +3496,62 @@ int XLALSimIMRSpinEOBWaveformAll(
   if ( XLALSimInspiralPrecessionRotateModes( hlmPTSHi,
         alphaP2JTSHi, betaP2JTSHi, gammaP2JTSHi ) == XLAL_FAILURE )
   {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( tlistRDPatchHi );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
     XLAL_ERROR( XLAL_EFUNC );
   }
   h22JTSHi  = XLALSphHarmTimeSeriesGetMode( hlmPTSHi, 2, 2 );
@@ -3620,6 +3596,64 @@ int XLALSimIMRSpinEOBWaveformAll(
   if ( combSize > tAttach )
   {
       XLALPrintError( "Function: %s, The comb size looks to be too big!!!\n", __func__ );
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( tlistRDPatchHi );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
+        XLALDestroyREAL8Vector( sigReHi );
+        XLALDestroyREAL8Vector( sigImHi );
       XLAL_ERROR( XLAL_EINVAL );
   }
   rdMatchPoint->data[0] = combSize < tAttach ? tAttach - combSize : 0;
@@ -3694,6 +3728,64 @@ int XLALSimIMRSpinEOBWaveformAll(
                     deltaTHigh, m1, m2, 0.0, 0.0, chi1L, 0.0, 0.0, chi2L,
                     &timeHi, rdMatchPoint, spinEOBApproximant, kappaJL, &timediff) == XLAL_FAILURE )
       {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( tlistRDPatchHi );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
+        XLALDestroyREAL8Vector( sigReHi );
+        XLALDestroyREAL8Vector( sigImHi );
           XLAL_ERROR( XLAL_EFUNC );
       }
 
@@ -3710,6 +3802,64 @@ int XLALSimIMRSpinEOBWaveformAll(
                     deltaTHigh, m1, m2, 0.0, 0.0, chi1L, 0.0, 0.0, chi2L,
                     &timeHi, rdMatchPoint, spinEOBApproximant, kappaJL, &timediff ) == XLAL_FAILURE )
       {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( tlistRDPatchHi );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
+        XLALDestroyREAL8Vector( sigReHi );
+        XLALDestroyREAL8Vector( sigImHi );
           XLAL_ERROR( XLAL_EFUNC );
       }
 
@@ -3793,6 +3943,64 @@ int XLALSimIMRSpinEOBWaveformAll(
                 &timeHi, rdMatchPoint, spinEOBApproximant, kappaJL )
             == XLAL_FAILURE )
     {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( tlistRDPatchHi );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
+        XLALDestroyREAL8Vector( sigReHi );
+        XLALDestroyREAL8Vector( sigImHi );
       XLAL_ERROR( XLAL_EFUNC );
     }
 
@@ -3951,6 +4159,8 @@ int XLALSimIMRSpinEOBWaveformAll(
   REAL8TimeSeries *gamI        = XLALCreateREAL8TimeSeries( "gammaJ2I",
         &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
 
+  /** NOTE we are making again transformation between notations of Arun et. al adopted here and 
+   * Wiegner matrix (active rotation) coded up in LAL */
   for (i=0; i< retLenLow + retLenRDPatchLow; i++){
       alpI->data->data[i] = -alJtoI;
       betI->data->data[i] = betJtoI;
@@ -3973,6 +4183,67 @@ int XLALSimIMRSpinEOBWaveformAll(
   if ( XLALSimInspiralPrecessionRotateModes( hIMRlmITS,
                 alpI, betI, gamI ) == XLAL_FAILURE )
   {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( tmpValues2 );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( LN_x );
+        XLALDestroyREAL8Vector( LN_y );
+        XLALDestroyREAL8Vector( LN_z );
+        XLALDestroyREAL8Vector( LN_xHi );
+        XLALDestroyREAL8Vector( LN_yHi );
+        XLALDestroyREAL8Vector( LN_zHi );
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+
+        XLALDestroySphHarmTimeSeries(hlmPTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmJTS);
+        XLALDestroySphHarmTimeSeries(hIMRlmITS);
+
+        XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
+
+        XLALDestroyREAL8TimeSeries(hPlusTS);
+        XLALDestroyREAL8TimeSeries(hCrossTS);
+        XLALDestroyREAL8Vector( sigReHi );
+        XLALDestroyREAL8Vector( sigImHi );
+        
+        XLALDestroyREAL8TimeSeries(alpI);
+        XLALDestroyREAL8TimeSeries(betI);
+        XLALDestroyREAL8TimeSeries(gamI);
     XLAL_ERROR( XLAL_EFUNC );
   }
   hIMR22ITS  = XLALSphHarmTimeSeriesGetMode( hIMRlmITS, 2, 2 );

@@ -14,7 +14,7 @@
 
 #include "LALSimIMRSpinEOBAuxFuncs.c"
 #include "LALSimIMREOBNQCCorrection.c"
-#include "LALSimIMRSpinEOBFactorizedWaveform.c"
+//#include "LALSimIMRSpinEOBFactorizedWaveform.c"
 #include "LALSimIMRSpinEOBFactorizedWaveformPrec.c"
 
 

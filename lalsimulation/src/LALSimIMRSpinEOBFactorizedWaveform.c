@@ -66,7 +66,7 @@
  */
 
 
-static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
+UNUSED static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
                                 COMPLEX16             * restrict hlm,
                                 REAL8Vector           * restrict values,
                                 const REAL8           v,
