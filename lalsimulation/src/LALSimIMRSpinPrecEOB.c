@@ -631,8 +631,8 @@ int XLALSimIMRSpinEOBWaveformAll(
   REAL8Vector cartPosVec, cartMomVec;
   REAL8 cartPosData[3] = {0,0,0}, cartMomData[3] = {0,0,0};
   REAL8 rcrossrdotNorm = 0, rvec[3]    = {0,0,0}, rcrossrdot[3] = {0,0,0};
-    REAL8 pvec[3] = {0,0,0},  rcrossp[3] = {0,0,0};//, rcrosspMag    = 0;
-  //REAL8  s1dotL = 0, s2dotL = 0;
+    REAL8 pvec[3] = {0,0,0},  rcrossp[3] = {0,0,0}, rcrosspMag    = 0;
+  REAL8  s1dotLN = 0, s2dotLN = 0;
 
   /* Polar vectors needed for waveform modes calculation */
   REAL8Vector  polarDynamics;
