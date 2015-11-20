@@ -26,7 +26,7 @@
  *
  * \brief Functions for producing SEOBNRv3 waveforms for
  * precessing binaries of spinning compact objects, as described
- * in Pan et al. ( arXiv 1307.6232 ) == YPP.
+ * in Pan et al. ( PRD 89, 084006 (2014) ) == YPP.
  */
 
 #include <math.h>
@@ -454,7 +454,6 @@ int XLALSimIMRSpinEOBWaveformAll(
      )
 
 {
-  /* FIXME: Moved this definition out of prototype to allow SWIG interaction*/
   REAL8 INspin1[3], INspin2[3];
   INspin1[0] = INspin1x;
   INspin1[1] = INspin1y;
@@ -619,7 +618,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   /* Parameters of the system */
   REAL8 m1 = 0, m2 = 0, mTotal = 0, eta = 0, mTScaled = 0;
   REAL8 amp0 = 0;
-  REAL8 amp = 0;
 
   /* Dynamics of the system */
   REAL8Vector tVec, phiDMod, phiMod;
@@ -673,13 +671,55 @@ int XLALSimIMRSpinEOBWaveformAll(
 
 
   /* Set up structures and calculate necessary PN parameters */
-  /* Due to precession, these need to get calculated in every step */
-  /* TODO: Only calculate non-spinning parts once */
-  SpinEOBParams           seobParams;
-  SpinEOBHCoeffs          seobCoeffs;
-  EOBParams               eobParams;
-  FacWaveformCoeffs       hCoeffs;
-  NewtonMultipolePrefixes prefixes;
+    /* SpinEOBParams contains:
+        EOBParams               *eobParams; // see below
+        SpinEOBHCoeffs       *seobCoeffs; // see below
+        EOBNonQCCoeffs     *nqcCoeffs; // see below
+        REAL8Vector             *s1Vec; // spin1
+        REAL8Vector             *s2Vec; // spin2
+        REAL8Vector             *sigmaStar; // Eq. 5.3 of Barausse and Buonanno PRD 81, 084024 (2010)
+        REAL8Vector             *sigmaKerr; // Eq. 5.2 of Barausse and Buonanno PRD 81, 084024 (2010)
+        REAL8                        a; // |sigmaKerr|
+        REAL8                        chi1; // spin1.LNhat/m1^2
+        REAL8                        chi2; // spin2.LNhat/m2^2
+        REAL8                        prev_dr; // stores dr/dt for stopping condition purposes
+        int                              alignedSpins; // flag to indicate whther the binary is precessing or not
+        int                              tortoise; // flag to switch on/off tortoise coordinates when calling Hamiltonian
+        int i                            gnoreflux;  // flag to swith off radiation reaction when calling the ODEs via XLALSpinPrecHcapNumericalDerivative
+        */
+    SpinEOBParams           seobParams;
+    /* SpinEOBHCoeffs contains:
+        double KK; // nonspinning calibration in Hamiltonian (for SEOBNRv2: 1.712 − 1.804eta − 39:77eta^2 + 103.2eta^3)
+        double k0; // Delta_i coefficients in the Delta_u potential Eq. 8 of PRD 86, 024011 (2012) and https://dcc.ligo.org/T1400476
+        double k1;
+        double k2;
+        double k3;
+        double k4;
+        double k5;
+        double k5l;
+        double b3; // omega_{fd}^1 frame dragging parameter in Hamiltonian (unused)
+        double bb3; // omega_{fd}^2 frame dragging parameter in Hamiltonian (unused)
+        double d1; // spin-orbit calibration in Hamiltonian for SEOBNRv1
+        double d1v2; // spin-orbit calibration in Hamiltonian for SEOBNRv1
+        double dheffSS; // spin-spin calibration in Hamiltonian for SEOBNRv1
+        double dheffSSv2; // spin-spin calibration in Hamiltonian for SEOBNRv1
+        UINT4    SpinAlignedEOBversion;
+        int      updateHCoeffs;
+    */
+    SpinEOBHCoeffs          seobCoeffs;
+    /* EOBParams contains parameters common to nonspin and spin EOBNR models,
+        including mass ratio, masses, pre-computed coefficients for potential, flux and waveforms,
+        NQC coefficients and Newtonian multiple prefixes */
+    EOBParams               eobParams;
+    /*FacWaveformCoeffscontaining the coefficients for calculating the factorized waveform.
+      The coefficients are precomputed in the function  XLALSimIMREOBCalcSpinPrecFacWaveformCoefficients */
+    FacWaveformCoeffs       hCoeffs;
+    /* NewtonMultipolePrefixes contains all the terms of the Newtonian multipole which
+       are constant over the course of the evolution, and can therefore be
+       pre-computed. They are stored in a two-dimensional array, which is
+       indexed as values[l][m]. This is filled by XLALSimIMREOBComputeNewtonMultipolePrefixes */
+    NewtonMultipolePrefixes prefixes;
+
 
   memset( &seobParams, 0, sizeof(seobParams) );
   memset( &seobCoeffs, 0, sizeof(seobCoeffs) );
@@ -691,7 +731,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   REAL8 tPeakOmega = 0, tAttach = 0, combSize = 0,/*longCombSize,*/ deltaNQC =0;
   REAL8  sh  = 0;
   REAL8 vX = 0, vY = 0, vZ = 0;
-  REAL8  vOmega = 0;
   REAL8 magR = 0, Lx   = 0, Ly   = 0, Lz = 0, magL = 0, magJ = 0,
         LNhx = 0, LNhy = 0, LNhz = 0, magLN =0, Jx = 0, Jy   = 0, Jz = 0;
   REAL8 aI2P = 0, bI2P = 0, gI2P = 0, aP2J = 0, bP2J = 0, gP2J = 0;
@@ -713,10 +752,11 @@ int XLALSimIMRSpinEOBWaveformAll(
   gsl_interp_accel *acc = NULL;
 
   /* Accuracies of adaptive Runge-Kutta integrator */
+    /* Note that this accuracies are lower than those used in SEOBNRv2: they allow reasonable runtimes for precessing systems */
    REAL8 EPS_ABS = 1.0e-8;
   const REAL8 EPS_REL = 1.0e-8;
   /* Relax abs accuracy in case of highly symmetric case that would otherwise slow down significantly */
-  if (sqrt((INspin1[0] + INspin2[0])*(INspin1[0] + INspin2[0]) + (INspin1[1] + INspin2[1])*(INspin1[1] + INspin2[1]) + 0*(INspin1[2] + INspin2[2])*(INspin1[2] + INspin2[2])) < 1.0e-10 && (theta1Ini >= 1e-4 && theta2Ini >= 1e-4))
+  if (sqrt((INspin1[0] + INspin2[0])*(INspin1[0] + INspin2[0]) + (INspin1[1] + INspin2[1])*(INspin1[1] + INspin2[1])) < 1.0e-10 && !SpinsAlmostAligned)
   {
       if (debugPK) XLAL_PRINT_INFO("EPS_ABS is decreased!\n");
       EPS_ABS = 1.0e-4;
@@ -789,6 +829,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   }
 
   /* Calculate the time we will need to step back for ringdown */
+    /* Stepping back 150M in time is very conservative: the attachment point usually lies in the last 20M of the trajectory */
   tStepBack = 150. * mTScaled;
   nStepBack = ceil( tStepBack / deltaT );
 
@@ -919,7 +960,22 @@ int XLALSimIMRSpinEOBWaveformAll(
   eobParams.m2  = m2;
   eobParams.eta = eta;
 
-  /* Pre-compute the Hamiltonian coefficients */
+  /* Pre-compute the Hamiltonian coefficients
+    double KK; // nonspinning calibration in Hamiltonian (for SEOBNRv2: 1.712 − 1.804eta − 39:77eta^2 + 103.2eta^3)
+    double k0; // Delta_i coefficients in the Delta_u potential Eq. 8 of PRD 86, 024011 (2012) and https://dcc.ligo.org/T1400476
+    double k1;
+    double k2;
+    double k3;
+    double k4;
+    double k5;
+    double k5l;
+    double b3; // omega_{fd}^1 frame dragging parameter in Hamiltonian (unused)
+    double bb3; // omega_{fd}^2 frame dragging parameter in Hamiltonian (unused)
+    double d1; // spin-orbit calibration in Hamiltonian for SEOBNRv1
+    double d1v2; // spin-orbit calibration in Hamiltonian for SEOBNRv1
+    double dheffSS; // spin-spin calibration in Hamiltonian for SEOBNRv1
+    double dheffSSv2; // spin-spin calibration in Hamiltonian for SEOBNRv1
+   */
   if ( XLALSimIMRCalculateSpinPrecEOBHCoeffs( &seobCoeffs, eta, a,
                           SpinAlignedEOBversion ) == XLAL_FAILURE )
   {
@@ -1663,18 +1719,18 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   for( i=0; i < retLenLow; i++ )
   {
-        tmpR[0] = posVecx.data[i]; tmpR[1] = posVecy.data[i]; tmpR[2] = posVecz.data[i];
-		tmpRdot[0] = gsl_spline_eval_deriv( x_spline, tVec.data[i], x_acc );
-		tmpRdot[1] = gsl_spline_eval_deriv( y_spline, tVec.data[i], y_acc );
-		tmpRdot[2] = gsl_spline_eval_deriv( z_spline, tVec.data[i], z_acc );
+      tmpR[0] = posVecx.data[i]; tmpR[1] = posVecy.data[i]; tmpR[2] = posVecz.data[i];
+      tmpRdot[0] = gsl_spline_eval_deriv( x_spline, tVec.data[i], x_acc );
+      tmpRdot[1] = gsl_spline_eval_deriv( y_spline, tVec.data[i], y_acc );
+      tmpRdot[2] = gsl_spline_eval_deriv( z_spline, tVec.data[i], z_acc );
 
-		LN_x->data[i] = tmpR[1] * tmpRdot[2] - tmpR[2] * tmpRdot[1];
-		LN_y->data[i] = tmpR[2] * tmpRdot[0] - tmpR[0] * tmpRdot[2];
-		LN_z->data[i] = tmpR[0] * tmpRdot[1] - tmpR[1] * tmpRdot[0];
+      LN_x->data[i] = tmpR[1] * tmpRdot[2] - tmpR[2] * tmpRdot[1];
+      LN_y->data[i] = tmpR[2] * tmpRdot[0] - tmpR[0] * tmpRdot[2];
+      LN_z->data[i] = tmpR[0] * tmpRdot[1] - tmpR[1] * tmpRdot[0];
 
-		magLN = sqrt(LN_x->data[i] * LN_x->data[i] + LN_y->data[i] * LN_y->data[i]
+      magLN = sqrt(LN_x->data[i] * LN_x->data[i] + LN_y->data[i] * LN_y->data[i]
               + LN_z->data[i] * LN_z->data[i]);
-		LN_x->data[i] /= magLN; LN_y->data[i] /= magLN; LN_z->data[i] /= magLN;
+      LN_x->data[i] /= magLN; LN_y->data[i] /= magLN; LN_z->data[i] /= magLN;
 
     /*  Eq. 19 of PRD 89, 084006 (2014) */
     /*  Also unwrap the two angles */
@@ -1685,23 +1741,24 @@ int XLALSimIMRSpinEOBWaveformAll(
                       + phaseCounterA * LAL_TWOPI;
     }
 
-    if( i && Alpha->data[i] - Alpha->data[i-1] > 5. )
-		{
-			phaseCounterA--;
-			Alpha->data[i] -= LAL_TWOPI;
-		} else if ( i && Alpha->data[i] - Alpha->data[i-1] < -5. )
-		{
-			phaseCounterA++;
-			Alpha->data[i] += LAL_TWOPI;
-		}
-
-    /* FIXME: Why is there a "0" multiplying phaseCounterB ?? */
-		Beta->data[i] = acos( LN_z->data[i] ) + 0*phaseCounterB * LAL_TWOPI;
-
-		if( i && Beta->data[i] > Beta->data[i-1] )
-		{
-			phaseCounterB--;
-		}
+    if( i>0 && Alpha->data[i] - Alpha->data[i-1] > 5. ) {
+        phaseCounterA--;
+        Alpha->data[i] -= LAL_TWOPI;
+    }
+    else if ( i && Alpha->data[i] - Alpha->data[i-1] < -5. ) {
+        phaseCounterA++;
+        Alpha->data[i] += LAL_TWOPI;
+    }
+    if (LN_z->data[i] >1.) {
+        LN_z->data[i] = 1.;
+    }
+    if (LN_z->data[i] <-1.) {
+        LN_z->data[i] = -1.;
+    }
+    Beta->data[i] = acos( LN_z->data[i] );
+    if( i>0 && Beta->data[i] > Beta->data[i-1] ) {
+        phaseCounterB--;
+    }
 
     if(debugPK) {
       fprintf( out, "%.16e %.16e %.16e %d %d %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
@@ -1783,17 +1840,17 @@ int XLALSimIMRSpinEOBWaveformAll(
   }
   for( i=0; i < retLenHi; i++ )
   {
-		tmpR[0] = posVecxHi.data[i]; tmpR[1] = posVecyHi.data[i]; tmpR[2] = posVeczHi.data[i];
-		tmpRdot[0] = gsl_spline_eval_deriv( x_spline, timeHi.data[i], x_acc );
-		tmpRdot[1] = gsl_spline_eval_deriv( y_spline, timeHi.data[i], y_acc );
-		tmpRdot[2] = gsl_spline_eval_deriv( z_spline, timeHi.data[i], z_acc );
+    tmpR[0] = posVecxHi.data[i]; tmpR[1] = posVecyHi.data[i]; tmpR[2] = posVeczHi.data[i];
+    tmpRdot[0] = gsl_spline_eval_deriv( x_spline, timeHi.data[i], x_acc );
+    tmpRdot[1] = gsl_spline_eval_deriv( y_spline, timeHi.data[i], y_acc );
+    tmpRdot[2] = gsl_spline_eval_deriv( z_spline, timeHi.data[i], z_acc );
 
-		LN_xHi->data[i] = tmpR[1] * tmpRdot[2] - tmpR[2] * tmpRdot[1];
-		LN_yHi->data[i] = tmpR[2] * tmpRdot[0] - tmpR[0] * tmpRdot[2];
-		LN_zHi->data[i] = tmpR[0] * tmpRdot[1] - tmpR[1] * tmpRdot[0];
+    LN_xHi->data[i] = tmpR[1] * tmpRdot[2] - tmpR[2] * tmpRdot[1];
+    LN_yHi->data[i] = tmpR[2] * tmpRdot[0] - tmpR[0] * tmpRdot[2];
+    LN_zHi->data[i] = tmpR[0] * tmpRdot[1] - tmpR[1] * tmpRdot[0];
 
-		magLN = sqrt(LN_xHi->data[i] * LN_xHi->data[i] + LN_yHi->data[i] * LN_yHi->data[i] + LN_zHi->data[i] * LN_zHi->data[i]);
-		LN_xHi->data[i] /= magLN; LN_yHi->data[i] /= magLN; LN_zHi->data[i] /= magLN;
+    magLN = sqrt(LN_xHi->data[i] * LN_xHi->data[i] + LN_yHi->data[i] * LN_yHi->data[i] + LN_zHi->data[i] * LN_zHi->data[i]);
+    LN_xHi->data[i] /= magLN; LN_yHi->data[i] /= magLN; LN_zHi->data[i] /= magLN;
 
 		/* Unwrap the two angles */
     if (fabs(LN_xHi->data[i]) <= 1.e-7 && fabs(LN_yHi->data[i]) <=1.e-7){
@@ -1801,12 +1858,12 @@ int XLALSimIMRSpinEOBWaveformAll(
     } else {
       AlphaHi->data[i] = atan2( LN_yHi->data[i], LN_xHi->data[i] ) + phaseCounterA * LAL_TWOPI;
     }
-    if( i && AlphaHi->data[i] - AlphaHi->data[i-1] > 5. )
+    if( i>0 && AlphaHi->data[i] - AlphaHi->data[i-1] > 5. )
 		{
 			phaseCounterA--;
 			AlphaHi->data[i] -= LAL_TWOPI;
 		}
-		else if( i && AlphaHi->data[i] - AlphaHi->data[i-1] < -5. )
+		else if( i>0 && AlphaHi->data[i] - AlphaHi->data[i-1] < -5. )
 		{
 			phaseCounterA++;
 			AlphaHi->data[i] += LAL_TWOPI;
@@ -1815,9 +1872,8 @@ int XLALSimIMRSpinEOBWaveformAll(
 		/* Make sure that Alpha agrees initially with the low SR value */
 		AlphaHi->data[i] -= (AlphaHi->data[0] - Alpha->data[hiSRndx]);
 
-    /* FIXME: Why is phaseCounterB multiplied by 0?? */
-		BetaHi->data[i] = acos( LN_zHi->data[i] ) + 0*phaseCounterB * LAL_TWOPI;
-		if( i && BetaHi->data[i] > BetaHi->data[i-1] )
+		BetaHi->data[i] = acos( LN_zHi->data[i] );
+		if( i>0 && BetaHi->data[i] > BetaHi->data[i-1] )
 		{
 			phaseCounterB--;
 		}
@@ -2389,8 +2445,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     cross_product( rvec, rdotvec, rcrossrdot );
     magR = sqrt(inner_product(rvec, rvec));
     omega = sqrt(inner_product(rcrossrdot, rcrossrdot)) / (magR*magR);
-    vOmega = v = cbrt( omega );
-    amp = amp0 * vOmega * vOmega;
+    v = cbrt( omega );
 
     /* Cartesian vectors needed to calculate Hamiltonian */
     cartPosVec.length = cartMomVec.length = 3;
@@ -2979,8 +3034,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
     magR   = sqrt(inner_product(rvec, rvec));
     omega  = sqrt(inner_product(rcrossrdot, rcrossrdot)) / (magR*magR);
-    vOmega = v = cbrt( omega );
-    amp = amp0 * vOmega * vOmega;
+    v = cbrt( omega );
 
     /* Cartesian vectors needed to calculate Hamiltonian */
     cartPosVec.length = cartMomVec.length = 3;
