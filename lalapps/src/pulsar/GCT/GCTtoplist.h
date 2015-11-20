@@ -51,6 +51,8 @@ typedef struct {
   REAL4 log10BSGL;    /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGL}}\f$ */
   UINT4 numDetectors; /**< number of detectors for optional avTwoFX arrays */
   REAL4 avTwoFX[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector average \f$2\F^X\f$-values */
+  REAL4 maxTwoFl; /**< multi-detector maximum 2F over segments \f$\max2\F^\ell\f$ */
+  REAL4 maxTwoFXl[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector maximum 2F over segments \f$\max2\F^{X\ell}\f$ */
   REAL4 avTwoFrecalc;  /**< average of \f$2\F\f$-values as recomputed by recalcToplistStats */
   REAL4 avTwoFXrecalc[PULSAR_MAX_DETECTORS];  /**< fixed-size array of single-detector \f$2\F^X\f$-values as recomputed by recalcToplistStats */
   REAL4 log10BSGLrecalc; /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGL}}\f$ recomputed by recalcToplistStats */

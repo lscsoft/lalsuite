@@ -98,6 +98,7 @@ extern char *global_column_headings_stringp;
 static void reduce_gctFstat_toplist_precision(toplist_t *l);
 static int _atomic_write_gctFstat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done);
 static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen);
+static int print_single_detector_quantities_to_str(char *outstr, size_t outstrlen, const REAL4 *quantities, const UINT4 numDetectors);
 static int write_gctFstat_toplist_item_to_fp(GCTtopOutputEntry fline, FILE*fp, UINT4*checksum);
 
 /* ordering function for sorting the list */
@@ -248,26 +249,23 @@ void sort_gctFstat_toplist(toplist_t*l) {
 /* Prints a Toplist line to a string buffer.
    Separate function to assure consistency of output and reduced precision for sorting */
 static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen) {
-  const char *fn = __func__;
 
   /* add extra output field for line-robust statistic BSGL */
   char BSGLstr[256] = "";	/* defaults to empty */
   if ( fline.log10BSGL > -LAL_REAL4_MAX*0.2 ) /* if --computeBSGL=FALSE, the log10BSGL field was initialised to -LAL_REAL4_MAX; if --computeBSGL=TRUE, it is at least -LAL_REAL4_MAX*0.1 */
     {
-      char buf0[256];
       snprintf ( BSGLstr, sizeof(BSGLstr), " %.6f", fline.log10BSGL );
-      for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
-        {
-          snprintf ( buf0, sizeof(buf0), " %.6f", fline.avTwoFX[X] );
-          UINT4 len1 = strlen ( BSGLstr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( BSGLstr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %zu)\n", fn, len1, sizeof(BSGLstr ));
-            break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
-          }
-          strcat ( BSGLstr, buf0 );
-        } /* for X < numDet */
-
+      print_single_detector_quantities_to_str ( BSGLstr, sizeof(BSGLstr), fline.avTwoFX, fline.numDetectors );
     } /* if fline.log10BSGL */
+
+  /* add extra output fields for max2F over segments */
+  char maxTwoFstr[256] = "";	/* defaults to empty */
+  if ( fline.maxTwoFl >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually computed in inner loop */
+    {
+      snprintf ( maxTwoFstr, sizeof(maxTwoFstr), " %.6f", fline.maxTwoFl );
+      print_single_detector_quantities_to_str ( maxTwoFstr, sizeof(maxTwoFstr), fline.maxTwoFXl, fline.numDetectors );
+    }
+
   /* add extra output fields for recalculated statistics */
   char recalcStr[256] = "";	/* defaults to empty */
   if ( fline.avTwoFrecalc >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
@@ -279,32 +277,15 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
           snprintf ( buf0, sizeof(buf0), " %.6f", fline.log10BSGLrecalc );
           strcat ( recalcStr, buf0 );
         } /* if ( fline.log10BSGL > -LAL_REAL4_MAX*0.2 ) */
-      for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
-        {
-          snprintf ( buf0, sizeof(buf0), " %.6f", fline.avTwoFXrecalc[X] );
-          UINT4 len1 = strlen ( recalcStr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( recalcStr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %zu)\n", fn, len1, sizeof(recalcStr ));
-            break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
-          }
-          strcat ( recalcStr, buf0 );
-        } /* for X < numDet */
+      print_single_detector_quantities_to_str ( recalcStr, sizeof(recalcStr), fline.avTwoFXrecalc, fline.numDetectors );
+
       if ( fline.twoFloudestSeg >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
       {
         snprintf ( buf0, sizeof(buf0), " %d %.6f", fline.loudestSeg, fline.twoFloudestSeg );
         strcat ( recalcStr, buf0 );
-        for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
-          {
-            snprintf ( buf0, sizeof(buf0), " %.6f", fline.twoFXloudestSeg[X] );
-            UINT4 len1 = strlen ( recalcStr ) + strlen ( buf0 ) + 1;
-            if ( len1 > sizeof ( recalcStr ) ) {
-              XLALPrintError ("%s: assembled output string too long! (%d > %zu)\n", fn, len1, sizeof(recalcStr ));
-              break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
-            }
-            strcat ( recalcStr, buf0 );
-          } /* for X < numDet */
+        print_single_detector_quantities_to_str ( recalcStr, sizeof(recalcStr), fline.twoFXloudestSeg, fline.numDetectors );
       } /* if ( fline.twoFloudestSeg >= 0.0 ) */
-    } /* if avTwoFX */
+    } /* if avTwoFrecalc */
 
   int len;
   if (fline.have_f3dot){
@@ -312,9 +293,9 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 #ifdef EAH_BOINC /* for S5GC1HF Apps use exactly the precision used in the workunit generator
 		    (12g for Freq and F1dot) and skygrid file (7f for Alpha & Delta)
 		    as discussed with Holger & Reinhard 5.11.2010 */
-                     "%.16f %.7f %.7f %.12g %.12g %.12g %d %.6f%s%s\n",
+                     "%.16f %.7f %.7f %.12g %.12g %.12g %d %.6f%s%s%s\n",
 #else
-                     "%.16g %.13g %.13g %.13g %.13g %.13g %d %.6f%s%s\n",
+                     "%.16g %.13g %.13g %.13g %.13g %.13g %d %.6f%s%s%s\n",
 #endif
                      fline.Freq,
                      fline.Alpha,
@@ -325,6 +306,7 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
                      fline.nc,
                      fline.avTwoF,
                      BSGLstr,
+                     maxTwoFstr,
                      recalcStr
                  );
   }
@@ -333,9 +315,9 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 #ifdef EAH_BOINC /* for S5GC1HF Apps use exactly the precision used in the workunit generator
 		    (12g for Freq and F1dot) and skygrid file (7f for Alpha & Delta)
 		    as discussed with Holger & Reinhard 5.11.2010 */
-                     "%.16f %.7f %.7f %.12g %.12g %d %.6f%s%s\n",
+                     "%.16f %.7f %.7f %.12g %.12g %d %.6f%s%s%s\n",
 #else
-                     "%.16g %.13g %.13g %.13g %.13g %d %.6f%s%s\n",
+                     "%.16g %.13g %.13g %.13g %.13g %d %.6f%s%s%s\n",
 #endif
                      fline.Freq,
                      fline.Alpha,
@@ -345,6 +327,7 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
                      fline.nc,
                      fline.avTwoF,
                      BSGLstr,
+                     maxTwoFstr,
                      recalcStr
                  );
 }
@@ -352,7 +335,25 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 
 } /* print_gctFstatline_to_str() */
 
+static int print_single_detector_quantities_to_str ( char *outstr, size_t outstrlen, const REAL4 *quantities, const UINT4 numDetectors ) {
+  const char *fn = __func__;
 
+  UINT4 len = strlen ( outstr );
+
+  char buf0[outstrlen];
+  for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
+    snprintf ( buf0, sizeof(buf0), " %.6f", quantities[X] );
+    len = strlen ( outstr ) + strlen ( buf0 ) + 1;
+    if ( len > outstrlen ) {
+      XLALPrintError ("%s: assembled output string too long! (%d > %zu)\n", fn, len, outstrlen);
+      break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
+    }
+    strcat ( outstr, buf0 );
+  } /* for X < numDet */
+
+  return len;
+
+} /* print_single_detector_quantities_to_str() */
 
 /* writes an GCTtopOutputEntry line to an open filepointer.
    Returns the number of chars written, -1 if in error

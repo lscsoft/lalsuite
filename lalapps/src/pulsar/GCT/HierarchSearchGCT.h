@@ -164,6 +164,8 @@ extern "C" {
     UINT4 freqlengthAL;     /**< "aligned" number of fine-grid points in frequency: in blocks of 16 bytes, consistent with ALAlloc() [used only for sumTwoFX]*/
     REAL4 * sumTwoFX;       /**< sum of per-IFO 2F-values, 2D array over frequencies and detectors (of length 'freqlengthAL*numDetectors') */
     FINEGRID_NC_T * nc;     /**< number count (1D array over frequencies, of length 'length') */
+    REAL4 * maxTwoFl;         /**< maximum of multi-IFO 2F over segments, 1D array over fine-grid frequencies (of length 'length') */
+    REAL4 * maxTwoFXl;         /**< maximum of per-IFO 2F over segments, 2D array over frequencies and detectors (of length 'freqlengthAL*numDetectors') */
   } FineGrid;
 
   /* macro to index arrays in the FineGrid structure

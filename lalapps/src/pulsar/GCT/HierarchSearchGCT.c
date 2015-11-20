@@ -356,6 +356,7 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_BSGLlogcorr = FALSE;		/* compute log-correction in line-robust statistic BSGL (slower) or not (faster) */
   REAL8   uvar_Fstar0 = 0.0;			/* BSGL transition-scale parameter 'Fstar0', see documentation for XLALCreateBSGLSetup() for details */
   LALStringVector *uvar_oLGX = NULL;       	/* prior per-detector line-vs-Gauss odds ratios 'oLGX', see XLALCreateBSGLSetup() for details */
+  BOOLEAN uvar_getMaxFperSeg = FALSE;          	/* In Fstat loop, compute maximum F and FX over segments */
   // --------------------------------------------
 
   REAL8 uvar_dAlpha = DALPHA;   /* resolution for flat or isotropic grids -- coarse grid*/
@@ -502,6 +503,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "Fstar0",       0, UVAR_OPTIONAL,  "BSGL: transition-scale parameter 'Fstar0'", &uvar_Fstar0 ), &status);
   LAL_CALL( LALRegisterLISTUserVar(   &status, "oLGX",         0, UVAR_OPTIONAL,  "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)", &uvar_oLGX), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "BSGLlogcorr",  0, UVAR_DEVELOPER, "BSGL: include log-correction terms (slower) or not (faster)", &uvar_BSGLlogcorr), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "getMaxFperSeg",   0, UVAR_OPTIONAL, "Compute and output maximum F and FX over segments", &uvar_getMaxFperSeg), &status);
   // --------------------------------------------
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethod",  0, UVAR_OPTIONAL, XLALFstatMethodHelpString(), &uvar_FstatMethod ), &status);
@@ -661,6 +663,8 @@ int MAIN( int argc, char *argv[]) {
   finegrid.nc= NULL;
   finegrid.sumTwoF=NULL;
   finegrid.sumTwoFX=NULL;
+  finegrid.maxTwoFl=NULL;
+  finegrid.maxTwoFXl=NULL;
 
   /* initialize ephemeris info */
   EphemerisData *edat;
@@ -1016,6 +1020,9 @@ int MAIN( int argc, char *argv[]) {
   if ( uvar_computeBSGL ) {
     column_headings_string_length += 10 + numDetectors*8; /* 10 for " log10BSGL" and 8 per detector for " <2F_XY>" */
   }
+  if ( uvar_getMaxFperSeg ) {
+    column_headings_string_length += 6 + numDetectors*9; /* 6 for " max2F" and 9 per detector for " max2F_XY" */
+  }
   if ( uvar_recalcToplistStats ) {
     column_headings_string_length += 6 + 11 + numDetectors*9; /* 6 for " <2Fr>" and 9 per detector for " <2Fr_XY>" */
     if ( uvar_computeBSGL) {
@@ -1036,6 +1043,14 @@ int MAIN( int argc, char *argv[]) {
     for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
       char headingX[9];
       snprintf ( headingX, sizeof(headingX), " <2F_%s>", detectorIDs->data[X] );
+      strcat ( column_headings_string, headingX );
+    } /* for X < numDet */
+  }
+  if ( uvar_getMaxFperSeg ) {
+    strcat ( column_headings_string, " max2F" );
+    for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
+      char headingX[10];
+      snprintf ( headingX, sizeof(headingX), " max2F_%s", detectorIDs->data[X] );
       strcat ( column_headings_string, headingX );
     } /* for X < numDet */
   }
@@ -1310,8 +1325,14 @@ int MAIN( int argc, char *argv[]) {
 
           finegrid.nc = (FINEGRID_NC_T *)ALRealloc( finegrid.nc, finegrid.length * sizeof(FINEGRID_NC_T));
           finegrid.sumTwoF = (REAL4 *)ALRealloc( finegrid.sumTwoF, finegrid.length * sizeof(REAL4));
-	  if ( uvar_computeBSGL ) {
+          if ( uvar_getMaxFperSeg ) {
+            finegrid.maxTwoFl = (REAL4 *)ALRealloc( finegrid.maxTwoFl, finegrid.length * sizeof(REAL4));
+          }
+          if ( uvar_computeBSGL ) {
             finegrid.sumTwoFX = (REAL4 *)ALRealloc( finegrid.sumTwoFX, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4));
+            if ( uvar_getMaxFperSeg ) {
+              finegrid.maxTwoFXl = (REAL4 *)ALRealloc( finegrid.maxTwoFXl, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4));
+            }
           }
 
           if ( finegrid.nc == NULL || finegrid.sumTwoF == NULL) {
@@ -1344,8 +1365,14 @@ int MAIN( int argc, char *argv[]) {
               /* initialize the entire finegrid ( 2F-sum and number count set to 0 ) */
               memset( finegrid.nc, 0, finegrid.length * sizeof(FINEGRID_NC_T) );
               memset( finegrid.sumTwoF, 0, finegrid.length * sizeof(REAL4) );
-	      if ( uvar_computeBSGL ) {
+              if ( uvar_getMaxFperSeg ) {
+                memset( finegrid.maxTwoFl, 0, finegrid.length * sizeof(REAL4) );
+              }
+              if ( uvar_computeBSGL ) {
                 memset( finegrid.sumTwoFX, 0, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4) );
+                if ( uvar_getMaxFperSeg ) {
+                  memset( finegrid.maxTwoFXl, 0, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4) );
+                }
               }
 
               /* compute F-statistic values for coarse grid the first time through fine grid fdots loop */
@@ -1553,6 +1580,9 @@ int MAIN( int argc, char *argv[]) {
 #else
                 gc_hotloop_no_nc ( fgrid2F, cgrid2F, finegrid.freqlength );
 #endif
+                if ( uvar_getMaxFperSeg ) {
+                  // FIXME not implemented for optimized hotloop
+                }
                 if ( uvar_computeBSGL ) {
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
@@ -1569,6 +1599,24 @@ int MAIN( int argc, char *argv[]) {
 #endif // EXP_NO_NUM_COUNT
                   fgrid2F++;
                   cgrid2F++;
+                }
+                if ( uvar_getMaxFperSeg ) {
+                  cgrid2F = coarsegrid.TwoF + CG_INDEX(coarsegrid, k, U1idx);
+                  REAL4 * fgridMax2Fl = finegrid.maxTwoFl + FG_INDEX(finegrid, 0);
+                  for (UINT4 ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
+                    fgridMax2Fl[0] = fmax( fgridMax2Fl[0], cgrid2F[0] );
+                    fgridMax2Fl++;
+                    cgrid2F++;
+                  }
+                  for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
+                    REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
+                    REAL4 * fgridMax2FXl = finegrid.maxTwoFXl + FG_FX_INDEX(finegrid, X, 0);
+                    for(UINT4 ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
+                      fgridMax2FXl[0] = fmax( fgridMax2FXl[0], cgrid2FX[0] );
+                      fgridMax2FXl++;
+                      cgrid2FX++;
+                    }
+                  }
                 }
                 if ( uvar_computeBSGL ) {
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
@@ -1780,6 +1828,12 @@ int MAIN( int argc, char *argv[]) {
   }
   if (finegrid.sumTwoFX) {
     ALFree(finegrid.sumTwoFX);
+  }
+  if (finegrid.maxTwoFl) {
+    ALFree(finegrid.maxTwoFl);
+  }
+  if (finegrid.maxTwoFXl) {
+    ALFree(finegrid.maxTwoFXl);
   }
 
   if (coarsegrid.TwoF) {
@@ -2411,9 +2465,11 @@ void UpdateSemiCohToplists ( LALStatus *status,
     line.F3dot = f3dot_fg;
     line.nc = in->nc[ifreq_fg];
     line.avTwoF = 0.0; /* will be set to average over segments later */
+    line.maxTwoFl = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFstatline_to_str if actually computed */
     line.numDetectors = in->numDetectors;
     for (UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X++) { /* initialise single-IFO F-stat arrays to zero */
       line.avTwoFX[X] = 0.0;
+      line.maxTwoFXl[X] = 0.0;
       line.avTwoFXrecalc[X] = 0.0;
     }
     line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFstatline_to_str if later overwritten in recalcToplistStats step */
@@ -2452,6 +2508,14 @@ void UpdateSemiCohToplists ( LALStatus *status,
       for (UINT4 X = 0; X < in->numDetectors; X++) {
         line.avTwoFX[X] = sumTwoFX[X]*NSegmentsInvX[X]; /* average single-2F by per-IFO number of segments */
       }
+    }
+
+    if ( in->maxTwoFXl ) { /* if we already have max-per-segment values from the main loop, insert these too */
+      line.maxTwoFl = in->maxTwoFl[ifreq_fg];
+      for (UINT4 X = 0; X < in->numDetectors; X++) {
+       line.maxTwoFXl[X] = in->maxTwoFXl[FG_FX_INDEX(*in, X, ifreq_fg)];
+      }
+      // FIXME: compute transient-line-robust stat here
     }
 
     insert_into_gctFstat_toplist( list1, line);
