@@ -187,15 +187,16 @@ XLALCompareBSGLComputations ( const REAL4 TwoF,			/**< multi-detector  Fstat */
   log10BSGL_extcomp_notallterms *= LAL_LOG10E;
 
   /* faster version: use only the leading term of the BSGL denominator sum */
+  UINT4 numSegs = 1;
   BSGLSetup *setup_noLogCorrection;
-  XLAL_CHECK ( (setup_noLogCorrection = XLALCreateBSGLSetup ( numDetectors, Fstar0, oLGX, FALSE )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (setup_noLogCorrection = XLALCreateBSGLSetup ( numDetectors, Fstar0, oLGX, FALSE, numSegs )) != NULL, XLAL_EFUNC );
   REAL4 log10BSGL_XLAL_notallterms = XLALComputeBSGL ( TwoF, TwoFX->data, setup_noLogCorrection );
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
   XLALFree ( setup_noLogCorrection ); setup_noLogCorrection = NULL;
 
   /* more precise version: use all terms of the BSGL denominator sum */
   BSGLSetup *setup_withLogCorrection;
-  XLAL_CHECK ( (setup_withLogCorrection = XLALCreateBSGLSetup ( numDetectors, Fstar0, oLGX, TRUE )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (setup_withLogCorrection = XLALCreateBSGLSetup ( numDetectors, Fstar0, oLGX, TRUE, numSegs )) != NULL, XLAL_EFUNC );
   REAL4 log10BSGL_XLAL_allterms = XLALComputeBSGL ( TwoF, TwoFX->data, setup_withLogCorrection );
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
   XLALFree ( setup_withLogCorrection ); setup_withLogCorrection = NULL;

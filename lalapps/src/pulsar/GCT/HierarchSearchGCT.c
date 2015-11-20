@@ -996,7 +996,7 @@ int MAIN( int argc, char *argv[]) {
           oLGX_p = &oLGX[0];
         } // if uvar_oLGX != NULL
 
-      usefulParams.BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar_Fstar0, oLGX_p, uvar_BSGLlogcorr );
+      usefulParams.BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar_Fstar0, oLGX_p, uvar_BSGLlogcorr, nStacks );
       if ( usefulParams.BSGLsetup == NULL ) {
         fprintf(stderr, "XLALCreateBSGLSetup() failed\n");
         return( HIERARCHICALSEARCH_EBAD );

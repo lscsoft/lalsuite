@@ -36,8 +36,10 @@ struct tagBSGLSetup {
   UINT4 numDetectors;
   REAL4 Fstar0;
   REAL4 oLGX[PULSAR_MAX_DETECTORS];
-  REAL4 C;				// C  = Fstar0 + log(1-pL)
-  REAL4 CX[PULSAR_MAX_DETECTORS];	// CX = log( pL rX / Ndet )
+  REAL4 C;						// constant term C  = Fstar0 + log(1-pL)
+  REAL4 CX[PULSAR_MAX_DETECTORS];			// per-detector term CX = log( pL rX / Ndet )
+//   REAL4 CXl[PULSAR_MAX_DETECTORS][PULSAR_MAX_SEGMENTS];	// per-detector, per-segment term ClX = (Nseg - 1)*Fstar0 + log(  ptLXl ) FIXME: not implemented in XLALCreateBSGLSetup()
+  REAL4 perSegTerm;					// extra term for per-segment transient contributions, (Nseg - 1)*Fstar0
   BOOLEAN useLogCorrection;
 };
 
@@ -47,16 +49,20 @@ struct tagBSGLSetup {
  * \f[
  * \newcommand{\Ndet}{N_{\mathrm{det}}}
  * \newcommand{\F}{\mathcal{F}}
+ * \newcommand{\scF}{\hat{\F}}
  * \newcommand{\Ftho}{\F_*^{(0)}}
+ * \newcommand{\scFtho}{\scF_*^{(0)}}
  * \newcommand{\oLGX}{o_{\mathrm{LG}}^X}
+ * \newcommand{\Nseg}{N_{\mathrm{seg}}}
  * \f]
  * Pre-compute the 'setup' for XLALComputeBSGL() for given prior parameters \f$\Ftho\f$ and \f$\{\oLGX\}\f$.
  */
 BSGLSetup *
 XLALCreateBSGLSetup ( const UINT4 numDetectors,			//!< [in] number of detectors \f$\Ndet\f$
-                      const REAL4 Fstar0,				//!< [in] prior parameter \f$\Ftho\f$
-                      const REAL4 oLGX[PULSAR_MAX_DETECTORS],		//!< [in] prior per-detector line odds \f$\{\oLGX\}\f$, if NULL: interpreted as \f$\oLGX=\frac{1}{\Ndet} \forall X\f$
-                      const BOOLEAN useLogCorrection			//!< [in] include log-term correction [slower] or not [faster, less accurate]
+                      const REAL4 Fstar0,			//!< [in] prior parameter \f$\Ftho\f$ (in semi-coherent case this is \f$\scFtho\f$ from papers!)
+                      const REAL4 oLGX[PULSAR_MAX_DETECTORS],	//!< [in] prior per-detector line odds \f$\{\oLGX\}\f$, if NULL: interpreted as \f$\oLGX=\frac{1}{\Ndet} \forall X\f$
+                      const BOOLEAN useLogCorrection,		//!< [in] include log-term correction [slower] or not [faster, less accurate]
+                      const UINT4 numSegments			//!< [in] number of segments \f$\Nseg\f$
                       )
 {
   // check input
@@ -91,6 +97,10 @@ XLALCreateBSGLSetup ( const UINT4 numDetectors,			//!< [in] number of detectors 
         setup->CX[X] = log ( setup->oLGX[X] ) - log_1_plus_oLG; // ln(oLGX) - log(1+oLG)
       }
     } // for X < numDetectors
+
+  setup->perSegTerm = Fstar0 * ( numSegments - 1 ) / numSegments; // in this function's convention, Fstar0 is actually semi-coherent Fstar0hat, so have to divide by numSegments here!
+
+  // FIXME: implement CXl[X][l] = (numSegments - 1)*Fstar0 + log(  ptLXl[X][l] )
 
   setup->useLogCorrection = useLogCorrection;
 
@@ -192,6 +202,103 @@ XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector Fstat \f$2\F\f$ 
 
 } // XLALComputeBSGL()
 
+REAL4
+XLALComputeGLtLDenominator ( const REAL4 twoFX[PULSAR_MAX_DETECTORS],			//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (semi-coherent sum(!))
+                             const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] per-detector maximum Fstats \f$\{\max\limits_l2\F^{Xl}\}\f$ over segments
+                             const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
+                             )
+{
+
+  XLAL_CHECK ( setup != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( !setup->useLogCorrection, XLAL_EDOM, "log correction not implemented for GLtL denominator.");
+
+  REAL4 FpMax = setup->C; // used to keep track of log of maximal denominator sum-term
+
+  // per-detector contributions, including line weights
+  REAL4 Xterm[PULSAR_MAX_DETECTORS];
+  REAL4 Xlterm[PULSAR_MAX_DETECTORS];
+  for ( UINT4 X=0; X < setup->numDetectors; X ++ )
+    {
+      Xterm[X] = 0.5 * twoFX[X] + setup->CX[X]; 	// FX + CX
+      FpMax = fmax ( FpMax, Xterm[X] );
+//       Xlterm[X] = 0.5 * maxtwoFXl[X] + setup->CXl[X][maxseg[X]]; // FIXME: this would be the general expression
+      Xlterm[X] = 0.5 * maxtwoFXl[X] + setup->perSegTerm + setup->CX[X]; // assuming ptLXl = pLX for all segments
+      FpMax = fmax ( FpMax, Xlterm[X] );
+  }
+
+//   if ( !setup->useLogCorrection ) {
+    return FpMax;
+//   }
+
+  // if useLogCorrection: extraSum = e^(Fstar0+ln(1-pL) - FpMax) + sum_X e^( Xterm[X] - FpMax )
+//   REAL4 extraSum = exp ( setup->C  - FpMax );
+
+  // ... and add all FX, FXl contributions (FIXME: not implemented!)
+//   for ( UINT4 X = 0; X < setup->numDetectors; X++ )
+//     {
+//       extraSum += exp ( Xterm[X] - FpMax );
+//     }
+
+//   return = FpMax + log ( extraSum );
+
+}
+
+REAL4
+XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] multi-detector Fstat \f$2\F\f$ (semi-coherent sum(!))
+                    const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (semi-coherent sum(!))
+                    const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] per-detector maximum Fstats \f$\{\max\limits_l2\F^{Xl}\}\f$ over segments
+                    const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
+                    )
+{
+
+  REAL4 GLtLDenominator = XLALComputeGLtLDenominator ( twoFX, maxtwoFXl, setup );
+
+  REAL4 ln_BSGLtL = 0.5 * twoF - GLtLDenominator;
+
+  return ln_BSGLtL * LAL_LOG10E; // return log10(B_SGLtL)
+
+} // XLALComputeBSGLtL
+
+REAL4
+XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] multi-detector maximum Fstat \f$\max\limits_l2\F^l\f$ over segments
+                     const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (semi-coherent sum(!))
+                     const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] per-detector maximum Fstats \f$\{\max\limits_l2\F^{Xl}\}\f$ over segments
+                     const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
+                     )
+{
+  XLAL_CHECK ( setup != NULL, XLAL_EINVAL );
+
+  REAL4 GLtLDenominator = XLALComputeGLtLDenominator ( twoFX, maxtwoFXl, setup );
+
+  REAL4 ln_BtSGLtL = 0.5 * maxtwoFl + setup->perSegTerm - GLtLDenominator; // assuming equal pS=ptSl priors for all segments
+
+  return ln_BtSGLtL * LAL_LOG10E; // return log10(B_SGLtL)
+
+} // XLALComputeBtSGLtL
+
+REAL4
+XLALComputeBStSGLtL ( const REAL4 twoF,					//!< [in] multi-detector Fstat \f$2\F\f$ (semi-coherent sum(!))
+                      const REAL4 maxtwoFl,				//!< [in] multi-detector maximum Fstat \f$\max\limits_l2\F^l\f$ over segments
+                      const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (semi-coherent sum(!))
+                      const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] per-detector maximum Fstats \f$\{\max\limits_l2\F^{Xl}\}\f$ over segments
+                      const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
+                      )
+{
+  XLAL_CHECK ( setup != NULL, XLAL_EINVAL );
+
+  REAL4 GLtLDenominator = XLALComputeGLtLDenominator ( twoFX, maxtwoFXl, setup );
+
+  // assuming equal pS=ptSl priors for all segments
+  REAL4 multiF = 0.5 * twoF;
+  REAL4 tsTerm = 0.5 * maxtwoFl + setup->perSegTerm;
+  REAL4 maxNumerator = fmax ( multiF, tsTerm );
+  REAL4 minNumerator = fmin ( multiF, tsTerm );
+
+  REAL4 ln_BStSGLtL  = maxNumerator + log ( 1 + exp ( minNumerator - maxNumerator ) ) - GLtLDenominator;
+
+  return ln_BStSGLtL * LAL_LOG10E; // return log10(B_SGL)
+
+} // XLALComputeBStSGLtL
 
 /**
  * Parse string-vectors (typically input by user) of N per-detector line-to-Gaussian prior ratios
