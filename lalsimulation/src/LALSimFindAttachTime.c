@@ -34,7 +34,7 @@ double  XLALSimLocateOmegaTime(
     SpinEOBHCoeffs  seobCoeffs,
     REAL8 m1,
     REAL8 m2,
-    REAL8 *radiusVec,
+    REAL8Vector *radiusVec,
     int *found,
     REAL8* tMaxOmega
         )
@@ -80,7 +80,7 @@ double  XLALSimLocateOmegaTime(
     double ddradiusVec[timeHi.length - 2];
     unsigned int k;
     for (k = 1; k < timeHi.length-1; k++) {
-        ddradiusVec[k] = (radiusVec[k+1] - 2.*radiusVec[k] + radiusVec[k-1])/dt/dt;
+        ddradiusVec[k] = (radiusVec->data[k+1] - 2.*radiusVec->data[k] + radiusVec->data[k-1])/dt/dt;
         //        XLAL_PRINT_INFO("%3.10f %3.10f\n", timeHi->data[k], ddradiusVec[k]);
     }
     //    for (k = timeHi->length-3; k>=1; k--) {
@@ -345,7 +345,7 @@ double  XLALSimLocateOmegaTime(
 double XLALSimLocateAmplTime(
     REAL8Vector *timeHi,
     COMPLEX16Vector *hP22,
-    REAL8 *radiusVec,
+    REAL8Vector *radiusVec,
     int *found,
     REAL8* tMaxAmp)
 {
@@ -360,7 +360,7 @@ double XLALSimLocateAmplTime(
     double ddradiusVec[timeHi->length - 2];
     unsigned int k;
     for (k = 1; k < timeHi->length-1; k++) {
-        ddradiusVec[k] = (radiusVec[k+1] - 2.*radiusVec[k] + radiusVec[k-1])/dt/dt;
+        ddradiusVec[k] = (radiusVec->data[k+1] - 2.*radiusVec->data[k] + radiusVec->data[k-1])/dt/dt;
 //        XLAL_PRINT_INFO("%3.10f %3.10f\n", timeHi->data[k], ddradiusVec[k]);
     }
 //    for (k = timeHi->length-3; k>=1; k--) {
