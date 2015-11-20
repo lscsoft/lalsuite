@@ -619,7 +619,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   /* Parameters of the system */
   REAL8 m1 = 0, m2 = 0, mTotal = 0, eta = 0, mTScaled = 0;
   REAL8 amp0 = 0;
-  //REAL8 amp = 0;
+  REAL8 amp = 0;
 
   /* Dynamics of the system */
   REAL8Vector tVec, phiDMod, phiMod;
@@ -632,7 +632,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   REAL8 cartPosData[3] = {0,0,0}, cartMomData[3] = {0,0,0};
   REAL8 rcrossrdotNorm = 0, rvec[3]    = {0,0,0}, rcrossrdot[3] = {0,0,0};
     REAL8 pvec[3] = {0,0,0},  rcrossp[3] = {0,0,0};//, rcrosspMag    = 0;
-  //REAL8  s1dotL = 0, s2dotL = 0;
+  REAL8 s1dotLN = 0, s2dotLN = 0;
 
   /* Polar vectors needed for waveform modes calculation */
   REAL8Vector  polarDynamics;
@@ -1072,13 +1072,6 @@ int XLALSimIMRSpinEOBWaveformAll(
 //
 //  s1dotL = inner_product( spin1, rcrossrdot );
 //  s2dotL = inner_product( spin2, rcrossrdot );
-/* An alternative is to project the spins onto L = rXp */
- cross_product( rvec, pvec, rcrossp );
-  rcrosspMag = sqrt(inner_product(rcrossp, rcrossp));
-  for( i = 0; i < 3; i++ ) { rcrossp[i] /= rcrosspMag; }
-
-  //s1dotL = inner_product( spin1, rcrossrdot );
-  //s2dotL = inner_product( spin2, rcrossrdot );
 
   if(debugPK) {
     XLAL_PRINT_INFO("rXp = %3.10f %3.10f %3.10f\n", rcrossp[0], rcrossp[1], rcrossp[2]);
@@ -2397,7 +2390,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     magR = sqrt(inner_product(rvec, rvec));
     omega = sqrt(inner_product(rcrossrdot, rcrossrdot)) / (magR*magR);
     vOmega = v = cbrt( omega );
-    //amp = amp0 * vOmega * vOmega;
+    amp = amp0 * vOmega * vOmega;
 
     /* Cartesian vectors needed to calculate Hamiltonian */
     cartPosVec.length = cartMomVec.length = 3;
@@ -2987,7 +2980,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     magR   = sqrt(inner_product(rvec, rvec));
     omega  = sqrt(inner_product(rcrossrdot, rcrossrdot)) / (magR*magR);
     vOmega = v = cbrt( omega );
-    //amp = amp0 * vOmega * vOmega;
+    amp = amp0 * vOmega * vOmega;
 
     /* Cartesian vectors needed to calculate Hamiltonian */
     cartPosVec.length = cartMomVec.length = 3;
