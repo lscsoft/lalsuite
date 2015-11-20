@@ -690,7 +690,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   REAL8 tPeakOmega = 0, tAttach = 0, combSize = 0,/*longCombSize,*/ deltaNQC =0;
   REAL8  sh  = 0;
   REAL8 vX = 0, vY = 0, vZ = 0;
-  //REAL8  vOmega = 0;
+  REAL8  vOmega = 0;
   REAL8 magR = 0, Lx   = 0, Ly   = 0, Lz = 0, magL = 0, magJ = 0,
         LNhx = 0, LNhy = 0, LNhz = 0, magLN =0, Jx = 0, Jy   = 0, Jz = 0;
   REAL8 aI2P = 0, bI2P = 0, gI2P = 0, aP2J = 0, bP2J = 0, gP2J = 0;
@@ -2407,8 +2407,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     cross_product( rvec, rdotvec, rcrossrdot );
     magR = sqrt(inner_product(rvec, rvec));
     omega = sqrt(inner_product(rcrossrdot, rcrossrdot)) / (magR*magR);
-    //vOmega = 
-    v = cbrt( omega );
+    vOmega = v = cbrt( omega );
     //amp = amp0 * vOmega * vOmega;
 
     /* Cartesian vectors needed to calculate Hamiltonian */
@@ -2998,8 +2997,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
     magR   = sqrt(inner_product(rvec, rvec));
     omega  = sqrt(inner_product(rcrossrdot, rcrossrdot)) / (magR*magR);
-    //vOmega = 
-    v = cbrt( omega );
+    vOmega = v = cbrt( omega );
     //amp = amp0 * vOmega * vOmega;
 
     /* Cartesian vectors needed to calculate Hamiltonian */
