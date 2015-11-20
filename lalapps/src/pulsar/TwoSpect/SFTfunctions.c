@@ -456,31 +456,30 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
             for (UINT4 kk=0; kk<scaling->length; kk++) scaling->data[kk] = DirichletScaling0->data[kk]/DirichletScalingX->data[kk];
             XLAL_CHECK_NULL( DirichletRatioVector(Dratio, delta0valsSubset, deltaXvalsSubset, scaling, params) == XLAL_SUCCESS, XLAL_EFUNC );
 
+	    //Compute values outside inner loop
+	    //Normalize Dirichlet kernel ratio values
+	    for (UINT4 kk=0; kk<Dratio->length; kk++) {
+	       REAL4 DratioMag = cabsf(Dratio->data[kk]);
+	       if (DratioMag!=0.0) Dratio->data[kk] /= DratioMag;
+	    }
+	    //compute the complex detector-phase relationship
+	    COMPLEX8 detPhaseVal = cpolarf(detPhaseMag, detPhaseArg);
+
             //Now finish the computation with the Dirichlet kernel ratio and final correction
             for (UINT4 kk=0; kk<sftcopySubset->data->length; kk++) {
-               REAL4 detArgVal = 0.0;
-               if (crealf(Dratio->data[kk])!=0.0 && cimagf(Dratio->data[kk])!=0.0) {
-                  detArgVal = (REAL4)gsl_sf_angle_restrict_pos((REAL8)cargf(conjf(Dratio->data[kk])));
-               } else {
-                  detPhaseMag = 0.0;
-                  detArgVal = 0.0;
-               }
-
                //When signals are on different "sides" of a bin, there can be error > pi, so we add pi to reduce this error, improving detection efficiency
-               //if (fabs(floor(delta0valsSubset->data[kk])-floor(deltaXvalsSubset->data[kk]))>=1.0) detArgVal += LAL_PI;
-               if (fabs(diffFloorDeltaValsSubset->data[kk])>=1.0) detArgVal += LAL_PI;
+	       REAL8 differentSides = 0.0;
+               if (fabs(diffFloorDeltaValsSubset->data[kk])>=1.0) differentSides = LAL_PI;
 
                //The complex coefficient to scale SFT bins
-               COMPLEX8 complexfactor = cpolarf(detPhaseMag, detArgVal+detPhaseArg-TwoPiFrequenciesTau->data[kk+10]);
+	       COMPLEX8 complexfactor = detPhaseVal*cpolarf(1.0, differentSides-TwoPiFrequenciesTau->data[kk+10])*Dratio->data[kk];
 
                REAL4 noiseWeighting = 1.0;
                if (kk>=numSFTbins2skip && kk<numFbinsInBackground+numSFTbins2skip && createSFT) {
-                  REAL4 absVal = cabsf(complexfactor);
-                  backgroundScaling->data[fftnum2*numFbinsInBackground + (kk-numSFTbins2skip)] = absVal*absVal;
+                  backgroundScaling->data[fftnum2*numFbinsInBackground + (kk-numSFTbins2skip)] = detPhaseMag*detPhaseMag;
                } else if (kk>=numSFTbins2skip && kk<numFbinsInBackground+numSFTbins2skip && !createSFT) {
                   noiseWeighting = backgroundRatio->data[jj]->data[fftnum];
-                  REAL4 absVal = cabsf(complexfactor);
-                  backgroundScaling->data[fftnum2*numFbinsInBackground + (kk-numSFTbins2skip)] += noiseWeighting*(absVal*absVal);
+                  backgroundScaling->data[fftnum2*numFbinsInBackground + (kk-numSFTbins2skip)] += noiseWeighting*detPhaseMag*detPhaseMag;
                }
 
                //Apply the corrections and shift to correct bin with the shiftVector
