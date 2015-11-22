@@ -408,6 +408,53 @@ INT4 VectorAbsREAL4(REAL4VectorAligned *output, REAL4VectorAligned *input, INT4 
    return XLAL_SUCCESS;
 }
 
+INT4 VectorAbsREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, INT4 vectorMath)
+{
+   XLAL_CHECK( output!=NULL && input!=NULL, XLAL_EINVAL );
+   if (vectorMath==2) {
+#ifdef __AVX__
+      _mm256_zeroupper();
+      INT4 roundedvectorlength = (INT4)input->length / 4;
+      __m256d *arr, *result;
+      __m256i mask = _mm256_set1_epi64x(~0x8000000000000000);
+      arr = (__m256d*)(void*)input->data;
+      result = (__m256d*)(void*)output->data;
+      for (INT4 ii=0; ii<roundedvectorlength; ii++) {
+         *result = _mm256_and_pd(*arr, (__m256d)mask);
+         arr++;
+         result++;
+      }
+      _mm256_zeroupper();
+      for (UINT4 ii=4*roundedvectorlength; ii<input->length; ii++) output->data[ii] = fabs(input->data[ii]);
+#else
+      (void)output;
+      (void)input;
+      fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+#endif
+   } else if (vectorMath==1) {
+#ifdef __SSE2__
+      INT4 roundedvectorlength = (INT4)input->length / 2;
+      __m128d *arr, *result;
+      __m128i mask = _mm_set1_epi64x(~0x8000000000000000);
+      arr = (__m128d*)(void*)input->data;
+      result = (__m128d*)(void*)output->data;
+      for (INT4 ii=0; ii<roundedvectorlength; ii++) {
+         *result = _mm_and_pd(*arr, (__m128d)mask);
+         arr++;
+         result++;
+      }
+      for (UINT4 ii=2*roundedvectorlength; ii<input->length; ii++) output->data[ii] = fabs(input->data[ii]);
+#else
+      (void)output;
+      (void)input;
+      fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+#endif
+   } else for (UINT4 ii=0; ii<input->length; ii++) output->data[ii] = fabs(input->data[ii]);
+   return XLAL_SUCCESS;
+}
+
 /**
  * Sum two alignedREAL8Vector using SSE2
  * \param [out] output Pointer to a alignedREAL8Vector

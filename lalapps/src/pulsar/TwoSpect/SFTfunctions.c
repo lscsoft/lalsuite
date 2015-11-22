@@ -192,7 +192,8 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    XLAL_CHECK_NULL( VectorScaleREAL8(frequencyBins, frequencies, params->Tsft, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Pre-allocate delta values for IFO_0 and IFO_X, also 2*pi*f_k*tau
-   alignedREAL8Vector *delta0vals = NULL, *deltaXvals = NULL, *delta0valsSubset = NULL, *deltaXvalsSubset = NULL, *floorDelta0valsSubset = NULL, *floorDeltaXvalsSubset = NULL, *diffFloorDeltaValsSubset = NULL, *roundDelta0valsSubset = NULL, *roundDeltaXvalsSubset = NULL, *diffRoundDeltaValsSubset = NULL, *TwoPiFrequenciesTau = NULL;
+   alignedREAL8Vector *delta0vals = NULL, *deltaXvals = NULL, *delta0valsSubset = NULL, *deltaXvalsSubset = NULL, *floorDelta0valsSubset = NULL, *floorDeltaXvalsSubset = NULL, *diffFloorDeltaValsSubset = NULL, *roundDelta0valsSubset = NULL, *roundDeltaXvalsSubset = NULL, *diffRoundDeltaValsSubset = NULL, *TwoPiFrequenciesTau = NULL, *absDiffFloorDeltaValsSubset = NULL;
+   REAL4VectorAligned *TwoPiFrequenciesTau_f = NULL, *sinTwoPiFrequenciesTau = NULL, *cosTwoPiFrequenciesTau = NULL;
    XLAL_CHECK_NULL( (delta0vals = createAlignedREAL8Vector(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (deltaXvals = createAlignedREAL8Vector(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (delta0valsSubset = createAlignedREAL8Vector(frequencyBins->length - 20, 32)) != NULL, XLAL_EFUNC );
@@ -202,8 +203,12 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    XLAL_CHECK_NULL( (roundDelta0valsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (roundDeltaXvalsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (diffFloorDeltaValsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (absDiffFloorDeltaValsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (diffRoundDeltaValsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (TwoPiFrequenciesTau = createAlignedREAL8Vector(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (TwoPiFrequenciesTau_f = XLALCreateREAL4VectorAligned(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (sinTwoPiFrequenciesTau = XLALCreateREAL4VectorAligned(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (cosTwoPiFrequenciesTau = XLALCreateREAL4VectorAligned(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
 
    INT4Vector *shiftVector = NULL;
    XLAL_CHECK_NULL( (shiftVector = XLALCreateINT4Vector(delta0valsSubset->length)) != NULL, XLAL_EFUNC );
@@ -464,15 +469,19 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
 	    }
 	    //compute the complex detector-phase relationship
 	    COMPLEX8 detPhaseVal = cpolarf(detPhaseMag, detPhaseArg);
+	    //compute absDiffFloorDeltaValsSubset and phase shift by pi for when signals are on different "sides" of a bin, to reduce error and improve detection efficiency
+	    XLAL_CHECK_NULL( VectorAbsREAL8(absDiffFloorDeltaValsSubset, diffFloorDeltaValsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+	    for (UINT4 kk=0; kk<absDiffFloorDeltaValsSubset->length; kk++) if (absDiffFloorDeltaValsSubset->data[kk]>=1.0) TwoPiFrequenciesTau->data[kk+10] -= LAL_PI;
+	    //Cast TwoPiFrequenciesTau into a REAL4VectorAligned and take sin and cos
+	    //We want to compute exp[-i*(2*pi*f*tau)] = cos[-2*pi*f*tau]+i*sin[-2*pi*f*tau] = cos[2*pi*f*tau]-i*sin[2*pi*f*tau]
+	    //Sometimes this is exp[-i*(2*pi*f*tau)+i*pi] = exp[-i*(2*pi*f*tau-pi)] = cos[2*pi*f*tau-pi]-i*sin[2*pi*f*tau-pi]
+	    for (UINT4 kk=0; kk<TwoPiFrequenciesTau->length; kk++) TwoPiFrequenciesTau_f->data[kk] = (REAL4)TwoPiFrequenciesTau->data[kk];
+	    XLAL_CHECK_NULL( XLALVectorSinCosREAL4(sinTwoPiFrequenciesTau->data, cosTwoPiFrequenciesTau->data, TwoPiFrequenciesTau_f->data, TwoPiFrequenciesTau_f->length) == XLAL_SUCCESS, XLAL_EFUNC );
 
             //Now finish the computation with the Dirichlet kernel ratio and final correction
             for (UINT4 kk=0; kk<sftcopySubset->data->length; kk++) {
-               //When signals are on different "sides" of a bin, there can be error > pi, so we add pi to reduce this error, improving detection efficiency
-	       REAL8 differentSides = 0.0;
-               if (fabs(diffFloorDeltaValsSubset->data[kk])>=1.0) differentSides = LAL_PI;
-
                //The complex coefficient to scale SFT bins
-	       COMPLEX8 complexfactor = detPhaseVal*cpolarf(1.0, differentSides-TwoPiFrequenciesTau->data[kk+10])*Dratio->data[kk];
+	       COMPLEX8 complexfactor = detPhaseVal*crectf(cosTwoPiFrequenciesTau->data[kk+10], -sinTwoPiFrequenciesTau->data[kk+10])*Dratio->data[kk];
 
                REAL4 noiseWeighting = 1.0;
                if (kk>=numSFTbins2skip && kk<numFbinsInBackground+numSFTbins2skip && createSFT) {
@@ -510,6 +519,9 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    XLALDestroyREAL4VectorAligned(Fcross0s);
    XLALDestroyREAL4VectorAligned(FplusXs);
    XLALDestroyREAL4VectorAligned(FcrossXs);
+   XLALDestroyREAL4VectorAligned(TwoPiFrequenciesTau_f);
+   XLALDestroyREAL4VectorAligned(sinTwoPiFrequenciesTau);
+   XLALDestroyREAL4VectorAligned(cosTwoPiFrequenciesTau);
    destroyAlignedREAL8Vector(frequencies);
    destroyAlignedREAL8Vector(frequencyBins);
    destroyAlignedREAL8VectorArray(twoPiTauVals);
@@ -523,6 +535,7 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    destroyAlignedREAL8Vector(roundDelta0valsSubset);
    destroyAlignedREAL8Vector(roundDeltaXvalsSubset);
    destroyAlignedREAL8Vector(diffFloorDeltaValsSubset);
+   destroyAlignedREAL8Vector(absDiffFloorDeltaValsSubset);
    destroyAlignedREAL8Vector(diffRoundDeltaValsSubset);
    XLALDestroyINT4Vector(shiftVector);
    destroyAlignedREAL8Vector(TwoPiFrequenciesTau);
