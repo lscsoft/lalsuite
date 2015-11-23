@@ -1427,6 +1427,24 @@ static void test_signal_amplitude_model(
         XLALComputeDetAMResponse(
             &Fplus, &Fcross, detector->response, ra, dec, polarization, gmst);
 
+        /* Check that the way I compute the antenna factors matches */
+        {
+            double complex F;
+            XLALComputeDetAMResponse(
+                (double *)&F, 1 + (double *)&F, detector->response, ra, dec, 0, gmst);
+            F *= exp_i(-2 * polarization);
+
+            gsl_test_abs(creal(F), Fplus, 4 * GSL_DBL_EPSILON,
+                "testing Fplus(ra=%0.03f, dec=%0.03f, "
+                "inc=%0.03f, pol=%0.03f, epoch_nanos=%lu, detector=%s)",
+                ra, dec, inclination, polarization, epoch_nanos, instrument);
+
+            gsl_test_abs(cimag(F), Fcross, 4 * GSL_DBL_EPSILON,
+                "testing Fcross(ra=%0.03f, dec=%0.03f, "
+                "inc=%0.03f, pol=%0.03f, epoch_nanos=%lu, detector=%s)",
+                ra, dec, inclination, polarization, epoch_nanos, instrument);
+        }
+
         /* "Template" waveform with inclination angle of zero */
         ret = XLALSimInspiralFD(
             &Htemplate, &Hcross, 0, 1, 1.4 * LAL_MSUN_SI, 1.4 * LAL_MSUN_SI,
