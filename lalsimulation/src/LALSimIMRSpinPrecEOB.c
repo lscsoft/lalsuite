@@ -89,6 +89,178 @@ static double f_alphadotcosi( double x, void * inparams )
 
 }
 
+/**
+ * Given the trajectory in an inertial frame, this computes Euler angles
+ * of the roation from the inertial frame to the minimal-rotation frame
+ * that co-precesses with LN(t) = rvec(t) x rdotvec(t)
+ */
+static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
+                 REAL8Vector *Beta, /**<< output: beta Euler angle */
+                 REAL8Vector *Gamma, /**<< output: gamma Euler angle */
+                 INT4 *phaseCounterA, /**<< output: counter for unwrapping of alpha */
+                 INT4 *phaseCounterB, /**<< output: counter for unwrapping of beta */
+                 const REAL8Vector tVec, /**<< time series */
+                 const REAL8Vector posVecx, /**<< x time series */
+                 const REAL8Vector posVecy, /**<< y time series */
+                 const REAL8Vector posVecz, /**<< z time series */
+                 const UINT4 retLenLow, /**<< Array length of the trajectory */
+                 const REAL8 InitialAlpha, /**<< Initial alpha (used only if flag_highSR=1) */
+                 const REAL8 InitialGamma, /**<< Initial gamma */
+                 UINT4 flag_highSR /**<< Flag to indicate whether one is analyzing the high SR trajectory */) {
+    UINT4 i = 0;
+    REAL8Vector *LN_x = NULL, *LN_y = NULL, *LN_z = NULL;
+    REAL8 tmpR[3], tmpRdot[3], magLN;
+    REAL8 precEulerresult = 0, precEulererror = 0;
+    gsl_integration_workspace * precEulerw = gsl_integration_workspace_alloc (1000);
+    gsl_function precEulerF;
+    PrecEulerAnglesIntegration precEulerparams;
+    
+    LN_x = XLALCreateREAL8Vector( retLenLow );
+    LN_y = XLALCreateREAL8Vector( retLenLow );
+    LN_z = XLALCreateREAL8Vector( retLenLow );
+    
+    gsl_spline *x_spline = gsl_spline_alloc( gsl_interp_cspline, retLenLow );
+    gsl_spline *y_spline = gsl_spline_alloc( gsl_interp_cspline, retLenLow );
+    gsl_spline *z_spline = gsl_spline_alloc( gsl_interp_cspline, retLenLow );
+    
+    gsl_interp_accel *x_acc    = gsl_interp_accel_alloc();
+    gsl_interp_accel *y_acc    = gsl_interp_accel_alloc();
+    gsl_interp_accel *z_acc    = gsl_interp_accel_alloc();
+    
+    gsl_spline_init( x_spline, tVec.data, posVecx.data, retLenLow );
+    gsl_spline_init( y_spline, tVec.data, posVecy.data, retLenLow );
+    gsl_spline_init( z_spline, tVec.data, posVecz.data, retLenLow );
+
+    for( i=0; i < retLenLow; i++ )
+    {
+        tmpR[0] = posVecx.data[i]; tmpR[1] = posVecy.data[i]; tmpR[2] = posVecz.data[i];
+        tmpRdot[0] = gsl_spline_eval_deriv( x_spline, tVec.data[i], x_acc );
+        tmpRdot[1] = gsl_spline_eval_deriv( y_spline, tVec.data[i], y_acc );
+        tmpRdot[2] = gsl_spline_eval_deriv( z_spline, tVec.data[i], z_acc );
+        
+        LN_x->data[i] = tmpR[1] * tmpRdot[2] - tmpR[2] * tmpRdot[1];
+        LN_y->data[i] = tmpR[2] * tmpRdot[0] - tmpR[0] * tmpRdot[2];
+        LN_z->data[i] = tmpR[0] * tmpRdot[1] - tmpR[1] * tmpRdot[0];
+        
+        magLN = sqrt(LN_x->data[i] * LN_x->data[i] + LN_y->data[i] * LN_y->data[i]
+                     + LN_z->data[i] * LN_z->data[i]);
+        LN_x->data[i] /= magLN; LN_y->data[i] /= magLN; LN_z->data[i] /= magLN;
+
+        /*  Eq. 19 of PRD 89, 084006 (2014) */
+        /*  Also unwrap the two angles */
+        if (fabs(LN_x->data[i]) <= 1.e-7 && fabs(LN_y->data[i]) <=1.e-7){
+            Alpha->data[i] = 0.0;
+        } else {
+            Alpha->data[i] = atan2( LN_y->data[i], LN_x->data[i] )
+            +  *phaseCounterA * LAL_TWOPI;
+        }
+        
+        if( i>0 && Alpha->data[i] - Alpha->data[i-1] > 5. ) {
+            *phaseCounterA = *phaseCounterA - 1;
+            Alpha->data[i] -= LAL_TWOPI;
+        }
+        else if ( i && Alpha->data[i] - Alpha->data[i-1] < -5. ) {
+            *phaseCounterA = *phaseCounterA + 1;
+            Alpha->data[i] += LAL_TWOPI;
+        }
+        if (LN_z->data[i] >1.) {
+            LN_z->data[i] = 1.;
+        }
+        if (LN_z->data[i] <-1.) {
+            LN_z->data[i] = -1.;
+        }
+        if ( flag_highSR == 1) {
+            Alpha->data[i] -= (Alpha->data[0] - InitialAlpha);
+        }
+
+        Beta->data[i] = acos( LN_z->data[i] );
+        if( i>0 && Beta->data[i] > Beta->data[i-1] ) {
+            *phaseCounterB = *phaseCounterB - 1;
+        }
+    }
+    /* Integrate \dot{\alpha} \cos{\beta} to get the final Euler angle
+     Eq. 20 of PRD 89, 084006 (2014) */
+    gsl_spline_init( x_spline, tVec.data, Alpha->data, retLenLow );
+    gsl_spline_init( y_spline, tVec.data, Beta->data, retLenLow );
+        
+    precEulerparams.alpha_spline = x_spline;
+    precEulerparams.alpha_acc    = x_acc;
+    precEulerparams.beta_spline  = y_spline;
+    precEulerparams.beta_acc     = y_acc;
+    
+    precEulerF.function = &f_alphadotcosi;
+    precEulerF.params   = &precEulerparams;
+    
+    for( i = 0; i < retLenLow; i++ )
+    {
+        if( i==0 ) { Gamma->data[i] = InitialGamma; }
+        else
+        {
+            gsl_integration_qags (&precEulerF, tVec.data[i-1], tVec.data[i], 1e-9, 1e-9, 1000, precEulerw, &precEulerresult, &precEulererror);
+            Gamma->data[i] = Gamma->data[i-1] + precEulerresult;
+        }
+    }
+    gsl_integration_workspace_free( precEulerw );
+    gsl_spline_free( x_spline );
+    gsl_spline_free( y_spline );
+    gsl_spline_free( z_spline );
+    gsl_interp_accel_free( x_acc );
+    gsl_interp_accel_free( y_acc );
+    gsl_interp_accel_free( z_acc );
+    XLALDestroyREAL8Vector( LN_x );
+    XLALDestroyREAL8Vector( LN_y );
+    XLALDestroyREAL8Vector( LN_z );
+    return XLAL_SUCCESS;
+}
+
+/**
+ * Given Euler angles to go from initial inertial frame to precessing frama
+ * and the LNhat vector, this functions computes the Euler angles to 
+ * go from the precessing frame to the frame of the total angular
+ * momentum
+ */
+static void EulerAnglesP2J(
+                REAL8 *aP2J, /**<< alpha Euler angle from precessing to final-J frame */
+                REAL8 *bP2J, /**<< beta Euler angle from precessing to final-J frame */
+                REAL8 *gP2J, /**<< gamma Euler angle from precessing to final-J frame */
+                const REAL8 aI2P, /**<< alpha Euler angle from inertial to precessing frame */
+                const REAL8 bI2P, /**<< beta Euler angle from inertial to precessing frame */
+                const REAL8 gI2P, /**<< gamma Euler angle from inertial to precessing frame */
+                const REAL8 LNhx, /**<< x component of LNhat */
+                const REAL8 LNhy, /**<< y component of LNhat */
+                const REAL8 LNhz, /**<< z component of LNhat */
+                const REAL8 JframeEx[], /**<< x-axis of the total-angular-momentum frame */
+                const REAL8 JframeEy[], /**<< y-axis of the total-angular-momentum frame */
+                const REAL8 JframeEz[] /**<< z-axis of the total-angular-momentum frame */
+) {
+    REAL8 LframeEx[3] = {0,0,0}, LframeEy[3] = {0,0,0}, LframeEz[3] = {0,0,0};
+    LframeEx[0] =  cos(aI2P)*cos(bI2P)*cos(gI2P) - sin(aI2P)*sin(gI2P);
+    LframeEx[1] =  sin(aI2P)*cos(bI2P)*cos(gI2P) + cos(aI2P)*sin(gI2P);
+    LframeEx[2] = -sin(bI2P)*cos(gI2P);
+    LframeEy[0] = -cos(aI2P)*cos(bI2P)*sin(gI2P) - sin(aI2P)*cos(gI2P);
+    LframeEy[1] = -sin(aI2P)*cos(bI2P)*sin(gI2P) + cos(aI2P)*cos(gI2P);
+    LframeEy[2] =  sin(bI2P)*sin(gI2P);
+    LframeEz[0] =  LNhx;
+    LframeEz[1] =  LNhy;
+    LframeEz[2] =  LNhz;
+    *aP2J = atan2(JframeEz[0]*LframeEy[0]+JframeEz[1]*LframeEy[1]+JframeEz[2]*LframeEy[2],
+                 JframeEz[0]*LframeEx[0]+JframeEz[1]*LframeEx[1]+JframeEz[2]*LframeEx[2]);
+    *bP2J = acos( JframeEz[0]*LframeEz[0]+JframeEz[1]*LframeEz[1]+JframeEz[2]*LframeEz[2]);
+    *gP2J = atan2(  JframeEy[0]*LframeEz[0]+JframeEy[1]*LframeEz[1]+JframeEy[2]*LframeEz[2],
+                 -(JframeEx[0]*LframeEz[0]+JframeEx[1]*LframeEz[1]+JframeEx[2]*LframeEz[2]));
+    
+    /* I2P Euler angles are stored only for debugging purposes */
+    if ( fabs(*bP2J-LAL_PI) < 1.e-10){
+        *gP2J = 0.0;
+        *aP2J = atan2( JframeEx[1], JframeEx[0]);
+    }
+    
+    if ( fabs(*bP2J) < 1.e-10){
+        *gP2J = 0.0;
+        *aP2J = atan2( JframeEx[1], JframeEx[0]);
+    }
+}
+
 
 /**
  * Stopping conditions for dynamics integration for SEOBNRv3
@@ -373,24 +545,16 @@ int XLALSimIMRSpinEOBWaveform(
     SphHarmTimeSeries *hIMR = NULL;
 
     XLALSimIMRSpinEOBWaveformAll(hplus, hcross, &dynamicsHi, &hlmPTSout, &hlmPTSHi, &hIMRlmJTSHi, &hIMR, &AttachPars,
-                        phiC, deltaT, m1SI, m2SI, fMin, r, inc, INspin1[0],
-                        INspin1[1], INspin1[2], INspin2[0], INspin2[1],
-                        INspin2[2]);
+                        phiC, deltaT, m1SI, m2SI, fMin, r, inc, INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
 
     XLALDestroyREAL8Vector( dynamicsHi );
-
     XLALDestroyREAL8Vector( AttachPars );
-
     XLALDestroySphHarmTimeSeries(hlmPTSout);
-
     XLALDestroySphHarmTimeSeries(hlmPTSHi);
-
     XLALDestroySphHarmTimeSeries(hIMRlmJTSHi);
-
     XLALDestroySphHarmTimeSeries(hIMR);
 
     return XLAL_SUCCESS;
-
 }
 
 /**
@@ -734,13 +898,13 @@ int XLALSimIMRSpinEOBWaveformAll(
   REAL8  sh  = 0;
   REAL8 magR = 0, Lx   = 0, Ly   = 0, Lz = 0, magL = 0, magJ = 0,
         LNhx = 0, LNhy = 0, LNhz = 0, magLN =0, Jx = 0, Jy   = 0, Jz = 0;
-  REAL8 aI2P = 0, bI2P = 0, gI2P = 0, aP2J = 0, bP2J = 0, gP2J = 0;
+  REAL8 aI2P = 0, bI2P = 0, gI2P = 0;
+  REAL8 aP2J = 0, bP2J = 0, gP2J = 0;
   REAL8 chi1J= 0, chi2J= 0, chiJ = 0;
   REAL8 chi1L= 0.0, chi2L = 0.0, chiL = 0.0;
   REAL8 kappaJL = 0;
   REAL8 JLN = 0.0;
   REAL8 JframeEx[3] = {0,0,0}, JframeEy[3] = {0,0,0}, JframeEz[3] = {0,0,0};
-  REAL8 LframeEx[3] = {0,0,0}, LframeEy[3] = {0,0,0}, LframeEz[3] = {0,0,0};
 
   /* Variables for the integrator */
   LALAdaptiveRungeKutta4Integrator       *integrator = NULL;
@@ -764,23 +928,8 @@ int XLALSimIMRSpinEOBWaveformAll(
   }
 
     /* Memory for the calculation of the alpha(t) and beta(t) angles */
-  REAL8 tmpR[3], tmpRdot[3];
-  INT4 phaseCounterA = 0, phaseCounterB = 0;
-
-  REAL8Vector *LN_x = NULL;  REAL8Vector *LN_y = NULL; REAL8Vector *LN_z = NULL;
-  REAL8Vector *Alpha = NULL; REAL8Vector *Beta = NULL; REAL8Vector *Gamma = NULL;
-  REAL8Vector *LN_xHi = NULL; REAL8Vector *LN_yHi = NULL;
-  REAL8Vector *LN_zHi = NULL;
-  REAL8Vector *AlphaHi = NULL; REAL8Vector *BetaHi = NULL;
-  REAL8Vector *GammaHi = NULL;
-
-  REAL8 precEulerresult = 0, precEulererror = 0;
-  gsl_integration_workspace * precEulerw = gsl_integration_workspace_alloc (1000);
-  gsl_function precEulerF;
-  PrecEulerAnglesIntegration precEulerparams;
-
-
-
+  REAL8Vector *Alpha = NULL, *Beta = NULL, *Gamma = NULL;
+  REAL8Vector *AlphaHi = NULL,  *BetaHi = NULL, *GammaHi = NULL;
   /* Memory to help with rotation of dynamics */
   REAL8 JExnorm = 0;
   SphHarmTimeSeries  *hlmPTS = NULL;
@@ -1026,7 +1175,6 @@ int XLALSimIMRSpinEOBWaveformAll(
     fflush(NULL);
   }
 
-//  REAL8Vector* values = NULL;
   values = XLALCreateREAL8Vector( 14 );
   REAL8 incl_temp = 0.0;  // !!!! For comparison with C++ and NR we need inc = 0 for initial conditions
   incl_temp = inc;
@@ -1234,9 +1382,7 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
-
-      XLAL_ERROR (XLAL_EINVAL );
+        XLAL_ERROR (XLAL_EINVAL );
   }
 
   switch ( SpinAlignedEOBversion )
@@ -1257,7 +1403,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
 	    XLAL_ERROR( XLAL_EINVAL );
 	    break;
   }
@@ -1331,7 +1476,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
         XLAL_ERROR(  XLAL_ENOMEM );
     }
     memset( valuesV2->data, 0, valuesV2->length * sizeof( REAL8 ));
@@ -1354,7 +1498,6 @@ int XLALSimIMRSpinEOBWaveformAll(
             XLALDestroyREAL8Vector( dvalues );
             XLALDestroyREAL8Vector( rdMatchPoint );
             XLALDestroyREAL8Vector( AttachParams );
-            
             XLALDestroyREAL8Vector( valuesV2 );
             XLAL_ERROR( XLAL_EFUNC );
         }
@@ -1371,7 +1514,6 @@ int XLALSimIMRSpinEOBWaveformAll(
             XLALDestroyREAL8Vector( dvalues );
             XLALDestroyREAL8Vector( rdMatchPoint );
             XLALDestroyREAL8Vector( AttachParams );
-            
             XLALDestroyREAL8Vector( valuesV2 );
             XLAL_ERROR( XLAL_EFUNC );
         }
@@ -1472,12 +1614,7 @@ int XLALSimIMRSpinEOBWaveformAll(
         s2Vecz.data = dynamics->data+12*retLenLow;
         phiDMod.data= dynamics->data+13*retLenLow;
         phiMod.data = dynamics->data+14*retLenLow;
-
-
-
-
      if(debugPK) { XLAL_PRINT_INFO("\n\n FINISHED THE EVOLUTION\n\n"); fflush(NULL);  }
-
 
   if (debugPK) {
     /* Write the dynamics to file */
@@ -1577,7 +1714,6 @@ int XLALSimIMRSpinEOBWaveformAll(
             XLALDestroyREAL8Vector( dvalues );
             XLALDestroyREAL8Vector( rdMatchPoint );
             XLALDestroyREAL8Vector( AttachParams );
-            
             XLALDestroyREAL8Vector( valuesV2 );
             if (dynamicsV2 != NULL){
                 XLALDestroyREAL8Array( dynamicsV2 );
@@ -1624,7 +1760,6 @@ int XLALSimIMRSpinEOBWaveformAll(
             XLALDestroyREAL8Vector( dvalues );
             XLALDestroyREAL8Vector( rdMatchPoint );
             XLALDestroyREAL8Vector( AttachParams );
-            
             XLALDestroyREAL8Vector( valuesV2 );
             if (dynamicsV2 != NULL){
                 XLALDestroyREAL8Array( dynamicsV2 );
@@ -1694,259 +1829,53 @@ int XLALSimIMRSpinEOBWaveformAll(
 * **********************************************************************************/
 /* Interpolate trajectories to compute L_N (t) in order to get alpha(t) and
    * beta(t). */
-  if(debugPK){
-    fprintf( stderr, "Generating Alpha and Beta angle timeseries at low SR\n" );
-    fflush(NULL);
-  }
-
-  LN_x = XLALCreateREAL8Vector( retLenLow );
-  LN_y = XLALCreateREAL8Vector( retLenLow );
-  LN_z = XLALCreateREAL8Vector( retLenLow );
-
-  Alpha = XLALCreateREAL8Vector( retLenLow );
-  Beta   = XLALCreateREAL8Vector( retLenLow );
-
-  gsl_spline *x_spline = gsl_spline_alloc( gsl_interp_cspline, retLenLow );
-  gsl_spline *y_spline = gsl_spline_alloc( gsl_interp_cspline, retLenLow );
-  gsl_spline *z_spline = gsl_spline_alloc( gsl_interp_cspline, retLenLow );
-
-  gsl_interp_accel *x_acc    = gsl_interp_accel_alloc();
-  gsl_interp_accel *y_acc    = gsl_interp_accel_alloc();
-  gsl_interp_accel *z_acc    = gsl_interp_accel_alloc();
-
-  gsl_spline_init( x_spline, tVec.data, posVecx.data, retLenLow );
-  gsl_spline_init( y_spline, tVec.data, posVecy.data, retLenLow );
-  gsl_spline_init( z_spline, tVec.data, posVecz.data, retLenLow );
-
-  if (debugPK){
-    fprintf( stderr, "Writing Alpha and Beta angle timeseries at low SR to alphaANDbeta.dat\n" );
-    fflush(NULL);
-    out = fopen( "alphaANDbeta.dat","w");
-  }
-
-  for( i=0; i < retLenLow; i++ )
-  {
-      tmpR[0] = posVecx.data[i]; tmpR[1] = posVecy.data[i]; tmpR[2] = posVecz.data[i];
-      tmpRdot[0] = gsl_spline_eval_deriv( x_spline, tVec.data[i], x_acc );
-      tmpRdot[1] = gsl_spline_eval_deriv( y_spline, tVec.data[i], y_acc );
-      tmpRdot[2] = gsl_spline_eval_deriv( z_spline, tVec.data[i], z_acc );
-
-      LN_x->data[i] = tmpR[1] * tmpRdot[2] - tmpR[2] * tmpRdot[1];
-      LN_y->data[i] = tmpR[2] * tmpRdot[0] - tmpR[0] * tmpRdot[2];
-      LN_z->data[i] = tmpR[0] * tmpRdot[1] - tmpR[1] * tmpRdot[0];
-
-      magLN = sqrt(LN_x->data[i] * LN_x->data[i] + LN_y->data[i] * LN_y->data[i]
-              + LN_z->data[i] * LN_z->data[i]);
-      LN_x->data[i] /= magLN; LN_y->data[i] /= magLN; LN_z->data[i] /= magLN;
-
-    /*  Eq. 19 of PRD 89, 084006 (2014) */
-    /*  Also unwrap the two angles */
-    if (fabs(LN_x->data[i]) <= 1.e-7 && fabs(LN_y->data[i]) <=1.e-7){
-      Alpha->data[i] = 0.0;
-    } else {
-      Alpha->data[i] = atan2( LN_y->data[i], LN_x->data[i] )
-                      + phaseCounterA * LAL_TWOPI;
-    }
-
-    if( i>0 && Alpha->data[i] - Alpha->data[i-1] > 5. ) {
-        phaseCounterA--;
-        Alpha->data[i] -= LAL_TWOPI;
-    }
-    else if ( i && Alpha->data[i] - Alpha->data[i-1] < -5. ) {
-        phaseCounterA++;
-        Alpha->data[i] += LAL_TWOPI;
-    }
-    if (LN_z->data[i] >1.) {
-        LN_z->data[i] = 1.;
-    }
-    if (LN_z->data[i] <-1.) {
-        LN_z->data[i] = -1.;
-    }
-    Beta->data[i] = acos( LN_z->data[i] );
-    if( i>0 && Beta->data[i] > Beta->data[i-1] ) {
-        phaseCounterB--;
-    }
-
-    if(debugPK) {
-      fprintf( out, "%.16e %.16e %.16e %d %d %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
-      tVec.data[i], Alpha->data[i], Beta->data[i],
-      phaseCounterA, phaseCounterB, tmpR[0], tmpR[1], tmpR[2],
-      tmpRdot[0], tmpRdot[1], tmpRdot[2],
-      LN_x->data[i], LN_y->data[i], LN_z->data[i] );
-    }
-	}
-  if (debugPK) fclose(out);
-
-  /* Integrate \dot{\alpha} \cos{\beta} to get the final Euler angle
-      Eq. 20 of PRD 89, 084006 (2014) */
-  gsl_spline_init( x_spline, tVec.data, Alpha->data, retLenLow );
-  gsl_spline_init( y_spline, tVec.data, Beta->data, retLenLow );
-
-  Gamma = XLALCreateREAL8Vector( retLenLow );
-
-  precEulerparams.alpha_spline = x_spline;
-  precEulerparams.alpha_acc    = x_acc;
-  precEulerparams.beta_spline  = y_spline;
-  precEulerparams.beta_acc     = y_acc;
-
-  precEulerF.function = &f_alphadotcosi;
-  precEulerF.params   = &precEulerparams;
-
-  if (debugPK) {
-    fprintf( stderr,"Writing Gamma angle timeseries at low SR to gamma.dat\n");
-    fflush(NULL);
-    out = fopen( "gamma.dat","w");
-  }
-
-  for( i = 0; i < retLenLow; i++ )
-  {
-    if( i==0 ) { Gamma->data[i] = 0.; }
-    else
-		{
-      gsl_integration_qags (&precEulerF, tVec.data[i-1], tVec.data[i], 1e-9, 1e-9, 1000, precEulerw, &precEulerresult, &precEulererror);
-			Gamma->data[i] = Gamma->data[i-1] + precEulerresult;
-    }
-
-		if (debugPK)
-      fprintf( out, "%.16e %.16e %.16e %.16e\n", tVec.data[i], Gamma->data[i],
-                                              precEulerresult, precEulererror);
-  }
-  if (debugPK) fclose(out);
-
-/* Same as above, but now for the high-sampling-rate portion of the trajectory */
-  LN_xHi = XLALCreateREAL8Vector( retLenHi );
-  LN_yHi = XLALCreateREAL8Vector( retLenHi );
-  LN_zHi = XLALCreateREAL8Vector( retLenHi );
-
-  AlphaHi = XLALCreateREAL8Vector( retLenHi );
-  BetaHi   = XLALCreateREAL8Vector( retLenHi );
-
-  gsl_spline_free(x_spline);
-  gsl_interp_accel_free(x_acc);
-  gsl_spline_free(y_spline);
-  gsl_interp_accel_free(y_acc);
-  gsl_spline_free(z_spline);
-  gsl_interp_accel_free(z_acc);
-
-  x_spline = gsl_spline_alloc( gsl_interp_cspline, retLenHi );
-  y_spline = gsl_spline_alloc( gsl_interp_cspline, retLenHi );
-  z_spline = gsl_spline_alloc( gsl_interp_cspline, retLenHi );
-
-  x_acc    = gsl_interp_accel_alloc();
-  y_acc    = gsl_interp_accel_alloc();
-  z_acc    = gsl_interp_accel_alloc();
-
-  gsl_spline_init( x_spline, timeHi.data, posVecxHi.data, retLenHi );
-  gsl_spline_init( y_spline, timeHi.data, posVecyHi.data, retLenHi );
-  gsl_spline_init( z_spline, timeHi.data, posVeczHi.data, retLenHi );
-
-  if (debugPK){
-    fprintf( stderr, "WRiting Alpha and Beta angle timeseries at High SR to alphaANDbetaHi.dat\n" );
-    fflush(NULL);
-    out = fopen( "alphaANDbetaHi.dat","w");
-  }
-  for( i=0; i < retLenHi; i++ )
-  {
-    tmpR[0] = posVecxHi.data[i]; tmpR[1] = posVecyHi.data[i]; tmpR[2] = posVeczHi.data[i];
-    tmpRdot[0] = gsl_spline_eval_deriv( x_spline, timeHi.data[i], x_acc );
-    tmpRdot[1] = gsl_spline_eval_deriv( y_spline, timeHi.data[i], y_acc );
-    tmpRdot[2] = gsl_spline_eval_deriv( z_spline, timeHi.data[i], z_acc );
-
-    LN_xHi->data[i] = tmpR[1] * tmpRdot[2] - tmpR[2] * tmpRdot[1];
-    LN_yHi->data[i] = tmpR[2] * tmpRdot[0] - tmpR[0] * tmpRdot[2];
-    LN_zHi->data[i] = tmpR[0] * tmpRdot[1] - tmpR[1] * tmpRdot[0];
-
-    magLN = sqrt(LN_xHi->data[i] * LN_xHi->data[i] + LN_yHi->data[i] * LN_yHi->data[i] + LN_zHi->data[i] * LN_zHi->data[i]);
-    LN_xHi->data[i] /= magLN; LN_yHi->data[i] /= magLN; LN_zHi->data[i] /= magLN;
-
-		/* Unwrap the two angles */
-    if (fabs(LN_xHi->data[i]) <= 1.e-7 && fabs(LN_yHi->data[i]) <=1.e-7){
-      AlphaHi->data[i] = 0.0;
-    } else {
-      AlphaHi->data[i] = atan2( LN_yHi->data[i], LN_xHi->data[i] ) + phaseCounterA * LAL_TWOPI;
-    }
-    if( i>0 && AlphaHi->data[i] - AlphaHi->data[i-1] > 5. )
-		{
-			phaseCounterA--;
-			AlphaHi->data[i] -= LAL_TWOPI;
-		}
-		else if( i>0 && AlphaHi->data[i] - AlphaHi->data[i-1] < -5. )
-		{
-			phaseCounterA++;
-			AlphaHi->data[i] += LAL_TWOPI;
-		}
-
-		/* Make sure that Alpha agrees initially with the low SR value */
-		AlphaHi->data[i] -= (AlphaHi->data[0] - Alpha->data[hiSRndx]);
-
-		BetaHi->data[i] = acos( LN_zHi->data[i] );
-		if( i>0 && BetaHi->data[i] > BetaHi->data[i-1] )
-		{
-			phaseCounterB--;
-		}
+    INT4 phaseCounterA = 0, phaseCounterB = 0;
+    Alpha = XLALCreateREAL8Vector( retLenLow );
+    Beta   = XLALCreateREAL8Vector( retLenLow );
+    Gamma = XLALCreateREAL8Vector( retLenLow );
+    EulerAnglesI2P(Alpha, Beta, Gamma, &phaseCounterA, &phaseCounterB, tVec, posVecx, posVecy, posVecz, retLenLow, 0., 0., 0);
 
     if (debugPK){
-      fprintf( out, "%.16e %.16e %.16e %d %d %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n",
-      tVec.data[hiSRndx]+timeHi.data[i],
-		  AlphaHi->data[i], BetaHi->data[i],
-      phaseCounterA, phaseCounterB,
-      tmpR[0], tmpR[1], tmpR[2], tmpRdot[0], tmpRdot[1], tmpRdot[2],
-			LN_xHi->data[i], LN_yHi->data[i], LN_zHi->data[i] );
+        fprintf( stderr, "Writing Alpha and Beta angle timeseries at low SR to alphaANDbeta.dat\n" );
+        fflush(NULL);
+        out = fopen( "alphaANDbeta.dat","w");
+        for( i = 0; i < retLenLow; i++ ) {
+            fprintf( out, "%.16e %.16e %.16e\n", tVec.data[i], Alpha->data[i], Beta->data[i]);
+        }
+        fclose(out);
+        
+        fprintf( stderr,"Writing Gamma angle timeseries at low SR to gamma.dat\n");
+        fflush(NULL);
+        out = fopen( "gamma.dat","w");
+        for( i = 0; i < retLenLow; i++ ) {
+            fprintf( out, "%.16e %.16e\n", tVec.data[i], Gamma->data[i]);
+        }
+        fclose(out);
     }
-	}
-  if (debugPK) fclose(out);
 
-  /* Integrate \dot{\alpha} \cos{\beta} to get the final Euler angle*/
-  gsl_spline_init( x_spline, timeHi.data, AlphaHi->data, retLenHi );
-  gsl_spline_init( y_spline, timeHi.data, BetaHi->data, retLenHi );
-
-  GammaHi = XLALCreateREAL8Vector( retLenHi );
-
-  //PrecEulerAnglesIntegration precEulerparams;
-  precEulerparams.alpha_spline = x_spline;
-  precEulerparams.alpha_acc    = x_acc;
-  precEulerparams.beta_spline  = y_spline;
-  precEulerparams.beta_acc     = y_acc;
-
-  /*gsl_integration_workspace * */
-  gsl_integration_workspace_free( precEulerw );
-  precEulerw = gsl_integration_workspace_alloc (1000);
-  precEulerresult = 0, precEulererror = 0;
-
-  precEulerF.function = &f_alphadotcosi;
-  precEulerF.params = &precEulerparams;
-
-  if(debugPK){
-    fprintf( stderr,
-      "WRiting Gamma angle timeseries at High SR to gammaHi.dat\n" );
-    out = fopen( "gammaHi.dat","w");
-  }
-
-  for( i = 0; i < retLenHi; i++ )
-  {
-    if( i==0 ) { GammaHi->data[i] = Gamma->data[hiSRndx]; }
-    else {
-        gsl_integration_qags(&precEulerF, timeHi.data[i-1], timeHi.data[i],
-        1e-9, 1e-9, 1000, precEulerw, &precEulerresult, &precEulererror);
-		 GammaHi->data[i] = GammaHi->data[i-1] + precEulerresult;
+    AlphaHi = XLALCreateREAL8Vector( retLenHi );
+    BetaHi   = XLALCreateREAL8Vector( retLenHi );
+    GammaHi = XLALCreateREAL8Vector( retLenHi );
+    EulerAnglesI2P(AlphaHi, BetaHi, GammaHi, &phaseCounterA, &phaseCounterB, timeHi, posVecxHi, posVecyHi, posVeczHi, retLenHi, Alpha->data[hiSRndx], Gamma->data[hiSRndx], 1);
+    if (debugPK){
+        fprintf( stderr, "Writing Alpha and Beta angle timeseries at high SR to alphaANDbetaHi.dat\n" );
+        fflush(NULL);
+        out = fopen( "alphaANDbetaHi.dat","w");
+        for( i = 0; i < retLenHi; i++ ) {
+            fprintf( out, "%.16e %.16e %.16e\n", tVec.data[hiSRndx] + timeHi.data[i], AlphaHi->data[i], BetaHi->data[i]);
+        }
+        fclose(out);
+        
+        fprintf( stderr,"Writing Gamma angle timeseries at high SR to gammaHi.dat\n");
+        fflush(NULL);
+        out = fopen( "gammaHi.dat","w");
+        for( i = 0; i < retLenHi; i++ ) {
+            fprintf( out, "%.16e %.16e\n", tVec.data[hiSRndx] + timeHi.data[i], GammaHi->data[i]);
+        }
+        fclose(out);
     }
-	
-      if (debugPK)
-      fprintf( out, "%.16e %.16e %.16e %.16e\n",
-        tVec.data[hiSRndx]+timeHi.data[i], GammaHi->data[i],
-        precEulerresult, precEulererror);
-	}
-  if (debugPK) fclose(out);
 
-  gsl_integration_workspace_free( precEulerw );
-  gsl_spline_free( x_spline );
-  gsl_spline_free( y_spline );
-  gsl_spline_free( z_spline );
-  gsl_interp_accel_free( x_acc );
-  gsl_interp_accel_free( y_acc );
-  gsl_interp_accel_free( z_acc );
-
-
+  /* Compute leading QNM to determine how long the ringdown will be */
   modefreqVec.length = 1;
   modefreqVec.data   = &modeFreq;
 
@@ -1958,7 +1887,6 @@ int XLALSimIMRSpinEOBWaveformAll(
     XLALDestroyREAL8Vector( dvalues );
     XLALDestroyREAL8Vector( rdMatchPoint );
     XLALDestroyREAL8Vector( AttachParams );
-    
     XLALDestroyREAL8Vector( valuesV2 );
     if (dynamicsV2 != NULL){
         XLALDestroyREAL8Array( dynamicsV2 );
@@ -1972,12 +1900,6 @@ int XLALSimIMRSpinEOBWaveformAll(
     if (dynamicsHi != NULL){
         XLALDestroyREAL8Array( dynamicsHi );
     }
-    XLALDestroyREAL8Vector( LN_x );
-    XLALDestroyREAL8Vector( LN_y );
-    XLALDestroyREAL8Vector( LN_z );
-    XLALDestroyREAL8Vector( LN_xHi );
-    XLALDestroyREAL8Vector( LN_yHi );
-    XLALDestroyREAL8Vector( LN_zHi );
     XLALDestroyREAL8Vector( Alpha );
     XLALDestroyREAL8Vector( Beta );
     XLALDestroyREAL8Vector( AlphaHi );
@@ -2020,12 +1942,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -2109,12 +2025,6 @@ int XLALSimIMRSpinEOBWaveformAll(
     if (dynamicsHi != NULL){
         XLALDestroyREAL8Array( dynamicsHi );
     }
-    XLALDestroyREAL8Vector( LN_x );
-    XLALDestroyREAL8Vector( LN_y );
-    XLALDestroyREAL8Vector( LN_z );
-    XLALDestroyREAL8Vector( LN_xHi );
-    XLALDestroyREAL8Vector( LN_yHi );
-    XLALDestroyREAL8Vector( LN_zHi );
     XLALDestroyREAL8Vector( Alpha );
     XLALDestroyREAL8Vector( Beta );
     XLALDestroyREAL8Vector( AlphaHi );
@@ -2208,7 +2118,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
         XLALDestroyREAL8Vector( valuesV2 );
         if (dynamicsV2 != NULL){
             XLALDestroyREAL8Array( dynamicsV2 );
@@ -2222,12 +2131,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -2238,15 +2141,10 @@ int XLALSimIMRSpinEOBWaveformAll(
       break;
   }
 
-  /*** Here is the old attempt of Yi to modify parameters according to the
-       opening angle
-  combSize    *= 1.0 + 9.0 * (1.0 - fabs(kappaJL));
-  //longCombSize = combSize;
-  deltaNQC    += 10.0 * (1.0 - fabs(kappaJL));*/
 
-  // (Stas) !!! NOTE: tAttach is further modified by small shift "sh" computed and applied in XLALSimIMREOBHybridAttachRingdownPrec !!!
-  // FIXME
-  tAttach = tPeakOmega - deltaNQC; //- 1.0;
+  /* NOTE: tAttach is further modified by small shift "sh" computed and applied in XLALSimIMREOBHybridAttachRingdownPrec !!!
+    Manually choose tAttach here */
+  tAttach = tPeakOmega - deltaNQC;
 
   /* tPeakOmega is initialized to 0 by default, so even when found is false, tPeakOmega has numerical value */
   if (! foundPeakOmega){
@@ -2260,7 +2158,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 	  fflush(NULL);
   }
 
-  // FIXME
+  /* Manually choose combSize */
   //combSize = 40.0;
 
   /* Construct J-frame */
@@ -2279,11 +2177,6 @@ int XLALSimIMRSpinEOBWaveformAll(
             JframeEx[2] = 0.;
       }
   }
-  // FIXME try to change the sign of x:
-  //if (JframeEx[0] < 0.0){
-  //  JframeEx[0] = -JframeEz[1];
-  //  JframeEx[1] = JframeEz[0];
-  //}
 
   JExnorm = sqrt(JframeEx[0]*JframeEx[0] + JframeEx[1]*JframeEx[1]);
 
@@ -2293,11 +2186,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   JframeEy[1] = JframeEz[2]*JframeEx[0] - JframeEz[0]*JframeEx[2];
   JframeEy[2] = JframeEz[0]*JframeEx[1] - JframeEz[1]*JframeEx[0];
 
-
-  // FIXME try to change the sign of x:
-  //JframeEy[0] = - JframeEy[0];
-  //JframeEy[1] = - JframeEy[1];
-  //JframeEy[2] = - JframeEy[2];
 
   if(debugPK) {
     XLAL_PRINT_INFO("J-frameEx = [%e\t%e\t%e]\n", JframeEx[0], JframeEx[1], JframeEx[2]);XLAL_PRINT_INFO("J-frameEy = [%e\t%e\t%e]\n", JframeEy[0], JframeEy[1], JframeEy[2]);
@@ -2335,12 +2223,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -2394,13 +2276,7 @@ int XLALSimIMRSpinEOBWaveformAll(
          if (dynamicsHi != NULL){
              XLALDestroyREAL8Array( dynamicsHi );
          }
-         XLALDestroyREAL8Vector( LN_x );
-         XLALDestroyREAL8Vector( LN_y );
-         XLALDestroyREAL8Vector( LN_z );
-         XLALDestroyREAL8Vector( LN_xHi );
-         XLALDestroyREAL8Vector( LN_yHi );
-         XLALDestroyREAL8Vector( LN_zHi );
-         XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Alpha );
          XLALDestroyREAL8Vector( Beta );
          XLALDestroyREAL8Vector( AlphaHi );
          XLALDestroyREAL8Vector( BetaHi );
@@ -2534,12 +2410,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -2604,39 +2474,15 @@ int XLALSimIMRSpinEOBWaveformAll(
     bI2P = Beta->data[i];
     gI2P = Gamma->data[i];
 
-    LframeEx[0] =  cos(aI2P)*cos(bI2P)*cos(gI2P) - sin(aI2P)*sin(gI2P);
-    LframeEx[1] =  sin(aI2P)*cos(bI2P)*cos(gI2P) + cos(aI2P)*sin(gI2P);
-    LframeEx[2] = -sin(bI2P)*cos(gI2P);
-    LframeEy[0] = -cos(aI2P)*cos(bI2P)*sin(gI2P) - sin(aI2P)*cos(gI2P);
-    LframeEy[1] = -sin(aI2P)*cos(bI2P)*sin(gI2P) + cos(aI2P)*cos(gI2P);
-    LframeEy[2] =  sin(bI2P)*sin(gI2P);
-    LframeEz[0] =  LNhx;
-    LframeEz[1] =  LNhy;
-    LframeEz[2] =  LNhz;
-    aP2J = atan2(JframeEz[0]*LframeEy[0]+JframeEz[1]*LframeEy[1]+JframeEz[2]*LframeEy[2],
-                 JframeEz[0]*LframeEx[0]+JframeEz[1]*LframeEx[1]+JframeEz[2]*LframeEx[2]);
-    bP2J = acos( JframeEz[0]*LframeEz[0]+JframeEz[1]*LframeEz[1]+JframeEz[2]*LframeEz[2]);
-          gP2J = atan2(  JframeEy[0]*LframeEz[0]+JframeEy[1]*LframeEz[1]+JframeEy[2]*LframeEz[2],
-                 -(JframeEx[0]*LframeEz[0]+JframeEx[1]*LframeEz[1]+JframeEx[2]*LframeEz[2]));
-
-    /* I2P Euler angles are stored only for debugging purposes */
-      if ( fabs(bP2J-LAL_PI) < 1.e-10){
-          gP2J = 0.0;
-          aP2J = atan2( JframeEx[1], JframeEx[0]);
-      }
-
-      if ( fabs(bP2J) < 1.e-10){
-          gP2J = 0.0;
-          aP2J = atan2( JframeEx[1], JframeEx[0]);
-      }
+    EulerAnglesP2J(&aP2J, &bP2J, &gP2J, aI2P, bI2P, gI2P, LNhx, LNhy, LNhz, JframeEx, JframeEy, JframeEz);
+                     
       /** Euler angles to go from precessing to J-frame. Note that we follow in this code passive rotation Z-Y-Z and notations
        * of Arun et al. arXiv 0810.5336, however the Wiegner D-matrix and mode rotation coded up in LAL for active rotation 
        * We make the angle transformation here in order to match two conventions  */
     alphaI2PTS->data->data[i] = -aI2P;
-     betaI2PTS->data->data[i] = bI2P;
+    betaI2PTS->data->data[i] = bI2P;
     gammaI2PTS->data->data[i] = -gI2P;
     alphaP2JTS->data->data[i] = -aP2J;
-    /*betaP2JTS->data->data[i] = 0.*LAL_PI/2.-bP2J;*/
     betaP2JTS->data->data[i] = bP2J;
     gammaP2JTS->data->data[i] = -gP2J;
 
@@ -2696,7 +2542,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
         XLALDestroyREAL8Vector( valuesV2 );
         if (dynamicsV2 != NULL){
             XLALDestroyREAL8Array( dynamicsV2 );
@@ -2710,12 +2555,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -2737,13 +2576,10 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
        break;
@@ -2788,7 +2624,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
         XLALDestroyREAL8Vector( valuesV2 );
         if (dynamicsV2 != NULL){
             XLALDestroyREAL8Array( dynamicsV2 );
@@ -2802,12 +2637,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -2829,13 +2658,10 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EFUNC );
@@ -2849,7 +2675,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
         XLALDestroyREAL8Vector( valuesV2 );
         if (dynamicsV2 != NULL){
             XLALDestroyREAL8Array( dynamicsV2 );
@@ -2863,12 +2688,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -2890,13 +2709,10 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EFUNC );
@@ -2923,7 +2739,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
         XLALDestroyREAL8Vector( valuesV2 );
         if (dynamicsV2 != NULL){
             XLALDestroyREAL8Array( dynamicsV2 );
@@ -2937,12 +2752,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -2964,13 +2773,10 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EFUNC );
@@ -3020,32 +2826,125 @@ int XLALSimIMRSpinEOBWaveformAll(
 
 
   /* Main loop for quasi-nonprecessing waveform generation -- HIGH SR */
-//  retLen = retLenHi;
-
-  REAL8TimeSeries *alphaI2PTSHi = XLALCreateREAL8TimeSeries( "alphaI2P",
-                                &tc, 0.0, deltaTHigh, &lalStrainUnit, retLenHi );
-  REAL8TimeSeries  *betaI2PTSHi = XLALCreateREAL8TimeSeries(  "betaI2P",
-                                &tc, 0.0, deltaTHigh, &lalStrainUnit, retLenHi );
-  REAL8TimeSeries *gammaI2PTSHi = XLALCreateREAL8TimeSeries( "gammaI2P",
-                                &tc, 0.0, deltaTHigh, &lalStrainUnit, retLenHi );
-  REAL8TimeSeries *alphaP2JTSHi = XLALCreateREAL8TimeSeries( "alphaP2J",
-                                &tc, 0.0, deltaTHigh, &lalStrainUnit, retLenHi );
-  REAL8TimeSeries  *betaP2JTSHi = XLALCreateREAL8TimeSeries(  "betaP2J",
-                                &tc, 0.0, deltaTHigh, &lalStrainUnit, retLenHi );
-  REAL8TimeSeries *gammaP2JTSHi = XLALCreateREAL8TimeSeries( "gammaP2J",
-                                &tc, 0.0, deltaTHigh, &lalStrainUnit, retLenHi );
-
-  COMPLEX16TimeSeries *h22TSHi   = XLALCreateCOMPLEX16TimeSeries( "H_22",
-                                &tc, 0.0, deltaTHigh, &lalStrainUnit, retLenHi );
-  COMPLEX16TimeSeries *h21TSHi   = XLALCreateCOMPLEX16TimeSeries( "H_21",
-                                &tc, 0.0, deltaTHigh, &lalStrainUnit, retLenHi );
-  COMPLEX16TimeSeries *h20TSHi   = XLALCreateCOMPLEX16TimeSeries( "H_20",
-                                &tc, 0.0, deltaTHigh, &lalStrainUnit, retLenHi );
-  COMPLEX16TimeSeries *h2m1TSHi  = XLALCreateCOMPLEX16TimeSeries( "H_2m1",
-                                &tc, 0.0, deltaTHigh, &lalStrainUnit, retLenHi );
-  COMPLEX16TimeSeries *h2m2TSHi  = XLALCreateCOMPLEX16TimeSeries( "H_2m2",
-                                &tc, 0.0, deltaTHigh, &lalStrainUnit, retLenHi );
-
+     REAL8TimeSeries *alphaI2PTSHi, *betaI2PTSHi, *gammaI2PTSHi, *alphaP2JTSHi, *betaP2JTSHi, *gammaP2JTSHi;
+    
+    if ( !(!!(alphaI2PTSHi = XLALCreateREAL8TimeSeries( "alphaI2P", &tc, 0.0, deltaT, &lalStrainUnit, retLenHi )) * !!(betaI2PTSHi = XLALCreateREAL8TimeSeries(  "betaI2P", &tc, 0.0, deltaT, &lalStrainUnit, retLenHi )) * !!(gammaI2PTSHi = XLALCreateREAL8TimeSeries( "gammaI2P", &tc, 0.0, deltaT, &lalStrainUnit, retLenHi )) * !!(alphaP2JTSHi = XLALCreateREAL8TimeSeries( "alphaP2J", &tc, 0.0, deltaT, &lalStrainUnit, retLenHi )) * !!(betaP2JTSHi = XLALCreateREAL8TimeSeries(  "betaP2J", &tc, 0.0, deltaT, &lalStrainUnit, retLenHi )) * !!(gammaP2JTSHi = XLALCreateREAL8TimeSeries( "gammaP2J", &tc, 0.0, deltaT, &lalStrainUnit, retLenHi ))) )
+    {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlist );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        if ( alphaI2PTSHi != NULL ) {
+            XLALDestroyREAL8TimeSeries(alphaI2PTSHi);
+        }
+        if ( betaI2PTSHi != NULL ) {
+            XLALDestroyREAL8TimeSeries(betaI2PTSHi);
+        }
+        if ( gammaI2PTSHi != NULL ) {
+            XLALDestroyREAL8TimeSeries(gammaI2PTSHi);
+        }
+        if ( alphaP2JTSHi != NULL ) {
+            XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
+        }
+        if ( betaP2JTSHi != NULL ) {
+            XLALDestroyREAL8TimeSeries(betaP2JTSHi);
+        }
+        if ( gammaP2JTSHi != NULL ) {
+            XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
+        }
+        XLAL_ERROR(  XLAL_ENOMEM );
+    }
+    
+    COMPLEX16TimeSeries *h22TSHi, *h21TSHi, *h20TSHi, *h2m1TSHi, *h2m2TSHi;
+    if ( !(!!(h22TSHi   = XLALCreateCOMPLEX16TimeSeries( "H_22",  &tc, 0.0, deltaT, &lalStrainUnit, retLenHi )) * !!(h21TSHi   = XLALCreateCOMPLEX16TimeSeries( "H_21", &tc, 0.0, deltaT, &lalStrainUnit, retLenHi )) * !!(h20TSHi   = XLALCreateCOMPLEX16TimeSeries( "H_20",  &tc, 0.0, deltaT, &lalStrainUnit, retLenHi )) * !!(h2m1TSHi  = XLALCreateCOMPLEX16TimeSeries( "H_2m1", &tc, 0.0, deltaT, &lalStrainUnit, retLenHi )) * !!(h2m2TSHi  = XLALCreateCOMPLEX16TimeSeries( "H_2m2", &tc, 0.0, deltaT, &lalStrainUnit, retLenHi )))) {
+        XLALDestroyREAL8Vector( sigmaKerr );
+        XLALDestroyREAL8Vector( sigmaStar );
+        XLALDestroyREAL8Vector( values );
+        XLALDestroyREAL8Vector( dvalues );
+        XLALDestroyREAL8Vector( rdMatchPoint );
+        XLALDestroyREAL8Vector( AttachParams );
+        XLALDestroyREAL8Vector( valuesV2 );
+        if (dynamicsV2 != NULL){
+            XLALDestroyREAL8Array( dynamicsV2 );
+        }
+        if (dynamicsV2Hi != NULL){
+            XLALDestroyREAL8Array( dynamicsV2Hi );
+        }
+        if (dynamics != NULL){
+            XLALDestroyREAL8Array( dynamics );
+        }
+        if (dynamicsHi != NULL){
+            XLALDestroyREAL8Array( dynamicsHi );
+        }
+        XLALDestroyREAL8Vector( Alpha );
+        XLALDestroyREAL8Vector( Beta );
+        XLALDestroyREAL8Vector( AlphaHi );
+        XLALDestroyREAL8Vector( BetaHi );
+        XLALDestroyREAL8Vector( Gamma );
+        XLALDestroyREAL8Vector( GammaHi );
+        XLALDestroyREAL8Vector( tlist );
+        XLALDestroyREAL8Vector( tlistRDPatch );
+        XLALDestroyREAL8Vector( timeJFull );
+        XLALDestroyREAL8Vector( timeIFull );
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTS);
+        XLALDestroyREAL8TimeSeries(betaP2JTS);
+        XLALDestroyREAL8TimeSeries(gammaP2JTS);
+        XLALDestroyCOMPLEX16TimeSeries(h22TS);
+        XLALDestroyCOMPLEX16TimeSeries(h21TS);
+        XLALDestroyCOMPLEX16TimeSeries(h20TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
+        if ( h22TSHi != NULL ) {
+            XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
+        }
+        if ( h21TSHi != NULL ) {
+            XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
+        }
+        if ( h20TSHi != NULL ) {
+            XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
+        }
+        if ( h2m1TSHi != NULL ) {
+            XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
+        }
+        if ( h2m2TSHi != NULL ) {
+            XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
+        }
+        XLAL_ERROR(  XLAL_ENOMEM );
+    }
 
   COMPLEX16TimeSeries *h22PTSHi  = NULL;
   COMPLEX16TimeSeries *h21PTSHi  = NULL;
@@ -3113,7 +3012,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
         XLALDestroyREAL8Vector( valuesV2 );
         if (dynamicsV2 != NULL){
             XLALDestroyREAL8Array( dynamicsV2 );
@@ -3127,12 +3025,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -3155,13 +3047,21 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(betaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EFUNC );
@@ -3192,31 +3092,8 @@ int XLALSimIMRSpinEOBWaveformAll(
     aI2P = AlphaHi->data[i];
     bI2P = BetaHi->data[i];
     gI2P = GammaHi->data[i];
-    LframeEx[0] =  cos(aI2P)*cos(bI2P)*cos(gI2P) - sin(aI2P)*sin(gI2P);
-    LframeEx[1] =  sin(aI2P)*cos(bI2P)*cos(gI2P) + cos(aI2P)*sin(gI2P);
-    LframeEx[2] = -sin(bI2P)*cos(gI2P);
-    LframeEy[0] = -cos(aI2P)*cos(bI2P)*sin(gI2P) - sin(aI2P)*cos(gI2P);
-    LframeEy[1] = -sin(aI2P)*cos(bI2P)*sin(gI2P) + cos(aI2P)*cos(gI2P);
-    LframeEy[2] =  sin(bI2P)*sin(gI2P);
-    LframeEz[0] =  LNhx;
-    LframeEz[1] =  LNhy;
-    LframeEz[2] =  LNhz;
-
-    aP2J = atan2(JframeEz[0]*LframeEy[0]+JframeEz[1]*LframeEy[1]+JframeEz[2]*LframeEy[2],
-                 JframeEz[0]*LframeEx[0]+JframeEz[1]*LframeEx[1]+JframeEz[2]*LframeEx[2]);
-    bP2J = acos( JframeEz[0]*LframeEz[0]+JframeEz[1]*LframeEz[1]+JframeEz[2]*LframeEz[2]);
-    gP2J = atan2(  JframeEy[0]*LframeEz[0]+JframeEy[1]*LframeEz[1]+JframeEy[2]*LframeEz[2],
-                 -(JframeEx[0]*LframeEz[0]+JframeEx[1]*LframeEz[1]+JframeEx[2]*LframeEz[2]));
-
-      if ( fabs(bP2J-LAL_PI) < 1.e-10){
-          gP2J = 0.0;
-          aP2J = atan2( JframeEx[1], JframeEx[0]);
-      }
-
-      if ( fabs(bP2J) < 1.e-10){
-          gP2J = 0.0;
-          aP2J = atan2( JframeEx[1], JframeEx[0]);
-      }
+    
+      EulerAnglesP2J(&aP2J, &bP2J, &gP2J, aI2P, bI2P, gI2P, LNhx, LNhy, LNhz, JframeEx, JframeEy, JframeEz);
 
     /* I2P Euler angles are stored only for debugging purposes */
     alphaI2PTSHi->data->data[i] = -aI2P;
@@ -3330,12 +3207,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -3358,13 +3229,21 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(betaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EFUNC );
@@ -3377,7 +3256,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
         XLALDestroyREAL8Vector( valuesV2 );
         if (dynamicsV2 != NULL){
             XLALDestroyREAL8Array( dynamicsV2 );
@@ -3391,12 +3269,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -3419,16 +3291,24 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(betaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
-      XLAL_ERROR( XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
     }
     hLM *= hNQC;
     h22TSHi->data->data[i]  = hLM;
@@ -3532,12 +3412,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -3559,13 +3433,21 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(betaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
       XLAL_ERROR( XLAL_EINVAL );
@@ -3600,7 +3482,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
         XLALDestroyREAL8Vector( valuesV2 );
         if (dynamicsV2 != NULL){
             XLALDestroyREAL8Array( dynamicsV2 );
@@ -3614,12 +3495,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -3641,16 +3516,24 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(betaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
-    XLAL_ERROR( XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
   }
   h22JTS  = XLALSphHarmTimeSeriesGetMode( hlmPTS, 2, 2 );
   h21JTS  = XLALSphHarmTimeSeriesGetMode( hlmPTS, 2, 1 );
@@ -3689,7 +3572,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
         XLALDestroyREAL8Vector( valuesV2 );
         if (dynamicsV2 != NULL){
             XLALDestroyREAL8Array( dynamicsV2 );
@@ -3703,12 +3585,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -3730,13 +3606,21 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(betaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
     XLAL_ERROR( XLAL_EFUNC );
@@ -3803,12 +3687,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -3830,13 +3708,21 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(betaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
         XLALDestroyREAL8Vector( sigReHi );
@@ -3935,12 +3821,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -3962,13 +3842,21 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(betaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
         XLALDestroyREAL8Vector( sigReHi );
@@ -4009,12 +3897,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -4036,18 +3918,26 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(betaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
         XLALDestroyREAL8Vector( sigReHi );
         XLALDestroyREAL8Vector( sigImHi );
-          XLAL_ERROR( XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
       }
 
       if (debugPK){
@@ -4137,7 +4027,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyREAL8Vector( dvalues );
         XLALDestroyREAL8Vector( rdMatchPoint );
         XLALDestroyREAL8Vector( AttachParams );
-        
         XLALDestroyREAL8Vector( valuesV2 );
         if (dynamicsV2 != NULL){
             XLALDestroyREAL8Array( dynamicsV2 );
@@ -4151,12 +4040,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -4178,13 +4061,21 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(betaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
         XLALDestroyREAL8Vector( sigReHi );
@@ -4342,7 +4233,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   REAL8TimeSeries *alpI        = XLALCreateREAL8TimeSeries( "alphaJ2I",
         &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
-  REAL8TimeSeries *betI        = XLALCreateREAL8TimeSeries( "betaaJ2I",
+  REAL8TimeSeries *betI        = XLALCreateREAL8TimeSeries( "betaJ2I",
         &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
   REAL8TimeSeries *gamI        = XLALCreateREAL8TimeSeries( "gammaJ2I",
         &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
@@ -4391,12 +4282,6 @@ int XLALSimIMRSpinEOBWaveformAll(
         if (dynamicsHi != NULL){
             XLALDestroyREAL8Array( dynamicsHi );
         }
-        XLALDestroyREAL8Vector( LN_x );
-        XLALDestroyREAL8Vector( LN_y );
-        XLALDestroyREAL8Vector( LN_z );
-        XLALDestroyREAL8Vector( LN_xHi );
-        XLALDestroyREAL8Vector( LN_yHi );
-        XLALDestroyREAL8Vector( LN_zHi );
         XLALDestroyREAL8Vector( Alpha );
         XLALDestroyREAL8Vector( Beta );
         XLALDestroyREAL8Vector( AlphaHi );
@@ -4417,18 +4302,25 @@ int XLALSimIMRSpinEOBWaveformAll(
         XLALDestroyCOMPLEX16TimeSeries(h20TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
         XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
         XLALDestroySphHarmTimeSeries(hlmPTS);
         XLALDestroySphHarmTimeSeries(hIMRlmJTS);
         XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
         XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
-
+        XLALDestroyREAL8TimeSeries(alphaI2PTS);
+        XLALDestroyREAL8TimeSeries(betaI2PTS);
+        XLALDestroyREAL8TimeSeries(gammaI2PTS);
+        XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(betaP2JTSHi);
+        XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
+        XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
         XLALDestroyREAL8TimeSeries(hPlusTS);
         XLALDestroyREAL8TimeSeries(hCrossTS);
         XLALDestroyREAL8Vector( sigReHi );
         XLALDestroyREAL8Vector( sigImHi );
-        
         XLALDestroyREAL8TimeSeries(alpI);
         XLALDestroyREAL8TimeSeries(betI);
         XLALDestroyREAL8TimeSeries(gamI);
@@ -4502,14 +4394,12 @@ int XLALSimIMRSpinEOBWaveformAll(
     XLAL_PRINT_INFO("plus and cross are computed, freeing the memory\n");
     fflush(NULL);
   }
-
   XLALDestroyREAL8TimeSeries(alphaI2PTS);
   XLALDestroyREAL8TimeSeries(betaI2PTS);
   XLALDestroyREAL8TimeSeries(gammaI2PTS);
   XLALDestroyREAL8TimeSeries(alphaP2JTS);
   XLALDestroyREAL8TimeSeries(betaP2JTS);
   XLALDestroyREAL8TimeSeries(gammaP2JTS);
-
   if(debugPK){ XLAL_PRINT_INFO("Memory cleanup 1 done.\n"); fflush(NULL); }
   XLALDestroyREAL8TimeSeries(alphaI2PTSHi);
   XLALDestroyREAL8TimeSeries(betaI2PTSHi);
@@ -4517,51 +4407,31 @@ int XLALSimIMRSpinEOBWaveformAll(
   XLALDestroyREAL8TimeSeries(alphaP2JTSHi);
   XLALDestroyREAL8TimeSeries(betaP2JTSHi);
   XLALDestroyREAL8TimeSeries(gammaP2JTSHi);
-
-
-  ////////////////////////////////////////
-
-
   XLALDestroyCOMPLEX16TimeSeries(h22TS);
   XLALDestroyCOMPLEX16TimeSeries(h21TS);
   XLALDestroyCOMPLEX16TimeSeries(h20TS);
   XLALDestroyCOMPLEX16TimeSeries(h2m1TS);
   XLALDestroyCOMPLEX16TimeSeries(h2m2TS);
-
   XLALDestroySphHarmTimeSeries(hlmPTS);
   XLALDestroySphHarmTimeSeries(hIMRlmJTS);
   XLALDestroySphHarmTimeSeries(hIMRlmITS);
-
   XLALDestroyCOMPLEX16TimeSeries(hIMRJTS);
   if(debugPK){ XLAL_PRINT_INFO("Memory cleanup 2 done.\n"); fflush(NULL); }
-
-
   XLALDestroyCOMPLEX16TimeSeries(h22TSHi);
   XLALDestroyCOMPLEX16TimeSeries(h21TSHi);
   XLALDestroyCOMPLEX16TimeSeries(h20TSHi);
   XLALDestroyCOMPLEX16TimeSeries(h2m1TSHi);
   XLALDestroyCOMPLEX16TimeSeries(h2m2TSHi);
-
   XLALDestroyCOMPLEX16TimeSeries(hIMRJTSHi);
-
-
   XLALDestroyREAL8Vector( values );
   XLALDestroyREAL8Vector( dvalues );
   XLALDestroyREAL8Vector( sigmaStar );
   XLALDestroyREAL8Vector( sigmaKerr );
   XLALDestroyREAL8Vector( sigReHi );
   XLALDestroyREAL8Vector( sigImHi );
-
   if(debugPK){ XLAL_PRINT_INFO("Memory cleanup 3 done.\n"); fflush(NULL); }
   XLALAdaptiveRungeKutta4Free(integrator);
   XLALDestroyREAL8Array( dynamics );
-
-  XLALDestroyREAL8Vector( LN_x );
-  XLALDestroyREAL8Vector( LN_y );
-  XLALDestroyREAL8Vector( LN_z );
-  XLALDestroyREAL8Vector( LN_xHi );
-  XLALDestroyREAL8Vector( LN_yHi );
-  XLALDestroyREAL8Vector( LN_zHi );
   XLALDestroyREAL8Vector( Alpha );
   XLALDestroyREAL8Vector( Beta );
   XLALDestroyREAL8Vector( AlphaHi );
@@ -4571,10 +4441,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   XLALDestroyREAL8TimeSeries( alpI);
   XLALDestroyREAL8TimeSeries( betI);
   XLALDestroyREAL8TimeSeries( gamI);
-
-
   XLALDestroyREAL8Vector( rdMatchPoint );
-//  XLALDestroyREAL8Vector( values );
 
   if(debugPK){ XLAL_PRINT_INFO("Memory cleanup ALL done.\n"); fflush(NULL); }
 
@@ -4599,6 +4466,5 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   return XLAL_SUCCESS;
 }
-
 
 #endif
