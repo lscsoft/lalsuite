@@ -143,6 +143,9 @@ int main(int argc, char *argv[]){
   LALInferenceInitCBCThreads(runState,1);
   LALInferenceInitLikelihood(runState);
 
+  /* Disable waveform caching */
+  runState->threads[0]->model->waveformCache=NULL;
+  
   if(bench_T)
   {
     printf("Template test will run with parameters:\n");
