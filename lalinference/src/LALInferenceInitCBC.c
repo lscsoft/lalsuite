@@ -244,11 +244,14 @@ LALInferenceTemplateFunction LALInferenceInitCBCTemplate(LALInferenceRunState *r
   if(ppt) {
     if(!strcmp("LALSim",ppt->value))
       templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
-    else {
-      XLALPrintError("Error: unknown template %s\n",ppt->value);
-      XLALPrintError("%s", help);
-      XLAL_ERROR_NULL(XLAL_EINVAL);
-    }
+    else
+      if(!strcmp("null",ppt->value))
+        templt=&LALInferenceTemplateNullFreqdomain;
+      else {
+        XLALPrintError("Error: unknown template %s\n",ppt->value);
+        XLALPrintError("%s", help);
+        XLAL_ERROR_NULL(XLAL_EINVAL);
+      }
   }
   else if(LALInferenceGetProcParamVal(commandLine,"--LALSimulation")){
     fprintf(stderr,"Warning: --LALSimulation is deprecated, the LALSimulation package is now the default. To use LALInspiral specify:\n\
