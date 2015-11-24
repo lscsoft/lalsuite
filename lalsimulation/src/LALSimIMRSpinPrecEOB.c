@@ -719,6 +719,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   INT4 k=0;
   UINT4 j=0;
   LIGOTimeGPS tc = LIGOTIMEGPSZERO;
+  REAL8 coa_phase_offset = 0;
 
   REAL8Vector *AttachParams = NULL;
 
@@ -2078,6 +2079,10 @@ int XLALSimIMRSpinEOBWaveformAll(
     values->data[j] = gsl_spline_eval( spline, tPeakOmega, acc );
   }
 
+  /* Get the phase offset required to ensure that the orbital phase = phiC at
+   * tPeakOmega */
+  coa_phase_offset = values->data[12] - phiC;
+
   /* Calculate dr/dt */
   memset( dvalues->data, 0, 14*sizeof(dvalues->data[0]));
   if( XLALSpinPrecHcapRvecDerivative( 0, values->data, dvalues->data,
@@ -3337,18 +3342,18 @@ int XLALSimIMRSpinEOBWaveformAll(
  * *********************************************************************************
  * **********************************************************************************/
     if ( SpinsAlmostAligned ) {
-        Y22 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, 2 );
-        Y2m2 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, -2 );
-        Y21 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, 1 );
-        Y2m1 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, -1 );
-        Y20 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, 0 );
+        Y22 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, 2 );
+        Y2m2 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, -2 );
+        Y21 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, 1 );
+        Y2m1 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, -1 );
+        Y20 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, 0 );
     }
     else {
-        Y22 = XLALSpinWeightedSphericalHarmonic( 0, phiC, -2, 2, 2 );
-        Y2m2 = XLALSpinWeightedSphericalHarmonic( 0, phiC, -2, 2, -2 );
-        Y21 = XLALSpinWeightedSphericalHarmonic( 0, phiC, -2, 2, 1 );
-        Y2m1 = XLALSpinWeightedSphericalHarmonic( 0, phiC, -2, 2, -1 );
-        Y20 = XLALSpinWeightedSphericalHarmonic( 0, phiC, -2, 2, 0 );
+        Y22 = XLALSpinWeightedSphericalHarmonic( 0, coa_phase_offset, -2, 2, 2 );
+        Y2m2 = XLALSpinWeightedSphericalHarmonic( 0, coa_phase_offset, -2, 2, -2 );
+        Y21 = XLALSpinWeightedSphericalHarmonic( 0, coa_phase_offset, -2, 2, 1 );
+        Y2m1 = XLALSpinWeightedSphericalHarmonic( 0, coa_phase_offset, -2, 2, -1 );
+        Y20 = XLALSpinWeightedSphericalHarmonic( 0, coa_phase_offset, -2, 2, 0 );
     }
 
     if(debugPK){ XLAL_PRINT_INFO("Ylm %e %e %e %e %e %e %e %e %e %e \n", creal(Y22), cimag(Y22), creal(Y2m2), cimag(Y2m2), creal(Y21), cimag(Y21), creal(Y2m1), cimag(Y2m1), creal(Y20), cimag (Y20)); fflush(NULL); }
