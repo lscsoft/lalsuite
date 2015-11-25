@@ -646,6 +646,7 @@ int main(int argc, char *argv[]){
     INT4 mpirank;
     ProcessParamsTable *procParams = NULL, *ppt = NULL;
     LALInferenceRunState *runState = NULL;
+    LALInferenceIFOData *data = NULL;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
@@ -665,17 +666,24 @@ int main(int argc, char *argv[]){
     /* And allocating memory */
     runState = LALInferenceInitRunState(procParams);
 
-    /* Perform injections if data successful read or created */
-    if (runState){
-      LALInferenceInjectInspiralSignal(runState->data, runState->commandLine);
-    }
-
     if (runState == NULL) {
         if (!LALInferenceGetProcParamVal(procParams, "--help")) {
             fprintf(stderr, "run_state not allocated (%s, line %d).\n",
                     __FILE__, __LINE__);
         }
+    } else {
+        data = runState->data;
     }
+
+    /* Perform injections if data successful read or created */
+    if (runState){
+      LALInferenceInjectInspiralSignal(data, runState->commandLine);
+    }
+
+    /* Simulate calibration errors. 
+     * NOTE: this must be called after both ReadData and (if relevant) 
+     * injectInspiralTD/FD are called! */
+    LALInferenceApplyCalibrationErrors(data, procParams);
 
     /* Handle PTMCMC setup */
     init_ptmcmc(runState);

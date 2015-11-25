@@ -754,6 +754,11 @@ Arguments for each section follow:\n\n";
     /* Perform injections if data successful read or created */
     LALInferenceInjectInspiralSignal(state->data, state->commandLine);
     
+    /* Simulate calibration errors. 
+     * NOTE: this must be called after both ReadData and (if relevant) 
+     * injectInspiralTD/FD are called! */
+    LALInferenceApplyCalibrationErrors(state->data, state->commandLine);
+
     /* Set up prior */
     LALInferenceInitCBCPrior(state);
     

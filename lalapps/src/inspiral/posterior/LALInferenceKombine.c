@@ -29,6 +29,7 @@
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceInit.h>
+#include <lal/LALInferenceCalibrationErrors.h>
 
 #include <mpi.h>
 
@@ -374,6 +375,7 @@ int main(int argc, char *argv[]){
     INT4 mpi_rank;
     ProcessParamsTable *proc_params;
     LALInferenceRunState *run_state = NULL;
+    LALInferenceIFOData *data = NULL;
 
     /* Initialize MPI parallelization */
     MPI_Init(&argc, &argv);
@@ -397,11 +399,18 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "run_state not allocated (%s, line %d).\n",
                     __FILE__, __LINE__);
         }
+    } else {
+        data = run_state->data;
     }
 
     /* Perform injections if data successful read or created */
     if (run_state)
-        LALInferenceInjectInspiralSignal(run_state->data, run_state->commandLine);
+        LALInferenceInjectInspiralSignal(data, run_state->commandLine);
+
+    /* Simulate calibration errors. 
+    * NOTE: this must be called after both ReadData and (if relevant) 
+    * injectInspiralTD/FD are called! */
+    LALInferenceApplyCalibrationErrors(data, proc_params);
 
     /* Choose the prior */
     LALInferenceInitCBCPrior(run_state);

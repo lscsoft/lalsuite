@@ -339,13 +339,12 @@ void ApplySquaredAmplitudeErrors(REAL8FrequencySeries * Spectrum,REAL8 * Acoeffs
     }
 }
 
-void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessParamsTable *commandLine ){
+void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine) {
     /*
-     * This function takes a pointer to a LALInferenceRunState and applies calibration errors to state->data->freqData (i.e. the frequency domain stream), state->data->oneSidedNoisePowerSpectrum (i.e. the PSD) and state->data->freqData. These arrays must already have been filled by LALInferenceReadData()  and (if injtable is used) by LALInferenceInjectInspiralSignal().
-     * CE are either randomly generated or constant.
-     * 
-     * */
-     
+     * This function takes a pointer to a linked list of IFO data and applies calibration errors to data->freqData (i.e. the frequency domain stream),
+     * data->oneSidedNoisePowerSpectrum (i.e. the PSD) and data->freqData. These arrays must already have been filled by LALInferenceReadData()  and
+     * (if injtable is used) by LALInferenceInjectInspiralSignal(). CE are either randomly generated or constant.
+     */
      char help[]="\
 \n\
 ------------------------------------------------------------------------------------------------------------------\n\
@@ -371,14 +370,8 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
   (--spcal-phase-uncertainty X) Set the prior on phase uncertanity in degrees (default 5)\n\n\n";
 
     static LALStatus   status;
-      /* Print command line arguments if state was not allocated */
-    if(state==NULL)
-    {
-      fprintf(stdout,"%s",help);
-      return ;
-    }
     /* Print command line arguments if help requested */
-    if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
+    if(LALInferenceGetProcParamVal(commandLine,"--help"))
     {
       fprintf(stdout,"%s",help);
       return;
@@ -409,7 +402,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
     calib_seed_phase=floor(1E6*tmpphase);
     fprintf(stdout,"Using calibseedAmp %d and calibseedPha %d\n",calib_seed_ampli,calib_seed_phase);
   
-    LALInferenceIFOData * tmpdata=state->data;
+    LALInferenceIFOData * tmpdata=IFOdata;
     int num_ifos=0;
     int i;
     //UINT4 unum_ifos=(UINT4) num_ifos;
@@ -418,7 +411,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
       num_ifos++;
       tmpdata=tmpdata->next;
     }
-    tmpdata=state->data;
+    tmpdata=IFOdata;
     int this_ifo=0;  
     REAL8 phaseCoeffs[num_ifos][Npoints*2];
     REAL8 ampCoeffs[num_ifos][Npoints*2];
@@ -431,7 +424,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
     if(LALInferenceGetProcParamVal(commandLine,"--RandomCE")){
         /* Random phase and amplitude calibration errors. Use S6 Budget. That is an overkill, but may be good to test worst case scenarios. */
         fprintf(stdout,"Applying random phase and amplitude errors. \n");
-        tmpdata=state->data;
+        tmpdata=IFOdata;
         this_ifo=0;
         /* For each IFO create a CE realization and write in amp/phaseCoeffs the coefficients of the polynomial expansion */
         while (tmpdata!=NULL){
@@ -502,7 +495,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
       
       fprintf(stdout,"Applying quasi constant amplitude calibration errors. \n");
       i=0;
-      tmpdata=state->data;
+      tmpdata=IFOdata;
       while (tmpdata!=NULL){
         /* Store variables for random jitter in the first (Npoints-1) positions of ampCoeffs. 
          * Store constant plateau, knee position and slope in the next 3 positions.
@@ -552,7 +545,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
       fprintf(stdout,"Applying quasi constant phase calibration errors. \n");
       
       i=0;
-      tmpdata=state->data;
+      tmpdata=IFOdata;
       while (tmpdata!=NULL){
         /* Store variables for random jitter in the first (Npoints-1) positions of phaCoeffs. 
          * Store constant plateau, knee position and slope in the next 3 positions.
@@ -585,7 +578,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessPara
       exit(1);
     }
     /* Now apply CE to various quantities */
-    tmpdata=state->data;
+    tmpdata=IFOdata;
     this_ifo=0;
     while (tmpdata!=NULL){
       PrintCEtoFile(ampCoeffs[this_ifo],phaseCoeffs[this_ifo],tmpdata, commandLine);
