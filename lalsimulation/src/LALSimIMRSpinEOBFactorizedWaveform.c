@@ -1366,6 +1366,7 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
   coeffs->delta32vh9 = -9112./405. + (208.*LAL_PI*LAL_PI)/63.;
 
   coeffs->rho32v   = (4.*chiS*eta)/(-3.*m1Plus3eta);
+  /** TODO The term proportional to eta^2 a^2 in coeffs->rho32v2 is wrong, but it was used in the calibration of SEOBNRv2 */
   coeffs->rho32v2  = (-4.*a2*eta2)/(9.*m1Plus3eta2) + (328. - 1115.*eta
                         + 320.*eta2)/(270.*m1Plus3eta);
   coeffs->rho32v3  = (2.*(45.*a*m1Plus3eta3
@@ -2424,6 +2425,7 @@ UNUSED static int XLALSimIMREOBCalcPrecSpinFacWaveformCoefficients(
   //coeffs->delta32vh9 = -9112./405. + (208.*LAL_PI*LAL_PI)/63.;
 
   coeffs->rho32vS   = (4.*chiS*eta)/(-3.*m1Plus3eta);
+  /** TODO The term proportional to eta^2 a^2 in coeffs->rho32v2 is wrong, but it was used in the calibration of SEOBNRv2 */
   coeffs->rho32v2S  = (-4.*a2*eta2)/(9.*m1Plus3eta2);// + (328. - 1115.*eta
                         //+ 320.*eta2)/(270.*m1Plus3eta);
   coeffs->rho32v3S  = (2.*(45.*a*m1Plus3eta3
