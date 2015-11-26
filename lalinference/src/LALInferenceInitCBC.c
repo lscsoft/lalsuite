@@ -1247,7 +1247,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *sta
     ProcessParamsTable *ppt=NULL;
     char **strings=NULL;
     char *pinned_params=NULL;
-    UINT4 N=0,i,j;
+    UINT4 N=0,i;
     if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
             pinned_params=ppt->value;
             LALInferenceVariables tempParams;
@@ -1270,36 +1270,17 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *sta
 
 	i=0;
 
-	struct varSettings {const char *name; REAL8 val, min, max;};
-
-	struct varSettings setup[]=
-	{
-		{.name="time", .val=0.0, .min=-0.1073625, .max=0.1073625},
-		{.name="m1", .val=16., .min=14.927715, .max=17.072285},
-		{.name="m2", .val=7., .min=5.829675, .max=8.170325},
-		{.name="logdistance", .val=log(50.), .min=log(37.986000000000004), .max=log(62.013999999999996)},
-		{.name="costheta_jn", .val=cos(LAL_PI/2.), .min=cos(1.7361498267948965), .max=cos(1.4054428267948966)},
-		{.name="phase", .val=LAL_PI, .min=2.8701521535897934, .max=3.413033153589793},
-		{.name="polarisation", .val=LAL_PI/2., .min=1.3885563267948966, .max=1.7530363267948965},
-		{.name="rightascension", .val=LAL_PI, .min=2.813050153589793, .max=3.4701351535897933},
-		{.name="declination", .val=0., .min=-0.300699, .max=0.300699},
-		{.name="a_spin1", .val=0.5, .min=0.3784565, .max=0.6215435},
-		{.name="a_spin2", .val=0.5, .min=0.421869, .max=0.578131},
-		{.name="theta_spin1", .val=LAL_PI/2., .min=1.3993998267948966, .max=1.7421928267948965},
-		{.name="theta_spin2", .val=LAL_PI/2., .min=1.4086158267948965, .max=1.7329768267948966},
-		{.name="phi_spin1", .val=LAL_PI, .min=2.781852653589793, .max=3.501332653589793},
-		{.name="phi_spin2", .val=LAL_PI, .min=2.777215653589793, .max=3.5059696535897933},
-		{.name="END", .val=0., .min=0., .max=0.}
-	};
-
-	while(strcmp("END",setup[i].name))
-	{
-        LALInferenceParamVaryType type=LALINFERENCE_PARAM_CIRCULAR;
-        /* Check if it is to be fixed */
-        for(j=0;j<N;j++) if(!strcmp(setup[i].name,strings[j])) {type=LALINFERENCE_PARAM_FIXED; printf("Fixing parameter %s\n",setup[i].name); break;}
-		LALInferenceRegisterUniformVariableREAL8(state, model->params, setup[i].name, setup[i].val, setup[i].min, setup[i].max, type);
-		i++;
-	}
+ 
+  /* Parameter bounds at ±5 sigma */
+  fprintf(stdout,"Setting up priors\n");
+  LALInferenceParamVaryType type=LALINFERENCE_PARAM_LINEAR;
+  for(i=0;i<15;i++)
+  {
+    REAL8 min = LALInferenceAnalyticMeansCBC[i] - 5.0/scaling[i]*sqrt(CM[i][i]);
+    REAL8 max = LALInferenceAnalyticMeansCBC[i] + 5.0/scaling[i]*sqrt(CM[i][i]);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, LALInferenceAnalyticNamesCBC[i], LALInferenceAnalyticMeansCBC[i], min, max, type );
+    fprintf(stdout,"%s: %e - %e\n",LALInferenceAnalyticNamesCBC[i],min,max);
+  }
 
 	return(model);
 }
@@ -1313,7 +1294,7 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_bimod(LALInferenceRunStat
   ProcessParamsTable *ppt=NULL;
   char **strings=NULL;
   char *pinned_params=NULL;
-  UINT4 N=0,i,j;
+  UINT4 N=0,i;
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
     pinned_params=ppt->value;
     LALInferenceVariables tempParams;
@@ -1336,36 +1317,17 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_bimod(LALInferenceRunStat
 
   i=0;
 
-  struct varSettings {const char *name; REAL8 val, min, max;};
-
-  struct varSettings setup[]=
+  /* Parameter bounds ± 5 sigma from 2 modes separated by 8 sigma */
+  LALInferenceParamVaryType type=LALINFERENCE_PARAM_LINEAR;
+  fprintf(stdout,"Setting up priors\n");
+  for(i=0;i<15;i++)
   {
-    {.name="time", .val=0.05589, .min=-0.1373625, .max=0.2491425},
-    {.name="m1", .val=16.857828, .min=14.927715, .max=18.787941},
-    {.name="m2", .val=7.93626, .min=5.829675, .max=10.042845},
-    {.name="logdistance", .val=log(34.6112), .min=log(12.986), .max=log(56.2364)},
-    {.name="costheta_jn", .val=cos(0.9176809634), .min=cos(1.2153172634), .max=cos(0.6200446634)},
-    {.name="phase", .val=1.7879487268, .min=1.2993558268, .max=2.2765416268},
-    {.name="polarisation", .val=0.9311901634, .min=0.6031581634, .max=1.2592221634},
-    {.name="rightascension", .val=1.8336303268, .min=1.2422538268, .max=2.4250068268},
-    {.name="declination", .val=-0.5448389634, .min=-1.0860971634, .max=-0.0035807634},
-    {.name="a_spin1", .val=0.2972348, .min=0.0784565, .max=0.5160131},
-    {.name="a_spin2", .val=0.2625048, .min=0.121869, .max=0.4031406},
-    {.name="theta_spin1", .val=0.9225153634, .min=0.6140016634, .max=1.2310290634},
-    {.name="theta_spin2", .val=0.9151425634, .min=0.6232176634, .max=1.2070674634},
-    {.name="phi_spin1", .val=1.8585883268, .min=1.2110563268, .max=2.5061203268},
-    {.name="phi_spin2", .val=1.8622979268, .min=1.2064193268, .max=2.5181765268},
-    {.name="END", .val=0., .min=0., .max=0.}
-  };
-
-  while(strcmp("END",setup[i].name))
-  {
-    LALInferenceParamVaryType type=LALINFERENCE_PARAM_CIRCULAR;
-    /* Check if it is to be fixed */
-    for(j=0;j<N;j++) if(!strcmp(setup[i].name,strings[j])) {type=LALINFERENCE_PARAM_FIXED; printf("Fixing parameter %s\n",setup[i].name); break;}
-    LALInferenceRegisterUniformVariableREAL8(state, model->params, setup[i].name, setup[i].val, setup[i].min, setup[i].max, type);
-    i++;
+    REAL8 min = LALInferenceAnalyticMeansCBC[i] - (4.0+5.0)/scaling[i]*sqrt(CM[i][i]);
+    REAL8 max = LALInferenceAnalyticMeansCBC[i] + (4.0+5.0)/scaling[i]*sqrt(CM[i][i]);
+    LALInferenceRegisterUniformVariableREAL8(state, model->params, LALInferenceAnalyticNamesCBC[i], LALInferenceAnalyticMeansCBC[i], min, max, type );
+    fprintf(stdout,"%s: %e - %e\n",LALInferenceAnalyticNamesCBC[i],min,max);
   }
+
   return(model);
 }
 

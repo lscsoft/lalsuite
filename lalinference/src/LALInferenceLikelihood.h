@@ -46,6 +46,16 @@ SWIGLAL(
 #endif
 
 
+extern const char *LALInferenceAnalyticNamesCBC[];
+
+extern const REAL8 LALInferenceAnalyticMeansCBC[];
+
+/* Scaling used for the CBC analytic likelihood parameters */
+extern const REAL8 scaling[15];
+
+/* Covariance matrix for use in analytic likelihoods */
+extern const REAL8 CM[15][15];
+
 
 /**
  * \defgroup LALInferenceLikelihood_h Header LALInferenceLikelihood.h
