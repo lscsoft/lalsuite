@@ -1327,6 +1327,18 @@ int XLALSimIMRSpinEOBWaveformAll(
         seobParams.alignedSpins = 1;
         seobParams.chi1 = copysign( spin1Norm, cos(theta1Ini) );
         seobParams.chi2 = copysign( spin2Norm, cos(theta2Ini) );
+        chiS = 0.5*(seobParams.chi1 + seobParams.chi2);
+        chiA = 0.5*(seobParams.chi1 - seobParams.chi2);
+        tplspin = (1.-2.*eta) * chiS + (m1 - m2)/(m1 + m2) * chiA;
+        if ( XLALSimIMREOBCalcSpinFacWaveformCoefficients( seobParams.eobParams->hCoeffs, m1, m2, eta, tplspin, chiS, chiA, SpinAlignedEOBversion ) == XLAL_FAILURE ) {
+            XLALDestroyREAL8Vector( sigmaKerr );
+            XLALDestroyREAL8Vector( sigmaStar );
+            XLALDestroyREAL8Vector( values );
+            XLALDestroyREAL8Vector( dvalues );
+            XLALDestroyREAL8Vector( rdMatchPoint );
+            XLAL_ERROR( XLAL_EFUNC );
+        }
+
         if ( XLALSimIMRSpinEOBInitialConditions( values, m1, m2, fMin, incA,
                                                 mSpin1, mSpin2, &seobParams, /* use_optimized_v2 = */ 0 ) == XLAL_FAILURE )
         {
@@ -1338,10 +1350,6 @@ int XLALSimIMRSpinEOBWaveformAll(
             XLAL_ERROR( XLAL_EFUNC );
         }
         seobParams.alignedSpins = 0;
-      /* Note that the inital p_r returned by the SEOBNRv2 is off by a tortoise factor csi. 
-       * The factor csi is defined in Eq. 28 of PRD 81, 084041 (2010) */
-      REAL8 csi = sqrt(XLALSimIMRSpinPrecEOBHamiltonianDeltaT(seobParams.seobCoeffs, values->data[0], eta, a)*XLALSimIMRSpinPrecEOBHamiltonianDeltaR(seobParams.seobCoeffs, values->data[0], eta, a)) / (values->data[0] * values->data[0] + a * a);
-      values->data[3] *= csi*csi;
     }
     else {
         if ( XLALSimIMRSpinEOBInitialConditionsPrec( values, m1, m2, fMin, incl_temp,
