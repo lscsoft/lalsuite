@@ -436,6 +436,10 @@ int main(int argc, char *argv[])
    REAL4VectorAligned *expRandVals = NULL;
    XLAL_CHECK( (expRandVals = expRandNumVector(100*ffdata->numffts, 1.0, rng)) != NULL, XLAL_EFUNC );
 
+   //Allocate aveNoiseInTime vector
+   REAL4VectorAligned *aveNoiseInTime = NULL;
+   XLAL_CHECK( (aveNoiseInTime = XLALCreateREAL4VectorAligned(ffdata->numffts, 32)) != NULL, XLAL_EFUNC );
+
    //Initialize to -1.0 for far just at the start
    ihsfarstruct->ihsfar->data[0] = -1.0;
    REAL4 antweightsrms = 0.0;
@@ -485,6 +489,15 @@ int main(int argc, char *argv[])
       XLAL_CHECK( (sftexistForihs2h0 = XLALCreateINT4Vector(sftexist->length)) != NULL, XLAL_EFUNC );
       memcpy(sftexistForihs2h0->data, sftexist->data, sizeof(INT4)*sftexist->length);
    }
+
+   //Compute median values in time of the background
+   REAL4VectorAligned *aveNoiseInTimeForihs2h0 = NULL;
+   XLAL_CHECK( (aveNoiseInTimeForihs2h0 = XLALCreateREAL4VectorAligned(aveNoiseInTime->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( medianBackgroundBandInTime(aveNoiseInTimeForihs2h0, backgroundForihs2h0, sftexistForihs2h0) == XLAL_SUCCESS, XLAL_EFUNC );
+
+   //Antenna normalization for different sky locations
+   REAL8 skypointffnormalization = 1.0;
+   XLAL_CHECK( ffPlaneNoise(aveNoise, &uvar, sftexistForihs2h0, aveNoiseInTimeForihs2h0, antweightsforihs2h0, backgroundScalingForihs2h0, secondFFTplan, expRandVals, rng, &(skypointffnormalization)) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Set skycounter to -1 at the start
    INT4 skycounter = -1;
@@ -649,13 +662,12 @@ int main(int argc, char *argv[])
          antweightsrms = currentAntWeightsRMS;
       }
 
-      //Antenna normalization for different sky locations
-      REAL8 skypointffnormalization = 1.0;
-      XLAL_CHECK( ffPlaneNoise(aveNoise, &uvar, sftexistForihs2h0, backgroundForihs2h0_slided, antweightsforihs2h0, backgroundScalingForihs2h0_slided, secondFFTplan, expRandVals, rng, &(skypointffnormalization)) == XLAL_SUCCESS, XLAL_EFUNC );
+      //Compute median values
+      XLAL_CHECK( medianBackgroundBandInTime(aveNoiseInTime, background_slided, sftexist) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Average noise floor of FF plane for each 1st FFT frequency bin
       ffdata->ffnormalization = 1.0;
-      XLAL_CHECK( ffPlaneNoise(aveNoise, &uvar, sftexist, background_slided, antweights, backgroundScaling_slided, secondFFTplan, expRandVals, rng, &(ffdata->ffnormalization)) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( ffPlaneNoise(aveNoise, &uvar, sftexist, aveNoiseInTime, antweights, backgroundScaling_slided, secondFFTplan, expRandVals, rng, &(ffdata->ffnormalization)) == XLAL_SUCCESS, XLAL_EFUNC );
       if (uvar.printData) XLAL_CHECK( printREAL4Vector2File((REAL4Vector*)aveNoise, uvar.outdirectory, "ffbackground.dat") == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Compute the weighted TF data
@@ -953,6 +965,8 @@ int main(int argc, char *argv[])
    XLALDestroyREAL4VectorAligned(antweightsforihs2h0);
    XLALDestroyINT4Vector(sftexistForihs2h0);
    XLALDestroyREAL4VectorAligned(aveNoise);
+   XLALDestroyREAL4VectorAligned(aveNoiseInTime);
+   XLALDestroyREAL4VectorAligned(aveNoiseInTimeForihs2h0);
    XLALDestroyREAL4VectorAligned(expRandVals);
    XLALDestroyREAL4VectorAligned(backgroundScaling);
    XLALDestroyREAL4VectorAligned(backgroundScalingForihs2h0);
@@ -1369,13 +1383,28 @@ REAL4 rmsTFdataBand(const REAL4VectorAligned *backgrnd, UINT4 numfbins, UINT4 nu
 
 } /* rmsTFdataBand() */
 
+INT4 medianBackgroundBandInTime(REAL4VectorAligned *aveNoiseInTime, const REAL4VectorAligned *backgrnd, const INT4Vector *sftexist)
+{
+   XLAL_CHECK( aveNoiseInTime!=NULL && backgrnd!=NULL && sftexist!=NULL, XLAL_EINVAL );
+   memset(aveNoiseInTime->data, 0, sizeof(REAL4)*aveNoiseInTime->length);
+   REAL4VectorAligned *band = NULL;
+   XLAL_CHECK( (band = XLALCreateREAL4VectorAligned(backgrnd->length/sftexist->length, 32)) != NULL, XLAL_EFUNC );
+   for (UINT4 ii=0; ii<sftexist->length; ii++) {
+      if (sftexist->data[ii] != 0) {
+	 memcpy(band->data, &(backgrnd->data[ii*band->length]), sizeof(REAL4)*band->length);
+	 XLAL_CHECK( calcMedian(&(aveNoiseInTime->data[ii]), band) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+   }
+   XLALDestroyREAL4VectorAligned(band);
+   return XLAL_SUCCESS;
+}
 
 /**
  * Measure of the average noise power in each 2nd FFT frequency bin
  * \param [out]    aveNoise          Pointer to REAL4VectorAligned of the expected 2nd FFT powers
  * \param [in]     params            Pointer to UserInput_t
  * \param [in]     sftexist          Pointer to INT4Vector of SFTs existing or not
- * \param [in]     backgrnd          Pointer to REAL4VectorAligned of running means
+ * \param [in]     aveNoiseInTime    Pointer to REAL4VectorAligned of running means
  * \param [in]     antweights        Pointer to REAL4VectorAligned of antenna pattern weights
  * \param [in]     backgroundScaling Pointer to REAL4VectorAligned of background scaling values
  * \param [in]     plan              Pointer to REAL4FFTPlan
@@ -1384,17 +1413,17 @@ REAL4 rmsTFdataBand(const REAL4VectorAligned *backgrnd, UINT4 numfbins, UINT4 nu
  * \param [in,out] normalization     Pointer to REAL8 value of the normalization for the 2nd FFT
  * \return Status value
  */
-INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, const UserInput_t *params, const INT4Vector *sftexist, const REAL4VectorAligned *backgrnd, const REAL4VectorAligned *antweights, const REAL4VectorAligned *backgroundScaling, const REAL4FFTPlan *plan, const REAL4VectorAligned *expDistVals, const gsl_rng *rng, REAL8 *normalization)
+INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, const UserInput_t *params, const INT4Vector *sftexist, const REAL4VectorAligned *aveNoiseInTime, const REAL4VectorAligned *antweights, const REAL4VectorAligned *backgroundScaling, const REAL4FFTPlan *plan, const REAL4VectorAligned *expDistVals, const gsl_rng *rng, REAL8 *normalization)
 {
 
-   XLAL_CHECK( aveNoise != NULL && params != NULL && sftexist != NULL && backgrnd != NULL && antweights != NULL && backgroundScaling != NULL && plan != NULL && normalization != NULL, XLAL_EINVAL );
+   XLAL_CHECK( aveNoise != NULL && params != NULL && sftexist != NULL && aveNoiseInTime != NULL && antweights != NULL && backgroundScaling != NULL && plan != NULL && normalization != NULL, XLAL_EINVAL );
 
    fprintf(stderr, "Computing noise background estimate... ");
 
    REAL8 invsumofweights = 0.0, sumofweights = 0.0;
 
    UINT4 numffts = antweights->length;
-   UINT4 numfbins = backgrnd->length/numffts;
+   UINT4 numfbins = backgroundScaling->length/numffts;
    UINT4 numfprbins = aveNoise->length;
 
    //Set up for making the PSD
@@ -1411,20 +1440,14 @@ INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, const UserInput_t *params, const
       REAL8 dutyfactor = 0.0, dutyfactorincrement = 1.0/(REAL8)numffts;
 
       //Average each SFT across the frequency band, also compute normalization factor
-      REAL4VectorAligned *rngMeansOverBand = NULL, *backgroundScalingOverBand = NULL, *aveNoiseInTime = NULL, *aveBackgroundScalingInTime = NULL, *scaledAveNoiseInTime = NULL;
-      XLAL_CHECK( (rngMeansOverBand = XLALCreateREAL4VectorAligned(numfbins, 32)) != NULL, XLAL_EFUNC );
+      REAL4VectorAligned *backgroundScalingOverBand = NULL, *aveBackgroundScalingInTime = NULL, *scaledAveNoiseInTime = NULL;
       XLAL_CHECK( (backgroundScalingOverBand = XLALCreateREAL4VectorAligned(numfbins, 32)) != NULL, XLAL_EFUNC );
-      XLAL_CHECK( (aveNoiseInTime = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
       XLAL_CHECK( (aveBackgroundScalingInTime = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
       XLAL_CHECK( (scaledAveNoiseInTime = XLALCreateREAL4VectorAligned(numffts, 32)) != NULL, XLAL_EFUNC );
 
-      memset(aveNoiseInTime->data, 0, sizeof(REAL4)*numffts);
       memset(aveBackgroundScalingInTime->data, 0, sizeof(REAL4)*numffts);
       for (UINT4 ii=0; ii<aveNoiseInTime->length; ii++) {
          if (sftexist->data[ii]!=0) {
-            memcpy(rngMeansOverBand->data, &(backgrnd->data[ii*numfbins]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
-            XLAL_CHECK( calcMedian(&(aveNoiseInTime->data[ii]), rngMeansOverBand) == XLAL_SUCCESS, XLAL_EFUNC );
-
             memcpy(backgroundScalingOverBand->data, &(backgroundScaling->data[ii*numfbins]), sizeof(REAL4)*backgroundScalingOverBand->length);
             aveBackgroundScalingInTime->data[ii] = calcMean(backgroundScalingOverBand);
             XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
@@ -1523,10 +1546,8 @@ INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, const UserInput_t *params, const
       XLALDestroyREAL4VectorAligned(x);
       XLALDestroyREAL4VectorAligned(psd);
       XLALDestroyREAL4Window(win);
-      XLALDestroyREAL4VectorAligned(aveNoiseInTime);
       XLALDestroyREAL4VectorAligned(aveBackgroundScalingInTime);
       XLALDestroyREAL4VectorAligned(scaledAveNoiseInTime);
-      XLALDestroyREAL4VectorAligned(rngMeansOverBand);
       XLALDestroyREAL4VectorAligned(backgroundScalingOverBand);
       XLALDestroyREAL4VectorAligned(multiplicativeFactor);
    } else {
