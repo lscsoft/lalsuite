@@ -2072,6 +2072,8 @@ int XLALSimIMRSpinEOBWaveformAll(
                     dynamicsHi->data, dynamicsHi->data+(j+1)*retLenHi, retLenHi );
     values->data[j] = gsl_spline_eval( spline, tPeakOmega, acc );
   }
+  gsl_spline_free(spline);
+  gsl_interp_accel_free(acc);
 
   /* Get the phase offset required to ensure that the orbital phase = phiC at
    * tPeakOmega */
@@ -3162,8 +3164,7 @@ int XLALSimIMRSpinEOBWaveformAll(
      fflush(NULL);
   }
 
-  gsl_spline_free(spline);
-  gsl_interp_accel_free(acc);
+
   /*** attach hi sampling part and resample  */
   for ( k = 2; k > -3; k-- )
   {
@@ -3206,7 +3207,6 @@ int XLALSimIMRSpinEOBWaveformAll(
              hIMRJTS->data->data[i] += I*0.;
          }
      }
-
      gsl_spline_free(spline);
      gsl_interp_accel_free(acc);
 
