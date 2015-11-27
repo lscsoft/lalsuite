@@ -107,7 +107,7 @@ int XLALSimIMRPhenomDGenerateFD(
     const REAL8 chi1,                  /**< Aligned-spin parameter of companion 1 */
     const REAL8 chi2,                  /**< Aligned-spin parameter of companion 2 */
     const REAL8 f_min,                 /**< Starting GW frequency (Hz) */
-    const REAL8 f_max,                 /**< End frequency; 0 defaults to Mf = 0.3 */
+    const REAL8 f_max,                 /**< End frequency; 0 defaults to Mf = \ref f_CUT */
     const REAL8 distance               /**< Distance of source (m) */
 ) {
   /* external: SI; internal: solar masses */
