@@ -528,6 +528,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
                                     (default: -1 <==> Use all tidal effects).\n\
     (--inj-spin-frame FRAME     Specify injection spin frame: choice of total-j, orbital-l, view.\n\
                                     (Default = OrbitalL).\n\
+    (--inj-numreldata FileName) Location of NR data file for the injection of NR waveforms (with NR_hdf5 in injection XML file).\n\
     (--0noise)                  Sets the noise realisation to be identically zero\n\
                                     (for the fake caches above only)\n\
     \n"
@@ -1579,6 +1580,10 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         frameAxis = XLALSimInspiralGetFrameAxisFromString(ppt->value);
       }
       XLALSimInspiralSetFrameAxis(waveFlags,frameAxis);
+      if((ppt=LALInferenceGetProcParamVal(commandLine,"--inj-numreldata"))) {
+	XLALSimInspiralSetNumrelData(waveFlags, ppt->value);
+	fprintf(stdout,"Injection will use %s.\n",ppt->value);
+      }
       LALSimInspiralTestGRParam *nonGRparams = NULL;
       /* Print a line with information about approximant, amporder, phaseorder, tide order and spin order */
       fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the time domain with a reference frequency of %f.\n",approximant,XLALGetStringFromApproximant(approximant),order,amporder,(int) spinO, (int) tideO, (float) fref);
