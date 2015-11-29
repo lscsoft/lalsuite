@@ -260,9 +260,11 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    XLAL_CHECK_NULL( (DirichletScalingX = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (scaling = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
 
-   //Pre-allocate the Dirichlet ratio vector
+   //Pre-allocate the Dirichlet ratio vector and its magnitude
    COMPLEX8Vector *Dratio = NULL;
+   REAL4VectorAligned *cabsDratio = NULL;
    XLAL_CHECK_NULL( (Dratio = XLALCreateCOMPLEX8Vector(delta0valsSubset->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (cabsDratio = XLALCreateREAL4VectorAligned(Dratio->length, 32)) != NULL, XLAL_EFUNC );
 
    //Determine new band size
    REAL8 newFmin = frequencies->data[10];
@@ -463,9 +465,9 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
 
 	    //Compute values outside inner loop
 	    //Normalize Dirichlet kernel ratio values
+	    XLAL_CHECK_NULL( VectorCabsfCOMPLEX8(cabsDratio, Dratio, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
 	    for (UINT4 kk=0; kk<Dratio->length; kk++) {
-	       REAL4 DratioMag = cabsf(Dratio->data[kk]);
-	       if (DratioMag!=0.0) Dratio->data[kk] /= DratioMag;
+	       if (cabsDratio->data[kk]!=0.0) Dratio->data[kk] /= cabsDratio->data[kk];
 	    }
 	    //compute the complex detector-phase relationship
 	    COMPLEX8 detPhaseVal = cpolarf(detPhaseMag, detPhaseArg);
@@ -481,7 +483,7 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
             //Now finish the computation with the Dirichlet kernel ratio and final correction
             for (UINT4 kk=0; kk<sftcopySubset->data->length; kk++) {
                //The complex coefficient to scale SFT bins
-	       COMPLEX8 complexfactor = detPhaseVal*crectf(cosTwoPiFrequenciesTau->data[kk+10], -sinTwoPiFrequenciesTau->data[kk+10])*Dratio->data[kk];
+	       COMPLEX8 complexfactor = detPhaseVal*crectf(cosTwoPiFrequenciesTau->data[kk+10], -sinTwoPiFrequenciesTau->data[kk+10])*conj(Dratio->data[kk]);
 
                REAL4 noiseWeighting = 1.0;
                if (kk>=numSFTbins2skip && kk<numFbinsInBackground+numSFTbins2skip && createSFT) {
@@ -547,6 +549,7 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    destroyAlignedREAL8Vector(DirichletScalingX);
    destroyAlignedREAL8Vector(scaling);
    XLALDestroyCOMPLEX8Vector(Dratio);
+   XLALDestroyREAL4VectorAligned(cabsDratio);
 
    fprintf(stderr, "done\n");
 
@@ -586,17 +589,21 @@ REAL4VectorAligned * convertSFTdataToPowers(const SFTVector *sfts, const UserInp
 
    REAL8 starttime = params->t0;
 
+   //Allocate temporary normalized abs[sftcoeff]^2 vector
+   alignedREAL8Vector *normAbsSFTcoeffSq = NULL;
+   XLAL_CHECK_NULL( (normAbsSFTcoeffSq = createAlignedREAL8Vector(sftlength, 32)) != NULL, XLAL_EFUNC );
+
    //Load the data into the output vector, roughly normalizing as we go along from the input value
    //REAL8 sqrtnorm = sqrt(normalization);
    for (UINT4 ii=0; ii<numffts; ii++) {
       if (ii-nonexistantsft < sfts->length) {
          SFTtype *sft = &(sfts->data[ii - nonexistantsft]);
          if (sft->epoch.gpsSeconds == (INT4)round(ii*(params->Tsft-params->SFToverlap)+starttime)) {
+	    XLAL_CHECK_NULL( VectorCabsCOMPLEX8(normAbsSFTcoeffSq, sft->data, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+	    XLAL_CHECK_NULL( VectorMultiplyREAL8(normAbsSFTcoeffSq, normAbsSFTcoeffSq, normAbsSFTcoeffSq, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+	    XLAL_CHECK_NULL( VectorScaleREAL8(normAbsSFTcoeffSq, normAbsSFTcoeffSq, normalization, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
             for (UINT4 jj=0; jj<sftlength; jj++) {
-               COMPLEX8 sftcoeff = sft->data->data[jj];
-               //tfdata->data[ii*sftlength + jj] = (REAL4)((sqrtnorm*crealf(sftcoeff))*(sqrtnorm*crealf(sftcoeff)) + (sqrtnorm*cimagf(sftcoeff))*(sqrtnorm*cimagf(sftcoeff)));  //power, normalized
-               REAL8 absSFTcoeff = cabs(sftcoeff);
-               tfdata->data[ii*sftlength + jj] = (REAL4)(normalization*absSFTcoeff*absSFTcoeff);
+	       tfdata->data[ii*sftlength + jj] = (REAL4)normAbsSFTcoeffSq->data[jj];
             } /* for jj < sftLength */
          } else {
             memset(&(tfdata->data[ii*sftlength]), 0, sizeof(REAL4)*sftlength);
@@ -607,6 +614,8 @@ REAL4VectorAligned * convertSFTdataToPowers(const SFTVector *sfts, const UserInp
          nonexistantsft++;    //increment the nonexistantsft counter
       }
    } /* for ii < numffts */
+
+   destroyAlignedREAL8Vector(normAbsSFTcoeffSq);
 
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");

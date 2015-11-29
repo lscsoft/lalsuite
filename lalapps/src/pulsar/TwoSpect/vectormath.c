@@ -455,6 +455,111 @@ INT4 VectorAbsREAL8(alignedREAL8Vector *output, alignedREAL8Vector *input, INT4 
    return XLAL_SUCCESS;
 }
 
+INT4 VectorCabsfCOMPLEX8(REAL4VectorAligned *output, COMPLEX8Vector *input, INT4 vectorMath)
+{
+   XLAL_CHECK( output!=NULL && input!=NULL, XLAL_EINVAL );
+   if (vectorMath==2) {
+#ifdef __AVX__
+      _mm256_zeroupper();
+      INT4 roundedvectorlength = (INT4)input->length / 8;
+      __m256 *result = (__m256*)(void*)output->data;
+      INT4 position = 0;
+      for (INT4 ii=0; ii<roundedvectorlength; ii++) {
+	 __m256 input_re = _mm256_set_ps((float)crealf(input->data[position+7]), (float)crealf(input->data[position+6]), (float)crealf(input->data[position+5]), (float)crealf(input->data[position+4]), (float)crealf(input->data[position+3]), (float)crealf(input->data[position+2]), (float)crealf(input->data[position+1]), (float)crealf(input->data[position]));
+	 __m256 input_im = _mm256_set_ps((float)cimagf(input->data[position+7]), (float)cimagf(input->data[position+6]), (float)cimagf(input->data[position+5]), (float)cimagf(input->data[position+4]), (float)cimagf(input->data[position+3]), (float)cimagf(input->data[position+2]), (float)cimagf(input->data[position+1]), (float)cimagf(input->data[position]));
+	 __m256 input_re_sq = _mm256_mul_ps(input_re, input_re);
+	 __m256 input_im_sq = _mm256_mul_ps(input_im, input_im);
+         __m256 sqsum = _mm256_add_ps(input_re_sq, input_im_sq);
+	 *result = _mm256_sqrt_ps(sqsum);
+	 position += 8;
+         result++;
+      }
+      _mm256_zeroupper();
+      for (UINT4 ii=8*roundedvectorlength; ii<input->length; ii++) output->data[ii] = cabsf(input->data[ii]);
+#else
+      (void)output;
+      (void)input;
+      fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+#endif
+   } else if (vectorMath==1) {
+#ifdef __SSE2__
+      INT4 roundedvectorlength = (INT4)input->length / 4;
+      __m128 *result = (__m128*)(void*)output->data;
+      INT4 position = 0;
+      for (INT4 ii=0; ii<roundedvectorlength; ii++) {
+	 __m128 input_re = _mm_set_ps((float)crealf(input->data[position+3]), (float)crealf(input->data[position+2]), (float)crealf(input->data[position+1]), (float)crealf(input->data[position]));
+	 __m128 input_im = _mm_set_ps((float)cimagf(input->data[position+3]), (float)cimagf(input->data[position+2]), (float)cimagf(input->data[position+1]), (float)cimagf(input->data[position]));
+	 __m128 input_re_sq = _mm_mul_ps(input_re, input_re);
+	 __m128 input_im_sq = _mm_mul_ps(input_im, input_im);
+         __m128 sqsum = _mm_add_ps(input_re_sq, input_im_sq);
+	 *result = _mm_sqrt_ps(sqsum);
+	 position += 4;
+         result++;
+      }
+      for (UINT4 ii=4*roundedvectorlength; ii<input->length; ii++) output->data[ii] = cabsf(input->data[ii]);
+#else
+      (void)output;
+      (void)input;
+      fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+#endif
+   } else for (UINT4 ii=0; ii<input->length; ii++) output->data[ii] = cabsf(input->data[ii]);
+   return XLAL_SUCCESS;
+}
+INT4 VectorCabsCOMPLEX8(alignedREAL8Vector *output, COMPLEX8Vector *input, INT4 vectorMath)
+{
+   XLAL_CHECK( output!=NULL && input!=NULL, XLAL_EINVAL );
+   if (vectorMath==2) {
+#ifdef __AVX__
+      _mm256_zeroupper();
+      INT4 roundedvectorlength = (INT4)input->length / 4;
+      __m256d *result = (__m256d*)(void*)output->data;
+      INT4 position = 0;
+      for (INT4 ii=0; ii<roundedvectorlength; ii++) {
+	 __m256d input_re = _mm256_set_pd((double)crealf(input->data[position+3]), (double)crealf(input->data[position+2]), (double)crealf(input->data[position+1]), (double)crealf(input->data[position]));
+	 __m256d input_im = _mm256_set_pd((double)cimagf(input->data[position+3]), (double)cimagf(input->data[position+2]), (double)cimagf(input->data[position+1]), (double)cimagf(input->data[position]));
+	 __m256d input_re_sq = _mm256_mul_pd(input_re, input_re);
+	 __m256d input_im_sq = _mm256_mul_pd(input_im, input_im);
+         __m256d sqsum = _mm256_add_pd(input_re_sq, input_im_sq);
+	 *result = _mm256_sqrt_pd(sqsum);
+	 position += 4;
+         result++;
+      }
+      _mm256_zeroupper();
+      for (UINT4 ii=4*roundedvectorlength; ii<input->length; ii++) output->data[ii] = cabs(input->data[ii]);
+#else
+      (void)output;
+      (void)input;
+      fprintf(stderr, "%s: Failed because AVX is not supported, possibly because -mavx flag wasn't used for compiling.\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+#endif
+   } else if (vectorMath==1) {
+#ifdef __SSE2__
+      INT4 roundedvectorlength = (INT4)input->length / 2;
+      __m128d *result = (__m128d*)(void*)output->data;
+      INT4 position = 0;
+      for (INT4 ii=0; ii<roundedvectorlength; ii++) {
+	 __m128d input_re = _mm_set_pd((double)crealf(input->data[position+1]), (double)crealf(input->data[position]));
+	 __m128d input_im = _mm_set_pd((double)cimagf(input->data[position+1]), (double)cimagf(input->data[position]));
+	 __m128d input_re_sq = _mm_mul_pd(input_re, input_re);
+	 __m128d input_im_sq = _mm_mul_pd(input_im, input_im);
+         __m128d sqsum = _mm_add_pd(input_re_sq, input_im_sq);
+	 *result = _mm_sqrt_pd(sqsum);
+	 position += 2;
+         result++;
+      }
+      for (UINT4 ii=2*roundedvectorlength; ii<input->length; ii++) output->data[ii] = cabs(input->data[ii]);
+#else
+      (void)output;
+      (void)input;
+      fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+#endif
+   } else for (UINT4 ii=0; ii<input->length; ii++) output->data[ii] = cabs(input->data[ii]);
+   return XLAL_SUCCESS;
+}
+
 /**
  * Sum two alignedREAL8Vector using SSE2
  * \param [out] output Pointer to a alignedREAL8Vector
