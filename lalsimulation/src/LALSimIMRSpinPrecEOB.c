@@ -91,6 +91,7 @@ XLALDestroyREAL8Array( dynamicsHi ); \
 XLALDestroyREAL8Vector( valuesV2 ); \
 XLALDestroyREAL8Vector( values ); \
 XLALDestroyREAL8Vector( dvalues ); \
+XLALDestroyREAL8Vector( radiusVec ); \
 \
 XLALDestroyREAL8Vector( sigmaStar ); \
 XLALDestroyREAL8Vector( sigmaKerr ); \
