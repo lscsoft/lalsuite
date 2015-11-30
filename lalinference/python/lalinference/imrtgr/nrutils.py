@@ -7,7 +7,7 @@ P. Ajith, 2015-04-09
 import numpy as np 
 import scipy.optimize as so
 
-def bbh_final_mass_non_spinning(m1, m2):
+def bbh_final_mass_non_spinning_Panetal(m1, m2):
     """
     Calculate the mass of the final BH resulting from the merger of two non-spinning black holes using fit from Pan et al, Phys Rev D 84, 124052 (2011).
     
@@ -19,14 +19,14 @@ def bbh_final_mass_non_spinning(m1, m2):
     ------
     final mass, mf
     """
-    m1 = np.array(m1)
-    m2 = np.array(m2)
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
     
     m = m1 + m2
     eta = m1*m2/(m1+m2)**2.
     return m*(1. + (np.sqrt(8./9.)-1.)*eta - 0.4333*(eta**2.) - (0.4392*(eta**3)))
 
-def bbh_final_spin_non_spinning(m1, m2):
+def bbh_final_spin_non_spinning_Panetal(m1, m2):
     """
     Calculate the spin of the final BH resulting from the merger of two non-spinning black holes using fit from Pan et al, Phys Rev D 84, 124052 (2011).
     
@@ -38,8 +38,8 @@ def bbh_final_spin_non_spinning(m1, m2):
     ------
     final spin, sf
     """
-    m1 = np.array(m1)
-    m2 = np.array(m2)
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
     
     eta = m1*m2/(m1+m2)**2.
     return np.sqrt(12.)*eta - 3.871*(eta**2.) + 4.028*(eta**3)
@@ -64,7 +64,7 @@ def calc_isco_radius(a):
     a_sign = np.sign(a)
     return 3+z2 - np.sqrt((3.-z1)*(3.+z1+2.*z2))*a_sign
 
-def _final_spin_diff(a_f, eta, delta_m, S, Delta):
+def _final_spin_diff_Healyetal(a_f, eta, delta_m, S, Delta):
     """ Internal function: the final spin is determined by minimizing this function """
     
     # calculate ISCO radius
@@ -104,27 +104,27 @@ def _final_spin_diff(a_f, eta, delta_m, S, Delta):
     
     return abs(a_f-a_f_new)
 
-def bbh_final_spin_non_precessing(m1, m2, a1, a2):
+def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2):
     """
     Calculate the spin of the final BH resulting from the merger of two black holes with non-precessing spins using fit from Healy et al Phys Rev D 90, 104004 (2014)
     
     Parameters
     ----------
     m1, m2 : component masses
-    a1, a2 : dimensionless spins of two BHs
+    chi1, chi2 : dimensionless spins of two BHs
     
     Returns
     -------
-    dimensionless final spin, af
+    dimensionless final spin, chif
     """
-    m1 = np.array(m1)
-    m2 = np.array(m2)
-    a1 = np.array(a1)
-    a2 = np.array(a2)
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
     
     # Vectorize the function if arrays are provided as input
-    if np.size(m1) * np.size(m2) * np.size(a1) * np.size(a2) > 1:
-        return np.vectorize(bbh_final_spin_non_precessing)(m1, m2, a1, a2)
+    if np.size(m1) * np.size(m2) * np.size(chi1) * np.size(chi2) > 1:
+        return np.vectorize(bbh_final_spin_non_precessing_Healyetal)(m1, m2, chi1, chi2)
     
     # binary parameters
     m = m1+m2
@@ -132,8 +132,8 @@ def bbh_final_spin_non_precessing(m1, m2, a1, a2):
     eta = q/(1.+q)**2.
     delta_m = (m1-m2)/m
     
-    S1 = a1*m1**2 # spin angular momentum 1
-    S2 = a2*m2**2 # spin angular momentum 2
+    S1 = chi1*m1**2 # spin angular momentum 1
+    S2 = chi2*m2**2 # spin angular momentum 2
     S = (S1+S2)/m**2 # symmetric spin (dimensionless -- called \tilde{S} in the paper)
     Delta = (S2/m2-S1/m1)/m # antisymmetric spin (dimensionless -- called tilde{Delta} in the paper
     
@@ -141,29 +141,29 @@ def bbh_final_spin_non_precessing(m1, m2, a1, a2):
     # compute the final spin
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     
-    x, cov_x = so.leastsq(_final_spin_diff, 0., args=(eta, delta_m, S, Delta))
-    af = x[0]
+    x, cov_x = so.leastsq(_final_spin_diff_Healyetal, 0., args=(eta, delta_m, S, Delta))
+    chif = x[0]
     
-    return af
+    return chif
 
-def bbh_final_mass_non_precessing(m1, m2, a1, a2, af=None):
+def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=None):
     """
     Calculate the mass of the final BH resulting from the merger of two black holes with non-precessing spins using fit from Healy et al Phys Rev D 90, 104004 (2014)
     
     Parameters
     ----------
     m1, m2 : component masses
-    a1, a2 : dimensionless spins of two BHs
-    af: final spin (optional), if already calculated
+    chi1, chi2 : dimensionless spins of two BHs
+    chif: final spin (optional), if already calculated
     
     Returns
     -------
     final mass, mf
     """
-    m1 = np.array(m1)
-    m2 = np.array(m2)
-    a1 = np.array(a1)
-    a2 = np.array(a2)
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
     
     # binary parameters
     m = m1+m2
@@ -171,20 +171,20 @@ def bbh_final_mass_non_precessing(m1, m2, a1, a2, af=None):
     eta = q/(1.+q)**2.
     delta_m = (m1-m2)/m
     
-    S1 = a1*m1**2 # spin angular momentum 1
-    S2 = a2*m2**2 # spin angular momentum 2
+    S1 = chi1*m1**2 # spin angular momentum 1
+    S2 = chi2*m2**2 # spin angular momentum 2
     S = (S1+S2)/m**2 # symmetric spin (dimensionless -- called \tilde{S} in the paper)
     Delta = (S2/m2-S1/m1)/m # antisymmetric spin (dimensionless -- called tilde{Delta} in the paper
     
-    if af is None:
-        af = bbh_final_spin_non_precessing(m1, m2, a1, a2)
+    if chif is None:
+        chif = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2)
     else:
-        af = np.array(af)
+        chif = np.array(chif)
     
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     # now compute the final mass
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    r_isco = calc_isco_radius(af)
+    r_isco = calc_isco_radius(chif)
     
     # fitting coefficients - Table XI of Healy et al Phys Rev D 90, 104004 (2014)
     # [fourth order fits]
@@ -209,7 +209,7 @@ def bbh_final_mass_non_precessing(m1, m2, a1, a2, af=None):
     K4i = 0.078441
     
     # binding energy at ISCO -- Eq.(2.7) of Ori, Thorne Phys Rev D 62 124022 (2000)
-    E_isco = (1. - 2./r_isco + af/r_isco**1.5)/np.sqrt(1. - 3./r_isco + 2.*af/r_isco**1.5)
+    E_isco = (1. - 2./r_isco + chif/r_isco**1.5)/np.sqrt(1. - 3./r_isco + 2.*chif/r_isco**1.5)
     
     # final mass -- Eq. (14) of Healy et al Phys Rev D 90, 104004 (2014)
     mf = (4.*eta)**2*(M0 + K1*S + K2a*Delta*delta_m + K2b*S**2 + K2c*Delta**2 + K2d*delta_m**2 \
@@ -220,38 +220,116 @@ def bbh_final_mass_non_precessing(m1, m2, a1, a2, af=None):
     
     return mf*m
 
-def bbh_final_spin_projected_spin(m1, m2, a1, a2, tilt1, tilt2):
+def bbh_final_spin_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2):
     """
     Calculate the spin of the final BH resulting from the merger of two black holes projecting spin along angular momentum and using fit from Healy et al Phys Rev D 90, 104004 (2014)
     
     Parameters
     ----------
     m1, m2 : component masses
-    a1, a2 : dimensionless spins of two BHs
-    tilt1, tilt2 : tilts in the new spin convention
+    chi1, chi2 : dimensionless spins of two BHs
+    tilt1, tilt2 : tilts (in radians) in the new spin convention
     
     Returns
     -------
-    final spin, af
+    final spin, chif
     """
-    return bbh_final_spin_non_precessing(m1, m2, a1*np.cos(tilt1), a2*np.cos(tilt2))
+    return bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1*np.cos(tilt1), chi2*np.cos(tilt2))
 
-def bbh_final_mass_projected_spin(m1, m2, a1, a2, tilt1, tilt2, af=None):
+def bbh_final_mass_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2, chif=None):
     """
     Calculate the mass of the final BH resulting from the merger of two black holes projecting spin along angular momentum and using fit from Healy et al Phys Rev D 90, 104004 (2014)
     
     Parameters
     ----------
     m1, m2 : component masses
-    a1, a2 : dimensionless spins of two BHs
-    tilt1, tilt2 : tilts in the new spin convention
-    af: final spin (optional), if already calculated
+    chi1, chi2 : dimensionless spins of two BHs
+    tilt1, tilt2 : tilts (in radians) in the new spin convention
+    chif: final spin (optional), if already calculated
     
     Returns
     -------
     final mass, mf
     """
-    return bbh_final_mass_non_precessing(m1, m2, a1*np.cos(tilt1), a2*np.cos(tilt2), af=af)
+    return bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1*np.cos(tilt1), chi2*np.cos(tilt2), chif=chif)
+
+def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2): 
+    """ 
+    Calculate the mass and spin of the final BH resulting from the 
+    merger of two black holes with non-precessing spins using the fits
+    used by IMRPhenomD, given in Eqs. (3.6) and (3.8) of Husa et al.
+    arXiv:1508.07250. Note that Eq. (3.8) gives the radiated energy, not
+    the final mass directly
+
+    m1, m2: component masses
+    chi1, chi2: dimensionless spins of two BHs
+    """
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
+    
+    # binary parameters 
+    m = m1+m2  
+    msq = m*m
+
+    eta = m1*m2/msq
+    eta2 = eta*eta
+    eta3 = eta2*eta
+    eta4 = eta3*eta
+
+    S1 = chi1*m1**2/msq                   # spin angular momentum 1 (in m = 1 units) 
+    S2 = chi2*m2**2/msq                   # spin angular momentum 2 (in m = 1 units)
+    S = S1+S2                        # total spin
+    Sh = S/(1. - 2.*eta)                    # rescaled total spin
+
+    # Expressions copied from LALSimIMRPhenomD_internals.c (except with two notation differences: S is capitalized in chif and s -> Sh in Mf, in addition to the "m*(1. - ...)" to obtain the final mass from the radiated mass in m = 1 units which is calculated in the LAL code)
+
+    Mf = m*(1. - ((0.055974469826360077*eta + 0.5809510763115132*eta2 - 0.9606726679372312*eta3 + 3.352411249771192*eta4)*
+    (1. + (-0.0030302335878845507 - 2.0066110851351073*eta + 7.7050567802399215*eta2)*Sh))/(1. + (-0.6714403054720589 - 1.4756929437702908*eta + 7.304676214885011*eta2)*Sh))
+
+    return Mf
+
+def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2): 
+    """ 
+    Calculate the mass and spin of the final BH resulting from the 
+    merger of two black holes with non-precessing spins using the fits
+    used by IMRPhenomD, given in Eqs. (3.6) and (3.8) of Husa et al.
+    arXiv:1508.07250. Note that Eq. (3.8) gives the radiated energy, not
+    the final mass directly
+
+    m1, m2: component masses
+    chi1, chi2: dimensionless spins of two BHs
+    """
+    # Vectorize the function if arrays are provided as input
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
+    
+    # binary parameters 
+    m = m1+m2  
+    msq = m*m
+
+    eta = m1*m2/msq
+    eta2 = eta*eta
+    eta3 = eta2*eta
+    eta4 = eta3*eta
+
+    S1 = chi1*m1**2/msq                   # spin angular momentum 1 (in m = 1 units) 
+    S2 = chi2*m2**2/msq                   # spin angular momentum 2 (in m = 1 units)
+    S = S1+S2                        # total spin
+    Sh = S/(1. - 2.*eta)                    # rescaled total spin
+
+    Ssq = S*S
+    Scu = Ssq*S
+    Squ = Scu*S
+
+    # Expressions copied from LALSimIMRPhenomD_internals.c (except with two notation differences: S is capitalized in chif and s -> Sh in Mf, in addition to the "m*(1. - ...)" to obtain the final mass from the radiated mass in m = 1 units which is calculated in the LAL code)
+
+    chif = 3.4641016151377544*eta - 4.399247300629289*eta2 + 9.397292189321194*eta3 - 13.180949901606242*eta4 + (1 - 0.0850917821418767*eta - 5.837029316602263*eta2)*S + (0.1014665242971878*eta - 2.0967746996832157*eta2)*Ssq + (-1.3546806617824356*eta + 4.108962025369336*eta2)*Scu + (-0.8676969352555539*eta + 2.064046835273906*eta2)*Squ 
+
+    return chif
 
 
 def qnmfreqs_berti(a, l, m, n):
@@ -291,12 +369,12 @@ def qnmfreqs_berti(a, l, m, n):
             print '# More than on fit point corresponding to this l, m, n combination'
             exit()
 
-def calc_fqnm_dominant_mode(af): 
+def calc_fqnm_dominant_mode(chif): 
     """
-    calculate the (dimensionless) freq of the dominant QNM of a Kerr BH with spin af 
+    calculate the (dimensionless) freq of the dominant QNM of a Kerr BH with spin chif 
     """
 
-    Omega = qnmfreqs_berti(af, 2, 2, 0)
+    Omega = qnmfreqs_berti(chif, 2, 2, 0)
     return np.real(Omega)/(2*np.pi) 
 
 
