@@ -993,6 +993,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
  //                    }
                  }
              }
+             XLALDestroyCOMPLEX16Vector(modefreqs_xtr);
 	if (debugout) {
             XLAL_PRINT_INFO("l,m = %d %d\n",l,m);
             XLAL_PRINT_INFO("finalSpin = %f\n",finalSpin);
@@ -1007,7 +1008,6 @@ XLALSimIMREOBHybridAttachRingdownPrec(
             XLAL_PRINT_INFO("w6 = %f, t6 = %f\n",creal(modefreqs->data[6])*mTot, 1./cimag(modefreqs->data[6])/mTot);
             XLAL_PRINT_INFO("w7 = %f, t7 = %f\n",creal(modefreqs->data[7])*mTot, 1./cimag(modefreqs->data[7])/mTot);
             XLAL_PRINT_INFO("matchrange %.16e,%.16e,%.16e\n", matchrange->data[0] * mTot / dt, matchrange->data[1] * mTot / dt, matchrange->data[2] * mTot / dt - 2);
-             XLALDestroyCOMPLEX16Vector(modefreqs_xtr);
     }
              /*XLALSimIMREOBGenerateQNMFreqV2Prec(modefreqs_xtr, mass1, mass2, spin1, spin2, l, 1, nmodes, approximant);
 
@@ -1073,6 +1073,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
                 }
             }
  //           modefreqs->data[7] = 0.5*(NRPeakOmega22 + modefreqs->data[0]) + I/mTot/((1./cimag(modefreqs->data[0])/mTot)/3.);
+            XLALDestroyCOMPLEX16Vector(modefreqs_xtr);
 	if (debugout) {
             XLAL_PRINT_INFO("l,m = %d %d\n",l,m);
             XLAL_PRINT_INFO("finalSpin = %f\n",finalSpin);
@@ -1087,7 +1088,6 @@ XLALSimIMREOBHybridAttachRingdownPrec(
             XLAL_PRINT_INFO("w6 = %f, t6 = %f\n",creal(modefreqs->data[6])*mTot, 1./cimag(modefreqs->data[6])/mTot);
             XLAL_PRINT_INFO("w7 = %f, t7 = %f\n",creal(modefreqs->data[7])*mTot, 1./cimag(modefreqs->data[7])/mTot);
             XLAL_PRINT_INFO("matchrange %.16e,%.16e,%.16e\n", matchrange->data[0] * mTot / dt, matchrange->data[1] * mTot / dt, matchrange->data[2] * mTot / dt - 2);
-            XLALDestroyCOMPLEX16Vector(modefreqs_xtr);
         }
         }
             // FIXME

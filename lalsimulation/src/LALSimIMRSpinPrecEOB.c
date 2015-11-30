@@ -1318,7 +1318,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     fflush(NULL);
   }
 
-  values = XLALCreateREAL8Vector( 14 );
+  //values = XLALCreateREAL8Vector( 14 );
   REAL8 incl_temp = 0.0;  // !!!! For comparison with C++ and NR we need inc = 0 for initial conditions
   incl_temp = inc;
   /* The initial condition construction is based on PRD 74, 104005 (2006) */
@@ -3416,6 +3416,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     XLALDestroyREAL8TimeSeries( betI);
     XLALDestroyREAL8TimeSeries( gamI);
     XLALDestroyREAL8Vector( rdMatchPoint );
+    XLALDestroyREAL8Vector( radiusVec  );
     
   /* FIXME: Temporary code to convert REAL8Array to REAL8Vector because SWIG
    *        doesn't seem to like REAL8Array */
