@@ -104,6 +104,7 @@ noinst_HEADERS = \
 	LALSimIMRPhenomD_internals.c \
 	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomP.c \
+	LALSimIMRPhenomP.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMREOBNRv2HMROMUtilities.c \
 	LALSimBlackHoleRingdownPrec.c \

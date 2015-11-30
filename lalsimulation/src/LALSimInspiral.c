@@ -1279,7 +1279,7 @@ int XLALSimInspiralChooseFDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
               chi1_l, chi2_l, chip, thetaJ,
-              m1, m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, 1);
+              m1, m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, IMRPhenomPv1_V);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
@@ -1309,7 +1309,7 @@ int XLALSimInspiralChooseFDWaveform(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
               chi1_l, chi2_l, chip, thetaJ,
-              m1, m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, 2);
+              m1, m2, r, alpha0, phiRef, deltaF, f_min, f_max, f_ref, IMRPhenomPv2_V);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             break;
 
