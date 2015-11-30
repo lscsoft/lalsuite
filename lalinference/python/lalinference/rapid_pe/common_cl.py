@@ -111,6 +111,7 @@ def add_output_params(optp):
 #
 def add_integration_params(optp):
     integration_params = OptionGroup(optp, "Integration Parameters", "Control the integration with these options.")
+    integration_params.add_option("--distance-maximum", default=300.0, type=float, help="Override the maximum distance in the prior. Default is 300 Mpc.")
     integration_params.add_option("-m", "--time-marginalization", action="store_true", help="Perform marginalization over time via direct numerical integration. Default is false.")
     # Default is actually None, but that tells the integrator to go forever or until n_eff is hit.
     integration_params.add_option("--n-max", type=int, help="Total number of samples points to draw. If this number is hit before n_eff, then the integration will terminate. Default is 'infinite'.",default=None)
