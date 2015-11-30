@@ -2823,15 +2823,20 @@ int XLALSimIMRSpinEOBWaveformAll(
           XLAL_PRINT_INFO("The Amplitude-related time is found and it's %f \n", tAmpMax);
       }
   }
-  if( foundAmp==0 && foundPeakOmega == 0){
+  if (debugPK){
       XLALPrintError("Houston, we've got a problem SOS, SOS, SOS, cannot find the RD attachment point... m1 = %.16e, m2 = %.16e, fMin = %.16e, inclination = %.16e,  Mtotal = %.16e, eta = %.16e, spin1 = {%.16e, %.16e, %.16e},   spin2 = {%.16e, %.16e, %.16e} \n", 
                m1, m2, (double)fMin, (double)inc, mTotal, eta, spin1[0], spin1[1], spin1[2], spin2[0], spin2[1], spin2[2]);
-      FREE_EVERYTHING
-      XLALDestroyREAL8Vector( timeJFull );
-      XLALDestroyREAL8Vector( timeIFull );
-      XLALDestroyREAL8Vector( tlistRDPatch );
-      XLALDestroyREAL8Vector( tlistRDPatchHi );
-      XLAL_ERROR( XLAL_EINVAL );
+  }
+
+  if( foundAmp==0 && foundPeakOmega == 0){
+      
+      tAttach = tAttach -2.0;    
+      //FREE_EVERYTHING
+      //XLALDestroyREAL8Vector( timeJFull );
+      //XLALDestroyREAL8Vector( timeIFull );
+      //XLALDestroyREAL8Vector( tlistRDPatch );
+      //XLALDestroyREAL8Vector( tlistRDPatchHi );
+      //XLAL_ERROR( XLAL_EINVAL );
   }
 
 
