@@ -90,7 +90,7 @@ if __name__ == '__main__':
   parser.add_option("-r", "--ring-post", dest="ring_post", help="file containing the posterior samples from the lalinference ringdown run")
   parser.add_option("-m", "--imr-post", dest="imr_post", help="file containing the posterior samples from the full lalinference IMR run")
   parser.add_option("-f", "--fit-formula", dest="fit_formula", help="fitting formula to be used for the calculation of final mass/spin [options: 'nospin_Pan2011', 'nonprecspin_Healy2014'")
-  parser.add_option("-p", "--mf-af-prior", dest="prior_Mfaf_file", help="pickle file containing the interpolation object of the prior in (Mf,af) used in the lalinference runs", default=None)
+  parser.add_option("-p", "--mf-chif-prior", dest="prior_Mfchif_file", help="pickle file containing the interpolation object of the prior in (Mf,chif) used in the lalinference runs", default=None)
   parser.add_option("-o", "--out-dir", dest="out_dir", help="output directory")
   parser.add_option("--insp-fhigh", dest="insp_fhigh", help="Upper cutoff freq for the inspiral analysis")
   parser.add_option("--ring-flow", dest="ring_flow", help="Lower cutoff freq for the ringdown analysis")
@@ -105,7 +105,7 @@ if __name__ == '__main__':
   insp_post = options.insp_post
   ring_post = options.ring_post
   imr_post = options.imr_post
-  prior_Mfaf_file = options.prior_Mfaf_file
+  prior_Mfchif_file = options.prior_Mfchif_file
   out_dir = options.out_dir
   fit_formula = options.fit_formula
   debug_plots = options.debug_plots
@@ -115,8 +115,8 @@ if __name__ == '__main__':
   N_bins = 201
   
   lalinference_datadir = os.getenv('LALINFERENCE_DATADIR')
-  if prior_Mfaf_file is None:
-    prior_Mfaf_file = os.path.join(lalinference_datadir, 'imrtgr_prior_data', 'Prior_Mfaf_nonprecspin_Healy2014_comp_mass_min1.0_comp_mass_max500.0_comp_spin_min-1.0_comp_spin_max1.0.pklz')
+  if prior_Mfchif_file is None:
+    prior_Mfchif_file = os.path.join(lalinference_datadir, 'imrtgr_prior_data', 'Prior_Mfchif_nonprecspin_Healy2014_comp_mass_min1.0_comp_mass_max500.0_comp_spin_min-1.0_comp_spin_max1.0.pklz')
 
   # create output directory and copy the script 
   os.system('mkdir -p %s' %out_dir)
@@ -125,7 +125,7 @@ if __name__ == '__main__':
   os.system('cp %s %s' %(__file__, out_dir))
   #os.system('cp ../src/imrtestgr.py %s' %(out_dir))
   os.system('cp %s %s/'%(os.path.join(lalinference_datadir, 'imrtgr_webpage_templates/*.*'), out_dir))
-  os.system('cp %s %s/data'%(prior_Mfaf_file, out_dir))
+  os.system('cp %s %s/data'%(prior_Mfchif_file, out_dir))
 
   # creating file to save the run command
   run_command = open('%s/command.txt'%(out_dir),'w')
@@ -162,7 +162,7 @@ if __name__ == '__main__':
     m2_inj = M_inj/(1.+q_inj)
     m1_inj = M_inj*q_inj/(1.+q_inj)
     eta_inj = q_inj/(1.+q_inj)**2.
-    Mf_inj, af_inj = tgr.calc_final_mass_spin(m1_inj, m2_inj, chi1_inj, chi2_inj, fit_formula)
+    Mf_inj, chif_inj = tgr.calc_final_mass_spin(m1_inj, m2_inj, chi1_inj, chi2_inj, fit_formula)
 
   ###############################################################################################
   # Read the posteriors from the inspiral, ringdown and imr lalinference runs (after post-processing) 
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     chi1_i, chi2_i = insp_data['a1z'], insp_data['a2z']
   else:
     chi1_i, chi2_i = np.zeros(len(m1_i)), np.zeros(len(m2_i))
-  Mf_i, af_i = tgr.calc_final_mass_spin(m1_i, m2_i, chi1_i, chi2_i, fit_formula)
+  Mf_i, chif_i = tgr.calc_final_mass_spin(m1_i, m2_i, chi1_i, chi2_i, fit_formula)
 
   ring_data = np.genfromtxt(ring_post, dtype=None, names=True)
   m1_r, m2_r = ring_data['m1'], ring_data['m2']
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     chi1_r, chi2_r = ring_data['a1z'], ring_data['a2z']
   else:
     chi1_r, chi2_r = np.zeros(len(m1_r)), np.zeros(len(m2_r))
-  Mf_r, af_r = tgr.calc_final_mass_spin(m1_r, m2_r, chi1_r, chi2_r, fit_formula)
+  Mf_r, chif_r = tgr.calc_final_mass_spin(m1_r, m2_r, chi1_r, chi2_r, fit_formula)
 
   imr_data = np.genfromtxt(imr_post, dtype=None, names=True)
   m1_imr, m2_imr = imr_data['m1'], imr_data['m2']
@@ -189,104 +189,104 @@ if __name__ == '__main__':
     chi1_imr, chi2_imr = imr_data['a1z'], imr_data['a2z']
   else:
     chi1_imr, chi2_imr = np.zeros(len(m1_imr)), np.zeros(len(m2_imr))
-  Mf_imr, af_imr = tgr.calc_final_mass_spin(m1_imr, m2_imr, chi1_imr, chi2_imr, fit_formula)
+  Mf_imr, chif_imr = tgr.calc_final_mass_spin(m1_imr, m2_imr, chi1_imr, chi2_imr, fit_formula)
 
   print '... read posteriors'
   ###############################################################################################
 
   ###############################################################################################
-  # compute the limits of integration for computing delta_Mf and delta_af 
+  # compute the limits of integration for computing delta_Mf and delta_chif 
   ###############################################################################################
   Mf_lim = max(abs(np.append(np.append(Mf_i, Mf_r), Mf_imr)))
-  af_lim = max(abs(np.append(np.append(af_i, af_r), af_imr)))
+  chif_lim = max(abs(np.append(np.append(chif_i, chif_r), chif_imr)))
 
   Mf_bins = np.linspace(-Mf_lim, Mf_lim, N_bins)
-  af_bins = np.linspace(-af_lim, af_lim, N_bins)
+  chif_bins = np.linspace(-chif_lim, chif_lim, N_bins)
 
   dMf = np.mean(np.diff(Mf_bins))
-  daf = np.mean(np.diff(af_bins))
+  dchif = np.mean(np.diff(chif_bins))
 
   Mf_intp = (Mf_bins[:-1] + Mf_bins[1:])/2.
-  af_intp = (af_bins[:-1] + af_bins[1:])/2.
+  chif_intp = (chif_bins[:-1] + chif_bins[1:])/2.
   ###############################################################################################
 
 
   ###############################################################################################
   # Undo the effect of the prior from the lalinference posterior. Lalinference assumes a        #
-  # uniform prior in component masses. We need to assume a uniform prior in Mf, af              #
+  # uniform prior in component masses. We need to assume a uniform prior in Mf, chif              #
   ###############################################################################################
 
   # read the interpolation object, reconstruct the data from the interpolation object 
-  f = gzip.open(prior_Mfaf_file,'rb')
-  P_Mfaf_pr_interp_obj = pickle.load(f)
-  P_Mfaf_pr = P_Mfaf_pr_interp_obj(Mf_intp, af_intp)
+  f = gzip.open(prior_Mfchif_file,'rb')
+  P_Mfchif_pr_interp_obj = pickle.load(f)
+  P_Mfchif_pr = P_Mfchif_pr_interp_obj(Mf_intp, chif_intp)
 
   # compute the 2D posterior distributions for the inspiral, ringodwn and IMR analyses 
-  P_Mfaf_i, Mf_bins, af_bins = np.histogram2d(Mf_i, af_i, bins=(Mf_bins, af_bins), normed=True)
-  P_Mfaf_r, Mf_bins, af_bins = np.histogram2d(Mf_r, af_r, bins=(Mf_bins, af_bins), normed=True)
-  P_Mfaf_imr, Mf_bins, af_bins = np.histogram2d(Mf_imr, af_imr, bins=(Mf_bins, af_bins), normed=True)
+  P_Mfchif_i, Mf_bins, chif_bins = np.histogram2d(Mf_i, chif_i, bins=(Mf_bins, chif_bins), normed=True)
+  P_Mfchif_r, Mf_bins, chif_bins = np.histogram2d(Mf_r, chif_r, bins=(Mf_bins, chif_bins), normed=True)
+  P_Mfchif_imr, Mf_bins, chif_bins = np.histogram2d(Mf_imr, chif_imr, bins=(Mf_bins, chif_bins), normed=True)
 
-  P_Mfaf_i = P_Mfaf_i.T
-  P_Mfaf_r = P_Mfaf_r.T
-  P_Mfaf_imr = P_Mfaf_imr.T
+  P_Mfchif_i = P_Mfchif_i.T
+  P_Mfchif_r = P_Mfchif_r.T
+  P_Mfchif_imr = P_Mfchif_imr.T
 
-  # compute the corrected 2D posteriors in Mf and af by dividing by the prior distribution 
-  P_Mfaf_i = P_Mfaf_i/P_Mfaf_pr
-  P_Mfaf_r = P_Mfaf_r/P_Mfaf_pr
-  P_Mfaf_imr = P_Mfaf_imr/P_Mfaf_pr
+  # compute the corrected 2D posteriors in Mf and chif by dividing by the prior distribution 
+  P_Mfchif_i = P_Mfchif_i/P_Mfchif_pr
+  P_Mfchif_r = P_Mfchif_r/P_Mfchif_pr
+  P_Mfchif_imr = P_Mfchif_imr/P_Mfchif_pr
 
   # removing nan's
-  P_Mfaf_i[np.isnan(P_Mfaf_i)] = 0.
-  P_Mfaf_r[np.isnan(P_Mfaf_r)] = 0.
-  P_Mfaf_imr[np.isnan(P_Mfaf_imr)] = 0.
+  P_Mfchif_i[np.isnan(P_Mfchif_i)] = 0.
+  P_Mfchif_r[np.isnan(P_Mfchif_r)] = 0.
+  P_Mfchif_imr[np.isnan(P_Mfchif_imr)] = 0.
 
   # removing infinities
-  P_Mfaf_i[np.isinf(P_Mfaf_i)] = 0.
-  P_Mfaf_r[np.isinf(P_Mfaf_r)] = 0.
-  P_Mfaf_imr[np.isinf(P_Mfaf_imr)] = 0.
+  P_Mfchif_i[np.isinf(P_Mfchif_i)] = 0.
+  P_Mfchif_r[np.isinf(P_Mfchif_r)] = 0.
+  P_Mfchif_imr[np.isinf(P_Mfchif_imr)] = 0.
 
   print '... computed (prior) corrected posteriors'
   ###############################################################################################
 
   ################################################################################################
-  # compute the posterior of (delta_Mf, delta_af)
+  # compute the posterior of (delta_Mf, delta_chif)
   ################################################################################################
-  P_dMfdaf = dMf*daf*ss.correlate2d(P_Mfaf_i, P_Mfaf_r, boundary='fill', mode='same')
+  P_dMfdchif = dMf*dchif*ss.correlate2d(P_Mfchif_i, P_Mfchif_r, boundary='fill', mode='same')
 
-  print '... computed P(delta_Mf, delta_af)'
+  print '... computed P(delta_Mf, delta_chif)'
   ###############################################################################################
 
   ################################################################################################
-  # compute the posterior of (delta_Mf/Mf, delta_af/af)
+  # compute the posterior of (delta_Mf/Mf, delta_chif/chif)
   ################################################################################################
 
-  # compute interpolation objects for the Mf,af posterior and delta_Mf and delta_af posterior 
-  P_dMfdaf_interp_object = scipy.interpolate.interp2d(Mf_intp, af_intp, P_dMfdaf, fill_value=0., bounds_error=False)
-  P_Mfaf_imr_interp_object = scipy.interpolate.interp2d(Mf_intp, af_intp, P_Mfaf_imr, fill_value=0., bounds_error=False)
+  # compute interpolation objects for the Mf,chif posterior and delta_Mf and delta_chif posterior 
+  P_dMfdchif_interp_object = scipy.interpolate.interp2d(Mf_intp, chif_intp, P_dMfdchif, fill_value=0., bounds_error=False)
+  P_Mfchif_imr_interp_object = scipy.interpolate.interp2d(Mf_intp, chif_intp, P_Mfchif_imr, fill_value=0., bounds_error=False)
 
-  # defining limits of delta_Mf/Mf and delta_af/af. limits are currently set arbitrarily FIXME 
+  # defining limits of delta_Mf/Mf and delta_chif/chif. limits are currently set arbitrarily FIXME 
   dMfbyMf_vec = np.linspace(-1.0, 1.0, N_bins)
-  dafbyaf_vec = np.linspace(-1.0, 1.0, N_bins)
+  dchifbychif_vec = np.linspace(-1.0, 1.0, N_bins)
 
-  # compute the P(dMf/Mf, daf/af) by evaluating the integral 
+  # compute the P(dMf/Mf, dchif/chif) by evaluating the integral 
   dx = np.mean(np.diff(dMfbyMf_vec))
-  dy = np.mean(np.diff(dafbyaf_vec))
-  P_dMfbyMf_dafbyaf = np.zeros(shape=(N_bins,N_bins))
+  dy = np.mean(np.diff(dchifbychif_vec))
+  P_dMfbyMf_dchifbychif = np.zeros(shape=(N_bins,N_bins))
 
-  for i, v2 in enumerate(dafbyaf_vec):
+  for i, v2 in enumerate(dchifbychif_vec):
     for j, v1 in enumerate(dMfbyMf_vec):
-      P_dMfbyMf_dafbyaf[i,j] = tgr.calc_sum(Mf_intp, af_intp, v1, v2, P_dMfdaf_interp_object, P_Mfaf_imr_interp_object)*dx*dy
+      P_dMfbyMf_dchifbychif[i,j] = tgr.calc_sum(Mf_intp, chif_intp, v1, v2, P_dMfdchif_interp_object, P_Mfchif_imr_interp_object)*dx*dy
 
   # normalization
-  P_dMfbyMf_dafbyaf /= np.sum(P_dMfbyMf_dafbyaf) * dx * dy
+  P_dMfbyMf_dchifbychif /= np.sum(P_dMfbyMf_dchifbychif) * dx * dy
 
   # Marginalization to one-dimensional joint_posteriors
-  P_dMfbyMf = np.sum(P_dMfbyMf_dafbyaf, axis=0) * dy
-  P_dafbyaf = np.sum(P_dMfbyMf_dafbyaf, axis=1) * dx
+  P_dMfbyMf = np.sum(P_dMfbyMf_dchifbychif, axis=0) * dy
+  P_dchifbychif = np.sum(P_dMfbyMf_dchifbychif, axis=1) * dx
   
   # GR confidence
-  conf_v1v2 = confidence(P_dMfbyMf_dafbyaf)
-  gr_height = P_dMfbyMf_dafbyaf[np.argmin(abs(dMfbyMf_vec)), np.argmin(abs(dafbyaf_vec))]
+  conf_v1v2 = confidence(P_dMfbyMf_dchifbychif)
+  gr_height = P_dMfbyMf_dchifbychif[np.argmin(abs(dMfbyMf_vec)), np.argmin(abs(dchifbychif_vec))]
   gr_conf_level = conf_v1v2.level_from_height(gr_height)
   print '... no deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level)
 
@@ -299,16 +299,16 @@ if __name__ == '__main__':
   np.savetxt('%s/summary_table.txt'%(out_dir), np.array(param_table), delimiter='\t', fmt='%s')
 
   # save results 
-  np.savetxt(out_dir+'/data/Mfaf.dat.gz', (Mf_bins,af_bins))
-  np.savetxt(out_dir+'/data/P_Mfaf_i.dat.gz', P_Mfaf_i)
-  np.savetxt(out_dir+'/data/P_Mfaf_r.dat.gz', P_Mfaf_r)
-  np.savetxt(out_dir+'/data/P_Mfaf_imr.dat.gz', P_Mfaf_imr)
-  np.savetxt(out_dir+'/data/P_dMfdaf.dat.gz', P_dMfdaf)
+  np.savetxt(out_dir+'/data/Mfchif.dat.gz', (Mf_bins,chif_bins))
+  np.savetxt(out_dir+'/data/P_Mfchif_i.dat.gz', P_Mfchif_i)
+  np.savetxt(out_dir+'/data/P_Mfchif_r.dat.gz', P_Mfchif_r)
+  np.savetxt(out_dir+'/data/P_Mfchif_imr.dat.gz', P_Mfchif_imr)
+  np.savetxt(out_dir+'/data/P_dMfdchif.dat.gz', P_dMfdchif)
   np.savetxt(out_dir+'/data/dMfbyMf_vec.dat.gz', dMfbyMf_vec)
-  np.savetxt(out_dir+'/data/dafbyaf_vec.dat.gz', dafbyaf_vec)
-  np.savetxt(out_dir+'/data/P_dMfbyMf_dafbyaf.dat.gz', P_dMfbyMf_dafbyaf)
+  np.savetxt(out_dir+'/data/dchifbychif_vec.dat.gz', dchifbychif_vec)
+  np.savetxt(out_dir+'/data/P_dMfbyMf_dchifbychif.dat.gz', P_dMfbyMf_dchifbychif)
   np.savetxt(out_dir+'/data/P_dMfbyMf.dat.gz', P_dMfbyMf)
-  np.savetxt(out_dir+'/data/P_dafbyaf.dat.gz', P_dafbyaf)
+  np.savetxt(out_dir+'/data/P_dchifbychif.dat.gz', P_dchifbychif)
   np.savetxt(out_dir+'/data/GR_confidence.txt', [gr_conf_level])
 
   #########################################################################################
@@ -331,9 +331,9 @@ if __name__ == '__main__':
   s1_chi1chi2_i = conf_chi1chi2_i.height_from_level(0.68)
   s2_chi1chi2_i = conf_chi1chi2_i.height_from_level(0.95)
   
-  conf_Mfaf_i = confidence(P_Mfaf_i)
-  s1_Mfaf_i = conf_Mfaf_i.height_from_level(0.68)
-  s2_Mfaf_i = conf_Mfaf_i.height_from_level(0.95)
+  conf_Mfchif_i = confidence(P_Mfchif_i)
+  s1_Mfchif_i = conf_Mfchif_i.height_from_level(0.68)
+  s2_Mfchif_i = conf_Mfchif_i.height_from_level(0.95)
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(m1_bins_i, m2_bins_i, tgr.gf(P_m1m2_i), cmap='YlOrBr')
@@ -390,18 +390,18 @@ if __name__ == '__main__':
   plt.savefig('%s/img/inspiral_chi1chi2_scatter.png'%(out_dir), dpi=300)
 
   plt.figure(figsize=(5,5))
-  plt.pcolormesh(Mf_bins, af_bins, tgr.gf(P_Mfaf_i), cmap='YlOrBr')
-  plt.contour(Mf_bins[:-1], af_bins[:-1], tgr.gf(P_Mfaf_i), levels=(s1_Mfaf_i,s2_Mfaf_i), linewidths=(1,1.5))
+  plt.pcolormesh(Mf_bins, chif_bins, tgr.gf(P_Mfchif_i), cmap='YlOrBr')
+  plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_i), levels=(s1_Mfchif_i,s2_Mfchif_i), linewidths=(1,1.5))
   if plot_injection_lines == True:
     plt.axvline(x=Mf_inj, ls='--', color='k')
-    plt.axhline(y=af_inj, ls='--', color='k')
+    plt.axhline(y=chif_inj, ls='--', color='k')
   plt.xlabel('$M_f [M_{\odot}]$')
   plt.ylabel('$\chi_f$')
   plt.xlim([min(Mf_i), max(Mf_i)])
-  plt.ylim([min(af_i), max(af_i)])
+  plt.ylim([min(chif_i), max(chif_i)])
   plt.grid()
-  plt.savefig('%s/img/inspiral_Mfaf_thumb.png'%(out_dir), dpi=72)
-  plt.savefig('%s/img/inspiral_Mfaf.png'%(out_dir), dpi=300)
+  plt.savefig('%s/img/inspiral_Mfchif_thumb.png'%(out_dir), dpi=72)
+  plt.savefig('%s/img/inspiral_Mfchif.png'%(out_dir), dpi=300)
 
 
   #ringdown
@@ -419,9 +419,9 @@ if __name__ == '__main__':
   s1_chi1chi2_r = conf_chi1chi2_r.height_from_level(0.68)
   s2_chi1chi2_r = conf_chi1chi2_r.height_from_level(0.95)
   
-  conf_Mfaf_r = confidence(P_Mfaf_r)
-  s1_Mfaf_r = conf_Mfaf_r.height_from_level(0.68)
-  s2_Mfaf_r = conf_Mfaf_r.height_from_level(0.95)
+  conf_Mfchif_r = confidence(P_Mfchif_r)
+  s1_Mfchif_r = conf_Mfchif_r.height_from_level(0.68)
+  s2_Mfchif_r = conf_Mfchif_r.height_from_level(0.95)
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(m1_bins_r, m2_bins_r, tgr.gf(P_m1m2_r), cmap='YlOrBr')
@@ -478,18 +478,18 @@ if __name__ == '__main__':
   plt.savefig('%s/img/ringdown_chi1chi2_scatter.png'%(out_dir), dpi=300)
 
   plt.figure(figsize=(5,5))
-  plt.pcolormesh(Mf_bins, af_bins, tgr.gf(P_Mfaf_r), cmap='YlOrBr')
-  plt.contour(Mf_bins[:-1], af_bins[:-1], tgr.gf(P_Mfaf_r), levels=(s1_Mfaf_r,s2_Mfaf_r), linewidths=(1,1.5))
+  plt.pcolormesh(Mf_bins, chif_bins, tgr.gf(P_Mfchif_r), cmap='YlOrBr')
+  plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_r), levels=(s1_Mfchif_r,s2_Mfchif_r), linewidths=(1,1.5))
   if plot_injection_lines == True:
     plt.axvline(x=Mf_inj, ls='--', color='k')
-    plt.axhline(y=af_inj, ls='--', color='k')
+    plt.axhline(y=chif_inj, ls='--', color='k')
   plt.xlabel('$M_f [M_{\odot}]$')
   plt.ylabel('$\chi_f$')
   plt.xlim([min(Mf_r), max(Mf_r)])
-  plt.ylim([min(af_r), max(af_r)])
+  plt.ylim([min(chif_r), max(chif_r)])
   plt.grid()
-  plt.savefig('%s/img/ringdown_Mfaf.png'%(out_dir), dpi=300)
-  plt.savefig('%s/img/ringdown_Mfaf_thumb.png'%(out_dir), dpi=72)
+  plt.savefig('%s/img/ringdown_Mfchif.png'%(out_dir), dpi=300)
+  plt.savefig('%s/img/ringdown_Mfchif_thumb.png'%(out_dir), dpi=72)
 
   #IMR
   P_m1m2_imr, m1_bins_imr, m2_bins_imr = np.histogram2d(m1_imr, m2_imr, bins=50, normed=True)
@@ -506,9 +506,9 @@ if __name__ == '__main__':
   s1_chi1chi2_imr = conf_chi1chi2_imr.height_from_level(0.68)
   s2_chi1chi2_imr = conf_chi1chi2_imr.height_from_level(0.95)
   
-  conf_Mfaf_imr = confidence(P_Mfaf_imr)
-  s1_Mfaf_imr = conf_Mfaf_imr.height_from_level(0.68)
-  s2_Mfaf_imr = conf_Mfaf_imr.height_from_level(0.95)
+  conf_Mfchif_imr = confidence(P_Mfchif_imr)
+  s1_Mfchif_imr = conf_Mfchif_imr.height_from_level(0.68)
+  s2_Mfchif_imr = conf_Mfchif_imr.height_from_level(0.95)
 
   plt.figure(figsize=(5,5))
   plt.pcolormesh(m1_bins_imr, m2_bins_imr, tgr.gf(P_m1m2_imr), cmap='YlOrBr')
@@ -565,29 +565,29 @@ if __name__ == '__main__':
   plt.savefig('%s/img/imr_chi1chi2_scatter.png'%(out_dir), dpi=300)
 
   plt.figure(figsize=(5,5))
-  plt.pcolormesh(Mf_bins, af_bins, tgr.gf(P_Mfaf_imr), cmap='YlOrBr')
-  plt.contour(Mf_bins[:-1], af_bins[:-1], tgr.gf(P_Mfaf_imr), levels=(s1_Mfaf_imr,s2_Mfaf_imr), linewidths=(1,1.5))
+  plt.pcolormesh(Mf_bins, chif_bins, tgr.gf(P_Mfchif_imr), cmap='YlOrBr')
+  plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_imr), levels=(s1_Mfchif_imr,s2_Mfchif_imr), linewidths=(1,1.5))
   if plot_injection_lines == True:
     plt.axvline(x=Mf_inj, ls='--', color='k')
-    plt.axhline(y=af_inj, ls='--', color='k')
+    plt.axhline(y=chif_inj, ls='--', color='k')
   plt.xlabel('$M_f [M_{\odot}]$')
   plt.ylabel('$\chi_f$')
   plt.xlim([min(Mf_imr), max(Mf_imr)])
-  plt.ylim([min(af_imr), max(af_imr)])
+  plt.ylim([min(chif_imr), max(chif_imr)])
   plt.grid()
-  plt.savefig('%s/img/imr_Mfaf.png'%(out_dir), dpi=300)
-  plt.savefig('%s/img/imr_Mfaf_thumb.png'%(out_dir), dpi=72)
+  plt.savefig('%s/img/imr_Mfchif.png'%(out_dir), dpi=300)
+  plt.savefig('%s/img/imr_Mfchif_thumb.png'%(out_dir), dpi=72)
 
   # IR overlap
   plt.figure(figsize=(5,5))
-  CSi = plt.contour(Mf_bins[:-1], af_bins[:-1], tgr.gf(P_Mfaf_i), levels=(s1_Mfaf_i,s2_Mfaf_i), linewidths=(1,1.5), colors='orange')
-  CSr = plt.contour(Mf_bins[:-1], af_bins[:-1], tgr.gf(P_Mfaf_r), levels=(s1_Mfaf_r,s2_Mfaf_r), linewidths=(1,1.5), colors='red')
-  CSimr = plt.contour(Mf_bins[:-1], af_bins[:-1], tgr.gf(P_Mfaf_imr), levels=(s1_Mfaf_imr,s2_Mfaf_imr), linewidths=(1,1.5), colors='k')
+  CSi = plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_i), levels=(s1_Mfchif_i,s2_Mfchif_i), linewidths=(1,1.5), colors='orange')
+  CSr = plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_r), levels=(s1_Mfchif_r,s2_Mfchif_r), linewidths=(1,1.5), colors='red')
+  CSimr = plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_Mfchif_imr), levels=(s1_Mfchif_imr,s2_Mfchif_imr), linewidths=(1,1.5), colors='k')
   if plot_injection_lines == True:
     plt.axvline(x=Mf_inj, ls='--', color='k')
-    plt.axhline(y=af_inj, ls='--', color='k')
+    plt.axhline(y=chif_inj, ls='--', color='k')
   plt.xlim([min(np.append(Mf_i, Mf_r)), max(np.append(Mf_i, Mf_r))])
-  plt.ylim([min(np.append(af_i, af_r)), max(np.append(af_i, af_r))])
+  plt.ylim([min(np.append(chif_i, chif_r)), max(np.append(chif_i, chif_r))])
   plt.xlabel('$M_f~[M_\odot]$')
   plt.ylabel('$\chi_f$')
   plt.grid()
@@ -613,23 +613,23 @@ if __name__ == '__main__':
   plt.savefig('%s/img/IMR_overlap.png'%(out_dir), dpi=300)
   plt.savefig('%s/img/IMR_overlap_thumb.png'%(out_dir), dpi=72)
 
-  #(dMf, daf)
-  conf_dMfdaf = confidence(P_dMfdaf)
-  s1_dMfdaf = conf_dMfdaf.height_from_level(0.68)
-  s2_dMfdaf = conf_dMfdaf.height_from_level(0.95)
+  #(dMf, dchif)
+  conf_dMfdchif = confidence(P_dMfdchif)
+  s1_dMfdchif = conf_dMfdchif.height_from_level(0.68)
+  s2_dMfdchif = conf_dMfdchif.height_from_level(0.95)
 
   plt.figure(figsize=(5,5))
-  plt.pcolormesh(Mf_bins, af_bins, tgr.gf(P_dMfdaf), cmap='YlOrBr')
-  plt.contour(Mf_bins[:-1], af_bins[:-1], tgr.gf(P_dMfdaf), levels=(s1_dMfdaf,s2_dMfdaf), linewidths=(1,1.5))
+  plt.pcolormesh(Mf_bins, chif_bins, tgr.gf(P_dMfdchif), cmap='YlOrBr')
+  plt.contour(Mf_bins[:-1], chif_bins[:-1], tgr.gf(P_dMfdchif), levels=(s1_dMfdchif,s2_dMfdchif), linewidths=(1,1.5))
   plt.plot(0, 0, 'k+', ms=12, mew=2)
   plt.xlabel('$\Delta M_f~[M_\odot]$')
   plt.ylabel('$\Delta \chi_f$')
   plt.grid()
-  plt.savefig('%s/img/dMfdaf.png'%(out_dir), dpi=300)
-  plt.savefig('%s/img/dMfdaf_thumb.png'%(out_dir), dpi=72)
+  plt.savefig('%s/img/dMfdchif.png'%(out_dir), dpi=300)
+  plt.savefig('%s/img/dMfdchif_thumb.png'%(out_dir), dpi=72)
 
-  #(dMf/Mf, daf/af)
-  conf_v1v2 = confidence(P_dMfbyMf_dafbyaf)
+  #(dMf/Mf, dchif/chif)
+  conf_v1v2 = confidence(P_dMfbyMf_dchifbychif)
   s1_v1v2 = conf_v1v2.height_from_level(0.68)
   s2_v1v2 = conf_v1v2.height_from_level(0.95)
   
@@ -637,7 +637,7 @@ if __name__ == '__main__':
   s1_v1 = conf_v1.height_from_level(0.68)
   s2_v1 = conf_v1.height_from_level(0.95)
 
-  conf_v2 = confidence(P_dafbyaf)
+  conf_v2 = confidence(P_dchifbychif)
   s1_v2 = conf_v2.height_from_level(0.68)
   s2_v2 = conf_v2.height_from_level(0.95)
 
@@ -648,11 +648,11 @@ if __name__ == '__main__':
   left2_v1 = min(dMfbyMf_vec[np.where(P_dMfbyMf>=s2_v1)[0]])
   right2_v1 = max(dMfbyMf_vec[np.where(P_dMfbyMf>=s2_v1)[0]])
 
-  left1_v2 = min(dafbyaf_vec[np.where(P_dafbyaf>s1_v2)[0]])
-  right1_v2 = max(dafbyaf_vec[np.where(P_dafbyaf>s1_v2)[0]])
+  left1_v2 = min(dchifbychif_vec[np.where(P_dchifbychif>s1_v2)[0]])
+  right1_v2 = max(dchifbychif_vec[np.where(P_dchifbychif>s1_v2)[0]])
 
-  left2_v2 = min(dafbyaf_vec[np.where(P_dafbyaf>s2_v2)[0]])
-  right2_v2 = max(dafbyaf_vec[np.where(P_dafbyaf>s2_v2)[0]])
+  left2_v2 = min(dchifbychif_vec[np.where(P_dchifbychif>s2_v2)[0]])
+  right2_v2 = max(dchifbychif_vec[np.where(P_dchifbychif>s2_v2)[0]])
 
   plt.figure(figsize=(5,5))
   plt.subplot2grid((3,3), (0,0), colspan=2)
@@ -666,8 +666,8 @@ if __name__ == '__main__':
   #plt.grid()
 
   plt.subplot2grid((3,3), (1,0), colspan=2, rowspan=2)
-  plt.pcolormesh(dMfbyMf_vec,dafbyaf_vec,P_dMfbyMf_dafbyaf, cmap='YlOrBr')
-  plt.contour(dMfbyMf_vec,dafbyaf_vec,tgr.gf(P_dMfbyMf_dafbyaf), levels=(s1_v1v2,s2_v1v2), linewidths=(1,1.5))
+  plt.pcolormesh(dMfbyMf_vec,dchifbychif_vec,P_dMfbyMf_dchifbychif, cmap='YlOrBr')
+  plt.contour(dMfbyMf_vec,dchifbychif_vec,tgr.gf(P_dMfbyMf_dchifbychif), levels=(s1_v1v2,s2_v1v2), linewidths=(1,1.5))
   plt.plot(0, 0, 'k+', ms=12, mew=2)
   plt.xlabel('$\Delta M_f/M_f$')
   plt.ylabel('$\Delta \chi_f/\chi_f$')
@@ -676,7 +676,7 @@ if __name__ == '__main__':
   plt.grid()
 
   plt.subplot2grid((3,3), (1,2), rowspan=2)
-  plt.plot(P_dafbyaf, dafbyaf_vec,'k', lw=1)
+  plt.plot(P_dchifbychif, dchifbychif_vec,'k', lw=1)
   plt.axhline(y=left1_v2, color='c', lw=0.5, ls='-.')
   plt.axhline(y=right1_v2, color='c', lw=0.5, ls='-.')
   plt.axhline(y=left2_v2, color='b', lw=0.5, ls='-.')
@@ -685,8 +685,8 @@ if __name__ == '__main__':
   plt.xlabel('$P(\Delta \chi_f/\chi_f)$')
   #plt.grid()
 
-  plt.savefig('%s/img/dMfbyMfdafbyaf.png' %(out_dir), dpi=300)
-  plt.savefig('%s/img/dMfbyMfdafbyaf_thumb.png' %(out_dir), dpi=72)
+  plt.savefig('%s/img/dMfbyMfdchifbychif.png' %(out_dir), dpi=300)
+  plt.savefig('%s/img/dMfbyMfdchifbychif_thumb.png' %(out_dir), dpi=72)
 
   print '... made summary plots' 
 
