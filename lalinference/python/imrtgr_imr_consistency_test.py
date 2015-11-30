@@ -259,9 +259,8 @@ if __name__ == '__main__':
   ################################################################################################
   # compute the posterior of (delta_Mf/Mf, delta_af/af)
   ################################################################################################
+
   # compute interpolation objects for the Mf,af posterior and delta_Mf and delta_af posterior 
-  Mf_intp = (Mf_bins[:-1] + Mf_bins[1:])/2.
-  af_intp = (af_bins[:-1] + af_bins[1:])/2.
   P_dMfdaf_interp_object = scipy.interpolate.interp2d(Mf_intp, af_intp, P_dMfdaf, fill_value=0., bounds_error=False)
   P_Mfaf_imr_interp_object = scipy.interpolate.interp2d(Mf_intp, af_intp, P_Mfaf_imr, fill_value=0., bounds_error=False)
 
@@ -289,27 +288,27 @@ if __name__ == '__main__':
   conf_v1v2 = confidence(P_dMfbyMf_dafbyaf)
   gr_height = P_dMfbyMf_dafbyaf[np.argmin(abs(dMfbyMf_vec)), np.argmin(abs(dafbyaf_vec))]
   gr_conf_level = conf_v1v2.level_from_height(gr_height)
-  print 'GR is consistent with %.1f%% confidence level'%(100.*gr_conf_level)
+  print '... no deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level)
 
   # creating the parameter table
   param_table = [['Upper cutoff freq for the inspiral analysis: %s Hz'%insp_fhigh],
                 ['Lower cutoff freq for the ringdown analysis: %s Hz'%ring_flow],
                 ['Waveform approximant: %s'%(waveform)],
                 ['Final mass/spin fitting formula: %s'%(fit_formula)],
-		['No deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level)]]
+								['No deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level)]]
   np.savetxt('%s/summary_table.txt'%(out_dir), np.array(param_table), delimiter='\t', fmt='%s')
 
   # save results 
-  np.savetxt(out_dir+'/data/Mfaf.dat', (Mf_bins,af_bins))
-  np.savetxt(out_dir+'/data/P_Mfaf_i.dat', P_Mfaf_i)
-  np.savetxt(out_dir+'/data/P_Mfaf_r.dat', P_Mfaf_r)
-  np.savetxt(out_dir+'/data/P_Mfaf_imr.dat', P_Mfaf_imr)
-  np.savetxt(out_dir+'/data/P_dMfdaf.dat', P_dMfdaf)
-  np.savetxt(out_dir+'/data/dMfbyMf_vec.dat', dMfbyMf_vec)
-  np.savetxt(out_dir+'/data/dafbyaf_vec.dat', dafbyaf_vec)
-  np.savetxt(out_dir+'/data/P_dMfbyMf_dafbyaf.dat', P_dMfbyMf_dafbyaf)
-  np.savetxt(out_dir+'/data/P_dMfbyMf.dat', P_dMfbyMf)
-  np.savetxt(out_dir+'/data/P_dafbyaf.dat', P_dafbyaf)
+  np.savetxt(out_dir+'/data/Mfaf.dat.gz', (Mf_bins,af_bins))
+  np.savetxt(out_dir+'/data/P_Mfaf_i.dat.gz', P_Mfaf_i)
+  np.savetxt(out_dir+'/data/P_Mfaf_r.dat.gz', P_Mfaf_r)
+  np.savetxt(out_dir+'/data/P_Mfaf_imr.dat.gz', P_Mfaf_imr)
+  np.savetxt(out_dir+'/data/P_dMfdaf.dat.gz', P_dMfdaf)
+  np.savetxt(out_dir+'/data/dMfbyMf_vec.dat.gz', dMfbyMf_vec)
+  np.savetxt(out_dir+'/data/dafbyaf_vec.dat.gz', dafbyaf_vec)
+  np.savetxt(out_dir+'/data/P_dMfbyMf_dafbyaf.dat.gz', P_dMfbyMf_dafbyaf)
+  np.savetxt(out_dir+'/data/P_dMfbyMf.dat.gz', P_dMfbyMf)
+  np.savetxt(out_dir+'/data/P_dafbyaf.dat.gz', P_dafbyaf)
   np.savetxt(out_dir+'/data/GR_confidence.txt', [gr_conf_level])
 
   #########################################################################################
@@ -397,7 +396,7 @@ if __name__ == '__main__':
     plt.axvline(x=Mf_inj, ls='--', color='k')
     plt.axhline(y=af_inj, ls='--', color='k')
   plt.xlabel('$M_f [M_{\odot}]$')
-  plt.ylabel('$a_f/M_f$')
+  plt.ylabel('$\chi_f$')
   plt.xlim([min(Mf_i), max(Mf_i)])
   plt.ylim([min(af_i), max(af_i)])
   plt.grid()
@@ -485,7 +484,7 @@ if __name__ == '__main__':
     plt.axvline(x=Mf_inj, ls='--', color='k')
     plt.axhline(y=af_inj, ls='--', color='k')
   plt.xlabel('$M_f [M_{\odot}]$')
-  plt.ylabel('$a_f/M_f$')
+  plt.ylabel('$\chi_f$')
   plt.xlim([min(Mf_r), max(Mf_r)])
   plt.ylim([min(af_r), max(af_r)])
   plt.grid()
@@ -572,7 +571,7 @@ if __name__ == '__main__':
     plt.axvline(x=Mf_inj, ls='--', color='k')
     plt.axhline(y=af_inj, ls='--', color='k')
   plt.xlabel('$M_f [M_{\odot}]$')
-  plt.ylabel('$a_f/M_f$')
+  plt.ylabel('$\chi_f$')
   plt.xlim([min(Mf_imr), max(Mf_imr)])
   plt.ylim([min(af_imr), max(af_imr)])
   plt.grid()
@@ -590,7 +589,7 @@ if __name__ == '__main__':
   plt.xlim([min(np.append(Mf_i, Mf_r)), max(np.append(Mf_i, Mf_r))])
   plt.ylim([min(np.append(af_i, af_r)), max(np.append(af_i, af_r))])
   plt.xlabel('$M_f~[M_\odot]$')
-  plt.ylabel('$a_f/M_f$')
+  plt.ylabel('$\chi_f$')
   plt.grid()
 
   strs_i = [ 'inspiral', 'inspiral' ]
@@ -624,7 +623,7 @@ if __name__ == '__main__':
   plt.contour(Mf_bins[:-1], af_bins[:-1], tgr.gf(P_dMfdaf), levels=(s1_dMfdaf,s2_dMfdaf), linewidths=(1,1.5))
   plt.plot(0, 0, 'k+', ms=12, mew=2)
   plt.xlabel('$\Delta M_f~[M_\odot]$')
-  plt.ylabel('$\Delta a_f$')
+  plt.ylabel('$\Delta \chi_f$')
   plt.grid()
   plt.savefig('%s/img/dMfdaf.png'%(out_dir), dpi=300)
   plt.savefig('%s/img/dMfdaf_thumb.png'%(out_dir), dpi=72)
@@ -643,7 +642,6 @@ if __name__ == '__main__':
   s2_v2 = conf_v2.height_from_level(0.95)
 
   # Calculation of condifence edges
-
   left1_v1 = min(dMfbyMf_vec[np.where(P_dMfbyMf>=s1_v1)[0]])
   right1_v1 = max(dMfbyMf_vec[np.where(P_dMfbyMf>=s1_v1)[0]])
 
@@ -672,7 +670,7 @@ if __name__ == '__main__':
   plt.contour(dMfbyMf_vec,dafbyaf_vec,tgr.gf(P_dMfbyMf_dafbyaf), levels=(s1_v1v2,s2_v1v2), linewidths=(1,1.5))
   plt.plot(0, 0, 'k+', ms=12, mew=2)
   plt.xlabel('$\Delta M_f/M_f$')
-  plt.ylabel('$\Delta a_f/a_f$')
+  plt.ylabel('$\Delta \chi_f/\chi_f$')
   plt.xlim([-1.,1.])
   plt.ylim([-1.,1.])
   plt.grid()
@@ -683,8 +681,8 @@ if __name__ == '__main__':
   plt.axhline(y=right1_v2, color='c', lw=0.5, ls='-.')
   plt.axhline(y=left2_v2, color='b', lw=0.5, ls='-.')
   plt.axhline(y=right2_v2, color='b', lw=0.5, ls='-.')
-  #plt.ylabel('$\Delta a_f/a_f$')
-  plt.xlabel('$P(\Delta a_f/a_f)$')
+  #plt.ylabel('$\Delta \chi_f/\chi_f$')
+  plt.xlabel('$P(\Delta \chi_f/\chi_f)$')
   #plt.grid()
 
   plt.savefig('%s/img/dMfbyMfdafbyaf.png' %(out_dir), dpi=300)
