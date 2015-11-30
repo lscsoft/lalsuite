@@ -128,6 +128,13 @@ static REAL8 FinalSpinBarausse2009_aligned_spin_equally_distributed(
 );
 #endif
 
+static REAL8 FinalSpinBarausse2009_all_in_plane_spin_on_larger_BH(
+  const REAL8 nu,     /**< Symmetric mass-ratio */
+  const REAL8 chi1_l, /**< Aligned spin of BH 1 (m1 >= m2) */
+  const REAL8 chi2_l, /**< Aligned spin of BH 2  */
+  const REAL8 chip    /**< Dimensionless spin in the orbital plane */
+);
+
 static REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009, arXiv:0904.2577 */
   const REAL8 nu,               /**< Symmetric mass-ratio */
   const REAL8 a1,               /**< |a_1| norm of dimensionless spin vector for BH 1 */
