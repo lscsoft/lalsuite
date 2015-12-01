@@ -313,7 +313,8 @@ class MCSampler(object):
         n_history = int(kwargs["history_mult"]*n) if kwargs.has_key("history_mult") else None
         tempering_exp = kwargs["tempering_exp"] if kwargs.has_key("tempering_exp") else 0.0
         n_adapt = int(kwargs["n_adapt"]*n) if kwargs.has_key("n_adapt") else 0
-        nmax = kwargs["nmin"] if kwargs.has_key("nmin") else n_adapt
+        nmax = kwargs["nmax"] if kwargs.has_key("nmax") else n_adapt
+        nmin = kwargs["nmin"] if kwargs.has_key("nmin") else n_adapt
 
         save_intg = kwargs["save_intg"] if kwargs.has_key("save_intg") else False
         # FIXME: The adaptive step relies on the _rvs cache, so this has to be
