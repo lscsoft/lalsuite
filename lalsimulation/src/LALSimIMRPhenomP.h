@@ -78,7 +78,8 @@ static int PhenomPCore(
 static int PhenomPCoreOneFrequency(
   const REAL8 fHz,                        /**< Frequency (Hz) */
   const REAL8 eta,                        /**< Symmetric mass ratio */
-  const REAL8 chi_eff,                    /**< Dimensionless effective total aligned spin */
+  const REAL8 chi1_l,                     /**< Dimensionless aligned spin on companion 1 */
+  const REAL8 chi2_l,                     /**< Dimensionless aligned spin on companion 2 */
   const REAL8 chip,                       /**< Dimensionless spin in the orbital plane */
   const REAL8 distance,                   /**< Distance of source (m) */
   const REAL8 M,                          /**< Total mass (Solar masses) */
