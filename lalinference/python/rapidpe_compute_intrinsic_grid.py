@@ -92,7 +92,7 @@ def eval_grid(t1, cells, intr_prms):
 
     return overlaps
 
-def determine_region(pt, pts, ovrlp, ovrlp_thresh):
+def determine_region(pt, pts, ovrlp, ovrlp_thresh, expand_prms={}):
     """
     Given a point (pt) in a set of points (pts), with a function value at those points (ovrlp), return a rectangular hull such that the function exceeds the value ovrlp_thresh.
     """
@@ -100,6 +100,9 @@ def determine_region(pt, pts, ovrlp, ovrlp_thresh):
     #print "Found %d neighbors with overlap >= %f" % (len(ovrlp[sidx:]), ovrlp_thresh)
 
     cell = amrlib.Cell.make_cell_from_boundaries(pt, pts[sidx:])
+    for k, lim in expand_prms.iteritems():
+        cell._bounds = numpy.vstack((cell._bounds, lim))
+        # FIXME: Need to do center?
     return cell, sidx
 
 def find_olap_index(tree, exact=True, **kwargs):
@@ -177,9 +180,9 @@ def parse_param(popts):
     Parse out the specification of the intrinsic space. Examples:
 
     >>> parse_param(["mass1=1.4", "mass2", "spin1z=-1.0,10"])
-    {'mass1': 1.4, 'mass2': None, 'spin1z': [-1.0, 10.0]}
+    {'mass1': 1.4, 'mass2': None, 'spin1z': (-1.0, 10.0)}
     """
-    intr_prms = {}
+    intr_prms, expand_prms = {}, {}
     for popt in popts:
         popt = popt.split("=")
         if len(popt) == 1:
@@ -192,8 +195,8 @@ def parse_param(popts):
                 # Fix intrinsic point
                 intr_prms[popt[0]] = float(popt[1][0])
             else:
-                intr_prms[popt[0]] = map(float, popt[1])
-    return intr_prms
+                expand_prms[popt[0]] = tuple(map(float, popt[1]))
+    return intr_prms, expand_prms
 
 optp = OptionParser()
 
@@ -247,7 +250,7 @@ if opts.use_overlap is not None:
 # could incur an overlap calculation, or suffer from the effects of being close
 # only in Euclidean terms
 
-intr_prms = parse_param(opts.intrinsic_param)
+intr_prms, expand_prms = parse_param(opts.intrinsic_param)
 intr_pt = numpy.array([intr_prms[k] for k in intr_prms])
 intr_prms = intr_prms.keys()
 
@@ -330,7 +333,8 @@ else:
     init_region, idx = determine_region(pt, res_pts, results, 0)
 """
 
-init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold)
+intr_prms = list(intr_prms) + expand_prms.keys()
+init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold, expand_prms)
 
 ####### BEGIN INITIAL GRID CODE #########
 
