@@ -79,6 +79,11 @@ t_ref_wind = 50e-3 # Interpolate in a window +/- this width about event time.
 T_safety = 2. # Safety buffer (in sec) for wraparound corruption
 
 #
+# Set distance maximum
+#
+param_limits["distance"] = (param_limits["distance"][0], opts.distance_maximum)
+
+#
 # Inverse spectrum truncation control
 #
 T_spec = opts.inv_spec_trunc_time
