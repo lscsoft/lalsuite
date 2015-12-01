@@ -224,6 +224,8 @@ static inline double pow_2_of(double number);
 static inline double pow_3_of(double number);
 static inline double pow_4_of(double number);
 
+static double Subtract3PNSS(double m1, double m2, double M, double chi1, double chi2);
+
 /******************************* Constants to save floating-point pow calculations *******************************/
 
 /**
@@ -1661,4 +1663,21 @@ static double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingS
   //	Intermediate range
   double PhiInt = 1.0/p->eta * PhiIntAnsatz(f, p) + p->C1Int + p->C2Int * f;
   return PhiInt;
+}
+
+/**
+ * Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
+ * (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
+ * was not available when PhenomD was tuned.
+ */
+static double Subtract3PNSS(double m1, double m2, double M, double chi1, double chi2) {
+  REAL8 eta = m1 * m2 / (M * M);
+  REAL8 chi1sq = chi1 * chi1;
+  REAL8 chi2sq = chi2 * chi2;
+  REAL8 m1M = m1 / M;
+  REAL8 m2M = m2 / M;
+  REAL8 pn_ss3 =  (326.75L/1.12L + 557.5L/1.8L*eta)*eta*chi1*chi2;
+  pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m1M-120.L*m1M*m1M) + (-4108.25L/6.72L-108.5L/1.2L*m1M+125.5L/3.6L*m1M*m1M)) *m1M*m1M * chi1sq;
+  pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m2M-120.L*m2M*m2M) + (-4108.25L/6.72L-108.5L/1.2L*m2M+125.5L/3.6L*m2M*m2M)) *m2M*m2M * chi2sq;
+  return pn_ss3;
 }
