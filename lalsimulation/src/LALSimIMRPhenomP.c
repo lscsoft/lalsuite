@@ -586,7 +586,7 @@ static int PhenomPCore(
       goto skip;
 
     /* Generate the waveform */
-    per_thread_errcode = PhenomPCoreOneFrequency(f, eta, chi_eff, chip, distance, M, phic,
+    per_thread_errcode = PhenomPCoreOneFrequency(f, eta, chi1_l, chi2_l, chip, distance, M, phic,
                               pAmp, pPhi, PCparams, pn, &angcoeffs, &Y2m,
                               alphaNNLOoffset - alpha0, epsilonNNLOoffset,
                               &hp_val, &hc_val, &phasing, IMRPhenomP_version, &amp_prefactors, &phi_prefactors);
@@ -667,7 +667,8 @@ static int PhenomPCore(
 static int PhenomPCoreOneFrequency(
   const REAL8 fHz,                            /**< Frequency (Hz) */
   const REAL8 eta,                            /**< Symmetric mass ratio */
-  const REAL8 chi_eff,                        /**< Dimensionless effective total aligned spin */
+  const REAL8 chi1_l,                         /**< Dimensionless aligned spin on companion 1 */
+  const REAL8 chi2_l,                         /**< Dimensionless aligned spin on companion 2 */
   const REAL8 chip,                           /**< Dimensionless spin in the orbital plane */
   const REAL8 distance,                       /**< Distance of source (m) */
   const REAL8 M,                              /**< Total mass (Solar masses) */
@@ -700,12 +701,32 @@ static int PhenomPCoreOneFrequency(
   int status = XLAL_SUCCESS;
   UsefulPowers powers_of_f;
 
+ /*
+  * For IMRPhenomPv1 we put all spin on the larger BH. Here m2 >= m1.
+  * chi_eff = (m1*chi1 + m2*chi2)/M
+  * chil = chi_eff / m2 (for M=1)
+  * SL = m2^2 chil = m2*M*chi_eff = q/(1+q) * chi_eff (for M=1)
+  * For IMRPhenomPv2 we use both aligned spins:
+  * SL = chi1*m1^2 + chi2*m2^2
+  *
+  * For both IMRPhenomPv1 and IMRPhenomPv2 we put the in-plane spin on the larger BH:
+  * Sperp = chip*m2^2  (perpendicular spin)
+  */
+
+  const REAL8 q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta)/(2.0*eta);
+  const REAL8 m1 = 1.0/(1.0+q);       /* Mass of the smaller BH for unit total mass M=1. */
+  const REAL8 m2 = q/(1.0+q);         /* Mass of the larger BH for unit total mass M=1. */
+  const REAL8 Sperp = chip*(m2*m2);   /* Dimensionfull spin component in the orbital plane. S_perp = S_2_perp */
+  REAL8 SL;                           /* Dimensionfull aligned spin. */
+  const REAL8 chi_eff = (m1*chi1_l + m2*chi2_l); /* effective spin for M=1 */
+
   /* Calculate Phenom amplitude and phase for a given frequency. */
   switch (IMRPhenomP_version) {
     case IMRPhenomPv1_V:
       XLAL_CHECK(PCparams != NULL, XLAL_EFAULT);
       errcode = IMRPhenomCGenerateAmpPhase( &aPhenom, &phPhenom, fHz, eta, PCparams );
       if( errcode != XLAL_SUCCESS ) XLAL_ERROR(XLAL_EFUNC);
+      SL = chi_eff*m2;        /* Dimensionfull aligned spin of the largest BH. SL = m2^2 chil = m2*M*chi_eff */
       break;
     case IMRPhenomPv2_V:
       XLAL_CHECK(pAmp != NULL, XLAL_EFAULT);
@@ -717,6 +738,7 @@ static int PhenomPCoreOneFrequency(
       XLAL_CHECK(status == XLAL_SUCCESS, status, "init_useful_powers failed for f");
       aPhenom = IMRPhenDAmplitude(f, pAmp, &powers_of_f, amp_prefactors);
       phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors);
+      SL = chi1_l*m1*m1 + chi2_l*m2*m2;        /* Dimensionfull aligned spin. */
       break;
     default:
       XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
@@ -727,20 +749,6 @@ static int PhenomPCoreOneFrequency(
   phPhenom -= 2.*phic; /* Note: phic is orbital phase */
   REAL8 amp0 = M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
   COMPLEX16 hP = amp0 * aPhenom * cexp(-I*phPhenom); /* Assemble IMRPhenom waveform. */
-
-  /*
-   * We put all spin on the larger BH. Here m2 >= m1.
-   * chi_eff = (m1*0 + m2*chi2)/M
-   * chil = chi2 = chi_eff / m2 (for M=1)
-   * SL = m2^2 chi2 = m2*M*chi = q/(1+q) * chi (for M=1)
-   * Sp = chip*m2^2
-   */
-
-  const REAL8 q = (1.0 + sqrt(1.0 - 4.0*eta) - 2.0*eta)/(2.0*eta);
-  const REAL8 m2 = q/(1.0+q);         /* Compute the mass of the larger BH for unit total mass M=1. */
-  const REAL8 SL = chi_eff*m2;        /* Dimensionfull aligned spin of the largest BH. */
-  const REAL8 Sperp = chip*(m2*m2);   /* Dimensionfull spin component in the orbital plane. S_perp = S_2_perp */
-
 
   /*
    * Calculate plus and cross polarizations of the PhenomP model for individual m's.
