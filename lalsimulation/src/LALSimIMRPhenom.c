@@ -1195,12 +1195,16 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  * These are frequency-domain models for compact binaries at comparable masses,
  * tuned to numerical-relativity simulations.
  *  * IMRPhenomA models non-spinning binaries.
- *  * IMRPhenomB/C/D model spinning, but non-precessing binaries. IMRPhenomD is the most
- *    up-to-date model and should be used unless there are specific reasons to use an
- *    older version.
- *  * IMRPhenomP models precessing binaries, based on IMRPhenomC.
- *  * IMRPhenomPv2 models precessing binaries, based on IMRPhenomD, and should be used to
- *    instead of IMRPhenomP (unless there are good reasons not to).
+ *  * IMRPhenomB/C/D model spinning, but non-precessing binaries.
+ *    IMRPhenomD is the most up-to-date model and should be used
+ *    unless there are specific reasons to use an older version.
+ *  * IMRPhenomP models precessing binaries,
+ *    IMRPhenomP based on IMRPhenomC
+ *    (outdated)
+ *  * IMRPhenomPv2 models precessing binaries,
+ *    based on IMRPhenomD
+ *    (should be used instead of IMRPhenomP,
+ *    unless there are good reasons not to).
  *
  * @review IMRPhenomB routines reviewed by Frank Ohme, P. Ajith, Alex Nitz
  * and Riccardo Sturani. The review concluded with git hash
@@ -1211,6 +1215,9 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  * David Keitel.
  * The review concluded with git hash
  * db16d17013531cd10451c7d0c6906972ce731866 (Oct/Nov 2015).
+ *
+ * @review original IMRPhenomP not reviewed, nor going to be.
+ * IMRPhenomPv2 currently under review (Dec 2015).
  * @{
  */
 
