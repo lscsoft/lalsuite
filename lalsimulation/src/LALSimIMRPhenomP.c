@@ -92,7 +92,9 @@ int XLALSimIMRPhenomPCalculateModelParameters(
     const REAL8 s1z,                /**< Initial value of s1z: dimensionless spin of BH 1 */
     const REAL8 s2x,                /**< Initial value of s2x: dimensionless spin of BH 2 */
     const REAL8 s2y,                /**< Initial value of s2y: dimensionless spin of BH 2 */
-    const REAL8 s2z)                /**< Initial value of s2z: dimensionless spin of BH 2 */
+    const REAL8 s2z,                /**< Initial value of s2z: dimensionless spin of BH 2 */
+    IMRPhenomP_version_type IMRPhenomP_version /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
+)
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
   // Note that the angle phiJ defined below and alpha0 are degenerate. Therefore we do not output phiJ.
@@ -145,7 +147,20 @@ int XLALSimIMRPhenomPCalculateModelParameters(
   const REAL8 piM = LAL_PI * m_sec;
   const REAL8 v_ref = cbrt(piM * f_ref);
 
-  const REAL8 L0 = M*M * L2PNR(v_ref, eta); /* Use 2PN approximation for L. */
+  REAL8 L0 = 0.0;
+  switch (IMRPhenomP_version) {
+    case IMRPhenomPv1_V:
+      L0 = M*M * L2PNR_v1(v_ref, eta); /* Use 2PN approximation for L. */
+      break;
+    case IMRPhenomPv2_V:
+      L0 = M*M * L2PNR(v_ref, eta);   /* Use 2PN approximation for L. */
+      break;
+    default:
+      XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
+      XLAL_ERROR( XLAL_EINVAL );
+      break;
+    }
+
   const REAL8 Jx0 = L0 * lnhatx + m1_2*s1x + m2_2*s2x;
   const REAL8 Jy0 = L0 * lnhaty + m1_2*s1y + m2_2*s2y;
   const REAL8 Jz0 = L0 * lnhatz + m1_2*s1z + m2_2*s2z;
@@ -926,6 +941,20 @@ static REAL8 L2PNR(
   const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 eta) /**< Symmetric mass-ratio */
 {
+  const REAL8 eta2 = eta*eta;
+  const REAL8 x = v*v;
+  const REAL8 x2 = x*x;
+  /* Simple 2PN version of the orbital angular momentum L,
+     without any spin terms expressed as a function of v:
+     [Bohé et al, 1212.5520v2 Eq 4.7 first line] */
+  return (eta*(1.0 + (1.5 + eta/6.0)*x + (3.375 - (19.0*eta)/8. - eta2/24.0)*x2)) / sqrt(x);
+}
+
+/* 2PN orbital angular momentum L. For IMRPhenomP(v1). */
+static REAL8 L2PNR_v1(
+  const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
+  const REAL8 eta) /**< Symmetric mass-ratio */
+{
   const REAL8 mu = eta; /* M=1 */
   const REAL8 v2 = v*v;
   const REAL8 v3 = v2*v;
@@ -982,7 +1011,7 @@ static void WignerdCoefficients_SmallAngleApproximation(
   XLAL_CHECK_VOID(sin_beta_half != NULL, XLAL_EFAULT);
   /* cos(beta) = \hat J . \hat L = (1 + (Sp / (L + SL))^2 )^(-1/2) */
   /* We use the expression cos(beta/2) \approx (1 + s^2 / 4 )^(-1/2) where s := Sp / (L + SL) */
-  REAL8 s = Sp / (L2PNR(v, eta) + SL);  /* s := Sp / (L + SL) */
+  REAL8 s = Sp / (L2PNR_v1(v, eta) + SL);  /* s := Sp / (L + SL) */
   REAL8 s2 = s*s;
   *cos_beta_half = 1.0/sqrt(1.0 + s2/4.0);           /* cos(beta/2) */
   *sin_beta_half = sqrt(1.0 - 1.0/(1.0 + s2/4.0));   /* sin(beta/2) */

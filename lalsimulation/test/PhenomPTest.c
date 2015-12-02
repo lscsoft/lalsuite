@@ -220,6 +220,7 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
   REAL8 lnhatz = cos(0.4);
   REAL8 f_min = 20;
   REAL8 f_ref = f_min;
+  IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
   XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
@@ -238,13 +239,14 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
       s1z,                /**< Initial value of s1z: dimensionless spin of larger BH */
       s2x,                /**< Initial value of s2x: dimensionless spin of larger BH */
       s2y,                /**< Initial value of s2y: dimensionless spin of larger BH */
-      s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
+      s2z,                /**< Initial value of s2z: dimensionless spin of larger BH */
+      version);
 
   chi_eff = (m1_SI*chi1_l + m2_SI*chi2_l) / (m1_SI + m2_SI); /* Effective aligned spin */
 
-  REAL8 chi_eff_expected = 0.4378425;
-  REAL8 chip_expected = 0.17523825;
-  REAL8 thetaJ_expected = 0.298552787;
+  REAL8 chi_eff_expected = 0.4378425478398173;
+  REAL8 chip_expected = 0.1752382540388927;
+  REAL8 thetaJ_expected = 0.29197409372473093;
   REAL8 alpha0_expected = LAL_PI;
 
   print_difference("chi_eff", chi_eff, chi_eff_expected);
@@ -414,6 +416,7 @@ static void Test_XLALSimIMRPhenomP(void) {
   REAL8 lnhatz = cos(0.4);
   REAL8 f_min = 20;
   REAL8 f_ref = f_min;
+  IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
   XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
@@ -432,7 +435,8 @@ static void Test_XLALSimIMRPhenomP(void) {
       s1z,                /**< Initial value of s1z: dimensionless spin of larger BH */
       s2x,                /**< Initial value of s2x: dimensionless spin of larger BH */
       s2y,                /**< Initial value of s2y: dimensionless spin of larger BH */
-      s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
+      s2z,                /**< Initial value of s2z: dimensionless spin of larger BH */
+      version);
 
   COMPLEX16FrequencySeries *hptilde = NULL;
   COMPLEX16FrequencySeries *hctilde = NULL;
@@ -440,7 +444,6 @@ static void Test_XLALSimIMRPhenomP(void) {
   REAL8 deltaF = 0.06;
   REAL8 f_max = 0; // 8000;
   REAL8 distance = 100 * 1e6 * LAL_PC_SI;
-  IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
   int ret = XLALSimIMRPhenomP(
     &hptilde,                 /**< Frequency-domain waveform h+ */
@@ -467,8 +470,8 @@ static void Test_XLALSimIMRPhenomP(void) {
   prC("hp", hp);
   prC("hc", hc);
 
-  COMPLEX16 hp_expected = -5.14056e-23 + I * 2.62881e-23;
-  COMPLEX16 hc_expected = 2.62869e-23 + I * 5.13976e-23;
+  COMPLEX16 hp_expected = -5.15808e-23 + I * 2.64076e-23;
+  COMPLEX16 hc_expected = 2.64074e-23 + I * 5.15758e-23;
   const REAL8 eps = 1e-5;
 
   assert(
@@ -632,6 +635,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   REAL8 lnhatz = cos(0.4);
   REAL8 f_min = 20;
   REAL8 f_ref = f_min;
+  IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
   XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
@@ -650,7 +654,8 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
       s1z,                /**< Initial value of s1z: dimensionless spin of larger BH */
       s2x,                /**< Initial value of s2x: dimensionless spin of larger BH */
       s2y,                /**< Initial value of s2y: dimensionless spin of larger BH */
-      s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
+      s2z,                /**< Initial value of s2z: dimensionless spin of larger BH */
+      version);
 
   COMPLEX16FrequencySeries *hptilde = NULL;
   COMPLEX16FrequencySeries *hctilde = NULL;
@@ -658,7 +663,6 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   REAL8 deltaF = 0.06;
   REAL8 f_max = 0; // 8000;
   REAL8 distance = 100 * 1e6 * LAL_PC_SI;
-  IMRPhenomP_version_type version = IMRPhenomPv2_V;
 
   int ret = XLALSimIMRPhenomP(
     &hptilde,                 /**< Frequency-domain waveform h+ */
@@ -706,7 +710,8 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
       s1z,                /**< Initial value of s1z: dimensionless spin of larger BH */
       s2x,                /**< Initial value of s2x: dimensionless spin of larger BH */
       s2y,                /**< Initial value of s2y: dimensionless spin of larger BH */
-      s2z);               /**< Initial value of s2z: dimensionless spin of larger BH */
+      s2z,                /**< Initial value of s2z: dimensionless spin of larger BH */
+      version);
 
   COMPLEX16FrequencySeries *hptilde2 = NULL;
   COMPLEX16FrequencySeries *hctilde2 = NULL;
