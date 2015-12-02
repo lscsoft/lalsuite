@@ -106,6 +106,11 @@ static REAL8 L2PNR(
   const REAL8 eta  /**< Symmetric mass-ratio */
 );
 
+static REAL8 L2PNR_v1(
+  const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
+  const REAL8 eta  /**< Symmetric mass-ratio */
+);
+
 static void WignerdCoefficients(
   const REAL8 v,          /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 SL,         /**< Dimensionfull aligned spin */
