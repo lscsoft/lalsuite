@@ -633,17 +633,13 @@ int main(int argc, char *argv[])
       XLAL_CHECK( calcRms(&currentAntWeightsRMS, antweights) == XLAL_SUCCESS, XLAL_EFUNC );
 
       //Slide SFTs here -- need to slide the data and the estimated background
-      REAL4VectorAligned *TFdata_slided = NULL, *background_slided = NULL, *backgroundScaling_slided = NULL, *backgroundForihs2h0_slided = NULL, *backgroundScalingForihs2h0_slided = NULL;
+      REAL4VectorAligned *TFdata_slided = NULL, *background_slided = NULL, *backgroundScaling_slided = NULL;
       XLAL_CHECK( (TFdata_slided = XLALCreateREAL4VectorAligned(ffdata->numffts*ffdata->numfbins, 32)) != NULL, XLAL_EFUNC );
       XLAL_CHECK( (background_slided = XLALCreateREAL4VectorAligned(TFdata_slided->length, 32)) != NULL, XLAL_EFUNC );
       XLAL_CHECK( (backgroundScaling_slided = XLALCreateREAL4VectorAligned(TFdata_slided->length, 32)) != NULL, XLAL_EFUNC );
-      XLAL_CHECK( (backgroundForihs2h0_slided = XLALCreateREAL4VectorAligned(TFdata_slided->length, 32)) != NULL, XLAL_EFUNC );
-      XLAL_CHECK( (backgroundScalingForihs2h0_slided = XLALCreateREAL4VectorAligned(TFdata_slided->length, 32)) != NULL, XLAL_EFUNC );
       XLAL_CHECK( slideTFdata(TFdata_slided, &uvar, usableTFdata, binshifts) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( slideTFdata(background_slided, &uvar, background, binshifts) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( slideTFdata(backgroundScaling_slided, &uvar, backgroundScaling, binshifts) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( slideTFdata(backgroundForihs2h0_slided, &uvar, backgroundForihs2h0, binshifts) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( slideTFdata(backgroundScalingForihs2h0_slided, &uvar, backgroundScalingForihs2h0, binshifts) == XLAL_SUCCESS, XLAL_EFUNC );
 
       if (detectors->length>1) {
          XLALDestroyREAL4VectorAligned(usableTFdata);
@@ -687,8 +683,6 @@ int main(int argc, char *argv[])
       XLAL_CHECK( (aveTFnoisePerFbinRatio = calcAveTFnoisePerFbinRatio(background_slided, backgroundScaling_slided, ffdata->numffts)) != NULL, XLAL_EFUNC );
       XLALDestroyREAL4VectorAligned(background_slided);
       XLALDestroyREAL4VectorAligned(backgroundScaling_slided);
-      XLALDestroyREAL4VectorAligned(backgroundForihs2h0_slided);
-      XLALDestroyREAL4VectorAligned(backgroundScalingForihs2h0_slided);
 
       //Do the second FFT
       XLAL_CHECK( makeSecondFFT(ffdata, TFdata_weighted, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
