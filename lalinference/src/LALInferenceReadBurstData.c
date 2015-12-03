@@ -280,7 +280,6 @@ void LALInferenceBurstInjectionToVariables(SimBurst *theEventTable, LALInference
     LALInferenceAddVariable(vars,"duration",&duration,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "polar_angle", &pol_angle, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "polar_eccentricity", &eccentricity, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    //LALInferenceAddVariable(vars, "alpha", &pol_angle, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 }
 
 static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , char SNRpath[] ){
