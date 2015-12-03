@@ -64,7 +64,7 @@ static const REAL8 bCM[9][9] = {{0.0118334553095770112635110,0.01012448936626723
 {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.121}
 };
 
-const char *LALInferenceAnalyticNamesCBC[] = {"mass1","mass2","costheta_jn","phase","polarisation","rightascension","declination","logdistance","time","a_spin1","a_spin2","theta_spin1","theta_spin2","phi_spin1","phi_spin2"};
+const char *LALInferenceAnalyticNamesCBC[] = {"mass1","mass2","costheta_jn","phase","polarisation","rightascension","declination","logdistance","time","a_spin1","a_spin2","tilt_spin1", "tilt_spin2", "phi12", "phi_jl"};
 
 const REAL8 LALInferenceAnalyticMeansCBC[] =
 {
