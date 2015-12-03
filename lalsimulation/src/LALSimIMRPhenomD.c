@@ -317,3 +317,55 @@ static int IMRPhenomDGenerateFD(
 
   return status;
 }
+
+/**
+ * Function to return the frequency (in Hz) of the peak of the frequency
+ * domain amplitude for the IMRPhenomD model.
+ *
+ * The peak is a parameter in the PhenomD model given by Eq. 20 in 1508.07253
+ * where it is called f_peak in the paper.
+ *  All input parameters should be in SI units. Angles should be in radians.
+ */
+double XLALIMRPhenomDGetPeakFreq(
+    const REAL8 m1_in,                 /**< mass of companion 1 [solar masses] */
+    const REAL8 m2_in,                 /**< mass of companion 2 [solar masses] */
+    const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
+    const REAL8 chi2_in               /**< aligned-spin of companion 2 */
+) {
+    // Ensure that m1 > m2 and that chi1 is the spin on m1
+    REAL8 chi1, chi2, m1, m2;
+    if (m1_in>m2_in) {
+       chi1 = chi1_in;
+       chi2 = chi2_in;
+       m1   = m1_in;
+       m2   = m2_in;
+    } else { // swap spins and masses
+       chi1 = chi2_in;
+       chi2 = chi1_in;
+       m1   = m2_in;
+       m2   = m1_in;
+    }
+
+    const REAL8 M = m1 + m2;
+    const REAL8 M_sec = M * LAL_MTSUN_SI; // Conversion factor Hz -> dimensionless frequency
+
+    REAL8 eta = m1 * m2 / (M * M);
+    if (eta > 0.25 || eta < 0.0)
+      XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
+
+    // Calculate phenomenological parameters
+    REAL8 finspin = FinalSpin0815(eta, chi1, chi2);
+
+    if (finspin < MIN_FINAL_SPIN)
+          XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
+                          the model might misbehave here.", finspin);
+    IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2, finspin);
+    if (!pAmp) XLAL_ERROR(XLAL_EFUNC);
+
+    // PeakFreq, converted to Hz
+    REAL8 PeakFreq = ( pAmp->fmaxCalc ) / M_sec;
+
+    LALFree(pAmp);
+
+    return PeakFreq;
+}
