@@ -288,6 +288,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
         stretch = 1;
         walk = 1;
         skyring = 0;
+        distance = 1;
         kde = 0;
         spline_cal = 0;
         psdfit = 0;
@@ -354,6 +355,7 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
         LALInferenceGetProcParamVal(command_line, "--bimodalGaussianLikelihood") ||
         LALInferenceGetProcParamVal(command_line, "--rosenbrockLikelihood")) {
         analytic_test = 1;
+        distance = 0;
     }
     LALInferenceAddINT4Variable(propArgs, "analytical_test", analytic_test, LALINFERENCE_PARAM_FIXED);
 
