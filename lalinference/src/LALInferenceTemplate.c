@@ -1228,7 +1228,6 @@ void LALInferenceTemplateXLALSimBurstSineGaussianF(LALInferenceModel *model)
     tau=*(REAL8*) LALInferenceGetVariable(model->params, "duration");
     quality=tau*freq*LAL_SQRT2*LAL_PI;
   }
-  //alpha=*(REAL8*) LALInferenceGetVariable(model->params, "alpha");
   REAL8 polar_angle=*(REAL8*) LALInferenceGetVariable(model->params, "polar_angle");
   /* If someone wants to use old parametrization, allow for */
   REAL8 polar_ecc=*(REAL8*) LALInferenceGetVariable(model->params, "polar_eccentricity");
