@@ -46,9 +46,9 @@ SWIGLAL(
 #endif
 
 
-extern const char *LALInferenceAnalyticNamesCBC[];
+extern const char *LALInferenceAnalyticNamesCBC[15];
 
-extern const REAL8 LALInferenceAnalyticMeansCBC[];
+extern const REAL8 LALInferenceAnalyticMeansCBC[15];
 
 /* Scaling used for the CBC analytic likelihood parameters */
 extern const REAL8 scaling[15];

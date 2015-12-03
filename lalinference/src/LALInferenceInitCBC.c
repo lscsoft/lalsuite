@@ -1367,8 +1367,8 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence_banana(LALInferenceRunSta
   struct varSettings setup[]=
   {
     {.name="time", .val=0.0, .min=-2., .max=2.},
-    {.name="m1", .val=16., .min=14., .max=18.},
-    {.name="m2", .val=7., .min=5., .max=9.},
+    {.name="mass1", .val=16., .min=14., .max=18.},
+    {.name="mass2", .val=7., .min=5., .max=9.},
     {.name="logdistance", .val=log(50.), .min=log(45.), .max=log(55.)},
     {.name="costheta_jn", .val=cos(LAL_PI/2.), .min=cos(3.570796327), .max=cos(-0.429203673)},
     {.name="phase", .val=LAL_PI, .min=1.141592654, .max=5.141592654},
