@@ -786,10 +786,20 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 	LnHat[1] = 0.;
 	LnHat[2] = cos(inc);
 
-    REAL8		theta0 = atan(LnHat[2] / LnHat[0]);	/* theta0 is between 0 and Pi */
-    rHat[0] = sin(theta0);
-    rHat[1] = 0;
-    rHat[2] = cos(theta0);
+	/*
+	 * Set the radial direction - need to take care to avoid singularity
+	 * if L is along z axis
+	 */
+	if (LnHat[2] > 0.9999) {
+		rHat[0] = 1.;
+		rHat[1] = rHat[2] = 0.;
+	} else {
+		REAL8		theta0 = atan(-LnHat[2] / LnHat[0]);	/* theta0 is between 0
+									 * and Pi */
+		rHat[0] = sin(theta0);
+		rHat[1] = 0;
+		rHat[2] = cos(theta0);
+	}
 
 	/* Now we can complete the triad */
 	vHat[0] = CalculateCrossProductPrec(0, LnHat, rHat);
