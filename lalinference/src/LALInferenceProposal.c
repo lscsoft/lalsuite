@@ -95,7 +95,7 @@ const char *const splineCalibrationProposalName = "SplineCalibration";
 const char *const distanceLikelihoodProposalName = "DistanceLikelihood";
 
 static const char *intrinsicNames[] = {"chirpmass", "q", "eta", "mass1", "mass2", "a_spin1", "a_spin2",
-  "tilt_spin1", "tilt_spin2", "phi12","frequency", "quality", "duration","polar_angle", "phase", "polar_eccentricity", NULL};
+  "tilt_spin1", "tilt_spin2", "phi12", "phi_jl", "frequency", "quality", "duration","polar_angle", "phase", "polar_eccentricity", NULL};
 
 static const char *extrinsicNames[] = {"rightascension", "declination", "cosalpha", "azimuth", "polarisation", "distance",
   "logdistance", "time", "costheta_jn", "t0", "theta","hrss", "loghrss", NULL};
