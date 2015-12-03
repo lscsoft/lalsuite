@@ -22,12 +22,15 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 import argparse
+import errno
 from optparse import IndentedHelpFormatter
 import glob
 import inspect
 import itertools
 import os
+import shutil
 import sys
+import tempfile
 from matplotlib import cm
 from .. import cmap
 
@@ -288,3 +291,24 @@ def sqlite_get_filename(connection):
     except ValueError:
         raise RuntimeError('Expected exactly one attached database')
     return filename
+
+
+def rename(src, dst):
+    """Like os.rename(src, dst), but works across different devices because it
+    catches and handles EXDEV ('Invalid cross-device link') errors. This
+    operation is atomic, even if src and dst are on different devices."""
+    try:
+        os.rename(src, dst)
+    except OSError as e:
+        if e.errno == errno.EXDEV:
+            dir, suffix = os.path.split(dst)
+            tmpfid, tmpdst = tempfile.mkstemp(dir=dir, suffix=suffix)
+            try:
+                os.close(tmpfid)
+                shutil.copy2(src, tmpdst)
+                os.rename(tmpdst, dst)
+            except:
+                os.remove(tmpdst)
+                raise
+        else:
+            raise
