@@ -781,7 +781,19 @@ static int PhenomPCoreOneFrequency(
 
   /* Calculate intermediate expressions cos(beta/2), sin(beta/2) and powers thereof for Wigner d's. */
   REAL8 cBetah, sBetah; /* cos(beta/2), sin(beta/2) */
-  WignerdCoefficients(omega_cbrt, SL, eta, Sperp, &cBetah, &sBetah);
+  switch (IMRPhenomP_version) {
+    case IMRPhenomPv1_V:
+      WignerdCoefficients_SmallAngleApproximation(omega_cbrt, SL, eta, Sperp, &cBetah, &sBetah);
+      break;
+    case IMRPhenomPv2_V:
+      WignerdCoefficients(omega_cbrt, SL, eta, Sperp, &cBetah, &sBetah);
+      break;
+  default:
+    XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
+    XLAL_ERROR( XLAL_EINVAL );
+    break;
+  }
+
   const REAL8 cBetah2 = cBetah*cBetah;
   const REAL8 cBetah3 = cBetah2*cBetah;
   const REAL8 cBetah4 = cBetah3*cBetah;
@@ -934,6 +946,31 @@ static REAL8 L2PNR(
 
 /* Expressions used for the WignerD symbol. */
 static void WignerdCoefficients(
+  const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
+  const REAL8 SL,       /**< Dimensionfull aligned spin */
+  const REAL8 eta,      /**< Symmetric mass-ratio */
+  const REAL8 Sp,       /**< Dimensionfull spin component in the orbital plane */
+  REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
+  REAL8 *sin_beta_half) /**< Output: sin(beta/2) */
+{
+  XLAL_CHECK_VOID(cos_beta_half != NULL, XLAL_EFAULT);
+  XLAL_CHECK_VOID(sin_beta_half != NULL, XLAL_EFAULT);
+  /* cos(beta) = \hat J . \hat L = (L + SL) / sqrt( (L + SL)^2 + Sp^2 )
+               = sign(L + SL) * (1 + (Sp / (L + SL))^2 )^(-1/2) */
+  /* We define the shorthand s := Sp / (L + SL) */
+  const REAL8 L = L2PNR(v, eta);
+  if (L + SL < 0.0)
+    XLAL_PRINT_WARNING("Warning: IMRPhenomP L + SL < 0. The waveform might not be accurate here.\n");
+    // We ignore the sign of L + SL below.
+  REAL8 s = Sp / (L + SL);  /* s := Sp / (L + SL) */
+  REAL8 s2 = s*s;
+  REAL8 cos_beta = 1.0 / sqrt(1.0 + s2);
+  *cos_beta_half = + sqrt( (1.0 + cos_beta) / 2.0 );  /* cos(beta/2) */
+  *sin_beta_half = + sqrt( (1.0 - cos_beta) / 2.0 );  /* sin(beta/2) */
+}
+
+/* Expressions used for the WignerD symbol with small angle approximation. For IMRPhenomP(v1). */
+static void WignerdCoefficients_SmallAngleApproximation(
   const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 SL,       /**< Dimensionfull aligned spin */
   const REAL8 eta,      /**< Symmetric mass-ratio */
