@@ -439,6 +439,10 @@ static int PhenomPCore(
       // We use the more general Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009 here.
       // Final spin wrapper assumes that m1 >= m2.
       finspin = FinalSpinBarausse2009_all_in_plane_spin_on_larger_BH(eta, chi2_l, chi1_l, chip);
+      if( fabs(finspin) > 1.0 ) {
+        XLAL_PRINT_WARNING("Warning: final spin magnitude %g > 1. Setting final spin magnitude = 1.", finspin);
+        finspin = copysign(1.0, finspin);
+      }
 
       // IMRPhenomD assumes that m1 >= m2.
       pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi2_l, chi1_l, finspin);
@@ -1151,8 +1155,8 @@ UNUSED static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
 
   REAL8 finspin = FinalSpinBarausse2009_all_spin_on_larger_BH(eta, chi, chip);
   if( fabs(finspin) > 1.0 ) {
-    XLAL_PRINT_ERROR("Error: magnitude of final spin > 1!");
-    XLAL_ERROR_NULL( XLAL_EDOM );
+    XLAL_PRINT_WARNING("Warning: final spin magnitude %g > 1. Setting final spin magnitude = 1.", finspin);
+    finspin = copysign(1.0, finspin);
   }
 
   p->afin = finspin;
