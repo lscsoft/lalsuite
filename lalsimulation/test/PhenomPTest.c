@@ -467,8 +467,8 @@ static void Test_XLALSimIMRPhenomP(void) {
   prC("hp", hp);
   prC("hc", hc);
 
-  COMPLEX16 hp_expected = -5.14089e-23 + I * 2.62907e-23;
-  COMPLEX16 hc_expected =  2.62896e-23 + I * 5.14009e-23;
+  COMPLEX16 hp_expected = -5.14056e-23 + I * 2.62881e-23;
+  COMPLEX16 hc_expected = 2.62869e-23 + I * 5.13976e-23;
   const REAL8 eps = 1e-5;
 
   assert(
