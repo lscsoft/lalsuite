@@ -206,29 +206,26 @@ def gps_to_iso8601(gps_time):
     -------
 
     >>> gps_to_iso8601(1000000000.01)
-    '2011-09-14T01:46:25.00999999'
+    '2011-09-14T01:46:25.010000'
     >>> gps_to_iso8601(1000000000)
-    '2011-09-14T01:46:25'
+    '2011-09-14T01:46:25.000000'
     >>> gps_to_iso8601(1000000000.999999)
     '2011-09-14T01:46:25.999999'
     >>> gps_to_iso8601(1000000000.9999999)
-    '2011-09-14T01:46:26'
+    '2011-09-14T01:46:26.000000'
     >>> gps_to_iso8601(1000000814.999999)
     '2011-09-14T01:59:59.999999'
     >>> gps_to_iso8601(1000000814.9999999)
-    '2011-09-14T02:00:00'
+    '2011-09-14T02:00:00.000000'
     """
     gps_seconds_fraction, gps_seconds = math.modf(gps_time)
-    if gps_seconds_fraction:
-        gps_seconds_fraction = '{0:g}'.format(gps_seconds_fraction)
-        if gps_seconds_fraction == '1':
-            gps_seconds_fraction = ''
-            gps_seconds += 1
-        else:
-            assert gps_seconds_fraction.startswith('0.')
-            gps_seconds_fraction = gps_seconds_fraction[1:]
+    gps_seconds_fraction = '{0:6f}'.format(gps_seconds_fraction)
+    if gps_seconds_fraction[0] == '1':
+        gps_seconds += 1
     else:
-        gps_seconds_fraction = ''
+        assert gps_seconds_fraction[0] == '0'
+    assert gps_seconds_fraction[1] == '.'
+    gps_seconds_fraction = gps_seconds_fraction[1:]
     year, month, day, hour, minute, second, _, _, _ = lal.GPSToUTC(int(gps_seconds))
     return '{0:04d}-{1:02d}-{2:02d}T{3:02d}:{4:02d}:{5:02d}{6:s}'.format(
         year, month, day, hour, minute, second, gps_seconds_fraction)
@@ -254,7 +251,7 @@ def iso8601_to_gps(iso8601):
     -------
 
     >>> gps_to_iso8601(1129501781.2)
-    '2015-10-21T22:29:24.2'
+    '2015-10-21T22:29:24.200000'
     >>> iso8601_to_gps('2015-10-21T22:29:24.2')
     1129501781.2
     """
