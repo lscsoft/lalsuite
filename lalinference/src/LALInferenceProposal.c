@@ -2776,13 +2776,20 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
   MatchedFilterSNR *= new_x/old_x;
   LALInferenceSetREAL8Variable(proposedParams,"optimal_snr",OptimalSNR);
   LALInferenceSetREAL8Variable(proposedParams,"matched_filter_snr",MatchedFilterSNR);
-  if(LALInferenceCheckVariable(currentParams,"H1_optimal_snr"))
-    LALInferenceSetREAL8Variable(proposedParams,"H1_optimal_snr",LALInferenceGetREAL8Variable(currentParams,"H1_optimal_snr") * (new_x/old_x));
-  if(LALInferenceCheckVariable(currentParams,"L1_optimal_snr"))
-    LALInferenceSetREAL8Variable(proposedParams,"L1_optimal_snr",LALInferenceGetREAL8Variable(currentParams,"L1_optimal_snr") * (new_x/old_x));
-  if(LALInferenceCheckVariable(currentParams,"V1_optimal_snr"))
-    LALInferenceSetREAL8Variable(proposedParams,"V1_optimal_snr",LALInferenceGetREAL8Variable(currentParams,"V1_optimal_snr") * (new_x/old_x));
+
   
+  /* Update individual detector information */
+  const char *ifonames[5]={"H1","L1","V1","I1","J1"};
+  char pname[64]="";
+  for(UINT4 i=0;i<5;i++)
+  {
+    sprintf(pname,"%s_optimal_snr",ifonames[i]);
+    if(LALInferenceCheckVariable(currentParams,pname))
+      LALInferenceSetREAL8Variable(proposedParams,pname,LALInferenceGetREAL8Variable(currentParams,pname) * (new_x/old_x));
+    sprintf(pname,"%s_cplx_snr_amp",ifonames[i]);
+    if(LALInferenceCheckVariable(currentParams,pname))
+      LALInferenceSetREAL8Variable(proposedParams,pname,LALInferenceGetREAL8Variable(currentParams,pname) * (new_x/old_x));
+  }
   
   REAL8 logxdjac;
   /* Set distance */
