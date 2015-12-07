@@ -4614,7 +4614,7 @@ double XLALSimInspiralGetFrequency(
             freq = XLALSimIMRPhenomCGetFinalFreq(m1Msun, m2Msun, chi);
             break;
 		case fIMRPhenomDPeak:
-			freq = XLALIMRPhenomDGetPeakFreq(m1, m2, S1z, S2z);
+			freq = XLALIMRPhenomDGetPeakFreq(m1Msun, m2Msun, S1z, S2z);
 			break;
 
         /* EOBNR ringdown frequencies all come from the same code,

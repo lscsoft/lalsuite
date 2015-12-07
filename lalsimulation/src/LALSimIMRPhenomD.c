@@ -327,8 +327,8 @@ static int IMRPhenomDGenerateFD(
  *  All input parameters should be in SI units. Angles should be in radians.
  */
 double XLALIMRPhenomDGetPeakFreq(
-    const REAL8 m1_in,                 /**< mass of companion 1 [solar masses] */
-    const REAL8 m2_in,                 /**< mass of companion 2 [solar masses] */
+    const REAL8 m1_in,                 /**< mass of companion 1 [kg] */
+    const REAL8 m2_in,                 /**< mass of companion 2 [kg] */
     const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
     const REAL8 chi2_in               /**< aligned-spin of companion 2 */
 ) {
