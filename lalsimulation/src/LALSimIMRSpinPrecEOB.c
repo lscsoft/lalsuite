@@ -719,7 +719,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   INT4 k=0;
   UINT4 j=0;
   LIGOTimeGPS tc = LIGOTIMEGPSZERO;
-  REAL8 coa_phase_offset = 0;
+  //REAL8 coa_phase_offset = 0;
 
   REAL8Vector *AttachParams = NULL;
 
@@ -728,7 +728,9 @@ int XLALSimIMRSpinEOBWaveformAll(
   INT4 SpinAlignedEOBversion = 2;
 
   /* Vector to store the initial spins */
-  REAL8 spin1[3] = {0,0,0}, spin2[3] = {0,0,0}, InitLhat[3] = {sin(inc),0.,cos(inc)};
+  //REAL8 spin1[3] = {0,0,0}, spin2[3] = {0,0,0}, InitLhat[3] = {sin(inc),0.,cos(inc)};
+  REAL8 spin1[3] = {0,0,0}, spin2[3] = {0,0,0}, InitLhat[3] = {0.0,0.0,1.0};
+  // FIXME
   memcpy( spin1, INspin1, 3*sizeof(REAL8));
   memcpy( spin2, INspin2, 3*sizeof(REAL8));
 
@@ -1320,7 +1322,8 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   //values = XLALCreateREAL8Vector( 14 );
   REAL8 incl_temp = 0.0;  // !!!! For comparison with C++ and NR we need inc = 0 for initial conditions
-  incl_temp = inc;
+  
+  //incl_temp = inc; //FIXME
   /* The initial condition construction is based on PRD 74, 104005 (2006) */
   /* If the initial spin opening angles are small, then use SEOBNRv2 (aligned-spin) dyamics */
   if ( SpinsAlmostAligned ) {
@@ -2067,7 +2070,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     }
 
   /* Having found the time of peak, we set the time of coalescence */
-  XLALGPSAdd(&tc, -mTScaled * (tPeakOmega + HiSRstart) );
+  //XLALGPSAdd(&tc, -mTScaled * (tPeakOmega + HiSRstart) );
 
   /* Calculate J at merger */
   spline = gsl_spline_alloc( gsl_interp_cspline, retLenHi );
@@ -2085,7 +2088,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   /* Get the phase offset required to ensure that the orbital phase = phiC at
    * tPeakOmega */
-  coa_phase_offset = values->data[12] - phiC;
+  //coa_phase_offset = values->data[12] - phiC;
 
   /* Calculate dr/dt */
   memset( dvalues->data, 0, 14*sizeof(dvalues->data[0]));
@@ -2207,10 +2210,12 @@ int XLALSimIMRSpinEOBWaveformAll(
   JframeEz[2] = Jz / magJ;
 
   if ( fabs(1.+ JframeEz[2]) <= 1.0e-13 )
-  { JframeEx[0] = -1.; JframeEx[1] = 0.; JframeEx[2] = 0.; } // anti-aligned
+  //{ JframeEx[0] = -1.; JframeEx[1] = 0.; JframeEx[2] = 0.; } // anti-aligned
+  { JframeEx[0] = 0.0; JframeEx[1] = 1.0; JframeEx[2] = 0.; } // anti-aligned
   else {
       if ( fabs(1. - JframeEz[2]) <= 1.0e-13 )
-          { JframeEx[0] = 1.; JframeEx[1] = 0.; JframeEx[2] = 0.; }  // aligned
+          //{ JframeEx[0] = 1.; JframeEx[1] = 0.; JframeEx[2] = 0.; }  // aligned
+          { JframeEx[0] = 0.0; JframeEx[1] = -1.0; JframeEx[2] = 0.; }  // aligned
       else {
             JframeEx[0] = JframeEz[1];
             JframeEx[1] = -JframeEz[0];
@@ -2253,10 +2258,6 @@ int XLALSimIMRSpinEOBWaveformAll(
   hIMRJTS    = XLALCreateCOMPLEX16TimeSeries( "HIMRJ",
               &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
 
-  hPlusTS  = XLALCreateREAL8TimeSeries( "H_PLUS",
-              &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
-  hCrossTS = XLALCreateREAL8TimeSeries( "H_CROSS",
-              &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
 
   if ( !(tlist = XLALCreateREAL8Vector( retLenLow ))
     || !(tlistRDPatch = XLALCreateREAL8Vector( retLenLow + retLenRDPatchLow )) )
@@ -3156,6 +3157,44 @@ int XLALSimIMRSpinEOBWaveformAll(
   hIMR20JTSHi  = XLALSphHarmTimeSeriesGetMode( hIMRlmJTSHi, 2, 0 );
   hIMR2m1JTSHi = XLALSphHarmTimeSeriesGetMode( hIMRlmJTSHi, 2, -1);
   hIMR2m2JTSHi = XLALSphHarmTimeSeriesGetMode( hIMRlmJTSHi, 2, -2);
+  
+  // find tc which is accosiated with max of invariant amplitude:
+  REAL8Vector *invAmp = XLALCreateREAL8Vector( hIMR22JTSHi->data->length ); 
+  for (i=0; i < retLenHi + retLenRDPatchHi; i++ ){
+      invAmp->data[i] =  creal(hIMR22JTSHi->data->data[i])*creal(hIMR22JTSHi->data->data[i]) + 
+          cimag(hIMR22JTSHi->data->data[i]) * cimag(hIMR22JTSHi->data->data[i])  + 
+           creal(hIMR21JTSHi->data->data[i])*creal(hIMR21JTSHi->data->data[i]) + 
+          cimag(hIMR21JTSHi->data->data[i]) * cimag(hIMR21JTSHi->data->data[i])  + 
+           creal(hIMR20JTSHi->data->data[i])*creal(hIMR20JTSHi->data->data[i]) + 
+          cimag(hIMR20JTSHi->data->data[i]) * cimag(hIMR20JTSHi->data->data[i])  + 
+           creal(hIMR2m1JTSHi->data->data[i])*creal(hIMR2m1JTSHi->data->data[i]) + 
+          cimag(hIMR2m1JTSHi->data->data[i]) * cimag(hIMR2m1JTSHi->data->data[i])  + 
+           creal(hIMR2m2JTSHi->data->data[i])*creal(hIMR2m2JTSHi->data->data[i]) + 
+          cimag(hIMR2m2JTSHi->data->data[i]) * cimag(hIMR2m2JTSHi->data->data[i]);
+  }
+  REAL8 invAmpmax = invAmp->data[0];
+  int i_maxiA = 0;
+  for (i=1; i < retLenHi + retLenRDPatchHi - 1; i++){
+      if ( invAmp->data[i] >= invAmp->data[i-1] && invAmp->data[i] > invAmp->data[i+1] && invAmp->data[i] > invAmpmax){
+          i_maxiA = i;
+          invAmpmax = invAmp->data[i];
+      }
+  } 
+  if(debugPK){  
+      XLAL_PRINT_INFO("We set tc = %.16e, %.16e \n", (tlistRDPatchHi->data[i_maxiA] ), -mTScaled * (tlistRDPatchHi->data[i_maxiA] ));
+  }
+
+
+  //XLALGPSAdd( &tc, -mTScaled * (tlistRDPatchHi->data[i_maxiA] + HiSRstart));
+  XLALGPSAdd( &tc, -mTScaled * (tlistRDPatchHi->data[i_maxiA] ));
+  XLALDestroyREAL8Vector( invAmp ); // we don't need it anymore
+
+  hPlusTS  = XLALCreateREAL8TimeSeries( "H_PLUS",
+              &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
+  hCrossTS = XLALCreateREAL8TimeSeries( "H_CROSS",
+              &tc, 0.0, deltaT, &lalStrainUnit, retLenLow + retLenRDPatchLow );
+
+
 
   *hIMRlmJTSHiOutput = hIMRlmJTSHi;
   if (debugPK){
@@ -3340,9 +3379,17 @@ int XLALSimIMRSpinEOBWaveformAll(
 /* *********************************************************************************
  * *********************************************************************************
  * STEP 9) Compute h+, hx
- * *********************************************************************************
+ * ********************************************************************************
  * **********************************************************************************/
-    if ( SpinsAlmostAligned ) {
+    //incl_temp = inc;
+    //incl_temp = 0.0;
+
+    Y22 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, 2 );
+    Y2m2 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, -2 );
+    Y21 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, 1 );
+    Y2m1 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, -1 );
+    Y20 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, 0 );
+    /*if ( SpinsAlmostAligned ) {
         Y22 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, 2 );
         Y2m2 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, -2 );
         Y21 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, 1 );
@@ -3350,12 +3397,12 @@ int XLALSimIMRSpinEOBWaveformAll(
         Y20 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, 0 );
     }
     else {
-        Y22 = XLALSpinWeightedSphericalHarmonic( 0, coa_phase_offset, -2, 2, 2 );
-        Y2m2 = XLALSpinWeightedSphericalHarmonic( 0, coa_phase_offset, -2, 2, -2 );
-        Y21 = XLALSpinWeightedSphericalHarmonic( 0, coa_phase_offset, -2, 2, 1 );
-        Y2m1 = XLALSpinWeightedSphericalHarmonic( 0, coa_phase_offset, -2, 2, -1 );
-        Y20 = XLALSpinWeightedSphericalHarmonic( 0, coa_phase_offset, -2, 2, 0 );
-    }
+        Y22 = XLALSpinWeightedSphericalHarmonic( incl_temp, coa_phase_offset, -2, 2, 2 );
+        Y2m2 = XLALSpinWeightedSphericalHarmonic( incl_temp, coa_phase_offset, -2, 2, -2 );
+        Y21 = XLALSpinWeightedSphericalHarmonic( incl_temp, coa_phase_offset, -2, 2, 1 );
+        Y2m1 = XLALSpinWeightedSphericalHarmonic( incl_temp, coa_phase_offset, -2, 2, -1 );
+        Y20 = XLALSpinWeightedSphericalHarmonic( incl_temp, coa_phase_offset, -2, 2, 0 );
+    }*/
 
     if(debugPK){ XLAL_PRINT_INFO("Ylm %e %e %e %e %e %e %e %e %e %e \n", creal(Y22), cimag(Y22), creal(Y2m2), cimag(Y2m2), creal(Y21), cimag(Y21), creal(Y2m1), cimag(Y2m1), creal(Y20), cimag (Y20)); fflush(NULL); }
 
