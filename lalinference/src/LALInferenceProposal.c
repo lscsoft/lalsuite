@@ -2786,9 +2786,6 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
     sprintf(pname,"%s_optimal_snr",ifonames[i]);
     if(LALInferenceCheckVariable(currentParams,pname))
       LALInferenceSetREAL8Variable(proposedParams,pname,LALInferenceGetREAL8Variable(currentParams,pname) * (new_x/old_x));
-    sprintf(pname,"%s_cplx_snr_amp",ifonames[i]);
-    if(LALInferenceCheckVariable(currentParams,pname))
-      LALInferenceSetREAL8Variable(proposedParams,pname,LALInferenceGetREAL8Variable(currentParams,pname) * (new_x/old_x));
   }
   
   REAL8 logxdjac;
