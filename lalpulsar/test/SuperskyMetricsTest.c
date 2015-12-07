@@ -28,7 +28,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/MetricUtils.h>
 
-#include "../src/GSLHelpers.h"
+#include <lal/GSLHelpers.h>
 
 #define NUM_POINTS 10
 #define NUM_SEGS 3

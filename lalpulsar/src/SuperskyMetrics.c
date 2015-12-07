@@ -35,7 +35,7 @@
 #include <lal/MetricUtils.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
-#include "GSLHelpers.h"
+#include <lal/GSLHelpers.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

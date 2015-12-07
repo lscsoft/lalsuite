@@ -45,7 +45,7 @@
 #include <lal/UniversalDopplerMetric.h>
 #include <lal/MetricUtils.h>
 
-#include "GSLHelpers.h"
+#include <lal/GSLHelpers.h>
 
 /**
  * \author Reinhard Prix, Karl Wette
