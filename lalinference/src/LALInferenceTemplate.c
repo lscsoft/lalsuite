@@ -760,6 +760,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
       memset(model->freqhCross->data->data,0,sizeof(model->freqhCross->data->data[0])*model->freqhCross->data->length);
       if ( hptilde ) XLALDestroyCOMPLEX16FrequencySeries(hptilde);
       if ( hctilde ) XLALDestroyCOMPLEX16FrequencySeries(hctilde);
+      if ( hplus) XLALDestroyREAL8TimeSeries(hplus);
+      if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
       XLALSimInspiralDestroyTestGRParam(nonGRparams);
       errnum&=~XLAL_EFUNC; /* Mask out the internal function failure bit */
       switch(errnum)
