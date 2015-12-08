@@ -442,7 +442,6 @@ def autocorrelation(H, out_duration):
     H_len = H.data.data.size
     nsamples = 2 * H_len
     sample_rate = nsamples * H.deltaF
-    duration = 1 / H.deltaF
 
     # Compute autopower spectral density.
     power = np.empty(nsamples, H.data.data.dtype)
