@@ -628,6 +628,19 @@ int XLALSimIMRSpinEOBWaveform(
     XLALSimIMRSpinEOBWaveformAll(hplus, hcross, &dynamicsHi, &hlmPTSout, &hlmPTSHi, &hIMRlmJTSHi, &hIMR, &AttachPars,
                         phiC, deltaT, m1SI, m2SI, fMin, r, inc, INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
 
+    if (*hplus == NULL || *hcross == NULL){
+         XLALPrintError("Houston-2, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n", 
+                   m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc,  INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
+
+         XLAL_ERROR( XLAL_ENOMEM );
+    }
+    if (*hplus->data == NULL || *hcross->data == NULL){
+         XLALPrintError("Houston-3, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n", 
+                   m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc,  INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
+
+         XLAL_ERROR( XLAL_ENOMEM );
+    }
+
     XLALDestroyREAL8Vector( dynamicsHi );
     XLALDestroyREAL8Vector( AttachPars );
     XLALDestroySphHarmTimeSeries(hlmPTSout);
@@ -2824,12 +2837,12 @@ int XLALSimIMRSpinEOBWaveformAll(
           XLAL_PRINT_INFO("The Amplitude-related time is found and it's %f \n", tAmpMax);
       }
   }
-  if (debugPK){
-      XLALPrintError("Houston, we've got a problem SOS, SOS, SOS, cannot find the RD attachment point... m1 = %.16e, m2 = %.16e, fMin = %.16e, inclination = %.16e,  Mtotal = %.16e, eta = %.16e, spin1 = {%.16e, %.16e, %.16e},   spin2 = {%.16e, %.16e, %.16e} \n", 
-               m1, m2, (double)fMin, (double)inc, mTotal, eta, spin1[0], spin1[1], spin1[2], spin2[0], spin2[1], spin2[2]);
-  }
 
   if( foundAmp==0 && foundPeakOmega == 0){
+      if (debugPK){
+          XLALPrintError("Houston, we've got a problem SOS, SOS, SOS, cannot find the RD attachment point... m1 = %.16e, m2 = %.16e, fMin = %.16e, inclination = %.16e,  Mtotal = %.16e, eta = %.16e, spin1 = {%.16e, %.16e, %.16e},   spin2 = {%.16e, %.16e, %.16e} \n", 
+                   m1, m2, (double)fMin, (double)inc, mTotal, eta, spin1[0], spin1[1], spin1[2], spin2[0], spin2[1], spin2[2]);
+      }
       
       tAttach = tAttach -2.0;    
       //FREE_EVERYTHING

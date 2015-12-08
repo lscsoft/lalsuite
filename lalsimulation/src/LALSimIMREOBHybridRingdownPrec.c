@@ -67,6 +67,7 @@ static INT4 XLALSimIMREOBHybridRingdownWave(
 
     /* For checking GSL return codes */
     INT4 gslStatus;
+    INT4 debugSB = 0;
 
     UINT4 i, j, k, nmodes = 8;
 
@@ -229,6 +230,15 @@ static INT4 XLALSimIMREOBHybridRingdownWave(
     /* Build ring-down waveforms */
 
     REAL8 timeOffset = fmod( matchrange->data[1], dt/m) * dt;
+
+    if (debugSB){
+       /// Print the solution: 
+       for (i=0; i<nmodes; i++){
+           printf("RD info: QNM: (re) %.16e, (im) %.16e, Amp %16e \n", creal(modefreqs->data[i]), 
+                    cimag(modefreqs->data[i]), modeamps->data[i]);
+       }
+
+    }
 
     for (j = 0; j < rdwave1->length; ++j)
     {

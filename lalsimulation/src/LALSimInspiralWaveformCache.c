@@ -812,6 +812,12 @@ static int StoreTDHCache(LALSimInspiralWaveformCache *cache,
     // NB: XLALCut... creates a new Series object and copies data and metadata
     XLALDestroyREAL8TimeSeries(cache->hplus);
     XLALDestroyREAL8TimeSeries(cache->hcross);
+    if (hlpus == NULL || hcross == NULL || hplus->data == NULL || hcross->data == NULL){
+        XLALPrintError("We have null pointers for h+, hx in StoreTDHCache \n");
+        XLALPrintError("Houston-S, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n", 
+                   m1, m2, (double)f_min, S1x, S1y, S1z, S2x, S2y, S2z);
+        return XLAL_ENOMEM;
+    }
     cache->hplus = XLALCutREAL8TimeSeries(hplus, 0, hplus->data->length);
     if (cache->hplus == NULL) return XLAL_ENOMEM;
     cache->hcross = XLALCutREAL8TimeSeries(hcross, 0, hcross->data->length);
