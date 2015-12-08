@@ -634,7 +634,7 @@ int XLALSimIMRSpinEOBWaveform(
 
          XLAL_ERROR( XLAL_ENOMEM );
     }
-    if (*hplus->data == NULL || *hcross->data == NULL){
+    if ((*hplus)->data == NULL || (*hcross)->data == NULL){
          XLALPrintError("Houston-3, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n", 
                    m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc,  INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
 
