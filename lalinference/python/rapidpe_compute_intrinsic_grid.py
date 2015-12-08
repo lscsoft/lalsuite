@@ -123,7 +123,7 @@ def find_olap_index(tree, exact=True, **kwargs):
         exit("Could not find template in bank, closest pt was %f away" % dist)
     return m_idx, pt
 
-def write_to_xml(cells, intr_prms, fvals=None, fname=None, verbose=False):
+def write_to_xml(cells, intr_prms, pin_prms={}, fvals=None, fname=None, verbose=False):
     """
     Write a set of cells, with dimensions corresponding to intr_prms to an XML file as sim_inspiral rows.
     """
@@ -133,7 +133,9 @@ def write_to_xml(cells, intr_prms, fvals=None, fname=None, verbose=False):
     procid = procrow.process_id
     process.append_process_params(xmldoc, procrow, process.process_params_from_dict(opts.__dict__))
 
-    rows = ["simulation_id", "process_id", "numrel_data"] + list(intr_prms)
+    rows = ["simulation_id", "process_id", "numrel_data"]
+    rows += list(intr_prms)
+    rows += list(pin_prms)
     if fvals is not None:
         rows.append("alpha1")
     sim_insp_tbl = lsctables.New(lsctables.SimInspiralTable, rows)
@@ -146,6 +148,8 @@ def write_to_xml(cells, intr_prms, fvals=None, fname=None, verbose=False):
         if fvals:
             sim_insp.alpha1 = fvals[itr]
         for p, v in zip(intr_prms, intr_prm._center):
+            setattr(sim_insp, p, v)
+        for p, v in pin_prms.iteritems():
             setattr(sim_insp, p, v)
         sim_insp_tbl.append(sim_insp)
 
@@ -182,6 +186,8 @@ def parse_param(popts):
     >>> parse_param(["mass1=1.4", "mass2", "spin1z=-1.0,10"])
     {'mass1': 1.4, 'mass2': None, 'spin1z': (-1.0, 10.0)}
     """
+    if popts is None:
+        return {}, {}
     intr_prms, expand_prms = {}, {}
     for popt in popts:
         popt = popt.split("=")
@@ -211,6 +217,7 @@ optp.add_option("-v", "--verbose", action='store_true', help="Be verbose.")
 # this is range). No argument given implies use entire known range (if
 # available).
 optp.add_option("-i", "--intrinsic-param", action="append", help="Adapt in this intrinsic parameter. If a pre-existing value is known (e.g. a search template was identified), specify this parameter as -i mass1=1.4 . This will indicate to the program to choose grid points which are commensurate with this value.")
+optp.add_option("-p", "--pin-param", action="append", help="Pin the parameter to this value in the template bank.")
 # FIXME: This option to be replaced with semantics from above
 #optp.add_option("-e", "--expand-param", action="append", help="Expand in this intrinsic parameter.")
 
@@ -251,6 +258,7 @@ if opts.use_overlap is not None:
 # only in Euclidean terms
 
 intr_prms, expand_prms = parse_param(opts.intrinsic_param)
+pin_prms, _ = parse_param(opts.pin_param)
 intr_pt = numpy.array([intr_prms[k] for k in intr_prms])
 intr_prms = intr_prms.keys()
 
@@ -417,12 +425,13 @@ else:
     #amrlib.serialize_grid_cells({-1: npy_grid}, opts.refine)
     amrlib.serialize_grid_cells({1: npy_grid}, opts.refine)
 
+# FIXME: need to add pinned parameters
 overlaps = eval_grid(t1, cells, intr_prms)
 
 print "Selected %d cells for further analysis." % len(cells)
 if opts.setup:
     fname = "HL-MASS_POINTS_LEVEL_0-0-1.xml.gz"
-    write_to_xml(cells, intr_prms, overlaps, fname, verbose=opts.verbose)
+    write_to_xml(cells, intr_prms, pin_prms, overlaps, fname, verbose=opts.verbose)
 else:
     m = re.search("LEVEL_(\d+)", opts.result_file)
     if m is not None:
@@ -430,4 +439,4 @@ else:
         fname = "HL-MASS_POINTS_LEVEL_%d-0-1.xml.gz" % level
     else:
         fname = "HL-MASS_POINTS_LEVEL_X-0-1.xml.gz"
-    write_to_xml(cells, intr_prms, overlaps, fname, verbose=opts.verbose)
+    write_to_xml(cells, intr_prms, pin_prms, overlaps, fname, verbose=opts.verbose)
