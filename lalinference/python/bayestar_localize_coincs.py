@@ -141,7 +141,9 @@ if opts.psd_files: # read pycbc psds here
             lal.StrainUnit**2 / lal.HertzUnit, len(psd.value) - kmin)
         fseries.data.data = psd.value[kmin:] / np.square(DYN_RANGE_FAC)
 
-        return timing.InterpolatedPSD(filter.abscissa(fseries), fseries.data.data)
+        return timing.InterpolatedPSD(
+            filter.abscissa(fseries), fseries.data.data,
+            f_high_truncate=opts.f_high_truncate)
 
     def reference_psds_for_sngls(sngl_inspirals):
         return [reference_psd_for_sngl(sngl) for sngl in sngl_inspirals]
@@ -154,7 +156,8 @@ else:
             filename, contenthandler=lal.series.PSDContentHandler)
         psds = lal.series.read_psd_xmldoc(xmldoc)
         return dict(
-            (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
+            (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
+                f_high_truncate=opts.f_high_truncate))
             for key, psd in psds.iteritems() if psd is not None)
 
     def reference_psd_for_ifo_and_filename(ifo, filename):

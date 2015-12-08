@@ -80,6 +80,9 @@ group = waveform_parser.add_argument_group(
 # not support frequencies less than 30 Hz.
 group.add_argument('--f-low', type=float, metavar='Hz', default=30,
     help='Low frequency cutoff [default: %(default)s]')
+group.add_argument('--f-high-truncate', type=float, default=0.95,
+    help='Truncate waveform at this fraction of the maximum frequency of the '
+    'PSD [default: %(default)s]')
 group.add_argument('--waveform', default='o1-uberbank',
     help='Template waveform approximant (e.g., TaylorF2threePointFivePN) '
     '[default: O1 uberbank mass-dependent waveform]')

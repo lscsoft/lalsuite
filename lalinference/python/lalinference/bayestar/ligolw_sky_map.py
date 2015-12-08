@@ -287,7 +287,7 @@ def ligolw_sky_map(
 def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
         max_distance=None, prior_distance_power=None, nside=-1,
-        phase_convention='antifindchirp'):
+        phase_convention='antifindchirp', f_high_truncate=1.0):
     # LIGO-LW XML imports.
     from . import ligolw
     from glue.ligolw import table as ligolw_table
@@ -325,7 +325,8 @@ def gracedb_sky_map(
     psds = [psds[sngl_inspiral.ifo] for sngl_inspiral in sngl_inspirals]
 
     # Interpolate PSDs.
-    psds = [timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data)
+    psds = [timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
+            f_high_truncate=f_high_truncate)
         for psd in psds]
 
     # TOA+SNR sky localization
