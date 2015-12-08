@@ -2239,32 +2239,32 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
     if(LALInferenceCheckVariable(params,"SKY_FRAME"))
       SKY_FRAME=*(INT4 *)LALInferenceGetVariable(params,"SKY_FRAME");
 
-    if(LALInferenceCheckVariable(params,"m1"))
+    if(LALInferenceCheckVariable(params,"mass1"))
     {
-        if(LALInferenceGetItem(params,"m1")->vary != LALINFERENCE_PARAM_FIXED)
+        if(LALInferenceGetItem(params,"mass1")->vary != LALINFERENCE_PARAM_FIXED)
         {
-            LALInferenceGetMinMaxPrior(runState->priorArgs, "m1", (void *)&min, (void *)&max);
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "mass1", (void *)&min, (void *)&max);
             m1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
-            LALInferenceSetVariable(params, "m1", &m1);
+            LALInferenceSetVariable(params, "mass1", &m1);
             logPrior -= log(max-min);
         }
         else
         {
-            m1=(*(REAL8 *)LALInferenceGetVariable(params,"m1"));
+            m1=(*(REAL8 *)LALInferenceGetVariable(params,"mass1"));
         }
     }
-    if(LALInferenceCheckVariable(params,"m2"))
+    if(LALInferenceCheckVariable(params,"mass2"))
     {
-        if(LALInferenceGetItem(params,"m2")->vary != LALINFERENCE_PARAM_FIXED)
+        if(LALInferenceGetItem(params,"mass2")->vary != LALINFERENCE_PARAM_FIXED)
         {
-            LALInferenceGetMinMaxPrior(runState->priorArgs, "m2", (void *)&min, (void *)&max);
+            LALInferenceGetMinMaxPrior(runState->priorArgs, "mass2", (void *)&min, (void *)&max);
             m2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
-            LALInferenceSetVariable(params, "m2", &m2);
+            LALInferenceSetVariable(params, "mass2", &m2);
             logPrior -= log(max-min);
         }
         else
         {
-            m2=(*(REAL8 *)LALInferenceGetVariable(params,"m2"));
+            m2=(*(REAL8 *)LALInferenceGetVariable(params,"mass2"));
         }
     }
 
