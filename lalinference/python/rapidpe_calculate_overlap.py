@@ -144,7 +144,6 @@ idx_range = range(args.tmplt_start_index or 0, args.tmplt_end_index or len(tmplt
 
 # FIXME:
 npts = len(tmplt_bank)
-npts = 1000
 for i1, pt in enumerate(pts):
     opt = amrlib.apply_inv_transform(pts[i1,numpy.newaxis].copy(), intr_prms, "mchirp_eta")[0]
     fname = "%s/%s_%d.json" % (bdir, wtype, i1)

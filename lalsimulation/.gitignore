@@ -82,6 +82,9 @@ test/h_ref_PhenomB.txt
 test/h_rot.txt
 test/h_rot_EOBNR.txt
 test/h_rot_PhenomB.txt
+test/saDynamics.dat
+test/saDynamicsHi.dat
+test/saWavesHi.dat
 test/simulation-FD-*.dat
 test/simulation-TD-*.dat
 test/simulation.dat

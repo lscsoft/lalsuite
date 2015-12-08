@@ -86,7 +86,7 @@ parser.add_argument('--assumeNScosi', type=float, help='Assume a particular cos(
 parser.add_argument('--assumeNSpsi', type=float, help='Assume a particular psi for coherent SFT summing')
 parser.add_argument('--cosiSignCoherent', type=int, choices=[-1, 0, 1], default=0, help='For coherent analysis assume [-1,1] values (0), [0,1] values (1), or [-1,0] values (-1) for cosi (Note: unused when assumeNScosi is specified)')
 parser.add_argument('--scoX1', action='store_true', help='Perform the restricted, Sco X-1 search')
-parser.add_argument('--ulonly', action='store_true', help='Perform the restricted, Sco X-1 search')
+parser.add_argument('--ulonly', action='store_true', help='Only do upper limits')
 args = parser.parse_args()
 
 os.mkdir('{}_{}'.format(args.dir, args.IFO.replace(',','')))

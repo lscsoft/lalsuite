@@ -43,7 +43,7 @@
 #include "LALSimIMRSpinEOBFactorizedWaveform.c"
 
 
-int UsePrec = 0;
+static int UsePrec = 0;
 
 /*------------------------------------------------------------------------------------------
  *
@@ -177,9 +177,9 @@ static REAL8 XLALInspiralSpinFactorizedFlux(
   {
     for ( m = 1; m <= l; m++ )
     {
-
+      INT4 use_optimized_v2 = 0;
       if ( XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform( &hLM, values, v, H,
-            l, m, ak ) == XLAL_FAILURE )
+            l, m, ak, use_optimized_v2, NULL ) == XLAL_FAILURE )
       {
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }

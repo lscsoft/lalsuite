@@ -1919,7 +1919,7 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
     fc = np.zeros(len(gpsTime))
 
     for i in range(len(gpsTime)):
-      gps = lal.LIGOTimeGPS( gpsTime[0] )
+      gps = lal.LIGOTimeGPS( gpsTime[i] )
       gmst_rad = lal.GreenwichMeanSiderealTime(gps)
 
       # actual computation of antenna factors
@@ -2500,7 +2500,7 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
   -------
   L           - The 4d posterior over all parameters
   h0pdf       - The 1d marginal posterior for h0
-  phi0pdf     - The 1d marginal posterior for phi0
+  phi0pdf     - The 1d marginal posterior for phi0 (the rotation frequency, not GW frequency)
   psipdf      - The 1d marginal posterior for psi
   cosiotapdf  - The 1d marginal posterior for cosiota
   lingrids    - A dictionary of the grid points for each parameter
@@ -2610,12 +2610,30 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
   [H0S, PHI0S, PSIS, COSIS] = np.meshgrid(lingrids['h0'], lingrids['phi0'], lingrids['psi'],
                                           lingrids['cosiota'], indexing='ij')
 
-  APLUS = (1.+COSIS**2)/2.
+  APLUS = 0.5*(1.+COSIS**2)
   ACROSS = COSIS
-  SINPHI = np.sin(PHI0S)
-  COSPHI = np.cos(PHI0S)
+  SINPHI = np.sin(2.*PHI0S) # multiply phi0 by two to get GW frequency
+  COSPHI = np.cos(2.*PHI0S)
   SIN2PSI = np.sin(2.*PSIS)
   COS2PSI = np.cos(2.*PSIS)
+
+  Apsinphi_2 = 0.5*APLUS*SINPHI
+  Acsinphi_2 = 0.5*ACROSS*SINPHI
+  Apcosphi_2 = 0.5*APLUS*COSPHI
+  Accosphi_2 = 0.5*ACROSS*COSPHI
+  Acpsphicphi_2 = 0.5*APLUS*ACROSS*COSPHI*SINPHI
+
+  AP2 = APLUS**2
+  AC2 = ACROSS**2
+  TWOAPACSPCP = 2.*APLUS*ACROSS*SINPHI*COSPHI
+  SP2 = SINPHI**2
+  CP2 = COSPHI**2
+
+  C2PS2P = COS2PSI*SIN2PSI
+  C2P2 = COS2PSI**2
+  S2P2 = SIN2PSI**2
+
+  H02 = H0S**2
 
   # initialise loglikelihood
   like = np.zeros(shapetuple)
@@ -2654,11 +2672,9 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
       ast = As[startidx:endidx]/nstd[startidx:endidx]
       bst = Bs[startidx:endidx]/nstd[startidx:endidx]
 
-      startidx += cl # updated start index
-
       A = np.sum(ast**2)
       B = np.sum(bst**2)
-      AB = 2.*np.dot(ast, bst)
+      AB = np.dot(ast, bst)
 
       dA1real = np.dot(thisdata.real, ast)
       dA1imag = np.dot(thisdata.imag, ast)
@@ -2669,27 +2685,26 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
       dd1real = np.sum(thisdata.real**2)
       dd1imag = np.sum(thisdata.imag**2)
 
-      hr2 = (H0S/2.)**2 * (APLUS**2 * COSPHI**2 * ( A*COS2PSI**2 + B*SIN2PSI**2 + AB*COS2PSI*SIN2PSI ) + \
-          ACROSS**2 * SINPHI**2 * ( B*COS2PSI**2 + A*SIN2PSI**2 - AB*COS2PSI*SIN2PSI ) + \
-          2.*APLUS*ACROSS*SINPHI*COSPHI* ((AB/2.)*(COS2PSI**2 - SIN2PSI**2) - A*COS2PSI*SIN2PSI + \
-          B*COS2PSI*SIN2PSI))
+      P1 = A*C2P2 + B*S2P2 + 2.*AB*C2PS2P
+      P2 = B*C2P2 + A*S2P2 - 2.*AB*C2PS2P
+      P3 = AB*(C2P2 - S2P2) - A*C2PS2P + B*C2PS2P
 
-      hi2 = (H0S/2.)**2 * (APLUS**2 * SINPHI**2 * ( A*COS2PSI**2 + B*SIN2PSI**2 + AB*COS2PSI*SIN2PSI ) + \
-          ACROSS**2 * COSPHI**2 * ( B*COS2PSI**2 + A*SIN2PSI**2 - AB*COS2PSI*SIN2PSI ) - \
-          2.*APLUS*ACROSS*SINPHI*COSPHI* ((AB/2.)*(COS2PSI**2 - SIN2PSI**2) - A*COS2PSI*SIN2PSI + \
-          B*COS2PSI*SIN2PSI))
+      hr2 = (Apcosphi_2**2)*P1 + (Acsinphi_2**2)*P2 + Acpsphicphi_2*P3
+      hi2 = (Apsinphi_2**2)*P1 + (Accosphi_2**2)*P2 - Acpsphicphi_2*P3
 
-      d1hr = (H0S/2.)*(APLUS*COSPHI*(dA1real * COS2PSI + dB1real * SIN2PSI) + \
-          ACROSS*SINPHI*(dB1real*COS2PSI - dA1real*SIN2PSI))
-      d1hi = (H0S/2.)*(APLUS*SINPHI*(dA1imag * COS2PSI + dB1imag * SIN2PSI) - \
-          ACROSS*COSPHI*(dB1imag*COS2PSI - dA1imag*SIN2PSI))
+      d1hr = Apcosphi_2*(dA1real*COS2PSI + dB1real*SIN2PSI) + Acsinphi_2*(dB1real*COS2PSI - dA1real*SIN2PSI)
+      d1hi = Apsinphi_2*(dA1imag*COS2PSI + dB1imag*SIN2PSI) - Accosphi_2*(dB1imag*COS2PSI - dA1imag*SIN2PSI)
+
+      chiSq = dd1real + dd1imag + H02*(hr2 + hi2) - 2.*H0S*(d1hr + d1hi)
 
       if liketype == 'gaussian':
-        like -= 0.5*(dd1real + hr2 - 2.*d1hr + dd1imag + hi2 - 2.*d1hi)
+        like -= 0.5*(chiSq)
         noiselike -= 0.5*(dd1real + dd1imag)
       else:
-        like -= len(thisdata)*np.log(dd1real + hr2 - 2.*d1hr + dd1imag + hi2 - 2.*d1hi)
-        noiselike -= len(thisdata)*np.log(dd1real + dd1imag)
+        like -= float(cl)*np.log(chiSq)
+        noiselike -= float(cl)*np.log(dd1real + dd1imag)
+
+      startidx += cl # updated start index
 
   # convert to posterior
   like += logprior

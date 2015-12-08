@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2014  Leo Singer
+# Copyright (C) 2011-2015  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,30 +28,21 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 # Command line interface
 
-from optparse import Option, OptionParser
 from lalinference.bayestar import command
-parser = OptionParser(
-    formatter=command.NewlinePreservingHelpFormatter(),
-    description = __doc__,
-    usage = "%prog [options] [INPUT] -o OUTPUT.fits[.gz]",
-    option_list = [
-        Option("--nside", "-n", type=int, default=-1,
-            help="Write final sky map at this HEALPix lateral resolution [default: auto]"),
-        Option("--max-nside", "-m", type=int, default=-1,
-            help="Stop subdivision at this maximum HEALPix lateral resolution [default: max 64-bit]"),
-        Option("-o", "--output", metavar="OUTPUT.fits[.gz]",
-            help="name of output FITS file [required]"),
-        Option("--samples-per-bin", type=int, default=30,
-            help="Samples per bin [default: %default]"),
-        Option("--objid",
-            help="Event ID to be stored in FITS header [default: %default]"),
-    ]
-)
-opts, args = parser.parse_args()
-infilename = command.get_input_filename(parser, args)
-
-if opts.output is None:
-    parser.error('--output: missing required argument')
+parser = command.ArgumentParser()
+parser.add_argument('--nside', '-n', type=int, default=-1,
+    help='Write final sky map at this HEALPix lateral resolution [default: auto]')
+parser.add_argument('--max-nside', '-m', type=int, default=-1,
+    help='Stop subdivision at this maximum HEALPix lateral resolution [default: max 64-bit]')
+parser.add_argument('--samples-per-bin', type=int, default=30,
+    help='Samples per bin [default: %(default)s]')
+parser.add_argument('--objid',
+    help='Event ID to be stored in FITS header [default: %(default)s]')
+parser.add_argument('input', metavar='INPUT.dat', default='-',
+    help='name of input posterior samples file [default: stdin]')
+parser.add_argument('-o', '--output', metavar='OUTPUT.fits[.gz]', required=True,
+    help='name of output FITS file [required]')
+opts = parser.parse_args()
 
 
 # Late imports.
@@ -59,7 +50,7 @@ import numpy as np
 import lalinference.fits
 import lalinference.bayestar.postprocess
 
-samples = np.recfromtxt(infilename, names=True)
+samples = np.recfromtxt(opts.input, names=True)
 theta = 0.5*np.pi - samples['dec']
 phi = samples['ra']
 
@@ -69,5 +60,5 @@ p = lalinference.bayestar.postprocess.adaptive_healpix_histogram(
 
 # Write output to FITS file.
 lalinference.fits.write_sky_map(opts.output, p,
-    creator=parser.get_prog_name(), objid=opts.objid,
+    creator=parser.prog, objid=opts.objid,
     gps_time=samples['time'].mean())

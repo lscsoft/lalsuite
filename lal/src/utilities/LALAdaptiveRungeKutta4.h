@@ -71,6 +71,14 @@ LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4Init( int dim,
                              double eps_abs, double eps_rel
                              );
 
+/* OPTIMIZED */
+LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4InitEighthOrderInstead( int dim,
+                             int (* dydt) (double t, const double y[], double dydt[], void * params),
+                             int (* stop) (double t, const double y[], double dydt[], void * params),
+                             double eps_abs, double eps_rel
+                             );
+/* END OPTIMIZED */
+
 void XLALAdaptiveRungeKutta4Free( LALAdaptiveRungeKutta4Integrator *integrator );
 
 int XLALAdaptiveRungeKutta4( LALAdaptiveRungeKutta4Integrator *integrator,
@@ -79,6 +87,12 @@ int XLALAdaptiveRungeKutta4( LALAdaptiveRungeKutta4Integrator *integrator,
                          REAL8 tinit, REAL8 tend, REAL8 deltat,
                          REAL8Array **yout
                          );
+/* OPTIMIZED */
+int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * integrator,
+         void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0,
+         REAL8Array ** t_and_yout);
+/* END OPTIMIZED */
+
 int XLALAdaptiveRungeKutta4Hermite( LALAdaptiveRungeKutta4Integrator *integrator,
                                     void *params,
                                     REAL8 *yinit,

@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 118
+# serial 119
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1106,10 +1106,20 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
     # Python is required to run some scripts
     LALSUITE_REQUIRE_PYTHON([2.6])
 
+    # Perl and BibTeX are required to build the references
+    AC_PATH_PROG([PERL],[perl],[],[])
+    AS_IF([test "x${PERL}" = x],[
+      AC_MSG_ERROR([could not find 'perl' in PATH (required for Doxygen references)])
+    ])
+    AC_PATH_PROG([BIBTEX],[bibtex],[],[])
+    AS_IF([test "x${BIBTEX}" = x],[
+      AC_MSG_ERROR([could not find 'bibtex' in PATH (required for Doxygen references)])
+    ])
+
     # check for Doxygen
     AC_PATH_PROG([DOXYGEN],[doxygen],[],[])
     AS_IF([test "x${DOXYGEN}" = x],[
-      AC_MSG_ERROR([could not find Doxygen in PATH])
+      AC_MSG_ERROR([could not find 'doxygen' in PATH])
     ])
     doxygen_min_version=1.8.1.2   # minimum required Doxygen version
     AC_MSG_CHECKING([if ${DOXYGEN} version is at least ${doxygen_min_version}])

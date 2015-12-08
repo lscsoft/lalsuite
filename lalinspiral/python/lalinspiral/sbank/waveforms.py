@@ -312,7 +312,7 @@ class IMRPhenomDTemplate(IMRPhenomBTemplate):
 
     def _compute_waveform(self, df, f_final):
         return lalsim.SimIMRPhenomDGenerateFD(
-            0, df,
+            0, 0, df,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
             self.spin1z, self.spin2z,
             self.bank.flow, f_final, 1000000 * PC_SI)
@@ -389,6 +389,21 @@ class SEOBNRv2ROMDoubleSpinTemplate(SEOBNRv2Template):
             self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, 0., 0., 0.,
             flags, None, 1, 8, approx_enum)
         return htilde
+
+class SEOBNRv2ROMDoubleSpinHITemplate(SEOBNRv2Template):
+    def _compute_waveform(self, df, f_final):
+        """
+        The ROM is a frequency domain waveform, so easier.
+        """
+        # get hptilde
+        approx_enum = lalsim.GetApproximantFromString('SEOBNRv2_ROM_DoubleSpin_HI')
+        flags = lalsim.SimInspiralCreateWaveformFlags()
+        htilde, _ = lalsim.SimInspiralChooseFDWaveform(0, df, self.m1 * MSUN_SI,
+            self.m2 * MSUN_SI, 0., 0., self.spin1z, 0., 0., self.spin2z,
+            self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, 0., 0., 0.,
+            flags, None, 1, 8, approx_enum)
+        return htilde
+
 
 
 class EOBNRv2Template(SEOBNRv2Template):
@@ -780,6 +795,7 @@ waveforms = {
     "IMRPhenomP": IMRPhenomPTemplate,
     "SEOBNRv2": SEOBNRv2Template,
     "SEOBNRv2_ROM_DoubleSpin": SEOBNRv2ROMDoubleSpinTemplate,
+    "SEOBNRv2_ROM_DoubleSpin_HI": SEOBNRv2ROMDoubleSpinHITemplate,
     "EOBNRv2": EOBNRv2Template,
     "SpinTaylorT4": SpinTaylorT4Template,
     "SpinTaylorT5": SpinTaylorT5Template,

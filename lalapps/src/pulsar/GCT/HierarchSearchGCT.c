@@ -150,6 +150,7 @@ typedef struct {
   UINT4 nf3dot;			/**< number of 3rd spindown Fstat bins */
   SSBprecision SSBprec;            /**< SSB transform precision */
   FstatMethodType Fmethod;         //!< which Fstat-method/algorithm to use
+  BOOLEAN recalcToplistStats;	   //!< do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
   FstatMethodType FmethodRecalc;   //!< which Fstat-method/algorithm to use for the recalc step
   REAL8 mismatch1;                 /**< 'mismatch1' user-input needed here internally ... */
   UINT4 nSFTs;                     /**< total number of SFTs */
@@ -461,16 +462,16 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dAlpha), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dDelta), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "Freq",        'f', UVAR_OPTIONAL, "Start search frequency", &uvar_Freq), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq",        0,  UVAR_OPTIONAL, "Frequency resolution (default \\propto 1/Tstack)", &uvar_dFreq), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq",        0,  UVAR_OPTIONAL, "Frequency resolution (required if nonzero FreqBand)", &uvar_dFreq), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "FreqBand",    'b', UVAR_OPTIONAL, "Search frequency band", &uvar_FreqBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dot",        0,  UVAR_OPTIONAL, "Spindown parameter", &uvar_f1dot), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot",       0,  UVAR_OPTIONAL, "Spindown resolution (default \\propto 1/Tstack^2)", &uvar_df1dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot",       0,  UVAR_OPTIONAL, "Spindown resolution (required if nonzero f1dotBand)", &uvar_df1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Spindown Range", &uvar_f1dotBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f2dot",        0,  UVAR_OPTIONAL, "2nd spindown parameter", &uvar_f2dot), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "df2dot",       0,  UVAR_OPTIONAL, "2nd spindown resolution (default \\propto 1/Tstack^3)", &uvar_df2dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "df2dot",       0,  UVAR_OPTIONAL, "2nd spindown resolution (required if nonzero f2dotBand)", &uvar_df2dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f2dotBand",    0,  UVAR_OPTIONAL, "2nd spindown Range", &uvar_f2dotBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f3dot",        0,  UVAR_OPTIONAL, "3rd spindown parameter", &uvar_f3dot), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "df3dot",       0,  UVAR_OPTIONAL, "3rd spindown resolution (default \\propto 1/Tstack^4)", &uvar_df3dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "df3dot",       0,  UVAR_OPTIONAL, "3rd spindown resolution (required if nonzero f3dotBand)", &uvar_df3dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f3dotBand",    0,  UVAR_OPTIONAL, "3rd spindown Range", &uvar_f3dotBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_ThrF), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",   'm', UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
@@ -750,6 +751,7 @@ int MAIN( int argc, char *argv[]) {
 
   XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &usefulParams.Fmethod, uvar_FstatMethod ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN ( XLALParseFstatMethodString ( &usefulParams.FmethodRecalc, uvar_FstatMethodRecalc ) == XLAL_SUCCESS, XLAL_EFUNC );
+  usefulParams.recalcToplistStats = uvar_recalcToplistStats;
 
   usefulParams.mismatch1 = uvar_mismatch1;
 
@@ -2029,7 +2031,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     ABORT ( status, HIERARCHICALSEARCH_EMEM, HIERARCHICALSEARCH_MSGEMEM );
   }
   // if using different Fstat-method for main search and recalc: set-up separate Fstat input
-  if ( in->Fmethod != in->FmethodRecalc )
+  if ( in->recalcToplistStats && (in->Fmethod != in->FmethodRecalc) )
     {
       in->Fstat_in_vec_recalc = XLALCreateFstatInputVector( in->nStacks );
       if ( in->Fstat_in_vec == NULL ) {
@@ -2079,7 +2081,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
     // ----- if recalc uses a different Fstat-method from main search, we'll setup its own Fstat setup struct
-    if ( in->Fstat_in_vec_recalc != NULL )
+    if ( in->recalcToplistStats && (in->Fstat_in_vec_recalc != NULL) )
       {
         optionalArgsRecalc = optionalArgs;
         optionalArgsRecalc.FstatMethod = in->FmethodRecalc;

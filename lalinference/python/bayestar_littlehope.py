@@ -147,7 +147,7 @@ xmldoc = ligolw_utils.load_filename(
     opts.template_bank, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Determine the low frequency cutoff from the template bank file.
-template_bank_f_low = ligolw_bayestar.get_temlate_bank_f_low(xmldoc)
+template_bank_f_low = ligolw_bayestar.get_template_bank_f_low(xmldoc)
 
 template_bank = ligolw_table.get_table(xmldoc,
     lsctables.SnglInspiralTable.tableName)

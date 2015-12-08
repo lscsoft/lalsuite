@@ -66,6 +66,44 @@ LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4Init(int dim, int (*dyd
     return integrator;
 }
 
+LALAdaptiveRungeKutta4Integrator *XLALAdaptiveRungeKutta4InitEighthOrderInstead(int dim, int (*dydt) (double t, const double y[], double dydt[], void *params),   /* These are XLAL functions! */
+    int (*stop) (double t, const double y[], double dydt[], void *params), double eps_abs, double eps_rel)
+{
+    LALAdaptiveRungeKutta4Integrator *integrator;
+
+    /* allocate our custom integrator structure */
+    if (!(integrator = (LALAdaptiveRungeKutta4Integrator *) LALCalloc(1, sizeof(LALAdaptiveRungeKutta4Integrator)))) {
+        XLAL_ERROR_NULL(XLAL_ENOMEM);
+    }
+
+    /* allocate the GSL ODE components */
+    XLAL_CALLGSL(integrator->step = gsl_odeiv_step_alloc(gsl_odeiv_step_rk8pd, dim));
+    XLAL_CALLGSL(integrator->control = gsl_odeiv_control_y_new(eps_abs, eps_rel));
+    XLAL_CALLGSL(integrator->evolve = gsl_odeiv_evolve_alloc(dim));
+
+    /* allocate the GSL system (functions, etc.) */
+    integrator->sys = (gsl_odeiv_system *) LALCalloc(1, sizeof(gsl_odeiv_system));
+
+    /* if something failed to be allocated, bail out */
+    if (!(integrator->step) || !(integrator->control) || !(integrator->evolve) || !(integrator->sys)) {
+        XLALAdaptiveRungeKutta4Free(integrator);
+        XLAL_ERROR_NULL(XLAL_ENOMEM);
+    }
+
+    integrator->dydt = dydt;
+    integrator->stop = stop;
+
+    integrator->sys->function = dydt;
+    integrator->sys->jacobian = NULL;
+    integrator->sys->dimension = dim;
+    integrator->sys->params = NULL;
+
+    integrator->retries = 6;
+    integrator->stopontestonly = 0;
+
+    return integrator;
+}
+
 void XLALAdaptiveRungeKutta4Free(LALAdaptiveRungeKutta4Integrator * integrator)
 {
     if (!integrator)
@@ -361,6 +399,193 @@ int XLALAdaptiveRungeKutta4Hermite(LALAdaptiveRungeKutta4Integrator * integrator
     *yout = output;
     return outputlen;
 }
+
+int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKutta4Integrator * integrator,
+         void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0,
+         REAL8Array ** t_and_y_out)
+{
+    int errnum = 0;
+    int status; /* used throughout */
+
+    /* needed for the integration */
+    size_t dim, outputlength=0, bufferlength, retries;
+    REAL8 t, tnew, h0;
+    REAL8Array *buffers = NULL;
+    REAL8 *temp = NULL, *y, *y0, *dydt_in, *dydt_in0, *dydt_out, *yerr; /* aliases */
+    REAL8Array *output = NULL; /* This is where we'll store the pointer for the output. */
+
+    /* note: for speed, this replaces the single CALLGSL wrapper applied before each GSL call */
+    XLAL_BEGINGSL;
+
+    /* allocate the buffers!
+     * note: REAL8Array has a field dimLength (UINT4Vector) with dimensions, and a field data that points to a single memory block;
+     * dimLength itself has fields length and data */
+    dim = integrator->sys->dimension;
+    bufferlength = (int)((tend - tinit) / deltat_or_h0) + 2;   /* allow for the initial value and possibly a final semi-step */
+    buffers = XLALCreateREAL8ArrayL(2, dim + 1, bufferlength); /* 2-dimensional array, ((dim+1)) x bufferlength */
+    temp = LALCalloc(6 * dim, sizeof(REAL8));
+
+    if (!buffers || !temp) {
+        errnum = XLAL_ENOMEM;
+        goto bail_out;
+    }
+
+    y = temp;
+    y0 = temp + dim;
+    dydt_in = temp + 2 * dim;
+    dydt_in0 = temp + 3 * dim;
+    dydt_out = temp + 4 * dim;
+    yerr = temp + 5 * dim;      /* aliases */
+
+    /* set up to get started */
+    integrator->sys->params = params;
+
+    integrator->returncode = 0;
+
+    retries = integrator->retries;
+
+    t = tinit;
+    h0 = deltat_or_h0;
+    memcpy(y, yinit, dim * sizeof(REAL8));
+
+    /* store the first data point */
+    buffers->data[0] = t;
+    for (unsigned int i = 1; i <= dim; i++)
+        buffers->data[i * bufferlength] = y[i - 1];
+
+    /* compute derivatives at the initial time (dydt_in), bail out if impossible */
+    if ((status = integrator->dydt(t, y, dydt_in, params)) != GSL_SUCCESS) {
+        integrator->returncode = status;
+        errnum = XLAL_EFAILED;
+        goto bail_out;
+    }
+
+    while (1) {
+
+        if (!integrator->stopontestonly && t >= tend) {
+            break;
+        }
+
+        if (integrator->stop) {
+            if ((status = integrator->stop(t, y, dydt_in, params)) != GSL_SUCCESS) {
+                integrator->returncode = status;
+                break;
+            }
+        }
+
+        /* ready to try stepping! */
+      try_step:
+
+        /* if we would be stepping beyond the final time, stop there instead... */
+        if (!integrator->stopontestonly && t + h0 > tend)
+            h0 = tend - t;
+
+        memcpy(y0, y, dim * sizeof(REAL8));     /* save y to y0, dydt_in to dydt_in0 */
+        memcpy(dydt_in0, dydt_in, dim * sizeof(REAL8));
+
+        /* call the GSL stepper function */
+        status = gsl_odeiv_step_apply(integrator->step, t, h0, y, yerr, dydt_in, dydt_out, integrator->sys);
+        /* note: If the user-supplied functions defined in the system dydt return a status other than GSL_SUCCESS,
+         * the step will be aborted. In this case, the elements of y will be restored to their pre-step values,
+         * and the error code from the user-supplied function will be returned. */
+
+        /* did the stepper report a derivative-evaluation error? */
+        if (status != GSL_SUCCESS) {
+            if (retries--) {
+                h0 = h0 / 10.0; /* if we have singularity retries left, reduce the timestep and try again */
+                goto try_step;
+            } else {
+                integrator->returncode = status;
+                break;  /* otherwise exit the loop */
+            }
+        } else {
+            retries = integrator->retries;      /* we stepped successfully, reset the singularity retries */
+        }
+
+        tnew = t + h0;
+
+        /* call the GSL error-checking function */
+        status = gsl_odeiv_control_hadjust(integrator->control, integrator->step, y, yerr, dydt_out, &h0);
+
+        /* did the error-checker reduce the stepsize?
+         * note: other possible return codes are GSL_ODEIV_HADJ_INC if it was increased,
+         * GSL_ODEIV_HADJ_NIL if it was unchanged */
+        if (status == GSL_ODEIV_HADJ_DEC) {
+            memcpy(y, y0, dim * sizeof(REAL8)); /* if so, undo the step, and try again */
+            memcpy(dydt_in, dydt_in0, dim * sizeof(REAL8));
+            goto try_step;
+        }
+
+        /* update the current time and input derivatives */
+        t = tnew;
+        memcpy(dydt_in, dydt_out, dim * sizeof(REAL8));
+        outputlength++;
+
+        /* check if interpolation buffers need to be extended */
+        if (outputlength >= bufferlength) {
+            REAL8Array *rebuffers;
+
+            /* sadly, we cannot use ResizeREAL8Array, because it would only work if we extended the first array dimension,
+             * so we need to copy everything over and switch the buffers. Oh well. */
+            if (!(rebuffers = XLALCreateREAL8ArrayL(2, dim + 1, 2 * bufferlength))) {
+                errnum = XLAL_ENOMEM;   /* ouch, that hurt */
+                goto bail_out;
+            } else {
+                for (unsigned int i = 0; i <= dim; i++)
+                    memcpy(&rebuffers->data[i * 2 * bufferlength], &buffers->data[i * bufferlength], outputlength * sizeof(REAL8));
+                XLALDestroyREAL8Array(buffers);
+                buffers = rebuffers;
+                bufferlength *= 2;
+            }
+        }
+
+        /* copy time and state into output buffers */
+        buffers->data[outputlength] = t;
+        for (unsigned int i = 1; i <= dim; i++)
+            buffers->data[i * bufferlength + outputlength] = y[i - 1];   /* y does not have time */
+    }
+
+    /* copy the final state into yinit */
+
+    memcpy(yinit, y, dim * sizeof(REAL8));
+
+    /* if we have completed at least one step, allocate the GSL interpolation object and the output array */
+    if (outputlength == 0)
+        goto bail_out;
+
+    output = XLALCreateREAL8ArrayL(2,(dim + 3),outputlength); // dim=4 by default (4 evolved variables) plus one for time, plus two for amp&phase.
+
+    if (!output) {
+        errnum = XLAL_ENOMEM;   /* ouch again, ran out of memory */
+        if (output)
+            XLALDestroyREAL8Array(output);
+        outputlength = 0;
+        goto bail_out;
+    }
+
+    for(UINT8 j=0;j<outputlength;j++) {
+      output->data[j] = buffers->data[j];
+      for(UINT8 i=1;i<=dim;i++) {
+        output->data[i*outputlength + j] = buffers->data[i*bufferlength + j];
+      }
+    }
+    /* deallocate stuff and return */
+  bail_out:
+
+    XLAL_ENDGSL;
+
+    if (buffers)
+        XLALDestroyREAL8Array(buffers); /* let's be careful, although all these checks may not be needed */
+    if (temp)
+        LALFree(temp);
+
+    if (errnum)
+        XLAL_ERROR(errnum);
+
+    *t_and_y_out = output;
+    return outputlength;
+}
+
 
 int XLALAdaptiveRungeKutta4(LALAdaptiveRungeKutta4Integrator * integrator,
     void *params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat, REAL8Array ** yout)

@@ -233,9 +233,9 @@ class MCSampler(object):
         # Cache the samples we chose
         #
         if len(self._rvs) == 0:
-            self._rvs = dict(zip(args, rvs_tmp.astype(numpy.float64)))
+            self._rvs = dict(zip(args, rvs_tmp))
         else:
-            rvs_tmp = dict(zip(args, rvs_tmp.astype(numpy.float64)))
+            rvs_tmp = dict(zip(args, rvs_tmp))
             #for p, ar in self._rvs.iteritems():
             for p in self.params:
                 self._rvs[p] = numpy.hstack( (self._rvs[p], rvs_tmp[p]) ).astype(numpy.float64)
@@ -261,14 +261,15 @@ class MCSampler(object):
 
         kwargs:
         nmax -- total allowed number of sample points, will throw a warning if this number is reached before neff.
+        nmin -- minimum number of samples to allow, by default will be set to the end of the 'burnin' at n_adapt * n
         neff -- Effective samples to collect before terminating. If not given, assume infinity
         n -- Number of samples to integrate in a 'chunk' -- default is 1000
         save_integrand -- Save the evaluated value of the integrand at the sample points with the sample point
         history_mult -- Number of chunks (of size n) to use in the adaptive histogramming: only useful if there are parameters with adaptation enabled
         tempering_exp -- Exponent to raise the weights of the 1-D marginalized histograms for adaptive sampling prior generation, by default it is 0 which will turn off adaptive sampling regardless of other settings
-        floor_level -- *total probability* of a uniform distribution, averaged with the weighted sampled distribution, to generate a new sampled distribution
         n_adapt -- number of chunks over which to allow the pdf to adapt. Default is zero, which will turn off adaptive sampling regardless of other settings
         convergence_tests - dictionary of function pointers, each accepting self._rvs and self.params as arguments. CURRENTLY ONLY USED FOR REPORTING
+        maxval - Guess at the maximum value of the integrand -- used as a seed for the maxval counter
 
         Pinning a value: By specifying a kwarg with the same of an existing parameter, it is possible to "pin" it. The sample draws will always be that value, and the sampling prior will use a delta function at that value.
         """
@@ -312,7 +313,8 @@ class MCSampler(object):
         n_history = int(kwargs["history_mult"]*n) if kwargs.has_key("history_mult") else None
         tempering_exp = kwargs["tempering_exp"] if kwargs.has_key("tempering_exp") else 0.0
         n_adapt = int(kwargs["n_adapt"]*n) if kwargs.has_key("n_adapt") else 0
-        floor_integrated_probability = kwargs["floor_level"] if kwargs.has_key("floor_level") else 0
+        nmax = kwargs["nmax"] if kwargs.has_key("nmax") else n_adapt
+        nmin = kwargs["nmin"] if kwargs.has_key("nmin") else n_adapt
 
         save_intg = kwargs["save_intg"] if kwargs.has_key("save_intg") else False
         # FIXME: The adaptive step relies on the _rvs cache, so this has to be
@@ -329,7 +331,8 @@ class MCSampler(object):
 
         int_val1 = numpy.float128(0)
         self.ntotal = 0
-        old_maxval, maxval = -float("Inf"), -float("Inf")
+        maxval = kwargs["maxval"] if "maxval" in kwargs else -float("Inf")
+        old_maxval = maxval
         maxlnL = -float("Inf")
         eff_samp = 0
         mean, var = None, None
@@ -338,7 +341,7 @@ class MCSampler(object):
         if show_evaluation_log:
             print "walltime : iteration Neff  ln(maxweight) lnLmarg ln(Z/Lmax) int_var"
 
-        while (eff_samp < neff and self.ntotal < nmax): #  and (not bConvergenceTests):
+        while self.ntotal < nmin or (eff_samp < neff and self.ntotal < nmax):
             # Draw our sample points
             p_s, p_prior, rv = self.draw(n, *self.params)
                         
@@ -439,7 +442,7 @@ class MCSampler(object):
             if show_evaluation_log:
                 print int(time.time()), ": ", self.ntotal, eff_samp, math.log(maxval), numpy.log(int_val1/self.ntotal), numpy.log(int_val1/self.ntotal)-maxlnL, numpy.sqrt(var*self.ntotal)/int_val1
 
-            if (not convergence_tests) and self.ntotal >= nmax and neff != float("inf"):
+            if (not convergence_tests) and self.ntotal >= nmin and self.ntotal >= nmax and neff != float("inf"):
                 print >>sys.stderr, "WARNING: User requested maximum number of samples reached... bailing."
 
             #
@@ -479,7 +482,6 @@ class MCSampler(object):
                 self._hist[p] = statutils.get_adaptive_binning(points, (self.llim[p], self.rlim[p]))
                 for pt, w in zip(points, weights):
                     self._hist[p][pt,] += w
-                #self._hist[p].array = (1-floor_integrated_probability)*self._hist[p].array + numpy.ones(len(self._hist[p].array))*floor_integrated_probability/len(self._hist[p].array)
                 self._hist[p].array += self._hist[p].array.mean()
                 rate.to_moving_mean_density(self._hist[p], rate.tophat_window(3))
                 norm = numpy.sum(self._hist[p].array * self._hist[p].bins.volumes())

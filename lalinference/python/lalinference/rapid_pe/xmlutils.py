@@ -44,6 +44,8 @@ CMAP = { "right_ascension": "longitude",
     "dlam_tilde": "psi3",
     "psi0": "psi0",
     "psi3": "psi3",
+    "spin1z": "spin1z",
+    "spin2z": "spin2z",
     # SHOEHORN ALERT
     "sample_n": assign_id,
     "alpha1":"alpha1",
@@ -58,7 +60,7 @@ CMAP = { "right_ascension": "longitude",
 # Otherwise, we'll have to add them manually and ensure they all exist
 sim_valid_req = ["process_id", "simulation_id", "alpha1", "alpha2", "alpha3"]
 sim_valid_ext = ["inclination", "longitude", "latitude", "polarization", "geocent_end_time", "geocent_end_time_ns", "coa_phase", "distance"]
-sim_valid_int = ["mass1", "mass2", "psi0", "psi3"]
+sim_valid_int = ["mass1", "mass2", "spin1z", "spin2z", "psi0", "psi3"]
 sngl_valid_cols = ["process_id", "event_id", "snr", "tau0", "tau3"]
 multi_valid_cols = ["process_id", "event_id", "snr"]
 

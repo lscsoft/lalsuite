@@ -137,7 +137,7 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
 
   (*Detector) = Detector1;
 
-  return 0;
+  return XLAL_SUCCESS;
 
 } /* XLALcreateLISA() */
 

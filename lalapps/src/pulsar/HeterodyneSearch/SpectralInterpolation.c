@@ -1438,7 +1438,6 @@ INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, REAL8 minDur, REAL8
   INT4 i=0;
   long offset;
   CHAR jnkstr[256]; /* junk string to contain comment lines */
-  INT4 num, dur; /* variable to contain the segment number and duration */
   INT4 linecount=0; /* number of lines in the segment file */
   INT4 ch=0;
 
@@ -1483,11 +1482,10 @@ INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, REAL8 minDur, REAL8
     else{
       fseek(fp, offset, SEEK_SET); /* if line doesn't start with a # then it is
                                       data */
-      INT4 starttemp=0,stoptemp=0;
-      INT4 starttemp2=0,stoptemp2=0;
-      if( fscanf(fp, "%d%d%d%d", &num, &starttemp, 
-                 &stoptemp, &dur) == EOF ) break;
-      /*format is segwizard type: num starts stops dur */
+      INT4 starttemp=0, stoptemp=0;
+      INT4 starttemp2=0, stoptemp2=0;
+      if( fscanf(fp, "%d%d", &starttemp, &stoptemp) == EOF ) break;
+      /* format is: starts stops */
 
       /* perform checks on whether the segment is within or overlapping
        the segment and then output the correct combination */
@@ -1499,7 +1497,7 @@ INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, REAL8 minDur, REAL8
         else{
           starttemp2 = starttemp; /* Start time is segment start */
         }
-        if ( stoptemp > endSegs){ /* if segment ends after the specified end time */
+        if ( stoptemp > endSegs ){ /* if segment ends after the specified end time */
           stoptemp2 = endSegs; /* end time is specified end */
         }
         else{

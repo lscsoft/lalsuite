@@ -856,7 +856,7 @@ INT4 findIHScandidates(candidateVector **candlist, const ihsfarStruct *ihsfarstr
          REAL8 h0 = ihs2h0(2.0*highestval, params);  //Candidate h0, need factor of 2 for the degrees of freedom counting
 
          if ((*candlist)->numofcandidates == (*candlist)->length-1) XLAL_CHECK( (*candlist = resizecandidateVector(*candlist, 2*(*candlist)->length)) != NULL, XLAL_EFUNC );
-         loadCandidateData(&((*candlist)->data[(*candlist)->numofcandidates]), fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, highestsignificance, 0, ffdata->tfnormalization, -1);
+         loadCandidateData(&((*candlist)->data[(*candlist)->numofcandidates]), fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, highestsignificance, 0, ffdata->tfnormalization, -1, 0);
          (*candlist)->numofcandidates++;
       }
 

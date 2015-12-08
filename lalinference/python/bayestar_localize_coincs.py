@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013  Leo Singer
+# Copyright (C) 2013-2015  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -43,7 +43,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.
-from optparse import Option, OptionParser
+import argparse
 from lalinference.bayestar import command
 
 methods = '''
@@ -53,40 +53,24 @@ methods = '''
     toa_snr_mcmc_kde
     toa_phoa_snr_mcmc_kde
     '''.split()
-default_method = "toa_phoa_snr"
-parser = OptionParser(
-    formatter = command.NewlinePreservingHelpFormatter(),
-    description = __doc__,
-    usage = '%prog [options] [INPUT.xml[.gz]]',
-    option_list = [
-        Option("--nside", "-n", type=int, default=-1,
-            help="HEALPix lateral resolution [default: auto]"),
-        Option("--f-low", type=float, metavar="Hz",
-            help="Low frequency cutoff [required]"),
-        Option("--waveform",
-            help="Waveform to use for determining parameter estimation accuracy from signal model [required]"),
-        Option("--min-distance", type=float, metavar="Mpc",
-            help="Minimum distance of prior in megaparsec [default: infer from effective distance]"),
-        Option("--max-distance", type=float, metavar="Mpc",
-            help="Maximum distance of prior in megaparsecs [default: infer from effective distance]"),
-        Option("--prior-distance-power", type=int, metavar="-1|2",
-            help="Distance prior [-1 for uniform in log, 2 for uniform in volume, default: 2]"),
-        Option("--method", choices=methods, metavar='|'.join(methods), default=[], action="append",
-            help="Sky localization method [may be specified multiple times, default: "
-            + default_method + "]"),
-        Option("--chain-dump", default=False, action="store_true",
-            help="For MCMC methods, dump the sample chain to disk [default: no]"),
-        Option("--keep-going", "-k", default=False, action="store_true",
-            help="Keep processing events if a sky map fails to converge [default: no].")
-    ]
-)
-opts, args = parser.parse_args()
-infilename = command.get_input_filename(parser, args)
-command.check_required_arguments(parser, opts, "f_low", "waveform")
-
-if not opts.method:
-    opts.method.append(default_method)
-
+default_method = 'toa_phoa_snr'
+parser = command.ArgumentParser(
+    parents=[command.waveform_parser, command.prior_parser])
+parser.add_argument('--nside', '-n', type=int, default=-1,
+    help='HEALPix resolution [default: auto]')
+parser.add_argument('--method', choices=methods, metavar='|'.join(methods),
+    default=[default_method], nargs='*',
+    help='Sky localization methods [default: %s]' % default_method)
+parser.add_argument('--chain-dump', default=False, action='store_true',
+    help='For MCMC methods, dump the sample chain to disk [default: no]')
+parser.add_argument('--keep-going', '-k', default=False, action='store_true',
+    help='Keep processing events if a sky map fails to converge [default: no]')
+parser.add_argument('input', metavar='INPUT.xml[.gz]', default='-', nargs='?',
+    type=argparse.FileType('rb'),
+    help='Input LIGO-LW XML file [default: stdin]')
+parser.add_argument('--psd-files', nargs='*',
+    help='pycbc-style merged HDF5 PSD files')
+opts = parser.parse_args()
 
 #
 # Logging
@@ -113,26 +97,77 @@ import healpy as hp
 import numpy as np
 
 # Read coinc file.
-log.info('%s:reading input XML file', infilename)
-xmldoc = ligolw_utils.load_filename(
-    infilename, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
+log.info('%s:reading input XML file', opts.input.name)
+xmldoc, _ = ligolw_utils.load_fileobj(
+    opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
-reference_psd_filenames_by_process_id = ligolw_bayestar.psd_filenames_by_process_id_for_xmldoc(xmldoc)
+if opts.psd_files: # read pycbc psds here
+    import lal
+    from glue.segments import segment, segmentlist
+    import h5py
 
-@memoized
-def reference_psds_for_filename(filename):
-    xmldoc = ligolw_utils.load_filename(
-        filename, contenthandler=lal.series.PSDContentHandler)
-    psds = lal.series.read_psd_xmldoc(xmldoc)
-    return dict(
-        (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
-        for key, psd in psds.iteritems() if psd is not None)
+    # FIXME: This should be imported from pycbc.
+    DYN_RANGE_FAC =  5.9029581035870565e+20
 
-def reference_psd_for_ifo_and_filename(ifo, filename):
-    return reference_psds_for_filename(filename)[ifo]
+    class psd_segment(segment):
+        def __new__(cls, psd, *args):
+            return segment.__new__(cls, *args)
+        def __init__(self, psd, *args):
+            self.psd = psd
 
-f_low = opts.f_low
-approximant, amplitude_order, phase_order = timing.get_approximant_and_orders_from_string(opts.waveform)
+    psdseglistdict = {}
+    for psd_file in opts.psd_files:
+        (ifo, group), = h5py.File(psd_file, 'r').items()
+        psd = [group['psds'][str(i)] for i in range(len(group['psds'].keys()))]
+        psdseglistdict[ifo] = segmentlist(
+            psd_segment(*segargs) for segargs in zip(
+            psd, group['start_time'], group['end_time']))
+
+    def reference_psd_for_sngl(sngl):
+        psd = psdseglistdict[sngl.ifo]
+        try:
+            psd = psd[psd.find(sngl.get_end())].psd
+        except ValueError:
+            raise ValueError(
+                'No PSD found for detector {0} at GPS time {1}'.format(
+                sngl.ifo, sngl.get_end()))
+
+        flow = psd.file.attrs['low_frequency_cutoff']
+        df = psd.attrs['delta_f']
+        kmin = int(flow / df)
+
+        fseries = lal.CreateREAL8FrequencySeries(
+            'psd', psd.attrs['epoch'], kmin * df, df,
+            lal.StrainUnit**2 / lal.HertzUnit, len(psd.value) - kmin)
+        fseries.data.data = psd.value[kmin:] / np.square(DYN_RANGE_FAC)
+
+        return timing.InterpolatedPSD(
+            filter.abscissa(fseries), fseries.data.data,
+            f_high_truncate=opts.f_high_truncate)
+
+    def reference_psds_for_sngls(sngl_inspirals):
+        return [reference_psd_for_sngl(sngl) for sngl in sngl_inspirals]
+else:
+    reference_psd_filenames_by_process_id = ligolw_bayestar.psd_filenames_by_process_id_for_xmldoc(xmldoc)
+
+    @memoized
+    def reference_psds_for_filename(filename):
+        xmldoc = ligolw_utils.load_filename(
+            filename, contenthandler=lal.series.PSDContentHandler)
+        psds = lal.series.read_psd_xmldoc(xmldoc)
+        return dict(
+            (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
+                f_high_truncate=opts.f_high_truncate))
+            for key, psd in psds.iteritems() if psd is not None)
+
+    def reference_psd_for_ifo_and_filename(ifo, filename):
+        return reference_psds_for_filename(filename)[ifo]
+
+    def reference_psds_for_sngls(sngl_inspirals):
+        return tuple(
+            reference_psd_for_ifo_and_filename(sngl_inspiral.ifo,
+            reference_psd_filenames_by_process_id[sngl_inspiral.process_id])
+            for sngl_inspiral in sngl_inspirals)
 
 count_sky_maps_failed = 0
 
@@ -143,10 +178,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
 
     # Look up PSDs
     log.info('%s:reading PSDs', coinc.coinc_event_id)
-    psds = tuple(
-        reference_psd_for_ifo_and_filename(sngl_inspiral.ifo,
-        reference_psd_filenames_by_process_id[sngl_inspiral.process_id])
-        for sngl_inspiral in sngl_inspirals)
+    psds = reference_psds_for_sngls(sngl_inspirals)
 
     # Loop over sky localization methods
     for method in opts.method:
@@ -157,9 +189,10 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
             chain_dump = None
         try:
             sky_map, epoch, elapsed_time = ligolw_sky_map.ligolw_sky_map(
-                sngl_inspirals, approximant, amplitude_order, phase_order, f_low,
-                opts.min_distance, opts.max_distance, opts.prior_distance_power,
-                psds=psds, method=method, nside=opts.nside, chain_dump=chain_dump)
+                sngl_inspirals, opts.waveform, opts.f_low, opts.min_distance,
+                opts.max_distance, opts.prior_distance_power, psds=psds,
+                method=method, nside=opts.nside, chain_dump=chain_dump,
+                phase_convention=opts.phase_convention)
         except (ArithmeticError, ValueError):
             log.exception("%s:method '%s':sky localization failed", coinc.coinc_event_id, method)
             count_sky_maps_failed += 1
@@ -169,7 +202,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
             log.info("%s:method '%s':saving sky map", coinc.coinc_event_id, method)
             fits.write_sky_map('%s.%s.fits.gz' % (int(coinc.coinc_event_id), method),
                 sky_map, objid=str(coinc.coinc_event_id), gps_time=float(epoch),
-                creator=parser.get_prog_name(), runtime=elapsed_time,
+                creator=parser.prog, runtime=elapsed_time,
                 instruments=instruments, nest=True)
 
 

@@ -19,6 +19,7 @@ AC_CONFIG_FILES([ \
   src/LALSimulationVCSInfo.c \
   src/LALSimulationVCSInfo.h \
   src/Makefile \
+  src/mathematica_codes/Makefile \
   swig/Makefile \
   test/Makefile \
 ])
