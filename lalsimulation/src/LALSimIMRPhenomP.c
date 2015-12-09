@@ -233,6 +233,7 @@ int XLALSimIMRPhenomP(
 
   int retcode = PhenomPCore(hptilde, hctilde,
       chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version);
+  XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
   XLALDestroyREAL8Sequence(freqs);
   return (retcode);
 }
@@ -261,7 +262,7 @@ int XLALSimIMRPhenomPFrequencySequence(
   // spaced and we want the strain only at these frequencies
   int retcode = PhenomPCore(hptilde, hctilde,
       chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version);
-
+  XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
   return(retcode);
 }
 
@@ -500,8 +501,12 @@ static int PhenomPCore(
     "Failed to shift coalescence time by -1.0/deltaF with deltaF=%g.", deltaF); // shift by overall length in time
 
     *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
+    if(!*hptilde) {
+      errcode = XLAL_ENOMEM;
+      goto cleanup;
+    }
     *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
-    if(!*hptilde || !*hctilde) {
+    if(!*hctilde) {
       errcode = XLAL_ENOMEM;
       goto cleanup;
     }
@@ -523,8 +528,12 @@ static int PhenomPCore(
     n = freqs_in->length;
 
     *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
+    if(!*hptilde) {
+      errcode = XLAL_ENOMEM;
+      goto cleanup;
+    }
     *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
-    if(!*hptilde || !*hctilde) {
+    if(!*hctilde) {
       errcode = XLAL_ENOMEM;
       goto cleanup;
     }
