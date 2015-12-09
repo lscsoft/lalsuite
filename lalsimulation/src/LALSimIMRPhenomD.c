@@ -257,7 +257,7 @@ static int IMRPhenomDGenerateFD(
 
   // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
   // (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
-
+  REAL8 testGRcor=1.0;
   if (extraParams!=NULL)
   {
 	  if (XLALSimInspiralTestGRParamExists(extraParams,"dchi6"))  testGRcor += XLALSimInspiralGetTestGRParam(extraParams,"dchi6");
