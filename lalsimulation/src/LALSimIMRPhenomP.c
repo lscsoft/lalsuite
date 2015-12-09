@@ -140,7 +140,7 @@ int XLALSimIMRPhenomPCalculateModelParameters(
   const REAL8 ASp2 = A2*S2_perp;
   const REAL8 num = (ASp2 > ASp1) ? ASp2 : ASp1;
   const REAL8 den = (m2 > m1) ? A2*m2_2 : A1*m1_2;
-  *chip = num / den; /*  chip = max(A1 Sp1, A2 Sp2) / (A_i m_i^2) for i index of larger BH */
+  *chip = num / den; /*  chip = max(A1 Sp1, A2 Sp2) / (A_i m_i^2) for i index of larger BH (See Eqn. 32 in technical document) */
 
   /* Compute L, J0 and orientation angles */
   const REAL8 m_sec = M * LAL_MTSUN_SI;   /* Total mass in seconds */
@@ -227,6 +227,7 @@ int XLALSimIMRPhenomP(
   // Instead of building a full sequency we only transfer the boundaries and let
   // the internal core function do the rest (and properly take care of corner cases).
   REAL8Sequence *freqs = XLALCreateREAL8Sequence(2);
+  XLAL_CHECK(freqs != NULL, XLAL_EFAULT);
   freqs->data[0] = f_min;
   freqs->data[1] = f_max;
 
@@ -292,7 +293,7 @@ static int PhenomPCore(
   /* Check inputs for sanity */
   XLAL_CHECK(*hptilde == NULL, XLAL_EFAULT);
   XLAL_CHECK(*hctilde == NULL, XLAL_EFAULT);
-  XLAL_CHECK(deltaF > 0, XLAL_EDOM, "deltaF must be non-negative.\n");
+  XLAL_CHECK(deltaF >= 0, XLAL_EDOM, "deltaF must be non-negative.\n");
   XLAL_CHECK(m1_SI_in > 0, XLAL_EDOM, "m1 must be positive.\n");
   XLAL_CHECK(m2_SI_in > 0, XLAL_EDOM, "m2 must be positive.\n");
   XLAL_CHECK(f_ref > 0, XLAL_EDOM, "Reference frequency must be non-negative.\n");
@@ -315,8 +316,6 @@ static int PhenomPCore(
   REAL8 *phis=NULL;
   int errcode = XLAL_SUCCESS;
 
-  XLAL_PRINT_INFO("*** PhenomPCore() ***");
-
   // Enforce convention m2 >= m1
   REAL8 chi1_l, chi2_l;
   REAL8 m1_SI, m2_SI;
@@ -333,11 +332,11 @@ static int PhenomPCore(
     chi2_l = chi1_l_in;
   }
 
-  int status = init_useful_powers(&powers_of_pi, LAL_PI);
-  XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+  errcode = init_useful_powers(&powers_of_pi, LAL_PI);
+  XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "init_useful_powers() failed.");
 
   /* Find frequency bounds */
-  if (!freqs_in) XLAL_ERROR(XLAL_EFAULT);
+  if (!freqs_in || !freqs_in->data) XLAL_ERROR(XLAL_EFAULT);
   double f_min = freqs_in->data[0];
   double f_max = freqs_in->data[freqs_in->length - 1];
   XLAL_CHECK(f_min > 0, XLAL_EDOM, "Minimum frequency must be positive.\n");
@@ -350,9 +349,7 @@ static int PhenomPCore(
   const REAL8 m_sec = M * LAL_MTSUN_SI;   /* Total mass in seconds */
   const REAL8 q = m2 / m1; /* q >= 1 */
   const REAL8 eta = m1 * m2 / (M*M);    /* Symmetric mass-ratio */
-
   const REAL8 piM = LAL_PI * m_sec;
-  const REAL8 v0 = cbrt(piM * f_ref);
 
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
 
@@ -366,19 +363,19 @@ static int PhenomPCore(
     case IMRPhenomPv1_V:
       XLAL_PRINT_WARNING("Warning: IMRPhenomP(v1) is unreviewed.\n");
       if (eta < 0.0453515) /* q = 20 */
-          XLAL_ERROR(XLAL_EDOM, "Mass ratio is way outside the calibration range. m1/m2 should be <= 20.\n");
+          XLAL_ERROR(XLAL_EDOM, "IMRPhenomP(v1): Mass ratio is way outside the calibration range. m1/m2 should be <= 20.\n");
       else if (eta < 0.16)  /* q = 4 */
-          XLAL_PRINT_WARNING("Warning: The model is only calibrated for m1/m2 <= 4.\n");
+          XLAL_PRINT_WARNING("IMRPhenomP(v1): Warning: The model is only calibrated for m1/m2 <= 4.\n");
       /* If spins are above 0.9 or below -0.9, throw an error. */
       /* The rationale behind this is given at this page: https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomCdevel-SanityCheck01 */
       if (chi_eff > 0.9 || chi_eff < -0.9)
-          XLAL_ERROR(XLAL_EDOM, "Effective spin chi_eff = %g outside the range [-0.9,0.9] is not supported!\n", chi_eff);
+          XLAL_ERROR(XLAL_EDOM, "IMRPhenomP(v1): Effective spin chi_eff = %g outside the range [-0.9,0.9] is not supported!\n", chi_eff);
       break;
     case IMRPhenomPv2_V:
       if (q > 18.0)
-        XLAL_PRINT_WARNING("Warning: The model is calibrated up to m1/m2 <= 18.\n");
+        XLAL_PRINT_WARNING("IMRPhenomPv2: Warning: The model is calibrated up to m1/m2 <= 18.\n");
       else if (q > 100.0)
-          XLAL_ERROR(XLAL_EDOM, "Mass ratio q > 100 which is way outside the calibration range q <= 18.\n");
+          XLAL_ERROR(XLAL_EDOM, "IMRPhenomPv2: Mass ratio q > 100 which is way outside the calibration range q <= 18.\n");
       break;
     default:
       XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
@@ -386,13 +383,13 @@ static int PhenomPCore(
       break;
     }
 
-  NNLOanglecoeffs angcoeffs;
+  NNLOanglecoeffs angcoeffs; /* Next-to-next-to leading order PN coefficients for Euler angles alpha and epsilon */
   ComputeNNLOanglecoeffs(&angcoeffs,q,chil,chip);
 
   /* Compute the offsets due to the choice of integration constant in alpha and epsilon PN formula */
   const REAL8 omega_ref = piM * f_ref;
   const REAL8 logomega_ref = log(omega_ref);
-  const REAL8 omega_ref_cbrt = v0;
+  const REAL8 omega_ref_cbrt = cbrt(piM * f_ref); // == v0
   const REAL8 omega_ref_cbrt2 = omega_ref_cbrt*omega_ref_cbrt;
   const REAL8 alphaNNLOoffset = (angcoeffs.alphacoeff1/omega_ref
                               + angcoeffs.alphacoeff2/omega_ref_cbrt2
@@ -427,7 +424,7 @@ static int PhenomPCore(
       // PhenomC with ringdown using Barausse 2009 formula for final spin
       PCparams = ComputeIMRPhenomCParamsRDmod(m1, m2, chi_eff, chip);
       if (!PCparams) {
-        errcode=XLAL_EFUNC;
+        errcode = XLAL_EFUNC;
         goto cleanup;
       }
       fCut = PCparams->fCut;
@@ -435,9 +432,9 @@ static int PhenomPCore(
       break;
     case IMRPhenomPv2_V:
       XLAL_PRINT_INFO("*** IMRPhenomP version 2: based on IMRPhenomD ***");
-      // PhenomD uses FinalSpin0714() to calculate the final spin if the spins are aligned.
+      // PhenomD uses FinalSpin0815() to calculate the final spin if the spins are aligned.
       // We use the more general Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009 here.
-      // Final spin wrapper assumes that m1 >= m2.
+      // Final spin wrapper assumes that m1 >= m2, so we switch the spins in the following calls.
       finspin = FinalSpinBarausse2009_all_in_plane_spin_on_larger_BH(eta, chi2_l, chi1_l, chip);
       if( fabs(finspin) > 1.0 ) {
         XLAL_PRINT_WARNING("Warning: final spin magnitude %g > 1. Setting final spin magnitude = 1.", finspin);
@@ -458,16 +455,13 @@ static int PhenomPCore(
       // was not available when PhenomD was tuned.
       pn->v[6] -= (Subtract3PNSS(m1, m2, M, chi1_l, chi2_l) * pn->v[0]);
 
-
-
-
       PhiInsPrefactors phi_prefactors;
-      status = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
-      XLAL_CHECK(XLAL_SUCCESS == status, status, "init_phi_ins_prefactors failed");
+      errcode = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
+      XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "init_phi_ins_prefactors failed");
 
       ComputeIMRPhenDPhaseConnectionCoefficients(pPhi, pn, &phi_prefactors);
       // This should be the same as the ending frequency in PhenomD
-      fCut = 0.2 / m_sec;
+      fCut = f_CUT / m_sec;
       f_final = pAmp->fRD / m_sec;
       break;
     default:
@@ -476,18 +470,18 @@ static int PhenomPCore(
       goto cleanup;
       break;
   }
+
   if (fCut <= f_min)
-    XLAL_ERROR(XLAL_EDOM, "fCut <= f_min\n");
+    XLAL_ERROR(XLAL_EDOM, "fCut = %.2f/M <= f_min\n", fCut);
 
   /* Default f_max to params->fCut */
   REAL8 f_max_prime = f_max ? f_max : fCut;
   f_max_prime = (f_max_prime > fCut) ? fCut : f_max_prime;
   if (f_max_prime <= f_min){
     XLALPrintError("f_max <= f_min\n");
-    errcode=XLAL_EDOM;
+    errcode = XLAL_EDOM;
     goto cleanup;
   }
-  XLAL_PRINT_INFO("f_max_prime = %g\tfcut = %g\tv = %g\n", f_max_prime, fCut, cbrt(piM * f_max_prime));
 
   /* Allocate hp, hc */
 
@@ -495,8 +489,6 @@ static int PhenomPCore(
   size_t n = 0;
   UINT4 offset = 0; // Index shift between freqs and the frequency series
   if (deltaF > 0)  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
-    XLAL_PRINT_INFO("f_max / deltaF = %g\n", f_max_prime / deltaF);
-
     /* Set up output array with size closest power of 2 */
     if (f_max_prime < f_max)  /* Resize waveform if user wants f_max larger than cutoff frequency */
       n = NextPow2(f_max / deltaF) + 1;
@@ -504,7 +496,8 @@ static int PhenomPCore(
       n = NextPow2(f_max_prime / deltaF) + 1;
 
     /* coalesce at t=0 */
-    XLALGPSAdd(&ligotimegps_zero, -1. / deltaF); // shift by overall length in time
+    XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / deltaF), XLAL_EFUNC,
+    "Failed to shift coalescence time by -1.0/deltaF with deltaF=%g.", deltaF); // shift by overall length in time
 
     *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
     *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
@@ -518,13 +511,13 @@ static int PhenomPCore(
     size_t i_max = (size_t) (f_max_prime / deltaF);
     freqs = XLALCreateREAL8Sequence(i_max - i_min);
     if (!freqs) {
-      errcode=XLAL_EFUNC;
+      errcode = XLAL_EFUNC;
       XLALPrintError("Frequency array allocation failed.");
       goto cleanup;
     }
-    for (UINT4 i=i_min; i<i_max; i++, L_fCut++)
+    for (UINT4 i=i_min; i<i_max; i++)
       freqs->data[i-i_min] = i*deltaF;
-
+    L_fCut = freqs->length;
     offset = i_min;
   } else { // freqs contains frequencies with non-uniform spacing; we start at lowest given frequency
     n = freqs_in->length;
@@ -544,7 +537,7 @@ static int PhenomPCore(
       if (!(freqs_in->data[i] > freqs_in->data[i-1]))
       {
         XLALPrintError("Frequency sequence must be strictly increasing!\n");
-        errcode=XLAL_EDOM;
+        errcode = XLAL_EDOM;
         goto cleanup;
       }
     }
@@ -552,7 +545,7 @@ static int PhenomPCore(
     freqs = XLALCreateREAL8Sequence(n);
     if (!freqs) {
       XLALPrintError( "Frequency array allocation failed.");
-      errcode=XLAL_ENOMEM;
+      errcode = XLAL_ENOMEM;
       goto cleanup;
     }
     // Restrict sequence to frequencies <= fCut
@@ -571,7 +564,7 @@ static int PhenomPCore(
 
   phis = XLALMalloc(L_fCut*sizeof(REAL8)); // array for waveform phase
   if(!phis) {
-    errcode=XLAL_ENOMEM;
+    errcode = XLAL_ENOMEM;
     goto cleanup;
   }
   REAL8 phasing = 0;
@@ -580,10 +573,10 @@ static int PhenomPCore(
   PhiInsPrefactors phi_prefactors;
 
   if (IMRPhenomP_version == IMRPhenomPv2_V) {
-    status = init_amp_ins_prefactors(&amp_prefactors, pAmp);
-    XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
-    status = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
-    XLAL_CHECK(XLAL_SUCCESS == status, status, "return status is not XLAL_SUCCESS");
+    errcode = init_amp_ins_prefactors(&amp_prefactors, pAmp);
+    XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "init_amp_ins_prefactors() failed.");
+    errcode = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
+    XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "init_phi_ins_prefactors() failed.");
   }
 
   /*
@@ -632,21 +625,18 @@ static int PhenomPCore(
 
     gsl_spline_init(phiI, freqs->data, phis, L_fCut);
 
-    XLAL_PRINT_INFO("f_ringdown = %g\n", f_final);
-
     // Prevent gsl interpolation errors
     if (f_final > freqs->data[L_fCut-1])
       f_final = freqs->data[L_fCut-1];
     if (f_final < freqs->data[0])
     {
       XLALPrintError("f_ringdown < f_min\n");
-      errcode=XLAL_EDOM;
+      errcode = XLAL_EDOM;
       goto cleanup;
     }
 
     /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
     REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
-    XLAL_PRINT_INFO("Time correction: t_corr = %g", t_corr);
 
     /* Now correct phase */
     for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
@@ -710,6 +700,7 @@ static int PhenomPCoreOneFrequency(
   XLAL_CHECK(angcoeffs != NULL, XLAL_EFAULT);
   XLAL_CHECK(hp != NULL, XLAL_EFAULT);
   XLAL_CHECK(hc != NULL, XLAL_EFAULT);
+  XLAL_CHECK(Y2m != NULL, XLAL_EFAULT);
   XLAL_CHECK(phasing != NULL, XLAL_EFAULT);
 
   REAL8 f = fHz*LAL_MTSUN_SI*M; /* Frequency in geometric units */
@@ -717,7 +708,6 @@ static int PhenomPCoreOneFrequency(
   REAL8 aPhenom = 0.0;
   REAL8 phPhenom = 0.0;
   int errcode = XLAL_SUCCESS;
-  int status = XLAL_SUCCESS;
   UsefulPowers powers_of_f;
 
  /*
@@ -753,8 +743,8 @@ static int PhenomPCoreOneFrequency(
       XLAL_CHECK(PNparams != NULL, XLAL_EFAULT);
       XLAL_CHECK(amp_prefactors != NULL, XLAL_EFAULT);
       XLAL_CHECK(phi_prefactors != NULL, XLAL_EFAULT);
-      status = init_useful_powers(&powers_of_f, f);
-      XLAL_CHECK(status == XLAL_SUCCESS, status, "init_useful_powers failed for f");
+      errcode = init_useful_powers(&powers_of_f, f);
+      XLAL_CHECK(errcode == XLAL_SUCCESS, errcode, "init_useful_powers failed for f");
       aPhenom = IMRPhenDAmplitude(f, pAmp, &powers_of_f, amp_prefactors);
       phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors);
       SL = chi1_l*m1*m1 + chi2_l*m2*m2;        /* Dimensionfull aligned spin. */
@@ -802,10 +792,10 @@ static int PhenomPCoreOneFrequency(
   REAL8 cBetah, sBetah; /* cos(beta/2), sin(beta/2) */
   switch (IMRPhenomP_version) {
     case IMRPhenomPv1_V:
-      WignerdCoefficients_SmallAngleApproximation(omega_cbrt, SL, eta, Sperp, &cBetah, &sBetah);
+      WignerdCoefficients_SmallAngleApproximation(&cBetah, &sBetah, omega_cbrt, SL, eta, Sperp);
       break;
     case IMRPhenomPv2_V:
-      WignerdCoefficients(omega_cbrt, SL, eta, Sperp, &cBetah, &sBetah);
+      WignerdCoefficients(&cBetah, &sBetah, omega_cbrt, SL, eta, Sperp);
       break;
   default:
     XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
@@ -821,7 +811,7 @@ static int PhenomPCoreOneFrequency(
   const REAL8 sBetah4 = sBetah3*sBetah;
 
   /* Compute Wigner d coefficients
-    The expressions below agree with refX and Mathematica
+    The expressions below agree with refX [Goldstein?] and Mathematica
     d2  = Table[WignerD[{2, mp, 2}, 0, -\[Beta], 0], {mp, -2, 2}]
     dm2 = Table[WignerD[{2, mp, -2}, 0, -\[Beta], 0], {mp, -2, 2}]
   */
@@ -979,12 +969,12 @@ static REAL8 L2PNR_v1(
 
 /* Expressions used for the WignerD symbol. */
 static void WignerdCoefficients(
+  REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
+  REAL8 *sin_beta_half, /**< Output: sin(beta/2) */
   const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 SL,       /**< Dimensionfull aligned spin */
   const REAL8 eta,      /**< Symmetric mass-ratio */
-  const REAL8 Sp,       /**< Dimensionfull spin component in the orbital plane */
-  REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
-  REAL8 *sin_beta_half) /**< Output: sin(beta/2) */
+  const REAL8 Sp)       /**< Dimensionfull spin component in the orbital plane */
 {
   XLAL_CHECK_VOID(cos_beta_half != NULL, XLAL_EFAULT);
   XLAL_CHECK_VOID(sin_beta_half != NULL, XLAL_EFAULT);
@@ -1004,12 +994,12 @@ static void WignerdCoefficients(
 
 /* Expressions used for the WignerD symbol with small angle approximation. For IMRPhenomP(v1). */
 static void WignerdCoefficients_SmallAngleApproximation(
+  REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
+  REAL8 *sin_beta_half, /**< Output: sin(beta/2) */
   const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 SL,       /**< Dimensionfull aligned spin */
   const REAL8 eta,      /**< Symmetric mass-ratio */
-  const REAL8 Sp,       /**< Dimensionfull spin component in the orbital plane */
-  REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
-  REAL8 *sin_beta_half) /**< Output: sin(beta/2) */
+  const REAL8 Sp)       /**< Dimensionfull spin component in the orbital plane */
 {
   XLAL_CHECK_VOID(cos_beta_half != NULL, XLAL_EFAULT);
   XLAL_CHECK_VOID(sin_beta_half != NULL, XLAL_EFAULT);
@@ -1045,32 +1035,6 @@ static REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(
   return FinalSpinBarausse2009(nu, a1, a2, cos_alpha, cos_beta_tilde, cos_gamma_tilde);
 }
 
-#if 0
-static REAL8 FinalSpinBarausse2009_aligned_spin_equally_distributed(
-  const REAL8 nu,     /**< Symmetric mass-ratio */
-  const REAL8 chi,    /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
-  const REAL8 chip)   /**< Dimensionless spin in the orbital plane */
-{
-  /* Use convention m1>m2 as in arXiv:0904.2577 */
-  /* Put all spin on larger BH: a1 = (chip, 0, chi), a2 = (0,0,0), L = (0,0,1) */
-  const REAL8 a1_x = chip;
-  const REAL8 a1_y = 0;
-  const REAL8 a1_z = chi;
-  const REAL8 a2_x = 0;
-  const REAL8 a2_y = 0;
-  const REAL8 a2_z = chi;
-
-  const REAL8 a1 = sqrt(a1_x*a1_x + a1_y*a1_y + a1_z*a1_z);
-  const REAL8 a2 = sqrt(a2_x*a2_x + a2_y*a2_y + a2_z*a2_z);
-
-  const REAL8 cos_alpha = (a1*a2 == 0) ? 0.0 : a1_z*a2_z/(a1*a2); /* cos(alpha) = \hat a1 . \hat a2 (Eq. 7) */
-  const REAL8 cos_beta_tilde  = (a1 == 0) ? 0.0 : a1_z/a1;  /* \cos(\tilde \beta)  = \hat a1 . \hat L  (Eq. 9) */
-  const REAL8 cos_gamma_tilde = (a2 == 0) ? 0.0 : a2_z/a2;  /* \cos(\tilde \gamma) = \hat a2 . \hat L (Eq. 9) */
-
-  return FinalSpinBarausse2009(nu, a1, a2, cos_alpha, cos_beta_tilde, cos_gamma_tilde);
-}
-#endif
-
 static REAL8 FinalSpinBarausse2009_all_in_plane_spin_on_larger_BH(
   const REAL8 nu,     /**< Symmetric mass-ratio */
   const REAL8 chi1_l, /**< Aligned spin of BH 1 (m1 >= m2) */
@@ -1095,7 +1059,6 @@ static REAL8 FinalSpinBarausse2009_all_in_plane_spin_on_larger_BH(
 
   return FinalSpinBarausse2009(nu, a1, a2, cos_alpha, cos_beta_tilde, cos_gamma_tilde);
 }
-
 
 static REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009, arXiv:0904.2577 */
   const REAL8 nu,               /**< Symmetric mass-ratio */
