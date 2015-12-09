@@ -368,13 +368,14 @@ int XLALApplyPhaseCorrection(COMPLEX8TimeSeries **outts,            /**< [out] t
   for (j=0;j<ints->data->length;j++) {
 
     /* compute phase correction including heterodyne to shift frequencies to match up with grid */
-    REAL8 tn = j*ints->deltaT - 0.5*ints->deltaT*ints->data->length;
+    const REAL8 t = j*ints->deltaT - 0.5*ints->deltaT*ints->data->length;
+    REAL8 tn = t;
     REAL8 arg = 0.0;
     UINT4 fac = 1;
 
     /* loop over each spin derivitive and add to phase contribution for current time sample */
     for (k=0;k<fn->ndim;k++) {
-      tn *= tn;
+      tn *= t;
       fac *= k+2;
       arg += (-1.0)*LAL_TWOPI*fn->x[k]*tn/fac;
     }

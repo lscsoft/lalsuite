@@ -525,6 +525,40 @@ void XLALFileRewind( LALFILE *file )
   return;
 }
 
+/** \brief Set buffering for file I/O
+ *
+ * For a regular file buffering will be set using \c setvbuf. If \c buf is \c NULL then a buffer of \c size will be
+ * automatically allocated. The \c mode can be \c _IONBF, \c _IOLBF or \c _IOFBF for no buffering, line buffering
+ * or full buffering respectively.
+ *
+ * For a compressed file the buffering will be set with \c gzbuffer. The \c buf and \c mode inputs are ignored and a
+ * buffer of \c size is set.
+ */
+int XLALFileSetBuffer( LALFILE *file, char *buf, int mode, size_t size )
+{
+  int c = 0;
+  if ( ! file )
+    XLAL_ERROR( XLAL_EFAULT );
+#ifdef ZLIB_ENABLED
+  if ( !file->compression ){
+    c = setvbuf(((FILE*)file->fp), buf, mode, size);
+  }
+  else{
+#if defined ZLIB_VER_MAJOR && ZLIB_VER_MAJOR >= 1 && ZLIB_VER_MINOR >= 2 && ZLIB_VER_REVISION >= 4
+    c = (int)gzbuffer(((gzFile)file->fp), size);
+#else
+    XLAL_PRINT_WARNING("Ignored buffering: unsupported in zlib version %s", ZLIB_VERSION);
+#endif
+  }
+#else
+  c = setvbuf(((FILE*)file->fp), buf, mode, size);
+#endif
+  if ( c != 0 )
+    XLAL_ERROR( XLAL_EIO );
+  return c;
+}
+
+
 int XLALFileEOF( LALFILE *file )
 {
   int c;

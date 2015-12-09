@@ -194,7 +194,7 @@ const char *SFTErrorMessage(int errorcode) {
   case SFTENSAMPLESNOTPOS:
     return "SFT number of data samples is not positive";
   case SFTEINSTRUMENTUNKNOWN:
-    return "SFT detector not one of A1 B1 E1 G1 H1 H2 K1 L1 N1 O1 P1 T1 V1 V2";
+    return "SFT detector not one of A1 B1 E1 G1 H1 H2 K1 L1 N1 O1 P1 T1 V1 V2 X1";
   case SFTEBEFOREDATA:
     return "SFT data requested lies before available data";
   case SFTEAFTERDATA:
@@ -687,18 +687,18 @@ int unknownDetector (const char *detector) {
   const char *knownDetectors[] = {
     "A1",       /* ALLEGRO */
     "B1",       /* NIOBE */
-    "E1",       /* EXPLORER */
+    "E1",       /* ET */
     "G1",       /* GEO_600 */
     "H1",       /* LHO_4k */
     "H2",       /* LHO_2k */
-    "K1",       /* ACIGA */
+    "K1",       /* KAGRA */
     "L1",       /* LLO_4k */
     "N1",       /* Nautilus */
     "O1",       /* AURIGA */
     "P1",       /* CIT_40 */
     "T1",       /* TAMA_300 */
-    "V1",       /* Virgo_CITF */
-    "V2",       /* Virgo (3km) */
+    "V1",       /* Virgo (3km) */
+    "V2",       /* Virgo_CITF */
     "X1",       /* RXTE */
     NULL
   };

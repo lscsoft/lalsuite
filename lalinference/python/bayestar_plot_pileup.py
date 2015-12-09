@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011  Leo Singer
+# Copyright (C) 2011-2015  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,41 +23,25 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 # Command line interface
 
-from optparse import Option, OptionParser
 from lalinference.bayestar import command
-parser = OptionParser(
-    description = __doc__,
-    usage = "%prog [options] INPUT1.fits[.gz] INPUT2.fits[.gz] ...",
-    option_list = [
-        Option("-o", "--output", metavar="FILE.{pdf,png}",
-            help="name of output file [default: plot to screen]"),
-        Option("--figure-width", metavar="INCHES", type=float, default=8.,
-            help="width of figure in inches [default: %default]"),
-        Option("--figure-height", metavar="INCHES", type=float, default=6.,
-            help="height of figure in inches [default: %default]"),
-        Option("--dpi", metavar="PIXELS", type=int, default=300,
-            help="resolution of figure in dots per inch [default: %default]"),
-        Option("--contour", metavar="PERCENT", type=float, default=90,
-            help="plot contour enclosing this percentage of"
-            + " probability mass [default: %default]"),
-        Option("--alpha", metavar="ALPHA", type=float, default=0.1,
-            help="alpha blending for each sky map [default: %default]"),
-        Option("--transparent", action="store_true", default=False,
-            help="Save image with transparent background [default: %default]")
-    ]
-)
-opts, args = parser.parse_args()
+parser = command.ArgumentParser(parents=[command.figure_parser])
+parser.add_argument('--contour', metavar='PERCENT', type=float, default=90,
+    help='plot contour enclosing this percentage of'
+    ' probability mass [default: %(default)s]')
+parser.add_argument('--alpha', metavar='ALPHA', type=float, default=0.1,
+    help='alpha blending for each sky map [default: %(default)s]')
+parser.add_argument('--transparent', action='store_true', default=False,
+    help='Save image with transparent background [default: %(default)s]')
+parser.add_argument(
+    'fitsfileglobs', metavar='GLOB.fits[.gz]', nargs='+',
+    help='Input FITS filenames and/or globs')
+opts = parser.parse_args()
 
 # Late imports
 
-# Choose a matplotlib backend that is suitable for headless
-# rendering if output to file is requested
-import matplotlib
-if opts.output is not None:
-    matplotlib.use('agg')
-
 import functools
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import healpy as hp
 import lal
@@ -66,15 +50,14 @@ from lalinference import plot
 from glue.text_progress_bar import ProgressBar
 
 
-fig = plt.figure(figsize=(opts.figure_width, opts.figure_height), frameon=False)
-ax = plt.subplot(111, projection='mollweide')
-ax.cla()
+fig = plt.figure(frameon=False)
+ax = plt.axes(projection='mollweide')
 ax.grid()
 
 progress = ProgressBar()
 
 progress.update(-1, 'obtaining filenames of sky maps')
-fitsfilenames = tuple(command.chainglob(args))
+fitsfilenames = tuple(command.chainglob(opts.fitsfileglobs))
 
 progress.max = len(fitsfilenames)
 
@@ -104,7 +87,4 @@ if opts.transparent:
     ax.patch.set_alpha(0.)
     ax.set_alpha(0.)
 
-if opts.output is None:
-    plt.show()
-else:
-    plt.savefig(opts.output, dpi=opts.dpi)
+opts.output()

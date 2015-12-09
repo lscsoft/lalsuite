@@ -21,6 +21,10 @@ parser.add_argument('--gracedb', action='store_true',
                     default=False,
                     help='Runs the analysis for the GraceDB test event T169545.')
 
+parser.add_argument('--bbh-injection', type=str, nargs='?',
+                    default='',
+                    help='injection file for optional BBH analysis.')
+
 parser.add_argument('-e','--engine', type=str, nargs='?',
                     default='lalinferencemcmc',
                     help='lalinference engine to run with.')
@@ -209,6 +213,64 @@ if args.gracedb:
                          , '-p'
                          , './daglog'
                          , args.output+'/GraceDB/'+os.path.basename(ini_file)
+                         , '--dax'
+                         , '--grid-site'
+                         , 'local'
+                         ]
+
+    if args.pegasus_submit:
+        lalinferenceargs.append('--pegasus-submit')
+
+    subprocess.call(lalinferenceargs)
+
+############################################################
+
+def replace_fiducial_bbh(line):
+    if 'webdir=' in line:
+        return line.replace(line.split('=')[-1],os.getcwd()+'/webdir/')
+    if 'baseurl=' in line:
+        return line.replace(line.split('=')[-1],'file://'+os.getcwd()+'/webdir/')
+    if 'fake-cache=' in line:
+        return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
+    if 'ignore-science-segments=' in line:
+        return 'ignore-science-segments=True\n'
+    if 'dataseed=' in line:
+        return line.replace('#','').strip()+'\n'
+    if 'disable-spin=' in line:
+        return '#disable-spin=\n'
+    if 'margphi=' in line:
+        return '#margphi=\n'
+    if 'margtime=' in line:
+        return line.replace('#','').strip()+'\n'
+    if 'amporder=' in line:
+        return 'amporder=-1\nfref=0\n'
+    if 'parname-max' in line:
+        return line+'distance-max=2000\n'
+    if 'deltaLogL=' in line:
+        return 'deltaLogL=7\n'
+    return line
+
+if args.bbh_injection != '':
+
+    os.makedirs(args.output+'/fiducialBBH/')
+    os.chdir(args.output+'/fiducialBBH/')
+
+    shutil.copy(ini_file,args.output+'/fiducialBBH/'+os.path.basename(ini_file)+'.bak')
+    shutil.copy(ini_file,args.output+'/fiducialBBH/')
+
+    with open(args.output+'/fiducialBBH/'+os.path.basename(ini_file),'w') as fout:
+        with open(args.output+'/fiducialBBH/'+os.path.basename(ini_file)+'.bak','r') as fin:
+            for line in fin:
+                fout.write(replace_fiducial_bbh(line))
+
+    lalinferenceargs = [ 'lalinference_pipe'
+                         , '-I'
+                         , args.bbh_injection
+                         , '-r'
+                         , './run'
+                         , '-p'
+                         , './daglog'
+                         , args.output+'/fiducialBBH/'+os.path.basename(ini_file)
                          , '--dax'
                          , '--grid-site'
                          , 'local'

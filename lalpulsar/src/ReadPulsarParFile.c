@@ -560,6 +560,7 @@ DEFINE_CONV_FACTOR_FUNCTION( ArcsecsToRads, LAL_PI_180/3600., CONVFLOAT ) /* con
 DEFINE_CONV_FACTOR_FUNCTION( MasToRads, LAL_PI_180/3600.0e3, CONVFLOAT ) /* convert milliarcseconds to radians */
 DEFINE_CONV_FACTOR_FUNCTION( InvArcsecsToInvRads, 3600./LAL_PI_180, CONVFLOAT ) /* convert 1/arcsec to 1/rads */
 DEFINE_CONV_FACTOR_FUNCTION( DaysToSecs, DAYSTOSECS, CONVFLOAT ) /* convert days to seconds */
+DEFINE_CONV_FACTOR_FUNCTION( KpcToMetres, LAL_PC_SI*1.e3, CONVFLOAT ) /* convert kiloparsecs to metres */
 DEFINE_CONV_FACTOR_FUNCTION( BinaryUnits, 1.e-12, CONVBINUNITS ) /* convert certain binary units as defined in TEMPO2 with factor */
 DEFINE_CONV_FACTOR_FUNCTION( MJDToGPS, 0, CONVMJD ) /* convert from MJD to GPS time */
 DEFINE_CONV_FACTOR_FUNCTION( DegPerYrToRadParSec, LAL_PI_180/(365.25*DAYSTOSECS), CONVFLOAT ) /* convert degs/year to rads/s */
@@ -581,7 +582,7 @@ typedef struct tagParConversion{
 }ParConversion;
 
 
-#define NUM_PARS 108 /* number of allowed parameters */
+#define NUM_PARS 109 /* number of allowed parameters */
 
 /** Initialise conversion structure with most allowed TEMPO2 parameter names and conversion functions
  * (convert all read in parameters to SI units where necessary). See http://arxiv.org/abs/astro-ph/0603381 and
@@ -601,7 +602,7 @@ ParConversion pc[NUM_PARS] = {
   { .name = "F7", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* seventh frequency time derivative (Hz/s^7) */
   { .name = "F8", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* eighth frequency time derivative (Hz/s^8) */
   { .name = "F9", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* ninth frequency time derivative (Hz/s^9) */
-  { .name = "DIST", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* distance to pulsar in kpc */
+  { .name = "DIST", .convfunc = ParConvKpcToMetres, .converrfunc = ParConvKpcToMetres, .ptype = PULSARTYPE_REAL8_t }, /* distance to pulsar in metres */
   { .name = "PX", .convfunc = ParConvMasToRads, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* parallax (converted to radians) */
   { .name = "DM", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* dispersion measure */
   { .name = "DM1", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /*first derivative of the dispersion measure */
@@ -707,6 +708,7 @@ ParConversion pc[NUM_PARS] = {
   { .name = "THETA", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "I21", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "I31", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
+  { .name = "Q22", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* the l=m=2 mass quadrupole in kg m^2 */
 
   /* GW non-GR polarisation mode amplitude parameters */
   { .name = "HPLUS", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW tensor plus polarisation amplitude */
@@ -1159,6 +1161,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->DM1Err=0.;
 
   output->h0=0.;
+  output->Q22=0.;
   output->cosiota=0.;
   output->iota=0.;
   output->psi=0.;
@@ -1189,6 +1192,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->phi0Vector=0.;
 
   output->h0Err=0.;
+  output->Q22Err=0.;
   output->cosiotaErr=0.;
   output->iotaErr=0.;
   output->psiErr=0.;
@@ -2048,6 +2052,15 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
 
       if(atoi(val[i+2])==1 && i+2<k){
         output->h0Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"q22") || !strcmp(val[i],"Q22") ) {
+      output->Q22 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->Q22Err = atof(val[i+3]);
         j+=2;
       }
     }

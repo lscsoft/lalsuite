@@ -449,7 +449,7 @@ INT4 XLALSimInspiralSpinDerivatives(REAL8 *dLNhx,
   REAL8 v7=omega2*v;
   REAL8 v8=omega2*v2;
   REAL8 omega3=omega2*omega;
-  REAL8 v10=omega2*v;
+  REAL8 v10=omega3*v;
 
   /* Phasing is given in terms of LNhat, however we know the
    * evolution equation for L, which is not parallel to LN, because

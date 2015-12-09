@@ -279,8 +279,8 @@ static REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f
 }
 
 /*
- * Find a higher value of f_max so that we can safely apply a window later. 
- * The safety factor 1.025 is an empirical estimation 
+ * Find a higher value of f_max so that we can safely apply a window later.
+ * The safety factor 1.025 is an empirical estimation
  */
 static REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 deltaT) {
   REAL8 temp_f_max = 1.025 * f_max;
@@ -628,9 +628,9 @@ static int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
     return 0;
 }
 
-/* Apply the inclination-angle weighting to the two polarizations 
+/* Apply the inclination-angle weighting to the two polarizations
 * Ref. Eq.(63) of B.S. Sathyaprakash and Bernard F. Schutz,
-* “Physics, Astrophysics and Cosmology with Gravitational Waves”, 
+* “Physics, Astrophysics and Cosmology with Gravitational Waves”,
 * Living Rev. Relativity, 12, (2009), 2. [Online Article]: cited 27 Nov 2013,
 * http://www.livingreviews.org/lrr-2009-2
 */
@@ -1206,9 +1206,11 @@ static gsl_matrix *XLALSimIMRPhenomBProjectExtrinsicParam(
  * and Riccardo Sturani. The review concluded with git hash
  * 43ce3b0a8753eb266d75a43ba94b6fb6412121d0 (May 2014).
  *
- * @review IMRPhenomD routines are currently under review by Alex Nielsen, Carl Haster,
+ * @review IMRPhenomD routines reviewed by Alex Nielsen, Carl Haster,
  * Sebastian Khan, Sascha Husa, Frank Ohme, Mark Hannam, Ofek Brinholtz, Lionel London and
  * David Keitel.
+ * The review concluded with git hash
+ * db16d17013531cd10451c7d0c6906972ce731866 (Oct/Nov 2015).
  * @{
  */
 
@@ -1366,7 +1368,7 @@ int XLALSimIMRPhenomAGenerateTD(
 }
 
 /**
- * Compute the default final frequency 
+ * Compute the default final frequency
  */
 double XLALSimIMRPhenomAGetFinalFreq(
     const REAL8 m1,
@@ -1399,7 +1401,7 @@ double XLALSimIMRPhenomBComputeChi(
 }
 
 /**
- * Compute the default final frequency 
+ * Compute the default final frequency
  */
 double XLALSimIMRPhenomBGetFinalFreq(
     const REAL8 m1,

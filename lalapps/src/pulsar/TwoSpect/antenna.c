@@ -244,3 +244,27 @@ REAL4 CompDetectorVmax(const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap,
    return Vmax;
 
 } /* CompDetectorVmax() */
+REAL4 CompDetectorVmax2(const LIGOTimeGPSVector *timestamps, const LALDetector det, EphemerisData *edat)
+{
+   XLAL_CHECK( timestamps!=NULL && edat != NULL, XLAL_EINVAL );
+
+   LALStatus XLAL_INIT_DECL(status);
+
+   LIGOTimeGPS gpstime = timestamps->data[0];
+
+   REAL8 detvel[3];
+   LALDetectorVel(&status, detvel, &gpstime, det, edat);
+   XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
+   REAL4 Vmax = (REAL4)sqrt(detvel[0]*detvel[0] + detvel[1]*detvel[1] + detvel[2]*detvel[2]);
+
+   for (UINT4 ii=1; ii<timestamps->length; ii++) {
+      gpstime = timestamps->data[ii];
+
+      LALDetectorVel(&status, detvel, &gpstime, det, edat);
+      XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
+      REAL4 V = (REAL4)sqrt(detvel[0]*detvel[0] + detvel[1]*detvel[1] + detvel[2]*detvel[2]);
+      if (V > Vmax) Vmax = V;
+   } /* for ii < numffts */
+
+   return Vmax;
+}

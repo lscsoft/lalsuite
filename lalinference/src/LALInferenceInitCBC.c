@@ -707,7 +707,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   }
   else if (LALInferenceGetProcParamVal(commandLine, "--rosenbrockLikelihood"))
   {
-    return(LALInferenceInitModelReviewEvidence_banana(state));
+    return(LALInferenceInitModelReviewEvidence(state)); /* CHECKME: Use the default prior for unimodal */
   }
 
   LALInferenceModel *model = XLALMalloc(sizeof(LALInferenceModel));

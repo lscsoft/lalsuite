@@ -2773,10 +2773,7 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
   LALInferenceCopyVariables(currentParams,proposedParams);
   /* Adjust SNRs */
   OptimalSNR *= new_x / old_x;
-  MatchedFilterSNR *= new_x/old_x;
   LALInferenceSetREAL8Variable(proposedParams,"optimal_snr",OptimalSNR);
-  LALInferenceSetREAL8Variable(proposedParams,"matched_filter_snr",MatchedFilterSNR);
-
   
   /* Update individual detector information */
   const char *ifonames[5]={"H1","L1","V1","I1","J1"};

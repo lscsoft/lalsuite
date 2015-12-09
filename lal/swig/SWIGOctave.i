@@ -39,14 +39,24 @@ extern "C++" {
 #include <octave/ov-flt-cx-mat.h>
 #include <octave/ov-cx-mat.h>
 #include <octave/toplev.h>
+#include <octave/Array-util.h>
 }
 #if defined(SWIG_OCTAVE_PREREQ)
+# if SWIG_OCTAVE_PREREQ(4,0,0)
+#  define SWIGLAL_OCT_PREREQ_4_0_0 1
+# else
+#  define SWIGLAL_OCT_PREREQ_4_0_0 0
+# endif
 # if SWIG_OCTAVE_PREREQ(3,3,52)
-#  define SWIGLAL_OCT_PREREQ_3_3_52
+#  define SWIGLAL_OCT_PREREQ_3_3_52 1
+# else
+#  define SWIGLAL_OCT_PREREQ_3_3_52 0
 # endif
 #elif defined(OCTAVE_API_VERSION_NUMBER)
 # if OCTAVE_API_VERSION_NUMBER >= 40
-#  define SWIGLAL_OCT_PREREQ_3_3_52
+#  define SWIGLAL_OCT_PREREQ_3_3_52 1
+# else
+#  define SWIGLAL_OCT_PREREQ_3_3_52 0
 # endif
 #endif
 %}
@@ -510,12 +520,23 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
         return obj.load_binary(is, swap, fmt) && SWIG_IsOK(sloav_array_in(obj));
       }
 
-%#if defined(HAVE_HDF5)
       // Save and load from HDF5.
+%#ifdef HAVE_HDF5
+%#if SWIGLAL_OCT_PREREQ_4_0_0
+      bool save_hdf5(octave_hdf5_id loc_id, const char *name, bool save_as_floats) {
+        return sloav_array_out().save_hdf5(loc_id, name, save_as_floats);
+      }
+%#else
       bool save_hdf5(hid_t loc_id, const char *name, bool save_as_floats) {
         return sloav_array_out().save_hdf5(loc_id, name, save_as_floats);
       }
-%#if defined(SWIGLAL_OCT_PREREQ_3_3_52)
+%#endif
+%#if SWIGLAL_OCT_PREREQ_4_0_0
+      bool load_hdf5(octave_hdf5_id loc_id, const char *name) {
+        octave_value obj = sloav_array_out();
+        return obj.load_hdf5(loc_id, name) && SWIG_IsOK(sloav_array_in(obj));
+      }
+%#elif SWIGLAL_OCT_PREREQ_3_3_52
       bool load_hdf5(hid_t loc_id, const char *name) {
         octave_value obj = sloav_array_out();
         return obj.load_hdf5(loc_id, name) && SWIG_IsOK(sloav_array_in(obj));
@@ -639,7 +660,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
       SLOAV_OBV_METH_FROM_ARRAY_0(log10, octave_value);
       SLOAV_OBV_METH_FROM_ARRAY_0(log1p, octave_value);
       SLOAV_OBV_METH_FROM_ARRAY_0(log2, octave_value);
-%#if defined(SWIGLAL_OCT_PREREQ_3_3_52)
+%#if SWIGLAL_OCT_PREREQ_3_3_52
       SLOAV_OBV_METH_FROM_ARRAY_0(map_value, octave_map);
 %#else
       SLOAV_OBV_METH_FROM_ARRAY_0(map_value, Octave_map);
@@ -760,7 +781,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 %fragment(%swiglal_oct_array_view_frag(ACFTYPE), "header",
           fragment=%swiglal_oct_array_view_init_frag(ACFTYPE),
           fragment="swiglal_oct_array_view", fragment=INFRAG, fragment=OUTFRAG)
-{
+%{
 
   extern "C++" {
 
@@ -798,7 +819,9 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     private:
 
       // Octave type constructs.
+#if !SWIGLAL_OCT_PREREQ_4_0_0
       DECLARE_OCTAVE_ALLOCATOR;
+#endif
       DECLARE_OV_TYPEID_FUNCTIONS_AND_DATA;
 
     protected:
@@ -827,19 +850,21 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     };
 
     // Octave type constructs.
+#if !SWIGLAL_OCT_PREREQ_4_0_0
     DEFINE_OCTAVE_ALLOCATOR(%swiglal_oct_array_view_class(ACFTYPE));
+#endif
     DEFINE_OV_TYPEID_FUNCTIONS_AND_DATA(%swiglal_oct_array_view_class(ACFTYPE),
                                         %swiglal_oct_array_view_ovtype(ACFTYPE),
                                         OVCLASS::static_class_name());
 
   } // extern "C++"
 
-} // %swiglal_oct_array_view_frag()
+%} // %swiglal_oct_array_view_frag()
 
 // Input copy conversion fragment for arrays of type ACFTYPE.
 %fragment(%swiglal_array_copyin_frag(ACFTYPE), "header",
           fragment=%swiglal_oct_array_view_frag(ACFTYPE))
-{
+%{
   SWIGINTERN int %swiglal_array_copyin_func(ACFTYPE)(const octave_value& parent,
                                                      octave_value obj,
                                                      void* ptr,
@@ -856,12 +881,12 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
     return arrview.sloav_array_in(obj);
   }
-}
+%}
 
 // Output copy conversion fragment for arrays of type ACFTYPE.
 %fragment(%swiglal_array_copyout_frag(ACFTYPE), "header",
           fragment=%swiglal_oct_array_view_frag(ACFTYPE))
-{
+%{
   SWIGINTERN octave_value %swiglal_array_copyout_func(ACFTYPE)(const octave_value& parent,
                                                                void* ptr,
                                                                const size_t esize,
@@ -877,12 +902,12 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     %swiglal_oct_array_view_class(ACFTYPE) arrview(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
     return arrview.sloav_array_out();
   }
-}
+%}
 
 // Input view conversion fragment for arrays of type ACFTYPE.
 %fragment(%swiglal_array_viewin_frag(ACFTYPE), "header",
           fragment=%swiglal_oct_array_view_frag(ACFTYPE))
-{
+%{
   SWIGINTERN int %swiglal_array_viewin_func(ACFTYPE)(const octave_value& parent,
                                                      octave_value obj,
                                                      void** ptr,
@@ -985,12 +1010,12 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     return SWIG_OK;
 
   }
-}
+%}
 
 // Output view conversion fragment for arrays of type ACFTYPE.
 %fragment(%swiglal_array_viewout_frag(ACFTYPE), "header",
           fragment=%swiglal_oct_array_view_frag(ACFTYPE))
-{
+%{
   SWIGINTERN octave_value %swiglal_array_viewout_func(ACFTYPE)(const octave_value& parent,
                                                                void* ptr,
                                                                const size_t esize,
@@ -1005,7 +1030,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     octave_base_value *objval = new %swiglal_oct_array_view_class(ACFTYPE)(parent, ptr, esize, ndims, dims, strides, isptr, tinfo, tflags);
     return octave_value(objval);
   }
-}
+%}
 
 %enddef // %swiglal_oct_array_frags
 

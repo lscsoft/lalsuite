@@ -74,6 +74,7 @@ int XLALFileFlush( LALFILE *file );
 int XLALFileSeek( LALFILE *file, long offset, int whence );
 long XLALFileTell( LALFILE *file );
 void XLALFileRewind( LALFILE *file );
+int XLALFileSetBuffer( LALFILE *file, char *buf, int mode, size_t size );
 int XLALFileEOF( LALFILE *file );
 
 int XLALFileIsRegularAndGetSize ( const char *path, size_t *fileLen );

@@ -27,5 +27,7 @@ priordatadir = $(pkgdatadir)/imrtgr_prior_data
 priordata_DATA = \
 	Prior_Mfchif_nonprecspin_Healy2014_comp_mass_min1.0_comp_mass_max500.0_comp_spin_min-1.0_comp_spin_max1.0.pklz \
 	$(END_OF_LIST)
+	nrutils.py \
+	$(END_OF_LIST)
 
 endif

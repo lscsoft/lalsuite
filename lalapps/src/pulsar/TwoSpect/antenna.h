@@ -30,6 +30,7 @@ INT4 CompAntennaVelocity(REAL4VectorAligned *output, const SkyPosition skypos, c
 
 REAL4 CompDetectorDeltaVmax(const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat);
 REAL4 CompDetectorVmax(const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat);
+REAL4 CompDetectorVmax2(const LIGOTimeGPSVector *timestamps, const LALDetector det, EphemerisData *edat);
 
 #endif
 

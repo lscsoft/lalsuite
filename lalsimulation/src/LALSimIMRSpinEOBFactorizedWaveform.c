@@ -54,6 +54,10 @@
 #include "LALSimIMREOBNQCCorrection.c"
 #include "LALSimIMRSpinEOBHamiltonian.c"
 
+/* OPTIMIZED */
+#include "LALSimIMRSpinEOBHamiltonianOptimized.c"
+/* END OPTIMIZED */
+
 /*------------------------------------------------------------------------------------------
  *
  *          Prototypes of functions defined in this code.
@@ -62,14 +66,15 @@
  */
 
 
-static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
+UNUSED static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
                                 COMPLEX16             * restrict hlm,
                                 REAL8Vector           * restrict values,
                                 const REAL8           v,
                                 const REAL8           Hreal,
                                 const INT4            l,
                                 const INT4            m,
-                                SpinEOBParams         * restrict params
+                                SpinEOBParams         * restrict params,
+                                INT4                  use_optimized_v2/**< Use optimized v2? */
                                 );
 #if UsePrecFunctions
 static INT4 XLALSimIMRSpinEOBGetPrecSpinFactorizedWaveform(
@@ -89,7 +94,9 @@ static INT4 XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform(
                                 const REAL8           Hreal,
                                 const INT4            l,
                                 const INT4            m,
-                                SpinEOBParams         * restrict params
+                                SpinEOBParams         * restrict params,
+                                INT4                  use_optimized_v2,/**< Use optimized v2? */
+                                REAL8                 * vPhil2m2
                                 );
 
 static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
@@ -730,7 +737,9 @@ static INT4 XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform(
                  const REAL8         Hreal,           /**< real Hamiltonian */
                  const INT4          l,               /**< l mode index */
                  const INT4          m,               /**< m mode index */
-                 SpinEOBParams     * restrict params  /**< Spin EOB parameters */
+                 SpinEOBParams     * restrict params, /**< Spin EOB parameters */
+                 INT4                use_optimized_v2,/**< Use optimized v2? */
+                 REAL8             * vPhiInput        /**< Reuse vPhi computed outside for efficiency! */
                  )
 {
     /* Status of function calls */
@@ -789,7 +798,16 @@ static INT4 XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform(
         /* Calculate the non-Keplerian velocity */
         if ( params->alignedSpins )
         {
-          vPhi = XLALSimIMRSpinAlignedEOBNonKeplerCoeff( values->data, params );
+          if(!use_optimized_v2)
+            {
+              vPhi = XLALSimIMRSpinAlignedEOBNonKeplerCoeff( values->data, params );
+            }
+          else
+            {
+              /* OPTIMIZED */
+              vPhi = *vPhiInput;
+              /* END OPTIMIZED */
+            }
 
           if ( XLAL_IS_REAL8_FAIL_NAN( vPhi ) )
           {
@@ -1348,6 +1366,7 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
   coeffs->delta32vh9 = -9112./405. + (208.*LAL_PI*LAL_PI)/63.;
 
   coeffs->rho32v   = (4.*chiS*eta)/(-3.*m1Plus3eta);
+  /** TODO The term proportional to eta^2 a^2 in coeffs->rho32v2 is wrong, but it was used in the calibration of SEOBNRv2 */
   coeffs->rho32v2  = (-4.*a2*eta2)/(9.*m1Plus3eta2) + (328. - 1115.*eta
                         + 320.*eta2)/(270.*m1Plus3eta);
   coeffs->rho32v3  = (2.*(45.*a*m1Plus3eta3
@@ -2406,6 +2425,7 @@ UNUSED static int XLALSimIMREOBCalcPrecSpinFacWaveformCoefficients(
   //coeffs->delta32vh9 = -9112./405. + (208.*LAL_PI*LAL_PI)/63.;
 
   coeffs->rho32vS   = (4.*chiS*eta)/(-3.*m1Plus3eta);
+  /** TODO The term proportional to eta^2 a^2 in coeffs->rho32v2 is wrong, but it was used in the calibration of SEOBNRv2 */
   coeffs->rho32v2S  = (-4.*a2*eta2)/(9.*m1Plus3eta2);// + (328. - 1115.*eta
                         //+ 320.*eta2)/(270.*m1Plus3eta);
   coeffs->rho32v3S  = (2.*(45.*a*m1Plus3eta3
@@ -2731,7 +2751,8 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
                  const REAL8         Hreal,           /**< real Hamiltonian */
                  const INT4          l,               /**< l mode index */
                  const INT4          m,               /**< m mode index */
-                 SpinEOBParams     * restrict params  /**< Spin EOB parameters */
+                 SpinEOBParams     * restrict params,  /**< Spin EOB parameters */
+                 INT4                use_optimized_v2 /**< Spin EOB parameters */
                  )
 {
     /* Status of function calls */
@@ -2801,7 +2822,13 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
         if ( params->alignedSpins )
         {
         // YP: !!!!! SEOBNRv3devel temporary change !!!!!
-	  vPhi = XLALSimIMRSpinAlignedEOBNonKeplerCoeff( values->data, params );
+          if(use_optimized_v2) {
+            /* OPTIMIZED */
+            vPhi = XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized( values->data, params );
+            /* END OPTIMIZED */
+          } else {
+            vPhi = XLALSimIMRSpinAlignedEOBNonKeplerCoeff( values->data, params );
+          }
           #if YPPrecWave
 	  vPhi = XLALSimIMRSpinEOBNonKeplerCoeff( values->data, params );
           #endif

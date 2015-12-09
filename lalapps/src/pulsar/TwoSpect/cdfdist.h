@@ -25,12 +25,12 @@
 REAL8 cdf_chisq_Pinv(REAL8 P, REAL8 nu);
 REAL8 cdf_chisq_Qinv(REAL8 Q, REAL8 nu);
 REAL8 cdf_gamma_Pinv(REAL8 P, REAL8 a, REAL8 b);
-REAL8 cdf_gamma_Qinv(REAL8 Q, REAL8 a, REAL8 b);
+INT4 cdf_gamma_Qinv(REAL8 *out, REAL8 Q, REAL8 a, REAL8 b);
 REAL8 cdf_ugaussian_Pinv(REAL8 P);
-REAL8 cdf_ugaussian_Qinv(REAL8 Q);
+INT4 cdf_ugaussian_Qinv(REAL8 *out, REAL8 Q);
 REAL8 cdf_gamma_P(REAL8 x, REAL8 a, REAL8 b);
 REAL8 cdf_gamma_P_usingmatlab(REAL8 x, REAL8 a, REAL8 b);
-REAL8 cdf_gamma_Q(REAL8 x, REAL8 a, REAL8 b);
+INT4 cdf_gamma_Q(REAL8 *out, REAL8 x, REAL8 a, REAL8 b);
 REAL8 cdf_gamma_Q_usingmatlab(REAL8 x, REAL8 a, REAL8 b);
 REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta);
 REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta);

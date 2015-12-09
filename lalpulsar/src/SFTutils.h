@@ -129,6 +129,7 @@ LIGOTimeGPSVector *XLALTimestampsFromSegmentFile( const char *filename, REAL8 Ts
 void XLALDestroyTimestampVector (LIGOTimeGPSVector *vect);
 void XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS );
 
+char *XLALGetCWDetectorPrefix ( INT4 *lalCachedIndex, const char *name );
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
 

@@ -31,6 +31,7 @@
 #include <lal/LISAspecifics.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
+#include <lal/LALString.h>
 
 #include <lal/SFTutils.h>
 
@@ -721,197 +722,131 @@ XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS )
 
 } /* XLALDestroyMultiTimestamps() */
 
+///
+/// Parses valid CW detector names and prefixes: 'name' input can be either a valid detector name or prefix
+/// \return allocated prefix string (2 characters+0) for valid detectors, NULL otherwise
+///
+/// If passed a non-NULL pointers 'lalCachedIndex', will set to index >= 0 into the
+/// lalCachedDetectors[] array if found there, or -1 if it's one of the "CW special" detectors
+///
+/// \note this should be the *only* function defining valid CW detector names and prefixes
+///
+/// \note if first two characters of 'name' match a valid detector prefix, that is accepted, which
+/// allows passing longer strings beginning with a detector prefix ('H1:blabla') without extra hassle
+///
+/// \note the returned string is allocated here and needs to be free'ed by caller!
+///
+char *
+XLALGetCWDetectorPrefix ( INT4 *lalCachedIndex, const char *name )
+{
+  XLAL_CHECK_NULL ( name != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( strlen ( name ) >= 2, XLAL_EINVAL );	// need at least a full prefix 'letter+number'
+
+  // ----- first check if 'name' corresponds to one of our 'CW special' detectors (LISA and X-ray satellites)
+  const char *specialDetectors[] =
+    {
+      "Z1",	  /* LISA effective IFO 1 */
+      "Z2",	  /* LISA effective IFO 2 */
+      "Z3",	  /* LISA effective IFO 3 */
+      "Z4",	  /* LISA effective IFO 2 minus 3 */
+      "Z5",	  /* LISA effective IFO 3 minus 1 */
+      "Z6",	  /* LISA effective IFO 1 minus 2 */
+      "Z7",	  /* LISA pseudo TDI A */
+      "Z8",	  /* LISA pseudo TDI E */
+      "Z9",	  /* LISA pseudo TDI T */
+
+      "X1",       /* RXTE PCA */
+      "X2",       /* RXTE ASM */
+      NULL
+    };
+  for ( UINT4 i = 0; specialDetectors[i] != NULL; i ++ )
+    {
+      if ( ( specialDetectors[i][0] == name[0] ) && ( specialDetectors[i][1] == name[1] )  )
+        {
+          if ( lalCachedIndex != NULL ) {
+            (*lalCachedIndex) = -1;
+          }
+          return XLALStringDuplicate ( specialDetectors[i] );
+        }
+    } // for i < len(specialDetectors)
+
+  // ----- if not found, go through list of 'official' cached lalsuite detectors
+  UINT4 numLALDetectors = sizeof(lalCachedDetectors) / sizeof(lalCachedDetectors[0]);
+  for ( UINT4 i = 0; i < numLALDetectors; i ++)
+    {
+      const char *prefix_i = lalCachedDetectors[i].frDetector.prefix;
+      const char *name_i   = lalCachedDetectors[i].frDetector.name;
+      if ( ((prefix_i[0] == name[0]) && (prefix_i[1] == name[1]))
+           || strncmp ( name, name_i, strlen ( name_i ) ) == 0
+           )
+        {
+          if ( lalCachedIndex != NULL ) {
+            (*lalCachedIndex) = i;
+          }
+          return XLALStringDuplicate ( prefix_i );
+        } // found prefix match in lalCachedDetectors[]
+
+    } // for i < numLALDetectors
+
+  XLAL_ERROR_NULL ( XLAL_EINVAL, "Unknown detector name '%s'\n", name );
+
+} // XLALGetCWDetectorPrefix()
 
 /**
- * Extract/construct the unique 2-character "channel prefix" from the given
- * "detector-name", which unfortunately will not always follow any of the
- * official detector-naming conventions given in the Frames-Spec LIGO-T970130-F-E
- * This function therefore sometime has to do some creative guessing:
+ * Extract/construct the unique 2-character "channel prefix" from the given "detector-name".
+ * This is only a convenience wrapper around XLALGetCWDetectorPrefix() for backwards compatibility.
  *
- * NOTE: in case the channel-number can not be deduced from the name,
- * it is set to '1', and a warning will be printed if lalDebugLevel > 0.
- *
- * NOTE2: the returned string is allocated here!
- *
- * Note3: if more than one valid detector-string is found in the input, an error is returned
+ * NOTE: the returned string is allocated here!
  *
  */
 CHAR *
 XLALGetChannelPrefix ( const CHAR *name )
 {
-  CHAR *channel = XLALCalloc( 3, sizeof(CHAR) );  /* 2 chars + \0 */
-
-#define CHECK_UNIQUE do { if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name ); } while(0)
-
-  if ( !channel ) {
-    XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to calloc(3)!\n" );
-  }
-  if ( !name ) {
-    XLALFree ( channel );
-    XLAL_ERROR_NULL ( XLAL_EINVAL, "Invalid NULL input 'name'" );
-  }
-
-  /* first handle (currently) unambiguous ones */
-  if ( strstr( name, "ALLEGRO") || strstr ( name, "A1") ) {
-    CHECK_UNIQUE;
-    strcpy ( channel, "A1");
-  }
-  if ( strstr(name, "NIOBE") || strstr( name, "B1") ) {
-    CHECK_UNIQUE;
-    strcpy ( channel, "B1");
-  }
-  if ( strstr(name, "EXPLORER") || strstr( name, "E1") ) {
-    CHECK_UNIQUE;
-    strcpy ( channel, "E1");
-  }
-  if ( strstr(name, "GEO") || strstr(name, "G1") ) {
-    CHECK_UNIQUE;
-    strcpy ( channel, "G1" );
-  }
-  if ( strstr(name, "ACIGA") || strstr (name, "K1") ) {
-    CHECK_UNIQUE;
-    strcpy ( channel, "K1" );
-  }
-  if ( strstr(name, "LLO") || strstr(name, "Livingston") || strstr(name, "L1") ) {
-    CHECK_UNIQUE;
-    strcpy ( channel, "L1" );
-  }
-  if ( strstr(name, "Nautilus") || strstr(name, "N1") ) {
-    CHECK_UNIQUE;
-    strcpy ( channel, "N1" );
-  }
-  if ( strstr(name, "AURIGA") || strstr(name,"O1") ) {
-    CHECK_UNIQUE;
-    strcpy ( channel, "O1" );
-  }
-  if ( strstr(name, "CIT_40") || strstr(name, "Caltech-40") || strstr(name, "P1") ) {
-    CHECK_UNIQUE;
-    strcpy ( channel, "P1" );
-  }
-  if ( strstr(name, "TAMA") || strstr(name, "T1") ) {
-    CHECK_UNIQUE;
-    strcpy (channel, "T1" );
-  }
-  /* currently the only real ambiguity arises with H1 vs H2 */
-  if ( strstr(name, "LHO") || strstr(name, "Hanford") || strstr(name, "H1") || strstr(name, "H2") ) {
-    if ( strstr(name, "LHO_2k") ||  strstr(name, "H2") )
-      {
-        CHECK_UNIQUE;
-        strcpy ( channel, "H2" );
-      }
-    if ( strstr(name, "LHO_4k") ||  strstr(name, "H1") )
-      {
-        CHECK_UNIQUE;
-        strcpy ( channel, "H1" );
-      }
-    /* otherwise: guess */
-    if ( channel[0] == 0 )
-      {
-        strcpy ( channel, "H1" );
-        XLALPrintWarning("Detector-name '%s' ambiguous, guessing '%s'\n", name, channel );
-      }
-  } /* if LHO */
-  /* LISA channel names are simply left unchanged */
-  if ( strstr(name, "Z1") || strstr(name, "Z2") || strstr(name, "Z3")
-       || strstr(name, "Z4") || strstr(name, "Z5") || strstr(name, "Z6")
-       || strstr(name, "Z7") || strstr(name, "Z8") || strstr(name, "Z9") )
-    {
-      CHECK_UNIQUE;
-      strncpy ( channel, name, 2);
-      channel[2] = 0;
-    }
-  if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V1") || strstr(name, "V2") )
-    {
-      if ( strstr(name, "Virgo_CITF") || strstr(name, "V2") )
-        {
-          CHECK_UNIQUE;
-          strcpy ( channel, "V2" );
-        }
-      if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V1") )
-        {
-          CHECK_UNIQUE;
-          strcpy ( channel, "V1" );
-        }
-    } /* if Virgo */
-
-  /* Did we fail to find any matches? */
-  if ( channel[0] == 0 )
-    XLAL_ERROR_NULL ( XLAL_EINVAL, "Unknown detector-name '%s'", name );
-  else
-    return channel;
-
-} /* XLALGetChannelPrefix() */
+  return XLALGetCWDetectorPrefix ( NULL, name );
+} // XLALGetChannelPrefix()
 
 
-/**
- * Find the site geometry-information 'LALDetector' (mis-nomer!) given a detector-name.
- * The LALDetector struct is allocated here.
- */
+///
+/// Find the site geometry-information 'LALDetector' for given a detector name (or prefix).
+///
+/// \note The LALDetector struct is allocated here and needs to be free'ed by caller!
+///
 LALDetector *
 XLALGetSiteInfo ( const CHAR *name )
 {
-  CHAR *channel;
+  XLAL_CHECK_NULL ( name != NULL, XLAL_EINVAL );
+
+  const INT4 numLALDetectors = sizeof(lalCachedDetectors) / sizeof(lalCachedDetectors[0]);
+
+  // first turn the free-form 'detector-name' into a well-defined channel-prefix, and find lalCachedDetector[] index
+  INT4 lalCachedIndex = -1;
+  CHAR *prefix;
+  XLAL_CHECK_NULL ( (prefix = XLALGetCWDetectorPrefix ( &lalCachedIndex, name )) != NULL, XLAL_EFUNC );
+
   LALDetector *site;
+  XLAL_CHECK_NULL ( ( site = XLALCalloc ( 1, sizeof( *site) )) != NULL, XLAL_ENOMEM );
 
-  /* first turn the free-form 'detector-name' into a well-defined channel-prefix */
-  if ( ( channel = XLALGetChannelPrefix ( name ) ) == NULL ) {
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
-  }
-
-  if ( ( site = XLALCalloc ( 1, sizeof( *site) )) == NULL ) {
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
-
-  switch ( channel[0] )
+  switch ( prefix[0] )
     {
-    case 'T':
-      (*site) = lalCachedDetectors[LAL_TAMA_300_DETECTOR];
-      break;
-    case 'V':
-      (*site) = lalCachedDetectors[LAL_VIRGO_DETECTOR];
-      break;
-    case 'G':
-      (*site) = lalCachedDetectors[LAL_GEO_600_DETECTOR];
-      break;
-    case 'H':
-      if ( channel[1] == '1' )
-	(*site) = lalCachedDetectors[LAL_LHO_4K_DETECTOR];
-      else
-	(*site) = lalCachedDetectors[LAL_LHO_2K_DETECTOR];
-      break;
-    case 'L':
-      (*site) = lalCachedDetectors[LAL_LLO_4K_DETECTOR];
-      break;
-    case 'P':
-      (*site) = lalCachedDetectors[LAL_CIT_40_DETECTOR];
-      break;
-    case 'N':
-      (*site) = lalCachedDetectors[LAL_NAUTILUS_DETECTOR];
+    case 'X':	    // X-ray satellite data
+      XLAL_ERROR_NULL ( XLAL_EINVAL, "Sorry, detector site not implemented for special 'X'-ray detector 'name=%s, prefix=%s'\n", name, prefix );
       break;
 
-    case 'Z':       /* create dummy-sites for LISA  */
-      if ( XLALcreateLISA ( site, channel[1] ) != 0 )
-	{
-	  XLALPrintError("\nFailed to created LISA detector '%d'\n\n", channel[1]);
-	  XLALFree ( site );
-	  XLALFree ( channel );
-	  XLAL_ERROR_NULL ( XLAL_EFUNC );
-	}
+    case 'Z':       // create dummy-sites for LISA
+      XLAL_CHECK_NULL ( XLALcreateLISA ( site, prefix[1] ) != XLAL_SUCCESS, XLAL_EFUNC, "Failed to created LISA detector 'name=%s, prefix=%s'\n", name, prefix );
       break;
 
     default:
-      XLALPrintError ( "\nSorry, I don't have the site-info for '%c%c'\n\n", channel[0], channel[1]);
-      XLALFree(site);
-      XLALFree(channel);
-      XLAL_ERROR_NULL ( XLAL_EINVAL );
+      XLAL_CHECK_NULL ( (lalCachedIndex >= 0) && (lalCachedIndex < numLALDetectors), XLAL_EFAILED, "Internal inconsistency found (for 'name=%s, prefix=%s')\n", name, prefix );
+      (*site) = lalCachedDetectors[lalCachedIndex];
       break;
     } /* switch channel[0] */
 
-  XLALFree ( channel );
+  XLALFree ( prefix );
 
   return site;
 
-} /* XLALGetSiteInfo() */
+} // XLALGetSiteInfo()
 
 
 /**

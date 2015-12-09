@@ -161,6 +161,15 @@ REAL8 XLALLatticeTilingStepSizes(
   );
 
 ///
+/// Return the bounding box extent of the lattice tiling in a given dimension, or 0 for non-tiled
+/// dimensions.
+///
+REAL8 XLALLatticeTilingBoundingBox(
+  const LatticeTiling *tiling,		///< [in] Lattice tiling
+  const size_t dim			///< [in] Dimension of which to return bounding box extent
+  );
+
+///
 /// Return statistics related to the number/value of lattice tiling points in a dimension.
 ///
 const LatticeTilingStats *XLALLatticeTilingStatistics(

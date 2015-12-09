@@ -257,7 +257,7 @@ typedef struct {
   /// typemap is needed for Python: since built-in types call the same function for both normal and
   /// reverse operators, so the function must support (LIGOTimeGPS, LIGOTimeGPS), (LIGOTimeGPS,
   /// double), and (double, LIGOTimeGPS) as inputs.
-  %typemap(in, noblock=1, fragment=SWIG_AsVal_frag(double)) struct tagLIGOTimeGPS* self (void *argp = 0, int res = 0, int self_set = 0, int factor_set = 0) {
+  %typemap(in, noblock=1, fragment=SWIG_AsVal_frag(double)) struct tagLIGOTimeGPS* self (LIGOTimeGPS tmp, void *argp = 0, int res = 0, int self_set = 0, int factor_set = 0) {
     res = SWIG_ConvertPtr($input, &argp, $descriptor, $disown | %convertptr_flags);
     if (SWIG_IsOK(res)) {
       arg1 = %reinterpret_cast(argp, $ltype);
@@ -267,11 +267,17 @@ typedef struct {
       if (SWIG_IsOK(res)) {
         factor_set = 1;
       } else {
-        %argument_fail(res, "$type", $symname, $argnum);
+        res = swiglal_specialised_tagLIGOTimeGPS($input, &tmp);
+        if (SWIG_IsOK(res)) {
+          arg1 = &tmp;
+          self_set = 1;
+        } else {
+          %argument_fail(res, "$type", $symname, $argnum);
+        }
       }
     }
   }
-  %typemap(in, noblock=1, fragment=SWIG_AsVal_frag(double)) double factor (void *argp = 0, int res = 0) {
+  %typemap(in, noblock=1, fragment=SWIG_AsVal_frag(double)) double factor (LIGOTimeGPS tmp, void *argp = 0, int res = 0) {
     if (!self_set1) {
       res = SWIG_ConvertPtr($input, &argp, SWIGTYPE_p_tagLIGOTimeGPS, $disown | %convertptr_flags);
       if (SWIG_IsOK(res)) {
@@ -288,6 +294,12 @@ typedef struct {
         if (SWIG_IsOK(res)) {
           arg2 = XLALGPSGetREAL8(%reinterpret_cast(argp, LIGOTimeGPS*));
           factor_set1 = 1;
+        } else {
+          res = swiglal_specialised_tagLIGOTimeGPS($input, &tmp);
+          if (SWIG_IsOK(res)) {
+            arg2 = XLALGPSGetREAL8(&tmp);
+            factor_set1 = 1;
+          }
         }
       }
     }

@@ -1110,10 +1110,14 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     LALInferenceAddREAL8Variable(currentParams,varname,sqrt(2.0*this_ifo_S),LALINFERENCE_PARAM_OUTPUT);
 
     sprintf(varname,"%s_cplx_snr_amp",dataPtr->name);
-    LALInferenceAddREAL8Variable(currentParams,varname,2.0*this_ifo_Rcplx/sqrt(2.0*this_ifo_S),LALINFERENCE_PARAM_OUTPUT);
+    REAL8 cplx_snr_amp=0.0;
+    REAL8 cplx_snr_phase=carg(this_ifo_Rcplx);
+    if(this_ifo_S > 0) cplx_snr_amp=2.0*cabs(this_ifo_Rcplx)/sqrt(2.0*this_ifo_S);
+
+    LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_amp,LALINFERENCE_PARAM_OUTPUT);
 
     sprintf(varname,"%s_cplx_snr_arg",dataPtr->name);
-    LALInferenceAddREAL8Variable(currentParams,varname,carg(this_ifo_Rcplx),LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_phase,LALINFERENCE_PARAM_OUTPUT);
     
    /* Clean up calibration if necessary */
     if (!(calFactor == NULL)) {

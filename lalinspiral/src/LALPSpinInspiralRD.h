@@ -11,7 +11,8 @@
 
 #ifdef  __cplusplus
 extern "C" {
-#pragma }
+#elif 0
+}       /* so that editors will match preceding brace */
 #endif
 
 /* use error codes above 1024 to avoid conflicts with GSL */
@@ -22,8 +23,9 @@ extern "C" {
 #define LALPSIRDPN_TEST_OMEGANONPOS     1031
 #define LALPSIRDPN_TEST_OMEGACUT        1032
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{       /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 
