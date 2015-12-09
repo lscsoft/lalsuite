@@ -141,9 +141,9 @@ if __name__ == '__main__':
   ring_posplots = ring_post.replace("/posterior_samples.dat"," ")
   imr_posplots = imr_post.replace("/posterior_samples.dat"," ")
 
-  os.system('ln -s %s %s/lalinf_insp' %(insp_posplots, out_dir))
-  os.system('ln -s %s %s/lalinf_ring' %(ring_posplots, out_dir))
-  os.system('ln -s %s %s/lalinf_imr' %(imr_posplots, out_dir))
+  os.system('ln -s %s %s' %(os.path.realpath(insp_posplots), os.path.realpath(os.path.join(out_dir, 'lalinf_insp'))))
+  os.system('ln -s %s %s' %(os.path.realpath(ring_posplots), os.path.realpath(os.path.join(out_dir, 'lalinf_ring'))))
+  os.system('ln -s %s %s' %(os.path.realpath(imr_posplots), os.path.realpath(os.path.join(out_dir, 'lalinf_imr'))))
 
   # read the injection mass parameters if this is an injection
   M_inj = options.M_inj
