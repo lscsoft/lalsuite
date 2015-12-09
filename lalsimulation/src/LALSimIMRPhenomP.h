@@ -112,21 +112,21 @@ static REAL8 L2PNR_v1(
 );
 
 static void WignerdCoefficients(
+  REAL8 *cos_beta_half,   /**< Output: cos(beta/2) */
+  REAL8 *sin_beta_half,   /**< Output: sin(beta/2) */
   const REAL8 v,          /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 SL,         /**< Dimensionfull aligned spin */
   const REAL8 eta,        /**< Symmetric mass-ratio */
-  const REAL8 Sp,         /**< Dimensionfull spin component in the orbital plane */
-  REAL8 *cos_beta_half,   /**< Output: cos(beta/2) */
-  REAL8 *sin_beta_half    /**< Output: sin(beta/2) */
+  const REAL8 Sp          /**< Dimensionfull spin component in the orbital plane */
 );
 
 static void WignerdCoefficients_SmallAngleApproximation(
+  REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
+  REAL8 *sin_beta_half, /**< Output: sin(beta/2) */
   const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 SL,       /**< Dimensionfull aligned spin */
   const REAL8 eta,      /**< Symmetric mass-ratio */
-  const REAL8 Sp,       /**< Dimensionfull spin component in the orbital plane */
-  REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
-  REAL8 *sin_beta_half  /**< Output: sin(beta/2) */
+  const REAL8 Sp        /**< Dimensionfull spin component in the orbital plane */
 );
 
 static REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(
@@ -134,14 +134,6 @@ static REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(
   const REAL8 chi,    /**< Effective aligned spin of the binary:  chi = (m1*chi1 + m2*chi2)/M  */
   const REAL8 chip    /**< Dimensionless spin in the orbital plane */
 );
-
-#if 0
-static REAL8 FinalSpinBarausse2009_aligned_spin_equally_distributed(
-  const REAL8 nu,     /**< Symmetric mass-ratio */
-  const REAL8 chi,    /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
-  const REAL8 chip    /**< Dimensionless spin in the orbital plane */
-);
-#endif
 
 static REAL8 FinalSpinBarausse2009_all_in_plane_spin_on_larger_BH(
   const REAL8 nu,     /**< Symmetric mass-ratio */
