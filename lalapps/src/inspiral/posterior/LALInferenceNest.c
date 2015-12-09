@@ -70,7 +70,23 @@ int main(int argc, char *argv[]){
   /* And performing any injections specified */
   /* And allocating memory */
   state = LALInferenceInitRunState(procParams);
-
+  /* Create header */
+  if (state!=NULL){
+    ProcessParamsTable *ppt=NULL;
+    ppt=LALInferenceGetProcParamVal(state->commandLine,"--outfile");
+    if(!ppt){
+      fprintf(stderr,"Must specify --outfile <filename.dat>\n");
+      exit(1);
+    }
+    char *outfile=ppt->value;
+    char headerfile[FILENAME_MAX];
+    FILE *fpout=NULL;
+    sprintf(headerfile,"%s_header.txt",outfile);
+    fpout=fopen(headerfile,"w");
+    fprintf(fpout,"LALInference version:%s,%s,%s,%s,%s\n", lalAppsVCSId,lalAppsVCSDate,lalAppsVCSBranch,lalAppsVCSAuthor,lalAppsVCSStatus);
+    fprintf(fpout,LALInferencePrintCommandLine(state->commandLine));
+    fclose(fpout);
+    }
   if (state == NULL) {
       if (!LALInferenceGetProcParamVal(procParams, "--help")) {
           fprintf(stderr, "run state not allocated (%s, line %d).\n",
