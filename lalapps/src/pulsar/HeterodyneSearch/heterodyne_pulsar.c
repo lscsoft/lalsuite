@@ -65,6 +65,9 @@ void printmemuse() {
  }
 #endif
 
+// internal function taken from lal/src/support/LogPrintf.c
+static const char * LogTimeToString(double t);
+
 /* verbose global variable */
 INT4 verbose=0;
 
@@ -74,7 +77,8 @@ int main(int argc, char *argv[]){
 
   Filters iirFilters;
 
-  FILE *fpin=NULL, *fpout=NULL;
+  LALFILE *fpin=NULL;
+  FILE *fpout=NULL;
   static FrameCache cache;
   INT4 count=0, frcount=0;
 
@@ -86,8 +90,6 @@ int main(int argc, char *argv[]){
   INT4 numSegs=0;
 
   FilterResponse *filtresp=NULL; /* variable for the filter response function */
-
-  CHAR *pos=NULL;
 
   /* set error handler */
   XLALSetErrorHandler(XLALAbortErrorHandler);
@@ -211,7 +213,7 @@ pulsars spin frequency.\n", inputParams.freqfactor);
   if(verbose){ fprintf(stderr, "I've read in the segment list.\n"); }
 
   /* open input file */
-  if((fpin = fopen(inputParams.datafile, "r")) == NULL){
+  if((fpin = XLALFileOpen(inputParams.datafile, "r")) == NULL){
     fprintf(stderr, "Error... Can't open input data file!\n");
     return 1;
   }
@@ -227,12 +229,12 @@ pulsars spin frequency.\n", inputParams.freqfactor);
     INT4 cachecount=0, ch=0;
 
     /* count the number of frame files in the cache file */
-    while( (ch = fgetc(fpin) ) != EOF ){
+    while( (ch = XLALFileGetc(fpin) ) != EOF ){
       if( ch == '\n' ) cachecount++;
     }
 
     /* rewind file pointer */
-    rewind(fpin);
+    XLALFileRewind(fpin);
 
     /* allocate memory for frame cache information */
     {
@@ -244,18 +246,28 @@ pulsars spin frequency.\n", inputParams.freqfactor);
         {  XLALPrintError("Error allocating frame cache memory.\n");  }
 
       for( ii=0; ii<cachecount; ii++ ){
-        if( (cache.framelist[ii] = XLALCalloc(MAXSTRLENGTH, sizeof(CHAR)))
-          == NULL )
+        if( (cache.framelist[ii] = XLALCalloc(MAXSTRLENGTH, sizeof(CHAR))) == NULL )
           {  XLALPrintError("Error allocating frame list memory.\n");  }
       }
     }
 
     frcount=0;
-    while(fscanf(fpin, "%s%s%d%d file://localhost%s", det, type,
-      &cache.starttime[frcount], &cache.duration[frcount],
-      cache.framelist[frcount]) != EOF)
-      {  frcount++;  }
-    fclose(fpin);
+    do{
+      CHAR linebuf[1024]; // buffer for each line
+      if ( XLALFileGets(&linebuf[0], 1024, fpin) == NULL ){
+        // skip this line
+        continue;
+      }
+
+      if ( sscanf(linebuf, "%s%s%d%d file://localhost%s", det, type, &cache.starttime[frcount], &cache.duration[frcount],
+             cache.framelist[frcount]) != 5 ){
+        // skip this line
+        continue;
+      }
+
+      frcount++;
+    }while( !XLALFileEOF(fpin) );
+    XLALFileClose(fpin);
 
     if( frcount != cachecount ){
       fprintf(stderr, "Error... There's been a problem reading in the frame \
@@ -295,28 +307,60 @@ data!\n");
     if(verbose){  fprintf(stderr, "I've set up the filters.\n");  }
   }
 
-  /* the outputdir string contains the GPS start and end time of the analysis
-     so use this in the filename */
-  if((pos = strrchr(inputParams.outputdir, '/'))==NULL){
-    fprintf(stderr, "Error... output directory path must contain a final \
-directory of the form /GPS_START_TIME-GPS_END_TIME!\n");
-    return 1;
+  /* set output file */
+  snprintf(outputfile, sizeof(outputfile), "%s", inputParams.outputfile);
+
+  // check if output should be gzipped due to ".gz" suffix on file name */
+  if ( XLALStringCaseSubstring( outputfile, ".gz" ) != NULL ){
+    if ( inputParams.binaryoutput ){
+      XLALPrintError("Error... do not use a \".gz\" file extension for a binary output file\n");
+    }
+
+    inputParams.gzipoutput = 1;
+    // remove ".gz" suffix
+    CHAR *strloc = XLALStringCaseSubstring( outputfile, ".gz" );
+    strloc[0] = '\0';
   }
 
-  if(inputParams.heterodyneflag == 0){
-    snprintf(outputfile, sizeof(outputfile), "%s/coarsehet_%s_%s_%s",
-      inputParams.outputdir, psrname, inputParams.ifo, pos+1);
-    if(verbose){  fprintf(stderr, "I'm performing a coarse \
-heterodyne.\n");  }
+  /* add header to the files: header information will be a string consisting of several lines starting with %%s.
+   *  - the first line will contain the time and date of the file creation
+   *  - the next set of lines will contain the version and git hash of the lalsuite versions
+   *  - the penulimate line will contain the command line inputs used to create the file
+   *  - the final will contain headers for the three columns in the file: GPS time, Real, Imag */
+  if( (fpout = fopen(outputfile, "w")) == NULL ){
+    fprintf(stderr, "Error... can't open output file %s!\n", outputfile);
+    return 0;
+  }
+
+  CHAR *headerinfo = XLALStringDuplicate("%% File created on ");
+  headerinfo = XLALStringAppend(headerinfo, LogTimeToString( XLALGetTimeOfDay() ));
+  headerinfo = XLALStringAppend(headerinfo, "\n");
+  headerinfo = XLALStringAppend(headerinfo, XLALGetVersionString( 0 ) );
+  headerinfo = XLALStringAppend(headerinfo, "%% ");
+  for ( INT4 j=0; j<argc; j++ ) {
+    headerinfo = XLALStringAppend(headerinfo, argv[j]);
+    headerinfo = XLALStringAppend(headerinfo, " ");
+  }
+  CHAR dataline[] = "\n%% GPS time\tReal\tImag\n";
+  if ( strlen(headerinfo)+strlen(dataline) > HEADERSIZE ) {
+    fprintf(stderr, "Error... HEADERSIZE needs to be increased to accommodate information\n");
+    return 0;
   }
   else{
-    snprintf(outputfile, sizeof(outputfile), "%s/finehet_%s_%s",
-      inputParams.outputdir, psrname, inputParams.ifo);
-    if(verbose){  fprintf(stderr, "I'm performing a fine \
-heterodyne.\n");  }
-  }
+    /* fill in rest of string with whitespace */
+    for ( INT4 j=strlen(headerinfo); j<HEADERSIZE; j++ ){ headerinfo = XLALStringAppend(headerinfo, " "); }
+    memcpy(&headerinfo[HEADERSIZE-strlen(dataline)], &dataline[0], sizeof(CHAR)*strlen(dataline));
 
-  remove(outputfile); /* if output file already exists remove it */
+    /* output the header to the file */
+    size_t rc = fwrite(&headerinfo[0], sizeof(CHAR), HEADERSIZE, fpout);
+    if ( ferror(fpout) || !rc ){
+      fprintf(stderr, "Error... problem writing out header data!\n");
+      exit(1);
+    }
+  }
+  XLALFree( headerinfo );
+  fclose(fpout);
+
   snprintf(channel, sizeof(channel), "%s", inputParams.channel);
 
   #if TRACKMEMUSE
@@ -439,8 +483,15 @@ heterodyne.\n");  }
         {  XLALPrintError("Error allocating memory for data.\n");  }
       i=0;
 
-      fprintf(stderr, "Reading heterodyned data from %s.\n",
-        inputParams.datafile);
+      fprintf(stderr, "Reading heterodyned data from %s.\n", inputParams.datafile);
+
+      /* read in header info */
+      CHAR headerdata[HEADERSIZE];
+      size_t rch = XLALFileRead((void*)&headerdata[0], sizeof(CHAR), HEADERSIZE, fpin);
+      if ( !rch ){
+        fprintf(stderr, "Error... problem reading in header data!\n");
+        exit(1);
+      }
 
       /* read in file - depends on if file is binary or not */
       if(inputParams.binaryinput){
@@ -449,11 +500,11 @@ heterodyne.\n");  }
         do{
           size_t rc;
           REAL8 reVal, imVal;
-          rc = fread((void*)&times->data[i], sizeof(REAL8), 1, fpin);
-          rc = fread((void*)&reVal, sizeof(REAL8), 1, fpin);
-          rc = fread((void*)&imVal, sizeof(REAL8), 1, fpin);
+          rc = XLALFileRead((void*)&times->data[i], sizeof(REAL8), 1, fpin);
+          rc = XLALFileRead((void*)&reVal, sizeof(REAL8), 1, fpin);
+          rc = XLALFileRead((void*)&imVal, sizeof(REAL8), 1, fpin);
 
-          if( feof(fpin) || rc == 0 ) break;
+          if( XLALFileEOF(fpin) || rc == 0 ) break;
 
           if(inputParams.scaleFac > 1.0){
             reVal *= inputParams.scaleFac;
@@ -469,12 +520,6 @@ heterodyne.\n");  }
           }
           else { continue; }
 
-          /* if there is an error during read in then exit */
-          if( ferror(fpin) ){
-            fprintf(stderr, "Error... problem reading in binary data file!\n");
-            exit(1);
-          }
-
           /* dynamically allocate memory 2^20 lines at a time */
           if( ( i == 1 ) || ( i % MAXALLOC == 0 ) ){
             if( (times = XLALResizeREAL8Vector( times, MAXALLOC*memcount )) == NULL
@@ -483,13 +528,24 @@ heterodyne.\n");  }
               {  XLALPrintError("Error resizing data memory.\n");  }
             memcount++;
           }
-        }while( !feof(fpin) );
+        }while( !XLALFileEOF(fpin) );
       }
       else{
         INT4 memcount=1;
         REAL8 reVal, imVal;
 
-        while( fscanf(fpin, "%lf%lf%lf", &times->data[i], &reVal, &imVal) != EOF ){
+        do{
+          CHAR linebuf[256];
+          if ( XLALFileGets( &linebuf[0], 256, fpin ) == NULL ){
+            // skip this line
+            continue;
+          }
+
+          if ( sscanf(linebuf, "%lf%lf%lf", &times->data[i], &reVal, &imVal) != 3 ){
+            // skip this line
+            continue;
+          }
+
           if( inputParams.scaleFac > 1.0 ){
             reVal *= inputParams.scaleFac;
             imVal *= inputParams.scaleFac;
@@ -512,10 +568,10 @@ heterodyne.\n");  }
               {  XLALPrintError("Error resizing data memory.\n");  }
             memcount++;
           }
-        }
+        } while( !XLALFileEOF(fpin) );
       }
 
-      fclose(fpin);
+      XLALFileClose(fpin);
 
       hetParams.timestamp = times->data[0]; /* set initial time stamp */
 
@@ -610,8 +666,7 @@ sigma for 2nd time.\n",
 
     /* buffer the output, so that file system is not thrashed when outputing */
     /* buffer will be 1Mb */
-    if( setvbuf(fpout, NULL, _IOFBF, 0x100000) )
-      fprintf(stderr, "Warning: Unable to set output file buffer!");
+    if( setvbuf(fpout, NULL, _IOFBF, 0x100000) ){ fprintf(stderr, "Warning: Unable to set output file buffer!"); }
 
     for( i=0;i<(INT4)resampData->data->length;i++ ){
       /* if data has been scaled then undo scaling for output */
@@ -623,7 +678,6 @@ sigma for 2nd time.\n",
         tempreal = creal(resampData->data->data[i]);
         tempimag = cimag(resampData->data->data[i]);
 
-        /*FIXME: maybe add header info to binary output - or output to frames!*/
         /* binary output will be same as ASCII text - time real imag */
         if( inputParams.scaleFac > 1.0 ){
           tempreal /= inputParams.scaleFac;
@@ -635,8 +689,7 @@ sigma for 2nd time.\n",
         rc = fwrite(&tempimag, sizeof(REAL8), 1, fpout);
 
         if( ferror(fpout) || !rc ){
-          fprintf(stderr, "Error... problem writing out data to binary \
-file!\n");
+          fprintf(stderr, "Error... problem writing out data to binary file!\n");
           exit(1);
         }
       }
@@ -656,11 +709,19 @@ file!\n");
     if( verbose ){ fprintf(stderr, "I've output the data.\n"); }
 
     fclose(fpout);
+
     XLALDestroyCOMPLEX16TimeSeries( resampData );
 
     XLALDestroyREAL8Vector( times );
-  }while( count < numSegs && (inputParams.heterodyneflag==0 ||
-    inputParams.heterodyneflag==3) );
+  }while( count < numSegs && (inputParams.heterodyneflag==0 || inputParams.heterodyneflag==3) );
+
+  /* check whether to gzip the output */
+  if ( !inputParams.binaryoutput && inputParams.gzipoutput ){
+    fprintf(stderr, "Outputing %s to gzipped file\n", outputfile);
+    if ( XLALGzipTextFile(outputfile) != XLAL_SUCCESS ){ // gzip it
+      XLALPrintError("Error... problem gzipping the output file.\n");
+    }
+  }
 
   #if TRACKMEMUSE
     fprintf(stderr, "Memory usage after completion of main loop:\n"); printmemuse();
@@ -717,7 +778,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "resample-rate",            required_argument,  0, 'r' },
     { "data-file",                required_argument,  0, 'd' },
     { "channel",                  required_argument,  0, 'c' },
-    { "output-dir",               required_argument,  0, 'o' },
+    { "output-file",              required_argument,  0, 'o' },
     { "ephem-earth-file",         required_argument,  0, 'e' },
     { "ephem-sun-file",           required_argument,  0, 'S' },
     { "ephem-time-file",          required_argument,  0, 't' },
@@ -734,11 +795,12 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "manual-epoch",             required_argument,  0, 'M' },
     { "binary-input",             no_argument,     NULL, 'B' },
     { "binary-output",            no_argument,     NULL, 'b' },
+    { "gzip-output",              no_argument,     NULL, 'Z' },
     { "verbose",                  no_argument,     NULL, 'v' },
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:t:l:R:C:F:O:T:m:G:H:M:ABbv";
+  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:t:l:R:C:F:O:T:m:G:H:M:ABbZv";
   char *program = argv[0];
 
   /* set defaults */
@@ -751,6 +813,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   inputParams->binaryinput = 0; /* default to NOT read in data from a binary
 file */
   inputParams->binaryoutput = 0; /* default is to output data as ASCII text */
+  inputParams->gzipoutput = 0; /* default is to not gzip the output */
   inputParams->stddevthresh = 0.; /* default is not to threshold */
   inputParams->calibfiles.calibcoefficientfile = NULL;
   inputParams->calibfiles.sensingfunctionfile = NULL;
@@ -810,6 +873,9 @@ the pulsar parameter file */
         break;
       case 'b': /* output file is to be in binary format */
         inputParams->binaryoutput = 1;
+        break;
+      case 'Z': /* gzip output ascii text file */
+        inputParams->gzipoutput = 1;
         break;
       case 'f': /* initial heterodyne parameter file */
         snprintf(inputParams->paramfile, sizeof(inputParams->paramfile), "%s",
@@ -884,7 +950,7 @@ the pulsar parameter file */
           LALoptarg);
         break;
       case 'o': /* output data directory */
-        snprintf(inputParams->outputdir, sizeof(inputParams->outputdir), "%s",
+        snprintf(inputParams->outputfile, sizeof(inputParams->outputfile), "%s",
           LALoptarg);
         break;
       case 'e': /* earth ephemeris file */
@@ -1688,7 +1754,7 @@ INT4 heterodyneflag){
   INT4 i=0;
   long offset;
   CHAR jnkstr[256]; /* junk string to contain comment lines */
-  INT4 num, dur; /* variable to contain the segment number and duration */
+  INT4 dur; /* variable to contain the segment number and duration */
   INT4 linecount=0; /* number of lines in the segment file */
   INT4 ch=0;
 
@@ -1728,9 +1794,9 @@ INT4 heterodyneflag){
     else{
       fseek(fp, offset, SEEK_SET); /* if line doesn't start with a # then it is
                                       data */
-      if( fscanf(fp, "%d%d%d%d", &num, &starts->data[i],
-                 &stops->data[i], &dur) == EOF ) break;
-      /*format is segwizard type: num starts stops dur */
+      if( fscanf(fp, "%d%d", &starts->data[i], &stops->data[i]) == EOF ) break;
+      /* format is: starts stops */
+      dur = stops->data[i] - starts->data[i];
 
       /* if performing a fine heterodyne remove the first 60 secs at the start
          of a segment to remove the filter response - if the segment is less
@@ -2194,3 +2260,15 @@ void destroy_filter_response( FilterResponse *filtresp ){
   XLALDestroyREAL8Vector( filtresp->phaseResp );
   XLALFree( filtresp );
 }
+
+/* edited version of internal function from lal/src/support/LogPrintf.c: return time-string for given unix-time */
+const char *LogTimeToString ( double t ){
+  static char buf[100];
+  time_t x = (time_t)t;
+  struct tm tm;
+  localtime_r(&x, &tm);
+
+  strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+
+  return buf;
+} /* LogTimeToString() */

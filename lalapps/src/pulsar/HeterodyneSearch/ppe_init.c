@@ -349,6 +349,7 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
   add_variable_parameter( pars, ini, "COSIOTA", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "IOTA", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "PSI", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "Q22", LALINFERENCE_PARAM_FIXED ); /* mass quadrupole, Q22 */
 
   /* amplitude model parameters for l=2, m=1 and 2 harmonic emission from Jones (2010) */
   add_variable_parameter( pars, ini, "I21", LALINFERENCE_PARAM_FIXED );
@@ -409,6 +410,9 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
   add_variable_parameter( pars, ini, "PMRA", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "PMDEC", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "POSEPOCH", LALINFERENCE_PARAM_FIXED );
+
+  /* source distance */
+  add_variable_parameter( pars, ini, "DIST", LALINFERENCE_PARAM_FIXED );
 
   /* only add binary system parameters if required */
   if ( PulsarCheckParam( pars, "BINARY" ) ){

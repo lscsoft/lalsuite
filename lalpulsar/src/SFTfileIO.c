@@ -2297,58 +2297,20 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
 } /* read_v2_header_from_fp() */
 
 
-/* check that channel-prefix defines a 'known' detector.  The list of
- * known detectors implemented here for now follows the list in
- * Appendix D of LIGO-T970130-F-E:
+/* check that channel-prefix defines a valid 'known' detector.
+ * This is just a convenience wrapper to XLALGetCWDetectorPrefix(), which defines all valid 'CW detectors'
  *
  * returns TRUE if valid, FALSE otherwise */
 static BOOLEAN
 is_valid_detector (const char *channel)
 {
-  int i;
-  const char *knownDetectors[] =
-    {
-      "A1",       /* ALLEGRO */
-      "B1",       /* NIOBE */
-      "E1",       /* EXPLORER */
-      "G1",       /* GEO_600 */
-      "H1",       /* LHO_4k */
-      "H2",       /* LHO_2k */
-      "K1",       /* ACIGA */
-      "L1",       /* LLO_4k */
-      "N1",       /* Nautilus */
-      "O1",       /* AURIGA */
-      "P1",       /* CIT_40 */
-      "T1",       /* TAMA_300 */
-      "V1",       /* Virgo_CITF */
-      "V2",       /* Virgo (3km) */
-      "Z1",	  /* LISA effective IFO 1 */
-      "Z2",	  /* LISA effective IFO 2 */
-      "Z3",	  /* LISA effective IFO 3 */
-      "Z4",	  /* LISA effective IFO 2 minus 3 */
-      "Z5",	  /* LISA effective IFO 3 minus 1 */
-      "Z6",	  /* LISA effective IFO 1 minus 2 */
-      "Z7",	  /* LISA pseudo TDI A */
-      "Z8",	  /* LISA pseudo TDI E */
-      "Z9",	  /* LISA pseudo TDI T */
-      "X1",       /* RXTE PCA */
-      "X2",       /* RXTE ASM */
-      NULL
-    };
 
-  if ( !channel )
+  char *prefix = XLALGetCWDetectorPrefix ( NULL, channel );
+  if ( prefix == NULL ) {
     return FALSE;
-
-  if ( strlen(channel) < 2 )
-    return FALSE;
-
-  for ( i = 0; knownDetectors[i]; i ++ )
-    {
-      if ( ( knownDetectors[i][0] == channel[0] ) && ( knownDetectors[i][1] == channel[1] )  )
-	return TRUE;
-    }
-
-  return FALSE;
+  }
+  XLALFree ( prefix );
+  return TRUE;
 
 } /* is_valid_detector() */
 

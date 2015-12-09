@@ -219,6 +219,7 @@ tagBinaryPulsarParams
 
   /* gravitational wave parameters */
   REAL8 h0;     /**< gravitational wave amplitude */
+  REAL8 Q22;    /**< gravitational wave l=m=2 mass quadrupole moment */
   REAL8 cosiota;/**< cosine of the pulsars inclination angle */
   REAL8 iota;   /**< inclination angle */
   REAL8 psi;    /**< polarisation angle */
@@ -322,6 +323,7 @@ tagBinaryPulsarParams
 
   /* gravitational wave parameters */
   REAL8 h0Err;
+  REAL8 Q22Err;
   REAL8 cosiotaErr;
   REAL8 iotaErr;
   REAL8 psiErr;
@@ -495,6 +497,8 @@ void ParConvMasToRads( const CHAR *in, void *out );
 void ParConvInvArcsecsToInvRads( const CHAR *in, void *out );
 /** Convert the input string from days to seconds */
 void ParConvDaysToSecs( const CHAR *in, void *out );
+/** Convert the input string from kiloparsecs to metres */
+void ParConvKpcToMetres( const CHAR *in, void *out );
 
 /** Convert the binary system parameter from a string to a double, but  make the check (as performed by TEMPO2)
  * that this is > 1e-7 then it's in units of 1e-12, so needs converting by that factor. It also checks if the

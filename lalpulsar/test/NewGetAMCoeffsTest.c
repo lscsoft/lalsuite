@@ -115,10 +115,10 @@ int main(int argc, char *argv[])
   EarthState earth;
   UINT4 i;
   REAL8 maxerr01, maxerr02, maxerr12, averr01, averr02, averr12;
-  REAL8 tolerance = 1e-2;	/* be generous: allow 1% error */
+  REAL8 tolerance = 2e-2;	/* be generous: allow 1% error */
   struct tms buf;
 
-  const CHAR *sites[]   = {"H1", "L1", "V2", "G1", "T1" };
+  const CHAR *sites[]   = {"H1", "L1", "K1", "G1", "T1" };
   REAL8 sinzeta;	/* zeta = IFO opening angle */
   UINT4 pickedSite;
   BOOLEAN ignoreErrors = 0; /* Don't fail if tolerance exceeded */
@@ -169,7 +169,8 @@ int main(int argc, char *argv[])
 {
 
   /* ----- pick detector-site at random ----- */
-  pickedSite = floor( 5 * (1.0 * rand() / (RAND_MAX + 1.0) ) );  /* int in [0,5) */
+  UINT4 numSites = sizeof(sites) / sizeof(sites[0]);
+  pickedSite = floor( numSites * (1.0 * rand() / (RAND_MAX + 1.0) ) );  /* int in [0,numSites) */
 
   /* NOTE: contrary to ComputeAM() and LALGetAMCoffs(), the new function LALNewGetAMCoeffs()
    * computes 'a * sinzeta' and 'b * sinzeta': for the comparison we therefore need to correct

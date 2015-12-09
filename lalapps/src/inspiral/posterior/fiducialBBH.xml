@@ -1,0 +1,123 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE LIGO_LW SYSTEM "http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt"><LIGO_LW>
+   <Table Name="processgroup:process:table">
+      <Column Name="processgroup:process:program" Type="lstring"/>
+      <Column Name="processgroup:process:version" Type="lstring"/>
+      <Column Name="processgroup:process:cvs_repository" Type="lstring"/>
+      <Column Name="processgroup:process:cvs_entry_time" Type="int_4s"/>
+      <Column Name="processgroup:process:comment" Type="lstring"/>
+      <Column Name="processgroup:process:is_online" Type="int_4s"/>
+      <Column Name="processgroup:process:node" Type="lstring"/>
+      <Column Name="processgroup:process:username" Type="lstring"/>
+      <Column Name="processgroup:process:unix_procid" Type="int_4s"/>
+      <Column Name="processgroup:process:start_time" Type="int_4s"/>
+      <Column Name="processgroup:process:end_time" Type="int_4s"/>
+      <Column Name="processgroup:process:jobid" Type="int_4s"/>
+      <Column Name="processgroup:process:domain" Type="lstring"/>
+      <Column Name="processgroup:process:ifos" Type="lstring"/>
+      <Column Name="processgroup:process:process_id" Type="ilwd:char"/>
+      <Stream Name="processgroup:process:table" Type="Local" Delimiter=",">
+         "inspinj","a278ef96101ccda5fd9d2b3187ecb769f93ac872","CLEAN: All modifications committed",1133269943," ",0,"pcdev1","994",4022,1133277294,1133277295,0,"lalapps","","process:process_id:0"
+      </Stream>
+   </Table>
+   <Table Name="process_paramsgroup:process_params:table">
+      <Column Name="process_paramsgroup:process_params:program" Type="lstring"/>
+      <Column Name="process_paramsgroup:process_params:process_id" Type="ilwd:char"/>
+      <Column Name="process_paramsgroup:process_params:param" Type="lstring"/>
+      <Column Name="process_paramsgroup:process_params:type" Type="lstring"/>
+      <Column Name="process_paramsgroup:process_params:value" Type="lstring"/>
+      <Stream Name="process_paramsgroup:process_params:table" Type="Local" Delimiter=",">
+         "inspinj","process:process_id:0","--gps-start-time","int","441417609",
+         "inspinj","process:process_id:0","--gps-end-time","int","441418609",
+         "inspinj","process:process_id:0","--m-distr","string","componentMass",
+         "inspinj","process:process_id:0","--min-mass1","float","2.500000e+01",
+         "inspinj","process:process_id:0","--max-mass1","float","2.500000e+01",
+         "inspinj","process:process_id:0","--min-mass2","float","1.000000e+01",
+         "inspinj","process:process_id:0","--max-mass2","float","1.000000e+01",
+         "inspinj","process:process_id:0","--i-distr","string","uniform",
+         "inspinj","process:process_id:0","--waveform","string","SpinTaylorT4threePointFivePN",
+         "inspinj","process:process_id:0","--amp-order","int","0",
+         "inspinj","process:process_id:0","--l-distr","string","random",
+         "inspinj","process:process_id:0","--f-lower","float","40.000000",
+         "inspinj","process:process_id:0","--time-step","float","1.000000e+03",
+         "inspinj","process:process_id:0","--output","string","fiducialBBH.xml",
+         "inspinj","process:process_id:0","--snr-distr","string","volume",
+         "inspinj","process:process_id:0","--min-coinc-snr","float","5.000000e+00",
+         "inspinj","process:process_id:0","--min-snr","float","1.414214e+01",
+         "inspinj","process:process_id:0","--max-snr","float","1.414214e+01",
+         "inspinj","process:process_id:0","--ifos","string","H1,L1,V1",
+         "inspinj","process:process_id:0","--ligo-fake-psd","string","LALAdLIGO",
+         "inspinj","process:process_id:0","--virgo-fake-psd","string","LALAdVirgo",
+         "inspinj","process:process_id:0","--ligo-start-freq","float","40.000000",
+         "inspinj","process:process_id:0","--virgo-start-freq","float","40.000000",
+         "inspinj","process:process_id:0","--enable-spin","string","",
+         "inspinj","process:process_id:0","--min-spin1","float","0.000000e+00",
+         "inspinj","process:process_id:0","--max-spin1","float","1.000000e+00",
+         "inspinj","process:process_id:0","--min-spin2","float","0.000000e+00",
+         "inspinj","process:process_id:0","--max-spin2","float","1.000000e+00"
+      </Stream>
+   </Table>
+   <Table Name="sim_inspiralgroup:sim_inspiral:table">
+      <Column Name="sim_inspiralgroup:sim_inspiral:process_id" Type="ilwd:char"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:waveform" Type="lstring"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:geocent_end_time" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:geocent_end_time_ns" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:h_end_time" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:h_end_time_ns" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:l_end_time" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:l_end_time_ns" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:g_end_time" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:g_end_time_ns" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:t_end_time" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:t_end_time_ns" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:v_end_time" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:v_end_time_ns" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:end_time_gmst" Type="real_8"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:source" Type="lstring"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:mass1" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:mass2" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:mchirp" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:eta" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:distance" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:longitude" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:latitude" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:inclination" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:coa_phase" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:polarization" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:psi0" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:psi3" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:alpha" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:alpha1" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:alpha2" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:alpha3" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:alpha4" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:alpha5" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:alpha6" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:beta" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:spin1x" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:spin1y" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:spin1z" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:spin2x" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:spin2y" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:spin2z" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:theta0" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:phi0" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:f_lower" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:f_final" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_h" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_l" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_g" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_t" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:eff_dist_v" Type="real_4"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:numrel_mode_min" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:numrel_mode_max" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:numrel_data" Type="lstring"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:amp_order" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:taper" Type="lstring"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:bandpass" Type="int_4s"/>
+      <Column Name="sim_inspiralgroup:sim_inspiral:simulation_id" Type="ilwd:char"/>
+      <Stream Name="sim_inspiralgroup:sim_inspiral:table" Type="Local" Delimiter=",">
+         "process:process_id:0","SpinTaylorT4threePointFivePN",441417609,0,441417609,6306974,441417609,10388146,441417609,19206433,441417608,994227089,441417609,19621940,-1.3802405557688196e+04,"",2.500000e+01,1.000000e+01,1.348809e+01,2.040816e-01,1.107028e+03,4.598893e+00,-6.182897e-01,2.826317e+00,2.882723e+00,5.943814e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,0.000000e+00,1.988989e-02,2.353228e-02,1.800141e-02,-4.457477e-02,8.669829e-03,2.006492e-03,0.000000e+00,0.000000e+00,4.000000e+01,0.000000e+00,2.142509e+03,1.906824e+03,1.285201e+03,2.598697e+03,1.258988e+03,0,0,"",0,"TAPER_NONE",0,"sim_inspiral:simulation_id:0"
+      </Stream>
+   </Table>
+</LIGO_LW>

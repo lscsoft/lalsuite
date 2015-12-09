@@ -32,12 +32,19 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 #include <sys/types.h>
 
-#include <lal/BinaryPulsarTiming.h>
-#include <lal/LALgetopt.h>
+// definition taken from lal/src/support/LogPrintf.c
+#ifndef HAVE_LOCALTIME_R
+#define localtime_r(timep, result) memcpy((result), localtime(timep), sizeof(struct tm))
+#endif
 
 /* LAL headers */
+#include <lal/BinaryPulsarTiming.h>
+#include <lal/LALgetopt.h>
+#include <lal/LogPrintf.h>
+#include <lal/FileIO.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
@@ -101,7 +108,7 @@ extern "C" {
                           cache format) or previously heterodyned data\n\
                           file\n"\
 " --channel (-c)           frame data channel (i.e. LSC-DARM_ERR)\n"\
-" --output-dir (-o)        directory for output data files\n"\
+" --output-file (-o)       full path and filename for the output data\n"\
 " --seg-file (-l)          name of file containing science segment list\n"\
 " --calibrate (-A)         if specified calibrate data (no argument)\n"\
 " --response-file (-R)     name of file containing the response function\n"\
@@ -117,6 +124,10 @@ extern "C" {
 " --binary-input (-B)      read in input data from binary file (for fine and\n\
                           update heterodynes only)\n"\
 " --binary-output (-b)     output data to a binary file\n"\
+" --gzip-output (-Z)       if not outputting in binary format then gzip the\n\
+                          output file. This will be done by default if the\n\
+                          --output-file specified has the \".gz\" suffix, but\n\
+                          if not this suffix will be appended\n"\
 "\n"
 
 #define MAXDATALENGTH 256 /* maximum length of data to be read from frames */
@@ -127,6 +138,8 @@ extern "C" {
 #define ALPHAMAX 2.0 /* maximum acceptable value of alpha calib coefficient */
 
 #define FILTERFFTTIME 200
+
+#define HEADERSIZE 2048 /* number of bytes in header for output files */
 
 /* define structures */
 
@@ -167,7 +180,7 @@ typedef struct tagInputParams{
   CHAR datafile[256];
   CHAR channel[128];
 
-  CHAR outputdir[256];
+  CHAR outputfile[256];
   CHAR segfile[256];
 
   INT4 calibrate;
@@ -182,6 +195,7 @@ typedef struct tagInputParams{
 
   INT4 binaryinput;
   INT4 binaryoutput;
+  INT4 gzipoutput;
 }InputParams;
 
 typedef struct tagHeterodyneParams{

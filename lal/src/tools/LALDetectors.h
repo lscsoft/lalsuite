@@ -713,7 +713,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  */
 /*@{*/
 #define LAL_EXPLORER_DETECTOR_NAME               	"EXPLORER"	/**< EXPLORER detector name string */
-#define LAL_EXPLORER_DETECTOR_PREFIX             	"X1"	/**< EXPLORER detector prefix string */
+#define LAL_EXPLORER_DETECTOR_PREFIX             	"C1"	        /**< EXPLORER detector prefix string */
 #define LAL_EXPLORER_DETECTOR_LONGITUDE_RAD      	0.10821041362	/**< EXPLORER vertex longitude (rad) */
 #define LAL_EXPLORER_DETECTOR_LATITUDE_RAD       	0.81070543755	/**< EXPLORER vertex latitude (rad) */
 #define LAL_EXPLORER_DETECTOR_ELEVATION_SI       	0	/**< EXPLORER vertex elevation (m) */

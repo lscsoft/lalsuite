@@ -1079,7 +1079,10 @@ MultiSFTVector * generateSFTdata(UserInput_t *uvar, const MultiLALDetector *dete
       } else {
          SFTCatalog *catalog = NULL;
          XLAL_CHECK_NULL( (catalog = findSFTdata(uvar)) != NULL, XLAL_EFUNC );
-         XLAL_CHECK_NULL( (multiSFTvector = extractSFTband(catalog, minfbin, maxfbin)) != NULL, XLAL_EFUNC );
+         MultiSFTVector *tmpmultiSFTvector = NULL;
+         XLAL_CHECK_NULL( (tmpmultiSFTvector = extractSFTband(catalog, minfbin, maxfbin)) != NULL, XLAL_EFUNC );
+         XLAL_CHECK_NULL( (multiSFTvector = XLALExtractMultiSFTVectorWithMultiTimestamps(tmpmultiSFTvector, multiTimestamps)) != NULL, XLAL_EFUNC );
+         XLALDestroyMultiSFTVector(tmpmultiSFTvector);
          XLALDestroySFTCatalog(catalog);
       }
    } // if not signal only SFTs
@@ -1437,11 +1440,12 @@ INT4Vector * existingSFTs(const REAL4VectorAligned *tfdata, const UINT4 numffts)
 
 /**
  * Go through the backgroundScaling vector and zero out if the SFTexistVector has a 0 in that SFT location instead of 1
+ * \param [in,out] background        Pointer to REAL4VectorAligned of background data
  * \param [in,out] backgroundScaling Pointer to REAL4VectorAligned of background scaling data
  * \param [in]     SFTexistVector    Pointer to INT4Vector of 0 or 1 values representing if an SFT is present (1) or not (0)
  * \return Status value
  */
-INT4 checkBackgroundScaling(const REAL4VectorAligned *backgroundScaling, const INT4Vector *SFTexistVector)
+INT4 checkBackgroundScaling(const REAL4VectorAligned *background, const REAL4VectorAligned *backgroundScaling, const INT4Vector *SFTexistVector)
 {
    XLAL_CHECK( backgroundScaling != NULL && SFTexistVector != NULL, XLAL_EINVAL );
 
@@ -1449,6 +1453,9 @@ INT4 checkBackgroundScaling(const REAL4VectorAligned *backgroundScaling, const I
    for (UINT4 ii=0; ii<SFTexistVector->length; ii++) {
       if (SFTexistVector->data[ii]==0 && backgroundScaling->data[ii*numfbins]!=0.0) {
          memset(&(backgroundScaling->data[ii*numfbins]), 0, sizeof(REAL4)*numfbins);
+      }
+      if (SFTexistVector->data[ii]==0 && background->data[ii*numfbins]!=0.0) {
+         memset(&(background->data[ii*numfbins]), 0, sizeof(REAL4)*numfbins);
       }
    }
    return XLAL_SUCCESS;

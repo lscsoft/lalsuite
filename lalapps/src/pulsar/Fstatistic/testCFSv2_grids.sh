@@ -70,7 +70,7 @@ else
     haveNoise=false;
 fi
 
-IFO=LLO
+IFO=L1
 
 ##--------------------------------------------------
 ## test starts here

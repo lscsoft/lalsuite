@@ -31,6 +31,7 @@ libtool
 octave/
 python/bayestar_aggregate_found_injections
 python/bayestar_bin_samples
+python/bayestar_contour_allsky
 python/bayestar_lattice_tmpltbank
 python/bayestar_littlehope
 python/bayestar_localize_coincs

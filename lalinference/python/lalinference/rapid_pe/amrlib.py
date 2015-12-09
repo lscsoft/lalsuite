@@ -478,10 +478,8 @@ def check_tau0tau3(tau0, tau3, flow=40):
 def check_mchirpeta(mchirp, eta):
     return eta <= 0.25 and mchirp >= 0
 
-def check_spins(spin1, spin2):
-    b1 = numpy.sqrt(numpy.atleast_2d(spin1**2).sum(axis=0)) <= 1
-    b2 = numpy.sqrt(numpy.atleast_2d(spin2**2).sum(axis=0)) <= 1
-    return b1 & b2
+def check_spins(spin):
+    return numpy.sqrt(numpy.atleast_2d(spin**2).sum(axis=0)) <= 1
 
 # Make sure the new grid points are physical
 def check_grid(grid, intr_prms, distance_coordinates):
@@ -496,9 +494,12 @@ def check_grid(grid, intr_prms, distance_coordinates):
         bounds_mask = check_mchirpeta(grid_check[m1_axis], grid_check[m2_axis])
 
     # FIXME: Needs general spin
-    if "spin1z" in intr_prms or "spin2z" in intr_prms:
-        s1_axis, s2_axis = intr_prms.index("spin1z"), intr_prms.index("spin2z")
-        bounds_mask &= check_spins(grid_check[s1_axis], grid_check[s2_axis])
+    if "spin1z" in intr_prms:
+        s1_axis = intr_prms.index("spin1z")
+        bounds_mask &= check_spins(grid_check[s1_axis])
+    if "spin2z" in intr_prms:
+        s2_axis = intr_prms.index("spin2z")
+        bounds_mask &= check_spins(grid_check[s2_axis])
     return bounds_mask
 
 VALID_TRANSFORMS_MASS = { \

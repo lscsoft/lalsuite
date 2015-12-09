@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012  Leo Singer
+# Copyright (C) 2012-2015  Leo Singer
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ from matplotlib import ticker
 from matplotlib.ticker import Formatter, FixedLocator
 from matplotlib.projections import projection_registry
 from matplotlib.transforms import Transform, Affine2D
-from matplotlib.projections.geo import MollweideAxes
+from matplotlib.projections.geo import LambertAxes, MollweideAxes
 from mpl_toolkits.basemap import _geoslib as geos
 from matplotlib import pyplot as plt
 import scipy.stats
@@ -188,6 +188,43 @@ class AstroMollweideAxes(FixedMollweideAxes):
 
 
 projection_registry.register(AstroMollweideAxes)
+
+
+class AstroLambertAxes(LambertAxes):
+    name = 'astro lambert'
+
+    def cla(self):
+        super(AstroLambertAxes, self).cla()
+        self.set_xlim(0, 2*np.pi)
+
+    def set_xlim(self, *args, **kwargs):
+        Axes.set_xlim(self, 0., 2*np.pi)
+        Axes.set_ylim(self, -np.pi / 2.0, np.pi / 2.0)
+
+    def _get_core_transform(self, resolution):
+        return Affine2D().translate(-np.pi, 0.).scale(-1, 1) + super(AstroLambertAxes, self)._get_core_transform(resolution)
+
+    class RaFormatter(Formatter):
+        # Copied from matplotlib.geo.GeoAxes.ThetaFormatter and modified
+        def __init__(self, round_to=1.0):
+            self._round_to = round_to
+
+        def __call__(self, x, pos=None):
+            hours = (x / np.pi) * 12.
+            hours = round(15 * hours / self._round_to) * self._round_to / 15
+            return r"%0.0f$^\mathrm{h}$" % hours
+
+    def set_longitude_grid(self, degrees):
+        # Copied from matplotlib.geo.GeoAxes.set_longitude_grid and modified
+        number = (360.0 / degrees) + 1
+        self.xaxis.set_major_locator(
+            FixedLocator(
+                np.linspace(0, 2*np.pi, number, True)[1:-1]))
+        self._longitude_degrees = degrees
+        self.xaxis.set_major_formatter(self.RaFormatter(degrees))
+
+
+projection_registry.register(AstroLambertAxes)
 
 
 def wrapped_angle(a):

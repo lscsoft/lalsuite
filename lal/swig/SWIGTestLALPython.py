@@ -28,8 +28,6 @@ if not lal.NoDebug:
     mem3 = lal.CreateREAL8Vector(3)
     mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lal.DimensionlessUnit, 10)
     print("*** below should be an error message from CheckMemoryLeaks() ***")
-    sys.stdout.flush()
-    sys.stderr.flush()
     try:
         lal.CheckMemoryLeaks()
         expected_exception = True
@@ -1083,6 +1081,28 @@ del t4struct
 del t5
 lal.CheckMemoryLeaks()
 print("PASSED LIGOTimeGPS operations")
+print("checking LIGOTimeGPS operations (Python specific) ...")
+class my_gps_class:
+    def __init__(self, s, ns):
+        self.gpsSeconds = s
+        self.gpsNanoSeconds = ns
+tmy = my_gps_class(987, 654321)
+tsw = LIGOTimeGPS(tmy)
+assert(isinstance(tsw, LIGOTimeGPS))
+assert(tsw.gpsSeconds == 987)
+assert(tsw.gpsNanoSeconds == 654321)
+assert(tsw + tmy == tsw + tsw and isinstance(tsw + tmy, LIGOTimeGPS))
+assert(tmy + tsw == tsw + tsw and isinstance(tmy + tsw, LIGOTimeGPS))
+assert(tsw - tmy == tsw - tsw and isinstance(tsw - tmy, LIGOTimeGPS))
+assert(tmy - tsw == tsw - tsw and isinstance(tmy - tsw, LIGOTimeGPS))
+assert(tsw * tmy == tsw * tsw and isinstance(tsw * tmy, LIGOTimeGPS))
+assert(tmy * tsw == tsw * tsw and isinstance(tmy * tsw, LIGOTimeGPS))
+assert(tsw / tmy == tsw / tsw and isinstance(tsw / tmy, LIGOTimeGPS))
+assert(tmy / tsw == tsw / tsw and isinstance(tmy / tsw, LIGOTimeGPS))
+assert(lal.swig_lal_test_noptrgps(tmy) == lal.swig_lal_test_noptrgps(tsw))
+del tsw
+lal.CheckMemoryLeaks()
+print("PASSED LIGOTimeGPS operations (Python specific)")
 
 # check LALUnit operations
 print("checking LALUnit operations ...")

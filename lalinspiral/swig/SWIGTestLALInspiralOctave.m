@@ -1,6 +1,7 @@
 ## Check SWIG Octave bindings for LALInspiral
 ## Author: Karl Wette, 2011--2014
 
+page_screen_output(0);
 crash_dumps_octave_core(0);
 
 ## check module load

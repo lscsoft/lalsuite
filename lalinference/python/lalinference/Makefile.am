@@ -7,6 +7,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 SUBDIRS = \
 	bayestar \
 	rapid_pe \
+	imrtgr \
 	$(END_OF_LIST)
 
 vcs_info_sources = git_version.py

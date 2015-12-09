@@ -85,7 +85,7 @@ else
     haveNoise=false;
 fi
 
-IFO=LHO
+IFO=H1
 
 ## ----- define output directory and files
 testDir=testCFSv2.d

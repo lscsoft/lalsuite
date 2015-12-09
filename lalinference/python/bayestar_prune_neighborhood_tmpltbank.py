@@ -76,7 +76,7 @@ process = ligolw_process.register_to_xmldoc(xmldoc, parser.get_prog_name(),
     opts.__dict__)
 
 # Determine the low frequency cutoff from the template bank file.
-f_low = bayestar.ligolw.get_temlate_bank_f_low(xmldoc)
+f_low = bayestar.ligolw.get_template_bank_f_low(xmldoc)
 
 # Get the SnglInspiral table.
 sngl_inspiral_table = ligolw_table.get_table(xmldoc,

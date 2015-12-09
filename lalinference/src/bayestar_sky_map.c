@@ -47,7 +47,7 @@
 
 
 /*
- * Copyright (C) 2013  Leo Singer
+ * Copyright (C) 2013-2015  Leo Singer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,6 +75,8 @@
 
 #include <lal/DetResponse.h>
 #include <lal/InspiralInjectionParams.h>
+#include <lal/FrequencySeries.h>
+#include <lal/LALSimInspiral.h>
 #include <lal/LALSimulation.h>
 
 #include <chealpix.h>
@@ -642,7 +644,7 @@ static double complex signal_amplitude_model(
     double u2                       /* cos^2(inclination */
 ) {
     const double complex tmp = F * conj(exp_i_twopsi);
-    return 0.5 * (1 + u2) * creal(tmp) + I * u * cimag(tmp);
+    return 0.5 * (1 + u2) * creal(tmp) - I * u * cimag(tmp);
 }
 
 
@@ -956,9 +958,9 @@ double *bayestar_sky_map_toa_phoa_snr(
                             for (unsigned int iifo = 0; iifo < nifos; iifo ++)
                             {
                                 I0arg_complex_times_r += snrs[iifo]
-                                    * conj(z_times_r[iifo]) * exp_i_phoas[iifo]
+                                    * exp_i_phoas[iifo] * conj(z_times_r[iifo]
                                     * eval_acor(acors[iifo], nsamples,
-                                        dt[iifo] * sample_rate + isample);
+                                        dt[iifo] * sample_rate + isample));
                             }
                             b = cabs(I0arg_complex_times_r);
                         }
@@ -1114,8 +1116,8 @@ double bayestar_log_likelihood_toa_phoa_snr(
              signal_amplitude_model(F, exp_i_twopsi, u, u2);
         const double complex zhat = snrs[iifo] * exp_i(phoas[iifo]);
 
-        i0arg_complex_times_r += zhat * conj(z_times_r)
-            * eval_acor(acors[iifo], nsamples, dt[iifo] * sample_rate);
+        i0arg_complex_times_r += zhat * conj(z_times_r
+            * eval_acor(acors[iifo], nsamples, dt[iifo] * sample_rate));
         A += cabs2(z_times_r);
     }
     A *= -0.5;
@@ -1412,14 +1414,82 @@ static void test_signal_amplitude_model(
         abs_expected = 1 / abs_expected;
     }
 
-    double complex expected;
+    /* This is the *really* slow way of working out the signal amplitude:
+     * generate a frequency-domain waveform and inject it. */
+    double complex expected = 0;
     {
-        double Fplus, Fcross;
-        const double u = cos(inclination);
-        const double u2 = gsl_pow_2(u);
+        COMPLEX16FrequencySeries
+            *Htemplate = NULL, *Hsignal = NULL, *Hcross = NULL;
+        double h = 0, Fplus, Fcross;
+        int ret;
+
+        /* Calculate antenna factors */
         XLALComputeDetAMResponse(
             &Fplus, &Fcross, detector->response, ra, dec, polarization, gmst);
-        expected = 0.5 * (1 + u2) * Fplus + I * u * Fcross;
+
+        /* Check that the way I compute the antenna factors matches */
+        {
+            double complex F;
+            XLALComputeDetAMResponse(
+                (double *)&F, 1 + (double *)&F, detector->response, ra, dec, 0, gmst);
+            F *= exp_i(-2 * polarization);
+
+            gsl_test_abs(creal(F), Fplus, 4 * GSL_DBL_EPSILON,
+                "testing Fplus(ra=%0.03f, dec=%0.03f, "
+                "inc=%0.03f, pol=%0.03f, epoch_nanos=%lu, detector=%s)",
+                ra, dec, inclination, polarization, epoch_nanos, instrument);
+
+            gsl_test_abs(cimag(F), Fcross, 4 * GSL_DBL_EPSILON,
+                "testing Fcross(ra=%0.03f, dec=%0.03f, "
+                "inc=%0.03f, pol=%0.03f, epoch_nanos=%lu, detector=%s)",
+                ra, dec, inclination, polarization, epoch_nanos, instrument);
+        }
+
+        /* "Template" waveform with inclination angle of zero */
+        ret = XLALSimInspiralFD(
+            &Htemplate, &Hcross, 0, 1, 1.4 * LAL_MSUN_SI, 1.4 * LAL_MSUN_SI,
+            0, 0, 0, 0, 0, 0, 100, 101, 100, 1, 0, 0, 0, 0,
+            NULL, NULL, LAL_PNORDER_NEWTONIAN, LAL_PNORDER_NEWTONIAN, TaylorF2);
+        assert(ret == XLAL_SUCCESS);
+
+        /* Discard any non-quadrature phase component of "template" */
+        for (size_t i = 0; i < Htemplate->data->length; i ++)
+            Htemplate->data->data[i] += I * Hcross->data->data[i];
+
+        /* Free Hcross */
+        XLALDestroyCOMPLEX16FrequencySeries(Hcross);
+        Hcross = NULL;
+
+        /* Normalize "template" */
+        for (size_t i = 0; i < Htemplate->data->length; i ++)
+            h += cabs2(Htemplate->data->data[i]);
+        h = 2 / h;
+        for (size_t i = 0; i < Htemplate->data->length; i ++)
+            Htemplate->data->data[i] *= h;
+
+        /* "Signal" waveform with requested inclination angle */
+        ret = XLALSimInspiralFD(
+            &Hsignal, &Hcross, 0, 1, 1.4 * LAL_MSUN_SI, 1.4 * LAL_MSUN_SI,
+            0, 0, 0, 0, 0, 0, 100, 101, 100, 1, 0, inclination, 0, 0,
+            NULL, NULL, LAL_PNORDER_NEWTONIAN, LAL_PNORDER_NEWTONIAN, TaylorF2);
+        assert(ret == XLAL_SUCCESS);
+
+        /* Project "signal" using antenna factors */
+        for (size_t i = 0; i < Hsignal->data->length; i ++)
+            Hsignal->data->data[i] = Fplus * Hsignal->data->data[i]
+                                   + Fcross * Hcross->data->data[i];
+
+        /* Free Hcross */
+        XLALDestroyCOMPLEX16FrequencySeries(Hcross);
+        Hcross = NULL;
+
+        /* Work out complex amplitude by comparing with "template" waveform */
+        for (size_t i = 0; i < Htemplate->data->length; i ++)
+            expected += conj(Htemplate->data->data[i]) * Hsignal->data->data[i];
+
+        XLALDestroyCOMPLEX16FrequencySeries(Hsignal);
+        XLALDestroyCOMPLEX16FrequencySeries(Htemplate);
+        Hsignal = Htemplate = NULL;
     }
 
     /* Test to nearly float (32-bit) precision because
@@ -1429,12 +1499,12 @@ static void test_signal_amplitude_model(
         "inc=%0.03f, pol=%0.03f, epoch_nanos=%lu, detector=%s))",
         ra, dec, inclination, polarization, epoch_nanos, instrument);
 
-    gsl_test_abs(creal(result), creal(expected), 2.5 * GSL_DBL_EPSILON,
+    gsl_test_abs(creal(result), creal(expected), 4 * GSL_DBL_EPSILON,
         "testing re(signal_amplitude_model(ra=%0.03f, dec=%0.03f, "
         "inc=%0.03f, pol=%0.03f, epoch_nanos=%lu, detector=%s))",
         ra, dec, inclination, polarization, epoch_nanos, instrument);
 
-    gsl_test_abs(cimag(result), cimag(expected), 2.5 * GSL_DBL_EPSILON,
+    gsl_test_abs(cimag(result), cimag(expected), 4 * GSL_DBL_EPSILON,
         "testing im(signal_amplitude_model(ra=%0.03f, dec=%0.03f, "
         "inc=%0.03f, pol=%0.03f, epoch_nanos=%lu, detector=%s))",
         ra, dec, inclination, polarization, epoch_nanos, instrument);

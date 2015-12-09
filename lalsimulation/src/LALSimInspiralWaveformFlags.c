@@ -16,7 +16,9 @@
  *  MA  02111-1307  USA
  */
 
-#include  <lal/LALSimInspiralWaveformFlags.h>
+#include <stdio.h>
+#include <lal/LALString.h>
+#include <lal/LALSimInspiralWaveformFlags.h>
 
 /**
  * Struct containing several enumerated flags that control specialized behavior
@@ -34,6 +36,7 @@ struct tagLALSimInspiralWaveformFlags
     LALSimInspiralTidalOrder tideO; /**< PN order of spin effects */
     LALSimInspiralFrameAxis axisChoice; /**< Flag to set frame z-axis convention */
     LALSimInspiralModesChoice modesChoice; /**< Flag to control which modes are included in IMR models */
+    char numreldata[FILENAME_MAX]; /**< Location of NR data file for NR waveforms */
 };
 
 /**
@@ -288,6 +291,41 @@ bool XLALSimInspiralModesChoiceIsDefault(
         return true;
     else 
         return false;
+}
+
+/**
+ * Set the numreldata string within a LALSimInspiralWaveformFlags struct
+ */
+void XLALSimInspiralSetNumrelData(
+        LALSimInspiralWaveformFlags *waveFlags, /**< Struct whose value will be set */
+        const char* numreldata /**< value to set numreldata to */
+        )
+{
+    XLALStringCopy(waveFlags->numreldata, numreldata, sizeof(waveFlags->numreldata));
+    return;
+}
+
+/**
+ * Returns a deepcopy of the pointer of the numeraldata attribute of the
+ * waveFlags structure. If this is NULL then NULL will be returned.
+ * The returned value is independent of the waveFlags structure and will
+ * need to be LALFree-d.
+ */
+char* XLALSimInspiralGetNumrelData(
+        LALSimInspiralWaveformFlags *waveFlags
+        )
+{
+    char *ret_string;
+    if ( waveFlags )
+    {
+        ret_string = XLALMalloc(FILENAME_MAX * sizeof(char));
+        XLALStringCopy(ret_string, waveFlags->numreldata, sizeof(waveFlags->numreldata));
+        return ret_string;
+    }
+    else
+    {
+        return NULL;
+    }
 }
 
 /** @} */

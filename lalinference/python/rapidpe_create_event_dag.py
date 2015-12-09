@@ -163,7 +163,8 @@ ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         convergence_tests_on=opts.convergence_tests_on,
         adapt_floor_level=opts.adapt_floor_level,
         adapt_weight_exponent=opts.adapt_weight_exponent,
-        skymap_file=opts.skymap_file
+        skymap_file=opts.skymap_file,
+        distance_maximum=opts.distance_maximum
         )
 ile_job_type.write_sub_file()
 
