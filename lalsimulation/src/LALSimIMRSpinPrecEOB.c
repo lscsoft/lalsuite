@@ -640,6 +640,17 @@ int XLALSimIMRSpinEOBWaveform(
 
          XLAL_ERROR( XLAL_ENOMEM );
     }
+    if( ((*hplus)->data->length == (*hcross)->data->length) && ((*hplus)->data->length != 0) && ((*hcross)->data->length != 0) ) {
+        // This line makes sure that all data can be accessed, checking only for the last element
+        fprintf(stderr, "Final h element: %.18e, %.18e", (*hcross)->data->data[(*hcross)->data->length-1], (*hplus)->data->data[(*hplus)->data->length-1]);
+
+        // If the above line faces a segmentation fault, it will fail here.
+        // Prayush: Should be handle the seg fault?
+    }
+    else {
+        XLALPrintError("Houston-4, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = .18e, m2 = %.18e, fMin = %.18e, inclination = %.18e, spin1 = {.18e, .18e, %.18e}, spin2 = {.18e, %.18e, %.18e} \n", m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc, INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
+        XLAL_ERROR( XLAL_ENOMEM );
+    }
 
     XLALDestroyREAL8Vector( dynamicsHi );
     XLALDestroyREAL8Vector( AttachPars );
