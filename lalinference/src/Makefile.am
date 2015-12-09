@@ -13,6 +13,10 @@ BAYESTARHDR = bayestar_sky_map.h
 BAYESTARSRC = bayestar_sky_map.c
 endif
 
+ANALYTICFILES = CorrelationMatrix.csv unimodalMeans.csv bimodalMeans.csv
+
+pkgdata_DATA = $(ANALYTICFILES)
+
 pkginclude_HEADERS = \
 	LALInference.h \
 	LALInferenceConfig.h \
@@ -67,6 +71,7 @@ EXTRA_DIST = \
 	LALInferenceConfig.h.in \
 	LALInferenceXML.c \
 	LALInferenceXML.h \
+	$(ANALYTICFILES) \
 	config.h.in
 
 DISTCLEANFILES = config.h
