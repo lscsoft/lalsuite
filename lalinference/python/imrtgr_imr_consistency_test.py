@@ -33,15 +33,15 @@ rc('font', serif='times')
 rc('mathtext', default='sf')
 rc("lines", markeredgewidth=1)
 rc("lines", linewidth=2)
-rc('axes', labelsize=10) #24
-rc("axes", linewidth=0.5) #2)
+rc('axes', labelsize=10)
+rc("axes", linewidth=0.5)
 rc('xtick', labelsize=8)
 rc('ytick', labelsize=8)
-rc('legend', fontsize=10) #16
-rc('xtick.major', pad=6) #8)
-rc('ytick.major', pad=6) #8)
-rc('xtick.minor', size=5) #8)
-rc('ytick.minor', size=5) #8)
+rc('legend', fontsize=10)
+rc('xtick.major', pad=6)
+rc('ytick.major', pad=6)
+rc('xtick.minor', size=5)
+rc('ytick.minor', size=5)
 
 def set_tick_sizes(ax, major, minor):
   for l in ax.get_xticklines() + ax.get_yticklines():
@@ -90,14 +90,14 @@ if __name__ == '__main__':
   parser.add_option("-r", "--ring-post", dest="ring_post", help="file containing the posterior samples from the lalinference ringdown run")
   parser.add_option("-m", "--imr-post", dest="imr_post", help="file containing the posterior samples from the full lalinference IMR run")
   parser.add_option("-f", "--fit-formula", dest="fit_formula", help="fitting formula to be used for the calculation of final mass/spin [options: 'nospin_Pan2011', 'nonprecspin_Healy2014'")
-  parser.add_option("-p", "--mf-chif-prior", dest="prior_Mfchif_file", help="pickle file containing the interpolation object of the prior in (Mf,chif) used in the lalinference runs", default=None)
+  parser.add_option("-p", "--mf-chif-prior", dest="prior_Mfchif_file", help="pickle file containing the interpolation object of the prior in (Mf,chif) used in the lalinference runs defined in eqn (34) LIGO-P1500185", default=None)
   parser.add_option("-o", "--out-dir", dest="out_dir", help="output directory")
   parser.add_option("--insp-fhigh", dest="insp_fhigh", help="Upper cutoff freq for the inspiral analysis")
   parser.add_option("--ring-flow", dest="ring_flow", help="Lower cutoff freq for the ringdown analysis")
-  parser.add_option("-M", "--mtot-inj", dest="M_inj", help="injected value of total mass (if this is an injection)")
-  parser.add_option("-Q", "--mratio-inj", dest="q_inj", help="injected value of mass ratio (if this is an injection)")
-  parser.add_option("--chi1-inj", dest="chi1_inj", help="injected value of spin of mass m1 (if this is an injection)")
-  parser.add_option("--chi2-inj", dest="chi2_inj", help="injected value of spin of mass m2 (if this is an injection)")
+  parser.add_option("--m1-inj", dest="m1_inj", help="injected value of component mass m1 (if this is an injection)")
+  parser.add_option("--m2-inj", dest="m_inj", help="injected value of component mass m2 (if this is an injection)")
+  parser.add_option("--chi1-inj", dest="chi1_inj", help="injected value of z-component of spin of mass m1 (if this is an injection)")
+  parser.add_option("--chi2-inj", dest="chi2_inj", help="injected value of z-component of spin of mass m2 (if this is an injection)")
   parser.add_option("-w", "--waveform", dest="waveform", help="waveform used for recovery")
   parser.add_option("-d", "--debug-plots", dest="debug_plots", help="debug plots")
   (options, args) = parser.parse_args()
@@ -112,7 +112,7 @@ if __name__ == '__main__':
   insp_fhigh = float(options.insp_fhigh)
   ring_flow = float(options.ring_flow)
   waveform = options.waveform
-  N_bins = 201
+  N_bins = 201 # Number of grid points along either axis (dMfbyMf, dchifbychif) for computation of the posteriors
   
   lalinference_datadir = os.getenv('LALINFERENCE_DATADIR')
   if prior_Mfchif_file is None:
@@ -123,7 +123,6 @@ if __name__ == '__main__':
   os.system('mkdir -p %s/data' %out_dir)
   os.system('mkdir -p %s/img' %out_dir)
   os.system('cp %s %s' %(__file__, out_dir))
-  #os.system('cp ../src/imrtestgr.py %s' %(out_dir))
   os.system('cp %s %s/'%(os.path.join(lalinference_datadir, 'imrtgr_webpage_templates/*.*'), out_dir))
   os.system('cp %s %s/data'%(prior_Mfchif_file, out_dir))
 
@@ -146,21 +145,16 @@ if __name__ == '__main__':
   os.system('ln -s %s %s' %(os.path.realpath(imr_posplots), os.path.realpath(os.path.join(out_dir, 'lalinf_imr'))))
 
   # read the injection mass parameters if this is an injection
-  M_inj = options.M_inj
-  q_inj = options.q_inj
-  chi1_inj = options.chi1_inj
-  chi2_inj = options.chi2_inj
+  m1_inj = float(options.m1_inj)
+  m2_inj = float(options.m2_inj)
+  chi1_inj = float(options.chi1_inj)
+  chi2_inj = float(options.chi2_inj)
 
-  if M_inj == None or q_inj == None or chi1_inj == None or chi2_inj == None:
+  if m1_inj == None or m2_inj == None or chi1_inj == None or chi2_inj == None:
     plot_injection_lines = False
   else:
     plot_injection_lines = True
-    M_inj = float(options.M_inj)
-    q_inj = float(options.q_inj)
-    chi1_inj = float(options.chi1_inj)
-    chi2_inj = float(options.chi2_inj)
-    m2_inj = M_inj/(1.+q_inj)
-    m1_inj = M_inj*q_inj/(1.+q_inj)
+    q_inj = m1_inj/m2_inj
     eta_inj = q_inj/(1.+q_inj)**2.
     Mf_inj, chif_inj = tgr.calc_final_mass_spin(m1_inj, m2_inj, chi1_inj, chi2_inj, fit_formula)
 
@@ -225,7 +219,8 @@ if __name__ == '__main__':
   P_Mfchif_i, Mf_bins, chif_bins = np.histogram2d(Mf_i, chif_i, bins=(Mf_bins, chif_bins), normed=True)
   P_Mfchif_r, Mf_bins, chif_bins = np.histogram2d(Mf_r, chif_r, bins=(Mf_bins, chif_bins), normed=True)
   P_Mfchif_imr, Mf_bins, chif_bins = np.histogram2d(Mf_imr, chif_imr, bins=(Mf_bins, chif_bins), normed=True)
-
+  
+  # Transpose to go from (X,Y) indexing returned by np.histogram2d() to array (i,j) indexing to be provided to plt.pcolormesh() later
   P_Mfchif_i = P_Mfchif_i.T
   P_Mfchif_r = P_Mfchif_r.T
   P_Mfchif_imr = P_Mfchif_imr.T
@@ -264,28 +259,30 @@ if __name__ == '__main__':
   P_dMfdchif_interp_object = scipy.interpolate.interp2d(Mf_intp, chif_intp, P_dMfdchif, fill_value=0., bounds_error=False)
   P_Mfchif_imr_interp_object = scipy.interpolate.interp2d(Mf_intp, chif_intp, P_Mfchif_imr, fill_value=0., bounds_error=False)
 
-  # defining limits of delta_Mf/Mf and delta_chif/chif. limits are currently set arbitrarily FIXME 
+  # defining limits of delta_Mf/Mf and delta_chif/chif.
   dMfbyMf_vec = np.linspace(-1.0, 1.0, N_bins)
   dchifbychif_vec = np.linspace(-1.0, 1.0, N_bins)
 
   # compute the P(dMf/Mf, dchif/chif) by evaluating the integral 
-  dx = np.mean(np.diff(dMfbyMf_vec))
-  dy = np.mean(np.diff(dchifbychif_vec))
+  diff_dMfbyMf = np.mean(np.diff(dMfbyMf_vec))
+  diff_dchifbychif = np.mean(np.diff(dchifbychif_vec))
   P_dMfbyMf_dchifbychif = np.zeros(shape=(N_bins,N_bins))
 
+  # Eqn (54) LIGO-P1500185
   for i, v2 in enumerate(dchifbychif_vec):
     for j, v1 in enumerate(dMfbyMf_vec):
-      P_dMfbyMf_dchifbychif[i,j] = tgr.calc_sum(Mf_intp, chif_intp, v1, v2, P_dMfdchif_interp_object, P_Mfchif_imr_interp_object)*dx*dy
+      P_dMfbyMf_dchifbychif[i,j] = tgr.calc_sum(Mf_intp, chif_intp, v1, v2, P_dMfdchif_interp_object, P_Mfchif_imr_interp_object)*diff_dMfbyMf*diff_dchifbychif
 
   # normalization
-  P_dMfbyMf_dchifbychif /= np.sum(P_dMfbyMf_dchifbychif) * dx * dy
+  P_dMfbyMf_dchifbychif /= np.sum(P_dMfbyMf_dchifbychif) * diff_dMfbyMf * diff_dchifbychif
 
   # Marginalization to one-dimensional joint_posteriors
-  P_dMfbyMf = np.sum(P_dMfbyMf_dchifbychif, axis=0) * dy
-  P_dchifbychif = np.sum(P_dMfbyMf_dchifbychif, axis=1) * dx
+  P_dMfbyMf = np.sum(P_dMfbyMf_dchifbychif, axis=0) * diff_dchifbychif
+  P_dchifbychif = np.sum(P_dMfbyMf_dchifbychif, axis=1) * diff_dMfbyMf
   
   # GR confidence
   conf_v1v2 = confidence(P_dMfbyMf_dchifbychif)
+  # taking value closest to deltas being zero
   gr_height = P_dMfbyMf_dchifbychif[np.argmin(abs(dMfbyMf_vec)), np.argmin(abs(dchifbychif_vec))]
   gr_conf_level = conf_v1v2.level_from_height(gr_height)
   print '... no deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level)
