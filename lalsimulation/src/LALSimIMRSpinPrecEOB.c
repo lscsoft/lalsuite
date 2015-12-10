@@ -654,7 +654,7 @@ int XLALSimIMRSpinEOBWaveform(
         // Prayush: Should be handle the seg fault?
     }
     else {
-        XLALPrintError("Houston-4, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = .18e, m2 = %.18e, fMin = %.18e, inclination = %.18e, spin1 = {.18e, .18e, %.18e}, spin2 = {.18e, %.18e, %.18e} \n", m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc, INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
+        XLALPrintError("Houston-4, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e, spin1 = {%.18e, %.18e, %.18e}, spin2 = {%.18e, %.18e, %.18e} \n", m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc, INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
         XLAL_ERROR( XLAL_ENOMEM );
     }
 
@@ -2375,23 +2375,23 @@ int XLALSimIMRSpinEOBWaveformAll(
     bI2P = Beta->data[i];
     gI2P = Gamma->data[i];
 
-    if (debugPK){
-        REAL8 LframeEx[3] = {0,0,0}, LframeEy[3] = {0,0,0}, LframeEz[3] = {0,0,0};
-        LframeEx[0] =  cos(aI2P)*cos(bI2P)*cos(gI2P) - sin(aI2P)*sin(gI2P);
-        LframeEx[1] =  sin(aI2P)*cos(bI2P)*cos(gI2P) + cos(aI2P)*sin(gI2P);
-        LframeEx[2] = -sin(bI2P)*cos(gI2P);
-        LframeEy[0] = -cos(aI2P)*cos(bI2P)*sin(gI2P) - sin(aI2P)*cos(gI2P);
-        LframeEy[1] = -sin(aI2P)*cos(bI2P)*sin(gI2P) + cos(aI2P)*cos(gI2P);
-        LframeEy[2] =  sin(bI2P)*sin(gI2P);
-        LframeEz[0] =  LNhx;
-        LframeEz[1] =  LNhy;
-        LframeEz[2] =  LNhz;
+    //if (debugPK){
+        //REAL8 LframeEx[3] = {0,0,0}, LframeEy[3] = {0,0,0}, LframeEz[3] = {0,0,0};
+        //LframeEx[0] =  cos(aI2P)*cos(bI2P)*cos(gI2P) - sin(aI2P)*sin(gI2P);
+       // LframeEx[1] =  sin(aI2P)*cos(bI2P)*cos(gI2P) + cos(aI2P)*sin(gI2P);
+        //LframeEx[2] = -sin(bI2P)*cos(gI2P);
+        //LframeEy[0] = -cos(aI2P)*cos(bI2P)*sin(gI2P) - sin(aI2P)*cos(gI2P);
+        //LframeEy[1] = -sin(aI2P)*cos(bI2P)*sin(gI2P) + cos(aI2P)*cos(gI2P);
+        //LframeEy[2] =  sin(bI2P)*sin(gI2P);
+        //LframeEz[0] =  LNhx;
+        //LframeEz[1] =  LNhy;
+        //LframeEz[2] =  LNhz;
         
         //fprintf(out2, "%.16e   %.16e  %.16e  %.16e    %.16e  %.16e  %.16e     %.16e  %.16e  %.16e \n",
         //        i*deltaT/mTScaled, LframeEx[0],  LframeEx[1],  LframeEx[2],  LframeEy[0],  LframeEy[1], 
         //         LframeEy[2],  LframeEz[0],  LframeEz[1],  LframeEz[2]);
 
-    }
+    //}
 
     EulerAnglesP2J(&aP2J, &bP2J, &gP2J, aI2P, bI2P, gI2P, LNhx, LNhy, LNhz, JframeEx, JframeEy, JframeEz);
                      
