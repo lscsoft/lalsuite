@@ -168,7 +168,7 @@ static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState
 	      REAL8 amp = 0.0;
 	      snprintf(ampVarName, VARNAME_MAX, "calamp_%s", ifo->name);
 	      amp = *(REAL8*)LALInferenceGetVariable(params, ampVarName);
-	      logPrior += -log(2.0*M_PI) - log(ampWidth) - 0.5*amp*amp/ampWidth/ampWidth;
+	      logPrior += -0.5*log(2.0*M_PI) - log(ampWidth) - 0.5*amp*amp/ampWidth/ampWidth;
       }
     }
     if((LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha"))){
@@ -178,7 +178,7 @@ static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState
 	      REAL8 phase = 0.0;
 	      snprintf(phaseVarName, VARNAME_MAX, "calpha_%s", ifo->name);   
 	      phase = *(REAL8 *)LALInferenceGetVariable(params, phaseVarName);
-	      logPrior += -log(2.0*M_PI) - log(phaseWidth) - 0.5*phase*phase/phaseWidth/phaseWidth;
+	      logPrior += -0.5*log(2.0*M_PI) - log(phaseWidth) - 0.5*phase*phase/phaseWidth/phaseWidth;
       }
     }
    
@@ -264,8 +264,8 @@ static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, 
     phase = *(REAL8Vector **)LALInferenceGetVariable(params, phaseVarName);
 
     for (i = 0; i < amps->length; i++) {
-      logPrior += -log(2.0*M_PI) - log(ampWidth) - 0.5*amps->data[i]*amps->data[i]/ampWidth/ampWidth;
-      logPrior += -log(2.0*M_PI) - log(phaseWidth) - 0.5*phase->data[i]*phase->data[i]/phaseWidth/phaseWidth;
+      logPrior += -0.5*log(2.0*M_PI) - log(ampWidth) - 0.5*amps->data[i]*amps->data[i]/ampWidth/ampWidth;
+      logPrior += -0.5*log(2.0*M_PI) - log(phaseWidth) - 0.5*phase->data[i]*phase->data[i]/phaseWidth/phaseWidth;
     }
 
     ifo = ifo->next;
