@@ -195,6 +195,7 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
     gsl_integration_workspace * precEulerw = gsl_integration_workspace_alloc (1000);
     gsl_function precEulerF;
     PrecEulerAnglesIntegration precEulerparams;
+    REAL8 inGamma = InitialGamma; // FIXME
     
     LN_x = XLALCreateREAL8Vector( retLenLow );
     LN_y = XLALCreateREAL8Vector( retLenLow );
@@ -231,9 +232,13 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
         /*  Also unwrap the two angles */
         if (fabs(LN_x->data[i]) <= 1.e-7 && fabs(LN_y->data[i]) <=1.e-7){
             Alpha->data[i] = 0.0;
+            inGamma = 0.0;
         } else {
             Alpha->data[i] = atan2( LN_y->data[i], LN_x->data[i] )
-            +  *phaseCounterA * LAL_TWOPI;
+                             +  *phaseCounterA * LAL_TWOPI;
+            if (i==0){
+                inGamma = -Alpha->data[i];
+            }
         }
         
         if( i>0 && Alpha->data[i] - Alpha->data[i-1] > 5. ) {
@@ -274,7 +279,8 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
     
     for( i = 0; i < retLenLow; i++ )
     {
-        if( i==0 ) { Gamma->data[i] = InitialGamma; }
+        //if( i==0 ) { Gamma->data[i] = InitialGamma; }
+        if( i==0 ) { Gamma->data[i] = inGamma; }
         else
         {
             gsl_integration_qags (&precEulerF, tVec.data[i-1], tVec.data[i], 1e-9, 1e-9, 1000, precEulerw, &precEulerresult, &precEulererror);
@@ -1990,7 +1996,8 @@ int XLALSimIMRSpinEOBWaveformAll(
     Alpha = XLALCreateREAL8Vector( retLenLow );
     Beta   = XLALCreateREAL8Vector( retLenLow );
     Gamma = XLALCreateREAL8Vector( retLenLow );
-    EulerAnglesI2P(Alpha, Beta, Gamma, &phaseCounterA, &phaseCounterB, tVec, posVecx, posVecy, posVecz, retLenLow, 0., 0., 0);
+    EulerAnglesI2P(Alpha, Beta, Gamma, &phaseCounterA, &phaseCounterB, tVec, posVecx, posVecy, posVecz, retLenLow, 0., 0.5*LAL_PI, 0);
+    //EulerAnglesI2P(Alpha, Beta, Gamma, &phaseCounterA, &phaseCounterB, tVec, posVecx, posVecy, posVecz, retLenLow, 0., 0.0, 0);
 
     if (debugPK){
         fprintf( stderr, "Writing Alpha and Beta angle timeseries at low SR to alphaANDbeta.dat\n" );
@@ -2234,12 +2241,12 @@ int XLALSimIMRSpinEOBWaveformAll(
   JframeEz[2] = Jz / magJ;
 
   if ( fabs(1.+ JframeEz[2]) <= 1.0e-13 )
-  //{ JframeEx[0] = -1.; JframeEx[1] = 0.; JframeEx[2] = 0.; } // anti-aligned
-  { JframeEx[0] = 0.0; JframeEx[1] = 1.0; JframeEx[2] = 0.; } // anti-aligned
+    { JframeEx[0] = -1.; JframeEx[1] = 0.; JframeEx[2] = 0.; } // anti-aligned
+   //{ JframeEx[0] = 0.0; JframeEx[1] = -1.0; JframeEx[2] = 0.; } // anti-aligned
   else {
       if ( fabs(1. - JframeEz[2]) <= 1.0e-13 )
           //{ JframeEx[0] = 1.; JframeEx[1] = 0.; JframeEx[2] = 0.; }  // aligned
-          { JframeEx[0] = 0.0; JframeEx[1] = -1.0; JframeEx[2] = 0.; }  // aligned
+          { JframeEx[0] = 1.0; JframeEx[1] = 0.0; JframeEx[2] = 0.; }  // aligned
       else {
             JframeEx[0] = JframeEz[1];
             JframeEx[1] = -JframeEz[0];
@@ -2314,6 +2321,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   /* Main loop for quasi-nonprecessing waveform generation */
   // Generating modes for coarsely sampled portion
+  //FILE *out2 = fopen("Lframe.dat", "w");  //FIXME
   if(debugPK){
     XLAL_PRINT_INFO("Generating precessing-frame modes for coarse dynamics\n");
     fflush(NULL);
@@ -2366,6 +2374,24 @@ int XLALSimIMRSpinEOBWaveformAll(
     aI2P = Alpha->data[i];
     bI2P = Beta->data[i];
     gI2P = Gamma->data[i];
+
+    if (debugPK){
+        REAL8 LframeEx[3] = {0,0,0}, LframeEy[3] = {0,0,0}, LframeEz[3] = {0,0,0};
+        LframeEx[0] =  cos(aI2P)*cos(bI2P)*cos(gI2P) - sin(aI2P)*sin(gI2P);
+        LframeEx[1] =  sin(aI2P)*cos(bI2P)*cos(gI2P) + cos(aI2P)*sin(gI2P);
+        LframeEx[2] = -sin(bI2P)*cos(gI2P);
+        LframeEy[0] = -cos(aI2P)*cos(bI2P)*sin(gI2P) - sin(aI2P)*cos(gI2P);
+        LframeEy[1] = -sin(aI2P)*cos(bI2P)*sin(gI2P) + cos(aI2P)*cos(gI2P);
+        LframeEy[2] =  sin(bI2P)*sin(gI2P);
+        LframeEz[0] =  LNhx;
+        LframeEz[1] =  LNhy;
+        LframeEz[2] =  LNhz;
+        
+        //fprintf(out2, "%.16e   %.16e  %.16e  %.16e    %.16e  %.16e  %.16e     %.16e  %.16e  %.16e \n",
+        //        i*deltaT/mTScaled, LframeEx[0],  LframeEx[1],  LframeEx[2],  LframeEy[0],  LframeEy[1], 
+        //         LframeEy[2],  LframeEz[0],  LframeEz[1],  LframeEz[2]);
+
+    }
 
     EulerAnglesP2J(&aP2J, &bP2J, &gP2J, aI2P, bI2P, gI2P, LNhx, LNhy, LNhz, JframeEx, JframeEy, JframeEz);
                      
@@ -2504,6 +2530,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   }
   if(debugPK) {
       fclose( out );
+      //fclose( out2 );
       XLAL_PRINT_INFO("YP: quasi-nonprecessing modes generated.\n"); fflush(NULL);
   }
 
