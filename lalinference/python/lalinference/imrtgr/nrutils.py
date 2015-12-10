@@ -9,7 +9,7 @@ import scipy.optimize as so
 
 def bbh_final_mass_non_spinning_Panetal(m1, m2):
     """
-    Calculate the mass of the final BH resulting from the merger of two non-spinning black holes using fit from Pan et al, Phys Rev D 84, 124052 (2011).
+    Calculate the mass of the final BH resulting from the merger of two non-spinning black holes using eqn. 29a of from Pan et al, Phys Rev D 84, 124052 (2011).
     
     Parameters
     ----------
@@ -28,7 +28,7 @@ def bbh_final_mass_non_spinning_Panetal(m1, m2):
 
 def bbh_final_spin_non_spinning_Panetal(m1, m2):
     """
-    Calculate the spin of the final BH resulting from the merger of two non-spinning black holes using fit from Pan et al, Phys Rev D 84, 124052 (2011).
+    Calculate the spin of the final BH resulting from the merger of two non-spinning black holes using eqn. 29b of Pan et al, Phys Rev D 84, 124052 (2011).
     
     Parameters
     ----------
@@ -36,7 +36,7 @@ def bbh_final_spin_non_spinning_Panetal(m1, m2):
     
     Returns
     ------
-    final spin, sf
+    final dimensionless spin, chif
     """
     m1 = np.vectorize(float)(np.array(m1))
     m2 = np.vectorize(float)(np.array(m2))
@@ -46,7 +46,7 @@ def bbh_final_spin_non_spinning_Panetal(m1, m2):
 
 def calc_isco_radius(a):
     """
-    Calculate the ISCO radius of a Kerr BH as a function of the Kerr parameter
+    Calculate the ISCO radius of a Kerr BH as a function of the Kerr parameter using eqns. 2.5 and 2.8 from Ori and Thorne, Phys Rev D 62, 24022 (2000)
     
     Parameters
     ----------
@@ -330,51 +330,3 @@ def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
     chif = 3.4641016151377544*eta - 4.399247300629289*eta2 + 9.397292189321194*eta3 - 13.180949901606242*eta4 + (1 - 0.0850917821418767*eta - 5.837029316602263*eta2)*S + (0.1014665242971878*eta - 2.0967746996832157*eta2)*Ssq + (-1.3546806617824356*eta + 4.108962025369336*eta2)*Scu + (-0.8676969352555539*eta + 2.064046835273906*eta2)*Squ 
 
     return chif
-
-
-def qnmfreqs_berti(a, l, m, n):
-    """
-    compute the (complex) QNM frequencies for different 
-    overtones using the fits provided by Berti, Cardoso, Will 
-    
-    a         : Kerr parameter of the BH 
-    l, m, n    : indices of spheroidal harnonics modes 
-    """
-
-    # load the data file containing the fits (Berti et al,  gr-qc/0512160)
-    lVec, mVec, nVec, f1Vec, f2Vec, f3Vec, q1Vec, q2Vec, q3Vec = np.loadtxt('../src/Berti_QNMfitcoeffsWEB.dat', unpack=True)
-
-    idx = np.logical_and(np.logical_and(lVec == l, mVec == m), nVec == n)
-
-    # evaluate the Berti et al fits to the complex frequencies 
-    if len(lVec[idx]) == 1:
-
-         f1 = f1Vec[idx]
-         f2 = f2Vec[idx]
-         f3 = f3Vec[idx]
-         q1 = q1Vec[idx]
-         q2 = q2Vec[idx]
-         q3 = q3Vec[idx]
-
-         omega = (f1 + f2*(1.-a)**f3) # fit to omega
-         Q = q1 + q2*(1.-a)**q3       # fit to quality factor 
-         tau = 2.*Q/omega
-
-         return omega - 1j/tau  # complex frequency 
-
-    elif len(lVec[idx]) < 1:
-            print '# No data matching this l, m, n combination (l = #d m = #d n = #d)' %(l, m, n)
-            exit()
-    else:
-            print '# More than on fit point corresponding to this l, m, n combination'
-            exit()
-
-def calc_fqnm_dominant_mode(chif): 
-    """
-    calculate the (dimensionless) freq of the dominant QNM of a Kerr BH with spin chif 
-    """
-
-    Omega = qnmfreqs_berti(chif, 2, 2, 0)
-    return np.real(Omega)/(2*np.pi) 
-
-
