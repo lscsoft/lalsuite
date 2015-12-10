@@ -32,6 +32,7 @@ pybin_scripts = \
 	laldetchar-idq-ann-convert \
 	laldetchar-idq-ann-train \
 	laldetchar-idq-ann-evaluate \
+	laldetchar-idq-frames-to-segments \
 	laldetchar-idq-gst-sender \
 	laldetchar-idq-gst-relay \
 	laldetchar-idq-gst-listener \
