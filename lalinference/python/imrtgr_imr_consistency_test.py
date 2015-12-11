@@ -161,28 +161,41 @@ if __name__ == '__main__':
   ###############################################################################################
   # Read the posteriors from the inspiral, ringdown and imr lalinference runs (after post-processing) 
   ###############################################################################################
+
+  # read data from the inspiral posterior file 
   insp_data = np.genfromtxt(insp_post, dtype=None, names=True)
   m1_i, m2_i = insp_data['m1'], insp_data['m2']
+  # if there is a spin column in the posterior, read the spin values. Note that we are using only
+  # the z-component of the spins (component along the orb angular momentum) 
   if ('a1z' in insp_data.dtype.names) and ('a2z' in insp_data.dtype.names):
     chi1_i, chi2_i = insp_data['a1z'], insp_data['a2z']
   else:
     chi1_i, chi2_i = np.zeros(len(m1_i)), np.zeros(len(m2_i))
+  # compute the final mass and spin
   Mf_i, chif_i = tgr.calc_final_mass_spin(m1_i, m2_i, chi1_i, chi2_i, fit_formula)
 
+  # read data from the ringdown posterior file 
   ring_data = np.genfromtxt(ring_post, dtype=None, names=True)
   m1_r, m2_r = ring_data['m1'], ring_data['m2']
+  # if there is a spin column in the posterior, read the spin values. Note that we are using only
+  # the z-component of the spins (component along the orb angular momentum) 
   if ('a1z' in ring_data.dtype.names) and ('a2z' in ring_data.dtype.names):
     chi1_r, chi2_r = ring_data['a1z'], ring_data['a2z']
   else:
     chi1_r, chi2_r = np.zeros(len(m1_r)), np.zeros(len(m2_r))
+  # compute the final mass and spin
   Mf_r, chif_r = tgr.calc_final_mass_spin(m1_r, m2_r, chi1_r, chi2_r, fit_formula)
 
+  # read data from the IMR posterior file 
   imr_data = np.genfromtxt(imr_post, dtype=None, names=True)
   m1_imr, m2_imr = imr_data['m1'], imr_data['m2']
+	# if there is a spin column in the posterior, read the spin values. Note that we are using only
+  # the z-component of the spins (component along the orb angular momentum) 
   if ('a1z' in imr_data.dtype.names) and ('a2z' in imr_data.dtype.names):
     chi1_imr, chi2_imr = imr_data['a1z'], imr_data['a2z']
   else:
     chi1_imr, chi2_imr = np.zeros(len(m1_imr)), np.zeros(len(m2_imr))
+  # compute the final mass and spin
   Mf_imr, chif_imr = tgr.calc_final_mass_spin(m1_imr, m2_imr, chi1_imr, chi2_imr, fit_formula)
 
   print '... read posteriors'
