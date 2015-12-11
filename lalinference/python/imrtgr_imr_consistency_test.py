@@ -90,7 +90,7 @@ if __name__ == '__main__':
   parser.add_option("-r", "--ring-post", dest="ring_post", help="file containing the posterior samples from the lalinference ringdown run")
   parser.add_option("-m", "--imr-post", dest="imr_post", help="file containing the posterior samples from the full lalinference IMR run")
   parser.add_option("-f", "--fit-formula", dest="fit_formula", help="fitting formula to be used for the calculation of final mass/spin [options: 'nospin_Pan2011', 'nonprecspin_Healy2014'")
-  parser.add_option("-p", "--mf-chif-prior", dest="prior_Mfchif_file", help="pickle file containing the interpolation object of the prior in (Mf,chif) used in the lalinference runs defined in eqn (34) LIGO-P1500185", default=None)
+  parser.add_option("-p", "--mf-chif-prior", dest="prior_Mfchif_file", help="pickle file containing the interpolation object of the prior in (Mf, chif) used in the lalinference runs", default=None)
   parser.add_option("-o", "--out-dir", dest="out_dir", help="output directory")
   parser.add_option("--insp-fhigh", dest="insp_fhigh", help="Upper cutoff freq for the inspiral analysis")
   parser.add_option("--ring-flow", dest="ring_flow", help="Lower cutoff freq for the ringdown analysis")
@@ -301,10 +301,10 @@ if __name__ == '__main__':
   P_dMfbyMf = np.sum(P_dMfbyMf_dchifbychif, axis=0) * diff_dchifbychif
   P_dchifbychif = np.sum(P_dMfbyMf_dchifbychif, axis=1) * diff_dMfbyMf
   
-  # GR confidence
+  # compute the confidence region corresponding to the GR value (delta_Mf/Mf = 0, delta_chif/chif = 0). 
+  # the 'confidence' class is defined on top of this script 
   conf_v1v2 = confidence(P_dMfbyMf_dchifbychif)
-  # taking value closest to deltas being zero
-  gr_height = P_dMfbyMf_dchifbychif[np.argmin(abs(dMfbyMf_vec)), np.argmin(abs(dchifbychif_vec))]
+  gr_height = P_dMfbyMf_dchifbychif[np.argmin(abs(dMfbyMf_vec)), np.argmin(abs(dchifbychif_vec))] # taking value closest to (0,0)
   gr_conf_level = conf_v1v2.level_from_height(gr_height)
   print '... no deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level)
 
@@ -313,7 +313,7 @@ if __name__ == '__main__':
                 ['Lower cutoff freq for the ringdown analysis: %s Hz'%ring_flow],
                 ['Waveform approximant: %s'%(waveform)],
                 ['Final mass/spin fitting formula: %s'%(fit_formula)],
-								['No deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level)]]
+                ['No deviation from GR above %.1f%% confidence level'%(100.*gr_conf_level)]]
   np.savetxt('%s/summary_table.txt'%(out_dir), np.array(param_table), delimiter='\t', fmt='%s')
 
   # save results 
