@@ -238,7 +238,9 @@ if __name__ == '__main__':
   P_Mfchif_r, Mf_bins, chif_bins = np.histogram2d(Mf_r, chif_r, bins=(Mf_bins, chif_bins), normed=True)
   P_Mfchif_imr, Mf_bins, chif_bins = np.histogram2d(Mf_imr, chif_imr, bins=(Mf_bins, chif_bins), normed=True)
   
-  # Transpose to go from (X,Y) indexing returned by np.histogram2d() to array (i,j) indexing to be provided to plt.pcolormesh() later
+  # transpose to go from (X,Y) indexing returned by np.histogram2d() to array (i,j) indexing for further
+  # computations. From now onwards, different rows (i) correspond to different values of Mf and different 
+  # columns (j) correspond to different values of chif 
   P_Mfchif_i = P_Mfchif_i.T
   P_Mfchif_r = P_Mfchif_r.T
   P_Mfchif_imr = P_Mfchif_imr.T
