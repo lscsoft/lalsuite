@@ -954,8 +954,8 @@ XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * deltaT); // epoch is set to minus (3
   double omega2=twopif*twopif;
   for(i = lower; i < upper; i++) {
     f=((REAL8 ) i )*deltaF;
-    hptilde->data->data[i]  = -h0plus * (lambda*cp+  twopif*sp+LAL_TWOPI*1j*cp*f)/(4.*LAL_PI*LAL_PI*f*f - 4.*LAL_PI*1j*f*lambda-lambda2-omega2);
-    hctilde->data->data[i]  = -h0cross * (-lambda*sp + twopif*cp - LAL_TWOPI*1j*sp*f)/(4.*LAL_PI*LAL_PI*f*f - 4.*LAL_PI*1j*f*lambda-lambda2-omega2);
+    hptilde->data->data[i]  = -h0plus * (lambda*cp+  twopif*sp+LAL_TWOPI*1.0j*cp*f)/(4.*LAL_PI*LAL_PI*f*f - 4.*LAL_PI*1.0j*f*lambda-lambda2-omega2);
+    hctilde->data->data[i]  = -h0cross * (-lambda*sp + twopif*cp - LAL_TWOPI*1.0j*sp*f)/(4.*LAL_PI*LAL_PI*f*f - 4.*LAL_PI*1.0j*f*lambda-lambda2-omega2);
   }
 
   *hplus=hptilde;
