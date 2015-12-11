@@ -193,7 +193,12 @@ if __name__ == '__main__':
   ###############################################################################################
   Mf_lim = max(abs(np.append(np.append(Mf_i, Mf_r), Mf_imr)))
   chif_lim = max(abs(np.append(np.append(chif_i, chif_r), chif_imr)))
-
+	
+  # the integral used to compute (Delta Mf, Delta af) has limits from -infinity to +infinity. We 
+  # are approximating this by setting the limits to (-Mf_lim to Mf_lim) and (-chif_lim to chif_lim)
+  # where Mf_lim and chif_lim are the max values of Mf and chif where the posteriors have nonzero 
+  # support. The scipy.signal.correlate2d function requires arguments x_bins and y_bins that need 
+  # to be symmetric around zero
   Mf_bins = np.linspace(-Mf_lim, Mf_lim, N_bins)
   chif_bins = np.linspace(-chif_lim, chif_lim, N_bins)
 
