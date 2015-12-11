@@ -288,7 +288,8 @@ if __name__ == '__main__':
   diff_dchifbychif = np.mean(np.diff(dchifbychif_vec))
   P_dMfbyMf_dchifbychif = np.zeros(shape=(N_bins,N_bins))
 
-  # Eqn (54) LIGO-P1500185
+  # compute the posterior on the fractional deviation parameters (delta_Mf/Mf, delta_chif/chif). 
+  # Approximate the integral in Eq.(6) of the document LIGO-P1500185-v5 by a discrete sum 
   for i, v2 in enumerate(dchifbychif_vec):
     for j, v1 in enumerate(dMfbyMf_vec):
       P_dMfbyMf_dchifbychif[i,j] = tgr.calc_sum(Mf_intp, chif_intp, v1, v2, P_dMfdchif_interp_object, P_Mfchif_imr_interp_object)*diff_dMfbyMf*diff_dchifbychif
