@@ -11,6 +11,7 @@ AM_INIT_AUTOMAKE([ \
   subdir-objects \
   color-tests \
   parallel-tests \
+  tar-ustar \
 ])
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
