@@ -5,7 +5,13 @@ AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_PREFIX_DEFAULT(["`pwd`/_inst"])
 AC_CONFIG_FILES([Makefile])
-AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
+AM_INIT_AUTOMAKE([ \
+  1.11 \
+  foreign \
+  subdir-objects \
+  color-tests \
+  parallel-tests \
+])
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
