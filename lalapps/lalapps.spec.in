@@ -10,7 +10,7 @@ Release: 1
 Summary: LSC Algorithm Library Applications
 License: GPL
 Group: LAL
-Source: %{name}-%{version}.tar.gz
+Source: %{name}-%{version}.tar.xz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Duncan Brown <dbrown@ligo.caltech.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
