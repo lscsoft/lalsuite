@@ -95,7 +95,7 @@ if __name__ == '__main__':
   parser.add_option("--insp-fhigh", dest="insp_fhigh", help="Upper cutoff freq for the inspiral analysis")
   parser.add_option("--ring-flow", dest="ring_flow", help="Lower cutoff freq for the ringdown analysis")
   parser.add_option("--m1-inj", dest="m1_inj", help="injected value of component mass m1 (if this is an injection)")
-  parser.add_option("--m2-inj", dest="m_inj", help="injected value of component mass m2 (if this is an injection)")
+  parser.add_option("--m2-inj", dest="m2_inj", help="injected value of component mass m2 (if this is an injection)")
   parser.add_option("--chi1-inj", dest="chi1_inj", help="injected value of z-component of spin of mass m1 (if this is an injection)")
   parser.add_option("--chi2-inj", dest="chi2_inj", help="injected value of z-component of spin of mass m2 (if this is an injection)")
   parser.add_option("-w", "--waveform", dest="waveform", help="waveform used for recovery")
