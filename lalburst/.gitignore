@@ -22,7 +22,7 @@ doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
-lalburst-*.tar.gz
+lalburst-*.tar.xz
 lalburst-user-env.csh
 lalburst-user-env.sh
 lalburst-user-env.shell
