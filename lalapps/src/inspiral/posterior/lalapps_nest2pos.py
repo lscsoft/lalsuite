@@ -118,4 +118,18 @@ if __name__=='__main__':
     outB=open(Bfile,'w')
     outB.write('%f %f %f %f\n'%(meanB,meanZ,noiseZ,maxL))
     outB.close()
+  # Write out an header (git info and command line) file
+  if opts.pos is not None:
+    strout=""
+    for i in datafiles:
+      fin="%s_header.txt"%i
+      if os.path.isfile(fin):
+        f=open(fin)
+        for l in f.readlines():
+          strout+=l
+        strout+='\n\n'
+    if strout!="":
+      fout=open(opts.pos+"_header.txt",'w')
+      fout.write(strout)
+      fout.close
 

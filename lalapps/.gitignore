@@ -124,6 +124,7 @@ src/inspiral/lalapps_trigger_hipe
 src/inspiral/lalapps_trigscan
 src/inspiral/lalapps_write_ihope_page
 src/inspiral/posterior/ChiSquare_test
+src/inspiral/posterior/lalinference_bench
 src/inspiral/posterior/lalapps_coherence_test
 src/inspiral/posterior/lalapps_combine_evidence
 src/inspiral/posterior/lalapps_compute_roq_weights
