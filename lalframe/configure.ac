@@ -30,6 +30,8 @@ AM_INIT_AUTOMAKE([ \
   color-tests \
   parallel-tests \
   tar-ustar \
+  dist-xz \
+  no-dist-gzip \
 ])
 
 AC_CANONICAL_HOST
