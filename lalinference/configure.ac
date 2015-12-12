@@ -31,6 +31,7 @@ AM_INIT_AUTOMAKE([ \
   subdir-objects \
   color-tests \
   parallel-tests \
+  tar-ustar \
 ])
 
 AC_CANONICAL_HOST
