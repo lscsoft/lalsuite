@@ -212,6 +212,7 @@ XLALGPSInSeg( const void *pgps, const void *pseg )
 int
 XLALSegCmp( const void *pseg0, const void *pseg1 )
 {
+  XLAL_CHECK(pseg0 != NULL && pseg1 != NULL, XLAL_EFAULT);
   const LALSeg *seg0 = pseg0;
   const LALSeg *seg1 = pseg1;
   int result;
