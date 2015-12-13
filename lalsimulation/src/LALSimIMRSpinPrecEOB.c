@@ -236,7 +236,7 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
         } else {
             Alpha->data[i] = atan2( LN_y->data[i], LN_x->data[i] )
                              +  *phaseCounterA * LAL_TWOPI;
-            if (i==0){
+            if (i==0 && flag_highSR != 1){
                 inGamma = -Alpha->data[i];
             }
         }
@@ -3134,8 +3134,7 @@ int XLALSimIMRSpinEOBWaveformAll(
                        tAttach, ratio22, ratio2m2);fflush(NULL);
              }
                else if (found_att == 2) {
-                   XLAL_PRINT_INFO("we haven't found proper attachment point, we picked the best point at tAtt = %f\n",
-                          tAttach);fflush(NULL);
+                   XLAL_PRINT_INFO("we haven't found proper attachment point, we picked the best point at tAtt = %f with ratios %f, %f\n", tAttach, ratio22, ratio2m2);fflush(NULL);
 
                }
                else{
