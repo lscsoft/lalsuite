@@ -120,6 +120,7 @@ test/tools/IndependentDetResponseTest
 test/tools/LanczosTriggerInterpolantTest
 test/tools/NearestNeighborTriggerInterpolantTest
 test/tools/QuadraticFitTriggerInterpolantTest
+test/tools/SegmentsTest
 test/tools/SequenceTest
 test/tools/SkymapTest
 test/tools/TimeSeriesInterpTest
