@@ -182,11 +182,14 @@ int
 XLALGPSInSeg( const void *pgps, const void *pseg )
 {
   XLAL_CHECK(pseg != NULL, XLAL_EFAULT);
+  const LIGOTimeGPS *gps = pgps;
+  const LALSeg *seg = pseg;
+
   /* if time is < start of segment, return -1 */
-  if ( XLALGPSCmp( (const LIGOTimeGPS *) pgps, &((const LALSeg *) pseg)->start ) < 0 )
+  if ( XLALGPSCmp( gps, &seg->start ) < 0 )
     return -1;
   /* else if time is < end of segment, return 0 */
-  if ( XLALGPSCmp( (const LIGOTimeGPS *) pgps, &((const LALSeg *) pseg)->end ) < 0 )
+  if ( XLALGPSCmp( gps, &seg->end ) < 0 )
     return 0;
   /* time is >= end of segment, return +1 */
   return +1;
