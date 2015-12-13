@@ -181,6 +181,7 @@ XLALSegCreate( const LIGOTimeGPS *start, const LIGOTimeGPS *end,
 int
 XLALGPSInSeg( const void *pgps, const void *pseg )
 {
+  XLAL_CHECK(pseg != NULL, XLAL_EFAULT);
   /* if time is < start of segment, return -1 */
   if ( XLALGPSCmp( (const LIGOTimeGPS *) pgps, &((const LALSeg *) pseg)->start ) < 0 )
     return -1;
