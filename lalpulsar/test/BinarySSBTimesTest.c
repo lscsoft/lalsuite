@@ -87,8 +87,8 @@ main ( int argc, char *argv[] )
   uvar->randSeed = times(&buf);
 
   // ---------- register all our user-variable ----------
-  XLALregBOOLUserStruct (  help,                'h', UVAR_HELP    , "Print this help/usage message");
-  XLALregINTUserStruct (   randSeed,             's', UVAR_OPTIONAL, "Specify random-number seed for reproducible noise.");
+  XLALRegisterUvarMember(  help,                BOOLEAN, 'h', HELP    , "Print this help/usage message");
+  XLALRegisterUvarMember(   randSeed,             INT4, 's', OPTIONAL, "Specify random-number seed for reproducible noise.");
 
   /* read cmdline & cfgfile  */
   XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );

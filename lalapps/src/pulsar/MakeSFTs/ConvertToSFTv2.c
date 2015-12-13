@@ -259,27 +259,27 @@ initUserVars ( UserInput_t *uvar )
   uvar->timestampsFile = NULL;
 
   /* now register all our user-variable */
-  XLALregBOOLUserStruct(   help,		'h', UVAR_HELP,     "Print this help/usage message");
-  XLALregSTRINGUserStruct( inputSFTs,	'i', UVAR_REQUIRED, "File-pattern for input SFTs");
-  XLALregSTRINGUserStruct( IFO,		'I', UVAR_OPTIONAL, "IFO of input SFTs: 'G1', 'H1', 'H2', ...(required for v1-SFTs)");
+  XLALRegisterUvarMember(   help,		BOOLEAN, 'h', HELP,     "Print this help/usage message");
+  XLALRegisterUvarMember( inputSFTs,	STRING, 'i', REQUIRED, "File-pattern for input SFTs");
+  XLALRegisterUvarMember( IFO,		STRING, 'I', OPTIONAL, "IFO of input SFTs: 'G1', 'H1', 'H2', ...(required for v1-SFTs)");
 
-  XLALregSTRINGUserStruct( outputSingleSFT,	'O', UVAR_OPTIONAL, "Output all SFTs into a single concatenated SFT-file with this name");
-  XLALregSTRINGUserStruct( outputDir,	'o', UVAR_OPTIONAL, "Output directory for SFTs");
+  XLALRegisterUvarMember( outputSingleSFT,	STRING, 'O', OPTIONAL, "Output all SFTs into a single concatenated SFT-file with this name");
+  XLALRegisterUvarMember( outputDir,	STRING, 'o', OPTIONAL, "Output directory for SFTs");
 
-  XLALregSTRINGUserStruct( extraComment,	'C', UVAR_OPTIONAL, "Additional comment to be added to output-SFTs");
+  XLALRegisterUvarMember( extraComment,	STRING, 'C', OPTIONAL, "Additional comment to be added to output-SFTs");
 
-  XLALregSTRINGUserStruct( descriptionMisc,	'D', UVAR_OPTIONAL, "'Misc' entry in the SFT filename description-field (see SFTv2 naming convention)");
-  XLALregREALUserStruct(   fmin,		'f', UVAR_OPTIONAL, "Lowest frequency to extract from SFTs. [Default: lowest in inputSFTs]");
-  XLALregREALUserStruct(   fmax,		'F', UVAR_OPTIONAL, "Highest frequency to extract from SFTs. [Default: highest in inputSFTs]");
+  XLALRegisterUvarMember( descriptionMisc,	STRING, 'D', OPTIONAL, "'Misc' entry in the SFT filename description-field (see SFTv2 naming convention)");
+  XLALRegisterUvarMember(   fmin,		REAL8, 'f', OPTIONAL, "Lowest frequency to extract from SFTs. [Default: lowest in inputSFTs]");
+  XLALRegisterUvarMember(   fmax,		REAL8, 'F', OPTIONAL, "Highest frequency to extract from SFTs. [Default: highest in inputSFTs]");
 
 
-  XLALregINTUserStruct (  	minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
-  XLALregINTUserStruct (  	maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
+  XLALRegisterUvarMember(  	minStartTime, 	 INT4, 0,  OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
+  XLALRegisterUvarMember(  	maxStartTime, 	 INT4, 0,  OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
 
-  XLALregSTRINGUserStruct( timestampsFile,	 0, UVAR_OPTIONAL, "Timestamps file to use as a constraint for SFT loading");
+  XLALRegisterUvarMember( timestampsFile,	 STRING, 0, OPTIONAL, "Timestamps file to use as a constraint for SFT loading");
 
   /* developer-options */
-  XLALregREALUserStruct(   mysteryFactor,	 0, UVAR_DEVELOPER, "Change data-normalization by applying this factor (for E@H)");
+  XLALRegisterUvarMember(   mysteryFactor,	 REAL8, 0, DEVELOPER, "Change data-normalization by applying this factor (for E@H)");
 
   return XLAL_SUCCESS;
 
