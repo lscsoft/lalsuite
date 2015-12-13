@@ -223,6 +223,9 @@ XLALSegListSort( LALSegList *seglist );
 int
 XLALSegListCoalesce( LALSegList *seglist );
 
+int
+XLALSegListRange( LALSegList *seglist, LIGOTimeGPS *start, LIGOTimeGPS *end );
+
 LALSeg *
 XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps );
 

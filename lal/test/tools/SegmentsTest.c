@@ -1202,6 +1202,35 @@ int main( int argc, char *argv[] )
 
 
   /*-------------------------------------------------------------------------*/
+  XLALPrintInfo("\n========== XLALSegListRange tests \n");
+  /*-------------------------------------------------------------------------*/
+
+  {
+    LIGOTimeGPS start, end;
+
+    XLALPrintInfo("Check XLALSegListRange() for a sorted list ...\n");
+    XLAL_CHECK( XLALSegListIsInitialized(&seglist1) && seglist1.sorted, XLAL_EFUNC );
+    XLAL_CHECK( XLALSegListRange(&seglist1, &start, &end) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALGPSCmp(&start, &seglist1.segs[0].start) == 0, XLAL_EFAILED );
+    XLAL_CHECK( XLALGPSCmp(&end, &seglist1.segs[seglist1.length - 1].end) == 0, XLAL_EFAILED );
+
+    XLALPrintInfo("Check XLALSegListRange() for a non-sorted list ...\n");
+    XLAL_CHECK( XLALSegListClear(&seglist2) == XLAL_SUCCESS, XLAL_EFUNC );
+    UINT4 i = seglist1.length / 2;
+    while (seglist2.length < seglist1.length) {
+      XLAL_CHECK( XLALSegListAppend(&seglist2, &seglist1.segs[i]) == XLAL_SUCCESS, XLAL_EFUNC );
+      i = (i + 1) % seglist1.length;
+    }
+    XLAL_CHECK( XLALSegListIsInitialized(&seglist2) && !seglist2.sorted, XLAL_EFUNC );
+    XLAL_CHECK( XLALSegListRange(&seglist2, &start, &end) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALGPSCmp(&start, &seglist1.segs[0].start) == 0, XLAL_EFAILED );
+    XLAL_CHECK( XLALGPSCmp(&end, &seglist1.segs[seglist1.length - 1].end) == 0, XLAL_EFAILED );
+
+  }
+  XLALPrintInfo("Passed XLALSegListRange tests\n");
+
+
+  /*-------------------------------------------------------------------------*/
   /* Clean up leftover seg lists */
   if ( seglist1.segs ) { XLALSegListClear( &seglist1 ); }
   if ( seglist2.segs ) { XLALSegListClear( &seglist2 ); }
