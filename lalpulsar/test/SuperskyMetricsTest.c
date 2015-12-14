@@ -192,7 +192,7 @@ static int CheckSuperskyMetrics(
   // Check supersky metrics
   {
     gsl_matrix_const_view rssky_metric_ref_view = gsl_matrix_const_view_array((const double *)rssky_metric_ref, 4, 4);
-    const double err = XLALCompareMetrics(rssky_metric, &rssky_metric_ref_view.matrix), err_tol = 1e-7;
+    const double err = XLALCompareMetrics(rssky_metric, &rssky_metric_ref_view.matrix), err_tol = 1e-6;
     XLAL_CHECK(err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol);
   }
   {
@@ -221,7 +221,7 @@ static int CheckSuperskyMetrics(
     gsl_matrix *new_rssky_points = NULL;
     XLAL_CHECK(XLALConvertSuperskyToPhysicalPoints(&intm_phys_points, rssky_points, rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK(XLALConvertPhysicalToSuperskyPoints(&new_rssky_points, intm_phys_points, rssky_transf) == XLAL_SUCCESS, XLAL_EFUNC);
-    const double err_tol = 1e-7;
+    const double err_tol = 1e-6;
     for (size_t i = 0; i < 4; ++i) {
       for (size_t j = 0; j < NUM_POINTS; ++j) {
         const double rssky_points_ij = gsl_matrix_get(rssky_points, i, j);
@@ -310,7 +310,7 @@ int main(void)
     gsl_matrix_view semi_rssky_metric_rescale_view = gsl_matrix_view_array((double *)semi_rssky_metric_rescale, 4, 4);
     gsl_matrix_view sky_sky = gsl_matrix_submatrix(&semi_rssky_metric_rescale_view.matrix, 0, 0, 2, 2);
     gsl_matrix_scale(&sky_sky.matrix, (257.52 / FIDUCIAL_FREQ) * (257.52 / FIDUCIAL_FREQ));
-    const double err = XLALCompareMetrics(metrics->semi_rssky_metric, &semi_rssky_metric_rescale_view.matrix), err_tol = 1e-7;
+    const double err = XLALCompareMetrics(metrics->semi_rssky_metric, &semi_rssky_metric_rescale_view.matrix), err_tol = 1e-6;
     XLAL_CHECK(err <= err_tol, XLAL_ETOL, "'rssky_metric' check failed: err = %0.3e > %0.3e = err_tol", err, err_tol);
   }
   XLAL_CHECK_MAIN(XLALScaleSuperskyMetricsFiducialFreq(metrics, FIDUCIAL_FREQ) == XLAL_SUCCESS, XLAL_EFUNC);
