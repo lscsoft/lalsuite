@@ -124,7 +124,7 @@ extern "C" {
 /*@}*/
 
 /**
- * \name Convenient format macros for printing and scanning (decimal) integer and floating-point types
+ * \name Format macros for printing and scanning (U)INT* (decimal only) and REAL*
  */
 /*@{*/
 #define LAL_INT2_FORMAT  LAL_INT2_SCNd
