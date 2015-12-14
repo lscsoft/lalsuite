@@ -489,8 +489,9 @@ CW_Phi_i ( double tt, void *params )
   PosVel3D_t XLAL_INIT_DECL(orbit_posvel);
   PosVel3D_t XLAL_INIT_DECL(posvel);
 
-  /* orbit position in ecliptic plane */
+  /* positions in ecliptic plane */
   vect3D_t XLAL_INIT_DECL(ecl_orbit_pos);
+  vect3D_t XLAL_INIT_DECL(ecl_pos);
 
   /* get skypos-vector */
   const REAL8 cosa = cos(par->dopplerPoint->Alpha);
@@ -530,8 +531,9 @@ CW_Phi_i ( double tt, void *params )
   COPY_VECT(posvel.vel, spin_posvel.vel);
   ADD_VECT(posvel.vel, orbit_posvel.vel);
 
-  /* compute orbital detector positions projected onto ecliptic plane */
+  /* compute detector positions projected onto ecliptic plane */
   EQU_VECT_TO_ECL(ecl_orbit_pos, orbit_posvel.pos);
+  EQU_VECT_TO_ECL(ecl_pos, posvel.pos);
 
   /* get frequency of Doppler point */
   const REAL8 Freq = par->dopplerPoint->fkdot[0];
@@ -658,23 +660,23 @@ CW_Phi_i ( double tt, void *params )
       break;
 
     case DOPPLERCOORD_N3X_EQU:		/**< X component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * rr_ord_Equ[0];
+      ret = LAL_TWOPI * Freq * posvel.pos[0];
       break;
     case DOPPLERCOORD_N3Y_EQU:		/**< Y component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * rr_ord_Equ[1];
+      ret = LAL_TWOPI * Freq * posvel.pos[1];
       break;
     case DOPPLERCOORD_N3Z_EQU:		/**< Z component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * rr_ord_Equ[2];
+      ret = LAL_TWOPI * Freq * posvel.pos[2];
       break;
 
     case DOPPLERCOORD_N3X_ECL:		/**< X component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * rr_ord_Ecl[0];
+      ret = LAL_TWOPI * Freq * ecl_pos[0];
       break;
     case DOPPLERCOORD_N3Y_ECL:		/**< Y component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * rr_ord_Ecl[1];
+      ret = LAL_TWOPI * Freq * ecl_pos[1];
       break;
     case DOPPLERCOORD_N3Z_ECL:		/**< Z component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * rr_ord_Ecl[2];
+      ret = LAL_TWOPI * Freq * ecl_pos[2];
       break;
 
     case DOPPLERCOORD_N3SX_EQU:	/**< X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
