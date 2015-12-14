@@ -1909,7 +1909,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
         integrator->stop = XLALSpinPrecAlignedHiSRStopCondition;
 
-        retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, valuesV2->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsV2Hi );
+        retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, valuesV2->data, 0., tStepBack/mTScaled, deltaTHigh/mTScaled, &dynamicsV2Hi );
 
         seobParams.alignedSpins = 0;
         retLenHi = retLen;
@@ -1958,7 +1958,7 @@ int XLALSimIMRSpinEOBWaveformAll(
      }
     else {
         retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data,
-                                         0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsHi );
+                                         0., tStepBack/mTScaled, deltaTHigh/mTScaled, &dynamicsHi );
         retLenHi = retLen;
         if ( retLenHi == XLAL_FAILURE )
         {
