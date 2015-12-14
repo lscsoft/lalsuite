@@ -315,7 +315,7 @@ XLALFindSphericalOrbit( const gsl_vector *x, /**<< Parameters requested by gsl r
   dHdx = XLALSpinHcapNumDerivWRTParam( 0, rootParams->values, rootParams->params );
   if ( XLAL_IS_REAL8_FAIL_NAN( dHdx ) )
   {
-    XLAL_ERROR( XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EDOM );
   }
   //printf( "dHdx = %.16e\n", dHdx );
 
@@ -324,7 +324,7 @@ XLALFindSphericalOrbit( const gsl_vector *x, /**<< Parameters requested by gsl r
   dHdpy = XLALSpinHcapNumDerivWRTParam( 4, rootParams->values, rootParams->params );
   if ( XLAL_IS_REAL8_FAIL_NAN( dHdpy ) )
   {
-    XLAL_ERROR( XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EDOM );
   }
 
   /* dHdPtheta (I think we can use dHdPz in this coord system) */
@@ -332,7 +332,7 @@ XLALFindSphericalOrbit( const gsl_vector *x, /**<< Parameters requested by gsl r
   dHdpz = XLALSpinHcapNumDerivWRTParam( 5, rootParams->values, rootParams->params );
   if ( XLAL_IS_REAL8_FAIL_NAN( dHdpz ) )
   {
-    XLAL_ERROR( XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EDOM );
   }
 
   /* Now convert to spherical polars */
@@ -407,7 +407,7 @@ static double GSLSpinHamiltonianDerivWrapperHybrid( double x,    /**<< Derivativ
       break;
     default:
       XLALPrintError( "This option is not supported in the second derivative function!\n" );
-      XLAL_ERROR_REAL8( XLAL_EFUNC );
+      XLAL_ERROR_REAL8( XLAL_EINVAL );
       break;
     }
 }
@@ -466,7 +466,7 @@ static double GSLSpinHamiltonianDerivWrapper( double x,    /**<< Derivative at x
       break;
     default:
       XLALPrintError( "This option is not supported in the second derivative function!\n" );
-      XLAL_ERROR_REAL8( XLAL_EFUNC );
+      XLAL_ERROR_REAL8( XLAL_EINVAL );
       break;
   }
 }
@@ -500,7 +500,7 @@ static REAL8 XLALCalculateSphHamiltonianDeriv2Hybrid(                 const int 
   if ( gslStatus != GSL_SUCCESS )
     {
       XLALPrintError( "XLAL Error %s - Failure in GSL function\n", __func__ );
-      XLAL_ERROR_REAL8( XLAL_EFUNC );
+      XLAL_ERROR_REAL8( XLAL_EDOM );
     }
   return result;
 }
@@ -555,7 +555,7 @@ static REAL8 XLALCalculateSphHamiltonianDeriv2(
   if ( gslStatus != GSL_SUCCESS )
   {
     XLALPrintError( "XLAL Error %s - Failure in GSL function\n", __func__ );
-    XLAL_ERROR_REAL8( XLAL_EFUNC );
+    XLAL_ERROR_REAL8( XLAL_EDOM );
   }
 
   //printf( "Second deriv abs err = %.16e\n", absErr );
@@ -841,7 +841,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
       gsl_vector_free( initValues );
       gsl_matrix_free( rotMatrix );
       gsl_matrix_free( invMatrix );
-      XLAL_ERROR( XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EDOM );
     }
 
     XLAL_CALLGSL( gslStatus = gsl_multiroot_test_residual( rootSolver->f, 1.0e-10 ) );
