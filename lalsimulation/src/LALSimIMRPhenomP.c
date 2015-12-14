@@ -341,6 +341,8 @@ static int PhenomPCore(
   )
 {
   /* Check inputs for sanity */
+  XLAL_CHECK(NULL != hptilde, XLAL_EFAULT);
+  XLAL_CHECK(NULL != hctilde, XLAL_EFAULT);
   XLAL_CHECK(*hptilde == NULL, XLAL_EFAULT);
   XLAL_CHECK(*hctilde == NULL, XLAL_EFAULT);
   XLAL_CHECK(deltaF >= 0, XLAL_EDOM, "deltaF must be non-negative.\n");
