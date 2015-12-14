@@ -1216,19 +1216,22 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
 
   /* if using 'global correlation' frequency variables, determine the highest spindown order: */
   UINT4 maxorder = findHighestGCSpinOrder ( coordSys );
+  if ( maxorder > 0 ) {
 
-  /* compute rOrb(t) derivatives at reference time */
-  if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
-    XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  }
-  if (lalDebugLevel & LALINFOBIT) {
-    /* diagnostic / debug output */
-    fprintf( stderr, "%s: rOrb_n(%d) = [ ", __func__, intparams.dopplerPoint->refTime.gpsSeconds );
-    for ( UINT4 n = 0; n < intparams.rOrb_n->length; n++ ) {
-      fprintf( stderr, "[%g, %g, %g]%s", intparams.rOrb_n->data[n][0], intparams.rOrb_n->data[n][1], intparams.rOrb_n->data[n][2],
-               (n < intparams.rOrb_n->length -1 ) ? ", " : " ]\n" );
+    /* compute rOrb(t) derivatives at reference time */
+    if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
+      XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
+      XLAL_ERROR_NULL( XLAL_EFUNC );
     }
+    if (lalDebugLevel & LALINFOBIT) {
+      /* diagnostic / debug output */
+      fprintf( stderr, "%s: rOrb_n(%d) = [ ", __func__, intparams.dopplerPoint->refTime.gpsSeconds );
+      for ( UINT4 n = 0; n < intparams.rOrb_n->length; n++ ) {
+        fprintf( stderr, "[%g, %g, %g]%s", intparams.rOrb_n->data[n][0], intparams.rOrb_n->data[n][1], intparams.rOrb_n->data[n][2],
+                 (n < intparams.rOrb_n->length -1 ) ? ", " : " ]\n" );
+      }
+    }
+
   }
 
   metric->maxrelerr = 0;
@@ -1653,11 +1656,14 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
   /* if using 'global correlation' frequency variables, determine the highest spindown order: */
   UINT4 maxorder = findHighestGCSpinOrder ( coordSys );
+  if ( maxorder > 0 ) {
 
-  /* compute rOrb(t) derivatives at reference time */
-  if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
-    XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
-    XLAL_ERROR_NULL( XLAL_EFUNC );
+    /* compute rOrb(t) derivatives at reference time */
+    if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
+      XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
+      XLAL_ERROR_NULL( XLAL_EFUNC );
+    }
+
   }
 
   /* ----- integrate antenna-pattern coefficients A, B, C */
