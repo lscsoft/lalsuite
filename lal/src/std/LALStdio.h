@@ -137,6 +137,21 @@ extern "C" {
 #define LAL_REAL8_FORMAT "lg"
 /*@}*/
 
+/**
+ * \name Convenient format macros for printing LIGOTimeGPS
+ *
+ * ### Example ###
+ *
+ * @code
+ * LIGOTimeGPS t = { 1122334455, 666777888 };
+ * printf("The time is %" LAL_GPS_FORMAT "\n", LAL_GPS_PRINT(t));
+ * @endcode
+ */
+/*@{*/
+#define LAL_GPS_FORMAT       LAL_INT4_FORMAT ".%" LAL_INT4_FORMAT
+#define LAL_GPS_PRINT(gps)   (gps).gpsSeconds, (gps).gpsNanoSeconds
+/*@}*/
+
 /*@}*/
 
 #if 0
