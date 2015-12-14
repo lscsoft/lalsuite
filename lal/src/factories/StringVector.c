@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 Karl Wette
  * Copyright (C) 2008 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -196,6 +197,40 @@ static int StringCompare (const void *p1, const void *p2)
    *
    */
   return strcmp ( * ( char * const *) p1, * ( char * const *) p2 );
+}
+
+///
+/// Concatenate a string vector 'strings', separated by the string 'sep', into a single string
+///
+char *XLALConcatStringVector( const LALStringVector *strings, const char *sep )
+{
+
+  // Check input
+  XLAL_CHECK_NULL( strings != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( sep != NULL, XLAL_EFAULT );
+
+  // Allocate a string of the required size
+  int len = 1;
+  if ( strings->length > 0 ) {
+    len += strlen( strings->data[0] );
+    for ( size_t i = 1; i < strings->length; ++i ) {
+      len += strlen( sep ) + strlen( strings->data[i] );
+    }
+  }
+  char *s = XLALCalloc( len, sizeof(*s) );
+  XLAL_CHECK_NULL( s != NULL, XLAL_ENOMEM );
+
+  // Concatenate the vector of strings into a single string
+  if ( strings->length > 0 ) {
+    strcpy( s, strings->data[0] );
+    for ( size_t i = 1; i < strings->length; ++i ) {
+      strcat( s, sep );
+      strcat( s, strings->data[i] );
+    }
+  }
+
+  return s;
+
 }
 
 /**
