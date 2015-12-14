@@ -270,3 +270,16 @@ char *XLALStringToken(char **s, const char *delim, int empty)
     return begin;
 
 }
+
+/**
+ * Return the string 's' with all characters 'from' replaced with 'to'
+ */
+char *XLALStringReplaceChar(char *s, const int from, const int to)
+{
+    for (char *c = s; c != NULL && *c != '\0'; ++c) {
+        if (*c == from) {
+            *c = to;
+        }
+    }
+    return s;
+}

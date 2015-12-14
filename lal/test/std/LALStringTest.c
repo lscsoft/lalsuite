@@ -108,6 +108,14 @@ int main( void )
     XLAL_CHECK_MAIN( XLALStringToken(&p, ",-", 1) == NULL, XLAL_EFAILED );
   }
 
+  {
+    char s[] = "abcbdeacd";
+    XLAL_CHECK_MAIN( strcmp( XLALStringReplaceChar(s, 'a', 'b'), "bbcbdebcd" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringReplaceChar(s, 'b', 'c'), "ccccdeccd" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringReplaceChar(s, 'c', 'd'), "dddddeddd" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK_MAIN( strcmp( XLALStringReplaceChar(s, 'd', 'e'), "eeeeeeeee" ) == 0, XLAL_EFAILED );
+  }
+
   return 0;
 
 }
