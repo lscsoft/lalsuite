@@ -233,6 +233,37 @@ char *XLALConcatStringVector( const LALStringVector *strings, const char *sep )
 
 }
 
+///
+/// Parse 'string' into a string vector of tokens, delimited by the characters 'delim'
+///
+LALStringVector *XLALParseStringVector( const char *string, const char *delim )
+{
+
+  // Check input
+  XLAL_CHECK_NULL( string != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( delim != NULL, XLAL_EFAULT );
+
+  // Allocate an empty string vector
+  LALStringVector *strings = XLALCalloc( 1, sizeof(*strings) );
+  XLAL_CHECK_NULL( strings != NULL, XLAL_ENOMEM );
+
+  // Split the string into a vector of strings
+  char *s = XLALStringDuplicate( string );
+  XLAL_CHECK_NULL( s != NULL, XLAL_EFUNC );
+  char *p = s;
+  char *t = XLALStringToken( &p, delim, 1 );
+  while ( t != NULL ) {
+    XLAL_CHECK_NULL( XLALAppendString2Vector( strings, t ) != NULL, XLAL_EFUNC );
+    t = XLALStringToken( &p, delim, 1 );
+  }
+
+  // Cleanup
+  XLALFree( s );
+
+  return strings;
+
+}
+
 /**
  * Sort string-vector alphabetically *in place*
  */
