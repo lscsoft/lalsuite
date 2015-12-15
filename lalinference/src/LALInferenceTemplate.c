@@ -713,6 +713,13 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           /* Another error occurred that we can't handle. Propogate upward */
           XLALSetErrno(errnum);
           XLAL_ERROR_VOID(errnum,"%s: Template generation failed in XLALSimInspiralChooseFDWaveformFromCache",__func__);
+          XLAL_ERROR_VOID(errnum,"XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, \
+            %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, \
+            model->waveFlags(%d,%d,%d,%d,numreldata),nonGRparams,%d,%d,%d,model->waveformCache)\n",
+            phi0, deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
+            f_start, f_max, f_ref, distance, inclination, lambda1, lambda2, (int) XLALSimInspiralGetSpinOrder(model->waveFlags),
+            (int) XLALSimInspiralGetTidalOrder(model->waveFlags),(int) XLALSimInspiralGetFrameAxis(model->waveFlags),
+            (int) XLALSimInspiralGetModesChoice(model->waveFlags),amporder, order, approximant);
       }
     }
 
@@ -773,6 +780,13 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           /* Another error occurred that we can't handle. Propogate upward */
           XLALSetErrno(errnum);
           XLAL_ERROR_VOID(errnum,"%s: Template generation failed in XLALSimInspiralChooseTDWaveformFromCache",__func__);
+          XLAL_ERROR_VOID(errnum,"XLALSimInspiralChooseTDWaveformFromCache(&hplus, &hcross, \
+            %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, \
+            model->waveFlags(%d,%d,%d,%d,numreldata),nonGRparams,%d,%d,%d,model->waveformCache)\n",
+            phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
+            f_start, f_ref, distance, inclination, lambda1, lambda2, (int) XLALSimInspiralGetSpinOrder(model->waveFlags),
+            (int) XLALSimInspiralGetTidalOrder(model->waveFlags),(int) XLALSimInspiralGetFrameAxis(model->waveFlags),
+            (int) XLALSimInspiralGetModesChoice(model->waveFlags),amporder, order, approximant);
       }
     }
 
@@ -1360,4 +1374,3 @@ void LALInferenceDumptemplateTimeDomain(LALInferenceVariables *currentParams,
   fclose(outfile);
   fprintf(stdout, " wrote (time-domain) template to CSV file \"%s\".\n", filename);
 }
-
