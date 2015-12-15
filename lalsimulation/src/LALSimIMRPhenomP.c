@@ -483,9 +483,8 @@ static int PhenomPCore(
     case IMRPhenomPv2_V:
       XLAL_PRINT_INFO("*** IMRPhenomP version 2: based on IMRPhenomD ***");
       // PhenomD uses FinalSpin0815() to calculate the final spin if the spins are aligned.
-      // We use the more general Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009 here.
-      // Final spin wrapper assumes that m1 >= m2, so we switch the spins in the following calls.
-      finspin = FinalSpinBarausse2009_all_in_plane_spin_on_larger_BH(eta, chi2_l, chi1_l, chip);
+      // We use a generalized version of FinalSpin0815() that includes the in-plane spin chip.
+      finspin = FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH(m1, m2, chi1_l, chi2_l, chip);
       if( fabs(finspin) > 1.0 ) {
         XLAL_PRINT_WARNING("Warning: final spin magnitude %g > 1. Setting final spin magnitude = 1.", finspin);
         finspin = copysign(1.0, finspin);
@@ -1133,6 +1132,40 @@ static void WignerdCoefficients_SmallAngleApproximation(
 
 /**
  * Wrapper for final-spin formula based on:
+ * - IMRPhenomD's FinalSpin0815() for aligned spins.
+ *
+ * We use their convention m1>m2
+ * and put <b>all in-plane spin on the larger BH</b>.
+ *
+ * In the aligned limit return the FinalSpin0815 value.
+ */
+static REAL8 FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH(
+  const REAL8 m1,     /**< Mass of companion 1 (solar masses) */
+  const REAL8 m2,     /**< Mass of companion 2 (solar masses) */
+  const REAL8 chi1_l, /**< Aligned spin of BH 1 */
+  const REAL8 chi2_l, /**< Aligned spin of BH 2 */
+  const REAL8 chip)   /**< Dimensionless spin in the orbital plane */
+{
+  const REAL8 M = m1+m2;
+  const REAL8 eta = m1*m2/(M*M);
+
+  REAL8 af_parallel, q_factor;
+  if (m1 >= m2) {
+    q_factor = m1/M;
+    af_parallel = FinalSpin0815(eta, chi1_l, chi2_l);
+  }
+  else {
+    q_factor = m2/M;
+    af_parallel = FinalSpin0815(eta, chi2_l, chi1_l);
+  }  
+
+  REAL8 Sperp = chip * q_factor*q_factor;
+  REAL8 af = copysign(1.0, af_parallel) * sqrt(Sperp*Sperp + af_parallel*af_parallel);
+  return af;
+}
+
+/**
+ * Wrapper for final-spin formula based on:
  * - Barausse \& Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009,
  * arXiv:0904.2577
  *
@@ -1153,39 +1186,6 @@ static REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(
   const REAL8 a2_x = 0;
   const REAL8 a2_y = 0;
   const REAL8 a2_z = 0;
-
-  const REAL8 a1 = sqrt(a1_x*a1_x + a1_y*a1_y + a1_z*a1_z);
-  const REAL8 a2 = sqrt(a2_x*a2_x + a2_y*a2_y + a2_z*a2_z);
-
-  const REAL8 cos_alpha = (a1*a2 == 0) ? 0.0 : a1_z*a2_z/(a1*a2); /* cos(alpha) = \hat a1 . \hat a2 (Eq. 7) */
-  const REAL8 cos_beta_tilde  = (a1 == 0) ? 0.0 : a1_z/a1;  /* \cos(\tilde \beta)  = \hat a1 . \hat L  (Eq. 9) */
-  const REAL8 cos_gamma_tilde = (a2 == 0) ? 0.0 : a2_z/a2;  /* \cos(\tilde \gamma) = \hat a2 . \hat L (Eq. 9) */
-
-  return FinalSpinBarausse2009(nu, a1, a2, cos_alpha, cos_beta_tilde, cos_gamma_tilde);
-}
-
-/**
- * Wrapper for final-spin formula based on:
- * - Barausse \& Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009,
- * arXiv:0904.2577
- *
- * We use their convention m1>m2
- * and put <b>all in-plane spin on the larger BH</b>:
- *
- * a1 = (chip, 0, chi1_l), a2 = (0, 0, chi2_l), L = (0,0,1)
- */
-static REAL8 FinalSpinBarausse2009_all_in_plane_spin_on_larger_BH(
-  const REAL8 nu,     /**< Symmetric mass-ratio */
-  const REAL8 chi1_l, /**< Aligned spin of BH 1 (m1 >= m2) */
-  const REAL8 chi2_l, /**< Aligned spin of BH 2  */
-  const REAL8 chip)   /**< Dimensionless spin in the orbital plane */
-{
-  const REAL8 a1_x = chip;
-  const REAL8 a1_y = 0;
-  const REAL8 a1_z = chi1_l;
-  const REAL8 a2_x = 0;
-  const REAL8 a2_y = 0;
-  const REAL8 a2_z = chi2_l;
 
   const REAL8 a1 = sqrt(a1_x*a1_x + a1_y*a1_y + a1_z*a1_z);
   const REAL8 a2 = sqrt(a2_x*a2_x + a2_y*a2_y + a2_z*a2_z);
