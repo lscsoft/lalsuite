@@ -82,6 +82,14 @@ void XLALDestroySuperskyMetrics(
   SuperskyMetrics *metrics			///< [in] Supersky metrics struct
   );
 
+///
+/// Return dimensions of the supersky metrics.
+///
+int XLALSuperskyMetricsDimensions(
+  const SuperskyMetrics *metrics,		///< [in] Supersky metrics struct
+  size_t *spindowns				///< [out] Number of spindown dimensions
+  );
+
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
 #endif // SWIG

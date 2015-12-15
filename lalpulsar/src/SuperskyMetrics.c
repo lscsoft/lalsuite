@@ -684,6 +684,33 @@ void XLALDestroySuperskyMetrics(
   }
 }
 
+int XLALSuperskyMetricsDimensions(
+  const SuperskyMetrics *metrics,
+  size_t *spindowns
+  )
+{
+
+
+  // Check input
+  XLAL_CHECK(metrics != NULL, XLAL_EFAULT);
+  XLAL_CHECK(metrics->num_segments > 0, XLAL_EINVAL);
+  for (size_t n = 0; n < metrics->num_segments; ++n) {
+    XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n]), XLAL_EINVAL);
+  }
+  XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(metrics->semi_rssky_metric, metrics->semi_rssky_transf), XLAL_EINVAL);
+
+  // Decompose coordinate transform data
+  DECOMPOSE_RSSKY_TRANSF(metrics->semi_rssky_transf);
+
+  // Return dimensions
+  if (spindowns != NULL) {
+    *spindowns = smax;
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALScaleSuperskyMetricFiducialFreq(
   gsl_matrix *rssky_metric,
   gsl_matrix *rssky_transf,
