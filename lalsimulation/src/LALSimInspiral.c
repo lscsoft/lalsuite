@@ -787,7 +787,7 @@ int XLALSimInspiralChooseTDWaveform(
             spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
             spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
             iTmp=i;
-           XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
+           //XLALSimInspiralInitialConditionsPrecessingApproxs(&i,&S1x,&S1y,&S1z,&S2x,&S2y,&S2z,iTmp,spin1[0],spin1[1],spin1[2],spin2[0],spin2[1],spin2[2],m1,m2,f_ref,XLALSimInspiralGetFrameAxis(waveFlags));
             spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
             spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
             ret = XLALSimIMRSpinEOBWaveform(hplus, hcross, /*&epoch,*/ phiRef,
@@ -1275,7 +1275,7 @@ int XLALSimInspiralChooseFDWaveform(
                 m1, m2, f_ref,
                 LNhatx, LNhaty, LNhatz,
                 S1x, S1y, S1z,
-                S2x, S2y, S2z);
+                S2x, S2y, S2z, IMRPhenomPv1_V);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
               chi1_l, chi2_l, chip, thetaJ,
@@ -1305,7 +1305,7 @@ int XLALSimInspiralChooseFDWaveform(
                 m1, m2, f_ref,
                 LNhatx, LNhaty, LNhatz,
                 S1x, S1y, S1z,
-                S2x, S2y, S2z);
+                S2x, S2y, S2z, IMRPhenomPv2_V);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
               chi1_l, chi2_l, chip, thetaJ,
@@ -1399,10 +1399,10 @@ int XLALSimInspiralChooseFDWaveform(
 
     return ret;
 }
- 
+
 /**
  * @brief Generates an time domain inspiral waveform using the specified approximant; the
- * resulting waveform is appropriately conditioned, suitable for injection into data, 
+ * resulting waveform is appropriately conditioned, suitable for injection into data,
  * and decomposed into the (2, \f$\pm\f$ 2), spin -2 weighted spherical harmonic modes.
  * NOTE: This is an algebraic decomposition, and will only be correct for approximants
  * which use only the dominant 2, \f$\pm\f$ 2 mode.
@@ -1423,7 +1423,7 @@ int XLALSimInspiralChooseFDWaveform(
  * parameter r is the comoving (transverse) distance.  If the calling routine has already
  * applied cosmological "corrections" to m1 and m2 and regards r as a luminosity distance
  * then the redshift factor should again be set to zero.
- * 
+ *
  * @note The parameters passed must be in SI units.
  */
 SphHarmTimeSeries* XLALSimInspiralTDModesFromPolarizations(
@@ -1454,7 +1454,7 @@ SphHarmTimeSeries* XLALSimInspiralTDModesFromPolarizations(
     SphHarmTimeSeries *hlm;
     UINT4 j;
     int retval;
-    float fac = XLALSpinWeightedSphericalHarmonic(0., 0., -2, 2,2); 
+    float fac = XLALSpinWeightedSphericalHarmonic(0., 0., -2, 2,2);
 
     /* Generate waveform via on-axis emission. Assumes only (2,2) and (2,-2) emission */
     retval = XLALSimInspiralTD(&hplus, &hcross, 0.0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, z, 0.0, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
@@ -1478,7 +1478,7 @@ SphHarmTimeSeries* XLALSimInspiralTDModesFromPolarizations(
     XLALDestroyREAL8TimeSeries(hcross);
     XLALDestroyCOMPLEX16TimeSeries(h22);
     XLALDestroyCOMPLEX16TimeSeries(h2m2);
-    
+
     return hlm;
 }
 
@@ -1560,7 +1560,7 @@ static int XLALSimInspiralTDFromTD(
      * region between that lower frequency and the requested
      * frequency f_min; here compute a new lower frequency */
     fstart = XLALSimInspiralChirpStartFrequencyBound((1.0 + extra_time_fraction) * tchirp + tmerge + textra, m1, m2);
-    
+
     /* generate the waveform in the time domain starting at fstart */
     retval = XLALSimInspiralChooseTDWaveform(hplus, hcross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, fstart, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
     if (retval < 0)
@@ -1705,7 +1705,7 @@ static int XLALSimInspiralTDFromFD(
     /* revised estimate of chirp length from new start frequency */
     fstart = XLALSimInspiralChirpStartFrequencyBound((1.0 + extra_time_fraction) * tchirp, m1, m2);
     tchirp = XLALSimInspiralChirpTimeBound(fstart, m1, m2, S1z, S2z);
-        
+
     /* total expected chirp length includes merger */
     chirplen = round((tchirp + tmerge) / deltaT);
 
@@ -1752,7 +1752,7 @@ static int XLALSimInspiralTDFromFD(
  * parameter r is the comoving (transverse) distance.  If the calling routine has already
  * applied cosmological "corrections" to m1 and m2 and regards r as a luminosity distance
  * then the redshift factor should again be set to zero.
- * 
+ *
  * @note The parameters passed must be in SI units.
  */
 int XLALSimInspiralTD(
@@ -4685,6 +4685,9 @@ double XLALSimInspiralGetFrequency(
             chi = XLALSimIMRPhenomBComputeChi(m1Msun, m2Msun, S1z, S2z);
             freq = XLALSimIMRPhenomCGetFinalFreq(m1Msun, m2Msun, chi);
             break;
+		case fIMRPhenomDPeak:
+			freq = XLALIMRPhenomDGetPeakFreq(m1Msun, m2Msun, S1z, S2z);
+			break;
 
         /* EOBNR ringdown frequencies all come from the same code,
          * just with different inputs */

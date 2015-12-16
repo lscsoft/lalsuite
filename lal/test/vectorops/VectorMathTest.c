@@ -127,9 +127,9 @@ main ( int argc, char *argv[] )
   uvar->randSeed = 1;
   uvar->Nruns = 1;
   // ---------- register user-variable ----------
-  XLALregBOOLUserStruct (  help,                'h', UVAR_HELP    , "Print this help/usage message");
-  XLALregINTUserStruct  (  randSeed,            's', UVAR_OPTIONAL, "Random-number seed");
-  XLALregINTUserStruct  (  Nruns,               'r', UVAR_OPTIONAL, "Number of repeated timing 'runs' to average over (=improves variance)" );
+  XLALRegisterUvarMember(  help,                BOOLEAN, 'h', HELP    , "Print this help/usage message");
+  XLALRegisterUvarMember(  randSeed,            INT4, 's', OPTIONAL, "Random-number seed");
+  XLALRegisterUvarMember(  Nruns,               INT4, 'r', OPTIONAL, "Number of repeated timing 'runs' to average over (=improves variance)" );
 
   XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( uvar->help ) {	/* if help was requested, we're done */

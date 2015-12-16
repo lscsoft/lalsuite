@@ -42,7 +42,7 @@ UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
  */
 
 static int IMRPhenomDGenerateFD(
-    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8 phi0,                  /**< phase at fRef */
     const REAL8 fRef,                  /**< reference frequency [Hz] */
     const REAL8 deltaF,                /**< frequency resolution */
@@ -98,9 +98,9 @@ static int IMRPhenomDGenerateFD(
  *  All input parameters should be in SI units. Angles should be in radians.
  */
 int XLALSimIMRPhenomDGenerateFD(
-    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8 phi0,                  /**< Orbital phase at fRef (rad) */
-    const REAL8 fRef_in,                  /**< reference frequency (Hz) */
+    const REAL8 fRef_in,               /**< reference frequency (Hz) */
     const REAL8 deltaF,                /**< Sampling frequency (Hz) */
     const REAL8 m1_SI,                 /**< Mass of companion 1 (kg) */
     const REAL8 m2_SI,                 /**< Mass of companion 2 (kg) */
@@ -177,7 +177,7 @@ int XLALSimIMRPhenomDGenerateFD(
 /* *********************************************************************************/
 
 static int IMRPhenomDGenerateFD(
-    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8 phi0,                  /**< phase at fRef */
     const REAL8 fRef,                  /**< reference frequency [Hz] */
     const REAL8 deltaF,                /**< frequency resolution */
@@ -254,16 +254,9 @@ static int IMRPhenomDGenerateFD(
 
   // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation
   // (LALSimInspiralPNCoefficients.c -> XLALSimInspiralPNPhasing_F2), but
-  // was not available as PhenomD was tuned.
-  REAL8 chi1sq = chi1 * chi1;
-  REAL8 chi2sq = chi2 * chi2;
-  REAL8 m1M = m1 / M;
-  REAL8 m2M = m2 / M;
-  REAL8 pn_ss3 =  (326.75L/1.12L + 557.5L/1.8L*eta)*eta*chi1*chi2;
-  pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m1M-120.L*m1M*m1M) + (-4108.25L/6.72L-108.5L/1.2L*m1M+125.5L/3.6L*m1M*m1M)) *m1M*m1M * chi1sq;
-  pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m2M-120.L*m2M*m2M) + (-4108.25L/6.72L-108.5L/1.2L*m2M+125.5L/3.6L*m2M*m2M)) *m2M*m2M * chi2sq;
+  // was not available when PhenomD was tuned.
+  pn->v[6] -= (Subtract3PNSS(m1, m2, M, chi1, chi2) * pn->v[0]);
 
-  pn->v[6] -= (pn_ss3 * pn->v[0]);
 
   PhiInsPrefactors phi_prefactors;
   status = init_phi_ins_prefactors(&phi_prefactors, pPhi, pn);
@@ -323,4 +316,56 @@ static int IMRPhenomDGenerateFD(
   LALFree(pn);
 
   return status;
+}
+
+/**
+ * Function to return the frequency (in Hz) of the peak of the frequency
+ * domain amplitude for the IMRPhenomD model.
+ *
+ * The peak is a parameter in the PhenomD model given by Eq. 20 in 1508.07253
+ * where it is called f_peak in the paper.
+ *  All input parameters should be in SI units. Angles should be in radians.
+ */
+double XLALIMRPhenomDGetPeakFreq(
+    const REAL8 m1_in,                 /**< mass of companion 1 [kg] */
+    const REAL8 m2_in,                 /**< mass of companion 2 [kg] */
+    const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
+    const REAL8 chi2_in               /**< aligned-spin of companion 2 */
+) {
+    // Ensure that m1 > m2 and that chi1 is the spin on m1
+    REAL8 chi1, chi2, m1, m2;
+    if (m1_in>m2_in) {
+       chi1 = chi1_in;
+       chi2 = chi2_in;
+       m1   = m1_in;
+       m2   = m2_in;
+    } else { // swap spins and masses
+       chi1 = chi2_in;
+       chi2 = chi1_in;
+       m1   = m2_in;
+       m2   = m1_in;
+    }
+
+    const REAL8 M = m1 + m2;
+    const REAL8 M_sec = M * LAL_MTSUN_SI; // Conversion factor Hz -> dimensionless frequency
+
+    REAL8 eta = m1 * m2 / (M * M);
+    if (eta > 0.25 || eta < 0.0)
+      XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
+
+    // Calculate phenomenological parameters
+    REAL8 finspin = FinalSpin0815(eta, chi1, chi2);
+
+    if (finspin < MIN_FINAL_SPIN)
+          XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
+                          the model might misbehave here.", finspin);
+    IMRPhenomDAmplitudeCoefficients *pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi1, chi2, finspin);
+    if (!pAmp) XLAL_ERROR(XLAL_EFUNC);
+
+    // PeakFreq, converted to Hz
+    REAL8 PeakFreq = ( pAmp->fmaxCalc ) / M_sec;
+
+    LALFree(pAmp);
+
+    return PeakFreq;
 }

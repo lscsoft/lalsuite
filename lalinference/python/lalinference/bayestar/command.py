@@ -22,12 +22,15 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 import argparse
+import errno
 from optparse import IndentedHelpFormatter
 import glob
 import inspect
 import itertools
 import os
+import shutil
 import sys
+import tempfile
 from matplotlib import cm
 from .. import cmap
 
@@ -77,6 +80,9 @@ group = waveform_parser.add_argument_group(
 # not support frequencies less than 30 Hz.
 group.add_argument('--f-low', type=float, metavar='Hz', default=30,
     help='Low frequency cutoff [default: %(default)s]')
+group.add_argument('--f-high-truncate', type=float, default=0.95,
+    help='Truncate waveform at this fraction of the maximum frequency of the '
+    'PSD [default: %(default)s]')
 group.add_argument('--waveform', default='o1-uberbank',
     help='Template waveform approximant (e.g., TaylorF2threePointFivePN) '
     '[default: O1 uberbank mass-dependent waveform]')
@@ -288,3 +294,24 @@ def sqlite_get_filename(connection):
     except ValueError:
         raise RuntimeError('Expected exactly one attached database')
     return filename
+
+
+def rename(src, dst):
+    """Like os.rename(src, dst), but works across different devices because it
+    catches and handles EXDEV ('Invalid cross-device link') errors. This
+    operation is atomic, even if src and dst are on different devices."""
+    try:
+        os.rename(src, dst)
+    except OSError as e:
+        if e.errno == errno.EXDEV:
+            dir, suffix = os.path.split(dst)
+            tmpfid, tmpdst = tempfile.mkstemp(dir=dir, suffix=suffix)
+            try:
+                os.close(tmpfid)
+                shutil.copy2(src, tmpdst)
+                os.rename(tmpdst, dst)
+            except:
+                os.remove(tmpdst)
+                raise
+        else:
+            raise

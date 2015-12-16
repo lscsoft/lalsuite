@@ -1,3 +1,6 @@
+#ifndef _LALSIM_IMR_PHENOMP_H
+#define _LALSIM_IMR_PHENOMP_H
+
 /*
  *  Copyright (C) 2013,2014,2015 Michael Puerrer, Alejandro Bohe
  *
@@ -17,7 +20,19 @@
  *  MA  02111-1307  USA
  */
 
+#include <lal/LALStdlib.h>
+#include <lal/LALSimIMR.h>
+#include <lal/LALConstants.h>
+
+#include "LALSimIMRPhenomC_internals.h"
+#include "LALSimIMRPhenomD_internals.h"
+
+#include <lal/FrequencySeries.h>
+#include <lal/LALSimInspiral.h>
+
+
 /* ************************** PhenomP internal function prototypes *****************************/
+
 
 /* PhenomC parameters for modified ringdown: Uses final spin formula of Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009 */
 static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
@@ -78,7 +93,8 @@ static int PhenomPCore(
 static int PhenomPCoreOneFrequency(
   const REAL8 fHz,                        /**< Frequency (Hz) */
   const REAL8 eta,                        /**< Symmetric mass ratio */
-  const REAL8 chi_eff,                    /**< Dimensionless effective total aligned spin */
+  const REAL8 chi1_l,                     /**< Dimensionless aligned spin on companion 1 */
+  const REAL8 chi2_l,                     /**< Dimensionless aligned spin on companion 2 */
   const REAL8 chip,                       /**< Dimensionless spin in the orbital plane */
   const REAL8 distance,                   /**< Distance of source (m) */
   const REAL8 M,                          /**< Total mass (Solar masses) */
@@ -105,33 +121,40 @@ static REAL8 L2PNR(
   const REAL8 eta  /**< Symmetric mass-ratio */
 );
 
+static REAL8 L2PNR_v1(
+  const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
+  const REAL8 eta  /**< Symmetric mass-ratio */
+);
+
 static void WignerdCoefficients(
+  REAL8 *cos_beta_half,   /**< Output: cos(beta/2) */
+  REAL8 *sin_beta_half,   /**< Output: sin(beta/2) */
   const REAL8 v,          /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 SL,         /**< Dimensionfull aligned spin */
   const REAL8 eta,        /**< Symmetric mass-ratio */
-  const REAL8 Sp,         /**< Dimensionfull spin component in the orbital plane */
-  REAL8 *cos_beta_half,   /**< Output: cos(beta/2) */
-  REAL8 *sin_beta_half    /**< Output: sin(beta/2) */
+  const REAL8 Sp          /**< Dimensionfull spin component in the orbital plane */
+);
+
+static void WignerdCoefficients_SmallAngleApproximation(
+  REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
+  REAL8 *sin_beta_half, /**< Output: sin(beta/2) */
+  const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
+  const REAL8 SL,       /**< Dimensionfull aligned spin */
+  const REAL8 eta,      /**< Symmetric mass-ratio */
+  const REAL8 Sp        /**< Dimensionfull spin component in the orbital plane */
+);
+
+static REAL8 FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH(
+  const REAL8 m1,     /**< Mass of companion 1 (solar masses) */
+  const REAL8 m2,     /**< Mass of companion 2 (solar masses) */
+  const REAL8 chi1_l, /**< Aligned spin of BH 1 */
+  const REAL8 chi2_l, /**< Aligned spin of BH 2 */
+  const REAL8 chip    /**< Dimensionless spin in the orbital plane */
 );
 
 static REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(
   const REAL8 nu,     /**< Symmetric mass-ratio */
   const REAL8 chi,    /**< Effective aligned spin of the binary:  chi = (m1*chi1 + m2*chi2)/M  */
-  const REAL8 chip    /**< Dimensionless spin in the orbital plane */
-);
-
-#if 0
-static REAL8 FinalSpinBarausse2009_aligned_spin_equally_distributed(
-  const REAL8 nu,     /**< Symmetric mass-ratio */
-  const REAL8 chi,    /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
-  const REAL8 chip    /**< Dimensionless spin in the orbital plane */
-);
-#endif
-
-static REAL8 FinalSpinBarausse2009_all_in_plane_spin_on_larger_BH(
-  const REAL8 nu,     /**< Symmetric mass-ratio */
-  const REAL8 chi1_l, /**< Aligned spin of BH 1 (m1 >= m2) */
-  const REAL8 chi2_l, /**< Aligned spin of BH 2  */
   const REAL8 chip    /**< Dimensionless spin in the orbital plane */
 );
 
@@ -144,4 +167,4 @@ static REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.70
   const REAL8 cos_gamma_tilde   /**< cos(\\tilde gamma) = \\hat a_2 . \\hat L (Eq. 9)*/
 );
 
-static size_t NextPow2(const size_t n); /* Return the closest higher power of 2. */
+#endif	// of #ifndef _LALSIM_IMR_PHENOMP_H

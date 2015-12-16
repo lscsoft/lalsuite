@@ -182,10 +182,10 @@ XLALprintData ( const SFTtype *sft )
 int
 XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar )
 {
-  XLALregBOOLUserStruct ( 	help,		'h', UVAR_HELP,     "Print this help/usage message");
-  XLALregSTRINGUserStruct (	SFTfiles,	'i', UVAR_REQUIRED, "File-pattern for input SFTs");
-  XLALregBOOLUserStruct (	headerOnly,	'H', UVAR_OPTIONAL, "Output only header-info");
-  XLALregBOOLUserStruct (	noHeader,	'n', UVAR_OPTIONAL, "Output only data, no header");
+  XLALRegisterUvarMember( 	help,		BOOLEAN, 'h', HELP,     "Print this help/usage message");
+  XLALRegisterUvarMember(	SFTfiles,	STRING, 'i', REQUIRED, "File-pattern for input SFTs");
+  XLALRegisterUvarMember(	headerOnly,	BOOLEAN, 'H', OPTIONAL, "Output only header-info");
+  XLALRegisterUvarMember(	noHeader,	BOOLEAN, 'n', OPTIONAL, "Output only data, no header");
 
   /* read cmdline & cfgfile  */
   XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );

@@ -136,7 +136,8 @@ try:
     sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(
         coinc_file, psd_file, opts.waveform, opts.f_low,
         opts.min_distance, opts.max_distance, opts.prior_distance_power,
-        phase_convention=opts.phase_convention)
+        phase_convention=opts.phase_convention,
+        f_high_truncate=opts.f_high_truncate)
     log.info("sky localization complete")
 
     # upload FITS file
@@ -152,7 +153,7 @@ try:
             gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
                 filename=fitspath, tagname=("sky_loc", "lvem"))
         else:
-            os.rename(fitspath, os.path.join('.', opts.output))
+            command.rename(fitspath, os.path.join('.', opts.output))
     finally:
         shutil.rmtree(fitsdir)
 except:

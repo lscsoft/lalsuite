@@ -31,6 +31,7 @@
  * \endcode
  *
  */
+/*@{*/
 
 #ifndef _LALSTDIO_H
 #define _LALSTDIO_H
@@ -54,48 +55,78 @@ extern "C" {
 #endif
 #define LALFclose fclose
 
-
+/**
+ * \name Format macros for printing (U)INT2
+ */
+/*@{*/
 #define LAL_INT2_PRId PRId16
 #define LAL_INT2_PRIi PRIi16
 #define LAL_INT2_PRIo PRIo16
 #define LAL_INT2_PRIu PRIu16
 #define LAL_INT2_PRIx PRIx16
 #define LAL_INT2_PRIX PRIX16
+/*@}*/
 
+/**
+ * \name Format macros for printing (U)INT4
+ */
+/*@{*/
 #define LAL_INT4_PRId PRId32
 #define LAL_INT4_PRIi PRIi32
 #define LAL_INT4_PRIo PRIo32
 #define LAL_INT4_PRIu PRIu32
 #define LAL_INT4_PRIx PRIx32
 #define LAL_INT4_PRIX PRIX32
+/*@}*/
 
+/**
+ * \name Format macros for printing (U)INT8
+ */
+/*@{*/
 #define LAL_INT8_PRId PRId64
 #define LAL_INT8_PRIi PRIi64
 #define LAL_INT8_PRIo PRIo64
 #define LAL_INT8_PRIu PRIu64
 #define LAL_INT8_PRIx PRIx64
 #define LAL_INT8_PRIX PRIX64
+/*@}*/
 
+/**
+ * \name Format macros for scanning (U)INT2
+ */
 #define LAL_INT2_SCNd SCNd16
 #define LAL_INT2_SCNi SCNi16
 #define LAL_INT2_SCNo SCNo16
 #define LAL_INT2_SCNu SCNu16
 #define LAL_INT2_SCNx SCNx16
+/*@}*/
 
+/**
+ * \name Format macros for scanning (U)INT4
+ */
+/*@{*/
 #define LAL_INT4_SCNd SCNd32
 #define LAL_INT4_SCNi SCNi32
 #define LAL_INT4_SCNo SCNo32
 #define LAL_INT4_SCNu SCNu32
 #define LAL_INT4_SCNx SCNx32
+/*@}*/
 
+/**
+ * \name Format macros for scanning (U)INT8
+ */
+/*@{*/
 #define LAL_INT8_SCNd SCNd64
 #define LAL_INT8_SCNi SCNi64
 #define LAL_INT8_SCNo SCNo64
 #define LAL_INT8_SCNu SCNu64
 #define LAL_INT8_SCNx SCNx64
+/*@}*/
 
-/* convenient versions of above that can be used in
- * either scanf or printf (decimal integers only) */
+/**
+ * \name Format macros for printing and scanning (U)INT* (decimal only) and REAL*
+ */
+/*@{*/
 #define LAL_INT2_FORMAT  LAL_INT2_SCNd
 #define LAL_INT4_FORMAT  LAL_INT4_SCNd
 #define LAL_INT8_FORMAT  LAL_INT8_SCNd
@@ -104,6 +135,9 @@ extern "C" {
 #define LAL_UINT8_FORMAT LAL_INT8_SCNu
 #define LAL_REAL4_FORMAT "g"
 #define LAL_REAL8_FORMAT "lg"
+/*@}*/
+
+/*@}*/
 
 #if 0
 {       /* so that editors will match succeeding brace */

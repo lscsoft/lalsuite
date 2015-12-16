@@ -10,13 +10,13 @@ test_programs += FrequencySeriesTest
 test_programs += LanczosTriggerInterpolantTest
 test_programs += NearestNeighborTriggerInterpolantTest
 test_programs += QuadraticFitTriggerInterpolantTest
+test_programs += SegmentsTest
 test_programs += SequenceTest
 test_programs += SkymapTest
 test_programs += TimeSeriesInterpTest
 test_programs += TimeSeriesTest
 test_programs += UnitsTest
 #test_programs += CoherentEstimationTest
-#test_programs += SegmentsTest
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += IndependentDetResponseTest.sh

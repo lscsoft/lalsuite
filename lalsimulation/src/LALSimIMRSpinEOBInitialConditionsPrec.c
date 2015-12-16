@@ -399,9 +399,9 @@ XLALFindSphericalOrbitPrec(
                   rootParams->values, rootParams->params);
 	}
 
-	if (XLAL_IS_REAL8_FAIL_NAN(dHdx)) { XLAL_ERROR(XLAL_EFUNC); }
-	if (XLAL_IS_REAL8_FAIL_NAN(dHdpy)) { XLAL_ERROR(XLAL_EFUNC); }
-	if (XLAL_IS_REAL8_FAIL_NAN(dHdpz)) { XLAL_ERROR(XLAL_EFUNC); }
+	if (XLAL_IS_REAL8_FAIL_NAN(dHdx)) { XLAL_ERROR(XLAL_EDOM); }
+	if (XLAL_IS_REAL8_FAIL_NAN(dHdpy)) { XLAL_ERROR(XLAL_EDOM); }
+	if (XLAL_IS_REAL8_FAIL_NAN(dHdpz)) { XLAL_ERROR(XLAL_EDOM); }
 	if (debugPK)
 		XLAL_PRINT_INFO("dHdx = %.16e, dHdpy = %.16e, dHdpz = %.16e\n", dHdx, dHdpy, dHdpz);
 
@@ -520,7 +520,7 @@ GSLSpinHamiltonianDerivWrapperPrec(double x,	/**<< Derivative at x */
 			break;
 		default:
 			XLALPrintError("This option is not supported in the second derivative function!\n");
-			XLAL_ERROR_REAL8(XLAL_EFUNC);
+			XLAL_ERROR_REAL8(XLAL_EINVAL);
 			break;
 		}
 	} else {
@@ -548,7 +548,7 @@ GSLSpinHamiltonianDerivWrapperPrec(double x,	/**<< Derivative at x */
 			break;
 		default:
 			XLALPrintError("This option is not supported in the second derivative function!\n");
-			XLAL_ERROR_REAL8(XLAL_EFUNC);
+			XLAL_ERROR_REAL8(XLAL_EINVAL);
 			break;
 		}
 	}
@@ -606,7 +606,7 @@ XLALCalculateSphHamiltonianDeriv2Prec(
 
 	if (gslStatus != GSL_SUCCESS) {
 		XLALPrintError("XLAL Error %s - Failure in GSL function\n", __func__);
-		XLAL_ERROR_REAL8(XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EDOM);
 	}
 	//XLAL_PRINT_INFO("Second deriv abs err = %.16e\n", absErr);
 
@@ -749,9 +749,11 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 	gsl_vector     *initValues = NULL;
 	gsl_vector     *finalValues = NULL;
 	INT4 gslStatus;
-        INT4 cntGslNoProgress = 0, MAXcntGslNoProgress = 50;
+        INT4 cntGslNoProgress = 0, MAXcntGslNoProgress = 5;
+        //INT4 cntGslNoProgress = 0, MAXcntGslNoProgress = 50;
         REAL8 multFacGslNoProgress = 3./5.;
-	const int	maxIter = 1000;
+	//const int	maxIter = 2000;
+	const int	maxIter = 10000;
 
 	memset(&rootParams, 0, sizeof(rootParams));
 
@@ -962,21 +964,18 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 //      XLAL_PRINT_INFO("Stepsizes in each dimension:\n");
 //      XLAL_PRINT_INFO(" x = %.16e, py = %.16e, pz = %.16e\n",
 //          gsl_vector_get(finalValues, 0)/scale1,
-//		       gsl_vector_get(finalValues, 1)/scale2,
-//            gsl_vector_get(finalValues, 2)/scale3);
+//	       gsl_vector_get(finalValues, 1)/scale2,
+//          gsl_vector_get(finalValues, 2)/scale3);
 
       /* Only allow this flag to be caught MAXcntGslNoProgress no. of times */
       cntGslNoProgress += 1;
       if (cntGslNoProgress >= MAXcntGslNoProgress) {
-        XLALPrintError(
-      "\nINCREASE the max allowed number of trials for NO_PROGRESS flag being made by Spherical orbit root solver\n");
-        gsl_multiroot_fsolver_free(rootSolver);
-        gsl_vector_free(initValues);
-        gsl_matrix_free(rotMatrix);
-        gsl_matrix_free(invMatrix);
-        XLAL_ERROR(XLAL_EFUNC);
-      }
+        cntGslNoProgress = 0;
 
+        if(multFacGslNoProgress < 1.){ multFacGslNoProgress *= 1.02; }
+        else{ multFacGslNoProgress /= 1.01; }
+
+      } 
       /* Now that no progress is being made, we need to reset the initial guess
        * for the (r,pPhi, pTheta) and reset the integrator */
       rootParams.values[0] = scale1 * 1. / (v0 * v0);	/* Initial r */
@@ -1008,7 +1007,7 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 			gsl_vector_free(initValues);
 			gsl_matrix_free(rotMatrix);
 			gsl_matrix_free(invMatrix);
-			XLAL_ERROR(XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EDOM);
     }
 		else if (gslStatus != GSL_SUCCESS) {
 			XLALPrintError("Error in GSL iteration function!\n");
@@ -1016,7 +1015,7 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 			gsl_vector_free(initValues);
 			gsl_matrix_free(rotMatrix);
 			gsl_matrix_free(invMatrix);
-			XLAL_ERROR(XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EDOM);
 		}
 
     /* different ways to test convergence of the method */

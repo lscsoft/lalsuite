@@ -28,7 +28,7 @@
 #include <lal/SuperskyMetrics.h>
 #include <lal/LALInitBarycenter.h>
 
-#include "../src/GSLHelpers.h"
+#include <lal/GSLHelpers.h>
 
 #define MISM_HIST_BINS 20
 

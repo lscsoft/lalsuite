@@ -82,11 +82,24 @@ class InterpolatedPSD(interpolate.interp1d):
     """Create a (linear in log-log) interpolating function for a discretely
     sampled power spectrum S(f)."""
 
-    def __init__(self, f, S):
+    def __init__(self, f, S, f_high_truncate=1.0):
+        assert f_high_truncate <= 1.0
+        f = np.asarray(f)
+        S = np.asarray(S)
+
         # Exclude DC if present
         if f[0] == 0:
             f = f[1:]
             S = S[1:]
+        # FIXME: This is a hack to fix an issue with the detection pipeline's
+        # PSD conditioning. Remove this when the issue is fixed upstream.
+        if f_high_truncate < 1.0:
+            log.warn('Truncating PSD at %g of maximum frequency to suppress '
+                'rolloff artifacts. This option may be removed in the future.',
+                f_high_truncate)
+            keep = (f <= f_high_truncate * max(f))
+            f = f[keep]
+            S = S[keep]
         super(InterpolatedPSD, self).__init__(np.log(f), np.log(S),
             kind='linear', bounds_error=False, fill_value=np.inf)
         self._f_min = min(f)

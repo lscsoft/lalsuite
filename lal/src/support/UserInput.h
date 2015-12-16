@@ -88,15 +88,14 @@ extern "C" {
  *   uvar->andAString = NULL;     // Note: need to assign allocated strings here as default!!
  *
  *   // 2. step: Register all user-variables using the shortcut macros:
- *   XLALregBOOLUserStruct  ( help,               'h',  UVAR_HELP,     "Output this help-message");
- *   XLALregINTUserStruct   ( anInteger,          'i',  UVAR_OPTIONAL, "An example user-variable of an optional integer");
- *   XLALregREALUserStruct  ( aDoubleVar,         'r',  UVAR_REQUIRED, "This REAL8 user-variable is required");
- *   XLALregSTRINGUserStruct( andAString,          0,   UVAR_OPTIONAL, "Optional string-input, has no short-option");
- *   XLALregEPOCHUserStruct ( someEpoch,           0,   UVAR_OPTIONAL, "Reference epoch (format 'xx.yy[GPS|MJD]')");
- *   XLALregRAJUserStruct   ( RAJ,                 0,   UVAR_OPTIONAL, "Sky location: equatorial right ascension in [0,2pi] (in radians or hours:minutes:seconds)");
- *   XLALregDECJUserStruct  ( DEC,                 0,   UVAR_OPTIONAL, "Sky location: equatorial declination [-pi/2,pi/2] (in radians or degrees:minutes:seconds)");
- *
- *   XLALregREALUserStruct  ( specialGeekSwitch,   'g', UVAR_DEVELOPER, "This REAL8 user-variable may not be relevant for standard usage");
+ *   XLALRegisterUvarMember( help,               BOOLEAN, 'h',  HELP,      "Output this help-message");
+ *   XLALRegisterUvarMember( anInteger,          INT4,    'i',  OPTIONAL,  "An example user-variable of an optional integer");
+ *   XLALRegisterUvarMember( aDoubleVar,         REAL8,   'r',  REQUIRED,  "This REAL8 user-variable is required");
+ *   XLALRegisterUvarMember( andAString,         STRING,   0,   OPTIONAL,  "Optional string-input, has no short-option");
+ *   XLALRegisterUvarMember( someEpoch,          EPOCH,    0,   OPTIONAL,  "Reference epoch (format 'xx.yy[GPS|MJD]')");
+ *   XLALRegisterUvarMember( RAJ,                RAJ,      0,   OPTIONAL,  "Sky location: equatorial right ascension in [0,2pi] (in radians or hours:minutes:seconds)");
+ *   XLALRegisterUvarMember( DEC,                DECJ,     0,   OPTIONAL,  "Sky location: equatorial declination [-pi/2,pi/2] (in radians or degrees:minutes:seconds)");
+ *   XLALRegisterUvarMember( specialGeekSwitch,  REAL8,    'g', DEVELOPER, "This REAL8 user-variable may not be relevant for standard usage");
  *
  *   // 3. step: parse all user-input, from either config-file if given, or commandline (overloads config-file values)
  *   XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC);
@@ -150,40 +149,11 @@ someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
 /*@{*/
 
 /**
- * \name Shortcut Macro for registering new user variables, which are assumed
+ * Shortcut Macro for registering new user variables, which are assumed
  * to be accessible via the \e struct-pointer '*uvar'
  */
 #define XLALRegisterUvarMember(name,type,option,category,help)             \
   XLALRegister ##type## UserVar( #name, option, UVAR_CATEGORY_ ## category, help, &(uvar-> name))
-
-/** \deprecated Use XLALRegisterUvarMember() instead.
- */
-/*@{*/
-#define XLALregREALUserStruct(name,option,category,help) \
-  XLALRegisterREAL8UserVar(#name, option, category, help, &(uvar-> name))
-
-#define XLALregINTUserStruct(name,option,category,help) \
-  XLALRegisterINT4UserVar(#name, option,category, help, &(uvar-> name))
-
-#define XLALregBOOLUserStruct(name,option,category,help) \
-  XLALRegisterBOOLEANUserVar(#name, option, category, help, &(uvar-> name))
-
-#define XLALregSTRINGUserStruct(name,option,category,help) \
-  XLALRegisterSTRINGUserVar(#name, option, category, help, &(uvar-> name))
-
-#define XLALregLISTUserStruct(name,option,category,help)                    \
-  XLALRegisterSTRINGVectorUserVar(#name, option, category, help, &(uvar-> name))
-
-#define XLALregEPOCHUserStruct(name,option,category,help)                    \
-  XLALRegisterEPOCHUserVar(#name, option, category, help, &(uvar-> name))
-
-#define XLALregRAJUserStruct(name,option,category,help)                    \
-  XLALRegisterRAJUserVar(#name, option, category, help, &(uvar-> name))
-
-#define XLALregDECJUserStruct(name,option,category,help)               \
-  XLALRegisterDECJUserVar(#name, option, category, help, &(uvar-> name))
-
-/*@}*/
 
 /// (mutually exclusive) UserVariable categories: optional, required, help, developer, ...
 typedef enum {

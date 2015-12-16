@@ -300,6 +300,87 @@ main( void )
   XLALPrintError ("XLALBarycenter()	%g s (= %.1f %%)\n", tau_xlal / counter, - 100 * (tau_lal - tau_xlal ) / tau_lal );
   XLALPrintError ("XLALBarycenterOpt()	%g s (= %.1f %%)\n", tau_opt / counter,  - 100 * (tau_lal - tau_opt ) / tau_lal );
 
+  /* ===== test XLALRestrictEphemerisData() ===== */
+  XLALPrintInfo("\n\nTesting XLALRestrictEphemerisData() ... ");
+  {
+    XLAL_CHECK( edat.nentriesS >= 100, XLAL_EFAILED );
+    const INT4 orig_nentriesS = edat.nentriesS;
+    for (INT4 i = 1; i <= 4; ++i) {
+      REAL8 start, end;
+      LIGOTimeGPS startGPS, endGPS;
+      INT4 diff_nentriesS;
+
+      start = edat.ephemS[2*i].gps;
+      end = edat.ephemS[edat.nentriesS - 1 - 3*i].gps;
+      XLAL_CHECK( XLALGPSSetREAL8(&startGPS, start) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( XLALGPSSetREAL8(&endGPS, end) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( XLALRestrictEphemerisData(&edat, &startGPS, &endGPS) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( edat.ephemS[0].gps == start, XLAL_EFAILED, "\nTest S%dA FAILED: %0.9f != start %0.9f\n", i, edat.ephemS[0].gps, start );
+      XLAL_CHECK( edat.ephemS[edat.nentriesS - 1].gps == end, XLAL_EFAILED, "\nTest S%dA FAILED: end %0.9f != %0.9f\n", i, edat.ephemS[edat.nentriesS - 1].gps, end );
+      diff_nentriesS = ((i*i + i) * 5) / 2 + 2*(i-1);
+      XLAL_CHECK( orig_nentriesS - edat.nentriesS == diff_nentriesS, XLAL_EFAILED, "\nTest S%dA FAILED: nentries %d != %d\n", i, orig_nentriesS - edat.nentriesS, diff_nentriesS );
+
+      XLAL_CHECK( XLALGPSSetREAL8(&startGPS, start + 0.5*edat.dtStable) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( XLALGPSSetREAL8(&endGPS, end - 0.5*edat.dtStable) != NULL, XLAL_EFUNC );
+      start = edat.ephemS[0].gps;
+      end = edat.ephemS[edat.nentriesS - 1].gps;
+      XLAL_CHECK( XLALRestrictEphemerisData(&edat, &startGPS, &endGPS) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( edat.ephemS[0].gps == start, XLAL_EFAILED, "\nTest S%dB FAILED: start %0.9f != %0.9f\n", i, edat.ephemS[0].gps, start );
+      XLAL_CHECK( edat.ephemS[edat.nentriesS - 1].gps == end, XLAL_EFAILED, "\nTest S%dB FAILED: end %0.9f != %0.9f\n", i, edat.ephemS[edat.nentriesS - 1].gps, end );
+      diff_nentriesS = ((i*i + i) * 5) / 2 + 2*(i-1);
+      XLAL_CHECK( orig_nentriesS - edat.nentriesS == diff_nentriesS, XLAL_EFAILED, "\nTest S%dB FAILED: nentries %d != %d\n", i, orig_nentriesS - edat.nentriesS, diff_nentriesS );
+
+      XLAL_CHECK( XLALGPSSetREAL8(&startGPS, start + 1.5*edat.dtStable) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( XLALGPSSetREAL8(&endGPS, end - 1.5*edat.dtStable) != NULL, XLAL_EFUNC );
+      start = edat.ephemS[1].gps;
+      end = edat.ephemS[edat.nentriesS - 2].gps;
+      XLAL_CHECK( XLALRestrictEphemerisData(&edat, &startGPS, &endGPS) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( edat.ephemS[0].gps == start, XLAL_EFAILED, "\nTest S%dC FAILED: start %0.9f != %0.9f\n", i, edat.ephemS[0].gps, start );
+      XLAL_CHECK( edat.ephemS[edat.nentriesS - 1].gps == end, XLAL_EFAILED, "\nTest S%dC FAILED: end %0.9f != %0.9f\n", i, edat.ephemS[edat.nentriesS - 1].gps, end );
+      diff_nentriesS = ((i*i + i) * 5) / 2 + 2*i;
+      XLAL_CHECK( orig_nentriesS - edat.nentriesS == diff_nentriesS, XLAL_EFAILED, "\nTest S%dC FAILED: nentries %d != %d\n", i, orig_nentriesS - edat.nentriesS, diff_nentriesS );
+    }
+
+    XLAL_CHECK( edat.nentriesE >= 100, XLAL_EFAILED );
+    const INT4 orig_nentriesE = edat.nentriesE;
+    for (INT4 i = 1; i <= 4; ++i) {
+      REAL8 start, end;
+      LIGOTimeGPS startGPS, endGPS;
+      INT4 diff_nentriesE;
+
+      start = edat.ephemE[2*i].gps;
+      end = edat.ephemE[edat.nentriesE - 1 - 3*i].gps;
+      XLAL_CHECK( XLALGPSSetREAL8(&startGPS, start) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( XLALGPSSetREAL8(&endGPS, end) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( XLALRestrictEphemerisData(&edat, &startGPS, &endGPS) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( edat.ephemE[0].gps == start, XLAL_EFAILED, "\nTest E%dA FAILED: %0.9f != start %0.9f\n", i, edat.ephemE[0].gps, start );
+      XLAL_CHECK( edat.ephemE[edat.nentriesE - 1].gps == end, XLAL_EFAILED, "\nTest E%dA FAILED: end %0.9f != %0.9f\n", i, edat.ephemE[edat.nentriesE - 1].gps, end );
+      diff_nentriesE = ((i*i + i) * 5) / 2 + 2*(i-1);
+      XLAL_CHECK( orig_nentriesE - edat.nentriesE == diff_nentriesE, XLAL_EFAILED, "\nTest E%dA FAILED: nentries %d != %d\n", i, orig_nentriesE - edat.nentriesE, diff_nentriesE );
+
+      XLAL_CHECK( XLALGPSSetREAL8(&startGPS, start + 0.5*edat.dtEtable) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( XLALGPSSetREAL8(&endGPS, end - 0.5*edat.dtEtable) != NULL, XLAL_EFUNC );
+      start = edat.ephemE[0].gps;
+      end = edat.ephemE[edat.nentriesE - 1].gps;
+      XLAL_CHECK( XLALRestrictEphemerisData(&edat, &startGPS, &endGPS) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( edat.ephemE[0].gps == start, XLAL_EFAILED, "\nTest E%dB FAILED: start %0.9f != %0.9f\n", i, edat.ephemE[0].gps, start );
+      XLAL_CHECK( edat.ephemE[edat.nentriesE - 1].gps == end, XLAL_EFAILED, "\nTest E%dB FAILED: end %0.9f != %0.9f\n", i, edat.ephemE[edat.nentriesE - 1].gps, end );
+      diff_nentriesE = ((i*i + i) * 5) / 2 + 2*(i-1);
+      XLAL_CHECK( orig_nentriesE - edat.nentriesE == diff_nentriesE, XLAL_EFAILED, "\nTest E%dB FAILED: nentries %d != %d\n", i, orig_nentriesE - edat.nentriesE, diff_nentriesE );
+
+      XLAL_CHECK( XLALGPSSetREAL8(&startGPS, start + 1.5*edat.dtEtable) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( XLALGPSSetREAL8(&endGPS, end - 1.5*edat.dtEtable) != NULL, XLAL_EFUNC );
+      start = edat.ephemE[1].gps;
+      end = edat.ephemE[edat.nentriesE - 2].gps;
+      XLAL_CHECK( XLALRestrictEphemerisData(&edat, &startGPS, &endGPS) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( edat.ephemE[0].gps == start, XLAL_EFAILED, "\nTest E%dC FAILED: start %0.9f != %0.9f\n", i, edat.ephemE[0].gps, start );
+      XLAL_CHECK( edat.ephemE[edat.nentriesE - 1].gps == end, XLAL_EFAILED, "\nTest E%dC FAILED: end %0.9f != %0.9f\n", i, edat.ephemE[edat.nentriesE - 1].gps, end );
+      diff_nentriesE = ((i*i + i) * 5) / 2 + 2*i;
+      XLAL_CHECK( orig_nentriesE - edat.nentriesE == diff_nentriesE, XLAL_EFAILED, "\nTest E%dC FAILED: nentries %d != %d\n", i, orig_nentriesE - edat.nentriesE, diff_nentriesE );
+    }
+  }
+  XLALPrintInfo("PASSED\n\n");
+
   LALFree(edat.ephemE);
   LALFree(edat.ephemS);
 
