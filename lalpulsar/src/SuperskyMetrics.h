@@ -116,8 +116,8 @@ int XLALScaleSuperskyMetricsFiducialFreq(
   );
 
 ///
-/// Project and rescale the semicoherent reduced supersky metric in the frequency dimension, such that
-/// all reduced supersky metrics have the same frequency spacing for the given maximum mismatches.
+/// Project and rescale the reduced supersky metrics in the frequency dimension, such that all
+/// reduced supersky metrics have the same frequency spacing for the given maximum mismatches.
 ///
 int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   SuperskyMetrics *metrics,			///< [in] Supersky metrics struct
