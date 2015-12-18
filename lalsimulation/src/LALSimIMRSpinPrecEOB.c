@@ -200,7 +200,7 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
     gsl_integration_workspace * precEulerw = gsl_integration_workspace_alloc (1000);
     gsl_function precEulerF;
     PrecEulerAnglesIntegration precEulerparams;
-    REAL8 inGamma = InitialGamma; // FIXME
+    REAL8 inGamma = InitialGamma; 
     
     LN_x = XLALCreateREAL8Vector( retLenLow );
     LN_y = XLALCreateREAL8Vector( retLenLow );
@@ -639,16 +639,17 @@ int XLALSimIMRSpinEOBWaveform(
 
     ret = XLALSimIMRSpinEOBWaveformAll(hplus, hcross, &dynamicsHi, &hlmPTSout, &hlmPTSHi, &hIMRlmJTSHi, &hIMR, &AttachPars,
                         phiC, deltaT, m1SI, m2SI, fMin, r, inc, INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
-
-    if (*hplus == NULL || *hcross == NULL){
-         XLALPrintError("Houston-2, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n", 
-                   m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc,  INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
-         XLAL_ERROR( XLAL_ENOMEM );
-    }
-    if ((*hplus)->data == NULL || (*hcross)->data == NULL){
-         XLALPrintError("Houston-3, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n", 
-                   m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc,  INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
-         XLAL_ERROR( XLAL_ENOMEM );
+    if (ret == XLAL_SUCCESS){
+        if (*hplus == NULL || *hcross == NULL){
+             XLALPrintError("Houston-2, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n", 
+                       m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc,  INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
+             XLAL_ERROR( XLAL_ENOMEM );
+        }
+        if ((*hplus)->data == NULL || (*hcross)->data == NULL){
+             XLALPrintError("Houston-3, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, inclination = %.18e,   spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n", 
+                       m1SI/LAL_MSUN_SI, m2SI/LAL_MSUN_SI, (double)fMin, (double)inc,  INspin1[0], INspin1[1], INspin1[2], INspin2[0], INspin2[1], INspin2[2]);
+             XLAL_ERROR( XLAL_ENOMEM );
+        }
     }
 
     if(dynamicsHi)
@@ -2046,7 +2047,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     //EulerAnglesI2P(Alpha, Beta, Gamma, &phaseCounterA, &phaseCounterB, tVec, posVecx, posVecy, posVecz, retLenLow, 0., 0.0, 0);
 
     if (debugPK){
-        fprintf( stderr, "Writing Alpha and Beta angle timeseries at low SR to alphaANDbeta.dat\n" );
+        XLAL_PRINT_INFO("Writing Alpha and Beta angle timeseries at low SR to alphaANDbeta.dat\n" );
         fflush(NULL);
         out = fopen( "alphaANDbeta.dat","w");
         for( i = 0; i < retLenLow; i++ ) {
@@ -2054,7 +2055,7 @@ int XLALSimIMRSpinEOBWaveformAll(
         }
         fclose(out);
         
-        fprintf( stderr,"Writing Gamma angle timeseries at low SR to gamma.dat\n");
+        XLAL_PRINT_INFO("Writing Gamma angle timeseries at low SR to gamma.dat\n");
         fflush(NULL);
         out = fopen( "gamma.dat","w");
         for( i = 0; i < retLenLow; i++ ) {
@@ -2068,7 +2069,7 @@ int XLALSimIMRSpinEOBWaveformAll(
     GammaHi = XLALCreateREAL8Vector( retLenHi );
     EulerAnglesI2P(AlphaHi, BetaHi, GammaHi, &phaseCounterA, &phaseCounterB, timeHi, posVecxHi, posVecyHi, posVeczHi, retLenHi, Alpha->data[hiSRndx], Gamma->data[hiSRndx], 1);
     if (debugPK){
-        fprintf( stderr, "Writing Alpha and Beta angle timeseries at high SR to alphaANDbetaHi.dat\n" );
+        XLAL_PRINT_INFO("Writing Alpha and Beta angle timeseries at high SR to alphaANDbetaHi.dat\n" );
         fflush(NULL);
         out = fopen( "alphaANDbetaHi.dat","w");
         for( i = 0; i < retLenHi; i++ ) {
@@ -2076,7 +2077,7 @@ int XLALSimIMRSpinEOBWaveformAll(
         }
         fclose(out);
         
-        fprintf( stderr,"Writing Gamma angle timeseries at high SR to gammaHi.dat\n");
+        XLAL_PRINT_INFO("Writing Gamma angle timeseries at high SR to gammaHi.dat\n");
         fflush(NULL);
         out = fopen( "gammaHi.dat","w");
         for( i = 0; i < retLenHi; i++ ) {
@@ -2150,8 +2151,6 @@ int XLALSimIMRSpinEOBWaveformAll(
       fflush(NULL);
     }
 
-  /* Having found the time of peak, we set the time of coalescence */
-  //XLALGPSAdd(&tc, -mTScaled * (tPeakOmega + HiSRstart) );
 
   /* Calculate J at merger */
   spline = gsl_spline_alloc( gsl_interp_cspline, retLenHi );
@@ -3311,7 +3310,9 @@ int XLALSimIMRSpinEOBWaveformAll(
   hIMR20JTSHi  = XLALSphHarmTimeSeriesGetMode( hIMRlmJTSHi, 2, 0 );
   hIMR2m1JTSHi = XLALSphHarmTimeSeriesGetMode( hIMRlmJTSHi, 2, -1);
   hIMR2m2JTSHi = XLALSphHarmTimeSeriesGetMode( hIMRlmJTSHi, 2, -2);
-  
+ 
+  /** We search for maximum of the frame-invariant amplitude and set its time as time of
+   * coalescence (or reference time) */ 
   // find tc which is accosiated with max of invariant amplitude:
   REAL8Vector *invAmp = XLALCreateREAL8Vector( hIMR22JTSHi->data->length ); 
   for (i=0; i < retLenHi + retLenRDPatchHi; i++ ){
@@ -3339,7 +3340,8 @@ int XLALSimIMRSpinEOBWaveformAll(
   }
 
 
-  //XLALGPSAdd( &tc, -mTScaled * (tlistRDPatchHi->data[i_maxiA] + HiSRstart));
+  /* Having found the time of peak, we set the time of coalescence */
+  //XLALGPSAdd(&tc, -mTScaled * (tPeakOmega + HiSRstart) );
   XLALGPSAdd( &tc, -mTScaled * (tlistRDPatchHi->data[i_maxiA] ));
   XLALDestroyREAL8Vector( invAmp ); // we don't need it anymore
 
@@ -3539,6 +3541,9 @@ int XLALSimIMRSpinEOBWaveformAll(
  * **********************************************************************************/
     //incl_temp = inc;
     //incl_temp = 0.0;
+    /** NOTE that we have use  now different convention: the phi_ref (or one might call it phi_c) is now
+     * the azimuthal phase of the observer in the source (I-)frame. Together with inclination angle it defines 
+     * the position of the observer in the (I-)frame associated with the source at t=0 */
 
     Y22 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, 2 );
     Y2m2 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, -2 );
