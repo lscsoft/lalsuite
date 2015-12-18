@@ -169,8 +169,7 @@ int XLALSimIMRPhenomPCalculateModelParameters(
       L0 = M*M * L2PNR(v_ref, eta);   /* Use 2PN approximation for L. */
       break;
     default:
-      XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
-      XLAL_ERROR( XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL, "Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
       break;
     }
 
@@ -253,6 +252,9 @@ int XLALSimIMRPhenomP(
   // Use f_min, f_max, deltaF to compute freqs sequence
   // Instead of building a full sequency we only transfer the boundaries and let
   // the internal core function do the rest (and properly take care of corner cases).
+  XLAL_CHECK (f_min > 0, XLAL_EDOM, "Minimum frequency must be positive.");
+  XLAL_CHECK (f_max >= 0, XLAL_EDOM, "Maximum frequency must be non-negative.");
+  XLAL_CHECK ( ( f_max == 0 ) || ( f_max > f_min ), XLAL_EDOM, "f_max <= f_min");
   REAL8Sequence *freqs = XLALCreateREAL8Sequence(2);
   XLAL_CHECK(freqs != NULL, XLAL_EFAULT);
   freqs->data[0] = f_min;
@@ -350,9 +352,9 @@ static int PhenomPCore(
   XLAL_CHECK(m2_SI_in > 0, XLAL_EDOM, "m2 must be positive.\n");
   XLAL_CHECK(f_ref > 0, XLAL_EDOM, "Reference frequency must be non-negative.\n");
   XLAL_CHECK(distance > 0, XLAL_EDOM, "distance must be positive.\n");
-  XLAL_CHECK(fabs(chi1_l_in) <= 1.0, XLAL_EDOM, "Aligned spin chi1_l=%g must be < 1 in magnitude!\n", chi1_l_in);
-  XLAL_CHECK(fabs(chi2_l_in) <= 1.0, XLAL_EDOM, "Aligned spin chi2_l=%g must be < 1 in magnitude!\n", chi2_l_in);
-  XLAL_CHECK(fabs(chip) <= 1.0, XLAL_EDOM, "In-plane spin chip =%g must be < 1 in magnitude!\n", chip);
+  XLAL_CHECK(fabs(chi1_l_in) <= 1.0, XLAL_EDOM, "Aligned spin chi1_l=%g must be <= 1 in magnitude!\n", chi1_l_in);
+  XLAL_CHECK(fabs(chi2_l_in) <= 1.0, XLAL_EDOM, "Aligned spin chi2_l=%g must be <= 1 in magnitude!\n", chi2_l_in);
+  XLAL_CHECK(fabs(chip) <= 1.0, XLAL_EDOM, "In-plane spin chip =%g must be <= 1 in magnitude!\n", chip);
 
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
@@ -430,8 +432,7 @@ static int PhenomPCore(
           XLAL_ERROR(XLAL_EDOM, "IMRPhenomPv2: Mass ratio q > 100 which is way outside the calibration range q <= 18.\n");
       break;
     default:
-      XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
-      XLAL_ERROR( XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL, "Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
       break;
     }
 
@@ -522,14 +523,13 @@ static int PhenomPCore(
       break;
   }
 
-  if (fCut <= f_min)
-    XLAL_ERROR(XLAL_EDOM, "fCut = %.2f/M <= f_min\n", fCut);
+  XLAL_CHECK ( fCut > f_min, XLAL_EDOM, "fCut = %.2g/M <= f_min", fCut );
 
   /* Default f_max to params->fCut */
   REAL8 f_max_prime = f_max ? f_max : fCut;
   f_max_prime = (f_max_prime > fCut) ? fCut : f_max_prime;
   if (f_max_prime <= f_min){
-    XLALPrintError("f_max <= f_min\n");
+    XLALPrintError("XLAL Error - %s: f_max <= f_min\n", __func__);
     errcode = XLAL_EDOM;
     goto cleanup;
   }
@@ -567,7 +567,7 @@ static int PhenomPCore(
     freqs = XLALCreateREAL8Sequence(i_max - i_min);
     if (!freqs) {
       errcode = XLAL_EFUNC;
-      XLALPrintError("Frequency array allocation failed.");
+      XLALPrintError("XLAL Error - %s: Frequency array allocation failed.", __func__);
       goto cleanup;
     }
     for (UINT4 i=i_min; i<i_max; i++)
@@ -579,11 +579,13 @@ static int PhenomPCore(
 
     *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
     if(!*hptilde) {
+      XLALPrintError("XLAL Error - %s: Failed to allocate frequency series for hptilde polarization with f_min=%f and %tu bins.", __func__, f_min, n);
       errcode = XLAL_ENOMEM;
       goto cleanup;
     }
     *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
     if(!*hctilde) {
+      XLALPrintError("XLAL Error - %s: Failed to allocate frequency series for hctilde polarization with f_min=%f and %tu bins.", __func__, f_min, n);
       errcode = XLAL_ENOMEM;
       goto cleanup;
     }
@@ -595,7 +597,7 @@ static int PhenomPCore(
     {
       if (!(freqs_in->data[i] > freqs_in->data[i-1]))
       {
-        XLALPrintError("Frequency sequence must be strictly increasing!\n");
+        XLALPrintError("XLAL Error - %s: Frequency sequence must be strictly increasing!\n",  __func__);
         errcode = XLAL_EDOM;
         goto cleanup;
       }
@@ -603,7 +605,7 @@ static int PhenomPCore(
 
     freqs = XLALCreateREAL8Sequence(n);
     if (!freqs) {
-      XLALPrintError( "Frequency array allocation failed.");
+      XLALPrintError("XLAL Error - %s: Frequency array allocation failed.",  __func__);
       errcode = XLAL_ENOMEM;
       goto cleanup;
     }
@@ -681,6 +683,7 @@ static int PhenomPCore(
     /* Set up spline for phase */
     acc = gsl_interp_accel_alloc();
     phiI = gsl_spline_alloc(gsl_interp_cspline, L_fCut);
+    XLAL_CHECK(phiI, XLAL_ENOMEM, "Failed to allocate GSL spline with %d points for phase.", L_fCut);
 
     gsl_spline_init(phiI, freqs->data, phis, L_fCut);
 
@@ -689,14 +692,13 @@ static int PhenomPCore(
       f_final = freqs->data[L_fCut-1];
     if (f_final < freqs->data[0])
     {
-      XLALPrintError("f_ringdown < f_min\n");
+      XLALPrintError("XLAL Error - %s: f_ringdown = %f < f_min\n", __func__, f_final);
       errcode = XLAL_EDOM;
       goto cleanup;
     }
 
     /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
     REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
-
     /* Now correct phase */
     for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
       double f = freqs->data[i];
@@ -720,13 +722,16 @@ static int PhenomPCore(
 
   if(freqs) XLALDestroyREAL8Sequence(freqs);
 
-  if(!*hptilde) XLALFree(hptilde);
-  if(!*hctilde) XLALFree(hctilde);
-
-  if( errcode != XLAL_SUCCESS )
+  if( errcode != XLAL_SUCCESS ) {
+    if(*hptilde)
+      XLALDestroyCOMPLEX16FrequencySeries(*hptilde);
+    if(*hctilde)
+      XLALDestroyCOMPLEX16FrequencySeries(*hctilde);
     XLAL_ERROR(errcode);
-  else
+  }
+  else {
     return XLAL_SUCCESS;
+  }
 }
 
 /* ***************************** PhenomP internal functions *********************************/
@@ -854,8 +859,7 @@ static int PhenomPCoreOneFrequency(
       SL = chi1_l*m1*m1 + chi2_l*m2*m2;        /* Dimensionfull aligned spin. */
       break;
     default:
-      XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
-      XLAL_ERROR( XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL, "Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
       break;
   }
 
@@ -891,8 +895,7 @@ static int PhenomPCoreOneFrequency(
       WignerdCoefficients(&cBetah, &sBetah, omega_cbrt, SL, eta, Sperp);
       break;
   default:
-    XLALPrintError( "XLAL Error - %s: Unknown IMRPhenomP version!\nAt present only v1 and v2 are available.\n", __func__);
-    XLAL_ERROR( XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL, " Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
     break;
   }
 
