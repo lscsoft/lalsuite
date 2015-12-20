@@ -56,6 +56,8 @@ parser.add_option("--comp-spin-min", dest="comp_spin_min",
                   help="minimum value of the dimensionless spin prior [along the orb. ang. momentum]")
 parser.add_option("--comp-spin-max", dest="comp_spin_max",
                   help="maximum value of the dimensionless spin prior [along the orb. ang. momentum]")
+parser.add_option("--spin-angle-dist", dest="spin_angle_dist",
+                  help="distribution of spin angles options: 'aligned', 'isotropic']")
 parser.add_option("--Mf-lim", dest="Mf_lim",
                   help="the prior distribution will be calculated from -Mf_lim to Mf_lim [M_sun]")
 parser.add_option("--af-lim", dest="af_lim",
@@ -78,23 +80,27 @@ N_bins = int(options.N_bins)
 Mf_lim = float(options.Mf_lim)
 af_lim = float(options.af_lim)
 num_threads = int(options.num_threads)
+if options.spin_angle_dist == None: 
+  spin_angle_dist = 'aligned'
+else: 
+  spin_angle_dist = options.spin_angle_dist
 
 # create the bins over which the histograms will be comptued 
 Mf_bins = np.linspace(-Mf_lim, Mf_lim, N_bins)
 af_bins = np.linspace(-af_lim, af_lim, N_bins)
-P_Mfaf_pr = tgr.calc_Mfchif_prior(comp_mass_min, comp_mass_max, comp_spin_min, comp_spin_max, Mf_bins, af_bins, fit_formula, N_sampl, num_threads)
+P_Mfaf_pr = tgr.calc_Mfchif_prior(comp_mass_min, comp_mass_max, comp_spin_min, comp_spin_max, Mf_bins, af_bins, fit_formula, spin_angle_dist, N_sampl, num_threads)
 print '... calculated the prior' 
 
 # create an interpolation object and save it 
 Mf_bins = (Mf_bins[:-1] + Mf_bins[1:])/2.
 af_bins = (af_bins[:-1] + af_bins[1:])/2.
-outfile = 'Prior_Mfaf_%s_comp_mass_min%2.1f_comp_mass_max%2.1f_comp_spin_min%2.1f_comp_spin_max%2.1f'%(fit_formula, comp_mass_min, comp_mass_max,  comp_spin_min, comp_spin_max)
+outfile = 'Prior_Mfaf_%s_comp_mass_min%2.1f_comp_mass_max%2.1f_comp_spin_min%2.1f_comp_spin_max%2.1f_%s'%(fit_formula, comp_mass_min, comp_mass_max, comp_spin_min, comp_spin_max, spin_angle_dist)
 P_Mfaf_pr_interp_obj = interp.interp2d(Mf_bins, af_bins, P_Mfaf_pr, fill_value=0., bounds_error=False)
 f = gzip.open(outfile+".pklz",'wb')
 pickle.dump(P_Mfaf_pr_interp_obj, f)
 print '... saved the interpolation object.' 
 
-# read the interpolation object, reconstruct the data from the interpolation object 
+# read the interpolation object, reconstruct the data from the interpolation object. This is only used for estimating the error due to the interpolation 
 f = gzip.open(outfile+".pklz",'rb')
 P_Mfaf_pr_interp_obj = pickle.load(f)
 P_Mfaf_pr_interp = P_Mfaf_pr_interp_obj(Mf_bins, af_bins)
