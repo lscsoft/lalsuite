@@ -26,8 +26,7 @@ def calc_final_mass_spin(m1, m2, chi1, chi2, fit_formula):
     chif = nr.bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2)
     mf = nr.bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2)
   else:
-    print '# unknown spin fit formula'
-    exit()
+    raise ValueError("unknown spin fit formula")
   return mf, chif
 
 """ compute the integrand of P(dMf/Mf, dchif/chif). """
@@ -66,25 +65,48 @@ def gf(P):
   return filter.gaussian_filter(P, sigma=2.0)
 
 """ generate prior samples in (Mf, chif) assuming uniform prior in component masses """
-def calc_Mfchif_prior_samples(comp_mass_prior_min, comp_mass_prior_max, comp_spin_min, comp_spin_max, Mf_bins, chif_bins, fit_formula, N_sampl, thread):
+def calc_Mfchif_prior_samples(comp_mass_prior_min, comp_mass_prior_max, comp_spin_min, comp_spin_max, Mf_bins, chif_bins, fit_formula, spin_angle_dist, N_sampl, thread):
 
   # generate random samples of the prior uniform in component masses 
   m1_pr = np.random.uniform(comp_mass_prior_min, comp_mass_prior_max, N_sampl)
   m2_pr = np.random.uniform(comp_mass_prior_min, comp_mass_prior_max, N_sampl)
-  chi1_pr = np.random.uniform(comp_spin_min, comp_spin_max, N_sampl)
-  chi2_pr = np.random.uniform(comp_spin_min, comp_spin_max, N_sampl)
+
+  # generate samples of component spins, for non-precessing spins (aligned/anti-aligned with the orb ang momentum)  
+  if spin_angle_dist == 'aligned':
+    chi1_pr = np.random.uniform(comp_spin_min, comp_spin_max, N_sampl)
+    chi2_pr = np.random.uniform(comp_spin_min, comp_spin_max, N_sampl)
+  # generate samples of component spins, for uninform spin magnitudes and isotropic spin directions (uniform in cos_tilt_angle) 
+  elif spin_angle_dist == 'isotropic':
+    chi1_pr = np.random.uniform(comp_spin_min, comp_spin_max, N_sampl)*np.random.uniform(-1., 1., N_sampl)
+    chi2_pr = np.random.uniform(comp_spin_min, comp_spin_max, N_sampl)*np.random.uniform(-1., 1., N_sampl)
 
   # return the corrresponding samples of prior in Mf, chif 
   return calc_final_mass_spin(m1_pr, m2_pr, chi1_pr, chi2_pr, fit_formula)
 
 """ calculate the prior distribution in (Mf, chif) assuming uniform prior in component masses """
-def calc_Mfchif_prior(comp_mass_prior_min, comp_mass_prior_max, comp_spin_min, comp_spin_max, Mf_bins, chif_bins, fit_formula, N_sampl, num_threads):
+def calc_Mfchif_prior(comp_mass_prior_min, comp_mass_prior_max, comp_spin_min, comp_spin_max, Mf_bins, chif_bins, fit_formula, spin_angle_dist, N_sampl, num_threads):
+
+  # check inputs 
+  if comp_mass_prior_min < 1. or comp_mass_prior_min > 1000.: raise ValueError("comp_mass_prior_min should be in the interval [1, 1000]")
+  if comp_mass_prior_max < 1. or comp_mass_prior_max > 1000.: raise ValueError("comp_mass_prior_max should be in the interval [1, 1000]")
+  if comp_mass_prior_max <= comp_mass_prior_min : raise ValueError("comp_mass_prior_max should be greater than comp_mass_prior_min")
+  if N_sampl < 1: raise ValueError("N_sampl should be greater than 1")
+  if comp_spin_max < comp_spin_min: raise ValueError("comp_spin_max should be greater than comp_spin_min")
+  if spin_angle_dist == 'aligned':
+    if comp_spin_min < -1. or comp_spin_min > 1.: raise ValueError("comp_spin_min should be in the interval [-1, 1] for the case of aligned spin distributions")
+    if comp_spin_max < -1. or comp_spin_max > 1.: raise ValueError("comp_spin_max should be in the interval [-1, 1] for the case of aligned spin distributions")
+  elif spin_angle_dist == 'isotropic':
+    if comp_spin_min < 0. or comp_spin_min > 1.: raise ValueError("comp_spin_min should be in the interval [0, 1] for the case of isotrpic spin distributions")
+    if comp_spin_max < 0. or comp_spin_max > 1.: raise ValueError("comp_spin_max should be in the interval [0, 1] for the case of isotrpic spin distributions")
+  else:
+    raise ValueError("spin_angle_dist should be 'aligned' or 'isotropic'")
+
 
   # generate samples in Mf and chif corresponding to uniform samples in m1, m2. Parallelise the calculation over multiple threads 
   thread_vec = range(num_threads)
   N_sampl = int(N_sampl/num_threads)
   p = Pool(num_threads)
-  func = partial(calc_Mfchif_prior_samples, comp_mass_prior_min, comp_mass_prior_max, comp_spin_min, comp_spin_max, Mf_bins, chif_bins, fit_formula, N_sampl)
+  func = partial(calc_Mfchif_prior_samples, comp_mass_prior_min, comp_mass_prior_max, comp_spin_min, comp_spin_max, Mf_bins, chif_bins, fit_formula, spin_angle_dist, N_sampl)
   final_params = p.map(func, thread_vec)
   p.close()
   p.join()
