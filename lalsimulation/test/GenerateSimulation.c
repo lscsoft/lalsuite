@@ -480,7 +480,7 @@ int main (int argc , char **argv) {
     }
 
     /* dump file */
-    if ( params->outname && ( strlen(params->outname) > 0 ) ) {
+    if ( strlen(params->outname) > 0 ) {
       f = fopen(params->outname, "w");
       if (f==NULL) {
         printf("**ERROR** Impossible to write file %s\n",params->outname);
