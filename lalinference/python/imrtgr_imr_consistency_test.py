@@ -100,7 +100,7 @@ if __name__ == '__main__':
   parser.add_option("--chi2-inj", dest="chi2_inj", help="injected value of z-component of spin of mass m2 (if this is an injection)")
   parser.add_option("-w", "--waveform", dest="waveform", help="waveform used for recovery")
   parser.add_option("-d", "--debug-plots", dest="debug_plots", help="debug plots")
-  parser.add_option("--N_bins", dtype="int", dest="N_bins", default=201, help="number of bins (default=201)")
+  parser.add_option("--N_bins", type="int", dest="N_bins", default=201, help="number of bins (default=201)")
   (options, args) = parser.parse_args()
 
   insp_post = options.insp_post
