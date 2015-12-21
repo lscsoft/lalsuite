@@ -100,6 +100,7 @@ if __name__ == '__main__':
   parser.add_option("--chi2-inj", dest="chi2_inj", help="injected value of z-component of spin of mass m2 (if this is an injection)")
   parser.add_option("-w", "--waveform", dest="waveform", help="waveform used for recovery")
   parser.add_option("-d", "--debug-plots", dest="debug_plots", help="debug plots")
+  parser.add_option("--N_bins", dest="N_bins", help="number of bins")
   (options, args) = parser.parse_args()
 
   insp_post = options.insp_post
@@ -112,7 +113,7 @@ if __name__ == '__main__':
   insp_fhigh = float(options.insp_fhigh)
   ring_flow = float(options.ring_flow)
   waveform = options.waveform
-  N_bins = 201 # Number of grid points along either axis (dMfbyMf, dchifbychif) for computation of the posteriors
+  N_bins = int(options.N_bins) # Number of grid points along either axis (dMfbyMf, dchifbychif) for computation of the posteriors
   
   lalinference_datadir = os.getenv('LALINFERENCE_DATADIR')
   if prior_Mfchif_file is None:
@@ -145,14 +146,18 @@ if __name__ == '__main__':
   os.system('ln -s %s %s' %(os.path.realpath(imr_posplots), os.path.realpath(os.path.join(out_dir, 'lalinf_imr'))))
 
   # read the injection mass parameters if this is an injection
-  m1_inj = float(options.m1_inj)
-  m2_inj = float(options.m2_inj)
-  chi1_inj = float(options.chi1_inj)
-  chi2_inj = float(options.chi2_inj)
+  m1_inj = options.m1_inj
+  m2_inj = options.m2_inj
+  chi1_inj = options.chi1_inj
+  chi2_inj = options.chi2_inj
 
   if m1_inj == None or m2_inj == None or chi1_inj == None or chi2_inj == None:
     plot_injection_lines = False
   else:
+    m1_inj = float(m1_inj)
+    m2_inj = float(m2_inj)
+    chi1_inj = float(chi1_inj)
+    chi2_inj = float(chi2_inj)
     plot_injection_lines = True
     q_inj = m1_inj/m2_inj
     eta_inj = q_inj/(1.+q_inj)**2.
