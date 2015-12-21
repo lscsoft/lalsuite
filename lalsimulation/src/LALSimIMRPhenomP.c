@@ -677,7 +677,7 @@ static int PhenomPCore(
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
   /* We apply the same time shift to hptilde and hctilde based on the overall phasing returned by PhenomPCoreOneFrequency */
-  if (deltaF>0) {
+  if (deltaF>=0) {
     /* Set up spline for phase */
     acc = gsl_interp_accel_alloc();
     phiI = gsl_spline_alloc(gsl_interp_cspline, L_fCut);
