@@ -38,6 +38,12 @@ static double qInnerIntegrand(double M2, void *viData);
 static double etaInnerIntegrand(double M2, void *viData);
 static double outerIntegrand(double M1, void *voData);
 
+static REAL8 REAL8max(REAL8 a, REAL8 b);
+static REAL8 REAL8max(REAL8 a, REAL8 b)
+{
+  return (a>b?a:b);
+}
+
 void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
 {
     char help[]="\
@@ -50,6 +56,7 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
     (--malmquist-network-snr)        Threshold network SNR (0.0)\n\
     (--analyticnullprior)            Use analytic null prior\n\
     (--nullprior)                    Use null prior in the sampled parameters\n\
+    (--alignedspin-zprior)           Use prior on z component of spin that corresponds to fully precessing model\n\
     \n";
     ProcessParamsTable *ppt = NULL;
 
@@ -129,6 +136,11 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
                                 LALINFERENCE_REAL8_t,
                                 LALINFERENCE_PARAM_OUTPUT);
     }
+    if(LALInferenceGetProcParamVal(commandLine,"--alignedspin-zprior"))
+    {
+      INT4 one=1;
+      LALInferenceAddVariable(runState->priorArgs,"projected_aligned_spin",&one,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+    }
 }
 
 void LALInferenceInitLIBPrior(LALInferenceRunState *runState)
@@ -178,7 +190,7 @@ static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState
 	      REAL8 amp = 0.0;
 	      snprintf(ampVarName, VARNAME_MAX, "calamp_%s", ifo->name);
 	      amp = *(REAL8*)LALInferenceGetVariable(params, ampVarName);
-	      logPrior += -log(2.0*M_PI) - log(ampWidth) - 0.5*amp*amp/ampWidth/ampWidth;
+	      logPrior += -0.5*log(2.0*M_PI) - log(ampWidth) - 0.5*amp*amp/ampWidth/ampWidth;
       }
     }
     if((LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha"))){
@@ -188,7 +200,7 @@ static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState
 	      REAL8 phase = 0.0;
 	      snprintf(phaseVarName, VARNAME_MAX, "calpha_%s", ifo->name);   
 	      phase = *(REAL8 *)LALInferenceGetVariable(params, phaseVarName);
-	      logPrior += -log(2.0*M_PI) - log(phaseWidth) - 0.5*phase*phase/phaseWidth/phaseWidth;
+	      logPrior += -0.5*log(2.0*M_PI) - log(phaseWidth) - 0.5*phase*phase/phaseWidth/phaseWidth;
       }
     }
    
@@ -274,8 +286,8 @@ static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, 
     phase = *(REAL8Vector **)LALInferenceGetVariable(params, phaseVarName);
 
     for (i = 0; i < amps->length; i++) {
-      logPrior += -log(2.0*M_PI) - log(ampWidth) - 0.5*amps->data[i]*amps->data[i]/ampWidth/ampWidth;
-      logPrior += -log(2.0*M_PI) - log(phaseWidth) - 0.5*phase->data[i]*phase->data[i]/phaseWidth/phaseWidth;
+      logPrior += -0.5*log(2.0*M_PI) - log(ampWidth) - 0.5*amps->data[i]*amps->data[i]/ampWidth/ampWidth;
+      logPrior += -0.5*log(2.0*M_PI) - log(phaseWidth) - 0.5*phase->data[i]*phase->data[i]/phaseWidth/phaseWidth;
     }
 
     ifo = ifo->next;
@@ -588,6 +600,29 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 
   }/* end prior for signal model parameters */
 
+  /* Optional prior on aligned spin component that corresponds to the effective prior on
+   that component when using a precessing spin model. p(z) = (1/2)(1/R)log(|z|/R)
+   Where R is the maximum magnitude of the spin vector max(|a_spin1_max|,|a_spin1_min|).
+   */
+  if (LALInferenceCheckVariable(priorParams,"projected_aligned_spin") && LALInferenceCheckVariable(priorParams,"projected_aligned_spin"))
+  {
+    REAL8 z=0.0;
+    /* Double-check for tilts to prevent accidental double-prior */
+    if(LALInferenceCheckVariable(params,"a_spin1") && ~LALInferenceCheckVariable(params,"tilt_spin1"))
+    {
+      REAL8 R = REAL8max(fabs(LALInferenceGetREAL8Variable(priorParams,"a_spin1_max")),fabs(LALInferenceGetREAL8Variable(priorParams,"a_spin1_min")));
+      z=LALInferenceGetREAL8Variable(params,"a_spin1");
+      logPrior += -log(2.0) - log(R) + log(-log(fabs(z) / R));
+    }
+    if(LALInferenceCheckVariable(params,"a_spin2")&& ~LALInferenceCheckVariable(params,"tilt_spin2"))
+    {
+      REAL8 R = REAL8max(fabs(LALInferenceGetREAL8Variable(priorParams,"a_spin2_max")),fabs(LALInferenceGetREAL8Variable(priorParams,"a_spin2_min")));
+      z=LALInferenceGetREAL8Variable(params,"a_spin2");
+      logPrior += -log(2.0) - log(R) + log(-log(fabs(z) / R));
+    }
+    
+  }
+  
   /* Calibration priors. */
   logPrior += LALInferenceSplineCalibrationPrior(runState, params);
   logPrior += LALInferenceConstantCalibrationPrior(runState, params);
