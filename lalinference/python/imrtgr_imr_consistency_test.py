@@ -113,8 +113,11 @@ if __name__ == '__main__':
   insp_fhigh = float(options.insp_fhigh)
   ring_flow = float(options.ring_flow)
   waveform = options.waveform
-  N_bins = int(options.N_bins) # Number of grid points along either axis (dMfbyMf, dchifbychif) for computation of the posteriors
   
+  N_bins = int(options.N_bins) # Number of grid points along either axis (dMfbyMf, dchifbychif) for computation of the posteriors
+  if N_bins is None:
+    N_bins = 201  
+
   lalinference_datadir = os.getenv('LALINFERENCE_DATADIR')
   if prior_Mfchif_file is None:
     prior_Mfchif_file = os.path.join(lalinference_datadir, 'imrtgr_prior_data', 'Prior_Mfchif_nonprecspin_Healy2014_comp_mass_min1.0_comp_mass_max500.0_comp_spin_min-1.0_comp_spin_max1.0.pklz')
