@@ -122,6 +122,11 @@ def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2):
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
     
+    if np.any(abs(chi1>1)):
+      raise ValueError("chi1 has to be in [-1, 1]")
+    if np.any(abs(chi2>1)):
+      raise ValueError("chi2 has to be in [-1, 1]")
+    
     # Vectorize the function if arrays are provided as input
     if np.size(m1) * np.size(m2) * np.size(chi1) * np.size(chi2) > 1:
         return np.vectorize(bbh_final_spin_non_precessing_Healyetal)(m1, m2, chi1, chi2)
@@ -164,6 +169,11 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=None):
     m2 = np.vectorize(float)(np.array(m2))
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
+    
+    if np.any(abs(chi1>1)):
+      raise ValueError("chi1 has to be in [-1, 1]")
+    if np.any(abs(chi2>1)):
+      raise ValueError("chi2 has to be in [-1, 1]")
     
     # binary parameters
     m = m1+m2
@@ -269,6 +279,11 @@ def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2):
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
     
+    if np.any(abs(chi1>1)):
+      raise ValueError("chi1 has to be in [-1, 1]")
+    if np.any(abs(chi2>1)):
+      raise ValueError("chi2 has to be in [-1, 1]")
+    
     # binary parameters 
     m = m1+m2  
     msq = m*m
@@ -306,6 +321,11 @@ def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
     m2 = np.vectorize(float)(np.array(m2))
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
+    
+    if np.any(abs(chi1>1)):
+      raise ValueError("chi1 has to be in [-1, 1]")
+    if np.any(abs(chi2>1)):
+      raise ValueError("chi2 has to be in [-1, 1]")
     
     # binary parameters 
     m = m1+m2  
