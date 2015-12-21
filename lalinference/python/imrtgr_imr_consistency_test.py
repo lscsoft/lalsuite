@@ -100,7 +100,7 @@ if __name__ == '__main__':
   parser.add_option("--chi2-inj", dest="chi2_inj", help="injected value of z-component of spin of mass m2 (if this is an injection)")
   parser.add_option("-w", "--waveform", dest="waveform", help="waveform used for recovery")
   parser.add_option("-d", "--debug-plots", dest="debug_plots", help="debug plots")
-  parser.add_option("--N_bins", dest="N_bins", help="number of bins")
+  parser.add_option("--N_bins", dtype="int", dest="N_bins", default=201, help="number of bins (default=201)")
   (options, args) = parser.parse_args()
 
   insp_post = options.insp_post
@@ -115,8 +115,6 @@ if __name__ == '__main__':
   waveform = options.waveform
   
   N_bins = int(options.N_bins) # Number of grid points along either axis (dMfbyMf, dchifbychif) for computation of the posteriors
-  if N_bins is None:
-    N_bins = 201  
 
   lalinference_datadir = os.getenv('LALINFERENCE_DATADIR')
   if prior_Mfchif_file is None:
