@@ -42,7 +42,7 @@ UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
  */
 
 static int IMRPhenomDGenerateFD(
-    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8 phi0,                  /**< phase at fRef */
     const REAL8 fRef,                  /**< reference frequency [Hz] */
     const REAL8 deltaF,                /**< frequency resolution */
@@ -98,9 +98,9 @@ static int IMRPhenomDGenerateFD(
  *  All input parameters should be in SI units. Angles should be in radians.
  */
 int XLALSimIMRPhenomDGenerateFD(
-    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8 phi0,                  /**< Orbital phase at fRef (rad) */
-    const REAL8 fRef_in,                  /**< reference frequency (Hz) */
+    const REAL8 fRef_in,               /**< reference frequency (Hz) */
     const REAL8 deltaF,                /**< Sampling frequency (Hz) */
     const REAL8 m1_SI,                 /**< Mass of companion 1 (kg) */
     const REAL8 m2_SI,                 /**< Mass of companion 2 (kg) */
@@ -177,7 +177,7 @@ int XLALSimIMRPhenomDGenerateFD(
 /* *********************************************************************************/
 
 static int IMRPhenomDGenerateFD(
-    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8 phi0,                  /**< phase at fRef */
     const REAL8 fRef,                  /**< reference frequency [Hz] */
     const REAL8 deltaF,                /**< frequency resolution */

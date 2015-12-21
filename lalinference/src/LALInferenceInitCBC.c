@@ -582,6 +582,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--use-tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
     (--spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
     (--tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
+    (--numreldata FileName)         Location of NR data file for NR waveforms (with NR_hdf5 approx).\n\
     (--modeldomain)                 domain the waveform template will be computed in (\"time\" or \"frequency\"). If not given will use LALSim to decide\n\
     (--spinAligned or --aligned-spin)  template will assume spins aligned with the orbital angular momentum.\n\
     (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
@@ -1168,6 +1169,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   XLALSimInspiralSetSpinOrder(model->waveFlags,  spinO);
   XLALSimInspiralSetTidalOrder(model->waveFlags, tideO);
   XLALSimInspiralSetFrameAxis(model->waveFlags,frameAxis);
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--numreldata"))) {
+    XLALSimInspiralSetNumrelData(model->waveFlags, ppt->value);
+    fprintf(stdout,"Template will use %s.\n",ppt->value);
+  }
+
 
 
   fprintf(stdout,"\n\n---\t\t ---\n");

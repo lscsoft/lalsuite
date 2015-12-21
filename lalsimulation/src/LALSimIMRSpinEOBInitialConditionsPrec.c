@@ -399,9 +399,9 @@ XLALFindSphericalOrbitPrec(
                   rootParams->values, rootParams->params);
 	}
 
-	if (XLAL_IS_REAL8_FAIL_NAN(dHdx)) { XLAL_ERROR(XLAL_EFUNC); }
-	if (XLAL_IS_REAL8_FAIL_NAN(dHdpy)) { XLAL_ERROR(XLAL_EFUNC); }
-	if (XLAL_IS_REAL8_FAIL_NAN(dHdpz)) { XLAL_ERROR(XLAL_EFUNC); }
+	if (XLAL_IS_REAL8_FAIL_NAN(dHdx)) { XLAL_ERROR(XLAL_EDOM); }
+	if (XLAL_IS_REAL8_FAIL_NAN(dHdpy)) { XLAL_ERROR(XLAL_EDOM); }
+	if (XLAL_IS_REAL8_FAIL_NAN(dHdpz)) { XLAL_ERROR(XLAL_EDOM); }
 	if (debugPK)
 		XLAL_PRINT_INFO("dHdx = %.16e, dHdpy = %.16e, dHdpz = %.16e\n", dHdx, dHdpy, dHdpz);
 
@@ -520,7 +520,7 @@ GSLSpinHamiltonianDerivWrapperPrec(double x,	/**<< Derivative at x */
 			break;
 		default:
 			XLALPrintError("This option is not supported in the second derivative function!\n");
-			XLAL_ERROR_REAL8(XLAL_EFUNC);
+			XLAL_ERROR_REAL8(XLAL_EINVAL);
 			break;
 		}
 	} else {
@@ -548,7 +548,7 @@ GSLSpinHamiltonianDerivWrapperPrec(double x,	/**<< Derivative at x */
 			break;
 		default:
 			XLALPrintError("This option is not supported in the second derivative function!\n");
-			XLAL_ERROR_REAL8(XLAL_EFUNC);
+			XLAL_ERROR_REAL8(XLAL_EINVAL);
 			break;
 		}
 	}
@@ -606,7 +606,7 @@ XLALCalculateSphHamiltonianDeriv2Prec(
 
 	if (gslStatus != GSL_SUCCESS) {
 		XLALPrintError("XLAL Error %s - Failure in GSL function\n", __func__);
-		XLAL_ERROR_REAL8(XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EDOM);
 	}
 	//XLAL_PRINT_INFO("Second deriv abs err = %.16e\n", absErr);
 
@@ -1007,7 +1007,7 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 			gsl_vector_free(initValues);
 			gsl_matrix_free(rotMatrix);
 			gsl_matrix_free(invMatrix);
-			XLAL_ERROR(XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EDOM);
     }
 		else if (gslStatus != GSL_SUCCESS) {
 			XLALPrintError("Error in GSL iteration function!\n");
@@ -1015,7 +1015,7 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 			gsl_vector_free(initValues);
 			gsl_matrix_free(rotMatrix);
 			gsl_matrix_free(invMatrix);
-			XLAL_ERROR(XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EDOM);
 		}
 
     /* different ways to test convergence of the method */
