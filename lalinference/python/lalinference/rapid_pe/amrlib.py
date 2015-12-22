@@ -344,7 +344,7 @@ def grid_to_cells(grid, grid_spacing):
 # Cell grid serialization and packing routines
 #
 
-def init_grid_hdf(init_region, h5file, overlap_thresh, base_grp="rapidpe_grids"):
+def init_grid_hdf(init_region, h5file, overlap_thresh, crd_sys, base_grp="rapidpe_grids"):
     """
     Set up a new HDF5 file (h5file), truncating any existing file with this name. A new 'folder' called 'base_grp' is set up and the initial region with attribute 'overlap_thresh' is set up under it.
     """
@@ -353,16 +353,19 @@ def init_grid_hdf(init_region, h5file, overlap_thresh, base_grp="rapidpe_grids")
         hfile.create_group(base_grp)
     hfile[base_grp].create_dataset("init_region", data=init_region._bounds)
     hfile[base_grp].attrs.create("overlap_thresh", overlap_thresh)
+    hfile[base_grp].attrs.create("distance_coordinates", crd_sys)
     return hfile[base_grp]
 
-def save_grid_cells_hdf(base_grp, cells, check=True):
+def save_grid_cells_hdf(base_grp, cells, crd_sys, check=True):
     """
     Under the base_grp, a new level of grid points is saved. It will create a subgroup called "grids" if it does not already exist. Under this subgroup, levels are created sequentially, the function looks for the last level (e.g. the subsubgroup with the largest "level" attribute, and appends a new level with +1 to that number. If check is enabled (that is the default), a safety check against the new level versus the last level is made to ensure the resolution is a factor of two smaller.
     """
     if "grids" not in base_grp:
         grids = base_grp.create_group("grids")
+        grids.attrs.create("distance_coordinates", crd_sys)
     else:
         grids = base_grp["grids"]
+        assert grids.attrs["distance_coordinates"] == crd_sys
 
     levels = []
     for name, ds in grids.iteritems():
@@ -384,18 +387,31 @@ def save_grid_cells_hdf(base_grp, cells, check=True):
         ds.attrs.create("level", lvl)
         ds.attrs.create("resolution", grid_res)
 
-def load_grid_level(h5file, level, base_grp="rapidpe_grids"):
+def load_init_region(h5file, base_grp="rapidpe_grids"):
     """
-    Load a set grid points (in the form of cells) from h5file. ArgumentError is raised if 'level' is not represented in the attributes of one of the levels stored under base_grp/'grids'
+    Load the initial region for a set grid points (in the form of cells) from h5file.
     """
     hfile = h5py.File(h5file, "r")
+    return Cell(hfile[base_grp]["init_region"][:])
+
+def load_grid_level(h5file, level, base_grp="rapidpe_grids"):
+    """
+    Load a set grid points (in the form of cells) from h5file. If level is None, return the base_grp, if level is -1, return the highest resolution available, otherwise an ArgumentError is raised if 'level' is not represented in the attributes of one of the levels stored under base_grp/'grids'
+    """
+    hfile = h5py.File(h5file, "a")
+    if level is None:
+        return hfile[base_grp]
+
     grids = hfile[base_grp]["grids"]
+    if level == -1:
+        level = sorted(dat.attrs["level"] for name, dat in grids.iteritems())[-1]
+
     for name, dat in grids.iteritems():
         if dat.attrs["level"] == level:
             grid_res = dat.attrs["resolution"][numpy.newaxis,:]
-            return unpack_grid_cells(numpy.concatenate((grid_res, dat[:])))
+            return unpack_grid_cells(numpy.concatenate((grid_res, dat[:]))), level
     raise ArgumentError("No grid refinement level %d" % level)
-    
+
 def pack_grid_cells(cells, resolution):
     """
     Pack the cell centers (grid points) into a convienient numpy array. The resolution of the grid is prepended for later use.
