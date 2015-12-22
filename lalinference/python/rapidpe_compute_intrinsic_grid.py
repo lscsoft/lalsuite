@@ -312,7 +312,11 @@ else:
 """
 
 intr_prms = list(intr_prms) + expand_prms.keys()
-init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold, expand_prms)
+
+if opts.refine:
+    init_region = amrlib.load_init_region(opts.refine)
+else:
+    init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold, expand_prms)
 
 ####### BEGIN INITIAL GRID CODE #########
 
@@ -345,7 +349,10 @@ else:
 if opts.result_file is not None:
     # FIXME: temporary -- we shouldn't need to know the spacing of the initial
     # region
-    prev_cells, spacing = amrlib.deserialize_grid_cells(opts.refine)
+
+    #prev_cells, spacing = amrlib.deserialize_grid_cells(opts.refine)
+    (prev_cells, spacing), level = amrlib.load_grid_level(opts.refine, -1)
+
     selected = numpy.array([c._center for c in prev_cells])
     # refinement already occurred once in the setup stage
     #spacing /= 2
@@ -386,14 +393,18 @@ grid = amrlib.apply_inv_transform(grid, intr_prms, opts.distance_coordinates)
 
 cells = amrlib.grid_to_cells(grid, spacing)
 if opts.setup:
-    npy_grid = amrlib.pack_grid_cells(cells, spacing)
+    #npy_grid = amrlib.pack_grid_cells(cells, spacing)
     # FIXME: specify level better
-    amrlib.serialize_grid_cells({1: npy_grid}, opts.setup)
+    #amrlib.serialize_grid_cells({1: npy_grid}, opts.setup)
+    grid_group = amrlib.init_grid_hdf(init_region, opts.setup + ".hdf", opts.overlap_threshold, opts.distance_coordinates)
+    amrlib.save_grid_cells_hdf(grid_group, cells, "mass1_mass2")
 else:
-    npy_grid = amrlib.pack_grid_cells(cells, spacing)
+    #npy_grid = amrlib.pack_grid_cells(cells, spacing)
     # FIXME: -1 will mean "whatever the next level is"
-    #amrlib.serialize_grid_cells({-1: npy_grid}, opts.refine)
-    amrlib.serialize_grid_cells({1: npy_grid}, opts.refine)
+    ###amrlib.serialize_grid_cells({-1: npy_grid}, opts.refine)
+    #amrlib.serialize_grid_cells({1: npy_grid}, opts.refine)
+    grp = amrlib.load_grid_level(opts.refine, None)
+    amrlib.save_grid_cells_hdf(grp, cells, "mass1_mass2")
 
 print "Selected %d cells for further analysis." % len(cells)
 if opts.setup:
