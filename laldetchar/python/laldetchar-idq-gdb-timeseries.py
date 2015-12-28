@@ -405,32 +405,32 @@ for t, ts in zip(r_times, r_timeseries):
 ### post max-rank value
 if opts.verbose:
     print "finding max rank observed within [%.3f, %.3f]"%(opts.start, opts.end)
-    max_rnk = 0.0
-    for (t, ts) in zip(r_times, r_timeseries):
-        # ensure time series only fall within desired range
-        truth = (opts.start <= t) * (t <= opts.end)
-        ts = ts[truth]
-        t = t[truth]
+max_rnk = 0.0
+for (t, ts) in zip(r_times, r_timeseries):
+    # ensure time series only fall within desired range
+    truth = (opts.start <= t) * (t <= opts.end)
+    ts = ts[truth]
+    t = t[truth]
 
-        if len(t): # some surviving data
-            # generate and write summary statistics
-            (r_min, r_max, r_mean, r_stdv) = idq.stats_ts(ts)
+    if len(t): # some surviving data
+        # generate and write summary statistics
+        (r_min, r_max, r_mean, r_stdv) = idq.stats_ts(ts)
 
-            # update min_fap
-            if max_rnk < r_max:
-                max_rnk = r_max
+        # update min_fap
+        if max_rnk < r_max:
+            max_rnk = r_max
 
-    # upload minimum fap observed within opts.start, opts.end
-    jsonfilename = idq.gdb_minFap_json(gdbdir, opts.classifier, ifo, "_maxRANK%s"%filetag, int(opts.start), int(opts.end-opts.start))
-    file_obj = open(jsonfilename, "w")
-    file_obj.write( json.dumps( {rank_channame:{"max":max_rnk, "start":opts.start, "end":opts.end}} ) )
-    file_obj.close()
+# upload minimum fap observed within opts.start, opts.end
+jsonfilename = idq.gdb_minFap_json(gdbdir, opts.classifier, ifo, "_maxRANK%s"%filetag, int(opts.start), int(opts.end-opts.start))
+file_obj = open(jsonfilename, "w")
+file_obj.write( json.dumps( {rank_channame:{"max":max_rnk, "start":opts.start, "end":opts.end}} ) )
+file_obj.close()
 
-    if not opts.skip_gracedb_upload:
-        message = "maximum glitch-RANK for %s at %s within [%.3f, %.3f] is %.3e"%(opts.classifier, ifo, opts.start, opts.end, max_rnk)
-        if opts.verbose:
-            print "    %s"%message
-        gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
+if not opts.skip_gracedb_upload:
+    message = "maximum glitch-RANK for %s at %s within [%.3f, %.3f] is %.3e"%(opts.classifier, ifo, opts.start, opts.end, max_rnk)
+    if opts.verbose:
+        print "    %s"%message
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
 
 #### compute statistics
 #if opts.verbose:
