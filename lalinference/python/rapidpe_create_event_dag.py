@@ -72,6 +72,10 @@ opts, args = optp.parse_args()
 if not opts.template_bank_xml:
     exit("Option --template-bank-xml is required.")
 
+condor_commands = None
+if opts.condor_command is not None:
+    condor_commands = dict([c.split("=") for c in opts.condor_command])
+
 #
 # Get trigger information from coinc xml file
 #
