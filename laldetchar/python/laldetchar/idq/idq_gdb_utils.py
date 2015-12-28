@@ -34,13 +34,15 @@ __date__ = git_version.date
 
 # Utility functions used for generating iDQ input to GraceDB.
 
+import glob
+
 import numpy as np
 import re as re
 
 from laldetchar.idq import event
+from laldetchar.idq import ovl
 
 from laldetchar.idq import idq
-#from laldetchar.idq import reed as idq
 
 from laldetchar.idq import idq_tables
 from glue.ligolw import ligolw
@@ -49,76 +51,6 @@ from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 from glue.ligolw import dbtables
 from glue.ligolw import table
-
-
-#===================================================================================================
-### DEPRECATED
-'''
-def execute_gdb_timeseries(
-    gps_start,
-    gps_end,
-    gps,
-    gracedb_id,
-    ifo,
-    classifier,
-    cp,
-    input_dir,
-    exec_prog,
-    usertag='',
-    gch_xml=[],
-    cln_xml=[],
-    plotting_gps_start=None,
-    plotting_gps_end=None):
-    """ Function that sets up and runs idq-gdb-timeseries script as one of the tasks of idq-gdb-processor."""
-    # form the command line
-    cmd_line = [exec_prog, '-s', gps_start, '-e', gps_end, '--gps', gps,\
-        '-g', gracedb_id, '--ifo', ifo, '-c', classifier, '-i', input_dir,\
-        '-t', usertag]
-	
-    # add extra options from config file
-    if cp.has_option("general","gdb_url"):
-        cmd_line += ["--gdb-url", cp.get("general","gdb_url")]
-    if plotting_gps_start:
-        cmd_line += ["--plotting-gps-start", str(plotting_gps_start)]
-    if plotting_gps_end:
-        cmd_line += ["--plotting-gps-end", str(plotting_gps_end)]
-    for gch in gch_xml:
-        cmd_line += ["--gch-xml", gch]
-    for cln in cln_xml:
-        cmd_line += ["--cln-xml", cln]
-
-    for (option,value) in cp.items('gdb-time-series'):
-        cmd_line.extend([option, value])
-#	print cmd_line
-    exit_status = idq.submit_command(cmd_line, 'gdb_timeseries', verbose=True)
-	
-    return exit_status
-	
-def execute_gdb_glitch_tables(
-    gps_start,
-    gps_end,
-    gracedb_id,
-    ifo,
-    classifier,
-    cp,
-    input_dir,
-    exec_prog,
-    usertag=''):
-    """ Function that sets up and runs idq-gdb-timeseries script as one of the tasks of idq-gdb-processor."""
-    # form the command line
-    cmd_line = [exec_prog, '-s', gps_start, '-e', gps_end, '-g', gracedb_id,\
-        '--ifo', ifo, '-c', classifier, '-i', input_dir, '-t', usertag]
-	
-    # add extra options from config file
-    if cp.has_option("general","gdb_url"):
-        cmd_line += ["--gdb-url", cp.get("general","gdb_url")]
-    for (option,value) in cp.items('gdb-glitch-tables'):
-        cmd_line.extend([option, value])
-#	print cmd_line
-    exit_status = idq.submit_command(cmd_line, 'gdb_glitch_tables', verbose=True)
-	
-    return exit_status	
-'''
 
 #===================================================================================================
 
@@ -141,7 +73,7 @@ def get_glitch_times(glitch_xmlfiles):
         print "Can not perform requested query."
         return []
 
-    data = cursor.execute('''SELECT gps, gps_ns FROM ''' + \
+    data = cursor.execute("""SELECT gps, gps_ns FROM """ + \
         table.StripTableName(idq_tables.IDQGlitchTable.tableName)).fetchall()
     # close database
     connection.close()
@@ -180,6 +112,74 @@ def get_glitch_ovl_channels(glitch_xmlfiles):
     connection.close()
     return data
 
+def extract_ovl_vconfigs( rank_frames, channame, traindir, start, end, metric='eff/dt' ):
+    """
+    returns a dictionary mapping active vconfigs to segments
+    does NOT include "none" channel
+    """
+    vconfigs = []
+    for rnkfr in rank_frames:
+        trained, calib = idq.extract_timeseries_ranges( rnkfr )
+        classifier = idq.extract_fap_name( rnkfr ) 
+
+        vetolist = glob.glob( "%s/%d_%d/ovl/ovl/*vetolist.eval"%(traindir, trained[0], trained[1]) )        
+        if len(vetolist) != 1:
+            raise ValueError( "trouble finding a single vetolist file for : %s"%rnkfr )
+        vetolist=vetolist[0]
+        v = event.loadstringtable( vetolist )
+
+        rankmap = { 0:[(None, None, None, None, 0, 0)] }
+
+        for line in v:
+            metric_exp = float(line[ovl.vD['metric_exp']])
+            if metric == 'eff/dt':
+                rnk = ovl.effbydt_to_rank( metric_exp )
+            elif metric == 'vsig':
+                rnk = ovl.vsig_to_rank( metric_exp )
+            elif metric == 'useP': 
+                rnk = ovl.useP_to_rank( metric_exp )
+            else:
+                raise ValueError("metric=%s not understood"%metric)
+            if rankmap.has_key(rnk):
+                rankmap[rnk].append( (line[ovl.vD['vchan']], float(line[ovl.vD['vthr']]), float(line[ovl.vD['vwin']]), metric, metric_exp, rnk ))
+            else:
+                rankmap[rnk] = [(line[ovl.vD['vchan']], float(line[ovl.vD['vthr']]), float(line[ovl.vD['vwin']]), metric, metric_exp, rnk )]
+
+        for key, value in rankmap.items():
+            rankmap[key] = tuple(value)
+
+        t, ts = idq.combine_gwf( [rnkfr], [channame])
+        t = t[0]
+        truth = (start <= t)*(t <= end)
+        t = t[truth]
+        ts = ts[0][truth]
+        if not len(ts):
+            continue
+
+        configs = rankmap[ts[0]]
+        segStart = t[0]
+        for T, TS in zip(t, ts):
+            if rankmap[TS] != configs:
+                vconfigs.append( (configs, [segStart, T] ) )
+                segStart = T
+                configs = rankmap[TS]
+            else:
+                pass 
+        vconfigs.append( (configs, [segStart, T+t[1]-t[0]] ) )
+
+    configs = {}
+    for vconfig, seg in vconfigs:
+        if configs.has_key( vconfig ):
+            configs[vconfig].append( seg )
+        else:
+            configs[vconfig] = [ seg ]
+    for key, value in configs.items():
+        value = event.andsegments( [event.fixsegments( value ), [[start,end]] ] )
+        if event.livetime( value ):
+            configs[key] = event.fixsegments( value )
+        else:
+            raise ValueError("somehow picked up a config with zero livetime...")
+
+    return vconfigs, configs, {"vchan":0, "vthr":1, "vwin":2, "metric":3, "metric_exp":4, "rank":5}
 
 ##@}
-

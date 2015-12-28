@@ -36,6 +36,7 @@ pybin_scripts = \
 	laldetchar-idq-gst-sender \
 	laldetchar-idq-gst-relay \
 	laldetchar-idq-gst-listener \
+	laldetchar-idq-gdb-local-performance \
 	$(END_OF_LIST)
 
 endif
