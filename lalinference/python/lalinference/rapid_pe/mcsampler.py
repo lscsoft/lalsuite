@@ -317,6 +317,8 @@ class MCSampler(object):
         nmin = kwargs["nmin"] if kwargs.has_key("nmin") else n_adapt
 
         save_intg = kwargs["save_intg"] if kwargs.has_key("save_intg") else False
+        nkeep = kwargs["save_intg"] if kwargs.has_key("save_intg") else None
+
         # FIXME: The adaptive step relies on the _rvs cache, so this has to be
         # on in order to work
         if n_adapt > 0 and tempering_exp > 0.0:
@@ -400,7 +402,7 @@ class MCSampler(object):
                     self._rvs["integrand"] = numpy.hstack( (self._rvs["integrand"], fval) )
                     self._rvs["joint_prior"] = numpy.hstack( (self._rvs["joint_prior"], joint_p_prior) )
                     self._rvs["joint_s_prior"] = numpy.hstack( (self._rvs["joint_s_prior"], joint_p_s) )
-                    self._rvs["weights"] = numpy.hstack( (self._rvs["joint_s_prior"], fval*joint_p_prior/joint_p_s) )
+                    self._rvs["weights"] = numpy.hstack( (self._rvs["weights"], fval*joint_p_prior/joint_p_s) )
                 else:
                     self._rvs["integrand"] = fval
                     self._rvs["joint_prior"] = joint_p_prior
@@ -462,8 +464,12 @@ class MCSampler(object):
             # The total number of adaptive steps is reached
             #
             # FIXME: We need a better stopping condition here
-            #if self.ntotal > n_adapt or maxval == old_maxval:
             if self.ntotal > n_adapt and maxval == old_maxval:
+                # Downsample points
+                if save_intg and nkeep is not None:
+                    pt_sort = self._rvs["weights"].argsort()[-nkeep:]
+                    for key in self._rvs:
+                        self._rvs[key] = self._rvs[key][pt_sort]
                 continue
             old_maxval = maxval
 
@@ -502,35 +508,30 @@ class MCSampler(object):
         self.prior_pdf.update(temppriordict)
 
         # Clean out the _rvs arrays for 'irrelevant' points
-        #   - find and remove samples with  lnL less than maxlnL - deltalnL (latter user-specified)
         #   - create the cumulative weights
-        #   - find and remove samples which contribute too little to the cumulative weights
-        # FIXME: This needs *a lot* of work
+        if "weights" in self._rvs:
+            # Sort the weights with the deltaL masked applied
+            sorted_weights = self._rvs["weights"].argsort()
+            # Make the (unnormalized) CDF
+            total_weight = self._rvs["weights"][sorted_weights].cumsum()
+            # Find the deltaP cutoff index
+            idx = numpy.searchsorted(total_weight, deltaP*total_weight[-1])
+            sorted_weights = sorted_weights[idx:]
+            # Remove all samples which contribute to smallest 1e-3 of cumulative
+            # probability
+            for key in self._rvs.keys():
+                if isinstance(key, tuple):
+                    self._rvs[key] = self._rvs[key][:,sorted_weights]
+                else:
+                    self._rvs[key] = self._rvs[key][sorted_weights]
         if "integrand" in self._rvs:
-            self._rvs["sample_n"] = numpy.arange(len(self._rvs["integrand"]))  # create 'iteration number'        
-            # Step 1: Cut out any sample with lnL belw threshold
-            indx_list = [k for k, value in enumerate( (self._rvs["integrand"] > maxlnL - deltalnL)) if value] # threshold number 1
-            # FIXME: This is an unncessary initial copy, the second step (cum i
-            # prob) can be accomplished with indexing first then only pare at
-            # the end
+            deltal_mask = numpy.log(self._rvs["integrand"]) > (maxlnL - deltalnL)
+            # Remove all samples which do not have L > maxlnL - deltalnL
             for key in self._rvs.keys():
                 if isinstance(key, tuple):
-                    self._rvs[key] = self._rvs[key][:,indx_list]
+                    self._rvs[key] = self._rvs[key][:,deltal_mask]
                 else:
-                    self._rvs[key] = self._rvs[key][indx_list]
-            # Step 2: Create and sort the cumulative weights, among the remaining points, then use that as a threshold
-            wt = self._rvs["integrand"]*self._rvs["joint_prior"]/self._rvs["joint_s_prior"]
-            idx_sorted_index = numpy.lexsort((numpy.arange(len(wt)), wt))  # Sort the array of weights, recovering index values
-            indx_list = numpy.array( [[k, wt[k]] for k in idx_sorted_index])     # pair up with the weights again
-            cum_sum = numpy.cumsum(indx_list[:,1])  # find the cumulative sum
-            cum_sum = cum_sum/cum_sum[-1]          # normalize the cumulative sum
-            indx_list = [indx_list[k, 0] for k, value in enumerate(cum_sum > deltaP) if value]  # find the indices that preserve > 1e-7 of total probability
-            # FIXME: See previous FIXME
-            for key in self._rvs.keys():
-                if isinstance(key, tuple):
-                    self._rvs[key] = self._rvs[key][:,indx_list]
-                else:
-                    self._rvs[key] = self._rvs[key][indx_list]
+                    self._rvs[key] = self._rvs[key][deltal_mask]
 
         # Create extra dictionary to return things
         dict_return ={}
