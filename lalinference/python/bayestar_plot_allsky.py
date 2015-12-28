@@ -117,7 +117,7 @@ if opts.geo:
         verts = np.deg2rad(shape['coordinates'])
         plt.plot(verts[:, 0], verts[:, 1], color='0.5', linewidth=0.5)
 
-radecs = opts.radec
+radecs = np.deg2rad(opts.radec)
 if opts.inj_database:
     query = '''SELECT longitude, latitude FROM sim_inspiral AS si
                INNER JOIN coinc_event_map AS cm1
