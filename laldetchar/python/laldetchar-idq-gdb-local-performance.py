@@ -24,11 +24,8 @@ from ligo.gracedb.rest import GraceDb
 
 from laldetchar.idq import idq
 from laldetchar.idq import idq_summary_plots as isp
-#from laldetchar.idq import reed as idq
-#from laldetchar.idq import reed_summary_plots as isp
 
 from laldetchar.idq import idq_gdb_utils as igu
-#from laldetchar.idq import reed_gdb_utils as igu
 
 from ConfigParser import SafeConfigParser
 
@@ -42,8 +39,7 @@ __author__ = 'Reed Essick <reed.essick@ligo.org>'
 __version__ = git_version.id__date__ = git_version.date
 
 description = \
-    """ Program generates a summary of iDQ glitch-rank time-series during a short time period, \
-    generating figures and summary files"""
+    """ Program generates a summary of iDQ performance around an event."""
 
 #===================================================================================================
 
@@ -78,38 +74,6 @@ parser.add_option(
         type='float',
         help='the gps end time of the time range of interest')
 
-parser.add_option('',
-        '--plotting-gps-start',
-        default=None,
-        type='float',
-        help='the gps start time of the plots. This may be before --gps-start, but cannot be after')
-
-parser.add_option('',
-        '--plotting-gps-end',
-        default=None,
-        type='float',
-        help='the gps end time of the plots. This may be after --gps-end, but cannot be before')
-
-parser.add_option('',
-        '--gps',
-        default=None,
-        type='float',
-        help='the timestamp of interest within [start, end]. eg: coalescence time of CBC trigger')
-
-parser.add_option('',
-        '--gch-xml',
-        default=[],
-        action='append',
-        type='string',
-        help='filename of a glitch xml file with which we annotate our plot')
-
-parser.add_option('',
-        '--cln-xml',
-        default=[],
-        action='append',
-        type='string',
-        help='filename of a clean xml file with which we annotate our plot')
-
 parser.add_option('-g',
         '--gracedb-id',
         default=None,
@@ -129,12 +93,6 @@ parser.add_option('-C',
         help='the classifier used to generate the timeseries data. Default="ovl"')
 
 (opts, args) = parser.parse_args()
-
-if (opts.plotting_gps_start == None) or (opts.plotting_gps_start > opts.start):
-    opts.plotting_gps_start = opts.start
-
-if (opts.plotting_gps_end == None) or (opts.plotting_gps_end < opts.end):
-   opts.plotting_gps_end = opts.end
 
 opts.skip_gracedb_upload = (opts.gracedb_id==None) or opts.skip_gracedb_upload
 
@@ -177,6 +135,76 @@ fap_channame   = idq.channame(ifo, opts.classifier, "%s_fap"%tag)
 fapUL_channame = idq.channame(ifo, opts.classifier, "%s_fapUL"%tag)
 
 #===================================================================================================
+
+'''
+Need to generate:
+  ROC curves 
+    use both dat and gwf files to estimate this. Difference should primarily be in FAP estiamtes
+    annotate with the min-FAP associated with this event
+  calibration checks 
+    use both dat and gwf files to estimate this.
+  likelihood ratios
+  active channels (over a wider timescale than timeseries?)
+  information on when the last training was performed, how much data was available
+  when the last calibration was performed, how much data was available
+  iDQ glitch/clean rates
+  else?
+
+Essentially, a faster summary job without the html wrapper and uploaded to GraceDB.
+  Should we just write an html document and post a link? (I tend to think no...)
+  Should everything be tagged data_quality, or will that crowd the pull-down section too much?
+'''
+
+
+raise ValueError("this executable still needs to be written...")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # get all *.gwf files in range
 
@@ -423,11 +451,11 @@ if opts.verbose:
     # upload minimum fap observed within opts.start, opts.end
     jsonfilename = idq.gdb_minFap_json(gdbdir, opts.classifier, ifo, "_maxRANK%s"%filetag, int(opts.start), int(opts.end-opts.start))
     file_obj = open(jsonfilename, "w")
-    file_obj.write( json.dumps( {rank_channame:{"max":max_rnk, "start":opts.start, "end":opts.end}} ) )
+    file_obj.write( json.dumps( {fap_channame:{"min":min_fap, "start":opts.start, "end":opts.end}} ) )
     file_obj.close()
 
     if not opts.skip_gracedb_upload:
-        message = "maximum glitch-RANK for %s at %s within [%.3f, %.3f] is %.3e"%(opts.classifier, ifo, opts.start, opts.end, max_rnk)
+        message = "maximum glitch-RANK for %s at %s within [%.3f, %.3f] is %.3e"%(opts.classifier, ifo, opts.start, opts.end, min_fap)
         if opts.verbose:
             print "    %s"%message
         gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
@@ -542,8 +570,8 @@ isp.plt.setp(fap_ax.get_xticklabels(), visible=False)
 rnk_ax.set_ylim(ymin=0-2e-2, ymax=1+2e-2)
 fap_ax.set_ylim(ymin=1e-5*10**(-5*2e-2), ymax=10**(5*2e-2))
 
-rnk_ax.set_xlabel('Time [sec] since %.3f'%to, visible=True)
-fap_ax.set_xlabel('Time [sec] since %.3f'%to, visible=False)
+rnk_ax.set_xlabel('Time since %.3f'%to, visible=True)
+fap_ax.set_xlabel('Time since %.3f'%to, visible=False)
 
 rnk_ax.set_ylabel('%s rank' % plotting_label, color='r')
 fap_ax.set_ylabel('%s FAP' % plotting_label, color='b')
@@ -573,104 +601,3 @@ if not opts.skip_gracedb_upload:
 if opts.verbose:
     print "Done"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''
-#=================================================
-# write summary file
-#summary_filename = '%s/%s_idq_%s_summary_%s%d-%d.txt' % (
-#        opts.output_dir,
-#        opts.ifo,
-#        opts.classifier,
-#        opts.tag,
-#        int(opts.plotting_gps_start),
-#        int(opts.plotting_gps_end - opts.plotting_gps_start))
-summary_filename = idq.gdb_summary(opts.output_dir, opts.classifier, opts.ifo, opts.tag, int(opts.plotting_gps_start), int(opts.plotting_gps_end-opts.plotting_gps_start))
-
-if opts.verbose:
-    print "\twriting " + summary_filename
-summary_file = open(summary_filename, 'w')
-
-# WARNING: Summary file assumes fap segments are identical to rank segments!
-
-No_segs = len(merged_rank_filenames)
-print >> summary_file, 'coverage : %f' % (dur / (opts.plotting_gps_end - opts.plotting_gps_start))
-print >> summary_file, 'No. segments : %d' % No_segs
-print >> summary_file, 'max_rank : %f' % max_rank
-print >> summary_file, 'max_rank_segNo : %d' % max_rank_segNo
-print >> summary_file, 'min_fap : %f' % min_fap
-print >> summary_file, 'min_fap_segNo : %d' % min_fap_segNo
-
-for segNo in range(No_segs):
-    print >> summary_file, '\nsegNo : %d' % segNo
-    (_start,
-        _end,
-        _dt,
-        r_min,
-        r_max,
-        r_mean,
-        r_stdv,
-        ) = rank_summaries[segNo]
-    print >> summary_file, '\tstart : %d' % _start
-    print >> summary_file, '\tend : %d' % _end
-    print >> summary_file, '\tdt : %f' % _dt
-
-    print >> summary_file, '\tmerged_rank_filename : ' \
-        + merged_rank_filenames[segNo]
-    print >> summary_file, '\tmin rank : %f' % r_min
-    print >> summary_file, '\tmax rank : %f' % r_max
-    print >> summary_file, '\tmean rank : %f' % r_mean
-    print >> summary_file, '\tstdv rank : %f' % r_stdv
-
-    (_,
-        _,
-        _,
-        f_min,
-        f_max,
-        f_mean,
-        f_stdv,
-        ) = fap_summaries[segNo]
-    print >> summary_file, '\tmerged_fap_filename : ' \
-        + merged_fap_filenames[segNo]
-    print >> summary_file, '\tmin fap : %f' % f_min
-    print >> summary_file, '\tmax fap : %f' % f_max
-    print >> summary_file, '\tmean fap : %f' % f_mean
-    print >> summary_file, '\tstdv fap : %f' % f_stdv
-
-    if opts.classifier == 'ovl' and opts.gch_xml:
-        # write summary info using glitch, ovl and snglburst tables 
-        glitch_columns = ['ifo','gps', 'gps_ns']
-        ovl_columns = ['aux_channel']
-        snglburst_columns = ['search', 'snr']
-        # get the data from xml tables
-        summary_data = igu.get_glitch_ovl_snglburst_summary_info(opts.gch_xml, glitch_columns,\
-            ovl_columns, snglburst_columns)
-
-        print >> summary_file, '\n'
-        print >> summary_file, 'OVL Glitch Events Summary Table'
-        # write header
-        print >> summary_file, '| #  | ' + ' | '.join(glitch_columns) + ' | ' + ' | '.join(ovl_columns) + ' | ' + ' | '.join(snglburst_columns) + ' |'
-        # write data
-        for (i, row) in enumerate(summary_data):
-            print >> summary_file,  '| ' + str(i) + ' | ' + ' | '.join([str(v) for v in row])
-
-
-summary_file.close()
-if not opts.skip_gracedb_upload:
-    ### write log message to gracedb and upload file
-    gracedb.writeLog(opts.gracedb_id, message="iDQ timeseries summary for " + opts.classifier +\
-                    " at "+opts.ifo+":", filename=summary_filename)
-'''
