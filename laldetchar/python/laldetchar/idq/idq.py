@@ -367,6 +367,15 @@ def gdb_minFap_json(directory, classifier, ifo, tag, t, stride):
 def gdb_ovlstripchart_json(directory, classifier, ifo, tag, t, stride):
     return "%s/%s_%s_chanlist%s-%d-%d.json"%(directory, ifo, classifier, tag, t, stride)
 
+def gdb_roc_json(directory, classifier, ifo, tag, t, stride):
+    return "%s/%s_%s%s_ROC-%d-%d.json"%(directory, ifo, classifier, tag, t, stride)
+
+def gdb_calib_json( directory, ifo, classifier, tag, t, stride):
+    return "%s/%s_%s%s_calib-%d-%d.json"%(directory, ifo, classifier, tag, t, stride)
+
+def useSummary_json( directory, ifo, classifier, tag, t, stride):
+    return "%s/%s_%s%s-%d-%d.json"%(directory, ifo, classifier, tag, t, stride)
+
 #def frame2segment( directory, classifier, ifo, FAPthr, tag, right_padding, left_padding, t_lag, widen, t, stride ):
 #    return "%s/%s_%s_FAP-%.3e_rp-%.3f_lp-%.3f_tl-%.3f_wd-%.3f%s-%s-%d.seg"%(directory, ifo, classifier, FAPthr, right_padding, left_padding, t_lag, widen, tag, t, stride)
 def frame2segment( directory, classifier, ifo, FAPthr, tag, right_padding, left_padding, t_lag, t, stride ):

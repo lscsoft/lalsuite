@@ -97,6 +97,12 @@ parser.add_option(
     "", "--skip-gracedb-upload",
     default=False,
     action="store_true")
+
+parser.add_option('',
+    '--ignore-science-segments',
+    default=False,
+    action='store_true',
+    help='only used for local-performance')
 	
 (options, args) = parser.parse_args()
 
@@ -242,6 +248,9 @@ plotting_time_after = config.getfloat(event_type, 'plotting_time_after')
 performance_time_before = config.getfloat(event_type, 'performance_time_before')
 performance_time_after = config.getfloat(event_type, 'performance_time_after')
 
+performance_FAPthr = config.get(event_type, 'performance_fapthr').split()
+performance_KWsignifThr = config.get(event_type, 'performance_kwsignifthr').split()
+
 max_wait = config.getfloat(event_type,'max_wait')
 delay = config.getfloat(event_type, 'delay') ### the amount of extra time we wait for jobs to finish
 
@@ -368,14 +377,19 @@ for classifier in classifiers+combiners:
     logger.info("    Begin: executing idq-gdb-local-performance for " + classifier + " ...")
 
     performance_cmd = "%s -c %s -s %.4f -e %.4f -g %s -C %s"%(performance_script, options.config_file, performance_gps_start, performance_gps_end, gdb_id, classifier)
-
+    if options.ignore_science_segments:
+        preformance_cmd += " --ignore-science-segments"   
+    if performance_FAPthr:
+        performance_cmd += " -F %s"%(" -F ".join(performance_FAPthr))
+    if performance_KWsignifThr:
+        performance_cmd += " -S %s"%(" -S ".join(performance_KWsignifThr))
     if options.verbose:
         performance_cmd += " -v"
     if options.skip_gracedb_upload:
         performance_cmd += " --skip-gracedb-upload"
 
     logger.info("    Submitting peformance script with the following options")
-    logger.info("    "+performance_cmd)
+    logger.info("      "+performance_cmd)
 
     performance_out_file = open(performance_out, 'a')
     performance_err_file = open(performance_err, 'a')

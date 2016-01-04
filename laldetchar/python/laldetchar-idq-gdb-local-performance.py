@@ -16,16 +16,25 @@
 
 
 import sys
+import glob
 import numpy as np
 import re as re
 import json
 
+from collections import defaultdict
+
 from ligo.gracedb.rest import GraceDb
 
+from laldetchar.idq import event
 from laldetchar.idq import idq
 from laldetchar.idq import idq_summary_plots as isp
 
 from laldetchar.idq import idq_gdb_utils as igu
+
+from glue.ligolw import ligolw
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw import lsctables
+#from glue.ligolw import table
 
 from ConfigParser import SafeConfigParser
 
@@ -81,10 +90,10 @@ parser.add_option('-g',
         help='GraceDB ID')
 
 parser.add_option('',
-    '--skip-gracedb-upload',
-    default=False,
-    action='store_true',
-    help='skip steps involving communication with GraceDB. Automatically set to True if --gracedb-id==None')
+        '--skip-gracedb-upload',
+        default=False,
+        action='store_true',
+        help='skip steps involving communication with GraceDB. Automatically set to True if --gracedb-id==None')
 
 parser.add_option('-C',
         '--classifier',
@@ -92,9 +101,29 @@ parser.add_option('-C',
         type='string',
         help='the classifier used to generate the timeseries data. Default="ovl"')
 
+parser.add_option('-F', 
+        '--FAPthr',
+        default=[],
+        action='append',
+        type='float')
+
+parser.add_option('-S',
+        '--KWsignifThr',
+        default=[],
+        action='append',
+        type='float')
+
+parser.add_option('',
+        '--ignore-science-segments',
+        default=False, 
+        action='store_true')
+
 (opts, args) = parser.parse_args()
 
 opts.skip_gracedb_upload = (opts.gracedb_id==None) or opts.skip_gracedb_upload
+
+if not opts.FAPthr:
+    opts.FAPthr.append( 0.1 )
 
 #=================================================
 # read relevant stuff from config file
@@ -115,7 +144,21 @@ else:
     filetag = ""
 
 realtimedir = config.get('general','realtimedir')
+traindir = config.get('general','traindir')
+calibrationdir = config.get('general','calibrationdir')
+
 gdbdir = config.get('gdb general','main_gdb_dir')
+
+gwchannel = config.get('general', 'gwchannel')
+
+if not opts.KWsignifThr:
+    opts.KWsignifThr.append( config.getfloat('general', 'gw_kwsignif_thr') )
+
+GWkwconfig = idq.loadkwconfig(config.get('data_discovery', 'GWkwconfig'))
+GWkwbasename = GWkwconfig['basename']
+GWgdsdir = config.get('data_discovery', 'GWgdsdir')
+
+kwstride = int(float(GWkwconfig['stride']))
 
 if not opts.skip_gracedb_upload:
     if config.has_option('gdb general', 'gdb_url'):
@@ -130,474 +173,371 @@ else:
 
 #===================================================================================================
 
+### science segments
+if opts.ignore_science_segments:
+    if opts.verbose:
+        print 'analyzing data regardless of science segements'
+    scisegs = [[opts.start, opts.end]] ### set segs to be this stride range
+    coveredsegs = [[opts.start, opts.end]] ### set segs to be this stride range
+
+else:
+    ### load settings for accessing dmt segment files
+    dq_name = config.get('get_science_segments', 'include')
+    segdb_url = config.get('get_science_segments', 'segdb')
+
+    if opts.verbose:
+        print 'querrying science segments'
+
+    ### this returns a string
+    seg_xml_file = idq.segment_query(config, opts.start , opts.end, url=segdb_url)
+
+    ### write seg_xml_file to disk
+    lsctables.use_in(ligolw.LIGOLWContentHandler)
+    xmldoc = ligolw_utils.load_fileobj(seg_xml_file, contenthandler=ligolw.LIGOLWContentHandler)[0]
+
+    ### science segments xml filename
+    seg_file = idq.segxml(gdbdir, "%s_%s"%(filetag, dq_name), opts.start , opts.end-opts.start )
+    if opts.verbose:
+        print '  writing science segments to file : '+seg_file
+    ligolw_utils.write_filename(xmldoc, seg_file, gz=seg_file.endswith(".gz"))
+
+    (scisegs, coveredseg) = idq.extract_dq_segments(seg_file, dq_name) ### read in segments from xml file
+
+if opts.verbose:
+    print 'finding idq segments'
+idqsegs = idq.get_idq_segments(realtimedir, opts.start, opts.end, suffix='.dat')
+
+if opts.verbose:
+    print 'taking intersection between science segments and idq segments'
+idqsegs = event.andsegments( [scisegs, idqsegs] )
+
+### write segment file
+if opts.ignore_science_segments:
+    idqseg_path = idq.idqsegascii(gdbdir, filetag, opts.start, opts.end-opts.start)
+else:
+    idqseg_path = idq.idqsegascii(gdbdir, '%s_%s'%(filetag, dq_name), opts.start, opts.end-opts.start)
+if opts.verbose:
+    print "  writing : "+idqseg_path
+f = open(idqseg_path, 'w')
+for seg in idqsegs:
+    print >> f, seg[0], seg[1]
+f.close()
+
+#=================================================
+
 rank_channame  = idq.channame(ifo, opts.classifier, "%s_rank"%tag)
 fap_channame   = idq.channame(ifo, opts.classifier, "%s_fap"%tag)
 fapUL_channame = idq.channame(ifo, opts.classifier, "%s_fapUL"%tag)
 
-#===================================================================================================
-
-'''
-Need to generate:
-  ROC curves 
-    use both dat and gwf files to estimate this. Difference should primarily be in FAP estiamtes
-    annotate with the min-FAP associated with this event
-  calibration checks 
-    use both dat and gwf files to estimate this.
-  likelihood ratios
-  active channels (over a wider timescale than timeseries?)
-  information on when the last training was performed, how much data was available
-  when the last calibration was performed, how much data was available
-  iDQ glitch/clean rates
-  else?
-
-Essentially, a faster summary job without the html wrapper and uploaded to GraceDB.
-  Should we just write an html document and post a link? (I tend to think no...)
-  Should everything be tagged data_quality, or will that crowd the pull-down section too much?
-'''
-
-
-raise ValueError("this executable still needs to be written...")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# get all *.gwf files in range
-
-if opts.verbose:
-    print "Finding relevant *.gwf files"
-rank_filenames = []
-fap_filenames = []
-all_files = idq.get_all_files_in_range(realtimedir, opts.plotting_gps_start, opts.plotting_gps_end, pad=0, suffix='.gwf')
-for filename in all_files:
-    if opts.classifier == idq.extract_fap_name(filename): # and ifo in filename: ### this last bit not needed?
-        if 'rank' in filename:
-            rank_filenames.append(filename)
-        if 'fap' in filename:
-            fap_filenames.append(filename)
-
-rank_filenames.sort()
-fap_filenames.sort()
-
-if (not rank_filenames) or (not fap_filenames): # we couldn't find either rank or fap files
-    # exit gracefully
-    if opts.verbose:
-        print "no iDQ timeseries for %s at %s"%(opts.classifier, ifo)
-    if not opts.skip_gracedb_upload:
-        gracedb.writeLog(opts.gracedb_id, message="No iDQ timeseries for %s at %s"%(opts.classifier, ifo))
-    sys.exit(0)
-
-#===================================================================================================
-### process FAP files
-
-if opts.verbose:
-    print "reading fap timeseries from:"
-    for filename in fap_filenames:
-        print '\t' + filename
-
-#fig = isp.plt.figure(figsize=isp.rank_timeseries_figsize)
-#rnk_ax = fig.add_axes(isp.rank_timeseries_axpos)
-#fap_ax = rnk_ax.twinx()
-fig = isp.plt.figure(figsize=isp.rank_splittimeseries_figsize)
-rnk_ax = fig.add_axes(isp.rank_splittimeseries_axpos)
-fap_ax = fig.add_axes(isp.fap_splittimeseries_axpos)
-
-fap_figax = (fig, fap_ax)
-rnk_figax = (fig, rnk_ax)
-
-if opts.gps:
-    to = opts.gps
-#    rnk_ax.plot( np.zeros((2, )), rnk_ax.get_ylim(), ':k', linewidth=2, alpha=0.5)
-#    rnk_ax.text( 0.0, 0.8, "%.3f"%opts.gps, ha='center', va='center')
+flavor = config.get(opts.classifier, 'flavor')
+if config.has_option(opts.classifier, 'plotting_label'):
+    plotting_label = config.get(opts.classifier, 'plotting_label')
 else:
-    to = opts.plotting_gps_start
-
-### check calibration type -> include UpperLimits when possible
-if config.get('calibration','mode')=='dat': 
-    f_times, f_timeseries = idq.combine_gwf(fap_filenames, [fap_channame, fapUL_channame])
-    fUL_timeseries = [f[1] for f in f_timeseries]
-    f_timeseries = [f[0] for f in f_timeseries]
-
-    ### write combined data to disk
-    if opts.verbose:
-        print "writing combined fap frames to disk"
-    for t, ts, tS in zip(f_times, f_timeseries, fUL_timeseries):
-        truth = (opts.plotting_gps_start <= t)*(t <= opts.plotting_gps_end)
-        t = t[truth]
-        ts = ts[truth]
-        tS = tS[truth]
-
-        start = int(t[0])
-        dt = t[1]-t[0]
-        dur = int(len(t)*dt)
-        fapfr = idq.gdb_timeseriesgwf( gdbdir , opts.classifier, ifo, "_fap%s"%filetag, start, dur)                      
-        if opts.verbose:
-            print "    %s"%fapfr
-        idq.timeseries2frame( fapfr, {fap_channame:ts, fapUL_channame:tS}, t[0], dt )
-        if not opts.skip_gracedb_upload:
-            message = "iDQ fap timeseries for %s at %s within [%d, %d] :"%(opts.classifier, ifo, start, start+dur)
-            if opts.verbose:
-                print "    %s"%message
-            gracedb.writeLog( opts.gracedb_id, message=message, filename=fapfr ) #, tagname=['data_quality'] )
-
-    ### post min-fap value
-    if opts.verbose:
-        print "finding minimum FAP observed within [%.3f, %.3f]"%(opts.start, opts.end)
-    min_fap = 1.0
-    for (t, ts) in zip(f_times, f_timeseries):
-        # ensure time series only fall within desired range
-        truth = (opts.start <= t) * (t <= opts.end)
-        ts = ts[truth]
-        t = t[truth]
-
-        if len(t): # some surviving data
-            # generate and write summary statistics
-            (f_min, f_max, f_mean, f_stdv) = idq.stats_ts(ts)
-
-            # update min_fap
-            if min_fap > f_min:
-                min_fap = f_min
-
-    # upload minimum fap observed within opts.start, opts.end
-    jsonfilename = idq.gdb_minFap_json(gdbdir, opts.classifier, ifo, "_minFAP%s"%filetag, int(opts.start), int(opts.end-opts.start))
-    file_obj = open(jsonfilename, "w")
-    file_obj.write( json.dumps( {fap_channame:{"min":min_fap, "start":opts.start, "end":opts.end}} ) )
-    file_obj.close()
-
-    if not opts.skip_gracedb_upload:
-        message = "minimum glitch-FAP for %s at %s within [%.3f, %.3f] is %.3e"%(opts.classifier, ifo, opts.start, opts.end, min_fap)
-        if opts.verbose:
-            print "    %s"%message
-        gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
-
-#    ### compute statistics
-#    if opts.verbose:
-#        print "computing fap timeseries statistics"
-#    raise StandardError("WRITE ME")
-#
-#    ### write statistics to disk
-#    if opts.verbose:
-#        print "writing fap timeseries statistics to disk" ### ascii and json
-#    raise StandardError("WRITE ME")
-
-    ### plot
-    if opts.verbose:
-        print "plotting fap timeseries"
-    fap_figax = isp.rank_timeseries_filled( f_times, fUL_timeseries, baseline=1, start=opts.plotting_gps_start, end=opts.plotting_gps_end, to=opts.gps, color='c', linestyle='dashed', figax=fap_figax, shade_alpha=0.0, zorder=9, alpha=0.5 )
-#    fap_figax = isp.rank_timeseries( f_times, fUL_timeseries, start=opts.plotting_gps_start, end=opts.plotting_gps_end, to=opts.gps, color='c', linestyle='solid', figax=fap_figax, shade_alpha=0.0, zorder=9, alpha=1.0, linewidth=1.0 )
-    fap_figax = isp.rank_timeseries( f_times, f_timeseries, start=opts.plotting_gps_start, end=opts.plotting_gps_end, to=opts.gps, color='b', linestyle='solid', figax=fap_figax, shade_alpha=0.1, zorder=10, alpha=0.75 )
-
-else:
-    f_times, f_timeseries = idq.combine_gwf(fap_filenames, [fap_channame])
-
-    ### write combined data to disk
-    if opts.verbose:
-        print "writing combined fap frames to disk"
-    for t, ts in zip(f_times, f_timeseries):
-        truth = (opts.plotting_gps_start <= t)*(t <= opts.plotting_gps_end)
-        t = t[truth]
-        ts = ts[truth]
-
-        start = int(t[0])
-        dt = t[1]-t[0]
-        dur = int(len(t)*dt)
-        fapfr = idq.gdb_timeseriesgwf( gdbdir , opts.classifier, ifo, "_fap%s"%filetag, start, dur)
-        if opts.verbose:
-            print "    %s"%fapfr
-        idq.timeseries2frame( fapfr, {fap_channame:ts}, t[0], dt )
-        if not opts.skip_gracedb_upload:
-            message = "iDQ fap frame for %s at %s within [%d, %d] :"%(opts.classifier, ifo, start, start+dur)
-            if opts.verbose:
-                print "    %s"%message
-            gracedb.writeLog( opts.gracedb_id, message=message, filename=fapfr ) #, tagname=['data_quality'] )
-
-    ### post min-fap value
-    if opts.verbose:
-        print "finding minimum FAP observed within [%.3f, %.3f]"%(opts.start, opts.end)
-    min_fap = 1.0
-    for (t, ts) in zip(f_times, f_timeseries):
-        # ensure time series only fall within desired range
-        truth = (opts.start <= t) * (t <= opts.end)
-        ts = ts[truth]
-        t = t[truth]
-
-        if len(t): # some surviving data
-            # generate and write summary statistics
-            (f_min, f_max, f_mean, f_stdv) = idq.stats_ts(ts)
-
-            # update min_fap
-            if min_fap > f_min:
-                min_fap = f_min
-
-    # upload minimum fap observed within opts.start, opts.end
-    jsonfilename = idq.gdb_minFap_json(gdbdir, opts.classifier, ifo, "_minFAP%s"%filetag, int(opts.start), int(opts.end-opts.start))
-    file_obj = open(jsonfilename, "w")
-    file_obj.write( json.dumps( {fap_channame:{"min":min_fap, "start":opts.start, "end":opts.end}} ) )
-    file_obj.close()
-
-    if not opts.skip_gracedb_upload:
-        message = "minimum glitch-FAP for %s at %s within [%.3f, %.3f] is %.3e"%(opts.classifier, ifo, opts.start, opts.end, min_fap)
-        if opts.verbose:
-            print "    %s"%message
-        gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
-
-#    ### compute statistics
-#    if opts.verbose:
-#        print "computing fap timeseries statistics"
-#    raise StandardError("WRITE ME")
-#
-#    ### write statistics to disk
-#    if opts.verbose:
-#        print "writing fap timeseries statistics to disk" ### ascii and json
-#    raise StandardError("WRITE ME")
-
-    ### plot
-    if opts.verbose:
-        print "plotting fap timeseries"
-    fap_figax = isp.rank_timeseries( f_times, f_timeseries, start=opts.plotting_gps_start, end=opts.plotting_gps_end, to=opts.gps, color='b', linestyle='solid', figax=fap_figax, shade_alpha=0.1, zorder=10, alpha=0.75 )
-
-#===================================================================================================
-### process rank files
-
-if opts.verbose:
-    print "reading rank timeseries from:"
-    for filename in rank_filenames:
-        print '\t' + filename
-(r_times, r_timeseries) = idq.combine_gwf(rank_filenames, [rank_channame])
-
-### write combined data to disk
-if opts.verbose:
-    print "writing combined rank frames to disk:"
-for t, ts in zip(r_times, r_timeseries):
-    truth = (opts.plotting_gps_start <= t)*(t <= opts.plotting_gps_end)
-    t = t[truth]
-    ts = ts[truth]
-
-    start = int(t[0])
-    dt = t[1]-t[0]
-    dur = int(len(t)*dt)
-    rnkfr = idq.gdb_timeseriesgwf( gdbdir , opts.classifier, ifo, "_rank%s"%filetag, start, dur)
-    if opts.verbose:
-        print "    %s"%rnkfr
-    idq.timeseries2frame( rnkfr, {rank_channame:ts}, t[0], dt )
-    if not opts.skip_gracedb_upload:
-        message = "iDQ glitch-rank frame for %s at %s within [%d, %d] :"%(opts.classifier, ifo, start, start+dur)
-        if opts.verbose:
-            print "    %s"%message
-        gracedb.writeLog( opts.gracedb_id, message=message, filename=rnkfr ) #, tagname=['data_quality'] )
-
-### post max-rank value
-if opts.verbose:
-    print "finding max rank observed within [%.3f, %.3f]"%(opts.start, opts.end)
-    max_rnk = 0.0
-    for (t, ts) in zip(r_times, r_timeseries):
-        # ensure time series only fall within desired range
-        truth = (opts.start <= t) * (t <= opts.end)
-        ts = ts[truth]
-        t = t[truth]
-
-        if len(t): # some surviving data
-            # generate and write summary statistics
-            (r_min, r_max, r_mean, r_stdv) = idq.stats_ts(ts)
-
-            # update min_fap
-            if max_rnk < r_max:
-                max_rnk = r_max
-
-    # upload minimum fap observed within opts.start, opts.end
-    jsonfilename = idq.gdb_minFap_json(gdbdir, opts.classifier, ifo, "_maxRANK%s"%filetag, int(opts.start), int(opts.end-opts.start))
-    file_obj = open(jsonfilename, "w")
-    file_obj.write( json.dumps( {fap_channame:{"min":min_fap, "start":opts.start, "end":opts.end}} ) )
-    file_obj.close()
-
-    if not opts.skip_gracedb_upload:
-        message = "maximum glitch-RANK for %s at %s within [%.3f, %.3f] is %.3e"%(opts.classifier, ifo, opts.start, opts.end, min_fap)
-        if opts.verbose:
-            print "    %s"%message
-        gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
-
-#### compute statistics
-#if opts.verbose:
-#    print "computing rank timeseries statistics"
-#raise StandardError("WRITE ME")
-#
-#### write statistics to disk
-#if opts.verbose:
-#    print "writing fap timeseries statistics to disk" ### ascii and json
-#raise StandardError("WRITE ME")
-
-### add to plot
-if opts.verbose:
-    print "plotting rank timeseries"
-rnk_figax = isp.rank_timeseries( r_times, r_timeseries, start=opts.plotting_gps_start, end=opts.plotting_gps_end, to=opts.gps, color='r', linestyle='solid', figax=rnk_figax, shade_alpha=0.1, zorder=1, alpha=0.75 )
-
-### look up flavor-specific stuff
-if config.has_section(opts.classifier) and config.has_option(opts.classifier, 'flavor'): ### only allow classifiers, not combiners
-    flavor = config.get(opts.classifier, 'flavor')
-    if flavor == "ovl":
-        if opts.verbose:
-            print "  looking up extra data for flavor=ovl"
-
-        time_ordered_vconfigs, channel_ordered_vconfigs, vconfig_keys = igu.extract_ovl_vconfigs( rank_filenames, rank_channame, config.get('general','traindir'), opts.plotting_gps_start, opts.plotting_gps_end, metric=config.get(opts.classifier, 'metric') )
-
-        ### make plot
-#        scfig, ax = isp.ovl_vconfig_stripchart( time_ordered_vconfigs, to=opts.gps, mapIt=vconfig_keys )
-        scfig, ax = isp.ovl_vconfig_stripchart( channel_ordered_vconfigs, to=opts.gps, mapIt=vconfig_keys )
-
-        ax.set_xlim(xmin=opts.plotting_gps_start-to, xmax=opts.plotting_gps_end-to)
-        ax.set_title('iDQ (possible) active channels for %s at %s'%(plotting_label, ifo))
-
-        figname = isp.ovlstripchart(gdbdir, ifo, opts.classifier, filetag, opts.plotting_gps_start, opts.plotting_gps_end-opts.plotting_gps_start, figtype="png")
-        if opts.verbose:
-            print "  saving : %s"%figname
-        scfig.savefig(figname)
-        isp.plt.close( scfig )
-
-        if not opts.skip_gracedb_upload:
-            message = "iDQ channel strip chart for %s at %s between [%.3f, %.3f]"%(opts.classifier, ifo, opts.plotting_gps_start, opts.plotting_gps_end)
-            if opts.verbose:
-                print "  %s"%message
-            gracedb.writeLog(opts.gracedb_id, message=message, filename=figname, tagname='data_quality')
-            
-        ### json file containing segments
-        json_cov = []
-        for key, value in channel_ordered_vconfigs.items():
-            key = [ dict((k,K[vconfig_keys[k]]) for k in vconfig_keys) for K in key]
-            json_cov.append( {'vconfigs':key, 'segments':value} )
-
-        ### perhaps we should make this a fancy xml table of some sort?
-        jsonfilename = idq.gdb_ovlstripchart_json(gdbdir, opts.classifier, ifo, filetag, int(opts.plotting_gps_start), int(opts.plotting_gps_end-opts.plotting_gps_start))
-        if opts.verbose:
-            print "  writing : %s"%jsonfilename
-        file_obj = open(jsonfilename, "w")
-        file_obj.write( json.dumps( json_cov ) )
-        file_obj.close()
-        if not opts.skip_gracedb_upload:
-            message = "iDQ (possible) active channels for %s at %s between [%.3f, %.3f]"%(opts.classifier, ifo, opts.plotting_gps_start, opts.plotting_gps_end)
-            if opts.verbose:
-                print "  %s"%message
-            gracedb.writeLog(opts.gracedb_id, message=message, filename=jsonfilename, tagname='data_quality')
-
-    elif opts.verbose:
-        print "flavor=%s does not require any special extra data"%flavor
+    plotting_label = opts.classifier
 
 #===================================================================================================
 
-### add annotations to the plot
-
-if opts.gch_xml:
-    ### annotate glitches
-    gps_times = [ gps + gps_ns * 1e-9 for (gps, gps_ns) in igu.get_glitch_times(opts.gch_xml)]
-    gps_times = np.asarray(gps_times)
-    # channel annotation looks awfull on the static plot, must find a better way to visualize it
-    #rnk_ax.text(gps - opts.plotting_gps_start, 0.1, auxchannel, ha="left", va="bottom", rotation=45)
-    rnk_ax.plot(gps_times - to, 0.1*np.ones(len(gps_times)), marker="x", markerfacecolor="g", \
-        markeredgecolor = "g", linestyle="none")
-
-### shade region outside of opts.start, opts.end
-if opts.start != opts.plotting_gps_start:
-    for ax in [fap_ax, rnk_ax]:
-        ax.fill_between( [opts.plotting_gps_start - to, opts.start-to],
-            np.ones((2, ))*1e-5,
-            np.ones((2, )),
-            color='k',
-            edgecolor='none',
-            alpha=0.25,
-            )
-
-if opts.end != opts.plotting_gps_end:
-    for ax in [fap_ax, rnk_ax]:
-        ax.fill_between( [opts.end-to, opts.plotting_gps_end-to],
-            np.ones((2, ))*1e-5,
-            np.ones((2, )),
-            color='k',
-            edgecolor='none',
-            alpha=0.25,
-            )
-
-#fig.suptitle('%s at %s'%(opts.classifier, ifo))
-fap_ax.set_title('iDQ glitch False Alarm Probability for %s at %s'%(plotting_label, ifo))
-
-rnk_ax.set_xlim(xmin=opts.plotting_gps_start-to, xmax=opts.plotting_gps_end-to)
-fap_ax.set_xlim(rnk_ax.get_xlim())
-
-isp.plt.setp(fap_ax.get_xticklabels(), visible=False)
-
-rnk_ax.set_ylim(ymin=0-2e-2, ymax=1+2e-2)
-fap_ax.set_ylim(ymin=1e-5*10**(-5*2e-2), ymax=10**(5*2e-2))
-
-rnk_ax.set_xlabel('Time since %.3f'%to, visible=True)
-fap_ax.set_xlabel('Time since %.3f'%to, visible=False)
-
-rnk_ax.set_ylabel('%s rank' % plotting_label, color='r')
-fap_ax.set_ylabel('%s FAP' % plotting_label, color='b')
-
-rnk_ax.set_yscale('linear')
-fap_ax.set_yscale('log')
-
-rnk_ax.yaxis.set_label_position('left')
-rnk_ax.yaxis.tick_left()
-
-fap_ax.yaxis.set_label_position('right')
-fap_ax.yaxis.tick_right()
-
-### save figure
-figname = isp.timeseriesfig(gdbdir, ifo, opts.classifier, filetag, int(opts.plotting_gps_start), int(opts.plotting_gps_end-opts.plotting_gps_start))
+### Find all FAP files
 if opts.verbose:
-    print '  saving : %s'%figname
+    print "finding all fap*gwf files"
+faps = [fap for fap in idq.get_all_files_in_range( realtimedir, opts.start, opts.end, pad=0, suffix='.gwf') if ('fap' in fap) and (opts.classifier==idq.extract_fap_name( fap )) and event.livetime(event.andsegments([[idq.extract_start_stop(fap, suffix=".gwf")], idqsegs])) ]
+
+### compute total time covered
+#T = event.livetime( [idq.extract_start_stop(fap, suffix='.gwf') for fap in faps] )*1.0
+T = event.livetime( idqsegs )*1.0
+
+### combine timeseries and generate segments
+if opts.verbose:
+    print "generating segments from %d fap files"%(len(faps))
+segs = dict( (fapThr, [[], 1.0]) for fapThr in opts.FAPthr )
+t, ts = idq.combine_gwf(faps, [fap_channame])
+for t, ts in zip(t, ts):
+
+    t, ts = idq.timeseries_in_segments( t, ts, idqsegs )
+
+    for fapThr in opts.FAPthr:
+        s, minFAP = idq.timeseries_to_segments(t, -ts, -fapThr) # we want FAP <= FAPthr <--> -FAP >= -FAPthr
+
+        s = event.andsegments( [s, idqsegs] ) ### necessary because of how timeseries_to_segments may interact with timeseries_in_segments
+
+        segs[fapThr][0] += s
+        segs[fapThr][1] = min(segs[fapThr][1], -minFAP)
+if opts.verbose:
+    print "computing associated deadtimes"
+dt = [event.livetime(segs[fapThr][0])/T for fapThr in opts.FAPthr]
+maxFAP = [segs[fapThr][1] for fapThr in opts.FAPthr]
+
+### write json for calibration check
+jsonfilename = idq.gdb_calib_json( gdbdir, ifo, opts.classifier, filetag, opts.start, opts.end-opts.start )
+if opts.verbose:
+    print "  %s"%jsonfilename
+file_obj = open(jsonfilename, "w")
+file_obj.write( json.dumps( {opts.classifier:{'nominal FAP':opts.FAPthr, 'maximum reported FAP':maxFAP, 'observed deadtime':dt, 'duration':T} } ) )
+file_obj.close()
+
+if not opts.skip_gracedb_upload:
+    message = "iDQ calibration sanity check for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
+    if opts.verbose:
+        print "    "+message
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename )
+
+### plot calibration check
+fig = isp.plt.figure()
+ax = fig.add_axes( isp.default_axpos )
+
+ax.loglog(maxFAP, dt, marker='o', linestyle='none')
+
+ax.set_xlabel('Nominal FAP')
+ax.set_ylabel('Observed deadtime')
+
+ax.grid(True)
+xmin = 1e-4
+xmax = 1.0
+ax.set_xlim(xmin=xmin, xmax=xmax)
+ax.set_ylim(ax.get_xlim())
+
+faircoin = np.linspace( xmin, xmax, 1001 )
+ax.plot( faircoin, faircoin, color='k' )
+
+ax.set_title('iDQ local FAP calibration for %s at %s'%(plotting_label, ifo))
+
+figname = isp.calibfig( gdbdir, ifo, opts.classifier, filetag, opts.start, opts.end-opts.start )
+if opts.verbose:
+    print "  %s"%figname
 fig.savefig(figname)
 isp.plt.close(fig)
 
 if not opts.skip_gracedb_upload:
-    message = "iDQ fap and glitch-rank timeseries plot for " + opts.classifier + " at "+ifo+":"
+    message = "iDQ calibration sanity check figure for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
-        print "  %s"%message
-    gracedb.writeLog(opts.gracedb_id, message=message, filename=figname, tagname='data_quality')
+        print "    "+message
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=figname, tagname=['data_quality'] )
 
+### discover KW triggers, compute efficiencies, plot ROC curves
 if opts.verbose:
-    print "Done"
+    print "retrieving gw triggers"
+gwtrgs = event.include( idq.retrieve_kwtrigs(GWgdsdir, GWkwbasename, opts.start, opts.end-opts.start, kwstride, sleep=0, ntrials=1, verbose=False)[gwchannel], idqsegs, tcent=event.col_kw['tcent'] )
+
+fig = isp.plt.figure()
+ax = fig.add_axes( isp.default_axpos )
+
+jsonD = {}
+for signif in opts.KWsignifThr:
+    trgs = [trg for trg in gwtrgs if trg[event.col_kw['signif']] >= signif]
+    N = len(trgs)*1.0
+    if N:
+        eff = []
+        for fapThr in opts.FAPthr:
+            s = segs[fapThr][0]
+            eff.append( len(event.include( trgs, s, tcent=event.col_kw['tcent'] ))/N )
+    else:
+        eff = [0.0 for fapThr in opts.FAPthr]
+
+    color = ax.step( dt, eff, label='%d events with KWsignif $\geq %.1f$'%(N, signif), where='post' )[0].get_color()
+
+    jsonD[signif] = {'observed deadtime':dt, 'observed efficiency':eff, 'number of glitches':N, 'duration':T}
+
+    l, h = [], []
+    for e in eff:
+        cr = idq.binomialCR( e*N, N, conf=0.68 )
+        l.append(cr[0])
+        h.append(cr[1])
+    ax.fill_between( dt, l, h, color=color, alpha=0.25, edgecolor='none' )    
+
+### add curve from dat files
+if opts.verbose:
+    print "finding all *dat files"
+dats = [dat for dat in idq.get_all_files_in_range( realtimedir, opts.start, opts.end, pad=0, suffix='.dat') if (opts.classifier==idq.extract_dat_name( dat )) and event.livetime(event.andsegments([[idq.extract_start_stop(dat, suffix=".dat")], idqsegs]))]
+if opts.verbose:
+    print "reading samples from %d dat files"%len(dats)
+output = idq.slim_load_datfiles( dats, skip_lines=0, columns=['GPS', 'i', 'rank'])
+output = idq.filter_datfile_output( output, idqsegs )
+#output['GPS'] = [float(l) for l in output['GPS']] ### not necessary because values are cast appropriately within idq.filter_datfile_output
+#output['i'] = [float(l) for l in output['i']]
+#output['rank'] = [float(l) for l in output['rank']]
+
+r, c, g, = idq.dat_to_rcg( output )
+
+if g[-1] and c[-1]:
+    color = ax.step( 1.0*c/c[-1], 1.0*g/g[-1], label='datfiles: $N_c=%d$, $N_g=%d$'%(c[-1], g[-1]), linewidth=2, where='post' )[0].get_color()
+    for G, C in zip(g, c):
+        c_cr = idq.binomialCR( C, c[-1], conf=0.68 )
+        g_cr = idq.binomialCR( G, g[-1], conf=0.68 )
+        ax.fill_between( c_cr, [g_cr[0]]*2, [g_cr[1]]*2, color=color, alpha=0.25, edgecolor='none' )
+
+jsonD['dat'] = {'rank':list(r), 'cumulative cleans':list(c), 'cumulative glitches':list(g)}
+
+### finish plot
+ax.set_xlabel('Deadtime (FAP)')
+ax.set_ylabel('Efficiency')
+
+ax.set_xscale('log')
+ax.set_yscale('linear')
+
+ax.grid(True)
+xmin = 1e-4
+xmax = 1.0
+ax.set_xlim(xmin=xmin, xmax=xmax)
+ax.set_ylim(ymin=0.0, ymax=1.0)
+
+faircoin = np.linspace( xmin, xmax, 1001 )
+ax.plot( faircoin, faircoin, color='k' )
+
+ax.legend(loc='best')
+
+ax.set_title('iDQ local ROC curves for %s at %s'%(plotting_label, ifo))
+
+figname = isp.rocfig( gdbdir, opts.classifier, ifo, filetag, opts.start, opts.end-opts.start )
+if opts.verbose:
+    print "  %s"%figname
+fig.savefig(figname)
+isp.plt.close(fig)
+
+if not opts.skip_gracedb_upload:
+    message = "iDQ local ROC figure for %s at %s within [%.3f, %.3f]"%(ifo, opts.classifier, opts.start, opts.end)
+    if opts.verbose:
+        print "    "+message
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=figname, tagname=['data_quality'] )
+
+jsonfilename = idq.gdb_roc_json(  gdbdir, opts.classifier, ifo, filetag, opts.start, opts.end-opts.start )
+if opts.verbose:
+    print "  %s"%jsonfilename
+file_obj = open(jsonfilename, "w")
+file_obj.write( json.dumps( {opts.classifier:jsonD} ) )
+file_obj.close()
+
+if not opts.skip_gracedb_upload:
+    message = "iDQ local ROC curves for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
+    if opts.verbose:
+        print "    "+message
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename )
+
+#=================================================
+
+### determine vital statistics about training and calibration 
+
+### extract trained, calib ranges and associate them with segments
+trainD = defaultdict( list )
+calibD = defaultdict( list )
+for fap in faps:
+    seg = idq.extract_start_stop( fap, suffix=".gwf" )
+    trained, calib = idq.extract_timeseries_ranges( fap )
+    trainD[tuple(trained)].append( seg )
+    calibD[tuple(calib)].append( seg )
+
+if opts.ignore_science_segments:
+    dq_name = config.get('get_science_segments', 'include')
+
+### fix segments, extract info
+jsonD = {}
+for (calib_start, calib_end), segs in calibD.items():
+    segs = event.fixsegments( segs )
+    thisD = {'used':segs}
+
+    ### extract livetime
+    sciseg_files = glob.glob("%s/*_%d/science_segments*%s-*-*.xml.gz"%(calibrationdir, calib_end, dq_name))
+    if len(sciseg_files) > 1:
+        raise ValueError("something odd with %s scisegs in : %s/*_%d/"%(dq_name, calibrationdir, calib_end))
+    elif sciseg_files: ### len == 1
+        thisD['%s livetime'%dq_name] = event.livetime( idq.extract_dq_segments( sciseg_files[0], dq_name)[0] )
+        segstart, segend = idq.extract_start_stop( sciseg_files[0], suffix='.xml.gz')
+        thisD['start'] = int(segstart)
+        thisD['end'] = int(segend)
+    else:
+        thisD['%s livetime'%dq_name] = None
+        thisD['start'] = None
+        thisD['end'] = None
+
+    ### extract Ng, Nc
+    ### format is the same for all classifiers, independent of flavor, so we just write the command here instead of delegating...
+    rocs = [ _ for _ in glob.glob("%s/*_%d/%s_%s-*-*.uroc"%(calibrationdir, calib_end, ifo, opts.classifier)) if (len(_.split(opts.classifier)[-1].split('-'))==3)]
+    if len(rocs) != 1:
+        raise ValueError("something odd with %s uroc files in : %s/*_%d/"%(opts.classifier, calibrationdir, calib_end))
+    else:
+        _, _, _, Nc, Ng = idq.file_to_rcg( rocs[0] )
+        thisD['Num glitches'] = int(Ng)
+        thisD['Num cleans'] = Nc
+
+    ### add to dictionary
+    jsonD["%d_%d"%(calib_start, calib_end)] = thisD
+
+### write jsonD to file
+jsonfilename = idq.useSummary_json( gdbdir, ifo, opts.classifier, "%s_calib"%filetag, opts.start, opts.end-opts.start)
+if opts.verbose:
+    print "writing : %s"%jsonfilename
+file_obj = open(jsonfilename, "w")
+file_obj.write( json.dumps( jsonD ) )
+file_obj.close()
+if not opts.skip_gracedb_upload:
+    message = "iDQ local calibration vital statistics for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
+    if opts.verbose:
+        print "    "+message
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
+
+
+### repeat for training
+jsonD = {}
+for (train_start, train_end), segs in trainD.items():
+    segs = event.fixsegments( segs )
+    thisD = {'used':segs}
+
+    ### extract livetime
+    sciseg_files = glob.glob("%s/%d_%d/science_segments*%s*.xml.gz"%(traindir, train_start, train_end, dq_name))
+    if len(sciseg_files) > 1:
+        raise ValueError("something odd with %s scisegs in : %s/%d_%d/"%(dq_name, traindir, train_start, train_end))
+    elif sciseg_files: ### len == 1
+        thisD['%s livetime'%dq_name] = event.livetime( idq.extract_dq_segments( sciseg_files[0], dq_name)[0] )
+        segstart, segend = idq.extract_start_stop( sciseg_files[0], suffix='.xml.gz')
+        thisD['start'] = int(segstart)
+        thisD['end'] = int(segend)
+    else:
+        thisD['%s livetime'%dq_name] = None
+        thisD['start'] = None
+        thisD['end'] = None
+
+    ### extract Ng, Nc
+    if flavor == "ovl":
+        vetolist = glob.glob("%s/%d_%d/%s/ovl/*vetolist.eval"%(traindir, train_start, train_end, opts.classifier))
+        if len(vetolist) != 1:
+            raise ValueError("something odd with %s vetolists : %s/%d_%d/%s/ovl/"%(opts.classifier, traindir, train_start, train_end))
+        else:
+            thisD['Num glitches'] = int( event.loadstringtable( vetolist[0] )[0][idq.ovl.vD['#gwtrg']] ) 
+    elif flavor in idq.mla_flavors:
+        pat = glob.glob("%s/%d_%d/%s_mla*.pat"%(traindir, train_start, train_end, ifo))
+        if len(pat) != 1:
+            raise ValueError("something odd with %s patfile : %s/%d_%d/"%(opts.classifier, traindir, train_start, train_end))
+        else:
+            i = [float(i) for i in idq.slim_load_datfiles( pat[0], columns=['i'] )]
+            Ng = np.sum( i )
+            Nc = len(i) - Ng
+            thisD['Num glitches'] = int(Ng)
+            thisD['Num cleans'] = int(Nc)
+    else:
+        raise ValueError("do not know how to extract training information for flavor=%s"%(flavor))
+
+    ### add to dictionary
+    jsonD["%d_%d"%(train_start, train_end)] = thisD
+
+### write jsonD to file
+jsonfilename = idq.useSummary_json( gdbdir, ifo, opts.classifier, "%s_train"%filetag, opts.start, opts.end-opts.start)
+if opts.verbose:
+    print "writing : %s"%jsonfilename
+file_obj = open(jsonfilename, "w")
+file_obj.write( json.dumps( jsonD ) )
+file_obj.close()
+if not opts.skip_gracedb_upload:
+    message = "iDQ local training vital statistics for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
+    if opts.verbose:
+        print "    "+message
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
+
+
+#=================================================
+
+'''
+  likelihood ratios
+  active channels (over a wider timescale than timeseries?)
+  iDQ glitch/clean rates
+  else?
+'''
 
