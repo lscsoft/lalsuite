@@ -278,3 +278,8 @@ if use_bayespe_postproc:
         ppdag.write_script()
 
     print "Created a postprocessing DAG named %s\n" % ppdag_name
+
+xmldoc = ligolw.Document()
+xmldoc.appendChild(ligolw.LIGO_LW())
+process.register_to_xmldoc(xmldoc, sys.argv[0], opts.__dict__)
+utils.write_filename(xmldoc, opts.output_name + ".xml.gz", gz=True)
