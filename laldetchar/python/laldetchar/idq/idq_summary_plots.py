@@ -583,8 +583,9 @@ def ovl_vconfig_stripchart( channel_ordered_vconfigs, to=None, cmap='jet', mapIt
     
     N = len(configs)
 
+    ### figure out the size of the axis object and the figure
     chan_stripchart_left = 0.3
-    chan_stripchart_right = 0.9
+    chan_stripchart_right = 0.90
     chan_stripchart_figwidth = 10
 
     chan_stripchart_topmargin = 0.4
@@ -596,13 +597,22 @@ def ovl_vconfig_stripchart( channel_ordered_vconfigs, to=None, cmap='jet', mapIt
     chan_stripchart_axpos = [chan_stripchart_left, chan_stripchart_botmargin/chan_stripchart_figheight, chan_stripchart_right-chan_stripchart_left, 1-chan_stripchart_topmargin/chan_stripchart_figheight - chan_stripchart_botmargin/chan_stripchart_figheight]
 #    chan_stripchart_axpos = [chan_stripchart_left, plt.rcParams['figure.subplot.bottom'], plt.rcParams['figure.subplot.right']-chan_stripchart_left, plt.rcParams['figure.subplot.top']-plt.rcParams['figure.subplot.bottom']]
 
+    chan_stripchart_cb_left = chan_stripchart_right + 0.01
+    chan_stripchart_cb_right = 0.93
+
+    chan_stripchart_cbpos = [chan_stripchart_cb_left, chan_stripchart_axpos[1], chan_stripchart_cb_right-chan_stripchart_cb_left, chan_stripchart_axpos[3]]
+
     fig = plt.figure(figsize=[chan_stripchart_figwidth, chan_stripchart_figheight])
     ax = fig.add_axes(chan_stripchart_axpos)
+
+    cbax = fig.add_axes(chan_stripchart_cbpos)
 
     ymap = dict( (config, ind) for ind, config in enumerate(configs) )
 
     cmap = plt.get_cmap(cmap)
 
+    ### plot segments for each vconfig
+    alpha = 1.0
     for cnfgs, segs in channel_ordered_vconfigs.items():
         for config in cnfgs:
             y = ymap[config]
@@ -612,8 +622,13 @@ def ovl_vconfig_stripchart( channel_ordered_vconfigs, to=None, cmap='jet', mapIt
             color = cmap( config[mapIt['rank']] )
 
             for start, end in segs:
-                ax.fill_between( [start-to, end-to], [y+0.02]*2, [y+0.98]*2, edgecolor=color, color=color, linewidth=0.5, alpha=0.75 ) 
+                ax.fill_between( [start-to, end-to], [y+0.02]*2, [y+0.98]*2, edgecolor=color, color=color, linewidth=0.5, alpha=alpha ) 
 
+    ### plot the colorbar
+    cmap_norm=matplotlib.colors.Normalize( vmin=0.0, vmax=1.0 )
+    cb = matplotlib.colorbar.ColorbarBase( cbax, cmap=cmap, norm=cmap_norm, orientation='vertical', alpha=alpha )
+    
+    ### decorate the plot
     ax.set_xlabel('Time [sec] since %.3f'%to)
     ax.set_yticks( [ind+0.5 for ind in range(len(configs))])
     yticklabels = ["None"]
@@ -636,6 +651,6 @@ def ovl_vconfig_stripchart( channel_ordered_vconfigs, to=None, cmap='jet', mapIt
 
     ax.grid(False, which="both")
 
-    return fig, ax
+    return fig, ax, cbax
 
 ##@}

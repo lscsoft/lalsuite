@@ -457,11 +457,13 @@ if config.has_section(opts.classifier) and config.has_option(opts.classifier, 'f
         time_ordered_vconfigs, channel_ordered_vconfigs, vconfig_keys = igu.extract_ovl_vconfigs( rank_filenames, rank_channame, config.get('general','traindir'), opts.plotting_gps_start, opts.plotting_gps_end, metric=config.get(opts.classifier, 'metric') )
 
         ### make plot
-#        scfig, ax = isp.ovl_vconfig_stripchart( time_ordered_vconfigs, to=opts.gps, mapIt=vconfig_keys )
-        scfig, ax = isp.ovl_vconfig_stripchart( channel_ordered_vconfigs, to=opts.gps, mapIt=vconfig_keys )
+#        scfig, ax, cbax = isp.ovl_vconfig_stripchart( time_ordered_vconfigs, to=opts.gps, mapIt=vconfig_keys )
+        scfig, ax, cbax = isp.ovl_vconfig_stripchart( channel_ordered_vconfigs, to=opts.gps, mapIt=vconfig_keys )
 
         ax.set_xlim(xmin=opts.plotting_gps_start-to, xmax=opts.plotting_gps_end-to)
         ax.set_title('iDQ (possible) active channels for %s at %s'%(plotting_label, ifo))
+
+        cbax.set_ylabel('%s rank'%(plotting_label))
 
         figname = isp.ovlstripchart(gdbdir, ifo, opts.classifier, filetag, opts.plotting_gps_start, opts.plotting_gps_end-opts.plotting_gps_start, figtype="png")
         if opts.verbose:
