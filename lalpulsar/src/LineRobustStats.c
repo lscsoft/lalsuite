@@ -168,7 +168,7 @@ XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector F-stat \f$2\F\f$
                   const BSGLSetup *setup			//!< [in] pre-computed setup from XLALCreateBSGLSetup()
                   )
 {
-  XLAL_CHECK ( setup != NULL, XLAL_EINVAL );
+  XLAL_CHECK_REAL4 ( setup != NULL, XLAL_EINVAL );
 
   REAL4 FpMax = setup->C; // used to keep track of log of maximal denominator sum-term
 
@@ -237,8 +237,8 @@ XLALComputeGLtLDenominator ( const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in]
                              )
 {
 
-  XLAL_CHECK ( setup != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( !setup->useLogCorrection, XLAL_EDOM, "log correction not implemented for GLtL denominator.");
+  XLAL_CHECK_REAL4 ( setup != NULL, XLAL_EINVAL );
+  XLAL_CHECK_REAL4 ( !setup->useLogCorrection, XLAL_EDOM, "log correction not implemented for GLtL denominator.");
 
   REAL4 FpMax = setup->C; // used to keep track of log of maximal denominator sum-term
 
@@ -345,7 +345,7 @@ XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] maximum \f$\max\limits_{
                      const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
                      )
 {
-  XLAL_CHECK ( setup != NULL, XLAL_EINVAL );
+  XLAL_CHECK_REAL4 ( setup != NULL, XLAL_EINVAL );
 
   REAL4 GLtLDenominator = XLALComputeGLtLDenominator ( twoFX, maxtwoFXl, setup );
 
@@ -395,7 +395,7 @@ XLALComputeBStSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$2\scF
                       const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
                       )
 {
-  XLAL_CHECK ( setup != NULL, XLAL_EINVAL );
+  XLAL_CHECK_REAL4 ( setup != NULL, XLAL_EINVAL );
 
   REAL4 GLtLDenominator = XLALComputeGLtLDenominator ( twoFX, maxtwoFXl, setup );
 
