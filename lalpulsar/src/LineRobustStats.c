@@ -59,10 +59,10 @@ struct tagBSGLSetup {
  */
 BSGLSetup *
 XLALCreateBSGLSetup ( const UINT4 numDetectors,			//!< [in] number of detectors \f$\Ndet\f$
-                      const REAL4 Fstar0,			//!< [in] prior parameter \f$\Ftho\f$ (in semi-coherent case this is \f$\scFtho\f$ from papers!)
+                      const REAL4 Fstar0,			//!< [in] prior transition-scale parameter: pass \f$\Ftho\f$ in coherent case, \f$\scFtho=\Nseg\Ftho\f$ in semi-coherent case
                       const REAL4 oLGX[PULSAR_MAX_DETECTORS],	//!< [in] prior per-detector line odds \f$\{\oLGX\}\f$, if NULL: interpreted as \f$\oLGX=\frac{1}{\Ndet} \forall X\f$
                       const BOOLEAN useLogCorrection,		//!< [in] include log-term correction [slower] or not [faster, less accurate]
-                      const UINT4 numSegments			//!< [in] number of segments \f$\Nseg\f$
+                      const UINT4 numSegments			//!< [in] number of segments \f$\Nseg\f$ in a semi-coherent search (=1 for coherent search)
                       )
 {
   // check input
@@ -164,8 +164,8 @@ XLALDestroyBSGLSetup ( BSGLSetup * setup )
  *
  */
 REAL4
-XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector Fstat \f$2\F\f$ (coherent or semi-coherent sum(!))
-                  const REAL4 twoFX[PULSAR_MAX_DETECTORS],	//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (coherent or semi-coherent sum(!))
+XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector F-stat \f$2\F\f$ (coherent or semi-coherent sum(!))
+                  const REAL4 twoFX[PULSAR_MAX_DETECTORS],	//!< [in] per-detector F-stats \f$\{2\F^X\}\f$ (coherent or semi-coherent sum(!))
                   const BSGLSetup *setup			//!< [in] pre-computed setup from XLALCreateBSGLSetup()
                   )
 {
@@ -202,9 +202,39 @@ XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector Fstat \f$2\F\f$ 
 
 } // XLALComputeBSGL()
 
+/**
+ * \f[
+ * \newcommand{\coh}[1]{\widetilde{#1}}
+ * \newcommand{\sc}[1]{\widehat{#1}}
+ * \newcommand{\cohF}{\coh{\F}}
+ * \newcommand{\scF}{\sc{\F}}
+ * \newcommand{\denomterm}{\sc{D}}
+ * \newcommand{\denommax}{\denomterm_{\mathrm{max}}}
+ * \newcommand{\Transline}{{\mathrm{t\Line}}}
+ * \newcommand{\cppLX}{\sc{p}_{\Line}^X}
+ * \newcommand{\cppTLXk}{\coh{p}_{\Transline}^{X\ell}}
+ * \newcommand{\cppLTLsc}{\sc{p}_{\Line\Transline}}
+ * \f]
+ * Compute the common noise-hypothesis denominator for various semi-coherent 'transient-line-robust statistics'
+ * as defined in \cite Keitel2015 .
+ *
+ * NOTE: In the current implementation, only
+ * \c setup->useLogCorrection == TRUE
+ * is accepted!
+ * In this case, the output is simply the maximum of the set of denominator exponents,
+ * \f{equation}{
+ * \denommax \equiv \max \left\{ \Nseg\Ftho + \ln\left( 1-\cppLTLsc \right) ,\,
+ *                               \scF^X + \ln\cppLX ,\,
+ *                               \cohF^{X\ell} + (\Nseg-1)\Ftho + \ln\cppTLXk
+ *                       \right\} \,,
+ * \f}
+ * with the simplifying assumption that all
+ * \f$\cppTLXk = \cppLTLsc = \cppLX = 1\f$.
+ *
+ */
 REAL4
-XLALComputeGLtLDenominator ( const REAL4 twoFX[PULSAR_MAX_DETECTORS],			//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (semi-coherent sum(!))
-                             const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] per-detector maximum Fstats \f$\{\max\limits_l2\F^{Xl}\}\f$ over segments
+XLALComputeGLtLDenominator ( const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] semi-coherent sums \f$\{2\scF^X\}\f$ of per-detector F-stats
+                             const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] maxima \f$\{\max\limits_{\ell}2\{\cohF^{X\ell}\}\}\f$ of per-detector F-stats over segments
                              const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
                              )
 {
@@ -243,10 +273,38 @@ XLALComputeGLtLDenominator ( const REAL4 twoFX[PULSAR_MAX_DETECTORS],			//!< [in
 
 }
 
+/**
+ * \f[
+ * \newcommand{\denomtermset}{\mathcal{\denomterm}}
+ * \newcommand{\SGLtL}{{\Signal\Gauss\Line\Transline}}
+ * \newcommand{\OSGLtL}{O_\SGLtL}
+ * \newcommand{\oSGLtL}{o_\SGLtL}
+ * \newcommand{\BSGLtL}{B_{\SGLtL}}
+ * \f]
+ * Compute the semi-coherent transient-line-robust CW detection statistic \f$\logten \BSGLtL\f$
+ * from \cite Keitel2015 .
+ *
+ * As defined in Eq.(22), \f$\BSGLtL\f$ is the BayesFactor for CW signals vs.
+ * either Gaussian noise, a persistent line or a transient line, i.e.
+ * \f$\BSGLtL \equiv \frac{P(\data | \text{Signal})}{P(\data | \text{Gauss or Line or transient Line})}\f$.
+ * It is related to the odds ratio
+ * via \f$\OSGLtL = \oSGLtL\,\BSGLtL\f$ in terms of the prior odds \f$\oSGLtL\f$.
+ *
+ * This function returns an approximation of \f$\logten B_\SGLtL = \ln B_\SGLtL \, \logten e\f$,
+ * with the general expression for \f$\ln B_\SGLtL\f$ given in Eq.(23) of \cite Keitel2015 :
+ * \f{equation}{
+ * \ln \BSGLtL = \F - \denommax - \ln\left( \sum\limits_{\denomterm \in \denomtermset} e^{\denomterm-\denommax} \right) \,,
+ * \f}
+ * while the current implementation of XLALComputeGLtLDenominator() uses only
+ * the maximum \f$\denommax\f$ of the set of denominator exponents and drops the additional log-correction term.
+ *
+ * NOTE: This implementation also assumes unit prior weights for the various noise hypotheses.
+ *
+ */
 REAL4
-XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] multi-detector Fstat \f$2\F\f$ (semi-coherent sum(!))
-                    const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (semi-coherent sum(!))
-                    const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] per-detector maximum Fstats \f$\{\max\limits_l2\F^{Xl}\}\f$ over segments
+XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$2\scF\f$ of multi-detector F-stats
+                    const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] semi-coherent sums \f$\{2\scF^X\}\f$ of per-detector F-stats
+                    const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] maxima \f$\{\max\limits_{\ell}2\{\cohF^{X\ell}\}\}\f$ of per-detector F-stats over segments
                     const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
                     )
 {
@@ -259,10 +317,41 @@ XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] multi-detector Fstat \f$2\F\
 
 } // XLALComputeBSGLtL
 
+/**
+ * \f[
+ * \newcommand{\Transsig}{{\mathrm{t\Signal}}}
+ * \newcommand{\tSGLtL}{{\Transsig\Gauss\Line\Transline}}
+ * \newcommand{\BtSGLtL}{B_{\tSGLtL}}
+ * \newcommand{\OtSGLtL}{O_\tSGLtL}
+ * \newcommand{\otSGLtL}{o_\tSGLtL}
+ * \newcommand{\oTSGk}{\coh{o}_{\Transsig/\Gauss}^{\ell}}
+ * \f]
+ * Compute a semi-coherent transient-line-robust tCW detection statistic \f$\logten \BtSGLtL\f$
+ * based on \cite Keitel2015 .
+ *
+ * Based on the transient-CW hypothesis as given in Eq.(29), \f$\BtSGLtL\f$ is the BayesFactor for tCW signals vs.
+ * either Gaussian noise, a persistent line or a transient line, i.e.
+ * \f$\BtSGLtL \equiv \frac{P(\data | \text{Signal})}{P(\data | \text{Gauss or Line or transient Line})}\f$.
+ * It is related to the odds ratio
+ * via \f$\OtSGLtL = \otSGLtL\,\BtSGLtL\f$ in terms of the prior odds \f$\oSGLtL\f$.
+ *
+ * This function returns an approximation of \f$\logten B_\SGLtL = \ln B_\SGLtL \, \logten e\f$.
+ * While the general expression for \f$\ln B_\SGLtL\f$ would be analoguous to Eq.(23) of \cite Keitel2015 ,
+ * \f{equation}{
+ * \ln \BtSGLtL = \sum\limits_{\ell=1}^{\Nseg} \oTSGk \, e^{\cohF^{\ell} - \Ftho} - \denommax - \ln\left( \sum\limits_{\denomterm \in \denomtermset} e^{\denomterm-\denommax} \right) \,,
+ * \f}
+ * the current implementation uses only
+ * the maximum multi-detector, single-segment F-stat value \f$\max\cohF^{\ell}\f$ for the numerator
+ * and, through XLALComputeGLtLDenominator(), the maximum \f$\denommax\f$ of the set of denominator exponents.
+ * The  additional log-correction terms are dropped.
+ *
+ * NOTE: This implementation also assumes unit prior weights for the various signal and noise hypotheses.
+ *
+ */
 REAL4
-XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] multi-detector maximum Fstat \f$\max\limits_l2\F^l\f$ over segments
-                     const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (semi-coherent sum(!))
-                     const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] per-detector maximum Fstats \f$\{\max\limits_l2\F^{Xl}\}\f$ over segments
+XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] maximum \f$\max\limits_{\ell}2\cohF^\ell\f$ of multi-detector F-stats over segments
+                     const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] semi-coherent sums \f$\{2\scF^X\}\f$ of per-detector F-stats
+                     const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] maxima \f$\{\max\limits_{\ell}2\{\cohF^{X\ell}\}\}\f$ of per-detector F-stats over segments
                      const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
                      )
 {
@@ -276,11 +365,53 @@ XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] multi-detector maximum F
 
 } // XLALComputeBtSGLtL
 
+/**
+ * \f[
+ * \newcommand{\StSGLtL}{{\Signal\Transsig\Gauss\Line\Transline}}
+ * \newcommand{\OStSGLtL}{O_\StSGLtL}
+ * \newcommand{\oStSGLtL}{o_\StSGLtL}
+ * \newcommand{\BStSGLtL}{B_{\StSGLtL}}
+ * \newcommand{\numerterm}{\sc{E}}
+ * \newcommand{\numertermset}{\mathcal{\numerterm}}
+ * \newcommand{\numermax}{\numerterm_{\mathrm{max}}}
+ * \newcommand{\cppS}{\sc{p}_{\Signal}}
+ * \newcommand{\cppTS}{\coh{p}_{\Transsig}}
+ * \newcommand{\cppTSk}{\coh{p}_{\Transsig}^{\ell}}
+ * \f]
+ * Compute the semi-coherent transient-line-robust CW+tCW detection statistic \f$\logten \BStSGLtL\f$
+ * from \cite Keitel2015 .
+ *
+ * As defined in Eq.(34), \f$\BStSGLtL\f$ is the BayesFactor for either persistent CW or transient tCW signals vs.
+ * either Gaussian noise, a persistent line or a transient line, i.e.
+ * \f$\BStSGLtL \equiv \frac{P(\data | \text{Signal or transient Signal})}{P(\data | \text{Gauss or Line or transient Line})}\f$.
+ * It is related to the odds ratio
+ * via \f$\OStSGLtL = \oStSGLtL\,\BStSGLtL\f$ in terms of the prior odds \f$\oStSGLtL\f$.
+ *
+ * This function returns an approximation of \f$\logten B_\StSGLtL = \ln B_\StSGLtL \, \logten e\f$,
+ * with the general expression for \f$\ln B_\StSGLtL\f$ given in Eq.(35) of \cite Keitel2015 :
+ * \f{equation}{
+ * \ln \BStSGLtL =   \numermax + \ln \left( \sum\limits_{\numerterm \in \numertermset} e^{\numerterm-\numermax} \right)
+ *                 - \denommax - \ln \left( \sum\limits_{\denomterm \in \denomtermset} e^{\denomterm-\denommax} \right) \,,
+ * \f}
+ * with the denominator terms defined as in XLALComputeGLtLDenominator() and
+ * \f{equation}{
+ * \numertermset = \left\{ \scF + \ln\cppS , \;
+                           \cohF^{\ell} + (\Nseg-1)\Ftho + \ln\cppTSk
+                   \right\} \,,
+ * \f}
+ * while the current implementation uses only the maximum multi-detector, single-segment F-stat value \f$\max\cohF^{\ell}\f$ for the numerator:
+ * \f$\numermax = \max \left\{  \scF, \max\limits_{\ell}\cohF^\ell + \Ftho (\Nseg-1) \right\}\f$
+ * and, through XLALComputeGLtLDenominator(), the maximum \f$\denommax\f$ of the set of denominator exponents.
+ * dropping the additional log-correction terms.
+ *
+ * NOTE: This implementation also assumes unit prior weights for the various signal and noise hypotheses.
+ *
+ */
 REAL4
-XLALComputeBStSGLtL ( const REAL4 twoF,					//!< [in] multi-detector Fstat \f$2\F\f$ (semi-coherent sum(!))
-                      const REAL4 maxtwoFl,				//!< [in] multi-detector maximum Fstat \f$\max\limits_l2\F^l\f$ over segments
-                      const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] per-detector Fstats \f$\{2\F^X\}\f$ (semi-coherent sum(!))
-                      const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] per-detector maximum Fstats \f$\{\max\limits_l2\F^{Xl}\}\f$ over segments
+XLALComputeBStSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$2\scF\f$ of multi-detector F-stats
+                      const REAL4 maxtwoFl,				//!< [in] maximum \f$\max\limits_{\ell}2\cohF^\ell\f$ of multi-detector F-stats over segments
+                      const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] semi-coherent sums \f$\{2\scF^X\}\f$ of per-detector F-stats
+                      const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] maxima \f$\{\max\limits_{\ell}2\{\cohF^{X\ell}\}\}\f$ of per-detector F-stats over segments
                       const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
                       )
 {
