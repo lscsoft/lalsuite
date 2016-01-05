@@ -132,6 +132,23 @@ def write_to_xml(cells, intr_prms, pin_prms={}, fvals=None, fname=None, verbose=
         fname = "%s-MASS_POINTS-%d-1.xml.gz" % (ifos, start)
     utils.write_filename(xmldoc, fname, gz=True, verbose=verbose)
 
+def get_evidence_grid(points, res_pts, intr_prms, exact=False):
+    """
+    Associate the "z-axis" value (evidence, overlap, etc...) res_pts with its
+    corresponding point in the template bank (points). If exact is True, then
+    the poit must exactly match the point in the bank.
+    """
+    grid_tree = BallTree(selected)
+    grid_idx = []
+    # Reorder the grid points to match their weight indices
+    for res in res_pts:
+        dist, idx = grid_tree.query(res, k=1)
+        # Stupid floating point inexactitude...
+        #print res, selected[idx[0][0]]
+        #assert numpy.allclose(res, selected[idx[0][0]])
+        grid_idx.append(idx[0][0])
+    return points[grid_idx]
+
 #
 # Plotting utilities
 #
@@ -352,21 +369,9 @@ else:
 
 extent_str = " ".join("(%f, %f)" % bnd for bnd in map(tuple, init_region._bounds))
 center_str = " ".join(map(str, init_region._center))
-print "Created cell with center " + center_str + " and extent " + extent_str
+print "Initial region has center " + center_str + " and extent " + extent_str
 
 #### BEGIN REFINEMENT OF RESULTS #########
-
-def get_evidence_grid(points, res_pts, intr_prms, exact=False):
-    grid_tree = BallTree(selected)
-    grid_idx = []
-    # Reorder the grid points to match their weight indices
-    for res in res_pts:
-        dist, idx = grid_tree.query(res, k=1)
-        # Stupid floating point inexactitude...
-        #print res, selected[idx[0][0]]
-        #assert numpy.allclose(res, selected[idx[0][0]])
-        grid_idx.append(idx[0][0])
-    return points[grid_idx]
 
 if opts.result_file is not None:
     (prev_cells, spacing), level = amrlib.load_grid_level(opts.refine or opts.prerefine, -1)
