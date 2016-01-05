@@ -20,7 +20,7 @@
 
 /**
  * \defgroup LineRobustStats_h Header LineRobustStats.h
- * \ingroup lalpulsar_coh
+ * \ingroup lalpulsar_LR
  * \author David Keitel, Reinhard Prix
  *
  * \brief Functions to compute line-robust CW statistics
@@ -57,7 +57,7 @@ typedef struct tagBSGLSetup BSGLSetup;	///< internal storage for setup and pre-c
 
 BSGLSetup *
 XLALCreateBSGLSetup ( const UINT4 numDetectors,
-                      const REAL4 Fstar0,
+                      const REAL4 Fstar0sc,
                       const REAL4 oLGX[PULSAR_MAX_DETECTORS],
                       const BOOLEAN useLogCorrection,
                       const UINT4 numSegments

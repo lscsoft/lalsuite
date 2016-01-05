@@ -38,6 +38,12 @@
    associated functions.
 @}
 
+\defgroup lalpulsar_LR			Line-robust detection statistics
+@{
+   \brief This packages provides routines to calculate (coherent and semi-coherent)
+   line-robust detection statistics (based on F-statistics), e.g. the BSGL statistic.
+@}
+
 \defgroup lalpulsar_hough		The Hough Transform
 @{
    \brief This package provides routines which implement the

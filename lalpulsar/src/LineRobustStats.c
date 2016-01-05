@@ -34,12 +34,12 @@
 // opaque internal setup structure for XLALComputeBSGL()
 struct tagBSGLSetup {
   UINT4 numDetectors;
-  REAL4 Fstar0;
+  REAL4 Fstar0sc;
   REAL4 oLGX[PULSAR_MAX_DETECTORS];
-  REAL4 C;						// constant term C  = Fstar0 + log(1-pL)
-  REAL4 CX[PULSAR_MAX_DETECTORS];			// per-detector term CX = log( pL rX / Ndet )
-//   REAL4 CXl[PULSAR_MAX_DETECTORS][PULSAR_MAX_SEGMENTS];	// per-detector, per-segment term ClX = (Nseg - 1)*Fstar0 + log(  ptLXl ) FIXME: not implemented in XLALCreateBSGLSetup()
-  REAL4 perSegTerm;					// extra term for per-segment transient contributions, (Nseg - 1)*Fstar0
+  REAL4 C;						// constant term C  = Fstar0sc + log(1-pL)
+  REAL4 ln_pLtL_X[PULSAR_MAX_DETECTORS];			// per-detector term ln(pX) = ln(oLGX) - ln(1+oLG)
+//   REAL4 CXl[PULSAR_MAX_DETECTORS][PULSAR_MAX_SEGMENTS];	// per-detector, per-segment term ClX = (Nseg - 1)*Fstar0sc/Nseg + log(  ptLXl )
+  REAL4 perSegTerm;					// extra term for per-segment transient contributions, (Nseg - 1)*Fstar0sc/Nseg - ln(Nseg)
   BOOLEAN useLogCorrection;
 };
 
@@ -47,19 +47,20 @@ struct tagBSGLSetup {
 
 /**
  * \f[
+ * \newcommand{\coh}[1]{\widetilde{#1}}
  * \newcommand{\Ndet}{N_{\mathrm{det}}}
  * \newcommand{\F}{\mathcal{F}}
  * \newcommand{\scF}{\hat{\F}}
- * \newcommand{\Ftho}{\F_*^{(0)}}
+ * \newcommand{\cohFtho}{\coh{\F}_*^{(0)}}
  * \newcommand{\scFtho}{\scF_*^{(0)}}
  * \newcommand{\oLGX}{o_{\mathrm{LG}}^X}
  * \newcommand{\Nseg}{N_{\mathrm{seg}}}
  * \f]
- * Pre-compute the 'setup' for XLALComputeBSGL() for given prior parameters \f$\Ftho\f$ and \f$\{\oLGX\}\f$.
+ * Pre-compute the 'setup' for XLALComputeBSGL() for given prior parameters \f$\scFtho\f$ and \f$\{\oLGX\}\f$.
  */
 BSGLSetup *
 XLALCreateBSGLSetup ( const UINT4 numDetectors,			//!< [in] number of detectors \f$\Ndet\f$
-                      const REAL4 Fstar0,			//!< [in] prior transition-scale parameter: pass \f$\Ftho\f$ in coherent case, \f$\scFtho=\Nseg\Ftho\f$ in semi-coherent case
+                      const REAL4 Fstar0sc,			//!< [in] (semi-coherent) prior transition-scale parameter \f$\scFtho=\Nseg\cohFtho\f$
                       const REAL4 oLGX[PULSAR_MAX_DETECTORS],	//!< [in] prior per-detector line odds \f$\{\oLGX\}\f$, if NULL: interpreted as \f$\oLGX=\frac{1}{\Ndet} \forall X\f$
                       const BOOLEAN useLogCorrection,		//!< [in] include log-term correction [slower] or not [faster, less accurate]
                       const UINT4 numSegments			//!< [in] number of segments \f$\Nseg\f$ in a semi-coherent search (=1 for coherent search)
@@ -75,11 +76,11 @@ XLALCreateBSGLSetup ( const UINT4 numDetectors,			//!< [in] number of detectors 
   BSGLSetup *setup;
   XLAL_CHECK_NULL ( (setup = XLALCalloc( 1, sizeof(*setup) )) != NULL, XLAL_ENOMEM );
   setup->numDetectors = numDetectors;
-  setup->Fstar0       = Fstar0;
+  setup->Fstar0sc     = Fstar0sc;
 
   // Compute oLG from Eq.(22)
   REAL4 oLG = 0.0;
-  REAL4 oLGX_default = 1.0/numDetectors;  // 'even odds': use oLGX=1/numDetectors for all X ==> oLG=1, rX=1, pL=0.5
+  REAL4 oLGX_default = 1.0/numDetectors;  // 'even odds': use oLGX=1/numDetectors for all X ==> oLG=1, pL=0.5
   for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
       setup->oLGX[X] = (oLGX != NULL) ? oLGX[X] : oLGX_default;
@@ -87,18 +88,18 @@ XLALCreateBSGLSetup ( const UINT4 numDetectors,			//!< [in] number of detectors 
     }
 
   // constant transition scale term
-  REAL4 log_1_plus_oLG = log ( 1.0 + oLG ); 	// ln(1+oLG)
-  setup->C = Fstar0 - log_1_plus_oLG; 		// Fstar0 + ln(1-pL) = Fstar0 - ln(1+oLG)
+  REAL4 log_1_plus_oLG = logf ( 1.0 + oLG ); 	// ln(1+oLG)
+  setup->C = Fstar0sc - log_1_plus_oLG;		// Fstar0sc + ln(1-pL) = Fstar0sc - ln(1+oLG)
 
   for (UINT4 X = 0; X < numDetectors; X++)
     {
-      setup->CX[X] = -LAL_REAL4_MAX; // fallback if oLGX==0 to avoid raising underflow
+      setup->ln_pLtL_X[X] = -LAL_REAL4_MAX; // fallback if oLGX==0 to avoid raising underflow
       if ( setup->oLGX[X] > 0 ) {
-        setup->CX[X] = log ( setup->oLGX[X] ) - log_1_plus_oLG; // ln(oLGX) - log(1+oLG)
+        setup->ln_pLtL_X[X] = logf ( setup->oLGX[X] ) - log_1_plus_oLG; // ln(oLGX) - log(1+oLG)
       }
     } // for X < numDetectors
 
-  setup->perSegTerm = Fstar0 * ( numSegments - 1 ) / numSegments; // in this function's convention, Fstar0 is actually semi-coherent Fstar0hat, so have to divide by numSegments here!
+  setup->perSegTerm = Fstar0sc * ( numSegments - 1 ) / numSegments - logf ( numSegments );
 
   // FIXME: implement CXl[X][l] = (numSegments - 1)*Fstar0 + log(  ptLXl[X][l] )
 
@@ -118,7 +119,6 @@ XLALDestroyBSGLSetup ( BSGLSetup * setup )
 /**
  * \f[
  * \newcommand{\F}{\mathcal{F}}
- * \newcommand{\Ftho}{\F_*^{(0)}}
  * \newcommand{\FpMax}{\F^{\#}_{\mathrm{max}}}
  * \newcommand{\Ndet}{N_{\mathrm{det}}}
  * \newcommand{\Signal}{\mathrm{S}}
@@ -143,19 +143,18 @@ XLALDestroyBSGLSetup ( BSGLSetup * setup )
  *
  * Here we use the odds ratio derived in Eq.(36) (and Eq.(55)) of \cite KPPLS2014 , from which we can obtain
  * \f{equation}{
- * \ln \BSGL = \F - \FpMax - \ln\left( e^{C - \FpMax} + \sum_X e^{\F^X + C^X - \FpMax} \right) \,,
+ * \ln \BSGL = \F - \FpMax - \ln\left( e^{C - \FpMax} + \sum_X \pL^X \, e^{\F^X - \FpMax} \right) \,,
  * \f}
  * where \c setup->useLogCorrection controls whether or not to include the (usually small) log-correction of the last term,
  * and we defined
- * \f{equation}{ \FpMax \equiv \max\left[ C, \{ \F^X + C^X \} \right] \f}
- * and \f$C,\{C^X\}\f$ are the prior quantities pre-computed in XLALCreateBSGLSetup(), namely
+ * \f{equation}{ \FpMax \equiv \max\left[ C, \{ \F^X + \ln\pL^X \} \right] \f}
+ * and \f$C,\{\ln\pL^X\}\f$ are the prior quantities pre-computed in XLALCreateBSGLSetup(), namely
  * \f{align}{
- * C &\equiv \Ftho + \ln(1-\pL) = \Ftho - \ln(1+\oLG)\,,\\
- * C^X &\equiv \ln\frac{\pL\,r^X}{\Ndet} = \ln \oLGX - \ln(1+\oLG)\,,
+ * C &\equiv \scFtho + \ln(1-\pL) = \scFtho - \ln(1+\oLG)\,,\\
+ * \ln\pL^X &\equiv \ln \oLGX - \ln(1+\oLG)\,,
  * \f}
  * and we used the following relations from \cite KPPLS2014 :
  * \f$ \oLG = \sum_X \oLGX \;\f$ [Eq.(22)],
- * \f$ r^X = \frac{\oLGX\, \Ndet}{\oLG} \;\f$ [Eq.(23)],
  * and \f$\pL = \frac{\oLG}{1 + \oLG} \;\f$ [Eq.(37)].
  *
  * Here, \f$\FpMax\f$ differs from \f$\F''_{\mathrm{max}}\f$ from [Eq.(41)] by \f$\ln\Ndet\f$, due to summation instead of an average over detectors.
@@ -177,26 +176,26 @@ XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector F-stat \f$2\F\f$
   REAL4 Xterm[PULSAR_MAX_DETECTORS];
   for ( UINT4 X=0; X < setup->numDetectors; X ++ )
     {
-      Xterm[X] = 0.5 * twoFX[X] + setup->CX[X]; 	// FX + CX
-      FpMax = fmax ( FpMax, Xterm[X] );
+      Xterm[X] = 0.5f * twoFX[X] + setup->ln_pLtL_X[X]; 	// FX + ln(pLtL_X) = FX + ln(pL_X) as ptL=0
+      FpMax = fmaxf ( FpMax, Xterm[X] );
   }
 
-  REAL4 ln_BSGL = 0.5 * twoF - FpMax; // approximate result without log-correction term
+  REAL4 ln_BSGL = 0.5f * twoF - FpMax; // approximate result without log-correction term
 
   if ( !setup->useLogCorrection ) {
     return ln_BSGL * LAL_LOG10E; // return log10(B_SGL)
   }
 
-  // if useLogCorrection: extraSum = e^(Fstar0+ln(1-pL) - FpMax) + sum_X e^( Xterm[X] - FpMax )
-  REAL4 extraSum = exp ( setup->C  - FpMax );
+  // if useLogCorrection: extraSum = e^(Fstar0sc +ln(1-pL) - FpMax) + sum_X e^( Xterm[X] - FpMax )
+  REAL4 extraSum = expf ( setup->C  - FpMax );
 
   // ... and add all FX-contributions
   for ( UINT4 X = 0; X < setup->numDetectors; X++ )
     {
-      extraSum += exp ( Xterm[X] - FpMax );
+      extraSum += expf ( Xterm[X] - FpMax );
     }
 
-  ln_BSGL -= log ( extraSum ); // F - FpMax - ln( ... )
+  ln_BSGL -= logf ( extraSum ); // F - FpMax - ln( ... )
 
   return ln_BSGL * LAL_LOG10E; // return log10(B_SGL)
 
@@ -204,7 +203,6 @@ XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector F-stat \f$2\F\f$
 
 /**
  * \f[
- * \newcommand{\coh}[1]{\widetilde{#1}}
  * \newcommand{\sc}[1]{\widehat{#1}}
  * \newcommand{\cohF}{\coh{\F}}
  * \newcommand{\scF}{\sc{\F}}
@@ -223,13 +221,13 @@ XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector F-stat \f$2\F\f$
  * is accepted!
  * In this case, the output is simply the maximum of the set of denominator exponents,
  * \f{equation}{
- * \denommax \equiv \max \left\{ \Nseg\Ftho + \ln\left( 1-\cppLTLsc \right) ,\,
+ * \denommax \equiv \max \left\{ \Nseg\cohFtho + \ln\left( 1-\cppLTLsc \right) ,\,
  *                               \scF^X + \ln\cppLX ,\,
- *                               \cohF^{X\ell} + (\Nseg-1)\Ftho + \ln\cppTLXk
+ *                               \cohF^{X\ell} + (\Nseg-1)\cohFtho + \ln\cppTLXk
  *                       \right\} \,,
  * \f}
- * with the simplifying assumption that all
- * \f$\cppTLXk = \cppLTLsc = \cppLX = 1\f$.
+ * with the simplifying assumption of equal prior odds for persistent and transient lines (with equal odds for all segments), ie.
+ * \f$\cppTLXk = \cppLX / \Nseg\f$, therefore \f$\ln\cppTLXk = \ln\cppLX - \ln\Nseg\f$.
  *
  */
 REAL4
@@ -249,24 +247,25 @@ XLALComputeGLtLDenominator ( const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in]
   REAL4 Xlterm[PULSAR_MAX_DETECTORS];
   for ( UINT4 X=0; X < setup->numDetectors; X ++ )
     {
-      Xterm[X] = 0.5 * twoFX[X] + setup->CX[X]; 	// FX + CX
-      FpMax = fmax ( FpMax, Xterm[X] );
-//       Xlterm[X] = 0.5 * maxtwoFXl[X] + setup->CXl[X][maxseg[X]]; // FIXME: this would be the general expression
-      Xlterm[X] = 0.5 * maxtwoFXl[X] + setup->perSegTerm + setup->CX[X]; // assuming ptLXl = pLX for all segments
-      FpMax = fmax ( FpMax, Xlterm[X] );
+      REAL4 ln_pLX = setup->ln_pLtL_X[X] - (REAL4)LAL_LN2; //  ln(pLX) = ln(pLtLX/2), as we assume pLX=ptLX, so pLtLX = 2*pLX
+      Xterm[X] = 0.5f * twoFX[X] + ln_pLX; 	// FX + ln(pLX)
+      FpMax = fmaxf ( FpMax, Xterm[X] );
+//       Xlterm[X] = 0.5f * maxtwoFXl[X] + setup->CXl[X][maxseg[X]]; // FIXME: this would be the general expression
+      Xlterm[X] = 0.5f * maxtwoFXl[X] + setup->perSegTerm + ln_pLX; // assuming equal odds between segments: ptL_X = pL_X/Nseg
+      FpMax = fmaxf ( FpMax, Xlterm[X] );
   }
 
 //   if ( !setup->useLogCorrection ) {
     return FpMax;
 //   }
 
-  // if useLogCorrection: extraSum = e^(Fstar0+ln(1-pL) - FpMax) + sum_X e^( Xterm[X] - FpMax )
-//   REAL4 extraSum = exp ( setup->C  - FpMax );
+  // if useLogCorrection: extraSum = e^(Fstar0sc +ln(1-pL) - FpMax) + sum_X e^( Xterm[X] - FpMax )
+//   REAL4 extraSum = expf ( setup->C  - FpMax );
 
   // ... and add all FX, FXl contributions (FIXME: not implemented!)
 //   for ( UINT4 X = 0; X < setup->numDetectors; X++ )
 //     {
-//       extraSum += exp ( Xterm[X] - FpMax );
+//       extraSum += expf ( Xterm[X] - FpMax );
 //     }
 
 //   return = FpMax + log ( extraSum );
@@ -287,18 +286,13 @@ XLALComputeGLtLDenominator ( const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in]
  * As defined in Eq.(22), \f$\BSGLtL\f$ is the BayesFactor for CW signals vs.
  * either Gaussian noise, a persistent line or a transient line, i.e.
  * \f$\BSGLtL \equiv \frac{P(\data | \text{Signal})}{P(\data | \text{Gauss or Line or transient Line})}\f$.
- * It is related to the odds ratio
- * via \f$\OSGLtL = \oSGLtL\,\BSGLtL\f$ in terms of the prior odds \f$\oSGLtL\f$.
  *
  * This function returns an approximation of \f$\logten B_\SGLtL = \ln B_\SGLtL \, \logten e\f$,
- * with the general expression for \f$\ln B_\SGLtL\f$ given in Eq.(23) of \cite Keitel2015 :
+ * with the general expression for \f$\ln B_\SGLtL\f$ given in Eq.(23) of \cite Keitel2015, while here we compute
  * \f{equation}{
- * \ln \BSGLtL = \F - \denommax - \ln\left( \sum\limits_{\denomterm \in \denomtermset} e^{\denomterm-\denommax} \right) \,,
+ * \ln \BSGLtL \approx \F - \denommax\,,
  * \f}
- * while the current implementation of XLALComputeGLtLDenominator() uses only
- * the maximum \f$\denommax\f$ of the set of denominator exponents and drops the additional log-correction term.
- *
- * NOTE: This implementation also assumes unit prior weights for the various noise hypotheses.
+ * see the documentation of XLALComputeGLtLDenominator() for definition of \f$\denommax\f$.
  *
  */
 REAL4
@@ -311,7 +305,7 @@ XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$2\scF\f
 
   REAL4 GLtLDenominator = XLALComputeGLtLDenominator ( twoFX, maxtwoFXl, setup );
 
-  REAL4 ln_BSGLtL = 0.5 * twoF - GLtLDenominator;
+  REAL4 ln_BSGLtL = 0.5f * twoF - GLtLDenominator;
 
   return ln_BSGLtL * LAL_LOG10E; // return log10(B_SGLtL)
 
@@ -331,21 +325,17 @@ XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$2\scF\f
  *
  * Based on the transient-CW hypothesis as given in Eq.(29), \f$\BtSGLtL\f$ is the BayesFactor for tCW signals vs.
  * either Gaussian noise, a persistent line or a transient line, i.e.
- * \f$\BtSGLtL \equiv \frac{P(\data | \text{Signal})}{P(\data | \text{Gauss or Line or transient Line})}\f$.
- * It is related to the odds ratio
- * via \f$\OtSGLtL = \otSGLtL\,\BtSGLtL\f$ in terms of the prior odds \f$\oSGLtL\f$.
+ * \f$\BtSGLtL \equiv \frac{P(\data | \text{transient Signal})}{P(\data | \text{Gauss or Line or transient Line})}\f$.
  *
  * This function returns an approximation of \f$\logten B_\SGLtL = \ln B_\SGLtL \, \logten e\f$.
- * While the general expression for \f$\ln B_\SGLtL\f$ would be analoguous to Eq.(23) of \cite Keitel2015 ,
+ * While the general expression for \f$\ln B_\SGLtL\f$ would be analoguous to Eq.(39) of \cite Keitel2015 , here we compute
  * \f{equation}{
- * \ln \BtSGLtL = \sum\limits_{\ell=1}^{\Nseg} \oTSGk \, e^{\cohF^{\ell} - \Ftho} - \denommax - \ln\left( \sum\limits_{\denomterm \in \denomtermset} e^{\denomterm-\denommax} \right) \,,
+ * \ln \BtSGLtL \approx \max_{\ell}\cohF^{\ell} - (\Nseg - 1)\cohFtho - \ln \Nseg - \denommax\,.
  * \f}
- * the current implementation uses only
- * the maximum multi-detector, single-segment F-stat value \f$\max\cohF^{\ell}\f$ for the numerator
- * and, through XLALComputeGLtLDenominator(), the maximum \f$\denommax\f$ of the set of denominator exponents.
- * The  additional log-correction terms are dropped.
+ * using the maximum multi-detector, single-segment F-stat value \f$\max\cohF^{\ell}\f$ in the numerator, and
+ * and the maximum \f$\denommax\f$ of the set of denominator exponents, computed in XLALComputeGLtLDenominator().
  *
- * NOTE: This implementation also assumes unit prior weights for the various signal and noise hypotheses.
+ * NOTE: This implementation also assumes equal prior transient-signal odds for all segments.
  *
  */
 REAL4
@@ -359,7 +349,7 @@ XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] maximum \f$\max\limits_{
 
   REAL4 GLtLDenominator = XLALComputeGLtLDenominator ( twoFX, maxtwoFXl, setup );
 
-  REAL4 ln_BtSGLtL = 0.5 * maxtwoFl + setup->perSegTerm - GLtLDenominator; // assuming equal pS=ptSl priors for all segments
+  REAL4 ln_BtSGLtL = 0.5f * maxtwoFl + setup->perSegTerm - GLtLDenominator;
 
   return ln_BtSGLtL * LAL_LOG10E; // return log10(B_SGLtL)
 
@@ -373,6 +363,7 @@ XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] maximum \f$\max\limits_{
  * \newcommand{\BStSGLtL}{B_{\StSGLtL}}
  * \newcommand{\numerterm}{\sc{E}}
  * \newcommand{\numertermset}{\mathcal{\numerterm}}
+ * \newcommand{\numermin}{\numerterm_{\mathrm{min}}}
  * \newcommand{\numermax}{\numerterm_{\mathrm{max}}}
  * \newcommand{\cppS}{\sc{p}_{\Signal}}
  * \newcommand{\cppTS}{\coh{p}_{\Transsig}}
@@ -384,27 +375,16 @@ XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] maximum \f$\max\limits_{
  * As defined in Eq.(34), \f$\BStSGLtL\f$ is the BayesFactor for either persistent CW or transient tCW signals vs.
  * either Gaussian noise, a persistent line or a transient line, i.e.
  * \f$\BStSGLtL \equiv \frac{P(\data | \text{Signal or transient Signal})}{P(\data | \text{Gauss or Line or transient Line})}\f$.
- * It is related to the odds ratio
- * via \f$\OStSGLtL = \oStSGLtL\,\BStSGLtL\f$ in terms of the prior odds \f$\oStSGLtL\f$.
  *
  * This function returns an approximation of \f$\logten B_\StSGLtL = \ln B_\StSGLtL \, \logten e\f$,
- * with the general expression for \f$\ln B_\StSGLtL\f$ given in Eq.(35) of \cite Keitel2015 :
+ * with the general expression for \f$\ln B_\StSGLtL\f$ given in Eq.(35) of \cite Keitel2015 . Here we compute
  * \f{equation}{
- * \ln \BStSGLtL =   \numermax + \ln \left( \sum\limits_{\numerterm \in \numertermset} e^{\numerterm-\numermax} \right)
- *                 - \denommax - \ln \left( \sum\limits_{\denomterm \in \denomtermset} e^{\denomterm-\denommax} \right) \,,
+ * \ln \BStSGLtL \approx   \numermax + \ln \left( 1 + e^{\numermin-\numermax} \right) - \denommax \,,
  * \f}
- * with the denominator terms defined as in XLALComputeGLtLDenominator() and
- * \f{equation}{
- * \numertermset = \left\{ \scF + \ln\cppS , \;
-                           \cohF^{\ell} + (\Nseg-1)\Ftho + \ln\cppTSk
-                   \right\} \,,
- * \f}
- * while the current implementation uses only the maximum multi-detector, single-segment F-stat value \f$\max\cohF^{\ell}\f$ for the numerator:
- * \f$\numermax = \max \left\{  \scF, \max\limits_{\ell}\cohF^\ell + \Ftho (\Nseg-1) \right\}\f$
- * and, through XLALComputeGLtLDenominator(), the maximum \f$\denommax\f$ of the set of denominator exponents.
- * dropping the additional log-correction terms.
+ * with the \f$\denommax\f$ terms defined as in XLALComputeGLtLDenominator() and
+ * \f$\numermax = \max \left\{  \scF, \max\limits_{\ell}\cohF^\ell + \cohFtho (\Nseg-1) - \ln \Nseg\right\}\f$,
+ * where we have assumed prior equal odds between persistent and transient signals (and equal odds for all segments).
  *
- * NOTE: This implementation also assumes unit prior weights for the various signal and noise hypotheses.
  *
  */
 REAL4
@@ -419,13 +399,13 @@ XLALComputeBStSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$2\scF
 
   REAL4 GLtLDenominator = XLALComputeGLtLDenominator ( twoFX, maxtwoFXl, setup );
 
-  // assuming equal pS=ptSl priors for all segments
-  REAL4 multiF = 0.5 * twoF;
-  REAL4 tsTerm = 0.5 * maxtwoFl + setup->perSegTerm;
-  REAL4 maxNumerator = fmax ( multiF, tsTerm );
-  REAL4 minNumerator = fmin ( multiF, tsTerm );
+  const REAL4 ln_pS = -(REAL4)LAL_LN2;	// =log(2) assuming equal odds between S and tS hypotheses: pS = ptS = 1/2, conditional on (S or tS)
+  REAL4 multiF = 0.5f * twoF + ln_pS;
+  REAL4 tsTerm = 0.5f * maxtwoFl + setup->perSegTerm + ln_pS;	// ptS_l = ptS/Nseg = pS/Nseg
+  REAL4 maxNumerator = fmaxf ( multiF, tsTerm );
+  REAL4 minNumerator = fminf ( multiF, tsTerm );
 
-  REAL4 ln_BStSGLtL  = maxNumerator + log ( 1 + exp ( minNumerator - maxNumerator ) ) - GLtLDenominator;
+  REAL4 ln_BStSGLtL  = maxNumerator + logf ( 1 + expf ( minNumerator - maxNumerator ) ) - GLtLDenominator;
 
   return ln_BStSGLtL * LAL_LOG10E; // return log10(B_SGL)
 
