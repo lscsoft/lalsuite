@@ -188,15 +188,13 @@ optp.add_option("-v", "--verbose", action='store_true', help="Be verbose.")
 # available).
 optp.add_option("-i", "--intrinsic-param", action="append", help="Adapt in this intrinsic parameter. If a pre-existing value is known (e.g. a search template was identified), specify this parameter as -i mass1=1.4 . This will indicate to the program to choose grid points which are commensurate with this value.")
 optp.add_option("-p", "--pin-param", action="append", help="Pin the parameter to this value in the template bank.")
-# FIXME: This option to be replaced with semantics from above
-#optp.add_option("-e", "--expand-param", action="append", help="Expand in this intrinsic parameter.")
 
 grid_section = OptionGroup(optp, "initial gridding options", "Options for setting up the initial grid.")
 grid_section.add_option("--setup", help="Set up the initial grid based on template bank overlaps. The new grid will be saved to this argument, e.g. --setup grid will produce a grid.npy file.")
 grid_section.add_option("-t", "--tmplt-bank", help="XML file with template bank.")
 grid_section.add_option("-O", "--use-overlap", help="Use overlap information to define 'closeness'.")
 grid_section.add_option("-T", "--overlap-threshold", type=float, help="Threshold on overlap value.")
-grid_section.add_option("-N", "--no-deactivate", action="store_true", help="Do not deactivate cells initially which have no template within them.")
+grid_section.add_option("-D", "--deactivate", action="store_true", help="Deactivate cells initially which have no template within them.")
 grid_section.add_option("-P", "--prerefine", help="Refine this initial grid based on overlap values.")
 optp.add_option_group(grid_section)
 
@@ -233,48 +231,15 @@ pin_prms, _ = parse_param(opts.pin_param)
 intr_pt = numpy.array([intr_prms[k] for k in intr_prms])
 intr_prms = intr_prms.keys()
 
+# Transform and repack initial point
+intr_pt = amrlib.apply_transform(intr_pt[numpy.newaxis,:], intr_prms, opts.distance_coordinates)[0]
+intr_pt = dict(zip(intr_prms, intr_pt))
+
 #
 # Step 1: retrieve templates / result
 #
 xmldoc = utils.load_filename(opts.tmplt_bank, contenthandler=ligolw.LIGOLWContentHandler)
 tmplt_bank = lsctables.SnglInspiralTable.get_table(xmldoc)
-
-results = []
-if opts.result_file:
-    for arg in glob.glob(opts.result_file):
-        # FIXME: Bad hardcode
-        if "samples" in arg:
-            continue
-        xmldoc = utils.load_filename(arg, contenthandler=ligolw.LIGOLWContentHandler)
-
-        # FIXME: The template banks we make are sim inspirals, we should
-        # revisit this decision -- it isn't really helping anything
-        if opts.prerefine:
-            results.extend(lsctables.SimInspiralTable.get_table(xmldoc))
-        else:
-            results.extend(lsctables.SnglInspiralTable.get_table(xmldoc))
-
-    res_pts = numpy.array([tuple(getattr(t, a) for a in intr_prms) for t in results])
-    res_pts = amrlib.apply_transform(res_pts, intr_prms, opts.distance_coordinates)
-
-    if opts.prerefine:
-        # We only want toe overlap values
-
-        # FIXME: this needs to be done in a more consistent way
-        results = numpy.array([res.alpha1 for res in results])
-    else:
-        # Normalize
-        # We're gathering the evidence values. We normalize here so as to avoid
-        # overflows later on
-        # FIXME: If we have more than 1 copies -- This is tricky because we need to
-        # pare down the duplicate sngl rows too
-        maxlnevid = numpy.max([s.snr for s in results])
-        total_evid = numpy.exp([s.snr - maxlnevid for s in results]).sum()
-        for res in results:
-            res.snr = numpy.exp(res.snr - maxlnevid)/total_evid
-
-        # FIXME: this needs to be done in a more consistent way
-        results = numpy.array([res.snr for res in results])
 
 #
 # Step 2: Set up metric space
@@ -287,10 +252,6 @@ if opts.result_file:
 # rectified.
 pts = numpy.array([tuple(getattr(t, a) for a in intr_prms) for t in tmplt_bank])
 pts = amrlib.apply_transform(pts, intr_prms, opts.distance_coordinates)
-
-# Transform and repack initial point
-intr_pt = amrlib.apply_transform(intr_pt[numpy.newaxis,:], intr_prms, opts.distance_coordinates)[0]
-intr_pt = dict(zip(intr_prms, intr_pt))
 
 # FIXME: Can probably be moved to point index identification function -- it's
 # not used again
@@ -307,7 +268,6 @@ t1 = tmplt_bank[m_idx]
 #
 # Rearrange data to correspond to input point
 #
-
 sort_order = ovrlp[m_idx].argsort()
 ovrlp = numpy.array(ovrlp[m_idx])[sort_order]
 
@@ -317,8 +277,54 @@ ovrlp = numpy.array(ovrlp[m_idx])[sort_order]
 pts = pts[sort_order]
 m_idx = sort_order[m_idx]
 
+# Gather any results we may want to use -- this is either the evidence values
+# we've calculated, or overlaps of points we've looked at
+results = []
+if opts.result_file:
+    for arg in glob.glob(opts.result_file):
+        # FIXME: Bad hardcode
+        # This is here because I'm too lazy to figure out the glob syntax to
+        # exclude the samples files which would be both double counting and
+        # slow to load because of their potential size
+        if "samples" in arg:
+            continue
+        xmldoc = utils.load_filename(arg, contenthandler=ligolw.LIGOLWContentHandler)
+
+        # FIXME: The template banks we make are sim inspirals, we should
+        # revisit this decision -- it isn't really helping anything
+        if opts.prerefine:
+            results.extend(lsctables.SimInspiralTable.get_table(xmldoc))
+        else:
+            results.extend(lsctables.SnglInspiralTable.get_table(xmldoc))
+
+    res_pts = numpy.array([tuple(getattr(t, a) for a in intr_prms) for t in results])
+    res_pts = amrlib.apply_transform(res_pts, intr_prms, opts.distance_coordinates)
+
+    # In the prerefine case, the "result" is the overlap values, which we use as
+    # a surrogate for the true evidence value.
+    if opts.prerefine:
+        # We only want toe overlap values
+        # FIXME: this needs to be done in a more consistent way
+        results = numpy.array([res.alpha1 for res in results])
+    else:
+        # Normalize
+        # We're gathering the evidence values. We normalize here so as to avoid
+        # overflows later on
+        # FIXME: If we have more than 1 copies -- This is tricky because we need
+        # to pare down the duplicate sngl rows too
+        maxlnevid = numpy.max([s.snr for s in results])
+        total_evid = numpy.exp([s.snr - maxlnevid for s in results]).sum()
+        for res in results:
+            res.snr = numpy.exp(res.snr - maxlnevid)/total_evid
+
+        # FIXME: this needs to be done in a more consistent way
+        results = numpy.array([res.snr for res in results])
+
 intr_prms = list(intr_prms) + expand_prms.keys()
 
+#
+# Build (or retrieve) the initial region
+#
 if opts.refine:
     init_region = amrlib.load_init_region(opts.refine)
 else:
@@ -328,15 +334,15 @@ else:
     #if opts.expand_param is not None:
         #expand_param(init_region, opts.expand_param)
 
-    # TODO: Alternatively, check density of points in the region to determine the
-    # points to a side
+    # TODO: Alternatively, check density of points in the region to determine
+    # the points to a side
     grid, spacing = amrlib.create_regular_grid_from_cell(init_region, side_pts=5, return_cells=True)
 
     # "Deactivate" cells not close to template points
     # FIXME: This gets more and more dangerous in higher dimensions
     # FIXME: Move to function
     tree = BallTree(grid)
-    if not opts.no_deactivate:
+    if opts.deactivate:
         get_idx = set()
         for pt in pts[idx:]:
             get_idx.add(tree.query(pt, k=1, return_distance=False)[0][0])
