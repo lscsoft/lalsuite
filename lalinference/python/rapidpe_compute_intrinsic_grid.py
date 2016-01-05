@@ -197,6 +197,7 @@ grid_section.add_option("-t", "--tmplt-bank", help="XML file with template bank.
 grid_section.add_option("-O", "--use-overlap", help="Use overlap information to define 'closeness'.")
 grid_section.add_option("-T", "--overlap-threshold", type=float, help="Threshold on overlap value.")
 grid_section.add_option("-N", "--no-deactivate", action="store_true", help="Do not deactivate cells initially which have no template within them.")
+grid_section.add_option("-P", "--prerefine", help="Refine this initial grid based on overlap values.")
 optp.add_option_group(grid_section)
 
 refine_section = OptionGroup(optp, "refine options", "Options for refining a pre-existing grid.")
@@ -245,20 +246,35 @@ if opts.result_file:
         if "samples" in arg:
             continue
         xmldoc = utils.load_filename(arg, contenthandler=ligolw.LIGOLWContentHandler)
-        results.extend(lsctables.SnglInspiralTable.get_table(xmldoc))
 
-    # Normalize
-    # FIXME: If we have more than 1 copies -- This is tricky because we need to
-    # pare down the duplicate sngl rows too
-    maxlnevid = numpy.max([s.snr for s in results])
-    total_evid = numpy.exp([s.snr - maxlnevid for s in results]).sum()
-    for res in results:
-        res.snr = numpy.exp(res.snr - maxlnevid)/total_evid
+        # FIXME: The template banks we make are sim inspirals, we should
+        # revisit this decision -- it isn't really helping anything
+        if opts.prerefine:
+            results.extend(lsctables.SimInspiralTable.get_table(xmldoc))
+        else:
+            results.extend(lsctables.SnglInspiralTable.get_table(xmldoc))
 
     res_pts = numpy.array([tuple(getattr(t, a) for a in intr_prms) for t in results])
     res_pts = amrlib.apply_transform(res_pts, intr_prms, opts.distance_coordinates)
-    # FIXME: this needs to be done in a more consistent way
-    results = numpy.array([res.snr for res in results])
+
+    if opts.prerefine:
+        # We only want toe overlap values
+
+        # FIXME: this needs to be done in a more consistent way
+        results = numpy.array([res.alpha1 for res in results])
+    else:
+        # Normalize
+        # We're gathering the evidence values. We normalize here so as to avoid
+        # overflows later on
+        # FIXME: If we have more than 1 copies -- This is tricky because we need to
+        # pare down the duplicate sngl rows too
+        maxlnevid = numpy.max([s.snr for s in results])
+        total_evid = numpy.exp([s.snr - maxlnevid for s in results]).sum()
+        for res in results:
+            res.snr = numpy.exp(res.snr - maxlnevid)/total_evid
+
+        # FIXME: this needs to be done in a more consistent way
+        results = numpy.array([res.snr for res in results])
 
 #
 # Step 2: Set up metric space
@@ -301,63 +317,40 @@ ovrlp = numpy.array(ovrlp[m_idx])[sort_order]
 pts = pts[sort_order]
 m_idx = sort_order[m_idx]
 
-"""
-if results is None:
-    # Initial gridding
-    init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold)
-else:
-    # FIXME: This needs to be recalculated for the spacing, we should just save
-    # and retrieve it in the grid file as necessary
-    init_region, idx = determine_region(pt, res_pts, results, 0)
-"""
-
 intr_prms = list(intr_prms) + expand_prms.keys()
 
 if opts.refine:
     init_region = amrlib.load_init_region(opts.refine)
 else:
+    ####### BEGIN INITIAL GRID CODE #########
     init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold, expand_prms)
+    # FIXME: To be reimplemented in a different way
+    #if opts.expand_param is not None:
+        #expand_param(init_region, opts.expand_param)
 
-####### BEGIN INITIAL GRID CODE #########
+    # TODO: Alternatively, check density of points in the region to determine the
+    # points to a side
+    grid, spacing = amrlib.create_regular_grid_from_cell(init_region, side_pts=5, return_cells=True)
 
-# FIXME: To be reimplemented in a different way
-#if opts.expand_param is not None:
-    #expand_param(init_region, opts.expand_param)
+    # "Deactivate" cells not close to template points
+    # FIXME: This gets more and more dangerous in higher dimensions
+    # FIXME: Move to function
+    tree = BallTree(grid)
+    if not opts.no_deactivate:
+        get_idx = set()
+        for pt in pts[idx:]:
+            get_idx.add(tree.query(pt, k=1, return_distance=False)[0][0])
+        selected = grid[numpy.array(list(get_idx))]
+    else:
+        selected = grid
 
 extent_str = " ".join("(%f, %f)" % bnd for bnd in map(tuple, init_region._bounds))
 center_str = " ".join(map(str, init_region._center))
 print "Created cell with center " + center_str + " and extent " + extent_str
 
-# TODO: Alternatively, check density of points in the region to determine the
-# points to a side
-grid, spacing = amrlib.create_regular_grid_from_cell(init_region, side_pts=5, return_cells=True)
-
-# "Deactivate" cells not close to template points
-# FIXME: This gets more and more dangerous in higher dimensions
-# FIXME: Move to function
-tree = BallTree(grid)
-if not opts.no_deactivate:
-    get_idx = set()
-    for pt in pts[idx:]:
-        get_idx.add(tree.query(pt, k=1, return_distance=False)[0][0])
-    selected = grid[numpy.array(list(get_idx))]
-else:
-    selected = grid
-
 #### BEGIN REFINEMENT OF RESULTS #########
 
-if opts.result_file is not None:
-    # FIXME: temporary -- we shouldn't need to know the spacing of the initial
-    # region
-
-    #prev_cells, spacing = amrlib.deserialize_grid_cells(opts.refine)
-    (prev_cells, spacing), level = amrlib.load_grid_level(opts.refine, -1)
-
-    selected = numpy.array([c._center for c in prev_cells])
-    # refinement already occurred once in the setup stage
-    #spacing /= 2
-    selected = amrlib.apply_transform(selected, intr_prms, opts.distance_coordinates)
-
+def get_evidence_grid(points, res_pts, intr_prms, exact=False):
     grid_tree = BallTree(selected)
     grid_idx = []
     # Reorder the grid points to match their weight indices
@@ -367,12 +360,33 @@ if opts.result_file is not None:
         #print res, selected[idx[0][0]]
         #assert numpy.allclose(res, selected[idx[0][0]])
         grid_idx.append(idx[0][0])
+    return points[grid_idx]
+
+if opts.result_file is not None:
+    (prev_cells, spacing), level = amrlib.load_grid_level(opts.refine or opts.prerefine, -1)
+
+    selected = numpy.array([c._center for c in prev_cells])
+    selected = amrlib.apply_transform(selected, intr_prms, opts.distance_coordinates)
+
+    selected = get_evidence_grid(selected, res_pts, intr_prms)
+
+    if opts.verbose:
+        print "Loaded %d result points" % len(selected)
 
     if opts.refine:
-        selected = get_cr_from_grid(selected[grid_idx], results, cr_thr=opts.overlap_threshold)
+        # FIXME: We use overlap threshold as a proxy for confidence level
+        selected = get_cr_from_grid(selected, results, cr_thr=opts.overlap_threshold)
         print "Selected %d cells from %3.2f%% confidence region" % (len(selected), opts.overlap_threshold*100)
 
-grid, spacing = amrlib.refine_regular_grid(selected, spacing, return_cntr=opts.setup)
+if opts.prerefine:
+    print "Performing refinement for points with overlap > %1.3f" % opts.overlap_threshold
+    pt_select = results > opts.overlap_threshold
+    selected = selected[pt_select]
+    results = results[pt_select]
+    grid, spacing = amrlib.refine_regular_grid(selected, spacing, return_cntr=True)
+
+else:
+    grid, spacing = amrlib.refine_regular_grid(selected, spacing, return_cntr=opts.setup)
 print "%d cells after refinement" % len(grid)
 grid = amrlib.prune_duplicate_pts(grid, init_region._bounds, spacing)
 
@@ -393,16 +407,9 @@ grid = amrlib.apply_inv_transform(grid, intr_prms, opts.distance_coordinates)
 
 cells = amrlib.grid_to_cells(grid, spacing)
 if opts.setup:
-    #npy_grid = amrlib.pack_grid_cells(cells, spacing)
-    # FIXME: specify level better
-    #amrlib.serialize_grid_cells({1: npy_grid}, opts.setup)
     grid_group = amrlib.init_grid_hdf(init_region, opts.setup + ".hdf", opts.overlap_threshold, opts.distance_coordinates)
     amrlib.save_grid_cells_hdf(grid_group, cells, "mass1_mass2")
 else:
-    #npy_grid = amrlib.pack_grid_cells(cells, spacing)
-    # FIXME: -1 will mean "whatever the next level is"
-    ###amrlib.serialize_grid_cells({-1: npy_grid}, opts.refine)
-    #amrlib.serialize_grid_cells({1: npy_grid}, opts.refine)
     grp = amrlib.load_grid_level(opts.refine, None)
     amrlib.save_grid_cells_hdf(grp, cells, "mass1_mass2")
 
