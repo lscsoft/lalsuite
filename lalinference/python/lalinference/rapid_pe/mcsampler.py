@@ -464,12 +464,15 @@ class MCSampler(object):
             # The total number of adaptive steps is reached
             #
             # FIXME: We need a better stopping condition here
-            if self.ntotal > n_adapt and maxval == old_maxval:
+            if self.ntotal >= n_adapt and maxval == old_maxval:
                 # Downsample points
                 if save_intg and nkeep is not None:
                     pt_sort = self._rvs["weights"].argsort()[-nkeep:]
                     for key in self._rvs:
-                        self._rvs[key] = self._rvs[key][pt_sort]
+                        if len(self._rvs[key].shape) > 1:
+                            self._rvs[key] = self._rvs[key][:,pt_sort]
+                        else:
+                            self._rvs[key] = self._rvs[key][pt_sort]
                 continue
             old_maxval = maxval
 
