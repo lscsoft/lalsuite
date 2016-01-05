@@ -62,36 +62,6 @@ def get_cr_from_grid(cells, weight, cr_thr=0.9):
 
     return cell_sort[idx:,1:]
 
-# FIXME: Should this be moved to amrlib --- seems a little too specialized?
-ovrlp_obj = lalsimutils.Overlap(fLow=40, fMax=2000, deltaF=0.125, psd=lalsimulation.SimNoisePSDeLIGOModel)
-def eval_grid(t1, cells, intr_prms):
-
-    t1_norm = None
-    t1_copy = copy(t1)
-
-    overlaps = []
-    for cell in cells:
-
-        try:
-            prms = intr_prms
-            tmp = numpy.array(cell._center)[numpy.newaxis,:]
-            tmp = amrlib.apply_inv_transform(tmp, prms, opts.distance_coordinates).T
-            for p, pval in zip(prms, tmp):
-                #if p == "lam_tilde":
-                    #t1_copy.psi0 = pval[0]
-                    #t1_copy.psi3 = 0
-                #else:
-                setattr(t1_copy, p, pval[0])
-        except AssertionError:
-            rejected.append((cell, 0.0))
-            continue
-
-        # FIXME: Hardcoded waveforms
-        olap, t1_norm, _ = lalsimutils.overlap(t1, t1_copy, ovrlp_obj, 0.125, 40, "TaylorF2", "TaylorF2", t1_norm=t1_norm)
-        overlaps.append(olap)
-
-    return overlaps
-
 def determine_region(pt, pts, ovrlp, ovrlp_thresh, expand_prms={}):
     """
     Given a point (pt) in a set of points (pts), with a function value at those points (ovrlp), return a rectangular hull such that the function exceeds the value ovrlp_thresh.
@@ -425,13 +395,10 @@ else:
     #amrlib.serialize_grid_cells({-1: npy_grid}, opts.refine)
     amrlib.serialize_grid_cells({1: npy_grid}, opts.refine)
 
-# FIXME: need to add pinned parameters
-overlaps = eval_grid(t1, cells, intr_prms)
-
 print "Selected %d cells for further analysis." % len(cells)
 if opts.setup:
     fname = "HL-MASS_POINTS_LEVEL_0-0-1.xml.gz"
-    write_to_xml(cells, intr_prms, pin_prms, overlaps, fname, verbose=opts.verbose)
+    write_to_xml(cells, intr_prms, pin_prms, None, fname, verbose=opts.verbose)
 else:
     m = re.search("LEVEL_(\d+)", opts.result_file)
     if m is not None:
@@ -439,4 +406,4 @@ else:
         fname = "HL-MASS_POINTS_LEVEL_%d-0-1.xml.gz" % level
     else:
         fname = "HL-MASS_POINTS_LEVEL_X-0-1.xml.gz"
-    write_to_xml(cells, intr_prms, pin_prms, overlaps, fname, verbose=opts.verbose)
+    write_to_xml(cells, intr_prms, pin_prms, None, fname, verbose=opts.verbose)
