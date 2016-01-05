@@ -192,6 +192,44 @@ static int gctBSGL_smaller(const void*a, const void*b) {
   else
     return(gctFstat_result_order(a,b));
 }
+/* ordering function defining the toplist: SORT BY BSGLtL */
+static int gctBSGLtL_smaller(const void*a, const void*b) {
+#ifdef DEBUG_SORTING
+  if(debugfp)
+    fprintf(debugfp,"%20lf  %20lf\n%20lf  %20lf\n\n",
+	    ((const GCTtopOutputEntry*)a)->avTwoF,  ((const GCTtopOutputEntry*)b)->avTwoF,
+	    ((const GCTtopOutputEntry*)a)->log10BSGLtL, ((const GCTtopOutputEntry*)b)->log10BSGLtL);
+#endif
+  if      (((const GCTtopOutputEntry*)a)->log10BSGLtL < ((const GCTtopOutputEntry*)b)->log10BSGLtL)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->log10BSGLtL > ((const GCTtopOutputEntry*)b)->log10BSGLtL)
+    return -1;
+  else if (((const GCTtopOutputEntry*)a)->avTwoF < ((const GCTtopOutputEntry*)b)->avTwoF)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->avTwoF > ((const GCTtopOutputEntry*)b)->avTwoF)
+    return -1;
+  else
+    return(gctFstat_result_order(a,b));
+}
+/* ordering function defining the toplist: SORT BY BtSGLtL */
+static int gctBtSGLtL_smaller(const void*a, const void*b) {
+#ifdef DEBUG_SORTING
+  if(debugfp)
+    fprintf(debugfp,"%20lf  %20lf\n%20lf  %20lf\n\n",
+	    ((const GCTtopOutputEntry*)a)->avTwoF,  ((const GCTtopOutputEntry*)b)->avTwoF,
+	    ((const GCTtopOutputEntry*)a)->log10BtSGLtL, ((const GCTtopOutputEntry*)b)->log10BtSGLtL);
+#endif
+  if      (((const GCTtopOutputEntry*)a)->log10BtSGLtL < ((const GCTtopOutputEntry*)b)->log10BtSGLtL)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->log10BtSGLtL > ((const GCTtopOutputEntry*)b)->log10BtSGLtL)
+    return -1;
+  else if (((const GCTtopOutputEntry*)a)->avTwoF < ((const GCTtopOutputEntry*)b)->avTwoF)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->avTwoF > ((const GCTtopOutputEntry*)b)->avTwoF)
+    return -1;
+  else
+    return(gctFstat_result_order(a,b));
+}
 
 
 /* functions for qsort based on the above ordering functions */
@@ -210,11 +248,17 @@ int create_gctFstat_toplist(toplist_t**tl, UINT8 length, UINT4 whatToSortBy) {
     debugfp=fopen("debug_sort","w");
 #endif
 
-  if (whatToSortBy==1) {
+  if (whatToSortBy==SORTBY_NC) {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctNC_smaller) );
   }
-  else if (whatToSortBy==2) {
+  else if (whatToSortBy==SORTBY_BSGL) {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctBSGL_smaller) );
+  }
+  else if (whatToSortBy==SORTBY_BSGLtL) {
+    return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctBSGLtL_smaller) );
+  }
+  else if (whatToSortBy==SORTBY_BtSGLtL) {
+    return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctBtSGLtL_smaller) );
   }
   else {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctFstat_smaller) );
@@ -258,6 +302,16 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
       print_single_detector_quantities_to_str ( BSGLstr, sizeof(BSGLstr), fline.avTwoFX, fline.numDetectors );
     } /* if fline.log10BSGL */
 
+  /* add extra output fields for line-robust statistic BSGLtL and BtSGLtL */
+  char BSGLtLstr[256] = "";	/* defaults to empty */
+  if ( fline.log10BSGLtL > -LAL_REAL4_MAX*0.2 ) {
+    snprintf ( BSGLtLstr, sizeof(BSGLtLstr), " %.6f", fline.log10BSGLtL );
+  }
+  char BtSGLtLstr[256] = "";	/* defaults to empty */
+  if ( fline.log10BtSGLtL > -LAL_REAL4_MAX*0.2 ) {
+    snprintf ( BtSGLtLstr, sizeof(BtSGLtLstr), " %.6f", fline.log10BtSGLtL );
+  }
+
   /* add extra output fields for max2F over segments */
   char maxTwoFstr[256] = "";	/* defaults to empty */
   if ( fline.maxTwoFl >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually computed in inner loop */
@@ -293,9 +347,9 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 #ifdef EAH_BOINC /* for S5GC1HF Apps use exactly the precision used in the workunit generator
 		    (12g for Freq and F1dot) and skygrid file (7f for Alpha & Delta)
 		    as discussed with Holger & Reinhard 5.11.2010 */
-                     "%.16f %.7f %.7f %.12g %.12g %.12g %d %.6f%s%s%s\n",
+                     "%.16f %.7f %.7f %.12g %.12g %.12g %d %.6f%s%s%s%s%s\n",
 #else
-                     "%.16g %.13g %.13g %.13g %.13g %.13g %d %.6f%s%s%s\n",
+                     "%.16g %.13g %.13g %.13g %.13g %.13g %d %.6f%s%s%s%s%s\n",
 #endif
                      fline.Freq,
                      fline.Alpha,
@@ -306,6 +360,8 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
                      fline.nc,
                      fline.avTwoF,
                      BSGLstr,
+                     BSGLtLstr,
+                     BtSGLtLstr,
                      maxTwoFstr,
                      recalcStr
                  );
@@ -315,9 +371,9 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 #ifdef EAH_BOINC /* for S5GC1HF Apps use exactly the precision used in the workunit generator
 		    (12g for Freq and F1dot) and skygrid file (7f for Alpha & Delta)
 		    as discussed with Holger & Reinhard 5.11.2010 */
-                     "%.16f %.7f %.7f %.12g %.12g %d %.6f%s%s%s\n",
+                     "%.16f %.7f %.7f %.12g %.12g %d %.6f%s%s%s%s%s\n",
 #else
-                     "%.16g %.13g %.13g %.13g %.13g %d %.6f%s%s%s\n",
+                     "%.16g %.13g %.13g %.13g %.13g %d %.6f%s%s%s%s%s\n",
 #endif
                      fline.Freq,
                      fline.Alpha,
@@ -327,6 +383,8 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
                      fline.nc,
                      fline.avTwoF,
                      BSGLstr,
+                     BSGLtLstr,
+                     BtSGLtLstr,
                      maxTwoFstr,
                      recalcStr
                  );
@@ -502,8 +560,12 @@ static int _atomic_write_gctFstat_toplist_to_file(toplist_t *l, const char *file
         sortstat = "nc";
       else if ( l->smaller == gctBSGL_smaller )
         sortstat = "BSGL";
+      else if ( l->smaller == gctBSGLtL_smaller )
+        sortstat = "BSGLtL";
+      else if ( l->smaller == gctBtSGLtL_smaller )
+        sortstat = "BtSGLtL";
       else {
-        LogPrintf (LOG_CRITICAL, "Failed to write toplist sorting line, toplist is sorted by unknowns statistic.\n");
+        LogPrintf (LOG_CRITICAL, "Failed to write toplist sorting line, toplist is sorted by unknown statistic.\n");
         length = -1;
       }
       if (length >= 0) {

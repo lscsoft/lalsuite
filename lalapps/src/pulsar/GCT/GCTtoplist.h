@@ -49,6 +49,8 @@ typedef struct {
   REAL4 avTwoF;  /**< average of F-statistic values \f$2\F\f$ over segments */
   UINT4 nc;       /**< number count */
   REAL4 log10BSGL;    /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGL}}\f$ */
+  REAL4 log10BSGLtL;  /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGLtL}}\f$ */
+  REAL4 log10BtSGLtL;    /**< Line-robust transient-CW statistic \f$\log_{10} B_{\mathrm{tSGLtL}}\f$ */
   UINT4 numDetectors; /**< number of detectors for optional avTwoFX arrays */
   REAL4 avTwoFX[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector average \f$2\F^X\f$-values */
   REAL4 maxTwoFl; /**< multi-detector maximum 2F over segments \f$\max2\F^\ell\f$ */
@@ -67,8 +69,11 @@ typedef enum
   {
     SORTBY_F 		= 0,	//< sort by multi-IFO F-stat (averaged over segments)
     SORTBY_NC 		= 1,	//< sort by number-count 'nc'
-    SORTBY_BSGL 		= 2,	//< sort by line-robust statistic (BSGL)
-    SORTBY_DUAL_F_BSGL 	= 3,	//< dual toplists: one sorted by F, one by BSGL
+    SORTBY_BSGL 	= 2,	//< sort by line-robust statistic B_S/GL
+    SORTBY_DUAL_F_BSGL 	= 3,	//< dual toplists: one sorted by F, one by B_S/GL
+    SORTBY_BSGLtL 	= 4,	//< sort by transient-line robust statistic B_S/GLtL
+    SORTBY_BtSGLtL 	= 5,	//< sort by transient-CW line robust statistic B_tS/GLtL
+    SORTBY_TRIPLE_BStSGLtL = 6,	//< triple toplists: one sorted by B_S/GL, one by B_S/GLtL, one by B_tS/GLtL
     SORTBY_LAST			//< end-marker
   } SortBy_t;
 

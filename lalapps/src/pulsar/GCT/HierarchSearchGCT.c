@@ -193,7 +193,7 @@ void PrintFstatVec( LALStatus *status, FstatResults *in, FILE *fp, PulsarDoppler
                     LIGOTimeGPS refTime, INT4 stackIndex);
 void PrintCatalogInfo( LALStatus *status, const SFTCatalog *catalog, FILE *fp );
 void PrintStackInfo( LALStatus *status, const SFTCatalogSequence *catalogSeq, FILE *fp );
-void UpdateSemiCohToplists ( LALStatus *status, toplist_t *list1, toplist_t *list2, FineGrid *in, REAL8 f1dot_fg, REAL8 f2dot_fg, REAL8 f3dot_fg, UsefulStageVariables *usefulparams, REAL4 NSegmentsInv, REAL4 *NSegmentsInvX, BOOLEAN have_f3dot );
+void UpdateSemiCohToplists ( LALStatus *status, toplist_t *list1, toplist_t *list2, toplist_t *list3, FineGrid *in, REAL8 f1dot_fg, REAL8 f2dot_fg, REAL8 f3dot_fg, UsefulStageVariables *usefulparams, REAL4 NSegmentsInv, REAL4 *NSegmentsInvX, BOOLEAN have_f3dot );
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg,
                                REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg,
                                UsefulStageVariables *usefulparams );
@@ -313,7 +313,8 @@ int MAIN( int argc, char *argv[]) {
 
   /* fstat candidate structure for candidate toplist*/
   toplist_t *semiCohToplist=NULL;
-  toplist_t *semiCohToplist2=NULL;	// only used for SORTBY_DUAL_F_BSGL: 1st toplist sorted by 'F', 2nd one by 'BSGL'
+  toplist_t *semiCohToplist2=NULL;	// only used for SORTBY_DUAL_F_BSGL or SORTBY_TRIPLE_BStSGLtL
+  toplist_t *semiCohToplist3=NULL;	// only used for SORTBY_TRIPLE_BStSGLtL
 
   /* template and grid variables */
   static DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
@@ -504,6 +505,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterLISTUserVar(   &status, "oLGX",         0, UVAR_OPTIONAL,  "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)", &uvar_oLGX), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "BSGLlogcorr",  0, UVAR_DEVELOPER, "BSGL: include log-correction terms (slower) or not (faster)", &uvar_BSGLlogcorr), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "getMaxFperSeg",   0, UVAR_OPTIONAL, "Compute and output maximum F and FX over segments", &uvar_getMaxFperSeg), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_OPTIONAL, "Sort toplist by: 0=Fstat, 1=nc, 2=B_S/GL, 3='Fstat + B_S/GL', 4=B_S/GLtL, 5=B_tS/GLtL, 6='B_S/GL + B_S/GLtL + B_tS/GLtL'",  &uvar_SortToplist), &status);
   // --------------------------------------------
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethod",  0, UVAR_OPTIONAL, XLALFstatMethodHelpString(), &uvar_FstatMethod ), &status);
@@ -513,7 +515,6 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "Dterms",       0, UVAR_DEVELOPER, "No. of terms to keep in Dirichlet Kernel", &uvar_Dterms ), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "skyPointIndex",0, UVAR_DEVELOPER, "Only analyze this skypoint in grid", &uvar_skyPointIndex ), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=avg2F, 1=numbercount, 2=BSGL, 3=dual-toplists 'avg2F+BSGL'",  &uvar_SortToplist), &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTiming", 0, UVAR_DEVELOPER, "Append timing information into this file", &uvar_outputTiming), &status);
 
@@ -605,6 +606,15 @@ int MAIN( int argc, char *argv[]) {
                    XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_F );
       XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist2, uvar_nCand1, SORTBY_BSGL ),
                    XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_BSGL );
+    }
+  else if ( uvar_SortToplist == SORTBY_TRIPLE_BStSGLtL )// special treatement of 'triple' toplists: 1st one sorted by 'B_S/GL', 2nd one by 'B_S/GLtL', 3rd by 'B_tS/GLtL'
+    {
+      XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist, uvar_nCand1, SORTBY_BSGL ),
+                   XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_BSGL );
+      XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist2, uvar_nCand1, SORTBY_BSGLtL ),
+                   XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_BSGLtL );
+      XLAL_CHECK ( 0 == create_gctFstat_toplist ( &semiCohToplist3, uvar_nCand1, SORTBY_BtSGLtL ),
+                   XLAL_EFUNC, "create_gctFstat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_BtSGLtL );
     }
   else	// 'normal' single-sorting toplist cases (sortby 'F', 'nc' or 'BSGL')
     {
@@ -1021,6 +1031,7 @@ int MAIN( int argc, char *argv[]) {
     column_headings_string_length += 10 + numDetectors*8; /* 10 for " log10BSGL" and 8 per detector for " <2F_XY>" */
   }
   if ( uvar_getMaxFperSeg ) {
+    column_headings_string_length += 12 + 13; /* 12 for " log10BSGLtL" and 13 for " log10BtSGLtL" */
     column_headings_string_length += 6 + numDetectors*9; /* 6 for " max2F" and 9 per detector for " max2F_XY" */
   }
   if ( uvar_recalcToplistStats ) {
@@ -1047,6 +1058,7 @@ int MAIN( int argc, char *argv[]) {
     } /* for X < numDet */
   }
   if ( uvar_getMaxFperSeg ) {
+    strcat ( column_headings_string, " log10BSGLtL log10BtSGLtL" );
     strcat ( column_headings_string, " max2F" );
     for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
       char headingX[10];
@@ -1604,7 +1616,7 @@ int MAIN( int argc, char *argv[]) {
                   cgrid2F = coarsegrid.TwoF + CG_INDEX(coarsegrid, k, U1idx);
                   REAL4 * fgridMax2Fl = finegrid.maxTwoFl + FG_INDEX(finegrid, 0);
                   for (UINT4 ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
-                    fgridMax2Fl[0] = fmax( fgridMax2Fl[0], cgrid2F[0] );
+                    fgridMax2Fl[0] = fmaxf ( fgridMax2Fl[0], cgrid2F[0] );
                     fgridMax2Fl++;
                     cgrid2F++;
                   }
@@ -1612,7 +1624,7 @@ int MAIN( int argc, char *argv[]) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgridMax2FXl = finegrid.maxTwoFXl + FG_FX_INDEX(finegrid, X, 0);
                     for(UINT4 ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
-                      fgridMax2FXl[0] = fmax( fgridMax2FXl[0], cgrid2FX[0] );
+                      fgridMax2FXl[0] = fmaxf ( fgridMax2FXl[0], cgrid2FX[0] );
                       fgridMax2FXl++;
                       cgrid2FX++;
                     }
@@ -1643,7 +1655,7 @@ int MAIN( int argc, char *argv[]) {
               if( uvar_semiCohToplist ) {
                 /* this is necessary here, because UpdateSemiCohToplists() might set
                    a checkpoint that needs some information from here */
-                LAL_CALL( UpdateSemiCohToplists (&status, semiCohToplist, semiCohToplist2, &finegrid, f1dot_fg, f2dot_fg, f3dot_fg, &usefulParams, NSegmentsInv, usefulParams.NSegmentsInvX, XLALUserVarWasSet(&uvar_f3dot) ), &status);
+                LAL_CALL( UpdateSemiCohToplists (&status, semiCohToplist, semiCohToplist2, semiCohToplist3, &finegrid, f1dot_fg, f2dot_fg, f3dot_fg, &usefulParams, NSegmentsInv, usefulParams.NSegmentsInvX, XLALUserVarWasSet(&uvar_f3dot) ), &status);
               }
               timeToplistEnd = XLALGetTimeOfDay();
               costToplist += ( timeToplistEnd - timeToplistStart );
@@ -1695,8 +1707,12 @@ int MAIN( int argc, char *argv[]) {
   /* now that we have the final toplist, translate all pulsar parameters to correct reftime */
   xlalErrno = 0;
   XLALExtrapolateToplistPulsarSpins ( semiCohToplist, usefulParams.spinRange_refTime.refTime, finegrid.refTime );
-  if ( semiCohToplist2 )	// handle (optional) second toplist
+  if ( semiCohToplist2 ) {	// handle (optional) second toplist
     XLALExtrapolateToplistPulsarSpins ( semiCohToplist2, usefulParams.spinRange_refTime.refTime, finegrid.refTime );
+  }
+  if ( semiCohToplist3 ) {	// handle (optional) second toplist
+    XLALExtrapolateToplistPulsarSpins ( semiCohToplist3, usefulParams.spinRange_refTime.refTime, finegrid.refTime );
+  }
   if ( xlalErrno != 0 ) {
     XLALPrintError ("%s line %d : XLALExtrapolateToplistPulsarSpins() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
     return(HIERARCHICALSEARCH_EXLAL);
@@ -1724,10 +1740,17 @@ int MAIN( int argc, char *argv[]) {
                  HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", xlalErrno
                  );
     // also recalc optional 2nd toplist if present
-    if ( semiCohToplist2 )
+    if ( semiCohToplist2 ) {
       XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist2, &recalcParams ),
                    HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed for 2nd toplist with xlalErrno = %d.\n\n", xlalErrno
                    );
+    }
+    // also recalc optional 3rd toplist if present
+    if ( semiCohToplist3 ) {
+      XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist3, &recalcParams ),
+                   HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed for 3rd toplist with xlalErrno = %d.\n\n", xlalErrno
+                   );
+    }
 
     LogPrintf( LOG_NORMAL, "Finished recalculating toplist statistics.\n");
   }
@@ -1772,6 +1795,16 @@ int MAIN( int argc, char *argv[]) {
       sprintf ( fname2, "%s-BSGL", uvar_fnameout );
       XLAL_CHECK ( write_hfs_oputput ( fname2, semiCohToplist2) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist2) failed for 2nd toplist!\n", fname2 );
       XLALFree ( fname2 );
+    }
+  if ( semiCohToplist3 )
+    {
+      LogPrintf ( LOG_DEBUG, "toplist3 ... ");
+      UINT4 newlen = strlen(uvar_fnameout) + 10;
+      CHAR *fname3;
+      XLAL_CHECK ( (fname3 = XLALCalloc ( 1, newlen )) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1, %d)\n\n", newlen );
+      sprintf ( fname3, "%s-BtSGLtL", uvar_fnameout );
+      XLAL_CHECK ( write_hfs_oputput ( fname3, semiCohToplist3) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist3) failed for 3rd toplist!\n", fname3 );
+      XLALFree ( fname3 );
     }
 
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
@@ -1847,7 +1880,12 @@ int MAIN( int argc, char *argv[]) {
   }
 
   free_gctFstat_toplist ( &semiCohToplist );
-  if ( semiCohToplist2 ) free_gctFstat_toplist ( &semiCohToplist2 );
+  if ( semiCohToplist2 ) {
+    free_gctFstat_toplist ( &semiCohToplist2 );
+  }
+  if ( semiCohToplist3 ) {
+    free_gctFstat_toplist ( &semiCohToplist3 );
+  }
 
   XLALDestroyBSGLSetup ( usefulParams.BSGLsetup );
 
@@ -2430,6 +2468,7 @@ void PrintStackInfo( LALStatus  *status,
 void UpdateSemiCohToplists ( LALStatus *status,
                              toplist_t *list1,
                              toplist_t *list2,	//< optional (can be NULL): insert candidate into this 2nd toplist as well
+                             toplist_t *list3,	//< optional (can be NULL): insert candidate into this 3rd toplist as well
                              FineGrid *in,
                              REAL8 f1dot_fg,
                              REAL8 f2dot_fg,
@@ -2466,6 +2505,10 @@ void UpdateSemiCohToplists ( LALStatus *status,
     line.nc = in->nc[ifreq_fg];
     line.avTwoF = 0.0; /* will be set to average over segments later */
     line.maxTwoFl = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFstatline_to_str if actually computed */
+    line.log10BSGL    = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
+    line.log10BSGLtL  = -LAL_REAL4_MAX;
+    line.log10BtSGLtL = -LAL_REAL4_MAX;
+
     line.numDetectors = in->numDetectors;
     for (UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X++) { /* initialise single-IFO F-stat arrays to zero */
       line.avTwoFX[X] = 0.0;
@@ -2515,14 +2558,21 @@ void UpdateSemiCohToplists ( LALStatus *status,
       for (UINT4 X = 0; X < in->numDetectors; X++) {
        line.maxTwoFXl[X] = in->maxTwoFXl[FG_FX_INDEX(*in, X, ifreq_fg)];
       }
+      line.log10BSGLtL  = XLALComputeBSGLtL ( sumTwoF, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
+      line.log10BtSGLtL = XLALComputeBtSGLtL ( line.maxTwoFl, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
+
       // FIXME: compute transient-line-robust stat here
     }
 
     insert_into_gctFstat_toplist( list1, line);
-    if ( list2 )	// also insert candidate into (optional) second toplist
+    if ( list2 ){	// also insert candidate into (optional) second toplist
       insert_into_gctFstat_toplist( list2, line);
+    }
+    if ( list3 ){	// also insert candidate into (optional) 3rd toplist
+      insert_into_gctFstat_toplist( list3, line);
+    }
 
-  }
+  } // for ifreq_fg
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
