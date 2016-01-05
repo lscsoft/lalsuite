@@ -333,7 +333,8 @@ for signif in opts.KWsignifThr:
     else:
         eff = [0.0 for fapThr in opts.FAPthr]
 
-    color = ax.step( dt, eff, label='%d events with KWsignif $\geq %.1f$'%(N, signif), where='post' )[0].get_color()
+#    color = ax.step( dt, eff, label='%d events with KWsignif $\geq %.1f$'%(N, signif), where='post' )[0].get_color()
+    color = ax.plot( dt, eff, label='%d events with KWsignif $\geq %.1f$'%(N, signif) )[0].get_color()
 
     jsonD[signif] = {'observed deadtime':dt, 'observed efficiency':eff, 'number of glitches':N, 'duration':T}
 
