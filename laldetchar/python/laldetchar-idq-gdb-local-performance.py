@@ -261,7 +261,8 @@ for t, ts in zip(t, ts):
         s = event.andsegments( [s, idqsegs] ) ### necessary because of how timeseries_to_segments may interact with timeseries_in_segments
 
         segs[fapThr][0] += s
-        segs[fapThr][1] = min(segs[fapThr][1], -minFAP)
+        if minFAP!=None:
+            segs[fapThr][1] = min(segs[fapThr][1], -minFAP)
 if opts.verbose:
     print "computing associated deadtimes"
 dt = [event.livetime(segs[fapThr][0])/T for fapThr in opts.FAPthr]
