@@ -75,7 +75,7 @@ def determine_region(pt, pts, ovrlp, ovrlp_thresh, expand_prms={}):
         # FIXME: Need to do center?
     return cell, sidx
 
-def find_olap_index(tree, exact=True, **kwargs):
+def find_olap_index(tree, intr_prms, exact=True, **kwargs):
     """
     Given an object that can retrieve distance via a 'query' function (e.g. KDTree or BallTree), find the index of a point closest to the input point. Note that kwargs is used to get the current known values of the event. E.g.
 
@@ -283,7 +283,7 @@ tree = BallTree(pts)
 #
 # Step 3: Get the row of the overlap matrix to work with
 #
-m_idx, pt = find_olap_index(tree, not opts.no_exact_match, **intr_pt)
+m_idx, pt = find_olap_index(tree, intr_prms, not opts.no_exact_match, **intr_pt)
 
 # Save the template for later use as well
 t1 = tmplt_bank[m_idx]
