@@ -100,7 +100,7 @@ def emcee_sky_map(
         pts = np.column_stack((ra, dec))
         # Pass a random subset of 1000 points to the KDE, to save time.
         pts = np.random.permutation(pts)[:1000, :]
-        prob = ClusteredKDEPosterior(pts).as_healpix(nside)
+        prob = ClusteredSkyKDEPosterior(pts).as_healpix(nside)
 
     # Optionally save posterior sample chain to file.
     # Read back in with np.load().
