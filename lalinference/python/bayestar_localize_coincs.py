@@ -54,15 +54,11 @@ methods = '''
     toa_phoa_snr_mcmc_kde
     '''.split()
 default_method = 'toa_phoa_snr'
-parser = command.ArgumentParser(
-    parents=[command.waveform_parser, command.prior_parser])
-parser.add_argument('--nside', '-n', type=int, default=-1,
-    help='HEALPix resolution [default: auto]')
-parser.add_argument('--method', choices=methods,
-    default=[default_method], nargs='*',
+command.skymap_parser.add_argument(
+    '--method', choices=methods, default=[default_method], nargs='*',
     help='Sky localization methods [default: %(default)s]')
-parser.add_argument('--chain-dump', default=False, action='store_true',
-    help='For MCMC methods, dump the sample chain to disk [default: no]')
+parser = command.ArgumentParser(
+    parents=[command.waveform_parser, command.prior_parser, command.skymap_parser])
 parser.add_argument('--keep-going', '-k', default=False, action='store_true',
     help='Keep processing events if a sky map fails to converge [default: no]')
 parser.add_argument('input', metavar='INPUT.xml[.gz]', default='-', nargs='?',

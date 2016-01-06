@@ -287,7 +287,8 @@ def ligolw_sky_map(
 
 def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
-        max_distance=None, prior_distance_power=None, nside=-1,
+        max_distance=None, prior_distance_power=None,
+        method="toa_phoa_snr", nside=-1, chain_dump=None,
         phase_convention='antifindchirp', f_high_truncate=1.0):
     # LIGO-LW XML imports.
     from . import ligolw
@@ -330,9 +331,10 @@ def gracedb_sky_map(
             f_high_truncate=f_high_truncate)
         for psd in psds]
 
-    # TOA+SNR sky localization
+    # Run sky localization
     prob, epoch, elapsed_time = ligolw_sky_map(sngl_inspirals, waveform, f_low,
-        min_distance, max_distance, prior_distance_power,
-        nside=nside, psds=psds, phase_convention=phase_convention)
+        min_distance, max_distance, prior_distance_power, method=method,
+        nside=nside, psds=psds, phase_convention=phase_convention,
+        chain_dump=chain_dump)
 
     return prob, epoch, elapsed_time, instruments
