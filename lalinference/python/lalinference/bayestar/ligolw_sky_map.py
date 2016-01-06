@@ -95,7 +95,7 @@ def emcee_sky_map(
         nside *= 2
 
     if kde:
-        from sky_area.sky_area_clustering import ClusteredKDEPosterior
+        from sky_area.sky_area_clustering import ClusteredSkyKDEPosterior
         dec = 0.5 * np.pi - theta
         pts = np.column_stack((ra, dec))
         # Pass a random subset of 1000 points to the KDE, to save time.
