@@ -2423,9 +2423,25 @@ def timeseries_to_segments(t, ts, thr):
                             ts = time series (values)
                             thr=threshold on time series
     so that t \f$\in\f$ segments iff ts(t) >= thr
+    """    
+    truth = ts >= thr ### determine which time samples are above the threshold
+    if numpy.any(truth):
+        edges = list(numpy.nonzero(ts[1:]-ts[:-1])[0]+1) ### find the edges corresponding to state changes
+        if truth[0] and (edges[0]!=0): ### we start off in a segment and that edge is not included
+            edges.insert(0, 0)
+        if truth[-1] and (edges[-1]!=len(ts)-1): ### we end in a segment and that edge is not included
+            edges.append( len(ts)-1 )
 
-    pad is added to the end of the time-series points when generating segments
-    """
+        if len(edges)%2:
+            raise ValueError("odd number of edges...something is wrong")
+
+        edges = numpy.array(edges)
+        segs = numpy.transpose( numpy.array([t[edges[:-1:2]], t[edges[1::2]]]) )
+        return segs, numpy.min(ts[truth])
+    else:
+        return [], None
+
+    '''
     segs = []
     in_seg = False
     min_TS = numpy.infty
@@ -2450,6 +2466,7 @@ def timeseries_to_segments(t, ts, thr):
         return (segs, min_TS)
     else:
         return ([], None)
+    ''' 
 
 def combine_gwf(filenames, channels):
     """

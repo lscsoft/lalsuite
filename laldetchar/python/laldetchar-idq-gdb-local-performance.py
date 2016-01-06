@@ -257,7 +257,6 @@ for t, ts in zip(t, ts):
 
     for fapThr in opts.FAPthr:
         s, minFAP = idq.timeseries_to_segments(t, -ts, -fapThr) # we want FAP <= FAPthr <--> -FAP >= -FAPthr
-
         s = event.andsegments( [s, idqsegs] ) ### necessary because of how timeseries_to_segments may interact with timeseries_in_segments
 
         segs[fapThr][0] += s
