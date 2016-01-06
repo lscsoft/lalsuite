@@ -627,7 +627,7 @@ def ovl_vconfig_stripchart( channel_ordered_vconfigs, to=None, cmap='jet', mapIt
     ### plot the colorbar
     cmap_norm=matplotlib.colors.Normalize( vmin=0.0, vmax=1.0 )
     cb = matplotlib.colorbar.ColorbarBase( cbax, cmap=cmap, norm=cmap_norm, orientation='vertical', alpha=alpha )
-    
+
     ### decorate the plot
     ax.set_xlabel('Time [sec] since %.3f'%to)
     ax.set_yticks( [ind+0.5 for ind in range(len(configs))])
@@ -650,6 +650,12 @@ def ovl_vconfig_stripchart( channel_ordered_vconfigs, to=None, cmap='jet', mapIt
 #         tic.label1On = tic.label2On = False
 
     ax.grid(False, which="both")
+
+    ### decorate colorbar
+    if N < 3:
+        cb.set_ticks([0.0, 0.5, 1.0])
+    elif N < 5:
+        cb.set_ticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
 
     return fig, ax, cbax
 
