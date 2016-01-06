@@ -286,7 +286,10 @@ if not opts.skip_gracedb_upload:
 fig = isp.plt.figure()
 ax = fig.add_axes( isp.default_axpos )
 
-ax.loglog(maxFAP, dt, marker='o', linestyle='none')
+if np.any(np.array(maxFAP)>0) and np.any(np.array(dt)>0): 
+    ax.loglog(maxFAP, dt, marker='o', linestyle='none')
+else:
+    ax.plot(maxFAP, dt, marker='o', linestyle='none')
 
 ax.set_xlabel('Nominal FAP')
 ax.set_ylabel('Observed deadtime')
