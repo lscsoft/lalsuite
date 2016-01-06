@@ -1612,6 +1612,19 @@ int MAIN( int argc, char *argv[]) {
                   fgrid2F++;
                   cgrid2F++;
                 }
+                if ( uvar_computeBSGL ) {
+                  for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
+                    REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
+                    REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
+                    for(UINT4 ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
+                      fgrid2FX[0] += cgrid2FX[0];
+                      fgrid2FX++;
+                      cgrid2FX++;
+                    }
+                  }
+                }
+#endif // GC_SSE2_OPT
+
                 if ( uvar_getMaxFperSeg ) {
                   cgrid2F = coarsegrid.TwoF + CG_INDEX(coarsegrid, k, U1idx);
                   REAL4 * fgridMax2Fl = finegrid.maxTwoFl + FG_INDEX(finegrid, 0);
@@ -1630,18 +1643,6 @@ int MAIN( int argc, char *argv[]) {
                     }
                   }
                 }
-                if ( uvar_computeBSGL ) {
-                  for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
-                    REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
-                    REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
-                    for(UINT4 ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
-                      fgrid2FX[0] += cgrid2FX[0];
-                      fgrid2FX++;
-                      cgrid2FX++;
-                    }
-                  }
-                }
-#endif // GC_SSE2_OPT
 
                 timeIncohEnd = XLALGetTimeOfDay();
                 costIncoh += (timeIncohEnd - timeIncohStart);
