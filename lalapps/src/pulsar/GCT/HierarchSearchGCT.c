@@ -158,7 +158,7 @@ typedef struct {
   REAL4 NSegmentsInvX[PULSAR_MAX_DETECTORS]; /**< effective inverse number of segments per detector (needed for correct averaging in single-IFO F calculation) */
   FstatInputVector* Fstat_in_vec;	/**< Original wide-parameter search: vector of Fstat input data structures for XLALComputeFstat(), one per stack */
   FstatInputVector* Fstat_in_vec_recalc; /**< Recalculate the toplist: Vector of Fstat input data structures for XLALComputeFstat(), one per stack */
-
+  FILE *timingDetailsFP;	// file pointer to write detailed coherent-timing info into
 } UsefulStageVariables;
 
 
@@ -665,6 +665,13 @@ int MAIN( int argc, char *argv[]) {
       LALFree(fnamelog);
 
     } /* end of logging */
+
+  if ( uvar_outputTiming != NULL )
+    {
+      char buf [ strlen ( uvar_outputTiming ) + 10 ];
+      sprintf ( buf, "%s-details", uvar_outputTiming );
+      XLAL_CHECK ( (usefulParams.timingDetailsFP = fopen ( buf, "wb" )) != NULL, XLAL_ESYS, "Failed to open '%s' for writing\n", buf );
+    } // if uvar_outputTiming
 
   /* initializations of coarse and fine grids */
   coarsegrid.TwoF=NULL;
@@ -1486,6 +1493,9 @@ int MAIN( int argc, char *argv[]) {
                     XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
                     return xlalErrno;
                   }
+                  if ( usefulParams.timingDetailsFP != NULL ) {
+                    XLAL_CHECK ( AppendFstatTimingInfo2File ( usefulParams.Fstat_in_vec->data[k], usefulParams.timingDetailsFP ) == XLAL_SUCCESS, XLAL_EFUNC );
+                  }
                   /* if single-only flag is given, add +4 to F-statistic */
                   if ( uvar_SignalOnly ) {
                     if (XLALAdd4ToFstatResults(Fstat_res) != XLAL_SUCCESS) {
@@ -1894,6 +1904,10 @@ int MAIN( int argc, char *argv[]) {
 
   XLALFree ( VCSInfoString );
 
+  if ( usefulParams.timingDetailsFP != NULL ) {
+    fclose ( usefulParams.timingDetailsFP );
+  }
+
   LALCheckMemoryLeaks();
 
   return HIERARCHICALSEARCH_ENORM;
@@ -2142,6 +2156,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   optionalArgs.Dterms = in->Dterms;
   optionalArgs.runningMedianWindow = in->blocksRngMed;
   optionalArgs.FstatMethod = in->Fmethod;
+  optionalArgs.collectTiming = (in->timingDetailsFP != NULL);
 
   FstatOptionalArgs XLAL_INIT_DECL(optionalArgsRecalc);
 
