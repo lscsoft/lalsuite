@@ -380,6 +380,29 @@ if [ -n "${diff_F}" -o -n "${diff_BSGL}" ]; then
     exit 1
 fi
 
+echo
+echo "----------------------------------------------------------------------------------------------------"
+echo " STEP 7: run HierarchSearchGCT using Resampling (perfect match), triple toplist and recalc "
+echo "----------------------------------------------------------------------------------------------------"
+echo
+
+rm -f checkpoint.cpt # delete checkpoint to start correctly
+outfile_GCT_RS_triple="${testDir}/GCT_RS_triple.dat"
+timingsfile_RS_triple="${testDir}/timing_RS_triple.dat"
+
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' --outputTiming='$timingsfile_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=6"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline"
+else
+    cmdline="$cmdline &> /dev/null"
+fi
+
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$gct_code' ..."
+    exit 1
+fi
+
 ## ---------- compute relative differences and check against tolerance --------------------
 awk_reldev='{printf "%.2e", sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
 
@@ -415,10 +438,14 @@ echo "--------- Timings --------------------------------------------------------
 awk_timing='{printf "c0ic = %-6.1e s, c1co = %-6.1e s, c0Demod = %-6.1e s,  (%s)", $8, $9, $10, $11, $12}'
 timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
 timing_DM_BSGL=$(sed '/^%.*/d' $timingsfile_DM_BSGL | awk "$awk_timing")
+timing_DM_DUAL=$(sed '/^%.*/d' $timingsfile_DM_DUAL | awk "$awk_timing")
 timing_RS=$(sed '/^%.*/d' $timingsfile_RS | awk "$awk_timing")
-echo " GCT-LALDemod:      $timing_DM"
+timing_RS_triple=$(sed '/^%.*/d' $timingsfile_RS_triple | awk "$awk_timing")
+echo " GCT-LALDemod:       $timing_DM"
 echo " GCT-LALDemod-BSGL:  $timing_DM_BSGL"
-echo " GCT-Resamp:        $timing_RS"
+echo " GCT-LALDemod-2top:  $timing_DM_DUAL"
+echo " GCT-Resamp:         $timing_RS"
+echo " GCT-Resamp-3top:    $timing_RS_triple"
 
 echo
 echo "--------- Compare results ----------------------------------------------------------------------------------------"
