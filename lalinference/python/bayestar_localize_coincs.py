@@ -58,9 +58,9 @@ parser = command.ArgumentParser(
     parents=[command.waveform_parser, command.prior_parser])
 parser.add_argument('--nside', '-n', type=int, default=-1,
     help='HEALPix resolution [default: auto]')
-parser.add_argument('--method', choices=methods, metavar='|'.join(methods),
+parser.add_argument('--method', choices=methods,
     default=[default_method], nargs='*',
-    help='Sky localization methods [default: %s]' % default_method)
+    help='Sky localization methods [default: %(default)s]')
 parser.add_argument('--chain-dump', default=False, action='store_true',
     help='For MCMC methods, dump the sample chain to disk [default: no]')
 parser.add_argument('--keep-going', '-k', default=False, action='store_true',
