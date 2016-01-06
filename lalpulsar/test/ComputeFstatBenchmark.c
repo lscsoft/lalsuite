@@ -51,10 +51,6 @@ typedef struct
   BOOLEAN reuseInput;   // only useful for checking workspace management
 } UserInput_t;
 
-// hidden global variables used to pass timings to test/benchmark programs
-extern REAL8 Fstat_tauF1Buf;
-extern REAL8 Fstat_tauF1NoBuf;
-
 // ---------- main ----------
 int
 main ( int argc, char *argv[] )
@@ -188,10 +184,12 @@ main ( int argc, char *argv[] )
   }
   optionalArgs.injectSqrtSX = &injectSqrtSX;
   optionalArgs.FstatMethod = FstatMethod;
+  optionalArgs.collectTiming = 1;
 
-  if ( (uvar->outputInfo != NULL) && (FstatMethod >= FMETHOD_RESAMP_GENERIC) )
+  FILE *timingLogFILE = NULL;
+  if ( uvar->outputInfo != NULL )
     {
-      XLAL_CHECK ( (optionalArgs.timingLogFile = fopen (uvar->outputInfo, "ab")) != NULL, XLAL_ESYS, "Failed to open '%s' for appending\n", uvar->outputInfo );
+      XLAL_CHECK ( (timingLogFILE = fopen (uvar->outputInfo, "ab")) != NULL, XLAL_ESYS, "Failed to open '%s' for appending\n", uvar->outputInfo );
     }
 
   FstatInputVector *inputs;
@@ -239,9 +237,15 @@ main ( int argc, char *argv[] )
         {
           XLAL_CHECK ( XLALComputeFstat ( &results, inputs->data[l], &Doppler, numFreqBins_i, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-          // ----- output timing details if requested
+          REAL8 Fstat_tauF1Buf, Fstat_tauF1NoBuf;
+          XLAL_CHECK ( XLALGetFstatTiming ( inputs->data[l], &Fstat_tauF1Buf, &Fstat_tauF1NoBuf ) == XLAL_SUCCESS, XLAL_EFUNC );
           tauF1NoBuf_i += Fstat_tauF1NoBuf;
           tauF1Buf_i   += Fstat_tauF1Buf;
+          // ----- output timing details to file if requested
+          if ( timingLogFILE != NULL ) {
+            XLAL_CHECK ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE ) == XLAL_SUCCESS, XLAL_EFUNC );
+          }
+
         } // for l < numSegments
 
       tauF1NoBuf_i /= uvar->numSegments;
@@ -263,8 +267,8 @@ main ( int argc, char *argv[] )
   fprintf (stderr, "\nAveraged timings: <tauF1Buf> = %.2g s, <tauF1NoBuf> = %.2g s\n", tauF1Buf, tauF1NoBuf );
 
   // ----- free memory ----------
-  if ( optionalArgs.timingLogFile != NULL ) {
-    fclose ( optionalArgs.timingLogFile );
+  if ( timingLogFILE != NULL ) {
+    fclose ( timingLogFILE );
   }
 
   for ( INT4 l = 0; l < uvar->numSegments; l ++ )

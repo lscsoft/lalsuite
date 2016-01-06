@@ -29,18 +29,12 @@
 // ================================================================================================= //
 
 // ---------- Shared constants/defines ---------- //
-#ifndef COLLECT_TIMING
-#define COLLECT_TIMING 1
-#endif
 
 // ---------- Shared macro definitions ---------- //
 
 #define SQ(x) ( (x) * (x) )
 
 // ---------- Shared global variables ---------- //
-// hidden global variables used to pass timings to test/benchmark programs
-extern REAL8 Fstat_tauF1Buf;
-extern REAL8 Fstat_tauF1NoBuf;
 
 // ---------- Shared struct definitions ---------- //
 
@@ -67,6 +61,10 @@ typedef struct {
 } FstatMethodFuncs;
 
 // ---------- Shared internal functions ---------- //
+int XLALGetFstatTiming_Demod ( const void* method_data, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
+int XLALGetFstatTiming_Resamp ( const void* method_data, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
+int AppendFstatTimingInfo2File_Demod ( const void* method_data, FILE *fp );
+int AppendFstatTimingInfo2File_Resamp ( const void *method_data, FILE *fp );
 
 static inline REAL4
 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv )
