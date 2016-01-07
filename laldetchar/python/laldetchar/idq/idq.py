@@ -2426,7 +2426,7 @@ def timeseries_to_segments(t, ts, thr):
     """    
     truth = ts >= thr ### determine which time samples are above the threshold
     if numpy.any(truth):
-        edges = list(numpy.nonzero(ts[1:]-ts[:-1])[0]+1) ### find the edges corresponding to state changes
+        edges = list(numpy.nonzero(truth[1:]-truth[:-1])[0]+1) ### find the edges corresponding to state changes
         if truth[0] and (edges[0]!=0): ### we start off in a segment and that edge is not included
             edges.insert(0, 0)
         if truth[-1] and (edges[-1]!=len(ts)-1): ### we end in a segment and that edge is not included
