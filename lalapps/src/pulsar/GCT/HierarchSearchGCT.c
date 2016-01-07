@@ -412,6 +412,7 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_version = 0;
 
   CHAR *uvar_outputTiming = NULL;
+  CHAR *uvar_outputTimingDetails = NULL;
 
   CHAR *uvar_FstatMethod = XLALStringDuplicate("DemodBest");
   CHAR *uvar_FstatMethodRecalc = XLALStringDuplicate("DemodBest");
@@ -517,6 +518,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "skyPointIndex",0, UVAR_DEVELOPER, "Only analyze this skypoint in grid", &uvar_skyPointIndex ), &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTiming", 0, UVAR_DEVELOPER, "Append timing information into this file", &uvar_outputTiming), &status);
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTimingDetails", 0, UVAR_DEVELOPER, "Append detailed F-stat timing information to this file", &uvar_outputTimingDetails), &status);
 
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
 
@@ -666,12 +668,9 @@ int MAIN( int argc, char *argv[]) {
 
     } /* end of logging */
 
-  if ( uvar_outputTiming != NULL )
-    {
-      char buf [ strlen ( uvar_outputTiming ) + 10 ];
-      sprintf ( buf, "%s-details", uvar_outputTiming );
-      XLAL_CHECK ( (usefulParams.timingDetailsFP = fopen ( buf, "wb" )) != NULL, XLAL_ESYS, "Failed to open '%s' for writing\n", buf );
-    } // if uvar_outputTiming
+  if ( uvar_outputTimingDetails != NULL ) {
+    XLAL_CHECK ( (usefulParams.timingDetailsFP = fopen ( uvar_outputTimingDetails, "wb" )) != NULL, XLAL_ESYS, "Failed to open '%s' for writing\n", uvar_outputTimingDetails );
+  } // if uvar_outputTimingDetails
 
   /* initializations of coarse and fine grids */
   coarsegrid.TwoF=NULL;
