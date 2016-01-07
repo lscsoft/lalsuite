@@ -39,11 +39,9 @@ int XLALGetDopplerShiftedFrequencyInfo
    REAL8                            Tsft  /**< SFT duration */
   )
 {
-  UINT8 numSFTs;
-  UINT4 k;
   REAL8 timeDiff, factor, fhat, phiByTwoPi;
 
-  numSFTs = sftIndices->length;
+  UINT4 numSFTs = sftIndices->length;
   if ( expSignalPhases->length !=numSFTs
        || shiftedFreqs->length !=numSFTs
        || lowestBins->length !=numSFTs
@@ -65,14 +63,14 @@ int XLALGetDopplerShiftedFrequencyInfo
   /* fhat = f_0 + f_1(t-t0) + f_2(t-t0)^2/2 + ... */
 
   /* this is the sft reference time  - the pulsar reference time */
-  for (UINT8 sftNum=0; sftNum < numSFTs; sftNum++) {
-    UINT8 detInd = sftIndices->data[sftNum].detInd;
+  for (UINT4 sftNum=0; sftNum < numSFTs; sftNum++) {
+    UINT4 detInd = sftIndices->data[sftNum].detInd;
     XLAL_CHECK ( ( detInd < inputSFTs->length ),
 		 XLAL_EINVAL,
-		 "SFT asked for detector index off end of list:\n sftNum=%"LAL_UINT8_FORMAT", detInd=%"LAL_UINT8_FORMAT", inputSFTs->length=%d\n",
+		 "SFT asked for detector index off end of list:\n sftNum=%"LAL_UINT4_FORMAT", detInd=%"LAL_UINT4_FORMAT", inputSFTs->length=%d\n",
 		 sftNum, detInd, inputSFTs->length );
 
-    UINT8 numSFTsDet = inputSFTs->data[detInd]->length;
+    UINT4 numSFTsDet = inputSFTs->data[detInd]->length;
     SSBtimes *times;
     times = multiTimes->data[detInd];
     XLAL_CHECK ( ( times->DeltaT->length == numSFTsDet )
@@ -80,10 +78,10 @@ int XLALGetDopplerShiftedFrequencyInfo
 		 XLAL_EBADLEN,
 		 "Lengths of multilists don't match!" );
 
-    UINT8 sftInd = sftIndices->data[sftNum].sftInd;
+    UINT4 sftInd = sftIndices->data[sftNum].sftInd;
     XLAL_CHECK ( ( sftInd < numSFTsDet ),
 		 XLAL_EINVAL,
-		 "SFT asked for SFT index off end of list:\n sftNum=%"LAL_UINT8_FORMAT", detInd=%"LAL_UINT8_FORMAT", sftInd=%"LAL_UINT8_FORMAT", numSFTsDet=%"LAL_UINT8_FORMAT"\n",
+		 "SFT asked for SFT index off end of list:\n sftNum=%"LAL_UINT4_FORMAT", detInd=%"LAL_UINT4_FORMAT", sftInd=%"LAL_UINT4_FORMAT", numSFTsDet=%"LAL_UINT4_FORMAT"\n",
 		 sftNum, detInd, sftInd, numSFTsDet );
     timeDiff = times->DeltaT->data[sftInd]
       + XLALGPSDiff( &(times->refTime), &(dopp->refTime));
@@ -91,7 +89,7 @@ int XLALGetDopplerShiftedFrequencyInfo
     phiByTwoPi = fmod ( fhat * timeDiff , 1.0 );
     factor = timeDiff;
 
-    for (k = 1;  k < PULSAR_MAX_SPINS; k++) {
+    for (UINT4 k = 1;  k < PULSAR_MAX_SPINS; k++) {
       fhat += dopp->fkdot[k] * factor;
       factor *= timeDiff / (k+1);
       phiByTwoPi += dopp->fkdot[k] * factor;
@@ -106,7 +104,7 @@ int XLALGetDopplerShiftedFrequencyInfo
     REAL8 fminusf0 = shiftedFreqs->data[sftNum] - inputSFTs->data[detInd]->data[sftInd].f0;
     lowestBins->data[sftNum] = ceil( fminusf0 * Tsft - 0.5*numBins );
 #define SINC_SAFETY 1e-5
-    for (UINT8 l = 0; l < numBins; l++) {
+    for (UINT4 l = 0; l < numBins; l++) {
       REAL4 sinPiX, cosPiX;
       REAL8 X;  /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
       X =  lowestBins->data[sftNum] - fminusf0 * Tsft + l;
@@ -140,14 +138,12 @@ int XLALCreateSFTIndexListFromMultiSFTVect
   )
 {
   SFTIndexList *ret = NULL;
-  UINT8 numSFTs;
-  UINT8 j, k, l, numForDet;
-  UINT4 numDets;
 
-  numDets = sfts->length;
+  UINT4 numDets = numDets = sfts->length;
+  UINT4 numSFTs = 0;
+  UINT4 j = 0;
 
-  numSFTs = 0;
-  for (k=0; k < numDets; k++) {
+  for (UINT4 k=0; k < numDets; k++) {
     numSFTs += sfts->data[k]->length;
   }
 
@@ -160,10 +156,9 @@ int XLALCreateSFTIndexListFromMultiSFTVect
     XLAL_ERROR ( XLAL_ENOMEM );
   }
 
-  j = 0;
-  for (k=0; k < numDets; k++) {
-    numForDet = sfts->data[k]->length;
-    for (l=0; l < numForDet; l++) {
+  for (UINT4 k=0; k < numDets; k++) {
+    UINT4 numForDet = sfts->data[k]->length;
+    for (UINT4 l=0; l < numForDet; l++) {
       ret->data[j].detInd = k;
       ret->data[j].sftInd = l;
       ++j;
@@ -189,12 +184,9 @@ int XLALCreateSFTPairIndexList
   )
 {
   SFTPairIndexList *ret = NULL;
-  UINT8 numSFTs;
-  UINT8 j, k, l, lMin;
-  REAL8 timeDiff;
-  LIGOTimeGPS gps1, gps2;
 
-  numSFTs = indexList->length;
+  UINT4 numSFTs = indexList->length;
+  UINT4 j = 0;
 
   if ( ( ret = XLALCalloc( 1, sizeof( *ret ) )) == NULL ) {
     XLAL_ERROR ( XLAL_ENOMEM );
@@ -204,17 +196,17 @@ int XLALCreateSFTPairIndexList
 
   /* maximum possible number of pairs */
 
-  j = 0;
-  for (k=0; k < numSFTs; k++) {
+  for (UINT4 k=0; k < numSFTs; k++) {
+    UINT4 lMin;
     if ( inclAutoCorr ) {
       lMin = k;
     } else {
       lMin = k+1;
     }
-    gps1 = sfts->data[indexList->data[k].detInd]->data[indexList->data[k].sftInd].epoch;
-    for (l=lMin; l < numSFTs; l++) {
-      gps2 = sfts->data[indexList->data[l].detInd]->data[indexList->data[l].sftInd].epoch;
-      timeDiff = XLALGPSDiff(&gps1,&gps2);
+    LIGOTimeGPS gps1 = sfts->data[indexList->data[k].detInd]->data[indexList->data[k].sftInd].epoch;
+    for (UINT4 l=lMin; l < numSFTs; l++) {
+      LIGOTimeGPS gps2 = sfts->data[indexList->data[l].detInd]->data[indexList->data[l].sftInd].epoch;
+      REAL8 timeDiff = XLALGPSDiff(&gps1,&gps2);
       if (fabs(timeDiff) <= maxLag) {
 	++j;
       }
@@ -226,16 +218,17 @@ int XLALCreateSFTPairIndexList
     XLAL_ERROR ( XLAL_ENOMEM );
   }
   j = 0;
-  for (k=0; k < numSFTs; k++) {
+  for (UINT4 k=0; k < numSFTs; k++) {
+    UINT4 lMin;
     if ( inclAutoCorr ) {
       lMin = k;
     } else {
       lMin = k+1;
     }
-    gps1 = sfts->data[indexList->data[k].detInd]->data[indexList->data[k].sftInd].epoch;
-    for (l=lMin; l < numSFTs; l++) {
-      gps2 = sfts->data[indexList->data[l].detInd]->data[indexList->data[l].sftInd].epoch;
-      timeDiff = XLALGPSDiff(&gps1,&gps2);
+    LIGOTimeGPS gps1 = sfts->data[indexList->data[k].detInd]->data[indexList->data[k].sftInd].epoch;
+    for (UINT4 l=lMin; l < numSFTs; l++) {
+      LIGOTimeGPS gps2 = sfts->data[indexList->data[l].detInd]->data[indexList->data[l].sftInd].epoch;
+      REAL8 timeDiff = XLALGPSDiff(&gps1,&gps2);
       if (fabs(timeDiff) <= maxLag) {
 	ret->data[j].sftNum[0] = k;
 	ret->data[j].sftNum[1] = l;
@@ -263,20 +256,20 @@ int XLALCalculateCrossCorrGammas
   )
 {
 
-  UINT8 numPairs = pairIndexList->length;
+  UINT4 numPairs = pairIndexList->length;
 
   REAL8Vector *ret1 = NULL;
-  XLAL_CHECK ( ( ret1 = XLALCreateREAL8Vector ( numPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %"LAL_UINT8_FORMAT" ) failed.", numPairs );
+  XLAL_CHECK ( ( ret1 = XLALCreateREAL8Vector ( numPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %"LAL_UINT4_FORMAT" ) failed.", numPairs );
   REAL8Vector *ret2 = NULL;
-  XLAL_CHECK ( ( ret2 = XLALCreateREAL8Vector ( numPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %"LAL_UINT8_FORMAT" ) failed.", numPairs );
+  XLAL_CHECK ( ( ret2 = XLALCreateREAL8Vector ( numPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %"LAL_UINT4_FORMAT" ) failed.", numPairs );
 
-  for (UINT8 j=0; j < numPairs; j++) {
-    UINT8 sftNum1 = pairIndexList->data[j].sftNum[0];
-    UINT8 sftNum2 = pairIndexList->data[j].sftNum[1];
-    UINT8 detInd1 = indexList->data[sftNum1].detInd;
-    UINT8 detInd2 = indexList->data[sftNum2].detInd;
-    UINT8 sftInd1 = indexList->data[sftNum1].sftInd;
-    UINT8 sftInd2 = indexList->data[sftNum2].sftInd;
+  for (UINT4 j=0; j < numPairs; j++) {
+    UINT4 sftNum1 = pairIndexList->data[j].sftNum[0];
+    UINT4 sftNum2 = pairIndexList->data[j].sftNum[1];
+    UINT4 detInd1 = indexList->data[sftNum1].detInd;
+    UINT4 detInd2 = indexList->data[sftNum2].detInd;
+    UINT4 sftInd1 = indexList->data[sftNum1].sftInd;
+    UINT4 sftInd2 = indexList->data[sftNum2].sftInd;
     ret1->data[j] = 0.1 * ( multiCoeffs->data[detInd1]->a->data[sftInd1]
 			   * multiCoeffs->data[detInd2]->a->data[sftInd2]
 			   + multiCoeffs->data[detInd1]->b->data[sftInd1]
@@ -310,7 +303,7 @@ int XLALCalculatePulsarCrossCorrStatistic
  )
 {
 
-  UINT8 numSFTs = sftIndices->length;
+  UINT4 numSFTs = sftIndices->length;
   if ( expSignalPhases->length !=numSFTs
        || lowestBins->length !=numSFTs
        || sincList->length !=numSFTs) {
@@ -318,7 +311,7 @@ int XLALCalculatePulsarCrossCorrStatistic
     XLAL_ERROR(XLAL_EBADLEN );
   }
 
-  UINT8 numPairs = sftPairs->length;
+  UINT4 numPairs = sftPairs->length;
   if ( curlyGAmp->length !=numPairs ) {
     XLALPrintError("Lengths of pair-indexed lists don't match!");
     XLAL_ERROR(XLAL_EBADLEN );
@@ -327,31 +320,31 @@ int XLALCalculatePulsarCrossCorrStatistic
   REAL8 curlyGSqr = 0;
   *ccStat = 0.0;
   *evSquared = 0.0;
-  for (UINT8 alpha = 0; alpha < numPairs; alpha++) {
-    UINT8 sftNum1 = sftPairs->data[alpha].sftNum[0];
-    UINT8 sftNum2 = sftPairs->data[alpha].sftNum[1];
+  for (UINT4 alpha = 0; alpha < numPairs; alpha++) {
+    UINT4 sftNum1 = sftPairs->data[alpha].sftNum[0];
+    UINT4 sftNum2 = sftPairs->data[alpha].sftNum[1];
 
     XLAL_CHECK ( ( sftNum1 < numSFTs ) && ( sftNum2 < numSFTs ),
 		 XLAL_EINVAL,
-		 "SFT pair asked for SFT index off end of list:\n alpha=%"LAL_UINT8_FORMAT", sftNum1=%"LAL_UINT8_FORMAT", sftNum2=%"LAL_UINT8_FORMAT", numSFTs=%"LAL_UINT8_FORMAT"\n",
+		 "SFT pair asked for SFT index off end of list:\n alpha=%"LAL_UINT4_FORMAT", sftNum1=%"LAL_UINT4_FORMAT", sftNum2=%"LAL_UINT4_FORMAT", numSFTs=%"LAL_UINT4_FORMAT"\n",
 		 alpha,  sftNum1, sftNum2, numSFTs );
 
-    UINT8 detInd1 = sftIndices->data[sftNum1].detInd;
-    UINT8 detInd2 = sftIndices->data[sftNum2].detInd;
+    UINT4 detInd1 = sftIndices->data[sftNum1].detInd;
+    UINT4 detInd2 = sftIndices->data[sftNum2].detInd;
 
     XLAL_CHECK ( ( detInd1 < inputSFTs->length )
 		 && ( detInd2 < inputSFTs->length ),
 		 XLAL_EINVAL,
-		 "SFT asked for detector index off end of list:\n sftNum1=%"LAL_UINT8_FORMAT", sftNum2=%"LAL_UINT8_FORMAT", detInd1=%"LAL_UINT8_FORMAT", detInd2=%"LAL_UINT8_FORMAT", inputSFTs->length=%d\n",
+		 "SFT asked for detector index off end of list:\n sftNum1=%"LAL_UINT4_FORMAT", sftNum2=%"LAL_UINT4_FORMAT", detInd1=%"LAL_UINT4_FORMAT", detInd2=%"LAL_UINT4_FORMAT", inputSFTs->length=%d\n",
 		 sftNum1, sftNum2, detInd1, detInd2, inputSFTs->length );
 
-    UINT8 sftInd1 = sftIndices->data[sftNum1].sftInd;
-    UINT8 sftInd2 = sftIndices->data[sftNum2].sftInd;
+    UINT4 sftInd1 = sftIndices->data[sftNum1].sftInd;
+    UINT4 sftInd2 = sftIndices->data[sftNum2].sftInd;
 
     XLAL_CHECK ( ( sftInd1 < inputSFTs->data[detInd1]->length )
 		 && ( sftInd2 < inputSFTs->data[detInd2]->length ),
 		 XLAL_EINVAL,
-		 "SFT asked for SFT index off end of list:\n sftNum1=%"LAL_UINT8_FORMAT", sftNum2=%"LAL_UINT8_FORMAT", detInd1=%"LAL_UINT8_FORMAT", detInd2=%"LAL_UINT8_FORMAT", sftInd1=%"LAL_UINT8_FORMAT", sftInd2=%"LAL_UINT8_FORMAT", inputSFTs->data[detInd1]->length=%d, inputSFTs->data[detInd2]->length=%d\n",
+		 "SFT asked for SFT index off end of list:\n sftNum1=%"LAL_UINT4_FORMAT", sftNum2=%"LAL_UINT4_FORMAT", detInd1=%"LAL_UINT4_FORMAT", detInd2=%"LAL_UINT4_FORMAT", sftInd1=%"LAL_UINT4_FORMAT", sftInd2=%"LAL_UINT4_FORMAT", inputSFTs->data[detInd1]->length=%d, inputSFTs->data[detInd2]->length=%d\n",
 		 sftNum1, sftNum2, detInd1, detInd2, sftInd1, sftInd2,
 		 inputSFTs->data[detInd1]->length,
 		 inputSFTs->data[detInd2]->length );
@@ -373,7 +366,7 @@ int XLALCalculatePulsarCrossCorrStatistic
 		 XLAL_EINVAL,
 		 "Loop would run off end of array:\n lowestBin1=%d, numBins=%d, len(dataArray1)=%d\n",
 		 lowestBin1, numBins, lenDataArray1 );
-    for (UINT8 j = 0; j < numBins; j++) {
+    for (UINT4 j = 0; j < numBins; j++) {
       COMPLEX8 data1 = dataArray1[lowestBin1+j];
 
       INT4 ccSign = baseCCSign;
@@ -382,7 +375,7 @@ int XLALCalculatePulsarCrossCorrStatistic
 		   XLAL_EINVAL,
 		   "Loop would run off end of array:\n lowestBin2=%d, numBins=%d, len(dataArray2)=%d\n",
 		   lowestBin2, numBins, lenDataArray2 );
-      for (UINT8 k = 0; k < numBins; k++) {
+      for (UINT4 k = 0; k < numBins; k++) {
 	COMPLEX8 data2 = dataArray2[lowestBins->data[sftNum2]+k];
 	REAL8 sincFactor =1;
 
@@ -422,21 +415,21 @@ int XLALCalculateCrossCorrPhaseDerivatives
   XLAL_CHECK ( coordSys != NULL, XLAL_EINVAL );
 
   const UINT4 numCoords = coordSys->dim;
-  const UINT8 numSFTs = indexList->length;
+  const UINT4 numSFTs = indexList->length;
 
   REAL8VectorSequence *ret = NULL;
 
-  XLAL_CHECK ( ( ret = XLALCreateREAL8VectorSequence ( numCoords, numSFTs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8VectorSequence ( %"LAL_UINT4_FORMAT", %"LAL_UINT8_FORMAT" ) failed.", numCoords,numSFTs );
+  XLAL_CHECK ( ( ret = XLALCreateREAL8VectorSequence ( numCoords, numSFTs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8VectorSequence ( %"LAL_UINT4_FORMAT", %"LAL_UINT4_FORMAT" ) failed.", numCoords,numSFTs );
 
   for ( UINT4 coordNum=0; coordNum < numCoords; coordNum++ ) {
-    for ( UINT8 sftNum=0; sftNum < numSFTs; sftNum++ ) {
-      UINT8 detInd = indexList->data[sftNum].detInd;
-      UINT8 sftInd = indexList->data[sftNum].sftInd;
+    for ( UINT4 sftNum=0; sftNum < numSFTs; sftNum++ ) {
+      UINT4 detInd = indexList->data[sftNum].detInd;
+      UINT4 sftInd = indexList->data[sftNum].sftInd;
       SSBtimes *times;
       times = multiTimes->data[detInd];
       REAL8 refTime8 = XLALGPSGetREAL8 ( &(times->refTime) );
-      UINT8 numSFTsDet = times->DeltaT->length;
-      XLAL_CHECK ( ( sftInd < numSFTsDet ), XLAL_EINVAL, "SFT asked for SFT index off end of list:\n sftNum=%"LAL_UINT8_FORMAT", detInd=%"LAL_UINT8_FORMAT", sftInd=%"LAL_UINT8_FORMAT", numSFTsDet=%"LAL_UINT8_FORMAT"\n", sftNum, detInd, sftInd, numSFTsDet );
+      UINT4 numSFTsDet = times->DeltaT->length;
+      XLAL_CHECK ( ( sftInd < numSFTsDet ), XLAL_EINVAL, "SFT asked for SFT index off end of list:\n sftNum=%"LAL_UINT4_FORMAT", detInd=%"LAL_UINT4_FORMAT", sftInd=%"LAL_UINT4_FORMAT", numSFTsDet=%"LAL_UINT4_FORMAT"\n", sftNum, detInd, sftInd, numSFTsDet );
       REAL8 tSSB = refTime8 + times->DeltaT->data[sftInd];
       ret->data[coordNum*numSFTs+sftNum] = XLALComputePhaseDerivative ( tSSB, dopplerPoint, (coordSys->coordIDs[coordNum]), edat, NULL, 0 );
       XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputePhaseDerivative() failed with xlalErrno = %d\n", xlalErrno );
@@ -474,10 +467,10 @@ int XLALCalculateCrossCorrPhaseMetric
 
   const UINT4 numCoords = coordSys->dim;
   XLAL_CHECK ( ( phaseDerivs->length == numCoords ), XLAL_EINVAL, "Length mismatch: phaseDerivs->length=%"LAL_UINT4_FORMAT", numCoords=%"LAL_UINT4_FORMAT"\n", phaseDerivs->length, numCoords );
-  const UINT8 numSFTs = phaseDerivs->vectorLength;
-  const UINT8 numPairs = pairIndexList->length;
-  XLAL_CHECK ( ( Gamma_ave->length == numPairs ), XLAL_EINVAL, "Length mismatch: Gamma_ave->length=%"LAL_UINT4_FORMAT", numPairs=%"LAL_UINT8_FORMAT"\n", Gamma_ave->length, numPairs );
-  XLAL_CHECK ( ( Gamma_circ->length == numPairs ), XLAL_EINVAL, "Length mismatch: Gamma_circ->length=%"LAL_UINT4_FORMAT", numPairs=%"LAL_UINT8_FORMAT"\n", Gamma_circ->length, numPairs );
+  const UINT4 numSFTs = phaseDerivs->vectorLength;
+  const UINT4 numPairs = pairIndexList->length;
+  XLAL_CHECK ( ( Gamma_ave->length == numPairs ), XLAL_EINVAL, "Length mismatch: Gamma_ave->length=%"LAL_UINT4_FORMAT", numPairs=%"LAL_UINT4_FORMAT"\n", Gamma_ave->length, numPairs );
+  XLAL_CHECK ( ( Gamma_circ->length == numPairs ), XLAL_EINVAL, "Length mismatch: Gamma_circ->length=%"LAL_UINT4_FORMAT", numPairs=%"LAL_UINT4_FORMAT"\n", Gamma_circ->length, numPairs );
 
   /* ---------- prepare output metric ---------- */
   gsl_matrix *ret_g;
@@ -495,9 +488,9 @@ int XLALCalculateCrossCorrPhaseMetric
   REAL8Vector *dDeltaPhi_i = NULL;
   REAL8 denom = 0;
   XLAL_CHECK ( ( dDeltaPhi_i = XLALCreateREAL8Vector ( numCoords ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %"LAL_UINT4_FORMAT" ) failed.", numCoords );
-  for ( UINT8 pairNum=0; pairNum < numPairs; pairNum++ ) {
-    UINT8 sftNum1 = pairIndexList->data[pairNum].sftNum[0];
-    UINT8 sftNum2 = pairIndexList->data[pairNum].sftNum[1];
+  for ( UINT4 pairNum=0; pairNum < numPairs; pairNum++ ) {
+    UINT4 sftNum1 = pairIndexList->data[pairNum].sftNum[0];
+    UINT4 sftNum2 = pairIndexList->data[pairNum].sftNum[1];
     REAL8 aveWeight = SQUARE(Gamma_ave->data[pairNum]);
     denom += aveWeight;
     REAL8 circWeight = Gamma_ave->data[pairNum] * Gamma_circ->data[pairNum];
@@ -554,8 +547,8 @@ int XLALCalculateLMXBCrossCorrDiagMetric
    )
 
 {
-  UINT8 sftNum1 = 0;
-  UINT8 sftNum2 = 0;
+  UINT4 sftNum1 = 0;
+  UINT4 sftNum2 = 0;
   REAL8 TDiff = 0;
   REAL8 TMean = 0;
   REAL8 denom = 0;
@@ -571,16 +564,16 @@ int XLALCalculateLMXBCrossCorrDiagMetric
   REAL8 rhosum = 0;
   LIGOTimeGPS *T1 = NULL;
   LIGOTimeGPS *T2 = NULL;
-  UINT8 numalpha = G_alpha->length;
+  UINT4 numalpha = G_alpha->length;
 
 
-  for (UINT8 j = 0; j < numalpha; j++) {
+  for (UINT4 j = 0; j < numalpha; j++) {
     sftNum1 = pairIndexList->data[j].sftNum[0];
     sftNum2 = pairIndexList->data[j].sftNum[1];
-    UINT8 detInd1 = indexList->data[sftNum1].detInd;
-    UINT8 detInd2 = indexList->data[sftNum2].detInd;
-    UINT8 sftInd1 = indexList->data[sftNum1].sftInd;
-    UINT8 sftInd2 = indexList->data[sftNum2].sftInd;
+    UINT4 detInd1 = indexList->data[sftNum1].detInd;
+    UINT4 detInd2 = indexList->data[sftNum2].detInd;
+    UINT4 sftInd1 = indexList->data[sftNum1].sftInd;
+    UINT4 sftInd2 = indexList->data[sftNum2].sftInd;
     T1 = &(sfts->data[detInd1]->data[sftInd1].epoch);
     T2 = &(sfts->data[detInd2]->data[sftInd2].epoch);
     TDiff = XLALGPSDiff(T1, T2);
