@@ -36,7 +36,7 @@ int XLALGetDopplerShiftedFrequencyInfo
    SFTIndexList              *sftIndices, /**< List of indices for SFTs */
    MultiSFTVector             *inputSFTs, /**< SFT data (needed for f0) */
    MultiSSBtimes             *multiTimes, /**< SSB or Binary times */
-   UINT4VectorSequence          *badBins, /**< List of bin indices contaminated by known lines */
+   MultiUINT4Vector             *badBins, /**< List of bin indices contaminated by known lines */
    REAL8                            Tsft  /**< SFT duration */
   )
 {
@@ -109,7 +109,7 @@ int XLALGetDopplerShiftedFrequencyInfo
 #define SINC_SAFETY 1e-5
     for (UINT4 l = 0; l < numBins; l++) {
       sincList->data[sftNum*numBins + l] = 1.0;
-      if ( badBins ) {
+      if ( badBins && badBins->data[detInd] ) {
 	for (UINT4 j = 0;
 	     sincList->data[sftNum*numBins + l] != 0.0
 	       && j < badBins->data[detInd]->length;
@@ -121,7 +121,8 @@ int XLALGetDopplerShiftedFrequencyInfo
 	}
       }
 
-      if ( !badBins && sincList->data[sftNum*numBins + l] != 0.0 ) {
+      if ( !badBins || !(badBins->data[detInd])
+	   || sincList->data[sftNum*numBins + l] != 0.0 ) {
 	/* Calculate normalized sinc, i.e., sin(pi*x)/(pi*x) */
 	REAL4 sinPiX, cosPiX;
 	REAL8 X = lowestBins->data[sftNum] - fminusf0 * Tsft + l;
