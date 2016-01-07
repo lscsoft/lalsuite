@@ -115,6 +115,7 @@ int XLALGetDopplerShiftedFrequencyInfo
    SFTIndexList                   *sfts,
    MultiSFTVector            *inputSFTs,
    MultiSSBtimes            *multiTimes,
+   UINT4VectorSequence         *badBins,
    REAL8                           Tsft
    )
   ;
