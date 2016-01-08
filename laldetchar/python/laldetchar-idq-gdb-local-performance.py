@@ -466,7 +466,7 @@ for (calib_start, calib_end), segs in calibD.items():
     jsonD["%d_%d"%(calib_start, calib_end)] = thisD
 
 ### write jsonD to file
-jsonfilename = idq.useSummary_json( gdbdir, ifo, opts.classifier, "%s_calib"%filetag, opts.start, opts.end-opts.start)
+jsonfilename = idq.useSummary_json( gdbdir, ifo, opts.classifier, "%s_calibStats"%filetag, opts.start, opts.end-opts.start)
 if opts.verbose:
     print "writing : %s"%jsonfilename
 file_obj = open(jsonfilename, "w")
@@ -523,7 +523,7 @@ for (train_start, train_end), segs in trainD.items():
     jsonD["%d_%d"%(train_start, train_end)] = thisD
 
 ### write jsonD to file
-jsonfilename = idq.useSummary_json( gdbdir, ifo, opts.classifier, "%s_train"%filetag, opts.start, opts.end-opts.start)
+jsonfilename = idq.useSummary_json( gdbdir, ifo, opts.classifier, "%s_trainStats"%filetag, opts.start, opts.end-opts.start)
 if opts.verbose:
     print "writing : %s"%jsonfilename
 file_obj = open(jsonfilename, "w")
