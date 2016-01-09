@@ -573,7 +573,10 @@ def ovl_vconfig_stripchart( channel_ordered_vconfigs, to=None, cmap='jet', mapIt
             configs.add( C )
     configs = list( configs )
 
-    configs.remove( (None, None, None, None, 0, 0) )
+    try:
+        configs.remove( (None, None, None, None, 0, 0) )
+    except ValueError as e: ### None is not present...
+        pass
 
     configs.sort( key=lambda l: l[mapIt['vwin']], reverse=True )
     configs.sort( key=lambda l: l[mapIt['vthr']], reverse=True )
