@@ -1711,7 +1711,9 @@ int MAIN( int argc, char *argv[]) {
                       thisScan.numSkyGridPoints * usefulParams.nf1dot, uvar_Freq, uvar_FreqBand);
 #endif
 
-        SET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*usefulParams.nf1dot+ifdot, TRUE);
+        if ( !uvar_outputTiming ) {
+          SET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*usefulParams.nf1dot+ifdot, TRUE);
+        }
 
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
 
