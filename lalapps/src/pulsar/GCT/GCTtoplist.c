@@ -417,7 +417,7 @@ static int print_single_detector_quantities_to_str ( char *outstr, size_t outstr
    Returns the number of chars written, -1 if in error
    Updates checksum if given */
 static int write_gctFstat_toplist_item_to_fp(GCTtopOutputEntry fline, FILE*fp, UINT4*checksum) {
-  char linebuf[256];
+  char linebuf[512];
   UINT4 i;
 
   UINT4 length = print_gctFstatline_to_str(fline, linebuf, sizeof(linebuf)-1);
@@ -469,8 +469,8 @@ int write_gctFstat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
     *checksum = 0;
   for(i=0;i<tl->elems;i++)
     if ((r = write_gctFstat_toplist_item_to_fp(*((GCTtopOutputEntry*)(void*)(tl->heap[i])), fp, checksum)) < 0) {
-      LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s\n",
-		 errno,strerror(errno));
+      LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s %d\n",
+		 errno,strerror(errno),i);
 #ifdef _MSC_VER
       LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
 #endif
