@@ -64,11 +64,11 @@ void gc_hotloop_2Fmax_tracking (REAL4 * fgrid2F, REAL4 * fgrid2Fmax, UINT4 * fgr
   } /*  for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) */
 
 
-  for( ; ifreq_fg +4 < length; ifreq_fg+=4 ) {	
+  for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
 #ifdef EXP_NO_ASM
 
 #pragma ivdep
-    for(int j=0 ; j < 4; j++ ) {
+    for(int j=0 ; j < 16; j++ ) {
             fgrid2F[0] += cgrid2F[0] ;
 
             newMax=(cgrid2F[0] >= fgrid2Fmax[0]);
@@ -84,45 +84,122 @@ void gc_hotloop_2Fmax_tracking (REAL4 * fgrid2F, REAL4 * fgrid2Fmax, UINT4 * fgr
 
 
     __asm __volatile (
+         "MOVAPS %[Vk],%%xmm0 \n\t"
+         "MOVAPS %[V1],%%xmm1 \n\t"
+/* iteration 0,1,2,3 */
          "MOVUPS  (%[cg2F]),%%xmm2 \n\t"  /* load coarse grid values, possibly unaligned */
          "MOVAPS  (%[fg2F]),%%xmm3 \n\t"
          "MOVAPS  (%[fg2Fmax]),%%xmm4 \n\t"
          "MOVAPS  (%[fg2FmaxIdx]),%%xmm5 \n\t"
-
 /* create mask with comparison result of former max 2F */
-
          "MOVAPS %%xmm4,%%xmm7 \n\t"
 	 "CMPLEPS %%xmm2,%%xmm7 \n\t"     /* -1 if previous 2Fmax is <= coarse grid value */
-
-
 /* summing */
          "ADDPS   %%xmm2,%%xmm3 \n\t"     /* Add four coarse grid 2F values to fine grid sums */
          "MOVAPS  %%xmm3,(%[fg2F]) \n\t"  /* store 4 values in fine grid 2F sum array */
-
-	 "MOVAPS %[Vk],%%xmm6 \n\t"
+	 "MOVAPS %%xmm0,%%xmm6 \n\t"
          "ANDPS   %%xmm7,%%xmm2  \n\t"
 	 "ANDPS   %%xmm7,%%xmm6  \n\t"
 
 /* negate the bitmask */
-
-         "XORPS   %[V1],%%xmm7 \n\t"
-
+         "XORPS   %%xmm1,%%xmm7 \n\t"
          "ANDPS   %%xmm7,%%xmm4  \n\t"
          "ANDPS   %%xmm7,%%xmm5  \n\t"
-
-
 /*get the new entries for the max 2F values by ORing the masked values */
-
          "ORPS   %%xmm2,%%xmm4  \n\t"
          "ORPS   %%xmm6,%%xmm5  \n\t"
-
 /* write back */
-
 	 "MOVAPS  %%xmm4,(%[fg2Fmax]) \n\t"
          "MOVAPS  %%xmm5,(%[fg2FmaxIdx]) \n\t"
 
 
-/* TODO : unrolling */
+
+/* iteration 4,5,6,7 */ 
+
+
+         "MOVUPS  0x10(%[cg2F]),%%xmm2 \n\t"  /* load coarse grid values, possibly unaligned */
+         "MOVAPS  0x10(%[fg2F]),%%xmm3 \n\t"
+         "MOVAPS  0x10(%[fg2Fmax]),%%xmm4 \n\t"
+         "MOVAPS  0x10(%[fg2FmaxIdx]),%%xmm5 \n\t"
+/* create mask with comparison result of former max 2F */
+         "MOVAPS %%xmm4,%%xmm7 \n\t"
+         "CMPLEPS %%xmm2,%%xmm7 \n\t"     /* -1 if previous 2Fmax is <= coarse grid value */
+/* summing */
+         "ADDPS   %%xmm2,%%xmm3 \n\t"     /* Add four coarse grid 2F values to fine grid sums */
+         "MOVAPS  %%xmm3,0x10(%[fg2F]) \n\t"  /* store 4 values in fine grid 2F sum array */
+         "MOVAPS %%xmm0,%%xmm6 \n\t"
+         "ANDPS   %%xmm7,%%xmm2  \n\t"
+         "ANDPS   %%xmm7,%%xmm6  \n\t"
+
+/* negate the bitmask */
+         "XORPS   %%xmm1,%%xmm7 \n\t"
+         "ANDPS   %%xmm7,%%xmm4  \n\t"
+         "ANDPS   %%xmm7,%%xmm5  \n\t"
+/*get the new entries for the max 2F values by ORing the masked values */
+         "ORPS   %%xmm2,%%xmm4  \n\t"
+         "ORPS   %%xmm6,%%xmm5  \n\t"
+/* write back */
+         "MOVAPS  %%xmm4,0x10(%[fg2Fmax]) \n\t"
+         "MOVAPS  %%xmm5,0x10(%[fg2FmaxIdx]) \n\t"
+
+/* iteration 8,9,10,11 */ 
+
+
+         "MOVUPS  0x20(%[cg2F]),%%xmm2 \n\t"  /* load coarse grid values, possibly unaligned */
+         "MOVAPS  0x20(%[fg2F]),%%xmm3 \n\t"
+         "MOVAPS  0x20(%[fg2Fmax]),%%xmm4 \n\t"
+         "MOVAPS  0x20(%[fg2FmaxIdx]),%%xmm5 \n\t"
+/* create mask with comparison result of former max 2F */
+         "MOVAPS %%xmm4,%%xmm7 \n\t"
+         "CMPLEPS %%xmm2,%%xmm7 \n\t"     /* -1 if previous 2Fmax is <= coarse grid value */
+/* summing */
+         "ADDPS   %%xmm2,%%xmm3 \n\t"     /* Add four coarse grid 2F values to fine grid sums */
+         "MOVAPS  %%xmm3,0x20(%[fg2F]) \n\t"  /* store 4 values in fine grid 2F sum array */
+         "MOVAPS %%xmm0,%%xmm6 \n\t"
+         "ANDPS   %%xmm7,%%xmm2  \n\t"
+         "ANDPS   %%xmm7,%%xmm6  \n\t"
+
+/* negate the bitmask */
+         "XORPS   %%xmm1,%%xmm7 \n\t"
+         "ANDPS   %%xmm7,%%xmm4  \n\t"
+         "ANDPS   %%xmm7,%%xmm5  \n\t"
+/*get the new entries for the max 2F values by ORing the masked values */
+         "ORPS   %%xmm2,%%xmm4  \n\t"
+         "ORPS   %%xmm6,%%xmm5  \n\t"
+/* write back */
+         "MOVAPS  %%xmm4,0x20(%[fg2Fmax]) \n\t"
+         "MOVAPS  %%xmm5,0x20(%[fg2FmaxIdx]) \n\t"
+
+
+/* iteration 12,13,14,15 */ 
+
+
+         "MOVUPS  0x30(%[cg2F]),%%xmm2 \n\t"  /* load coarse grid values, possibly unaligned */
+         "MOVAPS  0x30(%[fg2F]),%%xmm3 \n\t"
+         "MOVAPS  0x30(%[fg2Fmax]),%%xmm4 \n\t"
+         "MOVAPS  0x30(%[fg2FmaxIdx]),%%xmm5 \n\t"
+/* create mask with comparison result of former max 2F */
+         "MOVAPS %%xmm4,%%xmm7 \n\t"
+         "CMPLEPS %%xmm2,%%xmm7 \n\t"     /* -1 if previous 2Fmax is <= coarse grid value */
+/* summing */
+         "ADDPS   %%xmm2,%%xmm3 \n\t"     /* Add four coarse grid 2F values to fine grid sums */
+         "MOVAPS  %%xmm3,0x30(%[fg2F]) \n\t"  /* store 4 values in fine grid 2F sum array */
+         "MOVAPS %%xmm0,%%xmm6 \n\t"
+         "ANDPS   %%xmm7,%%xmm2  \n\t"
+         "ANDPS   %%xmm7,%%xmm6  \n\t"
+
+/* negate the bitmask */
+         "XORPS   %%xmm1,%%xmm7 \n\t"
+         "ANDPS   %%xmm7,%%xmm4  \n\t"
+         "ANDPS   %%xmm7,%%xmm5  \n\t"
+/*get the new entries for the max 2F values by ORing the masked values */
+         "ORPS   %%xmm2,%%xmm4  \n\t"
+         "ORPS   %%xmm6,%%xmm5  \n\t"
+/* write back */
+         "MOVAPS  %%xmm4,0x30(%[fg2Fmax]) \n\t"
+         "MOVAPS  %%xmm5,0x30(%[fg2FmaxIdx]) \n\t"
+
+
 
 /*  ---------------------------------------------------*/
 :
@@ -149,10 +226,10 @@ void gc_hotloop_2Fmax_tracking (REAL4 * fgrid2F, REAL4 * fgrid2Fmax, UINT4 * fgr
     ) ;
 
 
-    fgrid2F+=4;
-    cgrid2F+=4;
-    fgrid2Fmax+=4;
-    fgrid2FmaxIdx+=4;
+    fgrid2F+=16;
+    cgrid2F+=16;
+    fgrid2Fmax+=16;
+    fgrid2FmaxIdx+=16;
 
 #endif // EXP_No_ASM
 
