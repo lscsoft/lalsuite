@@ -1,5 +1,9 @@
 static inline void gc_hotloop (REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthreshold, UINT4 length  ) __attribute__ ((hot));
 static inline void gc_hotloop_no_nc (REAL4 * fgrid2F, REAL4 * cgrid2F, UINT4 length  ) __attribute__ ((hot));
+static inline void gc_hotloop_2Fmax_tracking (REAL4 * fgrid2F, REAL4 * fgrid2Fmax, UINT4 * fgrid2FmaxIdx, REAL4 * cgrid2F, UINT4 k, UINT4 length  ) __attribute__ ((hot));
+
+
+
 
 #ifdef __APPLE__
 
@@ -32,6 +36,148 @@ void *ALRealloc(void *ptr, size_t size) {
 }
 
 #endif
+
+void gc_hotloop_2Fmax_tracking (REAL4 * fgrid2F, REAL4 * fgrid2Fmax, UINT4 * fgrid2FmaxIdx, REAL4 * cgrid2F, UINT4 k, UINT4 length  ) {
+
+  UINT4 ifreq_fg;
+  int newMax;
+
+  UINT4 VIIII[4] __attribute__ ((aligned (16))) = { k,k,k,k };
+  UINT4 V1111[4] __attribute__ ((aligned (16))) = { 0xffffffff,0xffffffff,0xffffffff,0xffffffff};
+
+  UINT8 offset = ((UINT8)fgrid2F & 0xf) ;
+
+  if(offset != 0) offset = 16-offset;
+
+  for(ifreq_fg=0; offset > 0 && ifreq_fg < length; ifreq_fg++, offset-- ) {
+
+            fgrid2F[0] += cgrid2F[0] ;
+
+            newMax=(cgrid2F[0] >= fgrid2Fmax[0]);
+	    fgrid2Fmax[0]=fmaxf(fgrid2Fmax[0],fgrid2Fmax[0]);
+            fgrid2FmaxIdx[0]=fgrid2FmaxIdx[0]*(1-newMax)+k*newMax;
+            fgrid2F++;
+            cgrid2F++;
+            fgrid2Fmax++;
+            fgrid2FmaxIdx++;
+
+  } /*  for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) */
+
+
+  for( ; ifreq_fg +4 < length; ifreq_fg+=4 ) {	
+#ifdef EXP_NO_ASM
+
+#pragma ivdep
+    for(int j=0 ; j < 4; j++ ) {
+            fgrid2F[0] += cgrid2F[0] ;
+
+            newMax=(cgrid2F[0] >= fgrid2Fmax[0]);
+            fgrid2Fmax[0]=fmaxf(fgrid2Fmax[0],fgrid2Fmax[0]);
+            fgrid2FmaxIdx[0]=fgrid2FmaxIdx[0]*(1-newMax)+k*newMax;
+            fgrid2F++;
+            cgrid2F++;
+            fgrid2Fmax++;
+            fgrid2FmaxIdx++;
+    }
+
+#else
+
+
+    __asm __volatile (
+         "MOVUPS  (%[cg2F]),%%xmm2 \n\t"  /* load coarse grid values, possibly unaligned */
+         "MOVAPS  (%[fg2F]),%%xmm3 \n\t"
+         "MOVAPS  (%[fg2Fmax]),%%xmm4 \n\t"
+         "MOVAPS  (%[fg2FmaxIdx]),%%xmm5 \n\t"
+
+/* create mask with comparison result of former max 2F */
+
+         "MOVAPS %%xmm4,%%xmm7 \n\t"
+	 "CMPLEPS %%xmm2,%%xmm7 \n\t"     /* -1 if previous 2Fmax is <= coarse grid value */
+
+
+/* summing */
+         "ADDPS   %%xmm2,%%xmm3 \n\t"     /* Add four coarse grid 2F values to fine grid sums */
+         "MOVAPS  %%xmm3,(%[fg2F]) \n\t"  /* store 4 values in fine grid 2F sum array */
+
+	 "MOVAPS %[Vk],%%xmm6 \n\t"
+         "ANDPS   %%xmm7,%%xmm2  \n\t"
+	 "ANDPS   %%xmm7,%%xmm6  \n\t"
+
+/* negate the bitmask */
+
+         "XORPS   %[V1],%%xmm7 \n\t"
+
+         "ANDPS   %%xmm7,%%xmm4  \n\t"
+         "ANDPS   %%xmm7,%%xmm5  \n\t"
+
+
+/*get the new entries for the max 2F values by ORing the masked values */
+
+         "ORPS   %%xmm2,%%xmm4  \n\t"
+         "ORPS   %%xmm6,%%xmm5  \n\t"
+
+/* write back */
+
+	 "MOVAPS  %%xmm4,(%[fg2Fmax]) \n\t"
+         "MOVAPS  %%xmm5,(%[fg2FmaxIdx]) \n\t"
+
+
+/* TODO : unrolling */
+
+/*  ---------------------------------------------------*/
+:
+      /* output */
+
+      :
+      /* input */
+      [cg2F]       "r"  (cgrid2F),
+      [fg2F]       "r"  (fgrid2F)
+
+      ,
+
+      [fg2Fmax]     "r"  (fgrid2Fmax),
+      [fg2FmaxIdx]  "r"  (fgrid2FmaxIdx),
+
+
+      [Vk]         "m"  (VIIII[0]),
+      [V1]         "m"  (V1111[0])
+
+
+      : /* clobbered */
+      "xmm0","xmm1","xmm2","xmm3","xmm4","xmm5","xmm6","xmm7","memory"
+
+    ) ;
+
+
+    fgrid2F+=4;
+    cgrid2F+=4;
+    fgrid2Fmax+=4;
+    fgrid2FmaxIdx+=4;
+
+#endif // EXP_No_ASM
+
+
+  }
+
+  /* take care of remaining iterations, length  modulo 16 */
+  for( ; ifreq_fg < length; ifreq_fg++ ) {
+
+            fgrid2F[0] += cgrid2F[0] ;
+
+            newMax=(cgrid2F[0] >= fgrid2Fmax[0]);
+            fgrid2Fmax[0]=fmaxf(fgrid2Fmax[0],fgrid2Fmax[0]);
+            fgrid2FmaxIdx[0]=fgrid2FmaxIdx[0]*(1-newMax)+k*newMax;
+            fgrid2F++;
+            cgrid2F++;
+            fgrid2Fmax++;
+            fgrid2FmaxIdx++;
+
+  } /* for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) { */
+
+
+}
+
+
 
 
 void gc_hotloop(REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthreshold, UINT4 length  )  {

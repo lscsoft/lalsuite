@@ -1606,20 +1606,33 @@ int MAIN( int argc, char *argv[]) {
 #endif
 
 #ifdef GC_SSE2_OPT
-#ifndef EXP_NO_NUM_COUNT
-                gc_hotloop( fgrid2F, cgrid2F, fgridnc, TwoFthreshold, finegrid.freqlength );
-#else
-                gc_hotloop_no_nc ( fgrid2F, cgrid2F, finegrid.freqlength );
-#endif
                 if ( uvar_getMaxFperSeg ) {
-                  // FIXME not implemented for optimized hotloop
-                }
+                  /* disables number count keeping */
+                  REAL4 * fgrid2Fmax = finegrid.maxTwoFl + FG_INDEX(finegrid, 0);
+                  UINT4 * fgrid2FmaxIdx = finegrid.maxTwoFlIdx + FG_INDEX(finegrid, 0);
+
+                  gc_hotloop_2Fmax_tracking (fgrid2F, fgrid2Fmax, fgrid2FmaxIdx, cgrid2F, k, finegrid.freqlength);
+                } else {
+#ifndef EXP_NO_NUM_COUNT
+                  gc_hotloop( fgrid2F, cgrid2F, fgridnc, TwoFthreshold, finegrid.freqlength );
+#else
+                  gc_hotloop_no_nc ( fgrid2F, cgrid2F, finegrid.freqlength );
+#endif
+		}
                 if ( uvar_computeBSGL ) {
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
-                    gc_hotloop_no_nc( fgrid2FX, cgrid2FX, finegrid.freqlength );
-                  }
+
+                    if ( uvar_getMaxFperSeg ) {
+                      REAL4 * fgrid2FXmax = finegrid.maxTwoFXl + FG_FX_INDEX(finegrid,X, 0);
+                      UINT4 * fgrid2FXmaxIdx = finegrid.maxTwoFXlIdx + FG_FX_INDEX(finegrid,X, 0);
+
+                      gc_hotloop_2Fmax_tracking (fgrid2FX, fgrid2FXmax, fgrid2FXmaxIdx, cgrid2FX, k, finegrid.freqlength  );
+                    } else {  
+                      gc_hotloop_no_nc( fgrid2FX, cgrid2FX, finegrid.freqlength );
+                    }
+                  } /* for  X  */
                 }
 #else // GC_SSE2_OPT
                 for(UINT4 ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
