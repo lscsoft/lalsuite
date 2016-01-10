@@ -1345,11 +1345,14 @@ int MAIN( int argc, char *argv[]) {
           finegrid.sumTwoF = (REAL4 *)ALRealloc( finegrid.sumTwoF, finegrid.length * sizeof(REAL4));
           if ( uvar_getMaxFperSeg ) {
             finegrid.maxTwoFl = (REAL4 *)ALRealloc( finegrid.maxTwoFl, finegrid.length * sizeof(REAL4));
+            finegrid.maxTwoFlIdx = (UINT4 *)ALRealloc( finegrid.maxTwoFlIdx, finegrid.length * sizeof(UINT4));
+
           }
           if ( uvar_computeBSGL ) {
             finegrid.sumTwoFX = (REAL4 *)ALRealloc( finegrid.sumTwoFX, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4));
             if ( uvar_getMaxFperSeg ) {
               finegrid.maxTwoFXl = (REAL4 *)ALRealloc( finegrid.maxTwoFXl, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4));
+              finegrid.maxTwoFXlIdx = (UINT4 *)ALRealloc( finegrid.maxTwoFXlIdx, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(UINT4));
             }
           }
 
@@ -1381,15 +1384,22 @@ int MAIN( int argc, char *argv[]) {
               f3dot_fg = f3dotmin_fg + if3dot_fg * df3dot_fg;
 
               /* initialize the entire finegrid ( 2F-sum and number count set to 0 ) */
+#ifndef EXP_NO_NUM_COUNT
               memset( finegrid.nc, 0, finegrid.length * sizeof(FINEGRID_NC_T) );
+#endif
+              /* Alternatively we could treat the first segment separately and copy the coarse grid 
+                 2F vector to the fine grid vector instead of summing with (for the first segment) always 0 */ 
+
               memset( finegrid.sumTwoF, 0, finegrid.length * sizeof(REAL4) );
               if ( uvar_getMaxFperSeg ) {
                 memset( finegrid.maxTwoFl, 0, finegrid.length * sizeof(REAL4) );
+		memset( finegrid.maxTwoFlIdx,0,finegrid.length * sizeof(UINT4) );
               }
               if ( uvar_computeBSGL ) {
                 memset( finegrid.sumTwoFX, 0, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4) );
                 if ( uvar_getMaxFperSeg ) {
                   memset( finegrid.maxTwoFXl, 0, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(REAL4) );
+                  memset( finegrid.maxTwoFXlIdx, 0, finegrid.numDetectors * finegrid.freqlengthAL * sizeof(UINT4) );
                 }
               }
 
@@ -1875,8 +1885,16 @@ int MAIN( int argc, char *argv[]) {
   if (finegrid.maxTwoFl) {
     ALFree(finegrid.maxTwoFl);
   }
+  if (finegrid.maxTwoFlIdx) {
+    ALFree(finegrid.maxTwoFlIdx);
+  }
+
   if (finegrid.maxTwoFXl) {
     ALFree(finegrid.maxTwoFXl);
+  }
+
+  if (finegrid.maxTwoFXlIdx) {
+    ALFree(finegrid.maxTwoFXlIdx);
   }
 
   if (coarsegrid.TwoF) {
