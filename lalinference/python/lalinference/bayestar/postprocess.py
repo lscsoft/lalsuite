@@ -594,3 +594,28 @@ def polar_profile(m, nest=False):
         for i, j, stheta in zip(startpix, ringpix, sintheta)])
 
     return theta, m_int
+
+
+def smooth_ud_grade(m, nside, nest=False):
+    """Resample a sky map to a new resolution using bilinear interpolation.
+
+    Parameters
+    ----------
+
+    m : np.ndarray
+        The input HEALPix array.
+
+    nest : bool, default=False
+        Indicates whether the input sky map is in nested rather than
+        ring-indexed HEALPix coordinates (default: ring).
+
+    Returns
+    -------
+
+    new_m : np.ndarray
+        The resampled HEALPix array. The sum of `m` is approximately preserved.
+    """
+    npix = hp.nside2npix(nside)
+    theta, phi = hp.pix2ang(nside, np.arange(npix), nest=nest)
+    new_m = hp.get_interp_val(m, theta, phi, nest=nest)
+    return new_m * len(m) / len(new_m)
