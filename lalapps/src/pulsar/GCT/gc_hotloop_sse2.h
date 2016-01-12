@@ -47,6 +47,20 @@ void gc_hotloop_2Fmax_tracking (REAL4 * fgrid2F, REAL4 * fgrid2Fmax, UINT4 * fgr
 
   UINT8 offset = ((UINT8)fgrid2F & 0xf) ;
 
+
+  /* if this is the first segment (seg 0), then all we need to do is copy the cg vector into the fg 
+   * vector and initialize the loudest segment data to also the first segment. This assumes 
+   * we are calling this function in ascending order of segments */
+
+  if(k==0) {
+    memcpy(fgrid2F,cgrid2F,sizeof(REAL4)*length);
+    memcpy(fgrid2Fmax,cgrid2F,sizeof(REAL4)*length);
+    memset(fgrid2FmaxIdx,0,sizeof(UINT4)*length);
+
+    return;
+  }
+
+
   if(offset != 0) offset = 16-offset;
 
   for(ifreq_fg=0; offset > 0 && ifreq_fg < length; ifreq_fg++, offset-- ) {
@@ -399,6 +413,8 @@ for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
 
 void gc_hotloop_no_nc(REAL4 * fgrid2F, REAL4 * cgrid2F, UINT4 length  )  {
   UINT4 ifreq_fg;
+
+
 
 for( ifreq_fg=0 ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
     /* unrolled loop (16 iterations of original loop) */

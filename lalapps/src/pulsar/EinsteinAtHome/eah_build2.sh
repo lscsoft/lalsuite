@@ -67,7 +67,7 @@ boinc_rev=current_gw_apps
 retries=1
 
 gsl=gsl-1.16
-fftw=fftw-3.3.3
+fftw=fftw-3.3.4
 zlib=zlib-1.2.8
 binutils=binutils-2.19
 
@@ -119,6 +119,7 @@ for i; do
 	--gc-opt)
 	    CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS" ;;
 	--64)
+	    fftw_copts_single="--enable-sse --enable-sse2 --enable-avx"
 	    CPPFLAGS="-m64 $CPPFLAGS"
 	    CXXFLAGS="-m64 $CXXFLAGS"
 	    CFLAGS="-m64 $CFLAGS"
@@ -192,7 +193,7 @@ for i; do
 	    echo "  --win32           cros-compile a Win32 App (requires MinGW, target i586-mingw32msvc-gcc)"
 	    echo "  --cross-prefix=<p> use a compiler toolchain with a prefix other than i586-mingw32msvc"
 	    echo "  --32              build 32Bit (add -m32 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
-	    echo "  --64              build 64Bit (add -m64 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
+	    echo "  --64              build 64Bit (add -m64 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS), FFTW may use AVX is available"
 	    echo "  --tiger           build to run on Mac OS 10.4"
 	    echo "  --cuda            build an App that uses CUDA"
 	    echo "  --sse             build an App that uses SSE"
