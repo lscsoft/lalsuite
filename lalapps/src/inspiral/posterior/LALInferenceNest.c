@@ -84,7 +84,7 @@ int main(int argc, char *argv[]){
     sprintf(headerfile,"%s_header.txt",outfile);
     fpout=fopen(headerfile,"w");
     fprintf(fpout,"LALInference version:%s,%s,%s,%s,%s\n", lalAppsVCSId,lalAppsVCSDate,lalAppsVCSBranch,lalAppsVCSAuthor,lalAppsVCSStatus);
-    fprintf(fpout,LALInferencePrintCommandLine(state->commandLine));
+    fprintf(fpout,"%s\n",LALInferencePrintCommandLine(state->commandLine));
     fclose(fpout);
     }
   if (state == NULL) {
