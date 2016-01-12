@@ -1384,12 +1384,7 @@ int MAIN( int argc, char *argv[]) {
               f3dot_fg = f3dotmin_fg + if3dot_fg * df3dot_fg;
 
               /* initialize the entire finegrid ( 2F-sum and number count set to 0 ) */
-#ifndef EXP_NO_NUM_COUNT
               memset( finegrid.nc, 0, finegrid.length * sizeof(FINEGRID_NC_T) );
-#endif
-              /* Alternatively we could treat the first segment separately and copy the coarse grid 
-                 2F vector to the fine grid vector instead of summing with (for the first segment) always 0 */ 
-
               memset( finegrid.sumTwoF, 0, finegrid.length * sizeof(REAL4) );
               if ( uvar_getMaxFperSeg ) {
                 memset( finegrid.maxTwoFl, 0, finegrid.length * sizeof(REAL4) );
@@ -1629,7 +1624,7 @@ int MAIN( int argc, char *argv[]) {
                       UINT4 * fgrid2FXmaxIdx = finegrid.maxTwoFXlIdx + FG_FX_INDEX(finegrid,X, 0);
 
                       gc_hotloop_2Fmax_tracking (fgrid2FX, fgrid2FXmax, fgrid2FXmaxIdx, cgrid2FX, k, finegrid.freqlength  );
-                    } else {  
+                    } else {
                       gc_hotloop_no_nc( fgrid2FX, cgrid2FX, finegrid.freqlength );
                     }
                   } /* for  X  */
@@ -1655,27 +1650,38 @@ int MAIN( int argc, char *argv[]) {
                     }
                   }
                 }
-#endif // GC_SSE2_OPT
+
 
                 if ( uvar_getMaxFperSeg ) {
                   cgrid2F = coarsegrid.TwoF + CG_INDEX(coarsegrid, k, U1idx);
                   REAL4 * fgridMax2Fl = finegrid.maxTwoFl + FG_INDEX(finegrid, 0);
+                  UINT4 * fgrid2FmaxIdx = finegrid.maxTwoFlIdx + FG_INDEX(finegrid, 0);
+                  UINT4 lseg;
+                  int isLouder;
                   for (UINT4 ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
+                    isLouder=(fgridMax2Fl[0] <= cgrid2F[0]);
                     fgridMax2Fl[0] = fmaxf ( fgridMax2Fl[0], cgrid2F[0] );
+                    fgrid2FmaxIdx[0]= isLouder*k + (1-isLouder)*fgrid2FmaxIdx[0];
                     fgridMax2Fl++;
+                    fgrid2FmaxIdx++;
                     cgrid2F++;
                   }
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgridMax2FXl = finegrid.maxTwoFXl + FG_FX_INDEX(finegrid, X, 0);
+                    UINT4 * fgrid2FXmaxIdx = finegrid.maxTwoFXlIdx + FG_FX_INDEX(finegrid,X, 0);
+
                     for(UINT4 ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
+                      isLouder=(fgridMax2FXl[0] <= cgrid2FX[0]);
                       fgridMax2FXl[0] = fmaxf ( fgridMax2FXl[0], cgrid2FX[0] );
+                      fgrid2FXmaxIdx[0] = isLouder*k + (1-isLouder)*fgrid2FXmaxIdx[0];
+                      fgrid2FXmaxIdx++;
                       fgridMax2FXl++;
                       cgrid2FX++;
                     }
                   }
                 }
-
+#endif // GC_SSE2_OPT
                 timeIncohEnd = XLALGetTimeOfDay();
                 costIncoh += (timeIncohEnd - timeIncohStart);
 
