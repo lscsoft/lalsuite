@@ -1656,7 +1656,6 @@ int MAIN( int argc, char *argv[]) {
                   cgrid2F = coarsegrid.TwoF + CG_INDEX(coarsegrid, k, U1idx);
                   REAL4 * fgridMax2Fl = finegrid.maxTwoFl + FG_INDEX(finegrid, 0);
                   UINT4 * fgrid2FmaxIdx = finegrid.maxTwoFlIdx + FG_INDEX(finegrid, 0);
-                  UINT4 lseg;
                   int isLouder;
                   for (UINT4 ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
                     isLouder=(fgridMax2Fl[0] <= cgrid2F[0]);

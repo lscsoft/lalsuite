@@ -469,7 +469,7 @@ int write_gctFstat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
     *checksum = 0;
   for(i=0;i<tl->elems;i++)
     if ((r = write_gctFstat_toplist_item_to_fp(*((GCTtopOutputEntry*)(void*)(tl->heap[i])), fp, checksum)) < 0) {
-      LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s %d\n",
+      LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s %lu\n",
 		 errno,strerror(errno),i);
 #ifdef _MSC_VER
       LogPrintf (LOG_CRITICAL, "Windows system call returned: %d\n", _doserrno);
