@@ -408,7 +408,7 @@ if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
     log_and_show "using existing fftw source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $fftw"
-    download $fftw.tar.gz
+    download http://www.fftw.org $fftw.tar.gz
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
