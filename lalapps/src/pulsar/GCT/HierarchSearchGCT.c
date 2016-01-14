@@ -681,6 +681,8 @@ int MAIN( int argc, char *argv[]) {
   finegrid.sumTwoFX=NULL;
   finegrid.maxTwoFl=NULL;
   finegrid.maxTwoFXl=NULL;
+  finegrid.maxTwoFlIdx=NULL;
+  finegrid.maxTwoFXlIdx=NULL;
 
   /* initialize ephemeris info */
   EphemerisData *edat;
