@@ -222,8 +222,8 @@ optp.add_option_group(refine_section)
 
 opts, args = optp.parse_args()
 
-if not (opts.setup or opts.refine):
-    exit("Either --setup or --refine must be chosen")
+if not (opts.setup or opts.refine or opts.prerefine):
+    exit("Either --setup or --refine or --prerefine must be chosen")
 
 # If asked, retrieve bank overlap
 if opts.use_overlap is not None:
@@ -342,8 +342,8 @@ intr_prms = list(intr_prms) + expand_prms.keys()
 #
 # Build (or retrieve) the initial region
 #
-if opts.refine:
-    init_region = amrlib.load_init_region(opts.refine)
+if opts.refine or opts.prerefine:
+    init_region = amrlib.load_init_region(opts.refine or opts.prerefine)
 else:
     ####### BEGIN INITIAL GRID CODE #########
     init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold, expand_prms)
