@@ -1697,7 +1697,7 @@ int main(int argc, char**argv) {
 /**
  * sets a checkpoint.
  */
-int write_boinc_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 counter, BOOLEAN do_sync) {
+int write_boinc_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplist_t*t3,UINT4 counter, BOOLEAN do_sync) {
   int ret;
   /* make sure the exception mask isn't messed up by a badly written device driver etc.,
      so restore it periodically */
@@ -1707,7 +1707,7 @@ int write_boinc_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, 
   if (!(boinc_is_standalone() || boinc_time_to_checkpoint()))
     return 1; /* >0, no checkpoint written, no error */
 #endif
-  ret = write_gct_checkpoint(filename, tl, t2, counter, do_sync);
+  ret = write_gct_checkpoint(filename, tl, t2, t3, counter, do_sync);
   fprintf(stderr,"c\n");
   boinc_checkpoint_completed();
   return(ret);

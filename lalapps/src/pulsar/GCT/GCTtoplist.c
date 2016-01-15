@@ -99,6 +99,7 @@ static void reduce_gctFstat_toplist_precision(toplist_t *l);
 static int _atomic_write_gctFstat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done);
 static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen);
 static int print_single_detector_quantities_to_str(char *outstr, size_t outstrlen, const REAL4 *quantities, const UINT4 numDetectors);
+static int print_single_detector_intval_to_str( char *outstr, size_t outstrlen, const INT4 *quantities, const UINT4 numDetectors );
 static int write_gctFstat_toplist_item_to_fp(GCTtopOutputEntry fline, FILE*fp, UINT4*checksum);
 
 /* ordering function for sorting the list */
@@ -316,8 +317,9 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
   char maxTwoFstr[256] = "";	/* defaults to empty */
   if ( fline.maxTwoFl >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually computed in inner loop */
     {
-      snprintf ( maxTwoFstr, sizeof(maxTwoFstr), " %.6f", fline.maxTwoFl );
+      snprintf ( maxTwoFstr, sizeof(maxTwoFstr), " %.6f %d", fline.maxTwoFl, fline.maxTwoFlSeg );
       print_single_detector_quantities_to_str ( maxTwoFstr, sizeof(maxTwoFstr), fline.maxTwoFXl, fline.numDetectors );
+      print_single_detector_intval_to_str ( maxTwoFstr, sizeof(maxTwoFstr), fline.maxTwoFXlSeg, fline.numDetectors );
     }
 
   /* add extra output fields for recalculated statistics */
@@ -412,6 +414,31 @@ static int print_single_detector_quantities_to_str ( char *outstr, size_t outstr
   return len;
 
 } /* print_single_detector_quantities_to_str() */
+
+
+static int print_single_detector_intval_to_str ( char *outstr, size_t outstrlen, const INT4 *quantities, const UINT4 numDetectors ) {
+  const char *fn = __func__;
+
+  UINT4 len = strlen ( outstr );
+
+  char buf0[outstrlen];
+  for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
+    snprintf ( buf0, sizeof(buf0), " %d", quantities[X] );
+    len = strlen ( outstr ) + strlen ( buf0 ) + 1;
+    if ( len > outstrlen ) {
+      XLALPrintError ("%s: assembled output string too long! (%d > %zu)\n", fn, len, outstrlen);
+      break;    /* we can't really terminate with error in this function, but at least we avoid crashing */
+    }
+    strcat ( outstr, buf0 );
+  } /* for X < numDet */
+
+  return len;
+
+} /* print_single_detector_quantities_to_str() */
+
+
+
+
 
 /* writes an GCTtopOutputEntry line to an open filepointer.
    Returns the number of chars written, -1 if in error
@@ -636,7 +663,7 @@ static int _atomic_write_gctFstat_toplist_to_file(toplist_t *l, const char *file
 /* New easier checkpointing - simply dump the whole toplist (plus a counter and
    a checksum) into a binary file.
    The heap structure array is hard to dump because it's based on pointers, so it
-   is restored after reding the data back in by sorting the list once.
+   is restored after reading the data back in by sorting the list once.
 */
 
 /** log an I/O error, i.e. source code line no., ferror, errno and strerror, and doserrno on Windows, too */
@@ -659,7 +686,7 @@ static int _atomic_write_gctFstat_toplist_to_file(toplist_t *l, const char *file
 #endif
 
 /* dumps toplist to a temporary file, then renames the file to filename */
-int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 counter, BOOLEAN do_sync) {
+int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplist_t*t3, UINT4 counter, BOOLEAN do_sync) {
 #define TMP_EXT ".tmp"
   char*tmpfilename;
   FILE*fp;
@@ -769,6 +796,50 @@ int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 
     }
   } /* if t2 */
 
+  /* FIXME: this is getting silly, put this into a function and call it for the 
+     different toplists */
+
+  if (t3) {
+    /* write number of elements */
+    len = fwrite(&(t3->elems), sizeof(t3->elems), 1, fp);
+    if(len != 1) {
+      LOGIOERROR("Couldn't write elems to", tmpfilename);
+      LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
+      if(fclose(fp))
+        LOGIOERROR("In addition: couldn't close", tmpfilename);
+      LALFree(tmpfilename);
+      return(-1);
+    }
+
+    /* write data */
+    len = fwrite(t3->data, t3->size, t3->elems, fp);
+    if(len != t3->elems) {
+      LOGIOERROR("Couldn't write data to", tmpfilename);
+      LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %zu\n", len, t3->elems);
+      if(fclose(fp))
+        LOGIOERROR("In addition: couldn't close", tmpfilename);
+      LALFree(tmpfilename);
+      return(-1);
+    }
+
+    /* dump heap order */
+    for(UINT4 i = 0; i < t3->elems; i++) {
+      UINT4 idx = (t3->heap[i] - t3->data) / t3->size;
+      len = fwrite(&idx, sizeof(idx), 1, fp);
+      if(len != 1) {
+        LOGIOERROR("Couldn't write idx to", tmpfilename);
+        LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
+        if(fclose(fp))
+          LOGIOERROR("In addition: couldn't close", tmpfilename);
+        LALFree(tmpfilename);
+        return(-1);
+      }
+      for(len = 0; len < sizeof(idx); len++)
+        checksum += *(((char*)&idx) + len);
+    }
+  } /* if t3 */
+
+
   /* write counter */
   len = fwrite(&counter, sizeof(counter), 1, fp);
   if(len != 1) {
@@ -791,6 +862,14 @@ int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 
     for(len = 0; len < (t2->elems * t2->size); len++)
       checksum += *(((char*)t2->data) + len);
   }
+
+  if (t3) {
+    for(len = 0; len < sizeof(t3->elems); len++)
+      checksum += *(((char*)&(t3->elems)) + len);
+    for(len = 0; len < (t3->elems * t3->size); len++)
+      checksum += *(((char*)t3->data) + len);
+  }
+
   for(len = 0; len < sizeof(counter); len++)
     checksum += *(((char*)&counter) + len);
 
@@ -837,7 +916,7 @@ int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 
 } /* write_gct_checkpoint() */
 
 
-int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*counter) {
+int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplist_t*t3, UINT4*counter) {
   FILE*fp;
   UINT4 len;
   UINT4 checksum, indexsum = 0;
@@ -963,6 +1042,57 @@ int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*c
     }
   } /* if (t2) */
 
+  if (t3) {
+    /* read number of elements */
+    len = fread(&(t3->elems), sizeof(t3->elems), 1, fp);
+    if(len != 1) {
+      LOGIOERROR("Couldn't read elems from", filename);
+      LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n", len, 1);
+      if(fclose(fp))
+        LOGIOERROR("In addition: couldn't close", filename);
+      return(-1);
+    }
+    /* sanity check */
+    if (t3->elems > t3->length) {
+      LogPrintf(LOG_CRITICAL,
+                "Number of elements read larger than length of toplist: %zu > %zu\n",
+                t3->elems, t3->length);
+      if(fclose(fp))
+        LOGIOERROR("In addition: couldn't close", filename);
+      return(-2);
+    }
+
+    /* read data */
+    len = fread(t3->data, t3->size, t3->elems, fp);
+    if(len != t3->elems) {
+      LOGIOERROR("Couldn't read data from", filename);
+      LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %zu\n", len, t3->elems);
+      if(fclose(fp))
+        LOGIOERROR("In addition: couldn't close", filename);
+      clear_toplist(tl);
+      clear_toplist(t2);
+      clear_toplist(t3);
+      return(-1);
+    }
+
+    /* read heap order */
+    for(UINT4 i = 0; i < t3->elems; i++) {
+      UINT4 idx;
+      len = fread(&idx, sizeof(idx), 1, fp);
+      if(len != 1) {
+        LOGIOERROR("Couldn't read idx from", filename);
+        LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n",len,1);
+        if(fclose(fp))
+          LOGIOERROR("In addition: couldn't close", filename);
+        return(-1);
+      }
+      t3->heap[i] = (char*)(t3->data + idx * t3->size);
+      for(len = 0; len < sizeof(idx); len++)
+        indexsum += *(((char*)&idx) + len);
+    }
+  } /* if (t3) */
+
+
   /* read counter */
   len = fread(counter, sizeof(*counter), 1, fp);
   if(len != 1) {
@@ -972,6 +1102,7 @@ int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*c
       LOGIOERROR("In addition: couldn't close", filename);
     clear_toplist(tl);
     if (t2) clear_toplist(t2);
+    if (t3) clear_toplist(t3);
     return(-1);
   }
 
@@ -983,6 +1114,8 @@ int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*c
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
     if (t2) clear_toplist(t2);
+    if (t3) clear_toplist(t3);
+
     clear_toplist(tl);
     return(-1);
   }
@@ -992,6 +1125,8 @@ int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*c
     LOGIOERROR("Couldn't close", filename);
     clear_toplist(tl);
     if (t2) clear_toplist(t2);
+    if (t3) clear_toplist(t3);
+
     return(-1);
   }
 
@@ -1013,6 +1148,8 @@ int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*c
     LogPrintf(LOG_CRITICAL,"Checksum error: %d\n", checksum);
     clear_toplist(tl);
     if (t2) clear_toplist(t2);
+    if (t3) clear_toplist(t3);
+
     return(-2);
   }
 

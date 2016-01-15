@@ -1026,21 +1026,21 @@ int MAIN( int argc, char *argv[]) {
     } // if uvar_computeBSGL
 
   /* assemble column headings string for output file */
-  CHAR colum_headings_string_base[256];
+  CHAR column_headings_string_base[256];
   if (XLALUserVarWasSet(&uvar_f3dot)) {
-		sprintf(colum_headings_string_base,"freq alpha delta f1dot f2dot f3dot nc <2F>");
+		sprintf(column_headings_string_base,"freq alpha delta f1dot f2dot f3dot nc <2F>");
   }
   else {
-		sprintf(colum_headings_string_base,"freq alpha delta f1dot f2dot nc <2F>");
+		sprintf(column_headings_string_base,"freq alpha delta f1dot f2dot nc <2F>");
   }
 
-  UINT4 column_headings_string_length = sizeof(colum_headings_string_base);
+  UINT4 column_headings_string_length = sizeof(column_headings_string_base);
   if ( uvar_computeBSGL ) {
     column_headings_string_length += 10 + numDetectors*8; /* 10 for " log10BSGL" and 8 per detector for " <2F_XY>" */
   }
   if ( uvar_getMaxFperSeg ) {
     column_headings_string_length += 12 + 13; /* 12 for " log10BSGLtL" and 13 for " log10BtSGLtL" */
-    column_headings_string_length += 6 + numDetectors*9; /* 6 for " max2F" and 9 per detector for " max2F_XY" */
+    column_headings_string_length += 6 +9 + numDetectors*(9+12); /* 6 for " max2F", 9 for " max2Fseg" and 9+12 per detector for " max2F_XY" and " max2F_XYseg"*/
   }
   if ( uvar_recalcToplistStats ) {
     column_headings_string_length += 6 + 11 + numDetectors*9; /* 6 for " <2Fr>" and 9 per detector for " <2Fr_XY>" */
@@ -1056,7 +1056,7 @@ int MAIN( int argc, char *argv[]) {
   }
   char column_headings_string[column_headings_string_length];
   XLAL_INIT_MEM( column_headings_string );
-  strcat ( column_headings_string, colum_headings_string_base );
+  strcat ( column_headings_string, column_headings_string_base );
   if ( uvar_computeBSGL ) {
     strcat ( column_headings_string, " log10BSGL" );
     for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
@@ -1068,9 +1068,15 @@ int MAIN( int argc, char *argv[]) {
   if ( uvar_getMaxFperSeg ) {
     strcat ( column_headings_string, " log10BSGLtL log10BtSGLtL" );
     strcat ( column_headings_string, " max2F" );
+    strcat ( column_headings_string, " max2Fseg" );
     for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
-      char headingX[10];
+      char headingX[16];
       snprintf ( headingX, sizeof(headingX), " max2F_%s", detectorIDs->data[X] );
+      strcat ( column_headings_string, headingX );
+    }
+    for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
+      char headingX[16];
+      snprintf ( headingX, sizeof(headingX), " max2F_%sseg", detectorIDs->data[X] );
       strcat ( column_headings_string, headingX );
     } /* for X < numDet */
   }
@@ -1146,7 +1152,7 @@ int MAIN( int argc, char *argv[]) {
     UINT4 count = 0; /* The first checkpoint should have value 1 */
     UINT4 skycount = 0;
 
-    GET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, &count);
+    GET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, semiCohToplist3, &count);
 
     if (count) {
       f1dotGridCounter = (UINT4) (count % usefulParams.nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
@@ -1719,7 +1725,7 @@ int MAIN( int argc, char *argv[]) {
 #endif
 
         if ( !uvar_outputTiming ) {
-          SET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*usefulParams.nf1dot+ifdot, TRUE);
+          SET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, semiCohToplist3,skyGridCounter*usefulParams.nf1dot+ifdot, TRUE);
         }
 
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
@@ -2560,6 +2566,7 @@ void UpdateSemiCohToplists ( LALStatus *status,
     line.nc = in->nc[ifreq_fg];
     line.avTwoF = 0.0; /* will be set to average over segments later */
     line.maxTwoFl = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFstatline_to_str if actually computed */
+    line.maxTwoFlSeg = -1;
     line.log10BSGL    = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
     line.log10BSGLtL  = -LAL_REAL4_MAX;
     line.log10BtSGLtL = -LAL_REAL4_MAX;
@@ -2568,6 +2575,7 @@ void UpdateSemiCohToplists ( LALStatus *status,
     for (UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X++) { /* initialise single-IFO F-stat arrays to zero */
       line.avTwoFX[X] = 0.0;
       line.maxTwoFXl[X] = 0.0;
+      line.maxTwoFXlSeg[X] = -1;
       line.avTwoFXrecalc[X] = 0.0;
     }
     line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFstatline_to_str if later overwritten in recalcToplistStats step */
@@ -2610,13 +2618,13 @@ void UpdateSemiCohToplists ( LALStatus *status,
 
     if ( in->maxTwoFXl ) { /* if we already have max-per-segment values from the main loop, insert these too */
       line.maxTwoFl = in->maxTwoFl[ifreq_fg];
+      line.maxTwoFlSeg = in->maxTwoFlIdx[ifreq_fg];
       for (UINT4 X = 0; X < in->numDetectors; X++) {
        line.maxTwoFXl[X] = in->maxTwoFXl[FG_FX_INDEX(*in, X, ifreq_fg)];
+       line.maxTwoFXlSeg[X] = in->maxTwoFXlIdx[FG_FX_INDEX(*in, X, ifreq_fg)];
       }
       line.log10BSGLtL  = XLALComputeBSGLtL ( sumTwoF, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
       line.log10BtSGLtL = XLALComputeBtSGLtL ( line.maxTwoFl, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
-
-      // FIXME: compute transient-line-robust stat here
     }
 
     insert_into_gctFstat_toplist( list1, line);
