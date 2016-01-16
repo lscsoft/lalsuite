@@ -556,7 +556,7 @@ def colorbar():
     if usetex:
         fmt = '{{{0}}}{{{1}}}'
     else:
-        fmt = '{0}{1}'
+        fmt = u'{0}{1}'
     ticklabels[-1] = fmt.format(ticklabels[-1], formatter.get_offset())
     axis.set_ticklabels(ticklabels)
     last_ticklabel = axis.get_ticklabels()[-1]
