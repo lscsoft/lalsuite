@@ -2624,7 +2624,16 @@ void UpdateSemiCohToplists ( LALStatus *status,
        line.maxTwoFXlSeg[X] = in->maxTwoFXlIdx[FG_FX_INDEX(*in, X, ifreq_fg)];
       }
       line.log10BSGLtL  = XLALComputeBSGLtL ( sumTwoF, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
+      if ( xlalErrno != 0 ) {
+        XLALPrintError ("%s line %d : XLALComputeBSGLtL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
+        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+      }
       line.log10BtSGLtL = XLALComputeBtSGLtL ( line.maxTwoFl, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
+      if ( xlalErrno != 0 ) {
+        XLALPrintError ("%s line %d : XLALComputeBtSGLtL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
+        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+      }
+
     }
 
     insert_into_gctFstat_toplist( list1, line);
