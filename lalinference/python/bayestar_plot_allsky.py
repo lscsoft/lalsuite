@@ -41,7 +41,7 @@ parser.add_argument(
     '--colorbar', default=False, action='store_true',
     help='Show colorbar [default: %(default)s]')
 parser.add_argument(
-    '--radec', nargs=2, metavar='deg deg', type=float, action='append',
+    '--radec', nargs=2, metavar='deg', type=float, action='append',
     default=[], help='right ascension (deg) and declination (deg) to mark'
     ' [may be specified multiple times, default: none]')
 parser.add_argument(
