@@ -70,6 +70,7 @@ import healpy as hp
 import lal
 from lalinference import fits
 from lalinference import plot
+from lalinference.bayestar import postprocess
 
 fig = plt.figure(frameon=False)
 ax = plt.axes(projection='mollweide' if opts.geo else 'astro mollweide')
@@ -98,11 +99,9 @@ if opts.colorbar:
 
 # Add contours.
 if opts.contour:
-    indices = np.argsort(-skymap)
-    region = np.empty(skymap.shape)
-    region[indices] = 100 * np.cumsum(skymap[indices])
+    cls = 100 * postprocess.find_greedy_credible_levels(skymap)
     cs = plot.healpix_contour(
-        region, dlon=dlon, nest=metadata['nest'],
+        cls, dlon=dlon, nest=metadata['nest'],
         colors='k', linewidths=0.5, levels=opts.contour)
     fmt = r'%g\%%' if rcParams['text.usetex'] else '%g%%'
     plt.clabel(cs, fmt=fmt, fontsize=6, inline=True)
