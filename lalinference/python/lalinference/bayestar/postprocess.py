@@ -494,6 +494,31 @@ def contour(m, levels, nest=False, degrees=False, simplify=True):
     return paths
 
 
+def find_greedy_credible_levels(p):
+    """Find the greedy credible levels of a (possibly multi-dimensional) array.
+
+    Parameters
+    ----------
+
+    p : np.ndarray
+        The input array, typically a HEALPix image.
+
+    Returns
+    -------
+
+    cls : np.ndarray
+        An array with the same shape as `p`, with values ranging from `0`
+        to `p.sum()`, representing the greedy credible level to which each
+        entry in the array belongs.
+    """
+    pflat = p.ravel()
+    i = np.flipud(np.argsort(pflat))
+    cs = np.cumsum(pflat[i])
+    cls = np.empty_like(pflat)
+    cls[i] = cs
+    return cls.reshape(p.shape)
+
+
 def rotate_map_to_axis(m, ra, dec, nest=False, method='direct'):
     """Rotate a sky map to place a given line of sight on the +z axis.
 
