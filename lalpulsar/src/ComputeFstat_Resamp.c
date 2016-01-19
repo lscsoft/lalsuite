@@ -156,6 +156,11 @@ XLALComputeFaFb_Resamp ( ResampWorkspace *ws,
                          const COMPLEX8TimeSeries *TimeSeries_SRC_b
                          );
 
+static void
+XLALGetFFTPlanHints ( int * planMode,
+                      double * planGenTimeoutSeconds
+                      );
+
 // ==================== function definitions ====================
 
 static void
@@ -300,14 +305,21 @@ XLALSetupFstatResamp ( void **method_data,
     {
       if ( numSamplesFFT > ws->numSamplesFFT )
         {
+          int fft_plan_flags=FFTW_MEASURE;
+          double fft_plan_timeout= FFTW_NO_TIMELIMIT ;
+
           fftw_free ( ws->FabX_Raw );
           XLAL_CHECK ( (ws->FabX_Raw = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
           fftw_free ( ws->TS_FFT );
           XLAL_CHECK ( (ws->TS_FFT   = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
 
           LAL_FFTW_WISDOM_LOCK;
+          XLALGetFFTPlanHints (& fft_plan_flags , & fft_plan_timeout);
+
           fftwf_destroy_plan ( ws->fftplan );
-          XLAL_CHECK ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->TS_FFT, ws->FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
+
+          fftw_set_timelimit( fft_plan_timeout );
+          XLAL_CHECK ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->TS_FFT, ws->FabX_Raw, FFTW_FORWARD, fft_plan_flags )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
           LAL_FFTW_WISDOM_UNLOCK;
           ws->numSamplesFFT = numSamplesFFT;
           ws->decimateFFT = decimateFFT;
@@ -326,6 +338,9 @@ XLALSetupFstatResamp ( void **method_data,
     } // end: if shared workspace given
   else
     {
+      int fft_plan_flags=FFTW_MEASURE;
+      double fft_plan_timeout= FFTW_NO_TIMELIMIT ;
+
       XLAL_CHECK ( (ws = XLALCalloc ( 1, sizeof(*ws))) != NULL, XLAL_ENOMEM );
       XLAL_CHECK ( (ws->TStmp1_SRC   = XLALCreateCOMPLEX8Vector ( numSamplesMax_SRC )) != NULL, XLAL_EFUNC );
       XLAL_CHECK ( (ws->TStmp2_SRC   = XLALCreateCOMPLEX8Vector ( numSamplesMax_SRC )) != NULL, XLAL_EFUNC );
@@ -335,7 +350,9 @@ XLALSetupFstatResamp ( void **method_data,
       XLAL_CHECK ( (ws->TS_FFT   = fftw_malloc ( numSamplesFFT * sizeof(COMPLEX8) )) != NULL, XLAL_ENOMEM );
 
       LAL_FFTW_WISDOM_LOCK;
-      XLAL_CHECK ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->TS_FFT, ws->FabX_Raw, FFTW_FORWARD, FFTW_MEASURE )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
+      XLALGetFFTPlanHints (& fft_plan_flags , & fft_plan_timeout);
+      fftw_set_timelimit( fft_plan_timeout );
+      XLAL_CHECK ( (ws->fftplan = fftwf_plan_dft_1d ( numSamplesFFT, ws->TS_FFT, ws->FabX_Raw, FFTW_FORWARD, fft_plan_flags )) != NULL, XLAL_EFAILED, "fftwf_plan_dft_1d() failed\n");
       LAL_FFTW_WISDOM_UNLOCK;
       ws->numSamplesFFT = numSamplesFFT;
       ws->decimateFFT = decimateFFT;
@@ -981,3 +998,41 @@ AppendFstatTimingInfo2File_Resamp ( const void* method_data, FILE *fp )
 
   return XLAL_SUCCESS;
 } // AppendFstatTimingInfo2File_Resamp()
+
+
+
+static void
+XLALGetFFTPlanHints ( int * planMode, 
+                      double * planGenTimeoutSeconds
+                      )
+{
+  char * planMode_env = getenv("LAL_FSTAT_FFT_PLAN_MODE");
+  char * planGenTimeout_env = getenv("LAL_FSTAT_FFT_PLAN_TIMEOUT");;
+  int fft_plan_flags=FFTW_MEASURE;
+  double fft_plan_timeout= FFTW_NO_TIMELIMIT ;
+
+  if ( planGenTimeout_env ) {
+    char * end;
+    fft_plan_timeout=strtod(planGenTimeout_env,& end);
+    if(end[0] != '\0') {
+      fft_plan_timeout=FFTW_NO_TIMELIMIT;
+    }
+  }
+
+  if ( planMode_env ) {
+    if ( strcmp(planMode_env , "ESTIMATE" ) == 0 ) {
+      fft_plan_flags=FFTW_ESTIMATE;
+    }
+
+    if ( strcmp(planMode_env , "MEASURE" ) == 0 ) {
+      fft_plan_flags=FFTW_MEASURE;
+    }
+
+    if ( strcmp(planMode_env , "PATIENT" ) == 0 ) {
+      fft_plan_flags=FFTW_PATIENT;
+    }
+  }
+  *planMode=fft_plan_flags;
+  *planGenTimeoutSeconds=fft_plan_timeout;
+} // XLALGetFFTPlanHints
+
