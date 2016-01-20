@@ -294,6 +294,9 @@ ovrlp = numpy.array(ovrlp[m_idx])[sort_order]
 pts = pts[sort_order]
 m_idx = sort_order[m_idx]
 
+# Expanded parameters are now part of the intrinsic set
+intr_prms = list(intr_prms) + expand_prms.keys()
+
 # Gather any results we may want to use -- this is either the evidence values
 # we've calculated, or overlaps of points we've looked at
 results = []
@@ -336,8 +339,6 @@ if opts.result_file:
 
         # FIXME: this needs to be done in a more consistent way
         results = numpy.array([res.snr for res in results])
-
-intr_prms = list(intr_prms) + expand_prms.keys()
 
 #
 # Build (or retrieve) the initial region
