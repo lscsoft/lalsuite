@@ -1833,28 +1833,55 @@ int MAIN( int argc, char *argv[]) {
 
   LogPrintf ( LOG_DEBUG, "Writing output ... ");
   XLAL_CHECK ( write_hfs_oputput(uvar_fnameout, semiCohToplist) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist) failed.!\n", uvar_fnameout );
-  // output optional second toplist, if it exists, into "<uvar_fnameout>-BSGL"
-  if ( semiCohToplist2 )
-    {
-      LogPrintf ( LOG_DEBUG, "toplist2 ... ");
-      UINT4 newlen = strlen(uvar_fnameout) + 10;
-      CHAR *fname2;
-      XLAL_CHECK ( (fname2 = XLALCalloc ( 1, newlen )) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1, %d)\n\n", newlen );
-      sprintf ( fname2, "%s-BSGL", uvar_fnameout );
-      XLAL_CHECK ( write_hfs_oputput ( fname2, semiCohToplist2) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist2) failed for 2nd toplist!\n", fname2 );
-      XLALFree ( fname2 );
-    }
-  if ( semiCohToplist3 )
-    {
-      LogPrintf ( LOG_DEBUG, "toplist3 ... ");
-      UINT4 newlen = strlen(uvar_fnameout) + 10;
-      CHAR *fname3;
-      XLAL_CHECK ( (fname3 = XLALCalloc ( 1, newlen )) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1, %d)\n\n", newlen );
-      sprintf ( fname3, "%s-BtSGLtL", uvar_fnameout );
-      XLAL_CHECK ( write_hfs_oputput ( fname3, semiCohToplist3) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist3) failed for 3rd toplist!\n", fname3 );
-      XLALFree ( fname3 );
+
+
+  /* output optional additional toplists if any */
+
+  if ( semiCohToplist2 ) {
+    char t2_suffix[16];
+    char t3_suffix[16];
+
+    XLAL_INIT_MEM( t2_suffix );
+    XLAL_INIT_MEM( t3_suffix );
+
+  /* additional toplist(s) suffix selection */
+
+    switch ( uvar_SortToplist ) {
+      case SORTBY_DUAL_F_BSGL : {
+        strcpy(t2_suffix,"-BSGL");
+        strcpy(t3_suffix,"");
+        break;
+      };
+      case SORTBY_TRIPLE_BStSGLtL : {
+        strcpy(t2_suffix,"-BSGLtL");
+        strcpy(t3_suffix,"-BStSGLtL");
+        break;
+      };
+      default : {
+        strcpy(t2_suffix,"");
+        strcpy(t3_suffix,"");
+      };
     }
 
+    LogPrintf ( LOG_DEBUG, "toplist2 ... ");
+    UINT4 newlen = strlen(uvar_fnameout) + 10;
+    CHAR *fname2;
+    XLAL_CHECK ( (fname2 = XLALCalloc ( 1, newlen )) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1, %d)\n\n", newlen );
+    sprintf ( fname2, "%s%s", uvar_fnameout,t2_suffix );
+    XLAL_CHECK ( write_hfs_oputput ( fname2, semiCohToplist2) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist2) failed for 2nd toplist!\n", fname2 );
+    XLALFree ( fname2 );
+
+    if ( semiCohToplist3 )
+      {
+        LogPrintf ( LOG_DEBUG, "toplist3 ... ");
+        UINT4 newlen = strlen(uvar_fnameout) + 10;
+        CHAR *fname3;
+        XLAL_CHECK ( (fname3 = XLALCalloc ( 1, newlen )) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1, %d)\n\n", newlen );
+        sprintf ( fname3, "%s%s", uvar_fnameout,t3_suffix );
+        XLAL_CHECK ( write_hfs_oputput ( fname3, semiCohToplist3) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist3) failed for 3rd toplist!\n", fname3 );
+        XLALFree ( fname3 );
+      }
+  }
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
 #ifdef EAH_BOINC
