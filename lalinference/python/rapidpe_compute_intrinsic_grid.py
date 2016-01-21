@@ -420,20 +420,21 @@ grid = amrlib.apply_inv_transform(grid, intr_prms, opts.distance_coordinates)
 cells = amrlib.grid_to_cells(grid, spacing)
 if opts.setup:
     grid_group = amrlib.init_grid_hdf(init_region, opts.setup + ".hdf", opts.overlap_threshold, opts.distance_coordinates)
-    amrlib.save_grid_cells_hdf(grid_group, cells, "mass1_mass2")
+    level = amrlib.save_grid_cells_hdf(grid_group, cells, "mass1_mass2")
 else:
     grp = amrlib.load_grid_level(opts.refine, None)
-    amrlib.save_grid_cells_hdf(grp, cells, "mass1_mass2")
+    level = amrlib.save_grid_cells_hdf(grp, cells, "mass1_mass2")
 
 print "Selected %d cells for further analysis." % len(cells)
 if opts.setup:
     fname = "HL-MASS_POINTS_LEVEL_0-0-1.xml.gz"
     write_to_xml(cells, intr_prms, pin_prms, None, fname, verbose=opts.verbose)
 else:
-    m = re.search("LEVEL_(\d+)", opts.result_file)
-    if m is not None:
-        level = int(m.group(1)) + 1
-        fname = "HL-MASS_POINTS_LEVEL_%d-0-1.xml.gz" % level
-    else:
-        fname = "HL-MASS_POINTS_LEVEL_X-0-1.xml.gz"
+    #m = re.search("LEVEL_(\d+)", opts.result_file)
+    #if m is not None:
+        #level = int(m.group(1)) + 1
+        #fname = "HL-MASS_POINTS_LEVEL_%d-0-1.xml.gz" % level
+    #else:
+        #fname = "HL-MASS_POINTS_LEVEL_X-0-1.xml.gz"
+    fname = "HL-MASS_POINTS_LEVEL_%d-0-1.xml.gz" % level
     write_to_xml(cells, intr_prms, pin_prms, None, fname, verbose=opts.verbose)
