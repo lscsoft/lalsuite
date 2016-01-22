@@ -73,13 +73,13 @@ def neff_frac(weights, ntotal):
 # Histogramming utilities
 #
 def get_adaptive_binning(samples, edges, nbins=100, bintype='linear'):
+
+    if bintype == "linear":
+        return BinnedArray(NDBins((LinearBins(edges[0], edges[-1], nbins),)))
+
     ordering = numpy.argsort(samples)
-    
     stride = len(samples) / nbins
     bins = [samples[ordering[i]] for i in xrange(stride, nbins*stride, stride)]
     bins.insert(0, edges[0])
     bins.append(edges[1])
-    if bintype == "linear":
-        return BinnedArray(NDBins((LinearBins(edges[0], edges[-1], nbins),)))
-    else:
-        return BinnedArray(NDBins((IrregularBins(bins),)))
+    return BinnedArray(NDBins((IrregularBins(bins),)))
