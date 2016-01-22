@@ -518,7 +518,7 @@ class MCSampler(object):
             # Make the (unnormalized) CDF
             total_weight = self._rvs["weights"][sorted_weights].cumsum()
             # Find the deltaP cutoff index
-            idx = numpy.searchsorted(total_weight, deltaP*total_weight[-1])
+            idx = numpy.searchsorted(total_weight, deltaP*total_weight[-1], 'left')
             sorted_weights = sorted_weights[idx:]
             # Remove all samples which contribute to smallest 1e-3 of cumulative
             # probability
