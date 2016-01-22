@@ -427,9 +427,10 @@ static int PhenomPCore(
       break;
     case IMRPhenomPv2_V:
       if (q > 18.0)
-        XLAL_PRINT_WARNING("IMRPhenomPv2: Warning: The model is calibrated up to m1/m2 <= 18.\n");
+        XLAL_PRINT_WARNING("IMRPhenomPv2: Warning: The underlying non-precessing model is calibrated up to m1/m2 <= 18.\n");
       else if (q > 100.0)
           XLAL_ERROR(XLAL_EDOM, "IMRPhenomPv2: Mass ratio q > 100 which is way outside the calibration range q <= 18.\n");
+      CheckMaxOpeningAngle(m1, m2, chi1_l, chi2_l, chip);
       break;
     default:
       XLAL_ERROR( XLAL_EINVAL, "Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
@@ -1096,8 +1097,6 @@ static void WignerdCoefficients(
   XLAL_CHECK_VOID(sin_beta_half != NULL, XLAL_EFAULT);
   /* We define the shorthand s := Sp / (L + SL) */
   const REAL8 L = L2PNR(v, eta);
-  if (L + SL < 0.0)
-    XLAL_PRINT_WARNING("Warning: IMRPhenomP L + SL < 0. The waveform might not be accurate here.\n");
     // We ignore the sign of L + SL below.
   REAL8 s = Sp / (L + SL);  /* s := Sp / (L + SL) */
   REAL8 s2 = s*s;
@@ -1133,6 +1132,40 @@ static void WignerdCoefficients_SmallAngleApproximation(
   REAL8 s2 = s*s;
   *cos_beta_half = 1.0/sqrt(1.0 + s2/4.0);           /* cos(beta/2) */
   *sin_beta_half = sqrt(1.0 - 1.0/(1.0 + s2/4.0));   /* sin(beta/2) */
+}
+
+/**
+ * In this helper function we check whether the maximum opening angle during the evolution
+ * becomes larger than pi/2 or pi/4, in which case a warning is issued.
+ */
+static void CheckMaxOpeningAngle(
+  const REAL8 m1,     /**< Mass of companion 1 (solar masses) */
+  const REAL8 m2,     /**< Mass of companion 2 (solar masses) */
+  const REAL8 chi1_l, /**< Aligned spin of BH 1 */
+  const REAL8 chi2_l, /**< Aligned spin of BH 2 */
+  const REAL8 chip    /**< Dimensionless spin in the orbital plane */
+) {
+  REAL8 M = m1+m2;
+  REAL8 m1_normalized = m1/M;
+  REAL8 m2_normalized = m2/M;
+  REAL8 eta = m1_normalized*m2_normalized;
+  REAL8 v_at_max_beta = sqrt( 2*(9. + eta - sqrt(1539 - 1008*eta - 17*eta*eta)) / 3. / (eta*eta + 57.*eta - 81.) );
+  // The coefficients above come from finding the roots of the derivative of L2PN
+  REAL8 SL = m1_normalized*m1_normalized*chi1_l + m2_normalized*m2_normalized*chi2_l;
+  REAL8 Sperp = m2_normalized*m2_normalized * chip;
+  REAL8 cBetah, sBetah;
+  WignerdCoefficients(&cBetah, &sBetah, v_at_max_beta, SL, eta, Sperp);
+  REAL8 L_min = L2PNR(v_at_max_beta,eta);
+  REAL8 max_beta = 2*acos(cBetah);
+    /** If L+SL becomes <0, WignerdCoefficients does not track the angle between J and L anymore (see tech doc, choice of + sign
+     * so that the Wigner coefficients are OK in the aligned spin limit) and the model may become pathological as one moves away from
+     * the aligned spin limit.
+     * If this does not happen, then max_beta is the actual maximum opening angle as predicted by the model.
+     */
+  if (L_min + SL < 0. && chip > 0.)
+    XLAL_PRINT_WARNING("The maximum opening angle exceeds Pi/2.\nThe model may be pathological in this regime.");
+  else if (max_beta > LAL_PI_4)
+    XLAL_PRINT_WARNING("The maximum opening angle %g is larger than Pi/4.\nThe model has not been tested against NR in this regime.", max_beta);
 }
 
 /**

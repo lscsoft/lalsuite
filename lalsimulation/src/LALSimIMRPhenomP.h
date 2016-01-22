@@ -144,6 +144,14 @@ static void WignerdCoefficients_SmallAngleApproximation(
   const REAL8 Sp        /**< Dimensionfull spin component in the orbital plane */
 );
 
+static void CheckMaxOpeningAngle(
+  const REAL8 m1,     /**< Mass of companion 1 (solar masses) */
+  const REAL8 m2,     /**< Mass of companion 2 (solar masses) */
+  const REAL8 chi1_l, /**< Aligned spin of BH 1 */
+  const REAL8 chi2_l, /**< Aligned spin of BH 2 */
+  const REAL8 chip    /**< Dimensionless spin in the orbital plane */
+);
+
 static REAL8 FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH(
   const REAL8 m1,     /**< Mass of companion 1 (solar masses) */
   const REAL8 m2,     /**< Mass of companion 2 (solar masses) */
