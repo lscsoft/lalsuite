@@ -96,7 +96,7 @@ extern void free_gctFstat_toplist(toplist_t**list);
  * In the latter case, remove the smallest element from the toplist
  * Returns 1 if the element was actually inserted, 0 if not.
  */
-extern int insert_into_gctFstat_toplist(toplist_t*list, GCTtopOutputEntry line);
+extern int insert_into_gctFstat_toplist(toplist_t*list, GCTtopOutputEntry * line);
 
 
 /**

@@ -279,11 +279,11 @@ void free_gctFstat_toplist(toplist_t**l) {
    In the latter case, remove the smallest element from the toplist and
    look for the now smallest one.
    Returns 1 if the element was actually inserted, 0 if not. */
-int insert_into_gctFstat_toplist(toplist_t*tl, GCTtopOutputEntry elem) {
+int insert_into_gctFstat_toplist(toplist_t*tl, GCTtopOutputEntry * elem) {
   if ( !tl )
     return 0;
   else
-    return(insert_into_toplist(tl, (void*)&elem));
+    return(insert_into_toplist(tl, (void*) elem));
 }
 
 /* (q)sort the toplist according to the sorting function. */
