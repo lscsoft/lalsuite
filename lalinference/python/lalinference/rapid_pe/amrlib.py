@@ -475,6 +475,9 @@ def transform_tau0tau3_m1m2(tau0, tau3, flow=40.):
     m1, m2 = m1m2(mt*eta**(3./5), eta)
     return m1 / __dim_mass, m2 / __dim_mass
 
+def transform_s1zs2z_chi(m1, m2, s1z, s2z):
+    return (m1 * s1z + m2 * s2z) / (m1 + m2)
+
 #
 # Coordinate transformation boundaries
 #
