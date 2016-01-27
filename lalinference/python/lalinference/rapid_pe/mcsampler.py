@@ -311,20 +311,24 @@ class MCSampler(object):
         # Adaptive sampling parameters
         #
         n_history = int(kwargs["history_mult"]*n) if kwargs.has_key("history_mult") else None
-        tempering_exp = kwargs["tempering_exp"] if kwargs.has_key("tempering_exp") else 0.0
+        tempering_exp = kwargs["tempering_exp"] if kwargs.has_key("tempering_exp") else 1.0
         n_adapt = int(kwargs["n_adapt"]*n) if kwargs.has_key("n_adapt") else 0
         nmax = kwargs["nmax"] if kwargs.has_key("nmax") else n_adapt
         nmin = kwargs["nmin"] if kwargs.has_key("nmin") else n_adapt
 
         save_intg = kwargs["save_intg"] if kwargs.has_key("save_intg") else False
         nkeep = kwargs["save_intg"] if kwargs.has_key("save_intg") else None
+        # Corner case: we want all the samples, and we don't want them messed
+        # with, so everything is saved, but no sort is done
+        if nkeep is True:
+            nkeep = None
 
         # FIXME: The adaptive step relies on the _rvs cache, so this has to be
         # on in order to work
         if n_adapt > 0 and tempering_exp > 0.0:
             save_intg = True
 
-        deltalnL = kwargs['igrand_threshold_deltalnL'] if kwargs.has_key('igrand_threshold_deltalnL') else float("Inf") # default is to return all
+        deltalnL = kwargs['igrand_threshold_deltalnL'] if kwargs.has_key('igrand_threshold_deltalnL') else None # default is to return all
         deltaP = kwargs["igrand_threshold_p"] if kwargs.has_key('igrand_threshold_p') else 0 # default is to omit 1e-7 of probability
 
         show_evaluation_log = kwargs['verbose'] if kwargs.has_key('verbose') else False
@@ -512,7 +516,7 @@ class MCSampler(object):
 
         # Clean out the _rvs arrays for 'irrelevant' points
         #   - create the cumulative weights
-        if "weights" in self._rvs:
+        if "weights" in self._rvs and deltaP > 0:
             # Sort the weights with the deltaL masked applied
             sorted_weights = self._rvs["weights"].argsort()
             # Make the (unnormalized) CDF
@@ -527,7 +531,8 @@ class MCSampler(object):
                     self._rvs[key] = self._rvs[key][:,sorted_weights]
                 else:
                     self._rvs[key] = self._rvs[key][sorted_weights]
-        if "integrand" in self._rvs:
+
+        if "integrand" in self._rvs and deltalnL is not None:
             deltal_mask = numpy.log(self._rvs["integrand"]) > (maxlnL - deltalnL)
             # Remove all samples which do not have L > maxlnL - deltalnL
             for key in self._rvs.keys():
