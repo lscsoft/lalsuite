@@ -21,6 +21,7 @@
 
 #include <lal/LALString.h>
 #include <lal/XLALError.h>
+#include <lal/LALMalloc.h>
 
 static inline int sign(int s) {
   if (s < 0) return -1;
@@ -46,6 +47,13 @@ static inline int sign(int s) {
 
 int main( void )
 {
+
+  {
+    char *s = NULL;
+    XLAL_CHECK( strcmp( (s = XLALStringAppendFmt(s, "Hi %s!", "there")), "Hi there!" ) == 0, XLAL_EFAILED );
+    XLAL_CHECK( strcmp( (s = XLALStringAppendFmt(s, " %i + %i = %i?", 2, 2, 4)), "Hi there! 2 + 2 = 4?" ) == 0, XLAL_EFAILED );
+    XLALFree( s );
+  }
 
   STRCMPCHK( XLALStringCaseCompare, "0gS1BGPuCG",   "aMYKHogF0r",   strcmp, "0gs1bgpucg",   "amykhogf0r"   );
   STRCMPCHK( XLALStringCaseCompare, "1XJ7G7dIjZ",   "ERB8R8FljJ",   strcmp, "1xj7g7dijz",   "erb8r8fljj"   );
@@ -115,6 +123,8 @@ int main( void )
     XLAL_CHECK_MAIN( strcmp( XLALStringReplaceChar(s, 'c', 'd'), "dddddeddd" ) == 0, XLAL_EFAILED );
     XLAL_CHECK_MAIN( strcmp( XLALStringReplaceChar(s, 'd', 'e'), "eeeeeeeee" ) == 0, XLAL_EFAILED );
   }
+
+  LALCheckMemoryLeaks();
 
   return 0;
 

@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2015 Karl Wette
+*  Copyright (C) 2015, 2016 Karl Wette
 *  Copyright (C) 2007 Jolien Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -37,6 +37,29 @@ char *XLALStringAppend(char *s, const char *append)
         XLAL_ERROR_NULL(XLAL_ENOMEM);
     strcpy(s + curlen, append);
     return s;
+}
+
+/**
+ * Append the formatted string 'fmt' to the string 's', which
+ * is reallocated with XLALRealloc() to the required size.
+ */
+char *XLALStringAppendFmt(char *s, const char *fmt, ...)
+{
+  XLAL_CHECK_NULL(fmt != NULL, XLAL_EFAULT);
+  const size_t n = (s == NULL) ? 0 : strlen(s);
+  va_list ap;
+  va_start(ap, fmt);
+  char tmp[1];
+  const int m = vsnprintf(tmp, sizeof(tmp), fmt, ap);
+  va_end(ap);
+  XLAL_CHECK_NULL(m >= 0, XLAL_ESYS, "vsnprintf('%s', ...) failed", fmt);
+  const size_t l = (n + m + 1) * sizeof(*s);
+  s = XLALRealloc(s, l);
+  XLAL_CHECK_NULL(s != NULL, XLAL_ENOMEM, "XLALRealloc(n=%zu) failed", l);
+  va_start(ap, fmt);
+  XLAL_CHECK_NULL(vsnprintf(s + n, m + 1, fmt, ap) >= 0, XLAL_ESYS, "vsnprintf('%s', ...) failed", fmt);
+  va_end(ap);
+  return s;
 }
 
 /** Like strdup but uses LAL allocation routines (free with LALFree). */

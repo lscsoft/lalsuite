@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2015, 2016 Karl Wette
 *  Copyright (C) 2007 Jolien Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -37,6 +38,7 @@ extern "C" {
  *//*@{*/
 
 char *XLALStringAppend(char *s, const char *append);
+char *XLALStringAppendFmt(char *s, const char *fmt, ...) _LAL_GCC_PRINTF_FORMAT_(2,3);
 char *XLALStringDuplicate(const char *s);
 size_t XLALStringCopy(char *dst, const char *src, size_t size);
 size_t XLALStringConcatenate(char *dst, const char *src, size_t size);
