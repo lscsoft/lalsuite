@@ -144,6 +144,16 @@ int XLALConvertSuperskyToPhysicalPoint(
   );
 
 ///
+/// Convert a point between supersky coordinates. The vectors \c out_rssky and \c in_rssky may be the same.
+///
+int XLALConvertSuperskyToSuperskyPoint(
+  gsl_vector *out_rssky,			///< [out] Output point in supersky coordinates
+  const gsl_matrix *out_rssky_transf,		///< [in] Output reduced supersky coordinate transform data
+  const gsl_vector *in_rssky,			///< [in] Input point in supersky coordinates
+  const gsl_matrix *in_rssky_transf		///< [in] Input reduced supersky coordinate transform data
+  );
+
+///
 /// Convert a set of points from physical to supersky coordinates.
 ///
 #ifdef SWIG // SWIG interface directives
