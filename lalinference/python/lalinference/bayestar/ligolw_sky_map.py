@@ -95,12 +95,13 @@ def emcee_sky_map(
         nside *= 2
 
     if kde:
-        from sky_area.sky_area_clustering import ClusteredKDEPosterior
+        from sky_area.sky_area_clustering import ClusteredSkyKDEPosterior
+        ra = phi
         dec = 0.5 * np.pi - theta
         pts = np.column_stack((ra, dec))
         # Pass a random subset of 1000 points to the KDE, to save time.
         pts = np.random.permutation(pts)[:1000, :]
-        prob = ClusteredKDEPosterior(pts).as_healpix(nside)
+        prob = ClusteredSkyKDEPosterior(pts).as_healpix(nside)
 
     # Optionally save posterior sample chain to file.
     # Read back in with np.load().
@@ -286,7 +287,8 @@ def ligolw_sky_map(
 
 def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
-        max_distance=None, prior_distance_power=None, nside=-1,
+        max_distance=None, prior_distance_power=None,
+        method="toa_phoa_snr", nside=-1, chain_dump=None,
         phase_convention='antifindchirp', f_high_truncate=1.0):
     # LIGO-LW XML imports.
     from . import ligolw
@@ -329,9 +331,10 @@ def gracedb_sky_map(
             f_high_truncate=f_high_truncate)
         for psd in psds]
 
-    # TOA+SNR sky localization
+    # Run sky localization
     prob, epoch, elapsed_time = ligolw_sky_map(sngl_inspirals, waveform, f_low,
-        min_distance, max_distance, prior_distance_power,
-        nside=nside, psds=psds, phase_convention=phase_convention)
+        min_distance, max_distance, prior_distance_power, method=method,
+        nside=nside, psds=psds, phase_convention=phase_convention,
+        chain_dump=chain_dump)
 
     return prob, epoch, elapsed_time, instruments

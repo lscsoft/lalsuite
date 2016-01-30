@@ -271,22 +271,22 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    uvar->unrestrictedCosi = 0;
    uvar->rectWindow = 0;
 
-   XLALregBOOLUserStruct(  help,            'h', UVAR_HELP     , "Print this help/usage message");
-   XLALregREALUserStruct(  Tsft,             0 , UVAR_OPTIONAL , "SFT coherence time");
-   XLALregREALUserStruct(  SFToverlap,       0 , UVAR_OPTIONAL , "SFT overlap in seconds, usually Tsft/2");
-   XLALregREALUserStruct(  t0,               0 , UVAR_OPTIONAL , "GPS start time of the search");
-   XLALregREALUserStruct(  Tobs,             0 , UVAR_OPTIONAL , "Duration of the search (in seconds)");
-   XLALregREALUserStruct(  cosi,             0 , UVAR_OPTIONAL , "Cosine of NS inclinaiont angle");
-   XLALregREALUserStruct(  psi,              0 , UVAR_OPTIONAL , "Polarization angle of GW");
-   XLALregREALUserStruct(  alpha,            0 , UVAR_OPTIONAL , "Right ascension of source (in radians)");
-   XLALregREALUserStruct(  delta,            0 , UVAR_OPTIONAL , "Declination of source (in radians)");
-   XLALregINTUserStruct(   skylocations,     0 , UVAR_OPTIONAL , "Number of sky locations");
-   XLALregLISTUserStruct(  IFO,              0 , UVAR_REQUIRED , "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
-   XLALregSTRINGUserStruct(outfilename,      0 , UVAR_OPTIONAL , "Output filename");
-   XLALregSTRINGUserStruct(ephemEarth,       0 , UVAR_OPTIONAL , "Earth ephemeris file");
-   XLALregSTRINGUserStruct(ephemSun,         0 , UVAR_OPTIONAL , "Sun ephemeris file");
-   XLALregBOOLUserStruct(  unrestrictedCosi, 0 , UVAR_OPTIONAL , "Marginalize over cos(iota) from -1 to 1");
-   XLALregBOOLUserStruct(  rectWindow,       0 , UVAR_OPTIONAL , "Use rectangular window function instead of Hann windowing");
+   XLALRegisterUvarMember(  help,            BOOLEAN, 'h', HELP     , "Print this help/usage message");
+   XLALRegisterUvarMember(  Tsft,             REAL8, 0 , OPTIONAL , "SFT coherence time");
+   XLALRegisterUvarMember(  SFToverlap,       REAL8, 0 , OPTIONAL , "SFT overlap in seconds, usually Tsft/2");
+   XLALRegisterUvarMember(  t0,               REAL8, 0 , OPTIONAL , "GPS start time of the search");
+   XLALRegisterUvarMember(  Tobs,             REAL8, 0 , OPTIONAL , "Duration of the search (in seconds)");
+   XLALRegisterUvarMember(  cosi,             REAL8, 0 , OPTIONAL , "Cosine of NS inclinaiont angle");
+   XLALRegisterUvarMember(  psi,              REAL8, 0 , OPTIONAL , "Polarization angle of GW");
+   XLALRegisterUvarMember(  alpha,            REAL8, 0 , OPTIONAL , "Right ascension of source (in radians)");
+   XLALRegisterUvarMember(  delta,            REAL8, 0 , OPTIONAL , "Declination of source (in radians)");
+   XLALRegisterUvarMember(   skylocations,     INT4, 0 , OPTIONAL , "Number of sky locations");
+   XLALRegisterUvarMember(  IFO,              STRINGVector, 0 , REQUIRED , "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
+   XLALRegisterUvarMember(outfilename,      STRING, 0 , OPTIONAL , "Output filename");
+   XLALRegisterUvarMember(ephemEarth,       STRING, 0 , OPTIONAL , "Earth ephemeris file");
+   XLALRegisterUvarMember(ephemSun,         STRING, 0 , OPTIONAL , "Sun ephemeris file");
+   XLALRegisterUvarMember(  unrestrictedCosi, BOOLEAN, 0 , OPTIONAL , "Marginalize over cos(iota) from -1 to 1");
+   XLALRegisterUvarMember(  rectWindow,       BOOLEAN, 0 , OPTIONAL , "Use rectangular window function instead of Hann windowing");
 
    XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
 

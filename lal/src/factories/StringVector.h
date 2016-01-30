@@ -63,6 +63,9 @@ LALStringVector *XLALCreateStringVector ( const CHAR *str1, ... );
 LALStringVector *XLALAppendString2Vector (LALStringVector *vect, const CHAR *string );
 void XLALDestroyStringVector ( LALStringVector *vect );
 
+char *XLALConcatStringVector( const LALStringVector *strings, const char *sep );
+LALStringVector *XLALParseStringVector( const char *string, const char *delim );
+
 int XLALSortStringVector (LALStringVector *strings);
 INT4 XLALFindStringInVector ( const char *needle, const LALStringVector *haystack );
 

@@ -192,7 +192,8 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    XLAL_CHECK_NULL( VectorScaleREAL8(frequencyBins, frequencies, params->Tsft, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Pre-allocate delta values for IFO_0 and IFO_X, also 2*pi*f_k*tau
-   alignedREAL8Vector *delta0vals = NULL, *deltaXvals = NULL, *delta0valsSubset = NULL, *deltaXvalsSubset = NULL, *floorDelta0valsSubset = NULL, *floorDeltaXvalsSubset = NULL, *diffFloorDeltaValsSubset = NULL, *roundDelta0valsSubset = NULL, *roundDeltaXvalsSubset = NULL, *diffRoundDeltaValsSubset = NULL, *TwoPiFrequenciesTau = NULL;
+   alignedREAL8Vector *delta0vals = NULL, *deltaXvals = NULL, *delta0valsSubset = NULL, *deltaXvalsSubset = NULL, *floorDelta0valsSubset = NULL, *floorDeltaXvalsSubset = NULL, *diffFloorDeltaValsSubset = NULL, *roundDelta0valsSubset = NULL, *roundDeltaXvalsSubset = NULL, *diffRoundDeltaValsSubset = NULL, *TwoPiFrequenciesTau = NULL, *absDiffFloorDeltaValsSubset = NULL;
+   REAL4VectorAligned *TwoPiFrequenciesTau_f = NULL, *sinTwoPiFrequenciesTau = NULL, *cosTwoPiFrequenciesTau = NULL;
    XLAL_CHECK_NULL( (delta0vals = createAlignedREAL8Vector(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (deltaXvals = createAlignedREAL8Vector(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (delta0valsSubset = createAlignedREAL8Vector(frequencyBins->length - 20, 32)) != NULL, XLAL_EFUNC );
@@ -202,8 +203,12 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    XLAL_CHECK_NULL( (roundDelta0valsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (roundDeltaXvalsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (diffFloorDeltaValsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (absDiffFloorDeltaValsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (diffRoundDeltaValsSubset = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (TwoPiFrequenciesTau = createAlignedREAL8Vector(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (TwoPiFrequenciesTau_f = XLALCreateREAL4VectorAligned(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (sinTwoPiFrequenciesTau = XLALCreateREAL4VectorAligned(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (cosTwoPiFrequenciesTau = XLALCreateREAL4VectorAligned(frequencyBins->length, 32)) != NULL, XLAL_EFUNC );
 
    INT4Vector *shiftVector = NULL;
    XLAL_CHECK_NULL( (shiftVector = XLALCreateINT4Vector(delta0valsSubset->length)) != NULL, XLAL_EFUNC );
@@ -255,9 +260,11 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    XLAL_CHECK_NULL( (DirichletScalingX = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
    XLAL_CHECK_NULL( (scaling = createAlignedREAL8Vector(delta0valsSubset->length, 32)) != NULL, XLAL_EFUNC );
 
-   //Pre-allocate the Dirichlet ratio vector
+   //Pre-allocate the Dirichlet ratio vector and its magnitude
    COMPLEX8Vector *Dratio = NULL;
+   REAL4VectorAligned *cabsDratio = NULL;
    XLAL_CHECK_NULL( (Dratio = XLALCreateCOMPLEX8Vector(delta0valsSubset->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (cabsDratio = XLALCreateREAL4VectorAligned(Dratio->length, 32)) != NULL, XLAL_EFUNC );
 
    //Determine new band size
    REAL8 newFmin = frequencies->data[10];
@@ -456,31 +463,34 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
             for (UINT4 kk=0; kk<scaling->length; kk++) scaling->data[kk] = DirichletScaling0->data[kk]/DirichletScalingX->data[kk];
             XLAL_CHECK_NULL( DirichletRatioVector(Dratio, delta0valsSubset, deltaXvalsSubset, scaling, params) == XLAL_SUCCESS, XLAL_EFUNC );
 
+	    //Compute values outside inner loop
+	    //Normalize Dirichlet kernel ratio values
+	    XLAL_CHECK_NULL( VectorCabsfCOMPLEX8(cabsDratio, Dratio, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+	    for (UINT4 kk=0; kk<Dratio->length; kk++) {
+	       if (cabsDratio->data[kk]!=0.0) Dratio->data[kk] /= cabsDratio->data[kk];
+	    }
+	    //compute the complex detector-phase relationship
+	    COMPLEX8 detPhaseVal = cpolarf(detPhaseMag, detPhaseArg);
+	    //compute absDiffFloorDeltaValsSubset and phase shift by pi for when signals are on different "sides" of a bin, to reduce error and improve detection efficiency
+	    XLAL_CHECK_NULL( VectorAbsREAL8(absDiffFloorDeltaValsSubset, diffFloorDeltaValsSubset, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+	    for (UINT4 kk=0; kk<absDiffFloorDeltaValsSubset->length; kk++) if (absDiffFloorDeltaValsSubset->data[kk]>=1.0) TwoPiFrequenciesTau->data[kk+10] -= LAL_PI;
+	    //Cast TwoPiFrequenciesTau into a REAL4VectorAligned and take sin and cos
+	    //We want to compute exp[-i*(2*pi*f*tau)] = cos[-2*pi*f*tau]+i*sin[-2*pi*f*tau] = cos[2*pi*f*tau]-i*sin[2*pi*f*tau]
+	    //Sometimes this is exp[-i*(2*pi*f*tau)+i*pi] = exp[-i*(2*pi*f*tau-pi)] = cos[2*pi*f*tau-pi]-i*sin[2*pi*f*tau-pi]
+	    for (UINT4 kk=0; kk<TwoPiFrequenciesTau->length; kk++) TwoPiFrequenciesTau_f->data[kk] = (REAL4)TwoPiFrequenciesTau->data[kk];
+	    XLAL_CHECK_NULL( XLALVectorSinCosREAL4(sinTwoPiFrequenciesTau->data, cosTwoPiFrequenciesTau->data, TwoPiFrequenciesTau_f->data, TwoPiFrequenciesTau_f->length) == XLAL_SUCCESS, XLAL_EFUNC );
+
             //Now finish the computation with the Dirichlet kernel ratio and final correction
             for (UINT4 kk=0; kk<sftcopySubset->data->length; kk++) {
-               REAL4 detArgVal = 0.0;
-               if (crealf(Dratio->data[kk])!=0.0 && cimagf(Dratio->data[kk])!=0.0) {
-                  detArgVal = (REAL4)gsl_sf_angle_restrict_pos((REAL8)cargf(conjf(Dratio->data[kk])));
-               } else {
-                  detPhaseMag = 0.0;
-                  detArgVal = 0.0;
-               }
-
-               //When signals are on different "sides" of a bin, there can be error > pi, so we add pi to reduce this error, improving detection efficiency
-               //if (fabs(floor(delta0valsSubset->data[kk])-floor(deltaXvalsSubset->data[kk]))>=1.0) detArgVal += LAL_PI;
-               if (fabs(diffFloorDeltaValsSubset->data[kk])>=1.0) detArgVal += LAL_PI;
-
                //The complex coefficient to scale SFT bins
-               COMPLEX8 complexfactor = cpolarf(detPhaseMag, detArgVal+detPhaseArg-TwoPiFrequenciesTau->data[kk+10]);
+	       COMPLEX8 complexfactor = detPhaseVal*crectf(cosTwoPiFrequenciesTau->data[kk+10], -sinTwoPiFrequenciesTau->data[kk+10])*conj(Dratio->data[kk]);
 
                REAL4 noiseWeighting = 1.0;
                if (kk>=numSFTbins2skip && kk<numFbinsInBackground+numSFTbins2skip && createSFT) {
-                  REAL4 absVal = cabsf(complexfactor);
-                  backgroundScaling->data[fftnum2*numFbinsInBackground + (kk-numSFTbins2skip)] = absVal*absVal;
+                  backgroundScaling->data[fftnum2*numFbinsInBackground + (kk-numSFTbins2skip)] = detPhaseMag*detPhaseMag;
                } else if (kk>=numSFTbins2skip && kk<numFbinsInBackground+numSFTbins2skip && !createSFT) {
                   noiseWeighting = backgroundRatio->data[jj]->data[fftnum];
-                  REAL4 absVal = cabsf(complexfactor);
-                  backgroundScaling->data[fftnum2*numFbinsInBackground + (kk-numSFTbins2skip)] += noiseWeighting*(absVal*absVal);
+                  backgroundScaling->data[fftnum2*numFbinsInBackground + (kk-numSFTbins2skip)] += noiseWeighting*detPhaseMag*detPhaseMag;
                }
 
                //Apply the corrections and shift to correct bin with the shiftVector
@@ -511,6 +521,9 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    XLALDestroyREAL4VectorAligned(Fcross0s);
    XLALDestroyREAL4VectorAligned(FplusXs);
    XLALDestroyREAL4VectorAligned(FcrossXs);
+   XLALDestroyREAL4VectorAligned(TwoPiFrequenciesTau_f);
+   XLALDestroyREAL4VectorAligned(sinTwoPiFrequenciesTau);
+   XLALDestroyREAL4VectorAligned(cosTwoPiFrequenciesTau);
    destroyAlignedREAL8Vector(frequencies);
    destroyAlignedREAL8Vector(frequencyBins);
    destroyAlignedREAL8VectorArray(twoPiTauVals);
@@ -524,6 +537,7 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    destroyAlignedREAL8Vector(roundDelta0valsSubset);
    destroyAlignedREAL8Vector(roundDeltaXvalsSubset);
    destroyAlignedREAL8Vector(diffFloorDeltaValsSubset);
+   destroyAlignedREAL8Vector(absDiffFloorDeltaValsSubset);
    destroyAlignedREAL8Vector(diffRoundDeltaValsSubset);
    XLALDestroyINT4Vector(shiftVector);
    destroyAlignedREAL8Vector(TwoPiFrequenciesTau);
@@ -535,6 +549,7 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
    destroyAlignedREAL8Vector(DirichletScalingX);
    destroyAlignedREAL8Vector(scaling);
    XLALDestroyCOMPLEX8Vector(Dratio);
+   XLALDestroyREAL4VectorAligned(cabsDratio);
 
    fprintf(stderr, "done\n");
 
@@ -574,17 +589,21 @@ REAL4VectorAligned * convertSFTdataToPowers(const SFTVector *sfts, const UserInp
 
    REAL8 starttime = params->t0;
 
+   //Allocate temporary normalized abs[sftcoeff]^2 vector
+   alignedREAL8Vector *normAbsSFTcoeffSq = NULL;
+   XLAL_CHECK_NULL( (normAbsSFTcoeffSq = createAlignedREAL8Vector(sftlength, 32)) != NULL, XLAL_EFUNC );
+
    //Load the data into the output vector, roughly normalizing as we go along from the input value
    //REAL8 sqrtnorm = sqrt(normalization);
    for (UINT4 ii=0; ii<numffts; ii++) {
       if (ii-nonexistantsft < sfts->length) {
          SFTtype *sft = &(sfts->data[ii - nonexistantsft]);
          if (sft->epoch.gpsSeconds == (INT4)round(ii*(params->Tsft-params->SFToverlap)+starttime)) {
+	    XLAL_CHECK_NULL( VectorCabsCOMPLEX8(normAbsSFTcoeffSq, sft->data, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+	    XLAL_CHECK_NULL( VectorMultiplyREAL8(normAbsSFTcoeffSq, normAbsSFTcoeffSq, normAbsSFTcoeffSq, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
+	    XLAL_CHECK_NULL( VectorScaleREAL8(normAbsSFTcoeffSq, normAbsSFTcoeffSq, normalization, params->vectorMath) == XLAL_SUCCESS, XLAL_EFUNC );
             for (UINT4 jj=0; jj<sftlength; jj++) {
-               COMPLEX8 sftcoeff = sft->data->data[jj];
-               //tfdata->data[ii*sftlength + jj] = (REAL4)((sqrtnorm*crealf(sftcoeff))*(sqrtnorm*crealf(sftcoeff)) + (sqrtnorm*cimagf(sftcoeff))*(sqrtnorm*cimagf(sftcoeff)));  //power, normalized
-               REAL8 absSFTcoeff = cabs(sftcoeff);
-               tfdata->data[ii*sftlength + jj] = (REAL4)(normalization*absSFTcoeff*absSFTcoeff);
+	       tfdata->data[ii*sftlength + jj] = (REAL4)normAbsSFTcoeffSq->data[jj];
             } /* for jj < sftLength */
          } else {
             memset(&(tfdata->data[ii*sftlength]), 0, sizeof(REAL4)*sftlength);
@@ -595,6 +614,8 @@ REAL4VectorAligned * convertSFTdataToPowers(const SFTVector *sfts, const UserInp
          nonexistantsft++;    //increment the nonexistantsft counter
       }
    } /* for ii < numffts */
+
+   destroyAlignedREAL8Vector(normAbsSFTcoeffSq);
 
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");

@@ -66,19 +66,19 @@ main(int argc, char *argv[])
   UserInput_t *uvar = &my_uvars;
   uvar->string2 = XLALStringDuplicate ( "this is the default value");
 
-  XLAL_CHECK ( XLALregREALUserStruct( argNum, 0, UVAR_REQUIRED, "Testing float argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregSTRINGUserStruct( argStr, 0, UVAR_REQUIRED, "Testing string argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregBOOLUserStruct( argBool, 0, UVAR_REQUIRED, "Testing bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregINTUserStruct( argInt, 'a', UVAR_REQUIRED, "Testing INT argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregINTUserStruct( dummy,  'c', UVAR_OPTIONAL, "Testing INT argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregBOOLUserStruct( argB2, 'b', UVAR_REQUIRED, "Testing short-option bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregSTRINGUserStruct( string2, 0, UVAR_REQUIRED, "Testing another string argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregEPOCHUserStruct( epochGPS, 0, UVAR_REQUIRED, "Testing epoch given as GPS time") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregEPOCHUserStruct( epochMJDTT, 0, UVAR_REQUIRED, "Testing epoch given as MJD(TT) time") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregRAJUserStruct( longHMS, 0, UVAR_REQUIRED, "Testing RAJ(HMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregRAJUserStruct( longRad, 0, UVAR_REQUIRED, "Testing RAJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregDECJUserStruct( latDMS, 0, UVAR_REQUIRED, "Testing DECJ(DMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregDECJUserStruct( latRad, 0, UVAR_REQUIRED, "Testing DECJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( argNum, REAL8, 0, REQUIRED, "Testing float argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( argStr, STRING, 0, REQUIRED, "Testing string argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( argBool, BOOLEAN, 0, REQUIRED, "Testing bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( argInt, INT4, 'a', REQUIRED, "Testing INT argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( dummy,  INT4, 'c', OPTIONAL, "Testing INT argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( argB2, BOOLEAN, 'b', REQUIRED, "Testing short-option bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( string2, STRING, 0, REQUIRED, "Testing another string argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( epochGPS, EPOCH, 0, REQUIRED, "Testing epoch given as GPS time") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( epochMJDTT, EPOCH, 0, REQUIRED, "Testing epoch given as MJD(TT) time") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( longHMS, RAJ, 0, REQUIRED, "Testing RAJ(HMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( longRad, RAJ, 0, REQUIRED, "Testing RAJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( latDMS, DECJ, 0, REQUIRED, "Testing DECJ(DMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( latRad, DECJ, 0, REQUIRED, "Testing DECJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- now read all input from commandline and config-file ---------- */
   XLAL_CHECK ( XLALUserVarReadAllInput ( my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );

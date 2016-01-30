@@ -82,6 +82,14 @@ void XLALDestroySuperskyMetrics(
   SuperskyMetrics *metrics			///< [in] Supersky metrics struct
   );
 
+///
+/// Return dimensions of the supersky metrics.
+///
+int XLALSuperskyMetricsDimensions(
+  const SuperskyMetrics *metrics,		///< [in] Supersky metrics struct
+  size_t *spindowns				///< [out] Number of spindown dimensions
+  );
+
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
 #endif // SWIG
@@ -108,8 +116,8 @@ int XLALScaleSuperskyMetricsFiducialFreq(
   );
 
 ///
-/// Project and rescale the semicoherent reduced supersky metric in the frequency dimension, such that
-/// all reduced supersky metrics have the same frequency spacing for the given maximum mismatches.
+/// Project and rescale the reduced supersky metrics in the frequency dimension, such that all
+/// reduced supersky metrics have the same frequency spacing for the given maximum mismatches.
 ///
 int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   SuperskyMetrics *metrics,			///< [in] Supersky metrics struct
@@ -133,6 +141,16 @@ int XLALConvertSuperskyToPhysicalPoint(
   PulsarDopplerParams *out_phys,		///< [out] Output point in physical coordinates
   const gsl_vector *in_rssky,			///< [in] Input point in supersky coordinates
   const gsl_matrix *rssky_transf		///< [in] Reduced supersky coordinate transform data
+  );
+
+///
+/// Convert a point between supersky coordinates. The vectors \c out_rssky and \c in_rssky may be the same.
+///
+int XLALConvertSuperskyToSuperskyPoint(
+  gsl_vector *out_rssky,			///< [out] Output point in supersky coordinates
+  const gsl_matrix *out_rssky_transf,		///< [in] Output reduced supersky coordinate transform data
+  const gsl_vector *in_rssky,			///< [in] Input point in supersky coordinates
+  const gsl_matrix *in_rssky_transf		///< [in] Input reduced supersky coordinate transform data
   );
 
 ///

@@ -1,3 +1,6 @@
+#ifndef _LALSIM_IMR_PHENOMP_H
+#define _LALSIM_IMR_PHENOMP_H
+
 /*
  *  Copyright (C) 2013,2014,2015 Michael Puerrer, Alejandro Bohe
  *
@@ -17,7 +20,19 @@
  *  MA  02111-1307  USA
  */
 
+#include <lal/LALStdlib.h>
+#include <lal/LALSimIMR.h>
+#include <lal/LALConstants.h>
+
+#include "LALSimIMRPhenomC_internals.h"
+#include "LALSimIMRPhenomD_internals.h"
+
+#include <lal/FrequencySeries.h>
+#include <lal/LALSimInspiral.h>
+
+
 /* ************************** PhenomP internal function prototypes *****************************/
+
 
 /* PhenomC parameters for modified ringdown: Uses final spin formula of Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009 */
 static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
@@ -129,6 +144,14 @@ static void WignerdCoefficients_SmallAngleApproximation(
   const REAL8 Sp        /**< Dimensionfull spin component in the orbital plane */
 );
 
+static void CheckMaxOpeningAngle(
+  const REAL8 m1,     /**< Mass of companion 1 (solar masses) */
+  const REAL8 m2,     /**< Mass of companion 2 (solar masses) */
+  const REAL8 chi1_l, /**< Aligned spin of BH 1 */
+  const REAL8 chi2_l, /**< Aligned spin of BH 2 */
+  const REAL8 chip    /**< Dimensionless spin in the orbital plane */
+);
+
 static REAL8 FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH(
   const REAL8 m1,     /**< Mass of companion 1 (solar masses) */
   const REAL8 m2,     /**< Mass of companion 2 (solar masses) */
@@ -152,4 +175,4 @@ static REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.70
   const REAL8 cos_gamma_tilde   /**< cos(\\tilde gamma) = \\hat a_2 . \\hat L (Eq. 9)*/
 );
 
-static size_t NextPow2(const size_t n); /* Return the closest higher power of 2. */
+#endif	// of #ifndef _LALSIM_IMR_PHENOMP_H

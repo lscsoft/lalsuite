@@ -146,9 +146,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   char phase_key[20];
   gsl_vector *tmpVector=NULL;
   LALH5File *file, *group;
-  LIGOTimeGPS tmpEpoch;
-  tmpEpoch.gpsSeconds = 0;
-  tmpEpoch.gpsNanoSeconds = 0;
+  LIGOTimeGPS tmpEpoch = LIGOTIMEGPSZERO;
   REAL8Vector *curr_amp, *curr_phase;
 
   /* Use solar masses for units. NR files will use
@@ -238,10 +236,11 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
                 fStart, Mflower, Mflower / (m1 + m2));
   }
 
-  array_length = (UINT4)( (time_end_s - time_start_s) / deltaT);
+  array_length = (UINT4)(ceil( (time_end_s - time_start_s) / deltaT));
 
   /* Create the return time series, use arbitrary epoch here. We set this
    * properly later. */
+  XLALGPSAdd(&tmpEpoch, time_start_s);
   *hplus  = XLALCreateREAL8TimeSeries("H_PLUS", &tmpEpoch, 0.0, deltaT,
                                       &lalStrainUnit, array_length );
   *hcross = XLALCreateREAL8TimeSeries("H_CROSS", &tmpEpoch, 0.0, deltaT,

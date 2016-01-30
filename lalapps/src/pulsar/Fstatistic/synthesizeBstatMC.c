@@ -356,31 +356,31 @@ initUserVars ( UserInput_t *uvar )
   uvar->E = 0;	/* RAA approximation antenna-pattern matrix component M_{14}. Zero if using LWL */
 
   /* register all our user-variables */
-  XLALregBOOLUserStruct(	help, 		'h', UVAR_HELP,     "Print this message");
+  XLALRegisterUvarMember(	help, 		BOOLEAN, 'h', HELP,     "Print this message");
 
-  XLALregREALUserStruct(	h0Nat,		's', UVAR_OPTIONAL, "Overall GW amplitude h0 in *natural units*: h0Nat = h0 sqrt(T/Sn) ");
-  XLALregREALUserStruct(	h0NatBand,	 0,  UVAR_OPTIONAL, "Randomize amplitude within [h0, h0+h0Band] with uniform prior");
-  XLALregREALUserStruct(	SNR,		 0,  UVAR_OPTIONAL, "Alternative: adjust h0 to obtain signal of exactly this optimal SNR");
+  XLALRegisterUvarMember(	h0Nat,		REAL8, 's', OPTIONAL, "Overall GW amplitude h0 in *natural units*: h0Nat = h0 sqrt(T/Sn) ");
+  XLALRegisterUvarMember(	h0NatBand,	 REAL8, 0,  OPTIONAL, "Randomize amplitude within [h0, h0+h0Band] with uniform prior");
+  XLALRegisterUvarMember(	SNR,		 REAL8, 0,  OPTIONAL, "Alternative: adjust h0 to obtain signal of exactly this optimal SNR");
 
-  XLALregREALUserStruct(	cosi,		'i', UVAR_OPTIONAL, "cos(inclination angle). If not set: randomize within [-1,1].");
-  XLALregREALUserStruct(	psi,		 0, UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
-  XLALregREALUserStruct(	phi0,		 0, UVAR_OPTIONAL, "initial GW phase phi_0. If not set: randomize within [0, 2pi]");
+  XLALRegisterUvarMember(	cosi,		REAL8, 'i', OPTIONAL, "cos(inclination angle). If not set: randomize within [-1,1].");
+  XLALRegisterUvarMember(	psi,		 REAL8, 0, OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
+  XLALRegisterUvarMember(	phi0,		 REAL8, 0, OPTIONAL, "initial GW phase phi_0. If not set: randomize within [0, 2pi]");
 
-  XLALregREALUserStruct(	A,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {1,1} = A = <|a|^2>");
-  XLALregREALUserStruct(	B,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {2,2} = B = <|b|^2>");
-  XLALregREALUserStruct(	C,	  	 0,  UVAR_REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {1,2} = C = <Re(b a*)>");
-  XLALregREALUserStruct(	E,	  	 0,  UVAR_OPTIONAL, "Antenna-pattern matrix MNat_mu_nu: component {1,4} = E = <Im(b a*)>");
+  XLALRegisterUvarMember(	A,	  	 REAL8, 0,  REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {1,1} = A = <|a|^2>");
+  XLALRegisterUvarMember(	B,	  	 REAL8, 0,  REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {2,2} = B = <|b|^2>");
+  XLALRegisterUvarMember(	C,	  	 REAL8, 0,  REQUIRED, "Antenna-pattern matrix MNat_mu_nu: component {1,2} = C = <Re(b a*)>");
+  XLALRegisterUvarMember(	E,	  	 REAL8, 0,  OPTIONAL, "Antenna-pattern matrix MNat_mu_nu: component {1,4} = E = <Im(b a*)>");
 
-  XLALregREALUserStruct(	numDraws,	'N', UVAR_OPTIONAL, "Number of random 'draws' to simulate for F-stat and B-stat");
+  XLALRegisterUvarMember(	numDraws,	REAL8, 'N', OPTIONAL, "Number of random 'draws' to simulate for F-stat and B-stat");
 
-  XLALregSTRINGUserStruct( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of lnL, 2F and B");
+  XLALRegisterUvarMember( outputStats,	STRING, 'o', OPTIONAL, "Output file containing 'numDraws' random draws of lnL, 2F and B");
 
-  XLALregINTUserStruct( integrationMethod,'m', UVAR_OPTIONAL, "2D Integration-method: 0=Gauss-Kronod, 1=Monte-Carlo(Vegas)");
-  XLALregREALUserStruct(	numMCpoints,	'M', UVAR_OPTIONAL, "Number of points to use in Monte-Carlo integration");
+  XLALRegisterUvarMember( integrationMethod,INT4, 'm', OPTIONAL, "2D Integration-method: 0=Gauss-Kronod, 1=Monte-Carlo(Vegas)");
+  XLALRegisterUvarMember(	numMCpoints,	REAL8, 'M', OPTIONAL, "Number of points to use in Monte-Carlo integration");
 
-  XLALregBOOLUserStruct(	SignalOnly,     'S', UVAR_SPECIAL,  "No noise-draws: will result in non-random 'signal only' values for F and B");
+  XLALRegisterUvarMember(	SignalOnly,     BOOLEAN, 'S', SPECIAL,  "No noise-draws: will result in non-random 'signal only' values for F and B");
 
-  XLALregBOOLUserStruct(	version,        'V', UVAR_SPECIAL,   "Output code version");
+  XLALRegisterUvarMember(	version,        BOOLEAN, 'V', SPECIAL,   "Output code version");
 
   return XLAL_SUCCESS;
 

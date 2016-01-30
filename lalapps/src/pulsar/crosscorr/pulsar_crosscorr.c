@@ -1868,8 +1868,14 @@ void initUserVars (LALStatus *status)
 			    "Alternative: input skypatch file",
 			    &uvar_skyfile);
 
-  XLALRegisterSTRINGUserVar( "ephemEarth",   	 0,  UVAR_OPTIONAL,     "Earth ephemeris file to use", &uvar_ephemEarth );
-  XLALRegisterSTRINGUserVar( "ephemSun",     	 0,  UVAR_OPTIONAL,     "Sun ephemeris file to use", &uvar_ephemSun );
+  LALRegisterSTRINGUserVar( status->statusPtr, "ephemEarth",
+                            0, UVAR_OPTIONAL,
+                            "Earth ephemeris file to use",
+                            &uvar_ephemEarth );
+  LALRegisterSTRINGUserVar( status->statusPtr, "ephemSun",
+                            0, UVAR_OPTIONAL,
+                            "Sun ephemeris file to use",
+                            &uvar_ephemSun );
 
   LALRegisterSTRINGUserVar( status->statusPtr, "sftDir",
 			    'D', UVAR_REQUIRED,

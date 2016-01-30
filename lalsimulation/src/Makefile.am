@@ -101,7 +101,9 @@ noinst_HEADERS = \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
 	LALSimIMRPhenomC_internals.c \
+	LALSimIMRPhenomC_internals.h \
 	LALSimIMRPhenomD_internals.c \
+	LALSimIMRPhenomD_internals.h \
 	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomP.c \
 	LALSimIMRPhenomP.h \

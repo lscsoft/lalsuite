@@ -268,15 +268,15 @@ int initUserVars(int argc,char *argv[],UserInput_t *uvar)
 
  
   /* register all user-variables */
-  XLALregBOOLUserStruct(help, 		'h', UVAR_HELP,     "Print this message"); 
-  XLALregREALUserStruct(Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz"); 
-  XLALregREALUserStruct(FreqBand, 	'b', UVAR_REQUIRED, "Search frequency band in Hz"); 
-  XLALregREALUserStruct(orbitPeriod, 	'P', UVAR_REQUIRED, "Orbital period in seconds");
-  XLALregREALUserStruct(orbitasini, 	'A', UVAR_REQUIRED, "Light travel time of orbital projected semi-major axis, in seconds");
-  XLALregSTRINGUserStruct(inputFstat, 	'D', UVAR_REQUIRED, "Filename specifying input Fstat file"); 
-  XLALregSTRINGUserStruct(outputCstat,	'C', UVAR_REQUIRED, "Output-file for C-statistic");
-  XLALregBOOLUserStruct(tophat,		't', UVAR_OPTIONAL, "Perform search with tophat template");
-  XLALregBOOLUserStruct(version,	'V', UVAR_SPECIAL,  "Output version information");
+  XLALRegisterUvarMember(help,          BOOLEAN, 'h', HELP,     "Print this message");
+  XLALRegisterUvarMember(Freq,          REAL8, 'f', REQUIRED, "Starting search frequency in Hz");
+  XLALRegisterUvarMember(FreqBand,      REAL8, 'b', REQUIRED, "Search frequency band in Hz");
+  XLALRegisterUvarMember(orbitPeriod,   REAL8, 'P', REQUIRED, "Orbital period in seconds");
+  XLALRegisterUvarMember(orbitasini,    REAL8, 'A', REQUIRED, "Light travel time of orbital projected semi-major axis, in seconds");
+  XLALRegisterUvarMember(inputFstat,    STRING, 'D', REQUIRED, "Filename specifying input Fstat file");
+  XLALRegisterUvarMember(outputCstat,	STRING, 'C', REQUIRED, "Output-file for C-statistic");
+  XLALRegisterUvarMember(tophat,	BOOLEAN, 't', OPTIONAL, "Perform search with tophat template");
+  XLALRegisterUvarMember(version,	BOOLEAN, 'V', SPECIAL,  "Output version information");
   
   /* do ALL cmdline and cfgfile handling */
   if (XLALUserVarReadAllInput(argc, argv)) {

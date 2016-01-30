@@ -963,115 +963,115 @@ initUserVars ( UserInput_t *uvar )
   uvar->transient_useFReg = 0;
 
   /* ---------- register all user-variables ---------- */
-  XLALregBOOLUserStruct( 	help, 		'h', UVAR_HELP,     "Print this message");
+  XLALRegisterUvarMember( 	help, 		BOOLEAN, 'h', HELP,     "Print this message");
 
-  XLALregRAJUserStruct( 	Alpha, 		'a', UVAR_OPTIONAL, "Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
-  XLALregDECJUserStruct( 	Delta, 		'd', UVAR_OPTIONAL, "Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
-  XLALregSTRINGUserStruct ( 	skyRegion,      'R', UVAR_OPTIONAL, "ALTERNATIVE: Sky-region polygon '(Alpha1,Delta1),(Alpha2,Delta2),...' or 'allsky'");
+  XLALRegisterUvarMember( 	Alpha, 		RAJ, 'a', OPTIONAL, "Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
+  XLALRegisterUvarMember( 	Delta, 		DECJ, 'd', OPTIONAL, "Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
+  XLALRegisterUvarMember( 	skyRegion,      STRING, 'R', OPTIONAL, "ALTERNATIVE: Sky-region polygon '(Alpha1,Delta1),(Alpha2,Delta2),...' or 'allsky'");
 
-  XLALregREALUserStruct( 	Freq, 		'f', UVAR_OPTIONAL, "Starting search frequency Freq in Hz");
-  XLALregREALUserStruct( 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter  f1dot = dFreq/dt");
-  XLALregREALUserStruct( 	f2dot, 		 0 , UVAR_OPTIONAL, "Second spindown parameter f2dot = d^2Freq/dt^2");
-  XLALregREALUserStruct( 	f3dot, 		 0 , UVAR_OPTIONAL, "Third spindown parameter  f3dot = d^3Freq/dt^3");
+  XLALRegisterUvarMember( 	Freq, 		REAL8, 'f', OPTIONAL, "Starting search frequency Freq in Hz");
+  XLALRegisterUvarMember( 	f1dot, 		REAL8, 's', OPTIONAL, "First spindown parameter  f1dot = dFreq/dt");
+  XLALRegisterUvarMember( 	f2dot, 		 REAL8, 0 , OPTIONAL, "Second spindown parameter f2dot = d^2Freq/dt^2");
+  XLALRegisterUvarMember( 	f3dot, 		 REAL8, 0 , OPTIONAL, "Third spindown parameter  f3dot = d^3Freq/dt^3");
 
-  XLALregRAJUserStruct( 	AlphaBand, 	'z', UVAR_OPTIONAL, "Sky: search band from Alpha to Alpha+AlphaBand (in radians or h:m:s)");
-  XLALregDECJUserStruct( 	DeltaBand, 	'c', UVAR_OPTIONAL, "Sky: search band from Delta to Delta+DeltaBand (in radians or d:m:s)");
-  XLALregREALUserStruct( 	FreqBand, 	'b', UVAR_OPTIONAL, "Search band in frequency in Hz");
-  XLALregREALUserStruct( 	f1dotBand, 	'm', UVAR_OPTIONAL, "Search band in f1dot in Hz/s");
-  XLALregREALUserStruct( 	f2dotBand, 	 0 , UVAR_OPTIONAL, "Search band in f2dot in Hz/s^2");
-  XLALregREALUserStruct( 	f3dotBand, 	 0 , UVAR_OPTIONAL, "Search band in f3dot in Hz/s^3");
+  XLALRegisterUvarMember( 	AlphaBand, 	RAJ, 'z', OPTIONAL, "Sky: search band from Alpha to Alpha+AlphaBand (in radians or h:m:s)");
+  XLALRegisterUvarMember( 	DeltaBand, 	DECJ, 'c', OPTIONAL, "Sky: search band from Delta to Delta+DeltaBand (in radians or d:m:s)");
+  XLALRegisterUvarMember( 	FreqBand, 	REAL8, 'b', OPTIONAL, "Search band in frequency in Hz");
+  XLALRegisterUvarMember( 	f1dotBand, 	REAL8, 'm', OPTIONAL, "Search band in f1dot in Hz/s");
+  XLALRegisterUvarMember( 	f2dotBand, 	 REAL8, 0 , OPTIONAL, "Search band in f2dot in Hz/s^2");
+  XLALRegisterUvarMember( 	f3dotBand, 	 REAL8, 0 , OPTIONAL, "Search band in f3dot in Hz/s^3");
 
-  XLALregRAJUserStruct( 	dAlpha, 	'l', UVAR_OPTIONAL, "Sky: stepsize in Alpha (in radians or h:m:s)");
-  XLALregDECJUserStruct( 	dDelta, 	'g', UVAR_OPTIONAL, "Sky: stepsize in Delta (in radians or d:m:s)");
-  XLALregREALUserStruct(  	dFreq,          'r', UVAR_OPTIONAL, "Stepsize for frequency in Hz");
-  XLALregREALUserStruct( 	df1dot, 	'e', UVAR_OPTIONAL, "Stepsize for f1dot in Hz/s");
-  XLALregREALUserStruct( 	df2dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f2dot in Hz/s^2");
-  XLALregREALUserStruct( 	df3dot, 	 0 , UVAR_OPTIONAL, "Stepsize for f3dot in Hz/s^3");
+  XLALRegisterUvarMember( 	dAlpha, 	RAJ, 'l', OPTIONAL, "Sky: stepsize in Alpha (in radians or h:m:s)");
+  XLALRegisterUvarMember( 	dDelta, 	DECJ, 'g', OPTIONAL, "Sky: stepsize in Delta (in radians or d:m:s)");
+  XLALRegisterUvarMember(  	dFreq,          REAL8, 'r', OPTIONAL, "Stepsize for frequency in Hz");
+  XLALRegisterUvarMember( 	df1dot, 	REAL8, 'e', OPTIONAL, "Stepsize for f1dot in Hz/s");
+  XLALRegisterUvarMember( 	df2dot, 	 REAL8, 0 , OPTIONAL, "Stepsize for f2dot in Hz/s^2");
+  XLALRegisterUvarMember( 	df3dot, 	 REAL8, 0 , OPTIONAL, "Stepsize for f3dot in Hz/s^3");
 
-  XLALregREALUserStruct( 	orbitasini, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Projected semi-major axis in light-seconds [Default: 0.0]");
-  XLALregREALUserStruct( 	orbitPeriod, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Period in seconds");
-  XLALregEPOCHUserStruct(	orbitTp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
-  XLALregREALUserStruct( 	orbitArgp, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital argument of periapse in radians");
-  XLALregREALUserStruct( 	orbitEcc, 	 0,  UVAR_OPTIONAL, "Binary Orbit: Orbital eccentricity");
+  XLALRegisterUvarMember( 	orbitasini, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Projected semi-major axis in light-seconds [Default: 0.0]");
+  XLALRegisterUvarMember( 	orbitPeriod, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Period in seconds");
+  XLALRegisterUvarMember(	orbitTp, 	 EPOCH, 0,  OPTIONAL, "Binary Orbit: (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
+  XLALRegisterUvarMember( 	orbitArgp, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Orbital argument of periapse in radians");
+  XLALRegisterUvarMember( 	orbitEcc, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Orbital eccentricity");
 
-  XLALregSTRINGUserStruct(DataFiles, 	'D', UVAR_REQUIRED, "File-pattern specifying (also multi-IFO) input SFT-files");
-  XLALregSTRINGUserStruct(IFO, 		'I', UVAR_OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
+  XLALRegisterUvarMember(DataFiles, 	STRING, 'D', REQUIRED, "File-pattern specifying (also multi-IFO) input SFT-files");
+  XLALRegisterUvarMember(IFO, 		STRING, 'I', OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
 
-  XLALregBOOLUserStruct( 	SignalOnly, 	'S', UVAR_OPTIONAL, "Signal only flag");
+  XLALRegisterUvarMember( 	SignalOnly, 	BOOLEAN, 'S', OPTIONAL, "Signal only flag");
 
-  XLALregREALUserStruct( 	TwoFthreshold,	'F', UVAR_OPTIONAL, "Set the threshold for selection of 2F");
-  XLALregINTUserStruct( 	gridType,	 0 , UVAR_OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 8=spin-square, 9=spin-age-brk");
-  XLALregINTUserStruct( 	metricType,	'M', UVAR_OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
-  XLALregREALUserStruct( 	metricMismatch,	'X', UVAR_OPTIONAL, "Maximal allowed mismatch for metric tiling");
-  XLALregSTRINGUserStruct(outputLogfile,	 0,  UVAR_OPTIONAL, "Name of log-file identifying the code + search performed");
-  XLALregSTRINGUserStruct(gridFile,	 0,  UVAR_OPTIONAL, "Load grid from this file: sky-grid or full-grid depending on --gridType.");
-  XLALregEPOCHUserStruct(refTime,	 	 0,  UVAR_OPTIONAL, "Reference SSB epoch for pulsar-parameters: use 'xx.yy[GPS|MJD]' format [Default: startTime]");
+  XLALRegisterUvarMember( 	TwoFthreshold,	REAL8, 'F', OPTIONAL, "Set the threshold for selection of 2F");
+  XLALRegisterUvarMember( 	gridType,	 INT4, 0 , OPTIONAL, "Grid: 0=flat, 1=isotropic, 2=metric, 3=skygrid-file, 6=grid-file, 8=spin-square, 9=spin-age-brk");
+  XLALRegisterUvarMember( 	metricType,	INT4, 'M', OPTIONAL, "Metric: 0=none,1=Ptole-analytic,2=Ptole-numeric, 3=exact");
+  XLALRegisterUvarMember( 	metricMismatch,	REAL8, 'X', OPTIONAL, "Maximal allowed mismatch for metric tiling");
+  XLALRegisterUvarMember(outputLogfile,	 STRING, 0,  OPTIONAL, "Name of log-file identifying the code + search performed");
+  XLALRegisterUvarMember(gridFile,	 STRING, 0,  OPTIONAL, "Load grid from this file: sky-grid or full-grid depending on --gridType.");
+  XLALRegisterUvarMember(refTime,	 	 EPOCH, 0,  OPTIONAL, "Reference SSB epoch for pulsar-parameters: use 'xx.yy[GPS|MJD]' format [Default: startTime]");
 
-  XLALregSTRINGUserStruct(outputFstat,	 0,  UVAR_OPTIONAL, "Output-file for F-statistic field over the parameter-space");
-  XLALregSTRINGUserStruct(outputLoudest,	 0,  UVAR_OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
+  XLALRegisterUvarMember(outputFstat,	 STRING, 0,  OPTIONAL, "Output-file for F-statistic field over the parameter-space");
+  XLALRegisterUvarMember(outputLoudest,	 STRING, 0,  OPTIONAL, "Loudest F-statistic candidate + estimated MLE amplitudes");
 
-  XLALregSTRINGUserStruct(outputFstatHist, 0,  UVAR_OPTIONAL, "Output-file for a discrete histogram of all Fstatistic values");
-  XLALregREALUserStruct(  FstatHistBin,    0,  UVAR_OPTIONAL, "Width of an Fstatistic histogram bin");
+  XLALRegisterUvarMember(outputFstatHist, STRING, 0,  OPTIONAL, "Output-file for a discrete histogram of all Fstatistic values");
+  XLALRegisterUvarMember(  FstatHistBin,    REAL8, 0,  OPTIONAL, "Width of an Fstatistic histogram bin");
 
-  XLALregINTUserStruct(  NumCandidatesToKeep,0, UVAR_OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
-  XLALregREALUserStruct(FracCandidatesToKeep,0, UVAR_OPTIONAL, "Fraction of Fstat 'candidates' to keep.");
-  XLALregINTUserStruct(   clusterOnScanline, 0, UVAR_OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
+  XLALRegisterUvarMember(  NumCandidatesToKeep,INT4, 0, OPTIONAL, "Number of Fstat 'candidates' to keep. (0 = All)");
+  XLALRegisterUvarMember(FracCandidatesToKeep,REAL8, 0, OPTIONAL, "Fraction of Fstat 'candidates' to keep.");
+  XLALRegisterUvarMember(   clusterOnScanline, INT4, 0, OPTIONAL, "Neighbors on each side for finding 1D local maxima on scanline");
 
-  XLALregEPOCHUserStruct(minStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps starting from (including) this epoch (format 'xx.yy[GPS|MJD]') ");
-  XLALregEPOCHUserStruct(maxStartTime, 	 0,  UVAR_OPTIONAL, "Only use SFTs with timestamps up to (excluding) this epoch (format 'xx.yy[GPS|MJD]')");
+  XLALRegisterUvarMember(minStartTime, 	 EPOCH, 0,  OPTIONAL, "Only use SFTs with timestamps starting from (including) this epoch (format 'xx.yy[GPS|MJD]') ");
+  XLALRegisterUvarMember(maxStartTime, 	 EPOCH, 0,  OPTIONAL, "Only use SFTs with timestamps up to (excluding) this epoch (format 'xx.yy[GPS|MJD]')");
 
-  XLALregSTRINGUserStruct(outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
-  XLALregBOOLUserStruct(  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
-  XLALregSTRINGUserStruct(RankingStatistic,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'BSGL' statistic");
+  XLALRegisterUvarMember(outputFstatAtoms,STRING, 0,  OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
+  XLALRegisterUvarMember(  outputSingleFstats,BOOLEAN, 0,  OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
+  XLALRegisterUvarMember(RankingStatistic,STRING, 0,  DEVELOPER, "Rank toplist candidates according to 'F' or 'BSGL' statistic");
 
   // ----- Line robust stats parameters ----------
-  XLALregBOOLUserStruct(  computeBSGL,	0,  UVAR_OPTIONAL, "Compute and output line-robust statistic BSGL ");
-  XLALregREALUserStruct(  Fstar0,		0,  UVAR_OPTIONAL, "BSGL: transition-scale parameter 'Fstar0'");
-  XLALregLISTUserStruct(  oLGX,		0,  UVAR_OPTIONAL, "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)");
-  XLALregBOOLUserStruct(  BSGLlogcorr,	0,  UVAR_DEVELOPER,"BSGL: include log-correction terms (slower) or not (faster)");
-  XLALregREALUserStruct( 	BSGLthreshold,	0,  UVAR_OPTIONAL, "BSGL threshold for candidate output");
+  XLALRegisterUvarMember(  computeBSGL,	BOOLEAN, 0,  OPTIONAL, "Compute and output line-robust statistic BSGL ");
+  XLALRegisterUvarMember(  Fstar0,		REAL8, 0,  OPTIONAL, "BSGL: transition-scale parameter 'Fstar0'");
+  XLALRegisterUvarMember(  oLGX,		STRINGVector, 0,  OPTIONAL, "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)");
+  XLALRegisterUvarMember(  BSGLlogcorr,	BOOLEAN, 0,  DEVELOPER,"BSGL: include log-correction terms (slower) or not (faster)");
+  XLALRegisterUvarMember( 	BSGLthreshold,	REAL8, 0,  OPTIONAL, "BSGL threshold for candidate output");
   // --------------------------------------------
 
-  XLALregSTRINGUserStruct(outputTransientStats,0,  UVAR_OPTIONAL, "TransientCW: Output filename for transient-CW statistics.");
-  XLALregSTRINGUserStruct( transient_WindowType,0,UVAR_OPTIONAL,  "TransientCW: Type of transient signal window to use. ('none', 'rect', 'exp').");
-  XLALregREALUserStruct ( transient_t0Days, 0,  UVAR_OPTIONAL,    "TransientCW: Earliest GPS start-time for transient window search, as offset in days from dataStartGPS");
-  XLALregREALUserStruct ( transient_t0DaysBand,0,UVAR_OPTIONAL,   "TransientCW: Range of GPS start-times to search in transient search, in days");
-  XLALregINTUserStruct ( transient_dt0,    0,  UVAR_OPTIONAL,     "TransientCW: Step-size in transient-CW start-time in seconds [Default:Tsft]");
-  XLALregREALUserStruct( transient_tauDays,0,  UVAR_OPTIONAL,     "TransientCW: Minimal transient-CW duration timescale, in days");
-  XLALregREALUserStruct( transient_tauDaysBand,0,  UVAR_OPTIONAL, "TransientCW: Range of transient-CW duration timescales to search, in days");
-  XLALregINTUserStruct ( transient_dtau,   0,  UVAR_OPTIONAL,     "TransientCW: Step-size in transient-CW duration timescale, in seconds [Default:Tsft]");
+  XLALRegisterUvarMember(outputTransientStats,STRING, 0,  OPTIONAL, "TransientCW: Output filename for transient-CW statistics.");
+  XLALRegisterUvarMember( transient_WindowType,STRING, 0,OPTIONAL,  "TransientCW: Type of transient signal window to use. ('none', 'rect', 'exp').");
+  XLALRegisterUvarMember( transient_t0Days, REAL8, 0,  OPTIONAL,    "TransientCW: Earliest GPS start-time for transient window search, as offset in days from dataStartGPS");
+  XLALRegisterUvarMember( transient_t0DaysBand,REAL8, 0,OPTIONAL,   "TransientCW: Range of GPS start-times to search in transient search, in days");
+  XLALRegisterUvarMember( transient_dt0,    INT4, 0,  OPTIONAL,     "TransientCW: Step-size in transient-CW start-time in seconds [Default:Tsft]");
+  XLALRegisterUvarMember( transient_tauDays,REAL8, 0,  OPTIONAL,     "TransientCW: Minimal transient-CW duration timescale, in days");
+  XLALRegisterUvarMember( transient_tauDaysBand,REAL8, 0,  OPTIONAL, "TransientCW: Range of transient-CW duration timescales to search, in days");
+  XLALRegisterUvarMember( transient_dtau,   INT4, 0,  OPTIONAL,     "TransientCW: Step-size in transient-CW duration timescale, in seconds [Default:Tsft]");
 
-  XLALregSTRINGUserStruct(FstatMethod,             0,  UVAR_OPTIONAL,  XLALFstatMethodHelpString() );
+  XLALRegisterUvarMember(FstatMethod,             STRING, 0,  OPTIONAL,  XLALFstatMethodHelpString() );
 
-  XLALregBOOLUserStruct(  version,	'V', UVAR_SPECIAL,  "Output version information");
+  XLALRegisterUvarMember(  version,	BOOLEAN, 'V', SPECIAL,  "Output version information");
 
   /* ----- more experimental/expert options ----- */
-  XLALregREALUserStruct( 	dopplermax, 	'q', UVAR_DEVELOPER, "Maximum doppler shift expected");
-  XLALregBOOLUserStruct( 	UseNoiseWeights,'W', UVAR_DEVELOPER, "Use per-SFT noise weights");
-  XLALregSTRINGUserStruct(ephemEarth, 	 0,  UVAR_DEVELOPER, "Earth ephemeris file to use");
-  XLALregSTRINGUserStruct(ephemSun, 	 0,  UVAR_DEVELOPER, "Sun ephemeris file to use");
+  XLALRegisterUvarMember( 	dopplermax, 	REAL8, 'q', DEVELOPER, "Maximum doppler shift expected");
+  XLALRegisterUvarMember( 	UseNoiseWeights,BOOLEAN, 'W', DEVELOPER, "Use per-SFT noise weights");
+  XLALRegisterUvarMember(ephemEarth, 	 STRING, 0,  DEVELOPER, "Earth ephemeris file to use");
+  XLALRegisterUvarMember(ephemSun, 	 STRING, 0,  DEVELOPER, "Sun ephemeris file to use");
 
-  XLALregINTUserStruct ( 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
+  XLALRegisterUvarMember( 	SSBprecision,	 INT4, 0,  DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
 
-  XLALregINTUserStruct( 	RngMedWindow,	'k', UVAR_DEVELOPER, "Running-Median window size");
-  XLALregINTUserStruct(	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
+  XLALRegisterUvarMember( 	RngMedWindow,	INT4, 'k', DEVELOPER, "Running-Median window size");
+  XLALRegisterUvarMember(	Dterms,		INT4, 't', DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
 
-  XLALregSTRINGUserStruct(workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
-  XLALregREALUserStruct( 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N seconds");
+  XLALRegisterUvarMember(workingDir,     STRING, 'w', DEVELOPER, "Directory to use as work directory.");
+  XLALRegisterUvarMember( 	timerCount, 	 REAL8, 0,  DEVELOPER, "N: Output progress/timer info every N seconds");
 
-  XLALregBOOLUserStruct( 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
+  XLALRegisterUvarMember( 	projectMetric, 	 BOOLEAN, 0,  DEVELOPER, "Use projected metric on Freq=const subspact");
 
-  XLALregSTRINGUserStruct(outputLogPrintf, 0,  UVAR_DEVELOPER, "Send all output from LogPrintf statements to this file");
+  XLALRegisterUvarMember(outputLogPrintf, STRING, 0,  DEVELOPER, "Send all output from LogPrintf statements to this file");
 
-  XLALregBOOLUserStruct( 	countTemplates,  0,  UVAR_DEVELOPER, "Count number of templates (if supported) instead of search");
+  XLALRegisterUvarMember( 	countTemplates,  BOOLEAN, 0,  DEVELOPER, "Count number of templates (if supported) instead of search");
 
-  XLALregREALUserStruct(  spindownAge,     0,  UVAR_DEVELOPER, "Spindown age for --gridType=9");
-  XLALregREALUserStruct(  minBraking,      0,  UVAR_DEVELOPER, "Minimum braking index for --gridType=9");
-  XLALregREALUserStruct(  maxBraking,      0,  UVAR_DEVELOPER, "Maximum braking index for --gridType=9");
+  XLALRegisterUvarMember(  spindownAge,     REAL8, 0,  DEVELOPER, "Spindown age for --gridType=9");
+  XLALRegisterUvarMember(  minBraking,      REAL8, 0,  DEVELOPER, "Minimum braking index for --gridType=9");
+  XLALRegisterUvarMember(  maxBraking,      REAL8, 0,  DEVELOPER, "Maximum braking index for --gridType=9");
 
-  XLALregBOOLUserStruct(transient_useFReg,   	 0,  UVAR_DEVELOPER, "FALSE: use 'standard' e^F for marginalization, if TRUE: use e^FReg = (1/D)*e^F (BAD)");
+  XLALRegisterUvarMember(transient_useFReg,   	 BOOLEAN, 0,  DEVELOPER, "FALSE: use 'standard' e^F for marginalization, if TRUE: use e^FReg = (1/D)*e^F (BAD)");
 
-  XLALregSTRINGUserStruct(outputTiming,         0,  UVAR_DEVELOPER, "Append timing measurements and parameters into this file");
+  XLALRegisterUvarMember(outputTiming,         STRING, 0,  DEVELOPER, "Append timing measurements and parameters into this file");
 
   // ---------- deprecated but still-supported or tolerated options ----------
   XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "Use --Alpha instead" );

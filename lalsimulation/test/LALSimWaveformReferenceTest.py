@@ -142,10 +142,15 @@ def generateAttributes(datasets, counter = ''):
                              approxstr, parstring))
             hpmean = np.abs(hpref).mean()
             hcmean = np.abs(hcref).mean()
-            self.assertTrue(np.allclose(hp.data.data / hpmean, hpref / hpmean),
-                            self.errmsg('hplus', approxstr, parstring))
-            self.assertTrue(np.allclose(hc.data.data / hcmean, hcref / hcmean),
-                            self.errmsg('hcross', approxstr, parstring))
+            if ( conf.get('approximant', 'approximant')=='SEOBNRv3'):
+                EPS=float(conf.get('auxiliary','EPS'))
+                self.assertTrue(np.allclose(hp.data.data / hpmean, hpref / hpmean,rtol=EPS),self.errmsg('hplus', approxstr, parstring))
+                self.assertTrue(np.allclose(hc.data.data / hcmean, hcref / hcmean,rtol=EPS),self.errmsg('hcross', approxstr, parstring))
+            else:
+                self.assertTrue(np.allclose(hp.data.data / hpmean, hpref / hpmean),
+                                self.errmsg('hplus', approxstr, parstring))
+                self.assertTrue(np.allclose(hc.data.data / hcmean, hcref / hcmean),
+                                self.errmsg('hcross', approxstr, parstring))
     if options.plot:                        
         def plot_approx(self):
             '''plot the amplitude and phase'''

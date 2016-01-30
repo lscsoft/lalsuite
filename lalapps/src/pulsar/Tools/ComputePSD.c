@@ -609,58 +609,58 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   uvar->version = FALSE;
 
   /* register user input variables */
-  XLALregBOOLUserStruct  (help,             'h', UVAR_HELP,     "Print this message" );
-  XLALregSTRINGUserStruct(inputData,        'i', UVAR_REQUIRED, "Input SFT pattern");
-  XLALregSTRINGUserStruct(outputPSD,        'o', UVAR_OPTIONAL, "Output PSD into this file");
-  XLALregSTRINGUserStruct(outputQ,	     0,  UVAR_OPTIONAL, "Output the 'data-quality factor' Q(f) into this file");
-  XLALregSTRINGUserStruct(outputSpectBname,  0 , UVAR_OPTIONAL, "Filename-base for (binary) spectrograms (one per IFO)");
+  XLALRegisterUvarMember(help,             BOOLEAN, 'h', HELP,     "Print this message" );
+  XLALRegisterUvarMember(inputData,        STRING, 'i', REQUIRED, "Input SFT pattern");
+  XLALRegisterUvarMember(outputPSD,        STRING, 'o', OPTIONAL, "Output PSD into this file");
+  XLALRegisterUvarMember(outputQ,	     STRING, 0,  OPTIONAL, "Output the 'data-quality factor' Q(f) into this file");
+  XLALRegisterUvarMember(outputSpectBname,  STRING, 0 , OPTIONAL, "Filename-base for (binary) spectrograms (one per IFO)");
 
-  XLALregREALUserStruct  (Freq,              0,  UVAR_OPTIONAL, "physical start frequency to compute PSD for (excluding rngmed wings)");
-  XLALregREALUserStruct  (FreqBand,          0,  UVAR_OPTIONAL, "physical frequency band to compute PSD for (excluding rngmed wings)");
+  XLALRegisterUvarMember(Freq,              REAL8, 0,  OPTIONAL, "physical start frequency to compute PSD for (excluding rngmed wings)");
+  XLALRegisterUvarMember(FreqBand,          REAL8, 0,  OPTIONAL, "physical frequency band to compute PSD for (excluding rngmed wings)");
 
-  XLALregREALUserStruct  (startTime,        's', UVAR_OPTIONAL, "GPS timestamp of earliest SFT to include");
-  XLALregREALUserStruct  (endTime,          'e', UVAR_OPTIONAL, "GPS timestamp of last SFT to include (NOTE: this refers to the SFT start-time!)");
-  XLALregSTRINGUserStruct(timeStampsFile,   't', UVAR_OPTIONAL, "Time-stamps file");
-  XLALregSTRINGUserStruct(IFO,               0 , UVAR_OPTIONAL, "Detector filter");
+  XLALRegisterUvarMember(startTime,        REAL8, 's', OPTIONAL, "GPS timestamp of earliest SFT to include");
+  XLALRegisterUvarMember(endTime,          REAL8, 'e', OPTIONAL, "GPS timestamp of last SFT to include (NOTE: this refers to the SFT start-time!)");
+  XLALRegisterUvarMember(timeStampsFile,   STRING, 't', OPTIONAL, "Time-stamps file");
+  XLALRegisterUvarMember(IFO,               STRING, 0 , OPTIONAL, "Detector filter");
 
-  XLALregINTUserStruct   (blocksRngMed,     'w', UVAR_OPTIONAL, "Running Median window size");
+  XLALRegisterUvarMember(blocksRngMed,     INT4, 'w', OPTIONAL, "Running Median window size");
 
-  XLALregINTUserStruct   (PSDmthopSFTs,     'S', UVAR_OPTIONAL, "For PSD, type of math. operation over SFTs: "
+  XLALRegisterUvarMember(PSDmthopSFTs,     INT4, 'S', OPTIONAL, "For PSD, type of math. operation over SFTs: "
                                                                 "0=arith-sum, 1=arith-mean, 2=arith-median, "
                                                                 "3=harm-sum, 4=harm-mean, "
                                                                 "5=power-2-sum, 6=power-2-mean, "
                                                                 "7=min, 8=max");
-  XLALregINTUserStruct   (PSDmthopIFOs,     'I', UVAR_OPTIONAL, "For PSD, type of math. op. over IFOs: "
+  XLALRegisterUvarMember(PSDmthopIFOs,     INT4, 'I', OPTIONAL, "For PSD, type of math. op. over IFOs: "
                                                                 "see --PSDmthopSFTs");
-  XLALregBOOLUserStruct  (outputNormSFT,    'n', UVAR_OPTIONAL, "Output normalised SFT power to PSD file");
-  XLALregINTUserStruct   (nSFTmthopSFTs,    'N', UVAR_OPTIONAL, "For norm. SFT, type of math. op. over SFTs: "
+  XLALRegisterUvarMember(outputNormSFT,    BOOLEAN, 'n', OPTIONAL, "Output normalised SFT power to PSD file");
+  XLALRegisterUvarMember(nSFTmthopSFTs,    INT4, 'N', OPTIONAL, "For norm. SFT, type of math. op. over SFTs: "
                                                                 "see --PSDmthopSFTs");
-  XLALregINTUserStruct   (nSFTmthopIFOs,    'J', UVAR_OPTIONAL, "For norm. SFT, type of math. op. over IFOs: "
+  XLALRegisterUvarMember(nSFTmthopIFOs,    INT4, 'J', OPTIONAL, "For norm. SFT, type of math. op. over IFOs: "
                                                                 "see --PSDmthopSFTs");
 
-  XLALregINTUserStruct   (binSize,          'z', UVAR_OPTIONAL, "Bin the output into bins of size (in number of bins)");
-  XLALregREALUserStruct  (binSizeHz,        'Z', UVAR_OPTIONAL, "Bin the output into bins of size (in Hz)");
-  XLALregINTUserStruct   (PSDmthopBins,     'A', UVAR_OPTIONAL, "If binning, for PSD type of math. op. over bins: "
+  XLALRegisterUvarMember(binSize,          INT4, 'z', OPTIONAL, "Bin the output into bins of size (in number of bins)");
+  XLALRegisterUvarMember(binSizeHz,        REAL8, 'Z', OPTIONAL, "Bin the output into bins of size (in Hz)");
+  XLALRegisterUvarMember(PSDmthopBins,     INT4, 'A', OPTIONAL, "If binning, for PSD type of math. op. over bins: "
                                                                 "see --PSDmthopSFTs");
-  XLALregINTUserStruct   (nSFTmthopBins,    'B', UVAR_OPTIONAL, "If binning, for norm. SFT type of math. op. over bins: "
+  XLALRegisterUvarMember(nSFTmthopBins,    INT4, 'B', OPTIONAL, "If binning, for norm. SFT type of math. op. over bins: "
                                                                 "see --PSDmthopSFTs");
-  XLALregINTUserStruct   (binStep,          'p', UVAR_OPTIONAL, "If binning, step size to move bin along "
+  XLALRegisterUvarMember(binStep,          INT4, 'p', OPTIONAL, "If binning, step size to move bin along "
                                                                 "(in number of bins, default is bin size)");
-  XLALregREALUserStruct  (binStepHz,        'P', UVAR_OPTIONAL, "If binning, step size to move bin along "
+  XLALRegisterUvarMember(binStepHz,        REAL8, 'P', OPTIONAL, "If binning, step size to move bin along "
                                                                 "(in Hz, default is bin size)");
-  XLALregBOOLUserStruct  (outFreqBinEnd,    'E', UVAR_OPTIONAL, "Output the end frequency of each bin");
+  XLALRegisterUvarMember(outFreqBinEnd,    BOOLEAN, 'E', OPTIONAL, "Output the end frequency of each bin");
 
-  XLALregINTUserStruct   (maxBinsClean,     'm', UVAR_OPTIONAL, "Maximum Cleaning Bins");
-  XLALregLISTUserStruct  (linefiles,         0 , UVAR_OPTIONAL, "Comma separated list of linefiles "
+  XLALRegisterUvarMember(maxBinsClean,     INT4, 'm', OPTIONAL, "Maximum Cleaning Bins");
+  XLALRegisterUvarMember(linefiles,         STRINGVector, 0 , OPTIONAL, "Comma separated list of linefiles "
 								"(names must contain IFO name)");
 
-  XLALregBOOLUserStruct  (dumpMultiPSDVector,'d',UVAR_OPTIONAL, "Output multi-PSD vector over IFOs, timestamps, and frequencies into file(s) '<outputPSD>-IFO'");
+  XLALRegisterUvarMember(dumpMultiPSDVector,BOOLEAN, 'd',OPTIONAL, "Output multi-PSD vector over IFOs, timestamps, and frequencies into file(s) '<outputPSD>-IFO'");
 
   /* ----- developer options ---------- */
-  XLALregREALUserStruct  (fStart,           'f', UVAR_DEVELOPER, "Start Frequency to load from SFT and compute PSD, including rngmed wings (BETTER: use --Freq instead)");
-  XLALregREALUserStruct  (fBand,            'b', UVAR_DEVELOPER, "Frequency Band to load from SFT and compute PSD, including rngmed wings (BETTER: use --FreqBand instead)");
+  XLALRegisterUvarMember(fStart,           REAL8, 'f', DEVELOPER, "Start Frequency to load from SFT and compute PSD, including rngmed wings (BETTER: use --Freq instead)");
+  XLALRegisterUvarMember(fBand,            REAL8, 'b', DEVELOPER, "Frequency Band to load from SFT and compute PSD, including rngmed wings (BETTER: use --FreqBand instead)");
 
-  XLALregBOOLUserStruct  (version,          'V', UVAR_SPECIAL, "Output version information");
+  XLALRegisterUvarMember(version,          BOOLEAN, 'V', SPECIAL, "Output version information");
 
 
   /* read all command line variables */

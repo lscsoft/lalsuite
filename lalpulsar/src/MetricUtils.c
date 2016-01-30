@@ -30,7 +30,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/Factorial.h>
 
-#include "GSLHelpers.h"
+#include <lal/GSLHelpers.h>
 
 // Shortcuts for integer powers
 #define POW2(a)  ( (a) * (a) )

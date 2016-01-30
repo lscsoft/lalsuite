@@ -203,11 +203,11 @@ initUserVars ( UserInput_t *uvar )
 
   /* now register all our user-variable */
 
-  XLALregBOOLUserStruct		( help,		'h', UVAR_HELP,     "Print this help/usage message");
-  XLALregSTRINGUserStruct 	( sftBname1,	'1', UVAR_REQUIRED, "Path and basefilename for SFTs1");
-  XLALregSTRINGUserStruct 	( sftBname2,	'2', UVAR_REQUIRED, "Path and basefilename for SFTs2");
-  XLALregBOOLUserStruct 	(  verbose,	'v', UVAR_OPTIONAL, "Verbose output of differences");
-  XLALregREALUserStruct 	( relErrorMax,	'e', UVAR_OPTIONAL, "Maximal relative error acceptable to 'pass' comparison");
+  XLALRegisterUvarMember( help,		BOOLEAN, 'h', HELP,     "Print this help/usage message");
+  XLALRegisterUvarMember( sftBname1,	STRING, '1', REQUIRED, "Path and basefilename for SFTs1");
+  XLALRegisterUvarMember( sftBname2,	STRING, '2', REQUIRED, "Path and basefilename for SFTs2");
+  XLALRegisterUvarMember(  verbose,	BOOLEAN, 'v', OPTIONAL, "Verbose output of differences");
+  XLALRegisterUvarMember( relErrorMax,	REAL8, 'e', OPTIONAL, "Maximal relative error acceptable to 'pass' comparison");
 
   return XLAL_SUCCESS;
 

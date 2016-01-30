@@ -32,6 +32,8 @@ extern "C" {
 EphemerisData * XLALInitBarycenter ( const CHAR *earthEphemerisFile, const CHAR *sunEphemerisFile );
 void XLALDestroyEphemerisData ( EphemerisData *edat );
 
+int XLALRestrictEphemerisData ( EphemerisData *edat, const LIGOTimeGPS *startGPS, const LIGOTimeGPS *endGPS );
+
 TimeCorrectionData *XLALInitTimeCorrections ( const CHAR *timeCorrectionFile );
 void XLALDestroyTimeCorrectionData( TimeCorrectionData *tcd );
 

@@ -62,36 +62,6 @@ def get_cr_from_grid(cells, weight, cr_thr=0.9):
 
     return cell_sort[idx:,1:]
 
-# FIXME: Should this be moved to amrlib --- seems a little too specialized?
-ovrlp_obj = lalsimutils.Overlap(fLow=40, fMax=2000, deltaF=0.125, psd=lalsimulation.SimNoisePSDeLIGOModel)
-def eval_grid(t1, cells, intr_prms):
-
-    t1_norm = None
-    t1_copy = copy(t1)
-
-    overlaps = []
-    for cell in cells:
-
-        try:
-            prms = intr_prms
-            tmp = numpy.array(cell._center)[numpy.newaxis,:]
-            tmp = amrlib.apply_inv_transform(tmp, prms, opts.distance_coordinates).T
-            for p, pval in zip(prms, tmp):
-                #if p == "lam_tilde":
-                    #t1_copy.psi0 = pval[0]
-                    #t1_copy.psi3 = 0
-                #else:
-                setattr(t1_copy, p, pval[0])
-        except AssertionError:
-            rejected.append((cell, 0.0))
-            continue
-
-        # FIXME: Hardcoded waveforms
-        olap, t1_norm, _ = lalsimutils.overlap(t1, t1_copy, ovrlp_obj, 0.125, 40, "TaylorF2", "TaylorF2", t1_norm=t1_norm)
-        overlaps.append(olap)
-
-    return overlaps
-
 def determine_region(pt, pts, ovrlp, ovrlp_thresh, expand_prms={}):
     """
     Given a point (pt) in a set of points (pts), with a function value at those points (ovrlp), return a rectangular hull such that the function exceeds the value ovrlp_thresh.
@@ -105,7 +75,7 @@ def determine_region(pt, pts, ovrlp, ovrlp_thresh, expand_prms={}):
         # FIXME: Need to do center?
     return cell, sidx
 
-def find_olap_index(tree, exact=True, **kwargs):
+def find_olap_index(tree, intr_prms, exact=True, **kwargs):
     """
     Given an object that can retrieve distance via a 'query' function (e.g. KDTree or BallTree), find the index of a point closest to the input point. Note that kwargs is used to get the current known values of the event. E.g.
 
@@ -161,6 +131,23 @@ def write_to_xml(cells, intr_prms, pin_prms={}, fvals=None, fname=None, verbose=
         start = 0
         fname = "%s-MASS_POINTS-%d-1.xml.gz" % (ifos, start)
     utils.write_filename(xmldoc, fname, gz=True, verbose=verbose)
+
+def get_evidence_grid(points, res_pts, intr_prms, exact=False):
+    """
+    Associate the "z-axis" value (evidence, overlap, etc...) res_pts with its
+    corresponding point in the template bank (points). If exact is True, then
+    the poit must exactly match the point in the bank.
+    """
+    grid_tree = BallTree(selected)
+    grid_idx = []
+    # Reorder the grid points to match their weight indices
+    for res in res_pts:
+        dist, idx = grid_tree.query(res, k=1)
+        # Stupid floating point inexactitude...
+        #print res, selected[idx[0][0]]
+        #assert numpy.allclose(res, selected[idx[0][0]])
+        grid_idx.append(idx[0][0])
+    return points[grid_idx]
 
 #
 # Plotting utilities
@@ -218,15 +205,14 @@ optp.add_option("-v", "--verbose", action='store_true', help="Be verbose.")
 # available).
 optp.add_option("-i", "--intrinsic-param", action="append", help="Adapt in this intrinsic parameter. If a pre-existing value is known (e.g. a search template was identified), specify this parameter as -i mass1=1.4 . This will indicate to the program to choose grid points which are commensurate with this value.")
 optp.add_option("-p", "--pin-param", action="append", help="Pin the parameter to this value in the template bank.")
-# FIXME: This option to be replaced with semantics from above
-#optp.add_option("-e", "--expand-param", action="append", help="Expand in this intrinsic parameter.")
 
 grid_section = OptionGroup(optp, "initial gridding options", "Options for setting up the initial grid.")
 grid_section.add_option("--setup", help="Set up the initial grid based on template bank overlaps. The new grid will be saved to this argument, e.g. --setup grid will produce a grid.npy file.")
 grid_section.add_option("-t", "--tmplt-bank", help="XML file with template bank.")
 grid_section.add_option("-O", "--use-overlap", help="Use overlap information to define 'closeness'.")
 grid_section.add_option("-T", "--overlap-threshold", type=float, help="Threshold on overlap value.")
-grid_section.add_option("-N", "--no-deactivate", action="store_true", help="Do not deactivate cells initially which have no template within them.")
+grid_section.add_option("-D", "--deactivate", action="store_true", help="Deactivate cells initially which have no template within them.")
+grid_section.add_option("-P", "--prerefine", help="Refine this initial grid based on overlap values.")
 optp.add_option_group(grid_section)
 
 refine_section = OptionGroup(optp, "refine options", "Options for refining a pre-existing grid.")
@@ -236,8 +222,8 @@ optp.add_option_group(refine_section)
 
 opts, args = optp.parse_args()
 
-if not (opts.setup or opts.refine):
-    exit("Either --setup or --refine must be chosen")
+if not (opts.setup or opts.refine or opts.prerefine):
+    exit("Either --setup or --refine or --prerefine must be chosen")
 
 # If asked, retrieve bank overlap
 if opts.use_overlap is not None:
@@ -262,33 +248,15 @@ pin_prms, _ = parse_param(opts.pin_param)
 intr_pt = numpy.array([intr_prms[k] for k in intr_prms])
 intr_prms = intr_prms.keys()
 
+# Transform and repack initial point
+intr_pt = amrlib.apply_transform(intr_pt[numpy.newaxis,:], intr_prms, opts.distance_coordinates)[0]
+intr_pt = dict(zip(intr_prms, intr_pt))
+
 #
 # Step 1: retrieve templates / result
 #
 xmldoc = utils.load_filename(opts.tmplt_bank, contenthandler=ligolw.LIGOLWContentHandler)
 tmplt_bank = lsctables.SnglInspiralTable.get_table(xmldoc)
-
-results = []
-if opts.result_file:
-    for arg in glob.glob(opts.result_file):
-        # FIXME: Bad hardcode
-        if "samples" in arg:
-            continue
-        xmldoc = utils.load_filename(arg, contenthandler=ligolw.LIGOLWContentHandler)
-        results.extend(lsctables.SnglInspiralTable.get_table(xmldoc))
-
-    # Normalize
-    # FIXME: If we have more than 1 copies -- This is tricky because we need to
-    # pare down the duplicate sngl rows too
-    maxlnevid = numpy.max([s.snr for s in results])
-    total_evid = numpy.exp([s.snr - maxlnevid for s in results]).sum()
-    for res in results:
-        res.snr = numpy.exp(res.snr - maxlnevid)/total_evid
-
-    res_pts = numpy.array([tuple(getattr(t, a) for a in intr_prms) for t in results])
-    res_pts = amrlib.apply_transform(res_pts, intr_prms, opts.distance_coordinates)
-    # FIXME: this needs to be done in a more consistent way
-    results = numpy.array([res.snr for res in results])
 
 #
 # Step 2: Set up metric space
@@ -302,10 +270,6 @@ if opts.result_file:
 pts = numpy.array([tuple(getattr(t, a) for a in intr_prms) for t in tmplt_bank])
 pts = amrlib.apply_transform(pts, intr_prms, opts.distance_coordinates)
 
-# Transform and repack initial point
-intr_pt = amrlib.apply_transform(intr_pt[numpy.newaxis,:], intr_prms, opts.distance_coordinates)[0]
-intr_pt = dict(zip(intr_prms, intr_pt))
-
 # FIXME: Can probably be moved to point index identification function -- it's
 # not used again
 tree = BallTree(pts)
@@ -313,7 +277,7 @@ tree = BallTree(pts)
 #
 # Step 3: Get the row of the overlap matrix to work with
 #
-m_idx, pt = find_olap_index(tree, not opts.no_exact_match, **intr_pt)
+m_idx, pt = find_olap_index(tree, intr_prms, not opts.no_exact_match, **intr_pt)
 
 # Save the template for later use as well
 t1 = tmplt_bank[m_idx]
@@ -321,7 +285,6 @@ t1 = tmplt_bank[m_idx]
 #
 # Rearrange data to correspond to input point
 #
-
 sort_order = ovrlp[m_idx].argsort()
 ovrlp = numpy.array(ovrlp[m_idx])[sort_order]
 
@@ -331,71 +294,111 @@ ovrlp = numpy.array(ovrlp[m_idx])[sort_order]
 pts = pts[sort_order]
 m_idx = sort_order[m_idx]
 
-"""
-if results is None:
-    # Initial gridding
-    init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold)
-else:
-    # FIXME: This needs to be recalculated for the spacing, we should just save
-    # and retrieve it in the grid file as necessary
-    init_region, idx = determine_region(pt, res_pts, results, 0)
-"""
-
+# Expanded parameters are now part of the intrinsic set
 intr_prms = list(intr_prms) + expand_prms.keys()
-init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold, expand_prms)
 
-####### BEGIN INITIAL GRID CODE #########
+# Gather any results we may want to use -- this is either the evidence values
+# we've calculated, or overlaps of points we've looked at
+results = []
+if opts.result_file:
+    for arg in glob.glob(opts.result_file):
+        # FIXME: Bad hardcode
+        # This is here because I'm too lazy to figure out the glob syntax to
+        # exclude the samples files which would be both double counting and
+        # slow to load because of their potential size
+        if "samples" in arg:
+            continue
+        xmldoc = utils.load_filename(arg, contenthandler=ligolw.LIGOLWContentHandler)
 
-# FIXME: To be reimplemented in a different way
-#if opts.expand_param is not None:
-    #expand_param(init_region, opts.expand_param)
+        # FIXME: The template banks we make are sim inspirals, we should
+        # revisit this decision -- it isn't really helping anything
+        if opts.prerefine:
+            results.extend(lsctables.SimInspiralTable.get_table(xmldoc))
+        else:
+            results.extend(lsctables.SnglInspiralTable.get_table(xmldoc))
+
+    res_pts = numpy.array([tuple(getattr(t, a) for a in intr_prms) for t in results])
+    res_pts = amrlib.apply_transform(res_pts, intr_prms, opts.distance_coordinates)
+
+    # In the prerefine case, the "result" is the overlap values, which we use as
+    # a surrogate for the true evidence value.
+    if opts.prerefine:
+        # We only want toe overlap values
+        # FIXME: this needs to be done in a more consistent way
+        results = numpy.array([res.alpha1 for res in results])
+    else:
+        # Normalize
+        # We're gathering the evidence values. We normalize here so as to avoid
+        # overflows later on
+        # FIXME: If we have more than 1 copies -- This is tricky because we need
+        # to pare down the duplicate sngl rows too
+        maxlnevid = numpy.max([s.snr for s in results])
+        total_evid = numpy.exp([s.snr - maxlnevid for s in results]).sum()
+        for res in results:
+            res.snr = numpy.exp(res.snr - maxlnevid)/total_evid
+
+        # FIXME: this needs to be done in a more consistent way
+        results = numpy.array([res.snr for res in results])
+
+#
+# Build (or retrieve) the initial region
+#
+if opts.refine or opts.prerefine:
+    init_region = amrlib.load_init_region(opts.refine or opts.prerefine)
+else:
+    ####### BEGIN INITIAL GRID CODE #########
+    init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold, expand_prms)
+    # FIXME: To be reimplemented in a different way
+    #if opts.expand_param is not None:
+        #expand_param(init_region, opts.expand_param)
+
+    # TODO: Alternatively, check density of points in the region to determine
+    # the points to a side
+    grid, spacing = amrlib.create_regular_grid_from_cell(init_region, side_pts=5, return_cells=True)
+
+    # "Deactivate" cells not close to template points
+    # FIXME: This gets more and more dangerous in higher dimensions
+    # FIXME: Move to function
+    tree = BallTree(grid)
+    if opts.deactivate:
+        get_idx = set()
+        for pt in pts[idx:]:
+            get_idx.add(tree.query(pt, k=1, return_distance=False)[0][0])
+        selected = grid[numpy.array(list(get_idx))]
+    else:
+        selected = grid
 
 extent_str = " ".join("(%f, %f)" % bnd for bnd in map(tuple, init_region._bounds))
 center_str = " ".join(map(str, init_region._center))
-print "Created cell with center " + center_str + " and extent " + extent_str
-
-# TODO: Alternatively, check density of points in the region to determine the
-# points to a side
-grid, spacing = amrlib.create_regular_grid_from_cell(init_region, side_pts=5, return_cells=True)
-
-# "Deactivate" cells not close to template points
-# FIXME: This gets more and more dangerous in higher dimensions
-# FIXME: Move to function
-tree = BallTree(grid)
-if not opts.no_deactivate:
-    get_idx = set()
-    for pt in pts[idx:]:
-        get_idx.add(tree.query(pt, k=1, return_distance=False)[0][0])
-    selected = grid[numpy.array(list(get_idx))]
-else:
-    selected = grid
+print "Initial region has center " + center_str + " and extent " + extent_str
 
 #### BEGIN REFINEMENT OF RESULTS #########
 
 if opts.result_file is not None:
-    # FIXME: temporary -- we shouldn't need to know the spacing of the initial
-    # region
-    prev_cells, spacing = amrlib.deserialize_grid_cells(opts.refine)
+    (prev_cells, spacing), level = amrlib.load_grid_level(opts.refine or opts.prerefine, -1)
+
     selected = numpy.array([c._center for c in prev_cells])
-    # refinement already occurred once in the setup stage
-    #spacing /= 2
     selected = amrlib.apply_transform(selected, intr_prms, opts.distance_coordinates)
 
-    grid_tree = BallTree(selected)
-    grid_idx = []
-    # Reorder the grid points to match their weight indices
-    for res in res_pts:
-        dist, idx = grid_tree.query(res, k=1)
-        # Stupid floating point inexactitude...
-        #print res, selected[idx[0][0]]
-        #assert numpy.allclose(res, selected[idx[0][0]])
-        grid_idx.append(idx[0][0])
+    selected = get_evidence_grid(selected, res_pts, intr_prms)
+
+    if opts.verbose:
+        print "Loaded %d result points" % len(selected)
 
     if opts.refine:
-        selected = get_cr_from_grid(selected[grid_idx], results, cr_thr=opts.overlap_threshold)
+        # FIXME: We use overlap threshold as a proxy for confidence level
+        selected = get_cr_from_grid(selected, results, cr_thr=opts.overlap_threshold)
         print "Selected %d cells from %3.2f%% confidence region" % (len(selected), opts.overlap_threshold*100)
 
-grid, spacing = amrlib.refine_regular_grid(selected, spacing, return_cntr=opts.setup)
+if opts.prerefine:
+    print "Performing refinement for points with overlap > %1.3f" % opts.overlap_threshold
+    pt_select = results > opts.overlap_threshold
+    selected = selected[pt_select]
+    results = results[pt_select]
+    grid, spacing = amrlib.refine_regular_grid(selected, spacing, return_cntr=True)
+
+else:
+    grid, spacing = amrlib.refine_regular_grid(selected, spacing, return_cntr=opts.setup)
 print "%d cells after refinement" % len(grid)
 grid = amrlib.prune_duplicate_pts(grid, init_region._bounds, spacing)
 
@@ -416,27 +419,22 @@ grid = amrlib.apply_inv_transform(grid, intr_prms, opts.distance_coordinates)
 
 cells = amrlib.grid_to_cells(grid, spacing)
 if opts.setup:
-    npy_grid = amrlib.pack_grid_cells(cells, spacing)
-    # FIXME: specify level better
-    amrlib.serialize_grid_cells({1: npy_grid}, opts.setup)
+    grid_group = amrlib.init_grid_hdf(init_region, opts.setup + ".hdf", opts.overlap_threshold, opts.distance_coordinates)
+    level = amrlib.save_grid_cells_hdf(grid_group, cells, "mass1_mass2")
 else:
-    npy_grid = amrlib.pack_grid_cells(cells, spacing)
-    # FIXME: -1 will mean "whatever the next level is"
-    #amrlib.serialize_grid_cells({-1: npy_grid}, opts.refine)
-    amrlib.serialize_grid_cells({1: npy_grid}, opts.refine)
-
-# FIXME: need to add pinned parameters
-overlaps = eval_grid(t1, cells, intr_prms)
+    grp = amrlib.load_grid_level(opts.refine, None)
+    level = amrlib.save_grid_cells_hdf(grp, cells, "mass1_mass2")
 
 print "Selected %d cells for further analysis." % len(cells)
 if opts.setup:
     fname = "HL-MASS_POINTS_LEVEL_0-0-1.xml.gz"
-    write_to_xml(cells, intr_prms, pin_prms, overlaps, fname, verbose=opts.verbose)
+    write_to_xml(cells, intr_prms, pin_prms, None, fname, verbose=opts.verbose)
 else:
-    m = re.search("LEVEL_(\d+)", opts.result_file)
-    if m is not None:
-        level = int(m.group(1)) + 1
-        fname = "HL-MASS_POINTS_LEVEL_%d-0-1.xml.gz" % level
-    else:
-        fname = "HL-MASS_POINTS_LEVEL_X-0-1.xml.gz"
-    write_to_xml(cells, intr_prms, pin_prms, overlaps, fname, verbose=opts.verbose)
+    #m = re.search("LEVEL_(\d+)", opts.result_file)
+    #if m is not None:
+        #level = int(m.group(1)) + 1
+        #fname = "HL-MASS_POINTS_LEVEL_%d-0-1.xml.gz" % level
+    #else:
+        #fname = "HL-MASS_POINTS_LEVEL_X-0-1.xml.gz"
+    fname = "HL-MASS_POINTS_LEVEL_%d-0-1.xml.gz" % level
+    write_to_xml(cells, intr_prms, pin_prms, None, fname, verbose=opts.verbose)
