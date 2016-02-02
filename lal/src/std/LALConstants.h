@@ -265,6 +265,13 @@ extern "C" {
 #define LAL_TPL_SI 5.391060427168919359777623104225619054e-44
 
 /**
+ * @brief Planck luminosity, J s^-1
+ * @details
+ * LAL_LUMPL_SI = (LAL_C_SI * LAL_C_SI * LAL_C_SI * LAL_C_SI * LAL_C_SI) / (LAL_G_SI)
+ */
+#define LAL_LUMPL_SI 3.628504984913064522721519179529402840e52
+
+/**
  * @brief Electron mass, kg
  * @details
  * LAL_ME_SI = ((2 * LAL_RYD_SI * LAL_H_SI) / (LAL_C_SI * LAL_ALPHA * LAL_ALPHA))

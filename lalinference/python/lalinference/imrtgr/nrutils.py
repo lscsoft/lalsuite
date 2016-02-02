@@ -6,6 +6,10 @@ P. Ajith, 2015-04-09
 
 import numpy as np 
 import scipy.optimize as so
+try:
+    import lal
+except ImportError:
+    print('Cannot import lal SWIG bindings')
 
 def bbh_final_mass_non_spinning_Panetal(m1, m2):
     """
@@ -122,9 +126,9 @@ def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2):
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
     
-    if np.any(abs(chi1>1)):
+    if np.any(abs(chi1)>1):
       raise ValueError("chi1 has to be in [-1, 1]")
-    if np.any(abs(chi2>1)):
+    if np.any(abs(chi2)>1):
       raise ValueError("chi2 has to be in [-1, 1]")
     
     # Vectorize the function if arrays are provided as input
@@ -170,9 +174,9 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=None):
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
     
-    if np.any(abs(chi1>1)):
+    if np.any(abs(chi1)>1):
       raise ValueError("chi1 has to be in [-1, 1]")
-    if np.any(abs(chi2>1)):
+    if np.any(abs(chi2)>1):
       raise ValueError("chi2 has to be in [-1, 1]")
     
     # binary parameters
@@ -279,9 +283,9 @@ def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2):
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
     
-    if np.any(abs(chi1>1)):
+    if np.any(abs(chi1)>1):
       raise ValueError("chi1 has to be in [-1, 1]")
-    if np.any(abs(chi2>1)):
+    if np.any(abs(chi2)>1):
       raise ValueError("chi2 has to be in [-1, 1]")
     
     # binary parameters 
@@ -322,9 +326,9 @@ def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
     
-    if np.any(abs(chi1>1)):
+    if np.any(abs(chi1)>1):
       raise ValueError("chi1 has to be in [-1, 1]")
-    if np.any(abs(chi2>1)):
+    if np.any(abs(chi2)>1):
       raise ValueError("chi2 has to be in [-1, 1]")
     
     # binary parameters 
@@ -350,3 +354,62 @@ def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
     chif = 3.4641016151377544*eta - 4.399247300629289*eta2 + 9.397292189321194*eta3 - 13.180949901606242*eta4 + (1 - 0.0850917821418767*eta - 5.837029316602263*eta2)*S + (0.1014665242971878*eta - 2.0967746996832157*eta2)*Ssq + (-1.3546806617824356*eta + 4.108962025369336*eta2)*Scu + (-0.8676969352555539*eta + 2.064046835273906*eta2)*Squ 
 
     return chif
+
+def bbh_aligned_Lpeak_6mode_SHXJDK(q, chi1para, chi2para):
+    """
+    Calculate the peak luminosity (using modes 22, 21, 33, 32, 44, and 43) of a binary black hole with aligned spins using the fit made by Sascha Husa, Xisco Jimenez Forteza, David Keitel [LIGO-T1500598] using 5th order in chieff and return results in units of 10^56 ergs/s
+
+    q: mass ratio (here m2/m1, where m1>m2)
+    chi1para: the component of the dimensionless spin of m1 along the angular momentum (z)
+    chi2para: the component of the dimensionless spin of m2 along the angular momentum (z)
+    
+    Note: Here it is assumed that m1>m2.
+    """
+    # Vectorize the function if arrays are provided as input
+    q = np.vectorize(float)(np.array(q))
+    chi1para = np.vectorize(float)(np.array(chi1para))
+    chi2para = np.vectorize(float)(np.array(chi2para))
+    
+    if np.any(q<=0.):
+      raise ValueError("q has to be > 0.")
+    if np.any(q>1.):
+      raise ValueError("q has to be <= 1.")
+    
+    if np.any(abs(chi1para)>1):
+      raise ValueError("chi1para has to be in [-1, 1]")
+    if np.any(abs(chi2para)>1):
+      raise ValueError("chi2para has to be in [-1, 1]")
+
+    # Calculate eta and the effective spin
+    
+    # This function is designed for bayespputils.py that expects q = m2/m1, where m1>m2. Expressions in reference above are for q = m1/m2. Here we do the appropriate conversion.
+    q_inv = 1./q
+
+    eta = q_inv/(1.+q_inv)**2.
+
+    eta2 = eta*eta
+    eta3 = eta2*eta
+    eta4 = eta3*eta
+
+    dm2 = 1. - 4.*eta
+
+    chi_eff = (q_inv*chi1para + chi2para)/(1. + q_inv)
+
+    chi_eff2 = chi_eff*chi_eff
+    chi_eff3 = chi_eff2*chi_eff
+    chi_eff4 = chi_eff3*chi_eff
+    chi_eff5 = chi_eff4*chi_eff
+
+    chi_diff = chi1para - chi2para
+    chi_diff2 = chi_diff*chi_diff
+
+    # Calculate best fit (from [https://dcc.ligo.org/T1500598-v4])
+
+    Lpeak = (0.012851338846828302 + 0.007822265919928252*chi_eff + 0.010221856361035788*chi_eff2 + 0.015805535732661396*chi_eff3 + 0.0011356206806770043*chi_eff4 - 0.009868152529667197*chi_eff5)*eta2 + (0.05681786589129071 - 0.0017473702709303457*chi_eff - 0.10150706091341818*chi_eff2 - 0.2349153289253309*chi_eff3 + 0.015657737820040145*chi_eff4 + 0.19556893194885075*chi_eff5)*eta4 + 0.026161288241420833*dm2**0.541825641769908*eta**3.1629576945611757*chi_diff + 0.0007771032100485481*dm2**0.4499151697918658*eta**1.7800346166040835*chi_diff2
+
+    # Convert to 10^56 ergs/s units
+    
+    # We first define the "Planck luminosity" of c^5/G in 10^56 ergs/s units. Note: 10^56 ergs/s = 10^49 J/s
+    LumPl_ergs_per_sec = lal.LUMPL_SI*1e-49 # Approximate value = 3628.505 
+    
+    return LumPl_ergs_per_sec*Lpeak
