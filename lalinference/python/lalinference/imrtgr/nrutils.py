@@ -151,7 +151,12 @@ def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     
     x, cov_x = so.leastsq(_final_spin_diff_Healyetal, 0., args=(eta, delta_m, S, Delta))
-    chif = x[0]
+    
+    # The first element returned by so.leastsq() is a scalar in early versions of scipy (like 0.7.2) while it is a tuple of length 1 in later versions of scipy (like 0.10.1). The following bit ensures that a scalar is returned for a set of scalar inputs in a version-independent way.
+    if hasattr(x, '__len__'):
+      chif = x[0]
+    else:
+      chif = x
     
     return chif
 
