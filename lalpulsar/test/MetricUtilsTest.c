@@ -26,7 +26,7 @@
 #include <lal/UniversalDopplerMetric.h>
 #include <lal/LALInitBarycenter.h>
 
-#include "../src/GSLHelpers.h"
+#include <lal/GSLHelpers.h>
 
 int main( void )
 {

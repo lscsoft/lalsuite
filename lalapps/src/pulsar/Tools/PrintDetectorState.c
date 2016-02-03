@@ -255,18 +255,18 @@ XLALInitUserVars ( UserVariables_t *uvar )
 
 
   /* register all user-variables */
-  XLALregBOOLUserStruct(	help,		'h', UVAR_HELP,		"Print this help/usage message");
-  XLALregSTRINGUserStruct( 	detector,	'I', UVAR_REQUIRED, 	"Detector name (eg. H1,H2,L1,G1,etc).");
+  XLALRegisterUvarMember(	help,		BOOLEAN, 'h', HELP,		"Print this help/usage message");
+  XLALRegisterUvarMember( 	detector,	STRING, 'I', REQUIRED, 	"Detector name (eg. H1,H2,L1,G1,etc).");
 
-  XLALregREALUserStruct(	Alpha,		'a', UVAR_OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
-  XLALregREALUserStruct(	Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
+  XLALRegisterUvarMember(	Alpha,		REAL8, 'a', OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");
+  XLALRegisterUvarMember(	Delta, 		REAL8, 'd', OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
 
-  XLALregREALUserStruct( 	timeGPS,        't', UVAR_OPTIONAL, 	"GPS time at which to compute detector state");
+  XLALRegisterUvarMember( 	timeGPS,        REAL8, 't', OPTIONAL, 	"GPS time at which to compute detector state");
 
-  XLALregSTRINGUserStruct (	ephemEarth,   	 0,  UVAR_OPTIONAL,     "Earth ephemeris file to use");
-  XLALregSTRINGUserStruct (	ephemSun,     	 0,  UVAR_OPTIONAL,     "Sun ephemeris file to use");
+  XLALRegisterUvarMember(	ephemEarth,   	 STRING, 0,  OPTIONAL,     "Earth ephemeris file to use");
+  XLALRegisterUvarMember(	ephemSun,     	 STRING, 0,  OPTIONAL,     "Sun ephemeris file to use");
 
-  XLALregBOOLUserStruct(	version,        'V', UVAR_SPECIAL,      "Output code version");
+  XLALRegisterUvarMember(	version,        BOOLEAN, 'V', SPECIAL,      "Output code version");
 
   return XLAL_SUCCESS;
 

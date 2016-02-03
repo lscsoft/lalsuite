@@ -36,7 +36,27 @@ import matplotlib.cm
 from matplotlib import mpl
 from matplotlib import pyplot as plt
 
-plt.rcParams.update( {'text.usetex':True} )
+plt.rcParams.update({
+    'text.usetex':True,
+    'font.family': 'serif',
+    'font.serif': ['Computer Modern'],
+    "axes.grid": True,
+    "axes.axisbelow": False,
+    "axes.formatter.limits": (-3, 4),
+    "axes.labelsize": 20,
+    "axes.titlesize": 22,
+    "figure.subplot.bottom": 0.17,
+    "figure.subplot.left": 0.1,
+    "figure.subplot.right": 0.9,
+    "figure.subplot.top": 0.90,
+    "grid.color": 'gray', 
+    "image.aspect": 'auto',
+    "image.interpolation": 'nearest',
+    "image.origin": 'lower',
+    "xtick.labelsize": 20,
+    "ytick.labelsize": 20,
+})
+
 
 from laldetchar.idq import ovl
 from laldetchar.idq import idq
@@ -69,6 +89,14 @@ stacked_axcpos = [0.1, 0.5, 0.8, 0.4]
 chan_perf_figsize = [20, 10]
 chan_perf_axpos = [0.30, 0.15, 0.45, 0.80]
 
+rank_timeseries_figsize = [10, 4]
+#rank_timeseries_axpos = [0.10, 0.15, 0.8, 0.8]
+rank_timeseries_axpos = [plt.rcParams['figure.subplot.left'], plt.rcParams['figure.subplot.bottom'], plt.rcParams['figure.subplot.right']-plt.rcParams['figure.subplot.left'], plt.rcParams['figure.subplot.top']-plt.rcParams['figure.subplot.bottom']]
+
+rank_splittimeseries_figsize = [10, 8]
+rank_splittimeseries_axpos = [plt.rcParams['figure.subplot.left'], plt.rcParams['figure.subplot.bottom'], plt.rcParams['figure.subplot.right']-plt.rcParams['figure.subplot.left'], 0.5-plt.rcParams['figure.subplot.bottom']]
+fap_splittimeseries_axpos = [plt.rcParams['figure.subplot.left'], 0.52, plt.rcParams['figure.subplot.right']-plt.rcParams['figure.subplot.left'], plt.rcParams['figure.subplot.top']-0.52]
+
 #========================
 # default names
 #========================
@@ -99,6 +127,9 @@ def calibfig(directory, ifo, classifier, tag, t, stride, figtype="png"):
 
 def timeseriesfig(directory, ifo, classifier, tag, t, stride, figtype="png"):
     return "%s/%s_%s%s_timeseries-%d-%d.%s"%(directory, ifo, classifier, tag, t, stride, figtype)
+
+def ovlstripchart(directory, ifo, classifier, tag, t, stride, figtype="png"):
+    return "%s/%s_%s%s_chanstrip-%d-%d.%s"%(directory, ifo, classifier, tag, t, stride, figtype)
 
 #===================================================================================================
 # utility
@@ -463,5 +494,172 @@ def channel_performance( vchans, ranges, performances, num_gchs, num_clns, figax
         ax.set_ylim(ymin=-0.5, ymax=ind+0.5)
  
     return (figrank, axrank), (figeff, axeff), (figfap, axfap)
+
+#===================================================================================================
+# Plots for GraceDB follow-up
+
+def rank_timeseries( times, timeseries, start=None, end=None, to=None, shade_alpha=0.25, color='r', linestyle='solid', figax=None, zorder=1, alpha=1.0, linewidth=1.0 ):
+    """
+    makes a timeseries plot for GraceDB follow-up annotations
+    """
+    if figax==None:
+        fig = plt.figure(figsize=rank_timeseries_figsize)
+        ax = fig.add_axes(rank_timeseries_axpos)
+    else:
+        fig, ax = figax
+
+    if start==None:
+        start = times[0][0]
+    if end==None:
+        end = times[-1][-1]
+    if to==None:
+        to = start
+
+    this_start = start
+    for t, ts in zip(times, timeseries):
+        if shade_alpha and (t[0]!=this_start):
+            ax.fill_between(np.array([this_start, t[0]])-to, [1e-5,1e-5], [1,1], color='k', alpha=shade_alpha, linewidth=0.0 )
+        ax.plot( np.array(t)-to, ts, color=color, linestyle=linestyle, zorder=zorder, alpha=alpha, linewidth=linewidth )
+        this_start = t[-1] + (t[1]-t[0])
+
+    return fig, ax
+
+def rank_timeseries_filled( times, timeseries, baseline=1, start=None, end=None, to=None, shade_alpha=0.25, color='r', linestyle='solid', figax=None, zorder=1, alpha=1.0, linewidth=0.0 ):
+    """
+    makes a timeseries plot for GraceDB follow-up annotations
+    """
+    if figax==None:
+        fig = plt.figure(figsize=rank_timeseries_figsize)
+        ax = fig.add_axes(rank_timeseries_axpos)
+    else:
+        fig, ax = figax
+
+    if start==None:
+        start = times[0][0]
+    if end==None:
+        end = times[-1][-1]
+    if to==None:
+        to = start
+
+    this_start = start
+    for t, ts in zip(times, timeseries):
+        if shade_alpha and (t[0]!=this_start):
+            ax.fill_between(np.array([this_start, t[0]])-to, [1e-5,1e-5], [1,1], color='k', alpha=shade_alpha, linewidth=0.0 )
+
+        ts[ts!=ts] = 1 ### get rid of Nan, in case they exist
+                       ### this is hacky, and we shoudl remove it if possible
+                       ### Nan is likely produced within idq.BinomialUL, and may be fixed but we'll keep this here just in case
+
+        ax.fill_between( np.array(t)-to, ts, np.ones(np.shape(ts))*baseline, color=color, alpha=alpha, edgecolor=color, linewidth=linewidth )
+        this_start = t[-1] + (t[1]-t[0])
+
+    return fig, ax
+
+def ovl_vconfig_stripchart( channel_ordered_vconfigs, to=None, cmap='jet', mapIt=dict( (k,i) for i,k in enumerate("vchan vthr vwin metric metric_exp rank".split()) ) ):
+    """
+    builds a strip chart based on the info in channel_ordered_vconfigs
+
+    WARNING: 
+        you may get gaps in your strip chart corresponding to edges of frames.
+        this is a plotting artefact, and nothing more
+    """
+    if to==None:
+        to = min([values[0][0] for value in channel_ordered_vconfigs.values()])
+
+    ### find configs contained
+    configs = set()
+    for c in channel_ordered_vconfigs.keys():
+        for C in c:
+            configs.add( C )
+    configs = list( configs )
+
+    try:
+        configs.remove( (None, None, None, None, 0, 0) )
+    except ValueError as e: ### None is not present...
+        pass
+
+    configs.sort( key=lambda l: l[mapIt['vwin']], reverse=True )
+    configs.sort( key=lambda l: l[mapIt['vthr']], reverse=True )
+    configs.sort( key=lambda l: l[mapIt['vchan']] )
+
+    configs.insert(0, (None, None, None, None, 0, 0) )
+    
+    N = len(configs)
+
+    ### figure out the size of the axis object and the figure
+    chan_stripchart_left = 0.3
+    chan_stripchart_right = 0.90
+    chan_stripchart_figwidth = 10
+
+    chan_stripchart_topmargin = 0.4
+    chan_stripchart_botmargin = 0.68
+    chan_stripchart_chanheight = 0.95
+
+    chan_stripchart_figheight = chan_stripchart_topmargin + N*chan_stripchart_chanheight + chan_stripchart_botmargin
+
+    chan_stripchart_axpos = [chan_stripchart_left, chan_stripchart_botmargin/chan_stripchart_figheight, chan_stripchart_right-chan_stripchart_left, 1-chan_stripchart_topmargin/chan_stripchart_figheight - chan_stripchart_botmargin/chan_stripchart_figheight]
+#    chan_stripchart_axpos = [chan_stripchart_left, plt.rcParams['figure.subplot.bottom'], plt.rcParams['figure.subplot.right']-chan_stripchart_left, plt.rcParams['figure.subplot.top']-plt.rcParams['figure.subplot.bottom']]
+
+    chan_stripchart_cb_left = chan_stripchart_right + 0.01
+    chan_stripchart_cb_right = 0.93
+
+    chan_stripchart_cbpos = [chan_stripchart_cb_left, chan_stripchart_axpos[1], chan_stripchart_cb_right-chan_stripchart_cb_left, chan_stripchart_axpos[3]]
+
+    fig = plt.figure(figsize=[chan_stripchart_figwidth, chan_stripchart_figheight])
+    ax = fig.add_axes(chan_stripchart_axpos)
+
+    cbax = fig.add_axes(chan_stripchart_cbpos)
+
+    ymap = dict( (config, ind) for ind, config in enumerate(configs) )
+
+    cmap = plt.get_cmap(cmap)
+
+    ### plot segments for each vconfig
+    alpha = 1.0
+    for cnfgs, segs in channel_ordered_vconfigs.items():
+        for config in cnfgs:
+            y = ymap[config]
+
+            metric_exp = config[mapIt['metric_exp']]
+     
+            color = cmap( config[mapIt['rank']] )
+
+            for start, end in segs:
+                ax.fill_between( [start-to, end-to], [y+0.02]*2, [y+0.98]*2, edgecolor=color, color=color, linewidth=0.5, alpha=alpha ) 
+
+    ### plot the colorbar
+    cmap_norm=matplotlib.colors.Normalize( vmin=0.0, vmax=1.0 )
+    cb = matplotlib.colorbar.ColorbarBase( cbax, cmap=cmap, norm=cmap_norm, orientation='vertical', alpha=alpha )
+
+    ### decorate the plot
+    ax.set_xlabel('Time [sec] since %.3f'%to)
+    ax.set_yticks( [ind+0.5 for ind in range(len(configs))])
+    yticklabels = ["None"]
+    for c in configs[1:]:
+        vchan = c[mapIt['vchan']]
+        try:
+            vchan = vchan.split("_")
+            flow, fhigh = [float(l) for l in vchan[-2:]]
+            vchan = "%s:%s"%(vchan[0], "\_".join(vchan[1:-2]))
+            yticklabels.append( "%s\nmin freq : %.1f Hz\nmax freq : %.1f Hz\nthreshold : %.1f\nwindow : %.3f sec"%(vchan, flow, fhigh, c[mapIt['vthr']], c[mapIt['vwin']]) )
+        except:
+            yticklabels.append( "%s\nthreshold : %.1f\nwindow : %.3f sec"%(vchan.replace("_","\_"), c[mapIt['vthr']], c[mapIt['vwin']]) )
+    ax.set_yticklabels( yticklabels, fontsize=10)
+
+    ax.set_ylim(ymin=0, ymax=N)
+
+    for tic in ax.yaxis.get_major_ticks():
+         tic.tick1On = tic.tick2On = False
+#         tic.label1On = tic.label2On = False
+
+    ax.grid(False, which="both")
+
+    ### decorate colorbar
+    if N < 3:
+        cb.set_ticks([0.0, 0.5, 1.0])
+    elif N < 5:
+        cb.set_ticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+
+    return fig, ax, cbax
 
 ##@}

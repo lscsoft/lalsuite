@@ -491,47 +491,47 @@ static REAL8 XLALSimIMRSpinPrecEOBHamiltonian(
     XLAL_PRINT_INFO( "Hreal = %.16e\n", Hreal );
 
   if(isnan(Hreal)) {
-    XLAL_PRINT_INFO(
+    XLALPrintError(
     "\n\nInside Hamiltonian: Hreal is a NAN. Printing its components below:\n");
-      XLAL_PRINT_INFO( "(deltaU, bulk, logTerms, log arg) = (%.16e, %.16e, %.16e, %.16e)\n", deltaU, bulk, logTerms, 1. + coeffs->k1*u + coeffs->k2*u2 + coeffs->k3*u3 + coeffs->k4*u4
+      XLALPrintError( "(deltaU, bulk, logTerms, log arg) = (%.16e, %.16e, %.16e, %.16e)\n", deltaU, bulk, logTerms, 1. + coeffs->k1*u + coeffs->k2*u2 + coeffs->k3*u3 + coeffs->k4*u4
              + coeffs->k5*u5 + coeffs->k5l*u5*logu);
 
-    XLAL_PRINT_INFO( "In Hamiltonian: tortoise flag = %d\n", (int) tortoise );
-    XLAL_PRINT_INFO( "x = %.16e\t%.16e\t%.16e\n", x->data[0], x->data[1], x->data[2] );
-    XLAL_PRINT_INFO( "p = %.16e\t%.16e\t%.16e\n", p->data[0], p->data[1], p->data[2] );
-    XLAL_PRINT_INFO( "sStar = %.16e\t%.16e\t%.16e\n", sigmaStar->data[0],
+    XLALPrintError( "In Hamiltonian: tortoise flag = %d\n", (int) tortoise );
+    XLALPrintError( "x = %.16e\t%.16e\t%.16e\n", x->data[0], x->data[1], x->data[2] );
+    XLALPrintError( "p = %.16e\t%.16e\t%.16e\n", p->data[0], p->data[1], p->data[2] );
+    XLALPrintError( "sStar = %.16e\t%.16e\t%.16e\n", sigmaStar->data[0],
       sigmaStar->data[1], sigmaStar->data[2] );
-    XLAL_PRINT_INFO( "sKerr = %.16e\t%.16e\t%.16e\n", sigmaKerr->data[0],
+    XLALPrintError( "sKerr = %.16e\t%.16e\t%.16e\n", sigmaKerr->data[0],
       sigmaKerr->data[1], sigmaKerr->data[2] );
-      XLAL_PRINT_INFO("csi = %.16e, Q = %.16e, pvr = %.16e, xi2 = %.16e , deltaT = %.16e, rho2 = %.16e, Lambda = %.16e, pxir = %.16e, B = %.16e\n", csi,Q, pvr, xi2, deltaT, rho2, Lambda, pxir, B );
+      XLALPrintError("csi = %.16e, Q = %.16e, pvr = %.16e, xi2 = %.16e , deltaT = %.16e, rho2 = %.16e, Lambda = %.16e, pxir = %.16e, B = %.16e\n", csi,Q, pvr, xi2, deltaT, rho2, Lambda, pxir, B );
 
-    XLAL_PRINT_INFO( "KK = %.16e\n", coeffs->KK );
-    XLAL_PRINT_INFO( "bulk = %.16e, logTerms = %.16e\n", bulk, logTerms );
-    XLAL_PRINT_INFO("csi(miami) = %.16e\n", csi);
-    XLAL_PRINT_INFO( " a = %.16e, r = %.16e\n", a, r );
-    XLAL_PRINT_INFO( "D = %.16e, ww = %.16e, rho = %.16e, Lambda = %.16e, xi = %.16e\npr = %.16e, pf = %.16e, deltaR = %.16e, deltaT = %.16e\n",
+    XLALPrintError( "KK = %.16e\n", coeffs->KK );
+    XLALPrintError( "bulk = %.16e, logTerms = %.16e\n", bulk, logTerms );
+    XLALPrintError("csi(miami) = %.16e\n", csi);
+    XLALPrintError( " a = %.16e, r = %.16e\n", a, r );
+    XLALPrintError( "D = %.16e, ww = %.16e, rho = %.16e, Lambda = %.16e, xi = %.16e\npr = %.16e, pf = %.16e, deltaR = %.16e, deltaT = %.16e\n",
         D, ww, sqrt(rho2), Lambda, sqrt(xi2), pr, pf, deltaR, deltaT );
-    XLAL_PRINT_INFO( "pr = %.16e, prT = %.16e\n", pr, prT );
+    XLALPrintError( "pr = %.16e, prT = %.16e\n", pr, prT );
 
-    XLAL_PRINT_INFO( " a = %.16e, r = %.16e\n", a, r );
-    XLAL_PRINT_INFO( "D = %.16e, ww = %.16e, rho = %.16e, Lambda = %.16e, xi = %.16e\npr = %.16e, pf = %.16e, deltaR = %.16e, deltaT = %.16e\n",
+    XLALPrintError( " a = %.16e, r = %.16e\n", a, r );
+    XLALPrintError( "D = %.16e, ww = %.16e, rho = %.16e, Lambda = %.16e, xi = %.16e\npr = %.16e, pf = %.16e, deltaR = %.16e, deltaT = %.16e\n",
         D, ww, sqrt(rho2), Lambda, sqrt(xi2), pr, pf, deltaR, deltaT );
-    XLAL_PRINT_INFO( "pr = %.16e, prT = %.16e\n", pr, prT );
-    XLAL_PRINT_INFO( "pn2 = %.16e, pp = %.16e\n", pn2, pp );
-    XLAL_PRINT_INFO( "deltaSigmaStar_x = %.16e, deltaSigmaStar_y = %.16e, deltaSigmaStar_z = %.16e\n",
+    XLALPrintError( "pr = %.16e, prT = %.16e\n", pr, prT );
+    XLALPrintError( "pn2 = %.16e, pp = %.16e\n", pn2, pp );
+    XLALPrintError( "deltaSigmaStar_x = %.16e, deltaSigmaStar_y = %.16e, deltaSigmaStar_z = %.16e\n",
      deltaSigmaStar_x, deltaSigmaStar_y, deltaSigmaStar_z );
 
-    XLAL_PRINT_INFO( "term 1 in Hns: %.16e\n",  prT*prT*prT*prT*qq*u2 );
-    XLAL_PRINT_INFO( "term 2 in Hns: %.16e\n", ptheta2/rho2 );
-    XLAL_PRINT_INFO( "term 3 in Hns = %.16e\n", pf*pf*rho2/(Lambda*xi2) );
-    XLAL_PRINT_INFO( "term 4 in Hns = %.16e\n", pr*pr*deltaR/rho2 );
-    XLAL_PRINT_INFO( "term 5 in Hns = %.16e\n", Lambda/(rho2*deltaT) );
-    XLAL_PRINT_INFO( "term 6 in Hns = %.16e\n", pf*ww/Lambda );
+    XLALPrintError( "term 1 in Hns: %.16e\n",  prT*prT*prT*prT*qq*u2 );
+    XLALPrintError( "term 2 in Hns: %.16e\n", ptheta2/rho2 );
+    XLALPrintError( "term 3 in Hns = %.16e\n", pf*pf*rho2/(Lambda*xi2) );
+    XLALPrintError( "term 4 in Hns = %.16e\n", pr*pr*deltaR/rho2 );
+    XLALPrintError( "term 5 in Hns = %.16e\n", Lambda/(rho2*deltaT) );
+    XLALPrintError( "term 6 in Hns = %.16e\n", pf*ww/Lambda );
 
-    XLAL_PRINT_INFO( "Hns = %.16e, Hs = %.16e, Hss = %.16e\n", Hns, Hs, Hss );
-	  XLAL_PRINT_INFO( "H = %.16e\n", H );
+    XLALPrintError( "Hns = %.16e, Hs = %.16e, Hss = %.16e\n", Hns, Hs, Hss );
+	  XLALPrintError( "H = %.16e\n", H );
 
-    XLAL_PRINT_INFO("Done printing components.\n\n");
+    XLALPrintError("Done printing components.\n\n");
     XLALPrintError( "XLAL Error - %s: Hreal = nan in Hamiltonian \n", __func__);
     XLAL_ERROR( XLAL_EINVAL );
   }

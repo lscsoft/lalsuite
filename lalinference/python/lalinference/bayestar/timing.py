@@ -43,9 +43,9 @@ class vectorize_swig_psd_func(object):
     SWIG does not provide enough information for Numpy to determine the number
     of input arguments, so we can't just use np.vectorize."""
 
-    def __init__(self, func):
-        self.__func = func
-        self.__npyfunc = np.frompyfunc(func, 1, 1)
+    def __init__(self, str):
+        self.__func = getattr(lalsimulation, str + 'Ptr')
+        self.__npyfunc = np.frompyfunc(getattr(lalsimulation, str), 1, 1)
 
     def __call__(self, f):
         fa = np.asarray(f)
@@ -64,9 +64,9 @@ class vectorize_swig_psd_func(object):
 
 
 for _ifos, _func in (
-    (("H1", "H2", "L1", "I1"), lalsimulation.SimNoisePSDaLIGOZeroDetHighPower),
-    (("V1",), lalsimulation.SimNoisePSDAdvVirgo),
-    (("K1"), lalsimulation.SimNoisePSDKAGRA)
+    (("H1", "H2", "L1", "I1"), 'SimNoisePSDaLIGOZeroDetHighPower'),
+    (("V1",), 'SimNoisePSDAdvVirgo'),
+    (("K1"), 'SimNoisePSDKAGRA')
 ):
     _func = vectorize_swig_psd_func(_func)
     for _ifo in _ifos:

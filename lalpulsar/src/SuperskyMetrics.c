@@ -35,7 +35,7 @@
 #include <lal/MetricUtils.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
-#include "GSLHelpers.h"
+#include <lal/GSLHelpers.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -684,6 +684,33 @@ void XLALDestroySuperskyMetrics(
   }
 }
 
+int XLALSuperskyMetricsDimensions(
+  const SuperskyMetrics *metrics,
+  size_t *spindowns
+  )
+{
+
+
+  // Check input
+  XLAL_CHECK(metrics != NULL, XLAL_EFAULT);
+  XLAL_CHECK(metrics->num_segments > 0, XLAL_EINVAL);
+  for (size_t n = 0; n < metrics->num_segments; ++n) {
+    XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n]), XLAL_EINVAL);
+  }
+  XLAL_CHECK(CHECK_RSSKY_METRIC_TRANSF(metrics->semi_rssky_metric, metrics->semi_rssky_transf), XLAL_EINVAL);
+
+  // Decompose coordinate transform data
+  DECOMPOSE_RSSKY_TRANSF(metrics->semi_rssky_transf);
+
+  // Return dimensions
+  if (spindowns != NULL) {
+    *spindowns = smax;
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALScaleSuperskyMetricFiducialFreq(
   gsl_matrix *rssky_metric,
   gsl_matrix *rssky_transf,
@@ -973,6 +1000,31 @@ int XLALConvertSuperskyToPhysicalPoint(
   out_phys->Alpha = atan2(intm[1], intm[0]);
   out_phys->Delta = atan2(intm[2], sqrt(SQR(intm[0]) + SQR(intm[1])));
   XLALNormalizeSkyPosition(&out_phys->Alpha, &out_phys->Delta);
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALConvertSuperskyToSuperskyPoint(
+  gsl_vector *out_rssky,
+  const gsl_matrix *out_rssky_transf,
+  const gsl_vector *in_rssky,
+  const gsl_matrix *in_rssky_transf
+  )
+{
+
+  // Check input
+  XLAL_CHECK(out_rssky != NULL, XLAL_EFAULT);
+  XLAL_CHECK(CHECK_RSSKY_TRANSF(out_rssky_transf), XLAL_EFAULT);
+  XLAL_CHECK(in_rssky != NULL, XLAL_EFAULT);
+  XLAL_CHECK(CHECK_RSSKY_TRANSF(in_rssky_transf), XLAL_EFAULT);
+
+  // Convert input reduced supersky point to physical coordinates
+  PulsarDopplerParams XLAL_INIT_DECL(phys);
+  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &phys, in_rssky, in_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
+
+  // Convert physical point to output reduced supersky coordinates
+  XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( out_rssky, &phys, out_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
 
   return XLAL_SUCCESS;
 

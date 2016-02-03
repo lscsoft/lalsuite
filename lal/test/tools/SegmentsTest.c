@@ -57,24 +57,6 @@
 
 /** \cond DONT_DOXYGEN */
 
-/*-- Macros for this test program --*/
-
-#define RETPASS(testname,status) XLALPrintInfo( \
-    "Pass return check for %s: return=%d, xlalErrno=%d\n", \
-    testname, status, xlalErrno );
-
-#define RETFAIL(testname,status) XLALPrintInfo( \
-    "*FAIL* return check for %s: return=%d, xlalErrno=%d\n", \
-    testname, status, xlalErrno ); nfailures++;
-
-#define FUNCPASS(testname) XLALPrintInfo( \
-    "Pass functional check for %s\n", testname );
-
-#define FUNCFAIL(testname,reason) XLALPrintInfo( \
-    "*FAIL* functional check for %s: %s\n", testname, reason ); nfailures++;
-
-
-
 int main( int argc, char *argv[] )
 {
   INT4 nfailures = 0;
@@ -199,64 +181,70 @@ int main( int argc, char *argv[] )
 
   /*------------------------------*/
   strcpy( testname, "XLALSegSet normal operation" );
+  xlalErrno = 0;
   status = XLALSegSet( &seg, &time1, &time2, 5 );
   if ( status ) {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else if ( XLALGPSCmp(&seg.start,&time1) == 0 &&
 	      XLALGPSCmp(&seg.end,&time2) == 0 &&
 	      seg.id == 5 ) {
-    FUNCPASS( testname );
+    XLALPrintInfo("Pass functional check for %s\n", testname);
   } else {
-    FUNCFAIL( testname, "Set wrong start time, end time, and/or id" );
+    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Set wrong start time, end time, and/or id"); nfailures++;
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegSet zero-length segment" );
+  xlalErrno = 0;
   status = XLALSegSet( &seg, &time3, &time3, 6 );
   if ( status ) {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else if ( XLALGPSCmp(&seg.start,&time3) == 0 &&
 	      XLALGPSCmp(&seg.end,&time3) == 0 &&
 	      seg.id == 6 ) {
-    FUNCPASS( testname );
+    XLALPrintInfo("Pass functional check for %s\n", testname);
   } else {
-    FUNCFAIL( testname, "Set wrong start time, end time, and/or id" );
+    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Set wrong start time, end time, and/or id"); nfailures++;
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegSet invalid segment" );
+  xlalErrno = 0;
   status = XLALSegSet( &seg, &time2, &time1, 0 );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EDOM ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegSet null segment pointer" );
+  xlalErrno = 0;
   status = XLALSegSet( NULL, &time1, &time2, 0 );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegSet null time pointer 1" );
+  xlalErrno = 0;
   status = XLALSegSet( &seg, NULL, &time3, 0 );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegSet null time pointer 2" );
+  xlalErrno = 0;
   status = XLALSegSet( &seg, &time2, NULL, 0 );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*-------------------------------------------------------------------------*/
@@ -265,59 +253,64 @@ int main( int argc, char *argv[] )
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCreate normal operation" );
+  xlalErrno = 0;
   segptr = XLALSegCreate( &time1, &time2, 5 );
   if ( segptr == NULL ) {
-    RETFAIL( testname, segptr );
+    XLALPrintInfo("*FAIL* return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   } else if ( XLALGPSCmp(&(segptr->start),&time1) == 0 &&
 	      XLALGPSCmp(&(segptr->end),&time2) == 0 &&
 	      segptr->id == 5 ) {
-    FUNCPASS( testname );
+    XLALPrintInfo("Pass functional check for %s\n", testname);
   } else {
-    FUNCFAIL( testname, "Set wrong start time, end time, and/or id" );
+    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Set wrong start time, end time, and/or id"); nfailures++;
   }
   if (segptr) LALFree( segptr );
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCreate zero-length segment" );
+  xlalErrno = 0;
   segptr = XLALSegCreate( &time3, &time3, 6 );
   if ( segptr == NULL ) {
-    RETFAIL( testname, segptr );
+    XLALPrintInfo("*FAIL* return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   } else if ( XLALGPSCmp(&(segptr->start),&time3) == 0 &&
 	      XLALGPSCmp(&(segptr->end),&time3) == 0 &&
 	      segptr->id == 6 ) {
-    FUNCPASS( testname );
+    XLALPrintInfo("Pass functional check for %s\n", testname);
   } else {
-    FUNCFAIL( testname, "Set wrong start time, end time, and/or id" );
+    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Set wrong start time, end time, and/or id"); nfailures++;
   }
   if (segptr) LALFree( segptr );
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCreate invalid segment" );
+  xlalErrno = 0;
   segptr = XLALSegCreate( &time2, &time1, 0 );
   if ( segptr == NULL && xlalErrno == XLAL_EDOM ) {
-    RETPASS( testname, segptr );
+    XLALPrintInfo("Pass return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   } else {
-    RETFAIL( testname, segptr );
+    XLALPrintInfo("*FAIL* return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   }
   if (segptr) LALFree( segptr );
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCreate null time pointer 1" );
+  xlalErrno = 0;
   segptr = XLALSegCreate( NULL, &time3, 0 );
   if ( segptr == NULL && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, segptr );
+    XLALPrintInfo("Pass return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   } else {
-    RETFAIL( testname, segptr );
+    XLALPrintInfo("*FAIL* return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   }
   if (segptr) LALFree( segptr );
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCreate null time pointer 2" );
+  xlalErrno = 0;
   segptr = XLALSegCreate( &time2, NULL, 0 );
   if ( segptr == NULL && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, segptr );
+    XLALPrintInfo("Pass return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   } else {
-    RETFAIL( testname, segptr );
+    XLALPrintInfo("*FAIL* return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   }
   if (segptr) LALFree( segptr );
 
@@ -328,98 +321,106 @@ int main( int argc, char *argv[] )
 
   /*------------------------------*/
   strcpy( testname, "XLALGPSInSeg normal comparison 1" );
+  xlalErrno = 0;
   compval = XLALGPSInSeg( &time1, &seg2 );
   if ( xlalErrno == 0 ) {
     if ( compval < 0 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALGPSInSeg normal comparison 3" );
+  xlalErrno = 0;
   compval = XLALGPSInSeg( &time3, &seg2 );
   if ( xlalErrno == 0 ) {
     if ( compval > 0 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALGPSInSeg normal comparison 4a" );
+  xlalErrno = 0;
   compval = XLALGPSInSeg( &time4a, &seg2 );
   if ( xlalErrno == 0 ) {
     if ( compval == 0 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALGPSInSeg normal comparison 4b" );
+  xlalErrno = 0;
   compval = XLALGPSInSeg( &time4b, &seg2 );
   if ( xlalErrno == 0 ) {
     if ( compval == 0 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALGPSInSeg normal comparison 4c" );
+  xlalErrno = 0;
   compval = XLALGPSInSeg( &time4c, &seg2 );
   if ( xlalErrno == 0 ) {
     if ( compval > 0 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALGPSInSeg normal comparison 3p" );
+  xlalErrno = 0;
   compval = XLALGPSInSeg( &time3p, &seg3p );
   if ( xlalErrno == 0 ) {
-    if ( compval == 0 ) {
-      FUNCPASS( testname );
+    if ( compval == 1 ) {   /* seg3p is a point in time, since segment is half-open interval it cannot contain any points */
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALGPSInSeg null GPS pointer" );
+  xlalErrno = 0;
   compval = XLALGPSInSeg( NULL, &seg2 );
-  if ( xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, compval );
+  if ( compval == -1 ) {   /* NULL GPS time is always compared less than a non-NULL GPS time */
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALGPSInSeg null seg pointer" );
+  xlalErrno = 0;
   compval = XLALGPSInSeg( &time1, NULL );
   if ( xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, compval );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
 
@@ -429,111 +430,120 @@ int main( int argc, char *argv[] )
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCmp normal comparison (1,2)" );
+  xlalErrno = 0;
   compval = XLALSegCmp( &seg1, &seg2 );
   if ( xlalErrno == 0 ) {
     if ( compval < 0 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCmp normal comparison (2,1)" );
+  xlalErrno = 0;
   compval = XLALSegCmp( &seg2, &seg1 );
   if ( xlalErrno == 0 ) {
     if ( compval > 0 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCmp normal comparison (2,2)" );
+  xlalErrno = 0;
   compval = XLALSegCmp( &seg2, &seg2 );
   if ( xlalErrno == 0 ) {
     if ( compval == 0 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCmp normal comparison (1,3p)" );
+  xlalErrno = 0;
   compval = XLALSegCmp( &seg1, &seg3p );
   if ( xlalErrno == 0 ) {
     if ( compval > 0 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCmp normal comparison (3p,3p)" );
+  xlalErrno = 0;
   compval = XLALSegCmp( &seg3p, &seg3p );
   if ( xlalErrno == 0 ) {
     if ( compval == 0 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCmp normal comparison (5a,5b)" );
+  xlalErrno = 0;
   compval = XLALSegCmp( &seg5a, &seg5b );
   if ( xlalErrno == 0 ) {
     if ( compval < 0 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCmp normal comparison (5b,5a)" );
+  xlalErrno = 0;
   compval = XLALSegCmp( &seg5b, &seg5a );
   if ( xlalErrno == 0 ) {
     if ( compval > 0 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Returned wrong comparison value" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Returned wrong comparison value"); nfailures++;
     }
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCmp null seg pointer 1" );
+  xlalErrno = 0;
   compval = XLALSegCmp( NULL, &seg5a );
   if ( xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, compval );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegCmp null seg pointer 2" );
+  xlalErrno = 0;
   compval = XLALSegCmp( &seg5b, NULL );
   if ( xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, compval );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   } else {
-    RETFAIL( testname, compval );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, compval, xlalErrno);
   }
 
 
@@ -543,23 +553,25 @@ int main( int argc, char *argv[] )
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListInit normal operation" );
+  xlalErrno = 0;
   seglist1.initMagic = -123;
   status = XLALSegListInit( &seglist1 );
   if ( status ) {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else if ( seglist1.initMagic == SEGMENTSH_INITMAGICVAL ) {
-    FUNCPASS( testname );
+    XLALPrintInfo("Pass functional check for %s\n", testname);
   } else {
-    FUNCFAIL( testname, "Failed to set initMagic correctly" );
+    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to set initMagic correctly"); nfailures++;
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListInit null seglist pointer" );
+  xlalErrno = 0;
   status = XLALSegListInit( NULL );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
 
@@ -569,68 +581,73 @@ int main( int argc, char *argv[] )
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListClear normal operation (empty)" );
+  xlalErrno = 0;
   seglist1.sorted = 0;
   status = XLALSegListClear( &seglist1 );
   if ( status ) {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else if ( seglist1.sorted == 1 ) {
-    FUNCPASS( testname );
+    XLALPrintInfo("Pass functional check for %s\n", testname);
   } else {
-    FUNCFAIL( testname, "Failed to reset sorted correctly" );
+    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to reset sorted correctly"); nfailures++;
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListClear null seglist pointer" );
+  xlalErrno = 0;
   status = XLALSegListClear( NULL );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListClear uninitialized seglist" );
+  xlalErrno = 0;
   seglist1.initMagic = -444;
   status = XLALSegListClear( &seglist1 );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EINVAL ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListClear normal operation (filled) - init" );
+  xlalErrno = 0;
   status = XLALSegListInit( &seglist1 );
   if ( status ) {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else if ( seglist1.segs != NULL ) {
-    FUNCFAIL( testname, "Failed to init segment list" );
+    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to init segment list"); nfailures++;
   } else {
 
     strcpy( testname, "XLALSegListClear normal operation (filled) - fill" );
+    xlalErrno = 0;
     status = XLALSegListAppend( &seglist1, &seg2 );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
     } else if ( seglist1.segs == NULL ) {
-      FUNCFAIL( testname, "Failed to store segment 2" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to store segment 2"); nfailures++;
     } else {
 
       status = XLALSegListAppend( &seglist1, &seg1 );
       if ( status ) {
-	RETFAIL( testname, status );
+	XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       } else if ( seglist1.sorted == 1 ) {
-	FUNCFAIL( testname, "Failed to clear sorted flag" );
+	XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to clear sorted flag"); nfailures++;
       } else {
 
 	/*-- Finally, we're ready to test clearing --*/
 	strcpy( testname, "XLALSegListClear normal operation (filled)" );
 	status = XLALSegListClear( &seglist1 );
 	if ( status ) {
-	  RETFAIL( testname, status );
+	  XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
 	} else if ( seglist1.sorted == 1 ) {
-	  FUNCPASS( testname );
+	  XLALPrintInfo("Pass functional check for %s\n", testname);
 	} else {
-	  FUNCFAIL( testname, "Failed to reset sorted correctly" );
+	  XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to reset sorted correctly"); nfailures++;
 	}
 
       }
@@ -644,47 +661,52 @@ int main( int argc, char *argv[] )
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListAppend null seglist pointer" );
+  xlalErrno = 0;
   status = XLALSegListAppend( NULL, &seg1 );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListAppend null seg pointer" );
+  xlalErrno = 0;
   status = XLALSegListAppend( &seglist1, NULL );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListAppend uninitialized seglist" );
+  xlalErrno = 0;
   seglist1.initMagic = -444;
   status = XLALSegListAppend( &seglist1, &seg1 );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EINVAL ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListAppend invalid segment - init" );
+  xlalErrno = 0;
   status = XLALSegListInit( &seglist1 );
   if ( status ) {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else if ( seglist1.segs != NULL ) {
-    FUNCFAIL( testname, "Failed to init segment list" );
+    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to init segment list"); nfailures++;
   } else {
 
     strcpy( testname, "XLALSegListAppend invalid segment" );
+    xlalErrno = 0;
     status = XLALSegListAppend( &seglist1, &segbad );
     if ( status == XLAL_FAILURE && xlalErrno == XLAL_EDOM ) {
-      RETPASS( testname, status );
+      XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
     } else {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
     }
 
     /* Clean up */
@@ -694,28 +716,30 @@ int main( int argc, char *argv[] )
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListAppend decimal place record - init" );
+  xlalErrno = 0;
   status = XLALSegListInit( &seglist1 );
   if ( status ) {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else if ( seglist1.segs != NULL ) {
-    FUNCFAIL( testname, "Failed to init segment list" );
+    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to init segment list"); nfailures++;
   } else if ( seglist1.dplaces != 0 ) {
-    FUNCFAIL( testname, "Failed to init dplaces for segment list" );
+    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to init dplaces for segment list"); nfailures++;
   } else {
     /* Loop over segments */
     strcpy( testname, "XLALSegListAppend decimal place record" );
+    xlalErrno = 0;
     for ( iseg=0; iseg<=9; iseg++ ) {
       XLALSegSet( &seg, dtime+0, dtime+iseg, 0 );
       XLALSegListAppend( &seglist1, &seg );
       if ( seglist1.dplaces != 3*(((UINT4)iseg+2)/3) ) {
-	FUNCFAIL( testname, "Wrong dplaces value after appending segment" );
+	XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Wrong dplaces value after appending segment"); nfailures++;
       }
     }
     for ( iseg=9; iseg>=0; iseg-- ) {
       XLALSegSet( &seg, dtime+0, dtime+iseg, 0 );
       XLALSegListAppend( &seglist1, &seg );
       if ( seglist1.dplaces != 9 ) {
-	FUNCFAIL( testname, "Wrong dplaces value after re-appending segment" );
+	XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Wrong dplaces value after re-appending segment"); nfailures++;
       }
     }
 
@@ -726,28 +750,30 @@ int main( int argc, char *argv[] )
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListAppend normal operation (empty) - init" );
+  xlalErrno = 0;
   status = XLALSegListInit( &seglist1 );
   if ( status ) {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
     seglist1ok = 0;
   } else if ( seglist1.segs != NULL ) {
-    FUNCFAIL( testname, "Failed to init segment list" );
+    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to init segment list"); nfailures++;
     seglist1ok = 0;
   } else {
     seglist1ok = 1;
   }
 
   strcpy( testname, "XLALSegListAppend first segment" );
+  xlalErrno = 0;
   if ( seglist1ok ) {
     status = XLALSegListAppend( &seglist1, &seg1 );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       seglist1ok = 0;
     } else if ( seglist1.segs && seglist1.arraySize == SEGMENTSH_ALLOCBLOCK &&
 		seglist1.length == 1 ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Failed to store first segment" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to store first segment"); nfailures++;
       seglist1ok = 0;
     }
   } else {
@@ -756,16 +782,17 @@ int main( int argc, char *argv[] )
 
   /*-- Continue with a second segment --*/
   strcpy( testname, "XLALSegListAppend sorted, disjoint segment" );
+  xlalErrno = 0;
   if ( seglist1ok ) {
     status = XLALSegListAppend( &seglist1, &seg6a );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       seglist1ok = 0;
     } else if ( seglist1.length == 2 && seglist1.sorted &&
 		seglist1.disjoint ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Failed to store second segment" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to store second segment"); nfailures++;
       seglist1ok = 0;
     }
   } else {
@@ -775,16 +802,17 @@ int main( int argc, char *argv[] )
 
   /*-- Continue with a third segment which is not disjoint --*/
   strcpy( testname, "XLALSegListAppend non-disjoint segment" );
+  xlalErrno = 0;
   if ( seglist1ok ) {
     status = XLALSegListAppend( &seglist1, &seg6b );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       seglist1ok = 0;
     } else if ( seglist1.length == 3 && seglist1.sorted &&
 		! seglist1.disjoint ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Failed to store second segment" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to store second segment"); nfailures++;
       seglist1ok = 0;
     }
   } else {
@@ -793,16 +821,17 @@ int main( int argc, char *argv[] )
 
   /*-- Continue with a fourth segment which is not sorted --*/
   strcpy( testname, "XLALSegListAppend non-sorted segment" );
+  xlalErrno = 0;
   if ( seglist1ok ) {
     status = XLALSegListAppend( &seglist1, &seg4a );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       seglist1ok = 0;
     } else if ( seglist1.length == 4 && ! seglist1.sorted &&
 		! seglist1.disjoint ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Failed to store second segment" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to store second segment"); nfailures++;
       seglist1ok = 0;
     }
   } else {
@@ -816,30 +845,33 @@ int main( int argc, char *argv[] )
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListSort null seglist pointer" );
+  xlalErrno = 0;
   status = XLALSegListSort( NULL );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListSort uninitialized seglist" );
+  xlalErrno = 0;
   seglist2.initMagic = -444;
   status = XLALSegListSort( &seglist2 );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EINVAL ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListSort normal operation" );
+  xlalErrno = 0;
   /*-- Sort the existing segment list --*/
   if ( seglist1ok ) {
     status = XLALSegListSort( &seglist1 );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       seglist1ok = 0;
     } else if ( seglist1.length == 4 &&
 		XLALSegCmp( &(seglist1.segs[0]), &seg1 ) == 0 &&
@@ -847,9 +879,9 @@ int main( int argc, char *argv[] )
 		XLALSegCmp( &(seglist1.segs[2]), &seg6a ) == 0 &&
 		XLALSegCmp( &(seglist1.segs[3]), &seg6b ) == 0 &&
 		seglist1.sorted && ! seglist1.disjoint ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Did not sort correctly" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Did not sort correctly"); nfailures++;
       seglist1ok = 0;
     }
   } else {
@@ -863,41 +895,44 @@ int main( int argc, char *argv[] )
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListCoalesce null seglist pointer" );
+  xlalErrno = 0;
   status = XLALSegListCoalesce( NULL );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListCoalesce uninitialized seglist" );
+  xlalErrno = 0;
   seglist2.initMagic = -444;
   status = XLALSegListCoalesce( &seglist2 );
   if ( status == XLAL_FAILURE && xlalErrno == XLAL_EINVAL ) {
-    RETPASS( testname, status );
+    XLALPrintInfo("Pass return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListCoalesce normal operation 1" );
+  xlalErrno = 0;
   /*-- Coalesce the existing segment list --*/
   if ( seglist1ok ) {
     status = XLALSegListCoalesce( &seglist1 );
     /*-- Construct segment for comparison purposes --*/
     XLALSegSet( &segc1, &(seg6a.start), &(seg6b.end), 8 );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       seglist1ok = 0;
     } else if ( seglist1.length == 3 &&
 		XLALSegCmp( &(seglist1.segs[0]), &seg1 ) == 0 &&
 		XLALSegCmp( &(seglist1.segs[1]), &seg4a ) == 0 &&
 		XLALSegCmp( &(seglist1.segs[2]), &segc1 ) == 0 &&
 		seglist1.sorted && seglist1.disjoint ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Did not coalesce correctly" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Did not coalesce correctly"); nfailures++;
       seglist1ok = 0;
     }
   } else {
@@ -908,16 +943,17 @@ int main( int argc, char *argv[] )
   /*------------------------------*/
   /*-- Add some segments to the existing segment list --*/
   strcpy( testname, "XLALSegListCoalesce normal operation 2 - add 6c" );
+  xlalErrno = 0;
   if ( seglist1ok ) {
     status = XLALSegListAppend( &seglist1, &seg6c );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       seglist1ok = 0;
     } else if ( seglist1.length == 4 && seglist1.sorted &&
 		! seglist1.disjoint ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Failed to store second segment" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to store second segment"); nfailures++;
       seglist1ok = 0;
     }
   } else {
@@ -925,16 +961,17 @@ int main( int argc, char *argv[] )
   }
 
   strcpy( testname, "XLALSegListCoalesce normal operation 2 - add 4b" );
+  xlalErrno = 0;
   if ( seglist1ok ) {
     status = XLALSegListAppend( &seglist1, &seg4b );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       seglist1ok = 0;
     } else if ( seglist1.length == 5 && ! seglist1.sorted &&
 		! seglist1.disjoint ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Failed to store second segment" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to store second segment"); nfailures++;
       seglist1ok = 0;
     }
   } else {
@@ -942,16 +979,17 @@ int main( int argc, char *argv[] )
   }
 
   strcpy( testname, "XLALSegListCoalesce normal operation 2 - add 2" );
+  xlalErrno = 0;
   if ( seglist1ok ) {
     status = XLALSegListAppend( &seglist1, &seg2 );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       seglist1ok = 0;
     } else if ( seglist1.length == 6 && ! seglist1.sorted &&
 		! seglist1.disjoint ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Failed to store second segment" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to store second segment"); nfailures++;
       seglist1ok = 0;
     }
   } else {
@@ -959,16 +997,17 @@ int main( int argc, char *argv[] )
   }
 
   strcpy( testname, "XLALSegListCoalesce normal operation 2 - add 2 again" );
+  xlalErrno = 0;
   if ( seglist1ok ) {
     status = XLALSegListAppend( &seglist1, &seg2 );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       seglist1ok = 0;
     } else if ( seglist1.length == 7 && ! seglist1.sorted &&
 		! seglist1.disjoint ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Failed to store second segment" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to store second segment"); nfailures++;
       seglist1ok = 0;
     }
   } else {
@@ -976,13 +1015,14 @@ int main( int argc, char *argv[] )
   }
 
   strcpy( testname, "XLALSegListCoalesce normal operation 2 - coalesce" );
+  xlalErrno = 0;
   if ( seglist1ok ) {
     status = XLALSegListCoalesce( &seglist1 );
     /*-- Construct segments for comparison purposes --*/
     XLALSegSet( &segc1, &(seg4a.start), &(seg4b.end), 8 );
     XLALSegSet( &segc2, &(seg6a.start), &(seg6c.end), 8 );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       seglist1ok = 0;
     } else if ( seglist1.length == 4 &&
 		XLALSegCmp( &(seglist1.segs[0]), &seg1 ) == 0 &&
@@ -990,9 +1030,9 @@ int main( int argc, char *argv[] )
 		XLALSegCmp( &(seglist1.segs[2]), &segc1 ) == 0 &&
 		XLALSegCmp( &(seglist1.segs[3]), &segc2 ) == 0 &&
 		seglist1.sorted && seglist1.disjoint ) {
-      FUNCPASS( testname );
+      XLALPrintInfo("Pass functional check for %s\n", testname);
     } else {
-      FUNCFAIL( testname, "Did not coalesce correctly" );
+      XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Did not coalesce correctly"); nfailures++;
       seglist1ok = 0;
     }
   } else {
@@ -1006,49 +1046,54 @@ int main( int argc, char *argv[] )
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListSearch null seglist pointer" );
+  xlalErrno = 0;
   segptr = XLALSegListSearch( NULL, &time1 );
   if ( segptr == NULL && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, segptr );
+    XLALPrintInfo("Pass return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   } else {
-    RETFAIL( testname, segptr );
+    XLALPrintInfo("*FAIL* return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListSearch null GPS pointer" );
+  xlalErrno = 0;
   segptr = XLALSegListSearch( &seglist1, NULL );
   if ( segptr == NULL && xlalErrno == XLAL_EFAULT ) {
-    RETPASS( testname, segptr );
+    XLALPrintInfo("Pass return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   } else {
-    RETFAIL( testname, segptr );
+    XLALPrintInfo("*FAIL* return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListSearch uninitialized seglist" );
+  xlalErrno = 0;
   seglist2.initMagic = -444;
   segptr = XLALSegListSearch( &seglist2, &time1 );
   if ( segptr == NULL && xlalErrno == XLAL_EINVAL ) {
-    RETPASS( testname, segptr );
+    XLALPrintInfo("Pass return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   } else {
-    RETFAIL( testname, segptr );
+    XLALPrintInfo("*FAIL* return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   }
 
   /*------------------------------*/
   strcpy( testname, "XLALSegListSearch empty seglist - init" );
+  xlalErrno = 0;
   status = XLALSegListInit( &seglist2 );
   if ( status ) {
-    RETFAIL( testname, status );
+    XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
   } else if ( seglist2.initMagic == SEGMENTSH_INITMAGICVAL ) {
-    FUNCPASS( testname );
+    XLALPrintInfo("Pass functional check for %s\n", testname);
   } else {
-    FUNCFAIL( testname, "Failed to set initMagic correctly" );
+    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to set initMagic correctly"); nfailures++;
   }
 
   strcpy( testname, "XLALSegListSearch empty seglist - search" );
+  xlalErrno = 0;
   segptr = XLALSegListSearch( &seglist2, &time1 );
   if ( segptr == NULL && xlalErrno == 0 ) {
-    RETPASS( testname, segptr );
+    XLALPrintInfo("Pass return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   } else {
-    RETFAIL( testname, segptr );
+    XLALPrintInfo("*FAIL* return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
   }
 
   nsearchtests = 0;
@@ -1064,7 +1109,7 @@ int main( int argc, char *argv[] )
 	     nsegs );
     status = XLALSegListAppend( &seglist2, sseg+nsegs-1 );
     if ( status ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       break;
     }
 
@@ -1089,7 +1134,7 @@ int main( int argc, char *argv[] )
 
 	/* Check whether the function had an error */
 	if ( xlalErrno != 0 ) {
-	  RETFAIL( testname, segptr );
+	  XLALPrintInfo("*FAIL* return check for %s: return=%p, xlalErrno=%d\n", testname, segptr, xlalErrno);
 	  continue;
 	}
 
@@ -1097,18 +1142,18 @@ int main( int argc, char *argv[] )
 	if ( lalstime[itime].infirst > 0 && nsegs >= lalstime[itime].infirst ) {
 	  /* The search should have found a match */
 	  if ( ! segptr ) {
-	    FUNCFAIL( testname, "Failed to find a match" );
+	    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Failed to find a match"); nfailures++;
 	    continue;
 	  }
 	  /* The matched segment should contain the time */
 	  if ( XLALGPSInSeg(&(lalstime[itime].gps),segptr) != 0 ) {
-	    FUNCFAIL( testname, "Segment returned does not contain the time" );
+	    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Segment returned does not contain the time"); nfailures++;
 	    continue;
 	  }
 	} else {
 	  /* The search should NOT have found a match */
 	  if ( segptr ) {
-	    FUNCFAIL( testname, "Found inappropriate match" );
+	    XLALPrintInfo("*FAIL* functional check for %s: %s\n", testname, "Found inappropriate match"); nfailures++;
 	    continue;
 	  }
 	}
@@ -1134,12 +1179,12 @@ int main( int argc, char *argv[] )
     time2.gpsNanoSeconds = 500000000;
     status = XLALSegSet( &seg, &time1, &time2, 0 );
     if ( status != 0 ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       break;
     }
     status = XLALSegListAppend( &seglist2, &seg );
     if ( status != 0 ) {
-      RETFAIL( testname, status );
+      XLALPrintInfo("*FAIL* return check for %s: return=%d, xlalErrno=%d\n", testname, status, xlalErrno);
       break;
     }
   }
@@ -1154,6 +1199,35 @@ int main( int argc, char *argv[] )
     seglist2.lastFound = NULL;
     segptr = XLALSegListSearch( &seglist2, &time1 );
   }
+
+
+  /*-------------------------------------------------------------------------*/
+  XLALPrintInfo("\n========== XLALSegListRange tests \n");
+  /*-------------------------------------------------------------------------*/
+
+  {
+    LIGOTimeGPS start, end;
+
+    XLALPrintInfo("Check XLALSegListRange() for a sorted list ...\n");
+    XLAL_CHECK( XLALSegListIsInitialized(&seglist1) && seglist1.sorted, XLAL_EFUNC );
+    XLAL_CHECK( XLALSegListRange(&seglist1, &start, &end) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALGPSCmp(&start, &seglist1.segs[0].start) == 0, XLAL_EFAILED );
+    XLAL_CHECK( XLALGPSCmp(&end, &seglist1.segs[seglist1.length - 1].end) == 0, XLAL_EFAILED );
+
+    XLALPrintInfo("Check XLALSegListRange() for a non-sorted list ...\n");
+    XLAL_CHECK( XLALSegListClear(&seglist2) == XLAL_SUCCESS, XLAL_EFUNC );
+    UINT4 i = seglist1.length / 2;
+    while (seglist2.length < seglist1.length) {
+      XLAL_CHECK( XLALSegListAppend(&seglist2, &seglist1.segs[i]) == XLAL_SUCCESS, XLAL_EFUNC );
+      i = (i + 1) % seglist1.length;
+    }
+    XLAL_CHECK( XLALSegListIsInitialized(&seglist2) && !seglist2.sorted, XLAL_EFUNC );
+    XLAL_CHECK( XLALSegListRange(&seglist2, &start, &end) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALGPSCmp(&start, &seglist1.segs[0].start) == 0, XLAL_EFAILED );
+    XLAL_CHECK( XLALGPSCmp(&end, &seglist1.segs[seglist1.length - 1].end) == 0, XLAL_EFAILED );
+
+  }
+  XLALPrintInfo("Passed XLALSegListRange tests\n");
 
 
   /*-------------------------------------------------------------------------*/

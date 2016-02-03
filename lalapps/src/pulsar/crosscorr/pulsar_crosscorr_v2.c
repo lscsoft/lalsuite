@@ -832,47 +832,47 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->version = FALSE;
 
   /* register  user-variables */
-  XLALregBOOLUserStruct  ( help, 	   'h',  UVAR_HELP, "Print this message");
-  XLALregINTUserStruct   ( startTime,       0,  UVAR_REQUIRED, "Desired start time of analysis in GPS seconds");
-  XLALregINTUserStruct   ( endTime,         0,  UVAR_REQUIRED, "Desired end time of analysis in GPS seconds");
-  XLALregREALUserStruct  ( maxLag,          0,  UVAR_OPTIONAL, "Maximum lag time in seconds between SFTs in correlation");
-  XLALregBOOLUserStruct  ( inclAutoCorr,    0,  UVAR_OPTIONAL, "Include auto-correlation terms (an SFT with itself)");
-  XLALregREALUserStruct  ( fStart,          0,  UVAR_OPTIONAL, "Start frequency in Hz");
-  XLALregREALUserStruct  ( fBand,           0,  UVAR_OPTIONAL, "Frequency band to search over in Hz ");
-  /* XLALregREALUserStruct  ( fdotStart,     0,  UVAR_OPTIONAL, "Start value of spindown in Hz/s"); */
-  /* XLALregREALUserStruct  ( fdotBand,      0,  UVAR_OPTIONAL, "Band for spindown values in Hz/s"); */
-  XLALregREALUserStruct  ( alphaRad,        0,  UVAR_OPTIONAL, "Right ascension for directed search (radians)");
-  XLALregREALUserStruct  ( deltaRad,        0,  UVAR_OPTIONAL, "Declination for directed search (radians)");
-  XLALregREALUserStruct  ( refTime,         0,  UVAR_OPTIONAL, "SSB reference time for pulsar-parameters [Default: midPoint]");
-  XLALregREALUserStruct  ( orbitAsiniSec,   0,  UVAR_OPTIONAL, "Start of search band for projected semimajor axis (seconds) [0 means not a binary]");
-  XLALregREALUserStruct  ( orbitAsiniSecBand, 0,  UVAR_OPTIONAL, "Width of search band for projected semimajor axis (seconds)");
-  XLALregREALUserStruct  ( orbitPSec,       0,  UVAR_OPTIONAL, "Binary orbital period (seconds) [0 means not a binary]");
-  XLALregREALUserStruct  ( orbitPSecBand,       0,  UVAR_OPTIONAL, "Band for binary orbital period (seconds) ");
-  XLALregREALUserStruct  ( orbitTimeAsc,    0,  UVAR_OPTIONAL, "Start of orbital time-of-ascension band in GPS seconds");
-  XLALregREALUserStruct  ( orbitTimeAscBand, 0,  UVAR_OPTIONAL, "Width of orbital time-of-ascension band (seconds)");
-  XLALregSTRINGUserStruct( ephemEarth,      0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
-  XLALregSTRINGUserStruct( ephemSun,        0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
-  XLALregSTRINGUserStruct( sftLocation,     0,  UVAR_REQUIRED, "Filename pattern for locating SFT data");
-  XLALregINTUserStruct   ( rngMedBlock,     0,  UVAR_OPTIONAL, "Running median block size for PSD estimation");
-  XLALregINTUserStruct   ( numBins,         0,  UVAR_OPTIONAL, "Number of frequency bins to include in calculation");
-  XLALregREALUserStruct  ( mismatchF,       0,  UVAR_OPTIONAL, "Desired mismatch for frequency spacing");
-  XLALregREALUserStruct  ( mismatchA,       0,  UVAR_OPTIONAL, "Desired mismatch for asini spacing");
-  XLALregREALUserStruct  ( mismatchT,       0,  UVAR_OPTIONAL, "Desired mismatch for periapse passage time spacing");
-  XLALregREALUserStruct  ( mismatchP,       0,  UVAR_OPTIONAL, "Desired mismatch for period spacing");
-  XLALregREALUserStruct  ( spacingF,       0,  UVAR_OPTIONAL, "Desired frequency spacing");
-  XLALregREALUserStruct  ( spacingA,       0,  UVAR_OPTIONAL, "Desired asini spacing");
-  XLALregREALUserStruct  ( spacingT,       0,  UVAR_OPTIONAL, "Desired periapse passage time spacing");
-  XLALregREALUserStruct  ( spacingP,       0,  UVAR_OPTIONAL, "Desired period spacing");
-  XLALregINTUserStruct   ( numCand,         0,  UVAR_OPTIONAL, "Number of candidates to keep in toplist");
-  XLALregSTRINGUserStruct( pairListInputFilename, 0,  UVAR_OPTIONAL, "Name of file from which to read list of SFT pairs");
-  XLALregSTRINGUserStruct( pairListOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write list of SFT pairs");
-  XLALregSTRINGUserStruct( sftListOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write list of SFTs (for sanity checks)");
-  XLALregSTRINGUserStruct( sftListInputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to read in list of SFTs (for sanity checks)");
-  XLALregSTRINGUserStruct( gammaAveOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write aa+bb weights (for e.g., false alarm estimation)");
-  XLALregSTRINGUserStruct( gammaCircOutputFilename, 0,  UVAR_OPTIONAL, "Name of file to which to write ab-ba weights (for e.g., systematic error)");
-  XLALregSTRINGUserStruct( toplistFilename, 0,  UVAR_OPTIONAL, "Output filename containing candidates in toplist");
-  XLALregSTRINGUserStruct( logFilename, 0,  UVAR_OPTIONAL, "Output a meta-data file for the search");
-  XLALregBOOLUserStruct  ( version, 	   'V',  UVAR_SPECIAL, "Output version(VCS) information");
+  XLALRegisterUvarMember( help, 	   BOOLEAN, 'h',  HELP, "Print this message");
+  XLALRegisterUvarMember( startTime,       INT4, 0,  REQUIRED, "Desired start time of analysis in GPS seconds");
+  XLALRegisterUvarMember( endTime,         INT4, 0,  REQUIRED, "Desired end time of analysis in GPS seconds");
+  XLALRegisterUvarMember( maxLag,          REAL8, 0,  OPTIONAL, "Maximum lag time in seconds between SFTs in correlation");
+  XLALRegisterUvarMember( inclAutoCorr,    BOOLEAN, 0,  OPTIONAL, "Include auto-correlation terms (an SFT with itself)");
+  XLALRegisterUvarMember( fStart,          REAL8, 0,  OPTIONAL, "Start frequency in Hz");
+  XLALRegisterUvarMember( fBand,           REAL8, 0,  OPTIONAL, "Frequency band to search over in Hz ");
+  /* XLALRegisterUvarMember( fdotStart,     REAL8, 0,  OPTIONAL, "Start value of spindown in Hz/s"); */
+  /* XLALRegisterUvarMember( fdotBand,      REAL8, 0,  OPTIONAL, "Band for spindown values in Hz/s"); */
+  XLALRegisterUvarMember( alphaRad,        REAL8, 0,  OPTIONAL, "Right ascension for directed search (radians)");
+  XLALRegisterUvarMember( deltaRad,        REAL8, 0,  OPTIONAL, "Declination for directed search (radians)");
+  XLALRegisterUvarMember( refTime,         REAL8, 0,  OPTIONAL, "SSB reference time for pulsar-parameters [Default: midPoint]");
+  XLALRegisterUvarMember( orbitAsiniSec,   REAL8, 0,  OPTIONAL, "Start of search band for projected semimajor axis (seconds) [0 means not a binary]");
+  XLALRegisterUvarMember( orbitAsiniSecBand, REAL8, 0,  OPTIONAL, "Width of search band for projected semimajor axis (seconds)");
+  XLALRegisterUvarMember( orbitPSec,       REAL8, 0,  OPTIONAL, "Binary orbital period (seconds) [0 means not a binary]");
+  XLALRegisterUvarMember( orbitPSecBand,       REAL8, 0,  OPTIONAL, "Band for binary orbital period (seconds) ");
+  XLALRegisterUvarMember( orbitTimeAsc,    REAL8, 0,  OPTIONAL, "Start of orbital time-of-ascension band in GPS seconds");
+  XLALRegisterUvarMember( orbitTimeAscBand, REAL8, 0,  OPTIONAL, "Width of orbital time-of-ascension band (seconds)");
+  XLALRegisterUvarMember( ephemEarth,      STRING, 0,  OPTIONAL, "Earth ephemeris file to use");
+  XLALRegisterUvarMember( ephemSun,        STRING, 0,  OPTIONAL, "Sun ephemeris file to use");
+  XLALRegisterUvarMember( sftLocation,     STRING, 0,  REQUIRED, "Filename pattern for locating SFT data");
+  XLALRegisterUvarMember( rngMedBlock,     INT4, 0,  OPTIONAL, "Running median block size for PSD estimation");
+  XLALRegisterUvarMember( numBins,         INT4, 0,  OPTIONAL, "Number of frequency bins to include in calculation");
+  XLALRegisterUvarMember( mismatchF,       REAL8, 0,  OPTIONAL, "Desired mismatch for frequency spacing");
+  XLALRegisterUvarMember( mismatchA,       REAL8, 0,  OPTIONAL, "Desired mismatch for asini spacing");
+  XLALRegisterUvarMember( mismatchT,       REAL8, 0,  OPTIONAL, "Desired mismatch for periapse passage time spacing");
+  XLALRegisterUvarMember( mismatchP,       REAL8, 0,  OPTIONAL, "Desired mismatch for period spacing");
+  XLALRegisterUvarMember( spacingF,       REAL8, 0,  OPTIONAL, "Desired frequency spacing");
+  XLALRegisterUvarMember( spacingA,       REAL8, 0,  OPTIONAL, "Desired asini spacing");
+  XLALRegisterUvarMember( spacingT,       REAL8, 0,  OPTIONAL, "Desired periapse passage time spacing");
+  XLALRegisterUvarMember( spacingP,       REAL8, 0,  OPTIONAL, "Desired period spacing");
+  XLALRegisterUvarMember( numCand,         INT4, 0,  OPTIONAL, "Number of candidates to keep in toplist");
+  XLALRegisterUvarMember( pairListInputFilename, STRING, 0,  OPTIONAL, "Name of file from which to read list of SFT pairs");
+  XLALRegisterUvarMember( pairListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFT pairs");
+  XLALRegisterUvarMember( sftListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFTs (for sanity checks)");
+  XLALRegisterUvarMember( sftListInputFilename, STRING, 0,  OPTIONAL, "Name of file to which to read in list of SFTs (for sanity checks)");
+  XLALRegisterUvarMember( gammaAveOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write aa+bb weights (for e.g., false alarm estimation)");
+  XLALRegisterUvarMember( gammaCircOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write ab-ba weights (for e.g., systematic error)");
+  XLALRegisterUvarMember( toplistFilename, STRING, 0,  OPTIONAL, "Output filename containing candidates in toplist");
+  XLALRegisterUvarMember( logFilename, STRING, 0,  OPTIONAL, "Output a meta-data file for the search");
+  XLALRegisterUvarMember( version, 	   BOOLEAN, 'V',  SPECIAL, "Output version(VCS) information");
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );

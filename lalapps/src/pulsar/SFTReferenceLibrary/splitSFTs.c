@@ -217,7 +217,7 @@ int main(int argc, char**argv) {
   TRY((cmdline = (char*)malloc(strlen(lalAppsVCSIdentId)+strlen(lalAppsVCSIdentStatus)+2)) == NULL,
       "out of memory allocating cmdline",1);
   strcpy(cmdline,lalAppsVCSIdentId);
-  strcpy(cmdline,lalAppsVCSIdentStatus);
+  strcat(cmdline,lalAppsVCSIdentStatus);
   strcat(cmdline, "\n");
   for(arg = 0; arg < argc; arg++) {
     if (strcmp(argv[arg], "-m") == 0) {

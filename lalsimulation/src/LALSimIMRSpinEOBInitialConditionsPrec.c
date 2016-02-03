@@ -1035,7 +1035,8 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 		gsl_vector_free(initValues);
 		gsl_matrix_free(rotMatrix);
 		gsl_matrix_free(invMatrix);
-		XLAL_ERROR(XLAL_EMAXITER);
+		//XLAL_ERROR(XLAL_EMAXITER);
+		XLAL_ERROR(XLAL_EDOM);
 	}
 	finalValues = gsl_multiroot_fsolver_root(rootSolver);
 

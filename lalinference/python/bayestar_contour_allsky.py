@@ -35,9 +35,9 @@ parser.add_argument(
     '--contour', metavar='PERCENT', type=float, nargs='+', required=True,
     help='plot contour enclosing this percentage of probability mass')
 parser.add_argument(
-    '-i', '--interpolate', default=False, action='store_true',
-    help='perform bilinear interpolation to smooth blocky'
-    ' multiresolution sky maps [default: %(default)s]')
+    '-i', '--interpolate',
+    choices='nearest nested bilinear'.split(), default='nearest',
+    help='resampling interpolation method [default: %(default)s]')
 parser.add_argument(
     '-s', '--simplify', default=False, action='store_true',
     help='simplify contour paths [default: %(default)s]')
@@ -62,11 +62,11 @@ import json
 prob, _ = fits.read_sky_map(opts.input.name, nest=True)
 
 # Resample if requested
-if opts.nside is not None:
+if opts.nside is not None and opts.interpolate in ('nearest', 'nested'):
     prob = hp.ud_grade(prob, opts.nside, order_in='NESTED', power=-2)
-
-# Smooth if requested
-if opts.interpolate:
+elif opts.nside is not None and opts.interpolate == 'bilinear':
+    prob = postprocess.smooth_ud_grade(prob, opts.nside, nest=True)
+if opts.interpolate == 'nested':
     prob = postprocess.interpolate_nested(prob, nest=True)
 
 # Find credible levels

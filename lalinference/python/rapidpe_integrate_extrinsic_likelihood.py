@@ -435,7 +435,7 @@ pinned_params.update({
     "neff": opts.n_eff, # Total number of effective samples to collect before termination
 
     # Adaptive sampling settings
-    "tempering_exp": opts.adapt_weight_exponent if not opts.no_adapt else 0.0, # Weights will be raised to this power to prevent overconvergence
+    "tempering_exp": opts.adapt_weight_exponent if not opts.no_adapt else 1.0, # Weights will be raised to this power to prevent overconvergence
     "floor_level": opts.adapt_floor_level if not opts.no_adapt else 0.0, # The new sampling distribution at the end of each chunk will be floor_level-weighted average of a uniform distribution and the (L^tempering_exp p/p_s)-weighted histogram of sampled points.
     "history_mult": 10, # Multiplier on 'n' - number of samples to estimate marginalized 1-D histograms
     "n_adapt": 100 if not opts.no_adapt else 0, # Number of chunks to allow adaption over

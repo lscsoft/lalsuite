@@ -489,12 +489,12 @@ ReadUserVars( int argc,char *argv[], UserInput_t *uvar, CHAR *clargs)
   uvar->deltat = MIN_DT;
 
   /* ---------- register all user-variables ---------- */
-  XLALregBOOLUserStruct ( 	help, 		'h', UVAR_HELP,     "Print this message");
-  XLALregSTRINGUserStruct ( 	inputfile, 	'i', UVAR_REQUIRED, "The input FITS file name");
-  XLALregSTRINGUserStruct ( 	outputdir, 	'o', UVAR_REQUIRED, "The output frame file directory name");
-  XLALregREALUserStruct ( 	deltat,         't', UVAR_OPTIONAL, "The output sampling time (in seconds)");
-  XLALregBOOLUserStruct ( 	bary,   	'b', UVAR_OPTIONAL, "Output barycentered data");
-  XLALregBOOLUserStruct (	version,        'V', UVAR_SPECIAL,  "Output code version");
+  XLALRegisterUvarMember( 	help, 		BOOLEAN, 'h', HELP,     "Print this message");
+  XLALRegisterUvarMember( 	inputfile, 	STRING, 'i', REQUIRED, "The input FITS file name");
+  XLALRegisterUvarMember( 	outputdir, 	STRING, 'o', REQUIRED, "The output frame file directory name");
+  XLALRegisterUvarMember( 	deltat,         REAL8, 't', OPTIONAL, "The output sampling time (in seconds)");
+  XLALRegisterUvarMember( 	bary,   	BOOLEAN, 'b', OPTIONAL, "Output barycentered data");
+  XLALRegisterUvarMember(	version,        BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
   XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );

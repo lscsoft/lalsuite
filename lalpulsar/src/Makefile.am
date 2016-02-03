@@ -20,6 +20,7 @@ pkginclude_HEADERS = \
 	GeneratePulsarSignal.h \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
+	GSLHelpers.h \
 	HoughMap.h \
 	LALBarycenter.h \
 	LALComputeAM.h \
@@ -168,7 +169,6 @@ EXTRA_liblalpulsar_la_SOURCES = \
 	ComputeFstat_DemodHL_SSE.i \
 	ComputeFstat_Demod_ComputeFaFb.c \
 	ComputeFstat_internal.h \
-	GSLHelpers.h \
 	SFTfileIO-LAL.c \
 	SFTutils-LAL.c \
 	SinCosLUT.i \

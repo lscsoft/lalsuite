@@ -554,8 +554,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   /* Set the template correction factor */
   if ( localparams.approximant == FindChirpSP)
   {
-    /* Most of this gets stored in fcTmplt->fcTmpltNorm which is computed on th
-     * fly. This is correction needed to that. */
+    /* Most of this gets stored in fcTmplt->fcTmpltNorm which is computed on
+     * the fly. This is the correction needed to that. */
     /* First need to add ( (df)**-7./6. )**2 */
     localparams.tempCorrFac = pow(localparams.segmentDuration,14./6.); 
     /* For some reason FindChirp multiplies by a dt factor, take this out */
@@ -564,8 +564,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   else
   {
     /* Sigmasq factors are not yet available for all approximants */
-    /* Set values to 0 to avoid confusion in this case */
-    localparams.tempCorrFac = 0;
+    /* Set values to 1 (so this factor has no effect) and warn user */
+    verbose("warning: Sigmasq correction factor is not yet available for this approximant: setting it to 1.\n");
+    localparams.tempCorrFac = 1.0;
   }
 
   *params = localparams;

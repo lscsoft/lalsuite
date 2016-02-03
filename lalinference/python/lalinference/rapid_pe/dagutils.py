@@ -42,7 +42,7 @@ def which(program):
     return None
 
 # FIXME: Keep in sync with arguments of integrate_likelihood_extrinsic
-def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=None, intr_prms=("mass1", "mass2"), ncopies=1, **kwargs):
+def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=None, intr_prms=("mass1", "mass2"), ncopies=1, condor_commands=None, **kwargs):
     """
     Write a submit file for launching jobs to marginalize the likelihood over
     extrinsic parameters.
@@ -122,7 +122,9 @@ def write_integrate_likelihood_extrinsic_sub(tag='integrate', exe=None, log_dir=
         ile_job.add_var_opt(p.replace("_", "-"))
 
     ile_job.add_condor_cmd('getenv', 'True')
-    ile_job.add_condor_cmd('accounting_group', 'cgca.cbc.rapidpe.devel')
+    if condor_commands is not None:
+        for cmd, value in condor_commands.iteritems():
+            ile_job.add_condor_cmd(cmd, value)
     ile_job.add_condor_cmd('request_memory', '2048')
     
     return ile_job, ile_sub_name

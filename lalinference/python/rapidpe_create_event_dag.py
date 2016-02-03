@@ -55,6 +55,7 @@ optp.add_option("--n-copies", default=1, help="Number of copies of each integrat
 optp.add_option("--write-script", action="store_true", help="In addition to the DAG, write a script to this filename to execute the workflow.")
 optp.add_option("--write-eff-lambda", action="store_true", help="Use psi0 column of template bank XML as effective lambda point to calculate in DAG.")
 optp.add_option("--write-deff-lambda", action="store_true", help="Use psi3 column of template bank XML as delta effective lambda point to calculate in DAG.")
+optp.add_option("--condor-command", action="append", help="Append these condor commands to the submit files. Useful for account group information.")
 
 for cat, val in MAXJOBS.iteritems():
     optname = "--maxjobs-%s" % cat.lower().replace("_", "-")
@@ -71,6 +72,10 @@ opts, args = optp.parse_args()
 
 if not opts.template_bank_xml:
     exit("Option --template-bank-xml is required.")
+
+condor_commands = None
+if opts.condor_command is not None:
+    condor_commands = dict([c.split("=") for c in opts.condor_command])
 
 #
 # Get trigger information from coinc xml file
@@ -138,6 +143,7 @@ if opts.write_deff_lambda:
 
 ile_job_type, ile_sub_name = dagutils.write_integrate_likelihood_extrinsic_sub(
         tag='integrate',
+        condor_commands=condor_commands,
         intr_prms=intr_prms,
         log_dir=opts.log_directory,
         cache_file=opts.cache_file,
@@ -274,3 +280,8 @@ if use_bayespe_postproc:
         ppdag.write_script()
 
     print "Created a postprocessing DAG named %s\n" % ppdag_name
+
+xmldoc = ligolw.Document()
+xmldoc.appendChild(ligolw.LIGO_LW())
+process.register_to_xmldoc(xmldoc, sys.argv[0], opts.__dict__)
+utils.write_filename(xmldoc, opts.output_name + ".xml.gz", gz=True)

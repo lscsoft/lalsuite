@@ -492,3 +492,155 @@ def contour(m, levels, nest=False, degrees=False, simplify=True):
         paths.append([cycle + [cycle[0]] for cycle in cycles])
 
     return paths
+
+
+def find_greedy_credible_levels(p):
+    """Find the greedy credible levels of a (possibly multi-dimensional) array.
+
+    Parameters
+    ----------
+
+    p : np.ndarray
+        The input array, typically a HEALPix image.
+
+    Returns
+    -------
+
+    cls : np.ndarray
+        An array with the same shape as `p`, with values ranging from `0`
+        to `p.sum()`, representing the greedy credible level to which each
+        entry in the array belongs.
+    """
+    pflat = p.ravel()
+    i = np.flipud(np.argsort(pflat))
+    cs = np.cumsum(pflat[i])
+    cls = np.empty_like(pflat)
+    cls[i] = cs
+    return cls.reshape(p.shape)
+
+
+def rotate_map_to_axis(m, ra, dec, nest=False, method='direct'):
+    """Rotate a sky map to place a given line of sight on the +z axis.
+
+    Parameters
+    ----------
+
+    m : np.ndarray
+        The input HEALPix array.
+
+    ra : float
+        Right ascension of axis in radians.
+
+        To specify the axis in geocentric coordinates, supply ra=(lon + gmst),
+        where lon is the geocentric longitude and gmst is the Greenwich mean
+        sidereal time in radians.
+
+    dec : float
+        Declination of axis in radians.
+
+        To specify the axis in geocentric coordinates, supply dec=lat,
+        where lat is the geocentric latitude in radians.
+
+    nest : bool, default=False
+        Indicates whether the input sky map is in nested rather than
+        ring-indexed HEALPix coordinates (default: ring).
+
+    method : 'direct' or 'fft'
+        Select whether to use spherical harmonic transformation ('fft') or
+        direct coordinate transformation ('direct')
+
+    Returns
+    -------
+
+    m_rotated : np.ndarray
+        The rotated HEALPix array.
+    """
+    npix = len(m)
+    nside = hp.npix2nside(npix)
+
+    theta = 0.5 * np.pi - dec
+    phi = ra
+
+    if method == 'fft':
+        if nest:
+            m = hp.reorder(m, n2r=True)
+        alm = hp.map2alm(m)
+        hp.rotate_alm(alm, -phi, -theta, 0.0)
+        ret = hp.alm2map(alm, nside, verbose=False)
+        if nest:
+            ret = hp.reorder(ret, r2n=True)
+    elif method == 'direct':
+        R = hp.Rotator(
+            rot=np.asarray([0, theta, -phi]),
+            deg=False, inv=False, eulertype='Y')
+        theta, phi = hp.pix2ang(nside, np.arange(npix), nest=nest)
+        ipix = hp.ang2pix(nside, *R(theta, phi), nest=nest)
+        ret = m[ipix]
+    else:
+        raise ValueError('Unrecognized method: {0}'.format(method))
+
+    return ret
+
+
+def polar_profile(m, nest=False):
+    """Obtain the marginalized polar profile of sky map.
+
+    Parameters
+    ----------
+
+    m : np.ndarray
+        The input HEALPix array.
+
+    nest : bool, default=False
+        Indicates whether the input sky map is in nested rather than
+        ring-indexed HEALPix coordinates (default: ring).
+
+    Returns
+    -------
+
+    theta : np.ndarray
+        The polar angles (i.e., the colatitudes) of the isolatitude rings.
+
+    m_int : np.ndarray
+        The normalized probability density, such that `np.trapz(m_int, theta)`
+        is approximately `np.sum(m)`.
+    """
+    npix = len(m)
+    nside = hp.npix2nside(npix)
+    nrings, = hp.pix2ring(nside, np.asarray([npix]))
+    startpix, ringpix, costheta, sintheta, _ = hp.ringinfo(
+        nside, np.arange(1, nrings))
+
+    if nest:
+        m = hp.reorder(m, n2r=True)
+
+    theta = np.arccos(costheta)
+    m_int = np.asarray([m[i:i+j].sum() * stheta * 0.5 * npix / j
+        for i, j, stheta in zip(startpix, ringpix, sintheta)])
+
+    return theta, m_int
+
+
+def smooth_ud_grade(m, nside, nest=False):
+    """Resample a sky map to a new resolution using bilinear interpolation.
+
+    Parameters
+    ----------
+
+    m : np.ndarray
+        The input HEALPix array.
+
+    nest : bool, default=False
+        Indicates whether the input sky map is in nested rather than
+        ring-indexed HEALPix coordinates (default: ring).
+
+    Returns
+    -------
+
+    new_m : np.ndarray
+        The resampled HEALPix array. The sum of `m` is approximately preserved.
+    """
+    npix = hp.nside2npix(nside)
+    theta, phi = hp.pix2ang(nside, np.arange(npix), nest=nest)
+    new_m = hp.get_interp_val(m, theta, phi, nest=nest)
+    return new_m * len(m) / len(new_m)
