@@ -118,8 +118,10 @@ for i; do
             noupdate=true ;;
 	--gc-opt)
 	    CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS" ;;
+        --avx)
+            fftw_copts_single="--enable-avx $fftw_copts_single" ;;
 	--64)
-	    fftw_copts_single="--enable-sse --enable-sse2 --enable-avx"
+	    fftw_copts_single="--enable-sse --enable-sse2 $fftw_copts_single"
 	    CPPFLAGS="-m64 $CPPFLAGS"
 	    CXXFLAGS="-m64 $CXXFLAGS"
 	    CFLAGS="-m64 $CFLAGS"
@@ -132,14 +134,14 @@ for i; do
 	--sse)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -march=pentium3 $CFLAGS"
-	    fftw_copts_single=--enable-sse
+	    fftw_copts_single="--enable-sse $fftw_copts_single"
 	    planclass=__SSE
 	    acc="_sse";;
 	--sse2)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
-            fftw_copts_single=--enable-sse
-            fftw_copts_double=--enable-sse2
+            fftw_copts_single="--enable-sse $fftw_copts_single"
+            fftw_copts_double="--enable-sse2 $fftw_copts_double"
 	    planclass=__SSE2
 	    acc="_sse2";;
 	--altivec)
@@ -147,7 +149,7 @@ for i; do
 	    CFLAGS="-arch ppc -fast -mcpu=G4 -maltivec -faltivec $CFLAGS"
 	    CXXFLAGS="-arch ppc -mcpu=G4 $CXXFLAGS"
 	    LDFLAGS="-arch ppc $LDFLAGS"
-	    fftw_copts_single=--enable-altivec
+	    fftw_copts_single="--enable-altivec $fftw_copts_single"
 	    planclass=__ALTIVEC
 	    acc="_altivec"
 	    cross_copt=--host=powerpc-apple-darwin ;;
@@ -198,6 +200,7 @@ for i; do
 	    echo "  --cuda            build an App that uses CUDA"
 	    echo "  --sse             build an App that uses SSE"
 	    echo "  --sse2            build an App that uses SSE2"
+            echo "  --avx             build an App that uses AVX (currently in FFTW only)"
 	    echo "  --altivec         build an App that uses AltiVec"
 	    echo "  --gc-opt          build an App that uses SSE2 GC optimization"
 	    echo "  --boinc-tag=<tag>|--boinc-commit=<sha1> specify a BOINC commit to use (defaults to 'current_gw_apps')"
