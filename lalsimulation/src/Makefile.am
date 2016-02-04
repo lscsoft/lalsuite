@@ -83,6 +83,7 @@ noinst_HEADERS = \
 	LALSimIMREOBHybridRingdown.c \
 	LALSimIMREOBHybridRingdownPrec.c \
 	LALSimIMREOBNQCCorrection.c \
+	LALSimIMREOBNQCTables.c \
 	LALSimIMREOBNRv2.h \
 	LALSimIMREOBNRv2HMROMUtilities.c \
 	LALSimIMREOBNewtonianMultipole.c \
