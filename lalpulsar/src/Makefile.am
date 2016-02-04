@@ -17,10 +17,10 @@ pkginclude_HEADERS = \
 	FitToPulsar.h \
 	FlatMesh.h \
 	FlatPulsarMetric.h \
+	GSLHelpers.h \
 	GeneratePulsarSignal.h \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
-	GSLHelpers.h \
 	HoughMap.h \
 	LALBarycenter.h \
 	LALComputeAM.h \
