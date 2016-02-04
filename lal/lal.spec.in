@@ -53,7 +53,7 @@ This package provides the Octave bindings.
 %setup -q
 
 %build
-%configure --disable-gcc-flags --disable-debug --enable-swig
+%configure --disable-gcc-flags --enable-swig
 %{__make} V=1
 
 %check
