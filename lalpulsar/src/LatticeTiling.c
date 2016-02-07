@@ -1365,8 +1365,14 @@ int XLALNextLatticeTilingPoint(
         itr->direction[ti] = direction;
       }
 
-      // Set integer point to lower or bound, depending on current direction
-      itr->int_point[ti] = (direction > 0) ? int_lower_i : int_upper_i;
+      // Set integer point to:
+      // - lower or upper bound (depending on current direction) for iterated-over dimensions
+      // - mid-point of integer bounds for non-iterated dimensions
+      if (ti < itr->tiled_itr_ndim) {
+        itr->int_point[ti] = (direction > 0) ? int_lower_i : int_upper_i;
+      } else {
+        itr->int_point[ti] = (int_lower_i + int_upper_i) / 2;
+      }
 
       // Set current physical point from integer point
       double phys_point_i = phys_origin_i;
