@@ -74,11 +74,8 @@ static FILE* LogOutput = NULL;
 /*---------- internal Global variables ----------*/
 
 
-
-static int LogLevel = 0;	/* to be set with LogPrint_set_level() */
-
 /*---------- internal prototypes ----------*/
-static void LogPrintf_va (LogLevel_t level, const char* format, va_list va );
+static LogLevel_t LogLevel(void);
 
 static const char * LogGetTimestamp (void);
 static const char * LogTimeToString(double t);
@@ -87,6 +84,18 @@ static const char *LogFormatLevel( LogLevel_t level );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/** Get log level by examining lalDebugLevel */
+static LogLevel_t LogLevel()
+{
+  if (lalDebugLevel == 0)
+    return LOG_NONE;		// If not printing LAL messages, also do not print log messages
+  if (lalDebugLevel & LALTRACE)
+    return LOG_DETAIL;		// Print LOG_DETAIL messages if LAL_DEBUG_LEVEL contains 'trace'
+  if (lalDebugLevel & LALINFO)
+    return LOG_DEBUG;		// Print LOG_DEBUG messages if LAL_DEBUG_LEVEL contains 'info'
+  return LOG_NORMAL;		// Print LOG_CRITICAL and LOG_NORMAL messages by default
+}
+
 /** Set the output file for log messages */
 void LogSetFile(FILE *file)
 {
@@ -94,72 +103,52 @@ void LogSetFile(FILE *file)
   return;
 }
 
-/* Set the log-level to be used in this module.
- * (allow independence of lalDebugLevel!)
+/**
+ * Verbatim output of the given log-message if LogLevel() >= level
  */
-void
-LogSetLevel(LogLevel_t level)
-{
-  LogLevel = level;
-  return;
-}
-
-/** Verbatim output of the given log-message if LogPrintf_level >= level */
 void
 LogPrintfVerbatim (LogLevel_t level, const char* format, ...)
 {
-    va_list va;
-    va_start(va, format);
 
-    if ( LogLevel < level )
-      return;
-    if (LogOutput == NULL)
-      LogOutput = LogOutputDefault;
+  if ( LogLevel() < level )
+    return;
+  if (LogOutput == NULL)
+    LogOutput = LogOutputDefault;
 
-    /* simply print this to output  */
-    vfprintf (LogOutput, format, va );
-    fflush(LogOutput);
+  va_list va;
+  va_start(va, format);
 
-    va_end(va);
+  /* simply print this to output  */
+  vfprintf (LogOutput, format, va );
+  fflush(LogOutput);
+
+  va_end(va);
 
 } /* LogPrintfVerbatim() */
 
 
 /**
- * prefix the log-message by a timestamp and level
+ * Output the given log-message, prefixed by a timestamp and level, if LogLevel() >= level
  */
 void
 LogPrintf (LogLevel_t level, const char* format, ...)
 {
-  va_list va;
-  va_start(va, format);
 
-  LogPrintf_va ( level, format, va );
-
-  va_end(va);
-
-} /* LogPrintf() */
-
-
-/**
- * Low-level log-printing function: prefix message by timestamp if given.
- */
-void
-LogPrintf_va (LogLevel_t level, const char* format, va_list va )
-{
-  if ( LogLevel < level )
+  if ( LogLevel() < level )
     return;
   if (LogOutput == NULL)
     LogOutput = LogOutputDefault;
+
+  va_list va;
+  va_start(va, format);
 
   fprintf(LogOutput, "%s (%d) [%s]: ", LogGetTimestamp(), getpid(), LogFormatLevel(level) );
   vfprintf(LogOutput, format, va);
   fflush(LogOutput);
 
-  return;
+  va_end(va);
 
-} /* LogPrintf_va() */
-
+} /* LogPrintf() */
 
 
 /* taken from BOINC: return time-string for given unix-time

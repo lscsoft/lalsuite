@@ -116,9 +116,8 @@ int main(int argc, char *argv[]) {
   INT8 MC_trials_reset;
   gsl_vector_int *twoF_pdf_hist = NULL;
     
-  /* Initialise LAL error handler, debug level and log level */
+  /* Initialise LAL error handler */
   lal_errhandler = LAL_ERR_EXIT;
-  LogSetLevel(lalDebugLevel);
   
   /* Register command line arguments */
   LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",             'h', UVAR_HELP,     "Print this help message", &help), &status);

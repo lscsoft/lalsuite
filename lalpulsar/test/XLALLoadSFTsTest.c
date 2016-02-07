@@ -202,8 +202,6 @@ int main(int argc, char *argv[])
     loglevel = atoi(argv[4]);
   }
 
-  LogSetLevel(loglevel);
-
   LogPrintf(LOG_DEBUG, "Calling LALSFTdataFind ...\n");
   SUB ( LALSFTdataFind ( &status, &catalog, argv[1], &constraints ), &status);
   LogPrintf(LOG_DEBUG, "Calling LALLoadSFTs ...\n");

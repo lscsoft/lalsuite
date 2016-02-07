@@ -192,14 +192,11 @@ int main(int argc,char *argv[])
   ConfigVariables XLAL_INIT_DECL(cfg);
 
   vrbflg = 1;	/* verbose error-messages */
-  LogSetLevel(lalDebugLevel);
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off ();
 
   /* ----- register and read all user-variables ----- */
-  LogSetLevel(lalDebugLevel);
-
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
     return 1;

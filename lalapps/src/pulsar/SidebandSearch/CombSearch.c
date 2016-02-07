@@ -162,11 +162,6 @@ int main(int argc,char *argv[])
 
   vrbflg = 1;					/* verbose error-messages */
 
-
-  /* setup LAL debug level */
-  LogSetLevel(lalDebugLevel);
-  LogPrintf(LOG_DEBUG,"Debug level set to %d \n", lalDebugLevel);
-  
   /* register and read all user-variables */
   if (initUserVars(argc, argv, &uvar)) {
     LogPrintf(LOG_CRITICAL,"%s : initUserVars failed with error = %d\n",fn,xlalErrno);

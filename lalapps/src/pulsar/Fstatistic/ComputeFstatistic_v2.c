@@ -377,8 +377,7 @@ int main(int argc,char *argv[])
       exit (0);
     }
 
-  /* set log-level and open log-file */
-  LogSetLevel ( lalDebugLevel );
+  /* open log-file */
   if ( XLALUserVarWasSet(&uvar.outputLogPrintf))
     {
       XLAL_CHECK_MAIN ((fpLogPrintf = fopen(uvar.outputLogPrintf, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputLogPrintf );

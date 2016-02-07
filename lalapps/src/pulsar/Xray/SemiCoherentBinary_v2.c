@@ -140,9 +140,6 @@ int main( int argc, char *argv[] )  {
   /* turn off default GSL error handler */
   gsl_set_error_handler_off();
 
-  /* setup LAL debug level */
-  LogSetLevel(lalDebugLevel);
-
   /* register and read all user-variables */
   if (XLALReadUserVars(argc,argv,&uvar,&clargs)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALReadUserVars() failed with error = %d\n",__func__,xlalErrno);

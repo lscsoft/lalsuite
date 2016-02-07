@@ -341,7 +341,7 @@ int MAIN( int argc, char *argv[]) {
   /* user variables */
   BOOLEAN uvar_help = FALSE;    /* true if -h option is given */
   BOOLEAN uvar_log = FALSE;     /* logging done if true */
-  INT4 uvar_loglevel = 0;
+  INT4 uvar_loglevel = 0;       /* DEPRECATED; used to set logLevel, now set by LAL_DEBUG_LEVEL */
 
   BOOLEAN uvar_printCand1 = FALSE;      /* if 1st stage candidates are to be printed */
   BOOLEAN uvar_printFstat1 = FALSE;
@@ -426,13 +426,6 @@ int MAIN( int argc, char *argv[]) {
 #ifdef EAH_LALDEBUGLEVEL
 #endif
 
-  /* set log-level */
-#ifdef EAH_LOGLEVEL
-  uvar_loglevel = EAH_LOGLEVEL;
-#else
-  uvar_loglevel = lalDebugLevel & LALALLDBG;
-#endif
-
   uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar_ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
@@ -451,7 +444,6 @@ int MAIN( int argc, char *argv[]) {
 
   /* register user input variables */
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "logLevel",     0,  UVAR_OPTIONAL, "Set logLevel", &uvar_loglevel), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print toplist of semicoherent candidates", &uvar_semiCohToplist ), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
@@ -517,11 +509,10 @@ int MAIN( int argc, char *argv[]) {
 
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
 
+  LAL_CALL( LALRegisterINTUserVar(    &status, "logLevel",     0,  UVAR_CATEGORY_DEPRECATED, "DEPRECATED; used to set logLevel, now set by LAL_DEBUG_LEVEL", &uvar_loglevel), &status);
+
   /* read all command line variables */
   LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* set log level */
-  LogSetLevel(uvar_loglevel);
 
   /* assemble version string */
   CHAR *VCSInfoString;

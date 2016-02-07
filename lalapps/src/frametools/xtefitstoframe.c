@@ -354,9 +354,6 @@ int main( int argc, char *argv[] )  {
   /* turn off default GSL error handler */
   gsl_set_error_handler_off();
 
-  /* setup LAL debug level */
-  LogSetLevel(lalDebugLevel);
-
   /* register and read all user-variables */
   XLAL_CHECK_MAIN ( ReadUserVars( argc,argv, &uvar, clargs) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf(LOG_DEBUG,"%s : read in uservars\n",fn);
