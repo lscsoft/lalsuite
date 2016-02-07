@@ -921,11 +921,11 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
     for (size_t i = 0; i < n; ++i) {
       const double phys_point = gsl_vector_get(itr->phys_point, i);
       tiling->stats[i].total_points = 1;
-      tiling->stats[i].min_points_pass = 1;
-      tiling->stats[i].avg_points_pass = 1;
-      tiling->stats[i].max_points_pass = 1;
-      tiling->stats[i].min_value_pass = phys_point;
-      tiling->stats[i].max_value_pass = phys_point;
+      tiling->stats[i].min_points = 1;
+      tiling->stats[i].avg_points = 1;
+      tiling->stats[i].max_points = 1;
+      tiling->stats[i].min_value = phys_point;
+      tiling->stats[i].max_value = phys_point;
     }
 
     // If lattice tiling contains more than a single point
@@ -933,17 +933,17 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
 
       // Allocate and initialise arrays for computing statistics
       UINT8 t_num_points[tn];
-      UINT4 t_num_passes[tn], t_min_points[tn], t_max_points[tn];
+      UINT4 t_num_crossings[tn], t_min_points[tn], t_max_points[tn];
       double t_min_value[tn], t_max_value[tn];
       for (size_t tj = 0; tj < tn; ++tj) {
         const size_t j = itr->tiling->tiled_idx[tj];
         const UINT4 num_points = itr->int_upper[tj] - itr->int_lower[tj] + 1;
         t_num_points[tj] = 1;
-        t_num_passes[tj] = 1;
+        t_num_crossings[tj] = 1;
         t_min_points[tj] = num_points;
         t_max_points[tj] = num_points;
-        t_min_value[tj] = tiling->stats[j].min_value_pass;
-        t_max_value[tj] = tiling->stats[j].max_value_pass;
+        t_min_value[tj] = tiling->stats[j].min_value;
+        t_max_value[tj] = tiling->stats[j].max_value;
       }
 
       // Iterate over remaining points; XLALNextLatticeTilingPoint() returns the index
@@ -960,7 +960,7 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
           const UINT4 num_points = itr->int_upper[tj] - itr->int_lower[tj] + 1;
           const double phys_point = gsl_vector_get(itr->phys_point, j);
           t_num_points[tj] += 1;
-          t_num_passes[tj] += 1;
+          t_num_crossings[tj] += 1;
           t_min_points[tj] = GSL_MIN(t_min_points[tj], num_points);
           t_max_points[tj] = GSL_MAX(t_max_points[tj], num_points);
           t_min_value[tj] = GSL_MIN(t_min_value[tj], phys_point);
@@ -986,11 +986,11 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
           // Non-tiled dimensions should inherit their total number of points from lower dimensions
           tiling->stats[k].total_points = t_num_points[tj];
         }
-        tiling->stats[j].min_points_pass = t_min_points[tj];
-        tiling->stats[j].avg_points_pass = ((double) t_num_points[tj]) / t_num_passes[tj];
-        tiling->stats[j].max_points_pass = t_max_points[tj];
-        tiling->stats[j].min_value_pass = t_min_value[tj];
-        tiling->stats[j].max_value_pass = t_max_value[tj];
+        tiling->stats[j].min_points = t_min_points[tj];
+        tiling->stats[j].avg_points = ((double) t_num_points[tj]) / t_num_crossings[tj];
+        tiling->stats[j].max_points = t_max_points[tj];
+        tiling->stats[j].min_value = t_min_value[tj];
+        tiling->stats[j].max_value = t_max_value[tj];
       }
 
     }

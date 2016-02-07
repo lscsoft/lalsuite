@@ -1988,7 +1988,7 @@ int XLALSuperskyLatticePulsarSpinRange(
   for (size_t s = 0; s <= smax; ++s) {
     const LatticeTilingStats *stats = XLALLatticeTilingStatistics(tiling, RSSKY_FKDOT_DIM(s));
     XLAL_CHECK(stats != NULL, XLAL_EFUNC);
-    fkdotMax[s] += stats->max_value_pass - stats->min_value_pass;
+    fkdotMax[s] += stats->max_value - stats->min_value;
   }
 
   // Initialise 'spin_range' to zero

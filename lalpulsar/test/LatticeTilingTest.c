@@ -137,10 +137,10 @@ static int BasicTest(
       XLAL_CHECK(stats != NULL, XLAL_EFUNC);
       XLAL_CHECK(stats->total_points == total_ref[j], XLAL_EFAILED, "\n  "
                  "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref[%zu]", stats->total_points, total_ref[j], j);
-      XLAL_CHECK(stats->min_points_pass <= stats->avg_points_pass, XLAL_EFAILED, "\n  "
-                 "ERROR: min_points_pass = %" LAL_INT4_FORMAT " > %g = avg_points_pass", stats->min_points_pass, stats->avg_points_pass);
-      XLAL_CHECK(stats->max_points_pass >= stats->avg_points_pass, XLAL_EFAILED, "\n  "
-                 "ERROR: max_points_pass = %" LAL_INT4_FORMAT " < %g = avg_points_pass", stats->max_points_pass, stats->avg_points_pass);
+      XLAL_CHECK(stats->min_points <= stats->avg_points, XLAL_EFAILED, "\n  "
+                 "ERROR: min_points = %" LAL_INT4_FORMAT " > %g = avg_points", stats->min_points, stats->avg_points);
+      XLAL_CHECK(stats->max_points >= stats->avg_points, XLAL_EFAILED, "\n  "
+                 "ERROR: max_points = %" LAL_INT4_FORMAT " < %g = avg_points", stats->max_points, stats->avg_points);
     }
     printf(" done\n");
 

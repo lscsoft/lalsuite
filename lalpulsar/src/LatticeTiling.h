@@ -69,11 +69,11 @@ typedef enum tagTilingLattice {
 ///
 typedef struct tagLatticeTilingStats {
   UINT8 total_points;			///< Total number of points up to this dimension
-  INT4 min_points_pass;			///< Minimum number of points per pass in this dimension
-  double avg_points_pass;		///< Average number of points per pass in this dimension
-  INT4 max_points_pass;			///< Maximum number of points per pass in this dimension
-  double min_value_pass;		///< Minimum value of points in this dimension
-  double max_value_pass;		///< Maximum value of points in this dimension
+  UINT4 min_points;			///< Minimum number of points in this dimension
+  double avg_points;			///< Average number of points in this dimension
+  UINT4 max_points;			///< Maximum number of points in this dimension
+  double min_value;			///< Minimum value of points in this dimension
+  double max_value;			///< Maximum value of points in this dimension
 } LatticeTilingStats;
 
 ///
