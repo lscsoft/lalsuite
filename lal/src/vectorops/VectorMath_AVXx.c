@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2015 Reinhard Prix
+// Copyright (C) 2015 Reinhard Prix, Karl Wette
 // Copyright (C) 2015 Evan Goetz
 //
 // This program is free software; you can redistribute it and/or modify
@@ -50,16 +50,14 @@ local_mul_ps ( __m256 in1, __m256 in2 )
 static inline int
 XLALVectorMath_S2S_AVXx ( REAL4 *out, const REAL4 *in, const UINT4 len, __m256 (*f)(__m256) )
 {
-  XLAL_CHECK ( isMemAligned(out, 32) && isMemAligned(in, 32), XLAL_EINVAL, "All vectors need to be 32-byte aligned (8xfloats\n");
 
   // walk through vector in blocks of 8
   UINT4 i8Max = len - ( len % 8 );
-  const __m256 *in8p = (const void *)&(in[0]);
-  __m256 *out8p = (void *)&(out[0]);
-
   for ( UINT4 i8 = 0; i8 < i8Max; i8 += 8 )
     {
-      (*out8p++) = (*f)( (*in8p++) );
+      __m256 in8p = _mm256_loadu_ps(&in[i8]);
+      __m256 out8p = (*f)( in8p );
+      _mm256_storeu_ps(&out[i8], out8p);
     }
 
   // deal with the remaining (<=7) terms separately
@@ -80,17 +78,16 @@ XLALVectorMath_S2S_AVXx ( REAL4 *out, const REAL4 *in, const UINT4 len, __m256 (
 static inline int
 XLALVectorMath_S2SS_AVXx ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len, void (*f)(__m256, __m256*, __m256*) )
 {
-  XLAL_CHECK ( isMemAligned(out1, 32) && isMemAligned(out2, 32) && isMemAligned(in, 32), XLAL_EINVAL, "All vectors need to be 32-byte aligned (8xfloats\n");
 
   // walk through vector in blocks of 8
   UINT4 i8Max = len - ( len % 8 );
-  const __m256 *in8p = (const void *)&(in[0]);
-  __m256 *out8p_1 = (void *)&(out1[0]);
-  __m256 *out8p_2 = (void *)&(out2[0]);
-
   for ( UINT4 i8 = 0; i8 < i8Max; i8 += 8)
     {
-      (*f) ( (*in8p++), out8p_1++, out8p_2++ );
+      __m256 in8p = _mm256_loadu_ps(&in[i8]);
+      __m256 out8p_1, out8p_2;
+      (*f) ( in8p, &out8p_1, &out8p_2 );
+      _mm256_storeu_ps(&out1[i8], out8p_1);
+      _mm256_storeu_ps(&out2[i8], out8p_2);
     }
 
   // deal with the remaining (<=7) terms separately
@@ -112,17 +109,15 @@ XLALVectorMath_S2SS_AVXx ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT
 static inline int
 XLALVectorMath_SS2S_AVXx ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len, __m256 (*op)(__m256, __m256) )
 {
-  XLAL_CHECK ( isMemAligned(out, 32) && isMemAligned(in1, 32) && isMemAligned(in2, 32), XLAL_EINVAL, "All vectors need to be 32-byte aligned (8xfloats\n");
 
   // walk through vector in blocks of 8
   UINT4 i8Max = len - ( len % 8 );
-  const __m256 *in8p_1 = (const void *)&(in1[0]);
-  const __m256 *in8p_2 = (const void *)&(in2[0]);
-  __m256 *out8p = (void *)&(out[0]);
-
   for ( UINT4 i8 = 0; i8 < i8Max; i8 += 8 )
     {
-      (*out8p++) = (*op) ( (*in8p_1++), (*in8p_2++) );
+      __m256 in8p_1 = _mm256_loadu_ps(&in1[i8]);
+      __m256 in8p_2 = _mm256_loadu_ps(&in2[i8]);
+      __m256 out8p = (*op) ( in8p_1, in8p_2 );
+      _mm256_storeu_ps(&out[i8], out8p);
     }
 
   // deal with the remaining (<=7) terms separately
@@ -146,17 +141,15 @@ XLALVectorMath_SS2S_AVXx ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const
 static inline int
 XLALVectorMath_sS2S_AVXx ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len, __m256 (*op)(__m256, __m256) )
 {
-  XLAL_CHECK ( isMemAligned(out, 32) && isMemAligned(in, 32), XLAL_EINVAL, "All vectors need to be 32-byte aligned (8xfloats\n");
-
   const V8SF scalar8 = {.f={scalar,scalar,scalar,scalar,scalar,scalar,scalar,scalar}};
+
   // walk through vector in blocks of 8
   UINT4 i8Max = len - ( len % 8 );
-  const __m256 *in8p = (const void *)&(in[0]);
-  __m256 *out8p = (void *)&(out[0]);
-
   for ( UINT4 i8 = 0; i8 < i8Max; i8 += 8 )
     {
-      (*out8p++) = (*op) ( scalar8.v, (*in8p++) );
+      __m256 in8p = _mm256_loadu_ps(&in[i8]);
+      __m256 out8p = (*op) ( scalar8.v, in8p );
+      _mm256_storeu_ps(&out[i8], out8p);
     }
 
   // deal with the remaining (<=7) terms separately

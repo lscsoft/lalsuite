@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2015 Reinhard Prix
+// Copyright (C) 2015 Reinhard Prix, Karl Wette
 // Copyright (C) 2015 Evan Goetz
 //
 // This program is free software; you can redistribute it and/or modify
@@ -54,16 +54,14 @@ local_mul_ps ( __m128 in1, __m128 in2 )
 static inline int
 XLALVectorMath_S2S_SSEx ( REAL4 *out, const REAL4 *in, const UINT4 len, __m128 (*f)(__m128) )
 {
-  XLAL_CHECK ( isMemAligned(out, 16) && isMemAligned(in, 16), XLAL_EINVAL, "All vectors need to be 16-byte aligned (4xfloats\n");
 
   // walk through vector in blocks of 4
   UINT4 i4Max = len - ( len % 4 );
-  const __m128 *in4p = (const void *)&(in[0]);
-  __m128 *out4p = (void *)&out[0];
-
   for ( UINT4 i4 = 0; i4 < i4Max; i4 += 4 )
     {
-      (*out4p++) = (*f)( (*in4p++) );
+      __m128 in4p = _mm_loadu_ps(&in[i4]);
+      __m128 out4p = (*f)( in4p );
+      _mm_storeu_ps(&out[i4], out4p);
     }
 
   // deal with the remaining (<=3) terms separately
@@ -84,17 +82,16 @@ XLALVectorMath_S2S_SSEx ( REAL4 *out, const REAL4 *in, const UINT4 len, __m128 (
 static inline int
 XLALVectorMath_S2SS_SSEx ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len, void (*f)(__m128, __m128*, __m128*) )
 {
-  XLAL_CHECK ( isMemAligned(out1, 16) && isMemAligned(out2, 16) && isMemAligned(in, 16), XLAL_EINVAL, "All vectors need to be 16-byte aligned (4xfloats\n");
 
   // walk through vector in blocks of 4
   UINT4 i4Max = len - ( len % 4 );
-  const __m128 *in4p = (const void *)&(in[0]);
-  __m128 *out4p_1 = (void *)&(out1[0]);
-  __m128 *out4p_2 = (void *)&(out2[0]);
-
   for ( UINT4 i4 = 0; i4 < i4Max; i4 += 4 )
     {
-      (*f) ( (*in4p++), out4p_1++, out4p_2++ );
+      __m128 in4p = _mm_loadu_ps(&in[i4]);
+      __m128 out4p_1, out4p_2;
+      (*f) ( in4p, &out4p_1, &out4p_2 );
+      _mm_storeu_ps(&out1[i4], out4p_1);
+      _mm_storeu_ps(&out2[i4], out4p_2);
     }
 
   // deal with the remaining (<=3) terms separately
@@ -116,17 +113,15 @@ XLALVectorMath_S2SS_SSEx ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT
 static inline int
 XLALVectorMath_SS2S_SSEx ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len, __m128 (*op)(__m128, __m128) )
 {
-  XLAL_CHECK ( isMemAligned(out, 16) && isMemAligned(in1, 16) && isMemAligned(in2, 16), XLAL_EINVAL, "All vectors need to be 16-byte aligned (4xfloats\n");
 
   // walk through vector in blocks of 4
   UINT4 i4Max = len - ( len % 4 );
-  const __m128 *in4p_1 = (const void *)&(in1[0]);
-  const __m128 *in4p_2 = (const void *)&(in2[0]);
-  __m128 *out4p = (void *)&(out[0]);
-
   for ( UINT4 i4 = 0; i4 < i4Max; i4 += 4 )
     {
-      (*out4p++) = (*op) ( (*in4p_1++), (*in4p_2++) );
+      __m128 in4p_1 = _mm_loadu_ps(&in1[i4]);
+      __m128 in4p_2 = _mm_loadu_ps(&in2[i4]);
+      __m128 out4p = (*op) ( in4p_1, in4p_2 );
+      _mm_storeu_ps(&out[i4], out4p);
     }
 
   // deal with the remaining (<=3) terms separately
@@ -150,17 +145,15 @@ XLALVectorMath_SS2S_SSEx ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const
 static inline int
 XLALVectorMath_sS2S_SSEx ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len, __m128 (*op)(__m128, __m128) )
 {
-  XLAL_CHECK ( isMemAligned(out, 16) && isMemAligned(in, 16), XLAL_EINVAL, "All vectors need to be 16-byte aligned (4xfloats\n");
-
   const V4SF scalar4 = {.f={scalar,scalar,scalar,scalar}};
+
   // walk through vector in blocks of 4
   UINT4 i4Max = len - ( len % 4 );
-  const __m128 *in4p = (const void *)&(in[0]);
-  __m128 *out4p = (void *)&(out[0]);
-
   for ( UINT4 i4 = 0; i4 < i4Max; i4 += 4 )
     {
-      (*out4p++) = (*op) ( scalar4.v, (*in4p++) );
+      __m128 in4p = _mm_loadu_ps(&in[i4]);
+      __m128 out4p = (*op) ( scalar4.v, in4p );
+      _mm_storeu_ps(&out[i4], out4p);
     }
 
   // deal with the remaining (<=3) terms separately
