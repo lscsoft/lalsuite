@@ -925,9 +925,7 @@ XLALFstatMethodHelpString ( void )
   static CHAR helpstr[1024];
   if ( firstCall )
     {
-      XLAL_LAST_ELEM ( helpstr ) = '\0';
-      strcpy ( helpstr, "Available methods:" );
-      CHAR separator = ' ';
+      XLAL_INIT_MEM ( helpstr );
       for (int i = FMETHOD_START + 1; i < FMETHOD_END; i++ )
         {
           if ( ! XLALFstatMethodIsAvailable(i) ) {
@@ -936,11 +934,10 @@ XLALFstatMethodHelpString ( void )
           XLAL_CHECK_NULL ( FstatMethodNames[i] != NULL, XLAL_EFAULT );
           if ( strcmp ( FstatMethodNames[i] + strlen(FstatMethodNames[i]) - 4, "Best" ) == 0 ) {
             strcat ( helpstr, "=" );
-          } else {
-            strncat ( helpstr, &separator, 1 );
+          } else if ( i > FMETHOD_START + 1 ) {
+            strcat ( helpstr, "|" );
           }
           strcat ( helpstr, FstatMethodNames[i] );
-          separator = '|';
         } // for i < FMETHOD_LAST
 
       XLAL_CHECK_NULL ( XLAL_LAST_ELEM ( helpstr ) == '\0', XLAL_EBADLEN, "FstatMethod help-string exceeds buffer length (%zu)\n", sizeof(helpstr) );

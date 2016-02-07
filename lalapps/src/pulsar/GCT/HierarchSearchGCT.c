@@ -411,6 +411,7 @@ int MAIN( int argc, char *argv[]) {
 
   CHAR *uvar_outputTiming = NULL;
 
+  CHAR helpstr_buf[2048];
   CHAR *uvar_FstatMethod = XLALStringDuplicate("DemodBest");
   CHAR *uvar_FstatMethodRecalc = XLALStringDuplicate("DemodBest");
 
@@ -496,8 +497,10 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "BSGLlogcorr",  0, UVAR_DEVELOPER, "BSGL: include log-correction terms (slower) or not (faster)", &uvar_BSGLlogcorr), &status);
   // --------------------------------------------
 
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethod",  0, UVAR_OPTIONAL, XLALFstatMethodHelpString(), &uvar_FstatMethod ), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethodRecalc", 0, UVAR_OPTIONAL, XLALFstatMethodHelpString(), &uvar_FstatMethodRecalc ), &status);
+  snprintf( helpstr_buf, sizeof(helpstr_buf), "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() );
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethod",  0, UVAR_OPTIONAL, helpstr_buf, &uvar_FstatMethod ), &status);
+  snprintf( helpstr_buf, sizeof(helpstr_buf), "F-statistic method to use for recalc. Available methods: %s", XLALFstatMethodHelpString() );
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethodRecalc", 0, UVAR_OPTIONAL, helpstr_buf, &uvar_FstatMethodRecalc ), &status);
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);

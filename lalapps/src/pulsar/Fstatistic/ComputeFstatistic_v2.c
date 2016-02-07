@@ -1026,7 +1026,7 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( transient_tauDaysBand,REAL8, 0,  OPTIONAL, "TransientCW: Range of transient-CW duration timescales to search, in days");
   XLALRegisterUvarMember( transient_dtau,   INT4, 0,  OPTIONAL,     "TransientCW: Step-size in transient-CW duration timescale, in seconds [Default:Tsft]");
 
-  XLALRegisterUvarMember(FstatMethod,             STRING, 0,  OPTIONAL,  XLALFstatMethodHelpString() );
+  XLALRegisterUvarMember(FstatMethod,             STRING, 0,  OPTIONAL,  "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() );
 
   XLALRegisterUvarMember(  version,	BOOLEAN, 'V', SPECIAL,  "Output version information");
 

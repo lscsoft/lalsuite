@@ -41,9 +41,14 @@
 
 // ----- macro template for defining registration functions for UserInput variables
 #define DEFN_REGISTER_UVAR(UTYPE,CTYPE)                     \
-DECL_REGISTER_UVAR(UTYPE,CTYPE)                             \
-{                                                                       \
-  return XLALRegisterUserVar (name, UVAR_TYPE_ ## UTYPE, optchar, category, helpstr, cvar); \
+int XLALRegister ##UTYPE## UserVar ( CTYPE *cvar, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) \
+{                                                           \
+  char helpstr[2048];                                       \
+  va_list ap;                                               \
+  va_start(ap, fmt);                                        \
+  vsnprintf(helpstr, sizeof(helpstr), fmt, ap);             \
+  va_end(ap);                                               \
+  return XLALRegisterUserVar (cvar, name, UVAR_TYPE_ ## UTYPE, optchar, category, helpstr); \
 }
 
 // ---------- local type definitions ----------
@@ -74,7 +79,7 @@ typedef struct tagLALUserVariable {
   CHAR name[64];			// full name
   UserVarType type;			// variable type: BOOLEAN, INT4, REAL8, ...
   CHAR optchar;				// cmd-line character
-  const CHAR *help;			// help-string
+  CHAR help[2048];			// help-string
   void *varp;				// pointer to the actual C-variable
   UserVarCategory category;		// category (optional, required, developer, ... )
   BOOLEAN was_set;			// was this set by the user in any way? (ie vie cmdline or cfg-file)
@@ -82,7 +87,7 @@ typedef struct tagLALUserVariable {
 } LALUserVariable;
 
 // ---------- local prototypes ----------
-int XLALRegisterUserVar (const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *helpstr, void *cvar);
+int XLALRegisterUserVar (void *cvar, const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *helpstr);
 void check_and_mark_as_set ( LALUserVariable *ptr );
 
 // ----- define templated registration functions for all supported UVAR_TYPE_ 'UTYPES'
@@ -164,18 +169,19 @@ static const CHAR *program_name;	// keep a pointer to the program name
  * ==> use the type-safe macro XLALRegisterUvarMember(name,type,option,category,help) instead!
  */
 int
-XLALRegisterUserVar ( const CHAR *name,		/**< name of user-variable to register */
+XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variabe to link to this user-variable */
+                      const CHAR *name,		/**< name of user-variable to register */
                       UserVarType type,		/**< variable type (int,bool,string,real) */
                       CHAR optchar,		/**< optional short-option character */
                       UserVarCategory category,		/**< sets category to this */
-                      const CHAR *helpstr,	/**< help-string explaining this input-variable */
-                      void *cvar		/**< pointer to the actual C-variabe to link to this user-variable */
+                      const CHAR *helpstr	/**< help-string explaining this input-variable */
                       )
 {
+  XLAL_CHECK ( cvar != NULL, XLAL_EINVAL );
   XLAL_CHECK ( name != NULL, XLAL_EINVAL );
   XLAL_CHECK ( strlen(name) < sizeof(UVAR_vars.name), XLAL_EINVAL, "User-variable name '%s' is too long", name );
   XLAL_CHECK ( (category > UVAR_CATEGORY_START) && (category < UVAR_CATEGORY_END), XLAL_EINVAL );
-  XLAL_CHECK ( cvar != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( strlen(helpstr) < sizeof(UVAR_vars.help), XLAL_EINVAL, "User-variable help '%s' is too long", helpstr );
 
   // find end of uvar-list && check that neither short- nor long-option are taken already
   LALUserVariable *ptr = &UVAR_vars;
@@ -199,11 +205,11 @@ XLALRegisterUserVar ( const CHAR *name,		/**< name of user-variable to register 
   // fill in entry name, replacing '_' with '-' so
   // that e.g. uvar->an_option maps to --an-option
   XLALStringReplaceChar( strncpy( ptr->name, name, sizeof(ptr->name) ), '_', '-' );
+  strncpy( ptr->help, helpstr, sizeof(ptr->help) );
 
   // fill in entry values
   ptr->type 	= type;
   ptr->optchar 	= optchar;
-  ptr->help 	= helpstr;
   ptr->varp 	= cvar;
   ptr->category = category;
 
@@ -929,7 +935,7 @@ LALRegisterREALUserVar (LALStatus *status,
 			REAL8 *cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_REAL8, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_REAL8, optchar, category, helpstr ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
@@ -946,7 +952,7 @@ LALRegisterINTUserVar (LALStatus *status,
 		       INT4 *cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_INT4, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_INT4, optchar, category, helpstr ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
@@ -963,7 +969,7 @@ LALRegisterBOOLUserVar (LALStatus *status,
 			BOOLEAN *cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_BOOLEAN, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_BOOLEAN, optchar, category, helpstr ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
@@ -980,7 +986,7 @@ LALRegisterSTRINGUserVar (LALStatus *status,
 			  CHAR **cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_STRING, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_STRING, optchar, category, helpstr ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
@@ -997,7 +1003,7 @@ LALRegisterLISTUserVar (LALStatus *status,
 			LALStringVector **cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_STRINGVector, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_STRINGVector, optchar, category, helpstr ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
