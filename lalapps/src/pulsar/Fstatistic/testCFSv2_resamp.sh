@@ -141,7 +141,7 @@ sort $outfile_Resamp > __tmp_sorted && mv __tmp_sorted $outfile_Resamp
 
 ## compare absolute differences instead of relative, allow deviations of up to sigma=sqrt(8)~2.8
 echo
-cmdline="$cmp_code -1 ./${outfile_Demod} -2 ./${outfile_Resamp} --tol_L1=8e-2 --tol_L2=8e-2 --tol_angle=0.08 --tol_atMax=8e-2"
+cmdline="$cmp_code -1 ./${outfile_Demod} -2 ./${outfile_Resamp} --tol-L1=8e-2 --tol-L2=8e-2 --tol-angle=0.08 --tol-atMax=8e-2"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."

@@ -71,7 +71,7 @@ typedef enum {
 // Linked list to hold the complete information about the user-variables.
 //
 typedef struct tagLALUserVariable {
-  const CHAR *name;			// full name
+  CHAR name[64];			// full name
   UserVarType type;			// variable type: BOOLEAN, INT4, REAL8, ...
   CHAR optchar;				// cmd-line character
   const CHAR *help;			// help-string
@@ -173,6 +173,7 @@ XLALRegisterUserVar ( const CHAR *name,		/**< name of user-variable to register 
                       )
 {
   XLAL_CHECK ( name != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( strlen(name) < sizeof(UVAR_vars.name), XLAL_EINVAL, "User-variable name '%s' is too long", name );
   XLAL_CHECK ( (category > UVAR_CATEGORY_START) && (category < UVAR_CATEGORY_END), XLAL_EINVAL );
   XLAL_CHECK ( cvar != NULL, XLAL_EINVAL );
 
@@ -195,7 +196,8 @@ XLALRegisterUserVar ( const CHAR *name,		/**< name of user-variable to register 
   // set pointer to newly created entry and fill in values
   ptr = ptr->next;
 
-  ptr->name 	= name;
+  XLALStringReplaceChar( strncpy( ptr->name, name, sizeof(ptr->name) ), '_', '-' );
+
   ptr->type 	= type;
   ptr->optchar 	= optchar;
   ptr->help 	= helpstr;
