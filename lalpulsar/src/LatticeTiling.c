@@ -76,7 +76,7 @@ struct tagLatticeTilingIterator {
   const LatticeTiling *tiling;		///< Lattice tiling
   size_t itr_ndim;			///< Number of parameter-space dimensions to iterate over
   size_t tiled_itr_ndim;		///< Number of tiled parameter-space dimensions to iterate over
-  bool alternating;			///< If true, alternate iterator direction after every pass
+  bool alternating;			///< If true, alternate iterator direction after every crossing
   int state;				///< Iterator state: 0=initialised, 1=in progress, 2=finished
   gsl_vector *phys_point;		///< Current lattice point in physical coordinates
   INT4 *int_point;			///< Current lattice point in generating integers
