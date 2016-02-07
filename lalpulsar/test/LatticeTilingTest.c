@@ -123,7 +123,7 @@ static int BasicTest(
     // Count number of points
     const UINT8 total = XLALTotalLatticeTilingPoints(itr);
     printf("Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT "\n", i+1, total);
-    XLAL_CHECK(total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref[i]);
+    XLAL_CHECK(total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref[%zu]", total, total_ref[i], i);
     for (UINT8 k = 0; XLALNextLatticeTilingPoint(itr, NULL) > 0; ++k) {
       const UINT8 itr_index = XLALCurrentLatticeTilingIndex(itr);
       XLAL_CHECK(k == itr_index, XLAL_EFUNC, "ERROR: k = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = itr_index", k, itr_index);
@@ -136,7 +136,7 @@ static int BasicTest(
       const LatticeTilingStats *stats = XLALLatticeTilingStatistics(tiling, j);
       XLAL_CHECK(stats != NULL, XLAL_EFUNC);
       XLAL_CHECK(stats->total_points == total_ref[j], XLAL_EFAILED, "\n  "
-                 "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", stats->total_points, total_ref[j]);
+                 "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref[%zu]", stats->total_points, total_ref[j], j);
       XLAL_CHECK(stats->min_points_pass <= stats->avg_points_pass, XLAL_EFAILED, "\n  "
                  "ERROR: min_points_pass = %" LAL_INT4_FORMAT " > %g = avg_points_pass", stats->min_points_pass, stats->avg_points_pass);
       XLAL_CHECK(stats->max_points_pass >= stats->avg_points_pass, XLAL_EFAILED, "\n  "
@@ -207,7 +207,7 @@ static int BasicTest(
     // Count number of points, check for consistency with non-alternating count
     UINT8 total = 0;
     while (XLALNextLatticeTilingPoint(itr_alt, NULL) > 0) ++total;
-    XLAL_CHECK(total == total_ref[i], XLAL_EFUNC, "ERROR: alternating total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref[i]);
+    XLAL_CHECK(total == total_ref[i], XLAL_EFUNC, "ERROR: alternating total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref[%zu]", total, total_ref[i], i);
 
     // Cleanup
     XLALDestroyLatticeTilingIterator(itr_alt);
@@ -634,6 +634,20 @@ int main(void)
   XLAL_CHECK_MAIN(BasicTest(3, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,    8,   46,  332,    0) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(BasicTest(3, 1, 1, 1, 1, TILING_LATTICE_CUBIC ,    8,   60,  583,    0) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(BasicTest(4, 0, 0, 0, 0, TILING_LATTICE_ANSTAR,    1,    1,    1,    1) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 0, 0, 1, TILING_LATTICE_ANSTAR,    1,    1,    1,    4) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 0, 1, 0, TILING_LATTICE_ANSTAR,    1,    1,    4,    4) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 0, 1, 1, TILING_LATTICE_ANSTAR,    1,    1,    4,   20) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 1, 0, 0, TILING_LATTICE_ANSTAR,    1,    4,    4,    4) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 1, 0, 1, TILING_LATTICE_ANSTAR,    1,    5,    5,   25) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 1, 1, 0, TILING_LATTICE_ANSTAR,    1,    5,   24,   24) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 1, 1, 1, TILING_LATTICE_ANSTAR,    1,    5,   20,  115) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 0, 0, 0, TILING_LATTICE_ANSTAR,    4,    4,    4,    4) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 0, 0, 1, TILING_LATTICE_ANSTAR,    5,    5,    5,   23) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 0, 1, 0, TILING_LATTICE_ANSTAR,    5,    5,   23,   23) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 0, 1, 1, TILING_LATTICE_ANSTAR,    6,    6,   24,  139) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 1, 0, 0, TILING_LATTICE_ANSTAR,    5,   25,   25,   25) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 1, 0, 1, TILING_LATTICE_ANSTAR,    6,   30,   30,  162) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 1, 1, 0, TILING_LATTICE_ANSTAR,    6,   27,  151,  151) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(BasicTest(4, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,    6,   30,  145,  897) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(BasicTest(4, 1, 1, 1, 1, TILING_LATTICE_CUBIC ,    7,   46,  287, 2543) == XLAL_SUCCESS, XLAL_EFUNC);
 

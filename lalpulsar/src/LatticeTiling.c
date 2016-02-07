@@ -1533,7 +1533,6 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
     // Create iterator over the bounded dimensions
     LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator(tiling, tiling->ndim);
 
-    const size_t n = itr->tiling->ndim;
     const size_t tn = itr->tiling->tiled_ndim;
 
     // Allocate array of pointers to the next index trie in each dimension
@@ -1541,7 +1540,7 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
     memset(next, 0, sizeof(next));
 
     // Allocate array containing sequential indices for every dimension
-    UINT8 seq_idx[n];
+    UINT8 seq_idx[tn];
     memset(seq_idx, 0, sizeof(seq_idx));
 
     // Iterate over all points; XLALNextLatticeTilingPoint() returns the index
@@ -1604,12 +1603,12 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
       }
 
       // Increment sequential index in every higher dimension
-      for (size_t i = itr->tiling->tiled_idx[ti]; i < n; ++i) {
-        ++seq_idx[i];
+      for (size_t tj = ti; tj < tn; ++tj) {
+        ++seq_idx[tj];
       }
 
       // Fast-forward iterator over highest tiled dimension.
-      seq_idx[itr->tiling->tiled_idx[tn - 1]] += LT_FastForwardIterator(itr);
+      seq_idx[tn - 1] += LT_FastForwardIterator(itr);
 
     }
     XLAL_CHECK_NULL(xlalErrno == 0, XLAL_EFUNC);
@@ -2064,30 +2063,49 @@ int XLALNearestLatticeTilingPoints(
     // Return various results
     {
       const LT_IndexTrie *trie = loc->index_trie;
-      for (size_t ti = 0; ti < tn; ++ti) {
-        const size_t i = loc->tiling->tiled_idx[ti];
+      UINT8 nearest_seq_idx = 0;
+      UINT4 nearest_pass_idx = 0, nearest_pass_len = 1;
+      for (size_t ti = 0, i = 0; i < n; ++i) {
+        const bool is_tiled = loc->tiling->bounds[i].is_tiled;
 
         // Return nearest point
-        gsl_matrix_set(nearest, i, j, nearest_int[ti]);
+        if (is_tiled) {
+          gsl_matrix_set(nearest, i, j, nearest_int[ti]);
+        }
 
         // Return sequential indexes of nearest points
+        // - Non-tiled dimensions inherit value of next-lowest dimension
+        if (is_tiled) {
+          nearest_seq_idx = trie->seq_idx + nearest_int[ti] - trie->int_lower;
+        }
         if (nearest_seqs_idxs != NULL) {
-          (*nearest_seqs_idxs)->data[n * j + i] = trie->seq_idx + nearest_int[ti] - trie->int_lower;
+          (*nearest_seqs_idxs)->data[n * j + i] = nearest_seq_idx;
         }
 
         // Return indexes of nearest points in each pass
+        // - Non-tiled dimensions inherit value of next-lowest dimension
+        if (is_tiled) {
+          nearest_pass_idx = nearest_int[ti] - trie->int_lower;
+        }
         if (nearest_passes_idxs != NULL) {
-          (*nearest_passes_idxs)->data[n * j + i] = nearest_int[ti] - trie->int_lower;
+          (*nearest_passes_idxs)->data[n * j + i] = nearest_pass_idx;
         }
 
         // Return number of points in each pass containing nearest points
+        // - Non-tiled dimensions inherit value of next-lowest dimension
+        if (is_tiled) {
+          nearest_pass_len = trie->int_upper - trie->int_lower + 1;
+        }
         if (nearest_passes_lens != NULL) {
-          (*nearest_passes_lens)->data[n * j + i] = trie->int_upper - trie->int_lower + 1;
+          (*nearest_passes_lens)->data[n * j + i] = nearest_pass_len;
         }
 
         // If we are below the highest dimension, jump to the next dimension based on 'nearest_int[ti]'
-        if (ti + 1 < tn) {
-          trie = &trie->next[nearest_int[ti] - trie->int_lower];
+        if (is_tiled) {
+          if (ti + 1 < tn) {
+            trie = &trie->next[nearest_int[ti] - trie->int_lower];
+          }
+          ++ti;
         }
 
       }
