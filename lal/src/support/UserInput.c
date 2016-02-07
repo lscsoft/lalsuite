@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2016 Karl Wette
  * Copyright (C) 2015 Reinhard Prix
  * Copyright (C) 2010 Reinhard Prix (xlalified)
  * Copyright (C) 2004, 2005, 2015 Reinhard Prix
@@ -63,8 +64,13 @@ typedef enum {
   UVAR_TYPE_EPOCH,   		// time 'epoch', specified in either GPS or MJD(TT) format, translated into GPS
   UVAR_TYPE_RAJ,     		// sky equatorial longitude (aka right-ascencion or RA), in either radians or hours:minutes:seconds format, translated into radians
   UVAR_TYPE_DECJ,    		// sky equatorial latitude (aka declination or DEC), in either radians or degrees:minutes:seconds format, translated into radians
-
   UVAR_TYPE_STRING, 		// normal string
+
+  UVAR_TYPE_REAL8Range,		// range of REAL8 values
+  UVAR_TYPE_EPOCHRange,		// range of LIGOTimeGPS values
+  UVAR_TYPE_RAJRange,		// range of RAJ values
+  UVAR_TYPE_DECJRange,		// range of DECJ values
+
   UVAR_TYPE_STRINGVector,	// list of comma-separated strings
   UVAR_TYPE_REAL8Vector,	// list of comma-separated REAL8's
   UVAR_TYPE_INT4Vector,		// list of comma-separated INT4's
@@ -98,6 +104,12 @@ DEFN_REGISTER_UVAR(RAJ,REAL8);
 DEFN_REGISTER_UVAR(DECJ,REAL8);
 DEFN_REGISTER_UVAR(EPOCH,LIGOTimeGPS);
 DEFN_REGISTER_UVAR(STRING,CHAR*);
+
+DEFN_REGISTER_UVAR(REAL8Range,REAL8Range);
+DEFN_REGISTER_UVAR(EPOCHRange,LIGOTimeGPSRange);
+DEFN_REGISTER_UVAR(RAJRange,REAL8Range);
+DEFN_REGISTER_UVAR(DECJRange,REAL8Range);
+
 DEFN_REGISTER_UVAR(STRINGVector,LALStringVector*);
 DEFN_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
 DEFN_REGISTER_UVAR(INT4Vector,INT4Vector*);
@@ -141,10 +153,16 @@ static const struct
   REGULAR_MAP_ENTRY ( INT4, NULL ),
   REGULAR_MAP_ENTRY ( REAL8, NULL ),
   REGULAR_MAP_ENTRY ( STRING, XLALFree ),
-  REGULAR_MAP_ENTRY ( STRINGVector, XLALDestroyStringVector ),
   REGULAR_MAP_ENTRY ( EPOCH, NULL ),
   REGULAR_MAP_ENTRY ( RAJ, NULL ),
   REGULAR_MAP_ENTRY ( DECJ, NULL ),
+
+  REGULAR_MAP_ENTRY ( REAL8Range, NULL ),
+  REGULAR_MAP_ENTRY ( EPOCHRange, NULL ),
+  REGULAR_MAP_ENTRY ( RAJRange, NULL ),
+  REGULAR_MAP_ENTRY ( DECJRange, NULL ),
+
+  REGULAR_MAP_ENTRY ( STRINGVector, XLALDestroyStringVector ),
   REGULAR_MAP_ENTRY ( REAL8Vector, XLALDestroyREAL8Vector ),
   REGULAR_MAP_ENTRY ( INT4Vector, XLALDestroyINT4Vector )
 };
