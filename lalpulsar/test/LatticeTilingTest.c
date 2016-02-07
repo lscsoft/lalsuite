@@ -150,39 +150,41 @@ static int BasicTest(
     XLAL_CHECK(XLALNextLatticeTilingPoint(itr, NULL) == 0, XLAL_EFUNC);
 
     // Get nearest points to each template, check for consistency
-    printf("  Testing XLALNearestLatticeTiling{Point|Pass}() ...");
+    printf("  Testing XLALNearestLatticeTiling{Point|Block}() ...");
     gsl_vector *GAVEC(nearest, n);
-    UINT8Vector *nearest_seq_idxs = XLALCreateUINT8Vector(n);
-    XLAL_CHECK(nearest_seq_idxs != NULL, XLAL_ENOMEM);
-    UINT4Vector *nearest_pass_idxs = XLALCreateUINT4Vector(n);
-    XLAL_CHECK(nearest_pass_idxs != NULL, XLAL_ENOMEM);
-    UINT4Vector *nearest_pass_lens = XLALCreateUINT4Vector(n);
-    XLAL_CHECK(nearest_pass_lens != NULL, XLAL_ENOMEM);
+    UINT8Vector *nearest_indexes = XLALCreateUINT8Vector(n);
+    XLAL_CHECK(nearest_indexes != NULL, XLAL_ENOMEM);
     for (UINT8 k = 0; k < total; ++k) {
       gsl_vector_const_view point_view = gsl_matrix_const_column(points, k);
       const gsl_vector *point = &point_view.vector;
-      XLAL_CHECK(XLALNearestLatticeTilingPoint(loc, point, nearest, nearest_seq_idxs, nearest_pass_idxs, nearest_pass_lens) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK(XLALNearestLatticeTilingPoint(loc, point, nearest, nearest_indexes) == XLAL_SUCCESS, XLAL_EFUNC);
       gsl_vector_sub(nearest, point);
       double err = gsl_blas_dasum(nearest) / n;
       XLAL_CHECK(err < 1e-6, XLAL_EFAILED, "\n  "
                  "ERROR: err = %e < 1e-6", err);
-      XLAL_CHECK(nearest_seq_idxs->data[i] == k, XLAL_EFAILED, "\n  "
-                 "ERROR: nearest_seq_idxs[%zu] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", i, nearest_seq_idxs->data[i], k);
-      for (size_t j = 0; j < n; ++j) {
-        XLAL_CHECK(nearest_pass_idxs->data[j] < nearest_pass_lens->data[j], XLAL_EFAILED, "\n  "
-                   "ERROR: nearest_pass_idxs[%zu] = %" LAL_UINT4_FORMAT " >= %" LAL_UINT4_FORMAT "\n", j, nearest_pass_idxs->data[i], nearest_pass_lens->data[j]);
-      }
+      XLAL_CHECK(nearest_indexes->data[i] == k, XLAL_EFAILED, "\n  "
+                 "ERROR: nearest_indexes[%zu] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", i, nearest_indexes->data[i], k);
       if (0 < i) {
-        UINT8 nearest_seq_idx = 0;
-        XLAL_CHECK(XLALNearestLatticeTilingPass(loc, point, i, NULL, &nearest_seq_idx, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
-        XLAL_CHECK(nearest_seq_idx == nearest_seq_idxs->data[i-1], XLAL_EFAILED, "\n  "
-                   "ERROR: nearest_seq_idx = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_seq_idx, nearest_seq_idxs->data[i-1]);
+        const LatticeTilingStats *stats = XLALLatticeTilingStatistics(tiling, i);
+        UINT8 nearest_index = 0;
+        UINT4 nearest_left = 0, nearest_right = 0;
+        XLAL_CHECK(XLALNearestLatticeTilingBlock(loc, point, i, nearest, &nearest_index, &nearest_left, &nearest_right) == XLAL_SUCCESS, XLAL_EFUNC);
+        XLAL_CHECK(nearest_index == nearest_indexes->data[i-1], XLAL_EFAILED, "\n  "
+                   "ERROR: nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i-1]);
+        UINT4 nearest_len = 1 + nearest_left + nearest_right;
+        XLAL_CHECK(nearest_len <= stats->max_points, XLAL_EFAILED, "\n  "
+                   "ERROR: nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i);
       }
       if (i+1 < n) {
-        UINT8 nearest_seq_idx = 0;
-        XLAL_CHECK(XLALNearestLatticeTilingPass(loc, point, i+1, NULL, &nearest_seq_idx, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
-        XLAL_CHECK(nearest_seq_idx == nearest_seq_idxs->data[i], XLAL_EFAILED, "\n  "
-                   "ERROR: nearest_seq_idx = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_seq_idx, nearest_seq_idxs->data[i]);
+        const LatticeTilingStats *stats = XLALLatticeTilingStatistics(tiling, i+1);
+        UINT8 nearest_index = 0;
+        UINT4 nearest_left = 0, nearest_right = 0;
+        XLAL_CHECK(XLALNearestLatticeTilingBlock(loc, point, i+1, nearest, &nearest_index, &nearest_left, &nearest_right) == XLAL_SUCCESS, XLAL_EFUNC);
+        XLAL_CHECK(nearest_index == nearest_indexes->data[i], XLAL_EFAILED, "\n  "
+                   "ERROR: nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i]);
+        UINT4 nearest_len = 1 + nearest_left + nearest_right;
+        XLAL_CHECK(nearest_len <= stats->max_points, XLAL_EFAILED, "\n  "
+                   "ERROR: nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i+1);
       }
     }
     printf(" done\n");
@@ -191,9 +193,7 @@ static int BasicTest(
     XLALDestroyLatticeTilingIterator(itr);
     GFMAT(points);
     GFVEC(nearest);
-    XLALDestroyUINT8Vector(nearest_seq_idxs);
-    XLALDestroyUINT4Vector(nearest_pass_idxs);
-    XLALDestroyUINT4Vector(nearest_pass_lens);
+    XLALDestroyUINT8Vector(nearest_indexes);
 
   }
 
@@ -269,7 +269,7 @@ static int MismatchTest(
       XLAL_CHECK(XLALRandomLatticeTilingPoints(tiling, 0.0, rng, injections) == XLAL_SUCCESS, XLAL_EFUNC);
 
       // Find nearest lattice template points
-      XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, injections, &nearest, NULL, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, injections, &nearest, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
 
       // Compute mismatch between injections
       gsl_matrix_sub(nearest, injections);
@@ -347,7 +347,7 @@ static int MismatchTest(
     XLAL_CHECK(XLALRandomLatticeTilingPoints(tiling, 5.0, rng, injections) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Find nearest lattice template points
-    XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, injections, &nearest, NULL, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, injections, &nearest, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Cleanup
     GFMAT(injections, nearest);
