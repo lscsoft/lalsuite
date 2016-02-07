@@ -348,7 +348,6 @@ int main(int argc,char *argv[])
   PulsarDopplerParams XLAL_INIT_DECL(dopplerpos);
   FstatCandidate XLAL_INIT_DECL(loudestFCand);
   FstatCandidate XLAL_INIT_DECL(thisFCand);
-  FILE *fpLogPrintf = NULL;
   gsl_vector_int *Fstat_histogram = NULL;
 
   UserInput_t XLAL_INIT_DECL(uvar);
@@ -375,13 +374,6 @@ int main(int argc,char *argv[])
     {
       printf ( "%s\n", GV.VCSInfoString );
       exit (0);
-    }
-
-  /* open log-file */
-  if ( XLALUserVarWasSet(&uvar.outputLogPrintf))
-    {
-      XLAL_CHECK_MAIN ((fpLogPrintf = fopen(uvar.outputLogPrintf, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputLogPrintf );
-      LogSetFile(fpLogPrintf);
     }
 
   /* do some sanity checks on the user-input before we proceed */
@@ -853,12 +845,6 @@ int main(int argc,char *argv[])
     gsl_vector_int_free(Fstat_histogram);
   }
 
-  /* close log-file */
-  if (fpLogPrintf) {
-    fclose(fpLogPrintf);
-    LogSetFile(fpLogPrintf = NULL);
-  }
-
   /* did we forget anything ? */
   LALCheckMemoryLeaks();
 
@@ -1060,8 +1046,6 @@ initUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarMember( 	projectMetric, 	 BOOLEAN, 0,  DEVELOPER, "Use projected metric on Freq=const subspact");
 
-  XLALRegisterUvarMember(outputLogPrintf, STRING, 0,  DEVELOPER, "Send all output from LogPrintf statements to this file");
-
   XLALRegisterUvarMember( 	countTemplates,  BOOLEAN, 0,  DEVELOPER, "Count number of templates (if supported) instead of search");
 
   XLALRegisterUvarMember(  spindownAge,     REAL8, 0,  DEVELOPER, "Spindown age for --gridType=9");
@@ -1077,7 +1061,9 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember ( Dec, STRING, 0, DEPRECATED, "Use --Delta instead");
 
   XLALRegisterUvarMember ( internalRefTime, EPOCH, 0, DEPRECATED, "HAS NO EFFECT and should no longer be used: XLALComputeFstat() now always uses midtime internally ... ");
+
   // ---------- obsolete and unsupported options ----------
+  XLALRegisterUvarMember(outputLogPrintf, STRING, 0,  DEFUNCT, "DEFUNCT; used to send all output from LogPrintf statements to this file");
 
   return XLAL_SUCCESS;
 

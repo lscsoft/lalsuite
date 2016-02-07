@@ -152,9 +152,6 @@ int main(int argc, char *argv[]) {
   if (help)
     return EXIT_SUCCESS;
 
-  /* Send log output to stdout */
-  LogSetFile(stdout);
-
   /* Load the mismatch PDF histogram if available */
   if (LALUserVarWasSet(&mism_hist_file)) {
 

@@ -63,10 +63,6 @@
 
 #include <lal/LogPrintf.h>
 
-/* output file for log messages, default to standard error */
-#define LogOutputDefault stderr
-static FILE* LogOutput = NULL;
-
 /*---------- internal types ----------*/
 
 /*---------- empty initializers ---------- */
@@ -76,6 +72,7 @@ static FILE* LogOutput = NULL;
 
 /*---------- internal prototypes ----------*/
 static LogLevel_t LogLevel(void);
+static FILE* LogFile(void);
 
 static const char * LogGetTimestamp (void);
 static const char * LogTimeToString(double t);
@@ -96,11 +93,12 @@ static LogLevel_t LogLevel()
   return LOG_NORMAL;		// Print LOG_CRITICAL and LOG_NORMAL messages by default
 }
 
-/** Set the output file for log messages */
-void LogSetFile(FILE *file)
+/** Decide where to print log messages */
+static FILE* LogFile(void)
 {
-  LogOutput = file;
-  return;
+  if (LogLevel() < LOG_NORMAL)
+    return stderr;		// Error log messages are printed to standard error
+  return stdout;		// All other log messages are printed to standard output
 }
 
 /**
@@ -112,15 +110,13 @@ LogPrintfVerbatim (LogLevel_t level, const char* format, ...)
 
   if ( LogLevel() < level )
     return;
-  if (LogOutput == NULL)
-    LogOutput = LogOutputDefault;
 
   va_list va;
   va_start(va, format);
 
   /* simply print this to output  */
-  vfprintf (LogOutput, format, va );
-  fflush(LogOutput);
+  vfprintf (LogFile(), format, va );
+  fflush(LogFile());
 
   va_end(va);
 
@@ -136,15 +132,13 @@ LogPrintf (LogLevel_t level, const char* format, ...)
 
   if ( LogLevel() < level )
     return;
-  if (LogOutput == NULL)
-    LogOutput = LogOutputDefault;
 
   va_list va;
   va_start(va, format);
 
-  fprintf(LogOutput, "%s (%d) [%s]: ", LogGetTimestamp(), getpid(), LogFormatLevel(level) );
-  vfprintf(LogOutput, format, va);
-  fflush(LogOutput);
+  fprintf(LogFile(), "%s (%d) [%s]: ", LogGetTimestamp(), getpid(), LogFormatLevel(level) );
+  vfprintf(LogFile(), format, va);
+  fflush(LogFile());
 
   va_end(va);
 
