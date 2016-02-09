@@ -16,8 +16,7 @@ override_dh_auto_install:
 	    --sysconfdir=/etc \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 	    --enable-swig \
-	    --disable-gcc-flags \
-	    --disable-debug && \
+	    --disable-gcc-flags && \
 	$(MAKE) V=1 && \
 	$(MAKE) V=1 check && \
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp && \
