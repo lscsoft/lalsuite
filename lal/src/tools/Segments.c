@@ -622,7 +622,7 @@ XLALSegListCoalesce( LALSegList *seglist )
  * list, for example if the segment list is not sorted.
  */
 int
-XLALSegListRange( LALSegList *seglist, LIGOTimeGPS *start, LIGOTimeGPS *end ) {
+XLALSegListRange( const LALSegList *seglist, LIGOTimeGPS *start, LIGOTimeGPS *end ) {
 
   // Check input
   XLAL_CHECK(seglist != NULL, XLAL_EFAULT);
