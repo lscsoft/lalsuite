@@ -35,6 +35,7 @@
 
 // Internal definition of input data structure
 struct tagFstatInput {
+  int singleFreqBin;					// True if XLALComputeFstat() can only compute a single frequency bin, due to zero dFreq being passed to XLALCreateFstatInput()
   FstatMethodType method;				// Method to use for computing the F-statistic
   FstatCommon common;					// Common input data
   int *workspace_refcount;				// Reference counter for the shared workspace 'common.workspace'
@@ -217,7 +218,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
                                                                   ///< The \c locator field of each ::SFTDescriptor must be \c !=NULL for SFT loading, and \c ==NULL for SFT generation.
                        const REAL8 minCoverFreq,                  ///< [in] Minimum instantaneous frequency which will be covered over the SFT time span.
                        const REAL8 maxCoverFreq,                  ///< [in] Maximum instantaneous frequency which will be covered over the SFT time span.
-                       const REAL8 dFreq,                         ///< [in] Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
+                       const REAL8 dFreq,                         ///< [in] Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins. May be zero \e only for single-frequency searches.
                        const EphemerisData *ephemerides,          ///< [in] Ephemerides for the time-span of the SFTs.
                        const FstatOptionalArgs *optionalArgs      ///< [in] Optional 'advanced-level' and method-specific extra arguments; NULL: use defaults from FstatOptionalArgsDefaults.
                        )
@@ -236,7 +237,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   XLAL_CHECK_NULL ( isfinite(maxCoverFreq) && maxCoverFreq > 0, XLAL_EINVAL );
   XLAL_CHECK_NULL ( maxCoverFreq > minCoverFreq, XLAL_EINVAL );
   XLAL_CHECK_NULL ( ephemerides != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( dFreq > 0, XLAL_EINVAL);
+  XLAL_CHECK_NULL ( dFreq >= 0, XLAL_EINVAL);
 
   // Create local copy of optional arguments, or use defaults if not given
   FstatOptionalArgs optArgs;
@@ -334,7 +335,6 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   XLAL_CHECK_NULL ( (input = XLALCalloc ( 1, sizeof(*input) )) != NULL, XLAL_ENOMEM );
   input->method = optArgs.FstatMethod;
   FstatCommon *common = &input->common;      // handy shortcut
-  common->dFreq = dFreq;
 
   // Determine whether we can re-used workspace from a previous call to XLALCreateFstatInput()
   if ( optArgs.prevInput != NULL ) {
@@ -367,13 +367,19 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
   // Determine the time baseline of an SFT
   const REAL8 Tsft = 1.0 / SFTcatalog->data[0].header.deltaF;
 
-  // Save the mid-time of the SFTs
+  // Compute the mid-time and time-span of the SFTs
+  double Tspan = 0;
   {
     const LIGOTimeGPS startTime = SFTcatalog->data[0].header.epoch;
     const LIGOTimeGPS endTime   = SFTcatalog->data[SFTcatalog->length - 1].header.epoch;
     common->midTime = startTime;
-    XLALGPSAdd ( &common->midTime, 0.5 * (  Tsft + XLALGPSDiff( &endTime, &startTime )) );
+    Tspan = Tsft + XLALGPSDiff( &endTime, &startTime );
+    XLALGPSAdd ( &common->midTime, 0.5 * Tspan );
   }
+
+  // Determine the frequency spacing: if dFreq==0, default to 1.0/Tspan and set singleFreqBin==true
+  input->singleFreqBin = (dFreq == 0);
+  common->dFreq = input->singleFreqBin ? 1.0/Tspan : dFreq;
 
   // Determine the frequency band required by each method 'minFreqMethod',
   // as well as the frequency band required to load or generate initial SFTs for 'minFreqFull'
@@ -578,7 +584,7 @@ int
 XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of a pointer to a #FstatResults results structure; if \c NULL, allocate here.
                    FstatInput *input,                   ///< [in] Input data structure created by one of the setup functions.
                    const PulsarDopplerParams *doppler,  ///< [in] Doppler parameters, including starting frequency, at which to compute \f$2\mathcal{F}\f$
-                   const UINT4 numFreqBins,             ///< [in] Number of frequencies at which the \f$2\mathcal{F}\f$ are to be computed.
+                   const UINT4 numFreqBins,             ///< [in] Number of frequencies at which the \f$2\mathcal{F}\f$ are to be computed. Must be 1 if XLALCreateFstatInput() was passed zero \c dFreq.
                    const FstatQuantities whatToCompute  ///< [in] Bit-field of which \f$\mathcal{F}\f$-statistic quantities to compute.
                    )
 {
@@ -588,6 +594,7 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
   XLAL_CHECK ( doppler != NULL, XLAL_EINVAL);
   XLAL_CHECK ( doppler->asini >= 0, XLAL_EINVAL);
   XLAL_CHECK ( numFreqBins > 0, XLAL_EINVAL);
+  XLAL_CHECK ( !input->singleFreqBin || numFreqBins == 1, XLAL_EINVAL, "numFreqBins must be 1 if XLALCreateFstatInput() was passed zero dFreq" );
   XLAL_CHECK ( 0 < whatToCompute && whatToCompute < FSTATQ_LAST, XLAL_EINVAL);
 
   // Allocate results struct, if needed
@@ -681,7 +688,7 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
 
   // Initialise result struct parameters
   (*Fstats)->doppler      = midDoppler;
-  (*Fstats)->dFreq        = common->dFreq;
+  (*Fstats)->dFreq        = input->singleFreqBin ? 0 : common->dFreq;
   (*Fstats)->numFreqBins  = numFreqBins;
   (*Fstats)->numDetectors = numDetectors;
   XLAL_INIT_MEM ( (*Fstats)->detectorNames);
