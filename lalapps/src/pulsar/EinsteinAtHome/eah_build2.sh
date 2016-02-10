@@ -119,7 +119,8 @@ for i; do
 	--gc-opt)
 	    CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS" ;;
         --avx)
-            fftw_copts_single="--enable-avx $fftw_copts_single" ;;
+            fftw_copts_single="--enable-avx $fftw_copts_single"
+	    planclass=__AVX ;;
 	--64)
 	    fftw_copts_single="--enable-sse --enable-sse2 $fftw_copts_single"
 	    CPPFLAGS="-m64 $CPPFLAGS"
@@ -255,10 +256,11 @@ log_and_show "Build start `date`"
 missing_wine_warning=false
 if [ ."$build_win32" = ."true" ] ; then
     if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
-	platform=x86_64-pc-linux-gnu
+	platform=windows_x86_64
 	BUILD="${BUILD}_win64"
 	INSTALL="${INSTALL}_win64"
     else
+	platform=windows_intelx86
 	BUILD="${BUILD}_win32"
 	INSTALL="${INSTALL}_win32"
     fi
@@ -275,7 +277,6 @@ if [ ."$build_win32" = ."true" ] ; then
     fftw_copts_double="$fftw_copts_double --with-our-malloc16"
     build_zlib=true
     ext=".exe"
-    platform=windows_intelx86
     wine=`which wine`
     if [ ".$wine" = "." -a ".$check" = ".true" ]; then
         missing_wine_warning=true
