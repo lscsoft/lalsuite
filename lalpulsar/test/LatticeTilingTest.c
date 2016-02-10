@@ -64,6 +64,10 @@ const double A3s_mism_hist[MISM_HIST_BINS] = {
 
 static int BasicTest(
   size_t n,
+  const int bound_on_0,
+  const int bound_on_1,
+  const int bound_on_2,
+  const int bound_on_3,
   const TilingLattice lattice,
   const UINT8 total_ref_0,
   const UINT8 total_ref_1,
@@ -72,22 +76,17 @@ static int BasicTest(
   )
 {
 
+  const int bound_on[4] = {bound_on_0, bound_on_1, bound_on_2, bound_on_3};
   const UINT8 total_ref[4] = {total_ref_0, total_ref_1, total_ref_2, total_ref_3};
 
-  // 'n == 0' denotes a single-point template bank
-  const bool single_point = (n == 0);
-  if (single_point) {
-    n = 4;
-  }
-
   // Create lattice tiling
-  printf("Number of dimensions: %zu%s\n", n, single_point ? " (single point)" : "");
   LatticeTiling *tiling = XLALCreateLatticeTiling(n);
   XLAL_CHECK(tiling != NULL, XLAL_EFUNC);
 
   // Add bounds
   for (size_t i = 0; i < n; ++i) {
-    XLAL_CHECK(XLALSetLatticeTilingConstantBound(tiling, i, 0.0, single_point ? 0.0 : pow(100.0, 1.0/n)) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(bound_on[i] == 0 || bound_on[i] == 1, XLAL_EFAILED);
+    XLAL_CHECK(XLALSetLatticeTilingConstantBound(tiling, i, 0.0, bound_on[i] * pow(100.0, 1.0/n)) == XLAL_SUCCESS, XLAL_EFUNC);
   }
 
   // Set metric to the Lehmer matrix
@@ -100,9 +99,11 @@ static int BasicTest(
         gsl_matrix_set(metric, i, j, jj >= ii ? ii/jj : jj/ii);
       }
     }
-    printf("  Lattice type: %u\n", lattice);
     XLAL_CHECK(XLALSetTilingLatticeAndMetric(tiling, lattice, metric, max_mismatch) == XLAL_SUCCESS, XLAL_EFUNC);
     GFMAT(metric);
+    printf("Number of (tiled) dimensions: %zu (%zu)\n", XLALTotalLatticeTilingDimensions(tiling), XLALTiledLatticeTilingDimensions(tiling));
+    printf("  Bounds: %i %i %i %i\n", bound_on_0, bound_on_1, bound_on_2, bound_on_3);
+    printf("  Lattice type: %u\n", lattice);
   }
 
   // Create lattice tiling locator
@@ -122,7 +123,7 @@ static int BasicTest(
     // Count number of points
     const UINT8 total = XLALTotalLatticeTilingPoints(itr);
     printf("Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT "\n", i+1, total);
-    XLAL_CHECK(total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref[i]);
+    XLAL_CHECK(total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref[%zu]", total, total_ref[i], i);
     for (UINT8 k = 0; XLALNextLatticeTilingPoint(itr, NULL) > 0; ++k) {
       const UINT8 itr_index = XLALCurrentLatticeTilingIndex(itr);
       XLAL_CHECK(k == itr_index, XLAL_EFUNC, "ERROR: k = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = itr_index", k, itr_index);
@@ -135,11 +136,11 @@ static int BasicTest(
       const LatticeTilingStats *stats = XLALLatticeTilingStatistics(tiling, j);
       XLAL_CHECK(stats != NULL, XLAL_EFUNC);
       XLAL_CHECK(stats->total_points == total_ref[j], XLAL_EFAILED, "\n  "
-                 "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", stats->total_points, total_ref[j]);
-      XLAL_CHECK(stats->min_points_pass <= stats->avg_points_pass, XLAL_EFAILED, "\n  "
-                 "ERROR: min_points_pass = %" LAL_INT4_FORMAT " > %g = avg_points_pass", stats->min_points_pass, stats->avg_points_pass);
-      XLAL_CHECK(stats->max_points_pass >= stats->avg_points_pass, XLAL_EFAILED, "\n  "
-                 "ERROR: max_points_pass = %" LAL_INT4_FORMAT " < %g = avg_points_pass", stats->max_points_pass, stats->avg_points_pass);
+                 "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref[%zu]", stats->total_points, total_ref[j], j);
+      XLAL_CHECK(stats->min_points <= stats->avg_points, XLAL_EFAILED, "\n  "
+                 "ERROR: min_points = %" LAL_INT4_FORMAT " > %g = avg_points", stats->min_points, stats->avg_points);
+      XLAL_CHECK(stats->max_points >= stats->avg_points, XLAL_EFAILED, "\n  "
+                 "ERROR: max_points = %" LAL_INT4_FORMAT " < %g = avg_points", stats->max_points, stats->avg_points);
     }
     printf(" done\n");
 
@@ -149,39 +150,41 @@ static int BasicTest(
     XLAL_CHECK(XLALNextLatticeTilingPoint(itr, NULL) == 0, XLAL_EFUNC);
 
     // Get nearest points to each template, check for consistency
-    printf("  Testing XLALNearestLatticeTiling{Point|Pass}() ...");
+    printf("  Testing XLALNearestLatticeTiling{Point|Block}() ...");
     gsl_vector *GAVEC(nearest, n);
-    UINT8Vector *nearest_seq_idxs = XLALCreateUINT8Vector(n);
-    XLAL_CHECK(nearest_seq_idxs != NULL, XLAL_ENOMEM);
-    UINT4Vector *nearest_pass_idxs = XLALCreateUINT4Vector(n);
-    XLAL_CHECK(nearest_pass_idxs != NULL, XLAL_ENOMEM);
-    UINT4Vector *nearest_pass_lens = XLALCreateUINT4Vector(n);
-    XLAL_CHECK(nearest_pass_lens != NULL, XLAL_ENOMEM);
+    UINT8Vector *nearest_indexes = XLALCreateUINT8Vector(n);
+    XLAL_CHECK(nearest_indexes != NULL, XLAL_ENOMEM);
     for (UINT8 k = 0; k < total; ++k) {
       gsl_vector_const_view point_view = gsl_matrix_const_column(points, k);
       const gsl_vector *point = &point_view.vector;
-      XLAL_CHECK(XLALNearestLatticeTilingPoint(loc, point, nearest, nearest_seq_idxs, nearest_pass_idxs, nearest_pass_lens) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK(XLALNearestLatticeTilingPoint(loc, point, nearest, nearest_indexes) == XLAL_SUCCESS, XLAL_EFUNC);
       gsl_vector_sub(nearest, point);
       double err = gsl_blas_dasum(nearest) / n;
       XLAL_CHECK(err < 1e-6, XLAL_EFAILED, "\n  "
                  "ERROR: err = %e < 1e-6", err);
-      XLAL_CHECK(nearest_seq_idxs->data[i] == k, XLAL_EFAILED, "\n  "
-                 "ERROR: nearest_seq_idxs[%zu] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", i, nearest_seq_idxs->data[i], k);
-      for (size_t j = 0; j < n; ++j) {
-        XLAL_CHECK(nearest_pass_idxs->data[j] < nearest_pass_lens->data[j], XLAL_EFAILED, "\n  "
-                   "ERROR: nearest_pass_idxs[%zu] = %" LAL_UINT4_FORMAT " >= %" LAL_UINT4_FORMAT "\n", j, nearest_pass_idxs->data[i], nearest_pass_lens->data[j]);
-      }
+      XLAL_CHECK(nearest_indexes->data[i] == k, XLAL_EFAILED, "\n  "
+                 "ERROR: nearest_indexes[%zu] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", i, nearest_indexes->data[i], k);
       if (0 < i) {
-        UINT8 nearest_seq_idx = 0;
-        XLAL_CHECK(XLALNearestLatticeTilingPass(loc, point, i, NULL, &nearest_seq_idx, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
-        XLAL_CHECK(nearest_seq_idx == nearest_seq_idxs->data[i-1], XLAL_EFAILED, "\n  "
-                   "ERROR: nearest_seq_idx = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_seq_idx, nearest_seq_idxs->data[i-1]);
+        const LatticeTilingStats *stats = XLALLatticeTilingStatistics(tiling, i);
+        UINT8 nearest_index = 0;
+        UINT4 nearest_left = 0, nearest_right = 0;
+        XLAL_CHECK(XLALNearestLatticeTilingBlock(loc, point, i, nearest, &nearest_index, &nearest_left, &nearest_right) == XLAL_SUCCESS, XLAL_EFUNC);
+        XLAL_CHECK(nearest_index == nearest_indexes->data[i-1], XLAL_EFAILED, "\n  "
+                   "ERROR: nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i-1]);
+        UINT4 nearest_len = 1 + nearest_left + nearest_right;
+        XLAL_CHECK(nearest_len <= stats->max_points, XLAL_EFAILED, "\n  "
+                   "ERROR: nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i);
       }
       if (i+1 < n) {
-        UINT8 nearest_seq_idx = 0;
-        XLAL_CHECK(XLALNearestLatticeTilingPass(loc, point, i+1, NULL, &nearest_seq_idx, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
-        XLAL_CHECK(nearest_seq_idx == nearest_seq_idxs->data[i], XLAL_EFAILED, "\n  "
-                   "ERROR: nearest_seq_idx = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_seq_idx, nearest_seq_idxs->data[i]);
+        const LatticeTilingStats *stats = XLALLatticeTilingStatistics(tiling, i+1);
+        UINT8 nearest_index = 0;
+        UINT4 nearest_left = 0, nearest_right = 0;
+        XLAL_CHECK(XLALNearestLatticeTilingBlock(loc, point, i+1, nearest, &nearest_index, &nearest_left, &nearest_right) == XLAL_SUCCESS, XLAL_EFUNC);
+        XLAL_CHECK(nearest_index == nearest_indexes->data[i], XLAL_EFAILED, "\n  "
+                   "ERROR: nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i]);
+        UINT4 nearest_len = 1 + nearest_left + nearest_right;
+        XLAL_CHECK(nearest_len <= stats->max_points, XLAL_EFAILED, "\n  "
+                   "ERROR: nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i+1);
       }
     }
     printf(" done\n");
@@ -190,9 +193,7 @@ static int BasicTest(
     XLALDestroyLatticeTilingIterator(itr);
     GFMAT(points);
     GFVEC(nearest);
-    XLALDestroyUINT8Vector(nearest_seq_idxs);
-    XLALDestroyUINT4Vector(nearest_pass_idxs);
-    XLALDestroyUINT4Vector(nearest_pass_lens);
+    XLALDestroyUINT8Vector(nearest_indexes);
 
   }
 
@@ -206,7 +207,7 @@ static int BasicTest(
     // Count number of points, check for consistency with non-alternating count
     UINT8 total = 0;
     while (XLALNextLatticeTilingPoint(itr_alt, NULL) > 0) ++total;
-    XLAL_CHECK(total == total_ref[i], XLAL_EFUNC, "ERROR: alternating total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref[i]);
+    XLAL_CHECK(total == total_ref[i], XLAL_EFUNC, "ERROR: alternating total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref[%zu]", total, total_ref[i], i);
 
     // Cleanup
     XLALDestroyLatticeTilingIterator(itr_alt);
@@ -268,7 +269,7 @@ static int MismatchTest(
       XLAL_CHECK(XLALRandomLatticeTilingPoints(tiling, 0.0, rng, injections) == XLAL_SUCCESS, XLAL_EFUNC);
 
       // Find nearest lattice template points
-      XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, injections, &nearest, NULL, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, injections, &nearest, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
 
       // Compute mismatch between injections
       gsl_matrix_sub(nearest, injections);
@@ -346,7 +347,7 @@ static int MismatchTest(
     XLAL_CHECK(XLALRandomLatticeTilingPoints(tiling, 5.0, rng, injections) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Find nearest lattice template points
-    XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, injections, &nearest, NULL, NULL, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK(XLALNearestLatticeTilingPoints(loc, injections, &nearest, NULL) == XLAL_SUCCESS, XLAL_EFUNC);
 
     // Cleanup
     GFMAT(injections, nearest);
@@ -623,15 +624,32 @@ int main(void)
 {
 
   // Perform basic tests
-  XLAL_CHECK_MAIN(BasicTest(0, TILING_LATTICE_ANSTAR,  1,   1,   1,    1) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(1, TILING_LATTICE_CUBIC,  93,   0,   0,    0) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(1, TILING_LATTICE_ANSTAR, 93,   0,   0,    0) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(2, TILING_LATTICE_CUBIC,  13, 190,   0,    0) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(2, TILING_LATTICE_ANSTAR, 12, 144,   0,    0) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(3, TILING_LATTICE_CUBIC,   8,  60, 583,    0) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(3, TILING_LATTICE_ANSTAR,  8,  46, 332,    0) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(4, TILING_LATTICE_CUBIC,   7,  46, 287, 2543) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(BasicTest(4, TILING_LATTICE_ANSTAR,  6,  30, 145,  897) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(1, 0, 0, 0, 0, TILING_LATTICE_CUBIC ,    1,    1,    1,    1) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(1, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,   93,    0,    0,    0) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(1, 1, 1, 1, 1, TILING_LATTICE_CUBIC ,   93,    0,    0,    0) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(2, 0, 0, 0, 0, TILING_LATTICE_ANSTAR,    1,    1,    1,    1) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(2, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,   12,  144,    0,    0) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(2, 1, 1, 1, 1, TILING_LATTICE_CUBIC ,   13,  190,    0,    0) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(3, 0, 0, 0, 0, TILING_LATTICE_CUBIC ,    1,    1,    1,    1) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(3, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,    8,   46,  332,    0) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(3, 1, 1, 1, 1, TILING_LATTICE_CUBIC ,    8,   60,  583,    0) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 0, 0, 0, TILING_LATTICE_ANSTAR,    1,    1,    1,    1) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 0, 0, 1, TILING_LATTICE_ANSTAR,    1,    1,    1,    4) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 0, 1, 0, TILING_LATTICE_ANSTAR,    1,    1,    4,    4) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 0, 1, 1, TILING_LATTICE_ANSTAR,    1,    1,    4,   20) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 1, 0, 0, TILING_LATTICE_ANSTAR,    1,    4,    4,    4) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 1, 0, 1, TILING_LATTICE_ANSTAR,    1,    5,    5,   25) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 1, 1, 0, TILING_LATTICE_ANSTAR,    1,    5,   24,   24) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 0, 1, 1, 1, TILING_LATTICE_ANSTAR,    1,    5,   20,  115) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 0, 0, 0, TILING_LATTICE_ANSTAR,    4,    4,    4,    4) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 0, 0, 1, TILING_LATTICE_ANSTAR,    5,    5,    5,   23) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 0, 1, 0, TILING_LATTICE_ANSTAR,    5,    5,   23,   23) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 0, 1, 1, TILING_LATTICE_ANSTAR,    6,    6,   24,  139) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 1, 0, 0, TILING_LATTICE_ANSTAR,    5,   25,   25,   25) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 1, 0, 1, TILING_LATTICE_ANSTAR,    6,   30,   30,  162) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 1, 1, 0, TILING_LATTICE_ANSTAR,    6,   27,  151,  151) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 1, 1, 1, TILING_LATTICE_ANSTAR,    6,   30,  145,  897) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(BasicTest(4, 1, 1, 1, 1, TILING_LATTICE_CUBIC ,    7,   46,  287, 2543) == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Perform mismatch tests with a square parameter space
   XLAL_CHECK_MAIN(MismatchSquareTest(TILING_LATTICE_CUBIC,  0.03,     0,     0, 21460,  Z1_mism_hist) == XLAL_SUCCESS, XLAL_EFUNC);

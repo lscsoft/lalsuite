@@ -158,6 +158,22 @@ XLALCreateStringVector ( const CHAR *str1, ... )
 } /* XLALCreateStringVector() */
 
 
+/**
+ * Create a copy of a string vector
+ */
+LALStringVector *XLALCopyStringVector( const LALStringVector *vect )
+{
+  XLAL_CHECK_NULL( vect != NULL && vect->data != NULL && vect->length > 0, XLAL_EINVAL );
+  LALStringVector *copy = XLALCreateStringVector( vect->data[0], NULL );
+  XLAL_CHECK_NULL( copy != NULL, XLAL_EFUNC );
+  for (size_t i = 1; i < vect->length; ++i) {
+    copy = XLALAppendString2Vector( copy, vect->data[i] );
+    XLAL_CHECK_NULL( copy != NULL, XLAL_EFUNC );
+  }
+  return copy;
+} /* XLALCopyStringVector() */
+
+
 /** XLAL-interface: Free a string-vector ;) */
 void
 XLALDestroyStringVector ( LALStringVector *vect )

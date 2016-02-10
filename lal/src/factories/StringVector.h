@@ -60,6 +60,7 @@ SWIGLAL(VARIABLE_ARGUMENT_LIST(XLALCreateStringVector, CHAR*, NULL));
 #endif /* SWIG */
 
 LALStringVector *XLALCreateStringVector ( const CHAR *str1, ... );
+LALStringVector *XLALCopyStringVector ( const LALStringVector *vect );
 LALStringVector *XLALAppendString2Vector (LALStringVector *vect, const CHAR *string );
 void XLALDestroyStringVector ( LALStringVector *vect );
 
