@@ -79,7 +79,10 @@ for i; do
 	    build_win32=true
 	    cross_prefix=i586-mingw32msvc ;;
 	--cross-prefix=*)
-	    cross_prefix=`echo "$i" | sed 's/--cross-prefix=//'` ;;
+	    cross_prefix=`echo "$i" | sed 's/--cross-prefix=//'`
+	    if echo "$cross_prefix"|grep w64-mingw32 >/dev/null; then
+		LDFLAGS="-static-libstdc++ $LDFLAGS"
+	    fi ;;
 	--static)
 	    shared_copt="--disable-shared" ;;
 	--rebuild)
