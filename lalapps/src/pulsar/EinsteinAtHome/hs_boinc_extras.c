@@ -856,6 +856,7 @@ static void worker (void) {
   char wu_result_file[MAX_PATH_LEN];
 
   int second_outfile = 0;        /**< flag: is there a second output file, i.e. --SortToplist=3 */
+  int bsgl_outfiles = 0;
   int resultfile_present = 0;
 
   resultfile[0] = '\0';
@@ -1101,6 +1102,12 @@ static void worker (void) {
     else if (!strcmp("--SortToplist=3",argv[arg])) {
       rargv[rarg] = argv[arg];
       second_outfile = -1;
+    }
+
+    /* record if there will be a second output file */
+    else if (!strcmp("--computeBSGL",argv[arg])) {
+      rargv[rarg] = argv[arg];
+      bsgl_outfiles = -1;
     }
 
     /* set the "flops estimation" */
@@ -1369,6 +1376,29 @@ static void worker (void) {
 	  strcat(lv_file, "-LV");
 	  if (boinc_file_exists(lv_file) && resultfile[len-1]=='0') {
 	    myltoa(current_config_file*2+1, &resultfile[len-1], 5);
+	    boinc_rename(lv_file,resultfile);
+	  }
+	} else {
+	  LogPrintf(LOG_CRITICAL,"ERROR: out of memory, can't allocate lv_file\n");
+	  res = HS_BOINC_EXIT_MEM;
+	}
+      }
+
+      /* if there is a file <wuname>_<instance>_0-LV, rename it to <wuname>_<instance>_1 */
+      if (bsgl_outfiles) {
+	unsigned int len = strlen(resultfile);
+	char*lv_file = (char*)malloc(len+12);
+	if (lv_file) {
+	  strcpy(lv_file, resultfile);
+	  strcat(lv_file, "-BSGLtL");
+	  if (boinc_file_exists(lv_file) && resultfile[len-1]=='0') {
+	    myltoa(current_config_file*3+1, &resultfile[len-1], 5);
+	    boinc_rename(lv_file,resultfile);
+	  }
+	  strcpy(lv_file, resultfile);
+	  strcat(lv_file, "-BtSGLtL");
+	  if (boinc_file_exists(lv_file) && resultfile[len-1]=='1') {
+	    myltoa(current_config_file*3+2, &resultfile[len-1], 5);
 	    boinc_rename(lv_file,resultfile);
 	  }
 	} else {
