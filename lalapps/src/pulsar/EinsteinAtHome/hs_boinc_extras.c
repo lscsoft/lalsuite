@@ -1105,8 +1105,9 @@ static void worker (void) {
     }
 
     /* record if there will be a second output file */
-    else if (!strcmp("--computeBSGL",argv[arg])) {
+    else if (!strcmp("--SortToplist=6",argv[arg])) {
       rargv[rarg] = argv[arg];
+      LogPrintf(LOG_DEBUG,"BSGL output files\n");
       bsgl_outfiles = -1;
     }
 
@@ -1326,10 +1327,16 @@ static void worker (void) {
       if (bundle_size) {
 	char buf[20];
 	unsigned int rlen = strlen(resultfile);
+        long n;
 	strcpy(wu_result_file, resultfile);
-	strcpy(&wu_result_file[rlen-1], myltoa(second_outfile ? current_config_file * 2 : current_config_file, buf, 20));
+	if (second_outfile)
+	  n = current_config_file * 2;
+	else if (bsgl_outfiles)
+	  n = current_config_file * 3;
+	else
+	  n = current_config_file;
+	strcpy(&wu_result_file[rlen-1], myltoa(n, buf, 20));
 	*config_file_arg = config_files[current_config_file];
-
 	if (fp = boinc_fopen(wu_result_file,"r")) {
 	  fclose(fp);
 	  LogPrintf (LOG_NORMAL, "WARNING: Resultfile '%s' present - skipping subWU#%d\n", wu_result_file, current_config_file);
@@ -1389,16 +1396,21 @@ static void worker (void) {
 	unsigned int len = strlen(resultfile);
 	char*lv_file = (char*)malloc(len+12);
 	if (lv_file) {
+	  LogPrintf(LOG_DEBUG,"resultfile '%s' (len %d), current config file: %d\n", resultfile, len, current_config_file);
 	  strcpy(lv_file, resultfile);
 	  strcat(lv_file, "-BSGLtL");
 	  if (boinc_file_exists(lv_file) && resultfile[len-1]=='0') {
-	    myltoa(current_config_file*3+1, &resultfile[len-1], 5);
+	    resultfile[len-1]='1';
+	    // myltoa(current_config_file*3+1, &resultfile[len-1], 5);
+	    LogPrintf(LOG_DEBUG,"renaming '%s' to '%s'\n", lv_file, resultfile);
 	    boinc_rename(lv_file,resultfile);
 	  }
-	  strcpy(lv_file, resultfile);
+	  lv_file[len]='\0';
 	  strcat(lv_file, "-BtSGLtL");
 	  if (boinc_file_exists(lv_file) && resultfile[len-1]=='1') {
-	    myltoa(current_config_file*3+2, &resultfile[len-1], 5);
+	    resultfile[len-1]='2';
+	    // myltoa(current_config_file*3+2, &resultfile[len-1], 5);
+	    LogPrintf(LOG_DEBUG,"renaming '%s' to '%s'\n", lv_file, resultfile);
 	    boinc_rename(lv_file,resultfile);
 	  }
 	} else {
