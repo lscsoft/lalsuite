@@ -1169,7 +1169,10 @@ int MAIN( int argc, char *argv[]) {
     UINT4 count = 0; /* The first checkpoint should have value 1 */
     UINT4 skycount = 0;
 
-    GET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, semiCohToplist3, &count);
+    if( 0 > GET_GCT_CHECKPOINT (uvar_fnameChkPoint, semiCohToplist, semiCohToplist2, semiCohToplist3, &count)) {
+      XLALPrintError ("%s : '%s' \n", HIERARCHICALSEARCH_MSGECHECKPT,uvar_fnameChkPoint);
+      return (HIERARCHICALSEARCH_ECHECKPT); 
+    }
 
     if (count) {
       f1dotGridCounter = (UINT4) (count % usefulParams.nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
