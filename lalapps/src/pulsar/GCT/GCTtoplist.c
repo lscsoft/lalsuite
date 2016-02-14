@@ -1142,6 +1142,12 @@ int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplist
     for(len = 0; len < (t2->elems * t2->size); len++)
       checksum -= *(((char*)t2->data) + len);
   }
+  if (t3) {
+    for(len = 0; len < sizeof(t3->elems); len++)
+      checksum -= *(((char*)&(t3->elems)) + len);
+    for(len = 0; len < (t3->elems * t3->size); len++)
+      checksum -= *(((char*)t3->data) + len);
+  }
   for(len = 0; len < sizeof(*counter); len++)
     checksum -= *(((char*)counter) + len);
   if(checksum) {
