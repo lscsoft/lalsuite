@@ -390,6 +390,13 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_RS_triple="${testDir}/GCT_RS_triple.dat"
 timingsfile_RS_triple="${testDir}/timing_RS_triple.dat"
 
+
+# set plan mode so that results should be deterministic, easier to compare results of different runs this way
+
+export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
+export LAL_FSTAT_FFT_PLAN_TIMEOUT=30
+
+
 cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' --outputTiming='$timingsfile_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=6"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
@@ -402,6 +409,83 @@ if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$gct_code' ..."
     exit 1
 fi
+
+
+## re-run, but now create the three toplists one by one, then compare results 
+
+outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_1.dat"
+
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' --outputTiming='$timingsfile_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=2"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline"
+else
+    cmdline="$cmdline &> /dev/null"
+fi
+
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$gct_code' ..."
+    exit 1
+fi
+
+outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_2.dat"
+
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' --outputTiming='$timingsfile_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=4"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline"
+else
+    cmdline="$cmdline &> /dev/null"
+fi
+
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$gct_code' ..."
+    exit 1
+fi
+
+outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_3.dat"
+
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' --outputTiming='$timingsfile_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=5"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline"
+else
+    cmdline="$cmdline &> /dev/null"
+fi
+
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$gct_code' ..."
+    exit 1
+fi
+
+
+# filter out comments 
+
+egrep -v "^%" ${testDir}/GCT_RS_triple_1.dat > ${testDir}/GCT_RS_triple_1.txt
+egrep -v "^%" ${testDir}/GCT_RS_triple_2.dat > ${testDir}/GCT_RS_triple_2.txt
+egrep -v "^%" ${testDir}/GCT_RS_triple_3.dat > ${testDir}/GCT_RS_triple_3.txt
+
+
+egrep -v "^%" ${testDir}/GCT_RS_triple.dat > ${testDir}/GCT_RS_triple.txt
+egrep -v "^%" ${testDir}/GCT_RS_triple.dat-BSGLtL > ${testDir}/GCT_RS_triple-BSGLtL.txt
+egrep -v "^%" ${testDir}/GCT_RS_triple.dat-BtSGLtL > ${testDir}/GCT_RS_triple-BtSGLtL.txt
+
+if ! eval "diff ${testDir}/GCT_RS_triple_1.txt ${testDir}/GCT_RS_triple.txt"; then
+    echo "Error: tripple toplists do not match separately generated toplists  (1) "
+    exit 1
+fi
+
+if ! eval "diff ${testDir}/GCT_RS_triple_2.txt ${testDir}/GCT_RS_triple-BSGLtL.txt"; then
+    echo "Error: tripple toplists do not match separately generated toplists  (2) "
+    exit 1
+fi
+
+if ! eval "diff ${testDir}/GCT_RS_triple_3.txt ${testDir}/GCT_RS_triple-BtSGLtL.txt"; then
+    echo "Error: tripple toplists do not match separately generated toplists  (3) "
+    exit 1
+fi
+
+
 
 ## ---------- compute relative differences and check against tolerance --------------------
 awk_reldev='{printf "%.2e", sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
