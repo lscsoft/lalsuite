@@ -97,18 +97,18 @@ int main( int argc, char *argv[]) {
 
   /* compute and compare the results for one set of Fstar0, oLtLGX values */
   REAL4 cohFstar0 = -LAL_REAL4_MAX; /* prior from BSGL derivation, -Inf means pure line veto, +Inf means pure multi-Fstat */
-  REAL4 *oLtLGX = NULL; /* per-IFO prior odds ratio for line vs. Gaussian noise, NULL is interpreted as oLtLGX[X]=1 for all X  (in most general case includes both L and tL) */
-  printf ("Computing BSGL for TwoF_multi=%f, TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=NULL...\n", TwoF, TwoFX->data[0], TwoFX->data[1], cohFstar0 );
+  REAL4 oLtLGXarray[numDetectors]; /* per-IFO prior odds ratio for line vs. Gaussian noise */
+  oLtLGXarray[0] = 0.5; /* pick some arbitrary values first */
+  oLtLGXarray[1] = 0.8;
+  REAL4 *oLtLGX = oLtLGXarray;
+  printf ("Computing BSGL for TwoF_multi=%f, TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=(%f,%f)...\n", TwoF, TwoFX->data[0], TwoFX->data[1], cohFstar0, oLtLGX[0], oLtLGX[1] );
   XLAL_CHECK ( XLALCompareBSGLComputations( TwoF, numDetectors, TwoFX, cohFstar0, oLtLGX, numSegs, tolerance, LRS_BSGL, 0.0, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* change the priors to catch more possible problems */
   cohFstar0 = 10.0;
-  REAL4 oLtLGXarray[numDetectors];
-  oLtLGXarray[0] = 0.5;
-  oLtLGXarray[1] = 0.8;
-  oLtLGX = oLtLGXarray;
+  oLtLGX = NULL; /* NULL is interpreted as oLtLGX[X]=1 for all X (in most general case includes both L and tL) */
 
-  printf ("Computing BSGL for TwoF_multi=%f, TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=(%f,%f)...\n", TwoF, TwoFX->data[0], TwoFX->data[1], cohFstar0, oLtLGX[0], oLtLGX[1] );
+  printf ("Computing BSGL for TwoF_multi=%f, TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=NULL...\n", TwoF, TwoFX->data[0], TwoFX->data[1], cohFstar0 );
   XLAL_CHECK ( XLALCompareBSGLComputations( TwoF, numDetectors, TwoFX, cohFstar0, oLtLGX, numSegs, tolerance, LRS_BSGL, 0.0, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroyREAL4Vector(TwoFX);
@@ -141,7 +141,7 @@ int main( int argc, char *argv[]) {
     }
   }
 
-  printf ("Computing semi-coherent BSGL for sum_TwoF_multi=%f, sum_TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=(%f,%f)...\n", sumTwoF, sumTwoFX->data[0], sumTwoFX->data[1], cohFstar0, oLtLGX[0], oLtLGX[1] );
+  printf ("Computing semi-coherent BSGL for sum_TwoF_multi=%f, sum_TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=NULL...\n", sumTwoF, sumTwoFX->data[0], sumTwoFX->data[1], cohFstar0 );
   XLAL_CHECK ( XLALCompareBSGLComputations( sumTwoF, numDetectors, sumTwoFX, cohFstar0, oLtLGX, numSegs, tolerance, LRS_BSGL, 0.0, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   REAL4 maxTwoF = 0.0;
@@ -154,13 +154,13 @@ int main( int argc, char *argv[]) {
     }
   }
 
-  printf ("Computing semi-coherent BSGLtL for sum_TwoF_multi=%f, sum_TwoFX=(%f,%f), max_TwoF_multi=%f, max_TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=(%f,%f)...\n", sumTwoF, sumTwoFX->data[0], sumTwoFX->data[1], maxTwoF, maxTwoFX->data[0], maxTwoFX->data[1], cohFstar0, oLtLGX[0], oLtLGX[1] );
+  printf ("Computing semi-coherent BSGLtL for sum_TwoF_multi=%f, sum_TwoFX=(%f,%f), max_TwoF_multi=%f, max_TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=NULL...\n", sumTwoF, sumTwoFX->data[0], sumTwoFX->data[1], maxTwoF, maxTwoFX->data[0], maxTwoFX->data[1], cohFstar0 );
   XLAL_CHECK ( XLALCompareBSGLComputations( sumTwoF, numDetectors, sumTwoFX, cohFstar0, oLtLGX, numSegs, tolerance, LRS_BSGLtL, maxTwoF, maxTwoFX  ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  printf ("Computing semi-coherent BtSGLtL for sum_TwoF_multi=%f, sum_TwoFX=(%f,%f), max_TwoF_multi=%f, max_TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=(%f,%f)...\n", sumTwoF, sumTwoFX->data[0], sumTwoFX->data[1], maxTwoF, maxTwoFX->data[0], maxTwoFX->data[1], cohFstar0, oLtLGX[0], oLtLGX[1] );
+  printf ("Computing semi-coherent BtSGLtL for sum_TwoF_multi=%f, sum_TwoFX=(%f,%f), max_TwoF_multi=%f, max_TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=NULL...\n", sumTwoF, sumTwoFX->data[0], sumTwoFX->data[1], maxTwoF, maxTwoFX->data[0], maxTwoFX->data[1], cohFstar0 );
   XLAL_CHECK ( XLALCompareBSGLComputations( sumTwoF, numDetectors, sumTwoFX, cohFstar0, oLtLGX, numSegs, tolerance, LRS_BtSGLtL, maxTwoF, maxTwoFX  ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  printf ("Computing semi-coherent BStSGLtL for sum_TwoF_multi=%f, sum_TwoFX=(%f,%f), max_TwoF_multi=%f, max_TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=(%f,%f)...\n", sumTwoF, sumTwoFX->data[0], sumTwoFX->data[1], maxTwoF, maxTwoFX->data[0], maxTwoFX->data[1], cohFstar0, oLtLGX[0], oLtLGX[1] );
+  printf ("Computing semi-coherent BStSGLtL for sum_TwoF_multi=%f, sum_TwoFX=(%f,%f), max_TwoF_multi=%f, max_TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=NULL...\n", sumTwoF, sumTwoFX->data[0], sumTwoFX->data[1], maxTwoF, maxTwoFX->data[0], maxTwoFX->data[1], cohFstar0 );
   XLAL_CHECK ( XLALCompareBSGLComputations( sumTwoF, numDetectors, sumTwoFX, cohFstar0, oLtLGX, numSegs, tolerance, LRS_BStSGLtL, maxTwoF, maxTwoFX  ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* free memory */
@@ -202,7 +202,7 @@ XLALCompareBSGLComputations ( const REAL4 TwoF,			/**< multi-detector  Fstat */
   /* faster version: use only the leading term of the BSGL denominator sum */
   BSGLSetup *setup_noLogCorrection;
   XLAL_CHECK ( (setup_noLogCorrection = XLALCreateBSGLSetup ( numDetectors, numSegs*cohFstar0, oLtLGX, FALSE, numSegs )) != NULL, XLAL_EFUNC );
-  REAL4 log10_LRS_XLAL_notallterms;
+  REAL4 log10_LRS_XLAL_notallterms = 0.0;
   char funcname[64] = "";
   switch ( LRstat_variant ) {
     case LRS_BSGL :
@@ -228,7 +228,7 @@ XLALCompareBSGLComputations ( const REAL4 TwoF,			/**< multi-detector  Fstat */
   /* more precise version: use all terms of the BSGL denominator sum */
   BSGLSetup *setup_withLogCorrection;
   XLAL_CHECK ( (setup_withLogCorrection = XLALCreateBSGLSetup ( numDetectors, numSegs*cohFstar0, oLtLGX, TRUE, numSegs )) != NULL, XLAL_EFUNC );
-  REAL4 log10_LRS_XLAL_allterms;
+  REAL4 log10_LRS_XLAL_allterms = 0.0;
   switch ( LRstat_variant ) {
     case LRS_BSGL :
       log10_LRS_XLAL_allterms = XLALComputeBSGL ( TwoF, TwoFX->data, setup_withLogCorrection );
