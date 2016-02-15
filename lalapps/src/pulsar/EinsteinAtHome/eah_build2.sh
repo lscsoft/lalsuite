@@ -676,7 +676,8 @@ log_and_dont_fail make gitID
 log_and_do make "eah_HierarchSearchGCT$ext"
 log_and_do cp "eah_HierarchSearchGCT$ext" "$EAH/eah_HierarchSearchGCT$acc$ext"
 test ".$release" = ".true" &&
-    log_and_do cp "$EAH/eah_HierarchSearchGCT$acc$ext" "$EAH/${appname}_${appversion}_$platform$planclass$ext"
+    log_and_do cp "$EAH/eah_HierarchSearchGCT$acc$ext" "$EAH/${appname}_${appversion}_$platform$planclass$ext" &&
+    log_and_do gzip "$EAH/${appname}_${appversion}_$platform$planclass$ext"
 
 log_and_do cd "$BUILD/lalapps/src/pulsar/Injections"
 log_and_do make eah_Makefakedata_v5$ext
@@ -687,9 +688,7 @@ log_and_do cp eah_PredictFstat$ext eah_ComputeFstatistic_v2$ext "$EAH"
 
 log_and_show "==========================================="
 log_and_show "Einstein@home App was built, find it at"
-log_and_show "$EAH/${appname}_${appversion}_$platform$planclass$ext"
-( md5sum "$EAH/${appname}_${appversion}_$platform$planclass$ext" ||
-  md5 "$EAH/${appname}_${appversion}_$platform$planclass$ext" ) 2>&1 | tee -a "$LOGFILE" >&2
+log_and_show "$EAH/${appname}_${appversion}_$platform$planclass${ext}.gz"
 log_and_show "==========================================="
 
 fi # check-only
