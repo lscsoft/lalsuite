@@ -124,8 +124,8 @@ XLALDestroyBSGLSetup ( BSGLSetup * setup )
  * \newcommand{\Signal}{\mathrm{S}}
  * \newcommand{\Gauss}{\mathrm{G}}
  * \newcommand{\Line}{\mathrm{L}}
- * \newcommand{\SGL}{{\Signal\Gauss\Line}}
- * \newcommand{\oLG}{o_{\Line\Gauss}}
+ * \newcommand{\SGL}{{\Signal/\Gauss\Line}}
+ * \newcommand{\oLG}{o_{\Line/\Gauss}}
  * \newcommand{\oLGX}{\oLG^X}
  * \newcommand{\OSGL}{O_\SGL}
  * \newcommand{\oSGL}{o_\SGL}
@@ -275,7 +275,7 @@ XLALComputeGLtLDenominator ( const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in]
 /**
  * \f[
  * \newcommand{\denomtermset}{\mathcal{\denomterm}}
- * \newcommand{\SGLtL}{{\Signal\Gauss\Line\Transline}}
+ * \newcommand{\SGLtL}{{\Signal/\Gauss\Line\Transline}}
  * \newcommand{\OSGLtL}{O_\SGLtL}
  * \newcommand{\oSGLtL}{o_\SGLtL}
  * \newcommand{\BSGLtL}{B_{\SGLtL}}
@@ -314,7 +314,7 @@ XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$2\scF\f
 /**
  * \f[
  * \newcommand{\Transsig}{{\mathrm{t\Signal}}}
- * \newcommand{\tSGLtL}{{\Transsig\Gauss\Line\Transline}}
+ * \newcommand{\tSGLtL}{{\Transsig/\Gauss\Line\Transline}}
  * \newcommand{\BtSGLtL}{B_{\tSGLtL}}
  * \newcommand{\OtSGLtL}{O_\tSGLtL}
  * \newcommand{\otSGLtL}{o_\tSGLtL}
@@ -330,7 +330,7 @@ XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$2\scF\f
  * This function returns an approximation of \f$\logten B_\SGLtL = \ln B_\SGLtL \, \logten e\f$.
  * While the general expression for \f$\ln B_\SGLtL\f$ would be analoguous to Eq.(39) of \cite Keitel2015 , here we compute
  * \f{equation}{
- * \ln \BtSGLtL \approx \max_{\ell}\cohF^{\ell} - (\Nseg - 1)\cohFtho - \ln \Nseg - \denommax\,.
+ * \ln \BtSGLtL \approx \max_{\ell}\cohF^{\ell} + (\Nseg - 1)\cohFtho - \ln \Nseg - \denommax\,.
  * \f}
  * using the maximum multi-detector, single-segment F-stat value \f$\max\cohF^{\ell}\f$ in the numerator, and
  * and the maximum \f$\denommax\f$ of the set of denominator exponents, computed in XLALComputeGLtLDenominator().
