@@ -2643,8 +2643,9 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
     REAL4 sumTwoF = in->sumTwoF[ifreq_fg];
     REAL4 sumTwoFX[PULSAR_MAX_DETECTORS];
 
-/* compute BSGL */ 
+    /* compute BSGL */
 
+    line.maxTwoFl = in->maxTwoFl[ifreq_fg];
     for (UINT4 X = 0; X < in->numDetectors; X++) {
       int fg_FX_idx= FG_FX_INDEX(*in, X, ifreq_fg);
       sumTwoFX[X] = in->sumTwoFX[fg_FX_idx]; /* here it's still the summed 2F value over segments, not the average */
@@ -2657,25 +2658,22 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
       XLALPrintError ("%s line %d : XLALComputeBSGL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
-    if ( unlikely(line.log10BSGL < -LAL_REAL4_MAX*0.1) )
+
+    if ( unlikely(line.log10BSGL < -LAL_REAL4_MAX*0.1) ) {
       line.log10BSGL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
-
-
-    line.maxTwoFl = in->maxTwoFl[ifreq_fg];
-    for (UINT4 X = 0; X < in->numDetectors; X++) {
-     line.maxTwoFXl[X] = in->maxTwoFXl[FG_FX_INDEX(*in, X, ifreq_fg)];
     }
+
     line.log10BSGLtL  = XLALComputeBSGLtL ( sumTwoF, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
     if ( unlikely(xlalErrno != 0) ) {
       XLALPrintError ("%s line %d : XLALComputeBSGLtL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
+
     line.log10BtSGLtL = XLALComputeBtSGLtL ( line.maxTwoFl, sumTwoFX, line.maxTwoFXl, usefulparams->BSGLsetup );
     if ( unlikely(xlalErrno != 0) ) {
       XLALPrintError ("%s line %d : XLALComputeBSGLtL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
     }
-
 
     line.Freq = freq_fg; /* NOTE: this is not the final output frequency! For performance reasons, it will only later get correctly extrapolated for the final toplist */
     line.Alpha = in->alpha;
@@ -2810,8 +2808,9 @@ void UpdateSemiCohToplists ( LALStatus *status,
         XLALPrintError ("%s line %d : XLALComputeBSGL() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
       }
-      if ( line.log10BSGL < -LAL_REAL4_MAX*0.1 )
+      if ( line.log10BSGL < -LAL_REAL4_MAX*0.1 ) {
         line.log10BSGL = -LAL_REAL4_MAX*0.1; /* avoid minimum value, needed for output checking in print_gctFstatline_to_str() */
+      }
     }
     else {
       line.log10BSGL = -LAL_REAL4_MAX; /* in non-BSGL case, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
