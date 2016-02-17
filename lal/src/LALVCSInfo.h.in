@@ -62,6 +62,9 @@ extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentStatus;
 /** @PACKAGE_NAME@ VCS information */
 extern const LALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfo;
 
+/** List of VCS information for @PACKAGE_NAME@ and its LALSuite dependencies (<tt>NULL</tt>-terminated) */
+extern const LALVCSInfo *const lal@PACKAGE_NAME_NOLAL@VCSInfoList[32];
+
 /** @PACKAGE_NAME@ <tt>configure</tt> arguments */
 extern const char *const lal@PACKAGE_NAME_NOLAL@ConfigureArgs;
 
