@@ -29,7 +29,7 @@ extern "C" {
 
 /**
  * \defgroup ExtrapolatePulsarSpins_h Header ExtrapolatePulsarSpins.h
- * \ingroup lalpulsar_common
+ * \ingroup lalpulsar_general
  * \brief  Extrapolate the Pulsar spin-paramters
  * \f$\{f^{(k)}\}\equiv\{f, \dot{f},\ddot{f},...\}\f$, and "spin-ranges"
  * \f$\{ f^{(k)}, \Delta f^{(k)} \}\f$ from one SSB epoch to another.

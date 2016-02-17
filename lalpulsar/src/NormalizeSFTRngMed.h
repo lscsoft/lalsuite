@@ -26,7 +26,7 @@ extern "C" {
 
 /**
  * \defgroup NormalizeSFTRngMed_h Header NormalizeSFTRngMed.h
- * \ingroup lalpulsar_common
+ * \ingroup lalpulsar_general
  *
  * \author Krishnan, B.
  * \date
