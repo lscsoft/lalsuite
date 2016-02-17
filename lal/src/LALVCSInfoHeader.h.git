@@ -20,6 +20,8 @@
  * Copyright (C) 2014 Karl Wette
  */
 
+/** \cond DONT_DOXYGEN */
+
 #ifndef _@PACKAGE_NAME_UCASE@VCSINFOHEADER_H
 #define _@PACKAGE_NAME_UCASE@VCSINFOHEADER_H
 
@@ -31,7 +33,7 @@
 extern "C" {
 #endif
 
-/* vcs information defines */
+/* VCS information defines */
 #define @PACKAGE_NAME_UCASE@_NAME "@PACKAGE_NAME@"
 #define @PACKAGE_NAME_UCASE@_VCS_ID "@ID@"
 #define @PACKAGE_NAME_UCASE@_VCS_DATE "@DATE@"
@@ -41,7 +43,7 @@ extern "C" {
 #define @PACKAGE_NAME_UCASE@_VCS_COMMITTER "@COMMITTER@"
 #define @PACKAGE_NAME_UCASE@_VCS_STATUS "@STATUS@"
 
-/* vcs information defines - identable*/
+/* Identable VCS information defines */
 #define @PACKAGE_NAME_UCASE@_VCS_IDENT_ID "$" "@PACKAGE_NAME@Id: @ID@ " "$"
 #define @PACKAGE_NAME_UCASE@_VCS_IDENT_DATE "$" "@PACKAGE_NAME@Date: @DATE@ " "$"
 #define @PACKAGE_NAME_UCASE@_VCS_IDENT_BRANCH "$" "@PACKAGE_NAME@Branch: @BRANCH@ " "$"
@@ -50,8 +52,8 @@ extern "C" {
 #define @PACKAGE_NAME_UCASE@_VCS_IDENT_COMMITTER "$" "@PACKAGE_NAME@Committer: @COMMITTER@ " "$"
 #define @PACKAGE_NAME_UCASE@_VCS_IDENT_STATUS "$" "@PACKAGE_NAME@Status: @STATUS@ " "$"
 
-/* header vcs information structure */
-static const struct tagLALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfoHeader = { \
+/* Header VCS information structure */
+static const LALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfoHeader = { \
   @PACKAGE_NAME_UCASE@_NAME, \
   @PACKAGE_NAME_UCASE@_VERSION, \
   @PACKAGE_NAME_UCASE@_VCS_ID, \
@@ -68,6 +70,8 @@ static const struct tagLALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfoHeader = { \
 #endif
 
 #endif /* _@PACKAGE_NAME_UCASE@VCSINFOHEADER_H */
+
+/** \endcond */
 
 /*
  * vim: tw=0 ts=2 et
