@@ -281,8 +281,8 @@ def gps_to_mjd(gps_time):
     Example
     -------
 
-    >>> gps_to_mjd(1129501781.2)
-    57316.93708564808
+    >>> '%.9f' % round(gps_to_mjd(1129501781.2), 9)
+    '57316.937085648'
     """
     gps_seconds_fraction, gps_seconds = math.modf(gps_time)
     mjd = lal.ConvertCivilTimeToMJD(lal.GPSToUTC(int(gps_seconds)))
