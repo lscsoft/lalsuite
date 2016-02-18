@@ -26,6 +26,8 @@ import numpy as np
 import healpy as hp
 import collections
 import itertools
+import lal
+import lalsimulation
 
 
 _max_order = 29
@@ -517,6 +519,67 @@ def find_greedy_credible_levels(p):
     cls = np.empty_like(pflat)
     cls[i] = cs
     return cls.reshape(p.shape)
+
+
+def get_detector_pair_axis(ifo1, ifo2, gmst):
+    """Find the sky position where the line between two detectors pierces the
+    celestial sphere.
+
+    Parameters
+    ----------
+
+    ifo1 : str or `~lal.Detector` or `~np.ndarray`
+        The first detector; either the name of the detector (e.g. `'H1'`), or a
+        `lal.Detector` object (e.g., as returned by
+        `lalsimulation.DetectorPrefixToLALDetector('H1')` or the geocentric
+        Cartesian position of the detection in meters.
+
+    ifo2 : str or `~lal.Detector` or `~np.ndarray`
+        The second detector; same as described above.
+
+    gmst : float
+        The Greenwich mean sidereal time in radians, as returned by
+        `lal.GreenwichMeanSiderealTime`.
+
+    Returns
+    -------
+
+    pole_ra : float
+        The right ascension in radians at which a ray from `ifo1` to `ifo2`
+        would pierce the celestial sphere.
+
+    pole_dec : float
+        The declination in radians at which a ray from `ifo1` to `ifo2` would
+        pierce the celestial sphere.
+
+    light_travel_time : float
+        The light travel time from `ifo1` to `ifo2` in seconds.
+    """
+
+    # Get location of detectors if ifo1, ifo2 are LAL detector structs
+    try:
+        ifo1 = lalsimulation.lalsimulation.DetectorPrefixToLALDetector(ifo1)
+    except TypeError:
+        pass
+    try:
+        ifo1 = ifo1.location
+    except AttributeError:
+        pass
+    try:
+        ifo2 = lalsimulation.lalsimulation.DetectorPrefixToLALDetector(ifo2)
+    except TypeError:
+        pass
+    try:
+        ifo2 = ifo2.location
+    except AttributeError:
+        pass
+
+    n = ifo2 - ifo1
+    light_travel_time = np.sqrt(np.sum(np.square(n))) / lal.C_SI
+    (theta,), (phi,) = hp.vec2ang(n)
+    pole_ra = (gmst + phi) % (2 * np.pi)
+    pole_dec = 0.5 * np.pi - theta
+    return pole_ra, pole_dec, light_travel_time
 
 
 def rotate_map_to_axis(m, ra, dec, nest=False, method='direct'):
