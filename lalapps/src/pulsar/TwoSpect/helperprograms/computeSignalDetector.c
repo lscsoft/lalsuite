@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
                   dirichlet0 = crect(0.0, 0.0);
                   continue;
                }
-               else dirichlet0 = conj(0.5/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/(2.0*LAL_TWOPI*delta0_0*(delta0_0*delta0_0-1.0))));
+	       else dirichlet0 = -LAL_PI*crectf(cos(LAL_PI*delta0_0), -sin(LAL_PI*delta0_0))*delta0_0*(delta0_0*delta0_0 - 1.0)/sin(LAL_PI*delta0_0);
             }
             else if (fabsf((REAL4)(delta1_0*delta1_0-1.0))<(REAL4)1.0e-6) {
                if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = crect(-0.5, 0.0);
@@ -181,15 +181,15 @@ int main(int argc, char *argv[])
                   dirichlet0 = crect(0.0, 0.0);
                   continue;
                }
-               else dirichlet0 = conj(-0.25/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/(2.0*LAL_TWOPI*delta0_0*(delta0_0*delta0_0-1.0))));
+	       else dirichlet0 = -LAL_PI_2*crectf(-cos(LAL_PI*delta0_0), sin(LAL_PI*delta0_0))*delta0_0*(delta0_0*delta0_0 - 1.0)/sin(LAL_PI*delta0_0);
             }
-            else if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = conj(2.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/(2.0*LAL_TWOPI*delta1_0*(delta1_0*delta1_0-1.0))));
-            else if (fabsf((REAL4)(delta0_0-1.0))<(REAL4)1.0e-6) dirichlet0 = conj(-4.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/(2.0*LAL_TWOPI*delta1_0*(delta1_0*delta1_0-1.0))));
+            else if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = -LAL_1_PI*crectf(cos(LAL_PI*delta1_0), sin(LAL_PI*delta1_0))*sin(LAL_PI*delta1_0)/(delta1_0*(delta1_0*delta1_0-1.0));
+            else if (fabsf((REAL4)(delta0_0*delta0_0-1.0))<(REAL4)1.0e-6) dirichlet0 = LAL_2_PI*crectf(cos(LAL_PI*delta1_0), sin(LAL_PI*delta1_0))*sin(LAL_PI*delta1_0)/(delta1_0*(delta1_0*delta1_0-1.0));
             else if (fabsf((REAL4)(delta0_0-roundf(delta0_0)))<(REAL4)1.0e-6) {
                dirichlet0 = crect(0.0, 0.0);
                continue;
             }
-            else dirichlet0 = conj((crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/(2.0*LAL_TWOPI*delta1_0*(delta1_0*delta1_0-1.0)))/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/(2.0*LAL_TWOPI*delta0_0*(delta0_0*delta0_0-1.0))));     //real Dirichlet ratio
+            else dirichlet0 = sin(LAL_PI*delta1_0)/sin(LAL_PI*delta0_0)*(delta0_0*(delta0_0*delta0_0-1.0))/(delta1_0*(delta1_0*delta1_0-1.0))*cpolarf(1.0,LAL_PI*(delta1_0-delta0_0));
          } else {
             if (fabsf((REAL4)delta1_0)<(REAL4)1.0e-6) {
                if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = crect(1.0, 0.0);
@@ -213,18 +213,18 @@ int main(int argc, char *argv[])
                if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = crect(1.0, 0.0);
                else if (fabsf((REAL4)(delta0*delta0-1.0))<(REAL4)1.0e-6) dirichlet = crect(-2.0, 0.0);
                else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) dirichlet = crect(0.0, 0.0);
-               else dirichlet = conj(0.5/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0)-1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0-1.0))));
+               else dirichlet = -LAL_PI*crectf(cos(LAL_PI*delta0), -sin(LAL_PI*delta0))*delta0*(delta0*delta0 - 1.0)/sin(LAL_PI*delta0);
             }
             else if (fabsf((REAL4)(delta1*delta1-1.0))<(REAL4)1.0e-6) {
                if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = crect(-0.5, 0.0);
                else if (fabsf((REAL4)(delta0*delta0-1.0))<(REAL4)1.0e-6) dirichlet = crect(1.0, 0.0);
                else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) dirichlet = crect(0.0, 0.0);
-               else dirichlet = conj(-0.25/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0)-1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0-1.0))));
+               else dirichlet = -LAL_PI_2*crectf(-cos(LAL_PI*delta0), sin(LAL_PI*delta0))*delta0*(delta0*delta0 - 1.0)/sin(LAL_PI*delta0);
             }
-            else if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = conj(2.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1)-1.0)/(2.0*LAL_TWOPI*delta1*(delta1*delta1-1.0))));
-            else if (fabsf((REAL4)(delta0-1.0))<(REAL4)1.0e-6) dirichlet = conj(-4.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1)-1.0)/(2.0*LAL_TWOPI*delta1*(delta1*delta1-1.0))));
+            else if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = -LAL_1_PI*crectf(cos(LAL_PI*delta1), sin(LAL_PI*delta1))*sin(LAL_PI*delta1)/(delta1*(delta1*delta1-1.0));
+            else if (fabsf((REAL4)(delta0*delta0-1.0))<(REAL4)1.0e-6) dirichlet = LAL_2_PI*crectf(cos(LAL_PI*delta1), sin(LAL_PI*delta1))*sin(LAL_PI*delta1)/(delta1*(delta1*delta1-1.0));
             else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) dirichlet = crect(0.0, 0.0);
-            else dirichlet = conj((crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1)-1.0)/(2.0*LAL_TWOPI*delta1*(delta1*delta1-1.0)))/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0)-1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0-1.0))));     //estimated Dirichlet ratio
+            else dirichlet = sin(LAL_PI*delta1)/sin(LAL_PI*delta0)*(delta0*(delta0*delta0-1.0))/(delta1*(delta1*delta1-1.0))*cpolarf(1.0,LAL_PI*(delta1-delta0));
          } else {
             if (fabsf((REAL4)delta1)<(REAL4)1.0e-6) {
                if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = crect(1.0, 0.0);
@@ -238,8 +238,8 @@ int main(int argc, char *argv[])
          dirichlet = cpolar(1.0, carg(dirichlet));
          if (fabs(floor(delta0)-floor(delta1))>=1.0) dirichlet *= -1.0;
 
-         COMPLEX16 realRatio = RatioTerm0*phaseshift0*dirichlet0;
-         COMPLEX16 estRatio = RatioTerm*phaseshift*dirichlet;
+         COMPLEX16 realRatio = RatioTerm0*phaseshift0*conj(dirichlet0);
+         COMPLEX16 estRatio = RatioTerm*phaseshift*conj(dirichlet);
 
          fprintf(OUTPUT, "%g %g %g %g\n", cabs(realRatio), gsl_sf_angle_restrict_pos(carg(realRatio)), cabs(estRatio), gsl_sf_angle_restrict_pos(carg(estRatio)));
       }
