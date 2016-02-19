@@ -17,6 +17,7 @@
  *  MA  02111-1307  USA
  */
 
+#include <sys/stat.h>
 #include <gsl/gsl_roots.h>
 #include "upperlimits.h"
 #include "cdfdist.h"
@@ -340,7 +341,14 @@ INT4 outputUpperLimitToFile(const CHAR *outputfile, const UpperLimit ul, const B
    XLAL_CHECK( outputfile!=NULL, XLAL_EINVAL );
 
    FILE *ULFILE = NULL;
-   XLAL_CHECK( (ULFILE = fopen(outputfile, "a")) != NULL, XLAL_EIO, "Couldn't fopen file %s to output upper limits\n", outputfile );
+   struct stat XLAL_INIT_DECL(buf);
+   if ( stat(outputfile, &buf) == -1 && errno == ENOENT ) {
+      XLAL_CHECK( (ULFILE = fopen(outputfile, "w")) != NULL, XLAL_EIO, "Couldn't fopen file %s to output upper limits\n", outputfile );
+      fprintf(ULFILE, "# TwoSpect upper limits output file\n");
+      fprintf(ULFILE, "# RA      DEC     Upper limit   SNR_eff    Freq     Period   Mod. depth    UL normalization\n");
+   } else {
+      XLAL_CHECK( (ULFILE = fopen(outputfile, "a")) != NULL, XLAL_EIO, "Couldn't fopen file %s to output upper limits\n", outputfile );
+   }
 
    REAL8 highesth0 = 0.0, snr = 0.0, fsig = 0.0, period = 0.0, moddepth = 0.0;
    for (UINT4 ii=0; ii<ul.moddepth->length; ii++) {
