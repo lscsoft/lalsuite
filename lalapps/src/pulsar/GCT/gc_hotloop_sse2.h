@@ -45,7 +45,6 @@ void gc_hotloop_2Fmax_tracking (REAL4 * fgrid2F, REAL4 * fgrid2Fmax, UINT4 * fgr
   UINT4 VIIII[4] __attribute__ ((aligned (16))) = { k,k,k,k };
   UINT4 V1111[4] __attribute__ ((aligned (16))) = { 0xffffffff,0xffffffff,0xffffffff,0xffffffff};
 
-  UINT8 offset = ((UINT8)fgrid2F & 0xf) ;
 
 
   /* if this is the first segment (seg 0), then all we need to do is copy the cg vector into the fg 
@@ -61,24 +60,8 @@ void gc_hotloop_2Fmax_tracking (REAL4 * fgrid2F, REAL4 * fgrid2Fmax, UINT4 * fgr
   }
 
 
-  if(offset != 0) offset = 16-offset;
 
-  for(ifreq_fg=0; offset > 0 && ifreq_fg < length; ifreq_fg++, offset-- ) {
-
-            fgrid2F[0] += cgrid2F[0] ;
-
-            newMax=(cgrid2F[0] >= fgrid2Fmax[0]);
-	    fgrid2Fmax[0]=fmaxf(fgrid2Fmax[0],fgrid2Fmax[0]);
-            fgrid2FmaxIdx[0]=fgrid2FmaxIdx[0]*(1-newMax)+k*newMax;
-            fgrid2F++;
-            cgrid2F++;
-            fgrid2Fmax++;
-            fgrid2FmaxIdx++;
-
-  } /*  for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) */
-
-
-  for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
+  for(ifreq_fg=0 ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
 #ifdef EXP_NO_ASM
 
 #pragma ivdep
@@ -276,26 +259,8 @@ void gc_hotloop(REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthr
 
   REAL4 VTTTT[4] __attribute__ ((aligned (16))) = { TwoFthreshold,TwoFthreshold,TwoFthreshold,TwoFthreshold };
 
-  /* ensure alignment on fine grid. note fgridnc is UCHAR*
-     while fgrid2F is UINT4*  */
 
-  UINT8 offset = ((UINT8)fgridnc & 0xf) ;
-
-  if(offset != 0) offset = 16-offset;
-
-  for(ifreq_fg=0; offset > 0 && ifreq_fg < length; ifreq_fg++, offset-- ) {
-
-	    fgrid2F[0] += cgrid2F[0] ;
-
-	    fgridnc[0] += (TwoFthreshold < cgrid2F[0]);
-	    fgridnc++;
-	    fgrid2F++;
-	    cgrid2F++;
-
-  } /* for( ifreq_fg = 0; ifreq_fg < finegrid.freqlength; ifreq_fg++ ) { */
-
-
-for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
+for(ifreq_fg=0 ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
     /* unrolled loop (16 iterations of original loop) */
 #ifdef EXP_NO_ASM
 
