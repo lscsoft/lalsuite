@@ -677,7 +677,7 @@ log_and_do make "eah_HierarchSearchGCT$ext"
 log_and_do cp "eah_HierarchSearchGCT$ext" "$EAH/eah_HierarchSearchGCT$acc$ext"
 test ".$release" = ".true" &&
     log_and_do cp "$EAH/eah_HierarchSearchGCT$acc$ext" "$EAH/${appname}_${appversion}_$platform$planclass$ext" &&
-    log_and_do gzip "$EAH/${appname}_${appversion}_$platform$planclass$ext"
+    log_and_do gzip -f "$EAH/${appname}_${appversion}_$platform$planclass$ext"
 
 log_and_do cd "$BUILD/lalapps/src/pulsar/Injections"
 log_and_do make eah_Makefakedata_v5$ext
