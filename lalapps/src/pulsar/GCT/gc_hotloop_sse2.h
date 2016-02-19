@@ -86,7 +86,7 @@ void gc_hotloop_2Fmax_tracking (REAL4 * fgrid2F, REAL4 * fgrid2Fmax, UINT4 * fgr
             fgrid2F[0] += cgrid2F[0] ;
 
             newMax=(cgrid2F[0] >= fgrid2Fmax[0]);
-            fgrid2Fmax[0]=fmaxf(fgrid2Fmax[0],fgrid2Fmax[0]);
+            fgrid2Fmax[0]=fmaxf(fgrid2Fmax[0],cgrid2F[0]);
             fgrid2FmaxIdx[0]=fgrid2FmaxIdx[0]*(1-newMax)+k*newMax;
             fgrid2F++;
             cgrid2F++;
@@ -256,7 +256,7 @@ void gc_hotloop_2Fmax_tracking (REAL4 * fgrid2F, REAL4 * fgrid2Fmax, UINT4 * fgr
             fgrid2F[0] += cgrid2F[0] ;
 
             newMax=(cgrid2F[0] >= fgrid2Fmax[0]);
-            fgrid2Fmax[0]=fmaxf(fgrid2Fmax[0],fgrid2Fmax[0]);
+            fgrid2Fmax[0]=fmaxf(fgrid2Fmax[0],cgrid2F[0]);
             fgrid2FmaxIdx[0]=fgrid2FmaxIdx[0]*(1-newMax)+k*newMax;
             fgrid2F++;
             cgrid2F++;
