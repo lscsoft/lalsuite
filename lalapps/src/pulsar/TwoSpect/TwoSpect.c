@@ -930,7 +930,7 @@ int main(int argc, char *argv[])
 
       //Destroy stuff
       XLALDestroyREAL4VectorAligned(aveTFnoisePerFbinRatio);
-      XLALDestroyREAL4VectorSequence(trackedlines);
+      if (trackedlines!=NULL) XLALDestroyREAL4VectorSequence(trackedlines);
       if (detectors->length>1 && !uvar.signalOnly) {
          XLALDestroyINT4Vector(sftexist);
          XLALDestroyINT4Vector(indexValuesOfExistingSFTs);
@@ -1008,7 +1008,6 @@ int main(int argc, char *argv[])
    destroycandidateVector(exactCandidates1);
    destroycandidateVector(exactCandidates2);
    FreeDopplerSkyScan(&status, &scan);
-   if (lines!=NULL) XLALDestroyINT4Vector(lines);
 
    //print end time
    time(&programendtime);
