@@ -2,3 +2,4 @@ etc/*
 usr/bin/*
 usr/share/lalapps/*
 usr/share/man/man1/*
+usr/lib/python*/*-packages/lalapps/
