@@ -5,7 +5,7 @@ import argparse, sys, os, subprocess, math
 def writeConfigFile(args, fmin, directorynumber):
     configFile = open('{}_{}/in/{}'.format(args.dir, args.IFO.replace(',',''), directorynumber),'w')
     configFile.write("""\
-inputSFTs {}
+inputSFTs \"{}\"
 IFO {}
 fmin {}
 fspan {}
@@ -33,7 +33,7 @@ ihsfactor {}
 randSeed {}
 """.format(args.inputSFTs, args.IFO, fmin, args.fspan, args.t0, args.Tobs, args.Tsft, args.SFToverlap, args.ihsfar, args.ihsfomfar, args.tmplfar, args.Pmin, args.Pmax, args.dfmin, args.dfmax, args.blksize, args.avesqrtSh, args.minTemplateL, args.maxTemplateL, args.dir, args.IFO.replace(',',''), directorynumber, args.dir, args.IFO.replace(',',''), directorynumber, args.FFTplan, args.vectorMath, args.ihsfactor, int(float(fmin)*args.Tsft + 0.5)+directorynumber))
     if args.linedetection: configFile.write('lineDetection {}\n'.format(args.linedetection))
-    if args.keepTopIHS: configFile.write('keepTopNumIHS {}\n'.format(args.keepTopIHS))
+    if args.keepTopIHS: configFile.write('keepOnlyTopNumIHS {}\n'.format(args.keepTopIHS))
     if args.markBadSFTs: configFile.write('markBadSFTs TRUE\n')
     if args.assumeNScosi: configFile.write('assumeNScosi {}\n'.format(args.assumeNScosi))
     if args.assumeNSpsi: configFile.write('assumeNSpsi {}\n'.format(args.assumeNSpsi))
@@ -87,6 +87,7 @@ parser.add_argument('--assumeNSpsi', type=float, help='Assume a particular psi f
 parser.add_argument('--cosiSignCoherent', type=int, choices=[-1, 0, 1], default=0, help='For coherent analysis assume [-1,1] values (0), [0,1] values (1), or [-1,0] values (-1) for cosi (Note: unused when assumeNScosi is specified)')
 parser.add_argument('--scoX1', action='store_true', help='Perform the restricted, Sco X-1 search')
 parser.add_argument('--ulonly', action='store_true', help='Only do upper limits')
+parser.add_argument('--skygridsetupProgram', required=true, type=str, help='Path to and program name of the skygridsetup program')
 args = parser.parse_args()
 
 os.mkdir('{}_{}'.format(args.dir, args.IFO.replace(',','')))
@@ -106,6 +107,7 @@ log={}
 request_memory={}
 notification=Never
 accounting_group={}
+requirements= simd_max=="avx2"
 queue
 """.format(args.program, args.dir, args.IFO.replace(',',''), args.dir, args.IFO.replace(',',''), args.logfile, args.memRequest, args.accountingGroup))
 condorfile.close()
@@ -120,7 +122,7 @@ for ii in range(0, args.numberBands):
 
     if not args.scoX1:
         IFOList = args.IFO.split(',')
-        subprocess.check_call(['../skygridsetup', '--fmin={}'.format(fmin), '--fspan={}'.format(args.fspan), '--Tsft={}'.format(args.Tsft), '--IFO={}'.format(IFOList[0]), '--SFToverlap={}'.format(args.SFToverlap), '--t0={}'.format(args.t0), '--Tobs={}'.format(args.Tobs), '--outfilename={}_{}/skygrid-{}Hz-{}Hz.dat'.format(args.dir, args.IFO.replace(',',''), fmin, args.fspan)])
+        subprocess.check_call(['{}'.format(args.skygridsetupProgram), '--fmin={}'.format(fmin), '--fspan={}'.format(args.fspan), '--Tsft={}'.format(args.Tsft), '--IFO={}'.format(IFOList[0]), '--SFToverlap={}'.format(args.SFToverlap), '--t0={}'.format(args.t0), '--Tobs={}'.format(args.Tobs), '--outfilename={}_{}/skygrid-{}Hz-{}Hz.dat'.format(args.dir, args.IFO.replace(',',''), fmin, args.fspan)])
     else:
          skyRegionFileName = '{}_{}/skygrid-{}Hz-{}Hz.dat'.format(args.dir, args.IFO.replace(',',''), fmin, args.fspan)
          skyRegionFile = open(skyRegionFileName, 'w')
