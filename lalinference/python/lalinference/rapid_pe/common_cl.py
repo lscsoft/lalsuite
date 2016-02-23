@@ -114,6 +114,7 @@ def add_integration_params(optp):
     integration_params.add_option("--distance-maximum", default=300.0, type=float, help="Override the maximum distance in the prior. Default is 300 Mpc.")
     integration_params.add_option("-m", "--time-marginalization", action="store_true", help="Perform marginalization over time via direct numerical integration. Default is false.")
     # Default is actually None, but that tells the integrator to go forever or until n_eff is hit.
+    integration_params.add_option("--zero-noise", action="store_true", help="Do not use input data as noise. Use with --pin-to-sim to make an injection")
     integration_params.add_option("--n-max", type=int, help="Total number of samples points to draw. If this number is hit before n_eff, then the integration will terminate. Default is 'infinite'.",default=None)
     integration_params.add_option("--n-eff", type=int, default=100, help="Total number of effective samples points to calculate before the integration will terminate. Default is 100")
     integration_params.add_option("--n-chunk", type=int, help="Chunk'.",default=100)
