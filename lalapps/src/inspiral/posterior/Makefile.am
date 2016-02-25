@@ -11,9 +11,9 @@ if LALPULSAR
 if LALINFERENCE
 
 pulsar_progs = lalinference_nest \
-			   lalinference_bench \
-			   lalinference_datadump \
-			   lalinference_burst
+	lalinference_bench \
+	lalinference_datadump \
+	lalinference_burst
 lalinference_nest_SOURCES = LALInferenceNest.c
 lalinference_burst_SOURCES = LALInferenceBurst.c
 lalinference_datadump_SOURCES = LALInferenceDataDump.c
@@ -67,6 +67,6 @@ endif
 
 EXTRA_DIST += \
 	LALInferenceMCMCSampler.c \
-    LALInferenceMCMCSampler.h \
+	LALInferenceMCMCSampler.h \
 	LALInferenceKombineSampler.c \
 	LALInferenceKombineSampler.h
