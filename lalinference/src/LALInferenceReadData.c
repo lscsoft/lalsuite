@@ -694,6 +694,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         if(!strcmp(IFOnames[i],"E3")){
             memcpy(IFOdata[i].detector,&lalCachedDetectors[LALDetectorIndexE3DIFF],sizeof(LALDetector));
             if(!Nchannel) sprintf((channels[i]),"E3:STRAIN"); continue;}
+        if(!strcmp(IFOnames[i],"K1")){
+            memcpy(IFOdata[i].detector, &lalCachedDetectors[LALDetectorIndexKAGRADIFF],sizeof(LALDetector));
+            if(!Nchannel) sprintf((channels[i]),"K1:STRAIN"); continue;}
         if(!strcmp(IFOnames[i],"I1")||!strcmp(IFOnames[i],"LIGOIndia")){
             /* Detector in India with 4k arms */
             LALFrDetector LIGOIndiaFr;
@@ -748,33 +751,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             }
             continue;
         }
-        if(!strcmp(IFOnames[i],"J1")||!strcmp(IFOnames[i],"LCGT")){
-            /* Construct the LCGT telescope */
-            REAL8 LCGTangle=19.0*(LAL_PI/180.0);
-            LALFrDetector LCGTFr;
-            sprintf(LCGTFr.name,"LCGT");
-            sprintf(LCGTFr.prefix,"J1");
-            LCGTFr.vertexLatitudeRadians  = 36.25 * LAL_PI/180.0;
-            LCGTFr.vertexLongitudeRadians = (137.18 * LAL_PI/180.0);
-            LCGTFr.vertexElevation=0.0;
-            LCGTFr.xArmAltitudeRadians=0.0;
-            LCGTFr.xArmAzimuthRadians=LCGTangle+LAL_PI/2.;
-            LCGTFr.yArmAltitudeRadians=0.0;
-            LCGTFr.yArmAzimuthRadians=LCGTangle;
-            LCGTFr.xArmMidpoint=1500.;
-            LCGTFr.yArmMidpoint=1500.;
-            IFOdata[i].detector=XLALMalloc(sizeof(LALDetector));
-            memset(IFOdata[i].detector,0,sizeof(LALDetector));
-            XLALCreateDetector(IFOdata[i].detector,&LCGTFr,LALDETECTORTYPE_IFODIFF);
-            printf("Created LCGT telescope, location: %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
-            printf("Detector tensor:\n");
-            for(int jdx=0;jdx<3;jdx++){
-                for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
-                printf("\n");
-            }
-            continue;
-        }
-        fprintf(stderr,"Unknown interferometer %s. Valid codes: H1 H2 L1 V1 GEO A1 J1 I1 E1 E2 E3 HM1 HM2 EM1 EM2\n",IFOnames[i]); exit(-1);
+        fprintf(stderr,"Unknown interferometer %s. Valid codes: H1 H2 L1 V1 GEO A1 K1 I1 E1 E2 E3 HM1 HM2 EM1 EM2\n",IFOnames[i]); exit(-1);
     }
 
     /* Set up FFT structures and window */
