@@ -589,6 +589,18 @@ int *XLALGetErrnoPtr(void);
 		XLALSetErrorHandler(xlalSaveErrorHandler); \
 	} while (0)
 
+/**
+ * Performs the same actions as XLAL_TRY(), but additionally silences
+ * any error/warning/etc. messages being printed while statement is
+ * executed, regardless of the value of #lalDebugLevel.
+ */
+#define XLAL_TRY_SILENT( statement, errnum ) \
+	do { \
+		int xlalSaveDebugLevel = lalDebugLevel; \
+		XLALClobberDebugLevel(xlalSaveDebugLevel & ~(LALERRORBIT | LALWARNINGBIT | LALINFOBIT | LALTRACEBIT)); \
+		XLAL_TRY(statement, errnum); \
+		XLALClobberDebugLevel(xlalSaveDebugLevel); \
+	} while (0)
 
 /*
  *
