@@ -55,6 +55,7 @@ MultiLIGOTimeGPSVector * getMultiTimeStampsFromSFTs(const MultiSFTVector *multiS
 MultiLIGOTimeGPSVector * getMultiTimeStampsFromSegmentsFile(const LALStringVector *filenames, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 dur);
 
 LIGOTimeGPSVector * jointTimestampsFromMultiTimestamps(const MultiLIGOTimeGPSVector *multiTimestamps);
+MultiLIGOTimeGPSVector * squeezeMultiTimestamps(const MultiLIGOTimeGPSVector *multiTS);
 
 INT4Vector * markBadSFTs(const REAL4VectorAligned *tfdata, const UserInput_t *params);
 INT4Vector * existingSFTs(const REAL4VectorAligned *tfdata, const UINT4 numffts);
@@ -70,5 +71,6 @@ INT4 checkBackgroundScaling(const REAL4VectorAligned *background, const REAL4Vec
 REAL8 determineSumOfWeights(const REAL4VectorAligned *antweightssq, const REAL4VectorAligned *rngMeanssq);
 
 INT4 printSFTtimestamps2File(const MultiSFTVector *multiSFTvector, const UserInput_t *params);
+
 
 #endif

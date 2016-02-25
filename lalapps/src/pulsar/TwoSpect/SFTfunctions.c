@@ -924,79 +924,113 @@ LIGOTimeGPSVector * jointTimestampsFromMultiTimestamps(const MultiLIGOTimeGPSVec
 {
    XLAL_CHECK_NULL( multiTimestamps!=NULL, XLAL_EINVAL );
 
+   MultiLIGOTimeGPSVector *squeezedMultiTS = NULL;
+   XLAL_CHECK_NULL( (squeezedMultiTS = squeezeMultiTimestamps(multiTimestamps)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( squeezedMultiTS->length>0, XLAL_EFAILED, "Squeezed multiTimestamps to zero length" );
+
+   LIGOTimeGPSVector *output = NULL;
+   if (squeezedMultiTS->length<2) {
+      XLAL_CHECK_NULL( (output = XLALCreateTimestampVector(squeezedMultiTS->data[0]->length)) != NULL, XLAL_EFUNC );
+      memcpy(output->data, squeezedMultiTS->data[0]->data, sizeof(LIGOTimeGPS)*output->length);
+      output->deltaT = squeezedMultiTS->data[0]->deltaT;
+      XLALDestroyMultiTimestamps(squeezedMultiTS);
+      return output;
+   }
+
    //First determine the earliest of the timestamps and the last of the timestamps, adding one timestride to the last of the timestamps
    LIGOTimeGPS earliestTimestamp, lastTimesample, currentTimestamp;
    LIGOTimeGPS smallestGPS = LIGOTIMEGPSZERO, largestGPS = LIGOTIMEGPSZERO;
    INT4 ifoWithSmallestGPS = -1, ifoWithLargestGPS = -1;
-   for (UINT4 ii=0; ii<multiTimestamps->length; ii++) {
+   for (UINT4 ii=0; ii<squeezedMultiTS->length; ii++) {
       if (ifoWithSmallestGPS < 0) {
-         smallestGPS = multiTimestamps->data[ii]->data[0];
+         smallestGPS = squeezedMultiTS->data[ii]->data[0];
          ifoWithSmallestGPS = ii;
-      } else if (XLALGPSCmp(&(multiTimestamps->data[ifoWithSmallestGPS]->data[0]), &(multiTimestamps->data[ii]->data[0]))>0) {
-         smallestGPS = multiTimestamps->data[ii]->data[0];
+      } else if (XLALGPSCmp(&(squeezedMultiTS->data[ifoWithSmallestGPS]->data[0]), &(squeezedMultiTS->data[ii]->data[0]))>0) {
+         smallestGPS = squeezedMultiTS->data[ii]->data[0];
          ifoWithSmallestGPS = ii;
       }
       if (ifoWithLargestGPS < 0) {
-         largestGPS = multiTimestamps->data[ii]->data[multiTimestamps->data[ii]->length-1];
+         largestGPS = squeezedMultiTS->data[ii]->data[squeezedMultiTS->data[ii]->length-1];
          ifoWithLargestGPS = ii;
-      } else if (XLALGPSCmp(&(multiTimestamps->data[ifoWithLargestGPS]->data[multiTimestamps->data[ifoWithLargestGPS]->length-1]), &(multiTimestamps->data[ii]->data[multiTimestamps->data[ii]->length-1]))<0) {
-         largestGPS = multiTimestamps->data[ii]->data[multiTimestamps->data[ii]->length-1];
+      } else if (XLALGPSCmp(&(squeezedMultiTS->data[ifoWithLargestGPS]->data[squeezedMultiTS->data[ifoWithLargestGPS]->length-1]), &(squeezedMultiTS->data[ii]->data[squeezedMultiTS->data[ii]->length-1]))<0) {
+         largestGPS = squeezedMultiTS->data[ii]->data[squeezedMultiTS->data[ii]->length-1];
          ifoWithLargestGPS = ii;
       }
    }
    earliestTimestamp = smallestGPS;
    lastTimesample = largestGPS;
-   XLAL_CHECK_NULL( XLALGPSAdd(&lastTimesample, multiTimestamps->data[0]->deltaT) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( XLALGPSAdd(&lastTimesample, squeezedMultiTS->data[0]->deltaT) != NULL, XLAL_EFUNC );
    currentTimestamp = earliestTimestamp;
 
    //Now determine the number of unique timestamps for the length of the output vector
    UINT4Vector *indexInTimestampVector = NULL;
-   XLAL_CHECK_NULL( (indexInTimestampVector = XLALCreateUINT4Vector(multiTimestamps->length)) != NULL, XLAL_EFUNC );
+   XLAL_CHECK_NULL( (indexInTimestampVector = XLALCreateUINT4Vector(squeezedMultiTS->length)) != NULL, XLAL_EFUNC );
    memset(indexInTimestampVector->data, 0, sizeof(UINT4)*indexInTimestampVector->length);
    UINT4 totalnumTimestamps = 0;
    while ( XLALGPSCmp(&currentTimestamp, &lastTimesample) < 0 ) {
       BOOLEAN foundTimestamp = 0;
-      for (UINT4 ii=0; ii<multiTimestamps->length; ii++) {
-         if (indexInTimestampVector->data[ii]<multiTimestamps->data[ii]->length && XLALGPSCmp(&currentTimestamp, &(multiTimestamps->data[ii]->data[indexInTimestampVector->data[ii]]))==0 && !foundTimestamp) {
+      for (UINT4 ii=0; ii<squeezedMultiTS->length; ii++) {
+         if (indexInTimestampVector->data[ii]<squeezedMultiTS->data[ii]->length && XLALGPSCmp(&currentTimestamp, &(squeezedMultiTS->data[ii]->data[indexInTimestampVector->data[ii]]))==0 && !foundTimestamp) {
             foundTimestamp = 1;
             totalnumTimestamps++;
             (indexInTimestampVector->data[ii])++;
-         } else if (indexInTimestampVector->data[ii]<multiTimestamps->data[ii]->length && XLALGPSCmp(&currentTimestamp, &(multiTimestamps->data[ii]->data[indexInTimestampVector->data[ii]]))==0 && foundTimestamp) {
+         } else if (indexInTimestampVector->data[ii]<squeezedMultiTS->data[ii]->length && XLALGPSCmp(&currentTimestamp, &(squeezedMultiTS->data[ii]->data[indexInTimestampVector->data[ii]]))==0 && foundTimestamp) {
             (indexInTimestampVector->data[ii])++;
          }
       }
-      XLAL_CHECK_NULL( XLALGPSAdd(&currentTimestamp, 0.5*multiTimestamps->data[0]->deltaT) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_NULL( XLALGPSAdd(&currentTimestamp, 0.5*squeezedMultiTS->data[0]->deltaT) != NULL, XLAL_EFUNC );
    }
 
    //Reset index vector
    memset(indexInTimestampVector->data, 0, sizeof(UINT4)*indexInTimestampVector->length);
 
    //Populate the output vector
-   LIGOTimeGPSVector *output = NULL;
    XLAL_CHECK_NULL( (output = XLALCreateTimestampVector(totalnumTimestamps)) != NULL, XLAL_EFUNC );
-   output->deltaT = multiTimestamps->data[0]->deltaT;
+   output->deltaT = squeezedMultiTS->data[0]->deltaT;
    for (UINT4 ii=0; ii<output->length; ii++) {
       smallestGPS.gpsSeconds = 0;
       smallestGPS.gpsNanoSeconds = 0;
       ifoWithSmallestGPS = -1;
-      for (UINT4 jj=0; jj<multiTimestamps->length; jj++) {
-         if (indexInTimestampVector->data[jj]<multiTimestamps->data[jj]->length && ifoWithSmallestGPS < 0) {
-            smallestGPS = multiTimestamps->data[jj]->data[indexInTimestampVector->data[jj]];
+      for (UINT4 jj=0; jj<squeezedMultiTS->length; jj++) {
+         if (indexInTimestampVector->data[jj]<squeezedMultiTS->data[jj]->length && ifoWithSmallestGPS < 0) {
+            smallestGPS = squeezedMultiTS->data[jj]->data[indexInTimestampVector->data[jj]];
             ifoWithSmallestGPS = jj;
-         } else if (indexInTimestampVector->data[jj]<multiTimestamps->data[jj]->length && XLALGPSCmp(&(multiTimestamps->data[ifoWithSmallestGPS]->data[indexInTimestampVector->data[ifoWithSmallestGPS]]), &(multiTimestamps->data[jj]->data[indexInTimestampVector->data[jj]]))>0) {
-            smallestGPS = multiTimestamps->data[jj]->data[indexInTimestampVector->data[jj]];
+         } else if (indexInTimestampVector->data[jj]<squeezedMultiTS->data[jj]->length && XLALGPSCmp(&(squeezedMultiTS->data[ifoWithSmallestGPS]->data[indexInTimestampVector->data[ifoWithSmallestGPS]]), &(squeezedMultiTS->data[jj]->data[indexInTimestampVector->data[jj]]))>0) {
+            smallestGPS = squeezedMultiTS->data[jj]->data[indexInTimestampVector->data[jj]];
             ifoWithSmallestGPS = jj;
          }
       }
       output->data[ii] = smallestGPS;
-      for (UINT4 jj=0; jj<multiTimestamps->length; jj++) {
-         if (indexInTimestampVector->data[jj]<multiTimestamps->data[jj]->length && XLALGPSCmp(&(multiTimestamps->data[jj]->data[indexInTimestampVector->data[jj]]), &smallestGPS)==0) (indexInTimestampVector->data[jj])++;
+      for (UINT4 jj=0; jj<squeezedMultiTS->length; jj++) {
+         if (indexInTimestampVector->data[jj]<squeezedMultiTS->data[jj]->length && XLALGPSCmp(&(squeezedMultiTS->data[jj]->data[indexInTimestampVector->data[jj]]), &smallestGPS)==0) (indexInTimestampVector->data[jj])++;
       }
    }
 
    XLALDestroyUINT4Vector(indexInTimestampVector);
+   XLALDestroyMultiTimestamps(squeezedMultiTS);
 
    return output;
+}
+
+MultiLIGOTimeGPSVector * squeezeMultiTimestamps(const MultiLIGOTimeGPSVector *multiTS)
+{
+   XLAL_CHECK_NULL( multiTS != NULL, XLAL_EINVAL );
+   UINT4 nonZeroLength = 0;
+   for (UINT4 ii=0; ii<multiTS->length; ii++) if (multiTS->data[ii]->length>0) nonZeroLength++;
+   XLAL_CHECK_NULL( nonZeroLength != 0, XLAL_EFAILED );
+   MultiLIGOTimeGPSVector *ret = NULL;
+   XLAL_CHECK_NULL( (ret = XLALCalloc(1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
+   XLAL_CHECK_NULL( (ret->data = XLALCalloc(nonZeroLength, sizeof(*ret->data))) != NULL, XLAL_ENOMEM );
+   ret->length = nonZeroLength;
+   UINT4 whichTS = 0;
+   for (UINT4 ii=0; ii<nonZeroLength; ii++) {
+      while (multiTS->data[whichTS]->length==0) whichTS++;
+      XLAL_CHECK_NULL( (ret->data[ii] = XLALCreateTimestampVector(multiTS->data[whichTS]->length)) != NULL, XLAL_EFUNC );
+      memcpy(ret->data[ii]->data, multiTS->data[whichTS]->data, sizeof(LIGOTimeGPS)*ret->data[ii]->length);
+      ret->data[ii]->deltaT = multiTS->data[whichTS]->deltaT;
+      whichTS++;
+   }
+   return ret;
 }
 
 /**

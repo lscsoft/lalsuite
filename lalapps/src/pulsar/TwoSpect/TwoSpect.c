@@ -241,6 +241,18 @@ int main(int argc, char *argv[])
    XLAL_CHECK( (jointSFTtimestamps = jointTimestampsFromMultiTimestamps(multiSFTtimestamps)) != NULL, XLAL_EFUNC );
    XLALDestroyMultiTimestamps(multiSFTtimestamps);
 
+   if ((REAL8)jointSFTtimestamps->length / (REAL8)ffdata->numffts < 0.1) {
+      fprintf(stderr, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+      fprintf(LOG, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+      //print end time
+      time(&programendtime);
+      ptm = localtime(&programendtime);
+      fprintf(stderr, "Program finished on %s", asctime(ptm));
+      fprintf(LOG, "Program finished on %s", asctime(ptm));
+      fclose(LOG);
+      return 0;
+   }
+
    //Print SFT times, if requested by user
    if (uvar.printSFTtimes) XLAL_CHECK( printSFTtimestamps2File(multiSFTvector, &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -358,6 +370,12 @@ int main(int argc, char *argv[])
       if (frac_tobs_complete<0.1) {
          fprintf(stderr, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
          fprintf(LOG, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+	 //print end time
+	 time(&programendtime);
+	 ptm = localtime(&programendtime);
+	 fprintf(stderr, "Program finished on %s", asctime(ptm));
+	 fprintf(LOG, "Program finished on %s", asctime(ptm));
+	 fclose(LOG);
          return 0;
       }
 
@@ -491,6 +509,11 @@ int main(int argc, char *argv[])
       frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexistForihs2h0->length;
       fprintf(LOG, "Duty factor of usable SFTs = %f\n", frac_tobs_complete);
       fprintf(stderr, "Duty factor of usable SFTs = %f\n", frac_tobs_complete);
+      if (frac_tobs_complete<0.1) {
+         fprintf(stderr, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+         fprintf(LOG, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+         return 0;
+      }
       XLAL_CHECK( checkBackgroundScaling(backgroundForihs2h0, backgroundScalingForihs2h0, sftexistForihs2h0) == XLAL_SUCCESS, XLAL_EFUNC );
       XLALDestroyREAL4VectorAligned(tmpTFdata);
       XLALDestroyMultiAMCoeffs(multiAMcoefficients);
