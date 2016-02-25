@@ -12,8 +12,8 @@ if LALINFERENCE
 
 pulsar_progs = lalinference_nest \
 			   lalinference_bench \
-			   #lalinference_mcmcmpi
-pulsar_progs+=lalinference_burst
+			   lalinference_datadump \
+			   lalinference_burst
 lalinference_nest_SOURCES = LALInferenceNest.c
 lalinference_burst_SOURCES = LALInferenceBurst.c
 lalinference_datadump_SOURCES = LALInferenceDataDump.c
@@ -39,9 +39,7 @@ bin_PROGRAMS = \
 	$(metaio_progs) \
 	$(frame_progs) \
 	$(pulsar_progs) \
-	$(mpi_progs) \
-	lalinference_datadump
-#	bayesline
+	$(mpi_progs)
 
 noinst_PROGRAMS = \
 	$(td_test_progs)
@@ -55,7 +53,7 @@ pybin_scripts = \
 	lalinference_pipe \
 	lalapps_nest2pos \
 	lalapps_merge_nested_sampling_runs \
-        lalinference_burst_pp_pipe \
+	lalinference_burst_pp_pipe \
 	lalinference_pp_pipe \
 	lalapps_compute_roq_weights \
 	lalapps_merge_posteriors \
