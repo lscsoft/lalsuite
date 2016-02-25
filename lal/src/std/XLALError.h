@@ -570,16 +570,14 @@ int *XLALGetErrnoPtr(void);
 
 
 /**
- *
  * A macro to (i) disable the XLAL error handling and preserve the
  * current value of xlalErrno (ii) perform a statement that involves an
  * XLAL function call and (iii) restore the XLAL error handler and value of
  * xlalErrno while setting variable errnum to the xlalErrno set by the
  * statement.
- *
  */
 #define XLAL_TRY( statement, errnum ) \
-        do { \
+	do { \
 		XLALErrorHandlerType *xlalSaveErrorHandler; \
 		int xlalSaveErrno; \
 		xlalSaveErrorHandler = XLALSetSilentErrorHandler(); \
@@ -589,7 +587,7 @@ int *XLALGetErrnoPtr(void);
 		errnum = xlalErrno; \
 		xlalErrno = xlalSaveErrno; \
 		XLALSetErrorHandler(xlalSaveErrorHandler); \
-        } while (0)
+	} while (0)
 
 
 /*
@@ -645,7 +643,7 @@ void XLALError(const char *func,
 				XLAL_PRINT_ERROR("Check failed: %s", #assertion); \
 			} \
 			XLALError(__func__, __FILE__, __LINE__, errnum); \
-                        statement; \
+			statement; \
 		} \
 	} while (0)
 
