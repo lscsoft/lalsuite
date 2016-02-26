@@ -31,6 +31,14 @@
 static int test(struct tm *t, int correct_gps)
 {
 
+  {
+    struct tm tf = *t;
+    tf.tm_wday = tf.tm_yday = -1;
+    XLAL_CHECK(XLALFillUTC(&tf) != NULL, XLAL_EFUNC, "UTCtoGPSTest: error in XLALFillUTC()");
+    XLAL_CHECK(tf.tm_wday == t->tm_wday, XLAL_EFAILED, "UTCtoGPSTest: incorrect day of week\n  output   = %d\n  expected = %d\n", tf.tm_wday, t->tm_wday);
+    XLAL_CHECK(tf.tm_yday == t->tm_yday, XLAL_EFAILED, "UTCtoGPSTest: incorrect day of year\n  output   = %d\n  expected = %d\n", tf.tm_yday, t->tm_yday);
+  }
+
   int gps = XLALUTCToGPS(t);
   XLAL_CHECK(xlalErrno == 0, XLAL_EFUNC, "UTCtoGPSTest: error in XLALUTCToGPS()");
 
@@ -53,9 +61,9 @@ int main(void)
 
   utcDate.tm_year = 80;
   utcDate.tm_yday =  5;
-  utcDate.tm_wday =  0;	/* unused */
-  utcDate.tm_mon  =  0;	/* unused */
-  utcDate.tm_mday =  6;	/* unused */
+  utcDate.tm_wday =  0;
+  utcDate.tm_mon  =  0;
+  utcDate.tm_mday =  6;
   utcDate.tm_hour =  0;
   utcDate.tm_min  =  0;
   utcDate.tm_sec  =  0;
@@ -64,9 +72,9 @@ int main(void)
 
   utcDate.tm_year =  94;
   utcDate.tm_yday = 186;
-  utcDate.tm_wday =   3;	/* unused */
-  utcDate.tm_mon  =   6;	/* unused */
-  utcDate.tm_mday =   6;	/* unused */
+  utcDate.tm_wday =   3;
+  utcDate.tm_mon  =   6;
+  utcDate.tm_mday =   6;
   utcDate.tm_hour =  23;
   utcDate.tm_min  =  59;
   utcDate.tm_sec  =  50;
@@ -75,9 +83,9 @@ int main(void)
 
   utcDate.tm_year =  94;
   utcDate.tm_yday = 181;
-  utcDate.tm_wday =   5;	/* unused */
-  utcDate.tm_mon  =   6;	/* unused */
-  utcDate.tm_mday =   1;	/* unused */
+  utcDate.tm_wday =   5;
+  utcDate.tm_mon  =   6;
+  utcDate.tm_mday =   1;
   utcDate.tm_hour =   0;
   utcDate.tm_min  =   0;
   utcDate.tm_sec  =   0;
@@ -91,9 +99,9 @@ int main(void)
       if (utcDate.tm_sec <= 60)
         {
           utcDate.tm_yday = 180;
-          utcDate.tm_wday =   4;	/* unused */
-          utcDate.tm_mon  =   5;	/* unused */
-          utcDate.tm_mday =  30;	/* unused */
+          utcDate.tm_wday =   4;
+          utcDate.tm_mon  =   5;
+          utcDate.tm_mday =  30;
           utcDate.tm_hour =  23;
           utcDate.tm_min  =  59;
         }
@@ -101,9 +109,9 @@ int main(void)
         {
           utcDate.tm_sec -=  61;
           utcDate.tm_yday = 181;
-          utcDate.tm_wday =   5;	/* unused */
-          utcDate.tm_mon  =   6;	/* unused */
-          utcDate.tm_mday =   1;	/* unused */
+          utcDate.tm_wday =   5;
+          utcDate.tm_mon  =   6;
+          utcDate.tm_mday =   1;
           utcDate.tm_hour =  00;
           utcDate.tm_min  =  00;
         }
@@ -113,9 +121,9 @@ int main(void)
 
   utcDate.tm_year =  94;
   utcDate.tm_yday = 319;
-  utcDate.tm_wday =   3;	/* unused */
-  utcDate.tm_mon  =  10;	/* unused */
-  utcDate.tm_mday =  16;	/* unused */
+  utcDate.tm_wday =   3;
+  utcDate.tm_mon  =  10;
+  utcDate.tm_mday =  16;
   utcDate.tm_hour =   0;
   utcDate.tm_min  =   0;
   utcDate.tm_sec  =   0;
