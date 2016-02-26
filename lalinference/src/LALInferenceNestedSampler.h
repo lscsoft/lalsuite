@@ -54,15 +54,16 @@ SWIGLAL(
 /* double logadd(double a,double b); */
 
 /**
+ * Initialise the nested sampling algorithm by reading from the commandLine
+ * and setting up algorithmParams
+ */
+void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState);
+
+/**
  * NestedSamplingAlgorithm implements the nested sampling algorithm,
  * see e.g. Sivia "Data Analysis: A Bayesian Tutorial, 2nd edition
  */
 void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState);
-
-/** Calculate covariance matrix from a collection of live points */
-void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4 Nlive);
-/** This should be moved */
-/* double logadd(double a,double b); */
 
 /** A single iteration of the NS algorithm */
 INT4 LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState);
@@ -86,20 +87,11 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState);
 /* Cache wrapper around the sloppy sampler */
 INT4 LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState);
 
-/* REAL8 mean(REAL8 *array,int N); */
-REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG);
-
 /**
  * Setup the live points by calling runState->initVariables on each of them
  * if it is specified. Otherwise clones runState->currentParams (legacy)
  */
 void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState);
-
-/**
- * Setup a k-D tree from the current set of nested sampling live points for use
- * as a proposal distribution.
- */
-void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState );
 
 /** Project the sample in params onto the eigenvectors given in eigenvectors. */
 void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gsl_matrix *eigenvectors, REAL8Vector **projection);

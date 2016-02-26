@@ -1776,8 +1776,8 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinHITimeOfFrequency(
     XLAL_ERROR(ret);
 
   // ROM frequency bounds in Mf
-  double Mf_ROM_min = 0.00053;
-  double Mf_ROM_max = 0.135;
+  double Mf_ROM_min = 0.0000985;
+  double Mf_ROM_max = 0.3;
 
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   double t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI); // t_corr / M

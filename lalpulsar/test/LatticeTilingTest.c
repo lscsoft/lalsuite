@@ -123,10 +123,12 @@ static int BasicTest(
     // Count number of points
     const UINT8 total = XLALTotalLatticeTilingPoints(itr);
     printf("Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT "\n", i+1, total);
-    XLAL_CHECK(total == total_ref[i], XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref[%zu]", total, total_ref[i], i);
+    XLAL_CHECK(imaxabs(total - total_ref[i]) <= 1, XLAL_EFUNC,
+               "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", i, total, total_ref[i]);
     for (UINT8 k = 0; XLALNextLatticeTilingPoint(itr, NULL) > 0; ++k) {
       const UINT8 itr_index = XLALCurrentLatticeTilingIndex(itr);
-      XLAL_CHECK(k == itr_index, XLAL_EFUNC, "ERROR: k = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = itr_index", k, itr_index);
+      XLAL_CHECK(k == itr_index, XLAL_EFUNC,
+                 "ERROR: k = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = itr_index", k, itr_index);
     }
     XLAL_CHECK(XLALResetLatticeTilingIterator(itr) == XLAL_SUCCESS, XLAL_EFUNC);
 
@@ -135,8 +137,8 @@ static int BasicTest(
     for (size_t j = 0; j < n; ++j) {
       const LatticeTilingStats *stats = XLALLatticeTilingStatistics(tiling, j);
       XLAL_CHECK(stats != NULL, XLAL_EFUNC);
-      XLAL_CHECK(stats->total_points == total_ref[j], XLAL_EFAILED, "\n  "
-                 "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref[%zu]", stats->total_points, total_ref[j], j);
+      XLAL_CHECK(imaxabs(stats->total_points - total_ref[j]) <= 1, XLAL_EFAILED, "\n  "
+                 "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", j, stats->total_points, total_ref[j]);
       XLAL_CHECK(stats->min_points <= stats->avg_points, XLAL_EFAILED, "\n  "
                  "ERROR: min_points = %" LAL_INT4_FORMAT " > %g = avg_points", stats->min_points, stats->avg_points);
       XLAL_CHECK(stats->max_points >= stats->avg_points, XLAL_EFAILED, "\n  "
@@ -207,7 +209,7 @@ static int BasicTest(
     // Count number of points, check for consistency with non-alternating count
     UINT8 total = 0;
     while (XLALNextLatticeTilingPoint(itr_alt, NULL) > 0) ++total;
-    XLAL_CHECK(total == total_ref[i], XLAL_EFUNC, "ERROR: alternating total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref[%zu]", total, total_ref[i], i);
+    XLAL_CHECK(imaxabs(total - total_ref[i]) <= 1, XLAL_EFUNC, "ERROR: alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", i, total, total_ref[i]);
 
     // Cleanup
     XLALDestroyLatticeTilingIterator(itr_alt);
@@ -245,7 +247,7 @@ static int MismatchTest(
   // Count number of points
   const UINT8 total = XLALTotalLatticeTilingPoints(itr);
   printf("Number of lattice points: %" LAL_UINT8_FORMAT "\n", total);
-  XLAL_CHECK(total == total_ref, XLAL_EFUNC, "ERROR: total = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT " = total_ref", total, total_ref);
+  XLAL_CHECK(imaxabs(total - total_ref) <= 1, XLAL_EFUNC, "ERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", total, total_ref);
 
   // Get all points
   gsl_matrix *GAMAT(points, n, total);

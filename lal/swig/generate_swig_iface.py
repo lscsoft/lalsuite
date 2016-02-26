@@ -310,6 +310,9 @@ for header_name in ordered_headers:
     f.write('#include <lal/%s>\n' % header_name)
 f.write('%}\n')
 
+# write name of VCS information check function, called when module is loaded
+f.write('%%header %%{#define VCS_INFO_CHECK X%sVCSInfoCheck%%}\n' % package_name)
+
 # perform symbol renames
 for name in sorted(renames):
     rename = renames[name]

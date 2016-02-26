@@ -13,12 +13,17 @@ BAYESTARHDR = bayestar_sky_map.h
 BAYESTARSRC = bayestar_sky_map.c
 endif
 
+ANALYTICFILES = CorrelationMatrix.csv unimodalMeans.csv bimodalMeans.csv
+
+pkgdata_DATA = $(ANALYTICFILES)
+
 pkginclude_HEADERS = \
 	LALInference.h \
 	LALInferenceConfig.h \
 	LALInferenceLikelihood.h \
 	LALInferenceNestedSampler.h \
 	LALInferencePrior.h \
+	LALInferenceReadBurstData.h \
 	LALInferenceReadData.h \
 	LALInferenceTemplate.h \
 	LALInferenceProposal.h \
@@ -30,6 +35,7 @@ pkginclude_HEADERS = \
 	LALInferenceRemoveLines.h \
 	LALInferenceCalibrationErrors.h \
 	LALInferenceGenerateROQ.h \
+	LALInferenceBurstRoutines.h \
 	$(BAYESTARHDR) \
 	$(XMLHDR)
 
@@ -37,18 +43,22 @@ lib_LTLIBRARIES = liblalinference.la
 liblalinference_la_SOURCES = \
 	LALInference.c \
 	LALInferenceLikelihood.c \
+	LALInferenceAnalyticLikelihood.c \
 	LALInferenceNestedSampler.c \
 	LALInferencePrior.c \
+	LALInferenceReadBurstData.c \
 	LALInferenceReadData.c \
 	LALInferenceTemplate.c \
 	LALInferenceProposal.c \
 	LALInferenceClusteredKDE.c \
 	LALInferenceKDE.c \
+	LALInferenceInitBurst.c \
 	LALInferenceInitCBC.c \
 	LALInferenceVCSInfo.c \
 	LALInferenceRemoveLines.c \
 	LALInferenceCalibrationErrors.c \
 	LALInferenceGenerateROQ.c \
+	LALInferenceBurstRoutines.c \
 	DetectorFixedSkyCoords.c \
 	logaddexp.h \
 	$(BAYESTARSRC) \
@@ -61,6 +71,7 @@ EXTRA_DIST = \
 	LALInferenceConfig.h.in \
 	LALInferenceXML.c \
 	LALInferenceXML.h \
+	$(ANALYTICFILES) \
 	config.h.in
 
 DISTCLEANFILES = config.h

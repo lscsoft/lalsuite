@@ -910,7 +910,6 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	/* force the sample rate incase round-off has shifted it a bit */
 
 	(*hplus)->deltaT = (*hcross)->deltaT = delta_t;
-
 	/* apply a Tukey window for continuity at the start and end of the
 	 * injection.  the window's shape parameter sets what fraction of
 	 * the window is used by the tapers */
@@ -933,15 +932,13 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	return 0;
 }
 
-
 /*
  * ============================================================================
  *
- *                         Sine-Gaussian and Friends
+ *                         SineGaussian and Friends
  *
  * ============================================================================
  */
-
 
 /**
  * @brief Compute the Q of a sine-Gaussian waveform from the duration and
@@ -1071,8 +1068,6 @@ double XLALSimBurstSineGaussianDuration(
  * @retval 0 Success
  * @retval <0 Failure
  */
-
-
 int XLALSimBurstSineGaussian(
 	REAL8TimeSeries **hplus,
 	REAL8TimeSeries **hcross,
@@ -1269,7 +1264,6 @@ int XLALSimBurstGaussian(
 
 	return 0;
 }
-
 
 /*
  * ============================================================================

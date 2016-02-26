@@ -3,7 +3,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 
 # Add compiled test programs to this variable
 test_programs += LALInferenceTest
-test_programs += LALInferenceKDTest
 test_programs += LALInferencePriorTest
 test_programs += LALInferenceGenerateROQTest
 #test_programs += LALInferenceInjectionTest

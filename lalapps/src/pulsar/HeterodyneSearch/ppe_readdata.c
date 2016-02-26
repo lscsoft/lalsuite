@@ -136,7 +136,8 @@ void read_pulsar_data( LALInferenceRunState *runState ){
   runState->data = NULL;
 
   /* Initialize the model, as it will hold IFO params and signal buffers */
-  runState->model = XLALMalloc(sizeof(LALInferenceModel));
+  /* single thread */
+  runState->threads[0]->model = XLALMalloc(sizeof(LALInferenceModel));
 
   /* timing values */
   struct timeval time1, time2;
@@ -377,8 +378,8 @@ number of detectors specified (no. dets =%d)\n", ml, ml, numDets);
     exit(0);
   }
 
-  runState->model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8)*ml*numDets );
-  runState->model->ifo_SNRs = XLALMalloc( sizeof(REAL8)*ml*numDets );
+  runState->threads[0]->model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8)*ml*numDets );
+  runState->threads[0]->model->ifo_SNRs = XLALMalloc( sizeof(REAL8)*ml*numDets );
 
   UINT4 nstreams = ml*numDets;
   LALInferenceAddVariable( runState->algorithmParams, "numstreams", &nstreams, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
@@ -483,7 +484,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
 
     if( i == 0 ) {
         runState->data = ifodata;
-        runState->model->ifo = ifomodel;
+        runState->threads[0]->model->ifo = ifomodel;
     }
     if( i > 0 ) {
         prev->next = ifodata;
@@ -759,7 +760,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
   else { chunkMax = CHUNKMAX; } /* default maximum chunk length */
 
   LALInferenceIFOData *datatmp = runState->data;
-  LALInferenceIFOModel *modeltmp = runState->model->ifo;
+  LALInferenceIFOModel *modeltmp = runState->threads[0]->model->ifo;
   while ( modeltmp ){
     UINT4Vector *chunkLength = NULL;
 
@@ -920,25 +921,25 @@ void setup_from_par_file( LALInferenceRunState *runState )
   /* Setup lookup tables for amplitudes */
   setup_lookup_tables( runState, &psr );
 
-  runState->model->params = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-  runState->model->domain = LAL_SIM_DOMAIN_TIME;
+  runState->threads[0]->model->params = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+  runState->threads[0]->model->domain = LAL_SIM_DOMAIN_TIME;
 
-  runState->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+  runState->threads[0]->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
 
   /* Add initial (unchanging) variables for the model from the par file */
-  add_initial_variables( runState->currentParams, pulsar );
+  add_initial_variables( runState->threads[0]->currentParams, pulsar );
 
   /* check for binary model */
   CHAR *binarymodel = NULL;
-  if ( LALInferenceCheckVariable( runState->currentParams, "BINARY") ){
-    binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->currentParams, "BINARY" ));
+  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "BINARY") ){
+    binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->threads[0]->currentParams, "BINARY" ));
 
     /* now remove from runState->params (as it conflict with calls to LALInferenceCompareVariables in the proposal) */
-    LALInferenceRemoveVariable( runState->currentParams, "BINARY" );
+    LALInferenceRemoveVariable( runState->threads[0]->currentParams, "BINARY" );
   }
 
   /* Setup initial phase, and barycentring delays */
-  LALInferenceIFOModel *ifo_model = runState->model->ifo;
+  LALInferenceIFOModel *ifo_model = runState->threads[0]->model->ifo;
   while( data ){
     REAL8Vector *freqFactors = NULL;
     UINT4 j = 0;
@@ -989,7 +990,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
   /* set frequency bin step from longest data time span */
   REAL8 df = 1./(2.*DeltaT);
-  LALInferenceAddVariable( runState->currentParams, "df", &df, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+  LALInferenceAddVariable( runState->threads[0]->currentParams, "df", &df, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
   return;
 }
@@ -1133,8 +1134,8 @@ void samples_prior( LALInferenceRunState *runState ){
            and par file, otherwise set the parameter to fixed */
         LALInferenceParamVaryType vary;
 
-        if ( LALInferenceCheckVariable( runState->currentParams, paramNames->data[j] ) ){
-          vary = LALInferenceGetVariableVaryType( runState->currentParams, paramNames->data[j] );
+        if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, paramNames->data[j] ) ){
+          vary = LALInferenceGetVariableVaryType( runState->threads[0]->currentParams, paramNames->data[j] );
         }
         else { vary = LALINFERENCE_PARAM_FIXED; }
 

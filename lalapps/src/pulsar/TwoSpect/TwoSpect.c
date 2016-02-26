@@ -74,11 +74,13 @@ int main(int argc, char *argv[])
    XLAL_CHECK( dirstatus == 0 || (dirstatus == -1 && errno == EEXIST), XLAL_EIO, "Couldn't create directory %s\n", uvar.outdirectory ) ;
 
    //Filenames for logfile and ULfile
-   CHARVector *LOGFILENAME = NULL, *ULFILENAME = NULL;
+   CHARVector *LOGFILENAME = NULL, *ULFILENAME = NULL, *CANDFILENAME = NULL;
    XLAL_CHECK( (LOGFILENAME = XLALCreateCHARVector(strlen(uvar.outdirectory)+strlen(uvar.outfilename)+3)) != NULL, XLAL_EFUNC);
    sprintf(LOGFILENAME->data, "%s/%s", uvar.outdirectory, uvar.outfilename);
    XLAL_CHECK( (ULFILENAME = XLALCreateCHARVector(strlen(uvar.outdirectory)+strlen(uvar.ULfilename)+3)) != NULL, XLAL_EFUNC );
    sprintf(ULFILENAME->data, "%s/%s", uvar.outdirectory, uvar.ULfilename);
+   XLAL_CHECK( (CANDFILENAME = XLALCreateCHARVector(strlen(uvar.outdirectory)+strlen(uvar.candidatesFilename)+3)) != NULL, XLAL_EFUNC );
+   sprintf(CANDFILENAME->data, "%s/%s", uvar.outdirectory, uvar.candidatesFilename);
 
    //Save args_info
    CHARVector *configfilecopy = NULL;
@@ -239,6 +241,18 @@ int main(int argc, char *argv[])
    XLAL_CHECK( (jointSFTtimestamps = jointTimestampsFromMultiTimestamps(multiSFTtimestamps)) != NULL, XLAL_EFUNC );
    XLALDestroyMultiTimestamps(multiSFTtimestamps);
 
+   if ((REAL8)jointSFTtimestamps->length / (REAL8)ffdata->numffts < 0.1) {
+      fprintf(stderr, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+      fprintf(LOG, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+      //print end time
+      time(&programendtime);
+      ptm = localtime(&programendtime);
+      fprintf(stderr, "Program finished on %s", asctime(ptm));
+      fprintf(LOG, "Program finished on %s", asctime(ptm));
+      fclose(LOG);
+      return 0;
+   }
+
    //Print SFT times, if requested by user
    if (uvar.printSFTtimes) XLAL_CHECK( printSFTtimestamps2File(multiSFTvector, &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -356,6 +370,12 @@ int main(int argc, char *argv[])
       if (frac_tobs_complete<0.1) {
          fprintf(stderr, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
          fprintf(LOG, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+	 //print end time
+	 time(&programendtime);
+	 ptm = localtime(&programendtime);
+	 fprintf(stderr, "Program finished on %s", asctime(ptm));
+	 fprintf(LOG, "Program finished on %s", asctime(ptm));
+	 fclose(LOG);
          return 0;
       }
 
@@ -471,16 +491,29 @@ int main(int argc, char *argv[])
       MultiAMCoeffs *multiAMcoefficients = NULL;
       XLAL_CHECK( (multiAMcoefficients = XLALComputeMultiAMCoeffs(multiStateSeries, NULL, skypos0)) != NULL, XLAL_EFUNC );
       REAL4VectorAligned *tmpTFdata = NULL;
-      REAL8 *cosi = NULL, *psi = NULL;
-      if (XLALUserVarWasSet(&uvar.assumeNScosi)) cosi = &uvar.assumeNScosi;
-      if (XLALUserVarWasSet(&uvar.assumeNSpsi)) psi = &uvar.assumeNSpsi;
-      XLAL_CHECK( (tmpTFdata = coherentlyAddSFTs(multiSFTvector, multissb, multiAMcoefficients, jointSFTtimestamps, backgroundRatioMeans, uvar.cosiSignCoherent, cosi, psi, &uvar, backgroundScalingForihs2h0)) != NULL, XLAL_EFUNC );
+      assumeNSparams XLAL_INIT_DECL(NSparams);
+      NSparams.assumeNSpos = skypos0;
+      if (XLALUserVarWasSet(&uvar.assumeNScosi)) NSparams.assumeNScosi = &uvar.assumeNScosi;
+      if (XLALUserVarWasSet(&uvar.assumeNSpsi)) NSparams.assumeNSpsi = &uvar.assumeNSpsi;
+      if (XLALUserVarWasSet(&uvar.assumeNSGWfreq)) {
+	 NSparams.assumeNSGWfreq = &uvar.assumeNSGWfreq;
+	 NSparams.assumeNSorbitP = &uvar.assumeNSorbitP;
+	 NSparams.assumeNSasini = &uvar.assumeNSasini;
+	 NSparams.assumeNSorbitTp = &uvar.assumeNSorbitTp;
+	 if (XLALUserVarWasSet(&uvar.assumeNSrefTime)) NSparams.assumeNSrefTime = &uvar.assumeNSrefTime;
+      }
+      XLAL_CHECK( (tmpTFdata = coherentlyAddSFTs(multiSFTvector, multissb, multiAMcoefficients, jointSFTtimestamps, backgroundRatioMeans, uvar.cosiSignCoherent, &NSparams, &uvar, backgroundScalingForihs2h0)) != NULL, XLAL_EFUNC );
       XLAL_CHECK( (sftexistForihs2h0 = existingSFTs(tmpTFdata, (UINT4)ffdata->numffts)) != NULL, XLAL_EFUNC );
       INT4 totalincludedsftnumber = 0;
       for (ii=0; ii<(INT4)sftexistForihs2h0->length; ii++) if (sftexistForihs2h0->data[ii]==1) totalincludedsftnumber++;
       frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexistForihs2h0->length;
       fprintf(LOG, "Duty factor of usable SFTs = %f\n", frac_tobs_complete);
       fprintf(stderr, "Duty factor of usable SFTs = %f\n", frac_tobs_complete);
+      if (frac_tobs_complete<0.1) {
+         fprintf(stderr, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+         fprintf(LOG, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+         return 0;
+      }
       XLAL_CHECK( checkBackgroundScaling(backgroundForihs2h0, backgroundScalingForihs2h0, sftexistForihs2h0) == XLAL_SUCCESS, XLAL_EFUNC );
       XLALDestroyREAL4VectorAligned(tmpTFdata);
       XLALDestroyMultiAMCoeffs(multiAMcoefficients);
@@ -545,10 +578,18 @@ int main(int argc, char *argv[])
          XLAL_CHECK( (multiAMcoefficients = XLALComputeMultiAMCoeffs(multiStateSeries, NULL, skypos)) != NULL, XLAL_EFUNC );
 
          //Coherenly combine the SFT data
-         REAL8 *cosi = NULL, *psi = NULL;
-         if (XLALUserVarWasSet(&uvar.assumeNScosi)) cosi = &uvar.assumeNScosi;
-         if (XLALUserVarWasSet(&uvar.assumeNSpsi)) psi = &uvar.assumeNSpsi;
-         XLAL_CHECK( (tfdata = coherentlyAddSFTs(multiSFTvector, multissb, multiAMcoefficients, jointSFTtimestamps, backgroundRatioMeans, uvar.cosiSignCoherent, cosi, psi, &uvar, backgroundScaling)) != NULL, XLAL_EFUNC );
+	 assumeNSparams XLAL_INIT_DECL(NSparams);
+	 NSparams.assumeNSpos = skypos;
+         if (XLALUserVarWasSet(&uvar.assumeNScosi)) NSparams.assumeNScosi = &uvar.assumeNScosi;
+         if (XLALUserVarWasSet(&uvar.assumeNSpsi)) NSparams.assumeNSpsi = &uvar.assumeNSpsi;
+	 if (XLALUserVarWasSet(&uvar.assumeNSGWfreq)) {
+	    NSparams.assumeNSGWfreq = &uvar.assumeNSGWfreq;
+	    NSparams.assumeNSorbitP = &uvar.assumeNSorbitP;
+	    NSparams.assumeNSasini = &uvar.assumeNSasini;
+	    NSparams.assumeNSorbitTp = &uvar.assumeNSorbitTp;
+	    if (XLALUserVarWasSet(&uvar.assumeNSrefTime)) NSparams.assumeNSrefTime = &uvar.assumeNSrefTime;
+	 }
+         XLAL_CHECK( (tfdata = coherentlyAddSFTs(multiSFTvector, multissb, multiAMcoefficients, jointSFTtimestamps, backgroundRatioMeans, uvar.cosiSignCoherent, &NSparams, &uvar, backgroundScaling)) != NULL, XLAL_EFUNC );
 
          XLALDestroyMultiAMCoeffs(multiAMcoefficients);
 
@@ -912,7 +953,7 @@ int main(int argc, char *argv[])
 
       //Destroy stuff
       XLALDestroyREAL4VectorAligned(aveTFnoisePerFbinRatio);
-      XLALDestroyREAL4VectorSequence(trackedlines);
+      if (trackedlines!=NULL) XLALDestroyREAL4VectorSequence(trackedlines);
       if (detectors->length>1 && !uvar.signalOnly) {
          XLALDestroyINT4Vector(sftexist);
          XLALDestroyINT4Vector(indexValuesOfExistingSFTs);
@@ -939,6 +980,9 @@ int main(int argc, char *argv[])
          XLAL_CHECK( outputUpperLimitToFile(ULFILENAME->data, upperlimits->data[ii], uvar.allULvalsPerSkyLoc) == XLAL_SUCCESS, XLAL_EFUNC );
       }
    }
+
+   //Output candidates to a file
+   XLAL_CHECK( writeCandidateVector2File(CANDFILENAME->data, exactCandidates2) == XLAL_SUCCESS, XLAL_EFUNC );
 
    //Destroy varaibles
    if (detectors->length>1) {
@@ -977,6 +1021,7 @@ int main(int argc, char *argv[])
    XLALDestroyUserVars();
    XLALDestroyCHARVector(ULFILENAME);
    XLALDestroyCHARVector(LOGFILENAME);
+   XLALDestroyCHARVector(CANDFILENAME);
    destroyUpperLimitVector(upperlimits);
    destroycandidateVector(ihsCandidates);
    destroycandidateVector(gaussCandidates1);
@@ -986,7 +1031,6 @@ int main(int argc, char *argv[])
    destroycandidateVector(exactCandidates1);
    destroycandidateVector(exactCandidates2);
    FreeDopplerSkyScan(&status, &scan);
-   if (lines!=NULL) XLALDestroyINT4Vector(lines);
 
    //print end time
    time(&programendtime);
@@ -1608,6 +1652,7 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    uvar->outfilename = XLALStringDuplicate("logfile.txt");
    uvar->configCopy = XLALStringDuplicate("input_args.conf");
    uvar->ULfilename = XLALStringDuplicate("uls.dat");
+   uvar->candidatesFilename = XLALStringDuplicate("candidates.dat");
    uvar->harmonicNumToSearch = 1;
    uvar->periodHarmToCheck = 5;
    uvar->periodFracToCheck = 3;
@@ -1645,6 +1690,7 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    XLALRegisterUvarMember(outfilename,                 STRING, 0 , OPTIONAL,  "Output file name");
    XLALRegisterUvarMember(configCopy,                  STRING, 0 , OPTIONAL,  "Copy of the input values");
    XLALRegisterUvarMember(ULfilename,                  STRING, 0 , OPTIONAL,  "Upper limit file name");
+   XLALRegisterUvarMember(candidatesFilename,          STRING, 0 , OPTIONAL,  "Candidates file name");
    XLALRegisterUvarMember(inputSFTs,                   STRING, 0 , OPTIONAL,  "Path and filename of SFTs, conflicts with timestampsFile and segmentFile");
    XLALRegisterUvarMember(ephemEarth,                  STRING, 0 , OPTIONAL,  "Earth ephemeris file to use");
    XLALRegisterUvarMember(ephemSun,                    STRING, 0 , OPTIONAL,  "Sun ephemeris file to use");
@@ -1661,6 +1707,11 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    XLALRegisterUvarMember(templateSearchAsiniSigma,      REAL8, 0 , OPTIONAL,  "The template search uncertainty in Asini; templateSearch flag is required");
    XLALRegisterUvarMember(assumeNScosi,                  REAL8, 0 , OPTIONAL,  "Assume cosi orientation of the source (only used when specifying more than 1 detector)");
    XLALRegisterUvarMember(assumeNSpsi,                   REAL8, 0 , OPTIONAL,  "Assume psi polarization angle of the source (only used when specifying more than 1 detector)");
+   XLALRegisterUvarMember(assumeNSGWfreq,                REAL8, 0 , OPTIONAL,  "Assume GW frequency of the source (only used when specifying more than 1 detector)");
+   XLALRegisterUvarMember(assumeNSorbitP,                REAL8, 0 , OPTIONAL,  "Assume orbital period of the source (only used when specifying more than 1 detector)");
+   XLALRegisterUvarMember(assumeNSasini,                 REAL8, 0 , OPTIONAL,  "Assume projected semi-major axis (units of lt-sec) of the source (only used when specifying more than 1 detector)");
+   XLALRegisterUvarMember(assumeNSorbitTp,               EPOCH, 0 , OPTIONAL,  "Assume NS time of periapsis passage of the source (only used when specifying more than 1 detector)");
+   XLALRegisterUvarMember(assumeNSrefTime,               EPOCH, 0 , OPTIONAL,  "Assume NS spin reference time (if not given, assume start time of search) (only used when specifying more than 1 detector)");
    XLALRegisterUvarMember(cosiSignCoherent,               INT4, 0 , OPTIONAL,  "For coherent analysis assume [-1,1] values (0), [0,1] values (1), or [-1,0] values (-1) for cosi (Note: unused when assumeNScosi is specified)");
    XLALRegisterUvarMember(ihsfactor,                      INT4, 0 , OPTIONAL,  "Number of harmonics to sum in IHS algorithm");
    XLALRegisterUvarMember(ihsfar,                        REAL8, 0 , OPTIONAL,  "IHS FAR threshold");
@@ -1721,11 +1772,11 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    if (uvar->help) exit(0);
 
    //Check analysis parameters
-   /* if (ceil(uvar->t0/uvar->Tsft)*uvar->Tsft - uvar->t0 != 0.0) {
+   if (ceil(uvar->t0/uvar->SFToverlap)*uvar->SFToverlap - uvar->t0 != 0.0) {
       REAL8 oldstart = uvar->t0;
-      uvar->t0 = ceil(uvar->t0/uvar->Tsft)*uvar->Tsft;
+      uvar->t0 = ceil(uvar->t0/uvar->SFToverlap)*uvar->SFToverlap;
       fprintf(stderr, "WARNING! Adjusting start time from %f to %f\n", oldstart, uvar->t0);
-      } */
+   }
    XLAL_CHECK( uvar->Pmax >= uvar->Pmin, XLAL_EINVAL, "Pmax is smaller than Pmin\n" );
    XLAL_CHECK( uvar->dfmax >= uvar->dfmin, XLAL_EINVAL, "dfmax is smaller than dfmin\n" );
    if (uvar->Pmax > 0.2*uvar->Tobs) {
@@ -1758,6 +1809,9 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
       uvar->fspan = newfspan;
       fprintf(stderr, "WARNING! Adjusting fspan to %g\n", newfspan);
    }
+
+   //If specifying coherent addition assumed frequency parameters, then check all are present
+   XLAL_CHECK( !(XLALUserVarWasSet(&uvar->assumeNSGWfreq) || XLALUserVarWasSet(&uvar->assumeNSorbitP) || XLALUserVarWasSet(&uvar->assumeNSasini) || XLALUserVarWasSet(&uvar->assumeNSorbitTp)) || (XLALUserVarWasSet(&uvar->assumeNSGWfreq) && XLALUserVarWasSet(&uvar->assumeNSorbitP) && XLALUserVarWasSet(&uvar->assumeNSasini) && XLALUserVarWasSet(&uvar->assumeNSorbitTp)), XLAL_EINVAL, "Need to specify all parameters for frequency evolution (assumeNSrefTime is optional)" );
 
    //Check blocksize settings for running mean
    if (uvar->blksize % 2 != 1) uvar->blksize += 1;

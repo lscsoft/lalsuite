@@ -110,6 +110,7 @@ src/inspiral/lalapps_ninja
 src/inspiral/lalapps_plot_hipe
 src/inspiral/lalapps_populate_chisq
 src/inspiral/lalapps_randombank
+src/inspiral/lalapps_siminspiral_to_frame
 src/inspiral/lalapps_sire
 src/inspiral/lalapps_siva
 src/inspiral/lalapps_skymap
@@ -123,6 +124,7 @@ src/inspiral/lalapps_trigger_hipe
 src/inspiral/lalapps_trigscan
 src/inspiral/lalapps_write_ihope_page
 src/inspiral/posterior/ChiSquare_test
+src/inspiral/posterior/lalinference_bench
 src/inspiral/posterior/lalapps_coherence_test
 src/inspiral/posterior/lalapps_combine_evidence
 src/inspiral/posterior/lalapps_compute_roq_weights
@@ -136,6 +138,9 @@ src/inspiral/posterior/lalapps_vo_nest2pos
 src/inspiral/posterior/lalinference_bambi
 src/inspiral/posterior/lalinference_pipe
 src/inspiral/posterior/lalinference_pp_pipe
+src/inspiral/posterior/lalapps_merge_posteriors
+src/inspiral/posterior/lalapps_test_run_lalinference_pipe_example
+src/inspiral/posterior/lalinference_datadump
 src/lalapps/LALAppsBuildInfo.c
 src/lalapps/LALAppsVCSInfo.c
 src/lalapps/LALAppsVCSInfo.h
@@ -149,11 +154,13 @@ src/lalapps/lalapps_tconvert
 src/lalapps/lalapps_version
 src/online/lalapps_online_datafind
 src/power/lalapps_binj
+src/power/lalapps_libbinj
 src/power/lalapps_power
 src/power/lalapps_power_likelihood_pipe
 src/power/lalapps_power_online_pipe
 src/power/lalapps_power_pipe
 src/power/sense_compare
+src/power/lalapps_simburst_to_frame
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
 src/pulsar/Fstatistic/lalapps_ComputeFstatMCUpperLimit

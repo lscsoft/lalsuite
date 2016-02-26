@@ -1,7 +1,7 @@
 /*
  *
- *  LALInferenceEnsembleSampler:    Ensemble Markov-Chain Monte Carlo sampler for LALInference        
- *  LALInferenceEnsembleSampler.h:  main header file
+ *  LALInferenceKombineSampler:    Ensemble Markov-Chain Monte Carlo sampler for LALInference        
+ *  LALInferenceKombineSampler.h:  main header file
  *
  *  Copyright (C) 2014 Ben Farr
  *
@@ -23,7 +23,7 @@
  */
 
 /**
- * \file LALInferenceEnsembleSampler.h
+ * \file LALInferenceKombineSampler.h
  * \ingroup lalapps_inspiral
  * \brief Ensemble Markov-Chain Monte Carlo sampler written for LALInference.
  *
@@ -38,14 +38,8 @@ void ensemble_sampler(LALInferenceRunState *run_state);
 
 
 /** Evolve a walker a single step */
-INT4 walker_step(LALInferenceRunState *run_state,
-                    LALInferenceModel *model,
-                    LALInferenceVariables *current_params,
-                    LALInferenceVariables *proposed_params,
-                    REAL8 *current_prior, REAL8 *current_likelihood,
-                    REAL8 *current_prop_density,
-                    REAL8 *proposed_prior, REAL8 *proposed_likelihood,
-                    REAL8 *proposed_prop_density);
+void walker_step(LALInferenceRunState *run_state, LALInferenceThreadState *thread,
+                 REAL8 *proposed_prior, REAL8 *proposed_likelihood, REAL8 *proposed_prop_density);
 
 /** Update the ensemble proposal from the ensemble's current state */
 REAL8 get_acceptance_rate(LALInferenceRunState *run_state, REAL8 *local_acceptance_rates);
@@ -76,14 +70,9 @@ void print_evidence(LALInferenceRunState *run_state,
                             REAL8* loglike,
                             REAL8* prop_density);
 
-void print_proposed_sample(LALInferenceRunState *run_state,
-                            LALInferenceVariables *proposed_params,
-                            INT4 walker,
-                            INT4 accepted);
+void print_proposed_sample(LALInferenceThreadState *thread);
 
-char* ensemble_output_name(LALInferenceRunState *run_state,
-                            const char *out_type,
-                            INT4 rank);
+char* ensemble_output_name(const char *out_type, INT4 rank);
 
 FILE* print_ensemble_header(LALInferenceRunState *run_state,
                             INT4 rank);

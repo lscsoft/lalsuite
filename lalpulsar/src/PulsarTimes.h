@@ -31,7 +31,7 @@ extern "C" {
 /**
  * \defgroup PulsarTimes_h  Header PulsarTimes.h
  * \author Creighton, T. D.
- * \ingroup lalpulsar_common
+ * \ingroup lalpulsar_general
  * \brief Provides routines to transform among various time coordinates used in a pulsar search.
  *
  * ### Synopsis ###

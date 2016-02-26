@@ -137,6 +137,8 @@ void initialise_algorithm( LALInferenceRunState *runState )
   runState->algorithmParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
   runState->priorArgs = XLALCalloc( 1, sizeof(LALInferenceVariables) );
   runState->proposalArgs = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+  /* Initialise threads - single thread */
+  runState->threads = LALInferenceInitThreads(1);
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--verbose" );
   if( ppt ) {
@@ -205,6 +207,8 @@ void initialise_algorithm( LALInferenceRunState *runState )
     }
   }
 
+  gsl_rng_set( runState->GSLrandom, randomseed );
+
   /* check if we want to time the program */
   ppt = LALInferenceGetProcParamVal( commandLine, "--time-it" );
   if ( ppt != NULL ){
@@ -256,9 +260,11 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
   /* Using psi bins, time bins */
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
+  /* Single thread here */
+  LALInferenceThreadState *threadState = runState->threads[0];
 
   LALInferenceIFOData *data = runState->data;
-  LALInferenceIFOModel *ifo_model = runState->model->ifo;
+  LALInferenceIFOModel *ifo_model = threadState->model->ifo;
 
   REAL8 t0;
   LALDetAndSource detAndSource;
@@ -497,6 +503,8 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
 void initialise_prior( LALInferenceRunState *runState )
 {
   CHAR *propfile = NULL;
+  /* Single thread here */
+  LALInferenceThreadState *threadState = runState->threads[0];
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
   FILE *fp=NULL;
@@ -504,7 +512,7 @@ void initialise_prior( LALInferenceRunState *runState )
   CHAR tempPar[VARNAME_MAX] = "", tempPrior[VARNAME_MAX] = "";
   REAL8 low, high;
 
-  LALInferenceIFOModel *ifo = runState->model->ifo;
+  LALInferenceIFOModel *ifo = threadState->model->ifo;
 
   /* parameters in correlation matrix */
   LALStringVector *corParams = NULL;
@@ -552,7 +560,7 @@ void initialise_prior( LALInferenceRunState *runState )
 
     /* set variable type to LINEAR (as they are initialised as FIXED) */
     varyType = LALINFERENCE_PARAM_LINEAR;
-    LALInferenceSetParamVaryType( runState->currentParams, tempPar, varyType );
+    LALInferenceSetParamVaryType( threadState->currentParams, tempPar, varyType );
 
     /* Add the prior variables */
     if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "predefined") ){
@@ -618,7 +626,7 @@ void initialise_prior( LALInferenceRunState *runState )
     corParams = XLALReadTEMPOCorFile( corMat, corFile );
 
     /* if the correlation matrix is given then add it as the prior for values with Gaussian errors specified in the par file */
-    add_correlation_matrix( runState->currentParams, runState->priorArgs, corMat, corParams );
+    add_correlation_matrix( threadState->currentParams, runState->priorArgs, corMat, corParams );
 
     XLALDestroyUINT4Vector( dims );
   }
@@ -650,8 +658,6 @@ void initialise_proposal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL;
   UINT4 defrac = 0, freqfrac = 0, esfrac = 0, ewfrac = 0;
   REAL8 temperature = 0.;
-  const CHAR *defaultPropName = NULL;
-  defaultPropName = XLALStringDuplicate( "none" );
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--diffev" );
   if( ppt ) { defrac = atoi( ppt->value ); }
@@ -673,29 +679,41 @@ void initialise_proposal( LALInferenceRunState *runState ){
     XLAL_ERROR_VOID(XLAL_EFAILED);
   }
 
-  runState->proposalStats = NULL;
-  if(!runState->proposalStats) runState->proposalStats = XLALCalloc(1,sizeof(LALInferenceVariables));
-
+  /* Single thread here */
+  LALInferenceThreadState *threadState = runState->threads[0];
+  threadState->cycle = LALInferenceInitProposalCycle();
+  LALInferenceProposalCycle *cycle=threadState->cycle;
   /* add proposals */
   if( defrac ){
-    LALInferenceAddProposalToCycle( runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull,
-                                    defrac );
+    LALInferenceAddProposalToCycle(
+                                   cycle,
+                                   LALInferenceInitProposal(&LALInferenceDifferentialEvolutionFull,differentialEvolutionFullName),
+                                   defrac);
   }
 
   if ( freqfrac ){
-    LALInferenceAddProposalToCycle( runState, frequencyBinJumpName, &LALInferenceFrequencyBinJump, freqfrac );
+    LALInferenceAddProposalToCycle(
+                                   cycle,
+                                   LALInferenceInitProposal(&LALInferenceFrequencyBinJump,frequencyBinJumpName),
+                                   freqfrac);
   }
 
   /* Use ensemble moves */
   if ( esfrac ){
-    LALInferenceAddProposalToCycle( runState, ensembleStretchFullName, &LALInferenceEnsembleStretchFull, esfrac );
+    LALInferenceAddProposalToCycle(
+                                   cycle,
+                                   LALInferenceInitProposal(&LALInferenceEnsembleStretchFull,ensembleStretchFullName),
+                                   esfrac);
   }
 
   if ( ewfrac ){
-    LALInferenceAddProposalToCycle( runState, ensembleWalkFullName, &LALInferenceEnsembleWalkFull, ewfrac );
+    LALInferenceAddProposalToCycle(
+                                   cycle,
+                                   LALInferenceInitProposal(&LALInferenceEnsembleWalkFull,ensembleWalkFullName),
+                                   ewfrac);
   }
 
-  LALInferenceRandomizeProposalCycle( runState );
+  LALInferenceRandomizeProposalCycle( cycle, runState->GSLrandom );
   /* set temperature */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--temperature" );
   if( ppt ) { temperature = atof( ppt->value ); }
@@ -704,12 +722,9 @@ void initialise_proposal( LALInferenceRunState *runState ){
   LALInferenceAddVariable( runState->proposalArgs, "temperature", &temperature, LALINFERENCE_REAL8_t,
                            LALINFERENCE_PARAM_FIXED );
 
-  /* add default proposal name */
-  LALInferenceAddVariable( runState->proposalArgs, LALInferenceCurrentProposalName, &defaultPropName,
-                           LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT );
-
   /* set proposal */
-  runState->proposal = LALInferenceDefaultProposal;
+  threadState->proposal = LALInferenceCyclicProposal;
+  LALInferenceZeroProposalStats(threadState->cycle);
 }
 
 
@@ -817,7 +832,7 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
  */
 void sum_data( LALInferenceRunState *runState ){
   LALInferenceIFOData *data = runState->data;
-  LALInferenceIFOModel *ifomodel = runState->model->ifo;
+  LALInferenceIFOModel *ifomodel = runState->threads[0]->model->ifo;
 
   UINT4 gaussianLike = 0, roq = 0, nonGR = 0;
 
@@ -1286,10 +1301,12 @@ static void PrintNonFixedSample(FILE *fp, LALInferenceVariables *sample){
  */
 void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
 {
+
   FILE *outfile = NULL;
   if( LALInferenceCheckVariable(state->algorithmParams,"outfile") ){
-    outfile = *(FILE **)LALInferenceGetVariable( state->algorithmParams, "outfile" );
+    outfile = *(FILE **)LALInferenceGetVariable(state->algorithmParams,"outfile");
   }
+
   /* Write out old sample */
   if( outfile == NULL ) { return; }
   LALInferenceSortVariablesByName(vars);
@@ -1356,3 +1373,22 @@ void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
   return;
 }
 
+
+void initialise_threads(LALInferenceRunState *state, INT4 nthreads){
+  INT4 i,randomseed;
+  LALInferenceThreadState *thread;
+  for (i=0; i<nthreads; i++){
+    thread=state->threads[i];
+    //LALInferenceCopyVariables(thread->model->params, thread->currentParams);
+    LALInferenceCopyVariables(state->priorArgs, thread->priorArgs);
+    LALInferenceCopyVariables(state->proposalArgs, thread->proposalArgs);
+    thread->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
+    randomseed = gsl_rng_get(state->GSLrandom);
+    gsl_rng_set(thread->GSLrandom, randomseed);
+
+    /* Explicitly zero out DE, in case it's not used later */
+    thread->differentialPoints = NULL;
+    thread->differentialPointsLength = 0;
+    thread->differentialPointsSize = 0;
+  }
+}

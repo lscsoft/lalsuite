@@ -29,7 +29,7 @@ extern "C" {
  * \author Reinhard Prix
  * \date 2005
  * \defgroup PulsarDataTypes_h Header PulsarDataTypes.h
- * \ingroup lalpulsar_common
+ * \ingroup lalpulsar_general
  * \brief Some common useful data-types for pulsar-searches.
  *
  * ### Synopsis ###

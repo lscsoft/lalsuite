@@ -121,6 +121,8 @@ INT4 analyzeCandidatesTemplateFromVector(candidateVector *output,
                                          const gsl_rng *rng,
                                          const UINT4 templateLen);
 
+INT4 writeCandidateVector2File(const CHAR *outputfile, const candidateVector *input);
+
 REAL8 maxModDepth(const REAL8 period, const REAL8 cohtime);
 REAL8 minPeriod(const REAL8 moddepth, const REAL8 cohtime);
 REAL8 calculateR(const REAL4VectorAligned *ffdata, const TwoSpectTemplate *template, const REAL4VectorAligned *noise, const REAL4VectorAligned *fbinaveratios);

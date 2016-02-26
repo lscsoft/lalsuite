@@ -43,6 +43,6 @@
 #define LALCALIBRATIONERRORSH_MSGENULL "Null pointer"
 #define LALCALIBRATIONERRORSH_MSGEDIV0 "Division by zero"
 
-void LALInferenceApplyCalibrationErrors(LALInferenceRunState *state, ProcessParamsTable *commandLine );
+void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 #endif
 

@@ -1,7 +1,7 @@
 /* Top-level module organisation for LALPulsar */
 /**
 
-\defgroup lalpulsar_common		Common Pulsar Routines
+\defgroup lalpulsar_general		General Routines
 @{
    \brief This package provides common data-types and routines for
    pulsar searches.

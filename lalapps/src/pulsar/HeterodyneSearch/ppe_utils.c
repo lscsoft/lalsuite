@@ -613,6 +613,8 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
  * \param runState [in] The analysis information structure
  */
 void gzip_output( LALInferenceRunState *runState ){
+  /* Single thread here */
+  LALInferenceThreadState *threadState = runState->threads[0];
   /* Open original output output file */
   CHAR *outfile = NULL;
   ProcessParamsTable *ppt1 = LALInferenceGetProcParamVal( runState->commandLine, "--outfile" );
@@ -643,8 +645,8 @@ void gzip_output( LALInferenceRunState *runState ){
     while( fscanf(fppars, "%s", v) != EOF ){
       /* if outputing only non-fixed values then only re-output names of those non-fixed things */
       if ( nonfixed ){
-        if ( LALInferenceCheckVariable( runState->currentParams, v ) ){
-          if ( LALInferenceGetVariableVaryType( runState->currentParams, v ) != LALINFERENCE_PARAM_FIXED ){
+        if ( LALInferenceCheckVariable( threadState->currentParams, v ) ){
+          if ( LALInferenceGetVariableVaryType( threadState->currentParams, v ) != LALINFERENCE_PARAM_FIXED ){
             fprintf(fpparstmp, "%s\t", v);
           }
         }

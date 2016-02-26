@@ -77,7 +77,13 @@ void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
   
   XLALGPSSetREAL8(&gpstime,t0);
   LALGeographicToEquatorial(&status,&equat,&horiz,&gpstime);
-  //CHECKSTATUSPTR(&status);
+  if(status.statusCode)
+  {
+    REPORTSTATUS(&status);
+    fprintf(stderr,"Error in coordinate conversion.\n");
+    exit(1);
+  }
+
   *ra=equat.longitude;
   *dec=equat.latitude;
   

@@ -22,24 +22,23 @@
 #include <string.h>
 #include <lal/LALVCSInfoType.h>
 
-/* function to compare two LALVCSInfo structures */
-int XLALVCSInfoCompare(const LALVCSInfo *header, const LALVCSInfo *library)
+int XLALVCSInfoCompare(const LALVCSInfo *vcs1, const LALVCSInfo *vcs2)
 {
-  /* check for header/library mismatch */
-  if (strcmp(header->name, library->name) || \
-      strcmp(header->version, library->version) || \
-      strcmp(header->vcsId, library->vcsId) || \
-      strcmp(header->vcsDate, library->vcsDate) || \
-      strcmp(header->vcsBranch, library->vcsBranch) || \
-      strcmp(header->vcsTag, library->vcsTag) || \
-      strcmp(header->vcsAuthor, library->vcsAuthor) || \
-      strcmp(header->vcsCommitter, library->vcsCommitter) || \
-      strcmp(header->vcsStatus, library->vcsStatus))
+  if (strcmp(vcs1->name, vcs2->name) || \
+      strcmp(vcs1->version, vcs2->version) || \
+      strcmp(vcs1->vcsId, vcs2->vcsId) || \
+      strcmp(vcs1->vcsDate, vcs2->vcsDate) || \
+      strcmp(vcs1->vcsBranch, vcs2->vcsBranch) || \
+      strcmp(vcs1->vcsTag, vcs2->vcsTag) || \
+      strcmp(vcs1->vcsAuthor, vcs2->vcsAuthor) || \
+      strcmp(vcs1->vcsCommitter, vcs2->vcsCommitter) || \
+      strcmp(vcs1->vcsStatus, vcs2->vcsStatus))
   {
-    /* version mismatch */
+    /* vcs1 != vcs2 */
     return 1;
   }
 
+  /* vcs1 == vcs2 */
   return 0;
 }
 

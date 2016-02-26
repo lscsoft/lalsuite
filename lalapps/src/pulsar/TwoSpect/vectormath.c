@@ -153,14 +153,14 @@ INT4 DirichletRatioVector(COMPLEX8Vector *output, alignedREAL8Vector *delta0, al
          if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = 1.0;
          else if (fabsf((REAL4)(delta0_int->data[ii]*delta0_int->data[ii]-1.0))<(REAL4)1.0e-6) output->data[ii] = -2.0;
          else if (fabsf((REAL4)(delta0_int->data[ii]-roundedDelta0_int->data[ii]))<(REAL4)1.0e-6) output->data[ii] = 0.0;
-         else output->data[ii] = 0.5/(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta0_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta0_int->data[ii]*(delta0_int->data[ii]*delta0_int->data[ii]-1.0)));
+	 else output->data[ii] = -LAL_PI*crectf(cosPiDelta0->data[ii], -sinPiDelta0->data[ii])*delta0_int->data[ii]*(delta0_int->data[ii]*delta0_int->data[ii] - 1.0)/sinPiDelta0->data[ii];
       } else if (fabsf((REAL4)(delta1_int->data[ii]*delta1_int->data[ii]-1.0))<(REAL4)1.0e-6) {
          if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = -0.5;
          else if (fabsf((REAL4)(delta0_int->data[ii]*delta0_int->data[ii]-1.0))<(REAL4)1.0e-6) output->data[ii] = 1.0;
          else if (fabsf((REAL4)(delta0_int->data[ii]-roundedDelta0_int->data[ii]))<(REAL4)1.0e-6) output->data[ii] = 0.0;
-         else output->data[ii] = -0.25/(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta0_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta0_int->data[ii]*(delta0_int->data[ii]*delta0_int->data[ii]-1.0)));
-      } else if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = 2.0*(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta1_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta1_int->data[ii]*(delta1_int->data[ii]*delta1_int->data[ii]-1.0)));
-      else if (fabsf((REAL4)(delta0_int->data[ii] - 1.0))<(REAL4)1.0e-6) output->data[ii] = -4.0*(crectf(0.0,1.0)*(cpolarf(1.0,LAL_TWOPI*delta1_int->data[ii])-1.0)/(2.0*LAL_TWOPI*delta1_int->data[ii]*(delta1_int->data[ii]*delta1_int->data[ii]-1.0)));
+	 else output->data[ii] = -LAL_PI_2*crectf(-cosPiDelta0->data[ii], sinPiDelta0->data[ii])*delta0_int->data[ii]*(delta0_int->data[ii]*delta0_int->data[ii] - 1.0)/sinPiDelta0->data[ii];
+      } else if (fabsf(delta0_int->data[ii])<(REAL4)1.0e-6) output->data[ii] = -LAL_1_PI*crectf(cosPiDelta1->data[ii], sinPiDelta1->data[ii])*sinPiDelta1->data[ii]/(delta1_int->data[ii]*(delta1_int->data[ii]*delta1_int->data[ii]-1.0));
+      else if (fabsf((REAL4)(delta0_int->data[ii]*delta0_int->data[ii] - 1.0))<(REAL4)1.0e-6) output->data[ii] = LAL_2_PI*crectf(cosPiDelta1->data[ii], sinPiDelta1->data[ii])*sinPiDelta1->data[ii]/(delta1_int->data[ii]*(delta1_int->data[ii]*delta1_int->data[ii]-1.0));
       else if (fabsf((REAL4)(delta0_int->data[ii]-roundedDelta0_int->data[ii]))<(REAL4)1.0e-6) output->data[ii] = 0.0;
       else output->data[ii] = scaling->data[ii]*sinPiDelta1->data[ii]/sinPiDelta0->data[ii]*crectf(realTerms->data[ii], imagTerms->data[ii]);
    }

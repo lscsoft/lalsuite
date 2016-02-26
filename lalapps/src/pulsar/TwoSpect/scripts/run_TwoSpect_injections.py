@@ -51,6 +51,7 @@ parser.add_argument('--tmplfar', type=float, default=1.0, help='Template statist
 parser.add_argument('--tmplLength', type=int, default=500, help='Maximum length of a template (%(default)s)')
 parser.add_argument('--markBadSFTs', action='store_true', help='Mark and remove bad SFTs')
 parser.add_argument('--keepOnlyTopNumIHS', type=int, help='Keep only the top N number of IHS outliers')
+parser.add_argument('--useCorrectGWfreq', action='store_true', help='Use the correct GW frequency for the coherent analysis')
 parser.add_argument('--useCorrectNScosi', action='store_true', help='Use the correct NS cosi orientation for coherent analysis')
 parser.add_argument('--useCorrectNSpsi', action='store_true', help='Use the correct NS psi orientation for coherent analysis')
 parser.add_argument('--unrestrictedCosi', action='store_true', help='Marginalize over cosi=[-1,1] for coherent analysis')
@@ -271,6 +272,12 @@ ihsfactor {}
 
     if args.useCorrectNScosi: twospectconfig.write('assumeNScosi {}\n'.format(cosi))
     if args.useCorrectNSpsi: twospectconfig.write('assumeNSpsi {}\n'.format(psi))
+    if args.useCorrectGWfreq:
+        twospectconfig.write('assumeNSGWfreq {}\n'.format(f0))
+        twospectconfig.write('assumeNSorbitP {}\n'.format(P))
+        twospectconfig.write('assumeNSasini {}\n'.format(asini))
+        twospectconfig.write('assumeNSorbitTp {}\n'.format(900000000))
+        twospectconfig.write('assumeNSrefTime {}\n'.format(900000000))
 
     if numberTimestampFiles>0:
         twospectconfig.write('timestampsFile ')

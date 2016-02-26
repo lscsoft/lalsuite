@@ -1,6 +1,6 @@
 /*
  *
- *  LALInferenceMCMCSampler:    Markov-Chain Monte Carlo sampler for LALInference        
+ *  LALInferenceMCMCSampler:    Markov-Chain Monte Carlo sampler for LALInference
  *  LALInferenceMCMCSampler.h:  main header file
  *
  *  Copyright (C) 2011 Vivien Raymond, Ben Farr, Will Farr, Ilya Mandel, Christian Roever, Marc van der Sluys and John Veitch
@@ -45,7 +45,7 @@
 /** Implements the parallel tempered MCMC algorithm. Designes to use PTMCMCOneStep() as the runstate->evolve function */
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState);
 /** Implements one MCMC step forward, updating the sigma values for the jump proposals if required.*/
-INT4 PTMCMCOneStep(LALInferenceRunState *runState);
+void mcmc_step(LALInferenceRunState *runState, LALInferenceThreadState *thread);
 
 /* MPI communications */
 typedef enum {
@@ -55,34 +55,33 @@ typedef enum {
     RUN_COMPLETE       /** Run complete */
 } LALInferenceMPIcomm;
 
-/* PT swap return values  */
-typedef enum {
-    NO_SWAP_PROPOSED, /** No proposal was made */
-    REJECTED_SWAP,    /** A jump was proposed, but not accepted */
-    ACCEPTED_SWAP     /** A jump was proposed and accepted */
-} LALInferenceMPIswapAcceptance;
-
 /* Standard parallel temperature swap proposal function */
-UINT4 LALInferencePTswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, FILE *swapfile);
+void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile);
 
 /* Metropolis-coupled MCMC swap proposal, when the likelihood is not identical between chains */
-UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, FILE *swapfile);
+//UINT4 LALInferenceMCMCMCswap(LALInferenceRunState *runState, REAL8 *ladder, INT4 i, FILE *swapfile);
 
 /* Functions for controlling adaptation */
 void acknowledgePhase(LALInferenceRunState *runState);
-void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle);
-void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle);
-void LALInferenceAdaptationEnvelope(LALInferenceRunState *runState, INT4 cycle);
+void LALInferenceAdaptation(LALInferenceThreadState *thread);
+void LALInferenceAdaptationRestart(LALInferenceThreadState *thread);
+REAL8 LALInferenceAdaptationEnvelope(INT4 step, INT4 tau, INT4 length, INT4 fix_adapt_len);
 void LALInferenceShutdownLadder(void);
 void LALInferenceFlushPTswap(void);
 void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag, INT4 cycle);
 
 /* Data IO routines */
-FILE* LALInferencePrintPTMCMCHeaderOrResume(LALInferenceRunState *runState);
-void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *file);
+void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE ***threadoutputs, FILE ***resumeoutputs);
+void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInferenceThreadState *thread, FILE *threadoutput);
+void LALInferencePrintAdaptationHeader(FILE *outfile, LALInferenceThreadState *thread);
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState);
 void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model);
+void LALInferenceSaveSample(LALInferenceThreadState *thread, FILE *output);
+void LALInferencePrintAdaptationSettings(FILE *outfile, LALInferenceThreadState *thread);
+void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIFOData *data, INT4 iteration, REAL8 timestamp, FILE *threadoutput);
 
 /** Reads final parameter values from the given output file, and
     stores them in the current params to try to continue the run. */
-void LALInferenceMCMCResumeRead(LALInferenceRunState *runState, FILE *resumeFile);
+void LALInferenceMCMCResumeRead(LALInferenceThreadState *thread, FILE *resumeFile);
+
+void init_mpi_randomstate(LALInferenceRunState *run_state);

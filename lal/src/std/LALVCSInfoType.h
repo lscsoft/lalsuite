@@ -26,22 +26,37 @@
 extern "C" {
 #endif
 
-/* define vcs information structure */
+/**
+ * \defgroup LALVCSInfoType_h Header LALVCSInfoType.h
+ * \ingroup lal_std
+ * \author Adam Mercer
+ * \brief Contains routines for dealing with VCS information
+ */
+/*@{*/
+
+/**
+ * VCS information structure
+ */
 typedef struct tagLALVCSInfo
 {
-  const char *const name;
-  const char *const version;
-  const char *const vcsId;
-  const char *const vcsDate;
-  const char *const vcsBranch;
-  const char *const vcsTag;
-  const char *const vcsAuthor;
-  const char *const vcsCommitter;
-  const char *const vcsStatus;
+  const char *const name;		/**< Library name */
+  const char *const version;		/**< Library version */
+  const char *const vcsId;		/**< Identifier (e.g. git SHA1) of last commit */
+  const char *const vcsDate;		/**< Committer date of last commit */
+  const char *const vcsBranch;		/**< Branch of last commit */
+  const char *const vcsTag;		/**< Tag of last commit */
+  const char *const vcsAuthor;		/**< Author of last commit */
+  const char *const vcsCommitter;	/**< Committer of last commit */
+  const char *const vcsStatus;		/**< (UN)CLEAN: Status message */
 } LALVCSInfo;
 
-/* function to compare two LALVCSInfo structures */
-int XLALVCSInfoCompare(const LALVCSInfo *header, const LALVCSInfo *library);
+/**
+ * Compare two VCS information structures \p vcs1 and \p vcs2
+ * \returns Zero if the structures are identical, non-zero otherwise
+ */
+int XLALVCSInfoCompare(const LALVCSInfo *vcs1, const LALVCSInfo *vcs2);
+
+/*@}*/
 
 #ifdef __cplusplus
 }
