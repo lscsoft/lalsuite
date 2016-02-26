@@ -39,6 +39,7 @@ static int test(struct tm *t, int correct_gps)
     XLAL_CHECK(tf.tm_yday == t->tm_yday, XLAL_EFAILED, "UTCtoGPSTest: incorrect day of year\n  output   = %d\n  expected = %d\n", tf.tm_yday, t->tm_yday);
   }
 
+  t->tm_wday = t->tm_yday = -1;
   int gps = XLALUTCToGPS(t);
   XLAL_CHECK(xlalErrno == 0, XLAL_EFUNC, "UTCtoGPSTest: error in XLALUTCToGPS()");
 

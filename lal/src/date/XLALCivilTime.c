@@ -271,6 +271,12 @@ INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time
   INT4 gpssec;
   int leapsec;
 
+  /* make sure derived fields in 'utc' are filled correctly */
+  struct tm utc_filled = *utc;
+  utc = XLALFillUTC(&utc_filled);
+  if ( utc == NULL )
+    XLAL_ERROR( XLAL_EFUNC );
+
   /* compute leap seconds */
   leapsec = XLALLeapSecondsUTC( utc );
   if ( leapsec < 0 )
