@@ -53,7 +53,7 @@ int main(void)
 
   utcDate.tm_year = 80;
   utcDate.tm_yday =  5;
-  utcDate.tm_wday = -1;	/* unused */
+  utcDate.tm_wday =  0;	/* unused */
   utcDate.tm_mon  =  0;	/* unused */
   utcDate.tm_mday =  6;	/* unused */
   utcDate.tm_hour =  0;
@@ -64,7 +64,7 @@ int main(void)
 
   utcDate.tm_year =  94;
   utcDate.tm_yday = 186;
-  utcDate.tm_wday =  -1;	/* unused */
+  utcDate.tm_wday =   3;	/* unused */
   utcDate.tm_mon  =   6;	/* unused */
   utcDate.tm_mday =   6;	/* unused */
   utcDate.tm_hour =  23;
@@ -75,7 +75,7 @@ int main(void)
 
   utcDate.tm_year =  94;
   utcDate.tm_yday = 181;
-  utcDate.tm_wday =  -1;	/* unused */
+  utcDate.tm_wday =   5;	/* unused */
   utcDate.tm_mon  =   6;	/* unused */
   utcDate.tm_mday =   1;	/* unused */
   utcDate.tm_hour =   0;
@@ -87,11 +87,11 @@ int main(void)
   for (sec = 457056007; sec < 457056012; sec++)
     {
       utcDate.tm_year =  94;
-      utcDate.tm_wday =  -1;	/* unused */
       utcDate.tm_sec  =  58 + (sec - 457056007);
       if (utcDate.tm_sec <= 60)
         {
           utcDate.tm_yday = 180;
+          utcDate.tm_wday =   4;	/* unused */
           utcDate.tm_mon  =   5;	/* unused */
           utcDate.tm_mday =  30;	/* unused */
           utcDate.tm_hour =  23;
@@ -101,6 +101,7 @@ int main(void)
         {
           utcDate.tm_sec -=  61;
           utcDate.tm_yday = 181;
+          utcDate.tm_wday =   5;	/* unused */
           utcDate.tm_mon  =   6;	/* unused */
           utcDate.tm_mday =   1;	/* unused */
           utcDate.tm_hour =  00;
@@ -112,7 +113,7 @@ int main(void)
 
   utcDate.tm_year =  94;
   utcDate.tm_yday = 319;
-  utcDate.tm_wday =  -1;	/* unused */
+  utcDate.tm_wday =   3;	/* unused */
   utcDate.tm_mon  =  10;	/* unused */
   utcDate.tm_mday =  16;	/* unused */
   utcDate.tm_hour =   0;
