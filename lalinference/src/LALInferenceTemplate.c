@@ -39,7 +39,7 @@
 #include <lal/LIGOMetadataRingdownUtils.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALInferenceTemplate.h>
-#include <lal/LALInferenceFVectorMultiBanding_Flat.h>
+#include <lal/LALInferenceMultibanding.h>
 
 /* LIB imports*/
 #include <lal/LALInferenceBurstRoutines.h>
@@ -1151,7 +1151,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
     
     /* ==== Call the waveform generator ==== */
     if(model->domain == LAL_SIM_DOMAIN_FREQUENCY) {
-        if(!frequencies) frequencies = LALInferenceFrequencySequenceFunction(Nbands,f_start,0.5/deltaT, model->deltaF, mc_min);
+        if(!frequencies) frequencies = LALInferenceMultibandFrequencies(Nbands,f_start,0.5/deltaT, model->deltaF, mc_min);
         
         
         XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,

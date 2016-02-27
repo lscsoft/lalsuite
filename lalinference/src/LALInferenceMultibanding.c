@@ -15,78 +15,16 @@
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/TimeSeries.h>
-#include <lal/LALInferencePrior.h>
-#include <lal/LALInferenceTemplate.h>
-#include <lal/LALInferenceProposal.h>
-#include <lal/LALInferenceLikelihood.h>
-#include <lal/LALInferenceReadData.h>
-#include <lal/LALInferenceInit.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Sequence.h>
-//#include <lal/LALDatatypes.h>
+#include <lal/LALInferenceMultibanding.h>
 
 
-/* Decimate a sequence, returning a shorter sequence with a factor less elements */
-REAL8Sequence *DecimateREAL8Sequence(REAL8Sequence *old, UINT4 factor);
-COMPLEX16Sequence *DecimateCOMPLEX16Sequence(COMPLEX16Sequence *old, UINT4 factor);
-REAL8Sequence *LALInferenceFrequencySequenceFunction(int NBands, double fmin, double fmax, double deltaF0, double mc);
-double LALInferenceTimeFrequencyRelation(double mc, double inPar, UINT4 flag_f);
+/** F(t) and T(f) for newtonian waveform */
+static double LALInferenceTimeFrequencyRelation(double mc, double inPar, UINT4 flag_f);
 
-REAL8Sequence *DecimateREAL8Sequence(REAL8Sequence *old, UINT4 factor)
-{
-    if (old == NULL) {
-        XLALPrintError(" ERROR old MBfile == NULL.\n");
-        printf(" ERROR old (MB file)== NULL.\n");
-        exit(1);
-    }
-  UINT4 Nold=old->length;
-  if ((Nold%factor)!=0)
-  {
-    XLALPrintError("ERROR: Cannot downsample %i points by a factor %i\n",Nold,factor);
-    return NULL;
-  }
-  UINT4 l=(Nold/factor);
-  REAL8Sequence *new = XLALCreateREAL8Sequence(l);
-    if (new == NULL ) {
-        XLALPrintError(" ERROR new MBfile == NULL.\n");
-        printf(" ERROR new (MB file)== NULL.\n");
-        exit(1);
-    }
 
-  for(UINT4 i=0;i<new->length;i++)
-    new->data[i]=old->data[i*factor];
-
-  return new;
-}
-
-COMPLEX16Sequence *DecimateCOMPLEX16Sequence(COMPLEX16Sequence *old, UINT4 factor)
-{
-    if (old == NULL) {
-        XLALPrintError(" ERROR old MBfile == NULL.\n");
-        printf(" ERROR old (MB file)== NULL.\n");
-        exit(1);
-    }
-
-    UINT4 Nold=old->length;
-    if ((Nold%factor)!=0)
-    {
-        XLALPrintError("ERROR: Cannot downsample %i points by a factor %i\n",Nold,factor);
-        return NULL;
-    }
-    UINT4 l=(Nold/factor);
-    COMPLEX16Sequence *new=XLALCreateCOMPLEX16Sequence(l);
-    if (new == NULL ) {
-        XLALPrintError(" ERROR new MBfile == NULL.\n");
-        printf(" ERROR new (MB file)== NULL.\n");
-        exit(1);
-    }
-    for(UINT4 i=0;i<new->length;i++)
-        new->data[i]=old->data[i*factor];
-    
-    return new;
-}
-
-double LALInferenceTimeFrequencyRelation(double mc, double inPar, UINT4 flag_f)
+static double LALInferenceTimeFrequencyRelation(double mc, double inPar, UINT4 flag_f)
 {
     double outPar = 0.0;
     if (!flag_f){
@@ -101,7 +39,7 @@ double LALInferenceTimeFrequencyRelation(double mc, double inPar, UINT4 flag_f)
     return (outPar);
 }
 
-REAL8Sequence *LALInferenceFrequencySequenceFunction(int NBands, double fmin, double fmax, double deltaF0, double mc)
+REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double fmin, double fmax, double deltaF0, double mc)
 {
     
     if (0) printf("fmax %f", fmax);
