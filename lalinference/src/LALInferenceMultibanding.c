@@ -39,10 +39,10 @@ static double LALInferenceTimeFrequencyRelation(double mc, double inPar, UINT4 f
     return (outPar);
 }
 
-REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double fmin, double fmax, double deltaF0, double mc)
+REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double f_min, double f_max, double deltaF0, double mc)
 {
     
-    if (0) printf("fmax %f", fmax);
+    if (0) printf("f_max %f", f_max);
     if (NBands==0){
         XLALPrintError("ERROR: ask for Multi Banding procedure with 0 bands!\n");
         return NULL;
@@ -50,16 +50,16 @@ REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double fmin, double 
 
     double mc_sec=mc*LAL_MTSUN_SI;
 
-    fmin=deltaF0*ceil(fmin/deltaF0);
-    fmax=deltaF0*floor(fmax/deltaF0);
+    f_min=deltaF0*ceil(f_min/deltaF0);
+    f_max=deltaF0*floor(f_max/deltaF0);
     
 
-    double fi = fmin;
+    double fi = f_min;
     int n_max = floor(- log2(deltaF0*2.1));
     float t_nmax= 1./(pow(2.,n_max)*deltaF0) - 2.1;
     float f_nmax= LALInferenceTimeFrequencyRelation(mc_sec,-t_nmax,1);
     
-    int n_min = floor(- log2(deltaF0*(2.1 - LALInferenceTimeFrequencyRelation(mc_sec,fmin,0))));
+    int n_min = floor(- log2(deltaF0*(2.1 - LALInferenceTimeFrequencyRelation(mc_sec,f_min,0))));
     if (n_min < 0 ) n_min = 0;
     int max_NBands = 0;
     max_NBands = n_max+1 - n_min;
@@ -83,15 +83,15 @@ REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double fmin, double 
         exit(1);
     }
     
-    F_inf->data[0]=fmin;
-    F_sup->data[NBands-1]=fmax;
+    F_inf->data[0]=f_min;
+    F_sup->data[NBands-1]=f_max;
     
     int nC = 1;
     if (NBands == 1) n_max = n_min;
     deltaF->data[NBands - 1] = (pow(2.,n_max)*deltaF0);
     F_inf->data[NBands - 1] = f_nmax;
-    F_sup->data[NBands - 1] = fmax;
-    fi = fmax;
+    F_sup->data[NBands - 1] = f_max;
+    fi = f_max;
     int n_i = n_max;
     
     for (int i=NBands - 1; i>=0; i--) {
@@ -103,11 +103,11 @@ REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double fmin, double 
         if (i< NBands - 1) F_sup->data[i] = F_inf->data[i+1];
         double t_ni= 1./(pow(2.,n_i)*deltaF0) - 2.1;
         F_inf->data[i] = LALInferenceTimeFrequencyRelation(mc_sec,-t_ni,1);
-        if(i == 0 && F_inf->data[i]<= fmin ) F_inf->data[i]= fmin;
-        if (i== 0 && F_inf->data[i] > fmin ) {
+        if(i == 0 && F_inf->data[i]<= f_min ) F_inf->data[i]= f_min;
+        if (i== 0 && F_inf->data[i] > f_min ) {
             n_i = n_min;
             deltaF->data[i] = (pow(2.,n_i)*deltaF0);
-            F_inf->data[i] = fmin;
+            F_inf->data[i] = f_min;
         }
       }
       while((fi-deltaF->data[i])>=F_inf->data[i]){
@@ -118,7 +118,7 @@ REAL8Sequence *LALInferenceMultibandFrequencies(int NBands, double fmin, double 
     
     UINT4 NFreq = nC;
     Frequencies = XLALCreateREAL8Sequence(NFreq);
-    Frequencies->data[nC - 1]= fmax;
+    Frequencies->data[nC - 1]= f_max;
     int k= nC - 1;
     printf("PHASE INTERPOLATION ACTIVATED: %i bands used to define the %u frequencies at which compute the waveforms \n",NBands,NFreq);
 
