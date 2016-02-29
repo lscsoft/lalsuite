@@ -230,8 +230,6 @@ void initialise_algorithm( LALInferenceRunState *runState )
     }
   }
 
-  gsl_rng_set( runState->GSLrandom, randomseed );
-
   /* log samples */
 #ifdef HAVE_LIBLALXML
   runState->logsample = LogSampleToArray;

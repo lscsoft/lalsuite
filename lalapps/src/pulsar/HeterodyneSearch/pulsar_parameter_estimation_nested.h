@@ -209,8 +209,8 @@ extern "C" {
                      otherwise the noise variance will be calculated from the data.\n"\
 " --nonGR             Set to allow non-GR polarisation modes and/or a variable\n\
                      speed of gravitational waves\n"\
-" --randomise         Set this to randomise the data (through permutations of the\n\
-                     time stamps) for use in Monte-Carlo studies. NOTE: this will not\n\
+" --randomise         Set this, with an INT seed, to randomise the data (through permutations\n\
+                     of the time stamps) for use in Monte-Carlo studies. NOTE: this will not\n\
                      work if using the code to create injections\n"\
 "\n"\
 " Nested sampling parameters:\n"\
@@ -311,8 +311,8 @@ extern "C" {
 " --oldChunks        Set if using fixed chunk sizes for dividing the data as\n\
                     in the old code, rather than the calculating chunks\n\
                     using the change point method\n"\
-" --jones-model      Set if using both 1 and 2 multiples of the frequency and\n\
-                    requiring the use of the original signal model parameters\n\
+" --source-model     Set if using both 1 and 2 multiples of the frequency and\n\
+                    requiring the use of the original source model parameters\n\
                     from Jones, MNRAS, 402 (2010)\n"\
 "\n"\
 " Benchmarking:\n"\
