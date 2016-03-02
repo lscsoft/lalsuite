@@ -106,8 +106,8 @@ int main ( int argc, char *argv[])
                epochGPS.gpsSeconds, epochGPS.gpsNanoSeconds, epochMJDTT.gpsSeconds, epochMJDTT.gpsNanoSeconds );
 
   REAL8 diff, tol = 3e-15;
-  XLAL_CHECK ( (diff = fabs(longHMS - longRad)) < tol, XLAL_EFAILED, "longitude(HMS) = %.16g differs from longitude(rad) = %.16g by %g > tolerance\n", longHMS, longRad, diff, tol );
-  XLAL_CHECK ( (diff = fabs(latDMS - latRad)) < tol, XLAL_EFAILED, "latitude(HMS) = %.16g differs from latitude(rad) = %.16g by %g > tolerance\n", latDMS, latRad, diff, tol );
+  XLAL_CHECK ( (diff = fabs(longHMS - longRad)) < tol, XLAL_EFAILED, "longitude(HMS) = %.16g differs from longitude(rad) = %.16g by %g > %g\n", longHMS, longRad, diff, tol );
+  XLAL_CHECK ( (diff = fabs(latDMS - latRad)) < tol, XLAL_EFAILED, "latitude(HMS) = %.16g differs from latitude(rad) = %.16g by %g > %g\n", latDMS, latRad, diff, tol );
 
   XLALFree (string1);
   XLALFree (string2);

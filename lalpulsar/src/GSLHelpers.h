@@ -114,14 +114,15 @@
     } \
   } while (0)
 
-#define CALL_GSL_VAL(val, ...)		CALL_GSL_VAL_(val, __VA_ARGS__, NULL, NULL)
-#define CALL_GSL_VAL_(val, call, fmt, ...) \
+#define CALL_GSL_VAL(val, call, ...) \
   do { \
     int GH_retn = 0; \
     XLAL_CALLGSL(GH_retn = (call)); \
     if (GH_retn != 0) { \
-      if (fmt != NULL) { \
-        XLAL_ERROR_VAL(val, XLAL_EFAILED, fmt, __VA_ARGS__, NULL); \
+      char GH_buf[1024]; \
+      snprintf(GH_buf, sizeof(GH_buf), "X" __VA_ARGS__); \
+      if (strlen(GH_buf) > 1) { \
+        XLAL_ERROR_VAL(val, XLAL_EFAILED, "%s", &GH_buf[1]); \
       } else { \
         XLAL_ERROR_VAL(val, XLAL_EFAILED, #call " failed: %s", gsl_strerror(GH_retn)); \
       } \

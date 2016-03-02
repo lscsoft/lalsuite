@@ -232,7 +232,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   }
   else if (fStart < Mflower / (m1 + m2) )
   {
-     XLAL_ERROR(XLAL_EDOM, "WAVEFORM IS NOT LONG ENOUGH TO REACH f_low. %e %e",
+     XLAL_ERROR(XLAL_EDOM, "WAVEFORM IS NOT LONG ENOUGH TO REACH f_low. %e %e %e",
                 fStart, Mflower, Mflower / (m1 + m2));
   }
 

@@ -21,8 +21,10 @@
 #define XLALERROR_H
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <string.h>
 #include <lal/LALAtomicDatatypes.h>
 
 #if defined(__cplusplus)
@@ -625,32 +627,38 @@ void XLALError(const char *func,
     );
 
 /** \cond DONT_DOXYGEN */
-/* Helper macros for internal use only */
+/*
+ * Helper macros for internal use only:
+ * To allow for a possibly empty error message, these macros use the construct
+ *   snprintf(buf, sizeof(buf), "X" __VA_ARGS__)
+ * to print any error message (preceded by "X", to silence -Wformat-zero-length)
+ * to a string buffer 'buf', then print the error message only if 'buf' is longer
+ * than 1, i.e. more than just the "X". This construct allows for
+ *   XLAL_ERROR(XLAL_EFUNC);
+ *   XLAL_ERROR(XLAL_EFUNC, "%i < 0", n);
+ * It does not allow a non-literal format string, e.g.
+ *   const char *fmt = "%i < 0"; XLAL_ERROR(XLAL_EFUNC, fmt, n);
+ * but since this is a security risk, -Wformat does not allow this anyway.
+ */
 
-#define _XLAL_ERROR_IMPL_(statement, ...) \
-  _XLAL_ERROR_IMPL2_(statement, __VA_ARGS__, NULL, NULL)
-#define _XLAL_ERROR_IMPL2_(statement, errnum, fmt, ...) \
+#define _XLAL_ERROR_IMPL_(statement, errnum, ...) \
 	do { \
-		if (fmt != NULL) { \
-			_LAL_GCC_DIAGNOSTIC_(push); \
-			_LAL_GCC_DIAGNOSTIC_(ignored "-Wformat-extra-args"); \
-			XLAL_PRINT_ERROR(fmt, __VA_ARGS__); \
-			_LAL_GCC_DIAGNOSTIC_(pop); \
+		char _XLAL_ERROR_IMPL_buf_[1024]; \
+		snprintf(_XLAL_ERROR_IMPL_buf_, sizeof(_XLAL_ERROR_IMPL_buf_), "X" __VA_ARGS__); \
+		if (strlen(_XLAL_ERROR_IMPL_buf_) > 1) { \
+			XLAL_PRINT_ERROR("%s", &_XLAL_ERROR_IMPL_buf_[1]); \
 		} \
 		XLALError(__func__, __FILE__, __LINE__, errnum); \
 		statement; \
 	} while (0)
 
-#define _XLAL_CHECK_IMPL_(statement, assertion, ...) \
-  _XLAL_CHECK_IMPL2_(statement, assertion, __VA_ARGS__, NULL, NULL)
-#define _XLAL_CHECK_IMPL2_(statement, assertion, errnum, fmt, ...) \
+#define _XLAL_CHECK_IMPL_(statement, assertion, errnum, ...) \
 	do { \
 		if (!(assertion)) { \
-			if (fmt != NULL) { \
-				_LAL_GCC_DIAGNOSTIC_(push); \
-				_LAL_GCC_DIAGNOSTIC_(ignored "-Wformat-extra-args"); \
-				XLAL_PRINT_ERROR(fmt, __VA_ARGS__); \
-				_LAL_GCC_DIAGNOSTIC_(pop); \
+			char _XLAL_CHECK_IMPL_buf_[1024]; \
+			snprintf(_XLAL_CHECK_IMPL_buf_, sizeof(_XLAL_CHECK_IMPL_buf_), "X" __VA_ARGS__); \
+			if (strlen(_XLAL_CHECK_IMPL_buf_) > 1) { \
+				XLAL_PRINT_ERROR("%s", &_XLAL_CHECK_IMPL_buf_[1]); \
 			} else { \
 				XLAL_PRINT_ERROR("Check failed: %s", #assertion); \
 			} \
@@ -675,7 +683,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_ERROR_VAL(val, ...) _XLAL_ERROR_IMPL_(return val, __VA_ARGS__, NULL, NULL)
+#define XLAL_ERROR_VAL(val, ...) _XLAL_ERROR_IMPL_(return val, __VA_ARGS__)
 
 /**
  * Macro to invoke a failure from a XLAL routine returning an integer.
@@ -783,7 +791,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_CHECK_VAL(val, assertion, ...) _XLAL_CHECK_IMPL_(return val, assertion, __VA_ARGS__, NULL, NULL)
+#define XLAL_CHECK_VAL(val, assertion, ...) _XLAL_CHECK_IMPL_(return val, assertion, __VA_ARGS__)
 
 /**
  * \brief Macro to test an assertion and invoke a failure if it is not true

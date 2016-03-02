@@ -497,11 +497,12 @@ int main(int argc, char *argv[])
 
     UINT4 numTS = ts1->length;
     char buf1[256], buf2[256];
-    const char *fmt = "Timestamps-lists differ in entry %" LAL_UINT4_FORMAT ": %s != %s\n";
     for ( UINT4 i = 0; i < numTS; i ++ )
       {
-        XLAL_CHECK_MAIN ( XLALGPSDiff( &ts1->data[i], &ts2->data[i]) == 0, XLAL_EFAILED, fmt, i + 1, XLALGPSToStr ( buf1, &ts1->data[i] ), XLALGPSToStr ( buf2, &ts2->data[i] ) );
-        XLAL_CHECK_MAIN ( XLALGPSDiff( &ts2->data[i], &ts3->data[i]) == 0, XLAL_EFAILED, fmt, i + 1, XLALGPSToStr ( buf1, &ts2->data[i] ), XLALGPSToStr ( buf2, &ts3->data[i] ) );
+        XLAL_CHECK_MAIN ( XLALGPSDiff( &ts1->data[i], &ts2->data[i]) == 0, XLAL_EFAILED,
+                          "Timestamps-lists differ in entry %" LAL_UINT4_FORMAT ": %s != %s\n", i + 1, XLALGPSToStr ( buf1, &ts1->data[i] ), XLALGPSToStr ( buf2, &ts2->data[i] ) );
+        XLAL_CHECK_MAIN ( XLALGPSDiff( &ts2->data[i], &ts3->data[i]) == 0, XLAL_EFAILED,
+                          "Timestamps-lists differ in entry %" LAL_UINT4_FORMAT ": %s != %s\n", i + 1, XLALGPSToStr ( buf1, &ts2->data[i] ), XLALGPSToStr ( buf2, &ts3->data[i] ) );
       } /* for i < numTS */
 
     /* free mem */
