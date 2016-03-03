@@ -7,6 +7,7 @@ import sys
 py_version = sys.version_info[:2]
 from os import path, makedirs
 from pylab import figure,ioff,linspace
+import matplotlib.patches as mpatches
 from numpy import load,save
 
 from copy import deepcopy
@@ -79,7 +80,7 @@ settings = {"rescan_files":True,#false does not work for some reason
             "outpath":"/home/jeroen/Dropbox/combined_posteriors/", #plots will end up here
             "datadir":"/home/jeroen/Dropbox/combined_posteriors/", #data should be here
             "sources":["gw150914","gw151226"],
-            "singles":True, #False if using parameters from batch runs
+            "singles":False, #False if using parameters from batch runs
             "parameters":["dchi0","dchi1","dchi2","dchi3","dchi4","dchi5l","dchi6","dchi6l","dchi7",
                           "dsigma2","dsigma3","dsigma4",
                           "dbeta2","dbeta3",
@@ -313,7 +314,16 @@ def plot_combined_kde(parameters,param,settings):
     ax.plot(xaxis,param_obj.get_source_kde(source),label=r"${\rm %s}$"%source,c=colors[source])
   ax.plot(xaxis,param_obj.get_combined_kde(),label=r"${\rm combined}$",c=colors["combined"],lw=1)
 
-  ax.legend(loc='upper left', fancybox=True, framealpha=0.8)
+#  ax.legend(loc='upper left', fancybox=True, framealpha=0.8)
+
+  handles, labels = ax.get_legend_handles_labels()
+  if settings["fill_all"]:
+    for i in range(len(sourcenames)):
+      nh = mpatches.Patch(facecolor=colors[sourcenames[i]], alpha=0.7, edgecolor=colors[sourcenames[i]], label='')
+      handles[i] = nh
+  nh = mpatches.Patch(facecolor=lightgray, alpha=1.0, edgecolor=colors["combined"], label='')
+  handles[-1] = nh
+  ax.legend(handles, labels, loc='upper left', fancybox=True, framealpha=0.8)
 
   if settings["singles"]:
     figname = path.join(settings["outpath"],"posteriors_%s"%param)
