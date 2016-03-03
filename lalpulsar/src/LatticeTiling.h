@@ -56,15 +56,6 @@ typedef struct tagLatticeTilingIterator LatticeTilingIterator;
 typedef struct tagLatticeTilingLocator LatticeTilingLocator;
 
 ///
-/// Type of lattice to generate tiling with.
-///
-typedef enum tagTilingLattice {
-  TILING_LATTICE_CUBIC,			///< Cubic (\f$Z_n\f$) lattice
-  TILING_LATTICE_ANSTAR,		///< An-star (\f$A_n^*\f$) lattice
-  TILING_LATTICE_MAX
-} TilingLattice;
-
-///
 /// Statistics related to the number/value of lattice tiling points in a dimension.
 ///
 typedef struct tagLatticeTilingStats {
@@ -131,9 +122,13 @@ int XLALSetLatticeTilingConstantBound(
 /// tiling \c tiling is now fully initialised, and can be used to create tiling iterators [via
 /// XLALCreateLatticeTilingIterator()] and locators [via XLALCreateLatticeTilingLocator()].
 ///
+/// Valid lattice names are:
+/// - Cubic (\f$Z_n\f$) lattice: \c Zn, \c Cubic, or \c 0
+/// - An-star (\f$A_n^*\f$) lattice: \c Ans, \c An-star, or \c 1
+///
 int XLALSetTilingLatticeAndMetric(
   LatticeTiling *tiling,		///< [in] Lattice tiling
-  const TilingLattice lattice,		///< [in] Type of lattice to generate tiling with
+  const char *lattice_name,		///< [in] Name of lattice to generate tiling with
   const gsl_matrix *metric,		///< [in] Parameter-space metric
   const double max_mismatch		///< [in] Maximum prescribed mismatch
   );
