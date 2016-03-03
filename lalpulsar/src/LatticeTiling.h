@@ -123,8 +123,8 @@ int XLALSetLatticeTilingConstantBound(
 /// XLALCreateLatticeTilingIterator()] and locators [via XLALCreateLatticeTilingLocator()].
 ///
 /// Valid lattice names are:
-/// - Cubic (\f$Z_n\f$) lattice: \c Zn, \c Cubic, or \c 0
-/// - An-star (\f$A_n^*\f$) lattice: \c Ans, \c An-star, or \c 1
+/// - Cubic (\f$Z_n\f$) lattice: \c Zn or \c Cubic
+/// - An-star (\f$A_n^*\f$) lattice: \c Ans or \c An-star
 ///
 int XLALSetTilingLatticeAndMetric(
   LatticeTiling *tiling,		///< [in] Lattice tiling

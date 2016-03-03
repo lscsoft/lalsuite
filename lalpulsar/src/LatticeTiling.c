@@ -883,13 +883,9 @@ int XLALSetTilingLatticeAndMetric(
   }
 
   // Parse name of lattice to generate tiling with
-  if (XLALStringCaseCompare(lattice_name, "Zn") == 0 ||
-      XLALStringCaseCompare(lattice_name, "Cubic") == 0 ||
-      XLALStringCaseCompare(lattice_name, "0") == 0) {
+  if (XLALStringCaseCompare(lattice_name, "Zn") == 0 || XLALStringCaseCompare(lattice_name, "Cubic") == 0) {
     tiling->lattice = LT_LATTICE_CUBIC;
-  } else if (XLALStringCaseCompare(lattice_name, "Ans") == 0 ||
-             XLALStringCaseCompare(lattice_name, "An-star") == 0 ||
-             XLALStringCaseCompare(lattice_name, "1") == 0) {
+  } else if (XLALStringCaseCompare(lattice_name, "Ans") == 0 || XLALStringCaseCompare(lattice_name, "An-star") == 0) {
     tiling->lattice = LT_LATTICE_ANSTAR;
   } else {
     XLAL_ERROR(XLAL_EINVAL, "Invalid lattice name '%s'", lattice_name);
