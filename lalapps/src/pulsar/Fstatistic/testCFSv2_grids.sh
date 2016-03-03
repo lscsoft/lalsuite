@@ -246,8 +246,9 @@ if [ $? -ne 0 ]; then
     echo "Error.. something failed when running '$cmdline' ..."
     exit 1
 fi
-ntemplates_ref=`grep -v '^%' ./testCFSv2_grid8.dat | wc -l`
-echo "Compare template counts (gridType=8): $ntemplates vs $ntemplates_ref"
+ntemplates=`echo X$ntemplates | sed 's/[^0123456789]//g'`
+ntemplates_ref=`grep -v '^%' ./testCFSv2_grid8.dat | wc -l | sed 's/[^0123456789]//g'`
+echo "Compare template counts (gridType=8): '$ntemplates' vs '$ntemplates_ref'"
 if [ "X$ntemplates" != "X$ntemplates_ref" ]; then
     echo "OUCH... template counts differ. Something might be wrong..."
     exit 2
@@ -263,8 +264,9 @@ if [ $? -ne 0 ]; then
     echo "Error.. something failed when running '$cmdline' ..."
     exit 1
 fi
-ntemplates_ref=`grep -v '^%' ./testCFSv2_grid9.dat | wc -l`
-echo "Compare template counts (gridType=9): $ntemplates vs $ntemplates_ref"
+ntemplates=`echo X$ntemplates | sed 's/[^0123456789]//g'`
+ntemplates_ref=`grep -v '^%' ./testCFSv2_grid9.dat | wc -l | sed 's/[^0123456789]//g'`
+echo "Compare template counts (gridType=9): '$ntemplates' vs '$ntemplates_ref'"
 if [ "X$ntemplates" != "X$ntemplates_ref" ]; then
     echo "OUCH... template counts differ. Something might be wrong..."
     exit 2
