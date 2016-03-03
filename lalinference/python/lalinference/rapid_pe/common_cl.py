@@ -102,7 +102,7 @@ def add_datasource_params(optp):
 def add_output_params(optp):
     optp.add_option("-o", "--output-file", help="Save result to this file.")
     optp.add_option("-S", "--save-samples", type=int, default=0, help="Save this number of sample points to output-file. Requires --output-file to be defined.")
-    optp.add_option("-L", "--save-deltalnL", type=float, default=float("Inf"), help="Threshold on deltalnL for points preserved in output file.  Requires --output-file to be defined")
+    optp.add_option("-L", "--save-deltalnL", type=float, default=None, help="Threshold on deltalnL for points preserved in output file.  Requires --output-file to be defined")
     optp.add_option("-P", "--save-P", type=float,default=0, help="Threshold on cumulative probability for points preserved in output file.  Requires --output-file to be defined")
     return optp
 
