@@ -9,7 +9,9 @@ bin_PROGRAMS = \
 	lalapps_ComputeFstatMCUpperLimit \
 	lalapps_synthesizeBstatMC \
 	lalapps_synthesizeTransientStats \
-	lalapps_synthesizeLVStats
+	lalapps_synthesizeLVStats \
+	lalapps_LatticeTilingCount \
+	$(END_OF_LIST)
 
 EXTRA_PROGRAMS = \
 	lalapps_CFSv3 \
@@ -44,6 +46,8 @@ lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c
 
 lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c
+
+lalapps_LatticeTilingCount_SOURCES = LatticeTilingCount.c
 
 lalapps_CFSv3_SOURCES = CFSv3.c
 

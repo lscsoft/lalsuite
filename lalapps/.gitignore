@@ -165,6 +165,7 @@ src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
 src/pulsar/Fstatistic/lalapps_ComputeFstatMCUpperLimit
 src/pulsar/Fstatistic/lalapps_ComputeFstatistic_v2
+src/pulsar/Fstatistic/lalapps_LatticeTilingCount
 src/pulsar/Fstatistic/lalapps_PredictFstat
 src/pulsar/Fstatistic/lalapps_SemiAnalyticF
 src/pulsar/Fstatistic/lalapps_compareFstats
