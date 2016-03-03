@@ -160,10 +160,11 @@ def factored_log_likelihood(extr_params, rholms_intp, crossTerms, Lmax):
     lnL = 0.
     for det in detectors:
         CT = crossTerms[det]
-        F = complex_antenna_factor(det, RA, DEC, psi, tref)
 
         # This is the GPS time at the detector
         t_det = compute_arrival_time_at_detector(det, RA, DEC, tref)
+        F = complex_antenna_factor(det, RA, DEC, psi, t_det)
+
         det_rholms = {}  # rholms evaluated at time at detector
         for key in rholms_intp[det]:
             func = rholms_intp[det][key]
