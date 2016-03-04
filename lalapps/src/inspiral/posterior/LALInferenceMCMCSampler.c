@@ -260,118 +260,133 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
     // iterate:
     while (!runComplete) {
-        #pragma omp parallel for private(thread)
-        for (t = 0; t < n_local_threads; t++) {
-            FILE *outfile = NULL;
-            char outfilename[256];
-            struct timeval tv;
-            REAL8 timestamp=-1.0;
+        #pragma omp parallel private(thread)
+        {
+            #pragma omp for nowait
+            for (t = 0; t < n_local_threads; t++) {
+                FILE *outfile = NULL;
+                char outfilename[256];
+                struct timeval tv;
+                REAL8 timestamp=-1.0;
 
-            thread = runState->threads[t];
+                thread = runState->threads[t];
 
-            /* Increment iteration counter */
-            thread->step += 1;
+                /* Increment iteration counter */
+                thread->step += 1;
 
-            INT4 adapting = LALInferenceGetINT4Variable(thread->proposalArgs, "adapting");
+                INT4 adapting = LALInferenceGetINT4Variable(thread->proposalArgs, "adapting");
 
-            if (!no_adapt)
-                LALInferenceAdaptation(thread);
+                if (!no_adapt)
+                    LALInferenceAdaptation(thread);
 
-            //ACL calculation
-            INT4 iEff = 0;
-            if (thread->step % (100*Nskip) == 0) {
-                if (adapting)
-                    iEff = 0;
-                else {
-                    iEff = LALInferenceComputeEffectiveSampleSize(thread);
-                    if (verbose && thread->temperature == 1.)
-                        printf("Cold thread has collected %i samples.\n", iEff);
+                //ACL calculation
+                INT4 iEff = 0;
+                if (thread->step % (100*Nskip) == 0) {
+                    if (adapting)
+                        iEff = 0;
+                    else {
+                        iEff = LALInferenceComputeEffectiveSampleSize(thread);
+                        if (verbose && thread->temperature == 1.)
+                            printf("Cold thread has collected %i samples.\n", iEff);
+                    }
+                }
+
+                if (MPIrank == 0 && t == 0 && iEff > Neff) {
+                    fprintf(stdout,"Thread %i has %i effective samples. Stopping...\n", MPIrank, iEff);
+                    runComplete = 1;          // Sampling is done!
+                }
+
+                mcmc_step(runState, thread); //evolve the chain at temperature ladder[t]
+
+                if (propVerbose)
+                    LALInferenceTrackProposalAcceptance(thread);
+
+                if ((thread->step % Nskip) == 0) {
+                    /* Update clustered-KDE proposal every time the buffer is expanded */
+                    if (LALInferenceGetProcParamVal(runState->commandLine, "--proposal-kde")
+                        && (iEff > kde_update_start)
+                        && (((iEff - last_kde_update[t]) > kde_update_interval[t]) ||
+                          ((last_kde_update[t] - iEff) > kde_update_interval[t]))) {
+                        LALInferenceSetupClusteredKDEProposalFromDEBuffer(thread);
+
+                        /* Update 5 times each decade.  This keeps hot chains (with lower ACLs) under control */
+                        kde_update_interval[t] = 2 * ((INT4) pow(10.0, floor(log10((REAL8) iEff))));
+
+                        last_kde_update[t] = iEff;
+                    }
+
+                    if (diffEvo && (thread->step % thread->differentialPointsSkip == 0))
+                        accumulateDifferentialEvolutionSample(thread, de_buffer_limit);
+
+                    if (benchmark) {
+                        gettimeofday(&tv, NULL);
+                        timestamp = tv.tv_sec + tv.tv_usec/1E6 - timestamp_epoch;
+                    }
+
+                    LALInferenceSaveSample(thread, resumeoutputs[t]);
+                    LALInferencePrintMCMCSample(thread, runState->data, thread->step, timestamp, threadoutputs[t]);
+
+                    if (adaptVerbose && !no_adapt) {
+                        sprintf(outfilename, "PTMCMC.statistics.%u.%2.2d",
+                                randomseed, n_local_threads*MPIrank+t);
+                        outfile = fopen(outfilename, "a");
+                        fprintf(outfile, "%d\t", thread->step);
+                        LALInferencePrintAdaptationSettings(outfile, thread);
+                        fclose(outfile);
+                    }
+
+                    if (propVerbose){
+                        sprintf(outfilename, "PTMCMC.propstats.%u.%2.2d", randomseed,
+                                n_local_threads*MPIrank+t);
+                        outfile = fopen(outfilename, "a");
+                        fprintf(outfile, "%d\t", thread->step);
+                        LALInferencePrintProposalStats(outfile, thread->cycle);
+                        fclose(outfile);
+                    }
+
+                    if (propTrack) {
+                        REAL8 logProposalRatio = LALInferenceGetREAL8Variable(thread->proposalArgs, "logProposalRatio");
+                        sprintf(outfilename, "PTMCMC.proptrack.%u.%2.2d", randomseed,
+                                n_local_threads*MPIrank+t);
+                        outfile = fopen(outfilename, "w");
+                        fprintf(outfile, "%d\t", thread->step);
+                        LALInferencePrintProposalTracking(outfile, thread->cycle, thread->preProposalParams, thread->proposedParams, logProposalRatio, thread->accepted);
+                        fclose(outfile);
+                    }
                 }
             }
 
-            if (MPIrank == 0 && t == 0 && iEff > Neff) {
-                fprintf(stdout,"Thread %i has %i effective samples. Stopping...\n", MPIrank, iEff);
-                runComplete = 1;          // Sampling is done!
-            }
+            if (LALInferenceSwapFuse(runState)) {
+                printf("Waiting to swap...\n");
+                #pragma omp barrier
+                #pragma omp master
+                {
+                    /* Open swap file if going verbose */
+                    verbose_file = NULL;
+                    if (tempVerbose) {
+                        sprintf(verbose_filename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
+                        verbose_file = fopen(verbose_filename, "a");
+                    }
 
-            mcmc_step(runState, thread); //evolve the chain at temperature ladder[t]
+                    /* Excute swap proposal. */
+                    printf("Swapping!\n");
+                    runState->parallelSwap(runState, verbose_file);
+                    printf("Swapped!\n");
 
-            if (propVerbose)
-                LALInferenceTrackProposalAcceptance(thread);
+                    if (tempVerbose)
+                        fclose(verbose_file);
 
-            if ((thread->step % Nskip) == 0) {
-                /* Update clustered-KDE proposal every time the buffer is expanded */
-                if (LALInferenceGetProcParamVal(runState->commandLine, "--proposal-kde")
-                    && (iEff > kde_update_start)
-                    && (((iEff - last_kde_update[t]) > kde_update_interval[t]) ||
-                      ((last_kde_update[t] - iEff) > kde_update_interval[t]))) {
-                    LALInferenceSetupClusteredKDEProposalFromDEBuffer(thread);
+                    /* Check if run should end */
+                    if (runState->threads[0]->step > Niter)
+                        runComplete=1;
 
-                    /* Update 5 times each decade.  This keeps hot chains (with lower ACLs) under control */
-                    kde_update_interval[t] = 2 * ((INT4) pow(10.0, floor(log10((REAL8) iEff))));
-
-                    last_kde_update[t] = iEff;
-                }
-
-                if (diffEvo && (thread->step % thread->differentialPointsSkip == 0))
-                    accumulateDifferentialEvolutionSample(thread, de_buffer_limit);
-
-                if (benchmark) {
-                    gettimeofday(&tv, NULL);
-                    timestamp = tv.tv_sec + tv.tv_usec/1E6 - timestamp_epoch;
-                }
-
-                LALInferenceSaveSample(thread, resumeoutputs[t]);
-                LALInferencePrintMCMCSample(thread, runState->data, thread->step, timestamp, threadoutputs[t]);
-
-                if (adaptVerbose && !no_adapt) {
-                    sprintf(outfilename, "PTMCMC.statistics.%u.%2.2d",
-                            randomseed, n_local_threads*MPIrank+t);
-                    outfile = fopen(outfilename, "a");
-                    fprintf(outfile, "%d\t", thread->step);
-                    LALInferencePrintAdaptationSettings(outfile, thread);
-                    fclose(outfile);
-                }
-
-                if (propVerbose){
-                    sprintf(outfilename, "PTMCMC.propstats.%u.%2.2d", randomseed,
-                            n_local_threads*MPIrank+t);
-                    outfile = fopen(outfilename, "a");
-                    fprintf(outfile, "%d\t", thread->step);
-                    LALInferencePrintProposalStats(outfile, thread->cycle);
-                    fclose(outfile);
-                }
-
-                if (propTrack) {
-                    REAL8 logProposalRatio = LALInferenceGetREAL8Variable(thread->proposalArgs, "logProposalRatio");
-                    sprintf(outfilename, "PTMCMC.proptrack.%u.%2.2d", randomseed,
-                            n_local_threads*MPIrank+t);
-                    outfile = fopen(outfilename, "w");
-                    fprintf(outfile, "%d\t", thread->step);
-                    LALInferencePrintProposalTracking(outfile, thread->cycle, thread->preProposalParams, thread->proposedParams, logProposalRatio, thread->accepted);
-                    fclose(outfile);
+                    /* Broadcast the root's decision on run completion */
+                    printf("Bcasting!\n");
+                    MPI_Bcast(&runComplete, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                    printf("Bcasted!\n");
                 }
             }
         }
-
-        /* Open swap file if going verbose */
-        verbose_file = NULL;
-        if (tempVerbose) {
-            sprintf(verbose_filename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
-            verbose_file = fopen(verbose_filename, "a");
-        }
-
-        /* Excute swap proposal. */
-        runState->parallelSwap(runState, verbose_file);
-
-        if (tempVerbose)
-            fclose(verbose_file);
-
-        if (runState->threads[0]->step > Niter)
-            runComplete=1;
-
-        /* Broadcast the root's decision on run completion */
-        MPI_Bcast(&runComplete, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }// while (!runComplete)
 }
 
@@ -457,21 +472,10 @@ void mcmc_step(LALInferenceRunState *runState, LALInferenceThreadState *thread) 
 //-----------------------------------------
 // Swap routines:
 //-----------------------------------------
-void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile) {
+INT4 LALInferenceSwapFuse(LALInferenceRunState *runState) {
     INT4 MPIrank, MPIsize;
-    MPI_Status MPIstatus;
-    INT4 nPar, adjNPar, n_local_threads, ntemps;
-    INT4 low;
-    INT4 ind, cold_ind, hot_ind;
-    INT4 cold_rank, hot_rank;
-    INT4 swapAccepted;
-    INT4 *cold_inds;
+    INT4 n_local_threads, ntemps;
     INT4 *nsteps_until_swap;
-    REAL8 adjCurrentLikelihood, adjCurrentPrior;
-    REAL8 logThreadSwap, temp_prior, temp_like, cold_temp;
-    LALInferenceThreadState *cold_thread = runState->threads[0];
-    LALInferenceThreadState *hot_thread;
-    LALInferenceVariables *temp_params;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
     MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
@@ -483,10 +487,33 @@ void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile) {
     ntemps = MPIsize*n_local_threads;
     if(*nsteps_until_swap != 0 || ntemps<2) {
         *nsteps_until_swap -= 1;
-        return;
+        return 0;
     } else {
         *nsteps_until_swap = LALInferenceGetINT4Variable(runState->algorithmParams, "tskip");
+        return 1;
     }
+}
+
+void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile) {
+    INT4 MPIrank, MPIsize;
+    MPI_Status MPIstatus;
+    INT4 nPar, adjNPar, n_local_threads, ntemps;
+    INT4 low;
+    INT4 ind, cold_ind, hot_ind;
+    INT4 cold_rank, hot_rank;
+    INT4 swapAccepted;
+    INT4 *cold_inds;
+    REAL8 adjCurrentLikelihood, adjCurrentPrior;
+    REAL8 logThreadSwap, temp_prior, temp_like, cold_temp;
+    LALInferenceThreadState *cold_thread = runState->threads[0];
+    LALInferenceThreadState *hot_thread;
+    LALInferenceVariables *temp_params;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+    MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+
+    n_local_threads = runState->nthreads;
+    ntemps = MPIsize*n_local_threads;
 
     cold_inds = XLALCalloc(ntemps-1, sizeof(INT4));
 
