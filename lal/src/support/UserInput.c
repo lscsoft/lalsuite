@@ -83,7 +83,7 @@ typedef struct tagLALUserVariable {
 
 // ---------- local prototypes ----------
 int XLALRegisterUserVar (const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *helpstr, void *cvar);
-void check_and_mark_as_set ( LALUserVariable *varp );
+void check_and_mark_as_set ( LALUserVariable *ptr );
 
 // ----- define templated registration functions for all supported UVAR_TYPE_ 'UTYPES'
 DEFN_REGISTER_UVAR(BOOLEAN,BOOLEAN);
@@ -318,7 +318,7 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
   INT4 c;
   while ( (c = LALgetopt_long(argc, argv, optstring, long_options, &longindex)) != -1 )
     {
-      XLAL_CHECK (c != '?', XLAL_EINVAL, "Unkown command-line option encountered, see '%s --help' for usage-help\n\n", argv[0] );
+      XLAL_CHECK (c != '?', XLAL_EINVAL, "Unknown command-line option encountered, see '%s --help' for usage-help\n\n", argv[0] );
       if (c != 0) 	// find short-option character
 	{
 	  ptr = &UVAR_vars;
@@ -820,14 +820,14 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
  * set previously and issue a warning if set more than once ...
  */
 void
-check_and_mark_as_set ( LALUserVariable *varp )
+check_and_mark_as_set ( LALUserVariable *ptr )
 {
   // output warning if this variable has been set before ...
-  if ( varp->was_set ) {
-    XLALPrintWarning ( "User-variable '%s' was set more than once!\n", varp->name ? varp->name : "(NULL)" );
+  if ( ptr->was_set ) {
+    XLALPrintWarning ( "User-variable '%s' was set more than once!\n", ptr->name );
   }
 
-  varp->was_set = 1;
+  ptr->was_set = 1;
 
   return;
 } // check_and_mark_as_set()
