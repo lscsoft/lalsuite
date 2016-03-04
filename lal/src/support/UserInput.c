@@ -184,7 +184,7 @@ XLALRegisterUserVar ( const CHAR *name,		/**< name of user-variable to register 
       ptr = ptr->next;
 
       // long-option name taken already?
-      XLAL_CHECK ( (name == NULL) || (ptr->name == NULL) || (strcmp ( name, ptr->name ) != 0), XLAL_EINVAL, "Long-option name '--%s' already taken!\n", name );
+      XLAL_CHECK ( strcmp ( name, ptr->name ) != 0, XLAL_EINVAL, "Long-option name '--%s' already taken!\n", name );
       // short-option character taken already?
       XLAL_CHECK ( (optchar == 0) || (ptr->optchar == 0) || (optchar != ptr->optchar), XLAL_EINVAL, "Short-option '-%c' already taken (by '--%s')!\n", ptr->optchar, ptr->name );
 
@@ -193,11 +193,14 @@ XLALRegisterUserVar ( const CHAR *name,		/**< name of user-variable to register 
   // append new entry at the end
   XLAL_CHECK ( (ptr->next = XLALCalloc (1, sizeof(LALUserVariable))) != NULL, XLAL_ENOMEM );
 
-  // set pointer to newly created entry and fill in values
+  // set pointer to newly created entry
   ptr = ptr->next;
 
+  // fill in entry name, replacing '_' with '-' so
+  // that e.g. uvar->an_option maps to --an-option
   XLALStringReplaceChar( strncpy( ptr->name, name, sizeof(ptr->name) ), '_', '-' );
 
+  // fill in entry values
   ptr->type 	= type;
   ptr->optchar 	= optchar;
   ptr->help 	= helpstr;
@@ -287,9 +290,6 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
   pos = 0;
   while ( (ptr= ptr->next) != NULL)
     {
-      if (ptr->name == NULL) {		/* if no long-option given, ignore */
-	continue;
-      }
       long_options[pos].name 	= ptr->name;
       long_options[pos].has_arg = (ptr->type == UVAR_TYPE_BOOLEAN) ? optional_argument : required_argument;
       long_options[pos].flag = NULL;	// get val returned from LALgetopt_long()
@@ -417,9 +417,6 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
   LALUserVariable *ptr = &UVAR_vars;
   while ( (ptr=ptr->next) != NULL)
     {
-      if (ptr->name == NULL) {	// ignore name-less user-variable
-	continue;
-      }
 
       XLAL_CHECK ( (ptr->type > UVAR_TYPE_START) && (ptr->type < UVAR_TYPE_END), XLAL_EFAILED, "Invalid UVAR_TYPE '%d' outside of [%d,%d]\n", ptr->type, UVAR_TYPE_START+1, UVAR_TYPE_END-1 );
 
@@ -496,13 +493,9 @@ XLALUserVarHelpString ( const CHAR *progname )
 	continue;	// always skip defunct options to hide them completely from help string
       }
 
-      UINT4 len;
       // max variable name length
-      if ( ptr->name != NULL )
-        {
-          len = strlen ( ptr->name );
-          nameFieldLen = (len > nameFieldLen) ? len : nameFieldLen;
-        }
+      UINT4 len = strlen ( ptr->name );
+      nameFieldLen = (len > nameFieldLen) ? len : nameFieldLen;
 
       // max type name length
       len = strlen ( UserVarTypeMap[ptr->type].name );
@@ -554,7 +547,7 @@ XLALUserVarHelpString ( const CHAR *progname )
 
       snprintf ( strbuf, sizeof(strbuf),  fmtStr,
                  optstr,
-                 ptr->name ? ptr->name : "-NONE-",
+                 ptr->name,
                  UserVarTypeMap[ptr->type].name,
                  ptr->help ? ptr->help : "-NONE-",
                  defaultstr
