@@ -93,7 +93,7 @@ typedef struct tagLALUserVariable {
 } LALUserVariable;
 
 // ---------- local prototypes ----------
-int XLALRegisterUserVar (void *cvar, const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *helpstr);
+int XLALRegisterUserVar (void *cvar, const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *help);
 void check_and_mark_as_set ( LALUserVariable *ptr );
 
 // ----- define templated registration functions for all supported UVAR_TYPE_ 'UTYPES'
@@ -191,15 +191,16 @@ XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variabe to link 
                       const CHAR *name,		/**< name of user-variable to register */
                       UserVarType type,		/**< variable type (int,bool,string,real) */
                       CHAR optchar,		/**< optional short-option character */
-                      UserVarCategory category,		/**< sets category to this */
-                      const CHAR *helpstr	/**< help-string explaining this input-variable */
+                      UserVarCategory category,	/**< sets category to this */
+                      const CHAR *help		/**< help-string explaining this input-variable */
                       )
 {
   XLAL_CHECK ( cvar != NULL, XLAL_EINVAL );
   XLAL_CHECK ( name != NULL, XLAL_EINVAL );
   XLAL_CHECK ( strlen(name) < sizeof(UVAR_vars.name), XLAL_EINVAL, "User-variable name '%s' is too long", name );
   XLAL_CHECK ( (category > UVAR_CATEGORY_START) && (category < UVAR_CATEGORY_END), XLAL_EINVAL );
-  XLAL_CHECK ( strlen(helpstr) < sizeof(UVAR_vars.help), XLAL_EINVAL, "User-variable help '%s' is too long", helpstr );
+  XLAL_CHECK ( help != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( strlen(help) < sizeof(UVAR_vars.help), XLAL_EINVAL, "User-variable help '%s' is too long", help );
 
   // find end of uvar-list && check that neither short- nor long-option are taken already
   LALUserVariable *ptr = &UVAR_vars;
@@ -220,10 +221,12 @@ XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variabe to link 
   // set pointer to newly created entry
   ptr = ptr->next;
 
-  // fill in entry name, replacing '_' with '-' so
-  // that e.g. uvar->an_option maps to --an-option
-  XLALStringReplaceChar( strncpy( ptr->name, name, sizeof(ptr->name) ), '_', '-' );
-  strncpy( ptr->help, helpstr, sizeof(ptr->help) );
+  // copy entry name, replacing '_' with '-' so that
+  // e.g. uvar->a_long_option maps to --a-long-option
+  XLALStringReplaceChar( strncpy( ptr->name, name, sizeof(ptr->name) - 1 ), '_', '-' );
+
+  // copy entry help string
+  strncpy( ptr->help, help, sizeof(ptr->help) - 1 );
 
   // fill in entry values
   ptr->type 	= type;
@@ -569,13 +572,7 @@ XLALUserVarHelpString ( const CHAR *progname )
 	strcpy (optstr, "   ");
       }
 
-      snprintf ( strbuf, sizeof(strbuf),  fmtStr,
-                 optstr,
-                 ptr->name,
-                 UserVarTypeMap[ptr->type].name,
-                 ptr->help ? ptr->help : "-NONE-",
-                 defaultstr
-                 );
+      snprintf ( strbuf, sizeof(strbuf), fmtStr, optstr, ptr->name, UserVarTypeMap[ptr->type].name, ptr->help, defaultstr );
       XLAL_LAST_ELEM(strbuf) = 0;
 
       // now append new line to the appropriate helpstring
