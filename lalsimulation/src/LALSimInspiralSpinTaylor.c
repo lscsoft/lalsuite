@@ -3424,8 +3424,8 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
 	 * to put Jhat along z-axis
 	 */
 	ROTATEY(-theta0, LNhx, LNhy, LNhz);
-	ROTATEZ(-theta0, s1hatx, s1haty, s1hatz);
-	ROTATEZ(-theta0, s2hatx, s2haty, s2hatz);
+	ROTATEY(-theta0, s1hatx, s1haty, s1hatz);
+	ROTATEY(-theta0, s2hatx, s2haty, s2hatz);
 
 	/* Rotation 3: Rotate about new z-axis by phiJL to put L at desired
 	 * azimuth about J. Note that is currently in x-z plane towards -x
