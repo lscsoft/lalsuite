@@ -287,12 +287,13 @@ XLALComputeGLtLDenominator ( const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in]
  * either Gaussian noise, a persistent line or a transient line, i.e.
  * \f$\BSGLtL \equiv \frac{P(\data | \text{Signal})}{P(\data | \text{Gauss or Line or transient Line})}\f$.
  *
- * This function returns an approximation of \f$\logten B_\SGLtL = \ln B_\SGLtL \, \logten e\f$,
- * with the general expression for \f$\ln B_\SGLtL\f$ given in Eq.(23) of \cite Keitel2015, while here we compute
+ * This function returns an approximation of \f$\logten \BSGLtL = \ln \BSGLtL \, \logten e\f$,
+ * with the general expression for \f$\ln \BSGLtL\f$ given in Eq.(23) of \cite Keitel2015,
+ * while here we compute only the leading term
  * \f{equation}{
- * \ln \BSGLtL \approx \F - \denommax\,,
+ * \ln \BSGLtL \approx \F - \denommax\,.
  * \f}
- * see the documentation of XLALComputeGLtLDenominator() for definition of \f$\denommax\f$.
+ * See the documentation of XLALComputeGLtLDenominator() for the definition of \f$\denommax\f$.
  *
  */
 REAL4
@@ -321,18 +322,18 @@ XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$2\scF\f
  * \newcommand{\oTSGk}{\coh{o}_{\Transsig/\Gauss}^{\ell}}
  * \f]
  * Compute a semi-coherent transient-line-robust tCW detection statistic \f$\logten \BtSGLtL\f$
- * based on \cite Keitel2015 .
+ * from \cite Keitel2015 .
  *
- * Based on the transient-CW hypothesis as given in Eq.(29), \f$\BtSGLtL\f$ is the BayesFactor for tCW signals vs.
+ * As defined in Eq.(40), \f$\BtSGLtL\f$ is the BayesFactor for tCW signals vs.
  * either Gaussian noise, a persistent line or a transient line, i.e.
  * \f$\BtSGLtL \equiv \frac{P(\data | \text{transient Signal})}{P(\data | \text{Gauss or Line or transient Line})}\f$.
  *
- * This function returns an approximation of \f$\logten B_\SGLtL = \ln B_\SGLtL \, \logten e\f$.
- * While the general expression for \f$\ln B_\SGLtL\f$ would be analoguous to Eq.(39) of \cite Keitel2015 , here we compute
+ * This function returns an approximation of \f$\logten \BtSGLtL = \ln \BtSGLtL \, \logten e\f$,
+ * computing only the leading term
  * \f{equation}{
- * \ln \BtSGLtL \approx \max_{\ell}\cohF^{\ell} + (\Nseg - 1)\cohFtho - \ln \Nseg - \denommax\,.
+ * \ln \BtSGLtL \approx \max_{\ell}\cohF^{\ell} + (\Nseg - 1)\cohFtho - \ln \Nseg - \denommax\,,
  * \f}
- * using the maximum multi-detector, single-segment F-stat value \f$\max\cohF^{\ell}\f$ in the numerator, and
+ * using the maximum multi-detector, single-segment F-stat value \f$\max\cohF^{\ell}\f$ in the numerator,
  * and the maximum \f$\denommax\f$ of the set of denominator exponents, computed in XLALComputeGLtLDenominator().
  *
  * NOTE: This implementation also assumes equal prior transient-signal odds for all segments.
@@ -372,18 +373,19 @@ XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] maximum \f$\max\limits_{
  * Compute the semi-coherent transient-line-robust CW+tCW detection statistic \f$\logten \BStSGLtL\f$
  * from \cite Keitel2015 .
  *
- * As defined in Eq.(34), \f$\BStSGLtL\f$ is the BayesFactor for either persistent CW or transient tCW signals vs.
+ * As defined in Eq.(35), \f$\BStSGLtL\f$ is the BayesFactor for either persistent CW or transient tCW signals vs.
  * either Gaussian noise, a persistent line or a transient line, i.e.
  * \f$\BStSGLtL \equiv \frac{P(\data | \text{Signal or transient Signal})}{P(\data | \text{Gauss or Line or transient Line})}\f$.
  *
- * This function returns an approximation of \f$\logten B_\StSGLtL = \ln B_\StSGLtL \, \logten e\f$,
- * with the general expression for \f$\ln B_\StSGLtL\f$ given in Eq.(35) of \cite Keitel2015 . Here we compute
+ * This function returns an approximation of \f$\logten \BStSGLtL = \ln \BStSGLtL \, \logten e\f$,
+ * with the general expression for \f$\ln \BStSGLtL\f$ given in Eq.(36) of \cite Keitel2015 .
+ * Here we compute only the leading term
  * \f{equation}{
  * \ln \BStSGLtL \approx   \numermax + \ln \left( 1 + e^{\numermin-\numermax} \right) - \denommax \,,
  * \f}
  * with the \f$\denommax\f$ terms defined as in XLALComputeGLtLDenominator() and
  * \f$\numermax = \max \left\{  \scF, \max\limits_{\ell}\cohF^\ell + \cohFtho (\Nseg-1) - \ln \Nseg\right\}\f$,
- * where we have assumed prior equal odds between persistent and transient signals (and equal odds for all segments).
+ * where we have assumed prior equal odds between persistent and transient signals and equal odds for all segments.
  *
  *
  */
