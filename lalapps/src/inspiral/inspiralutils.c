@@ -1338,6 +1338,10 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   REAL8 plainTemplateReal,  plainTemplateImag,templateReal,templateImag;
   REAL8 newRe, newIm,temp;
   REAL8 this_snr=0.0;
+  if ( psd )
+  {
+    psd = XLALInterpolatePSD(psd,  deltaF);
+  } 
   for (j=lower; j<=(UINT4) upper; ++j)
   {
     /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
