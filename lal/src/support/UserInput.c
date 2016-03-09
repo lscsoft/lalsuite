@@ -59,8 +59,9 @@ typedef enum {
   UVAR_TYPE_START=0, 		// internal start marker for range checking
 
   UVAR_TYPE_BOOLEAN, 		// boolean
-  UVAR_TYPE_INT4,    		// integer
-  UVAR_TYPE_REAL8,   		// float
+  UVAR_TYPE_INT4,    		// 4-byte integer
+  UVAR_TYPE_INT8,    		// 8-byte integer
+  UVAR_TYPE_REAL8,   		// 8-byte float
   UVAR_TYPE_EPOCH,   		// time 'epoch', specified in either GPS or MJD(TT) format, translated into GPS
   UVAR_TYPE_RAJ,     		// sky equatorial longitude (aka right-ascencion or RA), in either radians or hours:minutes:seconds format, translated into radians
   UVAR_TYPE_DECJ,    		// sky equatorial latitude (aka declination or DEC), in either radians or degrees:minutes:seconds format, translated into radians
@@ -99,6 +100,7 @@ void check_and_mark_as_set ( LALUserVariable *ptr );
 // ----- define templated registration functions for all supported UVAR_TYPE_ 'UTYPES'
 DEFN_REGISTER_UVAR(BOOLEAN,BOOLEAN);
 DEFN_REGISTER_UVAR(INT4,INT4);
+DEFN_REGISTER_UVAR(INT8,INT8);
 DEFN_REGISTER_UVAR(REAL8,REAL8);
 DEFN_REGISTER_UVAR(RAJ,REAL8);
 DEFN_REGISTER_UVAR(DECJ,REAL8);
@@ -151,6 +153,7 @@ static const struct
   // REGULAR_MAP_ENTRY ( \<UTYPE\>, XLALDestroy\<UTYPE\> ),
   REGULAR_MAP_ENTRY ( BOOLEAN, NULL ),
   REGULAR_MAP_ENTRY ( INT4, NULL ),
+  REGULAR_MAP_ENTRY ( INT8, NULL ),
   REGULAR_MAP_ENTRY ( REAL8, NULL ),
   REGULAR_MAP_ENTRY ( STRING, XLALFree ),
   REGULAR_MAP_ENTRY ( EPOCH, NULL ),
