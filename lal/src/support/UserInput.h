@@ -204,7 +204,7 @@ CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
  * \name Convenience macros for checking whether a user input variable was set
  */
 /*@{*/
-#define UVAR_SET(n)				(XLALUserVarWasSet(&(uvar-> n)))
+#define UVAR_SET(n)				(XLALUserVarWasSet(&(uvar-> n)) ? 1 : 0)
 #define UVAR_SET_EMSG(adv,n)			"'"#n"' must "adv"be specified"
 /*@}*/
 
