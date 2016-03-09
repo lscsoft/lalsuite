@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
   }
 
   // Check user input
-  XLAL_CHECK_MAIN(UVAR_ONESET2(square, age_braking), XLAL_EINVAL, UVAR_ONESET2_EMSG("must", square, age_braking));
+  XLAL_CHECK_MAIN(UVAR_ONESET2(square, age_braking), XLAL_EINVAL, UVAR_ONESET2_EMSG("", square, age_braking));
 
   LatticeTiling *tiling = NULL;
   if (UVAR_SET(square)) {

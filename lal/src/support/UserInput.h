@@ -205,7 +205,7 @@ CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
  */
 /*@{*/
 #define UVAR_SET(n)				(XLALUserVarWasSet(&(uvar-> n)))
-#define UVAR_SET_EMSG(V,n)			"'"#n"' must "V" specified"
+#define UVAR_SET_EMSG(adv,n)			"'"#n"' must "adv"be specified"
 /*@}*/
 
 /**
@@ -213,13 +213,13 @@ CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
  */
 /*@{*/
 #define UVAR_ALLSET2(n1,n2)			(UVAR_SET(n1) && UVAR_SET(n2))
-#define UVAR_ALLSET2_EMSG(V,n1,n2)		"Both '"#n1"' and '"#n2"' must "V" specified"
+#define UVAR_ALLSET2_EMSG(adv,n1,n2)		"Both '"#n1"' and '"#n2"' must "adv"be specified"
 #define UVAR_ALLSET3(n1,n2,n3)			(UVAR_ALLSET2(n1,n2) && UVAR_SET(n3))
-#define UVAR_ALLSET3_EMSG(V,n1,n2,n3)		"All of '"#n1"', '"#n2"' and '"#n3"' must "V" specified"
+#define UVAR_ALLSET3_EMSG(adv,n1,n2,n3)		"All of '"#n1"', '"#n2"' and '"#n3"' must "adv"be specified"
 #define UVAR_ALLSET4(n1,n2,n3,n4)		(UVAR_ALLSET3(n1,n2,n3) && UVAR_SET(n4))
-#define UVAR_ALLSET4_EMSG(V,n1,n2,n3,n4)	"All of '"#n1"', '"#n2"', '"#n3"' and '"#n4"' must "V" specified"
+#define UVAR_ALLSET4_EMSG(adv,n1,n2,n3,n4)	"All of '"#n1"', '"#n2"', '"#n3"' and '"#n4"' must "adv"be specified"
 #define UVAR_ALLSET5(n1,n2,n3,n4,n5)		(UVAR_ALLSET4(n1,n2,n3,n4) && UVAR_SET(n5))
-#define UVAR_ALLSET5_EMSG(V,n1,n2,n3,n4,n5)	"All of '"#n1"', '"#n2"', '"#n3"', '"#n4"' and '"#n5"' must "V" specified"
+#define UVAR_ALLSET5_EMSG(adv,n1,n2,n3,n4,n5)	"All of '"#n1"', '"#n2"', '"#n3"', '"#n4"' and '"#n5"' must "adv"be specified"
 /*@}*/
 
 /**
@@ -227,13 +227,13 @@ CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
  */
 /*@{*/
 #define UVAR_ANYSET2(n1,n2)			(UVAR_SET(n1) || UVAR_SET(n2))
-#define UVAR_ANYSET2_EMSG(V,n1,n2)		"Either '"#n1"' or '"#n2"' must "V" specified"
+#define UVAR_ANYSET2_EMSG(adv,n1,n2)		"Either '"#n1"' or '"#n2"' must "adv"be specified"
 #define UVAR_ANYSET3(n1,n2,n3)			(UVAR_ANYSET2(n1,n2) || UVAR_SET(n3))
-#define UVAR_ANYSET3_EMSG(V,n1,n2,n3)		"At least one of '"#n1"', '"#n2"' or '"#n3"' must "V" specified"
+#define UVAR_ANYSET3_EMSG(adv,n1,n2,n3)		"At least one of '"#n1"', '"#n2"' or '"#n3"' must "adv"be specified"
 #define UVAR_ANYSET4(n1,n2,n3,n4)		(UVAR_ANYSET3(n1,n2,n3) || UVAR_SET(n4))
-#define UVAR_ANYSET4_EMSG(V,n1,n2,n3,n4)	"At least one of '"#n1"', '"#n2"', '"#n3"' or '"#n4"' must "V" specified"
+#define UVAR_ANYSET4_EMSG(adv,n1,n2,n3,n4)	"At least one of '"#n1"', '"#n2"', '"#n3"' or '"#n4"' must "adv"be specified"
 #define UVAR_ANYSET5(n1,n2,n3,n4,n5)		(UVAR_ANYSET4(n1,n2,n3,n4) || UVAR_SET(n5))
-#define UVAR_ANYSET5_EMSG(V,n1,n2,n3,n4,n5)	"At least one of '"#n1"', '"#n2"', '"#n3"', '"#n4"' or '"#n5"' must "V" specified"
+#define UVAR_ANYSET5_EMSG(adv,n1,n2,n3,n4,n5)	"At least one of '"#n1"', '"#n2"', '"#n3"', '"#n4"' or '"#n5"' must "adv"be specified"
 /*@}*/
 
 /**
@@ -241,13 +241,13 @@ CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
  */
 /*@{*/
 #define UVAR_ONESET2(n1,n2)			(UVAR_SET(n1) + UVAR_SET(n2) == 1)
-#define UVAR_ONESET2_EMSG(V,n1,n2)		"Exactly one of '"#n1"' or '"#n2"' must "V" specified"
+#define UVAR_ONESET2_EMSG(adv,n1,n2)		"Exactly one of '"#n1"' or '"#n2"' must "adv"be specified"
 #define UVAR_ONESET3(n1,n2,n3)			(UVAR_ONESET2(n1,n2) + UVAR_SET(n3) == 1)
-#define UVAR_ONESET3_EMSG(V,n1,n2,n3)		"Exactly one of '"#n1"', '"#n2"' or '"#n3"' must "V" specified"
+#define UVAR_ONESET3_EMSG(adv,n1,n2,n3)		"Exactly one of '"#n1"', '"#n2"' or '"#n3"' must "adv"be specified"
 #define UVAR_ONESET4(n1,n2,n3,n4)		(UVAR_ONESET3(n1,n2,n3) + UVAR_SET(n4) == 1)
-#define UVAR_ONESET4_EMSG(V,n1,n2,n3,n4)	"Exactly one of '"#n1"', '"#n2"', '"#n3"' or '"#n4"' must "V" specified"
+#define UVAR_ONESET4_EMSG(adv,n1,n2,n3,n4)	"Exactly one of '"#n1"', '"#n2"', '"#n3"' or '"#n4"' must "adv"be specified"
 #define UVAR_ONESET5(n1,n2,n3,n4,n5)		(UVAR_ONESET4(n1,n2,n3,n4) + UVAR_SET(n5) == 1)
-#define UVAR_ONESET5_EMSG(V,n1,n2,n3,n4,n5)	"Exactly one of '"#n1"', '"#n2"', '"#n3"', '"#n4"' or '"#n5"' must "V" specified"
+#define UVAR_ONESET5_EMSG(adv,n1,n2,n3,n4,n5)	"Exactly one of '"#n1"', '"#n2"', '"#n3"', '"#n4"' or '"#n5"' must "adv"be specified"
 /*@}*/
 
 // declare type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking!
