@@ -52,6 +52,8 @@ test/DopplerScanTest
 test/DriveHoughTest
 test/DriveNDHoughTest
 test/ExtrapolatePulsarSpinsTest
+test/FITSFileIOTest
+test/FITSFileIOTest.fits
 test/FileIOTest
 test/FitToPulsarTest
 test/FlatMeshTest

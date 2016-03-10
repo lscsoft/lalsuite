@@ -9,6 +9,7 @@ test_programs += DopplerScanTest
 test_programs += DriveHoughTest
 test_programs += DriveNDHoughTest
 test_programs += ExtrapolatePulsarSpinsTest
+test_programs += FITSFileIOTest
 test_programs += FileIOTest
 test_programs += FitToPulsarTest
 test_programs += FlatMeshTest
@@ -69,15 +70,16 @@ UniversalDopplerMetricTest_SOURCES = \
 	$(END_OF_LIST)
 
 MOSTLYCLEANFILES = \
+	FITSFileIOTest.fits \
 	H-*_H1*.sft \
 	LFT_C8.dat \
 	LFT_R4.dat \
 	OutHistogram.asc \
 	OutHough.asc \
-	TS_R4.dat \
-	outputsft*.sft \
 	TEMPOcomparison.par \
 	TEMPOcomparison.tim \
+	TS_R4.dat \
+	outputsft*.sft \
 	$(END_OF_LIST)
 
 pkgdata_DATA = \
