@@ -68,7 +68,7 @@ LALAPPS_ENABLE_BAMBI
 LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
-LALAPPS_ENABLE_CFITSIO
+LALSUITE_ENABLE_CFITSIO
 LALAPPS_ENABLE_PSS
 LALAPPS_ENABLE_GDS
 
@@ -266,25 +266,8 @@ if test "$lalxml" = "true"; then
                    [CPPFLAGS="$lal_pre_libxml2_CPPFLAGS"])
 fi
 
-# check for libcfitsio
-if test "${cfitsio}" = "true"; then
-  PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
-  lal_pre_cfitsio_libs="$LIBS"
-  LALSUITE_ADD_FLAGS([C],[],[${CFITSIO_LIBS}])
-  AC_SEARCH_LIBS([ffopen],[cfitsio],,
-                 [cfitsio="false"]
-                 [LIBS="$lal_pre_cfitsio_LIBS"])
-fi
-
-# check for libcfitsio headers
-if test "${cfitsio}" = "true"; then
-  lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_FLAGS([C],[${CFITSIO_CFLAGS}],[])
-  AC_CHECK_HEADERS([fitsio.h],,
-                   [cfitsio="false"]
-                   [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
-fi
-LALSUITE_ENABLE_MODULE([CFITSIO])
+# check for cfitsio
+LALSUITE_USE_CFITSIO
 
 # check for pss
 if test "${pss}" = "true"; then
