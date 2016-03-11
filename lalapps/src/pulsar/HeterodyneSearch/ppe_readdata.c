@@ -562,6 +562,8 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
             fprintf(stderr, "Error... unrecognised number of values in first line of data file %s.\n", datafile);
             exit(3);
           }
+          /* ignore excessively large spurious values as they can screw things up */
+          if ( fabs(dataValsRe) > 1e-18 || fabs(dataValsIm) > 1e-18 ){ continue; }
         }
         j++;
 
