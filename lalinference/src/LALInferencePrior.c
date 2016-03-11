@@ -50,6 +50,7 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
     ----------------------------------------------\n\
     --- Prior Arguments --------------------------\n\
     ----------------------------------------------\n\
+    (--distance-prior-uniform)       Impose uniform prior on distance and not volume (False)\n\
     (--malmquistprior)               Impose selection effects on the prior (False)\n\
     (--malmquist-loudest-snr)        Threshold SNR in the loudest detector (0.0)\n\
     (--malmquist-second-loudest-snr) Threshold SNR in the second loudest detector (5.0)\n\
@@ -83,7 +84,7 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
 
     }
     
-    /* Optional uniform distance */
+    /* Optional uniform prior on distance */
     INT4 uniform_distance = 0;
     if (LALInferenceGetProcParamVal(commandLine, "--distance-prior-uniform"))
       uniform_distance = 1;
