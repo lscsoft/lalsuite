@@ -27,20 +27,20 @@ AC_CONFIG_FILES([\
   src/pulsar/CreateEphemeris/Makefile \
   src/pulsar/Fstatistic/Makefile \
   src/pulsar/GCT/Makefile \
+  src/pulsar/HeterodyneSearch/Makefile \
   src/pulsar/Injections/Makefile \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/Makefile \
   src/pulsar/SFTReferenceLibrary/Makefile \
   src/pulsar/SidebandSearch/Makefile \
-  src/pulsar/HeterodyneSearch/Makefile \
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \
+  src/pulsar/Xray/Makefile \
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
   src/pulsar/hough/Makefile \
   src/pulsar/hough/src/Makefile \
   src/pulsar/hough/src2/Makefile \
-  src/pulsar/Xray/Makefile \
   src/ring/Makefile \
   src/stochastic/Makefile \
   src/string/Makefile \
