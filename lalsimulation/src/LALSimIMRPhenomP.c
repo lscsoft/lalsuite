@@ -77,6 +77,10 @@ const double sqrt_6 = 2.44948974278317788;
  *
  * Each IMRPhenomP version inherits its range of validity
  * over the parameter space from the respective aligned-spin waveform.
+ *
+ * @attention A time-domain implementation of IMRPhenomPv2 is available in XLALChooseTDWaveform(). 
+ * This is based on a straight-forward inverse Fourier transformation via XLALSimInspiralTDfromFD(),
+ * but it was not included in the IMRPhenomPv2 review. Use it at your own risk. 
  */
 
 /**
