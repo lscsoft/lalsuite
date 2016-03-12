@@ -21,6 +21,7 @@
 #define _LALHASHTBL_H
 
 #include <lal/LALStdlib.h>
+#include <lal/LALHashFunc.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,14 +64,6 @@ typedef int ( *LALHashTblCmpFcn )( const void *x, const void *y );
  * Function which compares hash table elements <tt>x</tt> and <tt>y</tt>, with a parameter \c param
  */
 typedef int ( *LALHashTblCmpParamFcn )( void *param, const void *x, const void *y );
-
-/**
- * Compute a hash value for the given arbitrary data
- */
-UINT8 XLALComputeHash(
-  const void *data,		/**< [in] Arbitrary data to hash */
-  const size_t len		/**< [in] Length of arbitrary data */
-  );
 
 /**
  * Create a hash table

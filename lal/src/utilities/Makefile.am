@@ -7,6 +7,7 @@ pkginclude_HEADERS = \
 	Integrate.h \
 	Interpolate.h \
 	LALAdaptiveRungeKutta4.h \
+	LALHashFunc.h \
 	LALHashTbl.h \
 	LALHeap.h \
 	LALRunningMedian.h \
@@ -31,6 +32,7 @@ libutilities_la_SOURCES = \
 	LALAdaptiveRungeKutta4.c \
 	LALHashTbl.c \
 	LALHeap.c \
+	LALPearsonHash.c \
 	LALRunningMedian.c \
 	MatrixOps.c \
 	MersenneRandom.c \
