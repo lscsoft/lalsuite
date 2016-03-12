@@ -30,6 +30,7 @@ libutilities_la_SOURCES = \
 	Integrate.c \
 	Interpolate.c \
 	LALAdaptiveRungeKutta4.c \
+	LALCityHash.c \
 	LALHashTbl.c \
 	LALHeap.c \
 	LALPearsonHash.c \

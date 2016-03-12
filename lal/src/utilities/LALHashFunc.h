@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2016 John Veitch
  *  Copyright (C) 2016 Karl Wette
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -29,8 +30,13 @@ extern "C" {
 /**
  * \defgroup LALHashFunc_h Header LALHashFunc.h
  * \ingroup lal_utilities
- * \author Karl Wette
+ * \authors John Veitch, Karl Wette
  * \brief Implementations of various hash functions
+ */
+/*@{*/
+
+/**
+ * \name Pearson hash function
  */
 /*@{*/
 
@@ -44,6 +50,42 @@ int XLALPearsonHash(
   const void *data,		/**< [in] Arbitrary data to hash */
   const size_t data_len		/**< [in] Length of arbitrary data */
 );
+
+/*@}*/
+
+/**
+ * \name CityHash hash functions
+ */
+/*@{*/
+
+typedef struct tagUINT16 {UINT8 first,second;} UINT16;
+
+/** Hash function for a byte array. */
+UINT8 XLALCityHash64(const char *buf, size_t len);
+
+/** Hash function for a byte array.  For convenience, a 64-bit seed is also
+ * hashed into the result.
+ */
+UINT8 XLALCityHash64WithSeed(const char *buf, size_t len, UINT8 seed);
+
+/** Hash function for a byte array.  For convenience, two seeds are also
+ * hashed into the result.
+ */
+UINT8 XLALCityHash64WithSeeds(const char *buf, size_t len,
+                           UINT8 seed0, UINT8 seed1);
+
+/** Hash function for a byte array. */
+UINT16 XLALCityHash128(const char *s, size_t len);
+
+/** Hash function for a byte array.  For convenience, a 128-bit seed is also
+ * hashed into the result.
+ */
+UINT16 XLALCityHash128WithSeed(const char *s, size_t len, UINT16 seed);
+
+/** Hash function for a byte array.  Most useful in 32-bit binaries. */
+UINT4 XLALCityHash32(const char *buf, size_t len);
+
+/*@}*/
 
 /*@}*/
 
