@@ -36,6 +36,7 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_interp.h>
+#include <lal/LALHashFunc.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -45,6 +46,24 @@
 
 #define COL_MAX 128
 #define STR_MAX 2048
+
+typedef struct taghash_elem
+{
+  const char *name;
+  LALInferenceVariableItem *itemPtr;
+} hash_elem;
+
+static void *new_elem( const char *name, LALInferenceVariableItem *itemPtr )
+{
+  hash_elem e = { .name=name, .itemPtr=itemPtr };
+  return memcpy( XLALMalloc( sizeof( e ) ), &e, sizeof( e ) );
+};
+
+static void del_elem(void *elem)
+{
+  XLALFree(elem);
+}
+
 
 size_t LALInferenceTypeSize[] = {sizeof(INT4),
                                    sizeof(INT8),
@@ -109,14 +128,6 @@ static INT4 checkCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *series);
 static INT4 matrix_equal(gsl_matrix *a, gsl_matrix *b);
 static LALInferenceVariableItem *LALInferenceGetItemSlow(const LALInferenceVariables *vars,const char *name);
 
-static UINT4 hash(const char *name)
-{
-  UINT4 hashval=0;
-  for(;*name!='\0';name++)
-    hashval = *name + 31 *hashval;
-  return (hashval % LALINFERENCE_HASHTABLE_SIZE);
-}
-
 /* This replaces gsl_matrix_equal which is only available with gsl 1.15+ */
 /* Return 1 if matrices are equal, 0 otherwise */
 static INT4 matrix_equal(gsl_matrix *a, gsl_matrix *b)
@@ -136,17 +147,18 @@ LALInferenceVariableItem *LALInferenceGetItem(const LALInferenceVariables *vars,
 /* (this function is only to be used internally) */
 /* Returns pointer to item for given item name.  */
 {
-  LALInferenceVariableItem *item=NULL;
+  hash_elem tmp; /* Used for hash table lookup */
+  const hash_elem *match=NULL;
   if(vars==NULL) return NULL;
   if(vars->dimension==0) return NULL;
-  item=vars->hash_table[hash(name)];
-  if(!item) return LALInferenceGetItemSlow(vars,name); /* Not found in the hash table but need to check
-  because collision with an item previous Removed() will put a NULL in the hash table */
-
-  if(strcmp(item->name,name)) /* Check for hash collision */
-    return LALInferenceGetItemSlow(vars,name);
-  else
-    return item;
+  if(!vars->hash_table) return LALInferenceGetItemSlow(vars,name);
+  tmp.name=name;
+  XLALHashTblFind(vars->hash_table,		/**< [in] Pointer to hash table */
+                  &tmp,                 /**< [in] Hash element to match */
+                  (const void **)&match /**< [out] Pointer to matched hash element, or NULL if not found */
+                  );
+  if(!match) return NULL;
+  return match->itemPtr;
 }
 /* Walk through the list to check for an item */
 LALInferenceVariableItem *LALInferenceGetItemSlow(const LALInferenceVariables *vars,const char *name)
@@ -398,7 +410,8 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, co
   memcpy(new->value,value,LALInferenceTypeSize[type]);
   new->next = vars->head;
   vars->head = new;
-  vars->hash_table[hash(new->name)]=new;
+  hash_elem *elem=new_elem(new->name,new);
+  XLALHashTblAdd(vars->hash_table,(void *)elem);
   vars->dimension++;
   return;
 }
@@ -420,7 +433,10 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
   }
   if(!parent) vars->head=this->next;
   else parent->next=this->next;
-
+  /* Remove from hash table */
+  hash_elem elem;
+  elem.name=this->name;
+  XLALHashTblRemove(vars->hash_table,(void *)&elem);
   /* We own the memory for these types, so have to free. */
   switch (this->type) {
   case LALINFERENCE_gslMatrix_t:
@@ -446,8 +462,6 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
   }
 
   XLALFree(this->value);
-  if(this==vars->hash_table[hash(name)]) /* Have to check the name in case there was a collision */
-    vars->hash_table[hash(name)]=NULL;
   this->value=NULL;
   XLALFree(this);
   this=NULL;
@@ -485,6 +499,21 @@ int LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name)
   else return 0;
 }
 
+static UINT8 LALInferenceElemHash(const void *elem);
+static UINT8 LALInferenceElemHash(const void *elem)
+{
+  if(!elem) XLAL_ERROR(XLAL_EINVAL);
+  size_t len = strnlen(((const hash_elem *)elem)->name,VARNAME_MAX);
+  return(XLALCityHash64(((const hash_elem *)elem)->name, len));
+}
+
+static int LALInferenceElemCmp(const void *elem1, const void *elem2);
+static int LALInferenceElemCmp(const void *elem1, const void *elem2)
+{
+  if(!elem1 || !elem2) XLAL_ERROR(XLAL_EINVAL);
+  return(strncmp(((const hash_elem *)elem1)->name,((const hash_elem *)elem2)->name,VARNAME_MAX));
+}
+
 void LALInferenceClearVariables(LALInferenceVariables *vars)
 /* Free all variables inside the linked list, leaving only the head struct */
 {
@@ -505,7 +534,13 @@ void LALInferenceClearVariables(LALInferenceVariables *vars)
   }
   vars->head=NULL;
   vars->dimension=0;
-  memset(vars->hash_table,0,LALINFERENCE_HASHTABLE_SIZE*sizeof(LALInferenceVariableItem *));
+  if(vars->hash_table) XLALHashTblDestroy(vars->hash_table);
+  vars->hash_table = XLALHashTblCreate( del_elem,	/**< [in] Function to free memory of elements of hash, if required */
+                                       LALInferenceElemHash,	/**< [in] Hash function for hash table elements */
+                                       LALInferenceElemCmp	/**< [in] Hash table element comparison function */
+                                       );
+
+  //memset(vars->hash_table,0,LALINFERENCE_HASHTABLE_SIZE*sizeof(LALInferenceVariableItem *));
   return;
 }
 
