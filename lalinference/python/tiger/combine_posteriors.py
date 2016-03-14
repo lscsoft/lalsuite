@@ -8,7 +8,7 @@ py_version = sys.version_info[:2]
 from os import path, makedirs
 from pylab import figure,ioff,linspace
 import matplotlib.patches as mpatches
-from numpy import load,save
+from numpy import load,save,searchsorted,random,cumsum,savetxt,genfromtxt,array
 
 from copy import deepcopy
 from scipy.stats import gaussian_kde
@@ -31,6 +31,11 @@ For batch runs it must be as follows:
   e.g.: posterior_gw150914_dchis.dat
 
 To do a batch run, settings["singles"] must be set to False
+
+When doing a batch run, violin plot compatible files are
+automatically created.
+These files are written to the settings["datadir"] path and have the form:
+  posterior_samples_dchis.dat
 """
 
 ###########################################
@@ -63,7 +68,7 @@ lightgray = (0.8117647058823529, 0.8117647058823529, 0.8117647058823529)
 blue = (0.12156862745098039, 0.4666666666666667, 0.7058823529411765)
 red = (0.8392156862745098, 0.15294117647058825, 0.1568627450980392)
 lightblue = (0.6823529411764706, 0.7803921568627451, 0.9098039215686274)
-darkgrey = (1.0, 0.7333333333333333, 0.47058823529411764)
+darkgrey = (0.34901960784313724, 0.34901960784313724, 0.34901960784313724)
 purple = (0.5803921568627451, 0.403921568627451, 0.7411764705882353)
 cyan = (0.09019607843137255, 0.7450980392156863, 0.8117647058823529)
 orange = (1.0, 0.4980392156862745, 0.054901960784313725)
@@ -77,10 +82,11 @@ brown = (0.5490196078431373, 0.33725490196078434, 0.29411764705882354)
 
 settings = {"rescan_files":True,#false does not work for some reason
             "fill_all":False, #also fill the single posterior curves
+            "combinedposterior_samples":20000, #number of samples to draw from the combined pdf
             "outpath":"/home/jeroen/Dropbox/combined_posteriors/", #plots will end up here
             "datadir":"/home/jeroen/Dropbox/combined_posteriors/", #data should be here
             "sources":["gw150914","gw151226"],
-            "singles":False, #False if using parameters from batch runs
+            "singles":True, #False if using parameters from batch runs
             "parameters":["dchi0","dchi1","dchi2","dchi3","dchi4","dchi5l","dchi6","dchi6l","dchi7",
                           "dsigma2","dsigma3","dsigma4",
                           "dbeta2","dbeta3",
@@ -168,6 +174,7 @@ class posterior():
     density = gaussian_kde(self.posterior)
     density.covariance_factor = lambda : settings["kde_cov_factor"]
     density._compute_covariance()
+    #self.density = density
     self.kde = density(self.xaxis)
 
 
@@ -219,6 +226,25 @@ class parameter():
   def get_kde_xaxis(self):
     return self.kde_xaxis
 
+  def write_combined_posterior_samples(self,Nsamples):
+    thiskde = self.combined_kde
+    thisxaxis = self.kde_xaxis
+    samples = generate_rand_from_pdf(thiskde, thisxaxis, Nsamples)
+    if settings["singles"]:
+      filename = path.join(settings["datadir"],"combined_posterior_%s.dat"%self.name)
+    else:
+      filename = path.join(settings["datadir"],"combined_posterior_batch_%s.dat"%self.name)
+    savetxt(filename,samples)
+
+
+
+def generate_rand_from_pdf(pdf, x_axis, N):
+  cdf = cumsum(pdf)
+  cdf = cdf / cdf[-1]
+  values = random.rand(N)
+  value_bins = searchsorted(cdf, values)
+  random_from_cdf = x_axis[value_bins]
+  return random_from_cdf
 
 def batchname_from_parameter(param):
   if "dchi" in param:
@@ -343,5 +369,38 @@ def plot_combined_kde(parameters,param,settings):
 parameters = init(settings)
 for param in settings["parameters"]:
   plot_combined_kde(parameters,param,settings)
+
+for param in settings["parameters"]:
+  p = parameters[param]
+  p.write_combined_posterior_samples(settings["combinedposterior_samples"])
+
+
+###############################################################################
+## Create violin plotting script compatible files
+###############################################################################
+
+#The violin plotting script expects a batch file to contain collumns for all the
+#parameters, not one file per parameter.
+#This ugly routine creates such batch files.
+if not settings["singles"]:
+  import fileinput
+  batches = ["dchi","dalpha","dsigma","dbeta"]
+  for b in batches:
+    batchfilename_out = path.join(settings["datadir"],"posterior_samples_%ss.dat"%b)
+    thisbatch = []
+    paramnamesinbatch = []
+    for param in settings["parameters"]:
+      if b in param:
+        paramnamesinbatch.append(param)
+        samples = genfromtxt(path.join(settings["datadir"],"combined_posterior_batch_%s.dat"%param))
+        thisbatch.append(samples)
+    header = " ".join(paramnamesinbatch)
+    savetxt(batchfilename_out,array(thisbatch).T)
+    #add the header in a tremendously ugly, but effective fashion:
+    for line in fileinput.input([batchfilename_out], inplace=True):
+        if fileinput.isfirstline():
+            print header
+        print line,
+
 
 
