@@ -145,3 +145,20 @@ def find_tilts_and_phi12_at_freq(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, 
 	print("cos tilt1 = %f, cos tilt2 = %f, cos phi12 = %f"%(chi1dL_v/chi1_norm, chi2dL_v/chi2_norm, (chi1inplanex*chi2inplanex + chi1inplaney*chi2inplaney + chi1inplanez*chi2inplanez)/((chi1inplanex*chi1inplanex + chi1inplaney*chi1inplaney + chi1inplanez*chi1inplanez)*(chi2inplanex*chi2inplanex + chi2inplaney*chi2inplaney + chi2inplanez*chi2inplanez))**0.5))
 
 	return np.arccos(chi1dL_v/chi1_norm), np.arccos(chi2dL_v/chi2_norm), np.arccos((chi1inplanex*chi2inplanex + chi1inplaney*chi2inplaney + chi1inplanez*chi2inplanez)/((chi1inplanex*chi1inplanex + chi1inplaney*chi1inplaney + chi1inplanez*chi1inplanez)*(chi2inplanex*chi2inplanex + chi2inplaney*chi2inplaney + chi2inplanez*chi2inplanez))**0.5)
+
+def find_S_and_L_at_freq_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz, v_final, dt):
+        """ given the spins and ang momentum at a given frequency, find the spins and L at a later frequency """
+
+        # evolve the spins                                                                                                                                                           
+        v_v, chi1x_v, chi1y_v, chi1z_v, chi2x_v, chi2y_v, chi2z_v, Lnx_v, Lny_v, Lnz_v = evolve_spins_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz, v_final, dt)
+
+        # dot products                                                                                                                                                               
+        chi1dL_v = chi1x_v*Lnx_v + chi1y_v*Lny_v + chi1z_v*Lnz_v
+        chi2dL_v = chi2x_v*Lnx_v + chi2y_v*Lny_v + chi2z_v*Lnz_v
+
+        # norms                                                                                                                                                                      
+        chi1_norm = np.sqrt(chi1x_v**2+chi1y_v**2+chi1z_v**2)
+        chi2_norm = np.sqrt(chi2x_v**2+chi2y_v**2+chi2z_v**2)
+        L_norm = np.sqrt(Lnx_v**2+Lny_v**2+Lnz_v**2)
+
+        return chi1x_v[-1], chi1y_v[-1], chi1z_v[-1], chi2x_v[-1], chi2y_v[-1], chi2z_v[-1], Lnx_v[-1], Lny_v[-1], Lnz_v[-1], v_v[-1]
