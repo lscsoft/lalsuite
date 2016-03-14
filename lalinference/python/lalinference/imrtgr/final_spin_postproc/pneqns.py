@@ -6,7 +6,9 @@ MTSUN_SI = 4.926e-6
 
 
 def precession_eqns(t, y_vec, m1, m2): 
-	""" The couped set of ODEs containing the PN precession eqns as well as the evolution of dv/dt """
+	""" The couped set of ODEs containing the PN precession eqns as well as the evolution of dv/dt 
+	    All these equations are listed in Ajith (2011) (http://arxiv.org/pdf/1107.1267v2.pdf).
+	"""
 
 	# unpack the vector of variables 
 	v, S1x, S1y, S1z, S2x, S2y, S2z, Lx, Ly, Lz = y_vec 
@@ -19,7 +21,7 @@ def precession_eqns(t, y_vec, m1, m2):
 	eta = m1*m2/(m1+m2)**2 
 	delta = (m1-m2)/(m1+m2)
 
-	# spin ang ang momentum vectors 
+	# spin and angular momentum vectors 
 	Ln = np.array([Lx, Ly, Lz])
 	S1 = np.array([S1x, S1y, S1z])
 	S2 = np.array([S2x, S2y, S2z])
@@ -39,21 +41,21 @@ def precession_eqns(t, y_vec, m1, m2):
 	S1dL = np.dot(S1, Ln) 
 	S2dL = np.dot(S2, Ln) 
 
-	# magnitude of the orb ang momentum 
+	# magnitude of the orb ang momentum. The prefactor of dLN/dt in Eq.(3.6) of Ajith (2011) http://arxiv.org/pdf/1107.1267v2.pdf
 	Lmag = (eta*m**2./v)*(1.+(1.5+eta/6.)*v**2.)
 
-	# precession freqs 
+	# precession freqs. Eqs.(3.8) of Ajith (2011) http://arxiv.org/pdf/1107.1267v2.pdf
 	Omega1=(v**5./m)*((3./4+eta/2.-3.*delta/4.)*Ln+0.5*v/m**2.*(-3.0*(S2dL +q*S1dL)*Ln+S2)+v**2.*(9./16.+5.*eta/4.-eta**2./24.-9.*delta/16.+5.*delta*eta/8.)*Ln)
 	Omega2=(v**5./m)*((3./4+eta/2.+3.*delta/4.)*Ln+0.5*v/m**2.*(-3.0*(q1*S2dL+S1dL)*Ln+S1)+v**2.*(9./16.+5.*eta/4.-eta**2./24.+9.*delta/16.-5.*delta*eta/8.)*Ln)
 
-	# spin precession eqns 
+	# spin precession eqns. Eqs.(3.7) of Ajith (2011) http://arxiv.org/pdf/1107.1267v2.pdf
 	dS1_dt = np.cross(Omega1, S1)
 	dS2_dt = np.cross(Omega2, S2)
 
-	# ang momentum precession eqn 
+	# ang momentum precession eqn. Eqs.(3.6) of Ajith (2011) http://arxiv.org/pdf/1107.1267v2.pdf
 	dL_dt =-(dS1_dt+dS2_dt)/Lmag
 
-	# orb frequency evolution 
+	# orb frequency evolution. Eqs.(3.5) of Ajith (2011) http://arxiv.org/pdf/1107.1267v2.pdf
 	dv_dt = -1./(m*dE_by_Flux.denergy_by_flux(v, eta, delta, chiadL, chisdL, chiasqr, chissqr, chisdchia, 7))
 
 	return  [dv_dt, dS1_dt[0], dS1_dt[1], dS1_dt[2], dS2_dt[0], dS2_dt[1], dS2_dt[2], dL_dt[0], dL_dt[1], dL_dt[2]]
@@ -145,20 +147,3 @@ def find_tilts_and_phi12_at_freq(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, 
 	print("cos tilt1 = %f, cos tilt2 = %f, cos phi12 = %f"%(chi1dL_v/chi1_norm, chi2dL_v/chi2_norm, (chi1inplanex*chi2inplanex + chi1inplaney*chi2inplaney + chi1inplanez*chi2inplanez)/((chi1inplanex*chi1inplanex + chi1inplaney*chi1inplaney + chi1inplanez*chi1inplanez)*(chi2inplanex*chi2inplanex + chi2inplaney*chi2inplaney + chi2inplanez*chi2inplanez))**0.5))
 
 	return np.arccos(chi1dL_v/chi1_norm), np.arccos(chi2dL_v/chi2_norm), np.arccos((chi1inplanex*chi2inplanex + chi1inplaney*chi2inplaney + chi1inplanez*chi2inplanez)/((chi1inplanex*chi1inplanex + chi1inplaney*chi1inplaney + chi1inplanez*chi1inplanez)*(chi2inplanex*chi2inplanex + chi2inplaney*chi2inplaney + chi2inplanez*chi2inplanez))**0.5)
-
-def find_S_and_L_at_freq_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz, v_final, dt):
-        """ given the spins and ang momentum at a given frequency, find the spins and L at a later frequency """
-
-        # evolve the spins                                                                                                                                                           
-        v_v, chi1x_v, chi1y_v, chi1z_v, chi2x_v, chi2y_v, chi2z_v, Lnx_v, Lny_v, Lnz_v = evolve_spins_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz, v_final, dt)
-
-        # dot products                                                                                                                                                               
-        chi1dL_v = chi1x_v*Lnx_v + chi1y_v*Lny_v + chi1z_v*Lnz_v
-        chi2dL_v = chi2x_v*Lnx_v + chi2y_v*Lny_v + chi2z_v*Lnz_v
-
-        # norms                                                                                                                                                                      
-        chi1_norm = np.sqrt(chi1x_v**2+chi1y_v**2+chi1z_v**2)
-        chi2_norm = np.sqrt(chi2x_v**2+chi2y_v**2+chi2z_v**2)
-        L_norm = np.sqrt(Lnx_v**2+Lny_v**2+Lnz_v**2)
-
-        return chi1x_v[-1], chi1y_v[-1], chi1z_v[-1], chi2x_v[-1], chi2y_v[-1], chi2z_v[-1], Lnx_v[-1], Lny_v[-1], Lnz_v[-1], v_v[-1]
