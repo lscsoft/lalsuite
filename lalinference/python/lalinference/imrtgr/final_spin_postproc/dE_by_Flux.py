@@ -3,10 +3,11 @@ from numpy import log
 GAMMA = 0.577216
 pi = np.pi
 
+# Eqs.(3.2) of Ajith (2011) http://arxiv.org/pdf/1107.1267v2.pdf
 
-""" compute the re-exapnded dEnergy/flux """
+""" compute the re-exapnded dEnergy/flux """ 
 def denergy_by_flux(v, eta, delta, chiadL, chisdL, chiasqr, chissqr, chisdchia, order):
-
+    
 	# different powers of v 
 	v2 = v*v; v3 = v2*v; v4 = v3*v; v5 = v4*v; v6 = v5*v; v7 = v6*v; v9 = v7*v2 
 
