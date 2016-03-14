@@ -56,13 +56,48 @@ static int test_XLALPearsonHash(size_t hval_len, const int N, const int nc_ref)
   return XLAL_SUCCESS;
 }
 
+static int test_XLALCityHash(const char N, const int nc_ref)
+{
+  int n = 0, nc = 0;
+  char buf1[5] = {0}, buf2[5] = {0};
+  for (buf1[0] = 'a'; buf1[0] < 'a' + N; ++buf1[0]) {
+    for (buf1[1] = 'a'; buf1[1] < 'a' + N; ++buf1[1]) {
+      for (buf1[2] = 'a'; buf1[2] < 'a' + N; ++buf1[2]) {
+        for (buf1[3] = 'a'; buf1[3] < 'a' + N; ++buf1[3]) {
+          const UINT8 h1 = XLALCityHash64(buf1, strlen(buf1));
+          for (buf2[0] = 'a'; buf2[0] < 'a' + N; ++buf2[0]) {
+            for (buf2[1] = 'a'; buf2[1] < 'a' + N; ++buf2[1]) {
+              for (buf2[2] = 'a'; buf2[2] < 'a' + N; ++buf2[2]) {
+                for (buf2[3] = 'a'; buf2[3] < 'a' + N; ++buf2[3]) {
+                  const UINT8 h2 = XLALCityHash64(buf2, strlen(buf2));
+                  ++n;
+                  if (strcmp(buf1, buf2) != 0 && h1 == h2) {
+                    ++nc;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  printf("XLALCityHash() collisions in %i strings with %i letters: %i\n", n, N, nc);
+  XLAL_CHECK(nc == nc_ref, XLAL_EFAILED, "nc = %i != %i = nc_ref", nc, nc_ref);
+  return XLAL_SUCCESS;
+}
+
 int main(void)
 {
 
   /* Test XLALPearsonHash() */
-  XLAL_CHECK_MAIN(test_XLALPearsonHash(sizeof(UINT2), 2048, 68) == XLAL_SUCCESS, XLAL_EFAILED);
-  XLAL_CHECK_MAIN(test_XLALPearsonHash(sizeof(UINT4), 2048,  0) == XLAL_SUCCESS, XLAL_EFAILED);
-  XLAL_CHECK_MAIN(test_XLALPearsonHash(sizeof(UINT8), 2048,  0) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK_MAIN(test_XLALPearsonHash(sizeof(UINT2), 1024, 8) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK_MAIN(test_XLALPearsonHash(sizeof(UINT4), 1024, 0) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK_MAIN(test_XLALPearsonHash(sizeof(UINT8), 1024, 0) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  /* Test XLALCityHash() */
+  XLAL_CHECK_MAIN(test_XLALCityHash(5, 0) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK_MAIN(test_XLALCityHash(7, 0) == XLAL_SUCCESS, XLAL_EFAILED);
 
   /* Check for memory leaks */
   LALCheckMemoryLeaks();
