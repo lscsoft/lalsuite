@@ -684,35 +684,32 @@ static int PhenomPCore(
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
   /* We apply the same time shift to hptilde and hctilde based on the overall phasing returned by PhenomPCoreOneFrequency */
-  if (deltaF>=0) {
-    /* Set up spline for phase */
-    acc = gsl_interp_accel_alloc();
-    phiI = gsl_spline_alloc(gsl_interp_cspline, L_fCut);
-    XLAL_CHECK(phiI, XLAL_ENOMEM, "Failed to allocate GSL spline with %d points for phase.", L_fCut);
+  /* Set up spline for phase */
+  acc = gsl_interp_accel_alloc();
+  phiI = gsl_spline_alloc(gsl_interp_cspline, L_fCut);
+  XLAL_CHECK(phiI, XLAL_ENOMEM, "Failed to allocate GSL spline with %d points for phase.", L_fCut);
 
-    gsl_spline_init(phiI, freqs->data, phis, L_fCut);
+  gsl_spline_init(phiI, freqs->data, phis, L_fCut);
 
-    // Prevent gsl interpolation errors
-    if (f_final > freqs->data[L_fCut-1])
-      f_final = freqs->data[L_fCut-1];
-    if (f_final < freqs->data[0])
-    {
-      XLALPrintError("XLAL Error - %s: f_ringdown = %f < f_min\n", __func__, f_final);
-      errcode = XLAL_EDOM;
-      goto cleanup;
-    }
+  // Prevent gsl interpolation errors
+  if (f_final > freqs->data[L_fCut-1])
+    f_final = freqs->data[L_fCut-1];
+  if (f_final < freqs->data[0])
+  {
+    XLALPrintError("XLAL Error - %s: f_ringdown = %f < f_min\n", __func__, f_final);
+    errcode = XLAL_EDOM;
+    goto cleanup;
+  }
 
-    /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
-    REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
-    /* Now correct phase */
-    for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
-      double f = freqs->data[i];
-      COMPLEX16 phase_corr = cexp(-2*LAL_PI * I * f * t_corr);
-      int j = i + offset; // shift index for frequency series if needed
-      ((*hptilde)->data->data)[j] *= phase_corr;
-      ((*hctilde)->data->data)[j] *= phase_corr;
-    }
-
+  /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
+  REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
+  /* Now correct phase */
+  for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
+    double f = freqs->data[i];
+    COMPLEX16 phase_corr = cexp(-2*LAL_PI * I * f * t_corr);
+    int j = i + offset; // shift index for frequency series if needed
+    ((*hptilde)->data->data)[j] *= phase_corr;
+    ((*hctilde)->data->data)[j] *= phase_corr;
   }
 
   cleanup:
