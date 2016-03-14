@@ -5,7 +5,7 @@ pi = np.pi
 
 # Eqs.(3.2) of Ajith (2011) http://arxiv.org/pdf/1107.1267v2.pdf
 
-""" compute the re-exapnded dEnergy/flux """ 
+""" compute the re-expanded dEnergy/flux """ 
 def denergy_by_flux(v, eta, delta, chiadL, chisdL, chiasqr, chissqr, chisdchia, order):
     
 	# different powers of v 
