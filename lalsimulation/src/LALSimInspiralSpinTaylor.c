@@ -3364,6 +3364,11 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
 		XLALPrintError("XLAL Error - %s: fRef=0 is invalid. Please pass in the starting GW frequency instead.\n", __func__);
 		XLAL_ERROR(XLAL_EINVAL);
 	}
+	if( (chi1<0.) || (chi1>1.) || (chi2<0.) || (chi2>1.) )
+	{
+	  XLALPrintError("XLAL Error - %s: chi1,2=0  must be between 0 and 1, values %8.4f -- %8.4f passed.\n", __func__,chi1,chi2);
+		XLAL_ERROR(XLAL_EINVAL);
+	}
 
 	REAL8 m1, m2, eta, v0, theta0, phi0, Jnorm, tmp1, tmp2;
 	REAL8 Jhatx, Jhaty, Jhatz, LNhx, LNhy, LNhz, Jx, Jy, Jz, Lmag;
@@ -3518,8 +3523,8 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
  * as required by precessing waveforms routines.
  *
  * NOTE: Here the \"total\" angular momentum is computed as
- * J = L_N(1+L_1PN) + S1 + S2
- * where L_N(1+L_1PN) is the 1PN-corrected orbital angular momentum,
+ * J = L_N(1+l_1PN) + S1 + S2
+ * where L_N(1+l_1PN) is the 1PN-corrected orbital angular momentum,
  * which is parallel to Newtonian angular momentum.
  * PN corrections to L from 1.5PN order on (wrt to Newtonian value)
  * are NOT ACCOUNTED FOR in this function.
