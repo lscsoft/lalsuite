@@ -36,6 +36,8 @@
 #include <stdint.h>
 #include <string.h>  // for memcpy and memset
 
+typedef struct tagUINT16 {UINT8 first,second;} UINT16;
+
 static inline UINT8 Uint128Low64(const UINT16 *x) { return x->first; }
 static inline UINT8 Uint128High64(const UINT16 *x) { return x->second; }
 
