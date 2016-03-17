@@ -25,6 +25,7 @@ AC_CONFIG_FILES([\
   src/online/Makefile \
   src/power/Makefile \
   src/pulsar/CreateEphemeris/Makefile \
+  src/pulsar/FITSTools/Makefile \
   src/pulsar/Fstatistic/Makefile \
   src/pulsar/GCT/Makefile \
   src/pulsar/HeterodyneSearch/Makefile \
