@@ -38,18 +38,18 @@ int main(int argc, char *argv[])
   long jj = 0, nrows = 0;
 
   if (argc != 2) {
-    printf("Usage:  tablist filename[ext][col filter][row filter] \n");
-    printf("\n");
-    printf("List the contents of a FITS table \n");
-    printf("\n");
-    printf("Examples: \n");
-    printf("  tablist tab.fits[GTI]           - list the GTI extension\n");
-    printf("  tablist tab.fits[1][#row < 101] - list first 100 rows\n");
-    printf("  tablist tab.fits[1][col X;Y]    - list X and Y cols only\n");
-    printf("  tablist tab.fits[1][col -PI]    - list all but the PI col\n");
-    printf("  tablist tab.fits[1][col -PI][#row < 101]  - combined case\n");
-    printf("\n");
-    printf("Display formats can be modified with the TDISPn keywords.\n");
+    fprintf(stderr, "Usage:  tablist filename[ext][col filter][row filter] \n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "List the contents of a FITS table \n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Examples: \n");
+    fprintf(stderr, "  tablist tab.fits[GTI]           - list the GTI extension\n");
+    fprintf(stderr, "  tablist tab.fits[1][#row < 101] - list first 100 rows\n");
+    fprintf(stderr, "  tablist tab.fits[1][col X;Y]    - list X and Y cols only\n");
+    fprintf(stderr, "  tablist tab.fits[1][col -PI]    - list all but the PI col\n");
+    fprintf(stderr, "  tablist tab.fits[1][col -PI][#row < 101]  - combined case\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Display formats can be modified with the TDISPn keywords.\n");
     return(0);
   }
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
       fits_get_hdu_type(fptr, &hdutype, &status); /* Get the HDU type */
 
     if (hdutype == IMAGE_HDU)
-      printf("Error: this program only displays tables, not images\n");
+      fprintf(stderr, "Error: this program only displays tables, not images\n");
     else
     {
       fits_get_num_rows(fptr, &nrows, &status);

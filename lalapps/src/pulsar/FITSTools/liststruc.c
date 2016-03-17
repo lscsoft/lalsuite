@@ -36,13 +36,13 @@ int main(int argc, char *argv[])
   long naxes[10], nrows = 0;
 
   if (argc != 2) {
-    printf("Usage:  liststruc filename[ext] \n");
-    printf("\n");
-    printf("List the structure of a single extension, or, if ext is \n");
-    printf("not given, list the structure of the entire FITS file.  \n");
-    printf("\n");
-    printf("Note that it may be necessary to enclose the input file\n");
-    printf("name in single quote characters on the Unix command line.\n");
+    fprintf(stderr, "Usage:  liststruc filename[ext] \n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "List the structure of a single extension, or, if ext is \n");
+    fprintf(stderr, "not given, list the structure of the entire FITS file.  \n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Note that it may be necessary to enclose the input file\n");
+    fprintf(stderr, "name in single quote characters on the Unix command line.\n");
     return(0);
   }
 

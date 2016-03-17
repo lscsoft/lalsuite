@@ -34,39 +34,39 @@ int main(int argc, char *argv[])
   int hdutype = 0, hdunum = 0, ii = 0;
 
   if (argc != 4) {
-    printf("Usage:  tabselect infile expression outfile\n");
-    printf("\n");
-    printf("Copy selected rows from the input table to the output file\n");
-    printf("based on the input boolean expression.  The expression may \n");
-    printf("be a function of the values in other table columns or header \n");
-    printf("keyword values.  If the expression evaluates to 'true' then \n");
-    printf("that row is copied to the output file.\n");
-    printf("\n");
-    printf("Example: \n");
-    printf("1. tabselect intab.fits+1 'counts > 0' outab.fits\n");
-    printf("\n");
-    printf("    copy rows that have a positive 'counts' column value\n");
-    printf("\n");
-    printf("2. tabselect intab.fits+1 'gtifilter()' outab.fits\n");
-    printf("\n");
-    printf("    Select rows which have a Time column value that is\n");
-    printf("    within one of the Good Time Intervals (GTI) which are\n");
-    printf("    defined in a separate GTI extension in the same file.\n");
-    printf("\n");
-    printf("3. tabselect intab.fits+1 'regfilter(\"pow.reg\")' outab.fits\n");
-    printf("\n");
-    printf("    Select rows which have X,Y column coordinates located\n");
-    printf("    within the spatial region defined in the file named\n");
-    printf("    'pow.reg'.  This is an ASCII text file containing a\n");
-    printf("    list of one or more geometric regions such as circle,\n");
-    printf("    rectangle, annulus, etc.\n");
+    fprintf(stderr, "Usage:  tabselect infile expression outfile\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Copy selected rows from the input table to the output file\n");
+    fprintf(stderr, "based on the input boolean expression.  The expression may \n");
+    fprintf(stderr, "be a function of the values in other table columns or header \n");
+    fprintf(stderr, "keyword values.  If the expression evaluates to 'true' then \n");
+    fprintf(stderr, "that row is copied to the output file.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Example: \n");
+    fprintf(stderr, "1. tabselect intab.fits+1 'counts > 0' outab.fits\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "    copy rows that have a positive 'counts' column value\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "2. tabselect intab.fits+1 'gtifilter()' outab.fits\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "    Select rows which have a Time column value that is\n");
+    fprintf(stderr, "    within one of the Good Time Intervals (GTI) which are\n");
+    fprintf(stderr, "    defined in a separate GTI extension in the same file.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "3. tabselect intab.fits+1 'regfilter(\"pow.reg\")' outab.fits\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "    Select rows which have X,Y column coordinates located\n");
+    fprintf(stderr, "    within the spatial region defined in the file named\n");
+    fprintf(stderr, "    'pow.reg'.  This is an ASCII text file containing a\n");
+    fprintf(stderr, "    list of one or more geometric regions such as circle,\n");
+    fprintf(stderr, "    rectangle, annulus, etc.\n");
     return(0);
   }
   if (!fits_open_file(&infptr, argv[1], READONLY, &status) )
   {
     if (fits_get_hdu_type(infptr, &hdutype,&status) ||
         hdutype==IMAGE_HDU) {
-      printf("Error: input HDU is not a table\n");
+      fprintf(stderr, "Error: input HDU is not a table\n");
     } else {
 
       fits_get_hdu_num(infptr, &hdunum);  /* save current HDU location */

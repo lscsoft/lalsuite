@@ -43,15 +43,15 @@ int main(int argc, char *argv[])
   int image2=1;
 
   if (argc != 5) {
-    printf("Usage: imarith image1 { image2 | value } oper outimage \n");
-    printf("\n");
-    printf("Perform 'image1 oper image2' or 'image1 oper value'\n");
-    printf("creating a new output image.  Supported arithmetic\n");
-    printf("operators are add, sub, mul, div (first character required\n");
-    printf("\n");
-    printf("Examples: \n");
-    printf("  imarith in1.fits in2.fits a out.fits - add the 2 files\n");
-    printf("  imarith in1.fits 1000.0 mul out.fits - mult in1 by 1000\n");
+    fprintf(stderr, "Usage: imarith image1 { image2 | value } oper outimage \n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Perform 'image1 oper image2' or 'image1 oper value'\n");
+    fprintf(stderr, "creating a new output image.  Supported arithmetic\n");
+    fprintf(stderr, "operators are add, sub, mul, div (first character required\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Examples: \n");
+    fprintf(stderr, "  imarith in1.fits in2.fits a out.fits - add the 2 files\n");
+    fprintf(stderr, "  imarith in1.fits 1000.0 mul out.fits - mult in1 by 1000\n");
     return(0);
   }
 
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
   if (status) {
     value = atof(argv[2]);
     if (value == 0.0) {
-      printf("Error: second argument is neither an image name"
+      fprintf(stderr, "Error: second argument is neither an image name"
              " nor a valid numerical value.\n");
       return(status);
     }
@@ -83,14 +83,14 @@ int main(int argc, char *argv[])
   }
 
   if (anaxis > 3) {
-    printf("Error: images with > 3 dimensions are not supported\n");
+    fprintf(stderr, "Error: images with > 3 dimensions are not supported\n");
     check = 0;
   }
   /* check that the input 2 images have the same size */
   else if ( image2 && ( anaxes[0] != bnaxes[0] ||
                         anaxes[1] != bnaxes[1] ||
                         anaxes[2] != bnaxes[2] ) ) {
-    printf("Error: input images don't have same size\n");
+    fprintf(stderr, "Error: input images don't have same size\n");
     check = 0;
   }
 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   else if (*argv[3] == 'd' || *argv[3] == 'D')
     op = 4;
   else {
-    printf("Error: unknown arithmetic operator\n");
+    fprintf(stderr, "Error: unknown arithmetic operator\n");
     check = 0;
   }
 
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
     if (image2) bpix = (double *) malloc(npixels * sizeof(double));
 
     if (apix == NULL || (image2 && bpix == NULL)) {
-      printf("Memory allocation error\n");
+      fprintf(stderr, "Memory allocation error\n");
       return(1);
     }
 

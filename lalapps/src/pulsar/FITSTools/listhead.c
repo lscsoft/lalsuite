@@ -35,20 +35,20 @@ int main(int argc, char *argv[])
   int single = 0, hdupos = 0, nkeys = 0, ii = 0;
 
   if (argc != 2) {
-    printf("Usage:  listhead filename[ext] \n");
-    printf("\n");
-    printf("List the FITS header keywords in a single extension, or, if \n");
-    printf("ext is not given, list the keywords in all the extensions. \n");
-    printf("\n");
-    printf("Examples: \n");
-    printf("   listhead file.fits      - list every header in the file \n");
-    printf("   listhead file.fits[0]   - list primary array header \n");
-    printf("   listhead file.fits[2]   - list header of 2nd extension \n");
-    printf("   listhead file.fits+2    - same as above \n");
-    printf("   listhead file.fits[GTI] - list header of GTI extension\n");
-    printf("\n");
-    printf("Note that it may be necessary to enclose the input file\n");
-    printf("name in single quote characters on the Unix command line.\n");
+    fprintf(stderr, "Usage:  listhead filename[ext] \n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "List the FITS header keywords in a single extension, or, if \n");
+    fprintf(stderr, "ext is not given, list the keywords in all the extensions. \n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Examples: \n");
+    fprintf(stderr, "   listhead file.fits      - list every header in the file \n");
+    fprintf(stderr, "   listhead file.fits[0]   - list primary array header \n");
+    fprintf(stderr, "   listhead file.fits[2]   - list header of 2nd extension \n");
+    fprintf(stderr, "   listhead file.fits+2    - same as above \n");
+    fprintf(stderr, "   listhead file.fits[GTI] - list header of GTI extension\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Note that it may be necessary to enclose the input file\n");
+    fprintf(stderr, "name in single quote characters on the Unix command line.\n");
     return(0);
   }
 

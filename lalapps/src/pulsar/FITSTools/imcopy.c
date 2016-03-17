@@ -40,53 +40,53 @@ int main(int argc, char *argv[])
 
   if (argc != 3)
   {
-    printf("\n");
-    printf("Usage:  imcopy inputImage outputImage[compress]\n");
-    printf("\n");
-    printf("Copy an input image to an output image, optionally compressing\n");
-    printf("or uncompressing the image in the process.  If the [compress]\n");
-    printf("qualifier is appended to the output file name then the input image\n");
-    printf("will be compressed using the tile-compressed format.  In this format,\n");
-    printf("the image is divided into rectangular tiles and each tile of pixels\n");
-    printf("is compressed and stored in a variable-length row of a binary table.\n");
-    printf("If the [compress] qualifier is omitted, and the input image is\n");
-    printf("in tile-compressed format, then the output image will be uncompressed.\n");
-    printf("\n");
-    printf("If an extension name or number is appended to the input file name, \n");
-    printf("enclosed in square brackets, then only that single extension will be\n");
-    printf("copied to the output file.  Otherwise, every extension in the input file\n");
-    printf("will be processed in turn and copied to the output file.\n");
-    printf("\n");
-    printf("Examples:\n");
-    printf("\n");
-    printf("1)  imcopy image.fit 'cimage.fit[compress]'\n");
-    printf("\n");
-    printf("    This compresses the input image using the default parameters, i.e.,\n");
-    printf("    using the Rice compression algorithm and using row by row tiles.\n");
-    printf("\n");
-    printf("2)  imcopy cimage.fit image2.fit\n");
-    printf("\n");
-    printf("    This uncompress the image created in the first example.\n");
-    printf("    image2.fit should be identical to image.fit if the image\n");
-    printf("    has an integer datatype.  There will be small differences\n");
-    printf("    in the pixel values if it is a floating point image.\n");
-    printf("\n");
-    printf("3)  imcopy image.fit 'cimage.fit[compress GZIP 100,100;4]'\n");
-    printf("\n");
-    printf("    This compresses the input image using the following parameters:\n");
-    printf("         GZIP compression algorithm;\n");
-    printf("         100 X 100 pixel compression tiles;\n");
-    printf("         noise_bits = 4 (only used with floating point images)\n");
-    printf("\n");
-    printf("The full syntax of the compression qualifier is:\n");
-    printf("    [compress ALGORITHM TDIM1,TDIM2,...; NOISE_BITS]\n");
-    printf("where the allowed ALGORITHM values are Rice, GZIP, PLIO, \n");
-    printf("and TDIMn is the size of the compression tile in each dimension,\n");
-    printf("and NOISE_BITS = 1, 2, 3, or 4 and controls the amount of noise\n");
-    printf("suppression when compressing floating point images. \n");
-    printf("\n");
-    printf("Note that it may be necessary to enclose the file names\n");
-    printf("in single quote characters on the Unix command line.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Usage:  imcopy inputImage outputImage[compress]\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Copy an input image to an output image, optionally compressing\n");
+    fprintf(stderr, "or uncompressing the image in the process.  If the [compress]\n");
+    fprintf(stderr, "qualifier is appended to the output file name then the input image\n");
+    fprintf(stderr, "will be compressed using the tile-compressed format.  In this format,\n");
+    fprintf(stderr, "the image is divided into rectangular tiles and each tile of pixels\n");
+    fprintf(stderr, "is compressed and stored in a variable-length row of a binary table.\n");
+    fprintf(stderr, "If the [compress] qualifier is omitted, and the input image is\n");
+    fprintf(stderr, "in tile-compressed format, then the output image will be uncompressed.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "If an extension name or number is appended to the input file name, \n");
+    fprintf(stderr, "enclosed in square brackets, then only that single extension will be\n");
+    fprintf(stderr, "copied to the output file.  Otherwise, every extension in the input file\n");
+    fprintf(stderr, "will be processed in turn and copied to the output file.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Examples:\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "1)  imcopy image.fit 'cimage.fit[compress]'\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "    This compresses the input image using the default parameters, i.e.,\n");
+    fprintf(stderr, "    using the Rice compression algorithm and using row by row tiles.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "2)  imcopy cimage.fit image2.fit\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "    This uncompress the image created in the first example.\n");
+    fprintf(stderr, "    image2.fit should be identical to image.fit if the image\n");
+    fprintf(stderr, "    has an integer datatype.  There will be small differences\n");
+    fprintf(stderr, "    in the pixel values if it is a floating point image.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "3)  imcopy image.fit 'cimage.fit[compress GZIP 100,100;4]'\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "    This compresses the input image using the following parameters:\n");
+    fprintf(stderr, "         GZIP compression algorithm;\n");
+    fprintf(stderr, "         100 X 100 pixel compression tiles;\n");
+    fprintf(stderr, "         noise_bits = 4 (only used with floating point images)\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "The full syntax of the compression qualifier is:\n");
+    fprintf(stderr, "    [compress ALGORITHM TDIM1,TDIM2,...; NOISE_BITS]\n");
+    fprintf(stderr, "where the allowed ALGORITHM values are Rice, GZIP, PLIO, \n");
+    fprintf(stderr, "and TDIMn is the size of the compression tile in each dimension,\n");
+    fprintf(stderr, "and NOISE_BITS = 1, 2, 3, or 4 and controls the amount of noise\n");
+    fprintf(stderr, "suppression when compressing floating point images. \n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Note that it may be necessary to enclose the file names\n");
+    fprintf(stderr, "in single quote characters on the Unix command line.\n");
     return(0);
   }
 
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
       }
 
       if (!array)  {
-        printf("Memory allocation error\n");
+        fprintf(stderr, "Memory allocation error\n");
         return(0);
       }
 

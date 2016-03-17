@@ -36,22 +36,22 @@ int main(int argc, char *argv[])
   double *pix, sum = 0., meanval = 0., minval = 1.E33, maxval = -1.E33;
 
   if (argc != 2) {
-    printf("Usage: imstat image \n");
-    printf("\n");
-    printf("Compute statistics of pixels in the input image\n");
-    printf("\n");
-    printf("Examples: \n");
-    printf("  imarith image.fits                    - the whole image\n");
-    printf("  imarith 'image.fits[200:210,300:310]' - image section\n");
-    printf("  imarith 'table.fits+1[bin (X,Y) = 4]' - image constructed\n");
-    printf("     from X and Y columns of a table, with 4-pixel bin size\n");
+    fprintf(stderr, "Usage: imstat image \n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Compute statistics of pixels in the input image\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Examples: \n");
+    fprintf(stderr, "  imarith image.fits                    - the whole image\n");
+    fprintf(stderr, "  imarith 'image.fits[200:210,300:310]' - image section\n");
+    fprintf(stderr, "  imarith 'table.fits+1[bin (X,Y) = 4]' - image constructed\n");
+    fprintf(stderr, "     from X and Y columns of a table, with 4-pixel bin size\n");
     return(0);
   }
 
   if ( !fits_open_image(&fptr, argv[1], READONLY, &status) )
   {
     if (fits_get_hdu_type(fptr, &hdutype, &status) || hdutype != IMAGE_HDU) {
-      printf("Error: this program only works on images, not tables\n");
+      fprintf(stderr, "Error: this program only works on images, not tables\n");
       return(1);
     }
 
@@ -59,14 +59,14 @@ int main(int argc, char *argv[])
     fits_get_img_size(fptr, 2, naxes, &status);
 
     if (status || naxis != 2) {
-      printf("Error: NAXIS = %d.  Only 2-D images are supported.\n", naxis);
+      fprintf(stderr, "Error: NAXIS = %d.  Only 2-D images are supported.\n", naxis);
       return(1);
     }
 
     pix = (double *) malloc(naxes[0] * sizeof(double)); /* memory for 1 row */
 
     if (pix == NULL) {
-      printf("Memory allocation error\n");
+      fprintf(stderr, "Memory allocation error\n");
       return(1);
     }
 

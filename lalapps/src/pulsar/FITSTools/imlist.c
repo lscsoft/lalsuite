@@ -37,16 +37,16 @@ int main(int argc, char *argv[])
   char format[20], hdformat[20];
 
   if (argc != 2) {
-    printf("Usage:  imlist filename[ext][section filter] \n");
-    printf("\n");
-    printf("List the the pixel values in a FITS image \n");
-    printf("\n");
-    printf("Example: \n");
-    printf("  imlist image.fits                    - list the whole image\n");
-    printf("  imlist image.fits[100:110,400:410]   - list a section\n");
-    printf("  imlist table.fits[2][bin (x,y) = 32] - list the pixels in\n");
-    printf("         an image constructed from a 2D histogram of X and Y\n");
-    printf("         columns in a table with a binning factor = 32\n");
+    fprintf(stderr, "Usage:  imlist filename[ext][section filter] \n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "List the the pixel values in a FITS image \n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Example: \n");
+    fprintf(stderr, "  imlist image.fits                    - list the whole image\n");
+    fprintf(stderr, "  imlist image.fits[100:110,400:410]   - list a section\n");
+    fprintf(stderr, "  imlist table.fits[2][bin (x,y) = 32] - list the pixels in\n");
+    fprintf(stderr, "         an image constructed from a 2D histogram of X and Y\n");
+    fprintf(stderr, "         columns in a table with a binning factor = 32\n");
     return(0);
   }
 
@@ -55,14 +55,14 @@ int main(int argc, char *argv[])
     if (!fits_get_img_param(fptr, 2, &bitpix, &naxis, naxes, &status) )
     {
       if (naxis > 2 || naxis == 0)
-        printf("Error: only 1D or 2D images are supported\n");
+        fprintf(stderr, "Error: only 1D or 2D images are supported\n");
       else
       {
         /* get memory for 1 row */
         pixels = (double *) malloc(naxes[0] * sizeof(double));
 
         if (pixels == NULL) {
-          printf("Memory allocation error\n");
+          fprintf(stderr, "Memory allocation error\n");
           return(1);
         }
 

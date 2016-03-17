@@ -36,63 +36,63 @@ int main(int argc, char *argv[])
   unsigned char *buffer = 0;
 
   if (argc != 3) {
-    printf("Usage:  tabmerge infile1[ext][filter] outfile[ext]\n");
-    printf("\n");
-    printf("Merge 2 tables by copying all the rows from the 1st table\n");
-    printf("into the 2nd table.  The  2 tables must have identical\n");
-    printf("structure, with the same number of columns with the same\n");
-    printf("datatypes.  This program modifies the output file in place,\n");
-    printf("rather than creating a whole new output file.\n");
-    printf("\n");
-    printf("Examples: \n");
-    printf("\n");
-    printf("1. tabmerge intab.fit+1 outtab.fit+2\n");
-    printf("\n");
-    printf("    merge the table in the 1st extension of intab.fit with\n");
-    printf("    the table in the 2nd extension of outtab.fit.\n");
-    printf("\n");
-    printf("2. tabmerge 'intab.fit+1[PI > 45]' outab.fits+2\n");
-    printf("\n");
-    printf("    Same as the 1st example, except only rows that have a PI\n");
-    printf("    column value > 45 will be merged into the output table.\n");
-    printf("\n");
+    fprintf(stderr, "Usage:  tabmerge infile1[ext][filter] outfile[ext]\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Merge 2 tables by copying all the rows from the 1st table\n");
+    fprintf(stderr, "into the 2nd table.  The  2 tables must have identical\n");
+    fprintf(stderr, "structure, with the same number of columns with the same\n");
+    fprintf(stderr, "datatypes.  This program modifies the output file in place,\n");
+    fprintf(stderr, "rather than creating a whole new output file.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Examples: \n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "1. tabmerge intab.fit+1 outtab.fit+2\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "    merge the table in the 1st extension of intab.fit with\n");
+    fprintf(stderr, "    the table in the 2nd extension of outtab.fit.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "2. tabmerge 'intab.fit+1[PI > 45]' outab.fits+2\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "    Same as the 1st example, except only rows that have a PI\n");
+    fprintf(stderr, "    column value > 45 will be merged into the output table.\n");
+    fprintf(stderr, "\n");
     return(0);
   }
 
   /* open both input and output files and perform validity checks */
   if ( fits_open_file(&infptr,  argv[1], READONLY,  &status) ||
        fits_open_file(&outfptr, argv[2], READWRITE, &status) )
-    printf(" Couldn't open both files\n");
+    fprintf(stderr, " Couldn't open both files\n");
 
   else if ( fits_get_hdu_type(infptr,  &intype,  &status) ||
             fits_get_hdu_type(outfptr, &outtype, &status) )
-    printf("couldn't get the type of HDU for the files\n");
+    fprintf(stderr, "couldn't get the type of HDU for the files\n");
 
   else if (intype == IMAGE_HDU)
-    printf("The input HDU is an image, not a table\n");
+    fprintf(stderr, "The input HDU is an image, not a table\n");
 
   else if (outtype == IMAGE_HDU)
-    printf("The output HDU is an image, not a table\n");
+    fprintf(stderr, "The output HDU is an image, not a table\n");
 
   else if (outtype != intype)
-    printf("Input and output HDUs are not the same type of table.\n");
+    fprintf(stderr, "Input and output HDUs are not the same type of table.\n");
 
   else if ( fits_get_num_cols(infptr,  &incols,  &status) ||
             fits_get_num_cols(outfptr, &outcols, &status) )
-    printf("Couldn't get number of columns in the tables\n");
+    fprintf(stderr, "Couldn't get number of columns in the tables\n");
 
   else if ( incols != outcols )
-    printf("Input and output HDUs don't have same # of columns.\n");
+    fprintf(stderr, "Input and output HDUs don't have same # of columns.\n");
 
   else if ( fits_read_key(infptr, TLONG, "NAXIS1", &width, NULL, &status) )
-    printf("Couldn't get width of input table\n");
+    fprintf(stderr, "Couldn't get width of input table\n");
 
   else if (!(buffer = (unsigned char *) malloc(width)) )
-    printf("memory allocation error\n");
+    fprintf(stderr, "memory allocation error\n");
 
   else if ( fits_get_num_rows(infptr,  &inrows,  &status) ||
             fits_get_num_rows(outfptr, &outrows, &status) )
-    printf("Couldn't get the number of rows in the tables\n");
+    fprintf(stderr, "Couldn't get the number of rows in the tables\n");
 
   else  {
     /* check that the corresponding columns have the same datatypes */
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
       fits_get_coltype(infptr,  icol, &intype,  &inrep,  NULL, &status);
       fits_get_coltype(outfptr, icol, &outtype, &outrep, NULL, &status);
       if (intype != outtype || inrep != outrep) {
-        printf("Column %d is not the same in both tables\n", icol);
+        fprintf(stderr, "Column %d is not the same in both tables\n", icol);
         check = 0;
       }
     }
