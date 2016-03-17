@@ -27,6 +27,11 @@
 #error CFITSIO library is not available
 #endif
 
+#if !defined(PAGER) || !defined(HAVE_POPEN) || !defined(HAVE_PCLOSE)
+#define popen(...) stdout
+#define pclose(...)
+#endif
+
 int main(int argc, char *argv[])
 {
   fitsfile *fptr = 0;   /* FITS file pointer, defined in fitsio.h */
@@ -50,6 +55,12 @@ int main(int argc, char *argv[])
     return(0);
   }
 
+  FILE *fout = popen(PAGER, "w");
+  if (fout == NULL) {
+    fprintf(stderr, "Could not execute '%s'\n", PAGER);
+    return(1);
+  }
+
   if (!fits_open_file(&fptr, argv[1], READONLY, &status))
   {
     if (!fits_get_img_param(fptr, 2, &bitpix, &naxis, naxes, &status) )
@@ -67,17 +78,12 @@ int main(int argc, char *argv[])
         }
 
         if (bitpix > 0) {  /* set the default output format string */
-          strcpy(hdformat, " %7d");
-          strcpy(format,   " %7.0f");
+          strcpy(hdformat, "   %7d");
+          strcpy(format,   "   %7.0g");
         } else {
-          strcpy(hdformat, " %15d");
-          strcpy(format,   " %15.5f");
+          strcpy(hdformat, "   %15d");
+          strcpy(format,   "   %15.5g");
         }
-
-        printf("\n      ");          /* print column header */
-        for (ii = 1; ii <= naxes[0]; ii++)
-          printf(hdformat, ii);
-        printf("\n");                /* terminate header line */
 
         /* loop over all the rows in the image, top to bottom */
         for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
@@ -86,16 +92,17 @@ int main(int argc, char *argv[])
                             pixels, NULL, &status) )  /* read row of pixels */
             break;  /* jump out of loop on error */
 
-          printf(" %4li ",fpixel[1]);  /* print row number */
           for (ii = 0; ii < naxes[0]; ii++)
-            printf(format, pixels[ii]);   /* print each value  */
-          printf("\n");                    /* terminate line */
+            fprintf(fout, format, pixels[ii]);   /* print each value  */
+          fprintf(fout, "\n");                    /* terminate line */
         }
         free(pixels);
       }
     }
     fits_close_file(fptr, &status);
   }
+
+  pclose(fout);
 
   if (status) fits_report_error(stderr, status); /* print any error message */
   return(status);

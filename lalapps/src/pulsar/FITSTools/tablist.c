@@ -27,6 +27,11 @@
 #error CFITSIO library is not available
 #endif
 
+#if !defined(PAGER) || !defined(HAVE_POPEN) || !defined(HAVE_PCLOSE)
+#define popen(...) stdout
+#define pclose(...)
+#endif
+
 int main(int argc, char *argv[])
 {
   fitsfile *fptr = 0;      /* FITS file pointer, defined in fitsio.h */
@@ -53,6 +58,12 @@ int main(int argc, char *argv[])
     return(0);
   }
 
+  FILE *fout = popen(PAGER, "w");
+  if (fout == NULL) {
+    fprintf(stderr, "Could not execute '%s'\n", PAGER);
+    return(1);
+  }
+
   if (!fits_open_file(&fptr, argv[1], READONLY, &status))
   {
     if ( fits_get_hdu_num(fptr, &hdunum) == 1 )
@@ -69,7 +80,6 @@ int main(int argc, char *argv[])
       fits_get_num_rows(fptr, &nrows, &status);
       fits_get_num_cols(fptr, &ncols, &status);
 
-      /* find the number of columns that will fit within 80 characters */
       while(lastcol < ncols) {
         linewidth = 0;
         firstcol = lastcol+1;
@@ -77,24 +87,23 @@ int main(int argc, char *argv[])
           fits_get_col_display_width
             (fptr, lastcol, &dispwidth[lastcol], &status);
           linewidth += dispwidth[lastcol] + 1;
-          if (linewidth > 80)break;
         }
         if (lastcol > firstcol)lastcol--;  /* the last col didn't fit */
 
         /* print column names as column headers */
-        printf("\n    ");
+        fprintf(fout, "##\n## ");
         for (ii = firstcol; ii <= lastcol; ii++) {
           fits_make_keyn("TTYPE", ii, keyword, &status);
           fits_read_key(fptr, TSTRING, keyword, colname, NULL, &status);
           colname[dispwidth[ii]] = '\0';  /* truncate long names */
-          printf("%*s ",dispwidth[ii], colname);
+          fprintf(fout, "%*s ",dispwidth[ii], colname);
         }
-        printf("\n");  /* terminate header line */
+        fprintf(fout, "\n");  /* terminate header line */
 
         /* print each column, row by row (there are faster ways to do this) */
         val = value;
         for (jj = 1; jj <= nrows && !status; jj++) {
-          printf("%4li ", jj);
+          fprintf(fout, "   ");
           for (ii = firstcol; ii <= lastcol; ii++)
           {
             /* read value as a string, regardless of intrinsic datatype */
@@ -102,14 +111,16 @@ int main(int argc, char *argv[])
                                    &val, &anynul, &status) )
               break;  /* jump out of loop on error */
 
-            printf("%-*s ",dispwidth[ii], value);
+            fprintf(fout, "%-*s ",dispwidth[ii], value);
           }
-          printf("\n");
+          fprintf(fout, "\n");
         }
       }
     }
     fits_close_file(fptr, &status);
   }
+
+  pclose(fout);
 
   if (status) fits_report_error(stderr, status); /* print any error message */
   return(status);

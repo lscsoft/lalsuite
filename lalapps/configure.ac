@@ -128,6 +128,11 @@ AC_PROG_AWK
 AC_PROG_SED
 LALSUITE_CHECK_PYTHON([2.6])
 
+# check for pager programs
+PAGER=
+AC_PATH_PROGS([PAGER],[less more])
+AM_CONDITIONAL([PAGER],[test "x${PAGER}" != x])
+
 # check for condor_compile
 AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
@@ -163,6 +168,9 @@ AC_CHECK_LIB([z],[compress],,[AC_MSG_ERROR([could not find the zlib library])])
 AC_HEADER_STDC
 AC_CHECK_HEADERS([zlib.h],,[AC_MSG_ERROR([could not find zlib.h])])
 AC_CHECK_HEADERS([unistd.h glob.h])
+
+# check for popen/pclose
+AC_CHECK_FUNCS([popen pclose])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])

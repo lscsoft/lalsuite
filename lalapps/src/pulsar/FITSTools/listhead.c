@@ -27,6 +27,11 @@
 #error CFITSIO library is not available
 #endif
 
+#if !defined(PAGER) || !defined(HAVE_POPEN) || !defined(HAVE_PCLOSE)
+#define popen(...) stdout
+#define pclose(...)
+#endif
+
 int main(int argc, char *argv[])
 {
   fitsfile *fptr;         /* FITS file pointer, defined in fitsio.h */
@@ -52,6 +57,12 @@ int main(int argc, char *argv[])
     return(0);
   }
 
+  FILE *fout = popen(PAGER, "w");
+  if (fout == NULL) {
+    fprintf(stderr, "Could not execute '%s'\n", PAGER);
+    return(1);
+  }
+
   if (!fits_open_file(&fptr, argv[1], READONLY, &status))
   {
     fits_get_hdu_num(fptr, &hdupos);  /* Get the current HDU position */
@@ -63,14 +74,14 @@ int main(int argc, char *argv[])
     {
       fits_get_hdrspace(fptr, &nkeys, NULL, &status); /* get # of keywords */
 
-      printf("Header listing for HDU #%d:\n", hdupos);
+      fprintf(fout, "Header listing for HDU #%d:\n", hdupos);
 
       for (ii = 1; ii <= nkeys; ii++) { /* Read and print each keywords */
 
         if (fits_read_record(fptr, ii, card, &status))break;
-        printf("%s\n", card);
+        fprintf(fout, "%s\n", card);
       }
-      printf("END\n\n");  /* terminate listing with END */
+      fprintf(fout, "END\n\n");  /* terminate listing with END */
 
       if (single) break;  /* quit if only listing a single header */
 
@@ -81,6 +92,8 @@ int main(int argc, char *argv[])
 
     fits_close_file(fptr, &status);
   }
+
+  pclose(fout);
 
   if (status) fits_report_error(stderr, status); /* print any error message */
   return(status);
