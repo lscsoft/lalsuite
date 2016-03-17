@@ -1243,8 +1243,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
                 newIm_c = im_c + re_c*dim_c-dre_c*im_c,
                 re_c=newRe_c, im_c = newIm_c)
             {
-                modelPtrp[j]=hptilde->data->data[i]*(re_p +1j*im_p);
-                modelPtrc[j]=hctilde->data->data[i]*(re_c +1j*im_c);
+                modelPtrp[j]=hptilde->data->data[i]*(re_p +1.0j*im_p);
+                modelPtrc[j]=hctilde->data->data[i]*(re_c +1.0j*im_c);
             }
             oldpsi_p = endpsi_p;
             oldpsi_c = endpsi_c;
