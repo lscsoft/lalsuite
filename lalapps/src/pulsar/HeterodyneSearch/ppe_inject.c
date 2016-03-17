@@ -652,14 +652,14 @@ void get_loudest_snr( LALInferenceRunState *runState ){
 
     REAL8 snrval = calculate_time_domain_snr( data, ifo_model );
 
-    //UINT4 length = ifo_model->compTimeData->data->length;
+    //UINT4 length = ifo_model->compTimeSignal->data->length;
 
     /* print out maxlikelihood template */
     //for ( UINT4 j=0; j < length; j++ ){
     //  fprintf(fp, "%lf\t%le\t%le\n",
     //          XLALGPSGetREAL8( &ifo_model->times->data[j] ),
-    //          ifo_model->compTimeSignal->data->data[j].re,
-    //          ifo_model->compTimeSignal->data->data[j].im );
+    //          creal(ifo_model->compTimeSignal->data->data[j]),
+    //          cimag(ifo_model->compTimeSignal->data->data[j]));
     //}
 
     snrmulti += SQUARE( snrval );
