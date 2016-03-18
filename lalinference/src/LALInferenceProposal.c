@@ -3816,8 +3816,6 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LAL
   char **ifo_names;
   INT4 ifo;
   INT4 nifo = LALInferenceGetINT4Variable(thread->proposalArgs, "nDet");
-  REAL8 ampWidth = *(REAL8 *)LALInferenceGetVariable(thread->priorArgs, "spcal_amp_uncertainty");
-  REAL8 phaseWidth = *(REAL8 *)LALInferenceGetVariable(thread->priorArgs, "spcal_phase_uncertainty");
 
   LALInferenceCopyVariables(currentParams, proposedParams);
 
@@ -3833,10 +3831,16 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LAL
 
     snprintf(ampName, VARNAME_MAX, "%s_spcal_amp", ifo_names[ifo]);
     snprintf(phaseName, VARNAME_MAX, "%s_spcal_phase", ifo_names[ifo]);
-
+   
     amps = *(REAL8Vector **)LALInferenceGetVariable(proposedParams, ampName);
     phases = *(REAL8Vector **)LALInferenceGetVariable(proposedParams, phaseName);
-
+    
+    char amp_uncert[VARNAME_MAX];
+    char pha_uncert[VARNAME_MAX];
+    snprintf(amp_uncert, VARNAME_MAX, "%s_spcal_amp_uncertainty",ifo_names[ifo]);
+    snprintf(pha_uncert, VARNAME_MAX, "%s_spcal_phase_uncertainty", ifo_names[ifo]);
+    REAL8 ampWidth = *(REAL8 *)LALInferenceGetVariable(thread->priorArgs, amp_uncert);
+    REAL8 phaseWidth = *(REAL8 *)LALInferenceGetVariable(thread->priorArgs, pha_uncert);
     for (i = 0; i < amps->length; i++) {
       amps->data[i] += ampWidth*gsl_ran_ugaussian(thread->GSLrandom)/sqrt(nifo*amps->length);
       phases->data[i] += phaseWidth*gsl_ran_ugaussian(thread->GSLrandom)/sqrt(nifo*amps->length);

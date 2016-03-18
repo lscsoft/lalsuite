@@ -366,8 +366,8 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
  * Spline Calibration Model \n\
   (--enable-spline-calibration)            Enable cubic-spline calibration error model.\n\
   (--spcal-nodes N)           Set the number of spline nodes per detector (default 5)\n\
-  (--spcal-amp-uncertainty X) Set the prior on relative amplitude uncertainty (default 0.1)\n\
-  (--spcal-phase-uncertainty X) Set the prior on phase uncertanity in degrees (default 5)\n\n\n";
+  (--IFO-spcal-amp-uncertainty X) Set the prior on relative amplitude uncertainty for the instrument IFO (mandatory with --enable-spline-calibration)\n\
+  (--IFO-spcal-phase-uncertainty X) Set the prior on phase uncertanity in degrees  for the instrument IFO (mandatory with --enable-spline-calibration)\n\n\n";
 
     static LALStatus   status;
     /* Print command line arguments if help requested */
