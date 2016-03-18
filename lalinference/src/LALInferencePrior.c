@@ -244,9 +244,6 @@ static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, 
     return logPrior;
   }
 
-  ampWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_amp_uncertainty");
-  phaseWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, "spcal_phase_uncertainty");
-
   ifo = runState->data;
   do {
     size_t i;
@@ -262,7 +259,12 @@ static REAL8 LALInferenceSplineCalibrationPrior(LALInferenceRunState *runState, 
 
     amps = *(REAL8Vector **)LALInferenceGetVariable(params, ampVarName);
     phase = *(REAL8Vector **)LALInferenceGetVariable(params, phaseVarName);
-
+    char amp_uncert[VARNAME_MAX];
+    char pha_uncert[VARNAME_MAX];
+    snprintf(amp_uncert, VARNAME_MAX, "%s_spcal_amp_uncertainty", ifo->name);
+    snprintf(pha_uncert, VARNAME_MAX, "%s_spcal_phase_uncertainty", ifo->name);
+    ampWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, amp_uncert);
+    phaseWidth = *(REAL8 *)LALInferenceGetVariable(runState->priorArgs, pha_uncert);
     for (i = 0; i < amps->length; i++) {
       logPrior += -log(2.0*M_PI) - log(ampWidth) - 0.5*amps->data[i]*amps->data[i]/ampWidth/ampWidth;
       logPrior += -log(2.0*M_PI) - log(phaseWidth) - 0.5*phase->data[i]*phase->data[i]/phaseWidth/phaseWidth;
