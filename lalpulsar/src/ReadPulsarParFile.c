@@ -72,6 +72,7 @@
 #include <lal/ComputeFstat.h>
 #include <lal/TranslateAngles.h>
 #include <lal/TranslateMJD.h>
+#include <lal/LALHashFunc.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -108,12 +109,40 @@ static void strtoupper(CHAR *s) {
   }
 }
 
+/* hash functions copied from LALInference.c */
+typedef struct taghash_elem
+{
+  const char *name;
+  PulsarParam *itemPtr;
+} hash_elem;
 
-/** \brief Compute a hash value based on an input string */
-static UINT4 PulsarHash( const CHAR *name ){
-  UINT4 hashval = 0;
-  for( ; *name != '\0' ; name++ ) { hashval = *name + 31 * hashval; }
-  return ( hashval % PULSAR_HASHTABLE_SIZE );
+static void *new_elem( const char *name, PulsarParam *itemPtr )
+{
+  hash_elem e = { .name=name, .itemPtr=itemPtr };
+  return memcpy( XLALMalloc( sizeof( e ) ), &e, sizeof( e ) );
+};
+
+static void del_elem(void *elem)
+{
+  XLALFree(elem);
+}
+
+
+/* Compute a hash value based on element */
+static UINT8 PulsarHash( const void *elem );
+static UINT8 PulsarHash( const void *elem )
+{
+  if( !elem ) { XLAL_ERROR(XLAL_EINVAL); }
+  size_t len = strnlen(((const hash_elem *)elem)->name, PULSAR_PARNAME_MAX );
+  return( XLALCityHash64(((const hash_elem *)elem)->name, len) );
+}
+
+
+static int PulsarHashElemCmp( const void *elem1, const void *elem2 );
+static int PulsarHashElemCmp( const void *elem1, const void *elem2 )
+{
+  if( !elem1 || !elem2 ) { XLAL_ERROR(XLAL_EINVAL); }
+  return(strncmp(((const hash_elem *)elem1)->name,((const hash_elem *)elem2)->name, PULSAR_PARNAME_MAX));
 }
 
 
@@ -149,7 +178,8 @@ static PulsarParam *PulsarGetParamItemSlow( const PulsarParameters *pars, const 
 static PulsarParam *PulsarGetParamItem( const PulsarParameters *pars, const CHAR *name ){
 /* (this function is only to be used internally) */
 /* Returns pointer to item for given item name.  */
-  PulsarParam *item = NULL;
+  hash_elem tmp;
+  const hash_elem *match=NULL;
 
   CHAR upperName[PULSAR_PARNAME_MAX];
   XLALStringCopy( upperName, name, PULSAR_PARNAME_MAX );
@@ -157,16 +187,13 @@ static PulsarParam *PulsarGetParamItem( const PulsarParameters *pars, const CHAR
 
   if( pars == NULL ) { return NULL; }
   if( pars->nparams == 0 ) { return NULL; }
+  if( !pars->hash_table ) { return PulsarGetParamItemSlow( pars, upperName ); }
 
-  item = pars->hash_table[PulsarHash( upperName )];
+  tmp.name = upperName;
+  XLALHashTblFind( pars->hash_table, &tmp, (const void **)&match );
+  if ( !match ) { return NULL; }
 
-  /* If not found in the hash table, need to check for collision with an item previous Removed()
-   *  which will put a NULL in the hash table */
-  if( !item ) { return PulsarGetParamItemSlow( pars, upperName ); }
-
-  /* Check for hash collision */
-  if( strcmp( item->name, upperName ) ) { return PulsarGetParamItemSlow( pars, upperName ); }
-  else { return item; }
+  return match->itemPtr;
 }
 
 
@@ -358,7 +385,8 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
   memcpy( new->value, value, PulsarTypeSize[type] );
   new->next = pars->head;
   pars->head = new;
-  pars->hash_table[PulsarHash( new->name )] = new;
+  hash_elem *elem = new_elem( new->name, new );
+  XLALHashTblAdd(pars->hash_table, (void *)elem);
   pars->nparams++;
 }
 
@@ -398,8 +426,10 @@ void PulsarClearParams( PulsarParameters *pars ){
     if( this ) { next = this->next; }
   }
   pars->head = NULL;
-  memset( pars->hash_table, 0, PULSAR_HASHTABLE_SIZE * sizeof(PulsarParam *) );
   pars->nparams = 0;
+
+  if( pars->hash_table ) { XLALHashTblDestroy(pars->hash_table); }
+  pars->hash_table = XLALHashTblCreate( del_elem, PulsarHash, PulsarHashElemCmp );
 }
 
 
@@ -430,6 +460,10 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name ){
 
   if( !parent ) { pars->head = this->next; }
   else { parent->next = this->next; }
+  /* Remove from hash table */
+  hash_elem elem;
+  elem.name = this->name;
+  XLALHashTblRemove( pars->hash_table, (void *)&elem );
   XLALFree( this->value );
   XLALFree( this->err );
   XLALFree( this->fitFlag );
@@ -438,9 +472,6 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name ){
   this->fitFlag = NULL;
   XLALFree( this );
 
-  /* Have to check the name in case there was a collision */
-  UINT4 hash = PulsarHash( upperName );
-  if( this == pars->hash_table[hash] ) { pars->hash_table[hash] = NULL; }
   this = NULL;
   pars->nparams--;
   if( pars->nparams == 0 ) { PulsarClearParams( pars ); }
@@ -492,6 +523,7 @@ void PulsarFreeParams( PulsarParameters* pars ){
   if ( !pars ) { return; }
 
   PulsarClearParams( pars );
+  if( pars->hash_table ) { XLALHashTblDestroy(pars->hash_table); }
   XLALFree( pars );
 }
 
