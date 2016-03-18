@@ -379,18 +379,6 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       }
     }
 
-    if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, "--spcal-amp-uncertainty"))) {
-      ampUncertaintyPrior = atof(ppt->value);
-    }
-
-    if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, "--spcal-phase-uncertainty"))) {
-      phaseUncertaintyPrior = M_PI/180.0*atof(ppt->value); /* CL arg in degrees, variable in radians */
-    }
-
-    LALInferenceAddVariable(runState->priorArgs, "spcal_amp_uncertainty", &ampUncertaintyPrior,
-          LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(runState->priorArgs, "spcal_phase_uncertainty", &phaseUncertaintyPrior,
-          LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(currentParams, "spcal_active", &calOn, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(currentParams, "spcal_npts", &ncal, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
@@ -430,6 +418,35 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       LALInferenceAddVariable(currentParams, freqVarName, &logfreqs, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
       LALInferenceAddVariable(currentParams, ampVarName, &amps, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_LINEAR);
       LALInferenceAddVariable(currentParams, phaseVarName, &phase, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_LINEAR);
+      
+      char amp_uncert_op[VARNAME_MAX];
+      char pha_uncert_op[VARNAME_MAX];
+      snprintf(amp_uncert_op, VARNAME_MAX, "--%s-spcal-amp-uncertainty", ifo->name);
+      snprintf(pha_uncert_op, VARNAME_MAX, "--%s-spcal-phase-uncertainty", ifo->name);
+      if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, amp_uncert_op))) {
+        ampUncertaintyPrior = atof(ppt->value);
+      }
+      else{
+        fprintf(stderr,"Error, missing --%s-spcal-amp-uncertainty\n",ifo->name);
+        exit(1);
+      }
+
+      if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, pha_uncert_op))) {
+        phaseUncertaintyPrior = M_PI/180.0*atof(ppt->value); /* CL arg in degrees, variable in radians */
+      }
+      else{
+        fprintf(stderr,"Error, missing --%s-spcal-phase-uncertainty\n",ifo->name);
+        exit(1);
+      }
+
+      char amp_uncert[VARNAME_MAX];
+      char pha_uncert[VARNAME_MAX];
+      snprintf(amp_uncert, VARNAME_MAX, "%s_spcal_amp_uncertainty", ifo->name);
+      snprintf(pha_uncert, VARNAME_MAX, "%s_spcal_phase_uncertainty", ifo->name);
+      LALInferenceAddVariable(runState->priorArgs, amp_uncert, &ampUncertaintyPrior,
+            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->priorArgs, pha_uncert, &phaseUncertaintyPrior,
+            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
       ifo = ifo->next;
 
