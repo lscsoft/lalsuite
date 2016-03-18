@@ -1814,10 +1814,8 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
         oData.innerIntegrand.function = &qInnerIntegrand;
     else if(!strcmp(massRatioName,"eta"))
         oData.innerIntegrand.function = &etaInnerIntegrand;
-    else if ((MMin<0.0)||(MMax<0.0)||(MTotMax<0.0)||(McMin<0.0)||(McMax<0.0)||(massRatioMin<0.0)||(massRatioMax<0.0))
-        XLAL_ERROR_REAL8(XLAL_EFUNC | XLAL_EINVAL, "Invalid mass values specified");
     else
-        XLAL_ERROR_REAL8(XLAL_EFUNC | XLAL_ENAME, "Invalid mass ratio name specified");
+        XLAL_ERROR_REAL8(XLAL_ENAME, "Invalid mass ratio name specified");
 
     // Disable GSL error reporting in favour of XLAL (the integration routines are liable to fail).
     gsl_error_handler_t *oldHandler = gsl_set_error_handler_off();
@@ -1843,7 +1841,7 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
                         &result, &err);
 
     if (status)
-        XLAL_ERROR_REAL8(XLAL_EFUNC | XLAL_EDATA , "Bad data; GSL integration failed.");
+        XLAL_ERROR_REAL8(XLAL_EFUNC | XLAL_EDATA, "Bad data; GSL integration failed.");
 
     gsl_set_error_handler(oldHandler);
 
