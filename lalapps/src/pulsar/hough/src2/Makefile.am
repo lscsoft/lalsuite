@@ -16,7 +16,7 @@ NVCC ?= nvcc
 # allow to specify a different CUDA runtime library (e.g. for Windows when cross-compiling)
 CUDART ?= -lcudart
 
-bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch
+bin_PROGRAMS = lalapps_HierarchicalSearch
 
 EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 \
 		 eah_HierarchicalSearch
@@ -30,16 +30,6 @@ EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 
 
 EAHsrc = $(top_srcdir)/src/pulsar/EinsteinAtHome
 FDSsrc = ../../Fstatistic
-
-lalapps_HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h \
-	                  ../src/SFTbin.h ../src/SFTbin.c \
-			  ../src/DriveHoughColor.h ../src/PeakSelect.h \
-			  ../src/PeakSelect.c
-
-lalapps_HoughMismatch_SOURCES = HoughMismatch.c ../src/MCInjectHoughS2.h \
-			../src/SFTbin.h ../src/SFTbin.c \
-			../src/DriveHoughColor.h ../src/PeakSelect.h \
-			../src/PeakSelect.c
 
 HierarchicalSearchSources = HierarchicalSearch.c HierarchicalSearch.h \
 			  StackSlideFstat.c StackSlideFstat.h \

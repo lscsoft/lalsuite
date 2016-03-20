@@ -233,7 +233,9 @@ src/pulsar/crosscorr/toplist_crosscorr.dat
 src/pulsar/fscan/lalapps_spec_avg
 src/pulsar/hough/src/lalapps_DriveHoughMulti
 src/pulsar/hough/src/lalapps_DriveHough_v3
+src/pulsar/hough/src/lalapps_HoughMismatch
 src/pulsar/hough/src/lalapps_HoughValidate
+src/pulsar/hough/src/lalapps_HoughValidateAM
 src/pulsar/hough/src/lalapps_MCInjectHoughMulti
 src/pulsar/hough/src/lalapps_MCInjectHoughMultiChi2Test
 src/pulsar/hough/src/lalapps_MCInjectS2
@@ -243,8 +245,6 @@ src/pulsar/hough/src/lalapps_SFTclean
 src/pulsar/hough/src/lalapps_ValidateChi2Test
 src/pulsar/hough/src/lalapps_ValidateHoughMulti
 src/pulsar/hough/src2/lalapps_HierarchicalSearch
-src/pulsar/hough/src2/lalapps_HoughMismatch
-src/pulsar/hough/src2/lalapps_HoughValidateAM
 src/pulsar/hough/src2/lalapps_RecalcHSCandidates
 src/ring/lalapps_coh_PTF_inspiral
 src/ring/lalapps_coh_PTF_spin_checker
