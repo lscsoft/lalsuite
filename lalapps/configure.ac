@@ -45,10 +45,7 @@ AC_CONFIG_FILES([\
   src/stochastic/Makefile \
   src/string/Makefile \
 ])
-# FIXME: -Wno-unsupported is a hack which silences warnings regarding
-# subdir-objects in automake-1.14+. this will be the default, and only,
-# behaviour in automake-2.0+ so this is only a temporary measure
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests -Wno-unsupported])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 

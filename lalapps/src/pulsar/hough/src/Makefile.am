@@ -15,7 +15,7 @@ lalapps_DriveHough_v3_SOURCES = DriveHough_v3.c  DriveHoughColor.h PeakSelect.c 
 lalapps_HoughValidate_SOURCES = HoughValidate.c MCInjectComputeHough.h DriveHoughColor.h PeakSelect.h PeakSelect.c
 lalapps_DriveHoughMulti_SOURCES = DriveHoughMulti.c  DriveHoughColor.h PeakSelect.c PeakSelect.h \
 	 FstatToplist.c FstatToplist.h \
-	 ../../Fstatistic/HeapToplist.c ../../Fstatistic/HeapToplist.h
+	 HeapToplist.c
 
 lalapps_ValidateHoughMulti_SOURCES = ValidateHoughMulti.c  DriveHoughColor.h PeakSelect.c PeakSelect.h MCInjectHoughMulti.h
 lalapps_MultiWeights_SOURCES = MultiWeights.c  DriveHoughColor.h

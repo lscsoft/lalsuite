@@ -34,10 +34,10 @@ lalapps_PredictFstat_SOURCES = PredictFstat.c
 # force linking in C++ mode for E@H
 eah_PredictFstat_SOURCES = \
 	$(lalapps_PredictFstat_SOURCES) \
-	../EinsteinAtHome/win_lib.cpp
+	win_lib.cpp
 eah_ComputeFstatistic_v2_SOURCES = \
 	$(ComputeFstatisticV2Sources) \
-	../EinsteinAtHome/win_lib.cpp
+	win_lib.cpp
 
 lalapps_ComputeFstatMCUpperLimit_SOURCES = ComputeFstatMCUpperLimit.c
 

@@ -1,7 +1,7 @@
 BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/Fstatistic @AM_CPPFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/Fstatistic -I $(top_srcdir)/src/pulsar/EinsteinAtHome @AM_CPPFLAGS@
 
 ## Compiling with OpenCL on Linux
 # LDFLAGS = -lOpenCL
@@ -28,18 +28,15 @@ EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 
 #bin_PROGRAMS += lalapps_HierarchicalSearch
 #endif
 
-EAHsrc = $(top_srcdir)/src/pulsar/EinsteinAtHome
-FDSsrc = ../../Fstatistic
-
 HierarchicalSearchSources = HierarchicalSearch.c HierarchicalSearch.h \
 			  StackSlideFstat.c StackSlideFstat.h \
 			  HoughFstatToplist.c HoughFstatToplist.h \
-			  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h
+			  HeapToplist.c
 
 lalapps_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources)
 
-HSLocalSources = $(EAHsrc)/LocalComputeFstatHoughMap.c
-EAHSources = $(HSLocalSources) $(EAHsrc)/hs_boinc_extras.c $(EAHsrc)/hs_boinc_options.cpp $(EAHsrc)/win_lib.cpp
+HSLocalSources = LocalComputeFstatHoughMap.c
+EAHSources = $(HSLocalSources) hs_boinc_extras.c hs_boinc_options.cpp win_lib.cpp
 
 ## optimized HierarchicalSearch targets
 
@@ -66,10 +63,10 @@ eah_HierarchicalSearch_LDADD = $(LDADD) $(RELEASE_LDADD)
 libstdc++.a:
 	cp -f `$(CC) -print-file-name=$@` $@
 
-exchndl.o: $(EAHsrc)/exchndl.c
+exchndl.o: exchndl.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-erp_execinfo_plus.o: $(EAHsrc)/erp_execinfo_plus.c
+erp_execinfo_plus.o: erp_execinfo_plus.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 TESTS_ENVIRONMENT = \
