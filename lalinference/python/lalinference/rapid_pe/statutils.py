@@ -192,20 +192,17 @@ class AliasSampler(object):
         # Make ndraws from the alias table --- the flattened indices are in
         # sorted order though, so we have to remap them back to the proper bins
         idx = self._sort[draw_from_alias_table(self._cprobs, self._alias, ndraws)]
-        # Preconstruct the output draws
-        draws = numpy.empty((self._bins.array.ndim, ndraws))
 
-        # i is the output sample index, and n is the index in the sorted binned
-        # array (flattened).
+        # Preconstruct the output draws
+        draws = numpy.random.uniform(size=(self._bins.array.ndim, ndraws))
+
         # Convert 'idx' to a multi-dimensional index to get the bin we're
-        # drawing from
-        for i, nd_idx in enumerate(numpy.transpose(numpy.unravel_index(idx, self._bins.array.shape))):
-            # Iterate over each dimension, drawing a random number from within
-            # the bin
-            dim = 0
-            for dim_idx, low, high in zip(nd_idx, self._nd_low, self._nd_high):
-                draws[dim, i] = numpy.random.uniform(low[dim_idx], high[dim_idx])
-                dim += 1
+        # drawing from along the axis 'dim'
+        for dim, nd_idx in enumerate(numpy.unravel_index(idx, self._bins.array.shape)):
+            # Iterate over each dimension, shifting the random number to the bin
+            # FIXME: We *could* precalculate this in _finalize
+            ab = self._nd_high[dim] - self._nd_low[dim]
+            draws[dim,:] = ab[nd_idx] * draws[dim,:] + self._nd_low[dim][nd_idx]
 
         return draws
 
