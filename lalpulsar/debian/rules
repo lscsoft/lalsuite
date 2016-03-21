@@ -16,8 +16,8 @@ override_dh_auto_install:
 	    --sysconfdir=/etc \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 	    --enable-swig \
-	    --disable-gcc-flags \
-	    --without-simd && \
+	    --enable-cfitsio \
+	    --disable-gcc-flags && \
 	(grep . /dev/null `find . -name config.log`; true) && \
 	$(MAKE) V=1 && \
 	$(MAKE) V=1 check && \
