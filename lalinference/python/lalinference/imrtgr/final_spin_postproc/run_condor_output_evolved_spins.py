@@ -1,10 +1,10 @@
 '''
-Code to read in LALInference posterior samples at each node, evolve the spins up to the ISCO, and output the resulting mass and spin samples. This code takes the in the input posterior sample file with name `sometag.nodenum` and outputs `..._nodenum.dat`.
+Code to read in LALInference posterior samples at each node, evolve the spins up to the ISCO, and output the resulting mass and spin samples. This code takes in the input posterior sample file with name `sometag.nodenum` and outputs `..._nodenum.dat`.
 
 Usage:
 python run_condor_output_evolved_spins.py <tag for the sub file> <output directory> <Node number>
 '''
-# NKJ-M, 02.2016
+# NKJ-M, 02.2016; Anuradha Gupta, 03.2016
 
 import numpy as np
 import argparse
