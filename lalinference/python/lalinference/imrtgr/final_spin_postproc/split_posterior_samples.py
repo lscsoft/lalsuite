@@ -24,23 +24,27 @@ datfile = args.datfile
 tag = args.tag
 no_of_files = args.no_of_files
 
+
+# Collect data into fixed-length chunks or blocks
 def grouper(n, iterable, fillvalue=None):
-    "Collect data into fixed-length chunks or blocks"
     # grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx
     args = [iter(iterable)] * n
     return izip_longest(fillvalue=fillvalue, *args)
 
 
+# Open the data files to read in the total number of lines
 with open(datfile) as f:
     heads = f.readline()
     totn = len(f.readlines())
 
+
+# Writing in the different files 
 with open(datfile) as f:
     n = int(totn/no_of_files)
     for i, g in enumerate(grouper(n, f, fillvalue=''), 0):
         of = '{0}.{1}'.format(tag, i)
-        with open(of, 'w') as fout:
-	    if i != 0:
+        with open(args.outdir+'/'+of, 'w') as fout:
+	    if i != 0:    
 	        fout.writelines(heads)
             fout.writelines(g)
     
