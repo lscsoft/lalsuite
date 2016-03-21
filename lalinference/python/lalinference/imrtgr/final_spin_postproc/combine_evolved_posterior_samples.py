@@ -23,14 +23,18 @@ outdir = args.outdir
 outfile = args.outfilename
 no_of_files = args.no_of_files
 
+# Creating a list of input file names
 filenames = [prefix+'_{0}.dat'.format(i) for i in range(no_of_files)]
 
+# Reading in the data from all the files
 file_arrays = [np.loadtxt(f) for f in filenames]
 
+# Combining the data 
 final_file_array = np.concatenate(file_arrays)
 
 with open(filenames[0]) as f:                                                                   
     h = f.readline()
 
-np.savetxt(outfile, final_file_array, header=h.lstrip('#'))
+# saving the data in a new file
+np.savetxt(outdir+'/'+outfile, final_file_array, header=h.lstrip('#'))
 
