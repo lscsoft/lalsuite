@@ -22,8 +22,13 @@ v_final = 6.**-0.5 # Final v for the evolution
 
 evolve_spins = 1
 
+v0L = 1
+
 if evolve_spins:
-	evol_tag = 'evol'
+	if v0L:
+		evol_tag = 'evol_v0L'
+	else:
+		evol_tag = 'evol'
 else:
 	evol_tag = 'no_evol'
 
@@ -88,6 +93,7 @@ Lz /= L
 
 # rescale all results to unit M 
 M = m1+m2 
+eta = m1*m2/(M*M)
 m1 /= M 
 m2 /= M 
 af /= Mf**2. 
@@ -100,8 +106,12 @@ if evolve_spins:
 	phi12 = np.zeros_like(q)
 	Sperpmag = np.zeros_like(q) 
 	v_f = np.zeros_like(q)
-	for i in range(len(q)): 
-		v0 = omega0[i]**(1./3)
+	for i in range(len(q)):
+		if v0L:
+			aL = M[i]*eta[i]/L[i]
+			v0 = aL + (1.5 + eta[i]/6)*aL*aL*aL # Consistent 1PN expression for v0 in terms of L
+		else:
+			v0 = omega0[i]**(1./3)
 		print 'i = %d v0 = %f chi1z = %f chi2z = %f. #'  %(i,  v0, chi1_z[i], chi2_z[i]),  
 
 		# in the case of non-precessing spins chi_i . L = chi_z 
