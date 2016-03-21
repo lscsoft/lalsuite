@@ -40,8 +40,10 @@ python/laldetchar-idq-calibration
 python/laldetchar-idq-convertkwtosb
 python/laldetchar-idq-evaluate-times
 python/laldetchar-idq-fap-calibration
+python/laldetchar-idq-frames-to-segments
 python/laldetchar-idq-gdb-alert-handler
 python/laldetchar-idq-gdb-glitch-tables
+python/laldetchar-idq-gdb-local-performance
 python/laldetchar-idq-gdb-processor
 python/laldetchar-idq-gdb-timeseries
 python/laldetchar-idq-gst-listener
