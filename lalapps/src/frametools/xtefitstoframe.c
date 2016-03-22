@@ -1222,7 +1222,7 @@ int XLALReadFITSTimeStamps(BarycentricData **stamps,     /**< [out] the detector
      XLAL_ERROR(XLAL_EFAULT);
   }
   (*stamps)->length = numrows;
-  LogPrintf(LOG_DEBUG,"%s : found %ld rows in first extension.\n",fn,(*stamps)->length);
+  LogPrintf(LOG_DEBUG,"%s : found %" LAL_INT8_FORMAT " rows in first extension.\n",fn,(*stamps)->length);
 
   /* get number of columns in the data table */
   if (fits_read_key(fptr,TINT,string_TFIELDS,&ncols,comment,&status)) {
@@ -1539,15 +1539,15 @@ int XLALReadFITSEventData(XTECHARArray **event,       /**< [out] The FITSdata st
   (*event)->channeldata[0].nevents = header->nrows;
   (*event)->channeldata[0].rowlength = header->rowlength[0];
   (*event)->channeldata[0].length = (INT8)(header->rowlength[0]*header->nrows);
-  LogPrintf(LOG_DEBUG,"%s : preparing to read in %ld events\n",fn,(*event)->channeldata[0].nevents);
-  LogPrintf(LOG_DEBUG,"%s : this corresponds to %ld CHARS\n",fn,(*event)->channeldata[0].length);
+  LogPrintf(LOG_DEBUG,"%s : preparing to read in %" LAL_INT8_FORMAT " events\n",fn,(*event)->channeldata[0].nevents);
+  LogPrintf(LOG_DEBUG,"%s : this corresponds to %" LAL_INT8_FORMAT " CHARS\n",fn,(*event)->channeldata[0].length);
 
   /* allocate mem for data and data undefined flag */
   if (((*event)->channeldata[0].data = (CHAR *)LALCalloc((*event)->channeldata[0].length,sizeof(CHAR))) == NULL ) {
     LogPrintf(LOG_CRITICAL,"%s : failed to allocate memory for event data.\n",fn);
     XLAL_ERROR(XLAL_ENOMEM);
   }
-  LogPrintf(LOG_DEBUG,"%s : allocated memory for %ld CHARS\n",fn,(*event)->channeldata[0].length);
+  LogPrintf(LOG_DEBUG,"%s : allocated memory for %" LAL_INT8_FORMAT " CHARS\n",fn,(*event)->channeldata[0].length);
   LogPrintf(LOG_DEBUG,"%s : reading column %d\n",fn,col);
 
   /* read the complete data set - we must remember that any event with the most significant bit = 0 is not a real event !! */
@@ -1557,7 +1557,7 @@ int XLALReadFITSEventData(XTECHARArray **event,       /**< [out] The FITSdata st
     LogPrintf(LOG_CRITICAL,"%s : fits_read_col_bit() failed to read in event data.\n",fn);
     XLAL_ERROR(XLAL_EFAULT);
   }
-  LogPrintf(LOG_DEBUG,"%s : read in %ld events\n",fn,(*event)->channeldata[0].nevents);
+  LogPrintf(LOG_DEBUG,"%s : read in %" LAL_INT8_FORMAT " events\n",fn,(*event)->channeldata[0].nevents);
   LogPrintf(LOG_DEBUG,"%s : read rowlength as %" LAL_INT8_FORMAT "\n",fn,(*event)->channeldata[0].rowlength);
 
   /* output debugging information */
@@ -2025,7 +2025,7 @@ int XLALEventDataToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,      /**< [out] a
     LogPrintf(LOG_DEBUG,"%s : tstart = %6.12f\n",fn,(*ts)->tstart);
     LogPrintf(LOG_DEBUG,"%s : T = %f\n",fn,(*ts)->T);
     LogPrintf(LOG_DEBUG,"%s : dt = %e\n",fn,(*ts)->deltat);
-    LogPrintf(LOG_DEBUG,"%s : length = %ld\n",fn,(*ts)->length);
+    LogPrintf(LOG_DEBUG,"%s : length = %" LAL_INT8_FORMAT "\n",fn,(*ts)->length);
     LogPrintf(LOG_DEBUG,"%s : energy = %d - %d\n",fn,(*ts)->energy[0],(*ts)->energy[1]);
     LogPrintf(LOG_DEBUG,"%s : detconfig = %s\n",fn,(*ts)->detconfig);
   }
@@ -2213,7 +2213,7 @@ int XLALArrayDataToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,      /**< [out] a
     LogPrintf(LOG_DEBUG,"%s : tstart = %6.12f\n",fn,(*ts)->tstart);
     LogPrintf(LOG_DEBUG,"%s : T = %f\n",fn,(*ts)->T);
     LogPrintf(LOG_DEBUG,"%s : dt = %e\n",fn,(*ts)->deltat);
-    LogPrintf(LOG_DEBUG,"%s : length = %ld\n",fn,(*ts)->length);
+    LogPrintf(LOG_DEBUG,"%s : length = %" LAL_INT8_FORMAT "\n",fn,(*ts)->length);
     LogPrintf(LOG_DEBUG,"%s : energy = %d - %d\n",fn,(*ts)->energy[0],(*ts)->energy[1]);
     LogPrintf(LOG_DEBUG,"%s : detconfig = %s\n",fn,(*ts)->detconfig);
   }
@@ -2560,7 +2560,7 @@ int XLALApplyGTIToXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,    /**< [in/out] t
   newstartindex = (bti->end[0]-(*ts)->tstart)/(*ts)->deltat;
   newendindex = (bti->start[bti->length-1]-(*ts)->tstart)/(*ts)->deltat;
   newN = newendindex - newstartindex;
-  LogPrintf(LOG_DEBUG,"%s : computed new timeseries span as %ld samples.\n",fn,newN);
+  LogPrintf(LOG_DEBUG,"%s : computed new timeseries span as %" LAL_INT8_FORMAT " samples.\n",fn,newN);
 
   /* if the new start index is moved then slide all of the data */
   if (newstartindex>0) {
@@ -3062,7 +3062,7 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
 	/* compute new number of samples and starting index */
 	sidx = (INT8)floor(0.5 + (epoch.gpsSeconds - tempts->tstart)/tempts->deltat);
 	N = (INT8)floor(T/tempts->deltat);
-	LogPrintf(LOG_DEBUG,"%s : outputting %ld samples to frame\n",fn,N);
+	LogPrintf(LOG_DEBUG,"%s : outputting %" LAL_INT8_FORMAT " samples to frame\n",fn,N);
 
 	/* construct file name - we use the LIGO format <DETECTOR>-<COMMENT>-<GPSSTART>-<DURATION>.gwf */
 	/* the comment field we sub-format into <INSTRUMENT>_<FRAME>_<SOURCE>_<OBSID_APID> */
@@ -3299,7 +3299,7 @@ int XLALBarycenterXTEUINT4TimeSeries(XTEUINT4TimeSeries **ts,       /**< [in/out
 
     /* allocate temp memory first */
     XLALCreateXTEUINT4TimeSeries(&tempts,N);
-    LogPrintf(LOG_DEBUG,"%s : created a temporary short int timeseries with %ld points\n",fn,N);
+    LogPrintf(LOG_DEBUG,"%s : created a temporary short int timeseries with %" LAL_INT8_FORMAT " points\n",fn,N);
   }
 
   /* initialise the data - since the vector will only be filled in for GTI data segments we need to */
