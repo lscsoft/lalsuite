@@ -12,15 +12,15 @@ Source: %{name}-%{version}.tar.xz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig
-BuildRequires: python-devel
-BuildRequires: octave-devel
 BuildRequires: chealpix-devel
 BuildRequires: gsl-devel
 BuildRequires: libmetaio-devel
 BuildRequires: libxml2-devel
 BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
 BuildRequires: scipy
+BuildRequires: swig
 BuildRequires: lal-devel >= 6.15.0
 BuildRequires: lal-python >= 6.15.0
 BuildRequires: lal-octave >= 6.15.0
@@ -40,8 +40,8 @@ BuildRequires: lalpulsar-devel >= 1.12.0
 BuildRequires: lalpulsar-python >= 1.12.0
 BuildRequires: lalpulsar-octave >= 1.12.0
 Requires: chealpix
-Requires: healpy
 Requires: gsl >= 1.15
+Requires: healpy
 Requires: libmetaio
 Requires: libxml2
 Requires: lal >= 6.15.0
@@ -80,8 +80,8 @@ library.
 Summary: Python Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python
 Requires: numpy
+Requires: python
 Requires: scipy
 Requires: lal-python >= 6.15.0
 Requires: lalmetaio-python >= 1.2.0
