@@ -9,7 +9,7 @@ Summary: LSC Algorithm DetChar Library
 License: GPL
 Group: LAL
 Source: %{name}-%{version}.tar.xz
-URL: http://www.lsc-group.phys.uwm.edu/lal
+URL: http://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: glib2-devel
