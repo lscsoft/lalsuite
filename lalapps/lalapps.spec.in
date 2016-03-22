@@ -14,9 +14,9 @@ Source: %{name}-%{version}.tar.xz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Duncan Brown <dbrown@ligo.caltech.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: gsl-devel
-BuildRequires: fftw-devel
 BuildRequires: cfitsio-devel
+BuildRequires: fftw-devel
+BuildRequires: gsl-devel
 BuildRequires: libframe-devel
 BuildRequires: libmetaio-devel
 BuildRequires: lal-devel >= 6.15.0
@@ -39,10 +39,10 @@ BuildRequires: lalpulsar-devel >= 1.12.0
 BuildRequires: lalpulsar-python >= 1.12.0
 BuildRequires: lalinference-devel >= 1.5.0
 BuildRequires: lalinference-python >= 1.5.0
-Requires: healpy
-Requires: gsl
-Requires: fftw
 Requires: cfitsio
+Requires: fftw
+Requires: gsl
+Requires: healpy
 Requires: libframe
 Requires: libmetaio
 Requires: python
