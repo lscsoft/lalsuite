@@ -9,7 +9,7 @@ Summary: LSC Algorithm Inspiral Library
 License: GPL
 Group: LAL
 Source: %{name}-%{version}.tar.xz
-URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
+URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: gsl-devel
