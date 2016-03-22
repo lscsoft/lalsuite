@@ -4,7 +4,7 @@
 
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 1
+Release: 1%{?dist}
 Summary: LSC Algorithm Burst Library
 License: GPL
 Group: LAL
