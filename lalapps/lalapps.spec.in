@@ -6,7 +6,7 @@
 
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 1
+Release: 1%{?dist}
 Summary: LSC Algorithm Library Applications
 License: GPL
 Group: LAL
