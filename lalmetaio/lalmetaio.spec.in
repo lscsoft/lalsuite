@@ -12,11 +12,11 @@ Source: %{name}-%{version}.tar.xz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig
-BuildRequires: python-devel
-BuildRequires: octave-devel
 BuildRequires: libmetaio-devel
 BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
+BuildRequires: swig
 BuildRequires: lal-devel >= 6.14.0
 BuildRequires: lal-python >= 6.14.0
 BuildRequires: lal-octave >= 6.14.0
@@ -44,8 +44,8 @@ library.
 Summary: Python Bindings for LALMetaIO
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python
 Requires: numpy
+Requires: python
 Requires: lal-python >= 6.14.0
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
