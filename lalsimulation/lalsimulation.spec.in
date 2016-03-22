@@ -12,7 +12,11 @@ Source: %{name}-%{version}.tar.xz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig, python-devel, octave-devel, gsl-devel, numpy
+BuildRequires: swig
+BuildRequires: python-devel
+BuildRequires: octave-devel
+BuildRequires: gsl-devel
+BuildRequires: numpy
 BuildRequires: lal-devel >= 6.15.0
 BuildRequires: lal-python >= 6.15.0
 BuildRequires: lal-octave >= 6.15.0
@@ -40,7 +44,8 @@ library.
 Summary: Python bindings for LALSimulation
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python, numpy
+Requires: python
+Requires: numpy
 Requires: lal-python >= 6.15.0
 %description python
 This package provides the Python Bindings for LALSimulation.
