@@ -145,12 +145,10 @@ prior2injnode=pipeline.CondorDAGNode(prior2injjob)
 prior2injnode.add_var_opt('output',injfile)
 prior2injnode.add_var_opt('num-of-injs',str(opts.trials))
 prior2injnode.add_var_opt('approx',approx)
-flow=str(40)
 if prior_cp.has_option('engine','amporder'):
   amporder=prior_cp.get('engine','amporder')
 else:
   amporder='0'
-prior2injnode.add_var_opt('flow',flow) # TODO: Read from somewhere
 prior2injnode.add_var_opt('amporder',amporder)
 prior2injnode.add_var_arg(priorfile)
 prior2injnode.add_parent(priordagnode)

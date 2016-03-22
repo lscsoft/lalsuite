@@ -99,9 +99,6 @@ extern const REAL8 CM[15][15];
  ***************************************************************/
 REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
-REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
-                              LALInferenceModel *model);
-
 /**
  * For testing purposes (for instance sampling the prior),
  * likelihood that returns 0.0 = log(1) every

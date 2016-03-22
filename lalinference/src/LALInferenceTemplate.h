@@ -129,10 +129,7 @@ void LALInferenceTemplateNullTimedomain(LALInferenceModel *model);
  */
 void LALInferenceTemplateSineGaussian(LALInferenceModel *model);
 
-void LALInferenceTemplateROQ(LALInferenceModel *model);
-
-void LALInferenceTemplateROQ_amp_squared(LALInferenceModel *model);
-
+void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferenceModel *model);
 /**
  * Damped Sinusoid template.
  *

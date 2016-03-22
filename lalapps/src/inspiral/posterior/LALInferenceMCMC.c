@@ -305,6 +305,13 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     LALInferenceAddINT4Variable(runState->proposalArgs, "de_skip", skip, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(runState->proposalArgs, "output_snrs", outputSNRs, LALINFERENCE_PARAM_OUTPUT);
 
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--roqtime_steps")){
+
+        LALInferenceSetupROQdata(runState->data, runState->commandLine);
+        fprintf(stderr, "done LALInferenceSetupROQdata\n");
+
+     }
+
     /* Parse proposal args for runSTate and initialize the walkers on this MPI thread */
     LALInferenceInitCBCThreads(runState, ntemps_per_thread);
 
