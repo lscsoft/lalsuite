@@ -12,17 +12,17 @@ Source: %{name}-%{version}.tar.xz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig
-BuildRequires: python-devel
-BuildRequires: octave-devel
-BuildRequires: libframe-devel
 BuildRequires: ldas-tools-framecppc-devel
+BuildRequires: libframe-devel
 BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
+BuildRequires: swig
 BuildRequires: lal-devel >= 6.15.0
-BuildRequires: lal-python >= 6.15.0
 BuildRequires: lal-octave >= 6.15.0
-Requires: libframe
+BuildRequires: lal-python >= 6.15.0
 Requires: ldas-tools-framecppc
+Requires: libframe
 Requires: lal >= 6.15.0
 Prefix: %{_prefix}
 
@@ -35,8 +35,8 @@ that use the LAL Frame library.
 Summary: Files and documentation needed for compiling programs that use LAL Frame
 Group: LAL
 Requires: %{name} = %{version}
-Requires: libframe-devel
 Requires: ldas-tools-framecppc-devel
+Requires: libframe-devel
 Requires: lal-devel >= 6.15.0
 %description devel
 The LSC Algorithm Frame Library for gravitational wave data analysis. This
@@ -47,8 +47,8 @@ library.
 Summary: Python Bindings for LALFrame
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python
 Requires: numpy
+Requires: python
 Requires: lal-python >= 6.15.0
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
