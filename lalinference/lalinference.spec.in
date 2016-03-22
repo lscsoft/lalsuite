@@ -12,8 +12,15 @@ Source: %{name}-%{version}.tar.xz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig, python-devel, octave-devel, chealpix-devel, gsl-devel
-BuildRequires: libmetaio-devel, libxml2-devel, numpy, scipy
+BuildRequires: swig
+BuildRequires: python-devel
+BuildRequires: octave-devel
+BuildRequires: chealpix-devel
+BuildRequires: gsl-devel
+BuildRequires: libmetaio-devel
+BuildRequires: libxml2-devel
+BuildRequires: numpy
+BuildRequires: scipy
 BuildRequires: lal-devel >= 6.15.0
 BuildRequires: lal-python >= 6.15.0
 BuildRequires: lal-octave >= 6.15.0
@@ -32,7 +39,11 @@ BuildRequires: lalinspiral-octave >= 1.7.0
 BuildRequires: lalpulsar-devel >= 1.12.0
 BuildRequires: lalpulsar-python >= 1.12.0
 BuildRequires: lalpulsar-octave >= 1.12.0
-Requires: chealpix, healpy, gsl >= 1.15, libmetaio, libxml2
+Requires: chealpix
+Requires: healpy
+Requires: gsl >= 1.15
+Requires: libmetaio
+Requires: libxml2
 Requires: lal >= 6.15.0
 Requires: lalmetaio >= 1.2.0
 Requires: lalxml >= 1.2.0
@@ -50,7 +61,10 @@ that use the LAL Inference library.
 Summary: Files and documentation needed for compiling programs that use LAL Inference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: chealpix-devel, gsl-devel >= 1.15, libmetaio-devel, libxml2-devel
+Requires: chealpix-devel
+Requires: gsl-devel >= 1.15
+Requires: libmetaio-devel
+Requires: libxml2-devel
 Requires: lal-devel >= 6.15.0
 Requires: lalmetaio-devel >= 1.2.0
 Requires: lalxml-devel >= 1.2.0
@@ -66,7 +80,9 @@ library.
 Summary: Python Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python, numpy, scipy
+Requires: python
+Requires: numpy
+Requires: scipy
 Requires: lal-python >= 6.15.0
 Requires: lalmetaio-python >= 1.2.0
 Requires: lalxml-python >= 1.2.0
