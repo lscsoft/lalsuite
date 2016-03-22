@@ -12,14 +12,22 @@ Source: %{name}-%{version}.tar.xz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig, python-devel, octave-devel, gsl-devel, fftw-devel, cfitsio-devel, numpy
+BuildRequires: swig
+BuildRequires: python-devel
+BuildRequires: octave-devel
+BuildRequires: gsl-devel
+BuildRequires: fftw-devel
+BuildRequires: cfitsio-devel
+BuildRequires: numpy
 BuildRequires: lal-devel >= 6.15.0
 BuildRequires: lal-python >= 6.15.0
 BuildRequires: lal-octave >= 6.15.0
 BuildRequires: lalxml-devel >= 1.2.0
 BuildRequires: lalxml-python >= 1.2.0
 BuildRequires: lalxml-octave >= 1.2.0
-Requires: gsl, fftw, cfitsio
+Requires: gsl
+Requires: fftw
+Requires: cfitsio
 Requires: lal >= 6.15.0
 Requires: lalxml >= 1.2.0
 Prefix: %{_prefix}
@@ -33,7 +41,10 @@ that use the LAL Pulsar library.
 Summary: Files and documentation needed for compiling programs that use LAL Pulsar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel, fftw-devel, fftw-static, cfitsio-devel
+Requires: gsl-devel
+Requires: fftw-devel
+Requires: fftw-static
+Requires: cfitsio-devel
 Requires: lal-devel >= 6.15.0
 Requires: lalxml-devel >= 1.2.0
 %description devel
@@ -45,7 +56,8 @@ Pulsar library.
 Summary: Python bindings for LALPulsar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python, numpy
+Requires: python
+Requires: numpy
 Requires: lal-python >= 6.15.0
 Requires: lalxml-python >= 1.2.0
 %description python
