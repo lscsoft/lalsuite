@@ -12,13 +12,13 @@ Source: %{name}-%{version}.tar.xz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig
-BuildRequires: python-devel
-BuildRequires: octave-devel
-BuildRequires: gsl-devel
 BuildRequires: glib2-devel
+BuildRequires: gsl-devel
 BuildRequires: libmetaio-devel
 BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
+BuildRequires: swig
 BuildRequires: lal-devel >= 6.15.0
 BuildRequires: lal-python >= 6.15.0
 BuildRequires: lal-octave >= 6.15.0
@@ -50,8 +50,8 @@ that use the LAL DetChar library.
 Summary: Files and documentation needed for compiling programs that use LAL DetChar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel
 Requires: glib2-devel
+Requires: gsl-devel
 Requires: libmetaio-devel
 Requires: lal-devel >= 6.15.0
 Requires: lalmetaio-devel >= 1.2.0
@@ -66,8 +66,8 @@ library.
 Summary: Python Bindings for LALDetChar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python
 Requires: numpy
+Requires: python
 Requires: lal-python >= 6.15.0
 Requires: lalmetaio-python >= 1.2.0
 Requires: lalsimulation-python >= 1.4.0
