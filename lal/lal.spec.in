@@ -10,7 +10,7 @@ License: GPL
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
-Packager: Jolien Creighton <jolien@uwm.edu>
+Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: swig
 BuildRequires: python-devel
