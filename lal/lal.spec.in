@@ -32,9 +32,9 @@ that use the LAL library.
 Summary: Files and documentation needed for compiling programs that use LAL
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel
 Requires: fftw-devel
 Requires: fftw-static
+Requires: gsl-devel
 %description devel
 The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library
@@ -44,8 +44,8 @@ as well as the documentation for the library.
 Summary: Python bindings for LAL
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python
 Requires: numpy
+Requires: python
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings.
