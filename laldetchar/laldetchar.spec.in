@@ -31,6 +31,7 @@ BuildRequires: lalsimulation-octave >= 1.4.0
 BuildRequires: lalburst-devel >= 1.4.0
 BuildRequires: lalburst-python >= 1.4.0
 BuildRequires: lalburst-octave >= 1.4.0
+Requires: glib2
 Requires: gsl
 Requires: libframe
 Requires: libmetaio
