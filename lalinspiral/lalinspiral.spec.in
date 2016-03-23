@@ -18,25 +18,25 @@ BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: swig
-BuildRequires: lal-devel >= 6.15.0
-BuildRequires: lal-python >= 6.15.0
-BuildRequires: lal-octave >= 6.15.0
-BuildRequires: lalframe-devel >= 1.3.0
-BuildRequires: lalframe-python >= 1.3.0
-BuildRequires: lalframe-octave >= 1.3.0
-BuildRequires: lalmetaio-devel >= 1.2.0
-BuildRequires: lalmetaio-python >= 1.2.0
-BuildRequires: lalmetaio-octave >= 1.2.0
-BuildRequires: lalsimulation-devel >= 1.4.0
-BuildRequires: lalsimulation-python >= 1.4.0
-BuildRequires: lalsimulation-octave >= 1.4.0
+BuildRequires: lal-devel >= 6.16.0
+BuildRequires: lal-python >= 6.16.0
+BuildRequires: lal-octave >= 6.16.0
+BuildRequires: lalframe-devel >= 1.4.0
+BuildRequires: lalframe-python >= 1.4.0
+BuildRequires: lalframe-octave >= 1.4.0
+BuildRequires: lalmetaio-devel >= 1.2.7
+BuildRequires: lalmetaio-python >= 1.2.7
+BuildRequires: lalmetaio-octave >= 1.2.7
+BuildRequires: lalsimulation-devel >= 1.5.0
+BuildRequires: lalsimulation-python >= 1.5.0
+BuildRequires: lalsimulation-octave >= 1.5.0
 Requires: gsl
 Requires: libframe
 Requires: libmetaio
-Requires: lal >= 6.15.0
-Requires: lalframe >= 1.3.0
-Requires: lalmetaio >= 1.2.0
-Requires: lalsimulation >= 1.4.0
+Requires: lal >= 6.16.0
+Requires: lalframe >= 1.4.0
+Requires: lalmetaio >= 1.2.7
+Requires: lalsimulation >= 1.5.0
 Prefix: %{_prefix}
 
 %description
@@ -51,10 +51,10 @@ Requires: %{name} = %{version}
 Requires: gsl-devel
 Requires: libframe-devel
 Requires: libmetaio-devel
-Requires: lal-devel >= 6.15.0
-Requires: lalframe-devel >= 1.3.0
-Requires: lalmetaio-devel >= 1.2.0
-Requires: lalsimulation-devel >= 1.4.0
+Requires: lal-devel >= 6.16.0
+Requires: lalframe-devel >= 1.4.0
+Requires: lalmetaio-devel >= 1.2.7
+Requires: lalsimulation-devel >= 1.5.0
 %description devel
 The LSC Algorithm Inspiral Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inspiral
@@ -66,10 +66,10 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
-Requires: lal-python >= 6.15.0
-Requires: lalframe-python >= 1.3.0
-Requires: lalmetaio-python >= 1.2.0
-Requires: lalsimulation-python >= 1.4.0
+Requires: lal-python >= 6.16.0
+Requires: lalframe-python >= 1.4.0
+Requires: lalmetaio-python >= 1.2.7
+Requires: lalsimulation-python >= 1.5.0
 %description python
 This package provides the Python bindings for LALInspiral.
 
@@ -78,10 +78,10 @@ Summary: Octave bindings for LALInspiral
 Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
-Requires: lal-octave >= 6.15.0
-Requires: lalframe-octave >= 1.3.0
-Requires: lalmetaio-octave >= 1.2.0
-Requires: lalsimulation-octave >= 1.4.0
+Requires: lal-octave >= 6.16.0
+Requires: lalframe-octave >= 1.4.0
+Requires: lalmetaio-octave >= 1.2.7
+Requires: lalsimulation-octave >= 1.5.0
 %description octave
 This package provides the Octave bindings for LALInspiral.
 
