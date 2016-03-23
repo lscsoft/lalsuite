@@ -176,17 +176,17 @@ if test "$lalxml" = "true"; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.15.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.15.0],[XLALCacheImport],[lal/LALCache.h])
-LALSUITE_CHECK_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_LIB([LALFrame],[1.3.0],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_LIB([LALSimulation],[1.4.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
-LALSUITE_CHECK_LIB([LALInspiral],[1.7.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_LIB([LALPulsar],[1.12.0],[XLALComputeFstat],[lal/ComputeFstat.h])
-LALSUITE_CHECK_LIB([LALBurst],[1.4.0],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_LIB([LAL],[6.16.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.16.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.2.7],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LALFrame],[1.4.0],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_LIB([LALSimulation],[1.5.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_LIB([LALInspiral],[1.7.4],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_LIB([LALPulsar],[1.13.0],[XLALComputeFstat],[lal/ComputeFstat.h])
+LALSUITE_CHECK_LIB([LALBurst],[1.4.1],[XLALEPSearch],[lal/EPSearch.h])
 
 # check for lalxml
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.1],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG

@@ -21,35 +21,35 @@ BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: scipy
 BuildRequires: swig
-BuildRequires: lal-devel >= 6.15.0
-BuildRequires: lal-python >= 6.15.0
-BuildRequires: lal-octave >= 6.15.0
-BuildRequires: lalmetaio-devel >= 1.2.0
-BuildRequires: lalmetaio-python >= 1.2.0
-BuildRequires: lalmetaio-octave >= 1.2.0
-BuildRequires: lalxml-devel >= 1.2.0
-BuildRequires: lalxml-python >= 1.2.0
-BuildRequires: lalxml-octave >= 1.2.0
-BuildRequires: lalsimulation-devel >= 1.4.0
-BuildRequires: lalsimulation-python >= 1.4.0
-BuildRequires: lalsimulation-octave >= 1.4.0
-BuildRequires: lalinspiral-devel >= 1.7.0
-BuildRequires: lalinspiral-python >= 1.7.0
-BuildRequires: lalinspiral-octave >= 1.7.0
-BuildRequires: lalpulsar-devel >= 1.12.0
-BuildRequires: lalpulsar-python >= 1.12.0
-BuildRequires: lalpulsar-octave >= 1.12.0
+BuildRequires: lal-devel >= 6.16.0
+BuildRequires: lal-python >= 6.16.0
+BuildRequires: lal-octave >= 6.16.0
+BuildRequires: lalmetaio-devel >= 1.2.7
+BuildRequires: lalmetaio-python >= 1.2.7
+BuildRequires: lalmetaio-octave >= 1.2.7
+BuildRequires: lalxml-devel >= 1.2.1
+BuildRequires: lalxml-python >= 1.2.1
+BuildRequires: lalxml-octave >= 1.2.1
+BuildRequires: lalsimulation-devel >= 1.5.0
+BuildRequires: lalsimulation-python >= 1.5.0
+BuildRequires: lalsimulation-octave >= 1.5.0
+BuildRequires: lalinspiral-devel >= 1.7.4
+BuildRequires: lalinspiral-python >= 1.7.4
+BuildRequires: lalinspiral-octave >= 1.7.4
+BuildRequires: lalpulsar-devel >= 1.13.0
+BuildRequires: lalpulsar-python >= 1.13.0
+BuildRequires: lalpulsar-octave >= 1.13.0
 Requires: chealpix
 Requires: gsl >= 1.15
 Requires: healpy
 Requires: libmetaio
 Requires: libxml2
-Requires: lal >= 6.15.0
-Requires: lalmetaio >= 1.2.0
-Requires: lalxml >= 1.2.0
-Requires: lalsimulation >= 1.4.0
-Requires: lalinspiral >= 1.7.0
-Requires: lalpulsar >= 1.12.0
+Requires: lal >= 6.16.0
+Requires: lalmetaio >= 1.2.7
+Requires: lalxml >= 1.2.1
+Requires: lalsimulation >= 1.5.0
+Requires: lalinspiral >= 1.7.4
+Requires: lalpulsar >= 1.13.0
 Prefix: %{_prefix}
 
 %description
@@ -65,12 +65,12 @@ Requires: chealpix-devel
 Requires: gsl-devel >= 1.15
 Requires: libmetaio-devel
 Requires: libxml2-devel
-Requires: lal-devel >= 6.15.0
-Requires: lalmetaio-devel >= 1.2.0
-Requires: lalxml-devel >= 1.2.0
-Requires: lalsimulation-devel >= 1.4.0
-Requires: lalinspiral-devel >= 1.7.0
-Requires: lalpulsar-devel >= 1.12.0
+Requires: lal-devel >= 6.16.0
+Requires: lalmetaio-devel >= 1.2.7
+Requires: lalxml-devel >= 1.2.1
+Requires: lalsimulation-devel >= 1.5.0
+Requires: lalinspiral-devel >= 1.7.4
+Requires: lalpulsar-devel >= 1.13.0
 %description devel
 The LSC Algorithm Inference Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inference
@@ -83,12 +83,12 @@ Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
 Requires: scipy
-Requires: lal-python >= 6.15.0
-Requires: lalmetaio-python >= 1.2.0
-Requires: lalxml-python >= 1.2.0
-Requires: lalsimulation-python >= 1.4.0
-Requires: lalinspiral-python >= 1.7.0
-Requires: lalpulsar-python >= 1.12.0
+Requires: lal-python >= 6.16.0
+Requires: lalmetaio-python >= 1.2.7
+Requires: lalxml-python >= 1.2.1
+Requires: lalsimulation-python >= 1.5.0
+Requires: lalinspiral-python >= 1.7.4
+Requires: lalpulsar-python >= 1.13.0
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings for LALInference.
@@ -98,12 +98,12 @@ Summary: Octave Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
-Requires: lal-octave >= 6.15.0
-Requires: lalmetaio-octave >= 1.2.0
-Requires: lalxml-octave >= 1.2.0
-Requires: lalsimulation-octave >= 1.4.0
-Requires: lalinspiral-octave >= 1.7.0
-Requires: lalpulsar-octave >= 1.12.0
+Requires: lal-octave >= 6.16.0
+Requires: lalmetaio-octave >= 1.2.7
+Requires: lalxml-octave >= 1.2.1
+Requires: lalsimulation-octave >= 1.5.0
+Requires: lalinspiral-octave >= 1.7.4
+Requires: lalpulsar-octave >= 1.13.0
 %description octave
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALInference.
