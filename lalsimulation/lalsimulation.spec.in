@@ -17,11 +17,11 @@ BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: swig
-BuildRequires: lal-devel >= 6.15.0
-BuildRequires: lal-python >= 6.15.0
-BuildRequires: lal-octave >= 6.15.0
+BuildRequires: lal-devel >= 6.16.0
+BuildRequires: lal-python >= 6.16.0
+BuildRequires: lal-octave >= 6.16.0
 Requires: gsl
-Requires: lal >= 6.15.0
+Requires: lal >= 6.16.0
 Prefix: %{_prefix}
 
 %description
@@ -34,7 +34,7 @@ Summary: Files and documentation needed for compiling programs that use LAL Simu
 Group: LAL
 Requires: %{name} = %{version}
 Requires: gsl-devel
-Requires: lal-devel >= 6.15.0
+Requires: lal-devel >= 6.16.0
 %description devel
 The LSC Algorithm Simulation Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Simulation
@@ -46,7 +46,7 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
-Requires: lal-python >= 6.15.0
+Requires: lal-python >= 6.16.0
 %description python
 This package provides the Python Bindings for LALSimulation.
 
@@ -55,7 +55,7 @@ Summary: Octave bindings for LALSimulation
 Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
-Requires: lal-octave >= 6.15.0
+Requires: lal-octave >= 6.16.0
 %description octave
 This package provides the Octave Bindings for LALSimulation.
 
