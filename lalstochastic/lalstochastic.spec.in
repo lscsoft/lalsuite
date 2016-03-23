@@ -17,15 +17,15 @@ BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: swig
-BuildRequires: lal-devel >= 6.14.0
-BuildRequires: lal-python >= 6.14.0
-BuildRequires: lal-octave >= 6.14.0
-BuildRequires: lalmetaio-devel >= 1.2.0
-BuildRequires: lalmetaio-python >= 1.2.0
-BuildRequires: lalmetaio-octave >= 1.2.0
+BuildRequires: lal-devel >= 6.16.0
+BuildRequires: lal-python >= 6.16.0
+BuildRequires: lal-octave >= 6.16.0
+BuildRequires: lalmetaio-devel >= 1.2.7
+BuildRequires: lalmetaio-python >= 1.2.7
+BuildRequires: lalmetaio-octave >= 1.2.7
 Requires: libmetaio
-Requires: lal >= 6.14.0
-Requires: lalmetaio >= 1.2.0
+Requires: lal >= 6.16.0
+Requires: lalmetaio >= 1.2.7
 Prefix: %{_prefix}
 
 %description
@@ -38,8 +38,8 @@ Summary: Files and documentation needed for compiling programs that use LAL Stoc
 Group: LAL
 Requires: %{name} = %{version}
 Requires: libmetaio-devel
-Requires: lal-devel >= 6.14.0
-Requires: lalmetaio-devel >= 1.2.0
+Requires: lal-devel >= 6.16.0
+Requires: lalmetaio-devel >= 1.2.7
 %description devel
 The LSC Algorithm Stochastic Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
@@ -51,8 +51,8 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
-Requires: lal-python >= 6.14.0
-Requires: lalmetaio-python >= 1.2.0
+Requires: lal-python >= 6.16.0
+Requires: lalmetaio-python >= 1.2.7
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings for LALFrame.
@@ -62,8 +62,8 @@ Summary: Octave Bindings for LALStochastic
 Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
-Requires: lal-octave >= 6.14.0
-Requires: lalmetaio-octave >= 1.2.0
+Requires: lal-octave >= 6.16.0
+Requires: lalmetaio-octave >= 1.2.7
 %description octave
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALStochastic.
