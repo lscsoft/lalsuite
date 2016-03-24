@@ -287,7 +287,7 @@ LALFindChirpClusterEvents (
             thisEvent->end_time.gpsSeconds = j;
             thisEvent->snr = modqsq;
           }
-          else if (  ! params->clusterMethod == FindChirpClustering_none  &&
+          else if (  !(params->clusterMethod == FindChirpClustering_none) &&
               j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
              modqsq > thisEvent->snr )
           {
