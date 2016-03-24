@@ -90,8 +90,8 @@ FITSFile *XLALFITSFileOpenRead(const CHAR *file_name);
 ///
 /// @{
 int XLALFITSHeaderWriteComment(FITSFile *file, const CHAR *comment);
-int XLALFITSHeaderWriteBoolean(FITSFile *file, const CHAR *keyword, const BOOLEAN value, const CHAR *comment);
-int XLALFITSHeaderReadBoolean(FITSFile *file, const CHAR *keyword, BOOLEAN *value);
+int XLALFITSHeaderWriteBOOLEAN(FITSFile *file, const CHAR *keyword, const BOOLEAN value, const CHAR *comment);
+int XLALFITSHeaderReadBOOLEAN(FITSFile *file, const CHAR *keyword, BOOLEAN *value);
 int XLALFITSHeaderWriteINT4(FITSFile *file, const CHAR *keyword, const INT4 value, const CHAR *comment);
 int XLALFITSHeaderReadINT4(FITSFile *file, const CHAR *keyword, INT4 *value);
 int XLALFITSHeaderWriteINT8(FITSFile *file, const CHAR *keyword, const INT8 value, const CHAR *comment);

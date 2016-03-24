@@ -77,7 +77,7 @@ int main(void)
     XLAL_CHECK_MAIN(XLALFITSHeaderWriteComment(file, "This is a test comment") == XLAL_SUCCESS, XLAL_EFUNC);
     fprintf(stderr, "PASSED: opened 'FITSFileIOTest.fits' for writing\n");
 
-    XLAL_CHECK_MAIN(XLALFITSHeaderWriteBoolean(file, "testbool", 1, "This is a test BOOLEAN") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN(XLALFITSHeaderWriteBOOLEAN(file, "testbool", 1, "This is a test BOOLEAN") == XLAL_SUCCESS, XLAL_EFUNC);
     fprintf(stderr, "PASSED: wrote a BOOLEAN\n");
 
     XLAL_CHECK_MAIN(XLALFITSHeaderWriteINT4(file, "testint", 2345, "This is a test INT4") == XLAL_SUCCESS, XLAL_EFUNC);
@@ -180,7 +180,7 @@ int main(void)
 
     {
       BOOLEAN testbool;
-      XLAL_CHECK_MAIN(XLALFITSHeaderReadBoolean(file, "testbool", &testbool) == XLAL_SUCCESS, XLAL_EFUNC);
+      XLAL_CHECK_MAIN(XLALFITSHeaderReadBOOLEAN(file, "testbool", &testbool) == XLAL_SUCCESS, XLAL_EFUNC);
       XLAL_CHECK_MAIN(testbool, XLAL_EFAILED, "testbool is not true");
     }
     fprintf(stderr, "PASSED: read and verified a BOOLEAN\n");
@@ -245,7 +245,7 @@ int main(void)
     fprintf(stderr, "PASSED: read and verified a long string\n");
 
     {
-      LALStringVector *testsv = NULL; //XLALCreateStringVector("abc", "def", "ghij", NULL);
+      LALStringVector *testsv = NULL;
       XLAL_CHECK_MAIN(XLALFITSHeaderReadStringVector(file, "testsv", &testsv) == XLAL_SUCCESS, XLAL_EFUNC);
       XLAL_CHECK_MAIN(testsv->length == 3, XLAL_EFAILED, "testsv->length = %u != 3", testsv->length);
       XLAL_CHECK_MAIN(strcmp(testsv->data[0], "abc") == 0, XLAL_EFAILED, "testsv->data[0] = '%s' != 'abc'", testsv->data[0]);

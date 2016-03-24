@@ -227,7 +227,7 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderWriteBoolean(FITSFile *file, const CHAR *keyword, const BOOLEAN value, const CHAR *comment)
+int XLALFITSHeaderWriteBOOLEAN(FITSFile *file, const CHAR *keyword, const BOOLEAN value, const CHAR *comment)
 {
   int UNUSED status = 0;
 
@@ -254,7 +254,7 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderReadBoolean(FITSFile *file, const CHAR *keyword, BOOLEAN *value)
+int XLALFITSHeaderReadBOOLEAN(FITSFile *file, const CHAR *keyword, BOOLEAN *value)
 {
   int UNUSED status = 0;
 
@@ -314,7 +314,7 @@ int XLALFITSHeaderReadINT4(FITSFile *file, const CHAR *keyword, INT4 *value)
   XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
-  // Read 32-bit integer from current header
+  // Read 32-bit integer value from current header
   LONGLONG val = 0;
   CHAR comment[FLEN_COMMENT];
   CALL_FITS(fits_read_key_lnglng, file->ff, keyword, &val, comment);
@@ -365,7 +365,7 @@ int XLALFITSHeaderReadINT8(FITSFile *file, const CHAR *keyword, INT8 *value)
   XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
-  // Read 64-bit integer from current header
+  // Read 64-bit integer value from current header
   LONGLONG val = 0;
   CHAR comment[FLEN_COMMENT];
   CALL_FITS(fits_read_key_lnglng, file->ff, keyword, &val, comment);
@@ -389,7 +389,7 @@ int XLALFITSHeaderWriteREAL4(FITSFile *file, const CHAR *keyword, const REAL4 va
   XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
 
-  // Write integer value to current header
+  // Write 32-bit floating-point value to current header
   CALL_FITS(fits_write_key_flt, file->ff, keyword, value, FLT_DIG, comment);
 
   return XLAL_SUCCESS;
@@ -416,7 +416,7 @@ int XLALFITSHeaderReadREAL4(FITSFile *file, const CHAR *keyword, REAL4 *value)
   XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
-  // Read 64-bit integer from current header
+  // Read 32-bit floating-point value from current header
   CHAR comment[FLEN_COMMENT];
   CALL_FITS(fits_read_key_flt, file->ff, keyword, value, comment);
 
@@ -437,7 +437,7 @@ int XLALFITSHeaderWriteREAL8(FITSFile *file, const CHAR *keyword, const REAL8 va
   XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
 
-  // Write integer value to current header
+  // Write 64-bit floating-point value to current header
   CALL_FITS(fits_write_key_dbl, file->ff, keyword, value, DBL_DIG, comment);
 
   return XLAL_SUCCESS;
@@ -464,7 +464,7 @@ int XLALFITSHeaderReadREAL8(FITSFile *file, const CHAR *keyword, REAL8 *value)
   XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
-  // Read 64-bit integer from current header
+  // Read 64-bit floating-point value from current header
   CHAR comment[FLEN_COMMENT];
   CALL_FITS(fits_read_key_dbl, file->ff, keyword, value, comment);
 
