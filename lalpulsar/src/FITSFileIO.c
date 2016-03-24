@@ -475,6 +475,108 @@ XLAL_FAIL:
 
 }
 
+int XLALFITSHeaderWriteCOMPLEX8(FITSFile *file, const CHAR *keyword, const COMPLEX8 value, const CHAR *comment)
+{
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
+  XLAL_CHECK_FAIL(file->write, XLAL_EINVAL, "FITS file is not open for writing");
+  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
+
+  // Write 64-bit complex floating-point value to current header
+  REAL4 val[2] = {crealf(value), cimagf(value)};
+  CALL_FITS(fits_write_key_cmp, file->ff, keyword, val, FLT_DIG, comment);
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+
+  // Delete FITS file on error
+  if (file != NULL && file->ff != NULL) {
+    fits_delete_file(file->ff, &status);
+    file->ff = NULL;
+  }
+
+  return XLAL_FAILURE;
+
+}
+
+int XLALFITSHeaderReadCOMPLEX8(FITSFile *file, const CHAR *keyword, COMPLEX8 *value)
+{
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
+  XLAL_CHECK_FAIL(!file->write, XLAL_EINVAL, "FITS file is not open for reading");
+  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
+
+  // Read 64-bit floating-point value from current header
+  CHAR comment[FLEN_COMMENT];
+  REAL4 val[2] = {0, 0};
+  CALL_FITS(fits_read_key_cmp, file->ff, keyword, val, comment);
+  *value = crectf(val[0], val[1]);
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+  return XLAL_FAILURE;
+
+}
+
+int XLALFITSHeaderWriteCOMPLEX16(FITSFile *file, const CHAR *keyword, const COMPLEX16 value, const CHAR *comment)
+{
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
+  XLAL_CHECK_FAIL(file->write, XLAL_EINVAL, "FITS file is not open for writing");
+  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
+
+  // Write 128-bit complex floating-point value to current header
+  REAL8 val[2] = {creal(value), cimag(value)};
+  CALL_FITS(fits_write_key_dblcmp, file->ff, keyword, val, DBL_DIG, comment);
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+
+  // Delete FITS file on error
+  if (file != NULL && file->ff != NULL) {
+    fits_delete_file(file->ff, &status);
+    file->ff = NULL;
+  }
+
+  return XLAL_FAILURE;
+
+}
+
+int XLALFITSHeaderReadCOMPLEX16(FITSFile *file, const CHAR *keyword, COMPLEX16 *value)
+{
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
+  XLAL_CHECK_FAIL(!file->write, XLAL_EINVAL, "FITS file is not open for reading");
+  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
+
+  // Read 128-bit floating-point value from current header
+  CHAR comment[FLEN_COMMENT];
+  REAL8 val[2] = {0, 0};
+  CALL_FITS(fits_read_key_dblcmp, file->ff, keyword, val, comment);
+  *value = crect(val[0], val[1]);
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+  return XLAL_FAILURE;
+
+}
+
 int XLALFITSHeaderWriteString(FITSFile *file, const CHAR *keyword, const CHAR *value, const CHAR *comment)
 {
   int UNUSED status = 0;

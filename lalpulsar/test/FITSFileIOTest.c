@@ -92,6 +92,12 @@ int main(void)
     XLAL_CHECK_MAIN(XLALFITSHeaderWriteREAL8(file, "testdbl", LAL_E, "This is a test REAL8") == XLAL_SUCCESS, XLAL_EFUNC);
     fprintf(stderr, "PASSED: wrote a REAL8\n");
 
+    XLAL_CHECK_MAIN(XLALFITSHeaderWriteCOMPLEX8(file, "testcmp", crectf(LAL_PI_2, LAL_PI_4), "This is a test COMPLEX8") == XLAL_SUCCESS, XLAL_EFUNC);
+    fprintf(stderr, "PASSED: wrote a COMPLEX8\n");
+
+    XLAL_CHECK_MAIN(XLALFITSHeaderWriteCOMPLEX16(file, "testdblcmp", crect(LAL_LOG2E, LAL_LOG10E), "This is a test COMPLEX16") == XLAL_SUCCESS, XLAL_EFUNC);
+    fprintf(stderr, "PASSED: wrote a COMPLEX16\n");
+
     XLAL_CHECK_MAIN(XLALFITSHeaderWriteString(file, "teststr", "This is a short string", "This is a test string") == XLAL_SUCCESS, XLAL_EFUNC);
     fprintf(stderr, "PASSED: wrote a string\n");
 
@@ -226,6 +232,26 @@ int main(void)
                       DBL_DIG, testdbl, DBL_DIG, testdbl_ref, DBL_DIG, err, DBL_DIG, err_tol);
     }
     fprintf(stderr, "PASSED: read and verified a REAL8\n");
+
+    {
+      const COMPLEX8 testcmp_ref = crectf(LAL_PI_2, LAL_PI_4);
+      COMPLEX8 testcmp;
+      XLAL_CHECK_MAIN(XLALFITSHeaderReadCOMPLEX8(file, "testcmp", &testcmp) == XLAL_SUCCESS, XLAL_EFUNC);
+      const REAL4 err = cabsf(testcmp - testcmp_ref), err_tol = 5*FLT_EPSILON;
+      XLAL_CHECK_MAIN(err < err_tol, XLAL_EFAILED, "|testcmp - testcmp_ref| = |(%0.*g,%0.*g) - (%0.*g,%0.*g)| = %0.*g >= %0.*g",
+                      FLT_DIG, crealf(testcmp), FLT_DIG, cimagf(testcmp), FLT_DIG, crealf(testcmp_ref), FLT_DIG, cimagf(testcmp_ref), FLT_DIG, err, FLT_DIG, err_tol);
+    }
+    fprintf(stderr, "PASSED: read and verified a COMPLEX8\n");
+
+    {
+      const COMPLEX16 testdblcmp_ref = crect(LAL_LOG2E, LAL_LOG10E);
+      COMPLEX16 testdblcmp;
+      XLAL_CHECK_MAIN(XLALFITSHeaderReadCOMPLEX16(file, "testdblcmp", &testdblcmp) == XLAL_SUCCESS, XLAL_EFUNC);
+      const REAL8 err = cabs(testdblcmp - testdblcmp_ref), err_tol = 5*DBL_EPSILON;
+      XLAL_CHECK_MAIN(err < err_tol, XLAL_EFAILED, "|testdblcmp - testdblcmp_ref| = |(%0.*g,%0.*g) - (%0.*g,%0.*g)| = %0.*g >= %0.*g",
+                      DBL_DIG, creal(testdblcmp), DBL_DIG, cimag(testdblcmp), DBL_DIG, creal(testdblcmp_ref), DBL_DIG, cimag(testdblcmp_ref), DBL_DIG, err, DBL_DIG, err_tol);
+    }
+    fprintf(stderr, "PASSED: read and verified a COMPLEX16\n");
 
     {
       const CHAR *teststr_ref = "This is a short string";
