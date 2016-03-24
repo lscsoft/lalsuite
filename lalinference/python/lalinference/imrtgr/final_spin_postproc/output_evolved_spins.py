@@ -5,11 +5,12 @@ import numpy as np
 import argparse
 import pneqns
 import time
+from lal import MTSUN_SI
 
 # Settings
 v_final = 6.**-0.5
 flow = 20 # Start frequency in Hz
-dt = 1./5120. # steps in time for the integration
+dt = 40. # steps in time for the integration (in Msun)
 
 # Set up the parsing
 parser = argparse.ArgumentParser(description = 'Calculate the posteriors on the radiated mass and peak luminosity from LALInference posterior samples using a variety of NR fits for these quantities.')
@@ -40,12 +41,11 @@ else:
   phi12 = np.zeros(len(m1))
 
 # Evolve spins
-Msun2s = 4.92549e-6 # s/Msun
 
 start = time.clock()
 
 for i in range(len(m1)): 
-    v0 = ((m1[i]+m2[i])*Msun2s*np.pi*flow)**(1./3)
+    v0 = ((m1[i]+m2[i])*MTSUN_SI*np.pi*flow)**(1./3)
     print "Initial values of angles:"
     print "cos tilt1 = ", np.cos(tilt1[i]), "cos tilt2 = ", np.cos(tilt2[i]), "cos phi12 = ", np.cos(phi12[i])
     if np.logical_and(tilt1[i] < 1e-3, tilt2[i] < 1e-3):

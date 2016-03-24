@@ -10,10 +10,12 @@ import numpy as np
 import nrutils_new as nr
 from mpl_toolkits.mplot3d import Axes3D
 import pneqns
+#import pneqns_orig as pneqns
 import os 
 
 nr_data = 'SXS_catalog_params.txt'
 #fit_tag = 'HLZ'
+#fit_tag = 'HLZ_prec_extension_Mf'
 fit_tag = 'HLZ_prec_extension_Minit'
 #fit_tag = 'Husa_etal_prec_extension_Minit'
 #fit_tag = 'Barausse_and_Rezzolla'
@@ -37,6 +39,8 @@ else:
 def final_mass(m1,m2,chi1z,chi2z,fit_tag):
 	if fit_tag == 'HLZ':
 		return nr.bbh_final_mass_non_precessing_Healyetal(m1,m2,chi1z,chi2z)
+	if fit_tag == 'HLZ_prec_extension_Mf':
+                return nr.bbh_final_mass_non_precessing_Healyetal(m1,m2,chi1z,chi2z)
 	if fit_tag == 'HLZ_prec_extension_Minit':
 		return nr.bbh_final_mass_non_precessing_Healyetal(m1,m2,chi1z,chi2z)
 	if fit_tag == 'Husa_etal_prec_extension_Minit':
@@ -47,6 +51,8 @@ def final_mass(m1,m2,chi1z,chi2z,fit_tag):
 def final_spin(m1,m2,chi1,chi2,tilt1,tilt2,phi12,fit_tag):
 	if fit_tag == 'HLZ':
 		return nr.bbh_final_spin_non_precessing_Healyetal(m1,m2,chi1*np.cos(tilt1),chi2*np.cos(tilt2))
+	if fit_tag == 'HLZ_prec_extension_Mf':
+		return nr.bbh_final_spin_precessing_Healyetal_extension_Mf(m1,m2,chi1,chi2,tilt1,tilt2,phi12)
 	if fit_tag == 'HLZ_prec_extension_Minit':
 		return nr.bbh_final_spin_precessing_Healyetal_extension_Minit(m1,m2,chi1,chi2,tilt1,tilt2,phi12)
 	if fit_tag == 'Husa_etal_prec_extension_Minit':
@@ -57,9 +63,9 @@ def final_spin(m1,m2,chi1,chi2,tilt1,tilt2,phi12,fit_tag):
 # parameters for selecting all quasi-circular simulations and selecting out the precessing ones, as well
 out_dir = 'SXS_allspins'
 if fit_tag == 'HLZ':
-	tag = 'allspins_%s_L0ADM_corr_test_final_%s' %(evol_tag,fit_tag)
+	tag = 'allspins_%s_L0ADM_corr_test2_final_%s' %(evol_tag,fit_tag)
 else:
-	tag = 'allspins_incl_in-plane_spin_%s_L0ADM_corr_test_final_%s' %(evol_tag,fit_tag)
+	tag = 'allspins_incl_in-plane_spin_%s_L0ADM_corr_test2_final_%s' %(evol_tag,fit_tag)
 MIN_IN_PLANE_SPINS = 1e-3
 MAX_IN_PLANE_SPINS = 1.
 MAX_Q = 18.
@@ -119,7 +125,7 @@ if evolve_spins:
 			chi1dL[i], chi2dL[i], Sperpmag[i], v_f[i] = chi1_z[i], chi2_z[i], 0., v_final
 		# in the case of precessing simulations estimate chi_i . L at v_isco by evolving PN precession eqns 
 		else: 
-			chi1x_v, chi1y_v, chi1z_v, chi2x_v, chi2y_v, chi2z_v, Lnx_v, Lny_v, Lnz_v, v_f[i] = pneqns.find_S_and_L_at_freq_dt(v0, m1[i]*10, m2[i]*10, chi1_x[i], chi1_y[i], chi1_z[i], chi2_x[i], chi2_y[i], chi2_z[i], Lx[i], Ly[i], Lz[i], v_final,1./512.)
+			chi1x_v, chi1y_v, chi1z_v, chi2x_v, chi2y_v, chi2z_v, Lnx_v, Lny_v, Lnz_v, v_f[i] = pneqns.find_S_and_L_at_freq_dt(v0, m1[i]*10, m2[i]*10, chi1_x[i], chi1_y[i], chi1_z[i], chi2_x[i], chi2_y[i], chi2_z[i], Lx[i], Ly[i], Lz[i], v_final,25.)
 			m1sq, m2sq = m1[i]*m1[i], m2[i]*m2[i]
 			chi1dL[i] = chi1x_v*Lnx_v + chi1y_v*Lny_v + chi1z_v*Lnz_v
 			chi2dL[i] = chi2x_v*Lnx_v + chi2y_v*Lny_v + chi2z_v*Lnz_v
