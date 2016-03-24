@@ -761,7 +761,7 @@ LALCheckSFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure */
 	      (*check_result) = SFTFILEIO_EFILE;
 	      goto sft_failed;
 	    }
-	  if ( ! has_valid_v2_crc64 ( fp ) != 0 )
+	  if ( !(has_valid_v2_crc64 ( fp ) != 0) )
 	    {
 	      XLALPrintError ( "CRC64 checksum failure for SFT '%s'\n",
 			      XLALshowSFTLocator ( catalog->data[i].locator ) );
