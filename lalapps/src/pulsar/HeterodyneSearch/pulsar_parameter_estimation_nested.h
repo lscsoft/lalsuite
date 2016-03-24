@@ -148,7 +148,7 @@ extern "C" {
  * the signal frequency and its time derivatives, and the frequency (period)
  * epoch.
  */
-#define NUMFREQPARS 8
+#define NUMFREQPARS 12
 
 /**
  * The total number of sky position parameters that can define a signal e.g.
@@ -337,7 +337,7 @@ static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "H0", "PHI0", "PSI",
  * recognised within the code.
  */
 static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "F0", "F1", "F2", "F3",
-"F4", "F5", "PEPOCH", "CGW" };
+"F4", "F5", "F6", "F7", "F8", "F9", "PEPOCH", "CGW" };
 
 /**
  * A list of the sky position parameters. The names given here are those that
