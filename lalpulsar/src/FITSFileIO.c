@@ -1306,6 +1306,12 @@ XLAL_FAIL:
 
 }
 
+int XLALFITSTableColumnAddBOOLEAN(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const BOOLEAN *field, const size_t field_size)
+{
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(BOOLEAN), 'L', TLOGICAL) == XLAL_SUCCESS, XLAL_EFUNC);
+  return XLAL_SUCCESS;
+}
+
 int XLALFITSTableColumnAddINT2(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const INT2 *field, const size_t field_size)
 {
   XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(INT2), 'I', TSHORT) == XLAL_SUCCESS, XLAL_EFUNC);
@@ -1327,6 +1333,18 @@ int XLALFITSTableColumnAddREAL4(FITSFile *file, const CHAR *col_name, const void
 int XLALFITSTableColumnAddREAL8(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const REAL8 *field, const size_t field_size)
 {
   XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(REAL8), 'D', TDOUBLE) == XLAL_SUCCESS, XLAL_EFUNC);
+  return XLAL_SUCCESS;
+}
+
+int XLALFITSTableColumnAddCOMPLEX8(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const COMPLEX8 *field, const size_t field_size)
+{
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(COMPLEX8), 'C', TCOMPLEX) == XLAL_SUCCESS, XLAL_EFUNC);
+  return XLAL_SUCCESS;
+}
+
+int XLALFITSTableColumnAddCOMPLEX16(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const COMPLEX16 *field, const size_t field_size)
+{
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(COMPLEX16), 'M', TDBLCOMPLEX) == XLAL_SUCCESS, XLAL_EFUNC);
   return XLAL_SUCCESS;
 }
 

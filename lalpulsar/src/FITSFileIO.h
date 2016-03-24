@@ -185,10 +185,13 @@ int XLALFITSArrayReadGSLMatrix(FITSFile *file, const size_t idx[], gsl_matrix **
 int XLALFITSTableOpenWrite(FITSFile *file, const CHAR *name, const CHAR *comment);
 int XLALFITSTableOpenRead(FITSFile *file, const CHAR *name, UINT8 *nrows);
 /// \cond DONT_DOXYGEN
+int XLALFITSTableColumnAddBOOLEAN(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const BOOLEAN *field, const size_t field_size);
 int XLALFITSTableColumnAddINT2(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const INT2 *field, const size_t field_size);
 int XLALFITSTableColumnAddINT4(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const INT4 *field, const size_t field_size);
 int XLALFITSTableColumnAddREAL4(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const REAL4 *field, const size_t field_size);
 int XLALFITSTableColumnAddREAL8(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const REAL8 *field, const size_t field_size);
+int XLALFITSTableColumnAddCOMPLEX8(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const COMPLEX8 *field, const size_t field_size);
+int XLALFITSTableColumnAddCOMPLEX16(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const COMPLEX16 *field, const size_t field_size);
 int XLALFITSTableColumnAddCHAR(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const void *CHAR, const size_t field_size);
 int XLALFITSTableColumnAddGPSTime(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size);
 /// \endcond
