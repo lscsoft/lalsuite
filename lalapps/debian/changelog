@@ -1,8 +1,9 @@
-lalapps (6.17.2-2) unstable; urgency=low
+lalapps (6.18.0-1) unstable; urgency=low
 
-  * Add CFITSIO as library dependency
+  * LALApps 6.18.0
+  * Pre O2 packaging test release
 
- -- Karl Wette <karl.wette@ligo.org>  Tue, 22 Mar 2016 00:23:11 +0100
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 25 Mar 2016 09:29:59 -0500
 
 lalapps (6.17.2-1) unstable; urgency=low
 

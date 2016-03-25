@@ -104,3 +104,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_mandir}/man1/*
 %{_datadir}/lalapps/*
 %{_sysconfdir}/lalapps-user-env.*
+
+
+# dates should be formatted using: 'date +"%a %b %d %Y"'
+%changelog
+* Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 6.18.0-1
+- Pre O2 packaging test release
