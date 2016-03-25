@@ -56,10 +56,11 @@ def calc_isco_radius(a):
     -------
     ISCO radius
     """
-    a = np.array(a)
+
+    a = np.minimum(np.array(a),1.) # Only consider a <=1, to avoid numerical problems
      
     # Ref. Eq. (2.5) of Ori, Thorne Phys Rev D 62 124022 (2000)
-    z1 = 1.+np.maximum(1.-a**2.,0.)**(1./3)*((1.+a)**(1./3) + np.maximum(1.-a,0.)**(1./3))
+    z1 = 1.+(1.-a**2.)**(1./3)*((1.+a)**(1./3) + (1.-a)**(1./3))
     z2 = np.sqrt(3.*a**2 + z1**2)
     a_sign = np.sign(a)
     return 3+z2 - np.sqrt((3.-z1)*(3.+z1+2.*z2))*a_sign
