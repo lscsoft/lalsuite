@@ -107,3 +107,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %defattr(-,root,root)
 %{_libexecdir}/octave/*/site/oct/*/lalmetaio.oct*
 
+# dates should be formatted using: 'date +"%a %b %d %Y"'
+%changelog
+* Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 1.2.7-1
+- Pre O2 packaging test release
