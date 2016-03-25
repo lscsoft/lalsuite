@@ -68,6 +68,7 @@ test/LALInferenceGenerateROQTest
 test/LALInferenceInjectionTest
 test/LALInferenceKDTest
 test/LALInferenceLikelihoodTest
+test/LALInferenceMultiBandTest
 test/LALInferencePriorTest
 test/LALInferenceProposalTest
 test/LALInferenceTest
