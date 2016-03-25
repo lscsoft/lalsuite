@@ -203,12 +203,3 @@ def find_tilts_and_phi12_at_freq(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, 
 	print("cos tilt1 = %f, cos tilt2 = %f, cos phi12 = %f"%(cos_tilt1, cos_tilt2, cos_phi12))
 
 	return np.arccos(cos_tilt1), np.arccos(cos_tilt2), np.arccos(cos_phi12)
-
-
-def find_S_and_L_at_freq_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz, v_final, dt):
-        """ given the spins and ang momentum at a given frequency, find the spins and L at a later frequency """
-
-        # evolve the spins                                                                                                                                                           
-        v_v, chi1x_v, chi1y_v, chi1z_v, chi2x_v, chi2y_v, chi2z_v, Lnx_v, Lny_v, Lnz_v = evolve_spins_dt(v0, m1, m2, chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz, v_final, dt)
-
-        return chi1x_v[-1], chi1y_v[-1], chi1z_v[-1], chi2x_v[-1], chi2y_v[-1], chi2z_v[-1], Lnx_v[-1], Lny_v[-1], Lnz_v[-1], v_v[-1]
