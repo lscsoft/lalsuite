@@ -113,3 +113,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %files octave
 %defattr(-,root,root)
 %{_libexecdir}/octave/*/site/oct/*/lalstochastic.oct*
+
+# dates should be formatted using: 'date +"%a %b %d %Y"'
+%changelog
+* Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 1.1.17-1
+- Pre O2 packaging test release

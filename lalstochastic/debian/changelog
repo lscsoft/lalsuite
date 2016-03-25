@@ -1,6 +1,13 @@
+lalstochastic (1.1.17-1) unstable; urgency=low
+
+  * LALStochastic 1.1.17
+  * Pre O2 packaging test release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 25 Mar 2016 09:38:34 -0500
+
 lalstochastic (1.1.16-1) unstable; urgency=low
 
-  * LALStochastic 1.1.16 
+  * LALStochastic 1.1.16
 
  -- Adam Mercer <adam.mercer@ligo.org>  Mon, 18 May 2015 14:54:17 -0500
 
