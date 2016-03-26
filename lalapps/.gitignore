@@ -53,6 +53,7 @@ src/frametools/lalapps_frinfo
 src/frametools/lalapps_frjoin
 src/frametools/lalapps_frread
 src/frametools/lalapps_frview
+src/frametools/lalapps_xtefitstoframe
 src/hwinjection/lalapps_psinject
 src/hwinjection/online_psinject
 src/inspiral/ihope_ssipe.ini
@@ -163,6 +164,18 @@ src/power/lalapps_simburst_to_frame
 src/power/sense_compare
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
+src/pulsar/FITSTools/lalapps_fitscopy
+src/pulsar/FITSTools/lalapps_imarith
+src/pulsar/FITSTools/lalapps_imcopy
+src/pulsar/FITSTools/lalapps_imlist
+src/pulsar/FITSTools/lalapps_imstat
+src/pulsar/FITSTools/lalapps_listhead
+src/pulsar/FITSTools/lalapps_liststruc
+src/pulsar/FITSTools/lalapps_modhead
+src/pulsar/FITSTools/lalapps_tabcalc
+src/pulsar/FITSTools/lalapps_tablist
+src/pulsar/FITSTools/lalapps_tabmerge
+src/pulsar/FITSTools/lalapps_tabselect
 src/pulsar/Fstatistic/lalapps_ComputeFstatMCUpperLimit
 src/pulsar/Fstatistic/lalapps_ComputeFstatistic_v2
 src/pulsar/Fstatistic/lalapps_LatticeTilingCount
@@ -233,7 +246,9 @@ src/pulsar/crosscorr/toplist_crosscorr.dat
 src/pulsar/fscan/lalapps_spec_avg
 src/pulsar/hough/src/lalapps_DriveHoughMulti
 src/pulsar/hough/src/lalapps_DriveHough_v3
+src/pulsar/hough/src/lalapps_HoughMismatch
 src/pulsar/hough/src/lalapps_HoughValidate
+src/pulsar/hough/src/lalapps_HoughValidateAM
 src/pulsar/hough/src/lalapps_MCInjectHoughMulti
 src/pulsar/hough/src/lalapps_MCInjectHoughMultiChi2Test
 src/pulsar/hough/src/lalapps_MCInjectS2
@@ -243,8 +258,6 @@ src/pulsar/hough/src/lalapps_SFTclean
 src/pulsar/hough/src/lalapps_ValidateChi2Test
 src/pulsar/hough/src/lalapps_ValidateHoughMulti
 src/pulsar/hough/src2/lalapps_HierarchicalSearch
-src/pulsar/hough/src2/lalapps_HoughMismatch
-src/pulsar/hough/src2/lalapps_HoughValidateAM
 src/pulsar/hough/src2/lalapps_RecalcHSCandidates
 src/ring/lalapps_coh_PTF_inspiral
 src/ring/lalapps_coh_PTF_spin_checker

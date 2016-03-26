@@ -12,14 +12,14 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig, python-devel, octave-devel, gsl-devel, fftw-devel, numpy
+BuildRequires: swig, python-devel, octave-devel, gsl-devel, fftw-devel, cfitsio-devel, numpy
 BuildRequires: lal-devel >= 6.15.0
 BuildRequires: lal-python >= 6.15.0
 BuildRequires: lal-octave >= 6.15.0
 BuildRequires: lalxml-devel >= 1.2.0
 BuildRequires: lalxml-python >= 1.2.0
 BuildRequires: lalxml-octave >= 1.2.0
-Requires: gsl, fftw
+Requires: gsl, fftw, cfitsio
 Requires: lal >= 6.15.0
 Requires: lalxml >= 1.2.0
 Prefix: %{_prefix}
@@ -33,7 +33,7 @@ that use the LAL Pulsar library.
 Summary: Files and documentation needed for compiling programs that use LAL Pulsar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel, fftw-devel, fftw-static
+Requires: gsl-devel, fftw-devel, fftw-static, cfitsio-devel
 Requires: lal-devel >= 6.15.0
 Requires: lalxml-devel >= 1.2.0
 %description devel
@@ -65,7 +65,7 @@ This package provides the Octave bindings for LALPulsar.
 %setup -q
 
 %build
-%configure --disable-gcc-flags --enable-swig --without-simd
+%configure --disable-gcc-flags --enable-swig --enable-cfitsio
 %{__make} V=1
 
 %check

@@ -146,6 +146,15 @@ pkginclude_HEADERS += LALXMLVOTableSerializersPulsar.h
 liblalpulsar_la_SOURCES += LALXMLVOTableSerializersPulsar.c
 endif
 
+if CFITSIO
+pkginclude_HEADERS += \
+	FITSFileIO.h \
+	$(END_OF_LIST)
+liblalpulsar_la_SOURCES += \
+	FITSFileIO.c \
+	$(END_OF_LIST)
+endif
+
 noinst_LTLIBRARIES =
 liblalpulsar_la_LIBADD =
 

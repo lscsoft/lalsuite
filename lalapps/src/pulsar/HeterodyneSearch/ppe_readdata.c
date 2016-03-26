@@ -562,6 +562,8 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
             fprintf(stderr, "Error... unrecognised number of values in first line of data file %s.\n", datafile);
             exit(3);
           }
+          /* ignore excessively large spurious values as they can screw things up */
+          if ( fabs(dataValsRe) > 1e-18 || fabs(dataValsIm) > 1e-18 ){ continue; }
         }
         j++;
 
@@ -628,7 +630,11 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       /* check whether to randomise the data by shuffling the time stamps (this will preserve the order of
        * the data for working out stationary chunk, but randomise the signal) */
       if ( LALInferenceGetProcParamVal( commandLine, "--randomise" ) ){
-        gsl_ran_shuffle( runState->GSLrandom, &ifomodel->times->data[0], (size_t)datalength, sizeof(LIGOTimeGPS) );
+        INT4 randshufseed = atoi(LALInferenceGetProcParamVal( commandLine, "--randomise" )->value);
+        INT4 prevseed = gsl_rng_get( runState->GSLrandom );  // get previous RNG value
+        gsl_rng_set( runState->GSLrandom, randshufseed ); // set to value from randomise
+        gsl_ran_shuffle( runState->GSLrandom, &ifomodel->times->data[0], (size_t)datalength, sizeof(LIGOTimeGPS) ); // shuffle data times
+        gsl_rng_set( runState->GSLrandom, prevseed );     // reset to previous value
       }
 
       /* add data sample interval */
@@ -953,12 +959,12 @@ void setup_from_par_file( LALInferenceRunState *runState )
       UINT4 i = 0;
       REAL8Vector *dts = NULL, *bdts = NULL;
 
-      /* check whether using original Jones (2010) signal model or a biaxial model (in the amplitude/phase parameterisation) */
+      /* check whether using original Jones (2010) signal source model or a biaxial model (in the amplitude/phase parameterisation) */
       if ( freqFactors->length == 2 ){
         UINT4 dummyvar = 1;
 
-        if ( LALInferenceGetProcParamVal( runState->commandLine, "--jones-model" ) ){
-          LALInferenceAddVariable( ifo_model->params, "jones-model", &dummyvar, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+        if ( LALInferenceGetProcParamVal( runState->commandLine, "--source-model" ) ){
+          LALInferenceAddVariable( ifo_model->params, "source_model", &dummyvar, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
         }
         else if ( LALInferenceGetProcParamVal( runState->commandLine, "--biaxial" ) ){
           LALInferenceAddVariable( ifo_model->params, "biaxial", &dummyvar, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );

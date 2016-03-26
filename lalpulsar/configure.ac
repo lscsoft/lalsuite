@@ -56,6 +56,9 @@ LALSUITE_ENABLE_NIGHTLY
 # enable LALXML support
 LALSUITE_ENABLE_LALXML
 
+# enable cfitsio support
+LALSUITE_ENABLE_CFITSIO
+
 # boinc
 LALSUITE_ENABLE_BOINC
 
@@ -159,6 +162,9 @@ if test "$lalxml" = "true"; then
   AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_WARN([cannot find the xml2 library])])
 fi
 
+# check for cfitsio
+LALSUITE_USE_CFITSIO
+
 # for boinc enabled build do checks for lal in c++ mode
 if test "${boinc}" = "true" ; then
   AC_LANG_PUSH([C++])
@@ -233,6 +239,7 @@ LALPulsar has now been successfully configured:
 * Python support is $PYTHON_ENABLE_VAL
 * LALXML library support is $LALXML_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
+* FITS library support is $CFITSIO_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL

@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 119
+# serial 120
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1298,5 +1298,41 @@ double volatile d = round(c);
   AC_LANG_POP([C])
   LALSUITE_POP_UVARS
 
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_ENABLE_CFITSIO],[
+  # $0: enable/disable cfitsio library
+  AC_ARG_ENABLE(
+    [cfitsio],
+    AC_HELP_STRING([--enable-cfitsio],[compile code that requires cfitsio library [default=no]]),
+    AS_CASE(["${enableval}"],
+      [yes],[cfitsio=true],
+      [no],[cfitsio=false],
+      AC_MSG_ERROR([bad value ${enableval} for --enable-cfitsio])
+    ),
+    [cfitsio=false]
+  )
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_USE_CFITSIO],[
+  # $0: check for cfitsio library
+  AS_IF([test "x${cfitsio}" = xtrue],[
+    LALSUITE_PUSH_UVARS
+    PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
+    LALSUITE_ADD_FLAGS([C],[${CFITSIO_CFLAGS}],[${CFITSIO_LIBS}])
+    AC_CHECK_LIB([cfitsio],[ffopen],[],[cfitsio=false])
+    AC_CHECK_HEADER([fitsio.h],[],[cfitsio=false])
+    AC_CHECK_FUNCS([fffree])
+    AC_CHECK_DECLS([fffree],[],[],[AC_INCLUDES_DEFAULT
+#include <fitsio.h>
+])
+    LALSUITE_POP_UVARS
+  ])
+  AS_IF([test "x${cfitsio}" = xtrue],[
+    LALSUITE_ADD_FLAGS([C],[${CFITSIO_CFLAGS}],[${CFITSIO_LIBS}])
+  ])
+  LALSUITE_ENABLE_MODULE([CFITSIO])
   # end $0
 ])

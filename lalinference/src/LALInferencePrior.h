@@ -151,11 +151,39 @@ void LALInferenceGetGaussianPrior(LALInferenceVariables *priorArgs,
  */
 void LALInferenceRemoveGaussianPrior(LALInferenceVariables *priorArgs, const char *name);
 
+/**
+ * \brief Add a Fermi-Dirac prior
+ *
+ * Add a prior defined by the Fermi-Dirac PDF
+ * \f[p(h|\sigma, r, I) = \frac{1}{\sigma\log{\left(1+e^{r} \right)}}\left(e^{((h/\sigma) - r)} + 1\right)^{-1},\f]
+ * where \f$r = \mu/\sigma\f$ to give a more familiar form of the function.
+ *
+ * This function adds \c sigma  and \c r values for the Fermi-Dirac prior onto the \c priorArgs.
+ */
+void LALInferenceAddFermiDiracPrior(LALInferenceVariables *priorArgs,
+                                    const char *name, REAL8 *sigma, REAL8 *r,
+                                    LALInferenceVariableType type);
+
+/**
+ * Get the r and sigma values of the Fermi-Dirac prior from the \c priorArgs list, given a name.
+ */
+void LALInferenceGetFermiDiracPrior(LALInferenceVariables *priorArgs,
+                                    const char *name, REAL8 *sigma, REAL8 *r);
+
+
+/**
+ * Function to remove the r and sigma values for the Fermi-Dirac prior onto the \c priorArgs.
+ */
+void LALInferenceRemoveFermiDiracPrior(LALInferenceVariables *priorArgs, const char *name);
+
 /** Check for types of standard prior */
 /** Check for a uniform prior (with mininum and maximum) */
 int LALInferenceCheckMinMaxPrior(LALInferenceVariables *priorArgs, const char *name);
 /** Check for a Gaussian prior (with a mean and variance) */
 int LALInferenceCheckGaussianPrior(LALInferenceVariables *priorArgs, const char *name);
+/** Check for a Fermi-Dirac prior (with a r and sigma parameter) */
+int LALInferenceCheckFermiDiracPrior(LALInferenceVariables *priorArgs, const char *name);
+
 
 /**
  * Function to add a correlation matrix and parameter index for a prior
@@ -266,6 +294,10 @@ REAL8 LALInferenceCubeToSinPrior(double r, double x1, double x2);
 
 /* Simple burst prior (only checks for dec and (log)hrss*/
 REAL8 LALInferenceSineGaussianPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model);
+
+/* return the log of the Fermi-Dirac prior */
+REAL8 LALInferenceFermiDiracPrior(double x, double sigma, double r);
+
 /*@}*/
 
 #endif

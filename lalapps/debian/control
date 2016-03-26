@@ -3,7 +3,7 @@ Section: lscsoft
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
-  libgsl0-dev (>= 1.9), libfftw3-dev, zlib1g-dev,
+  libgsl0-dev (>= 1.9), libfftw3-dev, libcfitsio3-dev, zlib1g-dev,
   libframe-dev (>= 8.0), libmetaio-dev (>= 8.2),
   lal-dev (>= 6.15.0~),
   lal-python (>= 6.15.0~),
@@ -33,7 +33,7 @@ Package: lalapps
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   python-healpy,
-  libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw3, zlib1g,
+  libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw3, libcfitsio3, zlib1g,
   libframe1 (>= 8.0), libmetaio1 (>= 8.2),
   lal (>= 6.15.0~),
   lal-python (>= 6.15.0~),
