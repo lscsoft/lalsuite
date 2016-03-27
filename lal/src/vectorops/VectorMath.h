@@ -30,14 +30,20 @@ extern "C" {
 /**
  * \defgroup VectorMath_h Header VectorMath.h
  * \ingroup lal_vectorops
- * \author Reinhard Prix
+ * \author Reinhard Prix, Karl Wette
  *
  * \brief Functions for performing fast math on vectors of numbers, using SIMD (SSE, AVX, ...) instructions if available.
  *
  * ### Synopsis ###
+ *
  * \code
  * #include <lal/VectorMath.h>
  * \endcode
+ *
+ * ### Alignment ###
+ *
+ * Neither input nor output vectors are \b required to have any particular memory alignment. Nevertheless, performance
+ * \e may be improved if vectors are 16-byte aligned for SSE, and 32-byte aligned for AVX.
  */
 /** @{ */
 

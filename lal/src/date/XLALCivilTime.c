@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2016 Karl Wette
 *  Copyright (C) 2007 Bernd Machenschalk, Jolien Creighton, Kipp Cannon
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -180,6 +181,87 @@ int XLALLeapSecondsUTC( const struct tm *utc /**< [In] UTC as a broken down time
 
 
 /**
+ * Fill in derived fields, e.g. \c tm_wday and \c tm_yday, in a given UTC time structure
+ */
+struct tm *XLALFillUTC( struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
+{
+  XLAL_CHECK_NULL(utc != NULL, XLAL_EINVAL);
+
+  /* Most code in this function comes from time/mktime.c and time/strptime_l.c in
+     glibc v2.23 (commit de51ff8c0516e66554044b27656c6855a9c2ef25), licensed under
+     GNU Lesser General Public License, version 2.1 */
+
+  /* Copy fields we need from 'utc', then erase it */
+  int sec = utc->tm_sec;
+  int min = utc->tm_min;
+  int hour = utc->tm_hour;
+  int mday = utc->tm_mday;
+  int mon = utc->tm_mon;
+  int year_requested = utc->tm_year;
+  XLAL_INIT_MEM(*utc);
+
+  /* Ensure that month is in range, and set year accordingly.  */
+  int mon_remainder = mon % 12;
+  int negative_mon_remainder = mon_remainder < 0;
+  int mon_years = mon / 12 - negative_mon_remainder;
+  long int lyear_requested = year_requested;
+  long int year = lyear_requested + mon_years;
+
+  /* How many days come before each month (0-12) */
+  const unsigned short int __mon_yday[2][13] =
+    {
+      /* Normal years.  */
+      { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 },
+      /* Leap years.  */
+      { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 }
+    };
+
+  /* Compute day of week */
+  /* We know that January 1st 1970 was a Thursday (= 4).  Compute the
+     difference between this data in the one on TM and so determine
+     the weekday.  */
+  int corr_year = 1900 + year - (mon < 2);
+  int wday = (-473
+              + (365 * (year - 70))
+              + (corr_year / 4)
+              - ((corr_year / 4) / 25) + ((corr_year / 4) % 25 < 0)
+              + (((corr_year / 4) / 25) / 4)
+              + __mon_yday[0][mon]
+              + mday - 1);
+  wday = ((wday % 7) + 7) % 7;
+
+  /* Return 1 if 'year' + 1900 is a leap year.  */
+  int leapyear = 
+    /* Don't add 'year' to 1900, as that might overflow.
+       Also, work even if 'year' is negative.  */
+    ((year & 3) == 0
+     && (year % 100 != 0
+         || ((year / 100) & 3) == (- (1900 / 100) & 3)));
+
+  /* Calculate day of year from year, month, and day of month.
+     The result need not be in range.  */
+  int mon_yday = ((__mon_yday[leapyear]
+                   [mon_remainder + 12 * negative_mon_remainder])
+                  - 1);
+  long int lmday = mday;
+  long int yday = mon_yday + lmday;
+
+  /* Fill 'utc' */
+  utc->tm_sec = sec;
+  utc->tm_min = min;
+  utc->tm_hour = hour;
+  utc->tm_mday = mday;
+  utc->tm_mon = mon;
+  utc->tm_year = year;
+  utc->tm_wday = wday;
+  utc->tm_yday = yday;
+
+  return utc;
+
+}
+
+
+/**
  * Returns the GPS seconds since the GPS epoch for a
  * specified UTC time structure.
  */
@@ -188,6 +270,12 @@ INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time
   time_t unixsec;
   INT4 gpssec;
   int leapsec;
+
+  /* make sure derived fields in 'utc' are filled correctly */
+  struct tm utc_filled = *utc;
+  utc = XLALFillUTC(&utc_filled);
+  if ( utc == NULL )
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* compute leap seconds */
   leapsec = XLALLeapSecondsUTC( utc );

@@ -203,9 +203,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
                         sumYL->data[count]*(creal(My)*creal(Ml) + cimag(My)*cimag(Ml)) +
                         sumBL->data[count]*(creal(Mb)*creal(Ml) + cimag(Mb)*cimag(Ml)));
 
-            sumDataModel += creal(sumDataP->data[count])*creal(Mp) + cimag(sumDataP->data[count])*cimag(Mp) +
-                            creal(sumDataC->data[count])*creal(Mc) + cimag(sumDataC->data[count])*cimag(Mc) +
-                            creal(sumDataX->data[count])*creal(Mx) + cimag(sumDataX->data[count])*cimag(Mx) +
+            sumDataModel += creal(sumDataX->data[count])*creal(Mx) + cimag(sumDataX->data[count])*cimag(Mx) +
                             creal(sumDataY->data[count])*creal(My) + cimag(sumDataY->data[count])*cimag(My) +
                             creal(sumDataB->data[count])*creal(Mb) + cimag(sumDataB->data[count])*cimag(Mb) +
                             creal(sumDataL->data[count])*creal(Ml) + cimag(sumDataL->data[count])*cimag(Ml);
@@ -493,6 +491,14 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
           if ( !strcmp(item->name, "C21") ){ C21 = value; }
           if ( !strcmp(item->name, "C22") ){ C22 = value; }
         }
+      }
+      else if( LALInferenceCheckFermiDiracPrior(runState->priorArgs, item->name) ){
+        REAL8 r = 0., sigma = 0.;
+        LALInferenceGetFermiDiracPrior(runState->priorArgs, item->name, &sigma, &r);
+
+        value = (*(REAL8 *)item->value);
+        if ( value < 0. ) { return -DBL_MAX; } /* value must be positive */
+        prior += LALInferenceFermiDiracPrior(value, sigma, r);
       }
       else if( LALInferenceCheckCorrelatedPrior(runState->priorArgs, item->name) && corlist ){
         /* set item in correct position given the order of the correlation matrix given by corlist */

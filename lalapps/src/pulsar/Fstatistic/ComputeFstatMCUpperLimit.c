@@ -116,9 +116,8 @@ int main(int argc, char *argv[]) {
   INT8 MC_trials_reset;
   gsl_vector_int *twoF_pdf_hist = NULL;
     
-  /* Initialise LAL error handler, debug level and log level */
+  /* Initialise LAL error handler */
   lal_errhandler = LAL_ERR_EXIT;
-  LogSetLevel(lalDebugLevel);
   
   /* Register command line arguments */
   LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",             'h', UVAR_HELP,     "Print this help message", &help), &status);
@@ -152,9 +151,6 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
   if (help)
     return EXIT_SUCCESS;
-
-  /* Send log output to stdout */
-  LogSetFile(stdout);
 
   /* Load the mismatch PDF histogram if available */
   if (LALUserVarWasSet(&mism_hist_file)) {

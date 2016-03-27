@@ -1,6 +1,7 @@
 SUBDIRS = \
 	MakeSFTs \
 	Injections \
+	FITSTools \
 	Fstatistic \
 	hough \
 	GCT \
@@ -12,4 +13,5 @@ SUBDIRS = \
 	SidebandSearch \
 	CreateEphemeris \
 	Tools \
-	Xray
+	Xray \
+	$(END_OF_LINE)

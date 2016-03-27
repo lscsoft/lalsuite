@@ -14,7 +14,7 @@ Source: %{name}-%{version}.tar.gz
 URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Duncan Brown <dbrown@ligo.caltech.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: gsl-devel, fftw-devel, libframe-devel, libmetaio-devel
+BuildRequires: gsl-devel, fftw-devel, cfitsio-devel, libframe-devel, libmetaio-devel
 BuildRequires: lal-devel >= 6.15.0
 BuildRequires: lal-python >= 6.15.0
 BuildRequires: lalframe-devel >= 1.3.0
@@ -35,7 +35,7 @@ BuildRequires: lalpulsar-devel >= 1.12.0
 BuildRequires: lalpulsar-python >= 1.12.0
 BuildRequires: lalinference-devel >= 1.5.0
 BuildRequires: lalinference-python >= 1.5.0
-Requires: healpy, gsl, fftw, libframe, libmetaio, python
+Requires: healpy, gsl, fftw, cfitsio, libframe, libmetaio, python
 Requires: lal >= 6.15.0
 Requires: lal-python >= 6.15.0
 Requires: lalframe >= 1.3.0
@@ -68,7 +68,7 @@ Algorithm Library.
 
 %build
 nightly_version=@NIGHTLY_VERSION@
-%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags
+%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --enable-cfitsio
 %{__make} V=1
 
 %check

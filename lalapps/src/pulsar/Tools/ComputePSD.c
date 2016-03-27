@@ -184,9 +184,6 @@ main(int argc, char *argv[])
   /* set LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
 
-  /* set log-level */
-  LogSetLevel ( lalDebugLevel );
-
   /* register and read user variables */
   if (initUserVars(argc, argv, &uvar) != XLAL_SUCCESS)
     return EXIT_FAILURE;

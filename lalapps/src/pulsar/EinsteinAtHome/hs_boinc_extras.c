@@ -1458,8 +1458,6 @@ int main(int argc, char**argv) {
                          BOINC_DIAG_REDIRECTSTDERR |
                          BOINC_DIAG_TRACETOSTDERR);
 
-  LogSetLevel(LOG_DETAIL); /* as long as we are debugging */
-
   LogPrintf(LOG_NORMAL, "This program is published under the GNU General Public License, version 2\n");
   LogPrintf(LOG_NORMAL, "For details see http://einstein.phys.uwm.edu/license.php\n");
   LogPrintf(LOG_NORMAL, "This Einstein@home App was built at: " __DATE__ " " __TIME__ "\n");

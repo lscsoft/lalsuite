@@ -393,6 +393,8 @@ class MCSampler(object):
                 print >>sys.stderr, "No contribution to integral, skipping."
                 continue
 
+            sample_n = numpy.arange(self.ntotal, self.ntotal + len(fval))
+
             if save_intg:
                 # FIXME: The joint_prior, if not specified is set to one and
                 # will come out as a scalar here, hence the hack
@@ -407,11 +409,13 @@ class MCSampler(object):
                     self._rvs["joint_prior"] = numpy.hstack( (self._rvs["joint_prior"], joint_p_prior) )
                     self._rvs["joint_s_prior"] = numpy.hstack( (self._rvs["joint_s_prior"], joint_p_s) )
                     self._rvs["weights"] = numpy.hstack( (self._rvs["weights"], fval*joint_p_prior/joint_p_s) )
+                    self._rvs["sample_n"] = numpy.hstack( (self._rvs["sample_n"], sample_n) )
                 else:
                     self._rvs["integrand"] = fval
                     self._rvs["joint_prior"] = joint_p_prior
                     self._rvs["joint_s_prior"] = joint_p_s
                     self._rvs["weights"] = fval*joint_p_prior/joint_p_s
+                    self._rvs["sample_n"] = sample_n
 
             # Calculate the integral over this chunk
             int_val = fval * joint_p_prior / joint_p_s

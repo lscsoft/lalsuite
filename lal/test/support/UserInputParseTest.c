@@ -1,4 +1,5 @@
 //
+// Copyright (C) 2016 Karl Wette
 // Copyright (C) 2015 Reinhard Prix
 //
 // This program is free software; you can redistribute it and/or modify
@@ -172,6 +173,168 @@ test_ParseStringValue ( void )
   XLAL_CHECK ( XLALParseStringValueAsEPOCH ( &valGPS, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALGPSCmp ( &valGPS, &valGPSRef ) == 0, XLAL_ETOL, "XLALParseStringValueAsGPS(%s) failed, return = {%d,%d}, correct = {%d,%d}\n",
                valString, valGPS.gpsSeconds, valGPS.gpsNanoSeconds, valGPSRef.gpsSeconds, valGPSRef.gpsNanoSeconds );
+
+  // ---------- XLALParseStringValueAsREAL8Range() ----------
+  REAL8Range real8Range, real8RangeRef;
+
+  valString = "100";
+  real8RangeRef[0] = 100; real8RangeRef[1] = 100;
+  XLAL_CHECK( XLALParseStringValueAsREAL8Range(&real8Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(real8Range[0] - real8RangeRef[0])/real8RangeRef[0] <= LAL_REAL8_EPS && fabs(real8Range[1] - real8RangeRef[1])/real8RangeRef[1] <= LAL_REAL8_EPS && real8Range[0] <= real8Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsREAL8Range(%s) failed, return = {%g,%g}\n", valString, real8Range[0], real8Range[1] );
+
+  valString = "150/0.5";
+  real8RangeRef[0] = 150; real8RangeRef[1] = 150.5;
+  XLAL_CHECK( XLALParseStringValueAsREAL8Range(&real8Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(real8Range[0] - real8RangeRef[0])/real8RangeRef[0] <= LAL_REAL8_EPS && fabs(real8Range[1] - real8RangeRef[1])/real8RangeRef[1] <= LAL_REAL8_EPS && real8Range[0] <= real8Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsREAL8Range(%s) failed, return = {%g,%g}\n", valString, real8Range[0], real8Range[1] );
+
+  valString = "150/-0.5";
+  real8RangeRef[0] = 149.5; real8RangeRef[1] = 150;
+  XLAL_CHECK( XLALParseStringValueAsREAL8Range(&real8Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(real8Range[0] - real8RangeRef[0])/real8RangeRef[0] <= LAL_REAL8_EPS && fabs(real8Range[1] - real8RangeRef[1])/real8RangeRef[1] <= LAL_REAL8_EPS && real8Range[0] <= real8Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsREAL8Range(%s) failed, return = {%g,%g}\n", valString, real8Range[0], real8Range[1] );
+
+  valString = "200,201";
+  real8RangeRef[0] = 200; real8RangeRef[1] = 201;
+  XLAL_CHECK( XLALParseStringValueAsREAL8Range(&real8Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(real8Range[0] - real8RangeRef[0])/real8RangeRef[0] <= LAL_REAL8_EPS && fabs(real8Range[1] - real8RangeRef[1])/real8RangeRef[1] <= LAL_REAL8_EPS && real8Range[0] <= real8Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsREAL8Range(%s) failed, return = {%g,%g}\n", valString, real8Range[0], real8Range[1] );
+
+  valString = "203,202";
+  real8RangeRef[0] = 202; real8RangeRef[1] = 203;
+  XLAL_CHECK( XLALParseStringValueAsREAL8Range(&real8Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(real8Range[0] - real8RangeRef[0])/real8RangeRef[0] <= LAL_REAL8_EPS && fabs(real8Range[1] - real8RangeRef[1])/real8RangeRef[1] <= LAL_REAL8_EPS && real8Range[0] <= real8Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsREAL8Range(%s) failed, return = {%g,%g}\n", valString, real8Range[0], real8Range[1] );
+
+  valString = "-203,-202";
+  real8RangeRef[0] = -203; real8RangeRef[1] = -202;
+  XLAL_CHECK( XLALParseStringValueAsREAL8Range(&real8Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(real8Range[0] - real8RangeRef[0])/real8RangeRef[0] <= LAL_REAL8_EPS && fabs(real8Range[1] - real8RangeRef[1])/real8RangeRef[1] <= LAL_REAL8_EPS && real8Range[0] <= real8Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsREAL8Range(%s) failed, return = {%g,%g}\n", valString, real8Range[0], real8Range[1] );
+
+  valString = "250~5";
+  real8RangeRef[0] = 245; real8RangeRef[1] = 255;
+  XLAL_CHECK( XLALParseStringValueAsREAL8Range(&real8Range, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(real8Range[0] - real8RangeRef[0])/real8RangeRef[0] <= LAL_REAL8_EPS && fabs(real8Range[1] - real8RangeRef[1])/real8RangeRef[1] <= LAL_REAL8_EPS && real8Range[0] <= real8Range[1],
+              XLAL_ETOL, "XLALParseStringValueAsREAL8Range(%s) failed, return = {%g,%g}\n", valString, real8Range[0], real8Range[1] );
+
+  // ---------- XLALParseStringValueAsEPOCHRange() ----------
+  LIGOTimeGPSRange gpsRange, gpsRangeRef;
+
+  valString = "100200300.4";
+  XLALGPSSet(&gpsRangeRef[0], 100200300, 400000000); XLALGPSSet(&gpsRangeRef[1], 100200300, 400000000);
+  XLAL_CHECK( XLALParseStringValueAsEPOCHRange(&gpsRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALGPSCmp(&gpsRange[0], &gpsRangeRef[0]) == 0 && XLALGPSCmp(&gpsRange[1], &gpsRangeRef[1]) == 0 && XLALGPSCmp(&gpsRange[0], &gpsRange[1]) <= 0, XLAL_ETOL,
+              "XLALParseStringValueAsEPOCHRange(%s) failed, return = {{%d,%d},{%d,%d}}\n", valString, gpsRange[0].gpsSeconds, gpsRange[0].gpsNanoSeconds, gpsRange[1].gpsSeconds, gpsRange[1].gpsNanoSeconds );
+
+  valString = "100200300.4/800600400.2";
+  XLALGPSSet(&gpsRangeRef[0], 100200300, 400000000); XLALGPSSet(&gpsRangeRef[1], 900800700, 600000000);
+  XLAL_CHECK( XLALParseStringValueAsEPOCHRange(&gpsRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALGPSCmp(&gpsRange[0], &gpsRangeRef[0]) == 0 && XLALGPSCmp(&gpsRange[1], &gpsRangeRef[1]) == 0 && XLALGPSCmp(&gpsRange[0], &gpsRange[1]) <= 0, XLAL_ETOL,
+              "XLALParseStringValueAsEPOCHRange(%s) failed, return = {{%d,%d},{%d,%d}}\n", valString, gpsRange[0].gpsSeconds, gpsRange[0].gpsNanoSeconds, gpsRange[1].gpsSeconds, gpsRange[1].gpsNanoSeconds );
+
+  valString = "100200300.4/-800600400.2";
+  XLALGPSSet(&gpsRangeRef[0], -700400099, -800000000); XLALGPSSet(&gpsRangeRef[1], 100200300, 400000000);
+  XLAL_CHECK( XLALParseStringValueAsEPOCHRange(&gpsRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALGPSCmp(&gpsRange[0], &gpsRangeRef[0]) == 0 && XLALGPSCmp(&gpsRange[1], &gpsRangeRef[1]) == 0 && XLALGPSCmp(&gpsRange[0], &gpsRange[1]) <= 0, XLAL_ETOL,
+              "XLALParseStringValueAsEPOCHRange(%s) failed, return = {{%d,%d},{%d,%d}}\n", valString, gpsRange[0].gpsSeconds, gpsRange[0].gpsNanoSeconds, gpsRange[1].gpsSeconds, gpsRange[1].gpsNanoSeconds );
+
+  valString = "200300400.5,600700800.9";
+  XLALGPSSet(&gpsRangeRef[0], 200300400, 500000000); XLALGPSSet(&gpsRangeRef[1], 600700800, 900000000);
+  XLAL_CHECK( XLALParseStringValueAsEPOCHRange(&gpsRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALGPSCmp(&gpsRange[0], &gpsRangeRef[0]) == 0 && XLALGPSCmp(&gpsRange[1], &gpsRangeRef[1]) == 0 && XLALGPSCmp(&gpsRange[0], &gpsRange[1]) <= 0, XLAL_ETOL,
+              "XLALParseStringValueAsEPOCHRange(%s) failed, return = {{%d,%d},{%d,%d}}\n", valString, gpsRange[0].gpsSeconds, gpsRange[0].gpsNanoSeconds, gpsRange[1].gpsSeconds, gpsRange[1].gpsNanoSeconds );
+
+  valString = "600700800.9,200300400.5";
+  XLALGPSSet(&gpsRangeRef[0], 200300400, 500000000); XLALGPSSet(&gpsRangeRef[1], 600700800, 900000000);
+  XLAL_CHECK( XLALParseStringValueAsEPOCHRange(&gpsRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALGPSCmp(&gpsRange[0], &gpsRangeRef[0]) == 0 && XLALGPSCmp(&gpsRange[1], &gpsRangeRef[1]) == 0 && XLALGPSCmp(&gpsRange[0], &gpsRange[1]) <= 0, XLAL_ETOL,
+              "XLALParseStringValueAsEPOCHRange(%s) failed, return = {{%d,%d},{%d,%d}}\n", valString, gpsRange[0].gpsSeconds, gpsRange[0].gpsNanoSeconds, gpsRange[1].gpsSeconds, gpsRange[1].gpsNanoSeconds );
+
+  valString = "123456789~123456.789";
+  XLALGPSSet(&gpsRangeRef[0], 123333332, 211000000); XLALGPSSet(&gpsRangeRef[1], 123580245, 789000000);
+  XLAL_CHECK( XLALParseStringValueAsEPOCHRange(&gpsRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALGPSCmp(&gpsRange[0], &gpsRangeRef[0]) == 0 && XLALGPSCmp(&gpsRange[1], &gpsRangeRef[1]) == 0 && XLALGPSCmp(&gpsRange[0], &gpsRange[1]) <= 0, XLAL_ETOL,
+              "XLALParseStringValueAsEPOCHRange(%s) failed, return = {{%d,%d},{%d,%d}}\n", valString, gpsRange[0].gpsSeconds, gpsRange[0].gpsNanoSeconds, gpsRange[1].gpsSeconds, gpsRange[1].gpsNanoSeconds );
+
+  // ---------- XLALParseStringValueAsRAJRange() ----------
+  REAL8Range rajRange, rajRangeRef;
+
+  valString = "0.1";
+  rajRangeRef[0] = 0.1; rajRangeRef[1] = 0.1;
+  XLAL_CHECK( XLALParseStringValueAsRAJRange(&rajRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(rajRange[0] - rajRangeRef[0])/rajRangeRef[0] <= LAL_REAL8_EPS && fabs(rajRange[1] - rajRangeRef[1])/rajRangeRef[1] <= LAL_REAL8_EPS && rajRange[0] <= rajRange[1],
+              XLAL_ETOL, "XLALParseStringValueAsRAJRange(%s) failed, return = {%g,%g}\n", valString, rajRange[0], rajRange[1] );
+
+  valString = "10:20:30/0.5";
+  rajRangeRef[0] = 2.7074420021562036; rajRangeRef[1] = rajRangeRef[0] + 0.5;
+  XLAL_CHECK( XLALParseStringValueAsRAJRange(&rajRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(rajRange[0] - rajRangeRef[0])/rajRangeRef[0] <= LAL_REAL8_EPS && fabs(rajRange[1] - rajRangeRef[1])/rajRangeRef[1] <= LAL_REAL8_EPS && rajRange[0] <= rajRange[1],
+              XLAL_ETOL, "XLALParseStringValueAsRAJRange(%s) failed, return = {%g,%g}\n", valString, rajRange[0], rajRange[1] );
+
+  valString = "10:20:30/-0.5";
+  rajRangeRef[0] = 2.7074420021562036 - 0.5; rajRangeRef[1] = rajRangeRef[0] + 0.5;
+  XLAL_CHECK( XLALParseStringValueAsRAJRange(&rajRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(rajRange[0] - rajRangeRef[0])/rajRangeRef[0] <= LAL_REAL8_EPS && fabs(rajRange[1] - rajRangeRef[1])/rajRangeRef[1] <= LAL_REAL8_EPS && rajRange[0] <= rajRange[1],
+              XLAL_ETOL, "XLALParseStringValueAsRAJRange(%s) failed, return = {%g,%g}\n", valString, rajRange[0], rajRange[1] );
+
+  valString = "10:20:30,11:22:33";
+  rajRangeRef[0] = 2.7074420021562036; rajRangeRef[1] = 2.9781862023718242;
+  XLAL_CHECK( XLALParseStringValueAsRAJRange(&rajRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(rajRange[0] - rajRangeRef[0])/rajRangeRef[0] <= LAL_REAL8_EPS && fabs(rajRange[1] - rajRangeRef[1])/rajRangeRef[1] <= LAL_REAL8_EPS && rajRange[0] <= rajRange[1],
+              XLAL_ETOL, "XLALParseStringValueAsRAJRange(%s) failed, return = {%g,%g}\n", valString, rajRange[0], rajRange[1] );
+
+  valString = "11:22:33,10:20:30";
+  rajRangeRef[0] = 2.7074420021562036; rajRangeRef[1] = 2.9781862023718242;
+  XLAL_CHECK( XLALParseStringValueAsRAJRange(&rajRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(rajRange[0] - rajRangeRef[0])/rajRangeRef[0] <= LAL_REAL8_EPS && fabs(rajRange[1] - rajRangeRef[1])/rajRangeRef[1] <= LAL_REAL8_EPS && rajRange[0] <= rajRange[1],
+              XLAL_ETOL, "XLALParseStringValueAsRAJRange(%s) failed, return = {%g,%g}\n", valString, rajRange[0], rajRange[1] );
+
+  valString = "11:22:33~00:00:44.55";
+  rajRangeRef[0] = 2.9749464349478099; rajRangeRef[1] = 2.9814259697958385;
+  XLAL_CHECK( XLALParseStringValueAsRAJRange(&rajRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(rajRange[0] - rajRangeRef[0])/rajRangeRef[0] <= LAL_REAL8_EPS && fabs(rajRange[1] - rajRangeRef[1])/rajRangeRef[1] <= LAL_REAL8_EPS && rajRange[0] <= rajRange[1],
+              XLAL_ETOL, "XLALParseStringValueAsRAJRange(%s) failed, return = {%g,%g}\n", valString, rajRange[0], rajRange[1] );
+
+  // ---------- XLALParseStringValueAsDECJRange() ----------
+  REAL8Range decjRange, decjRangeRef;
+
+  valString = "0.1";
+  decjRangeRef[0] = 0.1; decjRangeRef[1] = 0.1;
+  XLAL_CHECK( XLALParseStringValueAsDECJRange(&decjRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(decjRange[0] - decjRangeRef[0])/decjRangeRef[0] <= LAL_REAL8_EPS && fabs(decjRange[1] - decjRangeRef[1])/decjRangeRef[1] <= LAL_REAL8_EPS && decjRange[0] <= decjRange[1],
+              XLAL_ETOL, "XLALParseStringValueAsDECJRange(%s) failed, return = {%g,%g}\n", valString, decjRange[0], decjRange[1] );
+
+  valString = "10:20:30/0.5";
+  decjRangeRef[0] = (2.7074420021562036/15); decjRangeRef[1] = decjRangeRef[0] + 0.5;
+  XLAL_CHECK( XLALParseStringValueAsDECJRange(&decjRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(decjRange[0] - decjRangeRef[0])/decjRangeRef[0] <= LAL_REAL8_EPS && fabs(decjRange[1] - decjRangeRef[1])/decjRangeRef[1] <= LAL_REAL8_EPS && decjRange[0] <= decjRange[1],
+              XLAL_ETOL, "XLALParseStringValueAsDECJRange(%s) failed, return = {%g,%g}\n", valString, decjRange[0], decjRange[1] );
+
+  valString = "10:20:30/-0.5";
+  decjRangeRef[0] = (2.7074420021562036/15) - 0.5; decjRangeRef[1] = decjRangeRef[0] + 0.5;
+  XLAL_CHECK( XLALParseStringValueAsDECJRange(&decjRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(decjRange[0] - decjRangeRef[0])/decjRangeRef[0] <= LAL_REAL8_EPS && fabs(decjRange[1] - decjRangeRef[1])/decjRangeRef[1] <= LAL_REAL8_EPS && decjRange[0] <= decjRange[1],
+              XLAL_ETOL, "XLALParseStringValueAsDECJRange(%s) failed, return = {%g,%g}\n", valString, decjRange[0], decjRange[1] );
+
+  valString = "10:20:30,11:22:33";
+  decjRangeRef[0] = (2.7074420021562036/15); decjRangeRef[1] = (2.9781862023718242/15);
+  XLAL_CHECK( XLALParseStringValueAsDECJRange(&decjRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(decjRange[0] - decjRangeRef[0])/decjRangeRef[0] <= LAL_REAL8_EPS && fabs(decjRange[1] - decjRangeRef[1])/decjRangeRef[1] <= LAL_REAL8_EPS && decjRange[0] <= decjRange[1],
+              XLAL_ETOL, "XLALParseStringValueAsDECJRange(%s) failed, return = {%g,%g}\n", valString, decjRange[0], decjRange[1] );
+
+  valString = "11:22:33,10:20:30";
+  decjRangeRef[0] = (2.7074420021562036/15); decjRangeRef[1] = (2.9781862023718242/15);
+  XLAL_CHECK( XLALParseStringValueAsDECJRange(&decjRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(decjRange[0] - decjRangeRef[0])/decjRangeRef[0] <= LAL_REAL8_EPS && fabs(decjRange[1] - decjRangeRef[1])/decjRangeRef[1] <= LAL_REAL8_EPS && decjRange[0] <= decjRange[1],
+              XLAL_ETOL, "XLALParseStringValueAsDECJRange(%s) failed, return = {%g,%g}\n", valString, decjRange[0], decjRange[1] );
+
+  valString = "11:22:33~00:00:44.55";
+  decjRangeRef[0] = (2.9749464349478099/15); decjRangeRef[1] = (2.9814259697958385/15);
+  XLAL_CHECK( XLALParseStringValueAsDECJRange(&decjRange, valString) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( fabs(decjRange[0] - decjRangeRef[0])/decjRangeRef[0] <= LAL_REAL8_EPS && fabs(decjRange[1] - decjRangeRef[1])/decjRangeRef[1] <= LAL_REAL8_EPS && decjRange[0] <= decjRange[1],
+              XLAL_ETOL, "XLALParseStringValueAsDECJRange(%s) failed, return = {%g,%g}\n", valString, decjRange[0], decjRange[1] );
 
   return XLAL_SUCCESS;
 } // test_ParseStringValue()

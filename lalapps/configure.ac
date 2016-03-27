@@ -25,30 +25,28 @@ AC_CONFIG_FILES([\
   src/online/Makefile \
   src/power/Makefile \
   src/pulsar/CreateEphemeris/Makefile \
+  src/pulsar/FITSTools/Makefile \
   src/pulsar/Fstatistic/Makefile \
   src/pulsar/GCT/Makefile \
+  src/pulsar/HeterodyneSearch/Makefile \
   src/pulsar/Injections/Makefile \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/Makefile \
   src/pulsar/SFTReferenceLibrary/Makefile \
   src/pulsar/SidebandSearch/Makefile \
-  src/pulsar/HeterodyneSearch/Makefile \
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \
+  src/pulsar/Xray/Makefile \
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
   src/pulsar/hough/Makefile \
   src/pulsar/hough/src/Makefile \
   src/pulsar/hough/src2/Makefile \
-  src/pulsar/Xray/Makefile \
   src/ring/Makefile \
   src/stochastic/Makefile \
   src/string/Makefile \
 ])
-# FIXME: -Wno-unsupported is a hack which silences warnings regarding
-# subdir-objects in automake-1.14+. this will be the default, and only,
-# behaviour in automake-2.0+ so this is only a temporary measure
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests -Wno-unsupported])
+AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
@@ -71,7 +69,7 @@ LALAPPS_ENABLE_BAMBI
 LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
-LALAPPS_ENABLE_CFITSIO
+LALSUITE_ENABLE_CFITSIO
 LALAPPS_ENABLE_PSS
 LALAPPS_ENABLE_GDS
 
@@ -130,6 +128,11 @@ AC_PROG_AWK
 AC_PROG_SED
 LALSUITE_CHECK_PYTHON([2.6])
 
+# check for pager programs
+PAGER=
+AC_PATH_PROGS([PAGER],[less more])
+AM_CONDITIONAL([PAGER],[test "x${PAGER}" != x])
+
 # check for condor_compile
 AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
@@ -165,6 +168,9 @@ AC_CHECK_LIB([z],[compress],,[AC_MSG_ERROR([could not find the zlib library])])
 AC_HEADER_STDC
 AC_CHECK_HEADERS([zlib.h],,[AC_MSG_ERROR([could not find zlib.h])])
 AC_CHECK_HEADERS([unistd.h glob.h])
+
+# check for popen/pclose
+AC_CHECK_FUNCS([popen pclose])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
@@ -269,25 +275,8 @@ if test "$lalxml" = "true"; then
                    [CPPFLAGS="$lal_pre_libxml2_CPPFLAGS"])
 fi
 
-# check for libcfitsio
-if test "${cfitsio}" = "true"; then
-  PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
-  lal_pre_cfitsio_libs="$LIBS"
-  LALSUITE_ADD_FLAGS([C],[],[${CFITSIO_LIBS}])
-  AC_SEARCH_LIBS([ffopen],[cfitsio],,
-                 [cfitsio="false"]
-                 [LIBS="$lal_pre_cfitsio_LIBS"])
-fi
-
-# check for libcfitsio headers
-if test "${cfitsio}" = "true"; then
-  lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_FLAGS([C],[${CFITSIO_CFLAGS}],[])
-  AC_CHECK_HEADERS([fitsio.h],,
-                   [cfitsio="false"]
-                   [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
-fi
-LALSUITE_ENABLE_MODULE([CFITSIO])
+# check for cfitsio
+LALSUITE_USE_CFITSIO
 
 # check for pss
 if test "${pss}" = "true"; then

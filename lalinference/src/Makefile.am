@@ -21,6 +21,7 @@ pkginclude_HEADERS = \
 	LALInference.h \
 	LALInferenceConfig.h \
 	LALInferenceLikelihood.h \
+	LALInferenceMultibanding.h \
 	LALInferenceNestedSampler.h \
 	LALInferencePrior.h \
 	LALInferenceReadBurstData.h \
@@ -44,6 +45,7 @@ liblalinference_la_SOURCES = \
 	LALInference.c \
 	LALInferenceLikelihood.c \
 	LALInferenceAnalyticLikelihood.c \
+	LALInferenceMultibanding.c \
 	LALInferenceNestedSampler.c \
 	LALInferencePrior.c \
 	LALInferenceReadBurstData.c \

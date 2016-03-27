@@ -39,6 +39,7 @@ typedef struct
   REAL8 longRad;
   REAL8 latDMS;
   REAL8 latRad;
+  INT8 longInt;
 } UserInput_t;
 
 /**
@@ -69,8 +70,8 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALRegisterUvarMember( argNum, REAL8, 0, REQUIRED, "Testing float argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argStr, STRING, 0, REQUIRED, "Testing string argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argBool, BOOLEAN, 0, REQUIRED, "Testing bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember( argInt, INT4, 'a', REQUIRED, "Testing INT argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember( dummy,  INT4, 'c', OPTIONAL, "Testing INT argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( argInt, INT4, 'a', REQUIRED, "Testing INT4 argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( dummy,  INT4, 'c', OPTIONAL, "Testing INT4 argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argB2, BOOLEAN, 'b', REQUIRED, "Testing short-option bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( string2, STRING, 0, REQUIRED, "Testing another string argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( epochGPS, EPOCH, 0, REQUIRED, "Testing epoch given as GPS time") == XLAL_SUCCESS, XLAL_EFUNC );
@@ -79,6 +80,7 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALRegisterUvarMember( longRad, RAJ, 0, REQUIRED, "Testing RAJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( latDMS, DECJ, 0, REQUIRED, "Testing DECJ(DMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( latRad, DECJ, 0, REQUIRED, "Testing DECJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( longInt, INT8, 0, REQUIRED, "Testing INT8 argument") == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- now read all input from commandline and config-file ---------- */
   XLAL_CHECK ( XLALUserVarReadAllInput ( my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -106,8 +108,10 @@ main(int argc, char *argv[])
                XLALGPSToStr ( buf1, &uvar->epochGPS), XLALGPSToStr ( buf2, &uvar->epochMJDTT ) );
 
   REAL8 diff, tol = 3e-15;
-  XLAL_CHECK ( (diff = fabs(uvar->longHMS - uvar->longRad)) < tol, XLAL_EFAILED, "longitude(HMS) = %.16g differs from longitude(rad) = %.16g by %g > tolerance\n", uvar->longHMS, uvar->longRad, diff, tol );
-  XLAL_CHECK ( (diff = fabs(uvar->latDMS - uvar->latRad)) < tol, XLAL_EFAILED, "latitude(HMS) = %.16g differs from latitude(rad) = %.16g by %g > tolerance\n", uvar->latDMS, uvar->latRad, diff, tol );
+  XLAL_CHECK ( (diff = fabs(uvar->longHMS - uvar->longRad)) < tol, XLAL_EFAILED, "longitude(HMS) = %.16g differs from longitude(rad) = %.16g by %g > %g\n", uvar->longHMS, uvar->longRad, diff, tol );
+  XLAL_CHECK ( (diff = fabs(uvar->latDMS - uvar->latRad)) < tol, XLAL_EFAILED, "latitude(HMS) = %.16g differs from latitude(rad) = %.16g by %g > %g\n", uvar->latDMS, uvar->latRad, diff, tol );
+
+  XLAL_CHECK ( uvar->longInt == 4294967294, XLAL_EFAILED, "Failed to read an INT8: longInt = %" LAL_INT8_FORMAT " != 4294967294", uvar->longInt );
 
   /* ----- cleanup ---------- */
   XLALDestroyUserVars();

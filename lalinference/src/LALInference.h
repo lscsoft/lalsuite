@@ -59,6 +59,7 @@
 #include <lal/LALString.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimInspiralWaveformCache.h>
+#include <lal/LALHashTbl.h>
 
 #include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
@@ -159,6 +160,7 @@ tagVariableItem
   struct tagVariableItem		*next;
 } LALInferenceVariableItem;
 
+
 /**
  * The LALInferenceVariables structure to contain a set of parameters
  * Implemented as a linked list of LALInferenceVariableItems.
@@ -169,7 +171,7 @@ tagLALInferenceVariables
 {
   LALInferenceVariableItem	*head;
   INT4 				dimension;
-  LALInferenceVariableItem	*hash_table[LALINFERENCE_HASHTABLE_SIZE];
+  LALHashTbl        *hash_table;
 } LALInferenceVariables;
 
 /**

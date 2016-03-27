@@ -32,8 +32,17 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	for dir in src test python; do \
 		test -d "$(abs_top_srcdir)/$${dir}" && doxygen_input="$${doxygen_input} $(abs_top_srcdir)/$${dir}"; \
 	done; \
-	for file in swig/SWIGCommon.i swig/SWIG$(PACKAGE_NAME)Alpha.i swig/SWIG$(PACKAGE_NAME)Omega.i; do \
-		test -r "$(abs_top_srcdir)/$${file}" && doxygen_input="$${doxygen_input} $(abs_top_srcdir)/$${file}"; \
+	files="\
+		$(abs_top_builddir)/src/$(PACKAGE_NAME)VCSInfo.h \
+		$(abs_top_builddir)/src/$(PACKAGE_NAME)VCSInfo.c \
+		$(abs_top_builddir)/src/$(PACKAGE_NAME_LCASE)/$(PACKAGE_NAME)VCSInfo.h \
+		$(abs_top_builddir)/src/$(PACKAGE_NAME_LCASE)/$(PACKAGE_NAME)VCSInfo.c \
+		$(abs_top_srcdir)/swig/SWIGCommon.i \
+		$(abs_top_srcdir)/swig/SWIG$(PACKAGE_NAME)Alpha.i \
+		$(abs_top_srcdir)/swig/SWIG$(PACKAGE_NAME)Omega.i \
+	"; \
+	for file in $${files}; do \
+		test -r "$${file}" && doxygen_input="$${doxygen_input} $${file}"; \
 	done; \
 	test -r "$(abs_srcdir)/exclude.list" || exit 1; \
 	export doxygen_exclude; doxygen_exclude=`cat $(abs_srcdir)/exclude.list | tr '\n' ' '`; \

@@ -9,7 +9,9 @@ bin_PROGRAMS = \
 	lalapps_ComputeFstatMCUpperLimit \
 	lalapps_synthesizeBstatMC \
 	lalapps_synthesizeTransientStats \
-	lalapps_synthesizeLVStats
+	lalapps_synthesizeLVStats \
+	lalapps_LatticeTilingCount \
+	$(END_OF_LIST)
 
 EXTRA_PROGRAMS = \
 	lalapps_CFSv3 \
@@ -32,10 +34,10 @@ lalapps_PredictFstat_SOURCES = PredictFstat.c
 # force linking in C++ mode for E@H
 eah_PredictFstat_SOURCES = \
 	$(lalapps_PredictFstat_SOURCES) \
-	../EinsteinAtHome/win_lib.cpp
+	win_lib.cpp
 eah_ComputeFstatistic_v2_SOURCES = \
 	$(ComputeFstatisticV2Sources) \
-	../EinsteinAtHome/win_lib.cpp
+	win_lib.cpp
 
 lalapps_ComputeFstatMCUpperLimit_SOURCES = ComputeFstatMCUpperLimit.c
 
@@ -44,6 +46,8 @@ lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c
 
 lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c
+
+lalapps_LatticeTilingCount_SOURCES = LatticeTilingCount.c
 
 lalapps_CFSv3_SOURCES = CFSv3.c
 

@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 82
+# serial 83
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -283,12 +283,11 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     AC_SUBST([SWIG_OCTAVE_LDFLAGS],[])
     swig_octave_ldflags=
     for arg in LFLAGS LIBOCTINTERP LIBOCTAVE LIBCRUFT OCT_LINK_OPTS OCT_LINK_DEPS; do
-      sep=""
       for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
         AS_CASE([${flag}],
           [-L/usr/lib|-L/usr/lib64],[:],
-          [-Xlinker],[swig_octave_ldflags="${swig_octave_ldflags} -Wl"; sep=","; continue],
-          [swig_octave_ldflags="${swig_octave_ldflags}${sep}${flag}"; sep=" "]
+          [-Xlinker],[swig_octave_ldflags="${swig_octave_ldflags}-Wl,"],
+          [swig_octave_ldflags="${swig_octave_ldflags}${flag} "]
         )
       done
     done
@@ -397,12 +396,12 @@ EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine Python linker flags])
     ])
-    sep=""
+    swig_python_ldflags=
     for flag in ${python_out}; do
       AS_CASE([${flag}],
         [-L/usr/lib|-L/usr/lib64],[:],
-        [-Xlinker],[swig_python_ldflags="${swig_python_ldflags} -Wl"; sep=","; continue],
-        [swig_python_ldflags="${swig_python_ldflags}${sep}${flag}"; sep=" "]
+        [-Xlinker],[swig_python_ldflags="${swig_python_ldflags}-Wl,"],
+        [swig_python_ldflags="${swig_python_ldflags}${flag} "]
       )
     done
     LALSUITE_CHECK_LINK_FLAGS([

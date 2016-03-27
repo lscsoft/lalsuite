@@ -200,6 +200,9 @@ int XLALGPSLeapSeconds( INT4 gpssec );
 /* Returns the leap seconds TAI-UTC for a given UTC broken down time. */
 int XLALLeapSecondsUTC( const struct tm *utc );
 
+/* Fill in derived fields in a given UTC time structure */
+struct tm *XLALFillUTC( struct tm *utc );
+
 /* Returns the GPS seconds since the GPS epoch for a specified UTC time structure. */
 INT4 XLALUTCToGPS( const struct tm *utc );
 

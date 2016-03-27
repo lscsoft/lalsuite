@@ -38,7 +38,7 @@ void get_pulsar_model( LALInferenceModel *model ){
   /* set model parameters (including rescaling) */
   add_pulsar_parameter( model->params, pars, "PSI" );
 
-  if( ( LALInferenceCheckVariableNonFixed( model->params, "H0" ) || LALInferenceCheckVariableNonFixed( model->params, "Q22" ) || LALInferenceCheckVariable( model->ifo->params, "jones-model" ) ) && !LALInferenceCheckVariable( model->ifo->params, "nonGR" ) ){
+  if( ( LALInferenceCheckVariableNonFixed( model->params, "H0" ) || LALInferenceCheckVariableNonFixed( model->params, "Q22" ) || LALInferenceCheckVariable( model->ifo->params, "source_model" ) ) && !LALInferenceCheckVariable( model->ifo->params, "nonGR" ) ){
     /* if searching in mass quadrupole, Q22, then check for distance and f0 and convert to h0 */
     if ( LALInferenceCheckVariableNonFixed( model->params, "Q22" ) && !LALInferenceCheckVariableNonFixed( model->params, "H0" ) ){
       if ( LALInferenceCheckVariable( model->params, "F0" ) && LALInferenceCheckVariable( model->params, "DIST" ) ){
@@ -155,6 +155,10 @@ void get_pulsar_model( LALInferenceModel *model ){
   add_pulsar_parameter( model->params, pars, "F3" );
   add_pulsar_parameter( model->params, pars, "F4" );
   add_pulsar_parameter( model->params, pars, "F5" );
+  add_pulsar_parameter( model->params, pars, "F6" );
+  add_pulsar_parameter( model->params, pars, "F7" );
+  add_pulsar_parameter( model->params, pars, "F8" );
+  add_pulsar_parameter( model->params, pars, "F9" );
 
   /* check if there are binary parameters */
   if( LALInferenceCheckVariable(model->ifo->params, "BINARY") ){
@@ -448,7 +452,11 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
       (1./6.)*PulsarGetREAL8ParamOrZero(params, "F2")*deltat2 +
       (1./24.)*PulsarGetREAL8ParamOrZero(params, "F3")*deltat*deltat2 +
       (1./120.)*PulsarGetREAL8ParamOrZero(params, "F4")*deltat2*deltat2 +
-      (1./720.)*PulsarGetREAL8ParamOrZero(params, "F5")*deltat2*deltat2*deltat);
+      (1./720.)*PulsarGetREAL8ParamOrZero(params, "F5")*deltat2*deltat2*deltat +
+      (1./5040.)*PulsarGetREAL8ParamOrZero(params, "F6")*deltat2*deltat2*deltat2 +
+      (1./40320.)*PulsarGetREAL8ParamOrZero(params, "F7")*deltat2*deltat2*deltat2*deltat +
+      (1./362880.)*PulsarGetREAL8ParamOrZero(params, "F8")*deltat2*deltat2*deltat2*deltat2 +
+      (1./3628800.)*PulsarGetREAL8ParamOrZero(params, "F9")*deltat2*deltat2*deltat2*deltat2*deltat);
   }
 
   /* free memory */

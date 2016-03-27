@@ -230,8 +230,6 @@ void initialise_algorithm( LALInferenceRunState *runState )
     }
   }
 
-  gsl_rng_set( runState->GSLrandom, randomseed );
-
   /* log samples */
 #ifdef HAVE_LIBLALXML
   runState->logsample = LogSampleToArray;
@@ -372,6 +370,10 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
   add_variable_parameter( pars, ini, "F3", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "F4", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "F5", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "F6", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "F7", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "F8", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "F9", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "PEPOCH", LALINFERENCE_PARAM_FIXED );
 
   /* add non-GR parameters */
@@ -473,7 +475,8 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
  * for each. This information is contained in a prior file specified by the command line argument \c prior-file. This
  * file should contain four columns: the first has the name of a parameter to be searched over; the second has the prior
  * type (e.g. "uniform" for a prior that is flat over the given range, or "gaussian" with a certain mean and standard
- * deviation, or "predefined", which means that the prior for that variable is already hardcoded into the prior function);
+ * deviation, or "fermidirac" for a Fermi-Dirac distribution defined by a sigma and r parameters (where r is mu/sigma),
+ * or "predefined", which means that the prior for that variable is already hardcoded into the prior function);
  * the third has the lower limit, or mean, of the prior, for "uniform"/"predefined" and "gaussian" priors respectively;
  * and the fourth has the upper limit, or standard deviation, for "uniform"/"predefined" and "gaussian" priors respectively.
  * E.g.
@@ -553,7 +556,7 @@ void initialise_prior( LALInferenceRunState *runState )
       }
     }
 
-    if ( strcmp(tempPrior, "uniform") && strcmp(tempPrior, "predefined") && strcmp(tempPrior, "gaussian") ){
+    if ( strcmp(tempPrior, "uniform") && strcmp(tempPrior, "predefined") && strcmp(tempPrior, "gaussian") && strcmp(tempPrior, "fermidirac") ){
       XLALPrintError("Error... prior type '%s' not recognised\n", tempPrior);
       XLAL_ERROR_VOID( XLAL_EINVAL );
     }
@@ -568,6 +571,9 @@ void initialise_prior( LALInferenceRunState *runState )
     }
     else if( !strcmp(tempPrior, "gaussian") ){
       LALInferenceAddGaussianPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
+    }
+    else if( !strcmp(tempPrior, "fermidirac") ){
+      LALInferenceAddFermiDiracPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
     }
 
     /* if there is a phase parameter defined in the proposal then set varyphase to 1 */

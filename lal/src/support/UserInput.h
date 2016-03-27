@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2016 Karl Wette
  * Copyright (C) 2015 Reinhard Prix
  * Copyright (C) 2010 Reinhard Prix (xlalified)
  * Copyright (C) 2004, 2005 Reinhard Prix
@@ -27,6 +28,7 @@ extern "C" {
 #endif
 
 #include <lal/ConfigFile.h>
+#include <lal/UserInputParse.h>
 
 /**
  * \defgroup UserInput_h Header UserInput.h
@@ -152,8 +154,8 @@ someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
  * Shortcut Macro for registering new user variables, which are assumed
  * to be accessible via the \e struct-pointer '*uvar'
  */
-#define XLALRegisterUvarMember(name,type,option,category,help)             \
-  XLALRegister ##type## UserVar( #name, option, UVAR_CATEGORY_ ## category, help, &(uvar-> name))
+#define XLALRegisterUvarMember(name,type,option,category,...)             \
+  XLALRegister ##type## UserVar( &(uvar-> name), #name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
 
 /// (mutually exclusive) UserVariable categories: optional, required, help, developer, ...
 typedef enum {
@@ -198,19 +200,75 @@ int XLALUserVarCheckRequired( void );
 int XLALUserVarWasSet (const void *cvar);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
 
+/**
+ * \name Convenience macros for checking whether a user input variable was set
+ */
+/*@{*/
+#define UVAR_SET(n)				(XLALUserVarWasSet(&(uvar-> n)) ? 1 : 0)
+#define UVAR_SET_EMSG(adv,n)			"'"#n"' must "adv"be specified"
+/*@}*/
+
+/**
+ * \name Convenience macros for checking whether all of a set of user input variables were set
+ */
+/*@{*/
+#define UVAR_ALLSET2(n1,n2)			(UVAR_SET(n1) && UVAR_SET(n2))
+#define UVAR_ALLSET2_EMSG(adv,n1,n2)		"Both '"#n1"' and '"#n2"' must "adv"be specified"
+#define UVAR_ALLSET3(n1,n2,n3)			(UVAR_ALLSET2(n1,n2) && UVAR_SET(n3))
+#define UVAR_ALLSET3_EMSG(adv,n1,n2,n3)		"All of '"#n1"', '"#n2"' and '"#n3"' must "adv"be specified"
+#define UVAR_ALLSET4(n1,n2,n3,n4)		(UVAR_ALLSET3(n1,n2,n3) && UVAR_SET(n4))
+#define UVAR_ALLSET4_EMSG(adv,n1,n2,n3,n4)	"All of '"#n1"', '"#n2"', '"#n3"' and '"#n4"' must "adv"be specified"
+#define UVAR_ALLSET5(n1,n2,n3,n4,n5)		(UVAR_ALLSET4(n1,n2,n3,n4) && UVAR_SET(n5))
+#define UVAR_ALLSET5_EMSG(adv,n1,n2,n3,n4,n5)	"All of '"#n1"', '"#n2"', '"#n3"', '"#n4"' and '"#n5"' must "adv"be specified"
+/*@}*/
+
+/**
+ * \name Convenience macros for checking whether any of a set of user input variables were set
+ */
+/*@{*/
+#define UVAR_ANYSET2(n1,n2)			(UVAR_SET(n1) || UVAR_SET(n2))
+#define UVAR_ANYSET2_EMSG(adv,n1,n2)		"Either '"#n1"' or '"#n2"' must "adv"be specified"
+#define UVAR_ANYSET3(n1,n2,n3)			(UVAR_ANYSET2(n1,n2) || UVAR_SET(n3))
+#define UVAR_ANYSET3_EMSG(adv,n1,n2,n3)		"At least one of '"#n1"', '"#n2"' or '"#n3"' must "adv"be specified"
+#define UVAR_ANYSET4(n1,n2,n3,n4)		(UVAR_ANYSET3(n1,n2,n3) || UVAR_SET(n4))
+#define UVAR_ANYSET4_EMSG(adv,n1,n2,n3,n4)	"At least one of '"#n1"', '"#n2"', '"#n3"' or '"#n4"' must "adv"be specified"
+#define UVAR_ANYSET5(n1,n2,n3,n4,n5)		(UVAR_ANYSET4(n1,n2,n3,n4) || UVAR_SET(n5))
+#define UVAR_ANYSET5_EMSG(adv,n1,n2,n3,n4,n5)	"At least one of '"#n1"', '"#n2"', '"#n3"', '"#n4"' or '"#n5"' must "adv"be specified"
+/*@}*/
+
+/**
+ * \name Convenience macros for checking whether any of a set of user input variables were set
+ */
+/*@{*/
+#define UVAR_ONESET2(n1,n2)			(UVAR_SET(n1) + UVAR_SET(n2) == 1)
+#define UVAR_ONESET2_EMSG(adv,n1,n2)		"Exactly one of '"#n1"' or '"#n2"' must "adv"be specified"
+#define UVAR_ONESET3(n1,n2,n3)			(UVAR_ONESET2(n1,n2) + UVAR_SET(n3) == 1)
+#define UVAR_ONESET3_EMSG(adv,n1,n2,n3)		"Exactly one of '"#n1"', '"#n2"' or '"#n3"' must "adv"be specified"
+#define UVAR_ONESET4(n1,n2,n3,n4)		(UVAR_ONESET3(n1,n2,n3) + UVAR_SET(n4) == 1)
+#define UVAR_ONESET4_EMSG(adv,n1,n2,n3,n4)	"Exactly one of '"#n1"', '"#n2"', '"#n3"' or '"#n4"' must "adv"be specified"
+#define UVAR_ONESET5(n1,n2,n3,n4,n5)		(UVAR_ONESET4(n1,n2,n3,n4) + UVAR_SET(n5) == 1)
+#define UVAR_ONESET5_EMSG(adv,n1,n2,n3,n4,n5)	"Exactly one of '"#n1"', '"#n2"', '"#n3"', '"#n4"' or '"#n5"' must "adv"be specified"
+/*@}*/
+
 // declare type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking!
 #define DECL_REGISTER_UVAR(UTYPE,CTYPE)                                 \
-  int XLALRegister ##UTYPE## UserVar ( const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, CTYPE *cvar )
+  int XLALRegister ##UTYPE## UserVar ( CTYPE *cvar, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(5,6)
 
 // ------ declare registration functions
 DECL_REGISTER_UVAR(REAL8,REAL8);
 DECL_REGISTER_UVAR(INT4,INT4);
+DECL_REGISTER_UVAR(INT8,INT8);
 DECL_REGISTER_UVAR(BOOLEAN,BOOLEAN);
 DECL_REGISTER_UVAR(EPOCH,LIGOTimeGPS);
 DECL_REGISTER_UVAR(RAJ,REAL8);
 DECL_REGISTER_UVAR(DECJ,REAL8);
-
 DECL_REGISTER_UVAR(STRING,CHAR*);
+
+DECL_REGISTER_UVAR(REAL8Range,REAL8Range);
+DECL_REGISTER_UVAR(EPOCHRange,LIGOTimeGPSRange);
+DECL_REGISTER_UVAR(RAJRange,REAL8Range);
+DECL_REGISTER_UVAR(DECJRange,REAL8Range);
+
 DECL_REGISTER_UVAR(STRINGVector,LALStringVector*);
 DECL_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
 DECL_REGISTER_UVAR(INT4Vector,INT4Vector*);

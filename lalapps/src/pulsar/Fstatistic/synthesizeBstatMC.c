@@ -200,7 +200,6 @@ int main(int argc,char *argv[])
   gsl_set_error_handler_off ();
 
   /* register all user-variable */
-  LogSetLevel(lalDebugLevel);
   XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* do ALL cmdline and cfgfile handling */

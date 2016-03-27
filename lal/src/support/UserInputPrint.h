@@ -1,4 +1,5 @@
 //
+// Copyright (C) 2016 Karl Wette
 // Copyright (C) 2015 Reinhard Prix
 //
 //  This program is free software; you can redistribute it and/or modify
@@ -21,6 +22,7 @@
 #define _USERINPUTPRINT_H
 
 #include <lal/LALDatatypes.h>
+#include <lal/UserInputParse.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -43,6 +45,8 @@ extern "C" {
 // ----- printing of UTYPES that are mappings to other types
 #define XLALPrintStringValueOfRAJ XLALPrintStringValueOfREAL8
 #define XLALPrintStringValueOfDECJ XLALPrintStringValueOfREAL8
+#define XLALPrintStringValueOfRAJRange XLALPrintStringValueOfREAL8Range
+#define XLALPrintStringValueOfDECJRange XLALPrintStringValueOfREAL8Range
 
 // ---------- exported types ----------
 
@@ -54,6 +58,10 @@ char *XLALPrintStringValueOfINT8 ( const INT8 *valINT8 );
 char *XLALPrintStringValueOfREAL4 ( const REAL4 *valREAL4 );
 char *XLALPrintStringValueOfREAL8 ( const REAL8 *valREAL8 );
 char *XLALPrintStringValueOfEPOCH ( const LIGOTimeGPS *valGPS );
+
+char *XLALPrintStringValueOfREAL8Range ( const REAL8Range *real8Range );
+char *XLALPrintStringValueOfEPOCHRange ( const LIGOTimeGPSRange *gpsRange );
+
 char *XLALPrintStringValueOfSTRING ( char **valSTRING );
 char *XLALPrintStringValueOfSTRINGVector ( LALStringVector **valSTRINGVector );
 

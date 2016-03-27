@@ -13,7 +13,7 @@
 int testLALInferenceVariables(void);
 
 int testLALInferenceVariables(void){
-  LALInferenceVariables var;
+  LALInferenceVariables XLAL_INIT_DECL(var);
   LALInferenceVariables **vars;
   char *xmlString = NULL;
   xmlDocPtr xmlDocument = NULL;

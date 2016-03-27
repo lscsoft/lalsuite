@@ -59,6 +59,7 @@ swig/swiglal*
 test/EOBNRv2Test
 test/GRFlagsTest
 test/GenerateSimulation
+test/InitialSpinRotationTest
 test/OpenMPTest
 test/PNCoefficients
 test/PhenomPTest

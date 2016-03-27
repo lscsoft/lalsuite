@@ -209,10 +209,6 @@ main(int argc, char *argv[])
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register user-variables */
-
-  /* set log-level */
-  LogSetLevel ( lalDebugLevel );
-
   if ( initUserVars(&uvar) != XLAL_SUCCESS ) {
     XLALPrintError( "%s(): initUserVars() failed\n", __func__ );
     return EXIT_FAILURE;

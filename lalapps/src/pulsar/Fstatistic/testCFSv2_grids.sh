@@ -27,6 +27,7 @@ mfdv4_code="${injectdir}lalapps_Makefakedata_v4"
 mfdv5_code="${injectdir}lalapps_Makefakedata_v5"
 cfsv2_code="${builddir}lalapps_ComputeFstatistic_v2"
 cmp_code="${builddir}lalapps_compareFstats"
+LTC_code="${builddir}lalapps_LatticeTilingCount"
 
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
@@ -211,9 +212,9 @@ if ! eval $cmdline; then
 fi
 
 echo
-echo "----------------------------------------"
+echo "----------------------------------------------------------------------"
 echo " STEP 3: Compare to reference results: "
-echo "----------------------------------------"
+echo "----------------------------------------------------------------------"
 echo
 
 for n in 0 1 2 3 6 8 9; do
@@ -230,6 +231,50 @@ for n in 0 1 2 3 6 8 9; do
     fi
 
 done
+
+echo
+echo "----------------------------------------------------------------------"
+echo " STEP 4: Compare template counts (gridType=8|9 only):"
+echo "----------------------------------------------------------------------"
+echo
+
+## --- grid=8 : lattice tiling grid, square parameter space
+cmdline="$LTC_code --time-span=433800 --square=6.1,0,1.2,0,100.4,5e-4,-1e-10,1e-10 --max-mismatch=0.5 --lattice=Ans --metric=spindown"
+echo $cmdline
+ntemplates=`$cmdline`
+if [ $? -ne 0 ]; then
+    echo "Error.. something failed when running '$cmdline' ..."
+    exit 1
+fi
+ntemplates=`echo X$ntemplates | sed 's/[^0123456789]//g'`
+ntemplates_ref=`grep -v '^%' ./testCFSv2_grid8.dat | wc -l | sed 's/[^0123456789]//g'`
+echo "Compare template counts (gridType=8): '$ntemplates' vs '$ntemplates_ref'"
+if [ "X$ntemplates" != "X$ntemplates_ref" ]; then
+    echo "OUCH... template counts differ. Something might be wrong..."
+    exit 2
+else
+    echo "OK."
+fi
+
+## --- grid=9 : lattice tiling grid, age-spindown-index parameter space
+cmdline="$LTC_code --time-span=433800 --age-braking=6.1,1.2,100.4,8e-5,1e11,2,5 --max-mismatch=0.5 --lattice=Ans --metric=spindown"
+echo $cmdline
+ntemplates=`$cmdline`
+if [ $? -ne 0 ]; then
+    echo "Error.. something failed when running '$cmdline' ..."
+    exit 1
+fi
+ntemplates=`echo X$ntemplates | sed 's/[^0123456789]//g'`
+ntemplates_ref=`grep -v '^%' ./testCFSv2_grid9.dat | wc -l | sed 's/[^0123456789]//g'`
+echo "Compare template counts (gridType=9): '$ntemplates' vs '$ntemplates_ref'"
+if [ "X$ntemplates" != "X$ntemplates_ref" ]; then
+    echo "OUCH... template counts differ. Something might be wrong..."
+    exit 2
+else
+    echo "OK."
+fi
+
+## ------------------------------------------------------------
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then

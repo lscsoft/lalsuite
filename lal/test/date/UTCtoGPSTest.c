@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2016 Karl Wette
 *  Copyright (C) 2007 David Chin
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -27,88 +28,81 @@
 #include <lal/AVFactories.h>
 
 
-static int test(struct tm *t, int correct_gps, int line)
+static int test(struct tm *t, int correct_gps)
 {
+
+  {
+    struct tm tf = *t;
+    tf.tm_wday = tf.tm_yday = -1;
+    XLAL_CHECK(XLALFillUTC(&tf) != NULL, XLAL_EFUNC, "UTCtoGPSTest: error in XLALFillUTC()");
+    XLAL_CHECK(tf.tm_wday == t->tm_wday, XLAL_EFAILED, "UTCtoGPSTest: incorrect day of week\n  output   = %d\n  expected = %d\n", tf.tm_wday, t->tm_wday);
+    XLAL_CHECK(tf.tm_yday == t->tm_yday, XLAL_EFAILED, "UTCtoGPSTest: incorrect day of year\n  output   = %d\n  expected = %d\n", tf.tm_yday, t->tm_yday);
+  }
+
+  t->tm_wday = t->tm_yday = -1;
   int gps = XLALUTCToGPS(t);
-
-  if (XLALGetBaseErrno())
-    {
-      fprintf(stderr, "TestUTCtoGPS: error in XLALUTCToGPS(), line %i\n", line);
-      return -1;
-    }
-
-  if (lalDebugLevel > 0)
-    {
-      char buf[64];
-      strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
-      fprintf(stderr, "Input = %s\tOutput =   %d\n\tExpected = %d\n",
-      buf, gps, correct_gps);
-    }
+  XLAL_CHECK(xlalErrno == 0, XLAL_EFUNC, "UTCtoGPSTest: error in XLALUTCToGPS()");
 
   if (gps != correct_gps)
     {
-      if (lalDebugLevel > 0)
-        fprintf(stderr, "TestUTCtoGPS: error, line %i\n", line);
-      return -1;
+      char buf[64];
+      strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", t);
+      XLAL_ERROR(XLAL_EFAILED, "UTCtoGPSTest: incorrect UTC to GPS conversion\n  input    = %s\n  output   = %d\n  expected = %d\n", buf, gps, correct_gps);
     }
 
-  return 0;
+  return XLAL_SUCCESS;
+
 }
-
-#define TEST(t, correct_gps) test(t, correct_gps, __LINE__)
-
 
 int main(void)
 {
+
   struct tm utcDate;
   time_t sec;
 
   utcDate.tm_year = 80;
   utcDate.tm_yday =  5;
-  utcDate.tm_wday = -1;	/* unused */
-  utcDate.tm_mon  =  0;	/* unused */
-  utcDate.tm_mday =  6;	/* unused */
+  utcDate.tm_wday =  0;
+  utcDate.tm_mon  =  0;
+  utcDate.tm_mday =  6;
   utcDate.tm_hour =  0;
   utcDate.tm_min  =  0;
   utcDate.tm_sec  =  0;
   utcDate.tm_isdst = 0;
-  if (TEST(&utcDate, 0))
-    return 1;
+  XLAL_CHECK_MAIN(test(&utcDate, 0) == XLAL_SUCCESS, XLAL_EFAILED);
 
   utcDate.tm_year =  94;
   utcDate.tm_yday = 186;
-  utcDate.tm_wday =  -1;	/* unused */
-  utcDate.tm_mon  =   6;	/* unused */
-  utcDate.tm_mday =   6;	/* unused */
+  utcDate.tm_wday =   3;
+  utcDate.tm_mon  =   6;
+  utcDate.tm_mday =   6;
   utcDate.tm_hour =  23;
   utcDate.tm_min  =  59;
   utcDate.tm_sec  =  50;
   utcDate.tm_isdst =  1;
-  if (TEST(&utcDate, 457574400))
-    return 1;
+  XLAL_CHECK_MAIN(test(&utcDate, 457574400) == XLAL_SUCCESS, XLAL_EFAILED);
 
   utcDate.tm_year =  94;
   utcDate.tm_yday = 181;
-  utcDate.tm_wday =  -1;	/* unused */
-  utcDate.tm_mon  =   6;	/* unused */
-  utcDate.tm_mday =   1;	/* unused */
+  utcDate.tm_wday =   5;
+  utcDate.tm_mon  =   6;
+  utcDate.tm_mday =   1;
   utcDate.tm_hour =   0;
   utcDate.tm_min  =   0;
   utcDate.tm_sec  =   0;
   utcDate.tm_isdst =  1;
-  if (TEST(&utcDate, 457056010))
-    return 1;
+  XLAL_CHECK_MAIN(test(&utcDate, 457056010) == XLAL_SUCCESS, XLAL_EFAILED);
 
   for (sec = 457056007; sec < 457056012; sec++)
     {
       utcDate.tm_year =  94;
-      utcDate.tm_wday =  -1;	/* unused */
       utcDate.tm_sec  =  58 + (sec - 457056007);
       if (utcDate.tm_sec <= 60)
         {
           utcDate.tm_yday = 180;
-          utcDate.tm_mon  =   5;	/* unused */
-          utcDate.tm_mday =  30;	/* unused */
+          utcDate.tm_wday =   4;
+          utcDate.tm_mon  =   5;
+          utcDate.tm_mday =  30;
           utcDate.tm_hour =  23;
           utcDate.tm_min  =  59;
         }
@@ -116,28 +110,29 @@ int main(void)
         {
           utcDate.tm_sec -=  61;
           utcDate.tm_yday = 181;
-          utcDate.tm_mon  =   6;	/* unused */
-          utcDate.tm_mday =   1;	/* unused */
+          utcDate.tm_wday =   5;
+          utcDate.tm_mon  =   6;
+          utcDate.tm_mday =   1;
           utcDate.tm_hour =  00;
           utcDate.tm_min  =  00;
         }
       utcDate.tm_isdst =  1;
-      if (TEST(&utcDate, sec))
-        return 1;
+      XLAL_CHECK_MAIN(test(&utcDate, sec) == XLAL_SUCCESS, XLAL_EFAILED);
     }
 
   utcDate.tm_year =  94;
   utcDate.tm_yday = 319;
-  utcDate.tm_wday =  -1;	/* unused */
-  utcDate.tm_mon  =  10;	/* unused */
-  utcDate.tm_mday =  16;	/* unused */
+  utcDate.tm_wday =   3;
+  utcDate.tm_mon  =  10;
+  utcDate.tm_mday =  16;
   utcDate.tm_hour =   0;
   utcDate.tm_min  =   0;
   utcDate.tm_sec  =   0;
   utcDate.tm_isdst =  0;
-  if (TEST(&utcDate, 468979210))
-    return 1;
+  XLAL_CHECK_MAIN(test(&utcDate, 468979210) == XLAL_SUCCESS, XLAL_EFAILED);
 
   LALCheckMemoryLeaks();
-  return 0;
+
+  return EXIT_SUCCESS;
+
 }

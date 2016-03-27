@@ -529,13 +529,6 @@ int MAIN( int argc, char *argv[]) {
       return (0);
     }
 
-  /* set log-level */
-#ifdef EAH_LOGLEVEL
-  LogSetLevel ( EAH_LOGLEVEL );
-#else
-  LogSetLevel ( lalDebugLevel );
-#endif
-
   if(uvar_gpu_device >= 0)
     gpu_device_id = uvar_gpu_device;
 

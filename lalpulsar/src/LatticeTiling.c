@@ -26,8 +26,8 @@
 
 #include <lal/LatticeTiling.h>
 #include <lal/LALStdio.h>
+#include <lal/LALString.h>
 #include <lal/MetricUtils.h>
-
 #include <lal/GSLHelpers.h>
 
 #ifdef __GNUC__
@@ -35,6 +35,15 @@
 #else
 #define UNUSED
 #endif
+
+///
+/// Type of lattice to generate tiling with.
+///
+typedef enum tagLT_Lattice{
+  LT_LATTICE_CUBIC,			///< Cubic (\f$Z_n\f$) lattice
+  LT_LATTICE_ANSTAR,			///< An-star (\f$A_n^*\f$) lattice
+  LT_LATTICE_MAX
+} LT_Lattice;
 
 ///
 /// Lattice tiling parameter-space bound for one dimension.
@@ -63,7 +72,7 @@ struct tagLatticeTiling {
   LT_Bound *bounds;			///< Array of parameter-space bound info for each dimension
   size_t tiled_ndim;			///< Number of tiled parameter-space dimensions
   size_t *tiled_idx;			///< Index to tiled parameter-space dimensions
-  TilingLattice lattice;		///< Type of lattice to generate tiling with
+  LT_Lattice lattice;			///< Type of lattice to generate tiling with
   gsl_vector *phys_bbox;		///< Metric ellipse bounding box
   gsl_vector *phys_origin;		///< Parameter-space origin in physical coordinates
   gsl_matrix *int_from_phys;		///< Transform to generating integers from physical coordinates
@@ -478,7 +487,7 @@ static int LT_FindNearestPoints(
       // Find the nearest point to 'nearest_points[:,j]', the tiled dimensions of which are generating integers
       switch (loc->tiling->lattice) {
 
-      case TILING_LATTICE_CUBIC:		// Cubic (\f$Z_n\f$) lattice
+      case LT_LATTICE_CUBIC:		// Cubic (\f$Z_n\f$) lattice
       {
 
         // Round each dimension of 'nearest_points[:,j]' to nearest integer to find the nearest point in Zn
@@ -500,7 +509,7 @@ static int LT_FindNearestPoints(
       }
       break;
 
-      case TILING_LATTICE_ANSTAR:		// An-star (\f$A_n^*\f$) lattice
+      case LT_LATTICE_ANSTAR:		// An-star (\f$A_n^*\f$) lattice
       {
 
         // The nearest point algorithm used below embeds the An* lattice in tn+1 dimensions,
@@ -608,7 +617,7 @@ static int LT_FindNearestPoints(
       break;
 
       default:
-        XLAL_ERROR(XLAL_EINVAL, "Invalid lattice=%u", loc->tiling->lattice);
+        XLAL_ERROR(XLAL_EFAILED, "Invalid lattice");
       }
 
       // Bound generating integers
@@ -739,7 +748,7 @@ LatticeTiling *XLALCreateLatticeTiling(
 
   // Initialise fields
   tiling->ndim = ndim;
-  tiling->lattice = TILING_LATTICE_MAX;
+  tiling->lattice = LT_LATTICE_MAX;
 
   return tiling;
 
@@ -777,7 +786,7 @@ int XLALSetLatticeTilingBound(
 
   // Check input
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL);
+  XLAL_CHECK(tiling->lattice == LT_LATTICE_MAX, XLAL_EINVAL);
   XLAL_CHECK(dim < tiling->ndim, XLAL_ESIZE);
   XLAL_CHECK(func != NULL, XLAL_EFAULT);
   XLAL_CHECK(data_len > 0, XLAL_EFAULT);
@@ -844,7 +853,7 @@ int XLALSetLatticeTilingConstantBound(
 
 int XLALSetTilingLatticeAndMetric(
   LatticeTiling *tiling,
-  const TilingLattice lattice,
+  const char *lattice_name,
   const gsl_matrix *metric,
   const double max_mismatch
   )
@@ -852,8 +861,8 @@ int XLALSetTilingLatticeAndMetric(
 
   // Check input
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL);
-  XLAL_CHECK(lattice < TILING_LATTICE_MAX, XLAL_EINVAL);
+  XLAL_CHECK(tiling->lattice == LT_LATTICE_MAX, XLAL_EINVAL);
+  XLAL_CHECK(lattice_name != NULL, XLAL_EFAULT);
   XLAL_CHECK(metric != NULL, XLAL_EFAULT);
   XLAL_CHECK(metric->size1 == tiling->ndim && metric->size2 == tiling->ndim, XLAL_EINVAL);
   XLAL_CHECK(max_mismatch > 0, XLAL_EINVAL);
@@ -873,8 +882,14 @@ int XLALSetTilingLatticeAndMetric(
     }
   }
 
-  // Set fields
-  tiling->lattice = lattice;
+  // Parse name of lattice to generate tiling with
+  if (XLALStringCaseCompare(lattice_name, "Zn") == 0 || XLALStringCaseCompare(lattice_name, "Cubic") == 0) {
+    tiling->lattice = LT_LATTICE_CUBIC;
+  } else if (XLALStringCaseCompare(lattice_name, "Ans") == 0 || XLALStringCaseCompare(lattice_name, "An-star") == 0) {
+    tiling->lattice = LT_LATTICE_ANSTAR;
+  } else {
+    XLAL_ERROR(XLAL_EINVAL, "Invalid lattice name '%s'", lattice_name);
+  }
 
   // Count number of tiled dimensions
   tiling->tiled_ndim = 0;
@@ -977,9 +992,9 @@ int XLALSetTilingLatticeAndMetric(
 
     // Compute lattice generator and normalised thickness
     double norm_thickness = 0.0;
-    switch (lattice) {
+    switch (tiling->lattice) {
 
-    case TILING_LATTICE_CUBIC:		// Cubic (\f$Z_n\f$) lattice
+    case LT_LATTICE_CUBIC:		// Cubic (\f$Z_n\f$) lattice
     {
 
       // Zn lattice generator is the identity
@@ -991,7 +1006,7 @@ int XLALSetTilingLatticeAndMetric(
     }
     break;
 
-    case TILING_LATTICE_ANSTAR:		// An-star (\f$A_n^*\f$) lattice
+    case LT_LATTICE_ANSTAR:		// An-star (\f$A_n^*\f$) lattice
     {
 
       // An* lattice generator in tn+1 dimensions, given in:
@@ -1036,7 +1051,7 @@ int XLALSetTilingLatticeAndMetric(
     break;
 
     default:
-      XLAL_ERROR(XLAL_EINVAL, "Invalid lattice=%u", lattice);
+      XLAL_ERROR(XLAL_EFAILED, "Invalid lattice");
     }
 
     // Generator will be lower-triangular, so zero out upper triangle
@@ -1137,7 +1152,7 @@ size_t XLALTiledLatticeTilingDimensions(
 
   // Check input
   XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VAL(0, tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL);
+  XLAL_CHECK_VAL(0, tiling->lattice < LT_LATTICE_MAX, XLAL_EINVAL);
 
   return tiling->tiled_ndim;
 
@@ -1151,7 +1166,7 @@ REAL8 XLALLatticeTilingStepSizes(
 
   // Check input
   XLAL_CHECK_REAL8(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_REAL8(tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL);
+  XLAL_CHECK_REAL8(tiling->lattice < LT_LATTICE_MAX, XLAL_EINVAL);
   XLAL_CHECK_REAL8(dim < tiling->ndim, XLAL_ESIZE);
 
   // Return 0 for non-tiled dimensions
@@ -1172,7 +1187,7 @@ REAL8 XLALLatticeTilingBoundingBox(
 
   // Check input
   XLAL_CHECK_REAL8(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_REAL8(tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL);
+  XLAL_CHECK_REAL8(tiling->lattice < LT_LATTICE_MAX, XLAL_EINVAL);
   XLAL_CHECK_REAL8(dim < tiling->ndim, XLAL_ESIZE);
 
   // Return 0 for non-tiled dimensions
@@ -1192,7 +1207,7 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
 
   // Check input
   XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL);
+  XLAL_CHECK_NULL(tiling->lattice < LT_LATTICE_MAX, XLAL_EINVAL);
   XLAL_CHECK_NULL(dim < tiling->ndim, XLAL_ESIZE);
 
   // Ensure lattice tiling statistics have been computed
@@ -1309,7 +1324,7 @@ int XLALRandomLatticeTilingPoints(
 
   // Check input
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL);
+  XLAL_CHECK(tiling->lattice < LT_LATTICE_MAX, XLAL_EINVAL);
   XLAL_CHECK(scale > -1.0, XLAL_EINVAL);
   XLAL_CHECK(rng != NULL, XLAL_EFAULT);
   XLAL_CHECK(random_points != NULL, XLAL_EFAULT);
@@ -1408,7 +1423,7 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
 
   // Check input
   XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL);
+  XLAL_CHECK_NULL(tiling->lattice < LT_LATTICE_MAX, XLAL_EINVAL);
   XLAL_CHECK_NULL(itr_ndim <= tiling->ndim, XLAL_EINVAL);
 
   // Allocate memory
@@ -1819,7 +1834,7 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
 
   // Check input
   XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL);
+  XLAL_CHECK_NULL(tiling->lattice < LT_LATTICE_MAX, XLAL_EINVAL);
 
   // Allocate memory
   LatticeTilingLocator *loc = XLALCalloc(1, sizeof(*loc));
