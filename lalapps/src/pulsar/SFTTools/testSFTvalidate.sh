@@ -1,9 +1,5 @@
 #!/bin/sh
 
-## set LAL debug level
-echo "Setting LAL_DEBUG_LEVEL=${LAL_DEBUG_LEVEL:-msglvl1,memdbg}"
-export LAL_DEBUG_LEVEL
-
 prog=./lalapps_SFTvalidate
 
 ./lalapps_SFTwrite >/dev/null

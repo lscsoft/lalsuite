@@ -20,7 +20,7 @@
 /**
  * \author Bruce Allen, Reinhard Prix
  * \file
- * \ingroup lalapps_pulsar_SFTReferenceLibrary
+ * \ingroup lalapps_pulsar_SFTTools
  * \brief
  * This is a reference library for the SFT data format
  */

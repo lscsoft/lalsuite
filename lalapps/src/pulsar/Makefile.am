@@ -9,7 +9,7 @@ SUBDIRS = \
 	HeterodyneSearch \
 	fscan \
 	TwoSpect \
-	SFTReferenceLibrary \
+	SFTTools \
 	SidebandSearch \
 	CreateEphemeris \
 	Tools \

@@ -32,7 +32,7 @@ AC_CONFIG_FILES([\
   src/pulsar/Injections/Makefile \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/Makefile \
-  src/pulsar/SFTReferenceLibrary/Makefile \
+  src/pulsar/SFTTools/Makefile \
   src/pulsar/SidebandSearch/Makefile \
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \

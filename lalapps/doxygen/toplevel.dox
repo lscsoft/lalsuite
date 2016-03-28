@@ -25,7 +25,7 @@
    \defgroup lalapps_pulsar_TwoSpect		TwoSpect Search Applications
    \defgroup lalapps_pulsar_crosscorr		Cross-Correlation Search Applications
    \defgroup lalapps_pulsar_CreateEphemeris	Ephemeris Creation Applications
-   \defgroup lalapps_pulsar_SFTReferenceLibrary	SFT Reference Library Applications
+   \defgroup lalapps_pulsar_SFTTools		SFT Utility Applications
    \defgroup lalapps_pulsar_fscan		FScan Spectrum Analysis Applications
    \defgroup lalapps_pulsar_templateBanks	Metric and Template Bank Applications
    \defgroup lalapps_pulsar_Tools		General Utility Applications

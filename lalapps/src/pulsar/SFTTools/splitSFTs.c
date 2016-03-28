@@ -19,13 +19,10 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_SFTReferenceLibrary
+ * \ingroup lalapps_pulsar_SFTTools
  * \author Bernd Machenschalk, Bruce Allen
  *
  * \brief This program reads in binary SFTs (v1 and v2) and writes out narrow-banded merged SFTs (v2).
- *
- * This code links to the SFTReferenceLibrary. To compile, use somehting like
- * <code>gcc -Wall -g -O2 splitSFTs.c -o splitSFTs libSFTReferenceLibrary.a -lm</code>
  *
  * Writen by Bernd Machenschalk for Einstein\@home 2008
  *

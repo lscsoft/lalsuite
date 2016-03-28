@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2004, 2005 Bruce Allen
+ *  Copyright (C) 2004, 2008 Bruce Allen, Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,30 +18,25 @@
  */
 
 /**
- * \author Bruce Allen
+ * \author Bruce Allen, Reinhard Prix
  * \file
- * \ingroup lalapps_pulsar_SFTReferenceLibrary
+ * \ingroup lalapps_pulsar_SFTTools
  * \brief
- * Verify that a set of SFT files is valid
+ * Dump the header information from a set of SFT files
  *
  * The exit status will be zero if all SFTs are valid.  The exit status
  * will be non-zero if any of the SFTs was invalid.  grep SFTE
  * SFTReferenceLibrary.h will show the return values.
  */
 
-#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <LALAppsVCSInfo.h>
 #include "SFTReferenceLibrary.h"
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   int i;
-  float *data=NULL;
-  
-  fprintf(stdout, "%s: %s %s\n", argv[0], lalAppsVCSId, lalAppsVCSStatus);
 
   /* loop over all file names on command line */
   for (i=1; i<argc; i++) {
@@ -56,14 +51,17 @@ int main(int argc, char** argv) {
       return SFTENULLFP;
     }
 
-    /* and read successive SFTs blocks from the file and validate CRC
-       checksums */
+    /* and read successive SFTs blocks from the file and print headers */
     for (count=0; 1; count++) {
-      struct headertag2 info,lastinfo;
-      int err=0, swapendian, move, j;
-      
-      err=ReadSFTHeader(fp, &info, NULL, &swapendian, 1);
 
+      struct headertag2 info,lastinfo;
+      int err=0, swapendian, move;
+      char *mycomment;
+
+      int whence = (int)ftell(fp);
+
+      err=ReadSFTHeader(fp, &info, &mycomment, &swapendian, 1);
+      
       /* at end of SFT file or merged SFT file blocks */
       if (err==SFTENONE && count)
 	break;
@@ -75,44 +73,38 @@ int main(int argc, char** argv) {
 	  perror(NULL);
 	return err;
       }
-
-      /* check that various bits of header information are consistent */
-      if (count && (err=CheckSFTHeaderConsistency(&lastinfo, &info)))
-	{
-	  fprintf(stderr, "%s is not a valid SFT. %s\n", argv[i], SFTErrorMessage(err));
-	  if (errno)
-	    perror(NULL);
-	  return err;
+      else {
+	printf("File name:            %s\n", argv[i]);
+	printf("SFT Version:          %.0f\n", info.version);
+	printf("GPS_sec:              %d\n", info.gps_sec);
+	printf("GPS_nsec:             %d\n", info.gps_nsec);
+	printf("Timebase:             %-16f\n", info.tbase);
+	printf("First frequency bin:  %d\n", info.firstfreqindex);
+	printf("Number of freq bins:  %d\n", info.nsamples);
+	printf("Endian order:         %s\n", swapendian?"reversed":"native");
+        printf("Start offset (bytes): %d\n", whence);
+	if (1 != info.version) {
+	  printf("Detector prefix:      %c%c\n", info.detector[0], info.detector[1]);
+	  printf("64-bit CRC checksum:  %llu\n", info.crc64);
+	  printf("Comment length bytes: %d\n", info.comment_length);
 	}
+	if (info.comment_length) {
+	  printf("Comment:              %s\n", mycomment);
+	  free(mycomment);
+	}
+	printf("\n");
+      }
       
-      /* check that data appears valid */
-      data=(float *)realloc((void *)data, info.nsamples*4*2);
-      if (!data) {
-	errno=SFTENULLPOINTER;
-	fprintf(stderr, "ran out of memory at %s. %s\n", argv[i], SFTErrorMessage(err));
-	if (errno)
-	  perror(NULL);
-	return err;
-      }
-
-      err=ReadSFTData(fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */ NULL);
-      if (err) {
+      /* check that various bits of header information are consistent */
+      if (count && (err=CheckSFTHeaderConsistency(&lastinfo, &info))) {
 	fprintf(stderr, "%s is not a valid SFT. %s\n", argv[i], SFTErrorMessage(err));
-	if (errno)
-	  perror(NULL);
 	return err;
-      }
-
-      for (j=0; j<info.nsamples; j++) {
-	if (!isfinite(data[2*j]) || !isfinite(data[2*j+1])) {
-	  fprintf(stderr, "%s is not a valid SFT (data infinite at freq bin %d)\n", argv[i], j+info.firstfreqindex);
-	  return SFTNOTFINITE;
-	}
       }
 
       /* keep copy of header for comparison the next time */
       lastinfo=info;
-      
+
+
       /* Move forward to next SFT in merged file */
       if (info.version==1)
 	move=sizeof(struct headertag1)+info.nsamples*2*sizeof(float);

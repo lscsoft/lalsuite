@@ -20,7 +20,7 @@
 /**
  * \author Bruce Allen
  * \file
- * \ingroup lalapps_pulsar_SFTReferenceLibrary
+ * \ingroup lalapps_pulsar_SFTTools
  * \brief
  * Makes a test SFT (called SFT-test)
  *
