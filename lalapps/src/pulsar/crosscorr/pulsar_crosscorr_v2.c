@@ -487,7 +487,7 @@ int main(int argc, char *argv[]){
   maxBinaryTemplate.argp = 0.0;
   maxBinaryTemplate.asini = uvar.orbitAsiniSec + uvar.orbitAsiniSecBand;
   maxBinaryTemplate.ecc = 0.0;
-  maxBinaryTemplate.period = uvar.orbitPSec;
+  maxBinaryTemplate.period = uvar.orbitPSec + uvar.orbitPSecBand;
   maxBinaryTemplate.fkdot[0] = uvar.fStart + uvar.fBand;
   /*fill in thisBinaryTemplate*/
   XLALGPSSetREAL8( &thisBinaryTemplate.tp, uvar.orbitTimeAsc + 0.5 * uvar.orbitTimeAscBand);
@@ -628,7 +628,7 @@ int main(int argc, char *argv[]){
 
   /* metric elements for eccentric case not considered? */
 
-    UINT8 fCount = 0, aCount = 0, tCount = 0 , pCount = 0;
+  UINT8 fCount = 0, aCount = 0, tCount = 0 , pCount = 0;
   const UINT8 fSpacingNum = floor( uvar.fBand / binaryTemplateSpacings.fkdot[0]);
   const UINT8 aSpacingNum = floor( uvar.orbitAsiniSecBand / binaryTemplateSpacings.asini);
   const UINT8 tSpacingNum = floor( uvar.orbitTimeAscBand / XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
@@ -639,6 +639,11 @@ int main(int argc, char *argv[]){
   minBinaryTemplate.asini = uvar.orbitAsiniSec + 0.5 * (uvar.orbitAsiniSecBand - aSpacingNum * binaryTemplateSpacings.asini);
   XLALGPSSetREAL8( &minBinaryTemplate.tp, uvar.orbitTimeAsc + 0.5 * (uvar.orbitTimeAscBand - tSpacingNum * XLALGPSGetREAL8(&binaryTemplateSpacings.tp)));
   minBinaryTemplate.period = uvar.orbitPSec + 0.5 * (uvar.orbitPSecBand - pSpacingNum * binaryTemplateSpacings.period);
+  /*also reset dopplerpos orbital parameters and frequency*/
+  dopplerpos.fkdot[0] = minBinaryTemplate.fkdot[0];
+  dopplerpos.asini = minBinaryTemplate.asini;
+  dopplerpos.tp = minBinaryTemplate.tp;
+  dopplerpos.period = minBinaryTemplate.period;
 
   /* args should be : spacings, min and max doppler params */
   BOOLEAN firstPoint = TRUE; /* a boolean to help to search at the beginning point in parameter space, after the search it is set to be FALSE to end the loop*/
