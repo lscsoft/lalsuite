@@ -106,7 +106,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files octave
 %defattr(-,root,root)
-%{_libexecdir}/octave/*/site/oct/*/lalxml.oct*
+%{_prefix}/lib*/octave/*/site/oct/*/lalxml.oct*
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
