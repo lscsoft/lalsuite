@@ -353,3 +353,5 @@ git commit --amend
 # 2015-02-12 lalapps/src/pulsar/templateBanks/skynet.c
 # 2015-02-27 lalapps/src/pulsar/hough/src2/RecalcHSCandidates.c
 # 2015-02-27 lalapps/src/pulsar/hough/src2/testRecalcHS.sh
+# 2016-03-28 lalapps/src/pulsar/MakeSFTs/Makefile_MakeSFTs
+# 2016-03-28 lalapps/src/pulsar/MakeSFTs/Makefile_MakeSFTsCondor
