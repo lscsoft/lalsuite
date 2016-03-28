@@ -143,4 +143,4 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files octave
 %defattr(-,root,root)
-%{_libexecdir}/octave/*/site/oct/*/laldetchar.oct*
+%{_prefix}/lib*/octave/*/site/oct/*/laldetchar.oct*
