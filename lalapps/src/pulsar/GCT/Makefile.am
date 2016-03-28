@@ -1,7 +1,7 @@
 BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/Fstatistic -I $(top_srcdir)/src/pulsar/EinsteinAtHome -I $(top_srcdir)/src/pulsar/hough/src2 @AM_CPPFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/Fstatistic -I $(top_srcdir)/src/pulsar/EinsteinAtHome -I $(top_srcdir)/src/pulsar/HoughFstat @AM_CPPFLAGS@
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
 check_PROGRAMS =

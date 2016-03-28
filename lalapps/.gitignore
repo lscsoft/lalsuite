@@ -193,6 +193,7 @@ src/pulsar/HeterodyneSearch/lalapps_heterodyne_pulsar
 src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation
 src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation_nested
 src/pulsar/HeterodyneSearch/lalapps_ssbtodetector
+src/pulsar/HoughFstat/lalapps_HierarchicalSearch
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_Makefakedata_v5
 src/pulsar/Injections/lalapps_compareTS
@@ -257,8 +258,6 @@ src/pulsar/hough/src/lalapps_NstarClean
 src/pulsar/hough/src/lalapps_SFTclean
 src/pulsar/hough/src/lalapps_ValidateChi2Test
 src/pulsar/hough/src/lalapps_ValidateHoughMulti
-src/pulsar/hough/src2/lalapps_HierarchicalSearch
-src/pulsar/hough/src2/lalapps_RecalcHSCandidates
 src/ring/lalapps_coh_PTF_inspiral
 src/ring/lalapps_coh_PTF_spin_checker
 src/ring/lalapps_coh_PTF_testing

@@ -12,6 +12,7 @@ SUBDIRS += \
 	Fstatistic \
 	GCT \
 	HeterodyneSearch \
+	HoughFstat \
 	MakeSFTs \
 	SidebandSearch \
 	TwoSpect \

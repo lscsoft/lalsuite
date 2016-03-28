@@ -946,7 +946,7 @@ step6()
     echo $ECHO_N "Building Einstein@Home... $ECHO_C"
     log_and_do cd src/lalapps
     log_and_do make LALAppsVCSInfo.h liblalapps.la
-    log_and_do cd ../pulsar/hough/src2
+    log_and_do cd ../pulsar/HoughFstat
     log_and_do make eah_HierarchicalSearch${eah_target_ext}
     echo "done."
 
@@ -1710,7 +1710,7 @@ if [ ${startstep} -le 6 ]; then step6; fi
 
 ## ---------- copy binary into build-dir
 
-f="${BUILD_LOCATION}/lalsuite/lalapps/src/pulsar/hough/src2/eah_HierarchicalSearch${eah_target_ext}"
+f="${BUILD_LOCATION}/lalsuite/lalapps/src/pulsar/HoughFstat/eah_HierarchicalSearch${eah_target_ext}"
 test -f "$f" && cp -f "$f" "${BUILD_LOCATION}/cfsBOINC${eah_target_ext}"
 
 ## ---------- consistency-checks on final binary
