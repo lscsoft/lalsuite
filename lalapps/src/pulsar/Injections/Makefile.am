@@ -3,9 +3,7 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 
 bin_PROGRAMS = 	lalapps_Makefakedata_v4 \
 		lalapps_Makefakedata_v5 \
-		lalapps_compareSFTs \
-		lalapps_compareTS \
-		lalapps_dumpSFT
+		lalapps_compareTS
 
 EXTRA_PROGRAMS = eah_Makefakedata_v4 eah_Makefakedata_v5
 
@@ -22,11 +20,7 @@ eah_Makefakedata_v4_SOURCES = $(lalapps_Makefakedata_v4_SOURCES) win_lib.cpp
 
 eah_Makefakedata_v5_SOURCES = $(lalapps_Makefakedata_v5_SOURCES) win_lib.cpp
 
-lalapps_compareSFTs_SOURCES = compareSFTs.c
-
 lalapps_compareTS_SOURCES = compareTS.c
-
-lalapps_dumpSFT_SOURCES = dumpSFT.c
 
 ## ----- extra-programs
 lalapps_sw_inj_frames_SOURCES = sw_inj_frames.c

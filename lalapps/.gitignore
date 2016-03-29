@@ -195,9 +195,7 @@ src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation_nested
 src/pulsar/HeterodyneSearch/lalapps_ssbtodetector
 src/pulsar/Injections/lalapps_Makefakedata_v4
 src/pulsar/Injections/lalapps_Makefakedata_v5
-src/pulsar/Injections/lalapps_compareSFTs
 src/pulsar/Injections/lalapps_compareTS
-src/pulsar/Injections/lalapps_dumpSFT
 src/pulsar/MakeSFTs/lalapps_LISAmakeSFTs
 src/pulsar/MakeSFTs/lalapps_MakeSFTs
 src/pulsar/SFTTools/SFT-bad1
@@ -227,6 +225,8 @@ src/pulsar/SFTTools/lalapps_SFTdumpall
 src/pulsar/SFTTools/lalapps_SFTdumpheader
 src/pulsar/SFTTools/lalapps_SFTvalidate
 src/pulsar/SFTTools/lalapps_SFTwrite
+src/pulsar/SFTTools/lalapps_compareSFTs
+src/pulsar/SFTTools/lalapps_dumpSFT
 src/pulsar/SFTTools/lalapps_splitSFTs
 src/pulsar/SidebandSearch/lalapps_CombSearch
 src/pulsar/Tools/lalapps_ComputeAntennaPattern

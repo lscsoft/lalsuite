@@ -13,7 +13,7 @@ builddir="./";
 sftdir="${builddir}../SFTTools/"
 
 mfdCODE="${builddir}lalapps_Makefakedata_v4"
-cmpCODE="${builddir}lalapps_compareSFTs"
+cmpCODE="${sftdir}lalapps_compareSFTs"
 extractCODE="${sftdir}lalapps_ConvertToSFTv2"
 
 testDIR1="./mfdv4_TEST1"

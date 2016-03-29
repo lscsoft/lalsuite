@@ -4,6 +4,8 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 SFTReferenceLibrary = SFTReferenceLibrary.c SFTReferenceLibrary.h
 
 bin_PROGRAMS = \
+	lalapps_dumpSFT \
+	lalapps_compareSFTs \
 	lalapps_ConvertToSFTv2 \
 	lalapps_SFTdumpall \
 	lalapps_SFTdumpheader \
@@ -17,6 +19,8 @@ lalapps_SFTdumpall_SOURCES = SFTdumpall.c $(SFTReferenceLibrary)
 lalapps_SFTdumpheader_SOURCES = SFTdumpheader.c $(SFTReferenceLibrary)
 lalapps_SFTvalidate_SOURCES = SFTvalidate.c $(SFTReferenceLibrary)
 lalapps_SFTwrite_SOURCES = SFTwrite.c $(SFTReferenceLibrary)
+lalapps_compareSFTs_SOURCES = compareSFTs.c
+lalapps_dumpSFT_SOURCES = dumpSFT.c
 lalapps_splitSFTs_SOURCES = splitSFTs.c $(SFTReferenceLibrary)
 
 EXTRA_DIST = \
