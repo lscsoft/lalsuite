@@ -24,7 +24,7 @@ typedef struct tagParamData{
   const CHAR *fitFlag; /* add a TEMPO-style fitting flag to some parameters */
 }ParamData;
 
-#define NUMPARS 42
+#define NUMPARS 43
 
 /* setup a collection of allowed .par file parameters */
 ParamData p[NUMPARS] =
@@ -69,6 +69,7 @@ ParamData p[NUMPARS] =
   { "FB0",      "1.23400e-05",  "1.23400e-05",      "1.23400e-14",  "1.23400e-14", "1" },
   { "FB2",      "1.23400e-09",  "1.23400e-09",      "1.23400e-18",  "1.23400e-18", " " },
   { "FB1",      "1.23400e-09",  "1.23400e-09",      "1.23400e-18",  "1.23400e-18", "1" },
+  { "EDOT",     "1.23400e-05",  "1.23400e-17",      "1.23400e-18",  "1.23400e-18", " " },
   /* GW parameters */
   { "H0",       "1.23000e-22",  "1.23000e-22",      "1.23000E-23",  "1.23000e-23", " " }, /* input exponent as E */
   { "COSIOTA",  "-0.12300",     "-0.12300",         "0.00123",      "0.00123"    , " " },
