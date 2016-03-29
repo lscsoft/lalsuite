@@ -1,19 +1,24 @@
+# General tools which should be tested first
 SUBDIRS = \
-	MakeSFTs \
-	Injections \
-	FITSTools \
-	Fstatistic \
-	hough \
-	GCT \
-	crosscorr \
-	HeterodyneSearch \
-	fscan \
-	TwoSpect \
-	SFTTools \
-	SidebandSearch \
-	CreateEphemeris \
 	Tools \
+	Injections \
+	SFTTools \
+	FITSTools \
+	$(END_OF_LINE)
+
+# Everything else
+SUBDIRS += \
+	CreateEphemeris \
+	Fstatistic \
+	GCT \
+	HeterodyneSearch \
+	MakeSFTs \
+	SidebandSearch \
+	TwoSpect \
 	Xray \
+	crosscorr \
+	fscan \
+	hough \
 	$(END_OF_LINE)
 
 # Because many tests in src/pulsar call executables from other subdirectories in
