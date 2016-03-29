@@ -4,17 +4,21 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 SFTReferenceLibrary = SFTReferenceLibrary.c SFTReferenceLibrary.h
 
 bin_PROGRAMS = \
-	lalapps_dumpSFT \
-	lalapps_compareSFTs \
+	lalapps_ComputePSD \
 	lalapps_ConvertToSFTv2 \
+	lalapps_GetSFTVelocities \
 	lalapps_SFTdumpall \
 	lalapps_SFTdumpheader \
 	lalapps_SFTvalidate  \
 	lalapps_SFTwrite \
+	lalapps_compareSFTs \
+	lalapps_dumpSFT \
 	lalapps_splitSFTs \
 	$(END_OF_LIST)
 
+lalapps_ComputePSD_SOURCES = ComputePSD.c
 lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
+lalapps_GetSFTVelocities_SOURCES = GetSFTVelocities.c
 lalapps_SFTdumpall_SOURCES = SFTdumpall.c $(SFTReferenceLibrary)
 lalapps_SFTdumpheader_SOURCES = SFTdumpheader.c $(SFTReferenceLibrary)
 lalapps_SFTvalidate_SOURCES = SFTvalidate.c $(SFTReferenceLibrary)
@@ -25,6 +29,7 @@ lalapps_splitSFTs_SOURCES = splitSFTs.c $(SFTReferenceLibrary)
 
 EXTRA_DIST = \
 	SFTReferenceLibrary.dox \
+	testComputePSD.sh \
 	testSFTvalidate.sh \
 	$(END_OF_LIST)
 
@@ -40,5 +45,6 @@ TESTS_ENVIRONMENT = \
 	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
 
 TESTS = \
+	testComputePSD.sh \
 	testSFTvalidate.sh \
 	$(END_OF_LIST)
