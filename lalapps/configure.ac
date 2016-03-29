@@ -29,6 +29,7 @@ AC_CONFIG_FILES([\
   src/pulsar/Fstatistic/Makefile \
   src/pulsar/GCT/Makefile \
   src/pulsar/HeterodyneSearch/Makefile \
+  src/pulsar/Hough/Makefile \
   src/pulsar/HoughFstat/Makefile \
   src/pulsar/Injections/Makefile \
   src/pulsar/MakeSFTs/Makefile \
@@ -40,8 +41,6 @@ AC_CONFIG_FILES([\
   src/pulsar/Xray/Makefile \
   src/pulsar/crosscorr/Makefile \
   src/pulsar/fscan/Makefile \
-  src/pulsar/hough/Makefile \
-  src/pulsar/hough/src/Makefile \
   src/ring/Makefile \
   src/stochastic/Makefile \
   src/string/Makefile \

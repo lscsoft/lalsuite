@@ -12,6 +12,7 @@ SUBDIRS += \
 	Fstatistic \
 	GCT \
 	HeterodyneSearch \
+	Hough \
 	HoughFstat \
 	MakeSFTs \
 	SidebandSearch \
@@ -19,7 +20,6 @@ SUBDIRS += \
 	Xray \
 	crosscorr \
 	fscan \
-	hough \
 	$(END_OF_LINE)
 
 # Because many tests in src/pulsar call executables from other subdirectories in
