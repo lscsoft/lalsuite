@@ -87,9 +87,11 @@ pkgdata_DATA = \
 	earth00-19-DE200.dat.gz \
 	earth00-19-DE405.dat.gz \
 	earth00-19-DE414.dat.gz \
+	earth00-19-DE421.dat.gz \
 	sun00-19-DE200.dat.gz \
 	sun00-19-DE405.dat.gz \
 	sun00-19-DE414.dat.gz \
+	sun00-19-DE421.dat.gz \
 	tdb_2000-2019.dat.gz \
 	te405_2000-2019.dat.gz \
 	testTimestamps.dat \
