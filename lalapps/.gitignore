@@ -198,7 +198,6 @@ src/pulsar/Injections/lalapps_Makefakedata_v5
 src/pulsar/Injections/lalapps_compareSFTs
 src/pulsar/Injections/lalapps_compareTS
 src/pulsar/Injections/lalapps_dumpSFT
-src/pulsar/MakeSFTs/lalapps_ConvertToSFTv2
 src/pulsar/MakeSFTs/lalapps_LISAmakeSFTs
 src/pulsar/MakeSFTs/lalapps_MakeSFTs
 src/pulsar/SFTTools/SFT-bad1
@@ -223,6 +222,7 @@ src/pulsar/SFTTools/SFT-test4
 src/pulsar/SFTTools/SFT-test5
 src/pulsar/SFTTools/SFT-test6
 src/pulsar/SFTTools/SFT-test7
+src/pulsar/SFTTools/lalapps_ConvertToSFTv2
 src/pulsar/SFTTools/lalapps_SFTdumpall
 src/pulsar/SFTTools/lalapps_SFTdumpheader
 src/pulsar/SFTTools/lalapps_SFTvalidate

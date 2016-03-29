@@ -4,6 +4,7 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 SFTReferenceLibrary = SFTReferenceLibrary.c SFTReferenceLibrary.h
 
 bin_PROGRAMS = \
+	lalapps_ConvertToSFTv2 \
 	lalapps_SFTdumpall \
 	lalapps_SFTdumpheader \
 	lalapps_SFTvalidate  \
@@ -11,6 +12,7 @@ bin_PROGRAMS = \
 	lalapps_splitSFTs \
 	$(END_OF_LIST)
 
+lalapps_ConvertToSFTv2_SOURCES = ConvertToSFTv2.c
 lalapps_SFTdumpall_SOURCES = SFTdumpall.c $(SFTReferenceLibrary)
 lalapps_SFTdumpheader_SOURCES = SFTdumpheader.c $(SFTReferenceLibrary)
 lalapps_SFTvalidate_SOURCES = SFTvalidate.c $(SFTReferenceLibrary)
