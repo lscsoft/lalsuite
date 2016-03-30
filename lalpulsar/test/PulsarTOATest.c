@@ -31,7 +31,7 @@
 " --verbose (-v)           display all error messages\n"\
 " --par-file (-p)          TEMPO2 parameter (.par) file\n"\
 " --tim-file (-t)          TEMPO2 TOA (.tim) file\n"\
-" --ephem (-e)             Ephemeris type (DE200 or [default] DE405)\n"\
+" --ephem (-e)             Ephemeris type (DE200, DE405 [default], or DE421)\n"\
 " --clock (-c)             Clock correction file (default is none)\n"\
 " --simulated (-s)         Set if the TOA file is from simulated data\n\
                           e.g. created with the TEMPO2 'fake' plugin:\n\
@@ -197,11 +197,16 @@ int main(int argc, char *argv[])
     earthFile = TEST_DATA_DIR "earth00-19-DE200.dat.gz";
     sunFile   = TEST_DATA_DIR "sun00-19-DE200.dat.gz";
   }
-  else if( strcmp(par.ephem, "DE405") ){
+  else if( strcmp(par.ephem, "DE405") == 0 ){
     earthFile = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
-    sunFile   = TEST_DATA_DIR "lalpulsar/sun00-19-DE405.dat.gz";
-  } else {
-    XLAL_ERROR_MAIN ( XLAL_EINVAL, "Invalid ephem='%s', allowed are 'DE200' or 'DE405'\n", par.ephem );
+    sunFile   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
+  }
+  else if( strcmp(par.ephem, "DE421") == 0 ){
+    earthFile = TEST_DATA_DIR "earth00-19-DE421.dat.gz";
+    sunFile   = TEST_DATA_DIR "sun00-19-DE421.dat.gz";
+  }
+  else {
+    XLAL_ERROR_MAIN ( XLAL_EINVAL, "Invalid ephem='%s', allowed are 'DE200', 'DE405' or 'DE421'\n", par.ephem );
   }
 
   edat = XLALInitBarycenter( earthFile, sunFile );
@@ -325,7 +330,7 @@ int main(int argc, char *argv[])
 
   if ( verbose ) { fclose(fpout); }
 
-  if ( exceedPhaseErr ) { return 1; } /* phase difference it too great, so fail */
+  if ( exceedPhaseErr ) { return 1; } /* phase difference is too great, so fail */
 
   // ----- clean up memory
   XLALDestroyEphemerisData ( edat );
