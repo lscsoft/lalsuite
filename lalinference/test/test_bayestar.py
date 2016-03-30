@@ -15,11 +15,6 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-
-# Run unit tests in single-threaded mode
-import os
-os.environ['OMP_NUM_THREADS'] = '1'
-
 import sys
 import doctest
 import lalinference.bayestar.sky_map
