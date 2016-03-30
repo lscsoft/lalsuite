@@ -12,7 +12,7 @@ import pneqns
 import time
 
 # Settings
-v_final = 6.**-0.5
+v_final = 6.**-0.5  # some fiducial value for final orbital velocity. Currently, it is Schwarzschild ISCO velocity.
 flow = 20 # Start frequency in Hz
 dt = 1./5120. # steps in time for the integration
 
@@ -52,7 +52,7 @@ Msun2s = 4.92549e-6 # s/Msun
 
 start = time.clock()
 
-for i in range(len(m1)): 
+for i in range(len(m1)):
     v0 = ((m1[i]+m2[i])*Msun2s*np.pi*flow)**(1./3)
     print "Initial values of angles:"
     print "cos tilt1 = ", np.cos(tilt1[i]), "cos tilt2 = ", np.cos(tilt2[i]), "cos phi12 = ", np.cos(phi12[i])
@@ -60,7 +60,7 @@ for i in range(len(m1)):
         phi12[i] = 0.
     else:
         tilt1[i], tilt2[i], phi12[i] = pneqns.find_tilts_and_phi12_at_freq(v0, m1[i], m2[i], chi1[i]*np.sin(tilt1[i]), 0., chi1[i]*np.cos(tilt1[i]), chi2[i]*np.sin(tilt2[i])*np.cos(phi12[i]), chi2[i]*np.sin(tilt2[i])*np.sin(phi12[i]), chi2[i]*np.cos(tilt2[i]), 0., 0., 1., v_final, dt)
-    
+
 print("Elapsed time for %f calculations: %f s"%(i, time.clock()-start))
 
 np.savetxt("%s/%s_evolved_spin_samples_%s.dat"%(args.outdir, args.tag, args.nodenum), zip(m1, m2, chi1, chi2, tilt1, tilt2, phi12), header = "m1_source\t m2_source\t a1\t a2\t tilt1\t tilt2\t phi12", delimiter = "\t")
