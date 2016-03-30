@@ -164,6 +164,10 @@ src/power/lalapps_simburst_to_frame
 src/power/sense_compare
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
+src/pulsar/CrossCorr/gsldata.dat
+src/pulsar/CrossCorr/lalapps_pulsar_crosscorr
+src/pulsar/CrossCorr/lalapps_pulsar_crosscorr_v2
+src/pulsar/CrossCorr/toplist_crosscorr.dat
 src/pulsar/FITSTools/lalapps_fitscopy
 src/pulsar/FITSTools/lalapps_imarith
 src/pulsar/FITSTools/lalapps_imcopy
@@ -254,10 +258,6 @@ src/pulsar/TwoSpect/lalapps_TwoSpectTemplateBank
 src/pulsar/Xray/lalapps_Intermittent
 src/pulsar/Xray/lalapps_SemiCoherentBinary_v2
 src/pulsar/Xray/lalapps_binary2sfts
-src/pulsar/crosscorr/gsldata.dat
-src/pulsar/crosscorr/lalapps_pulsar_crosscorr
-src/pulsar/crosscorr/lalapps_pulsar_crosscorr_v2
-src/pulsar/crosscorr/toplist_crosscorr.dat
 src/ring/lalapps_coh_PTF_inspiral
 src/ring/lalapps_coh_PTF_spin_checker
 src/ring/lalapps_coh_PTF_testing

@@ -25,6 +25,7 @@ AC_CONFIG_FILES([\
   src/online/Makefile \
   src/power/Makefile \
   src/pulsar/CreateEphemeris/Makefile \
+  src/pulsar/CrossCorr/Makefile \
   src/pulsar/FITSTools/Makefile \
   src/pulsar/Fscan/Makefile \
   src/pulsar/Fstatistic/Makefile \
@@ -40,7 +41,6 @@ AC_CONFIG_FILES([\
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \
   src/pulsar/Xray/Makefile \
-  src/pulsar/crosscorr/Makefile \
   src/ring/Makefile \
   src/stochastic/Makefile \
   src/string/Makefile \
