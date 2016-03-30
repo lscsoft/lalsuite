@@ -68,7 +68,3 @@ exchndl.o: exchndl.c
 
 erp_execinfo_plus.o: erp_execinfo_plus.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
-
-TESTS_ENVIRONMENT = \
-	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
-	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;

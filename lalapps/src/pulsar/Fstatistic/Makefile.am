@@ -79,7 +79,3 @@ TESTS += \
 	testCFSv2_resamp.sh \
 	testCFSv2_binary.sh
 endif
-
-TESTS_ENVIRONMENT = \
-	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
-	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;

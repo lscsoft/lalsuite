@@ -18,7 +18,3 @@ EXTRA_DIST = \
 TESTS = \
 	testComputeAntennaPattern.sh \
 	$(END_OF_LIST)
-
-TESTS_ENVIRONMENT = \
-	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
-	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;

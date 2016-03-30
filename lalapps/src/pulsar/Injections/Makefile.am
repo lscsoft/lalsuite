@@ -27,7 +27,3 @@ lalapps_sw_inj_frames_SOURCES = sw_inj_frames.c
 
 EXTRA_DIST = testMFDv4.sh testMFDv5.sh testT8_1800
 TESTS = testMFDv4.sh testMFDv5.sh
-
-TESTS_ENVIRONMENT = \
-	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
-	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
