@@ -176,6 +176,7 @@ src/pulsar/FITSTools/lalapps_tabcalc
 src/pulsar/FITSTools/lalapps_tablist
 src/pulsar/FITSTools/lalapps_tabmerge
 src/pulsar/FITSTools/lalapps_tabselect
+src/pulsar/Fscan/lalapps_spec_avg
 src/pulsar/Fstatistic/lalapps_ComputeFstatMCUpperLimit
 src/pulsar/Fstatistic/lalapps_ComputeFstatistic_v2
 src/pulsar/Fstatistic/lalapps_LatticeTilingCount
@@ -257,7 +258,6 @@ src/pulsar/crosscorr/gsldata.dat
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr
 src/pulsar/crosscorr/lalapps_pulsar_crosscorr_v2
 src/pulsar/crosscorr/toplist_crosscorr.dat
-src/pulsar/fscan/lalapps_spec_avg
 src/ring/lalapps_coh_PTF_inspiral
 src/ring/lalapps_coh_PTF_spin_checker
 src/ring/lalapps_coh_PTF_testing

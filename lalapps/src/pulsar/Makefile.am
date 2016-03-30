@@ -9,6 +9,7 @@ SUBDIRS = \
 # Everything else
 SUBDIRS += \
 	CreateEphemeris \
+	Fscan \
 	Fstatistic \
 	GCT \
 	HeterodyneSearch \
@@ -19,7 +20,6 @@ SUBDIRS += \
 	TwoSpect \
 	Xray \
 	crosscorr \
-	fscan \
 	$(END_OF_LINE)
 
 # Because many tests in src/pulsar call executables from other subdirectories in
