@@ -22,6 +22,9 @@ BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: scipy
 BuildRequires: swig
+BuildRequires: glue >= 1.49.1
+BuildRequires: glue-common >= 1.49.1
+BuildRequires: glue-segments >= 1.49.1
 BuildRequires: lal-devel >= 6.16.0
 BuildRequires: lal-python >= 6.16.0
 BuildRequires: lal-octave >= 6.16.0
@@ -89,6 +92,9 @@ Requires: healpy
 Requires: numpy
 Requires: python
 Requires: scipy
+Requires: glue >= 1.49.1
+Requires: glue-common >= 1.49.1
+Requires: glue-segments >= 1.49.1
 Requires: lal-python >= 6.16.0
 Requires: lalmetaio-python >= 1.2.7
 Requires: lalxml-python >= 1.2.1
