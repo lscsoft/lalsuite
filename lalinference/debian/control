@@ -21,6 +21,9 @@ Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   lalsimulation-dev (>= 1.5.0~),
   lalsimulation-python (>= 1.5.0~),
   lalsimulation-octave (>= 1.5.0~),
+  lalburst-dev (>= 1.4.1~),
+  lalburst-python (>= 1.4.1~),
+  lalburst-octave (>= 1.4.1~),
   lalinspiral-dev (>= 1.7.4~),
   lalinspiral-python (>= 1.7.4~),
   lalinspiral-octave (>= 1.7.4~),
@@ -40,6 +43,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   lalmetaio (>= 1.2.7~),
   lalxml (>= 1.2.1~),
   lalsimulation (>= 1.5.0~),
+  lalburst (>= 1.4.1~),
   lalinspiral (>= 1.7.4~),
   lalpulsar (>= 1.13.0~)
 Description: LSC Algorithm Library Inference
@@ -57,6 +61,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   lalmetaio-dev (>= 1.2.7~),
   lalxml-dev (>= 1.2.1~),
   lalsimulation-dev (>= 1.5.0~),
+  lalburst-dev (>= 1.4.1~),
   lalinspiral-dev (>= 1.7.4~),
   lalpulsar-dev (>= 1.13.0~)
 Description: LSC Algorithm Library Inference Developers
@@ -73,6 +78,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy, python-scipy,
   lalmetaio-python (>= 1.2.7~),
   lalxml-python (>= 1.2.1~),
   lalsimulation-python (>= 1.5.0~),
+  lalburst-python (>= 1.4.1~),
   lalinspiral-python (>= 1.7.4~),
   lalpulsar-python (>= 1.13.0~)
 Replaces: lalapps (<< 6.14.0-1)
@@ -88,6 +94,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lalmetaio-octave (>= 1.2.7~),
   lalxml-octave (>= 1.2.1~),
   lalsimulation-octave (>= 1.5.0~),
+  lalburst-octave (>= 1.4.1~),
   lalinspiral-octave (>= 1.7.4~),
   lalpulsar-octave (>= 1.13.0~)
 Description: Octave bindings for LALInference

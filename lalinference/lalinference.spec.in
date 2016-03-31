@@ -33,6 +33,9 @@ BuildRequires: lalxml-octave >= 1.2.1
 BuildRequires: lalsimulation-devel >= 1.5.0
 BuildRequires: lalsimulation-python >= 1.5.0
 BuildRequires: lalsimulation-octave >= 1.5.0
+BuildRequires: lalburst-devel >= 1.4.1
+BuildRequires: lalburst-python >= 1.4.1
+BuildRequires: lalburst-octave >= 1.4.1
 BuildRequires: lalinspiral-devel >= 1.7.4
 BuildRequires: lalinspiral-python >= 1.7.4
 BuildRequires: lalinspiral-octave >= 1.7.4
@@ -48,6 +51,7 @@ Requires: lal >= 6.16.0
 Requires: lalmetaio >= 1.2.7
 Requires: lalxml >= 1.2.1
 Requires: lalsimulation >= 1.5.0
+Requires: lalburst >= 1.4.1
 Requires: lalinspiral >= 1.7.4
 Requires: lalpulsar >= 1.13.0
 Prefix: %{_prefix}
@@ -69,6 +73,7 @@ Requires: lal-devel >= 6.16.0
 Requires: lalmetaio-devel >= 1.2.7
 Requires: lalxml-devel >= 1.2.1
 Requires: lalsimulation-devel >= 1.5.0
+Requires: lalburst-devel >= 1.4.1
 Requires: lalinspiral-devel >= 1.7.4
 Requires: lalpulsar-devel >= 1.13.0
 %description devel
@@ -87,6 +92,7 @@ Requires: lal-python >= 6.16.0
 Requires: lalmetaio-python >= 1.2.7
 Requires: lalxml-python >= 1.2.1
 Requires: lalsimulation-python >= 1.5.0
+Requires: lalburst-python >= 1.4.1
 Requires: lalinspiral-python >= 1.7.4
 Requires: lalpulsar-python >= 1.13.0
 %description python
@@ -102,6 +108,7 @@ Requires: lal-octave >= 6.16.0
 Requires: lalmetaio-octave >= 1.2.7
 Requires: lalxml-octave >= 1.2.1
 Requires: lalsimulation-octave >= 1.5.0
+Requires: lalburst-octave >= 1.4.1
 Requires: lalinspiral-octave >= 1.7.4
 Requires: lalpulsar-octave >= 1.13.0
 %description octave
