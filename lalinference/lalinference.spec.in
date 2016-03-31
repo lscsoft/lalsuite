@@ -14,6 +14,7 @@ Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: chealpix-devel
 BuildRequires: gsl-devel
+BuildRequires: healpy
 BuildRequires: libmetaio-devel
 BuildRequires: libxml2-devel
 BuildRequires: numpy
@@ -44,7 +45,6 @@ BuildRequires: lalpulsar-python >= 1.13.0
 BuildRequires: lalpulsar-octave >= 1.13.0
 Requires: chealpix
 Requires: gsl >= 1.15
-Requires: healpy
 Requires: libmetaio
 Requires: libxml2
 Requires: lal >= 6.16.0
@@ -85,6 +85,7 @@ library.
 Summary: Python Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
+Requires: healpy
 Requires: numpy
 Requires: python
 Requires: scipy
