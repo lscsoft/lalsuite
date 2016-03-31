@@ -1,7 +1,5 @@
-BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-AM_CPPFLAGS = @AM_CPPFLAGS@
 if PAGER
 AM_CPPFLAGS += -DPAGER='"$(PAGER)"'
 endif

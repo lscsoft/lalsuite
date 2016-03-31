@@ -1,8 +1,8 @@
-BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
+
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
-include $(top_srcdir)/gnuscripts/lalapps.am
 
 bin_PROGRAMS = lalapps_StringSearch lalapps_StringAddFrame 
 lalapps_StringSearch_SOURCES = StringSearch.c

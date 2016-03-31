@@ -1,4 +1,9 @@
-BUILT_SOURCES += liblalapps
+## so that additional flags can be easily appended with
+##   AM_CPPFLAGS += ...
+AM_CPPFLAGS = @AM_CPPFLAGS@
+
+## ensure liblalapps is (re)built before everything else
+BUILT_SOURCES = liblalapps
 
 .PHONY: liblalapps
 liblalapps:

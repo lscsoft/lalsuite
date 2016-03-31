@@ -1,7 +1,6 @@
-BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/Fstatistic @AM_CPPFLAGS@
+AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic
 
 bin_PROGRAMS = lalapps_NstarClean lalapps_SFTclean lalapps_MCInjectS2 lalapps_DriveHough_v3 lalapps_HoughValidate \
 	lalapps_DriveHoughMulti lalapps_MCInjectHoughMulti lalapps_MultiWeights \

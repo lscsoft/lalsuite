@@ -1,4 +1,3 @@
-BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
 SFTReferenceLibrary = SFTReferenceLibrary.c SFTReferenceLibrary.h

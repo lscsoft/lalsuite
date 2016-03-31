@@ -1,7 +1,6 @@
-BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-AM_CPPFLAGS = -I$(top_srcdir)/src/pulsar/Fstatistic -I $(top_srcdir)/src/pulsar/EinsteinAtHome @AM_CPPFLAGS@
+AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic -I $(top_srcdir)/src/pulsar/EinsteinAtHome
 
 ## Compiling with OpenCL on Linux
 # LDFLAGS = -lOpenCL
