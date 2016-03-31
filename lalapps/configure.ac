@@ -128,9 +128,7 @@ AC_PROG_SED
 LALSUITE_CHECK_PYTHON([2.6])
 
 # check for pager programs
-PAGER=
-AC_PATH_PROGS([PAGER],[less more])
-AM_CONDITIONAL([PAGER],[test "x${PAGER}" != x])
+LALSUITE_CHECK_PAGER
 
 # check for condor_compile
 AC_ENABLE_SHARED

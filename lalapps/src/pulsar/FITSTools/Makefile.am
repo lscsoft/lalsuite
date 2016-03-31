@@ -1,8 +1,6 @@
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-if PAGER
-AM_CPPFLAGS += -DPAGER='"$(PAGER)"'
-endif
+AM_CPPFLAGS += $(PAGER_CPPFLAGS)
 
 if CFITSIO
 
