@@ -10,6 +10,36 @@ import lalsimulation as lalsim
 import sys
 import os
 
+def _check_m(m1,m2):
+    if np.any(m1<=0):
+        raise ValueError("m1 has to be positive")
+    if np.any(m2<=0):
+        raise ValueError("m2 has to be positive")
+
+def _check_chiz(chi1z, chi2z):
+    if np.any(abs(chi1z)>1):
+      raise ValueError("chi1z has to be in [-1, 1]")
+    if np.any(abs(chi2z)>1):
+      raise ValueError("chi2z has to be in [-1, 1]")
+
+def _check_chi(chi1, chi2):
+    if np.any(chi1>1):
+      raise ValueError("chi1 has to be <= 1")
+    if np.any(chi2>1):
+      raise ValueError("chi2 has to be <= 1")
+    if np.any(chi1<0):
+      raise ValueError("chi1 has to be nonnegative")
+    if np.any(chi2<0):
+      raise ValueError("chi2 has to be nonnegative")
+
+def _check_mchiz(m1,m2,chi1z,chi2z):
+    _check_m(m1,m2)
+    _check_chiz(chi1z,chi2z)
+
+def _check_mchi(m1,m2,chi1,chi2):
+    _check_m(m1,m2)
+    _check_chi(chi1,chi2)
+
 def bbh_final_mass_non_spinning_Panetal(m1, m2):
     """
     Calculate the mass of the final BH resulting from the merger of two non-spinning black holes using fit from Pan et al, Phys Rev D 84, 124052 (2011).
@@ -22,12 +52,16 @@ def bbh_final_mass_non_spinning_Panetal(m1, m2):
     ------
     final mass, mf
     """
+
     m1 = np.vectorize(float)(np.array(m1))
     m2 = np.vectorize(float)(np.array(m2))
-    
-    m = m1 + m2
-    eta = m1*m2/(m1+m2)**2.
-    return m*(1. + (np.sqrt(8./9.)-1.)*eta - 0.4333*(eta**2.) - (0.4392*(eta**3)))
+
+    _check_m(m1,m2) # Check that inputs are physical
+
+    m1 = np.atleast_1d(m1)
+    m2 = np.atleast_1d(m2)
+
+    return np.array([(m1[i]+m2[i])*lalsim.SimIMREOBFinalMassSpin(m1[i], m2[i], [0., 0., 0.], [0., 0., 0.], lalsim.GetApproximantFromString('EOBNRv2'))[1] for i in range(len(m1))])
 
 def bbh_final_spin_non_spinning_Panetal(m1, m2):
     """
@@ -41,11 +75,16 @@ def bbh_final_spin_non_spinning_Panetal(m1, m2):
     ------
     final spin, sf
     """
+
     m1 = np.vectorize(float)(np.array(m1))
     m2 = np.vectorize(float)(np.array(m2))
-    
-    eta = m1*m2/(m1+m2)**2.
-    return np.sqrt(12.)*eta - 3.871*(eta**2.) + 4.028*(eta**3)
+
+    _check_m(m1,m2) # Check that inputs are physical
+
+    m1 = np.atleast_1d(m1)
+    m2 = np.atleast_1d(m2)
+
+    return np.array([lalsim.SimIMREOBFinalMassSpin(m1[i], m2[i], [0., 0., 0.], [0., 0., 0.], lalsim.GetApproximantFromString('EOBNRv2'))[2] for i in range(len(m1))])
 
 def calc_isco_radius(a):
     """
@@ -120,10 +159,13 @@ def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2):
     -------
     dimensionless final spin, chif
     """
+
     m1 = np.vectorize(float)(np.array(m1))
     m2 = np.vectorize(float)(np.array(m2))
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
+
+    _check_mchiz(m1,m2,chi1,chi2) # Check that inputs are physical
     
     # Vectorize the function if arrays are provided as input
     if np.size(m1) * np.size(m2) * np.size(chi1) * np.size(chi2) > 1:
@@ -163,10 +205,13 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=None):
     -------
     final mass, mf
     """
+
     m1 = np.vectorize(float)(np.array(m1))
     m2 = np.vectorize(float)(np.array(m2))
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
+
+    _check_mchiz(m1,m2,chi1,chi2) # Check that inputs are physical
     
     # binary parameters
     m = m1+m2
@@ -177,7 +222,7 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=None):
     S1 = chi1*m1**2 # spin angular momentum 1
     S2 = chi2*m2**2 # spin angular momentum 2
     S = (S1+S2)/m**2 # symmetric spin (dimensionless -- called \tilde{S} in the paper)
-    Delta = (S2/m2-S1/m1)/m # antisymmetric spin (dimensionless -- called tilde{Delta} in the paper
+    Delta = (S2/m2-S1/m1)/m # antisymmetric spin (dimensionless -- called tilde{Delta} in the paper)
     
     if chif is None:
         chif = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2)
@@ -237,6 +282,12 @@ def bbh_final_spin_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2):
     -------
     final spin, chif
     """
+
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
+
+    _check_chi(chi1,chi2) # Check that inputs are physical (ms checked inside the function called in the return statement)
+
     return bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1*np.cos(tilt1), chi2*np.cos(tilt2))
 
 def bbh_final_mass_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2, chif=None):
@@ -254,6 +305,12 @@ def bbh_final_mass_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2, ch
     -------
     final mass, mf
     """
+
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
+
+    _check_chi(chi1,chi2) # Check that inputs are physical (ms checked inside the function called in the return statement)
+
     return bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1*np.cos(tilt1), chi2*np.cos(tilt2), chif=chif)
 
 def bbh_final_spin_precessing_Healyetal_extension_Mf(m1, m2, chi1, chi2, tilt1, tilt2, phi12):
@@ -271,6 +328,12 @@ def bbh_final_spin_precessing_Healyetal_extension_Mf(m1, m2, chi1, chi2, tilt1, 
     -------
     final spin, chif
     """
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
+
+    _check_chi(chi1,chi2) # Check that inputs are physical (ms checked inside the function called in the return statement)
 
     # First compute the final mass and parallel component of the final spin using the aligned components of the initial spins
     chifpara = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1*np.cos(tilt1), chi2*np.cos(tilt2))
@@ -302,6 +365,13 @@ def bbh_final_spin_precessing_Healyetal_extension_Minit(m1, m2, chi1, chi2, tilt
     -------
     final spin, chif
     """
+
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
+
+    _check_chi(chi1,chi2) # Check that inputs are physical (ms checked inside the function called in the return statement)
 
     # First compute the final mass and parallel component of the final spin using the aligned components of the initial spins
     chifpara = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1*np.cos(tilt1), chi2*np.cos(tilt2))
@@ -561,7 +631,7 @@ def bbh_final_mass_precessing_Barausse_and_Rezzolla(m1, m2, a1, a2, tilt1, tilt2
 	merger of two black holes with precessing spins using the fit from Barausse and Rezzolla ApJL 704, L40 (2009). This is a wrapper
         for the implementation in XLALSimIMREOBFinalMassSpin in LALSimBlackHoleRingdown.c. (Note that while we pass SEOBNRv3 as the approximant
         here, the fit used by SEOBNRv3 is actually the same refit of the Barausse and Rezzolla aligned-spin fit used in SEOBNRv2--see XLALSimIMREOBFinalMassSpinPrec
-        in LALSimBlackHoleRingdownPrec.c.
+        in LALSimBlackHoleRingdownPrec.c.) Note also that this implementation prints the spins to stdout
 
 	m1, m2: component masses (with m1 > m2)
 	a1, a2: dimensionless spins of two BHs
@@ -579,13 +649,13 @@ def bbh_final_mass_precessing_Barausse_and_Rezzolla(m1, m2, a1, a2, tilt1, tilt2
 
         return np.array([(m1[i]+m2[i])*lalsim.SimIMREOBFinalMassSpin(m1[i], m2[i], [a1[i]*np.sin(tilt1[i]), 0., a1[i]*np.cos(tilt1[i])], [a2[i]*np.sin(tilt2[i])*np.cos(phi12[i]), a2[i]*np.sin(tilt2[i])*np.sin(phi12[i]), a2[i]*np.cos(tilt2[i])], lalsim.GetApproximantFromString('SEOBNRv3'))[1] for i in range(len(m1))])
 
-def bbh_final_spin_precessing_Barausse_and_Rezzolla(m1, m2, a1, a2, tilt1, tilt2, phi12): 
+def bbh_final_spin_precessing_Barausse_and_Rezzolla_SEOBNR(m1, m2, a1, a2, tilt1, tilt2, phi12): 
 	""" 
 	Calculate the dimensionless spin of the final BH resulting from the 
 	merger of two black holes with precessing spins using the fit from Barausse and Rezzolla ApJL 704, L40 (2009). This is a wrapper
         for the implementation in XLALSimIMREOBFinalMassSpin in LALSimBlackHoleRingdown.c. (Note that while we pass SEOBNRv3 as the approximant
         here, the fit used by SEOBNRv3 is actually the same refit of the Barausse and Rezzolla aligned-spin fit used in SEOBNRv2--see XLALSimIMREOBFinalMassSpinPrec
-        in LALSimBlackHoleRingdownPrec.c.
+        in LALSimBlackHoleRingdownPrec.c.)
 
 	m1, m2: component masses (with m1 > m2)
 	a1, a2: dimensionless spins of two BHs
@@ -602,6 +672,29 @@ def bbh_final_spin_precessing_Barausse_and_Rezzolla(m1, m2, a1, a2, tilt1, tilt2
         phi12 = np.atleast_1d(phi12)
 
         return np.array([lalsim.SimIMREOBFinalMassSpin(m1[i], m2[i], [a1[i]*np.sin(tilt1[i]), 0., a1[i]*np.cos(tilt1[i])], [a2[i]*np.sin(tilt2[i])*np.cos(phi12[i]), a2[i]*np.sin(tilt2[i])*np.sin(phi12[i]), a2[i]*np.cos(tilt2[i])], lalsim.GetApproximantFromString('SEOBNRv3'))[2] for i in range(len(m1))])
+
+
+def bbh_final_spin_precessing_Barausse_and_Rezzolla(m1, m2, a1, a2, tilt1, tilt2, phi12): 
+	""" 
+	Calculate the dimensionless spin of the final BH resulting from the 
+	merger of two black holes with precessing spins using the fit from Barausse and Rezzolla ApJL 704, L40 (2009). This is a wrapper
+        for the implementation in XLALSimIMRPhenSpinFinalMassSpin in LALSimIMRPSpinInspiralRD.c.
+
+	m1, m2: component masses (with m1 > m2)
+	a1, a2: dimensionless spins of two BHs
+	tilt1, tilt2: tilt angles of the spins from the orbital angular momentum
+	phi12: angle between in-plane spin components 
+	"""
+
+        m1 = np.atleast_1d(m1)
+        m2 = np.atleast_1d(m2)
+        a1 = np.atleast_1d(a1)
+        a2 = np.atleast_1d(a2)
+        tilt1 = np.atleast_1d(tilt1)
+        tilt2 = np.atleast_1d(tilt2)
+        phi12 = np.atleast_1d(phi12)
+
+        return np.array([lalsim.SimIMRPhenSpinFinalMassSpin(m1[i], m2[i], a1[i]*a1[i], a2[i]*a2[i], a1[i]*np.cos(tilt1[i]), a2[i]*np.cos(tilt2[i]), a1[i]*a2[i]*(np.sin(tilt1[i])*np.sin(tilt2[i])*np.cos(phi12[i]) + np.cos(tilt1[i])*np.cos(tilt2[i])), 0.)[1] for i in range(len(m1))])
 
 def qnmfreqs_berti(a, l, m, n):
     """
