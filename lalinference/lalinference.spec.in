@@ -167,6 +167,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/python*/site-packages/lalinference/bayestar/*.pyc
 %{_libdir}/python*/site-packages/lalinference/bayestar/sky_map.so*
 %{_libdir}/python*/site-packages/lalinference/cylon.csv
+%{_libdir}/python*/site-packages/lalinference/imrtgr/*.py
+%{_libdir}/python*/site-packages/lalinference/imrtgr/*.pyc
 %{_libdir}/python*/site-packages/lalinference/ne_simplified_coastline.json
 %{_libdir}/python*/site-packages/lalinference/rapid_pe/*.py
 %{_libdir}/python*/site-packages/lalinference/rapid_pe/*.pyc
@@ -174,6 +176,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %exclude %{_libdir}/python*/site-packages/lalinference/*.pyo
 %exclude %{_libdir}/python*/site-packages/lalinference/bayestar/*.pyo
 %exclude %{_libdir}/python*/site-packages/lalinference/bayestar/*.la
+%exclude %{_libdir}/python*/site-packages/lalinference/imrtgr/*.pyo
 %exclude %{_libdir}/python*/site-packages/lalinference/rapid_pe/*.pyo
 
 %files octave
