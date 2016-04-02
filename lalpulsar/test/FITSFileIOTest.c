@@ -233,7 +233,7 @@ int main(void)
       const REAL8 testdbl_ref = LAL_E;
       REAL8 testdbl;
       XLAL_CHECK_MAIN(XLALFITSHeaderReadREAL8(file, "testdbl", &testdbl) == XLAL_SUCCESS, XLAL_EFUNC);
-      const REAL8 err = fabsf(testdbl - testdbl_ref), err_tol = 5*DBL_EPSILON;
+      const REAL8 err = fabs(testdbl - testdbl_ref), err_tol = 5*DBL_EPSILON;
       XLAL_CHECK_MAIN(err < err_tol, XLAL_EFAILED, "|testdbl - testdbl_ref| = |%0.*g - %0.*g| = %0.*g >= %0.*g",
                       DBL_DIG, testdbl, DBL_DIG, testdbl_ref, DBL_DIG, err, DBL_DIG, err_tol);
     }

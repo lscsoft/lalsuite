@@ -510,7 +510,7 @@ void ParConvBinaryUnits( const CHAR *in, void *out );
 /** Convert the input string from a TT MJD value into a GPS time */
 void ParConvMJDToGPS( const CHAR *in, void *out );
 /** Convert the input string from degrees per year to radians per second */
-void ParConvDegPerYrToRadParSec( const CHAR *in, void *out );
+void ParConvDegPerYrToRadPerSec( const CHAR *in, void *out );
 /** Convert the input string from solar masses to kilograms */
 void ParConvSolarMassToKg( const CHAR *in, void *out );
 /** Convert a right ascension input string in the format "hh:mm:ss.s" into radians */

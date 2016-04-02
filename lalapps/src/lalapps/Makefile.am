@@ -1,8 +1,8 @@
 BUILT_SOURCES =
 MOSTLYCLEANFILES =
 EXTRA_DIST =
-include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 if FRAME
 if LALFRAME

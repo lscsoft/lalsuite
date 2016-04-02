@@ -85,6 +85,7 @@ test/stats/LALMomentTest
 test/stats/XLALChisqTest
 test/std/LALConstantsTest
 test/std/LALGSLTest
+test/std/LALMallocPerf
 test/std/LALMallocTest
 test/std/LALStringTest
 test/std/LALVersionTest

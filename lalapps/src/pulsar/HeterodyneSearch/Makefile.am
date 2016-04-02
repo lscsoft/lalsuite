@@ -1,4 +1,3 @@
-BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
 # Makefile for HeterodyneSearch
@@ -76,7 +75,3 @@ EXTRA_DIST = \
 	H-CW_Injection-875206560-120.gwf \
 	pulsarpputils.py \
 	pulsar_pipeline_utils.py
-
-TESTS_ENVIRONMENT = \
-	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
-	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;

@@ -1372,12 +1372,12 @@ XLALSimInspiralLN(REAL8 M,
 {
         return M*M*eta/v;
 }
-
+/* eq. 4.7 of http://arxiv.org/pdf/1212.5520.pdf */
 static REAL8 UNUSED
 XLALSimInspiralL_2PN(
         REAL8 eta)
 {
-        return 2.5 -eta/6.;
+        return 3./2. + eta/6.;
 }
 
 /* Orbital averaged from eq. 2.9c of
@@ -1390,11 +1390,12 @@ XLALSimInspiralL_3PNScoeff(
         return 0.5*(3.+1./mByM);
 }
 
+/* eq. 4.7 of http://arxiv.org/pdf/1212.5520.pdf */
 static REAL8 UNUSED
 XLALSimInspiralL_4PN(
         REAL8 eta)
 {
-        return 75./8. -23.5*eta/2.4 +1.1*eta*eta/7.2;
+        return 27./8. - 19./8.*eta +eta*eta/24;
 }
 
 /*

@@ -774,11 +774,18 @@ XLALLoadFullGridFile ( DopplerFullScanState *scan,
   /* parse this list of lines into a full grid */
   numTemplates = 0;
   tail = &head;         /* head will remain empty! */
-  while ( ! feof ( fp ) )
+  CHAR line[2048];
+  while ( ! feof ( fp ) && ! ferror ( fp ) && fgets( line, sizeof(line), fp ) != NULL )
     {
-      REAL8 Freq, Alpha, Delta, f1dot, f2dot, f3dot;
+
+      // Skip over any comment lines
+      if ( line[0] == '#' || line[0] == '%' ) {
+        continue;
+      }
+
       // File format expects lines containing 6 columns: Freq   Alpha  Delta  f1dot  f2dot  f3dot
-      if ( 6 != fscanf( fp, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "\n",
+      REAL8 Freq, Alpha, Delta, f1dot, f2dot, f3dot;
+      if ( 6 != sscanf( line, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "\n",
                         &Freq, &Alpha, &Delta, &f1dot, &f2dot, &f3dot ) )
         {
           XLALPrintError ("ERROR: Failed to parse 6 REAL8's from line %d in grid-file '%s'\n\n", numTemplates + 1, init->gridFile);
@@ -821,7 +828,10 @@ XLALLoadFullGridFile ( DopplerFullScanState *scan,
 
       numTemplates ++ ;
 
-    } /* while !feof(fp) */
+    } /* while !feof(fp) && ... */
+  if ( ferror ( fp ) ) {
+    XLAL_ERROR ( XLAL_EIO );
+  }
 
   XLALDestroyREAL8Vector ( entry );
 

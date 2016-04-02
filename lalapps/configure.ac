@@ -25,23 +25,22 @@ AC_CONFIG_FILES([\
   src/online/Makefile \
   src/power/Makefile \
   src/pulsar/CreateEphemeris/Makefile \
+  src/pulsar/CrossCorr/Makefile \
   src/pulsar/FITSTools/Makefile \
+  src/pulsar/Fscan/Makefile \
   src/pulsar/Fstatistic/Makefile \
   src/pulsar/GCT/Makefile \
   src/pulsar/HeterodyneSearch/Makefile \
+  src/pulsar/Hough/Makefile \
+  src/pulsar/HoughFstat/Makefile \
   src/pulsar/Injections/Makefile \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/Makefile \
-  src/pulsar/SFTReferenceLibrary/Makefile \
+  src/pulsar/SFTTools/Makefile \
   src/pulsar/SidebandSearch/Makefile \
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \
   src/pulsar/Xray/Makefile \
-  src/pulsar/crosscorr/Makefile \
-  src/pulsar/fscan/Makefile \
-  src/pulsar/hough/Makefile \
-  src/pulsar/hough/src/Makefile \
-  src/pulsar/hough/src2/Makefile \
   src/ring/Makefile \
   src/stochastic/Makefile \
   src/string/Makefile \
@@ -129,9 +128,7 @@ AC_PROG_SED
 LALSUITE_CHECK_PYTHON([2.6])
 
 # check for pager programs
-PAGER=
-AC_PATH_PROGS([PAGER],[less more])
-AM_CONDITIONAL([PAGER],[test "x${PAGER}" != x])
+LALSUITE_CHECK_PAGER
 
 # check for condor_compile
 AC_ENABLE_SHARED

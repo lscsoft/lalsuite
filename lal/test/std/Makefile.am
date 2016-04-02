@@ -13,4 +13,4 @@ test_programs += StringConvertTest
 test_scripts +=
 
 # Add any helper programs required by tests to this variable
-test_helpers +=
+test_helpers += LALMallocPerf

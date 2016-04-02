@@ -1357,8 +1357,8 @@ int XLALFITSTableColumnAddCHAR(FITSFile *file, const CHAR *col_name, const void 
 int XLALFITSTableColumnAddGPSTime(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size)
 {
   XLAL_CHECK(field_size == sizeof(LIGOTimeGPS), XLAL_EINVAL, "Array of GPS times is not supported");
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, ".s", record, record_size, &(field->gpsSeconds), sizeof(field->gpsSeconds), sizeof(field->gpsSeconds), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, ".ns", record, record_size, &(field->gpsNanoSeconds), sizeof(field->gpsNanoSeconds), sizeof(field->gpsNanoSeconds), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "_s", record, record_size, &(field->gpsSeconds), sizeof(field->gpsSeconds), sizeof(field->gpsSeconds), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "_ns", record, record_size, &(field->gpsNanoSeconds), sizeof(field->gpsNanoSeconds), sizeof(field->gpsNanoSeconds), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
   return XLAL_SUCCESS;
 }
 
