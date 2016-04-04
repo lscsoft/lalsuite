@@ -1,11 +1,20 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSuite],[6.36.1],[lal-discuss@ligo.org])
+AC_INIT([LALSuite],[6.37],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_PREFIX_DEFAULT(["`pwd`/_inst"])
 AC_CONFIG_FILES([Makefile])
-AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
+AM_INIT_AUTOMAKE([ \
+  1.11 \
+  foreign \
+  subdir-objects \
+  color-tests \
+  parallel-tests \
+  tar-ustar \
+  dist-xz \
+  no-dist-gzip \
+])
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 

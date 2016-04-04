@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInference],[1.5.2.1],[lal-discuss@ligo.org])
+AC_INIT([LALInference],[1.6.0],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([src/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -25,7 +25,16 @@ AC_CONFIG_FILES([ \
   swig/Makefile \
   test/Makefile \
 ])
-AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
+AM_INIT_AUTOMAKE([ \
+  1.11 \
+  foreign \
+  subdir-objects \
+  color-tests \
+  parallel-tests \
+  tar-ustar \
+  dist-xz \
+  no-dist-gzip \
+])
 
 AC_CANONICAL_HOST
 
@@ -48,8 +57,8 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[9])
-AC_SUBST([LIBREVISION],[1])
+AC_SUBST([LIBCURRENT],[10])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -167,17 +176,17 @@ if test "$lalxml" = "true"; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.15.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.15.0],[XLALCacheImport],[lal/LALCache.h])
-LALSUITE_CHECK_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_LIB([LALFrame],[1.3.0],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_LIB([LALSimulation],[1.4.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
-LALSUITE_CHECK_LIB([LALInspiral],[1.7.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_LIB([LALPulsar],[1.12.0],[XLALComputeFstat],[lal/ComputeFstat.h])
-LALSUITE_CHECK_LIB([LALBurst],[1.4.0],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_LIB([LAL],[6.16.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.16.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[1.2.7],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LALFrame],[1.4.0],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_LIB([LALSimulation],[1.5.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_LIB([LALInspiral],[1.7.4],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_LIB([LALPulsar],[1.13.0],[XLALComputeFstat],[lal/ComputeFstat.h])
+LALSUITE_CHECK_LIB([LALBurst],[1.4.1],[XLALEPSearch],[lal/EPSearch.h])
 
 # check for lalxml
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.1],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG

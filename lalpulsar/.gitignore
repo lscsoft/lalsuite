@@ -22,7 +22,7 @@ doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
-lalpulsar-*.tar.gz
+lalpulsar-*.tar.xz
 lalpulsar-user-env.csh
 lalpulsar-user-env.sh
 lalpulsar-user-env.shell

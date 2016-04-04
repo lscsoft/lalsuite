@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALFrame],[1.3.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALFrame],[1.4.0],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([src/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -23,7 +23,16 @@ AC_CONFIG_FILES([ \
   swig/Makefile \
   test/Makefile \
 ])
-AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
+AM_INIT_AUTOMAKE([ \
+  1.11 \
+  foreign \
+  subdir-objects \
+  color-tests \
+  parallel-tests \
+  tar-ustar \
+  dist-xz \
+  no-dist-gzip \
+])
 
 AC_CANONICAL_HOST
 
@@ -46,7 +55,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[9])
+AC_SUBST([LIBCURRENT],[10])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -158,8 +167,8 @@ AM_CONDITIONAL([FRAMEC],[test "${FRAMEC_AVAILABLE}" = "yes"])
 AM_CONDITIONAL([FRAMEL],[test "${FRAMEL_AVAILABLE}" = "yes"])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.15.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.15.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LAL],[6.16.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.16.0],[XLALCacheImport],[lal/LALCache.h])
 
 # check for inotify
 if test "${inotify}" = "true"; then

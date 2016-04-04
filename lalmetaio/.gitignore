@@ -22,7 +22,7 @@ doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
-lalmetaio-*.tar.gz
+lalmetaio-*.tar.xz
 lalmetaio-user-env.csh
 lalmetaio-user-env.sh
 lalmetaio-user-env.shell

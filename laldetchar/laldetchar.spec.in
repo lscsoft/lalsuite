@@ -4,33 +4,41 @@
 
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 1
+Release: 1%{?dist}
 Summary: LSC Algorithm DetChar Library
 License: GPL
 Group: LAL
-Source: %{name}-%{version}.tar.gz
-URL: http://www.lsc-group.phys.uwm.edu/lal
+Source: %{name}-%{version}.tar.xz
+URL: http://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig, python-devel, octave-devel, gsl-devel, glib2-devel
-BuildRequires: libmetaio-devel, numpy
-BuildRequires: lal-devel >= 6.15.0
-BuildRequires: lal-python >= 6.15.0
-BuildRequires: lal-octave >= 6.15.0
-BuildRequires: lalmetaio-devel >= 1.2.0
-BuildRequires: lalmetaio-python >= 1.2.0
-BuildRequires: lalmetaio-octave >= 1.2.0
-BuildRequires: lalsimulation-devel >= 1.4.0
-BuildRequires: lalsimulation-python >= 1.4.0
-BuildRequires: lalsimulation-octave >= 1.4.0
-BuildRequires: lalburst-devel >= 1.4.0
-BuildRequires: lalburst-python >= 1.4.0
-BuildRequires: lalburst-octave >= 1.4.0
-Requires: gsl, libframe, libmetaio
-Requires: lal >= 6.15.0
-Requires: lalmetaio >= 1.2.0
-Requires: lalsimulation >= 1.4.0
-Requires: lalburst >= 1.4.0
+BuildRequires: glib2-devel
+BuildRequires: gsl-devel
+BuildRequires: libmetaio-devel
+BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
+BuildRequires: swig
+BuildRequires: lal-devel >= 6.16.0
+BuildRequires: lal-python >= 6.16.0
+BuildRequires: lal-octave >= 6.16.0
+BuildRequires: lalmetaio-devel >= 1.2.7
+BuildRequires: lalmetaio-python >= 1.2.7
+BuildRequires: lalmetaio-octave >= 1.2.7
+BuildRequires: lalsimulation-devel >= 1.5.0
+BuildRequires: lalsimulation-python >= 1.5.0
+BuildRequires: lalsimulation-octave >= 1.5.0
+BuildRequires: lalburst-devel >= 1.4.1
+BuildRequires: lalburst-python >= 1.4.1
+BuildRequires: lalburst-octave >= 1.4.1
+Requires: glib2
+Requires: gsl
+Requires: libframe
+Requires: libmetaio
+Requires: lal >= 6.16.0
+Requires: lalmetaio >= 1.2.7
+Requires: lalsimulation >= 1.5.0
+Requires: lalburst >= 1.4.1
 Prefix: %{_prefix}
 
 %description
@@ -42,11 +50,13 @@ that use the LAL DetChar library.
 Summary: Files and documentation needed for compiling programs that use LAL DetChar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel, glib2-devel, libmetaio-devel
-Requires: lal-devel >= 6.15.0
-Requires: lalmetaio-devel >= 1.2.0
-Requires: lalsimulation-devel >= 1.4.0
-Requires: lalburst-devel >= 1.4.0
+Requires: glib2-devel
+Requires: gsl-devel
+Requires: libmetaio-devel
+Requires: lal-devel >= 6.16.0
+Requires: lalmetaio-devel >= 1.2.7
+Requires: lalsimulation-devel >= 1.5.0
+Requires: lalburst-devel >= 1.4.1
 %description devel
 The LSC Algorithm DetChar Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL DetChar
@@ -56,11 +66,12 @@ library.
 Summary: Python Bindings for LALDetChar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python, numpy
-Requires: lal-python >= 6.15.0
-Requires: lalmetaio-python >= 1.2.0
-Requires: lalsimulation-python >= 1.4.0
-Requires: lalburst-python >= 1.4.0
+Requires: numpy
+Requires: python
+Requires: lal-python >= 6.16.0
+Requires: lalmetaio-python >= 1.2.7
+Requires: lalsimulation-python >= 1.5.0
+Requires: lalburst-python >= 1.4.1
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings for LALDetChar.
@@ -70,10 +81,10 @@ Summary: Octave Bindings for LALDetChar
 Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
-Requires: lal-octave >= 6.15.0
-Requires: lalmetaio-octave >= 1.2.0
-Requires: lalsimulation-octave >= 1.4.0
-Requires: lalburst-octave >= 1.4.0
+Requires: lal-octave >= 6.16.0
+Requires: lalmetaio-octave >= 1.2.7
+Requires: lalsimulation-octave >= 1.5.0
+Requires: lalburst-octave >= 1.4.1
 %description octave
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALDetChar.
@@ -132,4 +143,4 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files octave
 %defattr(-,root,root)
-%{_libexecdir}/octave/*/site/oct/*/laldetchar.oct*
+%{_prefix}/lib*/octave/*/site/oct/*/laldetchar.oct*

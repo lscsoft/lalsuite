@@ -19,7 +19,7 @@ doxygen/doxygen.cfg
 doxygen/filter
 doxygen/out/
 doxygen/test_doxygen.*
-lalapps-*.tar.gz
+lalapps-*.tar.xz
 lalapps-user-env.csh
 lalapps-user-env.sh
 lalapps-user-env.shell
