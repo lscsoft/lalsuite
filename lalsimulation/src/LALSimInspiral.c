@@ -1015,10 +1015,9 @@ int XLALSimInspiralChooseFDWaveform(
             if( !XLALSimInspiralModesChoiceIsDefault(
                     XLALSimInspiralGetModesChoice(waveFlags) ) )
                 ABORT_NONDEFAULT_MODES_CHOICE(waveFlags);
-            if( S2z != 0. ) // This is a single-spin model
-                ABORT_NONZERO_SPINS(waveFlags);
-	    ROTATEY(i,S1x,S1y,S1z);
-	    ROTATEY(i,S2x,S2y,S2z);
+            if( !checkCOSpinZero(S2x, S2y, S2z) ) // This is a single-spin model
+                ABORT_NONZERO_SPIN2(waveFlags);
+            ROTATEY(i, S1x, S1y, S1z);
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
