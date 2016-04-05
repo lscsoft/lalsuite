@@ -2634,8 +2634,8 @@ static int XLALSimInspiralSpinTaylorT2Derivatives(
             // Also note this is equivalent to Eqs. 9c + 9d of astro-ph/0504538
             wspin4 += (params->wdot4S1S1 + params->wdot4QMS1S1) * S1sq
 	      + (params->wdot4S2S2 + params->wdot4QMS2S2) * S2sq
-	      + (params->wdot4S1S1 + params->wdot4QMS1OS1O) * LNhdotS1 * LNhdotS1
-	      + (params->wdot4S2S2 + params->wdot4QMS2OS2O) * LNhdotS2 * LNhdotS2;
+	      + (params->wdot4S1OS1O + params->wdot4QMS1OS1O) * LNhdotS1 * LNhdotS1
+	      + (params->wdot4S2OS2O + params->wdot4QMS2OS2O) * LNhdotS2 * LNhdotS2;
         case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
             // Compute 1.5PN SO correction to domega/dt
             wspin3 = params->wdot3S1O*LNhdotS1 + params->wdot3S2O*LNhdotS2;
