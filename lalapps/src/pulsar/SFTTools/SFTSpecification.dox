@@ -1,8 +1,8 @@
 /**
 \if LALPULSAR
 
-\defgroup SFTReferenceLibrary SFT Data Format Version 2 Specification (T040164-01)
-\ingroup lalapps_pulsar_SFTTools
+\defgroup lalapps_pulsar_SFTSpecification SFT Data Format Version 2 Specification (T040164-01)
+\ingroup lalapps_pulsar
 \authors The Continuous Waves Search Group
 
 # Changelog

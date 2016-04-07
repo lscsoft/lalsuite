@@ -36,7 +36,8 @@
 /**
  * \author B.Krishnan, S.Larson, J.T.Whelan, Y.Zhang
  * \date 2013, 2014, 2015
- * \addtogroup lalapps_pulsar_crosscorr
+ * \file
+ * \ingroup lalapps_pulsar_CrossCorr
  * \brief Perform CW cross-correlation search - version 2
  *
  * This carries out the cross-correlation search defined in

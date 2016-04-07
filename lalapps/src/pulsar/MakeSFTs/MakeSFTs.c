@@ -20,7 +20,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_MakeSFTs
+ * \ingroup lalapps_pulsar_SFTTools
  * \author Gregory Mendell, Xavier Siemens, Bruce Allen, Bernd Machenschalk
  * \brief generate SFTs
  */

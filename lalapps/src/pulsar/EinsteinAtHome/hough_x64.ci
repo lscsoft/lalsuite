@@ -19,16 +19,6 @@
  */
 
 
-
-/**
- * \file Opt_Hough_amd64_linux.h
- * \ingroup lalapps_pulsar_EinsteinAtHome
- * \brief Header file for CPU architecture specific optimization code
- * \author 
- * 
- ****/
-
-
 #ifndef _OPT_HOUGH_AMD64_LINUX_H
 #define _OPT_HOUGH_AMD64_LINUX_H
 

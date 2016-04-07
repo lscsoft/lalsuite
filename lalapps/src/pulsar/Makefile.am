@@ -1,4 +1,4 @@
-# General tools which should be tested first
+# Tools which should be tested early
 SUBDIRS = \
 	Tools \
 	Injections \

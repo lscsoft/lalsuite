@@ -18,8 +18,8 @@
 */
 
 /**
- * \file
- * \ingroup lalapps_pulsar_TwoSpect
+ * \defgroup lalapps_pulsar_TwoSpect TwoSpect Search Application
+ * \ingroup lalapps_pulsar_Apps
  * \author Evan Goetz
  */
 

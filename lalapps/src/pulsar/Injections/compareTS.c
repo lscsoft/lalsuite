@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_Injections
+ * \ingroup lalapps_pulsar_Tools
  * \author R. Prix
  * \brief
  * compare two binary strain files, written from hardware-injection

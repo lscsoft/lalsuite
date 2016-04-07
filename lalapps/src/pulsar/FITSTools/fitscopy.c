@@ -17,6 +17,11 @@
 // program, rather than coding the new program completely from scratch.
 //
 
+/**
+ * \file
+ * \ingroup lalapps_pulsar_FITSTools
+ */
+
 #include <config.h>
 #include <stdio.h>
 
