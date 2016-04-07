@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 121
+# serial 122
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -562,7 +562,7 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
     # use standard include paths
     save_IFS="$IFS"
     IFS=:
-    for flag in "$C_INCLUDE_PATH:$CPLUS_INCLUDE_PATH:/usr/include" ; do
+    for flag in $C_INCLUDE_PATH $CPLUS_INCLUDE_PATH /usr/include ; do
       test -n "$flag" && flag="-I$flag"
       AS_CASE([" $CPPFLAGS $LAL_SYSTEM_INCLUDES "],
         [*" ${flag} "*],[:],
