@@ -29,7 +29,6 @@ pkginclude_HEADERS = \
 	LALPulsarConfig.h \
 	LALPulsarVCSInfo.h \
 	LALPulsarVCSInfoHeader.h \
-	LALXMGRInterface.h \
 	LFTandTSutils.h \
 	LISAspecifics.h \
 	LUT.h \
@@ -99,7 +98,6 @@ liblalpulsar_la_SOURCES = \
 	LALComputeAM.c \
 	LALInitBarycenter.c \
 	LALPulsarVCSInfo.c \
-	LALXMGRInterface.c \
 	LFTandTSutils.c \
 	LISAspecifics.c \
 	LatticeTiling.c \

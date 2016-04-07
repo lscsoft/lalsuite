@@ -93,10 +93,6 @@
  * default is \f$39600\f$ seconds \f$= 11\f$ hours, which is chosen because it is of
  * the right size for S2 analyses).
  *
- * The <b>-x</b> option makes a plot of the mesh points on the sky patch using a
- * system call to \c xmgrace. If \c xmgrace is not installed on your
- * system, this option will not work. The plot goes to a file <tt>mesh.agr</tt>.
- *
  * ### Algorithm ###
  *
  *
@@ -141,7 +137,6 @@
 #include <stdio.h>
 #include <lal/AVFactories.h>
 #include <lal/LALgetopt.h>
-#include <lal/LALXMGRInterface.h>
 #include <lal/PtoleMetric.h>
 #include <lal/StackMetric.h>
 #include <lal/TwoDMesh.h>
@@ -185,7 +180,6 @@ int main( int argc, char **argv )
 {
   static LALStatus     stat;      /* status structure */
   INT2                 opt;       /* command-line option character */
-  BOOLEAN              grace;     /* whether or not to graph using xmgrace */
   BOOLEAN              nonGrace;  /* whether or not to write to data file */
   TwoDMeshNode        *firstNode; /* head of linked list of nodes in mesh */
   static TwoDMeshParamStruc mesh; /* mesh parameters */
@@ -210,7 +204,6 @@ int main( int argc, char **argv )
 
   /* Set default values. */
   metric_code = 1;
-  grace = 0;
   nonGrace = 0;
   begin = 731265908;
   duration = 1e5;
@@ -295,9 +288,6 @@ int main( int argc, char **argv )
                  GENERALMESHTESTC_MSGERNG );
         return GENERALMESHTESTC_ERNG;
       }
-      break;
-    case 'x':
-      grace = 1;
       break;
     } /* switch( opt ) */
   } /* while( LALgetopt... ) */
@@ -409,25 +399,6 @@ int main( int argc, char **argv )
   printf( "created %d nodes\n", mesh.nOut );
   if( mesh.nOut == MAX_NODES )
     printf( "This overflowed your limit. Try a smaller search.\n" );
-
-
-  /* Create xmgrace plot, if required */
-  if(grace)
-    {
-      TwoDMeshNode *node;
-      fp = popen( "xmgrace -pipe", "w" );
-      if( !fp )
-	return GENERALMESHTESTC_EFIO;
-      fprintf( fp, "@xaxis label \"Right ascension (degrees)\"\n" );
-      fprintf( fp, "@yaxis label \"Declination (degrees)\"\n" );
-      fprintf( fp, "@s0 line type 0\n");
-      fprintf( fp, "@s0 symbol 8\n");
-      fprintf( fp, "@s0 symbol size 0.300000\n");
-      for( node = firstNode; node; node = node->next )
-      fprintf( fp, "%e %e\n",
-	       (double)((node->y)*180/LAL_PI), (double)((node->x)*180/LAL_PI));
-      fclose( fp );
-    }
 
 
   /* Write what we've got to file mesh.dat, if required */
