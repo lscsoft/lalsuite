@@ -33,18 +33,20 @@ $(PACKAGE)rc: Makefile
 if DOXYGEN
 
 html-local: Makefile $(CONFIG_CLEAN_FILES)
-	$(AM_V_at)echo "=== Doxygen documentation was built successfully!"; \
-	echo "=== $(PACKAGE_NAME) main page is at file://$(abs_builddir)/index.html"
+	$(AM_V_at)set -e; \
+	echo "$(subdir)/Makefile: Doxygen documentation was built successfully!"; \
+	echo "$(subdir)/Makefile: $(PACKAGE_NAME) main page is at file://$(abs_builddir)/index.html"
 
 install-html-local: html-local
-	$(AM_V_at)echo " $(MKDIR_P) '$(DESTDIR)$(htmldir)'"; \
-	$(MKDIR_P) "$(DESTDIR)$(htmldir)" || exit 1; \
+	$(AM_V_at)set -e; \
+	echo " $(MKDIR_P) '$(DESTDIR)$(htmldir)'"; \
+	$(MKDIR_P) "$(DESTDIR)$(htmldir)"; \
 	echo " $(INSTALL_DATA) index.html '$(DESTDIR)$(htmldir)/index.html'"; \
-	$(SED) -e 's|\(lal[a-z]*\)/doxygen/out|../\1|g' index.html > $@.tmp || exit 1; \
-	$(INSTALL_DATA) $@.tmp "$(DESTDIR)$(htmldir)/index.html" || exit 1; \
+	$(SED) -e 's|\(lal[a-z]*\)/doxygen/out|../\1|g' index.html > $@.tmp; \
+	$(INSTALL_DATA) $@.tmp "$(DESTDIR)$(htmldir)/index.html"; \
 	rm -f $@.tmp; \
-	echo "=== Doxygen documentation was installed successfully!"; \
-	echo "=== Installed $(PACKAGE_NAME) main page is at file://$(DESTDIR)$(htmldir)/index.html"
+	echo "$(subdir)/Makefile: Doxygen documentation was installed successfully!"; \
+	echo "$(subdir)/Makefile: installed $(PACKAGE_NAME) main page is at file://$(DESTDIR)$(htmldir)/index.html"
 
 uninstall-local:
 	-rm -rf "$(DESTDIR)$(htmldir)/"
