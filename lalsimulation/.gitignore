@@ -22,7 +22,7 @@ doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
-lalsimulation-*.tar.gz
+lalsimulation-*.tar.xz
 lalsimulation-user-env.csh
 lalsimulation-user-env.sh
 lalsimulation-user-env.shell

@@ -1,6 +1,13 @@
+lalxml (1.2.1-1) unstable; urgency=low
+
+  * LALXML 1.2.1
+  * Pre O2 packaging test release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 25 Mar 2016 09:39:02 -0500
+
 lalxml (1.2.0-1) unstable; urgency=low
 
-  * LALXML 1.2.0 
+  * LALXML 1.2.0
 
  -- Adam Mercer <adam.mercer@ligo.org>  Sat, 01 Aug 2015 19:56:28 -0500
 

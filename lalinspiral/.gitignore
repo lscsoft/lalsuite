@@ -22,7 +22,7 @@ doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
-lalinspiral-*.tar.gz
+lalinspiral-*.tar.xz
 lalinspiral-user-env.csh
 lalinspiral-user-env.sh
 lalinspiral-user-env.shell

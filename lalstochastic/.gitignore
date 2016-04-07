@@ -22,7 +22,7 @@ doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
-lalstochastic-*.tar.gz
+lalstochastic-*.tar.xz
 lalstochastic-user-env.csh
 lalstochastic-user-env.sh
 lalstochastic-user-env.shell

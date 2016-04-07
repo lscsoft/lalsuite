@@ -69,9 +69,9 @@ FITSFile *XLALFITSFileOpenRead(const CHAR *file_name);
 /// @}
 
 ///
-/// \name Write/Read Keyword-Value Pairs To/From FITS Header Data Unit
+/// \name Write/Read Key-Value Pairs To/From FITS Header Data Unit
 ///
-/// These functions write/read keyword-value pairs (\p keyword, \p value) to/from a FITS Header Data
+/// These functions write/read key-value pairs (\p key, \p value) to/from a FITS Header Data
 /// Unit (HDU).  Scalar #BOOLEAN, #INT4, #INT8, #REAL4, #REAL8, #COMPLEX8, and #COMPLEX16 values,
 /// strings, string vectors (#LALStringVector) and GPS times (#LIGOTimeGPS) can be written and read.
 /// A \p comment string describing the value is required when writing to an HDU, and an arbitrary
@@ -90,26 +90,26 @@ FITSFile *XLALFITSFileOpenRead(const CHAR *file_name);
 ///
 /// @{
 int XLALFITSHeaderWriteComment(FITSFile *file, const CHAR *comment);
-int XLALFITSHeaderWriteBOOLEAN(FITSFile *file, const CHAR *keyword, const BOOLEAN value, const CHAR *comment);
-int XLALFITSHeaderReadBOOLEAN(FITSFile *file, const CHAR *keyword, BOOLEAN *value);
-int XLALFITSHeaderWriteINT4(FITSFile *file, const CHAR *keyword, const INT4 value, const CHAR *comment);
-int XLALFITSHeaderReadINT4(FITSFile *file, const CHAR *keyword, INT4 *value);
-int XLALFITSHeaderWriteINT8(FITSFile *file, const CHAR *keyword, const INT8 value, const CHAR *comment);
-int XLALFITSHeaderReadINT8(FITSFile *file, const CHAR *keyword, INT8 *value);
-int XLALFITSHeaderWriteREAL4(FITSFile *file, const CHAR *keyword, const REAL4 value, const CHAR *comment);
-int XLALFITSHeaderReadREAL4(FITSFile *file, const CHAR *keyword, REAL4 *value);
-int XLALFITSHeaderWriteREAL8(FITSFile *file, const CHAR *keyword, const REAL8 value, const CHAR *comment);
-int XLALFITSHeaderReadREAL8(FITSFile *file, const CHAR *keyword, REAL8 *value);
-int XLALFITSHeaderWriteCOMPLEX8(FITSFile *file, const CHAR *keyword, const COMPLEX8 value, const CHAR *comment);
-int XLALFITSHeaderReadCOMPLEX8(FITSFile *file, const CHAR *keyword, COMPLEX8 *value);
-int XLALFITSHeaderWriteCOMPLEX16(FITSFile *file, const CHAR *keyword, const COMPLEX16 value, const CHAR *comment);
-int XLALFITSHeaderReadCOMPLEX16(FITSFile *file, const CHAR *keyword, COMPLEX16 *value);
-int XLALFITSHeaderWriteString(FITSFile *file, const CHAR *keyword, const CHAR *value, const CHAR *comment);
-int XLALFITSHeaderReadString(FITSFile *file, const CHAR *keyword, CHAR **value);
-int XLALFITSHeaderWriteStringVector(FITSFile *file, const CHAR *keyword, const LALStringVector *values, const CHAR *comment);
-int XLALFITSHeaderReadStringVector(FITSFile *file, const CHAR *keyword, LALStringVector **values);
-int XLALFITSHeaderWriteGPSTime(FITSFile *file, const CHAR *keyword, const LIGOTimeGPS *value, const CHAR *comment);
-int XLALFITSHeaderReadGPSTime(FITSFile *file, const CHAR *keyword, LIGOTimeGPS *value);
+int XLALFITSHeaderWriteBOOLEAN(FITSFile *file, const CHAR *key, const BOOLEAN value, const CHAR *comment);
+int XLALFITSHeaderReadBOOLEAN(FITSFile *file, const CHAR *key, BOOLEAN *value);
+int XLALFITSHeaderWriteINT4(FITSFile *file, const CHAR *key, const INT4 value, const CHAR *comment);
+int XLALFITSHeaderReadINT4(FITSFile *file, const CHAR *key, INT4 *value);
+int XLALFITSHeaderWriteINT8(FITSFile *file, const CHAR *key, const INT8 value, const CHAR *comment);
+int XLALFITSHeaderReadINT8(FITSFile *file, const CHAR *key, INT8 *value);
+int XLALFITSHeaderWriteREAL4(FITSFile *file, const CHAR *key, const REAL4 value, const CHAR *comment);
+int XLALFITSHeaderReadREAL4(FITSFile *file, const CHAR *key, REAL4 *value);
+int XLALFITSHeaderWriteREAL8(FITSFile *file, const CHAR *key, const REAL8 value, const CHAR *comment);
+int XLALFITSHeaderReadREAL8(FITSFile *file, const CHAR *key, REAL8 *value);
+int XLALFITSHeaderWriteCOMPLEX8(FITSFile *file, const CHAR *key, const COMPLEX8 value, const CHAR *comment);
+int XLALFITSHeaderReadCOMPLEX8(FITSFile *file, const CHAR *key, COMPLEX8 *value);
+int XLALFITSHeaderWriteCOMPLEX16(FITSFile *file, const CHAR *key, const COMPLEX16 value, const CHAR *comment);
+int XLALFITSHeaderReadCOMPLEX16(FITSFile *file, const CHAR *key, COMPLEX16 *value);
+int XLALFITSHeaderWriteString(FITSFile *file, const CHAR *key, const CHAR *value, const CHAR *comment);
+int XLALFITSHeaderReadString(FITSFile *file, const CHAR *key, CHAR **value);
+int XLALFITSHeaderWriteStringVector(FITSFile *file, const CHAR *key, const LALStringVector *values, const CHAR *comment);
+int XLALFITSHeaderReadStringVector(FITSFile *file, const CHAR *key, LALStringVector **values);
+int XLALFITSHeaderWriteGPSTime(FITSFile *file, const CHAR *key, const LIGOTimeGPS *value, const CHAR *comment);
+int XLALFITSHeaderReadGPSTime(FITSFile *file, const CHAR *key, LIGOTimeGPS *value);
 /// @}
 
 ///

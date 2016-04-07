@@ -22,7 +22,7 @@ doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
-laldetchar-*.tar.gz
+laldetchar-*.tar.xz
 laldetchar-user-env.csh
 laldetchar-user-env.sh
 laldetchar-user-env.shell
