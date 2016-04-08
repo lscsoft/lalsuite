@@ -21,7 +21,7 @@
  * \author Matt Pitkin, Bernd Machenschalk
  * \date 2007
  * \file
- * \ingroup lalpulsar_UNCLASSIFIED
+ * \ingroup lalpulsar_general
  * \brief Functions to calculate binary system time delays and read TEMPO pulsar parameter files
  *
  * The main function in this code - <tt>XLALBinaryPulsarDeltaT</tt> - is for

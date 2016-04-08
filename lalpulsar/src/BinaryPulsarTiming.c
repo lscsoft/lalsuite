@@ -21,7 +21,7 @@
  * \author Matt Pitkin
  * \date 2006
  * \file
- * \ingroup lalpulsar_UNCLASSIFIED
+ * \ingroup lalpulsar_general
  * \brief Functions to calculate binary system time delays and read TEMPO pulsar parameter files
  *
  * Functions for calculating the timing delay to a signal from a pulsar in a

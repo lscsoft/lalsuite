@@ -21,7 +21,7 @@
  * \author Matt Pitkin
  * \date 2013
  * \file
- * \ingroup lalpulsar_UNCLASSIFIED
+ * \ingroup lalpulsar_general
  * \brief Functions to read TEMPO pulsar parameter files
  *
    Functions for reading pulsar parameters from TEMPO .par files.
