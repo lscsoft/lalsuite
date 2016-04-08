@@ -54,3 +54,6 @@ git commit --amend
 # 2015-04-09 lalpulsar/test/LALDemodTest.c
 # 2016-04-08 lalpulsar/src/LALXMGRInterface.c
 # 2016-04-08 lalpulsar/src/LALXMGRInterface.h
+# 2016-04-08 lalpulsar/src/FitToPulsar.c
+# 2016-04-08 lalpulsar/src/FitToPulsar.h
+# 2016-04-08 lalpulsar/test/FitToPulsarTest.c

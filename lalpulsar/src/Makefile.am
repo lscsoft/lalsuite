@@ -14,7 +14,6 @@ pkginclude_HEADERS = \
 	DopplerScan.h \
 	EstimateAmplitudeParams.h \
 	ExtrapolatePulsarSpins.h \
-	FitToPulsar.h \
 	FlatMesh.h \
 	FlatPulsarMetric.h \
 	GSLHelpers.h \
@@ -83,7 +82,6 @@ liblalpulsar_la_SOURCES = \
 	DriveHough.c \
 	EstimateAmplitudeParams.c \
 	ExtrapolatePulsarSpins.c \
-	FitToPulsar.c \
 	FlatMesh.c \
 	FlatPulsarMetric.c \
 	GenerateEllipticSpinOrbitCW.c \
