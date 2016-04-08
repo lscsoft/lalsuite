@@ -914,7 +914,6 @@ model->waveFlags(%d,%d,%d,%d,numreldata),nonGRparams,%d,%d,%d,model->waveformCac
   if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
   if ( hptilde ) XLALDestroyCOMPLEX16FrequencySeries(hptilde);
   if ( hctilde ) XLALDestroyCOMPLEX16FrequencySeries(hctilde);
-  XLALSimInspiralDestroyTestGRParam(nonGRparams);
 
   return;
 }
@@ -1413,7 +1412,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
     if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
     if ( hptilde ) XLALDestroyCOMPLEX16FrequencySeries(hptilde);
     if ( hctilde ) XLALDestroyCOMPLEX16FrequencySeries(hctilde);
-    XLALSimInspiralDestroyTestGRParam(nonGRparams);
     
     return;
 }

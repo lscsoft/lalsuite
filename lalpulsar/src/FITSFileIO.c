@@ -97,6 +97,40 @@ struct tagFITSFile {
   } table;
 };
 
+///
+/// Format and check a FITS keyword
+///
+static int CheckFITSKeyword(CHAR keyword[FLEN_KEYWORD], const CHAR *key)
+{
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  XLAL_CHECK_FAIL(key != NULL, XLAL_EFAULT);
+  XLAL_CHECK_FAIL(strlen(key) < FLEN_KEYWORD, XLAL_EINVAL, "Key '%s' is too long", key);
+
+  if (strlen(key) <= 8) {
+
+    // Format and check a normal FITS keyword
+    snprintf(keyword, FLEN_KEYWORD, "%s", key);
+    XLALStringToUpperCase(keyword);
+    CALL_FITS(fits_test_keyword, keyword);
+
+  } else {
+
+    // Format a hierarchical FITS keyword
+    snprintf(keyword, FLEN_KEYWORD, "hierarch %s", key);
+    XLALStringToUpperCase(keyword);
+
+  }
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+  return XLAL_FAILURE;
+
+}
+
 void XLALFITSFileClose(FITSFile *file)
 {
   int UNUSED status = 0;
@@ -227,14 +261,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderWriteBOOLEAN(FITSFile *file, const CHAR *keyword, const BOOLEAN value, const CHAR *comment)
+int XLALFITSHeaderWriteBOOLEAN(FITSFile *file, const CHAR *key, const BOOLEAN value, const CHAR *comment)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(file->write, XLAL_EINVAL, "FITS file is not open for writing");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
 
   // Write boolean value to current header
@@ -254,14 +289,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderReadBOOLEAN(FITSFile *file, const CHAR *keyword, BOOLEAN *value)
+int XLALFITSHeaderReadBOOLEAN(FITSFile *file, const CHAR *key, BOOLEAN *value)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(!file->write, XLAL_EINVAL, "FITS file is not open for reading");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
   // Read boolean value from current header
@@ -277,14 +313,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderWriteINT4(FITSFile *file, const CHAR *keyword, const INT4 value, const CHAR *comment)
+int XLALFITSHeaderWriteINT4(FITSFile *file, const CHAR *key, const INT4 value, const CHAR *comment)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(file->write, XLAL_EINVAL, "FITS file is not open for writing");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
 
   // Write 32-bit integer value to current header
@@ -304,14 +341,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderReadINT4(FITSFile *file, const CHAR *keyword, INT4 *value)
+int XLALFITSHeaderReadINT4(FITSFile *file, const CHAR *key, INT4 *value)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(!file->write, XLAL_EINVAL, "FITS file is not open for reading");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
   // Read 32-bit integer value from current header
@@ -328,14 +366,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderWriteINT8(FITSFile *file, const CHAR *keyword, const INT8 value, const CHAR *comment)
+int XLALFITSHeaderWriteINT8(FITSFile *file, const CHAR *key, const INT8 value, const CHAR *comment)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(file->write, XLAL_EINVAL, "FITS file is not open for writing");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
 
   // Write 64-bit integer value to current header
@@ -355,14 +394,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderReadINT8(FITSFile *file, const CHAR *keyword, INT8 *value)
+int XLALFITSHeaderReadINT8(FITSFile *file, const CHAR *key, INT8 *value)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(!file->write, XLAL_EINVAL, "FITS file is not open for reading");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
   // Read 64-bit integer value from current header
@@ -379,14 +419,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderWriteREAL4(FITSFile *file, const CHAR *keyword, const REAL4 value, const CHAR *comment)
+int XLALFITSHeaderWriteREAL4(FITSFile *file, const CHAR *key, const REAL4 value, const CHAR *comment)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(file->write, XLAL_EINVAL, "FITS file is not open for writing");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
 
   // Write 32-bit floating-point value to current header
@@ -406,14 +447,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderReadREAL4(FITSFile *file, const CHAR *keyword, REAL4 *value)
+int XLALFITSHeaderReadREAL4(FITSFile *file, const CHAR *key, REAL4 *value)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(!file->write, XLAL_EINVAL, "FITS file is not open for reading");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
   // Read 32-bit floating-point value from current header
@@ -427,14 +469,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderWriteREAL8(FITSFile *file, const CHAR *keyword, const REAL8 value, const CHAR *comment)
+int XLALFITSHeaderWriteREAL8(FITSFile *file, const CHAR *key, const REAL8 value, const CHAR *comment)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(file->write, XLAL_EINVAL, "FITS file is not open for writing");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
 
   // Write 64-bit floating-point value to current header
@@ -454,14 +497,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderReadREAL8(FITSFile *file, const CHAR *keyword, REAL8 *value)
+int XLALFITSHeaderReadREAL8(FITSFile *file, const CHAR *key, REAL8 *value)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(!file->write, XLAL_EINVAL, "FITS file is not open for reading");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
   // Read 64-bit floating-point value from current header
@@ -475,14 +519,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderWriteCOMPLEX8(FITSFile *file, const CHAR *keyword, const COMPLEX8 value, const CHAR *comment)
+int XLALFITSHeaderWriteCOMPLEX8(FITSFile *file, const CHAR *key, const COMPLEX8 value, const CHAR *comment)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(file->write, XLAL_EINVAL, "FITS file is not open for writing");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
 
   // Write 64-bit complex floating-point value to current header
@@ -503,14 +548,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderReadCOMPLEX8(FITSFile *file, const CHAR *keyword, COMPLEX8 *value)
+int XLALFITSHeaderReadCOMPLEX8(FITSFile *file, const CHAR *key, COMPLEX8 *value)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(!file->write, XLAL_EINVAL, "FITS file is not open for reading");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
   // Read 64-bit floating-point value from current header
@@ -526,14 +572,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderWriteCOMPLEX16(FITSFile *file, const CHAR *keyword, const COMPLEX16 value, const CHAR *comment)
+int XLALFITSHeaderWriteCOMPLEX16(FITSFile *file, const CHAR *key, const COMPLEX16 value, const CHAR *comment)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(file->write, XLAL_EINVAL, "FITS file is not open for writing");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
 
   // Write 128-bit complex floating-point value to current header
@@ -554,14 +601,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderReadCOMPLEX16(FITSFile *file, const CHAR *keyword, COMPLEX16 *value)
+int XLALFITSHeaderReadCOMPLEX16(FITSFile *file, const CHAR *key, COMPLEX16 *value)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(!file->write, XLAL_EINVAL, "FITS file is not open for reading");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
   // Read 128-bit floating-point value from current header
@@ -577,16 +625,20 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderWriteString(FITSFile *file, const CHAR *keyword, const CHAR *value, const CHAR *comment)
+int XLALFITSHeaderWriteString(FITSFile *file, const CHAR *key, const CHAR *value, const CHAR *comment)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(file->write, XLAL_EINVAL, "FITS file is not open for writing");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
+
+  // Write warning for FITS long string keyword convention
+  CALL_FITS(fits_write_key_longwarn, file->ff);
 
   // Write string value to current header
   union {
@@ -609,7 +661,7 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderReadString(FITSFile *file, const CHAR *keyword, CHAR **value)
+int XLALFITSHeaderReadString(FITSFile *file, const CHAR *key, CHAR **value)
 {
   int UNUSED status = 0;
   CHAR *val = NULL;
@@ -617,7 +669,8 @@ int XLALFITSHeaderReadString(FITSFile *file, const CHAR *keyword, CHAR **value)
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(!file->write, XLAL_EINVAL, "FITS file is not open for reading");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
   // Read string value from current header
@@ -638,14 +691,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderWriteStringVector(FITSFile *file, const CHAR *keyword, const LALStringVector *values, const CHAR *comment)
+int XLALFITSHeaderWriteStringVector(FITSFile *file, const CHAR *key, const LALStringVector *values, const CHAR *comment)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(file->write, XLAL_EINVAL, "FITS file is not open for writing");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(values != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(values->length > 0, XLAL_EFAULT);
   XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
@@ -676,14 +730,15 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderReadStringVector(FITSFile *file, const CHAR *keyword, LALStringVector **values)
+int XLALFITSHeaderReadStringVector(FITSFile *file, const CHAR *key, LALStringVector **values)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(!file->write, XLAL_EINVAL, "FITS file is not open for reading");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(values != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(*values == NULL, XLAL_EFAULT);
 
@@ -708,14 +763,15 @@ XLAL_FAIL:
 }
 
 
-int XLALFITSHeaderWriteGPSTime(FITSFile *file, const CHAR *keyword, const LIGOTimeGPS *value, const CHAR *comment)
+int XLALFITSHeaderWriteGPSTime(FITSFile *file, const CHAR *key, const LIGOTimeGPS *value, const CHAR *comment)
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(file->write, XLAL_EINVAL, "FITS file is not open for writing");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(comment != NULL, XLAL_EFAULT);
 
@@ -751,7 +807,7 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderReadGPSTime(FITSFile *file, const CHAR *keyword, LIGOTimeGPS *value)
+int XLALFITSHeaderReadGPSTime(FITSFile *file, const CHAR *key, LIGOTimeGPS *value)
 {
   int UNUSED status = 0;
   CHAR *utc_str = NULL;
@@ -759,7 +815,8 @@ int XLALFITSHeaderReadGPSTime(FITSFile *file, const CHAR *keyword, LIGOTimeGPS *
   // Check input
   XLAL_CHECK_FAIL(file != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(!file->write, XLAL_EINVAL, "FITS file is not open for reading");
-  XLAL_CHECK_FAIL(keyword != NULL, XLAL_EFAULT);
+  CHAR keyword[FLEN_KEYWORD];
+  XLAL_CHECK_FAIL(CheckFITSKeyword(keyword, key) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_FAIL(value != NULL, XLAL_EFAULT);
 
   // Read time in UTC format from current header
@@ -1357,8 +1414,8 @@ int XLALFITSTableColumnAddCHAR(FITSFile *file, const CHAR *col_name, const void 
 int XLALFITSTableColumnAddGPSTime(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size)
 {
   XLAL_CHECK(field_size == sizeof(LIGOTimeGPS), XLAL_EINVAL, "Array of GPS times is not supported");
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, ".s", record, record_size, &(field->gpsSeconds), sizeof(field->gpsSeconds), sizeof(field->gpsSeconds), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, ".ns", record, record_size, &(field->gpsNanoSeconds), sizeof(field->gpsNanoSeconds), sizeof(field->gpsNanoSeconds), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "_s", record, record_size, &(field->gpsSeconds), sizeof(field->gpsSeconds), sizeof(field->gpsSeconds), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "_ns", record, record_size, &(field->gpsNanoSeconds), sizeof(field->gpsNanoSeconds), sizeof(field->gpsNanoSeconds), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
   return XLAL_SUCCESS;
 }
 

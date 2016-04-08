@@ -18,16 +18,6 @@
  * 
  */
 
-
-
-/**
- * \file Opt_Hough_i686_sse2.h
- * \ingroup lalapps_pulsar_EinsteinAtHome
- * \brief Header file for CPU architecture specific optimization code
- * \author 
- * 
- ****/
-
 #ifndef _OPT_HOUGH_I686_SSE2_H
 #define _OPT_HOUGH_I686_SSE2_H
 

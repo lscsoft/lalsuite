@@ -23,7 +23,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_CreateEphemeris
+ * \ingroup lalapps_pulsar_Tools
  * \author Matt Pitkin
  * \brief
  * This code will take in JPL binary ephemeris files containing (e.g.

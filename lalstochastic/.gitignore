@@ -16,13 +16,16 @@ Makefile.in
 config.lt
 doxygen/autogen.dox
 doxygen/doxygen.cfg
+doxygen/doxygen_objdb_*.tmp
+doxygen/doxygen_sqlite3.db
 doxygen/filter
+doxygen/in/
 doxygen/out/
 doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
-lalstochastic-*.tar.gz
+lalstochastic-*.tar.xz
 lalstochastic-user-env.csh
 lalstochastic-user-env.sh
 lalstochastic-user-env.shell

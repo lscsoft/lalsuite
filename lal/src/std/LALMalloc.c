@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2016 Karl Wette
 *  Copyright (C) 2007 Jolien Creighton, Josh Willis
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -247,14 +248,30 @@ static const size_t magic = 0xABadCafe;
 
 #define allocsz(n) ((lalDebugLevel & LALMEMPADBIT) ? (padFactor * (n) + prefix) : (n))
 
+/* Hash table implementation taken from src/utilities/LALHashTbl.c */
+
 static struct allocNode {
     void *addr;
     size_t size;
     const char *file;
     int line;
-    struct allocNode *next;
-} *allocList = NULL;
-static int lalMallocCount = 0;
+} **alloc_data = NULL;		/* Allocation hash table with open addressing and linear probing */
+static int alloc_data_len = 0;	/* Size of the memory block 'alloc_data', in number of elements */
+static int alloc_n = 0;		/* Number of valid elements in the hash */
+static int alloc_q = 0;		/* Number of non-NULL elements in the hash */
+
+/* Special allocation hash table element value to indicate elements that have been deleted */
+static const void *hash_del = 0;
+#define DEL   ((struct allocNode*) &hash_del)
+
+/* Evaluates to the hash value of x, restricted to the length of the allocation hash table */
+#define HASHIDX(x)   ((int)( ((intptr_t)( (x)->addr )) % alloc_data_len ))
+
+/* Increment the next hash index, restricted to the length of the allocation hash table */
+#define INCRIDX(i)   do { if (++(i) == alloc_data_len) { (i) = 0; } } while(0)
+
+/* Evaluates true if the elements x and y are equal */
+#define EQUAL(x, y)   ((x)->addr == (y)->addr)
 
 /* need this to turn off gcc warnings about unused functions */
 #ifdef __GNUC__
@@ -263,6 +280,102 @@ static int lalMallocCount = 0;
 #define UNUSED
 #endif
 
+/* Resize and rebuild the allocation allocation hash table */
+UNUSED static int AllocHashTblResize(void)
+{
+    struct allocNode **old_data = alloc_data;
+    int old_data_len = alloc_data_len;
+    alloc_data_len = 2;
+    while (alloc_data_len < 3*alloc_n) {
+        alloc_data_len *= 2;
+    }
+    alloc_data = calloc(alloc_data_len, sizeof(alloc_data[0]));
+    if (alloc_data == NULL) {
+        return 0;
+    }
+    alloc_q = alloc_n;
+    for (int k = 0; k < old_data_len; ++k) {
+        if (old_data[k] != NULL && old_data[k] != DEL) {
+            int i = HASHIDX(old_data[k]);
+            while (alloc_data[i] != NULL) {
+                INCRIDX(i);
+            }
+            alloc_data[i] = old_data[k];
+        }
+    }
+    free(old_data);
+    return 1;
+}
+
+/* Find node in allocation hash table */
+UNUSED static struct allocNode *AllocHashTblFind(struct allocNode *x)
+{
+    struct allocNode *y = NULL;
+    if (alloc_data_len > 0) {
+        int i = HASHIDX(x);
+        while (alloc_data[i] != NULL) {
+            y = alloc_data[i];
+            if (y != DEL && EQUAL(x, y)) {
+                return y;
+            }
+            INCRIDX(i);
+        }
+    }
+    return NULL;
+}
+
+/* Add node to allocation hash table */
+UNUSED static int AllocHashTblAdd(struct allocNode *x)
+{
+    if (2*(alloc_q + 1) > alloc_data_len) {
+        /* Resize allocation hash table to preserve maximum 50% occupancy */
+        if (!AllocHashTblResize()) {
+            return 0;
+        }
+    }
+    int i = HASHIDX(x);
+    while (alloc_data[i] != NULL && alloc_data[i] != DEL) {
+        INCRIDX(i);
+    }
+    if (alloc_data[i] == NULL) {
+        ++alloc_q;
+    }
+    ++alloc_n;
+    alloc_data[i] = x;
+    return 1;
+}
+
+/* Extract node from allocation hash table */
+UNUSED static struct allocNode *AllocHashTblExtract(struct allocNode *x)
+{
+    if (alloc_data_len > 0) {
+        int i = HASHIDX(x);
+        while (alloc_data[i] != NULL) {
+            struct allocNode *y = alloc_data[i];
+            if (y != DEL && EQUAL(x, y)) {
+                alloc_data[i] = DEL;
+                --alloc_n;
+                if (alloc_n == 0) {
+                    /* Free all hash table memory */
+                    free(alloc_data);
+                    alloc_data = NULL;
+                    alloc_data_len = 0;
+                    alloc_q = 0;
+                } else if (8*alloc_n < alloc_data_len) {
+                    /* Resize hash table to preserve minimum 50% occupancy */
+                    if (!AllocHashTblResize()) {
+                        return NULL;
+                    }
+                }
+                return y;
+            }
+            INCRIDX(i);
+        }
+    }
+    return NULL;
+}
+
+
 /* Useful function for debugging */
 /* Checks to make sure alloc list is OK */
 /* Returns 0 if list is corrupted; 1 if list is OK */
@@ -270,30 +383,13 @@ UNUSED static int CheckAllocList(void)
 {
     int count = 0;
     size_t total = 0;
-    struct allocNode *node = allocList;
-    while (node) {
-        ++count;
-        total += node->size;
-        node = node->next;
+    for (int k = 0; k < alloc_data_len; ++k) {
+        if (alloc_data[k] != NULL && alloc_data[k] != DEL) {
+            ++count;
+            total += alloc_data[k]->size;
+        }
     }
-    return count == lalMallocCount && total == lalMallocTotal;
-}
-
-/* Useful function for debugging */
-/* Finds the node of the alloc list previous to the desired alloc */
-/* Returns NULL if not found or if the alloc node is the head */
-UNUSED static struct allocNode *FindPrevAlloc(void *p)
-{
-    struct allocNode *node = allocList;
-    if (p == node->addr)        /* top of list */
-        return NULL;
-    /* scroll through list to find node before the alloc */
-    while (node->next)
-        if (node->next->addr == p)
-            return node;
-        else
-            node = node->next;
-    return NULL;
+    return count == alloc_n && total == lalMallocTotal;
 }
 
 /* Useful function for debugging */
@@ -301,15 +397,9 @@ UNUSED static struct allocNode *FindPrevAlloc(void *p)
 /* Returns NULL if not found  */
 UNUSED static struct allocNode *FindAlloc(void *p)
 {
-    struct allocNode *node = allocList;
-    while (node)
-        if (p == node->addr)
-            return node;
-        else
-            node = node->next;
-    return NULL;
+    struct allocNode key = { .addr = p };
+    return AllocHashTblFind(&key);
 }
-
 
 
 static void *PadAlloc(size_t * p, size_t n, int keep, const char *func)
@@ -341,7 +431,6 @@ static void *PadAlloc(size_t * p, size_t n, int keep, const char *func)
     pthread_mutex_lock(&mut);
     lalMallocTotal += n;
     lalMallocTotalPeak = (lalMallocTotalPeak > lalMallocTotal) ? lalMallocTotalPeak : lalMallocTotal;
-    ++lalMallocCount;
     pthread_mutex_unlock(&mut);
 
     return (void *) (((char *) p) + prefix);
@@ -422,7 +511,6 @@ static void *UnPadAlloc(void *p, int keep, const char *func)
 
     pthread_mutex_lock(&mut);
     lalMallocTotal -= n;
-    --lalMallocCount;
     pthread_mutex_unlock(&mut);
 
     return q;
@@ -446,8 +534,10 @@ static void *PushAlloc(void *p, size_t n, const char *file, int line)
     newnode->size = n;
     newnode->file = file;
     newnode->line = line;
-    newnode->next = allocList;
-    allocList = newnode;
+    if (!AllocHashTblAdd(newnode)) {
+        free(newnode);
+        return NULL;
+    }
     pthread_mutex_unlock(&mut);
     return p;
 }
@@ -455,7 +545,6 @@ static void *PushAlloc(void *p, size_t n, const char *file, int line)
 
 static void *PopAlloc(void *p, const char *func)
 {
-    struct allocNode *node;
     if (!(lalDebugLevel & LALMEMTRKBIT)) {
         return p;
     }
@@ -463,31 +552,14 @@ static void *PopAlloc(void *p, const char *func)
         return NULL;
     }
     pthread_mutex_lock(&mut);
-    if (!(node = allocList)) {  /* empty allocation list */
+    struct allocNode key = { .addr = p };
+    struct allocNode *node = AllocHashTblExtract(&key);
+    if (node == NULL) {
         pthread_mutex_unlock(&mut);
         lalRaiseHook(SIGSEGV, "%s error: alloc %p not found\n", func, p);
         return NULL;
     }
-    if (p == node->addr) {      /* free the top of the list */
-        allocList = node->next;
-        free(node);
-    } else {    /* free somewhere within the list */
-
-        while (node->next && p != node->next->addr) {
-            node = node->next;
-        }
-        if (!node->next) {      /* bottom of list reached */
-            pthread_mutex_unlock(&mut);
-            lalRaiseHook(SIGSEGV, "%s error: alloc %p not found\n", func,
-                         p);
-            return NULL;
-        } else {        /* found the alloc */
-
-            struct allocNode *tmp = node->next;
-            node->next = node->next->next;
-            free(tmp);
-        }
-    }
+    free(node);
     pthread_mutex_unlock(&mut);
     return p;
 }
@@ -496,7 +568,6 @@ static void *PopAlloc(void *p, const char *func)
 static void *ModAlloc(void *p, void *q, size_t n, const char *func,
                       const char *file, int line)
 {
-    struct allocNode *node;
     if (!(lalDebugLevel & LALMEMTRKBIT)) {
         return q;
     }
@@ -504,23 +575,21 @@ static void *ModAlloc(void *p, void *q, size_t n, const char *func,
         return NULL;
     }
     pthread_mutex_lock(&mut);
-    if (!(node = allocList)) {  /* empty allocation list */
+    struct allocNode key = { .addr = p };
+    struct allocNode *node = AllocHashTblExtract(&key);
+    if (node == NULL) {
         pthread_mutex_unlock(&mut);
         lalRaiseHook(SIGSEGV, "%s error: alloc %p not found\n", func, p);
         return NULL;
-    }
-    while (p != node->addr) {
-        if (!(node = node->next)) {
-            pthread_mutex_unlock(&mut);
-            lalRaiseHook(SIGSEGV, "%s error: alloc %p not found\n", func,
-                         p);
-            return NULL;
-        }
     }
     node->addr = q;
     node->size = n;
     node->file = file;
     node->line = line;
+    if (!AllocHashTblAdd(node)) {
+        free(node);
+        return NULL;
+    }
     pthread_mutex_unlock(&mut);
     return q;
 }
@@ -681,25 +750,22 @@ void LALCheckMemoryLeaks(void)
         return;
     }
 
-    /* allocList should be NULL */
-    if ((lalDebugLevel & LALMEMTRKBIT) && allocList) {
-        struct allocNode *node = allocList;
+    /* alloc_data_len should be zero */
+    if ((lalDebugLevel & LALMEMTRKBIT) && alloc_data_len > 0) {
         XLALPrintError("LALCheckMemoryLeaks: allocation list\n");
-        while (node) {
-            XLALPrintError("%p: %lu bytes (%s:%d)\n", node->addr,
-                          (unsigned long) node->size, node->file,
-                          node->line);
-            node = node->next;
+        for (int k = 0; k < alloc_data_len; ++k) {
+            if (alloc_data[k] != NULL && alloc_data[k] != DEL) {
+                XLALPrintError("%p: %zu bytes (%s:%d)\n", alloc_data[k]->addr,
+                               alloc_data[k]->size, alloc_data[k]->file,
+                               alloc_data[k]->line);
+            }
         }
         leak = 1;
     }
 
-    /* lalMallocTotal and lalMallocCount should be zero */
-    if ((lalDebugLevel & LALMEMPADBIT)
-        && (lalMallocTotal || lalMallocCount)) {
-        XLALPrintError("LALCheckMemoryLeaks: lalMallocCount = %d allocs, "
-                      "lalMallocTotal = %ld bytes\n", lalMallocCount,
-                      (long) lalMallocTotal);
+    /* lalMallocTotal and alloc_n should be zero */
+    if ((lalDebugLevel & LALMEMPADBIT) && (lalMallocTotal || alloc_n)) {
+        XLALPrintError("LALCheckMemoryLeaks: %d allocs, %zd bytes\n", alloc_n, lalMallocTotal);
         leak = 1;
     }
 

@@ -12,6 +12,11 @@
 */
 
 /**
+ * \defgroup lalapps_pulsar_HeterodyneSearch Heterodyne Search Applications
+ * \ingroup lalapps_pulsar_Apps
+ */
+
+/**
  * \file
  * \ingroup lalapps_pulsar_HeterodyneSearch
  * \author Matthew Pitkin, John Veitch, Colin Gill

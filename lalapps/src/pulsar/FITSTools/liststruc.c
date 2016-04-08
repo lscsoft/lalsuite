@@ -17,6 +17,11 @@
 // program, rather than coding the new program completely from scratch.
 //
 
+/**
+ * \file
+ * \ingroup lalapps_pulsar_FITSTools
+ */
+
 #include <config.h>
 #include <string.h>
 #include <stdio.h>
@@ -25,6 +30,11 @@
 #include <fitsio.h>
 #else
 #error CFITSIO library is not available
+#endif
+
+#if !defined(PAGER) || !defined(HAVE_POPEN) || !defined(HAVE_PCLOSE)
+#define popen(...) stdout
+#define pclose(...)
 #endif
 
 int main(int argc, char *argv[])
@@ -46,6 +56,12 @@ int main(int argc, char *argv[])
     return(0);
   }
 
+  FILE *fout = popen(PAGER, "w");
+  if (fout == NULL) {
+    fprintf(stderr, "Could not execute '%s'\n", PAGER);
+    return(1);
+  }
+
   if (!fits_open_file(&fptr, argv[1], READONLY, &status))
   {
     fits_get_hdu_num(fptr, &hdupos);  /* Get the current HDU position */
@@ -57,14 +73,14 @@ int main(int argc, char *argv[])
     {
       fits_get_hdu_type(fptr, &hdutype, &status);  /* Get the HDU type */
 
-      printf("\nHDU #%d  ", hdupos);
+      fprintf(fout, "\nHDU #%d  ", hdupos);
       if (hdutype == IMAGE_HDU)   /* primary array or image HDU */
       {
         fits_get_img_param(fptr, 10, &bitpix, &naxis, naxes, &status);
 
-        printf("Array:  NAXIS = %d,  BITPIX = %d\n", naxis, bitpix);
+        fprintf(fout, "Array:  NAXIS = %d,  BITPIX = %d\n", naxis, bitpix);
         for (ii = 0; ii < naxis; ii++)
-          printf("   NAXIS%d = %ld\n",ii+1, naxes[ii]);
+          fprintf(fout, "   NAXIS%d = %ld\n",ii+1, naxes[ii]);
       }
       else  /* a table HDU */
       {
@@ -72,12 +88,12 @@ int main(int argc, char *argv[])
         fits_get_num_cols(fptr, &ncols, &status);
 
         if (hdutype == ASCII_TBL)
-          printf("ASCII Table:  ");
+          fprintf(fout, "ASCII Table:  ");
         else
-          printf("Binary Table:  ");
+          fprintf(fout, "Binary Table:  ");
 
-        printf("%d columns x %ld rows\n", ncols, nrows);
-        printf(" COL NAME             FORMAT\n");
+        fprintf(fout, "%d columns x %ld rows\n", ncols, nrows);
+        fprintf(fout, " COL NAME             FORMAT\n");
 
         for (ii = 1; ii <= ncols; ii++)
         {
@@ -86,7 +102,7 @@ int main(int argc, char *argv[])
           fits_make_keyn("TFORM", ii, keyname, &status); /* make keyword */
           fits_read_key(fptr, TSTRING, keyname, coltype, NULL, &status);
 
-          printf(" %3d %-16s %-16s\n", ii, colname, coltype);
+          fprintf(fout, " %3d %-16s %-16s\n", ii, colname, coltype);
         }
       }
 
@@ -98,6 +114,8 @@ int main(int argc, char *argv[])
     if (status == END_OF_FILE) status = 0; /* Reset normal error */
     fits_close_file(fptr, &status);
   }
+
+  pclose(fout);
 
   if (status) fits_report_error(stderr, status); /* print any error message */
   return(status);

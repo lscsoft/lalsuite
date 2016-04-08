@@ -43,7 +43,7 @@ information on <tt>lalapps_stopp</tt>.
 In order to create the DAG, a configuration file is required, examples
 of which can be found in the <tt>lalapps/src/stochastic/example</tt>
 directory. This configuration specfies the parameters to use for each
-step of the pipeline. See \ref lalapps_stochastic_pipe.py
+step of the pipeline. See <tt>lalapps_stochastic_pipe</tt>
 for details regarding the layout of the configuration file.
 
 Any combination of nodes, see above, can be present in the DAG, assuming

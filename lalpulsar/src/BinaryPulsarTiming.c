@@ -21,7 +21,7 @@
  * \author Matt Pitkin
  * \date 2006
  * \file
- * \ingroup lalpulsar_UNCLASSIFIED
+ * \ingroup lalpulsar_general
  * \brief Functions to calculate binary system time delays and read TEMPO pulsar parameter files
  *
  * Functions for calculating the timing delay to a signal from a pulsar in a
@@ -746,10 +746,8 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   /* for DD model - code partly adapted from TEMPO bnrydd.f */
   /* also used for MSS model (Wex 1998) - main sequence star orbit - this only has two lines
 different than DD model - TEMPO bnrymss.f */
-  /* also DDS model and (partial) T2 model (if EPS params not set) from TEMPO2
-T2model.C */
-  if( !strcmp(model, "DD") || !strcmp(model, "MSS") || !strcmp(model, "DDS") ||
-      (!strcmp(model, "T2") && eps1 == 0.) ){
+  /* also DDS model and (partial) T2 model (if EPS params not set) from TEMPO2 T2model.C */
+  if( !strcmp(model, "DD") || !strcmp(model, "MSS") || !strcmp(model, "DDS") || (!strcmp(model, "T2") && eps1 == 0.) ){
     REAL8 u;        /* new eccentric anomaly */
     REAL8 Ae;       /* eccentricity parameter */
     REAL8 DRE;      /* Roemer delay + Einstein delay */
@@ -786,6 +784,15 @@ T2model.C */
 
     tt0 = tb - T0;
     /* x = x + xdot*tt0; */
+
+    /* following DDmodel.C from TEMPO2 just set dth, dr, a0 and b0 to 0 */
+    if ( !strcmp(model, "DD") ){
+      dr = 0.;
+      dth = 0.;
+      a0 = 0.;
+      b0 = 0.;
+    }
+
     e = e + edot*tt0;
     er = e*(1.0+dr);
     eth = e*(1.0+dth);
@@ -1231,10 +1238,8 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
   /* for DD model - code partly adapted from TEMPO bnrydd.f */
   /* also used for MSS model (Wex 1998) - main sequence star orbit - this only has two lines
 different than DD model - TEMPO bnrymss.f */
-  /* also DDS model and (partial) T2 model (if EPS params not set) from TEMPO2
-T2model.C */
-  if( !strcmp(model, "DD") || !strcmp(model, "MSS") || !strcmp(model, "DDS") ||
-      (!strcmp(model, "T2") && eps1 == 0.) ){
+  /* also DDS model and (partial) T2 model (if EPS params not set) from TEMPO2 T2model.C */
+  if( !strcmp(model, "DD") || !strcmp(model, "MSS") || !strcmp(model, "DDS") || (!strcmp(model, "T2") && eps1 == 0.) ){
     REAL8 u;        /* new eccentric anomaly */
     REAL8 Ae;       /* eccentricity parameter */
     REAL8 DRE;      /* Roemer delay + Einstein delay */
@@ -1271,6 +1276,15 @@ T2model.C */
 
     tt0 = tb - T0;
     /* x = x + xdot*tt0; */
+
+    /* following DDmodel.C from TEMPO2 just set dth, dr, a0 and b0 to 0 */
+    if ( !strcmp(model, "DD") ){
+      dr = 0.;
+      dth = 0.;
+      a0 = 0.;
+      b0 = 0.;
+    }
+
     e = e + edot*tt0;
     er = e*(1.0+dr);
     eth = e*(1.0+dth);

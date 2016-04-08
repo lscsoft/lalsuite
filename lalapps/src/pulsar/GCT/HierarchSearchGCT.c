@@ -24,6 +24,11 @@
 
 /*********************************************************************************/
 /**
+ * \defgroup lalapps_pulsar_GCT GCT Search Application
+ * \ingroup lalapps_pulsar_Apps
+ */
+
+/**
  * \author Holger Pletsch
  * \file
  * \ingroup lalapps_pulsar_GCT

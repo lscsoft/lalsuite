@@ -17,7 +17,7 @@
  */
 
 /** \author C.Messenger
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar_Xray
  * \file
  * \brief
  * This code is designed to convert a binary timeseries file into a frame file.

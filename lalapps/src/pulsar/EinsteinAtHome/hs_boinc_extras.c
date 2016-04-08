@@ -17,12 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \file
- * \ingroup lalapps_pulsar_EinsteinAtHome
- * \author Bernd Machenschalk, Reinhard Prix
- */
-
 /* Extras for building an Einstein@Home BOINC App from HierarchicalSearch
 */
 

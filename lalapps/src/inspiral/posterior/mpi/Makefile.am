@@ -1,8 +1,7 @@
-BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
 CC = $(MPICC) -std=gnu99
-AM_CPPFLAGS = -I $(srcdir)/.. @AM_CPPFLAGS@
+AM_CPPFLAGS += -I $(srcdir)/..
 LIBS += $(MPILIBS)
 
 if LALINFERENCE

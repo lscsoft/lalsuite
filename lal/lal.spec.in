@@ -4,16 +4,23 @@
 
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 1
+Release: 1%{?dist}
 Summary: LSC Algorithm Library
 License: GPL
 Group: LAL
-Source: %{name}-%{version}.tar.gz
-URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
-Packager: Jolien Creighton <jolien@uwm.edu>
+Source: %{name}-%{version}.tar.xz
+URL: https://wiki.ligo.org/DASWG/LALSuite
+Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig, python-devel, octave-devel, gsl-devel, fftw-devel, numpy, bc
-Requires: gsl, fftw
+BuildRequires: swig
+BuildRequires: python-devel
+BuildRequires: octave-devel
+BuildRequires: gsl-devel
+BuildRequires: fftw-devel
+BuildRequires: numpy
+BuildRequires: bc
+Requires: gsl
+Requires: fftw
 Prefix: %{_prefix}
 
 %description
@@ -25,7 +32,9 @@ that use the LAL library.
 Summary: Files and documentation needed for compiling programs that use LAL
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel, fftw-devel, fftw-static
+Requires: fftw-devel
+Requires: fftw-static
+Requires: gsl-devel
 %description devel
 The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library
@@ -35,7 +44,8 @@ as well as the documentation for the library.
 Summary: Python bindings for LAL
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python, numpy
+Requires: numpy
+Requires: python
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings.
@@ -101,4 +111,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files octave
 %defattr(-,root,root)
-%{_libexecdir}/octave/*/site/oct/*/lal.oct*
+%{_prefix}/lib*/octave/*/site/oct/*/lal.oct*
+
+# dates should be formatted using: 'date +"%a %b %d %Y"'
+%changelog
+* Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 6.16.0-1
+- Pre O2 packaging test release

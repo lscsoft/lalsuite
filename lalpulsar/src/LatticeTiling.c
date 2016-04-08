@@ -235,10 +235,13 @@ static void LT_GetBounds(
   )
 {
 
+  // Get bound information for this dimension
+  const LT_Bound *bound = &tiling->bounds[dim];
+
   // Get parameter-space bounds in dimension 'dim'
   LT_CallBoundFunc(tiling, dim, phys_point, phys_lower, phys_upper);
 
-  if (padding) {
+  if (bound->is_tiled && padding) {
 
     if (dim > 0) {
 
