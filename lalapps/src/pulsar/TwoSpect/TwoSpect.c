@@ -24,6 +24,7 @@
 
 /*
  * \file
+ * \ingroup lalapps_pulsar_TwoSpect
  * \author Evan Goetz
  */
 
