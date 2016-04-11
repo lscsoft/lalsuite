@@ -213,7 +213,9 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
         LALInferenceSetupROQmodel(thread->model, commandLine);
         fprintf(stderr, "done LALInferenceSetupROQmodel\n");
 
-     }
+    }else{
+      thread->model->roq_flag=0;
+    }
 
     LALInferenceCopyVariables(thread->model->params, thread->currentParams);
     LALInferenceCopyVariables(run_state->proposalArgs, thread->proposalArgs);

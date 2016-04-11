@@ -2525,6 +2525,8 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     if (LALInferenceGetProcParamVal(runState->commandLine, "--roqtime_steps")){
       LALInferenceSetupROQmodel(model, runState->commandLine);
       fprintf(stderr, "done LALInferenceSetupROQmodel\n");
+    } else {
+      model->roq_flag=0;
     }
     LALInferenceVariables *injparams = XLALCalloc(1, sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(model->params, injparams);
