@@ -33,7 +33,7 @@ parser.add_argument('-o','--output', type=str, nargs='?',
                     default=None,
                     help='output directory.')
 
-parser.add_argument('--pegasus-submit', action='store_true',
+parser.add_argument('--condor-submit', action='store_true',
                     default=False,
                     help='submits the test suite.')
 
@@ -152,13 +152,10 @@ lalinferenceargs = [ 'lalinference_pipe'
 		     , '-p'
 		     , './daglog'
 		     , args.output+'/fiducialBNS/'+os.path.basename(ini_file)
-		     , '--dax'
-		     , '--grid-site'
-		     , 'local'
                      ]
 
-if args.pegasus_submit:
-    lalinferenceargs.append('--pegasus-submit')
+if args.condor_submit:
+    lalinferenceargs.append('--condor-submit')
 
 subprocess.call(lalinferenceargs)
 
@@ -213,13 +210,10 @@ if args.gracedb:
                          , '-p'
                          , './daglog'
                          , args.output+'/GraceDB/'+os.path.basename(ini_file)
-                         , '--dax'
-                         , '--grid-site'
-                         , 'local'
                          ]
 
-    if args.pegasus_submit:
-        lalinferenceargs.append('--pegasus-submit')
+    if args.condor_submit:
+        lalinferenceargs.append('--condor-submit')
 
     subprocess.call(lalinferenceargs)
 
@@ -271,12 +265,9 @@ if args.bbh_injection != '':
                          , '-p'
                          , './daglog'
                          , args.output+'/fiducialBBH/'+os.path.basename(ini_file)
-                         , '--dax'
-                         , '--grid-site'
-                         , 'local'
                          ]
 
-    if args.pegasus_submit:
-        lalinferenceargs.append('--pegasus-submit')
+    if args.condor_submit:
+        lalinferenceargs.append('--condor-submit')
 
     subprocess.call(lalinferenceargs)
