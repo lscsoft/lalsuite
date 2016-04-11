@@ -2641,7 +2641,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
   ProcessParamsTable *procparam=NULL,*ppt=NULL;
   SimInspiralTable *injTable=NULL;
   FILE *tempfp;
-  unsigned int n_basis_linear, n_basis_quadratic, n_samples, time_steps;
+  unsigned int n_basis_linear=0, n_basis_quadratic=0, n_samples=0, time_steps=0;
  
   LIGOTimeGPS GPStrig;
   REAL8 endtime=0.0;
