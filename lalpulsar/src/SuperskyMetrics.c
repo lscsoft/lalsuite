@@ -226,7 +226,7 @@ static int SM_ComputeFittedSuperskyMetric(
   gsl_matrix *GAMAT(svd_V, 1 + smax, 1 + smax);
   gsl_vector *GAVEC(svd_S, 1 + smax);
   gsl_matrix_memcpy(svd_U, fitAt_fitA);
-  GCALL(gsl_linalg_SV_decomp(svd_U, svd_V, svd_S, tmpv));
+  XLAL_CHECK(gsl_linalg_SV_decomp(svd_U, svd_V, svd_S, tmpv) == 0, XLAL_EFAILED);
 
   // The columns of 'fitc' contain the least-square fitting coefficients for the orbital X and Y metric elements:
   //    fitc(:,j) = inv(fitA^T * fitA) * fitA^T * orb_metric(:,j)
@@ -236,7 +236,7 @@ static int SM_ComputeFittedSuperskyMetric(
     gsl_vector_view orb_metric_j = gsl_matrix_column(orb_metric, j);
     gsl_vector_view fitc_j = gsl_matrix_column(fitc, j);
     gsl_blas_dgemv(CblasTrans, 1.0, fitA, &orb_metric_j.vector, 0.0, tmpv);
-    GCALL(gsl_linalg_SV_solve(svd_U, svd_V, svd_S, tmpv, &fitc_j.vector));
+    XLAL_CHECK(gsl_linalg_SV_solve(svd_U, svd_V, svd_S, tmpv, &fitc_j.vector) == 0, XLAL_EFAILED);
   }
 
   // Construct the matrix 'subtract_orb', which subtracts the least-squares fit of
@@ -359,8 +359,8 @@ static int SM_ComputeDecoupledSuperskyMetric(
   gsl_permutation *GAPERM(fspin_fspin_dnorm_LU_perm, 1 + smax);
   int fspin_fspin_dnorm_LU_sign = 0;
   gsl_matrix_memcpy(fspin_fspin_dnorm_LU, fspin_fspin_dnorm);
-  GCALL(gsl_linalg_LU_decomp(fspin_fspin_dnorm_LU, fspin_fspin_dnorm_LU_perm, &fspin_fspin_dnorm_LU_sign));
-  GCALL(gsl_linalg_LU_invert(fspin_fspin_dnorm_LU, fspin_fspin_dnorm_LU_perm, fspin_fspin_dnorm_inv));
+  XLAL_CHECK(gsl_linalg_LU_decomp(fspin_fspin_dnorm_LU, fspin_fspin_dnorm_LU_perm, &fspin_fspin_dnorm_LU_sign) == 0, XLAL_EFAILED);
+  XLAL_CHECK(gsl_linalg_LU_invert(fspin_fspin_dnorm_LU, fspin_fspin_dnorm_LU_perm, fspin_fspin_dnorm_inv) == 0, XLAL_EFAILED);
 
   // Compute the additional sky offsets required to decouple the sky--sky and frequency blocks:
   //   decouple_sky_offsets = fspin_fspin_dnorm_transf * inv(fspin_fspin_dnorm) * fspin_fspin_dnorm_transf * fspin_sky
@@ -420,10 +420,10 @@ static int SM_ComputeAlignedSuperskyMetric(
   gsl_matrix *GAMAT(sky_evec, 3, 3);
   gsl_eigen_symmv_workspace *GALLOC(wksp, gsl_eigen_symmv_alloc(3));
   gsl_matrix_view sky_sky = gsl_matrix_submatrix(aligned_ssky_metric, 0, 0, 3, 3);
-  GCALL(gsl_eigen_symmv(&sky_sky.matrix, sky_eval, sky_evec, wksp));
+  XLAL_CHECK(gsl_eigen_symmv(&sky_sky.matrix, sky_eval, sky_evec, wksp) == 0, XLAL_EFAILED);
 
   // Sort the eigenvalues/vectors by descending absolute eigenvalue
-  GCALL(gsl_eigen_symmv_sort(sky_eval, sky_evec, GSL_EIGEN_SORT_ABS_DESC));
+  XLAL_CHECK(gsl_eigen_symmv_sort(sky_eval, sky_evec, GSL_EIGEN_SORT_ABS_DESC) == 0, XLAL_EFAILED);
 
   // Set the sky--sky block to the diagonal matrix of eigenvalues
   gsl_matrix_set_zero(&sky_sky.matrix);
@@ -446,7 +446,7 @@ static int SM_ComputeAlignedSuperskyMetric(
   // to ensure that that it represents a rotation
   gsl_permutation *GAPERM(LU_perm, 3);
   int LU_sign = 0;
-  GCALL(gsl_linalg_LU_decomp(sky_evec, LU_perm, &LU_sign));
+  XLAL_CHECK(gsl_linalg_LU_decomp(sky_evec, LU_perm, &LU_sign) == 0, XLAL_EFAILED);
   if (gsl_linalg_LU_det(sky_evec, LU_sign) < 0.0) {
     gsl_vector_view col = gsl_matrix_column(&align_sky.matrix, 2);
     gsl_vector_scale(&col.vector, -1.0);

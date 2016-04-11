@@ -980,9 +980,9 @@ int XLALSetTilingLatticeAndMetric(
     //   metric^-1 = basis * basis^T
     // Hence basis is the Cholesky decomposition of metric^-1
     gsl_matrix_memcpy(t_basis, t_metric);
-    GCALL(gsl_linalg_cholesky_decomp(t_basis), "Parameter-space metric is not positive definite");
-    GCALL(gsl_linalg_cholesky_invert(t_basis), "Parameter-space metric cannot be inverted");
-    GCALL(gsl_linalg_cholesky_decomp(t_basis), "Inverse of parameter-space metric is not positive definite");
+    XLAL_CHECK(gsl_linalg_cholesky_decomp(t_basis) == 0, XLAL_EFAILED, "Parameter-space metric is not positive definite");
+    XLAL_CHECK(gsl_linalg_cholesky_invert(t_basis) == 0, XLAL_EFAILED, "Parameter-space metric cannot be inverted");
+    XLAL_CHECK(gsl_linalg_cholesky_decomp(t_basis) == 0, XLAL_EFAILED, "Inverse of parameter-space metric is not positive definite");
 
     // gsl_linalg_cholesky_decomp() stores both basis and basis^T
     // in the same matrix; zero out upper triangle to get basis
@@ -1032,7 +1032,7 @@ int XLALSetTilingLatticeAndMetric(
       gsl_matrix_view Gp = gsl_matrix_submatrix(G, 0, 1, tn + 1, tn);
       LT_ReverseOrderRowsCols(&Gp.matrix);
       gsl_vector *GAVEC(tau, tn);
-      GCALL(gsl_linalg_QR_decomp(&Gp.matrix, tau), "'G' cannot be QR-decomposed");
+      XLAL_CHECK(gsl_linalg_QR_decomp(&Gp.matrix, tau) == 0, XLAL_EFAILED, "'G' cannot be QR-decomposed");
       gsl_matrix *GAMAT(Q, tn + 1, tn + 1);
       gsl_matrix *GAMAT(L, tn + 1, tn);
       gsl_linalg_QR_unpack(&Gp.matrix, tau, Q, L);
@@ -1075,7 +1075,7 @@ int XLALSetTilingLatticeAndMetric(
     gsl_matrix_memcpy(LU_decomp, tiling->tiled_generator);
     gsl_permutation *GAPERM(LU_perm, tn);
     int LU_sign = 0;
-    GCALL(gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign), "Generator matrix cannot be LU-decomposed");
+    XLAL_CHECK(gsl_linalg_LU_decomp(LU_decomp, LU_perm, &LU_sign) == 0, XLAL_EFAILED, "Generator matrix cannot be LU-decomposed");
 
     // Compute generator determinant
     const double generator_determinant = XLALMetricDeterminant(tiling->tiled_generator);
