@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stddef.h>
-#include <string.h>
 #include <lal/LALAtomicDatatypes.h>
 
 #if defined(__cplusplus)
@@ -629,11 +628,11 @@ void XLALError(const char *func,
 /** \cond DONT_DOXYGEN */
 /*
  * Helper macros for internal use only:
- * To allow for a possibly empty error message, these macros use the construct
+ * To allow for a possibly empty error message, these macros use
  *   snprintf(buf, sizeof(buf), "X" __VA_ARGS__)
- * to print any error message (preceded by "X", to silence -Wformat-zero-length)
- * to a string buffer 'buf', then print the error message only if 'buf' is longer
- * than 1, i.e. more than just the "X". This construct allows for
+ * to print any error message preceded by "X" (to silence -Wformat-zero-length)
+ * to a buffer 'buf', then print the error message with XLAL_PRINT_ERROR() only
+ * if 'buf' contains any characters after the "X". This construct allows for
  *   XLAL_ERROR(XLAL_EFUNC);
  *   XLAL_ERROR(XLAL_EFUNC, "%i < 0", n);
  * It does not allow a non-literal format string, e.g.
@@ -645,7 +644,7 @@ void XLALError(const char *func,
 	do { \
 		char _XLAL_ERROR_IMPL_buf_[1024]; \
 		snprintf(_XLAL_ERROR_IMPL_buf_, sizeof(_XLAL_ERROR_IMPL_buf_), "X" __VA_ARGS__); \
-		if (strlen(_XLAL_ERROR_IMPL_buf_) > 1) { \
+		if (_XLAL_ERROR_IMPL_buf_[1] != 0) { \
 			XLAL_PRINT_ERROR("%s", &_XLAL_ERROR_IMPL_buf_[1]); \
 		} \
 		XLALError(__func__, __FILE__, __LINE__, errnum); \
@@ -657,7 +656,7 @@ void XLALError(const char *func,
 		if (!(assertion)) { \
 			char _XLAL_CHECK_IMPL_buf_[1024]; \
 			snprintf(_XLAL_CHECK_IMPL_buf_, sizeof(_XLAL_CHECK_IMPL_buf_), "X" __VA_ARGS__); \
-			if (strlen(_XLAL_CHECK_IMPL_buf_) > 1) { \
+			if (_XLAL_CHECK_IMPL_buf_[1] != 0) { \
 				XLAL_PRINT_ERROR("%s", &_XLAL_CHECK_IMPL_buf_[1]); \
 			} else { \
 				XLAL_PRINT_ERROR("Check failed: %s", #assertion); \
