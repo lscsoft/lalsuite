@@ -248,6 +248,16 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
   // Return amplitude modulation coefficients
   Fstats->Mmunu = demod->prevMultiAMcoef->Mmunu;
 
+  // return per-detector antenna-pattern matrices
+  for ( UINT4 X=0; X < numDetectors; X ++ )
+    {
+      Fstats->MmunuX[X].Ad = multiAMcoef->data[X]->A;
+      Fstats->MmunuX[X].Bd = multiAMcoef->data[X]->B;
+      Fstats->MmunuX[X].Cd = multiAMcoef->data[X]->C;
+      Fstats->MmunuX[X].Dd = multiAMcoef->data[X]->D;
+      Fstats->MmunuX[X].Ed = 0;
+    }
+
 #if COLLECT_TIMING
   toc = XLALGetCPUTime();
   tauTotal = (toc - tic);
