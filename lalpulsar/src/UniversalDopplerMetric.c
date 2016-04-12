@@ -1009,12 +1009,34 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
   saveGSLErrorHandler = gsl_set_error_handler_off();
 
   // loop over segments, detectors, and integration 'units'
-#pragma omp parallel for
-  for ( size_t k = 0; k < Nseg; ++k ) {
-#pragma omp parallel for
-    for ( size_t X = 0; X < numDet; ++X ) {
-#pragma omp parallel for
-      for ( size_t n = 0; n < intN[k][X]; ++n ) {
+  // together using a single index, for parallelisation
+  {
+    size_t index_max = 0;
+    for ( size_t k = 0; k < Nseg; ++k ) {
+      for ( size_t X = 0; X < numDet; ++X ) {
+        index_max += intN[k][X];
+      }
+    }
+#pragma omp parallel for schedule(static)
+    for ( size_t index = 0; index < index_max; ++index )
+      {
+    
+        // break single index into 'k', 'X', and 'n'
+        size_t k = 0, X = 0, n = 0, index_break = index + 1;
+        for ( k = 0; k < Nseg; ++k ) {
+          for ( X = 0; X < numDet; ++X ) {
+            if ( index_break > intN[k][X] ) {
+              index_break -= intN[k][X];
+            } else {
+              n = index_break - 1;
+              index_break = 0;
+              break;
+            }
+          }
+          if ( index_break == 0 ) {
+            break;
+          }
+        }
 
         InputOutputInfo *io = &intInOut[k][X][n];
 
@@ -1066,9 +1088,8 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
           io->av_j_err_sq = SQUARE( scale2 * abserr);
         }
 
-      } /* for n < intN */
-    } // for X < numDet
-  } // for k < Nseg
+      } /* for index < index_max */
+  }
 
   // restore GSL error handling
   gsl_set_error_handler( saveGSLErrorHandler );
