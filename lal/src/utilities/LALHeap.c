@@ -224,46 +224,6 @@ int XLALHeapAdd(
 
 }
 
-int XLALHeapAddCopy(
-  LALHeap *h,
-  const void *x,
-  const size_t siz
-  )
-{
-
-  /* Check input */
-  XLAL_CHECK( h != NULL, XLAL_EFAULT );
-  XLAL_CHECK( x != NULL, XLAL_EFAULT );
-  XLAL_CHECK( siz > 0, XLAL_EFAULT );
-
-  if ( h->max_size == 0 || h->n < h->max_size ) { /* If heap is unlimited, or not full yet */
-
-    /* Resize binary heap; designed so that resizing costs amortized constant time */
-    if ( h->n + 1 > h->data_len ) {
-      XLAL_CHECK( heap_resize( h ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-
-    /* Create copy of new element */
-    void *y = XLALMalloc(siz);
-    XLAL_CHECK( y != NULL, XLAL_ENOMEM );
-    memcpy(y, x, siz);
-
-    /* Add new element to end of binary heap, and bubble up to restore heap property */
-    h->data[h->n++] = y;
-    heap_bubble_up( h, h->n - 1 );
-
-  } else if ( UNORDERED( h, h->data[0], x ) ) { /* If new element should replace root */
-
-    /* Replace root with new element, and trickle down to restore heap property */
-    memcpy(h->data[0], x, siz);
-    heap_trickle_down( h, 0 );
-
-  }
-
-  return XLAL_SUCCESS;
-
-}
-
 int XLALHeapRemoveRoot(
   LALHeap *h
   )
