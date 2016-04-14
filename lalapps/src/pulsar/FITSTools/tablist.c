@@ -41,10 +41,9 @@ int main(int argc, char *argv[])
 {
   fitsfile *fptr = 0;      /* FITS file pointer, defined in fitsio.h */
   char *val = 0, value[1000], nullstr[]="*";
-  char keyword[FLEN_KEYWORD], colname[FLEN_VALUE];
+  char keyword[FLEN_KEYWORD], colname[1000][FLEN_VALUE];
   int status = 0;   /*  CFITSIO status value MUST be initialized to zero!  */
   int hdunum = 0, hdutype = 0, ncols = 0, ii = 0, anynul = 0, dispwidth[1000];
-  int firstcol = 0, lastcol = 0, linewidth = 0;
   long jj = 0, nrows = 0;
 
   if (argc != 2) {
@@ -85,43 +84,36 @@ int main(int argc, char *argv[])
       fits_get_num_rows(fptr, &nrows, &status);
       fits_get_num_cols(fptr, &ncols, &status);
 
-      while (lastcol < ncols) {
-        linewidth = 0;
-        firstcol = lastcol+1;
-        for (lastcol = firstcol; lastcol <= ncols; lastcol++) {
-          fits_get_col_display_width
-            (fptr, lastcol, &dispwidth[lastcol], &status);
-          linewidth += dispwidth[lastcol] + 1;
+      for (ii = 1; ii <= ncols; ii++) {
+        fits_make_keyn("TTYPE", ii, keyword, &status);
+        fits_read_key(fptr, TSTRING, keyword, colname[ii], NULL, &status);
+        fits_get_col_display_width(fptr, ii, &dispwidth[ii], &status);
+        if (dispwidth[ii] < (int)strlen(colname[ii])) {
+          dispwidth[ii] = (int)strlen(colname[ii]);
         }
-        if (lastcol > firstcol) {
-          lastcol--;  /* the last col didn't fit */
-        }
+      }
 
-        /* print column names as column headers */
-        fprintf(fout, "##\n## ");
-        for (ii = firstcol; ii <= lastcol; ii++) {
-          fits_make_keyn("TTYPE", ii, keyword, &status);
-          fits_read_key(fptr, TSTRING, keyword, colname, NULL, &status);
-          colname[dispwidth[ii]] = '\0';  /* truncate long names */
-          fprintf(fout, "%*s ",dispwidth[ii], colname);
-        }
-        fprintf(fout, "\n");  /* terminate header line */
+      /* print column names as column headers */
+      fprintf(fout, "##\n## ");
+      for (ii = 1; ii <= ncols; ii++) {
+        fprintf(fout, "%*s ",dispwidth[ii], colname[ii]);
+      }
+      fprintf(fout, "\n");  /* terminate header line */
 
-        /* print each column, row by row (there are faster ways to do this) */
-        val = value;
-        for (jj = 1; jj <= nrows && !status; jj++) {
-          fprintf(fout, "   ");
-          for (ii = firstcol; ii <= lastcol; ii++) {
-            /* read value as a string, regardless of intrinsic datatype */
-            if (fits_read_col_str(fptr,ii,jj, 1, 1, nullstr,
-                                  &val, &anynul, &status)) {
-              break;  /* jump out of loop on error */
-            }
-
-            fprintf(fout, "%-*s ",dispwidth[ii], value);
+      /* print each column, row by row (there are faster ways to do this) */
+      val = value;
+      for (jj = 1; jj <= nrows && !status; jj++) {
+        fprintf(fout, "   ");
+        for (ii = 1; ii <= ncols; ii++) {
+          /* read value as a string, regardless of intrinsic datatype */
+          if (fits_read_col_str(fptr,ii,jj, 1, 1, nullstr,
+                                &val, &anynul, &status)) {
+            break;  /* jump out of loop on error */
           }
-          fprintf(fout, "\n");
+
+          fprintf(fout, "%*s ",dispwidth[ii], value);
         }
+        fprintf(fout, "\n");
       }
     }
     fits_close_file(fptr, &status);
