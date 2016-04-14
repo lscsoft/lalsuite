@@ -30,7 +30,6 @@
 #define _PPE_UTILS_H
 
 #include "pulsar_parameter_estimation_nested.h"
-#include "ppe_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,8 +51,8 @@ INT4 count_csv( CHAR *csvline );
 INT4 recognised_parameter( CHAR *parname );
 void check_and_add_fixed_variable( LALInferenceVariables *vars, const char *name, void *value, LALInferenceVariableType type );
 
-TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
-                                              CHAR *tfile,
+TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile,
+                                              CHAR **tfile,
                                               PulsarParameters *pulsar,
                                               INT4 gpsstart, INT4 gpsend );
 

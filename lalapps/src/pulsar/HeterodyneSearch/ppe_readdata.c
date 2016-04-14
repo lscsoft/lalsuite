@@ -722,25 +722,19 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
         tfile = NULL;
         ttype = TIMECORRECTION_ORIGINAL;
       }
+
+      /* check ephemeris files exist and if not output an error message */
+      if( fopen(sfile, "r") == NULL || fopen(efile, "r") == NULL ){
+        fprintf(stderr, "Error... ephemeris files not, or incorrectly, defined!\n");
+        exit(3);
+      }
     }
     else{ /* try getting files automatically */
-      CHAR efiletmp[1024], sfiletmp[1024], tfiletmp[1024];
-
-      if( !( ttype = XLALAutoSetEphemerisFiles( efiletmp, sfiletmp, tfiletmp, pulsar,
+      if( !( ttype = XLALAutoSetEphemerisFiles( &efile, &sfile, &tfile, pulsar,
             ifomodel->times->data[0].gpsSeconds, ifomodel->times->data[datalength-1].gpsSeconds ) ) ){
         fprintf(stderr, "Error... not been able to set ephemeris files!\n");
         exit(3);
       }
-
-      efile = XLALStringDuplicate(efiletmp);
-      sfile = XLALStringDuplicate(sfiletmp);
-      tfile = XLALStringDuplicate(tfiletmp);
-    }
-
-    /* check ephemeris files exist and if not output an error message */
-    if( fopen(sfile, "r") == NULL || fopen(efile, "r") == NULL ){
-      fprintf(stderr, "Error... ephemeris files not, or incorrectly, defined!\n");
-      exit(3);
     }
 
     /* set up ephemeris information */

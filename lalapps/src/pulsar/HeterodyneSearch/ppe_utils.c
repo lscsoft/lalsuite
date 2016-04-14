@@ -763,10 +763,10 @@ INT4 recognised_parameter( CHAR *parname ){
 /**
  * \brief Automatically set the solar system ephemeris file based on environment variables and data time span
  *
- * This function will attempt to find Earth and Sun ephemeris files based on LAL environment variables (as set up by
- * <code> lalpulsar-user-env.(c)sh </code>) and a given start and end GPS time (presumably taken from the data that is
- * to be analysed). It requires \c LALPULSAR is installed and the \c LALPULSAR_PREFIX variable is set, which should mean
- * that ephemeris files are installed in the directory \c ${LALPULSAR_PREFIX}/share/lalpulsar/.
+ * This function will attempt to construct the file name for Sun, Earth and time correction ephemeris files
+ * based on the ephemeris used for the equivalent TEMPO(2) pulsar timing information. It assumes that the
+ * ephemeris files are those constructed between 2000 and 2020. The path to the file is not required as this
+ * will be found in \c XLALInitBarycenter.
  *
  * \param efile [in] a string that will return the Earth ephemeris file
  * \param sfile [in] a string that will return the Sun ephemeris file
@@ -777,49 +777,31 @@ INT4 recognised_parameter( CHAR *parname ){
  *
  * \return The TimeCorrectionType e.g. TDB or TCB
  */
-TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, CHAR *tfile, PulsarParameters *pulsar,
+TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile, CHAR **tfile, PulsarParameters *pulsar,
                                               INT4 gpsstart, INT4 gpsend ){
   /* set the times that the ephemeris files span */
   INT4 ephemstart = 630720013; /* GPS time of Jan 1, 2000, 00:00:00 UTC */
   INT4 ephemend = 1261872015; /* GPS time of Jan 1, 2020, 00:00:00 UTC */
-  CHAR *eftmp = NULL, *sftmp = NULL, *tftmp = NULL;
   TimeCorrectionType ttype = TIMECORRECTION_NONE;
-
-  CHAR *lalpath = NULL, *lalpulsarpath = NULL;
 
   if( gpsstart < ephemstart || gpsend < ephemstart || gpsstart > ephemend || gpsend > ephemend ){
     XLALPrintError("Start and end times are outside the ephemeris file ranges!\n");
     XLAL_ERROR(XLAL_EFUNC);
   }
 
-  /* first check that the path to the Ephemeris files is available in the
-     environment variables */
-  if((lalpath = getenv("LALPULSAR_PREFIX")) == NULL){
-    XLALPrintError("LALPULSAR_PREFIX environment variable not set. Cannot automatically generate ephemeris files!\n");
-    XLAL_ERROR(XLAL_EFUNC);
-  }
-
-  lalpulsarpath = XLALStringDuplicate( lalpath );
-
-  if ( (lalpulsarpath = XLALStringAppend(lalpulsarpath, "/share/lalpulsar/")) == NULL ) { XLAL_ERROR(XLAL_EFUNC); }
-
-  eftmp = XLALStringDuplicate(lalpulsarpath);
-  sftmp = XLALStringDuplicate(lalpulsarpath);
-  tftmp = XLALStringDuplicate(lalpulsarpath);
-
-  eftmp = XLALStringAppend(eftmp, "earth00-19-");
-  sftmp = XLALStringAppend(sftmp, "sun00-19-");
+  *efile = XLALStringDuplicate("earth00-19-");
+  *sfile = XLALStringDuplicate("sun00-19-");
 
   if( !PulsarCheckParam(pulsar, "EPHEM") ){
     /* default to use DE405 */
-    eftmp = XLALStringAppend(eftmp, "DE405");
-    sftmp = XLALStringAppend(sftmp, "DE405");
+    *efile = XLALStringAppend(*efile, "DE405");
+    *sfile = XLALStringAppend(*sfile, "DE405");
   }
   else{
     if( !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE405") || !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE200") ||
         !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE414") || !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE421") ){
-      eftmp = XLALStringAppend(eftmp, PulsarGetStringParam(pulsar, "EPHEM"));
-      sftmp = XLALStringAppend(sftmp, PulsarGetStringParam(pulsar, "EPHEM"));
+      *efile = XLALStringAppend(*efile, PulsarGetStringParam(pulsar, "EPHEM"));
+      *sfile = XLALStringAppend(*sfile, PulsarGetStringParam(pulsar, "EPHEM"));
     }
     else{
       XLALPrintError("Unknown ephemeris %s in par file\n", PulsarGetStringParam(pulsar, "EPHEM"));
@@ -827,44 +809,24 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, CHAR *tf
     }
   }
 
-  /* add .dat extension */
-  eftmp = XLALStringAppend(eftmp, ".dat.gz");
-  sftmp = XLALStringAppend(sftmp, ".dat.gz");
-
-  if ( eftmp == NULL || sftmp == NULL ) { XLAL_ERROR(XLAL_EFUNC); }
-
-  XLALStringCopy( efile, eftmp, strlen(eftmp)+1 );
-  XLALStringCopy( sfile, sftmp, strlen(sftmp)+1 );
-
-  /* double check that the files exist */
-  if( fopen(sfile, "r") == NULL || fopen(efile, "r") == NULL ){
-    XLALPrintError("Error... ephemeris files not, or incorrectly, defined!\n");
-    XLAL_ERROR(XLAL_EFUNC);
-  }
+  /* add .dat.gz extension */
+  *efile = XLALStringAppend(*efile, ".dat.gz");
+  *sfile = XLALStringAppend(*sfile, ".dat.gz");
 
   if( !PulsarCheckParam( pulsar, "UNITS" ) ){
     /* default to using TCB units */
-    tftmp = XLALStringAppend(tftmp, "te405_2000-2019.dat.gz");
+    *tfile = XLALStringDuplicate("te405_2000-2019.dat.gz");
     ttype = TIMECORRECTION_TCB;
   }
   else{
     if ( !strcmp( PulsarGetStringParam(pulsar, "UNITS"), "TDB" ) ){
-      tftmp = XLALStringAppend(tftmp, "tdb_2000-2019.dat.gz");
+      *tfile = XLALStringDuplicate("tdb_2000-2019.dat.gz");
       ttype = TIMECORRECTION_TDB;
     }
     else{
       XLALPrintError("Error... unknown units %s in par file!\n", PulsarGetStringParam(pulsar, "UNITS"));
       XLAL_ERROR(XLAL_EFUNC);
     }
-  }
-
-  if ( tftmp == NULL ) { XLAL_ERROR(XLAL_EFUNC); }
-
-  XLALStringCopy( tfile, tftmp, strlen(tftmp)+1 );
-
-  if( fopen(tfile, "r") == NULL ){
-    XLALPrintError("Error... time ephemeris files not, or incorrectly, defined!\n");
-    XLAL_ERROR(XLAL_EFUNC);
   }
 
   return ttype;
