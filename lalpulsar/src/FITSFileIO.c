@@ -1459,7 +1459,7 @@ int XLALFITSTableWriteRow(FITSFile *file, const void *record)
     CHAR *value = bad_cast.c;
     for (size_t n = 0; n < file->table.noffsets[i]; ++n) {
       if (n > 0) {
-        value = *((CHAR**) value);
+        value = *((void**) value);
       }
       value += file->table.offsets[i][n];
     }
@@ -1509,7 +1509,7 @@ int XLALFITSTableReadRow(FITSFile *file, void *record, UINT8 *rem_nrows)
     CHAR *value = (CHAR *) record;
     for (size_t n = 0; n < file->table.noffsets[i]; ++n) {
       if (n > 0) {
-        value = *((CHAR**) value);
+        value = *((void**) value);
       }
       value += file->table.offsets[i][n];
     }
