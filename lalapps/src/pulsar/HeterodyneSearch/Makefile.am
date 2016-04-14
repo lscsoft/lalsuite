@@ -81,6 +81,4 @@ endif
 EXTRA_DIST += \
 	test_heterodyne_pulsar.sh \
 	make_frame_cache H1response.txt \
-	H-CW_Injection-875206560-120.gwf \
-	pulsarpputils.py \
-	pulsar_pipeline_utils.py
+	H-CW_Injection-875206560-120.gwf
