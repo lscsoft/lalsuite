@@ -87,7 +87,8 @@ struct tagFITSFile {
   } array;
   struct {				// Parameters of current table
     int tfields;				// Number of columns in table
-    intptr_t offset[FFIO_MAX];			// Offset of field in table row record
+    size_t noffsets[FFIO_MAX];			// Number of nested offsets to field in table row record
+    size_t offsets[FFIO_MAX][2];		// List of nested offsets to field in table row record
     CHAR ttype[FFIO_MAX][FLEN_VALUE];		// Names of columns in table
     CHAR tform[FFIO_MAX][FLEN_VALUE];		// Format of columns in table
     int datatype[FFIO_MAX];			// Datatype of columns in table
@@ -1288,7 +1289,7 @@ XLAL_FAIL:
 
 }
 
-static int XLALFITSTableColumnAdd(FITSFile *file, const CHAR *col_name, const CHAR *col_suffix, const void *record, const size_t record_size, const void *field, const size_t field_size, const size_t elem_size, const int typechar, const int datatype)
+static int XLALFITSTableColumnAdd(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const CHAR *col_suffix, const void *record, const size_t record_size, const void *field, const size_t field_size, const size_t elem_size, const int typechar, const int datatype)
 {
   int UNUSED status = 0;
 
@@ -1300,6 +1301,8 @@ static int XLALFITSTableColumnAdd(FITSFile *file, const CHAR *col_name, const CH
   XLAL_CHECK_FAIL(col_name != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(col_suffix != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(strlen(col_name) + strlen(col_suffix) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s%s' is too long", col_name, col_suffix);
+  XLAL_CHECK_FAIL(0 < noffsets && noffsets <= 2, XLAL_EINVAL);
+  XLAL_CHECK_FAIL(offsets != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(record != NULL, XLAL_EFAULT);
   XLAL_CHECK_FAIL(record_size > 0, XLAL_EINVAL);
   XLAL_CHECK_FAIL(field != NULL, XLAL_EFAULT);
@@ -1315,8 +1318,10 @@ static int XLALFITSTableColumnAdd(FITSFile *file, const CHAR *col_name, const CH
   XLAL_CHECK_FAIL(file->table.tfields <= FFIO_MAX, XLAL_ESIZE);
   const int i = file->table.tfields++;
 
-  // Store field offset
-  file->table.offset[i] = ((intptr_t) field) - ((intptr_t) record);
+  // Store field offsets
+  file->table.noffsets[i] = noffsets;
+  memcpy(file->table.offsets[i], offsets, sizeof(file->table.offsets[i]));
+  file->table.offsets[i][noffsets - 1] = (size_t)(((intptr_t) field) - ((intptr_t) record));
 
   // Copy column name
   snprintf(file->table.ttype[i], sizeof(file->table.ttype[i]), "%s%s", col_name, col_suffix);
@@ -1363,59 +1368,59 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSTableColumnAddBOOLEAN(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const BOOLEAN *field, const size_t field_size)
+int XLALFITSTableColumnAddBOOLEAN(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const BOOLEAN *field, const size_t field_size)
 {
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(BOOLEAN), 'L', TLOGICAL) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof(BOOLEAN), 'L', TLOGICAL) == XLAL_SUCCESS, XLAL_EFUNC);
   return XLAL_SUCCESS;
 }
 
-int XLALFITSTableColumnAddINT2(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const INT2 *field, const size_t field_size)
+int XLALFITSTableColumnAddINT2(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT2 *field, const size_t field_size)
 {
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(INT2), 'I', TSHORT) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof(INT2), 'I', TSHORT) == XLAL_SUCCESS, XLAL_EFUNC);
   return XLAL_SUCCESS;
 }
 
-int XLALFITSTableColumnAddINT4(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const INT4 *field, const size_t field_size)
+int XLALFITSTableColumnAddINT4(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT4 *field, const size_t field_size)
 {
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(INT4), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof(INT4), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
   return XLAL_SUCCESS;
 }
 
-int XLALFITSTableColumnAddREAL4(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const REAL4 *field, const size_t field_size)
+int XLALFITSTableColumnAddREAL4(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL4 *field, const size_t field_size)
 {
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(REAL4), 'E', TFLOAT) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof(REAL4), 'E', TFLOAT) == XLAL_SUCCESS, XLAL_EFUNC);
   return XLAL_SUCCESS;
 }
 
-int XLALFITSTableColumnAddREAL8(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const REAL8 *field, const size_t field_size)
+int XLALFITSTableColumnAddREAL8(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL8 *field, const size_t field_size)
 {
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(REAL8), 'D', TDOUBLE) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof(REAL8), 'D', TDOUBLE) == XLAL_SUCCESS, XLAL_EFUNC);
   return XLAL_SUCCESS;
 }
 
-int XLALFITSTableColumnAddCOMPLEX8(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const COMPLEX8 *field, const size_t field_size)
+int XLALFITSTableColumnAddCOMPLEX8(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX8 *field, const size_t field_size)
 {
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(COMPLEX8), 'C', TCOMPLEX) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof(COMPLEX8), 'C', TCOMPLEX) == XLAL_SUCCESS, XLAL_EFUNC);
   return XLAL_SUCCESS;
 }
 
-int XLALFITSTableColumnAddCOMPLEX16(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const COMPLEX16 *field, const size_t field_size)
+int XLALFITSTableColumnAddCOMPLEX16(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX16 *field, const size_t field_size)
 {
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(COMPLEX16), 'M', TDBLCOMPLEX) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof(COMPLEX16), 'M', TDBLCOMPLEX) == XLAL_SUCCESS, XLAL_EFUNC);
   return XLAL_SUCCESS;
 }
 
-int XLALFITSTableColumnAddCHAR(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const void *field, const size_t field_size)
+int XLALFITSTableColumnAddCHAR(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *field, const size_t field_size)
 {
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "", record, record_size, field, field_size, sizeof(CHAR), 'A', TSTRING) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof(CHAR), 'A', TSTRING) == XLAL_SUCCESS, XLAL_EFUNC);
   return XLAL_SUCCESS;
 }
 
-int XLALFITSTableColumnAddGPSTime(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size)
+int XLALFITSTableColumnAddGPSTime(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size)
 {
   XLAL_CHECK(field_size == sizeof(LIGOTimeGPS), XLAL_EINVAL, "Array of GPS times is not supported");
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "_s", record, record_size, &(field->gpsSeconds), sizeof(field->gpsSeconds), sizeof(field->gpsSeconds), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, "_ns", record, record_size, &(field->gpsNanoSeconds), sizeof(field->gpsNanoSeconds), sizeof(field->gpsNanoSeconds), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, noffsets, offsets, "_s", record, record_size, &(field->gpsSeconds), sizeof(field->gpsSeconds), sizeof(field->gpsSeconds), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK(XLALFITSTableColumnAdd(file, col_name, noffsets, offsets, "_ns", record, record_size, &(field->gpsNanoSeconds), sizeof(field->gpsNanoSeconds), sizeof(field->gpsNanoSeconds), 'J', TINT32BIT) == XLAL_SUCCESS, XLAL_EFUNC);
   return XLAL_SUCCESS;
 }
 
@@ -1451,8 +1456,14 @@ int XLALFITSTableWriteRow(FITSFile *file, const void *record)
       const void *cv;
       CHAR *c;
     } bad_cast = { .cv = record };
-    void *value = bad_cast.c + file->table.offset[i];
-    void *pvalue = (file->table.datatype[i] == TSTRING) ? &value : value;
+    CHAR *value = bad_cast.c;
+    for (size_t n = 0; n < file->table.noffsets[i]; ++n) {
+      if (n > 0) {
+        value = *((CHAR**) value);
+      }
+      value += file->table.offsets[i][n];
+    }
+    void *pvalue = (file->table.datatype[i] == TSTRING) ? (void*) &value : value;
     CALL_FITS(fits_write_col, file->ff, file->table.datatype[i], 1 + i, file->table.irow, 1, file->table.nelements[i], pvalue);
   }
 
@@ -1495,8 +1506,14 @@ int XLALFITSTableReadRow(FITSFile *file, void *record, UINT8 *rem_nrows)
 
   // Read next table row
   for (int i = 0; i < file->table.tfields; ++i) {
-    void *value = ((CHAR *) record) + file->table.offset[i];
-    void *pvalue = (file->table.datatype[i] == TSTRING) ? &value : value;
+    CHAR *value = (CHAR *) record;
+    for (size_t n = 0; n < file->table.noffsets[i]; ++n) {
+      if (n > 0) {
+        value = *((CHAR**) value);
+      }
+      value += file->table.offsets[i][n];
+    }
+    void *pvalue = (file->table.datatype[i] == TSTRING) ? (void*) &value : value;
     CALL_FITS(fits_read_col, file->ff, file->table.datatype[i], 1 + i, file->table.irow, 1, file->table.nelements[i], NULL, pvalue, NULL);
   }
 
