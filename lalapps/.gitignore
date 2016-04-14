@@ -198,6 +198,10 @@ src/pulsar/HeterodyneSearch/lalapps_CrabTNHeterodyne
 src/pulsar/HeterodyneSearch/lalapps_SplInter
 src/pulsar/HeterodyneSearch/lalapps_create_pulsar_signal_frame
 src/pulsar/HeterodyneSearch/lalapps_heterodyne_pulsar
+src/pulsar/HeterodyneSearch/lalapps_knope
+src/pulsar/HeterodyneSearch/lalapps_knope_collate_results
+src/pulsar/HeterodyneSearch/lalapps_knope_create_prior
+src/pulsar/HeterodyneSearch/lalapps_knope_result_page
 src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation
 src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation_nested
 src/pulsar/HeterodyneSearch/lalapps_ssbtodetector
