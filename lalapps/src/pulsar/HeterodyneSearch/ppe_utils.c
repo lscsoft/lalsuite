@@ -777,7 +777,7 @@ INT4 recognised_parameter( CHAR *parname ){
  *
  * \return The TimeCorrectionType e.g. TDB or TCB
  */
-TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, CHAR *tfile, BinaryPulsarParams  pulsar,
+TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, CHAR *tfile, PulsarParameters *pulsar,
                                               INT4 gpsstart, INT4 gpsend ){
   /* set the times that the ephemeris files span */
   INT4 ephemstart = 630720013; /* GPS time of Jan 1, 2000, 00:00:00 UTC */
@@ -810,19 +810,19 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, CHAR *tf
   eftmp = XLALStringAppend(eftmp, "earth00-19-");
   sftmp = XLALStringAppend(sftmp, "sun00-19-");
 
-  if( pulsar.ephem == NULL ){
+  if( !PulsarCheckParam(pulsar, "EPHEM") ){
     /* default to use DE405 */
     eftmp = XLALStringAppend(eftmp, "DE405");
     sftmp = XLALStringAppend(sftmp, "DE405");
   }
   else{
-    if( !strcmp(pulsar.ephem, "DE405") || !strcmp(pulsar.ephem, "DE200") ||
-        !strcmp(pulsar.ephem, "DE414") ){
-      eftmp = XLALStringAppend(eftmp, pulsar.ephem);
-      sftmp = XLALStringAppend(sftmp, pulsar.ephem);
+    if( !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE405") || !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE200") ||
+        !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE414") || !strcmp(PulsarGetStringParam(pulsar, "EPHEM"), "DE421") ){
+      eftmp = XLALStringAppend(eftmp, PulsarGetStringParam(pulsar, "EPHEM"));
+      sftmp = XLALStringAppend(sftmp, PulsarGetStringParam(pulsar, "EPHEM"));
     }
     else{
-      XLALPrintError("Unknown ephemeris %s in par file\n", pulsar.ephem);
+      XLALPrintError("Unknown ephemeris %s in par file\n", PulsarGetStringParam(pulsar, "EPHEM"));
       XLAL_ERROR(XLAL_EFUNC);
     }
   }
@@ -842,18 +842,18 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile, CHAR *tf
     XLAL_ERROR(XLAL_EFUNC);
   }
 
-  if( pulsar.units == NULL ){
+  if( !PulsarCheckParam( pulsar, "UNITS" ) ){
     /* default to using TCB units */
     tftmp = XLALStringAppend(tftmp, "te405_2000-2019.dat.gz");
     ttype = TIMECORRECTION_TCB;
   }
   else{
-    if ( !strcmp( pulsar.units, "TDB" ) ){
+    if ( !strcmp( PulsarGetStringParam(pulsar, "UNITS"), "TDB" ) ){
       tftmp = XLALStringAppend(tftmp, "tdb_2000-2019.dat.gz");
       ttype = TIMECORRECTION_TDB;
     }
     else{
-      XLALPrintError("Error... unknown units %s in par file!\n", pulsar.units);
+      XLALPrintError("Error... unknown units %s in par file!\n", PulsarGetStringParam(pulsar, "UNITS"));
       XLAL_ERROR(XLAL_EFUNC);
     }
   }

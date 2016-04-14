@@ -54,7 +54,7 @@ void check_and_add_fixed_variable( LALInferenceVariables *vars, const char *name
 
 TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR *efile, CHAR *sfile,
                                               CHAR *tfile,
-                                              BinaryPulsarParams pulsar,
+                                              PulsarParameters *pulsar,
                                               INT4 gpsstart, INT4 gpsend );
 
 #ifdef __cplusplus

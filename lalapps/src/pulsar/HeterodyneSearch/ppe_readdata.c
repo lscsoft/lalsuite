@@ -131,7 +131,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
   INT4 ml = 1;
 
   CHAR *parFile = NULL;
-  BinaryPulsarParams pulsar;
+  PulsarParameters *pulsar;
 
   runState->data = NULL;
 
@@ -168,7 +168,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
   parFile = XLALStringDuplicate( ppt->value );
 
   /* get the pulsar parameters to give a value of f */
-  XLALReadTEMPOParFile( &pulsar, parFile );
+  pulsar = XLALReadTEMPOParFileNew( parFile );
 
   /* get the detectors - must */
   ppt = LALInferenceGetProcParamVal( commandLine, "--detectors" );
@@ -242,7 +242,11 @@ detectors specified (no. dets = %d)\n", ml, ml, numDets);
       REAL8 pfreq = 0.;
 
       /* putting in pulsar frequency at f here */
-      pfreq = pulsar.f0;
+      if ( PulsarCheckParam(pulsar, "F0") ) { pfreq = PulsarGetREAL8Param( pulsar, "F0" ); }
+      else {
+        XLALPrintError("%s: No source frequency given in parameter file", __func__);
+        XLAL_ERROR_VOID( XLAL_EINVAL );
+      }
 
       tempdets = XLALStringDuplicate( detectors );
 
@@ -708,8 +712,8 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       if ( pptt ){
         tfile = XLALStringDuplicate( pptt->value );
 
-        if ( pulsar.units != NULL ){
-          if( !strcmp(pulsar.units, "TDB") ) { ttype = TIMECORRECTION_TDB; }
+        if ( PulsarCheckParam( pulsar, "UNITS" ) ) {
+          if( !strcmp(PulsarGetStringParam(pulsar, "UNITS"), "TDB") ) { ttype = TIMECORRECTION_TDB; }
           else { ttype = TIMECORRECTION_TCB; } /* default to TCB otherwise */
         }
         else { ttype = TIMECORRECTION_TCB; }
@@ -937,7 +941,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
   /* check for binary model */
   CHAR *binarymodel = NULL;
-  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "BINARY") ){
+  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "BINARY" ) ){
     binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->threads[0]->currentParams, "BINARY" ));
 
     /* now remove from runState->params (as it conflict with calls to LALInferenceCompareVariables in the proposal) */
