@@ -1454,14 +1454,14 @@ int XLALFITSTableWriteRow(FITSFile *file, const void *record)
   for (int i = 0; i < file->table.tfields; ++i) {
     union {
       const void *cv;
-      CHAR *c;
+      void *v;
     } bad_cast = { .cv = record };
-    CHAR *value = bad_cast.c;
+    void *value = bad_cast.v;
     for (size_t n = 0; n < file->table.noffsets[i]; ++n) {
       if (n > 0) {
         value = *((void**) value);
       }
-      value += file->table.offsets[i][n];
+      value = (void*)(((intptr_t) value) + file->table.offsets[i][n]);
     }
     void *pvalue = (file->table.datatype[i] == TSTRING) ? (void*) &value : value;
     CALL_FITS(fits_write_col, file->ff, file->table.datatype[i], 1 + i, file->table.irow, 1, file->table.nelements[i], pvalue);
@@ -1506,12 +1506,12 @@ int XLALFITSTableReadRow(FITSFile *file, void *record, UINT8 *rem_nrows)
 
   // Read next table row
   for (int i = 0; i < file->table.tfields; ++i) {
-    CHAR *value = (CHAR *) record;
+    void *value = record;
     for (size_t n = 0; n < file->table.noffsets[i]; ++n) {
       if (n > 0) {
         value = *((void**) value);
       }
-      value += file->table.offsets[i][n];
+      value = (void*)(((intptr_t) value) + file->table.offsets[i][n]);
     }
     void *pvalue = (file->table.datatype[i] == TSTRING) ? (void*) &value : value;
     CALL_FITS(fits_read_col, file->ff, file->table.datatype[i], 1 + i, file->table.irow, 1, file->table.nelements[i], NULL, pvalue, NULL);
