@@ -22,9 +22,16 @@ inference_progs = \
 endif
 endif
 endif
-bin_PROGRAMS = $(frame_progs) $(inference_progs) lalapps_CrabTNHeterodyne lalapps_ssbtodetector
+bin_PROGRAMS = $(frame_progs) $(inference_progs) lalapps_CrabTNHeterodyne lalapps_ssbtodetector lalapps_pulsar_frequency_evolution
 
 lalapps_ssbtodetector_SOURCES = ssbtodetector.c
+
+lalapps_pulsar_frequency_evolution_SOURCES = \
+	pulsar_frequency_evolution.c \
+	ppe_models.c \
+	ppe_models.h \
+	ppe_utils.c \
+	ppe_utils.h
 
 lalapps_heterodyne_pulsar_SOURCES = \
 	heterodyne_pulsar.c \
