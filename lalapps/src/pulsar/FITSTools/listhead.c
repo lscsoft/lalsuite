@@ -59,47 +59,55 @@ int main(int argc, char *argv[])
     fprintf(stderr, "\n");
     fprintf(stderr, "Note that it may be necessary to enclose the input file\n");
     fprintf(stderr, "name in single quote characters on the Unix command line.\n");
-    return(0);
+    return (0);
   }
 
   FILE *fout = popen(PAGER, "w");
   if (fout == NULL) {
     fprintf(stderr, "Could not execute '%s'\n", PAGER);
-    return(1);
+    return (1);
   }
 
-  if (!fits_open_file(&fptr, argv[1], READONLY, &status))
-  {
+  if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
     fits_get_hdu_num(fptr, &hdupos);  /* Get the current HDU position */
 
     /* List only a single header if a specific extension was given */
-    if (hdupos != 1 || strchr(argv[1], '[')) single = 1;
+    if (hdupos != 1 || strchr(argv[1], '[')) {
+      single = 1;
+    }
 
-    for (; !status; hdupos++)  /* Main loop through each extension */
-    {
+    for (; !status; hdupos++) { /* Main loop through each extension */
       fits_get_hdrspace(fptr, &nkeys, NULL, &status); /* get # of keywords */
 
       fprintf(fout, "Header listing for HDU #%d:\n", hdupos);
 
       for (ii = 1; ii <= nkeys; ii++) { /* Read and print each keywords */
 
-        if (fits_read_record(fptr, ii, card, &status))break;
+        if (fits_read_record(fptr, ii, card, &status)) {
+          break;
+        }
         fprintf(fout, "%s\n", card);
       }
       fprintf(fout, "END\n\n");  /* terminate listing with END */
 
-      if (single) break;  /* quit if only listing a single header */
+      if (single) {
+        break;  /* quit if only listing a single header */
+      }
 
       fits_movrel_hdu(fptr, 1, NULL, &status);  /* try to move to next HDU */
     }
 
-    if (status == END_OF_FILE)  status = 0; /* Reset after normal error */
+    if (status == END_OF_FILE) {
+      status = 0;  /* Reset after normal error */
+    }
 
     fits_close_file(fptr, &status);
   }
 
   pclose(fout);
 
-  if (status) fits_report_error(stderr, status); /* print any error message */
-  return(status);
+  if (status) {
+    fits_report_error(stderr, status);  /* print any error message */
+  }
+  return (status);
 }

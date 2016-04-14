@@ -63,10 +63,9 @@ int main(int argc, char *argv[])
     fprintf(stderr, "    Calculate the running mean of the rate column by \n");
     fprintf(stderr, "    averaging the values in the previous row, the current\n");
     fprintf(stderr, "    row, and the next row\n");
-    return(0);
+    return (0);
   }
-  if (!fits_open_file(&infptr, argv[1], READONLY, &status) )
-  {
+  if (!fits_open_file(&infptr, argv[1], READONLY, &status)) {
     if (fits_get_hdu_type(infptr, &hdutype,&status) ||
         hdutype==IMAGE_HDU) {
       fprintf(stderr, "Error: input HDU is not a table\n");
@@ -74,16 +73,16 @@ int main(int argc, char *argv[])
 
       fits_get_hdu_num(infptr, &hdunum);  /* save current HDU location */
 
-      if (!fits_create_file(&outfptr, argv[4], &status) )
-      {
+      if (!fits_create_file(&outfptr, argv[4], &status)) {
         /* copy all the HDUs from the input file to the output file */
         for (ii = 1; !status; ii++) {
           fits_movabs_hdu(infptr, ii, NULL, &status);
           fits_copy_hdu(infptr, outfptr, 0, &status);
         }
 
-        if (status == END_OF_FILE)
+        if (status == END_OF_FILE) {
           status = 0;  /* reset expected error */
+        }
 
         /* move back to initial position in the file */
         fits_movabs_hdu(outfptr, hdunum, NULL, &status);
@@ -98,6 +97,8 @@ int main(int argc, char *argv[])
     fits_close_file(infptr, &status);
   }
 
-  if (status) fits_report_error(stderr, status); /* print any error message */
-  return(status);
+  if (status) {
+    fits_report_error(stderr, status);  /* print any error message */
+  }
+  return (status);
 }

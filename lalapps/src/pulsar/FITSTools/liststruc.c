@@ -53,50 +53,48 @@ int main(int argc, char *argv[])
     fprintf(stderr, "\n");
     fprintf(stderr, "Note that it may be necessary to enclose the input file\n");
     fprintf(stderr, "name in single quote characters on the Unix command line.\n");
-    return(0);
+    return (0);
   }
 
   FILE *fout = popen(PAGER, "w");
   if (fout == NULL) {
     fprintf(stderr, "Could not execute '%s'\n", PAGER);
-    return(1);
+    return (1);
   }
 
-  if (!fits_open_file(&fptr, argv[1], READONLY, &status))
-  {
+  if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
     fits_get_hdu_num(fptr, &hdupos);  /* Get the current HDU position */
 
     /* List only a single structure if a specific extension was given */
-    if (strchr(argv[1], '[') || strchr(argv[1], '+')) single++;
+    if (strchr(argv[1], '[') || strchr(argv[1], '+')) {
+      single++;
+    }
 
-    for (; !status; hdupos++)   /* Main loop for each HDU */
-    {
+    for (; !status; hdupos++) { /* Main loop for each HDU */
       fits_get_hdu_type(fptr, &hdutype, &status);  /* Get the HDU type */
 
       fprintf(fout, "\nHDU #%d  ", hdupos);
-      if (hdutype == IMAGE_HDU)   /* primary array or image HDU */
-      {
+      if (hdutype == IMAGE_HDU) { /* primary array or image HDU */
         fits_get_img_param(fptr, 10, &bitpix, &naxis, naxes, &status);
 
         fprintf(fout, "Array:  NAXIS = %d,  BITPIX = %d\n", naxis, bitpix);
-        for (ii = 0; ii < naxis; ii++)
+        for (ii = 0; ii < naxis; ii++) {
           fprintf(fout, "   NAXIS%d = %ld\n",ii+1, naxes[ii]);
-      }
-      else  /* a table HDU */
-      {
+        }
+      } else { /* a table HDU */
         fits_get_num_rows(fptr, &nrows, &status);
         fits_get_num_cols(fptr, &ncols, &status);
 
-        if (hdutype == ASCII_TBL)
+        if (hdutype == ASCII_TBL) {
           fprintf(fout, "ASCII Table:  ");
-        else
+        } else {
           fprintf(fout, "Binary Table:  ");
+        }
 
         fprintf(fout, "%d columns x %ld rows\n", ncols, nrows);
         fprintf(fout, " COL NAME             FORMAT\n");
 
-        for (ii = 1; ii <= ncols; ii++)
-        {
+        for (ii = 1; ii <= ncols; ii++) {
           fits_make_keyn("TTYPE", ii, keyname, &status); /* make keyword */
           fits_read_key(fptr, TSTRING, keyname, colname, NULL, &status);
           fits_make_keyn("TFORM", ii, keyname, &status); /* make keyword */
@@ -106,17 +104,23 @@ int main(int argc, char *argv[])
         }
       }
 
-      if (single)break;  /* quit if only listing a single HDU */
+      if (single) {
+        break;  /* quit if only listing a single HDU */
+      }
 
       fits_movrel_hdu(fptr, 1, NULL, &status);  /* try move to next ext */
     }
 
-    if (status == END_OF_FILE) status = 0; /* Reset normal error */
+    if (status == END_OF_FILE) {
+      status = 0;  /* Reset normal error */
+    }
     fits_close_file(fptr, &status);
   }
 
   pclose(fout);
 
-  if (status) fits_report_error(stderr, status); /* print any error message */
-  return(status);
+  if (status) {
+    fits_report_error(stderr, status);  /* print any error message */
+  }
+  return (status);
 }

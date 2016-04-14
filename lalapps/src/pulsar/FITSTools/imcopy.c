@@ -43,8 +43,7 @@ int main(int argc, char *argv[])
   double *array = 0, bscale = 1.0, bzero = 0.0, nulval = 0.;
   char card[81];
 
-  if (argc != 3)
-  {
+  if (argc != 3) {
     fprintf(stderr, "\n");
     fprintf(stderr, "Usage:  imcopy inputImage outputImage[compress]\n");
     fprintf(stderr, "\n");
@@ -92,7 +91,7 @@ int main(int argc, char *argv[])
     fprintf(stderr, "\n");
     fprintf(stderr, "Note that it may be necessary to enclose the file names\n");
     fprintf(stderr, "in single quote characters on the Unix command line.\n");
-    return(0);
+    return (0);
   }
 
   /* Open the input file and create output file */
@@ -101,24 +100,26 @@ int main(int argc, char *argv[])
 
   if (status != 0) {
     fits_report_error(stderr, status);
-    return(status);
+    return (status);
   }
 
   fits_get_hdu_num(infptr, &hdupos);  /* Get the current HDU position */
 
   /* Copy only a single HDU if a specific extension was given */
-  if (hdupos != 1 || strchr(argv[1], '[')) single = 1;
+  if (hdupos != 1 || strchr(argv[1], '[')) {
+    single = 1;
+  }
 
-  for (; !status; hdupos++)  /* Main loop through each extension */
-  {
+  for (; !status; hdupos++) { /* Main loop through each extension */
 
     fits_get_hdu_type(infptr, &hdutype, &status);
 
     if (hdutype == IMAGE_HDU) {
 
       /* get image dimensions and total number of pixels in image */
-      for (ii = 0; ii < 9; ii++)
+      for (ii = 0; ii < 9; ii++) {
         naxes[ii] = 1;
+      }
 
       fits_get_img_param(infptr, 9, &bitpix, &naxis, naxes, &status);
 
@@ -141,11 +142,12 @@ int main(int argc, char *argv[])
 
       for (ii = 1; ii <= nkeys; ii++) {
         fits_read_record(infptr, ii, card, &status);
-        if (fits_get_keyclass(card) > TYP_CMPRS_KEY)
+        if (fits_get_keyclass(card) > TYP_CMPRS_KEY) {
           fits_write_record(outfptr, card, &status);
+        }
       }
 
-      switch(bitpix) {
+      switch (bitpix) {
       case BYTE_IMG:
         datatype = TBYTE;
         break;
@@ -181,7 +183,7 @@ int main(int argc, char *argv[])
 
       if (!array)  {
         fprintf(stderr, "Memory allocation error\n");
-        return(0);
+        return (0);
       }
 
       /* turn off any scaling so that we copy the raw pixel values */
@@ -189,8 +191,7 @@ int main(int argc, char *argv[])
       fits_set_bscale(outfptr, bscale, bzero, &status);
 
       first = 1;
-      while (totpix > 0 && !status)
-      {
+      while (totpix > 0 && !status) {
         /* read all or part of image then write it back to the output file */
         fits_read_img(infptr, datatype, first, npix,
                       &nulval, array, &anynul, &status);
@@ -202,17 +203,22 @@ int main(int argc, char *argv[])
       free(array);
     }
 
-    if (single) break;  /* quit if only copying a single HDU */
+    if (single) {
+      break;  /* quit if only copying a single HDU */
+    }
     fits_movrel_hdu(infptr, 1, NULL, &status);  /* try to move to next HDU */
   }
 
-  if (status == END_OF_FILE)  status = 0; /* Reset after normal error */
+  if (status == END_OF_FILE) {
+    status = 0;  /* Reset after normal error */
+  }
 
   fits_close_file(outfptr,  &status);
   fits_close_file(infptr, &status);
 
   /* if error occurred, print out error message */
-  if (status)
+  if (status) {
     fits_report_error(stderr, status);
-  return(status);
+  }
+  return (status);
 }
