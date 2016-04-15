@@ -752,7 +752,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
   /* chop the data into stationary chunks and also calculate the noise variance if required
    * (note that if there is going to be a signal injected then this variance will be recalculated
    * after the injection has been made to make the analysis most similar to a real case). */
-  INT4 chunkMin, chunkMax;
+  UINT4 chunkMin, chunkMax;
 
   /* Get chunk min and chunk max */
   ppt = LALInferenceGetProcParamVal( commandLine, "--chunk-min" );
@@ -768,8 +768,8 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
   while ( modeltmp ){
     UINT4Vector *chunkLength = NULL;
 
-    LALInferenceAddVariable( modeltmp->params, "chunkMin", &chunkMin, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-    LALInferenceAddVariable( modeltmp->params, "chunkMax", &chunkMax, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( modeltmp->params, "chunkMin", &chunkMin, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( modeltmp->params, "chunkMax", &chunkMax, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
 
     ppt = LALInferenceGetProcParamVal( commandLine, "--oldChunks" );
     if ( ppt ){ /* use old style quasi-fixed data chunk lengths */
@@ -793,7 +793,11 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
         chunkLength = XLALCreateUINT4Vector( 1 );
         chunkLength->data[0] = datatmp->varTimeData->data->length;
       }
-      else{ chunkLength = chop_n_merge( datatmp, chunkMin, chunkMax ); }
+      else{
+        UINT4 outputchunks = 0;
+        if ( LALInferenceGetProcParamVal( commandLine, "--output-chunks" ) ){ outputchunks = 1; }
+        chunkLength = chop_n_merge( datatmp, chunkMin, chunkMax, outputchunks );
+      }
     }
 
     LALInferenceAddVariable( modeltmp->params, "chunkLength", &chunkLength, LALINFERENCE_UINT4Vector_t,
@@ -829,6 +833,8 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
   XLALFree( flengths );
   XLALFree( fstarts );
   XLALFree( fpsds );
+
+  PulsarFreeParams( pulsar );
 
   if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){
     gettimeofday(&time2, NULL);

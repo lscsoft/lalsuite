@@ -90,9 +90,9 @@ void compute_variance( LALInferenceIFOData *data, LALInferenceIFOModel *model ){
  *
  * \return A vector of chunk/segment lengths
  */
-UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, INT4 chunkMax ){
-  INT4 i = 0, j = 0, count = 0;
-  INT4 length;
+UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, UINT4 chunkMax ){
+  UINT4 i = 0, j = 0, count = 0;
+  UINT4 length;
 
   REAL8 t1, t2;
 
@@ -118,7 +118,7 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, INT4 chunkMax ){
 
     i++;
 
-    t1 = XLALGPSGetREAL8( &ifo->times->data[i-1 ] );
+    t1 = XLALGPSGetREAL8( &ifo->times->data[i-1] );
     t2 = XLALGPSGetREAL8( &ifo->times->data[i] );
 
     /* if consecutive points are within two sample times of each other count as in the same chunk */
@@ -153,12 +153,13 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, INT4 chunkMax ){
  * the data (e.g. those caused by a strong signal), which might affect the calculations (which assume the data is
  * Gaussian with zero mean).
  *
- * If the \c verbose flag is set then a list of the segments will be output to a file called \c data_segment_list.txt,
+ * If the \c outputsegments is non-zero then a list of the segments will be output to a file called \c data_segment_list.txt,
  * with a prefix of the detector name.
  *
  * \param data [in] A data structure
  * \param chunkMin [in] The minimum length of a segment
  * \param chunkMax [in] The maximum length of a segment
+ * \param outputsegments [in] A flag to check whether to output the segments
  *
  * \return A vector of segment/chunk lengths
  *
@@ -167,7 +168,7 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, INT4 chunkMax ){
  * \sa merge_data
  * \sa rechop_data
  */
-UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkMax ){
+UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chunkMax, UINT4 outputchunks ){
   UINT4 j = 0;
 
   UINT4Vector *chunkLengths = NULL;
@@ -197,8 +198,8 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkM
     else { chunkLengths->data[j] = chunkIndex->data[j] - chunkIndex->data[j-1]; }
   }
 
-  /* if verbose print out the segment end indices to a file */
-  if ( verbose_output ){
+  /* if required output the chunk end indices and lengths to a file */
+  if ( outputchunks ){
     FILE *fpsegs = NULL;
 
     CHAR *outfile = NULL;
@@ -208,12 +209,23 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkM
 
     outfile = XLALStringAppend( outfile, "data_segment_list.txt" );
 
-    if ( (fpsegs = fopen(outfile, "w")) == NULL ){
-      fprintf(stderr, "Non-fatal error open file to output segment list.\n");
-      return chunkLengths;
+    /* check if file exists, i.e. given mutliple frequency harmonics, and if so open for appending */
+    FILE *fpcheck = NULL;
+    if ( (fpcheck = fopen(outfile, "r")) != NULL ){
+      fclose(fpcheck);
+      if ( (fpsegs = fopen(outfile, "a")) == NULL ){
+        fprintf(stderr, "Non-fatal error open file to output segment list.\n");
+        return chunkLengths;
+      }
+    }
+    else{
+      if ( (fpsegs = fopen(outfile, "w")) == NULL ){
+        fprintf(stderr, "Non-fatal error open file to output segment list.\n");
+        return chunkLengths;
+      }
     }
 
-    for ( j = 0; j < chunkIndex->length; j++ ) { fprintf(fpsegs, "%u\n", chunkIndex->data[j]); }
+    for ( j = 0; j < chunkIndex->length; j++ ) { fprintf(fpsegs, "%u\t%u\n", chunkIndex->data[j], chunkLengths->data[j]); }
 
     /* add space at the end so that you can separate lists from different detector data streams */
     fprintf(fpsegs, "\n");
@@ -315,7 +327,7 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
  *
  * \sa find_change_point
  */
-UINT4Vector *chop_data( gsl_vector_complex *data, INT4 chunkMin ){
+UINT4Vector *chop_data( gsl_vector_complex *data, UINT4 chunkMin ){
   UINT4Vector *chunkIndex = NULL;
 
   UINT4 length = (UINT4)data->size;
@@ -382,7 +394,7 @@ UINT4Vector *chop_data( gsl_vector_complex *data, INT4 chunkMin ){
  *
  * \return The position of the change point
  */
-UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, INT4 minlength ){
+UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, UINT4 minlength ){
   UINT4 changepoint = 0, i = 0;
   UINT4 length = (UINT4)data->size, lsum = 0;
 
@@ -415,7 +427,7 @@ UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, INT4 minlengt
 
   for ( i = 0; i < length; i++ ){
     dval = gsl_vector_complex_get( data, i );
-    if ( i < (UINT4)minlength-1 ){ sumforward += SQUARE( gsl_complex_abs( dval ) ); }
+    if ( i < minlength-1 ){ sumforward += SQUARE( gsl_complex_abs( dval ) ); }
     else{ sumback += SQUARE( gsl_complex_abs( dval ) ); }
   }
 
@@ -468,10 +480,10 @@ UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, INT4 minlengt
  * \param chunkMax [in] the maximum allowed segment/chunk length
  * \param chunkMin [in] the minimum allowed segment/chunk length
  */
-void rechop_data( UINT4Vector *chunkIndex, INT4 chunkMax, INT4 chunkMin ){
-  INT4 i = 0, j = 0, count = 0;
-  INT4 length = chunkIndex->length;
-  INT4 endIndex = (INT4)chunkIndex->data[length-1];
+void rechop_data( UINT4Vector *chunkIndex, UINT4 chunkMax, UINT4 chunkMin ){
+  UINT4 i = 0, j = 0, count = 0;
+  UINT4 length = chunkIndex->length;
+  UINT4 endIndex = chunkIndex->data[length-1];
   UINT4 startindex = 0, chunklength = 0;
 
   UINT4Vector *newindex = NULL;
@@ -484,8 +496,8 @@ void rechop_data( UINT4Vector *chunkIndex, INT4 chunkMax, INT4 chunkMin ){
 
     chunklength = chunkIndex->data[i] - startindex;
 
-    if ( chunklength > (UINT4)chunkMax ){
-      INT4 remain = chunklength % chunkMax;
+    if ( chunklength > chunkMax ){
+      UINT4 remain = chunklength % chunkMax;
 
       /* cut segment into as many chunkMin chunks as possible */
       for ( j = 0; j < floor(chunklength / chunkMax); j++ ){
@@ -501,12 +513,12 @@ void rechop_data( UINT4Vector *chunkIndex, INT4 chunkMax, INT4 chunkMin ){
         if ( remain < chunkMin ){
           /* split the last two cells into one that is chunkMin long and one that is (chunkMax+remainder)-chunkMin long
            * - this may leave a cell shorter than chunkMin, but we'll have to live with that! */
-          INT4 n1 = (chunkMax + remain) - chunkMin;
+          UINT4 n1 = (chunkMax + remain) - chunkMin;
 
           /* reset second to last value two values */
           newindex->data[count-1] = newindex->data[count] - chunkMin;
 
-          if ( n1 < chunkMin && verbose_output ){
+          if ( n1 < chunkMin ){
             fprintf(stderr, "Non-fatal error... segment no. %d is %d long, which is less than chunkMin = %d.\n",
                     count, n1, chunkMin);
           }

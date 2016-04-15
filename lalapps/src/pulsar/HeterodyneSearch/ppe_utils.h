@@ -39,11 +39,11 @@ void compute_variance( LALInferenceIFOData *data, LALInferenceIFOModel *model );
 COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data );
 
 /* functions for finding change points in the data */
-UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, INT4 chunkMax );
-UINT4Vector *chop_n_merge( LALInferenceIFOData *data, INT4 chunkMin, INT4 chunkMax );
-UINT4Vector *chop_data( gsl_vector_complex *data, INT4 chunkMin );
-UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, INT4 chunkMin );
-void rechop_data( UINT4Vector *segs, INT4 chunkMax, INT4 chunkMin );
+UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, UINT4 chunkMax );
+UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chunkMax, UINT4 outputchunks );
+UINT4Vector *chop_data( gsl_vector_complex *data, UINT4 chunkMin );
+UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, UINT4 chunkMin );
+void rechop_data( UINT4Vector *segs, UINT4 chunkMax, UINT4 chunkMin );
 void merge_data( COMPLEX16Vector *data, UINT4Vector *segs );
 
 void gzip_output( LALInferenceRunState *runState );
