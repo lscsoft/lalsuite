@@ -1014,7 +1014,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
 
 	REAL8 OptimalSNR=sqrt(S);
-        REAL8 MatchedFilterSNR = cabs(d_inner_h)/OptimalSNR;
+        REAL8 MatchedFilterSNR = d_inner_h/OptimalSNR;
         LALInferenceAddVariable(currentParams,"optimal_snr",&OptimalSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
         LALInferenceAddVariable(currentParams,"matched_filter_snr",&MatchedFilterSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
