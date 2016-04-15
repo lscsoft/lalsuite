@@ -821,7 +821,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
     LALInferenceAddREAL8Variable(currentParams,varname,this_ifo_snr,LALINFERENCE_PARAM_OUTPUT);
 
 	sprintf(varname,"%s_cplx_snr_amp",dataPtr->name);
-	REAL8 cplx_snr_amp = this_ifo_d_inner_h/this_ifo_snr;
+	REAL8 cplx_snr_amp = cabs(this_ifo_d_inner_h)/this_ifo_snr;
     LALInferenceAddREAL8Variable(currentParams,varname,cplx_snr_amp,LALINFERENCE_PARAM_OUTPUT);
 
     sprintf(varname,"%s_cplx_snr_arg",dataPtr->name);
@@ -1014,7 +1014,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
 
 	REAL8 OptimalSNR=sqrt(S);
-        REAL8 MatchedFilterSNR = d_inner_h/OptimalSNR;
+        REAL8 MatchedFilterSNR = cabs(d_inner_h)/OptimalSNR;
         LALInferenceAddVariable(currentParams,"optimal_snr",&OptimalSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
         LALInferenceAddVariable(currentParams,"matched_filter_snr",&MatchedFilterSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
