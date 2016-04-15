@@ -306,7 +306,7 @@ class knopeDAG(pipeline.CondorDAG):
 
         # check that .par file contains ephemeris information and units (if not present defaults will be used - see get_ephemeris)
         if psr['EPHEM'] != None:
-          if psr['EPHEM'] not in ['DE200', 'DE405', 'DE414']:
+          if psr['EPHEM'] not in ['DE200', 'DE405', 'DE414', 'DE421']:
             print("Unregconised ephemeris '%s' in '%s'. Skipping this source" % (psr['EPHEM'], par))
             self.skipped_pulsars[par] = "Unregconised ephemeris '%s'" % psr['EPHEM']
             continue
