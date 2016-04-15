@@ -187,6 +187,7 @@ int XLALFITSArrayReadGSLMatrix(FITSFile *file, const size_t idx[], gsl_matrix **
 /// @{
 int XLALFITSTableOpenWrite(FITSFile *file, const CHAR *name, const CHAR *comment);
 int XLALFITSTableOpenRead(FITSFile *file, const CHAR *name, UINT8 *nrows);
+
 /// \cond DONT_DOXYGEN
 int XLALFITSTableColumnAddBOOLEAN(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const BOOLEAN *field, const size_t field_size);
 int XLALFITSTableColumnAddINT2(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT2 *field, const size_t field_size);
@@ -198,6 +199,7 @@ int XLALFITSTableColumnAddCOMPLEX16(FITSFile *file, const CHAR *col_name, const 
 int XLALFITSTableColumnAddCHAR(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *CHAR, const size_t field_size);
 int XLALFITSTableColumnAddGPSTime(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size);
 /// \endcond
+
 /// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_BEGIN(record_type) \
   record_type XLAL_INIT_DECL(_xlal_fits_record_); \
@@ -222,6 +224,7 @@ int XLALFITSTableColumnAddGPSTime(FITSFile *file, const CHAR *col_name, const si
 /// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED(file, index, type, field, col_name) \
   XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, &_xlal_fits_ptr_record_[0], sizeof(_xlal_fits_ptr_record_), &(_xlal_fits_ptr_record_[index].field[0]), sizeof(_xlal_fits_ptr_record_[index].field))
+
 int XLALFITSTableWriteRow(FITSFile *file, const void *record);
 int XLALFITSTableReadRow(FITSFile *file, void *record, UINT8 *rem_nrows);
 /// @}
