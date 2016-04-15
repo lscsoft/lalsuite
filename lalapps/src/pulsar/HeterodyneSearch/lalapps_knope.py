@@ -40,6 +40,7 @@ parser = argparse.ArgumentParser( description = description )
 parser.add_argument("inifile", help="The configuation (.ini) file") # the positional argument for the configuration file
 parser.add_argument("--condor-submit", action="store_true", default=False, help="Automatically submit the Condor DAG")
 parser.add_argument("-r", "--run-path", dest="runpath", default=None, help="Set the directory to run the pipeline in (overwrites any value in the config.ini file)")
+parser.add_argument("-p", "--pulsar", dest="pulsarlist", action='append', default=None, help="A pulsar name to search for rather than all pulsars given in a parameter file directory (this can be specified multiple times to search for more than one pulsar).")
 
 opts = parser.parse_args()
 
@@ -67,7 +68,7 @@ if not submitdag:
     submitdag = False
 
 # Create DAG from ConfigParser object
-dag = knope.knopeDAG(cp, inifile)
+dag = knope.knopeDAG(cp, inifile, pulsarlist=opts.pulsarlist)
 if dag.error_code != 0: # check for any errors that occured
   print("Error... their was an error creating the DAG file", file=sys.stderr)
   sys.exit(dag.error_code)

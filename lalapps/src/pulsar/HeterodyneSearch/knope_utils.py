@@ -35,7 +35,7 @@ from lalapps import pulsarpputils as pppu
 Class for setting up the DAG for the whole known pulsar search pipeline
 """
 class knopeDAG(pipeline.CondorDAG):
-  def __init__(self, cp, configfilename):
+  def __init__(self, cp, configfilename, pulsarlist=None):
     """
     Initialise with ConfigParser cp object and the filename of the config file.
 
@@ -43,8 +43,14 @@ class knopeDAG(pipeline.CondorDAG):
     """
 
     self.error_code = 0 # set error_code to -1 following any failures
-
     self.config = cp
+    if pulsarlist is not None:
+      if isinstance(pulsarlist, list):
+        self.pulsarlist = pulsarlist
+      else:
+        print("Error... 'pulsarlist' argument must be 'None' or a list.")
+        self.error_code = 1
+        return
 
     # if just re-doing post-processing try reading in previuos analysis pickle file
     self.postonly = self.get_config_option('analysis', 'postprocessing_only', cftype='boolean', default=False)
@@ -59,7 +65,7 @@ class knopeDAG(pipeline.CondorDAG):
       else:
         try:
           fp = open(preprocessed_pickle, 'rb')
-          prevdag = pickle.load(fp) # FIXME: this may fail (I may need to import (from lalapps.pulsar_pipeline_utils import KnownPulsarPipelineDAG) this module first)
+          prevdag = pickle.load(fp)
           fp.close()
         except:
           print("Error... trying post-processing only, but previous pickle file '%s' cannot be read in" % preprocessed_pickle, file=sys.stderr)
@@ -296,6 +302,11 @@ class knopeDAG(pipeline.CondorDAG):
           self.skipped_pulsars[par] = "Could not read 'PSRJ' value"
           continue
 
+        # check if we're just using selected input pulsars
+        if pulsarlist is not None:
+          if psr['PSRJ'] not in pulsarlist:
+            continue
+
         # check that (if the pulsar is in a binary) it is an allowed binary type (given what's coded in lalpulsar)
         if 'BINARY' in psr.__dict__:
           bintype = psr['BINARY']
@@ -346,6 +357,12 @@ class knopeDAG(pipeline.CondorDAG):
             self.modification_files.append({'file': modtimefile, 'time': parmodtime}) # update the time in the .mod file
             self.modified_pulsars.append(par)
 
+      if pulsarlist is not None:
+        if len(self.analysed_pulsars) == 0:
+          print("Could not find any of the listed pulsars '[%s]' in the .par file directory '%s'." % (', '.join(pulsarlist), self.pulsar_param_dir))
+          self.error_code = 1
+          return
+
     self.segment_file_update = [] # to contain a list of pairs of segment files - the former to be concatenated into the latter if required
 
     if not self.postonly:
@@ -359,12 +376,27 @@ class knopeDAG(pipeline.CondorDAG):
     else:
       # use information from previous run
       self.preprocessing_only = False
-      self.unmodified_pulsars = prevdag.unmodified_pulsars
-      self.modified_pulsars = prevdag.modified_pulsars
-      self.analysed_pulsars = prevdag.analysed_pulsars
-      self.skipped_pulsars = prevdag.skipped_pulsars
-      self.processed_files = prevdag.processed_files
       self.remove_job = None
+      if pulsarlist is None:
+        self.unmodified_pulsars = prevdag.unmodified_pulsars
+        self.modified_pulsars = prevdag.modified_pulsars
+        self.analysed_pulsars = prevdag.analysed_pulsars
+        self.skipped_pulsars = prevdag.skipped_pulsars
+        self.processed_files = prevdag.processed_files
+      else: # if analysing only selected pulsars (from pulsarlist) just get information on them
+        for psrl in pulsarlist:
+          if psrl not in self.unmodified_pulsars and psrl not in self.modified_pulsars:
+            print("Error... specified pulsar '%s' could not be found in previous run pickle file '%s'." % (psrl, preprocessed_pickle))
+            self.error_code = 1
+            return
+          else:
+            if psrl in prevdag.unmodified_pulsars:
+              self.unmodified_pulsars[psrl] = prevdag.unmodified_pulsars[psrl]
+            if psrl in prevdag.modified_pulsars:
+              self.modified_pulsars[psrl] = prevdag.modified_pulsars[psrl]
+
+          self.analysed_pulsars[psrl] = prevdag.analysed_pulsars[psrl]
+          self.processed_files[psrl] = prevdag.processed_files[psrl]
 
     if self.preprocessing_only: # end class initialisation
       # output par file modification times (do this now, so that modification files are overwritten if the script had failed earlier)
