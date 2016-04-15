@@ -207,7 +207,7 @@ void get_freq( double start, double deltaT,
   UINT4 i = 0;
 
   REAL8 T0 = 0., DT = 0.;
-  REAL8 time = 0., timep1 = 0.;
+  REAL8 time0 = 0., timep1 = 0.;
 
   EarthState earth, earth2;
   EmissionTime emit, emit2;
@@ -266,13 +266,13 @@ void get_freq( double start, double deltaT,
     LIGOTimeGPS tgps;
 
     T0 = pepoch;
-    time = start + deltaT*(double)i;
-    timep1 = time + 1.;
+    time0 = start + deltaT*(double)i;
+    timep1 = time0 + 1.;
 
-    DT = time - T0;
+    DT = time0 - T0;
 
-    bary.tgps.gpsSeconds = (UINT8)floor(time);
-    bary.tgps.gpsNanoSeconds = (UINT8)floor((fmod(time,1.)*1e9));
+    bary.tgps.gpsSeconds = (UINT8)floor(time0);
+    bary.tgps.gpsNanoSeconds = (UINT8)floor((fmod(time0,1.)*1e9));
 
     bary.delta = dec + DT*pmdec;
     bary.alpha = ra + DT*pmra/cos(bary.delta);
@@ -300,8 +300,8 @@ void get_freq( double start, double deltaT,
 
     /* get binary system doppler shift */
     if ( PulsarCheckParam( params, "BINARY" ) ){
-      binput.tb = time + emit.deltaT;
-      XLALGPSSetREAL8(&tgps, time);
+      binput.tb = time0 + emit.deltaT;
+      XLALGPSSetREAL8(&tgps, time0);
       get_earth_pos_vel( &earth, edat, &tgps );
       binput.earth = earth;
       XLALBinaryPulsarDeltaTNew( &boutput, &binput, params );
