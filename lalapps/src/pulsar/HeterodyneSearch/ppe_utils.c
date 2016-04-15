@@ -835,6 +835,10 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile, CHAR *
       *tfile = XLALStringDuplicate("tdb_2000-2019.dat.gz");
       ttype = TIMECORRECTION_TDB;
     }
+    else if ( !strcmp( PulsarGetStringParam(pulsar, "UNITS"), "TCB" ) ) {
+      *tfile = XLALStringDuplicate("te405_2000-2019.dat.gz");
+      ttype = TIMECORRECTION_TCB;
+    }
     else{
       XLALPrintError("Error... unknown units %s in par file!\n", PulsarGetStringParam(pulsar, "UNITS"));
       XLAL_ERROR(XLAL_EFUNC);
