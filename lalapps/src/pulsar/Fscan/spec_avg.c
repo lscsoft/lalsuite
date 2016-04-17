@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_fscan
+ * \ingroup lalapps_pulsar_SFTTools
  */
 
 

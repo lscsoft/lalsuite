@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_hough
+ * \ingroup lalapps_pulsar_Hough
  * \author Badri Krishnan, Reinhard Prix
  * \brief
  * Estimating mismatch of grid used in Hough search

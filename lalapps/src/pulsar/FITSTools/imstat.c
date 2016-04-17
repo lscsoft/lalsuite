@@ -17,6 +17,11 @@
 // program, rather than coding the new program completely from scratch.
 //
 
+/**
+ * \file
+ * \ingroup lalapps_pulsar_FITSTools
+ */
+
 #include <config.h>
 #include <string.h>
 #include <stdio.h>
@@ -45,14 +50,13 @@ int main(int argc, char *argv[])
     fprintf(stderr, "  imarith 'image.fits[200:210,300:310]' - image section\n");
     fprintf(stderr, "  imarith 'table.fits+1[bin (X,Y) = 4]' - image constructed\n");
     fprintf(stderr, "     from X and Y columns of a table, with 4-pixel bin size\n");
-    return(0);
+    return (0);
   }
 
-  if ( !fits_open_image(&fptr, argv[1], READONLY, &status) )
-  {
+  if (!fits_open_image(&fptr, argv[1], READONLY, &status)) {
     if (fits_get_hdu_type(fptr, &hdutype, &status) || hdutype != IMAGE_HDU) {
       fprintf(stderr, "Error: this program only works on images, not tables\n");
-      return(1);
+      return (1);
     }
 
     fits_get_img_dim(fptr, &naxis, &status);
@@ -60,30 +64,34 @@ int main(int argc, char *argv[])
 
     if (status || naxis != 2) {
       fprintf(stderr, "Error: NAXIS = %d.  Only 2-D images are supported.\n", naxis);
-      return(1);
+      return (1);
     }
 
     pix = (double *) malloc(naxes[0] * sizeof(double)); /* memory for 1 row */
 
     if (pix == NULL) {
       fprintf(stderr, "Memory allocation error\n");
-      return(1);
+      return (1);
     }
 
     totpix = naxes[0] * naxes[1];
     fpixel[0] = 1;  /* read starting with first pixel in each row */
 
     /* process image one row at a time; increment row # in each loop */
-    for (fpixel[1] = 1; fpixel[1] <= naxes[1]; fpixel[1]++)
-    {
+    for (fpixel[1] = 1; fpixel[1] <= naxes[1]; fpixel[1]++) {
       /* give starting pixel coordinate and number of pixels to read */
-      if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0],0, pix,0, &status))
-        break;   /* jump out of loop on error */
+      if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0],0, pix,0, &status)) {
+        break;  /* jump out of loop on error */
+      }
 
       for (ii = 0; ii < naxes[0]; ii++) {
         sum += pix[ii];                      /* accumlate sum */
-        if (pix[ii] < minval) minval = pix[ii];  /* find min and  */
-        if (pix[ii] > maxval) maxval = pix[ii];  /* max values    */
+        if (pix[ii] < minval) {
+          minval = pix[ii];  /* find min and  */
+        }
+        if (pix[ii] > maxval) {
+          maxval = pix[ii];  /* max values    */
+        }
       }
     }
 
@@ -94,7 +102,9 @@ int main(int argc, char *argv[])
   if (status)  {
     fits_report_error(stderr, status); /* print any error message */
   } else {
-    if (totpix > 0) meanval = sum / totpix;
+    if (totpix > 0) {
+      meanval = sum / totpix;
+    }
 
     printf("Statistics of %ld x %ld  image\n",
            naxes[0], naxes[1]);
@@ -104,5 +114,5 @@ int main(int argc, char *argv[])
     printf("  maximum value = %g\n", maxval);
   }
 
-  return(status);
+  return (status);
 }

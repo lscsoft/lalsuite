@@ -178,31 +178,53 @@ int XLALFITSArrayReadGSLMatrix(FITSFile *file, const size_t idx[], gsl_matrix **
 /// XLAL_FITS_TABLE_COLUMN_ADD_NAMED(file, REAL4, x, "value");
 /// \endcode
 ///
+/// The <tt>XLAL_FITS_TABLE_COLUMN_PTR_...()</tt> macros are for more complicated C structures
+/// which contain pointers to other C structures.
+///
 /// Finally, XLALFITSTableWriteRow() or XLALFITSTableReadRow() are called to write/read table rows;
 /// the latter returns the number of rows remaining in the table \p rem_nrows, if needed.
 ///
 /// @{
 int XLALFITSTableOpenWrite(FITSFile *file, const CHAR *name, const CHAR *comment);
 int XLALFITSTableOpenRead(FITSFile *file, const CHAR *name, UINT8 *nrows);
+
 /// \cond DONT_DOXYGEN
-int XLALFITSTableColumnAddBOOLEAN(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const BOOLEAN *field, const size_t field_size);
-int XLALFITSTableColumnAddINT2(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const INT2 *field, const size_t field_size);
-int XLALFITSTableColumnAddINT4(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const INT4 *field, const size_t field_size);
-int XLALFITSTableColumnAddREAL4(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const REAL4 *field, const size_t field_size);
-int XLALFITSTableColumnAddREAL8(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const REAL8 *field, const size_t field_size);
-int XLALFITSTableColumnAddCOMPLEX8(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const COMPLEX8 *field, const size_t field_size);
-int XLALFITSTableColumnAddCOMPLEX16(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const COMPLEX16 *field, const size_t field_size);
-int XLALFITSTableColumnAddCHAR(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const void *CHAR, const size_t field_size);
-int XLALFITSTableColumnAddGPSTime(FITSFile *file, const CHAR *col_name, const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size);
+int XLALFITSTableColumnAddBOOLEAN(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const BOOLEAN *field, const size_t field_size);
+int XLALFITSTableColumnAddINT2(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT2 *field, const size_t field_size);
+int XLALFITSTableColumnAddINT4(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT4 *field, const size_t field_size);
+int XLALFITSTableColumnAddREAL4(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL4 *field, const size_t field_size);
+int XLALFITSTableColumnAddREAL8(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL8 *field, const size_t field_size);
+int XLALFITSTableColumnAddCOMPLEX8(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX8 *field, const size_t field_size);
+int XLALFITSTableColumnAddCOMPLEX16(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX16 *field, const size_t field_size);
+int XLALFITSTableColumnAddCHAR(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *CHAR, const size_t field_size);
+int XLALFITSTableColumnAddGPSTime(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size);
 /// \endcond
+
+/// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_BEGIN(record_type) \
-  const record_type _xlal_fits_table_record_
+  record_type XLAL_INIT_DECL(_xlal_fits_record_); \
+  size_t _xlal_fits_offsets_[2] = {0};
+/// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_ADD(file, type, field) \
-  XLALFITSTableColumnAdd ## type (file, #field, &_xlal_fits_table_record_, sizeof(_xlal_fits_table_record_), &(_xlal_fits_table_record_.field), sizeof(_xlal_fits_table_record_.field))
-#define XLAL_FITS_TABLE_COLUMN_ADD_ARRAY(file, type, field) \
-  XLALFITSTableColumnAdd ## type (file, #field, &_xlal_fits_table_record_, sizeof(_xlal_fits_table_record_), &(_xlal_fits_table_record_.field[0]), sizeof(_xlal_fits_table_record_.field))
+  XLALFITSTableColumnAdd ## type (file, #field, 1, _xlal_fits_offsets_, &_xlal_fits_record_, sizeof(_xlal_fits_record_), &(_xlal_fits_record_.field), sizeof(_xlal_fits_record_.field))
+/// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_ADD_NAMED(file, type, field, col_name) \
-  XLALFITSTableColumnAdd ## type (file, col_name, &_xlal_fits_table_record_, sizeof(_xlal_fits_table_record_), &(_xlal_fits_table_record_.field), sizeof(_xlal_fits_table_record_.field))
+  XLALFITSTableColumnAdd ## type (file, col_name, 1, _xlal_fits_offsets_, &_xlal_fits_record_, sizeof(_xlal_fits_record_), &(_xlal_fits_record_.field), sizeof(_xlal_fits_record_.field))
+/// \hideinitializer
+#define XLAL_FITS_TABLE_COLUMN_ADD_ARRAY(file, type, field) \
+  XLALFITSTableColumnAdd ## type (file, #field, 1, _xlal_fits_offsets_, &_xlal_fits_record_, sizeof(_xlal_fits_record_), &(_xlal_fits_record_.field[0]), sizeof(_xlal_fits_record_.field))
+/// \hideinitializer
+#define XLAL_FITS_TABLE_COLUMN_PTR_BEGIN(field, ptr_record_type, length) \
+  ptr_record_type XLAL_INIT_ARRAY_DECL(_xlal_fits_ptr_record_, length); \
+  _xlal_fits_record_.field = &_xlal_fits_ptr_record_[0]; \
+  _xlal_fits_offsets_[0] = (size_t)(((intptr_t) &(_xlal_fits_record_.field)) - ((intptr_t) &_xlal_fits_record_));
+/// \hideinitializer
+#define XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED(file, index, type, field, col_name) \
+  XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, &_xlal_fits_ptr_record_[0], sizeof(_xlal_fits_ptr_record_), &(_xlal_fits_ptr_record_[index].field), sizeof(_xlal_fits_ptr_record_[index].field))
+/// \hideinitializer
+#define XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED(file, index, type, field, col_name) \
+  XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, &_xlal_fits_ptr_record_[0], sizeof(_xlal_fits_ptr_record_), &(_xlal_fits_ptr_record_[index].field[0]), sizeof(_xlal_fits_ptr_record_[index].field))
+
 int XLALFITSTableWriteRow(FITSFile *file, const void *record);
 int XLALFITSTableReadRow(FITSFile *file, void *record, UINT8 *rem_nrows);
 /// @}

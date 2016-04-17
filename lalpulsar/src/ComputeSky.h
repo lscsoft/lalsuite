@@ -20,7 +20,7 @@
 /**
  * \author Berukoff, S.J., Papa, M.A.
  * \file
- * \ingroup lalpulsar_UNCLASSIFIED
+ * \ingroup lalpulsar_inject
  *
  * \brief Computes phase coefficients necessary for a correct demodulation.
  *

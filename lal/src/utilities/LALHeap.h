@@ -120,15 +120,6 @@ int XLALHeapAdd(
   );
 
 /**
- * Add a new element to a heap. making a copy if required; if the heap is of fixed size and full, the root element is removed
- */
-int XLALHeapAddCopy(
-  LALHeap *h,			/**< [in] Pointer to heap */
-  const void *x,		/**< [in] New element, of which a copy is made if required */
-  const size_t siz		/**< [in] Size of new element */
-  );
-
-/**
  * Remove and destroy the root element of a heap
  */
 int XLALHeapRemoveRoot(

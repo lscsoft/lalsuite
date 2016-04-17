@@ -28,6 +28,7 @@
 #include <float.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
+#include <gsl/gsl_math.h>
 
 #include <lal/Date.h>
 #include <lal/FrequencySeries.h>
@@ -405,8 +406,8 @@ static int PhenomPCore(
   const REAL8 m2 = m2_SI / LAL_MSUN_SI;
   const REAL8 M = m1 + m2;
   const REAL8 m_sec = M * LAL_MTSUN_SI;   /* Total mass in seconds */
-  const REAL8 q = m2 / m1; /* q >= 1 */
-  const REAL8 eta = m1 * m2 / (M*M);    /* Symmetric mass-ratio */
+  REAL8 q = m2 / m1; /* q >= 1 */
+  REAL8 eta = m1 * m2 / (M*M);    /* Symmetric mass-ratio */
   const REAL8 piM = LAL_PI * m_sec;
 
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0, 0}
@@ -440,6 +441,11 @@ static int PhenomPCore(
       XLAL_ERROR( XLAL_EINVAL, "Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
       break;
     }
+
+  if (eta > 0.25 || q < 1.0) {
+    nudge(&eta, 0.25, 1e-6);
+    nudge(&q, 1.0, 1e-6);
+  }
 
   NNLOanglecoeffs angcoeffs; /* Next-to-next-to leading order PN coefficients for Euler angles alpha and epsilon */
   ComputeNNLOanglecoeffs(&angcoeffs,q,chil,chip);
@@ -1186,7 +1192,8 @@ static REAL8 FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH(
   const REAL8 chip)   /**< Dimensionless spin in the orbital plane */
 {
   const REAL8 M = m1+m2;
-  const REAL8 eta = m1*m2/(M*M);
+  REAL8 eta = m1*m2/(M*M);
+  if (eta > 0.25) nudge(&eta, 0.25, 1e-6);
 
   REAL8 af_parallel, q_factor;
   if (m1 >= m2) {
@@ -1349,3 +1356,26 @@ UNUSED static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
 
   return p;
 }
+
+
+// This function determines whether x and y are approximately equal to a relative accuracy epsilon.
+// Note that x and y are compared to relative accuracy, so this function is not suitable for testing whether a value is approximately zero.
+static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon) {
+  return !gsl_fcmp(x, y, epsilon);
+}
+
+// If x and X are approximately equal to relative accuracy epsilon then set x = X.
+// If X = 0 then use an absolute comparison.
+static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
+  if (X != 0.0) {
+    if (approximately_equal(*x, X, epsilon)) {
+      XLAL_PRINT_INFO("Nudging value %.15g to %.15g\n", *x, X);
+      *x = X;
+    }
+  }
+  else {
+    if (fabs(*x - X) < epsilon)
+      *x = X;
+  }
+}
+

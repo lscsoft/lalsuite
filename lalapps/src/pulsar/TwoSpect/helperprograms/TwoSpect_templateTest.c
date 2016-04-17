@@ -17,12 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \file
- * \ingroup lalapps_pulsar_TwoSpect
- * \author Evan Goetz
- */
-
 #include <stdio.h>
 #include <math.h>
 #include <time.h>

@@ -17,6 +17,11 @@
 // program, rather than coding the new program completely from scratch.
 //
 
+/**
+ * \file
+ * \ingroup lalapps_pulsar_FITSTools
+ */
+
 #include <config.h>
 #include <string.h>
 #include <stdio.h>
@@ -52,29 +57,26 @@ int main(int argc, char *argv[])
     fprintf(stderr, "  imlist table.fits[2][bin (x,y) = 32] - list the pixels in\n");
     fprintf(stderr, "         an image constructed from a 2D histogram of X and Y\n");
     fprintf(stderr, "         columns in a table with a binning factor = 32\n");
-    return(0);
+    return (0);
   }
 
   FILE *fout = popen(PAGER, "w");
   if (fout == NULL) {
     fprintf(stderr, "Could not execute '%s'\n", PAGER);
-    return(1);
+    return (1);
   }
 
-  if (!fits_open_file(&fptr, argv[1], READONLY, &status))
-  {
-    if (!fits_get_img_param(fptr, 2, &bitpix, &naxis, naxes, &status) )
-    {
-      if (naxis > 2 || naxis == 0)
+  if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
+    if (!fits_get_img_param(fptr, 2, &bitpix, &naxis, naxes, &status)) {
+      if (naxis > 2 || naxis == 0) {
         fprintf(stderr, "Error: only 1D or 2D images are supported\n");
-      else
-      {
+      } else {
         /* get memory for 1 row */
         pixels = (double *) malloc(naxes[0] * sizeof(double));
 
         if (pixels == NULL) {
           fprintf(stderr, "Memory allocation error\n");
-          return(1);
+          return (1);
         }
 
         if (bitpix > 0) {  /* set the default output format string */
@@ -86,14 +88,15 @@ int main(int argc, char *argv[])
         }
 
         /* loop over all the rows in the image, top to bottom */
-        for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--)
-        {
+        for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--) {
           if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0], NULL,
-                            pixels, NULL, &status) )  /* read row of pixels */
+                            pixels, NULL, &status)) { /* read row of pixels */
             break;  /* jump out of loop on error */
+          }
 
-          for (ii = 0; ii < naxes[0]; ii++)
-            fprintf(fout, format, pixels[ii]);   /* print each value  */
+          for (ii = 0; ii < naxes[0]; ii++) {
+            fprintf(fout, format, pixels[ii]);  /* print each value  */
+          }
           fprintf(fout, "\n");                    /* terminate line */
         }
         free(pixels);
@@ -104,6 +107,8 @@ int main(int argc, char *argv[])
 
   pclose(fout);
 
-  if (status) fits_report_error(stderr, status); /* print any error message */
-  return(status);
+  if (status) {
+    fits_report_error(stderr, status);  /* print any error message */
+  }
+  return (status);
 }

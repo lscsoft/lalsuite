@@ -17,6 +17,11 @@
 // program, rather than coding the new program completely from scratch.
 //
 
+/**
+ * \file
+ * \ingroup lalapps_pulsar_FITSTools
+ */
+
 #include <config.h>
 #include <string.h>
 #include <stdio.h>
@@ -60,10 +65,9 @@ int main(int argc, char *argv[])
     fprintf(stderr, "    'pow.reg'.  This is an ASCII text file containing a\n");
     fprintf(stderr, "    list of one or more geometric regions such as circle,\n");
     fprintf(stderr, "    rectangle, annulus, etc.\n");
-    return(0);
+    return (0);
   }
-  if (!fits_open_file(&infptr, argv[1], READONLY, &status) )
-  {
+  if (!fits_open_file(&infptr, argv[1], READONLY, &status)) {
     if (fits_get_hdu_type(infptr, &hdutype,&status) ||
         hdutype==IMAGE_HDU) {
       fprintf(stderr, "Error: input HDU is not a table\n");
@@ -71,16 +75,17 @@ int main(int argc, char *argv[])
 
       fits_get_hdu_num(infptr, &hdunum);  /* save current HDU location */
 
-      if (!fits_create_file(&outfptr, argv[3], &status) )
-      {
+      if (!fits_create_file(&outfptr, argv[3], &status)) {
         /* copy all the HDUs from the input file to the output file */
         for (ii = 1; !status; ii++) {
-          if ( !fits_movabs_hdu(infptr, ii, NULL, &status) )
+          if (!fits_movabs_hdu(infptr, ii, NULL, &status)) {
             fits_copy_hdu(infptr, outfptr, 0, &status);
+          }
         }
 
-        if (status == END_OF_FILE)
+        if (status == END_OF_FILE) {
           status = 0;  /* reset expected error */
+        }
 
         /* move back to initial position in the file */
         fits_movabs_hdu(outfptr, hdunum, NULL, &status);
@@ -96,6 +101,8 @@ int main(int argc, char *argv[])
     fits_close_file(infptr, &status);
   }
 
-  if (status) fits_report_error(stderr, status); /* print any error message */
-  return(status);
+  if (status) {
+    fits_report_error(stderr, status);  /* print any error message */
+  }
+  return (status);
 }

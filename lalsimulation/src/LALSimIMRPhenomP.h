@@ -175,4 +175,7 @@ static REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.70
   const REAL8 cos_gamma_tilde   /**< cos(\\tilde gamma) = \\hat a_2 . \\hat L (Eq. 9)*/
 );
 
+static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
+static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
+
 #endif	// of #ifndef _LALSIM_IMR_PHENOMP_H

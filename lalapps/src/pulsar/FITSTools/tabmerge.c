@@ -17,6 +17,11 @@
 // program, rather than coding the new program completely from scratch.
 //
 
+/**
+ * \file
+ * \ingroup lalapps_pulsar_FITSTools
+ */
+
 #include <config.h>
 #include <string.h>
 #include <stdio.h>
@@ -56,43 +61,53 @@ int main(int argc, char *argv[])
     fprintf(stderr, "    Same as the 1st example, except only rows that have a PI\n");
     fprintf(stderr, "    column value > 45 will be merged into the output table.\n");
     fprintf(stderr, "\n");
-    return(0);
+    return (0);
   }
 
   /* open both input and output files and perform validity checks */
-  if ( fits_open_file(&infptr,  argv[1], READONLY,  &status) ||
-       fits_open_file(&outfptr, argv[2], READWRITE, &status) )
+  if (fits_open_file(&infptr,  argv[1], READONLY,  &status) ||
+      fits_open_file(&outfptr, argv[2], READWRITE, &status)) {
     fprintf(stderr, " Couldn't open both files\n");
+  }
 
-  else if ( fits_get_hdu_type(infptr,  &intype,  &status) ||
-            fits_get_hdu_type(outfptr, &outtype, &status) )
+  else if (fits_get_hdu_type(infptr,  &intype,  &status) ||
+           fits_get_hdu_type(outfptr, &outtype, &status)) {
     fprintf(stderr, "couldn't get the type of HDU for the files\n");
+  }
 
-  else if (intype == IMAGE_HDU)
+  else if (intype == IMAGE_HDU) {
     fprintf(stderr, "The input HDU is an image, not a table\n");
+  }
 
-  else if (outtype == IMAGE_HDU)
+  else if (outtype == IMAGE_HDU) {
     fprintf(stderr, "The output HDU is an image, not a table\n");
+  }
 
-  else if (outtype != intype)
+  else if (outtype != intype) {
     fprintf(stderr, "Input and output HDUs are not the same type of table.\n");
+  }
 
-  else if ( fits_get_num_cols(infptr,  &incols,  &status) ||
-            fits_get_num_cols(outfptr, &outcols, &status) )
+  else if (fits_get_num_cols(infptr,  &incols,  &status) ||
+           fits_get_num_cols(outfptr, &outcols, &status)) {
     fprintf(stderr, "Couldn't get number of columns in the tables\n");
+  }
 
-  else if ( incols != outcols )
+  else if (incols != outcols) {
     fprintf(stderr, "Input and output HDUs don't have same # of columns.\n");
+  }
 
-  else if ( fits_read_key(infptr, TLONG, "NAXIS1", &width, NULL, &status) )
+  else if (fits_read_key(infptr, TLONG, "NAXIS1", &width, NULL, &status)) {
     fprintf(stderr, "Couldn't get width of input table\n");
+  }
 
-  else if (!(buffer = (unsigned char *) malloc(width)) )
+  else if (!(buffer = (unsigned char *) malloc(width))) {
     fprintf(stderr, "memory allocation error\n");
+  }
 
-  else if ( fits_get_num_rows(infptr,  &inrows,  &status) ||
-            fits_get_num_rows(outfptr, &outrows, &status) )
+  else if (fits_get_num_rows(infptr,  &inrows,  &status) ||
+           fits_get_num_rows(outfptr, &outrows, &status)) {
     fprintf(stderr, "Couldn't get the number of rows in the tables\n");
+  }
 
   else  {
     /* check that the corresponding columns have the same datatypes */
@@ -105,17 +120,17 @@ int main(int argc, char *argv[])
       }
     }
 
-    if (check && !status)
-    {
+    if (check && !status) {
       /* insert 'inrows' empty rows at the end of the output table */
       fits_insert_rows(outfptr, outrows, inrows, &status);
 
-      for (ii = 1, jj = outrows +1; ii <= inrows; ii++, jj++)
-      {
+      for (ii = 1, jj = outrows +1; ii <= inrows; ii++, jj++) {
         /* read row from input and write it to the output table */
-        fits_read_tblbytes( infptr,  ii, 1, width, buffer, &status);
+        fits_read_tblbytes(infptr,  ii, 1, width, buffer, &status);
         fits_write_tblbytes(outfptr, jj, 1, width, buffer, &status);
-        if (status)break;  /* jump out of loop if error occurred */
+        if (status) {
+          break;  /* jump out of loop if error occurred */
+        }
       }
 
       /* all done; now free memory and close files */
@@ -124,9 +139,12 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (buffer)
+  if (buffer) {
     free(buffer);
+  }
 
-  if (status) fits_report_error(stderr, status); /* print any error message */
-  return(status);
+  if (status) {
+    fits_report_error(stderr, status);  /* print any error message */
+  }
+  return (status);
 }

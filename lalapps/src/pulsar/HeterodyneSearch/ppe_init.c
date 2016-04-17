@@ -142,9 +142,7 @@ void initialise_algorithm( LALInferenceRunState *runState )
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--verbose" );
   if( ppt ) {
-    LALInferenceAddVariable( runState->algorithmParams, "verbose", &verbose , LALINFERENCE_UINT4_t,
-                             LALINFERENCE_PARAM_FIXED );
-    verbose_output = 1;
+    LALInferenceAddVariable( runState->algorithmParams, "verbose", &verbose , LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
   }
 
   /* Number of live points */
@@ -169,8 +167,7 @@ void initialise_algorithm( LALInferenceRunState *runState )
   ppt = LALInferenceGetProcParamVal(commandLine,"--sloppyfraction");
   if( ppt ) { tmp = atof(ppt->value); }
   else { tmp = 0.0; }
-  LALInferenceAddVariable( runState->algorithmParams, "sloppyfraction", &tmp, LALINFERENCE_REAL8_t,
-                           LALINFERENCE_PARAM_OUTPUT );
+  LALInferenceAddVariable( runState->algorithmParams, "sloppyfraction", &tmp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT );
 
   /* Optionally specify number of parallel runs */
   ppt = LALInferenceGetProcParamVal( commandLine, "--Nruns" );

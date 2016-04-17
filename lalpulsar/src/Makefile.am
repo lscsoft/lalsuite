@@ -14,7 +14,6 @@ pkginclude_HEADERS = \
 	DopplerScan.h \
 	EstimateAmplitudeParams.h \
 	ExtrapolatePulsarSpins.h \
-	FitToPulsar.h \
 	FlatMesh.h \
 	FlatPulsarMetric.h \
 	GSLHelpers.h \
@@ -29,7 +28,6 @@ pkginclude_HEADERS = \
 	LALPulsarConfig.h \
 	LALPulsarVCSInfo.h \
 	LALPulsarVCSInfoHeader.h \
-	LALXMGRInterface.h \
 	LFTandTSutils.h \
 	LISAspecifics.h \
 	LUT.h \
@@ -84,7 +82,6 @@ liblalpulsar_la_SOURCES = \
 	DriveHough.c \
 	EstimateAmplitudeParams.c \
 	ExtrapolatePulsarSpins.c \
-	FitToPulsar.c \
 	FlatMesh.c \
 	FlatPulsarMetric.c \
 	GenerateEllipticSpinOrbitCW.c \
@@ -99,7 +96,6 @@ liblalpulsar_la_SOURCES = \
 	LALComputeAM.c \
 	LALInitBarycenter.c \
 	LALPulsarVCSInfo.c \
-	LALXMGRInterface.c \
 	LFTandTSutils.c \
 	LISAspecifics.c \
 	LatticeTiling.c \

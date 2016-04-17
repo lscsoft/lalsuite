@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_hough
+ * \ingroup lalapps_pulsar_Hough
  * \author Badri Krishnan, Alicia Sintes
  *
  * History:   Created by Sintes June 16, 2003

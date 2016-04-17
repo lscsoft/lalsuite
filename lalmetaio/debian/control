@@ -24,7 +24,7 @@ Package: lalmetaio-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g-dev,
   libmetaio-dev (>= 8.2),
-  lalmetaio (= ${binary:Version})
+  lalmetaio (= ${binary:Version}),
   lal-dev (>= 6.16.0~),
 Description: LSC Algorithm Library MetaIO Developers
  The LSC Algorithm MetaIO Library for gravitational wave data analysis.

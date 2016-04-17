@@ -549,7 +549,7 @@ REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
 
   T0 = pepoch;
 
-  /* make sure ra and dec are wrapped withing 0--2pi and -pi.2--pi/2 respectively */
+  /* make sure ra and dec are wrapped within 0--2pi and -pi.2--pi/2 respectively */
   ra = fmod(ra, LAL_TWOPI);
   REAL8 absdec = fabs(dec);
   if ( absdec > LAL_PI_2 ){

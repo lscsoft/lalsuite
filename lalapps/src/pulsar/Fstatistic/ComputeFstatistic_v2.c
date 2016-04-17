@@ -24,6 +24,11 @@
 
 /*********************************************************************************/
 /**
+ * \defgroup lalapps_pulsar_Fstatistic Fstatistic Search Applications
+ * \ingroup lalapps_pulsar_Apps
+ */
+
+/**
  * \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens, C. Messenger, K. Wette
  * \file
  * \ingroup lalapps_pulsar_Fstatistic

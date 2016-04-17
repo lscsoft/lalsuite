@@ -27,6 +27,7 @@
 #include <lal/LALInference.h>
 #include <lal/Units.h>
 #include <lal/FrequencySeries.h>
+#include <lal/Sequence.h>
 #include <lal/TimeSeries.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/VectorOps.h>
@@ -3980,6 +3981,106 @@ int LALInferenceSplineCalibrationFactor(REAL8Vector *logfreqs,
     }
 
     calFactor->data->data[i] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
+  }
+
+ cleanup:
+  if (ampInterp != NULL) gsl_interp_free(ampInterp);
+  if (phaseInterp != NULL) gsl_interp_free(phaseInterp);
+  if (ampAcc != NULL) gsl_interp_accel_free(ampAcc);
+  if (phaseAcc != NULL) gsl_interp_accel_free(phaseAcc);
+
+  if (status == XLAL_SUCCESS) {
+    return status;
+  } else {
+    XLAL_ERROR(status, "%s", fmt);
+  }
+}
+
+int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
+					REAL8Vector *deltaAmps,
+					REAL8Vector *deltaPhases,
+					REAL8Sequence *freqNodesLin,
+					COMPLEX16Sequence *calFactorROQLin,
+					REAL8Sequence *freqNodesQuad,
+					COMPLEX16Sequence *calFactorROQQuad) {
+
+  gsl_interp_accel *ampAcc = NULL, *phaseAcc = NULL;
+  gsl_interp *ampInterp = NULL, *phaseInterp = NULL;
+  calFactorROQLin = XLALCreateCOMPLEX16Sequence(freqNodesLin->length);
+  calFactorROQQuad = XLALCreateCOMPLEX16Sequence(freqNodesQuad->length);
+
+  int status = XLAL_SUCCESS;
+  const char *fmt = "";
+
+  size_t N = 0;
+  
+  /* should I check that calFactorROQ = NULL as well? */
+
+  if (logfreqs == NULL || deltaAmps == NULL || deltaPhases == NULL || freqNodesLin == NULL || freqNodesQuad == NULL) {
+    status = XLAL_EINVAL;
+    fmt = "bad input";
+    goto cleanup;
+  }
+
+  if (logfreqs->length != deltaAmps->length || deltaAmps->length != deltaPhases->length || freqNodesLin->length != calFactorROQLin->length || freqNodesQuad->length != calFactorROQQuad->length) {
+    status = XLAL_EINVAL;
+    fmt = "input lengths differ";
+    goto cleanup;
+  }
+  
+  
+  N = logfreqs->length;
+
+  ampInterp = gsl_interp_alloc(gsl_interp_cspline, N);
+  phaseInterp = gsl_interp_alloc(gsl_interp_cspline, N);
+
+  if (ampInterp == NULL || phaseInterp == NULL) {
+    status = XLAL_ENOMEM;
+    fmt = "could not allocate GSL interpolation objects";
+    goto cleanup;
+  }
+
+  ampAcc = gsl_interp_accel_alloc();
+  phaseAcc = gsl_interp_accel_alloc();
+
+  if (ampAcc == NULL || phaseAcc == NULL) {
+    status = XLAL_ENOMEM;
+    fmt = "could not allocate interpolation acceleration objects";
+    goto cleanup;
+  }
+
+  gsl_interp_init(ampInterp, logfreqs->data, deltaAmps->data, N);
+  gsl_interp_init(phaseInterp, logfreqs->data, deltaPhases->data, N);
+
+  REAL8 lowf = exp(logfreqs->data[0]);
+  REAL8 highf = exp(logfreqs->data[N-1]);
+  REAL8 dA = 0.0, dPhi = 0.0;
+  
+  for (unsigned int i = 0; i < freqNodesLin->length; i++) {
+    REAL8 f = freqNodesLin->data[i];
+    if (f < lowf || f > highf) {
+      dA = 0.0;
+      dPhi = 0.0;
+    } else {
+      dA = gsl_interp_eval(ampInterp, logfreqs->data, deltaAmps->data, log(f), ampAcc);
+      dPhi = gsl_interp_eval(phaseInterp, logfreqs->data, deltaPhases->data, log(f), phaseAcc);
+    }
+    
+    calFactorROQLin->data[i] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
+  }
+  
+  for (unsigned int j = 0; j < freqNodesQuad->length; j++) {
+    REAL8 f = freqNodesQuad->data[j];
+    if (f < lowf || f > highf) {
+      dA = 0.0;
+      dPhi = 0.0;
+    } else {
+      dA = gsl_interp_eval(ampInterp, logfreqs->data, deltaAmps->data, log(f), ampAcc);
+      dPhi = gsl_interp_eval(phaseInterp, logfreqs->data, deltaPhases->data, log(f), phaseAcc);
+    }
+
+    calFactorROQQuad->data[j] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
+
   }
 
  cleanup:

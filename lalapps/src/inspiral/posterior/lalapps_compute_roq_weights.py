@@ -39,8 +39,8 @@ parser.add_option("-T", "--delta_tc", type=float,
                       help="width of tc subdomain",)
 parser.add_option("-B", "--basis-set", type='string',
                       action="store",
-                      dest="b_matrix_path",
-                      help="B matrix",)
+                      dest="b_matrix_directory",
+                      help="B matrix directory",)
 parser.add_option("-o", "--out", type='string',
                   action="store",
                   dest="outpath",
@@ -49,7 +49,9 @@ parser.add_option("-o", "--out", type='string',
 
 (options, args) = parser.parse_args()
 
-B = np.load(options.b_matrix_path)
+B_linear = np.load(options.b_matrix_directory + "/B_linear.npy")
+B_quadratic = np.load(options.b_matrix_directory + "/B_quadratic.npy")
+basis_params = np.loadtxt(options.b_matrix_directory + "/params.dat").T
 
 def BuildWeights(data, B, deltaF):
 
@@ -61,9 +63,8 @@ def BuildWeights(data, B, deltaF):
         deltaF: integration element df
 
         '''
-
-        weights = np.dot(B, data.conjugate()) * deltaF * 4.
-
+        weights = np.dot(B.conjugate(), data) * deltaF * 4.
+	#weights = np.einsum('ij,jk->ik', B, data.conjugate() * deltaF * 4)
         return weights
 ##################################
 
@@ -72,6 +73,7 @@ relative_tc_shift = options.seglen - 2.
 # loop over ifos 
 
 i=0
+scale_factor = 0
 
 for ifo in options.IFOs:
 
@@ -79,19 +81,30 @@ for ifo in options.IFOs:
 	data = dat_file[1] + 1j*dat_file[2]
 	fseries = dat_file[0]
         deltaF = fseries[1] - fseries[0]
-	fseries = fseries[int(options.fLow/deltaF):len(fseries)]
-	data = data[int(options.fLow/deltaF):len(data)]
+	fHigh = fseries[-1]
+	
+	if options.fLow: 
+		fLow = options.fLow
+		scale_factor = int(basis_params[0] / fLow)
+
+	else:
+		fLow = basis_params[0]
+
+		assert fHigh == basis_params[1]
+
+	fseries = fseries[int(fLow/deltaF):len(fseries)+1]
+	data = data[int(fLow/deltaF):len(data)+1]
 
 
 	psdfile = np.column_stack( np.loadtxt(options.psd_file[i]) )
 	psd = psdfile[1]
-	psd = psd[int(options.fLow/deltaF):len(psd)]
+
+	psd[-1] = psd[-1 -1 ]
+
+	psd = psd[int(fLow/deltaF):len(psd)+1]
 	data /= psd
 
-
-	# print len(data),len(psd),len(basis_set)
-
-	assert len(data) == len(psd) == B.shape[1]
+	assert len(data) == len(psd) == B_linear.shape[1] == B_quadratic.shape[1]
 
 	for k in range(len(data)):
 		if np.isnan(data[k].real):
@@ -99,7 +112,8 @@ for ifo in options.IFOs:
 
 	tc_shifted_data = []  # array to be filled with data, shifted by discrete time tc
 
-	tcs = np.linspace(relative_tc_shift - options.dt - 0.022, relative_tc_shift + options.dt + 0.022, ceil(2.*(options.dt+0.022) / options.delta_tc) )# array of relative time shifts to be applied to the data
+	tcs = np.linspace(relative_tc_shift - options.dt - 0.026, relative_tc_shift + options.dt + 0.026, ceil(2.*(options.dt+0.026) / options.delta_tc) )# array of relative time shifts to be applied to the data
+
 	print "time steps = "+str(len(tcs))
 	for j in range(len(tcs)):
 
@@ -112,19 +126,47 @@ for ifo in options.IFOs:
 	tc_shifted_data = np.array(tc_shifted_data).T
 
 	#*************************************************************************** #
-
-	weights_path = os.path.join(options.outpath,"weights_%s.dat"%ifo)
-
-	weights_file = open(weights_path, "wb")
-
 	print "Computing weights for "+ifo
-	weights = BuildWeights(tc_shifted_data, B, deltaF)
+	weights_path_linear = os.path.join(options.outpath,"weights_linear_%s.dat"%ifo)
+	weights_file_linear = open(weights_path_linear, "wb")
+	weights_linear = BuildWeights(tc_shifted_data, B_linear, deltaF)
+	(weights_linear).tofile(weights_file_linear)
+        weights_file_linear.close()
+	#size_file_path = os.path.join(options.outpath,"roq_sizes_linear.dat")
+	#np.savetxt(size_file_path,np.array((B_linear.shape[0],B_linear.shape[1])),fmt='%u')
+	#*************************************************************************** #	
+	weights_path_quadratic = os.path.join(options.outpath,"weights_quadratic_%s.dat"%ifo)
+        weights_file_quadratic = open(weights_path_quadratic, "wb")
+	weights_quadratic = BuildWeights(1./psd, B_quadratic, deltaF).real
+
+	(weights_quadratic).tofile(weights_file_quadratic)
+        weights_file_quadratic.close()
+	size_file_path = os.path.join(options.outpath,"roq_sizes.dat")
+        np.savetxt(size_file_path,np.array((len(tcs),B_linear.shape[0],B_quadratic.shape[0],B_linear.shape[1])),fmt='%u')
 	print "Weights have been computed for "+ifo
 
-	(weights).tofile(weights_file)
-
-	weights_file.close()
 	i += 1
 
-size_file_path = os.path.join(options.outpath,"roq_sizes.dat")
-np.savetxt(size_file_path,np.array((len(tcs),B.shape[0],B.shape[1])),fmt='%u')
+	#save the fnodes as a dat file if they're not already:
+
+
+fnodes_linear = np.load(options.b_matrix_directory + "/fnodes_linear.npy")
+fnodes_quadratic = np.load(options.b_matrix_directory + "/fnodes_quadratic.npy")
+
+if scale_factor:
+
+	fnodes_linear /= scale_factor
+	fnodes_quadratic  /= scale_factor
+
+
+fnodes_linear_path = os.path.join(options.outpath,"fnodes_linear.dat")
+fnodes_linear_file = open(fnodes_linear_path, "wb")
+
+fnodes_linear.tofile(fnodes_linear_file)
+fnodes_linear_file.close()
+
+fnodes_quadratic_path = os.path.join(options.outpath,"fnodes_quadratic.dat")
+fnodes_quadratic_file = open(fnodes_quadratic_path, "wb")
+
+fnodes_quadratic.tofile(fnodes_quadratic_file)
+fnodes_quadratic_file.close()

@@ -50,6 +50,12 @@ const CHAR *longstring_ref = \
   "This is a long string #9. This is a long string #10." ;
 
 typedef struct {
+  INT4 n;
+  REAL4 v;
+  CHAR desc[4];
+} TestSubRecord;
+
+typedef struct {
   INT4 index;
   BOOLEAN flag;
   CHAR name[8];
@@ -62,12 +68,19 @@ typedef struct {
   REAL8 values[2];
   COMPLEX8 phasef;
   COMPLEX16 phase;
+  const TestSubRecord *sub;
 } TestRecord;
 
-const TestRecord testtable[] = {
-  { .index=3, .flag=1, .name="CasA", .epoch={123456789, 5}, .pos={.sky=5.4321, .freq=100.999, .fkdot={1e-9, 5e-20}}, .values={13.24, 43.234}, .phasef=crectf(1.2, 3.4), .phase=crect(4.5, 0.2) },
-  { .index=2, .flag=0, .name="Vela", .epoch={452456245, 9}, .pos={.sky=34.454, .freq=1345.34, .fkdot={2e-8, 6e-21}}, .values={14.35, 94.128}, .phasef=crectf(3.6, 9.3), .phase=crect(8.3, 4.0) },
-  { .index=1, .flag=1, .name="Crab", .epoch={467846774, 4}, .pos={.sky=64.244, .freq=15.6463, .fkdot={4e-6,     0}}, .values={153.4, 3.0900}, .phasef=crectf(6.7, 4.4), .phase=crect(5.6, 6.3) },
+const TestSubRecord testsub[3][2] = {
+  { { .n=0, .v=1.23, .desc="A1" }, { .n=1, .v=2.34, .desc="X9" } },
+  { { .n=0, .v=3.45, .desc="B3" }, { .n=1, .v=4.56, .desc="Y7" } },
+  { { .n=0, .v=5.67, .desc="C5" }, { .n=1, .v=6.78, .desc="Z5" } },
+};
+
+const TestRecord testtable[3] = {
+  { .index=3, .flag=1, .name="CasA", .epoch={123456789, 5}, .pos={.sky=5.4321, .freq=100.999, .fkdot={1e-9, 5e-20}}, .values={13.24, 43.234}, .phasef=crectf(1.2, 3.4), .phase=crect(4.5, 0.2), .sub=testsub[0] },
+  { .index=2, .flag=0, .name="Vela", .epoch={452456245, 9}, .pos={.sky=34.454, .freq=1345.34, .fkdot={2e-8, 6e-21}}, .values={14.35, 94.128}, .phasef=crectf(3.6, 9.3), .phase=crect(8.3, 4.0), .sub=testsub[1] },
+  { .index=1, .flag=1, .name="Crab", .epoch={467846774, 4}, .pos={.sky=64.244, .freq=15.6463, .fkdot={4e-6,     0}}, .values={153.4, 3.0900}, .phasef=crectf(6.7, 4.4), .phase=crect(5.6, 6.3), .sub=testsub[2] },
 };
 
 int main(void)
@@ -171,6 +184,15 @@ int main(void)
       XLAL_CHECK_MAIN(XLAL_FITS_TABLE_COLUMN_ADD_ARRAY(file, REAL8, values) == XLAL_SUCCESS, XLAL_EFUNC);
       XLAL_CHECK_MAIN(XLAL_FITS_TABLE_COLUMN_ADD(file, COMPLEX8, phasef) == XLAL_SUCCESS, XLAL_EFUNC);
       XLAL_CHECK_MAIN(XLAL_FITS_TABLE_COLUMN_ADD(file, COMPLEX16, phase) == XLAL_SUCCESS, XLAL_EFUNC);
+      {
+        XLAL_FITS_TABLE_COLUMN_PTR_BEGIN(sub, TestSubRecord, 2);
+        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED(file, 0, INT4, n, "n1");
+        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED(file, 0, REAL4, v, "v1");
+        XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED(file, 0, CHAR, desc, "desc1");
+        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED(file, 1, INT4, n, "n2");
+        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED(file, 1, REAL4, v, "v2");
+        XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED(file, 1, CHAR, desc, "desc2");
+      }
     }
     for (size_t i = 0; i < XLAL_NUM_ELEM(testtable); ++i) {
       XLAL_CHECK_MAIN(XLALFITSTableWriteRow(file, &testtable[i]) == XLAL_SUCCESS, XLAL_EFUNC);
@@ -378,8 +400,22 @@ int main(void)
       XLAL_CHECK_MAIN(XLAL_FITS_TABLE_COLUMN_ADD_ARRAY(file, REAL8, values) == XLAL_SUCCESS, XLAL_EFUNC);
       XLAL_CHECK_MAIN(XLAL_FITS_TABLE_COLUMN_ADD(file, COMPLEX8, phasef) == XLAL_SUCCESS, XLAL_EFUNC);
       XLAL_CHECK_MAIN(XLAL_FITS_TABLE_COLUMN_ADD(file, COMPLEX16, phase) == XLAL_SUCCESS, XLAL_EFUNC);
+      {
+        XLAL_FITS_TABLE_COLUMN_PTR_BEGIN(sub, TestSubRecord, 2);
+        for (size_t s = 0; s < 2; ++s) {
+          char col_name[32];
+          snprintf(col_name, sizeof(col_name), "n%zu", s + 1);
+          XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED(file, s, INT4, n, col_name);
+          snprintf(col_name, sizeof(col_name), "v%zu", s + 1);
+          XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED(file, s, REAL4, v, col_name);
+          snprintf(col_name, sizeof(col_name), "desc%zu", s + 1);
+          XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED(file, s, CHAR, desc, col_name);
+        }
+      }
     }
     TestRecord XLAL_INIT_DECL(record);
+    TestSubRecord XLAL_INIT_ARRAY_DECL(record_sub, 2);
+    record.sub = record_sub;
     size_t i = 0;
     while (nrows > 0) {
       XLAL_CHECK_MAIN(XLALFITSTableReadRow(file, &record, &nrows) == XLAL_SUCCESS, XLAL_EFUNC);
@@ -398,6 +434,11 @@ int main(void)
       }
       XLAL_CHECK_MAIN(record.phasef == testtable[i].phasef, XLAL_EFAILED);
       XLAL_CHECK_MAIN(record.phase == testtable[i].phase, XLAL_EFAILED);
+      for (size_t s = 0; s < 2; ++s) {
+        XLAL_CHECK_MAIN(record.sub[s].n == testtable[i].sub[s].n, XLAL_EFAILED);
+        XLAL_CHECK_MAIN(record.sub[s].v == testtable[i].sub[s].v, XLAL_EFAILED);
+        XLAL_CHECK_MAIN(strcmp(record.sub[s].desc, testtable[i].sub[s].desc) == 0, XLAL_EFAILED);
+      }
       ++i;
     }
     XLAL_CHECK_MAIN(i == XLAL_NUM_ELEM(testtable), XLAL_EFAILED);

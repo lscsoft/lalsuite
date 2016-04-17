@@ -27,7 +27,7 @@ lalapps_dumpSFT_SOURCES = dumpSFT.c
 lalapps_splitSFTs_SOURCES = splitSFTs.c $(SFTReferenceLibrary)
 
 EXTRA_DIST = \
-	SFTReferenceLibrary.dox \
+	SFTSpecification.dox \
 	testComputePSD.sh \
 	testSFTvalidate.sh \
 	$(END_OF_LIST)

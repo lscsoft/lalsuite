@@ -12,6 +12,11 @@
 */
 
 /**
+ * \defgroup lalapps_pulsar_HeterodyneSearch Heterodyne Search Applications
+ * \ingroup lalapps_pulsar_Apps
+ */
+
+/**
  * \file
  * \ingroup lalapps_pulsar_HeterodyneSearch
  * \author Matthew Pitkin, John Veitch, Colin Gill
@@ -185,6 +190,7 @@ extern "C" {
 " --output-all-params Output all stored parameters, otherwise the default will be\n\
                      to only output the non-fixed (i.e. variable) parameters\n\
                      specified in the prior and .par files\n"\
+" --output-chunks     Output lists of stationary chunks into which the data has been split\n"\
 " --gzip              gzip the output text file\n"\
 " --outXML            name of output XML file [not required]\n"\
 " --chunk-min         (INT4) minimum stationary length of data to be used in\n\

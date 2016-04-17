@@ -18,8 +18,13 @@
  */
 
 /**
+ * \defgroup lalapps_pulsar_Hough Sky Hough Search Applications
+ * \ingroup lalapps_pulsar_Apps
+ */
+
+/**
  * \file
- * \ingroup lalapps_pulsar_hough
+ * \ingroup lalapps_pulsar_Hough
  * \author Badri Krishnan, Alicia Sintes
  * \brief Driver code for performing Hough transform search on non-demodulated
  * data.

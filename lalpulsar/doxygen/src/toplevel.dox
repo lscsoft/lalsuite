@@ -56,8 +56,6 @@
    structures to and from XML files.
 @}
 
-\defgroup lalpulsar_UNCLASSIFIED	UNCLASSIFIED LALPulsar Packages
-
 \defgroup lalpulsar_swig		SWIG Interfaces
 @{
    \brief This package provides Octave and Python wrappings of LALPulsar

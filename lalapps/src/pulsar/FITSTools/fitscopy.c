@@ -17,6 +17,11 @@
 // program, rather than coding the new program completely from scratch.
 //
 
+/**
+ * \file
+ * \ingroup lalapps_pulsar_FITSTools
+ */
+
 #include <config.h>
 #include <stdio.h>
 
@@ -31,8 +36,7 @@ int main(int argc, char *argv[])
   fitsfile *infptr = 0, *outfptr = 0;   /* FITS file pointers defined in fitsio.h */
   int status = 0, ii = 1;       /* status must always be initialized = 0  */
 
-  if (argc != 3)
-  {
+  if (argc != 3) {
     fprintf(stderr, "Usage:  fitscopy inputfile outputfile\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Copy an input file to an output file, optionally filtering\n");
@@ -62,21 +66,22 @@ int main(int argc, char *argv[])
     fprintf(stderr, "\n");
     fprintf(stderr, "Note that it may be necessary to enclose the input file name\n");
     fprintf(stderr, "in single quote characters on the Unix command line.\n");
-    return(0);
+    return (0);
   }
 
   /* Open the input file */
-  if ( !fits_open_file(&infptr, argv[1], READONLY, &status) )
-  {
+  if (!fits_open_file(&infptr, argv[1], READONLY, &status)) {
     /* Create the output file */
-    if ( !fits_create_file(&outfptr, argv[2], &status) )
-    {
+    if (!fits_create_file(&outfptr, argv[2], &status)) {
       /* Copy every HDU until we get an error */
-      while( !fits_movabs_hdu(infptr, ii++, NULL, &status) )
+      while (!fits_movabs_hdu(infptr, ii++, NULL, &status)) {
         fits_copy_hdu(infptr, outfptr, 0, &status);
+      }
 
       /* Reset status after normal error */
-      if (status == END_OF_FILE) status = 0;
+      if (status == END_OF_FILE) {
+        status = 0;
+      }
 
       fits_close_file(outfptr,  &status);
     }
@@ -84,6 +89,8 @@ int main(int argc, char *argv[])
   }
 
   /* if error occured, print out error message */
-  if (status) fits_report_error(stderr, status);
-  return(status);
+  if (status) {
+    fits_report_error(stderr, status);
+  }
+  return (status);
 }

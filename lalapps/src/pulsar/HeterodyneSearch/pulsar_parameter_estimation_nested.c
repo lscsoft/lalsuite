@@ -151,8 +151,6 @@ LALInference tools */
 #include "ppe_roq.h"
 
 /* global variables */
-UINT4 verbose_output = 0;
-
 LALStringVector *corlist = NULL;
 
 INT4 main( INT4 argc, CHAR *argv[] ){

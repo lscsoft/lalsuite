@@ -71,10 +71,6 @@
  * default is \f$10^5\f$ seconds, which is of order one day but is not an integer
  * multiple of anything astronomically important.)
  *
- * The <tt>-x</tt> option makes a plot of the mesh points on the sky patch using a
- * system call to \c xmgrace. If \c xmgrace is not installed on your
- * system, this option will not work. The plot goes to a file <tt>mesh.agr</tt>.
- *
  * ### Algorithm ###
  *
  *
@@ -85,7 +81,6 @@
  * LALCheckMemoryLeaks()
  * LALProjectMetric()
  * LALPtoleMetric()
- * LALXMGRPlotMesh()
  * \endcode
  *
  * ### Notes ###
@@ -110,7 +105,6 @@
 #include <stdio.h>
 #include <lal/AVFactories.h>
 #include <lal/LALgetopt.h>
-#include <lal/LALXMGRInterface.h>
 #include <lal/PtoleMetric.h>
 #include <lal/StackMetric.h>
 #include <lal/TwoDMesh.h>
@@ -145,7 +139,6 @@ int main( int argc, char **argv )
 {
   static LALStatus     stat;      /* status structure */
   INT2                 opt;       /* command-line option character */
-  BOOLEAN              grace;     /* whether or not to graph using xmgrace */
   BOOLEAN              nonGrace;  /* whether or not to write to data file */
   TwoDMeshNode        *firstNode; /* head of linked list of nodes in mesh */
   static TwoDMeshParamStruc mesh; /* mesh parameters */
@@ -160,7 +153,6 @@ int main( int argc, char **argv )
 
 
   /* Set default values. */
-  grace = 0;
   nonGrace = 0;
   begin = 0.0;
   duration = 1e5;
@@ -225,9 +217,6 @@ int main( int argc, char **argv )
         return PTOLEMESHTESTC_ERNG;
       }
       break;
-    case 'x':
-      grace = 1;
-      break;
     } /* switch( opt ) */
   } /* while( LALgetopt... ) */
 
@@ -263,18 +252,6 @@ int main( int argc, char **argv )
   if( stat.statusCode )
     return stat.statusCode;
   printf( "created %d nodes\n", mesh.nOut );
-
-  /* Plot what we've got, if asked. */
-  if( grace )
-  {
-    fp = fopen( "mesh.agr", "w" );
-    if( !fp )
-      return PTOLEMESHTESTC_EFIO;
-    LALXMGRPlotMesh( &stat, firstNode, fp, &mesh );
-    if( stat.statusCode )
-      return stat.statusCode;
-    fclose( fp );
-  }
 
   /* Write what we've got to file mesh.dat */
   if( nonGrace )

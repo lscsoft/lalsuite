@@ -1431,8 +1431,8 @@ static int SEOBNRv2ROMDoubleSpinCore(
  *
  * \brief C code for SEOBNRv2 reduced order model
  * (double spin high resolution low mass version).
- * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
- * Further details in M. Puerrer, https://dcc.ligo.org/P1500175.
+ * See CQG 31 195010, 2014, arXiv:1402.4146 for the basic approach.
+ * Further details in PRD 93, 064041, 2016, arXiv:1512.02248.
  *
  * This is a frequency domain model that approximates the time domain SEOBNRv2 model.
  *
