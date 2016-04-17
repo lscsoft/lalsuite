@@ -51,7 +51,6 @@
 
 /* user input variables */
 typedef struct{
-  BOOLEAN help; /**< if the user wants a help message */
   INT4    startTime;          /**< desired start GPS time of search */
   INT4    endTime;            /**< desired end GPS time */
   REAL8   maxLag;             /**< maximum lag time in seconds between SFTs in correlation */
@@ -167,13 +166,13 @@ int main(int argc, char *argv[]){
   }
 
   /* read user input from the command line or config file */
-  if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS ) {
+  BOOLEAN should_exit = 0;
+  if ( XLALUserVarReadAllInput ( &should_exit, argc, argv ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALUserVarReadAllInput() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
-
-  if (uvar.help)	/* if help was requested, then exit */
-    return 0;
+  if (should_exit)
+    return EXIT_FAILURE;
 
   CHAR *VCSInfoString = XLALGetVersionString(0);     /**<LAL + LALapps Vsersion string*/
   /*If the version information was requested, output it and exit*/
@@ -798,7 +797,6 @@ int XLALInitUserVars (UserInput_t *uvar)
 {
 
   /* initialize with some defaults */
-  uvar->help = FALSE;
   uvar->maxLag = 0.0;
   uvar->inclAutoCorr = FALSE;
   uvar->fStart = 100.0;
@@ -838,7 +836,6 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->version = FALSE;
 
   /* register  user-variables */
-  XLALRegisterUvarMember( help, 	   BOOLEAN, 'h',  HELP, "Print this message");
   XLALRegisterUvarMember( startTime,       INT4, 0,  REQUIRED, "Desired start time of analysis in GPS seconds");
   XLALRegisterUvarMember( endTime,         INT4, 0,  REQUIRED, "Desired end time of analysis in GPS seconds");
   XLALRegisterUvarMember( maxLag,          REAL8, 0,  OPTIONAL, "Maximum lag time in seconds between SFTs in correlation");

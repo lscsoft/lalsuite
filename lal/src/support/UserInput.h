@@ -163,7 +163,6 @@ typedef enum {
 
   UVAR_CATEGORY_OPTIONAL,	///< optional
   UVAR_CATEGORY_REQUIRED,	///< required
-  UVAR_CATEGORY_HELP,		///< special variable: trigger output of help-string
   UVAR_CATEGORY_DEVELOPER,	///< optional and hidden in help-output until lalDebugLevel>=warning
   UVAR_CATEGORY_DEPRECATED,	///< optional and hidden until lalDebugLevel>=info; still supported but output warning if used
   UVAR_CATEGORY_DEFUNCT,	///< hidden completely from help output; not supported, will output error + help-string if used
@@ -174,7 +173,6 @@ typedef enum {
 // ***** the following are provided only for backwards compatibility until full transition to new XLAL interface *****
 #define UVAR_OPTIONAL  	UVAR_CATEGORY_OPTIONAL
 #define UVAR_REQUIRED  	UVAR_CATEGORY_REQUIRED
-#define UVAR_HELP 	UVAR_CATEGORY_HELP
 #define UVAR_DEVELOPER	UVAR_CATEGORY_DEVELOPER
 #define UVAR_SPECIAL	UVAR_CATEGORY_SPECIAL
 // **********
@@ -192,10 +190,10 @@ typedef enum {
 
 /* Function prototypes */
 void XLALDestroyUserVars( void );
-int XLALUserVarReadCmdline (int argc, char *argv[]);
-int XLALUserVarReadCfgfile ( const CHAR *cfgfile );
+int XLALUserVarReadCmdline( BOOLEAN *should_exit, int argc, char *argv[] );
+int XLALUserVarReadCfgfile( BOOLEAN *should_exit, const CHAR *cfgfile );
 CHAR *XLALUserVarHelpString ( const CHAR *progname );
-int XLALUserVarReadAllInput ( int argc, char *argv[] );
+int XLALUserVarReadAllInput( BOOLEAN *should_exit, int argc, char *argv[] );
 int XLALUserVarCheckRequired( void );
 int XLALUserVarWasSet (const void *cvar);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
@@ -291,9 +289,9 @@ void LALRegisterLISTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVa
 
 void LALDestroyUserVars (LALStatus *);
 
-void LALUserVarReadAllInput(LALStatus *, int argc, char *argv[]);
-void LALUserVarReadCmdline (LALStatus *, int argc, char *argv[]);
-void LALUserVarReadCfgfile (LALStatus *, const CHAR *cfgfile);
+void LALUserVarReadAllInput(LALStatus *, BOOLEAN *should_exit, int argc, char *argv[]);
+void LALUserVarReadCmdline (LALStatus *, BOOLEAN *should_exit, int argc, char *argv[]);
+void LALUserVarReadCfgfile (LALStatus *, BOOLEAN *should_exit, const CHAR *cfgfile);
 
 void LALUserVarHelpString (LALStatus *, CHAR **helpstring, const CHAR *progname);
 void LALUserVarCheckRequired (LALStatus *);

@@ -60,8 +60,6 @@ typedef struct
 
 typedef struct
 {
-  BOOLEAN help;
-
   CHAR *detector;	/**< detector name */
 
   REAL8 Alpha;		/**< skyposition Alpha: radians, equatorial coords. */
@@ -102,10 +100,10 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALInitUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
-  XLAL_CHECK ( XLALUserVarReadAllInput ( argc,argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if (uvar.help) { 	/* help requested: we're done */
-    exit(0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit(1);
   }
 
   if ( uvar.version )
@@ -246,8 +244,6 @@ XLALInitUserVars ( UserVariables_t *uvar )
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set a few defaults */
-  uvar->help = 0;
-
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
@@ -255,7 +251,6 @@ XLALInitUserVars ( UserVariables_t *uvar )
 
 
   /* register all user-variables */
-  XLALRegisterUvarMember(	help,		BOOLEAN, 'h', HELP,		"Print this help/usage message");
   XLALRegisterUvarMember( 	detector,	STRING, 'I', REQUIRED, 	"Detector name (eg. H1,H2,L1,G1,etc).");
 
   XLALRegisterUvarMember(	Alpha,		REAL8, 'a', OPTIONAL,	"skyposition Alpha in radians, equatorial coords.");

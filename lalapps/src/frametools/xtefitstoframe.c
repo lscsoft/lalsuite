@@ -257,7 +257,6 @@ typedef struct {
  * A structure that stores user input variables
  */
 typedef struct {
-  BOOLEAN help;		            /**< trigger output of help string */
   CHAR *inputfile;                  /**< directory containing input FITS files */
   CHAR *outputdir;                  /**< name of output directory */
   REAL8 deltat;                     /**< the desired sampling time */
@@ -486,7 +485,6 @@ ReadUserVars( int argc,char *argv[], UserInput_t *uvar, CHAR *clargs)
   uvar->deltat = MIN_DT;
 
   /* ---------- register all user-variables ---------- */
-  XLALRegisterUvarMember( 	help, 		BOOLEAN, 'h', HELP,     "Print this message");
   XLALRegisterUvarMember( 	inputfile, 	STRING, 'i', REQUIRED, "The input FITS file name");
   XLALRegisterUvarMember( 	outputdir, 	STRING, 'o', REQUIRED, "The output frame file directory name");
   XLALRegisterUvarMember( 	deltat,         REAL8, 't', OPTIONAL, "The output sampling time (in seconds)");
@@ -494,10 +492,9 @@ ReadUserVars( int argc,char *argv[], UserInput_t *uvar, CHAR *clargs)
   XLALRegisterUvarMember(	version,        BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
-  XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  /* if help was requested, we're done here */
-  if (uvar->help) { exit(0); }
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) { exit(1); }
 
   if (uvar->version) {
     CHAR *version_string;

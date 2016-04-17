@@ -49,7 +49,6 @@ typedef struct {
 /* User variables */
 typedef struct
 {
-  BOOLEAN help;
   CHAR *Fname1;
   CHAR *Fname2;
 
@@ -77,10 +76,10 @@ main (int argc, char *argv[] )
   XLAL_CHECK ( XLALinitUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
-  XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if (uvar.help) { 	/* help requested: we're done */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit (1);
   }
 
   /* read in the two Fstats-files (we use XLALParseDataFile() for that purpose) */
@@ -122,8 +121,6 @@ XLALinitUserVars ( UserVariables_t *uvar )
   /* now register all user-variables */
   XLALRegisterUvarMember( Fname1,	STRING, '1', REQUIRED, "Path and basefilename for first Fstats file");
   XLALRegisterUvarMember( Fname2,	STRING, '2', REQUIRED, "Path and basefilename for second Fstats file");
-  XLALRegisterUvarMember(   help,	BOOLEAN, 'h', HELP,     "Print this help/usage message");
-
   XLALRegisterUvarMember(   tol_L1,   	REAL8, 0, OPTIONAL, "tolerance on relative error between vectors using L1 norm, between [0,2]");
   XLALRegisterUvarMember(   tol_L2,   	REAL8, 0, OPTIONAL, "tolerance on relative error between vectors using L2 norm, between [0,2]");
   XLALRegisterUvarMember(   tol_angle, 	REAL8, 0, OPTIONAL, "tolerance on angle between the two vectors in radians, between [0,pi]");

@@ -344,7 +344,6 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_fnameChkPoint = NULL;
 
   /* user variables */
-  BOOLEAN uvar_help = FALSE;    /* true if -h option is given */
   BOOLEAN uvar_log = FALSE;     /* logging done if true */
   INT4 uvar_loglevel = 0;       /* DEPRECATED; used to set logLevel, now set by LAL_DEBUG_LEVEL */
 
@@ -449,7 +448,6 @@ int MAIN( int argc, char *argv[]) {
 #endif
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print toplist of semicoherent candidates", &uvar_semiCohToplist ), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
@@ -520,7 +518,10 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "logLevel",     0,  UVAR_CATEGORY_DEPRECATED, "DEPRECATED; used to set logLevel, now set by LAL_DEBUG_LEVEL", &uvar_loglevel), &status);
 
   /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
+  BOOLEAN should_exit = 0;
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    return(1);
 
   /* assemble version string */
   CHAR *VCSInfoString;
@@ -537,11 +538,6 @@ int MAIN( int argc, char *argv[]) {
       printf ("%s\n", VCSInfoString );
       return (0);
     }
-
-  /* exit if help was required */
-  if (uvar_help)
-    return(0);
-
 
   /* some basic sanity checks on user vars */
   if ( uvar_nStacksMax < 1) {

@@ -83,7 +83,9 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALRegisterUvarMember( longInt, INT8, 0, REQUIRED, "Testing INT8 argument") == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- now read all input from commandline and config-file ---------- */
-  XLAL_CHECK ( XLALUserVarReadAllInput ( my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( should_exit == 0, XLAL_EFUNC );
 
   /* ---------- test help-string generation */
   CHAR *helpstr;

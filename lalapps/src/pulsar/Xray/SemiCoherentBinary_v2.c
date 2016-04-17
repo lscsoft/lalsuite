@@ -69,7 +69,6 @@
 /** A structure that stores user input variables
  */
 typedef struct {
-  BOOLEAN help;		            /**< trigger output of help string */
   CHAR *sftbasename;                /**< basename of input SFT files */
   CHAR *outputdir;                  /**< the output directory */
   REAL8 freq;                       /**< the starting frequency */
@@ -444,7 +443,6 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->deltaorbphase = 2.0*LAL_PI;
 
   /* ---------- register all user-variables ---------- */
-  XLALRegisterUvarMember(help, 		        BOOLEAN, 'h', HELP,     "Print this message");
   XLALRegisterUvarMember(sftbasename, 	        STRING, 'i', REQUIRED, "The basename of the input SFT files");
   XLALRegisterUvarMember(outputdir, 	        STRING, 'o', REQUIRED, "The output directory name");
   XLALRegisterUvarMember(comment, 	        STRING, 'C', REQUIRED, "An analysis descriptor string");
@@ -468,13 +466,12 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(version,                BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
-  if (XLALUserVarReadAllInput(argc, argv)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",__func__,xlalErrno);
-    XLAL_ERROR(XLAL_EINVAL);
+  BOOLEAN should_exit = 0;
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",__func__,xlalErrno);
+    return XLAL_EFAULT;
   }
-
-  /* if help was requested, we're done here */
-  if (uvar->help) exit(0);
+  if (should_exit) exit(1);
 
   if ((version_string = XLALGetVersionString(0)) == NULL) {
     XLALPrintError("XLALGetVersionString(0) failed.\n");

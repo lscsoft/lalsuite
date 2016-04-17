@@ -30,7 +30,6 @@
 
 typedef struct
 {
-   BOOLEAN help;		/**< Print this help/usage message */
    CHAR *infile1;
    CHAR *infile2;
    CHAR *outfile1;
@@ -61,7 +60,6 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
 
    uvar->Tcoh = 1800;
 
-   XLALRegisterUvarMember(  help,           BOOLEAN, 'h', HELP    , "Print this help/usage message");
    XLALRegisterUvarMember(infile1,         STRING, 0 , REQUIRED, "Input file 1");
    XLALRegisterUvarMember(infile2,         STRING, 0 , REQUIRED, "Input file 2");
    XLALRegisterUvarMember(outfile1,        STRING, 0 , REQUIRED, "Temporary output file with all coincident candidates");
@@ -74,9 +72,11 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    XLALRegisterUvarMember(  dfdiff_allowed,  REAL8, 0 , REQUIRED, "Difference in modulation depth allowed (in Hz)");
    XLALRegisterUvarMember(  skydiff_allowed, REAL8, 0 , REQUIRED, "Difference in sky location allowed (in radians) at fiducial frequency 200 Hz");
 
-   XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
-
-   if ( uvar->help ) exit (0);
+   BOOLEAN should_exit = 0;
+   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+   if ( should_exit ) {
+     exit(1);
+   }
 
    return XLAL_SUCCESS;
 }

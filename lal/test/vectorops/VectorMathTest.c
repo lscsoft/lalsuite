@@ -111,7 +111,6 @@
 // local types
 typedef struct
 {
-  BOOLEAN help;		/**< Print this help/usage message */
   INT4 randSeed;	/**< allow user to specify random-number seed for reproducible noise-realizations */
   INT4 Nruns;		// number of repated timing 'runs' to average over in order to improve variance of result
   INT4 inAlign;		// alignment of input vectors; default is sizeof(void*), i.e. no particular alignment
@@ -130,15 +129,15 @@ main ( int argc, char *argv[] )
   uvar->Nruns = 1;
   uvar->inAlign = uvar->outAlign = sizeof(void*);
   // ---------- register user-variable ----------
-  XLALRegisterUvarMember(  help,                BOOLEAN, 'h', HELP    , "Print this help/usage message");
   XLALRegisterUvarMember(  randSeed,            INT4, 's', OPTIONAL, "Random-number seed");
   XLALRegisterUvarMember(  Nruns,               INT4, 'r', OPTIONAL, "Number of repeated timing 'runs' to average over (=improves variance)" );
   XLALRegisterUvarMember(  inAlign,             INT4, 'a', OPTIONAL, "Alignment of input vectors; default is sizeof(void*), i.e. no particular alignment" );
   XLALRegisterUvarMember(  outAlign,            INT4, 'b', OPTIONAL, "Alignment of output vectors; default is sizeof(void*), i.e. no particular alignment" );
 
-  XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( uvar->help ) {	/* if help was requested, we're done */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit (1);
   }
 
   srand ( uvar->randSeed );

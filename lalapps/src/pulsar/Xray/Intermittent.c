@@ -66,7 +66,6 @@
 /** A structure that stores user input variables
  */
 typedef struct {
-  BOOLEAN help;		            /**< trigger output of help string */
   CHAR *outLabel;                   /**< 'misc' entry in SFT-filenames or 'description' entry of frame filenames */
   CHAR *outputdir;                  /**< the output directory */
   CHAR *cachefile;                  /**< the name of the input cache file */
@@ -417,7 +416,6 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->verbose = 0;
 
   /* ---------- register all user-variables ---------- */
-  XLALRegisterUvarMember(help, 		        BOOLEAN, 'h', HELP,     "Print this message");
   XLALRegisterUvarMember(outLabel, 	        STRING, 'n', REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
   XLALRegisterUvarMember(outputdir, 	        STRING, 'o', REQUIRED, "The output directory name");
   XLALRegisterUvarMember(binfile, 	        STRING, 'i', REQUIRED, "The input binary file name");
@@ -441,13 +439,12 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(verbose,                   BOOLEAN, 'v', OPTIONAL, "Output status to standard out");
 
   /* do ALL cmdline and cfgfile handling */
-  if (XLALUserVarReadAllInput(argc, argv)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",__func__,xlalErrno);
-    XLAL_ERROR(XLAL_EINVAL);
+  BOOLEAN should_exit = 0;
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",__func__,xlalErrno);
+    return XLAL_EFAULT;
   }
-
-  /* if help was requested, we're done here */
-  if (uvar->help) exit(0);
+  if (should_exit) exit(1);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;

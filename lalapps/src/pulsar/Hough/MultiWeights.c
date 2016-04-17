@@ -102,7 +102,7 @@ int main(int argc, char *argv[]){
   REAL8  deltaF;
 
   /* user input variables */
-  BOOLEAN  uvar_help, uvar_printLog;
+  BOOLEAN  uvar_printLog;
   BOOLEAN  uvar_weighAM, uvar_weighNoise;
   BOOLEAN  uvar_dumpAllW, uvar_dumpRelW, uvar_dumpNoise;
   CHAR     *uvar_sftDir=NULL;
@@ -121,7 +121,6 @@ int main(int argc, char *argv[]){
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
  
-  uvar_help = FALSE;
   uvar_printLog = FALSE;
   uvar_weighAM = FALSE;
   uvar_weighNoise = FALSE; 
@@ -152,7 +151,6 @@ int main(int argc, char *argv[]){
   strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
   
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                    &uvar_help),            &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",                &uvar_f0),              &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",                 &uvar_fSearchBand),     &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "printLog",         0,  UVAR_OPTIONAL, "Print Log file",                        &uvar_printLog),        &status);  
@@ -178,11 +176,10 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterINTUserVar(    &status, "nfSizeCylinder",   0, UVAR_DEVELOPER, "Size of cylinder of PHMDs",             &uvar_nfSizeCylinder),  &status);
 
   /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0); 
+  BOOLEAN should_exit = 0;
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
 
  /* very basic consistency checks on user input */
   if ( uvar_f0 < 0 ) {

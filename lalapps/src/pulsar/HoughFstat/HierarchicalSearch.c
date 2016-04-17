@@ -371,7 +371,6 @@ int MAIN( int argc, char *argv[]) {
   /*   UINT4 loopindex, loopcounter; */
 
   /* user variables */
-  BOOLEAN uvar_help = FALSE; 	/* true if -h option is given */
   BOOLEAN uvar_log = FALSE; 	/* logging done if true */
 
   BOOLEAN uvar_printCand1 = FALSE; 	/* if 1st stage candidates are to be printed */
@@ -454,7 +453,6 @@ int MAIN( int argc, char *argv[]) {
 #endif
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "method",       0,  UVAR_OPTIONAL, "0=Hough,1=stackslide,-1=fstat", &uvar_method ), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print semicoh toplist?", &uvar_semiCohToplist ), &status);
@@ -512,11 +510,10 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
 
   /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    return(0);
+  BOOLEAN should_exit = 0;
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    return(1);
 
 
   /* assemble version string */

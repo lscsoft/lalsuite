@@ -205,6 +205,10 @@ XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variabe to link 
   XLAL_CHECK ( help != NULL, XLAL_EINVAL );
   XLAL_CHECK ( strlen(help) < sizeof(UVAR_vars.help), XLAL_EINVAL, "User-variable help '%s' is too long", help );
 
+  // check that neither short- nor long-option are used by help
+  XLAL_CHECK ( strcmp ( name, "help" ) != 0, XLAL_EINVAL, "Long-option name '--%s' is reserved for help!\n", name );
+  XLAL_CHECK ( optchar != 'h', XLAL_EINVAL, "Short-option '-%c' is reserved for help!\n", optchar );
+
   // find end of uvar-list && check that neither short- nor long-option are taken already
   LALUserVariable *ptr = &UVAR_vars;
   while ( ptr->next != NULL )
@@ -214,7 +218,7 @@ XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variabe to link 
       // long-option name taken already?
       XLAL_CHECK ( strcmp ( name, ptr->name ) != 0, XLAL_EINVAL, "Long-option name '--%s' already taken!\n", name );
       // short-option character taken already?
-      XLAL_CHECK ( (optchar == 0) || (ptr->optchar == 0) || (optchar != ptr->optchar), XLAL_EINVAL, "Short-option '-%c' already taken (by '--%s')!\n", ptr->optchar, ptr->name );
+      XLAL_CHECK ( (optchar == 0) || (ptr->optchar == 0) || (optchar != ptr->optchar), XLAL_EINVAL, "Short-option '-%c' already taken (by '--%s')!\n", optchar, ptr->name );
 
     } // while ptr->next
 
@@ -285,12 +289,18 @@ XLALDestroyUserVars ( void )
 
 /**
  * Parse command-line into UserVariable array
+ *
+ * If \p *should_exit is TRUE when this function returns, the
+ * caller should exit immediately.
  */
 int
-XLALUserVarReadCmdline ( int argc, char *argv[] )
+XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[] )
 {
+  XLAL_CHECK ( should_exit != NULL, XLAL_EFAULT );
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Input error, NULL argv[] pointer passed.\n" );
   XLAL_CHECK ( UVAR_vars.next != NULL, XLAL_EINVAL, "Internal error, no UVAR memory allocated. Did you register any user-variables?" );
+
+  *should_exit = 0;
 
   LALUserVariable *ptr;
   UINT4 pos;
@@ -433,12 +443,18 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
  * Read config-variables from cfgfile and parse into input-structure.
  * An error is reported if the config-file reading fails, but the
  * individual variable-reads are treated as optional
+ *
+ * If \p *should_exit is TRUE when this function returns, the
+ * caller should exit immediately.
  */
 int
-XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file */
+XLALUserVarReadCfgfile ( BOOLEAN *should_exit, const CHAR *cfgfile )
 {
+  XLAL_CHECK ( should_exit != NULL, XLAL_EFAULT );
   XLAL_CHECK ( cfgfile != NULL, XLAL_EINVAL );
   XLAL_CHECK ( UVAR_vars.next != NULL, XLAL_EINVAL, "No memory allocated in UVAR_vars.next, did you register any user-variables?\n" );
+
+  *should_exit = 0;
 
   LALParsedDataFile *cfg = NULL;
   XLAL_CHECK ( XLALParseDataFile ( &cfg, cfgfile ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -556,9 +572,6 @@ XLALUserVarHelpString ( const CHAR *progname )
       if ( ptr->category == UVAR_CATEGORY_REQUIRED ) {
 	strcpy (defaultstr, "REQUIRED");
       }
-      else if ( ptr->category == UVAR_CATEGORY_HELP ) {
-        strcpy ( defaultstr, "");
-      }
       else // write the current default-value into a string
 	{
 	  CHAR *valstr;
@@ -649,18 +662,39 @@ XLALUserVarHelpString ( const CHAR *progname )
 
 /**
  * Put all the pieces together, and basically does everything:
- * get config-filename from cmd-line (if found),
+ * print help (if requested), get config-filename from cmd-line (if found),
  * then interpret config-file and then the command-line
+ *
+ * If \p *should_exit is TRUE when this function returns, the
+ * program should exit immediately with a non-zero status.
  */
 int
-XLALUserVarReadAllInput ( int argc, char *argv[] )
+XLALUserVarReadAllInput ( BOOLEAN *should_exit, int argc, char *argv[] )
 {
+  XLAL_CHECK ( should_exit != NULL, XLAL_EFAULT );
   XLAL_CHECK ( argc > 0, XLAL_EINVAL );
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL );
   XLAL_CHECK ( argv[0] != NULL, XLAL_EINVAL );
   XLAL_CHECK ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?" );
 
+  *should_exit = 0;
+
   program_name = argv[0];	// keep a modul-local pointer to the executable name
+
+  // ---------- manually parse command-line for help/usage arguments
+  for ( INT4 i = 1; i < argc; i++ )
+    {
+      XLAL_CHECK( argv[i] != NULL, XLAL_EINVAL, "argc = %d, but argv[%d] == NULL!\n", argc, i );
+      if ( strcmp( argv[i], "-h" ) == 0 || strcmp( argv[i], "--help" ) == 0 || strcmp( argv[i], "-help" ) == 0 )
+        {
+          CHAR *helpstring;
+          XLAL_CHECK ( ( helpstring = XLALUserVarHelpString(argv[0])) != NULL, XLAL_EFUNC );
+          printf ("\n%s\n", helpstring);
+          XLALFree (helpstring);
+          *should_exit = 1;
+          return XLAL_SUCCESS;
+        }
+    }
 
   // ---------- pre-process command-line: have we got a config-file ?
   CHAR* cfgfile_name = NULL;
@@ -681,26 +715,24 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
   // ---------- if config-file specified, read from that first
   if ( cfgfile_name != NULL )
     {
-      XLAL_CHECK ( XLALUserVarReadCfgfile ( cfgfile_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALUserVarReadCfgfile ( should_exit, cfgfile_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      if ( *should_exit ) {
+        return XLAL_SUCCESS;
+      }
       XLALFree (cfgfile_name);
     }
 
   // ---------- now parse cmdline: overloads previous config-file settings
-  XLAL_CHECK ( XLALUserVarReadCmdline ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALUserVarReadCmdline ( should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( *should_exit ) {
+    return XLAL_SUCCESS;
+  }
 
   // ---------- handle special options that need some action ----------
   BOOLEAN skipCheckRequired = FALSE;
   LALUserVariable *ptr = &UVAR_vars;
   while ( (ptr=ptr->next) != NULL )
     {
-      if ( (ptr->category == UVAR_CATEGORY_HELP) && ( *((BOOLEAN*)ptr->varp) ) )
-	{
-	  CHAR *helpstring;
-	  XLAL_CHECK ( ( helpstring = XLALUserVarHelpString(argv[0])) != NULL, XLAL_EFUNC );
-          printf ("\n%s\n", helpstring);
-	  XLALFree (helpstring);
-	  return XLAL_SUCCESS;
-	} // if help requested
 
       // check 'special' category, which suppresses the CheckRequired test
       if ( (ptr->category == UVAR_CATEGORY_SPECIAL) && ptr->was_set ) {
@@ -874,10 +906,10 @@ LALDestroyUserVars (LALStatus *status)
 
 /** \deprecated use XLALUserVarReadCmdline() instead */
 void
-LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
+LALUserVarReadCmdline (LALStatus *status, BOOLEAN *should_exit, int argc, char *argv[])
 {
   INITSTATUS(status);
-  if ( XLALUserVarReadCmdline(argc, argv) != XLAL_SUCCESS ) {
+  if ( XLALUserVarReadCmdline(should_exit, argc, argv) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALUserVarReadCmdline() failed with code %d\n", xlalErrno );
     ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
   }
@@ -898,10 +930,10 @@ LALUserVarCheckRequired (LALStatus *status)
 
 /** \deprecated use XLALUserVarReadAllInput() instead */
 void
-LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
+LALUserVarReadAllInput (LALStatus *status, BOOLEAN *should_exit, int argc, char *argv[])
 {
   INITSTATUS(status);
-  if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS ) {
+  if ( XLALUserVarReadAllInput ( should_exit, argc, argv ) != XLAL_SUCCESS ) {
     XLALPrintError ( "XLALUserVarReadAllInput() failed with code %d\n", xlalErrno );
     ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
   }
@@ -1031,11 +1063,12 @@ LALRegisterLISTUserVar (LALStatus *status,
 /** \deprecated use XLALUserVarReadCfgfile() instead */
 void
 LALUserVarReadCfgfile (LALStatus *status,
+		       BOOLEAN *should_exit,
 		       const CHAR *cfgfile) 	   /* name of config-file */
 {
 
   INITSTATUS(status);
-  if ( XLALUserVarReadCfgfile ( cfgfile ) != XLAL_SUCCESS ) {
+  if ( XLALUserVarReadCfgfile ( should_exit, cfgfile ) != XLAL_SUCCESS ) {
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
   RETURN (status);

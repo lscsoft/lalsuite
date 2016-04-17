@@ -113,14 +113,11 @@ int main(int argc, char *argv[]){
   INT4 flag= 0;
  
   /* user input variables */
-  BOOLEAN uvar_help;
   CHAR *uvar_nstarfile=NULL;
   CHAR *uvar_harmonicsfile=NULL;
   CHAR *uvar_cleannstar=NULL;
 
   /* set defaults */
-
-  uvar_help = FALSE;  
 
   uvar_nstarfile = (CHAR *)LALMalloc(512*sizeof(CHAR));
   strcpy(uvar_nstarfile, NSTARFILE);
@@ -132,18 +129,16 @@ int main(int argc, char *argv[]){
   strcpy(uvar_cleannstar, CLEANNSTARFILE);
 
   /* register user input variables */
-  SUB( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);   
   SUB( LALRegisterSTRINGUserVar( &status, "nstarfile",       'n', UVAR_OPTIONAL, "File with max number counts",   &uvar_nstarfile),       &status);
   SUB( LALRegisterSTRINGUserVar( &status, "harmonicsfile",   'l', UVAR_OPTIONAL, "File with line information",    &uvar_harmonicsfile),   &status);
   SUB( LALRegisterSTRINGUserVar( &status, "cleannstarfile",  'o', UVAR_OPTIONAL, "Output file",                   &uvar_cleannstar),      &status);
 
 
   /* read all command line variables */
-  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0); 
+  BOOLEAN should_exit = 0;
+  SUB( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
   
 
   /* find number of harmonics */

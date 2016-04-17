@@ -104,7 +104,6 @@ int main(int argc, char *argv[]){
   INT4   sftFminBin;
   UINT4 loopId, tempLoopId;
   FILE  *fpOut = NULL;
-  BOOLEAN uvar_help;
   CHAR *fnameLog=NULL;
   FILE *fpLog = NULL;
   CHAR *logstr=NULL;
@@ -125,7 +124,6 @@ int main(int argc, char *argv[]){
   pulsarTemplate.spindown.data = (REAL8 *)LALMalloc(msp*sizeof(REAL8));
  
  
-  uvar_help = FALSE;
   uvar_peakThreshold = THRESHOLD;
 
   uvar_earthEphemeris = (CHAR *)LALMalloc(1024*sizeof(CHAR));
@@ -146,7 +144,6 @@ int main(int argc, char *argv[]){
   uvar_blocksRngMed = BLOCKSRNGMED;
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar( &status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo", 'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file", &uvar_earthEphemeris), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris", 'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
@@ -157,13 +154,10 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar( &status, "peakThreshold", 't', UVAR_OPTIONAL, "Peak selection threshold", &uvar_peakThreshold), &status);
 
   /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-
-  
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0); 
+  BOOLEAN should_exit = 0;
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
  
   /* open log file for writing */
   fnameLog = LALCalloc( (strlen(uvar_fnameOut) + strlen(".log") + 10),1);
