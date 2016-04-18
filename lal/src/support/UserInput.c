@@ -99,13 +99,12 @@ typedef struct tagLALUserVariable {
   CHAR help[2048];			// help-string
   void *varp;				// pointer to the actual C-variable
   UserVarCategory category;		// category (optional, required, developer, ... )
-  BOOLEAN was_set;			// was this set by the user in any way? (ie vie cmdline or cfg-file)
+  BOOLEAN was_set;			// was this set by the user: 0=no, 1=via cfg-file, 2=via cmdline
   struct tagLALUserVariable *next; 	// linked list
 } LALUserVariable;
 
 // ---------- local prototypes ----------
 int XLALRegisterUserVar (void *cvar, const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *help);
-void check_and_mark_as_set ( LALUserVariable *ptr );
 int XLALUserVarPrintUsage ( FILE *file );
 int XLALUserVarPrintHelp ( FILE *file );
 static void format_user_var_names( char *s );
@@ -464,7 +463,17 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[] )
 
 	} // switch ptr->type
 
-      check_and_mark_as_set ( ptr );
+      switch ( ptr->was_set ) {
+      case 0:    // this variable has not been set; mark as set on command line
+        ptr->was_set = 2;
+        break;
+      case 1:    // this variable has been set in configuration file; print warning
+        XLALPrintError ( "\n%s: option " UVAR_FMT " is overriding value set in configuration file!\n\n", program_name, ptr->name );
+        break;
+      default:   // this variable has been set before; error
+        XLALUserVarCheck( should_exit, 0, "option " UVAR_FMT " was set more than once!", ptr->name );
+        return XLAL_SUCCESS;
+      }
 
     } // while LALgetopt_long()
 
@@ -537,7 +546,16 @@ XLALUserVarReadCfgfile ( BOOLEAN *should_exit, const CHAR *cfgfile )
               return XLAL_SUCCESS;
             }
           XLALFree (valString);
-          check_and_mark_as_set ( ptr );
+
+          switch ( ptr->was_set ) {
+          case 0:    // this variable has not been set; mark as set in configuration file
+            ptr->was_set = 1;
+            break;
+          default:   // this variable has been set before; error
+            XLALUserVarCheck( should_exit, 0, "configuration option `%s' was set more than once!", ptr->name );
+            return XLAL_SUCCESS;
+          }
+
         } // if wasRead
 
     } // while ptr->next
@@ -1040,23 +1058,6 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
   return record;
 
 } // XLALUserVarGetLog()
-
-/**
- * Mark the user-variable as set, check if it has been
- * set previously and issue a warning if set more than once ...
- */
-void
-check_and_mark_as_set ( LALUserVariable *ptr )
-{
-  // output warning if this variable has been set before ...
-  if ( ptr->was_set ) {
-    XLALPrintWarning ( "User-variable '%s' was set more than once!\n", ptr->name );
-  }
-
-  ptr->was_set = 1;
-
-  return;
-} // check_and_mark_as_set()
 
 /* ========== DEPRECATED LAL INTERFACE FUNCTIONS, which have been replaced by XLAL functions,
  * These functions are just wrappers around the XLAL functions

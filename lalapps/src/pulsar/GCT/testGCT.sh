@@ -269,7 +269,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_RS="${testDir}/GCT_RS.dat"
 timingsfile_RS="${testDir}/timing_RS.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' --recalcToplistStats ${BSGL_flags}"
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' ${BSGL_flags}"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
