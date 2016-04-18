@@ -39,13 +39,13 @@ import datetime
 import json
 from scipy import stats
 
+import matplotlib
+matplotlib.use("Agg")
+
 from lalapps.pulsarpputils import *
 from lalapps.pulsarhtmlutils import *
 from pylal import bayespputils as bppu
 from pylal import git_version
-
-import matplotlib
-matplotlib.use("Agg")
 
 __author__="Matthew Pitkin <matthew.pitkin@ligo.org>"
 __version__= "git id %s"%git_version.id
