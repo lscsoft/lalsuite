@@ -36,7 +36,7 @@
 #include <unistd.h>
 #endif
 
-#  define _(msgid)	(msgid)
+#define _(msgid) ("\n" msgid)
 
 /* This version of `getopt' appears to the caller like standard Unix `getopt'
    but it behaves differently for the user, since it allows the user

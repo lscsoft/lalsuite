@@ -188,14 +188,18 @@ typedef enum {
   UVAR_LOGFMT_LAST
 } UserVarLogFormat;
 
+/* Global variables */
+#ifndef SWIG /* exclude from SWIG interface */
+extern const char *lalUserVarHelpBrief;
+#endif /* SWIG */
+
 /* Function prototypes */
 void XLALDestroyUserVars( void );
 int XLALUserVarReadCmdline( BOOLEAN *should_exit, int argc, char *argv[] );
 int XLALUserVarReadCfgfile( BOOLEAN *should_exit, const CHAR *cfgfile );
-CHAR *XLALUserVarHelpString ( const CHAR *progname );
 int XLALUserVarReadAllInput( BOOLEAN *should_exit, int argc, char *argv[] );
-int XLALUserVarCheckRequired( void );
-int XLALUserVarWasSet (const void *cvar);
+int XLALUserVarWasSet( const void *cvar );
+void XLALUserVarCheck( BOOLEAN *should_exit, const int assertion, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(3,4);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
 
 /**
@@ -286,15 +290,10 @@ void LALRegisterINTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVar
 void LALRegisterBOOLUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, BOOLEAN *cvar);
 void LALRegisterSTRINGUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, CHAR **cvar);
 void LALRegisterLISTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, LALStringVector **cvar);
-
 void LALDestroyUserVars (LALStatus *);
-
 void LALUserVarReadAllInput(LALStatus *, BOOLEAN *should_exit, int argc, char *argv[]);
 void LALUserVarReadCmdline (LALStatus *, BOOLEAN *should_exit, int argc, char *argv[]);
 void LALUserVarReadCfgfile (LALStatus *, BOOLEAN *should_exit, const CHAR *cfgfile);
-
-void LALUserVarHelpString (LALStatus *, CHAR **helpstring, const CHAR *progname);
-void LALUserVarCheckRequired (LALStatus *);
 INT4 LALUserVarWasSet (const void *cvar);
 void LALUserVarGetLog (LALStatus *, CHAR **logstr,  UserVarLogFormat format);
 
