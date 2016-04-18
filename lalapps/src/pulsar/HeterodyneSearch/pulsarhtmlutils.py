@@ -393,7 +393,7 @@ class htmltag:
 
 class atag(htmltag):
   """
-  Class for a link <a href=""> tag
+  Class for a link tag
   """
   def __init__(self, link, linktext="", linkclass="", linkid="", linkstyle=""):
     """
