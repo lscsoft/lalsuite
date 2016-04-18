@@ -175,9 +175,6 @@ AC_HEADER_STDC
 AC_CHECK_HEADERS([zlib.h],,[AC_MSG_ERROR([could not find zlib.h])])
 AC_CHECK_HEADERS([unistd.h glob.h])
 
-# check for popen/pclose
-AC_CHECK_FUNCS([popen pclose])
-
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
