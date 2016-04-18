@@ -21,7 +21,6 @@
 #include <lal/AVFactories.h>
 #include <lal/LineRobustStats.h>
 #include <lal/LogPrintf.h>
-#include <lal/UserInput.h>
 
 /******************************************************
  *  Error codes and messages.
