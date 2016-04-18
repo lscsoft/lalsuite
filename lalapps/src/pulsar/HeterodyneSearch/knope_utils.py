@@ -385,17 +385,18 @@ class knopeDAG(pipeline.CondorDAG):
         self.processed_files = prevdag.processed_files
       else: # if analysing only selected pulsars (from pulsarlist) just get information on them
         for psrl in pulsarlist:
-          if psrl not in self.unmodified_pulsars and psrl not in self.modified_pulsars:
+          if psrl not in prevdag.analysed_pulsars:
             print("Error... specified pulsar '%s' could not be found in previous run pickle file '%s'." % (psrl, preprocessed_pickle))
             self.error_code = 1
             return
-          else:
-            if psrl in prevdag.unmodified_pulsars:
-              self.unmodified_pulsars[psrl] = prevdag.unmodified_pulsars[psrl]
-            if psrl in prevdag.modified_pulsars:
-              self.modified_pulsars[psrl] = prevdag.modified_pulsars[psrl]
+
+          if psrl in prevdag.unmodified_pulsars:
+            self.unmodified_pulsars[psrl] = prevdag.unmodified_pulsars[psrl]
+          if psrl in prevdag.modified_pulsars:
+            self.modified_pulsars[psrl] = prevdag.modified_pulsars[psrl]
 
           self.analysed_pulsars[psrl] = prevdag.analysed_pulsars[psrl]
+          self.processed_files = {}
           self.processed_files[psrl] = prevdag.processed_files[psrl]
 
     if self.preprocessing_only: # end class initialisation
@@ -943,7 +944,7 @@ class knopeDAG(pipeline.CondorDAG):
 
     # work out combinations of parameter estimation jobs to run (FIXME: if non-GR mode was able to be enabled then another
     # combination would include those below, but in both GR and non-GR flavours)
-    # NOTE: if running with two frequency factors (which have been fixed, so they can only be 1f and 2f), this just run with
+    # NOTE: if running with two frequency factors (which have been fixed, so they can only be 1f and 2f), this just runs
     # for a multi-harmonic search at both frequencies. If you want to run at a single frequency then that should be set up
     # independently.
     self.pe_combinations = []
@@ -1024,11 +1025,11 @@ class knopeDAG(pipeline.CondorDAG):
           self.mkdirs(ffpostdir)
           if self.error_code != 0: return
 
-          # create prior file for analysis
-          priorfile, priornode = self.create_prior_file(psr, psrdir, dets, self.freq_factors, ffdir)
-
           randomiseseed = ''
           if j == 0:
+            # create prior file for analysis (use this same file for all background runs)
+            priorfile, priornode = self.create_prior_file(psr, psrdir, dets, self.freq_factors, ffdir)
+
             nruns = self.pe_nruns
             nlive = self.pe_nlive
           else:
@@ -1120,6 +1121,9 @@ class knopeDAG(pipeline.CondorDAG):
                         penode.add_parent(self.splinter_nodes_modified[det][ff])
                       elif pname in self.splinter_unmodified_pars:
                         penode.add_parent(self.splinter_nodes_unmodified[det][ff])
+
+            # add prior creation node as parent
+            penode.add_parent(priornode)
 
             # add node to dag
             self.add_node(penode)
