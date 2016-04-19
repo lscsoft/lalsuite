@@ -228,8 +228,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     if (MPIrank == 0)
         LALInferencePrintInjectionSample(runState);
 
-    if (benchmark)
-        timestamp_epoch = LALInferenceGetREAL8Variable(runState->algorithmParams, "timestamp_epoch");
+    if (benchmark) {
+        struct timeval start_tv;
+        gettimeofday(&start_tv, NULL);
+        timestamp_epoch = start_tv.tv_sec + start_tv.tv_usec/1E6;
+        LALInferenceAddVariable(runState->algorithmParams,
+                                "timestamp_epoch", &timestamp_epoch,
+                                LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+    }
 
     /* Print run details */
     if (MPIrank == 0) {
