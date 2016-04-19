@@ -147,6 +147,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     INT4 Niter = LALInferenceGetINT4Variable(algorithm_params, "nsteps");
     INT4 Neff = LALInferenceGetINT4Variable(algorithm_params, "neff");
     INT4 Nskip = LALInferenceGetINT4Variable(algorithm_params, "skip");
+    INT4 temp_skip = LALInferenceGetINT4Variable(algorithm_params, "tskip");
     INT4 de_buffer_limit = LALInferenceGetINT4Variable(algorithm_params, "de_buffer_limit");
     INT4 randomseed = LALInferenceGetINT4Variable(algorithm_params, "random_seed");
 
@@ -266,17 +267,17 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
     // iterate:
     while (!runComplete) {
-        #pragma omp parallel private(thread)
-        {
-            #pragma omp for nowait
-            for (t = 0; t < n_local_threads; t++) {
-                FILE *outfile = NULL;
-                char outfilename[256];
-                struct timeval tv;
-                REAL8 timestamp=-1.0;
+        #pragma omp parallel for private(thread)
+        for (t = 0; t < n_local_threads; t++) {
+            FILE *outfile = NULL;
+            char outfilename[256];
+            struct timeval tv;
+            REAL8 timestamp=-1.0;
+            INT4 i=0;
 
-                thread = runState->threads[t];
+            thread = runState->threads[t];
 
+            for (i=0; i<temp_skip; i++) {
                 /* Increment iteration counter */
                 thread->step += 1;
 
@@ -361,38 +362,27 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
                     }
                 }
             }
-
-            if (LALInferenceSwapFuse(runState)) {
-                printf("Waiting to swap...\n");
-                #pragma omp barrier
-                #pragma omp master
-                {
-                    /* Open swap file if going verbose */
-                    verbose_file = NULL;
-                    if (tempVerbose) {
-                        sprintf(verbose_filename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
-                        verbose_file = fopen(verbose_filename, "a");
-                    }
-
-                    /* Excute swap proposal. */
-                    printf("Swapping!\n");
-                    runState->parallelSwap(runState, verbose_file);
-                    printf("Swapped!\n");
-
-                    if (tempVerbose)
-                        fclose(verbose_file);
-
-                    /* Check if run should end */
-                    if (runState->threads[0]->step > Niter)
-                        runComplete=1;
-
-                    /* Broadcast the root's decision on run completion */
-                    printf("Bcasting!\n");
-                    MPI_Bcast(&runComplete, 1, MPI_INT, 0, MPI_COMM_WORLD);
-                    printf("Bcasted!\n");
-                }
-            }
         }
+
+        /* Open swap file if going verbose */
+        verbose_file = NULL;
+        if (tempVerbose) {
+            sprintf(verbose_filename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
+            verbose_file = fopen(verbose_filename, "a");
+        }
+
+        /* Excute swap proposal. */
+        runState->parallelSwap(runState, verbose_file);
+
+        if (tempVerbose)
+            fclose(verbose_file);
+
+        /* Check if run should end */
+        if (runState->threads[0]->step > Niter)
+            runComplete=1;
+
+        /* Broadcast the root's decision on run completion */
+        MPI_Bcast(&runComplete, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }// while (!runComplete)
 }
 
@@ -478,28 +468,6 @@ void mcmc_step(LALInferenceRunState *runState, LALInferenceThreadState *thread) 
 //-----------------------------------------
 // Swap routines:
 //-----------------------------------------
-INT4 LALInferenceSwapFuse(LALInferenceRunState *runState) {
-    INT4 MPIrank, MPIsize;
-    INT4 n_local_threads, ntemps;
-    INT4 *nsteps_until_swap;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-    MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
-
-    n_local_threads = runState->nthreads;
-    nsteps_until_swap = (INT4 *)LALInferenceGetVariable(runState->algorithmParams, "nsteps_until_swap");
-
-    /* Return if no swap should be proposed */
-    ntemps = MPIsize*n_local_threads;
-    if(*nsteps_until_swap != 0 || ntemps<2) {
-        *nsteps_until_swap -= 1;
-        return 0;
-    } else {
-        *nsteps_until_swap = LALInferenceGetINT4Variable(runState->algorithmParams, "tskip");
-        return 1;
-    }
-}
-
 void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile) {
     INT4 MPIrank, MPIsize;
     MPI_Status MPIstatus;

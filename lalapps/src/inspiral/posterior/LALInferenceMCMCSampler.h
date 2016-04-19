@@ -55,9 +55,6 @@ typedef enum {
     RUN_COMPLETE       /** Run complete */
 } LALInferenceMPIcomm;
 
-/* Tracking function for triggering parallel swaps */
-INT4 LALInferenceSwapFuse(LALInferenceRunState *runState);
-
 /* Standard parallel temperature swap proposal function */
 void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile);
 
