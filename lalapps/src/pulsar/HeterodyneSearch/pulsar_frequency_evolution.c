@@ -27,6 +27,7 @@
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
+#include <lal/LALgetopt.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/DetectorSite.h>
 #include <lal/DetResponse.h>
@@ -53,6 +54,7 @@
 " --timespan          time span to calculate over (seconds)\n"\
 " --deltat            length of each step (seconds)\n"\
 " --output-dir        output directory\n"\
+" --harmonic          the frequency harmonic to output [default: 2]\n"\
 "\n"
 
 typedef struct tagInputParams{
@@ -62,13 +64,14 @@ typedef struct tagInputParams{
   INT4 start;
   INT4 timespan;
   INT4 deltat;
+  REAL8 freqharm;
 
   CHAR *outputdir;
 }InputParams;
 
 void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]);
 
-void get_freq( double start, double deltaT, PulsarParameters *params, BarycenterInput bary,
+void get_freq( REAL8 start, REAL8 deltaT, REAL8 freqharm, PulsarParameters *params, BarycenterInput bary,
                EphemerisData *edat, TimeCorrectionData *tdat, TimeCorrectionType ttype, REAL8Vector *freqs,
                REAL8Vector *dfsolar, REAL8Vector *dfbinary, REAL8Vector *dftotal );
 
@@ -117,7 +120,7 @@ int main(int argc, char *argv[]){
   doppler = XLALCreateREAL8Vector( npoints );
 
   /* calculate the frequency every minute for the mean values */
-  get_freq( inputs.start, (double)inputs.deltat, params, baryinput, edat, tdat, ttype, freqs, dopplerss, dopplerbs, doppler );
+  get_freq( inputs.start, (REAL8)inputs.deltat, inputs.freqharm, params, baryinput, edat, tdat, ttype, freqs, dopplerss, dopplerbs, doppler );
 
   sprintf(outputfile, "%s/frequency_evolution_%s.txt", inputs.outputdir, inputs.det);
 
@@ -139,7 +142,7 @@ int main(int argc, char *argv[]){
 }
 
 void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
-  struct option long_options[] =
+  struct LALoption long_options[] =
   {
     { "help",       no_argument,       0, 'h' },
     { "detector",   required_argument, 0, 'D' },
@@ -148,17 +151,21 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "timespan",   required_argument, 0, 't' },
     { "deltat",     required_argument, 0, 'd' },
     { "output-dir", required_argument, 0, 'o' },
+    { "harmonic",   required_argument, 0, 'f' },
     { 0, 0, 0, 0 }
   };
 
-  CHAR args[] = "hD:P:s:t:d:o:";
+  CHAR args[] = "hD:P:s:t:d:o:f:";
   CHAR *program = argv[0];
+
+  /* set default frequency harmonic to 2 */
+  inputParams->freqharm = 2.;
 
   while( 1 ){
     INT4 option_index = 0;
     INT4 c;
 
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    c = LALgetopt_long( argc, argv, args, long_options, &option_index );
     if( c == -1 ) /* end of options */
       break;
 
@@ -166,40 +173,66 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
       case 0:
         if( long_options[option_index].flag )
           break;
-        else
-          fprintf(stderr, "Error passing option %s with argument %s\n",
-            long_options[option_index].name, optarg);
+        else{
+          XLALPrintError("Error passing option %s with argument %s\n", long_options[option_index].name, LALoptarg);
+          XLAL_ERROR_VOID( XLAL_EINVAL );
+        }
       case 'h': /* help message */
         fprintf(stderr, CODEUSAGE, program);
         exit(0);
       case 'D':
-        inputParams->det = XLALStringDuplicate(optarg);
+        inputParams->det = XLALStringDuplicate(LALoptarg);
         break;
       case 'P':
-        inputParams->parfile = XLALStringDuplicate(optarg);
+        inputParams->parfile = XLALStringDuplicate(LALoptarg);
         break;
       case 's':
-        inputParams->start = atoi(optarg);
+        inputParams->start = atoi(LALoptarg);
         break;
       case 't':
-        inputParams->timespan = atoi(optarg);
+        inputParams->timespan = atoi(LALoptarg);
         break;
       case 'd':
-        inputParams->deltat = atoi(optarg);
+        inputParams->deltat = atoi(LALoptarg);
         break;
       case 'o':
-        inputParams->outputdir = XLALStringDuplicate(optarg);
+        inputParams->outputdir = XLALStringDuplicate(LALoptarg);
+        break;
+      case 'f':
+        inputParams->freqharm = atof(LALoptarg);
         break;
       case '?':
-        fprintf(stderr, "Unknown error while parsing options\n");
+        XLALPrintError("Unknown error while parsing options.");
+        XLAL_ERROR_VOID( XLAL_EINVAL );
       default:
-        fprintf(stderr, "Unknown error while parsing options\n");
+        XLALPrintError("Unknown error while parsing options.");
+        XLAL_ERROR_VOID( XLAL_EINVAL );
     }
+  }
+
+  if ( inputParams->start < 0. ){
+    XLALPrintError("Input start time must be positive");
+    XLAL_ERROR_VOID( XLAL_EINVAL );
+  }
+
+  if ( inputParams->timespan < 0. ){
+    XLALPrintError("Input timespan must be positive");
+    XLAL_ERROR_VOID( XLAL_EINVAL );
+  }
+
+  if ( inputParams->deltat < 0. ){
+    XLALPrintError("Input time steps must be positive");
+    XLAL_ERROR_VOID( XLAL_EINVAL );
+  }
+
+  if ( inputParams->freqharm < 0. ){
+    XLALPrintError("Input frequency harmonic must be positive");
+    XLAL_ERROR_VOID( XLAL_EINVAL );
   }
 }
 
 /* function to return a vector of the pulsar frequency for each data point */
-void get_freq( double start, double deltaT,
+void get_freq( REAL8 start, REAL8 deltaT, REAL8 freqharm,
                PulsarParameters *params, BarycenterInput bary, EphemerisData *edat,
                TimeCorrectionData *tdat, TimeCorrectionType ttype,
                REAL8Vector *freqs, REAL8Vector *dfsolar, REAL8Vector *dfbinary,
@@ -289,7 +322,7 @@ void get_freq( double start, double deltaT,
     XLALBarycenter( &emit2, &bary, &earth2 );
 
     /* work out frequency (assuming stationary at barycentre) */
-    freqs->data[i] = 2.*(f0 + f1*DT
+    freqs->data[i] = freqharm*(f0 + f1*DT
       + 0.5*f2*DT*DT
       + (1./6.)*f3*DT*DT*DT
       + (1./24.)*f4*DT*DT*DT*DT
