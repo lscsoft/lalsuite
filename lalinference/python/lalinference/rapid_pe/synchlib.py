@@ -2,6 +2,14 @@ import socket as pysocket
 import errno
 import numpy
 
+def init_socket(address, port):
+    """
+    Lower level socket initialization routine.
+    """
+    sock = pysocket.socket(pysocket.AF_INET, pysocket.SOCK_STREAM)
+    sock.connect((address, port))
+    return sock
+
 def prepare_data(data, dims, offset):
     """
     Pack the samples starting from 'offset' in 'data' enumerated from 'dims' into an array.
