@@ -75,6 +75,7 @@ argp.add_argument("-f", "--f-low", type=float, help="Lowest frequency component 
 argp.add_argument("-F", "--delta-f", type=float, default=0.125, help="Frequency binning of the FD waveform. Default is 0.125.")
 argp.add_argument("-a", "--approximant1", default="TaylorF2", help="Approximant to use for target waveform. Default is TaylorF2.")
 argp.add_argument("-b", "--approximant2", default="TaylorF2", help="Approximant to use for overlapped waveform. Default is TaylorF2.")
+argp.add_argument("-o", "--no-overwrite-id", action="store_true", help="Don't overwrite row IDs with sequential IDs.")
 argp.add_argument("-v", "--verbose", action="store_true", help="Be verbose.")
 argp.add_argument("-V", "--too-verbose", action="store_true", help="Be absolutely, obnoxiously loquacious.")
 args = argp.parse_args()
@@ -110,10 +111,20 @@ else:
 if f_low is None:
     exit("Low frequency cutoff could not be inferred from template bank, and none was given.")
 
+required_params = ("mass1", "mass2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z")
 # lalapps_tmpltbank assigns 0 ID to all events, so we remap
 # FIXME: Check for tmplt_bank: All others do assign IDs
 for tmplt in tmplt_bank:
-    tmplt.event_id = tmplt_bank.get_next_id()
+    if not args.no_overwrite_id:
+        try:
+            tmplt.event_id = tmplt_bank.get_next_id()
+        except AttributeError:
+            tmplt.simulation_id = tmplt_bank.get_next_id()
+    for p in required_params:
+        if not hasattr(tmplt, p):
+            setattr(tmplt, p, 0.0)
+    if not hasattr(tmplt, "mchirp"):
+        tmplt.mchirp, tmplt.eta = lalsimutils.Mceta(tmplt.mass1, tmplt.mass2)
 
 # FIXME: Unhardcode
 wtype = "%s_%s" % (args.approximant1, args.approximant2)
