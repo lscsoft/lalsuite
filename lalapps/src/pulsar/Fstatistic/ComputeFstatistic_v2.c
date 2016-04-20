@@ -390,7 +390,7 @@ int main(int argc,char *argv[])
 
   /* ----- produce a log-string describing the specific run setup ----- */
   XLAL_CHECK_MAIN ( (GV.logstring = XLALGetLogString ( &GV )) != NULL, XLAL_EFUNC );
-  LogPrintfVerbatim( LOG_DEBUG, "%s", GV.logstring );
+  LogPrintfVerbatim( LOG_NORMAL, "%s", GV.logstring );
 
   /* keep a log-file recording all relevant parameters of this search-run */
   if ( uvar.outputLogfile ) {
@@ -500,12 +500,12 @@ int main(int argc,char *argv[])
 
       /* Progress meter */
       templateCounter += 1.0;
-      if ( lalDebugLevel && ( (toc - timeOfLastProgressUpdate) > uvar.timerCount) )
+      if ( LogLevel() >= LOG_NORMAL && ( (toc - timeOfLastProgressUpdate) > uvar.timerCount) )
         {
           REAL8 diffSec = GETTIME() - clock0 ;  /* seconds since start of loop*/
           REAL8 taup = diffSec / templateCounter ;
           REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
-          LogPrintf (LOG_DEBUG, "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
+          LogPrintf (LOG_NORMAL, "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
                      templateCounter, numTemplates, templateCounter/numTemplates * 100.0, timeLeft);
           timeOfLastProgressUpdate = toc;
         }
@@ -591,18 +591,18 @@ int main(int argc,char *argv[])
 	  if ( GV.FstatToplist  )			/* dynamic threshold */
 	    {
 	      if ( insert_into_toplist(GV.FstatToplist, (void*)writeCand ) ) {
-		LogPrintf ( LOG_DETAIL, "Added new candidate into toplist: 2F = %f", writeCand->twoF );
+		LogPrintf ( LOG_DEBUG, "Added new candidate into toplist: 2F = %f", writeCand->twoF );
 		if ( uvar.computeBSGL ) {
-		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, log10BSGL = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->log10BSGL );
+		  LogPrintfVerbatim ( LOG_DEBUG, ", 2F_H1 = %f, 2F_L1 = %f, log10BSGL = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->log10BSGL );
                 }
 	      }
 	      else {
-		LogPrintf ( LOG_DETAIL, "NOT added the candidate into toplist: 2F = %f", writeCand->twoF );
+		LogPrintf ( LOG_DEBUG, "NOT added the candidate into toplist: 2F = %f", writeCand->twoF );
 		if ( uvar.computeBSGL ) {
-		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, log10BSGL = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->log10BSGL );
+		  LogPrintfVerbatim ( LOG_DEBUG, ", 2F_H1 = %f, 2F_L1 = %f, log10BSGL = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->log10BSGL );
                 }
 	      }
-	      LogPrintfVerbatim ( LOG_DETAIL, "\n" );
+	      LogPrintfVerbatim ( LOG_DEBUG, "\n" );
 	    }
 	  else if ( fpFstat ) 				/* no toplist :write out immediately */
 	    {
@@ -763,14 +763,14 @@ int main(int argc,char *argv[])
       UINT4 el;
 
       /* sort toplist */
-      LogPrintf ( LOG_DEBUG, "Sorting toplist ... ");
+      LogPrintf ( LOG_NORMAL, "Sorting toplist ... ");
       if ( GV.RankingStatistic == RANKBY_2F )
         qsort_toplist ( GV.FstatToplist, compareFstatCandidates );
       else if ( GV.RankingStatistic == RANKBY_BSGL )
         qsort_toplist ( GV.FstatToplist, compareFstatCandidates_BSGL );
       else
         XLAL_ERROR ( XLAL_EINVAL, "Ranking statistic '%d' undefined here, allowed are 'F=0' and 'BSGL=2'\n", GV.RankingStatistic );
-      LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+      LogPrintfVerbatim ( LOG_NORMAL, "done.\n");
 
       for ( el=0; el < GV.FstatToplist->elems; el ++ )
 	{
@@ -818,7 +818,7 @@ int main(int argc,char *argv[])
 
     } /* write loudest candidate to file */
 
-  LogPrintf (LOG_DEBUG, "Search finished.\n");
+  LogPrintf (LOG_NORMAL, "Search finished.\n");
 
   /* write out the Fstatistic histogram */
   if (uvar.outputFstatHist) {
@@ -1106,9 +1106,9 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   constraints.maxStartTime = &maxStartTime;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
-  LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
+  LogPrintf (LOG_NORMAL, "Finding all SFTs to load ... ");
   XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->DataFiles, &constraints )) != NULL, XLAL_EFUNC );
-  LogPrintfVerbatim (LOG_DEBUG, "done. (found %d SFTs)\n", catalog->length);
+  LogPrintfVerbatim (LOG_NORMAL, "done. (found %d SFTs)\n", catalog->length);
 
   if ( constraints.detector ) {
     XLALFree ( constraints.detector );
@@ -1271,9 +1271,9 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
       scanInit.extraArgs[2] = uvar->maxBraking;
     }
 
-    LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
+    LogPrintf (LOG_NORMAL, "Setting up template grid ... ");
     XLAL_CHECK ( (cfg->scanState = XLALInitDopplerFullScan ( &scanInit)) != NULL, XLAL_EFUNC );
-    LogPrintfVerbatim (LOG_DEBUG, "template grid ready.\n");
+    LogPrintfVerbatim (LOG_NORMAL, "template grid ready.\n");
     XLALNumDopplerTemplates ( cfg->scanState );
     XLALFree ( detector );
   }
