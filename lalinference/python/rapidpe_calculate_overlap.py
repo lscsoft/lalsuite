@@ -16,7 +16,7 @@ from glue.ligolw.utils import process
 lsctables.use_in(ligolw.LIGOLWContentHandler)
 from pylal.series import read_psd_xmldoc, LIGOLWContentHandler
 
-VALID_TMPLT_GENS = {"lalapps_cbc_sbank": "--flow", "tmpltbank": "--low-frequency-cutoff", "pycbc_geom_aligned_bank": "--f-low"}
+VALID_TMPLT_GENS = {"lalapps_cbc_sbank": "--flow", "tmpltbank": "--low-frequency-cutoff", "pycbc_geom_aligned_bank": "--f-low", "gstlal_bank_splitter": "--f-low"}
 def infer_flow(xmldoc):
     """
     Attempt to infer the low frequency by combing through the process table and trying to pick out the low frequency option given to that program. If you trust this, you will, for sure, be disappointed at some point in using this program.
