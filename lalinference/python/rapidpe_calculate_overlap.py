@@ -158,6 +158,14 @@ idx_range = range(args.tmplt_start_index or 0, args.tmplt_end_index or len(tmplt
 
 # FIXME:
 npts = len(tmplt_bank)
+import h5py
+h5file = h5py.File("test.hdf", "w")
+olapdata = h5file.create_group(wtype)
+for iprm in intr_prms:
+    dat = numpy.array([getattr(t, iprm) for t in tmplt_bank])
+    olapdata.create_dataset(iprm, maxshape=(npts,), data=dat)
+olapmat = olapdata.create_dataset("overlaps", shape=(npts, npts))
+
 for i1, pt in enumerate(pts):
     opt = amrlib.apply_inv_transform(pts[i1,numpy.newaxis].copy(), intr_prms, "mchirp_eta")[0]
     fname = "%s/%s_%d.json" % (bdir, wtype, i1)
@@ -188,6 +196,7 @@ for i1, pt in enumerate(pts):
 
         o12, _, _ = lalsimutils.overlap(h1, t2, ovrlp, delta_f, f_low, args.approximant1, args.approximant2, t1_norm=h1_norm)
         ovrlps.append(o12)
+        olapmat[i1, i2] = olapmat[i2, i1] = o12
 
         if args.too_verbose:
             print d, t2.mass1, t2.mass2, t2.mchirp, t2.eta, o12
@@ -201,3 +210,5 @@ for i1, pt in enumerate(pts):
 
 with open("tmplt_bank.json", "w") as fout:
     json.dump(toc, fout)
+
+h5file.close()
