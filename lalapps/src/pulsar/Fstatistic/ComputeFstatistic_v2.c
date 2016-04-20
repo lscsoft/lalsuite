@@ -257,7 +257,6 @@ typedef struct {
   INT4 clusterOnScanline;	/**< number of points on "scanline" to use for 1-D local maxima finding */
 
   CHAR *gridFile;		/**< read template grid from this file */
-  REAL8 dopplermax;		/**< maximal possible doppler-effect */
 
   INT4 RngMedWindow;		/**< running-median window for noise floor estimation */
   LIGOTimeGPS refTime;		/**< reference-time for definition of pulsar-parameters [GPS] */
@@ -298,6 +297,7 @@ typedef struct {
 
   // ----- deprecated and obsolete variables, kept around for backwards-compatibility -----
   LIGOTimeGPS internalRefTime;   /**< [DEPRECATED] internal reference time. Has no effect, XLALComputeFstat() now always uses midtime anyway ... */
+  REAL8 dopplermax;              /**< [DEPRECATED] HAS NO EFFECT and should no longer be used: maximum Doppler shift is accounted for internally */
 
 } UserInput_t;
 
@@ -922,7 +922,7 @@ initUserVars ( UserInput_t *uvar )
 
   uvar->gridFile = NULL;
 
-  uvar->dopplermax =  1.05e-4;
+  uvar->dopplermax =  0;        /* option is deprecated */
   uvar->RngMedWindow = 50;	/* for running-median */
 
   uvar->SSBprecision = SSBPREC_RELATIVISTIC;
@@ -1036,7 +1036,6 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(  version,	BOOLEAN, 'V', SPECIAL,  "Output version information");
 
   /* ----- more experimental/expert options ----- */
-  XLALRegisterUvarMember( 	dopplermax, 	REAL8, 'q', DEVELOPER, "Maximum doppler shift expected");
   XLALRegisterUvarMember( 	UseNoiseWeights,BOOLEAN, 'W', DEVELOPER, "Use per-SFT noise weights");
   XLALRegisterUvarMember(ephemEarth, 	 STRING, 0,  DEVELOPER, "Earth ephemeris file to use");
   XLALRegisterUvarMember(ephemSun, 	 STRING, 0,  DEVELOPER, "Sun ephemeris file to use");
@@ -1066,6 +1065,7 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember ( Dec, STRING, 0, DEPRECATED, "Use --Delta instead");
 
   XLALRegisterUvarMember ( internalRefTime, EPOCH, 0, DEPRECATED, "HAS NO EFFECT and should no longer be used: XLALComputeFstat() now always uses midtime internally ... ");
+  XLALRegisterUvarMember ( dopplermax,      REAL8, 0, DEPRECATED, "HAS NO EFFECT and should no longer be used: maximum Doppler shift is accounted for internally");
 
   // ---------- obsolete and unsupported options ----------
   XLALRegisterUvarMember(outputLogPrintf, STRING, 0,  DEFUNCT, "DEFUNCT; used to send all output from LogPrintf statements to this file");
@@ -1282,8 +1282,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   { /* ----- What frequency-band do we need to read from the SFTs?
      * propagate spin-range from refTime to startTime and endTime of observation
      */
-    PulsarSpinRange spinRangeRef, spinRangeStart, spinRangeEnd;	/* temporary only */
-    REAL8 fmaxStart, fmaxEnd, fminStart, fminEnd;
+    PulsarSpinRange spinRangeRef;	/* temporary only */
 
     // extract spanned spin-range at reference-time from the template-bank
     XLAL_CHECK ( XLALGetDopplerSpinRange ( &spinRangeRef, cfg->scanState ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1299,26 +1298,8 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     memcpy ( cfg->searchRegion.fkdot, spinRangeRef.fkdot, sizeof(cfg->searchRegion.fkdot) );
     memcpy ( cfg->searchRegion.fkdotBand, spinRangeRef.fkdotBand, sizeof(cfg->searchRegion.fkdotBand) );
 
-    /* compute spin-range at startTime of observation */
-    REAL8 dtau = XLALGPSDiff ( &cfg->startTime, &spinRangeRef.refTime );
-    XLAL_CHECK ( XLALExtrapolatePulsarSpinRange ( &spinRangeStart, &spinRangeRef, dtau ) == XLAL_SUCCESS, XLAL_EFUNC );
-    /* compute spin-range at endTime of these SFTs */
-    dtau = XLALGPSDiff ( &endTime, &spinRangeStart.refTime );
-    XLAL_CHECK ( XLALExtrapolatePulsarSpinRange (&spinRangeEnd, &spinRangeStart, dtau) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    fminStart = spinRangeStart.fkdot[0];
-    /* ranges are in canonical format! */
-    fmaxStart = fminStart + spinRangeStart.fkdotBand[0];
-    fminEnd   = spinRangeEnd.fkdot[0];
-    fmaxEnd   = fminEnd + spinRangeEnd.fkdotBand[0];
-
-    /*  get covering frequency-band  */
-    fCoverMax = MYMAX ( fmaxStart, fmaxEnd );
-    fCoverMin = MYMIN ( fminStart, fminEnd );
-
-    /* correct for doppler-shift */
-    fCoverMax *= 1.0 + uvar->dopplermax;
-    fCoverMin *= 1.0 - uvar->dopplermax;
+    // Compute covering frequency range, accounting for Doppler modulation due to the Earth and any binary companion */
+    XLALCWSignalCoveringBand( &fCoverMin, &fCoverMax, &cfg->startTime, &endTime, &spinRangeRef, uvar->orbitasini, uvar->orbitPeriod, uvar->orbitEcc );
 
   } /* extrapolate spin-range */
 
