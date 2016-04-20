@@ -97,7 +97,10 @@ psd = parse_psd_file(args.psd_file, fvals)
 # Extract and prepare template bank
 #
 xmldoc = utils.load_filename(args.tmplt_bank_file, contenthandler=ligolw.LIGOLWContentHandler)
-tmplt_bank = lsctables.SnglInspiralTable.get_table(xmldoc)
+try:
+    tmplt_bank = lsctables.SnglInspiralTable.get_table(xmldoc)
+except ValueError:
+    tmplt_bank = lsctables.SimInspiralTable.get_table(xmldoc)
 
 if args.f_low is None:
     f_low = infer_flow(xmldoc)
@@ -176,7 +179,7 @@ for i1, pt in enumerate(pts):
     h1 = lalsimutils.generate_waveform_from_tmplt(t1, args.approximant1, delta_f, f_low)
     h1_norm = ovrlp.norm(h1)
     if args.verbose:
-        print "--- (%f, %f) / (%f, %f)" % (t1.mass1, t1.mass2, t1.mchirp, t1.eta)
+        print "--- %d (%f, %f) / (%f, %f)" % (int(t1.event_id), t1.mass1, t1.mass2, t1.mchirp, t1.eta)
 
     ovrlps = []
     for d, i2 in numpy.vstack((dist, idx)).T:
