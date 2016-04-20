@@ -641,14 +641,12 @@ void gzip_output( LALInferenceRunState *runState ){
     /* open file for printing out list of parameter names - this should already exist */
     sprintf(outfilepars, "%s_params.txt", outfile);
     if( (fppars = fopen(outfilepars, "r")) == NULL ){
-      XLALPrintError("Error... cannot open parameter name output file %s.\n", outfilepars);
-      XLAL_ERROR_VOID(XLAL_EIO);
+      XLAL_ERROR_VOID(XLAL_EIO, "Error... cannot open parameter name output file %s.", outfilepars);
     }
     /* read in the parameter names and remove the "model" value */
     sprintf(outfileparstmp, "%s_params.txt_tmp", outfile);
     if( (fpparstmp = fopen(outfileparstmp, "w")) == NULL ){
-      XLALPrintError("Error... cannot open parameter name output file %s.\n", outfileparstmp);
-      XLAL_ERROR_VOID(XLAL_EIO);
+      XLAL_ERROR_VOID(XLAL_EIO, "Error... cannot open parameter name output file %s.", outfileparstmp);
     }
 
     if ( LALInferenceGetProcParamVal( runState->commandLine, "--output-all-params" ) ){ nonfixed = 0; }
@@ -692,7 +690,7 @@ void gzip_output( LALInferenceRunState *runState ){
   CHAR *outVOTable = NULL;
 
   if ( !ppt2 && !ppt1 ){
-    XLALPrintError("Must specify either --outfile or --outXML\n");
+    XLAL_PRINT_ERROR("Must specify either --outfile or --outXML\n");
     XLAL_ERROR_VOID( XLAL_EIO );
   }
 
@@ -702,17 +700,13 @@ void gzip_output( LALInferenceRunState *runState ){
     /* gzip the output file if required */
     if( LALInferenceGetProcParamVal( runState->commandLine, "--gzip" ) ){
       if ( XLALGzipTextFile( outVOTable ) != XLAL_SUCCESS ){
-        XLAL_PRINT_ERROR( "Error... Could not gzip the output file!\n" );
-        XLAL_ERROR_VOID( XLAL_EIO );
+        XLAL_ERROR_VOID( XLAL_EIO, "Error... Could not gzip the output file!" );
       }
     }
   }
 
 #else
-  if ( !ppt1 ){
-    XLALPrintError("Error... --outfile not defined!\n");
-    XLAL_ERROR_VOID( XLAL_EIO );
-  }
+  if ( !ppt1 ){ XLAL_ERROR_VOID( XLAL_EIO, "Error... --outfile not defined!" ); }
 #endif
 
   return;
@@ -736,10 +730,7 @@ INT4 count_csv( CHAR *csvline ){
 
   /* count number of commas */
   while(1){
-    if( XLALStringToken(&inputstr, ",", 0) == NULL ){
-      XLALPrintError("Error... problem counting number of commas!\n");
-      XLAL_ERROR( XLAL_EFUNC );
-    }
+    if( XLALStringToken(&inputstr, ",", 0) == NULL ){ XLAL_ERROR( XLAL_EFUNC, "Error... problem counting number of commas!" ); }
 
     if ( inputstr == NULL ) { break; }
 
@@ -797,8 +788,7 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile, CHAR *
   TimeCorrectionType ttype = TIMECORRECTION_NONE;
 
   if( gpsstart < ephemstart || gpsend < ephemstart || gpsstart > ephemend || gpsend > ephemend ){
-    XLALPrintError("Start and end times are outside the ephemeris file ranges!\n");
-    XLAL_ERROR(XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC, "Start and end times are outside the ephemeris file ranges!" );
   }
 
   *efile = XLALStringDuplicate("earth00-19-");
@@ -816,8 +806,7 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile, CHAR *
       *sfile = XLALStringAppend(*sfile, PulsarGetStringParam(pulsar, "EPHEM"));
     }
     else{
-      XLALPrintError("Unknown ephemeris %s in par file\n", PulsarGetStringParam(pulsar, "EPHEM"));
-      XLAL_ERROR(XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC, "Unknown ephemeris %s in par file.", PulsarGetStringParam(pulsar, "EPHEM") );
     }
   }
 
@@ -840,8 +829,7 @@ TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile, CHAR *
       ttype = TIMECORRECTION_TCB;
     }
     else{
-      XLALPrintError("Error... unknown units %s in par file!\n", PulsarGetStringParam(pulsar, "UNITS"));
-      XLAL_ERROR(XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC, "Error... unknown units %s in par file!", PulsarGetStringParam(pulsar, "UNITS"));
     }
   }
 

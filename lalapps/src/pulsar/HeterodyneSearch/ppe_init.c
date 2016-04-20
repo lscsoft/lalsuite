@@ -152,8 +152,7 @@ void initialise_algorithm( LALInferenceRunState *runState )
     LALInferenceAddVariable( runState->algorithmParams,"Nlive", &tmpi, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
   }
   else{
-   XLALPrintError("Error... Number of live point must be specified.\n");
-   XLAL_ERROR_VOID(XLAL_EIO);
+   XLAL_ERROR_VOID(XLAL_EIO, "Error... Number of live point must be specified.");
   }
 
   /* Number of points in MCMC chain */
@@ -394,15 +393,13 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
   if ( PulsarCheckParam( pars, "RA" ) ) { ra = PulsarGetREAL8Param( pars, "RA" ); }
   else if ( PulsarCheckParam( pars, "RAJ" ) ) { ra = PulsarGetREAL8Param( pars, "RAJ" ); }
   else {
-    XLALPrintError ("%s: No source right ascension specified!", __func__ );
-    XLAL_ERROR_VOID( XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL, "No source right ascension specified!" );
   }
   REAL8 dec = 0.;
   if ( PulsarCheckParam( pars, "DEC" ) ) { dec = PulsarGetREAL8Param( pars, "DEC" ); }
   else if ( PulsarCheckParam( pars, "DECJ" ) ) { dec = PulsarGetREAL8Param( pars, "DECJ" ); }
   else {
-    XLALPrintError ("%s: No source declination specified!", __func__ );
-    XLAL_ERROR_VOID( XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL, "No source declination specified!" );
   }
   LALInferenceAddVariable( ini, "RA", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
   LALInferenceAddVariable( ini, "DEC", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
@@ -557,14 +554,12 @@ void initialise_prior( LALInferenceRunState *runState )
 
     if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "predefined") ){
       if( high < low ){
-        XLALPrintError("Error... In %s the %s parameters ranges are wrongly set.\n", propfile, tempPar);
-        XLAL_ERROR_VOID( XLAL_EINVAL );
+        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... In %s the %s parameters ranges are wrongly set.", propfile, tempPar );
       }
     }
 
     if ( strcmp(tempPrior, "uniform") && strcmp(tempPrior, "predefined") && strcmp(tempPrior, "gaussian") && strcmp(tempPrior, "fermidirac") ){
-      XLALPrintError("Error... prior type '%s' not recognised\n", tempPrior);
-      XLAL_ERROR_VOID( XLAL_EINVAL );
+      XLAL_ERROR_VOID( XLAL_EINVAL, "Error... prior type '%s' not recognised", tempPrior );
     }
 
     /* set variable type to LINEAR (as they are initialised as FIXED) */
@@ -687,8 +682,7 @@ void initialise_proposal( LALInferenceRunState *runState ){
   else { ewfrac = 1; }
 
   if( !defrac && !freqfrac && !ewfrac && !esfrac ){
-    XLALPrintError("All proposal weights are zero!\n");
-    XLAL_ERROR_VOID(XLAL_EFAILED);
+    XLAL_ERROR_VOID(XLAL_EFAILED, "All proposal weights are zero!");
   }
 
   /* Single thread here */
@@ -816,11 +810,15 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
     for( ; checkPrior ; checkPrior = checkPrior->next ){
       if( LALInferenceCheckGaussianPrior(priors, checkPrior->name) ){
         if( !XLALStringCaseCompare(parMat->data[i], checkPrior->name) ){
-          /* replace it with the correlation matrix as a gsl_matrix */
-          LALInferenceAddCorrelatedPrior( priors, checkPrior->name, &corMatg, &i );
+          /* get the mean and standard deviation from the Gaussian prior */
+          REAL8 mu, sigma;
+          LALInferenceGetGaussianPrior( priors, checkPrior->name, &mu, &sigma );
 
-          /* NOTE: the Gaussian prior will not be removed as the mean and standard deviation values are still
-           * required when calculating the prior (see ppe_likelihood.c) */
+          /* replace it with the correlation matrix as a gsl_matrix */
+          LALInferenceAddCorrelatedPrior( priors, checkPrior->name, &corMatg, &mu, &sigma, &i );
+
+          /* remove the Gaussian prior */
+          LALInferenceRemoveGaussianPrior( priors, checkPrior->name );
 
           break;
         }

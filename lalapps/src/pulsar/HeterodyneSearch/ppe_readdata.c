@@ -244,8 +244,7 @@ detectors specified (no. dets = %d)\n", ml, ml, numDets);
       /* putting in pulsar frequency at f here */
       if ( PulsarCheckParam(pulsar, "F0") ) { pfreq = PulsarGetREAL8Param( pulsar, "F0" ); }
       else {
-        XLALPrintError("%s: No source frequency given in parameter file", __func__);
-        XLAL_ERROR_VOID( XLAL_EINVAL );
+        XLAL_ERROR_VOID( XLAL_EINVAL, "No source frequency given in parameter file" );
       }
 
       tempdets = XLALStringDuplicate( detectors );
@@ -914,15 +913,13 @@ void setup_from_par_file( LALInferenceRunState *runState )
   if ( PulsarCheckParam( pulsar, "RA" ) ) { ra = PulsarGetREAL8Param( pulsar, "RA" ); }
   else if ( PulsarCheckParam( pulsar, "RAJ" ) ) { ra = PulsarGetREAL8Param( pulsar, "RAJ" ); }
   else {
-    XLALPrintError ("%s: No source right ascension specified!", __func__ );
-    XLAL_ERROR_VOID( XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL, "No source right ascension specified!" );
   }
   REAL8 dec = 0.;
   if ( PulsarCheckParam( pulsar, "DEC" ) ) { dec = PulsarGetREAL8Param( pulsar, "DEC" ); }
   else if ( PulsarCheckParam( pulsar, "DECJ" ) ) { dec = PulsarGetREAL8Param( pulsar, "DECJ" ); }
   else {
-    XLALPrintError ("%s: No source declination specified!", __func__ );
-    XLAL_ERROR_VOID( XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL, "No source declination specified!" );
   }
   psr.equatorialCoords.longitude = ra;
   psr.equatorialCoords.latitude = dec;
@@ -1048,8 +1045,6 @@ void samples_prior( LALInferenceRunState *runState ){
 
   FILE *fp = NULL;
 
-  const CHAR *fn = __func__;
-
   /* get names of nested sample file columns */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--sample-files" );
   if ( ppt != NULL ){
@@ -1076,8 +1071,7 @@ void samples_prior( LALInferenceRunState *runState ){
     nnlive = count_csv( templives );
 
     if( nnlive != nsamps ){
-      XLALPrintError("%s: Number of live points not equal to number of posterior files!\n", fn);
-      XLAL_ERROR_VOID(XLAL_EIO);
+      XLAL_ERROR_VOID(XLAL_EINVAL, "Number of live points not equal to number of posterior files!" );
     }
 
     for( i = 0; i < nnlive; i++ ){
@@ -1113,8 +1107,7 @@ void samples_prior( LALInferenceRunState *runState ){
 
     /* check file exists */
     if ( fopen(namefile, "r") == NULL || fopen(sampfilenames->data[n], "r") == NULL ){
-      XLALPrintError("%s: Cannot access either %s or %s!\n", fn, namefile, sampfilenames->data[n]);
-      XLAL_ERROR_VOID(XLAL_EIO);
+      XLAL_ERROR_VOID(XLAL_EIO, "Cannot access either %s or %s!", namefile, sampfilenames->data[n]);
     }
 
     /* read in parameter names */
@@ -1171,8 +1164,7 @@ void samples_prior( LALInferenceRunState *runState ){
       }
 
       if( ( item1->vary != LALINFERENCE_PARAM_FIXED && item1->vary != LALINFERENCE_PARAM_OUTPUT ) && allsame == 0 ){
-        XLALPrintError("%s: Apparently variable parameter %s does not vary!\n", fn, item1->name );
-        XLAL_ERROR_VOID(XLAL_EFUNC);
+        XLAL_ERROR_VOID(XLAL_EFUNC, "Apparently variable parameter %s does not vary!\n", item1->name);
       }
 
       item1 = item1->next;
