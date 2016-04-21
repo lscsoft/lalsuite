@@ -415,8 +415,8 @@ void PulsarClearParams( PulsarParameters *pars ){
 
   while( this ){
     if( this->type == PULSARTYPE_REAL8Vector_t ) {
-      XLALDestroyREAL8Vector( *(REAL8Vector **)this->value );
-      XLALDestroyREAL8Vector( *(REAL8Vector **)this->err );
+      if ( this->value ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->value ); }
+      if ( this->err ) { XLALDestroyREAL8Vector( *(REAL8Vector **)this->err ); }
     }
     XLALFree( this->value );
     XLALFree( this->err );
