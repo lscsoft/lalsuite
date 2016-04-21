@@ -207,9 +207,15 @@ void get_pulsar_model( LALInferenceModel *model ){
     add_pulsar_parameter( model->params, pars, "MTOT" );
     add_pulsar_parameter( model->params, pars, "M2" );
 
-    if ( LALInferenceCheckVariable( model->params, "FB" ) ){
+    if ( LALInferenceCheckVariable( model->params, "FBNUM" ) ){
+      UINT4 fbnum = LALInferenceGetUINT4Variable( model->params, "FBNUM" );
       REAL8Vector *fb = NULL;
-      fb = *(REAL8Vector **)LALInferenceGetVariable( model->params, "FB" );
+      fb = XLALCreateREAL8Vector( fbnum );
+      for ( UINT4 i=0; i < fbnum; i++ ){
+        CHAR varname[256];
+        snprintf(varname, sizeof(varname), "FB%u", i);
+        fb->data[i] = LALInferenceGetREAL8Variable( model->params, varname );
+      }
       PulsarAddParam( pars, "FB", &fb, PULSARTYPE_REAL8Vector_t );
     }
   }
