@@ -42,17 +42,17 @@ extern "C" {
 /// Computed supersky metrics, returned by XLALComputeSuperskyMetrics().
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(ARRAY_MULTIPLE_LENGTHS(tagSuperskyMetrics, num_segments));
+SWIGLAL( ARRAY_MULTIPLE_LENGTHS( tagSuperskyMetrics, num_segments ) );
 #endif // SWIG
 typedef struct tagSuperskyMetrics {
   size_t num_segments;				///< Number of segments
 
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, coh_rssky_metric, size_t, num_segments));
+  SWIGLAL( ARRAY_1D( SuperskyMetrics, gsl_matrix *, coh_rssky_metric, size_t, num_segments ) );
 #endif // SWIG
   gsl_matrix **coh_rssky_metric;		///< Coherent reduced supersky metric (2-dimensional sky) for each segment
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D(SuperskyMetrics, gsl_matrix*, coh_rssky_transf, size_t, num_segments));
+  SWIGLAL( ARRAY_1D( SuperskyMetrics, gsl_matrix *, coh_rssky_transf, size_t, num_segments ) );
 #endif // SWIG
   gsl_matrix **coh_rssky_transf;		///< Coherent reduced supersky metric coordinate transform data for each segment
 
@@ -91,7 +91,7 @@ int XLALSuperskyMetricsDimensions(
   );
 
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
+SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 #endif // SWIG
 
 ///
@@ -104,7 +104,7 @@ int XLALScaleSuperskyMetricFiducialFreq(
   );
 
 #ifdef SWIG // SWIG interface directives
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 #endif // SWIG
 
 ///
@@ -157,7 +157,7 @@ int XLALConvertSuperskyToSuperskyPoint(
 /// Convert a set of points from physical to supersky coordinates.
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(INOUT_STRUCTS(gsl_matrix **, out_rssky));
+SWIGLAL( INOUT_STRUCTS( gsl_matrix **, out_rssky ) );
 #endif
 int XLALConvertPhysicalToSuperskyPoints(
   gsl_matrix **out_rssky,			///< [out] Columns are output point in supersky coordinates
@@ -169,7 +169,7 @@ int XLALConvertPhysicalToSuperskyPoints(
 /// Convert a set of points from supersky to physical coordinates.
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(INOUT_STRUCTS(gsl_matrix **, out_phys));
+SWIGLAL( INOUT_STRUCTS( gsl_matrix **, out_phys ) );
 #endif
 int XLALConvertSuperskyToPhysicalPoints(
   gsl_matrix **out_phys,			///< [out] Columns are output point in physical coordinates
@@ -178,7 +178,7 @@ int XLALConvertSuperskyToPhysicalPoints(
   );
 
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
+SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 #endif // SWIG
 
 ///
@@ -212,7 +212,7 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
   );
 
 #ifdef SWIG // SWIG interface directives
-SWIGLAL_CLEAR(COPYINOUT_ARRAYS(gsl_matrix, rssky_metric, rssky_transf));
+SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 #endif // SWIG
 
 ///
