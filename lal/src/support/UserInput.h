@@ -167,6 +167,7 @@ typedef enum {
   UVAR_CATEGORY_DEPRECATED,	///< optional and hidden until lalDebugLevel>=info; still supported but output warning if used
   UVAR_CATEGORY_DEFUNCT,	///< hidden completely from help output; not supported, will output error + help-string if used
   UVAR_CATEGORY_SPECIAL,	///< optional and *turns off* all checking of required variables, useful for output of version info
+  UVAR_CATEGORY_NODEFAULT,	///< optional and supresses printing the default value in the help, where it doesn't make sense
   UVAR_CATEGORY_END		///< internal end marker for range checking
 } UserVarCategory;
 

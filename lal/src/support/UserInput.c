@@ -796,6 +796,10 @@ XLALUserVarPrintHelp ( FILE *file )
                     {
                       fprintf( f, " [required]" );
                     }
+                  else if ( ptr->category == UVAR_CATEGORY_NODEFAULT )
+                    {
+                      fprintf( f, " [optional]" );
+                    }
                   else
                     {
                       char *valstr;
