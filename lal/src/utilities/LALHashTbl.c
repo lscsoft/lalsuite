@@ -20,7 +20,7 @@
 #include <lal/LALHashTbl.h>
 
 /* Special hash table element value to indicate elements that have been deleted */
-static const void* hash_del = 0;
+static const void *hash_del = 0;
 #define DEL   ((void*) &hash_del)
 
 /* Evaluates to the hash value of x, restricted to the length of the hash table */
@@ -33,15 +33,15 @@ static const void* hash_del = 0;
 #define EQUAL(ht, x, y)   ((ht)->cmp((ht)->cmp_param, (x), (y)) == 0)
 
 struct tagLALHashTbl {
-  void **data;			/* Hash table with open addressing and linear probing */
-  int data_len;			/* Size of the memory block 'data', in number of elements */
-  int n;			/* Number of valid elements in the hash */
-  int q;			/* Number of non-NULL elements in the hash */
-  LALHashTblDtorFcn dtor;	/* Function to free memory of elements of hash, if required */
-  LALHashTblHashParamFcn hash;	/* Parameterised hash function for hash table elements */
-  void *hash_param;		/* Parameter to pass to hash function */
-  LALHashTblCmpParamFcn cmp;	/* Parameterised hash table element comparison function */
-  void *cmp_param;		/* Parameter to pass to comparison function */
+  void **data;                  /* Hash table with open addressing and linear probing */
+  int data_len;                 /* Size of the memory block 'data', in number of elements */
+  int n;                        /* Number of valid elements in the hash */
+  int q;                        /* Number of non-NULL elements in the hash */
+  LALHashTblDtorFcn dtor;       /* Function to free memory of elements of hash, if required */
+  LALHashTblHashParamFcn hash;  /* Parameterised hash function for hash table elements */
+  void *hash_param;             /* Parameter to pass to hash function */
+  LALHashTblCmpParamFcn cmp;    /* Parameterised hash table element comparison function */
+  void *cmp_param;              /* Parameter to pass to comparison function */
 };
 
 /* Call a non-parameterised hash function, which is passed in 'param' */

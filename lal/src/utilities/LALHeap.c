@@ -19,9 +19,9 @@
 
 #include <lal/LALHeap.h>
 
-#define LEFT(i)     (2*(i) + 1)		/* Left child of binary heap element 'i' */
-#define RIGHT(i)    (2*(i) + 2)		/* Right child of binary heap element 'i' */
-#define PARENT(i)   (((i) - 1)/2)	/* Parent of binary heap element 'i' */
+#define LEFT(i)     (2*(i) + 1)         /* Left child of binary heap element 'i' */
+#define RIGHT(i)    (2*(i) + 2)         /* Right child of binary heap element 'i' */
+#define PARENT(i)   (((i) - 1)/2)       /* Parent of binary heap element 'i' */
 
 /* Swap elements x and y */
 #define SWAP(x, y)   do { void *z = (x); (x) = (y); (y) = z; } while (0)
@@ -30,14 +30,14 @@
 #define UNORDERED(h, x, y)   ((h)->cmp((h)->cmp_param, (x), (y)) * (h)->min_or_max_heap > 0)
 
 struct tagLALHeap {
-  void **data;			/* Binary heap data */
-  int data_len;			/* Size of the memory block 'data', in number of elements */
-  int n;			/* Number of valid elements in the heap */
-  LALHeapDtorFcn dtor;		/* Function to free memory of elements of heap, if required */
-  int max_size;			/* Maximum size of the heap; if zero, heap has unlimited size */
-  int min_or_max_heap;		/* -1|+1 if root of heap is minimum|maximum element */
-  LALHeapCmpParamFcn cmp;	/* Parameterised heap element comparison function */
-  void *cmp_param;		/* Parameter to pass to comparison function */
+  void **data;                  /* Binary heap data */
+  int data_len;                 /* Size of the memory block 'data', in number of elements */
+  int n;                        /* Number of valid elements in the heap */
+  LALHeapDtorFcn dtor;          /* Function to free memory of elements of heap, if required */
+  int max_size;                 /* Maximum size of the heap; if zero, heap has unlimited size */
+  int min_or_max_heap;          /* -1|+1 if root of heap is minimum|maximum element */
+  LALHeapCmpParamFcn cmp;       /* Parameterised heap element comparison function */
+  void *cmp_param;              /* Parameter to pass to comparison function */
 };
 
 /* Call a non-parameterised compare function, which is passed in 'param' */
