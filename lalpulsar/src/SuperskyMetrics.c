@@ -91,14 +91,14 @@ const double fiducial_calc_freq = 100.0;
 /// Call XLALComputeDopplerPhaseMetric() to compute the phase metric for a given coordinate system.
 ///
 static gsl_matrix *SM_ComputePhaseMetric(
-  const DopplerCoordinateSystem *coords,	///< [in] Coordinate system to compute metric for
-  const LIGOTimeGPS *ref_time,			///< [in] Reference time of the metric
-  const LIGOTimeGPS *start_time,		///< [in] Start time of the metric
-  const LIGOTimeGPS *end_time,			///< [in] End time of the metric
-  const MultiLALDetector *detectors,		///< [in] List of detectors to average metric over
-  const MultiNoiseFloor *detector_weights,	///< [in] Weights used to combine single-detector metrics (default: unit weights)
-  const DetectorMotionType detector_motion,	///< [in] Which detector motion to use
-  const EphemerisData *ephemerides		///< [in] Earth/Sun ephemerides
+  const DopplerCoordinateSystem *coords,        ///< [in] Coordinate system to compute metric for
+  const LIGOTimeGPS *ref_time,                  ///< [in] Reference time of the metric
+  const LIGOTimeGPS *start_time,                ///< [in] Start time of the metric
+  const LIGOTimeGPS *end_time,                  ///< [in] End time of the metric
+  const MultiLALDetector *detectors,            ///< [in] List of detectors to average metric over
+  const MultiNoiseFloor *detector_weights,      ///< [in] Weights used to combine single-detector metrics (default: unit weights)
+  const DetectorMotionType detector_motion,     ///< [in] Which detector motion to use
+  const EphemerisData *ephemerides              ///< [in] Earth/Sun ephemerides
   )
 {
 
@@ -169,13 +169,13 @@ static gsl_matrix *SM_ComputePhaseMetric(
 /// reduced supersky metric coordinate transform data.
 ///
 static int SM_ComputeFittedSuperskyMetric(
-  gsl_matrix *fitted_ssky_metric,		///< [out] Fitted supersky metric
-  gsl_matrix *rssky_transf,			///< [in,out] Reduced supersky metric coordinate transform data
-  const gsl_matrix *ussky_metric,		///< [in] Unrestricted supersky metric
-  const gsl_matrix *orbital_metric,		///< [in] Orbital metric in ecliptic coordinates
-  const DopplerCoordinateSystem *ocoords,	///< [in] Coordinate system of orbital metric
-  const LIGOTimeGPS *start_time,		///< [in] Start time of the metrics
-  const LIGOTimeGPS *end_time			///< [in] End time of the metrics
+  gsl_matrix *fitted_ssky_metric,               ///< [out] Fitted supersky metric
+  gsl_matrix *rssky_transf,                     ///< [in,out] Reduced supersky metric coordinate transform data
+  const gsl_matrix *ussky_metric,               ///< [in] Unrestricted supersky metric
+  const gsl_matrix *orbital_metric,             ///< [in] Orbital metric in ecliptic coordinates
+  const DopplerCoordinateSystem *ocoords,       ///< [in] Coordinate system of orbital metric
+  const LIGOTimeGPS *start_time,                ///< [in] Start time of the metrics
+  const LIGOTimeGPS *end_time                   ///< [in] End time of the metrics
   )
 {
 
@@ -326,9 +326,9 @@ static int SM_ComputeFittedSuperskyMetric(
 /// transform data.
 ///
 static int SM_ComputeDecoupledSuperskyMetric(
-  gsl_matrix *decoupled_ssky_metric,		///< [out] Decoupled supersky metric
-  gsl_matrix *rssky_transf,			///< [in,out] Reduced supersky metric coordinate transform data
-  const gsl_matrix *fitted_ssky_metric		///< [in] Fitted supersky metric
+  gsl_matrix *decoupled_ssky_metric,            ///< [out] Decoupled supersky metric
+  gsl_matrix *rssky_transf,                     ///< [in,out] Reduced supersky metric coordinate transform data
+  const gsl_matrix *fitted_ssky_metric          ///< [in] Fitted supersky metric
   )
 {
 
@@ -395,9 +395,9 @@ static int SM_ComputeDecoupledSuperskyMetric(
 /// metric coordinate transform data.
 ///
 static int SM_ComputeAlignedSuperskyMetric(
-  gsl_matrix *aligned_ssky_metric,		///< [out] Aligned supersky metric
-  gsl_matrix *rssky_transf,			///< [in,out] Reduced supersky metric coordinate transform data
-  const gsl_matrix *decoupled_ssky_metric	///< [in] Decoupled supersky metric
+  gsl_matrix *aligned_ssky_metric,              ///< [out] Aligned supersky metric
+  gsl_matrix *rssky_transf,                     ///< [in,out] Reduced supersky metric coordinate transform data
+  const gsl_matrix *decoupled_ssky_metric       ///< [in] Decoupled supersky metric
   )
 {
 
@@ -471,15 +471,15 @@ static int SM_ComputeAlignedSuperskyMetric(
 /// Compute the reduced supersky metric
 ///
 static int SM_ComputeReducedSuperskyMetric(
-  gsl_matrix **rssky_metric,			///< [out] Reduced supersky metric
-  gsl_matrix **rssky_transf,			///< [out] Reduced supersky metric coordinate transform data
-  const gsl_matrix *ussky_metric,		///< [in] Unrestricted supersky metric
-  const DopplerCoordinateSystem *ucoords,	///< [in] Coordinate system of unrestricted supersky metric
-  const gsl_matrix *orbital_metric,		///< [in] Orbital metric in ecliptic coordinates
-  const DopplerCoordinateSystem *ocoords,	///< [in] Coordinate system of orbital metric
-  const LIGOTimeGPS *ref_time,			///< [in] Reference time of the metrics
-  const LIGOTimeGPS *start_time,		///< [in] Start time of the metrics
-  const LIGOTimeGPS *end_time			///< [in] End time of the metrics
+  gsl_matrix **rssky_metric,                    ///< [out] Reduced supersky metric
+  gsl_matrix **rssky_transf,                    ///< [out] Reduced supersky metric coordinate transform data
+  const gsl_matrix *ussky_metric,               ///< [in] Unrestricted supersky metric
+  const DopplerCoordinateSystem *ucoords,       ///< [in] Coordinate system of unrestricted supersky metric
+  const gsl_matrix *orbital_metric,             ///< [in] Orbital metric in ecliptic coordinates
+  const DopplerCoordinateSystem *ocoords,       ///< [in] Coordinate system of orbital metric
+  const LIGOTimeGPS *ref_time,                  ///< [in] Reference time of the metrics
+  const LIGOTimeGPS *start_time,                ///< [in] Start time of the metrics
+  const LIGOTimeGPS *end_time                   ///< [in] End time of the metrics
   )
 {
 
@@ -670,7 +670,7 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
 }
 
 void XLALDestroySuperskyMetrics(
-  SuperskyMetrics *metrics			/// [in] Supersky metrics struct
+  SuperskyMetrics *metrics                      /// [in] Supersky metrics struct
   )
 {
   if ( metrics != NULL ) {
@@ -842,8 +842,8 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
  * Points outside the unit disks are moved radially onto their boundaries.
  */
 static void SM_ReducedToAligned(
-  double as[3],					///< [out] 3-dimensional aligned sky coordinates
-  const gsl_vector *rss				///< [in] 2-dimensional reduced supersky coordinates
+  double as[3],                                 ///< [out] 3-dimensional aligned sky coordinates
+  const gsl_vector *rss                         ///< [in] 2-dimensional reduced supersky coordinates
   )
 {
   const double A = gsl_vector_get( rss, 0 );
@@ -861,8 +861,8 @@ static void SM_ReducedToAligned(
 /// coordinates.
 ///
 static void SM_AlignedToReduced(
-  gsl_vector *rss,				///< [out] 2-dimensional reduced supersky coordinates
-  const double as[3]				///< [in] 3-dimensional aligned sky coordinates
+  gsl_vector *rss,                              ///< [out] 2-dimensional reduced supersky coordinates
+  const double as[3]                            ///< [in] 3-dimensional aligned sky coordinates
   )
 {
   const double r = sqrt( DOT3( as, as ) );

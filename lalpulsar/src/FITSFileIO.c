@@ -73,28 +73,28 @@ int fffree( void *, int * );
 
 // Internal representation of a FITS file opened for reading or writing
 struct tagFITSFile {
-  fitsfile *ff;				// Pointer to a CFITSIO FITS file representation
-  int write;				// True if the file is open for writing (otherwise reading)
-  int hdutype;				// Type of current HDU
-  CHAR hduname[FLEN_VALUE];		// Name of current HDU
-  CHAR hducomment[FLEN_COMMENT];	// Comment for name of current HDU
-  struct {				// Parameters of current array
-    int naxis;					// Number of dimensions of array
-    long naxes[FFIO_MAX];			// Size of dimensions of array
-    int bitpix;					// Bits per pixel of array
-    int datatype;				// Datatype of array
-    size_t size;				// Number of bytes in element of array
+  fitsfile *ff;                         // Pointer to a CFITSIO FITS file representation
+  int write;                            // True if the file is open for writing (otherwise reading)
+  int hdutype;                          // Type of current HDU
+  CHAR hduname[FLEN_VALUE];             // Name of current HDU
+  CHAR hducomment[FLEN_COMMENT];        // Comment for name of current HDU
+  struct {                              // Parameters of current array
+    int naxis;                                  // Number of dimensions of array
+    long naxes[FFIO_MAX];                       // Size of dimensions of array
+    int bitpix;                                 // Bits per pixel of array
+    int datatype;                               // Datatype of array
+    size_t size;                                // Number of bytes in element of array
   } array;
-  struct {				// Parameters of current table
-    int tfields;				// Number of columns in table
-    size_t noffsets[FFIO_MAX];			// Number of nested offsets to field in table row record
-    size_t offsets[FFIO_MAX][2];		// List of nested offsets to field in table row record
-    CHAR ttype[FFIO_MAX][FLEN_VALUE];		// Names of columns in table
-    CHAR tform[FFIO_MAX][FLEN_VALUE];		// Format of columns in table
-    int datatype[FFIO_MAX];			// Datatype of columns in table
-    LONGLONG nelements[FFIO_MAX];		// Number of elements in columns in table
-    LONGLONG nrows;				// Number of rows in table
-    LONGLONG irow;				// Index of current row in table
+  struct {                              // Parameters of current table
+    int tfields;                                // Number of columns in table
+    size_t noffsets[FFIO_MAX];                  // Number of nested offsets to field in table row record
+    size_t offsets[FFIO_MAX][2];                // List of nested offsets to field in table row record
+    CHAR ttype[FFIO_MAX][FLEN_VALUE];           // Names of columns in table
+    CHAR tform[FFIO_MAX][FLEN_VALUE];           // Format of columns in table
+    int datatype[FFIO_MAX];                     // Datatype of columns in table
+    LONGLONG nelements[FFIO_MAX];               // Number of elements in columns in table
+    LONGLONG nrows;                             // Number of rows in table
+    LONGLONG irow;                              // Index of current row in table
   } table;
 };
 

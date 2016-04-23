@@ -40,8 +40,8 @@
 /// Type of lattice to generate tiling with.
 ///
 typedef enum tagLT_Lattice {
-  LT_LATTICE_CUBIC,			///< Cubic (\f$Z_n\f$) lattice
-  LT_LATTICE_ANSTAR,			///< An-star (\f$A_n^*\f$) lattice
+  LT_LATTICE_CUBIC,                     ///< Cubic (\f$Z_n\f$) lattice
+  LT_LATTICE_ANSTAR,                    ///< An-star (\f$A_n^*\f$) lattice
   LT_LATTICE_MAX
 } LT_Lattice;
 
@@ -49,11 +49,11 @@ typedef enum tagLT_Lattice {
 /// Lattice tiling parameter-space bound for one dimension.
 ///
 typedef struct tagLT_Bound {
-  bool is_tiled;			///< True if the dimension is tiled, false if it is a single point
-  LatticeTilingBound func;		///< Parameter space bound function
-  size_t data_len;			///< Length of arbitrary data describing parameter-space bounds
-  void *data_lower;			///< Arbitrary data describing lower parameter-space bound
-  void *data_upper;			///< Arbitrary data describing upper parameter-space bound
+  bool is_tiled;                        ///< True if the dimension is tiled, false if it is a single point
+  LatticeTilingBound func;              ///< Parameter space bound function
+  size_t data_len;                      ///< Length of arbitrary data describing parameter-space bounds
+  void *data_lower;                     ///< Arbitrary data describing lower parameter-space bound
+  void *data_upper;                     ///< Arbitrary data describing upper parameter-space bound
 } LT_Bound;
 
 ///
@@ -61,46 +61,46 @@ typedef struct tagLT_Bound {
 ///
 typedef struct tagLT_IndexTrie LT_IndexTrie;
 struct tagLT_IndexTrie {
-  INT4 int_lower;			///< Lower integer point bound in this dimension
-  INT4 int_upper;			///< Upper integer point bound in this dimension
-  UINT8 index;				///< Sequential lattice tiling index up to this dimension
-  LT_IndexTrie *next;			///< Pointer to array of index tries for the next-highest dimension
+  INT4 int_lower;                       ///< Lower integer point bound in this dimension
+  INT4 int_upper;                       ///< Upper integer point bound in this dimension
+  UINT8 index;                          ///< Sequential lattice tiling index up to this dimension
+  LT_IndexTrie *next;                   ///< Pointer to array of index tries for the next-highest dimension
 };
 
 struct tagLatticeTiling {
-  size_t ndim;				///< Number of parameter-space dimensions
-  LT_Bound *bounds;			///< Array of parameter-space bound info for each dimension
-  size_t tiled_ndim;			///< Number of tiled parameter-space dimensions
-  size_t *tiled_idx;			///< Index to tiled parameter-space dimensions
-  LT_Lattice lattice;			///< Type of lattice to generate tiling with
-  gsl_vector *phys_bbox;		///< Metric ellipse bounding box
-  gsl_vector *phys_origin;		///< Parameter-space origin in physical coordinates
-  gsl_matrix *int_from_phys;		///< Transform to generating integers from physical coordinates
-  gsl_matrix *phys_from_int;		///< Transform to physical coordinates from generating integers
-  gsl_matrix *tiled_generator;		///< Lattice generator matrix in tiled dimensions
-  LatticeTilingStats *stats;		///< Array of parameter-space statistics for each dimension
+  size_t ndim;                          ///< Number of parameter-space dimensions
+  LT_Bound *bounds;                     ///< Array of parameter-space bound info for each dimension
+  size_t tiled_ndim;                    ///< Number of tiled parameter-space dimensions
+  size_t *tiled_idx;                    ///< Index to tiled parameter-space dimensions
+  LT_Lattice lattice;                   ///< Type of lattice to generate tiling with
+  gsl_vector *phys_bbox;                ///< Metric ellipse bounding box
+  gsl_vector *phys_origin;              ///< Parameter-space origin in physical coordinates
+  gsl_matrix *int_from_phys;            ///< Transform to generating integers from physical coordinates
+  gsl_matrix *phys_from_int;            ///< Transform to physical coordinates from generating integers
+  gsl_matrix *tiled_generator;          ///< Lattice generator matrix in tiled dimensions
+  LatticeTilingStats *stats;            ///< Array of parameter-space statistics for each dimension
 };
 
 struct tagLatticeTilingIterator {
-  const LatticeTiling *tiling;		///< Lattice tiling
-  size_t itr_ndim;			///< Number of parameter-space dimensions to iterate over
-  size_t tiled_itr_ndim;		///< Number of tiled parameter-space dimensions to iterate over
-  bool alternating;			///< If true, alternate iterator direction after every crossing
-  int state;				///< Iterator state: 0=initialised, 1=in progress, 2=finished
-  gsl_vector *phys_point;		///< Current lattice point in physical coordinates
-  INT4 *int_point;			///< Current lattice point in generating integers
-  INT4 *int_lower;			///< Current lower parameter-space bound in generating integers
-  INT4 *int_upper;			///< Current upper parameter-space bound in generating integers
-  INT4 *direction;			///< Direction of iteration in each tiled parameter-space dimension
-  UINT8 index;				///< Index of current lattice tiling point
-  UINT8 count;				///< Total number of lattice tiling points
+  const LatticeTiling *tiling;          ///< Lattice tiling
+  size_t itr_ndim;                      ///< Number of parameter-space dimensions to iterate over
+  size_t tiled_itr_ndim;                ///< Number of tiled parameter-space dimensions to iterate over
+  bool alternating;                     ///< If true, alternate iterator direction after every crossing
+  int state;                            ///< Iterator state: 0=initialised, 1=in progress, 2=finished
+  gsl_vector *phys_point;               ///< Current lattice point in physical coordinates
+  INT4 *int_point;                      ///< Current lattice point in generating integers
+  INT4 *int_lower;                      ///< Current lower parameter-space bound in generating integers
+  INT4 *int_upper;                      ///< Current upper parameter-space bound in generating integers
+  INT4 *direction;                      ///< Direction of iteration in each tiled parameter-space dimension
+  UINT8 index;                          ///< Index of current lattice tiling point
+  UINT8 count;                          ///< Total number of lattice tiling points
 };
 
 struct tagLatticeTilingLocator {
-  const LatticeTiling *tiling;		///< Lattice tiling
-  size_t ndim;				///< Number of parameter-space dimensions
-  size_t tiled_ndim;			///< Number of tiled parameter-space dimensions
-  LT_IndexTrie *index_trie;		///< Trie for locating unique index of nearest point
+  const LatticeTiling *tiling;          ///< Lattice tiling
+  size_t ndim;                          ///< Number of parameter-space dimensions
+  size_t tiled_ndim;                    ///< Number of tiled parameter-space dimensions
+  LT_IndexTrie *index_trie;             ///< Trie for locating unique index of nearest point
 };
 
 ///
@@ -132,11 +132,11 @@ static void LT_ReverseOrderRowsCols( gsl_matrix *A )
 /// Call the parameter-space bound function of a given dimension.
 ///
 static void LT_CallBoundFunc(
-  const LatticeTiling *tiling,		///< [in] Lattice tiling
-  const size_t dim,			///< [in] Dimension on which bound applies
-  const gsl_vector *phys_point,		///< [in] Physical point at which to find bounds
-  double *phys_lower,			///< [out] Lower parameter-space bound
-  double *phys_upper			///< [out] Upper parameter-space bound
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const size_t dim,                     ///< [in] Dimension on which bound applies
+  const gsl_vector *phys_point,         ///< [in] Physical point at which to find bounds
+  double *phys_lower,                   ///< [out] Lower parameter-space bound
+  double *phys_upper                    ///< [out] Upper parameter-space bound
   )
 {
 
@@ -173,12 +173,12 @@ static void LT_CallBoundFunc(
 /// Find the extrema of the parameter-space bounds, by sampling the bounds around the current point.
 ///
 static void LT_FindBoundExtrema(
-  const LatticeTiling *tiling,		///< [in] Lattice tiling
-  const size_t i,			///< [in] Current dimension in LT_FindBoundExtrema() iteration
-  const size_t dim,			///< [in] Dimension on which bound applies
-  gsl_vector *phys_point,		///< [in] Physical point at which to find bounds
-  double *phys_lower_minimum,		///< [out] Minimum lower parameter-space bound
-  double *phys_upper_maximum		///< [out] Maximum upper parameter-space bound
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const size_t i,                       ///< [in] Current dimension in LT_FindBoundExtrema() iteration
+  const size_t dim,                     ///< [in] Dimension on which bound applies
+  gsl_vector *phys_point,               ///< [in] Physical point at which to find bounds
+  double *phys_lower_minimum,           ///< [out] Minimum lower parameter-space bound
+  double *phys_upper_maximum            ///< [out] Maximum upper parameter-space bound
   )
 {
 
@@ -226,12 +226,12 @@ static void LT_FindBoundExtrema(
 /// Return the parameter-space bounds on a given dimension.
 ///
 static void LT_GetBounds(
-  const LatticeTiling *tiling,		///< [in] Lattice tiling
-  const bool padding,			///< [in] Whether padding is added to parameter space bounds
-  const size_t dim,			///< [in] Dimension on which bound applies
-  const gsl_vector *phys_point,		///< [in] Physical point at which to find bounds
-  double *phys_lower,			///< [out] Lower parameter-space bound
-  double *phys_upper			///< [out] Upper parameter-space bound
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const bool padding,                   ///< [in] Whether padding is added to parameter space bounds
+  const size_t dim,                     ///< [in] Dimension on which bound applies
+  const gsl_vector *phys_point,         ///< [in] Physical point at which to find bounds
+  double *phys_lower,                   ///< [out] Lower parameter-space bound
+  double *phys_upper                    ///< [out] Upper parameter-space bound
   )
 {
 
@@ -270,7 +270,7 @@ static void LT_GetBounds(
 /// Return the number of points fast-forwarded over.
 ///
 static INT4 LT_FastForwardIterator(
-  LatticeTilingIterator *itr		///< [in] Lattice tiling iterator
+  LatticeTilingIterator *itr            ///< [in] Lattice tiling iterator
   )
 {
 
@@ -309,7 +309,7 @@ static INT4 LT_FastForwardIterator(
 /// Free memory pointed to by an index trie. The trie itself should be freed by the caller.
 ///
 static void LT_FreeIndexTrie(
-  LT_IndexTrie *trie			///< [in] Pointer to array of index tries
+  LT_IndexTrie *trie                    ///< [in] Pointer to array of index tries
   )
 {
   LT_IndexTrie *next = trie->next;
@@ -326,13 +326,13 @@ static void LT_FreeIndexTrie(
 /// the neighbours of an 'original' nearest point found by LT_FindNearestPoints().
 ///
 static void LT_PollIndexTrie(
-  const LatticeTiling *tiling,		///< [in] Lattice tiling
-  const LT_IndexTrie *trie,		///< [in] Lattice tiling index trie
-  const size_t ti,			///< [in] Current depth of the trie
-  const gsl_vector *point_int,		///< [in] Original point in generating integers
-  INT4 *poll_nearest,			///< [in] Neighbouring point currently being polled
-  double *poll_min_distance,		///< [in] Minimum distance to neighbouring point found so far
-  INT4 *nearest				///< [in] New nearest point found by polling
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const LT_IndexTrie *trie,             ///< [in] Lattice tiling index trie
+  const size_t ti,                      ///< [in] Current depth of the trie
+  const gsl_vector *point_int,          ///< [in] Original point in generating integers
+  INT4 *poll_nearest,                   ///< [in] Neighbouring point currently being polled
+  double *poll_min_distance,            ///< [in] Minimum distance to neighbouring point found so far
+  INT4 *nearest                         ///< [in] New nearest point found by polling
   )
 {
 
@@ -385,11 +385,11 @@ static void LT_PollIndexTrie(
 /// Print one level of a lattice tiling index trie.
 ///
 static void LT_PrintIndexTrie(
-  const LatticeTiling *tiling,		///< [in] Lattice tiling
-  const LT_IndexTrie *trie,		///< [in] Lattice tiling index trie
-  const size_t ti,			///< [in] Current depth of the trie
-  FILE *file,				///< [in] File pointer to print trie to
-  INT4 int_lower[]			///< [in] Current integer lower bound
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const LT_IndexTrie *trie,             ///< [in] Lattice tiling index trie
+  const size_t ti,                      ///< [in] Current depth of the trie
+  FILE *file,                           ///< [in] File pointer to print trie to
+  INT4 int_lower[]                      ///< [in] Current integer lower bound
   )
 {
 
@@ -448,12 +448,12 @@ static void LT_PrintIndexTrie(
 /// in 'nearest_left' and 'nearest_right' respectively.
 ///
 static int LT_FindNearestPoints(
-  const LatticeTilingLocator *loc,	///< [in] Lattice tiling locator
-  const gsl_matrix *points,		///< [in] Columns are set of points for which to find nearest points
-  gsl_matrix *nearest_points,		///< [out] Columns are the corresponding nearest points
-  UINT8VectorSequence *nearest_indexes,	///< [out] Vectors are unique sequential indexes of the nearest points
-  UINT4VectorSequence *nearest_lefts,	///< [out] Vectors are number of points to left of the nearest points
-  UINT4VectorSequence *nearest_rights	///< [out] Vectors are number of points to right of the nearest points
+  const LatticeTilingLocator *loc,      ///< [in] Lattice tiling locator
+  const gsl_matrix *points,             ///< [in] Columns are set of points for which to find nearest points
+  gsl_matrix *nearest_points,           ///< [out] Columns are the corresponding nearest points
+  UINT8VectorSequence *nearest_indexes, ///< [out] Vectors are unique sequential indexes of the nearest points
+  UINT4VectorSequence *nearest_lefts,   ///< [out] Vectors are number of points to left of the nearest points
+  UINT4VectorSequence *nearest_rights   ///< [out] Vectors are number of points to right of the nearest points
   )
 {
 
@@ -490,7 +490,7 @@ static int LT_FindNearestPoints(
       // Find the nearest point to 'nearest_points[:,j]', the tiled dimensions of which are generating integers
       switch ( loc->tiling->lattice ) {
 
-      case LT_LATTICE_CUBIC: 	// Cubic (\f$Z_n\f$) lattice
+      case LT_LATTICE_CUBIC:    // Cubic (\f$Z_n\f$) lattice
 
       {
 
@@ -513,7 +513,7 @@ static int LT_FindNearestPoints(
       }
       break;
 
-      case LT_LATTICE_ANSTAR: 	// An-star (\f$A_n^*\f$) lattice
+      case LT_LATTICE_ANSTAR:   // An-star (\f$A_n^*\f$) lattice
 
       {
 
@@ -999,7 +999,7 @@ int XLALSetTilingLatticeAndMetric(
     double norm_thickness = 0.0;
     switch ( tiling->lattice ) {
 
-    case LT_LATTICE_CUBIC: 	// Cubic (\f$Z_n\f$) lattice
+    case LT_LATTICE_CUBIC:      // Cubic (\f$Z_n\f$) lattice
 
     {
 
@@ -1012,7 +1012,7 @@ int XLALSetTilingLatticeAndMetric(
     }
     break;
 
-    case LT_LATTICE_ANSTAR: 	// An-star (\f$A_n^*\f$) lattice
+    case LT_LATTICE_ANSTAR:     // An-star (\f$A_n^*\f$) lattice
 
     {
 
@@ -1545,7 +1545,7 @@ int XLALNextLatticeTilingPoint(
   // Which dimensions need to be reset?
   size_t reset_ti;
 
-  if ( itr->state == 0 ) {	// Iterator has been initialised
+  if ( itr->state == 0 ) {      // Iterator has been initialised
 
     // Initialise lattice point
     gsl_vector_set_zero( itr->phys_point );
@@ -1567,7 +1567,7 @@ int XLALNextLatticeTilingPoint(
     // All dimensions need to be reset
     reset_ti = 0;
 
-  } else {			// Iterator is in progress
+  } else {                      // Iterator is in progress
 
     // Start iterating from the maximum tiled dimension specified at iterator creation
     size_t ti = itr->tiled_itr_ndim;
