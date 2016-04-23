@@ -920,6 +920,16 @@ XLALFstatMethodIsAvailable ( FstatMethodType i )
   }
 } // XLALFstatMethodIsAvailable()
 
+///
+/// Return pointer to a static string giving the name of the #FstatMethodType \p i
+///
+const CHAR *
+XLALFstatMethodName ( FstatMethodType i )
+{
+  XLAL_CHECK_NULL( i < XLAL_NUM_ELEM(FstatMethodNames) && FstatMethodNames[i] != NULL,
+                   XLAL_EINVAL, "FstatMethodType = %i is invalid", i );
+  return FstatMethodNames[i];
+}
 
 ///
 /// Return pointer to a static help string enumerating all (available) #FstatMethodType options.
