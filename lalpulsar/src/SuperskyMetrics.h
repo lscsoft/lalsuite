@@ -187,7 +187,7 @@ SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 /// since they will be transformed such that the physical sky region maps to a region in the reduced
 /// supersky coordinates \f$(n_a,n_b)\f$ which may be covered by the lattice tiling.
 ///
-int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
+int XLALSetSuperskyPhysicalSkyBounds(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling
   gsl_matrix *rssky_metric,                     ///< [in,out] Reduced supersky metric
   gsl_matrix *rssky_transf,                     ///< [in,out] Reduced supersky coordinate transform data
@@ -218,7 +218,7 @@ SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 /// Set parameter-space bounds on the physical frequency/spindowns \f$f^{(s)}\f$ for a lattice
 /// tiling using the reduced supersky metric.
 ///
-int XLALSetSuperskyLatticeTilingPhysicalSpinBound(
+int XLALSetSuperskyPhysicalSpinBound(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling
   const gsl_matrix *rssky_transf,               ///< [in] Reduced supersky coordinate transform data
   const size_t s,                               ///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
@@ -231,7 +231,7 @@ int XLALSetSuperskyLatticeTilingPhysicalSpinBound(
 /// for a lattice tiling using the reduced supersky metric. These coordinates are related to the
 /// physical frequency/spindowns by \f$\nu^{(s)} = f^{(s)} + \vec\Delta^s \cdot \vec n\f$.
 ///
-int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
+int XLALSetSuperskyCoordinateSpinBound(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling.
   const gsl_matrix *rssky_transf,               ///< [in] Reduced supersky coordinate transform data
   const size_t s,                               ///< [in] Spindown order; 0=frequency, 1=first spindown, etc.

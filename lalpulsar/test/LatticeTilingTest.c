@@ -506,8 +506,8 @@ static int SuperskyTest(
   printf( "Bounds: supersky, sky patch 0/%" LAL_UINT8_FORMAT ", freq=%0.3g, freqband=%0.3g\n", patch_count, freq, freqband );
   double alpha1 = 0, alpha2 = 0, delta1 = 0, delta2 = 0;
   XLAL_CHECK( XLALComputePhysicalSkyEqualAreaPatch( &alpha1, &alpha2, &delta1, &delta2, patch_count, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSkyBounds( tiling, rssky_metric, rssky_transf, alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSpinBound( tiling, rssky_transf, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( tiling, rssky_metric, rssky_transf, alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( tiling, rssky_transf, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
   GFMAT( rssky_transf );
 
   // Set metric
@@ -582,13 +582,13 @@ static int MultiSegSuperskyTest( void )
   double alpha1 = 0, alpha2 = 0, delta1 = 0, delta2 = 0;
   XLAL_CHECK( XLALComputePhysicalSkyEqualAreaPatch( &alpha1, &alpha2, &delta1, &delta2, 1, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
-    XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSkyBounds( coh_tiling[n], metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n], alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 0, 50, 50 + 1e-4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 1, 0, -5e-10 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( coh_tiling[n], metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n], alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 0, 50, 50 + 1e-4 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 1, 0, -5e-10 ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
-  XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSkyBounds( semi_tiling, metrics->semi_rssky_metric, metrics->semi_rssky_transf, alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSpinBound( semi_tiling, metrics->semi_rssky_transf, 0, 50, 50 + 1e-4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyLatticeTilingPhysicalSpinBound( semi_tiling, metrics->semi_rssky_transf, 1, 0, -5e-10 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( semi_tiling, metrics->semi_rssky_metric, metrics->semi_rssky_transf, alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( semi_tiling, metrics->semi_rssky_transf, 0, 50, 50 + 1e-4 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( semi_tiling, metrics->semi_rssky_transf, 1, 0, -5e-10 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set metric
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {

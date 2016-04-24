@@ -1191,7 +1191,7 @@ static double PhysicalSkyBound(
         } else {
 
           // Set bound 'nb' to either a constant right ascension or constant declination bound,
-          // depending on bounds data set by XLALSetSuperskyLatticeTilingPhysicalSkyBounds()
+          // depending on bounds data set by XLALSetSuperskyPhysicalSkyBounds()
           const double c = ( na - p.na0 ) / p.r;
           double angle = asin( GSL_MAX( -1, GSL_MIN( c, 1 ) ) );
           if ( p.altroot ) {
@@ -1213,7 +1213,7 @@ static double PhysicalSkyBound(
 
 }
 
-int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
+int XLALSetSuperskyPhysicalSkyBounds(
   LatticeTiling *tiling,
   gsl_matrix *rssky_metric,
   gsl_matrix *rssky_transf,
@@ -1793,7 +1793,7 @@ int XLALComputePhysicalSkyEqualAreaPatch(
   XLAL_CHECK( patch_index < patch_count, XLAL_EINVAL );
 
   // Number of patch divisions in 'alpha'; for less than 4 patches, divide only in 'alpha' to prevent
-  // 'alpha' range in [pi,2*pi], which XLALSetSuperskyLatticeTilingPhysicalSkyBounds() cannot handle
+  // 'alpha' range in [pi,2*pi], which XLALSetSuperskyPhysicalSkyBounds() cannot handle
   const UINT4 alpha_count = ( patch_count < 4 ) ? patch_count : ( ( UINT4 ) ceil( sqrt( patch_count ) ) );
 
   // Mininum number of patch divisions in 'sin(delta)'; note integer division equivalent to floor()
@@ -1873,7 +1873,7 @@ static double PhysicalSpinBound(
 
 }
 
-int XLALSetSuperskyLatticeTilingPhysicalSpinBound(
+int XLALSetSuperskyPhysicalSpinBound(
   LatticeTiling *tiling,
   const gsl_matrix *rssky_transf,
   const size_t s,
@@ -1913,7 +1913,7 @@ int XLALSetSuperskyLatticeTilingPhysicalSpinBound(
 
 }
 
-int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
+int XLALSetSuperskyCoordinateSpinBound(
   LatticeTiling *tiling,
   const gsl_matrix *rssky_transf,
   const size_t s,
