@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
 #include <math.h>
 #include <limits.h>
 #include <float.h>
@@ -236,17 +237,27 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *comment )
+int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *format, ... )
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
-  XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( format != NULL, XLAL_EFAULT );
 
   // Write comment to current header
-  CALL_FITS( fits_write_comment, file->ff, comment );
+  CHAR buf[4096];
+  va_list ap;
+  va_start( ap, format );
+  XLAL_CHECK( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_ESYS, "Formatted string is too long" );
+  va_end( ap );
+  for ( size_t i = 0; i < strlen( buf ); ++ i ) {
+    if ( !isprint( buf[i] ) ) {
+      buf[i] = ' ';
+    }
+  }
+  CALL_FITS( fits_write_comment, file->ff, buf );
 
   return XLAL_SUCCESS;
 
