@@ -237,6 +237,42 @@ XLAL_FAIL:
 
 }
 
+int XLALFITSHeaderWriteHistory( FITSFile *file, const CHAR *format, ... )
+{
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
+  XLAL_CHECK_FAIL( format != NULL, XLAL_EFAULT );
+
+  // Write history to current header
+  CHAR buf[4096];
+  va_list ap;
+  va_start( ap, format );
+  XLAL_CHECK( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_ESYS, "Formatted string is too long" );
+  va_end( ap );
+  for ( size_t i = 0; i < strlen( buf ); ++ i ) {
+    if ( !isprint( buf[i] ) ) {
+      buf[i] = ' ';
+    }
+  }
+  CALL_FITS( fits_write_history, file->ff, buf );
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+
+  // Delete FITS file on error
+  if ( file != NULL && file->ff != NULL ) {
+    fits_delete_file( file->ff, &status );
+    file->ff = NULL;
+  }
+
+  return XLAL_FAILURE;
+
+}
+
 int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *format, ... )
 {
   int UNUSED status = 0;
