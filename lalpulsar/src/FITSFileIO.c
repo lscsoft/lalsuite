@@ -797,6 +797,7 @@ int XLALFITSHeaderReadStringVector( FITSFile *file, const CHAR *key, LALStringVe
   }
   int nfound = 0;
   CALL_FITS( fits_read_keys_str, file->ff, keyword, 1, FFIO_MAX, vals_ptr, &nfound );
+  XLAL_CHECK_FAIL( 0 < nfound, XLAL_EIO, "No items to read into string vector '%s'", keyword );
   XLAL_CHECK_FAIL( nfound <= FFIO_MAX, XLAL_EIO, "Too many items to read into string vector '%s'", keyword );
   for ( int i = 0; i < nfound; ++i ) {
     *values = XLALAppendString2Vector( *values, vals[i] );
@@ -809,7 +810,6 @@ XLAL_FAIL:
   return XLAL_FAILURE;
 
 }
-
 
 int XLALFITSHeaderWriteGPSTime( FITSFile *file, const CHAR *key, const LIGOTimeGPS *value, const CHAR *comment )
 {
