@@ -32,7 +32,7 @@ import functools
 
 import healpy
 
-from lalinference.rapid_pe import statutils
+from lalinference.rapid_pe import statutils, synchlib
 from pylal import rate
 
 class NanOrInf(Exception):
@@ -101,6 +101,20 @@ class MCSampler(object):
         # MEASURES (=priors): ROS needs these at the sampler level, to clearly separate their effects
         # ASSUMES the user insures they are normalized
         self.prior_pdf = {}
+
+        # Used if networking is useful
+        self._address, self._port = None, None
+        self.socket = None
+
+    def init_socket(self, address, port):
+        """
+        Initialize a network connection to 'address' at 'port'.
+        """
+        self._address, self._port = address, port
+        try:
+            self.socket = synchlib.init_socket(self._address, self._port)
+        except pysocket.error as sockerr:
+            pass
 
     def clear(self):
         """
@@ -347,6 +361,7 @@ class MCSampler(object):
         if show_evaluation_log:
             print "walltime : iteration Neff  ln(maxweight) lnLmarg ln(Z/Lmax) int_var"
 
+        socket = None
         while self.ntotal < nmin or (eff_samp < neff and self.ntotal < nmax):
             # Draw our sample points
             p_s, p_prior, rv = self.draw(n, *self.params)
@@ -467,6 +482,13 @@ class MCSampler(object):
             if convergence_tests and show_evaluation_log:  # Print status of each test
                 for key in convergence_tests:
                     print "   -- Convergence test status : ", key, last_convergence_test[key]
+
+            self._address, self._port = "pcdev2.nemo.phys.uwm.edu", 1890
+            if self._address is not None:
+                dims = ("distance", "inclination", "right_ascension",
+                        "declination", "integrand", "joint_prior", "joint_s_prior")
+                send_data = synchlib.prepare_data(self._rvs, dims, self.ntotal - n)
+                self.socket = synchlib.send_samples(send_data, self._address, self._port, verbose=True, socket=self.socket)
 
             #
             # The total number of adaptive steps is reached

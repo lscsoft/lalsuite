@@ -57,7 +57,6 @@ extern "C" {
 #include <lal/Statistics.h>
 #include <lal/ComputeFstat.h>
 #include <lal/LALConstants.h>
-#include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LALInitBarycenter.h>

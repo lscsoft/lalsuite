@@ -376,6 +376,7 @@ def save_grid_cells_hdf(base_grp, cells, crd_sys, check=True):
         ds = grids.create_dataset("level_0", data=numpy.array([c._center for c in cells]))
         ds.attrs.create("level", 0)
         ds.attrs.create("resolution", grid_res)
+        lvl = 0
     else:
         levels.sort()
         lvl, name = levels[-1]
@@ -386,6 +387,8 @@ def save_grid_cells_hdf(base_grp, cells, crd_sys, check=True):
         ds = grids.create_dataset("level_%d" % lvl, data=numpy.array([c._center for c in cells]))
         ds.attrs.create("level", lvl)
         ds.attrs.create("resolution", grid_res)
+
+    return lvl
 
 def load_init_region(h5file, base_grp="rapidpe_grids"):
     """

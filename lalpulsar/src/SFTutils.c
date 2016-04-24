@@ -32,6 +32,7 @@
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/LALString.h>
+#include <lal/ConfigFile.h>
 
 #include <lal/SFTutils.h>
 

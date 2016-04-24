@@ -17,12 +17,13 @@ TESTS = test_heterodyne_pulsar.sh
 if LALINFERENCE
 if LALXML
 inference_progs = \
-	lalapps_pulsar_parameter_estimation_nested
+	lalapps_pulsar_parameter_estimation_nested \
+	lalapps_pulsar_frequency_evolution
 
 endif
 endif
 endif
-bin_PROGRAMS = $(frame_progs) $(inference_progs) lalapps_CrabTNHeterodyne lalapps_ssbtodetector lalapps_pulsar_frequency_evolution
+bin_PROGRAMS = $(frame_progs) $(inference_progs) lalapps_CrabTNHeterodyne lalapps_ssbtodetector
 
 lalapps_ssbtodetector_SOURCES = ssbtodetector.c
 

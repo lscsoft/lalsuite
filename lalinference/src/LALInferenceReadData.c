@@ -480,6 +480,25 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
         fprintf(out, "%10.10g %10.10g %10.10g\n", f, dre, dim);
       }
       fclose(out);
+      
+      ppt=LALInferenceGetProcParamVal(commandLine,"--outfile");
+      if(ppt) {
+        snprintf(filename, nameLength, "%s%s-ASD.dat", ppt->value, IFOdata[i].name);
+      }
+      else
+        snprintf(filename, nameLength, "%.3f_%s-ASD.dat",GPStrig.gpsSeconds+1e-9*GPStrig.gpsNanoSeconds, IFOdata[i].name);
+      out = fopen(filename, "w");
+      if(!out){
+        fprintf(stderr,"Unable to open the path %s for writing freq ASD files\n",filename);
+        exit(1);
+      }
+      for (j = 0; j < IFOdata[i].oneSidedNoisePowerSpectrum->data->length; j++) {
+        REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
+        REAL8 asd = sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]);
+
+        fprintf(out, "%10.10g %10.10g\n", f, asd);
+      }
+      fclose(out);
     }
 
   }
@@ -1174,7 +1193,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
               REAL8 f = IFOdata[i].oneSidedNoisePowerSpectrum->deltaF*j;
               REAL8 psd = IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j];
 
-              fprintf(out, "%g %g\n", f, psd);
+              fprintf(out, "%10.10g %10.10g\n", f, psd);
           }
           fclose(out);
         }
@@ -1224,7 +1243,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                 REAL8 dre = creal(IFOdata[i].freqData->data->data[j]);
                 REAL8 dim = cimag(IFOdata[i].freqData->data->data[j]);
 
-                fprintf(out, "%g %g %g\n", f, dre, dim);
+                fprintf(out, "%10.10g %10.10g %10.10g\n", f, dre, dim);
             }
             fclose(out);
 

@@ -153,13 +153,13 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, UINT4 chunkMax ){
  * the data (e.g. those caused by a strong signal), which might affect the calculations (which assume the data is
  * Gaussian with zero mean).
  *
- * If the \c outputsegments is non-zero then a list of the segments will be output to a file called \c data_segment_list.txt,
+ * If the \c outputchunks is non-zero then a list of the segments will be output to a file called \c data_segment_list.txt,
  * with a prefix of the detector name.
  *
  * \param data [in] A data structure
  * \param chunkMin [in] The minimum length of a segment
  * \param chunkMax [in] The maximum length of a segment
- * \param outputsegments [in] A flag to check whether to output the segments
+ * \param outputchunks [in] A flag to check whether to output the segments
  *
  * \return A vector of segment/chunk lengths
  *

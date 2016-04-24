@@ -62,6 +62,8 @@ typedef enum
 /*---------- GLOBALs ----------*/
 
 /*---------- PROTOTYPES [API] ----------*/
+LogLevel_t LogLevel(void);
+
 void LogPrintf (LogLevel_t, const char* format, ...) _LAL_GCC_PRINTF_FORMAT_(2,3);
 void LogPrintfVerbatim (LogLevel_t, const char* format, ...) _LAL_GCC_PRINTF_FORMAT_(2,3);
 

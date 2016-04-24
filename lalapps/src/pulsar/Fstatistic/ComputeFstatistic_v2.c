@@ -219,10 +219,20 @@ typedef struct {
 
   /* orbital parameters */
   REAL8 orbitPeriod;		/**< binary-system orbital period in s */
+  REAL8 dorbitPeriod;
+  REAL8 orbitPeriodBand;
   REAL8 orbitasini;		/**< amplitude of radial motion */
+  REAL8 dorbitasini;
+  REAL8 orbitasiniBand;
   LIGOTimeGPS orbitTp;		/**< epoch of periapse passage */
+  REAL8 dorbitTp;
+  REAL8 orbitTpBand;
   REAL8 orbitArgp;		/**< angle of periapse */
+  REAL8 dorbitArgp;
+  REAL8 orbitArgpBand;
   REAL8 orbitEcc;		/**< orbital eccentricity */
+  REAL8 dorbitEcc;
+  REAL8 orbitEccBand;
 
   /* extra parameters for --gridType=GRID_SPINDOWN_AGEBRK parameter space */
   REAL8 spindownAge;            /**< spindown age of the object */
@@ -257,7 +267,6 @@ typedef struct {
   INT4 clusterOnScanline;	/**< number of points on "scanline" to use for 1-D local maxima finding */
 
   CHAR *gridFile;		/**< read template grid from this file */
-  REAL8 dopplermax;		/**< maximal possible doppler-effect */
 
   INT4 RngMedWindow;		/**< running-median window for noise floor estimation */
   LIGOTimeGPS refTime;		/**< reference-time for definition of pulsar-parameters [GPS] */
@@ -298,6 +307,7 @@ typedef struct {
 
   // ----- deprecated and obsolete variables, kept around for backwards-compatibility -----
   LIGOTimeGPS internalRefTime;   /**< [DEPRECATED] internal reference time. Has no effect, XLALComputeFstat() now always uses midtime anyway ... */
+  REAL8 dopplermax;              /**< [DEPRECATED] HAS NO EFFECT and should no longer be used: maximum Doppler shift is accounted for internally */
 
 } UserInput_t;
 
@@ -314,7 +324,7 @@ int checkUserInputConsistency (const UserInput_t *uvar);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 MultiNoiseWeights *getUnitWeights ( const MultiSFTVector *multiSFTs );
 
-int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand );
+int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand, const BOOLEAN output_orbit );
 int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, const FstatCandidate *Fcand );
 
 int compareFstatCandidates ( const void *candA, const void *candB );
@@ -390,7 +400,7 @@ int main(int argc,char *argv[])
 
   /* ----- produce a log-string describing the specific run setup ----- */
   XLAL_CHECK_MAIN ( (GV.logstring = XLALGetLogString ( &GV )) != NULL, XLAL_EFUNC );
-  LogPrintfVerbatim( LOG_DEBUG, "%s", GV.logstring );
+  LogPrintfVerbatim( LOG_NORMAL, "%s", GV.logstring );
 
   /* keep a log-file recording all relevant parameters of this search-run */
   if ( uvar.outputLogfile ) {
@@ -440,23 +450,17 @@ int main(int argc,char *argv[])
     gsl_vector_int_set_zero(Fstat_histogram);
   }
 
-  /* setup binary parameters */
-  REAL8 orbit_asini = 0 /* isolated pulsar */;
-  REAL8 orbit_period = 0;
-  REAL8 orbit_ecc = 0;
-  LIGOTimeGPS orbit_tp = LIGOTIMEGPSZERO;
-  REAL8 orbit_argp = 0;
-  if ( XLALUserVarWasSet ( &uvar.orbitasini ) && ( uvar.orbitasini > 0 ) )
-    {
-      orbit_tp = uvar.orbitTp;
-      orbit_argp = uvar.orbitArgp;
-      orbit_asini = uvar.orbitasini;
-      orbit_ecc = uvar.orbitEcc;
-      orbit_period = uvar.orbitPeriod;
-    }
+  // count number of binary orbit parameters
+  const UINT4 n_orbitasini = 1 + ( XLALUserVarWasSet(&uvar.dorbitasini) ? (UINT4) floor ( uvar.orbitasiniBand / uvar.dorbitasini ) : 0 );
+  const UINT4 n_orbitPeriod = 1 + ( XLALUserVarWasSet(&uvar.dorbitPeriod) ? (UINT4) floor ( uvar.orbitPeriodBand / uvar.dorbitPeriod ) : 0 );
+  const UINT4 n_orbitTp = 1 + ( XLALUserVarWasSet(&uvar.dorbitTp) ? (UINT4) floor ( uvar.orbitTpBand / uvar.dorbitTp ) : 0 );
+  const UINT4 n_orbitArgp = 1 + ( XLALUserVarWasSet(&uvar.dorbitArgp) ? (UINT4) floor ( uvar.orbitArgpBand / uvar.dorbitArgp ) : 0 );
+  const UINT4 n_orbitEcc = 1 + ( XLALUserVarWasSet(&uvar.dorbitEcc) ? (UINT4) floor ( uvar.orbitEccBand / uvar.dorbitEcc ) : 0 );
+  const UINT4 n_orbit = n_orbitasini * n_orbitPeriod * n_orbitTp * n_orbitArgp * n_orbitEcc;
 
   /* count number of templates */
   numTemplates = XLALNumDopplerTemplates ( GV.scanState );
+  numTemplates *= n_orbit;
   if (uvar.countTemplates) {
     printf("%%%% Number of templates: %0.0f\n", numTemplates);
   }
@@ -476,14 +480,19 @@ int main(int argc,char *argv[])
   FstatResults* Fstat_res = NULL;
 
   /* skip search if user supplied --countTemplates */
-  while ( !uvar.countTemplates && (XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
-    {
-      /* temporary solution until binary-gridding exists */
-      dopplerpos.asini  = orbit_asini;
-      dopplerpos.period = orbit_period;
-      dopplerpos.ecc    = orbit_ecc;
-      dopplerpos.tp     = orbit_tp;
-      dopplerpos.argp   = orbit_argp;
+  while ( !uvar.countTemplates && (XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) ) {
+
+    for (UINT4 i_orbitasini = 0; i_orbitasini < n_orbitasini; ++i_orbitasini) {
+    for (UINT4 i_orbitPeriod = 0; i_orbitPeriod < n_orbitPeriod; ++i_orbitPeriod) {
+    for (UINT4 i_orbitTp = 0; i_orbitTp < n_orbitTp; ++i_orbitTp) {
+    for (UINT4 i_orbitArgp = 0; i_orbitArgp < n_orbitArgp; ++i_orbitArgp) {
+    for (UINT4 i_orbitEcc = 0; i_orbitEcc < n_orbitEcc; ++i_orbitEcc) {
+    
+      dopplerpos.asini = uvar.orbitasini + i_orbitasini * uvar.dorbitasini;
+      dopplerpos.period = uvar.orbitPeriod + i_orbitPeriod * uvar.dorbitPeriod;
+      dopplerpos.tp = uvar.orbitTp; XLALGPSAdd( &dopplerpos.tp, i_orbitTp * uvar.dorbitTp );
+      dopplerpos.argp = uvar.orbitArgp + i_orbitArgp * uvar.dorbitArgp;
+      dopplerpos.ecc = uvar.orbitEcc + i_orbitEcc * uvar.dorbitEcc;
 
       tic0 = tic = GETTIME();
 
@@ -500,12 +509,12 @@ int main(int argc,char *argv[])
 
       /* Progress meter */
       templateCounter += 1.0;
-      if ( lalDebugLevel && ( (toc - timeOfLastProgressUpdate) > uvar.timerCount) )
+      if ( LogLevel() >= LOG_NORMAL && ( (toc - timeOfLastProgressUpdate) > uvar.timerCount) )
         {
           REAL8 diffSec = GETTIME() - clock0 ;  /* seconds since start of loop*/
           REAL8 taup = diffSec / templateCounter ;
           REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
-          LogPrintf (LOG_DEBUG, "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
+          LogPrintf (LOG_NORMAL, "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
                      templateCounter, numTemplates, templateCounter/numTemplates * 100.0, timeLeft);
           timeOfLastProgressUpdate = toc;
         }
@@ -591,22 +600,22 @@ int main(int argc,char *argv[])
 	  if ( GV.FstatToplist  )			/* dynamic threshold */
 	    {
 	      if ( insert_into_toplist(GV.FstatToplist, (void*)writeCand ) ) {
-		LogPrintf ( LOG_DETAIL, "Added new candidate into toplist: 2F = %f", writeCand->twoF );
+		LogPrintf ( LOG_DEBUG, "Added new candidate into toplist: 2F = %f", writeCand->twoF );
 		if ( uvar.computeBSGL ) {
-		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, log10BSGL = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->log10BSGL );
+		  LogPrintfVerbatim ( LOG_DEBUG, ", 2F_H1 = %f, 2F_L1 = %f, log10BSGL = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->log10BSGL );
                 }
 	      }
 	      else {
-		LogPrintf ( LOG_DETAIL, "NOT added the candidate into toplist: 2F = %f", writeCand->twoF );
+		LogPrintf ( LOG_DEBUG, "NOT added the candidate into toplist: 2F = %f", writeCand->twoF );
 		if ( uvar.computeBSGL ) {
-		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, log10BSGL = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->log10BSGL );
+		  LogPrintfVerbatim ( LOG_DEBUG, ", 2F_H1 = %f, 2F_L1 = %f, log10BSGL = %f", writeCand->twoFX[0], writeCand->twoFX[1], writeCand->log10BSGL );
                 }
 	      }
-	      LogPrintfVerbatim ( LOG_DETAIL, "\n" );
+	      LogPrintfVerbatim ( LOG_DEBUG, "\n" );
 	    }
 	  else if ( fpFstat ) 				/* no toplist :write out immediately */
 	    {
-	      if ( write_FstatCandidate_to_fp ( fpFstat, writeCand ) != 0 )
+	      if ( write_FstatCandidate_to_fp ( fpFstat, writeCand, n_orbit > 1 ) != 0 )
 		{
 		  LogPrintf (LOG_CRITICAL, "Failed to write candidate to file.\n");
 		  return -1;
@@ -737,7 +746,13 @@ int main(int argc,char *argv[])
       toc = GETTIME();
       timing.tauTemplate += (toc - tic0);
 
-    } /* while more Doppler positions to scan */
+    }
+    }
+    }
+    }
+    }
+
+  } /* while more Doppler positions to scan */
 
 
   /* if requested: output timings into timing-file */
@@ -763,14 +778,14 @@ int main(int argc,char *argv[])
       UINT4 el;
 
       /* sort toplist */
-      LogPrintf ( LOG_DEBUG, "Sorting toplist ... ");
+      LogPrintf ( LOG_NORMAL, "Sorting toplist ... ");
       if ( GV.RankingStatistic == RANKBY_2F )
         qsort_toplist ( GV.FstatToplist, compareFstatCandidates );
       else if ( GV.RankingStatistic == RANKBY_BSGL )
         qsort_toplist ( GV.FstatToplist, compareFstatCandidates_BSGL );
       else
         XLAL_ERROR ( XLAL_EINVAL, "Ranking statistic '%d' undefined here, allowed are 'F=0' and 'BSGL=2'\n", GV.RankingStatistic );
-      LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+      LogPrintfVerbatim ( LOG_NORMAL, "done.\n");
 
       for ( el=0; el < GV.FstatToplist->elems; el ++ )
 	{
@@ -779,7 +794,7 @@ int main(int argc,char *argv[])
 	    LogPrintf ( LOG_CRITICAL, "Internal consistency problems with toplist: contains fewer elements than expected!\n");
 	    return -1;
 	  }
-	  if ( write_FstatCandidate_to_fp ( fpFstat, candi ) != 0 )
+	  if ( write_FstatCandidate_to_fp ( fpFstat, candi, n_orbit > 1 ) != 0 )
 	    {
 	      LogPrintf (LOG_CRITICAL, "Failed to write candidate to file.\n");
 	      return -1;
@@ -818,7 +833,7 @@ int main(int argc,char *argv[])
 
     } /* write loudest candidate to file */
 
-  LogPrintf (LOG_DEBUG, "Search finished.\n");
+  LogPrintf (LOG_NORMAL, "Search finished.\n");
 
   /* write out the Fstatistic histogram */
   if (uvar.outputFstatHist) {
@@ -922,7 +937,7 @@ initUserVars ( UserInput_t *uvar )
 
   uvar->gridFile = NULL;
 
-  uvar->dopplermax =  1.05e-4;
+  uvar->dopplermax =  0;        /* option is deprecated */
   uvar->RngMedWindow = 50;	/* for running-median */
 
   uvar->SSBprecision = SSBPREC_RELATIVISTIC;
@@ -978,11 +993,23 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( 	df2dot, 	 REAL8, 0 , OPTIONAL, "Stepsize for f2dot in Hz/s^2");
   XLALRegisterUvarMember( 	df3dot, 	 REAL8, 0 , OPTIONAL, "Stepsize for f3dot in Hz/s^3");
 
-  XLALRegisterUvarMember( 	orbitasini, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Projected semi-major axis in light-seconds [Default: 0.0]");
-  XLALRegisterUvarMember( 	orbitPeriod, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Period in seconds");
-  XLALRegisterUvarMember(	orbitTp, 	 EPOCH, 0,  OPTIONAL, "Binary Orbit: (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
-  XLALRegisterUvarMember( 	orbitArgp, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Orbital argument of periapse in radians");
-  XLALRegisterUvarMember( 	orbitEcc, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Orbital eccentricity");
+  XLALRegisterUvarMember( 	orbitasini, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Projected semi-major axis in light-seconds [Default: 0.0]");
+  XLALRegisterUvarMember( 	orbitPeriod, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Period in seconds");
+  XLALRegisterUvarMember(	orbitTp, 	 EPOCH, 0,  DEVELOPER, "Binary Orbit: (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
+  XLALRegisterUvarMember( 	orbitArgp, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Orbital argument of periapse in radians");
+  XLALRegisterUvarMember( 	orbitEcc, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Orbital eccentricity");
+
+  XLALRegisterUvarMember( 	orbitasiniBand,	 REAL8, 0,  DEVELOPER, "Binary Orbit: Band in Projected semi-major axis in light-seconds [Default: 0.0]");
+  XLALRegisterUvarMember( 	orbitPeriodBand, REAL8, 0,  DEVELOPER, "Binary Orbit: Band in Period in seconds");
+  XLALRegisterUvarMember(	orbitTpBand, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Band in (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
+  XLALRegisterUvarMember( 	orbitArgpBand, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Band in Orbital argument of periapse in radians");
+  XLALRegisterUvarMember( 	orbitEccBand, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Band in Orbital eccentricity");
+
+  XLALRegisterUvarMember( 	dorbitasini, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in Projected semi-major axis in light-seconds [Default: 0.0]");
+  XLALRegisterUvarMember( 	dorbitPeriod, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in Period in seconds");
+  XLALRegisterUvarMember(	dorbitTp, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
+  XLALRegisterUvarMember( 	dorbitArgp, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in Orbital argument of periapse in radians");
+  XLALRegisterUvarMember( 	dorbitEcc, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in Orbital eccentricity");
 
   XLALRegisterUvarMember(DataFiles, 	STRING, 'D', REQUIRED, "File-pattern specifying (also multi-IFO) input SFT-files");
   XLALRegisterUvarMember(IFO, 		STRING, 'I', OPTIONAL, "Detector: 'G1', 'L1', 'H1', 'H2' ...(useful for single-IFO v1-SFTs only!)");
@@ -1036,7 +1063,6 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember(  version,	BOOLEAN, 'V', SPECIAL,  "Output version information");
 
   /* ----- more experimental/expert options ----- */
-  XLALRegisterUvarMember( 	dopplermax, 	REAL8, 'q', DEVELOPER, "Maximum doppler shift expected");
   XLALRegisterUvarMember( 	UseNoiseWeights,BOOLEAN, 'W', DEVELOPER, "Use per-SFT noise weights");
   XLALRegisterUvarMember(ephemEarth, 	 STRING, 0,  DEVELOPER, "Earth ephemeris file to use");
   XLALRegisterUvarMember(ephemSun, 	 STRING, 0,  DEVELOPER, "Sun ephemeris file to use");
@@ -1066,6 +1092,7 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember ( Dec, STRING, 0, DEPRECATED, "Use --Delta instead");
 
   XLALRegisterUvarMember ( internalRefTime, EPOCH, 0, DEPRECATED, "HAS NO EFFECT and should no longer be used: XLALComputeFstat() now always uses midtime internally ... ");
+  XLALRegisterUvarMember ( dopplermax,      REAL8, 0, DEPRECATED, "HAS NO EFFECT and should no longer be used: maximum Doppler shift is accounted for internally");
 
   // ---------- obsolete and unsupported options ----------
   XLALRegisterUvarMember(outputLogPrintf, STRING, 0,  DEFUNCT, "DEFUNCT; used to send all output from LogPrintf statements to this file");
@@ -1106,9 +1133,9 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   constraints.maxStartTime = &maxStartTime;
 
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
-  LogPrintf (LOG_DEBUG, "Finding all SFTs to load ... ");
+  LogPrintf (LOG_NORMAL, "Finding all SFTs to load ... ");
   XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->DataFiles, &constraints )) != NULL, XLAL_EFUNC );
-  LogPrintfVerbatim (LOG_DEBUG, "done. (found %d SFTs)\n", catalog->length);
+  LogPrintfVerbatim (LOG_NORMAL, "done. (found %d SFTs)\n", catalog->length);
 
   if ( constraints.detector ) {
     XLALFree ( constraints.detector );
@@ -1271,9 +1298,9 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
       scanInit.extraArgs[2] = uvar->maxBraking;
     }
 
-    LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
+    LogPrintf (LOG_NORMAL, "Setting up template grid ... ");
     XLAL_CHECK ( (cfg->scanState = XLALInitDopplerFullScan ( &scanInit)) != NULL, XLAL_EFUNC );
-    LogPrintfVerbatim (LOG_DEBUG, "template grid ready.\n");
+    LogPrintfVerbatim (LOG_NORMAL, "template grid ready.\n");
     XLALNumDopplerTemplates ( cfg->scanState );
     XLALFree ( detector );
   }
@@ -1282,8 +1309,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   { /* ----- What frequency-band do we need to read from the SFTs?
      * propagate spin-range from refTime to startTime and endTime of observation
      */
-    PulsarSpinRange spinRangeRef, spinRangeStart, spinRangeEnd;	/* temporary only */
-    REAL8 fmaxStart, fmaxEnd, fminStart, fminEnd;
+    PulsarSpinRange spinRangeRef;	/* temporary only */
 
     // extract spanned spin-range at reference-time from the template-bank
     XLAL_CHECK ( XLALGetDopplerSpinRange ( &spinRangeRef, cfg->scanState ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1299,26 +1325,11 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     memcpy ( cfg->searchRegion.fkdot, spinRangeRef.fkdot, sizeof(cfg->searchRegion.fkdot) );
     memcpy ( cfg->searchRegion.fkdotBand, spinRangeRef.fkdotBand, sizeof(cfg->searchRegion.fkdotBand) );
 
-    /* compute spin-range at startTime of observation */
-    REAL8 dtau = XLALGPSDiff ( &cfg->startTime, &spinRangeRef.refTime );
-    XLAL_CHECK ( XLALExtrapolatePulsarSpinRange ( &spinRangeStart, &spinRangeRef, dtau ) == XLAL_SUCCESS, XLAL_EFUNC );
-    /* compute spin-range at endTime of these SFTs */
-    dtau = XLALGPSDiff ( &endTime, &spinRangeStart.refTime );
-    XLAL_CHECK ( XLALExtrapolatePulsarSpinRange (&spinRangeEnd, &spinRangeStart, dtau) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    fminStart = spinRangeStart.fkdot[0];
-    /* ranges are in canonical format! */
-    fmaxStart = fminStart + spinRangeStart.fkdotBand[0];
-    fminEnd   = spinRangeEnd.fkdot[0];
-    fmaxEnd   = fminEnd + spinRangeEnd.fkdotBand[0];
-
-    /*  get covering frequency-band  */
-    fCoverMax = MYMAX ( fmaxStart, fmaxEnd );
-    fCoverMin = MYMIN ( fminStart, fminEnd );
-
-    /* correct for doppler-shift */
-    fCoverMax *= 1.0 + uvar->dopplermax;
-    fCoverMin *= 1.0 - uvar->dopplermax;
+    // Compute covering frequency range, accounting for Doppler modulation due to the Earth and any binary companion */
+    const REAL8 binaryMaxAsini = MYMAX( uvar->orbitasini, uvar->orbitasini + uvar->orbitasiniBand );
+    const REAL8 binaryMinPeriod = MYMIN( uvar->orbitPeriod, uvar->orbitPeriod + uvar->orbitPeriodBand );
+    const REAL8 binaryMaxEcc = MYMAX( uvar->orbitEcc, uvar->orbitEcc + uvar->orbitEccBand );
+    XLALCWSignalCoveringBand( &fCoverMin, &fCoverMax, &cfg->startTime, &endTime, &spinRangeRef, binaryMaxAsini, binaryMinPeriod, binaryMaxEcc );
 
   } /* extrapolate spin-range */
 
@@ -1959,7 +1970,7 @@ compareFstatCandidates_BSGL ( const void *candA, const void *candB )
  * Return: 0 = OK, -1 = ERROR
  */
 int
-write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
+write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand, const BOOLEAN output_orbit )
 {
 
   if ( !fp || !thisFCand )
@@ -1986,10 +1997,19 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
         } /* for X < numDet */
     } /* if FX */
 
-  fprintf (fp, "%.16g %.16g %.16g %.16g %.16g %.16g %.9g%s\n",
+  fprintf (fp, "%.16g %.16g %.16g %.16g %.16g %.16g %.9g%s",
 	   thisFCand->doppler.fkdot[0], thisFCand->doppler.Alpha, thisFCand->doppler.Delta,
 	   thisFCand->doppler.fkdot[1], thisFCand->doppler.fkdot[2], thisFCand->doppler.fkdot[3],
 	   thisFCand->twoF, extraStatsStr );
+
+  if (output_orbit) {
+    fprintf( fp, " %.16g %.16g %.16g %.16g %.16g",
+             thisFCand->doppler.asini, thisFCand->doppler.period,
+             XLALGPSGetREAL8(&thisFCand->doppler.tp),
+             thisFCand->doppler.argp, thisFCand->doppler.ecc );
+  }
+
+  fprintf( fp, "\n" );
 
   return 0;
 

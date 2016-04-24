@@ -457,9 +457,17 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
     add_variable_parameter( pars, ini, "M2", LALINFERENCE_PARAM_FIXED );
 
     if ( PulsarCheckParam(pars, "FB") ){
-      REAL8Vector *fb = NULL;
-      fb = PulsarGetREAL8VectorParam( pars, "FB" );
-      LALInferenceAddVariable( ini, "FB", &fb, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      UINT4 i = 0;
+      REAL8Vector *fb = PulsarGetREAL8VectorParam( pars, "FB" );
+      /* add each FB value as a seperate parameter */
+      for ( i = 0; i < fb->length; i++ ){
+        CHAR varname[256];
+        snprintf(varname, sizeof(varname), "FB%u", i);
+        REAL8 fbval = PulsarGetREAL8VectorParamIndividual( pars, varname );
+        LALInferenceAddVariable( ini, varname, &fbval, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+      }
+      /* add value with the number of FB parameters given */
+      LALInferenceAddVariable( ini, "FBNUM", &i, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
     }
   }
 }

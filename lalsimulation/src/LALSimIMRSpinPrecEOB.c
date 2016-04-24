@@ -235,7 +235,7 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
 
         /*  Eq. 19 of PRD 89, 084006 (2014) */
         /*  Also unwrap the two angles */
-        if (fabs(LN_x->data[i]) <= 1.e-7 && fabs(LN_y->data[i]) <=1.e-7){
+        if (fabs(LN_x->data[i]) <= 1.e-10 && fabs(LN_y->data[i]) <=1.e-10){
             Alpha->data[i] = 0.0;
             inGamma = 0.0;
         } else {
@@ -264,7 +264,15 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
             Alpha->data[i] -= (Alpha->data[0] - InitialAlpha);
         }
 
-        Beta->data[i] = acos( LN_z->data[i] );
+        if (fabs(1.0 - LN_z->data[i]) < 1.e-12){
+            REAL8 LN_xy;
+            LN_xy = sqrt(LN_x->data[i]*LN_x->data[i] + LN_y->data[i]*LN_y->data[i]);
+            //LN_z->data[i] = sqrt(1.0 - LN_xy*LN_xy);
+            Beta->data[i] = atan2(LN_xy, LN_z->data[i]);
+            //printf("here   ");
+        }else{
+            Beta->data[i] = acos( LN_z->data[i] );
+        }
         if( i>0 && Beta->data[i] > Beta->data[i-1] ) {
             *phaseCounterB = *phaseCounterB - 1;
         }
@@ -335,9 +343,17 @@ static void EulerAnglesP2J(
     LframeEz[0] =  LNhx;
     LframeEz[1] =  LNhy;
     LframeEz[2] =  LNhz;
+    REAL8 normJ, normLz;
+    normJ = JframeEz[0]*JframeEz[0]+JframeEz[1]*JframeEz[1]+JframeEz[2]*JframeEz[2];
+    normLz = LframeEz[0]*LframeEz[0]+LframeEz[1]*LframeEz[1]+LframeEz[2]*LframeEz[2];
     *aP2J = atan2(JframeEz[0]*LframeEy[0]+JframeEz[1]*LframeEy[1]+JframeEz[2]*LframeEy[2],
                  JframeEz[0]*LframeEx[0]+JframeEz[1]*LframeEx[1]+JframeEz[2]*LframeEx[2]);
     *bP2J = acos( JframeEz[0]*LframeEz[0]+JframeEz[1]*LframeEz[1]+JframeEz[2]*LframeEz[2]);
+    if (*bP2J < 1.e-4){
+        *bP2J = acos((JframeEz[0]*LframeEz[0]+JframeEz[1]*LframeEz[1]+JframeEz[2]*LframeEz[2])/sqrt(normJ*normLz));
+
+    }
+
     *gP2J = atan2(  JframeEy[0]*LframeEz[0]+JframeEy[1]*LframeEz[1]+JframeEy[2]*LframeEz[2],
                  -(JframeEx[0]*LframeEz[0]+JframeEx[1]*LframeEz[1]+JframeEx[2]*LframeEz[2]));
     
@@ -1153,6 +1169,11 @@ int XLALSimIMRSpinEOBWaveformAll(
   mTotal   = m1 + m2;
   mTScaled = mTotal * LAL_MTSUN_SI;
   eta      = m1 * m2 / (mTotal*mTotal);
+
+  if (eta > 0.25){
+      m2=m1;
+      eta = 0.25;
+  }
 
   /* Initialize amplitude scaling parameter */
   amp0 = mTotal * LAL_MRSUN_SI / r;

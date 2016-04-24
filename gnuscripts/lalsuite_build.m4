@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 122
+# serial 123
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1338,12 +1338,13 @@ AC_DEFUN([LALSUITE_USE_CFITSIO],[
 ])
 
 AC_DEFUN([LALSUITE_CHECK_PAGER],[
-  # $0: check for pager programs
+  # $0: check for pager programs and required functions
   PAGER=
   AC_PATH_PROGS([PAGER],[less more])
   AS_CASE(["${PAGER}"],
     [*/less],[PAGER="${PAGER} -FRX"]
   )
   AC_SUBST([PAGER_CPPFLAGS],["-DPAGER='\"\$(PAGER)\"'"])
+  AC_CHECK_FUNCS([popen pclose])
   # end $0
 ])

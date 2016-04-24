@@ -63,9 +63,9 @@ typedef struct tagFITSFile FITSFile;
 /// LAL library VCS header, e.g. #lalVCSInfoList from \ref LALVCSInfo_h
 ///
 /// @{
-void XLALFITSFileClose(FITSFile *file);
-FITSFile *XLALFITSFileOpenWrite(const CHAR *file_name, const LALVCSInfo *const vcs_list[]);
-FITSFile *XLALFITSFileOpenRead(const CHAR *file_name);
+void XLALFITSFileClose( FITSFile *file );
+FITSFile *XLALFITSFileOpenWrite( const CHAR *file_name, const LALVCSInfo *const vcs_list[] );
+FITSFile *XLALFITSFileOpenRead( const CHAR *file_name );
 /// @}
 
 ///
@@ -89,27 +89,27 @@ FITSFile *XLALFITSFileOpenRead(const CHAR *file_name);
 ///   used after the array or table is opened for reading.
 ///
 /// @{
-int XLALFITSHeaderWriteComment(FITSFile *file, const CHAR *comment);
-int XLALFITSHeaderWriteBOOLEAN(FITSFile *file, const CHAR *key, const BOOLEAN value, const CHAR *comment);
-int XLALFITSHeaderReadBOOLEAN(FITSFile *file, const CHAR *key, BOOLEAN *value);
-int XLALFITSHeaderWriteINT4(FITSFile *file, const CHAR *key, const INT4 value, const CHAR *comment);
-int XLALFITSHeaderReadINT4(FITSFile *file, const CHAR *key, INT4 *value);
-int XLALFITSHeaderWriteINT8(FITSFile *file, const CHAR *key, const INT8 value, const CHAR *comment);
-int XLALFITSHeaderReadINT8(FITSFile *file, const CHAR *key, INT8 *value);
-int XLALFITSHeaderWriteREAL4(FITSFile *file, const CHAR *key, const REAL4 value, const CHAR *comment);
-int XLALFITSHeaderReadREAL4(FITSFile *file, const CHAR *key, REAL4 *value);
-int XLALFITSHeaderWriteREAL8(FITSFile *file, const CHAR *key, const REAL8 value, const CHAR *comment);
-int XLALFITSHeaderReadREAL8(FITSFile *file, const CHAR *key, REAL8 *value);
-int XLALFITSHeaderWriteCOMPLEX8(FITSFile *file, const CHAR *key, const COMPLEX8 value, const CHAR *comment);
-int XLALFITSHeaderReadCOMPLEX8(FITSFile *file, const CHAR *key, COMPLEX8 *value);
-int XLALFITSHeaderWriteCOMPLEX16(FITSFile *file, const CHAR *key, const COMPLEX16 value, const CHAR *comment);
-int XLALFITSHeaderReadCOMPLEX16(FITSFile *file, const CHAR *key, COMPLEX16 *value);
-int XLALFITSHeaderWriteString(FITSFile *file, const CHAR *key, const CHAR *value, const CHAR *comment);
-int XLALFITSHeaderReadString(FITSFile *file, const CHAR *key, CHAR **value);
-int XLALFITSHeaderWriteStringVector(FITSFile *file, const CHAR *key, const LALStringVector *values, const CHAR *comment);
-int XLALFITSHeaderReadStringVector(FITSFile *file, const CHAR *key, LALStringVector **values);
-int XLALFITSHeaderWriteGPSTime(FITSFile *file, const CHAR *key, const LIGOTimeGPS *value, const CHAR *comment);
-int XLALFITSHeaderReadGPSTime(FITSFile *file, const CHAR *key, LIGOTimeGPS *value);
+int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *comment );
+int XLALFITSHeaderWriteBOOLEAN( FITSFile *file, const CHAR *key, const BOOLEAN value, const CHAR *comment );
+int XLALFITSHeaderReadBOOLEAN( FITSFile *file, const CHAR *key, BOOLEAN *value );
+int XLALFITSHeaderWriteINT4( FITSFile *file, const CHAR *key, const INT4 value, const CHAR *comment );
+int XLALFITSHeaderReadINT4( FITSFile *file, const CHAR *key, INT4 *value );
+int XLALFITSHeaderWriteINT8( FITSFile *file, const CHAR *key, const INT8 value, const CHAR *comment );
+int XLALFITSHeaderReadINT8( FITSFile *file, const CHAR *key, INT8 *value );
+int XLALFITSHeaderWriteREAL4( FITSFile *file, const CHAR *key, const REAL4 value, const CHAR *comment );
+int XLALFITSHeaderReadREAL4( FITSFile *file, const CHAR *key, REAL4 *value );
+int XLALFITSHeaderWriteREAL8( FITSFile *file, const CHAR *key, const REAL8 value, const CHAR *comment );
+int XLALFITSHeaderReadREAL8( FITSFile *file, const CHAR *key, REAL8 *value );
+int XLALFITSHeaderWriteCOMPLEX8( FITSFile *file, const CHAR *key, const COMPLEX8 value, const CHAR *comment );
+int XLALFITSHeaderReadCOMPLEX8( FITSFile *file, const CHAR *key, COMPLEX8 *value );
+int XLALFITSHeaderWriteCOMPLEX16( FITSFile *file, const CHAR *key, const COMPLEX16 value, const CHAR *comment );
+int XLALFITSHeaderReadCOMPLEX16( FITSFile *file, const CHAR *key, COMPLEX16 *value );
+int XLALFITSHeaderWriteString( FITSFile *file, const CHAR *key, const CHAR *value, const CHAR *comment );
+int XLALFITSHeaderReadString( FITSFile *file, const CHAR *key, CHAR **value );
+int XLALFITSHeaderWriteStringVector( FITSFile *file, const CHAR *key, const LALStringVector *values, const CHAR *comment );
+int XLALFITSHeaderReadStringVector( FITSFile *file, const CHAR *key, LALStringVector **values );
+int XLALFITSHeaderWriteGPSTime( FITSFile *file, const CHAR *key, const LIGOTimeGPS *value, const CHAR *comment );
+int XLALFITSHeaderReadGPSTime( FITSFile *file, const CHAR *key, LIGOTimeGPS *value );
 /// @}
 
 ///
@@ -126,26 +126,26 @@ int XLALFITSHeaderReadGPSTime(FITSFile *file, const CHAR *key, LIGOTimeGPS *valu
 /// XLALFITSArrayReadGSLMatrix() exist for writing/reading elements to/from a <tt>gsl_matrix</tt>.
 ///
 /// @{
-int XLALFITSArrayOpenWrite(FITSFile *file, const CHAR *name, const size_t ndim, const size_t dims[], const CHAR *comment);
-int XLALFITSArrayOpenRead(FITSFile *file, const CHAR *name, size_t *ndim, size_t dims[]);
-int XLALFITSArrayOpenWrite1(FITSFile *file, const CHAR *name, const size_t dim0, const CHAR *comment);
-int XLALFITSArrayOpenRead1(FITSFile *file, const CHAR *name, size_t *dim0);
-int XLALFITSArrayOpenWrite2(FITSFile *file, const CHAR *name, const size_t dim0, const size_t dim1, const CHAR *comment);
-int XLALFITSArrayOpenRead2(FITSFile *file, const CHAR *name, size_t *dim0, size_t *dim1);
-int XLALFITSArrayWriteUINT2(FITSFile *file, const size_t idx[], const UINT2 elem);
-int XLALFITSArrayReadUINT2(FITSFile *file, const size_t idx[], UINT2 *elem);
-int XLALFITSArrayWriteUINT4(FITSFile *file, const size_t idx[], const UINT4 elem);
-int XLALFITSArrayReadUINT4(FITSFile *file, const size_t idx[], UINT4 *elem);
-int XLALFITSArrayWriteINT2(FITSFile *file, const size_t idx[], const INT2 elem);
-int XLALFITSArrayReadINT2(FITSFile *file, const size_t idx[], INT2 *elem);
-int XLALFITSArrayWriteINT4(FITSFile *file, const size_t idx[], const INT4 elem);
-int XLALFITSArrayReadINT4(FITSFile *file, const size_t idx[], INT4 *elem);
-int XLALFITSArrayWriteREAL4(FITSFile *file, const size_t idx[], const REAL4 elem);
-int XLALFITSArrayReadREAL4(FITSFile *file, const size_t idx[], REAL4 *elem);
-int XLALFITSArrayWriteREAL8(FITSFile *file, const size_t idx[], const REAL8 elem);
-int XLALFITSArrayReadREAL8(FITSFile *file, const size_t idx[], REAL8 *elem);
-int XLALFITSArrayWriteGSLMatrix(FITSFile *file, const size_t idx[], const gsl_matrix *elems);
-int XLALFITSArrayReadGSLMatrix(FITSFile *file, const size_t idx[], gsl_matrix **elems);
+int XLALFITSArrayOpenWrite( FITSFile *file, const CHAR *name, const size_t ndim, const size_t dims[], const CHAR *comment );
+int XLALFITSArrayOpenRead( FITSFile *file, const CHAR *name, size_t *ndim, size_t dims[] );
+int XLALFITSArrayOpenWrite1( FITSFile *file, const CHAR *name, const size_t dim0, const CHAR *comment );
+int XLALFITSArrayOpenRead1( FITSFile *file, const CHAR *name, size_t *dim0 );
+int XLALFITSArrayOpenWrite2( FITSFile *file, const CHAR *name, const size_t dim0, const size_t dim1, const CHAR *comment );
+int XLALFITSArrayOpenRead2( FITSFile *file, const CHAR *name, size_t *dim0, size_t *dim1 );
+int XLALFITSArrayWriteUINT2( FITSFile *file, const size_t idx[], const UINT2 elem );
+int XLALFITSArrayReadUINT2( FITSFile *file, const size_t idx[], UINT2 *elem );
+int XLALFITSArrayWriteUINT4( FITSFile *file, const size_t idx[], const UINT4 elem );
+int XLALFITSArrayReadUINT4( FITSFile *file, const size_t idx[], UINT4 *elem );
+int XLALFITSArrayWriteINT2( FITSFile *file, const size_t idx[], const INT2 elem );
+int XLALFITSArrayReadINT2( FITSFile *file, const size_t idx[], INT2 *elem );
+int XLALFITSArrayWriteINT4( FITSFile *file, const size_t idx[], const INT4 elem );
+int XLALFITSArrayReadINT4( FITSFile *file, const size_t idx[], INT4 *elem );
+int XLALFITSArrayWriteREAL4( FITSFile *file, const size_t idx[], const REAL4 elem );
+int XLALFITSArrayReadREAL4( FITSFile *file, const size_t idx[], REAL4 *elem );
+int XLALFITSArrayWriteREAL8( FITSFile *file, const size_t idx[], const REAL8 elem );
+int XLALFITSArrayReadREAL8( FITSFile *file, const size_t idx[], REAL8 *elem );
+int XLALFITSArrayWriteGSLMatrix( FITSFile *file, const size_t idx[], const gsl_matrix *elems );
+int XLALFITSArrayReadGSLMatrix( FITSFile *file, const size_t idx[], gsl_matrix **elems );
 /// @}
 
 ///
@@ -185,19 +185,19 @@ int XLALFITSArrayReadGSLMatrix(FITSFile *file, const size_t idx[], gsl_matrix **
 /// the latter returns the number of rows remaining in the table \p rem_nrows, if needed.
 ///
 /// @{
-int XLALFITSTableOpenWrite(FITSFile *file, const CHAR *name, const CHAR *comment);
-int XLALFITSTableOpenRead(FITSFile *file, const CHAR *name, UINT8 *nrows);
+int XLALFITSTableOpenWrite( FITSFile *file, const CHAR *name, const CHAR *comment );
+int XLALFITSTableOpenRead( FITSFile *file, const CHAR *name, UINT8 *nrows );
 
 /// \cond DONT_DOXYGEN
-int XLALFITSTableColumnAddBOOLEAN(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const BOOLEAN *field, const size_t field_size);
-int XLALFITSTableColumnAddINT2(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT2 *field, const size_t field_size);
-int XLALFITSTableColumnAddINT4(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT4 *field, const size_t field_size);
-int XLALFITSTableColumnAddREAL4(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL4 *field, const size_t field_size);
-int XLALFITSTableColumnAddREAL8(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL8 *field, const size_t field_size);
-int XLALFITSTableColumnAddCOMPLEX8(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX8 *field, const size_t field_size);
-int XLALFITSTableColumnAddCOMPLEX16(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX16 *field, const size_t field_size);
-int XLALFITSTableColumnAddCHAR(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *CHAR, const size_t field_size);
-int XLALFITSTableColumnAddGPSTime(FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size);
+int XLALFITSTableColumnAddBOOLEAN( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const BOOLEAN *field, const size_t field_size );
+int XLALFITSTableColumnAddINT2( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT2 *field, const size_t field_size );
+int XLALFITSTableColumnAddINT4( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT4 *field, const size_t field_size );
+int XLALFITSTableColumnAddREAL4( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL4 *field, const size_t field_size );
+int XLALFITSTableColumnAddREAL8( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL8 *field, const size_t field_size );
+int XLALFITSTableColumnAddCOMPLEX8( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX8 *field, const size_t field_size );
+int XLALFITSTableColumnAddCOMPLEX16( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX16 *field, const size_t field_size );
+int XLALFITSTableColumnAddCHAR( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *CHAR, const size_t field_size );
+int XLALFITSTableColumnAddGPSTime( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size );
 /// \endcond
 
 /// \hideinitializer
@@ -225,8 +225,8 @@ int XLALFITSTableColumnAddGPSTime(FITSFile *file, const CHAR *col_name, const si
 #define XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED(file, index, type, field, col_name) \
   XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, &_xlal_fits_ptr_record_[0], sizeof(_xlal_fits_ptr_record_), &(_xlal_fits_ptr_record_[index].field[0]), sizeof(_xlal_fits_ptr_record_[index].field))
 
-int XLALFITSTableWriteRow(FITSFile *file, const void *record);
-int XLALFITSTableReadRow(FITSFile *file, void *record, UINT8 *rem_nrows);
+int XLALFITSTableWriteRow( FITSFile *file, const void *record );
+int XLALFITSTableReadRow( FITSFile *file, void *record, UINT8 *rem_nrows );
 /// @}
 
 /// @}
