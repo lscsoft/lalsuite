@@ -16,7 +16,7 @@ from glue.ligolw.utils import process
 lsctables.use_in(ligolw.LIGOLWContentHandler)
 from pylal.series import read_psd_xmldoc, LIGOLWContentHandler
 
-VALID_TMPLT_GENS = {"lalapps_cbc_sbank": "--flow", "tmpltbank": "--low-frequency-cutoff", "pycbc_geom_aligned_bank": "--f-low"}
+VALID_TMPLT_GENS = {"lalapps_cbc_sbank": "--flow", "tmpltbank": "--low-frequency-cutoff", "pycbc_geom_aligned_bank": "--f-low", "gstlal_bank_splitter": "--f-low"}
 def infer_flow(xmldoc):
     """
     Attempt to infer the low frequency by combing through the process table and trying to pick out the low frequency option given to that program. If you trust this, you will, for sure, be disappointed at some point in using this program.
@@ -75,6 +75,7 @@ argp.add_argument("-f", "--f-low", type=float, help="Lowest frequency component 
 argp.add_argument("-F", "--delta-f", type=float, default=0.125, help="Frequency binning of the FD waveform. Default is 0.125.")
 argp.add_argument("-a", "--approximant1", default="TaylorF2", help="Approximant to use for target waveform. Default is TaylorF2.")
 argp.add_argument("-b", "--approximant2", default="TaylorF2", help="Approximant to use for overlapped waveform. Default is TaylorF2.")
+argp.add_argument("-o", "--no-overwrite-id", action="store_true", help="Don't overwrite row IDs with sequential IDs.")
 argp.add_argument("-v", "--verbose", action="store_true", help="Be verbose.")
 argp.add_argument("-V", "--too-verbose", action="store_true", help="Be absolutely, obnoxiously loquacious.")
 args = argp.parse_args()
@@ -96,7 +97,10 @@ psd = parse_psd_file(args.psd_file, fvals)
 # Extract and prepare template bank
 #
 xmldoc = utils.load_filename(args.tmplt_bank_file, contenthandler=ligolw.LIGOLWContentHandler)
-tmplt_bank = lsctables.SnglInspiralTable.get_table(xmldoc)
+try:
+    tmplt_bank = lsctables.SnglInspiralTable.get_table(xmldoc)
+except ValueError:
+    tmplt_bank = lsctables.SimInspiralTable.get_table(xmldoc)
 
 if args.f_low is None:
     f_low = infer_flow(xmldoc)
@@ -110,10 +114,20 @@ else:
 if f_low is None:
     exit("Low frequency cutoff could not be inferred from template bank, and none was given.")
 
+required_params = ("mass1", "mass2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z")
 # lalapps_tmpltbank assigns 0 ID to all events, so we remap
 # FIXME: Check for tmplt_bank: All others do assign IDs
 for tmplt in tmplt_bank:
-    tmplt.event_id = tmplt_bank.get_next_id()
+    if not args.no_overwrite_id:
+        try:
+            tmplt.event_id = tmplt_bank.get_next_id()
+        except AttributeError:
+            tmplt.simulation_id = tmplt_bank.get_next_id()
+    for p in required_params:
+        if not hasattr(tmplt, p):
+            setattr(tmplt, p, 0.0)
+    if not hasattr(tmplt, "mchirp"):
+        tmplt.mchirp, tmplt.eta = lalsimutils.Mceta(tmplt.mass1, tmplt.mass2)
 
 # FIXME: Unhardcode
 wtype = "%s_%s" % (args.approximant1, args.approximant2)
@@ -144,6 +158,14 @@ idx_range = range(args.tmplt_start_index or 0, args.tmplt_end_index or len(tmplt
 
 # FIXME:
 npts = len(tmplt_bank)
+import h5py
+h5file = h5py.File("test.hdf", "w")
+olapdata = h5file.create_group(wtype)
+for iprm in intr_prms:
+    dat = numpy.array([getattr(t, iprm) for t in tmplt_bank])
+    olapdata.create_dataset(iprm, maxshape=(npts,), data=dat)
+olapmat = olapdata.create_dataset("overlaps", shape=(npts, npts))
+
 for i1, pt in enumerate(pts):
     opt = amrlib.apply_inv_transform(pts[i1,numpy.newaxis].copy(), intr_prms, "mchirp_eta")[0]
     fname = "%s/%s_%d.json" % (bdir, wtype, i1)
@@ -165,7 +187,7 @@ for i1, pt in enumerate(pts):
     h1 = lalsimutils.generate_waveform_from_tmplt(t1, args.approximant1, delta_f, f_low)
     h1_norm = ovrlp.norm(h1)
     if args.verbose:
-        print "--- (%f, %f) / (%f, %f)" % (t1.mass1, t1.mass2, t1.mchirp, t1.eta)
+        print "--- %d (%f, %f) / (%f, %f)" % (int(t1.event_id), t1.mass1, t1.mass2, t1.mchirp, t1.eta)
 
     ovrlps = []
     for d, i2 in numpy.vstack((dist, idx)).T:
@@ -174,6 +196,7 @@ for i1, pt in enumerate(pts):
 
         o12, _, _ = lalsimutils.overlap(h1, t2, ovrlp, delta_f, f_low, args.approximant1, args.approximant2, t1_norm=h1_norm)
         ovrlps.append(o12)
+        olapmat[i1, i2] = olapmat[i2, i1] = o12
 
         if args.too_verbose:
             print d, t2.mass1, t2.mass2, t2.mchirp, t2.eta, o12
@@ -187,3 +210,5 @@ for i1, pt in enumerate(pts):
 
 with open("tmplt_bank.json", "w") as fout:
     json.dump(toc, fout)
+
+h5file.close()

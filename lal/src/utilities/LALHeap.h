@@ -64,58 +64,58 @@ typedef int ( *LALHeapVisitFcn )( void *param, const void *x );
  * Create a heap
  */
 LALHeap *XLALHeapCreate(
-  LALHeapDtorFcn dtor,		/**< [in] Heap element destructor function, if required */
-  int max_size,			/**< [in] Maximum size of the heap; if zero, heap has unlimited size */
-  int min_or_max_heap,		/**< [in] -1|+1 if root of heap is minimum|maximum element */
-  LALHeapCmpFcn cmp		/**< [in[ Heap element comparison function */
+  LALHeapDtorFcn dtor,          /**< [in] Heap element destructor function, if required */
+  int max_size,                 /**< [in] Maximum size of the heap; if zero, heap has unlimited size */
+  int min_or_max_heap,          /**< [in] -1|+1 if root of heap is minimum|maximum element */
+  LALHeapCmpFcn cmp             /**< [in[ Heap element comparison function */
   );
 
 /**
  * Create a heap with a parameterised comparison function
  */
 LALHeap *XLALHeapCreate2(
-  LALHeapDtorFcn dtor,		/**< [in] Heap element destructor function, if required */
-  int max_size,			/**< [in] Maximum size of the heap; if zero, heap has unlimited size */
-  int min_or_max_heap,		/**< [in] -1|+1 if root of heap is minimum|maximum element */
-  LALHeapCmpParamFcn cmp,	/**< [in] Parameterised heap element comparison function */
-  void *cmp_param		/**< [in] Parameter to pass to comparison function */
+  LALHeapDtorFcn dtor,          /**< [in] Heap element destructor function, if required */
+  int max_size,                 /**< [in] Maximum size of the heap; if zero, heap has unlimited size */
+  int min_or_max_heap,          /**< [in] -1|+1 if root of heap is minimum|maximum element */
+  LALHeapCmpParamFcn cmp,       /**< [in] Parameterised heap element comparison function */
+  void *cmp_param               /**< [in] Parameter to pass to comparison function */
   );
 
 /**
  * Destroy a heap and its elements
  */
 void XLALHeapDestroy(
-  LALHeap *h			/**< [in] Pointer to heap */
+  LALHeap *h                    /**< [in] Pointer to heap */
   );
 
 /**
  * Return the size of a heap
  */
 int XLALHeapSize(
-  const LALHeap *h		/**< [in] Pointer to heap */
+  const LALHeap *h              /**< [in] Pointer to heap */
   );
 
 /**
  * Return the root element of a heap
  */
 const void *XLALHeapRoot(
-  const LALHeap *h		/**< [in] Pointer to heap */
+  const LALHeap *h              /**< [in] Pointer to heap */
   );
 
 /**
  * Change the maximum size of a heap; if the heap is contracted, excess elements are destroyed
  */
 int XLALHeapResize(
-  LALHeap *h,			/**< [in] Pointer to heap */
-  int max_size			/**< [in] New maximum size of the heap; if zero, heap has unlimited size */
+  LALHeap *h,                   /**< [in] Pointer to heap */
+  int max_size                  /**< [in] New maximum size of the heap; if zero, heap has unlimited size */
   );
 
 /**
  * Add a new element to a heap; if the heap is of fixed size and full, the root element is removed
  */
 int XLALHeapAdd(
-  LALHeap *h,			/**< [in] Pointer to heap */
-  void **x			/**< [in/out] Pointer to new element. If the root element is removed, it
+  LALHeap *h,                   /**< [in] Pointer to heap */
+  void **x                      /**< [in/out] Pointer to new element. If the root element is removed, it
                                    is returned in <tt>*x</tt>; otherwise <tt>*x</tt> is set to \c NULL */
   );
 
@@ -123,24 +123,24 @@ int XLALHeapAdd(
  * Remove and destroy the root element of a heap
  */
 int XLALHeapRemoveRoot(
-  LALHeap *h			/**< [in] Pointer to heap */
+  LALHeap *h                    /**< [in] Pointer to heap */
   );
 
 /**
  * Exchange the root element of a non-empty heap with the new element in <tt>*x</tt>
  */
 int XLALHeapExchangeRoot(
-  LALHeap *h,			/**< [in] Pointer to heap */
-  void **x			/**< [in/out] Pointer to new element. On return, contains root element */
+  LALHeap *h,                   /**< [in] Pointer to heap */
+  void **x                      /**< [in/out] Pointer to new element. On return, contains root element */
   );
 
 /**
  * Visit each element in the heap in the order given by the comparison function
  */
 int XLALHeapVisit(
-  const LALHeap *h,		/**< [in] Pointer to heap */
-  LALHeapVisitFcn visit,	/**< [in] Visitor function to call for each heap element */
-  void *visit_param		/**< [in] Parameter to pass to visitor function */
+  const LALHeap *h,             /**< [in] Pointer to heap */
+  LALHeapVisitFcn visit,        /**< [in] Visitor function to call for each heap element */
+  void *visit_param             /**< [in] Parameter to pass to visitor function */
   );
 
 /*@}*/

@@ -550,9 +550,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.add_science_segments()
 
     # Save the final configuration that is being used
+    # first to the run dir
     conffilename=os.path.join(self.basepath,'config.ini')
     with open(conffilename,'wb') as conffile:
       self.config.write(conffile)
+    if self.config.has_option('paths','webdir'):
+      with open(os.path.join(self.config.get('paths','webdir'),'config.ini'),'wb') as conffile:
+        self.config.write(conffile)
 
     # Generate the DAG according to the config given
     for event in self.events: self.add_full_analysis(event)

@@ -21,6 +21,8 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 .PHONY: swig-python-install-hook
 .PHONY: swig-python-uninstall-hook
 
+header-links: header-links-local
+
 EXTRA_DIST += \
 	generate_swig_iface.py \
 	$(END_OF_LIST)
@@ -52,6 +54,10 @@ swig_deps_if =
 else
 swig_deps_if = : no-deps-
 endif
+
+header-links-local:
+	$(AM_V_at)rm -f $(top_builddir)/include/lal/$(swig_iface) && \
+	$(LN_S) $(abs_builddir)/$(swig_iface) $(top_builddir)/include/lal/$(swig_iface)
 
 swiglal_config.h: $(CONFIG_HEADER)
 	$(AM_V_GEN)echo '// $@: generated from $< by $(subdir)/Makefile' >$@; \
@@ -114,9 +120,6 @@ $(swig_iface): Makefile swiglal_header_list.txt $(srcdir)/generate_swig_iface.py
 		exit 1; \
 	fi
 
-$(top_builddir)/include/lal/$(swig_iface): $(swig_iface)
-	$(AM_V_at)rm -f $@ && $(LN_S) $(abs_top_builddir)/swig/$< $@
-
 clean-local: swig-clean-local
 swig-clean-local:
 	-rm -rf swiglal*
@@ -141,7 +144,7 @@ if AMDEP
 swig_octave_flags += -MF ./$(DEPDIR)/swiglal_octave.deps.tmp
 endif
 
-$(nodist_swiglal_octave_la_SOURCES): $(top_builddir)/include/lal/$(swig_iface) swiglal_config.h
+$(nodist_swiglal_octave_la_SOURCES): $(swig_iface) swiglal_config.h
 	$(AM_V_GEN)$(MKDIR_P) swiglal_octave/ && \
 	if $(SWIG) $(swig_octave_flags) -o $@ $<; then \
 		$(swig_deps_if)mv -f ./$(DEPDIR)/swiglal_octave.deps.tmp ./$(DEPDIR)/swiglal_octave.deps; \
@@ -197,7 +200,7 @@ if AMDEP
 swig_python_flags += -MF ./$(DEPDIR)/swiglal_python.deps.tmp
 endif
 
-$(nodist_swiglal_python_la_SOURCES): $(top_builddir)/include/lal/$(swig_iface) swiglal_config.h
+$(nodist_swiglal_python_la_SOURCES): $(swig_iface) swiglal_config.h
 	$(AM_V_GEN)$(MKDIR_P) swiglal_python/ && \
 	if $(SWIG) $(swig_python_flags) -o $@ $<; then \
 		$(swig_deps_if)mv -f ./$(DEPDIR)/swiglal_python.deps.tmp ./$(DEPDIR)/swiglal_python.deps; \

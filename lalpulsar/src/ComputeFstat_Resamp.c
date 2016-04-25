@@ -571,7 +571,14 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
     XLAL_ERROR(XLAL_EFAILED, "NOT implemented!");
   }
 
+  // Return antenna-pattern matrix
   Fstats->Mmunu = resamp->Mmunu;
+
+  // return per-detector antenna-pattern matrices
+  for ( UINT4 X = 0; X < numDetectors; X ++ )
+    {
+      Fstats->MmunuX[X] = resamp->MmunuX[X];
+    }
 
   // ----- workspace memory management:
   // if we used the return struct directly to store Fa,Fb results,

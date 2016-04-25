@@ -201,53 +201,55 @@ int XLALUserVarWasSet (const void *cvar);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
 
 /**
- * \name Convenience macros for checking whether a user input variable was set
+ * \name Convenience macros for checking how many of a set of user input variables were set
  */
 /*@{*/
-#define UVAR_SET(n)				(XLALUserVarWasSet(&(uvar-> n)) ? 1 : 0)
-#define UVAR_SET_EMSG(adv,n)			"'"#n"' must "adv"be specified"
+#define UVAR_SET(n)                             (XLALUserVarWasSet(&(uvar-> n)) ? 1 : 0)
+#define UVAR_SET2(n1,n2)                        (UVAR_SET(n1) + UVAR_SET(n2))
+#define UVAR_SET3(n1,n2,n3)                     (UVAR_SET2(n1,n2) + UVAR_SET(n3))
+#define UVAR_SET4(n1,n2,n3,n4)                  (UVAR_SET3(n1,n2,n3) + UVAR_SET(n4))
+#define UVAR_SET5(n1,n2,n3,n4,n5)               (UVAR_SET4(n1,n2,n3,n4) + UVAR_SET(n5))
+#define UVAR_SET6(n1,n2,n3,n4,n5,n6)            (UVAR_SET5(n1,n2,n3,n4,n5) + UVAR_SET(n6))
 /*@}*/
 
 /**
  * \name Convenience macros for checking whether all of a set of user input variables were set
  */
 /*@{*/
-#define UVAR_ALLSET2(n1,n2)			(UVAR_SET(n1) && UVAR_SET(n2))
-#define UVAR_ALLSET2_EMSG(adv,n1,n2)		"Both '"#n1"' and '"#n2"' must "adv"be specified"
-#define UVAR_ALLSET3(n1,n2,n3)			(UVAR_ALLSET2(n1,n2) && UVAR_SET(n3))
-#define UVAR_ALLSET3_EMSG(adv,n1,n2,n3)		"All of '"#n1"', '"#n2"' and '"#n3"' must "adv"be specified"
-#define UVAR_ALLSET4(n1,n2,n3,n4)		(UVAR_ALLSET3(n1,n2,n3) && UVAR_SET(n4))
-#define UVAR_ALLSET4_EMSG(adv,n1,n2,n3,n4)	"All of '"#n1"', '"#n2"', '"#n3"' and '"#n4"' must "adv"be specified"
-#define UVAR_ALLSET5(n1,n2,n3,n4,n5)		(UVAR_ALLSET4(n1,n2,n3,n4) && UVAR_SET(n5))
-#define UVAR_ALLSET5_EMSG(adv,n1,n2,n3,n4,n5)	"All of '"#n1"', '"#n2"', '"#n3"', '"#n4"' and '"#n5"' must "adv"be specified"
+#define UVAR_ALLSET2(n1,n2)                     (UVAR_SET2(n1,n2) == 2)
+#define UVAR_ALLSET3(n1,n2,n3)                  (UVAR_SET3(n1,n2,n3) == 3)
+#define UVAR_ALLSET4(n1,n2,n3,n4)               (UVAR_SET4(n1,n2,n3,n4) == 4)
+#define UVAR_ALLSET5(n1,n2,n3,n4,n5)            (UVAR_SET5(n1,n2,n3,n4,n5) == 5)
+#define UVAR_ALLSET6(n1,n2,n3,n4,n5,n6)         (UVAR_SET6(n1,n2,n3,n4,n5,n6) == 6)
 /*@}*/
 
 /**
  * \name Convenience macros for checking whether any of a set of user input variables were set
  */
 /*@{*/
-#define UVAR_ANYSET2(n1,n2)			(UVAR_SET(n1) || UVAR_SET(n2))
-#define UVAR_ANYSET2_EMSG(adv,n1,n2)		"Either '"#n1"' or '"#n2"' must "adv"be specified"
-#define UVAR_ANYSET3(n1,n2,n3)			(UVAR_ANYSET2(n1,n2) || UVAR_SET(n3))
-#define UVAR_ANYSET3_EMSG(adv,n1,n2,n3)		"At least one of '"#n1"', '"#n2"' or '"#n3"' must "adv"be specified"
-#define UVAR_ANYSET4(n1,n2,n3,n4)		(UVAR_ANYSET3(n1,n2,n3) || UVAR_SET(n4))
-#define UVAR_ANYSET4_EMSG(adv,n1,n2,n3,n4)	"At least one of '"#n1"', '"#n2"', '"#n3"' or '"#n4"' must "adv"be specified"
-#define UVAR_ANYSET5(n1,n2,n3,n4,n5)		(UVAR_ANYSET4(n1,n2,n3,n4) || UVAR_SET(n5))
-#define UVAR_ANYSET5_EMSG(adv,n1,n2,n3,n4,n5)	"At least one of '"#n1"', '"#n2"', '"#n3"', '"#n4"' or '"#n5"' must "adv"be specified"
+#define UVAR_ANYSET2(n1,n2)                     (UVAR_SET2(n1,n2) > 0)
+#define UVAR_ANYSET3(n1,n2,n3)                  (UVAR_SET3(n1,n2,n3) > 0)
+#define UVAR_ANYSET4(n1,n2,n3,n4)               (UVAR_SET4(n1,n2,n3,n4) > 0)
+#define UVAR_ANYSET5(n1,n2,n3,n4,n5)            (UVAR_SET5(n1,n2,n3,n4,n5) > 0)
+#define UVAR_ANYSET6(n1,n2,n3,n4,n5,n6)         (UVAR_SET6(n1,n2,n3,n4,n5,n6) > 0)
 /*@}*/
 
 /**
- * \name Convenience macros for checking whether any of a set of user input variables were set
+ * \name Convenience macros for printing user input variables in error messages
  */
 /*@{*/
-#define UVAR_ONESET2(n1,n2)			(UVAR_SET(n1) + UVAR_SET(n2) == 1)
-#define UVAR_ONESET2_EMSG(adv,n1,n2)		"Exactly one of '"#n1"' or '"#n2"' must "adv"be specified"
-#define UVAR_ONESET3(n1,n2,n3)			(UVAR_ONESET2(n1,n2) + UVAR_SET(n3) == 1)
-#define UVAR_ONESET3_EMSG(adv,n1,n2,n3)		"Exactly one of '"#n1"', '"#n2"' or '"#n3"' must "adv"be specified"
-#define UVAR_ONESET4(n1,n2,n3,n4)		(UVAR_ONESET3(n1,n2,n3) + UVAR_SET(n4) == 1)
-#define UVAR_ONESET4_EMSG(adv,n1,n2,n3,n4)	"Exactly one of '"#n1"', '"#n2"', '"#n3"' or '"#n4"' must "adv"be specified"
-#define UVAR_ONESET5(n1,n2,n3,n4,n5)		(UVAR_ONESET4(n1,n2,n3,n4) + UVAR_SET(n5) == 1)
-#define UVAR_ONESET5_EMSG(adv,n1,n2,n3,n4,n5)	"Exactly one of '"#n1"', '"#n2"', '"#n3"', '"#n4"' or '"#n5"' must "adv"be specified"
+#define UVAR_FMT                                "`--%s'"
+#define UVAR_STR(n)                             "`--"n"'"
+#define UVAR_STR2AND(n1,n2)                     "`--"n1"' and `--"n2"'"
+#define UVAR_STR2OR(n1,n2)                      "`--"n1"' or `--"n2"'"
+#define UVAR_STR3AND(n1,n2,n3)                  "`--"n1"', `--"n2"', and `--"n3"'"
+#define UVAR_STR3OR(n1,n2,n3)                   "`--"n1"', `--"n2"', or `--"n3"'"
+#define UVAR_STR4AND(n1,n2,n3,n4)               "`--"n1"', `--"n2"', `--"n3"', and `--"n4"'"
+#define UVAR_STR4OR(n1,n2,n3,n4)                "`--"n1"', `--"n2"', `--"n3"', or `--"n4"'"
+#define UVAR_STR5AND(n1,n2,n3,n4,n5)            "`--"n1"', `--"n2"', `--"n3"', `--"n4"', and `--"n5"'"
+#define UVAR_STR5OR(n1,n2,n3,n4,n5)             "`--"n1"', `--"n2"', `--"n3"', `--"n4"', or `--"n5"'"
+#define UVAR_STR6AND(n1,n2,n3,n4,n5,n6)         "`--"n1"', `--"n2"', `--"n3"', `--"n4"', `--"n5"', and `--"n6"'"
+#define UVAR_STR6OR(n1,n2,n3,n4,n5,n6)          "`--"n1"', `--"n2"', `--"n3"', `--"n4"', `--"n5"', or `--"n6"'"
 /*@}*/
 
 // declare type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking!

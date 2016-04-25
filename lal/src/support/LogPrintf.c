@@ -71,7 +71,6 @@
 
 
 /*---------- internal prototypes ----------*/
-static LogLevel_t LogLevel(void);
 static FILE* LogFile(void);
 
 static const char * LogGetTimestamp (void);
@@ -81,15 +80,17 @@ static const char *LogFormatLevel( LogLevel_t level );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/** Get log level by examining lalDebugLevel */
-static LogLevel_t LogLevel()
+/**
+ * Get log level by examining lalDebugLevel
+ */
+LogLevel_t LogLevel(void)
 {
   if (lalDebugLevel == 0)
     return LOG_NONE;		// If not printing LAL messages, also do not print log messages
-  if (lalDebugLevel & LALTRACE)
-    return LOG_DETAIL;		// Print LOG_DETAIL messages if LAL_DEBUG_LEVEL contains 'trace'
   if (lalDebugLevel & LALINFO)
-    return LOG_DEBUG;		// Print LOG_DEBUG messages if LAL_DEBUG_LEVEL contains 'info'
+    return LOG_DETAIL;		// Print LOG_DETAIL messages if LAL_DEBUG_LEVEL contains 'info'
+  if (lalDebugLevel & LALWARNING)
+    return LOG_DEBUG;		// Print LOG_DEBUG messages if LAL_DEBUG_LEVEL contains 'warning'
   return LOG_NORMAL;		// Print LOG_CRITICAL and LOG_NORMAL messages by default
 }
 

@@ -215,6 +215,9 @@ typedef struct tagFstatResults {
   /// Antenna pattern matrix \f$M_{\mu\nu}\f$, used in computing \f$2\mathcal{F}\f$.
   AntennaPatternMatrix Mmunu;
 
+  /// Per detector antenna pattern matrix \f$M_{\mu\nu}^X\f$, used in computing \f$2\mathcal{F}^X\f$.
+  AntennaPatternMatrix MmunuX[PULSAR_MAX_DETECTORS];
+
   /// Bit-field of which \f$\mathcal{F}\f$-statistic quantities were computed.
   FstatQuantities whatWasComputed;
 
@@ -274,6 +277,7 @@ typedef struct tagFstatResults {
 
 // ---------- API function prototypes ----------
 int XLALFstatMethodIsAvailable ( FstatMethodType i );
+const CHAR *XLALFstatMethodName ( FstatMethodType i );
 const CHAR *XLALFstatMethodHelpString ( void );
 int XLALParseFstatMethodString ( FstatMethodType *Fmethod, const char *s );
 
