@@ -4,6 +4,57 @@ from math import ceil
 from optparse import OptionParser
 import os
 
+#####################################################################
+
+def _block_slices(dim_size, block_size):
+    """Generator that yields slice objects for indexing into 
+    sequential blocks of an array along a particular axis
+    """
+    count = 0
+    while True:
+        yield slice(count, count + block_size, 1)
+        count += block_size
+        if count > dim_size:
+            raise StopIteration
+
+def blockwise_dot(A, B, deltaF, max_elements=int(2**27), out=None):
+    """
+    Computes the dot product of two matrices in a block-wise fashion. 
+    Only blocks of `A` with a maximum size of `max_elements` will be 
+    processed simultaneously.
+    """
+
+    m,  n = A.shape
+    n1, o = B.shape
+
+    if n1 != n:
+        raise ValueError('matrices are not aligned')
+
+    if A.flags.f_contiguous:
+        # prioritize processing as many columns of A as possible
+        max_cols = max(1, max_elements / m)
+        max_rows =  max_elements / max_cols
+
+    else:
+        # prioritize processing as many rows of A as possible
+        max_rows = max(1, max_elements / n)
+        max_cols =  max_elements / max_rows
+
+    if out is None:
+        out = np.empty((m, o), dtype=np.result_type(A, B))
+    elif out.shape != (m, o):
+        raise ValueError('output array has incorrect dimensions')
+
+    for mm in _block_slices(m, max_rows):
+        out[mm, :] = 0
+        for nn in _block_slices(n, max_cols):
+            A_block = A[mm, nn].copy()  # copy to force a read
+            out[mm, :] += np.dot(A_block, B[nn, :]) * 4 * deltaF
+            del A_block
+
+    return out
+######################################################################
+
 data_dir = './'
 # load in data from file
 
@@ -63,7 +114,7 @@ def BuildWeights(data, B, deltaF):
         deltaF: integration element df
 
         '''
-        weights = np.dot(B.conjugate(), data) * deltaF * 4.
+        weights = np.dot(data, B.conjugate()) * deltaF * 4.
 	#weights = np.einsum('ij,jk->ik', B, data.conjugate() * deltaF * 4)
         return weights
 ##################################
@@ -106,42 +157,62 @@ for ifo in options.IFOs:
 
 	assert len(data) == len(psd) == B_linear.shape[1] == B_quadratic.shape[1]
 
+	#for the dot product, it's convenient to work with transpose of B:
+	B_linear = B_linear.T 
+	B_quadratic = B_quadratic.T
+
 	for k in range(len(data)):
 		if np.isnan(data[k].real):
 			data[k] = 0+0j
 
-	tc_shifted_data = []  # array to be filled with data, shifted by discrete time tc
 
 	tcs = np.linspace(relative_tc_shift - options.dt - 0.026, relative_tc_shift + options.dt + 0.026, ceil(2.*(options.dt+0.026) / options.delta_tc) )# array of relative time shifts to be applied to the data
+
+	
+	tc_shifted_data = np.zeros([len(tcs), len(fseries)], dtype=complex)  # array to be filled with data, shifted by discrete time tc
 
 	print "time steps = "+str(len(tcs))
 	for j in range(len(tcs)):
 
 	        tc = tcs[j]
 
-	        exp_2pi_i_tc = np.array(np.exp(1j*2.*np.pi*fseries*tc))
-        	data_tc = np.array(data*exp_2pi_i_tc)
-	        tc_shifted_data.append(data_tc)
+	        #exp_2pi_i_tc = np.array(np.exp(1j*2.*np.pi*fseries*tc))
+        	#data_tc = np.array(data*exp_2pi_i_tc)
+	        tc_shifted_data[j] = data * np.exp(1j*2.*np.pi*fseries*tc)
 
-	tc_shifted_data = np.array(tc_shifted_data).T
+	#tc_shifted_data = tc_shifted_data.T#np.array(tc_shifted_data).T
+
+
 
 	#*************************************************************************** #
 	print "Computing weights for "+ifo
 	weights_path_linear = os.path.join(options.outpath,"weights_linear_%s.dat"%ifo)
 	weights_file_linear = open(weights_path_linear, "wb")
-	weights_linear = BuildWeights(tc_shifted_data, B_linear, deltaF)
+	
+	max_block_gigabytes = 4
+	max_elements = int((max_block_gigabytes * 2 ** 30) / 8) # max number of double complex elements
+
+	weights_linear = blockwise_dot(tc_shifted_data, B_linear.conjugate(), deltaF, max_elements).T
+
 	(weights_linear).tofile(weights_file_linear)
         weights_file_linear.close()
-	#size_file_path = os.path.join(options.outpath,"roq_sizes_linear.dat")
-	#np.savetxt(size_file_path,np.array((B_linear.shape[0],B_linear.shape[1])),fmt='%u')
+
+	del tc_shifted_data
+
 	#*************************************************************************** #	
 	weights_path_quadratic = os.path.join(options.outpath,"weights_quadratic_%s.dat"%ifo)
         weights_file_quadratic = open(weights_path_quadratic, "wb")
-	weights_quadratic = BuildWeights(1./psd, B_quadratic, deltaF).real
+	weights_quadratic = (BuildWeights(1./psd, B_quadratic, deltaF).T).real
 
 	(weights_quadratic).tofile(weights_file_quadratic)
         weights_file_quadratic.close()
 	size_file_path = os.path.join(options.outpath,"roq_sizes.dat")
+
+	#*************************************************************************** #
+	
+	B_linear = B_linear.T
+	B_quadratic = B_quadratic.T
+	
         np.savetxt(size_file_path,np.array((len(tcs),B_linear.shape[0],B_quadratic.shape[0],B_linear.shape[1])),fmt='%u')
 	print "Weights have been computed for "+ifo
 
