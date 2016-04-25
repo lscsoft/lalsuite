@@ -116,7 +116,7 @@ static int BasicTest(
 
   for ( size_t i = 0; i < n; ++i ) {
 
-    // Create lattice tiling iterator and locator over 'i+1' dimensions
+    // Create lattice tiling iterator over 'i+1' dimensions
     LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, i+1 );
     XLAL_CHECK( itr != NULL, XLAL_EFUNC );
 
@@ -197,21 +197,19 @@ static int BasicTest(
     GFVEC( nearest );
     XLALDestroyUINT8Vector( nearest_indexes );
 
-  }
-
-  for ( size_t i = 0; i < n; ++i ) {
-
     // Create alternating lattice tiling iterator over 'i+1' dimensions
+    printf( "  Testing XLALSetLatticeTilingAlternatingIterator() ..." );
     LatticeTilingIterator *itr_alt = XLALCreateLatticeTilingIterator( tiling, i+1 );
     XLAL_CHECK( itr_alt != NULL, XLAL_EFUNC );
     XLAL_CHECK( XLALSetLatticeTilingAlternatingIterator( itr_alt, true ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Count number of points, check for consistency with non-alternating count
-    UINT8 total = 0;
+    UINT8 total_alt = 0;
     while ( XLALNextLatticeTilingPoint( itr_alt, NULL ) > 0 ) {
-      ++total;
+      ++total_alt;
     }
-    XLAL_CHECK( imaxabs( total - total_ref[i] ) <= 1, XLAL_EFUNC, "ERROR: alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", i, total, total_ref[i] );
+    XLAL_CHECK( imaxabs( total_alt - total_ref[i] ) <= 1, XLAL_EFUNC, "ERROR: alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", i, total_alt, total_ref[i] );
+    printf( " done\n" );
 
     // Cleanup
     XLALDestroyLatticeTilingIterator( itr_alt );
@@ -630,6 +628,10 @@ static int MultiSegSuperskyTest( void )
 
 int main( void )
 {
+
+  // Turn off buffering to sync standard output and error printing
+  setvbuf( stdout, NULL, _IONBF, 0 );
+  setvbuf( stderr, NULL, _IONBF, 0 );
 
   // Perform basic tests
   XLAL_CHECK_MAIN( BasicTest( 1, 0, 0, 0, 0, "Zn" ,    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
