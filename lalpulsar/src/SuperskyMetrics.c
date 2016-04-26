@@ -1965,13 +1965,16 @@ int XLALSuperskyLatticePulsarSpinRange(
     fkdotMax[s] = GSL_NEGINF;
   }
 
+  // Get frequency step size
+  const double dfreq = XLALLatticeTilingStepSizes( tiling, ndim - 1 );
+
   // Create iterator over reduced supersky coordinates
-  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, 2 );
+  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, ndim - 1 );
   XLAL_CHECK( itr != NULL, XLAL_EFUNC );
 
   // Iterate over reduced supersky coordinates
-  double in_rssky_array[3 + smax];
-  gsl_vector_view in_rssky_view = gsl_vector_view_array( in_rssky_array, 3 + smax );
+  double in_rssky_array[ndim];
+  gsl_vector_view in_rssky_view = gsl_vector_view_array( in_rssky_array, ndim );
   gsl_vector *const in_rssky = &in_rssky_view.vector;
   PulsarDopplerParams XLAL_INIT_DECL( out_phys );
   while ( XLALNextLatticeTilingPoint( itr, in_rssky ) > 0 ) {
@@ -1979,19 +1982,20 @@ int XLALSuperskyLatticePulsarSpinRange(
     // Convert reduced supersky point to physical coordinates
     XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &out_phys, in_rssky, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Store minimum/maximum physical frequency/spindowns
+    // Get indexes of left/right-most point in current frequency block
+    INT4 left = 0, right = 0;
+    XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, ndim - 1, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Store minimum/maximum physical frequency
+    fkdotMin[0] = GSL_MIN( fkdotMin[0], out_phys.fkdot[0] + dfreq * left );
+    fkdotMax[0] = GSL_MAX( fkdotMax[0], out_phys.fkdot[0] + dfreq * right );
+
+    // Store minimum/maximum physical spindowns
     for ( size_t s = 0; s <= smax; ++s ) {
       fkdotMin[s] = GSL_MIN( fkdotMin[s], out_phys.fkdot[s] );
       fkdotMax[s] = GSL_MAX( fkdotMax[s], out_phys.fkdot[s] );
     }
 
-  }
-
-  // Include width of supersky frequency/spindown parameter space
-  for ( size_t s = 0; s <= smax; ++s ) {
-    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, RSSKY_FKDOT_DIM( s ) );
-    XLAL_CHECK( stats != NULL, XLAL_EFUNC );
-    fkdotMax[s] += stats->max_value - stats->min_value;
   }
 
   // Initialise 'spin_range' to zero
