@@ -73,12 +73,14 @@ int main(int argc, char *argv[])
   // Parse user input
   BOOLEAN should_exit = 0;
   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Check user input
+  XLALUserVarCheck( &should_exit, UVAR_SET2(square, age_braking) == 1, "Exactly one of " UVAR_STR2AND(square, age_braking) " must be specified" );
+
+  // Exit if required
   if ( should_exit ) {
     return EXIT_FAILURE;
   }
-
-  // Check user input
-  XLAL_CHECK_MAIN(UVAR_SET2(square, age_braking) == 1, XLAL_EINVAL, "Exactly one of " UVAR_STR2AND("square", "age-braking") " must be specified");
 
   LatticeTiling *tiling = NULL;
   if (UVAR_SET(square)) {

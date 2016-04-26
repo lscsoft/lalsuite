@@ -242,17 +242,17 @@ CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
  */
 /*@{*/
 #define UVAR_FMT                                "`--%s'"
-#define UVAR_STR(n)                             "`--"n"'"
-#define UVAR_STR2AND(n1,n2)                     "`--"n1"' and `--"n2"'"
-#define UVAR_STR2OR(n1,n2)                      "`--"n1"' or `--"n2"'"
-#define UVAR_STR3AND(n1,n2,n3)                  "`--"n1"', `--"n2"', and `--"n3"'"
-#define UVAR_STR3OR(n1,n2,n3)                   "`--"n1"', `--"n2"', or `--"n3"'"
-#define UVAR_STR4AND(n1,n2,n3,n4)               "`--"n1"', `--"n2"', `--"n3"', and `--"n4"'"
-#define UVAR_STR4OR(n1,n2,n3,n4)                "`--"n1"', `--"n2"', `--"n3"', or `--"n4"'"
-#define UVAR_STR5AND(n1,n2,n3,n4,n5)            "`--"n1"', `--"n2"', `--"n3"', `--"n4"', and `--"n5"'"
-#define UVAR_STR5OR(n1,n2,n3,n4,n5)             "`--"n1"', `--"n2"', `--"n3"', `--"n4"', or `--"n5"'"
-#define UVAR_STR6AND(n1,n2,n3,n4,n5,n6)         "`--"n1"', `--"n2"', `--"n3"', `--"n4"', `--"n5"', and `--"n6"'"
-#define UVAR_STR6OR(n1,n2,n3,n4,n5,n6)          "`--"n1"', `--"n2"', `--"n3"', `--"n4"', `--"n5"', or `--"n6"'"
+#define UVAR_STR(n)                             "`--"#n"'"
+#define UVAR_STR2AND(n1,n2)                     "`--"#n1"' and `--"#n2"'"
+#define UVAR_STR2OR(n1,n2)                      "`--"#n1"' or `--"#n2"'"
+#define UVAR_STR3AND(n1,n2,n3)                  "`--"#n1"', `--"#n2"', and `--"#n3"'"
+#define UVAR_STR3OR(n1,n2,n3)                   "`--"#n1"', `--"#n2"', or `--"#n3"'"
+#define UVAR_STR4AND(n1,n2,n3,n4)               "`--"#n1"', `--"#n2"', `--"#n3"', and `--"#n4"'"
+#define UVAR_STR4OR(n1,n2,n3,n4)                "`--"#n1"', `--"#n2"', `--"#n3"', or `--"#n4"'"
+#define UVAR_STR5AND(n1,n2,n3,n4,n5)            "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', and `--"#n5"'"
+#define UVAR_STR5OR(n1,n2,n3,n4,n5)             "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', or `--"#n5"'"
+#define UVAR_STR6AND(n1,n2,n3,n4,n5,n6)         "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', `--"#n5"', and `--"#n6"'"
+#define UVAR_STR6OR(n1,n2,n3,n4,n5,n6)          "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', `--"#n5"', or `--"#n6"'"
 /*@}*/
 
 // declare type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking!
