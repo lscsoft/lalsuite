@@ -291,7 +291,7 @@ int XLALHeapExchangeRoot(
 }
 
 int XLALHeapVisit(
-  const LALHeap *h,
+  LALHeap *h,
   LALHeapVisitFcn visit,
   void *visit_param
   )
@@ -311,11 +311,20 @@ int XLALHeapVisit(
     XLAL_CHECK( XLALHeapAdd( h2, &x ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  /* Visit root element of internal min-heap and remove, until empty */
+  /* Remove all elements from original heap */
+  h->n = 0;
+
+  /* Extract roots element of internal min-heap, until empty */
   while ( h2->n > 0 ) {
-    const void *x = XLALHeapRoot( h2 );
+    void *x = XLALHeapExtractRoot( h2 );
+    XLAL_CHECK( x != NULL, XLAL_EFUNC );
+
+    /* Visit element, possibly modifying it */
     XLAL_CHECK( visit( visit_param, x ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALHeapRemoveRoot( h2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    /* Add element back to original heap */
+    XLAL_CHECK( XLALHeapAdd( h, &x ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   }
 
   /* Cleanup */

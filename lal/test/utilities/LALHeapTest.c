@@ -42,16 +42,16 @@ static int cmp_ptr_ptr_int( const void *x, const void *y )
   return cmp_ptr_int( *( ( const void *const * ) x ), *( ( const void *const * ) y ) );
 }
 
-static int print_ptr_int( UNUSED void *param, const void *x )
+static int print_ptr_int( UNUSED void *param, void *x )
 {
-  printf( " %i", *( ( const int * ) x ) );
+  printf( " %i", *( ( int * ) x ) );
   return XLAL_SUCCESS;
 }
 
-static int check_ptr_int( void *param, const void *x )
+static int check_ptr_int( void *param, void *x )
 {
   int ***y = ( int ** * ) param;
-  return *( ( const int * ) x ) == **( ( *y )++ ) ? XLAL_SUCCESS : XLAL_FAILURE;
+  return *( ( int * ) x ) == **( ( *y )++ ) ? XLAL_SUCCESS : XLAL_FAILURE;
 }
 
 int main( void )
