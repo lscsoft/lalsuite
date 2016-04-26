@@ -120,6 +120,13 @@ int XLALHeapAdd(
   );
 
 /**
+ * Remove the root element of a heap
+ */
+void *XLALHeapExtractRoot(
+  LALHeap *h                    /**< [in] Pointer to heap */
+  );
+
+/**
  * Remove and destroy the root element of a heap
  */
 int XLALHeapRemoveRoot(
