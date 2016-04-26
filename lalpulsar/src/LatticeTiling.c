@@ -444,16 +444,16 @@ static void LT_PrintIndexTrie(
 ///
 /// Locate the nearest points in a lattice tiling to a given set of points. Return the nearest
 /// points in 'nearest_points', and optionally: unique sequential indexes to the nearest points in
-/// 'nearest_indexes', and number of points in each dimension to the left/right of the current point
-/// in 'nearest_left' and 'nearest_right' respectively.
+/// 'nearest_indexes', and indexes of the left/right-most points in the blocks of the nearest points
+/// relative to the nearest points in 'nearest_left' and 'nearest_right' respectively.
 ///
 static int LT_FindNearestPoints(
   const LatticeTilingLocator *loc,      ///< [in] Lattice tiling locator
   const gsl_matrix *points,             ///< [in] Columns are set of points for which to find nearest points
   gsl_matrix *nearest_points,           ///< [out] Columns are the corresponding nearest points
   UINT8VectorSequence *nearest_indexes, ///< [out] Vectors are unique sequential indexes of the nearest points
-  UINT4VectorSequence *nearest_lefts,   ///< [out] Vectors are number of points to left of the nearest points
-  UINT4VectorSequence *nearest_rights   ///< [out] Vectors are number of points to right of the nearest points
+  INT4VectorSequence *nearest_lefts,    ///< [out] Vectors are indexes of left-most points of blocks relative to nearest points
+  INT4VectorSequence *nearest_rights    ///< [out] Vectors are indexes of right-most points of blocks relative to nearest points
   )
 {
 
@@ -676,7 +676,7 @@ static int LT_FindNearestPoints(
           gsl_matrix_set( nearest_points, i, j, nearest[i] );
         }
 
-        // Return sequential indexes of nearest points
+        // Return sequential indexes of nearest point
         // - Non-tiled dimensions inherit value of next-lowest dimension
         if ( is_tiled ) {
           nearest_index = trie->index + nearest[i] - trie->int_lower;
@@ -685,12 +685,10 @@ static int LT_FindNearestPoints(
           nearest_indexes->data[n * j + i] = nearest_index;
         }
 
-        // Return number of points to the left of nearest points
+        // Return indexes of left/right-most points in block relative to nearest point
         if ( nearest_lefts != NULL ) {
-          nearest_lefts->data[n * j + i] = is_tiled ? nearest[i] - trie->int_lower : 0;
+          nearest_lefts->data[n * j + i] = is_tiled ? trie->int_lower - nearest[i] : 0;
         }
-
-        // Return number of points to the right of nearest points
         if ( nearest_rights != NULL ) {
           nearest_rights->data[n * j + i] = is_tiled ? trie->int_upper - nearest[i] : 0;
         }
@@ -1805,8 +1803,8 @@ UINT8 XLALCurrentLatticeTilingIndex(
 int XLALCurrentLatticeTilingBlock(
   const LatticeTilingIterator *itr,
   const size_t dim,
-  UINT4 *left,
-  UINT4 *right
+  INT4 *left,
+  INT4 *right
   )
 {
 
@@ -1817,21 +1815,17 @@ int XLALCurrentLatticeTilingBlock(
   XLAL_CHECK( left != NULL, XLAL_EFAULT );
   XLAL_CHECK( right != NULL, XLAL_EFAULT );
 
-  // If this is a tiled dimension:
+  // Return indexes of left/right-most points in block relative to current point
+  *left = *right = 0;
   for ( size_t ti = 0; ti < itr->tiling->tiled_ndim; ++ti ) {
     const size_t i = itr->tiling->tiled_idx[ti];
     if ( i == dim ) {
-
-      // Return number of points to the left/right of the current point
-      *left = itr->int_point[ti] - itr->int_lower[ti];
+      *left = itr->int_lower[ti] - itr->int_point[ti];
       *right = itr->int_upper[ti] - itr->int_point[ti];
-      return XLAL_SUCCESS;
-
+      break;
     }
   }
 
-  // This is either a non-tiled or a non-iterated dimension
-  *left = *right = 0;
   return XLAL_SUCCESS;
 
 }
@@ -2074,8 +2068,8 @@ int XLALNearestLatticeTilingBlock(
   const size_t dim,
   gsl_vector *nearest_point,
   UINT8 *nearest_index,
-  UINT4 *nearest_left,
-  UINT4 *nearest_right
+  INT4 *nearest_left,
+  INT4 *nearest_right
   )
 {
 
@@ -2109,10 +2103,10 @@ int XLALNearestLatticeTilingBlock(
   // Create local vectors for sequential indexes and number of left/right points
   UINT8 nearest_indexes_data[n];
   UINT8VectorSequence nearest_indexes = { .length = 1, .vectorLength = n, .data = &nearest_indexes_data[0] };
-  UINT4 nearest_lefts_data[n];
-  UINT4VectorSequence nearest_lefts = { .length = 1, .vectorLength = n, .data = &nearest_lefts_data[0] };
-  UINT4 nearest_rights_data[n];
-  UINT4VectorSequence nearest_rights = { .length = 1, .vectorLength = n, .data = &nearest_rights_data[0] };
+  INT4 nearest_lefts_data[n];
+  INT4VectorSequence nearest_lefts = { .length = 1, .vectorLength = n, .data = &nearest_lefts_data[0] };
+  INT4 nearest_rights_data[n];
+  INT4VectorSequence nearest_rights = { .length = 1, .vectorLength = n, .data = &nearest_rights_data[0] };
 
   // Call LT_FindNearestPoints()
   gsl_vector_memcpy( local_point, point );

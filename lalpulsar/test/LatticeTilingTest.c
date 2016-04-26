@@ -169,22 +169,26 @@ static int BasicTest(
       if ( 0 < i ) {
         const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, i );
         UINT8 nearest_index = 0;
-        UINT4 nearest_left = 0, nearest_right = 0;
+        INT4 nearest_left = 0, nearest_right = 0;
         XLAL_CHECK( XLALNearestLatticeTilingBlock( loc, point, i, nearest, &nearest_index, &nearest_left, &nearest_right ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK( nearest_index == nearest_indexes->data[i-1], XLAL_EFAILED, "\n  "
                     "ERROR: nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i-1] );
-        UINT4 nearest_len = 1 + nearest_left + nearest_right;
+        XLAL_CHECK( nearest_left <= nearest_right, XLAL_EFAILED, "\n  "
+                    "ERROR: invalid [nearest_left, nearest_right] = [%i, %i]\n", nearest_left, nearest_right );
+        UINT4 nearest_len = nearest_right - nearest_left + 1;
         XLAL_CHECK( nearest_len <= stats->max_points, XLAL_EFAILED, "\n  "
                     "ERROR: nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i );
       }
       if ( i+1 < n ) {
         const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, i+1 );
         UINT8 nearest_index = 0;
-        UINT4 nearest_left = 0, nearest_right = 0;
+        INT4 nearest_left = 0, nearest_right = 0;
         XLAL_CHECK( XLALNearestLatticeTilingBlock( loc, point, i+1, nearest, &nearest_index, &nearest_left, &nearest_right ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK( nearest_index == nearest_indexes->data[i], XLAL_EFAILED, "\n  "
                     "ERROR: nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i] );
-        UINT4 nearest_len = 1 + nearest_left + nearest_right;
+        XLAL_CHECK( nearest_left <= nearest_right, XLAL_EFAILED, "\n  "
+                    "ERROR: invalid [nearest_left, nearest_right] = [%i, %i]\n", nearest_left, nearest_right );
+        UINT4 nearest_len = nearest_right - nearest_left + 1;
         XLAL_CHECK( nearest_len <= stats->max_points, XLAL_EFAILED, "\n  "
                     "ERROR: nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i+1 );
       }
