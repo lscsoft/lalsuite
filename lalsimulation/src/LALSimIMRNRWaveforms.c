@@ -107,6 +107,166 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File(
   #endif
 }
 
+UNUSED static int XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
+	REAL8 theta,
+	REAL8 psi,
+	REAL8 calpha,
+	REAL8 salpha,
+	UNUSED REAL8 x_source_hat[3],
+	UNUSED REAL8 y_source_hat[3],
+	UNUSED REAL8 z_source_hat[3],
+	UNUSED LALH5File* filepointer, 
+	UNUSED REAL8 inclination,
+	UNUSED REAL8 phi_ref
+	)
+{
+	/* Computes the angles necessary to rotate from the intrinsic NR source frame
+     * into the LAL frame. See DCC-T1600045 for details.
+     * Yes, it would be better to make this class-based, however as this has to
+     * be coded in C it is easier to keep a C-style to make later porting easier.
+	 */
+    
+    /* Attribute declarations go in here */
+    /* Declarations */
+    REAL8 orb_phase, ln_hat_x, ln_hat_y, ln_hat_z, ln_hat_norm;
+    REAL8 n_hat_x, n_hat_y, n_hat_z, n_hat_norm;
+    REAL8 corb_phase, sorb_phase, sinclination, cinclination;
+    REAL8 ln_cross_n_x, ln_cross_n_y, ln_cross_n_z;
+	REAL8 z_wave_x, z_wave_y, z_wave_z;
+	REAL8 stheta, ctheta, spsi, cpsi, theta_hat_x, theta_hat_y, theta_hat_z;
+	REAL8 psi_hat_x, psi_hat_y, psi_hat_z;
+	REAL8 n_dot_theta, ln_cross_n_dot_theta, n_dot_psi, ln_cross_n_dot_psi;
+	REAL8 y_val;
+	
+    /* Following section IV of DCC-T1600045
+     * Step 1: Define Phi = phiref/2 ... I'm ignoring this, I think it is wrong
+	 */
+	
+    orb_phase = phi_ref;
+
+    /* Step 2: Compute Zref
+     * 2.1: Compute LN_hat from file. LN_hat = direction of orbital ang. mom.
+	 */
+	
+	XLALH5FileQueryScalarAttributeValue(&ln_hat_x , filepointer, "LNhatx");	
+	XLALH5FileQueryScalarAttributeValue(&ln_hat_y , filepointer, "LNhaty");
+	XLALH5FileQueryScalarAttributeValue(&ln_hat_z , filepointer, "LNhatz");
+    
+	ln_hat_norm = sqrt(ln_hat_x * ln_hat_x + ln_hat_y * ln_hat_y + ln_hat_z * ln_hat_z);
+	
+    ln_hat_x = ln_hat_x / ln_hat_norm;
+	ln_hat_y = ln_hat_y / ln_hat_norm;
+	ln_hat_z = ln_hat_z / ln_hat_norm;
+
+    /* 2.2: Compute n_hat from file. n_hat = direction from object 2 to object 1 */
+	
+	XLALH5FileQueryScalarAttributeValue(&n_hat_x , filepointer, "nhatx");	
+	XLALH5FileQueryScalarAttributeValue(&n_hat_y , filepointer, "nhaty");	
+	XLALH5FileQueryScalarAttributeValue(&n_hat_z , filepointer, "nhatz");	
+    
+	n_hat_norm = sqrt(n_hat_x * n_hat_x + n_hat_y * n_hat_y + n_hat_z * n_hat_z);
+	
+	n_hat_x = n_hat_x / n_hat_norm;
+	n_hat_y = n_hat_y / n_hat_norm;
+	n_hat_z = n_hat_z / n_hat_norm;
+
+    /* 2.3: Compute Z in the lal wave frame */
+	
+    corb_phase = cos(orb_phase);
+    sorb_phase = sin(orb_phase);
+    sinclination = sin(inclination);
+    cinclination = cos(inclination);
+	
+    ln_cross_n_x = ln_hat_y * n_hat_z - ln_hat_z * n_hat_y;
+	ln_cross_n_y = ln_hat_z * n_hat_x - ln_hat_x * n_hat_z;	
+	ln_cross_n_z = ln_hat_x * n_hat_y - ln_hat_y * n_hat_x;
+	
+	z_wave_x = sinclination * (sorb_phase * n_hat_x + corb_phase * ln_cross_n_x);
+	z_wave_y = sinclination * (sorb_phase * n_hat_y + corb_phase * ln_cross_n_y);
+	z_wave_z = sinclination * (sorb_phase * n_hat_z + corb_phase * ln_cross_n_z);
+	
+	z_wave_x += cinclination * ln_hat_x;
+	z_wave_y += cinclination * ln_hat_y;
+	z_wave_z += cinclination * ln_hat_z;
+
+    /* Step 3.1: Extract theta and psi from Z in the lal wave frame
+     * NOTE: Theta can only run between 0 and pi, so no problem with arccos here
+	 */
+	
+    theta = acos(z_wave_z);
+		
+	/* Degenerate if Z_wave[2] == 1. In this case just choose psi randomly,
+     * the choice will be cancelled out by alpha correction (I hope!)
+	 */
+	
+    if(abs(z_wave_z - 1 ) < 0.000001)
+	{
+        psi = 0.5;
+	}
+    else 
+	{
+        /* psi can run between 0 and 2pi, but only one solution works for x and y */
+        psi = acos(z_wave_x / sin(theta));
+        y_val = sin(psi) * sin(theta);
+        /*  Is the sign wrong? */
+        if(y_val + z_wave_y < 0.0001)
+		{
+            psi = 2 * LAL_PI - psi;
+            y_val = sin(psi) * sin(theta);
+		}
+        if( y_val - z_wave_y > 0.0001)
+		{
+            XLAL_ERROR(XLAL_EDOM, "Something's wrong in Ian's math. Tell him he's an idiot!");
+		}
+	}
+
+    /* 3.2: Compute the vectors theta_hat and psi_hat */
+		
+    stheta = sin(theta);
+    ctheta = cos(theta);
+    spsi = sin(psi);
+    cpsi = cos(psi);
+	
+	theta_hat_x = cpsi * ctheta;
+	theta_hat_y = spsi * ctheta;
+	theta_hat_z = - stheta;
+		
+    psi_hat_x = -spsi;
+	psi_hat_y = cpsi;
+	psi_hat_z = 0.0;
+
+    /* Step 4: Compute sin(alpha) and cos(alpha) */
+	
+	n_dot_theta = n_hat_x * theta_hat_x + n_hat_y * theta_hat_y + n_hat_z * theta_hat_z;
+	ln_cross_n_dot_theta = ln_cross_n_x * theta_hat_x + ln_cross_n_y * theta_hat_y + ln_cross_n_z * theta_hat_z;
+    n_dot_psi = n_hat_x * psi_hat_x + n_hat_y * psi_hat_y + n_hat_z * psi_hat_z;
+	ln_cross_n_dot_psi = ln_cross_n_x * psi_hat_x + ln_cross_n_y * psi_hat_y + ln_cross_n_z * psi_hat_z;
+
+    calpha = corb_phase * n_dot_theta - sorb_phase * ln_cross_n_dot_theta;
+    salpha = corb_phase * n_dot_psi - sorb_phase * ln_cross_n_dot_psi;
+
+    /*  Step X: Also useful to keep the source frame vectors as defined in
+     *  equation 16 of Harald's document.
+	 */
+	
+	x_source_hat[0] = corb_phase * n_hat_x - sorb_phase * ln_cross_n_x;
+	x_source_hat[1] = corb_phase * n_hat_y - sorb_phase * ln_cross_n_y;
+	x_source_hat[2] = corb_phase * n_hat_z - sorb_phase * ln_cross_n_z;
+	
+	y_source_hat[0] = sorb_phase * n_hat_x + corb_phase * ln_cross_n_x;
+	y_source_hat[1] = sorb_phase * n_hat_y + corb_phase * ln_cross_n_y;
+	y_source_hat[2] = sorb_phase * n_hat_z + corb_phase * ln_cross_n_z;
+	
+	z_source_hat[0] = ln_hat_x;
+	z_source_hat[1] = ln_hat_y;
+	z_source_hat[2] = ln_hat_z;
+	
+	printf("The y-component of x_hat: %f\n", x_source_hat[2]);
+	
+    return XLAL_SUCCESS;
+}
+
+
 /* Everything needs to be declared as unused in case HDF is not enabled. */
 int XLALSimInspiralNRWaveformGetHplusHcross(
         UNUSED REAL8TimeSeries **hplus,        /**< Output h_+ vector */
@@ -137,7 +297,10 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   size_t array_length;
   REAL8 nrEta, nrSpin1x, nrSpin1y, nrSpin1z, nrSpin2x, nrSpin2y, nrSpin2z;
   REAL8 Mflower, time_start_M, time_start_s, time_end_M, time_end_s;
-  REAL8 chi, est_start_time, nrPhiRef, phi, curr_h_real, curr_h_imag;
+  REAL8 chi, est_start_time, curr_h_real, curr_h_imag;
+  REAL8 theta, psi, calpha, salpha;
+  UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File();
+  REAL8 x_source_hat[3], y_source_hat[3], z_source_hat[3];
   REAL8 distance_scale_fac;
   COMPLEX16 curr_ylm;
   /* These keys follow a strict formulation and cannot be longer than 11
@@ -237,6 +400,15 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   }
 
   array_length = (UINT4)(ceil( (time_end_s - time_start_s) / deltaT));
+  
+  /* Compute correct angles for hpluss and hcross following LAL convention */
+  theta = 0.;
+  psi = 0.;
+  calpha = 0.;
+  salpha = 0.;
+  
+  XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(theta, psi, calpha, salpha,
+	x_source_hat, y_source_hat, z_source_hat, file, inclination, phiRef);
 
   /* Create the return time series, use arbitrary epoch here. We set this
    * properly later. */
@@ -278,23 +450,33 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
       XLALSimInspiralNRWaveformGetDataFromHDF5File(&curr_phase, file, (m1 + m2),
                                 time_start_s, array_length, deltaT, phase_key);
 
-      XLALH5FileQueryScalarAttributeValue(&nrPhiRef, file, "coa_phase");
+      /*XLALH5FileQueryScalarAttributeValue(&nrPhiRef, file, "coa_phase");
       phi = nrPhiRef + phiRef;
-      curr_ylm = XLALSpinWeightedSphericalHarmonic(inclination, phi, -2,
+	  */
+      curr_ylm = XLALSpinWeightedSphericalHarmonic(theta, psi, -2,
                                                    model, modem);
-      for (curr_idx = 0; curr_idx < array_length; curr_idx++)
+      
+	  for (curr_idx = 0; curr_idx < array_length; curr_idx++)
       {
         curr_h_real = curr_amp->data[curr_idx]
                     * cos(curr_phase->data[curr_idx]) * distance_scale_fac;
         curr_h_imag = curr_amp->data[curr_idx]
                     * sin(curr_phase->data[curr_idx]) * distance_scale_fac;
         (*hplus)->data->data[curr_idx] = (*hplus)->data->data[curr_idx]
-               + curr_h_real * creal(curr_ylm) + curr_h_imag * cimag(curr_ylm);
+               + curr_h_real * creal(curr_ylm) - curr_h_imag * cimag(curr_ylm);
         (*hcross)->data->data[curr_idx] = (*hcross)->data->data[curr_idx]
-               + curr_h_real * cimag(curr_ylm) - curr_h_imag * creal(curr_ylm);
+               - curr_h_real * cimag(curr_ylm) - curr_h_imag * creal(curr_ylm);
+		
+ 	  /* Correct for the "alpha" angle as given in T1600045 to translate
+ 	   * from the NR wave frame to LAL wave-frame
+ 	   */
+	    
+		(*hplus)->data->data[curr_idx] = (calpha*calpha - salpha*salpha) * (*hplus)->data->data[curr_idx] + 2 * calpha * salpha * (*hcross)->data->data[curr_idx];
+		(*hcross)->data->data[curr_idx] = - 2 * calpha * salpha * (*hplus)->data->data[curr_idx] + (calpha*calpha - salpha*salpha) * (*hcross)->data->data[curr_idx];
       }
+	  
       XLALDestroyREAL8Vector(curr_amp);
-      XLALDestroyREAL8Vector(curr_phase);
+      XLALDestroyREAL8Vector(curr_phase);  
     }
   }
 
