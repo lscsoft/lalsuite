@@ -32,6 +32,7 @@
 
 #include <lal/SuperskyMetrics.h>
 #include <lal/LALConstants.h>
+#include <lal/LogPrintf.h>
 #include <lal/MetricUtils.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
@@ -644,6 +645,7 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
 
     // Compute the coherent reduced supersky metric
     XLAL_CHECK_NULL( SM_ComputeReducedSuperskyMetric( &metrics->coh_rssky_metric[n], &metrics->coh_rssky_transf[n], ussky_metric_seg, &ucoords, orbital_metric_seg, &ocoords, ref_time, start_time_seg, end_time_seg ) == XLAL_SUCCESS, XLAL_EFUNC );
+    LogPrintf( LOG_DEBUG, "Computed coherent reduced supersky metric for segment %zu/%zu\n", n, metrics->num_segments );
 
     // Cleanup
     GFMAT( ussky_metric_seg, orbital_metric_seg );
@@ -658,6 +660,7 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   const LIGOTimeGPS *start_time_avg = &segments->segs[0].start;
   const LIGOTimeGPS *end_time_avg = &segments->segs[segments->length - 1].end;
   XLAL_CHECK_NULL( SM_ComputeReducedSuperskyMetric( &metrics->semi_rssky_metric, &metrics->semi_rssky_transf, ussky_metric_avg, &ucoords, orbital_metric_avg, &ocoords, ref_time, start_time_avg, end_time_avg ) == XLAL_SUCCESS, XLAL_EFUNC );
+  LogPrintf( LOG_DEBUG, "Computed semicoherent reduced supersky metric for %zu segments\n", metrics->num_segments );
 
   // Rescale metrics to input fiducial frequency
   XLALScaleSuperskyMetricsFiducialFreq( metrics, fiducial_freq );
