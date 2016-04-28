@@ -2231,7 +2231,7 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
         return LALSIMINSPIRAL_ST_TEST_FREQBOUND;
     else if (test < 0.0) /* energy test fails! */
         return LALSIMINSPIRAL_ST_TEST_ENERGY;
-    else if isnan(omega) /* omega is nan! */
+    else if (isnan(omega)) /* omega is nan! */
         return LALSIMINSPIRAL_ST_TEST_OMEGANAN;
     else if (v >= 1.) // v/c >= 1!
         return LALSIMINSPIRAL_ST_TEST_LARGEV;
