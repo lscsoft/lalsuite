@@ -47,15 +47,15 @@ int main(int argc, char *argv[])
   char format[20], hdformat[20];
 
   if (argc != 2) {
-    fprintf(stderr, "Usage:  imlist filename[ext][section filter] \n");
+    fprintf(stderr, "Usage:  %s filename[ext][section filter] \n", argv[0]);
     fprintf(stderr, "\n");
-    fprintf(stderr, "List the the pixel values in a FITS image \n");
+    fprintf(stderr, "List the the pixel values in a FITS array \n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Example: \n");
-    fprintf(stderr, "  imlist image.fits                    - list the whole image\n");
-    fprintf(stderr, "  imlist image.fits[100:110,400:410]   - list a section\n");
-    fprintf(stderr, "  imlist table.fits[2][bin (x,y) = 32] - list the pixels in\n");
-    fprintf(stderr, "         an image constructed from a 2D histogram of X and Y\n");
+    fprintf(stderr, "  %s array.fits                    - list the whole array\n", argv[0]);
+    fprintf(stderr, "  %s array.fits[100:110,400:410]   - list a section\n", argv[0]);
+    fprintf(stderr, "  %s table.fits[2][bin (x,y) = 32] - list the pixels in\n", argv[0]);
+    fprintf(stderr, "         an array constructed from a 2D histogram of X and Y\n");
     fprintf(stderr, "         columns in a table with a binning factor = 32\n");
     return (0);
   }
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
   if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
     if (!fits_get_img_param(fptr, 2, &bitpix, &naxis, naxes, &status)) {
       if (naxis > 2 || naxis == 0) {
-        fprintf(stderr, "Error: only 1D or 2D images are supported\n");
+        fprintf(stderr, "Error: only 1D or 2D arrays are supported\n");
       } else {
         /* get memory for 1 row */
         pixels = (double *) malloc(naxes[0] * sizeof(double));
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
           strcpy(format,   "   %15.5g");
         }
 
-        /* loop over all the rows in the image, top to bottom */
+        /* loop over all the rows in the array, top to bottom */
         for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--) {
           if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0], NULL,
                             pixels, NULL, &status)) { /* read row of pixels */

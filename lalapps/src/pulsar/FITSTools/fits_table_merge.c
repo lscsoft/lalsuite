@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
   unsigned char *buffer = 0;
 
   if (argc != 3) {
-    fprintf(stderr, "Usage:  tabmerge infile1[ext][filter] outfile[ext]\n");
+    fprintf(stderr, "Usage:  %s infile1[ext][filter] outfile[ext]\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Merge 2 tables by copying all the rows from the 1st table\n");
     fprintf(stderr, "into the 2nd table.  The  2 tables must have identical\n");
@@ -51,12 +51,12 @@ int main(int argc, char *argv[])
     fprintf(stderr, "\n");
     fprintf(stderr, "Examples: \n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "1. tabmerge intab.fit+1 outtab.fit+2\n");
+    fprintf(stderr, "1. %s intab.fit+1 outtab.fit+2\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "    merge the table in the 1st extension of intab.fit with\n");
     fprintf(stderr, "    the table in the 2nd extension of outtab.fit.\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "2. tabmerge 'intab.fit+1[PI > 45]' outab.fits+2\n");
+    fprintf(stderr, "2. %s 'intab.fit+1[PI > 45]' outab.fits+2\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "    Same as the 1st example, except only rows that have a PI\n");
     fprintf(stderr, "    column value > 45 will be merged into the output table.\n");

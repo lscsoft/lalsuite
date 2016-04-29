@@ -41,21 +41,21 @@ int main(int argc, char *argv[])
   double *pix, sum = 0., meanval = 0., minval = 1.E33, maxval = -1.E33;
 
   if (argc != 2) {
-    fprintf(stderr, "Usage: imstat image \n");
+    fprintf(stderr, "Usage: %s array \n", argv[0]);
     fprintf(stderr, "\n");
-    fprintf(stderr, "Compute statistics of pixels in the input image\n");
+    fprintf(stderr, "Compute statistics of pixels in the input array\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Examples: \n");
-    fprintf(stderr, "  imarith image.fits                    - the whole image\n");
-    fprintf(stderr, "  imarith 'image.fits[200:210,300:310]' - image section\n");
-    fprintf(stderr, "  imarith 'table.fits+1[bin (X,Y) = 4]' - image constructed\n");
+    fprintf(stderr, "  imarith array.fits                    - the whole array\n");
+    fprintf(stderr, "  imarith 'array.fits[200:210,300:310]' - array section\n");
+    fprintf(stderr, "  imarith 'table.fits+1[bin (X,Y) = 4]' - array constructed\n");
     fprintf(stderr, "     from X and Y columns of a table, with 4-pixel bin size\n");
     return (0);
   }
 
   if (!fits_open_image(&fptr, argv[1], READONLY, &status)) {
     if (fits_get_hdu_type(fptr, &hdutype, &status) || hdutype != IMAGE_HDU) {
-      fprintf(stderr, "Error: this program only works on images, not tables\n");
+      fprintf(stderr, "Error: this program only works on arrays, not tables\n");
       return (1);
     }
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     fits_get_img_size(fptr, 2, naxes, &status);
 
     if (status || naxis != 2) {
-      fprintf(stderr, "Error: NAXIS = %d.  Only 2-D images are supported.\n", naxis);
+      fprintf(stderr, "Error: NAXIS = %d.  Only 2-D arrays are supported.\n", naxis);
       return (1);
     }
 
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     totpix = naxes[0] * naxes[1];
     fpixel[0] = 1;  /* read starting with first pixel in each row */
 
-    /* process image one row at a time; increment row # in each loop */
+    /* process array one row at a time; increment row # in each loop */
     for (fpixel[1] = 1; fpixel[1] <= naxes[1]; fpixel[1]++) {
       /* give starting pixel coordinate and number of pixels to read */
       if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0],0, pix,0, &status)) {
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
       meanval = sum / totpix;
     }
 
-    printf("Statistics of %ld x %ld  image\n",
+    printf("Statistics of %ld x %ld  array\n",
            naxes[0], naxes[1]);
     printf("  sum of pixels = %g\n", sum);
     printf("  mean value    = %g\n", meanval);

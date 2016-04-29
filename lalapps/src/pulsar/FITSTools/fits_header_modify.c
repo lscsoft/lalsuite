@@ -45,15 +45,15 @@ int main(int argc, char *argv[])
   } else if (argc == 4) {
     iomode = READWRITE;
   } else {
-    fprintf(stderr, "Usage:  modhead filename[ext] keyword newvalue\n");
+    fprintf(stderr, "Usage:  %s filename[ext] keyword newvalue\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Write or modify the value of a header keyword.\n");
     fprintf(stderr, "If 'newvalue' is not specified then just print \n");
     fprintf(stderr, "the current value. \n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Examples: \n");
-    fprintf(stderr, "  modhead file.fits dec      - list the DEC keyword \n");
-    fprintf(stderr, "  modhead file.fits dec 30.0 - set DEC = 30.0 \n");
+    fprintf(stderr, "  %s file.fits dec      - list the DEC keyword \n", argv[0]);
+    fprintf(stderr, "  %s file.fits dec 30.0 - set DEC = 30.0 \n", argv[0]);
     return (0);
   }
 
