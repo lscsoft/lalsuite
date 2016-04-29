@@ -58,6 +58,7 @@
 #include "LALSimIMRSEOBNRROMUtilities.c"
 
 /* Everything needs to be declared as unused in case HDF is not enabled. */
+
 UNUSED static UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File(
   UNUSED REAL8Vector** output,            /**< Returned vector uncompressed */
   UNUSED LALH5File* pointer,              /**< Pointer to HDF5 file */
@@ -107,20 +108,25 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File(
   #endif
 }
 
-UNUSED static int XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
-	REAL8 theta,
-	REAL8 psi,
-	REAL8 calpha,
-	REAL8 salpha,
-	UNUSED REAL8 x_source_hat[3],
-	UNUSED REAL8 y_source_hat[3],
-	UNUSED REAL8 z_source_hat[3],
-	UNUSED LALH5File* filepointer, 
-	UNUSED REAL8 inclination,
-	UNUSED REAL8 phi_ref
+UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
+	UNUSED REAL8 *theta,						/**< Returned inclination angle of source */
+	UNUSED REAL8 *psi,							/**< Returned azimuth angle of source */
+	UNUSED REAL8 *calpha,						/**< Returned cosine of the polarisation angle */
+	UNUSED REAL8 *salpha,						/**< Returned sine of the polarisation angle */
+	UNUSED REAL8 x_source_hat[3],				/**< Returned x basis vector of source frame */
+	UNUSED REAL8 y_source_hat[3],				/**< Returned y basis vector of source frame */
+	UNUSED REAL8 z_source_hat[3],				/**< Returned z basis vector of source frame */
+	UNUSED LALH5File* filepointer, 				/**< Pointer to NR HDF5 file */
+	UNUSED const REAL8 inclination,				/**< Inclination of source */
+	UNUSED const REAL8 phi_ref					/**< Orbital reference phase*/
 	)
 {
-	/* Computes the angles necessary to rotate from the intrinsic NR source frame
+	
+	#ifndef LAL_HDF5_ENABLED
+    XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+    #else
+	
+	/* Compute the angles necessary to rotate from the intrinsic NR source frame
      * into the LAL frame. See DCC-T1600045 for details.
      * Yes, it would be better to make this class-based, however as this has to
      * be coded in C it is easier to keep a C-style to make later porting easier.
@@ -193,7 +199,7 @@ UNUSED static int XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
      * NOTE: Theta can only run between 0 and pi, so no problem with arccos here
 	 */
 	
-    theta = acos(z_wave_z);
+    *theta = acos(z_wave_z);
 		
 	/* Degenerate if Z_wave[2] == 1. In this case just choose psi randomly,
      * the choice will be cancelled out by alpha correction (I hope!)
@@ -201,18 +207,18 @@ UNUSED static int XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
 	
     if(abs(z_wave_z - 1 ) < 0.000001)
 	{
-        psi = 0.5;
+        *psi = 0.5;
 	}
     else 
 	{
         /* psi can run between 0 and 2pi, but only one solution works for x and y */
-        psi = acos(z_wave_x / sin(theta));
-        y_val = sin(psi) * sin(theta);
+        *psi = acos(z_wave_x / sin(*theta));
+        y_val = sin(*psi) * sin(*theta);
         /*  Is the sign wrong? */
         if(y_val + z_wave_y < 0.0001)
 		{
-            psi = 2 * LAL_PI - psi;
-            y_val = sin(psi) * sin(theta);
+            *psi = 2 * LAL_PI - *psi;
+            y_val = sin(*psi) * sin(*theta);
 		}
         if( y_val - z_wave_y > 0.0001)
 		{
@@ -222,10 +228,10 @@ UNUSED static int XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
 
     /* 3.2: Compute the vectors theta_hat and psi_hat */
 		
-    stheta = sin(theta);
-    ctheta = cos(theta);
-    spsi = sin(psi);
-    cpsi = cos(psi);
+    stheta = sin(*theta);
+    ctheta = cos(*theta);
+    spsi = sin(*psi);
+    cpsi = cos(*psi);
 	
 	theta_hat_x = cpsi * ctheta;
 	theta_hat_y = spsi * ctheta;
@@ -242,10 +248,10 @@ UNUSED static int XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
     n_dot_psi = n_hat_x * psi_hat_x + n_hat_y * psi_hat_y + n_hat_z * psi_hat_z;
 	ln_cross_n_dot_psi = ln_cross_n_x * psi_hat_x + ln_cross_n_y * psi_hat_y + ln_cross_n_z * psi_hat_z;
 
-    calpha = corb_phase * n_dot_theta - sorb_phase * ln_cross_n_dot_theta;
-    salpha = corb_phase * n_dot_psi - sorb_phase * ln_cross_n_dot_psi;
+    *calpha = corb_phase * n_dot_theta - sorb_phase * ln_cross_n_dot_theta;
+    *salpha = corb_phase * n_dot_psi - sorb_phase * ln_cross_n_dot_psi;
 
-    /*  Step X: Also useful to keep the source frame vectors as defined in
+    /*  Step 5: Also useful to keep the source frame vectors as defined in
      *  equation 16 of Harald's document.
 	 */
 	
@@ -264,6 +270,7 @@ UNUSED static int XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
 	printf("The y-component of x_hat: %f\n", x_source_hat[2]);
 	
     return XLAL_SUCCESS;
+	#endif
 }
 
 
@@ -300,9 +307,13 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   REAL8 chi, est_start_time, curr_h_real, curr_h_imag;
   REAL8 theta, psi, calpha, salpha;
   UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File();
+  UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File();
   REAL8 x_source_hat[3], y_source_hat[3], z_source_hat[3];
   REAL8 distance_scale_fac;
   COMPLEX16 curr_ylm;
+  REAL8TimeSeries **hplus_corr=NULL; 
+  REAL8TimeSeries **hcross_corr=NULL;
+ 
   /* These keys follow a strict formulation and cannot be longer than 11
    * characters */
   char amp_key[20];
@@ -401,18 +412,26 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
 
   array_length = (UINT4)(ceil( (time_end_s - time_start_s) / deltaT));
   
-  /* Compute correct angles for hpluss and hcross following LAL convention */
-  theta = 0.;
+  /* Compute correct angles for hplus and hcross following LAL convention
+   * Initialise here.
+   */
+  
+  /*theta = 0.;
   psi = 0.;
   calpha = 0.;
   salpha = 0.;
+  */
   
-  XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(theta, psi, calpha, salpha,
+  XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(&theta, &psi, &calpha, &salpha,
 	x_source_hat, y_source_hat, z_source_hat, file, inclination, phiRef);
+	
+  printf("Theta needed to achieve input inclination = %f\n", theta);
+  printf("Psi needed to achieve input reference phase = %f\n", psi);
 
   /* Create the return time series, use arbitrary epoch here. We set this
    * properly later. */
   XLALGPSAdd(&tmpEpoch, time_start_s);
+  
   *hplus  = XLALCreateREAL8TimeSeries("H_PLUS", &tmpEpoch, 0.0, deltaT,
                                       &lalStrainUnit, array_length );
   *hcross = XLALCreateREAL8TimeSeries("H_CROSS", &tmpEpoch, 0.0, deltaT,
@@ -422,6 +441,17 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
     (*hplus)->data->data[curr_idx] = 0.;
     (*hcross)->data->data[curr_idx] = 0.;
   }
+  
+  /* *hplus_corr  = XLALCreateREAL8TimeSeries("H_PLUS", &tmpEpoch, 0.0, deltaT,
+                                      &lalStrainUnit, array_length );
+  *hcross_corr = XLALCreateREAL8TimeSeries("H_CROSS", &tmpEpoch, 0.0, deltaT,
+                                      &lalStrainUnit, array_length );
+  for (curr_idx = 0; curr_idx < array_length; curr_idx++)
+  {
+    (*hplus_corr)->data->data[curr_idx] = 0.;
+    (*hcross_corr)->data->data[curr_idx] = 0.;
+  }
+  */
 
   /* Create the distance scale factor */
   distance_scale_fac = (m1 + m2) * LAL_MRSUN_SI / r;
@@ -469,11 +499,21 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
 		
  	  /* Correct for the "alpha" angle as given in T1600045 to translate
  	   * from the NR wave frame to LAL wave-frame
+	   * Helper time series needed.
  	   */
 	    
-		(*hplus)->data->data[curr_idx] = (calpha*calpha - salpha*salpha) * (*hplus)->data->data[curr_idx] + 2 * calpha * salpha * (*hcross)->data->data[curr_idx];
-		(*hcross)->data->data[curr_idx] = - 2 * calpha * salpha * (*hplus)->data->data[curr_idx] + (calpha*calpha - salpha*salpha) * (*hcross)->data->data[curr_idx];
+		(*hplus_corr)->data->data[curr_idx] = (*hplus_corr)->data->data[curr_idx] + (calpha*calpha - salpha*salpha) * (*hplus)->data->data[curr_idx] 
+			+ 2*calpha*salpha * (*hcross)->data->data[curr_idx];
+		
+		(*hcross_corr)->data->data[curr_idx] = (*hcross_corr)->data->data[curr_idx] -2*calpha*salpha * (*hplus)->data->data[curr_idx] 
+			+(calpha*calpha - salpha*salpha) * (*hcross)->data->data[curr_idx];
+		
+		(*hplus)->data->data[curr_idx] = (*hplus_corr)->data->data[curr_idx];
+		(*hcross)->data->data[curr_idx] = (*hcross_corr)->data->data[curr_idx];		
+		
       }
+	  
+	  printf("Test finished.\n");
 	  
       XLALDestroyREAL8Vector(curr_amp);
       XLALDestroyREAL8Vector(curr_phase);  
