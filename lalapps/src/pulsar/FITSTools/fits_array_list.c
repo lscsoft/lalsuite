@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
   fitsfile *fptr = 0;   /* FITS file pointer, defined in fitsio.h */
   int status = 0;   /* CFITSIO status value MUST be initialized to zero! */
   int bitpix = 0, naxis = 0, ii = 0;
-  long naxes[2] = {1,1}, fpixel[2] = {1,1};
+  long naxes[3] = {1,1,1}, fpixel[3] = {1,1,1};
   double *pixels = 0;
   char format[20], hdformat[20];
 
@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
   }
 
   if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
-    if (!fits_get_img_param(fptr, 2, &bitpix, &naxis, naxes, &status)) {
-      if (naxis > 2 || naxis == 0) {
-        fprintf(stderr, "Error: only 1D or 2D arrays are supported\n");
+    if (!fits_get_img_param(fptr, 3, &bitpix, &naxis, naxes, &status)) {
+      if (naxis > 3 || naxis == 0) {
+        fprintf(stderr, "Error: only 1D, 2D, or 3D arrays are supported\n");
       } else {
         /* get memory for 1 row */
         pixels = (double *) malloc(naxes[0] * sizeof(double));
@@ -87,17 +87,22 @@ int main(int argc, char *argv[])
           strcpy(format,   "   %15.5g");
         }
 
-        /* loop over all the rows in the array, top to bottom */
-        for (fpixel[1] = naxes[1]; fpixel[1] >= 1; fpixel[1]--) {
-          if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0], NULL,
-                            pixels, NULL, &status)) { /* read row of pixels */
-            break;  /* jump out of loop on error */
-          }
+        /* loop over all the rows in the array */
+        for (fpixel[2] = 1; fpixel[2] <= naxes[2]; fpixel[2]++) {
+          for (fpixel[1] = 1; fpixel[1] <= naxes[1]; fpixel[1]++) {
+            if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0], NULL,
+                              pixels, NULL, &status)) { /* read row of pixels */
+              break;  /* jump out of loop on error */
+            }
 
-          for (ii = 0; ii < naxes[0]; ii++) {
-            fprintf(fout, format, pixels[ii]);  /* print each value  */
+            if (naxes[2] > 1) {
+              fprintf(fout, "%02li:", fpixel[2]);  /* print 3rd dimension */
+            }
+            for (ii = 0; ii < naxes[0]; ii++) {
+              fprintf(fout, format, pixels[ii]);  /* print each value  */
+            }
+            fprintf(fout, "\n");                    /* terminate line */
           }
-          fprintf(fout, "\n");                    /* terminate line */
         }
         free(pixels);
       }
