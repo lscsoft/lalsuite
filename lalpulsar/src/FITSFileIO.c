@@ -1199,10 +1199,8 @@ int XLALFITSArrayWriteGSLMatrix( FITSFile *file, const size_t idx[], const gsl_m
   // Check that we are at an array of sufficient size
   XLAL_CHECK_FAIL( file->hdutype == IMAGE_HDU, XLAL_EIO, "Current FITS file HDU is not an array" );
   XLAL_CHECK_FAIL( file->array.naxis >= 2, XLAL_EINVAL, "Array must have at least 2 dimensions" );
-  const size_t m = file->array.naxis - 2;
-  XLAL_CHECK_FAIL( elems->size1 == ( size_t ) file->array.naxes[m], XLAL_EINVAL, "Number of 'elems' rows (%zu) does not match array dimension #%zu (%li)", elems->size1, m, file->array.naxes[m] );
-  const size_t n = m + 1;
-  XLAL_CHECK_FAIL( elems->size2 == ( size_t ) file->array.naxes[n], XLAL_EINVAL, "Number of 'elems' rows (%zu) does not match array dimension #%zu (%li)", elems->size2, n, file->array.naxes[n] );
+  XLAL_CHECK_FAIL( elems->size1 == ( size_t ) file->array.naxes[0], XLAL_EINVAL, "Number of 'elems' rows (%zu) does not match array dimension 0 (%li)", elems->size1, file->array.naxes[0] );
+  XLAL_CHECK_FAIL( elems->size2 == ( size_t ) file->array.naxes[1], XLAL_EINVAL, "Number of 'elems' rows (%zu) does not match array dimension 1 (%li)", elems->size2, file->array.naxes[1] );
 
   // Copy index vector, if given
   size_t XLAL_INIT_ARRAY_DECL( i, FFIO_MAX );
@@ -1210,10 +1208,10 @@ int XLALFITSArrayWriteGSLMatrix( FITSFile *file, const size_t idx[], const gsl_m
     memcpy( i, idx, file->array.naxis * sizeof( i[0] ) );
   }
 
-  // Write GSL matrix elements to last 2 dimensions
-  for ( i[m] = 0; i[m] < ( size_t ) file->array.naxes[m]; ++i[m] ) {
-    for ( i[n] = 0; i[n] < ( size_t ) file->array.naxes[n]; ++i[n] ) {
-      const REAL8 elem = gsl_matrix_get( elems, i[m], i[n] );
+  // Write GSL matrix elements to first 2 dimensions
+  for ( i[0] = 0; i[0] < ( size_t ) file->array.naxes[0]; ++i[0] ) {
+    for ( i[1] = 0; i[1] < ( size_t ) file->array.naxes[1]; ++i[1] ) {
+      const REAL8 elem = gsl_matrix_get( elems, i[0], i[1] );
       XLAL_CHECK_FAIL( XLALFITSArrayWriteREAL8( file, i, elem ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
@@ -1247,9 +1245,7 @@ int XLALFITSArrayReadGSLMatrix( FITSFile *file, const size_t idx[], gsl_matrix *
   XLAL_CHECK_FAIL( file->array.naxis >= 2, XLAL_EINVAL, "Array must have at least 2 dimensions" );
 
   // Create GSL matrix
-  const size_t m = file->array.naxis - 2;
-  const size_t n = m + 1;
-  GAMAT( *elems, file->array.naxes[m], file->array.naxes[n] );
+  GAMAT( *elems, file->array.naxes[0], file->array.naxes[1] );
 
   // Copy index vector, if given
   size_t XLAL_INIT_ARRAY_DECL( i, FFIO_MAX );
@@ -1257,12 +1253,12 @@ int XLALFITSArrayReadGSLMatrix( FITSFile *file, const size_t idx[], gsl_matrix *
     memcpy( i, idx, file->array.naxis * sizeof( i[0] ) );
   }
 
-  // Read GSL matrix elements to last 2 dimensions
-  for ( i[m] = 0; i[m] < ( size_t ) file->array.naxes[m]; ++i[m] ) {
-    for ( i[n] = 0; i[n] < ( size_t ) file->array.naxes[n]; ++i[n] ) {
+  // Read GSL matrix elements from first 2 dimensions
+  for ( i[0] = 0; i[0] < ( size_t ) file->array.naxes[0]; ++i[0] ) {
+    for ( i[1] = 0; i[1] < ( size_t ) file->array.naxes[1]; ++i[1] ) {
       REAL8 elem = 0;
       XLAL_CHECK_FAIL( XLALFITSArrayReadREAL8( file, i, &elem ) == XLAL_SUCCESS, XLAL_EFUNC );
-      gsl_matrix_set( *elems, i[m], i[n], elem );
+      gsl_matrix_set( *elems, i[0], i[1], elem );
     }
   }
 
