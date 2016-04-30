@@ -187,10 +187,10 @@ SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 /// since they will be transformed such that the physical sky region maps to a region in the reduced
 /// supersky coordinates \f$(n_a,n_b)\f$ which may be covered by the lattice tiling.
 ///
-int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
+int XLALSetSuperskyPhysicalSkyBounds(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling
-  gsl_matrix *rssky_metric,                     ///< [in] Reduced supersky metric
-  gsl_matrix *rssky_transf,                     ///< [in] Reduced supersky coordinate transform data
+  gsl_matrix *rssky_metric,                     ///< [in,out] Reduced supersky metric
+  gsl_matrix *rssky_transf,                     ///< [in,out] Reduced supersky coordinate transform data
   const double alpha1,                          ///< [in] First bound on sky position right ascension
   const double alpha2,                          ///< [in] Second bound on sky position right ascension
   const double delta1,                          ///< [in] First bound on sky position declination
@@ -198,17 +198,16 @@ int XLALSetSuperskyLatticeTilingPhysicalSkyBounds(
   );
 
 ///
-/// Set parameter-space bounds on an equal-area fraction of the physical sky \f$(\alpha, \delta)\f$
-/// for a lattice tiling using the reduced supersky metric. The metric and coordinate transform data
-/// must be supplied, since they will be transformed such that the physical sky patch maps to a region
-/// in the reduced supersky coordinates \f$(n_a,n_b)\f$ which may be covered by the lattice tiling.
+/// Divide the physical sky into \p patch_count equal-area patches, and return physical sky position
+/// bounds \f$(\alpha, \delta)\f$ for the patch indexed by \p patch_index.
 ///
-int XLALSetSuperskyLatticeTilingPhysicalSkyPatch(
-  LatticeTiling *tiling,                        ///< [in] Lattice tiling
-  gsl_matrix *rssky_metric,                     ///< [in] Reduced supersky metric
-  gsl_matrix *rssky_transf,                     ///< [in] Reduced supersky coordinate transform data
+int XLALComputePhysicalSkyEqualAreaPatch(
+  double *alpha1,                               ///< [out] First bound on sky position right ascension
+  double *alpha2,                               ///< [out] Second bound on sky position right ascension
+  double *delta1,                               ///< [out] First bound on sky position declination
+  double *delta2,                               ///< [out] Second bound on sky position declination
   const UINT4 patch_count,                      ///< [in] Number of equal-area patches to divide sky into
-  const UINT4 patch_index                       ///< [in] Index of the patch for which to set bounds
+  const UINT4 patch_index                       ///< [in] Index of the patch for which to compute bounds
   );
 
 #ifdef SWIG // SWIG interface directives
@@ -219,7 +218,7 @@ SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 /// Set parameter-space bounds on the physical frequency/spindowns \f$f^{(s)}\f$ for a lattice
 /// tiling using the reduced supersky metric.
 ///
-int XLALSetSuperskyLatticeTilingPhysicalSpinBound(
+int XLALSetSuperskyPhysicalSpinBound(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling
   const gsl_matrix *rssky_transf,               ///< [in] Reduced supersky coordinate transform data
   const size_t s,                               ///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
@@ -232,7 +231,7 @@ int XLALSetSuperskyLatticeTilingPhysicalSpinBound(
 /// for a lattice tiling using the reduced supersky metric. These coordinates are related to the
 /// physical frequency/spindowns by \f$\nu^{(s)} = f^{(s)} + \vec\Delta^s \cdot \vec n\f$.
 ///
-int XLALSetSuperskyLatticeTilingCoordinateSpinBound(
+int XLALSetSuperskyCoordinateSpinBound(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling.
   const gsl_matrix *rssky_transf,               ///< [in] Reduced supersky coordinate transform data
   const size_t s,                               ///< [in] Spindown order; 0=frequency, 1=first spindown, etc.

@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <ctype.h>
 #include <math.h>
 #include <limits.h>
 #include <float.h>
@@ -236,17 +237,63 @@ XLAL_FAIL:
 
 }
 
-int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *comment )
+int XLALFITSHeaderWriteHistory( FITSFile *file, const CHAR *format, ... )
 {
   int UNUSED status = 0;
 
   // Check input
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
-  XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( format != NULL, XLAL_EFAULT );
+
+  // Write history to current header
+  CHAR buf[4096];
+  va_list ap;
+  va_start( ap, format );
+  XLAL_CHECK( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_ESYS, "Formatted string is too long" );
+  va_end( ap );
+  for ( size_t i = 0; i < strlen( buf ); ++ i ) {
+    if ( !isprint( buf[i] ) ) {
+      buf[i] = ' ';
+    }
+  }
+  CALL_FITS( fits_write_history, file->ff, buf );
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+
+  // Delete FITS file on error
+  if ( file != NULL && file->ff != NULL ) {
+    fits_delete_file( file->ff, &status );
+    file->ff = NULL;
+  }
+
+  return XLAL_FAILURE;
+
+}
+
+int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *format, ... )
+{
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
+  XLAL_CHECK_FAIL( format != NULL, XLAL_EFAULT );
 
   // Write comment to current header
-  CALL_FITS( fits_write_comment, file->ff, comment );
+  CHAR buf[4096];
+  va_list ap;
+  va_start( ap, format );
+  XLAL_CHECK( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_ESYS, "Formatted string is too long" );
+  va_end( ap );
+  for ( size_t i = 0; i < strlen( buf ); ++ i ) {
+    if ( !isprint( buf[i] ) ) {
+      buf[i] = ' ';
+    }
+  }
+  CALL_FITS( fits_write_comment, file->ff, buf );
 
   return XLAL_SUCCESS;
 
@@ -750,6 +797,7 @@ int XLALFITSHeaderReadStringVector( FITSFile *file, const CHAR *key, LALStringVe
   }
   int nfound = 0;
   CALL_FITS( fits_read_keys_str, file->ff, keyword, 1, FFIO_MAX, vals_ptr, &nfound );
+  XLAL_CHECK_FAIL( 0 < nfound, XLAL_EIO, "No items to read into string vector '%s'", keyword );
   XLAL_CHECK_FAIL( nfound <= FFIO_MAX, XLAL_EIO, "Too many items to read into string vector '%s'", keyword );
   for ( int i = 0; i < nfound; ++i ) {
     *values = XLALAppendString2Vector( *values, vals[i] );
@@ -762,7 +810,6 @@ XLAL_FAIL:
   return XLAL_FAILURE;
 
 }
-
 
 int XLALFITSHeaderWriteGPSTime( FITSFile *file, const CHAR *key, const LIGOTimeGPS *value, const CHAR *comment )
 {

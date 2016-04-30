@@ -46,7 +46,7 @@ extern "C" {
 ///
 /// Maximum possible number of FITS array dimensions, and FITS table columns
 ///
-#define FFIO_MAX 99
+#define FFIO_MAX 1000
 
 ///
 /// Representation of a FITS file
@@ -75,7 +75,7 @@ FITSFile *XLALFITSFileOpenRead( const CHAR *file_name );
 /// Unit (HDU).  Scalar #BOOLEAN, #INT4, #INT8, #REAL4, #REAL8, #COMPLEX8, and #COMPLEX16 values,
 /// strings, string vectors (#LALStringVector) and GPS times (#LIGOTimeGPS) can be written and read.
 /// A \p comment string describing the value is required when writing to an HDU, and an arbitrary
-/// comment can also be written.
+/// formatted history or comment string can also be written.
 ///
 /// There are some usage restrictions:
 ///
@@ -89,7 +89,8 @@ FITSFile *XLALFITSFileOpenRead( const CHAR *file_name );
 ///   used after the array or table is opened for reading.
 ///
 /// @{
-int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *comment );
+int XLALFITSHeaderWriteHistory( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
+int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
 int XLALFITSHeaderWriteBOOLEAN( FITSFile *file, const CHAR *key, const BOOLEAN value, const CHAR *comment );
 int XLALFITSHeaderReadBOOLEAN( FITSFile *file, const CHAR *key, BOOLEAN *value );
 int XLALFITSHeaderWriteINT4( FITSFile *file, const CHAR *key, const INT4 value, const CHAR *comment );
