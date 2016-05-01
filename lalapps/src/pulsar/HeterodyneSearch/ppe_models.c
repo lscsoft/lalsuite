@@ -235,7 +235,7 @@ void get_pulsar_model( LALInferenceModel *model ){
 void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
   /* determine what model was requested */
   int isG4v = strcmp(nonGRmodel, "G4v") * strcmp(nonGRmodel, "g4v") * strcmp(nonGRmodel, "G4V");
-  int isST = strcmp(nonGRmodel, "scalar-tensor") * strcmp(nonGRmodel, "ST");
+  int isEGR = strcmp(nonGRmodel, "enhanced-GR") * strcmp(nonGRmodel, "EGR") * strcmp(nonGRmodel, "egr") * strcmp(nonGRmodel, "eGR");
   REAL8 h0 = PulsarGetREAL8ParamOrZero( pars, "H0" );
 
   if( isG4v == 0 ){
@@ -252,9 +252,11 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
     PulsarAddParam( pars, "HVECTORY", &hVectorY, PULSARTYPE_REAL8_t );
     PulsarAddParam( pars, "PSIVECTOR", &psiVector, PULSARTYPE_REAL8_t );
   }
-  else if( isST == 0 ) {
-    /* GR plus an unconstrained breathing mode */
-    /* TO DO: are there specific functional relations linking the HSCALARB to pulsar parameters like COSIOTA, etc.? */
+  else if( isEGR == 0 ) {
+    /** GR plus an unconstrained non-GR modes
+    * With different priors, this can be used to obtain GR+scalar (i.e. 
+    * scalar-tensor), GR+vector, or GR+scalar+vector. Note: this mode used to
+    be called just "ST".*/
     REAL8 cosiota = PulsarGetREAL8ParamOrZero( pars, "COSIOTA" );
     REAL8 hPlus = 0.5 * h0 * (1. + cosiota * cosiota);
     REAL8 hCross = h0 * cosiota;
@@ -263,7 +265,7 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
     PulsarAddParam( pars, "HCROSS", &hCross, PULSARTYPE_REAL8_t );
     PulsarAddParam( pars, "PSITENSOR", &psiTensor, PULSARTYPE_REAL8_t );
   } else {
-    XLALPrintError ("%s: unrecognized non-GR model. Currently supported: scalar-tensor (ST), G4v, or no argument for full search.\n", __func__ );
+    XLALPrintError ("%s: unrecognized non-GR model. Currently supported: enhanced GR (EGR), G4v, or no argument for full search.\n", __func__ );
     XLAL_ERROR_VOID( XLAL_EINVAL );
   }
 }
