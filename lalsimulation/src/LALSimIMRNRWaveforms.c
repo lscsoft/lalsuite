@@ -113,9 +113,6 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
   UNUSED REAL8 *psi,              /**< Returned azimuth angle of source */
   UNUSED REAL8 *calpha,           /**< Returned cosine of the polarisation angle */
   UNUSED REAL8 *salpha,           /**< Returned sine of the polarisation angle */
-  UNUSED REAL8 x_source_hat[3],   /**< Returned x basis vector of source frame */
-  UNUSED REAL8 y_source_hat[3],   /**< Returned y basis vector of source frame */
-  UNUSED REAL8 z_source_hat[3],   /**< Returned z basis vector of source frame */
   UNUSED LALH5File* filepointer,  /**< Pointer to NR HDF5 file */
   UNUSED const REAL8 inclination, /**< Inclination of source */
   UNUSED const REAL8 phi_ref      /**< Orbital reference phase*/
@@ -254,16 +251,17 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
    *  equation 16 of Harald's document.
    */
 
-  x_source_hat[0] = corb_phase * n_hat_x - sorb_phase * ln_cross_n_x;
-  x_source_hat[1] = corb_phase * n_hat_y - sorb_phase * ln_cross_n_y;
-  x_source_hat[2] = corb_phase * n_hat_z - sorb_phase * ln_cross_n_z;
-
-  y_source_hat[0] = sorb_phase * n_hat_x + corb_phase * ln_cross_n_x;
-  y_source_hat[1] = sorb_phase * n_hat_y + corb_phase * ln_cross_n_y;
-  y_source_hat[2] = sorb_phase * n_hat_z + corb_phase * ln_cross_n_z;
-  z_source_hat[0] = ln_hat_x;
-  z_source_hat[1] = ln_hat_y;
-  z_source_hat[2] = ln_hat_z;
+  /*
+   * x_source_hat[0] = corb_phase * n_hat_x - sorb_phase * ln_cross_n_x;
+   * x_source_hat[1] = corb_phase * n_hat_y - sorb_phase * ln_cross_n_y;
+   * x_source_hat[2] = corb_phase * n_hat_z - sorb_phase * ln_cross_n_z;
+   * y_source_hat[0] = sorb_phase * n_hat_x + corb_phase * ln_cross_n_x;
+   * y_source_hat[1] = sorb_phase * n_hat_y + corb_phase * ln_cross_n_y;
+   * y_source_hat[2] = sorb_phase * n_hat_z + corb_phase * ln_cross_n_z;
+   * z_source_hat[0] = ln_hat_x;
+   * z_source_hat[1] = ln_hat_y;
+   * z_source_hat[2] = ln_hat_z;
+   */
 
   return XLAL_SUCCESS;
   #endif
@@ -304,7 +302,6 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   REAL8 Mflower, time_start_M, time_start_s, time_end_M, time_end_s;
   REAL8 chi, est_start_time, curr_h_real, curr_h_imag;
   REAL8 theta, psi, calpha, salpha;
-  REAL8 x_source_hat[3], y_source_hat[3], z_source_hat[3];
   REAL8 distance_scale_fac;
   COMPLEX16 curr_ylm;
   REAL8TimeSeries *hplus_corr;
@@ -442,8 +439,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
 
   theta = psi = calpha = salpha = 0.;
   XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(&theta, &psi, &calpha,
-                       &salpha, x_source_hat, y_source_hat, z_source_hat, file,
-                       inclination, phiRef);
+                       &salpha, file, inclination, phiRef);
 
   /* Create the return time series, use arbitrary epoch here. We set this
    * properly later. */
