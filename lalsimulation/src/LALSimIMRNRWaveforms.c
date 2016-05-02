@@ -267,7 +267,7 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
 	z_source_hat[1] = ln_hat_y;
 	z_source_hat[2] = ln_hat_z;
 	
-	printf("The y-component of x_hat: %f\n", x_source_hat[2]);
+	//printf("The y-component of x_hat: %f\n", x_source_hat[2]);
 	
     return XLAL_SUCCESS;
 	#endif
@@ -303,6 +303,8 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   INT4 model, modem;
   size_t array_length;
   REAL8 nrEta, nrSpin1x, nrSpin1y, nrSpin1z, nrSpin2x, nrSpin2y, nrSpin2z;
+  REAL8 S1x, S1y, S1z, S2x, S2y, S2z;
+  REAL8 ln_hat_x, ln_hat_y, ln_hat_z, n_hat_x, n_hat_y, n_hat_z;
   REAL8 Mflower, time_start_M, time_start_s, time_end_M, time_end_s;
   REAL8 chi, est_start_time, curr_h_real, curr_h_imag;
   REAL8 theta, psi, calpha, salpha;
@@ -340,6 +342,8 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
      XLAL_ERROR(XLAL_EDOM, "MASSES ARE INCONSISTENT WITH THE MASS RATIO OF THE NR SIMULATION.\n");
   }
 
+  /* Comment out spin checks for now:
+  
   XLALH5FileQueryScalarAttributeValue(&nrSpin1x, file, "spin1x");
   if (fabs(nrSpin1x - s1x) > 1E-3)
   {
@@ -375,10 +379,77 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   {
      XLAL_ERROR(XLAL_EDOM, "SPIN2Z IS INCONSISTENT WITH THE NR SIMULATION.\n");
   }
+  */
+  
+  /* Read spin metadata, L_hat, n_hat from HEDF5 metadata and make sure
+   * the ChooseTDWaveform() input values are consistent with the data
+   * recorded in the metadata of the HDF5 file.
+   * PS: This assumes that the input spins are in the LAL frame!
+  */
+  
+  XLALH5FileQueryScalarAttributeValue(&nrSpin1x, file, "spin1x");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin1y, file, "spin1y");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin1z, file, "spin1z");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin2x, file, "spin2x");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin2y, file, "spin2y");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin2z, file, "spin2z");
+  
+  XLALH5FileQueryScalarAttributeValue(&ln_hat_x , file, "LNhatx");	
+  XLALH5FileQueryScalarAttributeValue(&ln_hat_y , file, "LNhaty");
+  XLALH5FileQueryScalarAttributeValue(&ln_hat_z , file, "LNhatz");
+  
+  XLALH5FileQueryScalarAttributeValue(&n_hat_x , file, "nhatx");	
+  XLALH5FileQueryScalarAttributeValue(&n_hat_y , file, "nhaty");	
+  XLALH5FileQueryScalarAttributeValue(&n_hat_z , file, "nhatz");	
+ 
+  S1x = nrSpin1x * n_hat_x + nrSpin1y * n_hat_y + nrSpin1z * n_hat_z;
+  S1y = nrSpin1x * (-ln_hat_z * n_hat_y + ln_hat_y * n_hat_z) 
+	  + nrSpin1y * (ln_hat_z * n_hat_x - ln_hat_x * n_hat_z)
+	  + nrSpin1z * (-ln_hat_y * n_hat_x + ln_hat_x * n_hat_y) ;
+  S1z = nrSpin1x * ln_hat_x + nrSpin1y * ln_hat_y + nrSpin1z * ln_hat_z;
+  
+  S2x = nrSpin2x * n_hat_x + nrSpin2y * n_hat_y + nrSpin2z * n_hat_z;
+  S2y = nrSpin2x * (-ln_hat_z * n_hat_y + ln_hat_y * n_hat_z) 
+	  + nrSpin2y * (ln_hat_z * n_hat_x - ln_hat_x * n_hat_z)
+	  + nrSpin2z * (-ln_hat_y * n_hat_x + ln_hat_x * n_hat_y);
+  S2z = nrSpin2x * ln_hat_x + nrSpin2y * ln_hat_y + nrSpin2z * ln_hat_z;
+  
+ 
+  if (fabs(S1x - s1x) > 1E-3)
+  {
+     XLAL_ERROR(XLAL_EDOM, "SPIN1X IS INCONSISTENT WITH THE NR SIMULATION.\n");
+  }
+  
+  if (fabs(S1y - s1y) > 1E-3)
+  {
+     XLAL_ERROR(XLAL_EDOM, "SPIN1Y IS INCONSISTENT WITH THE NR SIMULATION.\n");
+  }
+  
+  if (fabs(S1z - s1z) > 1E-3)
+  {
+     XLAL_ERROR(XLAL_EDOM, "SPIN1Z IS INCONSISTENT WITH THE NR SIMULATION.\n");
+  }
+  
+  if (fabs(S2x - s2x) > 1E-3)
+  {
+     XLAL_ERROR(XLAL_EDOM, "SPIN2X IS INCONSISTENT WITH THE NR SIMULATION.\n");
+  }
+  
+  if (fabs(S2y - s2y) > 1E-3)
+  {
+     XLAL_ERROR(XLAL_EDOM, "SPIN2Y IS INCONSISTENT WITH THE NR SIMULATION.\n");
+  }
+  
+  if (fabs(S2z - s2z) > 1E-3)
+  {
+     XLAL_ERROR(XLAL_EDOM, "SPIN2Z IS INCONSISTENT WITH THE NR SIMULATION.\n");
+  }
+  
 
   /* First estimate the length of time series that is needed.
    * Demand that 22 mode that is present and use that to figure this out
    */
+  
   XLALH5FileQueryScalarAttributeValue(&Mflower, file, "f_lower_at_1MSUN");
   /* Figure out start time of data */
   group = XLALH5GroupOpen(file, "amp_l2_m2");
@@ -394,6 +465,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
    * the SEOBNR_ROM function and add 10% for safety.
    * FIXME: Is this correct for precessing waveforms?
    */
+  
   chi = XLALSimIMRPhenomBComputeChi(m1, m2, s1z, s2z);
   est_start_time = XLALSimIMRSEOBNRv2ChirpTimeSingleSpin(m1 * LAL_MSUN_SI,
                                                 m2 * LAL_MSUN_SI, chi, fStart);
