@@ -453,11 +453,6 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
                                       &lalStrainUnit, array_length );
   *hcross = XLALCreateREAL8TimeSeries("H_CROSS", &tmpEpoch, 0.0, deltaT,
                                       &lalStrainUnit, array_length );
-  for (curr_idx = 0; curr_idx < array_length; curr_idx++)
-  {
-    (*hplus)->data->data[curr_idx] = 0.0;
-    (*hcross)->data->data[curr_idx] = 0.0;
-  }
 
   hplus_corr = XLALCreateREAL8TimeSeries("H_PLUS", &tmpEpoch, 0.0, deltaT,
                                       &lalStrainUnit, array_length );
@@ -506,10 +501,10 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
         curr_h_imag = curr_amp->data[curr_idx]
                     * sin(curr_phase->data[curr_idx]) * distance_scale_fac;
 
-        (*hplus)->data->data[curr_idx] = (*hplus)->data->data[curr_idx]
+        hplus_corr->data->data[curr_idx] = hplus_corr->data->data[curr_idx]
                + curr_h_real * creal(curr_ylm) - curr_h_imag * cimag(curr_ylm);
 
-        (*hcross)->data->data[curr_idx] = (*hcross)->data->data[curr_idx]
+        hcross_corr->data->data[curr_idx] = hcross_corr->data->data[curr_idx]
                - curr_h_real * cimag(curr_ylm) - curr_h_imag * creal(curr_ylm);
 
       }
@@ -528,15 +523,13 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
 
   for (curr_idx = 0; curr_idx < array_length; curr_idx++)
   {
-    hplus_corr->data->data[curr_idx] +=
-          (calpha*calpha - salpha*salpha) * (*hplus)->data->data[curr_idx]
-          + 2.0*calpha*salpha * (*hcross)->data->data[curr_idx];
+    (*hplus)->data->data[curr_idx] =
+          (calpha*calpha - salpha*salpha) * hplus_corr->data->data[curr_idx]
+          + 2.0*calpha*salpha * hcross_corr->data->data[curr_idx];
 
-    hcross_corr->data->data[curr_idx] +=
-          - 2.0*calpha*salpha * (*hplus)->data->data[curr_idx]
-        + (calpha*calpha - salpha*salpha) * (*hcross)->data->data[curr_idx];
-    (*hplus)->data->data[curr_idx] = (hplus_corr)->data->data[curr_idx];
-    (*hcross)->data->data[curr_idx] = (hcross_corr)->data->data[curr_idx];
+    (*hcross)->data->data[curr_idx] =
+          - 2.0*calpha*salpha * hplus_corr->data->data[curr_idx]
+        + (calpha*calpha - salpha*salpha) * hcross_corr->data->data[curr_idx];
   }
 
   XLALDestroyREAL8TimeSeries(hplus_corr);
