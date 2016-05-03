@@ -344,10 +344,8 @@ void PulsarAddParam( PulsarParameters *pars, const CHAR *name, void *value, Puls
 /* If variable already exists, it will over-write the current value if type compatible*/
   PulsarParam *old = NULL;
 
-  /* This is a bit of a hack to make sure the hash table is initialised
-   * before it is accessed, assuming nobody is silly enough to Get()
-   * from a just-declared LALInferenceVariable */
-  if( pars->nparams == 0 ) { PulsarClearParams( pars ); }
+  /* create the hash table if it does not exist */
+  if( !pars->hash_table ) { pars->hash_table = XLALHashTblCreate( del_elem, PulsarHash, PulsarHashElemCmp ); }
 
   /* Check input value is accessible */
   if( !value ) { XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to access value through null pointer; trying to add \"%s\".", name); }
@@ -429,7 +427,7 @@ void PulsarClearParams( PulsarParameters *pars ){
   pars->nparams = 0;
 
   if( pars->hash_table ) { XLALHashTblDestroy(pars->hash_table); }
-  pars->hash_table = XLALHashTblCreate( del_elem, PulsarHash, PulsarHashElemCmp );
+  pars->hash_table = NULL;
 }
 
 
@@ -474,7 +472,6 @@ void PulsarRemoveParam( PulsarParameters *pars, const CHAR *name ){
 
   this = NULL;
   pars->nparams--;
-  if( pars->nparams == 0 ) { PulsarClearParams( pars ); }
 }
 
 
