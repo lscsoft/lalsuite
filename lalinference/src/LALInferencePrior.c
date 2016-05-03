@@ -93,7 +93,7 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
         runState->CubeToPrior = &LALInferenceInspiralCubeToPrior;
 
     }
-
+    
     /* Optional uniform prior on distance */
     INT4 uniform_distance = 0;
     if (LALInferenceGetProcParamVal(commandLine, "--distance-prior-uniform"))
@@ -102,7 +102,7 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
                                 "uniform_distance", &uniform_distance,
                                 LALINFERENCE_INT4_t,
                                 LALINFERENCE_PARAM_OUTPUT);
-
+    
 
     /* Set up malmquist prior */
     INT4 malmquist = 0;
@@ -633,9 +633,9 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
       z=LALInferenceGetREAL8Variable(params,"a_spin2");
       logPrior += -log(2.0) - log(R) + log(-log(fabs(z) / R));
     }
-
+    
   }
-
+  
   /* Calibration priors. */
   logPrior += LALInferenceSplineCalibrationPrior(runState, params);
   logPrior += LALInferenceConstantCalibrationPrior(runState, params);
@@ -1985,86 +1985,33 @@ void LALInferenceGetGaussianPrior(LALInferenceVariables *priorArgs,
 /* Function to add a correlation matrix to the prior onto the priorArgs */
 void LALInferenceAddCorrelatedPrior(LALInferenceVariables *priorArgs,
                                     const char *name, gsl_matrix **cor,
-                                    REAL8 *mu, REAL8 *sigma, UINT4 *idx){
+                                    UINT4 *idx){
   char corName[VARNAME_MAX];
-  char invName[VARNAME_MAX];
-  char meanName[VARNAME_MAX];
-  char sigmaName[VARNAME_MAX];
   char idxName[VARNAME_MAX];
 
-  sprintf(corName,"correlation_matrix");
-  sprintf(invName,"inverse_correlation_matrix");
-
-  /* add correlation matrix if not already added */
-  if ( !LALInferenceCheckVariable( priorArgs, corName ) ){
-    LALInferenceAddVariable(priorArgs, corName, cor, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
-
-    /* get the matrix we've just added */
-    gsl_matrix *thiscor = NULL, *usecor = NULL;
-    thiscor = *(gsl_matrix **)LALInferenceGetVariable( priorArgs, corName );
-    usecor = gsl_matrix_alloc( thiscor->size1, thiscor->size2 );
-    XLAL_CALLGSL( gsl_matrix_memcpy( usecor, thiscor ) );
-
-    gsl_matrix *invcor = gsl_matrix_alloc( usecor->size1, usecor->size2 );
-    gsl_permutation *p = gsl_permutation_alloc( usecor->size1 );
-    INT4 s;
-
-    /* check correlation matrix is positive definite */
-    if( !LALInferenceCheckPositiveDefinite( usecor, usecor->size1 ) ){
-      XLAL_ERROR_VOID( XLAL_EFUNC | XLAL_EINVAL, "Error... matrix is not positive definite!"  );
-    }
-
-    /* invert correlation matrix */
-    XLAL_CALLGSL( gsl_linalg_LU_decomp( usecor, p, &s ) );
-    XLAL_CALLGSL( gsl_linalg_LU_invert( usecor, p, invcor ) );
-    XLAL_CALLGSL( gsl_permutation_free( p ) );
-    XLAL_CALLGSL( gsl_matrix_free( usecor) );
-
-    LALInferenceAddVariable(priorArgs, invName, &invcor, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
-  }
-
-  sprintf(meanName, "%s_correlation_mean", name);
-  sprintf(sigmaName, "%s_correlation_sigma", name);
+  sprintf(corName,"%s_correlation_matrix",name);
   sprintf(idxName,"%s_index",name);
 
-  LALInferenceAddVariable(priorArgs, meanName, mu, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(priorArgs, sigmaName, sigma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-  LALInferenceAddVariable(priorArgs, idxName, idx, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
-
+  LALInferenceAddVariable(priorArgs, corName, cor,
+                          LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(priorArgs, idxName, idx, LALINFERENCE_UINT4_t,
+                          LALINFERENCE_PARAM_FIXED) ;
   return;
 }
 
 /* Get the correlation matrix and parameter index */
 void LALInferenceGetCorrelatedPrior(LALInferenceVariables *priorArgs,
-                                    const char *name, gsl_matrix **cor, gsl_matrix **invcor,
-                                    REAL8 *mu, REAL8 *sigma, UINT4 *idx){
+                                    const char *name, gsl_matrix **cor,
+                                    UINT4 *idx){
   char corName[VARNAME_MAX];
-  char invName[VARNAME_MAX];
-  char meanName[VARNAME_MAX];
-  char sigmaName[VARNAME_MAX];
   char idxName[VARNAME_MAX];
   void *ptr = NULL;
 
-  sprintf(corName, "correlation_matrix");
-  sprintf(invName,"inverse_correlation_matrix");
-  sprintf(meanName, "%s_correlation_mean", name);
-  sprintf(sigmaName, "%s_correlation_sigma", name);
+  sprintf(corName,"%s_correlation_matrix",name);
   sprintf(idxName,"%s_index",name);
 
   ptr = LALInferenceGetVariable(priorArgs, corName);
   if ( ptr ) *cor = *(gsl_matrix **)ptr;
-  else XLAL_ERROR_VOID(XLAL_EFAILED);
-
-  ptr = LALInferenceGetVariable(priorArgs, invName);
-  if ( ptr ) *invcor = *(gsl_matrix **)ptr;
-  else XLAL_ERROR_VOID(XLAL_EFAILED);
-
-  ptr = LALInferenceGetVariable(priorArgs, meanName);
-  if ( ptr ) *mu = *(REAL8 *)ptr;
-  else XLAL_ERROR_VOID(XLAL_EFAILED);
-
-  ptr = LALInferenceGetVariable(priorArgs, sigmaName);
-  if ( ptr ) *sigma = *(REAL8 *)ptr;
   else XLAL_ERROR_VOID(XLAL_EFAILED);
 
   ptr = LALInferenceGetVariable(priorArgs, idxName);
@@ -2074,33 +2021,17 @@ void LALInferenceGetCorrelatedPrior(LALInferenceVariables *priorArgs,
   return;
 }
 
-/* Remove the correlated prior (for all variables) */
-void LALInferenceRemoveCorrelatedPrior(LALInferenceVariables *priorArgs){
+/* Remove the correlated prior */
+void LALInferenceRemoveCorrelatedPrior(LALInferenceVariables *priorArgs,
+                                       const char *name){
   char corName[VARNAME_MAX];
-  char invName[VARNAME_MAX];
-  char meanName[VARNAME_MAX];
-  char sigmaName[VARNAME_MAX];
   char idxName[VARNAME_MAX];
 
-  sprintf(corName,"correlation_matrix");
-  sprintf(invName,"inverse_correlation_matrix");
-  sprintf(meanName, "_correlation_mean");
-  sprintf(sigmaName, "_correlation_sigma");
-  sprintf(idxName,"_index");
+  sprintf(corName,"%s_correlation_matrix",name);
+  sprintf(idxName,"%s_index",name);
 
   LALInferenceRemoveVariable(priorArgs, corName);
-  LALInferenceRemoveVariable(priorArgs, invName);
-
-  /* remove correlated prior parameters */
-  LALInferenceVariableItem *item = priorArgs->head;
-  for( ; item; item = item->next ){
-    if ( strstr(item->name, meanName) != NULL && strstr(item->name, sigmaName) != NULL && strstr(item->name, idxName) != NULL ){
-      LALInferenceRemoveVariable(priorArgs, meanName);
-      LALInferenceRemoveVariable(priorArgs, sigmaName);
-      LALInferenceRemoveVariable(priorArgs, idxName);
-    }
-  }
-
+  LALInferenceRemoveVariable(priorArgs, idxName);
   return;
 }
 
@@ -2108,22 +2039,13 @@ void LALInferenceRemoveCorrelatedPrior(LALInferenceVariables *priorArgs){
 int LALInferenceCheckCorrelatedPrior(LALInferenceVariables *priorArgs,
                                      const char *name){
   char corName[VARNAME_MAX];
-  char invName[VARNAME_MAX];
-  char meanName[VARNAME_MAX];
-  char sigmaName[VARNAME_MAX];
   char idxName[VARNAME_MAX];
 
-  sprintf(corName,"correlation_matrix");
-  sprintf(invName,"inverse_correlation_matrix");
-  sprintf(meanName, "%s_correlation_mean", name);
-  sprintf(sigmaName, "%s_correlation_sigma", name);
+  sprintf(corName,"%s_correlation_matrix",name);
   sprintf(idxName,"%s_index",name);
 
   return (LALInferenceCheckVariable(priorArgs,corName) &&
-          LALInferenceCheckVariable(priorArgs,invName) &&
-          LALInferenceCheckVariable(priorArgs,idxName) &&
-          LALInferenceCheckVariable(priorArgs,meanName) &&
-          LALInferenceCheckVariable(priorArgs,sigmaName));
+          LALInferenceCheckVariable(priorArgs,idxName));
 }
 
 /* Check for a Fermi-Dirac Prior */
@@ -2269,12 +2191,11 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
   }
   /* test for a prior drawn from correlated values */
   else if( LALInferenceCheckCorrelatedPrior( priorArgs, name ) ){
-    gsl_matrix *cor = NULL, *invcor = NULL;
-    REAL8 mu = 0, sigma = 0.;
+    gsl_matrix *cor = NULL;
     UINT4 idx = 0, dims = 0;
     REAL4Vector *tmps = NULL;
 
-    LALInferenceGetCorrelatedPrior( priorArgs, name, &cor, &invcor, &mu, &sigma, &idx );
+    LALInferenceGetCorrelatedPrior( priorArgs, name, &cor, &idx );
     dims = cor->size1;
 
     /* to avoid unnecessary repetition the multivariate deviates are be
@@ -2293,7 +2214,8 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
         XLAL_ERROR_VOID(XLAL_EFUNC | XLAL_EINVAL, "Matrix is not positive-definite!");
       }
 
-      /* draw values from the multivariate Gaussian described by the correlation matrix */
+      /* draw values from the multivariate Gaussian described by the correlation
+         matrix */
       tmps = XLALCreateREAL4Vector( dims );
       randParam = XLALCreateRandomParams( randomseed );
       XLALMultiNormalDeviates( tmps, cor, dims, randParam );
@@ -2303,8 +2225,8 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
                                LALINFERENCE_PARAM_FIXED );
     }
 
-    /* set random number for given parameter index (converted to a draw from the covariance matrix) */
-    tmp = mu + sigma*tmps->data[idx];
+    /* set random number for given parameter index */
+    tmp = tmps->data[idx];
 
     /* free tmps */
     if ( !LALInferenceCheckVariable( priorArgs, "multivariate_deviates" ) )

@@ -189,26 +189,26 @@ int LALInferenceCheckFermiDiracPrior(LALInferenceVariables *priorArgs, const cha
  * Function to add a correlation matrix and parameter index for a prior
  * defined as part of a multivariate Gaussian distribution onto the \c
  * priorArgs. The correlation coefficient matrix must be a gsl_matrix and the
- * index for the given parameter in the matrix must be supplied. The mean
- * and standard deviation the named parameter must also be supplied.
+ * index for the given parameter in the matrix must be supplied.
  */
 void LALInferenceAddCorrelatedPrior( LALInferenceVariables *priorArgs,
                                      const char *name, gsl_matrix **cor,
-                                     REAL8 *mu, REAL8 *sigma, UINT4 *idx );
+                                     UINT4 *idx );
 
 /**
  * Get the correlation coefficient matrix and index for a parameter from the
  * \c priorArgs list.
  */
 void LALInferenceGetCorrelatedPrior( LALInferenceVariables *priorArgs,
-                                     const char *name, gsl_matrix **cor, gsl_matrix **invcor,
-                                     REAL8 *mu, REAL8 *sigma, UINT4 *idx );
+                                     const char *name, gsl_matrix **cor,
+                                     UINT4 *idx );
 
 /**
  * Remove the correlation coefficient matrix and index for a parameter from the
  * \c priorArgs list.
  */
-void LALInferenceRemoveCorrelatedPrior( LALInferenceVariables *priorArgs );
+void LALInferenceRemoveCorrelatedPrior( LALInferenceVariables *priorArgs,
+                                        const char *name );
 
 /**
  * Check for the existance of a correlation coefficient matrix and index for
