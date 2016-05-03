@@ -554,9 +554,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     conffilename=os.path.join(self.basepath,'config.ini')
     with open(conffilename,'wb') as conffile:
       self.config.write(conffile)
-    if self.config.has_option('paths','webdir'):
-      with open(os.path.join(self.config.get('paths','webdir'),'config.ini'),'wb') as conffile:
-        self.config.write(conffile)
 
     # Generate the DAG according to the config given
     for event in self.events: self.add_full_analysis(event)
@@ -831,6 +828,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     myifos=enginenodes[0].get_ifos()
     # Merge the results together
     pagedir=os.path.join(self.webdir,evstring,myifos)
+    # Write the config file to the results dir for easy review
+    with open(os.path.join(pagedir,'config.ini'),'wb') as conffile:
+        self.config.write(conffile)
     #pagedir=os.path.join(self.basepath,evstring,myifos)
     mkdirs(pagedir)
     mergenode=MergeNSNode(self.merge_job,parents=enginenodes)
