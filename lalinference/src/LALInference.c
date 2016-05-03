@@ -65,6 +65,21 @@ static void del_elem(void *elem)
   XLALFree(elem);
 }
 
+static UINT8 LALInferenceElemHash(const void *elem);
+static UINT8 LALInferenceElemHash(const void *elem)
+{
+  if(!elem) XLAL_ERROR(XLAL_EINVAL);
+  size_t len = strnlen(((const hash_elem *)elem)->name,VARNAME_MAX);
+  return(XLALCityHash64(((const hash_elem *)elem)->name, len));
+}
+
+static int LALInferenceElemCmp(const void *elem1, const void *elem2);
+static int LALInferenceElemCmp(const void *elem1, const void *elem2)
+{
+  if(!elem1 || !elem2) XLAL_ERROR(XLAL_EINVAL);
+  return(strncmp(((const hash_elem *)elem1)->name,((const hash_elem *)elem2)->name,VARNAME_MAX));
+}
+
 
 size_t LALInferenceTypeSize[] = {sizeof(INT4),
                                    sizeof(INT8),
@@ -369,11 +384,9 @@ void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, co
 /* If variable already exists, it will over-write the current value if type compatible*/
 {
   LALInferenceVariableItem *old=NULL;
-  /* This is a bit of a hack to make sure the hash table is initialised
-   * before it is accessed, assuming nobody is silly enough to Get()
-   * from a just-declared LALInferenceVariable */
-  if(vars->dimension==0) LALInferenceClearVariables(vars);
-
+  /* Create the hash table if it does not exist */
+  if(!vars->hash_table) vars->hash_table = XLALHashTblCreate( del_elem, LALInferenceElemHash, LALInferenceElemCmp);
+  
   /* Check input value is accessible */
   if(!value) {
     XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to access value through null pointer; trying to add \"%s\".", name);
@@ -467,7 +480,6 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
   XLALFree(this);
   this=NULL;
   vars->dimension--;
-  if(vars->dimension==0) LALInferenceClearVariables(vars);
   return;
 }
 
@@ -500,21 +512,6 @@ int LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name)
   else return 0;
 }
 
-static UINT8 LALInferenceElemHash(const void *elem);
-static UINT8 LALInferenceElemHash(const void *elem)
-{
-  if(!elem) XLAL_ERROR(XLAL_EINVAL);
-  size_t len = strnlen(((const hash_elem *)elem)->name,VARNAME_MAX);
-  return(XLALCityHash64(((const hash_elem *)elem)->name, len));
-}
-
-static int LALInferenceElemCmp(const void *elem1, const void *elem2);
-static int LALInferenceElemCmp(const void *elem1, const void *elem2)
-{
-  if(!elem1 || !elem2) XLAL_ERROR(XLAL_EINVAL);
-  return(strncmp(((const hash_elem *)elem1)->name,((const hash_elem *)elem2)->name,VARNAME_MAX));
-}
-
 void LALInferenceClearVariables(LALInferenceVariables *vars)
 /* Free all variables inside the linked list, leaving only the head struct */
 {
@@ -536,12 +533,8 @@ void LALInferenceClearVariables(LALInferenceVariables *vars)
   vars->head=NULL;
   vars->dimension=0;
   if(vars->hash_table) XLALHashTblDestroy(vars->hash_table);
-  vars->hash_table = XLALHashTblCreate( del_elem,	/**< [in] Function to free memory of elements of hash, if required */
-                                       LALInferenceElemHash,	/**< [in] Hash function for hash table elements */
-                                       LALInferenceElemCmp	/**< [in] Hash table element comparison function */
-                                       );
-
-  //memset(vars->hash_table,0,LALINFERENCE_HASHTABLE_SIZE*sizeof(LALInferenceVariableItem *));
+  vars->hash_table=NULL;
+  
   return;
 }
 
