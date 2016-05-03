@@ -1261,8 +1261,7 @@ void sum_data( LALInferenceRunState *runState ){
         check_and_add_fixed_variable( ifomodel->params, "sumBLWhite", &sumBLWhite, LALINFERENCE_REAL8Vector_t );
       }
     }
-    else{ /* add parameter defining the usage of RQO here (as this is after any injection generation, which
-           * would fail if this was set */
+    else{ /* add parameter defining the usage of RQO here (as this is after any injection generation, which would fail if this was set */
       LALInferenceAddVariable( ifomodel->params, "roq", &roq, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
     }
 

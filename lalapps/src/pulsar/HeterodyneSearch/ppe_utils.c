@@ -188,6 +188,8 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chun
   /* DON'T BOTHER WITH THE MERGING AS IT WILL MAKE VERY LITTLE DIFFERENCE */
   /* merge_data( meddata, &chunkIndex ); */
 
+  XLALDestroyCOMPLEX16Vector( meddata ); /* free memory */
+
   /* if a maximum chunk length is defined then rechop up the data, to segment any chunks longer than this value */
   if ( chunkMax > chunkMin ) { rechop_data( &chunkIndex, chunkMax, chunkMin ); }
 
@@ -203,11 +205,9 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chun
   if ( outputchunks ){
     FILE *fpsegs = NULL;
 
-    CHAR *outfile = NULL;
-
     /* set detector name as prefix */
+    CHAR *outfile = NULL;
     outfile = XLALStringDuplicate( data->detector->frDetector.prefix );
-
     outfile = XLALStringAppend( outfile, "data_segment_list.txt" );
 
     /* check if file exists, i.e. given mutliple frequency harmonics, and if so open for appending */
@@ -225,6 +225,7 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chun
         return chunkLengths;
       }
     }
+    XLALFree( outfile );
 
     for ( j = 0; j < chunkIndex->length; j++ ) { fprintf(fpsegs, "%u\t%u\n", chunkIndex->data[j], chunkLengths->data[j]); }
 
@@ -364,6 +365,9 @@ UINT4Vector *chop_data( gsl_vector_complex *data, UINT4 chunkMin ){
     /* combine new chunks */
     for (i = 0; i < cp1->length; i++) { chunkIndex->data[i] = cp1->data[i]; }
     for (i = 0; i < cp2->length; i++) { chunkIndex->data[i+cp1->length] = cp2->data[i] + changepoint; }
+
+    XLALDestroyUINT4Vector( cp1 );
+    XLALDestroyUINT4Vector( cp2 );
   }
   else{ chunkIndex->data[0] = length; }
 
@@ -734,6 +738,8 @@ INT4 count_csv( CHAR *csvline ){
 
     count++;
   }
+
+  XLALFree( inputstr );
 
   return count+1;
 }

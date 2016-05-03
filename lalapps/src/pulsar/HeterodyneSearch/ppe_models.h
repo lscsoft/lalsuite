@@ -1,5 +1,6 @@
 /*******************************************************************************
   Matt Pitkin, Colin Gill, John Veitch - 2011
+  Max Isi - 2016
 
   ppe_models.h
 
@@ -14,7 +15,7 @@
 /**
  * \file
  * \ingroup lalapps_pulsar_HeterodyneSearch
- * \author Matthew Pitkin, John Veitch, Colin Gill
+ * \author Matthew Pitkin, John Veitch, Colin Gill, Max Isi
  *
  * \brief Header file for the signal models functions used in parameter
  * estimation code for known pulsar searches using the nested sampling
