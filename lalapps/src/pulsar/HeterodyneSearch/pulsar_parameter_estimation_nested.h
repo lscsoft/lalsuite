@@ -153,7 +153,7 @@ extern "C" {
  * the signal frequency and its time derivatives, and the frequency (period)
  * epoch.
  */
-#define NUMFREQPARS 12
+#define NUMFREQPARS 13
 
 /**
  * The total number of sky position parameters that can define a signal e.g.

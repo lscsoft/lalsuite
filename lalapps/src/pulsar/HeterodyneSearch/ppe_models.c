@@ -159,6 +159,7 @@ void get_pulsar_model( LALInferenceModel *model ){
   add_pulsar_parameter( model->params, pars, "F7" );
   add_pulsar_parameter( model->params, pars, "F8" );
   add_pulsar_parameter( model->params, pars, "F9" );
+  add_pulsar_parameter( model->params, pars, "F10" );
 
   /* check if there are binary parameters */
   if( LALInferenceCheckVariable(model->ifo->params, "BINARY") ){
@@ -464,7 +465,8 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
       (1./5040.)*PulsarGetREAL8ParamOrZero(params, "F6")*deltat2*deltat2*deltat2 +
       (1./40320.)*PulsarGetREAL8ParamOrZero(params, "F7")*deltat2*deltat2*deltat2*deltat +
       (1./362880.)*PulsarGetREAL8ParamOrZero(params, "F8")*deltat2*deltat2*deltat2*deltat2 +
-      (1./3628800.)*PulsarGetREAL8ParamOrZero(params, "F9")*deltat2*deltat2*deltat2*deltat2*deltat);
+      (1./3628800.)*PulsarGetREAL8ParamOrZero(params, "F9")*deltat2*deltat2*deltat2*deltat2*deltat +
+      (1./39916800.)*PulsarGetREAL8ParamOrZero(params, "F10")*deltat2*deltat2*deltat2*deltat2*deltat2);
   }
 
   /* free memory */

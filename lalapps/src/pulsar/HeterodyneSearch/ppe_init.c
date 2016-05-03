@@ -371,6 +371,7 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
   add_variable_parameter( pars, ini, "F7", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "F8", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "F9", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "F10", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "PEPOCH", LALINFERENCE_PARAM_FIXED );
 
   /* add non-GR parameters */
