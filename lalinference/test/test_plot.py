@@ -111,9 +111,9 @@ class TestMollweideAxes(unittest.TestCase):
 
     @image_comparison
     def test_astro_mollweide_axes(self):
-        """Test HEALPix heat map on 'astro mollweide' axes"""
+        """Test HEALPix heat map on 'astro hours mollweide' axes"""
         fig = plt.figure(figsize=(6, 4), dpi=72)
-        ax = fig.add_subplot(111, projection='astro mollweide')
+        ax = fig.add_subplot(111, projection='astro hours mollweide')
         lalinference.plot.healpix_heatmap(np.arange(12), nest=True)
         ax.grid()
         return fig

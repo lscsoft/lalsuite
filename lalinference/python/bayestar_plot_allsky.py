@@ -73,7 +73,7 @@ from lalinference import plot
 from lalinference.bayestar import postprocess
 
 fig = plt.figure(frameon=False)
-ax = plt.axes(projection='mollweide' if opts.geo else 'astro mollweide')
+ax = plt.axes(projection='mollweide' if opts.geo else 'astro hours mollweide')
 ax.grid()
 
 skymap, metadata = fits.read_sky_map(opts.input.name, nest=None)
