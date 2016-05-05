@@ -288,6 +288,9 @@ def cut_dateline(vertices):
 
     dateline_crossings = count_dateline_crossings(vertices[:, 0])
     if dateline_crossings % 2:
+        # FIXME: Use this simple heuristic to decide which pole to enclose.
+        sign_lat = np.sign(np.sum(vertices[:, 1]))
+
         # Determine index of the (unique) line segment that crosses the dateline.
         for i in range(len(vertices)):
             v0 = vertices[i - 1, :]
@@ -297,8 +300,8 @@ def cut_dateline(vertices):
                 lat = (np.pi - abs(v0[0])) / delta_lat * v0[1] + (np.pi - abs(v1[0])) / delta_lat * v1[1]
                 out_vertices += [np.vstack((vertices[:i, :], [
                     [np.sign(v0[0]) * np.pi, lat],
-                    [np.sign(v0[0]) * np.pi, np.sign(lat) * np.pi / 2],
-                    [-np.sign(v0[0]) * np.pi, np.sign(lat) * np.pi / 2],
+                    [np.sign(v0[0]) * np.pi, sign_lat * np.pi / 2],
+                    [-np.sign(v0[0]) * np.pi, sign_lat * np.pi / 2],
                     [-np.sign(v0[0]) * np.pi, lat],
                 ], vertices[i:, :]))]
                 break
@@ -352,6 +355,9 @@ def cut_prime_meridian(vertices):
     meridian_crossings = count_meridian_crossings(vertices[:, 0])
 
     if meridian_crossings % 2:
+        # FIXME: Use this simple heuristic to decide which pole to enclose.
+        sign_lat = np.sign(np.sum(vertices[:, 1]))
+
         # If there are an odd number of meridian crossings, then the polygon
         # encloses the pole. Any meridian-crossing edge has to be extended
         # into a curve following the nearest polar edge of the map.
@@ -377,8 +383,8 @@ def cut_prime_meridian(vertices):
                 # vertices.
                 out_vertices += [np.vstack((vertices[:i, :], [
                     [lon_0, lat],
-                    [lon_0, np.sign(lat) * np.pi / 2],
-                    [lon_1, np.sign(lat) * np.pi / 2],
+                    [lon_0, sign_lat * np.pi / 2],
+                    [lon_1, sign_lat * np.pi / 2],
                     [lon_1, lat],
                 ], vertices[i:, :]))]
 
