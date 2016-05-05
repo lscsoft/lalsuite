@@ -33,7 +33,6 @@ Summary: Files and documentation needed for compiling programs that use LAL
 Group: LAL
 Requires: %{name} = %{version}
 Requires: fftw-devel
-Requires: fftw-static
 Requires: gsl-devel
 %description devel
 The LSC Algorithm Library for gravitational wave data analysis.
