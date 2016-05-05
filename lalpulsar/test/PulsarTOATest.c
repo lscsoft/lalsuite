@@ -13,6 +13,7 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALgetopt.h>
+#include <lal/AVFactories.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/LALConstants.h>
@@ -62,7 +63,7 @@ int main(int argc, char *argv[])
   double TOA[10000];
   double num1;
   int telescope;
-  int i=0, j=0, k=0, exceedPhaseErr=0;
+  int i=0, j=0, k=0, n = 0, exceedPhaseErr=0;
 
   double PPTime[10000]; /* Pulsar proper time - corrected for solar system and binary orbit delay times */
   const double D = 2.41e-4; /* dispersion constant from TEMPO */
@@ -84,7 +85,7 @@ int main(int argc, char *argv[])
   double MJD_tcorr[10000];
   double tcorr[10000];
 
-  double f0=0., f1=0., f2=0., f3=0., T=0.;
+  double T=0.;
   double DM;
 
   long offset;
@@ -242,10 +243,8 @@ int main(int argc, char *argv[])
 
   tdat = XLALInitTimeCorrections( tcFile );
 
-  REAL8 f0p = PulsarGetREAL8ParamOrZero(params, "F0");
-  REAL8 f1p = PulsarGetREAL8ParamOrZero(params, "F1");
-  REAL8 f2p = PulsarGetREAL8ParamOrZero(params, "F2");
-  REAL8 f3p = PulsarGetREAL8ParamOrZero(params, "F3");
+  REAL8Vector *f0s = PulsarGetREAL8VectorParam(params, "F");
+  REAL8Vector *f0update = XLALCreateREAL8Vector( f0s->length );
 
   for(j=0;j<i;j++){
     double t; /* DM for current pulsar - make more general */
@@ -253,6 +252,7 @@ int main(int argc, char *argv[])
     double phase;
     double tt0;
     double phaseWave = 0., tWave = 0.;
+    double taylorcoeff = 1.;
 
     if (par.clock != NULL){
       while(MJD_tcorr[k] < TOA[j]){ k++; }
@@ -297,10 +297,16 @@ int main(int argc, char *argv[])
 
     if(j==0){
       T = PPTime[0] - PulsarGetREAL8ParamOrZero(params, "PEPOCH");
-      f0 = f0p + f1p*T + 0.5*f2p*T*T + (1./6.)*f3p*T*T*T;
-      f1 = f1p + f2p*T + 0.5*f3p*T*T;
-      f2 = f2p + f3p*T;
-      f3 = f3p;
+      for ( k=0; k<(INT4)f0s->length; k++ ) {
+        f0update->data[k] = f0s->data[k];
+        REAL8 Tupdate = T;
+        taylorcoeff = 1.;
+        for ( n = k+1; n<(INT4)f0s->length; n++ ) {
+          taylorcoeff /= (REAL8)(n-k);
+          f0update->data[k] += taylorcoeff*f0s->data[n]*Tupdate;
+          Tupdate *= T;
+        }
+      }
     }
 
     tt0 = PPTime[j] - PPTime[0];
@@ -315,10 +321,16 @@ int main(int argc, char *argv[])
       for( k = 0; k < (INT4)waveSin->length; k++ ){
         tWave += waveSin->data[k]*sin(om*(REAL8)(k+1.)*dtWave) + waveCos->data[k]*cos(om*(REAL8)(k+1.)*dtWave);
       }
-      phaseWave = f0p*tWave;
+      phaseWave = f0s->data[0]*tWave;
     }
 
-    phase = f0*tt0 + 0.5*f1*tt0*tt0 + f2*tt0*tt0*tt0/6.0 + f3*tt0*tt0*tt0*tt0/24.;
+    phase = 0., taylorcoeff = 1.;
+    REAL8 tt0update = tt0;
+    for ( k=0; k<(INT4)f0update->length; k++ ){
+      taylorcoeff /= (REAL8)(k+1);
+      phase += taylorcoeff*f0update->data[k]*tt0update;
+      tt0update *= tt0;
+    }
 
     phase = fmod(phase+phaseWave+0.5, 1.0) - 0.5;
 
@@ -339,6 +351,7 @@ int main(int argc, char *argv[])
   XLALFree ( par.timfile );
   XLALFree ( par.ephem );
   XLALFree ( par.clock );
+  XLALDestroyREAL8Vector( f0update );
 
   PulsarFreeParams( params );
 
