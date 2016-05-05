@@ -945,6 +945,10 @@ void setup_from_par_file( LALInferenceRunState *runState )
     LALInferenceRemoveVariable( runState->threads[0]->currentParams, "BINARY" );
   }
 
+  /* check for glitches */
+  UINT4 glitches = 0;
+  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "GLNUM" ) ){ glitches = 1; }
+
   /* Setup initial phase, and barycentring delays */
   LALInferenceIFOModel *ifo_model = runState->threads[0]->model->ifo;
   while( data ){
@@ -976,6 +980,8 @@ void setup_from_par_file( LALInferenceRunState *runState )
       if ( binarymodel != NULL ){
         LALInferenceAddVariable( ifo_model->params, "BINARY", &binarymodel, LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
       }
+
+      if ( glitches ){ LALInferenceAddVariable( ifo_model->params, "GLITCHES", &glitches, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED ); }
 
       dts = get_ssb_delay( pulsar, ifo_model->times, ifo_model->ephem, ifo_model->tdat, ifo_model->ttype, data->detector, 0. );
       LALInferenceAddVariable( ifo_model->params, "ssb_delays", &dts, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
