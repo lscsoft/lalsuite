@@ -15,12 +15,14 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: bc
 BuildRequires: fftw-devel
 BuildRequires: gsl-devel
+BuildRequires: hdf5-devel
 BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: swig
 Requires: fftw
 Requires: gsl
+Requires: hdf5
 Prefix: %{_prefix}
 
 %description
@@ -34,6 +36,7 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: fftw-devel
 Requires: gsl-devel
+Requires: hdf5-devel
 %description devel
 The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library
