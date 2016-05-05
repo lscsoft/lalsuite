@@ -12,15 +12,15 @@ Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig
-BuildRequires: python-devel
-BuildRequires: octave-devel
-BuildRequires: gsl-devel
-BuildRequires: fftw-devel
-BuildRequires: numpy
 BuildRequires: bc
-Requires: gsl
+BuildRequires: fftw-devel
+BuildRequires: gsl-devel
+BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
+BuildRequires: swig
 Requires: fftw
+Requires: gsl
 Prefix: %{_prefix}
 
 %description
