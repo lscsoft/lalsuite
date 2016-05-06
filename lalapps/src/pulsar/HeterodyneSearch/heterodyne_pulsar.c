@@ -106,6 +106,7 @@ int main(int argc, char *argv[]){
 
   /* read in pulsar data */
   hetParams.het = XLALReadTEMPOParFileNew( inputParams.paramfile );
+  hetParams.hetUpdate = NULL;
 
   /* set pulsar name - take from par file if available, or if not get from command line args */
   if( PulsarCheckParam( hetParams.het, "PSRJ" ) )
