@@ -204,8 +204,7 @@ REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
  * \brief Output a number of prior samples based on the initial live points
  *
  * This function will output prior samples for variable parameters (as create by
- * the LALInferenceSetupLivePointsArray function) making sure to rescale the
- * values.
+ * the LALInferenceSetupLivePointsArray function).
  *
  * \param runState [in]
  */
@@ -252,7 +251,7 @@ void outputPriorSamples( LALInferenceRunState *runState ){
             item->vary == LALINFERENCE_PARAM_CIRCULAR ){
           REAL8 var = 0.;
           var = *(REAL8 *)item->value;
-          fprintf(fp, "%.8le\t", var);
+          fprintf(fp, "%.16le\t", var);
         }
 
         item = item->next;

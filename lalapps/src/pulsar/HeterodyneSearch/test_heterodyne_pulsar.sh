@@ -69,7 +69,7 @@ echo F1     $FDOTOFF >> $PFILEOFF
 echo RAJ    $RA >> $PFILEOFF
 echo DECJ   $DEC >> $PFILEOFF
 echo PEPOCH $PEPOCH >> $PFILEOFF
-echo UNITS  $UNITS >> $PFILE
+echo UNITS  $UNITS >> $PFILEOFF
 
 if [ $? != "0" ]; then
         echo Error writing parameter file!

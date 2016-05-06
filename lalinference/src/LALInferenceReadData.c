@@ -1267,6 +1267,14 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     if(fLows) XLALFree(fLows);
     if(fHighs) XLALFree(fHighs);
 
+    if (LALInferenceGetProcParamVal(commandLine, "--roqtime_steps")){
+
+        LALInferenceSetupROQdata(IFOdata, commandLine);
+        fprintf(stderr, "done LALInferenceSetupROQdata\n");
+
+     }
+
+
     return headIFO;
 }
 

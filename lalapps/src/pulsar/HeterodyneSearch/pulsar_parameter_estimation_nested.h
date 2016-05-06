@@ -146,14 +146,14 @@ extern "C" {
  *
  * Note: These should be increased if additional model parameters are added.
  */
-#define NUMAMPPARS 26
+#define NUMAMPPARS 28
 
 /**
  * The total number of frequency parameters that can defined a signal e.g.
  * the signal frequency and its time derivatives, and the frequency (period)
  * epoch.
  */
-#define NUMFREQPARS 12
+#define NUMFREQPARS 13
 
 /**
  * The total number of sky position parameters that can define a signal e.g.
@@ -167,6 +167,11 @@ extern "C" {
  * periastron and angle of periastron.
  */
 #define NUMBINPARS 34
+
+/**
+ * The total number of glitch parameters that can define a signal
+ */
+#define NUMGLITCHPARS 7
 
 /** The maximum number of different detectors allowable. */
 #define MAXDETS 6
@@ -334,9 +339,10 @@ extern "C" {
  * recognised within the code.
  */
 static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "H0", "PHI0", "PSI",
-"COSIOTA", "C22", "C21", "PHI22", "PHI21", "HSCALARB", "HSCALARL", "HVECTORX",
-"HVECTORY", "PSIVECTOR", "PHI0VECTOR", "PSISCALAR", "PHI0SCALAR", "PSITENSOR",
-"PHI0TENSOR", "I21", "I31", "LAMBDA", "COSTHETA", "IOTA", "THETA", "Q22", "DIST" };
+"COSIOTA", "C22", "C21", "PHI22", "PHI21", "HPLUS", "HCROSS", "HSCALARB",
+"HSCALARL", "HVECTORX", "HVECTORY", "PSIVECTOR", "PHI0VECTOR", "PSISCALAR",
+"PHI0SCALAR", "PSITENSOR", "PHI0TENSOR", "I21", "I31", "LAMBDA", "COSTHETA",
+"IOTA", "THETA", "Q22", "DIST" };
 
 /**
  * A list of the frequency parameters. The names given here are those that are
@@ -360,6 +366,9 @@ static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "PB", "ECC", "EPS1",
 "EPS2", "T0", "TASC", "A1", "OM", "PB_2", "ECC_2", "T0_2", "A1_2", "OM_2", "PB_3", "ECC_3",
 "T0_3", "A1_3", "OM_3", "XPBDOT", "EPS1DOT", "EPS2DOT", "OMDOT", "GAMMA", "PBDOT",
 "XDOT", "EDOT", "SINI", "DR", "DTHETA", "A0", "B0", "MTOT", "M2", "FB" };
+
+/** A list of the glitch parameters. */
+static const CHAR glitchpars[NUMGLITCHPARS][VARNAME_MAX] = {"GLEP", "GLPH", "GLF0", "GLF1", "GLF2", "GLF0D", "GLTD"};
 
 extern LALStringVector *corlist;
 

@@ -555,6 +555,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     with open(conffilename,'wb') as conffile:
       self.config.write(conffile)
     if self.config.has_option('paths','webdir'):
+      mkdirs(self.config.get('paths','webdir'))
       with open(os.path.join(self.config.get('paths','webdir'),'config.ini'),'wb') as conffile:
         self.config.write(conffile)
 
