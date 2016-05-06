@@ -1423,8 +1423,6 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         if ( cgwu > 0. && cgwu < 1. ){ df /= cgwu; }
         df += (ffine - fcoarse);
 
-        if ( i == 0 || i == hetParams.length-1 ){ fprintf(stderr, "df = %.16le\n", df); }
-
         /*sample rate*/
         srate = (REAL8)filtresp->freqResp->length*filtresp->deltaf;
         middle = (UINT4)srate*FILTERFFTTIME/2;
