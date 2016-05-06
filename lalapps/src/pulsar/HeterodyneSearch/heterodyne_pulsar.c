@@ -1462,11 +1462,11 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       if ( glnum > 0 ){
         for ( UINT4 k = 0; k < glnum; k++ ){
           if ( tdt >= glep[k] - T0Update ){
-            REAL8 dtg = 0, expf = 1.;
+            REAL8 dtg = 0, expd = 1.;
             dtg = tdt - (glep[k]-T0Update); /* time since glitch */
-            if ( gltd[k] != 0. ) { expf = exp(-dtg/gltd[k]); } /* decaying part of glitch */
+            if ( gltd[k] != 0. ) { expd = exp(-dtg/gltd[k]); } /* decaying part of glitch */
 
-            phaseGlitch += glph[k] + glf0[k]*dtg + 0.5*glf1[k]*dtg*dtg + (1./6.)*glf2[k]*dtg*dtg*dtg + glf0d[k]*gltd[k]*(1.-expf);
+            phaseGlitch += glph[k] + glf0[k]*dtg + 0.5*glf1[k]*dtg*dtg + (1./6.)*glf2[k]*dtg*dtg*dtg + glf0d[k]*gltd[k]*(1.-expd);
           }
         }
         phaseGlitch *= freqfactor;
