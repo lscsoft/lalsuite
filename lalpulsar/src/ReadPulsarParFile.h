@@ -64,6 +64,7 @@ extern "C" {
 /* the difference between TDT/TT and the GPS epoch */
 #define GPS_TDT (TDT_TAI + XLAL_EPOCH_GPS_TAI_UTC)
 
+
 /** An enumerated type for denoting the type of a variable. Several LAL types are supported. */
 typedef enum {
   PULSARTYPE_UINT4_t = 0,
@@ -72,7 +73,6 @@ typedef enum {
   PULSARTYPE_string_t,
   PULSARTYPE_void_ptr_t
 } PulsarParamType;
-
 
 extern size_t PulsarTypeSize[5];
 
