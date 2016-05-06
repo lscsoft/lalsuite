@@ -1199,34 +1199,46 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     for ( i=0; i<(INT4)glpars->length; i++ ){ glep[i] = glpars->data[i]; }
 
     /* get phase offsets */
-    glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLPH" );
     glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<(INT4)glpars->length; i++ ){ glph[i] = glpars->data[i]; }
+    if ( PulsarCheckParam( hetParams.hetUpdate, "GLPH" ) ) {
+      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLPH" );
+      for ( i=0; i<(INT4)glpars->length; i++ ){ glph[i] = glpars->data[i]; }
+    }
 
     /* get frequencies offsets */
-    glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF0" );
     glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<(INT4)glpars->length; i++ ){ glf0[i] = glpars->data[i]; }
+    if ( PulsarCheckParam( hetParams.hetUpdate, "GLF0" ) ) {
+      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF0" );
+      for ( i=0; i<(INT4)glpars->length; i++ ){ glf0[i] = glpars->data[i]; }
+    }
 
     /* get frequency derivative offsets */
-    glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF1" );
     glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<(INT4)glpars->length; i++ ){ glf1[i] = glpars->data[i]; }
+    if ( PulsarCheckParam( hetParams.hetUpdate, "GLF1" ) ) {
+      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF1" );
+      for ( i=0; i<(INT4)glpars->length; i++ ){ glf1[i] = glpars->data[i]; }
+    }
 
     /* get second frequency derivative offsets */
-    glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF2" );
     glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<(INT4)glpars->length; i++ ){ glf2[i] = glpars->data[i]; }
+    if ( PulsarCheckParam( hetParams.hetUpdate, "GLF2" ) ) {
+      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF2" );
+      for ( i=0; i<(INT4)glpars->length; i++ ){ glf2[i] = glpars->data[i]; }
+    }
 
     /* get decaying frequency component offset derivative */
-    glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF0D" );
     glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<(INT4)glpars->length; i++ ){ glf0d[i] = glpars->data[i]; }
+    if ( PulsarCheckParam( hetParams.hetUpdate, "GLF0D" ) ) {
+      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLF0D" );
+      for ( i=0; i<(INT4)glpars->length; i++ ){ glf0d[i] = glpars->data[i]; }
+    }
 
     /* get decaying frequency component decay time constant */
-    glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLTD" );
     gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<(INT4)glpars->length; i++ ){ gltd[i] = glpars->data[i]; }
+    if ( PulsarCheckParam( hetParams.hetUpdate, "GLTD" ) ) {
+      glpars = PulsarGetREAL8VectorParam( hetParams.hetUpdate, "GLTD" );
+      for ( i=0; i<(INT4)glpars->length; i++ ){ gltd[i] = glpars->data[i]; }
+    }
   }
 
   for(i=0;i<hetParams.length;i++){
@@ -1301,16 +1313,16 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         phaseWave = freqs->data[0]*freqfactor*tWave;
       }
 
-      /* add glitch phase */
+      /* add glitch phase - based on equations in formResiduals.C of TEMPO2 from Eqn 1 of Yu et al (2013) http://ukads.nottingham.ac.uk/abs/2013MNRAS.429..688Y */
       phaseGlitch = 0.;
       if ( glnum > 0 ){
         for ( UINT4 k = 0; k < glnum; k++ ){
           if ( tdt >= glep[k] - T0 ){
-            REAL8 dtg = 0, expf = 1.;
+            REAL8 dtg = 0, expd = 1.;
             dtg = tdt - (glep[k]-T0); /* time since glitch */
-            if ( gltd[k] != 0. ) { expf = exp(-dtg/gltd[k]); } /* decaying part of glitch */
+            if ( gltd[k] != 0. ) { expd = exp(-dtg/gltd[k]); } /* decaying part of glitch */
 
-            phaseGlitch += glph[k] + glf0[k]*dtg + 0.5*glf1[k]*dtg*dtg + (1./6.)*glf2[k]*dtg*dtg*dtg + glf0d[k]*gltd[k]*(1.-expf);
+            phaseGlitch += glph[k] + glf0[k]*dtg + 0.5*glf1[k]*dtg*dtg + (1./6.)*glf2[k]*dtg*dtg*dtg + glf0d[k]*gltd[k]*(1.-expd);
           }
         }
         phaseGlitch *= freqfactor;

@@ -484,34 +484,46 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
     for ( i=0; i<glpars->length; i++ ){ glep[i] = glpars->data[i]; }
 
     /* get phase offsets */
-    glpars = PulsarGetREAL8VectorParam( params, "GLPH" );
     glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<glpars->length; i++ ){ glph[i] = glpars->data[i]; }
+    if ( PulsarCheckParam( params, "GLPH" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLPH" );
+      for ( i=0; i<glpars->length; i++ ){ glph[i] = glpars->data[i]; }
+    }
 
     /* get frequencies offsets */
-    glpars = PulsarGetREAL8VectorParam( params, "GLF0" );
     glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<glpars->length; i++ ){ glf0[i] = glpars->data[i]; }
+    if ( PulsarCheckParam( params, "GLF0" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLF0" );
+      for ( i=0; i<glpars->length; i++ ){ glf0[i] = glpars->data[i]; }
+    }
 
     /* get frequency derivative offsets */
-    glpars = PulsarGetREAL8VectorParam( params, "GLF1" );
     glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<glpars->length; i++ ){ glf1[i] = glpars->data[i]; }
+    if ( PulsarCheckParam( params, "GLF1" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLF1" );
+      for ( i=0; i<glpars->length; i++ ){ glf1[i] = glpars->data[i]; }
+    }
 
     /* get second frequency derivative offsets */
-    glpars = PulsarGetREAL8VectorParam( params, "GLF2" );
     glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<glpars->length; i++ ){ glf2[i] = glpars->data[i]; }
+    if ( PulsarCheckParam( params, "GLF2" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLF2" );
+      for ( i=0; i<glpars->length; i++ ){ glf2[i] = glpars->data[i]; }
+    }
 
     /* get decaying frequency component offset derivative */
-    glpars = PulsarGetREAL8VectorParam( params, "GLF0D" );
     glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<glpars->length; i++ ){ glf0d[i] = glpars->data[i]; }
+    if ( PulsarCheckParam( params, "GLF0D" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLF0D" );
+      for ( i=0; i<glpars->length; i++ ){ glf0d[i] = glpars->data[i]; }
+    }
 
     /* get decaying frequency component decay time constant */
-    glpars = PulsarGetREAL8VectorParam( params, "GLTD" );
     gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
-    for ( i=0; i<glpars->length; i++ ){ gltd[i] = glpars->data[i]; }
+    if ( PulsarCheckParam( params, "GLTD" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLTD" );
+      for ( i=0; i<glpars->length; i++ ){ gltd[i] = glpars->data[i]; }
+    }
   }
 
   for( i=0; i<length; i++){
@@ -538,11 +550,11 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
       /* get glitch phase - based on equations in formResiduals.C of TEMPO2 from Eqn 1 of Yu et al (2013) http://ukads.nottingham.ac.uk/abs/2013MNRAS.429..688Y */
       for ( j=0; j<glnum; j++ ){
         if ( deltat >= (glep[j]-T0) ){
-          REAL8 dtg = 0, expf = 1.;
+          REAL8 dtg = 0, expd = 1.;
           dtg = deltat - (glep[j]-T0); /* time since glitch */
-          if ( gltd[j] != 0. ) { expf = exp(-dtg/gltd[j]); } /* decaying part of glitch */
+          if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
 
-          phis->data[i] += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expf);
+          phis->data[i] += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
         }
       }
     }
