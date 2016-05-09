@@ -30,7 +30,7 @@ extern "C" {
  * \defgroup LALHeap_h Header LALHeap.h
  * \ingroup lal_utilities
  * \author Karl Wette
- * \brief Implementation of a generic heap, following Chapter 10.1 of \cite open-data-structs
+ * \brief Implementation of a generic heap, following Chapter 10.1 of \cite open-data-structs .
  */
 /*@{*/
 

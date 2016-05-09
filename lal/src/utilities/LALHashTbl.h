@@ -31,7 +31,7 @@ extern "C" {
  * \defgroup LALHashTbl_h Header LALHashTbl.h
  * \ingroup lal_utilities
  * \author Karl Wette
- * \brief Implementation of a generic hash table, following Chapter 5.2 of \cite open-data-structs
+ * \brief Implementation of a generic hash table, following Chapter 5.2 of \cite open-data-structs .
  */
 /*@{*/
 
