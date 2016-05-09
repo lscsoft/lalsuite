@@ -26,6 +26,12 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALError.h>
 
+#if defined(__cplusplus)
+extern "C" {
+  #elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 /**
  * @addtogroup LALSimInspiral_h
  * @{
@@ -62,5 +68,11 @@ double XLALSimInspiralGetTestGRParam(const LALSimInspiralTestGRParam *parameter,
 bool XLALSimInspiralTestGRParamExists(const LALSimInspiralTestGRParam *parameter, const char *name);
 int XLALSimInspiralPrintTestGRParam(FILE *fp, LALSimInspiralTestGRParam *parameter);
 void XLALSimInspiralDestroyTestGRParam(LALSimInspiralTestGRParam *parameter);
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
 
 #endif /* _LALSIMINSPIRALTESTGRPARAMS_H */
