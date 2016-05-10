@@ -286,14 +286,8 @@ void get_freq( REAL8 start, REAL8 deltaT, REAL8 freqharm,
   else if( posepoch == 0. && pepoch != 0. ) { posepoch = pepoch; }
 
   /* get frequencies */
-  REAL8 f0, f1, f2, f3, f4, f5;
-
-  f0 = PulsarGetREAL8ParamOrZero(params, "F0");
-  f1 = PulsarGetREAL8ParamOrZero(params, "F1");
-  f2 = PulsarGetREAL8ParamOrZero(params, "F2");
-  f3 = PulsarGetREAL8ParamOrZero(params, "F3");
-  f4 = PulsarGetREAL8ParamOrZero(params, "F4");
-  f5 = PulsarGetREAL8ParamOrZero(params, "F5");
+  REAL8 taylorcoeff = 1., tmpdt = 0.;
+  REAL8Vector *fs = PulsarGetREAL8VectorParam( params, "F" );
 
   for( i=0; i< freqs->length; i++ ){
     LIGOTimeGPS tgps;
@@ -322,11 +316,15 @@ void get_freq( REAL8 start, REAL8 deltaT, REAL8 freqharm,
     XLALBarycenter( &emit2, &bary, &earth2 );
 
     /* work out frequency (assuming stationary at barycentre) */
-    freqs->data[i] = freqharm*(f0 + f1*DT
-      + 0.5*f2*DT*DT
-      + (1./6.)*f3*DT*DT*DT
-      + (1./24.)*f4*DT*DT*DT*DT
-      + (1./120.)*f5*DT*DT*DT*DT*DT);
+    taylorcoeff = 1.;
+    tmpdt = DT;
+    freqs->data[i] = 0.;
+    for ( UINT4 k = 0; k < fs->length; k++ ){
+      taylorcoeff /= (REAL8)(k+1);
+      freqs->data[i] += taylorcoeff*fs->data[k]*tmpdt;
+      tmpdt *= DT;
+    }
+    freqs->data[i] *= freqharm;
 
     /* get solar system doppler shift and add it on */
     dfsolar->data[i] = (emit2.deltaT-emit.deltaT)*freqs->data[i];
