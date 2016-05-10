@@ -24,6 +24,7 @@
 #include <config.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <limits.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -641,11 +642,12 @@ void
 fprint_wrapped( FILE *file, int line_width, const char *prefix, char *text )
 {
 
-  /* Just print if line width is too short, or text is shorter */
+  /* Adjust line width */
   line_width -= strlen(prefix) + 1;
+
+  /* If line width is too short, just assume very long lines */
   if ( line_width < 1 ) {
-    fprintf( file, "%s%s\n", prefix, text );
-    return;
+    line_width = INT_MAX;
   }
 
   /* Iterate over text */
