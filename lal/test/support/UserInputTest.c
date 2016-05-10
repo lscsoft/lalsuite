@@ -102,12 +102,15 @@ main(void)
   XLAL_CHECK ( should_exit == 0, XLAL_EFUNC );
 
   /* ---------- test print usage and help page */
-  printf( " === Begin usage string ===\n" );
+  printf( "=== Begin usage string ===\n" );
+  fflush( stdout );
   XLALUserVarPrintUsage( stdout );
-  printf( " --- End usage string ---\n" );
-  printf( " === Begin help page ===\n" );
+  printf( "--- End usage string ---\n" );
+  printf( "=== Begin help page ===\n" );
+  fflush( stdout );
   XLALUserVarPrintHelp( stdout );
-  printf( " --- End help page ---\n" );
+  printf( "--- End help page ---\n" );
+  fflush( stdout );
 
   /* ---------- test log-generation */
   CHAR *logstr;
