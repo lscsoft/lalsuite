@@ -97,7 +97,7 @@ int main( void )
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteBOOLEAN( file, "testbool", 1, "This is a test BOOLEAN" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a BOOLEAN\n" );
 
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "testint", 2345, "This is a test INT4" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "testint [s]", 2345, "This is a test INT4" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a INT4\n" );
 
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT8( file, "testint2", LAL_INT4_MAX + 6789, "This is a test INT8" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -106,7 +106,7 @@ int main( void )
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL4( file, "testflt", LAL_PI, "This is a test REAL4" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a REAL4\n" );
 
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "testdbl", LAL_E, "This is a test REAL8" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "testdbl [Hz]", LAL_E, "This is a test REAL8" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a REAL8\n" );
 
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteCOMPLEX8( file, "testcmp", crectf( LAL_PI_2, LAL_PI_4 ), "This is a test COMPLEX8" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -180,8 +180,8 @@ int main( void )
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, epoch ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, pos.sky ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, pos.freq ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[0], "f1dot" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[1], "f2dot" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[0], "f1dot [Hz/s]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[1], "f2dot [Hz/s^2]" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, values ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX8, phasef ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX16, phase ) == XLAL_SUCCESS, XLAL_EFUNC );

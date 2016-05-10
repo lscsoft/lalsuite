@@ -92,6 +92,7 @@ struct tagFITSFile {
     size_t offsets[FFIO_MAX][2];                // List of nested offsets to field in table row record
     CHAR ttype[FFIO_MAX][FLEN_VALUE];           // Names of columns in table
     CHAR tform[FFIO_MAX][FLEN_VALUE];           // Format of columns in table
+    CHAR tunit[FFIO_MAX][FLEN_VALUE];           // Units of columns in table
     int datatype[FFIO_MAX];                     // Datatype of columns in table
     LONGLONG nelements[FFIO_MAX];               // Number of elements in columns in table
     LONGLONG nrows;                             // Number of rows in table
@@ -100,29 +101,68 @@ struct tagFITSFile {
 };
 
 ///
-/// Format and check a FITS keyword
+/// Extract unit from a keyword or column name
 ///
-static int CheckFITSKeyword( CHAR keyword[FLEN_KEYWORD], const CHAR *key )
+static int ExtractUnit( const CHAR *name_unit, CHAR *name, CHAR unit[FLEN_VALUE] )
 {
   int UNUSED status = 0;
 
   // Check input
-  XLAL_CHECK_FAIL( keyword != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( name_unit != NULL, XLAL_EFAULT );
+
+  // Copy name/unit
+  strcpy( name, name_unit );
+
+  // Extract unit, if any
+  if ( unit != NULL ) {
+    unit[0] = '\0';
+    CHAR *unit_start = strchr( name, '[' );
+    if ( unit_start != NULL ) {
+      CHAR *unit_end = strchr( unit_start, ']' );
+      XLAL_CHECK_FAIL( unit_end != NULL, XLAL_EINVAL, "Invalid unit in '%s'", name );
+      XLAL_CHECK_FAIL( unit_end - unit_start - 1 < FLEN_VALUE, XLAL_EINVAL, "Unit in '%s' are too long", name );
+      *unit_start = *unit_end = '\0';
+      strcpy( unit, unit_start + 1 );
+    }
+  }
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+  return XLAL_FAILURE;
+
+}
+
+///
+/// Format and check a FITS keyword
+///
+static int CheckFITSKeyword( const CHAR *key, CHAR keyword[FLEN_KEYWORD], CHAR unit[FLEN_VALUE] )
+{
+  int UNUSED status = 0;
+
+  // Check input
   XLAL_CHECK_FAIL( key != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( strlen( key ) < FLEN_KEYWORD, XLAL_EINVAL, "Key '%s' is too long", key );
+  XLAL_CHECK_FAIL( keyword != NULL, XLAL_EFAULT );
 
-  if ( strlen( key ) <= 8 ) {
+  // Extract unit
+  XLAL_CHECK_FAIL( ExtractUnit( key, keyword, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
 
-    // Format and check a normal FITS keyword
-    snprintf( keyword, FLEN_KEYWORD, "%s", key );
-    XLALStringToUpperCase( keyword );
+  // Force keyword to upper case
+  XLALStringToUpperCase( keyword );
+
+  if ( strlen( keyword ) <= 8 ) {
+
+    // Test for compliant FITS keyword
     CALL_FITS( fits_test_keyword, keyword );
 
   } else {
 
     // Format a hierarchical FITS keyword
-    snprintf( keyword, FLEN_KEYWORD, "hierarch %s", key );
-    XLALStringToUpperCase( keyword );
+    XLAL_CHECK_FAIL( 9 + strlen( keyword ) < FLEN_KEYWORD, XLAL_EINVAL, "Key '%s' is too long", keyword );
+    CHAR buf[FLEN_KEYWORD];
+    strcpy( buf, keyword );
+    snprintf( keyword, FLEN_KEYWORD, "HIERARCH %s", buf );
 
   }
 
@@ -317,7 +357,7 @@ int XLALFITSHeaderWriteBOOLEAN( FITSFile *file, const CHAR *key, const BOOLEAN v
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
 
   // Write boolean value to current header
@@ -345,7 +385,7 @@ int XLALFITSHeaderReadBOOLEAN( FITSFile *file, const CHAR *key, BOOLEAN *value )
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( !file->write, XLAL_EINVAL, "FITS file is not open for reading" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
 
   // Read boolean value from current header
@@ -368,12 +408,13 @@ int XLALFITSHeaderWriteINT4( FITSFile *file, const CHAR *key, const INT4 value, 
   // Check input
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
-  CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  CHAR keyword[FLEN_KEYWORD], unit[FLEN_VALUE];
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, unit ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
 
   // Write 32-bit integer value to current header
   CALL_FITS( fits_write_key_lng, file->ff, keyword, value, comment );
+  CALL_FITS( fits_write_key_unit, file->ff, keyword, unit );
 
   return XLAL_SUCCESS;
 
@@ -397,7 +438,7 @@ int XLALFITSHeaderReadINT4( FITSFile *file, const CHAR *key, INT4 *value )
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( !file->write, XLAL_EINVAL, "FITS file is not open for reading" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
 
   // Read 32-bit integer value from current header
@@ -421,12 +462,13 @@ int XLALFITSHeaderWriteINT8( FITSFile *file, const CHAR *key, const INT8 value, 
   // Check input
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
-  CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  CHAR keyword[FLEN_KEYWORD], unit[FLEN_VALUE];
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, unit ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
 
   // Write 64-bit integer value to current header
   CALL_FITS( fits_write_key_lng, file->ff, keyword, value, comment );
+  CALL_FITS( fits_write_key_unit, file->ff, keyword, unit );
 
   return XLAL_SUCCESS;
 
@@ -450,7 +492,7 @@ int XLALFITSHeaderReadINT8( FITSFile *file, const CHAR *key, INT8 *value )
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( !file->write, XLAL_EINVAL, "FITS file is not open for reading" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
 
   // Read 64-bit integer value from current header
@@ -474,12 +516,13 @@ int XLALFITSHeaderWriteREAL4( FITSFile *file, const CHAR *key, const REAL4 value
   // Check input
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
-  CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  CHAR keyword[FLEN_KEYWORD], unit[FLEN_VALUE];
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, unit ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
 
   // Write 32-bit floating-point value to current header
   CALL_FITS( fits_write_key_flt, file->ff, keyword, value, FLT_DIG, comment );
+  CALL_FITS( fits_write_key_unit, file->ff, keyword, unit );
 
   return XLAL_SUCCESS;
 
@@ -503,7 +546,7 @@ int XLALFITSHeaderReadREAL4( FITSFile *file, const CHAR *key, REAL4 *value )
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( !file->write, XLAL_EINVAL, "FITS file is not open for reading" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
 
   // Read 32-bit floating-point value from current header
@@ -524,12 +567,13 @@ int XLALFITSHeaderWriteREAL8( FITSFile *file, const CHAR *key, const REAL8 value
   // Check input
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
-  CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  CHAR keyword[FLEN_KEYWORD], unit[FLEN_VALUE];
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, unit ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
 
   // Write 64-bit floating-point value to current header
   CALL_FITS( fits_write_key_dbl, file->ff, keyword, value, DBL_DIG, comment );
+  CALL_FITS( fits_write_key_unit, file->ff, keyword, unit );
 
   return XLAL_SUCCESS;
 
@@ -553,7 +597,7 @@ int XLALFITSHeaderReadREAL8( FITSFile *file, const CHAR *key, REAL8 *value )
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( !file->write, XLAL_EINVAL, "FITS file is not open for reading" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
 
   // Read 64-bit floating-point value from current header
@@ -574,13 +618,14 @@ int XLALFITSHeaderWriteCOMPLEX8( FITSFile *file, const CHAR *key, const COMPLEX8
   // Check input
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
-  CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  CHAR keyword[FLEN_KEYWORD], unit[FLEN_VALUE];
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, unit ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
 
   // Write 64-bit complex floating-point value to current header
   REAL4 val[2] = {crealf( value ), cimagf( value )};
   CALL_FITS( fits_write_key_cmp, file->ff, keyword, val, FLT_DIG, comment );
+  CALL_FITS( fits_write_key_unit, file->ff, keyword, unit );
 
   return XLAL_SUCCESS;
 
@@ -604,7 +649,7 @@ int XLALFITSHeaderReadCOMPLEX8( FITSFile *file, const CHAR *key, COMPLEX8 *value
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( !file->write, XLAL_EINVAL, "FITS file is not open for reading" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
 
   // Read 64-bit floating-point value from current header
@@ -627,13 +672,14 @@ int XLALFITSHeaderWriteCOMPLEX16( FITSFile *file, const CHAR *key, const COMPLEX
   // Check input
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
-  CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  CHAR keyword[FLEN_KEYWORD], unit[FLEN_VALUE];
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, unit ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
 
   // Write 128-bit complex floating-point value to current header
   REAL8 val[2] = {creal( value ), cimag( value )};
   CALL_FITS( fits_write_key_dblcmp, file->ff, keyword, val, DBL_DIG, comment );
+  CALL_FITS( fits_write_key_unit, file->ff, keyword, unit );
 
   return XLAL_SUCCESS;
 
@@ -657,7 +703,7 @@ int XLALFITSHeaderReadCOMPLEX16( FITSFile *file, const CHAR *key, COMPLEX16 *val
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( !file->write, XLAL_EINVAL, "FITS file is not open for reading" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
 
   // Read 128-bit floating-point value from current header
@@ -681,7 +727,7 @@ int XLALFITSHeaderWriteString( FITSFile *file, const CHAR *key, const CHAR *valu
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
 
@@ -718,7 +764,7 @@ int XLALFITSHeaderReadString( FITSFile *file, const CHAR *key, CHAR **value )
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( !file->write, XLAL_EINVAL, "FITS file is not open for reading" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
 
   // Read string value from current header
@@ -747,7 +793,7 @@ int XLALFITSHeaderWriteStringVector( FITSFile *file, const CHAR *key, const LALS
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( values != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( values->length > 0, XLAL_EFAULT );
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
@@ -786,7 +832,7 @@ int XLALFITSHeaderReadStringVector( FITSFile *file, const CHAR *key, LALStringVe
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( !file->write, XLAL_EINVAL, "FITS file is not open for reading" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( values != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( *values == NULL, XLAL_EFAULT );
 
@@ -819,7 +865,7 @@ int XLALFITSHeaderWriteGPSTime( FITSFile *file, const CHAR *key, const LIGOTimeG
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
 
@@ -864,7 +910,7 @@ int XLALFITSHeaderReadGPSTime( FITSFile *file, const CHAR *key, LIGOTimeGPS *val
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( !file->write, XLAL_EINVAL, "FITS file is not open for reading" );
   CHAR keyword[FLEN_KEYWORD];
-  XLAL_CHECK_FAIL( CheckFITSKeyword( keyword, key ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
 
   // Read time in UTC format from current header
@@ -1332,7 +1378,7 @@ XLAL_FAIL:
 
 }
 
-static int XLALFITSTableColumnAdd( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const CHAR *col_suffix, const void *record, const size_t record_size, const void *field, const size_t field_size, const size_t elem_size, const int typechar, const int datatype )
+static int XLALFITSTableColumnAdd( FITSFile *file, const CHAR *name, const CHAR *unit, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *field, const size_t field_size, const size_t elem_size, const int typechar, const int datatype )
 {
   int UNUSED status = 0;
 
@@ -1341,9 +1387,8 @@ static int XLALFITSTableColumnAdd( FITSFile *file, const CHAR *col_name, const s
 
   // Check input
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
-  XLAL_CHECK_FAIL( col_name != NULL, XLAL_EFAULT );
-  XLAL_CHECK_FAIL( col_suffix != NULL, XLAL_EFAULT );
-  XLAL_CHECK_FAIL( strlen( col_name ) + strlen( col_suffix ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s%s' is too long", col_name, col_suffix );
+  XLAL_CHECK_FAIL( name != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( unit != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( 0 < noffsets && noffsets <= 2, XLAL_EINVAL );
   XLAL_CHECK_FAIL( offsets != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( record != NULL, XLAL_EFAULT );
@@ -1367,7 +1412,10 @@ static int XLALFITSTableColumnAdd( FITSFile *file, const CHAR *col_name, const s
   file->table.offsets[i][noffsets - 1] = ( size_t )( ( ( intptr_t ) field ) - ( ( intptr_t ) record ) );
 
   // Copy column name
-  snprintf( file->table.ttype[i], sizeof( file->table.ttype[i] ), "%s%s", col_name, col_suffix );
+  snprintf( file->table.ttype[i], sizeof( file->table.ttype[i] ), "%s", name );
+
+  // Copy column unit
+  snprintf( file->table.tunit[i], sizeof( file->table.tunit[i] ), "%s", unit );
 
   // Create column format
   snprintf( file->table.tform[i], sizeof( file->table.tform[i] ), "%zu%c", field_size / elem_size, typechar );
@@ -1413,57 +1461,90 @@ XLAL_FAIL:
 
 int XLALFITSTableColumnAddBOOLEAN( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const BOOLEAN *field, const size_t field_size )
 {
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof( BOOLEAN ), 'L', TLOGICAL ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, "", noffsets, offsets, record, record_size, field, field_size, sizeof( BOOLEAN ), 'L', TLOGICAL ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 }
 
 int XLALFITSTableColumnAddINT2( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT2 *field, const size_t field_size )
 {
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof( INT2 ), 'I', TSHORT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
+  XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( INT2 ), 'I', TSHORT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 }
 
 int XLALFITSTableColumnAddINT4( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT4 *field, const size_t field_size )
 {
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof( INT4 ), 'J', TINT32BIT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
+  XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( INT4 ), 'J', TINT32BIT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 }
 
 int XLALFITSTableColumnAddREAL4( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL4 *field, const size_t field_size )
 {
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof( REAL4 ), 'E', TFLOAT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
+  XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( REAL4 ), 'E', TFLOAT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 }
 
 int XLALFITSTableColumnAddREAL8( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL8 *field, const size_t field_size )
 {
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof( REAL8 ), 'D', TDOUBLE ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
+  XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( REAL8 ), 'D', TDOUBLE ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 }
 
 int XLALFITSTableColumnAddCOMPLEX8( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX8 *field, const size_t field_size )
 {
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof( COMPLEX8 ), 'C', TCOMPLEX ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
+  XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( COMPLEX8 ), 'C', TCOMPLEX ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 }
 
 int XLALFITSTableColumnAddCOMPLEX16( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX16 *field, const size_t field_size )
 {
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof( COMPLEX16 ), 'M', TDBLCOMPLEX ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
+  XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( COMPLEX16 ), 'M', TDBLCOMPLEX ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 }
 
 int XLALFITSTableColumnAddCHAR( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *field, const size_t field_size )
 {
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, noffsets, offsets, "", record, record_size, field, field_size, sizeof( CHAR ), 'A', TSTRING ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, "", noffsets, offsets, record, record_size, field, field_size, sizeof( CHAR ), 'A', TSTRING ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 }
 
 int XLALFITSTableColumnAddGPSTime( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size )
 {
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) + 3 < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   XLAL_CHECK( field_size == sizeof( LIGOTimeGPS ), XLAL_EINVAL, "Array of GPS times is not supported" );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, noffsets, offsets, "_s", record, record_size, &( field->gpsSeconds ), sizeof( field->gpsSeconds ), sizeof( field->gpsSeconds ), 'J', TINT32BIT ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, noffsets, offsets, "_ns", record, record_size, &( field->gpsNanoSeconds ), sizeof( field->gpsNanoSeconds ), sizeof( field->gpsNanoSeconds ), 'J', TINT32BIT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  CHAR name[FLEN_VALUE];
+  snprintf( name, sizeof( name ), "%s_s", col_name );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, "s", noffsets, offsets, record, record_size, &( field->gpsSeconds ), sizeof( field->gpsSeconds ), sizeof( field->gpsSeconds ), 'J', TINT32BIT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  snprintf( name, sizeof( name ), "%s_ns", col_name );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, "ns", noffsets, offsets, record, record_size, &( field->gpsNanoSeconds ), sizeof( field->gpsNanoSeconds ), sizeof( field->gpsNanoSeconds ), 'J', TINT32BIT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 }
 
@@ -1481,12 +1562,13 @@ int XLALFITSTableWriteRow( FITSFile *file, const void *record )
 
   // Create new table if required
   if ( file->table.irow == 0 ) {
-    CHAR *ttype_ptr[FFIO_MAX], *tform_ptr[FFIO_MAX];
+    CHAR *ttype_ptr[FFIO_MAX], *tform_ptr[FFIO_MAX], *tunit_ptr[FFIO_MAX];
     for ( int i = 0; i < file->table.tfields; ++i ) {
       ttype_ptr[i] = file->table.ttype[i];
       tform_ptr[i] = file->table.tform[i];
+      tunit_ptr[i] = file->table.tunit[i];
     }
-    CALL_FITS( fits_create_tbl, file->ff, file->hdutype, 0, file->table.tfields, ttype_ptr, tform_ptr, NULL, NULL );
+    CALL_FITS( fits_create_tbl, file->ff, file->hdutype, 0, file->table.tfields, ttype_ptr, tform_ptr, tunit_ptr, NULL );
     CALL_FITS( fits_write_key_str, file->ff, "HDUNAME", file->hduname, file->hducomment );
   }
 
