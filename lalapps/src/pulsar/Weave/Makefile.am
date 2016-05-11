@@ -28,4 +28,5 @@ lalapps_Weave_SOURCES = \
 	$(END_OF_LIST)
 
 TESTS = \
+	TestSingleSegment.sh \
 	$(END_OF_LIST)
