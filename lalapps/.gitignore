@@ -263,6 +263,7 @@ src/pulsar/Tools/lalapps_PrintDetectorState
 src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/TwoSpect/lalapps_TwoSpectTemplateBank
 src/pulsar/Weave/*.testdir
+src/pulsar/Weave/lalapps_Weave
 src/pulsar/Weave/lalapps_WeaveSetup
 src/pulsar/Xray/lalapps_Intermittent
 src/pulsar/Xray/lalapps_SemiCoherentBinary_v2
