@@ -32,4 +32,5 @@ TESTS = \
 	TestNonInterpolating.sh \
 	TestInterpolating.sh \
 	TestFreqPartition.sh \
+	TestCacheMaxSize.sh \
 	$(END_OF_LIST)
