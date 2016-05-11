@@ -54,6 +54,41 @@
 extern "C" {
 #endif
 
+///
+/// Setup data which is computed only once for a given search setup
+///
+typedef struct {
+  /// Reference time at which search is conducted
+  LIGOTimeGPS ref_time;
+  /// List of detector names for which metrics were computed
+  LALStringVector *detectors;
+  /// Segment list for which metrics were computed
+  LALSegList *segments;
+  /// Reduced supersky parameter-space metrics
+  SuperskyMetrics *metrics;
+  /// Ephemeris data over time-span of segments
+  EphemerisData *ephemerides;
+} WeaveSetup;
+
+///
+/// \name Routines which handle the setup data
+///
+/// @{
+
+void XLALWeaveSetupClear(
+  WeaveSetup *setup
+  );
+int XLALWeaveSetupWrite(
+  FITSFile *file,
+  const WeaveSetup *setup
+  );
+int XLALWeaveSetupRead(
+  FITSFile *file,
+  WeaveSetup *setup
+  );
+
+/// @}
+
 #ifdef __cplusplus
 }
 #endif
