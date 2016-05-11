@@ -195,8 +195,12 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
 	if(!LALInferenceGetProcParamVal(runState->commandLine,"--Nmcmc") && !LALInferenceGetProcParamVal(runState->commandLine,"--nmcmc")){
         if(LALInferenceCheckVariable(runState->algorithmParams,"maxmcmc"))
             maxMCMC = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"maxmcmc");
-        if(LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")) /* if already estimated the length */
+        if(LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")){ /* if already estimated the length */
+          if ( LALInferenceGetINT4Variable(runState->algorithmParams,"Nmcmc") != 0 ){
             max=4 * *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
+          }
+          else { max=4*maxMCMC; } /* otherwise use the MAX_MCMC */
+        }
         else max=4*maxMCMC; /* otherwise use the MAX_MCMC */
         if(max>4*maxMCMC) max=4*maxMCMC;
 	UINT4 Nlive = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
@@ -629,7 +633,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmp,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
   }
   s=initNSintegralState(Nruns,Nlive);
-
 
   /* Check for an interrupted run */
   char resumefilename[FILENAME_MAX];
@@ -1297,7 +1300,8 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     UINT4 BAILOUT=100*testnumber; /* If no acceptance after 100 tries, will exit and the sampler will try a different starting point */
     const char *extra_names[]={"logL","optimal_snr","matched_filter_snr","deltalogL"}; /* Names for parameters to be stripped when sampling prior */
     UINT4 Nnames = 4;
-    do{
+    if ( Nmcmc ){
+      do{
         counter=counter-1.;
         subchain_length=0;
         for(UINT4 i=0;i<Nnames;i++)
@@ -1354,7 +1358,8 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
             LALInferenceCopyVariables(&oldParams,threadState->currentParams);
             threadState->currentLikelihood=logLold;
         }
-    }while((mcmc_iter<testnumber||threadState->currentLikelihood<=logLmin||Naccepted==0)&&(mcmc_iter<BAILOUT));
+      }while((mcmc_iter<testnumber||threadState->currentLikelihood<=logLmin||Naccepted==0)&&(mcmc_iter<BAILOUT));
+    }
     /* Make sure likelihood is filled in if it wasn't done during sampling */
     if(logLnew==0.0){
             logLnew=runState->likelihood(threadState->currentParams,runState->data,threadState->model);
@@ -1392,6 +1397,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     }
     /* Cleanup */
     LALInferenceClearVariables(&oldParams);
+
     return Naccepted;
 }
 
