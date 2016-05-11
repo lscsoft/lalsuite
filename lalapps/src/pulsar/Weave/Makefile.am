@@ -30,4 +30,5 @@ lalapps_Weave_SOURCES = \
 TESTS = \
 	TestSingleSegment.sh \
 	TestNonInterpolating.sh \
+	TestInterpolating.sh \
 	$(END_OF_LIST)
