@@ -262,6 +262,7 @@ src/pulsar/Tools/lalapps_FstatMetric_v2
 src/pulsar/Tools/lalapps_PrintDetectorState
 src/pulsar/TwoSpect/lalapps_TwoSpect
 src/pulsar/TwoSpect/lalapps_TwoSpectTemplateBank
+src/pulsar/Weave/*.testdir
 src/pulsar/Xray/lalapps_Intermittent
 src/pulsar/Xray/lalapps_SemiCoherentBinary_v2
 src/pulsar/Xray/lalapps_binary2sfts

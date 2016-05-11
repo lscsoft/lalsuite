@@ -41,3 +41,6 @@ lalpulsar/test/sun00-19-DE414.dat.gz filter=lfs diff=lfs merge=lfs -text
 lalpulsar/test/sun00-19-DE421.dat.gz filter=lfs diff=lfs merge=lfs -text
 lalpulsar/test/tdb_2000-2019.dat.gz filter=lfs diff=lfs merge=lfs -text
 lalpulsar/test/te405_2000-2019.dat.gz filter=lfs diff=lfs merge=lfs -text
+lalapps/src/pulsar/Weave/TestInterpolating.tar.gz filter=lfs diff=lfs merge=lfs -text
+lalapps/src/pulsar/Weave/TestNonInterpolating.tar.gz filter=lfs diff=lfs merge=lfs -text
+lalapps/src/pulsar/Weave/TestSingleSegment.tar.gz filter=lfs diff=lfs merge=lfs -text

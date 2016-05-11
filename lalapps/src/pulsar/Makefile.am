@@ -19,6 +19,7 @@ SUBDIRS += \
 	MakeSFTs \
 	SidebandSearch \
 	TwoSpect \
+	Weave \
 	Xray \
 	$(END_OF_LINE)
 

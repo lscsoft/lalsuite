@@ -40,6 +40,7 @@ AC_CONFIG_FILES([\
   src/pulsar/SidebandSearch/Makefile \
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \
+  src/pulsar/Weave/Makefile \
   src/pulsar/Xray/Makefile \
   src/ring/Makefile \
   src/stochastic/Makefile \
