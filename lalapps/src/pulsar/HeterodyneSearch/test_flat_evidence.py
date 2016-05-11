@@ -7,6 +7,8 @@ It will calculate the value of the log(odds ratio)-log(prior) and check that it 
 flat as the prior range increases.
 """
 
+from __future__ import division
+
 import os
 import glob
 import sys
@@ -35,23 +37,31 @@ f.close()
 
 # data file
 datafile = 'data.txt.gz'
-ds = np.zeros((1440,3))
-ds[:,0] = np.linspace(900000000., 900000000.+86400.-60., 1440) # time stamps
-ds[:,-2:] = 1.e-24*np.random.randn(1440,2)
+dlen = 1440 # number of data points
+dt = 60     # number of seconds between each data point
+startgps = 900000000. # start GPS time
+endgps = startgps + dt*(dlen-1)
+ds = np.zeros((dlen,3))
+ds[:,0] = np.linspace(startgps, endgps, dlen) # time stamps
+noisesigma = 1e-24
+ds[:,-2:] = noisesigma*np.random.randn(dlen,2)
+
+ulest = 10.8*np.sqrt(noisesigma**2/dlen)
+print("Estimated upper limit is %.4e" % (ulest))
 
 # output data file
 np.savetxt(datafile, ds, fmt='%.12e');
 
 # range of upper limits on h0 in prior file
-h0uls = [1e-22, 1e-21, 1e-20, 1e-19, 1e-18]
+h0uls = np.logspace(np.log10(5.*ulest), np.log10(500.*ulest), 4)
 
 # some default inputs
 dets='H1'
-Nlive='1000'
-Nmcmcinitial='200'
+Nlive=1024
+Nmcmcinitial=0
 outfile='test.out'
-#uniformprop='--uniformprop 0'
-uniformprop=''
+proposalwalk = 3
+proposaluniform = 1
 
 Ntests = 10 # number of times to run nested sampling for each h0 value to get average
 
@@ -81,8 +91,8 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
     # run code
     commandline="\
 %s --detectors %s --par-file %s --input-files %s --outfile %s \
---prior-file %s --Nlive %s --Nmcmcinitial %s %s" \
-% (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, uniformprop)
+--prior-file %s --Nlive %d --Nmcmcinitial %d --ensembleWalk %d --uniformprop %d" \
+% (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, proposalwalk, proposaluniform)
 
     sp.check_call(commandline, shell=True)
 
@@ -115,7 +125,7 @@ pl.show()
 # clean up temporary files
 os.remove(parf)
 os.remove(priorf)
-os.remove(datafile)
+#os.remove(datafile)
 ofs = glob.glob(outfile+'*')
 for fs in ofs:
   os.remove(fs)
