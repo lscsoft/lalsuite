@@ -31,4 +31,5 @@ TESTS = \
 	TestSingleSegment.sh \
 	TestNonInterpolating.sh \
 	TestInterpolating.sh \
+	TestFreqPartition.sh \
 	$(END_OF_LIST)
