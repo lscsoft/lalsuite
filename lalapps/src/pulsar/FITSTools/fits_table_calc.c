@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
   int hdutype = 0, hdunum = 0, ii = 0;
 
   if (argc != 5) {
-    fprintf(stderr, "Usage:  tabcalc infile expression colname outfile\n");
+    fprintf(stderr, "Usage:  %s infile expression colname outfile\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Compute new values for the specified table column using the\n");
     fprintf(stderr, "input arithmetic expression which may be a function of the \n");
@@ -49,16 +49,16 @@ int main(int argc, char *argv[])
     fprintf(stderr, "then a new column will be appended to the table.\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Example: \n");
-    fprintf(stderr, "1. tabcalc intab.fits+1 'counts/#exposure' rate outab.fits\n");
+    fprintf(stderr, "1. %s intab.fits+1 'counts/#exposure' rate outab.fits\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "    Calculate the 'rate' column from the values in the\n");
     fprintf(stderr, "    'counts' column and the 'exposure' keyword.\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "2. tabcalc intab.fits+1 'sqrt(X**2 + Y**2)' Radius outab.fits\n");
+    fprintf(stderr, "2. %s intab.fits+1 'sqrt(X**2 + Y**2)' Radius outab.fits\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "    Calculate the 'Radius' column from the 'X' and 'Y' cols.\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "3. tabcalc intab.fits+1 '(rate{-1}+rate+rate{+1})/3' rate3 outab.fits\n");
+    fprintf(stderr, "3. %s intab.fits+1 '(rate{-1}+rate+rate{+1})/3' rate3 outab.fits\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "    Calculate the running mean of the rate column by \n");
     fprintf(stderr, "    averaging the values in the previous row, the current\n");

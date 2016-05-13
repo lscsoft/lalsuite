@@ -43,7 +43,6 @@
 
 
 /* user input variables */
-BOOLEAN  uvar_help;
 BOOLEAN  uvar_version;     /**< output version information */
 BOOLEAN  uvar_averagePsi;
 BOOLEAN  uvar_averageIota;
@@ -218,11 +217,10 @@ int main(int argc, char *argv[]){
   LAL_CALL (initUserVars(&status), &status);
 
   /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0); 
+  BOOLEAN should_exit = 0;
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
 
 
   if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
@@ -1722,7 +1720,6 @@ void initUserVars (LALStatus *status)
 
   uvar_maxlag = 0;
 
-  uvar_help = FALSE;
   uvar_version = FALSE;
   uvar_averagePsi = TRUE;
   uvar_averageIota = TRUE;
@@ -1775,10 +1772,6 @@ void initUserVars (LALStatus *status)
   strcpy(uvar_skyfile,SKYFILE);
 
   /* register user input variables */
-  LALRegisterBOOLUserVar( status->statusPtr, "help",
-			  'h', UVAR_HELP,
-			  "Print this message",
-			  &uvar_help);
   LALRegisterBOOLUserVar( status->statusPtr, "version",
 			  'V', UVAR_SPECIAL,
 			  "Output version information",

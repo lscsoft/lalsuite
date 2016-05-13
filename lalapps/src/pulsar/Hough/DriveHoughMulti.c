@@ -322,7 +322,7 @@ int main(int argc, char *argv[]){
     LIGOTimeGPSVector inputTimeStampsVector;
     
     /* user input variables */
-    BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog;
+    BOOLEAN  uvar_weighAM, uvar_weighNoise, uvar_printLog;
     INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_nSpinUp , uvar_maxBinsClean, uvar_binsHisto;
     INT4     uvar_keepBestSFTs=1;
     INT4     uvar_numCand;
@@ -358,7 +358,6 @@ int main(int argc, char *argv[]){
     /* LAL error-handler */
     lal_errhandler = LAL_ERR_EXIT;
     
-    uvar_help = FALSE;
     uvar_weighAM = TRUE;
     uvar_weighNoise = TRUE;
     uvar_printLog = FALSE;
@@ -396,7 +395,6 @@ int main(int argc, char *argv[]){
     strcpy(uvar_skyfile,SKYFILE);
     
     /* register user input variables */
-    LAL_CALL( LALRegisterBOOLUserVar( &status, "help",             'h',  UVAR_HELP,     "Print this message", &uvar_help), &status);
     LAL_CALL( LALRegisterREALUserVar( &status, "f0",               'f',  UVAR_OPTIONAL, "Start search frequency", &uvar_f0), &status);
     LAL_CALL( LALRegisterREALUserVar( &status, "freqBand",         'b',  UVAR_OPTIONAL, "Search frequency band", &uvar_freqBand), &status);
     LAL_CALL( LALRegisterREALUserVar( &status, "startTime",         0,  UVAR_OPTIONAL, "GPS start time of observation", &uvar_startTime), &status);
@@ -438,11 +436,10 @@ int main(int argc, char *argv[]){
     
     
     /* read all command line variables */
-    LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-    
-    /* exit if help was required */
-    if (uvar_help)
-        exit(0);
+    BOOLEAN should_exit = 0;
+    LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+    if (should_exit)
+        exit(1);
     
     /* very basic consistency checks on user input */
     if ( uvar_f0 < 0 ) {

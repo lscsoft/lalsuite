@@ -41,7 +41,6 @@
 #include <LALAppsVCSInfo.h>
 
 typedef struct {
-  BOOLEAN help;
   REAL8 time_span;
   REAL8Vector *square;
   REAL8Vector *age_braking;
@@ -64,7 +63,6 @@ int main(int argc, char *argv[])
   UserVariables *const uvar = &uvar_struct;
 
   // Register user variables
-  XLAL_CHECK_MAIN(XLALRegisterUvarMember(help, BOOLEAN, 'h', HELP, "Print this help message") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(time_span, REAL8, 'T', REQUIRED, "Time-span of the data set (in seconds)") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(square, REAL8Vector, 0, OPTIONAL, "Square parameter space: start,width,...") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(age_braking, REAL8Vector, 0, OPTIONAL, "Age/braking index parameter space: alpha,delta,freq,freqband,age,minbrake,maxbrake") == XLAL_SUCCESS, XLAL_EFUNC);
@@ -73,13 +71,16 @@ int main(int argc, char *argv[])
   XLAL_CHECK_MAIN(XLALRegisterUvarMember(metric, STRING, 'M', OPTIONAL, "Metric: 'spindown' or 'eye'") == XLAL_SUCCESS, XLAL_EFUNC);
 
   // Parse user input
-  XLAL_CHECK_MAIN(XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
-  if (uvar->help) {
-    return EXIT_SUCCESS;
-  }
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check user input
-  XLAL_CHECK_MAIN(UVAR_SET2(square, age_braking) == 1, XLAL_EINVAL, "Exactly one of " UVAR_STR2AND("square", "age-braking") " must be specified");
+  XLALUserVarCheck( &should_exit, UVAR_SET2(square, age_braking) == 1, "Exactly one of " UVAR_STR2AND(square, age_braking) " must be specified" );
+
+  // Exit if required
+  if ( should_exit ) {
+    return EXIT_FAILURE;
+  }
 
   LatticeTiling *tiling = NULL;
   if (UVAR_SET(square)) {

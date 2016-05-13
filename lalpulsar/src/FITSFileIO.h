@@ -75,7 +75,8 @@ FITSFile *XLALFITSFileOpenRead( const CHAR *file_name );
 /// Unit (HDU).  Scalar #BOOLEAN, #INT4, #INT8, #REAL4, #REAL8, #COMPLEX8, and #COMPLEX16 values,
 /// strings, string vectors (#LALStringVector) and GPS times (#LIGOTimeGPS) can be written and read.
 /// A \p comment string describing the value is required when writing to an HDU, and an arbitrary
-/// formatted history or comment string can also be written.
+/// formatted history or comment string can also be written. Units for numeric header values may be
+/// specified in square brackets after the header key, e.g. "freq [Hz]".
 ///
 /// There are some usage restrictions:
 ///
@@ -180,7 +181,8 @@ int XLALFITSArrayReadGSLMatrix( FITSFile *file, const size_t idx[], gsl_matrix *
 /// \endcode
 ///
 /// The <tt>XLAL_FITS_TABLE_COLUMN_PTR_...()</tt> macros are for more complicated C structures
-/// which contain pointers to other C structures.
+/// which contain pointers to other C structures. Units for numeric columns may be specified in
+/// square brackets after the column name, e.g. "freq [Hz]".
 ///
 /// Finally, XLALFITSTableWriteRow() or XLALFITSTableReadRow() are called to write/read table rows;
 /// the latter returns the number of rows remaining in the table \p rem_nrows, if needed.

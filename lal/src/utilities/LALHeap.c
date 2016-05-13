@@ -224,6 +224,31 @@ int XLALHeapAdd(
 
 }
 
+void *XLALHeapExtractRoot(
+  LALHeap *h
+  )
+{
+
+  /* Check input */
+  XLAL_CHECK_NULL( h != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( h->n > 0, XLAL_ESIZE );
+
+  /* Save root element */
+  void *x = h->data[0];
+
+  /* Replace root with last element in binary heap, and trickle down to restore heap property */
+  h->data[0] = h->data[--h->n];
+  heap_trickle_down( h, 0 );
+
+  /* Resize binary heap; designed so that resizing costs amortized constant time */
+  if ( 3*h->n < h->data_len ) {
+    XLAL_CHECK_NULL( heap_resize( h ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return x;
+
+}
+
 int XLALHeapRemoveRoot(
   LALHeap *h
   )
@@ -233,18 +258,13 @@ int XLALHeapRemoveRoot(
   XLAL_CHECK( h != NULL, XLAL_EFAULT );
   XLAL_CHECK( h->n > 0, XLAL_ESIZE );
 
+  /* Extract root */
+  void *x = XLALHeapExtractRoot( h );
+  XLAL_CHECK( x != NULL, XLAL_EFUNC );
+
   /* Free memory associated with root element, if required */
   if ( h->dtor != NULL ) {
-    h->dtor( h->data[0] );
-  }
-
-  /* Replace root with last element in binary heap, and trickle down to restore heap property */
-  h->data[0] = h->data[--h->n];
-  heap_trickle_down( h, 0 );
-
-  /* Resize binary heap; designed so that resizing costs amortized constant time */
-  if ( 3*h->n < h->data_len ) {
-    XLAL_CHECK( heap_resize( h ) == XLAL_SUCCESS, XLAL_EFUNC );
+    h->dtor( x );
   }
 
   return XLAL_SUCCESS;
@@ -271,7 +291,7 @@ int XLALHeapExchangeRoot(
 }
 
 int XLALHeapVisit(
-  const LALHeap *h,
+  LALHeap *h,
   LALHeapVisitFcn visit,
   void *visit_param
   )
@@ -291,11 +311,20 @@ int XLALHeapVisit(
     XLAL_CHECK( XLALHeapAdd( h2, &x ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  /* Visit root element of internal min-heap and remove, until empty */
+  /* Remove all elements from original heap */
+  h->n = 0;
+
+  /* Extract roots element of internal min-heap, until empty */
   while ( h2->n > 0 ) {
-    const void *x = XLALHeapRoot( h2 );
+    void *x = XLALHeapExtractRoot( h2 );
+    XLAL_CHECK( x != NULL, XLAL_EFUNC );
+
+    /* Visit element, possibly modifying it */
     XLAL_CHECK( visit( visit_param, x ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALHeapRemoveRoot( h2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    /* Add element back to original heap */
+    XLAL_CHECK( XLALHeapAdd( h, &x ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   }
 
   /* Cleanup */

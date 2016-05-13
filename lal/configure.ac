@@ -310,6 +310,21 @@ AC_HEADER_TIME
 # checks for library functions
 AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace clock_gettime])
 
+# check for pager programs
+LALSUITE_CHECK_PAGER
+
+# check for functions used to determine terminal size
+AC_CHECK_HEADERS([sys/ioctl.h])
+m4_pushdef([includes],[AC_INCLUDES_DEFAULT
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+])
+AC_CHECK_FUNCS([isatty fileno ioctl],,,includes)
+AC_CHECK_DECLS([TIOCGWINSZ],,,includes)
+AC_CHECK_MEMBERS([struct winsize.ws_col],,,includes)
+m4_popdef([includes])
+
 # set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])

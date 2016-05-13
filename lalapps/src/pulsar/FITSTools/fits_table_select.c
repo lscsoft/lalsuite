@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
   int hdutype = 0, hdunum = 0, ii = 0;
 
   if (argc != 4) {
-    fprintf(stderr, "Usage:  tabselect infile expression outfile\n");
+    fprintf(stderr, "Usage:  %s infile expression outfile\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Copy selected rows from the input table to the output file\n");
     fprintf(stderr, "based on the input boolean expression.  The expression may \n");
@@ -48,17 +48,17 @@ int main(int argc, char *argv[])
     fprintf(stderr, "that row is copied to the output file.\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Example: \n");
-    fprintf(stderr, "1. tabselect intab.fits+1 'counts > 0' outab.fits\n");
+    fprintf(stderr, "1. %s intab.fits+1 'counts > 0' outab.fits\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "    copy rows that have a positive 'counts' column value\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "2. tabselect intab.fits+1 'gtifilter()' outab.fits\n");
+    fprintf(stderr, "2. %s intab.fits+1 'gtifilter()' outab.fits\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "    Select rows which have a Time column value that is\n");
     fprintf(stderr, "    within one of the Good Time Intervals (GTI) which are\n");
     fprintf(stderr, "    defined in a separate GTI extension in the same file.\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "3. tabselect intab.fits+1 'regfilter(\"pow.reg\")' outab.fits\n");
+    fprintf(stderr, "3. %s intab.fits+1 'regfilter(\"pow.reg\")' outab.fits\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "    Select rows which have X,Y column coordinates located\n");
     fprintf(stderr, "    within the spatial region defined in the file named\n");

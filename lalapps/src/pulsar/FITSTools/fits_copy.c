@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
   int status = 0, ii = 1;       /* status must always be initialized = 0  */
 
   if (argc != 3) {
-    fprintf(stderr, "Usage:  fitscopy inputfile outputfile\n");
+    fprintf(stderr, "Usage:  %s inputfile outputfile\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Copy an input file to an output file, optionally filtering\n");
     fprintf(stderr, "the file in the process.  This seemingly simple program can\n");
@@ -53,16 +53,16 @@ int main(int argc, char *argv[])
     fprintf(stderr, "\n");
     fprintf(stderr, "Examples:\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "fitscopy in.fit out.fit                   (simple file copy)\n");
-    fprintf(stderr, "fitscopy - -                              (stdin to stdout)\n");
-    fprintf(stderr, "fitscopy in.fit[11:50,21:60] out.fit      (copy a subimage)\n");
-    fprintf(stderr, "fitscopy iniraf.imh out.fit               (IRAF image to FITS)\n");
-    fprintf(stderr, "fitscopy in.dat[i512,512] out.fit         (raw array to FITS)\n");
-    fprintf(stderr, "fitscopy in.fit[events][pi>35] out.fit    (copy rows with pi>35)\n");
-    fprintf(stderr, "fitscopy in.fit[events][bin X,Y] out.fit  (bin an image) \n");
-    fprintf(stderr, "fitscopy in.fit[events][col x=.9*y] out.fit        (new x column)\n");
-    fprintf(stderr, "fitscopy in.fit[events][gtifilter()] out.fit       (time filter)\n");
-    fprintf(stderr, "fitscopy in.fit[2][regfilter(\"pow.reg\")] out.fit (spatial filter)\n");
+    fprintf(stderr, "%s in.fit out.fit                   (simple file copy)\n", argv[0]);
+    fprintf(stderr, "%s - -                              (stdin to stdout)\n", argv[0]);
+    fprintf(stderr, "%s in.fit[11:50,21:60] out.fit      (copy a subimage)\n", argv[0]);
+    fprintf(stderr, "%s iniraf.imh out.fit               (IRAF image to FITS)\n", argv[0]);
+    fprintf(stderr, "%s in.dat[i512,512] out.fit         (raw array to FITS)\n", argv[0]);
+    fprintf(stderr, "%s in.fit[events][pi>35] out.fit    (copy rows with pi>35)\n", argv[0]);
+    fprintf(stderr, "%s in.fit[events][bin X,Y] out.fit  (bin an image) \n", argv[0]);
+    fprintf(stderr, "%s in.fit[events][col x=.9*y] out.fit        (new x column)\n", argv[0]);
+    fprintf(stderr, "%s in.fit[events][gtifilter()] out.fit       (time filter)\n", argv[0]);
+    fprintf(stderr, "%s in.fit[2][regfilter(\"pow.reg\")] out.fit (spatial filter)\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Note that it may be necessary to enclose the input file name\n");
     fprintf(stderr, "in single quote characters on the Unix command line.\n");

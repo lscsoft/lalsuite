@@ -95,8 +95,6 @@ enum tagMATH_OP_TYPE {
 /** user input variables */
 typedef struct
 {
-  BOOLEAN help;
-
   CHAR *inputData;    	/**< directory for input sfts */
   CHAR *outputPSD;    	/**< directory for output sfts */
   CHAR *outputSpectBname;
@@ -200,10 +198,6 @@ main(int argc, char *argv[])
       printf ("%s\n", VCSInfoString );
       return (0);
     }
-
-  /* exit if help was required */
-  if (uvar.help)
-    return EXIT_SUCCESS;
 
   MultiSFTVector *inputSFTs = NULL;
   if ( ( inputSFTs = XLALReadSFTs ( &cfg, &uvar ) ) == NULL )
@@ -569,8 +563,6 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 {
 
   /* set a few defaults */
-  uvar->help = FALSE;
-
   uvar->maxBinsClean = 100;
   uvar->blocksRngMed = 101;
 
@@ -606,7 +598,6 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   uvar->version = FALSE;
 
   /* register user input variables */
-  XLALRegisterUvarMember(help,             BOOLEAN, 'h', HELP,     "Print this message" );
   XLALRegisterUvarMember(inputData,        STRING, 'i', REQUIRED, "Input SFT pattern");
   XLALRegisterUvarMember(outputPSD,        STRING, 'o', OPTIONAL, "Output PSD into this file");
   XLALRegisterUvarMember(outputQ,	     STRING, 0,  OPTIONAL, "Output the 'data-quality factor' Q(f) into this file");
@@ -661,8 +652,11 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
 
 
   /* read all command line variables */
-  if (XLALUserVarReadAllInput(argc, argv) != XLAL_SUCCESS)
-    return XLAL_FAILURE;
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit(1);
+  }
 
   /* check user-input consistency */
   if (XLALUserVarWasSet(&(uvar->PSDmthopSFTs)) && !(0 <= uvar->PSDmthopSFTs && uvar->PSDmthopSFTs < MATH_OP_LAST)) {

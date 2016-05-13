@@ -39,23 +39,17 @@
 
 int main(int argc, char *argv[])
 {
-  fitsfile *fptr;         /* FITS file pointer, defined in fitsio.h */
-  char card[FLEN_CARD];   /* Standard string lengths defined in fitsio.h */
+  fitsfile *fptr = 0;         /* FITS file pointer, defined in fitsio.h */
+  char keyname[FLEN_KEYWORD], colname[FLEN_VALUE], coltype[FLEN_VALUE];
   int status = 0;   /* CFITSIO status value MUST be initialized to zero! */
-  int single = 0, hdupos = 0, nkeys = 0, ii = 0;
+  int single = 0, hdupos = 0, hdutype = 0, bitpix = 0, naxis = 0, ncols = 0, ii = 0;
+  long naxes[10], nrows = 0;
 
   if (argc != 2) {
-    fprintf(stderr, "Usage:  listhead filename[ext] \n");
+    fprintf(stderr, "Usage:  %s filename[ext] \n", argv[0]);
     fprintf(stderr, "\n");
-    fprintf(stderr, "List the FITS header keywords in a single extension, or, if \n");
-    fprintf(stderr, "ext is not given, list the keywords in all the extensions. \n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Examples: \n");
-    fprintf(stderr, "   listhead file.fits      - list every header in the file \n");
-    fprintf(stderr, "   listhead file.fits[0]   - list primary array header \n");
-    fprintf(stderr, "   listhead file.fits[2]   - list header of 2nd extension \n");
-    fprintf(stderr, "   listhead file.fits+2    - same as above \n");
-    fprintf(stderr, "   listhead file.fits[GTI] - list header of GTI extension\n");
+    fprintf(stderr, "List the structure of a single extension, or, if ext is \n");
+    fprintf(stderr, "not given, list the structure of the entire FITS file.  \n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Note that it may be necessary to enclose the input file\n");
     fprintf(stderr, "name in single quote characters on the Unix command line.\n");
@@ -71,36 +65,55 @@ int main(int argc, char *argv[])
   if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
     fits_get_hdu_num(fptr, &hdupos);  /* Get the current HDU position */
 
-    /* List only a single header if a specific extension was given */
-    if (hdupos != 1 || strchr(argv[1], '[')) {
-      single = 1;
+    /* List only a single structure if a specific extension was given */
+    if (strchr(argv[1], '[') || strchr(argv[1], '+')) {
+      single++;
     }
 
-    for (; !status; hdupos++) { /* Main loop through each extension */
-      fits_get_hdrspace(fptr, &nkeys, NULL, &status); /* get # of keywords */
+    for (; !status; hdupos++) { /* Main loop for each HDU */
+      fits_get_hdu_type(fptr, &hdutype, &status);  /* Get the HDU type */
 
-      fprintf(fout, "Header listing for HDU #%d:\n", hdupos);
+      fprintf(fout, "\nHDU #%d  ", hdupos);
+      if (hdutype == IMAGE_HDU) { /* primary array or image HDU */
+        fits_get_img_param(fptr, 10, &bitpix, &naxis, naxes, &status);
 
-      for (ii = 1; ii <= nkeys; ii++) { /* Read and print each keywords */
-
-        if (fits_read_record(fptr, ii, card, &status)) {
-          break;
+        fprintf(fout, "Array:  NAXIS = %d,  BITPIX = %d\n", naxis, bitpix);
+        for (ii = 0; ii < naxis; ii++) {
+          fprintf(fout, "   NAXIS%d = %ld\n",ii+1, naxes[ii]);
         }
-        fprintf(fout, "%s\n", card);
+      } else { /* a table HDU */
+        fits_get_num_rows(fptr, &nrows, &status);
+        fits_get_num_cols(fptr, &ncols, &status);
+
+        if (hdutype == ASCII_TBL) {
+          fprintf(fout, "ASCII Table:  ");
+        } else {
+          fprintf(fout, "Binary Table:  ");
+        }
+
+        fprintf(fout, "%d columns x %ld rows\n", ncols, nrows);
+        fprintf(fout, " COL NAME             FORMAT\n");
+
+        for (ii = 1; ii <= ncols; ii++) {
+          fits_make_keyn("TTYPE", ii, keyname, &status); /* make keyword */
+          fits_read_key(fptr, TSTRING, keyname, colname, NULL, &status);
+          fits_make_keyn("TFORM", ii, keyname, &status); /* make keyword */
+          fits_read_key(fptr, TSTRING, keyname, coltype, NULL, &status);
+
+          fprintf(fout, " %3d %-16s %-16s\n", ii, colname, coltype);
+        }
       }
-      fprintf(fout, "END\n\n");  /* terminate listing with END */
 
       if (single) {
-        break;  /* quit if only listing a single header */
+        break;  /* quit if only listing a single HDU */
       }
 
-      fits_movrel_hdu(fptr, 1, NULL, &status);  /* try to move to next HDU */
+      fits_movrel_hdu(fptr, 1, NULL, &status);  /* try move to next ext */
     }
 
     if (status == END_OF_FILE) {
-      status = 0;  /* Reset after normal error */
+      status = 0;  /* Reset normal error */
     }
-
     fits_close_file(fptr, &status);
   }
 

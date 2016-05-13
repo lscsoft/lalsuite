@@ -24,6 +24,10 @@
 
 #include <lal/UserInput.h>
 
+// for test print usage and help page
+int XLALUserVarPrintUsage ( FILE *file );
+int XLALUserVarPrintHelp ( FILE *file );
+
 typedef struct
 {
   REAL8 argNum;
@@ -40,6 +44,7 @@ typedef struct
   REAL8 latDMS;
   REAL8 latRad;
   INT8 longInt;
+  BOOLEAN long_help;
 } UserInput_t;
 
 /**
@@ -47,14 +52,12 @@ typedef struct
  * but should be enough to catch big obvious malfunctions
  */
 int
-main(int argc, char *argv[])
+main(void)
 {
   int i, my_argc = 8;
   char **my_argv;
   const char *argv_in[] = { "progname", "--argNum=1", "--argStr=xyz", "--argBool=true", "-a", "1", "-b", "@" TEST_DATA_DIR "ConfigFileSample.cfg" };
   UserInput_t XLAL_INIT_DECL(my_uvars);
-
-  XLAL_CHECK ( argc == 1, XLAL_EINVAL, "No input arguments allowed.\n");
 
   my_argv = XLALCalloc ( my_argc, sizeof(char*) );
   for (i=0; i < my_argc; i ++ )
@@ -81,14 +84,33 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALRegisterUvarMember( latDMS, DECJ, 0, REQUIRED, "Testing DECJ(DMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( latRad, DECJ, 0, REQUIRED, "Testing DECJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( longInt, INT8, 0, REQUIRED, "Testing INT8 argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( long_help, BOOLEAN, 0, NODEFAULT,
+                                       "This option is here to test the help page wrapping of long strings. "
+                                       "This option is here to test the help page wrapping of long strings. "
+                                       "This option is here to test the help page wrapping of long strings. "
+                                       "This option is here to test the help page wrapping of long strings. "
+                                       "This option is here to test the help page wrapping of long strings. "
+                                       "\n"
+                                       "This~option~is~here~to~test~the~help~page~wrapping~of~long~strings~without~spaces.~"
+                                       "This~option~is~here~to~test~the~help~page~wrapping~of~long~strings~without~spaces.~"
+                                       "This~option~is~here~to~test~the~help~page~wrapping~of~long~strings~without~spaces."
+                 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- now read all input from commandline and config-file ---------- */
-  XLAL_CHECK ( XLALUserVarReadAllInput ( my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( should_exit == 0, XLAL_EFUNC );
 
-  /* ---------- test help-string generation */
-  CHAR *helpstr;
-  XLAL_CHECK ( (helpstr = XLALUserVarHelpString ( argv[0])) != NULL, XLAL_EFUNC );
-  XLALFree ( helpstr );
+  /* ---------- test print usage and help page */
+  printf( "=== Begin usage string ===\n" );
+  fflush( stdout );
+  XLALUserVarPrintUsage( stdout );
+  printf( "--- End usage string ---\n" );
+  printf( "=== Begin help page ===\n" );
+  fflush( stdout );
+  XLALUserVarPrintHelp( stdout );
+  printf( "--- End help page ---\n" );
+  fflush( stdout );
 
   /* ---------- test log-generation */
   CHAR *logstr;

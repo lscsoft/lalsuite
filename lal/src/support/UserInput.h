@@ -163,18 +163,17 @@ typedef enum {
 
   UVAR_CATEGORY_OPTIONAL,	///< optional
   UVAR_CATEGORY_REQUIRED,	///< required
-  UVAR_CATEGORY_HELP,		///< special variable: trigger output of help-string
   UVAR_CATEGORY_DEVELOPER,	///< optional and hidden in help-output until lalDebugLevel>=warning
   UVAR_CATEGORY_DEPRECATED,	///< optional and hidden until lalDebugLevel>=info; still supported but output warning if used
   UVAR_CATEGORY_DEFUNCT,	///< hidden completely from help output; not supported, will output error + help-string if used
   UVAR_CATEGORY_SPECIAL,	///< optional and *turns off* all checking of required variables, useful for output of version info
+  UVAR_CATEGORY_NODEFAULT,	///< optional and supresses printing the default value in the help, where it doesn't make sense
   UVAR_CATEGORY_END		///< internal end marker for range checking
 } UserVarCategory;
 
 // ***** the following are provided only for backwards compatibility until full transition to new XLAL interface *****
 #define UVAR_OPTIONAL  	UVAR_CATEGORY_OPTIONAL
 #define UVAR_REQUIRED  	UVAR_CATEGORY_REQUIRED
-#define UVAR_HELP 	UVAR_CATEGORY_HELP
 #define UVAR_DEVELOPER	UVAR_CATEGORY_DEVELOPER
 #define UVAR_SPECIAL	UVAR_CATEGORY_SPECIAL
 // **********
@@ -190,14 +189,18 @@ typedef enum {
   UVAR_LOGFMT_LAST
 } UserVarLogFormat;
 
+/* Global variables */
+#ifndef SWIG /* exclude from SWIG interface */
+extern const char *lalUserVarHelpBrief;
+#endif /* SWIG */
+
 /* Function prototypes */
 void XLALDestroyUserVars( void );
-int XLALUserVarReadCmdline (int argc, char *argv[]);
-int XLALUserVarReadCfgfile ( const CHAR *cfgfile );
-CHAR *XLALUserVarHelpString ( const CHAR *progname );
-int XLALUserVarReadAllInput ( int argc, char *argv[] );
-int XLALUserVarCheckRequired( void );
-int XLALUserVarWasSet (const void *cvar);
+int XLALUserVarReadCmdline( BOOLEAN *should_exit, int argc, char *argv[] );
+int XLALUserVarReadCfgfile( BOOLEAN *should_exit, const CHAR *cfgfile );
+int XLALUserVarReadAllInput( BOOLEAN *should_exit, int argc, char *argv[] );
+int XLALUserVarWasSet( const void *cvar );
+void XLALUserVarCheck( BOOLEAN *should_exit, const int assertion, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(3,4);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
 
 /**
@@ -239,17 +242,17 @@ CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
  */
 /*@{*/
 #define UVAR_FMT                                "`--%s'"
-#define UVAR_STR(n)                             "`--"n"'"
-#define UVAR_STR2AND(n1,n2)                     "`--"n1"' and `--"n2"'"
-#define UVAR_STR2OR(n1,n2)                      "`--"n1"' or `--"n2"'"
-#define UVAR_STR3AND(n1,n2,n3)                  "`--"n1"', `--"n2"', and `--"n3"'"
-#define UVAR_STR3OR(n1,n2,n3)                   "`--"n1"', `--"n2"', or `--"n3"'"
-#define UVAR_STR4AND(n1,n2,n3,n4)               "`--"n1"', `--"n2"', `--"n3"', and `--"n4"'"
-#define UVAR_STR4OR(n1,n2,n3,n4)                "`--"n1"', `--"n2"', `--"n3"', or `--"n4"'"
-#define UVAR_STR5AND(n1,n2,n3,n4,n5)            "`--"n1"', `--"n2"', `--"n3"', `--"n4"', and `--"n5"'"
-#define UVAR_STR5OR(n1,n2,n3,n4,n5)             "`--"n1"', `--"n2"', `--"n3"', `--"n4"', or `--"n5"'"
-#define UVAR_STR6AND(n1,n2,n3,n4,n5,n6)         "`--"n1"', `--"n2"', `--"n3"', `--"n4"', `--"n5"', and `--"n6"'"
-#define UVAR_STR6OR(n1,n2,n3,n4,n5,n6)          "`--"n1"', `--"n2"', `--"n3"', `--"n4"', `--"n5"', or `--"n6"'"
+#define UVAR_STR(n)                             "`--"#n"'"
+#define UVAR_STR2AND(n1,n2)                     "`--"#n1"' and `--"#n2"'"
+#define UVAR_STR2OR(n1,n2)                      "`--"#n1"' or `--"#n2"'"
+#define UVAR_STR3AND(n1,n2,n3)                  "`--"#n1"', `--"#n2"', and `--"#n3"'"
+#define UVAR_STR3OR(n1,n2,n3)                   "`--"#n1"', `--"#n2"', or `--"#n3"'"
+#define UVAR_STR4AND(n1,n2,n3,n4)               "`--"#n1"', `--"#n2"', `--"#n3"', and `--"#n4"'"
+#define UVAR_STR4OR(n1,n2,n3,n4)                "`--"#n1"', `--"#n2"', `--"#n3"', or `--"#n4"'"
+#define UVAR_STR5AND(n1,n2,n3,n4,n5)            "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', and `--"#n5"'"
+#define UVAR_STR5OR(n1,n2,n3,n4,n5)             "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', or `--"#n5"'"
+#define UVAR_STR6AND(n1,n2,n3,n4,n5,n6)         "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', `--"#n5"', and `--"#n6"'"
+#define UVAR_STR6OR(n1,n2,n3,n4,n5,n6)          "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', `--"#n5"', or `--"#n6"'"
 /*@}*/
 
 // declare type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking!
@@ -288,15 +291,10 @@ void LALRegisterINTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVar
 void LALRegisterBOOLUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, BOOLEAN *cvar);
 void LALRegisterSTRINGUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, CHAR **cvar);
 void LALRegisterLISTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, LALStringVector **cvar);
-
 void LALDestroyUserVars (LALStatus *);
-
-void LALUserVarReadAllInput(LALStatus *, int argc, char *argv[]);
-void LALUserVarReadCmdline (LALStatus *, int argc, char *argv[]);
-void LALUserVarReadCfgfile (LALStatus *, const CHAR *cfgfile);
-
-void LALUserVarHelpString (LALStatus *, CHAR **helpstring, const CHAR *progname);
-void LALUserVarCheckRequired (LALStatus *);
+void LALUserVarReadAllInput(LALStatus *, BOOLEAN *should_exit, int argc, char *argv[]);
+void LALUserVarReadCmdline (LALStatus *, BOOLEAN *should_exit, int argc, char *argv[]);
+void LALUserVarReadCfgfile (LALStatus *, BOOLEAN *should_exit, const CHAR *cfgfile);
 INT4 LALUserVarWasSet (const void *cvar);
 void LALUserVarGetLog (LALStatus *, CHAR **logstr,  UserVarLogFormat format);
 

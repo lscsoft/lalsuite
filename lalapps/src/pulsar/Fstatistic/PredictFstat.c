@@ -97,8 +97,6 @@ ConfigVariables GV;		/**< global container for various derived configuration set
 
 /* ----- User-variables: can be set from config-file or command-line */
 typedef struct {
-  BOOLEAN help;		/**< trigger output of help string */
-
   INT4 RngMedWindow;	/**< running-median window to use for noise-floor estimation */
 
   REAL8 aPlus;		/**< '+' polarization amplitude: aPlus  [alternative to {h0, cosi}: aPlus = 0.5*h0*(1+cosi^2)] */
@@ -165,10 +163,10 @@ int main(int argc,char *argv[])
   XLAL_CHECK_MAIN ( initUserVars( &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* do ALL cmdline and cfgfile handling */
-  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput ( argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if (uvar.help) {	/* if help was requested, we're done here */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit (1);
   }
 
   XLAL_CHECK_MAIN ( (VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
@@ -264,7 +262,6 @@ initUserVars ( UserInput_t *uvar )
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
-  uvar->help = 0;
   uvar->outputFstat = NULL;
   uvar->printFstat = 1;
 
@@ -278,8 +275,6 @@ initUserVars ( UserInput_t *uvar )
   uvar->transientWindowType = XLALStringDuplicate ( "none" );
 
   /* register all our user-variables */
-  XLALRegisterUvarMember( help, 	BOOLEAN, 'h', HELP,     "Print this message");
-
   XLALRegisterUvarMember( aPlus, 	 REAL8, 0 , OPTIONAL, "'Plus' polarization amplitude: aPlus  [alternative to {h0, cosi}");
   XLALRegisterUvarMember( aCross,  	 REAL8, 0 , OPTIONAL, "'Cross' polarization amplitude: aCross [alternative to {h0, cosi}");
   XLALRegisterUvarMember( h0,		REAL8, 's', OPTIONAL, "Overall GW amplitude h0 [alternative to {aPlus, aCross}]");

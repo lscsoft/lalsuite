@@ -116,7 +116,7 @@ static int BasicTest(
 
   for ( size_t i = 0; i < n; ++i ) {
 
-    // Create lattice tiling iterator and locator over 'i+1' dimensions
+    // Create lattice tiling iterator over 'i+1' dimensions
     LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, i+1 );
     XLAL_CHECK( itr != NULL, XLAL_EFUNC );
 
@@ -169,22 +169,26 @@ static int BasicTest(
       if ( 0 < i ) {
         const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, i );
         UINT8 nearest_index = 0;
-        UINT4 nearest_left = 0, nearest_right = 0;
+        INT4 nearest_left = 0, nearest_right = 0;
         XLAL_CHECK( XLALNearestLatticeTilingBlock( loc, point, i, nearest, &nearest_index, &nearest_left, &nearest_right ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK( nearest_index == nearest_indexes->data[i-1], XLAL_EFAILED, "\n  "
                     "ERROR: nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i-1] );
-        UINT4 nearest_len = 1 + nearest_left + nearest_right;
+        XLAL_CHECK( nearest_left <= nearest_right, XLAL_EFAILED, "\n  "
+                    "ERROR: invalid [nearest_left, nearest_right] = [%i, %i]\n", nearest_left, nearest_right );
+        UINT4 nearest_len = nearest_right - nearest_left + 1;
         XLAL_CHECK( nearest_len <= stats->max_points, XLAL_EFAILED, "\n  "
                     "ERROR: nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i );
       }
       if ( i+1 < n ) {
         const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, i+1 );
         UINT8 nearest_index = 0;
-        UINT4 nearest_left = 0, nearest_right = 0;
+        INT4 nearest_left = 0, nearest_right = 0;
         XLAL_CHECK( XLALNearestLatticeTilingBlock( loc, point, i+1, nearest, &nearest_index, &nearest_left, &nearest_right ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK( nearest_index == nearest_indexes->data[i], XLAL_EFAILED, "\n  "
                     "ERROR: nearest_index = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT "\n", nearest_index, nearest_indexes->data[i] );
-        UINT4 nearest_len = 1 + nearest_left + nearest_right;
+        XLAL_CHECK( nearest_left <= nearest_right, XLAL_EFAILED, "\n  "
+                    "ERROR: invalid [nearest_left, nearest_right] = [%i, %i]\n", nearest_left, nearest_right );
+        UINT4 nearest_len = nearest_right - nearest_left + 1;
         XLAL_CHECK( nearest_len <= stats->max_points, XLAL_EFAILED, "\n  "
                     "ERROR: nearest_len = %i > %i = stats[%zu]->max_points\n", nearest_len, stats->max_points, i+1 );
       }
@@ -197,21 +201,19 @@ static int BasicTest(
     GFVEC( nearest );
     XLALDestroyUINT8Vector( nearest_indexes );
 
-  }
-
-  for ( size_t i = 0; i < n; ++i ) {
-
     // Create alternating lattice tiling iterator over 'i+1' dimensions
+    printf( "  Testing XLALSetLatticeTilingAlternatingIterator() ..." );
     LatticeTilingIterator *itr_alt = XLALCreateLatticeTilingIterator( tiling, i+1 );
     XLAL_CHECK( itr_alt != NULL, XLAL_EFUNC );
     XLAL_CHECK( XLALSetLatticeTilingAlternatingIterator( itr_alt, true ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Count number of points, check for consistency with non-alternating count
-    UINT8 total = 0;
+    UINT8 total_alt = 0;
     while ( XLALNextLatticeTilingPoint( itr_alt, NULL ) > 0 ) {
-      ++total;
+      ++total_alt;
     }
-    XLAL_CHECK( imaxabs( total - total_ref[i] ) <= 1, XLAL_EFUNC, "ERROR: alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", i, total, total_ref[i] );
+    XLAL_CHECK( imaxabs( total_alt - total_ref[i] ) <= 1, XLAL_EFUNC, "ERROR: alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", i, total_alt, total_ref[i] );
+    printf( " done\n" );
 
     // Cleanup
     XLALDestroyLatticeTilingIterator( itr_alt );
@@ -630,6 +632,10 @@ static int MultiSegSuperskyTest( void )
 
 int main( void )
 {
+
+  // Turn off buffering to sync standard output and error printing
+  setvbuf( stdout, NULL, _IONBF, 0 );
+  setvbuf( stderr, NULL, _IONBF, 0 );
 
   // Perform basic tests
   XLAL_CHECK_MAIN( BasicTest( 1, 0, 0, 0, 0, "Zn" ,    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );

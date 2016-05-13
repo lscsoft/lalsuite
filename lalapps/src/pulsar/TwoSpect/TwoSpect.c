@@ -1677,7 +1677,6 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    uvar->lineDetection = -1.0;
    uvar->cosiSignCoherent = 0;
 
-   XLALRegisterUvarMember(help,                         BOOLEAN, 'h', HELP    ,  "Print this help/usage message");
    XLALRegisterUvarMember(outdirectory,                STRING, 0 , REQUIRED,  "Output directory");
    XLALRegisterUvarMember(IFO,                           STRINGVector, 0 , REQUIRED,  "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
    XLALRegisterUvarMember(Tobs,                          REAL8, 0 , REQUIRED,  "Total observation time (in seconds)");
@@ -1771,10 +1770,9 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
 
    //Read all the input from config file and command line (command line has priority)
    //Also checks required variables unless help is requested
-   XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
-
-   //Help and exit
-   if (uvar->help) exit(0);
+   BOOLEAN should_exit = 0;
+   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+   if ( should_exit ) exit(1);
 
    //Check analysis parameters
    if (ceil(uvar->t0/uvar->SFToverlap)*uvar->SFToverlap - uvar->t0 != 0.0) {

@@ -5,31 +5,31 @@ AM_CPPFLAGS += $(PAGER_CPPFLAGS)
 if CFITSIO
 
 bin_PROGRAMS = \
-	lalapps_fitscopy \
-	lalapps_imarith \
-	lalapps_imcopy \
-	lalapps_imlist \
-	lalapps_imstat \
-	lalapps_listhead \
-	lalapps_liststruc \
-	lalapps_modhead \
-	lalapps_tabcalc \
-	lalapps_tablist \
-	lalapps_tabmerge \
-	lalapps_tabselect \
+	lalapps_fits_array_copy \
+	lalapps_fits_array_imarith \
+	lalapps_fits_array_list \
+	lalapps_fits_array_stat \
+	lalapps_fits_copy \
+	lalapps_fits_header_list \
+	lalapps_fits_header_modify \
+	lalapps_fits_overview \
+	lalapps_fits_table_calc \
+	lalapps_fits_table_list \
+	lalapps_fits_table_merge \
+	lalapps_fits_table_select \
         $(END_OF_LIST)
 
-lalapps_fitscopy_SOURCES = fitscopy.c
-lalapps_imarith_SOURCES = imarith.c
-lalapps_imcopy_SOURCES = imcopy.c
-lalapps_imlist_SOURCES = imlist.c
-lalapps_imstat_SOURCES = imstat.c
-lalapps_listhead_SOURCES = listhead.c
-lalapps_liststruc_SOURCES = liststruc.c
-lalapps_modhead_SOURCES = modhead.c
-lalapps_tabcalc_SOURCES = tabcalc.c
-lalapps_tablist_SOURCES = tablist.c
-lalapps_tabmerge_SOURCES = tabmerge.c
-lalapps_tabselect_SOURCES = tabselect.c
+lalapps_fits_array_copy_SOURCES = fits_array_copy.c
+lalapps_fits_array_imarith_SOURCES = fits_array_imarith.c
+lalapps_fits_array_list_SOURCES = fits_array_list.c
+lalapps_fits_array_stat_SOURCES = fits_array_stat.c
+lalapps_fits_copy_SOURCES = fits_copy.c
+lalapps_fits_header_list_SOURCES = fits_header_list.c
+lalapps_fits_header_modify_SOURCES = fits_header_modify.c
+lalapps_fits_overview_SOURCES = fits_overview.c
+lalapps_fits_table_calc_SOURCES = fits_table_calc.c
+lalapps_fits_table_list_SOURCES = fits_table_list.c
+lalapps_fits_table_merge_SOURCES = fits_table_merge.c
+lalapps_fits_table_select_SOURCES = fits_table_select.c
 
 endif

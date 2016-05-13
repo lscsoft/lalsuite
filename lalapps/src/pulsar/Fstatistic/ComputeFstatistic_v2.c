@@ -251,7 +251,6 @@ typedef struct {
   CHAR *skyRegion;		/**< list of skypositions defining a search-polygon */
   CHAR *DataFiles;		/**< glob-pattern for SFT data-files to use */
 
-  BOOLEAN help;			/**< output help-string */
   CHAR *outputLogfile;		/**< write a log-file */
   CHAR *outputFstat;		/**< filename to output Fstatistic in */
   CHAR *outputLoudest;		/**< filename for loudest F-candidate plus parameter estimation */
@@ -379,10 +378,10 @@ int main(int argc,char *argv[])
   XLAL_CHECK_MAIN ( (GV.VCSInfoString = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
 
   /* do ALL cmdline and cfgfile handling */
-  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if (uvar.help) {	/* if help was requested, we're done here */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit (1);
   }
 
   if ( uvar.version )
@@ -922,7 +921,6 @@ initUserVars ( UserInput_t *uvar )
 
   uvar->metricMismatch = 0.02;
 
-  uvar->help = FALSE;
   uvar->version = FALSE;
 
   uvar->outputLogfile = NULL;
@@ -968,8 +966,6 @@ initUserVars ( UserInput_t *uvar )
   uvar->transient_useFReg = 0;
 
   /* ---------- register all user-variables ---------- */
-  XLALRegisterUvarMember( 	help, 		BOOLEAN, 'h', HELP,     "Print this message");
-
   XLALRegisterUvarMember( 	Alpha, 		RAJ, 'a', OPTIONAL, "Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
   XLALRegisterUvarMember( 	Delta, 		DECJ, 'd', OPTIONAL, "Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
   XLALRegisterUvarMember( 	skyRegion,      STRING, 'R', OPTIONAL, "ALTERNATIVE: Sky-region polygon '(Alpha1,Delta1),(Alpha2,Delta2),...' or 'allsky'");

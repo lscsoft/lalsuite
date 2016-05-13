@@ -30,7 +30,7 @@ extern "C" {
  * \defgroup LALHeap_h Header LALHeap.h
  * \ingroup lal_utilities
  * \author Karl Wette
- * \brief Implementation of a generic heap, following Chapter 10.1 of \cite open-data-structs
+ * \brief Implementation of a generic heap, following Chapter 10.1 of \cite open-data-structs .
  */
 /*@{*/
 
@@ -58,7 +58,7 @@ typedef int ( *LALHeapCmpParamFcn )( void *param, const void *x, const void *y )
  * Function to call when visiting heap element <tt>x</tt>, with a parameter \c param.
  * Return XLAL_SUCCESS if successful, or XLAL_FAILURE otherwise.
  */
-typedef int ( *LALHeapVisitFcn )( void *param, const void *x );
+typedef int ( *LALHeapVisitFcn )( void *param, void *x );
 
 /**
  * Create a heap
@@ -120,6 +120,13 @@ int XLALHeapAdd(
   );
 
 /**
+ * Remove the root element of a heap
+ */
+void *XLALHeapExtractRoot(
+  LALHeap *h                    /**< [in] Pointer to heap */
+  );
+
+/**
  * Remove and destroy the root element of a heap
  */
 int XLALHeapRemoveRoot(
@@ -135,10 +142,10 @@ int XLALHeapExchangeRoot(
   );
 
 /**
- * Visit each element in the heap in the order given by the comparison function
+ * Visit (and possibly modify) each element in the heap in the order given by the comparison function
  */
 int XLALHeapVisit(
-  const LALHeap *h,             /**< [in] Pointer to heap */
+  LALHeap *h,                   /**< [in] Pointer to heap */
   LALHeapVisitFcn visit,        /**< [in] Visitor function to call for each heap element */
   void *visit_param             /**< [in] Parameter to pass to visitor function */
   );

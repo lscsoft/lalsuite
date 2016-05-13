@@ -32,6 +32,7 @@
 
 #include <lal/SuperskyMetrics.h>
 #include <lal/LALConstants.h>
+#include <lal/LogPrintf.h>
 #include <lal/MetricUtils.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 
@@ -644,6 +645,7 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
 
     // Compute the coherent reduced supersky metric
     XLAL_CHECK_NULL( SM_ComputeReducedSuperskyMetric( &metrics->coh_rssky_metric[n], &metrics->coh_rssky_transf[n], ussky_metric_seg, &ucoords, orbital_metric_seg, &ocoords, ref_time, start_time_seg, end_time_seg ) == XLAL_SUCCESS, XLAL_EFUNC );
+    LogPrintf( LOG_DEBUG, "Computed coherent reduced supersky metric for segment %zu/%zu\n", n, metrics->num_segments );
 
     // Cleanup
     GFMAT( ussky_metric_seg, orbital_metric_seg );
@@ -658,6 +660,7 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   const LIGOTimeGPS *start_time_avg = &segments->segs[0].start;
   const LIGOTimeGPS *end_time_avg = &segments->segs[segments->length - 1].end;
   XLAL_CHECK_NULL( SM_ComputeReducedSuperskyMetric( &metrics->semi_rssky_metric, &metrics->semi_rssky_transf, ussky_metric_avg, &ucoords, orbital_metric_avg, &ocoords, ref_time, start_time_avg, end_time_avg ) == XLAL_SUCCESS, XLAL_EFUNC );
+  LogPrintf( LOG_DEBUG, "Computed semicoherent reduced supersky metric for %zu segments\n", metrics->num_segments );
 
   // Rescale metrics to input fiducial frequency
   XLALScaleSuperskyMetricsFiducialFreq( metrics, fiducial_freq );
@@ -1962,13 +1965,16 @@ int XLALSuperskyLatticePulsarSpinRange(
     fkdotMax[s] = GSL_NEGINF;
   }
 
+  // Get frequency step size
+  const double dfreq = XLALLatticeTilingStepSizes( tiling, ndim - 1 );
+
   // Create iterator over reduced supersky coordinates
-  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, 2 );
+  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, ndim - 1 );
   XLAL_CHECK( itr != NULL, XLAL_EFUNC );
 
   // Iterate over reduced supersky coordinates
-  double in_rssky_array[3 + smax];
-  gsl_vector_view in_rssky_view = gsl_vector_view_array( in_rssky_array, 3 + smax );
+  double in_rssky_array[ndim];
+  gsl_vector_view in_rssky_view = gsl_vector_view_array( in_rssky_array, ndim );
   gsl_vector *const in_rssky = &in_rssky_view.vector;
   PulsarDopplerParams XLAL_INIT_DECL( out_phys );
   while ( XLALNextLatticeTilingPoint( itr, in_rssky ) > 0 ) {
@@ -1976,19 +1982,20 @@ int XLALSuperskyLatticePulsarSpinRange(
     // Convert reduced supersky point to physical coordinates
     XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &out_phys, in_rssky, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Store minimum/maximum physical frequency/spindowns
+    // Get indexes of left/right-most point in current frequency block
+    INT4 left = 0, right = 0;
+    XLAL_CHECK( XLALCurrentLatticeTilingBlock( itr, ndim - 1, &left, &right ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Store minimum/maximum physical frequency
+    fkdotMin[0] = GSL_MIN( fkdotMin[0], out_phys.fkdot[0] + dfreq * left );
+    fkdotMax[0] = GSL_MAX( fkdotMax[0], out_phys.fkdot[0] + dfreq * right );
+
+    // Store minimum/maximum physical spindowns
     for ( size_t s = 0; s <= smax; ++s ) {
       fkdotMin[s] = GSL_MIN( fkdotMin[s], out_phys.fkdot[s] );
       fkdotMax[s] = GSL_MAX( fkdotMax[s], out_phys.fkdot[s] );
     }
 
-  }
-
-  // Include width of supersky frequency/spindown parameter space
-  for ( size_t s = 0; s <= smax; ++s ) {
-    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, RSSKY_FKDOT_DIM( s ) );
-    XLAL_CHECK( stats != NULL, XLAL_EFUNC );
-    fkdotMax[s] += stats->max_value - stats->min_value;
   }
 
   // Initialise 'spin_range' to zero

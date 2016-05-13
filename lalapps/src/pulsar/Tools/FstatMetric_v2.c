@@ -131,8 +131,6 @@ typedef struct
 
 typedef struct
 {
-  BOOLEAN help;
-
   LALStringVector *IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
   LALStringVector *sqrtSX; 	/**< (string-) list of per-IFO sqrt{Sn} values, \f$\sqrt{S_X}\f$ */
 
@@ -215,13 +213,10 @@ main(int argc, char *argv[])
   }
 
   /* read cmdline & cfgfile  */
-  if ( XLALUserVarReadAllInput(argc,argv) != XLAL_SUCCESS ) {
-    XLALPrintError( "%s(): XLALUserVarReadAllInput() failed\n", __func__ );
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit )
     return EXIT_FAILURE;
-  }
-
-  if (uvar.help) 	/* help requested: we're done */
-    return 0;
 
   CHAR *VCSInfoString;
   if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
@@ -322,8 +317,6 @@ initUserVars (UserVariables_t *uvar)
 {
 
   /* set a few defaults */
-  uvar->help = FALSE;
-
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
@@ -361,7 +354,6 @@ initUserVars (UserVariables_t *uvar)
 
   /* register all our user-variables */
 
-  XLALRegisterUvarMember(help,		BOOLEAN, 'h', HELP,		"Print this help/usage message");
   XLALRegisterUvarMember(IFOs,		STRINGVector, 'I', OPTIONAL, 	"CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
   XLALRegisterUvarMember(sqrtSX,	 	 STRINGVector, 0,  OPTIONAL, 	"[for F-metric weights] CSV list of detectors' noise-floors sqrt{Sn}");
   XLALRegisterUvarMember(Alpha,		RAJ, 'a', OPTIONAL,	"Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");

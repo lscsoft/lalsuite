@@ -98,8 +98,6 @@ extern int vrbflg;		/**< defined in lalapps.c */
 
 /* ----- User-variables: can be set from config-file or command-line */
 typedef struct {
-  BOOLEAN help;		/**< trigger output of help string */
-
   /* amplitude parameters + ranges */
   REAL8 h0Nat;		/**< overall GW amplitude h0 in *natural units*: h0Nat = h0 * sqrt(T/Sn) */
   REAL8 h0NatBand;	/**< randomize signal within [h0, h0+Band] with uniform prior */
@@ -203,10 +201,10 @@ int main(int argc,char *argv[])
   XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* do ALL cmdline and cfgfile handling */
-  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if (uvar.help) {	/* if help was requested, we're done here */
-    return 0;
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    return EXIT_FAILURE;
   }
 
   XLAL_CHECK_MAIN ( (version_string = XLALGetVersionString(0)) != NULL, XLAL_EFUNC );
@@ -341,7 +339,6 @@ initUserVars ( UserInput_t *uvar )
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set a few defaults */
-  uvar->help = 0;
   uvar->outputStats = NULL;
 
   uvar->phi0 = 0;
@@ -355,8 +352,6 @@ initUserVars ( UserInput_t *uvar )
   uvar->E = 0;	/* RAA approximation antenna-pattern matrix component M_{14}. Zero if using LWL */
 
   /* register all our user-variables */
-  XLALRegisterUvarMember(	help, 		BOOLEAN, 'h', HELP,     "Print this message");
-
   XLALRegisterUvarMember(	h0Nat,		REAL8, 's', OPTIONAL, "Overall GW amplitude h0 in *natural units*: h0Nat = h0 sqrt(T/Sn) ");
   XLALRegisterUvarMember(	h0NatBand,	 REAL8, 0,  OPTIONAL, "Randomize amplitude within [h0, h0+h0Band] with uniform prior");
   XLALRegisterUvarMember(	SNR,		 REAL8, 0,  OPTIONAL, "Alternative: adjust h0 to obtain signal of exactly this optimal SNR");

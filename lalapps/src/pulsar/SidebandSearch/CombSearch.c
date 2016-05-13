@@ -104,7 +104,6 @@ typedef struct {
  * A structure that stores user input variables
  */
 typedef struct { 
-  BOOLEAN help;		            	/**< trigger to output help string */
   BOOLEAN version;			/**< output version information */
   BOOLEAN tophat;			/**< tophat template flag */
   CHAR *inputFstat;			/**< filename of Fstat input data file to use */
@@ -263,12 +262,10 @@ int initUserVars(int argc,char *argv[],UserInput_t *uvar)
   CHAR *version_string;
 
   /* set a few defaults */
-  uvar->help = FALSE;
   uvar->version = FALSE;
 
  
   /* register all user-variables */
-  XLALRegisterUvarMember(help,          BOOLEAN, 'h', HELP,     "Print this message");
   XLALRegisterUvarMember(Freq,          REAL8, 'f', REQUIRED, "Starting search frequency in Hz");
   XLALRegisterUvarMember(FreqBand,      REAL8, 'b', REQUIRED, "Search frequency band in Hz");
   XLALRegisterUvarMember(orbitPeriod,   REAL8, 'P', REQUIRED, "Orbital period in seconds");
@@ -279,13 +276,12 @@ int initUserVars(int argc,char *argv[],UserInput_t *uvar)
   XLALRegisterUvarMember(version,	BOOLEAN, 'V', SPECIAL,  "Output version information");
   
   /* do ALL cmdline and cfgfile handling */
-  if (XLALUserVarReadAllInput(argc, argv)) {
+  BOOLEAN should_exit = 0;
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",fn,xlalErrno);
     return XLAL_EFAULT;
   }
- 
-  /* if help was requested, we're done here */
-  if (uvar->help) exit(0);
+  if (should_exit) exit(1);
 
   if ((version_string = XLALGetVersionString(0)) == NULL) {
     XLALPrintError("XLALGetVersionString(0) failed.\n");

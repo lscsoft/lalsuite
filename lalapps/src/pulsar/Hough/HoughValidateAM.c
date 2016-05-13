@@ -108,7 +108,6 @@ int main( int argc, char *argv[]){
   INT4 mmP, mmT; /* for loop over mismatched templates */
 
   /* user input variables */
-  BOOLEAN uvar_help;
   INT4 uvar_ifo, uvar_blocksRngMed;
   REAL8 uvar_houghFalseAlarm;
   REAL8 uvar_peakThreshold;
@@ -129,7 +128,6 @@ int main( int argc, char *argv[]){
   
   /* *********************************************************************** */
   /* set other user input variables */
-  uvar_help = FALSE;
   uvar_peakThreshold = THRESHOLD;
   uvar_ifo = IFO;
   uvar_blocksRngMed = BLOCKSRNGMED;
@@ -161,7 +159,6 @@ int main( int argc, char *argv[]){
 
   /* *********************************************************************** */
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",             &uvar_help),            &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)",  &uvar_ifo ),            &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",              &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",   't', UVAR_OPTIONAL, "Peak selection threshold",       &uvar_peakThreshold),   &status);
@@ -181,11 +178,10 @@ int main( int argc, char *argv[]){
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch",        'M', UVAR_OPTIONAL, "Mismatch in weight calculation", &uvar_mismatchW),       &status);
 
   /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0); 
+  BOOLEAN should_exit = 0;
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
   
   /* *********************************************************************** */
   /* write the log file */
