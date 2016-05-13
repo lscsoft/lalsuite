@@ -266,7 +266,6 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
       }
   }
 
-
   /* ==== TIDAL PARAMETERS ==== */
   REAL8 lambda1 = 0.;
   if(LALInferenceCheckVariable(model->params, "lambda1")) lambda1 = *(REAL8*) LALInferenceGetVariable(model->params, "lambda1");
