@@ -355,18 +355,6 @@ class IMRPhenomBTemplate(IMRAlignedSpinTemplate):
     approximant = "IMRPhenomB"
     param_names = ("m1", "m2", "chieff")
     param_formats = ("%.2f", "%.2f", "%+.2f")
-    def _get_imr_dur(self):
-        """
-        Ajith gave us the heuristic that chirp + 1000 M is a conservative
-        estimate for the length of a full IMR waveform.
-        """
-        return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
-            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chieff,
-            7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
-
-    def _get_imr_f_final(self):
-        return spawaveform.imrffinal(self.m1, self.m2, self.chieff)
-
     def _compute_waveform(self, df, f_final):
         return lalsim.SimIMRPhenomBGenerateFD(0, df,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
@@ -393,19 +381,6 @@ class IMRPhenomDTemplate(IMRPhenomBTemplate):
 
 class SEOBNRv2Template(IMRAlignedSpinTemplate):
     approximant = "SEOBNRv2"
-    def _get_imr_dur(self):
-        """
-        Following Jolien's suggestion for the duration of an IMR
-        waveform, we compute the chirp time, scale by 10% and pad by
-        one second.
-        """
-        # FIXME: This should be done better when possible!
-        dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
-            self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chieff,
-            7) + 1000 * (self.m1 + self.m2) * MTSUN_SI
-        # FIXME: Is a minimal time of 1.0s too long?
-        dur = 1.1 * dur + 1.0
-        return dur
 
 class SEOBNRv2ROMDoubleSpinTemplate(SEOBNRv2Template):
     approximant = "SEOBNRv2_ROM_DoubleSpin"
