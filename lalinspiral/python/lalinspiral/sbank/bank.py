@@ -73,7 +73,11 @@ class Bank(object):
             self._moments = {}
             self.compute_match = self._metric_match
         else:
-            self._workspace_cache = CreateSBankWorkspaceCache()
+            if hasattr(tmplt_class, '_wf_hp'):
+                # The max over skyloc stuff needs a second cache
+                self._workspace_cache = [CreateSBankWorkspaceCache(), CreateSBankWorkspaceCache()]
+            else:
+                self._workspace_cache = CreateSBankWorkspaceCache()
             self.compute_match = self._brute_match
 
     def __len__(self):

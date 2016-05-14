@@ -275,8 +275,12 @@ def parse_command_line():
         if opts.spin2_max is None:
             opts.spin2_max = opts.spin1_max
 
-    if opts.approximant in ["TaylorF2RedSpin", "IMRPhenomB","SEOBNRv1"] and not opts.aligned_spin:
+    if opts.approximant in ["TaylorF2RedSpin", "IMRPhenomB","IMRPhenomC", "IMRPhenomD", "SEOBNRv1", "SEOBNRv2", "SEOBNRv2_ROM_DoubleSpin", "SEOBNRv2_ROM_DoubleSpin_HI"] and not opts.aligned_spin:
         parser.error("--aligned-spin is required for the %s approximant" % opts.approximant)
+
+    if opts.approximant in ["IMRPhenomPv2", "SEOBNRv3"] and opts.aligned_spin:
+        opts.approximant = {"IMRPhenomPv2":"IMRPhenomD",
+                            "SEOBNRv3":"SEOBNRv2"}[opts.approximant]
 
     if (opts.mchirp_boundaries_file is not None) ^ (opts.mchirp_boundaries_index is not None):
         parser.error("must supply both --mchirp-boundaries-file and --mchirp-boundaries-index or neither")
