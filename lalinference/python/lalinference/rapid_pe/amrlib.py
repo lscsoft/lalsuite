@@ -539,11 +539,18 @@ INVERSE_TRANSFORMS_MASS = { \
     None: None
 }
 
-def apply_transform(pts, intr_prms, mass_transform=None):
+def apply_transform(pts, intr_prms, mass_transform=None, spin_transform=None):
     # You know what... recarrays are dumb, and so's your face.
     # FIXME: Why does numpy want me to repack this into tuples!?
     #tpts = numpy.array([tuple(pt) for pt in pts.T], dtype = numpy.dtype([(a ,"float64") for a in intr_prms]))
     m1_idx, m2_idx = intr_prms.index("mass1"), intr_prms.index("mass2")
+    if spin_transform:
+        if spin_transform == "chi_z":
+            s1z_idx, s2z_idx = intr_prms.index("spin1z"), intr_prms.index("spin2z")
+            chi_z = transform_s1zs2z_chi(pts[:,m1_idx], pts[:,m2_idx], pts[:,s1z_idx], pts[:,s2z_idx]) 
+            pts = numpy.vstack((pts.T, chi_z)).T
+            intr_prms.append("chi_z")
+
     if mass_transform:
        pts[:,m1_idx], pts[:,m2_idx] = VALID_TRANSFORMS_MASS[mass_transform](pts[:,m1_idx], pts[:,m2_idx])
 
