@@ -244,8 +244,8 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
   n_dot_psi = n_hat_x * psi_hat_x + n_hat_y * psi_hat_y + n_hat_z * psi_hat_z;
   ln_cross_n_dot_psi = ln_cross_n_x * psi_hat_x + ln_cross_n_y * psi_hat_y + ln_cross_n_z * psi_hat_z;
 
-  *calpha = corb_phase * n_dot_theta - sorb_phase * ln_cross_n_dot_theta;
-  *salpha = corb_phase * n_dot_psi - sorb_phase * ln_cross_n_dot_psi;
+  *salpha = corb_phase * n_dot_theta - sorb_phase * ln_cross_n_dot_theta;
+  *calpha = corb_phase * n_dot_psi - sorb_phase * ln_cross_n_dot_psi;
 
   /*  Step 5: Also useful to keep the source frame vectors as defined in
    *  equation 16 of Harald's document.
@@ -521,10 +521,10 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   {
     (*hplus)->data->data[curr_idx] =
           (calpha*calpha - salpha*salpha) * hplus_corr->data->data[curr_idx]
-          + 2.0*calpha*salpha * hcross_corr->data->data[curr_idx];
+          - 2.0*calpha*salpha * hcross_corr->data->data[curr_idx];
 
     (*hcross)->data->data[curr_idx] =
-          - 2.0*calpha*salpha * hplus_corr->data->data[curr_idx]
+          + 2.0*calpha*salpha * hplus_corr->data->data[curr_idx]
         + (calpha*calpha - salpha*salpha) * hcross_corr->data->data[curr_idx];
   }
 
