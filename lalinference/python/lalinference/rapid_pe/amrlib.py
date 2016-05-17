@@ -522,6 +522,9 @@ def check_grid(grid, intr_prms, distance_coordinates):
     if "spin2z" in intr_prms:
         s2_axis = intr_prms.index("spin2z")
         bounds_mask &= check_spins(grid_check[s2_axis])
+    if "chi_z" in intr_prms:
+        chi_axis = intr_prms.index("chi_z")
+        bounds_mask &= check_spins(grid_check[chi_axis])
     return bounds_mask
 
 VALID_TRANSFORMS_MASS = { \
