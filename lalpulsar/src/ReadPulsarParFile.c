@@ -2616,6 +2616,8 @@ Parameters not in consistent order!\n");
     }
   }
 
+  XLALDestroyStringVector( tmpparams );
+
   return params;
 }
 
