@@ -60,72 +60,80 @@ dets='H1'
 Nlive=1024
 Nmcmcinitial=0
 outfile='test.out'
-proposalwalk = 3
-proposaluniform = 1
+
+# test two different proposals - the default proposal (which is currently --ensembleWalk 3 --uniformprop 1)
+# against just using the ensemble walk proposal
+proposals = ['', '--ensembleWalk 1 --uniformprop 0']
+labels = ['Default', 'Walk']
+pcolor = ['b', 'r']
 
 Ntests = 10 # number of times to run nested sampling for each h0 value to get average
 
-odds_prior = []
-std_odds_prior = []
-logpriors = []
+fig, ax = pl.subplots(1, 1)
 
-for h0ul in h0uls:
-  # prior file
-  priorfile="\
+for i, prop in enumerate(proposals):
+  odds_prior = []
+  std_odds_prior = []
+  logpriors = []
+
+  for h0ul in h0uls:
+    # prior file
+    priorfile="\
 H0 uniform 0 %e\n\
 PHI0 uniform 0 %f\n\
 COSIOTA uniform -1 1\n\
 PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
 
-  priorf = 'test.prior'
-  f = open(priorf, 'w')
-  f.write(priorfile)
-  f.close()
-
-  logprior = -np.log(h0ul*np.pi*2.*(np.pi/2.))
-  logpriors.append(logprior)
-
-  hodds = []
-  # run Ntests times to get average
-  for j in range(Ntests):
-    # run code
-    commandline="\
-%s --detectors %s --par-file %s --input-files %s --outfile %s \
---prior-file %s --Nlive %d --Nmcmcinitial %d --ensembleWalk %d --uniformprop %d" \
-% (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, proposalwalk, proposaluniform)
-
-    sp.check_call(commandline, shell=True)
-
-    # get odds ratio
-    f = open(outfile+'_B.txt', 'r')
-    hodds.append(float(f.readlines()[0].split()[0]))
+    priorf = 'test.prior'
+    f = open(priorf, 'w')
+    f.write(priorfile)
     f.close()
 
-  odds_prior.append(np.mean(hodds)-logprior)
-  std_odds_prior.append(np.std(hodds))
+    logprior = -np.log(h0ul*np.pi*2.*(np.pi/2.))
+    logpriors.append(logprior)
 
-# use reduced chi-squared value to test for "flatness"
-ns = np.array(odds_prior)
-p = np.sum((ns-np.mean(ns))**2/np.array(std_odds_prior)**2)/float(len(h0uls))
-stdchi = np.sqrt(2.*float(len(h0uls)))/float(len(h0uls)) # standard deviation of chi-squared distribution
-nsigma = np.abs(p-1.)/stdchi
+    hodds = []
+    # run Ntests times to get average
+    for j in range(Ntests):
+      # run code
+      commandline="\
+%s --detectors %s --par-file %s --input-files %s --outfile %s \
+--prior-file %s --Nlive %d --Nmcmcinitial %d %s" \
+% (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, prop)
 
-print "Reduced chi-squared test for linear relation = %f" % (p)
+      sp.check_call(commandline, shell=True)
 
-if nsigma > 2.:
-  print "This is potentially significantly (%f sigma) different from a flat line" % nsigma
+      # get odds ratio
+      f = open(outfile+'_B.txt', 'r')
+      hodds.append(float(f.readlines()[0].split()[0]))
+      f.close()
 
-# plot figure
-fig, ax = pl.subplots(1, 1)
-ax.errorbar(-np.array(logpriors), odds_prior, yerr=std_odds_prior, fmt='o')
-ax.set_xlabel('log(prior volume)')
-ax.set_ylabel('log(odds ratio)-log(prior)')
+    odds_prior.append(np.mean(hodds)-logprior)
+    std_odds_prior.append(np.std(hodds))
+
+  # use reduced chi-squared value to test for "flatness"
+  ns = np.array(odds_prior)
+  p = np.sum((ns-np.mean(ns))**2/np.array(std_odds_prior)**2)/float(len(h0uls))
+  stdchi = np.sqrt(2.*float(len(h0uls)))/float(len(h0uls)) # standard deviation of chi-squared distribution
+  nsigma = np.abs(p-1.)/stdchi
+
+  print "Reduced chi-squared test for linear relation = %f" % (p)
+
+  if nsigma > 2.:
+    print "This is potentially significantly (%f sigma) different from a flat line" % nsigma
+
+  # plot figure
+  ax.errorbar(-np.array(logpriors), odds_prior, yerr=std_odds_prior, fmt='o', label=labels[i], color=pcolor[i])
+  ax.set_xlabel('log(prior volume)')
+  ax.set_ylabel('log(odds ratio)-log(prior)')
+
+pl.legend()
 pl.show()
 
 # clean up temporary files
 os.remove(parf)
 os.remove(priorf)
-#os.remove(datafile)
+os.remove(datafile)
 ofs = glob.glob(outfile+'*')
 for fs in ofs:
   os.remove(fs)
