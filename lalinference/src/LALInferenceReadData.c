@@ -2546,9 +2546,9 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     char *fname=NULL;
     char defaultname[]="injection_params.dat";
     FILE *outfile=NULL;
+    LALInferenceModel *model = LALInferenceInitCBCModel(runState);
 
     SimInspiralTable *injTable=NULL, *theEventTable=NULL;
-    LALInferenceModel *model = LALInferenceInitCBCModel(runState);
     if (LALInferenceGetProcParamVal(runState->commandLine, "--roqtime_steps")){
       LALInferenceSetupROQmodel(model, runState->commandLine);
       fprintf(stderr, "done LALInferenceSetupROQmodel\n");
@@ -2556,6 +2556,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
       model->roq_flag=0;
     }
     LALInferenceVariables *injparams = XLALCalloc(1, sizeof(LALInferenceVariables));
+    model->roq_flag = 0;
     LALInferenceCopyVariables(model->params, injparams);
 
     ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine,"--inj");
@@ -2730,7 +2731,9 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 
 	  model->roq->frequencyNodesLinear = XLALCreateREAL8Sequence(n_basis_linear);
 	  model->roq->frequencyNodesQuadratic = XLALCreateREAL8Sequence(n_basis_quadratic);
-	  
+          model->roq->calFactorLinear = XLALCreateCOMPLEX16Sequence(model->roq->frequencyNodesLinear->length);   
+	  model->roq->calFactorQuadratic = XLALCreateCOMPLEX16Sequence(model->roq->frequencyNodesQuadratic->length);	 
+ 
 	  model->roq->trigtime = endtime;
 
 	  if(LALInferenceGetProcParamVal(commandLine,"--roqnodesLinear")){

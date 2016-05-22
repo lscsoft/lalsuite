@@ -127,7 +127,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
      *   from the priors. OVERWRITE EVEN USER CHOICES.
      *   (necessary for complicated prior shapes where
      *   LALInferenceCyclicReflectiveBound() is not enough) */
-    #pragma omp parallel for private(thread)
+    //#pragma omp parallel for private(thread)
     for (t = 0; t < run_state->nthreads; t++) {
         LALInferenceVariables *priorDraw = XLALCalloc(1, sizeof(LALInferenceVariables));
 
@@ -198,6 +198,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
 
     /* Set up CBC model and parameter array */
     thread->model = LALInferenceInitCBCModel(run_state);
+    thread->model->roq_flag = 0;
 
     /* Allocate IFO likelihood holders */
     nifo = 0;

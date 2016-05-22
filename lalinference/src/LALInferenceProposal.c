@@ -78,6 +78,7 @@ const char *const ensembleStretchFullName = "EnsembleStretchFull";
 const char *const ensembleStretchIntrinsicName = "EnsembleStretchIntrinsic";
 const char *const ensembleStretchExtrinsicName = "EnsembleStretchExtrinsic";
 const char *const drawApproxPriorName = "DrawApproxPrior";
+const char *const drawFlatPriorName = "DrawFlatPrior";
 const char *const skyReflectDetPlaneName = "SkyReflectDetPlane";
 const char *const skyRingProposalName = "SkyRingProposal";
 const char *const PSDFitJumpName = "PSDFitJump";
@@ -221,7 +222,7 @@ REAL8 LALInferenceCyclicProposal(LALInferenceThreadState *thread,
 
     /* One instance of each proposal object is stored in cycle->proposals.
         cycle->order is a list of elements to call from the proposals */
-  
+
     REAL8 logPropRatio=-INFINITY;
     do
     {
@@ -1109,7 +1110,7 @@ REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceThreadState *thread,
 
     LALInferenceCopyVariables(currentParams, proposedParams);
 
-  
+
     i = gsl_rng_uniform_int(rng, nPts);
     do {
         j = gsl_rng_uniform_int(rng, nPts);
@@ -1353,6 +1354,23 @@ REAL8 LALInferenceDrawApproxPrior(LALInferenceThreadState *thread,
     }
 
     return logPropRatio;
+}
+
+REAL8 LALInferenceDrawFlatPrior(LALInferenceThreadState *threadState, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
+  REAL8 logPropRatio = 0., tmp = 0.;
+
+  LALInferenceCopyVariables(currentParams, proposedParams);
+  LALInferenceVariableItem *ptr = currentParams->head;
+
+  while(ptr!=NULL) {
+    if(ptr->vary != LALINFERENCE_PARAM_FIXED && LALInferenceCheckMinMaxPrior(threadState->priorArgs, ptr->name ) ) {
+      tmp = draw_flat(threadState, ptr->name);
+      LALInferenceSetVariable(proposedParams, ptr->name, &tmp);
+    }
+    ptr=ptr->next;
+  }
+
+  return logPropRatio;
 }
 
 static void cross_product(REAL8 x[3], const REAL8 y[3], const REAL8 z[3]) {
@@ -2740,7 +2758,7 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
                                              LALInferenceVariables *proposedParams) {
   REAL8 old_d=0.0;
   DistanceParam distParam;
-  
+
   if (LALInferenceCheckVariable(currentParams, "distance")) {
     distParam = USES_DISTANCE_VARIABLE;
     old_d = LALInferenceGetREAL8Variable(currentParams,"distance");
@@ -2763,7 +2781,7 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
   REAL8 xmean = d_inner_h/(OptimalSNR*OptimalSNR*old_d);
   REAL8 xsigma = 1.0/(OptimalSNR*old_d);
   REAL8 old_x = 1.0/old_d;
-  
+
   /* Sample new x. Do not check for x<0 since that can throw the code
    * into a difficult-to-terminate loop */
   REAL8 new_x;
@@ -2774,7 +2792,7 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
   /* Adjust SNRs */
   OptimalSNR *= new_x / old_x;
   LALInferenceSetREAL8Variable(proposedParams,"optimal_snr",OptimalSNR);
-  
+
   /* Update individual detector information */
   const char *ifonames[5]={"H1","L1","V1","I1","J1"};
   char pname[64]="";
@@ -2784,14 +2802,14 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
     if(LALInferenceCheckVariable(currentParams,pname))
       LALInferenceSetREAL8Variable(proposedParams,pname,LALInferenceGetREAL8Variable(currentParams,pname) * (new_x/old_x));
   }
-  
+
   REAL8 logxdjac;
   /* Set distance */
   if(distParam == USES_DISTANCE_VARIABLE)
   {
     /* The natural proposal density is in x, but we need to compute
-       the proposal ratio density in d.  So, we need a factor of 
-       
+       the proposal ratio density in d.  So, we need a factor of
+
        |dx_old/dd_old| / |dx_new/dd_new| = d_new^2 / d_old^2
 
        to correct the x proposal density.
@@ -3700,13 +3718,13 @@ void LALInferenceComputeMaxAutoCorrLenFromDE(LALInferenceThreadState *thread, IN
  * the ACF to estimate the ACL; there must be at least M*ACL samples
  * summed.  This ensures that we obtain a reliable estimate of the ACL
  * by incorporating lags that are much longer that the estimated ACL.
- * 
+ *
  * The maximum window length is also restricted to be N/K as a safety
  * precaution against relying on data near the extreme of the lags in
  * the ACF, where there is a lot of noise.
- * 
+ *
  * By default, safe parameters are M = 5, K = 2.
- * 
+ *
  * If no estimate can be obtained, then return Infinity.
  *
  * @param array Array with rows containing samples.
@@ -3831,10 +3849,10 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LAL
 
     snprintf(ampName, VARNAME_MAX, "%s_spcal_amp", ifo_names[ifo]);
     snprintf(phaseName, VARNAME_MAX, "%s_spcal_phase", ifo_names[ifo]);
-   
+
     amps = *(REAL8Vector **)LALInferenceGetVariable(proposedParams, ampName);
     phases = *(REAL8Vector **)LALInferenceGetVariable(proposedParams, phaseName);
-    
+
     char amp_uncert[VARNAME_MAX];
     char pha_uncert[VARNAME_MAX];
     snprintf(amp_uncert, VARNAME_MAX, "%s_spcal_amp_uncertainty",ifo_names[ifo]);

@@ -381,6 +381,9 @@ def useSummary_json( directory, ifo, classifier, tag, t, stride):
 def frame2segment( directory, classifier, ifo, FAPthr, tag, right_padding, left_padding, t_lag, t, stride ):
     return "%s/%s_%s_FAP-%.3e_rp-%.3f_lp-%.3f_tl-%.3f%s-%d-%d.seg"%(directory, ifo, classifier, FAPthr, right_padding, left_padding, t_lag, tag, t, stride)
 
+def frame2segmentxml( directory, tag, t, stride ):
+    return "%s/laldetcharIDQFrame2Segment%s-%d-%d.xml.gz"%(directory, tag, t, stride)
+
 #=================================================
 # extract start/dur
 #=================================================

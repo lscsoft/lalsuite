@@ -150,13 +150,9 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 
    /* Try to determine a model-less likelihood, if such a thing makes sense */
    if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood){
-        if (LALInferenceGetProcParamVal(commandLine, "--roqtime_steps")) {
-                nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
-        }
 
-        else{
                 nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
-        }
+
     }
     else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood ||
        runState->likelihood==&LALInferenceMarginalisedTimeLogLikelihood ||
@@ -665,9 +661,9 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
              LALInferenceSplineCalibrationFactorROQ(logfreqs, amps, phases,
 						model->roq->frequencyNodesLinear,
-						model->roq->calFactorLinear,
+						&(model->roq->calFactorLinear),
 						model->roq->frequencyNodesQuadratic,
-						model->roq->calFactorQuadratic);
+						&(model->roq->calFactorQuadratic));
           }
 
 	else{
@@ -678,8 +674,9 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
                        &lalDimensionlessUnit,
                        dataPtr->freqData->data->length);
           }
-	}
           LALInferenceSplineCalibrationFactor(logfreqs, amps, phases, calFactor);
+	}
+	  
         }
         /*constant*/
         if (constantcal_active){
@@ -787,7 +784,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 	if (spcal_active){
 	
 	    for(unsigned int iii=0; iii < model->roq->frequencyNodesLinear->length; iii++){
-
 			this_ifo_d_inner_h += ( dataPtr->roq->weightsLinear[iii*dataPtr->roq->n_time_steps + weight_index] * ( conj( model->roq->calFactorLinear->data[iii] * (dataPtr->fPlus*model->roq->hptildeLinear->data->data[iii] + dataPtr->fCross*model->roq->hctildeLinear->data->data[iii]) ) ) );
 		}
 		
@@ -812,7 +808,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 	d_inner_h += creal(this_ifo_d_inner_h);
 	S += this_ifo_s;
 	model->ifo_loglikelihoods[ifo] = creal(this_ifo_d_inner_h) - (0.5*this_ifo_s) + dataPtr->nullloglikelihood; 
-
 	loglikelihood += model->ifo_loglikelihoods[ifo];
 
 	char varname[VARNAME_MAX];
@@ -1026,7 +1021,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   	if ( model->roq->hptildeQuadratic ) XLALDestroyCOMPLEX16FrequencySeries(model->roq->hptildeQuadratic);
   	if ( model->roq->hctildeQuadratic ) XLALDestroyCOMPLEX16FrequencySeries(model->roq->hctildeQuadratic);
 
-        
 	return(loglikelihood); /* The ROQ isn't compatible with the stuff below, so we can just exit here */
 
 

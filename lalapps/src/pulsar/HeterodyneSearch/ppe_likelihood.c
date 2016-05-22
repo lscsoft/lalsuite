@@ -430,7 +430,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         LALInferenceGetGaussianPrior(runState->priorArgs, item->name, &mu, &sigma);
 
         value = (*(REAL8 *)item->value);
-        prior -= 0.5*((*(REAL8 *)item->value - mu)*(*(REAL8 *)item->value - mu))/sigma;
+        prior -= 0.5*((*(REAL8 *)item->value - mu)*(*(REAL8 *)item->value - mu))/(sigma*sigma);
 
         if ( !strcmp(item->name, "I21") ){ I21 = value; }
         if ( !strcmp(item->name, "I31") ){ I31 = value; }

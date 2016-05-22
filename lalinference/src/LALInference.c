@@ -3993,15 +3993,13 @@ int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
 					REAL8Vector *deltaAmps,
 					REAL8Vector *deltaPhases,
 					REAL8Sequence *freqNodesLin,
-					COMPLEX16Sequence *calFactorROQLin,
+					COMPLEX16Sequence **calFactorROQLin,
 					REAL8Sequence *freqNodesQuad,
-					COMPLEX16Sequence *calFactorROQQuad) {
+					COMPLEX16Sequence **calFactorROQQuad) {
 
   gsl_interp_accel *ampAcc = NULL, *phaseAcc = NULL;
   gsl_interp *ampInterp = NULL, *phaseInterp = NULL;
-  calFactorROQLin = XLALCreateCOMPLEX16Sequence(freqNodesLin->length);
-  calFactorROQQuad = XLALCreateCOMPLEX16Sequence(freqNodesQuad->length);
-
+ 
   int status = XLAL_SUCCESS;
   const char *fmt = "";
 
@@ -4015,7 +4013,7 @@ int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
     goto cleanup;
   }
 
-  if (logfreqs->length != deltaAmps->length || deltaAmps->length != deltaPhases->length || freqNodesLin->length != calFactorROQLin->length || freqNodesQuad->length != calFactorROQQuad->length) {
+  if (logfreqs->length != deltaAmps->length || deltaAmps->length != deltaPhases->length || freqNodesLin->length != (*calFactorROQLin)->length || freqNodesQuad->length != (*calFactorROQQuad)->length) {
     status = XLAL_EINVAL;
     fmt = "input lengths differ";
     goto cleanup;
@@ -4059,7 +4057,7 @@ int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
       dPhi = gsl_interp_eval(phaseInterp, logfreqs->data, deltaPhases->data, log(f), phaseAcc);
     }
     
-    calFactorROQLin->data[i] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
+    (*calFactorROQLin)->data[i] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
   }
   
   for (unsigned int j = 0; j < freqNodesQuad->length; j++) {
@@ -4072,7 +4070,7 @@ int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
       dPhi = gsl_interp_eval(phaseInterp, logfreqs->data, deltaPhases->data, log(f), phaseAcc);
     }
 
-    calFactorROQQuad->data[j] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
+    (*calFactorROQQuad)->data[j] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
 
   }
 

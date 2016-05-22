@@ -246,7 +246,9 @@ extern "C" {
                      greatly increases the autocorrelation lengths, so in\n\
                      general should be avoided]\n"\
 " --ensembleWalk      (UINT4) relative weight of the ensemble walk\n\
-                     proposal (DEFAULT = 1, e.g. 100%%)\n"\
+                     proposal (DEFAULT = 3, e.g. 75%%)\n"\
+" --uniformprop       (UINT4) relative weights of uniform proposal\n\
+                     (DEFAULT = 1, e.g. 25%%)\n"\
 "\n"\
 " Reduced order quadrature parameters:\n"\
 " --roq               Set this to use reduced order quadrature to compute the\n\

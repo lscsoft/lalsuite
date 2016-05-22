@@ -196,10 +196,16 @@ LALInspiralFindEventsCluster
    if (findeventsin->displayTemplates)
    {
       for (i=0;i<(INT4)output1.length;i++)
-         printf("%e %e\n", i*dt, output1.data[i]);printf("&\n");
+      {
+         printf("%e %e\n", i*dt, output1.data[i]);
+         printf("&\n");
+      }
       /*
       for (i=0;i<(INT4)output1.length;i++)
-         printf("%e %e\n", i*dt, output2.data[i]);printf("&\n");
+      {
+         printf("%e %e\n", i*dt, output2.data[i]);
+         printf("&\n");
+      }
        */
    }
    if (XLALREAL4VectorFFT(&filter1, &output1, findeventsin->fwdp) != 0)
