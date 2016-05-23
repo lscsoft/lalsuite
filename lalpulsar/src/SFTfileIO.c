@@ -241,7 +241,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
       /* merged SFTs need to satisfy stronger consistency-constraints (-> see spec) */
       BOOLEAN mfirst_block = TRUE;
       UINT4   mprev_version = 0;
-      SFTtype mprev_header;
+      SFTtype XLAL_INIT_DECL( mprev_header );
       REAL8   mprev_nsamples = 0;
 
       FILE *fp;
