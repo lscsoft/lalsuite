@@ -627,7 +627,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     f_low = model->fLow;
 
   f_start = fLow2fStart(f_low, amporder, approximant);
-  f_max = 2048.0;//0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using model->fHigh causes NaNs in waveform (see redmine issue #750)*/
+  f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using model->fHigh causes NaNs in waveform (see redmine issue #750)*/
 
   /* ==== SPINS ==== */
   /* We will default to spinless signal and then add in the spin components if required */
