@@ -363,8 +363,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   UINT4 constantcal_active=0;
   
   /* ROQ likelihood stuff */
-  double time_requested, time_min;
-  unsigned int weight_index;
   REAL8 d_inner_h=0.0;
 
 
