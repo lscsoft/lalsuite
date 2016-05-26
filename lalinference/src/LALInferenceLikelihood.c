@@ -766,25 +766,17 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
     if (model->roq_flag) {
 
-	timedelay = XLALTimeDelayFromEarthCenter(dataPtr->detector->location, ra, dec, &GPSlal);
-	time_requested =  GPSdouble + timedelay;
+	double complex weight_iii;
 
-	dataPtr->timeshift = timeshift;
-
-	time_min = model->roq->trigtime - 0.5*dataPtr->roq->time_weights_width;
-
-	time_requested -= time_min;
-
-	time_requested /= dataPtr->roq->time_step_size;
-
-	weight_index = (unsigned int) floor(time_requested + 0.5);
-
-	// then set tc in sampler to be one of the discrete values
-	
 	if (spcal_active){
 	
 	    for(unsigned int iii=0; iii < model->roq->frequencyNodesLinear->length; iii++){
-			this_ifo_d_inner_h += ( dataPtr->roq->weightsLinear[iii*dataPtr->roq->n_time_steps + weight_index] * ( conj( model->roq->calFactorLinear->data[iii] * (dataPtr->fPlus*model->roq->hptildeLinear->data->data[iii] + dataPtr->fCross*model->roq->hctildeLinear->data->data[iii]) ) ) );
+			
+			complex double template_EI = model->roq->calFactorLinear->data[iii] * (dataPtr->fPlus*model->roq->hptildeLinear->data->data[iii] + dataPtr->fCross*model->roq->hctildeLinear->data->data[iii] );
+
+			weight_iii = gsl_spline_eval (dataPtr->roq->weights_linear[iii].spline_real_weight_linear, timeshift, dataPtr->roq->weights_linear[iii].acc_real_weight_linear) + I*gsl_spline_eval (dataPtr->roq->weights_linear[iii].spline_imag_weight_linear, timeshift, dataPtr->roq->weights_linear[iii].acc_imag_weight_linear);
+
+			this_ifo_d_inner_h += ( weight_iii * ( conj( template_EI ) ) );
 		}
 		
 		for(unsigned int jjj=0; jjj < model->roq->frequencyNodesQuadratic->length; jjj++){
@@ -792,22 +784,33 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 			this_ifo_s += dataPtr->roq->weightsQuadratic[jjj] * creal( conj( model->roq->calFactorQuadratic->data[jjj] * (model->roq->hptildeQuadratic->data->data[jjj]*dataPtr->fPlus + model->roq->hctildeQuadratic->data->data[jjj]*dataPtr->fCross) ) * ( model->roq->calFactorQuadratic->data[jjj] * (model->roq->hptildeQuadratic->data->data[jjj]*dataPtr->fPlus + model->roq->hctildeQuadratic->data->data[jjj]*dataPtr->fCross) ) );
 		}
 	}
+
 	else{
 	
 		for(unsigned int iii=0; iii < model->roq->frequencyNodesLinear->length; iii++){
 
-			this_ifo_d_inner_h += ( dataPtr->roq->weightsLinear[iii*dataPtr->roq->n_time_steps + weight_index]*( conj(dataPtr->fPlus*model->roq->hptildeLinear->data->data[iii] + dataPtr->fCross*model->roq->hctildeLinear->data->data[iii])) );
-		}
-		 
-		for(unsigned int jjj=0; jjj < model->roq->frequencyNodesQuadratic->length; jjj++){
+			complex double template_EI = dataPtr->fPlus*model->roq->hptildeLinear->data->data[iii] + dataPtr->fCross*model->roq->hctildeLinear->data->data[iii];
 
-			this_ifo_s += dataPtr->roq->weightsQuadratic[jjj] * creal( conj(model->roq->hptildeQuadratic->data->data[jjj]*dataPtr->fPlus + model->roq->hctildeQuadratic->data->data[jjj]*dataPtr->fCross) * (model->roq->hptildeQuadratic->data->data[jjj]*dataPtr->fPlus + model->roq->hctildeQuadratic->data->data[jjj]*dataPtr->fCross) );
+			weight_iii = gsl_spline_eval (dataPtr->roq->weights_linear[iii].spline_real_weight_linear, timeshift, dataPtr->roq->weights_linear[iii].acc_real_weight_linear) + I*gsl_spline_eval (dataPtr->roq->weights_linear[iii].spline_imag_weight_linear, timeshift, dataPtr->roq->weights_linear[iii].acc_imag_weight_linear); 
+
+			this_ifo_d_inner_h += weight_iii*conj(template_EI) ;
+
+			gsl_interp_accel_reset(dataPtr->roq->weights_linear[iii].acc_real_weight_linear);
+			gsl_interp_accel_reset(dataPtr->roq->weights_linear[iii].acc_imag_weight_linear);
+
 		}
+
+		for(unsigned int jjj=0; jjj < model->roq->frequencyNodesQuadratic->length; jjj++){
+			complex double template_EI = model->roq->hptildeQuadratic->data->data[jjj]*Fplus + model->roq->hctildeQuadratic->data->data[jjj]*Fcross;
+
+			this_ifo_s += dataPtr->roq->weightsQuadratic[jjj] * creal( conj(template_EI) * (template_EI) );
+					}
 	}
 
 	d_inner_h += creal(this_ifo_d_inner_h);
 	S += this_ifo_s;
 	model->ifo_loglikelihoods[ifo] = creal(this_ifo_d_inner_h) - (0.5*this_ifo_s) + dataPtr->nullloglikelihood; 
+
 	loglikelihood += model->ifo_loglikelihoods[ifo];
 
 	char varname[VARNAME_MAX];
