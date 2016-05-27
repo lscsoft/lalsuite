@@ -311,7 +311,7 @@ class AlignedSpinTemplate(object):
         raise NotImplementedError
 
     def brute_match(self, other, df, workspace_cache, **kwargs):
-        return InspiralSBankComputeMatch(self.get_whitened_normalized(df, **kwargs), other.get_whitened_normalized(df, **kwargs), workspace_cache)
+        return InspiralSBankComputeMatch(self.get_whitened_normalized(df, **kwargs), other.get_whitened_normalized(df, **kwargs), workspace_cache[0])
 
     def clear(self):
         self._wf = {}
@@ -651,13 +651,11 @@ class InspiralPrecessingSpinTemplate(PrecessingSpinTemplate):
 
 class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
     approximant = "SpinTaylorF2"
-    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
+    def __init__(self, m1, m2, spin1x, spin1y, spin1z,
                  theta, phi, iota, psi, bank):
-        # Single-spin approximant
-        spin2x = spin2y = spin2z = 0
         super(SpinTaylorF2Template,self).__init__(m1, m2,
-                                    spin1x, spin1y, spin1z, spin2x, spin2y,
-                                    spin2z, theta, phi, iota, psi, bank)
+                                    spin1x, spin1y, spin1z, 0, 0, 0,
+                                    theta, phi, iota, psi, bank)
 
     def _compute_waveform_comps(self, df, f_final):
         hplus_fd, hcross_fd = \
@@ -687,7 +685,6 @@ class IMRPhenomPTemplate(IMRPrecessingSpinTemplate):
 
 class IMRPhenomPv2Template(IMRPrecessingSpinTemplate):
     approximant = "IMRPhenomPv2"
-
 
 
 waveforms = {

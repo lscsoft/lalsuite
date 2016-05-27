@@ -45,8 +45,8 @@ class lazy_nhoods(object):
 
 class Bank(object):
 
-    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0", coarse_match_df=None, iterative_match_df_max=None, fhigh_max=None):
-        self.tmplt_class = tmplt_class
+    def __init__(self, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0", coarse_match_df=None, iterative_match_df_max=None, fhigh_max=None):
+
         self.noise_model = noise_model
         self.flow = flow
         self.use_metric = use_metric
@@ -73,11 +73,8 @@ class Bank(object):
             self._moments = {}
             self.compute_match = self._metric_match
         else:
-            if hasattr(tmplt_class, '_wf_hp'):
-                # The max over skyloc stuff needs a second cache
-                self._workspace_cache = [CreateSBankWorkspaceCache(), CreateSBankWorkspaceCache()]
-            else:
-                self._workspace_cache = CreateSBankWorkspaceCache()
+            # The max over skyloc stuff needs a second cache
+            self._workspace_cache = [CreateSBankWorkspaceCache(), CreateSBankWorkspaceCache()]
             self.compute_match = self._brute_match
 
     def __len__(self):
@@ -106,9 +103,17 @@ class Bank(object):
         merged._nmatch = sum(b._nmatch for b in banks)
         return merged
 
+    def add_from_sngls(self, sngls, tmplt_class):
+        newtmplts = [tmplt_class.from_sngl(s, bank=self) for s in sngls]
+        for template in newtmplts:
+            # Mark all templates as seed points
+            template.is_seed_point = True
+        self._templates.extend(newtmplts)
+        self._templates.sort(key=attrgetter(self.nhood_param))
+
     @classmethod
     def from_sngls(cls, sngls, tmplt_class, *args, **kwargs):
-        bank = cls(*((tmplt_class,) + args), **kwargs)
+        bank = cls(*args, **kwargs)
         bank._templates.extend([tmplt_class.from_sngl(s, bank=bank) for s in sngls])
         bank._templates.sort(key=attrgetter(bank.nhood_param))
         # Mark all templates as seed points
@@ -118,7 +123,7 @@ class Bank(object):
 
     @classmethod
     def from_sims(cls, sims, tmplt_class, *args):
-        bank = cls(*((tmplt_class,) + args))
+        bank = cls(*args)
         bank._templates.extend([tmplt_class.from_sim(s, bank=bank) for s in sims])
         return bank
 
