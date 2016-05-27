@@ -43,8 +43,8 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, UINT4 chunkMax );
 UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chunkMax, UINT4 outputchunks );
 UINT4Vector *chop_data( gsl_vector_complex *data, UINT4 chunkMin );
 UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, UINT4 chunkMin );
-void rechop_data( UINT4Vector *segs, UINT4 chunkMax, UINT4 chunkMin );
-void merge_data( COMPLEX16Vector *data, UINT4Vector *segs );
+void rechop_data( UINT4Vector **segs, UINT4 chunkMax, UINT4 chunkMin );
+void merge_data( COMPLEX16Vector *data, UINT4Vector **segs );
 
 void gzip_output( LALInferenceRunState *runState );
 INT4 count_csv( CHAR *csvline );
