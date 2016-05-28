@@ -546,7 +546,7 @@ void rechop_data( UINT4Vector **chunkIndex, UINT4 chunkMax, UINT4 chunkMin ){
  * combined segments they are merged.
  *
  * \param data [in] A complex data vector
- * \param segs [in] A vector of split segment indexes
+ * \param segments [in] A vector of split segment indexes
  */
 void merge_data( COMPLEX16Vector *data, UINT4Vector **segments ){
   UINT4 j = 0;
