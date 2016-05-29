@@ -169,11 +169,11 @@ void get_pulsar_model( LALInferenceModel *model ){
         gl = XLALCreateREAL8Vector( glnum );
         for ( UINT4 j=0; j < glnum; j++ ){
           CHAR varname[256];
-          snprintf(varname, sizeof(varname), "%s%u", glitchpars[i], j);
+          snprintf(varname, sizeof(varname), "%s_%u", glitchpars[i], j+1);
           if ( LALInferenceCheckVariable( model->params, varname ) ){
-            gl->data[i] = LALInferenceGetREAL8Variable( model->params, varname );
+            gl->data[j] = LALInferenceGetREAL8Variable( model->params, varname );
           }
-          else{ gl->data[i] = 0.; }
+          else{ gl->data[j] = 0.; }
         }
         PulsarAddParam( pars, glitchpars[i], &gl, PULSARTYPE_REAL8Vector_t );
       }

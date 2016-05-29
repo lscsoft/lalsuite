@@ -142,13 +142,6 @@ int main(int argc, char *argv[]){
   REAL8 fMin, fMax; /* min and max frequencies read from SFTs */
   REAL8 deltaF; /* frequency resolution associated with time baseline of SFTs */
 
-  REAL8 diagff = 0; /*diagonal metric components*/
-  REAL8 diagaa = 0;
-  REAL8 diagTT = 0;
-  REAL8 diagpp = 0;
-  REAL8 ccStat = 0;
-  REAL8 evSquared = 0;
-  REAL8 estSens = 0; /*estimated sensitivity(4.13)*/
   BOOLEAN dopplerShiftFlag = TRUE;
   toplist_t *ccToplist=NULL;
   CrossCorrBinaryOutputEntry thisCandidate;
@@ -497,8 +490,16 @@ int main(int argc, char *argv[]){
   thisBinaryTemplate.period =0.5*(minBinaryTemplate.period + maxBinaryTemplate.period);
   thisBinaryTemplate.fkdot[0]=0.5*(minBinaryTemplate.fkdot[0] + maxBinaryTemplate.fkdot[0]);
 
+  REAL8 old_diagff = 0; /*diagonal metric components*/
+  REAL8 old_diagaa = 0;
+  REAL8 old_diagTT = 0;
+  REAL8 old_diagpp = 0;
+  REAL8 ccStat = 0;
+  REAL8 evSquared = 0;
+  REAL8 estSens = 0; /*estimated sensitivity(4.13)*/
+
   /*Get metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
-  if ( (XLALCalculateLMXBCrossCorrDiagMetric(&estSens, &diagff, &diagaa, &diagTT, &diagpp, thisBinaryTemplate, GammaAve, sftPairs, sftIndices, inputSFTs, multiWeights /*, kappaValues*/)  != XLAL_SUCCESS ) ) {
+  if ( (XLALCalculateLMXBCrossCorrDiagMetric(&estSens, &old_diagff, &old_diagaa, &old_diagTT, &old_diagpp, thisBinaryTemplate, GammaAve, sftPairs, sftIndices, inputSFTs, multiWeights /*, kappaValues*/)  != XLAL_SUCCESS ) ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -593,10 +594,10 @@ int main(int argc, char *argv[]){
   XLALfprintfGSLvector(fp, "%g", eps_i);
   XLALfprintfGSLmatrix(fp, "%g", g_ij);*/
 
-  diagff = gsl_matrix_get(g_ij, 0, 0);
-  diagaa = gsl_matrix_get(g_ij, 1, 1);
-  diagTT = gsl_matrix_get(g_ij, 2, 2);
-  diagpp = gsl_matrix_get(g_ij, 3, 3);
+  REAL8 diagff = gsl_matrix_get(g_ij, 0, 0);
+  REAL8 diagaa = gsl_matrix_get(g_ij, 1, 1);
+  REAL8 diagTT = gsl_matrix_get(g_ij, 2, 2);
+  REAL8 diagpp = gsl_matrix_get(g_ij, 3, 3);
 
   dimName = XLALCreateCHARVector(coordSys.dim);
   dimName->data[0] = 'f';
@@ -732,6 +733,11 @@ int main(int argc, char *argv[]){
       eps_n = gsl_vector_get(eps_i, n);
       fprintf(fp, "eps_%c = %.9"LAL_REAL8_FORMAT"\n", dimName->data[n], eps_n);
     }
+    /* old metric for debugging */
+    fprintf(fp, "old_diagff = %.9g\n", old_diagff);
+    fprintf(fp, "old_diagaa = %.9g\n", old_diagaa);
+    fprintf(fp, "old_diagTT = %.9g\n", old_diagTT);
+    fprintf(fp, "old_diagpp = %.9g\n", old_diagpp);
     fprintf(fp, "FSpacing = %.9g\n", binaryTemplateSpacings.fkdot[0]);
     fprintf(fp, "ASpacing = %.9g\n", binaryTemplateSpacings.asini);
     fprintf(fp, "TSpacing = %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));

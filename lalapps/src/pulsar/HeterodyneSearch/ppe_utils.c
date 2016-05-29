@@ -185,10 +185,10 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chun
   chunkIndex = chop_data( &meddatagsl.vector, chunkMin );
 
   /* DON'T BOTHER WITH THE MERGING AS IT WILL MAKE VERY LITTLE DIFFERENCE */
-  /* merge_data( meddata, chunkIndex ); */
+  /* merge_data( meddata, &chunkIndex ); */
 
   /* if a maximum chunk length is defined then rechop up the data, to segment any chunks longer than this value */
-  if ( chunkMax > chunkMin ) { rechop_data( chunkIndex, chunkMax, chunkMin ); }
+  if ( chunkMax > chunkMin ) { rechop_data( &chunkIndex, chunkMax, chunkMin ); }
 
   chunkLengths = XLALCreateUINT4Vector( chunkIndex->length );
 
@@ -386,7 +386,7 @@ UINT4Vector *chop_data( gsl_vector_complex *data, UINT4 chunkMin ){
  * split point recorded. However, the value required for comparing to that for the whole data set, to give the odds
  * ratio, is the evidence that having any split is better than having no split, so the individual split data evidences
  * need to be added incoherently to give the total evidence for a split. The index at which the evidence for a single
- * split is maximum (i.e. the most favoured split point) that which is returned.
+ * split is maximum (i.e. the most favoured split point) is that which is returned.
  *
  * \param data [in] a complex data vector
  * \param logodds [in] a pointer to return the natural logarithm of the odds ratio/Bayes factor
@@ -480,35 +480,34 @@ UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, UINT4 minleng
  * \param chunkMax [in] the maximum allowed segment/chunk length
  * \param chunkMin [in] the minimum allowed segment/chunk length
  */
-void rechop_data( UINT4Vector *chunkIndex, UINT4 chunkMax, UINT4 chunkMin ){
+void rechop_data( UINT4Vector **chunkIndex, UINT4 chunkMax, UINT4 chunkMin ){
   UINT4 i = 0, j = 0, count = 0;
-  UINT4 length = chunkIndex->length;
-  UINT4 endIndex = chunkIndex->data[length-1];
+  UINT4Vector *cip = *chunkIndex; /* pointer to chunkIndex */
+  UINT4 length = cip->length;
+  UINT4 endIndex = cip->data[length-1];
   UINT4 startindex = 0, chunklength = 0;
-
-  UINT4Vector *newindex = NULL;
-  newindex = XLALCreateUINT4Vector( ceil((REAL8)endIndex / (REAL8)chunkMax ) );
+  UINT4 newindex[(UINT4)ceil((REAL8)endIndex/(REAL8)chunkMin)];
 
   /* chop any chunks that are greater than chunkMax into chunks smaller than, or equal to chunkMax, and greater than chunkMin */
   for ( i = 0; i < length; i++ ){
     if ( i == 0 ) { startindex = 0; }
-    else { startindex = chunkIndex->data[i-1]+1; }
+    else { startindex = cip->data[i-1]+1; }
 
-    chunklength = chunkIndex->data[i] - startindex;
+    chunklength = cip->data[i] - startindex;
 
     if ( chunklength > chunkMax ){
       UINT4 remain = chunklength % chunkMax;
 
       /* cut segment into as many chunkMin chunks as possible */
       for ( j = 0; j < floor(chunklength / chunkMax); j++ ){
-        newindex->data[count] = startindex + (j+1)*chunkMax;
+        newindex[count] = startindex + (j+1)*chunkMax;
         count++;
       }
 
       /* last chunk values */
       if ( remain != 0 ){
         /* set final value */
-        newindex->data[count] = startindex + j*chunkMax + remain;
+        newindex[count] = startindex + j*chunkMax + remain;
 
         if ( remain < chunkMin ){
           /* split the last two cells into one that is chunkMin long and one that is (chunkMax+remainder)-chunkMin long
@@ -516,11 +515,10 @@ void rechop_data( UINT4Vector *chunkIndex, UINT4 chunkMax, UINT4 chunkMin ){
           UINT4 n1 = (chunkMax + remain) - chunkMin;
 
           /* reset second to last value two values */
-          newindex->data[count-1] = newindex->data[count] - chunkMin;
+          newindex[count-1] = newindex[count] - chunkMin;
 
           if ( n1 < chunkMin ){
-            fprintf(stderr, "Non-fatal error... segment no. %d is %d long, which is less than chunkMin = %d.\n",
-                    count, n1, chunkMin);
+            XLAL_PRINT_WARNING("Non-fatal error... segment no. %d is %d long, which is less than chunkMin = %d.\n", count, n1, chunkMin);
           }
         }
 
@@ -528,16 +526,14 @@ void rechop_data( UINT4Vector *chunkIndex, UINT4 chunkMax, UINT4 chunkMin ){
       }
     }
     else{
-      newindex->data[count] = chunkIndex->data[i];
+      newindex[count] = cip->data[i];
       count++;
     }
   }
 
-  chunkIndex = XLALResizeUINT4Vector( chunkIndex, count );
+  cip = XLALResizeUINT4Vector( cip, count );
 
-  for ( i = 0; i < count; i++ ) { chunkIndex->data[i] = newindex->data[i]; }
-
-  XLALDestroyUINT4Vector( newindex );
+  for ( i = 0; i < count; i++ ) { cip->data[i] = newindex[i]; }
 }
 
 
@@ -550,11 +546,12 @@ void rechop_data( UINT4Vector *chunkIndex, UINT4 chunkMax, UINT4 chunkMin ){
  * combined segments they are merged.
  *
  * \param data [in] A complex data vector
- * \param segs [in] A vector of split segment indexes
+ * \param segments [in] A vector of split segment indexes
  */
-void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
+void merge_data( COMPLEX16Vector *data, UINT4Vector **segments ){
   UINT4 j = 0;
   REAL8 threshold = 0.; /* may need to be passed to function in the future, or defined globally */
+  UINT4Vector *segs = *segments;
 
   /* loop until stopping criterion is reached */
   while( 1 ){
