@@ -452,11 +452,21 @@ def aligned_spin_param_generator(flow, **kwargs):
         # get args
         spin1_bounds = kwargs.pop('spin1', (-1., 1.))
         spin2_bounds = kwargs.pop('spin2', (-1., 1.))
-        # the rest will be checked in the call to urand_tau0tau3_generator
 
+        # the rest will be checked in the call to urand_tau0tau3_generator
         for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
-            spin1 = uniform(*spin1_bounds)
-            spin2 = uniform(*spin2_bounds)
+
+            mtot = mass1 + mass2
+            chis_min = (mass1*spin1_bounds[0] + mass2*spin2_bounds[0])/mtot
+            chis_max = (mass1*spin1_bounds[1] + mass2*spin2_bounds[1])/mtot
+            chis = uniform(chis_min, chis_max)
+
+            s2min = max(spin2_bounds[0], (mtot*chis - mass1*spin1_bounds[1])/mass2)
+            s2max = min(spin2_bounds[1], (mtot*chis - mass1*spin1_bounds[0])/mass2)
+
+            spin2 = uniform(s2min, s2max)
+            spin1 = (chis*mtot - mass2*spin2)/mass1
+
             yield mass1, mass2, spin1, spin2
 
 def precessing_spin_param_generator(flow, **kwargs):
