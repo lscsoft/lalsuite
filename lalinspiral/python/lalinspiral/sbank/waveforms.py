@@ -668,6 +668,39 @@ class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
 
         return hplus_fd, hcross_fd
 
+    @classmethod
+    def from_sngl(cls, sngl, bank):
+        # FIXME: Using alpha columns to hold theta, phi, iota, psi
+        assert sngl.spin2x == sngl.spin2y == sngl.spin2z == 0
+        return cls(sngl.mass1, sngl.mass2, sngl.spin1x, sngl.spin1y,
+                   sngl.spin1z, sngl.alpha1, sngl.alpha2, sngl.alpha3, sngl.alpha4, bank)
+
+    def to_sngl(self):
+        # note that we use the C version; this causes all numerical values to
+        # be initiated as 0 and all strings to be '', which is nice
+        row = SnglInspiralTable()
+        row.mass1 = self.m1
+        row.mass2 = self.m2
+        row.mtotal = self.m1 + self.m2
+        row.mchirp = self._mchirp
+        row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
+        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
+        row.f_final = self.f_final
+        row.template_duration = self._dur
+        row.spin1x = self.spin1x
+        row.spin1y = self.spin1y
+        row.spin1z = self.spin1z
+        row.spin2x = 0
+        row.spin2y = 0
+        row.spin2z = 0
+        row.alpha1 = self.theta
+        row.alpha2 = self.phi
+        row.alpha3 = self.iota
+        row.alpha4 = self.psi
+        row.sigmasq = self.sigmasq
+        return row
+
+
 class SpinTaylorT2FourierTemplate(InspiralPrecessingSpinTemplate):
     approximant = "SpinTaylorT2Fourier"
 

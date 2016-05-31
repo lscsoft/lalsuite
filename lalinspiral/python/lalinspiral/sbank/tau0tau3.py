@@ -469,7 +469,7 @@ def aligned_spin_param_generator(flow, **kwargs):
 
             yield mass1, mass2, spin1, spin2
 
-def precessing_spin_param_generator(flow, **kwargs):
+def double_spin_precessing_param_generator(flow, **kwargs):
     """
     Currently a stub to test precessing template generation.
     """
@@ -498,6 +498,30 @@ def precessing_spin_param_generator(flow, **kwargs):
         yield mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi
 
 
+def single_spin_precessing_param_generator(flow, **kwargs):
+    """
+    Currently a stub to test precessing template generation.
+    """
+    spin1_bounds = kwargs.pop('spin1', (0., 0.9))
+    spin2_bounds = kwargs.pop('spin2', (0., 0.9))
+
+    for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
+        # Choose the rest from hardcoded limits
+        spin1mag = uniform(*spin1_bounds)
+        spin1ang1 = uniform(0, numpy.pi)
+        spin1ang2 = uniform(0, 2*numpy.pi)
+        spin1z = spin1mag * numpy.cos(spin1ang1)
+        spin1x = spin1mag * numpy.sin(spin1ang1) * numpy.cos(spin1ang2)
+        spin1y = spin1mag * numpy.sin(spin1ang1) * numpy.sin(spin1ang2)
+
+        # Check orientation angles use correct limits
+        theta = uniform(0, numpy.pi)
+        phi = uniform(0, 2*numpy.pi)
+        psi = uniform(0, 2*numpy.pi)
+        iota = uniform(0, numpy.pi)
+        yield mass1, mass2, spin1x, spin1y, spin1z, theta, phi, iota, psi
+
+
 def SpinTaylorT4_param_generator(flow, **kwargs):
     # FIXME implement!
     raise NotImplementedError
@@ -506,8 +530,8 @@ proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
              "IMRPhenomC":IMRPhenomC_param_generator,
              "IMRPhenomD":aligned_spin_param_generator,
              "TaylorF2": aligned_spin_param_generator,
-             "IMRPhenomP":precessing_spin_param_generator,
-             "IMRPhenomPv2":precessing_spin_param_generator,
+             "IMRPhenomP":double_spin_precessing_param_generator,
+             "IMRPhenomPv2":double_spin_precessing_param_generator,
              "TaylorF2RedSpin":aligned_spin_param_generator,
              "EOBNRv2":nonspin_param_generator,
              "SEOBNRv1":aligned_spin_param_generator,
@@ -515,6 +539,6 @@ proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
              "SEOBNRv2_ROM_DoubleSpin":aligned_spin_param_generator,
              "SEOBNRv2_ROM_DoubleSpin_HI":aligned_spin_param_generator,
              "SpinTaylorT4":SpinTaylorT4_param_generator,
-             "SpinTaylorF2":precessing_spin_param_generator,
-             "SpinTaylorT2Fourier":precessing_spin_param_generator,
-             "SEOBNRv3":precessing_spin_param_generator}
+             "SpinTaylorF2":single_spin_precessing_param_generator,
+             "SpinTaylorT2Fourier":double_spin_precessing_param_generator,
+             "SEOBNRv3":double_spin_precessing_param_generator}
