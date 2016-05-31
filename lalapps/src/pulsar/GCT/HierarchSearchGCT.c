@@ -370,7 +370,7 @@ int MAIN( int argc, char *argv[]) {
   // ----- Line robust stats parameters ----------
   BOOLEAN uvar_computeBSGL = FALSE;          	/* In Fstat loop, compute line-robust statistic (BSGL=log10BSGL) using single-IFO F-stats */
   BOOLEAN uvar_BSGLlogcorr = FALSE;		/* compute log-correction in line-robust statistic BSGL (slower) or not (faster) */
-  REAL8   uvar_Fstar0 = 0.0;			/* BSGL transition-scale parameter 'Fstar0', see documentation for XLALCreateBSGLSetup() for details */
+  REAL8   uvar_Fstar0sc = 0.0;			/* (semi-coherent) BSGL transition-scale parameter 'Fstar0sc=Nseg*Fstar0coh', see documentation for XLALCreateBSGLSetup() for details */
   LALStringVector *uvar_oLGX = NULL;       	/* prior per-detector line-vs-Gauss odds ratios 'oLGX', see XLALCreateBSGLSetup() for details */
   BOOLEAN uvar_getMaxFperSeg = FALSE;          	/* In Fstat loop, compute maximum F and FX over segments */
   // --------------------------------------------
@@ -517,7 +517,7 @@ int MAIN( int argc, char *argv[]) {
 
   // ----- Line robust stats parameters ----------
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeBSGL",   0, UVAR_OPTIONAL, "Compute and output line-robust statistic (BSGL)", &uvar_computeBSGL), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "Fstar0",       0, UVAR_OPTIONAL,  "BSGL: transition-scale parameter 'Fstar0'", &uvar_Fstar0 ), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "Fstar0sc",     0, UVAR_OPTIONAL,  "BSGL: semi-coh transition-scale parameter 'Fstar0sc=Nseg*Fstar0coh'", &uvar_Fstar0sc ), &status);
   LAL_CALL( LALRegisterLISTUserVar(   &status, "oLGX",         0, UVAR_OPTIONAL,  "BSGL: prior per-detector line-vs-Gauss odds 'oLGX' (Defaults to oLGX=1/Ndet)", &uvar_oLGX), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "BSGLlogcorr",  0, UVAR_DEVELOPER, "BSGL: include log-correction terms (slower) or not (faster)", &uvar_BSGLlogcorr), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "getMaxFperSeg",   0, UVAR_OPTIONAL, "Compute and output maximum F and FX over segments", &uvar_getMaxFperSeg), &status);
@@ -1035,7 +1035,7 @@ int MAIN( int argc, char *argv[]) {
           oLGX_p = &oLGX[0];
         } // if uvar_oLGX != NULL
 
-      usefulParams.BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar_Fstar0, oLGX_p, uvar_BSGLlogcorr, nStacks );
+      usefulParams.BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar_Fstar0sc, oLGX_p, uvar_BSGLlogcorr, nStacks );
       if ( usefulParams.BSGLsetup == NULL ) {
         fprintf(stderr, "XLALCreateBSGLSetup() failed\n");
         return( HIERARCHICALSEARCH_EBAD );
