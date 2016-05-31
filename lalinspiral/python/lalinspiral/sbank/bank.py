@@ -136,7 +136,7 @@ class Bank(object):
             tmplt.clear()
         return match
 
-    def covers(self, proposal, min_match):
+    def covers(self, proposal, min_match, nhood=None):
         """
         Return (max_match, template) where max_match is either (i) the
         best found match if max_match < min_match or (ii) the match of
@@ -148,8 +148,11 @@ class Bank(object):
 
         # find templates in the bank "near" this tmplt
         prop_nhd = getattr(proposal, self.nhood_param)
-        low, high = _find_neighborhood(self._nhoods, prop_nhd, self.nhood_size)
-        tmpbank = self._templates[low:high]
+        if not nhood:
+            low, high = _find_neighborhood(self._nhoods, prop_nhd, self.nhood_size)
+            tmpbank = self._templates[low:high]
+        else:
+            tmpbank = nhood
         if not tmpbank: return (max_match, template)
 
         # sort the bank by its nearness to tmplt in mchirp
