@@ -136,8 +136,8 @@ class MatplotlibFigureType(argparse.FileType):
         else:
             with super(MatplotlibFigureType, self).__call__(string):
                 pass
-            import matplotlib
-            matplotlib.use('agg')
+            from matplotlib import pyplot as plt
+            plt.switch_backend('agg')
             self.string = string
             return self.__save
 
@@ -180,17 +180,17 @@ def colormap(value):
 @type_with_sideeffect(float)
 def figwith(value):
     from matplotlib import rcParams
-    rcParams['figure.figsize'][0] = value
+    rcParams['figure.figsize'][0] = float(value)
 
 @type_with_sideeffect(float)
 def figheight(value):
     from matplotlib import rcParams
-    rcParams['figure.figsize'][1] = value
+    rcParams['figure.figsize'][1] = float(value)
 
 @type_with_sideeffect(int)
 def dpi(value):
     from matplotlib import rcParams
-    rcParams['figure.dpi'] = rcParams['savefig.dpi'] = value
+    rcParams['figure.dpi'] = rcParams['savefig.dpi'] = float(value)
 
 figure_parser = argparse.ArgumentParser(add_help=False)
 colormap_choices = sorted(cm.cmap_d.keys())
@@ -207,10 +207,10 @@ group.add_argument(
 group.add_argument(
     '--help-colormap', action=HelpChoicesAction, choices=colormap_choices)
 group.add_argument(
-    '--figure-width', metavar='INCHES', type=figwith, default=8.,
+    '--figure-width', metavar='INCHES', type=figwith, default='8',
     help='width of figure in inches [default: %(default)s]')
 group.add_argument(
-    '--figure-height', metavar='INCHES', type=figheight, default=6.,
+    '--figure-height', metavar='INCHES', type=figheight, default='6',
     help='height of figure in inches [default: %(default)s]')
 group.add_argument(
     '--dpi', metavar='PIXELS', type=dpi, default=300,
