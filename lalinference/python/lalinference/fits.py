@@ -61,6 +61,7 @@ __all__ = ("read_sky_map", "write_sky_map")
 
 import math
 import healpy as hp
+import numpy as np
 from glue.ligolw import lsctables
 import time
 import lal
@@ -170,7 +171,7 @@ def gps_to_mjd(gps_time):
     return mjd + gps_seconds_fraction / 86400.
 
 
-def write_sky_map(filename, prob, nest=False, objid=None, url=None, instruments=None,
+def write_sky_map(filename, m, nest=False, objid=None, url=None, instruments=None,
     gps_time=None, gps_creation_time=None, creator=None, origin=None,
     runtime=None):
     """Write a gravitational-wave sky map to a file, populating the header
@@ -219,11 +220,15 @@ def write_sky_map(filename, prob, nest=False, objid=None, url=None, instruments=
         extra_header.append(('RUNTIME', runtime,
             'Runtime in seconds of the CREATOR program'))
 
-    hp.write_map(filename, prob, nest=nest, fits_IDL=True, coord='C',
-        column_names=('PROB',), column_units=('pix-1',),
+    m = np.atleast_2d(m)
+
+    hp.write_map(filename, m, nest=nest, fits_IDL=True, coord='C',
+        column_names=('PROB', 'DISTMU', 'DISTSIGMA', 'DISTNORM')[:len(m)],
+        column_units=('pix-1', 'Mpc', 'Mpc', 'Mpc-2')[:len(m)],
         extra_header=extra_header)
 
-def read_sky_map(filename, nest=False):
+
+def read_sky_map(filename, nest=False, distances=False):
     """
     Read a LIGO/Virgo-type sky map and return a tuple of the HEALPix array
     and a dictionary of metadata from the header.
@@ -246,9 +251,17 @@ def read_sky_map(filename, nest=False):
         Regardless of the value of this option, the ordering used in the FITS
         file is indicated as the value of the 'nest' key in the metadata
         dictionary.
+
+    distances: bool, optional
+        If true, then read also read the additional HEALPix layers representing
+        the conditional mean and standard deviation of distance as a function
+        of sky location.
     """
-    prob, header = hp.read_map(filename, h=True, verbose=False, nest=nest)
-    header = dict(header)
+    out = hp.read_map(
+        filename, h=True, verbose=False, nest=nest,
+        field=(list(range(4)) if distances else 0))
+    prob = out[:-1] if distances else out[0]
+    header = dict(out[-1])
 
     metadata = {}
 

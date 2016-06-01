@@ -165,7 +165,8 @@ def ligolw_sky_map(
         for sngl_inspiral in sngl_inspirals])
 
     # Fudge factor for excess estimation error in gstlal_inspiral.
-    snrs *= 0.83
+    fudge = 0.83
+    snrs *= fudge
 
     # Look up physical parameters for detector.
     detectors = [lalsimulation.DetectorPrefixToLALDetector(str(ifo))
@@ -255,7 +256,10 @@ def ligolw_sky_map(
     if method == "toa_phoa_snr":
         prob = sky_map.toa_phoa_snr(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,
-            acors, responses, locations, horizons, toas, phoas, snrs, nside)
+            acors, responses, locations, horizons, toas, phoas, snrs, nside).T
+        prob[1] *= max_horizon * fudge
+        prob[2] *= max_horizon * fudge
+        prob[3] /= np.square(max_horizon * fudge)
     elif method == "toa_snr_mcmc":
         prob = emcee_sky_map(
             logl=sky_map.log_likelihood_toa_snr,

@@ -11,6 +11,7 @@ pymodule_PYTHON = \
 	__init__.py \
 	command.py \
 	decorator.py \
+	distance.py \
 	filter.py \
 	ligolw.py \
 	ligolw_sky_map.py \

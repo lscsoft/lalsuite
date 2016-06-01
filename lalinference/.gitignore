@@ -42,6 +42,7 @@ python/bayestar_localize_lvalert
 python/bayestar_plot_allsky
 python/bayestar_plot_found_injections
 python/bayestar_plot_pileup
+python/bayestar_plot_volume
 python/bayestar_prune_neighborhood_tmpltbank
 python/bayestar_realize_coincs
 python/bayestar_sample_model_psd

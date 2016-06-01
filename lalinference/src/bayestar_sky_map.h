@@ -78,7 +78,7 @@
 
 
 /* Perform sky localization based on TDOAs, PHOAs, and amplitude. */
-double *bayestar_sky_map_toa_phoa_snr(
+double (*bayestar_sky_map_toa_phoa_snr(
     long *npix,
     /* Prior */
     double min_distance,            /* Minimum distance */
@@ -97,7 +97,7 @@ double *bayestar_sky_map_toa_phoa_snr(
     const double *toas,             /* Arrival time differences relative to network barycenter (s) */
     const double *phoas,            /* Phases on arrival */
     const double *snrs              /* SNRs */
-);
+))[4];
 
 double bayestar_log_likelihood_toa_snr(
     /* Parameters */

@@ -66,6 +66,7 @@
  */
 
 #include "bayestar_sky_map.h"
+#include "bayestar_distance.h"
 
 #include <assert.h>
 #include <float.h>
@@ -659,7 +660,7 @@ static double complex exp_i(double phi) {
 
 /* Data structure to store a pixel in an adaptively refined sky map. */
 typedef struct {
-    double log4p;           /* Logarithm base 4 of probability */
+    double log4p_r[3];      /* Logarithm base 4 of probability x distance^k */
     unsigned char order;    /* HEALPix resolution order */
     unsigned long ipix;     /* HEALPix nested pixel index */
 } adaptive_sky_map_pixel;
@@ -680,7 +681,7 @@ static int adaptive_sky_map_pixel_compare(const void *a, const void *b)
     const adaptive_sky_map_pixel *apix = a;
     const adaptive_sky_map_pixel *bpix = b;
 
-    const double delta_log4p = apix->log4p - bpix->log4p;
+    const double delta_log4p = apix->log4p_r[0] - bpix->log4p_r[0];
     const char delta_order = apix->order - bpix->order;
 
     if (delta_log4p < delta_order)
@@ -741,7 +742,8 @@ static adaptive_sky_map *adaptive_sky_map_refine(
             {
                 adaptive_sky_map_pixel *const new_pixel
                     = &map->pixels[new_len - (4 * i + j) - 1];
-                new_pixel->log4p = old_pixel->log4p;
+                for (unsigned char k = 0; k < 3; k ++)
+                    new_pixel->log4p_r[k] = old_pixel->log4p_r[k];
                 new_pixel->order = order;
                 new_pixel->ipix = j + ipix;
             }
@@ -767,7 +769,8 @@ static adaptive_sky_map *adaptive_sky_map_alloc(unsigned char order)
     map->max_order = order;
     for (unsigned long ipix = 0; ipix < npix; ipix ++)
     {
-        map->pixels[ipix].log4p = GSL_NAN;
+        for (unsigned char k = 0; k < 3; k ++)
+            map->pixels[ipix].log4p_r[k] = GSL_NAN;
         map->pixels[ipix].order = order;
         map->pixels[ipix].ipix = ipix;
     }
@@ -779,31 +782,34 @@ static const double M_LN4 = 2 * M_LN2;
 static const double M_1_LN4 = 0.5 / M_LN2;
 
 
-static double *adaptive_sky_map_rasterize(adaptive_sky_map *map, long *out_npix)
+static double (*adaptive_sky_map_rasterize(adaptive_sky_map *map, long *out_npix))[4]
 {
     const unsigned char order = map->max_order;
     const unsigned long nside = (unsigned long)1 << order;
     const long npix = nside2npix(nside);
 
-    double *P = malloc(npix * sizeof(double));
+    double (*P)[4] = malloc(npix * 4 * sizeof(double));
     if (!P)
         GSL_ERROR_NULL("not enough memory to allocate image", GSL_ENOMEM);
 
     double norm = 0;
-    const double max_log4p = map->pixels[map->len - 1].log4p;
+    const double max_log4p = map->pixels[map->len - 1].log4p_r[0];
 
     /* Rescale so that log(max) = 0, and convert from log base 4 to
      * natural logarithm. */
     for (ssize_t i = (ssize_t)map->len - 1; i >= 0; i --)
     {
-        map->pixels[i].log4p -= max_log4p;
-        map->pixels[i].log4p *= M_LN4;
+        for (unsigned char k = 0; k < 3; k ++)
+        {
+            map->pixels[i].log4p_r[k] -= max_log4p;
+            map->pixels[i].log4p_r[k] *= M_LN4;
+        }
     }
 
     for (ssize_t i = (ssize_t)map->len - 1; i >= 0; i --)
     {
         const unsigned long reps = (unsigned long)1 << 2 * (order - map->pixels[i].order);
-        const double dP = gsl_sf_exp_mult(map->pixels[i].log4p, reps);
+        const double dP = gsl_sf_exp_mult(map->pixels[i].log4p_r[0], reps);
         if (dP <= 0)
             break; /* We have reached underflow. */
         norm += dP;
@@ -811,13 +817,31 @@ static double *adaptive_sky_map_rasterize(adaptive_sky_map *map, long *out_npix)
     norm = 1 / norm;
     for (ssize_t i = (ssize_t)map->len - 1; i >= 0; i --)
     {
-        const double value = gsl_sf_exp_mult(map->pixels[i].log4p, norm);
         const unsigned long base_ipix = map->pixels[i].ipix;
         const unsigned long reps = (unsigned long)1 << 2 * (order - map->pixels[i].order);
         const unsigned long start = base_ipix * reps;
         const unsigned long stop = (base_ipix + 1) * reps;
+
+        const double prob = gsl_sf_exp_mult(map->pixels[i].log4p_r[0], norm);
+        double rmean = exp(map->pixels[i].log4p_r[1] - map->pixels[i].log4p_r[0]);
+        double rstd = exp(map->pixels[i].log4p_r[2] - map->pixels[i].log4p_r[0]) - gsl_pow_2(rmean);
+        double distmu, distsigma, distnorm;
+        if (rstd >= 0)
+        {
+            rstd = sqrt(rstd);
+        } else {
+            rmean = INFINITY;
+            rstd = 1;
+        }
+        bayestar_distance_moments_to_parameters(rmean, rstd, &distmu, &distsigma, &distnorm);
+
         for (unsigned long ipix_nest = start; ipix_nest < stop; ipix_nest ++)
-            P[ipix_nest] = value;
+        {
+            P[ipix_nest][0] = prob;
+            P[ipix_nest][1] = distmu;
+            P[ipix_nest][2] = distsigma;
+            P[ipix_nest][3] = distnorm;
+        }
     }
     *out_npix = npix;
 
@@ -825,7 +849,7 @@ static double *adaptive_sky_map_rasterize(adaptive_sky_map *map, long *out_npix)
 }
 
 
-double *bayestar_sky_map_toa_phoa_snr(
+double (*bayestar_sky_map_toa_phoa_snr(
     long *inout_npix,
     /* Prior */
     double min_distance,            /* Minimum distance */
@@ -844,12 +868,12 @@ double *bayestar_sky_map_toa_phoa_snr(
     const double *toas,             /* Arrival time differences relative to network barycenter (s) */
     const double *phoas,            /* Phases on arrival */
     const double *snrs              /* SNRs */
-) {
+))[4] {
     double complex exp_i_phoas[nifos];
     for (unsigned int iifo = 0; iifo < nifos; iifo ++)
         exp_i_phoas[iifo] = exp_i(phoas[iifo]);
 
-    log_radial_integrator *integrator;
+    log_radial_integrator *integrators[] = {NULL, NULL, NULL};
     {
         double pmax = 0;
         for (unsigned int iifo = 0; iifo < nifos; iifo ++)
@@ -857,11 +881,18 @@ double *bayestar_sky_map_toa_phoa_snr(
             pmax += gsl_pow_2(horizons[iifo] / max_distance);
         }
         pmax = sqrt(0.5 * pmax);
-        integrator = log_radial_integrator_init(
-            min_distance, max_distance, prior_distance_power, pmax,
-            default_log_radial_integrator_size);
-        if (!integrator)
-            return NULL;
+        for (unsigned char k = 0; k < 3; k ++)
+        {
+            integrators[k] = log_radial_integrator_init(
+                min_distance, max_distance, prior_distance_power + k, pmax,
+                default_log_radial_integrator_size);
+            if (!integrators[k])
+            {
+                for (unsigned char kk = 0; kk < k; kk ++)
+                    log_radial_integrator_free(integrators[kk]);
+                return NULL;
+            }
+        }
     }
 
     static const unsigned char order0 = 4;
@@ -869,7 +900,8 @@ double *bayestar_sky_map_toa_phoa_snr(
     adaptive_sky_map *map = adaptive_sky_map_alloc(order0);
     if (!map)
     {
-        free(integrator);
+        for (unsigned char k = 0; k < 3; k ++)
+            log_radial_integrator_free(integrators[k]);
         return NULL;
     }
     const unsigned long npix0 = map->len;
@@ -900,7 +932,7 @@ double *bayestar_sky_map_toa_phoa_snr(
             adaptive_sky_map_pixel *const pixel = &map->pixels[map->len - npix0 + i];
             double complex F[nifos];
             double dt[nifos];
-            double accum = -INFINITY;
+            double accum[3] = {-INFINITY, -INFINITY, -INFINITY};
 
             {
                 double theta, phi;
@@ -920,13 +952,13 @@ double *bayestar_sky_map_toa_phoa_snr(
             {
                 const double twopsi = (2 * M_PI / ntwopsi) * itwopsi;
                 const double complex exp_i_twopsi = exp_i(twopsi);
-                double accum1 = -INFINITY;
+                double accum1[3] = {-INFINITY, -INFINITY, -INFINITY};
 
                 /* Integrate over u from -1 to 1. */
                 for (unsigned int iu = 0; iu < nglfixed; iu++)
                 {
                     double u, weight;
-                    double accum2 = -INFINITY;
+                    double accum2[3] = {-INFINITY, -INFINITY, -INFINITY};
                     {
                         /* Look up Gauss-Legendre abscissa and weight. */
                         int ret = gsl_integration_glfixed_point(
@@ -965,19 +997,31 @@ double *bayestar_sky_map_toa_phoa_snr(
                             b = cabs(I0arg_complex_times_r);
                         }
 
-                        double result = log_radial_integrator_eval(
-                            integrator, p, b);
-                        accum2 = logaddexp(accum2, result);
+                        for (unsigned char k = 0; k < 3; k ++)
+                        {
+                            double result = log_radial_integrator_eval(
+                                integrators[k], p, b);
+                            accum2[k] = logaddexp(accum2[k], result);
+                        }
                     }
 
-                    accum1 = logaddexp(accum1, accum2 + log(weight));
+                    for (unsigned char k = 0; k < 3; k ++)
+                    {
+                        accum1[k] = logaddexp(accum1[k], accum2[k] + log(weight));
+                    }
                 }
 
-                accum = logaddexp(accum, accum1);
+                for (unsigned char k = 0; k < 3; k ++)
+                {
+                    accum[k] = logaddexp(accum[k], accum1[k]);
+                }
             }
 
             /* Record logarithm base 4 of posterior. */
-            pixel->log4p = M_1_LN4 * accum;
+            for (unsigned char k = 0; k < 3; k ++)
+            {
+                pixel->log4p_r[k] = M_1_LN4 * accum[k];
+            }
         }
 
         /* Restore old error handler. */
@@ -996,14 +1040,15 @@ double *bayestar_sky_map_toa_phoa_snr(
             return NULL;
     }
 
-    log_radial_integrator_free(integrator);
+    for (unsigned char k = 0; k < 3; k ++)
+        log_radial_integrator_free(integrators[k]);
 
     /* Set error handler to ignore underflow errors, but invoke the user's
      * error handler for all other errors. */
     old_handler = gsl_set_error_handler(ignore_underflow);
 
     /* Flatten sky map to an image. */
-    double *P = adaptive_sky_map_rasterize(map, inout_npix);
+    double (*P)[4] = adaptive_sky_map_rasterize(map, inout_npix);
     free(map);
 
     /* Restore old error handler. */
@@ -1533,6 +1578,50 @@ static void test_log_radial_integral(
 }
 
 
+static void test_distance_moments_to_parameters_round_trip(double mean, double std)
+{
+    static const double min_mean_std = M_SQRT3 + 0.1;
+    double mu, sigma, norm, mean2, std2, norm2;
+
+    bayestar_distance_moments_to_parameters(
+        mean, std, &mu, &sigma, &norm);
+    bayestar_distance_parameters_to_moments(
+        mu, sigma, &mean2, &std2, &norm2);
+
+    if (gsl_finite(mean / std) && mean / std >= min_mean_std)
+    {
+        gsl_test_rel(norm2, norm, 1e-9,
+            "testing round-trip conversion of normalization for mean=%g, std=%g",
+            mean, std);
+        gsl_test_rel(mean2, mean, 1e-9,
+            "testing round-trip conversion of mean for mean=%g, std=%g",
+            mean, std);
+        gsl_test_rel(std2, std, 1e-9,
+            "testing round-trip conversion of mean for mean=%g, std=%g",
+            mean, std);
+    } else {
+        gsl_test_int(gsl_isinf(mu), 1,
+            "testing that out-of-bounds value gives mu=+inf for mean=%g, std=%g",
+            mean, std);
+        gsl_test_abs(sigma, 1, 0,
+            "testing that out-of-bounds value gives sigma=1 for mean=%g, std=%g",
+            mean, std);
+        gsl_test_abs(norm, 0, 0,
+            "testing that out-of-bounds value gives norm=0 for mean=%g, std=%g",
+            mean, std);
+        gsl_test_int(gsl_isinf(mean2), 1,
+            "testing that out-of-bounds value gives mean=+inf for mean=%g, std=%g",
+            mean, std);
+        gsl_test_abs(std2, 1, 0,
+            "testing that out-of-bounds value gives std=1 for mean=%g, std=%g",
+            mean, std);
+        gsl_test_abs(norm2, 0, 0,
+            "testing that out-of-bounds value gives norm=0 for mean=%g, std=%g",
+            mean, std);
+    }
+}
+
+
 int bayestar_test(void)
 {
     for (double re = -1; re < 1; re += 0.1)
@@ -1606,6 +1695,10 @@ int bayestar_test(void)
             log_radial_integrator_free(integrator);
         }
     }
+
+    for (double mean = 0; mean < 100; mean ++)
+        for (double std = 0; std < 100; std ++)
+            test_distance_moments_to_parameters_round_trip(mean, std);
 
     return gsl_test_summary();
 }
