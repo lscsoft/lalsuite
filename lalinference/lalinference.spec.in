@@ -14,7 +14,7 @@ Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: chealpix-devel
 BuildRequires: gsl-devel
-BuildRequires: healpy
+BuildRequires: healpy >= 1.8.5
 BuildRequires: libmetaio-devel
 BuildRequires: libxml2-devel
 BuildRequires: numpy
