@@ -82,6 +82,7 @@ typedef struct{
   REAL8   spacingT;           /**< spacing in time of periapse passage*/
   REAL8   spacingP;           /**< spacing in period*/
   INT4    numCand;            /**< number of candidates to keep in output toplist */
+  CHAR    *linesToCleanFilenames; /**< comma-separated list of filenames with known lines for each ifo */
   CHAR    *pairListInputFilename;  /**< input filename containing list of sft index pairs (if not provided, determine list of pairs */
   CHAR    *pairListOutputFilename; /**< output filename to write list of sft index pairs */
   CHAR    *sftListOutputFilename;  /**< output filename to write list of sfts */
@@ -97,6 +98,7 @@ typedef struct{
 typedef struct{
   SFTCatalog *catalog; /**< catalog of SFTs */
   EphemerisData *edat; /**< ephemeris data */
+  LALStringVector *lineFiles; /**< list of line files */
   REAL8   refTime;     /**< reference time for pulsar phase definition */
 } ConfigVariables;
 
@@ -109,7 +111,7 @@ int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
 int XLALDestroyConfigVars (ConfigVariables *config);
 int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum);
-
+INT4 pcc_count_csv( CHAR *csvline );
 /** @} */
 
 int main(int argc, char *argv[]){
@@ -428,6 +430,10 @@ int main(int argc, char *argv[]){
 
     }
 
+  /* Parse the list of lines to avoid (if given) */
+
+  MultiUINT4Vector *badBins = NULL;
+
   /* Get weighting factors for calculation of metric */
   /* note that the sigma-squared is now absorbed into the curly G
      because the AM coefficients are noise-weighted. */
@@ -667,7 +673,7 @@ int main(int argc, char *argv[]){
 	  }
 	}
 
-      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, NULL, Tsft )  != XLAL_SUCCESS ) ) {
+      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, badBins, Tsft )  != XLAL_SUCCESS ) ) {
 	LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }
@@ -873,6 +879,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( spacingT,       REAL8, 0,  OPTIONAL, "Desired periapse passage time spacing");
   XLALRegisterUvarMember( spacingP,       REAL8, 0,  OPTIONAL, "Desired period spacing");
   XLALRegisterUvarMember( numCand,         INT4, 0,  OPTIONAL, "Number of candidates to keep in toplist");
+  XLALRegisterUvarMember( linesToCleanFilenames, STRING, 0,  OPTIONAL, "Comma-separated list of line files");
   XLALRegisterUvarMember( pairListInputFilename, STRING, 0,  OPTIONAL, "Name of file from which to read list of SFT pairs");
   XLALRegisterUvarMember( pairListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFT pairs");
   XLALRegisterUvarMember( sftListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFTs (for sanity checks)");
@@ -929,8 +936,29 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  /* initialize ephemeris data*/
+  /* initialize ephemeris data */
   XLAL_CHECK ( (config->edat = XLALInitBarycenter ( uvar->ephemEarth, uvar->ephemSun )) != NULL, XLAL_EFUNC );
+
+  /* parse comma-separated list of lines files */
+  config->lineFiles = NULL;
+
+  if (XLALUserVarWasSet(&uvar->linesToCleanFilenames))
+    {
+      CHAR *tmpstring = NULL;
+      XLAL_CHECK ( (tmpstring = XLALStringDuplicate( uvar->linesToCleanFilenames )) != NULL, XLAL_EFUNC );
+
+      INT4 numfiles = pcc_count_csv( tmpstring );
+
+      LALFree( tmpstring );
+      XLAL_CHECK ( (tmpstring = XLALStringDuplicate( uvar->linesToCleanFilenames )) != NULL, XLAL_EFUNC );
+
+      for ( UINT4 i = 0 ; i < numfiles ; i++ ){
+	CHAR *tmpfile = NULL;
+	XLAL_CHECK ( (tmpfile = XLALStringToken( &tmpstring, ",", 0))!= NULL, XLAL_EFUNC );
+	XLAL_CHECK ( (config->lineFiles = XLALAppendString2Vector( config->lineFiles, tmpfile ))!= NULL, XLAL_EFUNC );
+
+      }
+    }
 
   return XLAL_SUCCESS;
 
@@ -942,6 +970,7 @@ int XLALDestroyConfigVars (ConfigVariables *config)
 {
   XLALDestroySFTCatalog(config->catalog);
   XLALDestroyEphemerisData(config->edat);
+  XLALDestroyStringVector(config->lineFiles);
   return XLAL_SUCCESS;
 }
 /* XLALDestroyConfigVars() */
@@ -1034,3 +1063,31 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, Pul
     }
 }
 
+/* Copied from ppe_utils.c by Matt Pitkin */
+
+/**
+ * \brief Counts the number of comma separated values in a string
+ *
+ * This function counts the number of comma separated values in a given input string.
+ *
+ * \param csvline [in] Any string
+ *
+ * \return The number of comma separated value in the input string
+ */
+INT4 pcc_count_csv( CHAR *csvline ){
+  CHAR *inputstr = NULL;
+  INT4 count = 0;
+
+  inputstr = XLALStringDuplicate( csvline );
+
+  /* count number of commas */
+  while(1){
+    if( XLALStringToken(&inputstr, ",", 0) == NULL ){ XLAL_ERROR( XLAL_EFUNC, "Error... problem counting number of commas!" ); }
+
+    if ( inputstr == NULL ) { break; }
+
+    count++;
+  }
+
+  return count+1;
+}
