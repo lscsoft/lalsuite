@@ -273,7 +273,7 @@ LALInferenceTemplateFunction LALInferenceInitCBCTemplate(LALInferenceRunState *r
                     --template LAL (for frequency-domain templates)\n");
   }
   else if(LALInferenceGetProcParamVal(commandLine,"--roqtime_steps")){
-  templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
+  templt=&LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence;
         fprintf(stderr, "template is \"LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence\"\n");
   }
   else {
