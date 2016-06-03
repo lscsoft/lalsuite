@@ -255,7 +255,6 @@ class AlignedSpinTemplate(object):
         ampO = -1 # Are these the correct values??
         phaseO = -1 # Are these the correct values??
         approx = lalsim.GetApproximantFromString( self.approximant )
-        #print df, self.m1, self.m2, self.spin1z, self.spin2z
 
         if lalsim.SimInspiralImplementedFDApproximants(approx):
             hplus_fd, hcross_fr = lalsim.SimInspiralChooseFDWaveform(
@@ -263,7 +262,7 @@ class AlignedSpinTemplate(object):
                 self.m1 * MSUN_SI, self.m2 * MSUN_SI,
                 0., 0., self.spin1z, 0., 0., self.spin2z,
                 self.bank.flow, f_final, self.bank.flow,
-                1e6*PC_SI, 0., 0., 0., flags, None, 1, 8, approx)
+                1e6*PC_SI, 0., 0., 0., flags, None, ampO, phaseO, approx)
 
         else:
             hplus_fd, hcross_fd = lalsim.SimInspiralFD(
@@ -518,11 +517,11 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         lmbda1 = lmbda2 = 0 # No tidal terms here
         ampO = -1 # Are these the correct values??
         phaseO = -1 # Are these the correct values??
-        # FIXME: Reference frequency hardcoded!!
-        hplus_fd, hcross_fd = lalsim.SimInspiralFD(
+
+        hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
             phi0, df, self.m1*MSUN_SI, self.m2*MSUN_SI, self.spin1x,
             self.spin1y, self.spin1z, self.spin2x, self.spin2y, self.spin2z,
-            self.bank.flow, f_final, 40.0, 1e6*PC_SI, self.iota, 0.0,
+            self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, self.iota,
             lmbda1, lmbda2, # irrelevant parameters for BBH
             None, None, # non-GR parameters
             ampO, phaseO, approx)
