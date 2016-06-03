@@ -257,7 +257,7 @@ class AlignedSpinTemplate(object):
         approx = lalsim.GetApproximantFromString( self.approximant )
 
         if lalsim.SimInspiralImplementedFDApproximants(approx):
-            hplus_fd, hcross_fr = lalsim.SimInspiralChooseFDWaveform(
+            hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
                 0, df,
                 self.m1 * MSUN_SI, self.m2 * MSUN_SI,
                 0., 0., self.spin1z, 0., 0., self.spin2z,
@@ -518,13 +518,23 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         ampO = -1 # Are these the correct values??
         phaseO = -1 # Are these the correct values??
 
-        hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
-            phi0, df, self.m1*MSUN_SI, self.m2*MSUN_SI, self.spin1x,
-            self.spin1y, self.spin1z, self.spin2x, self.spin2y, self.spin2z,
-            self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, self.iota,
-            lmbda1, lmbda2, # irrelevant parameters for BBH
-            None, None, # non-GR parameters
-            ampO, phaseO, approx)
+        if lalsim.SimInspiralImplementedFDApproximants(approx):
+            hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
+                phi0, df, self.m1*MSUN_SI, self.m2*MSUN_SI, self.spin1x,
+                self.spin1y, self.spin1z, self.spin2x, self.spin2y, self.spin2z,
+                self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, self.iota,
+                lmbda1, lmbda2, # irrelevant parameters for BBH
+                None, None, # non-GR parameters
+                ampO, phaseO, approx)
+        else:
+            hplus_fd, hcross_fd = lalsim.SimInspiralFD(
+                phi0, df, self.m1*MSUN_SI, self.m2*MSUN_SI,
+                self.spin1x, self.spin1y, self.spin1z,
+                self.spin2x, self.spin2y, self.spin2z,
+                self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, 0, self.iota,
+                lmbda1, lmbda2, # irrelevant parameters for BBH
+                None, None, # non-GR parameters
+                ampO, phaseO, approx)
 
         return hplus_fd, hcross_fd
 
