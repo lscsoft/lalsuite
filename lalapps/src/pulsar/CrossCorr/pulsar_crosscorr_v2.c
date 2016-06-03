@@ -112,7 +112,7 @@ int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
 int XLALDestroyConfigVars (ConfigVariables *config);
 int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum);
-INT4 pcc_count_csv( CHAR *csvline );
+UINT4 pcc_count_csv( CHAR *csvline );
 INT4 XLALFindBadBins ( UINT4Vector *badBinData, INT4 binCount, REAL8 flo, REAL8 fhi, REAL8 f0, REAL8 deltaF, UINT4 length) ;
 /** @} */
 
@@ -473,7 +473,7 @@ int main(int argc, char *argv[]){
       }
       CHAR ifo[3];
       UINT4 numLines;
-      if(fscanf(fp,PCC_LINEFILE_HEADER,&ifo,&numLines)==EOF){
+      if(fscanf(fp,PCC_LINEFILE_HEADER,&ifo[0],&numLines)==EOF){
 	LogPrintf ( LOG_CRITICAL, "can't parse header of line file %s\n",config.lineFiles->data[i_f]);
 	XLAL_ERROR( XLAL_EINVAL );
       }
@@ -490,7 +490,7 @@ int main(int argc, char *argv[]){
       UINT4 numSFTFreqs = inputSFTs->data[detInd]->data[0].data->length;
       REAL8 f0 = inputSFTs->data[detInd]->data[0].f0;
       if ( deltaF != inputSFTs->data[detInd]->data[0].deltaF ){
-	LogPrintf ( LOG_CRITICAL, "%s: deltaF = %f disagrees with SFT deltaF = %s", __func__, deltaF, inputSFTs->data[detInd]->data[0].deltaF );
+	LogPrintf ( LOG_CRITICAL, "%s: deltaF = %f disagrees with SFT deltaF = %f", __func__, deltaF, inputSFTs->data[detInd]->data[0].deltaF );
 	XLAL_ERROR( XLAL_EINVAL );
       }
 
@@ -538,7 +538,7 @@ int main(int argc, char *argv[]){
 	    LogPrintf ( LOG_CRITICAL, "Error in file %s: comb with firstindex=%d,lastindex=%d\n", config.lineFiles->data[i_f], firstindex, lastindex );
 	    XLAL_ERROR( XLAL_EINVAL );
 	  }
-	  for ( INT4 index = firstindex ; index <= lastindex; index++ ) {
+	  for ( UINT4 index = firstindex ; index <= lastindex; index++ ) {
 	    binCount = XLALFindBadBins( badBins->data[detInd], binCount, offset+index*spacing-leftwidth, offset+index*spacing+rightwidth, f0, deltaF, numSFTFreqs);
 	    if (binCount < 0){
 	      LogPrintf ( LOG_CRITICAL, "%s: XLALFindBadBins() failed with errno=%d\n", __func__, xlalErrno );
@@ -552,7 +552,7 @@ int main(int argc, char *argv[]){
 	    LogPrintf ( LOG_CRITICAL, "Error in file %s: comb with firstindex=%d,lastindex=%d\n", config.lineFiles->data[i_f], firstindex, lastindex );
 	    XLAL_ERROR( XLAL_EINVAL );
 	  }
-	  for ( INT4 index = firstindex ; index <= lastindex; index++ ) {
+	  for ( UINT4 index = firstindex ; index <= lastindex; index++ ) {
 	    binCount = XLALFindBadBins( badBins->data[detInd], binCount, offset+index*spacing-index*leftwidth, offset+index*spacing+index*rightwidth, f0, deltaF, numSFTFreqs);
 	    if (binCount < 0){
 	      LogPrintf ( LOG_CRITICAL, "%s: XLALFindBadBins() failed with errno=%d\n", __func__, xlalErrno );
@@ -1099,7 +1099,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
       CHAR *tmpstring = NULL;
       XLAL_CHECK ( (tmpstring = XLALStringDuplicate( uvar->linesToCleanFilenames )) != NULL, XLAL_EFUNC );
 
-      INT4 numfiles = pcc_count_csv( tmpstring );
+      UINT4 numfiles = pcc_count_csv( tmpstring );
 
       LALFree( tmpstring );
       XLAL_CHECK ( (tmpstring = XLALStringDuplicate( uvar->linesToCleanFilenames )) != NULL, XLAL_EFUNC );
@@ -1226,9 +1226,9 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, Pul
  *
  * \return The number of comma separated value in the input string
  */
-INT4 pcc_count_csv( CHAR *csvline ){
+UINT4 pcc_count_csv( CHAR *csvline ){
   CHAR *inputstr = NULL;
-  INT4 count = 0;
+  UINT4 count = 0;
 
   inputstr = XLALStringDuplicate( csvline );
 
@@ -1275,7 +1275,7 @@ INT4 XLALFindBadBins
 
   for ( INT4 badBin = firstBadBin ; badBin <= lastBadBin ; badBin++ ){
     /* printf ("%d %d %d\n", badBin, firstBadBin, lastBadBin); */
-    if (newBinCount >= length) {
+    if (newBinCount >= (INT4) length) {
       LogPrintf ( LOG_CRITICAL, "%s: requested bin %d longer than series length %d\n", __func__, newBinCount, length);
       XLAL_ERROR( XLAL_EINVAL );
     }
