@@ -105,6 +105,7 @@ typedef struct{
 #define TRUE (1==1)
 #define FALSE (1==0)
 #define MAXFILENAMELENGTH 512
+#define MAXLINELENGTH 1024
 
 /* local function prototypes */
 int XLALInitUserVars ( UserInput_t *uvar );
@@ -112,6 +113,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
 int XLALDestroyConfigVars (ConfigVariables *config);
 int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum);
 INT4 pcc_count_csv( CHAR *csvline );
+INT4 XLALFindBadBins ( UINT4Vector *badBinData, INT4 binCount, REAL8 flo, REAL8 fhi, REAL8 f0, REAL8 deltaF, UINT4 length) ;
 /** @} */
 
 int main(int argc, char *argv[]){
@@ -433,6 +435,154 @@ int main(int argc, char *argv[]){
   /* Parse the list of lines to avoid (if given) */
 
   MultiUINT4Vector *badBins = NULL;
+
+#define PCC_LINEFILE_HEADER "%% %2s lines cleaning file for O1\n"\
+"%%\n"\
+"%% File contains %d (non-comment) lines\n"\
+"%%\n"\
+"%% Column 1 - frequency spacing (Hz) of comb (or frequency of single line)\n"\
+"%% Column 2 - comb type (0 - singlet, 1 - comb with fixed width, 2 - comb with scaling width)\n"\
+"%% Column 3 - frequency offset of 1st visible harmonic (Hz)\n"\
+"%% Column 4 - index of first visible harmonic\n"\
+"%% Column 5 - index of last visible harmonic\n"\
+"%% Column 6 - width of left band (Hz)\n"\
+"%% Column 7 - width of right band (Hz)\n"\
+"%%\n"\
+"%% For fixed-width combs, veto the band:\n"\
+"%%     [offset+index*spacing-leftwidth, offset+index*spacing+rightwidth]\n"\
+"%% For scaling-width combs, veto the band:\n"\
+"%%     [offset+index*spacing-index*leftwidth, offset+index*spacing+index*rightwidth]\n"\
+"%%"
+#define PCC_LINEFILE_BODY "%lf %d %lf %d %d %lf %lf"
+
+  if ( config.lineFiles != NULL) {
+    if((badBins = XLALCalloc(1, sizeof(badBins))) == NULL){
+      XLAL_ERROR(XLAL_ENOMEM);
+    }
+    UINT4 numDets = inputSFTs->length;
+    badBins->length = numDets;
+    if((badBins->data = XLALCalloc(numDets, sizeof(*badBins->data))) == NULL){
+      XLAL_ERROR(XLAL_ENOMEM);
+    }
+
+    for ( UINT4 i_f=0 ; i_f < config.lineFiles->length ; i_f++ ) {
+      /* printf("i_f=%d\n",i_f); */
+      if((fp = fopen(config.lineFiles->data[i_f], "r")) == NULL){
+	LogPrintf ( LOG_CRITICAL, "%s: didn't find line file with name %s\n", __func__, config.lineFiles->data[i_f]);
+	XLAL_ERROR( XLAL_EINVAL );
+      }
+      CHAR ifo[3];
+      UINT4 numLines;
+      if(fscanf(fp,PCC_LINEFILE_HEADER,&ifo,&numLines)==EOF){
+	LogPrintf ( LOG_CRITICAL, "can't parse header of line file %s\n",config.lineFiles->data[i_f]);
+	XLAL_ERROR( XLAL_EINVAL );
+      }
+      fclose(fp);
+
+      UINT4 detInd = 0;
+      for ( ; detInd < numDets ; detInd++ ){
+	if ( strcmp(ifo,inputSFTs->data[detInd]->data[0].name) != 0 ) break;
+      }
+      if (detInd >= numDets){
+	LogPrintf ( LOG_CRITICAL, "%s: didn't find index for IFO %s\n", __func__, ifo);
+	XLAL_ERROR( XLAL_EINVAL );
+      }
+      UINT4 numSFTFreqs = inputSFTs->data[detInd]->data[0].data->length;
+      REAL8 f0 = inputSFTs->data[detInd]->data[0].f0;
+      if ( deltaF != inputSFTs->data[detInd]->data[0].deltaF ){
+	LogPrintf ( LOG_CRITICAL, "%s: deltaF = %f disagrees with SFT deltaF = %s", __func__, deltaF, inputSFTs->data[detInd]->data[0].deltaF );
+	XLAL_ERROR( XLAL_EINVAL );
+      }
+
+      if ((badBins->data[detInd] = XLALCreateUINT4Vector ( numSFTFreqs ) ) == NULL){
+	LogPrintf ( LOG_CRITICAL, "%s: XLALCreateUINT4Vector() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+      /* printf("%d\n",badBins->data[detInd]->length); */
+      INT4 binCount = 0;
+
+      if((fp = fopen(config.lineFiles->data[i_f], "r")) == NULL){
+	LogPrintf ( LOG_CRITICAL, "%s: didn't find line file with name %s\n", __func__, config.lineFiles->data[i_f]);
+	XLAL_ERROR( XLAL_EINVAL );
+      }
+      CHAR thisline[MAXLINELENGTH];
+      UINT4 linesRead = 0;
+      while (fgets(thisline, sizeof thisline, fp)) {
+	if ( thisline[0] == '%' ) continue;
+	REAL8 spacing;
+	UINT4 combtype;
+	REAL8 offset;
+	UINT4 firstindex, lastindex;
+	REAL8 leftwidth, rightwidth;
+	UINT4 numRead = sscanf(thisline,PCC_LINEFILE_BODY, &spacing, &combtype, &offset, &firstindex, &lastindex, &leftwidth, &rightwidth);
+	if(numRead!=7){
+	  LogPrintf ( LOG_CRITICAL, "Failed to read data out of line file %s: needed 7, got %d\n", config.lineFiles->data[i_f], numRead );
+	  XLAL_ERROR( XLAL_EINVAL );
+	}
+	/*	printf(PCC_LINEFILE_BODY "\n", spacing, combtype, offset, firstindex, lastindex, leftwidth, rightwidth); */
+	switch (combtype){
+	case 0: /* singlet line */
+	  if ( firstindex != lastindex ){
+	    LogPrintf ( LOG_CRITICAL, "Error in file %s: singlet line with firstindex=%d,lastindex=%d\n", config.lineFiles->data[i_f], firstindex, lastindex );
+	    XLAL_ERROR( XLAL_EINVAL );
+	  }
+	  binCount = XLALFindBadBins( badBins->data[detInd], binCount, offset+firstindex*spacing-leftwidth, offset+lastindex*spacing+rightwidth, f0, deltaF, numSFTFreqs);
+	  if (binCount < 0){
+	    LogPrintf ( LOG_CRITICAL, "%s: XLALFindBadBins() failed with errno=%d\n", __func__, xlalErrno );
+	    XLAL_ERROR( XLAL_EFUNC );
+	  }
+	  /* printf ("veto %f to %f\n", offset+firstindex*spacing-leftwidth, offset+lastindex*spacing+rightwidth); */
+	  break;
+	case 1: /* fixed-width comb */
+	  if ( firstindex > lastindex ){
+	    LogPrintf ( LOG_CRITICAL, "Error in file %s: comb with firstindex=%d,lastindex=%d\n", config.lineFiles->data[i_f], firstindex, lastindex );
+	    XLAL_ERROR( XLAL_EINVAL );
+	  }
+	  for ( INT4 index = firstindex ; index <= lastindex; index++ ) {
+	    binCount = XLALFindBadBins( badBins->data[detInd], binCount, offset+index*spacing-leftwidth, offset+index*spacing+rightwidth, f0, deltaF, numSFTFreqs);
+	    if (binCount < 0){
+	      LogPrintf ( LOG_CRITICAL, "%s: XLALFindBadBins() failed with errno=%d\n", __func__, xlalErrno );
+	      XLAL_ERROR( XLAL_EFUNC );
+	    }
+	    /* printf ("veto %f to %f\n", offset+index*spacing-leftwidth, offset+index*spacing+rightwidth); */
+	  }
+	  break;
+	case 2: /* scaling-width comb */
+	  if ( firstindex > lastindex ){
+	    LogPrintf ( LOG_CRITICAL, "Error in file %s: comb with firstindex=%d,lastindex=%d\n", config.lineFiles->data[i_f], firstindex, lastindex );
+	    XLAL_ERROR( XLAL_EINVAL );
+	  }
+	  for ( INT4 index = firstindex ; index <= lastindex; index++ ) {
+	    binCount = XLALFindBadBins( badBins->data[detInd], binCount, offset+index*spacing-index*leftwidth, offset+index*spacing+index*rightwidth, f0, deltaF, numSFTFreqs);
+	    if (binCount < 0){
+	      LogPrintf ( LOG_CRITICAL, "%s: XLALFindBadBins() failed with errno=%d\n", __func__, xlalErrno );
+	      XLAL_ERROR( XLAL_EFUNC );
+	    }
+	    /* printf ("veto %f to %f\n", offset+index*spacing-index*leftwidth, offset+index*spacing+index*rightwidth); */
+	  }
+	  break;
+	default:
+	  LogPrintf ( LOG_CRITICAL, "Unrecognized combtype %d\n", combtype );
+	  XLAL_ERROR( XLAL_EINVAL );
+	}
+
+	linesRead++;
+      } /* while (fgets(thisline, sizeof thisline, fp)) */
+      if (linesRead != numLines){
+	LogPrintf ( LOG_CRITICAL, "Read %d lines out of %s but expected %d", linesRead, config.lineFiles->data[i_f], numLines );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+      if ( binCount == 0 ){
+	XLALDestroyUINT4Vector( badBins->data[detInd] );
+	badBins->data[detInd] = NULL;
+      } else {
+	if ( (badBins->data[detInd]->data = XLALRealloc(badBins->data[detInd]->data, binCount*sizeof(UINT4)) ) == NULL){
+	  XLAL_ERROR(XLAL_ENOMEM);
+	}
+	badBins->data[detInd]->length = binCount;
+      }
+    } /* for ( UINT4 i_f=0 ; i_f < config.lineFiles->length ; i_f++ ) */
+  } /* if ( config->lineFiles ) */
 
   /* Get weighting factors for calculation of metric */
   /* note that the sigma-squared is now absorbed into the curly G
@@ -767,6 +917,8 @@ int main(int argc, char *argv[]){
     XLALFree(CMDInputStr);
   }
 
+  /* FIXME: Need to destroy badBins */
+
   XLALFree(VCSInfoString);
   XLALDestroyCOMPLEX8Vector ( expSignalPhases );
   XLALDestroyUINT4Vector ( lowestBins );
@@ -1090,4 +1242,47 @@ INT4 pcc_count_csv( CHAR *csvline ){
   }
 
   return count+1;
+}
+
+/** Convert a range of contaminated frequencies into a set of bins to zero out */
+/* Returns the running number of zeroed bins */
+INT4 XLALFindBadBins
+  (
+   UINT4Vector *badBinData, /* Modified: running list of bad bins */
+   INT4 binCount, /* Input: number of bins already in list */
+   REAL8 flo, /* Input: Lower end of contaminated frequency range */
+   REAL8 fhi, /* Input: Upper end of contaminated frequency range */
+   REAL8 f0, /* Input: Base frequency of frequency series */
+   REAL8 deltaF, /* Input: Frequency step of frequency series */
+   UINT4 length /* Input: Size of frequency series */
+   ) 
+{
+
+  /* printf ("veto %f to %f\n", flo, fhi); */
+
+  /* printf ("Series has %d bins starting at %f with %f spacing\n", length, f0, deltaF); */
+  /* printf ("Last bin is %f\n", f0 + length * deltaF); */
+
+  INT4 newBinCount = binCount;
+  INT4 firstBadBin = (INT4) ceil ( ( flo - f0 ) / deltaF );
+  /* printf ("firstBadBin = %d\n",firstBadBin); */
+  if ( firstBadBin < 0 ) firstBadBin = 0;
+  INT4 lastBadBin = (INT4) floor ( ( fhi - f0 ) / deltaF );
+  /* printf ("lastBadBin = %d\n",lastBadBin); */
+  if ( lastBadBin >= (INT4) length ) lastBadBin = (INT4) (length-1);
+
+  /* printf ("%d %d\n", firstBadBin, lastBadBin); */
+
+  for ( INT4 badBin = firstBadBin ; badBin <= lastBadBin ; badBin++ ){
+    /* printf ("%d %d %d\n", badBin, firstBadBin, lastBadBin); */
+    if (newBinCount >= length) {
+      LogPrintf ( LOG_CRITICAL, "%s: requested bin %d longer than series length %d\n", __func__, newBinCount, length);
+      XLAL_ERROR( XLAL_EINVAL );
+    }
+    badBinData->data[newBinCount] = badBin;
+    newBinCount++;
+  }
+
+  return newBinCount;
+
 }
