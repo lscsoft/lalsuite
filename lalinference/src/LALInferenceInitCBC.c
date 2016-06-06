@@ -420,8 +420,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
     LALInferenceAddVariable(currentParams, "spcal_active", &calOn, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(currentParams, "spcal_npts", &ncal, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
-    ifo = runState->data;
-    do {
+    for(ifo=runState->data;ifo;ifo=ifo->next) {
       size_t i;
 
       char freqVarName[VARNAME_MAX];
@@ -486,38 +485,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       LALInferenceAddVariable(runState->priorArgs, pha_uncert, &phaseUncertaintyPrior,
             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
-      char amp_uncert_op[VARNAME_MAX];
-      char pha_uncert_op[VARNAME_MAX];
-      snprintf(amp_uncert_op, VARNAME_MAX, "--%s-spcal-amp-uncertainty", ifo->name);
-      snprintf(pha_uncert_op, VARNAME_MAX, "--%s-spcal-phase-uncertainty", ifo->name);
-      if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, amp_uncert_op))) {
-        ampUncertaintyPrior = atof(ppt->value);
-      }
-      else{
-        fprintf(stderr,"Error, missing --%s-spcal-amp-uncertainty\n",ifo->name);
-        exit(1);
-      }
-
-      if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, pha_uncert_op))) {
-        phaseUncertaintyPrior = M_PI/180.0*atof(ppt->value); /* CL arg in degrees, variable in radians */
-      }
-      else{
-        fprintf(stderr,"Error, missing --%s-spcal-phase-uncertainty\n",ifo->name);
-        exit(1);
-      }
-
-      char amp_uncert[VARNAME_MAX];
-      char pha_uncert[VARNAME_MAX];
-      snprintf(amp_uncert, VARNAME_MAX, "%s_spcal_amp_uncertainty", ifo->name);
-      snprintf(pha_uncert, VARNAME_MAX, "%s_spcal_phase_uncertainty", ifo->name);
-      LALInferenceAddVariable(runState->priorArgs, amp_uncert, &ampUncertaintyPrior,
-            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(runState->priorArgs, pha_uncert, &phaseUncertaintyPrior,
-            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-
-      ifo = ifo->next;
-
-    } while (ifo);
+    }
   }
   else if(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp") ||LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")){
     /* Use constant (in frequency) approximation for the errors */
