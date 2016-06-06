@@ -67,6 +67,7 @@ typedef struct tagBBHPhenomCParams{
   REAL8 Qual;
 
   REAL8 pfaN;
+  REAL8 pfa1;
   REAL8 pfa2;
   REAL8 pfa3;
   REAL8 pfa4;
