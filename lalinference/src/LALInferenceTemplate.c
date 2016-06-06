@@ -725,7 +725,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   }
   /* Fill in PPE params if they are available */
   char PPEparam[64]="";
-  char **PPEnames={"aPPE","alphaPPE","bPPE","betaPPE",NULL}
+  const char *PPEnames[]={"aPPE","alphaPPE","bPPE","betaPPE",NULL};
   for(UINT4 idx=0;PPEnames[idx];idx++)
   {
     for(UINT4 ppeidx=0;;ppeidx++)

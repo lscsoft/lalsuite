@@ -419,6 +419,8 @@ static void Test_XLALSimIMRPhenomP(void) {
   REAL8 f_min = 20;
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
+  const LALSimInspiralTestGRParam *nonGR = NULL;
+
 
   XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
@@ -642,6 +644,8 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
   REAL8 f_min = 20;
   REAL8 f_ref = f_min;
   IMRPhenomP_version_type version = IMRPhenomPv2_V;
+  const LALSimInspiralTestGRParam *nonGR = NULL;
+
 
   XLALSimIMRPhenomPCalculateModelParameters(
       &chi1_l,            /**< Output: aligned spin on companion 1 */
