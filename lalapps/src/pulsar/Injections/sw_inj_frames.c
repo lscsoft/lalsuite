@@ -75,7 +75,6 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 
 /* ---------- local type definitions ---------- */
 typedef struct{
-  BOOLEAN help; /* Trigger output of help string*/
 /*    CHAR *out_chan;  Channel output ie. H1_LDAS_C02_L2_CWINJ*/
 /*    CHAR *in_chan;  Channel input from .gwf ie. H1:LDAS-STRAIN*/
   REAL8 srate; /* sample rate -- default 16384*/
@@ -109,9 +108,6 @@ int main(int argc, char **argv)
   if ( InitUserVars ( uvar, argc, argv ) != XLAL_SUCCESS ) {
     XLAL_ERROR ( XLAL_EFUNC );
   }
-
-  if ( uvar->help )
-    return 0;
 
   char version[256];
   sprintf(version, "v13"); /*manually change */
@@ -657,23 +653,23 @@ InitUserVars ( UserInput_t *uvar,      /**< [out] UserInput structure to be fill
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   /* Register User Variables*/
-  XLALregBOOLUserStruct( help,            'h', UVAR_HELP, "Print this message");
-  /*    XLALregSTRINGUserStruct(out_chan,   'o', UVAR_OPTIONAL, "Output channel i.e. (IFO)_LDAS_C02_L2_CWINJ");*/
-  /*    XLALregSTRINGUserStruct(in_chan,        'i', UVAR_OPTIONAL, "Input channel from .gwf file, i.e. (IFO):LDAS-STRAIN");*/
-  XLALregREALUserStruct(srate,            'r', UVAR_OPTIONAL, "user defined sample rate, default = 16384");
-  /*  XLALregREALUserStruct(duration,       'd', UVAR_OPTIONAL, "duration of frame (sec)"); */
-  /*  XLALregREALUserStruct(start,            's', UVAR_OPTIONAL, "epoch in GPS Seconds"); */
-  XLALregSTRINGUserStruct(inputdir,       'p', UVAR_OPTIONAL, "directory for .par files");
-  XLALregSTRINGUserStruct(gwfdir,     'g', UVAR_OPTIONAL,"directory for .gwf files");
-  XLALregSTRINGUserStruct(outputdir,  'c', UVAR_OPTIONAL, "directory for CWINJ files");
-  XLALregSTRINGUserStruct( ephemEarth,   0,  UVAR_OPTIONAL,     "Earth ephemeris file to use");
-  XLALregSTRINGUserStruct( ephemSun,     0,  UVAR_OPTIONAL,     "Sun ephemeris file to use");
-  XLALregSTRINGUserStruct( IFO,       'I', UVAR_REQUIRED, "Detector: 'G1', 'L1', 'H1', 'H2', 'V1'...");
-  XLALregSTRINGUserStruct( logDir, 'L', UVAR_OPTIONAL, "Directory to put .log file");
+  /*    XLALRegisterUvarMember(out_chan,   STRING, 'o', OPTIONAL, "Output channel i.e. (IFO)_LDAS_C02_L2_CWINJ");*/
+  /*    XLALRegisterUvarMember(in_chan,        STRING, 'i', OPTIONAL, "Input channel from .gwf file, i.e. (IFO):LDAS-STRAIN");*/
+  XLALRegisterUvarMember(srate,            REAL8, 'r', OPTIONAL, "user defined sample rate, default = 16384");
+  /*  XLALRegisterUvarMember(duration,       REAL8, 'd', OPTIONAL, "duration of frame (sec)"); */
+  /*  XLALRegisterUvarMember(start,            REAL8, 's', OPTIONAL, "epoch in GPS Seconds"); */
+  XLALRegisterUvarMember(inputdir,       STRING, 'p', OPTIONAL, "directory for .par files");
+  XLALRegisterUvarMember(gwfdir,     STRING, 'g', OPTIONAL,"directory for .gwf files");
+  XLALRegisterUvarMember(outputdir,  STRING, 'c', OPTIONAL, "directory for CWINJ files");
+  XLALRegisterUvarMember( ephemEarth,   STRING, 0,  OPTIONAL,     "Earth ephemeris file to use");
+  XLALRegisterUvarMember( ephemSun,     STRING, 0,  OPTIONAL,     "Sun ephemeris file to use");
+  XLALRegisterUvarMember( IFO,       STRING, 'I', REQUIRED, "Detector: 'G1', 'L1', 'H1', 'H2', 'V1'...");
+  XLALRegisterUvarMember( logDir, STRING, 'L', OPTIONAL, "Directory to put .log file");
 
-  if (XLALUserVarReadAllInput (argc, argv ) != XLAL_SUCCESS) {
-    XLALPrintError ("%s: XLALUserVarReadAllInput() failed with errno=%d\n", fn, xlalErrno);
-    XLAL_ERROR ( XLAL_EFUNC );
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit(1);
   }
 
   return XLAL_SUCCESS;

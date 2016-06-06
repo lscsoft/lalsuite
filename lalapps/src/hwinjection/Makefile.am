@@ -1,4 +1,3 @@
-BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
 progs = lalapps_psinject

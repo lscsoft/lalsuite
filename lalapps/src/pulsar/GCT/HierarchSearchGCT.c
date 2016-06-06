@@ -24,6 +24,11 @@
 
 /*********************************************************************************/
 /**
+ * \defgroup lalapps_pulsar_GCT GCT Search Application
+ * \ingroup lalapps_pulsar_Apps
+ */
+
+/**
  * \author Holger Pletsch
  * \file
  * \ingroup lalapps_pulsar_GCT
@@ -339,9 +344,8 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_fnameChkPoint = NULL;
 
   /* user variables */
-  BOOLEAN uvar_help = FALSE;    /* true if -h option is given */
   BOOLEAN uvar_log = FALSE;     /* logging done if true */
-  INT4 uvar_loglevel = 0;
+  INT4 uvar_loglevel = 0;       /* DEPRECATED; used to set logLevel, now set by LAL_DEBUG_LEVEL */
 
   BOOLEAN uvar_printCand1 = FALSE;      /* if 1st stage candidates are to be printed */
   BOOLEAN uvar_printFstat1 = FALSE;
@@ -411,6 +415,7 @@ int MAIN( int argc, char *argv[]) {
 
   CHAR *uvar_outputTiming = NULL;
 
+  CHAR helpstr_buf[2048];
   CHAR *uvar_FstatMethod = XLALStringDuplicate("DemodBest");
   CHAR *uvar_FstatMethodRecalc = XLALStringDuplicate("DemodBest");
 
@@ -424,13 +429,6 @@ int MAIN( int argc, char *argv[]) {
 #endif
 
 #ifdef EAH_LALDEBUGLEVEL
-#endif
-
-  /* set log-level */
-#ifdef EAH_LOGLEVEL
-  uvar_loglevel = EAH_LOGLEVEL;
-#else
-  uvar_loglevel = lalDebugLevel & LALALLDBG;
 #endif
 
   uvar_ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
@@ -450,8 +448,6 @@ int MAIN( int argc, char *argv[]) {
 #endif
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",        'h', UVAR_HELP,     "Print this message", &uvar_help), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "logLevel",     0,  UVAR_OPTIONAL, "Set logLevel", &uvar_loglevel), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "log",          0,  UVAR_OPTIONAL, "Write log file", &uvar_log), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "semiCohToplist",0, UVAR_OPTIONAL, "Print toplist of semicoherent candidates", &uvar_semiCohToplist ), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
@@ -504,8 +500,10 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "BSGLlogcorr",  0, UVAR_DEVELOPER, "BSGL: include log-correction terms (slower) or not (faster)", &uvar_BSGLlogcorr), &status);
   // --------------------------------------------
 
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethod",  0, UVAR_OPTIONAL, XLALFstatMethodHelpString(), &uvar_FstatMethod ), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethodRecalc", 0, UVAR_OPTIONAL, XLALFstatMethodHelpString(), &uvar_FstatMethodRecalc ), &status);
+  snprintf( helpstr_buf, sizeof(helpstr_buf), "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() );
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethod",  0, UVAR_OPTIONAL, helpstr_buf, &uvar_FstatMethod ), &status);
+  snprintf( helpstr_buf, sizeof(helpstr_buf), "F-statistic method to use for recalc. Available methods: %s", XLALFstatMethodHelpString() );
+  LAL_CALL( LALRegisterSTRINGUserVar( &status, "FstatMethodRecalc", 0, UVAR_OPTIONAL, helpstr_buf, &uvar_FstatMethodRecalc ), &status);
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
   LAL_CALL( LALRegisterINTUserVar (   &status, "SSBprecision", 0, UVAR_DEVELOPER, "Precision for SSB transform.", &uvar_SSBprecision),    &status);
@@ -517,11 +515,13 @@ int MAIN( int argc, char *argv[]) {
 
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
 
-  /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "logLevel",     0,  UVAR_CATEGORY_DEPRECATED, "DEPRECATED; used to set logLevel, now set by LAL_DEBUG_LEVEL", &uvar_loglevel), &status);
 
-  /* set log level */
-  LogSetLevel(uvar_loglevel);
+  /* read all command line variables */
+  BOOLEAN should_exit = 0;
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    return(1);
 
   /* assemble version string */
   CHAR *VCSInfoString;
@@ -538,11 +538,6 @@ int MAIN( int argc, char *argv[]) {
       printf ("%s\n", VCSInfoString );
       return (0);
     }
-
-  /* exit if help was required */
-  if (uvar_help)
-    return(0);
-
 
   /* some basic sanity checks on user vars */
   if ( uvar_nStacksMax < 1) {

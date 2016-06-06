@@ -30,7 +30,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/Factorial.h>
 
-#include "GSLHelpers.h"
+#include <lal/GSLHelpers.h>
 
 // Shortcuts for integer powers
 #define POW2(a)  ( (a) * (a) )
@@ -110,7 +110,7 @@ double XLALMetricDeterminant(
   // Compute LU decomposition
   gsl_matrix_memcpy( LU_decomp, g_ij );
   int LU_sign = 0;
-  GCALL_REAL8( gsl_linalg_LU_decomp( LU_decomp, LU_perm, &LU_sign ), "'g_ij' cannot be LU-decomposed" );
+  XLAL_CHECK_REAL8( gsl_linalg_LU_decomp( LU_decomp, LU_perm, &LU_sign ) == 0, XLAL_EFAILED, "'g_ij' cannot be LU-decomposed" );
 
   // Compute determinant
   const double determinant = gsl_linalg_LU_det( LU_decomp, LU_sign );
@@ -150,8 +150,8 @@ gsl_vector *XLALMetricEllipseBoundingBox(
 
   // Compute metric inverse
   int LU_sign = 0;
-  GCALL_NULL( gsl_linalg_LU_decomp( LU_decomp, LU_perm, &LU_sign ), "'g_ij' cannot be LU-decomposed" );
-  GCALL_NULL( gsl_linalg_LU_invert( LU_decomp, LU_perm, inverse ), "'g_ij' cannot be inverted" );
+  XLAL_CHECK_NULL( gsl_linalg_LU_decomp( LU_decomp, LU_perm, &LU_sign ) == 0, XLAL_EFAILED, "'g_ij' cannot be LU-decomposed" );
+  XLAL_CHECK_NULL( gsl_linalg_LU_invert( LU_decomp, LU_perm, inverse ) == 0, XLAL_EFAILED, "'g_ij' cannot be inverted" );
 
   // Compute bounding box, and invert diagonal normalization
   for( size_t i = 0; i < n; ++i ) {
@@ -364,8 +364,8 @@ int XLALInverseTransformMetric(
   // Compute inverse of transform
   int LU_sign = 0;
   gsl_matrix_memcpy( LU_decomp, transform );
-  GCALL( gsl_linalg_LU_decomp( LU_decomp, LU_perm, &LU_sign ), "'transform' cannot be LU-decomposed" );
-  GCALL( gsl_linalg_LU_invert( LU_decomp, LU_perm, inverse ), "'transform' cannot be inverted" );
+  XLAL_CHECK( gsl_linalg_LU_decomp( LU_decomp, LU_perm, &LU_sign ) == 0, XLAL_EFAILED, "'transform' cannot be LU-decomposed" );
+  XLAL_CHECK( gsl_linalg_LU_invert( LU_decomp, LU_perm, inverse ) == 0, XLAL_EFAILED, "'transform' cannot be inverted" );
 
   // Apply transform
   XLAL_CHECK( XLALTransformMetric( p_gpr_ij, inverse, g_ij ) == XLAL_SUCCESS, XLAL_EFUNC );

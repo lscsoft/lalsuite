@@ -184,7 +184,7 @@ def parse_command_line():
     # initial condition options
     #
     parser.add_option("--seed", help="Set the seed for the random number generator used by SBank for waveform parameter (masss, spins, ...) generation.", metavar="INT", default=1729, type="int")
-    parser.add_option("--bank-seed",help="Initialize the bank with specified template bank. For instance, one might generate a template bank by geomtretic/lattice placement methods and use SBank to \"complete\" the bank. NOTE: Only the additional templates will be outputted and to complete the bank you will need to add the output of this to the original bank", metavar="FILE")
+    parser.add_option("--bank-seed", metavar="FILE[:APPROX]", help="Add templates from FILE to the initial bank. If APPROX is also specified, the templates from this seed bank will be computed with this approximant instead of the one specified by --approximant. Can be specified multiple times. Only the additional templates will be outputted.", action="append", default=[])
 
     #
     # noise model options
@@ -275,8 +275,12 @@ def parse_command_line():
         if opts.spin2_max is None:
             opts.spin2_max = opts.spin1_max
 
-    if opts.approximant in ["TaylorF2RedSpin", "IMRPhenomB","SEOBNRv1"] and not opts.aligned_spin:
+    if opts.approximant in ["TaylorF2RedSpin", "IMRPhenomB","IMRPhenomC", "IMRPhenomD", "SEOBNRv1", "SEOBNRv2", "SEOBNRv2_ROM_DoubleSpin", "SEOBNRv2_ROM_DoubleSpin_HI"] and not opts.aligned_spin:
         parser.error("--aligned-spin is required for the %s approximant" % opts.approximant)
+
+    if opts.approximant in ["IMRPhenomPv2", "SEOBNRv3"] and opts.aligned_spin:
+        opts.approximant = {"IMRPhenomPv2":"IMRPhenomD",
+                            "SEOBNRv3":"SEOBNRv2"}[opts.approximant]
 
     if (opts.mchirp_boundaries_file is not None) ^ (opts.mchirp_boundaries_index is not None):
         parser.error("must supply both --mchirp-boundaries-file and --mchirp-boundaries-index or neither")
@@ -346,23 +350,34 @@ psd = REAL8FrequencySeries(name="psd", f0=0., deltaF=1., data=get_PSD(1., opts.f
 
 
 #
-# seed the bank, if applicable
+# initialize the bank
 #
-if opts.bank_seed is None:
-    # seed the process with an empty bank
-    # the first proposal will always be accepted
-    bank = Bank(waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)
-else:
-    # seed bank with input bank. we do not prune the bank
-    # for overcoverage, but take it as is
-    tmpdoc = utils.load_filename(opts.bank_seed, contenthandler=ContentHandler)
+bank = Bank(noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)
+for file_approx in opts.bank_seed:
+
+    # if no approximant specified, use same approximant as the
+    # templates we will add
+    if len(file_approx.split(":")) == 1:
+        seed_file = file_approx
+        approx = opts.approximant
+    else:
+        # if this fails, you have an input error
+        seed_file, approx = file_approx.split(":")
+
+    # add templates to bank
+    tmpdoc = utils.load_filename(seed_file, contenthandler=ContentHandler)
     sngl_inspiral = table.get_table(tmpdoc, lsctables.SnglInspiralTable.tableName)
-    bank = Bank.from_sngls(sngl_inspiral, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)
+    seed_waveform = waveforms[approx]
+    bank.add_from_sngls(sngl_inspiral, seed_waveform)
+
+    if opts.verbose:
+        print>>sys.stdout,"Added %d %s seed templates from %s to initial bank." % (len(sngl_inspiral), approx, seed_file)
 
     tmpdoc.unlink()
     del sngl_inspiral, tmpdoc
-    if opts.verbose:
-        print>>sys.stdout,"Initialized the template bank to seed file %s with %d precomputed templates." % (opts.bank_seed, len(bank))
+
+if opts.verbose:
+    print>>sys.stdout,"Initialized the template bank to seed with %d precomputed templates." % len(bank)
 
 
 #
@@ -446,9 +461,9 @@ while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) 
         ks.append(k)
         if opts.verbose:
             print "\nbank size: %d\t\tproposed: %d\trejection rate: %.6f / (%.6f)" % (len(bank), k, 1 - float(len(ks))/float(sum(ks)), 1 - 1./opts.convergence_threshold )
-            print >>sys.stdout, "accepted:\t\t", status_format % tmplt.params
+            print >>sys.stdout, "accepted:\t\t", tmplt
             if matcher is not None:
-                print >>sys.stdout, "max match (%.4f):\t" % match, status_format % matcher.params
+                print >>sys.stdout, "max match (%.4f):\t" % match, matcher
         k = 0
 
         # Add to single inspiral table. Do not store templates that

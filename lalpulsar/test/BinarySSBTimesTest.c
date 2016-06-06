@@ -53,7 +53,6 @@ static REAL8 A,B;          /* binary time delay coefficients (need to be global 
 // local types
 typedef struct
 {
-  BOOLEAN help;		/**< Print this help/usage message */
   INT4 randSeed;	/**< allow user to specify random-number seed for reproducible noise-realizations */
 } UserInput_t;
 
@@ -87,13 +86,13 @@ main ( int argc, char *argv[] )
   uvar->randSeed = times(&buf);
 
   // ---------- register all our user-variable ----------
-  XLALregBOOLUserStruct (  help,                'h', UVAR_HELP    , "Print this help/usage message");
-  XLALregINTUserStruct (   randSeed,             's', UVAR_OPTIONAL, "Specify random-number seed for reproducible noise.");
+  XLALRegisterUvarMember(   randSeed,             INT4, 's', OPTIONAL, "Specify random-number seed for reproducible noise.");
 
   /* read cmdline & cfgfile  */
-  XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-  if ( uvar->help ) {	/* if help was requested, we're done */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit (1);
   }
 
   srand ( uvar->randSeed );

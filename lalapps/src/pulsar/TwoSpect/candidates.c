@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#include <sys/stat.h>
 #include <lal/UserInput.h>
 #include "TwoSpect.h"
 #include "candidates.h"
@@ -1131,6 +1132,28 @@ REAL8 calculateR(const REAL4VectorAligned *ffdata, const TwoSpectTemplate *templ
 
 } /* calculateR() */
 
+INT4 writeCandidateVector2File(const CHAR *outputfile, const candidateVector *input)
+{
+   XLAL_CHECK( outputfile != NULL && input != NULL, XLAL_EINVAL );
+
+   FILE *CANDFILE = NULL;
+   struct stat XLAL_INIT_DECL(buf);
+   if ( stat(outputfile, &buf) == -1 && errno == ENOENT ) {
+      XLAL_CHECK( (CANDFILE = fopen(outputfile, "w")) != NULL, XLAL_EIO, "Couldn't fopen file %s to output candidates\n", outputfile );
+      fprintf(CANDFILE, "# TwoSpect candidates output file\n");
+      fprintf(CANDFILE, "# Freq     Period       Mod. depth  RA    DEC  Statistic val.  Est. h0  False alarm prob.  TF normalization  Template vec. num.  Line contam.\n");
+   } else {
+      XLAL_CHECK( (CANDFILE = fopen(outputfile, "a")) != NULL, XLAL_EIO, "Couldn't fopen file %s to output candidates\n", outputfile );
+   }
+
+   for (UINT4 ii=0; ii<input->numofcandidates; ii++) {
+      fprintf(CANDFILE, "%.6f %.6f %.7f %.4f %.4f %.4f %g %.4f %g %d %d\n", input->data[ii].fsig, input->data[ii].period, input->data[ii].moddepth, input->data[ii].ra, input->data[ii].dec, input->data[ii].stat, input->data[ii].h0, input->data[ii].prob, input->data[ii].normalization, input->data[ii].templateVectorIndex, input->data[ii].lineContamination);
+   }
+
+   fclose(CANDFILE);
+
+   return XLAL_SUCCESS;
+}
 
 /**
  * Calculates maximum modulation depth allowed, equation 6 of E. Goetz and K. Riles (2011)

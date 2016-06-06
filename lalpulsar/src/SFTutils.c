@@ -32,6 +32,7 @@
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/LALString.h>
+#include <lal/ConfigFile.h>
 
 #include <lal/SFTutils.h>
 
@@ -1754,6 +1755,47 @@ XLALMultiAddToFakeSFTCatalog ( SFTCatalog *catalog,                          /**
 
 } /* XLALMultiAddToFakeSFTCatalog() */
 
+///
+/// Set a SFT catalog 'slice' to a timeslice of a larger SFT catalog 'catalog', with entries
+/// restricted to the interval ['minStartGPS','maxStartGPS') according to XLALCWGPSinRange().
+/// The catalog 'slice' just points to existing data in 'catalog', and therefore should not
+/// be deallocated.
+///
+int XLALSFTCatalogTimeslice(
+  SFTCatalog *slice,			///< [out] Timeslice of SFT catalog
+  const SFTCatalog *catalog,		///< [in] SFT catalog
+  const LIGOTimeGPS *minStartGPS,	///< [in] Minimum starting GPS time
+  const LIGOTimeGPS *maxStartGPS	///< [in] Maximum starting GPS time
+  )
+{
+
+  // Check input
+  XLAL_CHECK( slice != NULL, XLAL_EFAULT );
+  XLAL_CHECK( catalog != NULL, XLAL_EFAULT );
+  XLAL_CHECK( catalog->length > 0, XLAL_EINVAL );
+
+  // Initialise timeslice of SFT catalog
+  XLAL_INIT_MEM(*slice);
+
+  // Find start and end of timeslice
+  UINT4 iStart = 0, iEnd = catalog->length - 1;
+  while (iStart <= iEnd && XLALCWGPSinRange( catalog->data[iStart].header.epoch, minStartGPS, maxStartGPS ) < 0 ) {
+    ++iStart;
+  }
+  while (iStart <= iEnd && XLALCWGPSinRange( catalog->data[iEnd].header.epoch, minStartGPS, maxStartGPS ) > 0 ) {
+    --iEnd;
+  }
+  if (iStart > iEnd) {
+    return XLAL_SUCCESS;
+  }
+
+  // Set timeslice of SFT catalog
+  slice->length = iEnd - iStart + 1;
+  slice->data = &catalog->data[iStart];
+
+  return XLAL_SUCCESS;
+
+}
 
 /**
  * Copy an entire SFT-type into another.

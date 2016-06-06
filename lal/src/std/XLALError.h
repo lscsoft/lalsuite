@@ -21,6 +21,7 @@
 #define XLALERROR_H
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <lal/LALAtomicDatatypes.h>
@@ -570,16 +571,14 @@ int *XLALGetErrnoPtr(void);
 
 
 /**
- *
  * A macro to (i) disable the XLAL error handling and preserve the
  * current value of xlalErrno (ii) perform a statement that involves an
  * XLAL function call and (iii) restore the XLAL error handler and value of
  * xlalErrno while setting variable errnum to the xlalErrno set by the
  * statement.
- *
  */
 #define XLAL_TRY( statement, errnum ) \
-        do { \
+	do { \
 		XLALErrorHandlerType *xlalSaveErrorHandler; \
 		int xlalSaveErrno; \
 		xlalSaveErrorHandler = XLALSetSilentErrorHandler(); \
@@ -589,8 +588,20 @@ int *XLALGetErrnoPtr(void);
 		errnum = xlalErrno; \
 		xlalErrno = xlalSaveErrno; \
 		XLALSetErrorHandler(xlalSaveErrorHandler); \
-        } while (0)
+	} while (0)
 
+/**
+ * Performs the same actions as XLAL_TRY(), but additionally silences
+ * any error/warning/etc. messages being printed while statement is
+ * executed, regardless of the value of #lalDebugLevel.
+ */
+#define XLAL_TRY_SILENT( statement, errnum ) \
+	do { \
+		int xlalSaveDebugLevel = lalDebugLevel; \
+		XLALClobberDebugLevel(xlalSaveDebugLevel & ~(LALERRORBIT | LALWARNINGBIT | LALINFOBIT | LALTRACEBIT)); \
+		XLAL_TRY(statement, errnum); \
+		XLALClobberDebugLevel(xlalSaveDebugLevel); \
+	} while (0)
 
 /*
  *
@@ -614,6 +625,49 @@ void XLALError(const char *func,
                int errnum /**< error code */
     );
 
+/** \cond DONT_DOXYGEN */
+/*
+ * Helper macros for internal use only:
+ * To allow for a possibly empty error message, these macros use
+ *   snprintf(buf, sizeof(buf), "X" __VA_ARGS__)
+ * to print any error message preceded by "X" (to silence -Wformat-zero-length)
+ * to a buffer 'buf', then print the error message with XLAL_PRINT_ERROR() only
+ * if 'buf' contains any characters after the "X". This construct allows for
+ *   XLAL_ERROR(XLAL_EFUNC);
+ *   XLAL_ERROR(XLAL_EFUNC, "%i < 0", n);
+ * It does not allow a non-literal format string, e.g.
+ *   const char *fmt = "%i < 0"; XLAL_ERROR(XLAL_EFUNC, fmt, n);
+ * but since this is a security risk, -Wformat does not allow this anyway.
+ */
+
+#define _XLAL_ERROR_IMPL_(statement, errnum, ...) \
+	do { \
+		char _XLAL_ERROR_IMPL_buf_[1024]; \
+		snprintf(_XLAL_ERROR_IMPL_buf_, sizeof(_XLAL_ERROR_IMPL_buf_), "X" __VA_ARGS__); \
+		if (_XLAL_ERROR_IMPL_buf_[1] != 0) { \
+			XLAL_PRINT_ERROR("%s", &_XLAL_ERROR_IMPL_buf_[1]); \
+		} \
+		XLALError(__func__, __FILE__, __LINE__, errnum); \
+		statement; \
+	} while (0)
+
+#define _XLAL_CHECK_IMPL_(statement, assertion, errnum, ...) \
+	do { \
+		if (!(assertion)) { \
+			char _XLAL_CHECK_IMPL_buf_[1024]; \
+			snprintf(_XLAL_CHECK_IMPL_buf_, sizeof(_XLAL_CHECK_IMPL_buf_), "X" __VA_ARGS__); \
+			if (_XLAL_CHECK_IMPL_buf_[1] != 0) { \
+				XLAL_PRINT_ERROR("%s", &_XLAL_CHECK_IMPL_buf_[1]); \
+			} else { \
+				XLAL_PRINT_ERROR("Check failed: %s", #assertion); \
+			} \
+			XLALError(__func__, __FILE__, __LINE__, errnum); \
+			statement; \
+		} \
+	} while (0)
+
+/** \endcond */
+
 /**
  * \brief Macro to invoke the <tt>XLALError()</tt> function and return
  * with code val (it should not really be used itself, but forms the basis for
@@ -628,20 +682,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_ERROR_VAL(val, ...) XLAL_ERROR_VAL_(val, __VA_ARGS__, NULL, NULL)
-
-/* Helper macro for internal use only */
-#define XLAL_ERROR_VAL_(val, errnum, fmt, ...) \
-	do { \
-		if (fmt != NULL) { \
-			_LAL_GCC_DIAGNOSTIC_(push); \
-			_LAL_GCC_DIAGNOSTIC_(ignored "-Wformat-extra-args"); \
-			XLAL_PRINT_ERROR(fmt, __VA_ARGS__); \
-			_LAL_GCC_DIAGNOSTIC_(pop); \
-		} \
-		XLALError(__func__, __FILE__, __LINE__, errnum); \
-		return val; \
-	} while (0)
+#define XLAL_ERROR_VAL(val, ...) _XLAL_ERROR_IMPL_(return val, __VA_ARGS__)
 
 /**
  * Macro to invoke a failure from a XLAL routine returning an integer.
@@ -654,7 +695,7 @@ void XLALError(const char *func,
  * <li> \b ...     (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_ERROR(...) XLAL_ERROR_VAL(XLAL_FAILURE, __VA_ARGS__)
+#define XLAL_ERROR(...) _XLAL_ERROR_IMPL_(return XLAL_FAILURE, __VA_ARGS__)
 
 /**
  * Macro to invoke a failure from a XLAL routine returning a pointer.
@@ -667,7 +708,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_ERROR_NULL(...) XLAL_ERROR_VAL(NULL, __VA_ARGS__)
+#define XLAL_ERROR_NULL(...) _XLAL_ERROR_IMPL_(return NULL, __VA_ARGS__)
 
 /**
  * \brief Macro to invoke a failure from a XLAL routine returning void.
@@ -680,7 +721,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_ERROR_VOID(...) XLAL_ERROR_VAL(/* void */, __VA_ARGS__)
+#define XLAL_ERROR_VOID(...) _XLAL_ERROR_IMPL_(return, __VA_ARGS__)
 
 /**
  * \brief Macro to invoke a failure from a XLAL routine returning a <tt>REAL4</tt>.
@@ -693,7 +734,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_ERROR_REAL4(...) XLAL_ERROR_VAL(XLAL_REAL4_FAIL_NAN, __VA_ARGS__)
+#define XLAL_ERROR_REAL4(...) _XLAL_ERROR_IMPL_(return XLAL_REAL4_FAIL_NAN, __VA_ARGS__)
 
 /**
  * \brief Macro to invoke a failure from a XLAL routine returning a <tt>REAL8</tt>.
@@ -706,7 +747,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_ERROR_REAL8(...) XLAL_ERROR_VAL(XLAL_REAL8_FAIL_NAN, __VA_ARGS__)
+#define XLAL_ERROR_REAL8(...) _XLAL_ERROR_IMPL_(return XLAL_REAL8_FAIL_NAN, __VA_ARGS__)
 
 /**
  * \brief Macro to invoke a failure from a C <tt>main()</tt> routine.
@@ -719,8 +760,20 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_ERROR_MAIN(...) XLAL_ERROR_VAL(EXIT_FAILURE, __VA_ARGS__)
+#define XLAL_ERROR_MAIN(...) _XLAL_ERROR_IMPL_(return EXIT_FAILURE, __VA_ARGS__)
 
+/**
+ * \brief Macro to invoke a failure by jumping to a <tt>XLAL_FAIL</tt> label.
+ *
+ * Prototype <b>XLAL_ERROR_FAIL(errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b errnum The XLAL error number to set.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
+ */
+#define XLAL_ERROR_FAIL(...) _XLAL_ERROR_IMPL_(goto XLAL_FAIL, __VA_ARGS__)
 
 /**
  * \brief Macro to test an assertion; if it is not true, invoke the
@@ -737,24 +790,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_CHECK_VAL(val, assertion, ...) XLAL_CHECK_VAL_(val, assertion, __VA_ARGS__, NULL, NULL)
-
-/* Helper macro for internal use only */
-#define XLAL_CHECK_VAL_(val, assertion, errnum, fmt, ...) \
-	do { \
-		if (!(assertion)) { \
-			if (fmt != NULL) { \
-				_LAL_GCC_DIAGNOSTIC_(push); \
-				_LAL_GCC_DIAGNOSTIC_(ignored "-Wformat-extra-args"); \
-				XLAL_PRINT_ERROR(fmt, __VA_ARGS__); \
-				_LAL_GCC_DIAGNOSTIC_(pop); \
-			} else { \
-				XLAL_PRINT_ERROR("Check failed: %s", #assertion); \
-			} \
-			XLALError(__func__, __FILE__, __LINE__, errnum); \
-			return val; \
-		} \
-	} while (0)
+#define XLAL_CHECK_VAL(val, assertion, ...) _XLAL_CHECK_IMPL_(return val, assertion, __VA_ARGS__)
 
 /**
  * \brief Macro to test an assertion and invoke a failure if it is not true
@@ -769,8 +805,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_CHECK(assertion, ...) \
-	XLAL_CHECK_VAL(XLAL_FAILURE, assertion, __VA_ARGS__)
+#define XLAL_CHECK(assertion, ...) _XLAL_CHECK_IMPL_(return XLAL_FAILURE, assertion, __VA_ARGS__)
 
 /**
  * \brief Macro to test an assertion and invoke a failure if it is not true
@@ -785,8 +820,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_CHECK_NULL(assertion, ...) \
-	XLAL_CHECK_VAL(NULL, assertion, __VA_ARGS__)
+#define XLAL_CHECK_NULL(assertion, ...) _XLAL_CHECK_IMPL_(return NULL, assertion, __VA_ARGS__)
 
 /**
  * \brief Macro to test an assertion and invoke a failure if it is not true
@@ -801,8 +835,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_CHECK_VOID(assertion, ...) \
-	XLAL_CHECK_VAL(/* void */, assertion, __VA_ARGS__)
+#define XLAL_CHECK_VOID(assertion, ...) _XLAL_CHECK_IMPL_(return, assertion, __VA_ARGS__)
 
 /**
  * \brief Macro to test an assertion and invoke a failure if it is not true
@@ -817,8 +850,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_CHECK_REAL4(assertion, ...) \
-	XLAL_CHECK_VAL(XLAL_REAL4_FAIL_NAN, assertion, __VA_ARGS__)
+#define XLAL_CHECK_REAL4(assertion, ...) _XLAL_CHECK_IMPL_(return XLAL_REAL4_FAIL_NAN, assertion, __VA_ARGS__)
 
 /**
  * \brief Macro to test an assertion and invoke a failure if it is not true
@@ -833,8 +865,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_CHECK_REAL8(assertion, ...) \
-	XLAL_CHECK_VAL(XLAL_REAL8_FAIL_NAN, assertion, __VA_ARGS__)
+#define XLAL_CHECK_REAL8(assertion, ...) _XLAL_CHECK_IMPL_(return XLAL_REAL8_FAIL_NAN, assertion, __VA_ARGS__)
 
 /**
  * \brief Macro to test an assertion and invoke a failure if it is not true
@@ -849,8 +880,22 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_CHECK_MAIN(assertion, ...) \
-	XLAL_CHECK_VAL(EXIT_FAILURE, assertion, __VA_ARGS__)
+#define XLAL_CHECK_MAIN(assertion, ...) _XLAL_CHECK_IMPL_(return EXIT_FAILURE, assertion, __VA_ARGS__)
+
+/**
+ * \brief Macro to test an assertion and invoke a failure if it is not true
+ * by jumping to a <tt>XLAL_FAIL</tt> label.
+ *
+ * Prototype: <b>XLAL_CHECK_FAIL(assertion, errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b assertion The assertion to test.
+ * <li> \b errnum The XLAL error number to set if the assertion is false.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
+ */
+#define XLAL_CHECK_FAIL(assertion, ...) _XLAL_CHECK_IMPL_(goto XLAL_FAIL, assertion, __VA_ARGS__)
 
 
 #endif /* SWIG */

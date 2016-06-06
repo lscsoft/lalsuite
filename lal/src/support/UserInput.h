@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2016 Karl Wette
  * Copyright (C) 2015 Reinhard Prix
  * Copyright (C) 2010 Reinhard Prix (xlalified)
  * Copyright (C) 2004, 2005 Reinhard Prix
@@ -27,6 +28,7 @@ extern "C" {
 #endif
 
 #include <lal/ConfigFile.h>
+#include <lal/UserInputParse.h>
 
 /**
  * \defgroup UserInput_h Header UserInput.h
@@ -88,15 +90,14 @@ extern "C" {
  *   uvar->andAString = NULL;     // Note: need to assign allocated strings here as default!!
  *
  *   // 2. step: Register all user-variables using the shortcut macros:
- *   XLALregBOOLUserStruct  ( help,               'h',  UVAR_HELP,     "Output this help-message");
- *   XLALregINTUserStruct   ( anInteger,          'i',  UVAR_OPTIONAL, "An example user-variable of an optional integer");
- *   XLALregREALUserStruct  ( aDoubleVar,         'r',  UVAR_REQUIRED, "This REAL8 user-variable is required");
- *   XLALregSTRINGUserStruct( andAString,          0,   UVAR_OPTIONAL, "Optional string-input, has no short-option");
- *   XLALregEPOCHUserStruct ( someEpoch,           0,   UVAR_OPTIONAL, "Reference epoch (format 'xx.yy[GPS|MJD]')");
- *   XLALregRAJUserStruct   ( RAJ,                 0,   UVAR_OPTIONAL, "Sky location: equatorial right ascension in [0,2pi] (in radians or hours:minutes:seconds)");
- *   XLALregDECJUserStruct  ( DEC,                 0,   UVAR_OPTIONAL, "Sky location: equatorial declination [-pi/2,pi/2] (in radians or degrees:minutes:seconds)");
- *
- *   XLALregREALUserStruct  ( specialGeekSwitch,   'g', UVAR_DEVELOPER, "This REAL8 user-variable may not be relevant for standard usage");
+ *   XLALRegisterUvarMember( help,               BOOLEAN, 'h',  HELP,      "Output this help-message");
+ *   XLALRegisterUvarMember( anInteger,          INT4,    'i',  OPTIONAL,  "An example user-variable of an optional integer");
+ *   XLALRegisterUvarMember( aDoubleVar,         REAL8,   'r',  REQUIRED,  "This REAL8 user-variable is required");
+ *   XLALRegisterUvarMember( andAString,         STRING,   0,   OPTIONAL,  "Optional string-input, has no short-option");
+ *   XLALRegisterUvarMember( someEpoch,          EPOCH,    0,   OPTIONAL,  "Reference epoch (format 'xx.yy[GPS|MJD]')");
+ *   XLALRegisterUvarMember( RAJ,                RAJ,      0,   OPTIONAL,  "Sky location: equatorial right ascension in [0,2pi] (in radians or hours:minutes:seconds)");
+ *   XLALRegisterUvarMember( DEC,                DECJ,     0,   OPTIONAL,  "Sky location: equatorial declination [-pi/2,pi/2] (in radians or degrees:minutes:seconds)");
+ *   XLALRegisterUvarMember( specialGeekSwitch,  REAL8,    'g', DEVELOPER, "This REAL8 user-variable may not be relevant for standard usage");
  *
  *   // 3. step: parse all user-input, from either config-file if given, or commandline (overloads config-file values)
  *   XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC);
@@ -150,40 +151,11 @@ someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
 /*@{*/
 
 /**
- * \name Shortcut Macro for registering new user variables, which are assumed
+ * Shortcut Macro for registering new user variables, which are assumed
  * to be accessible via the \e struct-pointer '*uvar'
  */
-#define XLALRegisterUvarMember(name,type,option,category,help)             \
-  XLALRegister ##type## UserVar( #name, option, UVAR_CATEGORY_ ## category, help, &(uvar-> name))
-
-/** \deprecated Use XLALRegisterUvarMember() instead.
- */
-/*@{*/
-#define XLALregREALUserStruct(name,option,category,help) \
-  XLALRegisterREAL8UserVar(#name, option, category, help, &(uvar-> name))
-
-#define XLALregINTUserStruct(name,option,category,help) \
-  XLALRegisterINT4UserVar(#name, option,category, help, &(uvar-> name))
-
-#define XLALregBOOLUserStruct(name,option,category,help) \
-  XLALRegisterBOOLEANUserVar(#name, option, category, help, &(uvar-> name))
-
-#define XLALregSTRINGUserStruct(name,option,category,help) \
-  XLALRegisterSTRINGUserVar(#name, option, category, help, &(uvar-> name))
-
-#define XLALregLISTUserStruct(name,option,category,help)                    \
-  XLALRegisterSTRINGVectorUserVar(#name, option, category, help, &(uvar-> name))
-
-#define XLALregEPOCHUserStruct(name,option,category,help)                    \
-  XLALRegisterEPOCHUserVar(#name, option, category, help, &(uvar-> name))
-
-#define XLALregRAJUserStruct(name,option,category,help)                    \
-  XLALRegisterRAJUserVar(#name, option, category, help, &(uvar-> name))
-
-#define XLALregDECJUserStruct(name,option,category,help)               \
-  XLALRegisterDECJUserVar(#name, option, category, help, &(uvar-> name))
-
-/*@}*/
+#define XLALRegisterUvarMember(name,type,option,category,...)             \
+  XLALRegister ##type## UserVar( &(uvar-> name), #name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
 
 /// (mutually exclusive) UserVariable categories: optional, required, help, developer, ...
 typedef enum {
@@ -191,18 +163,17 @@ typedef enum {
 
   UVAR_CATEGORY_OPTIONAL,	///< optional
   UVAR_CATEGORY_REQUIRED,	///< required
-  UVAR_CATEGORY_HELP,		///< special variable: trigger output of help-string
   UVAR_CATEGORY_DEVELOPER,	///< optional and hidden in help-output until lalDebugLevel>=warning
   UVAR_CATEGORY_DEPRECATED,	///< optional and hidden until lalDebugLevel>=info; still supported but output warning if used
   UVAR_CATEGORY_DEFUNCT,	///< hidden completely from help output; not supported, will output error + help-string if used
   UVAR_CATEGORY_SPECIAL,	///< optional and *turns off* all checking of required variables, useful for output of version info
+  UVAR_CATEGORY_NODEFAULT,	///< optional and supresses printing the default value in the help, where it doesn't make sense
   UVAR_CATEGORY_END		///< internal end marker for range checking
 } UserVarCategory;
 
 // ***** the following are provided only for backwards compatibility until full transition to new XLAL interface *****
 #define UVAR_OPTIONAL  	UVAR_CATEGORY_OPTIONAL
 #define UVAR_REQUIRED  	UVAR_CATEGORY_REQUIRED
-#define UVAR_HELP 	UVAR_CATEGORY_HELP
 #define UVAR_DEVELOPER	UVAR_CATEGORY_DEVELOPER
 #define UVAR_SPECIAL	UVAR_CATEGORY_SPECIAL
 // **********
@@ -218,29 +189,91 @@ typedef enum {
   UVAR_LOGFMT_LAST
 } UserVarLogFormat;
 
+/* Global variables */
+#ifndef SWIG /* exclude from SWIG interface */
+extern const char *lalUserVarHelpBrief;
+#endif /* SWIG */
+
 /* Function prototypes */
 void XLALDestroyUserVars( void );
-int XLALUserVarReadCmdline (int argc, char *argv[]);
-int XLALUserVarReadCfgfile ( const CHAR *cfgfile );
-CHAR *XLALUserVarHelpString ( const CHAR *progname );
-int XLALUserVarReadAllInput ( int argc, char *argv[] );
-int XLALUserVarCheckRequired( void );
-int XLALUserVarWasSet (const void *cvar);
+int XLALUserVarReadCmdline( BOOLEAN *should_exit, int argc, char *argv[] );
+int XLALUserVarReadCfgfile( BOOLEAN *should_exit, const CHAR *cfgfile );
+int XLALUserVarReadAllInput( BOOLEAN *should_exit, int argc, char *argv[] );
+int XLALUserVarWasSet( const void *cvar );
+void XLALUserVarCheck( BOOLEAN *should_exit, const int assertion, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(3,4);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
+
+/**
+ * \name Convenience macros for checking how many of a set of user input variables were set
+ */
+/*@{*/
+#define UVAR_SET(n)                             (XLALUserVarWasSet(&(uvar-> n)) ? 1 : 0)
+#define UVAR_SET2(n1,n2)                        (UVAR_SET(n1) + UVAR_SET(n2))
+#define UVAR_SET3(n1,n2,n3)                     (UVAR_SET2(n1,n2) + UVAR_SET(n3))
+#define UVAR_SET4(n1,n2,n3,n4)                  (UVAR_SET3(n1,n2,n3) + UVAR_SET(n4))
+#define UVAR_SET5(n1,n2,n3,n4,n5)               (UVAR_SET4(n1,n2,n3,n4) + UVAR_SET(n5))
+#define UVAR_SET6(n1,n2,n3,n4,n5,n6)            (UVAR_SET5(n1,n2,n3,n4,n5) + UVAR_SET(n6))
+/*@}*/
+
+/**
+ * \name Convenience macros for checking whether all of a set of user input variables were set
+ */
+/*@{*/
+#define UVAR_ALLSET2(n1,n2)                     (UVAR_SET2(n1,n2) == 2)
+#define UVAR_ALLSET3(n1,n2,n3)                  (UVAR_SET3(n1,n2,n3) == 3)
+#define UVAR_ALLSET4(n1,n2,n3,n4)               (UVAR_SET4(n1,n2,n3,n4) == 4)
+#define UVAR_ALLSET5(n1,n2,n3,n4,n5)            (UVAR_SET5(n1,n2,n3,n4,n5) == 5)
+#define UVAR_ALLSET6(n1,n2,n3,n4,n5,n6)         (UVAR_SET6(n1,n2,n3,n4,n5,n6) == 6)
+/*@}*/
+
+/**
+ * \name Convenience macros for checking whether any of a set of user input variables were set
+ */
+/*@{*/
+#define UVAR_ANYSET2(n1,n2)                     (UVAR_SET2(n1,n2) > 0)
+#define UVAR_ANYSET3(n1,n2,n3)                  (UVAR_SET3(n1,n2,n3) > 0)
+#define UVAR_ANYSET4(n1,n2,n3,n4)               (UVAR_SET4(n1,n2,n3,n4) > 0)
+#define UVAR_ANYSET5(n1,n2,n3,n4,n5)            (UVAR_SET5(n1,n2,n3,n4,n5) > 0)
+#define UVAR_ANYSET6(n1,n2,n3,n4,n5,n6)         (UVAR_SET6(n1,n2,n3,n4,n5,n6) > 0)
+/*@}*/
+
+/**
+ * \name Convenience macros for printing user input variables in error messages
+ */
+/*@{*/
+#define UVAR_FMT                                "`--%s'"
+#define UVAR_STR(n)                             "`--"#n"'"
+#define UVAR_STR2AND(n1,n2)                     "`--"#n1"' and `--"#n2"'"
+#define UVAR_STR2OR(n1,n2)                      "`--"#n1"' or `--"#n2"'"
+#define UVAR_STR3AND(n1,n2,n3)                  "`--"#n1"', `--"#n2"', and `--"#n3"'"
+#define UVAR_STR3OR(n1,n2,n3)                   "`--"#n1"', `--"#n2"', or `--"#n3"'"
+#define UVAR_STR4AND(n1,n2,n3,n4)               "`--"#n1"', `--"#n2"', `--"#n3"', and `--"#n4"'"
+#define UVAR_STR4OR(n1,n2,n3,n4)                "`--"#n1"', `--"#n2"', `--"#n3"', or `--"#n4"'"
+#define UVAR_STR5AND(n1,n2,n3,n4,n5)            "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', and `--"#n5"'"
+#define UVAR_STR5OR(n1,n2,n3,n4,n5)             "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', or `--"#n5"'"
+#define UVAR_STR6AND(n1,n2,n3,n4,n5,n6)         "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', `--"#n5"', and `--"#n6"'"
+#define UVAR_STR6OR(n1,n2,n3,n4,n5,n6)          "`--"#n1"', `--"#n2"', `--"#n3"', `--"#n4"', `--"#n5"', or `--"#n6"'"
+/*@}*/
 
 // declare type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking!
 #define DECL_REGISTER_UVAR(UTYPE,CTYPE)                                 \
-  int XLALRegister ##UTYPE## UserVar ( const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, CTYPE *cvar )
+  int XLALRegister ##UTYPE## UserVar ( CTYPE *cvar, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(5,6)
 
 // ------ declare registration functions
 DECL_REGISTER_UVAR(REAL8,REAL8);
 DECL_REGISTER_UVAR(INT4,INT4);
+DECL_REGISTER_UVAR(INT8,INT8);
 DECL_REGISTER_UVAR(BOOLEAN,BOOLEAN);
 DECL_REGISTER_UVAR(EPOCH,LIGOTimeGPS);
 DECL_REGISTER_UVAR(RAJ,REAL8);
 DECL_REGISTER_UVAR(DECJ,REAL8);
-
 DECL_REGISTER_UVAR(STRING,CHAR*);
+
+DECL_REGISTER_UVAR(REAL8Range,REAL8Range);
+DECL_REGISTER_UVAR(EPOCHRange,LIGOTimeGPSRange);
+DECL_REGISTER_UVAR(RAJRange,REAL8Range);
+DECL_REGISTER_UVAR(DECJRange,REAL8Range);
+
 DECL_REGISTER_UVAR(STRINGVector,LALStringVector*);
 DECL_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
 DECL_REGISTER_UVAR(INT4Vector,INT4Vector*);
@@ -258,15 +291,10 @@ void LALRegisterINTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVar
 void LALRegisterBOOLUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, BOOLEAN *cvar);
 void LALRegisterSTRINGUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, CHAR **cvar);
 void LALRegisterLISTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, LALStringVector **cvar);
-
 void LALDestroyUserVars (LALStatus *);
-
-void LALUserVarReadAllInput(LALStatus *, int argc, char *argv[]);
-void LALUserVarReadCmdline (LALStatus *, int argc, char *argv[]);
-void LALUserVarReadCfgfile (LALStatus *, const CHAR *cfgfile);
-
-void LALUserVarHelpString (LALStatus *, CHAR **helpstring, const CHAR *progname);
-void LALUserVarCheckRequired (LALStatus *);
+void LALUserVarReadAllInput(LALStatus *, BOOLEAN *should_exit, int argc, char *argv[]);
+void LALUserVarReadCmdline (LALStatus *, BOOLEAN *should_exit, int argc, char *argv[]);
+void LALUserVarReadCfgfile (LALStatus *, BOOLEAN *should_exit, const CHAR *cfgfile);
 INT4 LALUserVarWasSet (const void *cvar);
 void LALUserVarGetLog (LALStatus *, CHAR **logstr,  UserVarLogFormat format);
 

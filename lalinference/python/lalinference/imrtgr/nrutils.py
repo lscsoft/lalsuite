@@ -6,10 +6,38 @@ P. Ajith, 2015-04-09
 
 import numpy as np 
 import scipy.optimize as so
+try:
+    import lal
+except ImportError:
+    print('Cannot import lal SWIG bindings')
+
+# Functions to check that input values are physical
+
+def _check_m(m1,m2):
+    if np.any(m1<=0):
+        raise ValueError("m1 has to be positive")
+    if np.any(m2<=0):
+        raise ValueError("m2 has to be positive")
+
+def _check_chi(chi1, chi2):
+    if np.any(chi1>1):
+      raise ValueError("chi1 has to be <= 1")
+    if np.any(chi2>1):
+      raise ValueError("chi2 has to be <= 1")
+    if np.any(chi1<0):
+      raise ValueError("chi1 has to be nonnegative")
+    if np.any(chi2<0):
+      raise ValueError("chi2 has to be nonnegative")
+
+def _check_mchi(m1,m2,chi1,chi2):
+    _check_m(m1,m2)
+    _check_chi(chi1,chi2)
+
+# Final mass and spin functions
 
 def bbh_final_mass_non_spinning_Panetal(m1, m2):
     """
-    Calculate the mass of the final BH resulting from the merger of two non-spinning black holes using fit from Pan et al, Phys Rev D 84, 124052 (2011).
+    Calculate the mass of the final BH resulting from the merger of two non-spinning black holes using eqn. 29a of from Pan et al, Phys Rev D 84, 124052 (2011).
     
     Parameters
     ----------
@@ -28,7 +56,7 @@ def bbh_final_mass_non_spinning_Panetal(m1, m2):
 
 def bbh_final_spin_non_spinning_Panetal(m1, m2):
     """
-    Calculate the spin of the final BH resulting from the merger of two non-spinning black holes using fit from Pan et al, Phys Rev D 84, 124052 (2011).
+    Calculate the spin of the final BH resulting from the merger of two non-spinning black holes using eqn. 29b of Pan et al, Phys Rev D 84, 124052 (2011).
     
     Parameters
     ----------
@@ -36,7 +64,7 @@ def bbh_final_spin_non_spinning_Panetal(m1, m2):
     
     Returns
     ------
-    final spin, sf
+    final dimensionless spin, chif
     """
     m1 = np.vectorize(float)(np.array(m1))
     m2 = np.vectorize(float)(np.array(m2))
@@ -46,7 +74,7 @@ def bbh_final_spin_non_spinning_Panetal(m1, m2):
 
 def calc_isco_radius(a):
     """
-    Calculate the ISCO radius of a Kerr BH as a function of the Kerr parameter
+    Calculate the ISCO radius of a Kerr BH as a function of the Kerr parameter using eqns. 2.5 and 2.8 from Ori and Thorne, Phys Rev D 62, 24022 (2000)
     
     Parameters
     ----------
@@ -56,8 +84,9 @@ def calc_isco_radius(a):
     -------
     ISCO radius
     """
-    a = np.array(a)
      
+    a = np.minimum(np.array(a),1.) # Only consider a <=1, to avoid numerical problems
+
     # Ref. Eq. (2.5) of Ori, Thorne Phys Rev D 62 124022 (2000)
     z1 = 1.+(1.-a**2.)**(1./3)*((1.+a)**(1./3) + (1.-a)**(1./3))
     z2 = np.sqrt(3.*a**2 + z1**2)
@@ -122,6 +151,11 @@ def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2):
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
     
+    if np.any(abs(chi1)>1):
+      raise ValueError("chi1 has to be in [-1, 1]")
+    if np.any(abs(chi2)>1):
+      raise ValueError("chi2 has to be in [-1, 1]")
+    
     # Vectorize the function if arrays are provided as input
     if np.size(m1) * np.size(m2) * np.size(chi1) * np.size(chi2) > 1:
         return np.vectorize(bbh_final_spin_non_precessing_Healyetal)(m1, m2, chi1, chi2)
@@ -142,7 +176,12 @@ def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2):
     # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
     
     x, cov_x = so.leastsq(_final_spin_diff_Healyetal, 0., args=(eta, delta_m, S, Delta))
-    chif = x[0]
+    
+    # The first element returned by so.leastsq() is a scalar in early versions of scipy (like 0.7.2) while it is a tuple of length 1 in later versions of scipy (like 0.10.1). The following bit ensures that a scalar is returned for a set of scalar inputs in a version-independent way.
+    if hasattr(x, '__len__'):
+      chif = x[0]
+    else:
+      chif = x
     
     return chif
 
@@ -164,6 +203,11 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=None):
     m2 = np.vectorize(float)(np.array(m2))
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
+    
+    if np.any(abs(chi1)>1):
+      raise ValueError("chi1 has to be in [-1, 1]")
+    if np.any(abs(chi2)>1):
+      raise ValueError("chi2 has to be in [-1, 1]")
     
     # binary parameters
     m = m1+m2
@@ -253,6 +297,46 @@ def bbh_final_mass_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2, ch
     """
     return bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1*np.cos(tilt1), chi2*np.cos(tilt2), chif=chif)
 
+def bbh_final_spin_precessing_Healyetal_extension_Minit(m1, m2, chi1, chi2, tilt1, tilt2, phi12):
+    """
+    Calculate the spin of the final BH resulting from the merger of two black holes including the in-plane spine by projecting the spins along the angular momentum and using fit from Healy et al Phys Rev D 90, 104004 (2014) and then adding in quadrature the in-plane dimensionful spin scaled by the initial mass squared.
+
+    Parameters
+    ----------
+    m1, m2 : component masses
+    chi1, chi2 : dimensionless spins of two BHs
+    tilt1, tilt2 : tilts (in radians) in the new spin convention
+    phi12: angle (in radians) between in-plane spin components
+
+    Returns
+    -------
+    final spin, chif
+    """
+
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
+    tilt1 = np.vectorize(float)(np.array(tilt1))
+    tilt2 = np.vectorize(float)(np.array(tilt2))
+    phi12 = np.vectorize(float)(np.array(phi12))
+
+    _check_mchi(m1,m2,chi1,chi2) # Check that inputs are physical
+
+    # First compute the final mass and parallel component of the final spin using the aligned components of the initial spins
+    chifpara = bbh_final_spin_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2)
+
+    # Now compute the squared magnitude of the in-plane dimensionful spin, first computing the magnitudes of the initial in-plane spins
+
+    S1perpmag = m1*m1*chi1*np.sin(tilt1)
+    S2perpmag = m2*m2*chi2*np.sin(tilt2)
+
+    Sperpmag2 = S1perpmag*S1perpmag + S2perpmag*S2perpmag + 2.*S1perpmag*S2perpmag*np.cos(phi12)
+
+    # Combine together and return
+
+    return (chifpara*chifpara + Sperpmag2/(m1+m2)**4.)**0.5
+
 def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2): 
     """ 
     Calculate the mass and spin of the final BH resulting from the 
@@ -268,6 +352,11 @@ def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2):
     m2 = np.vectorize(float)(np.array(m2))
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
+    
+    if np.any(abs(chi1)>1):
+      raise ValueError("chi1 has to be in [-1, 1]")
+    if np.any(abs(chi2)>1):
+      raise ValueError("chi2 has to be in [-1, 1]")
     
     # binary parameters 
     m = m1+m2  
@@ -307,6 +396,11 @@ def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
     chi1 = np.vectorize(float)(np.array(chi1))
     chi2 = np.vectorize(float)(np.array(chi2))
     
+    if np.any(abs(chi1)>1):
+      raise ValueError("chi1 has to be in [-1, 1]")
+    if np.any(abs(chi2)>1):
+      raise ValueError("chi2 has to be in [-1, 1]")
+    
     # binary parameters 
     m = m1+m2  
     msq = m*m
@@ -331,50 +425,61 @@ def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
 
     return chif
 
-
-def qnmfreqs_berti(a, l, m, n):
+def bbh_aligned_Lpeak_6mode_SHXJDK(q, chi1para, chi2para):
     """
-    compute the (complex) QNM frequencies for different 
-    overtones using the fits provided by Berti, Cardoso, Will 
+    Calculate the peak luminosity (using modes 22, 21, 33, 32, 44, and 43) of a binary black hole with aligned spins using the fit made by Sascha Husa, Xisco Jimenez Forteza, David Keitel [LIGO-T1500598] using 5th order in chieff and return results in units of 10^56 ergs/s
+
+    q: mass ratio (here m2/m1, where m1>m2)
+    chi1para: the component of the dimensionless spin of m1 along the angular momentum (z)
+    chi2para: the component of the dimensionless spin of m2 along the angular momentum (z)
     
-    a         : Kerr parameter of the BH 
-    l, m, n    : indices of spheroidal harnonics modes 
+    Note: Here it is assumed that m1>m2.
     """
+    # Vectorize the function if arrays are provided as input
+    q = np.vectorize(float)(np.array(q))
+    chi1para = np.vectorize(float)(np.array(chi1para))
+    chi2para = np.vectorize(float)(np.array(chi2para))
+    
+    if np.any(q<=0.):
+      raise ValueError("q has to be > 0.")
+    if np.any(q>1.):
+      raise ValueError("q has to be <= 1.")
+    
+    if np.any(abs(chi1para)>1):
+      raise ValueError("chi1para has to be in [-1, 1]")
+    if np.any(abs(chi2para)>1):
+      raise ValueError("chi2para has to be in [-1, 1]")
 
-    # load the data file containing the fits (Berti et al,  gr-qc/0512160)
-    lVec, mVec, nVec, f1Vec, f2Vec, f3Vec, q1Vec, q2Vec, q3Vec = np.loadtxt('../src/Berti_QNMfitcoeffsWEB.dat', unpack=True)
+    # Calculate eta and the effective spin
+    
+    # This function is designed for bayespputils.py that expects q = m2/m1, where m1>m2. Expressions in reference above are for q = m1/m2. Here we do the appropriate conversion.
+    q_inv = 1./q
 
-    idx = np.logical_and(np.logical_and(lVec == l, mVec == m), nVec == n)
+    eta = q_inv/(1.+q_inv)**2.
 
-    # evaluate the Berti et al fits to the complex frequencies 
-    if len(lVec[idx]) == 1:
+    eta2 = eta*eta
+    eta3 = eta2*eta
+    eta4 = eta3*eta
 
-         f1 = f1Vec[idx]
-         f2 = f2Vec[idx]
-         f3 = f3Vec[idx]
-         q1 = q1Vec[idx]
-         q2 = q2Vec[idx]
-         q3 = q3Vec[idx]
+    dm2 = 1. - 4.*eta
 
-         omega = (f1 + f2*(1.-a)**f3) # fit to omega
-         Q = q1 + q2*(1.-a)**q3       # fit to quality factor 
-         tau = 2.*Q/omega
+    chi_eff = (q_inv*chi1para + chi2para)/(1. + q_inv)
 
-         return omega - 1j/tau  # complex frequency 
+    chi_eff2 = chi_eff*chi_eff
+    chi_eff3 = chi_eff2*chi_eff
+    chi_eff4 = chi_eff3*chi_eff
+    chi_eff5 = chi_eff4*chi_eff
 
-    elif len(lVec[idx]) < 1:
-            print '# No data matching this l, m, n combination (l = #d m = #d n = #d)' %(l, m, n)
-            exit()
-    else:
-            print '# More than on fit point corresponding to this l, m, n combination'
-            exit()
+    chi_diff = chi1para - chi2para
+    chi_diff2 = chi_diff*chi_diff
 
-def calc_fqnm_dominant_mode(chif): 
-    """
-    calculate the (dimensionless) freq of the dominant QNM of a Kerr BH with spin chif 
-    """
+    # Calculate best fit (from [https://dcc.ligo.org/T1500598-v4])
 
-    Omega = qnmfreqs_berti(chif, 2, 2, 0)
-    return np.real(Omega)/(2*np.pi) 
+    Lpeak = (0.012851338846828302 + 0.007822265919928252*chi_eff + 0.010221856361035788*chi_eff2 + 0.015805535732661396*chi_eff3 + 0.0011356206806770043*chi_eff4 - 0.009868152529667197*chi_eff5)*eta2 + (0.05681786589129071 - 0.0017473702709303457*chi_eff - 0.10150706091341818*chi_eff2 - 0.2349153289253309*chi_eff3 + 0.015657737820040145*chi_eff4 + 0.19556893194885075*chi_eff5)*eta4 + 0.026161288241420833*dm2**0.541825641769908*eta**3.1629576945611757*chi_diff + 0.0007771032100485481*dm2**0.4499151697918658*eta**1.7800346166040835*chi_diff2
 
-
+    # Convert to 10^56 ergs/s units
+    
+    # We first define the "Planck luminosity" of c^5/G in 10^56 ergs/s units. Note: 10^56 ergs/s = 10^49 J/s
+    LumPl_ergs_per_sec = lal.LUMPL_SI*1e-49 # Approximate value = 3628.505 
+    
+    return LumPl_ergs_per_sec*Lpeak

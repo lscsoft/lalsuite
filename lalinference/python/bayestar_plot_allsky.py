@@ -41,9 +41,12 @@ parser.add_argument(
     '--colorbar', default=False, action='store_true',
     help='Show colorbar [default: %(default)s]')
 parser.add_argument(
-    '--radec', nargs=2, metavar='deg deg', type=float, action='append',
+    '--radec', nargs=2, metavar='deg', type=float, action='append',
     default=[], help='right ascension (deg) and declination (deg) to mark'
     ' [may be specified multiple times, default: none]')
+parser.add_argument(
+    '--inj-database', metavar='FILE.sqlite', type=command.SQLiteType('r'),
+    help='read injection positions from database [default: none]')
 parser.add_argument(
     '--geo', action='store_true', default=False,
     help='Plot in geographic coordinates, (lat, lon) instead of (RA, Dec)'
@@ -67,9 +70,10 @@ import healpy as hp
 import lal
 from lalinference import fits
 from lalinference import plot
+from lalinference.bayestar import postprocess
 
 fig = plt.figure(frameon=False)
-ax = plt.axes(projection='mollweide' if opts.geo else 'astro mollweide')
+ax = plt.axes(projection='mollweide' if opts.geo else 'astro hours mollweide')
 ax.grid()
 
 skymap, metadata = fits.read_sky_map(opts.input.name, nest=None)
@@ -95,11 +99,9 @@ if opts.colorbar:
 
 # Add contours.
 if opts.contour:
-    indices = np.argsort(-skymap)
-    region = np.empty(skymap.shape)
-    region[indices] = 100 * np.cumsum(skymap[indices])
+    cls = 100 * postprocess.find_greedy_credible_levels(skymap)
     cs = plot.healpix_contour(
-        region, dlon=dlon, nest=metadata['nest'],
+        cls, dlon=dlon, nest=metadata['nest'],
         colors='k', linewidths=0.5, levels=opts.contour)
     fmt = r'%g\%%' if rcParams['text.usetex'] else '%g%%'
     plt.clabel(cs, fmt=fmt, fontsize=6, inline=True)
@@ -114,8 +116,20 @@ if opts.geo:
         verts = np.deg2rad(shape['coordinates'])
         plt.plot(verts[:, 0], verts[:, 1], color='0.5', linewidth=0.5)
 
+radecs = np.deg2rad(opts.radec)
+if opts.inj_database:
+    query = '''SELECT longitude, latitude FROM sim_inspiral AS si
+               INNER JOIN coinc_event_map AS cm1
+               ON (si.simulation_id = cm1.event_id)
+               INNER JOIN coinc_event_map AS cm2
+               ON (cm1.coinc_event_id = cm2.coinc_event_id)
+               WHERE cm2.event_id = ?'''
+    (ra, dec), = opts.inj_database.execute(
+        query, (metadata['objid'],)).fetchall()
+    radecs.append([ra, dec])
+
 # Add markers (e.g., for injections or external triggers).
-for ra, dec in np.deg2rad(opts.radec):
+for ra, dec in radecs:
     # Convert the right ascension to either a reference angle from -pi to pi
     # or a wrapped angle from 0 to 2 pi.
     if opts.geo:

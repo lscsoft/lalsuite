@@ -671,7 +671,7 @@ LALFindChirpBCVFilterSegment (
           thisEvent->end_time.gpsSeconds = j;
           thisEvent->snr = newmodqsq;
         }
-        else if ( ! params->clusterMethod == FindChirpClustering_none &&
+        else if ( !(params->clusterMethod == FindChirpClustering_none) &&
             j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
             newmodqsq > thisEvent->snr )
         {

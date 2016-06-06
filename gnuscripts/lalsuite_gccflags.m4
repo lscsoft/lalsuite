@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 24
+# serial 26
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],[
   # $0: enable GCC warning flags
@@ -25,11 +25,27 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],[
     gcc_ldflags=
 
     # check for GCC warning flags
+    # FIXME: Remove -Wno-misleading-indentation when indentation issues are fixed
     LALSUITE_CHECK_COMPILE_FLAGS([
-      -g3 -Wall -W -Werror -Wmissing-prototypes -Wstrict-prototypes -Wshadow
-      -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common
-      -Wnested-externs -Wno-format-zero-length -fno-strict-aliasing
-      -Wno-unused-result -Wno-unknown-pragmas -Qunused-arguments
+      -g3
+      -Wall
+      -W
+      -Werror
+      -Wmissing-prototypes
+      -Wstrict-prototypes
+      -Wshadow
+      -Wpointer-arith
+      -Wcast-qual
+      -Wcast-align
+      -Wwrite-strings
+      -fno-common
+      -Wnested-externs
+      -Wno-format-zero-length
+      -fno-strict-aliasing
+      -Wno-unused-result
+      -Wno-unknown-pragmas
+      -Wno-misleading-indentation
+      -Qunused-arguments
       ],[gcc_cflags="${gcc_cflags} ${flag}"]
     )
 

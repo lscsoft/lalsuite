@@ -1,4 +1,5 @@
 //
+// Copyright (C) 2016 Karl Wette
 // Copyright (C) 2004, 2005, 2015 Reinhard Prix
 //
 //  This program is free software; you can redistribute it and/or modify
@@ -38,6 +39,8 @@
 #define LAL_sINT4_MAX    LAL_INT8_C(2147483647)
 #define LAL_sINT8_MAX    LAL_INT8_C(9223372036854775807)
 
+#define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
+#define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
 // ==================== function definitions ====================
 
@@ -350,6 +353,204 @@ XLALParseStringValueAsDECJ ( REAL8 *valDECJ,   	///< [out] return latitude value
   return XLAL_SUCCESS;
 
 } // XLALParseStringValueAsDECJ()
+
+//
+// Split a range string into parts, return the parts as strings, and
+// the linear transform used to compute the range from the parsed parts
+//
+static void split_string_into_range(const char *str, char part[2][256], int T[2][2]) {
+
+  // Assume no separators by default, copy 'str' to both parts (--var=point)
+  memset(part[0], 0, sizeof(part[0]));
+  strncpy(part[0], str, sizeof(part[0]) - 1);
+  memset(part[1], 0, sizeof(part[1]));
+  strncpy(part[1], str, sizeof(part[1]) - 1);
+  const int defT[2][2] = {{1, 0}, {0, 1}};
+  memcpy(T, defT, sizeof(defT));
+
+  // Possible syntaxes
+  const struct {
+    const char sep;
+    int T[2][2];
+  } syntaxes[] = {
+    { ',', { {1,  0}, {0, 1} } },   // --var=start,end
+    { '/', { {1,  0}, {1, 1} } },   // --var=start/band
+    { '~', { {1, -1}, {1, 1} } },   // --var=start~plusminus
+  };
+
+  // Loop over possible syntaxes
+  for (size_t i = 0; i < XLAL_NUM_ELEM(syntaxes); ++i) {
+
+    // Look for separator in 'str'
+    const char *found = strchr(str, syntaxes[i].sep);
+    if (found != NULL) {
+
+      // Copy everything in 'str' up to separator to 'part[0]'
+      memset(part[0], 0, sizeof(part[0]));
+      strncpy(part[0], str, MYMIN((size_t)(found - str), sizeof(part[0]) - 1));
+
+      // Copy everything in 'str' past separator to 'part[1]'
+      memset(part[1], 0, sizeof(part[1]));
+      strncpy(part[1], found + 1, sizeof(part[1]) - 1);
+
+      // Copy transform to 'T'
+      memcpy(T, syntaxes[i].T, sizeof(syntaxes[i].T));
+
+      return;
+    }
+
+  }
+
+}
+
+
+///
+/// Parse a string representing a range of REAL8 values into a REAL8Range. Possible formats
+/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
+/// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
+///
+int XLALParseStringValueAsREAL8Range(
+  REAL8Range *real8Range,		///< [out] output range of REAL8 values
+  const char *valString			///< [in] input string
+  )
+{
+
+  // Check input
+  XLAL_CHECK(real8Range != NULL, XLAL_EFAULT);
+  XLAL_CHECK(valString != NULL, XLAL_EFAULT);
+
+  // Parse range
+  char part[2][256];
+  int T[2][2];
+  split_string_into_range(valString, part, T);
+  REAL8 val[2];
+  XLAL_CHECK( XLALParseStringValueAsREAL8(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALParseStringValueAsREAL8(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
+  (*real8Range)[0] = T[0][0] * val[0] + T[0][1] * val[1];
+  (*real8Range)[1] = T[1][0] * val[0] + T[1][1] * val[1];
+
+  // Check range ordering
+  if ((*real8Range)[0] > (*real8Range)[1]) {
+    const REAL8 tmp = (*real8Range)[0];
+    (*real8Range)[0] = (*real8Range)[1];
+    (*real8Range)[1] = tmp;
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+
+///
+/// Parse a string representing a range of LIGOTimeGPS values into a LIGOTimeGPSRange. Possible formats
+/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
+/// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
+///
+int XLALParseStringValueAsEPOCHRange(
+  LIGOTimeGPSRange *gpsRange,		///< [out] output range of LIGOTimeGPS values
+  const char *valString			///< [in] input string
+  )
+{
+
+  // Check input
+  XLAL_CHECK(gpsRange != NULL, XLAL_EFAULT);
+  XLAL_CHECK(valString != NULL, XLAL_EFAULT);
+
+  // Parse range
+  char part[2][256];
+  int T[2][2];
+  split_string_into_range(valString, part, T);
+  LIGOTimeGPS val[2];
+  XLAL_CHECK( XLALParseStringValueAsEPOCH(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALParseStringValueAsEPOCH(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALINT8NSToGPS( &(*gpsRange)[0], T[0][0] * XLALGPSToINT8NS(&val[0]) + T[0][1] * XLALGPSToINT8NS(&val[1]) );
+  XLALINT8NSToGPS( &(*gpsRange)[1], T[1][0] * XLALGPSToINT8NS(&val[0]) + T[1][1] * XLALGPSToINT8NS(&val[1]) );
+
+  // Check range ordering
+  if (XLALGPSCmp(&(*gpsRange)[0], &(*gpsRange)[1]) > 0) {
+    const LIGOTimeGPS tmp = (*gpsRange)[0];
+    (*gpsRange)[0] = (*gpsRange)[1];
+    (*gpsRange)[1] = tmp;
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+
+///
+/// Parse a string representing a range of RAJ values into a REAL8Range. Possible formats
+/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
+/// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
+///
+int XLALParseStringValueAsRAJRange(
+  REAL8Range *rajRange,			///< [out] output range of RAJ values
+  const char *valString			///< [in] input string
+  )
+{
+
+  // Check input
+  XLAL_CHECK(rajRange != NULL, XLAL_EFAULT);
+  XLAL_CHECK(valString != NULL, XLAL_EFAULT);
+
+  // Parse range
+  char part[2][256];
+  int T[2][2];
+  split_string_into_range(valString, part, T);
+  REAL8 val[2];
+  XLAL_CHECK( XLALParseStringValueAsRAJ(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALParseStringValueAsRAJ(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
+  (*rajRange)[0] = T[0][0] * val[0] + T[0][1] * val[1];
+  (*rajRange)[1] = T[1][0] * val[0] + T[1][1] * val[1];
+
+  // Check range ordering
+  if ((*rajRange)[0] > (*rajRange)[1]) {
+    const REAL8 tmp = (*rajRange)[0];
+    (*rajRange)[0] = (*rajRange)[1];
+    (*rajRange)[1] = tmp;
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+
+///
+/// Parse a string representing a range of DECJ values into a REAL8Range. Possible formats
+/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
+/// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
+///
+int XLALParseStringValueAsDECJRange(
+  REAL8Range *decjRange,		///< [out] output range of DECJ values
+  const char *valString			///< [in] input string
+  )
+{
+
+  // Check input
+  XLAL_CHECK(decjRange != NULL, XLAL_EFAULT);
+  XLAL_CHECK(valString != NULL, XLAL_EFAULT);
+
+  // Parse range
+  char part[2][256];
+  int T[2][2];
+  split_string_into_range(valString, part, T);
+  REAL8 val[2];
+  XLAL_CHECK( XLALParseStringValueAsDECJ(&val[0], part[0]) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALParseStringValueAsDECJ(&val[1], part[1]) == XLAL_SUCCESS, XLAL_EFUNC );
+  (*decjRange)[0] = T[0][0] * val[0] + T[0][1] * val[1];
+  (*decjRange)[1] = T[1][0] * val[0] + T[1][1] * val[1];
+
+  // Check range ordering
+  if ((*decjRange)[0] > (*decjRange)[1]) {
+    const REAL8 tmp = (*decjRange)[0];
+    (*decjRange)[0] = (*decjRange)[1];
+    (*decjRange)[1] = tmp;
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
 
 ///
 /// Duplicate string 'in', removing surrounding quotes \" or \' if present.

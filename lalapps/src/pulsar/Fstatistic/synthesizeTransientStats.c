@@ -75,8 +75,6 @@
 
 /** User-variables: can be set from config-file or command-line */
 typedef struct {
-  BOOLEAN help;		/**< trigger output of help string */
-
   /* amplitude parameters + ranges: 4 alternative ways to specify the h0-prior (set to < 0 to deactivate all but one!) */
   REAL8 fixedh0Nat;	/**< Alternative 1: if >=0 ==> fix the GW amplitude: h0/sqrt(Sn) */
   REAL8 fixedSNR;	/**< Alternative 2: if >=0 ==> fix the optimal SNR of the injected signals */
@@ -177,27 +175,24 @@ int main(int argc,char *argv[])
   ConfigVariables XLAL_INIT_DECL(cfg);		/**< various derived configuration settings */
 
   vrbflg = 1;	/* verbose error-messages */
-  LogSetLevel(lalDebugLevel);
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off ();
 
   /* ----- register and read all user-variables ----- */
-  LogSetLevel(lalDebugLevel);
-
   if ( XLALInitUserVars( &uvar ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALInitUserVars() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
 
   /* do ALL cmdline and cfgfile handling */
-  if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS ) {
+  BOOLEAN should_exit = 0;
+  if ( XLALUserVarReadAllInput ( &should_exit, argc, argv ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALUserVarReadAllInput() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
-
-  if (uvar.help)	/* if help was requested, we're done here */
-    return 0;
+  if ( should_exit )
+    return EXIT_FAILURE;
 
   if ( uvar.version ) {
     /* output verbose VCS version string if requested */
@@ -497,7 +492,6 @@ int
 XLALInitUserVars ( UserInput_t *uvar )
 {
   /* set a few defaults */
-  uvar->help = 0;
   uvar->outputStats = NULL;
 
   uvar->Alpha = -1;	/* Alpha < 0 indicates "allsky" */
@@ -552,67 +546,65 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->searchWindow_dtau = uvar->TAtom;
 
   /* register all our user-variables */
-  XLALregBOOLUserStruct ( help, 		'h',     UVAR_HELP, "Print this message");
-
   /* signal Doppler parameters */
-  XLALregREALUserStruct ( Alpha, 		'a', UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in radians [Default:allsky]");
-  XLALregREALUserStruct ( Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians [Default:allsky]");
+  XLALRegisterUvarMember( Alpha, 		REAL8, 'a', OPTIONAL, "Sky position alpha (equatorial coordinates) in radians [Default:allsky]");
+  XLALRegisterUvarMember( Delta, 		REAL8, 'd', OPTIONAL, "Sky position delta (equatorial coordinates) in radians [Default:allsky]");
 
   /* signal amplitude parameters */
-  XLALregREALUserStruct ( fixedh0Nat,		 0, UVAR_OPTIONAL, "Alternative 1: if >=0 fix the GW amplitude: h0/sqrt(Sn)");
-  XLALregREALUserStruct ( fixedSNR, 		 0, UVAR_OPTIONAL, "Alternative 2: if >=0 fix the optimal SNR of the injected signals");
-  XLALregREALUserStruct ( fixedh0NatMax,	 0, UVAR_OPTIONAL, "Alternative 3: if >=0 draw GW amplitude h0 in [0, h0NatMax ] (FReg prior)");
-  XLALregREALUserStruct ( fixedRhohMax, 	 0, UVAR_OPTIONAL, "Alternative 4: if >=0 draw rhoh=h0*(detM)^(1/8) in [0, rhohMax] (canonical F-stat prior)");
+  XLALRegisterUvarMember( fixedh0Nat,		 REAL8, 0, OPTIONAL, "Alternative 1: if >=0 fix the GW amplitude: h0/sqrt(Sn)");
+  XLALRegisterUvarMember( fixedSNR, 		 REAL8, 0, OPTIONAL, "Alternative 2: if >=0 fix the optimal SNR of the injected signals");
+  XLALRegisterUvarMember( fixedh0NatMax,	 REAL8, 0, OPTIONAL, "Alternative 3: if >=0 draw GW amplitude h0 in [0, h0NatMax ] (FReg prior)");
+  XLALRegisterUvarMember( fixedRhohMax, 	 REAL8, 0, OPTIONAL, "Alternative 4: if >=0 draw rhoh=h0*(detM)^(1/8) in [0, rhohMax] (canonical F-stat prior)");
 
-  XLALregREALUserStruct ( cosi,			'i', UVAR_OPTIONAL, "cos(inclination angle). If not set: randomize within [-1,1].");
-  XLALregREALUserStruct ( psi,			 0,  UVAR_OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
-  XLALregREALUserStruct ( phi0,		 	 0,  UVAR_OPTIONAL, "initial GW phase phi_0. If not set: randomize within [0, 2pi]");
+  XLALRegisterUvarMember( cosi,			REAL8, 'i', OPTIONAL, "cos(inclination angle). If not set: randomize within [-1,1].");
+  XLALRegisterUvarMember( psi,			 REAL8, 0,  OPTIONAL, "polarization angle psi. If not set: randomize within [-pi/4,pi/4].");
+  XLALRegisterUvarMember( phi0,		 	 REAL8, 0,  OPTIONAL, "initial GW phase phi_0. If not set: randomize within [0, 2pi]");
 
-  XLALregINTUserStruct  ( AmpPriorType,	 	 0,  UVAR_OPTIONAL, "Enumeration of types of amplitude-priors: 0=physical, 1=canonical");
+  XLALRegisterUvarMember( AmpPriorType,	 	 INT4, 0,  OPTIONAL, "Enumeration of types of amplitude-priors: 0=physical, 1=canonical");
 
-  XLALregSTRINGUserStruct ( IFO,	        'I', UVAR_OPTIONAL, "Detector: 'G1','L1','H1,'H2', 'V1', ... ");
-  XLALregINTUserStruct ( dataStartGPS,	 	 0,  UVAR_OPTIONAL, "data start-time in GPS seconds");
-  XLALregINTUserStruct ( dataDuration,	 	 0,  UVAR_OPTIONAL, "data-span to generate (in seconds)");
+  XLALRegisterUvarMember( IFO,	        STRING, 'I', OPTIONAL, "Detector: 'G1','L1','H1,'H2', 'V1', ... ");
+  XLALRegisterUvarMember( dataStartGPS,	 	 INT4, 0,  OPTIONAL, "data start-time in GPS seconds");
+  XLALRegisterUvarMember( dataDuration,	 	 INT4, 0,  OPTIONAL, "data-span to generate (in seconds)");
 
   /* transient window ranges: for injection ... */
-  XLALregSTRINGUserStruct( injectWindow_type,    0, UVAR_OPTIONAL, "Type of transient window to inject ('none', 'rect', 'exp')");
-  XLALregREALUserStruct  ( injectWindow_tauDays, 0, UVAR_OPTIONAL, "Shortest transient-window timescale to inject, in days");
-  XLALregREALUserStruct  ( injectWindow_tauDaysBand,0,UVAR_OPTIONAL,"Range of transient-window timescale to inject, in days");
-  XLALregREALUserStruct  ( injectWindow_t0Days,  0, UVAR_OPTIONAL, "Earliest start-time of transient window to inject, as offset in days from dataStartGPS");
-  XLALregREALUserStruct  ( injectWindow_t0DaysBand,0,UVAR_OPTIONAL,"Range of GPS start-time of transient window to inject, in days [Default:dataDuration-3*tauMax]");
+  XLALRegisterUvarMember( injectWindow_type,    STRING, 0, OPTIONAL, "Type of transient window to inject ('none', 'rect', 'exp')");
+  XLALRegisterUvarMember( injectWindow_tauDays, REAL8, 0, OPTIONAL, "Shortest transient-window timescale to inject, in days");
+  XLALRegisterUvarMember( injectWindow_tauDaysBand,REAL8, 0,OPTIONAL,"Range of transient-window timescale to inject, in days");
+  XLALRegisterUvarMember( injectWindow_t0Days,  REAL8, 0, OPTIONAL, "Earliest start-time of transient window to inject, as offset in days from dataStartGPS");
+  XLALRegisterUvarMember( injectWindow_t0DaysBand,REAL8, 0,OPTIONAL,"Range of GPS start-time of transient window to inject, in days [Default:dataDuration-3*tauMax]");
   /* ... and for search */
-  XLALregSTRINGUserStruct( searchWindow_type,    0, UVAR_OPTIONAL, "Type of transient window to search with ('none', 'rect', 'exp') [Default:injectWindow]");
-  XLALregREALUserStruct  ( searchWindow_tauDays, 0, UVAR_OPTIONAL, "Shortest transient-window timescale to search, in days [Default:injectWindow]");
-  XLALregREALUserStruct  ( searchWindow_tauDaysBand,0,UVAR_OPTIONAL, "Range of transient-window timescale to search, in days [Default:injectWindow]");
-  XLALregREALUserStruct  ( searchWindow_t0Days,  0, UVAR_OPTIONAL, "Earliest start-time of transient window to search, as offset in days from dataStartGPS [Default:injectWindow]");
-  XLALregREALUserStruct  ( searchWindow_t0DaysBand,0,UVAR_OPTIONAL, "Range of GPS start-time of transient window to search, in days [Default:injectWindow]");
+  XLALRegisterUvarMember( searchWindow_type,    STRING, 0, OPTIONAL, "Type of transient window to search with ('none', 'rect', 'exp') [Default:injectWindow]");
+  XLALRegisterUvarMember( searchWindow_tauDays, REAL8, 0, OPTIONAL, "Shortest transient-window timescale to search, in days [Default:injectWindow]");
+  XLALRegisterUvarMember( searchWindow_tauDaysBand,REAL8, 0,OPTIONAL, "Range of transient-window timescale to search, in days [Default:injectWindow]");
+  XLALRegisterUvarMember( searchWindow_t0Days,  REAL8, 0, OPTIONAL, "Earliest start-time of transient window to search, as offset in days from dataStartGPS [Default:injectWindow]");
+  XLALRegisterUvarMember( searchWindow_t0DaysBand,REAL8, 0,OPTIONAL, "Range of GPS start-time of transient window to search, in days [Default:injectWindow]");
 
-  XLALregINTUserStruct   ( searchWindow_dtau, 	 0, UVAR_OPTIONAL, "Step-size for search/marginalization over transient-window timescale, in seconds [Default:TAtom]");
-  XLALregINTUserStruct   ( searchWindow_dt0, 	 0, UVAR_OPTIONAL, "Step-size for search/marginalization over transient-window start-time, in seconds [Default:TAtom]");
+  XLALRegisterUvarMember( searchWindow_dtau, 	 INT4, 0, OPTIONAL, "Step-size for search/marginalization over transient-window timescale, in seconds [Default:TAtom]");
+  XLALRegisterUvarMember( searchWindow_dt0, 	 INT4, 0, OPTIONAL, "Step-size for search/marginalization over transient-window start-time, in seconds [Default:TAtom]");
 
   /* misc params */
-  XLALregBOOLUserStruct ( computeFtotal,	 0, UVAR_OPTIONAL, "Also compute 'total' F-statistic over the full data-span" );
+  XLALRegisterUvarMember( computeFtotal,	 BOOLEAN, 0, OPTIONAL, "Also compute 'total' F-statistic over the full data-span" );
 
-  XLALregINTUserStruct  ( numDraws,		'N', UVAR_OPTIONAL,"Number of random 'draws' to simulate");
-  XLALregINTUserStruct  ( randSeed,		 0, UVAR_OPTIONAL, "GSL random-number generator seed value to use");
+  XLALRegisterUvarMember( numDraws,		INT4, 'N', OPTIONAL,"Number of random 'draws' to simulate");
+  XLALRegisterUvarMember( randSeed,		 INT4, 0, OPTIONAL, "GSL random-number generator seed value to use");
 
-  XLALregSTRINGUserStruct ( outputStats,	'o', UVAR_OPTIONAL, "Output file containing 'numDraws' random draws of stats");
-  XLALregSTRINGUserStruct ( outputAtoms,	 0,  UVAR_OPTIONAL, "Output F-statistic atoms into a file with this basename");
-  XLALregSTRINGUserStruct ( outputFstatMap,	 0,  UVAR_OPTIONAL, "Output F-statistic over 2D parameter space {t0, tau} into file with this basename");
+  XLALRegisterUvarMember( outputStats,	STRING, 'o', OPTIONAL, "Output file containing 'numDraws' random draws of stats");
+  XLALRegisterUvarMember( outputAtoms,	 STRING, 0,  OPTIONAL, "Output F-statistic atoms into a file with this basename");
+  XLALRegisterUvarMember( outputFstatMap,	 STRING, 0,  OPTIONAL, "Output F-statistic over 2D parameter space {t0, tau} into file with this basename");
 
-  XLALregSTRINGUserStruct ( outputInjParams,	 0,  UVAR_OPTIONAL,  "Output injection parameters into this file");
-  XLALregSTRINGUserStruct ( outputPosteriors,	 0,  UVAR_OPTIONAL,  "output posterior pdfs on t0 and tau (in octave format) into this file ");
+  XLALRegisterUvarMember( outputInjParams,	 STRING, 0,  OPTIONAL,  "Output injection parameters into this file");
+  XLALRegisterUvarMember( outputPosteriors,	 STRING, 0,  OPTIONAL,  "output posterior pdfs on t0 and tau (in octave format) into this file ");
 
-  XLALregBOOLUserStruct ( SignalOnly,        	'S', UVAR_OPTIONAL, "Signal only: generate pure signal without noise");
-  XLALregBOOLUserStruct ( useFReg,        	 0,  UVAR_OPTIONAL, "use 'regularized' Fstat (1/D)*e^F (if TRUE) for marginalization, or 'standard' e^F (if FALSE)");
+  XLALRegisterUvarMember( SignalOnly,        	BOOLEAN, 'S', OPTIONAL, "Signal only: generate pure signal without noise");
+  XLALRegisterUvarMember( useFReg,        	 BOOLEAN, 0,  OPTIONAL, "use 'regularized' Fstat (1/D)*e^F (if TRUE) for marginalization, or 'standard' e^F (if FALSE)");
 
-  XLALregSTRINGUserStruct ( ephemEarth, 	 0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
-  XLALregSTRINGUserStruct ( ephemSun, 	 	 0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
+  XLALRegisterUvarMember( ephemEarth, 	 STRING, 0,  OPTIONAL, "Earth ephemeris file to use");
+  XLALRegisterUvarMember( ephemSun, 	 	 STRING, 0,  OPTIONAL, "Sun ephemeris file to use");
 
-  XLALregBOOLUserStruct ( version,        	'V', UVAR_SPECIAL,  "Output code version");
+  XLALRegisterUvarMember( version,        	BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   /* 'hidden' stuff */
-  XLALregINTUserStruct ( TAtom,		  	  0, UVAR_DEVELOPER, "Time baseline for Fstat-atoms (typically Tsft) in seconds." );
+  XLALRegisterUvarMember( TAtom,		  	  INT4, 0, DEVELOPER, "Time baseline for Fstat-atoms (typically Tsft) in seconds." );
 
 
   if ( xlalErrno ) {

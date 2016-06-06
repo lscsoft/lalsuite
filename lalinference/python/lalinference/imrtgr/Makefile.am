@@ -10,6 +10,7 @@ pymoduledir = $(pkgpythondir)/imrtgr
 pymodule_PYTHON = \
 	__init__.py \
 	nrutils.py \
+	pneqns.py \
 	$(END_OF_LIST)
 
 

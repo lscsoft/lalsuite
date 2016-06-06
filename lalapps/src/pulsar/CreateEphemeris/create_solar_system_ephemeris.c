@@ -23,7 +23,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_CreateEphemeris
+ * \ingroup lalapps_pulsar_Tools
  * \author Matt Pitkin
  * \brief
  * This code will take in JPL binary ephemeris files containing (e.g.
@@ -135,24 +135,22 @@ INT4 test=0;
 
 UINT4 ARRAY_SIZE=0;
 
-/* function to convert a GPS time in JD to TDB (similar to my routine
-LALTDBMJDtoGPS */
+/* function to convert a GPS time in JD to TDB (similar to my routine LALTDBMJDtoGPS) */
 void convert(REAL8 *gps_JD, REAL8 *time);
 
 /* function to read the record length of the binary file - this differs for
-   different ephemeris files (equivalent to Standish's FSIZER2 */
-INT4 fsizer(FILE *fp);
+   different ephemeris files (equivalent to Standish's FSIZER2) */
+INT4 fsizer(FILE *fp, UINT4 *bigendian);
 
 /* functions to swap endianness - taken from SFTfileIO.c file */
 void endian_swap(CHAR *pdata, size_t dsize, size_t nelements);
 
 /* function to read in coefficients from the ephemeris file for a give time */
-void read_coeffs(REAL8 *coeffArray, REAL8 *time, FILE *fp);
+void read_coeffs(REAL8 *coeffArray, REAL8 *time, FILE *fp, UINT4 bigendian);
 
-void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
-  REAL8 *state, FILE *fp);
+void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp, UINT4 bigendian);
 
-void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp);
+void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp, UINT4 bigendian);
 
 /* function to get the input arguments from the command line */
 void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]);
@@ -189,6 +187,7 @@ int main(int argc, char **argv){
   REAL8 pos[3], vel[3], acc[3], title[3];
 
   inputParams_t inputs;
+  UINT4 bigendian;      /* set if big-endian and bytes need swapped */
 
   /* allocate memory for headers structures */
   /* head1 = calloc(sizeof(headerRecord1), 1);
@@ -283,7 +282,7 @@ inputs.noverlap);
   }
 
   /* read the header info from the ephemeris files an work out the array size */
-  if( (ARRAY_SIZE = fsizer(fp)) == 0 ){
+  if( (ARRAY_SIZE = fsizer(fp, &bigendian)) == 0 ){
     fprintf(stderr, "Array size is zero!\n");
     return 1;
   }
@@ -303,7 +302,7 @@ inputs.noverlap);
   /*time=0.; */
   time[0] = 0.;
   time[1] = 0.;
-  read_coeffs(coeffArray, time, fp);
+  read_coeffs(coeffArray, time, fp, bigendian);
 
   if(test){
     if( fscanf(fpe, "%lf%lf%lf", &title[0], &title[1], &title[2]) != 3 ){
@@ -343,8 +342,7 @@ writing!\n");
 
     /* some information about the data */
     fprintf(fpe, "#\n# This file consists of a header line containing:\n");
-    fprintf(fpe, "#\tGPS time of the start year, interval between entries \
-(secs), no. of entries\n");
+    fprintf(fpe, "#\tGPS time of the start year, interval between entries (secs), no. of entries\n");
     fprintf(fpe, "# Each entry consists of:\n");
     fprintf(fpe, "#\tGPS time\t\tPos. x (lt sec)\t\tPos. y (lt sec)\n\
 #\tPos. z (lt sec)\t\tVel. x (lt sec/sec)\tVel. y (lt sec/sec)\n\
@@ -373,7 +371,7 @@ defined as %.3f km\n", JPL_AU_DE405);
 
   convert(gps_JD, time);
 
-  pleph(coeffArray, time, inputs.target, R, fp);
+  pleph(coeffArray, time, inputs.target, R, fp, bigendian);
 
   Rnow[0] = R[0];
   Rnow[1] = R[1];
@@ -389,7 +387,7 @@ defined as %.3f km\n", JPL_AU_DE405);
 
   /* get values of velocity around present time to calculate the accelerations
   */
-  pleph(coeffArray, time, inputs.target, R, fp);
+  pleph(coeffArray, time, inputs.target, R, fp, bigendian);
   Vlast[0] = R[3];
   Vlast[1] = R[4];
   Vlast[2] = R[5];
@@ -399,7 +397,7 @@ defined as %.3f km\n", JPL_AU_DE405);
 
   convert(gps_JD, time);
 
-  pleph(coeffArray, time, inputs.target, R, fp);
+  pleph(coeffArray, time, inputs.target, R, fp, bigendian);
   Vnext[0] = R[3];
   Vnext[1] = R[4];
   Vnext[2] = R[5];
@@ -456,7 +454,7 @@ A[0], A[1], A[2]);
 /* the int call and 1.d-4 are just to make sure gps is the ``right'' integer*/
     convert(gps_JD, time);
 
-    pleph(coeffArray, time, inputs.target, R, fp);
+    pleph(coeffArray, time, inputs.target, R, fp, bigendian);
     Rnow[0] = R[0];
     Rnow[1] = R[1];
     Rnow[2] = R[2];
@@ -472,7 +470,7 @@ A[0], A[1], A[2]);
 
     convert(gps_JD, time);
 
-    pleph(coeffArray, time, inputs.target, R, fp);
+    pleph(coeffArray, time, inputs.target, R, fp, bigendian);
     Vnext[0] = R[3];
     Vnext[1] = R[4];
     Vnext[2] = R[5];
@@ -526,7 +524,7 @@ A[1], A[2]);
 }
 
 /* function to determine the record size and initialise the ephemeris */
-INT4 fsizer(FILE *fp){
+INT4 fsizer(FILE *fp, UINT4 *bigendian){
   INT4 kmx=0, khi=0;
   UINT4 i=0;
   INT4 nd=0;
@@ -573,9 +571,13 @@ INT4 fsizer(FILE *fp){
     return 0;
   }
 
+  *bigendian = ( head1.data.con < 0 || head1.data.con > 65536L );
+
   /* flip bytes of ipt */
-  endian_swap((CHAR*)&head1.data.ipt, sizeof(INT4), 36);
-  endian_swap((CHAR*)&head1.data.libratPtr, sizeof(INT4), 3);
+  if ( *bigendian ){
+    endian_swap((CHAR*)&head1.data.ipt, sizeof(INT4), 36);
+    endian_swap((CHAR*)&head1.data.libratPtr, sizeof(INT4), 3);
+  }
 
   /*** Calculate array size in the ephemeris */
   for (i=0;i<12;i++){
@@ -618,12 +620,14 @@ INT4 fsizer(FILE *fp){
   fseek(fp, 2*size*sizeof(REAL8), SEEK_SET);
 
   /* flip bytes of values */
-  endian_swap((CHAR*)&head1.data.au, sizeof(REAL8), 1);
-  endian_swap((CHAR*)&head1.data.emrat, sizeof(REAL8), 1);
-  endian_swap((CHAR*)&head1.data.ss, sizeof(REAL8), 3);
-  endian_swap((CHAR*)&head1.data.con, sizeof(INT4), 1);
-  endian_swap((CHAR*)&head1.data.numde, sizeof(INT4), 1);
-  endian_swap((CHAR*)&head2.data.cval, sizeof(REAL8), 400);
+  if ( *bigendian ){
+    endian_swap((CHAR*)&head1.data.au, sizeof(REAL8), 1);
+    endian_swap((CHAR*)&head1.data.emrat, sizeof(REAL8), 1);
+    endian_swap((CHAR*)&head1.data.ss, sizeof(REAL8), 3);
+    endian_swap((CHAR*)&head1.data.con, sizeof(INT4), 1);
+    endian_swap((CHAR*)&head1.data.numde, sizeof(INT4), 1);
+    endian_swap((CHAR*)&head2.data.cval, sizeof(REAL8), 400);
+  }
 
   if(verbose){
     fprintf(stderr, "Check value of AU is correct:\n");
@@ -663,7 +667,7 @@ void convert(REAL8 *gps_JD, REAL8 *time){
 
 /* this is taken from David Hoffman's ephem_read functions from
    http://www.projectpluto.com/jpl_eph.htm */
-void read_coeffs(REAL8 *coeffArray, REAL8 *time, FILE *fp){
+void read_coeffs(REAL8 *coeffArray, REAL8 *time, FILE *fp, UINT4 bigendian){
   REAL8 Tdelta = 0.;
   INT4 offset = 0;
 
@@ -676,7 +680,9 @@ void read_coeffs(REAL8 *coeffArray, REAL8 *time, FILE *fp){
     }
 
     /* swap bits */
-    endian_swap((CHAR*)&coeffArray[0], sizeof(REAL8), ARRAY_SIZE);
+    if ( bigendian ){
+      endian_swap((CHAR*)&coeffArray[0], sizeof(REAL8), ARRAY_SIZE);
+    }
 
     /* set beginning and end time of these coefficients */
     Tbeg = coeffArray[0];
@@ -684,8 +690,7 @@ void read_coeffs(REAL8 *coeffArray, REAL8 *time, FILE *fp){
     Tspan = Tend - Tbeg;
 
     if(verbose){
-      fprintf(stdout, "First record in ephemeris file:\n  start time %lf\n  end\
- time %lf\n", Tbeg, Tend);
+      fprintf(stdout, "First record in ephemeris file:\n  start time %lf\n  end time %lf\n", Tbeg, Tend);
     }
   }
   else{
@@ -709,7 +714,9 @@ void read_coeffs(REAL8 *coeffArray, REAL8 *time, FILE *fp){
     }
 
     /* swap bits */
-    endian_swap((CHAR*)&coeffArray[0], sizeof(REAL8), ARRAY_SIZE);
+    if ( bigendian ) {
+      endian_swap((CHAR*)&coeffArray[0], sizeof(REAL8), ARRAY_SIZE);
+    }
 
     /* set new values of Tbeg and Tend */
     Tbeg = coeffArray[0];
@@ -718,25 +725,24 @@ void read_coeffs(REAL8 *coeffArray, REAL8 *time, FILE *fp){
   }
 }
 
-void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
+void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp, UINT4 bigendian){
   REAL8 stateTemp[6];
 
   INT4 i=0;
 
-  /* fix all ephemerides to use the metre / second definition the JPL DE405
-   * ephemeris */
+  /* fix all ephemerides to use the metre / second definition the JPL DE405 ephemeris */
   REAL8 au = JPL_AU_DE405;
 
   /* if we're getting the Earth data then correct for the Moon */
   if( target == EARTH ){
     /* get the Earth-Moon barycenter */
-    interpolate_state(coeffArray, time, target, stateTemp, fp);
+    interpolate_state(coeffArray, time, target, stateTemp, fp, bigendian);
 
     for (i=0; i<6; i++)
       state[i] = stateTemp[i];
 
     /* get moon position */
-    interpolate_state(coeffArray, time, MOON, stateTemp, fp);
+    interpolate_state(coeffArray, time, MOON, stateTemp, fp, bigendian);
 
     /* remove the effect of the Moon */
     for (i=0; i<6; i++)
@@ -744,20 +750,20 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
   }
   else if( target == MOON ){
     /* get the Moon position */
-    interpolate_state(coeffArray, time, target, stateTemp, fp);
+    interpolate_state(coeffArray, time, target, stateTemp, fp, bigendian);
 
     for (i=0; i<6; i++)
       state[i] = stateTemp[i];
 
     /* get Earth-Moon barycenter position */
-    interpolate_state(coeffArray, time, EARTH, stateTemp, fp);
+    interpolate_state(coeffArray, time, EARTH, stateTemp, fp, bigendian);
 
     /* remove the effect of the Earth */
     for (i=0; i<6; i++)
       state[i] = stateTemp[i] + state[i]*(1.-1./(1.+head1.data.emrat));
   }
   else
-    interpolate_state(coeffArray, time, target, state, fp);
+    interpolate_state(coeffArray, time, target, state, fp, bigendian);
 
   /* put values in light seconds and light seconds per second, from km and km
      per day*/
@@ -770,8 +776,7 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
 /* this function will compute the position and velocity vector of a given
 planetary body from the Chebyshev coefficients - it does not compute nutations
 of librations */
-void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
-  REAL8 *state, FILE *fp){
+void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp, UINT4 bigendian){
   REAL8 A[50], Cp[50], Psum[3], Vsum[3], Up[50];
   REAL8 Tbreak = 0., Tseg = 0., Tsub=0., Tc=0.;
 
@@ -785,7 +790,7 @@ void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
 
   /* determin if we need a new record to be read, or if the current one is OK */
   if( time[0]+time[1] < Tbeg || time[0]+time[1] > Tend)
-    read_coeffs(coeffArray, time, fp);
+    read_coeffs(coeffArray, time, fp, bigendian);
 
   /* read coefficients from the header record */
   C = head1.data.ipt[target][0] - 1;        /* coeff array entry point */
@@ -819,8 +824,7 @@ void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
     for (i=C ; i<(C+3*N) ; i++) A[i-C] = coeffArray[i];
   }
   else{     /* something has gone terribly wrong */
-    fprintf(stderr, "Error... number of granules must be >= 1: check header \
-data.\n");
+    fprintf(stderr, "Error... number of granules must be >= 1: check header data.\n");
     exit(1);
   }
 

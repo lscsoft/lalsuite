@@ -32,7 +32,7 @@
 #include <lal/UniversalDopplerMetric.h>
 #include <lal/MetricUtils.h>
 
-#include "../src/GSLHelpers.h"
+#include <lal/GSLHelpers.h>
 
 /**
  * \author Reinhard Prix

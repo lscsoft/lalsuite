@@ -29,7 +29,15 @@
 extern "C" {
 #endif
 
-/* global variables for vcs information */
+/**
+ * \defgroup @PACKAGE_NAME@VCSInfo_h Header @PACKAGE_NAME@VCSInfo.h
+ * \ingroup @PACKAGE_NAME_LCASE@_general
+ * \brief VCS information for @PACKAGE_NAME@
+ */
+/*@{*/
+
+/** \name Global variables for @PACKAGE_NAME@ VCS information */
+/*@{*/
 extern const char *const lal@PACKAGE_NAME_NOLAL@VCSVersion;
 extern const char *const lal@PACKAGE_NAME_NOLAL@VCSId;
 extern const char *const lal@PACKAGE_NAME_NOLAL@VCSDate;
@@ -38,8 +46,10 @@ extern const char *const lal@PACKAGE_NAME_NOLAL@VCSTag;
 extern const char *const lal@PACKAGE_NAME_NOLAL@VCSAuthor;
 extern const char *const lal@PACKAGE_NAME_NOLAL@VCSCommitter;
 extern const char *const lal@PACKAGE_NAME_NOLAL@VCSStatus;
+/*@}*/
 
-/* global variables for vcs information - identable */
+/** \name Identable global variables for @PACKAGE_NAME@ VCS information */
+/*@{*/
 extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentId;
 extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentDate;
 extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentBranch;
@@ -47,18 +57,30 @@ extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentTag;
 extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentAuthor;
 extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentCommitter;
 extern const char *const lal@PACKAGE_NAME_NOLAL@VCSIdentStatus;
+/*@}*/
 
-/* library vcs information structure */
-extern const struct tagLALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfo;
+/** @PACKAGE_NAME@ VCS information */
+extern const LALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfo;
 
-/* configure arguments */
+/** List of VCS information for @PACKAGE_NAME@ and its LALSuite dependencies (<tt>NULL</tt>-terminated) */
+extern const LALVCSInfo *const lal@PACKAGE_NAME_NOLAL@VCSInfoList[32];
+
+/** @PACKAGE_NAME@ <tt>configure</tt> arguments */
 extern const char *const lal@PACKAGE_NAME_NOLAL@ConfigureArgs;
 
-/* configure date */
+/** @PACKAGE_NAME@ <tt>configure</tt> date */
 extern const char *const lal@PACKAGE_NAME_NOLAL@ConfigureDate;
 
-/* build date */
+/** @PACKAGE_NAME@ build date */
 extern const char *const lal@PACKAGE_NAME_NOLAL@BuildDate;
+
+/** Check @PACKAGE_NAME@ VCS information for compile-time/run-time version mismatch */
+#ifndef SWIG /* exclude from SWIG interface */
+int X@PACKAGE_NAME@VCSInfoCheck(void);
+#endif /* SWIG */
+
+
+/*@}*/
 
 #ifdef __cplusplus
 }

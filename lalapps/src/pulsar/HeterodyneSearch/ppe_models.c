@@ -38,7 +38,7 @@ void get_pulsar_model( LALInferenceModel *model ){
   /* set model parameters (including rescaling) */
   add_pulsar_parameter( model->params, pars, "PSI" );
 
-  if( ( LALInferenceCheckVariableNonFixed( model->params, "H0" ) || LALInferenceCheckVariableNonFixed( model->params, "Q22" ) || LALInferenceCheckVariable( model->ifo->params, "jones-model" ) ) && !LALInferenceCheckVariable( model->ifo->params, "nonGR" ) ){
+  if( ( LALInferenceCheckVariableNonFixed( model->params, "H0" ) || LALInferenceCheckVariableNonFixed( model->params, "Q22" ) || LALInferenceCheckVariable( model->ifo->params, "source_model" ) ) && !LALInferenceCheckVariable( model->ifo->params, "nonGR" ) ){
     /* if searching in mass quadrupole, Q22, then check for distance and f0 and convert to h0 */
     if ( LALInferenceCheckVariableNonFixed( model->params, "Q22" ) && !LALInferenceCheckVariableNonFixed( model->params, "H0" ) ){
       if ( LALInferenceCheckVariable( model->params, "F0" ) && LALInferenceCheckVariable( model->params, "DIST" ) ){
@@ -50,13 +50,11 @@ void get_pulsar_model( LALInferenceModel *model ){
         PulsarAddParam( pars, "H0", &h0val, PULSARTYPE_REAL8_t );
       }
       else{
-        XLALPrintError("%s: Error... using mass quadrupole, Q22, but no distance or frequency given!\n", __func__ );
-        XLAL_ERROR_VOID( XLAL_EINVAL );
+        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... using mass quadrupole, Q22, but no distance or frequency given!" );
       }
     }
     else if ( LALInferenceCheckVariableNonFixed( model->params, "Q22" ) && LALInferenceCheckVariableNonFixed( model->params, "H0" ) ) {
-      XLALPrintError("%s: Error... cannot have both h0 and Q22 as variables.\n", __func__);
-      XLAL_ERROR_VOID( XLAL_EINVAL );
+      XLAL_ERROR_VOID( XLAL_EINVAL, "Error... cannot have both h0 and Q22 as variables." );
     }
 
     add_pulsar_parameter( model->params, pars, "H0" );
@@ -74,7 +72,7 @@ void get_pulsar_model( LALInferenceModel *model ){
     else{ add_pulsar_parameter( model->params, pars, "COSTHETA" ); }
     add_pulsar_parameter( model->params, pars, "PHI0" ); /* note that this is the rotational phase */
 
-    /* check whether using cos(theta) or theta as the variable (defaulting to cos(theta) being the value that is set */
+    /* check whether using cos(iota) or iota as the variable (defaulting to cos(iota) being the value that is set) */
     if ( LALInferenceCheckVariableNonFixed( model->params, "IOTA" ) ){
       REAL8 cosiota = cos(LALInferenceGetREAL8Variable( model->params, "IOTA" ));
       PulsarAddParam( pars, "COSIOTA", &cosiota, PULSARTYPE_REAL8_t );
@@ -149,12 +147,38 @@ void get_pulsar_model( LALInferenceModel *model ){
   add_pulsar_parameter( model->params, pars, "DEC" );
   add_pulsar_parameter( model->params, pars, "PMDEC" );
 
-  add_pulsar_parameter( model->params, pars, "F0" );
-  add_pulsar_parameter( model->params, pars, "F1" );
-  add_pulsar_parameter( model->params, pars, "F2" );
-  add_pulsar_parameter( model->params, pars, "F3" );
-  add_pulsar_parameter( model->params, pars, "F4" );
-  add_pulsar_parameter( model->params, pars, "F5" );
+  /* check the number of frequency and frequency derivative parameters */
+  if ( LALInferenceCheckVariable( model->params, "FREQNUM" ) ){
+    UINT4 freqnum = LALInferenceGetUINT4Variable( model->params, "FREQNUM" );
+    REAL8Vector *freqs = NULL;
+    freqs = XLALCreateREAL8Vector( freqnum );
+    for ( UINT4 i = 0; i < freqnum; i++ ){
+      CHAR varname[256];
+      snprintf(varname, sizeof(varname), "F%u", i);
+      freqs->data[i] = LALInferenceGetREAL8Variable( model->params, varname );
+    }
+    PulsarAddParam( pars, "F", &freqs, PULSARTYPE_REAL8Vector_t );
+  }
+
+  /* check if there are glitch parameters */
+  if ( LALInferenceCheckVariable(model->ifo->params, "GLITCHES" ) ){
+    if ( LALInferenceCheckVariable( model->params, "GLNUM" ) ){ /* number of glitches */
+      UINT4 glnum = LALInferenceGetUINT4Variable( model->params, "GLNUM" );
+      for ( UINT4 i = 0; i < NUMGLITCHPARS; i++ ){
+        REAL8Vector *gl = NULL;
+        gl = XLALCreateREAL8Vector( glnum );
+        for ( UINT4 j=0; j < glnum; j++ ){
+          CHAR varname[256];
+          snprintf(varname, sizeof(varname), "%s_%u", glitchpars[i], j+1);
+          if ( LALInferenceCheckVariable( model->params, varname ) ){
+            gl->data[j] = LALInferenceGetREAL8Variable( model->params, varname );
+          }
+          else{ gl->data[j] = 0.; }
+        }
+        PulsarAddParam( pars, glitchpars[i], &gl, PULSARTYPE_REAL8Vector_t );
+      }
+    }
+  }
 
   /* check if there are binary parameters */
   if( LALInferenceCheckVariable(model->ifo->params, "BINARY") ){
@@ -203,9 +227,15 @@ void get_pulsar_model( LALInferenceModel *model ){
     add_pulsar_parameter( model->params, pars, "MTOT" );
     add_pulsar_parameter( model->params, pars, "M2" );
 
-    if ( LALInferenceCheckVariable( model->params, "FB" ) ){
+    if ( LALInferenceCheckVariable( model->params, "FBNUM" ) ){
+      UINT4 fbnum = LALInferenceGetUINT4Variable( model->params, "FBNUM" );
       REAL8Vector *fb = NULL;
-      fb = *(REAL8Vector **)LALInferenceGetVariable( model->params, "FB" );
+      fb = XLALCreateREAL8Vector( fbnum );
+      for ( UINT4 i=0; i < fbnum; i++ ){
+        CHAR varname[256];
+        snprintf(varname, sizeof(varname), "FB%u", i);
+        fb->data[i] = LALInferenceGetREAL8Variable( model->params, varname );
+      }
       PulsarAddParam( pars, "FB", &fb, PULSARTYPE_REAL8Vector_t );
     }
   }
@@ -225,7 +255,7 @@ void get_pulsar_model( LALInferenceModel *model ){
 void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
   /* determine what model was requested */
   int isG4v = strcmp(nonGRmodel, "G4v") * strcmp(nonGRmodel, "g4v") * strcmp(nonGRmodel, "G4V");
-  int isST = strcmp(nonGRmodel, "scalar-tensor") * strcmp(nonGRmodel, "ST");
+  int isEGR = strcmp(nonGRmodel, "enhanced-GR") * strcmp(nonGRmodel, "EGR") * strcmp(nonGRmodel, "egr") * strcmp(nonGRmodel, "eGR");
   REAL8 h0 = PulsarGetREAL8ParamOrZero( pars, "H0" );
 
   if( isG4v == 0 ){
@@ -242,9 +272,11 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
     PulsarAddParam( pars, "HVECTORY", &hVectorY, PULSARTYPE_REAL8_t );
     PulsarAddParam( pars, "PSIVECTOR", &psiVector, PULSARTYPE_REAL8_t );
   }
-  else if( isST == 0 ) {
-    /* GR plus an unconstrained breathing mode */
-    /* TO DO: are there specific functional relations linking the HSCALARB to pulsar parameters like COSIOTA, etc.? */
+  else if( isEGR == 0 ) {
+    /** GR plus an unconstrained non-GR modes
+    * With different priors, this can be used to obtain GR+scalar (i.e.
+    * scalar-tensor), GR+vector, or GR+scalar+vector. Note: this mode used to
+    be called just "ST".*/
     REAL8 cosiota = PulsarGetREAL8ParamOrZero( pars, "COSIOTA" );
     REAL8 hPlus = 0.5 * h0 * (1. + cosiota * cosiota);
     REAL8 hCross = h0 * cosiota;
@@ -253,8 +285,7 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel ){
     PulsarAddParam( pars, "HCROSS", &hCross, PULSARTYPE_REAL8_t );
     PulsarAddParam( pars, "PSITENSOR", &psiTensor, PULSARTYPE_REAL8_t );
   } else {
-    XLALPrintError ("%s: unrecognized non-GR model. Currently supported: scalar-tensor (ST), G4v, or no argument for full search.\n", __func__ );
-    XLAL_ERROR_VOID( XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL, "Unrecognized non-GR model. Currently supported: enhanced GR (EGR), G4v, or no argument for full search." );
   }
 }
 
@@ -394,9 +425,9 @@ void pulsar_model( PulsarParameters *params, LALInferenceIFOModel *ifo ){
  * \sa get_bsb_delay
  */
 REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *ifo, REAL8 freqFactor ){
-  INT4 i = 0, length = 0;
+  UINT4 i = 0, j = 0, length = 0, isbinary = 0;
 
-  REAL8 DT = 0., deltat = 0., deltat2 = 0.;
+  REAL8 DT = 0., deltat = 0., deltatupdate = 0.;
   REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
 
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
@@ -404,6 +435,10 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
 
   REAL8 T0 = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /*time of ephem info*/
   REAL8 cgw = PulsarGetREAL8ParamOrZero(params, "CGW");
+
+  /* glitch parameters */
+  REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
+  UINT4 glnum = 0;
 
   /* check if we want to calculate the phase at a the downsampled rate */
   datatimes = ifo->times;
@@ -429,26 +464,102 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
     bdts = get_bsb_delay( params, datatimes, dts, ifo->ephem );
   }
 
-  #pragma omp parallel for private(DT, deltat, deltat2)
+  /* get vector of frequencies divided by the appropriate Taylor series coefficient factor */
+  REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
+  REAL8 freqstaylor[freqs->length];
+  REAL8 taylorcoeff = 1;
+  for ( i=0; i<freqs->length; i++ ){
+    taylorcoeff /= (REAL8)(i+1);
+    freqstaylor[i] = taylorcoeff*freqs->data[i];
+  }
+
+  if ( PulsarCheckParam( params, "BINARY" ) ){ isbinary = 1; } /* see if pulsar is in binary */
+  if ( PulsarCheckParam( params, "GLEP" ) ){ /* see if pulsar has glitch parameters */
+    REAL8Vector *glpars = NULL;
+    glpars = PulsarGetREAL8VectorParam( params, "GLEP" );
+    glnum = glpars->length;
+
+    /* get epochs */
+    glep = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    for ( i=0; i<glpars->length; i++ ){ glep[i] = glpars->data[i]; }
+
+    /* get phase offsets */
+    glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLPH" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLPH" );
+      for ( i=0; i<glpars->length; i++ ){ glph[i] = glpars->data[i]; }
+    }
+
+    /* get frequencies offsets */
+    glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLF0" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLF0" );
+      for ( i=0; i<glpars->length; i++ ){ glf0[i] = glpars->data[i]; }
+    }
+
+    /* get frequency derivative offsets */
+    glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLF1" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLF1" );
+      for ( i=0; i<glpars->length; i++ ){ glf1[i] = glpars->data[i]; }
+    }
+
+    /* get second frequency derivative offsets */
+    glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLF2" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLF2" );
+      for ( i=0; i<glpars->length; i++ ){ glf2[i] = glpars->data[i]; }
+    }
+
+    /* get decaying frequency component offset derivative */
+    glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLF0D" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLF0D" );
+      for ( i=0; i<glpars->length; i++ ){ glf0d[i] = glpars->data[i]; }
+    }
+
+    /* get decaying frequency component decay time constant */
+    gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLTD" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLTD" );
+      for ( i=0; i<glpars->length; i++ ){ gltd[i] = glpars->data[i]; }
+    }
+  }
+
   for( i=0; i<length; i++){
-    REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /*time of data*/
+    REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /* time of data */
 
-    DT = realT - T0; /*time diff between data and ephem info*/
+    DT = realT - T0; /* time diff between data and ephem info */
 
-    if ( PulsarCheckParam( params, "BINARY" ) ) { deltat = DT + dts->data[i] + bdts->data[i]; }
+    if ( isbinary ) { deltat = DT + dts->data[i] + bdts->data[i]; }
     else { deltat = DT + dts->data[i]; }
 
     /* correct for speed of GW compared to speed of light */
     if ( cgw > 0.0 && cgw < 1. ) { deltat /= cgw; }
 
     /* work out phase */
-    deltat2 = deltat*deltat;
-    phis->data[i] = freqFactor*deltat*(PulsarGetREAL8ParamOrZero(params, "F0") +
-      0.5*PulsarGetREAL8ParamOrZero(params, "F1")*deltat +
-      (1./6.)*PulsarGetREAL8ParamOrZero(params, "F2")*deltat2 +
-      (1./24.)*PulsarGetREAL8ParamOrZero(params, "F3")*deltat*deltat2 +
-      (1./120.)*PulsarGetREAL8ParamOrZero(params, "F4")*deltat2*deltat2 +
-      (1./720.)*PulsarGetREAL8ParamOrZero(params, "F5")*deltat2*deltat2*deltat);
+    deltatupdate = deltat;
+    phis->data[i] = 0.;
+    for ( j=0; j<freqs->length; j++ ){
+      phis->data[i] += deltatupdate*freqstaylor[j];
+      deltatupdate *= deltat;
+    }
+
+    /* check for glitches */
+    if ( glnum > 0 ){
+      /* get glitch phase - based on equations in formResiduals.C of TEMPO2 from Eqn 1 of Yu et al (2013) http://ukads.nottingham.ac.uk/abs/2013MNRAS.429..688Y */
+      for ( j=0; j<glnum; j++ ){
+        if ( deltat >= (glep[j]-T0) ){
+          REAL8 dtg = 0, expd = 1.;
+          dtg = deltat - (glep[j]-T0); /* time since glitch */
+          if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
+
+          phis->data[i] += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
+        }
+      }
+    }
+
+    phis->data[i] *= freqFactor; /* multiply by frequency factor */
   }
 
   /* free memory */
@@ -457,6 +568,16 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
 
   if ( !LALInferenceCheckVariable( ifo->params, "bsb_delays") || LALInferenceCheckVariable( ifo->params, "varybinary" ) )
     XLALDestroyREAL8Vector( bdts );
+
+  if ( glnum > 0 ){
+    XLALFree( glep );
+    XLALFree( glph );
+    XLALFree( glf0 );
+    XLALFree( glf1 );
+    XLALFree( glf2 );
+    XLALFree( glf0d );
+    XLALFree( gltd );
+  }
 
   return phis;
 }
@@ -508,15 +629,13 @@ REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
   if ( PulsarCheckParam( pars, "RA" ) ) { ra = PulsarGetREAL8Param( pars, "RA" ); }
   else if ( PulsarCheckParam( pars, "RAJ" ) ) { ra = PulsarGetREAL8Param( pars, "RAJ" ); }
   else {
-    XLALPrintError ("%s: No source right ascension specified!", __func__ );
-    XLAL_ERROR_NULL( XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL, "No source right ascension specified!" );
   }
   REAL8 dec = 0.;
   if ( PulsarCheckParam( pars, "DEC" ) ) { dec = PulsarGetREAL8Param( pars, "DEC" ); }
   else if ( PulsarCheckParam( pars, "DECJ" ) ) { dec = PulsarGetREAL8Param( pars, "DECJ" ); }
   else {
-    XLALPrintError ("%s: No source declination specified!", __func__ );
-    XLAL_ERROR_NULL( XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL, "No source declination specified!" );
   }
   REAL8 pmra = PulsarGetREAL8ParamOrZero( pars, "PMRA" );
   REAL8 pmdec = PulsarGetREAL8ParamOrZero( pars, "PMDEC" );
@@ -541,7 +660,7 @@ REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
 
   T0 = pepoch;
 
-  /* make sure ra and dec are wrapped withing 0--2pi and -pi.2--pi/2 respectively */
+  /* make sure ra and dec are wrapped within 0--2pi and -pi.2--pi/2 respectively */
   ra = fmod(ra, LAL_TWOPI);
   REAL8 absdec = fabs(dec);
   if ( absdec > LAL_PI_2 ){
@@ -948,8 +1067,7 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
   }
 
   if ( nonGR == 1 && freqFactors->length > 1 ){
-    XLALPrintError( "%s: Error... currently can only use non-GR parameters for l=m=2 harmonic.\n", __func__ );
-    XLAL_ERROR_VOID( XLAL_EFAILED );
+    XLAL_ERROR_VOID( XLAL_EFAILED, "Error... currently can only use non-GR parameters for l=m=2 harmonic." );
   }
 
   /* loop over all detectors */
@@ -960,8 +1078,7 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
       COMPLEX16 Cplus = 0., Ccross = 0., Cx = 0., Cy = 0., Cl = 0., Cb = 0.;
 
       if ( !ifo ){
-        XLALPrintError( "%s: Error... ifo model not defined.\n", __func__ );
-        XLAL_ERROR_VOID( XLAL_EINVAL );
+        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... ifo model not defined." );
       }
 
       /* get the amplitude and phase factors */
@@ -997,8 +1114,7 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
         }
       }
       else{
-        XLALPrintError("%s: Error... currently unknown frequency factor (%.2lf) for models.\n", __func__, freqFactors->data[j] );
-        XLAL_ERROR_VOID( XLAL_EINVAL );
+        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... currently unknown frequency factor (%.2lf) for models.", freqFactors->data[j] );
       }
 
       if ( varyphase || roq ){ /* have to compute the full time domain signal */
@@ -1157,8 +1273,7 @@ REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVecto
   T = XLALGPSGetREAL8(&t->data[t->length-1]) - XLALGPSGetREAL8(&t->data[0]);
 
   if ( phi1->length != phi2->length ){
-    XLALPrintError("Phase lengths should be equal!\n");
-    XLAL_ERROR_REAL8(XLAL_EFAILED);
+    XLAL_ERROR_REAL8( XLAL_EBADLEN, "Phase lengths should be equal!" );
   }
 
   /* calculate mismatch - integrate with trapezium rule */
@@ -1205,8 +1320,7 @@ void get_earth_pos_vel( EarthState *earth, EphemerisData *edat, LIGOTimeGPS *tGP
 
   /* check input */
   if ( !earth || !tGPS || !edat || !edat->ephemE || !edat->ephemS ) {
-    XLALPrintError ("%s: invalid NULL input 'earth', 'tGPS', 'edat','edat->ephemE' or 'edat->ephemS'\n", __func__ );
-    XLAL_ERROR_VOID( XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL, "Invalid NULL input 'earth', 'tGPS', 'edat','edat->ephemE' or 'edat->ephemS'" );
   }
 
   tgps[0] = (REAL8)tGPS->gpsSeconds; /* convert from INT4 to REAL8 */
@@ -1218,9 +1332,8 @@ void get_earth_pos_vel( EarthState *earth, EphemerisData *edat, LIGOTimeGPS *tGP
   ientryE = ROUND(t0e/edat->dtEtable);  /* finding Earth table entry */
 
   if ( ( ientryE < 0 ) || ( ientryE >=  edat->nentriesE )) {
-    XLALPrintError ("%s: input GPS time %f outside of Earth ephem range [%f, %f]\n", __func__, tgps[0], tinitE, tinitE +
+    XLAL_ERROR_VOID( XLAL_EDOM, "Input GPS time %f outside of Earth ephem range [%f, %f]\n", tgps[0], tinitE, tinitE +
 edat->nentriesE * edat->dtEtable );
-    XLAL_ERROR_VOID( XLAL_EDOM );
   }
 
   /* tdiff is arrival time minus closest Earth table entry; tdiff can be pos. or neg. */

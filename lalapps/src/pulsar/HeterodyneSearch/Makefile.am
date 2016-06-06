@@ -1,5 +1,7 @@
-BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
+MOSTLYCLEANFILES =
+EXTRA_DIST =
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 # Makefile for HeterodyneSearch
 
@@ -15,7 +17,8 @@ TESTS = test_heterodyne_pulsar.sh
 if LALINFERENCE
 if LALXML
 inference_progs = \
-	lalapps_pulsar_parameter_estimation_nested
+	lalapps_pulsar_parameter_estimation_nested \
+	lalapps_pulsar_frequency_evolution
 
 endif
 endif
@@ -23,6 +26,13 @@ endif
 bin_PROGRAMS = $(frame_progs) $(inference_progs) lalapps_CrabTNHeterodyne lalapps_ssbtodetector
 
 lalapps_ssbtodetector_SOURCES = ssbtodetector.c
+
+lalapps_pulsar_frequency_evolution_SOURCES = \
+	pulsar_frequency_evolution.c \
+	ppe_models.c \
+	ppe_models.h \
+	ppe_utils.c \
+	ppe_utils.h
 
 lalapps_heterodyne_pulsar_SOURCES = \
 	heterodyne_pulsar.c \
@@ -65,18 +75,18 @@ lalapps_SplInter_SOURCES = \
 	SpectralInterpolation.h
 
 if HAVE_PYTHON
-pkgpython_DATA = \
+pybin_scripts = \
+	lalapps_knope \
+	lalapps_knope_create_prior \
+	lalapps_knope_result_page \
+	lalapps_knope_collate_results
+pkgpython_PYTHON = \
+	pulsarhtmlutils.py \
 	pulsarpputils.py \
-	pulsar_pipeline_utils.py
+	knope_utils.py
 endif
 
-EXTRA_DIST = \
+EXTRA_DIST += \
 	test_heterodyne_pulsar.sh \
 	make_frame_cache H1response.txt \
-	H-CW_Injection-875206560-120.gwf \
-	pulsarpputils.py \
-	pulsar_pipeline_utils.py
-
-TESTS_ENVIRONMENT = \
-	LAL_DEBUG_LEVEL=msglvl1,memdbg; export LAL_DEBUG_LEVEL; \
-	LAL_DATA_PATH="$(LAL_DATA_PATH)"; export LAL_DATA_PATH;
+	H-CW_Injection-875206560-120.gwf

@@ -27,7 +27,7 @@ extern "C" {
 /**
  * \author Reinhard Prix
  * \defgroup DetectorStates_h Header DetectorStates.h
- * \ingroup lalpulsar_common
+ * \ingroup lalpulsar_general
  * \date 2005
  * \brief API for the DetectorStates.c functions.
  *
@@ -187,6 +187,7 @@ MultiDetectorStateSeries* XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVect
 
 int XLALParseMultiLALDetector ( MultiLALDetector *multiIFO, const LALStringVector *detNames );
 int XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor, const LALStringVector *sqrtSX, UINT4 numDetectors );
+int XLALParseMultiNoiseFloorMapped ( MultiNoiseFloor *multiNoiseFloor, const LALStringVector *multiNoiseFloorDetNames, const LALStringVector *sqrtSX, const LALStringVector *sqrtSXDetNames );
 int XLALMultiLALDetectorFromMultiSFTCatalogView ( MultiLALDetector *multiIFO, const MultiSFTCatalogView *multiView );
 int XLALMultiLALDetectorFromMultiSFTs ( MultiLALDetector *multiIFO, const MultiSFTVector *multiSFTs );
 

@@ -165,8 +165,6 @@
 /** user input variables */
 typedef struct
 {
-  BOOLEAN help;
-
   CHAR *RAJ;
   CHAR *DECJ;
   REAL8 TstartUTCMJD;
@@ -246,10 +244,6 @@ main(int argc, char *argv[])
   // ----------------------------------------------------------------------
   UserVariables_t XLAL_INIT_DECL(uvar);
   XLAL_CHECK ( initUserVars (argc, argv, &uvar) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if (uvar.help) {   /* exit if help was required */
-    exit(0);
-  }
 
   unsigned int seed = uvar.randSeed;
   if ( uvar.randSeed == 0 ) {
@@ -670,8 +664,6 @@ initUserVars ( int argc, char *argv[], UserVariables_t *uvar )
   XLAL_CHECK ( argc > 0 && (argv != NULL) && (uvar != NULL), XLAL_EINVAL );
 
   /* set a few defaults */
-  uvar->help = FALSE;
-
   uvar->RAJ  = NULL;
   uvar->DECJ = NULL;
 
@@ -693,23 +685,26 @@ initUserVars ( int argc, char *argv[], UserVariables_t *uvar )
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   /* register user input variables */
-  XLALregBOOLUserStruct   ( help, 		'h', UVAR_HELP,    	"Print this message" );
-  XLALregSTRINGUserStruct ( RAJ, 	        'r', UVAR_OPTIONAL, 	"Right ascension hh:mm.ss.ssss [Default=random]");
-  XLALregSTRINGUserStruct ( DECJ, 	        'j', UVAR_OPTIONAL, 	"Declination deg:mm.ss.ssss [Default=random]");
-  XLALregSTRINGUserStruct ( ephemEarth, 	 0,  UVAR_OPTIONAL, 	"Earth ephemeris file to use");
-  XLALregSTRINGUserStruct ( ephemSun, 	 	 0,  UVAR_OPTIONAL, 	"Sun ephemeris file to use");
-  XLALregREALUserStruct   ( f0,     		'f', UVAR_OPTIONAL, 	"The signal frequency in Hz at SSB at the reference time");
-  XLALregREALUserStruct   ( fdot,     		'p', UVAR_OPTIONAL, 	"The signal frequency derivitive in Hz at SSB at the reference time");
-  XLALregREALUserStruct   ( TrefTDBMJD, 	'R', UVAR_OPTIONAL, 	"Reference time at the SSB in TDB in MJD");
-  XLALregREALUserStruct   ( TstartUTCMJD, 	'T', UVAR_OPTIONAL, 	"Start time of output TOAs in UTC");
-  XLALregREALUserStruct   ( DeltaTMJD, 		't', UVAR_OPTIONAL, 	"Time inbetween TOAs (in days)");
-  XLALregREALUserStruct   ( DurationMJD, 	'D', UVAR_OPTIONAL, 	"Full duration of TOAs (in days)");
-  XLALregSTRINGUserStruct ( PSRJ,           	'n', UVAR_OPTIONAL, 	"Name of pulsar");
-  XLALregSTRINGUserStruct ( Observatory,    	'O', UVAR_OPTIONAL, 	"TEMPO observatory name (GBT,ARECIBO,NARRABRI,NANSHAN,DSS_43,PARKES,JODRELL,VLA,NANCAY,COE,SSB)");
-  XLALregINTUserStruct    ( randSeed,  		 0,  UVAR_OPTIONAL, 	"The random seed [0 = clock]");
+  XLALRegisterUvarMember( RAJ, 	        STRING, 'r', OPTIONAL, 	"Right ascension hh:mm.ss.ssss [Default=random]");
+  XLALRegisterUvarMember( DECJ, 	        STRING, 'j', OPTIONAL, 	"Declination deg:mm.ss.ssss [Default=random]");
+  XLALRegisterUvarMember( ephemEarth, 	 STRING, 0,  OPTIONAL, 	"Earth ephemeris file to use");
+  XLALRegisterUvarMember( ephemSun, 	 	 STRING, 0,  OPTIONAL, 	"Sun ephemeris file to use");
+  XLALRegisterUvarMember( f0,     		REAL8, 'f', OPTIONAL, 	"The signal frequency in Hz at SSB at the reference time");
+  XLALRegisterUvarMember( fdot,     		REAL8, 'p', OPTIONAL, 	"The signal frequency derivitive in Hz at SSB at the reference time");
+  XLALRegisterUvarMember( TrefTDBMJD, 	REAL8, 'R', OPTIONAL, 	"Reference time at the SSB in TDB in MJD");
+  XLALRegisterUvarMember( TstartUTCMJD, 	REAL8, 'T', OPTIONAL, 	"Start time of output TOAs in UTC");
+  XLALRegisterUvarMember( DeltaTMJD, 		REAL8, 't', OPTIONAL, 	"Time inbetween TOAs (in days)");
+  XLALRegisterUvarMember( DurationMJD, 	REAL8, 'D', OPTIONAL, 	"Full duration of TOAs (in days)");
+  XLALRegisterUvarMember( PSRJ,           	STRING, 'n', OPTIONAL, 	"Name of pulsar");
+  XLALRegisterUvarMember( Observatory,    	STRING, 'O', OPTIONAL, 	"TEMPO observatory name (GBT,ARECIBO,NARRABRI,NANSHAN,DSS_43,PARKES,JODRELL,VLA,NANCAY,COE,SSB)");
+  XLALRegisterUvarMember( randSeed,  		 INT4, 0,  OPTIONAL, 	"The random seed [0 = clock]");
 
   /* read all command line variables */
-  XLAL_CHECK ( XLALUserVarReadAllInput( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit(1);
+  }
 
   return XLAL_SUCCESS;
 } /* initUserVars() */

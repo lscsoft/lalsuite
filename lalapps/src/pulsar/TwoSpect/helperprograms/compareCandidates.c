@@ -30,7 +30,6 @@
 
 typedef struct
 {
-   BOOLEAN help;		/**< Print this help/usage message */
    CHAR *infile1;
    CHAR *infile2;
    CHAR *outfile1;
@@ -61,22 +60,23 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
 
    uvar->Tcoh = 1800;
 
-   XLALregBOOLUserStruct(  help,           'h', UVAR_HELP    , "Print this help/usage message");
-   XLALregSTRINGUserStruct(infile1,         0 , UVAR_REQUIRED, "Input file 1");
-   XLALregSTRINGUserStruct(infile2,         0 , UVAR_REQUIRED, "Input file 2");
-   XLALregSTRINGUserStruct(outfile1,        0 , UVAR_REQUIRED, "Temporary output file with all coincident candidates");
-   XLALregSTRINGUserStruct(outfile2,        0 , UVAR_REQUIRED, "Temporary output file with subset of coincient outliers");
-   XLALregSTRINGUserStruct(outfile3,        0 , UVAR_REQUIRED, "Temporary output file with alternate subset of coincident outliers");
-   XLALregSTRINGUserStruct(finalOutfile,    0 , UVAR_REQUIRED, "Final output file of coincident outliers");
-   XLALregREALUserStruct(  Tobs,            0 , UVAR_REQUIRED, "Total observation time (in seconds)");
-   XLALregREALUserStruct(  Tcoh,            0 , UVAR_OPTIONAL, "SFT coherence time (in seconds)");
-   XLALregREALUserStruct(  fdiff_allowed,   0 , UVAR_REQUIRED, "Difference in frequencies allowed (in Hz)");
-   XLALregREALUserStruct(  dfdiff_allowed,  0 , UVAR_REQUIRED, "Difference in modulation depth allowed (in Hz)");
-   XLALregREALUserStruct(  skydiff_allowed, 0 , UVAR_REQUIRED, "Difference in sky location allowed (in radians) at fiducial frequency 200 Hz");
+   XLALRegisterUvarMember(infile1,         STRING, 0 , REQUIRED, "Input file 1");
+   XLALRegisterUvarMember(infile2,         STRING, 0 , REQUIRED, "Input file 2");
+   XLALRegisterUvarMember(outfile1,        STRING, 0 , REQUIRED, "Temporary output file with all coincident candidates");
+   XLALRegisterUvarMember(outfile2,        STRING, 0 , REQUIRED, "Temporary output file with subset of coincient outliers");
+   XLALRegisterUvarMember(outfile3,        STRING, 0 , REQUIRED, "Temporary output file with alternate subset of coincident outliers");
+   XLALRegisterUvarMember(finalOutfile,    STRING, 0 , REQUIRED, "Final output file of coincident outliers");
+   XLALRegisterUvarMember(  Tobs,            REAL8, 0 , REQUIRED, "Total observation time (in seconds)");
+   XLALRegisterUvarMember(  Tcoh,            REAL8, 0 , OPTIONAL, "SFT coherence time (in seconds)");
+   XLALRegisterUvarMember(  fdiff_allowed,   REAL8, 0 , REQUIRED, "Difference in frequencies allowed (in Hz)");
+   XLALRegisterUvarMember(  dfdiff_allowed,  REAL8, 0 , REQUIRED, "Difference in modulation depth allowed (in Hz)");
+   XLALRegisterUvarMember(  skydiff_allowed, REAL8, 0 , REQUIRED, "Difference in sky location allowed (in radians) at fiducial frequency 200 Hz");
 
-   XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
-
-   if ( uvar->help ) exit (0);
+   BOOLEAN should_exit = 0;
+   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+   if ( should_exit ) {
+     exit(1);
+   }
 
    return XLAL_SUCCESS;
 }

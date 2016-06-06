@@ -1,5 +1,27 @@
-LDADD += $(top_builddir)/src/lalapps/liblalapps.la
-BUILT_SOURCES += liblalapps
+## so that additional flags can be easily appended with
+##   AM_CPPFLAGS += ...
+AM_CPPFLAGS = @AM_CPPFLAGS@
+
+## ensure liblalapps is (re)built before everything else
+BUILT_SOURCES = liblalapps
+
 .PHONY: liblalapps
 liblalapps:
 	@cd $(top_builddir)/src/lalapps && $(MAKE) liblalapps.la
+
+LDADD += $(top_builddir)/src/lalapps/liblalapps.la
+
+## here we should be using OMP_THREAD_LIMIT, instead of OMP_NUM_THREADS,
+## to limit the number of threads used by OpenMP but this is a OpenMP
+## 4.5 feature and not currently supported by the compilers we are
+## currently using. Therefore once we have an OpenMP-4.5 compiler we
+## should switch to using OMP_THREAD_LIMIT instead of OMP_NUM_THREADS
+
+TESTS_ENVIRONMENT = \
+	export LC_ALL; LC_ALL=C; \
+	export OMP_NUM_THREADS; OMP_NUM_THREADS=2; \
+	export LAL_DEBUG_LEVEL; LAL_DEBUG_LEVEL=msglvl1,memdbg; \
+	export LAL_TEST_SRCDIR; LAL_TEST_SRCDIR="$(abs_srcdir)"; \
+	export LAL_TEST_BUILDDIR; LAL_TEST_BUILDDIR="$(abs_builddir)"; \
+	export LAL_DATA_PATH; LAL_DATA_PATH="$(LAL_DATA_PATH)"; \
+	$(END_OF_LIST)

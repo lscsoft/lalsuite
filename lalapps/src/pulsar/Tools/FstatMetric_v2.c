@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_templateBanks
+ * \ingroup lalapps_pulsar_Fstatistic
  * \author Reinhard Prix
  * \brief
  * This module deals with calculating various F-statistic metric approximations,
@@ -131,8 +131,6 @@ typedef struct
 
 typedef struct
 {
-  BOOLEAN help;
-
   LALStringVector *IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
   LALStringVector *sqrtSX; 	/**< (string-) list of per-IFO sqrt{Sn} values, \f$\sqrt{S_X}\f$ */
 
@@ -209,23 +207,16 @@ main(int argc, char *argv[])
   lal_errhandler = LAL_ERR_EXIT;
 
   /* register user-variables */
-
-  /* set log-level */
-  LogSetLevel ( lalDebugLevel );
-
   if ( initUserVars(&uvar) != XLAL_SUCCESS ) {
     XLALPrintError( "%s(): initUserVars() failed\n", __func__ );
     return EXIT_FAILURE;
   }
 
   /* read cmdline & cfgfile  */
-  if ( XLALUserVarReadAllInput(argc,argv) != XLAL_SUCCESS ) {
-    XLALPrintError( "%s(): XLALUserVarReadAllInput() failed\n", __func__ );
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit )
     return EXIT_FAILURE;
-  }
-
-  if (uvar.help) 	/* help requested: we're done */
-    return 0;
 
   CHAR *VCSInfoString;
   if ( (VCSInfoString = XLALGetVersionString(0)) == NULL ) {
@@ -326,8 +317,6 @@ initUserVars (UserVariables_t *uvar)
 {
 
   /* set a few defaults */
-  uvar->help = FALSE;
-
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
@@ -365,15 +354,14 @@ initUserVars (UserVariables_t *uvar)
 
   /* register all our user-variables */
 
-  XLALregBOOLUserStruct(help,		'h', UVAR_HELP,		"Print this help/usage message");
-  XLALregLISTUserStruct(IFOs,		'I', UVAR_OPTIONAL, 	"CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
-  XLALregLISTUserStruct(sqrtSX,	 	 0,  UVAR_OPTIONAL, 	"[for F-metric weights] CSV list of detectors' noise-floors sqrt{Sn}");
-  XLALregRAJUserStruct(Alpha,		'a', UVAR_OPTIONAL,	"Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
-  XLALregDECJUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
-  XLALregREALUserStruct(Freq, 		'f', UVAR_OPTIONAL, 	"Target frequency");
-  XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"First spindown-value df/dt");
-  XLALregREALUserStruct(f2dot, 		 0 , UVAR_OPTIONAL, 	"Second spindown-value d2f/dt2");
-  XLALregREALUserStruct(f3dot, 		 0 , UVAR_OPTIONAL, 	"Third spindown-value d3f/dt3");
+  XLALRegisterUvarMember(IFOs,		STRINGVector, 'I', OPTIONAL, 	"CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
+  XLALRegisterUvarMember(sqrtSX,	 	 STRINGVector, 0,  OPTIONAL, 	"[for F-metric weights] CSV list of detectors' noise-floors sqrt{Sn}");
+  XLALRegisterUvarMember(Alpha,		RAJ, 'a', OPTIONAL,	"Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
+  XLALRegisterUvarMember(Delta, 		DECJ, 'd', OPTIONAL,	"Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
+  XLALRegisterUvarMember(Freq, 		REAL8, 'f', OPTIONAL, 	"Target frequency");
+  XLALRegisterUvarMember(f1dot, 		REAL8, 's', OPTIONAL, 	"First spindown-value df/dt");
+  XLALRegisterUvarMember(f2dot, 		 REAL8, 0 , OPTIONAL, 	"Second spindown-value d2f/dt2");
+  XLALRegisterUvarMember(f3dot, 		 REAL8, 0 , OPTIONAL, 	"Third spindown-value d3f/dt3");
 
   XLALRegisterUvarMember ( orbitasini,	REAL8, 0, OPTIONAL, 	"Target projected semimajor axis of binary orbit (Units: light seconds)");
   XLALRegisterUvarMember ( orbitPeriod,	REAL8, 0, OPTIONAL, 	"Target period of binary orbit (Units: s).");
@@ -381,31 +369,31 @@ initUserVars (UserVariables_t *uvar)
   XLALRegisterUvarMember ( orbitArgp,	REAL8, 0, OPTIONAL, 	"Target argument of periapse of binary orbit (Units: rad)");
   XLALRegisterUvarMember ( orbitEcc,	REAL8, 0, OPTIONAL, 	"Target eccentricity of binary orbit (Units: none)");
 
-  XLALregEPOCHUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"Reference epoch for phase-evolution parameters (format 'xx.yy[GPS|MJD]'). [0=startTime, default=mid-time]");
-  XLALregEPOCHUserStruct(startTime,      't', UVAR_OPTIONAL, 	"Start time of observation (format 'xx.yy[GPS|MJD]')");
+  XLALRegisterUvarMember(refTime,         EPOCH, 0,  OPTIONAL, 	"Reference epoch for phase-evolution parameters (format 'xx.yy[GPS|MJD]'). [0=startTime, default=mid-time]");
+  XLALRegisterUvarMember(startTime,      EPOCH, 't', OPTIONAL, 	"Start time of observation (format 'xx.yy[GPS|MJD]')");
 
-  XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Duration of observation in seconds");
-  XLALregINTUserStruct(Nseg,		'N', UVAR_OPTIONAL, 	"Compute semi-coherent metric for this number of segments within 'duration'" );
-  XLALregSTRINGUserStruct(segmentList,   0,  UVAR_OPTIONAL,     "ALTERNATIVE: specify segment file with format: repeated lines <startGPS endGPS duration[h] NumSFTs>");
-  XLALregSTRINGUserStruct( ephemEarth,   0,  UVAR_OPTIONAL,     "Earth ephemeris file to use");
-  XLALregSTRINGUserStruct( ephemSun,     0,  UVAR_OPTIONAL,     "Sun ephemeris file to use");
+  XLALRegisterUvarMember(duration,	REAL8, 'T', OPTIONAL,	"Duration of observation in seconds");
+  XLALRegisterUvarMember(Nseg,		INT4, 'N', OPTIONAL, 	"Compute semi-coherent metric for this number of segments within 'duration'" );
+  XLALRegisterUvarMember(segmentList,   STRING, 0,  OPTIONAL,     "ALTERNATIVE: specify segment file with format: repeated lines <startGPS endGPS duration[h] NumSFTs>");
+  XLALRegisterUvarMember( ephemEarth,   STRING, 0,  OPTIONAL,     "Earth ephemeris file to use");
+  XLALRegisterUvarMember( ephemSun,     STRING, 0,  OPTIONAL,     "Sun ephemeris file to use");
 
-  XLALregREALUserStruct(h0,	 	 0, UVAR_OPTIONAL,	"GW amplitude h0" );
-  XLALregREALUserStruct(cosi,	 	 0, UVAR_OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
-  XLALregREALUserStruct(psi,		 0, UVAR_OPTIONAL,	"Wave polarization-angle psi [0, pi]" );
-  XLALregREALUserStruct(phi0,		 0, UVAR_OPTIONAL,	"GW initial phase phi_0 [0, 2pi]" );
+  XLALRegisterUvarMember(h0,	 	 REAL8, 0, OPTIONAL,	"GW amplitude h0" );
+  XLALRegisterUvarMember(cosi,	 	 REAL8, 0, OPTIONAL,	"Pulsar orientation-angle cos(iota) [-1,1]" );
+  XLALRegisterUvarMember(psi,		 REAL8, 0, OPTIONAL,	"Wave polarization-angle psi [0, pi]" );
+  XLALRegisterUvarMember(phi0,		 REAL8, 0, OPTIONAL,	"GW initial phase phi_0 [0, 2pi]" );
 
-  XLALregINTUserStruct(metricType,	 0,  UVAR_OPTIONAL,	"type of metric to compute: 0=phase-metric, 1=F-metric(s), 2=both" );
-  XLALregSTRINGUserStruct(outputMetric,	'o', UVAR_OPTIONAL,	"Output the metric components (in octave format) into this file.");
-  XLALregINTUserStruct(projection,      0,  UVAR_OPTIONAL,     "Project onto subspace orthogonal to this axis: 0=none, 1=1st-coord, 2=2nd-coord etc");
+  XLALRegisterUvarMember(metricType,	 INT4, 0,  OPTIONAL,	"type of metric to compute: 0=phase-metric, 1=F-metric(s), 2=both" );
+  XLALRegisterUvarMember(outputMetric,	STRING, 'o', OPTIONAL,	"Output the metric components (in octave format) into this file.");
+  XLALRegisterUvarMember(projection,      INT4, 0,  OPTIONAL,     "Project onto subspace orthogonal to this axis: 0=none, 1=1st-coord, 2=2nd-coord etc");
 
-  XLALregLISTUserStruct(coords,		'c', UVAR_OPTIONAL, 	"Doppler-coordinates to compute metric in (see --coordsHelp)");
-  XLALregBOOLUserStruct(coordsHelp,      0,  UVAR_OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
+  XLALRegisterUvarMember(coords,		STRINGVector, 'c', OPTIONAL, 	"Doppler-coordinates to compute metric in (see --coordsHelp)");
+  XLALRegisterUvarMember(coordsHelp,      BOOLEAN, 0,  OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
 
-  XLALregSTRINGUserStruct(detMotionStr,  0,  UVAR_DEVELOPER,	"Detector-motion string: S|O|S+O where S=spin|spinz|spinxy and O=orbit|ptoleorbit");
-  XLALregBOOLUserStruct(approxPhase,     0,  UVAR_DEVELOPER,	"Use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders >= 1)");
+  XLALRegisterUvarMember(detMotionStr,  STRING, 0,  DEVELOPER,	"Detector-motion string: S|O|S+O where S=spin|spinz|spinxy and O=orbit|ptoleorbit");
+  XLALRegisterUvarMember(approxPhase,     BOOLEAN, 0,  DEVELOPER,	"Use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders >= 1)");
 
-  XLALregBOOLUserStruct(version,        'V', UVAR_SPECIAL,      "Output code version");
+  XLALRegisterUvarMember(version,        BOOLEAN, 'V', SPECIAL,      "Output code version");
 
   return XLAL_SUCCESS;
 

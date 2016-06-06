@@ -16,13 +16,16 @@ Makefile.in
 config.lt
 doxygen/autogen.dox
 doxygen/doxygen.cfg
+doxygen/doxygen_objdb_*.tmp
+doxygen/doxygen_sqlite3.db
 doxygen/filter
+doxygen/in/
 doxygen/out/
 doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
-lalinference-*.tar.gz
+lalinference-*.tar.xz
 lalinference-user-env.csh
 lalinference-user-env.sh
 lalinference-user-env.shell
@@ -68,6 +71,7 @@ test/LALInferenceGenerateROQTest
 test/LALInferenceInjectionTest
 test/LALInferenceKDTest
 test/LALInferenceLikelihoodTest
+test/LALInferenceMultiBandTest
 test/LALInferencePriorTest
 test/LALInferenceProposalTest
 test/LALInferenceTest

@@ -17,7 +17,7 @@
  */
 
 /** \author C.Messenger
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar_Xray
  * \file
  * \brief
  * This code is designed to search for intermittent signals in a time series
@@ -66,7 +66,6 @@
 /** A structure that stores user input variables
  */
 typedef struct {
-  BOOLEAN help;		            /**< trigger output of help string */
   CHAR *outLabel;                   /**< 'misc' entry in SFT-filenames or 'description' entry of frame filenames */
   CHAR *outputdir;                  /**< the output directory */
   CHAR *cachefile;                  /**< the name of the input cache file */
@@ -417,37 +416,35 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->verbose = 0;
 
   /* ---------- register all user-variables ---------- */
-  XLALregBOOLUserStruct(help, 		        'h', UVAR_HELP,     "Print this message");
-  XLALregSTRINGUserStruct(outLabel, 	        'n', UVAR_REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
-  XLALregSTRINGUserStruct(outputdir, 	        'o', UVAR_REQUIRED, "The output directory name");
-  XLALregSTRINGUserStruct(binfile, 	        'i', UVAR_REQUIRED, "The input binary file name");
-  XLALregSTRINGUserStruct(cachefile,            'e', UVAR_REQUIRED, "The input cache file name");
-  XLALregSTRINGUserStruct(tempdir, 	        'x', UVAR_OPTIONAL, "The temporary directory");
-  XLALregREALUserStruct(freq,                   'f', UVAR_REQUIRED, "The starting frequency (Hz)");
-  XLALregREALUserStruct(freqband,   	        'b', UVAR_REQUIRED, "The frequency band (Hz)");
-  XLALregINTUserStruct(Tmin,                    't', UVAR_OPTIONAL, "The min length of segemnts (sec)");
-  XLALregINTUserStruct(Tmax,                    'T', UVAR_OPTIONAL, "The max length of segments (sec)");
-  XLALregREALUserStruct(tsamp,           	's', UVAR_REQUIRED, "The sampling time (sec)");
-  XLALregREALUserStruct(highpassf,           	'H', UVAR_OPTIONAL, "The high pass filter frequency");
-  XLALregREALUserStruct(minorbperiod,          	'p', UVAR_REQUIRED, "The minimum orbital period (sec)");
-  XLALregREALUserStruct(maxorbperiod,          	'P', UVAR_REQUIRED, "The maximum orbital period (sec)");
-  XLALregREALUserStruct(minasini,          	'a', UVAR_REQUIRED, "The minimum projected orbital radius (sec)");
-  XLALregREALUserStruct(maxasini,          	'A', UVAR_REQUIRED, "The maximum projected orbital radius (sec)");
-  XLALregREALUserStruct(tasc,                   'c', UVAR_REQUIRED, "The best guess orbital time of ascension (rads)");
-  XLALregREALUserStruct(deltaorbphase,      	'C', UVAR_OPTIONAL, "The orbital phase uncertainty (cycles)");
-  XLALregREALUserStruct(mismatch,        	'm', UVAR_OPTIONAL, "The grid mismatch (0->1)");
-  XLALregREALUserStruct(thresh,         	'z', UVAR_OPTIONAL, "The threshold on Leahy power");
-  XLALregINTUserStruct(blocksize,               'B', UVAR_OPTIONAL, "The running median block size");
-  XLALregBOOLUserStruct(verbose,                   'v', UVAR_OPTIONAL, "Output status to standard out");
+  XLALRegisterUvarMember(outLabel, 	        STRING, 'n', REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
+  XLALRegisterUvarMember(outputdir, 	        STRING, 'o', REQUIRED, "The output directory name");
+  XLALRegisterUvarMember(binfile, 	        STRING, 'i', REQUIRED, "The input binary file name");
+  XLALRegisterUvarMember(cachefile,            STRING, 'e', REQUIRED, "The input cache file name");
+  XLALRegisterUvarMember(tempdir, 	        STRING, 'x', OPTIONAL, "The temporary directory");
+  XLALRegisterUvarMember(freq,                   REAL8, 'f', REQUIRED, "The starting frequency (Hz)");
+  XLALRegisterUvarMember(freqband,   	        REAL8, 'b', REQUIRED, "The frequency band (Hz)");
+  XLALRegisterUvarMember(Tmin,                    INT4, 't', OPTIONAL, "The min length of segemnts (sec)");
+  XLALRegisterUvarMember(Tmax,                    INT4, 'T', OPTIONAL, "The max length of segments (sec)");
+  XLALRegisterUvarMember(tsamp,           	REAL8, 's', REQUIRED, "The sampling time (sec)");
+  XLALRegisterUvarMember(highpassf,           	REAL8, 'H', OPTIONAL, "The high pass filter frequency");
+  XLALRegisterUvarMember(minorbperiod,          	REAL8, 'p', REQUIRED, "The minimum orbital period (sec)");
+  XLALRegisterUvarMember(maxorbperiod,          	REAL8, 'P', REQUIRED, "The maximum orbital period (sec)");
+  XLALRegisterUvarMember(minasini,          	REAL8, 'a', REQUIRED, "The minimum projected orbital radius (sec)");
+  XLALRegisterUvarMember(maxasini,          	REAL8, 'A', REQUIRED, "The maximum projected orbital radius (sec)");
+  XLALRegisterUvarMember(tasc,                   REAL8, 'c', REQUIRED, "The best guess orbital time of ascension (rads)");
+  XLALRegisterUvarMember(deltaorbphase,      	REAL8, 'C', OPTIONAL, "The orbital phase uncertainty (cycles)");
+  XLALRegisterUvarMember(mismatch,        	REAL8, 'm', OPTIONAL, "The grid mismatch (0->1)");
+  XLALRegisterUvarMember(thresh,         	REAL8, 'z', OPTIONAL, "The threshold on Leahy power");
+  XLALRegisterUvarMember(blocksize,               INT4, 'B', OPTIONAL, "The running median block size");
+  XLALRegisterUvarMember(verbose,                   BOOLEAN, 'v', OPTIONAL, "Output status to standard out");
 
   /* do ALL cmdline and cfgfile handling */
-  if (XLALUserVarReadAllInput(argc, argv)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",__func__,xlalErrno);
-    XLAL_ERROR(XLAL_EINVAL);
+  BOOLEAN should_exit = 0;
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",__func__,xlalErrno);
+    return XLAL_EFAULT;
   }
-
-  /* if help was requested, we're done here */
-  if (uvar->help) exit(0);
+  if (should_exit) exit(1);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;

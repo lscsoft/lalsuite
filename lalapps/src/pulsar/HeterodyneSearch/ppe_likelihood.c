@@ -203,9 +203,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
                         sumYL->data[count]*(creal(My)*creal(Ml) + cimag(My)*cimag(Ml)) +
                         sumBL->data[count]*(creal(Mb)*creal(Ml) + cimag(Mb)*cimag(Ml)));
 
-            sumDataModel += creal(sumDataP->data[count])*creal(Mp) + cimag(sumDataP->data[count])*cimag(Mp) +
-                            creal(sumDataC->data[count])*creal(Mc) + cimag(sumDataC->data[count])*cimag(Mc) +
-                            creal(sumDataX->data[count])*creal(Mx) + cimag(sumDataX->data[count])*cimag(Mx) +
+            sumDataModel += creal(sumDataX->data[count])*creal(Mx) + cimag(sumDataX->data[count])*cimag(Mx) +
                             creal(sumDataY->data[count])*creal(My) + cimag(sumDataY->data[count])*cimag(My) +
                             creal(sumDataB->data[count])*creal(Mb) + cimag(sumDataB->data[count])*cimag(Mb) +
                             creal(sumDataL->data[count])*creal(Ml) + cimag(sumDataL->data[count])*cimag(Ml);
@@ -411,45 +409,6 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
   /* check that parameters are within their prior ranges */
   if( !in_range( runState->priorArgs, params ) ) { return -DBL_MAX; }
 
-  /* if a k-d tree prior exists ONLY use that */
-  if( LALInferenceCheckVariable( runState->priorArgs, "kDTreePrior" ) &&
-      LALInferenceCheckVariable( runState->priorArgs, "kDTreePriorTemplate" ) ){
-    /* get tree */
-    LALInferenceKDTree *tree = *(LALInferenceKDTree **)LALInferenceGetVariable(runState->priorArgs, "kDTreePrior");
-
-    /* get parameter template */
-    LALInferenceVariables *template =*(LALInferenceVariables **)LALInferenceGetVariable(runState->priorArgs, "kDTreePriorTemplate");
-
-    /* number of points in a prior cell - i.e. controls how fine or coarse the prior looks (default to 8) */
-    UINT4 Ncell = 8;
-
-    if( LALInferenceCheckVariable( runState->priorArgs, "kDTreePriorNcell" ) ){
-      Ncell = *(UINT4 *)LALInferenceGetVariable( runState->priorArgs, "kDTreePriorNcell" );
-    }
-
-    if ( tree->npts == 0 ) {
-      XLALPrintError("%s: no points in prior k-d tree.\n", __func__ );
-      XLAL_ERROR_REAL8( XLAL_EFUNC );
-    }
-
-    REAL8 *pt = XLALCalloc(tree->dim, sizeof(REAL8));
-
-    /* Get the coordinates of the current point */
-    LALInferenceKDVariablesToREAL8(params, pt, template);
-
-    /* find cell of current point */
-    LALInferenceKDTree *currentCell = LALInferenceKDFindCell(tree, pt, Ncell);
-
-    /* get log probability of current point - taken from the function LALInferenceKDLogProposalRatio() in LALInference.c */
-    REAL8 logVolume = LALInferenceKDLogCellEigenVolume(currentCell);
-    REAL8 logCellFactor = log((REAL8)currentCell->npts / (REAL8)tree->npts);
-
-    /* probability is proportional to the inverse of the cell volume */
-    prior = -(logVolume + logCellFactor);
-
-    return prior;
-  }
-
   /* if some correlated priors exist allocate corVals */
   if ( corlist ) { corVals = XLALCreateREAL8Vector( corlist->length ); }
 
@@ -465,14 +424,13 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     if( item->vary == LALINFERENCE_PARAM_FIXED || item->vary == LALINFERENCE_PARAM_OUTPUT ){ continue; }
 
     if( item->vary == LALINFERENCE_PARAM_LINEAR || item->vary == LALINFERENCE_PARAM_CIRCULAR ){
-      /* Check for a gaussian (note that this is also set if using a correlation coefficient, so
-       * also check that is not being used) */
-      if ( LALInferenceCheckGaussianPrior(runState->priorArgs, item->name) && !LALInferenceCheckCorrelatedPrior(runState->priorArgs, item->name) ){
+      /* Check for a gaussian */
+      if ( LALInferenceCheckGaussianPrior(runState->priorArgs, item->name) ){
         REAL8 mu = 0., sigma = 0.;
         LALInferenceGetGaussianPrior(runState->priorArgs, item->name, &mu, &sigma);
 
         value = (*(REAL8 *)item->value);
-        prior -= 0.5*((*(REAL8 *)item->value - mu)*(*(REAL8 *)item->value - mu))/sigma;
+        prior -= 0.5*((*(REAL8 *)item->value - mu)*(*(REAL8 *)item->value - mu))/(sigma*sigma);
 
         if ( !strcmp(item->name, "I21") ){ I21 = value; }
         if ( !strcmp(item->name, "I31") ){ I31 = value; }
@@ -494,10 +452,20 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
           if ( !strcmp(item->name, "C22") ){ C22 = value; }
         }
       }
+      else if( LALInferenceCheckFermiDiracPrior(runState->priorArgs, item->name) ){
+        REAL8 r = 0., sigma = 0.;
+        LALInferenceGetFermiDiracPrior(runState->priorArgs, item->name, &sigma, &r);
+
+        value = (*(REAL8 *)item->value);
+        if ( value < 0. ) { return -DBL_MAX; } /* value must be positive */
+        prior += LALInferenceFermiDiracPrior(value, sigma, r);
+      }
       else if( LALInferenceCheckCorrelatedPrior(runState->priorArgs, item->name) && corlist ){
         /* set item in correct position given the order of the correlation matrix given by corlist */
         REAL8 mu = 0., sigma = 0.;
-        LALInferenceGetGaussianPrior(runState->priorArgs, item->name, &mu, &sigma);
+        gsl_matrix *cor = NULL, *invcor = NULL;
+        UINT4 idx = 0;
+        LALInferenceGetCorrelatedPrior(runState->priorArgs, item->name, &cor, &invcor, &mu, &sigma, &idx);
 
         for( cori = 0; cori < corlist->length; cori++ ){
           if( !strcmp(item->name, corlist->data[cori]) ){
@@ -508,8 +476,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         }
       }
       else{
-        XLALPrintError("Error... no prior specified!\n");
-        XLAL_ERROR_REAL8( XLAL_EFUNC );
+        XLAL_ERROR_REAL8( XLAL_EFUNC, "Error... no prior specified!" );
       }
     }
 
@@ -530,47 +497,20 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
   /* if there are values for which the priors are defined by a correlation
      coefficient matrix then get add the prior from that */
   if ( corlist ){
-    gsl_matrix *cor = NULL;
+    gsl_matrix *cor = NULL, *invcor = NULL;
     gsl_vector_view vals;
     gsl_vector *vm = gsl_vector_alloc( corVals->length );
+    REAL8 mu = 0., sigma = 0.;
     UINT4 idx = 0;
     REAL8 ptmp = 0;
 
-    if ( LALInferenceCheckVariable( runState->priorArgs, "matrix_inverse" ) ){
-      cor = *(gsl_matrix **)LALInferenceGetVariable( runState->priorArgs, "matrix_inverse" );
-    }
-    else{
-      LALInferenceGetCorrelatedPrior( runState->priorArgs, corlist->data[0], &cor, &idx );
-
-      /* check for positive definiteness */
-      if( !LALInferenceCheckPositiveDefinite( cor, cor->size1 ) ){
-        XLALPrintError("Error... matrix is not positive definite!\n");
-        XLAL_ERROR_REAL8( XLAL_EFUNC );
-      }
-
-      /* gsl_linalg_cholesky_invert is not supported in GSL versions < 1.9, so until this requirement is changed just
-       * use the LU decomposition method of calculating the matrix inverse. */
-      /* XLAL_CALLGSL( gsl_linalg_cholesky_decomp( cor ) );
-      XLAL_CALLGSL( gsl_linalg_cholesky_invert( cor ) );
-      */
-      gsl_permutation *p = gsl_permutation_alloc ( cor->size1 );
-      gsl_matrix *invcor = gsl_matrix_alloc( cor->size1, cor->size2 );
-      INT4 s;
-
-      XLAL_CALLGSL( gsl_linalg_LU_decomp( cor, p, &s ) );
-      XLAL_CALLGSL( gsl_linalg_LU_invert( cor, p, invcor ) );
-      XLAL_CALLGSL( gsl_matrix_memcpy( cor, invcor ) );
-      gsl_matrix_free( invcor );
-      gsl_permutation_free( p );
-
-      LALInferenceAddVariable( runState->priorArgs, "matrix_inverse", &cor, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED );
-    }
+    LALInferenceGetCorrelatedPrior( runState->priorArgs, corlist->data[0], &cor, &invcor, &mu, &sigma, &idx );
 
     /* get the log prior (this only works properly if the parameter values have been prescaled so as to be from a
-     * Gaussian of zero mean and unit variance, which happens on line 501) */
+     * Gaussian of zero mean and unit variance, which happens on line 473) */
     vals = gsl_vector_view_array( corVals->data, corVals->length );
 
-    XLAL_CALLGSL( gsl_blas_dgemv(CblasNoTrans, 1., cor, &vals.vector, 0., vm) );
+    XLAL_CALLGSL( gsl_blas_dgemv(CblasNoTrans, 1., invcor, &vals.vector, 0., vm) );
     XLAL_CALLGSL( gsl_blas_ddot(&vals.vector, vm, &ptmp) );
 
     /* divide by the 2 in the denominator of the Gaussian */
@@ -637,8 +577,7 @@ void ns_to_posterior( LALInferenceRunState *runState ){
   else { Npost = 1000; } /* default to 1000 */
 
   if ( Nsamp->length != Nlive->length ){
-    XLALPrintError("%s: Number of nested sample arrays not equal to number of live point for each array!", __func__);
-    XLAL_ERROR_VOID( XLAL_EBADLEN );
+    XLAL_ERROR_VOID( XLAL_EBADLEN, "Number of nested sample arrays not equal to number of live point for each array!" );
   }
 
   REAL8Vector *log_evs = XLALCreateREAL8Vector( Nsamp->length );
@@ -753,15 +692,12 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
 
   LALInferenceVariables *template = XLALCalloc(1,sizeof(LALInferenceVariables));
 
-  const CHAR *fn = __func__;
-
   /* get posterior samples to use as prior */
   if ( LALInferenceCheckVariable( runState->algorithmParams, "posteriorsamples" ) ){
     posterior = *(LALInferenceVariables ***)LALInferenceGetVariable( runState->algorithmParams, "posteriorsamples" );
   }
   else{
-    XLALPrintError("%s: No posterior samples set to use as prior.\n", fn);
-    XLAL_ERROR_VOID( XLAL_EFUNC );
+    XLAL_ERROR_VOID( XLAL_EFUNC, "No posterior samples set to use as prior." );
   }
 
   /* get the number of posterior samples */
@@ -769,8 +705,7 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
     nsamp = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams, "Nposterior" );
   }
   else{
-    XLALPrintError("%s: Number of posterior samples not set.\n", fn);
-    XLAL_ERROR_VOID( XLAL_EFUNC );
+    XLAL_ERROR_VOID( XLAL_EFUNC, "Number of posterior samples not set." );
   }
 
   /* get the upper and lower bounds for each variable parameter i.e. we won't be adding log likelihood, or log prior

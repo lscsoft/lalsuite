@@ -150,7 +150,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
      *   from the priors. OVERWRITE EVEN USER CHOICES.
      *   (necessary for complicated prior shapes where
      *   LALInferenceCyclicReflectiveBound() is not enough) */
-    #pragma omp parallel for private(thread)
+    //#pragma omp parallel for private(thread)
     for (t = 0; t < run_state->nthreads; t++) {
         LALInferenceVariables *priorDraw = XLALCalloc(1, sizeof(LALInferenceVariables));
 
@@ -203,6 +203,9 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
     LALInferenceInitCBCModel(run_state);
     return;
   }
+
+  ProcessParamsTable *commandLine=run_state->commandLine;
+
   LALInferenceThreadState *thread;
   INT4 t, nifo;
   INT4 randomseed;
@@ -218,6 +221,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
 
     /* Set up CBC model and parameter array */
     thread->model = LALInferenceInitCBCModel(run_state);
+    thread->model->roq_flag = 0;
 
     /* Allocate IFO likelihood holders */
     nifo = 0;
@@ -228,7 +232,14 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
     thread->currentIFOLikelihoods = XLALCalloc(nifo, sizeof(REAL8));
 
     /* Setup ROQ */
-    LALInferenceSetupROQ(run_state->data, thread->model, run_state->commandLine);
+    if (LALInferenceGetProcParamVal(commandLine, "--roqtime_steps")){
+
+        LALInferenceSetupROQmodel(thread->model, commandLine);
+        fprintf(stderr, "done LALInferenceSetupROQmodel\n");
+
+    }else{
+      thread->model->roq_flag=0;
+    }
 
     LALInferenceCopyVariables(thread->model->params, thread->currentParams);
     LALInferenceCopyVariables(run_state->proposalArgs, thread->proposalArgs);
@@ -250,7 +261,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
 /* Defaults to using LALSimulation */
 LALInferenceTemplateFunction LALInferenceInitCBCTemplate(LALInferenceRunState *runState)
 {
-  char help[]="(--template [LAL,PhenSpin,LALGenerateInspiral,LALSim]\tSpecify template (default LAL)\n";
+  char help[]="(--template [LAL,PhenSpin,LALGenerateInspiral,LALSim,multiband]\tSpecify template (default LAL)\n";
   ProcessParamsTable *ppt=NULL;
   ProcessParamsTable *commandLine=runState->commandLine;
   /* Print command line arguments if help requested */
@@ -267,22 +278,26 @@ LALInferenceTemplateFunction LALInferenceInitCBCTemplate(LALInferenceRunState *r
   if(ppt) {
     if(!strcmp("LALSim",ppt->value))
       templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
-    else
-      if(!strcmp("null",ppt->value))
+	else if(!strcmp("null",ppt->value))
         templt=&LALInferenceTemplateNullFreqdomain;
-      else {
+	else if(!strcmp("multiband",ppt->value)){
+        templt=&LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated;
+        fprintf(stdout,"Template function called is \"LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated\"\n");
+    }
+    else {
         XLALPrintError("Error: unknown template %s\n",ppt->value);
         XLALPrintError("%s", help);
         XLAL_ERROR_NULL(XLAL_EINVAL);
-      }
+    }
   }
   else if(LALInferenceGetProcParamVal(commandLine,"--LALSimulation")){
     fprintf(stderr,"Warning: --LALSimulation is deprecated, the LALSimulation package is now the default. To use LALInspiral specify:\n\
                     --template LALGenerateInspiral (for time-domain templates)\n\
                     --template LAL (for frequency-domain templates)\n");
   }
-  else if(LALInferenceGetProcParamVal(commandLine,"--roq")){
-  templt=&LALInferenceTemplateROQ;
+  else if(LALInferenceGetProcParamVal(commandLine,"--roqtime_steps")){
+  templt=&LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence;
+        fprintf(stderr, "template is \"LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence\"\n");
   }
   else {
     fprintf(stdout,"Template function called is \"LALInferenceTemplateXLALSimInspiralChooseWaveform\"\n");
@@ -441,6 +456,35 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       LALInferenceAddVariable(currentParams, freqVarName, &logfreqs, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
       LALInferenceAddVariable(currentParams, ampVarName, &amps, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_LINEAR);
       LALInferenceAddVariable(currentParams, phaseVarName, &phase, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_LINEAR);
+      
+      char amp_uncert_op[VARNAME_MAX];
+      char pha_uncert_op[VARNAME_MAX];
+      snprintf(amp_uncert_op, VARNAME_MAX, "--%s-spcal-amp-uncertainty", ifo->name);
+      snprintf(pha_uncert_op, VARNAME_MAX, "--%s-spcal-phase-uncertainty", ifo->name);
+      if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, amp_uncert_op))) {
+        ampUncertaintyPrior = atof(ppt->value);
+      }
+      else{
+        fprintf(stderr,"Error, missing --%s-spcal-amp-uncertainty\n",ifo->name);
+        exit(1);
+      }
+
+      if ((ppt = LALInferenceGetProcParamVal(runState->commandLine, pha_uncert_op))) {
+        phaseUncertaintyPrior = M_PI/180.0*atof(ppt->value); /* CL arg in degrees, variable in radians */
+      }
+      else{
+        fprintf(stderr,"Error, missing --%s-spcal-phase-uncertainty\n",ifo->name);
+        exit(1);
+      }
+
+      char amp_uncert[VARNAME_MAX];
+      char pha_uncert[VARNAME_MAX];
+      snprintf(amp_uncert, VARNAME_MAX, "%s_spcal_amp_uncertainty", ifo->name);
+      snprintf(pha_uncert, VARNAME_MAX, "%s_spcal_phase_uncertainty", ifo->name);
+      LALInferenceAddVariable(runState->priorArgs, amp_uncert, &ampUncertaintyPrior,
+            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->priorArgs, pha_uncert, &phaseUncertaintyPrior,
+            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
       char amp_uncert_op[VARNAME_MAX];
       char pha_uncert_op[VARNAME_MAX];
@@ -622,6 +666,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--use-tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
     (--spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
     (--tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
+    (--numreldata FileName)         Location of NR data file for NR waveforms (with NR_hdf5 approx).\n\
     (--modeldomain)                 domain the waveform template will be computed in (\"time\" or \"frequency\"). If not given will use LALSim to decide\n\
     (--spinAligned or --aligned-spin)  template will assume spins aligned with the orbital angular momentum.\n\
     (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
@@ -1215,6 +1260,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   XLALSimInspiralSetSpinOrder(model->waveFlags,  spinO);
   XLALSimInspiralSetTidalOrder(model->waveFlags, tideO);
   XLALSimInspiralSetFrameAxis(model->waveFlags,frameAxis);
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--numreldata"))) {
+    XLALSimInspiralSetNumrelData(model->waveFlags, ppt->value);
+    fprintf(stdout,"Template will use %s.\n",ppt->value);
+  }
+
 
 
   fprintf(stdout,"\n\n---\t\t ---\n");

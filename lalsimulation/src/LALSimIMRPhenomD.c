@@ -42,7 +42,7 @@ UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
  */
 
 static int IMRPhenomDGenerateFD(
-    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8 phi0,                  /**< phase at fRef */
     const REAL8 fRef,                  /**< reference frequency [Hz] */
     const REAL8 deltaF,                /**< frequency resolution */
@@ -99,9 +99,9 @@ static int IMRPhenomDGenerateFD(
  *  All input parameters should be in SI units. Angles should be in radians.
  */
 int XLALSimIMRPhenomDGenerateFD(
-    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8 phi0,                  /**< Orbital phase at fRef (rad) */
-    const REAL8 fRef_in,                  /**< reference frequency (Hz) */
+    const REAL8 fRef_in,               /**< reference frequency (Hz) */
     const REAL8 deltaF,                /**< Sampling frequency (Hz) */
     const REAL8 m1_SI,                 /**< Mass of companion 1 (kg) */
     const REAL8 m2_SI,                 /**< Mass of companion 2 (kg) */
@@ -179,7 +179,7 @@ int XLALSimIMRPhenomDGenerateFD(
 /* *********************************************************************************/
 
 static int IMRPhenomDGenerateFD(
-    COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+    COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8 phi0,                  /**< phase at fRef */
     const REAL8 fRef,                  /**< reference frequency [Hz] */
     const REAL8 deltaF,                /**< frequency resolution */
@@ -211,7 +211,7 @@ static int IMRPhenomDGenerateFD(
   XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initiate useful powers of pi.");
 
   const REAL8 M = m1 + m2;
-  REAL8 eta = m1 * m2 / (M * M);
+  const REAL8 eta = m1 * m2 / (M * M);
 
   if (eta > 0.25 || eta < 0.0)
     XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
@@ -219,7 +219,7 @@ static int IMRPhenomDGenerateFD(
   const REAL8 M_sec = M * LAL_MTSUN_SI;
 
   /* Compute the amplitude pre-factor */
-  REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
+  const REAL8 amp0 = 2. * sqrt(5. / (64.*LAL_PI)) * M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
 
   /* Coalesce at t=0 */
   // shift by overall length in time
@@ -241,7 +241,7 @@ static int IMRPhenomDGenerateFD(
   XLAL_CHECK ( (ind_max<=n) && (ind_min<=ind_max), XLAL_EDOM, "minimum freq index %zu and maximum freq index %zu do not fulfill 0<=ind_min<=ind_max<=htilde->data>length=%zu.", ind_min, ind_max, n);
 
   // Calculate phenomenological parameters
-  REAL8 finspin = FinalSpin0815(eta, chi1, chi2); //FinalSpin0815 - 0815 is like a version number
+  const REAL8 finspin = FinalSpin0815(eta, chi1, chi2); //FinalSpin0815 - 0815 is like a version number
 
   if (finspin < MIN_FINAL_SPIN)
           XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
@@ -275,48 +275,44 @@ static int IMRPhenomDGenerateFD(
 
   //time shift so that peak amplitude is approximately at t=0
   //For details see https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/WaveformsReview/IMRPhenomDCodeReview/timedomain
-  REAL8 t0 = DPhiMRD(pAmp->fmaxCalc, pPhi);
+  const REAL8 t0 = DPhiMRD(pAmp->fmaxCalc, pPhi);
 
   AmpInsPrefactors amp_prefactors;
   status = init_amp_ins_prefactors(&amp_prefactors, pAmp);
   XLAL_CHECK(XLAL_SUCCESS == status, status, "init_amp_ins_prefactors failed");
+
+  // incorporating fRef
+  const REAL8 MfRef = M_sec * fRef;
+  UsefulPowers powers_of_fRef;
+  status = init_useful_powers(&powers_of_fRef, MfRef);
+  XLAL_CHECK(XLAL_SUCCESS == status, status, "init_useful_powers failed for MfRef");
+  const REAL8 phifRef = IMRPhenDPhase(MfRef, pPhi, pn, &powers_of_fRef, &phi_prefactors);
+
+  // factor of 2 b/c phi0 is orbital phase
+  const REAL8 phi_precalc = 2.*phi0 + phifRef;
 
   int status_in_for = XLAL_SUCCESS;
   /* Now generate the waveform */
   #pragma omp parallel for
   for (size_t i = ind_min; i < ind_max; i++)
   {
-	REAL8 Mf = M_sec * i * deltaF; // geometric frequency
+    REAL8 Mf = M_sec * i * deltaF; // geometric frequency
 
-	UsefulPowers powers_of_f;
-	status_in_for = init_useful_powers(&powers_of_f, Mf);
-	if (XLAL_SUCCESS != status_in_for)
-	{
-		XLALPrintError("init_useful_powers failed for Mf, status_in_for=%d", status_in_for);
-		status = status_in_for;
-	}
-	else
-	{
-		 REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &powers_of_f, &amp_prefactors);
-		 REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn, &powers_of_f, &phi_prefactors);
+    UsefulPowers powers_of_f;
+    status_in_for = init_useful_powers(&powers_of_f, Mf);
+    if (XLAL_SUCCESS != status_in_for)
+    {
+      XLALPrintError("init_useful_powers failed for Mf, status_in_for=%d", status_in_for);
+      status = status_in_for;
+    }
+    else
+    {
+      REAL8 amp = IMRPhenDAmplitude(Mf, pAmp, &powers_of_f, &amp_prefactors);
+      REAL8 phi = IMRPhenDPhase(Mf, pPhi, pn, &powers_of_f, &phi_prefactors);
 
-		 // incorporating fRef
-		 REAL8 MfRef = M_sec * fRef;
-		 UsefulPowers powers_of_fRef;
-		 status_in_for = init_useful_powers(&powers_of_fRef, MfRef);
-		 if (XLAL_SUCCESS != status_in_for)
-		 {
-			 XLALPrintError("init_useful_powers failed for MfRef, status_in_for=%d", status_in_for);
-			 status = status_in_for;
-		 }
-		 else
-		 {
-			 REAL8 phifRef = IMRPhenDPhase(MfRef, pPhi, pn, &powers_of_fRef, &phi_prefactors);
-			 phi -= 2.*phi0 + t0*(Mf-MfRef) + phifRef; // factor of 2 b/c phi0 is orbital phase
-
-			 ((*htilde)->data->data)[i] = amp0 * amp * cexp(-I * phi);
-		 }
-	}
+      phi -= t0*(Mf-MfRef) + phi_precalc;
+      ((*htilde)->data->data)[i] = amp0 * amp * cexp(-I * phi);
+    }
   }
 
   LALFree(pAmp);

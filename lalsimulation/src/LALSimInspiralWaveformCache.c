@@ -484,16 +484,20 @@ int XLALSimInspiralChooseFDWaveformFromCache(
     COMPLEX16 exp_dphi;
     CacheVariableDiffersBitmask changedParams;
 
-    // Specifying the sequence of frequencies only works with TaylorF2 (for now).
-    if ( frequencies != NULL && approximant != TaylorF2 )
-        return XLAL_EINVAL;
 
     // If nonGRparams are not NULL, don't even try to cache.
-    if ( nonGRparams != NULL || (!cache) )
-        return XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef, deltaF,
+    if ( nonGRparams != NULL || (!cache) ){
+        if (frequencies != NULL)
+            return XLALSimInspiralChooseFDWaveformSequence(hptilde, hctilde, phiRef,
+                                                           m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_ref,
+                                                           r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO,
+                                                           phaseO, approximant,frequencies);
+        else
+            return XLALSimInspiralChooseFDWaveform(hptilde, hctilde, phiRef, deltaF,
                 m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_max, f_ref, r, i,
                 lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, phaseO,
                 approximant);
+    }
 
     // Check which parameters have changed
     changedParams = CacheArgsDifferenceBitmask(cache, phiRef, deltaF,
@@ -812,6 +816,12 @@ static int StoreTDHCache(LALSimInspiralWaveformCache *cache,
     // NB: XLALCut... creates a new Series object and copies data and metadata
     XLALDestroyREAL8TimeSeries(cache->hplus);
     XLALDestroyREAL8TimeSeries(cache->hcross);
+    if (hplus == NULL || hcross == NULL || hplus->data == NULL || hcross->data == NULL){
+        XLALPrintError("We have null pointers for h+, hx in StoreTDHCache \n");
+        XLALPrintError("Houston-S, we've got a problem SOS, SOS, SOS, the waveform generator returns NULL!!!... m1 = %.18e, m2 = %.18e, fMin = %.18e, spin1 = {%.18e, %.18e, %.18e},   spin2 = {%.18e, %.18e, %.18e} \n", 
+                   m1, m2, (double)f_min, S1x, S1y, S1z, S2x, S2y, S2z);
+        return XLAL_ENOMEM;
+    }
     cache->hplus = XLALCutREAL8TimeSeries(hplus, 0, hplus->data->length);
     if (cache->hplus == NULL) return XLAL_ENOMEM;
     cache->hcross = XLALCutREAL8TimeSeries(hcross, 0, hcross->data->length);

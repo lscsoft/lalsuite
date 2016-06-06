@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LAL],[6.15.2.1],[lal-discuss@ligo.org])
+AC_INIT([LAL],[6.16.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALConfig.h])
 AC_CONFIG_SRCDIR([src/std/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -51,7 +51,16 @@ AC_CONFIG_FILES([ \
   test/vectorops/Makefile \
   test/window/Makefile \
 ])
-AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
+AM_INIT_AUTOMAKE([ \
+  1.11 \
+  foreign \
+  subdir-objects \
+  color-tests \
+  parallel-tests \
+  tar-ustar \
+  dist-xz \
+  no-dist-gzip \
+])
 
 AC_CANONICAL_HOST
 
@@ -72,8 +81,8 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[11])
-AC_SUBST([LIBREVISION],[2])
+AC_SUBST([LIBCURRENT],[12])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -91,7 +100,7 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT_SUPPORT],[7])
+AC_SUBST([LIBCURRENT_SUPPORT],[8])
 AC_SUBST([LIBREVISION_SUPPORT],[0])
 AC_SUBST([LIBAGE_SUPPORT],[0])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
@@ -300,6 +309,21 @@ AC_HEADER_TIME
 
 # checks for library functions
 AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace clock_gettime])
+
+# check for pager programs
+LALSUITE_CHECK_PAGER
+
+# check for functions used to determine terminal size
+AC_CHECK_HEADERS([sys/ioctl.h])
+m4_pushdef([includes],[AC_INCLUDES_DEFAULT
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+])
+AC_CHECK_FUNCS([isatty fileno ioctl],,,includes)
+AC_CHECK_DECLS([TIOCGWINSZ],,,includes)
+AC_CHECK_MEMBERS([struct winsize.ws_col],,,includes)
+m4_popdef([includes])
 
 # set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])

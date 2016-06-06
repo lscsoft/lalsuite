@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2016 Karl Wette
  * Copyright (C) 2015 Reinhard Prix
  * Copyright (C) 2010 Reinhard Prix (xlalified)
  * Copyright (C) 2004, 2005, 2015 Reinhard Prix
@@ -20,6 +21,17 @@
  */
 
 // ---------- local includes ----------
+#include <config.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <limits.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+
 #include <lal/LALStdio.h>
 #include <lal/LALgetopt.h>
 #include <lal/LogPrintf.h>
@@ -41,9 +53,14 @@
 
 // ----- macro template for defining registration functions for UserInput variables
 #define DEFN_REGISTER_UVAR(UTYPE,CTYPE)                     \
-DECL_REGISTER_UVAR(UTYPE,CTYPE)                             \
-{                                                                       \
-  return XLALRegisterUserVar (name, UVAR_TYPE_ ## UTYPE, optchar, category, helpstr, cvar); \
+int XLALRegister ##UTYPE## UserVar ( CTYPE *cvar, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) \
+{                                                           \
+  char helpstr[2048];                                       \
+  va_list ap;                                               \
+  va_start(ap, fmt);                                        \
+  vsnprintf(helpstr, sizeof(helpstr), fmt, ap);             \
+  va_end(ap);                                               \
+  return XLALRegisterUserVar (cvar, name, UVAR_TYPE_ ## UTYPE, optchar, category, helpstr); \
 }
 
 // ---------- local type definitions ----------
@@ -53,13 +70,19 @@ typedef enum {
   UVAR_TYPE_START=0, 		// internal start marker for range checking
 
   UVAR_TYPE_BOOLEAN, 		// boolean
-  UVAR_TYPE_INT4,    		// integer
-  UVAR_TYPE_REAL8,   		// float
+  UVAR_TYPE_INT4,    		// 4-byte integer
+  UVAR_TYPE_INT8,    		// 8-byte integer
+  UVAR_TYPE_REAL8,   		// 8-byte float
   UVAR_TYPE_EPOCH,   		// time 'epoch', specified in either GPS or MJD(TT) format, translated into GPS
   UVAR_TYPE_RAJ,     		// sky equatorial longitude (aka right-ascencion or RA), in either radians or hours:minutes:seconds format, translated into radians
   UVAR_TYPE_DECJ,    		// sky equatorial latitude (aka declination or DEC), in either radians or degrees:minutes:seconds format, translated into radians
-
   UVAR_TYPE_STRING, 		// normal string
+
+  UVAR_TYPE_REAL8Range,		// range of REAL8 values
+  UVAR_TYPE_EPOCHRange,		// range of LIGOTimeGPS values
+  UVAR_TYPE_RAJRange,		// range of RAJ values
+  UVAR_TYPE_DECJRange,		// range of DECJ values
+
   UVAR_TYPE_STRINGVector,	// list of comma-separated strings
   UVAR_TYPE_REAL8Vector,	// list of comma-separated REAL8's
   UVAR_TYPE_INT4Vector,		// list of comma-separated INT4's
@@ -71,28 +94,38 @@ typedef enum {
 // Linked list to hold the complete information about the user-variables.
 //
 typedef struct tagLALUserVariable {
-  const CHAR *name;			// full name
+  CHAR name[64];			// full name
   UserVarType type;			// variable type: BOOLEAN, INT4, REAL8, ...
   CHAR optchar;				// cmd-line character
-  const CHAR *help;			// help-string
+  CHAR help[2048];			// help-string
   void *varp;				// pointer to the actual C-variable
   UserVarCategory category;		// category (optional, required, developer, ... )
-  BOOLEAN was_set;			// was this set by the user in any way? (ie vie cmdline or cfg-file)
+  BOOLEAN was_set;			// was this set by the user: 0=no, 1=via cfg-file, 2=via cmdline
   struct tagLALUserVariable *next; 	// linked list
 } LALUserVariable;
 
 // ---------- local prototypes ----------
-int XLALRegisterUserVar (const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *helpstr, void *cvar);
-void check_and_mark_as_set ( LALUserVariable *varp );
+int XLALRegisterUserVar (void *cvar, const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *help);
+int XLALUserVarPrintUsage ( FILE *file );
+int XLALUserVarPrintHelp ( FILE *file );
+static void format_user_var_names( char *s );
+static void fprint_wrapped( FILE *f, int line_width, const char *prefix, char *text );
 
 // ----- define templated registration functions for all supported UVAR_TYPE_ 'UTYPES'
 DEFN_REGISTER_UVAR(BOOLEAN,BOOLEAN);
 DEFN_REGISTER_UVAR(INT4,INT4);
+DEFN_REGISTER_UVAR(INT8,INT8);
 DEFN_REGISTER_UVAR(REAL8,REAL8);
 DEFN_REGISTER_UVAR(RAJ,REAL8);
 DEFN_REGISTER_UVAR(DECJ,REAL8);
 DEFN_REGISTER_UVAR(EPOCH,LIGOTimeGPS);
 DEFN_REGISTER_UVAR(STRING,CHAR*);
+
+DEFN_REGISTER_UVAR(REAL8Range,REAL8Range);
+DEFN_REGISTER_UVAR(EPOCHRange,LIGOTimeGPSRange);
+DEFN_REGISTER_UVAR(RAJRange,REAL8Range);
+DEFN_REGISTER_UVAR(DECJRange,REAL8Range);
+
 DEFN_REGISTER_UVAR(STRINGVector,LALStringVector*);
 DEFN_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
 DEFN_REGISTER_UVAR(INT4Vector,INT4Vector*);
@@ -103,8 +136,14 @@ typedef void (*destructorT)(void*);
 typedef char *(*printerT)(const void*);
 
 // ----- handy macro to simplify adding 'regular' entries for new UTYPES into UserVarTypeMap
-#define REGULAR_MAP_ENTRY(UTYPE,DESTRUCTOR)                             \
-  [UVAR_TYPE_##UTYPE] = { #UTYPE, (parserT)XLALParseStringValueAs##UTYPE,	(printerT)XLALPrintStringValueOf##UTYPE, (destructorT)DESTRUCTOR }
+#define REGULAR_MAP_ENTRY(UTYPE,DESTRUCTOR,FORMATHELP) \
+  [UVAR_TYPE_##UTYPE] = { \
+    .name = #UTYPE, \
+    .format_help = FORMATHELP, \
+    .parser = (parserT)XLALParseStringValueAs##UTYPE, \
+    .printer = (printerT)XLALPrintStringValueOf##UTYPE, \
+    .destructor = (destructorT)DESTRUCTOR \
+  }
 
 // ---------- HOWTO add new UserInput variable types ----------
 // In order to add a new type \<UTYPE\> to be handled by the UserInput module, you just need to
@@ -123,6 +162,7 @@ typedef char *(*printerT)(const void*);
 static const struct
 {
   const char *const name;			///< type name
+  const char *const format_help;		///< help string describing format of user variable
   int (*parser)(void*, const char*);		///< parser function to parse string as this type
   char *(*printer)(const void *);		///< 'printer' function returning string value for given type
   void (*destructor)(void*);			///< destructor for this variable type, NULL if none required
@@ -132,22 +172,36 @@ static const struct
   // [UVAR_TYPE_\<UTYPE\>] = { "\<UTYPE\>",	(parserT)XLALParseStringValueAs\<UTYPE\>, (printerT)XLALPrintStringValueOf\<UTYPE\>, (destructorT)XLALDestroy\<UTYPE\> },
   // or the convenience macro for cases using 'standard' function names and API
   // REGULAR_MAP_ENTRY ( \<UTYPE\>, XLALDestroy\<UTYPE\> ),
-  REGULAR_MAP_ENTRY ( BOOLEAN, NULL ),
-  REGULAR_MAP_ENTRY ( INT4, NULL ),
-  REGULAR_MAP_ENTRY ( REAL8, NULL ),
-  REGULAR_MAP_ENTRY ( STRING, XLALFree ),
-  REGULAR_MAP_ENTRY ( STRINGVector, XLALDestroyStringVector ),
-  REGULAR_MAP_ENTRY ( EPOCH, NULL ),
-  REGULAR_MAP_ENTRY ( RAJ, NULL ),
-  REGULAR_MAP_ENTRY ( DECJ, NULL ),
-  REGULAR_MAP_ENTRY ( REAL8Vector, XLALDestroyREAL8Vector ),
-  REGULAR_MAP_ENTRY ( INT4Vector, XLALDestroyINT4Vector )
+  REGULAR_MAP_ENTRY ( BOOLEAN, NULL, "[TRUE|FALSE | YES|NO | 1|0]" ),
+  REGULAR_MAP_ENTRY ( INT4, NULL, "<4-byte integer>" ),
+  REGULAR_MAP_ENTRY ( INT8, NULL, "<8-byte integer>" ),
+  REGULAR_MAP_ENTRY ( REAL8, NULL, "<8-byte real>" ),
+  REGULAR_MAP_ENTRY ( STRING, XLALFree, "<string>" ),
+  REGULAR_MAP_ENTRY ( EPOCH, NULL, "<seconds>[.<nano-seconds>][GPS|MJD]" ),
+  REGULAR_MAP_ENTRY ( RAJ, NULL, "<radians>|<hours>:<minutes>:<seconds>" ),
+  REGULAR_MAP_ENTRY ( DECJ, NULL, "<radians>|<degrees>:<minutes>:<seconds>" ),
+
+  REGULAR_MAP_ENTRY ( REAL8Range, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<8-byte real>" ),
+  REGULAR_MAP_ENTRY ( EPOCHRange, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<seconds>[.<nano-seconds>][GPS|MJD]" ),
+  REGULAR_MAP_ENTRY ( RAJRange, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<hours>:<minutes>:<seconds>" ),
+  REGULAR_MAP_ENTRY ( DECJRange, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<degrees>:<minutes>:<seconds>" ),
+
+  REGULAR_MAP_ENTRY ( STRINGVector, XLALDestroyStringVector, "<string>,..." ),
+  REGULAR_MAP_ENTRY ( REAL8Vector, XLALDestroyREAL8Vector, "<8-byte real>,..." ),
+  REGULAR_MAP_ENTRY ( INT4Vector, XLALDestroyINT4Vector, "<4-byte integer>,..." )
 };
 
 
 // ---------- The module-local linked list to hold the user-variables
 static LALUserVariable UVAR_vars;	// empty head
-static const CHAR *program_name;	// keep a pointer to the program name
+static CHAR *program_path = NULL;	// keep a pointer to the program path
+static CHAR *program_name = NULL;	// keep a pointer to the program name
+
+
+/**
+ * An optional brief description of the program printed as part of the help page.
+ */
+const char *lalUserVarHelpBrief = NULL;
 
 
 // ==================== Function definitions ====================
@@ -164,17 +218,24 @@ static const CHAR *program_name;	// keep a pointer to the program name
  * ==> use the type-safe macro XLALRegisterUvarMember(name,type,option,category,help) instead!
  */
 int
-XLALRegisterUserVar ( const CHAR *name,		/**< name of user-variable to register */
+XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variabe to link to this user-variable */
+                      const CHAR *name,		/**< name of user-variable to register */
                       UserVarType type,		/**< variable type (int,bool,string,real) */
                       CHAR optchar,		/**< optional short-option character */
-                      UserVarCategory category,		/**< sets category to this */
-                      const CHAR *helpstr,	/**< help-string explaining this input-variable */
-                      void *cvar		/**< pointer to the actual C-variabe to link to this user-variable */
+                      UserVarCategory category,	/**< sets category to this */
+                      const CHAR *help		/**< help-string explaining this input-variable */
                       )
 {
-  XLAL_CHECK ( name != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( (category > UVAR_CATEGORY_START) && (category < UVAR_CATEGORY_END), XLAL_EINVAL );
   XLAL_CHECK ( cvar != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( name != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( strlen(name) < sizeof(UVAR_vars.name), XLAL_EINVAL, "User-variable name '%s' is too long", name );
+  XLAL_CHECK ( (category > UVAR_CATEGORY_START) && (category < UVAR_CATEGORY_END), XLAL_EINVAL );
+  XLAL_CHECK ( help != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( strlen(help) < sizeof(UVAR_vars.help), XLAL_EINVAL, "User-variable help '%s' is too long", help );
+
+  // check that neither short- nor long-option are used by help
+  XLAL_CHECK ( strcmp ( name, "help" ) != 0, XLAL_EINVAL, "Long-option name '--%s' is reserved for help!\n", name );
+  XLAL_CHECK ( optchar != 'h', XLAL_EINVAL, "Short-option '-%c' is reserved for help!\n", optchar );
 
   // find end of uvar-list && check that neither short- nor long-option are taken already
   LALUserVariable *ptr = &UVAR_vars;
@@ -183,22 +244,29 @@ XLALRegisterUserVar ( const CHAR *name,		/**< name of user-variable to register 
       ptr = ptr->next;
 
       // long-option name taken already?
-      XLAL_CHECK ( (name == NULL) || (ptr->name == NULL) || (strcmp ( name, ptr->name ) != 0), XLAL_EINVAL, "Long-option name '--%s' already taken!\n", name );
+      XLAL_CHECK ( strcmp ( name, ptr->name ) != 0, XLAL_EINVAL, "Long-option name '--%s' already taken!\n", name );
       // short-option character taken already?
-      XLAL_CHECK ( (optchar == 0) || (ptr->optchar == 0) || (optchar != ptr->optchar), XLAL_EINVAL, "Short-option '-%c' already taken (by '--%s')!\n", ptr->optchar, ptr->name );
+      XLAL_CHECK ( (optchar == 0) || (ptr->optchar == 0) || (optchar != ptr->optchar), XLAL_EINVAL, "Short-option '-%c' already taken (by '--%s')!\n", optchar, ptr->name );
 
     } // while ptr->next
 
   // append new entry at the end
   XLAL_CHECK ( (ptr->next = XLALCalloc (1, sizeof(LALUserVariable))) != NULL, XLAL_ENOMEM );
 
-  // set pointer to newly created entry and fill in values
+  // set pointer to newly created entry
   ptr = ptr->next;
 
-  ptr->name 	= name;
+  // copy entry name, replacing '_' with '-' so that
+  // e.g. uvar->a_long_option maps to --a-long-option
+  XLALStringReplaceChar( strncpy( ptr->name, name, sizeof(ptr->name) - 1 ), '_', '-' );
+
+  // copy entry help string
+  strncpy( ptr->help, help, sizeof(ptr->help) - 1 );
+  format_user_var_names( ptr->help );
+
+  // fill in entry values
   ptr->type 	= type;
   ptr->optchar 	= optchar;
-  ptr->help 	= helpstr;
   ptr->varp 	= cvar;
   ptr->category = category;
 
@@ -250,12 +318,18 @@ XLALDestroyUserVars ( void )
 
 /**
  * Parse command-line into UserVariable array
+ *
+ * If \p *should_exit is TRUE when this function returns, the
+ * caller should exit immediately.
  */
 int
-XLALUserVarReadCmdline ( int argc, char *argv[] )
+XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[] )
 {
+  XLAL_CHECK ( should_exit != NULL, XLAL_EFAULT );
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Input error, NULL argv[] pointer passed.\n" );
   XLAL_CHECK ( UVAR_vars.next != NULL, XLAL_EINVAL, "Internal error, no UVAR memory allocated. Did you register any user-variables?" );
+
+  *should_exit = 0;
 
   LALUserVariable *ptr;
   UINT4 pos;
@@ -285,9 +359,6 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
   pos = 0;
   while ( (ptr= ptr->next) != NULL)
     {
-      if (ptr->name == NULL) {		/* if no long-option given, ignore */
-	continue;
-      }
       long_options[pos].name 	= ptr->name;
       long_options[pos].has_arg = (ptr->type == UVAR_TYPE_BOOLEAN) ? optional_argument : required_argument;
       long_options[pos].flag = NULL;	// get val returned from LALgetopt_long()
@@ -312,11 +383,24 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
   LALoptind = 0; 	// reset our local LALgetopt(), LALgetopt_long()
 
   // ---------- parse the command-line
-  int longindex = -1;
-  INT4 c;
-  while ( (c = LALgetopt_long(argc, argv, optstring, long_options, &longindex)) != -1 )
+  while ( 1 )
     {
-      XLAL_CHECK (c != '?', XLAL_EINVAL, "Unkown command-line option encountered, see '%s --help' for usage-help\n\n", argv[0] );
+
+      // call LALgetopt_long()
+      char *old_argv0 = argv[0];
+      argv[0] = program_name;   // use program_name for LALgetopt_long() error messages
+      int longindex = -1;
+      int c = LALgetopt_long(argc, argv, optstring, long_options, &longindex);
+      argv[0] = old_argv0;
+      if ( c == -1 ) {   // LALgetopt_long() is done
+        break;
+      }
+      if ( c == '?' || c == ':' ) {   // LALgetopt_long() returned an error
+        XLALUserVarPrintUsage( stderr );
+        *should_exit = 1;
+        return XLAL_SUCCESS;
+      }
+
       if (c != 0) 	// find short-option character
 	{
 	  ptr = &UVAR_vars;
@@ -354,7 +438,12 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
 	  if ( LALoptarg == NULL ) { // if no argument given, defaults to TRUE
             *(BOOLEAN*)(ptr->varp) = TRUE;
           } else {
-            XLAL_CHECK ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+            if ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, LALoptarg ) != XLAL_SUCCESS )
+              {
+                XLALPrintError( "\n%s: could not parse value given to option " UVAR_FMT "\n\n", program_name, ptr->name );
+                *should_exit = 1;
+                return XLAL_SUCCESS;
+              }
           }
 	  break;
 
@@ -365,12 +454,27 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
               UserVarTypeMap [ ptr->type ].destructor( *(char**)ptr->varp );
               *(char**)ptr->varp = NULL;
             } // if a destructor was registered
-          XLAL_CHECK ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, LALoptarg ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, LALoptarg ) != XLAL_SUCCESS )
+            {
+              XLALPrintError( "\n%s: could not parse value given to option " UVAR_FMT "\n\n", program_name, ptr->name );
+              *should_exit = 1;
+              return XLAL_SUCCESS;
+            }
 	  break;
 
 	} // switch ptr->type
 
-      check_and_mark_as_set ( ptr );
+      switch ( ptr->was_set ) {
+      case 0:    // this variable has not been set; mark as set on command line
+        ptr->was_set = 2;
+        break;
+      case 1:    // this variable has been set in configuration file; print warning
+        XLALPrintError ( "\n%s: option " UVAR_FMT " is overriding value set in configuration file!\n\n", program_name, ptr->name );
+        break;
+      default:   // this variable has been set before; error
+        XLALUserVarCheck( should_exit, 0, "option " UVAR_FMT " was set more than once!", ptr->name );
+        return XLAL_SUCCESS;
+      }
 
     } // while LALgetopt_long()
 
@@ -386,7 +490,8 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
         XLALPrintError ("%s ", argv[LALoptind++]);
       }
       XLALPrintError(" ]\n");
-      XLAL_ERROR ( XLAL_EINVAL );
+      *should_exit = 1;
+      return XLAL_SUCCESS;
     } // trailing non-option arguments found
 
   XLALFree (long_options);
@@ -401,12 +506,18 @@ XLALUserVarReadCmdline ( int argc, char *argv[] )
  * Read config-variables from cfgfile and parse into input-structure.
  * An error is reported if the config-file reading fails, but the
  * individual variable-reads are treated as optional
+ *
+ * If \p *should_exit is TRUE when this function returns, the
+ * caller should exit immediately.
  */
 int
-XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file */
+XLALUserVarReadCfgfile ( BOOLEAN *should_exit, const CHAR *cfgfile )
 {
+  XLAL_CHECK ( should_exit != NULL, XLAL_EFAULT );
   XLAL_CHECK ( cfgfile != NULL, XLAL_EINVAL );
   XLAL_CHECK ( UVAR_vars.next != NULL, XLAL_EINVAL, "No memory allocated in UVAR_vars.next, did you register any user-variables?\n" );
+
+  *should_exit = 0;
 
   LALParsedDataFile *cfg = NULL;
   XLAL_CHECK ( XLALParseDataFile ( &cfg, cfgfile ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -415,9 +526,6 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
   LALUserVariable *ptr = &UVAR_vars;
   while ( (ptr=ptr->next) != NULL)
     {
-      if (ptr->name == NULL) {	// ignore name-less user-variable
-	continue;
-      }
 
       XLAL_CHECK ( (ptr->type > UVAR_TYPE_START) && (ptr->type < UVAR_TYPE_END), XLAL_EFAILED, "Invalid UVAR_TYPE '%d' outside of [%d,%d]\n", ptr->type, UVAR_TYPE_START+1, UVAR_TYPE_END-1 );
 
@@ -432,9 +540,23 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
               UserVarTypeMap [ ptr->type ].destructor( *(char**)ptr->varp );
               *(char**)ptr->varp = NULL;
             } // if a destructor was registered
-          XLAL_CHECK ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, valString ) != XLAL_SUCCESS )
+            {
+              XLALPrintError( "\n%s: could not parse value given to option " UVAR_FMT "\n\n", program_name, ptr->name );
+              *should_exit = 1;
+              return XLAL_SUCCESS;
+            }
           XLALFree (valString);
-          check_and_mark_as_set ( ptr );
+
+          switch ( ptr->was_set ) {
+          case 0:    // this variable has not been set; mark as set in configuration file
+            ptr->was_set = 1;
+            break;
+          default:   // this variable has been set before; error
+            XLALUserVarCheck( should_exit, 0, "configuration option `%s' was set more than once!", ptr->name );
+            return XLAL_SUCCESS;
+          }
+
         } // if wasRead
 
     } // while ptr->next
@@ -458,190 +580,306 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
 } // XLALUserVarReadCfgfile()
 
 /**
- * Assemble all help-info from uvars into a help-string.
+ * Print a one-line usage string
  */
-CHAR *
-XLALUserVarHelpString ( const CHAR *progname )
+int
+XLALUserVarPrintUsage ( FILE *file )
 {
-  XLAL_CHECK_NULL ( progname != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?\n" );
 
-  BOOLEAN showDeveloperOptions  = (lalDebugLevel >= LALWARNING);	// only output for lalDebugLevel >= warning
-  BOOLEAN showDeprecatedOptions  = (lalDebugLevel >= LALINFO);		// only output for lalDebugLevel >= info
+  XLAL_CHECK ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?" );
 
-  // ---------- ZEROTH PASS: find longest long-option and type names, for proper output formatting
-  LALUserVariable *ptr = &UVAR_vars;
-  UINT4 nameFieldLen = 0;
-  UINT4 typeFieldLen = 0;
-  BOOLEAN haveDeveloperOptions = 0;
-  BOOLEAN haveDeprecatedOptions = 0;
-
-  while ( (ptr=ptr->next) != NULL )
+  /* Print usage: only required and regular arguments are printed */
+  fprintf( file, "\nUsage: %s [-h|--help] [@<config-file>]", program_name );
+  for ( LALUserVariable *ptr = &UVAR_vars; (ptr=ptr->next) != NULL; )
     {
-      if (ptr->category == UVAR_CATEGORY_DEVELOPER) {
-        haveDeveloperOptions = 1;
-      }
-      if ( ptr->category == UVAR_CATEGORY_DEPRECATED ) {
-        haveDeprecatedOptions = 1;
-      }
-      if ( (ptr->category == UVAR_CATEGORY_DEVELOPER) && !showDeveloperOptions ) {
-	continue;	// skip developer options if not requested
-      }
-      if ( (ptr->category == UVAR_CATEGORY_DEPRECATED) && !showDeprecatedOptions ) {
-	continue;	// skip deprecated options if not requested
-      }
-      if ( ptr->category == UVAR_CATEGORY_DEFUNCT ) {
-	continue;	// always skip defunct options to hide them completely from help string
-      }
-
-      UINT4 len;
-      // max variable name length
-      if ( ptr->name != NULL )
-        {
-          len = strlen ( ptr->name );
-          nameFieldLen = (len > nameFieldLen) ? len : nameFieldLen;
-        }
-
-      // max type name length
-      len = strlen ( UserVarTypeMap[ptr->type].name );
-      typeFieldLen = (len > typeFieldLen) ? len : typeFieldLen;
-
-    } // while ptr=ptr->next
-
-  CHAR fmtStr[256];		// for building a dynamic format-string
-  snprintf ( fmtStr, sizeof(fmtStr), "  %%s --%%-%ds   %%-%ds  %%s [%%s]\n", nameFieldLen, typeFieldLen );
-  XLAL_LAST_ELEM(fmtStr)=0;
-
-  CHAR defaultstr[256]; 	// for display of default-value
-  CHAR strbuf[512];
-
-  CHAR *helpstr_regular    = NULL;
-  CHAR *helpstr_developer  = NULL;
-  CHAR *helpstr_deprecated = NULL;
-  // ---------- provide header line: info about config-file reading
-
-  snprintf (strbuf, sizeof(strbuf), "Usage: %s [@ConfigFile] [options], where options are:\n\n", progname);
-  XLAL_LAST_ELEM(strbuf) = 0;
-  XLAL_CHECK_NULL ( (helpstr_regular = XLALStringDuplicate ( strbuf )) != NULL, XLAL_EFUNC );
-
-  // ---------- MAIN LOOP: step through all user variables and add entry to appropriate help string
-  ptr = &UVAR_vars;
-  while ( (ptr=ptr->next) != NULL )	// header always empty
-    {
-      if ( ptr->category == UVAR_CATEGORY_REQUIRED ) {
-	strcpy (defaultstr, "REQUIRED");
-      }
-      else if ( ptr->category == UVAR_CATEGORY_HELP ) {
-        strcpy ( defaultstr, "");
-      }
-      else // write the current default-value into a string
-	{
-	  CHAR *valstr;
-	  XLAL_CHECK_NULL ( (valstr = UserVarTypeMap [ ptr->type ].printer( ptr->varp )) != NULL, XLAL_EFUNC );
-	  strncpy ( defaultstr, valstr, sizeof(defaultstr) );	// cut short for default-entry
-	  XLAL_LAST_ELEM(defaultstr) = 0;
-	  XLALFree (valstr);
-	}
-
-      CHAR optstr[10];
-      if (ptr->optchar != 0) {
-	sprintf (optstr, "-%c,", ptr->optchar);
-      } else {
-	strcpy (optstr, "   ");
-      }
-
-      snprintf ( strbuf, sizeof(strbuf),  fmtStr,
-                 optstr,
-                 ptr->name ? ptr->name : "-NONE-",
-                 UserVarTypeMap[ptr->type].name,
-                 ptr->help ? ptr->help : "-NONE-",
-                 defaultstr
-                 );
-      XLAL_LAST_ELEM(strbuf) = 0;
-
-      // now append new line to the appropriate helpstring
       switch ( ptr->category )
         {
         case UVAR_CATEGORY_DEVELOPER:
-          if ( showDeveloperOptions ) {
-            helpstr_developer = XLALStringAppend ( helpstr_developer, strbuf );
-          }
-          break;
-
         case UVAR_CATEGORY_DEPRECATED:
-          if ( showDeprecatedOptions ) {
-            helpstr_deprecated = XLALStringAppend ( helpstr_deprecated, strbuf );
-          }
-          break;
-
+        case UVAR_CATEGORY_DEFUNCT:
+          continue;
         default:
-          helpstr_regular = XLALStringAppend ( helpstr_regular, strbuf );
           break;
-        } // switch category
+        }
+      fprintf( file, " " );
+      if ( ptr->category != UVAR_CATEGORY_REQUIRED ) {
+        fprintf( file, "[" );
+      }
+      if ( ptr->optchar != 0 ) {
+        fprintf( file, "-%c|", ptr->optchar );
+      }
+      fprintf( file,"--%s", ptr->name);
+      if ( ptr->category != UVAR_CATEGORY_REQUIRED ) {
+        fprintf( file, "]" );
+      }
+    }
+  fprintf( file,"\n\n");
 
-    } // while ptr=ptr->next
+  return XLAL_SUCCESS;
 
-  CHAR *helpstr = NULL;
-  XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, helpstr_regular )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, "\n" )) != NULL, XLAL_EFUNC );
+} // XLALUserVarPrintUsage()
 
-  // handle output of developer options, if requested
-  if ( haveDeveloperOptions )
+/*
+ * Format strings so that `--user_variables` have '_' replaced with '-'
+ */
+void
+format_user_var_names( char *s )
+{
+  while ( ( s = strchr( s, '`' ) ) != NULL )
     {
-      if ( !showDeveloperOptions )
+      while ( *s != '\0' && *s != '\'' )
         {
-          const char *str = " ---------- Use help with lalDebugLevel >= warning to also see all 'developer' options ----------\n";
-          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, str )) != NULL, XLAL_EFUNC );
+          if ( *s == '_' ) *s = '-';
+          ++s;
         }
-      else
-        {
-          const char *str = " ---------- The following are 'developer'-options not useful for most users:----------\n\n";
-          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, str )) != NULL, XLAL_EFUNC );
-          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, helpstr_developer )) != NULL, XLAL_EFUNC );
-          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, "\n" )) != NULL, XLAL_EFUNC );
-        }
-    } // if haveDeveloperOptions
+    }
+}
 
-  // handle output of deprecated options, if requested
-  if ( haveDeprecatedOptions )
+/*
+ * Print text wrapped to a given line width
+ */
+void
+fprint_wrapped( FILE *file, int line_width, const char *prefix, char *text )
+{
+
+  /* Adjust line width */
+  line_width -= strlen(prefix) + 1;
+
+  /* If line width is too short, just assume very long lines */
+  if ( line_width < 1 ) {
+    line_width = INT_MAX;
+  }
+
+  /* Iterate over text */
+  char *pstart = text, *pbreak = NULL;
+  for ( char *pend = text; *pend != '\0'; ++pend )
     {
-      if ( !showDeprecatedOptions )
-        {
-          const char *str = " ---------- Use help with lalDebugLevel >= info to also see deprecated options ----------\n";
-          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, str )) != NULL, XLAL_EFUNC );
+
+      /* Record position of last space, in order to break line */
+      if ( isspace( *pend ) ) {
+        pbreak = pend;
+      }
+
+      /* If at end of line, or encountered a newline */
+      if ( ( pend - pstart ) == line_width || *pend == '\n' ) {
+
+        if ( pbreak != NULL ) {   /* If we have a space character */
+
+          /* Print text up to before last space character */
+          const char old_pbreak = *pbreak;
+          *pbreak = '\0';
+          fprintf( file, "%s%s\n", prefix, pstart );
+          *pbreak = old_pbreak;
+
+          /* Start from next non-printed character */
+          pstart = pend = pbreak + 1;
+
+          /* Reset space character */
+          pbreak = NULL;
+
+        } else {
+
+          /* Print unbroken line, ending with hyphen */
+          const char old_pend = *pend;
+          *pend = '\0';
+          fprintf( file, "%s%s-\n", prefix, pstart );
+          *pend = old_pend;
+
+          /* Start from next non-printed character */
+          pstart = pend;
+
         }
-      else
+      }
+
+    }
+
+  /* Print remaining text */
+  if ( strlen( pstart ) > 0 ) {
+    fprintf( file, "%s%s\n", prefix, pstart );
+  }
+
+}
+
+/**
+ * Print help page
+ */
+int
+XLALUserVarPrintHelp ( FILE *file )
+{
+
+  XLAL_CHECK ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?" );
+
+  /* Determine terminal line width, or set to zero otherwise */
+  int line_width = 0;
+#if defined(HAVE_ISATTY) && defined(HAVE_FILENO) && defined(HAVE_IOCTL)
+#if HAVE_DECL_TIOCGWINSZ && HAVE_STRUCT_WINSIZE_WS_COL
+  if ( isatty( fileno( file ) ) ) {
+    struct winsize w;
+    ioctl( fileno( file ), TIOCGWINSZ, &w );
+    line_width = w.ws_col;
+  }
+#endif
+#endif
+
+  /* Pipe output through pager if possible */
+  FILE *f = file;
+#if defined(PAGER) && defined(HAVE_POPEN) && defined(HAVE_PCLOSE)
+  f = popen(PAGER, "w");
+  if ( f == NULL ) {
+    f = file;
+  }
+#endif
+  fflush( f );
+
+  /* Print program name and synopsis of command line syntax */
+  fprintf( f, "\nNAME\n" );
+  fprintf( f, "       %s", program_name );
+  if ( lalUserVarHelpBrief != NULL ) {
+    fprintf( f, " - %s", lalUserVarHelpBrief );
+  }
+  fprintf( f, "\n" );
+  fprintf( f, "\nSYNOPSIS\n" );
+  fprintf( f, "       %s -h|--help\n", program_name );
+  fprintf( f, "       %s [@<config-file>] [<options>...]\n", program_name );
+
+  /* Print options in sections */
+  const char* section_headers[] = { "OPTIONS", "DEVELOPER OPTIONS", "DEPRECATED OPTIONS" };
+  for ( size_t section = 0; section < XLAL_NUM_ELEM(section_headers); ++section )
+    {
+      BOOLEAN print_section_header = 1;
+
+      /* Go through all user variables */
+      for ( LALUserVariable *ptr = &UVAR_vars; (ptr=ptr->next) != NULL; )
         {
-          const char *str = " ---------- The following are *DEPRECATED* options that shouldn't be used any more:----------\n\n";
-          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, str )) != NULL, XLAL_EFUNC );
-          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, helpstr_deprecated )) != NULL, XLAL_EFUNC );
-          XLAL_CHECK_NULL ( (helpstr = XLALStringAppend ( helpstr, "\n" )) != NULL, XLAL_EFUNC );
+
+          /* Decide what section to print option in, and with what formatting */
+          size_t print_section = 0;
+          BOOLEAN print_format_help = 1, print_default_value = 1;
+          switch ( ptr->category )
+            {
+            case UVAR_CATEGORY_DEVELOPER:
+              print_section = 1;
+              break;
+            case UVAR_CATEGORY_DEPRECATED:
+              print_section = 2;
+              print_format_help = print_default_value = 0;
+              break;
+            case UVAR_CATEGORY_DEFUNCT:
+              continue;
+            default:
+              break;
+            }
+          XLAL_CHECK( print_section < XLAL_NUM_ELEM(section_headers), XLAL_EFAILED );
+
+          if ( print_section == section )
+            {
+
+              /* Print section header */
+              if ( print_section_header )
+                {
+                  fprintf( f, "\n%s\n", section_headers[section] );
+                  print_section_header = 0;
+                }
+
+              /* Print option, format help, and default value */
+              fprintf( f, "       " );
+              if ( ptr->optchar != 0 )
+                {
+                  fprintf( f, "-%c, ", ptr->optchar );
+                }
+              fprintf( f, "--%s", ptr->name );
+              if ( print_format_help )
+                {
+                  fprintf( f, "=%s", UserVarTypeMap [ ptr->type ].format_help );
+                }
+              if ( print_default_value )
+                {
+                  if ( ptr->category == UVAR_CATEGORY_REQUIRED )
+                    {
+                      fprintf( f, " [required]" );
+                    }
+                  else if ( ptr->category == UVAR_CATEGORY_NODEFAULT )
+                    {
+                      fprintf( f, " [optional]" );
+                    }
+                  else
+                    {
+                      char *valstr;
+                      XLAL_CHECK( (valstr = UserVarTypeMap [ ptr->type ].printer( ptr->varp )) != NULL, XLAL_EFUNC );
+                      fprintf( f, " [default: %s]",  valstr );
+                      XLALFree( valstr );
+                    }
+                }
+              fprintf( f, "\n" );
+
+              /* Print option help string */
+              fprint_wrapped( f, line_width, "           ", ptr->help );
+              fprintf( f, "\n" );
+
+            }
+
         }
-    } // if haveDeprecatedOptions
 
-  XLALFree ( helpstr_regular );
-  XLALFree ( helpstr_developer );
-  XLALFree ( helpstr_deprecated );
+    }
 
-  return helpstr;
+  /* Close pipe to pager if used */
+  fflush( f );
+#if defined(PAGER) && defined(HAVE_POPEN) && defined(HAVE_PCLOSE)
+  if ( f != file ) {
+    pclose( f );
+  }
+#endif
 
-} // XLALUserVarHelpString()
+  return XLAL_SUCCESS;
+
+} // XLALUserVarPrintHelp()
 
 
 /**
  * Put all the pieces together, and basically does everything:
- * get config-filename from cmd-line (if found),
+ * print help (if requested), get config-filename from cmd-line (if found),
  * then interpret config-file and then the command-line
+ *
+ * If \p *should_exit is TRUE when this function returns, the
+ * program should exit immediately with a non-zero status.
  */
 int
-XLALUserVarReadAllInput ( int argc, char *argv[] )
+XLALUserVarReadAllInput ( BOOLEAN *should_exit, int argc, char *argv[] )
 {
+  XLAL_CHECK ( should_exit != NULL, XLAL_EFAULT );
   XLAL_CHECK ( argc > 0, XLAL_EINVAL );
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL );
   XLAL_CHECK ( argv[0] != NULL, XLAL_EINVAL );
   XLAL_CHECK ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?" );
 
-  program_name = argv[0];	// keep a modul-local pointer to the executable name
+  *should_exit = 0;
+
+  // keep a module-local pointer to the executable path/name
+  program_path = argv[0];
+  program_name = strrchr( program_path, '/' );
+  if ( program_name == NULL ) {
+    program_name = program_path;
+  } else {
+    ++program_name;
+  }
+
+  // ---------- manually parse command-line for help/usage arguments
+  for ( INT4 i = 1; i < argc; i++ )
+    {
+      XLAL_CHECK( argv[i] != NULL, XLAL_EINVAL, "argc = %d, but argv[%d] == NULL!\n", argc, i );
+      if ( strcmp( argv[i], "-h" ) == 0 )
+        {
+          XLALUserVarPrintUsage( stdout );
+          *should_exit = 1;
+          return XLAL_SUCCESS;
+        }
+      else if ( strcmp( argv[i], "--help" ) == 0 || strcmp( argv[i], "-help" ) == 0 )
+        {
+          XLALUserVarPrintHelp( stdout );
+          *should_exit = 1;
+          return XLAL_SUCCESS;
+        }
+    }
 
   // ---------- pre-process command-line: have we got a config-file ?
   CHAR* cfgfile_name = NULL;
@@ -662,47 +900,54 @@ XLALUserVarReadAllInput ( int argc, char *argv[] )
   // ---------- if config-file specified, read from that first
   if ( cfgfile_name != NULL )
     {
-      XLAL_CHECK ( XLALUserVarReadCfgfile ( cfgfile_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALUserVarReadCfgfile ( should_exit, cfgfile_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      if ( *should_exit ) {
+        return XLAL_SUCCESS;
+      }
       XLALFree (cfgfile_name);
     }
 
   // ---------- now parse cmdline: overloads previous config-file settings
-  XLAL_CHECK ( XLALUserVarReadCmdline ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALUserVarReadCmdline ( should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( *should_exit ) {
+    return XLAL_SUCCESS;
+  }
 
   // ---------- handle special options that need some action ----------
   BOOLEAN skipCheckRequired = FALSE;
-  LALUserVariable *ptr = &UVAR_vars;
-  while ( (ptr=ptr->next) != NULL )
+  for ( LALUserVariable *ptr = &UVAR_vars; (ptr=ptr->next) != NULL; )
     {
-      if ( (ptr->category == UVAR_CATEGORY_HELP) && ( *((BOOLEAN*)ptr->varp) ) )
-	{
-	  CHAR *helpstring;
-	  XLAL_CHECK ( ( helpstring = XLALUserVarHelpString(argv[0])) != NULL, XLAL_EFUNC );
-          printf ("\n%s\n", helpstring);
-	  XLALFree (helpstring);
-	  return XLAL_SUCCESS;
-	} // if help requested
 
       // check 'special' category, which suppresses the CheckRequired test
       if ( (ptr->category == UVAR_CATEGORY_SPECIAL) && ptr->was_set ) {
 	skipCheckRequired = TRUE;
       }
 
-      // handle DEPRECATED options by outputting a warning:
+      // handle DEPRECATED options by outputting a warning (on error-level to make this very noticeable!)
       if ( ptr->category == UVAR_CATEGORY_DEPRECATED && ptr->was_set ) {
-        XLALPrintError ("Option '%s' is DEPRECATED: %s\n", ptr->name, ptr->help );	// we output warning on error-level to make this very noticeable!
+        XLALPrintError ("\n%s: option " UVAR_FMT " is DEPRECATED: %s\n\n", program_name, ptr->name, ptr->help );
       }
 
-      // handle DEPREC_ERROR options by throwing an error:
-      if ( ptr->category == UVAR_CATEGORY_DEFUNCT && ptr->was_set ) {
-        XLAL_ERROR ( XLAL_EINVAL, "Option '%s' is DEFUNCT: %s\n", ptr->name, ptr->help );
+      // handle DEFUNCT options by throwing an error:
+      XLALUserVarCheck( should_exit, ptr->category != UVAR_CATEGORY_DEFUNCT || !ptr->was_set, "option " UVAR_FMT " is DEFUNCT: %s", ptr->name, ptr->help );
+      if ( *should_exit ) {
+        return XLAL_SUCCESS;
       }
 
     } // while ptr = ptr->next
 
   // check that all required input-variables have been specified
   if ( !skipCheckRequired ) {
-    XLAL_CHECK ( XLALUserVarCheckRequired() == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // go through list of uvars
+    for ( LALUserVariable *ptr = &UVAR_vars; (ptr=ptr->next) != NULL; )
+      {
+        XLALUserVarCheck( should_exit, ptr->category != UVAR_CATEGORY_REQUIRED || ptr->was_set, "required option " UVAR_FMT " has not been specified!", ptr->name );
+        if ( *should_exit ) {
+          return XLAL_SUCCESS;
+        }
+      }
+
   }
 
   return XLAL_SUCCESS;
@@ -742,25 +987,25 @@ XLALUserVarWasSet ( const void *cvar )
 
 
 /**
- * Check that all required user-variables have been set successfully.
- * Print error if not
+ * If \p assertion is false, print the given error message, then the help usage;
+ * \p should_exit is then set to true.
  */
-int
-XLALUserVarCheckRequired (void)
+void
+XLALUserVarCheck( BOOLEAN *should_exit, const int assertion, const CHAR *fmt, ... )
 {
-  XLAL_CHECK ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?" );
-
-  // go through list of uvars
-  LALUserVariable *ptr = &UVAR_vars;
-  while ( (ptr = ptr->next) != NULL )
-    {
-      XLAL_CHECK ( ! ( ptr->category == UVAR_CATEGORY_REQUIRED && !ptr->was_set), XLAL_EFAILED, "Required user-variable '%s' has not been specified!\n\n", ptr->name );
-    }
-
-  return XLAL_SUCCESS;
-
-} // XLALUserVarCheckRequired()
-
+  if ( !( *should_exit ) && !assertion ) {
+    char buf[2048];
+    va_list ap;
+    va_start( ap, fmt );
+    vsnprintf( buf, sizeof( buf ), fmt, ap );
+    va_end( ap );
+    format_user_var_names( buf );
+    fprintf( stderr, "\n%s: %s\n", program_name, buf );
+    XLALUserVarPrintUsage( stderr );
+    fflush( stderr );
+    *should_exit = 1;
+  }
+} // XLALUserVarCheck()
 
 /**
  * Return a log-string representing the <em>complete</em> user-input.
@@ -777,7 +1022,7 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
   CHAR *record = NULL;
 
   if ( format == UVAR_LOGFMT_CMDLINE ) {
-    XLAL_CHECK_NULL ( (record = XLALStringAppend ( record, program_name)) != NULL, XLAL_EFUNC );
+    XLAL_CHECK_NULL ( (record = XLALStringAppend ( record, program_path)) != NULL, XLAL_EFUNC );
   }
 
   LALUserVariable *ptr = &UVAR_vars;
@@ -820,23 +1065,6 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
 
 } // XLALUserVarGetLog()
 
-/**
- * Mark the user-variable as set, check if it has been
- * set previously and issue a warning if set more than once ...
- */
-void
-check_and_mark_as_set ( LALUserVariable *varp )
-{
-  // output warning if this variable has been set before ...
-  if ( varp->was_set ) {
-    XLALPrintWarning ( "User-variable '%s' was set more than once!\n", varp->name ? varp->name : "(NULL)" );
-  }
-
-  varp->was_set = 1;
-
-  return;
-} // check_and_mark_as_set()
-
 /* ========== DEPRECATED LAL INTERFACE FUNCTIONS, which have been replaced by XLAL functions,
  * These functions are just wrappers around the XLAL functions
  */
@@ -855,34 +1083,22 @@ LALDestroyUserVars (LALStatus *status)
 
 /** \deprecated use XLALUserVarReadCmdline() instead */
 void
-LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
+LALUserVarReadCmdline (LALStatus *status, BOOLEAN *should_exit, int argc, char *argv[])
 {
   INITSTATUS(status);
-  if ( XLALUserVarReadCmdline(argc, argv) != XLAL_SUCCESS ) {
+  if ( XLALUserVarReadCmdline(should_exit, argc, argv) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALUserVarReadCmdline() failed with code %d\n", xlalErrno );
     ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
   }
   RETURN (status);
 } // LALUserVarReadCmdline()
 
-/** \deprecated use XLALUserVarCheckRequired() instead */
-void
-LALUserVarCheckRequired (LALStatus *status)
-{
-  INITSTATUS(status);
-  if ( XLALUserVarCheckRequired() != XLAL_SUCCESS ) {
-    ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
-  }
-  RETURN (status);
-} /* LALUserVarCheckRequired() */
-
-
 /** \deprecated use XLALUserVarReadAllInput() instead */
 void
-LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
+LALUserVarReadAllInput (LALStatus *status, BOOLEAN *should_exit, int argc, char *argv[])
 {
   INITSTATUS(status);
-  if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS ) {
+  if ( XLALUserVarReadAllInput ( should_exit, argc, argv ) != XLAL_SUCCESS ) {
     XLALPrintError ( "XLALUserVarReadAllInput() failed with code %d\n", xlalErrno );
     ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
   }
@@ -908,22 +1124,6 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
   RETURN (status);
 } /* LALUserVarGetLog() */
 
-/**
- * \deprecated use XLALUserVarHelpString() instead
- */
-void
-LALUserVarHelpString (LALStatus *status,
-		      CHAR **helpstring, /* output: allocated here! */
-		      const CHAR *progname)
-{
-  INITSTATUS(status);
-  if ( ((*helpstring) = XLALUserVarHelpString ( progname )) == NULL ) {
-    XLALPrintError ("XLALUserVarHelpString() failed with code %d\n", xlalErrno );
-    ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
-  }
-  RETURN(status);
-} /* LALUserVarHelpString() */
-
 /** \deprecated use XLALRegisterREALUserVar() instead */
 void
 LALRegisterREALUserVar (LALStatus *status,
@@ -934,7 +1134,7 @@ LALRegisterREALUserVar (LALStatus *status,
 			REAL8 *cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_REAL8, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_REAL8, optchar, category, helpstr ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
@@ -951,7 +1151,7 @@ LALRegisterINTUserVar (LALStatus *status,
 		       INT4 *cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_INT4, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_INT4, optchar, category, helpstr ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
@@ -968,7 +1168,7 @@ LALRegisterBOOLUserVar (LALStatus *status,
 			BOOLEAN *cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_BOOLEAN, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_BOOLEAN, optchar, category, helpstr ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
@@ -985,7 +1185,7 @@ LALRegisterSTRINGUserVar (LALStatus *status,
 			  CHAR **cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_STRING, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_STRING, optchar, category, helpstr ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
@@ -1002,7 +1202,7 @@ LALRegisterLISTUserVar (LALStatus *status,
 			LALStringVector **cvar)
 {
   INITSTATUS(status);
-  if ( XLALRegisterUserVar ( name, UVAR_TYPE_STRINGVector, optchar, category, helpstr, cvar ) != XLAL_SUCCESS ) {
+  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_STRINGVector, optchar, category, helpstr ) != XLAL_SUCCESS ) {
     XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
@@ -1012,11 +1212,12 @@ LALRegisterLISTUserVar (LALStatus *status,
 /** \deprecated use XLALUserVarReadCfgfile() instead */
 void
 LALUserVarReadCfgfile (LALStatus *status,
+		       BOOLEAN *should_exit,
 		       const CHAR *cfgfile) 	   /* name of config-file */
 {
 
   INITSTATUS(status);
-  if ( XLALUserVarReadCfgfile ( cfgfile ) != XLAL_SUCCESS ) {
+  if ( XLALUserVarReadCfgfile ( should_exit, cfgfile ) != XLAL_SUCCESS ) {
     ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
   }
   RETURN (status);

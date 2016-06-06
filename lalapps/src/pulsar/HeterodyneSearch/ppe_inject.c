@@ -61,17 +61,13 @@ void inject_signal( LALInferenceRunState *runState ){
   REAL8 snrscale = 0;
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-  if( !ppt ){
-    fprintf(stderr, "Error... no output file specified!\n");
-    exit(0);
-  }
+  if( !ppt ){ XLAL_ERROR_VOID( XLAL_EINVAL, "Error... no output file specified!" ); }
 
   snrfile = XLALStringDuplicate( ppt->value );
   snrfile = XLALStringAppend( snrfile, "_SNR" );
 
   if( (fpsnr = fopen(snrfile, "w")) == NULL ){
-    fprintf(stderr, "Error... cannot open output SNR file!\n");
-    exit(0);
+    XLAL_ERROR_VOID( XLAL_EIO, "Error... cannot open output SNR file!");
   }
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--inject-file" );
@@ -80,8 +76,7 @@ void inject_signal( LALInferenceRunState *runState ){
 
     /* check that the file exists */
     if ( fopen(injectfile, "r") == NULL ){
-      fprintf(stderr, "Error... Injection specified, but the injection parameter file %s is wrong.\n", injectfile);
-      exit(3);
+      XLAL_ERROR_VOID(XLAL_EINVAL, "Error... Injection specified, but the injection parameter file %s is wrong.", injectfile);
     }
 
     /* read in injection parameter file */
@@ -94,8 +89,7 @@ void inject_signal( LALInferenceRunState *runState ){
         PulsarAddParam( injpars, "RA", &ra, PULSARTYPE_REAL8_t );
       }
       else {
-        XLALPrintError ("%s: No source right ascension specified!", __func__ );
-        XLAL_ERROR_VOID( XLAL_EINVAL );
+        XLAL_ERROR_VOID( XLAL_EINVAL, "No source right ascension specified!" );
       }
     }
     if ( !PulsarCheckParam( injpars, "DEC" ) ){
@@ -104,8 +98,7 @@ void inject_signal( LALInferenceRunState *runState ){
         PulsarAddParam( injpars, "DEC", &dec, PULSARTYPE_REAL8_t );
       }
       else {
-        XLALPrintError ("%s: No source declination specified!", __func__ );
-        XLAL_ERROR_VOID( XLAL_EINVAL );
+        XLAL_ERROR_VOID( XLAL_EINVAL, "No source declination specified!" );
       }
     }
 
@@ -652,14 +645,14 @@ void get_loudest_snr( LALInferenceRunState *runState ){
 
     REAL8 snrval = calculate_time_domain_snr( data, ifo_model );
 
-    //UINT4 length = ifo_model->compTimeData->data->length;
+    //UINT4 length = ifo_model->compTimeSignal->data->length;
 
     /* print out maxlikelihood template */
     //for ( UINT4 j=0; j < length; j++ ){
     //  fprintf(fp, "%lf\t%le\t%le\n",
     //          XLALGPSGetREAL8( &ifo_model->times->data[j] ),
-    //          ifo_model->compTimeSignal->data->data[j].re,
-    //          ifo_model->compTimeSignal->data->data[j].im );
+    //          creal(ifo_model->compTimeSignal->data->data[j]),
+    //          cimag(ifo_model->compTimeSignal->data->data[j]));
     //}
 
     snrmulti += SQUARE( snrval );

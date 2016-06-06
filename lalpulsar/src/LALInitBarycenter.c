@@ -23,6 +23,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/ConfigFile.h>
 #include <lal/LALString.h>
+#include <lal/Date.h>
 
 /** \cond DONT_DOXYGEN */
 
@@ -211,6 +212,8 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
     earth_etype = EPHEM_DE405;
   else if ( strstr( earthEphemerisFile, "DE414" ) )
     earth_etype = EPHEM_DE414;
+  else if ( strstr( earthEphemerisFile, "DE421" ) )
+    earth_etype = EPHEM_DE421;
   else
     earth_etype = EPHEM_DE405;
 
@@ -221,12 +224,14 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
     sun_etype = EPHEM_DE405;
   else if ( strstr( sunEphemerisFile, "DE414" ) )
     sun_etype = EPHEM_DE414;
+  else if ( strstr( sunEphemerisFile, "DE421" ) )
+    sun_etype = EPHEM_DE421;
   else
     sun_etype = EPHEM_DE405;
 
   // check consistency
   if ( earth_etype != sun_etype )
-    XLAL_ERROR_NULL (XLAL_EINVAL, "Earth '%s' and Sun '%s' ephermis-files have inconsistent coordinate-types %d != %d\n",
+    XLAL_ERROR_NULL (XLAL_EINVAL, "Earth '%s' and Sun '%s' ephemeris-files have inconsistent coordinate-types %d != %d\n",
                      earthEphemerisFile, sunEphemerisFile, earth_etype, sun_etype );
   else
     etype = earth_etype;
@@ -321,6 +326,68 @@ XLALDestroyEphemerisData ( EphemerisData *edat )
   return;
 
 } /* XLALDestroyEphemerisData() */
+
+
+/**
+ * Restrict the EphemerisData 'edat' to the smallest number of entries
+ * required to cover the GPS time range ['startGPS', 'endGPS']
+ *
+ * \ingroup LALBarycenter_h
+ */
+int XLALRestrictEphemerisData ( EphemerisData *edat, const LIGOTimeGPS *startGPS, const LIGOTimeGPS *endGPS ) {
+
+  // Check input
+  XLAL_CHECK(edat != NULL, XLAL_EFAULT);
+  XLAL_CHECK(startGPS != NULL, XLAL_EFAULT);
+  XLAL_CHECK(endGPS != NULL, XLAL_EFAULT);
+  XLAL_CHECK(XLALGPSCmp(startGPS, endGPS) < 0, XLAL_EINVAL);
+
+  // Convert 'startGPS' and 'endGPS' to REAL8s
+  const REAL8 start = XLALGPSGetREAL8(startGPS), end = XLALGPSGetREAL8(endGPS);
+
+  // Increase 'ephemE' and decrease 'nentriesE' to fit the range ['start', 'end']
+  PosVelAcc *const old_ephemE = edat->ephemE;
+  do {
+    if (edat->nentriesE > 1 && edat->ephemE[0].gps < start && edat->ephemE[1].gps <= start) {
+      ++edat->ephemE;
+      --edat->nentriesE;
+    } else if (edat->nentriesE > 1 && edat->ephemE[edat->nentriesE-1].gps > end && edat->ephemE[edat->nentriesE-2].gps >= end) {
+      --edat->nentriesE;
+    } else {
+      break;
+    }
+  } while(1);
+
+  // Reallocate 'ephemE' to new table size, and free old table
+  PosVelAcc *const new_ephemE = XLALMalloc(edat->nentriesE * sizeof(*new_ephemE));
+  XLAL_CHECK(new_ephemE != NULL, XLAL_ENOMEM);
+  memcpy(new_ephemE, edat->ephemE, edat->nentriesE * sizeof(*new_ephemE));
+  edat->ephemE = new_ephemE;
+  XLALFree(old_ephemE);
+
+  // Increase 'ephemS' and decrease 'nentriesS' to fit the range ['start', 'end']
+  PosVelAcc *const old_ephemS = edat->ephemS;
+  do {
+    if (edat->nentriesS > 1 && edat->ephemS[0].gps < start && edat->ephemS[1].gps <= start) {
+      ++edat->ephemS;
+      --edat->nentriesS;
+    } else if (edat->nentriesS > 1 && edat->ephemS[edat->nentriesS-1].gps > end && edat->ephemS[edat->nentriesS-2].gps >= end) {
+      --edat->nentriesS;
+    } else {
+      break;
+    }
+  } while(1);
+
+  // Reallocate 'ephemS' to new table size, and free old table
+  PosVelAcc *const new_ephemS = XLALMalloc(edat->nentriesS * sizeof(*new_ephemS));
+  XLAL_CHECK(new_ephemS != NULL, XLAL_ENOMEM);
+  memcpy(new_ephemS, edat->ephemS, edat->nentriesS * sizeof(*new_ephemS));
+  edat->ephemS = new_ephemS;
+  XLALFree(old_ephemS);
+
+  return XLAL_SUCCESS;
+
+} /* XLALRestrictEphemerisData() */
 
 
 /* ========== internal function definitions ========== */

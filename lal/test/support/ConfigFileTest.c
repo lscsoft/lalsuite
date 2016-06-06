@@ -77,6 +77,9 @@ int main ( int argc, char *argv[])
   XLAL_CHECK ( XLALReadConfigDECJVariable ( &latDMS, cfgdata, 0, "latDMS", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALReadConfigDECJVariable ( &latRad, cfgdata, 0, "latRad", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  INT8 longInt;
+  XLAL_CHECK ( XLALReadConfigINT8Variable ( &longInt, cfgdata, 0, "longInt", &wasRead ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   UINT4Vector *unread = XLALConfigFileGetUnreadEntries ( cfgdata );
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALConfigFileGetUnreadEntries() failed\n");
   XLAL_CHECK ( unread == NULL, XLAL_EFAILED, "Some entries in config-file '%s' have not been parsed!\n", cfgname );
@@ -106,8 +109,10 @@ int main ( int argc, char *argv[])
                epochGPS.gpsSeconds, epochGPS.gpsNanoSeconds, epochMJDTT.gpsSeconds, epochMJDTT.gpsNanoSeconds );
 
   REAL8 diff, tol = 3e-15;
-  XLAL_CHECK ( (diff = fabs(longHMS - longRad)) < tol, XLAL_EFAILED, "longitude(HMS) = %.16g differs from longitude(rad) = %.16g by %g > tolerance\n", longHMS, longRad, diff, tol );
-  XLAL_CHECK ( (diff = fabs(latDMS - latRad)) < tol, XLAL_EFAILED, "latitude(HMS) = %.16g differs from latitude(rad) = %.16g by %g > tolerance\n", latDMS, latRad, diff, tol );
+  XLAL_CHECK ( (diff = fabs(longHMS - longRad)) < tol, XLAL_EFAILED, "longitude(HMS) = %.16g differs from longitude(rad) = %.16g by %g > %g\n", longHMS, longRad, diff, tol );
+  XLAL_CHECK ( (diff = fabs(latDMS - latRad)) < tol, XLAL_EFAILED, "latitude(HMS) = %.16g differs from latitude(rad) = %.16g by %g > %g\n", latDMS, latRad, diff, tol );
+
+  XLAL_CHECK ( longInt == 4294967294, XLAL_EFAILED, "Failed to read an INT8: longInt = %" LAL_INT8_FORMAT " != 4294967294", longInt );
 
   XLALFree (string1);
   XLALFree (string2);

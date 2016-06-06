@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2015 Karl Wette
  * Copyright (C) 2008 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -157,6 +158,22 @@ XLALCreateStringVector ( const CHAR *str1, ... )
 } /* XLALCreateStringVector() */
 
 
+/**
+ * Create a copy of a string vector
+ */
+LALStringVector *XLALCopyStringVector( const LALStringVector *vect )
+{
+  XLAL_CHECK_NULL( vect != NULL && vect->data != NULL && vect->length > 0, XLAL_EINVAL );
+  LALStringVector *copy = XLALCreateStringVector( vect->data[0], NULL );
+  XLAL_CHECK_NULL( copy != NULL, XLAL_EFUNC );
+  for (size_t i = 1; i < vect->length; ++i) {
+    copy = XLALAppendString2Vector( copy, vect->data[i] );
+    XLAL_CHECK_NULL( copy != NULL, XLAL_EFUNC );
+  }
+  return copy;
+} /* XLALCopyStringVector() */
+
+
 /** XLAL-interface: Free a string-vector ;) */
 void
 XLALDestroyStringVector ( LALStringVector *vect )
@@ -196,6 +213,71 @@ static int StringCompare (const void *p1, const void *p2)
    *
    */
   return strcmp ( * ( char * const *) p1, * ( char * const *) p2 );
+}
+
+///
+/// Concatenate a string vector 'strings', separated by the string 'sep', into a single string
+///
+char *XLALConcatStringVector( const LALStringVector *strings, const char *sep )
+{
+
+  // Check input
+  XLAL_CHECK_NULL( strings != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( sep != NULL, XLAL_EFAULT );
+
+  // Allocate a string of the required size
+  int len = 1;
+  if ( strings->length > 0 ) {
+    len += strlen( strings->data[0] );
+    for ( size_t i = 1; i < strings->length; ++i ) {
+      len += strlen( sep ) + strlen( strings->data[i] );
+    }
+  }
+  char *s = XLALCalloc( len, sizeof(*s) );
+  XLAL_CHECK_NULL( s != NULL, XLAL_ENOMEM );
+
+  // Concatenate the vector of strings into a single string
+  if ( strings->length > 0 ) {
+    strcpy( s, strings->data[0] );
+    for ( size_t i = 1; i < strings->length; ++i ) {
+      strcat( s, sep );
+      strcat( s, strings->data[i] );
+    }
+  }
+
+  return s;
+
+}
+
+///
+/// Parse 'string' into a string vector of tokens, delimited by the characters 'delim'
+///
+LALStringVector *XLALParseStringVector( const char *string, const char *delim )
+{
+
+  // Check input
+  XLAL_CHECK_NULL( string != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( delim != NULL, XLAL_EFAULT );
+
+  // Allocate an empty string vector
+  LALStringVector *strings = XLALCalloc( 1, sizeof(*strings) );
+  XLAL_CHECK_NULL( strings != NULL, XLAL_ENOMEM );
+
+  // Split the string into a vector of strings
+  char *s = XLALStringDuplicate( string );
+  XLAL_CHECK_NULL( s != NULL, XLAL_EFUNC );
+  char *p = s;
+  char *t = XLALStringToken( &p, delim, 1 );
+  while ( t != NULL ) {
+    XLAL_CHECK_NULL( XLALAppendString2Vector( strings, t ) != NULL, XLAL_EFUNC );
+    t = XLALStringToken( &p, delim, 1 );
+  }
+
+  // Cleanup
+  XLALFree( s );
+
+  return strings;
+
 }
 
 /**

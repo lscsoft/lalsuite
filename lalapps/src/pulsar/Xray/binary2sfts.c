@@ -17,7 +17,7 @@
  */
 
 /** \author C.Messenger
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar_Xray
  * \file
  * \brief
  * This code is designed to convert a binary timeseries file into a frame file.
@@ -66,7 +66,6 @@
 /** A structure that stores user input variables
  */
 typedef struct {
-  BOOLEAN help;		            /**< trigger output of help string */
   CHAR *outLabel;                   /**< 'misc' entry in SFT-filenames or 'description' entry of frame filenames */
   CHAR *outputdir;                  /**< the output directory */
   CHAR *cachefile;                  /**< the name of the input cache file */
@@ -266,32 +265,30 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->seed = 0;
 
   /* ---------- register all user-variables ---------- */
-  XLALregBOOLUserStruct(help, 		        'h', UVAR_HELP,     "Print this message");
-  XLALregSTRINGUserStruct(outLabel, 	        'n', UVAR_REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
-  XLALregSTRINGUserStruct(outputdir, 	        'o', UVAR_REQUIRED, "The output directory name");
-  XLALregSTRINGUserStruct(cachefile, 	        'i', UVAR_REQUIRED, "The input binary file name");
-  XLALregREALUserStruct(freq,                   'f', UVAR_OPTIONAL, "The starting frequency (Hz)");
-  XLALregREALUserStruct(freqband,   	        'b', UVAR_OPTIONAL, "The frequency band (Hz)");
-  XLALregINTUserStruct(tsft,                    't', UVAR_OPTIONAL, "The length of SFTs (sec)");
-  XLALregREALUserStruct(tsamp,           	's', UVAR_OPTIONAL, "The sampling time (sec)");
-  XLALregREALUserStruct(highpassf,           	'p', UVAR_OPTIONAL, "The high pass filter frequency");
-  XLALregBOOLUserStruct(outSingleSFT,           'S', UVAR_OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
-  XLALregREALUserStruct(amp_inj,          	'I', UVAR_OPTIONAL, "Fractional amplitude of injected signal");
-  XLALregREALUserStruct(f_inj,            	'A', UVAR_OPTIONAL, "frequency of injected signal");
-  XLALregREALUserStruct(asini_inj,          	'B', UVAR_OPTIONAL, "projected semi-major axis of injected signal");
-  XLALregREALUserStruct(tasc_inj,          	'C', UVAR_OPTIONAL, "time of ascension of injected signal");
-  XLALregREALUserStruct(P_inj,           	'D', UVAR_OPTIONAL, "orbital period of injected signal");
-  XLALregREALUserStruct(phi_inj,          	'E', UVAR_OPTIONAL, "initial phase of injected signal");
-  XLALregINTUserStruct(seed,                    'r', UVAR_OPTIONAL, "The random seed");
+  XLALRegisterUvarMember(outLabel, 	        STRING, 'n', REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
+  XLALRegisterUvarMember(outputdir, 	        STRING, 'o', REQUIRED, "The output directory name");
+  XLALRegisterUvarMember(cachefile, 	        STRING, 'i', REQUIRED, "The input binary file name");
+  XLALRegisterUvarMember(freq,                   REAL8, 'f', OPTIONAL, "The starting frequency (Hz)");
+  XLALRegisterUvarMember(freqband,   	        REAL8, 'b', OPTIONAL, "The frequency band (Hz)");
+  XLALRegisterUvarMember(tsft,                    INT4, 't', OPTIONAL, "The length of SFTs (sec)");
+  XLALRegisterUvarMember(tsamp,           	REAL8, 's', OPTIONAL, "The sampling time (sec)");
+  XLALRegisterUvarMember(highpassf,           	REAL8, 'p', OPTIONAL, "The high pass filter frequency");
+  XLALRegisterUvarMember(outSingleSFT,           BOOLEAN, 'S', OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
+  XLALRegisterUvarMember(amp_inj,          	REAL8, 'I', OPTIONAL, "Fractional amplitude of injected signal");
+  XLALRegisterUvarMember(f_inj,            	REAL8, 'A', OPTIONAL, "frequency of injected signal");
+  XLALRegisterUvarMember(asini_inj,          	REAL8, 'B', OPTIONAL, "projected semi-major axis of injected signal");
+  XLALRegisterUvarMember(tasc_inj,          	REAL8, 'C', OPTIONAL, "time of ascension of injected signal");
+  XLALRegisterUvarMember(P_inj,           	REAL8, 'D', OPTIONAL, "orbital period of injected signal");
+  XLALRegisterUvarMember(phi_inj,          	REAL8, 'E', OPTIONAL, "initial phase of injected signal");
+  XLALRegisterUvarMember(seed,                    INT4, 'r', OPTIONAL, "The random seed");
 
   /* do ALL cmdline and cfgfile handling */
-  if (XLALUserVarReadAllInput(argc, argv)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",__func__,xlalErrno);
-    XLAL_ERROR(XLAL_EINVAL);
+  BOOLEAN should_exit = 0;
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",__func__,xlalErrno);
+    return XLAL_EFAULT;
   }
-
-  /* if help was requested, we're done here */
-  if (uvar->help) exit(0);
+  if (should_exit) exit(1);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;

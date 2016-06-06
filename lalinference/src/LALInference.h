@@ -44,6 +44,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
 
 #define VARNAME_MAX 128
 #define VARVALSTRINGSIZE_MAX 128
@@ -59,6 +61,7 @@
 #include <lal/LALString.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimInspiralWaveformCache.h>
+#include <lal/LALHashTbl.h>
 
 #include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
@@ -159,6 +162,7 @@ tagVariableItem
   struct tagVariableItem		*next;
 } LALInferenceVariableItem;
 
+
 /**
  * The LALInferenceVariables structure to contain a set of parameters
  * Implemented as a linked list of LALInferenceVariableItems.
@@ -169,7 +173,7 @@ tagLALInferenceVariables
 {
   LALInferenceVariableItem	*head;
   INT4 				dimension;
-  LALInferenceVariableItem	*hash_table[LALINFERENCE_HASHTABLE_SIZE];
+  LALHashTbl        *hash_table;
 } LALInferenceVariables;
 
 /**
@@ -352,6 +356,20 @@ int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs,
 					REAL8Vector *deltaPhases,
 					COMPLEX16FrequencySeries *calFactor);
 
+ /** Modified version of LALInferenceSplineCalibrationFactor to compute the 
+ *	calibration factors for the specific frequency nodes used for 
+ *	Reduced Order Quadrature likelihoods.
+ */
+
+int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
+					REAL8Vector *deltaAmps,
+					REAL8Vector *deltaPhases,
+					REAL8Sequence *freqNodesLin,
+					COMPLEX16Sequence **calFactorROQLin,
+					REAL8Sequence *freqNodesQuad,
+					COMPLEX16Sequence **calFactorROQQuad);
+
+
 //Wrapper for template computation
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?
 //typedef void (LALTemplateFunction) (LALInferenceVariables *currentParams, struct tagLALInferenceIFOData *data); //Parameter Set is modelParams of LALInferenceIFOData
@@ -447,6 +465,8 @@ typedef struct tagLALInferenceModel
   REAL8Window                 *window;        /** A window */
   REAL8                        padding; /** The padding of the above window */
   struct tagLALInferenceROQModel *roq; /** ROQ data */
+  int roq_flag;
+
 } LALInferenceModel;
 
 
@@ -633,33 +653,80 @@ tagLALInferenceIFOData
   struct tagLALInferenceIFOData      *next;     /** A pointer to the next set of data for linked list */
 } LALInferenceIFOData;
 
-/**
- * Structure to contain data-related Reduced Order Quadrature quantities
- */
 typedef struct
 tagLALInferenceROQData
 {
+  COMPLEX16 *weightsLinear; /** weights for <d|h>: NOTE: needs to be stored from data read from command line */
+  REAL8 *weightsQuadratic; /** weights for calculating <h|h>*/
+  REAL8 time_weights_width;
+  REAL8 time_step_size;
+  int n_time_steps;
+  FILE *weightsFileLinear;
+  FILE *weightsFileQuadratic;
+
+
+  struct tagLALInferenceROQSplineWeightsLinear *weights_linear;
+
+ 
+  /* Deprecated functions that should be removed at some point */ 
   gsl_matrix_complex *weights; /** weights for the likelihood: NOTE: needs to be stored from data read from command line */
   gsl_matrix_complex *mmweights; /** weights for calculating <h|h> if not using analytical formula */
   double int_f_7_over_3; /** /int_{fmin}^{fmax} df f^(-7/3)/psd...for <h|h> part of the likelihood */
-  REAL8 time_weights_width;
+  /* end deprecated function */
+
 } LALInferenceROQData;
 
-
 /**
- * Structure to contain model-related Reduced Order Quadrature quantities
- */
+ *  *  * Structure to contain spline of ROQ weights as a function of tc
+ *   *   */
+
+typedef struct
+tagLALInferenceROQSplineWeightsLinear
+{
+  
+ 
+  gsl_spline *spline_real_weight_linear;
+  gsl_spline *spline_imag_weight_linear; 
+  gsl_interp_accel *acc_real_weight_linear;
+  gsl_interp_accel *acc_imag_weight_linear;
+
+} LALInferenceROQSplineWeights;
+/**
+ *  * Structure to contain model-related Reduced Order Quadrature quantities
+ *   */
 typedef struct
 tagLALInferenceROQModel
 {
+  COMPLEX16FrequencySeries *hptildeLinear;
+  COMPLEX16FrequencySeries *hctildeLinear;
+  COMPLEX16FrequencySeries *hptildeQuadratic;
+  COMPLEX16FrequencySeries *hctildeQuadratic;
+
+  COMPLEX16Sequence *calFactorLinear;
+
+  COMPLEX16Sequence *calFactorQuadratic;
+
+  REAL8Sequence  * frequencyNodesLinear; /** empirical frequency nodes for the likelihood. NOTE: needs to be stored from data read from command line */
+  REAL8Sequence * frequencyNodesQuadratic;
+  REAL8 trigtime;
+  REAL8 ROQnullLikelihood;
+  
+  FILE *nodesFileLinear;
+  FILE *nodesFileQuadratic;
+   
+  /* Deprecated functions that should be removed at some point */
   gsl_vector_complex *hplus; /** waveform at frequency nodes. */
   gsl_vector_complex *hcross;
   gsl_vector_complex *hstrain;
   gsl_vector         *frequencyNodes; /** empirical frequency nodes for the likelihood. NOTE: needs to be stored from data read from command line */
   REAL8* amp_squared;
-  REAL8 trigtime;
+  /* end Deprecated functions */
+
 } LALInferenceROQModel;
 
+/**
+ * Structure to contain data-related Reduced Order Quadrature quantities
+ */
 /* Initialize an empty thread, saving a timestamp for benchmarking */
 LALInferenceThreadState *LALInferenceInitThread(void);
 

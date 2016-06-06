@@ -26,7 +26,7 @@ extern "C" {
 
 /**
  * \defgroup NormalizeSFTRngMed_h Header NormalizeSFTRngMed.h
- * \ingroup lalpulsar_common
+ * \ingroup lalpulsar_general
  *
  * \author Krishnan, B.
  * \date
@@ -62,7 +62,6 @@ extern "C" {
 #include <lal/SeqFactories.h>
 #include <lal/SFTfileIO.h>
 #include <lal/PulsarDataTypes.h>
-#include <lal/UserInput.h>
 #include <lal/SFTutils.h>
 #include <lal/RngMedBias.h>
 #include <lal/LALRunningMedian.h>

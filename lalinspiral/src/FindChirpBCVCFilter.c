@@ -742,7 +742,7 @@ LALFindChirpBCVCFilterSegment (
         thisEvent->tau4  = rhosqUnconstraint;
         thisEvent->tau5  = alphaU;
       }
-      else if ( ! params->clusterMethod == FindChirpClustering_none &&
+      else if ( !(params->clusterMethod == FindChirpClustering_none) &&
           j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
           rhosqConstraint > thisEvent->snr )
       {

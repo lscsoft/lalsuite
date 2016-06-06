@@ -1,4 +1,3 @@
-BUILT_SOURCES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 
 bin_PROGRAMS = lalapps_TwoSpect lalapps_TwoSpectTemplateBank

@@ -21,7 +21,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_Injections
+ * \ingroup lalapps_pulsar_Tools
  * \author R. Prix, M.A. Papa, X. Siemens, B. Allen, C. Messenger
  */
 
@@ -107,8 +107,6 @@ typedef enum
 // ----- User variables
 typedef struct
 {
-  BOOLEAN help;		/**< Print this help/usage message */
-
   /* output */
   CHAR *outSFTbname;		/**< Path and basefilename of output SFT files */
   BOOLEAN outSFTv1;		/**< use v1-spec for output-SFTs */
@@ -1198,7 +1196,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 int
 XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 {
-  int ret, len;
+  int len;
 
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Invalid NULL input 'argv'\n");
@@ -1222,90 +1220,88 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   strcpy ( uvar->transientWindowType, DEFAULT_TRANSIENT );
 
   // ---------- register all our user-variable ----------
-  XLALregBOOLUserStruct (  help,                'h', UVAR_HELP    , "Print this help/usage message");
-
   /* output options */
-  XLALregBOOLUserStruct (   outSingleSFT,       's', UVAR_OPTIONAL, "Write a single concatenated SFT (name given by --outSFTbname)" );
-  XLALregSTRINGUserStruct ( outSFTbname,        'n', UVAR_OPTIONAL, "Output SFTs: target Directory (if --outSingleSFT=false) or filename (if --outSingleSFT=true)");
+  XLALRegisterUvarMember(   outSingleSFT,       BOOLEAN, 's', OPTIONAL, "Write a single concatenated SFT (name given by --outSFTbname)" );
+  XLALRegisterUvarMember( outSFTbname,        STRING, 'n', OPTIONAL, "Output SFTs: target Directory (if --outSingleSFT=false) or filename (if --outSingleSFT=true)");
 
-  XLALregSTRINGUserStruct( TDDfile,		't', UVAR_OPTIONAL, "Basename for output of ASCII time-series");
-  XLALregSTRINGUserStruct( TDDframedir,		'F', UVAR_OPTIONAL, "Directory to output frame time-series into");
-  XLALregSTRINGUserStruct( frameDesc,	 	 0,  UVAR_OPTIONAL,  "Description-field entry in frame filename");
+  XLALRegisterUvarMember( TDDfile,		STRING, 't', OPTIONAL, "Basename for output of ASCII time-series");
+  XLALRegisterUvarMember( TDDframedir,		STRING, 'F', OPTIONAL, "Directory to output frame time-series into");
+  XLALRegisterUvarMember( frameDesc,	 	 STRING, 0,  OPTIONAL,  "Description-field entry in frame filename");
 
-  XLALregSTRINGUserStruct ( logfile,            'l', UVAR_OPTIONAL, "Filename for log-output");
+  XLALRegisterUvarMember( logfile,            STRING, 'l', OPTIONAL, "Filename for log-output");
 
   /* detector and ephemeris */
-  XLALregSTRINGUserStruct ( IFO,                'I', UVAR_OPTIONAL, "Detector: one of 'G1','L1','H1,'H2','V1', ...");
+  XLALRegisterUvarMember( IFO,                STRING, 'I', OPTIONAL, "Detector: one of 'G1','L1','H1,'H2','V1', ...");
 
-  XLALregSTRINGUserStruct( ephemEarth, 	 	0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
-  XLALregSTRINGUserStruct( ephemSun, 	 	0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
+  XLALRegisterUvarMember( ephemEarth, 	 	STRING, 0,  OPTIONAL, "Earth ephemeris file to use");
+  XLALRegisterUvarMember( ephemSun, 	 	STRING, 0,  OPTIONAL, "Sun ephemeris file to use");
 
   /* start + duration of timeseries */
-  XLALregEPOCHUserStruct ( startTime,           'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (format 'xx.yy[GPS|MJD]')");
-  XLALregINTUserStruct (  duration,              0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
-  XLALregSTRINGUserStruct ( timestampsFile,      0,  UVAR_OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
+  XLALRegisterUvarMember( startTime,           EPOCH, 'G', OPTIONAL, "Start-time of requested signal in detector-frame (format 'xx.yy[GPS|MJD]')");
+  XLALRegisterUvarMember(  duration,              INT4, 0,  OPTIONAL, "Duration of requested signal in seconds");
+  XLALRegisterUvarMember( timestampsFile,      STRING, 0,  OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 
   /* sampling and heterodyning frequencies */
-  XLALregREALUserStruct (  fmin,                 0, UVAR_OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
-  XLALregREALUserStruct (  Band,                 0, UVAR_OPTIONAL, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
+  XLALRegisterUvarMember(  fmin,                 REAL8, 0, OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
+  XLALRegisterUvarMember(  Band,                 REAL8, 0, OPTIONAL, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
 
   /* SFT properties */
-  XLALregREALUserStruct (  Tsft,                 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
-  XLALregREALUserStruct (  SFToverlap,           0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFile)");
-  XLALregSTRINGUserStruct (window,               0, UVAR_OPTIONAL, "Window function to be applied to the SFTs; required when using --noiseSFTs ('None', 'Hann', or 'Tukey'; when --noiseSFTs is not given, default is 'None')");
-  XLALregREALUserStruct (  tukeyBeta,            0, UVAR_OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
+  XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds");
+  XLALRegisterUvarMember(  SFToverlap,           REAL8, 0, OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFile)");
+  XLALRegisterUvarMember(window,               STRING, 0, OPTIONAL, "Window function to be applied to the SFTs; required when using --noiseSFTs ('None', 'Hann', or 'Tukey'; when --noiseSFTs is not given, default is 'None')");
+  XLALRegisterUvarMember(  tukeyBeta,            REAL8, 0, OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
 
   /* pulsar params */
-  XLALregEPOCHUserStruct ( refTime,             'S', UVAR_OPTIONAL, "Pulsar SSB reference epoch: format 'xx.yy[GPS|MJD]' [default: startTime]");
+  XLALRegisterUvarMember( refTime,             EPOCH, 'S', OPTIONAL, "Pulsar SSB reference epoch: format 'xx.yy[GPS|MJD]' [default: startTime]");
 
-  XLALregRAJUserStruct (  Alpha,		 0, UVAR_OPTIONAL, "Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
-  XLALregDECJUserStruct (  Delta,		 0, UVAR_OPTIONAL, "Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
+  XLALRegisterUvarMember(  Alpha,		 RAJ, 0, OPTIONAL, "Sky: equatorial J2000 right ascension (in radians or hours:minutes:seconds)");
+  XLALRegisterUvarMember(  Delta,		 DECJ, 0, OPTIONAL, "Sky: equatorial J2000 declination (in radians or degrees:minutes:seconds)");
 
-  XLALregREALUserStruct (  h0,                   0, UVAR_OPTIONAL, "Overall signal-amplitude h0");
-  XLALregREALUserStruct (  cosi,                 0, UVAR_OPTIONAL, "cos(iota) of inclination-angle iota");
-  XLALregREALUserStruct (  aPlus,                0, UVAR_OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_+ amplitude");
-  XLALregREALUserStruct (  aCross,               0, UVAR_OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_x amplitude");
+  XLALRegisterUvarMember(  h0,                   REAL8, 0, OPTIONAL, "Overall signal-amplitude h0");
+  XLALRegisterUvarMember(  cosi,                 REAL8, 0, OPTIONAL, "cos(iota) of inclination-angle iota");
+  XLALRegisterUvarMember(  aPlus,                REAL8, 0, OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_+ amplitude");
+  XLALRegisterUvarMember(  aCross,               REAL8, 0, OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_x amplitude");
 
-  XLALregREALUserStruct (  psi,                  0, UVAR_OPTIONAL, "Polarization angle psi");
-  XLALregREALUserStruct (  phi0,                 0, UVAR_OPTIONAL, "Initial GW phase phi");
-  XLALregREALUserStruct (  Freq,                 0, UVAR_OPTIONAL, "Intrinsic GW-frequency at refTime");
+  XLALRegisterUvarMember(  psi,                  REAL8, 0, OPTIONAL, "Polarization angle psi");
+  XLALRegisterUvarMember(  phi0,                 REAL8, 0, OPTIONAL, "Initial GW phase phi");
+  XLALRegisterUvarMember(  Freq,                 REAL8, 0, OPTIONAL, "Intrinsic GW-frequency at refTime");
 
-  XLALregREALUserStruct (  f1dot,                0, UVAR_OPTIONAL, "First spindown parameter f' at refTime");
-  XLALregREALUserStruct (  f2dot,                0, UVAR_OPTIONAL, "Second spindown parameter f'' at refTime");
-  XLALregREALUserStruct (  f3dot,                0, UVAR_OPTIONAL, "Third spindown parameter f''' at refTime");
+  XLALRegisterUvarMember(  f1dot,                REAL8, 0, OPTIONAL, "First spindown parameter f' at refTime");
+  XLALRegisterUvarMember(  f2dot,                REAL8, 0, OPTIONAL, "Second spindown parameter f'' at refTime");
+  XLALRegisterUvarMember(  f3dot,                REAL8, 0, OPTIONAL, "Third spindown parameter f''' at refTime");
 
   /* binary-system orbital parameters */
-  XLALregREALUserStruct (  orbitasini,           0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
-  XLALregREALUserStruct (  orbitEcc,             0, UVAR_OPTIONAL, "Orbital eccentricity");
-  XLALregEPOCHUserStruct ( orbitTp,        	 0, UVAR_OPTIONAL, "True epoch of periapsis passage: format 'xx.yy[GPS|MJD]'");
-  XLALregREALUserStruct (  orbitPeriod,          0, UVAR_OPTIONAL, "Orbital period (seconds)");
-  XLALregREALUserStruct (  orbitArgp,            0, UVAR_OPTIONAL, "Argument of periapsis (radians)");
+  XLALRegisterUvarMember(  orbitasini,           REAL8, 0, OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
+  XLALRegisterUvarMember(  orbitEcc,             REAL8, 0, OPTIONAL, "Orbital eccentricity");
+  XLALRegisterUvarMember( orbitTp,        	 EPOCH, 0, OPTIONAL, "True epoch of periapsis passage: format 'xx.yy[GPS|MJD]'");
+  XLALRegisterUvarMember(  orbitPeriod,          REAL8, 0, OPTIONAL, "Orbital period (seconds)");
+  XLALRegisterUvarMember(  orbitArgp,            REAL8, 0, OPTIONAL, "Argument of periapsis (radians)");
 
   /* noise */
-  XLALregSTRINGUserStruct ( noiseSFTs,          'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Uses ONLY SFTs falling within (--startTime,--duration) or the set given in --timstampsFile)");
-  XLALregREALUserStruct (  noiseSqrtSh,          0, UVAR_OPTIONAL,  "Gaussian noise with single-sided PSD sqrt(Sh)");
+  XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Uses ONLY SFTs falling within (--startTime,--duration) or the set given in --timstampsFile)");
+  XLALRegisterUvarMember(  noiseSqrtSh,          REAL8, 0, OPTIONAL,  "Gaussian noise with single-sided PSD sqrt(Sh)");
 
-  XLALregBOOLUserStruct (  lineFeature,          0, UVAR_OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
+  XLALRegisterUvarMember(  lineFeature,          BOOLEAN, 0, OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
 
-  XLALregBOOLUserStruct (  version,             'V', UVAR_SPECIAL, "Output version information");
+  XLALRegisterUvarMember(  version,             BOOLEAN, 'V', SPECIAL, "Output version information");
 
-  XLALregSTRINGUserStruct (parfile,             'p', UVAR_OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
+  XLALRegisterUvarMember(parfile,             STRING, 'p', OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
 
   /* transient signal window properties (name, start, duration) */
-  XLALregSTRINGUserStruct (transientWindowType,  0, UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
-  XLALregREALUserStruct (  transientStartTime,   0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
-  XLALregREALUserStruct (  transientTauDays,     0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in days.");
+  XLALRegisterUvarMember(transientWindowType,  STRING, 0, OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
+  XLALRegisterUvarMember(  transientStartTime,   REAL8, 0, OPTIONAL, "GPS start-time 't0' of transient signal window.");
+  XLALRegisterUvarMember(  transientTauDays,     REAL8, 0, OPTIONAL, "Timescale 'tau' of transient signal window in days.");
 
   /* ----- 'expert-user/developer' and deprecated options ----- */
-  XLALregINTUserStruct (   generationMode,       0,  UVAR_DEVELOPER, "How to generate timeseries: 0=all-at-once (faster), 1=per-sft (slower)");
+  XLALRegisterUvarMember(   generationMode,       INT4, 0,  DEVELOPER, "How to generate timeseries: 0=all-at-once (faster), 1=per-sft (slower)");
 
-  XLALregBOOLUserStruct (  hardwareTDD,         'b', UVAR_DEVELOPER, "Hardware injection: output TDD in binary format (implies generationMode=1)");
-  XLALregSTRINGUserStruct (actuation,            0,  UVAR_DEVELOPER, "Filname containing actuation function of this detector");
-  XLALregREALUserStruct (  actuationScale,       0,  UVAR_DEVELOPER,  "(Signed) scale-factor to apply to the actuation-function.");
+  XLALRegisterUvarMember(  hardwareTDD,         BOOLEAN, 'b', DEVELOPER, "Hardware injection: output TDD in binary format (implies generationMode=1)");
+  XLALRegisterUvarMember(actuation,            STRING, 0,  DEVELOPER, "Filname containing actuation function of this detector");
+  XLALRegisterUvarMember(  actuationScale,       REAL8, 0,  DEVELOPER,  "(Signed) scale-factor to apply to the actuation-function.");
 
-  XLALregBOOLUserStruct (  exactSignal,          0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
-  XLALregINTUserStruct (   randSeed,             0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
-  XLALregBOOLUserStruct ( outSFTv1,	 	 0, UVAR_DEVELOPER,   "[deprecated] Write output-SFTs in obsolete SFT-v1 format." );
+  XLALRegisterUvarMember(  exactSignal,          BOOLEAN, 0, DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
+  XLALRegisterUvarMember(   randSeed,             INT4, 0, DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
+  XLALRegisterUvarMember( outSFTv1,	 	 BOOLEAN, 0, DEVELOPER,   "[deprecated] Write output-SFTs in obsolete SFT-v1 format." );
 
   // ----- deprecated but still supported options [throw warning if used] ----------
   XLALRegisterUvarMember ( longitude,	REAL8, 	 0, DEPRECATED, "Use --Alpha instead!");
@@ -1322,11 +1318,10 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember ( orbitTpSSBMJD, STRING,0, DEFUNCT, "Obsolete, use --orbitTp instead");
 
   /* read cmdline & cfgfile  */
-  ret = XLALUserVarReadAllInput ( argc, argv );
-  XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse user-input\n");
-
-  if ( uvar->help ) 	/* if help was requested, we're done */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit )
+    exit (1);
 
   return XLAL_SUCCESS;
 

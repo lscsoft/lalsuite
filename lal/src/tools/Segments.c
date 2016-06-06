@@ -181,11 +181,15 @@ XLALSegCreate( const LIGOTimeGPS *start, const LIGOTimeGPS *end,
 int
 XLALGPSInSeg( const void *pgps, const void *pseg )
 {
+  XLAL_CHECK(pseg != NULL, XLAL_EFAULT);
+  const LIGOTimeGPS *gps = pgps;
+  const LALSeg *seg = pseg;
+
   /* if time is < start of segment, return -1 */
-  if ( XLALGPSCmp( (const LIGOTimeGPS *) pgps, &((const LALSeg *) pseg)->start ) < 0 )
+  if ( XLALGPSCmp( gps, &seg->start ) < 0 )
     return -1;
   /* else if time is < end of segment, return 0 */
-  if ( XLALGPSCmp( (const LIGOTimeGPS *) pgps, &((const LALSeg *) pseg)->end ) < 0 )
+  if ( XLALGPSCmp( gps, &seg->end ) < 0 )
     return 0;
   /* time is >= end of segment, return +1 */
   return +1;
@@ -208,6 +212,7 @@ XLALGPSInSeg( const void *pgps, const void *pseg )
 int
 XLALSegCmp( const void *pseg0, const void *pseg1 )
 {
+  XLAL_CHECK(pseg0 != NULL && pseg1 != NULL, XLAL_EFAULT);
   const LALSeg *seg0 = pseg0;
   const LALSeg *seg1 = pseg1;
   int result;
@@ -606,6 +611,48 @@ XLALSegListCoalesce( LALSegList *seglist )
 
   /* Return with success status code */
   return XLAL_SUCCESS;
+}
+
+
+/*---------------------------------------------------------------------------*/
+
+/**
+ * The function XLALSegListRange() returns the start and end GPS times of the
+ * segment list. These may \e not be the first and last GPS times in the segment
+ * list, for example if the segment list is not sorted.
+ */
+int
+XLALSegListRange( const LALSegList *seglist, LIGOTimeGPS *start, LIGOTimeGPS *end ) {
+
+  // Check input
+  XLAL_CHECK(seglist != NULL, XLAL_EFAULT);
+  XLAL_CHECK(seglist->segs != NULL, XLAL_EINVAL);
+  XLAL_CHECK(seglist->initMagic == SEGMENTSH_INITMAGICVAL, XLAL_EINVAL);
+  XLAL_CHECK(seglist->length > 0, XLAL_EINVAL);
+  XLAL_CHECK(start != NULL, XLAL_EFAULT);
+  XLAL_CHECK(end != NULL, XLAL_EFAULT);
+
+  // Set 'start' and 'end' to first and list GPS times in the segment list
+  *start = seglist->segs[0].start;
+  *end = seglist->segs[seglist->length-1].end;
+
+  // If segment list is sorted, we're done
+  if (seglist->sorted) {
+    return XLAL_SUCCESS;
+  }
+
+  // Find 'start' and 'end' to lowest/highest values of segments 'start' and 'end'
+  for (size_t i = 0; i < seglist->length; ++i) {
+    if (XLALGPSCmp(&seglist->segs[i].start, start) < 0) {
+      *start = seglist->segs[i].start;
+    }
+    if (XLALGPSCmp(&seglist->segs[i].end, end) > 0) {
+      *end = seglist->segs[i].end;
+    }
+  }
+
+  return XLAL_SUCCESS;
+
 }
 
 

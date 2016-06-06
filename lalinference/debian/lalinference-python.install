@@ -3,6 +3,7 @@ usr/bin/rapidpe_*
 usr/lib/python*/dist-packages/lalinference/*.py
 usr/lib/python*/dist-packages/lalinference/bayestar/*.py
 usr/lib/python*/dist-packages/lalinference/cylon.csv
+usr/lib/python*/dist-packages/lalinference/imrtgr/*.py
 usr/lib/python*/dist-packages/lalinference/ne_simplified_coastline.json
 usr/lib/python*/dist-packages/lalinference/rapid_pe/*.py
 usr/lib/python*/dist-packages/lalinference/_lalinference.so*

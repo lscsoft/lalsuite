@@ -28,6 +28,7 @@
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALStdio.h>
 
 #include <lal/DetectorSite.h>
 
@@ -104,6 +105,21 @@ tagLALPlaceAndGPS
     LIGOTimeGPS *p_gps;        /**< Pointer to a GPS time structure */
 }
 LALPlaceAndGPS;
+
+/**
+ * \name Format macros for printing LIGOTimeGPS
+ *
+ * ### Example ###
+ *
+ * @code
+ * LIGOTimeGPS t = { 1122334455, 666777888 };
+ * printf("The time is %" LAL_GPS_FORMAT "\n", LAL_GPS_PRINT(t));
+ * @endcode
+ */
+/*@{*/
+#define LAL_GPS_FORMAT       LAL_INT8_FORMAT ".%09" LAL_INT4_FORMAT
+#define LAL_GPS_PRINT(gps)   (INT8)(XLALGPSToINT8NS(&(gps)) / XLAL_BILLION_INT8), (INT4)labs(XLALGPSToINT8NS(&(gps)) % XLAL_BILLION_INT8)
+/*@}*/
 
 /*@}*/
 
@@ -183,6 +199,9 @@ int XLALGPSLeapSeconds( INT4 gpssec );
 
 /* Returns the leap seconds TAI-UTC for a given UTC broken down time. */
 int XLALLeapSecondsUTC( const struct tm *utc );
+
+/* Fill in derived fields in a given UTC time structure */
+struct tm *XLALFillUTC( struct tm *utc );
 
 /* Returns the GPS seconds since the GPS epoch for a specified UTC time structure. */
 INT4 XLALUTCToGPS( const struct tm *utc );

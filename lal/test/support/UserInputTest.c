@@ -24,6 +24,10 @@
 
 #include <lal/UserInput.h>
 
+// for test print usage and help page
+int XLALUserVarPrintUsage ( FILE *file );
+int XLALUserVarPrintHelp ( FILE *file );
+
 typedef struct
 {
   REAL8 argNum;
@@ -39,6 +43,8 @@ typedef struct
   REAL8 longRad;
   REAL8 latDMS;
   REAL8 latRad;
+  INT8 longInt;
+  BOOLEAN long_help;
 } UserInput_t;
 
 /**
@@ -46,14 +52,12 @@ typedef struct
  * but should be enough to catch big obvious malfunctions
  */
 int
-main(int argc, char *argv[])
+main(void)
 {
   int i, my_argc = 8;
   char **my_argv;
   const char *argv_in[] = { "progname", "--argNum=1", "--argStr=xyz", "--argBool=true", "-a", "1", "-b", "@" TEST_DATA_DIR "ConfigFileSample.cfg" };
   UserInput_t XLAL_INIT_DECL(my_uvars);
-
-  XLAL_CHECK ( argc == 1, XLAL_EINVAL, "No input arguments allowed.\n");
 
   my_argv = XLALCalloc ( my_argc, sizeof(char*) );
   for (i=0; i < my_argc; i ++ )
@@ -66,27 +70,47 @@ main(int argc, char *argv[])
   UserInput_t *uvar = &my_uvars;
   uvar->string2 = XLALStringDuplicate ( "this is the default value");
 
-  XLAL_CHECK ( XLALregREALUserStruct( argNum, 0, UVAR_REQUIRED, "Testing float argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregSTRINGUserStruct( argStr, 0, UVAR_REQUIRED, "Testing string argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregBOOLUserStruct( argBool, 0, UVAR_REQUIRED, "Testing bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregINTUserStruct( argInt, 'a', UVAR_REQUIRED, "Testing INT argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregINTUserStruct( dummy,  'c', UVAR_OPTIONAL, "Testing INT argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregBOOLUserStruct( argB2, 'b', UVAR_REQUIRED, "Testing short-option bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregSTRINGUserStruct( string2, 0, UVAR_REQUIRED, "Testing another string argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregEPOCHUserStruct( epochGPS, 0, UVAR_REQUIRED, "Testing epoch given as GPS time") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregEPOCHUserStruct( epochMJDTT, 0, UVAR_REQUIRED, "Testing epoch given as MJD(TT) time") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregRAJUserStruct( longHMS, 0, UVAR_REQUIRED, "Testing RAJ(HMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregRAJUserStruct( longRad, 0, UVAR_REQUIRED, "Testing RAJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregDECJUserStruct( latDMS, 0, UVAR_REQUIRED, "Testing DECJ(DMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALregDECJUserStruct( latRad, 0, UVAR_REQUIRED, "Testing DECJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( argNum, REAL8, 0, REQUIRED, "Testing float argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( argStr, STRING, 0, REQUIRED, "Testing string argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( argBool, BOOLEAN, 0, REQUIRED, "Testing bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( argInt, INT4, 'a', REQUIRED, "Testing INT4 argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( dummy,  INT4, 'c', OPTIONAL, "Testing INT4 argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( argB2, BOOLEAN, 'b', REQUIRED, "Testing short-option bool argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( string2, STRING, 0, REQUIRED, "Testing another string argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( epochGPS, EPOCH, 0, REQUIRED, "Testing epoch given as GPS time") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( epochMJDTT, EPOCH, 0, REQUIRED, "Testing epoch given as MJD(TT) time") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( longHMS, RAJ, 0, REQUIRED, "Testing RAJ(HMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( longRad, RAJ, 0, REQUIRED, "Testing RAJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( latDMS, DECJ, 0, REQUIRED, "Testing DECJ(DMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( latRad, DECJ, 0, REQUIRED, "Testing DECJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( longInt, INT8, 0, REQUIRED, "Testing INT8 argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( long_help, BOOLEAN, 0, NODEFAULT,
+                                       "This option is here to test the help page wrapping of long strings. "
+                                       "This option is here to test the help page wrapping of long strings. "
+                                       "This option is here to test the help page wrapping of long strings. "
+                                       "This option is here to test the help page wrapping of long strings. "
+                                       "This option is here to test the help page wrapping of long strings. "
+                                       "\n"
+                                       "This~option~is~here~to~test~the~help~page~wrapping~of~long~strings~without~spaces.~"
+                                       "This~option~is~here~to~test~the~help~page~wrapping~of~long~strings~without~spaces.~"
+                                       "This~option~is~here~to~test~the~help~page~wrapping~of~long~strings~without~spaces."
+                 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- now read all input from commandline and config-file ---------- */
-  XLAL_CHECK ( XLALUserVarReadAllInput ( my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK ( XLALUserVarReadAllInput ( &should_exit, my_argc, my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( should_exit == 0, XLAL_EFUNC );
 
-  /* ---------- test help-string generation */
-  CHAR *helpstr;
-  XLAL_CHECK ( (helpstr = XLALUserVarHelpString ( argv[0])) != NULL, XLAL_EFUNC );
-  XLALFree ( helpstr );
+  /* ---------- test print usage and help page */
+  printf( "=== Begin usage string ===\n" );
+  fflush( stdout );
+  XLALUserVarPrintUsage( stdout );
+  printf( "--- End usage string ---\n" );
+  printf( "=== Begin help page ===\n" );
+  fflush( stdout );
+  XLALUserVarPrintHelp( stdout );
+  printf( "--- End help page ---\n" );
+  fflush( stdout );
 
   /* ---------- test log-generation */
   CHAR *logstr;
@@ -106,8 +130,10 @@ main(int argc, char *argv[])
                XLALGPSToStr ( buf1, &uvar->epochGPS), XLALGPSToStr ( buf2, &uvar->epochMJDTT ) );
 
   REAL8 diff, tol = 3e-15;
-  XLAL_CHECK ( (diff = fabs(uvar->longHMS - uvar->longRad)) < tol, XLAL_EFAILED, "longitude(HMS) = %.16g differs from longitude(rad) = %.16g by %g > tolerance\n", uvar->longHMS, uvar->longRad, diff, tol );
-  XLAL_CHECK ( (diff = fabs(uvar->latDMS - uvar->latRad)) < tol, XLAL_EFAILED, "latitude(HMS) = %.16g differs from latitude(rad) = %.16g by %g > tolerance\n", uvar->latDMS, uvar->latRad, diff, tol );
+  XLAL_CHECK ( (diff = fabs(uvar->longHMS - uvar->longRad)) < tol, XLAL_EFAILED, "longitude(HMS) = %.16g differs from longitude(rad) = %.16g by %g > %g\n", uvar->longHMS, uvar->longRad, diff, tol );
+  XLAL_CHECK ( (diff = fabs(uvar->latDMS - uvar->latRad)) < tol, XLAL_EFAILED, "latitude(HMS) = %.16g differs from latitude(rad) = %.16g by %g > %g\n", uvar->latDMS, uvar->latRad, diff, tol );
+
+  XLAL_CHECK ( uvar->longInt == 4294967294, XLAL_EFAILED, "Failed to read an INT8: longInt = %" LAL_INT8_FORMAT " != 4294967294", uvar->longInt );
 
   /* ----- cleanup ---------- */
   XLALDestroyUserVars();

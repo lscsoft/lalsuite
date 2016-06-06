@@ -67,8 +67,6 @@ typedef struct
 
 typedef struct
 {
-  BOOLEAN help;
-
   LALStringVector* IFOs; /**< list of detector-names "H1,H2,L1,.." or single detector*/
 
   REAL8 Alpha;		/**< a single skyposition Alpha: radians, equatorial coords. */
@@ -117,10 +115,10 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALInitUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
-  XLAL_CHECK ( XLALUserVarReadAllInput ( argc,argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if (uvar.help) { 	/* help requested: we're done */
-    exit(0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit(1);
   }
 
   if ( uvar.version )
@@ -286,8 +284,6 @@ XLALInitUserVars ( UserVariables_t *uvar )
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set a few defaults */
-  uvar->help = 0;
-
   XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_ENOMEM, "Call to XLALCreateStringVector() failed." );
 
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
@@ -307,31 +303,30 @@ XLALInitUserVars ( UserVariables_t *uvar )
   uvar->noiseSqrtShX = NULL;
 
   /* register all user-variables */
-  XLALregBOOLUserStruct(	help,		'h', UVAR_HELP,		"Print this help/usage message");
-  XLALregLISTUserStruct( IFOs,                  'I', UVAR_OPTIONAL, "Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" [only 1 detector supported at the moment] ");
+  XLALRegisterUvarMember( IFOs,                  STRINGVector, 'I', OPTIONAL, "Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" [only 1 detector supported at the moment] ");
 
-  XLALregREALUserStruct(	Alpha,		'a', UVAR_OPTIONAL,	"single skyposition Alpha in radians, equatorial coords.");
-  XLALregREALUserStruct(	Delta, 		'd', UVAR_OPTIONAL,	"single skyposition Delta in radians, equatorial coords.");
+  XLALRegisterUvarMember(	Alpha,		REAL8, 'a', OPTIONAL,	"single skyposition Alpha in radians, equatorial coords.");
+  XLALRegisterUvarMember(	Delta, 		REAL8, 'd', OPTIONAL,	"single skyposition Delta in radians, equatorial coords.");
 
-  XLALregSTRINGUserStruct( skyGridFile,		's', UVAR_OPTIONAL,	"Alternatively: sky-grid file");
+  XLALRegisterUvarMember( skyGridFile,		STRING, 's', OPTIONAL,	"Alternatively: sky-grid file");
 
-  XLALregLISTUserStruct( 	timeGPS,        't', UVAR_OPTIONAL, 	"GPS time at which to compute detector states (separate multiple timestamps by commata)");
-  XLALregLISTUserStruct(	timeStampsFiles, 'T', UVAR_OPTIONAL,	"Alternative: time-stamps file(s) (comma-separated list per IFO, or one for all)");
-  XLALregINTUserStruct(		Tsft,		 0, UVAR_OPTIONAL,	"Assumed length of one SFT in seconds; needed for timestamps offset consistency with F-stat based codes");
+  XLALRegisterUvarMember( 	timeGPS,        STRINGVector, 't', OPTIONAL, 	"GPS time at which to compute detector states (separate multiple timestamps by commata)");
+  XLALRegisterUvarMember(	timeStampsFiles, STRINGVector, 'T', OPTIONAL,	"Alternative: time-stamps file(s) (comma-separated list per IFO, or one for all)");
+  XLALRegisterUvarMember(		Tsft,		 INT4, 0, OPTIONAL,	"Assumed length of one SFT in seconds; needed for timestamps offset consistency with F-stat based codes");
 
-  XLALregLISTUserStruct ( noiseSqrtShX,		 0, UVAR_OPTIONAL, "Per-detector noise PSD sqrt(SX). Only ratios relevant to compute noise weights. Defaults to 1,1,...");
-  XLALregBOOLUserStruct ( singleIFOweighting,	 0, UVAR_OPTIONAL, "Normalize single-IFO quantities by single-IFO SX instead of Stot");
+  XLALRegisterUvarMember( noiseSqrtShX,		 STRINGVector, 0, OPTIONAL, "Per-detector noise PSD sqrt(SX). Only ratios relevant to compute noise weights. Defaults to 1,1,...");
+  XLALRegisterUvarMember( singleIFOweighting,	 BOOLEAN, 0, OPTIONAL, "Normalize single-IFO quantities by single-IFO SX instead of Stot");
 
-  XLALregSTRINGUserStruct (	ephemEarth,	 0,  UVAR_OPTIONAL,	"Earth ephemeris file to use");
-  XLALregSTRINGUserStruct (	ephemSun,	 0,  UVAR_OPTIONAL,	"Sun ephemeris file to use");
+  XLALRegisterUvarMember(	ephemEarth,	 STRING, 0,  OPTIONAL,	"Earth ephemeris file to use");
+  XLALRegisterUvarMember(	ephemSun,	 STRING, 0,  OPTIONAL,	"Sun ephemeris file to use");
 
-  XLALregSTRINGUserStruct(	outab,		'o', UVAR_OPTIONAL,	"output file for antenna pattern functions a(t), b(t) at each timestamp");
-  XLALregSTRINGUserStruct(	outABCD,	'O', UVAR_OPTIONAL,	"output file for antenna pattern matrix elements A, B, C, D averaged over timestamps");
+  XLALRegisterUvarMember(	outab,		STRING, 'o', OPTIONAL,	"output file for antenna pattern functions a(t), b(t) at each timestamp");
+  XLALRegisterUvarMember(	outABCD,	STRING, 'O', OPTIONAL,	"output file for antenna pattern matrix elements A, B, C, D averaged over timestamps");
 
-  XLALregBOOLUserStruct(	version,        'V', UVAR_SPECIAL,      "Output code version");
+  XLALRegisterUvarMember(	version,        BOOLEAN, 'V', SPECIAL,      "Output code version");
 
   /* developer user variables */
-  XLALregSTRINGUserStruct(	timeStampsFile,	  0, UVAR_OPTIONAL,	"Alternative: single time-stamps file (deprecated, use --timeStampsFiles instead");
+  XLALRegisterUvarMember(	timeStampsFile,	  STRING, 0, OPTIONAL,	"Alternative: single time-stamps file (deprecated, use --timeStampsFiles instead");
 
   return XLAL_SUCCESS;
 

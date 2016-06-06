@@ -145,7 +145,6 @@ int main(INT4 argc, CHAR *argv[])
   UINT4 k;
 
   /* user input variables */
-  BOOLEAN uvar_help = 0;
   CHAR *uvar_nrDir = NULL;
   CHAR *uvar_pattern = NULL;
   CHAR *uvar_nrGroup = NULL;
@@ -169,7 +168,6 @@ int main(INT4 argc, CHAR *argv[])
   uvar_format = (CHAR *)LALCalloc(1, 256 * sizeof(CHAR));
   strcpy(uvar_format, "NINJA1");
 
-  LAL_CALL(LALRegisterBOOLUserVar(&status, "help", 'h', UVAR_HELP, "Print this message", &uvar_help), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "datadir", 'D', UVAR_REQUIRED, "Directory with NR data", &uvar_nrDir), &status);
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "pattern", 0, UVAR_OPTIONAL, "Filename pattern", &uvar_pattern), &status);
 
@@ -201,11 +199,10 @@ int main(INT4 argc, CHAR *argv[])
   LAL_CALL(LALRegisterSTRINGUserVar(&status, "nr-group", 0, UVAR_OPTIONAL, "NR group list (default=all)", &uvar_nrGroup), &status);
 
   /* read all command line variables */
-  LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0);
+  BOOLEAN should_exit = 0;
+  LAL_CALL(LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
 
   /* check for supported metadata format */
   if (strcmp(uvar_format, "NINJA1") == 0);

@@ -40,8 +40,7 @@ extern "C" {
  * \ingroup lal_support
  * \author Reinhard Prix
  * \date 2005
- * \brief General-purpose log-message handling, controlled by lalDebugLevel independent of lalDebugLevel,
- * mostly modelled after the MSG_LOG class in BOINC.
+ * \brief General-purpose log-message handling, mostly modelled after the MSG_LOG class in BOINC.
  *
  */
 /*@{*/
@@ -52,18 +51,18 @@ extern "C" {
 /** Argument-type for LogPrintf(): determines log-level of this message */
 typedef enum
   {
-    LOG_CRITICAL = -1,  /**< log-level for critical errors */
-    LOG_NORMAL = 0,     /**< 'normal' log-level */
-    LOG_DEBUG  = 1,     /**< debug log-level */
-    LOG_DETAIL = 2,     /**< detailed log-level */
-    LOG_LAST            /**< internal: don't use */
+    LOG_NONE = 0,	/**< internal: don't use */
+    LOG_CRITICAL,	/**< log-level for critical errors */
+    LOG_NORMAL,		/**< 'normal' log-level */
+    LOG_DEBUG,		/**< debug log-level */
+    LOG_DETAIL,		/**< detailed log-level */
+    LOG_LAST		/**< internal: don't use */
   } LogLevel_t;
 
 /*---------- GLOBALs ----------*/
 
 /*---------- PROTOTYPES [API] ----------*/
-void LogSetFile(FILE* file);
-void LogSetLevel(LogLevel_t level);
+LogLevel_t LogLevel(void);
 
 void LogPrintf (LogLevel_t, const char* format, ...) _LAL_GCC_PRINTF_FORMAT_(2,3);
 void LogPrintfVerbatim (LogLevel_t, const char* format, ...) _LAL_GCC_PRINTF_FORMAT_(2,3);

@@ -63,8 +63,19 @@ import os
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('BAYESTAR')
 
+methods = '''
+    toa_phoa_snr
+    toa_snr_mcmc
+    toa_phoa_snr_mcmc
+    toa_snr_mcmc_kde
+    toa_phoa_snr_mcmc_kde
+    '''.split()
+default_method = 'toa_phoa_snr'
+command.skymap_parser.add_argument(
+    '--method', choices=methods, default=default_method,
+    help='Sky localization method [default: %(default)s]')
 parser = command.ArgumentParser(
-    parents=[command.waveform_parser, command.prior_parser])
+    parents=[command.waveform_parser, command.prior_parser, command.skymap_parser])
 parser.add_argument('-N', '--dry-run', default=False, action='store_true',
     help='Dry run; do not update GraceDB entry [default: %(default)s]')
 parser.add_argument('-o', '--output', metavar='FILE.fits[.gz]',
@@ -131,13 +142,19 @@ try:
     # download psd.xml.gz
     psd_file = gracedb.files(graceid, "psd.xml.gz")
 
+    if opts.chain_dump:
+        chain_dump = opts.output.replace('.fits.gz', '').replace('.fits', '') + '.chain.npy'
+    else:
+        chain_dump = None
+
     # perform sky localization
     log.info("starting sky localization")
     sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(
         coinc_file, psd_file, opts.waveform, opts.f_low,
         opts.min_distance, opts.max_distance, opts.prior_distance_power,
-        phase_convention=opts.phase_convention,
-        f_high_truncate=opts.f_high_truncate)
+        phase_convention=opts.phase_convention, nside=opts.nside,
+        f_high_truncate=opts.f_high_truncate,
+        method=opts.method, chain_dump=chain_dump)
     log.info("sky localization complete")
 
     # upload FITS file

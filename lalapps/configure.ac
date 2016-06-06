@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALApps],[6.17.1.1],[lal-discuss@ligo.org])
+AC_INIT([LALApps],[6.18.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -25,30 +25,36 @@ AC_CONFIG_FILES([\
   src/online/Makefile \
   src/power/Makefile \
   src/pulsar/CreateEphemeris/Makefile \
+  src/pulsar/CrossCorr/Makefile \
+  src/pulsar/FITSTools/Makefile \
+  src/pulsar/Fscan/Makefile \
   src/pulsar/Fstatistic/Makefile \
   src/pulsar/GCT/Makefile \
+  src/pulsar/HeterodyneSearch/Makefile \
+  src/pulsar/Hough/Makefile \
+  src/pulsar/HoughFstat/Makefile \
   src/pulsar/Injections/Makefile \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/Makefile \
-  src/pulsar/SFTReferenceLibrary/Makefile \
+  src/pulsar/SFTTools/Makefile \
   src/pulsar/SidebandSearch/Makefile \
-  src/pulsar/HeterodyneSearch/Makefile \
   src/pulsar/Tools/Makefile \
   src/pulsar/TwoSpect/Makefile \
-  src/pulsar/crosscorr/Makefile \
-  src/pulsar/fscan/Makefile \
-  src/pulsar/hough/Makefile \
-  src/pulsar/hough/src/Makefile \
-  src/pulsar/hough/src2/Makefile \
   src/pulsar/Xray/Makefile \
   src/ring/Makefile \
   src/stochastic/Makefile \
   src/string/Makefile \
 ])
-# FIXME: -Wno-unsupported is a hack which silences warnings regarding
-# subdir-objects in automake-1.14+. this will be the default, and only,
-# behaviour in automake-2.0+ so this is only a temporary measure
-AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests -Wno-unsupported])
+AM_INIT_AUTOMAKE([ \
+  1.11 \
+  foreign \
+  subdir-objects \
+  color-tests \
+  parallel-tests \
+  tar-ustar \
+  dist-xz \
+  no-dist-gzip \
+])
 
 AC_CANONICAL_HOST
 
@@ -71,7 +77,7 @@ LALAPPS_ENABLE_BAMBI
 LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
-LALAPPS_ENABLE_CFITSIO
+LALSUITE_ENABLE_CFITSIO
 LALAPPS_ENABLE_PSS
 LALAPPS_ENABLE_GDS
 
@@ -129,6 +135,9 @@ AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
 LALSUITE_CHECK_PYTHON([2.6])
+
+# check for pager programs
+LALSUITE_CHECK_PAGER
 
 # check for condor_compile
 AC_ENABLE_SHARED
@@ -269,25 +278,8 @@ if test "$lalxml" = "true"; then
                    [CPPFLAGS="$lal_pre_libxml2_CPPFLAGS"])
 fi
 
-# check for libcfitsio
-if test "${cfitsio}" = "true"; then
-  PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
-  lal_pre_cfitsio_libs="$LIBS"
-  LALSUITE_ADD_FLAGS([C],[],[${CFITSIO_LIBS}])
-  AC_SEARCH_LIBS([ffopen],[cfitsio],,
-                 [cfitsio="false"]
-                 [LIBS="$lal_pre_cfitsio_LIBS"])
-fi
-
-# check for libcfitsio headers
-if test "${cfitsio}" = "true"; then
-  lal_pre_cfitsio_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_FLAGS([C],[${CFITSIO_CFLAGS}],[])
-  AC_CHECK_HEADERS([fitsio.h],,
-                   [cfitsio="false"]
-                   [CPPFLAGS="$lal_pre_cfitsio_CPPFLAGS"])
-fi
-LALSUITE_ENABLE_MODULE([CFITSIO])
+# check for cfitsio
+LALSUITE_USE_CFITSIO
 
 # check for pss
 if test "${pss}" = "true"; then
@@ -344,17 +336,17 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libararies and headers
-LALSUITE_CHECK_LIB([LAL],[6.15.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.15.0],[XLALCacheImport],[lal/LALCache.h])
-LALSUITE_CHECK_OPT_LIB([LALFrame],[1.3.0],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.2.0],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
-LALSUITE_CHECK_OPT_LIB([LALSimulation],[1.4.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
-LALSUITE_CHECK_OPT_LIB([LALBurst],[1.4.0],[XLALEPSearch],[lal/EPSearch.h])
-LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.7.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.12.0],[XLALComputeFstat],[lal/ComputeFstat.h])
-LALSUITE_CHECK_OPT_LIB([LALInference],[1.5.0],[LALInferenceAddVariable],[lal/LALInference.h])
-LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.4],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
+LALSUITE_CHECK_LIB([LAL],[6.16.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.16.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_OPT_LIB([LALFrame],[1.4.0],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.2.7],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.1],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_OPT_LIB([LALSimulation],[1.5.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_OPT_LIB([LALBurst],[1.4.1],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.7.4],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.13.0],[XLALComputeFstat],[lal/ComputeFstat.h])
+LALSUITE_CHECK_OPT_LIB([LALInference],[1.6.0],[LALInferenceAddVariable],[lal/LALInference.h])
+LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.17],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 
 # check that lal was built with BOINC support, if required
 LALSUITE_CHECK_BOINC

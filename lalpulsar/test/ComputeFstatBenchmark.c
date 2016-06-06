@@ -34,7 +34,6 @@
 
 typedef struct
 {
-  BOOLEAN help;			//!< output help-string */
   CHAR *FstatMethod;		//!< select which method/algorithm to use to compute the F-statistic
   REAL8 Freq;
   REAL8 f1dot;
@@ -82,8 +81,7 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_EFUNC );
   uvar->outputInfo = NULL;
 
-  XLAL_CHECK ( XLALRegisterUvarMember ( help,           BOOLEAN,        'h', HELP,    "Print help message" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( FstatMethod,    STRING,         0, OPTIONAL,  XLALFstatMethodHelpString() ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember ( FstatMethod,    STRING,         0, OPTIONAL,  "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( Freq,           REAL8,          0, OPTIONAL,  "Search frequency in Hz" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( f1dot,          REAL8,          0, OPTIONAL,  "Search spindown f1dot in Hz/s" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( FreqResolution, REAL8Vector,    0, OPTIONAL,  "Range of frequency resolution factor 'r' (st dFreq = 1/(r*T)) [2-number range input]" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -98,9 +96,10 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( XLALRegisterUvarMember ( Tsft,           REAL8,          0, DEVELOPER, "SFT length" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( reuseInput,     BOOLEAN,        0, DEVELOPER, "Re-use FstatInput from previous setups (only useful for checking workspace management)" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
-  if (uvar->help) {	// if help was requested, we're done here
-    return XLAL_SUCCESS;
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    return EXIT_FAILURE;
   }
   // check user input
   XLAL_CHECK ( uvar->numSegments >= 1, XLAL_EINVAL );

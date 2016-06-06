@@ -4,24 +4,32 @@
 
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 1
+Release: 1%{?dist}
 Summary: LSC Algorithm Pulsar Library
 License: GPL
 Group: LAL
-Source: %{name}-%{version}.tar.gz
-URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
+Source: %{name}-%{version}.tar.xz
+URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig, python-devel, octave-devel, gsl-devel, fftw-devel, numpy
-BuildRequires: lal-devel >= 6.15.0
-BuildRequires: lal-python >= 6.15.0
-BuildRequires: lal-octave >= 6.15.0
-BuildRequires: lalxml-devel >= 1.2.0
-BuildRequires: lalxml-python >= 1.2.0
-BuildRequires: lalxml-octave >= 1.2.0
-Requires: gsl, fftw
-Requires: lal >= 6.15.0
-Requires: lalxml >= 1.2.0
+BuildRequires: cfitsio-devel
+BuildRequires: fftw-devel
+BuildRequires: gsl-devel
+BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
+BuildRequires: swig
+BuildRequires: lal-devel >= 6.16.0
+BuildRequires: lal-python >= 6.16.0
+BuildRequires: lal-octave >= 6.16.0
+BuildRequires: lalxml-devel >= 1.2.1
+BuildRequires: lalxml-python >= 1.2.1
+BuildRequires: lalxml-octave >= 1.2.1
+Requires: cfitsio
+Requires: fftw
+Requires: gsl
+Requires: lal >= 6.16.0
+Requires: lalxml >= 1.2.1
 Prefix: %{_prefix}
 
 %description
@@ -33,9 +41,12 @@ that use the LAL Pulsar library.
 Summary: Files and documentation needed for compiling programs that use LAL Pulsar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel, fftw-devel, fftw-static
-Requires: lal-devel >= 6.15.0
-Requires: lalxml-devel >= 1.2.0
+Requires: cfitsio-devel
+Requires: fftw-devel
+Requires: fftw-static
+Requires: gsl-devel
+Requires: lal-devel >= 6.16.0
+Requires: lalxml-devel >= 1.2.1
 %description devel
 The LSC Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
@@ -45,9 +56,10 @@ Pulsar library.
 Summary: Python bindings for LALPulsar
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python, numpy
-Requires: lal-python >= 6.15.0
-Requires: lalxml-python >= 1.2.0
+Requires: numpy
+Requires: python
+Requires: lal-python >= 6.16.0
+Requires: lalxml-python >= 1.2.1
 %description python
 This package provides the Python bindings for LALPulsar.
 
@@ -56,8 +68,8 @@ Summary: Octave bindings for LALPulsar
 Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
-Requires: lal-octave >= 6.15.0
-Requires: lalxml-octave >= 1.2.0
+Requires: lal-octave >= 6.16.0
+Requires: lalxml-octave >= 1.2.1
 %description octave
 This package provides the Octave bindings for LALPulsar.
 
@@ -65,7 +77,7 @@ This package provides the Octave bindings for LALPulsar.
 %setup -q
 
 %build
-%configure --disable-gcc-flags --enable-swig --without-simd
+%configure --disable-gcc-flags --enable-swig --enable-cfitsio
 %{__make} V=1
 
 %check
@@ -106,4 +118,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files octave
 %defattr(-,root,root)
-%{_libexecdir}/octave/*/site/oct/*/lalpulsar.oct*
+%{_prefix}/lib*/octave/*/site/oct/*/lalpulsar.oct*
+
+# dates should be formatted using: 'date +"%a %b %d %Y"'
+%changelog
+* Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 1.13.0-1
+- Pre O2 packaging test release

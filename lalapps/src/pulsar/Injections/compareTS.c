@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_Injections
+ * \ingroup lalapps_pulsar_Tools
  * \author R. Prix
  * \brief
  * compare two binary strain files, written from hardware-injection
@@ -46,7 +46,6 @@ typedef struct {
   CHAR *infile2;
   INT4 debug;
   BOOLEAN verbose;
-  BOOLEAN help;
   BOOLEAN version;
   REAL8 relErrorMax;
 } UserVar;
@@ -72,10 +71,10 @@ main(int argc, char *argv[])
   XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
-  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput ( argc,argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if (uvar.help) { 	/* help requested: we're done */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit (1);
   }
 
   if (uvar.version)
@@ -123,12 +122,11 @@ initUserVars ( UserVar *uvar )
   uvar->relErrorMax = 1e-4;
 
   /* now register all our user-variable */
-  XLALregBOOLUserStruct ( 	help,	        'h', UVAR_HELP,     "Print this help/usage message");
-  XLALregSTRINGUserStruct (	infile1,	'1', UVAR_REQUIRED, "First timeseries input file");
-  XLALregSTRINGUserStruct ( 	infile2,	'2', UVAR_REQUIRED, "Second timeseries input file");
-  XLALregBOOLUserStruct ( 	verbose,	'v', UVAR_OPTIONAL, "Verbose output of differences");
-  XLALregREALUserStruct ( 	relErrorMax,   	'e', UVAR_OPTIONAL, "Maximal relative error acceptable to 'pass' comparison");
-  XLALregBOOLUserStruct ( 	version,	'V', UVAR_SPECIAL,  "Output version information");
+  XLALRegisterUvarMember(	infile1,	STRING, '1', REQUIRED, "First timeseries input file");
+  XLALRegisterUvarMember( 	infile2,	STRING, '2', REQUIRED, "Second timeseries input file");
+  XLALRegisterUvarMember( 	verbose,	BOOLEAN, 'v', OPTIONAL, "Verbose output of differences");
+  XLALRegisterUvarMember( 	relErrorMax,   	REAL8, 'e', OPTIONAL, "Maximal relative error acceptable to 'pass' comparison");
+  XLALRegisterUvarMember( 	version,	BOOLEAN, 'V', SPECIAL,  "Output version information");
 
   return XLAL_SUCCESS;
 } /* initUserVars() */

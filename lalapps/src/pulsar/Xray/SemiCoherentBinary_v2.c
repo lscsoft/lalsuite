@@ -16,8 +16,13 @@
  *  MA  02111-1307  USA
  */
 
+/**
+ * \defgroup lalapps_pulsar_Xray X-ray Search Applications
+ * \ingroup lalapps_pulsar_Apps
+ */
+
 /** \author C.Messenger
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar_Xray
  * \file
  * \brief
  * This code is designed to compute the Bayes factor for a semi-coherent analysis
@@ -64,7 +69,6 @@
 /** A structure that stores user input variables
  */
 typedef struct {
-  BOOLEAN help;		            /**< trigger output of help string */
   CHAR *sftbasename;                /**< basename of input SFT files */
   CHAR *outputdir;                  /**< the output directory */
   REAL8 freq;                       /**< the starting frequency */
@@ -139,9 +143,6 @@ int main( int argc, char *argv[] )  {
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off();
-
-  /* setup LAL debug level */
-  LogSetLevel(lalDebugLevel);
 
   /* register and read all user-variables */
   if (XLALReadUserVars(argc,argv,&uvar,&clargs)) {
@@ -442,37 +443,35 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->deltaorbphase = 2.0*LAL_PI;
 
   /* ---------- register all user-variables ---------- */
-  XLALregBOOLUserStruct(help, 		        'h', UVAR_HELP,     "Print this message");
-  XLALregSTRINGUserStruct(sftbasename, 	        'i', UVAR_REQUIRED, "The basename of the input SFT files");
-  XLALregSTRINGUserStruct(outputdir, 	        'o', UVAR_REQUIRED, "The output directory name");
-  XLALregSTRINGUserStruct(comment, 	        'C', UVAR_REQUIRED, "An analysis descriptor string");
-  XLALregSTRINGUserStruct(tempdir,              'z', UVAR_OPTIONAL, "A temporary directory");
-  XLALregREALUserStruct(freq,                   'f', UVAR_REQUIRED, "The starting frequency (Hz)");
-  XLALregREALUserStruct(freqband,   	        'b', UVAR_OPTIONAL, "The frequency band (Hz)");
-  XLALregREALUserStruct(minorbperiod,           'p', UVAR_REQUIRED, "The minimum orbital period value (sec)");
-  XLALregREALUserStruct(maxorbperiod,   	'P', UVAR_OPTIONAL, "The maximum orbital period value (sec)");
-  XLALregREALUserStruct(minasini,               'a', UVAR_REQUIRED, "The minimum orbital semi-major axis (sec)");
-  XLALregREALUserStruct(maxasini,       	'A', UVAR_OPTIONAL, "The maximum orbital semi-major axis (sec)");
-  XLALregREALUserStruct(tasc,                   't', UVAR_REQUIRED, "The best guess orbital time of ascension (rads)");
-  XLALregREALUserStruct(deltaorbphase,      	'T', UVAR_OPTIONAL, "The orbital phase uncertainty (cycles)");
-  XLALregREALUserStruct(mismatch,        	'm', UVAR_OPTIONAL, "The grid mismatch (0->1)");
-  XLALregREALUserStruct(coverage,        	'c', UVAR_OPTIONAL, "The random template coverage (0->1)");
-  XLALregINTUserStruct(blocksize,        	'r', UVAR_OPTIONAL, "The running median block size");
-  XLALregINTUserStruct(tsft,                    'S', UVAR_OPTIONAL, "The length of the input SFTs in seconds");
-  XLALregINTUserStruct(ntoplist,                'x', UVAR_OPTIONAL, "output the top N results");
-  XLALregINTUserStruct(seed,                    'X', UVAR_OPTIONAL, "The random number seed (0 = clock)");
-  XLALregINTUserStruct(gpsstart,                's', UVAR_OPTIONAL, "The minimum start time (GPS sec)");
-  XLALregINTUserStruct(gpsend,          	'e', UVAR_OPTIONAL, "The maximum end time (GPS sec)");
-  XLALregBOOLUserStruct(version,                'V', UVAR_SPECIAL,  "Output code version");
+  XLALRegisterUvarMember(sftbasename, 	        STRING, 'i', REQUIRED, "The basename of the input SFT files");
+  XLALRegisterUvarMember(outputdir, 	        STRING, 'o', REQUIRED, "The output directory name");
+  XLALRegisterUvarMember(comment, 	        STRING, 'C', REQUIRED, "An analysis descriptor string");
+  XLALRegisterUvarMember(tempdir,              STRING, 'z', OPTIONAL, "A temporary directory");
+  XLALRegisterUvarMember(freq,                   REAL8, 'f', REQUIRED, "The starting frequency (Hz)");
+  XLALRegisterUvarMember(freqband,   	        REAL8, 'b', OPTIONAL, "The frequency band (Hz)");
+  XLALRegisterUvarMember(minorbperiod,           REAL8, 'p', REQUIRED, "The minimum orbital period value (sec)");
+  XLALRegisterUvarMember(maxorbperiod,   	REAL8, 'P', OPTIONAL, "The maximum orbital period value (sec)");
+  XLALRegisterUvarMember(minasini,               REAL8, 'a', REQUIRED, "The minimum orbital semi-major axis (sec)");
+  XLALRegisterUvarMember(maxasini,       	REAL8, 'A', OPTIONAL, "The maximum orbital semi-major axis (sec)");
+  XLALRegisterUvarMember(tasc,                   REAL8, 't', REQUIRED, "The best guess orbital time of ascension (rads)");
+  XLALRegisterUvarMember(deltaorbphase,      	REAL8, 'T', OPTIONAL, "The orbital phase uncertainty (cycles)");
+  XLALRegisterUvarMember(mismatch,        	REAL8, 'm', OPTIONAL, "The grid mismatch (0->1)");
+  XLALRegisterUvarMember(coverage,        	REAL8, 'c', OPTIONAL, "The random template coverage (0->1)");
+  XLALRegisterUvarMember(blocksize,        	INT4, 'r', OPTIONAL, "The running median block size");
+  XLALRegisterUvarMember(tsft,                    INT4, 'S', OPTIONAL, "The length of the input SFTs in seconds");
+  XLALRegisterUvarMember(ntoplist,                INT4, 'x', OPTIONAL, "output the top N results");
+  XLALRegisterUvarMember(seed,                    INT4, 'X', OPTIONAL, "The random number seed (0 = clock)");
+  XLALRegisterUvarMember(gpsstart,                INT4, 's', OPTIONAL, "The minimum start time (GPS sec)");
+  XLALRegisterUvarMember(gpsend,          	INT4, 'e', OPTIONAL, "The maximum end time (GPS sec)");
+  XLALRegisterUvarMember(version,                BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
-  if (XLALUserVarReadAllInput(argc, argv)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",__func__,xlalErrno);
-    XLAL_ERROR(XLAL_EINVAL);
+  BOOLEAN should_exit = 0;
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",__func__,xlalErrno);
+    return XLAL_EFAULT;
   }
-
-  /* if help was requested, we're done here */
-  if (uvar->help) exit(0);
+  if (should_exit) exit(1);
 
   if ((version_string = XLALGetVersionString(0)) == NULL) {
     XLALPrintError("XLALGetVersionString(0) failed.\n");

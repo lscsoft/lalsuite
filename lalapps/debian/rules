@@ -15,8 +15,8 @@ override_dh_auto_install:
 	    --prefix=/usr \
 	    --sysconfdir=/etc \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
-	    --disable-gcc-flags \
-	    --disable-debug && \
+	    --enable-cfitsio \
+	    --disable-gcc-flags && \
 	(grep . /dev/null `find . -name config.log`; true) && \
 	$(MAKE) V=1 && \
 	$(MAKE) V=1 check && \

@@ -16,13 +16,16 @@ Makefile.in
 config.lt
 doxygen/autogen.dox
 doxygen/doxygen.cfg
+doxygen/doxygen_objdb_*.tmp
+doxygen/doxygen_sqlite3.db
 doxygen/filter
+doxygen/in/
 doxygen/out/
 doxygen/test_doxygen.*
 include/lal/*.h
 include/lal/*.i
 include/lal/header-link-stamp
-lalsimulation-*.tar.gz
+lalsimulation-*.tar.xz
 lalsimulation-user-env.csh
 lalsimulation-user-env.sh
 lalsimulation-user-env.shell
@@ -59,6 +62,7 @@ swig/swiglal*
 test/EOBNRv2Test
 test/GRFlagsTest
 test/GenerateSimulation
+test/InitialSpinRotationTest
 test/OpenMPTest
 test/PNCoefficients
 test/PhenomPTest

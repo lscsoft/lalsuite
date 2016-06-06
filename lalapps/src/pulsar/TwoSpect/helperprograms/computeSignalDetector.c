@@ -8,7 +8,6 @@
 
 typedef struct
 {
-   BOOLEAN help;		/**< Print this help/usage message */
    REAL8 Tsft;
    REAL8 SFToverlap;
    REAL8 t0;
@@ -172,7 +171,7 @@ int main(int argc, char *argv[])
                   dirichlet0 = crect(0.0, 0.0);
                   continue;
                }
-               else dirichlet0 = conj(0.5/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/(2.0*LAL_TWOPI*delta0_0*(delta0_0*delta0_0-1.0))));
+	       else dirichlet0 = -LAL_PI*crectf(cos(LAL_PI*delta0_0), -sin(LAL_PI*delta0_0))*delta0_0*(delta0_0*delta0_0 - 1.0)/sin(LAL_PI*delta0_0);
             }
             else if (fabsf((REAL4)(delta1_0*delta1_0-1.0))<(REAL4)1.0e-6) {
                if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = crect(-0.5, 0.0);
@@ -181,15 +180,15 @@ int main(int argc, char *argv[])
                   dirichlet0 = crect(0.0, 0.0);
                   continue;
                }
-               else dirichlet0 = conj(-0.25/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/(2.0*LAL_TWOPI*delta0_0*(delta0_0*delta0_0-1.0))));
+	       else dirichlet0 = -LAL_PI_2*crectf(-cos(LAL_PI*delta0_0), sin(LAL_PI*delta0_0))*delta0_0*(delta0_0*delta0_0 - 1.0)/sin(LAL_PI*delta0_0);
             }
-            else if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = conj(2.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/(2.0*LAL_TWOPI*delta1_0*(delta1_0*delta1_0-1.0))));
-            else if (fabsf((REAL4)(delta0_0-1.0))<(REAL4)1.0e-6) dirichlet0 = conj(-4.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/(2.0*LAL_TWOPI*delta1_0*(delta1_0*delta1_0-1.0))));
+            else if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = -LAL_1_PI*crectf(cos(LAL_PI*delta1_0), sin(LAL_PI*delta1_0))*sin(LAL_PI*delta1_0)/(delta1_0*(delta1_0*delta1_0-1.0));
+            else if (fabsf((REAL4)(delta0_0*delta0_0-1.0))<(REAL4)1.0e-6) dirichlet0 = LAL_2_PI*crectf(cos(LAL_PI*delta1_0), sin(LAL_PI*delta1_0))*sin(LAL_PI*delta1_0)/(delta1_0*(delta1_0*delta1_0-1.0));
             else if (fabsf((REAL4)(delta0_0-roundf(delta0_0)))<(REAL4)1.0e-6) {
                dirichlet0 = crect(0.0, 0.0);
                continue;
             }
-            else dirichlet0 = conj((crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1_0)-1.0)/(2.0*LAL_TWOPI*delta1_0*(delta1_0*delta1_0-1.0)))/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0_0)-1.0)/(2.0*LAL_TWOPI*delta0_0*(delta0_0*delta0_0-1.0))));     //real Dirichlet ratio
+            else dirichlet0 = sin(LAL_PI*delta1_0)/sin(LAL_PI*delta0_0)*(delta0_0*(delta0_0*delta0_0-1.0))/(delta1_0*(delta1_0*delta1_0-1.0))*cpolarf(1.0,LAL_PI*(delta1_0-delta0_0));
          } else {
             if (fabsf((REAL4)delta1_0)<(REAL4)1.0e-6) {
                if (fabsf((REAL4)delta0_0)<(REAL4)1.0e-6) dirichlet0 = crect(1.0, 0.0);
@@ -213,18 +212,18 @@ int main(int argc, char *argv[])
                if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = crect(1.0, 0.0);
                else if (fabsf((REAL4)(delta0*delta0-1.0))<(REAL4)1.0e-6) dirichlet = crect(-2.0, 0.0);
                else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) dirichlet = crect(0.0, 0.0);
-               else dirichlet = conj(0.5/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0)-1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0-1.0))));
+               else dirichlet = -LAL_PI*crectf(cos(LAL_PI*delta0), -sin(LAL_PI*delta0))*delta0*(delta0*delta0 - 1.0)/sin(LAL_PI*delta0);
             }
             else if (fabsf((REAL4)(delta1*delta1-1.0))<(REAL4)1.0e-6) {
                if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = crect(-0.5, 0.0);
                else if (fabsf((REAL4)(delta0*delta0-1.0))<(REAL4)1.0e-6) dirichlet = crect(1.0, 0.0);
                else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) dirichlet = crect(0.0, 0.0);
-               else dirichlet = conj(-0.25/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0)-1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0-1.0))));
+               else dirichlet = -LAL_PI_2*crectf(-cos(LAL_PI*delta0), sin(LAL_PI*delta0))*delta0*(delta0*delta0 - 1.0)/sin(LAL_PI*delta0);
             }
-            else if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = conj(2.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1)-1.0)/(2.0*LAL_TWOPI*delta1*(delta1*delta1-1.0))));
-            else if (fabsf((REAL4)(delta0-1.0))<(REAL4)1.0e-6) dirichlet = conj(-4.0*(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1)-1.0)/(2.0*LAL_TWOPI*delta1*(delta1*delta1-1.0))));
+            else if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = -LAL_1_PI*crectf(cos(LAL_PI*delta1), sin(LAL_PI*delta1))*sin(LAL_PI*delta1)/(delta1*(delta1*delta1-1.0));
+            else if (fabsf((REAL4)(delta0*delta0-1.0))<(REAL4)1.0e-6) dirichlet = LAL_2_PI*crectf(cos(LAL_PI*delta1), sin(LAL_PI*delta1))*sin(LAL_PI*delta1)/(delta1*(delta1*delta1-1.0));
             else if (fabsf((REAL4)(delta0-roundf(delta0)))<(REAL4)1.0e-6) dirichlet = crect(0.0, 0.0);
-            else dirichlet = conj((crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta1)-1.0)/(2.0*LAL_TWOPI*delta1*(delta1*delta1-1.0)))/(crect(0.0,1.0)*(cpolar(1.0,LAL_TWOPI*delta0)-1.0)/(2.0*LAL_TWOPI*delta0*(delta0*delta0-1.0))));     //estimated Dirichlet ratio
+            else dirichlet = sin(LAL_PI*delta1)/sin(LAL_PI*delta0)*(delta0*(delta0*delta0-1.0))/(delta1*(delta1*delta1-1.0))*cpolarf(1.0,LAL_PI*(delta1-delta0));
          } else {
             if (fabsf((REAL4)delta1)<(REAL4)1.0e-6) {
                if (fabsf((REAL4)delta0)<(REAL4)1.0e-6) dirichlet = crect(1.0, 0.0);
@@ -238,8 +237,8 @@ int main(int argc, char *argv[])
          dirichlet = cpolar(1.0, carg(dirichlet));
          if (fabs(floor(delta0)-floor(delta1))>=1.0) dirichlet *= -1.0;
 
-         COMPLEX16 realRatio = RatioTerm0*phaseshift0*dirichlet0;
-         COMPLEX16 estRatio = RatioTerm*phaseshift*dirichlet;
+         COMPLEX16 realRatio = RatioTerm0*phaseshift0*conj(dirichlet0);
+         COMPLEX16 estRatio = RatioTerm*phaseshift*conj(dirichlet);
 
          fprintf(OUTPUT, "%g %g %g %g\n", cabs(realRatio), gsl_sf_angle_restrict_pos(carg(realRatio)), cabs(estRatio), gsl_sf_angle_restrict_pos(carg(estRatio)));
       }
@@ -271,26 +270,25 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    uvar->unrestrictedCosi = 0;
    uvar->rectWindow = 0;
 
-   XLALregBOOLUserStruct(  help,            'h', UVAR_HELP     , "Print this help/usage message");
-   XLALregREALUserStruct(  Tsft,             0 , UVAR_OPTIONAL , "SFT coherence time");
-   XLALregREALUserStruct(  SFToverlap,       0 , UVAR_OPTIONAL , "SFT overlap in seconds, usually Tsft/2");
-   XLALregREALUserStruct(  t0,               0 , UVAR_OPTIONAL , "GPS start time of the search");
-   XLALregREALUserStruct(  Tobs,             0 , UVAR_OPTIONAL , "Duration of the search (in seconds)");
-   XLALregREALUserStruct(  cosi,             0 , UVAR_OPTIONAL , "Cosine of NS inclinaiont angle");
-   XLALregREALUserStruct(  psi,              0 , UVAR_OPTIONAL , "Polarization angle of GW");
-   XLALregREALUserStruct(  alpha,            0 , UVAR_OPTIONAL , "Right ascension of source (in radians)");
-   XLALregREALUserStruct(  delta,            0 , UVAR_OPTIONAL , "Declination of source (in radians)");
-   XLALregINTUserStruct(   skylocations,     0 , UVAR_OPTIONAL , "Number of sky locations");
-   XLALregLISTUserStruct(  IFO,              0 , UVAR_REQUIRED , "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
-   XLALregSTRINGUserStruct(outfilename,      0 , UVAR_OPTIONAL , "Output filename");
-   XLALregSTRINGUserStruct(ephemEarth,       0 , UVAR_OPTIONAL , "Earth ephemeris file");
-   XLALregSTRINGUserStruct(ephemSun,         0 , UVAR_OPTIONAL , "Sun ephemeris file");
-   XLALregBOOLUserStruct(  unrestrictedCosi, 0 , UVAR_OPTIONAL , "Marginalize over cos(iota) from -1 to 1");
-   XLALregBOOLUserStruct(  rectWindow,       0 , UVAR_OPTIONAL , "Use rectangular window function instead of Hann windowing");
+   XLALRegisterUvarMember(  Tsft,             REAL8, 0 , OPTIONAL , "SFT coherence time");
+   XLALRegisterUvarMember(  SFToverlap,       REAL8, 0 , OPTIONAL , "SFT overlap in seconds, usually Tsft/2");
+   XLALRegisterUvarMember(  t0,               REAL8, 0 , OPTIONAL , "GPS start time of the search");
+   XLALRegisterUvarMember(  Tobs,             REAL8, 0 , OPTIONAL , "Duration of the search (in seconds)");
+   XLALRegisterUvarMember(  cosi,             REAL8, 0 , OPTIONAL , "Cosine of NS inclinaiont angle");
+   XLALRegisterUvarMember(  psi,              REAL8, 0 , OPTIONAL , "Polarization angle of GW");
+   XLALRegisterUvarMember(  alpha,            REAL8, 0 , OPTIONAL , "Right ascension of source (in radians)");
+   XLALRegisterUvarMember(  delta,            REAL8, 0 , OPTIONAL , "Declination of source (in radians)");
+   XLALRegisterUvarMember(   skylocations,     INT4, 0 , OPTIONAL , "Number of sky locations");
+   XLALRegisterUvarMember(  IFO,              STRINGVector, 0 , REQUIRED , "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
+   XLALRegisterUvarMember(outfilename,      STRING, 0 , OPTIONAL , "Output filename");
+   XLALRegisterUvarMember(ephemEarth,       STRING, 0 , OPTIONAL , "Earth ephemeris file");
+   XLALRegisterUvarMember(ephemSun,         STRING, 0 , OPTIONAL , "Sun ephemeris file");
+   XLALRegisterUvarMember(  unrestrictedCosi, BOOLEAN, 0 , OPTIONAL , "Marginalize over cos(iota) from -1 to 1");
+   XLALRegisterUvarMember(  rectWindow,       BOOLEAN, 0 , OPTIONAL , "Use rectangular window function instead of Hann windowing");
 
-   XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
-
-   if ( uvar->help ) exit (0);
+   BOOLEAN should_exit = 0;
+   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+   if ( should_exit ) exit (1);
 
    return XLAL_SUCCESS;
 }

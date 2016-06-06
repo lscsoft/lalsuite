@@ -53,6 +53,7 @@ parser.add_argument('--tmplfar', type=float, default=1.0, help='Template statist
 parser.add_argument('--tmplLength', type=int, default=500, help='Maximum length of a template (%(default)s)')
 parser.add_argument('--markBadSFTs', action='store_true', help='Mark and remove bad SFTs')
 parser.add_argument('--keepOnlyTopNumIHS', type=int, help='Keep only the top N number of IHS outliers')
+parser.add_argument('--useCorrectGWfreq', action='store_true', help='Use the correct GW frequency for the coherent analysis')
 parser.add_argument('--useCorrectNScosi', action='store_true', help='Use the correct NS cosi orientation for coherent analysis')
 parser.add_argument('--useCorrectNSpsi', action='store_true', help='Use the correct NS psi orientation for coherent analysis')
 parser.add_argument('--unrestrictedCosi', action='store_true', help='Marginalize over cosi=[-1,1] for coherent analysis')
@@ -155,6 +156,7 @@ if args.keepOnlyTopNumIHS>-1: condorfile.write(' --keepOnlyTopNumIHS={}'.format(
 if args.useCorrectNScosi: condorfile.write(' --useCorrectNScosi')
 if args.useCorrectNSpsi: condorfile.write(' --useCorrectNSpsi')
 if args.unrestrictedCosi: condorfile.write(' --unrestrictedCosi')
+if args.useCorrectGWfreq: condorfile.write(' --useCorrectGWfreq')
 
 condorfile.write('\"\n')
 condorfile.write('queue')

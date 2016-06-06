@@ -45,6 +45,7 @@ typedef struct {
    CHAR *outfilename;
    CHAR *configCopy;
    CHAR *ULfilename;
+   CHAR *candidatesFilename;
    CHAR *inputSFTs;
    CHAR *ephemEarth;
    CHAR *ephemSun;
@@ -66,6 +67,11 @@ typedef struct {
    REAL8 templateSearchAsiniSigma;
    REAL8 assumeNScosi;
    REAL8 assumeNSpsi;
+   REAL8 assumeNSGWfreq;
+   REAL8 assumeNSorbitP;
+   REAL8 assumeNSasini;
+   LIGOTimeGPS assumeNSorbitTp;
+   LIGOTimeGPS assumeNSrefTime;
    INT4 cosiSignCoherent;
    INT4 ihsfactor;
    REAL8 ihsfar;

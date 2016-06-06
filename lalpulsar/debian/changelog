@@ -1,6 +1,13 @@
+lalpulsar (1.13.0-1) unstable; urgency=low
+
+  * LALPulsar 1.13.0
+  * Pre O2 packaging test release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 25 Mar 2016 09:37:19 -0500
+
 lalpulsar (1.12.0-1) unstable; urgency=low
 
-  * LALPulsar 1.12.0 
+  * LALPulsar 1.12.0
 
  -- Adam Mercer <adam.mercer@ligo.org>  Sat, 01 Aug 2015 19:59:16 -0500
 

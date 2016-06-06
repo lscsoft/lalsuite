@@ -603,7 +603,7 @@ LALFindChirpBCVSpinFilterSegment (
 		within interval defined by
                 deltaEventIndex */
 
-		else if ( ! params->clusterMethod == FindChirpClustering_none &&
+		else if ( !(params->clusterMethod == FindChirpClustering_none) &&
 	        j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
 		rho > thisEvent->snr )
         	{

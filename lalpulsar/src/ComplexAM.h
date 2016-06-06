@@ -20,7 +20,7 @@
 /**
  * \author Whelan, J.T., Reinhard Prix
  * \date 2007
- * \ingroup lalpulsar_UNCLASSIFIED
+ * \ingroup lalpulsar_coh
  * \file
  * \brief structures and prototypes associated with complex AM coefficients
  *

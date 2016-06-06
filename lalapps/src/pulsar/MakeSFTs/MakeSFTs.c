@@ -1,6 +1,6 @@
 /*
 *  Copyright (C) 2007 Gregory Mendell
-*  Copyright (C) 2010,2011 Bernd Machenschalk
+*  Copyright (C) 2010,2011,2016 Bernd Machenschalk
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_MakeSFTs
+ * \ingroup lalapps_pulsar_SFTTools
  * \author Gregory Mendell, Xavier Siemens, Bruce Allen, Bernd Machenschalk
  * \brief generate SFTs
  */
@@ -99,6 +99,8 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <lal/ComplexFFT.h>
 #include <lal/SFTfileIO.h>
 #include <lal/SFTutils.h>
+#include <lal/LALVCSInfo.h>
+#include <LALAppsVCSInfo.h>
 
 #ifdef PSS_ENABLED
 #include <XLALPSSInterface.h>
@@ -606,6 +608,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"ht-data",              no_argument,       NULL,          'H'},
     {"use-single",           no_argument,       NULL,          'S'},
     {"help",                 no_argument,       NULL,          'h'},
+    {"version",              no_argument,       NULL,          'V'},
     {0, 0, 0, 0}
   };
   char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:X:u:w:P:p:ab:";
@@ -634,12 +637,37 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->PSSCleanHPf = 100.0;  /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES. defaults to 100Hz */
   CLA->PSSCleanExt = 1;      /* by default, extend the timeseries */
 
-  strcat(allargs, "Command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
+  strcat(allargs, "\nMakeSFTs ");
+  strcat(allargs, lalVCSIdentId);
+  strcat(allargs, lalVCSIdentStatus);
+  strcat(allargs, "\nMakeSFTs ");
+  strcat(allargs, lalAppsVCSIdentId);
+  strcat(allargs, lalAppsVCSIdentStatus);
+  strcat(allargs, "\nMakeSFTs command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
   for(i = 0; i < argc; i++)
   {
+      /* if the argument describes an additioanl comment, don't record it
+         in the command-line as well, as it will be recoeded in the comment later.
+         if the option is a single argument and does not include the comment itself,
+         skip the next argument as well, as this should be the comment then. */
+      if ((strstr(argv[i], "-c")==argv[i])) {
+          strcat(allargs, "-c ... ");
+          if (strcmp(argv[i], "-c") == 0) {
+              i++;
+          }
+          continue;
+      }
+      if ((strstr(argv[i], "--comment-field")==argv[i])) {
+          strcat(allargs, "--comment-field ... ");
+          if (strcmp(argv[i], "--comment-field") == 0) {
+              i++;
+          }
+          continue;
+      }
       strcat(allargs,argv[i]);
       strcat(allargs, " ");
   }
+  strcat(allargs, "\n");
   CLA->commentField=allargs;
       
   /* Scan through list of command line arguments */
@@ -706,8 +734,9 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'c':
       /* 12/28/05 gam; comment for version 2 SFTs */
       /* CLA->commentField=LALoptarg; */ /* 06/26/07 gam */
-      strcat(CLA->commentField, " Additional comment: "); /* 06/26/07 gam; copy all command line args into commentField */      
+      strcat(CLA->commentField, "MakeSFTs additional comment: "); /* 06/26/07 gam; copy all command line args into commentField */
       strcat(CLA->commentField,LALoptarg);
+      strcat(CLA->commentField,"\n");
       break;
     case 'X':
       /* 12/28/05 gam; misc. part of the SFT description field in the filename (also used if makeGPSDirs > 0) */
@@ -797,9 +826,14 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tpss-edge           \tFLOAT\t (optional) Set PSS parameter 'edge' for time-domain cleaning\n");
       fprintf(stdout,"\tpss-ext            \tINT\t (optional) Extend the timeseries at the beginning before calculating the autoregressive mean, defaults to 1, set to 0 for no\n");
 #endif
+      fprintf(stdout,"\tversion (-V)\t\tFLAG\t Print LAL & LALApps version and exit.\n");
       fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message.\n");
       exit(0);
-      break;
+    case 'V':
+      /* print version */
+      fprintf(stdout,"MakeSFTs %s %s\n", lalVCSIdentId, lalVCSIdentStatus);
+      fprintf(stdout,"MakeSFTs %s %s\n", lalAppsVCSIdentId, lalAppsVCSIdentStatus);
+      exit(0);
     default:
       /* unrecognized option */
       errflg++;

@@ -4,20 +4,25 @@
 
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 1
+Release: 1%{?dist}
 Summary: LSC Algorithm XML Library
 License: GPL
 Group: LAL
-Source: %{name}-%{version}.tar.gz
-URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
+Source: %{name}-%{version}.tar.xz
+URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig, python-devel, octave-devel, libxml2-devel, numpy
-BuildRequires: lal-devel >= 6.15.0
-BuildRequires: lal-python >= 6.15.0
-BuildRequires: lal-octave >= 6.15.0
-Requires: gsl, libxml2
-Requires:lal >= 6.15.0
+BuildRequires: libxml2-devel
+BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
+BuildRequires: swig
+BuildRequires: lal-devel >= 6.16.0
+BuildRequires: lal-python >= 6.16.0
+BuildRequires: lal-octave >= 6.16.0
+Requires: gsl
+Requires: libxml2
+Requires:lal >= 6.16.0
 Prefix: %{_prefix}
 
 %description
@@ -29,8 +34,9 @@ that use the LAL XML library.
 Summary: Files and documentation needed for compiling programs that use LAL XML
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel, libxml2-devel
-Requires: lal-devel >= 6.15.0
+Requires: gsl-devel
+Requires: libxml2-devel
+Requires: lal-devel >= 6.16.0
 %description devel
 The LSC Algorithm XML Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL XML
@@ -40,8 +46,9 @@ library.
 Summary: Python bindings for LALXML
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python, numpy
-Requires: lal-python >= 6.15.0
+Requires: numpy
+Requires: python
+Requires: lal-python >= 6.16.0
 %description python
 This package provides the Python bindings for LALXML.
 
@@ -50,7 +57,7 @@ Summary: Octave bindings for LALXML
 Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
-Requires: lal-octave >= 6.15.0
+Requires: lal-octave >= 6.16.0
 %description octave
 This package provides the Octave bindings for LALXML.
 
@@ -99,4 +106,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files octave
 %defattr(-,root,root)
-%{_libexecdir}/octave/*/site/oct/*/lalxml.oct*
+%{_prefix}/lib*/octave/*/site/oct/*/lalxml.oct*
+
+# dates should be formatted using: 'date +"%a %b %d %Y"'
+%changelog
+* Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 1.2.1-1
+- Pre O2 packaging test release

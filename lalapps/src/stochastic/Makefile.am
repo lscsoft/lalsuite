@@ -1,8 +1,8 @@
-BUILT_SOURCES =
+include $(top_srcdir)/gnuscripts/lalapps.am
+
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
-include $(top_srcdir)/gnuscripts/lalapps.am
 
 ## sources
 STOCH_SRCS       = data_input.c data_input.h \

@@ -1,11 +1,20 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSuite],[6.35.1],[lal-discuss@ligo.org])
+AC_INIT([LALSuite],[6.37.1],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_PREFIX_DEFAULT(["`pwd`/_inst"])
 AC_CONFIG_FILES([Makefile])
-AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
+AM_INIT_AUTOMAKE([ \
+  1.11 \
+  foreign \
+  subdir-objects \
+  color-tests \
+  parallel-tests \
+  tar-ustar \
+  dist-xz \
+  no-dist-gzip \
+])
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
@@ -49,8 +58,7 @@ AC_DEFUN([lalsuite_config_doxygen],[
 
 # directories of top-level build and source
 lalsuite_abs_top_builddir="`pwd`"
-#lalsuite_top_builddir='$(top_builddir)/..'
-lalsuite_top_srcdir='$(top_srcdir)/..'
+lalsuite_abs_top_srcdir='$(abs_top_srcdir)/..'
 
 # configure a lalsuite package
 AC_DEFUN([lalsuite_config_subdir],[
@@ -63,7 +71,7 @@ AC_DEFUN([lalsuite_config_subdir],[
     # export precious environment variables
     uppercase[]_LIBS="${lalsuite_abs_top_builddir}/lowercase/src/lib[]lowercase.la"
     uppercase[]_CFLAGS="-I${lalsuite_abs_top_builddir}/lowercase/include"
-    uppercase[]_DATA_PATH="${lalsuite_top_srcdir}/lowercase/test"
+    uppercase[]_DATA_PATH="${lalsuite_abs_top_srcdir}/lowercase/test"
     uppercase[]_OCTAVE_PATH="${lalsuite_abs_top_builddir}/lowercase/octave"
     uppercase[]_PYTHON_PATH="${lalsuite_abs_top_builddir}/lowercase/python"
     uppercase[]_HTMLDIR="${htmldir}/../lowercase"
@@ -92,7 +100,7 @@ lalsuite_config_doxygen([LAL])
 AC_CONFIG_SUBDIRS(lal)
 LAL_LIBS="${lalsuite_abs_top_builddir}/lal/src/liblal.la"
 LAL_CFLAGS="-I${lalsuite_abs_top_builddir}/lal/include"
-LAL_DATA_PATH="${lalsuite_top_srcdir}/lal/test"
+LAL_DATA_PATH="${lalsuite_abs_top_srcdir}/lal/test"
 LAL_OCTAVE_PATH="${lalsuite_abs_top_builddir}/lal/octave"
 LAL_PYTHON_PATH="${lalsuite_abs_top_builddir}/lal/python"
 LAL_HTMLDIR="${htmldir}/../lal"

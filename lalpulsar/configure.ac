@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALPulsar],[1.12.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALPulsar],[1.13.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -22,7 +22,16 @@ AC_CONFIG_FILES([ \
   swig/Makefile \
   test/Makefile \
 ])
-AM_INIT_AUTOMAKE([1.11 foreign subdir-objects color-tests parallel-tests])
+AM_INIT_AUTOMAKE([ \
+  1.11 \
+  foreign \
+  subdir-objects \
+  color-tests \
+  parallel-tests \
+  tar-ustar \
+  dist-xz \
+  no-dist-gzip \
+])
 
 AC_CANONICAL_HOST
 
@@ -45,7 +54,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[12])
+AC_SUBST([LIBCURRENT],[13])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -55,6 +64,9 @@ LALSUITE_ENABLE_NIGHTLY
 
 # enable LALXML support
 LALSUITE_ENABLE_LALXML
+
+# enable cfitsio support
+LALSUITE_ENABLE_CFITSIO
 
 # boinc
 LALSUITE_ENABLE_BOINC
@@ -159,22 +171,25 @@ if test "$lalxml" = "true"; then
   AC_CHECK_LIB([xml2],[xmlInitParser],,[AC_MSG_WARN([cannot find the xml2 library])])
 fi
 
+# check for cfitsio
+LALSUITE_USE_CFITSIO
+
 # for boinc enabled build do checks for lal in c++ mode
 if test "${boinc}" = "true" ; then
   AC_LANG_PUSH([C++])
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.15.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[6.16.0],[LALVersion],[lal/LALStdio.h])
 
 # check that lal was built with BOINC support, if required
 LALSUITE_CHECK_BOINC
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSupport],[6.15.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.16.0],[XLALCacheImport],[lal/LALCache.h])
 
 # check for lalxml
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.0],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.1],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # back to c mode
 if test "${boinc}" = "true" ; then
@@ -233,6 +248,7 @@ LALPulsar has now been successfully configured:
 * Python support is $PYTHON_ENABLE_VAL
 * LALXML library support is $LALXML_ENABLE_VAL
 * BOINC support is $BOINC_ENABLE_VAL
+* FITS library support is $CFITSIO_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL

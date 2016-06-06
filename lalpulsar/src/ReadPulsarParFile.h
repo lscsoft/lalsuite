@@ -21,7 +21,7 @@
  * \author Matt Pitkin
  * \date 2013
  * \file
- * \ingroup lalpulsar_UNCLASSIFIED
+ * \ingroup lalpulsar_general
  * \brief Functions to read TEMPO pulsar parameter files
  *
  * Here we define a function to read in pulsar parameters from a standard <tt>TEMPO(2)</tt> parameter
@@ -42,6 +42,7 @@
 #include <lal/StringVector.h>
 #include <lal/LALBarycenter.h>
 #include <lal/Date.h>
+#include <lal/LALHashTbl.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,6 +64,7 @@ extern "C" {
 /* the difference between TDT/TT and the GPS epoch */
 #define GPS_TDT (TDT_TAI + XLAL_EPOCH_GPS_TAI_UTC)
 
+
 /** An enumerated type for denoting the type of a variable. Several LAL types are supported. */
 typedef enum {
   PULSARTYPE_UINT4_t = 0,
@@ -71,7 +73,6 @@ typedef enum {
   PULSARTYPE_string_t,
   PULSARTYPE_void_ptr_t
 } PulsarParamType;
-
 
 extern size_t PulsarTypeSize[5];
 
@@ -101,7 +102,8 @@ typedef struct tagPulsarParam {
 typedef struct tagPulsarParameters {
   PulsarParam       *head;                              /**< A linked list of \c PulsarParam structures */
   INT4              nparams;                            /**< The total number of parameters in the structure */
-  PulsarParam       *hash_table[PULSAR_HASHTABLE_SIZE]; /**< Hash table of parameters */
+  /* PulsarParam       *hash_table[PULSAR_HASHTABLE_SIZE]; */ /**< Hash table of parameters */
+  LALHashTbl        *hash_table;
 } PulsarParameters;
 
 
@@ -131,6 +133,7 @@ tagBinaryPulsarParams
   REAL8 f7;     /**< frequency seventh derivative (Hz/s^7) */
   REAL8 f8;     /**< frequency eighth derivative (Hz/s^8) */
   REAL8 f9;     /**< frequency ninth derivative (Hz/s^9) */
+  REAL8 f10;    /**< frequency tenth derivative (Hz/s^10) */
 
   REAL8 ra;     /**< right ascension (rads) */
   REAL8 dec;    /**< declination (rads) */
@@ -273,6 +276,7 @@ tagBinaryPulsarParams
   REAL8 f7Err;
   REAL8 f8Err;
   REAL8 f9Err;
+  REAL8 f10Err;
 
   REAL8 pepochErr;
   REAL8 posepochErr;
@@ -508,7 +512,7 @@ void ParConvBinaryUnits( const CHAR *in, void *out );
 /** Convert the input string from a TT MJD value into a GPS time */
 void ParConvMJDToGPS( const CHAR *in, void *out );
 /** Convert the input string from degrees per year to radians per second */
-void ParConvDegPerYrToRadParSec( const CHAR *in, void *out );
+void ParConvDegPerYrToRadPerSec( const CHAR *in, void *out );
 /** Convert the input string from solar masses to kilograms */
 void ParConvSolarMassToKg( const CHAR *in, void *out );
 /** Convert a right ascension input string in the format "hh:mm:ss.s" into radians */

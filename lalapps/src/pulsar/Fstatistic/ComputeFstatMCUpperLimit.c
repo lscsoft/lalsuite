@@ -67,8 +67,6 @@ const REAL8 max_psi  =  LAL_PI_4;
 int main(int argc, char *argv[]) {
 
   LALStatus status = blank_status;
-  BOOLEAN help = FALSE;
-
   REAL8 alpha = 0.0;
   REAL8 alpha_band = 0.0;
   REAL8 delta = 0.0;
@@ -116,12 +114,10 @@ int main(int argc, char *argv[]) {
   INT8 MC_trials_reset;
   gsl_vector_int *twoF_pdf_hist = NULL;
     
-  /* Initialise LAL error handler, debug level and log level */
+  /* Initialise LAL error handler */
   lal_errhandler = LAL_ERR_EXIT;
-  LogSetLevel(lalDebugLevel);
   
   /* Register command line arguments */
-  LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",             'h', UVAR_HELP,     "Print this help message", &help), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "alpha",            'a', UVAR_REQUIRED, "Right ascension in radians", &alpha), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "alpha-band",       'z', UVAR_OPTIONAL, "Right ascension band", &alpha), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "delta",            'd', UVAR_REQUIRED, "Declination in radians", &delta), &status);
@@ -149,12 +145,10 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALRegisterREALUserVar  (&status, "initial-h0",        0 , UVAR_DEVELOPER,"Initial guess of h0 (default: automatic)", &initial_h0), &status);
 
   /* Get command line arguments */
-  LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
-  if (help)
-    return EXIT_SUCCESS;
-
-  /* Send log output to stdout */
-  LogSetFile(stdout);
+  BOOLEAN should_exit = 0;
+  LAL_CALL(LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    return EXIT_FAILURE;
 
   /* Load the mismatch PDF histogram if available */
   if (LALUserVarWasSet(&mism_hist_file)) {

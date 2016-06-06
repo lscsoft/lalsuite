@@ -17,7 +17,7 @@
  */
 
 /** \author C.Messenger
- * \ingroup pulsarApps
+ * \ingroup lalapps_pulsar_Xray
  * \file
  * \brief
  * This code is designed to compute the Bayes factor for a semi-coherent analysis

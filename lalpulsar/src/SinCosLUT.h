@@ -28,7 +28,7 @@ extern "C" {
 
 ///
 /// \defgroup SinCosLUT_h Header SinCosLUT.h
-/// \ingroup lalpulsar_common
+/// \ingroup lalpulsar_general
 /// \authors Reinhard Prix, Karl Wette
 ///
 /// \brief fast non-vector FPU version of SinCos used in various CW codes

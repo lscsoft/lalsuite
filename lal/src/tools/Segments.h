@@ -168,11 +168,14 @@ LALSeg;
 
 /** Struct holding a segment list */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IGNORE_MEMBERS(tagLALSegList, initMagic, lastFound));
+SWIGLAL(IGNORE_MEMBERS(tagLALSegList, arraySize, dplaces, sorted, disjoint, initMagic, lastFound));
 #endif // SWIG
 typedef struct
 tagLALSegList
 {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(LALSegList, LALSeg, segs, UINT4, length));
+#endif
   LALSeg *segs;      /**< Pointer to array of segments (LALSeg structures) */
   size_t arraySize;  /**< Size of array for which memory is allocated */
   UINT4 length;      /**< Number of segments in this segment list */
@@ -219,6 +222,9 @@ XLALSegListSort( LALSegList *seglist );
 
 int
 XLALSegListCoalesce( LALSegList *seglist );
+
+int
+XLALSegListRange( const LALSegList *seglist, LIGOTimeGPS *start, LIGOTimeGPS *end );
 
 LALSeg *
 XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps );

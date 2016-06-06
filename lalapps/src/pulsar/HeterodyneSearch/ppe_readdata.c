@@ -131,7 +131,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
   INT4 ml = 1;
 
   CHAR *parFile = NULL;
-  BinaryPulsarParams pulsar;
+  PulsarParameters *pulsar;
 
   runState->data = NULL;
 
@@ -168,7 +168,7 @@ void read_pulsar_data( LALInferenceRunState *runState ){
   parFile = XLALStringDuplicate( ppt->value );
 
   /* get the pulsar parameters to give a value of f */
-  XLALReadTEMPOParFile( &pulsar, parFile );
+  pulsar = XLALReadTEMPOParFileNew( parFile );
 
   /* get the detectors - must */
   ppt = LALInferenceGetProcParamVal( commandLine, "--detectors" );
@@ -242,7 +242,10 @@ detectors specified (no. dets = %d)\n", ml, ml, numDets);
       REAL8 pfreq = 0.;
 
       /* putting in pulsar frequency at f here */
-      pfreq = pulsar.f0;
+      if ( PulsarCheckParam(pulsar, "F0") ) { pfreq = PulsarGetREAL8Param( pulsar, "F0" ); }
+      else {
+        XLAL_ERROR_VOID( XLAL_EINVAL, "No source frequency given in parameter file" );
+      }
 
       tempdets = XLALStringDuplicate( detectors );
 
@@ -562,6 +565,8 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
             fprintf(stderr, "Error... unrecognised number of values in first line of data file %s.\n", datafile);
             exit(3);
           }
+          /* ignore excessively large spurious values as they can screw things up */
+          if ( fabs(dataValsRe) > 1e-18 || fabs(dataValsIm) > 1e-18 ){ continue; }
         }
         j++;
 
@@ -628,7 +633,11 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       /* check whether to randomise the data by shuffling the time stamps (this will preserve the order of
        * the data for working out stationary chunk, but randomise the signal) */
       if ( LALInferenceGetProcParamVal( commandLine, "--randomise" ) ){
-        gsl_ran_shuffle( runState->GSLrandom, &ifomodel->times->data[0], (size_t)datalength, sizeof(LIGOTimeGPS) );
+        INT4 randshufseed = atoi(LALInferenceGetProcParamVal( commandLine, "--randomise" )->value);
+        INT4 prevseed = gsl_rng_get( runState->GSLrandom );  // get previous RNG value
+        gsl_rng_set( runState->GSLrandom, randshufseed ); // set to value from randomise
+        gsl_ran_shuffle( runState->GSLrandom, &ifomodel->times->data[0], (size_t)datalength, sizeof(LIGOTimeGPS) ); // shuffle data times
+        gsl_rng_set( runState->GSLrandom, prevseed );     // reset to previous value
       }
 
       /* add data sample interval */
@@ -702,8 +711,8 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       if ( pptt ){
         tfile = XLALStringDuplicate( pptt->value );
 
-        if ( pulsar.units != NULL ){
-          if( !strcmp(pulsar.units, "TDB") ) { ttype = TIMECORRECTION_TDB; }
+        if ( PulsarCheckParam( pulsar, "UNITS" ) ) {
+          if( !strcmp(PulsarGetStringParam(pulsar, "UNITS"), "TDB") ) { ttype = TIMECORRECTION_TDB; }
           else { ttype = TIMECORRECTION_TCB; } /* default to TCB otherwise */
         }
         else { ttype = TIMECORRECTION_TCB; }
@@ -712,25 +721,19 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
         tfile = NULL;
         ttype = TIMECORRECTION_ORIGINAL;
       }
+
+      /* check ephemeris files exist and if not output an error message */
+      if( fopen(sfile, "r") == NULL || fopen(efile, "r") == NULL ){
+        fprintf(stderr, "Error... ephemeris files not, or incorrectly, defined!\n");
+        exit(3);
+      }
     }
     else{ /* try getting files automatically */
-      CHAR efiletmp[1024], sfiletmp[1024], tfiletmp[1024];
-
-      if( !( ttype = XLALAutoSetEphemerisFiles( efiletmp, sfiletmp, tfiletmp, pulsar,
+      if( !( ttype = XLALAutoSetEphemerisFiles( &efile, &sfile, &tfile, pulsar,
             ifomodel->times->data[0].gpsSeconds, ifomodel->times->data[datalength-1].gpsSeconds ) ) ){
         fprintf(stderr, "Error... not been able to set ephemeris files!\n");
         exit(3);
       }
-
-      efile = XLALStringDuplicate(efiletmp);
-      sfile = XLALStringDuplicate(sfiletmp);
-      tfile = XLALStringDuplicate(tfiletmp);
-    }
-
-    /* check ephemeris files exist and if not output an error message */
-    if( fopen(sfile, "r") == NULL || fopen(efile, "r") == NULL ){
-      fprintf(stderr, "Error... ephemeris files not, or incorrectly, defined!\n");
-      exit(3);
     }
 
     /* set up ephemeris information */
@@ -748,7 +751,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
   /* chop the data into stationary chunks and also calculate the noise variance if required
    * (note that if there is going to be a signal injected then this variance will be recalculated
    * after the injection has been made to make the analysis most similar to a real case). */
-  INT4 chunkMin, chunkMax;
+  UINT4 chunkMin, chunkMax;
 
   /* Get chunk min and chunk max */
   ppt = LALInferenceGetProcParamVal( commandLine, "--chunk-min" );
@@ -764,8 +767,8 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
   while ( modeltmp ){
     UINT4Vector *chunkLength = NULL;
 
-    LALInferenceAddVariable( modeltmp->params, "chunkMin", &chunkMin, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-    LALInferenceAddVariable( modeltmp->params, "chunkMax", &chunkMax, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( modeltmp->params, "chunkMin", &chunkMin, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( modeltmp->params, "chunkMax", &chunkMax, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
 
     ppt = LALInferenceGetProcParamVal( commandLine, "--oldChunks" );
     if ( ppt ){ /* use old style quasi-fixed data chunk lengths */
@@ -789,7 +792,11 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
         chunkLength = XLALCreateUINT4Vector( 1 );
         chunkLength->data[0] = datatmp->varTimeData->data->length;
       }
-      else{ chunkLength = chop_n_merge( datatmp, chunkMin, chunkMax ); }
+      else{
+        UINT4 outputchunks = 0;
+        if ( LALInferenceGetProcParamVal( commandLine, "--output-chunks" ) ){ outputchunks = 1; }
+        chunkLength = chop_n_merge( datatmp, chunkMin, chunkMax, outputchunks );
+      }
     }
 
     LALInferenceAddVariable( modeltmp->params, "chunkLength", &chunkLength, LALINFERENCE_UINT4Vector_t,
@@ -825,6 +832,8 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
   XLALFree( flengths );
   XLALFree( fstarts );
   XLALFree( fpsds );
+
+  PulsarFreeParams( pulsar );
 
   if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){
     gettimeofday(&time2, NULL);
@@ -904,15 +913,13 @@ void setup_from_par_file( LALInferenceRunState *runState )
   if ( PulsarCheckParam( pulsar, "RA" ) ) { ra = PulsarGetREAL8Param( pulsar, "RA" ); }
   else if ( PulsarCheckParam( pulsar, "RAJ" ) ) { ra = PulsarGetREAL8Param( pulsar, "RAJ" ); }
   else {
-    XLALPrintError ("%s: No source right ascension specified!", __func__ );
-    XLAL_ERROR_VOID( XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL, "No source right ascension specified!" );
   }
   REAL8 dec = 0.;
   if ( PulsarCheckParam( pulsar, "DEC" ) ) { dec = PulsarGetREAL8Param( pulsar, "DEC" ); }
   else if ( PulsarCheckParam( pulsar, "DECJ" ) ) { dec = PulsarGetREAL8Param( pulsar, "DECJ" ); }
   else {
-    XLALPrintError ("%s: No source declination specified!", __func__ );
-    XLAL_ERROR_VOID( XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EINVAL, "No source declination specified!" );
   }
   psr.equatorialCoords.longitude = ra;
   psr.equatorialCoords.latitude = dec;
@@ -931,12 +938,16 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
   /* check for binary model */
   CHAR *binarymodel = NULL;
-  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "BINARY") ){
+  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "BINARY" ) ){
     binarymodel = XLALStringDuplicate(*(CHAR**)LALInferenceGetVariable( runState->threads[0]->currentParams, "BINARY" ));
 
     /* now remove from runState->params (as it conflict with calls to LALInferenceCompareVariables in the proposal) */
     LALInferenceRemoveVariable( runState->threads[0]->currentParams, "BINARY" );
   }
+
+  /* check for glitches */
+  UINT4 glitches = 0;
+  if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "GLNUM" ) ){ glitches = 1; }
 
   /* Setup initial phase, and barycentring delays */
   LALInferenceIFOModel *ifo_model = runState->threads[0]->model->ifo;
@@ -953,12 +964,12 @@ void setup_from_par_file( LALInferenceRunState *runState )
       UINT4 i = 0;
       REAL8Vector *dts = NULL, *bdts = NULL;
 
-      /* check whether using original Jones (2010) signal model or a biaxial model (in the amplitude/phase parameterisation) */
+      /* check whether using original Jones (2010) signal source model or a biaxial model (in the amplitude/phase parameterisation) */
       if ( freqFactors->length == 2 ){
         UINT4 dummyvar = 1;
 
-        if ( LALInferenceGetProcParamVal( runState->commandLine, "--jones-model" ) ){
-          LALInferenceAddVariable( ifo_model->params, "jones-model", &dummyvar, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+        if ( LALInferenceGetProcParamVal( runState->commandLine, "--source-model" ) ){
+          LALInferenceAddVariable( ifo_model->params, "source_model", &dummyvar, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
         }
         else if ( LALInferenceGetProcParamVal( runState->commandLine, "--biaxial" ) ){
           LALInferenceAddVariable( ifo_model->params, "biaxial", &dummyvar, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
@@ -969,6 +980,8 @@ void setup_from_par_file( LALInferenceRunState *runState )
       if ( binarymodel != NULL ){
         LALInferenceAddVariable( ifo_model->params, "BINARY", &binarymodel, LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
       }
+
+      if ( glitches ){ LALInferenceAddVariable( ifo_model->params, "GLITCHES", &glitches, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED ); }
 
       dts = get_ssb_delay( pulsar, ifo_model->times, ifo_model->ephem, ifo_model->tdat, ifo_model->ttype, data->detector, 0. );
       LALInferenceAddVariable( ifo_model->params, "ssb_delays", &dts, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
@@ -1038,8 +1051,6 @@ void samples_prior( LALInferenceRunState *runState ){
 
   FILE *fp = NULL;
 
-  const CHAR *fn = __func__;
-
   /* get names of nested sample file columns */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--sample-files" );
   if ( ppt != NULL ){
@@ -1066,8 +1077,7 @@ void samples_prior( LALInferenceRunState *runState ){
     nnlive = count_csv( templives );
 
     if( nnlive != nsamps ){
-      XLALPrintError("%s: Number of live points not equal to number of posterior files!\n", fn);
-      XLAL_ERROR_VOID(XLAL_EIO);
+      XLAL_ERROR_VOID(XLAL_EINVAL, "Number of live points not equal to number of posterior files!" );
     }
 
     for( i = 0; i < nnlive; i++ ){
@@ -1103,8 +1113,7 @@ void samples_prior( LALInferenceRunState *runState ){
 
     /* check file exists */
     if ( fopen(namefile, "r") == NULL || fopen(sampfilenames->data[n], "r") == NULL ){
-      XLALPrintError("%s: Cannot access either %s or %s!\n", fn, namefile, sampfilenames->data[n]);
-      XLAL_ERROR_VOID(XLAL_EIO);
+      XLAL_ERROR_VOID(XLAL_EIO, "Cannot access either %s or %s!", namefile, sampfilenames->data[n]);
     }
 
     /* read in parameter names */
@@ -1161,8 +1170,7 @@ void samples_prior( LALInferenceRunState *runState ){
       }
 
       if( ( item1->vary != LALINFERENCE_PARAM_FIXED && item1->vary != LALINFERENCE_PARAM_OUTPUT ) && allsame == 0 ){
-        XLALPrintError("%s: Apparently variable parameter %s does not vary!\n", fn, item1->name );
-        XLAL_ERROR_VOID(XLAL_EFUNC);
+        XLAL_ERROR_VOID(XLAL_EFUNC, "Apparently variable parameter %s does not vary!\n", item1->name);
       }
 
       item1 = item1->next;

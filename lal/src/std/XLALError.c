@@ -71,6 +71,7 @@ int XLALPrintError(const char *fmt, ...)
     va_list ap;
     va_start(ap, fmt);
     n = XLALVPrintError(fmt, ap);
+    va_end(ap);
     return n;
 }
 

@@ -22,7 +22,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_Injections
+ * \ingroup lalapps_pulsar_Tools
  * \author R. Prix, M.A. Papa, X. Siemens, B. Allen, C. Messenger
  */
 
@@ -94,8 +94,6 @@ typedef struct
 // ----- User variables
 typedef struct
 {
-  BOOLEAN help;		/**< Print this help/usage message */
-
   /* output */
   CHAR *outSFTdir;		/**< Output directory for SFTs */
   CHAR *outLabel;		/**< 'misc' entry in SFT-filenames, and description entry of output frame filenames */
@@ -537,7 +535,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 int
 XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 {
-  int ret;
 
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Invalid NULL input 'argv'\n");
@@ -554,57 +551,55 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLAL_CHECK ( (uvar->outLabel = XLALStringDuplicate ( MISC_DEFAULT ))  != NULL, XLAL_EFUNC );
 
   // ---------- register all our user-variable ----------
-  XLALregBOOLUserStruct (  help,                'h', UVAR_HELP    , "Print this help/usage message");
-
   /* output options */
-  XLALregBOOLUserStruct (   outSingleSFT,       's', UVAR_OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
-  XLALregSTRINGUserStruct ( outSFTdir,          'n', UVAR_OPTIONAL, "Output SFTs:  directory for output SFTs");
-  XLALregSTRINGUserStruct(  outLabel,	         0, UVAR_OPTIONAL, "'misc' entry in SFT-filenames or 'description' entry of frame filenames" );
+  XLALRegisterUvarMember(   outSingleSFT,       BOOLEAN, 's', OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
+  XLALRegisterUvarMember( outSFTdir,          STRING, 'n', OPTIONAL, "Output SFTs:  directory for output SFTs");
+  XLALRegisterUvarMember(  outLabel,	         STRING, 0, OPTIONAL, "'misc' entry in SFT-filenames or 'description' entry of frame filenames" );
 #ifdef HAVE_LIBLALFRAME
   XLALRegisterUvarMember ( outFrameDir,	STRING, 'F', OPTIONAL,      "Output Frames: directory for output timeseries frame files");
 #endif
 
-  XLALregSTRINGUserStruct ( TDDfile,            't', UVAR_OPTIONAL, "Filename to output time-series into");
+  XLALRegisterUvarMember( TDDfile,            STRING, 't', OPTIONAL, "Filename to output time-series into");
 
-  XLALregSTRINGUserStruct ( logfile,            'l', UVAR_OPTIONAL, "Filename for log-output");
+  XLALRegisterUvarMember( logfile,            STRING, 'l', OPTIONAL, "Filename for log-output");
 
   /* detectors and respective noise-floors */
-  XLALregLISTUserStruct ( IFOs,			'I', UVAR_OPTIONAL, "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
-  XLALregLISTUserStruct ( sqrtSX,	 	 0,  UVAR_OPTIONAL, "Add Gaussian Noise: CSV list of detectors' noise-floors sqrt{Sn}");
+  XLALRegisterUvarMember( IFOs,			STRINGVector, 'I', OPTIONAL, "CSV list of detectors, eg. \"H1,H2,L1,G1, ...\" ");
+  XLALRegisterUvarMember( sqrtSX,	 	 STRINGVector, 0,  OPTIONAL, "Add Gaussian Noise: CSV list of detectors' noise-floors sqrt{Sn}");
 
-  XLALregSTRINGUserStruct( ephemEarth, 	 	0,  UVAR_OPTIONAL, "Earth ephemeris file to use");
-  XLALregSTRINGUserStruct( ephemSun, 	 	0,  UVAR_OPTIONAL, "Sun ephemeris file to use");
+  XLALRegisterUvarMember( ephemEarth, 	 	STRING, 0,  OPTIONAL, "Earth ephemeris file to use");
+  XLALRegisterUvarMember( ephemSun, 	 	STRING, 0,  OPTIONAL, "Sun ephemeris file to use");
 
   /* start + duration of timeseries */
-  XLALregEPOCHUserStruct (startTime,            'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (format 'xx.yy[GPS|MJD]')");
-  XLALregINTUserStruct (  duration,              0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
-  XLALregLISTUserStruct ( timestampsFiles,       0,  UVAR_OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
+  XLALRegisterUvarMember(startTime,            EPOCH, 'G', OPTIONAL, "Start-time of requested signal in detector-frame (format 'xx.yy[GPS|MJD]')");
+  XLALRegisterUvarMember(  duration,              INT4, 0,  OPTIONAL, "Duration of requested signal in seconds");
+  XLALRegisterUvarMember( timestampsFiles,       STRINGVector, 0,  OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 
   /* sampling and heterodyning frequencies */
-  XLALregREALUserStruct (  fmin,                 0, UVAR_OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
-  XLALregREALUserStruct (  Band,                 0, UVAR_OPTIONAL, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
+  XLALRegisterUvarMember(  fmin,                 REAL8, 0, OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
+  XLALRegisterUvarMember(  Band,                 REAL8, 0, OPTIONAL, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
 
   /* SFT properties */
-  XLALregREALUserStruct (  Tsft,                 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
-  XLALregREALUserStruct (  SFToverlap,           0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFiles)");
-  XLALregSTRINGUserStruct( SFTWindowType,        0, UVAR_OPTIONAL, "Window function to be applied to the SFTs (required when using --noiseSFTs)");
-  XLALregREALUserStruct (  SFTWindowBeta,        0, UVAR_OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
+  XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds");
+  XLALRegisterUvarMember(  SFToverlap,           REAL8, 0, OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFiles)");
+  XLALRegisterUvarMember( SFTWindowType,        STRING, 0, OPTIONAL, "Window function to be applied to the SFTs (required when using --noiseSFTs)");
+  XLALRegisterUvarMember(  SFTWindowBeta,        REAL8, 0, OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
 
   /* pulsar params */
-  XLALregLISTUserStruct( injectionSources,     0, UVAR_OPTIONAL,  "Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')" );
+  XLALRegisterUvarMember( injectionSources,     STRINGVector, 0, OPTIONAL,  "Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}')" );
 
   /* noise */
-  XLALregSTRINGUserStruct ( noiseSFTs,          'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps)");
+  XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps)");
 
 #ifdef HAVE_LIBLALFRAME
   XLALRegisterUvarMember ( inFrames, 	 STRINGVector,'C', OPTIONAL,  "CSV list (one per IFO) of input frame cache files");
   XLALRegisterUvarMember ( inFrChannels, STRINGVector,'N', OPTIONAL,  "CSV list (one per IFO) of frame channels to read timeseries from");
 #endif
 
-  XLALregBOOLUserStruct (  version,             'V', UVAR_SPECIAL, "Output version information");
+  XLALRegisterUvarMember(  version,             BOOLEAN, 'V', SPECIAL, "Output version information");
 
   // ----- 'expert-user/developer' options ----- (only shown in help at lalDebugLevel >= warning)
-  XLALregINTUserStruct (   randSeed,             0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
+  XLALRegisterUvarMember(   randSeed,             INT4, 0, DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
 
   // ----- deprecated but still supported options [throw warning if used] (only shown in help at lalDebugLevel >= info) ----------
 #ifdef HAVE_LIBLALFRAME
@@ -620,11 +615,10 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 #endif
 
   /* read cmdline & cfgfile  */
-  ret = XLALUserVarReadAllInput ( argc, argv );
-  XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse user-input\n");
-
-  if ( uvar->help ) {	/* if help was requested, we're done */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit (1);
   }
 
   return XLAL_SUCCESS;

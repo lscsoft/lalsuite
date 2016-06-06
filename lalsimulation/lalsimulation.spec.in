@@ -4,20 +4,24 @@
 
 Name: @PACKAGE@
 Version: @VERSION@
-Release: 1
+Release: 1%{?dist}
 Summary: LSC Algorithm Simulation Library
 License: GPL
 Group: LAL
-Source: %{name}-%{version}.tar.gz
-URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
+Source: %{name}-%{version}.tar.xz
+URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig, python-devel, octave-devel, gsl-devel, numpy
-BuildRequires: lal-devel >= 6.15.0
-BuildRequires: lal-python >= 6.15.0
-BuildRequires: lal-octave >= 6.15.0
+BuildRequires: gsl-devel
+BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
+BuildRequires: swig
+BuildRequires: lal-devel >= 6.16.0
+BuildRequires: lal-python >= 6.16.0
+BuildRequires: lal-octave >= 6.16.0
 Requires: gsl
-Requires: lal >= 6.15.0
+Requires: lal >= 6.16.0
 Prefix: %{_prefix}
 
 %description
@@ -30,7 +34,7 @@ Summary: Files and documentation needed for compiling programs that use LAL Simu
 Group: LAL
 Requires: %{name} = %{version}
 Requires: gsl-devel
-Requires: lal-devel >= 6.15.0
+Requires: lal-devel >= 6.16.0
 %description devel
 The LSC Algorithm Simulation Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Simulation
@@ -40,8 +44,9 @@ library.
 Summary: Python bindings for LALSimulation
 Group: LAL
 Requires: %{name} = %{version}
-Requires: python, numpy
-Requires: lal-python >= 6.15.0
+Requires: numpy
+Requires: python
+Requires: lal-python >= 6.16.0
 %description python
 This package provides the Python Bindings for LALSimulation.
 
@@ -50,7 +55,7 @@ Summary: Octave bindings for LALSimulation
 Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
-Requires: lal-octave >= 6.15.0
+Requires: lal-octave >= 6.16.0
 %description octave
 This package provides the Octave Bindings for LALSimulation.
 
@@ -102,4 +107,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files octave
 %defattr(-,root,root)
-%{_libexecdir}/octave/*/site/oct/*/lalsimulation.oct*
+%{_prefix}/lib*/octave/*/site/oct/*/lalsimulation.oct*
+
+# dates should be formatted using: 'date +"%a %b %d %Y"'
+%changelog
+* Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 1.5.0-1
+- Pre O2 packaging test release

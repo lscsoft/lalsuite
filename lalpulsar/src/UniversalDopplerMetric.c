@@ -45,7 +45,7 @@
 #include <lal/UniversalDopplerMetric.h>
 #include <lal/MetricUtils.h>
 
-#include "GSLHelpers.h"
+#include <lal/GSLHelpers.h>
 
 /**
  * \author Reinhard Prix, Karl Wette
@@ -489,8 +489,9 @@ CW_Phi_i ( double tt, void *params )
   PosVel3D_t XLAL_INIT_DECL(orbit_posvel);
   PosVel3D_t XLAL_INIT_DECL(posvel);
 
-  /* orbit position in ecliptic plane */
+  /* positions in ecliptic plane */
   vect3D_t XLAL_INIT_DECL(ecl_orbit_pos);
+  vect3D_t XLAL_INIT_DECL(ecl_pos);
 
   /* get skypos-vector */
   const REAL8 cosa = cos(par->dopplerPoint->Alpha);
@@ -530,8 +531,9 @@ CW_Phi_i ( double tt, void *params )
   COPY_VECT(posvel.vel, spin_posvel.vel);
   ADD_VECT(posvel.vel, orbit_posvel.vel);
 
-  /* compute orbital detector positions projected onto ecliptic plane */
+  /* compute detector positions projected onto ecliptic plane */
   EQU_VECT_TO_ECL(ecl_orbit_pos, orbit_posvel.pos);
+  EQU_VECT_TO_ECL(ecl_pos, posvel.pos);
 
   /* get frequency of Doppler point */
   const REAL8 Freq = par->dopplerPoint->fkdot[0];
@@ -658,23 +660,23 @@ CW_Phi_i ( double tt, void *params )
       break;
 
     case DOPPLERCOORD_N3X_EQU:		/**< X component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * rr_ord_Equ[0];
+      ret = LAL_TWOPI * Freq * posvel.pos[0];
       break;
     case DOPPLERCOORD_N3Y_EQU:		/**< Y component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * rr_ord_Equ[1];
+      ret = LAL_TWOPI * Freq * posvel.pos[1];
       break;
     case DOPPLERCOORD_N3Z_EQU:		/**< Z component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * rr_ord_Equ[2];
+      ret = LAL_TWOPI * Freq * posvel.pos[2];
       break;
 
     case DOPPLERCOORD_N3X_ECL:		/**< X component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * rr_ord_Ecl[0];
+      ret = LAL_TWOPI * Freq * ecl_pos[0];
       break;
     case DOPPLERCOORD_N3Y_ECL:		/**< Y component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * rr_ord_Ecl[1];
+      ret = LAL_TWOPI * Freq * ecl_pos[1];
       break;
     case DOPPLERCOORD_N3Z_ECL:		/**< Z component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
-      ret = LAL_TWOPI * Freq * rr_ord_Ecl[2];
+      ret = LAL_TWOPI * Freq * ecl_pos[2];
       break;
 
     case DOPPLERCOORD_N3SX_EQU:	/**< X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
@@ -1007,12 +1009,34 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
   saveGSLErrorHandler = gsl_set_error_handler_off();
 
   // loop over segments, detectors, and integration 'units'
-#pragma omp parallel for
-  for ( size_t k = 0; k < Nseg; ++k ) {
-#pragma omp parallel for
-    for ( size_t X = 0; X < numDet; ++X ) {
-#pragma omp parallel for
-      for ( size_t n = 0; n < intN[k][X]; ++n ) {
+  // together using a single index, for parallelisation
+  {
+    size_t index_max = 0;
+    for ( size_t k = 0; k < Nseg; ++k ) {
+      for ( size_t X = 0; X < numDet; ++X ) {
+        index_max += intN[k][X];
+      }
+    }
+#pragma omp parallel for schedule(static)
+    for ( size_t index = 0; index < index_max; ++index )
+      {
+    
+        // break single index into 'k', 'X', and 'n'
+        size_t k = 0, X = 0, n = 0, index_break = index + 1;
+        for ( k = 0; k < Nseg; ++k ) {
+          for ( X = 0; X < numDet; ++X ) {
+            if ( index_break > intN[k][X] ) {
+              index_break -= intN[k][X];
+            } else {
+              n = index_break - 1;
+              index_break = 0;
+              break;
+            }
+          }
+          if ( index_break == 0 ) {
+            break;
+          }
+        }
 
         InputOutputInfo *io = &intInOut[k][X][n];
 
@@ -1064,9 +1088,8 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
           io->av_j_err_sq = SQUARE( scale2 * abserr);
         }
 
-      } /* for n < intN */
-    } // for X < numDet
-  } // for k < Nseg
+      } /* for index < index_max */
+  }
 
   // restore GSL error handling
   gsl_set_error_handler( saveGSLErrorHandler );
@@ -1214,19 +1237,22 @@ XLALComputeDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< 
 
   /* if using 'global correlation' frequency variables, determine the highest spindown order: */
   UINT4 maxorder = findHighestGCSpinOrder ( coordSys );
+  if ( maxorder > 0 ) {
 
-  /* compute rOrb(t) derivatives at reference time */
-  if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
-    XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
-    XLAL_ERROR_NULL( XLAL_EFUNC );
-  }
-  if (lalDebugLevel & LALINFOBIT) {
-    /* diagnostic / debug output */
-    fprintf( stderr, "%s: rOrb_n(%d) = [ ", __func__, intparams.dopplerPoint->refTime.gpsSeconds );
-    for ( UINT4 n = 0; n < intparams.rOrb_n->length; n++ ) {
-      fprintf( stderr, "[%g, %g, %g]%s", intparams.rOrb_n->data[n][0], intparams.rOrb_n->data[n][1], intparams.rOrb_n->data[n][2],
-               (n < intparams.rOrb_n->length -1 ) ? ", " : " ]\n" );
+    /* compute rOrb(t) derivatives at reference time */
+    if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
+      XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
+      XLAL_ERROR_NULL( XLAL_EFUNC );
     }
+    if (lalDebugLevel & LALINFOBIT) {
+      /* diagnostic / debug output */
+      fprintf( stderr, "%s: rOrb_n(%d) = [ ", __func__, intparams.dopplerPoint->refTime.gpsSeconds );
+      for ( UINT4 n = 0; n < intparams.rOrb_n->length; n++ ) {
+        fprintf( stderr, "[%g, %g, %g]%s", intparams.rOrb_n->data[n][0], intparams.rOrb_n->data[n][1], intparams.rOrb_n->data[n][2],
+                 (n < intparams.rOrb_n->length -1 ) ? ", " : " ]\n" );
+      }
+    }
+
   }
 
   metric->maxrelerr = 0;
@@ -1651,11 +1677,14 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
   /* if using 'global correlation' frequency variables, determine the highest spindown order: */
   UINT4 maxorder = findHighestGCSpinOrder ( coordSys );
+  if ( maxorder > 0 ) {
 
-  /* compute rOrb(t) derivatives at reference time */
-  if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
-    XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
-    XLAL_ERROR_NULL( XLAL_EFUNC );
+    /* compute rOrb(t) derivatives at reference time */
+    if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
+      XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
+      XLAL_ERROR_NULL( XLAL_EFUNC );
+    }
+
   }
 
   /* ----- integrate antenna-pattern coefficients A, B, C */

@@ -114,6 +114,13 @@ int main(int argc, char *argv[]){
     state->proposalArgs = LALInferenceParseProposalArgs(state);
   }
 
+  if (LALInferenceGetProcParamVal(state->commandLine, "--roqtime_steps")){
+
+        LALInferenceSetupROQdata(state->data, state->commandLine);
+        fprintf(stderr, "done LALInferenceSetupROQdata\n");
+
+     }
+
   /* Set up the threads */
   LALInferenceInitCBCThreads(state,1);
 

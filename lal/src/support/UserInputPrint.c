@@ -1,4 +1,5 @@
 //
+// Copyright (C) 2016 Karl Wette
 // Copyright (C) 2015 Reinhard Prix
 //
 //  This program is free software; you can redistribute it and/or modify
@@ -112,6 +113,44 @@ XLALPrintStringValueOfSTRING ( CHAR **valSTRING )
   return ret;
 
 } // XLALPrintStringValueOfSTRING()
+
+
+/// Return 'string value' (allocated here) of a REAL8Range, as parseable by XLALParseStringValueAsREAL8Range()
+char *
+XLALPrintStringValueOfREAL8Range(const REAL8Range *real8Range) {
+  XLAL_CHECK_NULL(real8Range != NULL, XLAL_EFAULT);
+  char *part0 = XLALPrintStringValueOfREAL8(&(*real8Range)[0]);
+  XLAL_CHECK_NULL(part0 != NULL, XLAL_EFUNC);
+  char *part1 = XLALPrintStringValueOfREAL8(&(*real8Range)[1]);
+  XLAL_CHECK_NULL(part1 != NULL, XLAL_EFUNC);
+  char *retn = XLALMalloc(sizeof(*retn) * (strlen(part0) + 1 + strlen(part1) + 1));
+  XLAL_CHECK_NULL(retn != NULL, XLAL_ENOMEM);
+  strcpy(retn, part0);
+  strcat(retn, ",");
+  strcat(retn, part1);
+  XLALFree(part0);
+  XLALFree(part1);
+  return retn;
+}
+
+
+/// Return 'string value' (allocated here) of a EPOCHRange, as parseable by XLALParseStringValueAsEPOCHRange()
+char *
+XLALPrintStringValueOfEPOCHRange(const LIGOTimeGPSRange *gpsRange) {
+  XLAL_CHECK_NULL(gpsRange != NULL, XLAL_EFAULT);
+  char *part0 = XLALPrintStringValueOfEPOCH(&(*gpsRange)[0]);
+  XLAL_CHECK_NULL(part0 != NULL, XLAL_EFUNC);
+  char *part1 = XLALPrintStringValueOfEPOCH(&(*gpsRange)[1]);
+  XLAL_CHECK_NULL(part1 != NULL, XLAL_EFUNC);
+  char *retn = XLALMalloc(sizeof(*retn) * (strlen(part0) + 1 + strlen(part1) + 1));
+  XLAL_CHECK_NULL(retn != NULL, XLAL_ENOMEM);
+  strcpy(retn, part0);
+  strcat(retn, ",");
+  strcat(retn, part1);
+  XLALFree(part0);
+  XLALFree(part1);
+  return retn;
+}
 
 
 /// Return 'string value' (allocated here) of a STRINGVector, by turning into comma-separated list of strings, each surrounded by single quotes.

@@ -204,13 +204,11 @@ REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
  * \brief Output a number of prior samples based on the initial live points
  *
  * This function will output prior samples for variable parameters (as create by
- * the LALInferenceSetupLivePointsArray function) making sure to rescale the
- * values.
+ * the LALInferenceSetupLivePointsArray function).
  *
  * \param runState [in]
  */
 void outputPriorSamples( LALInferenceRunState *runState ){
-  LALInferenceThreadState *threadState = runState->threads[0];
   ProcessParamsTable *ppt = LALInferenceGetProcParamVal( runState->commandLine,
                                                          "--output-prior" );
   INT4 Nlive = *(INT4 *)LALInferenceGetVariable( runState->algorithmParams,
@@ -251,23 +249,9 @@ void outputPriorSamples( LALInferenceRunState *runState ){
       while( item ){
         if( item->vary == LALINFERENCE_PARAM_LINEAR ||
             item->vary == LALINFERENCE_PARAM_CIRCULAR ){
-          /* rescale sample */
-          CHAR scalePar[VARNAME_MAX] = "";
-          CHAR scaleMinPar[VARNAME_MAX] = "";
-          REAL8 scale = 0., scaleMin = 0., var = 0.;
-
-          /* get scale factors */
-          sprintf(scalePar, "%s_scale", item->name);
-          scale = *(REAL8 *)LALInferenceGetVariable( threadState->model->ifo->params,
-                                                     scalePar );
-
-          sprintf(scaleMinPar, "%s_scale_min", item->name);
-          scaleMin = *(REAL8 *)LALInferenceGetVariable(
-            threadState->model->ifo->params, scaleMinPar );
-
-          var = scaleMin + *(REAL8 *)item->value*scale;
-
-          fprintf(fp, "%.8le\t", var);
+          REAL8 var = 0.;
+          var = *(REAL8 *)item->value;
+          fprintf(fp, "%.16le\t", var);
         }
 
         item = item->next;

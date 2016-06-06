@@ -17,10 +17,49 @@
  * MA 02111-1307 USA
  *
  * Copyright (C) 2009-2013 Adam Mercer
- * Copyright (C) 2014 Karl Wette
+ * Copyright (C) 2014, 2016 Karl Wette
  */
 
+#include <stdlib.h>
+#include <config.h>
+
 #include <lal/LALVCSInfoType.h>
+#include <lal/XLALError.h>
+
+#if defined(HAVE_LIBLAL)
+#include <lal/LALVCSInfoHeader.h>
+#endif
+#if defined(HAVE_LIBLALFRAME)
+#include <lal/LALFrameVCSInfoHeader.h>
+#endif
+#if defined(HAVE_LIBLALMETAIO)
+#include <lal/LALMetaIOVCSInfoHeader.h>
+#endif
+#if defined(HAVE_LIBLALXML)
+#include <lal/LALXMLVCSInfoHeader.h>
+#endif
+#if defined(HAVE_LIBLALSIMULATION)
+#include <lal/LALSimulationVCSInfoHeader.h>
+#endif
+#if defined(HAVE_LIBLALBURST)
+#include <lal/LALBurstVCSInfoHeader.h>
+#endif
+#if defined(HAVE_LIBLALDETCHAR)
+#include <lal/LALDetCharVCSInfoHeader.h>
+#endif
+#if defined(HAVE_LIBLALINSPIRAL)
+#include <lal/LALInspiralVCSInfoHeader.h>
+#endif
+#if defined(HAVE_LIBLALPULSAR)
+#include <lal/LALPulsarVCSInfoHeader.h>
+#endif
+#if defined(HAVE_LIBLALINFERENCE)
+#include <lal/LALInferenceVCSInfoHeader.h>
+#endif
+#if defined(HAVE_LIBLALSTOCHASTIC)
+#include <lal/LALStochasticVCSInfoHeader.h>
+#endif
+
 #include "@PACKAGE_NAME@VCSInfoHeader.h"
 
 /* global variables for vcs information */
@@ -54,6 +93,96 @@ const struct tagLALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfo = { \
   @PACKAGE_NAME_UCASE@_VCS_COMMITTER, \
   @PACKAGE_NAME_UCASE@_VCS_STATUS \
 };
+
+const LALVCSInfo *const lal@PACKAGE_NAME_NOLAL@VCSInfoList[32] = {
+#if defined(HAVE_LIBLAL)
+  &lalVCSInfo,
+#endif
+#if defined(HAVE_LIBLALFRAME)
+  &lalFrameVCSInfo,
+#endif
+#if defined(HAVE_LIBLALMETAIO)
+  &lalMetaIOVCSInfo,
+#endif
+#if defined(HAVE_LIBLALXML)
+  &lalXMLVCSInfo,
+#endif
+#if defined(HAVE_LIBLALSIMULATION)
+  &lalSimulationVCSInfo,
+#endif
+#if defined(HAVE_LIBLALBURST)
+  &lalBurstVCSInfo,
+#endif
+#if defined(HAVE_LIBLALDETCHAR)
+  &lalDetCharVCSInfo,
+#endif
+#if defined(HAVE_LIBLALINSPIRAL)
+  &lalInspiralVCSInfo,
+#endif
+#if defined(HAVE_LIBLALPULSAR)
+  &lalPulsarVCSInfo,
+#endif
+#if defined(HAVE_LIBLALINFERENCE)
+  &lalInferenceVCSInfo,
+#endif
+#if defined(HAVE_LIBLALSTOCHASTIC)
+  &lalStochasticVCSInfo,
+#endif
+  &lal@PACKAGE_NAME_NOLAL@VCSInfo,
+  NULL
+};
+
+int X@PACKAGE_NAME@VCSInfoCheck(void)
+{
+#define VCS_INFO_CHECK(vcsinfo) \
+  do { \
+    if (XLALVCSInfoCompare(&vcsinfo##Header, &vcsinfo) != 0) { \
+      XLALPrintError("%s: FATAL: version mismatch between compile-time (%s) and run-time (%s) %s library\n", \
+                     __func__, vcsinfo##Header.vcsId, vcsinfo.vcsId, vcsinfo.name); \
+      XLALPrintError("This indicates a potential compilation problem: ensure your setup is consistent and recompile.\n"); \
+      XLAL_ERROR(XLAL_EERR); \
+    } \
+  } while (0)
+
+#if defined(HAVE_LIBLAL) && (LAL_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
+  VCS_INFO_CHECK(lalVCSInfo);
+#endif
+#if defined(HAVE_LIBLALFRAME) && (LALFRAME_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
+  VCS_INFO_CHECK(lalFrameVCSInfo);
+#endif
+#if defined(HAVE_LIBLALMETAIO) && (LALMETAIO_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
+  VCS_INFO_CHECK(lalMetaIOVCSInfo);
+#endif
+#if defined(HAVE_LIBLALXML) && (LALXML_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
+  VCS_INFO_CHECK(lalXMLVCSInfo);
+#endif
+#if defined(HAVE_LIBLALSIMULATION) && (LALSIMULATION_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
+  VCS_INFO_CHECK(lalSimulationVCSInfo);
+#endif
+#if defined(HAVE_LIBLALBURST) && (LALBURST_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
+  VCS_INFO_CHECK(lalBurstVCSInfo);
+#endif
+#if defined(HAVE_LIBLALDETCHAR) && (LALDETCHAR_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
+  VCS_INFO_CHECK(lalDetCharVCSInfo);
+#endif
+#if defined(HAVE_LIBLALINSPIRAL) && (LALINSPIRAL_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
+  VCS_INFO_CHECK(lalInspiralVCSInfo);
+#endif
+#if defined(HAVE_LIBLALPULSAR) && (LALPULSAR_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
+  VCS_INFO_CHECK(lalPulsarVCSInfo);
+#endif
+#if defined(HAVE_LIBLALINFERENCE) && (LALINFERENCE_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
+  VCS_INFO_CHECK(lalInferenceVCSInfo);
+#endif
+#if defined(HAVE_LIBLALSTOCHASTIC) && (LALSTOCHASTIC_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
+  VCS_INFO_CHECK(lalStochasticVCSInfo);
+#endif
+  VCS_INFO_CHECK(lal@PACKAGE_NAME_NOLAL@VCSInfo);
+
+#undef VCS_INFO_CHECK
+
+  return XLAL_SUCCESS;
+}
 
 /*
  * vim: tw=0 ts=2 et

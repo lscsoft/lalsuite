@@ -22,7 +22,6 @@
 
 typedef struct
 {
-   BOOLEAN help;
    REAL8 Pmin;
    REAL8 Pmax;
    REAL8 dfmin;
@@ -69,24 +68,23 @@ INT4 InitUserVars2(UserVariables_t *uvar, int argc, char *argv[])
    uvar->Tsft = 1800;
    uvar->SFToverlap = 900;
 
-   XLALregBOOLUserStruct(  help,             'h', UVAR_HELP    , "Print this help/usage message");
-   XLALregREALUserStruct(  Pmin,              0 , UVAR_REQUIRED, "Minimum period");
-   XLALregREALUserStruct(  Pmax,              0 , UVAR_REQUIRED, "Maximum period");
-   XLALregREALUserStruct(  dfmin,             0 , UVAR_REQUIRED, "Minimum modulation depth");
-   XLALregREALUserStruct(  dfmax,             0 , UVAR_REQUIRED, "Maximum modulation depth");
-   XLALregREALUserStruct(  Tsft,              0 , UVAR_OPTIONAL, "SFT coherence length");
-   XLALregREALUserStruct(  SFToverlap,        0 , UVAR_OPTIONAL, "SFT overlap in second");
-   XLALregREALUserStruct(  Tobs,              0 , UVAR_REQUIRED, "Total observation time");
-   XLALregINTUserStruct(   minTemplateLength, 0 , UVAR_REQUIRED, "Minimum number of pixels in templates");
-   XLALregINTUserStruct(   maxTemplateLength, 0 , UVAR_REQUIRED, "Maximum number of pixels in tempaltes");
-   XLALregINTUserStruct(   maxVectorLength,   0 , UVAR_REQUIRED, "Maximum vector length");
-   XLALregINTUserStruct(   vectorMath,        0 , UVAR_OPTIONAL, "Vector math flag: 0 = no SSE/AVX, 1 = SSE, 2 = AVX");
-   XLALregBOOLUserStruct(  exactflag,         0 , UVAR_OPTIONAL, "Flag to specify using exact templates");
-   XLALregSTRINGUserStruct(filename,          0 , UVAR_OPTIONAL, "Filename of output file (if not specified, the vector is destroyed upon exit)");
+   XLALRegisterUvarMember(  Pmin,              REAL8, 0 , REQUIRED, "Minimum period");
+   XLALRegisterUvarMember(  Pmax,              REAL8, 0 , REQUIRED, "Maximum period");
+   XLALRegisterUvarMember(  dfmin,             REAL8, 0 , REQUIRED, "Minimum modulation depth");
+   XLALRegisterUvarMember(  dfmax,             REAL8, 0 , REQUIRED, "Maximum modulation depth");
+   XLALRegisterUvarMember(  Tsft,              REAL8, 0 , OPTIONAL, "SFT coherence length");
+   XLALRegisterUvarMember(  SFToverlap,        REAL8, 0 , OPTIONAL, "SFT overlap in second");
+   XLALRegisterUvarMember(  Tobs,              REAL8, 0 , REQUIRED, "Total observation time");
+   XLALRegisterUvarMember(   minTemplateLength, INT4, 0 , REQUIRED, "Minimum number of pixels in templates");
+   XLALRegisterUvarMember(   maxTemplateLength, INT4, 0 , REQUIRED, "Maximum number of pixels in tempaltes");
+   XLALRegisterUvarMember(   maxVectorLength,   INT4, 0 , REQUIRED, "Maximum vector length");
+   XLALRegisterUvarMember(   vectorMath,        INT4, 0 , OPTIONAL, "Vector math flag: 0 = no SSE/AVX, 1 = SSE, 2 = AVX");
+   XLALRegisterUvarMember(  exactflag,         BOOLEAN, 0 , OPTIONAL, "Flag to specify using exact templates");
+   XLALRegisterUvarMember(filename,          STRING, 0 , OPTIONAL, "Filename of output file (if not specified, the vector is destroyed upon exit)");
 
-   XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
-
-   if ( uvar->help ) exit (0);
+   BOOLEAN should_exit = 0;
+   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+   if ( should_exit ) exit (1);
 
    return XLAL_SUCCESS;
 }

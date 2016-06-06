@@ -199,8 +199,9 @@ typedef struct tagInputParams{
 }InputParams;
 
 typedef struct tagHeterodyneParams{
-  BinaryPulsarParams het;
-  BinaryPulsarParams hetUpdate;
+  PulsarParameters *het;
+  PulsarParameters *hetUpdate;
+
   INT4 heterodyneflag;
 
   LALDetector detector;

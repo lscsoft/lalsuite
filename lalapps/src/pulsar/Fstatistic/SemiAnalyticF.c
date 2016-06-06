@@ -103,7 +103,6 @@ struct CommandLineArgsTag {
   REAL8 aCross;
   REAL8 h0;
   REAL8 cosi;
-  BOOLEAN help;
   /* ----- deprecated ----- */
   REAL8 cosiota;
   CHAR *detector;
@@ -138,9 +137,10 @@ int main(int argc,char *argv[])
   LAL_CALL (InitUserVars(&status, &CommandLineArgs), &status);	  
 
   /* read cmdline & cfgfile  */	
-  LAL_CALL (LALUserVarReadAllInput(&status, argc, argv), &status);
-  if (CommandLineArgs.help)	/* help was called, do nothing here.. */
-    return (0);
+  BOOLEAN should_exit = 0;
+  LAL_CALL (LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    return EXIT_FAILURE;
   LAL_CALL ( CheckUserInput (&status, &CommandLineArgs), &status);
 
   LAL_CALL ( Initialize (&status, &CommandLineArgs), &status);
@@ -226,12 +226,7 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   CLA->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
   CLA->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
   
-  CLA->help = FALSE;
-  
   /* ---------- register all our user-variable ---------- */
-  TRY (LALRegisterBOOLUserVar(status->statusPtr, "help", 'h', UVAR_HELP, "Print this message",
-			      &(CLA->help)), status); 
-
   TRY( LALRegisterREALUserVar(status->statusPtr, "Alpha", 'a', UVAR_OPTIONAL, 
 			      "Sky position Alpha (equatorial coordinates) in radians", 
 			      &(CLA->Alpha)), status);

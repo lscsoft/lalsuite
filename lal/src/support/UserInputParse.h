@@ -1,4 +1,5 @@
 //
+// Copyright (C) 2016 Karl Wette
 // Copyright (C) 2004, 2015 Reinhard Prix
 //
 //  This program is free software; you can redistribute it and/or modify
@@ -37,6 +38,16 @@ extern "C" {
 
 /*@{*/
 
+///
+/// A range of REAL8 values; first element is minimum, second element is maximum of range
+///
+typedef REAL8 REAL8Range[2];
+
+///
+/// A range of GPS times; first element is minimum, second element is maximum of range
+///
+typedef LIGOTimeGPS LIGOTimeGPSRange[2];
+
 // ---------- Function prototypes ----------
 int XLALParseStringValueAsINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );
 
@@ -50,6 +61,11 @@ int XLALParseStringValueAsGPS ( LIGOTimeGPS *gps, const char *valString );
 int XLALParseStringValueAsEPOCH ( LIGOTimeGPS *gps, const char *valString );
 int XLALParseStringValueAsRAJ ( REAL8 *valRAJ, const char *valString );
 int XLALParseStringValueAsDECJ ( REAL8 *valDECJ, const char *valString );
+
+int XLALParseStringValueAsREAL8Range ( REAL8Range *real8Range, const char *valString );
+int XLALParseStringValueAsEPOCHRange ( LIGOTimeGPSRange *gpsRange, const char *valString );
+int XLALParseStringValueAsRAJRange ( REAL8Range *rajRange, const char *valString );
+int XLALParseStringValueAsDECJRange ( REAL8Range *decjRange, const char *valString );
 
 int XLALParseStringValueAsSTRING ( CHAR **valOut, const char *valString );
 int XLALParseStringValueAsSTRINGVector ( LALStringVector **valSTRINGVector, const CHAR *valString );

@@ -56,6 +56,32 @@
     dest = NULL; \
   }
 
+#define COMPARE_GSL_1D_VAL(val, type, lhs, rhs, tol) \
+  do { \
+    if ((lhs) == NULL || (rhs) == NULL || (lhs)->size != (rhs)->size) { \
+      XLAL_ERROR_VAL(val, XLAL_ETOL, "Cannot compare '%s' and '%s': unequal or zero sizes", #lhs, #rhs); \
+    } else { \
+      for (size_t GH_i = 0; GH_i < (lhs)->size; ++GH_i) { \
+        const double GH_err = fabs(gsl_##type##_get(lhs, GH_i) - gsl_##type##_get(rhs, GH_i)); \
+        XLAL_CHECK_VAL(val, GH_err <= ((double)tol), XLAL_ETOL, "Element %zu of '%s' and '%s' differ by %g > %g", GH_i, #lhs, #rhs, GH_err, ((double)tol)); \
+      } \
+    } \
+  } while (0)
+
+#define COMPARE_GSL_2D_VAL(val, type, lhs, rhs, tol) \
+  do { \
+    if ((lhs) == NULL || (rhs) == NULL || (lhs)->size1 != (rhs)->size1 || (lhs)->size2 != (rhs)->size2) { \
+      XLAL_ERROR_VAL(val, XLAL_ETOL, "Cannot compare '%s' and '%s': unequal or zero sizes", #lhs, #rhs); \
+    } else { \
+      for (size_t GH_i = 0; GH_i < (lhs)->size1; ++GH_i) { \
+        for (size_t GH_j = 0; GH_j < (lhs)->size2; ++GH_j) { \
+          const double GH_err = gsl_##type##_get(lhs, GH_i, GH_j) - gsl_##type##_get(rhs, GH_i, GH_j); \
+          XLAL_CHECK_VAL(val, GH_err <= ((double)tol), XLAL_ETOL, "Elements (%zu,%zu) of '%s' and '%s' differ by %g > %g", GH_i, GH_j, #lhs, #rhs, GH_err, ((double)tol)); \
+        } \
+      } \
+    } \
+  } while (0)
+
 #define PRINT_GSL_1D(type, name, fmt) \
   do { \
     fprintf(stderr, "%s:%i ", strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__, __LINE__); \
@@ -88,31 +114,11 @@
     } \
   } while (0)
 
-#define CALL_GSL_VAL(val, ...)		CALL_GSL_VAL_(val, __VA_ARGS__, NULL, NULL)
-#define CALL_GSL_VAL_(val, call, fmt, ...) \
-  do { \
-    int GH_retn = 0; \
-    XLAL_CALLGSL(GH_retn = (call)); \
-    if (GH_retn != 0) { \
-      if (fmt != NULL) { \
-        XLAL_ERROR_VAL(val, XLAL_EFAILED, fmt, __VA_ARGS__, NULL); \
-      } else { \
-        XLAL_ERROR_VAL(val, XLAL_EFAILED, #call " failed: %s", gsl_strerror(GH_retn)); \
-      } \
-    } \
-  } while (0)
-
 #define GALLOC(name, call)		ALLOC_GSL_VAL(XLAL_FAILURE, name, call)
 #define GALLOC_NULL(type, name, n)	ALLOC_GSL_VAL(NULL, name, call)
 #define GALLOC_MAIN(type, name, n)	ALLOC_GSL_VAL(EXIT_FAILURE, name, call)
 #define GALLOC_REAL8(type, name, n)	ALLOC_GSL_VAL(XLAL_REAL8_FAIL_NAN, name, call)
 #define GALLOC_REAL4(type, name, n)	ALLOC_GSL_VAL(XLAL_REAL4_FAIL_NAN, name, call)
-
-#define GCALL(...)			CALL_GSL_VAL(XLAL_FAILURE, __VA_ARGS__)
-#define GCALL_NULL(...)			CALL_GSL_VAL(NULL, __VA_ARGS__)
-#define GCALL_MAIN(...)			CALL_GSL_VAL(EXIT_FAILURE, __VA_ARGS__)
-#define GCALL_REAL8(...)		CALL_GSL_VAL(XLAL_REAL8_FAIL_NAN, __VA_ARGS__)
-#define GCALL_REAL4(...)		CALL_GSL_VAL(XLAL_REAL4_FAIL_NAN, __VA_ARGS__)
 
 #define GAPERM(name, n)			ALLOC_GSL_1D_VAL(XLAL_FAILURE, permutation, name, n)
 #define GAPERM_NULL(name, n)		ALLOC_GSL_1D_VAL(NULL, permutation, name, n)
@@ -124,6 +130,11 @@
 #define GCPERM_MAIN(dest, src)		CLONE_GSL_1D_VAL(EXIT_FAILURE, permutation, dest, src)
 #define GCPERM_REAL8(dest, src)		CLONE_GSL_1D_VAL(XLAL_REAL8_FAIL_NAN, permutation, dest, src)
 #define GCPERM_REAL4(dest, src)		CLONE_GSL_1D_VAL(XLAL_REAL4_FAIL_NAN, permutation, dest, src)
+#define GCMPPERM(lhs, rhs, tol)		COMPARE_GSL_1D_VAL(XLAL_FAILURE, permutation, lhs, rhs, tol)
+#define GCMPPERM_NULL(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(NULL, permutation, lhs, rhs, tol)
+#define GCMPPERM_MAIN(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(EXIT_FAILURE, permutation, lhs, rhs, tol)
+#define GCMPPERM_REAL8(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_REAL8_FAIL_NAN, permutation, lhs, rhs, tol)
+#define GCMPPERM_REAL4(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_REAL4_FAIL_NAN, permutation, lhs, rhs, tol)
 #define GPPERM(name, fmt)		PRINT_GSL_1D(permutation, name, fmt)
 #define GFPERM(...)			FREE_GSL(permutation, __VA_ARGS__)
 
@@ -137,6 +148,11 @@
 #define GCVEC_MAIN(dest, src)		CLONE_GSL_1D_VAL(EXIT_FAILURE, vector, dest, src)
 #define GCVEC_REAL8(dest, src)		CLONE_GSL_1D_VAL(XLAL_REAL8_FAIL_NAN, vector, dest, src)
 #define GCVEC_REAL4(dest, src)		CLONE_GSL_1D_VAL(XLAL_REAL4_FAIL_NAN, vector, dest, src)
+#define GCMPVEC(lhs, rhs, tol)		COMPARE_GSL_1D_VAL(XLAL_FAILURE, vector, lhs, rhs, tol)
+#define GCMPVEC_NULL(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(NULL, vector, lhs, rhs, tol)
+#define GCMPVEC_MAIN(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(EXIT_FAILURE, vector, lhs, rhs, tol)
+#define GCMPVEC_REAL8(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_REAL8_FAIL_NAN, vector, lhs, rhs, tol)
+#define GCMPVEC_REAL4(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_REAL4_FAIL_NAN, vector, lhs, rhs, tol)
 #define GPVEC(name, fmt)		PRINT_GSL_1D(vector, name, fmt)
 #define GFVEC(...)			FREE_GSL(vector, __VA_ARGS__)
 
@@ -150,6 +166,11 @@
 #define GCVECI_MAIN(dest, src)		CLONE_GSL_1D_VAL(EXIT_FAILURE, vector_int, dest, src)
 #define GCVECI_REAL8(dest, src)		CLONE_GSL_1D_VAL(XLAL_REAL8_FAIL_NAN, vector_int, dest, src)
 #define GCVECI_REAL4(dest, src)		CLONE_GSL_1D_VAL(XLAL_REAL4_FAIL_NAN, vector_int, dest, src)
+#define GCMPVECI(lhs, rhs, tol)		COMPARE_GSL_1D_VAL(XLAL_FAILURE, vector_int, lhs, rhs, tol)
+#define GCMPVECI_NULL(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(NULL, vector_int, lhs, rhs, tol)
+#define GCMPVECI_MAIN(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(EXIT_FAILURE, vector_int, lhs, rhs, tol)
+#define GCMPVECI_REAL8(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_REAL8_FAIL_NAN, vector_int, lhs, rhs, tol)
+#define GCMPVECI_REAL4(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_REAL4_FAIL_NAN, vector_int, lhs, rhs, tol)
 #define GPVECI(name, fmt)		PRINT_GSL_1D(vector_int, name, fmt)
 #define GFVECI(...)			FREE_GSL(vector_int, __VA_ARGS__)
 
@@ -163,6 +184,11 @@
 #define GCVECU_MAIN(dest, src)		CLONE_GSL_1D_VAL(EXIT_FAILURE, vector_uint, dest, src)
 #define GCVECU_REAL8(dest, src)		CLONE_GSL_1D_VAL(XLAL_REAL8_FAIL_NAN, vector_uint, dest, src)
 #define GCVECU_REAL4(dest, src)		CLONE_GSL_1D_VAL(XLAL_REAL4_FAIL_NAN, vector_uint, dest, src)
+#define GCMPVECU(lhs, rhs, tol)		COMPARE_GSL_1D_VAL(XLAL_FAILURE, vector_uint, lhs, rhs, tol)
+#define GCMPVECU_NULL(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(NULL, vector_uint, lhs, rhs, tol)
+#define GCMPVECU_MAIN(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(EXIT_FAILURE, vector_uint, lhs, rhs, tol)
+#define GCMPVECU_REAL8(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_REAL8_FAIL_NAN, vector_uint, lhs, rhs, tol)
+#define GCMPVECU_REAL4(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_REAL4_FAIL_NAN, vector_uint, lhs, rhs, tol)
 #define GPVECU(name, fmt)		PRINT_GSL_1D(vector_uint, name, fmt)
 #define GFVECU(...)			FREE_GSL(vector_uint, __VA_ARGS__)
 
@@ -176,6 +202,11 @@
 #define GCVECLI_MAIN(dest, src)		CLONE_GSL_1D_VAL(EXIT_FAILURE, vector_long, dest, src)
 #define GCVECLI_REAL8(dest, src)	CLONE_GSL_1D_VAL(XLAL_REAL8_FAIL_NAN, vector_long, dest, src)
 #define GCVECLI_REAL4(dest, src)	CLONE_GSL_1D_VAL(XLAL_REAL4_FAIL_NAN, vector_long, dest, src)
+#define GCMPVECLI(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_FAILURE, vector_long, lhs, rhs, tol)
+#define GCMPVECLI_NULL(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(NULL, vector_long, lhs, rhs, tol)
+#define GCMPVECLI_MAIN(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(EXIT_FAILURE, vector_long, lhs, rhs, tol)
+#define GCMPVECLI_REAL8(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_REAL8_FAIL_NAN, vector_long, lhs, rhs, tol)
+#define GCMPVECLI_REAL4(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_REAL4_FAIL_NAN, vector_long, lhs, rhs, tol)
 #define GPVECLI(name, fmt)		PRINT_GSL_1D(vector_long, name, fmt)
 #define GFVECLI(...)			FREE_GSL(vector_long, __VA_ARGS__)
 
@@ -189,6 +220,11 @@
 #define GCVECLU_MAIN(dest, src)		CLONE_GSL_1D_VAL(EXIT_FAILURE, vector_ulong, dest, src)
 #define GCVECLU_REAL8(dest, src)	CLONE_GSL_1D_VAL(XLAL_REAL8_FAIL_NAN, vector_ulong, dest, src)
 #define GCVECLU_REAL4(dest, src)	CLONE_GSL_1D_VAL(XLAL_REAL4_FAIL_NAN, vector_ulong, dest, src)
+#define GCMPVECLU(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_FAILURE, vector_ulong, lhs, rhs, tol)
+#define GCMPVECLU_NULL(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(NULL, vector_ulong, lhs, rhs, tol)
+#define GCMPVECLU_MAIN(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(EXIT_FAILURE, vector_ulong, lhs, rhs, tol)
+#define GCMPVECLU_REAL8(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_REAL8_FAIL_NAN, vector_ulong, lhs, rhs, tol)
+#define GCMPVECLU_REAL4(lhs, rhs, tol)	COMPARE_GSL_1D_VAL(XLAL_REAL4_FAIL_NAN, vector_ulong, lhs, rhs, tol)
 #define GPVECLU(name, fmt)		PRINT_GSL_1D(vector_ulong, name, fmt)
 #define GFVECLU(...)			FREE_GSL(vector_ulong, __VA_ARGS__)
 
@@ -202,6 +238,11 @@
 #define GCMAT_MAIN(dest, src)		CLONE_GSL_2D_VAL(EXIT_FAILURE, matrix, dest, src)
 #define GCMAT_REAL8(dest, src)		CLONE_GSL_2D_VAL(XLAL_REAL8_FAIL_NAN, matrix, dest, src)
 #define GCMAT_REAL4(dest, src)		CLONE_GSL_2D_VAL(XLAL_REAL4_FAIL_NAN, matrix, dest, src)
+#define GCMPMAT(lhs, rhs, tol)		COMPARE_GSL_2D_VAL(XLAL_FAILURE, matrix, lhs, rhs, tol)
+#define GCMPMAT_NULL(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(NULL, matrix, lhs, rhs, tol)
+#define GCMPMAT_MAIN(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(EXIT_FAILURE, matrix, lhs, rhs, tol)
+#define GCMPMAT_REAL8(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_REAL8_FAIL_NAN, matrix, lhs, rhs, tol)
+#define GCMPMAT_REAL4(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_REAL4_FAIL_NAN, matrix, lhs, rhs, tol)
 #define GPMAT(name, fmt)		PRINT_GSL_2D(matrix, name, fmt)
 #define GFMAT(...)			FREE_GSL(matrix, __VA_ARGS__)
 
@@ -215,6 +256,11 @@
 #define GCMATI_MAIN(dest, src)		CLONE_GSL_2D_VAL(EXIT_FAILURE, matrix_int, dest, src)
 #define GCMATI_REAL8(dest, src)		CLONE_GSL_2D_VAL(XLAL_REAL8_FAIL_NAN, matrix_int, dest, src)
 #define GCMATI_REAL4(dest, src)		CLONE_GSL_2D_VAL(XLAL_REAL4_FAIL_NAN, matrix_int, dest, src)
+#define GCMPMATI(lhs, rhs, tol)		COMPARE_GSL_2D_VAL(XLAL_FAILURE, matrix_int, lhs, rhs, tol)
+#define GCMPMATI_NULL(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(NULL, matrix_int, lhs, rhs, tol)
+#define GCMPMATI_MAIN(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(EXIT_FAILURE, matrix_int, lhs, rhs, tol)
+#define GCMPMATI_REAL8(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_REAL8_FAIL_NAN, matrix_int, lhs, rhs, tol)
+#define GCMPMATI_REAL4(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_REAL4_FAIL_NAN, matrix_int, lhs, rhs, tol)
 #define GPMATI(name, fmt)		PRINT_GSL_2D(matrix_int, name, fmt)
 #define GFMATI(...)			FREE_GSL(matrix_int, __VA_ARGS__)
 
@@ -228,6 +274,11 @@
 #define GCMATU_MAIN(dest, src)		CLONE_GSL_2D_VAL(EXIT_FAILURE, matrix_uint, dest, src)
 #define GCMATU_REAL8(dest, src)		CLONE_GSL_2D_VAL(XLAL_REAL8_FAIL_NAN, matrix_uint, dest, src)
 #define GCMATU_REAL4(dest, src)		CLONE_GSL_2D_VAL(XLAL_REAL4_FAIL_NAN, matrix_uint, dest, src)
+#define GCMPMATU(lhs, rhs, tol)		COMPARE_GSL_2D_VAL(XLAL_FAILURE, matrix_uint, lhs, rhs, tol)
+#define GCMPMATU_NULL(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(NULL, matrix_uint, lhs, rhs, tol)
+#define GCMPMATU_MAIN(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(EXIT_FAILURE, matrix_uint, lhs, rhs, tol)
+#define GCMPMATU_REAL8(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_REAL8_FAIL_NAN, matrix_uint, lhs, rhs, tol)
+#define GCMPMATU_REAL4(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_REAL4_FAIL_NAN, matrix_uint, lhs, rhs, tol)
 #define GPMATU(name, fmt)		PRINT_GSL_2D(matrix_uint, name, fmt)
 #define GFMATU(...)			FREE_GSL(matrix_uint, __VA_ARGS__)
 
@@ -241,6 +292,11 @@
 #define GCMATLI_MAIN(dest, src)		CLONE_GSL_2D_VAL(EXIT_FAILURE, matrix_long, dest, src)
 #define GCMATLI_REAL8(dest, src)	CLONE_GSL_2D_VAL(XLAL_REAL8_FAIL_NAN, matrix_long, dest, src)
 #define GCMATLI_REAL4(dest, src)	CLONE_GSL_2D_VAL(XLAL_REAL4_FAIL_NAN, matrix_long, dest, src)
+#define GCMPMATLI(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_FAILURE, matrix_long, lhs, rhs, tol)
+#define GCMPMATLI_NULL(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(NULL, matrix_long, lhs, rhs, tol)
+#define GCMPMATLI_MAIN(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(EXIT_FAILURE, matrix_long, lhs, rhs, tol)
+#define GCMPMATLI_REAL8(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_REAL8_FAIL_NAN, matrix_long, lhs, rhs, tol)
+#define GCMPMATLI_REAL4(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_REAL4_FAIL_NAN, matrix_long, lhs, rhs, tol)
 #define GPMATLI(name, fmt)		PRINT_GSL_2D(matrix_long, name, fmt)
 #define GFMATLI(...)			FREE_GSL(matrix_long, __VA_ARGS__)
 
@@ -254,6 +310,11 @@
 #define GCMATLU_MAIN(dest, src)		CLONE_GSL_2D_VAL(EXIT_FAILURE, matrix_ulong, dest, src)
 #define GCMATLU_REAL8(dest, src)	CLONE_GSL_2D_VAL(XLAL_REAL8_FAIL_NAN, matrix_ulong, dest, src)
 #define GCMATLU_REAL4(dest, src)	CLONE_GSL_2D_VAL(XLAL_REAL4_FAIL_NAN, matrix_ulong, dest, src)
+#define GCMPMATLU(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_FAILURE, matrix_ulong, lhs, rhs, tol)
+#define GCMPMATLU_NULL(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(NULL, matrix_ulong, lhs, rhs, tol)
+#define GCMPMATLU_MAIN(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(EXIT_FAILURE, matrix_ulong, lhs, rhs, tol)
+#define GCMPMATLU_REAL8(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_REAL8_FAIL_NAN, matrix_ulong, lhs, rhs, tol)
+#define GCMPMATLU_REAL4(lhs, rhs, tol)	COMPARE_GSL_2D_VAL(XLAL_REAL4_FAIL_NAN, matrix_ulong, lhs, rhs, tol)
 #define GPMATLU(name, fmt)		PRINT_GSL_2D(matrix_ulong, name, fmt)
 #define GFMATLU(...)			FREE_GSL(matrix_ulong, __VA_ARGS__)
 
