@@ -819,6 +819,13 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_nruns_background = self.get_config_option('pe', 'n_runs_background', cftype='int', default=1)
     self.pe_nlive_background = self.get_config_option('pe', 'n_live_background', cftype='int', default=1024)
 
+    # parameters for ROQ
+    self.pe_roq = self.get_config_option('pe', 'use_roq', cftype='boolean', default=False)                # check if using Reduced Order Quadrature (ROQ)
+    self.pe_roq_ntraining = self.get_config_option('pe', 'roq_ntraining', cftype='int', default=2500)     # number of training waveforms for reduced basis generation
+    self.pe_roq_tolerance = self.get_config_option('pe', 'roq_tolerance', cftype='float', default=5e-12)  # mis-match tolerance when producing reduced basis
+    self.pe_roq_uniform = self.get_config_option('pe', 'roq_uniform', cftype='boolean', default=False)        # check if setting uniform distributions for sprinkling traning waveform parameters
+    self.pe_roq_chunkmax = self.get_config_option('pe', 'roq_chunkmax', cftype='int', default=1440)       # maximum data chunk length for creating ROQ
+
     # FIXME: Currently this won't run with non-GR parameters, so output a warning and default back to GR!
     if self.pe_non_gr:
       print("Warning... currently this will not run with non-GR parameters. Reverting to GR-mode.")
@@ -980,6 +987,11 @@ class knopeDAG(pipeline.CondorDAG):
         else: # subsequent iterations are for background jobs
           psrpostdir = os.path.join(self.pe_posterior_background_basedir, pname)
 
+        if self.pe_roq:
+          nroqruns = 1 # add one run for the ROQ weights calculation
+        else:
+          nroqruns = 0
+
         # create directory for that pulsar
         self.mkdirs(psrdir)
         if self.error_code != 0: return
@@ -1038,11 +1050,17 @@ class knopeDAG(pipeline.CondorDAG):
             # set seed for randomising data (this needs to be the same over each nruns)
             randomiseseed = ''.join([str(f) for f in np.random.randint(1, 10, size=15).tolist()])
 
+          # set output ROQ weights file
+          if self.pe_roq:
+            roqweightsfile = os.path.join(ffdir, 'roqweights.bin')
+
           nestfiles = [] # list of nested sample file names
           penodes = []
+          roqinputnode = None
 
           # setup job(s)
-          for i in range(nruns): # loop over the required number of runs
+          i = counter = 0
+          while counter < nruns+nroqruns: # loop over the required number of runs
             penode = ppeNode(pejob)
             if self.pe_random_seed != None:
               penode.set_randomseed(self.pe_random_seed)      # set seed for RNG
@@ -1062,6 +1080,19 @@ class knopeDAG(pipeline.CondorDAG):
             # set the output nested samples file
             nestfiles.append(os.path.join(ffdir, 'nested_samples_%s_%05d.txt' % (pname, i)))
             penode.set_outfile(nestfiles[i])
+
+            if self.pe_roq:
+              penode.set_roq()
+              penode.set_roq_chunkmax(str(self.pe_roq_chunkmax))
+
+              if counter == 0: # first time round just output weights
+                penode.set_roq_ntraining(str(self.pe_roq_ntraining))
+                penode.set_roq_tolerance(str(self.pe_roq_tolerance))
+                penode.set_roq_outputweights(roqweightsfile)
+                if self.pe_roq_uniform:
+                  penode.set_roq_uniform()
+              else: # use pre-created weights file
+                penode.set_roq_inputweights(roqweightsfile)
 
             # for background runs set the randomise seed
             if j > 0:
@@ -1125,6 +1156,18 @@ class knopeDAG(pipeline.CondorDAG):
             # add prior creation node as parent
             penode.add_parent(priornode)
 
+            # if using ROQ add first PE node as parent to the rest
+            if self.pe_roq:
+              if roqinputnode is not None: # add first penode (which generates the ROQ interpolant) as a parent to subsequent nodes
+                penode.add_parent(roqinputnode)
+
+              if counter == 0: # get first penode (generating and outputting the ROQ interpolant) to add as parents to subsequent nodes
+                roqinputnode = penode
+                self.add_node(penode)
+                counter = counter+1 # increment "counter", but not "i"
+                del nestfiles[-1]   # remove last element of nestfiles
+                continue
+
             # add node to dag
             self.add_node(penode)
             penodes.append(penode)
@@ -1137,6 +1180,9 @@ class knopeDAG(pipeline.CondorDAG):
             mvnode.set_destination(snrdestfile)
             mvnode.add_parent(penode)
             self.add_node(mvnode)
+
+            counter = counter+1
+            i = i+1
 
           # add lalapps_nest2pos node to combine outputs/convert to posterior samples
           n2pnode = nest2posNode(n2pjob)
@@ -2931,6 +2977,13 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__tolerance = None
     self.__randomseed = None
 
+    self.__use_roq = False
+    self.__roq_ntraining = None
+    self.__roq_tolerance = None
+    self.__roq_uniform = False
+    self.__roq_output_weights = None
+    self.__roq_input_weights = None
+
     self.__temperature = None
     self.__ensmeble_walk = None
     self.__ensemble_stretch = None
@@ -3214,6 +3267,84 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     curmacroval = curmacroval + ' --randomise ' + f
     self.add_macro('macroargs', curmacroval)
     self.__randomise = f
+
+  def set_roq(self):
+    # set to use Reduced Order Quadrature (ROQ)
+
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --roq'
+    self.add_macro('macroargs', curmacroval)
+    self.__use_roq = True
+
+  def set_roq_ntraining(self, f):
+    # set the number of training waveforms to use in ROQ basis generation
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --ntraining ' + f
+    self.add_macro('macroargs', curmacroval)
+    self.__roq_ntraining = f
+
+  def set_roq_tolerance(self, f):
+    # set the tolerance to use in ROQ basis generation
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --roq-tolerance ' + f
+    self.add_macro('macroargs', curmacroval)
+    self.__roq_tolerance = f
+
+  def set_roq_uniform(self):
+    # set to use uniform distributions when sprinkling (phase) parameters for ROQ training basis generation
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --roq-uniform'
+    self.add_macro('macroargs', curmacroval)
+    self.__roq_uniform = True
+
+  def set_roq_inputweights(self,f):
+    # set the location of the file containing pregenerated ROQ interpolants
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --input-weights ' + f
+    self.add_macro('macroargs', curmacroval)
+    self.__roq_input_weights = f
+
+  def set_roq_outputweights(self,f):
+    # set the location of the file to output ROQ interpolants
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --output-weights ' + f
+    self.add_macro('macroargs', curmacroval)
+    self.__roq_output_weights = f
+
+  def set_roq_chunkmax(self,f):
+    # set the maximum chunk length for if using ROQ (just adding using the chunk-max argument)
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --chunk-max ' + f
+    self.add_macro('macroargs', curmacroval)
+    self.__chunk_max = int(f)
 
 
 """
