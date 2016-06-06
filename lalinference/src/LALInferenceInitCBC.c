@@ -640,8 +640,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
     (--noSpin, --disable-spin)      template will assume no spins (giving this will void spinOrder!=0) \n\
     (--no-detector-frame)              model will NOT use detector-centred coordinates and instead RA,dec\n\
-  (--grtest-parameters dchi0,..,dxi1,..,dalpha1,..) template will assume deformations in the corresponding phase coefficients.\n\
-  (--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
+    (--grtest-parameters dchi0,..,dxi1,..,dalpha1,..) template will assume deformations in the corresponding phase coefficients.\n\
+    (--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
 \n\
     ----------------------------------------------\n\
     --- Starting Parameters ----------------------\n\
