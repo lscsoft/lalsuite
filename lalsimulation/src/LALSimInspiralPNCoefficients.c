@@ -459,7 +459,8 @@ XLALSimInspiralPNPhasing_F2(
 	const REAL8 chi1dotchi2, /**< Dot product of dimensionles spin 1 and spin 2 */
 	const REAL8 qm_def1, /**< Quadrupole deformation parameter of body 1 (dimensionless) */
 	const REAL8 qm_def2, /**< Quadrupole deformation parameter of body 2 (dimensionless) */
-	const LALSimInspiralSpinOrder spinO /**< Enums specifying spin order are in LALSimInspiralWaveformFlags.h */
+	const LALSimInspiralSpinOrder spinO, /**< Enums specifying spin order are in LALSimInspiralWaveformFlags.h */
+    const LALSimInspiralTestGRParam *p /**< Linked list containing the extra testing GR parameters >**/
 	)
 {
     const REAL8 mtot = m1 + m2;
@@ -481,7 +482,8 @@ XLALSimInspiralPNPhasing_F2(
 
     /* Non-spin phasing terms - see arXiv:0907.0700, Eq. 3.18 */
     pfa->v[0] = 1.L;
-    pfa->v[2] = 5.L*(743.L/84.L + 11.L * eta)/9.L; 
+    pfa->v[1] = 0.L;
+    pfa->v[2] = 5.L*(743.L/84.L + 11.L * eta)/9.L;
     pfa->v[3] = -16.L*LAL_PI;
     pfa->v[4] = 5.L*(3058.673L/7.056L + 5429.L/7.L * eta
                      + 617.L * eta*eta)/72.L;
@@ -498,7 +500,21 @@ XLALSimInspiralPNPhasing_F2(
     pfa->v[7] = LAL_PI * ( 77096675.L/254016.L
                      + 378515.L/1512.L * eta - 74045.L/756.L * eta*eta);
 
-
+    /* modify the PN coefficients if a non null LALSimInspiralTestGRParam structure is passed */
+    if (p!=NULL)
+    {
+      if (XLALSimInspiralTestGRParamExists(p,"dchi0")) pfa->v[0]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi0"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi1")) pfa->v[1] = XLALSimInspiralGetTestGRParam(p,"dchi1");
+      if (XLALSimInspiralTestGRParamExists(p,"dchi2")) pfa->v[2]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi2"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi3")) pfa->v[3]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi3"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi4")) pfa->v[4]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi4"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi5")) pfa->v[5]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi5"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi5l")) pfa->vlogv[5]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi5l"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi6")) pfa->v[6]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi6"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi6l")) pfa->vlogv[6]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi6l"));
+      if (XLALSimInspiralTestGRParamExists(p,"dchi7")) pfa->v[7]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi7"));
+    }
+    
     /* Compute 2.0PN SS, QM, and self-spin */
     // See Eq. (6.24) in arXiv:0810.5336
     // 9b,c,d in arXiv:astro-ph/0504538

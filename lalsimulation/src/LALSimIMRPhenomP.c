@@ -248,7 +248,8 @@ int XLALSimIMRPhenomP(
   const REAL8 f_min,                          /**< Starting GW frequency (Hz) */
   const REAL8 f_max,                          /**< End frequency; 0 defaults to ringdown cutoff freq */
   const REAL8 f_ref,                          /**< Reference frequency */
-  IMRPhenomP_version_type IMRPhenomP_version) /**< IMRPhenomP(v1) uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
+  IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
+  const LALSimInspiralTestGRParam *extraParams) /**<linked list containing the extra testing GR parameters */
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
@@ -266,7 +267,7 @@ int XLALSimIMRPhenomP(
   freqs->data[1] = f_max;
 
   int retcode = PhenomPCore(hptilde, hctilde,
-      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version);
+      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version, extraParams);
   XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
   XLALDestroyREAL8Sequence(freqs);
   return (retcode);
@@ -301,7 +302,8 @@ int XLALSimIMRPhenomPFrequencySequence(
   const REAL8 alpha0,                         /**< Initial value of alpha angle (azimuthal precession angle) */
   const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 f_ref,                          /**< Reference frequency */
-  IMRPhenomP_version_type IMRPhenomP_version) /**< IMRPhenomP(v1) uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
+  IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
+  const LALSimInspiralTestGRParam *extraParams) /**<linked list containing the extra testing GR parameters */
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParameters
@@ -310,7 +312,7 @@ int XLALSimIMRPhenomPFrequencySequence(
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = PhenomPCore(hptilde, hctilde,
-      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version);
+      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version, extraParams);
   XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
   return(retcode);
 }
@@ -344,7 +346,8 @@ static int PhenomPCore(
    * If deltaF > 0, the frequency points given in freqs are uniformly spaced with
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
-  IMRPhenomP_version_type IMRPhenomP_version /**< IMRPhenomP(v1) uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
+  IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
+  const LALSimInspiralTestGRParam *extraParams /**<linked list containing the extra testing GR parameters */
   )
 {
   /* Check inputs for sanity */
@@ -486,7 +489,7 @@ static int PhenomPCore(
     case IMRPhenomPv1_V:
       XLAL_PRINT_INFO("*** IMRPhenomP version 1: based on IMRPhenomC ***");
       // PhenomC with ringdown using Barausse 2009 formula for final spin
-      PCparams = ComputeIMRPhenomCParamsRDmod(m1, m2, chi_eff, chip);
+      PCparams = ComputeIMRPhenomCParamsRDmod(m1, m2, chi_eff, chip, extraParams);
       if (!PCparams) {
         errcode = XLAL_EFUNC;
         goto cleanup;
@@ -506,8 +509,8 @@ static int PhenomPCore(
 
       // IMRPhenomD assumes that m1 >= m2.
       pAmp = ComputeIMRPhenomDAmplitudeCoefficients(eta, chi2_l, chi1_l, finspin);
-      pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi2_l, chi1_l, finspin);
-      XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
+      pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi2_l, chi1_l, finspin, extraParams);
+      XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_l, chi2_l, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
       if (!pAmp || !pPhi || !pn) {
         errcode = XLAL_EFUNC;
         goto cleanup;
@@ -1300,11 +1303,12 @@ UNUSED static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
   const REAL8 m1,   /**< Mass of companion 1 (solar masses) */
   const REAL8 m2,   /**< Mass of companion 2 (solar masses) */
   const REAL8 chi,  /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
-  const REAL8 chip) /**< Dimensionless spin in the orbital plane */
+  const REAL8 chip, /**< Dimensionless spin in the orbital plane */
+  const LALSimInspiralTestGRParam *extraParams) /**< linked list containing the extra testing GR parameters */
 {
 
   BBHPhenomCParams *p = NULL;
-  p = ComputeIMRPhenomCParams(m1, m2, chi); /* populate parameters with the original PhenomC setup */
+  p = ComputeIMRPhenomCParams(m1, m2, chi, extraParams); /* populate parameters with the original PhenomC setup */
   if( !p )
     XLAL_ERROR_NULL(XLAL_EFUNC);
 

@@ -68,6 +68,11 @@
 
 static void q2masses(double mc, double q, double *m1, double *m2);
 
+/* list of testing GR parameters to be passed to the waveform */
+
+const char list_extra_parameters[34][16] = {"dchi0","dchi1","dchi2","dchi3","dchi4","dchi5","dchi5l","dchi6","dchi6l","dchi7","aPPE","alphaPPE","bPPE","betaPPE","betaStep","fStep","dxi1","dxi2","dxi3","dxi4","dxi5","dxi6","dalpha1","dalpha2","dalpha3","dalpha4","dalpha5","dbeta1","dbeta2","dbeta3","dsigma1","dsigma2","dsigma3","dsigma4"};
+
+const UINT4 N_extra_params = 34;
 
 void LALInferenceTemplateNullFreqdomain(LALInferenceModel *model)
 /**********************************************/
@@ -709,6 +714,30 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
   /* Only use GR templates */
   LALSimInspiralTestGRParam *nonGRparams = NULL;
+
+  /* Fill in the extra parameters for testing GR, if necessary */
+  for (UINT4 k=0; k<N_extra_params; k++)
+  {
+      if(LALInferenceCheckVariable(model->params,list_extra_parameters[k]))
+      {
+          XLALSimInspiralAddTestGRParam(&nonGRparams,list_extra_parameters[k],*(REAL8 *)LALInferenceGetVariable(model->params,list_extra_parameters[k]));
+      }
+  }
+  /* Fill in PPE params if they are available */
+  char PPEparam[64]="";
+  const char *PPEnames[]={"aPPE","alphaPPE","bPPE","betaPPE",NULL};
+  for(UINT4 idx=0;PPEnames[idx];idx++)
+  {
+    for(UINT4 ppeidx=0;;ppeidx++)
+    {
+      sprintf(PPEparam, "%s%d",PPEnames[idx],ppeidx);
+      if(LALInferenceCheckVariable(model->params,PPEparam))
+        XLALSimInspiralAddTestGRParam(&nonGRparams,PPEparam,LALInferenceGetREAL8Variable(model->params,PPEparam));
+      else
+        break;
+    }
+  }
+
   
 
   /* ==== Call the waveform generator ==== */
@@ -771,10 +800,6 @@ model->waveFlags(%d,%d,%d,%d,numreldata),nonGRparams,%d,%d,%d,model->waveformCac
     memcpy(model->freqhCross->data->data,hctilde->data->data,sizeof(hctilde->data->data[0])*size);
     if( (rem=(model->freqhCross->data->length - size)) > 0)
         memset(&(model->freqhCross->data->data[size]),0, rem*sizeof(hctilde->data->data[0]) );
-    
-    
-    /* Destroy the nonGr params */
-    XLALSimInspiralDestroyTestGRParam(nonGRparams);
     
     REAL8 instant = model->freqhPlus->epoch.gpsSeconds + 1e-9*model->freqhPlus->epoch.gpsNanoSeconds;
     LALInferenceSetVariable(model->params, "time", &instant);
