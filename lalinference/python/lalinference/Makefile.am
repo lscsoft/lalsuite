@@ -8,7 +8,6 @@ SUBDIRS = \
 	bayestar \
 	rapid_pe \
 	imrtgr \
-        volume \
 	$(END_OF_LIST)
 
 vcs_info_sources = git_version.py
