@@ -45,8 +45,8 @@ class lazy_nhoods(object):
 
 class Bank(object):
 
-    def __init__(self, tmplt_class, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0", coarse_match_df=None, iterative_match_df_max=None, fhigh_max=None):
-        self.tmplt_class = tmplt_class
+    def __init__(self, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0", coarse_match_df=None, iterative_match_df_max=None, fhigh_max=None):
+
         self.noise_model = noise_model
         self.flow = flow
         self.use_metric = use_metric
@@ -73,7 +73,8 @@ class Bank(object):
             self._moments = {}
             self.compute_match = self._metric_match
         else:
-            self._workspace_cache = CreateSBankWorkspaceCache()
+            # The max over skyloc stuff needs a second cache
+            self._workspace_cache = [CreateSBankWorkspaceCache(), CreateSBankWorkspaceCache()]
             self.compute_match = self._brute_match
 
     def __len__(self):
@@ -102,9 +103,17 @@ class Bank(object):
         merged._nmatch = sum(b._nmatch for b in banks)
         return merged
 
+    def add_from_sngls(self, sngls, tmplt_class):
+        newtmplts = [tmplt_class.from_sngl(s, bank=self) for s in sngls]
+        for template in newtmplts:
+            # Mark all templates as seed points
+            template.is_seed_point = True
+        self._templates.extend(newtmplts)
+        self._templates.sort(key=attrgetter(self.nhood_param))
+
     @classmethod
     def from_sngls(cls, sngls, tmplt_class, *args, **kwargs):
-        bank = cls(*((tmplt_class,) + args), **kwargs)
+        bank = cls(*args, **kwargs)
         bank._templates.extend([tmplt_class.from_sngl(s, bank=bank) for s in sngls])
         bank._templates.sort(key=attrgetter(bank.nhood_param))
         # Mark all templates as seed points
@@ -114,7 +123,7 @@ class Bank(object):
 
     @classmethod
     def from_sims(cls, sims, tmplt_class, *args):
-        bank = cls(*((tmplt_class,) + args))
+        bank = cls(*args)
         bank._templates.extend([tmplt_class.from_sim(s, bank=bank) for s in sims])
         return bank
 
@@ -127,7 +136,7 @@ class Bank(object):
             tmplt.clear()
         return match
 
-    def covers(self, proposal, min_match):
+    def covers(self, proposal, min_match, nhood=None):
         """
         Return (max_match, template) where max_match is either (i) the
         best found match if max_match < min_match or (ii) the match of
@@ -139,8 +148,11 @@ class Bank(object):
 
         # find templates in the bank "near" this tmplt
         prop_nhd = getattr(proposal, self.nhood_param)
-        low, high = _find_neighborhood(self._nhoods, prop_nhd, self.nhood_size)
-        tmpbank = self._templates[low:high]
+        if not nhood:
+            low, high = _find_neighborhood(self._nhoods, prop_nhd, self.nhood_size)
+            tmpbank = self._templates[low:high]
+        else:
+            tmpbank = nhood
         if not tmpbank: return (max_match, template)
 
         # sort the bank by its nearness to tmplt in mchirp
@@ -168,13 +180,25 @@ class Bank(object):
                 PSD = get_PSD(self.coarse_match_df, self.flow, f_max, self.noise_model)
                 match = self.compute_match(tmplt, proposal, self.coarse_match_df,
                                            PSD=PSD)
-                if (1 - match) > 4.0*(1 - min_match):
-                    continue
+                if match == 0:
+                    err_msg = "Match is 0. This might indicate that you have "
+                    err_msg += "the df value too high. Please try setting the "
+                    err_msg += "coarse-value-df value lower."
+                    # FIXME: This could be dealt with dynamically??
+                    raise ValueError(err_msg)
+                if (1 - match) > 0.05 + (1 - min_match):
+                    continue 
 
             while df >= df_end:
 
                 PSD = get_PSD(df, self.flow, f_max, self.noise_model)
                 match = self.compute_match(tmplt, proposal, df, PSD=PSD)
+                if match == 0:
+                    err_msg = "Match is 0. This might indicate that you have "
+                    err_msg += "the df value too high. Please try setting the "
+                    err_msg += "iterative-match-df-max value lower."
+                    # FIXME: This could be dealt with dynamically??
+                    raise ValueError(err_msg)
 
                 # record match and template params for highest match
                 if match > max_match:
@@ -183,7 +207,7 @@ class Bank(object):
 
                 # if the result is a really bad match, trust it isn't
                 # misrepresenting a good match
-                if (1 - match) > 4.0*(1 - min_match):
+                if (1 - match) > 0.05 + (1 - min_match):
                     break
 
                 # calculation converged
@@ -224,6 +248,7 @@ class Bank(object):
     def clear(self):
         if hasattr(self, "_workspace_cache"):
             self._workspace_cache = CreateSBankWorkspaceCache()
+
         for tmplt in self._templates:
             tmplt.clear()
 

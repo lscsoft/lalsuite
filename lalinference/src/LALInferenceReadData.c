@@ -121,6 +121,11 @@ struct fvec *interpFromFile(char *filename){
 	interp=XLALRealloc(interp,fileLength*sizeof(struct fvec)); /* Resize array */
 	fclose(interpfile);
 	printf("Read %i records from %s\n",fileLength-1,filename);
+    if(fileLength-1 <1)
+    {
+            XLALPrintError("Error: read no records from %s\n",filename);
+            exit(1);
+    }
 	return interp;
 }
 
@@ -2546,9 +2551,9 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
     char *fname=NULL;
     char defaultname[]="injection_params.dat";
     FILE *outfile=NULL;
-    LALInferenceModel *model = LALInferenceInitCBCModel(runState);
 
     SimInspiralTable *injTable=NULL, *theEventTable=NULL;
+    LALInferenceModel *model = LALInferenceInitCBCModel(runState);
     if (LALInferenceGetProcParamVal(runState->commandLine, "--roqtime_steps")){
       LALInferenceSetupROQmodel(model, runState->commandLine);
       fprintf(stderr, "done LALInferenceSetupROQmodel\n");
@@ -2556,7 +2561,6 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState) {
       model->roq_flag=0;
     }
     LALInferenceVariables *injparams = XLALCalloc(1, sizeof(LALInferenceVariables));
-    model->roq_flag = 0;
     LALInferenceCopyVariables(model->params, injparams);
 
     ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine,"--inj");
@@ -2731,9 +2735,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 
 	  model->roq->frequencyNodesLinear = XLALCreateREAL8Sequence(n_basis_linear);
 	  model->roq->frequencyNodesQuadratic = XLALCreateREAL8Sequence(n_basis_quadratic);
-          model->roq->calFactorLinear = XLALCreateCOMPLEX16Sequence(model->roq->frequencyNodesLinear->length);   
-	  model->roq->calFactorQuadratic = XLALCreateCOMPLEX16Sequence(model->roq->frequencyNodesQuadratic->length);	 
- 
+	  
 	  model->roq->trigtime = endtime;
 
 	  if(LALInferenceGetProcParamVal(commandLine,"--roqnodesLinear")){
@@ -2829,24 +2831,71 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 
 
 
+
     thisData=IFOdata;
     while (thisData) {
+
+
+
       thisData->roq = XLALMalloc(sizeof(LALInferenceROQData));
+
+      thisData->roq->weights_linear = XLALMalloc(n_basis_linear*sizeof(LALInferenceROQSplineWeights));
 
       sprintf(tmp, "--%s-roqweightsLinear", thisData->name);
       ppt = LALInferenceGetProcParamVal(commandLine,tmp);
 
       thisData->roq->weightsFileLinear = fopen(ppt->value, "rb");
-	assert(thisData->roq->weightsFileLinear!=NULL);
+      assert(thisData->roq->weightsFileLinear!=NULL);
       thisData->roq->weightsLinear = (double complex*)malloc(n_basis_linear*time_steps*(sizeof(double complex)));
 
+      thisData->roq->time_weights_width = 2*dt + 2*0.026;
+      thisData->roq->time_step_size = thisData->roq->time_weights_width/time_steps;
+      thisData->roq->n_time_steps = time_steps;
+
+
+	fprintf(stderr, "basis_size = %d\n", n_basis_linear);
+	fprintf(stderr, "time steps = %d\n", time_steps);
+
+      double *tmp_real_weight = malloc(time_steps*(sizeof(double)));
+      double *tmp_imag_weight = malloc(time_steps*(sizeof(double)));
+
+      double *tmp_tcs = malloc(time_steps*(sizeof(double)));
+
+      sprintf(tmp, "--roq-times");
+      ppt = LALInferenceGetProcParamVal(commandLine,tmp);
+
+	FILE *tcFile = fopen(ppt->value, "rb");
+      assert(tcFile!=NULL);
+
+	for(unsigned int gg=0;gg < time_steps; gg++){
+
+		fread(&(tmp_tcs[gg]), sizeof(double), 1, tcFile); 
+	}
+
+	
       for(unsigned int ii=0; ii<n_basis_linear;ii++){
 		for(unsigned int jj=0; jj<time_steps;jj++){
 
       		fread(&(thisData->roq->weightsLinear[ii*time_steps + jj]), sizeof(double complex), 1, thisData->roq->weightsFileLinear);
+		tmp_real_weight[jj] = creal(thisData->roq->weightsLinear[ii*time_steps + jj]);
+		tmp_imag_weight[jj] = cimag(thisData->roq->weightsLinear[ii*time_steps + jj]);
+
       		}
+
+	thisData->roq->weights_linear[ii].acc_real_weight_linear = gsl_interp_accel_alloc ();
+ 	thisData->roq->weights_linear[ii].acc_imag_weight_linear = gsl_interp_accel_alloc ();
+
+	thisData->roq->weights_linear[ii].spline_real_weight_linear = gsl_spline_alloc (gsl_interp_linear, time_steps);
+        gsl_spline_init(thisData->roq->weights_linear[ii].spline_real_weight_linear, tmp_tcs, tmp_real_weight, time_steps);
+      
+        thisData->roq->weights_linear[ii].spline_imag_weight_linear = gsl_spline_alloc (gsl_interp_linear, time_steps);
+        gsl_spline_init(thisData->roq->weights_linear[ii].spline_imag_weight_linear, tmp_tcs, tmp_imag_weight, time_steps);
+
       }
 
+
+      fclose(thisData->roq->weightsFileLinear);
+      fclose(tcFile);
       sprintf(tmp, "--%s-roqweightsQuadratic", thisData->name);
 
       ppt = LALInferenceGetProcParamVal(commandLine,tmp);
@@ -2858,13 +2907,10 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
       for(unsigned int ii=0; ii<n_basis_quadratic;ii++){
 
 		fread(&(thisData->roq->weightsQuadratic[ii]), sizeof(double), 1, thisData->roq->weightsFileQuadratic);
-	}
+      }	
 
 
-      thisData->roq->time_weights_width = 2*dt + 2*0.026;
-      thisData->roq->time_step_size = thisData->roq->time_weights_width/time_steps;
-      thisData->roq->n_time_steps = time_steps;
-
+      
       fprintf(stderr, "loaded %s ROQ weights\n", thisData->name);
       thisData = thisData->next;
     }

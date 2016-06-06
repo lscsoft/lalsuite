@@ -710,7 +710,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   /* Only use GR templates */
   LALSimInspiralTestGRParam *nonGRparams = NULL;
   
-  
 
   /* ==== Call the waveform generator ==== */
   if(model->domain == LAL_SIM_DOMAIN_FREQUENCY) {

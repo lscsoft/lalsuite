@@ -88,6 +88,8 @@ class SBankJob(inspiral.InspiralAnalysisJob):
         self.set_sub_file(tag_base+'.sub')
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         self.add_condor_cmd('getenv','True')
         self.add_condor_cmd('request_memory', '1999')
         if "OMP_NUM_THREADS" in os.environ:
@@ -128,6 +130,8 @@ class SBankSplitJob(inspiral.InspiralAnalysisJob):
         self.tag_base = tag_base
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         self.add_condor_cmd('getenv','True')
 
 
@@ -156,6 +160,8 @@ class SBankChooseMchirpBoundariesJob(inspiral.InspiralAnalysisJob):
         self.tag_base = tag_base
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         self.add_condor_cmd('getenv','True')
 
 
@@ -186,6 +192,9 @@ class InspinjJob(inspiral.InspiralAnalysisJob):
         self.tag_base = tag_base
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
+
 
 class InspinjNode(pipeline.CondorDAGNode):
     def __init__(self,job, dag, tag=None,seed=0, p_node=[]):
@@ -214,6 +223,8 @@ class BankSimJob(inspiral.InspiralAnalysisJob):
         self.add_condor_cmd('getenv','True')
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         if "OMP_NUM_THREADS" in os.environ:
             self.add_condor_cmd('request_cpus', os.environ["OMP_NUM_THREADS"])
 
@@ -279,6 +290,8 @@ class MergeSimsJob(inspiral.InspiralAnalysisJob):
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
         self.add_condor_cmd('getenv','True')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         self.add_condor_cmd('request_memory', '1999')
 
 
@@ -307,6 +320,8 @@ class PlotSimJob(inspiral.InspiralAnalysisJob):
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
         self.add_condor_cmd('getenv','True')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         self.add_condor_cmd('request_memory', '1999')
 
 
@@ -354,6 +369,9 @@ lalapps_cbc_sbank_sim = /home/sprivite/local/opt/master/bin/lalapps_cbc_sbank_si
 lalapps_cbc_sbank_plot_sim = /home/sprivite/local/opt/master/bin/lalapps_cbc_sbank_plot_sim
 lalapps_cbc_sbank_merge_sims = /home/sprivite/local/opt/master/bin/lalapps_cbc_sbank_merge_sims
 lalapps_inspinj = /home/sprivite/local/opt/master/bin/lalapps_inspinj
+
+;[accounting]
+;accounting-group = ???
 
 [sbank]
 ; This section contains the parameters of the entire bank parameter
@@ -637,7 +655,7 @@ for inj_run in cp.options("injections"):
 
     # merge and plot the partial sims
     sim_names = [node.get_output_files()[0] for node in sim_nodes]
-    merge_sims_node = MergeSimsNode(merge_simsJob, dag, inj_run.upper(), sim_names, sim_nodes )
+    merge_sims_node = MergeSimsNode(merge_simsJob, dag, tag, sim_names, sim_nodes )
     PlotSimNode(plotsimJob, dag, merge_sims_node.get_output_files(), [merge_sims_node])
 
 # write the dag

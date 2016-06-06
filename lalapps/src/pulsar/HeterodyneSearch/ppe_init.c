@@ -478,7 +478,7 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
         REAL8Vector *glv = PulsarGetREAL8VectorParam( pars, glitchpars[i] );
         for ( j = 0; j < glv->length; j++ ){
           CHAR varname[256];
-          snprintf(varname, sizeof(varname), "%s%u", glitchpars[i], j);
+          snprintf(varname, sizeof(varname), "%s_%u", glitchpars[i], j+1);
           REAL8 glval = PulsarGetREAL8VectorParamIndividual( pars, varname );
           LALInferenceAddVariable( ini, varname, &glval, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
         }
@@ -676,6 +676,7 @@ void initialise_prior( LALInferenceRunState *runState )
  * \c freqBinJump Jumps that are the size of the Fourier frequency bins (can be used if searching over frequency).
  * \c ensembleStretch Ensemble stretch moves (WARNING: These can lead to long autocorrelation lengths).
  * \c ensembleWalk Ensemble walk moves. These are used as the default proposal.
+ * \c uniformprop Points for any parameters with uniform priors are drawn from those priors
  *
  * This function sets up the relative weights with which each of above distributions is used.
  *
@@ -683,8 +684,7 @@ void initialise_prior( LALInferenceRunState *runState )
  */
 void initialise_proposal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL;
-  UINT4 defrac = 0, freqfrac = 0, esfrac = 0, ewfrac = 0;
-  REAL8 temperature = 0.;
+  UINT4 defrac = 0, freqfrac = 0, esfrac = 0, ewfrac = 0, flatfrac = 0;
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--diffev" );
   if( ppt ) { defrac = atoi( ppt->value ); }
@@ -699,7 +699,11 @@ void initialise_proposal( LALInferenceRunState *runState ){
 
   ppt = LALInferenceGetProcParamVal(runState->commandLine, "--ensembleWalk" );
   if ( ppt ) { ewfrac = atoi( ppt->value ); }
-  else { ewfrac = 1; }
+  else { ewfrac = 3; }
+
+  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--uniformprop" );
+  if ( ppt ) { flatfrac = atoi( ppt->value ); }
+  else { flatfrac = 1; }
 
   if( !defrac && !freqfrac && !ewfrac && !esfrac ){
     XLAL_ERROR_VOID(XLAL_EFAILED, "All proposal weights are zero!");
@@ -711,42 +715,37 @@ void initialise_proposal( LALInferenceRunState *runState ){
   LALInferenceProposalCycle *cycle=threadState->cycle;
   /* add proposals */
   if( defrac ){
-    LALInferenceAddProposalToCycle(
-                                   cycle,
+    LALInferenceAddProposalToCycle(cycle,
                                    LALInferenceInitProposal(&LALInferenceDifferentialEvolutionFull,differentialEvolutionFullName),
                                    defrac);
   }
 
   if ( freqfrac ){
-    LALInferenceAddProposalToCycle(
-                                   cycle,
+    LALInferenceAddProposalToCycle(cycle,
                                    LALInferenceInitProposal(&LALInferenceFrequencyBinJump,frequencyBinJumpName),
                                    freqfrac);
   }
 
   /* Use ensemble moves */
   if ( esfrac ){
-    LALInferenceAddProposalToCycle(
-                                   cycle,
+    LALInferenceAddProposalToCycle(cycle,
                                    LALInferenceInitProposal(&LALInferenceEnsembleStretchFull,ensembleStretchFullName),
                                    esfrac);
   }
 
   if ( ewfrac ){
-    LALInferenceAddProposalToCycle(
-                                   cycle,
+    LALInferenceAddProposalToCycle(cycle,
                                    LALInferenceInitProposal(&LALInferenceEnsembleWalkFull,ensembleWalkFullName),
                                    ewfrac);
   }
 
-  LALInferenceRandomizeProposalCycle( cycle, runState->GSLrandom );
-  /* set temperature */
-  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--temperature" );
-  if( ppt ) { temperature = atof( ppt->value ); }
-  else { temperature = 0.1; }
+  if ( flatfrac ){
+    LALInferenceAddProposalToCycle(cycle,
+                                   LALInferenceInitProposal(&LALInferenceDrawFlatPrior,drawFlatPriorName),
+                                   flatfrac);
+  }
 
-  LALInferenceAddVariable( runState->proposalArgs, "temperature", &temperature, LALINFERENCE_REAL8_t,
-                           LALINFERENCE_PARAM_FIXED );
+  LALInferenceRandomizeProposalCycle( cycle, runState->GSLrandom );
 
   /* set proposal */
   threadState->proposal = LALInferenceCyclicProposal;

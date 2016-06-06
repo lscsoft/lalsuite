@@ -44,6 +44,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
 
 #define VARNAME_MAX 128
 #define VARVALSTRINGSIZE_MAX 128
@@ -661,6 +663,10 @@ tagLALInferenceROQData
   int n_time_steps;
   FILE *weightsFileLinear;
   FILE *weightsFileQuadratic;
+
+
+  struct tagLALInferenceROQSplineWeightsLinear *weights_linear;
+
  
   /* Deprecated functions that should be removed at some point */ 
   gsl_matrix_complex *weights; /** weights for the likelihood: NOTE: needs to be stored from data read from command line */
@@ -670,7 +676,21 @@ tagLALInferenceROQData
 
 } LALInferenceROQData;
 
+/**
+ *  *  * Structure to contain spline of ROQ weights as a function of tc
+ *   *   */
 
+typedef struct
+tagLALInferenceROQSplineWeightsLinear
+{
+  
+ 
+  gsl_spline *spline_real_weight_linear;
+  gsl_spline *spline_imag_weight_linear; 
+  gsl_interp_accel *acc_real_weight_linear;
+  gsl_interp_accel *acc_imag_weight_linear;
+
+} LALInferenceROQSplineWeights;
 /**
  *  * Structure to contain model-related Reduced Order Quadrature quantities
  *   */

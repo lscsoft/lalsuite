@@ -45,12 +45,10 @@ h0uls = [1e-22, 1e-21, 1e-20, 1e-19, 1e-18, 1e-17]
 
 # some default inputs
 dets='H1'
-Nlive='1000'
-Nmcmcinitial='200'
+Nlive='10000'
+Nmcmcinitial='0'
 outfile='test.out'
-priorsamples='10000'
-#uniformprop='--uniformprop 0'
-uniformprop=''
+priorsamples=Nlive
 
 for h0ul in h0uls:
   # prior file
@@ -68,8 +66,8 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
   # run code
   commandline="\
 %s --detectors %s --par-file %s --input-files %s --outfile %s \
---prior-file %s --Nlive %s --Nmcmcinitial %s --sampleprior %s %s" \
-% (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, priorsamples, uniformprop)
+--prior-file %s --Nlive %s --Nmcmcinitial %s --sampleprior %s" \
+% (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, priorsamples)
 
   sp.check_call(commandline, shell=True)
 
@@ -101,20 +99,10 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
     print "There might be a problem for this prior distribution"
     import matplotlib.pyplot as pl
     fig, ax = pl.subplots(1, 1)
-    newedges = []
-    vs = []
-    for v in range(len(nc)):
-      #newedges.append(nedges[v]/h0ul)
-      #newedges.append(nedges[v+1]/h0ul)
-      newedges.append(nedges[v])
-      newedges.append(nedges[v+1])
-      vs.append(nc[v])
-      vs.append(nc[v])
-
-    ax.fill_between(newedges, 0, vs, alpha=0.2)
-    #ax.plot([0., 1.], [0., 1.], 'k--')
+    ax.hist(h0samps, bins=20, normed=True, cumulative=True, histtype='stepfilled', alpha=0.2)
     ax.plot([0., h0ul], [0., 1], 'k--')
     ax.set_xlim((0., h0ul))
+    ax.set_ylim((0., 1.))
     ax.set_xlabel('h_0')
     ax.set_ylabel('Cumulative probability')
     pl.show()

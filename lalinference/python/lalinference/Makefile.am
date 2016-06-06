@@ -21,6 +21,7 @@ pymodule_PYTHON = \
 	__init__.py \
 	cmap.py \
 	fits.py \
+	marker.py \
 	plot.py \
 	git_version.py \
 	$(END_OF_LIST)
