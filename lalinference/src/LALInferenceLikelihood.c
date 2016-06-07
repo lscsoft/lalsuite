@@ -793,9 +793,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
 			this_ifo_d_inner_h += weight_iii*conj(template_EI) ;
 
-			gsl_interp_accel_reset(dataPtr->roq->weights_linear[iii].acc_real_weight_linear);
-			gsl_interp_accel_reset(dataPtr->roq->weights_linear[iii].acc_imag_weight_linear);
-
 		}
 
 		for(unsigned int jjj=0; jjj < model->roq->frequencyNodesQuadratic->length; jjj++){

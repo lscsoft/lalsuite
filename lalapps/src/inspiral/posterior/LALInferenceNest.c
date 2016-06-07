@@ -46,6 +46,7 @@
 
 
 int main(int argc, char *argv[]){
+  int helpflag=0;
   char help[]="\
   LALInferenceNest:\n\
   Bayesian analysis tool using Nested Sampling algorithm\n\
@@ -60,6 +61,7 @@ int main(int argc, char *argv[]){
   procParams=LALInferenceParseCommandLine(argc,argv);
   if(LALInferenceGetProcParamVal(procParams,"--help"))
   {
+    helpflag=1;
     fprintf(stdout,"%s",help);
   }
   /* write down git information */
@@ -71,7 +73,7 @@ int main(int argc, char *argv[]){
   /* And allocating memory */
   state = LALInferenceInitRunState(procParams);
   /* Create header */
-  if (state!=NULL){
+  if (state!=NULL && !helpflag){
     ProcessParamsTable *ppt=NULL;
     ppt=LALInferenceGetProcParamVal(state->commandLine,"--outfile");
     if(!ppt){
@@ -88,7 +90,7 @@ int main(int argc, char *argv[]){
     fclose(fpout);
     }
   if (state == NULL) {
-      if (!LALInferenceGetProcParamVal(procParams, "--help")) {
+      if (!helpflag) {
           fprintf(stderr, "run state not allocated (%s, line %d).\n",
                   __FILE__, __LINE__);
       }
@@ -97,7 +99,7 @@ int main(int argc, char *argv[]){
   }
 
   /* Perform injections if data successful read or created */
-  if (state){
+  if (state&&!helpflag){
     LALInferenceInjectInspiralSignal(data, state->commandLine);
   }
 
@@ -114,7 +116,7 @@ int main(int argc, char *argv[]){
     state->proposalArgs = LALInferenceParseProposalArgs(state);
   }
 
-  if (LALInferenceGetProcParamVal(state->commandLine, "--roqtime_steps")){
+  if (!helpflag && LALInferenceGetProcParamVal(state->commandLine, "--roqtime_steps")){
 
         LALInferenceSetupROQdata(state->data, state->commandLine);
         fprintf(stderr, "done LALInferenceSetupROQdata\n");

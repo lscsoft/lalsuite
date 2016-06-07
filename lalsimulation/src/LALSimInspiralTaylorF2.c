@@ -68,7 +68,8 @@ int XLALSimInspiralTaylorF2AlignedPhasing(
         const REAL8 chi2,	/**< aligned spin parameter of body 2 */
         const REAL8 qm_def1,	/**< quadrupole-monopole parameter of body 1 (set 1 for BH) */
         const REAL8 qm_def2,	/**< quadrupole-monopole parameter of body 2 (set 1 for BH) */
-        const LALSimInspiralSpinOrder spinO  /**< PN order for spin contributions */
+        const LALSimInspiralSpinOrder spinO,  /**< PN order for spin contributions */
+        const LALSimInspiralTestGRParam *p /**< Linked list containing the extra testing GR parameters >**/
 	)
 {
     PNPhasingSeries *pfa;
@@ -79,7 +80,7 @@ int XLALSimInspiralTaylorF2AlignedPhasing(
 
     pfa = (PNPhasingSeries *) LALMalloc(sizeof(PNPhasingSeries));
 
-    XLALSimInspiralPNPhasing_F2(pfa, m1, m2, chi1, chi2, chi1*chi1, chi2*chi2, chi1*chi2, qm_def1, qm_def2, spinO);
+    XLALSimInspiralPNPhasing_F2(pfa, m1, m2, chi1, chi2, chi1*chi1, chi2*chi2, chi1*chi2, qm_def1, qm_def2, spinO, p);
 
     *pn = pfa;
 
@@ -104,7 +105,8 @@ int XLALSimInspiralTaylorF2Core(
         const LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
         const LALSimInspiralTidalOrder tideO,  /**< flag to control tidal effects */
         const INT4 phaseO,                     /**< twice PN phase order */
-        const INT4 amplitudeO                  /**< twice PN amplitude order */
+        const INT4 amplitudeO,                  /**< twice PN amplitude order */
+        const LALSimInspiralTestGRParam *p /**< Linked list containing the extra testing GR parameters >**/
         )
 {
 
@@ -140,9 +142,9 @@ int XLALSimInspiralTaylorF2Core(
 
     /* phasing coefficients */
     PNPhasingSeries pfa;
-    XLALSimInspiralPNPhasing_F2(&pfa, m1, m2, S1z, S2z, S1z*S1z, S2z*S2z, S1z*S2z, quadparam1, quadparam2, spinO);
+    XLALSimInspiralPNPhasing_F2(&pfa, m1, m2, S1z, S2z, S1z*S1z, S2z*S2z, S1z*S2z, quadparam1, quadparam2, spinO, p);
 
-    REAL8 pfaN = 0.;
+    REAL8 pfaN = 0.; REAL8 pfa1 = 0.;
     REAL8 pfa2 = 0.; REAL8 pfa3 = 0.; REAL8 pfa4 = 0.;
     REAL8 pfa5 = 0.; REAL8 pfl5 = 0.;
     REAL8 pfa6 = 0.; REAL8 pfl6 = 0.;
@@ -165,11 +167,9 @@ int XLALSimInspiralTaylorF2Core(
             pfa3 = pfa.v[3];
         case 2:
             pfa2 = pfa.v[2];
+        case 1:
+            pfa1 = pfa.v[1];
         case 0:
-            pfaN = pfa.v[0];
-            break;
-	case 1:
-	    XLALPrintWarning( "There is no 0.5PN phase coefficient, returning Newtonian-order phase.\n" );
             pfaN = pfa.v[0];
             break;
         default:
@@ -273,6 +273,7 @@ int XLALSimInspiralTaylorF2Core(
         ref_phasing += pfa4 * v4ref;
         ref_phasing += pfa3 * v3ref;
         ref_phasing += pfa2 * v2ref;
+        ref_phasing += pfa1 * vref;
         ref_phasing += pfaN;
 
         /* Tidal terms in reference phasing */
@@ -308,6 +309,7 @@ int XLALSimInspiralTaylorF2Core(
         phasing += pfa4 * v4;
         phasing += pfa3 * v3;
         phasing += pfa2 * v2;
+        phasing += pfa1 * v;
         phasing += pfaN;
 
         /* Tidal terms in phasing */
@@ -394,7 +396,8 @@ int XLALSimInspiralTaylorF2(
         const LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
         const LALSimInspiralTidalOrder tideO,  /**< flag to control tidal effects */
         const INT4 phaseO,                     /**< twice PN phase order */
-        const INT4 amplitudeO                  /**< twice PN amplitude order */
+        const INT4 amplitudeO,                  /**< twice PN amplitude order */
+        const LALSimInspiralTestGRParam *p /**< Linked list containing the extra testing GR parameters >**/
         )
 {
     /* external: SI; internal: solar masses */
@@ -455,7 +458,7 @@ int XLALSimInspiralTaylorF2(
     }
     ret = XLALSimInspiralTaylorF2Core(&htilde, freqs, phi_ref, m1_SI, m2_SI,
                                       S1z, S2z, f_ref, shft, r, quadparam1, quadparam2,
-                                      lambda1, lambda2, spinO, tideO, phaseO, amplitudeO);
+                                      lambda1, lambda2, spinO, tideO, phaseO, amplitudeO, p);
 
     XLALDestroyREAL8Sequence(freqs);
 

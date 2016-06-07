@@ -1,6 +1,6 @@
 /*
 *  Copyright (C) 2007 Gregory Mendell
-*  Copyright (C) 2010,2011 Bernd Machenschalk
+*  Copyright (C) 2010,2011,2016 Bernd Machenschalk
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -826,6 +826,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tpss-edge           \tFLOAT\t (optional) Set PSS parameter 'edge' for time-domain cleaning\n");
       fprintf(stdout,"\tpss-ext            \tINT\t (optional) Extend the timeseries at the beginning before calculating the autoregressive mean, defaults to 1, set to 0 for no\n");
 #endif
+      fprintf(stdout,"\tversion (-V)\t\tFLAG\t Print LAL & LALApps version and exit.\n");
       fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message.\n");
       exit(0);
     case 'V':

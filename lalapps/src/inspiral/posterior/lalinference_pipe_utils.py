@@ -445,7 +445,7 @@ def create_pfn_tuple(filename,protocol='file://',site='local'):
     return( (os.path.basename(filename),protocol+os.path.abspath(filename),site) )
 
 class LALInferencePipelineDAG(pipeline.CondorDAG):
-  def __init__(self,cp,dax=False,site='local'):
+  def __init__(self,cp,dax=False,first_dag=True,previous_dag=None,site='local'):
     self.subfiles=[]
     self.config=cp
     self.engine=get_engine_name(cp)
@@ -461,10 +461,18 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         os.chdir(self.basepath)
     self.posteriorpath=os.path.join(self.basepath,'posterior_samples')
     mkdirs(self.posteriorpath)
-    daglogdir=cp.get('paths','daglogdir')
-    mkdirs(daglogdir)
-    self.daglogfile=os.path.join(daglogdir,'lalinference_pipeline-'+str(uuid.uuid1())+'.log')
-    pipeline.CondorDAG.__init__(self,self.daglogfile,dax=dax)
+    if first_dag:
+      daglogdir=cp.get('paths','daglogdir')
+      mkdirs(daglogdir)
+      self.daglogfile=os.path.join(daglogdir,'lalinference_pipeline-'+str(uuid.uuid1())+'.log')
+      pipeline.CondorDAG.__init__(self,self.daglogfile,dax=dax)
+    elif not first_dag and previous_dag is not None:
+      daglogdir=cp.get('paths','daglogdir')
+      mkdirs(daglogdir)
+      self.daglogfile=os.path.join(daglogdir,'lalinference_pipeline-'+str(uuid.uuid1())+'.log')
+      pipeline.CondorDAG.__init__(self,self.daglogfile,dax=dax)
+      for node in previous_dag.get_nodes():
+        self.add_node(node)
     if cp.has_option('paths','cachedir'):
       self.cachepath=cp.get('paths','cachedir')
     else:
@@ -1233,6 +1241,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         node.add_input_file(os.path.join(roqeventpath,'weights_quadratic_'+ifo+'.dat'))
       node.add_var_arg('--roqtime_steps '+os.path.join(roqeventpath,'roq_sizes.dat'))
       node.add_input_file(os.path.join(roqeventpath,'roq_sizes.dat'))
+      node.add_var_arg('--roq-times '+os.path.join(roqeventpath,'tcs.dat'))
+      node.add_input_file(os.path.join(roqeventpath,'tcs.dat'))
       node.add_var_arg('--roqnodesLinear '+os.path.join(roqeventpath,'fnodes_linear.dat'))
       node.add_input_file(os.path.join(roqeventpath,'fnodes_linear.dat'))
       node.add_var_arg('--roqnodesQuadratic '+os.path.join(roqeventpath,'fnodes_quadratic.dat'))

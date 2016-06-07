@@ -121,6 +121,11 @@ struct fvec *interpFromFile(char *filename){
 	interp=XLALRealloc(interp,fileLength*sizeof(struct fvec)); /* Resize array */
 	fclose(interpfile);
 	printf("Read %i records from %s\n",fileLength-1,filename);
+    if(fileLength-1 <1)
+    {
+            XLALPrintError("Error: read no records from %s\n",filename);
+            exit(1);
+    }
 	return interp;
 }
 
@@ -2880,10 +2885,10 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 	thisData->roq->weights_linear[ii].acc_real_weight_linear = gsl_interp_accel_alloc ();
  	thisData->roq->weights_linear[ii].acc_imag_weight_linear = gsl_interp_accel_alloc ();
 
-	thisData->roq->weights_linear[ii].spline_real_weight_linear = gsl_spline_alloc (gsl_interp_cspline, time_steps);
+	thisData->roq->weights_linear[ii].spline_real_weight_linear = gsl_spline_alloc (gsl_interp_linear, time_steps);
         gsl_spline_init(thisData->roq->weights_linear[ii].spline_real_weight_linear, tmp_tcs, tmp_real_weight, time_steps);
       
-        thisData->roq->weights_linear[ii].spline_imag_weight_linear = gsl_spline_alloc (gsl_interp_cspline, time_steps);
+        thisData->roq->weights_linear[ii].spline_imag_weight_linear = gsl_spline_alloc (gsl_interp_linear, time_steps);
         gsl_spline_init(thisData->roq->weights_linear[ii].spline_imag_weight_linear, tmp_tcs, tmp_imag_weight, time_steps);
 
       }
