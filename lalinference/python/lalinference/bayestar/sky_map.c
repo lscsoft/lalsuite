@@ -39,7 +39,7 @@ typedef struct {
 static void premalloced_dealloc(premalloced_object *self)
 {
     free(self->data);
-    self->ob_type->tp_free((PyObject *) self);
+    Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 
@@ -528,7 +528,7 @@ typedef struct {
 static void LogRadialIntegrator_dealloc(LogRadialIntegrator *self)
 {
     log_radial_integrator_free(self->integrator);
-    self->ob_type->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 
@@ -661,7 +661,7 @@ PyMODINIT_FUNC PyInit_sky_map(void)
 #if PY_MAJOR_VERSION < 3
     module = Py_InitModule(modulename, methods);
 #else
-    module = PyModule_Create(moduledef);
+    module = PyModule_Create(&moduledef);
 #endif
 
     Py_INCREF(&LogRadialIntegrator_type);
