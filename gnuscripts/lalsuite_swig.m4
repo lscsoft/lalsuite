@@ -387,7 +387,7 @@ EOD`]
     python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
 import sys, os
 import distutils.sysconfig as cfg
-sys.stdout.write(cfg.get_config_var('LINKFORSHARED'))
+sys.stdout.write(cfg.get_config_var('LDFLAGS'))
 sys.stdout.write(' -L' + cfg.get_python_lib())
 sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
 sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1))
