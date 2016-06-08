@@ -11,6 +11,7 @@ pymodule_PYTHON = \
 	__init__.py \
 	imrtgrutils.py \
 	nrutils.py \
+	pneqns.py \
 	$(END_OF_LIST)
 
 webpagedir = $(pkgdatadir)/imrtgr_webpage_templates
