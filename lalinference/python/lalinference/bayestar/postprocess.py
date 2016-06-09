@@ -558,7 +558,7 @@ def get_detector_pair_axis(ifo1, ifo2, gmst):
 
     # Get location of detectors if ifo1, ifo2 are LAL detector structs
     try:
-        ifo1 = lalsimulation.lalsimulation.DetectorPrefixToLALDetector(ifo1)
+        ifo1 = lalsimulation.DetectorPrefixToLALDetector(ifo1)
     except TypeError:
         pass
     try:
@@ -566,7 +566,7 @@ def get_detector_pair_axis(ifo1, ifo2, gmst):
     except AttributeError:
         pass
     try:
-        ifo2 = lalsimulation.lalsimulation.DetectorPrefixToLALDetector(ifo2)
+        ifo2 = lalsimulation.DetectorPrefixToLALDetector(ifo2)
     except TypeError:
         pass
     try:
