@@ -59,11 +59,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 __all__ = ("read_sky_map", "write_sky_map")
 
 
-import gzip
 import math
-import os
-import shutil
-import tempfile
 import healpy as hp
 from glue.ligolw import lsctables
 import time
@@ -325,6 +321,7 @@ def read_sky_map(filename, nest=False):
 
 
 if __name__ == '__main__':
+    import os
     import healpy as hp
     import numpy as np
     nside = 128
