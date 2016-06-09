@@ -498,7 +498,7 @@ def check_tau0tau3(tau0, tau3, flow=40):
     return tau3 > tau3_bnd
 
 def check_mchirpeta(mchirp, eta):
-    return eta <= 0.25 and mchirp >= 0
+    return (numpy.array(eta) <= 0.25) & (numpy.array(mchirp) >= 0)
 
 def check_spins(spin):
     return numpy.sqrt(numpy.atleast_2d(spin**2).sum(axis=0)) <= 1
