@@ -93,16 +93,6 @@ void LALInferenceInitCBCPrior(LALInferenceRunState *runState)
         runState->CubeToPrior = &LALInferenceInspiralCubeToPrior;
 
     }
-    
-    /* Optional uniform distance */
-    INT4 uniform_distance = 0;
-    if (LALInferenceGetProcParamVal(commandLine, "--distance-prior-uniform"))
-      uniform_distance = 1;
-    LALInferenceAddVariable(runState->priorArgs,
-                                "uniform_distance", &uniform_distance,
-                                LALINFERENCE_INT4_t,
-                                LALINFERENCE_PARAM_OUTPUT);
-    
 
     /* Optional uniform prior on distance */
     INT4 uniform_distance = 0;
