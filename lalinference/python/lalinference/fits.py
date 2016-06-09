@@ -340,4 +340,4 @@ if __name__ == '__main__':
         origin='LIGO Scientific Collaboration',
         runtime=21.5)
 
-    print read_sky_map('test.fits.gz')
+    print(read_sky_map('test.fits.gz'))
