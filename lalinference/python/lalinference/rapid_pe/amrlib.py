@@ -234,16 +234,18 @@ class Cell(object):
 
         return Cell(numpy.array(cell_bounds), inpt_pt)
 
+class GriddingException(Exception):
+    def __init__(self, *args, **kwargs):
+        super(Exception, self).__init__(*args, **kwargs)
+
 #
 # Gridding / cell utilities
 #
-def grid_to_indices(pts, region, grid_spacing):
+def grid_to_indices(pts, region, grid_spacing, check=True):
     """
-    Convert points in a grid to their 1-D indices according to the grid extent in region, and grid spacing.
+    Convert points in a grid to their 1-D indices according to the grid extent in region, and grid spacing. If 'check' is True, ensure that all points exist within the expanded region before indexing --- this tends to avoid more cryptic errors about indexing later on.
     """
     region = region.copy() # avoid referencing
-    #region[:,0] = region[:,0] - grid_spacing
-    #region[:,1] = region[:,1] + grid_spacing
     # FIXME: This is not really exact. Because the information about how much
     # the initial region is expanded by the refinement is lost, we'll assume
     # our region extends in 3x in all directions.
@@ -251,6 +253,10 @@ def grid_to_indices(pts, region, grid_spacing):
     # original region doesn't matter so much as the relative position
     region[:,0] -= numpy.diff(region).flatten()
     region[:,1] += numpy.diff(region).flatten()
+    if check:
+        if (region[:,0] < pts).all() and (region[:,1] > pts).all():
+            raise GriddingException("Some or all of provided points are not within the region. Are your dimension labels swapped?")
+
     extent = numpy.diff(region)[:,0]
     pt_stride = numpy.round(extent / grid_spacing).astype(int)
     # Necessary for additional point on the right edge
