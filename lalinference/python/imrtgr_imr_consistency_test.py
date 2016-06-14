@@ -89,7 +89,7 @@ if __name__ == '__main__':
   parser.add_option("-i", "--insp-post", dest="insp_post", help="file containing the posterior samples from the lalinference inspiral run")
   parser.add_option("-r", "--ring-post", dest="ring_post", help="file containing the posterior samples from the lalinference ringdown run")
   parser.add_option("-m", "--imr-post", dest="imr_post", help="file containing the posterior samples from the full lalinference IMR run")
-  parser.add_option("-f", "--fit-formula", dest="fit_formula", help="fitting formula to be used for the calculation of final mass/spin [options: 'nospin_Pan2011', 'nonprecspin_Healy2014'")
+  parser.add_option("-f", "--fit-formula", dest="fit_formula", help="fitting formula to be used for the calculation of final mass/spin [options: 'nospin_Pan2011', 'nonprecspin_Healy2014'", default="nonprecspin_Healy2014")
   parser.add_option("-p", "--mf-chif-prior", dest="prior_Mfchif_file", help="pickle file containing the interpolation object of the prior in (Mf, chif) used in the lalinference runs", default=None)
   parser.add_option("-o", "--out-dir", dest="out_dir", help="output directory")
   parser.add_option("--insp-fhigh", dest="insp_fhigh", help="Upper cutoff freq for the inspiral analysis")
@@ -110,8 +110,14 @@ if __name__ == '__main__':
   out_dir = options.out_dir
   fit_formula = options.fit_formula
   debug_plots = options.debug_plots
-  insp_fhigh = float(options.insp_fhigh)
-  ring_flow = float(options.ring_flow)
+  if options.insp_fhigh is not None:
+    insp_fhigh = float(options.insp_fhigh)
+  else:
+    insp_fhigh = np.nan
+  if options.ring_flow is not None:
+    ring_flow = float(options.ring_flow)
+  else:
+    ring_flow = np.nan
   waveform = options.waveform
   
   N_bins = int(options.N_bins) # Number of grid points along either axis (dMfbyMf, dchifbychif) for computation of the posteriors
@@ -138,14 +144,33 @@ if __name__ == '__main__':
   run_command.close()
 
   # creating soft links for lalinference results
-  insp_posplots = insp_post.replace("/posterior_samples.dat"," ")
-  ring_posplots = ring_post.replace("/posterior_samples.dat"," ")
-  imr_posplots = imr_post.replace("/posterior_samples.dat"," ")
-
-  os.system('ln -s %s %s' %(os.path.realpath(insp_posplots), os.path.realpath(os.path.join(out_dir, 'lalinf_insp'))))
-  os.system('ln -s %s %s' %(os.path.realpath(ring_posplots), os.path.realpath(os.path.join(out_dir, 'lalinf_ring'))))
-  os.system('ln -s %s %s' %(os.path.realpath(imr_posplots), os.path.realpath(os.path.join(out_dir, 'lalinf_imr'))))
-
+  insp_posplots = os.path.realpath(os.path.dirname(insp_post))
+  ring_posplots = os.path.realpath(os.path.dirname(ring_post))
+  imr_posplots = os.path.realpath(os.path.dirname(imr_post))
+  
+  insp_target = os.path.join(out_dir, 'lalinf_insp')
+  ring_target = os.path.join(out_dir, 'lalinf_ring')
+  imr_target = os.path.join(out_dir, 'lalinf_imr')
+  
+  if insp_posplots != insp_target:
+    if os.path.islink(insp_target):
+      print('Removing existing link %s'%(insp_target))
+      os.system('rm %s'%(insp_target))
+    print('Linking %s to %s' %(insp_posplots, insp_target))
+    os.system('ln -s %s %s' %(insp_posplots, insp_target))
+  if ring_posplots != ring_target:
+    if os.path.islink(ring_target):
+      print('Removing existing link %s'%(ring_target))
+      os.system('rm %s'%(ring_target))
+    print('Linking %s to %s' %(ring_posplots, ring_target))
+    os.system('ln -s %s %s' %(ring_posplots, ring_target))
+  if imr_posplots != imr_target:
+    if os.path.islink(imr_target):
+      print('Removing existing link %s'%(imr_target))
+      os.system('rm %s'%(imr_target))
+    print('Linking %s to %s' %(imr_posplots, imr_target))
+    os.system('ln -s %s %s' %(imr_posplots, imr_target))
+  
   # read the injection mass parameters if this is an injection
   m1_inj = options.m1_inj
   m2_inj = options.m2_inj
