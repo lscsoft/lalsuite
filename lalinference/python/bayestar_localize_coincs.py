@@ -114,7 +114,7 @@ if opts.psd_files: # read pycbc psds here
     psdseglistdict = {}
     for psd_file in opts.psd_files:
         (ifo, group), = h5py.File(psd_file, 'r').items()
-        psd = [group['psds'][str(i)] for i in range(len(group['psds'].keys()))]
+        psd = [group['psds'][str(i)] for i in range(len(group['psds']))]
         psdseglistdict[ifo] = segmentlist(
             psd_segment(*segargs) for segargs in zip(
             psd, group['start_time'], group['end_time']))
@@ -154,7 +154,7 @@ else:
         return dict(
             (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
                 f_high_truncate=opts.f_high_truncate))
-            for key, psd in psds.iteritems() if psd is not None)
+            for key, psd in psds.items() if psd is not None)
 
     def reference_psd_for_ifo_and_filename(ifo, filename):
         return reference_psds_for_filename(filename)[ifo]

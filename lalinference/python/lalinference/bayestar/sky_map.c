@@ -502,7 +502,7 @@ fail: /* Cleanup */
 static PyObject *test(
     PyObject *NPY_UNUSED(module), PyObject *NPY_UNUSED(arg))
 {
-    return PyInt_FromLong(bayestar_test());
+    return PyLong_FromLong(bayestar_test());
 }
 
 
@@ -576,8 +576,7 @@ static PyObject *LogRadialIntegrator_call(
 
 
 static PyTypeObject LogRadialIntegrator_type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                      /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "sky_map.LogRadialIntegrator",          /*tp_name*/
     sizeof(LogRadialIntegrator),            /*tp_basicsize*/
     0,                                      /*tp_itemsize*/

@@ -74,7 +74,7 @@ Description: LSC Algorithm Library Inference Developers
 
 Package: lalinference-python
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy, python-scipy,
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy, python-scipy, python-six,
   python-glue (>= 1.49.1~),
   python-glue-common (>= 1.49.1~),
   python-glue-segments (>= 1.49.1~),

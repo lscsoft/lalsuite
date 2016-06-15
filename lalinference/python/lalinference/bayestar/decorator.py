@@ -35,7 +35,7 @@ def memoized(func):
     @wraps(func)
     def memo(*args, **kwargs):
         # Create a key out of the arguments.
-        key = (args, frozenset(kwargs.iteritems()))
+        key = (args, frozenset(kwargs.items()))
 
         if isinstance(args, Hashable): # The key is immutable.
             try:

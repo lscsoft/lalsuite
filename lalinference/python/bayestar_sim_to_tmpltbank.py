@@ -140,7 +140,7 @@ for sim_inspiral_intrinsic_param in sim_inspiral_intrinsic_params:
     # Create new sngl_inspiral row and initialize its columns to None,
     # which produces an empty field in the XML output.
     sngl_inspiral = lsctables.SnglInspiral()
-    for validcolumn in sngl_inspiral_table.validcolumns.iterkeys():
+    for validcolumn in sngl_inspiral_table.validcolumns.keys():
         setattr(sngl_inspiral, validcolumn, None)
 
     # Populate the row's fields.
