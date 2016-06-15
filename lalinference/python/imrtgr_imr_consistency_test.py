@@ -113,12 +113,16 @@ if __name__ == '__main__':
   if options.insp_fhigh is not None:
     insp_fhigh = float(options.insp_fhigh)
   else:
+    print('Inspiral cutoff freq not provided. To have it displayed on the results page, please pass command line option --insp-fhigh.')
     insp_fhigh = np.nan
   if options.ring_flow is not None:
     ring_flow = float(options.ring_flow)
   else:
+    print('Ringdown cutoff freq not provided. To have it displayed on the results page, please pass command line option --ring-flow.')
     ring_flow = np.nan
   waveform = options.waveform
+  if waveform is None:
+    print('Recovery approximant not provided. To have it displayed on the results page, please pass command line option --waveform.')
   
   N_bins = int(options.N_bins) # Number of grid points along either axis (dMfbyMf, dchifbychif) for computation of the posteriors
 
