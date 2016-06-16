@@ -254,7 +254,7 @@ def grid_to_indices(pts, region, grid_spacing, check=True):
     region[:,0] -= numpy.diff(region).flatten()
     region[:,1] += numpy.diff(region).flatten()
     if check:
-        if (region[:,0] < pts).all() and (region[:,1] > pts).all():
+        if not ((region[:,0] < pts).all() and (region[:,1] > pts).all()):
             raise GriddingException("Some or all of provided points are not within the region. Are your dimension labels swapped?")
 
     extent = numpy.diff(region)[:,0]
