@@ -127,8 +127,6 @@ if __name__ == '__main__':
   N_bins = int(options.N_bins) # Number of grid points along either axis (dMfbyMf, dchifbychif) for computation of the posteriors
 
   lalinference_datadir = os.getenv('LALINFERENCE_DATADIR')
-  if prior_Mfchif_file is None:
-    prior_Mfchif_file = os.path.join(lalinference_datadir, 'imrtgr_prior_data', 'Prior_Mfchif_nonprecspin_Healy2014_comp_mass_min1.0_comp_mass_max500.0_comp_spin_min-1.0_comp_spin_max1.0.pklz')
 
   # create output directory and copy the script 
   os.system('mkdir -p %s' %out_dir)
@@ -136,7 +134,6 @@ if __name__ == '__main__':
   os.system('mkdir -p %s/img' %out_dir)
   os.system('cp %s %s' %(__file__, out_dir))
   os.system('cp %s %s/'%(os.path.join(lalinference_datadir, 'imrtgr_webpage_templates/*.*'), out_dir))
-  os.system('cp %s %s/data'%(prior_Mfchif_file, out_dir))
 
   # creating file to save the run command
   run_command = open('%s/command.txt'%(out_dir),'w')
@@ -255,19 +252,7 @@ if __name__ == '__main__':
 
   Mf_intp = (Mf_bins[:-1] + Mf_bins[1:])/2.
   chif_intp = (chif_bins[:-1] + chif_bins[1:])/2.
-  ###############################################################################################
-
-
-  ###############################################################################################
-  # Undo the effect of the prior from the lalinference posterior. Lalinference assumes a        #
-  # uniform prior in component masses. We need to assume a uniform prior in Mf, chif              #
-  ###############################################################################################
-
-  # read the interpolation object, reconstruct the data from the interpolation object 
-  f = gzip.open(prior_Mfchif_file,'rb')
-  P_Mfchif_pr_interp_obj = pickle.load(f)
-  P_Mfchif_pr = P_Mfchif_pr_interp_obj(Mf_intp, chif_intp)
-
+  
   # compute the 2D posterior distributions for the inspiral, ringodwn and IMR analyses 
   P_Mfchif_i, Mf_bins, chif_bins = np.histogram2d(Mf_i, chif_i, bins=(Mf_bins, chif_bins), normed=True)
   P_Mfchif_r, Mf_bins, chif_bins = np.histogram2d(Mf_r, chif_r, bins=(Mf_bins, chif_bins), normed=True)
@@ -279,23 +264,41 @@ if __name__ == '__main__':
   P_Mfchif_i = P_Mfchif_i.T
   P_Mfchif_r = P_Mfchif_r.T
   P_Mfchif_imr = P_Mfchif_imr.T
+  
+  ###############################################################################################
 
-  # compute the corrected 2D posteriors in Mf and chif by dividing by the prior distribution 
-  P_Mfchif_i = P_Mfchif_i/P_Mfchif_pr
-  P_Mfchif_r = P_Mfchif_r/P_Mfchif_pr
-  P_Mfchif_imr = P_Mfchif_imr/P_Mfchif_pr
 
-  # removing nan's
-  P_Mfchif_i[np.isnan(P_Mfchif_i)] = 0.
-  P_Mfchif_r[np.isnan(P_Mfchif_r)] = 0.
-  P_Mfchif_imr[np.isnan(P_Mfchif_imr)] = 0.
+  ###############################################################################################
+  # Undo the effect of the prior from the lalinference posterior. Lalinference assumes a        #
+  # uniform prior in component masses. We need to assume a uniform prior in Mf, chif              #
+  ###############################################################################################
+  
+  if prior_Mfchif_file is not None:
+    
+    os.system('cp %s %s/data'%(prior_Mfchif_file, out_dir))
+  
+    # read the interpolation object, reconstruct the data from the interpolation object 
+    f = gzip.open(prior_Mfchif_file,'rb')
+    P_Mfchif_pr_interp_obj = pickle.load(f)
+    P_Mfchif_pr = P_Mfchif_pr_interp_obj(Mf_intp, chif_intp)
+    
+    # compute the corrected 2D posteriors in Mf and chif by dividing by the prior distribution 
+    P_Mfchif_i = P_Mfchif_i/P_Mfchif_pr
+    P_Mfchif_r = P_Mfchif_r/P_Mfchif_pr
+    P_Mfchif_imr = P_Mfchif_imr/P_Mfchif_pr
 
-  # removing infinities
-  P_Mfchif_i[np.isinf(P_Mfchif_i)] = 0.
-  P_Mfchif_r[np.isinf(P_Mfchif_r)] = 0.
-  P_Mfchif_imr[np.isinf(P_Mfchif_imr)] = 0.
+    # removing nan's
+    P_Mfchif_i[np.isnan(P_Mfchif_i)] = 0.
+    P_Mfchif_r[np.isnan(P_Mfchif_r)] = 0.
+    P_Mfchif_imr[np.isnan(P_Mfchif_imr)] = 0.
 
-  print '... computed (prior) corrected posteriors'
+    # removing infinities
+    P_Mfchif_i[np.isinf(P_Mfchif_i)] = 0.
+    P_Mfchif_r[np.isinf(P_Mfchif_r)] = 0.
+    P_Mfchif_imr[np.isinf(P_Mfchif_imr)] = 0.
+
+    print '... computed (prior) corrected posteriors'
+    
   ###############################################################################################
 
   ################################################################################################
