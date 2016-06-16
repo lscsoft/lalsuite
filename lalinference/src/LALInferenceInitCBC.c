@@ -835,7 +835,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   }
   if(approx==NumApproximants){
        approx=TaylorF2; /* Defaults to TF2 */
-       XLALPrintWarning("You did not provide an approximant for the templates. Using default %s, which might now be what you want!\n",XLALGetStringFromApproximant(approx));
+       XLALPrintWarning("You did not provide an approximant for the templates. Using default %s, which might now be what you want!\n",XLALSimInspiralGetStringFromApproximant(approx));
   }
 
   /* Set the model domain appropriately */
@@ -1244,7 +1244,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 
      /* Print info about orders and waveflags used for templates */
 
-     fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i tidal order %i in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,(int) spinO, (int) tideO, model->domain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
+     fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i tidal order %i in the %s domain.\n",approx,XLALSimInspiralGetStringFromApproximant(approx),PhaseOrder,AmpOrder,(int) spinO, (int) tideO, model->domain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
      fprintf(stdout,"---\t\t ---\n\n");
   }//end of signal only flag
   else
@@ -1494,7 +1494,7 @@ static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTabl
      /* check approximant is given */
     if (approx==NumApproximants){
         approx=XLALGetApproximantFromString(injt->waveform);
-        XLALPrintWarning("WARNING: You did not provide an approximant for the templates. Using value in injtable (%s), which might not what you want!\n",XLALGetStringFromApproximant(approx));
+        XLALPrintWarning("WARNING: You did not provide an approximant for the templates. Using value in injtable (%s), which might not what you want!\n",XLALSimInspiralGetStringFromApproximant(approx));
      }
 
     /* check inj/rec amporder */
