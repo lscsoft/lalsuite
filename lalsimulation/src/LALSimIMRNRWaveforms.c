@@ -208,15 +208,34 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
   else
   {
     /* psi can run between 0 and 2pi, but only one solution works for x and y */
-    *psi = acos(z_wave_x / sin(*theta));
+    /* Possible numerical issues if z_wave_x = sin(theta) */
+    if(fabs(z_wave_x / sin(*theta)) > 1.)
+    {
+      if(fabs(z_wave_x / sin(*theta)) < 1.00001)
+      {
+        if((z_wave_x * sin(*theta)) < 0.)
+        {
+          *psi = LAL_PI;
+        }
+        else
+        {
+          *psi = 0.;
+        }
+      }
+    }
+    else
+    {
+      *psi = acos(z_wave_x / sin(*theta));
+    }
     y_val = sin(*psi) * sin(*theta);
-    /*  Is the sign wrong? */
-    if( (y_val + z_wave_y) < 0.0001)
+    /*  If z_wave[1] is negative, flip psi so that sin(psi) goes negative
+     *  while preserving cos(psi) */
+    if( z_wave_y < 0.)
     {
       *psi = 2 * LAL_PI - *psi;
       y_val = sin(*psi) * sin(*theta);
     }
-    if( (y_val - z_wave_y) > 0.0001)
+    if( fabs(y_val - z_wave_y) > 0.0001)
     {
       XLAL_ERROR(XLAL_EDOM, "Something's wrong in Ian's math. Tell him he's an idiot!");
     }
