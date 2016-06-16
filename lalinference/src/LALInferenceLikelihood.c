@@ -159,38 +159,11 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
        runState->likelihood==&LALInferenceMarginalisedTimePhaseLogLikelihood ||
        runState->likelihood==&LALInferenceMarginalisedPhaseLogLikelihood) {
 
-       if (LALInferenceCheckVariable(thread->currentParams, "logdistance")) {
-           LALInferenceParamVaryType logd_type;
-           REAL8 logd, bigD;
-
-           /* Make the distance big to make the signal small */
-           bigD = INFINITY;
-
-           /* Make sure distance isn't fixed before trying to make it big */
-           logd = LALInferenceGetREAL8Variable(thread->currentParams, "logdistance");
-           logd_type = LALInferenceGetVariableVaryType(thread->currentParams, "logdistance");
-           LALInferenceSetParamVaryType(thread->currentParams, "logdistance", LALINFERENCE_PARAM_LINEAR);
-
-           /* Don't store to cache, since distance scaling won't work */
-           LALSimInspiralWaveformCache *cache = thread->model->waveformCache;
-           thread->model->waveformCache = NULL;
-
-           /* Remove log distance and add again, otherwise if it's fixed it won't be set */
-           LALInferenceSetREAL8Variable(thread->currentParams, "logdistance", bigD);
-           nullLikelihood = runState->likelihood(thread->currentParams, runState->data, thread->model);
-
-           thread->model->waveformCache = cache;
-           INT4 i = 0;
-           ifo = runState->data;
-           while (ifo != NULL) {
-               ifo->nullloglikelihood = thread->model->ifo_loglikelihoods[i];
-               ifo = ifo->next;
-               i++;
-           }
-
-           LALInferenceSetREAL8Variable(thread->currentParams, "logdistance", logd);
-           LALInferenceSetParamVaryType(thread->currentParams, "logdistance", logd_type);
-       }
+       void *oldtemplate = runState->threads[0]->model->templt;
+       runState->threads[0]->model->templt = &LALInferenceTemplateNullFreqdomain;
+       nullLikelihood = runState->likelihood(thread->currentParams, runState->data, thread->model);
+       runState->threads[0]->model->templt = oldtemplate;
+    
    }
 
     //null log likelihood logic doesn't work with noise parameters
