@@ -115,6 +115,18 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       SWIG="env CCACHE_DISABLE=1 ${ac_cv_path_SWIG}"
     ])
 
+    # determine SWIG Python flags
+    AC_SUBST([SWIG_PYTHON_FLAGS],[])
+    SWIG_PYTHON_FLAGS="-O -builtin -globals globalvar"
+    AC_MSG_CHECKING([if SWIG supports relative Python imports])
+    LALSUITE_VERSION_COMPARE([${swig_version}],[<],[3.0.0],
+      [AC_MSG_RESULT([no])],
+      [
+        AC_MSG_RESULT([yes])
+        SWIG_PYTHON_FLAGS="-py3 -relativeimport ${SWIG_PYTHON_FLAGS}"
+      ]
+    )
+
     # extract -I and -D flags from LALSuite library preprocessor flags
     AC_SUBST([SWIG_CPPFLAGS],[])
     for flag in ${CPPFLAGS}; do
