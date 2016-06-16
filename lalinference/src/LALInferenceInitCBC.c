@@ -726,6 +726,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   /* Default priors */
   REAL8 Dmin=1.0;
   REAL8 Dmax=2000.0;
+  REAL8 Dinitial = (Dmax + Dmin)/2.0;
   REAL8 mcMin=1.0;
   REAL8 mcMax=15.3;
   REAL8 etaMin=0.0312;
@@ -1133,8 +1134,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   /* Check for distance prior for use if the user samples in logdistance */
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--distance-max"))) Dmax=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--distance-min"))) Dmin=atof(ppt->value);
+  LALInferenceParamVaryType distanceVary = LALINFERENCE_PARAM_LINEAR;
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--fix-distance")))
+  {
+    Dinitial=atof(ppt->value);
+    distanceVary = LALINFERENCE_PARAM_FIXED;
+  }
 
-  LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", zero, log(Dmin), log(Dmax),LALINFERENCE_PARAM_LINEAR);
+  LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", log(Dinitial), log(Dmin), log(Dmax), distanceVary);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
 
