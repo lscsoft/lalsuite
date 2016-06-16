@@ -52,26 +52,42 @@ int compare_template(LALInferenceRunState *runState)
 {
   REAL8 logLnormal=0.0;
   REAL8 logLmultiband=0.0;
-  REAL8 tolerance = 0.01; /* Minimum allowable difference between standard and multiband */
+  REAL8 tolerance = 0.01; /* Maximum allowable difference between standard and multiband */
 
+  REAL8 oldSNR=0.0,mbSNR=0.0;
+  REAL8 oldPhase=0.0,mbPhase=0.0;
+
+  
   runState->threads[0]->model->templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
   LALInferenceTemplateNullFreqdomain(runState->threads[0]->model);
-  LALInferencePrintVariables(runState->threads[0]->model->params);
+  /* FIXME: Have to call the function once before result is repeatable!!! */
   logLnormal = runState->likelihood(runState->threads[0]->model->params,runState->data, runState->threads[0]->model);
   /* Clear the template */
   LALInferenceTemplateNullFreqdomain(runState->threads[0]->model);
-  /* FIXME: Have to call the function once before result is repeatable!!! */
-  LALInferencePrintVariables(runState->threads[0]->model->params);
+
 
   logLnormal = runState->likelihood(runState->threads[0]->model->params,runState->data, runState->threads[0]->model);
-
+  oldSNR=LALInferenceGetREAL8Variable(runState->threads[0]->model->params,"optimal_snr");
+  if(LALInferenceCheckVariable(runState->threads[0]->model->params,"phase_maxl"))
+    oldPhase=LALInferenceGetREAL8Variable(runState->threads[0]->model->params,"phase_maxl");
+  
   runState->threads[0]->model->templt=&LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated;
-  LALInferencePrintVariables(runState->threads[0]->model->params);
-
+  
   logLmultiband = runState->likelihood(runState->threads[0]->model->params,runState->data, runState->threads[0]->model);
   int result = tolerance > fabs(logLmultiband-logLnormal)?0:1;
-
-  fprintf(stdout,"logL normal = %lf, logL multiband = %lf. Test result: %i\n",logLnormal,logLmultiband,result);
+  mbSNR=LALInferenceGetREAL8Variable(runState->threads[0]->model->params,"optimal_snr");
+  if(LALInferenceCheckVariable(runState->threads[0]->model->params,"phase_maxl"))
+    mbPhase=LALInferenceGetREAL8Variable(runState->threads[0]->model->params,"phase_maxl");
+  
+  
+  fprintf(stdout,"Parameter values:\n");
+  LALInferencePrintVariables(runState->threads[0]->model->params);
+  
+  fprintf(stdout,"\n\n");
+  fprintf(stdout,"Optimal SNR:\tnormal = %lf, phaseinterp = %lf\n",oldSNR,mbSNR);
+  if(LALInferenceCheckVariable(runState->threads[0]->model->params,"phase_maxl"))
+    fprintf(stdout,"max Like phase:\tnormal = %lf, phaseinterp = %lf\n",oldPhase,mbPhase);
+  fprintf(stdout,"logL:\tnormal = %lf, logL multiband = %lf. Test result: %i\n",logLnormal,logLmultiband,result);
   return(result);
 }
 
