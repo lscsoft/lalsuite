@@ -64,6 +64,7 @@ import healpy as hp
 from glue.ligolw import lsctables
 import time
 import lal
+import six
 
 
 def gps_to_iso8601(gps_time):
@@ -190,7 +191,7 @@ def write_sky_map(filename, prob, nest=False, objid=None, url=None, instruments=
             'URL of this event'))
 
     if instruments is not None:
-        if not isinstance(instruments, basestring):
+        if not isinstance(instruments, six.string_types):
             instruments = str(lsctables.ifos_from_instrument_set(instruments))
         extra_header.append(('INSTRUME', instruments,
             'Instruments that triggered this event'))

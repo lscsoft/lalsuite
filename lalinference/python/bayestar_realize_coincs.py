@@ -134,7 +134,7 @@ xmldoc = ligolw_utils.load_filename(
 psds = lal.series.read_psd_xmldoc(xmldoc)
 psds = dict(
     (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
-    for key, psd in psds.iteritems() if psd is not None)
+    for key, psd in psds.items() if psd is not None)
 
 # Read injection file.
 progress.update(-1, 'reading ' + infilename)
@@ -262,7 +262,7 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
 
         # Create SnglInspiral entry.
         sngl_inspiral = lsctables.SnglInspiral()
-        for validcolumn in sngl_inspiral_table.validcolumns.iterkeys():
+        for validcolumn in sngl_inspiral_table.validcolumns.keys():
             setattr(sngl_inspiral, validcolumn, None)
         sngl_inspiral.process_id = process.process_id
         sngl_inspiral.ifo = ifo

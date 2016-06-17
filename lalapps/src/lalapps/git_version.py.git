@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2010 Nickolas Fotopoulos
 # Copyright (C) 2012-2013 Adam Mercer
+# Copyright (C) 2016 Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,12 +52,12 @@ def check_match(foreign_id, onmismatch="raise"):
       "warn": emit a warning, stating both versions involved
     """
     if onmismatch not in ("raise", "warn"):
-        raise ValueError, onmismatch + " is an unrecognized value of onmismatch"
+        raise ValueError(onmismatch + " is an unrecognized value of onmismatch")
     if foreign_id == "@ID@":
         return
     msg = "Program id (@ID@) does not match given id (%s)." % foreign_id
     if onmismatch == "raise":
-        raise VersionMismatchError, msg
+        raise VersionMismatchError(msg)
 
     # in the backtrace, show calling code
     warnings.warn(msg, UserWarning)

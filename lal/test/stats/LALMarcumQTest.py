@@ -62,7 +62,7 @@ q = [.9926176915580, .9999780077720, .2311934913546e-07, .9998253130004, .851686
 for mu, x, y, p, q in zip(mu, x, y, p, q):
 	lal_q = lal.MarcumQmodified(mu, x, y)
 	rel_err_q = abs(q - lal_q) / q
-	print "Q(%g,%g,%g) = %.16g\t%.16g\t%.16g" % (mu, x, y, q, lal_q, rel_err_q)
+	print("Q(%g,%g,%g) = %.16g\t%.16g\t%.16g" % (mu, x, y, q, lal_q, rel_err_q))
 	assert rel_err_q < 1e-12
 
 
@@ -81,35 +81,35 @@ for mu, x, y, p, q in zip(mu, x, y, p, q):
 
 
 # series expansion in section 3, x < 30
-print
-print lal.MarcumQmodified(1., 18, 8.)
+print()
+print(lal.MarcumQmodified(1., 18, 8.))
 
 # asymptotic expansion in section 4.1, xsi > 30 && M*M < 2 * xsi
 # for x < y
-print
-print lal.MarcumQmodified(1., 32., 40.5)
+print()
+print(lal.MarcumQmodified(1., 32., 40.5))
 # for x == y
-print lal.MarcumQmodified(1., 32., 32.)
+print(lal.MarcumQmodified(1., 32., 32.))
 # for y > x
-print lal.MarcumQmodified(1., 32., 8.)
+print(lal.MarcumQmodified(1., 32., 8.))
 
 # recurrence relation in (14), f1 < y < f2 && M < 135.
-print
-print lal.MarcumQmodified(50., 32., 80.)
+print()
+print(lal.MarcumQmodified(50., 32., 80.))
 
 # asymptotic expansion in section 4.2, f1 < y < f2 && M >= 135.
 #print
 #print lal.MarcumQmodified(150., 32., 180.)
 
 # quadrature integration in section 5
-print
-print lal.MarcumQmodified(50., 32., 98.)
+print()
+print(lal.MarcumQmodified(50., 32., 98.))
 
 # more tests
-print
-print lal.MarcumQmodified(1., 31.99999, 32.00001), lal.MarcumQmodified(1., 32.00001, 31.99999)
-print lal.MarcumQmodified(1., 31.9999999999, 32.0000000001), lal.MarcumQmodified(1., 32.0000000001, 31.9999999999)
-print lal.MarcumQmodified(1., 32., 32.), lal.MarcumQmodified(1., 32., 32.)
+print()
+print(lal.MarcumQmodified(1., 31.99999, 32.00001), lal.MarcumQmodified(1., 32.00001, 31.99999))
+print(lal.MarcumQmodified(1., 31.9999999999, 32.0000000001), lal.MarcumQmodified(1., 32.0000000001, 31.9999999999))
+print(lal.MarcumQmodified(1., 32., 32.), lal.MarcumQmodified(1., 32., 32.))
 
 
 #
@@ -121,9 +121,9 @@ print lal.MarcumQmodified(1., 32., 32.), lal.MarcumQmodified(1., 32., 32.)
 #
 
 
-for i in xrange(100000):
+for i in range(100000):
 	M, x, y = random.uniform(1, 10000), random.uniform(0, 10000), random.uniform(0, 10000)
 	if x + M - (4.*x + 2.*M)**.5 < y < x + M + (4.*x + 2.*M)**.5 and M >= 135:
 		continue
-	print "trying XLALMarcumQmodified(%.17g, %.17g, %.17g)" % (M, x, y)
+	print("trying XLALMarcumQmodified(%.17g, %.17g, %.17g)" % (M, x, y))
 	lal.MarcumQmodified(M, x, y)

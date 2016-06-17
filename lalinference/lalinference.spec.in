@@ -92,6 +92,7 @@ Requires: healpy
 Requires: numpy
 Requires: python
 Requires: scipy
+Requires: python-six
 Requires: glue >= 1.49.1
 Requires: glue-common >= 1.49.1
 Requires: glue-segments >= 1.49.1

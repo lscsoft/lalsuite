@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 83
+# serial 84
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -114,6 +114,18 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       ])
       SWIG="env CCACHE_DISABLE=1 ${ac_cv_path_SWIG}"
     ])
+
+    # determine SWIG Python flags
+    AC_SUBST([SWIG_PYTHON_FLAGS],[])
+    SWIG_PYTHON_FLAGS="-O -builtin -globals globalvar"
+    AC_MSG_CHECKING([if SWIG supports relative Python imports])
+    LALSUITE_VERSION_COMPARE([${swig_version}],[<],[3.0.0],
+      [AC_MSG_RESULT([no])],
+      [
+        AC_MSG_RESULT([yes])
+        SWIG_PYTHON_FLAGS="-py3 -relativeimport ${SWIG_PYTHON_FLAGS}"
+      ]
+    )
 
     # extract -I and -D flags from LALSuite library preprocessor flags
     AC_SUBST([SWIG_CPPFLAGS],[])
@@ -387,7 +399,7 @@ EOD`]
     python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
 import sys, os
 import distutils.sysconfig as cfg
-sys.stdout.write(cfg.get_config_var('LINKFORSHARED'))
+sys.stdout.write(cfg.get_config_var('LDFLAGS'))
 sys.stdout.write(' -L' + cfg.get_python_lib())
 sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
 sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1))

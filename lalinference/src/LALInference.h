@@ -1152,9 +1152,19 @@ void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,
  */
 void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadState *thread);
 
+/**
+ * Conversion routines between Equatorial (RA,DEC) and detector-based coordinate systems, where
+ * new "north pole" points along vector from det0 to det1.
+ * theta - azimuth angle about vector joining det0 and det1
+ * alpha - co-latitude (0,pi) relative to det0-det1 vector
+ */
 void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
                                       REAL8 t0, REAL8 alpha, REAL8 theta,
                                       REAL8 *tg, REAL8 *ra, REAL8 *dec);
+
+void LALInferenceEquatorialToDetFrame(LALDetector *det0, LALDetector *det1,
+                                 REAL8 tg, REAL8 ra, REAL8 dec,
+                                 REAL8 *t0, REAL8 *alpha, REAL8 *theta);
 
 /*@}*/
 
