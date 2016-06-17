@@ -30,9 +30,7 @@ def test_invertable(ra,dec,time,tolerance=[1e-6,1e-5,1e-5]):
     forward = li.EquatorialToDetFrame(LHO,LLO,time,ra,dec)
     back = li.DetFrameToEquatorial(LHO,LLO,*forward)
     delta=np.array([abs(time-back[0]),abs(ra-back[1]),abs(dec-back[2])])
-    print delta>tolerance
     if any(delta > tolerance):
-        print delta
         return False
     else:
         return True
