@@ -3,6 +3,23 @@ MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
+FINALBHFITS = \
+	Prior_Mfaf_nonprecspin_Healy2014_comp_mass_min1.0_comp_mass_max500.0_comp_spin_min-1.0_comp_spin_max1.0_aligned.pklz \
+	Prior_Mfaf_nonprecspin_Healy2014_comp_mass_min1.0_comp_mass_max500.0_comp_spin_min0.0_comp_spin_max1.0_isotropic.pklz \
+	$(END_OF_LIST)
+
+WEBPAGE = \
+	result.html \
+	webpage.css \
+	webpage.js \
+	jquery.js \
+	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	$(FINALBHFITS) \
+	$(WEBPAGE) \
+	$(END_OF_LIST)
+
 if HAVE_PYTHON
 
 pymoduledir = $(pkgpythondir)/imrtgr
@@ -15,19 +32,9 @@ pymodule_PYTHON = \
 	$(END_OF_LIST)
 
 webpagedir = $(pkgdatadir)/imrtgr_webpage_templates
-
-webpage_DATA = \
-	result.html \
-	webpage.css \
-	webpage.js \
-	jquery.js \
-	$(END_OF_LIST)
+webpage_DATA = $(WEBPAGE)
 
 priordatadir = $(pkgdatadir)/imrtgr_prior_data
-
-priordata_DATA = \
-	Prior_Mfaf_nonprecspin_Healy2014_comp_mass_min1.0_comp_mass_max500.0_comp_spin_min-1.0_comp_spin_max1.0_aligned.pklz \
-	Prior_Mfaf_nonprecspin_Healy2014_comp_mass_min1.0_comp_mass_max500.0_comp_spin_min0.0_comp_spin_max1.0_isotropic.pklz \
-	$(END_OF_LIST)
+priordata_DATA = $(FINALBHFITS)
 
 endif
