@@ -18,6 +18,7 @@ endif
 #test_scripts = test_multiband.sh
 if SWIG_BUILD_PYTHON
 #test_scripts += test_plot.py
+test_scripts += test_detframe.py
 if HAVE_CHEALPIX
 test_scripts += test_bayestar.py
 endif
