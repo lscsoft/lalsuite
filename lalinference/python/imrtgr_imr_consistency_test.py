@@ -153,24 +153,26 @@ if __name__ == '__main__':
   ring_target = os.path.join(out_dir, 'lalinf_ring')
   imr_target = os.path.join(out_dir, 'lalinf_imr')
   
+  print
   if insp_posplots != insp_target:
     if os.path.islink(insp_target):
-      print('Removing existing link %s'%(insp_target))
+      print('... removing existing link %s'%(insp_target))
       os.system('rm %s'%(insp_target))
-    print('Linking %s to %s' %(insp_posplots, insp_target))
+    print('... linking %s to %s' %(insp_posplots, insp_target))
     os.system('ln -s %s %s' %(insp_posplots, insp_target))
   if ring_posplots != ring_target:
     if os.path.islink(ring_target):
-      print('Removing existing link %s'%(ring_target))
+      print('... removing existing link %s'%(ring_target))
       os.system('rm %s'%(ring_target))
-    print('Linking %s to %s' %(ring_posplots, ring_target))
+    print('... linking %s to %s' %(ring_posplots, ring_target))
     os.system('ln -s %s %s' %(ring_posplots, ring_target))
   if imr_posplots != imr_target:
     if os.path.islink(imr_target):
-      print('Removing existing link %s'%(imr_target))
+      print('... removing existing link %s'%(imr_target))
       os.system('rm %s'%(imr_target))
-    print('Linking %s to %s' %(imr_posplots, imr_target))
+    print('... linking %s to %s' %(imr_posplots, imr_target))
     os.system('ln -s %s %s' %(imr_posplots, imr_target))
+  print
   
   # read the injection mass parameters if this is an injection
   m1_inj = options.m1_inj
