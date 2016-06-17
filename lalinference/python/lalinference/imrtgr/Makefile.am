@@ -4,8 +4,8 @@ EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 FINALBHFITS = \
-	Prior_Mfaf_nonprecspin_Healy2014_comp_mass_min1.0_comp_mass_max500.0_comp_spin_min-1.0_comp_spin_max1.0_aligned.pklz \
-	Prior_Mfaf_nonprecspin_Healy2014_comp_mass_min1.0_comp_mass_max500.0_comp_spin_min0.0_comp_spin_max1.0_isotropic.pklz \
+	Prior_Mfaf_nonprec_Healy2014_M1-500_aligned.pklz \
+	Prior_Mfaf_nonprec_Healy2014_M1-500_isotropic.pklz \
 	$(END_OF_LIST)
 
 WEBPAGE = \
