@@ -56,15 +56,26 @@ int compare_template(LALInferenceRunState *runState)
 
   REAL8 oldSNR=0.0,mbSNR=0.0;
   REAL8 oldPhase=0.0,mbPhase=0.0;
+  REAL8 CrossMatchPlus,CrossMatchCross;
+  REAL8 h0MatchPlus,h0MatchCross;
+  REAL8 hmbMatchPlus,hmbMatchCross;
+
+
+  COMPLEX16FrequencySeries *oldTemplatePlus=NULL,*oldTemplateCross=NULL,*newTemplatePlus=NULL,*newTemplateCross=NULL;
 
   
   runState->threads[0]->model->templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
   LALInferenceTemplateNullFreqdomain(runState->threads[0]->model);
   /* FIXME: Have to call the function once before result is repeatable!!! */
   logLnormal = runState->likelihood(runState->threads[0]->model->params,runState->data, runState->threads[0]->model);
+  oldTemplatePlus = runState->threads[0]->model->freqhPlus;
+  oldTemplateCross = runState->threads[0]->model->freqhCross;
+
+  runState->threads[0]->model->freqhPlus=XLALCreateCOMPLEX16FrequencySeries("mbtemplate",&oldTemplatePlus->epoch,oldTemplatePlus->f0,oldTemplatePlus->deltaF,&lalDimensionlessUnit,oldTemplatePlus->data->length);
+  runState->threads[0]->model->freqhCross=XLALCreateCOMPLEX16FrequencySeries("mbtemplate",&oldTemplateCross->epoch,oldTemplateCross->f0,oldTemplateCross->deltaF,&lalDimensionlessUnit,oldTemplateCross->data->length);
+  
   /* Clear the template */
   LALInferenceTemplateNullFreqdomain(runState->threads[0]->model);
-
 
   logLnormal = runState->likelihood(runState->threads[0]->model->params,runState->data, runState->threads[0]->model);
   oldSNR=LALInferenceGetREAL8Variable(runState->threads[0]->model->params,"optimal_snr");
@@ -79,15 +90,33 @@ int compare_template(LALInferenceRunState *runState)
   if(LALInferenceCheckVariable(runState->threads[0]->model->params,"phase_maxl"))
     mbPhase=LALInferenceGetREAL8Variable(runState->threads[0]->model->params,"phase_maxl");
   
+  newTemplatePlus = runState->threads[0]->model->freqhPlus;
+  newTemplateCross = runState->threads[0]->model->freqhCross;
+
+  CrossMatchPlus = LALInferenceComputeFrequencyDomainOverlap(runState->data,newTemplatePlus->data,oldTemplatePlus->data);
+  CrossMatchCross = LALInferenceComputeFrequencyDomainOverlap(runState->data,newTemplateCross->data,oldTemplateCross->data);
+
+  h0MatchPlus = LALInferenceComputeFrequencyDomainOverlap(runState->data,oldTemplatePlus->data,oldTemplatePlus->data);
+  h0MatchCross = LALInferenceComputeFrequencyDomainOverlap(runState->data,oldTemplateCross->data,oldTemplateCross->data);
+
+  hmbMatchPlus = LALInferenceComputeFrequencyDomainOverlap(runState->data,newTemplatePlus->data,newTemplatePlus->data);
+  hmbMatchCross = LALInferenceComputeFrequencyDomainOverlap(runState->data,newTemplateCross->data,newTemplateCross->data);
+  /* Want to check that <h0|h0>+<h_mb|h_mb>-2<h0|h_mb> < tolerance */
   
   fprintf(stdout,"Parameter values:\n");
   LALInferencePrintVariables(runState->threads[0]->model->params);
   
   fprintf(stdout,"\n\n");
+  fprintf(stdout,"matchPlus = %lf, matchCross = %lf\n",CrossMatchPlus,CrossMatchCross);
+  fprintf(stdout,"h0Plus = %lf, h0Cross = %lf\n",h0MatchPlus,h0MatchCross);
+  fprintf(stdout,"hmbPlus = %lf, hmbCross = %lf\n",hmbMatchPlus,hmbMatchCross);
+  fprintf(stdout,"Difference <h0|h0> + <hmb|hmb> - 2<h0|hmb> = %lf\n",hmbMatchPlus+h0MatchPlus-2.0*CrossMatchPlus);
+
   fprintf(stdout,"Optimal SNR:\tnormal = %lf, phaseinterp = %lf\n",oldSNR,mbSNR);
   if(LALInferenceCheckVariable(runState->threads[0]->model->params,"phase_maxl"))
     fprintf(stdout,"max Like phase:\tnormal = %lf, phaseinterp = %lf\n",oldPhase,mbPhase);
   fprintf(stdout,"logL:\tnormal = %lf, logL multiband = %lf. Test result: %i\n",logLnormal,logLmultiband,result);
+  fprintf(stdout,"Fractional difference epsilon = %lf\n",(logLnormal-logLmultiband)/logLnormal);
   return(result);
 }
 
