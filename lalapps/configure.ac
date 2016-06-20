@@ -472,6 +472,7 @@ LALApps has now been successfully configured:
 * GDS support is $GDS_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL
+* MPI support is $MPI_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL
 
 and will be installed under the directory:
