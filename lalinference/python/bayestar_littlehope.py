@@ -114,7 +114,7 @@ import numpy as np
 progress = glue.text_progress_bar.ProgressBar()
 
 template_approximant, template_amplitude_order, template_phase_order = \
-    timing.get_approximant_and_orders_from_string(opts.waveform)
+    filter.get_approximant_and_orders_from_string(opts.waveform)
 
 
 # FIXME: sample rate could be a command line option; template duration and data
@@ -352,7 +352,7 @@ for i_sim_inspiral in progress.iterate(range(n_injections), format='injection %d
         end_time = lal.LIGOTimeGPS(sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
         epoch = end_time - 256 # GPS start time of data
         gmst = lal.GreenwichMeanSiderealTime(end_time)
-        approximant, amplitude_order, phase_order = timing.get_approximant_and_orders_from_string(sim_inspiral.waveform)
+        approximant, amplitude_order, phase_order = filter.get_approximant_and_orders_from_string(sim_inspiral.waveform)
         if approximant != lalsimulation.TaylorT4:
             raise ValueError("unrecognized approximant")
 

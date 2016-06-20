@@ -59,7 +59,7 @@ import lalsimulation
 
 # BAYESTAR imports.
 from lalinference.bayestar import ligolw as ligolw_bayestar
-from lalinference.bayestar import timing
+from lalinference.bayestar import filter
 
 
 _fields = 'mass1 mass2 mchirp eta spin1z spin2z'
@@ -150,7 +150,7 @@ for sim_inspiral_intrinsic_param in sim_inspiral_intrinsic_params:
     sngl_inspiral.mtotal = sngl_inspiral.mass1 + sngl_inspiral.mass2
     sngl_inspiral.mchirp = sim_inspiral_intrinsic_param.mchirp
     sngl_inspiral.eta = sim_inspiral_intrinsic_param.eta
-    sngl_inspiral.f_final = timing.get_f_lso(sngl_inspiral.mass1, sngl_inspiral.mass2)
+    sngl_inspiral.f_final = filter.get_f_lso(sngl_inspiral.mass1, sngl_inspiral.mass2)
     sngl_inspiral.chi = sim_inspiral_intrinsic_param.chi
 
     # Add the row to the table in the document.

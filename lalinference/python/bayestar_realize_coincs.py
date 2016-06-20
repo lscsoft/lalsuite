@@ -195,17 +195,15 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
     gmst = lal.GreenwichMeanSiderealTime(epoch)
     waveform = sim_inspiral.waveform if opts.waveform is None else opts.waveform
-    approximant, amplitude_order, phase_order = \
-        timing.get_approximant_and_orders_from_string(waveform)
 
     # Pre-evaluate some trigonometric functions that we will need.
     u = np.cos(inc)
     u2 = np.square(u)
 
     # Signal models for each detector.
+    H = filter.sngl_inspiral_psd(sim_inspiral, waveform, f_low)
     signal_models = [
-        timing.SignalModel(m1, m2, psds[ifo], f_low,
-        approximant, amplitude_order, phase_order)
+        timing.SignalModel(filter.signal_psd_series(H, psds[ifo]))
         for ifo in opts.detector]
 
     # Get SNR=1 horizon distances for each detector.
