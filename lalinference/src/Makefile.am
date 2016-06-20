@@ -3,6 +3,11 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
+lalinference_nest_SOURCES = LALInferenceNest.c
+lalinference_burst_SOURCES = LALInferenceBurst.c
+lalinference_datadump_SOURCES = LALInferenceDataDump.c
+lalinference_bench_SOURCES = LALInferenceBench.c
+
 if LALXML
 XMLHDR = LALInferenceXML.h
 XMLSRC = LALInferenceXML.c
@@ -16,6 +21,7 @@ endif
 ANALYTICFILES = CorrelationMatrix.csv unimodalMeans.csv bimodalMeans.csv
 
 pkgdata_DATA = $(ANALYTICFILES)
+
 
 pkginclude_HEADERS = \
 	LALInference.h \
@@ -68,6 +74,12 @@ liblalinference_la_SOURCES = \
 nodist_liblalinference_la_SOURCES = LALInferenceBuildInfo.c
 
 liblalinference_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
+
+bin_PROGRAMS = \
+	lalinference_nest \
+	lalinference_burst \
+	lalinference_datadump \
+	lalinference_bench
 
 EXTRA_DIST = \
 	LALInferenceConfig.h.in \
