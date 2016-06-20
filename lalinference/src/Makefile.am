@@ -44,6 +44,7 @@ pkginclude_HEADERS = \
 	LALInferenceCalibrationErrors.h \
 	LALInferenceGenerateROQ.h \
 	LALInferenceBurstRoutines.h \
+	LALInferenceHDF5.h \
 	$(BAYESTARHDR) \
 	$(XMLHDR)
 
@@ -68,6 +69,7 @@ liblalinference_la_SOURCES = \
 	LALInferenceCalibrationErrors.c \
 	LALInferenceGenerateROQ.c \
 	LALInferenceBurstRoutines.c \
+	LALInferenceHDF5.c \
 	DetectorFixedSkyCoords.c \
 	logaddexp.h \
 	$(BAYESTARSRC) \
