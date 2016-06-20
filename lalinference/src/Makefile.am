@@ -3,6 +3,8 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
+LDADD = liblalinference.la
+
 lalinference_nest_SOURCES = LALInferenceNest.c
 lalinference_burst_SOURCES = LALInferenceBurst.c
 lalinference_datadump_SOURCES = LALInferenceDataDump.c
@@ -21,7 +23,6 @@ endif
 ANALYTICFILES = CorrelationMatrix.csv unimodalMeans.csv bimodalMeans.csv
 
 pkgdata_DATA = $(ANALYTICFILES)
-
 
 pkginclude_HEADERS = \
 	LALInference.h \
