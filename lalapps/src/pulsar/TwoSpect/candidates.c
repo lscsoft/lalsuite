@@ -648,7 +648,7 @@ INT4 templateSearch_scox1Style(candidateVector **output, const REAL8 fminimum, c
 INT4 templateSearch_fixedDf(candidateVector **output, const LALStringVector *dffixed, const REAL8 fminimum, const REAL8 fspan, const REAL8 period, const SkyPosition skypos, const UserInput_t *params, const REAL4VectorAligned *ffdata, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *aveTFnoisePerFbinRatio, const REAL4VectorSequence *trackedlines, const REAL4FFTPlan *secondFFTplan, const gsl_rng *rng, BOOLEAN useExactTemplates)
 {
 
-   XLAL_CHECK( *output != NULL && params != NULL && ffdata != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL && rng != NULL, XLAL_EINVAL );
+   XLAL_CHECK( *output != NULL && dffixed !=NULL && params != NULL && ffdata != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL && rng != NULL, XLAL_EINVAL );
 
    REAL8Vector *trialf;
    REAL8Vector *trialdf;
@@ -657,9 +657,10 @@ INT4 templateSearch_fixedDf(candidateVector **output, const LALStringVector *dff
    // Create the vector trialdf
    XLAL_CHECK( (trialdf = XLALCreateREAL8Vector((dffixed->length))) != NULL, XLAL_EFUNC );
    for (UINT4 ii=0;ii<dffixed->length;ii++) {
-       REAL8 dfval;
-       dfval=strtof(dffixed->data[ii],NULL);
-       trialdf->data[ii]=dfval;
+      XLAL_CHECK( XLALParseStringValueAsREAL8(&(trialdf->data[ii]), dffixed->data[ii])== XLAL_SUCCESS, XLAL_EFUNC );
+
+      // Check that the specified df is ok; if not, return an error and end the program.
+      XLAL_CHECK ( (trialdf->data[ii] < maxModDepth(period, params->Tsft)) && (trialdf->data[ii] > 0.5/params->Tsft), XLAL_EFAILED, "ERROR: Modulation depth must be between %.5f and %.5f.\n",0.5/params->Tsft,maxModDepth(period,params->Tsft) );
    }
 
    //Set up parameters of signal frequency search
@@ -680,19 +681,19 @@ INT4 templateSearch_fixedDf(candidateVector **output, const LALStringVector *dff
    //Search over frequency
    for (UINT4 ii=0; ii<trialf->length; ii++) {
 
-		 loadCandidateData(&cand, trialf->data[ii], period, trialdf->data[jj], skypos.longitude, skypos.latitude, 0, 0, 0.0, 0, 0.0, -1, 0);
+      loadCandidateData(&cand, trialf->data[ii], period, trialdf->data[jj], skypos.longitude, skypos.latitude, 0, 0, 0.0, 0, 0.0, -1, 0);
 
-         //Make the template
-         resetTwoSpectTemplate(template);
-         if (useExactTemplates!=0) XLAL_CHECK( makeTemplate(template, cand, params, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
-         else XLAL_CHECK( makeTemplateGaussians(template, cand, params) == XLAL_SUCCESS, XLAL_EFUNC );
+      //Make the template
+      resetTwoSpectTemplate(template);
+      if (useExactTemplates!=0) XLAL_CHECK( makeTemplate(template, cand, params, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
+      else XLAL_CHECK( makeTemplateGaussians(template, cand, params) == XLAL_SUCCESS, XLAL_EFUNC );
 
-         REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
-         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC);
-         REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, rng, &proberrcode);
-         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC);
-         REAL8 h0 = 0.0;
-         if ( R > 0.0 ) h0 = 2.7426*pow(R/(params->Tsft*params->Tobs),0.25);
+      REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC);
+      REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, rng, &proberrcode);
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC);
+      REAL8 h0 = 0.0;
+      if ( R > 0.0 ) h0 = 2.7426*pow(R/(params->Tsft*params->Tobs),0.25);
 
          //Line contamination?
          BOOLEAN lineContamination = 0;
@@ -723,8 +724,10 @@ INT4 templateSearch_fixedDf(candidateVector **output, const LALStringVector *dff
 
          loadCandidateData(&((*output)->data[(*output)->numofcandidates]), trialf->data[ii], period, trialdf->data[jj], skypos.longitude, skypos.latitude, R, h0, prob, proberrcode, 0.0, -1, lineContamination);
          (*output)->numofcandidates++;
-	  } /* for ii < trialf */
+
+         } /* for ii < trialf */
       } /* for jj < trialdf */
+
       XLALDestroyREAL8Vector(trialdf);
       trialdf = NULL;
       destroyTwoSpectTemplate(template);
