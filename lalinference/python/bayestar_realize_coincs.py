@@ -41,42 +41,38 @@ available_ifos = sorted(det.frDetector.prefix
     for det in lal.CachedDetectors)
 
 # Command line interface.
-from optparse import Option, OptionParser
+import argparse
 from lalinference.bayestar import command
 
-measurement_error_choices = ("zero-noise", "from-truth", "from-measurement")
-parser = OptionParser(
-    formatter = command.NewlinePreservingHelpFormatter(),
-    description = __doc__,
-    usage="%prog [options] [INPUT.xml[.gz]]",
-    option_list = [
-        Option("-o", "--output", metavar="OUTPUT.xml[.gz]",
-            default="/dev/stdout",
-            help="Name of output file [default: %default]"),
-        Option("--detector", metavar='|'.join(available_ifos), action="append",
-            help="Detectors to use.  May be specified multiple times.",
-            choices=available_ifos),
-        Option("--waveform",
-            help="Waveform to use for injections (overrides values in "
-            "sim_inspiral table)"),
-        Option("--snr-threshold", type=float, default=4.,
-            help="Single-detector SNR threshold [default: %default]"),
-        Option("--min-triggers", type=int, default=2,
-            help="Emit coincidences only when at least this many triggers "
-            "are found [default: %default]"),
-        Option("--measurement-error", choices=measurement_error_choices,
-            default=measurement_error_choices[0],
-            metavar='|'.join(measurement_error_choices),
-            help="How to compute the measurement error [default: %default]"),
-        Option("--reference-psd", metavar="PSD.xml[.gz]",
-            help="Name of PSD file (required)"),
-        Option("--f-low", type=float,
-            help="Override low frequency cutoff found in sim_inspiral table.")
-    ]
-)
-opts, args = parser.parse_args()
-infilename = command.get_input_filename(parser, args)
-command.check_required_arguments(parser, opts, 'reference_psd')
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    'input', metavar='IN.xml[.gz]', type=argparse.FileType('rb'),
+    default='-', help='Name of input file [default: stdin]')
+parser.add_argument(
+    '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('w'),
+    default='-', help='Name of output file [default: stdout]')
+parser.add_argument('--detector', metavar='|'.join(available_ifos), nargs='+',
+    help='Detectors to use.  May be specified multiple times.',
+    choices=available_ifos)
+parser.add_argument('--waveform',
+    help='Waveform to use for injections (overrides values in '
+    'sim_inspiral table)')
+parser.add_argument('--snr-threshold', type=float, default=4.,
+    help='Single-detector SNR threshold [default: %(default)s]')
+parser.add_argument('--min-triggers', type=int, default=2,
+    help='Emit coincidences only when at least this many triggers '
+    'are found [default: %(default)s]')
+parser.add_argument(
+    '--measurement-error',
+    choices=('zero-noise', 'from-truth', 'from-measurement'),
+    default='zero-noise',
+    help='How to compute the measurement error [default: %(default)s]')
+parser.add_argument(
+    '--reference-psd', metavar='PSD.xml[.gz]', type=argparse.FileType('rb'),
+    required=True, help='Name of PSD file [required]')
+parser.add_argument('--f-low', type=float,
+    help='Override low frequency cutoff found in sim_inspiral table')
+opts = parser.parse_args()
 
 
 # Python standard library imports.
@@ -116,8 +112,9 @@ out_xmldoc = ligolw.Document()
 out_xmldoc.appendChild(ligolw.LIGO_LW())
 
 # Write process metadata to output file.
-process = ligolw_process.register_to_xmldoc(out_xmldoc, parser.get_prog_name(),
-    opts.__dict__, ifos=opts.detector, comment="Simulated coincidences")
+process = command.register_to_xmldoc(
+    out_xmldoc, parser, opts, ifos=opts.detector,
+    comment="Simulated coincidences")
 
 # Add search summary to output file.
 all_time = segments.segment(
@@ -128,8 +125,8 @@ summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
     inseg=all_time, outseg=all_time)
 
 # Read PSDs.
-progress.update(-1, 'reading ' + opts.reference_psd)
-xmldoc = ligolw_utils.load_filename(
+progress.update(-1, 'reading ' + opts.reference_psd.name)
+xmldoc, _ = ligolw_utils.load_fileobj(
     opts.reference_psd, contenthandler=lal.series.PSDContentHandler)
 psds = lal.series.read_psd_xmldoc(xmldoc)
 psds = dict(
@@ -137,9 +134,9 @@ psds = dict(
     for key, psd in psds.items() if psd is not None)
 
 # Read injection file.
-progress.update(-1, 'reading ' + infilename)
-xmldoc = ligolw_utils.load_filename(
-    infilename, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
+progress.update(-1, 'reading ' + opts.input.name)
+xmldoc, _ = ligolw_utils.load_fileobj(
+    opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Extract simulation table from injection file.
 sim_inspiral_table = ligolw_table.get_table(xmldoc,
@@ -303,9 +300,9 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
 
 
 # Record process end time.
-progress.update(-1, 'writing ' + opts.output)
+progress.update(-1, 'writing ' + opts.output.name)
 ligolw_process.set_process_end_time(process)
 
 # Write output file.
-ligolw_utils.write_filename(out_xmldoc, opts.output,
-    gz=(os.path.splitext(opts.output)[-1]==".gz"))
+ligolw_utils.write_fileobj(out_xmldoc, opts.output,
+    gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
