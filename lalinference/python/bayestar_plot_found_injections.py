@@ -46,7 +46,6 @@ import matplotlib
 matplotlib.use('agg')
 from matplotlib import pyplot as plt
 from matplotlib import rcParams
-import scipy.stats
 import os
 from distutils.dir_util import mkpath
 import numpy as np
