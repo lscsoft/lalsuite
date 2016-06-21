@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2014-2015  Leo Singer
+# Copyright (C) 2014-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -18,16 +18,11 @@
 """Construct a LIGO-LW XML power spectral density file for a network of
 detectors by evaluating a model power noise sensitivity curve."""
 
-import glue.ligolw.utils
-import lal
-import lal.series
-import lalsimulation
+import argparse
 import inspect
-import optparse
-import os.path
-import numpy as np
+import lal
+import lalsimulation
 from lalinference.bayestar import command
-from lalinference.bayestar.timing import vectorize_swig_psd_func
 
 # Get names of PSD functions.
 psd_name_prefix = 'SimNoisePSD'
@@ -37,45 +32,45 @@ psd_names = sorted(
     if name.startswith(psd_name_prefix) and callable(func)
     and '(double f) -> double' in func.__doc__)
 
-# Create command line option parser.
-parser = optparse.OptionParser(
-    formatter=command.NewlinePreservingHelpFormatter(),
-    description=__doc__,
-    usage='%prog --H1=func ... [options] [-o FILENAME.xml[.gz]]')
+parser = command.ArgumentParser()
+parser.add_argument(
+    '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('w'),
+    default='-', help='Name of output file [default: stdout]')
+parser.add_argument(
+    '--df', metavar='Hz', type=float, default=1.0,
+    help='Frequency step size [default: %(default)s]')
+parser.add_argument(
+    '--f-max', metavar='Hz', type=float, default=2048.0,
+    help='Maximum frequency [default: %(default)s]')
+
+# Add options for individual detectors
+detectors = []
+for detector in lal.CachedDetectors:
+    name = detector.frDetector.name
+    prefix = detector.frDetector.prefix
+    detectors.append(prefix)
+    parser.add_argument('--' + prefix, choices=psd_names, metavar='func',
+        help='PSD function for {0} detector [optional]'.format(name))
 
 # Add list of vaild PSD functions.
 parser.description += '''
+
 The following options are supported for all detectors:
 
 '''
 for psd_name in psd_names:
     parser.description += '  ' + psd_name + '\n'
 
+opts = parser.parse_args()
+
+
+import glue.ligolw.utils
+import lal.series
+import os.path
+import numpy as np
+from lalinference.bayestar.timing import vectorize_swig_psd_func
+
 # Add basic options.
-parser.add_option(
-    '-o', '--output', metavar='FILENAME.xml[.gz]', default='/dev/stdout',
-    help='Name of optionally gzip-compressed output file [default: %default]')
-parser.add_option(
-    '--df', metavar='Hz', type=float, default=1,
-    help='Frequency step size [default: %default]')
-parser.add_option(
-    '--f-max', metavar='Hz', type=float, default=2048,
-    help='Maximum frequency [default: %default]')
-
-detectors = []
-
-# Add options for individual detectors
-for detector in lal.CachedDetectors:
-    name = detector.frDetector.name
-    prefix = detector.frDetector.prefix
-    detectors.append(prefix)
-    parser.add_option('--' + prefix, choices=psd_names, metavar='func',
-        help='PSD function for {0} detector [optional]'.format(name))
-
-# Parse command line.
-opts, args = parser.parse_args()
-if args:
-    parser.error('Did not expect any positional command line arguments')
 
 psds = {}
 
@@ -90,6 +85,6 @@ for detector in detectors:
     series.data.data = vectorize_swig_psd_func(psd_name_prefix + psd_name)(f)
     psds[detector] = series
 
-glue.ligolw.utils.write_filename(
+glue.ligolw.utils.write_fileobj(
     lal.series.make_psd_xmldoc(psds), opts.output,
-    gz=(os.path.splitext(opts.output)[-1]==".gz"))
+    gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
