@@ -17,6 +17,7 @@ import sys
 import random
 from itertools import permutations
 import shutil
+import numpy as np
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -89,7 +90,6 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",basepath="./
   from glue.ligolw import param
   from glue.ligolw import array
   from pylal import series as lalseries
-  import numpy as np
   import subprocess
   from subprocess import Popen, PIPE
   cwd=os.getcwd()
@@ -374,7 +374,6 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
   except ImportError:
     print "ERROR, cannot import pylal.series in bppu/get_xml_psds()\n"
     exit(1)
-  import numpy as np
 
   out={}
   if not os.path.isdir(outpath):
@@ -2075,6 +2074,8 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
   Class for a ROM compute weights job
   """
   def __init__(self,cp,submitFile,logdir,dax=False):
+    time_step=0.000025
+    dt=0.1
     exe=cp.get('condor','computeroqweights')
     pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
@@ -2088,17 +2089,20 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.add_condor_cmd('getenv','True')
     self.add_arg('-B '+str(cp.get('paths','roq_b_matrix_directory')))
     if cp.has_option('engine','dt'):
-      self.add_arg('-t '+str(cp.get('engine','dt')))
-    else:
-      self.add_arg('-t 0.1')
+      dt=cp.get('engine','dt')
+    self.add_arg('-t '+str(dt))
     if cp.has_option('engine','time_step'):
-      self.add_arg('-T '+str(cp.get('engine','time_step')))
-    else:
-      self.add_arg('-T 0.000025')
+      time_step=cp.get('engine','time_step')
+    self.add_arg('-T '+str(time_step))
     if cp.has_option('condor','computeroqweights_memory'):
       computeroqweights_memory=str(cp.get('condor','computeroqweights_memory'))
     else:
-      computeroqweights_memory=str((os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_linear.npy'))/(1024*1024))*256) # Check memory requirements                                                                                                  
+      params = np.genfromtxt(str(cp.get('paths','roq_b_matrix_directory')+'/params.dat'), names=True)
+      computeroqweights_memory=str(
+      os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_linear.npy'))
+      + ((params['fhigh']-params['flow'])*params['seglen'])*(dt/time_step)
+      + os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_quadratic.npy'))
+      )
     self.add_condor_cmd('request_memory',computeroqweights_memory)
 
 class ROMNode(pipeline.CondorDAGNode):
