@@ -150,7 +150,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
      *   from the priors. OVERWRITE EVEN USER CHOICES.
      *   (necessary for complicated prior shapes where
      *   LALInferenceCyclicReflectiveBound() is not enough) */
-    //#pragma omp parallel for private(thread)
+    #pragma omp parallel for private(thread)
     for (t = 0; t < run_state->nthreads; t++) {
         LALInferenceVariables *priorDraw = XLALCalloc(1, sizeof(LALInferenceVariables));
 
