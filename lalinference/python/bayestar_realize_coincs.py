@@ -44,7 +44,7 @@ available_ifos = sorted(det.frDetector.prefix
 import argparse
 from lalinference.bayestar import command
 
-parser = argparse.ArgumentParser()
+parser = command.ArgumentParser()
 parser.add_argument(
     'input', metavar='IN.xml[.gz]', type=argparse.FileType('rb'),
     default='-', help='Name of input file [default: stdin]')
