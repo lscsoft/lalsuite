@@ -206,13 +206,13 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
         neff = atoi(ppt->value);
 
     /* Print sample every skip iterations */
-    INT4 skip = 100;
+    INT4 skip = 500;
     ppt = LALInferenceGetProcParamVal(command_line, "--skip");
     if (ppt)
         skip = atoi(ppt->value);
 
     /* Iterations between proposed temperature swaps */
-    INT4 Tskip = 100;
+    INT4 Tskip = 500;
     ppt = LALInferenceGetProcParamVal(command_line, "--temp-skip");
     if (ppt)
         Tskip = atoi(ppt->value);
