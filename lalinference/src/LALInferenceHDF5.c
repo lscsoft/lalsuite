@@ -21,6 +21,9 @@
 #include <lal/H5FileIO.h>
 #include "LALInferenceHDF5.h"
 
+const char LALInferenceHDF5PosteriorSamplesGroupName[]="posterior_samples";
+const char LALInferenceHDF5NestedSamplesGroupName[]="nested_samples";
+
 int XLALInferenceVariablesArray2H5Group(LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N, const char *GroupName)
 {
   LALH5File *groupPtr=NULL;

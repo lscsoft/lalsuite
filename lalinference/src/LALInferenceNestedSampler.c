@@ -19,9 +19,8 @@
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceProposal.h>
-#ifdef HAVE_LIBLALXML
-#include <lal/LALInferenceXML.h>
-#endif
+#include <lal/LALInferenceHDF5.h>
+
 #include "logaddexp.h"
 
 #define PROGRAM_NAME "LALInferenceNestedSampler.c"
@@ -368,6 +367,7 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
     --- Nested Sampling Algorithm Parameters -----\n\
     ----------------------------------------------\n\
     --Nlive N                        Number of live points to use\n\
+    (--outhdf <filename.h5>)         HDF5 file output path\n\
     (--Nmcmc M)                      Over-ride auto chain length determination and use <M> MCMC samples\n\
     (--maxmcmc M)                    Use at most M MCMC points when autodetermining the chain (5000)\n\
     (--Nmcmcinitial M)               Use M MCMC points when initially resampling from the prior\n\
@@ -439,11 +439,7 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
   REAL8 temp=1.0;
   LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
-#ifdef HAVE_LIBLALXML
   runState->logsample=LALInferenceLogSampleToArray;
-#else
-  runState->logsample=LALInferenceLogSampleToFile;
-#endif
 
   /* Number of live points */
   ppt=LALInferenceGetProcParamVal(commandLine,"--Nlive");
@@ -534,13 +530,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   UINT4 samplePrior=0; //If this flag is set to a positive integer, code will just draw this many samples from the prior
   ProcessParamsTable *ppt=NULL;
 
-  /* Default sample logging functions with and without XML */
-  #ifdef HAVE_LIBLALXML
-  char *outVOTable=NULL;
   if(!runState->logsample) runState->logsample=LALInferenceLogSampleToArray;
-  #else
-  if(!runState->logsample) runState->logsample=LALInferenceLogSampleToFile;
-  #endif
 
   if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
     logZnoise=LALInferenceNullLogLikelihood(runState->data);
@@ -595,19 +585,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
   if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
     displayprogress=1;
-
-  #ifdef HAVE_LIBLALXML
-  ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outxml");
-  if(!ppt){
-    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
-  }
-  if(!ppt){
-    fprintf(stderr,"Can specify --outXML <filename.dat> for VOTable output\n");
-  }
-  else{
-    outVOTable=ppt->value;
-  }
-  #endif
 
   minpos=0;
 
@@ -886,8 +863,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     LALInferenceAddVariable(runState->algorithmParams,"logB",(void *)&logB,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->algorithmParams,"logLmax",(void *)&logLmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
-    #ifdef HAVE_LIBLALXML
-    /* Write out the XML if requested */
     LALInferenceVariables **output_array=NULL;
 
     UINT4 N_output_array=0;
@@ -897,36 +872,23 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
       N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
     }
-    if(output_array && outVOTable && N_output_array>0){
-      xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array, "Nested Samples");
-      xmlNewProp(votable, CAST_CONST_XMLCHAR("utype"), votype_nested_samples); /*CAST_CONST_XMLCHAR("lalinference:nestedsampling:samples")); */
-
-    xmlNodePtr stateResource=XLALInferenceStateVariables2VOTResource(runState, "Run State Configuration");
-
-    xmlNodePtr nestResource=XLALCreateVOTResourceNode("lalinference:nestedsampling","Nested sampling run",votable);
-
-    if(stateResource)
-      xmlAddChild(nestResource,stateResource);
-
-
-    char *xmlString = XLALCreateVOTStringFromTree ( nestResource );
-
-    /* Write to disk */
-    fpout=fopen(outVOTable,"w");
-    fprintf(fpout,"%s",xmlString);
-    fclose(fpout);
-
-
-  }
-  if(output_array) {
-    for(i=0;i<N_output_array;i++){
-      LALInferenceClearVariables(output_array[i]);
-      XLALFree(output_array[i]);
+    /* Write HDF5 file */
+    if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outhdf")))
+    {
+      LALH5File *h5file=XLALH5FileOpen(ppt->value, "w");
+      XLALInferenceVariablesArray2H5Group(h5file, output_array, N_output_array, LALInferenceHDF5NestedSamplesGroupName);
+      /* TODO: Write metadata */
+      XLALH5FileClose(h5file);
     }
-    XLALFree(output_array);
-  }
-  #endif
-
+  
+    if(output_array) {
+      for(i=0;i<N_output_array;i++){
+        LALInferenceClearVariables(output_array[i]);
+        XLALFree(output_array[i]);
+      }
+      XLALFree(output_array);
+    }
+  
   /* Clean up resume file */
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
   {

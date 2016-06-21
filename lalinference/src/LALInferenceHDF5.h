@@ -26,6 +26,8 @@
 
 int XLALInferenceVariablesArray2H5Group(LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N, const char *GroupName);
 
-const char LALInferenceHDF5PosteriorGroupName[]="posterior_samples";
+extern const char LALInferenceHDF5PosteriorSamplesGroupName[];
+extern const char LALInferenceHDF5NestedSamplesGroupName[];
+
 
 #endif /* LALInferenceHDF5_h */
