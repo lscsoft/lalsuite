@@ -51,9 +51,9 @@ parser.add_argument(
 parser.add_argument(
     '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('w'),
     default='-', help='Name of output file [default: stdout]')
-parser.add_argument('--detector', metavar='|'.join(available_ifos), nargs='+',
-    help='Detectors to use.  May be specified multiple times.',
-    choices=available_ifos)
+parser.add_argument(
+    '--detector', metavar='|'.join(available_ifos), nargs='+',
+    help='Detectors to use [required].', choices=available_ifos, required=True)
 parser.add_argument('--waveform',
     help='Waveform to use for injections (overrides values in '
     'sim_inspiral table)')
