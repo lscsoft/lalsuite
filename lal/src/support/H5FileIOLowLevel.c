@@ -877,6 +877,46 @@ int XLALH5FileAddScalarAttribute(LALH5File *file, const char *key, const void *v
 }
 
 /**
+ * @brief Gets attribute names from a #LALH5File
+ * @details
+ * This routine returns the names of all attributes from a HDF5 Dataset
+ * @param names Pointer a list of strings to be returned to the user. Memory
+ * should be freed by the caller.
+ * @param files Pointer to a #LALH5File from which the attributes will be added.
+ * @retval Number of names read.
+ * @retval -1 Failure.
+ */
+int XLALH5FileGetAttributeNames(char** names, LALH5File *file)
+{
+#ifndef HAVE_HDF5
+	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
+#else
+    int na;
+    int ns;
+    int i;
+    hid_t aid;
+
+	if (file == NULL)
+		XLAL_ERROR(XLAL_EFAULT);
+	if (names != NULL)
+		XLAL_ERROR(XLAL_EFAULT);
+
+    na = H5Aget_num_attrs(file->file_id);
+    names = (char**) XLALMalloc(na * sizeof(names));
+
+    for (i = 0; i <na; i++) {
+        aid = H5Aopen_idx(file->file_id, (unsigned int)i);
+        ns = H5Aget_name(aid, 0, NULL) + 1;
+        names[i] = (char*) XLALMalloc(ns * sizeof(names[i]));
+        H5Aget_name(aid, ns, names[i]);
+        H5Aclose(aid);
+    }
+
+	return na;
+#endif
+}
+
+/**
  * @brief Adds a string attribute to a #LALH5File
  * @details
  * This routine adds a NUL-terminated variable-length string @p value
