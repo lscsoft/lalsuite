@@ -97,7 +97,7 @@ import glue.lal
 import lal
 import lal.series
 import lalsimulation
-import pylal.progress
+from glue.text_progress_bar import ProgressBar
 
 # BAYESTAR imports.
 from lalinference.bayestar import ligolw as ligolw_bayestar
@@ -108,7 +108,7 @@ from lalinference.bayestar import timing
 import numpy as np
 
 
-progress = pylal.progress.ProgressBar()
+progress = ProgressBar()
 
 # Open output file.
 progress.update(-1, 'setting up output document')
