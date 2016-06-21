@@ -51,6 +51,8 @@ for detector in lal.CachedDetectors:
     detectors.append(prefix)
     parser.add_argument('--' + prefix, choices=psd_names, metavar='func',
         help='PSD function for {0} detector [optional]'.format(name))
+    parser.add_argument('--' + prefix + '-scale', type=float, default=1.0,
+        help='Scale range for {0} detector [default: %(default)s]'.format(name))
 
 # Add list of vaild PSD functions.
 parser.description += '''
@@ -79,10 +81,11 @@ f = np.arange(n) * opts.df
 
 for detector in detectors:
     psd_name = getattr(opts, detector)
+    scale = 1 / np.sqrt(getattr(opts, detector + '_scale'))
     if psd_name is None:
         continue
     series = lal.CreateREAL8FrequencySeries(psd_name, 0, 0, opts.df, lal.SecondUnit, n)
-    series.data.data = vectorize_swig_psd_func(psd_name_prefix + psd_name)(f)
+    series.data.data = vectorize_swig_psd_func(psd_name_prefix + psd_name)(f) * scale
     psds[detector] = series
 
 glue.ligolw.utils.write_fileobj(
