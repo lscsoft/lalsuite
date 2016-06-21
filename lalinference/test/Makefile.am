@@ -19,8 +19,8 @@ endif
 if SWIG_BUILD_PYTHON
 #test_scripts += test_plot.py
 test_scripts += test_detframe.py
-test_scripts += test_bayestar_realize_coincs.sh
 test_scripts += test_bayestar_sample_model_psd.sh
+test_scripts += test_bayestar_realize_coincs.sh
 test_scripts += test_bayestar_sim_to_tmpltbank.sh
 if HAVE_CHEALPIX
 test_scripts += test_bayestar.py
