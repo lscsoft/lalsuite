@@ -104,7 +104,8 @@ LALH5Dataset * XLALH5DatasetAlloc(LALH5File *file, const char *name, LALTYPECODE
 LALH5Dataset * XLALH5DatasetAlloc1D(LALH5File *file, const char *name, LALTYPECODE dtype, size_t length);
 int XLALH5DatasetWrite(LALH5Dataset *dset, void *data);
 
-int XLALH5FileGetAttributeNames(char** names, LALH5File *file);
+/** Read list of attributes from group */
+int XLALH5FileGetAttributeNames(LALH5File *file, char *** names, UINT4 *N);
 
 int XLALH5FileAddScalarAttribute(LALH5File *file, const char *key, const void *value, LALTYPECODE dtype);
 int XLALH5FileAddStringAttribute(LALH5File *file, const char *key, const char *value);

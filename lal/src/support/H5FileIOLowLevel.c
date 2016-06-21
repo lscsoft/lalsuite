@@ -886,7 +886,7 @@ int XLALH5FileAddScalarAttribute(LALH5File *file, const char *key, const void *v
  * @retval Number of names read.
  * @retval -1 Failure.
  */
-int XLALH5FileGetAttributeNames(char** names, LALH5File *file)
+int XLALH5FileGetAttributeNames(LALH5File *file, char *** names, UINT4 *N)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -902,17 +902,19 @@ int XLALH5FileGetAttributeNames(char** names, LALH5File *file)
 		XLAL_ERROR(XLAL_EFAULT);
 
     na = H5Aget_num_attrs(file->file_id);
-    names = (char**) XLALMalloc(na * sizeof(names));
+    char ** namelist = (char**) XLALMalloc(na * sizeof(*names));
 
     for (i = 0; i <na; i++) {
         aid = H5Aopen_idx(file->file_id, (unsigned int)i);
         ns = H5Aget_name(aid, 0, NULL) + 1;
-        names[i] = (char*) XLALMalloc(ns * sizeof(names[i]));
-        H5Aget_name(aid, ns, names[i]);
+        namelist[i] = (char*) XLALMalloc(ns * sizeof(namelist[i]));
+        H5Aget_name(aid, ns, namelist[i]);
         H5Aclose(aid);
     }
 
-	return na;
+  *N=na;
+  *names = namelist;
+  return(XLAL_SUCCESS);
 #endif
 }
 
