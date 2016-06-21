@@ -49,7 +49,7 @@ parser.add_argument(
     'input', metavar='IN.xml[.gz]', type=argparse.FileType('rb'),
     default='-', help='Name of input file [default: stdin]')
 parser.add_argument(
-    '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('w'),
+    '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('wb'),
     default='-', help='Name of output file [default: stdout]')
 parser.add_argument(
     '--detector', metavar='|'.join(available_ifos), nargs='+',
