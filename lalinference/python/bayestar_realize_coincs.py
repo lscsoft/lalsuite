@@ -175,6 +175,10 @@ out_xmldoc.childNodes[0].appendChild(coinc_map_table)
 coinc_table = lsctables.New(lsctables.CoincTable)
 out_xmldoc.childNodes[0].appendChild(coinc_table)
 
+# Create a CoincInspiral table.
+coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
+out_xmldoc.childNodes[0].appendChild(coinc_inspiral_table)
+
 # Precompute values that are common to all simulations.
 detectors = [lalsimulation.DetectorPrefixToLALDetector(ifo)
     for ifo in opts.detector]
@@ -300,6 +304,22 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     coinc.nevents = len(opts.detector)
     coinc.likelihood = None
     coinc_table.append(coinc)
+
+    # Add CoincInspiral table entry.
+    coinc_inspiral = lsctables.CoincInspiral()
+    coinc_inspiral.coinc_event_id = coinc.coinc_event_id
+    coinc_inspiral.ifos = lsctables.ifos_from_instrument_set(
+        sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
+    coinc_inspiral.end = lal.LIGOTimeGPS(
+        sum(sngl_inspiral.end.ns() for sngl_inspiral in sngl_inspirals)
+        // len(sngl_inspirals) * 1e-9) # FIXME: should only be detected sngls
+    coinc_inspiral.mass = sim_inspiral.mass1 + sim_inspiral.mass2
+    coinc_inspiral.mchirp = sim_inspiral.mchirp
+    coinc_inspiral.combined_far = 0.0 # Not provided
+    coinc_inspiral.false_alarm_rate = 0.0 # Not provided
+    coinc_inspiral.minimum_duration = None # Not provided
+    coinc_inspiral.snr = net_snr
+    coinc_inspiral_table.append(coinc_inspiral)
 
     # Record all sngl_inspiral records and associate them with coincidences.
     for sngl_inspiral in sngl_inspirals:
