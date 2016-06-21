@@ -183,7 +183,7 @@ endif # SWIG_BUILD_OCTAVE
 
 if SWIG_BUILD_PYTHON
 
-swig_python_flags = -python -O -builtin -globals globalvar -outdir swiglal_python/ $(swig_flags)
+swig_python_flags = -python $(SWIG_PYTHON_FLAGS) -outdir swiglal_python/ $(swig_flags)
 
 pkgpyexec_LTLIBRARIES = swiglal_python.la
 nodist_pkgpyexec_PYTHON = swiglal_python/$(PACKAGE).py

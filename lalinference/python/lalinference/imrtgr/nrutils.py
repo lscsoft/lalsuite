@@ -1,7 +1,7 @@
 """ 
 Various fitting formulas provided by numerical relativity 
 
-P. Ajith, 2015-04-09 
+Archisman Ghosh, Nathan K. Johnson-McDaniel, P. Ajith, 2015-04-09 
 """
 
 import numpy as np 

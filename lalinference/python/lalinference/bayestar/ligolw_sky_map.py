@@ -33,12 +33,18 @@ from . import timing
 from . import sky_map
 import lal, lalsimulation
 
+# FIXME: Remove this Python 2 workaround.
+try:
+    long
+except NameError:
+    long = int
+
 log = logging.getLogger('BAYESTAR')
 
 
 def toa_phoa_snr_log_prior(
-        (ra, sin_dec, distance, u, twopsi, t),
-        min_distance, max_distance, prior_distance_power, max_abs_t):
+        params, min_distance, max_distance, prior_distance_power, max_abs_t):
+    ra, sin_dec, distance, u, twopsi, t = params
     return (
         prior_distance_power * np.log(distance)
         if 0 <= ra < 2*np.pi
@@ -138,7 +144,7 @@ def ligolw_sky_map(
     ifos = [sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals]
 
     # Extract TOAs in GPS nanoseconds from table.
-    toas_ns = [long(sngl_inspiral.get_end().ns())
+    toas_ns = [sngl_inspiral.get_end().ns()
         for sngl_inspiral in sngl_inspirals]
 
     # Retrieve phases on arrival from table.
@@ -314,8 +320,8 @@ def gracedb_sky_map(
     coinc_event_id = coinc_inspiral.coinc_event_id
     event_ids = [coinc_map.event_id for coinc_map in coinc_map_table
         if coinc_map.coinc_event_id == coinc_event_id]
-    sngl_inspirals = [(sngl_inspiral for sngl_inspiral in sngl_inspiral_table
-        if sngl_inspiral.event_id == event_id).next() for event_id in event_ids]
+    sngl_inspirals = [next((sngl_inspiral for sngl_inspiral in sngl_inspiral_table
+        if sngl_inspiral.event_id == event_id)) for event_id in event_ids]
     instruments = set(sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
 
     # Read PSDs.

@@ -273,7 +273,7 @@ def count_modes(m, nest=False):
     WARNING: The input array is clobbered in the process."""
     npix = len(m)
     nside = hp.npix2nside(npix)
-    for nmodes in xrange(npix):
+    for nmodes in range(npix):
         nonzeroipix = np.flatnonzero(m)
         if len(nonzeroipix):
             flood_fill(nside, nonzeroipix[0], m, nest=nest)
@@ -339,7 +339,7 @@ def find_injection(sky_map, true_ra, true_dec, contours=(), areas=(), modes=Fals
     cum_sky_map = np.cumsum(sky_map[indices])
 
     # Find the index of the true location in the cumulative distribution.
-    idx = (i for i, pix in enumerate(indices) if pix == true_pix).next()
+    idx = next((i for i, pix in enumerate(indices) if pix == true_pix))
 
     # Find the smallest area that would have to be searched to find
     # the true location. Note that 1 is added to the index because we want
@@ -558,7 +558,7 @@ def get_detector_pair_axis(ifo1, ifo2, gmst):
 
     # Get location of detectors if ifo1, ifo2 are LAL detector structs
     try:
-        ifo1 = lalsimulation.lalsimulation.DetectorPrefixToLALDetector(ifo1)
+        ifo1 = lalsimulation.DetectorPrefixToLALDetector(ifo1)
     except TypeError:
         pass
     try:
@@ -566,7 +566,7 @@ def get_detector_pair_axis(ifo1, ifo2, gmst):
     except AttributeError:
         pass
     try:
-        ifo2 = lalsimulation.lalsimulation.DetectorPrefixToLALDetector(ifo2)
+        ifo2 = lalsimulation.DetectorPrefixToLALDetector(ifo2)
     except TypeError:
         pass
     try:

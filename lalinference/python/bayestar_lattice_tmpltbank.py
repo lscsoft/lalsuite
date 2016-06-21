@@ -66,7 +66,7 @@ import lalsimulation
 
 # BAYESTAR imports.
 from lalinference.bayestar import ligolw as ligolw_bayestar
-from lalinference.bayestar import timing
+from lalinference.bayestar import filter
 
 # Other imports.
 import numpy as np
@@ -177,7 +177,7 @@ for th0, th3 in theta0_theta3:
     # Create new sngl_inspiral row and initialize its columns to None,
     # which produces an empty field in the XML output.
     sngl_inspiral = lsctables.SnglInspiral()
-    for validcolumn in sngl_inspiral_table.validcolumns.iterkeys():
+    for validcolumn in sngl_inspiral_table.validcolumns.keys():
         setattr(sngl_inspiral, validcolumn, None)
 
     # Populate the row's fields.
@@ -190,7 +190,7 @@ for th0, th3 in theta0_theta3:
     sngl_inspiral.mchirp = mchirp
     sngl_inspiral.eta = eta
     sngl_inspiral.chi = chi
-    sngl_inspiral.f_final = timing.get_f_lso(mass1, mass2)
+    sngl_inspiral.f_final = filter.get_f_lso(mass1, mass2)
 
     # Add the row to the table in the document.
     sngl_inspiral_table.append(sngl_inspiral)

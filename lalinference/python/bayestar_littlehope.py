@@ -114,7 +114,7 @@ import numpy as np
 progress = glue.text_progress_bar.ProgressBar()
 
 template_approximant, template_amplitude_order, template_phase_order = \
-    timing.get_approximant_and_orders_from_string(opts.waveform)
+    filter.get_approximant_and_orders_from_string(opts.waveform)
 
 
 # FIXME: sample rate could be a command line option; template duration and data
@@ -204,7 +204,7 @@ xmldoc = ligolw_utils.load_filename(
 psds = lal.series.read_psd_xmldoc(xmldoc)
 psds = dict(
     (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
-    for key, psd in psds.iteritems() if psd is not None)
+    for key, psd in psds.items() if psd is not None)
 
 # Detector noise PSD model
 class psdfunc(object):
@@ -262,8 +262,8 @@ def detect_sngls(ifos, data, horizons, templates):
         rho = filter.fftfilt(zW, x.data.data)[len(zW)-1:]
 
         # Find maximum index
-        i0 = long(round(-(template_duration + float(x.epoch - end_time)) * sample_rate))
-        di = long(round(sample_rate * opts.trigger_window))
+        i0 = int(round(-(template_duration + float(x.epoch - end_time)) * sample_rate))
+        di = int(round(sample_rate * opts.trigger_window))
         imax = np.argmax(filter.abs2(rho[i0 - di:i0 + di])) + i0 - di
 
         # If SNR < threshold, then the injection is not found. Skip it.
@@ -276,7 +276,7 @@ def detect_sngls(ifos, data, horizons, templates):
 
         # Add SnglInspiral entry.
         sngl_inspiral = lsctables.SnglInspiral()
-        for validcolumn in sngl_inspiral_table.validcolumns.iterkeys():
+        for validcolumn in sngl_inspiral_table.validcolumns.keys():
             setattr(sngl_inspiral, validcolumn, None)
         sngl_inspiral.process_id = process.process_id
         sngl_inspiral.ifo = ifo
@@ -324,7 +324,7 @@ handler = keyboard_interrupt_handler()
 for i_sim_inspiral in progress.iterate(range(n_injections), format='injection %d of ' + str(n_injections)):
 
     if handler.interrupted:
-        print 'warning: interrupted, cleaning up'
+        print('warning: interrupted, cleaning up')
         break
 
     if opts.repeat_first_injection:
@@ -352,7 +352,7 @@ for i_sim_inspiral in progress.iterate(range(n_injections), format='injection %d
         end_time = lal.LIGOTimeGPS(sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
         epoch = end_time - 256 # GPS start time of data
         gmst = lal.GreenwichMeanSiderealTime(end_time)
-        approximant, amplitude_order, phase_order = timing.get_approximant_and_orders_from_string(sim_inspiral.waveform)
+        approximant, amplitude_order, phase_order = filter.get_approximant_and_orders_from_string(sim_inspiral.waveform)
         if approximant != lalsimulation.TaylorT4:
             raise ValueError("unrecognized approximant")
 

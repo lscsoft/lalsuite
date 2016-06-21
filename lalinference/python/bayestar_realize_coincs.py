@@ -134,7 +134,7 @@ xmldoc = ligolw_utils.load_filename(
 psds = lal.series.read_psd_xmldoc(xmldoc)
 psds = dict(
     (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
-    for key, psd in psds.iteritems() if psd is not None)
+    for key, psd in psds.items() if psd is not None)
 
 # Read injection file.
 progress.update(-1, 'reading ' + infilename)
@@ -195,17 +195,15 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
     gmst = lal.GreenwichMeanSiderealTime(epoch)
     waveform = sim_inspiral.waveform if opts.waveform is None else opts.waveform
-    approximant, amplitude_order, phase_order = \
-        timing.get_approximant_and_orders_from_string(waveform)
 
     # Pre-evaluate some trigonometric functions that we will need.
     u = np.cos(inc)
     u2 = np.square(u)
 
     # Signal models for each detector.
+    H = filter.sngl_inspiral_psd(sim_inspiral, waveform, f_low)
     signal_models = [
-        timing.SignalModel(m1, m2, psds[ifo], f_low,
-        approximant, amplitude_order, phase_order)
+        timing.SignalModel(filter.signal_psd_series(H, psds[ifo]))
         for ifo in opts.detector]
 
     # Get SNR=1 horizon distances for each detector.
@@ -262,7 +260,7 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
 
         # Create SnglInspiral entry.
         sngl_inspiral = lsctables.SnglInspiral()
-        for validcolumn in sngl_inspiral_table.validcolumns.iterkeys():
+        for validcolumn in sngl_inspiral_table.validcolumns.keys():
             setattr(sngl_inspiral, validcolumn, None)
         sngl_inspiral.process_id = process.process_id
         sngl_inspiral.ifo = ifo

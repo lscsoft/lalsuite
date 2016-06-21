@@ -10,17 +10,9 @@ SUBDIRS = \
 if LALPULSAR
 if LALINFERENCE
 
-pulsar_progs = lalinference_nest \
-	lalinference_bench \
-	lalinference_datadump \
-	lalinference_burst
-lalinference_nest_SOURCES = LALInferenceNest.c
-lalinference_burst_SOURCES = LALInferenceBurst.c
-lalinference_datadump_SOURCES = LALInferenceDataDump.c
-lalinference_bench_SOURCES = LALInferenceBench.c
 if HAVE_BAMBI
 if !HAVE_BAMBI_MPI
-pulsar_progs += lalinference_bambi
+pulsar_progs = lalinference_bambi
 lalinference_bambi_SOURCES = LALInferenceBAMBI.c
 lalinference_bambi_LDADD = ${BAMBI_LIBS}
 endif # bambi_mpi

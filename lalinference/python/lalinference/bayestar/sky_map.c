@@ -39,7 +39,7 @@ typedef struct {
 static void premalloced_dealloc(premalloced_object *self)
 {
     free(self->data);
-    self->ob_type->tp_free((PyObject *) self);
+    Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 
@@ -502,7 +502,7 @@ fail: /* Cleanup */
 static PyObject *test(
     PyObject *NPY_UNUSED(module), PyObject *NPY_UNUSED(arg))
 {
-    return PyInt_FromLong(bayestar_test());
+    return PyLong_FromLong(bayestar_test());
 }
 
 
@@ -528,7 +528,7 @@ typedef struct {
 static void LogRadialIntegrator_dealloc(LogRadialIntegrator *self)
 {
     log_radial_integrator_free(self->integrator);
-    self->ob_type->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 
@@ -576,8 +576,7 @@ static PyObject *LogRadialIntegrator_call(
 
 
 static PyTypeObject LogRadialIntegrator_type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                      /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "sky_map.LogRadialIntegrator",          /*tp_name*/
     sizeof(LogRadialIntegrator),            /*tp_basicsize*/
     0,                                      /*tp_itemsize*/
@@ -661,7 +660,7 @@ PyMODINIT_FUNC PyInit_sky_map(void)
 #if PY_MAJOR_VERSION < 3
     module = Py_InitModule(modulename, methods);
 #else
-    module = PyModule_Create(moduledef);
+    module = PyModule_Create(&moduledef);
 #endif
 
     Py_INCREF(&LogRadialIntegrator_type);

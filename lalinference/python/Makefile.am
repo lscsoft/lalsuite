@@ -28,6 +28,7 @@ pybin_scripts = \
 	rapidpe_compute_intrinsic_fisher \
 	rapidpe_compute_intrinsic_grid \
 	rapidpe_calculate_overlap \
+	imrtgr_imr_consistency_test \
 	$(END_OF_LIST)
 
 endif

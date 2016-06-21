@@ -86,9 +86,8 @@ for detector in detectors:
     psd_name = getattr(opts, detector)
     if psd_name is None:
         continue
-    psd_func = getattr(lalsimulation, psd_name_prefix + psd_name)
-    series = lal.CreateREAL8FrequencySeries(None, 0, 0, opts.df, lal.SecondUnit, n)
-    series.data.data = vectorize_swig_psd_func(psd_func)(f)
+    series = lal.CreateREAL8FrequencySeries(psd_name, 0, 0, opts.df, lal.SecondUnit, n)
+    series.data.data = vectorize_swig_psd_func(psd_name_prefix + psd_name)(f)
     psds[detector] = series
 
 glue.ligolw.utils.write_filename(

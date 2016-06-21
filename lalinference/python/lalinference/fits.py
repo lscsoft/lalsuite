@@ -59,15 +59,12 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 __all__ = ("read_sky_map", "write_sky_map")
 
 
-import gzip
 import math
-import os
-import shutil
-import tempfile
 import healpy as hp
 from glue.ligolw import lsctables
 import time
 import lal
+import six
 
 
 def gps_to_iso8601(gps_time):
@@ -194,7 +191,7 @@ def write_sky_map(filename, prob, nest=False, objid=None, url=None, instruments=
             'URL of this event'))
 
     if instruments is not None:
-        if not isinstance(instruments, basestring):
+        if not isinstance(instruments, six.string_types):
             instruments = str(lsctables.ifos_from_instrument_set(instruments))
         extra_header.append(('INSTRUME', instruments,
             'Instruments that triggered this event'))
@@ -325,6 +322,7 @@ def read_sky_map(filename, nest=False):
 
 
 if __name__ == '__main__':
+    import os
     import healpy as hp
     import numpy as np
     nside = 128
@@ -340,4 +338,4 @@ if __name__ == '__main__':
         origin='LIGO Scientific Collaboration',
         runtime=21.5)
 
-    print read_sky_map('test.fits.gz')
+    print(read_sky_map('test.fits.gz'))

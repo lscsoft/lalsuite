@@ -127,13 +127,13 @@ if __name__ == '__main__':
 
     progress.update(-1, 'spawning workers')
     if opts.jobs == 1:
-        from itertools import imap
+        from six.moves import map
     else:
         try:
             from emcee.interruptible_pool import InterruptiblePool as Pool
         except ImportError:
             from multiprocessing import Pool
-        imap = Pool(
+        map = Pool(
             opts.jobs, startup,
             (command.sqlite_get_filename(db), contours, modes, areas)
             ).imap_unordered
@@ -150,7 +150,7 @@ if __name__ == '__main__':
 
     count_records = 0
     progress.max = len(fitsfilenames)
-    for record in imap(process, fitsfilenames):
+    for record in map(process, fitsfilenames):
         count_records += 1
         progress.update(count_records, record[0])
         print(*record, sep="\t", file=opts.output)

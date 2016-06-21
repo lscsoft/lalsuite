@@ -344,10 +344,11 @@ if opts.result_file:
 # Build (or retrieve) the initial region
 #
 if opts.refine or opts.prerefine:
-    init_region = amrlib.load_init_region(opts.refine or opts.prerefine)
+    init_region, region_labels = amrlib.load_init_region(opts.refine or opts.prerefine, get_labels=True)
 else:
     ####### BEGIN INITIAL GRID CODE #########
     init_region, idx = determine_region(pt, pts, ovrlp, opts.overlap_threshold, expand_prms)
+    region_labels = intr_prms
     # FIXME: To be reimplemented in a different way
     #if opts.expand_param is not None:
         #expand_param(init_region, opts.expand_param)
@@ -370,12 +371,13 @@ else:
 
 extent_str = " ".join("(%f, %f)" % bnd for bnd in map(tuple, init_region._bounds))
 center_str = " ".join(map(str, init_region._center))
-print "Initial region has center " + center_str + " and extent " + extent_str
+label_str = ", ".join(region_labels)
+print "Initial region (" + label_str + ") has center " + center_str + " and extent " + extent_str
 
 #### BEGIN REFINEMENT OF RESULTS #########
 
 if opts.result_file is not None:
-    (prev_cells, spacing), level = amrlib.load_grid_level(opts.refine or opts.prerefine, -1)
+    (prev_cells, spacing), level, _ = amrlib.load_grid_level(opts.refine or opts.prerefine, -1, True)
 
     selected = numpy.array([c._center for c in prev_cells])
     selected = amrlib.apply_transform(selected, intr_prms, opts.distance_coordinates)
@@ -419,11 +421,11 @@ grid = amrlib.apply_inv_transform(grid, intr_prms, opts.distance_coordinates)
 
 cells = amrlib.grid_to_cells(grid, spacing)
 if opts.setup:
-    grid_group = amrlib.init_grid_hdf(init_region, opts.setup + ".hdf", opts.overlap_threshold, opts.distance_coordinates)
-    level = amrlib.save_grid_cells_hdf(grid_group, cells, "mass1_mass2")
+    grid_group = amrlib.init_grid_hdf(init_region, opts.setup + ".hdf", opts.overlap_threshold, opts.distance_coordinates, intr_prms=intr_prms)
+    level = amrlib.save_grid_cells_hdf(grid_group, cells, "mass1_mass2", intr_prms=intr_prms)
 else:
-    grp = amrlib.load_grid_level(opts.refine, None)
-    level = amrlib.save_grid_cells_hdf(grp, cells, "mass1_mass2")
+    grp, _ = amrlib.load_grid_level(opts.refine, None, True)
+    level = amrlib.save_grid_cells_hdf(grp, cells, "mass1_mass2", intr_prms)
 
 print "Selected %d cells for further analysis." % len(cells)
 if opts.setup:

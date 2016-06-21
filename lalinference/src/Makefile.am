@@ -3,6 +3,13 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
+LDADD = liblalinference.la
+
+lalinference_nest_SOURCES = LALInferenceNest.c
+lalinference_burst_SOURCES = LALInferenceBurst.c
+lalinference_datadump_SOURCES = LALInferenceDataDump.c
+lalinference_bench_SOURCES = LALInferenceBench.c
+
 if LALXML
 XMLHDR = LALInferenceXML.h
 XMLSRC = LALInferenceXML.c
@@ -37,6 +44,7 @@ pkginclude_HEADERS = \
 	LALInferenceCalibrationErrors.h \
 	LALInferenceGenerateROQ.h \
 	LALInferenceBurstRoutines.h \
+	LALInferenceHDF5.h \
 	$(BAYESTARHDR) \
 	$(XMLHDR)
 
@@ -61,6 +69,7 @@ liblalinference_la_SOURCES = \
 	LALInferenceCalibrationErrors.c \
 	LALInferenceGenerateROQ.c \
 	LALInferenceBurstRoutines.c \
+	LALInferenceHDF5.c \
 	DetectorFixedSkyCoords.c \
 	logaddexp.h \
 	$(BAYESTARSRC) \
@@ -68,6 +77,12 @@ liblalinference_la_SOURCES = \
 nodist_liblalinference_la_SOURCES = LALInferenceBuildInfo.c
 
 liblalinference_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
+
+bin_PROGRAMS = \
+	lalinference_nest \
+	lalinference_burst \
+	lalinference_datadump \
+	lalinference_bench
 
 EXTRA_DIST = \
 	LALInferenceConfig.h.in \
