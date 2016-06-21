@@ -116,9 +116,10 @@ for sampler in samps:
     cp.set('analysis','engine',sampler)
     for p in dict(cp.items('paths')).keys():
         #current value
-        out=cp.get('paths',p)
-        # append approximant prefix 
-        cp.set('paths',p,os.path.join(out,sampler,app))
+        if 'webdir' in p or 'url' in p or 'basedir' in p or 'daglogdir' in p:
+          out=cp.get('paths',p)
+          # append approximant prefix 
+          cp.set('paths',p,os.path.join(out,sampler,app))
 
     if opts.condor_submit and opts.pegasus_submit:
         print 'Error: Please only specify one of --condor-submit or --pegasus-submit'

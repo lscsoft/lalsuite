@@ -43,6 +43,7 @@ pybin_scripts = \
 	lalapps_nest_pipe \
 	lalapps_vo_nest2pos \
 	lalinference_pipe \
+        lalinference_pipe_roq \
 	lalapps_nest2pos \
 	lalapps_merge_nested_sampling_runs \
 	lalinference_burst_pp_pipe \
@@ -56,7 +57,7 @@ pkgpython_PYTHON = \
 	nest_utils.py \
 	combine_evidence.py \
 	nest2pos.py \
-	lalinference_pipe_utils.py
+	lalinference_pipe_utils.py 
 endif
 
 EXTRA_DIST += \

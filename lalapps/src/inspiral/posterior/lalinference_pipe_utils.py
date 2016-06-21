@@ -2100,7 +2100,7 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       params = np.genfromtxt(str(cp.get('paths','roq_b_matrix_directory')+'/params.dat'), names=True)
       computeroqweights_memory=str(
       os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_linear.npy'))
-      + ((params['fhigh']-params['flow'])*params['seglen'])*(dt/time_step)
+      + ((params['fhigh']-params['flow'])*params['seglen'])*(float(dt)/float(time_step))
       + os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_quadratic.npy'))
       )
     self.add_condor_cmd('request_memory',computeroqweights_memory)
