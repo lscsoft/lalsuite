@@ -59,6 +59,11 @@ parser.add_argument('--waveform',
     'sim_inspiral table)')
 parser.add_argument('--snr-threshold', type=float, default=4.,
     help='Single-detector SNR threshold [default: %(default)s]')
+parser.add_argument('--net-snr-threshold', type=float, default=12.,
+    help='Network SNR threshold [default: %(default)s]')
+parser.add_argument('--keep-subthreshold', action='store_true',
+    help='Keep sub-threshold triggers that do not contribute to network SNR '
+    '[default: %(default)s]')
 parser.add_argument('--min-triggers', type=int, default=2,
     help='Emit coincidences only when at least this many triggers '
     'are found [default: %(default)s]')
@@ -246,13 +251,18 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         raise RuntimeError("This code should not be reached.")
 
     sngl_inspirals = []
+    net_snr = 0.0
+    count_triggers = 0
 
     # Loop over individual detectors and create SnglInspiral entries.
     for ifo, abs_snr, arg_snr, toa, horizon in zip(
             opts.detector, abs_snrs, arg_snrs, toas, horizons):
 
         # If SNR < threshold, then the injection is not found. Skip it.
-        if abs_snr < opts.snr_threshold:
+        if abs_snr >= opts.snr_threshold:
+            count_triggers += 1
+            net_snr += np.square(abs_snr)
+        elif not opts.keep_subthreshold:
             continue
 
         # Create SnglInspiral entry.
@@ -270,8 +280,14 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         sngl_inspiral.eff_distance = horizon / sngl_inspiral.snr
         sngl_inspirals.append(sngl_inspiral)
 
+    net_snr = np.sqrt(net_snr)
+
     # If too few triggers were found, then skip this event.
-    if len(sngl_inspirals) < opts.min_triggers:
+    if count_triggers < opts.min_triggers:
+        continue
+
+    # If network SNR < threshold, then the injection is not found. Skip it.
+    if net_snr < opts.net_snr_threshold:
         continue
 
     # Add Coinc table entry.
