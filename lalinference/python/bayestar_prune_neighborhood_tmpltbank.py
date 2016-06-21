@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -64,19 +64,19 @@ import numpy as np
 from scipy import linalg
 
 # BAYESTAR imports.
-from lalinference import bayestar.ligolw
+from lalinference.bayestar import ligolw as ligolw_bayestar
 
 
 # Read input file.
-xmldoc = ligolw_utils.load_filename(,
-    infilename, contenthandler=bayestar.ligolw.LSCTablesContentHandler)
+xmldoc = ligolw_utils.load_filename(
+    infilename, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Write process metadata to output file.
 process = ligolw_process.register_to_xmldoc(xmldoc, parser.get_prog_name(),
     opts.__dict__)
 
 # Determine the low frequency cutoff from the template bank file.
-f_low = bayestar.ligolw.get_template_bank_f_low(xmldoc)
+f_low = ligolw_bayestar.get_template_bank_f_low(xmldoc)
 
 # Get the SnglInspiral table.
 sngl_inspiral_table = ligolw_table.get_table(xmldoc,

@@ -22,6 +22,7 @@ test_scripts += test_detframe.py
 test_scripts += test_bayestar_sample_model_psd.sh
 test_scripts += test_bayestar_realize_coincs.sh
 test_scripts += test_bayestar_sim_to_tmpltbank.sh
+test_scripts += test_bayestar_prune_neighborhood_tmpltbank.sh
 # test_scripts += test_bayestar_lattice_tmpltbank.sh # FIXME: broken
 if HAVE_CHEALPIX
 test_scripts += test_bayestar.py
@@ -54,6 +55,7 @@ MOSTLYCLEANFILES = \
 	test_bayestar_sample_model_psd.xml \
 	test_bayestar_realize_coincs.xml \
 	test_bayestar_sim_to_tmpltbank.xml \
+	test_bayestar_prune_neighborhood_tmpltbank.xml \
 	test_bayestar_lattice_tmpltbank.xml \
 	test_result_images/pp_plot_default.png \
 	test_result_images/pp_plot_lines.png \
