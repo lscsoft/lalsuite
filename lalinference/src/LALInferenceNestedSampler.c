@@ -876,7 +876,16 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outhdf")))
     {
       LALH5File *h5file=XLALH5FileOpen(ppt->value, "w");
-      XLALInferenceVariablesArray2H5Group(h5file, output_array, N_output_array, LALInferenceHDF5NestedSamplesGroupName);
+      /* Create group heirarchy */
+      char runID[256]="";
+      if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--runid")))
+        snprintf(runID,255,"%s_%s","lalinference_nest",ppt->value);
+      else
+        snprintf(runID,255,"lalinference_nest");
+        
+      LALH5File *groupPtr = LALInferenceCreateHDF5GroupStructure(h5file, "lalinference", runID);
+      /* Create run identifier group */
+      LALInferenceVariablesArray2H5Group(groupPtr, output_array, N_output_array, LALInferenceHDF5NestedSamplesGroupName);
       /* TODO: Write metadata */
       XLALH5FileClose(h5file);
     }

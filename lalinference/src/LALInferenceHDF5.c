@@ -24,7 +24,15 @@
 const char LALInferenceHDF5PosteriorSamplesGroupName[]="posterior_samples";
 const char LALInferenceHDF5NestedSamplesGroupName[]="nested_samples";
 
-int XLALInferenceVariablesArray2H5Group(LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N, const char *GroupName)
+LALH5File *LALInferenceCreateHDF5GroupStructure(LALH5File *h5file, const char *codename, const char *runID)
+{
+  LALH5File *codeGroup = XLALH5GroupOpen(h5file, codename);
+  LALH5File *runGroup = XLALH5GroupOpen(codeGroup, runID);
+  return(runGroup);
+}
+
+
+int LALInferenceVariablesArray2H5Group(LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N, const char *GroupName)
 {
   LALH5File *groupPtr=NULL;
   LALInferenceVariableItem *varitem=NULL;
