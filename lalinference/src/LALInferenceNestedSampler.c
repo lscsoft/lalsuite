@@ -882,7 +882,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         snprintf(runID,255,"%s_%s","lalinference_nest",ppt->value);
       else
         snprintf(runID,255,"lalinference_nest");
-        
+
       LALH5File *groupPtr = LALInferenceCreateHDF5GroupStructure(h5file, "lalinference", runID);
       /* Create run identifier group */
       LALInferenceVariablesArray2H5Group(groupPtr, output_array, N_output_array, LALInferenceHDF5NestedSamplesGroupName);

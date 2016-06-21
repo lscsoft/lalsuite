@@ -26,6 +26,9 @@
 
 int LALInferenceVariablesArray2H5Group(LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N, const char *GroupName);
 
+int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables ***varsArray, UINT4 *N);
+
+
 /**
  * Create a HDF5 heirarchy in the given LALH5File reference
  * /codename/runID/
