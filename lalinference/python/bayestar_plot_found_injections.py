@@ -26,7 +26,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 import argparse
 from lalinference.bayestar import command
 
-parser = argparse.ArgumentParser()
+parser = command.ArgumentParser()
 parser.add_argument('--cumulative', action='store_true')
 parser.add_argument('--normed', action='store_true')
 parser.add_argument('--group-by', choices=('far', 'snr'), metavar='far|snr',
