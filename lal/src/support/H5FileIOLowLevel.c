@@ -883,7 +883,8 @@ int XLALH5FileAddScalarAttribute(LALH5File *file, const char *key, const void *v
  * @param names Pointer a list of strings to be returned to the user. Memory
  * should be freed by the caller.
  * @param files Pointer to a #LALH5File from which the attributes will be added.
- * @retval Number of names read.
+ * @param N Pointer to a UINT4 where the number of datasets will be recorded
+ * @retval 0 Success.
  * @retval -1 Failure.
  */
 int XLALH5FileGetAttributeNames(LALH5File *file, char *** names, UINT4 *N)
