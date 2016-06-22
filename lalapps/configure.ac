@@ -403,7 +403,7 @@ AS_IF(
 )
 # add compiler flags for OpenMP
 AS_IF(
-  [test "x$OPENMP_CFLAGS" = "x"],
+  [test "x$OPENMP_CFLAGS" = "x" -a "x$ac_cv_prog_[]_AC_LANG_ABBREV[]_openmp" != "xnone needed"],
   [
     OPENMP_ENABLE_VAL="DISABLED"
     LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
