@@ -35,11 +35,10 @@ from __future__ import print_function
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
+# Command line interface.
+import argparse
+from lalinference.bayestar import command
 if __name__ == '__main__':
-    # Command line interface.
-    import argparse
-    from lalinference.bayestar import command
-
     parser = command.ArgumentParser()
     parser.add_argument(
         '-o', '--output', metavar='OUT.dat',
@@ -104,7 +103,7 @@ def process(fitsfilename):
     if row is None:
         raise ValueError(
             "No database record found for event '{0}' in '{1}'".format(
-            coinc_event_id, sqlite_get_filename(db)))
+            coinc_event_id, command.sqlite_get_filename(db)))
     simulation_id, true_ra, true_dec, far, snr = row
     searched_area, searched_prob, offset, searched_modes, contour_areas, area_probs, contour_modes = postprocess.find_injection(
         sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours],
