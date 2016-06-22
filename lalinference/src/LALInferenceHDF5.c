@@ -34,17 +34,27 @@ LALH5File *LALInferenceH5CreateGroupStructure(LALH5File *h5file, const char *cod
 int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables ***varsArray, UINT4 *N)
 {
   char **dataset_names=NULL;
+  UINT4 Ndatasets;
+  XLALH5FileGetDatasetNames(group, &dataset_names, &Ndatasets);
+  if(Ndatasets==0)
+    XLAL_ERROR(XLAL_EFAILED,"No datasets read from HDF5 group\n");
   char **fixed_names=NULL;
   UINT4 Nfixed=0;
   LALInferenceVariables **va=NULL;
   UINT4 i=0,j=0;
   UINT4 Nsamples=0;
   
+  /* Read the number of samples to be created */
+  LALH5Dataset *dset=XLALH5DatasetRead(group, dataset_names[0]);
+  Nsamples = XLALH5DatasetQueryNPoints(dset);
+  va=XLALCalloc(Nsamples,sizeof(LALInferenceVariables *));
+  for(i=0;i<Nsamples;i++) va[i]=XLALCalloc(1,sizeof(LALInferenceVariables));
+  
   /* Read the group datasets in as arrays */
-  for(i=0;dataset_names[i];i++)
+  for(i=0;i<Ndatasets;i++)
   {
     char *pname=dataset_names[i];
-    LALH5Dataset *dset = XLALH5DatasetRead(group, pname);
+    dset = XLALH5DatasetRead(group, pname);
     LALTYPECODE LALtype = XLALH5DatasetQueryType(dset);
     LALInferenceParamVaryType varyType = XLALH5DatasetQueryINT4AttributeValue(dset,"vary_type");;
     switch(LALtype)
