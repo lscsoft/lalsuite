@@ -919,6 +919,7 @@ int XLALH5FileGetAttributeNames(LALH5File *file, char *** names, UINT4 *N)
 #endif
 }
 
+
 /**
  * @brief Adds a string attribute to a #LALH5File
  * @details
@@ -1291,6 +1292,61 @@ int XLALH5DatasetWrite(LALH5Dataset *dset, void *data)
 	if (H5Dwrite(dset->dataset_id, dset->dtype_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not write data to dataset");
 	return 0;
+#endif
+}
+
+/**
+ * @brief Gets dataset names from a #LALH5File
+ * @details
+ * This routine returns the names of all datasets in a $LALH%File
+ * @param names Pointer a list of strings to be returned to the user. Memory
+ * should be freed by the caller.
+ * @param files Pointer to a UINT4 where the number of datasets will be recorded
+ * @retval 0 Success.
+ * @retval -1 Failure.
+ */
+int XLALH5FileGetDatasetNames(LALH5File *file, char *** names, UINT4 *N)
+{
+#ifndef HAVE_HDF5
+	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
+#else
+    hsize_t ng;
+    int ns;
+    int otype;
+    int i;
+
+	if (file == NULL)
+		XLAL_ERROR(XLAL_EFAULT);
+	if (names != NULL)
+		XLAL_ERROR(XLAL_EFAULT);
+
+    H5Gget_num_objs(file->file_id, &ng);
+    *N = ng;
+
+    /*
+     *  Filter objects that don't meet our requirements
+     */
+    for (i = 0; i < (int)ng; i++) {
+        otype = H5Gget_objtype_by_idx(file->file_id, (size_t)i);
+        if (otype != H5G_DATASET) {
+            (*N)--;
+        }
+    }
+    char ** namelist = (char**) XLALMalloc((*N) * sizeof(*names));
+
+    for (i = 0; i < (int)ng; i++) {
+        otype = H5Gget_objtype_by_idx(file->file_id, (size_t)i);
+        if (otype != H5G_DATASET) {
+            continue;
+        }
+
+        ns = H5Gget_objname_by_idx(file->file_id, (size_t)i, NULL, 0) + 1;
+        namelist[i] = (char*) XLALMalloc(ns * sizeof(namelist[i]));
+        H5Gget_objname_by_idx(file->file_id, (size_t)i, namelist[i], ns);
+    }
+
+  *names = namelist;
+  return(XLAL_SUCCESS);
 #endif
 }
 
