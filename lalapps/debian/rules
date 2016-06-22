@@ -16,6 +16,7 @@ override_dh_auto_install:
 	    --sysconfdir=/etc \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 	    --enable-cfitsio \
+	    --enable-openmp \
 	    --disable-gcc-flags && \
 	(grep . /dev/null `find . -name config.log`; true) && \
 	$(MAKE) V=1 && \
