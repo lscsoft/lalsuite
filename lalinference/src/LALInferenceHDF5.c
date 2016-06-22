@@ -35,6 +35,7 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
 {
   char **dataset_names=NULL;
   char **fixed_names=NULL;
+  UINT4 Nfixed=0;
   LALInferenceVariables **va=NULL;
   UINT4 i=0,j=0;
   UINT4 Nsamples=0;
@@ -101,6 +102,62 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
   /* end loop over parameter names */
   
   /* Read fixed parameters from attributes */
+  XLALH5FileGetAttributeNames(group, &fixed_names, &Nfixed);
+  for(i=0;i<Nfixed;i++)
+  {
+    char *pname=fixed_names[i];
+    LALTYPECODE LALtype = XLALH5FileQueryScalarAttributeType(group, pname);
+    switch(LALtype)
+    {
+      case(LAL_D_TYPE_CODE):
+      {
+        REAL8 value=0.0;
+        XLALH5FileQueryScalarAttributeValue(&value, group,pname);
+        for(j=0;j<Nsamples;j++) LALInferenceAddREAL8Variable(va[j],pname,value,LALINFERENCE_PARAM_FIXED);
+        break;
+      }
+      case(LAL_S_TYPE_CODE):
+      {
+        REAL4 value=0.0;
+        XLALH5FileQueryScalarAttributeValue(&value, group,pname);
+        for(j=0;j<Nsamples;j++) LALInferenceAddREAL4Variable(va[j],pname,value,LALINFERENCE_PARAM_FIXED);
+        break;
+      }
+      case(LAL_C_TYPE_CODE):
+      {
+        COMPLEX8 value=0.0;
+        XLALH5FileQueryScalarAttributeValue(&value, group,pname);
+        for(j=0;j<Nsamples;j++) LALInferenceAddCOMPLEX8Variable(va[j],pname,value,LALINFERENCE_PARAM_FIXED);
+        break;
+      }
+      case(LAL_Z_TYPE_CODE):
+      {
+        COMPLEX16 value=0.0;
+        XLALH5FileQueryScalarAttributeValue(&value, group,pname);
+        for(j=0;j<Nsamples;j++) LALInferenceAddCOMPLEX16Variable(va[j],pname,value,LALINFERENCE_PARAM_FIXED);
+        break;
+      }
+      case(LAL_I4_TYPE_CODE):
+      {
+        INT4 value=0;
+        XLALH5FileQueryScalarAttributeValue(&value, group,pname);
+        for(j=0;j<Nsamples;j++) LALInferenceAddINT4Variable(va[j],pname,value,LALINFERENCE_PARAM_FIXED);
+        break;
+      }
+      case(LAL_U4_TYPE_CODE):
+      {
+        UINT4 value=0;
+        XLALH5FileQueryScalarAttributeValue(&value, group,pname);
+        for(j=0;j<Nsamples;j++) LALInferenceAddUINT4Variable(va[j],pname,value,LALINFERENCE_PARAM_FIXED);
+        break;
+      }
+      default:
+      {
+        XLALPrintWarning("%s: Unknown type code %i\n",__func__,LALtype);
+        break;
+      }
+    } /* End switch */
+  } /* End loop over fixed_params */
 
   
   /* Construct the array of LALInferenceVariables */
