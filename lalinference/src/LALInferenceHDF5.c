@@ -34,7 +34,7 @@ LALH5File *LALInferenceH5CreateGroupStructure(LALH5File *h5file, const char *cod
 int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables ***varsArray, UINT4 *N)
 {
   char **dataset_names=NULL;
-  UINT4 Ndatasets;
+  UINT4 Ndatasets=0;
   XLALH5FileGetDatasetNames(group, &dataset_names, &Ndatasets);
   if(Ndatasets==0)
     XLAL_ERROR(XLAL_EFAILED,"No datasets read from HDF5 group\n");
