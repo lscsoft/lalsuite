@@ -883,10 +883,17 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       else
         snprintf(runID,255,"lalinference_nest");
 
-      LALH5File *groupPtr = LALInferenceCreateHDF5GroupStructure(h5file, "lalinference", runID);
+      LALH5File *groupPtr = LALInferenceH5CreateGroupStructure(h5file, "lalinference", runID);
       /* Create run identifier group */
-      LALInferenceVariablesArray2H5Group(groupPtr, output_array, N_output_array, LALInferenceHDF5NestedSamplesGroupName);
+      LALInferenceH5VariablesArray2Group(groupPtr, output_array, N_output_array, LALInferenceHDF5NestedSamplesGroupName);
       /* TODO: Write metadata */
+      XLALH5FileAddScalarAttribute(groupPtr, "log_evidence", &logZ, LAL_D_TYPE_CODE);
+      XLALH5FileAddScalarAttribute(groupPtr, "log_bayes_factor", &logB, LAL_D_TYPE_CODE);
+      XLALH5FileAddScalarAttribute(groupPtr, "information_nats", &H, LAL_D_TYPE_CODE);
+      XLALH5FileAddScalarAttribute(groupPtr, "log_noise_evidence", &logZnoise, LAL_D_TYPE_CODE );
+      XLALH5FileAddScalarAttribute(groupPtr, "log_max_likelihood", &logLmax , LAL_D_TYPE_CODE);
+      XLALH5FileAddScalarAttribute(groupPtr, "number_live_points", &Nlive, LAL_U4_TYPE_CODE);
+
       XLALH5FileClose(h5file);
     }
   
