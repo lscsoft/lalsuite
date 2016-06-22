@@ -169,6 +169,14 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 # check for libmetaio headers
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
+# check for hdf5 support
+HDF5_ENABLE_VAL="DISABLED"
+AX_LIB_HDF5()
+if test "${with_hdf5}" = "yes"; then
+          AC_DEFINE([LAL_HDF5_ENABLED],[1],[Define if using HDF5 library])
+            HDF5_ENABLE_VAL="ENABLED"
+fi
+
 if test "$lalxml" = "true"; then
   # check for libxml2
   PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
@@ -239,6 +247,7 @@ AC_MSG_NOTICE([
 LALInference has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
+* HDF5 support is $HDF5_ENABLE_VAL
 * LALXML library support is $LALXML_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
