@@ -122,7 +122,10 @@ static int WriteNSCheckPointH5(CHAR *filename, LALInferenceRunState *runState, N
 static int ReadNSCheckPointH5(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
 {
   int retcode;
-  LALH5File *h5file = XLALH5FileOpen(filename,"r");
+  LALH5File *h5file;
+  if( access( filename, F_OK ) == -1 ) return(1);
+  XLAL_TRY(h5file = XLALH5FileOpen(filename,"r"),retcode);
+  if(retcode!=XLAL_SUCCESS) return(retcode);
   LALH5File *group = XLALH5GroupOpen(h5file,"lalinferencenest_checkpoint");
   UINT4 N_outputarray;
   LALInferenceVariables **outputarray;
