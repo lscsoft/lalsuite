@@ -24,11 +24,11 @@
 #include <lal/LALInference.h>
 #include <lal/H5FileIO.h>
 
-int LALInferenceVariablesArray2H5Group(LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N, const char *GroupName);
+int LALInferenceH5VariablesArray2Group(LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N, const char *GroupName);
 
 int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables ***varsArray, UINT4 *N);
 
-int LALInferenceVariableToAttribute(LALH5File *filePtr, LALInferenceVariables *vars, char *name);
+int LALInferenceH5VariableToAttribute(LALH5File *group, LALInferenceVariables *vars, char *name);
 
 
 /**
@@ -36,7 +36,7 @@ int LALInferenceVariableToAttribute(LALH5File *filePtr, LALInferenceVariables *v
  * /codename/runID/
  * Returns a LALH5File pointer to the runID group.
  */
-LALH5File *LALInferenceCreateHDF5GroupStructure(LALH5File *h5file, const char *codename, const char *runID);
+LALH5File *LALInferenceH5CreateGroupStructure(LALH5File *h5file, const char *codename, const char *runID);
 
 extern const char LALInferenceHDF5PosteriorSamplesGroupName[];
 extern const char LALInferenceHDF5NestedSamplesGroupName[];

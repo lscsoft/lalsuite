@@ -24,7 +24,7 @@
 const char LALInferenceHDF5PosteriorSamplesGroupName[]="posterior_samples";
 const char LALInferenceHDF5NestedSamplesGroupName[]="nested_samples";
 
-LALH5File *LALInferenceCreateHDF5GroupStructure(LALH5File *h5file, const char *codename, const char *runID)
+LALH5File *LALInferenceH5CreateGroupStructure(LALH5File *h5file, const char *codename, const char *runID)
 {
   LALH5File *codeGroup = XLALH5GroupOpen(h5file, codename);
   LALH5File *runGroup = XLALH5GroupOpen(codeGroup, runID);
@@ -166,7 +166,7 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
   return(XLAL_SUCCESS);
 }
 
-int LALInferenceVariablesArray2H5Group(LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N, const char *GroupName)
+int LALInferenceH5VariablesArray2Group(LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N, const char *GroupName)
 {
   LALH5File *groupPtr=NULL;
   LALInferenceVariableItem *varitem=NULL;
@@ -287,16 +287,16 @@ int LALInferenceVariablesArray2H5Group(LALH5File *h5file, LALInferenceVariables 
   
   for(i=0;i<Nfixed;i++)
   {
-    LALInferenceVariableToAttribute(groupPtr, varsArray[0], fixed_names[i]);
+    LALInferenceH5VariableToAttribute(groupPtr, varsArray[0], fixed_names[i]);
   } /* End loop over fixed parameters */
 
   return(XLAL_SUCCESS);
   
 }
 
-int LALInferenceVariableToAttribute(LALH5File *filePtr, LALInferenceVariables *vars, char *name)
+int LALInferenceH5VariableToAttribute(LALH5File *group, LALInferenceVariables *vars, char *name)
 {
-  if(filePtr==NULL || vars==NULL)
+  if(group==NULL || vars==NULL)
   {
     XLAL_ERROR(XLAL_EFAULT, "%s: Received NULL pointer\n",__func__);
   }
@@ -330,6 +330,7 @@ int LALInferenceVariableToAttribute(LALH5File *filePtr, LALInferenceVariables *v
       break;
     }
   } /* End switch */
-  XLALH5FileAddScalarAttribute(filePtr, name, LALInferenceGetVariable(vars,name), laltype);
+  XLALH5FileAddScalarAttribute(group, name, LALInferenceGetVariable(vars,name), laltype);
   return(XLAL_SUCCESS);
 }
+
