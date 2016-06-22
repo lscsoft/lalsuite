@@ -30,7 +30,6 @@ def read_nested_from_hdf5(nested_path_list):
     log_noise_evidences = []
     log_max_likelihoods = []
     nlive = []
-    information = []
 
     def update_metadata(level, attrs, collision='raise'):
         """Updates the sub-dictionary 'key' of 'metadata' with the values from
@@ -164,11 +163,7 @@ def write_posterior_to_hdf(posterior_path, headers, posterior, metadata,
                                  shuffle=True, compression='gzip')
         for internal_path, attributes in metadata.items():
             for key, value in attributes.items():
-                try:
-                    hdf[internal_path].attrs[key] = value
-                except:
-                    print(internal_path, run_identifier)
-                    raise
+                hdf[internal_path].attrs[key] = value
 
 
 def write_posterior_to_ascii(posterior_path, headers, posterior,
