@@ -899,7 +899,7 @@ int XLALH5FileGetAttributeNames(LALH5File *file, char *** names, UINT4 *N)
 
 	if (file == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
-	if (names != NULL)
+	if (names == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
     na = H5Aget_num_attrs(file->file_id);
@@ -1317,7 +1317,7 @@ int XLALH5FileGetDatasetNames(LALH5File *file, char *** names, UINT4 *N)
 
 	if (file == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
-	if (names != NULL)
+	if (names == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
 
     H5Gget_num_objs(file->file_id, &ng);
