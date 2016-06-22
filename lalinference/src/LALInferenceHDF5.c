@@ -287,39 +287,49 @@ int LALInferenceVariablesArray2H5Group(LALH5File *h5file, LALInferenceVariables 
   
   for(i=0;i<Nfixed;i++)
   {
-    LALInferenceVariableType type=LALInferenceGetVariableType(varsArray[0],fixed_names[i]);
-    LALTYPECODE laltype=LAL_D_TYPE_CODE;
-    switch(type)
-    {
-      case LALINFERENCE_UINT4_t:
-      {
-        laltype = LAL_U4_TYPE_CODE;
-        break;
-      }
-      case LALINFERENCE_REAL8_t:
-      {
-        laltype = LAL_D_TYPE_CODE;
-        break;
-      }
-      case LALINFERENCE_REAL4_t:
-      {
-        laltype = LAL_S_TYPE_CODE;
-        break;
-      }
-      case LALINFERENCE_INT4_t:
-      {
-        laltype = LAL_I4_TYPE_CODE;
-        break;
-      }
-      default:
-      {
-        XLALPrintWarning("LALInferenceType %i for parameter %s not implemented for HDF5 attribute, ignoring\n",type,fixed_names[i]);
-        break;
-      }
-    } /* End switch */
-    XLALH5FileAddScalarAttribute(groupPtr, fixed_names[i], LALInferenceGetVariable(varsArray[0],fixed_names[i]), laltype);
+    LALInferenceVariableToAttribute(groupPtr, varsArray[0], fixed_names[i]);
   } /* End loop over fixed parameters */
 
   return(XLAL_SUCCESS);
   
+}
+
+int LALInferenceVariableToAttribute(LALH5File *filePtr, LALInferenceVariables *vars, char *name)
+{
+  if(filePtr==NULL || vars==NULL)
+  {
+    XLAL_ERROR(XLAL_EFAULT, "%s: Received NULL pointer\n",__func__);
+  }
+  LALInferenceVariableType type=LALInferenceGetVariableType(vars,name);
+  LALTYPECODE laltype=LAL_D_TYPE_CODE;
+  switch(type)
+  {
+    case LALINFERENCE_UINT4_t:
+    {
+      laltype = LAL_U4_TYPE_CODE;
+      break;
+    }
+    case LALINFERENCE_REAL8_t:
+    {
+      laltype = LAL_D_TYPE_CODE;
+      break;
+    }
+    case LALINFERENCE_REAL4_t:
+    {
+      laltype = LAL_S_TYPE_CODE;
+      break;
+    }
+    case LALINFERENCE_INT4_t:
+    {
+      laltype = LAL_I4_TYPE_CODE;
+      break;
+    }
+    default:
+    {
+      XLALPrintWarning("LALInferenceType %i for parameter %s not implemented for HDF5 attribute, ignoring\n",type,name);
+      break;
+    }
+  } /* End switch */
+  XLALH5FileAddScalarAttribute(filePtr, name, LALInferenceGetVariable(vars,name), laltype);
+  return(XLAL_SUCCESS);
 }
