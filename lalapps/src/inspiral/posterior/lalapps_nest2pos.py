@@ -1,9 +1,9 @@
-from numpy import loadtxt, logaddexp, log, array
+from numpy import loadtxt, logaddexp, log, array, mean
 from optparse import OptionParser
-import sys
-import os
 import gzip
 import h5py
+import os
+import sys
 
 from lalinference import LALInferenceHDF5PosteriorSamplesGroupName as posterior_grp_name
 from lalinference import LALInferenceHDF5NestedSamplesGroupName as nested_grp_name
@@ -11,57 +11,230 @@ from lalapps.nest2pos import draw_posterior_many, draw_N_posterior_many, compute
 
 usage = '''%prog -N Nlive [-p posterior.dat] [-H header.txt] [--npos Npos] datafile1.dat [datafile2.dat ...]
 
-%prog takes at least one nested sampling output file and outputs posterior samples.
-\tIf more than one input file is specified, each file is converted, then posterior samples drawn
-\taccording to the evidence of each. Will output to stdout if no -p option given.
-\tIf the --npos option is used the algorithm will draw approximately that number of samples
-\tfrom the posterior. This may give repeated samples in the output file. By default, the
-\tnon-repeating algorithm is used, but that may not produce enough samples.
+%prog takes at least one nested sampling output file and outputs posterior
+\tsamples. If more than one input file is specified, each file is converted,
+\tthen posterior samples drawn according to the evidence of each. Will output
+\tto stdout if no -p option given. If the --npos option is used the algorithm
+\twill draw approximately that number of samples from the posterior. This may
+\tgive repeated samples in the output file. By default, the non-repeating
+\talgorithm is used, but that may not produce enough samples. The input and
+\toutput files may be in either HDF5 or ASCII format, with ASCII tables being
+\tdeprecated. The type will be chosen based on the file extensions.
 '''
 
 
-def getBfile(Bfile):
-    Bfile = Bfile
-    if os.access(Bfile, os.R_OK):
-        outstat = loadtxt(Bfile)
-        return outstat
+def read_nested_from_hdf5(nested_path_list):
+    headers = None
+    input_arrays = []
+    metadata = {}
+    log_noise_evidences = []
+    log_max_likelihoods = []
+    nlive = []
+    information = []
+
+    def update_metadata(level, attrs, collision='raise'):
+        """Updates the sub-dictionary 'key' of 'metadata' with the values from
+        'attrs', while enforcing that existing values are equal to those with
+        which the dict is updated.
+        """
+        if level not in metadata:
+            metadata[level] = {}
+        for key in attrs:
+            if key in metadata[level]:
+                if attrs[key] != metadata[level][key]:
+                    if collision == 'raise':
+                        raise ValueError(
+                            'Metadata mismtach on level %r for key %r:\n\t%r != %r'
+                            % (level, key, attrs[key], metadata[level][key]))
+                    elif collision == 'append':
+                        if isinstance(metadata[level][key], list):
+                            metadata[level][key].append(attrs[key])
+                        else:
+                            metadata[level][key] = [metadata[level][key], attrs[key]]
+                    elif collision == 'ignore':
+                        pass
+                    else:
+                        raise ValueError('Invalid value for collision: %r' % collision)
+            else:
+                metadata[level][key] = attrs[key]
+        return
+
+    for path in nested_path_list:
+        with h5py.File(path, 'r') as hdf:
+            # walk down the groups until the actual data is reached, storing
+            # metadata for each step.
+            current_level = 'lalinference'
+            group = hdf[current_level]
+            update_metadata(current_level, group.attrs)
+
+            if len(hdf[current_level].keys()) != 1:
+                raise KeyError('Multiple run-identifiers found: %r'
+                               % list(hdf[current_level].keys()))
+            # we ensured above that there is only one identifier in the group.
+            run_identifier = list(hdf[current_level].keys())[0]
+
+            current_level = 'lalinference/' + run_identifier
+            group = hdf[current_level]
+            update_metadata(current_level, group.attrs, collision='append')
+
+            # store the noise evidence and max likelihood seperately for later use
+            log_noise_evidences.append(group.attrs['log_noise_evidence'])
+            log_max_likelihoods.append(group.attrs['log_max_likelihood'])
+            nlive.append(group.attrs['number_live_points'])
+
+            # storing the metadata under the posterior_group name simplifies
+            # writing it into the output hdf file.
+            current_level = 'lalinference/' + run_identifier + '/' + nested_grp_name
+            current_level_posterior = 'lalinference/' + run_identifier + '/' + posterior_grp_name
+            group = hdf[current_level]
+            update_metadata(current_level_posterior, group.attrs)
+            # copy the data into memory
+            input_data_dict = {}
+            for key in group:
+                input_data_dict[key] = group[key][...]
+            # copy the parameter names and crosscheck with possible previous files
+            if headers is None:
+                headers = sorted(group.keys())
+            elif headers != sorted(group.keys()):
+                raise ValueError('Mismatch in input parameters:\n\t%r\n\t\t!=\n\t%r'
+                                 % (headers, sorted(group.keys())))
+        input_arrays.append(array([input_data_dict[key] for key in headers]).T)
+
+    # for metadata which is in a list, take the average.
+    for level in metadata:
+        for key in metadata[level]:
+            if isinstance(metadata[level][key], list):
+                metadata[level][key] = mean(metadata[level][key])
+
+    log_noise_evidence = reduce(logaddexp, log_noise_evidences)
+    log_max_likelihood = max(log_max_likelihoods)
+
+    return headers, input_arrays, log_noise_evidence, log_max_likelihood, metadata, nlive, run_identifier
+
+
+def read_nested_from_ascii(nested_path_list):
+    print('Warning: ASCII files are deprecated in favor of HDF5.')
+    default_header_path = nested_path_list[0]+'_params.txt'
+    if opts.headers is not None:
+        header_path = opts.headers
+        if not os.access(header_path, os.R_OK):
+            raise OSError('Unable to open header file: %r' % header_path)
+    elif os.access(default_header_path, os.R_OK):
+        header_path = default_header_path
     else:
-        return None
+        header_path = None
+    if header_path is None:
+        if opts.verbose:
+            print('No header file found, assuming inspnest default')
+        header = 'mchirp eta time phi0 dist ra dec psi iota logL'
+    else:
+        if opts.verbose:
+            print('Reading headers from %r' % header_path)
+        with open(header_path, 'r') as f:
+            header = f.readline()
+    headers = header.split()
+    input_arrays = map(loadtxt, nested_path_list)
+
+    log_noise_evidences = []
+    log_max_likelihoods = []
+    for path in nested_path_list:
+        path = path.replace('.gz',  '')+'_B.txt'
+        if os.access(path, os.R_OK):
+            content = loadtxt(path)
+            log_noise_evidences.append(content[2])
+            log_max_likelihoods.append(content[3])
+    if log_noise_evidences:
+        log_noise_evidence = reduce(logaddexp, log_noise_evidences)
+        log_max_likelihood = max(log_max_likelihoods)
+    else:
+        log_noise_evidence = 0
+        log_max_likelihood = 0
+
+    return headers, input_arrays, log_noise_evidence, log_max_likelihood
 
 
-def read_hdf5(nested_samples_path):
-    attr_dict = {}
-    with h5py.File(nested_samples_path, 'r') as hdf:
-        # We step through the file level by level and check uniqueness and
-        # availability. We also store the metadata, i.e. the attr dict with
-        # the corresponding path for each level and dataset.
-        group = 'lalinference'
-        assert group in hdf
-        attr_dict[group] = {key: value for key, value in hdf[group].attrs.items()}
+def write_posterior_to_hdf(posterior_path, headers, posterior, metadata,
+                           run_identifier):
+    with h5py.File(posterior_path, 'w') as hdf:
+        group = hdf.create_group('lalinference')
+        group = group.create_group(run_identifier)
+        group = group.create_group(posterior_grp_name)
+        for i, key in enumerate(headers):
+            group.create_dataset(key, data=posterior[:, i],
+                                 shuffle=True, compression='gzip')
+        for internal_path, attributes in metadata.items():
+            for key, value in attributes.items():
+                try:
+                    hdf[internal_path].attrs[key] = value
+                except:
+                    print(internal_path, run_identifier)
+                    raise
 
-        if len(hdf[group].keys()) != 1:
-            raise KeyError('Multiple run-identifiers found: %r' % list(hdf[group].keys()))
-        # we ensured above that there is only one identifier in the group.
-        run_identifier = list(hdf[group].keys())[0]
-        group += '/' + run_identifier
-        attr_dict[group] = {key: value for key, value in hdf[group].attrs.items()}
 
-        assert 'nested_samples' in hdf[group]
-        group += '/nested_samples'
-        nested_samples_group = hdf[group]
-        # The following line is commented out since nest_specific metadata
-        # doesn't make much sense for the posterior samples.
-        attr_dict[group] = {key: value for key, value in hdf[group].attrs.items()}
+def write_posterior_to_ascii(posterior_path, headers, posterior,
+                             log_bayes_factor, log_evidence,
+                             log_noise_evidence, log_max_likelihood):
+    print('Warning: HDF5 output is inactive since %r was passed as '
+          'output file. ASCII output is deprecated.' % opts.pos)
 
-        input_data_dict = {}
-        for key in nested_samples_group:
-            input_data_dict[key] = nested_samples_group[key][...]
-            attr_dict[group+'/'+key] = {key: value for key, value in hdf[group+'/'+key].attrs.items()}
-    return input_data_dict, attr_dict, run_identifier
+    # set the output number format
+    if 1 <= opts.prec <= 20:
+        prec = opts.prec
+    else:
+        prec = 14
+        print('Using default precision instead of %r.' % opts.prec)
+
+    if posterior_path is None:
+        posterior_file = sys.stdout
+    else:
+        if opts.gz:
+            posterior_file = gzip.open(posterior_path, 'wb')
+        else:
+            posterior_file = open(posterior_path, 'w')
+    for field in headers:
+        posterior_file.write('%s\t' % field)
+    posterior_file.write('\n')
+
+    for row in posterior:
+        for value in row:
+            posterior_file.write('{1:.{0}e}\t'.format(prec, value))
+        posterior_file.write('\n')
+    if opts.pos is not None:
+        posterior_file.close()
+
+    # Write out an evidence file
+    if opts.pos is not None:
+        evidence_file_path = opts.pos + '_B.txt'
+        with open(evidence_file_path, 'w') as out:
+            out.write('%f %f %f %f\n' % (log_bayes_factor, log_evidence,
+                                         log_noise_evidence, log_max_likelihood))
+    # Write out an header (git info and command line) file
+    if opts.pos is not None:
+        strout = ''
+        for dfile in datafiles:
+            fin = '%s_header.txt' % dfile
+            if os.path.isfile(fin):
+                with open(fin, 'r') as f:
+                    for l in f.readlines():
+                        strout += l
+                strout += '\n\n'
+        if strout != '':
+            with open(opts.pos + '_header.txt', 'w') as fout:
+                fout.write(strout)
+
+
+def is_hdf5(path):
+    extension = os.path.splitext(path)[1]
+    if '.h5' in extension or '.hdf' in extension:
+        return True
+    elif extension.strip().lower() == '.dat':
+        return False
+    else:
+        raise ValueError("Extension %r not recognized as HDF5 or '.dat': %r"
+                         % (extension, path))
 
 
 if __name__ == '__main__':
-    headerfilename = None
     parser = OptionParser(usage)
     parser.add_option(
         '-N', '--Nlive', action='store', type='int', dest='Nlive', default=None,
@@ -96,66 +269,46 @@ if __name__ == '__main__':
         print('No input file specified, exiting')
         sys.exit(1)
 
-    if opts.Nlive is None:
-        print('Must specify number of live points using the --Nlive option')
-        sys.exit(1)
-
-    # Determine the file format: HDF5 as the current standard or ASCII table
-    # and header file as legacy support.
-    # Load the data and generate a list of fields in the appropriate way.
-    if all('.hdf' in dfile or '.h5' in dfile for dfile in datafiles):
-        headers = None
-        inarrays = []
-        for dfile in datafiles:
-            input_data_dict, attr_dict, run_identifier = read_hdf5(dfile)
-            current_headers = sorted(input_data_dict.keys())
-            if headers is None:
-                headers = current_headers
-            else:
-                # We have the fields already, but check to avoid inconsistencies
-                if headers != current_headers:
-                    # fields in headers but not current_headers
-                    diff = set(headers) - set(current_headers)
-                    # add fields in current_headers but not headers
-                    diff = diff | (set(current_headers) - set(headers))
-                    raise ValueError('Data fields do not match between '
-                                     'inputfiles. Unique fields: %r'
-                                     % sorted(diff))
-            # check that dimensions are equal for each field
-            shape_set = set(dset.shape for dset in input_data_dict.values())
-            assert len(shape_set) == 1, repr(shape_set)
-            # convert to numpy array and store in the 'inarrays' list
-            # loadtxt was of shape (nsamples, nfields), so we transpose
-            inarrays.append(array([input_data_dict[key] for key in headers]).T)
-
-    elif all(dfile.endswith('.dat') for dfile in datafiles):
-        print('Warning: ASCII files are deprecated in favor of HDF5.')
-
-        if opts.headers is None:
-            defaultparamfilename = args[0]+'_params.txt'
-            if os.access(defaultparamfilename, os.R_OK):
-                headerfilename = defaultparamfilename
-        else:
-            headerfilename = opts.headers
-        if headerfilename is not None:
-            if not os.access(headerfilename, os.R_OK):
-                print('Unable to open header file %s!' % headerfilename)
-                sys.exit(1)
-            elif opts.verbose:
-                print('Reading headers from %s' % headerfilename)
-            headerfile = open(headerfilename, 'r')
-            headerstr = headerfile.readline()
-            headerfile.close()
-        else:  # old inspnest defaults
-            if opts.verbose:
-                print('No header file found, assuming inspnest default')
-            headerstr = 'mchirp\t eta\t time\t phi0\t dist\t ra\t dec\t psi\t iota\t logL'
-        headers = headerstr.lower().split()
-
-        # Create posterior samples for each input file
-        inarrays = map(loadtxt, datafiles)
+    if all(map(is_hdf5, datafiles)):
+        hdf_input = True
+    elif not any(map(is_hdf5, datafiles)):
+        hdf_input = False
     else:
-        raise ValueError('Input files appear to be mixed between hdf5 and ASCII.')
+        raise ValueError('Input files appear to be mixed between HDF5 and ASCII.')
+
+    if opts.pos is None:
+        hdf_output = False
+        print('No output file given, writing to stdout.')
+    else:
+        hdf_output = is_hdf5(opts.pos)
+
+    if opts.Nlive is None and not hdf_input:
+        print('Must specify number of live points using the --Nlive option if '
+              'ASCII tables are used.')
+        sys.exit(1)
+    elif hdf_input and opts.Nlive is not None:
+        print('Nlive is ignored in favor of the value in the HDF metadata.')
+
+    # Read the input file
+    if hdf_input:
+        return_values = read_nested_from_hdf5(datafiles)
+        (headers, input_arrays, log_noise_evidence, log_max_likelihood,
+         metadata, nlive, run_identifier) = return_values
+    else:
+        return_values = read_nested_from_ascii(datafiles)
+        headers, input_arrays, log_noise_evidence, log_max_likelihood = return_values
+        metadata = {}
+        nlive = [opts.Nlive for d in datafiles]
+        run_identifier = 'default_run_identifier'
+        print("Input was not read from HDF5, so no run_identifier was read. "
+              "Will fall back to 'default_run_identifier'.")
+    nlive = map(int, nlive)
+
+    # Prepare the sampler
+    lowercase_headers = [field.lower() for field in headers]
+    if 'logl' not in lowercase_headers:
+        raise KeyError("Key 'logl' not found. Available: %r" % headers)
+    logLcol = lowercase_headers.index('logl')
 
     if opts.npos is not None:
         def sampler(datas, Nlives, logLcols, **kwargs):
@@ -164,119 +317,37 @@ if __name__ == '__main__':
     else:
         sampler = draw_posterior_many
 
-    #   Preperations
-    if 'logl' not in [field.lower() for field in headers]:
-        raise KeyError("Key 'logl' not found. Available: %r" % headers)
-    logLcol = [field.lower() for field in headers].index('logl')
-
-    # set the output number format
-    if 1 <= opts.prec <= 20:
-        prec = opts.prec
-        # precision is outside a reasonable range, so just set to default of 14
-    else:
-        prec = 14
-    outformat = '%%.%de' % prec
-
     # Create the posterior from nested samples
     # inarrays has shape (nfiles, nsamples. nfields)
-    posterior = sampler(inarrays,
-                        [int(opts.Nlive) for d in datafiles],
+    posterior = sampler(input_arrays,
+                        nlive,
                         logLcols=[logLcol for d in datafiles],
                         verbose=opts.verbose)
     # posterior is a list of lists/array with overall shape (nsamples, nfields)
     posterior = array(posterior)
 
-    log_evs, log_wts = zip(*[compute_weights(data[:, logLcol], opts.Nlive) for data in inarrays])
+    log_evs, log_wts = zip(*[compute_weights(data[:, logLcol], n)
+                             for data, n in zip(input_arrays, nlive)])
     if opts.verbose:
         print('Log evidences from input files: %s' % str(log_evs))
 
     # Compute the evidence
-    if all('.hdf' in dfile or '.h5' in dfile for dfile in datafiles):
-        raise NotImplementedError
-    elif all(dfile.endswith('.dat') for dfile in datafiles):
-        # read evidence from _B files
-        Bs = map(getBfile, [d.replace('.gz',  '')+'_B.txt' for d in datafiles])
-        Bs = [b for b in Bs if b is not None]
-        meanZ = reduce(logaddexp, log_evs)-log(len(log_evs))
-        if len(Bs) > 0:  # If there were files to load, use them
-            noiseZ = reduce(logaddexp, [b[2] for b in Bs]) - log(len(Bs))
-            maxL = max([b[3] for b in Bs])
-        else:  # Otherwise fill in some placeholder data
-            noiseZ = 0
-            maxL = 0
-        meanB = meanZ-noiseZ
+    log_evidence = reduce(logaddexp, log_evs) - log(len(log_evs))
+    log_bayes_factor = log_evidence - log_noise_evidence
 
+    # Update the metadata with the new evidences
+    run_level = 'lalinference/'+run_identifier
+    if run_level not in metadata:
+        metadata[run_level] = {}
+    metadata[run_level]['log_bayes_factor'] = log_bayes_factor
+    metadata[run_level]['log_evidence'] = log_evidence
+    metadata[run_level]['log_noise_evidence'] = log_noise_evidence
+    metadata[run_level]['log_max_likelihood'] = log_max_likelihood
 
-
-    #   Write the posterior file
-    if opts.pos is None or not ('.h5' in opts.pos or '.hdf' in opts.pos):
-        print('Warning: HDF5 output is inactive since %r was passed as output '
-              'file.' % opts.pos)
-        if opts.pos is not None:
-            if opts.gz:
-                posfile = gzip.open(opts.pos+'.gz', 'wb')
-            else:
-                posfile = open(opts.pos, 'w')
-        else:
-            posfile = sys.stdout
-        for h in headers:
-            posfile.write('%s\t' % h)
-        posfile.write('\n')
-        for row in posterior:
-            for i in row:
-                outval = outformat % i
-                posfile.write('%s\t' % outval)
-            posfile.write('\n')
-        if opts.pos is not None:
-            posfile.close()
-
-        # Write out an evidence file
-        if opts.pos is not None:
-            Bfile = opts.pos+'_B.txt'
-            outB = open(Bfile, 'w')
-            outB.write('%f %f %f %f\n' % (meanB, meanZ, noiseZ, maxL))
-            outB.close()
-        # Write out an header (git info and command line) file
-        if opts.pos is not None:
-            strout = ""
-            for i in datafiles:
-                fin = "%s_header.txt" % i
-                if os.path.isfile(fin):
-                    f = open(fin)
-                    for l in f.readlines():
-                        strout += l
-                    strout += '\n\n'
-            if strout != "":
-                fout = open(opts.pos+"_header.txt", 'w')
-                fout.write(strout)
-                fout.close
-    else:  # HDF5
-        try:
-            run_identifier
-        except:
-            print("Input was not read from HDF5, so no run_identifier was "
-                  "read. Will fall back to 'default_run_identifier'.")
-            run_identifier = 'default_run_identifier'
-        try:
-            attr_dict
-        except:
-            print("Input was not read from HDF5, so no metadata was read.")
-            attr_dict = {}
-        if opts.pos is None:
-            raise ValueError('Posterior output path required.')
-
-        with h5py.File(opts.pos, 'w') as hdf:
-            group = hdf.create_group('lalinference')
-            group = group.create_group(run_identifier)
-            group.attrs.update({'log_bayes_factor': meanB,
-                                'log_evidence': meanZ,
-                                'log_noise_evidence': noiseZ,
-                                'log_max_likelihood': maxL})
-            group = group.create_group('posterior_samples')
-            for i, key in enumerate(headers):
-                group.create_dataset(key, data=posterior[:, i], shuffle=True, compression='gzip')
-            for internal_path, attributes in attr_dict.items():
-                internal_path = internal_path.replace('nested_samples', 'posterior_samples')
-                for key, value in attributes.items():
-                    hdf[internal_path].attrs[key] = value
-        # metadata, compression
+    if hdf_output:
+        write_posterior_to_hdf(opts.pos, headers, posterior, metadata,
+                               run_identifier)
+    else:
+        write_posterior_to_ascii(opts.pos, headers, posterior,
+                                 log_bayes_factor, log_evidence,
+                                 log_noise_evidence, log_max_likelihood)
