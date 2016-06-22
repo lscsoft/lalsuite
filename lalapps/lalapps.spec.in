@@ -66,6 +66,7 @@ Requires: lalpulsar >= 1.13.0
 Requires: lalpulsar-python >= 1.13.0
 Requires: lalinference >= 1.6.0
 Requires: lalinference-python >= 1.6.0
+Requires: skyarea
 Prefix: %{_prefix}
 
 %description
