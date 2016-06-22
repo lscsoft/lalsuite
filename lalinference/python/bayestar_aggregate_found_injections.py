@@ -91,7 +91,7 @@ def process(fitsfilename):
     except KeyError:
         runtime = float('nan')
 
-    simulation_id, true_ra, true_dec, far, snr = db.execute("""
+    row = db.execute("""
         SELECT DISTINCT sim.simulation_id AS simulation_id, sim.longitude AS ra, sim.latitude AS dec,
         ci.combined_far AS far, ci.snr AS snr
         FROM coinc_event_map AS cem1 INNER JOIN coinc_event_map AS cem2
@@ -101,6 +101,11 @@ def process(fitsfilename):
         WHERE cem1.table_name = 'sim_inspiral'
         AND cem2.table_name = 'coinc_event' AND cem2.event_id = ?""",
         (coinc_event_id,)).fetchone()
+    if row is None:
+        raise ValueError(
+            "No database record found for event '{0}' in '{1}'".format(
+            coinc_event_id, sqlite_get_filename(db)))
+    simulation_id, true_ra, true_dec, far, snr = row
     searched_area, searched_prob, offset, searched_modes, contour_areas, area_probs, contour_modes = postprocess.find_injection(
         sky_map, true_ra, true_dec, contours=[0.01 * p for p in contours],
         areas=areas, modes=modes, nest=metadata['nest'])
