@@ -19,12 +19,6 @@ endif
 if SWIG_BUILD_PYTHON
 #test_scripts += test_plot.py
 test_scripts += test_detframe.py
-test_scripts += test_bayestar_sample_model_psd.sh
-test_scripts += test_bayestar_realize_coincs.sh
-test_scripts += test_bayestar_sim_to_tmpltbank.sh
-test_scripts += test_bayestar_prune_neighborhood_tmpltbank.sh
-# test_scripts += test_bayestar_littlehope.sh # FIXME: broken
-# test_scripts += test_bayestar_lattice_tmpltbank.sh # FIXME: broken
 if HAVE_CHEALPIX
 test_scripts += test_bayestar.py
 endif
@@ -41,13 +35,17 @@ HL-INJECTIONS_1_TEST-1000000000-10.xml:
 	--f-lower 30 --waveform TaylorF2threePointFivePN --disable-spin \
 	--time-step 1 --user-tag TEST
 
-test_bayestar_sample_model_psd.xml: test_bayestar_sample_model_psd.sh
-
-test_bayestar_realize_coincs.sh: HL-INJECTIONS_1_TEST-1000000000-10.xml test_bayestar_sample_model_psd.xml
-
-test_bayestar_realize_coincs.xml: test_bayestar_realize_coincs.sh
-
-test_bayestar_sim_to_tmpltbank.sh: HL-INJECTIONS_1_TEST-1000000000-10.xml
+installcheck-local:
+	bayestar_sample_model_psd --H1=aLIGOZeroDetHighPower --L1=aLIGOZeroDetHighPower -o test_bayestar_sample_model_psd.xml && \
+	bayestar_realize_coincs --detector H1 L1 --reference-psd test_bayestar_sample_model_psd.xml $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_realize_coincs.xml && \
+	bayestar_sim_to_tmpltbank $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_sim_to_tmpltbank.xml && \
+	bayestar_prune_neighborhood_tmpltbank test_bayestar_sim_to_tmpltbank.xml --mass1 1.4 --mass2 1.4 --snr 8 -o test_bayestar_prune_neighborhood_tmpltbank.xml
+# bayestar_lattice_tmpltbank -o test_bayestar_lattice_tmpltbank.xml --min-mass 2.7 --max-mass 2.9
+# bayestar_littlehope $srcdir/HL-INJECTIONS_1_TEST-1000000000-10.xml \
+#     --template-bank test_bayestar_sim_to_tmpltbank.xml \
+#     --reference-psd test_bayestar_sample_model_psd.xml \
+#     --detector H1 --detector L1 --waveform TaylorF2threePointFivePN \
+#     -o test_bayestar_littlehope.xml
 
 MOSTLYCLEANFILES = \
 	*.dat \
