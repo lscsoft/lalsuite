@@ -65,6 +65,10 @@ src/LALInferenceVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version
+src/lalinference_bench
+src/lalinference_burst
+src/lalinference_datadump
+src/lalinference_nest
 src/stamp-h1
 src/stamp-h2
 swig/swiglal*
