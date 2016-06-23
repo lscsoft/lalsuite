@@ -2074,7 +2074,10 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
   Class for a ROM compute weights job
   """
   def __init__(self,cp,submitFile,logdir,dax=False):
-    time_step=0.000025
+    time_step=0.000172895418228
+    #This ensures that, for SNR < 100, a signal with bandwidth 20-4096 Hz will
+    #have a resolved time posterior assuming a chirp-like frequency evolution
+    #and aLIGO_ZDHP PSD
     dt=0.1
     exe=cp.get('condor','computeroqweights')
     pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
