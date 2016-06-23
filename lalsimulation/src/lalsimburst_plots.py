@@ -169,7 +169,7 @@ def btlwnb_example(axes1, axes2, f0, dof, duration, e, pol):
 	axes1.set_ylim((-0.015, +0.015))
 	axes1.set_xlabel(r"Time (seconds)")
 	axes1.set_ylabel(r"Strain")
-	axes1.set_title(r"$\left\langle\int(\dot{h}_{+}^{2} + \dot{h}_{\times}^{2})\,\mathrm{d}t\right\rangle = 1$, $f_{0} = %g\,\mathrm{Hz}$, $\Delta t = %g\,\mathrm{s}$, $%g\,\mathrm{DOF}$ ($\Delta f = %g\,\mathrm{Hz}$), $\epsilon = %g$, $\phi = %g \pi$" % (f0, duration, dof, bandwidth, e, pol / math.pi))
+	axes1.set_title(r"$\int(\dot{h}_{+}^{2} + \dot{h}_{\times}^{2})\,\mathrm{d}t = 1$, $f_{0} = %g\,\mathrm{Hz}$, $\Delta t = %g\,\mathrm{s}$, $%g\,\mathrm{DOF}$ ($\Delta f = %g\,\mathrm{Hz}$), $\epsilon = %g$, $\phi = %g \pi$" % (f0, duration, dof, bandwidth, e, pol / math.pi))
 	axes1.legend()
 	axes2.plot(hc.data.data, hp.data.data, color = "k")
 	axes2.set_xlim((-0.015, +0.015))
