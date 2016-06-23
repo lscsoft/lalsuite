@@ -72,7 +72,7 @@ if ',' in apps:
 else:
   apps=[apps]
 
-single_sampler=True  
+single_sampler=True
 samps=cp.get('analysis','engine')
 if ',' in samps:
   single_sampler=False
@@ -96,27 +96,29 @@ if cp.has_option('paths','roq_b_matrix_directory'):
     print "The ROQ directory %s does not seem to exist\n"%path
     sys.exit(1)
   use_roq=True
-  roq_lengths=[128,64,32,16,8,4]
+  roq_paths=os.listdir(path)
   roq_params={}
   mc_ranges={}
-  print "WARNING: Overwriting user choice of flow, srate, seglen,mc_min, mc_max and q-min"
+  def key(item): # to order the ROQ bases
+    return float(item[1]['seglen'])
 
-  for roq in roq_lengths:
-    thispath=os.path.join(path,'%ds'%roq)
-    params=os.path.join(thispath,'params.dat')
+  print "WARNING: Overwriting user choice of flow, srate, seglen,mc_min, mc_max and q-min"
+  for roq in roq_paths:
+    params=os.path.join(path,roq,'params.dat')
     roq_params[roq]=genfromtxt(params,names=True)
     mc_ranges[roq]=[float(roq_params[roq]['chirpmassmin']),float(roq_params[roq]['chirpmassmax'])]
+  ordered_roq_paths=[item[0] for item in sorted(roq_params.items(), key=key)][::-1]
   i=0
-  for roq in roq_lengths:
+  for roq in ordered_roq_paths:
     if i>0:
       # change min, just set to the max of the previous one since we have already aligned it in the previous iteration of this loop
       #mc_ranges[roq][0]+= (mc_ranges[roq_lengths[i-1]][1]-mc_ranges[roq][0])/2.
-      mc_ranges[roq][0]=mc_ranges[roq_lengths[i-1]][1]
-    if i<len(roq_lengths)-1:
-      mc_ranges[roq][1]-= (mc_ranges[roq][1]- mc_ranges[roq_lengths[i+1]][0])/2.
+      mc_ranges[roq][0]=mc_ranges[ordered_roq_paths[i-1]][1]
+    if i<len(roq_paths)-1:
+      mc_ranges[roq][1]-= (mc_ranges[roq][1]- mc_ranges[ordered_roq_paths[i+1]][0])/2.
     i+=1
 else:
-  roq_lengths=[None]
+  roq_paths=[None]
 
 fp.close()
 
@@ -129,10 +131,10 @@ if single_sampler is False or single_approx is False or use_roq is True:
 
 
 for sampler in samps:
-    
+
   for app in apps:
-    
-    for roq in roq_lengths:
+
+    for roq in roq_paths:
 
       if not os.path.isdir(os.path.join(rundir_root,sampler,app)):
         os.makedirs(os.path.join(rundir_root,sampler,app))
@@ -151,22 +153,22 @@ for sampler in samps:
           #current value
           if 'webdir' in p or 'url' in p or 'basedir' in p or 'daglogdir' in p:
             out=cp.get('paths',p)
-            # append approximant prefix 
+            # append approximant prefix
             cp.set('paths',p,os.path.join(out,sampler,app))
       # do the appropriate hacks for ROQ
       if roq is not None:
-        if not os.path.isdir(os.path.join(rundir_root,sampler,app,str(roq)+"s")):
-          os.makedirs(os.path.join(rundir_root,sampler,app,str(roq)+"s"))
-        opts.run_path=os.path.abspath(os.path.join(rundir_root,sampler,app,str(roq)+"s"))
+        if not os.path.isdir(os.path.join(rundir_root,sampler,app,roq)):
+          os.makedirs(os.path.join(rundir_root,sampler,app,roq))
+        opts.run_path=os.path.abspath(os.path.join(rundir_root,sampler,app,roq))
         for p in dict(cp.items('paths')).keys():
           #current value
           if 'webdir' in p or 'url' in p or 'basedir' in p or 'daglogdir' in p:
             out=cp.get('paths',p)
-            # append approximant prefix 
-            cp.set('paths',p,os.path.join(out,sampler,app,str(roq)+"s"))
+            # append approximant prefix
+            cp.set('paths',p,os.path.join(out,sampler,app,roq))
 
         path=cp.get('paths','roq_b_matrix_directory')
-        thispath=os.path.join(path,'%ds'%roq)
+        thispath=os.path.join(path,roq)
         cp.set('paths','roq_b_matrix_directory',thispath)
         mc_min=mc_ranges[roq][0]
         mc_max=mc_ranges[roq][1]
@@ -330,7 +332,7 @@ for sampler in samps:
         else:
           print 'Unable to submit DAX file'
       #fp.close()
-    
+
 if single_sampler is False or single_approx is False or use_roq is True:
   if(opts.dax):
     # Create a text file with the frames listed
