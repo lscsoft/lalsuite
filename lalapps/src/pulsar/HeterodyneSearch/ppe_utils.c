@@ -21,6 +21,7 @@
 /*                            HELPER FUNCTIONS                                */
 /******************************************************************************/
 
+#include "config.h"
 #include "ppe_utils.h"
 
 /** \brief Compute the noise variance for each data segment

@@ -6,6 +6,7 @@
  * \brief Pulsar model functions for use in parameter estimation codes for targeted pulsar searches.
  */
 
+#include "config.h"
 #include "ppe_models.h"
 #include <lal/SinCosLUT.h>
 

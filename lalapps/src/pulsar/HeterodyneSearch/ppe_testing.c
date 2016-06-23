@@ -7,6 +7,7 @@
  * targeted pulsar searches.
  */
 
+#include "config.h"
 #include "ppe_testing.h"
 
 /* *****************************************************************************/

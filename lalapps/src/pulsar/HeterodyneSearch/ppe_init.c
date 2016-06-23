@@ -21,6 +21,7 @@
 /*                      INITIALISATION FUNCTIONS                              */
 /******************************************************************************/
 
+#include "config.h"
 #include "ppe_init.h"
 
 /** Array for conversion from lowercase to uppercase */

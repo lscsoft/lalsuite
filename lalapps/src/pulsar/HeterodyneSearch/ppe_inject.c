@@ -21,6 +21,7 @@
 /*                       SOFTWARE INJECTION FUNCTIONS                         */
 /******************************************************************************/
 
+#include "config.h"
 #include "ppe_inject.h"
 
 /**
