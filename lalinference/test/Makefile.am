@@ -21,6 +21,18 @@ if SWIG_BUILD_PYTHON
 test_scripts += test_detframe.py
 if HAVE_CHEALPIX
 test_scripts += test_bayestar.py
+
+installcheck-local:
+	bayestar_sample_model_psd --H1=aLIGOZeroDetHighPower --L1=aLIGOZeroDetHighPower -o test_bayestar_sample_model_psd.xml && \
+	bayestar_realize_coincs --detector H1 L1 --reference-psd test_bayestar_sample_model_psd.xml $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_realize_coincs.xml && \
+	bayestar_sim_to_tmpltbank $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_sim_to_tmpltbank.xml && \
+	bayestar_prune_neighborhood_tmpltbank test_bayestar_sim_to_tmpltbank.xml --mass1 1.4 --mass2 1.4 --snr 8 -o test_bayestar_prune_neighborhood_tmpltbank.xml
+# bayestar_lattice_tmpltbank -o test_bayestar_lattice_tmpltbank.xml --min-mass 2.7 --max-mass 2.9
+# bayestar_littlehope $srcdir/HL-INJECTIONS_1_TEST-1000000000-10.xml \
+#     --template-bank test_bayestar_sim_to_tmpltbank.xml \
+#     --reference-psd test_bayestar_sample_model_psd.xml \
+#     --detector H1 --detector L1 --waveform TaylorF2threePointFivePN \
+#     -o test_bayestar_littlehope.xml
 endif
 endif
 
@@ -34,18 +46,6 @@ HL-INJECTIONS_1_TEST-1000000000-10.xml:
 	--min-distance 1e3 --max-distance 1e6 --l-distr random --i-distr uniform \
 	--f-lower 30 --waveform TaylorF2threePointFivePN --disable-spin \
 	--time-step 1 --user-tag TEST
-
-installcheck-local:
-	bayestar_sample_model_psd --H1=aLIGOZeroDetHighPower --L1=aLIGOZeroDetHighPower -o test_bayestar_sample_model_psd.xml && \
-	bayestar_realize_coincs --detector H1 L1 --reference-psd test_bayestar_sample_model_psd.xml $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_realize_coincs.xml && \
-	bayestar_sim_to_tmpltbank $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_sim_to_tmpltbank.xml && \
-	bayestar_prune_neighborhood_tmpltbank test_bayestar_sim_to_tmpltbank.xml --mass1 1.4 --mass2 1.4 --snr 8 -o test_bayestar_prune_neighborhood_tmpltbank.xml
-# bayestar_lattice_tmpltbank -o test_bayestar_lattice_tmpltbank.xml --min-mass 2.7 --max-mass 2.9
-# bayestar_littlehope $srcdir/HL-INJECTIONS_1_TEST-1000000000-10.xml \
-#     --template-bank test_bayestar_sim_to_tmpltbank.xml \
-#     --reference-psd test_bayestar_sample_model_psd.xml \
-#     --detector H1 --detector L1 --waveform TaylorF2threePointFivePN \
-#     -o test_bayestar_littlehope.xml
 
 MOSTLYCLEANFILES = \
 	*.dat \
