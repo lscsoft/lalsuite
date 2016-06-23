@@ -28,6 +28,7 @@
  * \author Evan Goetz
  */
 
+#include "config.h"
 #include <sys/stat.h>
 
 #include <lal/UserInput.h>

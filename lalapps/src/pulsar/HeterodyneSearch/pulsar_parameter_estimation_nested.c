@@ -140,6 +140,7 @@ LALInference tools */
  * will be output.
  */
 
+#include "config.h"
 #include "pulsar_parameter_estimation_nested.h"
 #include "ppe_utils.h"
 #include "ppe_init.h"

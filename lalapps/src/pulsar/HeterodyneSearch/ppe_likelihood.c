@@ -7,6 +7,7 @@
  * codes for targeted pulsar searches.
  */
 
+#include "config.h"
 #include "ppe_likelihood.h"
 
 #ifndef _OPENMP

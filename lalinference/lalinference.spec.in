@@ -14,6 +14,7 @@ Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: chealpix-devel
 BuildRequires: gsl-devel
+BuildRequires: hdf5-devel
 BuildRequires: healpy >= 1.8.5
 BuildRequires: libmetaio-devel
 BuildRequires: libxml2-devel
@@ -48,6 +49,7 @@ BuildRequires: lalpulsar-python >= 1.13.0
 BuildRequires: lalpulsar-octave >= 1.13.0
 Requires: chealpix
 Requires: gsl >= 1.15
+Requires: hdf5
 Requires: libmetaio
 Requires: libxml2
 Requires: lal >= 6.16.0

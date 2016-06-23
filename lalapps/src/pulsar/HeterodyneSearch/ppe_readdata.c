@@ -22,6 +22,7 @@
 /*                        DATA READING FUNCTIONS                              */
 /******************************************************************************/
 
+#include "config.h"
 #include "ppe_readdata.h"
 
 /**
