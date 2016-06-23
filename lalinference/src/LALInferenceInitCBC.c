@@ -677,11 +677,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     Component masses, total mass and time have dedicated options listed here:\n\n\
     (--trigtime time)                       Center of the prior for the time variable.\n\
     (--comp-min min)                        Minimum component mass (1.0).\n\
-    (--comp-max max)                        Maximum component mass (30.0).\n\
+    (--comp-max max)                        Maximum component mass (100.0).\n\
     (--mass1-min min, --mass1-max max)      Min and max for mass1 (default: same as comp-min,comp-max, will over-ride these.\n\
     (--mass2-min min, --mass2-max max)      Min and max for mass2 (default: same as comp-min,comp-max, will over-ride these.\n\
     (--mtotal-min min)                      Minimum total mass (2.0).\n\
-    (--mtotal-max max)                      Maximum total mass (35.0).\n\
+    (--mtotal-max max)                      Maximum total mass (200.0).\n\
     (--dt time)                             Width of time prior, centred around trigger (0.2s).\n\
 \n\
     (--varyFlow, --flowMin, --flowMax)       Allow the lower frequency bound of integration to vary in given range.\n\
@@ -1828,8 +1828,8 @@ void LALInferenceInitMassVariables(LALInferenceRunState *state){
   LALInferenceVariables *priorArgs=state->priorArgs;
 
   REAL8 m1_min=1.0,m2_min=1.0;
-  REAL8 m1_max=30.0,m2_max=30.0;
-  REAL8 MTotMax=35.0;
+  REAL8 m1_max=100.0,m2_max=100.0;
+  REAL8 MTotMax=200.0;
   REAL8 MTotMin=2.0;
 
   /* Over-ride component masses */
