@@ -505,7 +505,7 @@ typedef void (*LALInferenceSwapRoutine) (struct tagLALInferenceRunState *runStat
 typedef void (*LALInferenceAlgorithm) (struct tagLALInferenceRunState *runState);
 
 /** Type declaration for output logging function, can be user-declared */
-typedef void (*LALInferenceLogFunction) (struct tagLALInferenceRunState *runState, LALInferenceVariables *vars);
+typedef void (*LALInferenceLogFunction) (LALInferenceVariables *algorithmParams, LALInferenceVariables *vars);
 
 
 /**
