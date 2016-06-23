@@ -146,7 +146,7 @@ def btlwnb_example(axes1, axes2, f0, dof, duration, e, pol):
 	axes1.grid(True)
 	axes2.grid(True)
 
-	# dof/2 = dof/polarization
+	# dof/2 = dof in each polarization
 	bandwidth = dof/2 * (2./math.pi) / duration
 
 	import lal
@@ -182,14 +182,17 @@ if 1:
 	fig = figure.Figure()
 	FigureCanvas(fig)
 	width = 200.
-	fig.set_size_inches(1.2 * width / 25.4, 5. * width / 25.4 / ((1 + math.sqrt(5)) / 2))
-	btlwnb_example(fig.add_subplot(7, 2,  1), fig.add_subplot(7, 2,  2), 250., 16., 0.016, 0., 0.)
-	btlwnb_example(fig.add_subplot(7, 2,  3), fig.add_subplot(7, 2,  4), 250.,  4., 0.008, 0., 0.)
-	btlwnb_example(fig.add_subplot(7, 2,  5), fig.add_subplot(7, 2,  6), 250.,  4., 0.008, 0.85, 0.)
-	btlwnb_example(fig.add_subplot(7, 2,  7), fig.add_subplot(7, 2,  8), 250.,  4., 0.008, 1., 0.)
-	btlwnb_example(fig.add_subplot(7, 2,  9), fig.add_subplot(7, 2, 10), 250.,  2., 0.008, 0., 0.)
-	btlwnb_example(fig.add_subplot(7, 2, 11), fig.add_subplot(7, 2, 12), 250.,  2., 0.008, 0.85, 0.)
-	btlwnb_example(fig.add_subplot(7, 2, 13), fig.add_subplot(7, 2, 14), 250.,  2., 0.008, 1., 0.)
+	fig.set_size_inches(1.2 * width / 25.4, 7. * width / 25.4 / ((1 + math.sqrt(5)) / 2))
+	btlwnb_example(fig.add_subplot(10, 2,  1), fig.add_subplot(10, 2,  2), 250., 16., 0.016, 0., 0.)
+	btlwnb_example(fig.add_subplot(10, 2,  3), fig.add_subplot(10, 2,  4), 250.,  4., 0.008, 0., 0.)
+	btlwnb_example(fig.add_subplot(10, 2,  5), fig.add_subplot(10, 2,  6), 250.,  4., 0.008, 0.85, 0.)
+	btlwnb_example(fig.add_subplot(10, 2,  7), fig.add_subplot(10, 2,  8), 250.,  4., 0.008, 1., 0.)
+	btlwnb_example(fig.add_subplot(10, 2,  9), fig.add_subplot(10, 2, 10), 250.,  2., 0.008, 0., 0.)
+	btlwnb_example(fig.add_subplot(10, 2, 11), fig.add_subplot(10, 2, 12), 250.,  2., 0.008, 0., math.pi / 2.)
+	btlwnb_example(fig.add_subplot(10, 2, 13), fig.add_subplot(10, 2, 14), 250.,  2., 0.008, 0.85, 0.)
+	btlwnb_example(fig.add_subplot(10, 2, 15), fig.add_subplot(10, 2, 16), 250.,  2., 0.008, 1., 0.)
+	btlwnb_example(fig.add_subplot(10, 2, 17), fig.add_subplot(10, 2, 18),   0.,  2., 0.008, 0., 0.)
+	btlwnb_example(fig.add_subplot(10, 2, 19), fig.add_subplot(10, 2, 20),   0.,  2., 0.008, 1., 0.)
 	fig.tight_layout()
 	fig.savefig("lalsimburst_btlwnbexamples.svg")
 

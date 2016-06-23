@@ -547,12 +547,10 @@ transformed to the time domain for injection into the strain data.
 
 ### Details
 
-The algorithm described here yields a single time series containing a band-
-and time-limited white noise burst waveform.  The injection generator
-produces both \f$h_{+}\f$ and \f$h_{\times}\f$ waveforms.  These are
-independent waveforms constructed by simply applying the time series
-construction algorithm twice.  The injection code uses a time series whose
-length is \f$21 \Delta t\f$ rounded to the nearest odd integer,
+This function produces both \f$h_{+}\f$ and \f$h_{\times}\f$ waveforms.
+These are independent waveforms constructed by applying the time series
+construction algorithm twice.  The length of the result is \f$21 \Delta
+t\f$ rounded to the nearest odd integer,
 \f{equation}{
 L
    = 2 \left\lfloor \frac{1}{2} \frac{21 \Delta t}{\delta t} \right\rfloor
@@ -730,18 +728,16 @@ of freedom.
  * is a need to reproduce a waveform exactly then it will be necessary to
  * tag the code before making such changes.
  *
- * @warning
- * The current algorithm's low degree-of-freedom limit yields
- * cosine-Gaussians in both \f$h_{+}\f$ and \f$h_{\times}\f$.  This makes
- * the ellipticity parameter nonsensical in this limit and one of the two
- * (total) degrees of freedom degenerate with the \f$\psi\f$ parameter
- * giving the orientation of the polarization axes about the light-of-sight
- * to the source.  Expect this behaviour to change:  expect the
- * construction to be modified to yield a sine-like component in the
- * \f$h_{\times}\f$ polarization in the low degree-of-freedom limit, and a
- * phase angle parameter to be added at that time as well.  Then this
- * function will yield the same waveforms as XLALSimBurstSineGaussian() in
- * the low degree-of-freedom limit.
+ * @note
+ * The algorithm's low degree-of-freedom limit is equivalent to
+ * XLALSimBurstSineGaussian() but instead of Q and centre frequency the
+ * duration and centre frequency are the degrees of freedom, which allows
+ * the algorithm to also be evaluated in the low-frequency limit where
+ * (when eccentricity = 1) it yields output equivalent to
+ * XLALSimBurstGaussian().  If 2-degree-of-freedom waveforms or Gaussian
+ * waveforms are required, the other functions are substantially more
+ * efficient ways to generate them, but this function provides an interface
+ * that yields sine-Gaussian family waveforms that is valid in all regimes.
  */
 
 
@@ -770,8 +766,6 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	 * the frequency-domain envelope */
 	REAL8 sigma_t_squared = duration * duration / 4.0 - 1.0 / (LAL_PI * LAL_PI * bandwidth * bandwidth);
 	unsigned i;
-
-	(void) phase;	/* silence unused parameter warning */
 
 	/* check input.  checking if sigma_t_squared < 0 is equivalent to
 	 * checking if duration * bandwidth < LAL_2_PI */
@@ -873,6 +867,11 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		double w = f == 0. ? 1. : exp(f * f * beta);
 		tilde_hplus->data->data[i] *= a * w;
 		tilde_hcross->data->data[i] *= b * w;
+		/* rotate phases of non-DC components */
+		if(i != 0) {
+			tilde_hplus->data->data[i] *= cexp(-I * phase);
+			tilde_hcross->data->data[i] *= I * cexp(-I * phase);
+		}
 	}
 	}
 
