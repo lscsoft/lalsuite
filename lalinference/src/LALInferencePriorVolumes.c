@@ -253,6 +253,7 @@ static double loudness_volume(LALInferenceRunState *state){
     lParams.omega=NULL;
     LALInferenceGetMinMaxPrior(priorArgs, "logdistance", &intmin, &intmax);
   }
+  else XLAL_ERROR_REAL8(XLAL_EINVAL,"No known distance parameter found, unable to proceed\n");
 
   lParams.priorargs=priorArgs;
   int status = gsl_integration_qags (&F, intmin, intmax, epsabs, epsrel, wsSize, w, &result, &error); 
