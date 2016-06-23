@@ -135,7 +135,6 @@ src/inspiral/posterior/lalapps_followupMcmc
 src/inspiral/posterior/lalapps_inspnest
 src/inspiral/posterior/lalapps_merge_nested_sampling_runs
 src/inspiral/posterior/lalapps_merge_posteriors
-src/inspiral/posterior/lalapps_merge_posteriors
 src/inspiral/posterior/lalapps_nest2pos
 src/inspiral/posterior/lalapps_nest_pipe
 src/inspiral/posterior/lalapps_test_run_lalinference_pipe_example
