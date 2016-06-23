@@ -1,3 +1,10 @@
+lalsimulation (1.6.0-1) unstable; urgency=low
+
+  * LALSimulation 1.6.0
+  * ER9 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 23 Jun 2016 16:21:35 -0500
+
 lalsimulation (1.5.0-1) unstable; urgency=low
 
   * LALSimulation 1.5.0
