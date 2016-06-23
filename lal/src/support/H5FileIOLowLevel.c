@@ -882,7 +882,7 @@ int XLALH5FileAddScalarAttribute(LALH5File *file, const char *key, const void *v
  * This routine returns the names of all attributes from a HDF5 Dataset
  * @param names Pointer a list of strings to be returned to the user. Memory
  * should be freed by the caller.
- * @param files Pointer to a #LALH5File from which the attributes will be added.
+ * @param file Pointer to a #LALH5File from which the attributes will be added.
  * @param N Pointer to a UINT4 where the number of datasets will be recorded
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1301,7 +1301,8 @@ int XLALH5DatasetWrite(LALH5Dataset *dset, void *data)
  * This routine returns the names of all datasets in a $LALH%File
  * @param names Pointer a list of strings to be returned to the user. Memory
  * should be freed by the caller.
- * @param files Pointer to a UINT4 where the number of datasets will be recorded
+ * @param N Pointer to a UINT4 where the number of datasets will be recorded
+ * @param file #LALH5File from which to read datasets
  * @retval 0 Success.
  * @retval -1 Failure.
  */
