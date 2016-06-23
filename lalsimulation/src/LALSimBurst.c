@@ -1156,9 +1156,9 @@ int XLALSimBurstSineGaussian(
 	for(i = 0; i < (*hplus)->data->length; i++) {
 		const double t = ((int) i - (length - 1) / 2) * delta_t;
 		const double phi = twopif0 * t;
-		const double fac = exp(phi * phi / negative2Qsquared);
-		hp[i]  = h0plus * fac * cos(phi - phase) * w[i];
-		hc[i] = h0cross * fac * sin(phi - phase) * w[i];
+		const complex double fac = cexp(phi * phi / negative2Qsquared + I * (phi - phase)) * w[i];
+		hp[i] = h0plus * creal(fac);
+		hc[i] = h0cross * cimag(fac);
 	}
 	XLALDestroyREAL8Window(window);
 
