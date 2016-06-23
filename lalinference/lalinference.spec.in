@@ -154,6 +154,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/*.so*
 %{_sysconfdir}/*
 %{_datarootdir}/lalinference/*.csv
+%{_bindir}/lalinference_*
 
 %files devel
 %defattr(-,root,root)

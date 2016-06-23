@@ -1,3 +1,4 @@
 etc/*
+usr/bin/lalinference_
 usr/lib/*.so*
 usr/share/lalinference/*.csv
