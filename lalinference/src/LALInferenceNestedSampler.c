@@ -60,7 +60,8 @@ static struct itimerval checkpoint_timer;
 /** Utility functions for the resume functionality */
 /** Write the current state to a checkpoint file the given filename */
 /** Read the given filename to populate a given LALInferenceRunState and NSintegralState */
-#ifdef HAVE_HDF5
+//#ifdef HAVE_HDF5
+#if 0
 static int _saveNSintegralStateH5(LALH5File *group, NSintegralState *s);
 static int _saveNSintegralStateH5(LALH5File *group, NSintegralState *s)
 {
@@ -91,10 +92,10 @@ static int _loadNSintegralStateH5(LALH5File *group, NSintegralState *s)
 }
 
 
-static int ReadNSCheckPointH5(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s);
-static int WriteNSCheckPointH5(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s);
+static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NSintegralState *s);
+static int WriteNSCheckPointH5(char *filename, LALInferenceRunState *runState, NSintegralState *s);
 
-static int WriteNSCheckPointH5(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
+static int WriteNSCheckPointH5(char *filename, LALInferenceRunState *runState, NSintegralState *s)
 {
   LALH5File *h5file = XLALH5FileOpen(filename,"w");
   if(!h5file)
@@ -123,7 +124,7 @@ static int WriteNSCheckPointH5(CHAR *filename, LALInferenceRunState *runState, N
   return(retcode);
 }
 
-static int ReadNSCheckPointH5(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
+static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NSintegralState *s)
 {
   int retcode;
   LALH5File *h5file;
@@ -178,12 +179,12 @@ static int _saveNSintegralState(FILE *fp, NSintegralState *s)
   UINT4 N=s->size;
   if(1!=fwrite(&N,sizeof(UINT4),1,fp)) return 1;
   if(1!=fwrite(&(s->iteration),sizeof(s->iteration),1,fp)) return 1;
-  if(N!=fwrite(s->logZarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->oldZarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->Harray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->logwarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->logtarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->logt2array,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fwrite(s->logZarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fwrite(s->oldZarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fwrite(s->Harray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fwrite(s->logwarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fwrite(s->logtarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fwrite(s->logt2array->data,sizeof(REAL8),N,fp)) return 1;
   return 0;
 }
 static int _loadNSintegralState(FILE *fp, NSintegralState *s);
@@ -191,13 +192,19 @@ static int _loadNSintegralState(FILE *fp, NSintegralState *s)
 {
   if(1!=fread(& (s->size) , sizeof(UINT4), 1, fp)) return 1;
   UINT4 N=s->size;
+  s->logZarray = XLALCreateREAL8Vector(N);
+  s->oldZarray = XLALCreateREAL8Vector(N);
+  s->Harray = XLALCreateREAL8Vector(N);
+  s->logwarray = XLALCreateREAL8Vector(N);
+  s->logtarray = XLALCreateREAL8Vector(N);
+  s->logt2array = XLALCreateREAL8Vector(N);
   if(1!=fread(&(s->iteration),sizeof(UINT4),1,fp)) return 1;
-  if(N!=fread(s->logZarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->oldZarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->Harray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->logwarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->logtarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->logt2array,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fread(s->logZarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fread(s->oldZarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fread(s->Harray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fread(s->logwarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fread(s->logtarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fread(s->logt2array->data,sizeof(REAL8),N,fp)) return 1;
   return 0;
 }
 
@@ -830,7 +837,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   sprintf(outfilebackup,"%s.bak",outfile);
   int retcode=1;
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume")){
-#ifdef HAVE_HDF5
+#if 0
       retcode=ReadNSCheckPointH5(resumefilename,runState,s);
 #else
       retcode=ReadNSCheckPoint(resumefilename,runState,s);
@@ -1002,7 +1009,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if(__ns_saveStateFlag!=0)
     {
       if(__ns_exitFlag) fprintf(stdout,"Saving state to %s.\n",resumefilename);
-#ifdef HAVE_HDF5
+#if 0
       WriteNSCheckPointH5(resumefilename,runState,s);
 #else
       WriteNSCheckPoint(resumefilename,runState,s);
@@ -1019,7 +1026,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   /* Update the proposal */
   if(!(iter%(Nlive/10))) {
     /* Update the covariance matrix */
-    WriteNSCheckPointH5(resumefilename, runState, s);
+    //WriteNSCheckPointH5(resumefilename, runState, s);
     if ( LALInferenceCheckVariable( threadState->proposalArgs,"covarianceMatrix" ) ){
       SetupEigenProposals(runState);
     }
