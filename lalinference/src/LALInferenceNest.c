@@ -40,7 +40,6 @@
 #include <lal/LALInferenceCalibrationErrors.h>
 #include <lal/LALInferenceVCSInfo.h>
 
-
 /*************** MAIN **********************/
 
 
