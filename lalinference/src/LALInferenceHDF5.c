@@ -302,7 +302,7 @@ int LALInferenceH5VariablesArray2Group(LALH5File *h5file, LALInferenceVariables 
         break;
       }
     } /* End switch */
-    if(!dset) XLAL_ERROR(XLAL_EFAILED,"Failed to write HDF5 Dataset for parameter %s\n",column_names[i]);
+    if(!dset) XLALPrintWarning("Failed to write HDF5 Dataset for parameter %s\n",column_names[i]);
     else{
       LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(varsArray[0],column_names[i]);
       XLALH5DatasetAddScalarAttribute(dset, "vary_type", &vtype , LAL_I4_TYPE_CODE );
