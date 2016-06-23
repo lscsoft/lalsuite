@@ -14,6 +14,7 @@ Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
+BuildRequires: openmpi-devel
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
 BuildRequires: gsl-devel
@@ -39,6 +40,7 @@ BuildRequires: lalpulsar-devel >= 1.13.0
 BuildRequires: lalpulsar-python >= 1.13.0
 BuildRequires: lalinference-devel >= 1.6.0
 BuildRequires: lalinference-python >= 1.6.0
+Requires: openmpi
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
@@ -79,7 +81,7 @@ Algorithm Library.
 
 %build
 nightly_version=@NIGHTLY_VERSION@
-%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --enable-cfitsio --enable-openmp
+%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --enable-cfitsio --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc MPICXX=/usr/lib64/openmpi/bin/mpicxx MPIFC=/usr/lib64/openmpi/bin/mpifc
 %{__make} V=1
 
 %check
