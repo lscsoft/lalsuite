@@ -457,6 +457,7 @@ typedef struct tagLALInferenceModel
 
   REAL8TimeSeries             *timehPlus, *timehCross; /** Time series model buffers */
   COMPLEX16FrequencySeries    *freqhPlus, *freqhCross; /** Freq series model buffers */
+  COMPLEX16FrequencySeries    **freqhs; /** Projected freq series model buffers */
 
   LALSimInspiralWaveformFlags *waveFlags;   /** A pointer to the WF flag. Will store here tide and spin order, as well as frame */
   LALSimInspiralWaveformCache *waveformCache;   /** Waveform cache */

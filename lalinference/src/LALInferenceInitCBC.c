@@ -1288,6 +1288,15 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
                                                 &lalDimensionlessUnit,
                                                 state->data->freqData->data->length);
 
+  model->freqhs = XLALCalloc(nifo, sizeof(COMPLEX16FrequencySeries *));
+  for (i=0; i<nifo; i++)
+      model->freqhs[i] = XLALCreateCOMPLEX16FrequencySeries("freqh",
+                                                            &(state->data->freqData->epoch),
+                                                            0.0,
+                                                            model->deltaF,
+                                                            &lalDimensionlessUnit,
+                                                            state->data->freqData->data->length);
+
   /* Create arrays for holding single-IFO likelihoods, etc. */
   model->ifo_loglikelihoods = XLALCalloc(nifo, sizeof(REAL8));
   model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
