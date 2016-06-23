@@ -700,6 +700,12 @@ of freedom.
  * (linearly polarized).  Note that this controls the relationship between
  * the expected amplitudes, not the realized amplitudes.
  *
+ * @param[in] phase The phase, \f$\phi\f$, of the sinusoidal oscillations
+ * that get multiplied by the Gaussian envelope.  With \f$\phi=0\f$,
+ * \f$h_{+}\f$ is cosine-like and \f$h_{\times}\f$ is sine-like.  With
+ * \f$\phi=\pi/2\f$, \f$h_{+}\f$ is sine-like and \f$h_{\times}\f$ is
+ * cosine-like.
+ *
  * @param[in] int_hdot_squared The output is normalized so that \f$\int
  * (\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) \diff t\f$
  * equals this.  Note that the normalization is not on the expected
@@ -746,6 +752,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	REAL8 frequency,
 	REAL8 bandwidth,
 	REAL8 eccentricity,
+	REAL8 phase,
 	REAL8 int_hdot_squared,
 	REAL8 delta_t,
 	gsl_rng *rng
@@ -763,6 +770,8 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	 * the frequency-domain envelope */
 	REAL8 sigma_t_squared = duration * duration / 4.0 - 1.0 / (LAL_PI * LAL_PI * bandwidth * bandwidth);
 	unsigned i;
+
+	(void) phase;	/* silence unused parameter warning */
 
 	/* check input.  checking if sigma_t_squared < 0 is equivalent to
 	 * checking if duration * bandwidth < LAL_2_PI */
