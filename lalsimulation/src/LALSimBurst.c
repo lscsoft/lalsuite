@@ -638,7 +638,7 @@ To ensure no discontinuities in the strain time series when the injection
 is added to it, a final Tukey window is applied to the injection in the
 time domain.  The Tukey window is constructed with a call to
 <tt>XLALCreateTukeyREAL8Window()</tt> with a shape parameter of \f$\beta =
-0.5\f$ so that the tapers span a total of 50\
+0.5\f$ so that the tapers span a total of 50\% of the time series.
 Because the Tukey window is flat with unit amplitude in the middle, it has
 no effect on the injection time series where the bulk of the energy is
 concentrated, and the large tapers ensure the Tukey window induces
@@ -656,14 +656,14 @@ how the initial time series of independent Gaussian random numbers is to be
 constructed.  This is done by specifying the seed to be used with the
 random number generator.  The random number generator is not specified, so
 the same seed may produce different injections with different versions of
-the code, but a seed and CVS tag combination should be guaranteed to
+the code, but a seed and revision tag combination should be guaranteed to
 produce the same injection.  Note also that changing the length of the
 injection time series changes the number of random numbers used to
 construct it, so the injection waveform also depends on the time series'
 sample rate.  One has to be careful when constructing injection waveforms
 for instruments with different sample rates (e.g., LIGO and VIRGO).  The
 injection must be constructed at the same sample rate for both instruments
-and then up- or down-sampled as needed when injected into the instrument's
+and then up- or down-sampled as needed when injected into each instrument's
 time series.
 
 \anchor xlalsimburstbtlwnb_examples
@@ -734,8 +734,8 @@ of freedom.
  * construction to be modified to yield a sine-like component in the
  * \f$h_{\times}\f$ polarization in the low degree-of-freedom limit, and a
  * phase angle parameter to be added at that time as well.  Then this
- * function will then yield exactly the same waveforms as
- * XLALSimBurstSineGaussian() in the low degree-of-freedom limit.
+ * function will yield the same waveforms as XLALSimBurstSineGaussian() in
+ * the low degree-of-freedom limit.
  */
 
 
