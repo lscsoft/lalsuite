@@ -47,6 +47,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState);
 /** Implements one MCMC step forward, updating the sigma values for the jump proposals if required.*/
 void mcmc_step(LALInferenceRunState *runState, LALInferenceThreadState *thread);
 
+void record_likelihoods(LALInferenceThreadState *thread);
+
 /* MPI communications */
 typedef enum {
     PT_COM,          /** Parallel tempering communications */
@@ -71,7 +73,7 @@ void LALInferenceFlushPTswap(void);
 void LALInferenceLadderUpdate(LALInferenceRunState *runState, INT4 sourceChainFlag, INT4 cycle);
 
 /* Data IO routines */
-void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState, FILE ***threadoutputs, FILE ***resumeoutputs);
+void LALInferencePrintPTMCMCHeadersOrResume(LALInferenceRunState *runState);
 void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, LALInferenceThreadState *thread, FILE *threadoutput);
 void LALInferencePrintAdaptationHeader(FILE *outfile, LALInferenceThreadState *thread);
 void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState);
@@ -79,6 +81,11 @@ void LALInferenceDataDump(LALInferenceIFOData *data, LALInferenceModel *model);
 void LALInferenceSaveSample(LALInferenceThreadState *thread, FILE *output);
 void LALInferencePrintAdaptationSettings(FILE *outfile, LALInferenceThreadState *thread);
 void LALInferencePrintMCMCSample(LALInferenceThreadState *thread, LALInferenceIFOData *data, INT4 iteration, REAL8 timestamp, FILE *threadoutput);
+void LALInferenceWriteMCMCSamples(LALInferenceRunState *runState);
+void LALInferenceNameOutputs(LALInferenceRunState *runState);
+void LALInferenceCheckpointMCMC(LALInferenceRunState *runState);
+void LALInferenceResumeMCMC(LALInferenceRunState *runState);
+void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState);
 
 /** Reads final parameter values from the given output file, and
     stores them in the current params to try to continue the run. */

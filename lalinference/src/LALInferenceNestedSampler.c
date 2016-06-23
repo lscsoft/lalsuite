@@ -976,7 +976,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     H=mean(Harray,Nruns);
     logZ=logZnew;
     for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
-    if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
+    if(runState->logsample) runState->logsample(runState->algorithmParams,runState->livePoints[minpos]);
     UINT4 itercounter=0;
 
     /* Generate a new live point */
@@ -1085,7 +1085,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       logZarray[j]=logaddexp(logZarray[j],logLikelihoods[i]+logwarray[j]-log(Nlive));
     }
 
-    if(runState->logsample) runState->logsample(runState,runState->livePoints[i]);
+    if(runState->logsample) runState->logsample(runState->algorithmParams,runState->livePoints[i]);
 
   }
 
@@ -1233,12 +1233,12 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   }
   while(0.==accept);
 	/* log the first sample*/
-  LALInferenceLogSampleToArray(runState,threadState->currentParams);
+  LALInferenceLogSampleToArray(runState->algorithmParams,threadState->currentParams);
   /* Evolve the initial sample (i starts at 1)*/
   for(i=1;i<max_iterations;i++)
   {
    evolve(runState);
-   LALInferenceLogSampleToArray(runState,threadState->currentParams);
+   LALInferenceLogSampleToArray(runState->algorithmParams,threadState->currentParams);
   }
 
   /* Get the location of the sample array */
