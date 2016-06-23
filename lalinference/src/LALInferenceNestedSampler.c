@@ -104,7 +104,9 @@ static int WriteNSCheckPointH5(CHAR *filename, LALInferenceRunState *runState, N
   }
   UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   LALH5File *group = XLALH5GroupOpen(h5file, "lalinferencenest_checkpoint");
+  if(!group) XLAL_ERROR(XLAL_EFAILED,"Unable to read group lalinferencenest_checkpoint\n");
   int retcode = _saveNSintegralStateH5(group,s);
+  if(retcode) XLAL_ERROR(XLAL_EFAILED,"Unable to save integral state\n");
   LALInferenceH5VariablesArray2Group(group, runState->livePoints, Nlive, "live_points");
   INT4 N_output_array=0;
   if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) N_output_array=LALInferenceGetINT4Variable(runState->algorithmParams,"N_outputarray");
@@ -115,6 +117,8 @@ static int WriteNSCheckPointH5(CHAR *filename, LALInferenceRunState *runState, N
     LALInferenceH5VariablesArray2Group(group, output_array, N_output_array, "past_chain");
     XLALH5FileAddScalarAttribute(group, "N_outputarray", &N_output_array, LAL_I4_TYPE_CODE);
   }
+  
+  XLALH5FileClose(group);
   XLALH5FileClose(h5file);
   return(retcode);
 }
@@ -134,9 +138,10 @@ static int ReadNSCheckPointH5(CHAR *filename, LALInferenceRunState *runState, NS
   XLALH5FileQueryScalarAttributeValue(&N_outputarray, group, "N_outputarray");
   if(!h5file)
   {
-    fprintf(stderr,"Unable to save resume file %s!\n",filename);
+    fprintf(stderr,"Unable to load resume file %s!\n",filename);
     return(1);
   }
+  printf("restoring nested sampling integral state\n");
   retcode=_loadNSintegralStateH5(group,s);
   if(retcode){
     fprintf(stderr,"Unable to read nested sampling state - unable to resume!\n");
@@ -145,15 +150,20 @@ static int ReadNSCheckPointH5(CHAR *filename, LALInferenceRunState *runState, NS
   }
   LALH5File *liveGroup = XLALH5GroupOpen(group,"live_points");
   retcode = LALInferenceH5GroupToVariablesArray(liveGroup , &(runState->livePoints), &(s->size));
+  printf("restored %i live points\n",s->size);
+  XLALH5FileClose(liveGroup);
   if(N_outputarray>0)
   {
+    printf("restoring %i past iterations\n",N_outputarray);
     LALH5File *outputGroup = XLALH5GroupOpen(group, "past_chain");
     retcode |= LALInferenceH5GroupToVariablesArray(outputGroup, &outputarray, &N_outputarray);
     LALInferenceAddVariable(runState->algorithmParams,"N_outputarray",&N_outputarray,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->algorithmParams,"outputarray",&outputarray,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
+    XLALH5FileClose(outputGroup);
   }
+  XLALH5FileClose(group);
   XLALH5FileClose(h5file);
-  
+  printf("done restoring\n");
   return(retcode);
   
 }
@@ -1009,6 +1019,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   /* Update the proposal */
   if(!(iter%(Nlive/10))) {
     /* Update the covariance matrix */
+    WriteNSCheckPointH5(resumefilename, runState, s);
     if ( LALInferenceCheckVariable( threadState->proposalArgs,"covarianceMatrix" ) ){
       SetupEigenProposals(runState);
     }

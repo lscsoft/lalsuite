@@ -47,6 +47,7 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
   /* Read the number of samples to be created */
   LALH5Dataset *dset=XLALH5DatasetRead(group, dataset_names[0]);
   Nsamples = XLALH5DatasetQueryNPoints(dset);
+  XLALH5DatasetFree(dset);
   va=XLALCalloc(Nsamples,sizeof(LALInferenceVariables *));
   for(i=0;i<Nsamples;i++) va[i]=XLALCalloc(1,sizeof(LALInferenceVariables));
   
@@ -55,6 +56,7 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
   {
     char *pname=dataset_names[i];
     dset = XLALH5DatasetRead(group, pname);
+    if(!dset) XLAL_ERROR(XLAL_EFAULT,"Invalid dataset\n");
     LALTYPECODE LALtype = XLALH5DatasetQueryType(dset);
     LALInferenceParamVaryType varyType = XLALH5DatasetQueryINT4AttributeValue(dset,"vary_type");;
     switch(LALtype)
@@ -62,6 +64,7 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
       case(LAL_D_TYPE_CODE):
       {
         REAL8Vector *vector = XLALH5DatasetReadREAL8Vector(dset);
+        if(!vector) XLAL_ERROR(XLAL_EFAULT,"Read invalid vector\n");
         for(j=0;j<vector->length;j++) LALInferenceAddVariable(va[j],pname,&(vector->data[j]),LALINFERENCE_REAL8_t,varyType);
         XLALDestroyREAL8Vector(vector);
         break;
@@ -69,6 +72,7 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
       case(LAL_S_TYPE_CODE):
       {
         REAL4Vector *vector = XLALH5DatasetReadREAL4Vector(dset);
+        if(!vector) XLAL_ERROR(XLAL_EFAULT,"Read invalid vector\n");
         for(j=0;j<vector->length;j++) LALInferenceAddVariable(va[j],pname,&(vector->data[j]),LALINFERENCE_REAL4_t,varyType);
         XLALDestroyREAL4Vector(vector);
         break;
@@ -76,6 +80,7 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
       case(LAL_C_TYPE_CODE):
       {
         COMPLEX8Vector *vector = XLALH5DatasetReadCOMPLEX8Vector(dset);
+        if(!vector) XLAL_ERROR(XLAL_EFAULT,"Read invalid vector\n");
         for(j=0;j<vector->length;j++) LALInferenceAddVariable(va[j],pname,&(vector->data[j]),LALINFERENCE_COMPLEX8_t,varyType);
         XLALDestroyCOMPLEX8Vector(vector);
         break;
@@ -83,6 +88,7 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
       case(LAL_Z_TYPE_CODE):
       {
         COMPLEX16Vector *vector = XLALH5DatasetReadCOMPLEX16Vector(dset);
+        if(!vector) XLAL_ERROR(XLAL_EFAULT,"Read invalid vector\n");
         for(j=0;j<vector->length;j++) LALInferenceAddVariable(va[j],pname,&(vector->data[j]),LALINFERENCE_COMPLEX16_t,varyType);
         XLALDestroyCOMPLEX16Vector(vector);
         break;
@@ -90,6 +96,7 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
       case(LAL_I4_TYPE_CODE):
       {
         INT4Vector *vector = XLALH5DatasetReadINT4Vector(dset);
+        if(!vector) XLAL_ERROR(XLAL_EFAULT,"Read invalid vector\n");
         for(j=0;j<vector->length;j++) LALInferenceAddVariable(va[j],pname,&(vector->data[j]),LALINFERENCE_INT4_t,varyType);
         XLALDestroyINT4Vector(vector);
         break;
@@ -97,6 +104,7 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
       case(LAL_U4_TYPE_CODE):
       {
         UINT4Vector *vector = XLALH5DatasetReadUINT4Vector(dset);
+        if(!vector) XLAL_ERROR(XLAL_EFAULT,"Read invalid vector\n");
         for(j=0;j<vector->length;j++) LALInferenceAddVariable(va[j],pname,&(vector->data[j]),LALINFERENCE_UINT4_t,varyType);
         XLALDestroyUINT4Vector(vector);
         break;
@@ -107,8 +115,8 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
         break;
       }
     } /* End switch */
+    XLALH5DatasetFree(dset);
   }
-  Nsamples = j;
   /* end loop over parameter names */
   
   /* Read fixed parameters from attributes */
@@ -173,6 +181,10 @@ int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables
   /* Construct the array of LALInferenceVariables */
   *varsArray = va;
   *N = Nsamples;
+  for(i=0;i<Nfixed;i++) XLALFree(fixed_names[i]);
+  for(i=0;i<Ndatasets;i++) XLALFree(dataset_names[i]);
+  XLALFree(dataset_names);
+  XLALFree(fixed_names);
   return(XLAL_SUCCESS);
 }
 
@@ -239,7 +251,7 @@ int LALInferenceH5VariablesArray2Group(LALH5File *h5file, LALInferenceVariables 
       case LALINFERENCE_REAL8_t:
       {
         REAL8Vector *vector=XLALCreateREAL8Vector(N);
-        for(j=0;j<N;j++) memcpy(&(vector->data[j]),LALInferenceGetVariable(varsArray[j],column_names[i]),LALInferenceTypeSize[type]);
+        for(j=0;j<N;j++) vector->data[j]=LALInferenceGetREAL8Variable(varsArray[j],column_names[i]);
         dset = XLALH5DatasetAllocREAL8Vector(groupPtr, column_names[i], vector);
         XLALDestroyREAL8Vector(vector);
         break;
@@ -247,7 +259,7 @@ int LALInferenceH5VariablesArray2Group(LALH5File *h5file, LALInferenceVariables 
       case LALINFERENCE_REAL4_t:
       {
         REAL4Vector *vector=XLALCreateREAL4Vector(N);
-        for(j=0;j<N;j++) memcpy(&(vector->data[j]),LALInferenceGetVariable(varsArray[j],column_names[i]),LALInferenceTypeSize[type]);
+        for(j=0;j<N;j++) vector->data[j]=LALInferenceGetREAL4Variable(varsArray[j],column_names[i]);
         dset = XLALH5DatasetAllocREAL4Vector(groupPtr, column_names[i], vector);
         XLALDestroyREAL4Vector(vector);
         break;
@@ -291,15 +303,18 @@ int LALInferenceH5VariablesArray2Group(LALH5File *h5file, LALInferenceVariables 
       }
     } /* End switch */
     if(!dset) XLAL_ERROR(XLAL_EFAILED,"Failed to write HDF5 Dataset for parameter %s\n",column_names[i]);
-    LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(varsArray[0],column_names[i]);
-    XLALH5DatasetAddScalarAttribute(dset, "vary_type", &vtype , LAL_I4_TYPE_CODE );
+    else{
+      LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(varsArray[0],column_names[i]);
+      XLALH5DatasetAddScalarAttribute(dset, "vary_type", &vtype , LAL_I4_TYPE_CODE );
+      XLALH5DatasetFree(dset);
+    }
   }/* End loop over varying parameters */
   
   for(i=0;i<Nfixed;i++)
   {
     LALInferenceH5VariableToAttribute(groupPtr, varsArray[0], fixed_names[i]);
   } /* End loop over fixed parameters */
-
+  XLALH5FileClose(groupPtr);
   return(XLAL_SUCCESS);
   
 }

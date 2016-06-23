@@ -710,6 +710,7 @@ void XLALH5FileClose(LALH5File *file)
 					XLAL_ERROR_VOID(XLAL_EIO, "Failed to move temporary file");
 				}
 				H5Fget_name(file->file_id, tmpfname, sizeof(tmpfname));
+                H5Fflush(file->file_id , H5F_SCOPE_GLOBAL);
 				if (rename(tmpfname, file->fname) < 0) {
 					H5Fclose(file->file_id);
 					LALFree(file);
