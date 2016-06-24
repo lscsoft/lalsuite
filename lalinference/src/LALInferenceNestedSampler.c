@@ -803,14 +803,16 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   }
   char *outfile=ppt->value;
 
-  /* Calculate the mass-distance volume and store it to file*/ 
-  /* Do it before algorithm starts so that we can kill the run and still get this */
-  double volume=LALInferenceMassDistancePriorVolume(runState);
-  char priorfile[FILENAME_MAX];
-  sprintf(priorfile,"%s_prior_weight.txt",outfile);
-  fpout=fopen(priorfile,"w");
-  fprintf(fpout,"%10.10e\n",volume);
-  fclose(fpout);
+  if ( LALInferenceCheckVariable( runState->livePoints[0], "chirpmass" ) ){
+    /* If a cbc run, calculate the mass-distance volume and store it to file*/ 
+    /* Do it before algorithm starts so that we can kill the run and still get this */
+    double volume=LALInferenceMassDistancePriorVolume(runState);
+    char priorfile[FILENAME_MAX];
+    sprintf(priorfile,"%s_prior_weight.txt",outfile);
+    fpout=fopen(priorfile,"w");
+    fprintf(fpout,"%10.10e\n",volume);
+    fclose(fpout);
+  }
 
 
   if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))

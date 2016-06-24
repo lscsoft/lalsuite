@@ -1,5 +1,5 @@
 /**
- * \file DoubleInt.h
+ * \file LALInferencePriorVolumes.h
  * \brief Header file for initialisation functions used by LALInference codes
  *
  */
