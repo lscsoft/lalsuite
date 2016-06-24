@@ -230,7 +230,7 @@ class ArgumentParser(argparse.ArgumentParser):
             if formatter_class is None:
                 formatter_class = argparse.RawDescriptionHelpFormatter
         if formatter_class is None:
-            formatter_class = HelpFormatter
+            formatter_class = argparse.HelpFormatter
         super(ArgumentParser, self).__init__(
                  prog=prog,
                  usage=usage,

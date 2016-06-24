@@ -30,7 +30,6 @@ from pylal import ligolw_inspinjfind
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw import ligolw
 from glue.ligolw import table as ligolw_table
-from glue.ligolw import array as ligolw_array
 from pylal import ligolw_thinca
 from glue.ligolw import lsctables
 

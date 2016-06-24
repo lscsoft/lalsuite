@@ -50,7 +50,6 @@ import os
 from distutils.dir_util import mkpath
 import numpy as np
 from glue.text_progress_bar import ProgressBar
-import lalinference.plot
 
 # Create progress bar.
 pb = ProgressBar()

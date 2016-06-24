@@ -89,7 +89,6 @@ from lalinference.bayestar import timing
 from lalinference.bayestar import ligolw_sky_map
 
 # Other imports.
-import healpy as hp
 import numpy as np
 
 # Read coinc file.

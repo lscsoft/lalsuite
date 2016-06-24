@@ -149,7 +149,7 @@ def ud_grade(prob, distmu, distsigma, *args, **kwargs):
     distnorm : `numpy.ndarray`
         Resampled distance normalization factor (Mpc^-2)
     """
-    bad = ~(np.isfinite(distnorm) & np.isfinite(distmu) & np.isfinite(distsigma))
+    bad = ~(np.isfinite(distmu) & np.isfinite(distsigma))
     distmean, diststd, _ = parameters_to_moments(distmu, distsigma)
     distmean[bad] = 0
     diststd[bad] = 0
@@ -342,5 +342,5 @@ def parameters_to_marginal_moments(prob, distmu, distsigma):
 
 
 def find_injection_distance(true_dist, prob, distmu, distsigma, distnorm):
-    return np.sum(prob * distance.conditional_distance_cdf(
+    return np.sum(prob * conditional_distance_cdf(
         true_dist, distmu, distsigma, distnorm))

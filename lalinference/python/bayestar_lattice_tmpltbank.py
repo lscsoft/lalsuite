@@ -49,7 +49,6 @@ import os
 # LIGO-LW XML imports.
 from glue.ligolw import ligolw
 from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw import table as ligolw_table
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 
@@ -60,7 +59,6 @@ import lalinspiral.sbank.tau0tau3
 import lalsimulation
 
 # BAYESTAR imports.
-from lalinference.bayestar import ligolw as ligolw_bayestar
 from lalinference.bayestar import filter
 
 # Other imports.

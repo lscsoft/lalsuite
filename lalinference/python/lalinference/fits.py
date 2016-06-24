@@ -336,8 +336,6 @@ def read_sky_map(filename, nest=False, distances=False):
 
 if __name__ == '__main__':
     import os
-    import healpy as hp
-    import numpy as np
     nside = 128
     npix = hp.nside2npix(nside)
     prob = np.random.random(npix)
