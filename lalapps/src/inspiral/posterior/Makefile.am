@@ -43,7 +43,6 @@ pybin_scripts = \
 	lalapps_nest_pipe \
 	lalapps_vo_nest2pos \
 	lalinference_pipe \
-        lalinference_pipe_roq \
 	lalapps_nest2pos \
 	lalapps_merge_nested_sampling_runs \
 	lalinference_burst_pp_pipe \
