@@ -138,14 +138,15 @@ for sampler in samps:
       fp.close()
       cp.set('engine',approx,app)
       cp.set('analysis','engine',sampler)
-      for p in dict(cp.items('paths')).keys():
+      if roq is None:
+        for p in dict(cp.items('paths')).keys():
           #current value
           if 'webdir' in p or 'url' in p or 'basedir' in p or 'daglogdir' in p:
             out=cp.get('paths',p)
             # append approximant prefix
             cp.set('paths',p,os.path.join(out,sampler,app))
-      # do the appropriate hacks for ROQ
-      if roq is not None:
+      else:
+        # do the appropriate hacks for ROQ
         if not os.path.isdir(os.path.join(rundir_root,sampler,app,roq)):
           os.makedirs(os.path.join(rundir_root,sampler,app,roq))
         opts.run_path=os.path.abspath(os.path.join(rundir_root,sampler,app,roq))
