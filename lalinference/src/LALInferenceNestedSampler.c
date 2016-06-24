@@ -803,16 +803,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   }
   char *outfile=ppt->value;
 
-  if ( LALInferenceCheckVariable( runState->livePoints[0], "chirpmass" ) ){
-    /* If a cbc run, calculate the mass-distance volume and store it to file*/ 
-    /* Do it before algorithm starts so that we can kill the run and still get this */
-    double volume=LALInferenceMassDistancePriorVolume(runState);
-    char priorfile[FILENAME_MAX];
-    sprintf(priorfile,"%s_prior_weight.txt",outfile);
-    fpout=fopen(priorfile,"w");
-    fprintf(fpout,"%10.10e\n",volume);
-    fclose(fpout);
-  }
+  
 
 
   if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
@@ -1123,6 +1114,12 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         snprintf(runID,255,"%s_%s","lalinference_nest",ppt->value);
       else
         snprintf(runID,255,"lalinference_nest");
+      double log_volume = 0;
+      if ( LALInferenceCheckVariable( runState->livePoints[0], "chirpmass" ) ){
+    	/* If a cbc run, calculate the mass-distance volume and store it to file*/ 
+    	/* Do it before algorithm starts so that we can kill the run and still get this */
+      	log_volume=log(LALInferenceMassDistancePriorVolume(runState));
+      }
 
       LALH5File *groupPtr = LALInferenceH5CreateGroupStructure(h5file, "lalinference", runID);
       /* Create run identifier group */
@@ -1134,6 +1131,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       XLALH5FileAddScalarAttribute(groupPtr, "log_noise_evidence", &logZnoise, LAL_D_TYPE_CODE );
       XLALH5FileAddScalarAttribute(groupPtr, "log_max_likelihood", &logLmax , LAL_D_TYPE_CODE);
       XLALH5FileAddScalarAttribute(groupPtr, "number_live_points", &Nlive, LAL_U4_TYPE_CODE);
+      XLALH5FileAddScalarAttribute(groupPtr, "log_prior_volume", &log_volume, LAL_D_TYPE_CODE);
 
       XLALH5FileClose(h5file);
     }
