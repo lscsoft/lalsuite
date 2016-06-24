@@ -630,14 +630,12 @@ INT4 templateSearch_scox1Style(candidateVector **output, const REAL8 fminimum, c
  * \param [in]  fminimum               Lower frequency bound to search (inclusive)
  * \param [in]  fspan                  Span of the frequency band (inclusive of endpoint)
  * \param [in]  period                 Specific orbital period (measured in seconds)
- * \param [in]  asini                  Specific projected semi-major axis (measured in light seconds)
- * \param [in]  asinisigma             Uncertainty on the specific asini value (measured in light seconds)
  * \param [in]  skypos                 SkyPosition struct of the sky position (in RA and DEC) being searched
  * \param [in]  params                 Pointer to UserInput_t
  * \param [in]  ffdata                 Pointer to ffdataStruct
- * \param [in]  sftexist               Pointer to INT4Vector of existing SFTs
  * \param [in]  aveNoise               Pointer to REAL4VectorAligned of 2nd FFT background powers
  * \param [in]  aveTFnoisePerFbinRatio Pointer to REAL4VectorAligned of normalized power across the frequency band
+* \param [in]  trackedlines           Pointer to REAL4VectorSequence of lines (allowed to be NULL if no lines)
  * \param [in]  secondFFTplan          Pointer to REAL4FFTPlan
  * \param [in]  rng                    Pointer to gsl_rng
  * \param [in]  useExactTemplates      Boolean of 0 (use Gaussian templates) or 1 (use exact templates)
