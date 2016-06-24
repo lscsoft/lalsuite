@@ -630,8 +630,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
                                                        IMRPhenomB, IMRPhenomP, IMRPhenomPv2.\n\
     (--amporder PNorder)            Specify a PN order in amplitude to use (defaults: LALSimulation: max available; LALInspiral: newtownian).\n\
     (--fref f_ref)                  Specify a reference frequency at which parameters are defined (default 100).\n\
-    (--use-tidal)                   Enables tidal corrections, only with LALSimulation.\n\
-    (--use-tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
+    (--tidal)                   Enables tidal corrections, only with LALSimulation.\n\
+    (--tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
     (--spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
     (--tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
     (--numreldata FileName)         Location of NR data file for NR waveforms (with NR_hdf5 approx).\n\
