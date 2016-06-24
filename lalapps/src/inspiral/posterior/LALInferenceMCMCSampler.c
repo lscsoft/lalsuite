@@ -992,11 +992,11 @@ void LALInferenceNameOutputs(LALInferenceRunState *runState) {
         runState->outFileName = (char*)XLALCalloc(255, sizeof(char*));
         runState->resumeOutFileName = (char*)XLALCalloc(255, sizeof(char*));
         if (MPIrank == 0) {
-            sprintf(runState->outFileName, "PTMCMC.output.%u", randomseed);
-            sprintf(runState->resumeOutFileName, "PTMCMC.output.%u.resume", randomseed);
+            sprintf(runState->outFileName, "PTMCMC.output.%u.h5", randomseed);
+            sprintf(runState->resumeOutFileName, "PTMCMC.output.%u.resume.h5", randomseed);
         } else {
-            sprintf(runState->outFileName, "PTMCMC.output.%u.%2.2d", randomseed, MPIrank);
-            sprintf(runState->resumeOutFileName, "PTMCMC.output.%u.%2.2d.resume", randomseed, MPIrank);
+            sprintf(runState->outFileName, "PTMCMC.output.%u.%2.2d.h5", randomseed, MPIrank);
+            sprintf(runState->resumeOutFileName, "PTMCMC.output.%u.%2.2d.resume.h5", randomseed, MPIrank);
         }
     }
 
