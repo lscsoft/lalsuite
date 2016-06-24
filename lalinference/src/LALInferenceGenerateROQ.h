@@ -75,6 +75,19 @@ INT4 LALInferenceTestCOMPLEX16OrthonormalBasis(REAL8Vector *delta,
                                                COMPLEX16Array *RB,
                                                COMPLEX16Array *testmodels);
 
+/* functions to enrich the training model set and basis set */
+REAL8 LALInferenceEnrichREAL8Basis(REAL8Vector *delta,
+                                   REAL8 tolerance,
+                                   REAL8Array **RB,
+                                   REAL8Array **testmodels,
+                                   REAL8Array *testmodelsnew);
+
+REAL8 LALInferenceEnrichCOMPLEX16Basis(REAL8Vector *delta,
+                                       REAL8 tolerance,
+                                       COMPLEX16Array **RB,
+                                       COMPLEX16Array **testmodels,
+                                       COMPLEX16Array *testmodelsnew);
+
 /* function to create the empirical interpolant */
 LALInferenceREALROQInterpolant *LALInferenceGenerateREALROQInterpolant(REAL8Array *RB);
 
