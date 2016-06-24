@@ -30,7 +30,9 @@ psd_names = sorted(
     name[len(psd_name_prefix):]
     for name, func in inspect.getmembers(lalsimulation)
     if name.startswith(psd_name_prefix) and callable(func)
-    and '(double f) -> double' in func.__doc__)
+    and (
+        '(double f) -> double' in func.__doc__ or
+        '(REAL8FrequencySeries psd, double flow) -> int' in func.__doc__))
 
 parser = command.ArgumentParser()
 parser.add_argument(
@@ -81,11 +83,27 @@ f = np.arange(n) * opts.df
 
 for detector in detectors:
     psd_name = getattr(opts, detector)
-    scale = 1 / np.sqrt(getattr(opts, detector + '_scale'))
+    scale = 1 / np.square(getattr(opts, detector + '_scale'))
     if psd_name is None:
         continue
+    func = getattr(lalsimulation, psd_name_prefix + psd_name)
     series = lal.CreateREAL8FrequencySeries(psd_name, 0, 0, opts.df, lal.SecondUnit, n)
-    series.data.data = vectorize_swig_psd_func(psd_name_prefix + psd_name)(f) * scale
+    if '(double f) -> double' in func.__doc__:
+        series.data.data = vectorize_swig_psd_func(psd_name_prefix + psd_name)(f)
+    else:
+        func(series, 0.0)
+
+        # Find indices of first and last nonzero samples.
+        nonzero = np.flatnonzero(series.data.data)
+        first_nonzero = nonzero[0]
+        last_nonzero = nonzero[-1]
+
+        # Truncate
+        series = lal.CutREAL8FrequencySeries(series, first_nonzero, last_nonzero - first_nonzero + 1)
+        series.f0 = first_nonzero * series.deltaF
+
+        series.name = psd_name
+    series.data.data *= scale
     psds[detector] = series
 
 glue.ligolw.utils.write_fileobj(
