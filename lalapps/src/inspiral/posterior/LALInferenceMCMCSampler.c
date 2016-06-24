@@ -277,8 +277,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         for (t = 0; t < n_local_threads; t++) {
             FILE *outfile = NULL;
             char outfilename[256];
-            struct timeval tv;
-            REAL8 timestamp=-1.0;
+            //struct timeval tv;
+            //REAL8 timestamp=-1.0;
             INT4 i=0;
 
             thread = runState->threads[t];
@@ -331,11 +331,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
                     if (diffEvo && (thread->step % thread->differentialPointsSkip == 0))
                         accumulateDifferentialEvolutionSample(thread, de_buffer_limit);
-
+                    /*   
                     if (benchmark) {
                         gettimeofday(&tv, NULL);
                         timestamp = tv.tv_sec + tv.tv_usec/1E6 - timestamp_epoch;
-                    }
+                    }*/
 
                     //LALInferenceSaveSample(thread, resumeoutputs[t]);
                     //LALInferencePrintMCMCSample(thread, runState->data, thread->step, timestamp, threadoutputs[t]);
@@ -1009,8 +1009,8 @@ void LALInferenceNameOutputs(LALInferenceRunState *runState) {
 
 /* If running with --resume, check if the resume file exists.  If it does, restore the runstate */
 void LALInferenceResumeMCMC(LALInferenceRunState *runState) {
-    INT4 t, n_local_threads;
-    LALInferenceThreadState *thread;
+    //INT4 t, n_local_threads;
+    //LALInferenceThreadState *thread;
 
     if (LALInferenceGetProcParamVal(runState->commandLine, "--resume") &&
             access(runState->outFileName, R_OK) == 0 &&
@@ -1026,7 +1026,7 @@ void LALInferenceResumeMCMC(LALInferenceRunState *runState) {
 
 /* Store the MCMC run state to HDF5 for use by --resume */
 void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
-    ProcessParamsTable *ppt;
+    //ProcessParamsTable *ppt;
     INT4 t, n_local_threads;
     INT4 MPIrank;
     LALH5File *resume_file = NULL;
@@ -1069,8 +1069,9 @@ void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
 
 /* Read in and restore the run state from an MCMC checkpoint */
 void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
-    ProcessParamsTable *ppt;
-    INT4 t, n_local_threads, n;
+    //ProcessParamsTable *ppt;
+    INT4 t, n_local_threads;
+    UINT4 n;
     LALH5File *resume_file = NULL;
     LALH5File *output = NULL;
     LALInferenceThreadState *thread;
@@ -1157,7 +1158,7 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
         LALH5File *chain_group = XLALH5GroupOpen(group, thread->name);
 
         LALInferenceVariables **input_array;
-        INT4 i, N;
+        UINT4 i,N;
         LALInferenceH5GroupToVariablesArray(chain_group, &input_array, &N);
         for (i=0; i<N; i++)
             LALInferenceLogSampleToArray(thread->algorithmParams, input_array[i]);
@@ -1174,7 +1175,7 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
 
 
 void LALInferenceWriteMCMCSamples(LALInferenceRunState *runState) {
-    ProcessParamsTable *ppt;
+    //ProcessParamsTable *ppt;
     INT4 MPIrank;
     INT4 t, n_local_threads;
     LALH5File *output = NULL;
