@@ -546,7 +546,7 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   }
 
   for( i=0; i<length; i++){
-    long double thisphi = 0.;
+    REAL8 thisphi = 0.;
 
     REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /* time of data */
 
@@ -573,13 +573,13 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
           REAL8 dtg = 0, expd = 1.;
           dtg = deltat - (glep[j]-T0); /* time since glitch */
           if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
-          thisphi += phis->data[i] += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
+          thisphi += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
         }
       }
     }
 
     thisphi *= (long double)freqFactor; /* multiply by frequency factor */
-    phis->data[i] = (REAL8)(thisphi - floorl(thisphi)); /* only need to keep the fractional part of the phase */
+    phis->data[i] = thisphi - floor(thisphi); /* only need to keep the fractional part of the phase */
   }
 
   /* free memory */

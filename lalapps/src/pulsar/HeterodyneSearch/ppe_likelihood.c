@@ -530,8 +530,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     if ( (C21 < 0. && C22 > 0.) || (C21 > 0. && C22 < 0.) ) { return -DBL_MAX; } /* if same sign this will be positive */
   }
 
-  /* if there are values for which the priors are defined by a correlation
-     coefficient matrix then get add the prior from that */
+  /* if there are values for which the priors are defined by a correlation coefficient matrix then get add the prior from that */
   if ( corlist ){
     gsl_matrix *cor = NULL, *invcor = NULL;
     gsl_vector_view vals;
@@ -553,6 +552,9 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     ptmp /= 2.;
 
     prior -= ptmp;
+
+    XLALDestroyREAL8Vector( corVals );
+    XLAL_CALLGSL( gsl_vector_free( vm ) );
   }
 
   return prior;

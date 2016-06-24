@@ -1462,6 +1462,7 @@ INT4 LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState)
   }
   REAL8 logL=-DBL_MAX;
   REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
+
   /* Draw the last sample from the cache and reduce the size of the cache by one
    until we find one that has a high enough likelihood */
   do {
