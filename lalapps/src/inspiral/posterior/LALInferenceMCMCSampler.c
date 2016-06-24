@@ -331,7 +331,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
                     if (diffEvo && (thread->step % thread->differentialPointsSkip == 0))
                         accumulateDifferentialEvolutionSample(thread, de_buffer_limit);
-                    /*   
+                    /*
                     if (benchmark) {
                         gettimeofday(&tv, NULL);
                         timestamp = tv.tv_sec + tv.tv_usec/1E6 - timestamp_epoch;
@@ -981,22 +981,22 @@ void LALInferenceNameOutputs(LALInferenceRunState *runState) {
         runState->outFileName = (char*)XLALCalloc(strlen(ppt->value)+255, sizeof(char*));
         runState->resumeOutFileName = (char*)XLALCalloc(strlen(ppt->value)+255, sizeof(char*));
         if (MPIrank == 0) {
-            sprintf(runState->outFileName, "%s.h5", ppt->value);
-            sprintf(runState->resumeOutFileName, "%s.resume.h5", ppt->value);
+            sprintf(runState->outFileName, "%s", ppt->value);
+            sprintf(runState->resumeOutFileName, "%s.resume", ppt->value);
         } else {
-            sprintf(runState->outFileName, "%s.%2.2d.h5", ppt->value, MPIrank);
-            sprintf(runState->resumeOutFileName, "%s.%2.2d.resume.h5", ppt->value, MPIrank);
+            sprintf(runState->outFileName, "%s.%2.2d", ppt->value, MPIrank);
+            sprintf(runState->resumeOutFileName, "%s.%2.2d.resume", ppt->value, MPIrank);
         }
 
     } else {
         runState->outFileName = (char*)XLALCalloc(255, sizeof(char*));
         runState->resumeOutFileName = (char*)XLALCalloc(255, sizeof(char*));
         if (MPIrank == 0) {
-            sprintf(runState->outFileName, "PTMCMC.output.%u.h5", randomseed);
-            sprintf(runState->resumeOutFileName, "PTMCMC.output.%u.resume.h5", randomseed);
+            sprintf(runState->outFileName, "PTMCMC.output.%u", randomseed);
+            sprintf(runState->resumeOutFileName, "PTMCMC.output.%u.resume", randomseed);
         } else {
-            sprintf(runState->outFileName, "PTMCMC.output.%u.%2.2d.h5", randomseed, MPIrank);
-            sprintf(runState->resumeOutFileName, "PTMCMC.output.%u.%2.2d.resume.h5", randomseed, MPIrank);
+            sprintf(runState->outFileName, "PTMCMC.output.%u.%2.2d", randomseed, MPIrank);
+            sprintf(runState->resumeOutFileName, "PTMCMC.output.%u.%2.2d.resume", randomseed, MPIrank);
         }
     }
 

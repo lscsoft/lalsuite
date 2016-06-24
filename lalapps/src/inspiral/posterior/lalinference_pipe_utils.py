@@ -1756,7 +1756,7 @@ class LALInferenceMCMCNode(EngineNode):
     self.add_var_opt('executable',li_job.binary)
 
   def set_output_file(self,filename):
-    self.posfile=filename
+    self.posfile=filename+'.h5'
     # Should also take care of the higher temperature outpufiles with
     # self.add_output_file, getting the number of files from machine_count
     self.add_file_opt(self.outfilearg,self.posfile,file_is_output_file=True)
@@ -1882,8 +1882,6 @@ class ResultsPageNode(pipeline.CondorDAGNode):
       """
       self.add_parent(node)
       self.add_file_arg(node.get_pos_file())
-      if isinstance(node,LALInferenceMCMCNode):
-        self.add_var_opt('lalinfmcmc','')
 
     def get_pos_file(self): return self.posfile
     def set_bayes_coherent_incoherent(self,bcifile):
