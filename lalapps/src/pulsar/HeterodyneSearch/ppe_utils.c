@@ -235,6 +235,8 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chun
     fclose( fpsegs );
   }
 
+  XLALDestroyUINT4Vector( chunkIndex );
+
   return chunkLengths;
 }
 
@@ -496,14 +498,14 @@ void rechop_data( UINT4Vector **chunkIndex, UINT4 chunkMax, UINT4 chunkMin ){
   /* chop any chunks that are greater than chunkMax into chunks smaller than, or equal to chunkMax, and greater than chunkMin */
   for ( i = 0; i < length; i++ ){
     if ( i == 0 ) { startindex = 0; }
-    else { startindex = cip->data[i-1]+1; }
+    else { startindex = cip->data[i-1]; }
 
     chunklength = cip->data[i] - startindex;
 
     if ( chunklength > chunkMax ){
       UINT4 remain = chunklength % chunkMax;
 
-      /* cut segment into as many chunkMin chunks as possible */
+      /* cut segment into as many chunkMax chunks as possible */
       for ( j = 0; j < floor(chunklength / chunkMax); j++ ){
         newindex[count] = startindex + (j+1)*chunkMax;
         count++;
