@@ -330,6 +330,9 @@ void compare_likelihoods( LALInferenceRunState *rs ){
 
   /* loop over samples and calculate likelihoods */
   for ( k = 0; k < sampsList->nTokens; k++){
+    /* remove "fixed variable" logL from curparams */
+    if ( LALInferenceCheckVariable(curparams, "logL" ) ){ LALInferenceRemoveVariable( curparams, "logL" ); }
+
     /* split line */
     TokenList *paramVals = NULL;
     if ( XLALCreateTokenList( &paramVals, sampsList->tokens[k], " \t" ) != XLAL_SUCCESS ){
