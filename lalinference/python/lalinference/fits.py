@@ -173,7 +173,7 @@ def gps_to_mjd(gps_time):
 
 def write_sky_map(filename, m, nest=False, objid=None, url=None, instruments=None,
     gps_time=None, gps_creation_time=None, creator=None, origin=None,
-    runtime=None):
+    runtime=None, distmean=None, diststd=None):
     """Write a gravitational-wave sky map to a file, populating the header
     with optional metadata."""
 
@@ -219,6 +219,14 @@ def write_sky_map(filename, m, nest=False, objid=None, url=None, instruments=Non
     if runtime is not None:
         extra_header.append(('RUNTIME', runtime,
             'Runtime in seconds of the CREATOR program'))
+
+    if distmean is not None:
+        extra_header.append(('DISTMEAN', distmean,
+            'Posterior mean distance in Mpc'))
+
+    if diststd is not None:
+        extra_header.append(('DISTSTD', diststd,
+            'Posterior standard deviation of distance in Mpc'))
 
     m = np.atleast_2d(m)
 
@@ -330,6 +338,20 @@ def read_sky_map(filename, nest=False, distances=False):
         pass
     else:
         metadata['runtime'] = value
+
+    try:
+        value = header['DISTMEAN']
+    except KeyError:
+        pass
+    else:
+        metadata['distmean'] = value
+
+    try:
+        value = header['DISTSTD']
+    except KeyError:
+        pass
+    else:
+        metadata['diststd'] = value
 
     return prob, metadata
 
