@@ -22,11 +22,11 @@ test_scripts += test_detframe.py
 if HAVE_CHEALPIX
 test_scripts += test_bayestar.py
 
-installcheck-local:
-	../python/bayestar_sample_model_psd --H1=aLIGOZeroDetHighPower --L1=aLIGOZeroDetHighPower -o test_bayestar_sample_model_psd.xml && \
-	../python/bayestar_realize_coincs --detector H1 L1 --reference-psd test_bayestar_sample_model_psd.xml $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_realize_coincs.xml && \
-	../python/bayestar_sim_to_tmpltbank $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_sim_to_tmpltbank.xml && \
-	../python/bayestar_prune_neighborhood_tmpltbank test_bayestar_sim_to_tmpltbank.xml --mass1 1.4 --mass2 1.4 --snr 8 -o test_bayestar_prune_neighborhood_tmpltbank.xml
+# installcheck-local:
+# 	../python/bayestar_sample_model_psd --H1=aLIGOZeroDetHighPower --L1=aLIGOZeroDetHighPower -o test_bayestar_sample_model_psd.xml && \
+# 	../python/bayestar_realize_coincs --detector H1 L1 --reference-psd test_bayestar_sample_model_psd.xml $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_realize_coincs.xml && \
+# 	../python/bayestar_sim_to_tmpltbank $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_sim_to_tmpltbank.xml && \
+# 	../python/bayestar_prune_neighborhood_tmpltbank test_bayestar_sim_to_tmpltbank.xml --mass1 1.4 --mass2 1.4 --snr 8 -o test_bayestar_prune_neighborhood_tmpltbank.xml
 # bayestar_lattice_tmpltbank -o test_bayestar_lattice_tmpltbank.xml --min-mass 2.7 --max-mass 2.9
 # bayestar_littlehope $srcdir/HL-INJECTIONS_1_TEST-1000000000-10.xml \
 #     --template-bank test_bayestar_sim_to_tmpltbank.xml \
