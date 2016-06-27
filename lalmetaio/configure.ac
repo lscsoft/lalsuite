@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALMetaIO],[1.2.7.1],[lal-discuss@ligo.org])
+AC_INIT([LALMetaIO],[1.2.8],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALMetaIOConfig.h])
 AC_CONFIG_SRCDIR([src/LIGOLwXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -113,8 +113,8 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.16.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.16.0],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LAL],[6.16.1],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.16.1],[XLALCacheImport],[lal/LALCache.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
