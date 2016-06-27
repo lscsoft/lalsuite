@@ -188,7 +188,7 @@ static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState
   if (runState->commandLine == NULL || (!LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp") &&
       !LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")))
   {
-    return 1;
+    return logPrior;
   }
 
   ifo = runState->data;
