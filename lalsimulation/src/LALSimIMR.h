@@ -196,6 +196,16 @@ int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hplus, REAL8TimeSeri
 
 /* in module LALSimInspiralNRWaveforms.c */
 
+int XLALSimInspiralNRWaveformGetSpinsFromHDF5File(
+  REAL8 *S1x,             /**< [out] Dimensionless spin1x in LAL frame */
+  REAL8 *S1y,             /**< [out] Dimensionless spin1y in LAL frame */
+  REAL8 *S1z,             /**< [out] Dimensionless spin1z in LAL frame */
+  REAL8 *S2x,             /**< [out] Dimensionless spin2x in LAL frame */
+  REAL8 *S2y,             /**< [out] Dimensionless spin2y in LAL frame */
+  REAL8 *S2z,             /**< [out] Dimensionless spin2z in LAL frame */
+  const char *NRDataFile  /**< Location of NR HDF file */
+);
+
 int XLALSimInspiralNRWaveformGetHplusHcross(
         REAL8TimeSeries **hplus,        /**< OUTPUT h_+ vector */
         REAL8TimeSeries **hcross,       /**< OUTPUT h_x vector */

@@ -58,6 +58,51 @@
 #include "LALSimIMRSEOBNRROMUtilities.c"
 
 /* Everything needs to be declared as unused in case HDF is not enabled. */
+UNUSED static UINT4 XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(
+  UNUSED REAL8 *S1x,           /**< [out] Dimensionless spin1x in LAL frame */
+  UNUSED REAL8 *S1y,           /**< [out] Dimensionless spin1y in LAL frame */
+  UNUSED REAL8 *S1z,           /**< [out] Dimensionless spin1z in LAL frame */
+  UNUSED REAL8 *S2x,           /**< [out] Dimensionless spin2x in LAL frame */
+  UNUSED REAL8 *S2y,           /**< [out] Dimensionless spin2y in LAL frame */
+  UNUSED REAL8 *S2z,           /**< [out] Dimensionless spin2z in LAL frame */
+  UNUSED LALH5File* file       /**< Pointer to HDF5 file */
+)
+{
+  #ifndef LAL_HDF5_ENABLED
+  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+  #else
+  REAL8 nrSpin1x, nrSpin1y, nrSpin1z, nrSpin2x, nrSpin2y, nrSpin2z;
+  REAL8 ln_hat_x, ln_hat_y, ln_hat_z, n_hat_x, n_hat_y, n_hat_z;
+  XLALH5FileQueryScalarAttributeValue(&nrSpin1x, file, "spin1x");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin1y, file, "spin1y");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin1z, file, "spin1z");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin2x, file, "spin2x");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin2y, file, "spin2y");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin2z, file, "spin2z");
+
+  XLALH5FileQueryScalarAttributeValue(&ln_hat_x , file, "LNhatx");
+  XLALH5FileQueryScalarAttributeValue(&ln_hat_y , file, "LNhaty");
+  XLALH5FileQueryScalarAttributeValue(&ln_hat_z , file, "LNhatz");
+
+  XLALH5FileQueryScalarAttributeValue(&n_hat_x , file, "nhatx");
+  XLALH5FileQueryScalarAttributeValue(&n_hat_y , file, "nhaty");
+  XLALH5FileQueryScalarAttributeValue(&n_hat_z , file, "nhatz");
+
+  *S1x = nrSpin1x * n_hat_x + nrSpin1y * n_hat_y + nrSpin1z * n_hat_z;
+  *S1y = nrSpin1x * (-ln_hat_z * n_hat_y + ln_hat_y * n_hat_z)
+        + nrSpin1y * (ln_hat_z * n_hat_x - ln_hat_x * n_hat_z)
+        + nrSpin1z * (-ln_hat_y * n_hat_x + ln_hat_x * n_hat_y) ;
+  *S1z = nrSpin1x * ln_hat_x + nrSpin1y * ln_hat_y + nrSpin1z * ln_hat_z;
+
+  *S2x = nrSpin2x * n_hat_x + nrSpin2y * n_hat_y + nrSpin2z * n_hat_z;
+  *S2y = nrSpin2x * (-ln_hat_z * n_hat_y + ln_hat_y * n_hat_z)
+        + nrSpin2y * (ln_hat_z * n_hat_x - ln_hat_x * n_hat_z)
+        + nrSpin2z * (-ln_hat_y * n_hat_x + ln_hat_x * n_hat_y);
+  *S2z = nrSpin2x * ln_hat_x + nrSpin2y * ln_hat_y + nrSpin2z * ln_hat_z;
+
+  return XLAL_SUCCESS;
+  #endif
+}
 
 UNUSED static UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File(
   UNUSED REAL8Vector** output,            /**< Returned vector uncompressed */
@@ -286,6 +331,28 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
   #endif
 }
 
+int XLALSimInspiralNRWaveformGetSpinsFromHDF5File(
+  UNUSED REAL8 *S1x,             /**< [out] Dimensionless spin1x in LAL frame */
+  UNUSED REAL8 *S1y,             /**< [out] Dimensionless spin1y in LAL frame */
+  UNUSED REAL8 *S1z,             /**< [out] Dimensionless spin1z in LAL frame */
+  UNUSED REAL8 *S2x,             /**< [out] Dimensionless spin2x in LAL frame */
+  UNUSED REAL8 *S2y,             /**< [out] Dimensionless spin2y in LAL frame */
+  UNUSED REAL8 *S2z,             /**< [out] Dimensionless spin2z in LAL frame */
+  UNUSED const char *NRDataFile  /**< Location of NR HDF file */
+)
+{
+  #ifndef LAL_HDF5_ENABLED
+  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+  #else
+  LALH5File *file;
+  file = XLALH5FileOpen(NRDataFile, "r");
+  XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(S1x, S1y, S1z, S2x, S2y,
+                                                       S2z, file);
+
+  return XLAL_SUCCESS;
+  #endif
+}
+
 
 /* Everything needs to be declared as unused in case HDF is not enabled. */
 int XLALSimInspiralNRWaveformGetHplusHcross(
@@ -315,9 +382,8 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   UINT4 curr_idx;
   INT4 model, modem;
   size_t array_length;
-  REAL8 nrEta, nrSpin1x, nrSpin1y, nrSpin1z, nrSpin2x, nrSpin2y, nrSpin2z;
+  REAL8 nrEta;
   REAL8 S1x, S1y, S1z, S2x, S2y, S2z;
-  REAL8 ln_hat_x, ln_hat_y, ln_hat_z, n_hat_x, n_hat_y, n_hat_z;
   REAL8 Mflower, time_start_M, time_start_s, time_end_M, time_end_s;
   REAL8 chi, est_start_time, curr_h_real, curr_h_imag;
   REAL8 theta, psi, calpha, salpha;
@@ -357,33 +423,8 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
    * recorded in the metadata of the HDF5 file.
    * PS: This assumes that the input spins are in the LAL frame!
    */
-
-  XLALH5FileQueryScalarAttributeValue(&nrSpin1x, file, "spin1x");
-  XLALH5FileQueryScalarAttributeValue(&nrSpin1y, file, "spin1y");
-  XLALH5FileQueryScalarAttributeValue(&nrSpin1z, file, "spin1z");
-  XLALH5FileQueryScalarAttributeValue(&nrSpin2x, file, "spin2x");
-  XLALH5FileQueryScalarAttributeValue(&nrSpin2y, file, "spin2y");
-  XLALH5FileQueryScalarAttributeValue(&nrSpin2z, file, "spin2z");
-
-  XLALH5FileQueryScalarAttributeValue(&ln_hat_x , file, "LNhatx");
-  XLALH5FileQueryScalarAttributeValue(&ln_hat_y , file, "LNhaty");
-  XLALH5FileQueryScalarAttributeValue(&ln_hat_z , file, "LNhatz");
-
-  XLALH5FileQueryScalarAttributeValue(&n_hat_x , file, "nhatx");
-  XLALH5FileQueryScalarAttributeValue(&n_hat_y , file, "nhaty");
-  XLALH5FileQueryScalarAttributeValue(&n_hat_z , file, "nhatz");
-
-  S1x = nrSpin1x * n_hat_x + nrSpin1y * n_hat_y + nrSpin1z * n_hat_z;
-  S1y = nrSpin1x * (-ln_hat_z * n_hat_y + ln_hat_y * n_hat_z)
-        + nrSpin1y * (ln_hat_z * n_hat_x - ln_hat_x * n_hat_z)
-        + nrSpin1z * (-ln_hat_y * n_hat_x + ln_hat_x * n_hat_y) ;
-  S1z = nrSpin1x * ln_hat_x + nrSpin1y * ln_hat_y + nrSpin1z * ln_hat_z;
-
-  S2x = nrSpin2x * n_hat_x + nrSpin2y * n_hat_y + nrSpin2z * n_hat_z;
-  S2y = nrSpin2x * (-ln_hat_z * n_hat_y + ln_hat_y * n_hat_z)
-        + nrSpin2y * (ln_hat_z * n_hat_x - ln_hat_x * n_hat_z)
-        + nrSpin2z * (-ln_hat_y * n_hat_x + ln_hat_x * n_hat_y);
-  S2z = nrSpin2x * ln_hat_x + nrSpin2y * ln_hat_y + nrSpin2z * ln_hat_z;
+  XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(&S1x, &S1y, &S1z,
+                                                       &S2x, &S2y, &S2z, file);
 
   if (fabs(S1x - s1x) > 1E-3)
   {
