@@ -283,6 +283,32 @@ def tau0tau3_bound(flow, **constraints):
     return lims_tau0, lims_tau3
 
 
+def urand_mtotal_generator(mtotal_min, mtotal_max):
+    """
+    This is a generator for random total mass values corresponding to a
+    uniform distribution of mass pairs in (tau0, tau3) space.  See also
+    urand_eta_generator(), and see LIGO-T1300127 for details.
+    """
+    alpha = mtotal_min*(1-(mtotal_min/mtotal_max)**(7./3.))**(-3./7.)
+    beta = (mtotal_min/mtotal_max)**(7./3.)/(1-(mtotal_min/mtotal_max)**(7./3.))
+    n = -3./7.
+    while 1:   # NB: "while 1" is inexplicably much faster than "while True"
+        yield alpha*(uniform(0, 1)+beta)**n
+
+
+def urand_eta_generator(eta_min, eta_max):
+    """
+    This is a generator for random eta (symmetric mass ratio) values
+    corresponding to a uniform distribution of mass pairs in (tau0, tau3)
+    space.  See also urand_mtotal_generator(), and see LIGO-T1300127 for
+    details.
+    """
+    alpha = eta_min/sqrt(1-(eta_min/eta_max)**2)
+    beta = (eta_min/eta_max)**2/(1-(eta_min/eta_max)**2)
+    while 1:   # NB: "while 1" is inexplicably much faster than "while True"
+        yield alpha/sqrt(uniform(0, 1)+beta)
+
+
 def urand_tau0tau3_generator(flow, **constraints):
     """
     This is a generator for random (m1, m2) pairs that are uniformly
