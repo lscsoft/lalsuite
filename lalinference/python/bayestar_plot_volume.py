@@ -79,7 +79,7 @@ nside = hp.npix2nside(npix)
 
 progress.update(-1, 'Preparing projection')
 
-R = principal_axes(prob, mu, sigma)
+R = np.ascontiguousarray(principal_axes(prob, mu, sigma))
 
 if opts.chain:
     chain = np.recfromtxt(opts.chain, names=True)

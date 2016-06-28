@@ -557,10 +557,7 @@ static void volume_render_kernel_loop(
     /* Assert that rotation matrix is 3x3 */
     assert(dimensions[1] == 3);
 
-    /* Assert that array arguments are stored contiguously */
-    assert(steps[11] == sizeof(double));
-    assert(steps[12] == sizeof(double) * 3);
-    assert(steps[13] == sizeof(double));
+    /* FIXME: Check that array arguments are stored contiguously */
 
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
