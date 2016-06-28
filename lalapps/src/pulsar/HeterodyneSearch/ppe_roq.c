@@ -260,6 +260,10 @@ void generate_interpolant( LALInferenceRunState *runState ){
         }
 
         LALInferenceAddVariable( ifotmp->params, "siderealDay", &thissiddayfrac, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+        if ( !LALInferenceCheckVariable( ifotmp->params, "varyskypos" ) ){
+          UINT4 vsp = 1;
+          LALInferenceAddVariable( ifotmp->params, "varyskypos", &vsp, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+        }
 
         REAL8Vector *deltas = XLALCreateREAL8Vector( 1 );
         deltas->data[0] = dt;

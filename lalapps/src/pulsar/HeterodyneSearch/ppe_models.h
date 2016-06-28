@@ -47,8 +47,7 @@ void set_nonGR_model_parameters( PulsarParameters *pars, char* nonGRmodel );
 REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *ifo, REAL8 freqFactor );
 
 REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes, EphemerisData *ephem,
-                            TimeCorrectionData *tdat, TimeCorrectionType ttype, LALDetector *detector,
-                            REAL8 interptime );
+                            TimeCorrectionData *tdat, TimeCorrectionType ttype, LALDetector *detector);
 
 REAL8Vector *get_bsb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes, REAL8Vector *dts,
                             EphemerisData *ephem );

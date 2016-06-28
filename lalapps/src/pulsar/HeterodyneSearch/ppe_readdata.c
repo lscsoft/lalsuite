@@ -995,7 +995,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
       if ( glitches ){ LALInferenceAddVariable( ifo_model->params, "GLITCHES", &glitches, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED ); }
 
-      dts = get_ssb_delay( pulsar, ifo_model->times, ifo_model->ephem, ifo_model->tdat, ifo_model->ttype, data->detector, 0. );
+      dts = get_ssb_delay( pulsar, ifo_model->times, ifo_model->ephem, ifo_model->tdat, ifo_model->ttype, data->detector );
       LALInferenceAddVariable( ifo_model->params, "ssb_delays", &dts, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
 
       bdts = get_bsb_delay( pulsar, ifo_model->times, dts, ifo_model->ephem );

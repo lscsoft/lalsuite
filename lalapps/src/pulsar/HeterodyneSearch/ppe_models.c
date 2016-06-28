@@ -446,7 +446,6 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   UINT4 i = 0, j = 0, length = 0, isbinary = 0;
 
   REAL8 DT = 0., deltat = 0., deltatupdate = 0.;
-  REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
 
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
   LIGOTimeGPSVector *datatimes = NULL;
@@ -471,8 +470,7 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
 
   /* get time delays */
   if( (dts = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "ssb_delays" )) == NULL || LALInferenceCheckVariable( ifo->params, "varyskypos" ) ){
-    /* get time delays with an interpolation of interptime (30 mins) */
-    dts = get_ssb_delay( params, datatimes, ifo->ephem, ifo->tdat, ifo->ttype, ifo->detector, interptime );
+    dts = get_ssb_delay( params, datatimes, ifo->ephem, ifo->tdat, ifo->ttype, ifo->detector );
   }
 
   if( LALInferenceCheckVariable( ifo->params, "varybinary" ) ){
@@ -578,16 +576,13 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
       }
     }
 
-    thisphi *= (long double)freqFactor; /* multiply by frequency factor */
+    thisphi *= freqFactor; /* multiply by frequency factor */
     phis->data[i] = thisphi - floor(thisphi); /* only need to keep the fractional part of the phase */
   }
 
   /* free memory */
-  if ( !LALInferenceCheckVariable( ifo->params, "ssb_delays") || LALInferenceCheckVariable( ifo->params, "varyskypos" ) )
-    XLALDestroyREAL8Vector( dts );
-
-  if ( !LALInferenceCheckVariable( ifo->params, "bsb_delays") || LALInferenceCheckVariable( ifo->params, "varybinary" ) )
-    XLALDestroyREAL8Vector( bdts );
+  if ( !LALInferenceCheckVariable( ifo->params, "ssb_delays") || LALInferenceCheckVariable( ifo->params, "varyskypos" ) ){ XLALDestroyREAL8Vector( dts ); }
+  if ( !LALInferenceCheckVariable( ifo->params, "bsb_delays") || LALInferenceCheckVariable( ifo->params, "varybinary" ) ){ XLALDestroyREAL8Vector( bdts ); }
 
   if ( glnum > 0 ){
     XLALFree( glep );
@@ -618,7 +613,6 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
  * \param datatimes [in] A vector of GPS times at Earth
  * \param ephem [in] Information on the solar system ephemeris
  * \param detector [in] Information on the detector position on the Earth
- * \param interptime [in] The time (in seconds) between explicit recalculations of the time delay
  * \param tdat *UNDOCUMENTED*
  * \param ttype *UNDOCUMENTED*
  * \return A vector of time delays in seconds
@@ -627,10 +621,8 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
  * \sa XLALBarycenterEarth
  */
 REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes, EphemerisData *ephem,
-                            TimeCorrectionData *tdat, TimeCorrectionType ttype, LALDetector *detector,
-                            REAL8 interptime ){
+                            TimeCorrectionData *tdat, TimeCorrectionType ttype, LALDetector *detector ){
   INT4 i = 0, length = 0;
-  REAL8 T0 = 0.;
 
   BarycenterInput bary;
 
@@ -677,8 +669,6 @@ REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
   else if( dist != 0. ) { bary.dInv = LAL_C_SI/(dist*1e3*LAL_PC_SI); }
   else { bary.dInv = 0.; }
 
-  T0 = pepoch;
-
   /* make sure ra and dec are wrapped within 0--2pi and -pi.2--pi/2 respectively */
   ra = fmod(ra, LAL_TWOPI);
   REAL8 absdec = fabs(dec);
@@ -688,39 +678,20 @@ REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
     ra = fmod(ra + (REAL8)nwrap*LAL_PI, LAL_TWOPI); /* move RA by pi */
   }
 
-  EarthState earth, earth2;
-  EmissionTime emit, emit2;
+  EarthState earth;
+  EmissionTime emit;
   for( i=0; i<length; i++){
-    REAL8 DT = 0., DTplus = 0., realT = XLALGPSGetREAL8( &datatimes->data[i] );
-    DT = realT - T0;
+    REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] );
 
-    /* only do call to the barycentring routines once every interptime (unless interptime == 0), otherwise just linearly interpolate between them */
-    if( i == 0 || DT > DTplus || interptime == 0 ){
-      bary.tgps = datatimes->data[i];
+    bary.tgps = datatimes->data[i];
+    bary.delta = dec + ( realT - posepoch ) * pmdec;
+    bary.alpha = ra + ( realT - posepoch ) * pmra / cos( bary.delta );
 
-      bary.delta = dec + ( realT - posepoch ) * pmdec;
-      bary.alpha = ra + ( realT - posepoch ) * pmra / cos( bary.delta );
+    /* call barycentring routines */
+    XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth, &bary.tgps, ephem, tdat, ttype ) == XLAL_SUCCESS, XLAL_EFUNC, "Barycentring routine failed" );
+    XLAL_CHECK_NULL( XLALBarycenter( &emit, &bary, &earth ) == XLAL_SUCCESS, XLAL_EFUNC, "Barycentring routine failed" );
 
-      /* call barycentring routines */
-      XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth, &bary.tgps, ephem, tdat, ttype ) == XLAL_SUCCESS, XLAL_EFUNC, "Barycentring routine failed" );
-      XLAL_CHECK_NULL( XLALBarycenter( &emit, &bary, &earth ) == XLAL_SUCCESS, XLAL_EFUNC, "Barycentring routine failed" );
-
-      /* add interptime to the time */
-      if ( interptime > 0 ){
-        DTplus = DT + interptime;
-        XLALGPSAdd( &bary.tgps, interptime );
-
-        /* No point in updating the positions as difference will be tiny */
-        XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth2, &bary.tgps, ephem, tdat, ttype ) == XLAL_SUCCESS, XLAL_EFUNC, "Barycentring routine failed" );
-        XLAL_CHECK_NULL( XLALBarycenter( &emit2, &bary, &earth2 ) == XLAL_SUCCESS, XLAL_EFUNC, "Barycentring routine failed" );
-      }
-    }
-
-    /* linearly interpolate to get emitdt */
-    if( interptime > 0. ){
-      dts->data[i] = emit.deltaT + (DT - (DTplus - interptime)) * (emit2.deltaT -  emit.deltaT)/interptime;
-    }
-    else { dts->data[i] = emit.deltaT; }
+    dts->data[i] = emit.deltaT;
   }
 
   return dts;
