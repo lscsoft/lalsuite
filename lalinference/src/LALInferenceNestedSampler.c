@@ -61,13 +61,10 @@ static struct itimerval checkpoint_timer;
 /** Utility functions for the resume functionality */
 /** Write the current state to a checkpoint file the given filename */
 /** Read the given filename to populate a given LALInferenceRunState and NSintegralState */
-//#ifdef HAVE_HDF5
-#if 0
+#ifdef HAVE_HDF5
 static int _saveNSintegralStateH5(LALH5File *group, NSintegralState *s);
 static int _saveNSintegralStateH5(LALH5File *group, NSintegralState *s)
 {
-  UINT4 N=s->size;
-  XLALH5FileAddScalarAttribute(group, "number_live_points", &(N), LAL_U4_TYPE_CODE );
   XLALH5FileAddScalarAttribute(group, "iteration", &(s->iteration), LAL_U4_TYPE_CODE );
   XLALH5FileWriteREAL8Vector(group, "logZarray", s->logZarray);
   XLALH5FileWriteREAL8Vector(group, "oldZarray", s->oldZarray);
@@ -81,7 +78,6 @@ static int _saveNSintegralStateH5(LALH5File *group, NSintegralState *s)
 static int _loadNSintegralStateH5(LALH5File *group, NSintegralState *s);
 static int _loadNSintegralStateH5(LALH5File *group, NSintegralState *s)
 {
-  XLALH5FileQueryScalarAttributeValue(&(s->size), group, "number_live_points");
   XLALH5FileQueryScalarAttributeValue(&(s->iteration), group, "iteration");
   s->logZarray = XLALH5FileReadREAL8Vector(group, "logZarray");
   s->oldZarray = XLALH5FileReadREAL8Vector(group, "oldZarray");
@@ -89,6 +85,7 @@ static int _loadNSintegralStateH5(LALH5File *group, NSintegralState *s)
   s->logwarray = XLALH5FileReadREAL8Vector(group, "logwarray");
   s->logtarray = XLALH5FileReadREAL8Vector(group, "logtarray");
   s->logt2array = XLALH5FileReadREAL8Vector(group, "logt2array");
+  s->size = s->logZarray->length;
   return(0);
 }
 
@@ -129,6 +126,7 @@ static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NS
 {
   int retcode;
   LALH5File *h5file;
+  UINT4 Nlive;
   if( access( filename, F_OK ) == -1 ) return(1);
   XLAL_TRY(h5file = XLALH5FileOpen(filename,"r"),retcode);
   if(retcode!=XLAL_SUCCESS) return(retcode);
@@ -151,7 +149,7 @@ static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NS
     return 1;
   }
   LALH5File *liveGroup = XLALH5GroupOpen(group,"live_points");
-  retcode = LALInferenceH5GroupToVariablesArray(liveGroup , &(runState->livePoints), &(s->size));
+  retcode = LALInferenceH5GroupToVariablesArray(liveGroup , &(runState->livePoints), &Nlive );
   printf("restored %i live points\n",s->size);
   XLALH5FileClose(liveGroup);
   if(N_outputarray>0)
@@ -798,22 +796,25 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   ppt = NULL;
   ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
   if(!ppt){
-    fprintf(stderr,"Must specify --outfile <filename.dat>\n");
-    exit(1);
+    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outhdf");
+    if(!ppt){
+      fprintf(stderr,"Must specify --outfile <filename.dat> or --outhdf <filename.h5>\n");
+      exit(1);
+      }
   }
   char *outfile=ppt->value;
-
+  double logvolume=0.0;
   if ( LALInferenceCheckVariable( runState->livePoints[0], "chirpmass" ) ){
     /* If a cbc run, calculate the mass-distance volume and store it to file*/ 
     /* Do it before algorithm starts so that we can kill the run and still get this */
-    double volume=LALInferenceMassDistancePriorVolume(runState);
-    char priorfile[FILENAME_MAX];
+    logvolume=log(LALInferenceMassDistancePriorVolume(runState));
+    /*moved to hdf5 below
+     * char priorfile[FILENAME_MAX];
     sprintf(priorfile,"%s_prior_weight.txt",outfile);
     fpout=fopen(priorfile,"w");
-    fprintf(fpout,"%10.10e\n",volume);
-    fclose(fpout);
+    fprintf(fpout,"%10.10e\n",logvolume);
+    fclose(fpout);*/
   }
-
 
   if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
     displayprogress=1;
@@ -850,7 +851,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   sprintf(outfilebackup,"%s.bak",outfile);
   int retcode=1;
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume")){
-#if 0
+#ifdef HAVE_HDF5
       retcode=ReadNSCheckPointH5(resumefilename,runState,s);
 #else
       retcode=ReadNSCheckPoint(resumefilename,runState,s);
@@ -952,14 +953,14 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     LALInferenceZeroProposalStats(threadState->cycle);
     printAdaptiveJumpSizes(stdout, threadState);
   }
-  /* Write out names of parameters */
+  /* Write out names of parameters 
   FILE *lout=NULL;
   char param_list[FILENAME_MAX];
   sprintf(param_list,"%s_params.txt",outfile);
   lout=fopen(param_list,"w");
-  minpos=0;
   LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
-  fclose(lout);
+  fclose(lout);*/
+  minpos=0;
   threadState->currentParams=currentVars;
   fprintf(stdout,"Starting nested sampling loop!\n");
   /* Iterate until termination condition is met */
@@ -1022,7 +1023,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if(__ns_saveStateFlag!=0)
     {
       if(__ns_exitFlag) fprintf(stdout,"Saving state to %s.\n",resumefilename);
-#if 0
+#ifdef HAVE_HDF5
+
       WriteNSCheckPointH5(resumefilename,runState,s);
 #else
       WriteNSCheckPoint(resumefilename,runState,s);
@@ -1093,11 +1095,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
     /* Write out the evidence */
     fclose(fpout);
+    /*
     char bayesfile[FILENAME_MAX];
     sprintf(bayesfile,"%s_B.txt",outfile);
     fpout=fopen(bayesfile,"w");
     fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
     fclose(fpout);
+    */
     double logB=logZ-logZnoise;
     /* Pass output back through algorithmparams */
     LALInferenceAddVariable(runState->algorithmParams,"logZ",(void *)&logZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
@@ -1116,8 +1120,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     /* Write HDF5 file */
     if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outhdf")))
     {
+      
       LALH5File *h5file=XLALH5FileOpen(ppt->value, "w");
-      /* Create group heirarchy */
+      // Create group heirarchy 
       char runID[256]="";
       if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--runid")))
         snprintf(runID,255,"%s_%s","lalinference_nest",ppt->value);
@@ -1134,6 +1139,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       XLALH5FileAddScalarAttribute(groupPtr, "log_noise_evidence", &logZnoise, LAL_D_TYPE_CODE );
       XLALH5FileAddScalarAttribute(groupPtr, "log_max_likelihood", &logLmax , LAL_D_TYPE_CODE);
       XLALH5FileAddScalarAttribute(groupPtr, "number_live_points", &Nlive, LAL_U4_TYPE_CODE);
+      XLALH5FileAddScalarAttribute(groupPtr, "log_prior_volume", &logvolume, LAL_D_TYPE_CODE);
 
       XLALH5FileClose(h5file);
     }
