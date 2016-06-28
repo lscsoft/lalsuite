@@ -2775,7 +2775,11 @@ REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
     /* Force a likelihood calculation to generate the parameters */
     thread->parent->likelihood(currentParams,thread->parent->data,thread->model);
   if(!LALInferenceCheckVariable(currentParams,"optimal_snr") || !LALInferenceCheckVariable(currentParams,"matched_filter_snr"))
-    XLAL_ERROR_REAL8(XLAL_FAILURE,"Could not find optimal_snr or matched_filter_snr for distance likelihood jump\n");
+  {
+		  /* If still can't find the required parameters, reject this jump */
+		  LALInferenceCopyVariables(currentParams,proposedParams);
+		  return(-INFINITY);
+  }
   REAL8 OptimalSNR = LALInferenceGetREAL8Variable(currentParams,"optimal_snr");
   REAL8 MatchedFilterSNR = LALInferenceGetREAL8Variable(currentParams,"matched_filter_snr");
   REAL8 d_inner_h = MatchedFilterSNR * OptimalSNR;
