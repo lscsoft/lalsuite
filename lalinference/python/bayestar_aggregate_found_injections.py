@@ -113,8 +113,10 @@ def process(fitsfilename):
         snr = float('nan')
     if far is None:
         far = float('nan')
+    distmean = metadata.get('distmean', float('nan'))
+    diststd = metadata.get('diststd', float('nan'))
 
-    ret = [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, offset, runtime] + contour_areas + area_probs
+    ret = [coinc_event_id, simulation_id, far, snr, searched_area, searched_prob, offset, runtime, distmean, diststd] + contour_areas + area_probs
     if modes:
         ret += [searched_modes] + contour_modes
     return ret
@@ -145,9 +147,11 @@ if __name__ == '__main__':
     progress.update(-1, 'obtaining filenames of sky maps')
     fitsfilenames = tuple(command.chainglob(opts.fitsfileglobs))
 
-    colnames = ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
-        'searched_prob', 'offset', 'runtime'] + ["area({0:g})".format(p)
-        for p in contours] + ["prob({0:g})".format(a) for a in areas]
+    colnames = (
+        ['coinc_event_id', 'simulation_id', 'far', 'snr', 'searched_area',
+        'searched_prob', 'offset', 'runtime', 'distmean', 'diststd'] +
+        ["area({0:g})".format(p) for p in contours] +
+        ["prob({0:g})".format(a) for a in areas])
     if modes:
         colnames += ['searched_modes'] + ["modes({0:g})".format(p) for p in contours]
     print(*colnames, sep="\t", file=opts.output)
