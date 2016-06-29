@@ -28,60 +28,31 @@ from lalinspiral import InspiralSBankComputeMatch, InspiralSBankComputeMatchMaxS
 from lalinspiral.sbank.psds import get_neighborhood_PSD
 from lalinspiral.sbank.tau0tau3 import m1m2_to_tau0tau3
 
-# We cannot use lalmetaio directly because end_times are stored as the internal
-# LALGPSTime class (ie. no end_time_ns but end_time.gpsNanoSeconds) and the
-# Gamma values are stored as an array.
-# This *is* a hack, but I don't know a better solution :-(
-from lalmetaio import SnglInspiralTable as lmisit
-class SnglInspiralTable(lmisit):
-    @property
-    def impulse_time_ns(self):
-        return self.impulse_time.gpsNanoSeconds
+# I wanted to use lalmetaio here, but the class has issues with python as the
+# LALGPSTime class is different (ie. no end_time_ns but
+# end_time.gpsNanoSeconds) and the Gamma values are stored as an array.
+# Also not convinced it can use the *python* XML reading routines
+# So for now we use lsctables.SnglInspiralTable
 
-    @property
-    def end_time_ns(self):
-        return self.end_time.gpsNanoSeconds
+# from lalmetaio import SnglInspiralTable
+from glue.ligolw.lsctables import SnglInspiralTable as gluesit
 
-    @property
-    def Gamma0(self):
-        return self.Gamma[0]
-
-    @property
-    def Gamma1(self):
-        return self.Gamma[1]
-
-    @property
-    def Gamma2(self):
-        return self.Gamma[2]
-
-    @property
-    def Gamma3(self):
-        return self.Gamma[3]
-
-    @property
-    def Gamma4(self):
-        return self.Gamma[4]
-
-    @property
-    def Gamma5(self):
-        return self.Gamma[5]
-
-    @property
-    def Gamma6(self):
-        return self.Gamma[6]
-
-    @property
-    def Gamma7(self):
-        return self.Gamma[7]
-
-    @property
-    def Gamma8(self):
-        return self.Gamma[8]
-
-    @property
-    def Gamma9(self):
-        return self.Gamma[9]
-
+# Add some small code to initialize columns to 0 or ''
+_sit_cols = gluesit.validcolumns
+class SnglInspiralTable(gluesit):
+    def __init__(self, *args, **kwargs):
+        gluesit.__init__(self, *args, **kwargs)
+        for entry in _sit_cols.keys():
+            if not(hasattr(self,entry)):
+                if _sit_cols[entry] in ['real_4','real_8']:
+                    setattr(self,entry,0.)
+                elif _sit_cols[entry] == 'int_4s':
+                    setattr(self,entry,0)
+                elif _sit_cols[entry] == 'lstring':
+                    setattr(self,entry,'')
+            else:
+                print >> sys.stderr, "Column %s not recognized" %(entry)
+                raise ValueError
 
 def compute_mchirp(m1, m2):
     return (m1 * m1 * m1 * m2 * m2 * m2 / (m1 + m2))**0.2
@@ -268,9 +239,7 @@ class AlignedSpinTemplate(object):
         return cls(sngl.mass1, sngl.mass2, sngl.spin1z, sngl.spin2z, bank)
 
     def to_sngl(self):
-        # note that we use the C version; this causes all numerical
-        # values to be initiated as 0 and all strings to be '', which
-        # is nice
+        # All numerical values are initiated as 0 and all strings as ''
         row = SnglInspiralTable()
 
         row.mass1 = self.m1
@@ -659,8 +628,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
                    sngl.alpha1, sngl.alpha2, sngl.alpha3, sngl.alpha4, bank)
 
     def to_sngl(self):
-        # note that we use the C version; this causes all numerical values to
-        # be initiated as 0 and all strings to be '', which is nice
+        # All numerical values are initiated as 0 and all strings as ''
         row = SnglInspiralTable()
         row.mass1 = self.m1
         row.mass2 = self.m2
@@ -737,8 +705,7 @@ class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
                    sngl.spin1z, sngl.alpha1, sngl.alpha2, sngl.alpha3, sngl.alpha4, bank)
 
     def to_sngl(self):
-        # note that we use the C version; this causes all numerical values to
-        # be initiated as 0 and all strings to be '', which is nice
+        # All numerical values are initiated as 0 and all strings as ''
         row = SnglInspiralTable()
         row.mass1 = self.m1
         row.mass2 = self.m2

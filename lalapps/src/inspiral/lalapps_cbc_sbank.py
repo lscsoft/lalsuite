@@ -29,7 +29,6 @@ from glue.ligolw import utils
 from glue.ligolw import ilwd
 from glue.ligolw.utils import process as ligolw_process
 from lal import REAL8FrequencySeries
-from lalmetaio import SnglInspiralTable, EventIDColumn
 
 from optparse import OptionParser
 
@@ -37,7 +36,7 @@ from optparse import OptionParser
 from lalinspiral.sbank.bank import Bank
 from lalinspiral.sbank.tau0tau3 import proposals
 from lalinspiral.sbank.psds import noise_models, read_psd, get_PSD
-from lalinspiral.sbank.waveforms import waveforms
+from lalinspiral.sbank.waveforms import waveforms, SnglInspiralTable
 
 import lal
 
@@ -469,10 +468,13 @@ while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) 
         if not hasattr(tmplt, 'is_seed_point'):
             row = tmplt.to_sngl()
             # Event ids must be unique, or the table isn't valid, SQL needs this
-            curr_id = EventIDColumn()
-            curr_id.id = len(bank)
-            curr_id.snglInspiralTable = row
-            row.event_id = curr_id
+            row.event_id = ilwd.ilwdchar('sngl_inspiral:event_id:%d' %(len(bank),))
+            # If we figure out how to use metaio's SnglInspiralTable the
+            # following change then defines the event_id
+            #curr_id = EventIDColumn()
+            #curr_id.id = len(bank)
+            #curr_id.snglInspiralTable = row
+            #row.event_id = curr_id
             row.ifo = opts.instrument
             row.process_id = process.process_id
             tbl.append(row)
