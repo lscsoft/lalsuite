@@ -953,13 +953,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     LALInferenceZeroProposalStats(threadState->cycle);
     printAdaptiveJumpSizes(stdout, threadState);
   }
-  /* Write out names of parameters 
+  /* Write out names of parameters */
   FILE *lout=NULL;
   char param_list[FILENAME_MAX];
   sprintf(param_list,"%s_params.txt",outfile);
   lout=fopen(param_list,"w");
   LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
-  fclose(lout);*/
+  fclose(lout);
   minpos=0;
   threadState->currentParams=currentVars;
   fprintf(stdout,"Starting nested sampling loop!\n");
