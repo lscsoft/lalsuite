@@ -1095,13 +1095,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
     /* Write out the evidence */
     fclose(fpout);
-    /*
+    
     char bayesfile[FILENAME_MAX];
     sprintf(bayesfile,"%s_B.txt",outfile);
     fpout=fopen(bayesfile,"w");
     fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
     fclose(fpout);
-    */
+    
     double logB=logZ-logZnoise;
     /* Pass output back through algorithmparams */
     LALInferenceAddVariable(runState->algorithmParams,"logZ",(void *)&logZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
