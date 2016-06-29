@@ -317,6 +317,20 @@ static REAL8 mean(REAL8 *array,int N);
 /** Calculate covariance matrix from a collection of live points */
 static void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4 Nlive);
 
+/* log( exp(a) - exp(b) ) */
+static double logsubexp(double a, double b);
+static double logsubexp(double a, double b)
+{
+		if(b>a)
+		{
+				fprintf(stderr,"Cannot take log of negative number %lf - %lf = %lf !\n",exp(a),exp(b),exp(a)-exp(b));
+				return -INFINITY;
+		}
+		else
+		{
+				return a + log1p(-exp(b-a));
+		}
+}
 
 static void SetupEigenProposals(LALInferenceRunState *runState);
 
@@ -331,7 +345,7 @@ static REAL8 incrementEvidenceSamples(LALInferenceRunState *runState, REAL8 logL
   UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   /* Update evidence array */
   for(UINT4 j=0;j<s->size;j++){
-    Wtarray[j]=s->logwarray->data[j]+logL+logaddexp(0,s->logt2array->data[j]*s->logtarray->data[j])-log(2.0);
+    Wtarray[j]=s->logwarray->data[j]+logL+logsubexp(0,s->logt2array->data[j] + s->logtarray->data[j])-log(2.0);
     s->logZarray->data[j]=logaddexp(s->logZarray->data[j],Wtarray[j]);
     s->Harray->data[j]= exp(Wtarray[j]-s->logZarray->data[j])*logL
     + exp(s->oldZarray->data[j]-s->logZarray->data[j])*(s->Harray->data[j]+s->oldZarray->data[j])-s->logZarray->data[j];
