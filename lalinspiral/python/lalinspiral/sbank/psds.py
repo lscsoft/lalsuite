@@ -24,12 +24,21 @@ seterr(over="ignore")  # the PSD overflows frequently, but that's OK
 try:
     from glue.ligolw import param
     from glue.ligolw import utils
-    from pylal import series as lalseries
+    from glue.ligolw import ligolw
+    from glue.ligolw import array as ligolw_array
+    from glue.ligolw import param as ligolw_param
+    from lal import series as lalseries
 except ImportError:
-    raise ImportError("The sbank subpackage of lalinspiral depends on the glue and pylal packages.")
+    raise ImportError("The sbank subpackage of lalinspiral depends on the glue package.")
 
 import lal
 import lalsimulation as lalsim
+
+class LIGOLWSeriesContentHandler(ligolw.LIGOLWContentHandler):
+        pass
+ligolw_array.use_in(LIGOLWSeriesContentHandler)
+ligolw_param.use_in(LIGOLWSeriesContentHandler)
+
 
 #
 # Analytical PSDs
@@ -147,4 +156,4 @@ def psd_instrument_dict(elem):
     return out
 
 def read_psd(filename, verbose = False):
-    return psd_instrument_dict(utils.load_filename(filename, verbose = verbose, contenthandler=lalseries.LIGOLWContentHandler))
+    return psd_instrument_dict(utils.load_filename(filename, verbose = verbose, contenthandler=LIGOLWSeriesContentHandler))

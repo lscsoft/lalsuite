@@ -27,7 +27,7 @@ from scipy.optimize import fsolve
 try:
     from glue.iterutils import choices
 except ImportError:
-    raise ImportError("The sbank subpackage of lalinspiral depends on the glue and pylal packages.")
+    raise ImportError("The sbank subpackage of lalinspiral depends on the glue package.")
 
 from lal import PI, MTSUN_SI
 #

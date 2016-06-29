@@ -28,9 +28,8 @@ from glue.ligolw import table
 from glue.ligolw import utils
 from glue.ligolw import ilwd
 from glue.ligolw.utils import process as ligolw_process
-from pylal.inspiral_metric import compute_metric
-from pylal.xlal.datatypes.real8frequencyseries import REAL8FrequencySeries
-from pylal.xlal.datatypes.snglinspiraltable import SnglInspiralTable
+from lal import REAL8FrequencySeries
+from lalmetaio import SnglInspiralTable, EventIDColumn
 
 from optparse import OptionParser
 
@@ -324,7 +323,7 @@ waveform = waveforms[opts.approximant]
 #
 if opts.reference_psd is not None:
     psd = read_psd(opts.reference_psd)[opts.instrument]
-    f_orig = psd.f0 + np.arange(len(psd.data)) * psd.deltaF
+    f_orig = psd.f0 + np.arange(len(psd.data.data)) * psd.deltaF
     f_max_orig = max(f_orig)
     if opts.fhigh_max:
         if opts.fhigh_max > f_max_orig:
@@ -336,7 +335,7 @@ if opts.reference_psd is not None:
                 % f_max_orig
         opts.fhigh_max = float(f_max_orig)
 
-    interpolator = UnivariateSpline(f_orig, np.log(psd.data), s=0)
+    interpolator = UnivariateSpline(f_orig, np.log(psd.data.data), s=0)
 
     # spline extrapolation may lead to unexpected results,
     # so set the PSD to infinity above the max original frequency
@@ -345,7 +344,6 @@ else:
     noise_model = noise_models[opts.noise_model]
 
 # Set up PSD for metric computation
-# calling into pylal, so need pylal types
 psd = REAL8FrequencySeries(name="psd", f0=0., deltaF=1., data=get_PSD(1., opts.flow, 1570., noise_model))
 
 
@@ -471,12 +469,12 @@ while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) 
         if not hasattr(tmplt, 'is_seed_point'):
             row = tmplt.to_sngl()
             # Event ids must be unique, or the table isn't valid, SQL needs this
-            row.event_id = ilwd.ilwdchar('sngl_inspiral:event_id:%d' %(len(bank),))
+            curr_id = EventIDColumn()
+            curr_id.id = len(bank)
+            curr_id.snglInspiralTable = row
+            row.event_id = curr_id
             row.ifo = opts.instrument
             row.process_id = process.process_id
-            row.Gamma0, row.Gamma1, row.Gamma2, row.Gamma3, row.Gamma4, row.Gamma5,\
-                row.Gamma6, row.Gamma7, row.Gamma8, row.Gamma9 = \
-                compute_metric(opts.flow, 1570., 4, row.tau0, row.tau3, psd)
             tbl.append(row)
 
         if opts.checkpoint and not len(bank) % opts.checkpoint:

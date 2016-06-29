@@ -28,8 +28,60 @@ from lalinspiral import InspiralSBankComputeMatch, InspiralSBankComputeMatchMaxS
 from lalinspiral.sbank.psds import get_neighborhood_PSD
 from lalinspiral.sbank.tau0tau3 import m1m2_to_tau0tau3
 
-from pylal import spawaveform  # XXX: Remove when everything is ported to lalsim
-from pylal.xlal.datatypes.snglinspiraltable import SnglInspiralTable
+# We cannot use lalmetaio directly because end_times are stored as the internal
+# LALGPSTime class (ie. no end_time_ns but end_time.gpsNanoSeconds) and the
+# Gamma values are stored as an array.
+# This *is* a hack, but I don't know a better solution :-(
+from lalmetaio import SnglInspiralTable as lmisit
+class SnglInspiralTable(lmisit):
+    @property
+    def impulse_time_ns(self):
+        return self.impulse_time.gpsNanoSeconds
+
+    @property
+    def end_time_ns(self):
+        return self.end_time.gpsNanoSeconds
+
+    @property
+    def Gamma0(self):
+        return self.Gamma[0]
+
+    @property
+    def Gamma1(self):
+        return self.Gamma[1]
+
+    @property
+    def Gamma2(self):
+        return self.Gamma[2]
+
+    @property
+    def Gamma3(self):
+        return self.Gamma[3]
+
+    @property
+    def Gamma4(self):
+        return self.Gamma[4]
+
+    @property
+    def Gamma5(self):
+        return self.Gamma[5]
+
+    @property
+    def Gamma6(self):
+        return self.Gamma[6]
+
+    @property
+    def Gamma7(self):
+        return self.Gamma[7]
+
+    @property
+    def Gamma8(self):
+        return self.Gamma[8]
+
+    @property
+    def Gamma9(self):
+        return self.Gamma[9]
+
 
 def compute_mchirp(m1, m2):
     return (m1 * m1 * m1 * m2 * m2 * m2 / (m1 + m2))**0.2
