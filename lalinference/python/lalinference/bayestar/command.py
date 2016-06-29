@@ -275,8 +275,7 @@ def sqlite_get_filename(connection):
 
 def rename(src, dst):
     """Like os.rename(src, dst), but works across different devices because it
-    catches and handles EXDEV ('Invalid cross-device link') errors. This
-    operation is atomic, even if src and dst are on different devices."""
+    catches and handles EXDEV ('Invalid cross-device link') errors."""
     try:
         os.rename(src, dst)
     except OSError as e:
