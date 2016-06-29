@@ -183,6 +183,7 @@ def parse_command_line():
     #
     parser.add_option("--seed", help="Set the seed for the random number generator used by SBank for waveform parameter (masss, spins, ...) generation.", metavar="INT", default=1729, type="int")
     parser.add_option("--bank-seed", metavar="FILE[:APPROX]", help="Add templates from FILE to the initial bank. If APPROX is also specified, the templates from this seed bank will be computed with this approximant instead of the one specified by --approximant. Can be specified multiple times. Only the additional templates will be outputted.", action="append", default=[])
+    parser.add_option("--trial-waveforms", metavar="FILE[:APPROX]", help="If supplied, instead of choosing points randomly, choose trial points from within the supplied XML file. Generation will terminate if the end of the file is reached unless any other termination condition is met first.")
 
     #
     # noise model options
@@ -212,6 +213,7 @@ def parse_command_line():
     parser.add_option("--instrument", metavar="IFO", help="Specify the instrument for which to generate a template bank. This option is used for naming of the output file but also for reading in PSDs or template bank seeds from file.")
     parser.add_option("--gps-start-time", type="int", default=0, help="GPS time of start. Used only for naming of output file.", metavar="INT")
     parser.add_option("--gps-end-time", type="int", default=999999999, help="GPS time of end. Used only for naming of output file", metavar="INT")
+    parser.add_option("--output-filename", default=None, help="Over-ride default filenaming and use this as the output filename.")
     parser.add_option("--user-tag", default=None, help="Apply descriptive tag to output filename.")
     parser.add_option("--verbose", default=False,action="store_true", help="Be verbose and write diagnostic information out to file.")
 
@@ -307,7 +309,9 @@ opts, args = parse_command_line()
 #
 # determine output bank filename
 #
-if opts.user_tag:
+if opts.output_filename:
+    fout = opts.output_filename
+elif opts.user_tag:
     fout = "%s-SBANK_%s-%d-%d.xml.gz" % (opts.instrument, opts.user_tag, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
 else:
     fout = "%s-SBANK-%d-%d.xml.gz" % (opts.instrument, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
@@ -424,22 +428,29 @@ process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
 # populate params dictionary to be passed to the generators
 #
 
-params = {'mass1': (opts.mass1_min, opts.mass1_max),
+if opts.trial_waveforms:
+    trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler, gz=opts.trial_waveforms.endswith('.gz'))
+    trial_sngls = table.get_table(trialdoc, lsctables.SnglInspiralTable.tableName)
+    tmplt_class = waveforms[opts.approximant]
+    curr_tmplt = 0
+    tmplt_len = len(trial_sngls)
+else:
+    params = {'mass1': (opts.mass1_min, opts.mass1_max),
           'mass2': (opts.mass2_min, opts.mass2_max),
           'mtotal': (opts.mtotal_min, opts.mtotal_max),
           'mratio': (opts.qmin, opts.qmax),
           'mchirp': (opts.mchirp_min, opts.mchirp_max)}
 
-if opts.ns_bh_boundary_mass is not None:
-    params['ns_bh_boundary_mass'] = opts.ns_bh_boundary_mass
-    params['bh_spin'] = (opts.bh_spin_min, opts.bh_spin_max)
-    params['ns_spin'] = (opts.ns_spin_min, opts.ns_spin_max)
-else:
-    params['spin1'] = (opts.spin1_min, opts.spin1_max)
-    params['spin2'] = (opts.spin2_min, opts.spin2_max)
+    if opts.ns_bh_boundary_mass is not None:
+        params['ns_bh_boundary_mass'] = opts.ns_bh_boundary_mass
+        params['bh_spin'] = (opts.bh_spin_min, opts.bh_spin_max)
+        params['ns_spin'] = (opts.ns_spin_min, opts.ns_spin_max)
+    else:
+        params['spin1'] = (opts.spin1_min, opts.spin1_max)
+        params['spin2'] = (opts.spin2_min, opts.spin2_max)
 
-# get the correct generator for the chosen approximant
-proposal = proposals[opts.approximant](opts.flow, **params)
+    # get the correct generator for the chosen approximant
+    proposal = proposals[opts.approximant](opts.flow, **params)
 
 
 # For robust convergence, ensure that an average of kmax/len(ks) of
@@ -449,7 +460,13 @@ k = 0 # k is nprop per iteration
 nprop = 1  # count total number of proposed templates
 status_format = "\t".join("%s: %s" % name_format for name_format in zip(waveform.param_names, waveform.param_formats))
 while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) < opts.templates_max:
-    tmplt = waveform(*proposal.next(), bank=bank)
+    if opts.trial_waveforms:
+        if curr_tmplt == tmplt_len:
+            break
+        tmplt = tmplt_class.from_sngl(trial_sngls[curr_tmplt], bank=bank)
+        curr_tmplt += 1
+    else:
+        tmplt = waveform(*proposal.next(), bank=bank)
     k += 1
     nprop += 1
     match, matcher = bank.covers(tmplt, opts.match_min)
