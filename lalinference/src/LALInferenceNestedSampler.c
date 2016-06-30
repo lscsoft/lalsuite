@@ -338,11 +338,11 @@ static void SetupEigenProposals(LALInferenceRunState *runState);
  * Update the internal state of the integrator after receiving the lowest logL
  * value logL
  */
-static REAL8 incrementEvidenceSamples(LALInferenceRunState *runState, REAL8 logL, NSintegralState *s);
-static REAL8 incrementEvidenceSamples(LALInferenceRunState *runState, REAL8 logL, NSintegralState *s)
+static REAL8 incrementEvidenceSamples(gsl_rng *GSLrandom, UINT4 Nlive, REAL8 logL, NSintegralState *s);
+static REAL8 incrementEvidenceSamples(gsl_rng *GSLrandom, UINT4 Nlive, REAL8 logL, NSintegralState *s)
 {
   REAL8 Wtarray[s->size];
-  UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
+  //UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   /* Update evidence array */
   for(UINT4 j=0;j<s->size;j++){
     Wtarray[j]=s->logwarray->data[j]+logL+logsubexp(0,s->logt2array->data[j] + s->logtarray->data[j])-log(2.0);
@@ -352,7 +352,7 @@ static REAL8 incrementEvidenceSamples(LALInferenceRunState *runState, REAL8 logL
     REAL8 tmp=s->logtarray->data[j];
     s->logtarray->data[j]=s->logt2array->data[j];
     s->logt2array->data[j]=tmp;
-    s->logtarray->data[j]=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
+    s->logtarray->data[j]=LALInferenceNSSample_logt(Nlive,GSLrandom);
     s->logwarray->data[j]+=s->logtarray->data[j];
   }
   s->iteration++;
@@ -988,7 +988,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     logLmin=logLikelihoods[minpos];
     if(samplePrior) logLmin=-DBL_MAX;
 
-    logZnew=incrementEvidenceSamples(runState, logLikelihoods[minpos], s);
+    logZnew=incrementEvidenceSamples(runState->GSLrandom, Nlive, logLikelihoods[minpos], s);
     //deltaZ=logZnew-logZ; - set but not used
     H=mean(Harray,Nruns);
     logZ=logZnew;
@@ -1097,14 +1097,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   }
   /* final corrections */
   for(i=0;i<Nlive;i++){
-    logZ=logaddexp(logZ,logLikelihoods[i]+logw);
-    for(j=0;j<Nruns;j++){
-      //logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
-      logZarray[j]=logaddexp(logZarray[j],logLikelihoods[i]+logwarray[j]-log(Nlive));
-    }
-
+    logZ=incrementEvidenceSamples(runState->GSLrandom, Nlive-i, logLikelihoods[i], s);
     if(runState->logsample) runState->logsample(runState->algorithmParams,runState->livePoints[i]);
-
   }
 
     /* Write out the evidence */
