@@ -67,7 +67,7 @@ boinc_rev=current_gw_apps
 retries=1
 
 gsl=gsl-1.16
-fftw=fftw-3.3.3
+fftw=fftw-3.3.4
 zlib=zlib-1.2.8
 binutils=binutils-2.19
 
@@ -79,7 +79,10 @@ for i; do
 	    build_win32=true
 	    cross_prefix=i586-mingw32msvc ;;
 	--cross-prefix=*)
-	    cross_prefix=`echo "$i" | sed 's/--cross-prefix=//'` ;;
+	    cross_prefix=`echo "$i" | sed 's/--cross-prefix=//'`
+	    if echo "$cross_prefix"|grep w64-mingw32 >/dev/null; then
+		LDFLAGS="-static-libstdc++ $LDFLAGS"
+	    fi ;;
 	--static)
 	    shared_copt="--disable-shared" ;;
 	--rebuild)
@@ -118,7 +121,11 @@ for i; do
             noupdate=true ;;
 	--gc-opt)
 	    CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS" ;;
+        --avx)
+            fftw_copts_single="--enable-avx $fftw_copts_single"
+	    planclass=__AVX ;;
 	--64)
+	    fftw_copts_single="--enable-sse --enable-sse2 $fftw_copts_single"
 	    CPPFLAGS="-m64 $CPPFLAGS"
 	    CXXFLAGS="-m64 $CXXFLAGS"
 	    CFLAGS="-m64 $CFLAGS"
@@ -131,14 +138,14 @@ for i; do
 	--sse)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -march=pentium3 $CFLAGS"
-	    fftw_copts_single=--enable-sse
+	    fftw_copts_single="--enable-sse $fftw_copts_single"
 	    planclass=__SSE
 	    acc="_sse";;
 	--sse2)
 	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
-            fftw_copts_single=--enable-sse
-            fftw_copts_double=--enable-sse2
+            fftw_copts_single="--enable-sse $fftw_copts_single"
+            fftw_copts_double="--enable-sse2 $fftw_copts_double"
 	    planclass=__SSE2
 	    acc="_sse2";;
 	--altivec)
@@ -146,7 +153,7 @@ for i; do
 	    CFLAGS="-arch ppc -fast -mcpu=G4 -maltivec -faltivec $CFLAGS"
 	    CXXFLAGS="-arch ppc -mcpu=G4 $CXXFLAGS"
 	    LDFLAGS="-arch ppc $LDFLAGS"
-	    fftw_copts_single=--enable-altivec
+	    fftw_copts_single="--enable-altivec $fftw_copts_single"
 	    planclass=__ALTIVEC
 	    acc="_altivec"
 	    cross_copt=--host=powerpc-apple-darwin ;;
@@ -197,6 +204,7 @@ for i; do
 	    echo "  --cuda            build an App that uses CUDA"
 	    echo "  --sse             build an App that uses SSE"
 	    echo "  --sse2            build an App that uses SSE2"
+            echo "  --avx             build an App that uses AVX (currently in FFTW only)"
 	    echo "  --altivec         build an App that uses AltiVec"
 	    echo "  --gc-opt          build an App that uses SSE2 GC optimization"
 	    echo "  --boinc-tag=<tag>|--boinc-commit=<sha1> specify a BOINC commit to use (defaults to 'current_gw_apps')"
@@ -251,10 +259,11 @@ log_and_show "Build start `date`"
 missing_wine_warning=false
 if [ ."$build_win32" = ."true" ] ; then
     if echo "$LDFLAGS" | grep -w -e -m64 >/dev/null; then
-	platform=x86_64-pc-linux-gnu
+	platform=windows_x86_64
 	BUILD="${BUILD}_win64"
 	INSTALL="${INSTALL}_win64"
     else
+	platform=windows_intelx86
 	BUILD="${BUILD}_win32"
 	INSTALL="${INSTALL}_win32"
     fi
@@ -271,7 +280,6 @@ if [ ."$build_win32" = ."true" ] ; then
     fftw_copts_double="$fftw_copts_double --with-our-malloc16"
     build_zlib=true
     ext=".exe"
-    platform=windows_intelx86
     wine=`which wine`
     if [ ".$wine" = "." -a ".$check" = ".true" ]; then
         missing_wine_warning=true
@@ -407,7 +415,7 @@ if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
     log_and_show "using existing fftw source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $fftw"
-    download $fftw.tar.gz
+    download http://www.fftw.org $fftw.tar.gz
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
@@ -615,7 +623,7 @@ else
     fi
 fi
 
-lalsuite_copts="--disable-gcc-flags --disable-debug --disable-frame --disable-metaio --disable-lalsimulation --disable-lalxml --enable-boinc --disable-silent-rules --disable-pthread-lock $shared_copt $cross_copt --prefix=$INSTALL"
+lalsuite_copts="--disable-gcc-flags --disable-debug --without-hdf5 --disable-frame --disable-metaio --disable-lalsimulation --disable-lalxml --enable-boinc --disable-silent-rules --disable-pthread-lock $shared_copt $cross_copt --prefix=$INSTALL"
 if [ ."$build_win32" = ."true" ] ; then
     export BOINC_EXTRA_LIBS="-lpsapi"
 fi
@@ -668,7 +676,8 @@ log_and_dont_fail make gitID
 log_and_do make "eah_HierarchSearchGCT$ext"
 log_and_do cp "eah_HierarchSearchGCT$ext" "$EAH/eah_HierarchSearchGCT$acc$ext"
 test ".$release" = ".true" &&
-    log_and_do cp "$EAH/eah_HierarchSearchGCT$acc$ext" "$EAH/${appname}_${appversion}_$platform$planclass$ext"
+    log_and_do cp "$EAH/eah_HierarchSearchGCT$acc$ext" "$EAH/${appname}_${appversion}_$platform$planclass$ext" &&
+    log_and_do gzip -f "$EAH/${appname}_${appversion}_$platform$planclass$ext"
 
 log_and_do cd "$BUILD/lalapps/src/pulsar/Injections"
 log_and_do make eah_Makefakedata_v5$ext
@@ -678,8 +687,8 @@ log_and_do make eah_PredictFstat$ext eah_ComputeFstatistic_v2$ext
 log_and_do cp eah_PredictFstat$ext eah_ComputeFstatistic_v2$ext "$EAH"
 
 log_and_show "==========================================="
-log_and_show "Einstein@home Apps were built, should be in"
-log_and_show "$EAH"
+log_and_show "Einstein@home App was built, find it at"
+log_and_show "$EAH/${appname}_${appversion}_$platform$planclass${ext}.gz"
 log_and_show "==========================================="
 
 fi # check-only
