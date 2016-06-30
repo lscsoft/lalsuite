@@ -118,6 +118,8 @@ int global_argc;
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
+#define GETTIME() XLALGetCPUTime()
+// #define GETTIME() XLALGetTimeOfDay();
 
 /* ---------- Exported types ---------- */
 /** useful variables for each hierarchical stage */
@@ -1195,7 +1197,7 @@ int MAIN( int argc, char *argv[]) {
   // timing values
   REAL8 costFstat = 0, costIncoh = 0, costLoop = 0, costToplist = 0;
 
-  REAL8 timeLoopStart = XLALGetTimeOfDay();
+  REAL8 timeLoopStart = GETTIME();
   REAL8 timeFstatStart, timeFstatEnd;
   REAL8 timeIncohStart, timeIncohEnd;
   REAL8 timeToplistStart, timeToplistEnd;
@@ -1514,7 +1516,7 @@ int MAIN( int argc, char *argv[]) {
                 /************************ Compute F-Statistic ************************/
                 if (doComputeFstats) { /* if first time through fine grid fdots loop */
 
-                  timeFstatStart = XLALGetTimeOfDay();
+                  timeFstatStart = GETTIME();
                   const int retn = XLALComputeFstat(&Fstat_res, usefulParams.Fstat_in_vec->data[k], &thisPoint, binsFstat1, Fstat_what);
                   if ( retn != XLAL_SUCCESS ) {
                     XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
@@ -1585,14 +1587,14 @@ int MAIN( int argc, char *argv[]) {
                   /* --- Holger: This is not needed in U1-only case. Sort the coarse grid in Uindex --- */
                   /* qsort(coarsegrid.list, (size_t)coarsegrid.length, sizeof(CoarseGridPoint), compareCoarseGridUindex); */
 
-                  timeFstatEnd = XLALGetTimeOfDay();
+                  timeFstatEnd = GETTIME();
                   costFstat += (timeFstatEnd - timeFstatStart);
 
                 } // if (doComputeFstats)
                 /* -------------------- END Compute F-Statistic -------------------- */
 
                 /* -------------------- Map fine grid to coarse grid -------------------- */
-                timeIncohStart = XLALGetTimeOfDay();
+                timeIncohStart = GETTIME();
 
                 /* get the frequency of this fine-grid point at mid point of segment */
                 /* OLD: ifreq_fg = 0; freq_tmp = finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg + f1dot_tmp * timeDiffSeg; */
@@ -1704,14 +1706,14 @@ int MAIN( int argc, char *argv[]) {
                   }
                 }
 #endif // GC_SSE2_OPT
-                timeIncohEnd = XLALGetTimeOfDay();
+                timeIncohEnd = GETTIME();
                 costIncoh += (timeIncohEnd - timeIncohStart);
 
               } /* end: ------------- MAIN LOOP over Segments --------------------*/
 
               /* ############################################################### */
 
-              timeToplistStart = XLALGetTimeOfDay();
+              timeToplistStart = GETTIME();
 
               if( uvar_semiCohToplist ) {
                 /* this is necessary here, because UpdateSemiCohToplists() might set
@@ -1723,7 +1725,7 @@ int MAIN( int argc, char *argv[]) {
                   LAL_CALL( UpdateSemiCohToplists (&status, semiCohToplist, semiCohToplist2, semiCohToplist3, &finegrid, f1dot_fg, f2dot_fg, f3dot_fg, &usefulParams, NSegmentsInv, usefulParams.NSegmentsInvX, XLALUserVarWasSet(&uvar_f3dot) ), &status);
                 }
               }
-              timeToplistEnd = XLALGetTimeOfDay();
+              timeToplistEnd = GETTIME();
               costToplist += ( timeToplistEnd - timeToplistStart );
 
             } /* for( if1dot_fg = 0; if1dot_fg < nf1dots_fg; if1dot_fg++ ) */
@@ -1769,7 +1771,7 @@ int MAIN( int argc, char *argv[]) {
       fprintf(stderr, "\n");
 #endif
   /*---------------------------------------------------------------------------------*/
-  timeLoopEnd = XLALGetTimeOfDay();
+  timeLoopEnd = GETTIME();
   costLoop = (timeLoopEnd - timeLoopStart);
 
   /* now that we have the final toplist, translate all pulsar parameters to correct reftime */
