@@ -2738,6 +2738,11 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	  
 	  model->roq->trigtime = endtime;
 
+          model->roq->frequencyNodesLinear = XLALCreateREAL8Sequence(n_basis_linear);
+          model->roq->frequencyNodesQuadratic = XLALCreateREAL8Sequence(n_basis_quadratic);
+          model->roq->calFactorLinear = XLALCreateCOMPLEX16Sequence(model->roq->frequencyNodesLinear->length);
+          model->roq->calFactorQuadratic = XLALCreateCOMPLEX16Sequence(model->roq->frequencyNodesQuadratic->length);
+
 	  if(LALInferenceGetProcParamVal(commandLine,"--roqnodesLinear")){
 	    ppt=LALInferenceGetProcParamVal(commandLine,"--roqnodesLinear");
 
