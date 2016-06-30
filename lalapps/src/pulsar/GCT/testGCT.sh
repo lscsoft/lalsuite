@@ -411,11 +411,11 @@ if ! eval "$cmdline"; then
 fi
 
 
-## re-run, but now create the three toplists one by one, then compare results 
+## re-run, but now create the three toplists one by one, then compare results
 
 outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_1.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' --outputTiming='$timingsfile_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=2"
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=2"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -430,7 +430,7 @@ fi
 
 outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_2.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' --outputTiming='$timingsfile_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=4"
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=4"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -445,7 +445,7 @@ fi
 
 outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_3.dat"
 
-cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' --outputTiming='$timingsfile_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=5"
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=5"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline"
 else
@@ -459,7 +459,7 @@ if ! eval "$cmdline"; then
 fi
 
 
-# filter out comments 
+# filter out comments
 
 egrep -v "^%" ${testDir}/GCT_RS_triple_1.dat > ${testDir}/GCT_RS_triple_1.txt
 egrep -v "^%" ${testDir}/GCT_RS_triple_2.dat > ${testDir}/GCT_RS_triple_2.txt
@@ -519,7 +519,9 @@ awk_isgtr='{if($1>$2) {print "1"}}'
 
 echo
 echo "--------- Timings ------------------------------------------------------------------------------------------------"
-awk_timing='{printf "c0ic = %-6.1e s, c1co = %-6.1e s, c0Demod = %-6.1e s,  (%s)", $8, $9, $10, $11, $12}'
+echo "Timing model: tau = Nseg * Ndet * Ncoh * tau_Fstat + Nseg * Ninc * tau_SumF + Ninc * tau_Bayes + Ncand * tau_Recalc + time_Other"
+echo
+awk_timing='{printf "tau_Fstat = %-6.1e s, tau_SumF = %-6.1e s, tau_Bayes = %-6.1e s, tau_Recalc = %-6.1e s, time_Other = %-6.1e s", $1, $2, $3, $4, $5}'
 timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
 timing_DM_BSGL=$(sed '/^%.*/d' $timingsfile_DM_BSGL | awk "$awk_timing")
 timing_DM_DUAL=$(sed '/^%.*/d' $timingsfile_DM_DUAL | awk "$awk_timing")
