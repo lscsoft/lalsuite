@@ -393,7 +393,7 @@ static NSintegralState *initNSintegralState(UINT4 Nruns, UINT4 Nlive)
   s->logwarray = XLALCreateREAL8Vector(Nruns);
   s->logtarray=XLALCreateREAL8Vector(Nruns);
   s->logt2array=XLALCreateREAL8Vector(Nruns);
-  REAL8 logw=log(1.0-exp(-1.0/Nlive));
+  REAL8 logw=0;
 
   if(s->logZarray==NULL || s->Harray==NULL || s->oldZarray==NULL || s->logwarray==NULL)
   {fprintf(stderr,"Unable to allocate RAM\n"); exit(-1);}
