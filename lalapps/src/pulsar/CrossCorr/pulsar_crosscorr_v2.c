@@ -481,8 +481,8 @@ int main(int argc, char *argv[]){
 
       UINT4 detInd = 0;
       for ( ; detInd < numDets ; detInd++ ){
-	if ( strcmp(ifo,inputSFTs->data[detInd]->data[0].name) != 0 ) break;
-      }
+	if ( strcmp(ifo,inputSFTs->data[detInd]->data[0].name) == 0 ) break;
+      } /*find the detctor index of the ifo and break the loop*/
       if (detInd >= numDets){
 	LogPrintf ( LOG_CRITICAL, "%s: didn't find index for IFO %s\n", __func__, ifo);
 	XLAL_ERROR( XLAL_EINVAL );
@@ -1264,10 +1264,10 @@ INT4 XLALFindBadBins
   /* printf ("Last bin is %f\n", f0 + length * deltaF); */
 
   INT4 newBinCount = binCount;
-  INT4 firstBadBin = (INT4) ceil ( ( flo - f0 ) / deltaF );
+  INT4 firstBadBin = (INT4) round ( ( flo - f0 ) / deltaF ); /*use round to get the lowest contaminated bin*/
   /* printf ("firstBadBin = %d\n",firstBadBin); */
   if ( firstBadBin < 0 ) firstBadBin = 0;
-  INT4 lastBadBin = (INT4) floor ( ( fhi - f0 ) / deltaF );
+  INT4 lastBadBin = (INT4) round ( ( fhi - f0 ) / deltaF ); /*use round to get the highest contaminated bin*/
   /* printf ("lastBadBin = %d\n",lastBadBin); */
   if ( lastBadBin >= (INT4) length ) lastBadBin = (INT4) (length-1);
 
