@@ -467,7 +467,7 @@ class knopeDAG(pipeline.CondorDAG):
           subject = "lalapps_knope: successful setup"
           messagetxt = "Hi User,\n\nYour analysis using configuration file '%s' has successfully setup the analysis. Once complete the results will be found at %s.\n\nRegards lalapps_knope\n" % (configfilename, self.results_url)
 
-          emailtemplate = "From: {0}\nTo: {1}\nSubject: {3}\n\n{4}"
+          emailtemplate = "From: {0}\nTo: {1}\nSubject: {2}\n\n{3}"
           message = emailtemplate.format(FROM, email, subject, messagetxt)
           server = smtplib.SMTP('localhost')
           server.sendmail(FROM, email, message)
