@@ -48,9 +48,6 @@ pybin_scripts = \
 	lalapps_compute_roq_weights \
 	lalapps_merge_posteriors \
 	lalapps_test_run_lalinference_pipe_example
-pkgpython_PYTHON = \
-	nest2pos.py \
-	lalinference_pipe_utils.py 
 endif
 
 EXTRA_DIST += \

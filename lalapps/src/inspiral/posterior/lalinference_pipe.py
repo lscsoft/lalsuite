@@ -1,7 +1,7 @@
 # DAG generation code for running LALInference pipeline
 # (C) 2012 John Veitch, Vivien Raymond
 
-from lalapps import lalinference_pipe_utils as pipe_utils
+from lalinference import lalinference_pipe_utils as pipe_utils
 from lalapps import inspiralutils
 import ConfigParser
 from optparse import OptionParser,OptionValueError
