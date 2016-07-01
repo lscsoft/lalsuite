@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 84
+# serial 85
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -226,12 +226,16 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
       AC_MSG_ERROR([Octave version ${octave_min_version} or later is required])
     ])
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[3.8.0],[
-      swig_min_version=2.0.12
-      swig_min_version_info="for Octave version ${octave_version}"
+      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[2.0.12],[
+        swig_min_version=2.0.12
+        swig_min_version_info="for Octave version ${octave_version}"
+      ])
     ])
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.0.0],[
-      swig_min_version=3.0.7
-      swig_min_version_info="for Octave version ${octave_version}"
+      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.7],[
+        swig_min_version=3.0.7
+        swig_min_version_info="for Octave version ${octave_version}"
+      ])
     ])
 
     # determine where to install Octave bindings: take versioned site .oct file
