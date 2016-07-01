@@ -14,6 +14,11 @@
 
 /* INTERNAL */
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 #ifndef HAVE_HDF5
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -691,7 +696,7 @@ static LIGOTimeGPS * XLALH5GenericQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS *va
  *
  * @param file A pointer to a #LALH5File structure to close.
  */
-void XLALH5FileClose(LALH5File *file)
+void XLALH5FileClose(LALH5File UNUSED *file)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR_VOID(XLAL_EFAILED, "HDF5 support not implemented");
@@ -749,7 +754,7 @@ void XLALH5FileClose(LALH5File *file)
  * specified HDF5 file.
  * @retval NULL An error occurred opening the file.
  */
-LALH5File * XLALH5FileOpen(const char *path, const char *mode)
+LALH5File * XLALH5FileOpen(const char UNUSED *path, const char UNUSED *mode)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
@@ -779,7 +784,7 @@ LALH5File * XLALH5FileOpen(const char *path, const char *mode)
  * specified group within a HDF5 file.
  * @retval NULL An error occurred opening the group.
  */
-LALH5File * XLALH5GroupOpen(LALH5File *file, const char *name)
+LALH5File * XLALH5GroupOpen(LALH5File UNUSED *file, const char UNUSED *name)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
@@ -826,7 +831,7 @@ LALH5File * XLALH5GroupOpen(LALH5File *file, const char *name)
  * @param name Pointer to a string with the name of the group to check.
  * @returns int, 1 if group exists. 0 if not.
  */
-int XLALH5CheckGroupExists(LALH5File *file, const char *name)
+int XLALH5CheckGroupExists(LALH5File UNUSED *file, const char UNUSED *name)
 {
 #ifndef HAVE_HDF5
         XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -864,7 +869,7 @@ int XLALH5CheckGroupExists(LALH5File *file, const char *name)
  * @retval 0 Success.
  * @retval -1 Failure.
  */
-int XLALH5FileAddScalarAttribute(LALH5File *file, const char *key, const void *value, LALTYPECODE dtype)
+int XLALH5FileAddScalarAttribute(LALH5File UNUSED *file, const char UNUSED *key, const void UNUSED *value, LALTYPECODE UNUSED dtype)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -888,7 +893,7 @@ int XLALH5FileAddScalarAttribute(LALH5File *file, const char *key, const void *v
  * @retval 0 Success.
  * @retval -1 Failure.
  */
-int XLALH5FileGetAttributeNames(LALH5File *file, char *** names, UINT4 *N)
+int XLALH5FileGetAttributeNames(LALH5File UNUSED *file, char UNUSED *** names, UINT4 UNUSED *N)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -933,7 +938,7 @@ int XLALH5FileGetAttributeNames(LALH5File *file, char *** names, UINT4 *N)
  * @retval 0 Success.
  * @retval -1 Failure.
  */
-int XLALH5FileAddStringAttribute(LALH5File *file, const char *key, const char *value)
+int XLALH5FileAddStringAttribute(LALH5File UNUSED *file, const char UNUSED *key, const char UNUSED *value)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -958,7 +963,7 @@ int XLALH5FileAddStringAttribute(LALH5File *file, const char *key, const char *v
  * @retval 0 Success.
  * @retval -1 Failure.
  */
-int XLALH5FileAddLIGOTimeGPSAttribute(LALH5File *file, const char *key, const LIGOTimeGPS *value)
+int XLALH5FileAddLIGOTimeGPSAttribute(LALH5File UNUSED *file, const char UNUSED *key, const LIGOTimeGPS UNUSED *value)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -981,7 +986,7 @@ int XLALH5FileAddLIGOTimeGPSAttribute(LALH5File *file, const char *key, const LI
  * @returns #LALTYPECODE value of the datatype of the scalar attribute.
  * @retval -1 Failure.
  */
-LALTYPECODE XLALH5FileQueryScalarAttributeType(LALH5File *file, const char *key)
+LALTYPECODE XLALH5FileQueryScalarAttributeType(LALH5File UNUSED *file, const char UNUSED *key)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1017,7 +1022,7 @@ LALTYPECODE XLALH5FileQueryScalarAttributeType(LALH5File *file, const char *key)
  * @retval 0 Success.
  * @retval -1 Failure.
  */
-int XLALH5FileQueryScalarAttributeValue(void *value, LALH5File *file, const char *key)
+int XLALH5FileQueryScalarAttributeValue(void UNUSED *value, LALH5File UNUSED *file, const char UNUSED *key)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1055,7 +1060,7 @@ int XLALH5FileQueryScalarAttributeValue(void *value, LALH5File *file, const char
  * been sufficiently large excluding the terminating NUL byte.
  * @retval NULL Failure.
  */
-int XLALH5FileQueryStringAttributeValue(char *value, size_t size, LALH5File *file, const char *key)
+int XLALH5FileQueryStringAttributeValue(char UNUSED *value, size_t UNUSED size, LALH5File UNUSED *file, const char UNUSED *key)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1086,7 +1091,7 @@ int XLALH5FileQueryStringAttributeValue(char *value, size_t size, LALH5File *fil
  * @returns Pointer to the LIGOTimeGPS structure passed to this routine.
  * @retval NULL Failure.
  */
-LIGOTimeGPS * XLALH5FileQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS *value, LALH5File *file, const char *key)
+LIGOTimeGPS * XLALH5FileQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS UNUSED *value, LALH5File UNUSED *file, const char UNUSED *key)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1113,7 +1118,7 @@ LIGOTimeGPS * XLALH5FileQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS *value, LALH5
  * and deallocates memory of the #LALH5Dataset structure.
  * @param dset Pointer to a #LALH5Dataset structure to close.
  */
-void XLALH5DatasetFree(LALH5Dataset *dset)
+void XLALH5DatasetFree(LALH5Dataset UNUSED *dset)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR_VOID(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1150,7 +1155,7 @@ void XLALH5DatasetFree(LALH5Dataset *dset)
  * specified dataset within a HDF5 file.
  * @retval NULL An error occurred creating the dataset.
  */
-LALH5Dataset * XLALH5DatasetAlloc(LALH5File *file, const char *name, LALTYPECODE dtype, UINT4Vector *dimLength)
+LALH5Dataset * XLALH5DatasetAlloc(LALH5File UNUSED *file, const char UNUSED *name, LALTYPECODE UNUSED dtype, UINT4Vector UNUSED *dimLength)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1228,7 +1233,7 @@ LALH5Dataset * XLALH5DatasetAlloc(LALH5File *file, const char *name, LALTYPECODE
  * specified dataset within a HDF5 file.
  * @retval NULL An error occurred creating the dataset.
  */
-LALH5Dataset * XLALH5DatasetAlloc1D(LALH5File *file, const char *name, LALTYPECODE dtype, size_t length)
+LALH5Dataset * XLALH5DatasetAlloc1D(LALH5File UNUSED *file, const char UNUSED *name, LALTYPECODE UNUSED dtype, size_t UNUSED length)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1283,7 +1288,7 @@ LALH5Dataset * XLALH5DatasetAlloc1D(LALH5File *file, const char *name, LALTYPECO
  * @retval 0 Success.
  * @retval -1 Failure.
  */
-int XLALH5DatasetWrite(LALH5Dataset *dset, void *data)
+int XLALH5DatasetWrite(LALH5Dataset UNUSED *dset, void UNUSED *data)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1307,7 +1312,7 @@ int XLALH5DatasetWrite(LALH5Dataset *dset, void *data)
  * @retval 0 Success.
  * @retval -1 Failure.
  */
-int XLALH5FileGetDatasetNames(LALH5File *file, char *** names, UINT4 *N)
+int XLALH5FileGetDatasetNames(LALH5File UNUSED *file, char UNUSED *** names, UINT4 UNUSED *N)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1369,7 +1374,7 @@ int XLALH5FileGetDatasetNames(LALH5File *file, char *** names, UINT4 *N)
  * specified dataset within a HDF5 file.
  * @retval NULL An error occurred creating the dataset.
  */
-LALH5Dataset * XLALH5DatasetRead(LALH5File *file, const char *name)
+LALH5Dataset * XLALH5DatasetRead(LALH5File UNUSED *file, const char UNUSED *name)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1418,7 +1423,7 @@ LALH5Dataset * XLALH5DatasetRead(LALH5File *file, const char *name)
  * with the specified #LALH5Dataset.
  * @retval (size_t)(-1) Failure.
  */
-size_t XLALH5DatasetQueryNPoints(LALH5Dataset *dset)
+size_t XLALH5DatasetQueryNPoints(LALH5Dataset UNUSED *dset)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1441,7 +1446,7 @@ size_t XLALH5DatasetQueryNPoints(LALH5Dataset *dset)
  * bytes required to hold the data in that dataset.
  * @retval (size_t)(-1) Failure.
  */
-size_t XLALH5DatasetQueryNBytes(LALH5Dataset *dset)
+size_t XLALH5DatasetQueryNBytes(LALH5Dataset UNUSED *dset)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1467,7 +1472,7 @@ size_t XLALH5DatasetQueryNBytes(LALH5Dataset *dset)
  * HDF5 dataset associated with the specified #LALH5Dataset.
  * @retval -1 Failure.
  */
-LALTYPECODE XLALH5DatasetQueryType(LALH5Dataset *dset)
+LALTYPECODE XLALH5DatasetQueryType(LALH5Dataset UNUSED *dset)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1489,7 +1494,7 @@ LALTYPECODE XLALH5DatasetQueryType(LALH5Dataset *dset)
  * HDF5 dataset associated with the specified #LALH5Dataset.
  * @retval -1 Failure.
  */
-int XLALH5DatasetQueryNDim(LALH5Dataset *dset)
+int XLALH5DatasetQueryNDim(LALH5Dataset UNUSED *dset)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1512,7 +1517,7 @@ int XLALH5DatasetQueryNDim(LALH5Dataset *dset)
  * with the * specified #LALH5Dataset.
  * @retval NULL Failure.
  */
-UINT4Vector * XLALH5DatasetQueryDims(LALH5Dataset *dset)
+UINT4Vector * XLALH5DatasetQueryDims(LALH5Dataset UNUSED *dset)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1562,7 +1567,7 @@ UINT4Vector * XLALH5DatasetQueryDims(LALH5Dataset *dset)
  * @retval 0 Success.
  * @retval -1 Failure.
  */
-int XLALH5DatasetQueryData(void *data, LALH5Dataset *dset)
+int XLALH5DatasetQueryData(void UNUSED *data, LALH5Dataset UNUSED *dset)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1599,7 +1604,7 @@ int XLALH5DatasetQueryData(void *data, LALH5Dataset *dset)
  * @retval 0 Success.
  * @retval -1 Failure.
  */
-int XLALH5DatasetAddScalarAttribute(LALH5Dataset *dset, const char *key, const void *value, LALTYPECODE dtype)
+int XLALH5DatasetAddScalarAttribute(LALH5Dataset UNUSED *dset, const char UNUSED *key, const void UNUSED *value, LALTYPECODE UNUSED dtype)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1624,7 +1629,7 @@ int XLALH5DatasetAddScalarAttribute(LALH5Dataset *dset, const char *key, const v
  * @retval 0 Success.
  * @retval -1 Failure.
  */
-int XLALH5DatasetAddStringAttribute(LALH5Dataset *dset, const char *key, const char *value)
+int XLALH5DatasetAddStringAttribute(LALH5Dataset UNUSED *dset, const char UNUSED *key, const char UNUSED *value)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1649,7 +1654,7 @@ int XLALH5DatasetAddStringAttribute(LALH5Dataset *dset, const char *key, const c
  * @retval 0 Success.
  * @retval -1 Failure.
  */
-int XLALH5DatasetAddLIGOTimeGPSAttribute(LALH5Dataset *dset, const char *key, const LIGOTimeGPS *value)
+int XLALH5DatasetAddLIGOTimeGPSAttribute(LALH5Dataset UNUSED *dset, const char UNUSED *key, const LIGOTimeGPS UNUSED *value)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1672,7 +1677,7 @@ int XLALH5DatasetAddLIGOTimeGPSAttribute(LALH5Dataset *dset, const char *key, co
  * @returns #LALTYPECODE value of the datatype of the scalar attribute.
  * @retval -1 Failure.
  */
-LALTYPECODE XLALH5DatasetQueryScalarAttributeType(LALH5Dataset *dset, const char *key)
+LALTYPECODE XLALH5DatasetQueryScalarAttributeType(LALH5Dataset UNUSED *dset, const char UNUSED *key)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1708,7 +1713,7 @@ LALTYPECODE XLALH5DatasetQueryScalarAttributeType(LALH5Dataset *dset, const char
  * @retval 0 Success.
  * @retval -1 Failure.
  */
-int XLALH5DatasetQueryScalarAttributeValue(void *value, LALH5Dataset *dset, const char *key)
+int XLALH5DatasetQueryScalarAttributeValue(void UNUSED *value, LALH5Dataset UNUSED *dset, const char UNUSED *key)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1746,7 +1751,7 @@ int XLALH5DatasetQueryScalarAttributeValue(void *value, LALH5Dataset *dset, cons
  * been sufficiently large excluding the terminating NUL byte.
  * @retval NULL Failure.
  */
-int XLALH5DatasetQueryStringAttributeValue(char *value, size_t size, LALH5Dataset *dset, const char *key)
+int XLALH5DatasetQueryStringAttributeValue(char UNUSED *value, size_t UNUSED size, LALH5Dataset UNUSED *dset, const char UNUSED *key)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
@@ -1777,7 +1782,7 @@ int XLALH5DatasetQueryStringAttributeValue(char *value, size_t size, LALH5Datase
  * @returns Pointer to the LIGOTimeGPS structure passed to this routine.
  * @retval NULL Failure.
  */
-LIGOTimeGPS * XLALH5DatasetQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS *value, LALH5Dataset *dset, const char *key)
+LIGOTimeGPS * XLALH5DatasetQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS UNUSED *value, LALH5Dataset UNUSED *dset, const char UNUSED *key)
 {
 #ifndef HAVE_HDF5
 	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
