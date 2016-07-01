@@ -38,13 +38,9 @@ noinst_PROGRAMS = \
 
 if HAVE_PYTHON
 pybin_scripts = \
-	lalapps_combine_evidence \
 	lalapps_coherence_test \
-	lalapps_nest_pipe \
-	lalapps_vo_nest2pos \
 	lalinference_pipe \
 	lalapps_nest2pos \
-	lalapps_merge_nested_sampling_runs \
 	lalinference_burst_pp_pipe \
 	lalinference_pp_pipe \
 	lalinference_multi_pipe \
@@ -53,8 +49,6 @@ pybin_scripts = \
 	lalapps_merge_posteriors \
 	lalapps_test_run_lalinference_pipe_example
 pkgpython_PYTHON = \
-	nest_utils.py \
-	combine_evidence.py \
 	nest2pos.py \
 	lalinference_pipe_utils.py 
 endif
