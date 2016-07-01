@@ -9,9 +9,6 @@ test_programs += LALInferenceGenerateROQTest
 #test_programs += LALInferenceInjectionTest
 #test_programs += LALInferenceLikelihoodTest
 #test_programs += LALInferenceProposalTest
-if LALXML
-test_programs += LALInferenceXMLTest
-endif
 
 # Add shell, Python, etc. test scripts to this variable
 # Disable test_multiband.sh for now
@@ -60,7 +57,6 @@ MOSTLYCLEANFILES = \
 	test_result_images/pp_plot_default.png \
 	test_result_images/pp_plot_lines.png \
 	test_result_images/pp_plot_steps.png \
-	test_vot.xml \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \
