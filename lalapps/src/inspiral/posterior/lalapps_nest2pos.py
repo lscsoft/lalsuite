@@ -41,7 +41,6 @@ def read_nested_from_hdf5(nested_path_list):
             metadata[level] = {}
         for key in attrs:
             if key in metadata[level]:
-                if attrs[key] != metadata[level][key]:
                     if collision == 'raise':
                         raise ValueError(
                             'Metadata mismtach on level %r for key %r:\n\t%r != %r'
@@ -87,7 +86,7 @@ def read_nested_from_hdf5(nested_path_list):
             current_level = 'lalinference/' + run_identifier + '/' + nested_grp_name
             current_level_posterior = 'lalinference/' + run_identifier + '/' + posterior_grp_name
             group = hdf[current_level]
-            update_metadata(current_level_posterior, group.attrs)
+            update_metadata(current_level_posterior, group.attrs, collision='ignore')
             # copy the data into memory
             input_data_dict = {}
             for key in group:
