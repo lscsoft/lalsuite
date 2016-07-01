@@ -347,18 +347,30 @@ REAL8 noise_only_likelihood( LALInferenceRunState *runState ){
   INT4 gaussianLike = 0;
   /*-----------------------------*/
   /*get the outfile name*/
-  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outhdf" );
+  if ( !ppt ){
+    fprintf(stderr, "Error... not output file specified\n");
+    exit(1);
+  }
 
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "freqfactors" );
 
   /* open the file to output noise evidence (or null signal evidence) for each individual data stream */
   /* set the Znoise filename to the outfile name with "_Znoise" appended */
   Znoisefile = XLALStringDuplicate( ppt->value );
+  /* strip the file extension */
+  CHAR *dotloc = strrchr(Znoisefile, '.');
+  CHAR *slashloc = strrchr(Znoisefile, '/');
+  if ( dotloc != NULL ){
+    if ( slashloc != NULL ){ /* check dot is after any filename seperator */
+      if( slashloc < dotloc ){ *dotloc = '\0'; }
+    }
+    else{ *dotloc = '\0'; }
+  }
   Znoisefile = XLALStringAppend( Znoisefile, "_Znoise" );
 
   if( (fp = fopen(Znoisefile, "w")) == NULL ){
-    fprintf(stderr, "Error... cannot open output Znoise file!\n");
-    exit(0);
+    XLAL_ERROR_REAL8(XLAL_EIO, "Error... cannot open output Znoise file \"%s\"!\n", Znoisefile);
   }
 
   /* check whether using Gaussian or students-t likelihood - using Gaussian if --gaussian

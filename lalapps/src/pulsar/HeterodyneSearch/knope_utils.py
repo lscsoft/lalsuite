@@ -831,8 +831,6 @@ class knopeDAG(pipeline.CondorDAG):
       print("Warning... currently this will not run with non-GR parameters. Reverting to GR-mode.")
       self.pe_non_gr = False
 
-    self.pe_gzip = self.get_config_option('pe', 'gzip_output', cftype='boolean', default=True) # gzip output files by default
-
     # if searching at both the rotation frequency and twice rotation frequency set which parameterisation to use
     self.pe_model_type = self.get_config_option('pe', 'model_type', default='waveform')
     if self.pe_model_type not in ['waveform', 'source']:
@@ -1078,7 +1076,7 @@ class knopeDAG(pipeline.CondorDAG):
             penode.set_tolerance(self.pe_tolerance)           # set tolerance for ending nested sampling
 
             # set the output nested samples file
-            nestfiles.append(os.path.join(ffdir, 'nested_samples_%s_%05d.txt' % (pname, i)))
+            nestfiles.append(os.path.join(ffdir, 'nested_samples_%s_%05d.hdf' % (pname, i)))
             penode.set_outfile(nestfiles[i])
 
             if self.pe_roq:
@@ -1117,11 +1115,6 @@ class knopeDAG(pipeline.CondorDAG):
               # set whether using a biaxial signal
               if self.pe_biaxial:
                 penode.set_biaxial()
-
-            # set whether to gzip the output nested sample files
-            if self.pe_gzip:
-              penode.set_gzip()
-              nestfiles[i] += '.gz'
 
             # set Earth, Sun and time ephemeris files
             if psr['EPHEM'] != None and self.ephem_path != None:
@@ -1174,7 +1167,7 @@ class knopeDAG(pipeline.CondorDAG):
 
             # move SNR files into posterior directory
             mvnode = moveNode(mvjob)
-            snrsourcefile = nestfiles[i].rstrip('.gz')+'_SNR' # source SNR file
+            snrsourcefile = os.path.splitext(nestfiles[i])[0]+'_SNR' # source SNR file
             snrdestfile = os.path.join(ffpostdir, 'SNR_%05d.txt' % i) # destination SNR file in posterior directory
             mvnode.set_source(snrsourcefile)
             mvnode.set_destination(snrdestfile)
@@ -1186,11 +1179,9 @@ class knopeDAG(pipeline.CondorDAG):
 
           # add lalapps_nest2pos node to combine outputs/convert to posterior samples
           n2pnode = nest2posNode(n2pjob)
-          postfile = os.path.join(ffpostdir, 'posterior_samples_%s.txt' % pname)
+          postfile = os.path.join(ffpostdir, 'posterior_samples_%s.hdf' % pname)
           n2pnode.set_outfile(postfile)     # output posterior file
           n2pnode.set_nest_files(nestfiles) # nested sample files
-          n2pnode.set_nest_live(nlive)      # number of nested sample live points
-          n2pnode.set_gzip()                # gzip output posterior sample files
 
           n2pnodes[pname].append(n2pnode)
 
@@ -1204,7 +1195,6 @@ class knopeDAG(pipeline.CondorDAG):
           if self.pe_clean_nest_samples:
             rmnode = removeNode(rmjob)
             # add name of header file
-            nestfiles.append(nestfiles[0].rstrip('.gz')+'_params.txt')
             rmnode.set_files(nestfiles)
             rmnode.add_parent(n2pnode)
             self.add_node(rmnode)
@@ -2956,7 +2946,6 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__cor_file = None
     self.__input_files = None
     self.__outfile = None
-    self.__outXML = None
     self.__chunk_min = None
     self.__chunk_max = None
     self.__psi_bins = None
@@ -3002,9 +2991,6 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__sample_nlives = None
     self.__prior_cell = None
 
-    self.__nonfixedonly = False
-    self.__gzip = False
-
     # legacy inputs
     self.__oldChunks = None
     self.__sourceModel = False
@@ -3049,13 +3035,8 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
   def set_outfile(self, of):
     # set the output file
-    self.add_var_opt('outfile', of)
+    self.add_var_opt('outhdf', of)
     self.__outfile = of
-
-  def set_outXML(self, ox):
-    # set the output XML file
-    self.add_var_opt('outXML',ox)
-    self.__outXML = ox
 
   def set_chunk_min(self, cmin):
     # set the minimum chunk length
@@ -3211,16 +3192,6 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set the k-d tree cell size for the prior
     self.add_var_opt('prior-cell',pc)
     self.__prior_cell = pc
-
-  def set_gzip(self):
-    # set to gzip the output file
-    self.add_var_opt('gzip', '')
-    self.__gzip = True
-
-  def set_non_fixed_only(self):
-    # set to only output the non-fixed parameters
-    self.add_var_opt('non-fixed-only', '')
-    self.__nonfixedonly = True
 
   def set_OldChunks(self):
     # use the old data segmentation routine i.e. 30 min segments
@@ -3500,10 +3471,12 @@ class nest2posNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set all the nested sample files
     self.__nest_files = nestfiles
 
-    # set header fo;e
-    header = nestfiles[0].rstrip('.gz')+'_params.txt'
-    self.__header = header
-    self.add_var_opt('headers', header)
+    fe = os.path.splitext(nestfiles[0])[-1].lower()
+    # set header file (only if not using hdf5 output)
+    if fe != '.hdf' and fe != '.h5':
+      header = nestfiles[0].rstrip('.gz')+'_params.txt'
+      self.__header = header
+      self.add_var_opt('headers', header)
     self.add_macro('macroinputfiles', ' '.join(nestfiles))
 
   def set_nest_live(self,nestlive):

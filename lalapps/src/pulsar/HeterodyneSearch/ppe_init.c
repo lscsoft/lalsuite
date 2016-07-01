@@ -211,12 +211,24 @@ void initialise_algorithm( LALInferenceRunState *runState )
   if ( ppt != NULL ){
     FILE *timefile = NULL;
     UINT4 timenum = 1;
-    ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
 
-    if ( !ppt ){ XLAL_ERROR_VOID(XLAL_EFUNC, "Error... no output file is specified!"); }
+    ppt = LALInferenceGetProcParamVal( commandLine, "--outhdf" );
+    if ( !ppt ){
+      XLAL_ERROR_VOID(XLAL_EFUNC, "Error... no output file is specified!");
+    }
 
-    CHAR outtimefile[256] = "";
-    sprintf(outtimefile, "%s_timings", ppt->value);
+    CHAR *outtimefile = NULL;
+    outtimefile = XLALStringDuplicate( ppt->value );
+    /* strip the file extension */
+    CHAR *dotloc = strrchr(outtimefile, '.');
+    CHAR *slashloc = strrchr(outtimefile, '/');
+    if ( dotloc != NULL ){
+      if ( slashloc != NULL ){ /* check dot is after any filename seperator */
+        if( slashloc < dotloc ){ *dotloc = '\0'; }
+      }
+      else{ *dotloc = '\0'; }
+    }
+    outtimefile = XLALStringAppend( outtimefile, "_timings" );
 
     if ( ( timefile = fopen(outtimefile, "w") ) == NULL ){
       fprintf(stderr, "Warning... cannot create a timing file, so proceeding without timings\n");
@@ -225,22 +237,11 @@ void initialise_algorithm( LALInferenceRunState *runState )
       LALInferenceAddVariable( runState->algorithmParams, "timefile", &timefile, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED );
       LALInferenceAddVariable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
     }
+    XLALFree( outtimefile );
   }
 
-  INT4 outputallparams=0;
-  if ( LALInferenceGetProcParamVal( runState->commandLine, "--output-all-params" ))
-  {
-    outputallparams=1;
-  }
-  LALInferenceAddVariable(runState->algorithmParams,"output_all_params",&outputallparams, LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
-
-  
   /* log samples */
-#ifdef HAVE_LIBLALXML
-  runState->logsample = LogSampleToArray;
-#else
-  runState->logsample = LogSampleToFile;
-#endif
+  runState->logsample = LALInferenceLogSampleToArray;
 
   return;
 }
@@ -1269,142 +1270,6 @@ void sum_data( LALInferenceRunState *runState ){
 
     data = data->next;
     ifomodel = ifomodel->next;
-  }
-
-  return;
-}
-
-
-/**
- * \brief Print any non-fixed sample to file (based on \c LALInferencePrintSampleNonFixed)
- */
-static void PrintNonFixedSample(FILE *fp, LALInferenceVariables *sample){
-  UINT4 i;
-  UINT4Vector *v=NULL;
-
-  if(sample==NULL) { return; }
-
-  LALInferenceVariableItem *ptr=sample->head;
-  if(fp==NULL) { return; }
-
-  while(ptr!=NULL) {
-    if (LALInferenceGetVariableVaryType(sample, ptr->name) != LALINFERENCE_PARAM_FIXED && ptr->type != LALINFERENCE_gslMatrix_t ) {
-      switch (ptr->type) {
-        case LALINFERENCE_INT4_t:
-          fprintf(fp, "%"LAL_INT4_FORMAT, *(INT4 *) ptr->value);
-          break;
-        case LALINFERENCE_INT8_t:
-          fprintf(fp, "%"LAL_INT8_FORMAT, *(INT8 *) ptr->value);
-          break;
-        case LALINFERENCE_UINT4_t:
-          fprintf(fp, "%"LAL_UINT4_FORMAT, *(UINT4 *) ptr->value);
-          break;
-        case LALINFERENCE_REAL4_t:
-          fprintf(fp, "%9.20e", *(REAL4 *) ptr->value);
-          break;
-        case LALINFERENCE_REAL8_t:
-          fprintf(fp, "%9.20le", *(REAL8 *) ptr->value);
-          break;
-        case LALINFERENCE_COMPLEX8_t:
-          fprintf(fp, "%e + i*%e", (REAL4) crealf(*(COMPLEX8 *) ptr->value), (REAL4) cimagf(*(COMPLEX8 *) ptr->value));
-          break;
-        case LALINFERENCE_COMPLEX16_t:
-          fprintf(fp, "%e + i*%e", (REAL8) creal(*(COMPLEX16 *) ptr->value), (REAL8) cimag(*(COMPLEX16 *) ptr->value));
-          break;
-        case LALINFERENCE_UINT4Vector_t:
-          v = *((UINT4Vector **)ptr->value);
-          for(i=0;i<v->length;i++){
-            fprintf(fp,"%11.7f",(REAL8)v->data[i]);
-            if( i!=(UINT4)(v->length-1) ) { fprintf(fp,"\t"); }
-          }
-          break;
-        default:
-          fprintf(stdout, "<can't print>");
-      }
-      fprintf(fp,"\t");
-    }
-    ptr=ptr->next;
-  }
-  return;
-}
-
-
-/**
- * \brief Print out only the variable (i.e. non-fixed) parameters to the file
- *
- * If the command line argument \c --output-all-params is given then this function
- * will output all parameters that have been stored, but by default it will only
- * output variable parameters to the nested samples to a file.
- */
-void LogSampleToFile(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars)
-{
-
-  FILE *outfile = NULL;
-  if( LALInferenceCheckVariable(algorithmParams,"outfile") ){
-    outfile = *(FILE **)LALInferenceGetVariable(algorithmParams,"outfile");
-  }
-
-  /* Write out old sample */
-  if( outfile == NULL ) { return; }
-  LALInferenceSortVariablesByName(vars);
-
-  /* only write out non-fixed samples if required */
-  if(LALInferenceCheckVariable(algorithmParams,"output_all_params")&&LALInferenceGetINT4Variable(algorithmParams,"output_all_params")){
-    LALInferencePrintSample(outfile, vars);
-  }
-  else{
-    /* default to writing out only the non-fixed (i.e. variable) parameters */
-    PrintNonFixedSample(outfile, vars);
-  }
-  fprintf(outfile,"\n");
-
-  return;
-}
-
-
-/**
- * \brief Print out only the variable (i.e. non-fixed) parameters to the file whilst also creating
- * an array for all parameters
- *
- * This function (which is used if the XML library is present) will only output variable
- * parameters.
- */
-void LogSampleToArray(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars)
-{
-  LALInferenceVariables **output_array = NULL;
-  UINT4 N_output_array = 0;
-  LALInferenceSortVariablesByName(vars);
-
-  LogSampleToFile(algorithmParams, vars);
-
-  /* Set up the array if it is not already allocated */
-  if(LALInferenceCheckVariable(algorithmParams,"outputarray")){
-    output_array = *(LALInferenceVariables ***)LALInferenceGetVariable(algorithmParams,"outputarray");
-  }
-  else{
-    LALInferenceAddVariable(algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
-  }
-
-  if(LALInferenceCheckVariable(algorithmParams,"N_outputarray")){
-    N_output_array = *(INT4 *)LALInferenceGetVariable(algorithmParams,"N_outputarray");
-  }
-  else{
-    LALInferenceAddVariable(algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
-  }
-
-  /* Expand the array for new sample */
-  output_array = XLALRealloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables *));
-  if( !output_array ){
-    XLAL_ERROR_VOID(XLAL_EFAULT, "Unable to allocate array for samples.");
-  }
-  else{
-    /* Save sample and update */
-    output_array[N_output_array] = XLALCalloc(1,sizeof(LALInferenceVariables));
-    LALInferenceCopyVariables(vars, output_array[N_output_array]);
-    N_output_array++;
-
-    LALInferenceSetVariable(algorithmParams,"outputarray",&output_array);
-    LALInferenceSetVariable(algorithmParams,"N_outputarray",&N_output_array);
   }
 
   return;

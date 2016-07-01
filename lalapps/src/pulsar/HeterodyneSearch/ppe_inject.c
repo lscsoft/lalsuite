@@ -61,15 +61,25 @@ void inject_signal( LALInferenceRunState *runState ){
   REAL8 snrmulti = 0.;
   REAL8 snrscale = 0;
 
-  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-  if( !ppt ){ XLAL_ERROR_VOID( XLAL_EINVAL, "Error... no output file specified!" ); }
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outhdf" );
+  if ( !ppt ){ XLAL_ERROR_VOID( XLAL_EINVAL, "Error... no output file specified!" ); }
 
   snrfile = XLALStringDuplicate( ppt->value );
+  /* strip the file extension */
+  CHAR *dotloc = strrchr(snrfile, '.');
+  CHAR *slashloc = strrchr(snrfile, '/');
+  if ( dotloc != NULL ){
+    if ( slashloc != NULL ){ /* check dot is after any filename seperator */
+      if( slashloc < dotloc ){ *dotloc = '\0'; }
+    }
+    else{ *dotloc = '\0'; }
+  }
   snrfile = XLALStringAppend( snrfile, "_SNR" );
 
   if( (fpsnr = fopen(snrfile, "w")) == NULL ){
     XLAL_ERROR_VOID( XLAL_EIO, "Error... cannot open output SNR file!");
   }
+  XLALFree( snrfile );
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--inject-file" );
   if( ppt ){
@@ -82,6 +92,7 @@ void inject_signal( LALInferenceRunState *runState ){
 
     /* read in injection parameter file */
     injpars = XLALReadTEMPOParFileNew( injectfile );
+    XLALFree( injectfile );
 
     /* check RA and DEC are set (if only RAJ and DECJ are given in the par file) */
     if ( !PulsarCheckParam( injpars, "RA" ) ){
@@ -311,6 +322,7 @@ void inject_signal( LALInferenceRunState *runState ){
       if ( (fpso = fopen(signalonly, "w")) == NULL ){
         fprintf(stderr, "Non-fatal error... unable to open file %s to output injection\n", signalonly);
       }
+      XLALFree( outfile );
     }
 
     /* add the signal to the data */
@@ -622,13 +634,19 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   LALInferenceClearVariables( loudestParams );
 
   /* setup output file */
-  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-  if( !ppt ){
-    fprintf(stderr, "Error... no output file specified!\n");
-    exit(0);
-  }
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outhdf" );
+  if ( !ppt ){ XLAL_ERROR_VOID(XLAL_EIO, "Error... no output file specified!\n"); }
 
   snrfile = XLALStringDuplicate( ppt->value );
+  /* strip the file extension */
+  CHAR *dotloc = strrchr(snrfile, '.');
+  CHAR *slashloc = strrchr(snrfile, '/');
+  if ( dotloc != NULL ){
+    if ( slashloc != NULL ){ /* check dot is after any filename seperator */
+      if( slashloc < dotloc ){ *dotloc = '\0'; }
+    }
+    else{ *dotloc = '\0'; }
+  }
   snrfile = XLALStringAppend( snrfile, "_SNR" );
 
   /* append to previous injection SNR file if it exists */
@@ -636,6 +654,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     fprintf(stderr, "Error... cannot open output SNR file!\n");
     exit(0);
   }
+  XLALFree( snrfile );
 
   /* get SNR of loudest point and print out to file */
   data = runState->data;
