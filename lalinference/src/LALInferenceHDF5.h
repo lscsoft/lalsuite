@@ -24,8 +24,22 @@
 #include <lal/LALInference.h>
 #include <lal/H5FileIO.h>
 
-int XLALInferenceVariablesArray2H5Group(LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N, const char *GroupName);
+int LALInferenceH5VariablesArray2Group(LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N, const char *GroupName);
 
-const char LALInferenceHDF5PosteriorGroupName[]="posterior_samples";
+int LALInferenceH5GroupToVariablesArray(LALH5File *group , LALInferenceVariables ***varsArray, UINT4 *N);
+
+int LALInferenceH5VariableToAttribute(LALH5File *group, LALInferenceVariables *vars, char *name);
+
+
+/**
+ * Create a HDF5 heirarchy in the given LALH5File reference
+ * /codename/runID/
+ * Returns a LALH5File pointer to the runID group.
+ */
+LALH5File *LALInferenceH5CreateGroupStructure(LALH5File *h5file, const char *codename, const char *runID);
+
+extern const char LALInferenceHDF5PosteriorSamplesGroupName[];
+extern const char LALInferenceHDF5NestedSamplesGroupName[];
+
 
 #endif /* LALInferenceHDF5_h */

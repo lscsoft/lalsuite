@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2015  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -84,12 +84,12 @@ from glue.ligolw import utils as ligolw_utils
 from lalinference.bayestar.decorator import memoized
 from lalinference import fits
 from lalinference.bayestar import ligolw as ligolw_bayestar
+from lalinference.bayestar import distance
 from lalinference.bayestar import filter
 from lalinference.bayestar import timing
 from lalinference.bayestar import ligolw_sky_map
 
 # Other imports.
-import healpy as hp
 import numpy as np
 
 # Read coinc file.
@@ -189,6 +189,9 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
                 opts.max_distance, opts.prior_distance_power, psds=psds,
                 method=method, nside=opts.nside, chain_dump=chain_dump,
                 phase_convention=opts.phase_convention)
+            prob, distmu, distsigma, _ = sky_map
+            distmean, diststd = distance.parameters_to_marginal_moments(
+                prob, distmu, distsigma)
         except (ArithmeticError, ValueError):
             log.exception("%s:method '%s':sky localization failed", coinc.coinc_event_id, method)
             count_sky_maps_failed += 1
@@ -199,6 +202,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
             fits.write_sky_map('%s.%s.fits.gz' % (int(coinc.coinc_event_id), method),
                 sky_map, objid=str(coinc.coinc_event_id), gps_time=float(epoch),
                 creator=parser.prog, runtime=elapsed_time,
+                distmean=distmean, diststd=diststd,
                 instruments=instruments, nest=True)
 
 

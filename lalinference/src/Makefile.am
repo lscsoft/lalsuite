@@ -16,8 +16,8 @@ XMLSRC = LALInferenceXML.c
 endif
 
 if HAVE_CHEALPIX
-BAYESTARHDR = bayestar_sky_map.h
-BAYESTARSRC = bayestar_sky_map.c
+BAYESTARHDR = bayestar_sky_map.h bayestar_distance.h
+BAYESTARSRC = bayestar_sky_map.c bayestar_distance.c
 endif
 
 ANALYTICFILES = CorrelationMatrix.csv unimodalMeans.csv bimodalMeans.csv
@@ -45,6 +45,7 @@ pkginclude_HEADERS = \
 	LALInferenceGenerateROQ.h \
 	LALInferenceBurstRoutines.h \
 	LALInferenceHDF5.h \
+	LALInferencePriorVolumes.h \
 	$(BAYESTARHDR) \
 	$(XMLHDR)
 
@@ -70,6 +71,7 @@ liblalinference_la_SOURCES = \
 	LALInferenceGenerateROQ.c \
 	LALInferenceBurstRoutines.c \
 	LALInferenceHDF5.c \
+	LALInferencePriorVolumes.c \
 	DetectorFixedSkyCoords.c \
 	logaddexp.h \
 	$(BAYESTARSRC) \

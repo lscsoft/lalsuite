@@ -1,3 +1,22 @@
+/*
+*  Copyright (C) 2014 Matthew Pitkin
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
 /**
  * \file
  * \ingroup lalapps_pulsar_HeterodyneSearch
@@ -7,6 +26,7 @@
  * codes for targeted pulsar searches.
  */
 
+#include "config.h"
 #include "ppe_likelihood.h"
 
 #ifndef _OPENMP
@@ -150,7 +170,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
         cl = i + (INT4)chunkLength;
 
         if ( varyphase ){ /* not using pre-summed values */
-          #pragma omp parallel for default(shared) private(B, M) reduction(+:sumModel,sumDataModel)
           for( j = i ; j < cl ; j++ ){
             B = tempdata->compTimeData->data->data[j];
             M = ifomodeltemp->compTimeSignal->data->data[j];
@@ -225,33 +244,45 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
     }
     else{ /* using ROQ to get likelihoods */
       UINT4Vector *numbases = *(UINT4Vector **)LALInferenceGetVariable( ifomodeltemp->params, "numBases" );
+      UINT4Vector *numbasesquad = *(UINT4Vector **)LALInferenceGetVariable( ifomodeltemp->params, "numBasesQuad" );
 
-      size_t vstart = 0, mstart = 0;
-
-      gsl_vector_complex_view dmview, mmview;
-      XLAL_CALLGSL( dmview = gsl_matrix_complex_row(tempdata->roq->weights, 0) );
-      XLAL_CALLGSL( mmview = gsl_matrix_complex_row(tempdata->roq->mmweights, 0) );
+      UINT4 vstart = 0, mstart = 0, dstart = 0;
 
       /* loop over chunks */
       for ( i = 0; i < chunkLengths->length; i++ ){
+        COMPLEX16Vector dmweights;
+        REAL8Vector mmweights;
+
         chunkLength = (REAL8)chunkLengths->data[i];
 
         /* get the weights for this chunk */
-        gsl_vector_complex_view dmweights, mmweightsub;
-        gsl_matrix_complex_view mmweights;
+        dmweights.data = &tempdata->roq->weightsLinear[vstart];
+        dmweights.length = numbases->data[i];
 
-        dmweights = gsl_vector_complex_subvector(&dmview.vector, vstart, numbases->data[i]);
-        mmweightsub = gsl_vector_complex_subvector(&mmview.vector, mstart, numbases->data[i]*numbases->data[i]);
-        mmweights = gsl_matrix_complex_view_vector(&mmweightsub.vector, numbases->data[i], numbases->data[i]);
+        mmweights.data = &tempdata->roq->weightsQuadratic[mstart];
+        mmweights.length = numbasesquad->data[i];
 
         /* get data/model term */
-        gsl_vector_complex_view cmodel, cmodelsub;
-        cmodel = gsl_vector_complex_view_array((double*)ifomodeltemp->compTimeSignal->data->data, ifomodeltemp->compTimeSignal->data->length);
-        cmodelsub = gsl_vector_complex_subvector(&cmodel.vector, vstart, numbases->data[i]);
-        COMPLEX16 dm = LALInferenceROQCOMPLEX16DataDotModel(&dmweights.vector, &cmodelsub.vector);
-        COMPLEX16 mm = LALInferenceROQCOMPLEX16ModelDotModel(&mmweights.matrix, &cmodelsub.vector);
+        COMPLEX16Vector cmodel; /* get vector view of required chuck of data */
+        cmodel.data = &ifomodeltemp->compTimeSignal->data->data[dstart];
+        cmodel.length = numbases->data[i];
 
-        chiSquare = sumDat->data[count] - 2.*creal(dm) + creal(mm);
+        dstart += numbases->data[i]; /* increment where the model starts */
+
+        /* get the quadratic of the model */
+        REAL8Vector *quadmodel = XLALCreateREAL8Vector( numbasesquad->data[i] );
+        for ( UINT4 idx = 0; idx < quadmodel->length; idx++ ){
+          COMPLEX16 qval = ifomodeltemp->compTimeSignal->data->data[dstart+idx];
+          quadmodel->data[idx] = creal(qval*conj(qval));
+        }
+        dstart += numbasesquad->data[i]; /* increment where the model starts */
+
+        COMPLEX16 dm = LALInferenceROQCOMPLEX16DotProduct(&dmweights, &cmodel);
+        REAL8 mm = LALInferenceROQREAL8DotProduct(&mmweights, quadmodel);
+
+        XLALDestroyREAL8Vector( quadmodel );
+
+        chiSquare = sumDat->data[i] - 2.*creal(dm) + mm;
 
         if ( !gaussianLike ){ /* using Students-t likelihood */
           logliketmp += (gsl_sf_lnfact(chunkLength-1) - LAL_LN2 - chunkLength*LAL_LNPI);
@@ -263,7 +294,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
 
         /* shift start indices */
         vstart += numbases->data[i];
-        mstart += numbases->data[i]*numbases->data[i];
+        mstart += numbasesquad->data[i];
       }
     }
 
@@ -432,6 +463,11 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         value = (*(REAL8 *)item->value);
         prior -= 0.5*((*(REAL8 *)item->value - mu)*(*(REAL8 *)item->value - mu))/(sigma*sigma);
 
+        /* make sure H0, Q22 or DIST are not negative */
+        if ( !strcmp(item->name, "H0") || !strcmp(item->name, "DIST") || !strcmp(item->name, "DIST") ){
+          if ( value < 0. ) { return -DBL_MAX; }
+        }
+
         if ( !strcmp(item->name, "I21") ){ I21 = value; }
         if ( !strcmp(item->name, "I31") ){ I31 = value; }
         if ( !strcmp(item->name, "C21") ){ C21 = value; }
@@ -494,8 +530,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     if ( (C21 < 0. && C22 > 0.) || (C21 > 0. && C22 < 0.) ) { return -DBL_MAX; } /* if same sign this will be positive */
   }
 
-  /* if there are values for which the priors are defined by a correlation
-     coefficient matrix then get add the prior from that */
+  /* if there are values for which the priors are defined by a correlation coefficient matrix then get add the prior from that */
   if ( corlist ){
     gsl_matrix *cor = NULL, *invcor = NULL;
     gsl_vector_view vals;
@@ -517,6 +552,9 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     ptmp /= 2.;
 
     prior -= ptmp;
+
+    XLALDestroyREAL8Vector( corVals );
+    XLAL_CALLGSL( gsl_vector_free( vm ) );
   }
 
   return prior;

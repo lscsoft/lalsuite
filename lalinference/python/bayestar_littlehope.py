@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -42,43 +42,41 @@ available_interp_methods = [
 
 
 # Command line interface.
-from optparse import Option, OptionParser
+import argparse
 from lalinference.bayestar import command
 
-parser = OptionParser(
-    formatter = command.NewlinePreservingHelpFormatter(),
-    description = __doc__,
-    usage="%prog [options] --template-bank TMPLTBANK.xml[.gz] [INPUT.xml[.gz]] [-o OUTPUT.xml[.gz]]",
-    option_list = [
-        Option("-o", "--output", metavar="OUTPUT.xml[.gz]", default="/dev/stdout",
-            help="Name of output file [default: %default]"),
-        Option("--detector", metavar='|'.join(available_ifos), action="append",
-            help="Detectors to use.  May be specified multiple times.",
-            choices=available_ifos),
-        Option("--trigger-window", type=float, default=0.1, metavar="SECONDS",
-            help="Search for a trigger across this many seconds before and after the time of the injection [default: %default]"),
-        Option("--interp-method", metavar='|'.join(available_interp_methods),
-               default="lanczos", choices=available_interp_methods,
-            help="Trigger interpolation method [default: %default]"),
-        Option("--interp-window", metavar="SAMPLES", type=int, default=2,
-            help="Trigger interpolation window [default: %default]"),
-        Option("--waveform",
-            help="Waveform to use for injections"),
-        Option("--snr-threshold", type=float, default=4.,
-            help="Single-detector SNR threshold [default: %default]"),
-        Option("--min-triggers", type=int, default=2,
-            help="Emit coincidences only when at least this many triggers are found [default: %default]"),
-        Option("-R", "--repeat-first-injection", type=int, default=None,
-            help="Instead of performing each injection once, just perform the first injection this many times."),
-        Option("--template-bank", metavar="TMPLTBANK.xml[.gz]",
-            help="Name of template bank file (required)"),
-        Option("--reference-psd", metavar="PSD.xml[.gz]",
-            help="Name of PSD file (required)")
-    ]
-)
-opts, args = parser.parse_args()
-infilename = command.get_input_filename(parser, args)
-command.check_required_arguments(parser, opts, 'waveform', 'template_bank', 'reference_psd')
+parser = command.ArgumentParser()
+parser.add_argument(
+    'input', metavar='IN.xml[.gz]', type=argparse.FileType('rb'),
+    default='-', help='Name of input file [default: stdin]')
+parser.add_argument(
+    '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('wb'),
+    default='-', help='Name of output file [default: stdout]')
+parser.add_argument('--detector', metavar='|'.join(available_ifos), action='append',
+    help='Detectors to use.  May be specified multiple times.',
+    choices=available_ifos)
+parser.add_argument('--trigger-window', type=float, default=0.1, metavar='SECONDS',
+    help='Search for a trigger across this many seconds before and after the time of the injection [default: %(default)s]')
+parser.add_argument('--interp-method', metavar='|'.join(available_interp_methods),
+       default='lanczos', choices=available_interp_methods,
+    help='Trigger interpolation method [default: %(default)s]')
+parser.add_argument('--interp-window', metavar='SAMPLES', type=int, default=2,
+    help='Trigger interpolation window [default: %(default)s]')
+parser.add_argument('--waveform',
+    help='Waveform to use for injections [required]', required=True)
+parser.add_argument('--snr-threshold', type=float, default=4.,
+    help='Single-detector SNR threshold [default: %(default)s]')
+parser.add_argument('--min-triggers', type=int, default=2,
+    help='Emit coincidences only when at least this many triggers are found [default: %(default)s]')
+parser.add_argument('-R', '--repeat-first-injection', type=int, default=None,
+    help='Instead of performing each injection once, just perform the first injection this many times.')
+parser.add_argument(
+    '--template-bank', metavar='TMPLTBANK.xml[.gz]', type=argparse.FileType('rb'),
+    required=True, help='Name of template bank file [required]')
+parser.add_argument(
+    '--reference-psd', metavar='PSD.xml[.gz]', type=argparse.FileType('rb'),
+    required=True, help='Name of PSD file [required]')
+opts = parser.parse_args()
 
 
 # Python standard library imports.
@@ -131,8 +129,8 @@ out_xmldoc = ligolw.Document()
 out_xmldoc.appendChild(ligolw.LIGO_LW())
 
 # Write process metadata to output file.
-process = ligolw_process.register_to_xmldoc(out_xmldoc, parser.get_prog_name(),
-    opts.__dict__, ifos=opts.detector, comment="Little hope!")
+process = command.register_to_xmldoc(
+    out_xmldoc, parser, opts, ifos=opts.detector, comment="Little hope!")
 
 # Add search summary to output file.
 all_time = segments.segment([glue.lal.LIGOTimeGPS(0), glue.lal.LIGOTimeGPS(2e9)])
@@ -142,8 +140,8 @@ summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
     inseg=all_time, outseg=all_time)
 
 # Read template bank file.
-progress.update(-1, 'reading ' + opts.template_bank)
-xmldoc = ligolw_utils.load_filename(
+progress.update(-1, 'reading ' + opts.template_bank.name)
+xmldoc, _ = ligolw_utils.load_fileobj(
     opts.template_bank, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Determine the low frequency cutoff from the template bank file.
@@ -153,9 +151,9 @@ template_bank = ligolw_table.get_table(xmldoc,
     lsctables.SnglInspiralTable.tableName)
 
 # Read injection file.
-progress.update(-1, 'reading ' + infilename)
-xmldoc = ligolw_utils.load_filename(
-    infilename, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
+progress.update(-1, 'reading ' + opts.input.name)
+xmldoc, _ = ligolw_utils.load_fileobj(
+    opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Extract simulation table from injection file.
 sim_inspiral_table = ligolw_table.get_table(xmldoc,
@@ -198,8 +196,8 @@ coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
 out_xmldoc.childNodes[0].appendChild(coinc_inspiral_table)
 
 # Read PSD file.
-progress.update(-1, 'reading ' + opts.reference_psd)
-xmldoc = ligolw_utils.load_filename(
+progress.update(-1, 'reading ' + opts.reference_psd.name)
+xmldoc, _ = ligolw_utils.load_fileobj(
     opts.reference_psd, contenthandler=lal.series.PSDContentHandler)
 psds = lal.series.read_psd_xmldoc(xmldoc)
 psds = dict(
@@ -425,12 +423,12 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
 # Record process end time.
-progress.update(-1, 'writing ' + opts.output)
+progress.update(-1, 'writing ' + opts.output.name)
 ligolw_process.set_process_end_time(process)
 
 # Write output file.
-ligolw_utils.write_filename(out_xmldoc, opts.output,
-    gz=(os.path.splitext(opts.output)[-1]==".gz"))
+ligolw_utils.write_fileobj(out_xmldoc, opts.output,
+    gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
 
 
 if handler.interrupted:

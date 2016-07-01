@@ -623,6 +623,119 @@ INT4 templateSearch_scox1Style(candidateVector **output, const REAL8 fminimum, c
 
 }
 
+/**
+ * A brute force template search to find the most significant template at a fixed modulation depth around a putative source whose parameters are somewhat constrained
+ * \param [out] output                 Pointer to a pointer of a candidateVector
+ * \param [in]  dffixed                Modulation depth (fixed by user)
+ * \param [in]  fminimum               Lower frequency bound to search (inclusive)
+ * \param [in]  fspan                  Span of the frequency band (inclusive of endpoint)
+ * \param [in]  period                 Specific orbital period (measured in seconds)
+ * \param [in]  skypos                 SkyPosition struct of the sky position (in RA and DEC) being searched
+ * \param [in]  params                 Pointer to UserInput_t
+ * \param [in]  ffdata                 Pointer to ffdataStruct
+ * \param [in]  aveNoise               Pointer to REAL4VectorAligned of 2nd FFT background powers
+ * \param [in]  aveTFnoisePerFbinRatio Pointer to REAL4VectorAligned of normalized power across the frequency band
+* \param [in]  trackedlines           Pointer to REAL4VectorSequence of lines (allowed to be NULL if no lines)
+ * \param [in]  secondFFTplan          Pointer to REAL4FFTPlan
+ * \param [in]  rng                    Pointer to gsl_rng
+ * \param [in]  useExactTemplates      Boolean of 0 (use Gaussian templates) or 1 (use exact templates)
+ * \return Status value
+ */
+
+
+INT4 templateSearch_fixedDf(candidateVector **output, const LALStringVector *dffixed, const REAL8 fminimum, const REAL8 fspan, const REAL8 period, const SkyPosition skypos, const UserInput_t *params, const REAL4VectorAligned *ffdata, const REAL4VectorAligned *aveNoise, const REAL4VectorAligned *aveTFnoisePerFbinRatio, const REAL4VectorSequence *trackedlines, const REAL4FFTPlan *secondFFTplan, const gsl_rng *rng, BOOLEAN useExactTemplates)
+{
+
+   XLAL_CHECK( *output != NULL && dffixed !=NULL && params != NULL && ffdata != NULL && aveNoise != NULL && aveTFnoisePerFbinRatio != NULL && secondFFTplan != NULL && rng != NULL, XLAL_EINVAL );
+
+   REAL8Vector *trialf;
+   REAL8Vector *trialdf;
+   REAL8 fstepsize;
+
+   // Create the vector trialdf
+   XLAL_CHECK( (trialdf = XLALCreateREAL8Vector((dffixed->length))) != NULL, XLAL_EFUNC );
+   for (UINT4 ii=0;ii<dffixed->length;ii++) {
+      XLAL_CHECK( XLALParseStringValueAsREAL8(&(trialdf->data[ii]), dffixed->data[ii])== XLAL_SUCCESS, XLAL_EFUNC );
+
+      // Check that the specified df is ok; if not, return an error and end the program.
+      XLAL_CHECK ( (trialdf->data[ii] < maxModDepth(period, params->Tsft)) && (trialdf->data[ii] > 0.5/params->Tsft), XLAL_EFAILED, "ERROR: Modulation depth must be between %.5f and %.5f.\n",0.5/params->Tsft,maxModDepth(period,params->Tsft) );
+   }
+
+   //Set up parameters of signal frequency search
+   INT4 numfsteps = (INT4)round(2.0*fspan*params->Tsft)+1;
+   XLAL_CHECK( (trialf = XLALCreateREAL8Vector(numfsteps)) != NULL, XLAL_EFUNC );
+   fstepsize = fspan/(REAL8)(numfsteps-1);
+   for (INT4 ii=0; ii<numfsteps; ii++) trialf->data[ii] = fminimum + fstepsize*ii;
+
+   //Now search over the frequencies
+   INT4 proberrcode = 0;
+   candidate cand;
+   TwoSpectTemplate *template = NULL;
+   XLAL_CHECK( (template = createTwoSpectTemplate(params->maxTemplateLength)) != NULL, XLAL_EFUNC );
+
+   // loop over dfs
+   for (UINT4 jj=0; jj<trialdf->length; jj++){
+
+   //Search over frequency
+   for (UINT4 ii=0; ii<trialf->length; ii++) {
+
+      loadCandidateData(&cand, trialf->data[ii], period, trialdf->data[jj], skypos.longitude, skypos.latitude, 0, 0, 0.0, 0, 0.0, -1, 0);
+
+      //Make the template
+      resetTwoSpectTemplate(template);
+      if (useExactTemplates!=0) XLAL_CHECK( makeTemplate(template, cand, params, secondFFTplan) == XLAL_SUCCESS, XLAL_EFUNC );
+      else XLAL_CHECK( makeTemplateGaussians(template, cand, params) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      REAL8 R = calculateR(ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC);
+      REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, rng, &proberrcode);
+      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC);
+      REAL8 h0 = 0.0;
+      if ( R > 0.0 ) h0 = 2.7426*pow(R/(params->Tsft*params->Tobs),0.25);
+
+         //Line contamination?
+         BOOLEAN lineContamination = 0;
+         if (trackedlines!=NULL) {
+            UINT4 kk = 0;
+            while (kk<trackedlines->length && lineContamination==0) {
+               if (2.0*trialdf->data[jj]>=(trackedlines->data[kk*3+2]-trackedlines->data[kk*3+1])) {
+                  if ((trackedlines->data[kk*3+2]>=(REAL4)(trialf->data[ii]-trialdf->data[jj]) && trackedlines->data[kk*3+2]<=(REAL4)(trialf->data[ii]+trialdf->data[jj])) ||
+                      (trackedlines->data[kk*3+1]>=(REAL4)(trialf->data[ii]-trialdf->data[jj]) && trackedlines->data[kk*3+1]<=(REAL4)(trialf->data[ii]+trialdf->data[jj]))) {
+                     lineContamination = 1;
+                  }
+               } // if the band spanned by the line is smaller than the band spanned by the signal
+               else {
+                  if (((REAL4)(trialf->data[ii]+trialdf->data[jj])>=trackedlines->data[kk*3+1] && (REAL4)(trialf->data[ii]+trialdf->data[jj])<=trackedlines->data[kk*3+2]) ||
+                      ((REAL4)(trialf->data[ii]-trialdf->data[jj])>=trackedlines->data[kk*3+1] && (REAL4)(trialf->data[ii]-trialdf->data[jj])<=trackedlines->data[kk*3+2])) {
+                     lineContamination = 1;
+                  }
+               } // instead if the band spanned by the line is larger than the band spanned by the signal
+               kk++;
+            } // while kk < trackedlines->length && lineContamination==0
+         } // if trackedlines != NULL
+
+         //Resize the output candidate vector if necessary
+         if ((*output)->numofcandidates == (*output)->length-1) {
+            *output = resizecandidateVector(*output, 2*((*output)->length));
+            XLAL_CHECK( *output != NULL, XLAL_EFUNC);
+         }
+
+         loadCandidateData(&((*output)->data[(*output)->numofcandidates]), trialf->data[ii], period, trialdf->data[jj], skypos.longitude, skypos.latitude, R, h0, prob, proberrcode, 0.0, -1, lineContamination);
+         (*output)->numofcandidates++;
+
+         } /* for ii < trialf */
+      } /* for jj < trialdf */
+
+      XLALDestroyREAL8Vector(trialdf);
+      trialdf = NULL;
+      destroyTwoSpectTemplate(template);
+      template = NULL;
+      XLALDestroyREAL8Vector(trialf);
+      trialf = NULL;
+
+   return XLAL_SUCCESS;
+
+}
 
 /**
  * Cluster candidates by frequency, period, and modulation depth using templates

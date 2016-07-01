@@ -18,6 +18,7 @@ pybin_scripts = \
 	bayestar_plot_allsky \
 	bayestar_plot_found_injections \
 	bayestar_plot_pileup \
+	bayestar_plot_volume \
 	bayestar_prune_neighborhood_tmpltbank \
 	bayestar_realize_coincs \
 	bayestar_sample_model_psd \

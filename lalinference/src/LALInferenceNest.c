@@ -40,7 +40,6 @@
 #include <lal/LALInferenceCalibrationErrors.h>
 #include <lal/LALInferenceVCSInfo.h>
 
-
 /*************** MAIN **********************/
 
 
@@ -71,14 +70,17 @@ int main(int argc, char *argv[]){
   /* And performing any injections specified */
   /* And allocating memory */
   state = LALInferenceInitRunState(procParams);
-  /* Create header */
+  /* Create header  */
   if (state!=NULL && !helpflag){
     ProcessParamsTable *ppt=NULL;
     ppt=LALInferenceGetProcParamVal(state->commandLine,"--outfile");
     if(!ppt){
-      fprintf(stderr,"Must specify --outfile <filename.dat>\n");
+    ppt=LALInferenceGetProcParamVal(state->commandLine,"--outhdf");
+    if(!ppt){
+      fprintf(stderr,"Must specify --outfile <filename.dat> or --outhdf <filename.h5>\n");
       exit(1);
-    }
+      }
+  }
     char *outfile=ppt->value;
     char headerfile[FILENAME_MAX];
     FILE *fpout=NULL;

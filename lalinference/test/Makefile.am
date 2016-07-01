@@ -19,11 +19,20 @@ endif
 if SWIG_BUILD_PYTHON
 #test_scripts += test_plot.py
 test_scripts += test_detframe.py
-test_scripts += test_bayestar_realize_coincs.sh
-test_scripts += test_bayestar_sample_model_psd.sh
-test_scripts += test_bayestar_sim_to_tmpltbank.sh
 if HAVE_CHEALPIX
 test_scripts += test_bayestar.py
+
+# installcheck-local:
+# 	../python/bayestar_sample_model_psd --H1=aLIGOZeroDetHighPower --L1=aLIGOZeroDetHighPower -o test_bayestar_sample_model_psd.xml && \
+# 	../python/bayestar_realize_coincs --detector H1 L1 --reference-psd test_bayestar_sample_model_psd.xml $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_realize_coincs.xml && \
+# 	../python/bayestar_sim_to_tmpltbank $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_sim_to_tmpltbank.xml && \
+# 	../python/bayestar_prune_neighborhood_tmpltbank test_bayestar_sim_to_tmpltbank.xml --mass1 1.4 --mass2 1.4 --snr 8 -o test_bayestar_prune_neighborhood_tmpltbank.xml
+# bayestar_lattice_tmpltbank -o test_bayestar_lattice_tmpltbank.xml --min-mass 2.7 --max-mass 2.9
+# bayestar_littlehope $srcdir/HL-INJECTIONS_1_TEST-1000000000-10.xml \
+#     --template-bank test_bayestar_sim_to_tmpltbank.xml \
+#     --reference-psd test_bayestar_sample_model_psd.xml \
+#     --detector H1 --detector L1 --waveform TaylorF2threePointFivePN \
+#     -o test_bayestar_littlehope.xml
 endif
 endif
 
@@ -38,14 +47,6 @@ HL-INJECTIONS_1_TEST-1000000000-10.xml:
 	--f-lower 30 --waveform TaylorF2threePointFivePN --disable-spin \
 	--time-step 1 --user-tag TEST
 
-test_bayestar_sample_model_psd.xml: test_bayestar_sample_model_psd.sh
-
-test_bayestar_realize_coincs.sh: HL-INJECTIONS_1_TEST-1000000000-10.xml test_bayestar_sample_model_psd.xml
-
-test_bayestar_realize_coincs.xml: test_bayestar_realize_coincs.sh
-
-test_bayestar_sim_to_tmpltbank.sh: HL-INJECTIONS_1_TEST-1000000000-10.xml
-
 MOSTLYCLEANFILES = \
 	*.dat \
 	*.out \
@@ -53,6 +54,9 @@ MOSTLYCLEANFILES = \
 	test_bayestar_sample_model_psd.xml \
 	test_bayestar_realize_coincs.xml \
 	test_bayestar_sim_to_tmpltbank.xml \
+	test_bayestar_prune_neighborhood_tmpltbank.xml \
+	test_bayestar_littlehope.xml \
+	test_bayestar_lattice_tmpltbank.xml \
 	test_result_images/pp_plot_default.png \
 	test_result_images/pp_plot_lines.png \
 	test_result_images/pp_plot_steps.png \

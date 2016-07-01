@@ -1,3 +1,10 @@
+lalinference (1.7.0-1) unstable; urgency=low
+
+  * LALInference 1.7.0
+  * ER9 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 23 Jun 2016 16:58:03 -0500
+
 lalinference (1.6.0-1) unstable; urgency=low
 
   * LALInference 1.6.0

@@ -39,7 +39,6 @@ opts = parser.parse_args()
 
 # Late imports
 
-import functools
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt

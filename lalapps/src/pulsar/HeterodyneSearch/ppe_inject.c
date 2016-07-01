@@ -21,6 +21,7 @@
 /*                       SOFTWARE INJECTION FUNCTIONS                         */
 /******************************************************************************/
 
+#include "config.h"
 #include "ppe_inject.h"
 
 /**
@@ -528,7 +529,7 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel
  */
 void get_loudest_snr( LALInferenceRunState *runState ){
   INT4 ndats = 0;
-  UINT4 roq = 0;
+  UINT4 roq = 0; // i = 0;
   INT4 Nlive = *(INT4 *)LALInferenceGetVariable( runState->algorithmParams, "Nlive" );
   REAL8 snrmulti = 0.;
   REAL8Vector *freqFactors = NULL;
@@ -560,12 +561,19 @@ void get_loudest_snr( LALInferenceRunState *runState ){
       LALInferenceAddVariable( ifo_model->params, "siderealDay", &sidtime, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
 
       LIGOTimeGPSVector *timestamps = *(LIGOTimeGPSVector **)LALInferenceGetVariable( ifo_model->params, "timeStampVectorFull" );
+      //REAL8Vector *timestamps = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "timeStampVectorFull" );
       XLALDestroyTimestampVector( ifo_model->times );
       ifo_model->times = timestamps;
+      //ifo_model->times = XLALCreateTimestampVector( timestamps->length );
+      //for ( i=0; i<timestamps->length; i++ ){ XLALGPSSetREAL8( &ifo_model->times->data[i], timestamps->data[i] ); }
+      //fprintf(stderr, "timestamps->length = %d, ifo_model->times->data[0] = %d, ifo_model->times->data[-1] = %d\n", timestamps->length, ifo_model->times->data[0].gpsSeconds, ifo_model->times->data[timestamps->length-1].gpsSeconds);
 
+      //REAL8Vector *timedata = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "timeDataFull" );
       REAL8TimeSeries *timedata = *(REAL8TimeSeries **)LALInferenceGetVariable( ifo_model->params, "timeDataFull" );
       XLALDestroyREAL8TimeSeries( ifo_model->timeData );
       ifo_model->timeData = timedata;
+      //ifo_model->timeData = XLALCreateREAL8TimeSeries( "", &ifo_model->times->data[0], 0., 1., &lalSecondUnit, timedata->length );
+      //memcpy(ifo_model->timeData->data->data, timedata->data, sizeof(REAL8)*timedata->length );
 
       ifo_model->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo_model->compTimeSignal, 0, ifo_model->times->length );
 

@@ -49,8 +49,14 @@ typedef struct {
   REAL4 avTwoF;  /**< average of F-statistic values \f$2\F\f$ over segments */
   UINT4 nc;       /**< number count */
   REAL4 log10BSGL;    /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGL}}\f$ */
+  REAL4 log10BSGLtL;  /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGLtL}}\f$ */
+  REAL4 log10BtSGLtL;    /**< Line-robust transient-CW statistic \f$\log_{10} B_{\mathrm{tSGLtL}}\f$ */
   UINT4 numDetectors; /**< number of detectors for optional avTwoFX arrays */
   REAL4 avTwoFX[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector average \f$2\F^X\f$-values */
+  REAL4 maxTwoFl; /**< multi-detector maximum 2F over segments \f$\max2\F^\ell\f$ */
+  INT4  maxTwoFlSeg; /**< index of segment with maximum multi-detector 2F */
+  REAL4 maxTwoFXl[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector maximum 2F over segments \f$\max2\F^{X\ell}\f$ */
+  INT4  maxTwoFXlSeg[PULSAR_MAX_DETECTORS]; /**< fixed-size array of index of segment with maximum single-detector 2F */
   REAL4 avTwoFrecalc;  /**< average of \f$2\F\f$-values as recomputed by recalcToplistStats */
   REAL4 avTwoFXrecalc[PULSAR_MAX_DETECTORS];  /**< fixed-size array of single-detector \f$2\F^X\f$-values as recomputed by recalcToplistStats */
   REAL4 log10BSGLrecalc; /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGL}}\f$ recomputed by recalcToplistStats */
@@ -65,8 +71,11 @@ typedef enum
   {
     SORTBY_F 		= 0,	//< sort by multi-IFO F-stat (averaged over segments)
     SORTBY_NC 		= 1,	//< sort by number-count 'nc'
-    SORTBY_BSGL 		= 2,	//< sort by line-robust statistic (BSGL)
-    SORTBY_DUAL_F_BSGL 	= 3,	//< dual toplists: one sorted by F, one by BSGL
+    SORTBY_BSGL 	= 2,	//< sort by line-robust statistic B_S/GL
+    SORTBY_DUAL_F_BSGL 	= 3,	//< dual toplists: one sorted by F, one by B_S/GL
+    SORTBY_BSGLtL 	= 4,	//< sort by transient-line robust statistic B_S/GLtL
+    SORTBY_BtSGLtL 	= 5,	//< sort by transient-CW line robust statistic B_tS/GLtL
+    SORTBY_TRIPLE_BStSGLtL = 6,	//< triple toplists: one sorted by B_S/GL, one by B_S/GLtL, one by B_tS/GLtL
     SORTBY_LAST			//< end-marker
   } SortBy_t;
 
@@ -87,7 +96,7 @@ extern void free_gctFstat_toplist(toplist_t**list);
  * In the latter case, remove the smallest element from the toplist
  * Returns 1 if the element was actually inserted, 0 if not.
  */
-extern int insert_into_gctFstat_toplist(toplist_t*list, GCTtopOutputEntry line);
+extern int insert_into_gctFstat_toplist(toplist_t*list, GCTtopOutputEntry * line);
 
 
 /**
@@ -129,7 +138,7 @@ extern void sort_gctFstat_toplist_strongest(toplist_t*list);
  * -2 if out of memory,
  * 0 otherwise (successful)
  */
-extern int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 counter, BOOLEAN do_sync);
+extern int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplist_t*t3,UINT4 counter, BOOLEAN do_sync);
 
 /**
  * tries to read a checkpoint
@@ -143,7 +152,7 @@ extern int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2,
  * -1 in case of an I/O error
  * -2 if the checksum was wrong or elems was unreasonable
  */
-extern int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*counter);
+extern int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplist_t*t3,UINT4*counter);
 
 /**
  * removes a checkpoint

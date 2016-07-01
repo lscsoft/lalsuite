@@ -56,7 +56,7 @@ pkgpython_PYTHON = \
 	nest_utils.py \
 	combine_evidence.py \
 	nest2pos.py \
-	lalinference_pipe_utils.py
+	lalinference_pipe_utils.py 
 endif
 
 EXTRA_DIST += \

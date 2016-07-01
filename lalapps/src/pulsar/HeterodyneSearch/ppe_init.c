@@ -21,6 +21,7 @@
 /*                      INITIALISATION FUNCTIONS                              */
 /******************************************************************************/
 
+#include "config.h"
 #include "ppe_init.h"
 
 /** Array for conversion from lowercase to uppercase */
@@ -226,6 +227,14 @@ void initialise_algorithm( LALInferenceRunState *runState )
     }
   }
 
+  INT4 outputallparams=0;
+  if ( LALInferenceGetProcParamVal( runState->commandLine, "--output-all-params" ))
+  {
+    outputallparams=1;
+  }
+  LALInferenceAddVariable(runState->algorithmParams,"output_all_params",&outputallparams, LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+
+  
   /* log samples */
 #ifdef HAVE_LIBLALXML
   runState->logsample = LogSampleToArray;
@@ -1252,8 +1261,7 @@ void sum_data( LALInferenceRunState *runState ){
         check_and_add_fixed_variable( ifomodel->params, "sumBLWhite", &sumBLWhite, LALINFERENCE_REAL8Vector_t );
       }
     }
-    else{ /* add parameter defining the usage of RQO here (as this is after any injection generation, which
-           * would fail if this was set */
+    else{ /* add parameter defining the usage of RQO here (as this is after any injection generation, which would fail if this was set */
       LALInferenceAddVariable( ifomodel->params, "roq", &roq, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
     }
 
@@ -1328,12 +1336,12 @@ static void PrintNonFixedSample(FILE *fp, LALInferenceVariables *sample){
  * will output all parameters that have been stored, but by default it will only
  * output variable parameters to the nested samples to a file.
  */
-void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
+void LogSampleToFile(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars)
 {
 
   FILE *outfile = NULL;
-  if( LALInferenceCheckVariable(state->algorithmParams,"outfile") ){
-    outfile = *(FILE **)LALInferenceGetVariable(state->algorithmParams,"outfile");
+  if( LALInferenceCheckVariable(algorithmParams,"outfile") ){
+    outfile = *(FILE **)LALInferenceGetVariable(algorithmParams,"outfile");
   }
 
   /* Write out old sample */
@@ -1341,7 +1349,7 @@ void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
   LALInferenceSortVariablesByName(vars);
 
   /* only write out non-fixed samples if required */
-  if ( LALInferenceGetProcParamVal( state->commandLine, "--output-all-params" ) ){
+  if(LALInferenceCheckVariable(algorithmParams,"output_all_params")&&LALInferenceGetINT4Variable(algorithmParams,"output_all_params")){
     LALInferencePrintSample(outfile, vars);
   }
   else{
@@ -1361,27 +1369,27 @@ void LogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
  * This function (which is used if the XML library is present) will only output variable
  * parameters.
  */
-void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
+void LogSampleToArray(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars)
 {
   LALInferenceVariables **output_array = NULL;
   UINT4 N_output_array = 0;
   LALInferenceSortVariablesByName(vars);
 
-  LogSampleToFile(state, vars);
+  LogSampleToFile(algorithmParams, vars);
 
   /* Set up the array if it is not already allocated */
-  if(LALInferenceCheckVariable(state->algorithmParams,"outputarray")){
-    output_array = *(LALInferenceVariables ***)LALInferenceGetVariable(state->algorithmParams,"outputarray");
+  if(LALInferenceCheckVariable(algorithmParams,"outputarray")){
+    output_array = *(LALInferenceVariables ***)LALInferenceGetVariable(algorithmParams,"outputarray");
   }
   else{
-    LALInferenceAddVariable(state->algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
   }
 
-  if(LALInferenceCheckVariable(state->algorithmParams,"N_outputarray")){
-    N_output_array = *(INT4 *)LALInferenceGetVariable(state->algorithmParams,"N_outputarray");
+  if(LALInferenceCheckVariable(algorithmParams,"N_outputarray")){
+    N_output_array = *(INT4 *)LALInferenceGetVariable(algorithmParams,"N_outputarray");
   }
   else{
-    LALInferenceAddVariable(state->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
   }
 
   /* Expand the array for new sample */
@@ -1395,8 +1403,8 @@ void LogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
     LALInferenceCopyVariables(vars, output_array[N_output_array]);
     N_output_array++;
 
-    LALInferenceSetVariable(state->algorithmParams,"outputarray",&output_array);
-    LALInferenceSetVariable(state->algorithmParams,"N_outputarray",&N_output_array);
+    LALInferenceSetVariable(algorithmParams,"outputarray",&output_array);
+    LALInferenceSetVariable(algorithmParams,"N_outputarray",&N_output_array);
   }
 
   return;

@@ -14,31 +14,33 @@ Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
+BuildRequires: openmpi-devel
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
 BuildRequires: gsl-devel
 BuildRequires: libframe-devel
 BuildRequires: libmetaio-devel
-BuildRequires: lal-devel >= 6.16.0
-BuildRequires: lal-python >= 6.16.0
-BuildRequires: lalframe-devel >= 1.4.0
-BuildRequires: lalframe-python >= 1.4.0
-BuildRequires: lalmetaio-devel >= 1.2.7
-BuildRequires: lalmetaio-python >= 1.2.7
-BuildRequires: lalxml-devel >= 1.2.1
-BuildRequires: lalxml-python >= 1.2.1
-BuildRequires: lalsimulation-devel >= 1.5.0
-BuildRequires: lalsimulation-python >= 1.5.0
-BuildRequires: lalburst-devel >= 1.4.1
-BuildRequires: lalburst-python >= 1.4.1
-BuildRequires: lalinspiral-devel >= 1.7.4
-BuildRequires: lalinspiral-python >= 1.7.4
-BuildRequires: lalstochastic-devel >= 1.1.17
-BuildRequires: lalstochastic-python >= 1.1.17
-BuildRequires: lalpulsar-devel >= 1.13.0
-BuildRequires: lalpulsar-python >= 1.13.0
-BuildRequires: lalinference-devel >= 1.6.0
-BuildRequires: lalinference-python >= 1.6.0
+BuildRequires: lal-devel >= 6.16.1
+BuildRequires: lal-python >= 6.16.1
+BuildRequires: lalframe-devel >= 1.4.1
+BuildRequires: lalframe-python >= 1.4.1
+BuildRequires: lalmetaio-devel >= 1.2.8
+BuildRequires: lalmetaio-python >= 1.2.8
+BuildRequires: lalxml-devel >= 1.2.2
+BuildRequires: lalxml-python >= 1.2.2
+BuildRequires: lalsimulation-devel >= 1.6.0
+BuildRequires: lalsimulation-python >= 1.6.0
+BuildRequires: lalburst-devel >= 1.4.2
+BuildRequires: lalburst-python >= 1.4.2
+BuildRequires: lalinspiral-devel >= 1.7.5
+BuildRequires: lalinspiral-python >= 1.7.5
+BuildRequires: lalstochastic-devel >= 1.1.18
+BuildRequires: lalstochastic-python >= 1.1.18
+BuildRequires: lalpulsar-devel >= 1.14.0
+BuildRequires: lalpulsar-python >= 1.14.0
+BuildRequires: lalinference-devel >= 1.7.0
+BuildRequires: lalinference-python >= 1.7.0
+Requires: openmpi
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
@@ -46,26 +48,27 @@ Requires: healpy
 Requires: libframe
 Requires: libmetaio
 Requires: python
-Requires: lal >= 6.16.0
-Requires: lal-python >= 6.16.0
-Requires: lalframe >= 1.4.0
-Requires: lalframe-python >= 1.4.0
-Requires: lalmetaio >= 1.2.7
-Requires: lalmetaio-python >= 1.2.7
-Requires: lalxml >= 1.2.1
-Requires: lalxml-python >= 1.2.1
-Requires: lalsimulation  >= 1.5.0
-Requires: lalsimulation-python >= 1.5.0
-Requires: lalburst >= 1.4.1
-Requires: lalburst-python >= 1.4.1
-Requires: lalinspiral >= 1.7.4
-Requires: lalinspiral-python >= 1.7.4
-Requires: lalstochastic >= 1.1.17
-Requires: lalstochastic-python >= 1.1.17
-Requires: lalpulsar >= 1.13.0
-Requires: lalpulsar-python >= 1.13.0
-Requires: lalinference >= 1.6.0
-Requires: lalinference-python >= 1.6.0
+Requires: lal >= 6.16.1
+Requires: lal-python >= 6.16.1
+Requires: lalframe >= 1.4.1
+Requires: lalframe-python >= 1.4.1
+Requires: lalmetaio >= 1.2.8
+Requires: lalmetaio-python >= 1.2.8
+Requires: lalxml >= 1.2.2
+Requires: lalxml-python >= 1.2.2
+Requires: lalsimulation  >= 1.6.0
+Requires: lalsimulation-python >= 1.6.0
+Requires: lalburst >= 1.4.2
+Requires: lalburst-python >= 1.4.2
+Requires: lalinspiral >= 1.7.5
+Requires: lalinspiral-python >= 1.7.5
+Requires: lalstochastic >= 1.1.18
+Requires: lalstochastic-python >= 1.1.18
+Requires: lalpulsar >= 1.14.0
+Requires: lalpulsar-python >= 1.14.0
+Requires: lalinference >= 1.7.0
+Requires: lalinference-python >= 1.7.0
+Requires: skyarea
 Prefix: %{_prefix}
 
 %description
@@ -78,7 +81,7 @@ Algorithm Library.
 
 %build
 nightly_version=@NIGHTLY_VERSION@
-%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --enable-cfitsio
+%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --enable-cfitsio --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc MPICXX=/usr/lib64/openmpi/bin/mpicxx MPIFC=/usr/lib64/openmpi/bin/mpifc
 %{__make} V=1
 
 %check
@@ -108,5 +111,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 6.19.0-1
+- ER9 release
+
 * Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 6.18.0-1
 - Pre O2 packaging test release

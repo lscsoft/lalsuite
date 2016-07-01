@@ -57,6 +57,8 @@ REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
 
 void outputPriorSamples( LALInferenceRunState *runState );
 
+void compare_likelihoods( LALInferenceRunState *rs );
+
 #ifdef __cplusplus
 }
 #endif

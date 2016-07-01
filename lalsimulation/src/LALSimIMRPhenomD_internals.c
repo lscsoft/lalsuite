@@ -26,6 +26,8 @@
  * \brief Internal function for IMRPhenomD phenomenological waveform model.
  * See \ref LALSimIMRPhenom_c for more details.
  *
+ * Note that the functions defined here in LALSimIMRPhenomD_internals.c / .h
+ * must be used by BOTH LALSimIMRPhenomD.c AND LALSimIMRPhenomP.c.
  */
 
 /*

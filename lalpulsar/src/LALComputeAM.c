@@ -705,6 +705,12 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
       amcoeX->C = CdX;
       amcoeX->D = AdX * BdX - CdX * CdX;
 
+      // in the unlikely event of a degenerate M-matrix with D = det[A, C; C, B] <= 0,
+      // we set D->inf, in order to set the corresponding F-value to zero rather than >>1
+      // By setting 'D=inf', we also allow upstream catching/filtering on such singular cases
+      if ( amcoeX->D <= 0 ) {
+	amcoeX->D = INFINITY;
+      }
       /* compute multi-IFO antenna-pattern coefficients A,B,C by summing over IFOs X */
       Ad += AdX;
       Bd += BdX;
@@ -717,8 +723,17 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
   multiAMcoef->Mmunu.Cd = Cd;
   multiAMcoef->Mmunu.Dd = Ad * Bd - Cd * Cd;
 
-  if ( multiWeights )
+  // in the unlikely event of a degenerate M-matrix with D = det[A, C; C, B] <= 0,
+  // we set D->inf, in order to set the corresponding F-value to zero rather than >>1
+  // By setting 'D=inf', we also allow upstream catching/filtering on such singular cases
+  if ( multiAMcoef->Mmunu.Dd <= 0 ) {
+    multiAMcoef->Mmunu.Dd = INFINITY;
+  }
+
+
+  if ( multiWeights ) {
     multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
+  }
 
   return XLAL_SUCCESS;
 

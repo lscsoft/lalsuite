@@ -78,7 +78,7 @@ path_keys = {'datafind': 'ligo_data_find',
             'lalinferencebambi': 'lalinference_bambi',
             'lalinferencedatadump': 'lalinference_datadump',
             'bayesline': 'BayesLine',
-            'skyarea': 'run_sky_area.py',
+            'skyarea': 'run_sky_area',
             'mpirun': 'mpirun',
             'mpiwrapper': 'lalinference_mpi_wrapper',
             'gracedb': 'gracedb',
@@ -86,6 +86,8 @@ path_keys = {'datafind': 'ligo_data_find',
             'pos_to_sim_inspiral': 'cbcBayesPosToSimInspiral.py'}
 
 def replace(line):
+    if line[0]=='#':
+        return line
     for key in path_keys.keys():
         if key+'=/' in line:
             albert_path=line.split('=')[-1]

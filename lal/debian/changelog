@@ -1,3 +1,10 @@
+lal (6.16.1-1) unstable; urgency=low
+
+  * LAL 6.16.1
+  * ER9 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 21 Jun 2016 18:39:37 -0500
+
 lal (6.16.0-1) unstable; urgency=low
 
   * LAL 6.16.0

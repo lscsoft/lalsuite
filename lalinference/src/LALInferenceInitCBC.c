@@ -150,7 +150,7 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
      *   from the priors. OVERWRITE EVEN USER CHOICES.
      *   (necessary for complicated prior shapes where
      *   LALInferenceCyclicReflectiveBound() is not enough) */
-    //#pragma omp parallel for private(thread)
+    #pragma omp parallel for private(thread)
     for (t = 0; t < run_state->nthreads; t++) {
         LALInferenceVariables *priorDraw = XLALCalloc(1, sizeof(LALInferenceVariables));
 
@@ -630,8 +630,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
                                                        IMRPhenomB, IMRPhenomP, IMRPhenomPv2.\n\
     (--amporder PNorder)            Specify a PN order in amplitude to use (defaults: LALSimulation: max available; LALInspiral: newtownian).\n\
     (--fref f_ref)                  Specify a reference frequency at which parameters are defined (default 100).\n\
-    (--use-tidal)                   Enables tidal corrections, only with LALSimulation.\n\
-    (--use-tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
+    (--tidal)                   Enables tidal corrections, only with LALSimulation.\n\
+    (--tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
     (--spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
     (--tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
     (--numreldata FileName)         Location of NR data file for NR waveforms (with NR_hdf5 approx).\n\
@@ -677,11 +677,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     Component masses, total mass and time have dedicated options listed here:\n\n\
     (--trigtime time)                       Center of the prior for the time variable.\n\
     (--comp-min min)                        Minimum component mass (1.0).\n\
-    (--comp-max max)                        Maximum component mass (30.0).\n\
+    (--comp-max max)                        Maximum component mass (100.0).\n\
     (--mass1-min min, --mass1-max max)      Min and max for mass1 (default: same as comp-min,comp-max, will over-ride these.\n\
     (--mass2-min min, --mass2-max max)      Min and max for mass2 (default: same as comp-min,comp-max, will over-ride these.\n\
     (--mtotal-min min)                      Minimum total mass (2.0).\n\
-    (--mtotal-max max)                      Maximum total mass (35.0).\n\
+    (--mtotal-max max)                      Maximum total mass (200.0).\n\
     (--dt time)                             Width of time prior, centred around trigger (0.2s).\n\
 \n\
     (--varyFlow, --flowMin, --flowMax)       Allow the lower frequency bound of integration to vary in given range.\n\
@@ -1288,6 +1288,15 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
                                                 &lalDimensionlessUnit,
                                                 state->data->freqData->data->length);
 
+  model->freqhs = XLALCalloc(nifo, sizeof(COMPLEX16FrequencySeries *));
+  for (i=0; i<nifo; i++)
+      model->freqhs[i] = XLALCreateCOMPLEX16FrequencySeries("freqh",
+                                                            &(state->data->freqData->epoch),
+                                                            0.0,
+                                                            model->deltaF,
+                                                            &lalDimensionlessUnit,
+                                                            state->data->freqData->data->length);
+
   /* Create arrays for holding single-IFO likelihoods, etc. */
   model->ifo_loglikelihoods = XLALCalloc(nifo, sizeof(REAL8));
   model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
@@ -1828,8 +1837,8 @@ void LALInferenceInitMassVariables(LALInferenceRunState *state){
   LALInferenceVariables *priorArgs=state->priorArgs;
 
   REAL8 m1_min=1.0,m2_min=1.0;
-  REAL8 m1_max=30.0,m2_max=30.0;
-  REAL8 MTotMax=35.0;
+  REAL8 m1_max=100.0,m2_max=100.0;
+  REAL8 MTotMax=200.0;
   REAL8 MTotMin=2.0;
 
   /* Over-ride component masses */

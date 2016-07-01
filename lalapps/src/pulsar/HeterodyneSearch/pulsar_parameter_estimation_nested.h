@@ -250,16 +250,22 @@ extern "C" {
 " --uniformprop       (UINT4) relative weights of uniform proposal\n\
                      (DEFAULT = 1, e.g. 25%%)\n"\
 "\n"\
-" Reduced order quadrature parameters:\n"\
+" Reduced order quadrature (ROQ) parameters:\n"\
 " --roq               Set this to use reduced order quadrature to compute the\n\
                      likelihood\n"\
-" --ntraining         (UNIT4) The number of training models used to generate an\n\
+" --ntraining         (UINT4) The number of training models used to generate an\n\
                      orthonormal basis of waveform models\n"\
 " --roq-tolerance     (REAL8) The tolerance used during the basis generation\n\
                      (DEFAULT = 1e-11)\n"\
-" --test-basis        If this is set then the reduced basis set will be tested\n\
-                     against another set of waveforms to check they really are\n\
-                     within the required tolerance\n"\
+" --enrich-max        (UINT4) The number of times to try and \"enrich\" the\n\
+                     basis set using new training data. The enrichment process\n\
+                     stop before this value is reached if three consecutive\n\
+                     enrichment steps produce no new bases (DEFAULT = 100)\n"\
+" --roq-uniform       Set this flag to cause training model parameters for\n\
+                     parameters with Gaussian prior distributions to be drawn\n\
+                     from a uniform distribution spanning mu +/- 5 sigma.\n\
+                     Otherwise, by default parameters are drawn from their given\n\
+                     prior distributions\n"\
 " --output-weights    (CHAR) If this is set then the weights will be output to\n\
                      the (binary) file that is named and the programme will\n\
                      exit. These could be read in later instead of being\n\

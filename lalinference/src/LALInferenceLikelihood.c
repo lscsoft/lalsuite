@@ -73,8 +73,8 @@ void LALInferenceInitLikelihood(LALInferenceRunState *runState)
     ----------------------------------------------\n\
     (--zeroLogLike)                  Use flat, null likelihood\n\
     (--studentTLikelihood)           Use the Student-T Likelihood that marginalizes over noise\n\
-    (--correlatedGaussianLikelihood) Use analytic, correlated Gaussian for Likelihood\n\
-    (--bimodalGaussianLikelihood)    Use analytic, bimodal correlated Gaussian for Likelihood\n\
+    (--correlatedGaussianLikelihood) Use analytic, correlated Gaussian for Likelihood Z=-21.3\n\
+    (--bimodalGaussianLikelihood)    Use analytic, bimodal correlated Gaussian for Likelihood Z=-25.9\n\
     (--rosenbrockLikelihood)         Use analytic, Rosenbrock banana for Likelihood\n\
     (--noiseonly)                    Using noise-only likelihood\n\
     (--margphi)                      Using marginalised phase likelihood\n\

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2015  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -23,7 +23,6 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 import argparse
 import errno
-from optparse import IndentedHelpFormatter
 import glob
 import inspect
 import itertools
@@ -34,38 +33,6 @@ import tempfile
 from matplotlib import cm
 from .. import cmap
 
-
-
-class NewlinePreservingHelpFormatter(IndentedHelpFormatter):
-    """A help formatter for optparse that preserves paragraphs and bulleted
-    lists whose lines start with a whitespace character."""
-
-    def _format_text(self, text):
-        __doc__ = IndentedHelpFormatter._format_text
-        return "\n\n".join(
-            t if len(t) == 0 or t[0].isspace()
-            else IndentedHelpFormatter._format_text(self, t)
-            for t in text.strip().split("\n\n")
-        )
-
-
-def check_required_arguments(parser, opts, *keys):
-    """Raise an error if any of the specified command-line arguments are missing."""
-    for key in keys:
-        if getattr(opts, key) is None:
-            parser.error("Missing required argument: --" + key.replace("_", "-"))
-
-
-def get_input_filename(parser, args):
-    """Determine name of input: either the sole positional command line argument,
-    or /dev/stdin."""
-    if len(args) == 0:
-        infilename = '/dev/stdin'
-    elif len(args) == 1:
-        infilename = args[0]
-    else:
-        parser.error("Too many command line arguments.")
-    return infilename
 
 
 def chainglob(patterns):
@@ -263,7 +230,7 @@ class ArgumentParser(argparse.ArgumentParser):
             if formatter_class is None:
                 formatter_class = argparse.RawDescriptionHelpFormatter
         if formatter_class is None:
-            formatter_class = HelpFormatter
+            formatter_class = argparse.HelpFormatter
         super(ArgumentParser, self).__init__(
                  prog=prog,
                  usage=usage,
@@ -308,8 +275,7 @@ def sqlite_get_filename(connection):
 
 def rename(src, dst):
     """Like os.rename(src, dst), but works across different devices because it
-    catches and handles EXDEV ('Invalid cross-device link') errors. This
-    operation is atomic, even if src and dst are on different devices."""
+    catches and handles EXDEV ('Invalid cross-device link') errors."""
     try:
         os.rename(src, dst)
     except OSError as e:
@@ -325,3 +291,11 @@ def rename(src, dst):
                 raise
         else:
             raise
+
+
+def register_to_xmldoc(xmldoc, parser, opts, **kwargs):
+    from glue.ligolw.utils import process
+    return process.register_to_xmldoc(
+        xmldoc, parser.prog,
+        {key: (value.name if hasattr(value, 'read') else value)
+        for key, value in opts.__dict__.items()})
