@@ -599,7 +599,6 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
     --- Nested Sampling Algorithm Parameters -----\n\
     ----------------------------------------------\n\
     --Nlive N                        Number of live points to use\n\
-    (--outhdf <filename.h5>)         HDF5 file output path\n\
     (--Nmcmc M)                      Over-ride auto chain length determination and use <M> MCMC samples\n\
     (--maxmcmc M)                    Use at most M MCMC points when autodetermining the chain (5000)\n\
     (--Nmcmcinitial M)               Use M MCMC points when initially resampling from the prior\n\
@@ -744,7 +743,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   UINT4 iter=0,i,j,minpos;
   /* Single thread here */
   LALInferenceThreadState *threadState = runState->threads[0];
-
+  UINT4 HDFOUTPUT=1;
   UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   UINT4 Nruns=100;
   REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*logtarray;
@@ -810,24 +809,19 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   ppt = NULL;
   ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
   if(!ppt){
-    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outhdf");
-    if(!ppt){
-      fprintf(stderr,"Must specify --outfile <filename.dat> or --outhdf <filename.h5>\n");
+      fprintf(stderr,"Must specify --outfile <filename.hdf5>\n");
       exit(1);
-      }
   }
   char *outfile=ppt->value;
+  /* Check if the output file has hdf5 extension */
+  if(strstr(outfile,".h5") || strstr(outfile,".hdf")) HDFOUTPUT=1;
+  else HDFOUTPUT=0;
+  
   double logvolume=0.0;
   if ( LALInferenceCheckVariable( runState->livePoints[0], "chirpmass" ) ){
     /* If a cbc run, calculate the mass-distance volume and store it to file*/ 
     /* Do it before algorithm starts so that we can kill the run and still get this */
     logvolume=log(LALInferenceMassDistancePriorVolume(runState));
-    /*moved to hdf5 below
-     * char priorfile[FILENAME_MAX];
-    sprintf(priorfile,"%s_prior_weight.txt",outfile);
-    fpout=fopen(priorfile,"w");
-    fprintf(fpout,"%10.10e\n",logvolume);
-    fclose(fpout);*/
   }
 
   if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
@@ -861,8 +855,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   /* Check for an interrupted run */
   char resumefilename[FILENAME_MAX];
   sprintf(resumefilename,"%s_resume",outfile);
-  char outfilebackup[FILENAME_MAX];
-  sprintf(outfilebackup,"%s.bak",outfile);
   int retcode=1;
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume")){
 #ifdef HAVE_HDF5
@@ -874,12 +866,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
           for(i=0;i<Nlive;i++) logLikelihoods[i]=*(REAL8 *)LALInferenceGetVariable(runState->livePoints[i],"logL");
           iter=s->iteration;
           /* back up the old file and get ready to append to it from the right place */
-          char commandline[1024];
-          sprintf(commandline,"cp %s %s",outfile,outfilebackup);
-          system(commandline);
-          sprintf(commandline,"head -n %i %s > %s",iter+1,outfilebackup,outfile);
-          system(commandline);
-          fpout=fopen(outfile,"a");
       }
       /* Install a periodic alarm that will trigger a checkpoint */
       int sigretcode=0;
@@ -921,13 +907,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     }while(isnan(logLikelihoods[i]));
 	if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
     }
-    fpout=fopen(outfile,"w");
-  }
-  if(fpout==NULL) {fprintf(stderr,"Unable to open output file %s!\n",outfile); exit(1);}
-  else{
-    if(setvbuf(fpout,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
-      fprintf(stderr,"Warning: Unable to set output file buffer!");
-    LALInferenceAddVariable(runState->algorithmParams,"outfile",&fpout,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_FIXED);
   }
 
   logZarray=s->logZarray->data;
@@ -1126,10 +1105,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
     }
     /* Write HDF5 file */
-    if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outhdf")))
+    if(HDFOUTPUT)
     {
       
-      LALH5File *h5file=XLALH5FileOpen(ppt->value, "w");
+      LALH5File *h5file=XLALH5FileOpen(outfile, "w");
       // Create group heirarchy 
       char runID[256]="";
       if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--runid")))
@@ -1164,7 +1143,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
   {
     if(!access(resumefilename,W_OK)) remove(resumefilename);
-    if(!access(outfilebackup,W_OK)) remove(outfilebackup);
   }
 
   /* Free memory */
