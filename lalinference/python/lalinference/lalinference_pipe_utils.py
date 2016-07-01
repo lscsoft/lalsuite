@@ -886,7 +886,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             subresnode.set_snr_file(cotest_nodes[0].get_snr_file())
             if os.path.exists(self.basepath+'/coinc.xml'):
               subresnode.set_coinc_file(self.basepath+'/coinc.xml')
-            subresnode.set_bayes_coherent_noise(pmergenode.get_B_file())
             if self.config.has_option('input','injection-file') and event.event_id is not None:
                 subresnode.set_injection(self.config.get('input','injection-file'),event.event_id)
             elif self.config.has_option('input','burst-injection-file') and event.event_id is not None:
@@ -908,7 +907,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         respagenode.set_snr_file(enginenodes[0].get_snr_file())
         if os.path.exists(self.basepath+'/coinc.xml'):
           respagenode.set_coinc_file(self.basepath+'/coinc.xml')
-    respagenode.set_bayes_coherent_noise(mergenode.get_B_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     elif self.config.has_option('input','burst-injection-file') and event.event_id is not None:
@@ -986,7 +984,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode.set_snr_file(enginenodes[0].get_snr_file())
     if os.path.exists(self.basepath+'/coinc.xml'):
       respagenode.set_coinc_file(self.basepath+'/coinc.xml')
-    respagenode.set_bayes_coherent_noise(enginenodes[0].get_B_file())
     respagenode.set_header_file(enginenodes[0].get_header_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
@@ -1727,14 +1724,8 @@ class LALInferenceNestNode(EngineNode):
     if self.job().resume:
         self.add_checkpoint_file(self.nsfile+'_resume')
 
-  def get_B_file(self):
-    return self.Bfilename
-
   def get_ns_file(self):
     return self.nsfile
-
-  def get_header_file(self):
-    return self.headerfile
 
 class LALInferenceBurstNode(EngineNode,LALInferenceNestNode):
   def __init__(self,li_job):
@@ -1819,7 +1810,6 @@ class ResultsPageJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.add_condor_cmd('getenv','True')
     self.add_condor_cmd('request_memory','2000')
     self.add_ini_opts(cp,'resultspage')
-    # self.add_opt('Nlive',cp.get('analysis','nlive'))
 
     if cp.has_option('results','skyres'):
         self.add_opt('skyres',cp.get('results','skyres'))
@@ -1943,9 +1933,9 @@ class CoherenceTestNode(pipeline.CondorDAGNode):
       """
       if self.finalized==True: return
       self.finalized=True
-      self.add_file_arg(self.coherent_parent.get_B_file())
+      self.add_file_arg(self.coherent_parent.get_pos_file())
       for inco in self.incoherent_parents:
-        self.add_file_arg(inco.get_B_file())
+        self.add_file_arg(inco.get_pos_file())
 
 class MergeNSJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     """
@@ -1967,10 +1957,6 @@ class MergeNSJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.set_stdout_file(os.path.join(logdir,'merge-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'merge-$(cluster)-$(process).err'))
       self.add_condor_cmd('getenv','True')
-      if cp.has_option('engine','nlive'):
-        self.add_opt('Nlive',cp.get('engine','nlive'))
-      elif cp.has_option('engine','Nlive'):
-        self.add_opt('Nlive',cp.get('engine','Nlive'))
       if cp.has_option('merge','npos'):
       	self.add_opt('npos',cp.get('merge','npos'))
 
@@ -1991,17 +1977,12 @@ class MergeNSNode(pipeline.CondorDAGNode):
     def add_engine_parent(self,parent):
         self.add_parent(parent)
         self.add_file_arg(parent.get_ns_file())
-        self.add_file_opt('headers',parent.get_header_file())
-        self.add_input_file(parent.get_B_file())
 
     def set_pos_output_file(self,file):
         self.add_file_opt('pos',file,file_is_output_file=True)
         self.posfile=file
-        self.Bfilename=self.posfile+'_B.txt'
-        self.add_output_file(self.Bfilename)
 
     def get_pos_file(self): return self.posfile
-    def get_B_file(self): return self.Bfilename
 
 class GraceDBJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     """
