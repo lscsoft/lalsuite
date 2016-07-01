@@ -843,7 +843,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     #pagedir=os.path.join(self.basepath,evstring,myifos)
     mkdirs(pagedir)
     mergenode=MergeNSNode(self.merge_job,parents=enginenodes)
-    mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(myifos,evstring)))
+    mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.hdf5'%(myifos,evstring)))
     self.add_node(mergenode)
     # Call finalize to build final list of available data
     enginenodes[0].finalize()
@@ -872,7 +872,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                 co.set_psd_files()
                 co.set_snr_file()
             pmergenode=MergeNSNode(self.merge_job,parents=cotest_nodes)
-            pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(ifo,evstring)))
+            pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.hdf5'%(ifo,evstring)))
             self.add_node(pmergenode)
             par_mergenodes.append(pmergenode)
             presultsdir=os.path.join(pagedir,ifo)
@@ -1499,6 +1499,7 @@ class EngineNode(pipeline.CondorDAGNode):
     self.cachefiles={}
     if li_job.ispreengine is False:
       self.id=EngineNode.new_id()
+      self.add_var_opt('runid',str(self.id))
     self.__finaldata=False
     self.fakedata=False
     self.lfns=[] # Local file names (for frame files and pegasus)
@@ -1716,7 +1717,7 @@ class LALInferenceNestNode(EngineNode):
     self.outfilearg='outfile'
 
   def set_output_file(self,filename):
-    self.nsfile=filename+'.dat'
+    self.nsfile=filename+'.hdf5'
     self.posfile=self.nsfile
     self.add_file_opt(self.outfilearg,self.nsfile,file_is_output_file=True)
     self.Bfilename=self.nsfile+'_B.txt'
@@ -1757,7 +1758,7 @@ class LALInferenceMCMCNode(EngineNode):
     self.add_var_opt('executable',li_job.binary)
 
   def set_output_file(self,filename):
-    self.posfile=filename+'.h5'
+    self.posfile=filename+'.hdf5'
     # Should also take care of the higher temperature outpufiles with
     # self.add_output_file, getting the number of files from machine_count
     self.add_file_opt(self.outfilearg,self.posfile,file_is_output_file=True)
