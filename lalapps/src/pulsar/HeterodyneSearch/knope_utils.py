@@ -1147,7 +1147,8 @@ class knopeDAG(pipeline.CondorDAG):
                         penode.add_parent(self.splinter_nodes_unmodified[det][ff])
 
             # add prior creation node as parent
-            penode.add_parent(priornode)
+            if priornode is not None:
+              penode.add_parent(priornode)
 
             # if using ROQ add first PE node as parent to the rest
             if self.pe_roq:
