@@ -1863,8 +1863,8 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
     memset( next, 0, sizeof( next ) );
 
     // Allocate array containing sequential indices for every dimension
-    UINT8 index[tn];
-    memset( index, 0, sizeof( index ) );
+    UINT8 indx[tn];
+    memset( indx, 0, sizeof( indx ) );
 
     // Iterate over all points; XLALNextLatticeTilingPoint() returns the index
     // (offset from 1) of the lowest dimension where the current point has changed
@@ -1895,7 +1895,7 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
           trie->int_upper = itr->int_upper[tj];
 
           // Save the sequential index of the current point up to this dimension
-          trie->index = index[tj];
+          trie->index = indx[tj];
 
           if ( tj + 1 < tn ) {
 
@@ -1927,11 +1927,11 @@ LatticeTilingLocator *XLALCreateLatticeTilingLocator(
 
       // Increment sequential index in every higher dimension
       for ( size_t tj = ti; tj < tn; ++tj ) {
-        ++index[tj];
+        ++indx[tj];
       }
 
       // Fast-forward iterator over highest tiled dimension.
-      index[tn - 1] += LT_FastForwardIterator( itr );
+      indx[tn - 1] += LT_FastForwardIterator( itr );
 
     }
     XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
