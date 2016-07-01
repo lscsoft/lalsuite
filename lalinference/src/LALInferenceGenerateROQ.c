@@ -70,7 +70,6 @@ int complex_vector_maxabs_index( gsl_vector_complex *c );
  * @param[in] TS The training set of waveforms
  * @param[in] projections The set of projections (this is updated in this function)
  * @param[in] idx The index of the reduced basis vector that the training set will project onto
- * @param[out] projection_coefficients The projection coefficients for each basis vector and each training waveform
  */
 void project_onto_basis(gsl_vector *weight,
                         gsl_matrix *RB,
@@ -111,7 +110,6 @@ void project_onto_basis(gsl_vector *weight,
  * @param[in] TS The training set of waveforms
  * @param[in] projections The set of projections (this is updated in this function)
  * @param[in] idx The index of the reduced basis vector that the training set will project onto
- * @param[out] projection_coefficients The projection coefficients for each basis vector and each training waveform
  */
 void complex_project_onto_basis(gsl_vector *weight,
                                 gsl_matrix_complex *RB,
