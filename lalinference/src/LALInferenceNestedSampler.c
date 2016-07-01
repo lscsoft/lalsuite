@@ -817,6 +817,14 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if(strstr(outfile,".h5") || strstr(outfile,".hdf")) HDFOUTPUT=1;
   else HDFOUTPUT=0;
   
+#ifndef HAVE_HDF5
+  if(HDFOUTPUT)
+  {
+      fprintf(stderr,"Error: LALSuite was compiled without HDF5 support. Unable to write HDF5 output files\n");
+      exit(1);
+  }
+#endif
+  
   double logvolume=0.0;
   if ( LALInferenceCheckVariable( runState->livePoints[0], "chirpmass" ) ){
     /* If a cbc run, calculate the mass-distance volume and store it to file*/ 
@@ -865,7 +873,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       if(retcode==0){
           for(i=0;i<Nlive;i++) logLikelihoods[i]=*(REAL8 *)LALInferenceGetVariable(runState->livePoints[i],"logL");
           iter=s->iteration;
-          /* back up the old file and get ready to append to it from the right place */
       }
       /* Install a periodic alarm that will trigger a checkpoint */
       int sigretcode=0;
@@ -877,7 +884,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       /* Condor sends SIGUSR2 to checkpoint and continue */
       sigretcode=sigaction(SIGUSR2,&sa,NULL);
       if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGUSR2.\n");
-      checkpoint_timer.it_interval.tv_sec=4*3600; /* Default timer 4 hours */
+      checkpoint_timer.it_interval.tv_sec=30*60; /* Default timer 30 mins */
       checkpoint_timer.it_interval.tv_usec=0;
       checkpoint_timer.it_value=checkpoint_timer.it_interval;
       setitimer(ITIMER_VIRTUAL,&checkpoint_timer,NULL);
@@ -947,12 +954,15 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     printAdaptiveJumpSizes(stdout, threadState);
   }
   /* Write out names of parameters */
-  FILE *lout=NULL;
-  char param_list[FILENAME_MAX];
-  sprintf(param_list,"%s_params.txt",outfile);
-  lout=fopen(param_list,"w");
-  LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
-  fclose(lout);
+  if(!HDFOUTPUT)
+  {
+      FILE *lout=NULL;
+      char param_list[FILENAME_MAX];
+      sprintf(param_list,"%s_params.txt",outfile);
+      lout=fopen(param_list,"w");
+      LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
+      fclose(lout);
+  }
   minpos=0;
   threadState->currentParams=currentVars;
   fprintf(stdout,"Starting nested sampling loop!\n");
@@ -1027,7 +1037,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     }
    /* Have we been told to quit? */
   if(__ns_exitFlag) {
-    fclose(fpout);
     exit(0);
   }
 
@@ -1079,30 +1088,36 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     logZ=incrementEvidenceSamples(runState->GSLrandom, Nlive-i, logLikelihoods[i], s);
     if(runState->logsample) runState->logsample(runState->algorithmParams,runState->livePoints[i]);
   }
-
-    /* Write out the evidence */
-    fclose(fpout);
-    
-    char bayesfile[FILENAME_MAX];
-    sprintf(bayesfile,"%s_B.txt",outfile);
-    fpout=fopen(bayesfile,"w");
-    fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
-    fclose(fpout);
-    
+  
+    LALInferenceVariables **output_array=NULL;
+    UINT4 N_output_array=0;
+    if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
+            &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
+    {
+            output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+            N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
+    }
     double logB=logZ-logZnoise;
     /* Pass output back through algorithmparams */
     LALInferenceAddVariable(runState->algorithmParams,"logZ",(void *)&logZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->algorithmParams,"logB",(void *)&logB,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->algorithmParams,"logLmax",(void *)&logLmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceVariables **output_array=NULL;
-
-    UINT4 N_output_array=0;
-    if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
-      &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
+    /* Write out the evidence */
+    if(!HDFOUTPUT)
     {
-      output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-      N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
+        fpout = fopen(outfile,"w");
+        for(i=0;i<N_output_array;i++) LALInferencePrintSample(fpout,output_array[i]);
+        fclose(fpout);
+    
+        char bayesfile[FILENAME_MAX];
+        sprintf(bayesfile,"%s_B.txt",outfile);
+        fpout=fopen(bayesfile,"w");
+        fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
+        fclose(fpout);
+    
+        
+     
     }
     /* Write HDF5 file */
     if(HDFOUTPUT)
