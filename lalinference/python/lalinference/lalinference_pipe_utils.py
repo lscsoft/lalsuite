@@ -1496,7 +1496,6 @@ class EngineNode(pipeline.CondorDAGNode):
     self.cachefiles={}
     if li_job.ispreengine is False:
       self.id=EngineNode.new_id()
-      self.add_var_opt('runid',str(self.id))
     self.__finaldata=False
     self.fakedata=False
     self.lfns=[] # Local file names (for frame files and pegasus)
