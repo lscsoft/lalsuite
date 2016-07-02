@@ -79,7 +79,7 @@
  * \c detectors command.
  *
  * The function also checks that valid Earth and Sun ephemeris files (from the lalpulsar suite) are set with the \c
- * ephem-earth and \c ephem-sun arguments, and that a valid output file for the nested samples is set via the \c outhdf
+ * ephem-earth and \c ephem-sun arguments, and that a valid output file for the nested samples is set via the \c outfile
  * argument.
  *
  * The function will by default also call \c chop_n_merge() for each data set, which will split the data into chunks
@@ -394,8 +394,8 @@ number of detectors specified (no. dets =%d)\n", ml, ml, numDets);
   LALInferenceAddVariable( runState->algorithmParams, "numstreams", &nstreams, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
 
   /* check the output file is given */
-  if( !LALInferenceGetProcParamVal( commandLine, "--outhdf" ) ){
-    fprintf(stderr, "Error... --outhdf needs to be set.\n");
+  if( !LALInferenceGetProcParamVal( commandLine, "--outfile" ) ){
+    fprintf(stderr, "Error... --outfile needs to be set.\n");
     fprintf(stderr, USAGE, commandLine->program);
     exit(0);
   }

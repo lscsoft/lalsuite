@@ -61,7 +61,7 @@ void inject_signal( LALInferenceRunState *runState ){
   REAL8 snrmulti = 0.;
   REAL8 snrscale = 0;
 
-  ppt = LALInferenceGetProcParamVal( commandLine, "--outhdf" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
   if ( !ppt ){ XLAL_ERROR_VOID( XLAL_EINVAL, "Error... no output file specified!" ); }
 
   snrfile = XLALStringDuplicate( ppt->value );
@@ -634,7 +634,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   LALInferenceClearVariables( loudestParams );
 
   /* setup output file */
-  ppt = LALInferenceGetProcParamVal( commandLine, "--outhdf" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
   if ( !ppt ){ XLAL_ERROR_VOID(XLAL_EIO, "Error... no output file specified!\n"); }
 
   snrfile = XLALStringDuplicate( ppt->value );

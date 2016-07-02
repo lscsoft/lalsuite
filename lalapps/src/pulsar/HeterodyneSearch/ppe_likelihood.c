@@ -347,7 +347,7 @@ REAL8 noise_only_likelihood( LALInferenceRunState *runState ){
   INT4 gaussianLike = 0;
   /*-----------------------------*/
   /*get the outfile name*/
-  ppt = LALInferenceGetProcParamVal( commandLine, "--outhdf" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
   if ( !ppt ){
     fprintf(stderr, "Error... not output file specified\n");
     exit(1);

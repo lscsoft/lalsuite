@@ -212,7 +212,7 @@ void initialise_algorithm( LALInferenceRunState *runState )
     FILE *timefile = NULL;
     UINT4 timenum = 1;
 
-    ppt = LALInferenceGetProcParamVal( commandLine, "--outhdf" );
+    ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
     if ( !ppt ){
       XLAL_ERROR_VOID(XLAL_EFUNC, "Error... no output file is specified!");
     }

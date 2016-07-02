@@ -3169,7 +3169,7 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
   def set_outfile(self, of):
     # set the output file
-    self.add_var_opt('outhdf', of)
+    self.add_var_opt('outfile', of)
     self.__outfile = of
 
   def set_chunk_min(self, cmin):

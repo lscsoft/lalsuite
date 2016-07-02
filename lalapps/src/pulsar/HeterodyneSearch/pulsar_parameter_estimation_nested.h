@@ -187,7 +187,7 @@ extern "C" {
                      same order) delimited by commas. These files can be gzipped.\n\
                      If not set you can generate fake data (see --fake-data below)\n"\
 " --sample-interval   (REAL8) the time interval bewteen samples (default to 60 s)\n"\
-" --outhdf            name of output data file (a HDF5 formated file with the\n\
+" --outfile           name of output data file (a HDF5 formated file with the\n\
                      extension '.hdf' or '.h5' [required]\n"\
 " --output-chunks     Output lists of stationary chunks into which the data has been split\n"\
 " --outXML            name of output XML file [not required]\n"\

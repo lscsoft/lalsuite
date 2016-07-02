@@ -66,7 +66,7 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
 
   # run code
   commandline="\
-%s --detectors %s --par-file %s --input-files %s --outhdf %s --prior-file %s --Nlive %s --Nmcmcinitial %s --sampleprior %s" \
+%s --detectors %s --par-file %s --input-files %s --outfile %s --prior-file %s --Nlive %s --Nmcmcinitial %s --sampleprior %s" \
 % (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, priorsamples)
 
   sp.check_call(commandline, shell=True)
