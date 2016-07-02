@@ -1,6 +1,6 @@
 include $(top_srcdir)/gnuscripts/lalapps.am
 
-AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic -I $(top_srcdir)/src/pulsar/EinsteinAtHome -I $(top_srcdir)/src/pulsar/HoughFstat
+AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic -I$(top_srcdir)/src/pulsar/EinsteinAtHome -I$(top_srcdir)/src/pulsar/HoughFstat
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
 check_PROGRAMS =
@@ -38,10 +38,10 @@ libstdc++.a:
 	cp -f `$(CC) -print-file-name=$@` $@
 
 exchndl.o: exchndl.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) $(AM_CPPFLAGS) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 erp_execinfo_plus.o: erp_execinfo_plus.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) $(AM_CPPFLAGS) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 
 # how to compile CUDA files (.cu)
