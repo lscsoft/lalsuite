@@ -1338,7 +1338,7 @@ class knopeDAG(pipeline.CondorDAG):
             return outfile
 
         # see if pulsar is in prior file
-        if pname in priorinfo:
+        if pname in self.pe_prior_info:
           uls = self.pe_prior_info[pname]
           for ult in requls:
             if ult == 'C22':
