@@ -142,8 +142,13 @@ for i; do
 	    planclass=__SSE
 	    acc="_sse";;
 	--sse2)
-	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
-	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
+	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS -DGC_SSE2_OPT $CPPFLAGS"
+	    CFLAGS="-msse -msse2 -mfpmath=sse $CFLAGS"
+	    if echo $CFLAGS|grep -e -m64 >/dev/null; then
+		CFLAGS="$CFLAGS -march=core2"
+	    else
+		CFLAGS="$CFLAGS -march=pentium-m"
+	    fi
             fftw_copts_single="--enable-sse $fftw_copts_single"
             fftw_copts_double="--enable-sse2 $fftw_copts_double"
 	    planclass=__SSE2
@@ -200,10 +205,11 @@ for i; do
 	    echo "  --cross-prefix=<p> use a compiler toolchain with a prefix other than i586-mingw32msvc"
 	    echo "  --32              build 32Bit (add -m32 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --64              build 64Bit (add -m64 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
+	    echo "                    - needs to precede --sse2 if that is also used"
 	    echo "  --tiger           build to run on Mac OS 10.4"
 	    echo "  --cuda            build an App that uses CUDA"
 	    echo "  --sse             build an App that uses SSE"
-	    echo "  --sse2            build an App that uses SSE2"
+	    echo "  --sse2            build an App that uses SSE2 (implies --sse and --gc-opt)"
             echo "  --avx             build an App that uses AVX (currently in FFTW only)"
 	    echo "  --altivec         build an App that uses AltiVec"
 	    echo "  --gc-opt          build an App that uses SSE2 GC optimization"
