@@ -623,7 +623,7 @@ class knopeDAG(pipeline.CondorDAG):
             dirpostfix = '%.2ff' % self.freq_factors[0]
 
         posteriorsfiles[det] = os.path.join(posteriorsfiles[det], dirpostfix)
-        posteriorsfiles[det] = os.path.join(posteriorsfiles[det], 'posterior_samples_%s.txt.gz' % pname)
+        posteriorsfiles[det] = os.path.join(posteriorsfiles[det], 'posterior_samples_%s.hdf' % pname)
         if self.pe_num_background > 0: backgrounddir[det] = os.path.join(backgrounddir[det], dirpostfix)
 
       cp.set('parameter_estimation', 'posteriors', posteriorsfiles)
