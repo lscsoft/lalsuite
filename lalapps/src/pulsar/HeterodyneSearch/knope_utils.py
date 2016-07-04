@@ -864,6 +864,9 @@ class knopeDAG(pipeline.CondorDAG):
       # get JSON file containing any previous amplitude upper limits for pulsars
       self.pe_amplitude_prior_file = self.get_config_option('pe', 'amplitude_prior_file', allownone=True)
 
+      self.pe_prior_info = None
+      self.pe_prior_asds = {}
+
       # get file, or dictionary of amplitude spectral density files (e.g. from a previous run) to derive amplitude priors
       try:
         self.pe_amplitude_prior_asds = ast.literal_eval(self.get_config_option('pe', 'amplitude_prior_asds', allownone=True))
@@ -1324,18 +1327,19 @@ class knopeDAG(pipeline.CondorDAG):
       # try and get the file containing previous upper limits
       if os.path.isfile(self.pe_amplitude_prior_file):
         # check file can be read
-        try:
-          fpp = open(self.pe_amplitude_prior_file, 'r')
-          priorinfo = json.load(fpp) # should be JSON file
-          fpp.close()
-        except:
-          print("Error... could not parse prior file '%s'." % self.pe_amplitude_prior_file, file=sys.stderr)
-          self.error_code = -1
-          return outfile
+        if self.pe_prior_info is None:
+          try:
+            fpp = open(self.pe_amplitude_prior_file, 'r')
+            self.pe_prior_info = json.load(fpp) # should be JSON file
+            fpp.close()
+          except:
+            print("Error... could not parse prior file '%s'." % self.pe_amplitude_prior_file, file=sys.stderr)
+            self.error_code = -1
+            return outfile
 
         # see if pulsar is in prior file
         if pname in priorinfo:
-          uls = priorinfo[pname]
+          uls = self.pe_prior_info[pname]
           for ult in requls:
             if ult == 'C22':
               if 'C22UL' not in uls and 'H0UL' in uls:
@@ -1347,6 +1351,7 @@ class knopeDAG(pipeline.CondorDAG):
 
       # if there are some required amplitude limits that have not been obtained try and get amplitude spectral densities
       freq = psr['F0']
+
       if None in requls.values() and freq > 0.0:
         if self.pe_amplitude_prior_asds != None and self.pe_amplitude_prior_obstimes != None:
           asdfiles = self.pe_amplitude_prior_asds
@@ -1371,31 +1376,35 @@ class knopeDAG(pipeline.CondorDAG):
                 print("Error... observation time must be a float or int.", file=sys.stderr)
                 self.error_code = -1
                 return outfile
-              if not os.path.isfile(asdfiles[dk]):
-                print("Error... ASD file '%s' does not exist." % asdfiles[dk], file=sys.stderr)
-                self.error_code = -1
-                return outfile
-              else:
-                try:
-                  asd = np.loadtxt(asdfiles[dk], comments=['%', '#'])
-                  asdv = [] # empty array
-                  if 1. in self.freq_factors and (asd[0,0] <= freq and asd[-1,0] >= freq): # add ASD at 1f
-                    idxf = (np.abs(asd[:,0]-freq)).argmin() # get value nearest required frequency
-                    asdv.append(asd[idxf,1])
-                  if 2. in self.freq_factors and (asd[0,0] <= 2.*freq and asd[-1,0] >= 2.*freq):
-                    idxf = (np.abs(asd[:,0]-2.*freq)).argmin() # get value nearest required frequency
-                    asdv.append(asd[idxf,1])
-
-                  if len(asdv) > 0:
-                    asdlist.append(np.array(asdv)**2/(obstimes[dk]*86400.))
-                  else:
-                    print("Error... frequency range in ASD file does not span pulsar frequency.", file=sys.stderr)
-                    self.error_code = -1
-                    return outfile
-                except:
-                  print("Error... could not load file '%s'." % asdfiles[dk], file=sys.stderr)
+              if dk not in self.pe_prior_asds:
+                if not os.path.isfile(asdfiles[dk]):
+                  print("Error... ASD file '%s' does not exist." % asdfiles[dk], file=sys.stderr)
                   self.error_code = -1
                   return outfile
+                else:
+                  try:
+                    self.pe_prior_asds[dk] = np.loadtxt(asdfiles[dk], comments=['%', '#'])
+                  except:
+                    print("Error... could not load file '%s'." % asdfiles[dk], file=sys.stderr)
+                    self.error_code = -1
+                    return outfile
+
+              asd = self.pe_prior_asds[dk]
+              asdv = [] # empty array
+              if 1. in self.freq_factors and (asd[0,0] <= freq and asd[-1,0] >= freq): # add ASD at 1f
+                idxf = (np.abs(asd[:,0]-freq)).argmin() # get value nearest required frequency
+                asdv.append(asd[idxf,1])
+              if 2. in self.freq_factors and (asd[0,0] <= 2.*freq and asd[-1,0] >= 2.*freq):
+                idxf = (np.abs(asd[:,0]-2.*freq)).argmin() # get value nearest required frequency
+                asdv.append(asd[idxf,1])
+
+              if len(asdv) > 0:
+                asdlist.append(np.array(asdv)**2/(obstimes[dk]*86400.))
+              else:
+                print("Error... frequency range in ASD file does not span pulsar frequency.", file=sys.stderr)
+                self.error_code = -1
+                return outfile
+
 
           # get upper limit spectrum (harmonic mean of all the weighted spectra)
           mspec = np.zeros(len(self.freq_factors))
