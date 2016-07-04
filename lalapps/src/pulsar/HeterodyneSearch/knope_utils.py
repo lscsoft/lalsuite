@@ -859,22 +859,8 @@ class knopeDAG(pipeline.CondorDAG):
         return
 
     self.pe_derive_amplitude_prior = self.get_config_option('pe', 'derive_amplitude_prior', cftype='boolean', default=False)
-    self.pe_derive_amplitude_prior_job = None
+
     if self.pe_derive_amplitude_prior:
-      # get exectable
-      self.pe_derive_amplitude_prior_exec = self.get_config_option('pe', 'derive_amplitude_prior_exec')
-      if self.error_code != 0: return
-
-      # check file exists and is executable
-      if not os.path.isfile(self.pe_derive_amplitude_prior_exec) or not os.access(self.pe_derive_amplitude_prior_exec, os.X_OK):
-        print("Warning... 'pe_derive_amplitude_prior_exec' in '[pe]' does not exist or is not an executable. Try finding code in path.")
-        self.pe_derive_amplitude_prior_exec = self.find_exec_file('lalapps_known_pulsar_pipeline_create_prior')
-
-        if self.pe_derive_amplitude_prior_exec == None:
-          print("Error... could not find 'lalapps_knope_create_prior' in 'PATH'", file=sys.stderr)
-          self.error_code = -1
-          return
-
       # get JSON file containing any previous amplitude upper limits for pulsars
       self.pe_amplitude_prior_file = self.get_config_option('pe', 'amplitude_prior_file', allownone=True)
 
@@ -888,9 +874,6 @@ class knopeDAG(pipeline.CondorDAG):
         self.pe_amplitude_prior_obstimes = ast.literal_eval(self.get_config_option('pe', 'amplitude_prior_obstimes', allownone=True))
       except:
         self.pe_amplitude_prior_obstimes = self.get_config_option('pe', 'amplitude_prior_obstimes', allownone=True)
-
-      # create a derive amplitude prior job
-      self.pe_derive_amplitude_prior_job = derivePriorJob(self.pe_derive_amplitude_prior_exec, univ='local', accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
 
       self.pe_amplitude_prior_type = self.get_config_option('pe', 'amplitude_prior_type', default='fermidirac')
 
