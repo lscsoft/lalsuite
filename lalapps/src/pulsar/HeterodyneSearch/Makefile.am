@@ -74,7 +74,6 @@ lalapps_SplInter_SOURCES = \
 if HAVE_PYTHON
 pybin_scripts = \
 	lalapps_knope \
-	lalapps_knope_create_prior \
 	lalapps_knope_result_page \
 	lalapps_knope_collate_results
 pkgpython_PYTHON = \
