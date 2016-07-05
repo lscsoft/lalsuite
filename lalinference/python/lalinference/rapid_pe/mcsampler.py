@@ -484,7 +484,8 @@ class MCSampler(object):
                     print "   -- Convergence test status : ", key, last_convergence_test[key]
 
             self._address, self._port = "pcdev2.nemo.phys.uwm.edu", 1890
-            if self._address is not None:
+            #if self._address is not None:
+            if False:
                 dims = ("distance", "inclination", "right_ascension",
                         "declination", "integrand", "joint_prior", "joint_s_prior")
                 send_data = synchlib.prepare_data(self._rvs, dims, self.ntotal - n)
