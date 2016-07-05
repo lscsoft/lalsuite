@@ -346,10 +346,6 @@ if opts.reference_psd is not None:
 else:
     noise_model = noise_models[opts.noise_model]
 
-# Set up PSD for metric computation
-psd = REAL8FrequencySeries(name="psd", f0=0., deltaF=1., data=get_PSD(1., opts.flow, 1570., noise_model))
-
-
 #
 # initialize the bank
 #

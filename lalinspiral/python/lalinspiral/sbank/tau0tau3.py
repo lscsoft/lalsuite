@@ -16,20 +16,15 @@
 
 from __future__ import division
 
-# standard
 from math import sqrt
 
 import numpy
 from numpy.random.mtrand import uniform
 from scipy.optimize import fsolve
 
-# local
-try:
-    from glue.iterutils import choices
-except ImportError:
-    raise ImportError("The sbank subpackage of lalinspiral depends on the glue package.")
-
+from glue.iterutils import choices
 from lal import PI, MTSUN_SI
+
 #
 # functions for converting between m1-m2 and tau0-tau3 coords
 #

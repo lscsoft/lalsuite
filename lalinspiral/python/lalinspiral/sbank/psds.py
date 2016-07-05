@@ -21,13 +21,9 @@ from math import log, ceil
 from numpy import vectorize, arange, seterr, inf, ones_like
 seterr(over="ignore")  # the PSD overflows frequently, but that's OK
 
-try:
-    from glue.ligolw import param
-    from glue.ligolw import utils
-    from lal import series as lalseries
-except ImportError:
-    raise ImportError("The sbank subpackage of lalinspiral depends on the glue package.")
-
+from glue.ligolw import param
+from glue.ligolw import utils
+from lal import series as lalseries
 import lal
 import lalsimulation as lalsim
 
