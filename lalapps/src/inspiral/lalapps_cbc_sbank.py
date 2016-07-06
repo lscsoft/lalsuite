@@ -319,7 +319,7 @@ else:
 #
 # choose waveform approximant
 #
-waveform = waveforms[opts.approximant]
+tmplt_class = waveforms[opts.approximant]
 
 #
 # choose noise model
@@ -384,7 +384,7 @@ if opts.checkpoint and os.path.exists( fout + "_checkpoint.gz" ):
 
     xmldoc = utils.load_filename(fout + "_checkpoint.gz", contenthandler=ContentHandler)
     tbl = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
-    [bank.insort(t) for t in Bank.from_sngls(tbl, waveform, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)]
+    [bank.insort(t) for t in Bank.from_sngls(tbl, tmplt_class, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)]
 
     if opts.verbose:
         print >>sys.stdout,"Found checkpoint file %s with %d precomputed templates." % (fout + "_checkpoint.gz", len(tbl))
@@ -427,9 +427,19 @@ process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
 if opts.trial_waveforms:
     trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler, gz=opts.trial_waveforms.endswith('.gz'))
     trial_sngls = table.get_table(trialdoc, lsctables.SnglInspiralTable.tableName)
-    tmplt_class = waveforms[opts.approximant]
-    curr_tmplt = 0
-    tmplt_len = len(trial_sngls)
+
+    def waveform_gener(trial_sngls, tmplt_class, bank):
+        curr_tmplt = 0
+        tmplt_len = len(trial_sngls)
+        while True:
+            if curr_tmplt == tmplt_len:
+                break
+            tmplt = tmplt_class.from_sngl(trial_sngls[curr_tmplt], bank=bank)
+            curr_tmplt += 1
+            yield tmplt
+
+    proposal = waveform_gener(trial_sngls, tmplt_class, bank)
+
 else:
     params = {'mass1': (opts.mass1_min, opts.mass1_max),
           'mass2': (opts.mass2_min, opts.mass2_max),
@@ -446,7 +456,8 @@ else:
         params['spin2'] = (opts.spin2_min, opts.spin2_max)
 
     # get the correct generator for the chosen approximant
-    proposal = proposals[opts.approximant](opts.flow, **params)
+    proposal = proposals[opts.approximant](opts.flow, tmplt_class, bank,
+                                           **params)
 
 
 # For robust convergence, ensure that an average of kmax/len(ks) of
@@ -454,15 +465,11 @@ else:
 ks = deque(10*[1], maxlen=10)
 k = 0 # k is nprop per iteration
 nprop = 1  # count total number of proposed templates
-status_format = "\t".join("%s: %s" % name_format for name_format in zip(waveform.param_names, waveform.param_formats))
-while ((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and len(bank) < opts.templates_max:
-    if opts.trial_waveforms:
-        if curr_tmplt == tmplt_len:
-            break
-        tmplt = tmplt_class.from_sngl(trial_sngls[curr_tmplt], bank=bank)
-        curr_tmplt += 1
-    else:
-        tmplt = waveform(*proposal.next(), bank=bank)
+status_format = "\t".join("%s: %s" % name_format for name_format in zip(tmplt_class.param_names, tmplt_class.param_formats))
+for tmplt in proposal:
+    if not (((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and\
+            (len(bank) < opts.templates_max)):
+        break
     k += 1
     nprop += 1
     match, matcher = bank.covers(tmplt, opts.match_min)
