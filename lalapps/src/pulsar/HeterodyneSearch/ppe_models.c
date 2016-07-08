@@ -450,7 +450,7 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
   LIGOTimeGPSVector *datatimes = NULL;
 
-  REAL8 T0 = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /*time of ephem info*/
+  REAL8 T0 = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
   REAL8 cgw = PulsarGetREAL8ParamOrZero(params, "CGW");
 
   /* glitch parameters */
@@ -481,14 +481,24 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
     bdts = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "bsb_delays" );
   }
 
-  /* get vector of frequencies divided by the appropriate Taylor series coefficient factor */
+  /* get vector of frequencies (updated to the start of the data) divided by the appropriate Taylor series coefficient factor */
   REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
   REAL8 freqstaylor[freqs->length];
-  REAL8 taylorcoeff = 1;
+  memcpy(freqstaylor, freqs->data, sizeof(REAL8)*freqs->length);
+  REAL8 taylorcoeff = 1., taylorcoeffinner = 1;
+  DT = XLALGPSGetREAL8( &datatimes->data[0] ) - T0;
   for ( i=0; i<freqs->length; i++ ){
+    taylorcoeffinner = 1.;
+    deltatupdate = DT;
+    for ( j=i+1; j<freqs->length; j++ ){
+      taylorcoeffinner /= (REAL8)(j-i);
+      freqstaylor[i] += taylorcoeffinner*freqstaylor[j]*deltatupdate;
+      deltatupdate *= DT;
+    }
     taylorcoeff /= (REAL8)(i+1);
-    freqstaylor[i] = taylorcoeff*freqs->data[i];
+    freqstaylor[i] *= taylorcoeff;
   }
+  T0 = XLALGPSGetREAL8( &datatimes->data[0] ); /* update T0 to start of data */
 
   if ( PulsarCheckParam( params, "BINARY" ) ){ isbinary = 1; } /* see if pulsar is in binary */
   if ( PulsarCheckParam( params, "GLEP" ) ){ /* see if pulsar has glitch parameters */
@@ -547,8 +557,7 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
     REAL8 thisphi = 0.;
 
     REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /* time of data */
-
-    DT = realT - T0; /* time diff between data and ephem info */
+    DT = realT - T0; /* time diff between data and start of data */
 
     if ( isbinary ) { deltat = DT + dts->data[i] + bdts->data[i]; }
     else { deltat = DT + dts->data[i]; }
