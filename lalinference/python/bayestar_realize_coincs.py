@@ -202,6 +202,12 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     gmst = lal.GreenwichMeanSiderealTime(epoch)
     waveform = sim_inspiral.waveform if opts.waveform is None else opts.waveform
 
+    # FIXME: Set tranverse spin components to 0
+    sim_inspiral.spin1x = 0
+    sim_inspiral.spin1y = 0
+    sim_inspiral.spin2x = 0
+    sim_inspiral.spin2y = 0
+
     # Pre-evaluate some trigonometric functions that we will need.
     u = np.cos(inc)
     u2 = np.square(u)
