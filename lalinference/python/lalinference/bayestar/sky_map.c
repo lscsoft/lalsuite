@@ -17,6 +17,7 @@
  * MA  02111-1307  USA
  */
 
+#include "config.h"
 #include <Python.h>
 #include <numpy/arrayobject.h>
 #include <numpy/ufuncobject.h>
