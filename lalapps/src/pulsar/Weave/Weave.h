@@ -111,42 +111,42 @@ typedef struct {
 } WeaveSetup;
 
 ///
-/// Output data template parameters
+/// Output toplist item template parameters
 ///
-typedef struct tagWeaveOutputDataParams {
+typedef struct tagWeaveOutputToplistParams {
   /// Sky position right ascension in radians
   REAL8 alpha;
   /// Sky position declination in radians
   REAL8 delta;
   /// Frequency and spindowns in Hz/s^2
   PulsarSpins fkdot;
-} WeaveOutputDataParams;
+} WeaveOutputToplistParams;
 
 ///
-/// Per-segment output data item
+/// Per-segment output toplist item
 ///
-typedef struct tagWeaveOutputDataPerSegItem {
+typedef struct tagWeaveOutputToplistPerSegItem {
   /// Coherent template parameters
-  WeaveOutputDataParams coh_par;
+  WeaveOutputToplistParams coh_par;
   /// Coherent multi-detector F-statistic
   REAL4 twoF;
   /// Coherent per-detector F-statistic
   REAL4 twoF_per_det[PULSAR_MAX_DETECTORS];
-} WeaveOutputDataPerSegItem;
+} WeaveOutputToplistPerSegItem;
 
 ///
-/// Output data item
+/// Output toplist item
 ///
-typedef struct tagWeaveOutputDataItem {
+typedef struct tagWeaveOutputToplistItem {
   /// Per-segment items (optional)
-  WeaveOutputDataPerSegItem *per_seg;
+  WeaveOutputToplistPerSegItem *per_seg;
   /// Semicoherent template parameters
-  WeaveOutputDataParams semi_par;
+  WeaveOutputToplistParams semi_par;
   /// Mean multi-detector F-statistic
   REAL4 mean_twoF;
   /// Mean per-detector F-statistic
   REAL4 mean_twoF_per_det[PULSAR_MAX_DETECTORS];
-} WeaveOutputDataItem;
+} WeaveOutputToplistItem;
 
 ///
 /// Output detailed information per segment
@@ -230,8 +230,8 @@ int XLALWeaveSemiResultsAdd(
   const WeaveCohResults *coh_res,
   const UINT4 coh_offset
   );
-int XLALWeaveFillOutputDataItem(
-  WeaveOutputDataItem **item,
+int XLALWeaveFillOutputToplistItem(
+  WeaveOutputToplistItem **item,
   BOOLEAN *full_init,
   const WeaveSemiResults *semi_res,
   const size_t freq_idx

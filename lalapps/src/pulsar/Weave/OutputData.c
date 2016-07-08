@@ -40,8 +40,8 @@ struct tagWeaveOutput {
   INT8 semi_total;
   /// Toplist ranked by mean multi-detector F-statistic
   LALHeap *toplist_mean_twoF;
-  /// Save a no-longer-used output data item for re-use
-  WeaveOutputDataItem *saved_item;
+  /// Save a no-longer-used output toplist item for re-use
+  WeaveOutputToplistItem *saved_item;
 };
 
 ///
@@ -62,7 +62,7 @@ static int toplist_fits_table_init(
   char col_name[32];
 
   // Begin FITS table description
-  XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveOutputDataItem );
+  XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveOutputToplistItem );
 
   // Add columns for semicoherent template parameters
   XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_par.alpha, "alpha [rad]" );
@@ -84,7 +84,7 @@ static int toplist_fits_table_init(
 
   // Begin FITS table description for per-segment items (optional)
   if ( per_nsegments > 0 ) {
-    XLAL_FITS_TABLE_COLUMN_PTR_BEGIN( per_seg, WeaveOutputDataPerSegItem, per_nsegments );
+    XLAL_FITS_TABLE_COLUMN_PTR_BEGIN( per_seg, WeaveOutputToplistPerSegItem, per_nsegments );
     for ( size_t s = 0; s < per_nsegments; ++s ) {
 
       // Add columns for coherent template parameters
@@ -130,29 +130,29 @@ static int toplist_fits_write_visitor(
 }
 
 ///
-/// Destroy an output data item
+/// Destroy an output toplist item
 ///
-static void output_data_item_destroy(
+static void output_toplist_item_destroy(
   void *x
   )
 {
   if ( x != NULL ) {
-    WeaveOutputDataItem *ix = ( WeaveOutputDataItem * ) x;
+    WeaveOutputToplistItem *ix = ( WeaveOutputToplistItem * ) x;
     XLALFree( ix->per_seg );
     XLALFree( ix );
   }
 }
 
 ///
-/// Compare output data items by mean multi-detector F-statistic
+/// Compare output toplist items by mean multi-detector F-statistic
 ///
-static int output_data_item_compare_by_mean_twoF(
+static int output_toplist_item_compare_by_mean_twoF(
   const void *x,
   const void *y
   )
 {
-  const WeaveOutputDataItem *ix = ( const WeaveOutputDataItem * ) x;
-  const WeaveOutputDataItem *iy = ( const WeaveOutputDataItem * ) y;
+  const WeaveOutputToplistItem *ix = ( const WeaveOutputToplistItem * ) x;
+  const WeaveOutputToplistItem *iy = ( const WeaveOutputToplistItem * ) y;
   if ( ix->mean_twoF > iy->mean_twoF ) {
     return -1;
   }
@@ -163,9 +163,9 @@ static int output_data_item_compare_by_mean_twoF(
 }
 
 ///
-/// Fill a output data item, creating a new one if needed
+/// Fill a output toplist item, creating a new one if needed
 ///
-static int output_data_item_add(
+static int output_toplist_item_add(
   BOOLEAN *full_init,
   WeaveOutput *out,
   LALHeap *toplist,
@@ -180,11 +180,11 @@ static int output_data_item_add(
   XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
 
-  // Fill output data item, creating a new one if needed
-  XLAL_CHECK( XLALWeaveFillOutputDataItem( &out->saved_item, full_init, semi_res, freq_idx ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Fill output toplist item, creating a new one if needed
+  XLAL_CHECK( XLALWeaveFillOutputToplistItem( &out->saved_item, full_init, semi_res, freq_idx ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Add item to toplist
-  const WeaveOutputDataItem *prev_item = out->saved_item;
+  const WeaveOutputToplistItem *prev_item = out->saved_item;
   XLAL_CHECK( XLALHeapAdd( toplist, ( void ** ) &out->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // If toplist added item and returned a different, no-unused item,
@@ -223,7 +223,7 @@ WeaveOutput *XLALWeaveOutputCreate(
   out->semi_total = 0;
 
   // Create a toplist ranked by mean multi-detector F-statistic
-  out->toplist_mean_twoF = XLALHeapCreate( output_data_item_destroy, toplist_limit, +1, output_data_item_compare_by_mean_twoF );
+  out->toplist_mean_twoF = XLALHeapCreate( output_toplist_item_destroy, toplist_limit, +1, output_toplist_item_compare_by_mean_twoF );
   XLAL_CHECK_NULL( out->toplist_mean_twoF != NULL, XLAL_EFUNC );
 
   return out;
@@ -238,7 +238,7 @@ void XLALWeaveOutputDestroy(
   )
 {
   if ( out != NULL ) {
-    output_data_item_destroy( out->saved_item );
+    output_toplist_item_destroy( out->saved_item );
     XLALHeapDestroy( out->toplist_mean_twoF );
     XLALFree( out );
   }
@@ -258,14 +258,14 @@ int XLALWeaveOutputAdd(
   XLAL_CHECK( out != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
 
-  // Must initialise all output data item fields the first time
+  // Must initialise all output toplist item fields the first time
   BOOLEAN full_init = 1;
 
   // Iterate over the frequency bins of the semicoherent results
   for ( size_t i = 0; i < semi_nfreqs; ++i ) {
 
     // Add item to toplist ranked by mean multi-detector F-statistic
-    XLAL_CHECK( output_data_item_add( &full_init, out, out->toplist_mean_twoF, semi_res, i ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( output_toplist_item_add( &full_init, out, out->toplist_mean_twoF, semi_res, i ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   }
 
