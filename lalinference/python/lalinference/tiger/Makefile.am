@@ -3,9 +3,9 @@
 # as errors) flag, for just targets declared in this file.
 CFLAGS += -Wno-error
 
-tigerdir = $(pkgpythondir)/tiger
+pymoduledir = $(pkgpythondir)/tiger
 
-tiger_PYTHON = \
+pymodule_PYTHON = \
 	__init__.py \
 	make_injtimes.py \
 	postproc.py \
