@@ -73,10 +73,6 @@
 
 #include <lal/LALSimNoise.h>
 
-#ifdef HAVE_LIBLALXML
-#include <lal/LALInferenceXML.h>
-#endif
-
 /* check whether openmp is enabled and if so include omp.h */
 #ifdef HAVE_OPENMP
 #include <omp.h>
@@ -191,12 +187,9 @@ extern "C" {
                      same order) delimited by commas. These files can be gzipped.\n\
                      If not set you can generate fake data (see --fake-data below)\n"\
 " --sample-interval   (REAL8) the time interval bewteen samples (default to 60 s)\n"\
-" --outfile           name of output data file [required]\n"\
-" --output-all-params Output all stored parameters, otherwise the default will be\n\
-                     to only output the non-fixed (i.e. variable) parameters\n\
-                     specified in the prior and .par files\n"\
+" --outhdf            name of output data file (a HDF5 formated file with the\n\
+                     extension '.hdf' or '.h5' [required]\n"\
 " --output-chunks     Output lists of stationary chunks into which the data has been split\n"\
-" --gzip              gzip the output text file\n"\
 " --outXML            name of output XML file [not required]\n"\
 " --chunk-min         (INT4) minimum stationary length of data to be used in\n\
                      the likelihood e.g. 5 mins\n"\

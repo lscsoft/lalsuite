@@ -52,6 +52,8 @@ else:
     args.output=os.path.abspath(args.output)
 
 args.injection_file=os.path.abspath(args.injection_file)
+if args.bbh_injection:
+    args.bbh_injection=os.path.abspath(args.bbh_injection)
 
 backup_file=args.output+'/'+os.path.basename(args.ini_file)+'.bak'
 ini_file=args.output+'/'+os.path.basename(args.ini_file)
@@ -251,6 +253,7 @@ if args.bbh_injection != '':
     os.makedirs(args.output+'/fiducialBBH/')
     os.chdir(args.output+'/fiducialBBH/')
 
+    shutil.copy(args.bbh_injection,args.output+'/fiducialBBH/')
     shutil.copy(ini_file,args.output+'/fiducialBBH/'+os.path.basename(ini_file)+'.bak')
     shutil.copy(ini_file,args.output+'/fiducialBBH/')
 

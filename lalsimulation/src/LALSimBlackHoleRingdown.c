@@ -830,7 +830,7 @@ INT4 XLALSimIMREOBFinalMassSpin(
 
 
 /**
- * This function generates the quasinormal mode frequencies for a black
+ * These functions generate the quasinormal mode frequencies for a black
  * hole ringdown. At present, this function works for the 22, 21, 33, 44
  * and 55 modes, and includes 8 overtones. The final frequencies are
  * computed by interpolating the data found on the webpage of
@@ -849,6 +849,41 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2(
   INT4             m,         /**<< The m value of the mode in question */
   UINT4            nmodes,    /**<< The number of overtones that should be included (max 8) */
   Approximant      approximant/**<< The waveform approximant being used */
+  )
+{
+
+  REAL8 totalMass, finalMass, finalSpin;
+
+  /* Call XLALSimIMREOBFinalMassSpin() to get mass and spin of the final black hole */
+  if ( XLALSimIMREOBFinalMassSpin(&finalMass, &finalSpin, mass1, mass2, spin1, spin2, approximant) == XLAL_FAILURE )
+  {
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  /* finalSpin interpolation is available only between -0.9996 and 0.9996 */
+  /* Set finalSpin to +/- 0.9996 if it is out of this range */
+  if ( finalSpin < -0.9996 ) finalSpin = -0.9996;
+  if ( finalSpin >  0.9996 ) finalSpin =  0.9996;
+  /* The final mass is scaled by the original total mass */
+  totalMass = mass1 + mass2;
+  finalMass *= totalMass;
+
+  if ( XLALSimIMREOBGenerateQNMFreqV2fromFinal(modefreqs, finalMass, finalSpin, l, m, nmodes) == XLAL_FAILURE )
+  {
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+INT4 XLALSimIMREOBGenerateQNMFreqV2fromFinal(
+  COMPLEX16Vector *modefreqs, /**<< OUTPUT, complex freqs of overtones in unit of Hz */
+  const REAL8      finalMass, /**<< The mass of the final black hole (in Solar masses) */
+  const REAL8      finalSpin, /**<< The spin of the final object; only needed for spin waveforms */
+  UINT4            l,         /**<< The l value of the mode in question */
+  INT4             m,         /**<< The m value of the mode in question */
+  UINT4            nmodes     /**<< The number of overtones that should be included (max 8) */
   )
 {
 
@@ -2303,8 +2338,6 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2(
   const double (*reomegaqnm)[107] = NULL;
   const double (*imomegaqnm)[107] = NULL;
 
-  REAL8 totalMass, finalMass, finalSpin;
-
   /* Stuff for interpolating the data */
   gsl_spline    *spline = NULL;
   gsl_interp_accel *acc = NULL;
@@ -2319,7 +2352,7 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2(
     XLAL_ERROR( XLAL_EINVAL );
   }
 
-  /* Choose the appropriate data bases on the user requested l an m */
+  /* Choose the appropriate data bases on the user requested l and m */
   switch ( l )
   {
     case 2:
@@ -2385,23 +2418,17 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2(
       XLAL_ERROR( XLAL_EINVAL );
       break;
   }
-
-
-  totalMass = mass1 + mass2;
-
-  /* Call XLALSimIMREOBFinalMassSpin() to get mass and spin of the final black hole */
-  if ( XLALSimIMREOBFinalMassSpin(&finalMass, &finalSpin, mass1, mass2, spin1, spin2, approximant) == XLAL_FAILURE )
-  {
-    XLAL_ERROR( XLAL_EFUNC );
-  }
   
   spline = gsl_spline_alloc( gsl_interp_cspline, 107 );
   acc    = gsl_interp_accel_alloc();
 
   /* finalSpin interpolation is available only between -0.9996 and 0.9996 */
   /* Set finalSpin to +/- 0.9996 if it is out of this range */
-  if ( finalSpin < -0.9996 ) finalSpin = -0.9996;
-  if ( finalSpin >  0.9996 ) finalSpin =  0.9996;
+  if ( finalSpin < -0.9996 || finalSpin > 0.9996 )
+  {
+    XLALPrintError( "Final spin must be between -0.9996 and 0.9996");
+    XLAL_ERROR( XLAL_EINVAL );
+  }
   /* Now get the QNM frequencies from interpolating the above data */
   for ( i = 0; i < nmodes; i++ )
   {
@@ -2416,7 +2443,7 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2(
     modefreqs->data[i] += I*gsl_spline_eval( spline, signm*finalSpin, acc );
 
     /* Scale by the appropriate mass factors */
-    modefreqs->data[i] *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
+    modefreqs->data[i] *= 1./ (finalMass * LAL_MTSUN_SI);
   }
   /* Free memory and exit */
   gsl_spline_free( spline );

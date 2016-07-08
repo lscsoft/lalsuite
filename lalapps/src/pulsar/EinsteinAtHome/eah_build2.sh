@@ -61,7 +61,7 @@ eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
 test ".$appname" = "." && appname=einstein_S6Bucket
 test ".$appversion" = "." && appversion=0.00
-boinc_repo="git://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/boinc.git"
+boinc_repo="https://gitlab.aei.uni-hannover.de/einsteinathome/boinc.git"
 boinc_rev=current_gw_apps
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
 retries=1
@@ -142,8 +142,13 @@ for i; do
 	    planclass=__SSE
 	    acc="_sse";;
 	--sse2)
-	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
-	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
+	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS -DGC_SSE2_OPT $CPPFLAGS"
+	    CFLAGS="-msse -msse2 -mfpmath=sse $CFLAGS"
+	    if echo $CFLAGS|grep -e -m64 >/dev/null; then
+		CFLAGS="$CFLAGS -march=core2"
+	    else
+		CFLAGS="$CFLAGS -march=pentium-m"
+	    fi
             fftw_copts_single="--enable-sse $fftw_copts_single"
             fftw_copts_double="--enable-sse2 $fftw_copts_double"
 	    planclass=__SSE2
@@ -200,10 +205,11 @@ for i; do
 	    echo "  --cross-prefix=<p> use a compiler toolchain with a prefix other than i586-mingw32msvc"
 	    echo "  --32              build 32Bit (add -m32 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
 	    echo "  --64              build 64Bit (add -m64 to  CPPFLAGS, CXXFLAGS, CFLAGS and LDFLAGS)"
+	    echo "                    - needs to precede --sse2 if that is also used"
 	    echo "  --tiger           build to run on Mac OS 10.4"
 	    echo "  --cuda            build an App that uses CUDA"
 	    echo "  --sse             build an App that uses SSE"
-	    echo "  --sse2            build an App that uses SSE2"
+	    echo "  --sse2            build an App that uses SSE2 (implies --sse and --gc-opt)"
             echo "  --avx             build an App that uses AVX (currently in FFTW only)"
 	    echo "  --altivec         build an App that uses AltiVec"
 	    echo "  --gc-opt          build an App that uses SSE2 GC optimization"
@@ -706,8 +712,8 @@ if [ .$check = .true ]; then
     log_and_do cp ../eah_Makefakedata_v5$ext lalapps_Makefakedata_v5
     log_and_do cp ../eah_PredictFstat$ext lalapps_PredictFstat
     log_and_do cp ../eah_ComputeFstatistic_v2$ext lalapps_ComputeFstatistic_v2
-    LAL_DATA_PATH="$INSTALL/share/lalpulsar" NOCLEANUP=1 PATH="$PWD:$PATH" \
-	log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testGCT.sh $wine "$check_app" --Dterms=8
+    LAL_DATA_PATH="$INSTALL/share/lalpulsar" DEBUG=1 NOCLEANUP=1 PATH="$PWD:$PATH" \
+	log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testGCT.sh $wine "$check_app"
     log_and_show "==========================================="
     log_and_show "Test passed"
     log_and_show "==========================================="

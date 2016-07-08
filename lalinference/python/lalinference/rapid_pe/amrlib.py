@@ -397,7 +397,7 @@ def save_grid_cells_hdf(base_grp, cells, crd_sys, intr_prms=None, check=True):
         ds.attrs.create("resolution", grid_res)
 
     if intr_prms is not None:
-        assert len(intr_prms) == data.shape[1]
+        assert len(intr_prms) == ds.shape[1]
         ds.attrs.create("labels", intr_prms)
 
     return lvl
@@ -408,8 +408,8 @@ def load_init_region(h5file, get_labels=False, base_grp="rapidpe_grids"):
     """
     hfile = h5py.File(h5file, "r")
     if get_labels:
-        if "labels" in hfile[base_grp]["init_region"].attrs:
-            labels = hfile[base_grp]["init_region"].attrs["labels"]
+        if "labels" in hfile[base_grp].attrs:
+            labels = hfile[base_grp].attrs["labels"]
         else:
             labels = tuple()
 

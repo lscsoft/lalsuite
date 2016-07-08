@@ -38,6 +38,7 @@ import ast
 import datetime
 import json
 from scipy import stats
+import h5py
 
 import matplotlib
 matplotlib.use("Agg")
@@ -680,7 +681,7 @@ class posteriors:
     # get the Bayes factors for the signal
     incoherent = 0. # the incoherent evidence
     for ifo in self._ifos:
-      self._Bsn[ifo], self._signal_evidence[ifo], self._noise_evidence[ifo], self._maxL[ifo] = self.get_bayes_factor(ifo, self._postfiles[ifo])
+      self._Bsn[ifo], self._signal_evidence[ifo], self._noise_evidence[ifo], self._maxL[ifo] = self.get_bayes_factor(self._postfiles[ifo])
 
       if ifo != 'Joint':
         incoherent += self._signal_evidence[ifo]
@@ -690,21 +691,19 @@ class posteriors:
       self._Bci = self._signal_evidence['Joint'] - incoherent
       self._Bcin = self._signal_evidence['Joint'] - np.logaddexp(incoherent, self._noise_evidence['Joint'])
 
-  def get_bayes_factor(self, ifo, postfile):
-    # return the Bayes factor for a given IFO and posterior file
-    Bfile = postfile.replace('.gz', '') + '_B.txt' # strip any '.gz' for a gzipped file
-    if not os.path.isfile(Bfile):
-      print("Error... Bayes factors file '%s' for '%s' does not exist." % (Bfile, ifo), file=sys.stderr)
+  def get_bayes_factor(self, postfile):
+    # return the Bayes factor extracted from a posterior file
+    try:
+      # open hdf5 file
+      f = h5py.File(postfile, 'r')
+      a = f['lalinference']['lalinference_nest']
+      evdata = (a.attrs['log_bayes_factor'], a.attrs['log_evidence'], a.attrs['log_noise_evidence'], a.attrs['log_max_likelihood'])
+      f.close()
+    except:
+      print("Error... could not extract evidences from '%s'." % postfile, file=sys.stderr)
       sys.exit(1)
 
-    fp = open(Bfile, 'r')
-    line = fp.readlines()
-    vals = line[0].split()
-    if len(vals) != 4:
-      print("Error... there is something wrong with the Bayes factors file '%s'." % Bfile, file=sys.stderr)
-      sys.exit(1)
-
-    return tuple([float(v) for v in vals]) # line contains Bsn, signal evidence, noise evidence, max likelihood
+    return evdata # line contains Bsn, signal evidence, noise evidence, max likelihood
 
   def snr(self, ifo):
     # return the SNR for a given detector
@@ -1241,7 +1240,7 @@ class create_background(posteriors):
     # vs incoherent or noise Bayes factor (all created from the posterior class)
     self._ifos = list(backgrounddirs.keys()) # detectors
     self._backgrounddirs = backgrounddirs
-    self._dir_lists = {}    # dictionary with a list of background resulst directories for each detector
+    self._dir_lists = {}    # dictionary with a list of background results directories for each detector
     self._Bci_fore = Bci    # the "foreground" Bayes factor for coherent vs incoherent
     self._Bcin_fore = Bcin  # the "foreground" Bayes factor for coherent vs incoherent or noise
 
@@ -1333,9 +1332,9 @@ class create_background(posteriors):
       for i, pdir in enumerate(self._dir_lists[ifo]):
         pfiles = os.listdir(pdir)
         Bsn = None
-        for pfile in pfiles: # get file with '_B.txt' in the name
-          if fnmatch.fnmatch(pfile, '*_B.txt'):
-            Bsn, sigev, noiseev, maxL = self.get_bayes_factor(ifo, os.path.join(pdir, pfile.replace('_B.txt', ''))) # strip off the '_B.txt' as it will get re-appended by get_bayes_factor()
+        for pfile in pfiles: # get HDF5 file with extenstion '.hdf' or '.h5'
+          if fnmatch.fnmatch(pfile, 'posterior_samples*.hdf') or fnmatch.fnmatch(pfile, 'posterior_samples*.h5'):
+            Bsn, sigev, noiseev, maxL = self.get_bayes_factor(os.path.join(pdir, pfile))
 
             self._Bsn[ifo].append(Bsn)
             self._signal_evidence[ifo].append(sigev)
@@ -1343,7 +1342,7 @@ class create_background(posteriors):
             self._maxL[ifo].append(maxL)
             break
         if Bsn == None:
-          print("Error... no file with 'posterior_samples' in the name was found in '%s'." % pdir, file=sys.stderr)
+          print("Error... no HDF5 file with 'posterior_samples' in the name was found in '%s'." % pdir, file=sys.stderr)
           sys.exit(1)
 
         if ifo != 'Joint':

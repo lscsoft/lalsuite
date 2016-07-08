@@ -144,6 +144,13 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
   }
 }
 
+// SWIG's SWIGPY_HASHFUNC_CLOSURE() macro requires the return of a __hash__()
+// function to be of PyLong type, which is not guaranteed by SWIG_from_long()
+// (which may return a PyInt), so use this custom typemap to guarantee this.
+%typemap(out, noblock=1) long __hash__ {
+  %set_output(PyLong_FromLong($1));
+}
+
 // Comparison operators.
 %typemap(in, numinputs=0, noblock=1) int SWIGLAL_CMP_OP_RETN_HACK "";
 %define %swiglal_py_cmp_op(NAME, COMPTYPE)

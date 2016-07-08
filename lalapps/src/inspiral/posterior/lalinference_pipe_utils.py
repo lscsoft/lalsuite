@@ -84,19 +84,19 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",basepath="./
   from glue.ligolw import utils
   from glue.ligolw import lsctables
   from glue.ligolw import ligolw
-  class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+  class PSDContentHandler(ligolw.LIGOLWContentHandler):
     pass
-  lsctables.use_in(LIGOLWContentHandler)
+  lsctables.use_in(PSDContentHandler)
   from glue.ligolw import param
   from glue.ligolw import array
-  from pylal import series as lalseries
   import subprocess
+  from lal import series as lalseries
   from subprocess import Popen, PIPE
   cwd=os.getcwd()
   os.chdir(basepath)
   print "%s download %s coinc.xml"%(gracedb,gid)
   subprocess.call([gracedb,"download", gid ,"coinc.xml"])
-  xmldoc=utils.load_filename("coinc.xml",contenthandler = LIGOLWContentHandler)
+  xmldoc=utils.load_filename("coinc.xml",contenthandler = PSDContentHandler)
   coinctable = lsctables.CoincInspiralTable.get_table(xmldoc)
   coinc_events = [event for event in coinctable]
   sngltable = lsctables.SnglInspiralTable.get_table(xmldoc)
@@ -113,7 +113,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",basepath="./
   if downloadpsd:
     print "gracedb download %s psd.xml.gz" % gid
     subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
-    xmlpsd = lalseries.read_psd_xmldoc(utils.load_filename('psd.xml.gz',contenthandler = lalseries.LIGOLWContentHandler))
+    xmlpsd = lalseries.read_psd_xmldoc(utils.load_filename('psd.xml.gz',contenthandler = lalseries.PSDContentHandler))
     # Note: This finds the active IFOs by looking for available PSDs
     # Is there another way of getting this info?
     ifos = xmlpsd.keys()
@@ -369,7 +369,8 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
   lal=1
   from glue.ligolw import utils
   try:
-    from pylal import series
+    #from pylal import series
+    from lal import series as series
     lal=0
   except ImportError:
     print "ERROR, cannot import pylal.series in bppu/get_xml_psds()\n"
@@ -401,7 +402,7 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
   if not os.path.isfile(psdxml):
     print "ERROR: impossible to open the psd file %s. Exiting...\n"%psdxml
     sys.exit(1)
-  xmlpsd =  series.read_psd_xmldoc(utils.load_filename(psdxml,contenthandler = series.LIGOLWContentHandler))
+  xmlpsd =  series.read_psd_xmldoc(utils.load_filename(psdxml,contenthandler = series.PSDContentHandler))
   # Check the psd file contains all the IFOs we want to analize
   for ifo in ifos:
     if not ifo in [i.encode('ascii') for i in xmlpsd.keys()]:
@@ -432,8 +433,8 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
 
     combine=[]
 
-    for i in np.arange(len(data.data)) :
-      combine.append([f0+i*deltaF,np.sqrt(data.data[i])])
+    for i in np.arange(len(data.data.data)) :
+      combine.append([f0+i*deltaF,np.sqrt(data.data.data[i])])
     np.savetxt(path_to_ascii_psd,combine)
     ifo=instrument.encode('ascii')
     # set node.psds dictionary with the path to the ascii files
@@ -745,10 +746,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       from glue.ligolw import utils
       from glue.ligolw import ligolw
       injfile=self.config.get('input','burst-injection-file')
-      class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+      class PSDContentHandler(ligolw.LIGOLWContentHandler):
 	pass
-      lsctables.use_in(LIGOLWContentHandler)
-      injTable=lsctables.SimBurstTable.get_table(utils.load_filename(injfile,contenthandler = LIGOLWContentHandler))
+      lsctables.use_in(PSDContentHandler)
+      injTable=lsctables.SimBurstTable.get_table(utils.load_filename(injfile,contenthandler = PSDContentHandler))
       events=[Event(SimBurst=inj) for inj in injTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
     # SnglInspiral Table

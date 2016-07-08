@@ -9,17 +9,17 @@ from lalinference import LALInferenceHDF5PosteriorSamplesGroupName as posterior_
 from lalinference import LALInferenceHDF5NestedSamplesGroupName as nested_grp_name
 from lalapps.nest2pos import draw_posterior_many, draw_N_posterior_many, compute_weights
 
-usage = '''%prog -N Nlive [-p posterior.dat] [-H header.txt] [--npos Npos] datafile1.dat [datafile2.dat ...]
+usage = '''%prog [-N Nlive] [-p posterior.hdf5] [-H header.txt] [--npos Npos] datafile1.hdf5 [datafile2.hdf5 ...]
 
 %prog takes at least one nested sampling output file and outputs posterior
 \tsamples. If more than one input file is specified, each file is converted,
-\tthen posterior samples drawn according to the evidence of each. Will output
-\tto stdout if no -p option given. If the --npos option is used the algorithm
+\tthen posterior samples drawn according to the evidence of each.
+\tIf the --npos option is used the algorithm
 \twill draw approximately that number of samples from the posterior. This may
 \tgive repeated samples in the output file. By default, the non-repeating
-\talgorithm is used, but that may not produce enough samples. The input and
-\toutput files may be in either HDF5 or ASCII format, with ASCII tables being
-\tdeprecated. The type will be chosen based on the file extensions.
+\talgorithm is used, but that may not produce enough samples.
+\tThe input and output files may be in either HDF5 or ASCII format, with
+\tASCII tables being deprecated. The type will be chosen based on the file extensions.
 '''
 
 

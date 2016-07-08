@@ -27,7 +27,7 @@ import json
 import bisect
 import re
 from collections import defaultdict
-from optparse import OptionParser, OptionGroup
+from argparse import ArgumentParser
 from copy import copy
 
 import h5py
@@ -191,11 +191,11 @@ def parse_param(popts):
                 expand_prms[popt[0]] = tuple(map(float, popt[1]))
     return intr_prms, expand_prms
 
-optp = OptionParser()
+argp = ArgumentParser()
 
-optp.add_option("-d", "--distance-coordinates", default="tau0_tau3", help="Coordinate system in which to calculate 'closeness'. Default is tau0_tau3.")
-optp.add_option("-n", "--no-exact-match", action="store_true", help="Loosen criteria that the input intrinsic point must be a member of the input template bank.")
-optp.add_option("-v", "--verbose", action='store_true', help="Be verbose.")
+argp.add_argument("-d", "--distance-coordinates", default="tau0_tau3", help="Coordinate system in which to calculate 'closeness'. Default is tau0_tau3.")
+argp.add_argument("-n", "--no-exact-match", action="store_true", help="Loosen criteria that the input intrinsic point must be a member of the input template bank.")
+argp.add_argument("-v", "--verbose", action='store_true', help="Be verbose.")
 
 # FIXME: These two probably should only be for the initial set up. While it
 # could work, in theory, for refinement, the procedure would be a bit more
@@ -203,24 +203,22 @@ optp.add_option("-v", "--verbose", action='store_true', help="Be verbose.")
 # FIXME: This could be a single value (lock a point in) or a range (adapt across
 # this is range). No argument given implies use entire known range (if
 # available).
-optp.add_option("-i", "--intrinsic-param", action="append", help="Adapt in this intrinsic parameter. If a pre-existing value is known (e.g. a search template was identified), specify this parameter as -i mass1=1.4 . This will indicate to the program to choose grid points which are commensurate with this value.")
-optp.add_option("-p", "--pin-param", action="append", help="Pin the parameter to this value in the template bank.")
+argp.add_argument("-i", "--intrinsic-param", action="append", help="Adapt in this intrinsic parameter. If a pre-existing value is known (e.g. a search template was identified), specify this parameter as -i mass1=1.4 . This will indicate to the program to choose grid points which are commensurate with this value.")
+argp.add_argument("-p", "--pin-param", action="append", help="Pin the parameter to this value in the template bank.")
 
-grid_section = OptionGroup(optp, "initial gridding options", "Options for setting up the initial grid.")
-grid_section.add_option("--setup", help="Set up the initial grid based on template bank overlaps. The new grid will be saved to this argument, e.g. --setup grid will produce a grid.npy file.")
-grid_section.add_option("-t", "--tmplt-bank", help="XML file with template bank.")
-grid_section.add_option("-O", "--use-overlap", help="Use overlap information to define 'closeness'.")
-grid_section.add_option("-T", "--overlap-threshold", type=float, help="Threshold on overlap value.")
-grid_section.add_option("-D", "--deactivate", action="store_true", help="Deactivate cells initially which have no template within them.")
-grid_section.add_option("-P", "--prerefine", help="Refine this initial grid based on overlap values.")
-optp.add_option_group(grid_section)
+grid_section = argp.add_argument_group("initial gridding options", "Options for setting up the initial grid.")
+grid_section.add_argument("--setup", help="Set up the initial grid based on template bank overlaps. The new grid will be saved to this argument, e.g. --setup grid will produce a grid.npy file.")
+grid_section.add_argument("-t", "--tmplt-bank", help="XML file with template bank.")
+grid_section.add_argument("-O", "--use-overlap", help="Use overlap information to define 'closeness'.")
+grid_section.add_argument("-T", "--overlap-threshold", type=float, help="Threshold on overlap value.")
+grid_section.add_argument("-D", "--deactivate", action="store_true", help="Deactivate cells initially which have no template within them.")
+grid_section.add_argument("-P", "--prerefine", help="Refine this initial grid based on overlap values.")
 
-refine_section = OptionGroup(optp, "refine options", "Options for refining a pre-existing grid.")
-refine_section.add_option("--refine", help="Refine a prexisting grid. Pass this option the grid points from previous levels (or the --setup) option.")
-refine_section.add_option("-r", "--result-file", help="XML file containing newest result to refine.")
-optp.add_option_group(refine_section)
+refine_section = argp.add_argument_group("refine options", "Options for refining a pre-existing grid.")
+refine_section.add_argument("--refine", help="Refine a prexisting grid. Pass this option the grid points from previous levels (or the --setup) option.")
+refine_section.add_argument("-r", "--result-file", help="XML file containing newest result to refine.")
 
-opts, args = optp.parse_args()
+opts = argp.parse_args()
 
 if not (opts.setup or opts.refine or opts.prerefine):
     exit("Either --setup or --refine or --prerefine must be chosen")
@@ -246,7 +244,8 @@ if opts.use_overlap is not None:
 intr_prms, expand_prms = parse_param(opts.intrinsic_param)
 pin_prms, _ = parse_param(opts.pin_param)
 intr_pt = numpy.array([intr_prms[k] for k in intr_prms])
-intr_prms = intr_prms.keys()
+# This keeps the list of parameters consistent across runs
+intr_prms = sorted(intr_prms.keys())
 
 # Transform and repack initial point
 intr_pt = amrlib.apply_transform(intr_pt[numpy.newaxis,:], intr_prms, opts.distance_coordinates)[0]
@@ -369,6 +368,12 @@ else:
     else:
         selected = grid
 
+# Make sure all our dimensions line up
+# FIXME: We just need to be consistent from the beginning
+reindex = numpy.array([list(region_labels).index(l) for l in intr_prms])
+intr_prms = list(region_labels)
+res_pts = res_pts[:,reindex]
+
 extent_str = " ".join("(%f, %f)" % bnd for bnd in map(tuple, init_region._bounds))
 center_str = " ".join(map(str, init_region._center))
 label_str = ", ".join(region_labels)
@@ -424,7 +429,7 @@ if opts.setup:
     grid_group = amrlib.init_grid_hdf(init_region, opts.setup + ".hdf", opts.overlap_threshold, opts.distance_coordinates, intr_prms=intr_prms)
     level = amrlib.save_grid_cells_hdf(grid_group, cells, "mass1_mass2", intr_prms=intr_prms)
 else:
-    grp, _ = amrlib.load_grid_level(opts.refine, None, True)
+    grp = amrlib.load_grid_level(opts.refine, None)
     level = amrlib.save_grid_cells_hdf(grp, cells, "mass1_mass2", intr_prms)
 
 print "Selected %d cells for further analysis." % len(cells)

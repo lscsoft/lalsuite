@@ -12,6 +12,7 @@ import sys
 import numpy as np
 import subprocess as sp
 import scipy.stats as ss
+import h5py
 
 lalapps_root = os.environ['LALAPPS_PREFIX'] # install location for lalapps
 execu = lalapps_root+'/bin/lalapps_pulsar_parameter_estimation_nested' # executable
@@ -47,7 +48,7 @@ h0uls = [1e-22, 1e-21, 1e-20, 1e-19, 1e-18, 1e-17]
 dets='H1'
 Nlive='10000'
 Nmcmcinitial='0'
-outfile='test.out'
+outfile='test.hdf'
 priorsamples=Nlive
 
 for h0ul in h0uls:
@@ -65,27 +66,15 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
 
   # run code
   commandline="\
-%s --detectors %s --par-file %s --input-files %s --outfile %s \
---prior-file %s --Nlive %s --Nmcmcinitial %s --sampleprior %s" \
+%s --detectors %s --par-file %s --input-files %s --outhdf %s --prior-file %s --Nlive %s --Nmcmcinitial %s --sampleprior %s" \
 % (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, priorsamples)
 
   sp.check_call(commandline, shell=True)
 
-  # read in header to find position of H0 value
-  f = open(outfile+'_params.txt', 'r')
-  hls = f.readlines()
-  f.close()
-  i = 0
-  for n in hls[0].split():
-    if 'H0' in n:
-      break
-
-    i += 1
-
   # read in prior samples
-  psamps = np.loadtxt(outfile)
-
-  h0samps = psamps[:,i]
+  f = h5py.File(outfile, 'r')
+  a = f['lalinference']
+  h0samps = a['lalinference_nest']['nested_samples']['H0'][:]
 
   # get normed histogram of samples
   [n, nedges] = np.histogram(h0samps, bins=20, range=(0., h0ul), density=True)

@@ -252,7 +252,7 @@ static int IMRPhenomDGenerateFD(
   IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin, extraParams);
   if (!pPhi) XLAL_ERROR(XLAL_EFUNC);
   PNPhasingSeries *pn = NULL;
-  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1_in, chi2_in, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
+  XLALSimInspiralTaylorF2AlignedPhasing(&pn, m1, m2, chi1, chi2, 1.0, 1.0, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN, extraParams);
   if (!pn) XLAL_ERROR(XLAL_EFUNC);
 
   // Subtract 3PN spin-spin term below as this is in LAL's TaylorF2 implementation

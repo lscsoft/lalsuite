@@ -231,7 +231,7 @@ def append_samples_to_hdf5_group(grp, samples):
 
 def append_metadata_to_hdf5_group(grp, metadata):
     for name, val in metadata.iteritems():
-        grp.attrs[name] = val
+        grp.attrs[name] = val or ""
 
 # TESTING
 import sys

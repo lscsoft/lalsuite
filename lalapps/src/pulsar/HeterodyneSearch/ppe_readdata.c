@@ -79,7 +79,7 @@
  * \c detectors command.
  *
  * The function also checks that valid Earth and Sun ephemeris files (from the lalpulsar suite) are set with the \c
- * ephem-earth and \c ephem-sun arguments, and that a valid output file for the nested samples is set via the \c outfile
+ * ephem-earth and \c ephem-sun arguments, and that a valid output file for the nested samples is set via the \c outhdf
  * argument.
  *
  * The function will by default also call \c chop_n_merge() for each data set, which will split the data into chunks
@@ -393,15 +393,14 @@ number of detectors specified (no. dets =%d)\n", ml, ml, numDets);
   UINT4 nstreams = ml*numDets;
   LALInferenceAddVariable( runState->algorithmParams, "numstreams", &nstreams, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
 
-  /* get the output directory */
-  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-  if( !ppt ){
-    fprintf(stderr, "Error... --outfile needs to be set.\n");
+  /* check the output file is given */
+  if( !LALInferenceGetProcParamVal( commandLine, "--outhdf" ) ){
+    fprintf(stderr, "Error... --outhdf needs to be set.\n");
     fprintf(stderr, USAGE, commandLine->program);
     exit(0);
   }
 
-  ppt = LALInferenceGetProcParamVal( commandLine,"--input-files" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--input-files" );
   if( ppt ) { inputfile = ppt->value; }
 
   if ( ( inputfile == NULL || strlen(inputfile) == 0 ) && !ppt2 ){

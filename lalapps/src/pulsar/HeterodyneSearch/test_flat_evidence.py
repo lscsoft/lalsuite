@@ -16,6 +16,7 @@ import numpy as np
 import subprocess as sp
 import scipy.stats as ss
 import matplotlib.pyplot as pl
+import h5py
 
 lalapps_root = os.environ['LALAPPS_PREFIX'] # install location for lalapps
 execu = lalapps_root+'/bin/lalapps_pulsar_parameter_estimation_nested' # executable
@@ -59,7 +60,7 @@ h0uls = np.logspace(np.log10(5.*ulest), np.log10(500.*ulest), 4)
 dets='H1'
 Nlive=1024
 Nmcmcinitial=0
-outfile='test.out'
+outfile='test.hdf'
 
 # test two different proposals - the default proposal (which is currently --ensembleWalk 3 --uniformprop 1)
 # against just using the ensemble walk proposal
@@ -96,16 +97,15 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
     # run Ntests times to get average
     for j in range(Ntests):
       # run code
-      commandline="\
-%s --detectors %s --par-file %s --input-files %s --outfile %s \
---prior-file %s --Nlive %d --Nmcmcinitial %d %s" \
+      commandline="%s --detectors %s --par-file %s --input-files %s --outhdf %s --prior-file %s --Nlive %d --Nmcmcinitial %d %s" \
 % (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, prop)
 
       sp.check_call(commandline, shell=True)
 
       # get odds ratio
-      f = open(outfile+'_B.txt', 'r')
-      hodds.append(float(f.readlines()[0].split()[0]))
+      f = h5py.File(outfile, 'r')
+      a = f['lalinference']['lalinference_nest']
+      hodds.append(a.attrs['log_bayes_factor'])
       f.close()
 
     odds_prior.append(np.mean(hodds)-logprior)

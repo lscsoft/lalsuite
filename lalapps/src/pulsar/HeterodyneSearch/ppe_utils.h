@@ -46,7 +46,6 @@ UINT4 find_change_point( gsl_vector_complex *data, REAL8 *logodds, UINT4 chunkMi
 void rechop_data( UINT4Vector **segs, UINT4 chunkMax, UINT4 chunkMin );
 void merge_data( COMPLEX16Vector *data, UINT4Vector **segs );
 
-void gzip_output( LALInferenceRunState *runState );
 INT4 count_csv( CHAR *csvline );
 INT4 recognised_parameter( CHAR *parname );
 void check_and_add_fixed_variable( LALInferenceVariables *vars, const char *name, void *value, LALInferenceVariableType type );

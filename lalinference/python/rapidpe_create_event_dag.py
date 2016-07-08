@@ -20,7 +20,7 @@ Creates a dag workflow to perform extrinsic marginalization calculation.
 
 import sys
 import os
-from optparse import OptionParser, OptionGroup
+from argparse import ArgumentParser
 
 import numpy as np
 
@@ -43,32 +43,32 @@ __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gr
 # Option parsing
 #
 
-optp = OptionParser()
+argp = ArgumentParser()
 # Options needed by this program only.
 
-optp.add_option("-T", "--template-bank-xml", help="Input template bank as a sim_inspiral or sngl_inspiral table. Required.")
-optp.add_option("-D", "--working-directory", default="./", help="Directory in which to stage DAG components.")
-optp.add_option("-l", "--log-directory", default="./", help="Directory in which to place condor logs.")
-optp.add_option("-W", "--web-output", default="./", help="Directory to place web accessible plots and webpages.")
-optp.add_option("-O", "--output-name", default="marginalize_extrinsic_parameters", help="Filename (without extension) to write DAG to.")
-optp.add_option("--n-copies", default=1, help="Number of copies of each integrator instance to run per mass point. Default is one.")
-optp.add_option("--write-script", action="store_true", help="In addition to the DAG, write a script to this filename to execute the workflow.")
-optp.add_option("--write-eff-lambda", action="store_true", help="Use psi0 column of template bank XML as effective lambda point to calculate in DAG.")
-optp.add_option("--write-deff-lambda", action="store_true", help="Use psi3 column of template bank XML as delta effective lambda point to calculate in DAG.")
-optp.add_option("--condor-command", action="append", help="Append these condor commands to the submit files. Useful for account group information.")
+argp.add_argument("-T", "--template-bank-xml", help="Input template bank as a sim_inspiral or sngl_inspiral table. Required.")
+argp.add_argument("-D", "--working-directory", default="./", help="Directory in which to stage DAG components.")
+argp.add_argument("-l", "--log-directory", default="./", help="Directory in which to place condor logs.")
+argp.add_argument("-W", "--web-output", default="./", help="Directory to place web accessible plots and webpages.")
+argp.add_argument("-O", "--output-name", default="marginalize_extrinsic_parameters", help="Filename (without extension) to write DAG to.")
+argp.add_argument("--n-copies", default=1, help="Number of copies of each integrator instance to run per mass point. Default is one.")
+argp.add_argument("--write-script", action="store_true", help="In addition to the DAG, write a script to this filename to execute the workflow.")
+argp.add_argument("--write-eff-lambda", action="store_true", help="Use psi0 column of template bank XML as effective lambda point to calculate in DAG.")
+argp.add_argument("--write-deff-lambda", action="store_true", help="Use psi3 column of template bank XML as delta effective lambda point to calculate in DAG.")
+argp.add_argument("--condor-command", action="append", help="Append these condor commands to the submit files. Useful for account group information.")
 
 for cat, val in MAXJOBS.iteritems():
     optname = "--maxjobs-%s" % cat.lower().replace("_", "-")
-    optp.add_option(optname, type="int", default=MAXJOBS[cat], help="Set MAXJOBS in DAGs for category %s. Default is %s" % (cat, str(val)))
+    argp.add_argument(optname, type=int, default=MAXJOBS[cat], help="Set MAXJOBS in DAGs for category %s. Default is %s" % (cat, str(val)))
 
 # Options transferred to ILE
-common_cl.add_datasource_params(optp)
-common_cl.add_integration_params(optp)
-common_cl.add_output_params(optp)
-common_cl.add_intrinsic_params(optp)
-common_cl.add_pinnable_params(optp)
+common_cl.add_datasource_params(argp)
+common_cl.add_integration_params(argp)
+common_cl.add_output_params(argp)
+common_cl.add_intrinsic_params(argp)
+common_cl.add_pinnable_params(argp)
 
-opts, args = optp.parse_args()
+opts = argp.parse_args()
 
 if not opts.template_bank_xml:
     exit("Option --template-bank-xml is required.")
