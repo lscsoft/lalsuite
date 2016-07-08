@@ -3,8 +3,7 @@ MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
-SUBDIRS = lalinference \
-	tiger
+SUBDIRS = lalinference
 
 if HAVE_PYTHON
 
