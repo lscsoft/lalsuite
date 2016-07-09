@@ -14,12 +14,12 @@ AC_CONFIG_FILES([ \
   lalinference.pc \
   lalinference.spec \
   python/Makefile \
-  python/tiger/Makefile \
   python/lalinference/Makefile \
   python/lalinference/__init__.py \
   python/lalinference/bayestar/Makefile \
   python/lalinference/rapid_pe/Makefile \
   python/lalinference/imrtgr/Makefile \
+  python/lalinference/tiger/Makefile \
   src/LALInferenceVCSInfo.c \
   src/LALInferenceVCSInfo.h \
   src/Makefile \
