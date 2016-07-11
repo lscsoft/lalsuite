@@ -17,24 +17,39 @@
 #
 import sys
 import doctest
+import numpy as np
 import lalinference.bayestar.sky_map
 import lalinference.bayestar.distance
 import lalinference.bayestar.filter
 import lalinference.fits
 import lalinference.bayestar.timing
 
-print('Running C unit tests.')
-total_failures = lalinference.bayestar.sky_map.test()
-
-print('Running Python unit tests.')
 modules = [
     lalinference.bayestar.distance,
     lalinference.bayestar.filter,
     lalinference.fits,
     lalinference.bayestar.timing,
 ]
+
+
+print('Running C unit tests.')
+total_failures = lalinference.bayestar.sky_map.test()
+
+print('Running Python unit tests.')
+
+finder = doctest.DocTestFinder()
+runner = doctest.DocTestRunner()
+tests = []
+
 for module in modules:
-    failures, tests = doctest.testmod(module)
+    # Find doctests in the module
+    tests += finder.find(module)
+    # Find doctests in Numpy external C ufuncs
+    for ufunc in set(_ for _ in module.__dict__.values() if isinstance(_, np.ufunc)):
+        tests += finder.find(ufunc, module=module)
+
+for test in tests:
+    failures, tests = runner.run(test)
     total_failures += failures
 
 if total_failures > 0:
