@@ -427,18 +427,7 @@ process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
 if opts.trial_waveforms:
     trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler, gz=opts.trial_waveforms.endswith('.gz'))
     trial_sngls = table.get_table(trialdoc, lsctables.SnglInspiralTable.tableName)
-
-    def waveform_gener(trial_sngls, tmplt_class, bank):
-        curr_tmplt = 0
-        tmplt_len = len(trial_sngls)
-        while True:
-            if curr_tmplt == tmplt_len:
-                break
-            tmplt = tmplt_class.from_sngl(trial_sngls[curr_tmplt], bank=bank)
-            curr_tmplt += 1
-            yield tmplt
-
-    proposal = waveform_gener(trial_sngls, tmplt_class, bank)
+    proposal = [tmplt_class.from_sngl(t, bank=bank) for t in trial_sngls]
 
 else:
     params = {'mass1': (opts.mass1_min, opts.mass1_max),
