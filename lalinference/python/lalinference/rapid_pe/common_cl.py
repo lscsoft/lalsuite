@@ -18,7 +18,7 @@
 Modularized command line options for rapidpe based programs
 """
 
-from optparse import OptionParser, OptionGroup
+from argparse import ArgumentParser
 
 import numpy
 
@@ -54,7 +54,7 @@ def get_unpinned_params(opts, params):
 #
 # Add the pinnable parameters
 #
-def add_pinnable_params(optp, include=None, exclude=None):
+def add_pinnable_params(argp, include=None, exclude=None):
     """
     Add a set of command line options with the ability to pin a parameter to a value. Pinnable parameters are held in the LIKELIHOOD_PINNABLE_PARAMS list in the common_cl module.
     Specifying include will include only those parameters both in 'include' and LIKELIHOOD_PINNABLE_PARAMS. Specifying exclude will exclude parameters present in both 'exclude' in LIKELIHOOD_PINNABLE_PARAMS.
@@ -71,77 +71,74 @@ def add_pinnable_params(optp, include=None, exclude=None):
     if exclude is not None:
         pinned_params = list(set(pinnable_params)- set(exclude))
 
-    pinnable = OptionGroup(optp, "Pinnable Parameters", "Specifying these command line options will pin the value of that parameter to the specified value with a probability of unity.")
+    pinnable = argp.add_argument_group("Pinnable Parameters", "Specifying these command line options will pin the value of that parameter to the specified value with a probability of unity.")
     for pin_param in pinned_params:
         option = "--" + pin_param.replace("_", "-")
-        pinnable.add_option(option, type=float, help="Pin the value of %s." % pin_param)
-    optp.add_option_group(pinnable)
-    return optp
+        pinnable.add_argument(option, type=float, help="Pin the value of %s." % pin_param)
+    return argp
 
 #
 # Data source options for command line processing
 #
-def add_datasource_params(optp):
-    optp.add_option("-c", "--cache-file", default=None, help="LIGO cache file containing all data needed.")
-    optp.add_option("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Can be given multiple times for different instruments.")
-    optp.add_option("-p", "--psd-file", action="append", help="instrument=psd-file, e.g. H1=H1_PSD.xml.gz. Can be given multiple times for different instruments.")
-    optp.add_option("-k", "--skymap-file", help="Use skymap stored in given FITS file.")
-    optp.add_option("-x", "--coinc-xml", help="gstlal_inspiral XML file containing coincidence information.")
-    optp.add_option("-f", "--reference-freq", type=float, default=100.0, help="Waveform reference frequency. Required, default is 100 Hz.")
-    optp.add_option("-a", "--approximant", default="TaylorT4", help="Waveform family to use for templates. Any approximant implemented in LALSimulation is valid.")
-    optp.add_option("-A", "--amp-order", type=int, default=0, help="Include amplitude corrections in template waveforms up to this e.g. (e.g. 5 <==> 2.5PN), default is Newtonian order.")
-    optp.add_option("--l-max", type=int, default=2, help="Include all (l,m) modes with l less than or equal to this value.")
-    optp.add_option("-s", "--data-start-time", type=float, default=None, help="GPS start time of data segment. If given, must also give --data-end-time. If not given, sane start and end time will automatically be chosen.")
-    optp.add_option("-e", "--data-end-time", type=float, default=None, help="GPS end time of data segment. If given, must also give --data-start-time. If not given, sane start and end time will automatically be chosen.")
-    optp.add_option("-F", "--fmax", type=float, help="Upper frequency of signal integration. Default is use PSD's maximum frequency.")
-    optp.add_option("-t", "--event-time", type=float, help="GPS time of the event --- probably the end time. Required if --coinc-xml not given.")
-    optp.add_option("-i", "--inv-spec-trunc-time", type=float, default=8., help="Timescale of inverse spectrum truncation in seconds (Default is 8 - give 0 for no truncation)")
-    optp.add_option("-w", "--window-shape", type=float, default=0, help="Shape of Tukey window to apply to data (default is no windowing)")
-    return optp
+def add_datasource_params(argp):
+    argp.add_argument("-c", "--cache-file", default=None, help="LIGO cache file containing all data needed.")
+    argp.add_argument("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Can be given multiple times for different instruments.")
+    argp.add_argument("-p", "--psd-file", action="append", help="instrument=psd-file, e.g. H1=H1_PSD.xml.gz. Can be given multiple times for different instruments.")
+    argp.add_argument("-k", "--skymap-file", help="Use skymap stored in given FITS file.")
+    argp.add_argument("-x", "--coinc-xml", help="gstlal_inspiral XML file containing coincidence information.")
+    argp.add_argument("-f", "--reference-freq", type=float, default=100.0, help="Waveform reference frequency. Required, default is 100 Hz.")
+    argp.add_argument("-a", "--approximant", default="TaylorT4", help="Waveform family to use for templates. Any approximant implemented in LALSimulation is valid.")
+    argp.add_argument("-A", "--amp-order", type=int, default=0, help="Include amplitude corrections in template waveforms up to this e.g. (e.g. 5 <==> 2.5PN), default is Newtonian order.")
+    argp.add_argument("--l-max", type=int, default=2, help="Include all (l,m) modes with l less than or equal to this value.")
+    argp.add_argument("-s", "--data-start-time", type=float, default=None, help="GPS start time of data segment. If given, must also give --data-end-time. If not given, sane start and end time will automatically be chosen.")
+    argp.add_argument("-e", "--data-end-time", type=float, default=None, help="GPS end time of data segment. If given, must also give --data-start-time. If not given, sane start and end time will automatically be chosen.")
+    argp.add_argument("-F", "--fmax", type=float, help="Upper frequency of signal integration. Default is use PSD's maximum frequency.")
+    argp.add_argument("-t", "--event-time", type=float, help="GPS time of the event --- probably the end time. Required if --coinc-xml not given.")
+    argp.add_argument("-i", "--inv-spec-trunc-time", type=float, default=8., help="Timescale of inverse spectrum truncation in seconds (Default is 8 - give 0 for no truncation)")
+    argp.add_argument("-w", "--window-shape", type=float, default=0, help="Shape of Tukey window to apply to data (default is no windowing)")
+    return argp
 
-def add_output_params(optp):
-    optp.add_option("-o", "--output-file", help="Save result to this file.")
-    optp.add_option("-S", "--save-samples", type=int, default=0, help="Save this number of sample points to output-file. Requires --output-file to be defined.")
-    optp.add_option("-L", "--save-deltalnL", type=float, default=None, help="Threshold on deltalnL for points preserved in output file.  Requires --output-file to be defined")
-    optp.add_option("-P", "--save-P", type=float,default=0, help="Threshold on cumulative probability for points preserved in output file.  Requires --output-file to be defined")
-    return optp
+def add_output_params(argp):
+    argp.add_argument("-o", "--output-file", help="Save result to this file.")
+    argp.add_argument("-S", "--save-samples", type=int, default=0, help="Save this number of sample points to output-file. Requires --output-file to be defined.")
+    argp.add_argument("-L", "--save-deltalnL", type=float, default=None, help="Threshold on deltalnL for points preserved in output file.  Requires --output-file to be defined")
+    argp.add_argument("-P", "--save-P", type=float,default=0, help="Threshold on cumulative probability for points preserved in output file.  Requires --output-file to be defined")
+    return argp
 
 #
 # Add the integration options
 #
-def add_integration_params(optp):
-    integration_params = OptionGroup(optp, "Integration Parameters", "Control the integration with these options.")
-    integration_params.add_option("--distance-maximum", default=300.0, type=float, help="Override the maximum distance in the prior. Default is 300 Mpc.")
-    integration_params.add_option("-m", "--time-marginalization", action="store_true", help="Perform marginalization over time via direct numerical integration. Default is false.")
+def add_integration_params(argp):
+    integration_params = argp.add_argument_group("Integration Parameters", "Control the integration with these options.")
+    integration_params.add_argument("--distance-maximum", default=300.0, type=float, help="Override the maximum distance in the prior. Default is 300 Mpc.")
+    integration_params.add_argument("-m", "--time-marginalization", action="store_true", help="Perform marginalization over time via direct numerical integration. Default is false.")
     # Default is actually None, but that tells the integrator to go forever or until n_eff is hit.
-    integration_params.add_option("--zero-noise", action="store_true", help="Do not use input data as noise. Use with --pin-to-sim to make an injection")
-    integration_params.add_option("--n-max", type=int, help="Total number of samples points to draw. If this number is hit before n_eff, then the integration will terminate. Default is 'infinite'.",default=None)
-    integration_params.add_option("--n-eff", type=int, default=100, help="Total number of effective samples points to calculate before the integration will terminate. Default is 100")
-    integration_params.add_option("--n-chunk", type=int, help="Chunk'.",default=100)
-    integration_params.add_option("--convergence-tests-on",default=False,action='store_true')
-    integration_params.add_option("--seed", type=int, help="Random seed to use. Default is to not seed the RNG.")
-    integration_params.add_option("--no-adapt", action="store_true", help="Turn off adaptive sampling. Adaptive sampling is on by default.")
-    integration_params.add_option("--adapt-weight-exponent", type=float, default=1.0, help="Exponent to use with weights (likelihood integrand) when doing adaptive sampling. Used in tandem with --adapt-floor-level to prevent overconvergence. Default is 1.0.")
-    integration_params.add_option("--adapt-floor-level", type=float, default=0.1, help="Floor to use with weights (likelihood integrand) when doing adaptive sampling. This is necessary to ensure the *sampling* prior is non zero during adaptive sampling and to prevent overconvergence. Default is 0.1 (no floor)")
-    integration_params.add_option("--interpolate-time", default=False,help="If using time marginalization, compute using a continuously-interpolated array. (Default=false)")
-    integration_params.add_option("--fmin-template", dest='fmin_template', type=float, default=40, help="Waveform starting frequency.  Default is 40 Hz.")
-    optp.add_option_group(integration_params)
-    return optp
+    integration_params.add_argument("--zero-noise", action="store_true", help="Do not use input data as noise. Use with --pin-to-sim to make an injection")
+    integration_params.add_argument("--n-max", type=int, help="Total number of samples points to draw. If this number is hit before n_eff, then the integration will terminate. Default is 'infinite'.",default=None)
+    integration_params.add_argument("--n-eff", type=int, default=100, help="Total number of effective samples points to calculate before the integration will terminate. Default is 100")
+    integration_params.add_argument("--n-chunk", type=int, help="Chunk'.",default=100)
+    integration_params.add_argument("--convergence-tests-on",default=False,action='store_true')
+    integration_params.add_argument("--seed", type=int, help="Random seed to use. Default is to not seed the RNG.")
+    integration_params.add_argument("--no-adapt", action="store_true", help="Turn off adaptive sampling. Adaptive sampling is on by default.")
+    integration_params.add_argument("--adapt-weight-exponent", type=float, default=1.0, help="Exponent to use with weights (likelihood integrand) when doing adaptive sampling. Used in tandem with --adapt-floor-level to prevent overconvergence. Default is 1.0.")
+    integration_params.add_argument("--adapt-floor-level", type=float, default=0.1, help="Floor to use with weights (likelihood integrand) when doing adaptive sampling. This is necessary to ensure the *sampling* prior is non zero during adaptive sampling and to prevent overconvergence. Default is 0.1 (no floor)")
+    integration_params.add_argument("--interpolate-time", default=False,help="If using time marginalization, compute using a continuously-interpolated array. (Default=false)")
+    integration_params.add_argument("--fmin-template", dest='fmin_template', type=float, default=40, help="Waveform starting frequency.  Default is 40 Hz.")
+    return argp
 
 #
 # Add the intrinsic parameters
 #
-def add_intrinsic_params(optp):
-    intrinsic_params = OptionGroup(optp, "Intrinsic Parameters", "Intrinsic parameters (e.g component mass) to use.")
-    intrinsic_params.add_option("--pin-to-sim", help="Pin values to sim_inspiral table entry.")
-    intrinsic_params.add_option("--mass1", type=float, help="Value of first component mass, in solar masses. Required if not providing coinc tables.")
-    intrinsic_params.add_option("--mass2", type=float, help="Value of second component mass, in solar masses. Required if not providing coinc tables.")
-    intrinsic_params.add_option("--spin1z", type=float, help="Value of first component spin (aligned with angular momentum), dimensionless.")
-    intrinsic_params.add_option("--spin2z", type=float, help="Value of second component spin (aligned with angular momentum), dimensionless.")
-    intrinsic_params.add_option("--eff-lambda", type=float, help="Value of effective tidal parameter. Optional, ignored if not given.")
-    intrinsic_params.add_option("--deff-lambda", type=float, help="Value of second effective tidal parameter. Optional, ignored if not given.")
-    optp.add_option_group(intrinsic_params)
-    return optp
+def add_intrinsic_params(argp):
+    intrinsic_params = argp.add_argument_group("Intrinsic Parameters", "Intrinsic parameters (e.g component mass) to use.")
+    intrinsic_params.add_argument("--pin-to-sim", help="Pin values to sim_inspiral table entry.")
+    intrinsic_params.add_argument("--mass1", type=float, help="Value of first component mass, in solar masses. Required if not providing coinc tables.")
+    intrinsic_params.add_argument("--mass2", type=float, help="Value of second component mass, in solar masses. Required if not providing coinc tables.")
+    intrinsic_params.add_argument("--spin1z", type=float, help="Value of first component spin (aligned with angular momentum), dimensionless.")
+    intrinsic_params.add_argument("--spin2z", type=float, help="Value of second component spin (aligned with angular momentum), dimensionless.")
+    intrinsic_params.add_argument("--eff-lambda", type=float, help="Value of effective tidal parameter. Optional, ignored if not given.")
+    intrinsic_params.add_argument("--deff-lambda", type=float, help="Value of second effective tidal parameter. Optional, ignored if not given.")
+    return argp
 
 #
 # DAG workflow related dictionaries

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2015  Leo Singer
+ * Copyright (C) 2013-2016  Leo Singer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,12 +17,16 @@
  * MA  02111-1307  USA
  */
 
+#include "config.h"
 #include <Python.h>
 #include <numpy/arrayobject.h>
+#include <numpy/ufuncobject.h>
 #include <chealpix.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_nan.h>
 #include <lal/bayestar_sky_map.h>
+#include <lal/bayestar_distance.h>
+#include <assert.h>
 
 
 /**
@@ -64,16 +68,14 @@ static PyObject *premalloced_new(void *data)
 }
 
 
-static PyObject *premalloced_npy_double_array(double *data, npy_intp len)
+static PyObject *premalloced_npy_double_array(double *data, int ndims, npy_intp *dims)
 {
     PyObject *premalloced = premalloced_new(data);
     if (!premalloced)
         return NULL;
 
-    npy_intp dims[1] = {len};
-
     PyArrayObject *out = (PyArrayObject *)
-        PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, data);
+        PyArray_SimpleNewFromData(ndims, dims, NPY_DOUBLE, data);
     if (!out)
     {
         Py_DECREF(premalloced);
@@ -265,14 +267,17 @@ static PyObject *sky_map_toa_phoa_snr(
 
     /* Call function */
     gsl_error_handler_t *old_handler = gsl_set_error_handler(my_gsl_error);
-    double *ret = bayestar_sky_map_toa_phoa_snr(&npix, min_distance,
+    double (*ret)[4] = bayestar_sky_map_toa_phoa_snr(&npix, min_distance,
         max_distance, prior_distance_power, gmst, nifos, nsamples, sample_rate,
         acors, responses, locations, horizons, toas, phoas, snrs);
     gsl_set_error_handler(old_handler);
 
     /* Prepare output object */
     if (ret)
-        out = premalloced_npy_double_array(ret, npix);
+    {
+        npy_intp dims[] = {npix, 4};
+        out = premalloced_npy_double_array(ret, 2, dims);
+    }
 
 fail: /* Cleanup */
     FREE_INPUT_LIST_OF_ARRAYS(acors)
@@ -499,10 +504,123 @@ fail: /* Cleanup */
 };
 
 
+static void distance_moments_to_parameters_loop(
+    char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
+{
+    const npy_intp n = dimensions[0];
+
+    #pragma omp parallel for
+    for (npy_intp i = 0; i < n; i ++)
+    {
+        bayestar_distance_moments_to_parameters(
+            *(double *) &args[0][i * steps[0]],
+            *(double *) &args[1][i * steps[1]],
+             (double *) &args[2][i * steps[2]],
+             (double *) &args[3][i * steps[3]],
+             (double *) &args[4][i * steps[4]]);
+    }
+}
+
+
+static void distance_parameters_to_moments_loop(
+    char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
+{
+    const npy_intp n = dimensions[0];
+
+    #pragma omp parallel for
+    for (npy_intp i = 0; i < n; i ++)
+    {
+        bayestar_distance_parameters_to_moments(
+            *(double *) &args[0][i * steps[0]],
+            *(double *) &args[1][i * steps[1]],
+             (double *) &args[2][i * steps[2]],
+             (double *) &args[3][i * steps[3]],
+             (double *) &args[4][i * steps[4]]);
+    }
+}
+
+
+static const PyUFuncGenericFunction distance_moments_to_parameters_loops[] = {
+    distance_moments_to_parameters_loop};
+static const PyUFuncGenericFunction distance_parameters_to_moments_loops[] = {
+    distance_parameters_to_moments_loop};
+static const char distance_ufunc_types[] = {
+    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
+static const void *distance_ufunc_data[] = {NULL};
+
+
+static void volume_render_kernel_loop(
+    char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
+{
+    const npy_intp n = dimensions[0];
+    const long nside = npix2nside(dimensions[2]);
+
+    /* Assert that rotation matrix is 3x3 */
+    assert(dimensions[1] == 3);
+
+    /* FIXME: Check that array arguments are stored contiguously */
+
+    #pragma omp parallel for
+    for (npy_intp i = 0; i < n; i ++)
+    {
+        *(double *) &args[11][i * steps[11]] = bayestar_volume_render_kernel(
+            *(double *)   &args[0][i * steps[0]],
+            *(double *)   &args[1][i * steps[1]],
+            *(double *)   &args[2][i * steps[2]],
+            *(int *)      &args[3][i * steps[3]],
+            *(int *)      &args[4][i * steps[4]],
+             (double *)   &args[5][i * steps[5]],
+            nside,
+            *(npy_bool *) &args[6][i * steps[6]],
+             (double *)   &args[7][i * steps[7]],
+             (double *)   &args[8][i * steps[8]],
+             (double *)   &args[9][i * steps[9]],
+             (double *)   &args[10][i * steps[10]]);
+    }
+}
+
+
+static const PyUFuncGenericFunction volume_render_kernel_loops[] = {
+    volume_render_kernel_loop};
+static const char volume_render_kernel_ufunc_types[] = {
+    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_INT, NPY_INT, NPY_DOUBLE, NPY_BOOL, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
+static const void *volume_render_kernel_ufunc_data[] = {NULL};
+
+
+static void marginal_distance_distribution_loop(
+    char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
+{
+    const npy_intp n = dimensions[0];
+    const long npix = dimensions[1];
+
+    /* Assert that array arguments are stored contiguously */
+    assert(steps[6] == sizeof(double));
+
+    #pragma omp parallel for
+    for (npy_intp i = 0; i < n; i ++)
+    {
+        *(double *) &args[5][i * steps[5]] =
+            bayestar_marginal_distance_distribution(
+            *(double *) &args[0][i * steps[0]], npix,
+             (double *) &args[1][i * steps[1]],
+             (double *) &args[2][i * steps[2]],
+             (double *) &args[3][i * steps[3]],
+             (double *) &args[4][i * steps[4]]);
+    }
+}
+
+
+static const PyUFuncGenericFunction marginal_distance_distribution_loops[] = {
+    marginal_distance_distribution_loop};
+static const char marginal_distance_distribution_ufunc_types[] = {
+    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
+static const void *marginal_distance_distribution_ufunc_data[] = {NULL};
+
+
 static PyObject *test(
     PyObject *NPY_UNUSED(module), PyObject *NPY_UNUSED(arg))
 {
-    return PyInt_FromLong(bayestar_test());
+    return PyLong_FromLong(bayestar_test());
 }
 
 
@@ -576,8 +694,7 @@ static PyObject *LogRadialIntegrator_call(
 
 
 static PyTypeObject LogRadialIntegrator_type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                      /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "sky_map.LogRadialIntegrator",          /*tp_name*/
     sizeof(LogRadialIntegrator),            /*tp_basicsize*/
     0,                                      /*tp_itemsize*/
@@ -637,6 +754,7 @@ PyMODINIT_FUNC PyInit_sky_map(void)
 {
     PyObject *module;
     import_array();
+    import_umath();
 
     premalloced_type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&premalloced_type) < 0)
@@ -664,7 +782,31 @@ PyMODINIT_FUNC PyInit_sky_map(void)
     module = PyModule_Create(&moduledef);
 #endif
 
-    Py_INCREF(&LogRadialIntegrator_type);
+    PyModule_AddObject(
+        module, "distance_moments_to_parameters", PyUFunc_FromFuncAndData(
+            distance_moments_to_parameters_loops, distance_ufunc_data,
+            distance_ufunc_types, 1, 2, 3, PyUFunc_None,
+            "distance_moments_to_parameters", NULL, 0));
+
+    PyModule_AddObject(
+        module, "distance_parameters_to_moments", PyUFunc_FromFuncAndData(
+            distance_parameters_to_moments_loops, distance_ufunc_data,
+            distance_ufunc_types, 1, 2, 3, PyUFunc_None,
+            "distance_parameters_to_moments", NULL, 0));
+
+    PyModule_AddObject(
+        module, "volume_render_kernel", PyUFunc_FromFuncAndDataAndSignature(
+            volume_render_kernel_loops, volume_render_kernel_ufunc_data,
+            volume_render_kernel_ufunc_types, 1, 11, 1, PyUFunc_None,
+            "volume_render_kernel", NULL, 0, "(),(),(),(),(),(i,i),(),(n),(n),(n),(n)->()"));
+
+    PyModule_AddObject(
+        module, "marginal_distance_distribution", PyUFunc_FromFuncAndDataAndSignature(
+            marginal_distance_distribution_loops, marginal_distance_distribution_ufunc_data,
+            marginal_distance_distribution_ufunc_types, 1, 5, 1, PyUFunc_None,
+            "marginal_distance_distribution", NULL, 0, "(),(n),(n),(n),(n)->()"));
+
+    Py_INCREF((PyObject *)&LogRadialIntegrator_type);
     PyModule_AddObject(
         module, "LogRadialIntegrator", (PyObject *)&LogRadialIntegrator_type);
 

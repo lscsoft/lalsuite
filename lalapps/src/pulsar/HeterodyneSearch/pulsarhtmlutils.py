@@ -55,7 +55,7 @@ paramlatexdict = {'H0': '$h_0$',
                   'PMRA': 'proper motion $\\alpha$ (rad/s)',
                   'PMDEC': 'proper motion $\delta$ (rad/s)',
                   'PMDC': 'proper motion $\delta$ (rad/s)',
-                  'X': '$a \sin{i}$ (lt s)',
+                  'A1': '$a \sin{i}$ (lt s)',
                   'PB': 'Period (days)',
                   'T0': '$T_0$ (s)',
                   'TASC': '$T_{\\textrm{asc}}$ (s)',
@@ -210,15 +210,15 @@ class paramhtmldispfunc:
   def F8(f): return exp_str(float(f), 2)
   def F9(f): return exp_str(float(f), 2)
   def F10(f): return exp_str(float(f), 2)
-  def PEPOCH(f): return '%.1f' % repr(44244. + (float(f)+51.184)/86400.) # return epoch as an float (converted from GPS to MJD)
+  def PEPOCH(f): return '%.1f' % float(repr(44244. + (float(f)+51.184)/86400.)) # return epoch as an float (converted from GPS to MJD)
   def A1(f): return dec_or_exp(f)
   def E(f): return dec_or_exp(f)
   def EPS1(f): return dec_or_exp(f)
   def EPS2(f): return dec_or_exp(f)
-  def T0(f): return '%.1f' % repr(44244. + ((float(f)+51.184)/86400.))   # convert from GPS to MJD for display
-  def TASC(f): return '%.1f' % repr(44244. + ((float(f)+51.184)/86400.)) # convert from GPS to MJD for display
-  def OM(f): return dec_or_exp(repr(float(f)*180./math.pi), dp=1)        # convert from rads to deg
-  def PB(f): return dec_or_exp(repr(float(f)/86400.))                    # convert from seconds to days
+  def T0(f): return '%.1f' % float(repr(44244. + ((float(f)+51.184)/86400.)))   # convert from GPS to MJD for display
+  def TASC(f): return '%.1f' % float(repr(44244. + ((float(f)+51.184)/86400.))) # convert from GPS to MJD for display
+  def OM(f): return dec_or_exp(repr(float(f)*180./math.pi), dp=1)               # convert from rads to deg
+  def PB(f): return dec_or_exp(repr(float(f)/86400.))                           # convert from seconds to days
   def H0(f): return exp_str(float(f), 1)
   def H0UL(f): return exp_str(float(f), 1)
   def C21(f): return exp_str(float(f), 1)

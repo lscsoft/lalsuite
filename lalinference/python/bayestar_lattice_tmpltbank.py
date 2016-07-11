@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -25,28 +25,22 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.
-from optparse import Option, OptionParser
+import argparse
 from lalinference.bayestar import command
 
-parser = OptionParser(
-    formatter = command.NewlinePreservingHelpFormatter(),
-    description = __doc__,
-    usage="%prog [options] [INPUT.xml[.gz]] [-o OUTPUT.xml[.gz]]",
-    option_list = [
-        Option("--initial-mass1", metavar="Msun", type=float, default=1.4,
-            help="Mass of first component of an initial lattice point [default: %default]"),
-        Option("--initial-mass2", metavar="Msun", type=float, default=1.4,
-            help="Mass of second component of an initial lattice point [default: %default]"),
-        Option("--min-mass", metavar="Msun", type=float, default=1.,
-            help="Minimum component mass [default: %default]"),
-        Option("--max-mass", metavar="Msun", type=float, default=3.,
-            help="Maximum component mass [default: %default]"),
-        Option("-o", "--output", metavar="OUTPUT.xml[.gz]", default="/dev/stdout",
-            help="Name of output file (default=stdout)")
-    ]
-)
-opts, args = parser.parse_args()
-infilename = command.get_input_filename(parser, args)
+parser = command.ArgumentParser()
+parser.add_argument('--initial-mass1', metavar='Msun', type=float, default=1.4,
+    help='Mass of first component of an initial lattice point [default: %(default)s]')
+parser.add_argument('--initial-mass2', metavar='Msun', type=float, default=1.4,
+    help='Mass of second component of an initial lattice point [default: %(default)s]')
+parser.add_argument('--min-mass', metavar='Msun', type=float, default=1.,
+    help='Minimum component mass [default: %(default)s]')
+parser.add_argument('--max-mass', metavar='Msun', type=float, default=3.,
+    help='Maximum component mass [default: %(default)s]')
+parser.add_argument(
+    '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('wb'),
+    default='-', help='Name of output file [default: stdout]')
+opts = parser.parse_args()
 
 
 # Python standard library imports.
@@ -55,18 +49,17 @@ import os
 # LIGO-LW XML imports.
 from glue.ligolw import ligolw
 from glue.ligolw.utils import process as ligolw_process
-from glue.ligolw import table as ligolw_table
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 
 # glue and LAL imports.
+from glue.text_progress_bar import ProgressBar
 import lal
 import lalinspiral.sbank.tau0tau3
 import lalsimulation
 
 # BAYESTAR imports.
-from lalinference.bayestar import ligolw as ligolw_bayestar
-from lalinference.bayestar import timing
+from lalinference.bayestar import filter
 
 # Other imports.
 import numpy as np
@@ -78,8 +71,7 @@ xmldoc = ligolw.Document()
 xmldoc.appendChild(ligolw.LIGO_LW())
 
 # Write process metadata to output file.
-process = ligolw_process.register_to_xmldoc(xmldoc, parser.get_prog_name(),
-    opts.__dict__)
+process = command.register_to_xmldoc(xmldoc, parser, opts)
 
 # Create a SnglInspiral table and initialize its row ID counter.
 sngl_inspiral_table = lsctables.New(lsctables.SnglInspiralTable)
@@ -146,7 +138,8 @@ i = np.column_stack((i0.ravel(), i1.ravel()))
 skip = 10
 theta0_theta3 = np.dot(i, skip * delta_theta0_theta3.T) + initial_theta0_theta3
 
-for th0, th3 in theta0_theta3:
+print(theta0_theta3.shape)
+for th0, th3 in ProgressBar(theta0_theta3.tolist()):
 
     th3S = 0
     tau0 = th0 / (2 * np.pi * f_low)
@@ -177,7 +170,7 @@ for th0, th3 in theta0_theta3:
     # Create new sngl_inspiral row and initialize its columns to None,
     # which produces an empty field in the XML output.
     sngl_inspiral = lsctables.SnglInspiral()
-    for validcolumn in sngl_inspiral_table.validcolumns.iterkeys():
+    for validcolumn in sngl_inspiral_table.validcolumns.keys():
         setattr(sngl_inspiral, validcolumn, None)
 
     # Populate the row's fields.
@@ -190,7 +183,7 @@ for th0, th3 in theta0_theta3:
     sngl_inspiral.mchirp = mchirp
     sngl_inspiral.eta = eta
     sngl_inspiral.chi = chi
-    sngl_inspiral.f_final = timing.get_f_lso(mass1, mass2)
+    sngl_inspiral.f_final = filter.get_f_lso(mass1, mass2)
 
     # Add the row to the table in the document.
     sngl_inspiral_table.append(sngl_inspiral)
@@ -199,5 +192,5 @@ for th0, th3 in theta0_theta3:
 ligolw_process.set_process_end_time(process)
 
 # Write output file.
-ligolw_utils.write_filename(xmldoc, opts.output,
-    gz=(os.path.splitext(opts.output)[-1]==".gz"))
+ligolw_utils.write_fileobj(xmldoc, opts.output,
+    gz=(os.path.splitext(opts.output.name)[-1]==".gz"))

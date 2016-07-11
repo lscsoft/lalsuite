@@ -17,6 +17,7 @@ import sys
 import random
 from itertools import permutations
 import shutil
+import numpy as np
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -83,20 +84,19 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",basepath="./
   from glue.ligolw import utils
   from glue.ligolw import lsctables
   from glue.ligolw import ligolw
-  class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+  class PSDContentHandler(ligolw.LIGOLWContentHandler):
     pass
-  lsctables.use_in(LIGOLWContentHandler)
+  lsctables.use_in(PSDContentHandler)
   from glue.ligolw import param
   from glue.ligolw import array
-  from pylal import series as lalseries
-  import numpy as np
   import subprocess
+  from lal import series as lalseries
   from subprocess import Popen, PIPE
   cwd=os.getcwd()
   os.chdir(basepath)
   print "%s download %s coinc.xml"%(gracedb,gid)
   subprocess.call([gracedb,"download", gid ,"coinc.xml"])
-  xmldoc=utils.load_filename("coinc.xml",contenthandler = LIGOLWContentHandler)
+  xmldoc=utils.load_filename("coinc.xml",contenthandler = PSDContentHandler)
   coinctable = lsctables.CoincInspiralTable.get_table(xmldoc)
   coinc_events = [event for event in coinctable]
   sngltable = lsctables.SnglInspiralTable.get_table(xmldoc)
@@ -113,7 +113,7 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",basepath="./
   if downloadpsd:
     print "gracedb download %s psd.xml.gz" % gid
     subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
-    xmlpsd = lalseries.read_psd_xmldoc(utils.load_filename('psd.xml.gz',contenthandler = lalseries.LIGOLWContentHandler))
+    xmlpsd = lalseries.read_psd_xmldoc(utils.load_filename('psd.xml.gz',contenthandler = lalseries.PSDContentHandler))
     # Note: This finds the active IFOs by looking for available PSDs
     # Is there another way of getting this info?
     ifos = xmlpsd.keys()
@@ -369,12 +369,12 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
   lal=1
   from glue.ligolw import utils
   try:
-    from pylal import series
+    #from pylal import series
+    from lal import series as series
     lal=0
   except ImportError:
     print "ERROR, cannot import pylal.series in bppu/get_xml_psds()\n"
     exit(1)
-  import numpy as np
 
   out={}
   if not os.path.isdir(outpath):
@@ -402,7 +402,7 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
   if not os.path.isfile(psdxml):
     print "ERROR: impossible to open the psd file %s. Exiting...\n"%psdxml
     sys.exit(1)
-  xmlpsd =  series.read_psd_xmldoc(utils.load_filename(psdxml,contenthandler = series.LIGOLWContentHandler))
+  xmlpsd =  series.read_psd_xmldoc(utils.load_filename(psdxml,contenthandler = series.PSDContentHandler))
   # Check the psd file contains all the IFOs we want to analize
   for ifo in ifos:
     if not ifo in [i.encode('ascii') for i in xmlpsd.keys()]:
@@ -433,8 +433,8 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
 
     combine=[]
 
-    for i in np.arange(len(data.data)) :
-      combine.append([f0+i*deltaF,np.sqrt(data.data[i])])
+    for i in np.arange(len(data.data.data)) :
+      combine.append([f0+i*deltaF,np.sqrt(data.data.data[i])])
     np.savetxt(path_to_ascii_psd,combine)
     ifo=instrument.encode('ascii')
     # set node.psds dictionary with the path to the ascii files
@@ -746,10 +746,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       from glue.ligolw import utils
       from glue.ligolw import ligolw
       injfile=self.config.get('input','burst-injection-file')
-      class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
+      class PSDContentHandler(ligolw.LIGOLWContentHandler):
 	pass
-      lsctables.use_in(LIGOLWContentHandler)
-      injTable=lsctables.SimBurstTable.get_table(utils.load_filename(injfile,contenthandler = LIGOLWContentHandler))
+      lsctables.use_in(PSDContentHandler)
+      injTable=lsctables.SimBurstTable.get_table(utils.load_filename(injfile,contenthandler = PSDContentHandler))
       events=[Event(SimBurst=inj) for inj in injTable]
       self.add_pfn_cache([create_pfn_tuple(self.config.get('input','burst-injection-file'))])
     # SnglInspiral Table
@@ -1757,7 +1757,7 @@ class LALInferenceMCMCNode(EngineNode):
     self.add_var_opt('executable',li_job.binary)
 
   def set_output_file(self,filename):
-    self.posfile=filename
+    self.posfile=filename+'.h5'
     # Should also take care of the higher temperature outpufiles with
     # self.add_output_file, getting the number of files from machine_count
     self.add_file_opt(self.outfilearg,self.posfile,file_is_output_file=True)
@@ -1883,8 +1883,6 @@ class ResultsPageNode(pipeline.CondorDAGNode):
       """
       self.add_parent(node)
       self.add_file_arg(node.get_pos_file())
-      if isinstance(node,LALInferenceMCMCNode):
-        self.add_var_opt('lalinfmcmc','')
 
     def get_pos_file(self): return self.posfile
     def set_bayes_coherent_incoherent(self,bcifile):
@@ -2075,6 +2073,11 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
   Class for a ROM compute weights job
   """
   def __init__(self,cp,submitFile,logdir,dax=False):
+    time_step=0.000172895418228
+    #This ensures that, for SNR < 100, a signal with bandwidth 20-4096 Hz will
+    #have a resolved time posterior assuming a chirp-like frequency evolution
+    #and aLIGO_ZDHP PSD
+    dt=0.1
     exe=cp.get('condor','computeroqweights')
     pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
@@ -2088,17 +2091,20 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     self.add_condor_cmd('getenv','True')
     self.add_arg('-B '+str(cp.get('paths','roq_b_matrix_directory')))
     if cp.has_option('engine','dt'):
-      self.add_arg('-t '+str(cp.get('engine','dt')))
-    else:
-      self.add_arg('-t 0.1')
+      dt=cp.get('engine','dt')
+    self.add_arg('-t '+str(dt))
     if cp.has_option('engine','time_step'):
-      self.add_arg('-T '+str(cp.get('engine','time_step')))
-    else:
-      self.add_arg('-T 0.000025')
+      time_step=cp.get('engine','time_step')
+    self.add_arg('-T '+str(time_step))
     if cp.has_option('condor','computeroqweights_memory'):
       computeroqweights_memory=str(cp.get('condor','computeroqweights_memory'))
     else:
-      computeroqweights_memory=str((os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_linear.npy'))/(1024*1024))*256) # Check memory requirements                                                                                                  
+      params = np.genfromtxt(str(cp.get('paths','roq_b_matrix_directory')+'/params.dat'), names=True)
+      computeroqweights_memory=str(int(
+      os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_linear.npy'))/(1024*1024)
+      + ((params['fhigh']-params['flow'])*params['seglen'])*(float(dt)*2/float(time_step))*2*8/(1024*1024)
+      + os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_quadratic.npy'))/(1024*1024)
+      ))
     self.add_condor_cmd('request_memory',computeroqweights_memory)
 
 class ROMNode(pipeline.CondorDAGNode):

@@ -126,7 +126,7 @@ extern void show_progress(REAL8 rac,   REAL8 dec,
 
 #ifdef HIERARCHSEARCHGCT /* used for HierarchSearchGCT */
 
-extern int write_boinc_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 counter, BOOLEAN do_sync);
+extern int write_boinc_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplist_t*t3, UINT4 counter, BOOLEAN do_sync);
 
 #else /* #ifdef HIERARCHSEARCHGCT */
 

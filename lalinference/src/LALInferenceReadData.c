@@ -1597,7 +1597,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       }
       LALSimInspiralTestGRParam *nonGRparams = NULL;
       /* Print a line with information about approximant, amporder, phaseorder, tide order and spin order */
-      fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the time domain with a reference frequency of %f.\n",approximant,XLALGetStringFromApproximant(approximant),order,amporder,(int) spinO, (int) tideO, (float) fref);
+      fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the time domain with a reference frequency of %f.\n",approximant,XLALSimInspiralGetStringFromApproximant(approximant),order,amporder,(int) spinO, (int) tideO, (float) fref);
 
       /* ChooseWaveform starts the (2,2) mode of the waveform at the given minimum frequency.  We want the highest order contribution to start at the f_lower of the injection file */
       REAL8 f_min = fLow2fStart(injEvent->f_lower, amporder, approximant);
@@ -2294,7 +2294,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
  /* Print a line with information about approximant, amp_order, phaseorder, tide order and spin order */
   fprintf(stdout,"\n\n---\t\t ---\n");
- fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the frequency domain.\n",approximant,XLALGetStringFromApproximant(approximant),phase_order,amp_order,(int) spinO,(int) tideO);
+ fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the frequency domain.\n",approximant,XLALSimInspiralGetStringFromApproximant(approximant),phase_order,amp_order,(int) spinO,(int) tideO);
    fprintf(stdout,"---\t\t ---\n\n");
 
   COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
@@ -2737,6 +2737,11 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	  model->roq->frequencyNodesQuadratic = XLALCreateREAL8Sequence(n_basis_quadratic);
 	  
 	  model->roq->trigtime = endtime;
+
+          model->roq->frequencyNodesLinear = XLALCreateREAL8Sequence(n_basis_linear);
+          model->roq->frequencyNodesQuadratic = XLALCreateREAL8Sequence(n_basis_quadratic);
+          model->roq->calFactorLinear = XLALCreateCOMPLEX16Sequence(model->roq->frequencyNodesLinear->length);
+          model->roq->calFactorQuadratic = XLALCreateCOMPLEX16Sequence(model->roq->frequencyNodesQuadratic->length);
 
 	  if(LALInferenceGetProcParamVal(commandLine,"--roqnodesLinear")){
 	    ppt=LALInferenceGetProcParamVal(commandLine,"--roqnodesLinear");

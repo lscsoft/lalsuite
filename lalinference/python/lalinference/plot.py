@@ -540,6 +540,27 @@ def contour(func, *args, **kwargs):
     return ax
 
 
+def contourf(func, *args, **kwargs):
+    "Plot a function on the sphere using the current geographic projection."""
+
+    # Get current axis.
+    ax = plt.gca()
+
+    # Set up a regular grid tiling in right ascension and declination
+    x = np.linspace(*ax.get_xlim(), num=500)
+    y = np.linspace(*ax.get_ylim(), num=500)
+    xx, yy = np.meshgrid(x, y)
+
+    # Evaluate the function everywhere.
+    zz = func(xx, yy)
+
+    # Add contour plot
+    ax = plt.contourf(xx, yy, zz, *args, **kwargs)
+
+    # Done.
+    return ax
+
+
 def _healpix_lookup(map, lon, lat, nest=False, dlon=0):
     """Look up the value of a HEALPix map in the pixel containing the point
     with the specified longitude and latitude."""
@@ -563,6 +584,16 @@ def healpix_contour(map, *args, **kwargs):
     dlon = mpl_kwargs.pop('dlon', 0)
     nest = mpl_kwargs.pop('nest', False)
     return contour(
+        functools.partial(_healpix_lookup, map, nest=nest, dlon=dlon),
+        *args, **mpl_kwargs)
+
+
+def healpix_contourf(map, *args, **kwargs):
+    """Produce a contour plot from a HEALPix map."""
+    mpl_kwargs = dict(kwargs)
+    dlon = mpl_kwargs.pop('dlon', 0)
+    nest = mpl_kwargs.pop('nest', False)
+    return contourf(
         functools.partial(_healpix_lookup, map, nest=nest, dlon=dlon),
         *args, **mpl_kwargs)
 

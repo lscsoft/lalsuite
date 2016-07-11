@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -41,42 +41,43 @@ available_ifos = sorted(det.frDetector.prefix
     for det in lal.CachedDetectors)
 
 # Command line interface.
-from optparse import Option, OptionParser
+import argparse
 from lalinference.bayestar import command
 
-measurement_error_choices = ("zero-noise", "from-truth", "from-measurement")
-parser = OptionParser(
-    formatter = command.NewlinePreservingHelpFormatter(),
-    description = __doc__,
-    usage="%prog [options] [INPUT.xml[.gz]]",
-    option_list = [
-        Option("-o", "--output", metavar="OUTPUT.xml[.gz]",
-            default="/dev/stdout",
-            help="Name of output file [default: %default]"),
-        Option("--detector", metavar='|'.join(available_ifos), action="append",
-            help="Detectors to use.  May be specified multiple times.",
-            choices=available_ifos),
-        Option("--waveform",
-            help="Waveform to use for injections (overrides values in "
-            "sim_inspiral table)"),
-        Option("--snr-threshold", type=float, default=4.,
-            help="Single-detector SNR threshold [default: %default]"),
-        Option("--min-triggers", type=int, default=2,
-            help="Emit coincidences only when at least this many triggers "
-            "are found [default: %default]"),
-        Option("--measurement-error", choices=measurement_error_choices,
-            default=measurement_error_choices[0],
-            metavar='|'.join(measurement_error_choices),
-            help="How to compute the measurement error [default: %default]"),
-        Option("--reference-psd", metavar="PSD.xml[.gz]",
-            help="Name of PSD file (required)"),
-        Option("--f-low", type=float,
-            help="Override low frequency cutoff found in sim_inspiral table.")
-    ]
-)
-opts, args = parser.parse_args()
-infilename = command.get_input_filename(parser, args)
-command.check_required_arguments(parser, opts, 'reference_psd')
+parser = command.ArgumentParser()
+parser.add_argument(
+    'input', metavar='IN.xml[.gz]', type=argparse.FileType('rb'),
+    default='-', help='Name of input file [default: stdin]')
+parser.add_argument(
+    '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('wb'),
+    default='-', help='Name of output file [default: stdout]')
+parser.add_argument(
+    '--detector', metavar='|'.join(available_ifos), nargs='+',
+    help='Detectors to use [required].', choices=available_ifos, required=True)
+parser.add_argument('--waveform',
+    help='Waveform to use for injections (overrides values in '
+    'sim_inspiral table)')
+parser.add_argument('--snr-threshold', type=float, default=4.,
+    help='Single-detector SNR threshold [default: %(default)s]')
+parser.add_argument('--net-snr-threshold', type=float, default=12.,
+    help='Network SNR threshold [default: %(default)s]')
+parser.add_argument('--keep-subthreshold', action='store_true',
+    help='Keep sub-threshold triggers that do not contribute to network SNR '
+    '[default: %(default)s]')
+parser.add_argument('--min-triggers', type=int, default=2,
+    help='Emit coincidences only when at least this many triggers '
+    'are found [default: %(default)s]')
+parser.add_argument(
+    '--measurement-error',
+    choices=('zero-noise', 'from-truth', 'from-measurement'),
+    default='zero-noise',
+    help='How to compute the measurement error [default: %(default)s]')
+parser.add_argument(
+    '--reference-psd', metavar='PSD.xml[.gz]', type=argparse.FileType('rb'),
+    required=True, help='Name of PSD file [required]')
+parser.add_argument('--f-low', type=float,
+    help='Override low frequency cutoff found in sim_inspiral table')
+opts = parser.parse_args()
 
 
 # Python standard library imports.
@@ -97,7 +98,7 @@ import glue.lal
 import lal
 import lal.series
 import lalsimulation
-import pylal.progress
+from glue.text_progress_bar import ProgressBar
 
 # BAYESTAR imports.
 from lalinference.bayestar import ligolw as ligolw_bayestar
@@ -108,7 +109,7 @@ from lalinference.bayestar import timing
 import numpy as np
 
 
-progress = pylal.progress.ProgressBar()
+progress = ProgressBar()
 
 # Open output file.
 progress.update(-1, 'setting up output document')
@@ -116,8 +117,9 @@ out_xmldoc = ligolw.Document()
 out_xmldoc.appendChild(ligolw.LIGO_LW())
 
 # Write process metadata to output file.
-process = ligolw_process.register_to_xmldoc(out_xmldoc, parser.get_prog_name(),
-    opts.__dict__, ifos=opts.detector, comment="Simulated coincidences")
+process = command.register_to_xmldoc(
+    out_xmldoc, parser, opts, ifos=opts.detector,
+    comment="Simulated coincidences")
 
 # Add search summary to output file.
 all_time = segments.segment(
@@ -128,18 +130,18 @@ summary = ligolw_search_summary.append_search_summary(out_xmldoc, process,
     inseg=all_time, outseg=all_time)
 
 # Read PSDs.
-progress.update(-1, 'reading ' + opts.reference_psd)
-xmldoc = ligolw_utils.load_filename(
+progress.update(-1, 'reading ' + opts.reference_psd.name)
+xmldoc, _ = ligolw_utils.load_fileobj(
     opts.reference_psd, contenthandler=lal.series.PSDContentHandler)
 psds = lal.series.read_psd_xmldoc(xmldoc)
 psds = dict(
     (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
-    for key, psd in psds.iteritems() if psd is not None)
+    for key, psd in psds.items() if psd is not None)
 
 # Read injection file.
-progress.update(-1, 'reading ' + infilename)
-xmldoc = ligolw_utils.load_filename(
-    infilename, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
+progress.update(-1, 'reading ' + opts.input.name)
+xmldoc, _ = ligolw_utils.load_fileobj(
+    opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Extract simulation table from injection file.
 sim_inspiral_table = ligolw_table.get_table(xmldoc,
@@ -173,6 +175,10 @@ out_xmldoc.childNodes[0].appendChild(coinc_map_table)
 coinc_table = lsctables.New(lsctables.CoincTable)
 out_xmldoc.childNodes[0].appendChild(coinc_table)
 
+# Create a CoincInspiral table.
+coinc_inspiral_table = lsctables.New(lsctables.CoincInspiralTable)
+out_xmldoc.childNodes[0].appendChild(coinc_inspiral_table)
+
 # Precompute values that are common to all simulations.
 detectors = [lalsimulation.DetectorPrefixToLALDetector(ifo)
     for ifo in opts.detector]
@@ -195,17 +201,21 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         sim_inspiral.geocent_end_time, sim_inspiral.geocent_end_time_ns)
     gmst = lal.GreenwichMeanSiderealTime(epoch)
     waveform = sim_inspiral.waveform if opts.waveform is None else opts.waveform
-    approximant, amplitude_order, phase_order = \
-        timing.get_approximant_and_orders_from_string(waveform)
+
+    # FIXME: Set tranverse spin components to 0
+    sim_inspiral.spin1x = 0
+    sim_inspiral.spin1y = 0
+    sim_inspiral.spin2x = 0
+    sim_inspiral.spin2y = 0
 
     # Pre-evaluate some trigonometric functions that we will need.
     u = np.cos(inc)
     u2 = np.square(u)
 
     # Signal models for each detector.
+    H = filter.sngl_inspiral_psd(sim_inspiral, waveform, f_low)
     signal_models = [
-        timing.SignalModel(m1, m2, psds[ifo], f_low,
-        approximant, amplitude_order, phase_order)
+        timing.SignalModel(filter.signal_psd_series(H, psds[ifo]))
         for ifo in opts.detector]
 
     # Get SNR=1 horizon distances for each detector.
@@ -251,18 +261,23 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         raise RuntimeError("This code should not be reached.")
 
     sngl_inspirals = []
+    net_snr = 0.0
+    count_triggers = 0
 
     # Loop over individual detectors and create SnglInspiral entries.
     for ifo, abs_snr, arg_snr, toa, horizon in zip(
             opts.detector, abs_snrs, arg_snrs, toas, horizons):
 
         # If SNR < threshold, then the injection is not found. Skip it.
-        if abs_snr < opts.snr_threshold:
+        if abs_snr >= opts.snr_threshold:
+            count_triggers += 1
+            net_snr += np.square(abs_snr)
+        elif not opts.keep_subthreshold:
             continue
 
         # Create SnglInspiral entry.
         sngl_inspiral = lsctables.SnglInspiral()
-        for validcolumn in sngl_inspiral_table.validcolumns.iterkeys():
+        for validcolumn in sngl_inspiral_table.validcolumns.keys():
             setattr(sngl_inspiral, validcolumn, None)
         sngl_inspiral.process_id = process.process_id
         sngl_inspiral.ifo = ifo
@@ -275,8 +290,14 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
         sngl_inspiral.eff_distance = horizon / sngl_inspiral.snr
         sngl_inspirals.append(sngl_inspiral)
 
+    net_snr = np.sqrt(net_snr)
+
     # If too few triggers were found, then skip this event.
-    if len(sngl_inspirals) < opts.min_triggers:
+    if count_triggers < opts.min_triggers:
+        continue
+
+    # If network SNR < threshold, then the injection is not found. Skip it.
+    if net_snr < opts.net_snr_threshold:
         continue
 
     # Add Coinc table entry.
@@ -289,6 +310,22 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
     coinc.nevents = len(opts.detector)
     coinc.likelihood = None
     coinc_table.append(coinc)
+
+    # Add CoincInspiral table entry.
+    coinc_inspiral = lsctables.CoincInspiral()
+    coinc_inspiral.coinc_event_id = coinc.coinc_event_id
+    coinc_inspiral.ifos = lsctables.ifos_from_instrument_set(
+        sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
+    coinc_inspiral.end = lal.LIGOTimeGPS(
+        sum(sngl_inspiral.end.ns() for sngl_inspiral in sngl_inspirals)
+        // len(sngl_inspirals) * 1e-9) # FIXME: should only be detected sngls
+    coinc_inspiral.mass = sim_inspiral.mass1 + sim_inspiral.mass2
+    coinc_inspiral.mchirp = sim_inspiral.mchirp
+    coinc_inspiral.combined_far = 0.0 # Not provided
+    coinc_inspiral.false_alarm_rate = 0.0 # Not provided
+    coinc_inspiral.minimum_duration = None # Not provided
+    coinc_inspiral.snr = net_snr
+    coinc_inspiral_table.append(coinc_inspiral)
 
     # Record all sngl_inspiral records and associate them with coincidences.
     for sngl_inspiral in sngl_inspirals:
@@ -305,9 +342,9 @@ for sim_inspiral in progress.iterate(sim_inspiral_table):
 
 
 # Record process end time.
-progress.update(-1, 'writing ' + opts.output)
+progress.update(-1, 'writing ' + opts.output.name)
 ligolw_process.set_process_end_time(process)
 
 # Write output file.
-ligolw_utils.write_filename(out_xmldoc, opts.output,
-    gz=(os.path.splitext(opts.output)[-1]==".gz"))
+ligolw_utils.write_fileobj(out_xmldoc, opts.output,
+    gz=(os.path.splitext(opts.output.name)[-1]==".gz"))

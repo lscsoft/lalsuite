@@ -129,6 +129,7 @@ if not opts.dry_run:
 import os
 import shutil
 import tempfile
+from lalinference.bayestar import distance
 from lalinference.bayestar.ligolw_sky_map import gracedb_sky_map
 from lalinference import fits
 
@@ -155,6 +156,9 @@ try:
         phase_convention=opts.phase_convention, nside=opts.nside,
         f_high_truncate=opts.f_high_truncate,
         method=opts.method, chain_dump=chain_dump)
+    prob, distmu, distsigma, _ = sky_map
+    distmean, diststd = distance.parameters_to_marginal_moments(
+        prob, distmu, distsigma)
     log.info("sky localization complete")
 
     # upload FITS file
@@ -165,6 +169,7 @@ try:
             creator=parser.prog, objid=str(graceid),
             url='https://gracedb.ligo.org/events/{0}'.format(graceid),
             runtime=elapsed_time, instruments=instruments,
+            distmean=distmean, diststd=diststd,
             origin='LIGO/Virgo', nest=True)
         if not opts.dry_run:
             gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",

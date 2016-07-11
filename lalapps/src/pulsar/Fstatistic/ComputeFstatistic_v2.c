@@ -1495,7 +1495,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
           oLGX_p = &oLGX[0];
         } // if uvar->oLGX != NULL
 
-      XLAL_CHECK ( (cfg->BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar->Fstar0, oLGX_p, uvar->BSGLlogcorr )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (cfg->BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar->Fstar0, oLGX_p, uvar->BSGLlogcorr, 1 )) != NULL, XLAL_EFUNC ); // coherent F-stat: NSeg=1
     } // if uvar_computeBSGL
 
   return XLAL_SUCCESS;

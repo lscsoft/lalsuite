@@ -1,4 +1,4 @@
-/* 
+/*
  *  InferenceNest.c:  Nested Sampling using LALInference
  *
  *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
@@ -30,7 +30,6 @@
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/TimeSeries.h>
-#include <lalapps.h>
 #include <lal/LALInferenceNestedSampler.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceReadData.h>
@@ -38,116 +37,128 @@
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceInit.h>
-#include <lal/LALInferenceReadBurstData.h>
 #include <lal/LALInferenceCalibrationErrors.h>
-#include <lal/LIGOLwXMLBurstRead.h>
-#include <lal/GenerateBurst.h>
-#include <lal/LALSimBurst.h>
+#include <lal/LALInferenceVCSInfo.h>
 
 /*************** MAIN **********************/
 
 
 int main(int argc, char *argv[]){
+  int helpflag=0;
   char help[]="\
   LALInferenceNest:\n\
   Bayesian analysis tool using Nested Sampling algorithm\n\
-  for Burst analysis. Uses LALInference library for back-end.\n\n\
+  for CBC analysis. Uses LALInference library for back-end.\n\n\
   Arguments for each section follow:\n\n";
-  
+
   LALInferenceRunState *state;
   ProcessParamsTable *procParams=NULL;
-  
+  LALInferenceIFOData *data = NULL;
+
   /* Read command line and parse */
   procParams=LALInferenceParseCommandLine(argc,argv);
   if(LALInferenceGetProcParamVal(procParams,"--help"))
   {
+    helpflag=1;
     fprintf(stdout,"%s",help);
   }
+  /* write down git information */
+  fprintf(stdout,"\n\nLALInference version:%s,%s,%s,%s,%s\n\n", lalInferenceVCSId,lalInferenceVCSDate,lalInferenceVCSBranch,lalInferenceVCSAuthor,lalInferenceVCSStatus);
   
   /* initialise runstate based on command line */
   /* This includes reading in the data */
   /* And performing any injections specified */
   /* And allocating memory */
   state = LALInferenceInitRunState(procParams);
-  
-  ProcessParamsTable *ppt=NULL;
-  if ((ppt=LALInferenceGetProcParamVal(state->commandLine,"--binj"))){
-    /* Perform injections if data successful read or created */
-    LALInferenceInjectBurstSignal(state->data, state->commandLine);
+  /* Create header  */
+  if (state!=NULL && !helpflag){
+    ProcessParamsTable *ppt=NULL;
+    ppt=LALInferenceGetProcParamVal(state->commandLine,"--outfile");
+    if(!ppt){
+    ppt=LALInferenceGetProcParamVal(state->commandLine,"--outhdf");
+    if(!ppt){
+      fprintf(stderr,"Must specify --outfile <filename.dat> or --outhdf <filename.h5>\n");
+      exit(1);
+      }
   }
-  else{
-    /* Perform CBC injection if required */
-    LALInferenceInjectInspiralSignal(state->data, state->commandLine);
+    char *outfile=ppt->value;
+    char headerfile[FILENAME_MAX];
+    FILE *fpout=NULL;
+    sprintf(headerfile,"%s_header.txt",outfile);
+    fpout=fopen(headerfile,"w");
+    fprintf(fpout,"LALInference version:%s,%s,%s,%s,%s\n", lalInferenceVCSId,lalInferenceVCSDate,lalInferenceVCSBranch,lalInferenceVCSAuthor,lalInferenceVCSStatus);
+    fprintf(fpout,"%s\n",LALInferencePrintCommandLine(state->commandLine));
+    fclose(fpout);
+    }
+  if (state == NULL) {
+      if (!helpflag) {
+          fprintf(stderr, "run state not allocated (%s, line %d).\n",
+                  __FILE__, __LINE__);
+      }
+  } else {
+      data = state->data;
   }
-  if (LALInferenceGetProcParamVal(state->commandLine,"--inject_from_mdc")){
-      fprintf(stdout,"WARNING: Injecting a signal from MDC has not been carefully tested yet! \n"); 
-      LALInferenceInjectFromMDC(state->commandLine, state->data);
+
+  /* Perform injections if data successful read or created */
+  if (state&&!helpflag){
+    LALInferenceInjectInspiralSignal(data, state->commandLine);
   }
 
   /* Simulate calibration errors. 
   * NOTE: this must be called after both ReadData and (if relevant) 
   * injectInspiralTD/FD are called! */
-  LALInferenceApplyCalibrationErrors(state->data, state->commandLine);
+  LALInferenceApplyCalibrationErrors(data, procParams);
 
   /* Set up the appropriate functions for the nested sampling algorithm */
   if (state){
-    /* Set up the appropriate functions for the nested sampling algorithm */
     state->algorithm=&LALInferenceNestedSamplingAlgorithm;
     state->evolve=&LALInferenceNestedSamplingOneStep;
-    INT4 one=1;
-    LALInferenceAddVariable(state->algorithmParams,"LIB",&one, LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+
     state->proposalArgs = LALInferenceParseProposalArgs(state);
   }
 
-  /* Check if recovery is LIB or CBC */
-  if ((ppt=LALInferenceGetProcParamVal(state->commandLine,"--approx"))){
-    if (XLALCheckBurstApproximantFromString(ppt->value)){
-      /* Set up the threads */
-      LALInferenceInitBurstThreads(state,1);
-      /* Init the prior */
-      LALInferenceInitLIBPrior(state);
-    }
-    else{
-      /* Set up the threads */
-      LALInferenceInitCBCThreads(state,1);
-      /* Init the prior */
-      LALInferenceInitCBCPrior(state);
-    }
-  }
-  else{
-    fprintf(stderr,"Must specify the approximant while using lalinference_burst\n");
-    exit(1);
-    }
+  if (!helpflag && LALInferenceGetProcParamVal(state->commandLine, "--roqtime_steps")){
+
+        LALInferenceSetupROQdata(state->data, state->commandLine);
+        fprintf(stderr, "done LALInferenceSetupROQdata\n");
+
+     }
+
+  /* Set up the threads */
+  LALInferenceInitCBCThreads(state,1);
+
+  /* Init the prior */
+  LALInferenceInitCBCPrior(state);
+
   /* Set up structures for nested sampling */
   LALInferenceNestedSamplingAlgorithmInit(state);
-  
-  for(INT4 i=0;i<state->nthreads;i++)
-  {
-    state->threads[i]->cycle=LALInferenceSetupDefaultInspiralProposalCycle(state->threads[i]->proposalArgs);
-    LALInferenceRandomizeProposalCycle(state->threads[i]->cycle,state->GSLrandom);
+
+  if (state){
+    for(INT4 i=0;i<state->nthreads;i++)
+    {
+      state->threads[i]->cycle=LALInferenceSetupDefaultInspiralProposalCycle(state->threads[i]->proposalArgs);
+      LALInferenceRandomizeProposalCycle(state->threads[i]->cycle,state->GSLrandom);
+    }
   }
 
   /* Choose the likelihood and set some auxiliary variables */
   LALInferenceInitLikelihood(state);
-  
+
   /* Exit since we printed all command line arguments */
   if(state == NULL || LALInferenceGetProcParamVal(state->commandLine,"--help"))
   {
     exit(0);
   }
-  
+
   /* Call setupLivePointsArray() to populate live points structures */
   LALInferenceSetupLivePointsArray(state);
-  
+
   /* write injection with noise evidence information from algorithm */
-  // SALVO FIXME
-  //LALInferencePrintInjectionSample(state);
-  
+  LALInferencePrintInjectionSample(state);
+
   /* Call nested sampling algorithm */
   state->algorithm(state);
-  
+
   /* end */
   return(0);
 }
-
-

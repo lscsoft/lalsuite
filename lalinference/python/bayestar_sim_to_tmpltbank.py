@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -25,22 +25,19 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.
-from optparse import Option, OptionParser
+import argparse
 from lalinference.bayestar import command
 
-parser = OptionParser(
-    formatter = command.NewlinePreservingHelpFormatter(),
-    description = __doc__,
-    usage="%prog [options] [INPUT.xml[.gz]] [-o OUTPUT.xml[.gz]]",
-    option_list = [
-        Option("-o", "--output", metavar="OUTPUT.xml[.gz]", default="/dev/stdout",
-            help="Name of output file [default: %default]"),
-        Option("--f-low", type=float,
-            help="Override low frequency cutoff found in sim_inspiral table.")
-    ]
-)
-opts, args = parser.parse_args()
-infilename = command.get_input_filename(parser, args)
+parser = command.ArgumentParser()
+parser.add_argument('--f-low', type=float, dest='low_frequency_cutoff',
+    help='Override low frequency cutoff found in sim_inspiral table.')
+parser.add_argument(
+    'input', metavar='IN.xml[.gz]', type=argparse.FileType('rb'),
+    default='-', help='Name of input file [default: stdin]')
+parser.add_argument(
+    '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('wb'),
+    default='-', help='Name of output file [default: stdout]')
+opts = parser.parse_args()
 
 
 # Python standard library imports.
@@ -59,7 +56,7 @@ import lalsimulation
 
 # BAYESTAR imports.
 from lalinference.bayestar import ligolw as ligolw_bayestar
-from lalinference.bayestar import timing
+from lalinference.bayestar import filter
 
 
 _fields = 'mass1 mass2 mchirp eta spin1z spin2z'
@@ -84,8 +81,8 @@ class TaylorF2RedSpinIntrinsicParams(namedtuple('intrinsic_params', _fields)):
 
 
 # Read injection file.
-xmldoc = ligolw_utils.load_filename(
-    infilename, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
+xmldoc, _ = ligolw_utils.load_fileobj(
+    opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Extract simulation table from injection file.
 sim_inspiral_table = ligolw_table.get_table(xmldoc,
@@ -95,7 +92,7 @@ sim_inspiral_table = ligolw_table.get_table(xmldoc,
 sim_inspiral_intrinsic_params = set(TaylorF2RedSpinIntrinsicParams(sim_inspiral)
     for sim_inspiral in sim_inspiral_table)
 
-if opts.f_low is None:
+if opts.low_frequency_cutoff is None:
     # Get the low-frequency cutoffs from the sim_inspiral table.
     f_lows = set(sim_inspiral.f_lower for sim_inspiral in sim_inspiral_table)
 
@@ -107,7 +104,7 @@ if opts.f_low is None:
             "sim_inspiral:f_lower columns are not unique, got values: "
             + ' '.join(f_lows))
 else:
-    f_low = opts.f_low
+    f_low = opts.low_frequency_cutoff
 
 # Open output file.
 out_xmldoc = ligolw.Document()
@@ -115,9 +112,8 @@ out_xmldoc.appendChild(ligolw.LIGO_LW())
 
 # Write process metadata to output file. Masquerade as lalapps_tmpltbank and
 # encode low frequency cutoff in command line arguments.
-process = ligolw_process.register_to_xmldoc(out_xmldoc, "tmpltbank",
-    dict(opts.__dict__, low_frequency_cutoff=f_low), ifos="H1",
-    comment="Exact-match template bank")
+process = command.register_to_xmldoc(
+    out_xmldoc, parser, opts, ifos="H1", comment="Exact-match template bank")
 
 # Record low-frequency cutoff in the SearchSummVars table.
 search_summvars_table = lsctables.New(lsctables.SearchSummVarsTable)
@@ -140,7 +136,7 @@ for sim_inspiral_intrinsic_param in sim_inspiral_intrinsic_params:
     # Create new sngl_inspiral row and initialize its columns to None,
     # which produces an empty field in the XML output.
     sngl_inspiral = lsctables.SnglInspiral()
-    for validcolumn in sngl_inspiral_table.validcolumns.iterkeys():
+    for validcolumn in sngl_inspiral_table.validcolumns.keys():
         setattr(sngl_inspiral, validcolumn, None)
 
     # Populate the row's fields.
@@ -150,7 +146,7 @@ for sim_inspiral_intrinsic_param in sim_inspiral_intrinsic_params:
     sngl_inspiral.mtotal = sngl_inspiral.mass1 + sngl_inspiral.mass2
     sngl_inspiral.mchirp = sim_inspiral_intrinsic_param.mchirp
     sngl_inspiral.eta = sim_inspiral_intrinsic_param.eta
-    sngl_inspiral.f_final = timing.get_f_lso(sngl_inspiral.mass1, sngl_inspiral.mass2)
+    sngl_inspiral.f_final = filter.get_f_lso(sngl_inspiral.mass1, sngl_inspiral.mass2)
     sngl_inspiral.chi = sim_inspiral_intrinsic_param.chi
 
     # Add the row to the table in the document.
@@ -160,5 +156,5 @@ for sim_inspiral_intrinsic_param in sim_inspiral_intrinsic_params:
 ligolw_process.set_process_end_time(process)
 
 # Write output file.
-ligolw_utils.write_filename(out_xmldoc, opts.output,
-    gz=(os.path.splitext(opts.output)[-1]==".gz"))
+ligolw_utils.write_fileobj(out_xmldoc, opts.output,
+    gz=(os.path.splitext(opts.output.name)[-1]==".gz"))

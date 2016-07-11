@@ -1018,11 +1018,10 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
       }
     }
 #pragma omp parallel for schedule(static)
-    for ( size_t index = 0; index < index_max; ++index )
+    for ( size_t indx = 0; indx < index_max; ++indx )
       {
-    
         // break single index into 'k', 'X', and 'n'
-        size_t k = 0, X = 0, n = 0, index_break = index + 1;
+        size_t k = 0, X = 0, n = 0, index_break = indx + 1;
         for ( k = 0; k < Nseg; ++k ) {
           for ( X = 0; X < numDet; ++X ) {
             if ( index_break > intN[k][X] ) {
@@ -1088,7 +1087,7 @@ XLALCovariance_Phi_ij ( const MultiLALDetector *multiIFO,		//!< [in] detectors t
           io->av_j_err_sq = SQUARE( scale2 * abserr);
         }
 
-      } /* for index < index_max */
+      } /* for indx < index_max */
   }
 
   // restore GSL error handling

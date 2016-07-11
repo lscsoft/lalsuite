@@ -21,6 +21,7 @@
 /*                       SOFTWARE INJECTION FUNCTIONS                         */
 /******************************************************************************/
 
+#include "config.h"
 #include "ppe_inject.h"
 
 /**
@@ -60,15 +61,25 @@ void inject_signal( LALInferenceRunState *runState ){
   REAL8 snrmulti = 0.;
   REAL8 snrscale = 0;
 
-  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-  if( !ppt ){ XLAL_ERROR_VOID( XLAL_EINVAL, "Error... no output file specified!" ); }
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outhdf" );
+  if ( !ppt ){ XLAL_ERROR_VOID( XLAL_EINVAL, "Error... no output file specified!" ); }
 
   snrfile = XLALStringDuplicate( ppt->value );
+  /* strip the file extension */
+  CHAR *dotloc = strrchr(snrfile, '.');
+  CHAR *slashloc = strrchr(snrfile, '/');
+  if ( dotloc != NULL ){
+    if ( slashloc != NULL ){ /* check dot is after any filename seperator */
+      if( slashloc < dotloc ){ *dotloc = '\0'; }
+    }
+    else{ *dotloc = '\0'; }
+  }
   snrfile = XLALStringAppend( snrfile, "_SNR" );
 
   if( (fpsnr = fopen(snrfile, "w")) == NULL ){
     XLAL_ERROR_VOID( XLAL_EIO, "Error... cannot open output SNR file!");
   }
+  XLALFree( snrfile );
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--inject-file" );
   if( ppt ){
@@ -81,6 +92,7 @@ void inject_signal( LALInferenceRunState *runState ){
 
     /* read in injection parameter file */
     injpars = XLALReadTEMPOParFileNew( injectfile );
+    XLALFree( injectfile );
 
     /* check RA and DEC are set (if only RAJ and DECJ are given in the par file) */
     if ( !PulsarCheckParam( injpars, "RA" ) ){
@@ -310,6 +322,7 @@ void inject_signal( LALInferenceRunState *runState ){
       if ( (fpso = fopen(signalonly, "w")) == NULL ){
         fprintf(stderr, "Non-fatal error... unable to open file %s to output injection\n", signalonly);
       }
+      XLALFree( outfile );
     }
 
     /* add the signal to the data */
@@ -528,7 +541,7 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data, LALInferenceIFOModel
  */
 void get_loudest_snr( LALInferenceRunState *runState ){
   INT4 ndats = 0;
-  UINT4 roq = 0;
+  UINT4 roq = 0; // i = 0;
   INT4 Nlive = *(INT4 *)LALInferenceGetVariable( runState->algorithmParams, "Nlive" );
   REAL8 snrmulti = 0.;
   REAL8Vector *freqFactors = NULL;
@@ -560,12 +573,19 @@ void get_loudest_snr( LALInferenceRunState *runState ){
       LALInferenceAddVariable( ifo_model->params, "siderealDay", &sidtime, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
 
       LIGOTimeGPSVector *timestamps = *(LIGOTimeGPSVector **)LALInferenceGetVariable( ifo_model->params, "timeStampVectorFull" );
+      //REAL8Vector *timestamps = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "timeStampVectorFull" );
       XLALDestroyTimestampVector( ifo_model->times );
       ifo_model->times = timestamps;
+      //ifo_model->times = XLALCreateTimestampVector( timestamps->length );
+      //for ( i=0; i<timestamps->length; i++ ){ XLALGPSSetREAL8( &ifo_model->times->data[i], timestamps->data[i] ); }
+      //fprintf(stderr, "timestamps->length = %d, ifo_model->times->data[0] = %d, ifo_model->times->data[-1] = %d\n", timestamps->length, ifo_model->times->data[0].gpsSeconds, ifo_model->times->data[timestamps->length-1].gpsSeconds);
 
+      //REAL8Vector *timedata = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "timeDataFull" );
       REAL8TimeSeries *timedata = *(REAL8TimeSeries **)LALInferenceGetVariable( ifo_model->params, "timeDataFull" );
       XLALDestroyREAL8TimeSeries( ifo_model->timeData );
       ifo_model->timeData = timedata;
+      //ifo_model->timeData = XLALCreateREAL8TimeSeries( "", &ifo_model->times->data[0], 0., 1., &lalSecondUnit, timedata->length );
+      //memcpy(ifo_model->timeData->data->data, timedata->data, sizeof(REAL8)*timedata->length );
 
       ifo_model->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo_model->compTimeSignal, 0, ifo_model->times->length );
 
@@ -614,13 +634,19 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   LALInferenceClearVariables( loudestParams );
 
   /* setup output file */
-  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-  if( !ppt ){
-    fprintf(stderr, "Error... no output file specified!\n");
-    exit(0);
-  }
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outhdf" );
+  if ( !ppt ){ XLAL_ERROR_VOID(XLAL_EIO, "Error... no output file specified!\n"); }
 
   snrfile = XLALStringDuplicate( ppt->value );
+  /* strip the file extension */
+  CHAR *dotloc = strrchr(snrfile, '.');
+  CHAR *slashloc = strrchr(snrfile, '/');
+  if ( dotloc != NULL ){
+    if ( slashloc != NULL ){ /* check dot is after any filename seperator */
+      if( slashloc < dotloc ){ *dotloc = '\0'; }
+    }
+    else{ *dotloc = '\0'; }
+  }
   snrfile = XLALStringAppend( snrfile, "_SNR" );
 
   /* append to previous injection SNR file if it exists */
@@ -628,6 +654,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     fprintf(stderr, "Error... cannot open output SNR file!\n");
     exit(0);
   }
+  XLALFree( snrfile );
 
   /* get SNR of loudest point and print out to file */
   data = runState->data;

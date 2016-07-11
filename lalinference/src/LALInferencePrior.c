@@ -188,7 +188,7 @@ static REAL8 LALInferenceConstantCalibrationPrior(LALInferenceRunState *runState
   if (runState->commandLine == NULL || (!LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp") &&
       !LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")))
   {
-    return 1;
+    return logPrior;
   }
 
   ifo = runState->data;
@@ -526,12 +526,12 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
     logPrior+=log(*(REAL8 *)LALInferenceGetVariable(params,"flow"));
 
   if(LALInferenceCheckVariable(params,"logdistance"))
-    if (!(LALInferenceCheckVariable(priorParams,"uniform_distance")))
+    if (!(LALInferenceCheckVariable(priorParams,"uniform_distance") && LALInferenceGetINT4Variable(priorParams,"uniform_distance")))
       logPrior+=3.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
     else
       logPrior+=1.0* *(REAL8 *)LALInferenceGetVariable(params,"logdistance");
   else if(LALInferenceCheckVariable(params,"distance"))
-    if (!(LALInferenceCheckVariable(priorParams,"uniform_distance")))
+    if (!(LALInferenceCheckVariable(priorParams,"uniform_distance")&&LALInferenceGetINT4Variable(priorParams,"uniform_distance")))
       logPrior+=2.0*log(*(REAL8 *)LALInferenceGetVariable(params,"distance"));
   if(LALInferenceCheckVariable(params,"declination"))
   {
@@ -884,7 +884,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             dist = LALInferenceCubeToPowerPrior(2.0, Cube[i], min, max);
             double logdist = log(dist);
             LALInferenceSetVariable(params, "logdistance", &logdist);
-            if (!(LALInferenceCheckVariable(priorParams,"uniform_distance")))
+            if (!(LALInferenceCheckVariable(priorParams,"uniform_distance") && LALInferenceGetINT4Variable(priorParams,"uniform_distance")))
               logPrior += 2.0*logdist;
             i++;
         }
@@ -897,7 +897,7 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", (void *)&min, (void *)&max);
             dist = LALInferenceCubeToPowerPrior(2.0, Cube[i], min, max);
             LALInferenceSetVariable(params, "distance", &dist);
-            if (!(LALInferenceCheckVariable(priorParams,"uniform_distance")))
+            if (!(LALInferenceCheckVariable(priorParams,"uniform_distance") && LALInferenceGetINT4Variable(priorParams,"uniform_distance")))
               logPrior += 2.0*log(dist);
             i++;
         }

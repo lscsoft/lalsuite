@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Inspiral-merger-ringdown consistency test for binary black hole triggers</title>
+  <link rel="stylesheet" type="text/css" href="webpage.css">
+  <script src="jquery.js"></script>
+  <script type="text/javascript" src="webpage.js"></script>
+</head>
+<body>
+  <header>
+    <p class="main-heading">Inspiral-merger-ringdown consistency test for binary black hole triggers</p>
+    <nav>
+	<ul>
+	    <li><a href="#summary" class="nav-items">Summary</a></li>
+	    <li><a href="#posteriors-inspiral" class="nav-items">Inspiral analysis</a></li>
+      <li><a href="#posteriors-ringdown " class="nav-items">Ringdown analysis</a></li>
+      <li><a href="#posteriors-imr" class="nav-items">IMR analysis</a></li>
+	</ul>
+    </nav>
+  </header>
+  <section>
+  
+ <div class="report">
+  <h1 id = "summary" class="heading">Summary</h1>
+  <table style="width:70%">
+    <tr>
+      <td>
+        <img src="img/IMR_overlap_thumb.png" alt="(Mf,chif plot)" class="graph-image">
+        <img src="img/IMR_overlap.png" alt="(Mf,chif plot)" class="graph-image-big">
+      </td>
+      <td>
+        <img src="img/dMfdchif_thumb.png" alt="(delta_Mf, delta_chif plot)" class="graph-image">
+        <img src="img/dMfdchif.png" alt="(Mf,chif plot)" class="graph-image-big">
+      </td>
+      <td>
+        <img src="img/dMfbyMfdchifbychif_thumb.png" alt="(delta_Mf/Mf, delta_chif/chif plot)" class="graph-image">
+        <img src="img/dMfbyMfdchifbychif.png" alt="(Mf,chif plot)" class="graph-image-big">
+      </td>
+    </tr>
+    <tr>
+      <td class="posteriors-graph-caption graph-caption">The plot shows the 68% and 95% confidence regions on the posteriors on the mass (M<sub>f</sub>) and dimensionless spin (&chi;<sub>f</sub>) of the final black hole estimated from the inspiral and ringdown parts of the signal, as well as the full IMR signal.</td>
+      <td class="posteriors-graph-caption graph-caption">Posteriors on the parameters (&Delta;M<sub>f</sub>, &Delta;&chi;<sub>f</sub>) describing the difference in the estimates of the mass and the spin of the final black hole estimated from the inspiral and ringdown parts of the signal. The GR prediction is marked by the + sign. </td>
+      <td class="posteriors-graph-caption graph-caption">Posteriors on the fractional parameters (&Delta;M<sub>f</sub>/M<sub>f</sub>, &Delta;&chi;<sub>f</sub>/&chi;<sub>f</sub>). The GR prediction is marked by the + sign.</td>
+    </tr>
+  </table>
+  </div>
+
+  <h2 id="analysis" class="analysis">Analysis summary</h2>
+  <iframe src="summary_table.txt" width="50%" height="100">
+  </iframe>
+  <!--
+  <table class="analysis-table">
+    <tr>
+      <th class="analysis-heading">Parameter</th>
+      <th class="analysis-heading">Value</th> 
+    </tr>
+    <tr>
+      <td class="analysis-heading">Upper cutoff freq for the inspiral analysis</td>
+      <td class="analysis-heading">134 Hz</td> 
+    </tr>
+    <tr>
+      <td class="analysis-heading">Lower cutoff freq for the ringdown analysis</td>
+      <td class="analysis-heading">201 Hz</td> 
+    </tr>
+    <tr>
+      <td class="analysis-heading">Waveform</td>
+      <td class="analysis-heading"></td> 
+    </tr>
+  </table>
+  --!>
+  <div class="report">
+  <h1 id = "posteriors-inspiral" class="heading">Posteriors from the inspiral part</h1>
+  <table style="width:70%">
+    <tr>
+      <td>
+        <img src="img/inspiral_Mfchif_thumb.png" alt="(Mf,chif plot)" class="graph-image">
+        <img src="img/inspiral_Mfchif.png" alt="(Mf,chif plot)" class="graph-image-big">
+      </td>
+      <td>
+        <img src="img/inspiral_m1m2_thumb.png" alt="(m1,m2 plot)" class="graph-image">
+        <img src="img/inspiral_m1m2.png" alt="(m1,m2 plot)" class="graph-image-big">
+      </td>
+      <td>
+      <img src="img/inspiral_chi1chi2_thumb.png" alt="(M,eta plot)" class="graph-image">
+      <img src="img/inspiral_chi1chi2.png" alt="(M,eta plot)" class="graph-image-big">
+      </td> 
+    </tr>
+    <tr>
+      <td class="posteriors-graph-caption graph-caption">Posteriors on the mass and spin of the final black hole estimated from the inspiral part of the signal.</td>
+      <td class="posteriors-graph-caption graph-caption">Posteriors on the component masses estimated from the inspiral part of the signal.</td> 
+      <td class="posteriors-graph-caption graph-caption">Posteriors on the component spins estimated from the inspiral part of the signal.</td>
+    </tr>
+  </table>
+  <p><a class="link" href="lalinf_insp/posplots.html">Link to the LALInference results</a></p>
+  </div>
+  
+  <div class="report">
+  <h1 id = "posteriors-ringdown" class="heading">Posteriors from the ringdown part</h1>
+  <table style="width:70%">
+    <tr>
+      <td>
+        <img src="img/ringdown_Mfchif_thumb.png" alt="(Mf,chif plot)" class="graph-image">
+        <img src="img/ringdown_Mfchif.png" alt="(Mf,chif plot)" class="graph-image-big">
+      </td>
+      <td>
+        <img src="img/ringdown_m1m2_thumb.png" alt="(m1,m2 plot)" class="graph-image">
+         <img src="img/ringdown_m1m2.png" alt="(m1,m2 plot)" class="graph-image-big">
+      </td>
+      <td>
+        <img src="img/ringdown_chi1chi2_thumb.png" alt="(M,eta plot)" class="graph-image">
+        <img src="img/ringdown_chi1chi2.png" alt="(M,eta plot)" class="graph-image-big">
+      </td> 
+    </tr>
+    <tr>
+      <td class="posteriors-graph-caption graph-caption">Posteriors on the mass and spin of the final black hole estimated from the ringdown part of the signal.</td>
+      <td class="posteriors-graph-caption graph-caption">Posteriors on the component masses estimated from the ringdown part of the signal.</td> 
+      <td class="posteriors-graph-caption graph-caption">Posteriors on the component spins estimated from the ringdown part of the signal.</td>
+    </tr>
+  </table>
+  <p><a class="link" href="lalinf_ring/posplots.html">Link to the LALInference results</a></p>
+  </div>
+
+  <div class="report">
+  <h1 id = "posteriors-imr" class="heading">Posteriors from the full IMR</h1>
+  <table style="width:70%">
+    <tr>
+      <td>
+        <img src="img/imr_Mfchif_thumb.png" alt="(Mf,chif plot)" class="graph-image">
+        <img src="img/imr_Mfchif.png" alt="(Mf,chif plot)" class="graph-image-big">
+      </td>
+      <td>
+        <img src="img/imr_m1m2_thumb.png" alt="(m1,m2 plot)" class="graph-image">
+        <img src="img/imr_m1m2.png" alt="(m1,m2 plot)" class="graph-image-big">
+      </td>
+      <td>
+        <img src="img/imr_chi1chi2_thumb.png" alt="(M,eta plot)" class="graph-image">
+        <img src="img/imr_chi1chi2.png" alt="(M,eta plot)" class="graph-image-big">
+      </td> 
+    </tr>
+    <tr>
+      <td class="posteriors-graph-caption graph-caption">Posteriors on the mass and spin of the final black hole estimated from the full IMR signal.</td>
+      <td class="posteriors-graph-caption graph-caption">Posteriors on the component masses estimated from the full IMR signal.</td> 
+      <td class="posteriors-graph-caption graph-caption">Posteriors on the component spins estimated from the full IMR signal.</td>
+    </tr>
+  </table>
+  <p><a class="link" href="lalinf_imr/posplots.html">Link to the LALInference results</a></p>
+  </div>
+  <p>Created by <a class="link" href="imrtgr_imr_consistency_test.py">imrtgr_imr_consistency_test.py</a></p>
+  <iframe src="command.txt" width="75%" height="500">
+  </section>
+</body>
+</html>

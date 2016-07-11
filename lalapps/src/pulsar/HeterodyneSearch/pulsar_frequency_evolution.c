@@ -19,6 +19,7 @@
 
 /* Calculate the frequency evolution of a pulsar over time */
 
+#include "config.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>

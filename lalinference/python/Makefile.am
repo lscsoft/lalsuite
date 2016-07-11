@@ -3,8 +3,7 @@ MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
-SUBDIRS = lalinference \
-	tiger
+SUBDIRS = lalinference
 
 if HAVE_PYTHON
 
@@ -18,6 +17,7 @@ pybin_scripts = \
 	bayestar_plot_allsky \
 	bayestar_plot_found_injections \
 	bayestar_plot_pileup \
+	bayestar_plot_volume \
 	bayestar_prune_neighborhood_tmpltbank \
 	bayestar_realize_coincs \
 	bayestar_sample_model_psd \
@@ -28,6 +28,7 @@ pybin_scripts = \
 	rapidpe_compute_intrinsic_fisher \
 	rapidpe_compute_intrinsic_grid \
 	rapidpe_calculate_overlap \
+	imrtgr_imr_consistency_test \
 	$(END_OF_LIST)
 
 endif

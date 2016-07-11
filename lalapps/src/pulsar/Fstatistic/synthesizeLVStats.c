@@ -286,7 +286,7 @@ int main(int argc,char *argv[])
           XLAL_CHECK ( XLALParseLinePriors ( &oLGX[0], uvar.oLGX ) == XLAL_SUCCESS, XLAL_EFUNC );
           oLGX_p = &oLGX[0];
         }
-      XLAL_CHECK ( ( BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar.Fstar0, oLGX_p, useLogCorrection ) ) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( ( BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar.Fstar0, oLGX_p, useLogCorrection, 1 ) ) != NULL, XLAL_EFUNC ); // coherent F-stat: NSeg=1
     } // if computeBSGL
 
   /* ----- main MC loop over numDraws trials ---------- */

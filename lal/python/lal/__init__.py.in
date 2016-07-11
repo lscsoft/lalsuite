@@ -1,5 +1,5 @@
 # Import SWIG wrappings, if available
-@SWIG_BUILD_PYTHON_TRUE@from lal import *
+@SWIG_BUILD_PYTHON_TRUE@from .lal import *
 
 ## \addtogroup lal_python
 """This package provides Python wrappings and extensions to the @ref lal_general and @ref lal_math.

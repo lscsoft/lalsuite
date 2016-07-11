@@ -140,6 +140,7 @@ LALInference tools */
  * will be output.
  */
 
+#include "config.h"
 #include "pulsar_parameter_estimation_nested.h"
 #include "ppe_utils.h"
 #include "ppe_init.h"
@@ -184,7 +185,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
 
   /* Generate the lookup tables and read parameters from par file */
   setup_from_par_file( &runState );
-  
+
   /* set signal model/template */
   runState.threads[0]->model->templt = &get_pulsar_model;
 
@@ -204,11 +205,12 @@ INT4 main( INT4 argc, CHAR *argv[] ){
 
   /* get noise likelihood and add as variable to runState */
   logZnoise = noise_only_likelihood( &runState );
-  LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, LALINFERENCE_REAL8_t,
-                           LALINFERENCE_PARAM_FIXED );
+  LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
   /* Create live points array and fill initial parameters */
-  setup_live_points_array_wrapper( &runState );
+  if( !LALInferenceGetProcParamVal(param_table, "--compare-likelihoods") ){
+    setup_live_points_array_wrapper( &runState );
+  }
 
   /* output the live points sampled from the prior */
   outputPriorSamples( &runState );
@@ -219,14 +221,18 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Set up threads */
   initialise_threads( &runState, 1 );
 
-  /* Call the nested sampling algorithm */
-  runState.algorithm( &runState );
+  if( !LALInferenceGetProcParamVal(param_table, "--compare-likelihoods") ){
+    /* Call the nested sampling algorithm */
+    runState.algorithm( &runState );
+  }
+  else{
+    /* compare likelihoods from previous run */
+    compare_likelihoods( &runState );
+    return 0;
+  }
 
   /* get SNR of highest likelihood point */
   get_loudest_snr( &runState );
-
-  /* gzip the output samples is required appropriately */
-  gzip_output( &runState );
 
   /* close timing file */
   if ( LALInferenceCheckVariable( runState.algorithmParams, "timefile" ) ){

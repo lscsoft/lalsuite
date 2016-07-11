@@ -18,6 +18,7 @@
 import sys
 import doctest
 import lalinference.bayestar.sky_map
+import lalinference.bayestar.distance
 import lalinference.bayestar.filter
 import lalinference.fits
 import lalinference.bayestar.timing
@@ -27,6 +28,7 @@ total_failures = lalinference.bayestar.sky_map.test()
 
 print('Running Python unit tests.')
 modules = [
+    lalinference.bayestar.distance,
     lalinference.bayestar.filter,
     lalinference.fits,
     lalinference.bayestar.timing,

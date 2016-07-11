@@ -21,6 +21,7 @@
 /*                            HELPER FUNCTIONS                                */
 /******************************************************************************/
 
+#include "config.h"
 #include "ppe_utils.h"
 
 /** \brief Compute the noise variance for each data segment
@@ -187,6 +188,8 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chun
   /* DON'T BOTHER WITH THE MERGING AS IT WILL MAKE VERY LITTLE DIFFERENCE */
   /* merge_data( meddata, &chunkIndex ); */
 
+  XLALDestroyCOMPLEX16Vector( meddata ); /* free memory */
+
   /* if a maximum chunk length is defined then rechop up the data, to segment any chunks longer than this value */
   if ( chunkMax > chunkMin ) { rechop_data( &chunkIndex, chunkMax, chunkMin ); }
 
@@ -202,11 +205,9 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chun
   if ( outputchunks ){
     FILE *fpsegs = NULL;
 
-    CHAR *outfile = NULL;
-
     /* set detector name as prefix */
+    CHAR *outfile = NULL;
     outfile = XLALStringDuplicate( data->detector->frDetector.prefix );
-
     outfile = XLALStringAppend( outfile, "data_segment_list.txt" );
 
     /* check if file exists, i.e. given mutliple frequency harmonics, and if so open for appending */
@@ -224,6 +225,7 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chun
         return chunkLengths;
       }
     }
+    XLALFree( outfile );
 
     for ( j = 0; j < chunkIndex->length; j++ ) { fprintf(fpsegs, "%u\t%u\n", chunkIndex->data[j], chunkLengths->data[j]); }
 
@@ -232,6 +234,8 @@ UINT4Vector *chop_n_merge( LALInferenceIFOData *data, UINT4 chunkMin, UINT4 chun
 
     fclose( fpsegs );
   }
+
+  XLALDestroyUINT4Vector( chunkIndex );
 
   return chunkLengths;
 }
@@ -363,6 +367,9 @@ UINT4Vector *chop_data( gsl_vector_complex *data, UINT4 chunkMin ){
     /* combine new chunks */
     for (i = 0; i < cp1->length; i++) { chunkIndex->data[i] = cp1->data[i]; }
     for (i = 0; i < cp2->length; i++) { chunkIndex->data[i+cp1->length] = cp2->data[i] + changepoint; }
+
+    XLALDestroyUINT4Vector( cp1 );
+    XLALDestroyUINT4Vector( cp2 );
   }
   else{ chunkIndex->data[0] = length; }
 
@@ -491,14 +498,14 @@ void rechop_data( UINT4Vector **chunkIndex, UINT4 chunkMax, UINT4 chunkMin ){
   /* chop any chunks that are greater than chunkMax into chunks smaller than, or equal to chunkMax, and greater than chunkMin */
   for ( i = 0; i < length; i++ ){
     if ( i == 0 ) { startindex = 0; }
-    else { startindex = cip->data[i-1]+1; }
+    else { startindex = cip->data[i-1]; }
 
     chunklength = cip->data[i] - startindex;
 
     if ( chunklength > chunkMax ){
       UINT4 remain = chunklength % chunkMax;
 
-      /* cut segment into as many chunkMin chunks as possible */
+      /* cut segment into as many chunkMax chunks as possible */
       for ( j = 0; j < floor(chunklength / chunkMax); j++ ){
         newindex[count] = startindex + (j+1)*chunkMax;
         count++;
@@ -614,103 +621,6 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector **segments ){
 
 
 /**
- * \brief Gzip the nested sample files
- *
- * This function gzips the output nested sample files. It will also strip unneccesary parameters
- * from the header "_params.txt" file.
- *
- * \param runState [in] The analysis information structure
- */
-void gzip_output( LALInferenceRunState *runState ){
-  /* Single thread here */
-  LALInferenceThreadState *threadState = runState->threads[0];
-  /* Open original output output file */
-  CHAR *outfile = NULL;
-  ProcessParamsTable *ppt1 = LALInferenceGetProcParamVal( runState->commandLine, "--outfile" );
-
-  if( ppt1 ){
-    CHAR outfilepars[256] = "", outfileparstmp[256] = "";
-    FILE *fppars = NULL, *fpparstmp = NULL;
-    UINT4 nonfixed = 1;
-
-    outfile = ppt1->value;
-
-    /* open file for printing out list of parameter names - this should already exist */
-    sprintf(outfilepars, "%s_params.txt", outfile);
-    if( (fppars = fopen(outfilepars, "r")) == NULL ){
-      XLAL_ERROR_VOID(XLAL_EIO, "Error... cannot open parameter name output file %s.", outfilepars);
-    }
-    /* read in the parameter names and remove the "model" value */
-    sprintf(outfileparstmp, "%s_params.txt_tmp", outfile);
-    if( (fpparstmp = fopen(outfileparstmp, "w")) == NULL ){
-      XLAL_ERROR_VOID(XLAL_EIO, "Error... cannot open parameter name output file %s.", outfileparstmp);
-    }
-
-    if ( LALInferenceGetProcParamVal( runState->commandLine, "--output-all-params" ) ){ nonfixed = 0; }
-
-    CHAR v[128] = "";
-    while( fscanf(fppars, "%s", v) != EOF ){
-      /* if outputing only non-fixed values then only re-output names of those non-fixed things */
-      if ( nonfixed ){
-        if ( LALInferenceCheckVariable( threadState->currentParams, v ) ){
-          if ( LALInferenceGetVariableVaryType( threadState->currentParams, v ) != LALINFERENCE_PARAM_FIXED ){
-            fprintf(fpparstmp, "%s\t", v);
-          }
-        }
-      }
-      else{
-        /* re-output everything to a temporary file */
-        fprintf(fpparstmp, "%s\t", v);
-      }
-    }
-
-    fclose(fppars);
-    fclose(fpparstmp);
-
-    /* move the temporary file name to the standard outfile_param name */
-    rename( outfileparstmp, outfilepars );
-
-    /* gzip the output file if required */
-    if( LALInferenceGetProcParamVal( runState->commandLine, "--gzip" ) ){
-      if ( XLALGzipTextFile( outfile ) != XLAL_SUCCESS ){
-        XLAL_PRINT_ERROR( "Error... Could not gzip the output file!\n" );
-        XLAL_ERROR_VOID( XLAL_EIO );
-      }
-    }
-  }
-/* if we have XML enabled */
-#ifdef HAVE_LIBLALXML
-  ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal( runState->commandLine, "--outxml" );
-  if(!ppt2){
-    ppt2=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
-  }
-  CHAR *outVOTable = NULL;
-
-  if ( !ppt2 && !ppt1 ){
-    XLAL_PRINT_ERROR("Must specify either --outfile or --outXML\n");
-    XLAL_ERROR_VOID( XLAL_EIO );
-  }
-
-  if( ppt2 ){
-    outVOTable = ppt2->value;
-
-    /* gzip the output file if required */
-    if( LALInferenceGetProcParamVal( runState->commandLine, "--gzip" ) ){
-      if ( XLALGzipTextFile( outVOTable ) != XLAL_SUCCESS ){
-        XLAL_ERROR_VOID( XLAL_EIO, "Error... Could not gzip the output file!" );
-      }
-    }
-  }
-
-#else
-  if ( !ppt1 ){ XLAL_ERROR_VOID( XLAL_EIO, "Error... --outfile not defined!" ); }
-#endif
-
-  return;
-}
-
-
-/**
  * \brief Counts the number of comma separated values in a string
  *
  * This function counts the number of comma separated values in a given input string.
@@ -733,6 +643,8 @@ INT4 count_csv( CHAR *csvline ){
 
     count++;
   }
+
+  XLALFree( inputstr );
 
   return count+1;
 }

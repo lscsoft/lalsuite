@@ -67,7 +67,7 @@ static UINT4 UNALIGNED_LOAD32(const char *p) {
   return result;
 }
 
-#ifdef _MSC_VER
+#if defined(_WIN32) && !defined(__CYGWIN__)
 
 #include <stdlib.h>
 #define bswap_32(x) _byteswap_ulong(x)
