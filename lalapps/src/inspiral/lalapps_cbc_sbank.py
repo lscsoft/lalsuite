@@ -183,7 +183,7 @@ def parse_command_line():
     #
     parser.add_option("--seed", help="Set the seed for the random number generator used by SBank for waveform parameter (masss, spins, ...) generation.", metavar="INT", default=1729, type="int")
     parser.add_option("--bank-seed", metavar="FILE[:APPROX]", help="Add templates from FILE to the initial bank. If APPROX is also specified, the templates from this seed bank will be computed with this approximant instead of the one specified by --approximant. Can be specified multiple times. Only the additional templates will be outputted.", action="append", default=[])
-    parser.add_option("--trial-waveforms", metavar="FILE[:APPROX]", help="If supplied, instead of choosing points randomly, choose trial points from within the supplied XML file. Generation will terminate if the end of the file is reached unless any other termination condition is met first.")
+    parser.add_option("--trial-waveforms", metavar="FILE", help="If supplied, instead of choosing points randomly, choose trial points from the sngl_inspiral table within the supplied XML file. Generation will terminate if the end of the file is reached unless any other termination condition is met first.")
 
     #
     # noise model options
@@ -455,12 +455,26 @@ ks = deque(10*[1], maxlen=10)
 k = 0 # k is nprop per iteration
 nprop = 1  # count total number of proposed templates
 status_format = "\t".join("%s: %s" % name_format for name_format in zip(tmplt_class.param_names, tmplt_class.param_formats))
+
+#
+# main working loop
+#
 for tmplt in proposal:
-    if not (((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and\
+
+    #
+    # check if stopping criterion has been reached
+    #
+    if not (((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and \
             (len(bank) < opts.templates_max)):
         break
-    k += 1
-    nprop += 1
+
+    # accounting for number of proposals
+    k += 1 # since last acceptance
+    nprop += 1 # total throughout lifetime of process
+
+    #
+    # check if proposal is already covered by existing templates
+    #
     match, matcher = bank.covers(tmplt, opts.match_min)
     if match < opts.match_min:
         bank.insort(tmplt)
