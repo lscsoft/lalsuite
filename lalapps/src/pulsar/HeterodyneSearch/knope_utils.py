@@ -1227,7 +1227,11 @@ class knopeDAG(pipeline.CondorDAG):
 
         erritems = [] #  list of values with errors
 
+        ignore_pars = ["DM", "START", "FINISH", "NTOA", "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS", "ELAT", "ELONG"] # keys to ignore from par file
+
         for paritem in pppu.float_keys:
+          if paritem in ignore_pars:
+            continue
           if psr['%s_ERR' % paritem] != None and psr['%s_FIT' % paritem] != None: # get values with a given error (suffixed with _ERR)
             if psr['%s_FIT' % paritem] == 1:
               # set Gaussian prior with mean being the parameter value and sigma being the error
