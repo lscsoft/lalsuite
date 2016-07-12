@@ -22,11 +22,7 @@ from operator import attrgetter
 
 import numpy as np
 
-try:
-    from glue.iterutils import inorder, uniq
-except ImportError:
-    raise ImportError("The sbank subpackage of lalinspiral depends on the glue and pylal packages.")
-
+from glue.iterutils import inorder, uniq
 from lal import PI, MTSUN_SI
 from lalinspiral import CreateSBankWorkspaceCache
 from lalinspiral.sbank.psds import get_neighborhood_ASD, get_neighborhood_PSD, get_PSD, get_neighborhood_df_fmax

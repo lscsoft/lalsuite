@@ -16,20 +16,15 @@
 
 from __future__ import division
 
-# standard
 from math import sqrt
 
 import numpy
 from numpy.random.mtrand import uniform
 from scipy.optimize import fsolve
 
-# local
-try:
-    from glue.iterutils import choices
-except ImportError:
-    raise ImportError("The sbank subpackage of lalinspiral depends on the glue and pylal packages.")
-
+from glue.iterutils import choices
 from lal import PI, MTSUN_SI
+
 #
 # functions for converting between m1-m2 and tau0-tau3 coords
 #
@@ -374,7 +369,7 @@ def urand_tau0tau3_generator(flow, **constraints):
                 qmin < mass1/mass2 < qmax:
             yield mass1, mass2
 
-def nonspin_param_generator(flow, **constraints):
+def nonspin_param_generator(flow, tmplt_class, bank, **constraints):
     """
     Wrapper for urand_tau0tau3_generator() to remove spin options
     for EOBNRv2 waveforms.
@@ -384,9 +379,10 @@ def nonspin_param_generator(flow, **constraints):
     if constraints.has_key('spin2'):
         constraints.pop('spin2')
 
-    return urand_tau0tau3_generator(flow, **constraints)
+    for mass1, mass2 in urand_tau0tau3_generator(flow, **constraints):
+        yield tmplt_class(mass1, mass2, bank=bank)
 
-def IMRPhenomB_param_generator(flow, **kwargs):
+def IMRPhenomB_param_generator(flow, tmplt_class, bank, **kwargs):
     """
     Specify the min and max mass of the bigger component, then
     the min and max mass of the total mass. This function includes
@@ -422,10 +418,10 @@ def IMRPhenomB_param_generator(flow, **kwargs):
             spin2 = uniform(*chi_low_bounds)
         else:
             raise ValueError("mass ratio out of range")
-        yield mass1, mass2, spin1, spin2
+        yield tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
 
 
-def IMRPhenomC_param_generator(flow, **kwargs):
+def IMRPhenomC_param_generator(flow, tmplt_class, bank, **kwargs):
     """
     Generate random parameters for the IMRPhenomC waveform model.
     Specify the min and max mass of the bigger component, then the min
@@ -453,10 +449,10 @@ def IMRPhenomC_param_generator(flow, **kwargs):
         else:
             raise ValueError("mass ratio out of range")
 
-        yield mass1, mass2, spin1, spin2
+        yield tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
 
 
-def aligned_spin_param_generator(flow, **kwargs):
+def aligned_spin_param_generator(flow, tmplt_class, bank, **kwargs):
     """
     Specify the min and max mass of the bigger component, the min and
     max mass of the total mass and the min and max values for the
@@ -493,9 +489,9 @@ def aligned_spin_param_generator(flow, **kwargs):
             spin2 = uniform(s2min, s2max)
             spin1 = (chis*mtot - mass2*spin2)/mass1
 
-            yield mass1, mass2, spin1, spin2
+            yield tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
 
-def double_spin_precessing_param_generator(flow, **kwargs):
+def double_spin_precessing_param_generator(flow, tmplt_class, bank, **kwargs):
     """
     Currently a stub to test precessing template generation.
     """
@@ -521,10 +517,10 @@ def double_spin_precessing_param_generator(flow, **kwargs):
         phi = uniform(0, 2*numpy.pi)
         psi = uniform(0, 2*numpy.pi)
         iota = uniform(0, numpy.pi)
-        yield mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi
+        yield tmplt_class(mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y,
+                          spin2z, theta, phi, iota, psi, bank=bank)
 
-
-def single_spin_precessing_param_generator(flow, **kwargs):
+def single_spin_precessing_param_generator(flow, tmplt_class, bank, **kwargs):
     """
     Currently a stub to test precessing template generation.
     """
@@ -545,10 +541,11 @@ def single_spin_precessing_param_generator(flow, **kwargs):
         phi = uniform(0, 2*numpy.pi)
         psi = uniform(0, 2*numpy.pi)
         iota = uniform(0, numpy.pi)
-        yield mass1, mass2, spin1x, spin1y, spin1z, theta, phi, iota, psi
+        yield tmplt_class(mass1, mass2, spin1x, spin1y, spin1z, theta, phi,
+                          iota, psi, bank=bank)
 
 
-def SpinTaylorT4_param_generator(flow, **kwargs):
+def SpinTaylorT4_param_generator(flow, tmplt_class, bank, **kwargs):
     # FIXME implement!
     raise NotImplementedError
 

@@ -17,7 +17,6 @@
 from time import strftime
 from operator import attrgetter
 from optparse import OptionParser
-from pylal import spawaveform
 from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw import ligolw
