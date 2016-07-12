@@ -419,8 +419,9 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
   add_variable_parameter( pars, ini, "PMDEC", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "POSEPOCH", LALINFERENCE_PARAM_FIXED );
 
-  /* source distance */
+  /* source distance and parallax */
   add_variable_parameter( pars, ini, "DIST", LALINFERENCE_PARAM_FIXED );
+  add_variable_parameter( pars, ini, "PX", LALINFERENCE_PARAM_FIXED );
 
   /* only add binary system parameters if required */
   if ( PulsarCheckParam( pars, "BINARY" ) ){

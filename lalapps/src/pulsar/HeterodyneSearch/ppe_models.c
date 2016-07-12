@@ -167,6 +167,7 @@ void get_pulsar_model( LALInferenceModel *model ){
   add_pulsar_parameter( model->params, pars, "PMRA" );
   add_pulsar_parameter( model->params, pars, "DEC" );
   add_pulsar_parameter( model->params, pars, "PMDEC" );
+  add_pulsar_parameter( model->params, pars, "PX" );
 
   /* check the number of frequency and frequency derivative parameters */
   if ( LALInferenceCheckVariable( model->params, "FREQNUM" ) ){
@@ -662,7 +663,6 @@ REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
   REAL8 pepoch = PulsarGetREAL8ParamOrZero( pars, "PEPOCH" );
   REAL8 posepoch = PulsarGetREAL8ParamOrZero( pars, "POSEPOCH" );
   REAL8 px = PulsarGetREAL8ParamOrZero( pars, "PX" );     /* parallax */
-  REAL8 dist = PulsarGetREAL8ParamOrZero( pars, "DIST" ); /* distance */
 
    /* set the position and frequency epochs if not already set */
   if( pepoch == 0. && posepoch != 0.) { pepoch = posepoch; }
@@ -673,9 +673,8 @@ REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
   /* allocate memory for times delays */
   dts = XLALCreateREAL8Vector( length );
 
-  /* set 1/distance if parallax or distance value is given (1/sec) */
-  if( px != 0. ) { bary.dInv = px*1e-3*LAL_C_SI/LAL_PC_SI; }
-  else if( dist != 0. ) { bary.dInv = LAL_C_SI/(dist*1e3*LAL_PC_SI); }
+  /* set 1/distance if parallax value is given (1/sec) */
+  if( px != 0. ) { bary.dInv = px*(LAL_C_SI/LAL_AU_SI); }
   else { bary.dInv = 0.; }
 
   /* make sure ra and dec are wrapped within 0--2pi and -pi.2--pi/2 respectively */

@@ -153,9 +153,9 @@ extern "C" {
 
 /**
  * The total number of sky position parameters that can define a signal e.g.
- * right ascension, declination, proper motion and the positional epoch.
+ * right ascension, declination, proper motion, parallax and the positional epoch.
  */
-#define NUMSKYPARS 5
+#define NUMSKYPARS 6
 
 /**
  * The total number of binary system parameters that can define a signal e.g.
@@ -357,7 +357,7 @@ static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "F0", "F1", "F2", "F3",
  * are recognised within the code.
  */
 static const CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "RA", "PMRA", "DEC",
-"PMDEC", "POSEPOCH" };
+"PMDEC", "POSEPOCH", "PX" };
 
 /**
  * A list of the binary system parameters. The names given here are those that
