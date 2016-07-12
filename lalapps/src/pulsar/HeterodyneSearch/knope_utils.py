@@ -2406,6 +2406,34 @@ class knopeDAG(pipeline.CondorDAG):
     each segment.
     """
 
+    # check if segment file(s) is given
+    segfile = self.get_config_option('segmentfind', 'seg_files', cftype='string', allownone=True) # check if file is given
+    if segfile is None: # try getting dictionary
+      segfiles = self.get_config_option('segmentfind', 'seg_files', cftype='dict', allownone=True)
+      if segfiles is not None:
+        if ifo not in segfiles:
+          print("Error... No segment file given for '%s'" % ifo)
+          self.error_code = -1
+          return
+        else:
+          segfile = segfiles[ifo]
+
+    if segfile is not None:
+      # check segment file exists
+      if not os.path.isfile(segfile):
+        print("Error... segment file '%s' does not exist." % segfile)
+        self.error_code = -1
+        return
+      else:
+        # copy segment file to the 'outfile' location
+        try:
+          shutil.copyfile(segfile, outfile)
+        except:
+          print("Error... could not copy segment file to location of '%s'." % outfile)
+          self.error_code = -1
+        return # exit function
+
+    # otherwise try and get the segment list
     # get server
     if self.config.has_option('segmentfind', 'server'):
       server = self.config.get('segmentfind', 'server')
