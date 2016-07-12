@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015  Leo Singer
+# Copyright (C) 2015-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -17,39 +17,24 @@
 #
 import sys
 import doctest
-import numpy as np
 import lalinference.bayestar.sky_map
 import lalinference.bayestar.distance
 import lalinference.bayestar.filter
 import lalinference.fits
 import lalinference.bayestar.timing
 
+print('Running C unit tests.')
+total_failures = lalinference.bayestar.sky_map.test()
+
+print('Running Python unit tests.')
 modules = [
     lalinference.bayestar.distance,
     lalinference.bayestar.filter,
     lalinference.fits,
     lalinference.bayestar.timing,
 ]
-
-
-print('Running C unit tests.')
-total_failures = lalinference.bayestar.sky_map.test()
-
-print('Running Python unit tests.')
-
-finder = doctest.DocTestFinder()
-runner = doctest.DocTestRunner()
-tests = []
-
 for module in modules:
-    # Find doctests in the module
-    tests += finder.find(module)
-    # Find doctests in Numpy external C ufuncs
-    for ufunc in set(_ for _ in module.__dict__.values() if isinstance(_, np.ufunc)):
-        tests += finder.find(ufunc, module=module)
-
-for test in tests:
-    failures, tests = runner.run(test)
+    failures, tests = doctest.testmod(module)
     total_failures += failures
 
 if total_failures > 0:
