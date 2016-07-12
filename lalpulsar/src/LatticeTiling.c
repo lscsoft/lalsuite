@@ -85,6 +85,7 @@ struct tagLatticeTilingIterator {
   const LatticeTiling *tiling;          ///< Lattice tiling
   size_t itr_ndim;                      ///< Number of parameter-space dimensions to iterate over
   size_t tiled_itr_ndim;                ///< Number of tiled parameter-space dimensions to iterate over
+  bool padding;                         ///< Whether padding is added to parameter space bounds
   bool alternating;                     ///< If true, alternate iterator direction after every crossing
   int state;                            ///< Iterator state: 0=initialised, 1=in progress, 2=finished
   gsl_vector *phys_point;               ///< Current lattice point in physical coordinates
@@ -1440,6 +1441,7 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
 
   // Set fields
   itr->itr_ndim = itr_ndim;
+  itr->padding = true;
   itr->alternating = false;
   itr->state = 0;
   itr->index = itr->count = 0;
@@ -1487,6 +1489,23 @@ void XLALDestroyLatticeTilingIterator(
     XLALFree( itr->direction );
     XLALFree( itr );
   }
+}
+
+int XLALSetLatticeTilingPaddedIterator(
+  LatticeTilingIterator *itr,
+  const bool padding
+  )
+{
+
+  // Check input
+  XLAL_CHECK( itr != NULL, XLAL_EFAULT );
+  XLAL_CHECK( itr->state == 0, XLAL_EINVAL );
+
+  // Set whether padding is added to parameter space bounds
+  itr->padding = padding;
+
+  return XLAL_SUCCESS;
+
 }
 
 int XLALSetLatticeTilingAlternatingIterator(
@@ -1629,7 +1648,7 @@ int XLALNextLatticeTilingPoint(
 
     // Get the physical bounds on the current dimension, with padding
     double phys_lower = 0, phys_upper = 0;
-    LT_GetBounds( itr->tiling, true, i, itr->phys_point, &phys_lower, &phys_upper );
+    LT_GetBounds( itr->tiling, itr->padding, i, itr->phys_point, &phys_lower, &phys_upper );
 
     // If not tiled, set current physical point to non-tiled parameter-space bound
     if ( !itr->tiling->bounds[i].is_tiled ) {

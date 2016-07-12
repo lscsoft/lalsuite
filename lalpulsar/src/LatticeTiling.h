@@ -218,6 +218,14 @@ void XLALDestroyLatticeTilingIterator(
   );
 
 ///
+/// Set whether padding is added to parameter space bounds.
+///
+int XLALSetLatticeTilingPaddedIterator(
+  LatticeTilingIterator *itr,           ///< [in] Lattice tiling iterator
+  const bool alternating                ///< [in] Wwhether padding is added to parameter space bounds
+  );
+
+///
 /// Set whether the lattice tiling iterator should alternate its iteration direction (i.e. lower to
 /// upper bound, then upper to lower bound, and so on) after every crossing of each dimension.
 ///
