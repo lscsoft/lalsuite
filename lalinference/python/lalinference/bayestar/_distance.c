@@ -86,11 +86,6 @@ static void ppf_loop(
 }
 
 
-static const PyUFuncGenericFunction pdf_loops[] = {pdf_loop};
-static const PyUFuncGenericFunction cdf_loops[] = {cdf_loop};
-static const PyUFuncGenericFunction ppf_loops[] = {ppf_loop};
-
-
 static void moments_to_parameters_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
@@ -133,15 +128,6 @@ static void parameters_to_moments_loop(
 }
 
 
-static const PyUFuncGenericFunction moments_to_parameters_loops[] = {
-    moments_to_parameters_loop};
-static const PyUFuncGenericFunction parameters_to_moments_loops[] = {
-    parameters_to_moments_loop};
-static const char distance_ufunc_types[] = {
-    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
-static const void *distance_ufunc_data[] = {NULL};
-
-
 static void volume_render_kernel_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
@@ -176,13 +162,6 @@ static void volume_render_kernel_loop(
 }
 
 
-static const PyUFuncGenericFunction volume_render_kernel_loops[] = {
-    volume_render_kernel_loop};
-static const char volume_render_kernel_ufunc_types[] = {
-    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_INT, NPY_INT, NPY_DOUBLE, NPY_BOOL, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
-static const void *volume_render_kernel_ufunc_data[] = {NULL};
-
-
 static void marginal_distribution_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
@@ -209,12 +188,23 @@ static void marginal_distribution_loop(
 }
 
 
-static const PyUFuncGenericFunction marginal_distribution_loops[] = {
-    marginal_distribution_loop};
-static const char marginal_distribution_ufunc_types[] = {
-    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
-static const void *marginal_distribution_ufunc_data[] = {NULL};
+static const PyUFuncGenericFunction
+    pdf_loops[] = {pdf_loop},
+    cdf_loops[] = {cdf_loop},
+    ppf_loops[] = {ppf_loop},
+    moments_to_parameters_loops[] = {moments_to_parameters_loop},
+    parameters_to_moments_loops[] = {parameters_to_moments_loop},
+    volume_render_kernel_loops[] = {volume_render_kernel_loop},
+    marginal_distribution_loops[] = {marginal_distribution_loop};
 
+static const char volume_render_kernel_ufunc_types[] = {
+    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_INT, NPY_INT, NPY_DOUBLE, NPY_BOOL,
+    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
+
+static const char double_ufunc_types[] = {
+    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
+
+static const void *no_ufunc_data[] = {NULL};
 
 static const char modulename[] = "_distance";
 
@@ -247,45 +237,47 @@ PyMODINIT_FUNC PyInit__distance(void)
 
     PyModule_AddObject(
         module, "pdf", PyUFunc_FromFuncAndData(
-            pdf_loops, distance_ufunc_data,
-            distance_ufunc_types, 1, 4, 1, PyUFunc_None,
+            pdf_loops, no_ufunc_data,
+            double_ufunc_types, 1, 4, 1, PyUFunc_None,
             "pdf", NULL, 0));
 
     PyModule_AddObject(
         module, "cdf", PyUFunc_FromFuncAndData(
-            cdf_loops, distance_ufunc_data,
-            distance_ufunc_types, 1, 4, 1, PyUFunc_None,
+            cdf_loops, no_ufunc_data,
+            double_ufunc_types, 1, 4, 1, PyUFunc_None,
             "cdf", NULL, 0));
 
     PyModule_AddObject(
         module, "ppf", PyUFunc_FromFuncAndData(
-            ppf_loops, distance_ufunc_data,
-            distance_ufunc_types, 1, 4, 1, PyUFunc_None,
+            ppf_loops, no_ufunc_data,
+            double_ufunc_types, 1, 4, 1, PyUFunc_None,
             "ppf", NULL, 0));
 
     PyModule_AddObject(
         module, "moments_to_parameters", PyUFunc_FromFuncAndData(
-            moments_to_parameters_loops, distance_ufunc_data,
-            distance_ufunc_types, 1, 2, 3, PyUFunc_None,
+            moments_to_parameters_loops, no_ufunc_data,
+            double_ufunc_types, 1, 2, 3, PyUFunc_None,
             "moments_to_parameters", NULL, 0));
 
     PyModule_AddObject(
         module, "parameters_to_moments", PyUFunc_FromFuncAndData(
-            parameters_to_moments_loops, distance_ufunc_data,
-            distance_ufunc_types, 1, 2, 3, PyUFunc_None,
+            parameters_to_moments_loops, no_ufunc_data,
+            double_ufunc_types, 1, 2, 3, PyUFunc_None,
             "parameters_to_moments", NULL, 0));
 
     PyModule_AddObject(
         module, "volume_render_kernel", PyUFunc_FromFuncAndDataAndSignature(
-            volume_render_kernel_loops, volume_render_kernel_ufunc_data,
+            volume_render_kernel_loops, no_ufunc_data,
             volume_render_kernel_ufunc_types, 1, 11, 1, PyUFunc_None,
-            "volume_render_kernel", NULL, 0, "(),(),(),(),(),(i,i),(),(n),(n),(n),(n)->()"));
+            "volume_render_kernel", NULL, 0,
+            "(),(),(),(),(),(i,i),(),(n),(n),(n),(n)->()"));
 
     PyModule_AddObject(
         module, "marginal_distribution", PyUFunc_FromFuncAndDataAndSignature(
-            marginal_distribution_loops, marginal_distribution_ufunc_data,
-            marginal_distribution_ufunc_types, 1, 5, 1, PyUFunc_None,
-            "marginal_distribution", NULL, 0, "(),(n),(n),(n),(n)->()"));
+            marginal_distribution_loops, no_ufunc_data,
+            double_ufunc_types, 1, 5, 1, PyUFunc_None,
+            "marginal_distribution", NULL, 0,
+            "(),(n),(n),(n),(n)->()"));
 
 #if PY_MAJOR_VERSION >= 3
     return module;
