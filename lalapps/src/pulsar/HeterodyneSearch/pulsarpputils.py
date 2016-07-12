@@ -232,9 +232,9 @@ def pferrs(porf, porferr, pdorfd=None, pdorfderr=None):
 
 # class to read in a pulsar par file - this is heavily based on the function
 # in parfile.py in PRESTO
-float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9",
+float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10",
               "PEPOCH", "POSEPOCH", "DM", "START", "FINISH", "NTOA",
-              "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS", "DM",
+              "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS",
               "A1", "XDOT", "E", "ECC", "EDOT", "T0", "PB", "PBDOT", "OM",
               "OMDOT", "EPS1", "EPS2", "EPS1DOT", "EPS2DOT", "TASC", "LAMBDA",
               "BETA", "RA_RAD", "DEC_RAD", "GAMMA", "SINI", "M2", "MTOT",
