@@ -36,8 +36,60 @@ import scipy.special
 from ._distance import *
 
 
+def _add_newdoc_ufunc(func, doc):
+    # The function `np.lib.add_newdoc_ufunc` can only change a ufunc's
+    # docstring if it is `NULL`. This workaround avoids an exception
+    # when the user tries to `reload()` this module.
+    if func.__doc__ is None:
+        np.lib.add_newdoc_ufunc(func, doc)
+
+
+_add_newdoc_ufunc(moments_to_parameters, """\
+Convert ansatz moments to parameters.
+This function is the inverse of `parameters_to_moments`.
+
+Parameters
+----------
+distmean : `numpy.ndarray`
+    Conditional mean of distance (Mpc)
+diststd : `numpy.ndarray`
+    Conditional standard deviation of distance (Mpc)
+
+Returns
+-------
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+""")
+
+
+_add_newdoc_ufunc(parameters_to_moments, """\
+Convert ansatz parameters to moments.
+This function is the inverse of `moments_to_parameters`.
+
+Parameters
+----------
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+
+Returns
+-------
+distmean : `numpy.ndarray`
+    Conditional mean of distance (Mpc)
+diststd : `numpy.ndarray`
+    Conditional standard deviation of distance (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+""")
+
+
 conditional_distance_pdf = pdf
-np.lib.add_newdoc_ufunc(pdf, """\
+_add_newdoc_ufunc(pdf, """\
 Conditional distance probability density function (ansatz).
 
 Parameters
@@ -59,7 +111,7 @@ pdf : `numpy.ndarray`
 
 
 conditional_distance_cdf = cdf
-np.lib.add_newdoc_ufunc(cdf, """\
+_add_newdoc_ufunc(cdf, """\
 Cumulative conditional distribution of distance (ansatz).
 
 Parameters
@@ -94,7 +146,7 @@ Test against numerical integral of pdf:
 
 
 conditional_distance_ppf = ppf
-np.lib.add_newdoc_ufunc(ppf, """\
+_add_newdoc_ufunc(ppf, """\
 Point percent function (inverse cdf) of distribution of distance (ansatz).
 
 Parameters
