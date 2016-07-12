@@ -389,7 +389,9 @@ def IMRPhenomB_param_generator(flow, tmplt_class, bank, **kwargs):
     restrictions on q and chi based on IMRPhenomB's range of believability.
     Ref: http://arxiv.org/pdf/0908.2090
 
-    @param flow UNDOCUMENTED
+    @param flow: Lower frequency at which to generate waveform
+    @param tmplt_class: Template generation class for this waveform
+    @param bank: sbank bank object
     @param kwargs: must specify a component_mass range; mtotal, q, chi, and tau0
     ranges are optional. If no chi is specified, the IMRPhenomB limits will be used.
     See urand_tau0tau3_generator for more usage help.
@@ -430,6 +432,8 @@ def IMRPhenomC_param_generator(flow, tmplt_class, bank, **kwargs):
     believability, namely q <=20 and |chi| <= 0.9.
 
     @param flow: low frequency cutoff
+    @param tmplt_class: Template generation class for this waveform
+    @param bank: sbank bank object
     @param kwargs: constraints on waveform parameters. See urand_tau0tau3_generator for more usage help. If no spin limits are specified, the IMRPhenomC limits will be used.
     """
 
