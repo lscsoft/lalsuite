@@ -277,8 +277,10 @@ def cartesian_kde_to_moments(n, datasets, inverse_covariances, weights):
     >>> n /= np.sqrt(np.sum(np.square(n)))
     >>>
     >>> # Analytically evaluate conditional mean and std. dev. in direction n
+    >>> datasets = [_.dataset for _ in kdes]
+    >>> inverse_covariances = [_.inv_cov for _ in kdes]
     >>> result_prob, result_mean, result_std = cartesian_kde_to_moments(
-    ...     n, [_.dataset for _ in kdes], [_.inv_cov for _ in kdes], weights)
+    ...     n, datasets, inverse_covariances, weights)
     >>>
     >>> # Numerically integrate conditional distance moments
     >>> def rkbar(k):
@@ -303,6 +305,16 @@ def cartesian_kde_to_moments(n, datasets, inverse_covariances, weights):
     >>> np.testing.assert_almost_equal(result_prob, expected_prob)
     >>> np.testing.assert_almost_equal(result_mean, expected_mean)
     >>> np.testing.assert_almost_equal(result_std, expected_std)
+    >>>
+    >>> # Check that KDE is normalized over unit sphere.
+    >>> nside = 32
+    >>> npix = hp.nside2npix(nside)
+    >>> prob, _, _ = np.transpose([cartesian_kde_to_moments(
+    ...     np.asarray(hp.pix2vec(nside, ipix)),
+    ...     datasets, inverse_covariances, weights)
+    ...     for ipix in range(npix)])
+    >>> result_integral = prob.sum() * hp.nside2pixarea(nside)
+    >>> np.testing.assert_almost_equal(result_integral, 1.0, decimal=4)
     """
     # Initialize moments of conditional KDE.
     r0bar = 0
