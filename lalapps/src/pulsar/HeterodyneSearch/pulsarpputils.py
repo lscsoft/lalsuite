@@ -2376,10 +2376,10 @@ def pulsar_nest_to_posterior(postfile):
   elif fe == '.gz': # gzipped file
     import gzip
     peparser = bppu.PEOutputParser('common')
-    nsResultsObject = peparser.parse(gzip.open(nestfile, 'r'))
+    nsResultsObject = peparser.parse(gzip.open(postfile, 'r'))
   else: # assume an ascii text file
     peparser = bppu.PEOutputParser('common')
-    nsResultsObject = peparser.parse(open(nestfile, 'r'))
+    nsResultsObject = peparser.parse(open(postfile, 'r'))
 
   pos = bppu.Posterior( nsResultsObject, SimInspiralTableEntry=None, votfile=None )
 
@@ -2442,7 +2442,7 @@ def pulsar_nest_to_posterior(postfile):
     noiseev = a.attrs['log_noise_evidence']
     hdf.close()
   else:
-    B = np.loadtxt(nestfile.replace('.gz', '')+'_B.txt')
+    B = np.loadtxt(postfile.replace('.gz', '')+'_B.txt')
     sigev = B[1]
     noiseev = B[2]
 
