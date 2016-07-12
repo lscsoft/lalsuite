@@ -1440,7 +1440,9 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
 
   // Set fields
   itr->itr_ndim = itr_ndim;
-  itr->count = 0;
+  itr->alternating = false;
+  itr->state = 0;
+  itr->index = itr->count = 0;
 
   // Determine the maximum tiled dimension to iterate over
   itr->tiled_itr_ndim = 0;
