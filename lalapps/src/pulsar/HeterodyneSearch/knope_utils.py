@@ -775,8 +775,11 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_nest2pos_nodes = {} # condor nodes for the lalapps_nest2pos jobs (needed to use as parents for results processing jobs)
     self.pe_nest2pos_background_nodes = {} # nodes for background analysis
 
-    # see whether to run just as independent detectors, or independental AND coherently over all detectors
-    self.pe_incoherent_only = self.get_config_option('analysis', 'incoherent_only', cftype='boolean', default=False)
+    # see whether to run just as independent detectors, or independently AND coherently over all detectors
+    if len(self.ifos) == 1:
+      self.pe_incoherent_only = True # set to True for one detector
+    else:
+      self.pe_incoherent_only = self.get_config_option('analysis', 'incoherent_only', cftype='boolean', default=False)
 
     # see whether to run only the coherent multidetector analysis analysis
     self.pe_coherent_only = False
