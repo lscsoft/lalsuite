@@ -1000,6 +1000,9 @@ void setup_from_par_file( LALInferenceRunState *runState )
       bdts = get_bsb_delay( pulsar, ifo_model->times, dts, ifo_model->ephem );
       if ( bdts != NULL ){ LALInferenceAddVariable( ifo_model->params, "bsb_delays", &bdts, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED ); }
 
+      /* set the epoch of the data (for updating the frequencies in the phase model) */
+      REAL8 dataepoch = XLALGPSGetREAL8( &ifo_model->times->data[0] );
+      LALInferenceAddVariable( ifo_model->params, "data_epoch", &dataepoch, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
       phase_vector = get_phase_model( pulsar, ifo_model, freqFactors->data[j] );
 
       ifo_model->timeData = NULL;

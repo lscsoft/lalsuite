@@ -20,7 +20,7 @@ override_dh_auto_install:
 	    --disable-gcc-flags && \
 	(grep . /dev/null `find . -name config.log`; true) && \
 	$(MAKE) V=1 && \
-	$(MAKE) V=1 check && \
+	$(if $(findstring nocheck,$(DEB_BUILD_OPTIONS)),true,$(MAKE) V=1 check) && \
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp && \
 	true; \
 	(grep . /dev/null `find $(CURDIR) -name test-suite.log`; true) ; \
