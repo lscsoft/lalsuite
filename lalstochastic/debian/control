@@ -46,6 +46,14 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalmetaio-python (>= 1.2.8~)
 Description: Python bindings for LALStochastic
 
+Package: lalstochastic-python3
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
+  lalstochastic (= ${binary:Version}),
+  lal-python3 (>= 6.16.1~),
+  lalmetaio-python3 (>= 1.2.8~)
+Description: Python bindings for LALStochastic
+
 Package: lalstochastic-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,

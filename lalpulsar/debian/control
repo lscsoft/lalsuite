@@ -44,6 +44,14 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalxml-python (>= 1.2.2~)
 Description: Python bindings for LALPulsar.
 
+Package: lalpulsar-python3
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
+  lalpulsar (= ${binary:Version}),
+  lal-python3 (>= 6.16.1~),
+  lalxml-python3 (>= 1.2.2~)
+Description: Python bindings for LALPulsar.
+
 Package: lalpulsar-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,

@@ -40,6 +40,13 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lal-python (>= 6.16.1~)
 Description: Python bindings for LALFrame
 
+Package: lalframe-python3
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
+  lalframe (= ${binary:Version}),
+  lal-python3 (>= 6.16.1~)
+Description: Python bindings for LALFrame
+
 Package: lalframe-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,

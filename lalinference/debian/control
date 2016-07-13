@@ -93,6 +93,25 @@ Replaces: lalapps (<< 6.14.0-1)
 Breaks: lalapps (<< 6.14.0-1)
 Description: Python bindings for LALInference
 
+Package: lalinference-python3
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy, python3-scipy, python3-six,
+  python3-glue (>= 1.49.1~),
+  python3-glue-common (>= 1.49.1~),
+  python3-glue-segments (>= 1.49.1~),
+  lalinference (= ${binary:Version}),
+  lal-python3 (>= 6.16.1~),
+  lalframe-python3 (>= 1.4.1~),
+  lalmetaio-python3 (>= 1.2.8~),
+  lalxml-python3 (>= 1.2.2~),
+  lalsimulation-python3 (>= 1.6.0~),
+  lalburst-python3 (>= 1.4.2~),
+  lalinspiral-python3 (>= 1.7.5~),
+  lalpulsar-python3 (>= 1.14.0~)
+Replaces: lalapps (<< 6.14.0-1)
+Breaks: lalapps (<< 6.14.0-1)
+Description: Python bindings for LALInference
+
 Package: lalinference-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,

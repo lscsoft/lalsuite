@@ -58,6 +58,16 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalburst-python (>= 1.4.2~)
 Description: Python bindings for LALDetChar
 
+Package: laldetchar-python3
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
+  laldetchar (= ${binary:Version}),
+  lal-python3 (>= 6.16.1~),
+  lalmetaio-python3 (>= 1.2.8~),
+  lalsimulation-python3 (>= 1.6.0~),
+  lalburst-python3 (>= 1.4.2~)
+Description: Python bindings for LALDetChar
+
 Package: laldetchar-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,

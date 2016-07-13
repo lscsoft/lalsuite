@@ -33,6 +33,12 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, lal (= ${binary:Version}),
   ${python:Depends}, python-numpy
 Description: Python bindings for LAL
 
+Package: lal-python3
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, lal (= ${binary:Version}),
+  ${python3:Depends}, python3-numpy
+Description: Python bindings for LAL
+
 Package: lal-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, lal (= ${binary:Version}),

@@ -52,6 +52,15 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalsimulation-python (>= 1.6.0~)
 Description: Python bindings for LALBurst
 
+Package: lalburst-python3
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
+  lalburst (= ${binary:Version}),
+  lal-python3 (>= 6.16.1~),
+  lalmetaio-python3 (>= 1.2.8~),
+  lalsimulation-python3 (>= 1.6.0~)
+Description: Python bindings for LALBurst
+
 Package: lalburst-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,

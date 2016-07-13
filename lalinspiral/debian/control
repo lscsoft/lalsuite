@@ -59,6 +59,16 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalsimulation-python (>= 1.6.0~)
 Description: Python bindings for LALInspiral
 
+Package: lalinspiral-python3
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
+  lalinspiral (= ${binary:Version}),
+  lal-python3 (>= 6.16.1~),
+  lalframe-python3 (>= 1.4.1~),
+  lalmetaio-python3 (>= 1.2.8~),
+  lalsimulation-python3 (>= 1.6.0~)
+Description: Python bindings for LALInspiral
+
 Package: lalinspiral-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
