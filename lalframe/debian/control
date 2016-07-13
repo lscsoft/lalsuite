@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 7.0.0), python-all-dev, python3-all-dev, pkg-config
   zlib1g-dev, libframe-dev (>= 8.0), swig (>= 3.0.7),
   octave3.2-headers | liboctave-dev, python-numpy, python3-numpy, ldas-tools-framecpp-c-dev,
   lal-dev (>= 6.16.1~),
-  lal-python (>= 6.16.1~),
+  lal-python (>= 6.16.1~), lal-python3 (>= 6.16.1~),
   lal-octave (>= 6.16.1~)
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
