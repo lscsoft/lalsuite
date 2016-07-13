@@ -3,7 +3,7 @@ Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
-  libgsl0-dev (>= 1.9), libfftw3-dev, libcfitsio3-dev, swig (>=2.0.11~), octave3.2-headers | liboctave-dev,
+  libgsl-dev | libgsl0-dev (>= 1.9), libfftw3-dev, libcfitsio3-dev, swig (>=2.0.11~), octave3.2-headers | liboctave-dev,
   python-numpy (>= 1.3),
   lal-dev (>= 6.16.1~),
   lal-python (>= 6.16.1~),
@@ -26,7 +26,7 @@ Description: LSC Algorithm Library Pulsar
 
 Package: lalpulsar-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0-dev (>= 1.9),
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl-dev | libgsl0-dev (>= 1.9),
   libfftw3-dev, libcfitsio3-dev, lalpulsar (= ${binary:Version}),
   lal-dev (>= 6.16.1~),
   lalxml-dev (>= 1.2.2~),

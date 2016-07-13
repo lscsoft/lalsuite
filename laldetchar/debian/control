@@ -3,7 +3,7 @@ Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7.0.0), pkg-config, python-all-dev,
-  libgsl0-dev (>= 1.9), libglib2.0-dev, swig (>= 3.0.7),
+  libgsl-dev | libgsl0-dev (>= 1.9), libglib2.0-dev, swig (>= 3.0.7),
   octave3.2-headers | liboctave-dev,
   lal-dev (>= 6.16.1~),
   lal-python (>= 6.16.1~),
@@ -35,7 +35,7 @@ Description: LSC Algorithm Library Detector Characterisation
 
 Package: laldetchar-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl0-dev (>= 1.9),
+Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl-dev | libgsl0-dev (>= 1.9),
   libglib2.0-dev,
   lal-dev (>= 6.16.1~),
   lalmetaio-dev (>= 1.2.8~),
