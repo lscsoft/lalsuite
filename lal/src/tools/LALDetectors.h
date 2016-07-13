@@ -507,7 +507,7 @@ void LALCreateDetector( LALStatus *status, LALDetector *output, const LALFrDetec
  * in several studies with LALInference. Note that these data do not
  * represent an actual prospective site.
  */
-#define LAL_LIO_4K_DETECTOR_NAME                 "LIO" /**< LIO_4K detector name string */
+#define LAL_LIO_4K_DETECTOR_NAME                 "LIO_4k" /**< LIO_4K detector name string */
 #define LAL_LIO_4K_DETECTOR_PREFIX               "I1"    /**< LIO_4K detector prefix string */
 #define LAL_LIO_4K_DETECTOR_LONGITUDE_RAD        1.3340133249409993   /**< LIO_4K vertex longitude (rad; equal to 76°26') */
 #define LAL_LIO_4K_DETECTOR_LATITUDE_RAD         0.2484185302005262   /**< LIO_4K vertex latitude (rad; equal to 14°14') */
