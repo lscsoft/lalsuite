@@ -18,7 +18,7 @@ override_dh_auto_install:
 	    --enable-swig \
 	    --disable-gcc-flags && \
 	$(MAKE) V=1 && \
-	$(MAKE) V=1 check && \
+	$(if $(findstring nocheck,$(DEB_BUILD_OPTIONS)),true,$(MAKE) V=1 check) && \
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp && \
 	$(MAKE) clean ; \
 	done
