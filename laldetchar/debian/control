@@ -23,7 +23,7 @@ Standards-Version: 3.8.6
 Package: laldetchar
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-  libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libglib2.0-0,
+  libglib2.0-0,
   lal (>= 6.16.1~),
   lalmetaio (>= 1.2.8~),
   lalsimulation (>= 1.6.0~),

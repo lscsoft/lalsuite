@@ -17,7 +17,6 @@ Standards-Version: 3.8.6
 Package: lalpulsar
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-  libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libfftw3-3, libcfitsio3,
   lal (>= 6.16.1~),
   lalxml (>= 1.2.2~)
 Description: LSC Algorithm Library Pulsar

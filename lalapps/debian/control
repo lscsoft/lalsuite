@@ -33,7 +33,7 @@ Package: lalapps
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   python-healpy,
-  libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw3, libcfitsio3, zlib1g,
+  zlib1g,
   libframe1 (>= 8.0), libmetaio1 (>= 8.2),
   lal (>= 6.16.1~),
   lal-python (>= 6.16.1~),

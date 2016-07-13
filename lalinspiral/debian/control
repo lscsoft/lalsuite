@@ -23,7 +23,7 @@ Standards-Version: 3.8.6
 Package: lalinspiral
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
-  libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libframe1 (>= 8.0),
+  libframe1 (>= 8.0),
   libmetaio1 (>= 8.2),
   lal (>= 6.16.1~),
   lalframe (>= 1.4.1~),
