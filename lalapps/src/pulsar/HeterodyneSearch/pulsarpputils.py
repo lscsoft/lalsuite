@@ -1299,7 +1299,7 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
       'font.size': 15 }
 
   matplotlib.rcParams.update(mplparams)
-  matplotlib.rcParams['text.latex.preamble']=r'\usepackage{nicefrac}'
+  matplotlib.rcParams['text.latex.preamble']=r'\usepackage{xfrac}'
 
   # ifos line colour specs
   coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm'}
@@ -1417,9 +1417,9 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
             xl.append('0')
           else:
             if item < 0:
-              xl.append(r'$-\nicefrac{1}{%d}$' % (-1./item))
+              xl.append(r'$-\sfrac{1}{%d}$' % (-1./item))
             else:
-              xl.append(r'$\nicefrac{1}{%d}$' % (1./item))
+              xl.append(r'$\sfrac{1}{%d}$' % (1./item))
         ax.set_xticklabels(xl)
         #plt.setp(ax.get_xticklabels(), fontsize=16)  # increase font size
         plt.tick_params(axis='x', which='major', labelsize=14)
@@ -1446,9 +1446,9 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
             yl.append('0')
           else:
             if item < 0:
-              yl.append(r'$-\nicefrac{1}{%d}$' % (-1./item))
+              yl.append(r'$-\sfrac{1}{%d}$' % (-1./item))
             else:
-              yl.append(r'$\nicefrac{1}{%d}$' % (1./item))
+              yl.append(r'$\sfrac{1}{%d}$' % (1./item))
         ax.set_yticklabels(yl)
         plt.tick_params(axis='y', which='major', labelsize=14)
 
