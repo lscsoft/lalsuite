@@ -6,6 +6,7 @@ Build-Depends: debhelper (>= 7), pkg-config, python-all-dev, zlib1g-dev,
   libgsl-dev | libgsl0-dev (>= 1.9), libfftw3-dev, swig (>= 3.0.7),
   octave3.2-headers | liboctave-dev, python-numpy (>= 1.3), bc, libhdf5-dev
 X-Python-Version: >= 2.7
+X-Python3-Version: >= 3.4
 Standards-Version: 3.8.6
 
 Package: lal

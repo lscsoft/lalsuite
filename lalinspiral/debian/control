@@ -18,6 +18,7 @@ Build-Depends: debhelper (>= 7), python-all-dev, pkg-config,
   lalsimulation-python (>= 1.6.0~),
   lalsimulation-octave (>= 1.6.0~)
 X-Python-Version: >= 2.7
+X-Python3-Version: >= 3.4
 Standards-Version: 3.8.6
 
 Package: lalinspiral

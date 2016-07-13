@@ -9,6 +9,7 @@ Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   lal-python (>= 6.16.1~),
   lal-octave (>= 6.16.1~)
 X-Python-Version: >= 2.7
+X-Python3-Version: >= 3.4
 Standards-Version: 3.8.6
 
 Package: lalxml

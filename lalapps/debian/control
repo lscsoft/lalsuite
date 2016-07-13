@@ -27,6 +27,7 @@ Build-Depends: debhelper (>= 7), pkg-config, python-all-dev, libopenmpi-dev,
   lalinference-python (>= 1.7.0~),
   bc
 X-Python-Version: >= 2.7
+X-Python3-Version: >= 3.4
 Standards-Version: 3.8.6
 
 Package: lalapps
