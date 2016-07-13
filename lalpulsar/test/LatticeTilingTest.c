@@ -63,7 +63,7 @@ const double A3s_mism_hist[MISM_HIST_BINS] = {
 };
 
 static int BasicTest(
-  size_t n,
+  const size_t n,
   const int bound_on_0,
   const int bound_on_1,
   const int bound_on_2,
@@ -232,8 +232,8 @@ static int BasicTest(
 }
 
 static int MismatchTest(
-  LatticeTiling *tiling,
-  gsl_matrix *metric,
+  const LatticeTiling *tiling,
+  const gsl_matrix *metric,
   const double max_mismatch,
   const UINT8 total_ref,
   const double mism_hist_ref[MISM_HIST_BINS]
@@ -362,11 +362,9 @@ static int MismatchTest(
   }
 
   // Cleanup
-  XLALDestroyLatticeTiling( tiling );
   XLALDestroyLatticeTilingIterator( itr );
   XLALDestroyLatticeTilingLocator( loc );
-  GFMAT( metric, points );
-  LALCheckMemoryLeaks();
+  GFMAT( points );
   printf( "\n" );
   fflush( stdout );
 
@@ -414,6 +412,11 @@ static int MismatchSquareTest(
   // Perform mismatch test
   XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Cleanup
+  XLALDestroyLatticeTiling( tiling );
+  GFMAT( metric );
+  LALCheckMemoryLeaks();
+
   return XLAL_SUCCESS;
 
 }
@@ -454,6 +457,11 @@ static int MismatchAgeBrakeTest(
 
   // Perform mismatch test
   XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Cleanup
+  XLALDestroyLatticeTiling( tiling );
+  GFMAT( metric );
+  LALCheckMemoryLeaks();
 
   return XLAL_SUCCESS;
 
@@ -498,9 +506,6 @@ static int SuperskyTest(
   XLAL_CHECK( edat != NULL, XLAL_EFUNC );
   SuperskyMetrics *metrics = XLALComputeSuperskyMetrics( 0, &ref_time, &segments, freq, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
   XLAL_CHECK( metrics != NULL, XLAL_EFUNC );
-  gsl_matrix *rssky_metric = metrics->semi_rssky_metric, *rssky_transf = metrics->semi_rssky_transf;
-  metrics->semi_rssky_metric = metrics->semi_rssky_transf = NULL;
-  XLALDestroySuperskyMetrics( metrics );
   XLALSegListClear( &segments );
   XLALDestroyEphemerisData( edat );
 
@@ -508,16 +513,20 @@ static int SuperskyTest(
   printf( "Bounds: supersky, sky patch 0/%" LAL_UINT8_FORMAT ", freq=%0.3g, freqband=%0.3g\n", patch_count, freq, freqband );
   double alpha1 = 0, alpha2 = 0, delta1 = 0, delta2 = 0;
   XLAL_CHECK( XLALComputePhysicalSkyEqualAreaPatch( &alpha1, &alpha2, &delta1, &delta2, patch_count, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( tiling, rssky_metric, rssky_transf, alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( tiling, rssky_transf, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
-  GFMAT( rssky_transf );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( tiling, metrics->semi_rssky_metric, metrics->semi_rssky_transf, alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( tiling, metrics->semi_rssky_transf, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set metric
   printf( "Lattice type: %s\n", lattice_name );
-  XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, rssky_metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, metrics->semi_rssky_metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch test
-  XLAL_CHECK( MismatchTest( tiling, rssky_metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( tiling, metrics->semi_rssky_metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Cleanup
+  XLALDestroyLatticeTiling( tiling );
+  XLALDestroySuperskyMetrics( metrics );
+  LALCheckMemoryLeaks();
 
   return XLAL_SUCCESS;
 
