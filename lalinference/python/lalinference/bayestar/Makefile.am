@@ -35,11 +35,14 @@ _distance_la_LIBADD = $(top_builddir)/src/liblalinference.la
 endif
 endif
 
-all-local: sky_map.so
+all-local: sky_map.so _distance.so
 
 sky_map.so:
 	rm -f $@ && $(LN_S) .libs/$@
 
-CLEANFILES = sky_map.so
+_distance.so:
+	rm -f $@ && $(LN_S) .libs/$@
+
+CLEANFILES = sky_map.so _distance.so
 
 endif
