@@ -72,6 +72,7 @@ struct tagLatticeTiling {
   LT_Bound *bounds;                     ///< Array of parameter-space bound info for each dimension
   size_t tiled_ndim;                    ///< Number of tiled parameter-space dimensions
   size_t *tiled_idx;                    ///< Index to tiled parameter-space dimensions
+  bool padding;                         ///< Whether padding is added to parameter space bounds
   LT_Lattice lattice;                   ///< Type of lattice to generate tiling with
   gsl_vector *phys_bbox;                ///< Metric ellipse bounding box
   gsl_vector *phys_origin;              ///< Parameter-space origin in physical coordinates
@@ -751,6 +752,7 @@ LatticeTiling *XLALCreateLatticeTiling(
 
   // Initialise fields
   tiling->ndim = ndim;
+  tiling->padding = true;
   tiling->lattice = LT_LATTICE_MAX;
 
   return tiling;
@@ -849,6 +851,23 @@ int XLALSetLatticeTilingConstantBound(
   *data_lower = GSL_MIN( bound1, bound2 );
   *data_upper = GSL_MAX( bound1, bound2 );
   XLAL_CHECK( XLALSetLatticeTilingBound( tiling, dim, ConstantBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSetLatticeTilingPadding(
+  LatticeTiling *tiling,
+  const bool padding
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling->lattice == LT_LATTICE_MAX, XLAL_EINVAL );
+
+  // Set whether padding is added to parameter space bounds
+  tiling->padding = padding;
 
   return XLAL_SUCCESS;
 
@@ -1629,7 +1648,7 @@ int XLALNextLatticeTilingPoint(
 
     // Get the physical bounds on the current dimension, with padding
     double phys_lower = 0, phys_upper = 0;
-    LT_GetBounds( itr->tiling, true, i, itr->phys_point, &phys_lower, &phys_upper );
+    LT_GetBounds( itr->tiling, itr->tiling->padding, i, itr->phys_point, &phys_lower, &phys_upper );
 
     // If not tiled, set current physical point to non-tiled parameter-space bound
     if ( !itr->tiling->bounds[i].is_tiled ) {

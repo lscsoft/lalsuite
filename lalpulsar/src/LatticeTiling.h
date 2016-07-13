@@ -118,6 +118,14 @@ int XLALSetLatticeTilingConstantBound(
   );
 
 ///
+/// Set whether padding is added to the lattice tiling parameter space bounds.
+///
+int XLALSetLatticeTilingPadding(
+  LatticeTiling *tiling,                ///< [in] Lattice tiling
+  const bool padding                    ///< [in] Whether padding is added to parameter space bounds
+  );
+
+///
 /// Set the tiling lattice, parameter-space metric, and maximum prescribed mismatch.  The lattice
 /// tiling \c tiling is now fully initialised, and can be used to create tiling iterators [via
 /// XLALCreateLatticeTilingIterator()] and locators [via XLALCreateLatticeTilingLocator()].
