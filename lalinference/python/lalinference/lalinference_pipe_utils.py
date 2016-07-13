@@ -2083,9 +2083,9 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       params = np.genfromtxt(str(cp.get('paths','roq_b_matrix_directory')+'/params.dat'), names=True)
       computeroqweights_memory=str(int(
       os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_linear.npy'))/(1024*1024)
-      + ((params['fhigh']-params['flow'])*params['seglen'])*(float(dt)*2/float(time_step))*2*8/(1024*1024)
+      + 3*((params['fhigh']-params['flow'])*params['seglen'])*(float(dt+0.05)*2/float(time_step))*2*8/(1024*1024)
       + os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_quadratic.npy'))/(1024*1024)
-      ))
+      ) + 4096) # add 4gb of memory due to how matrix-copying is handled in lalapps_compute_roq_weights.py/numpy
     self.add_condor_cmd('request_memory',computeroqweights_memory)
 
 class ROMNode(pipeline.CondorDAGNode):
