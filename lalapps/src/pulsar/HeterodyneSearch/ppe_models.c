@@ -30,10 +30,6 @@
 #include "ppe_models.h"
 #include <lal/SinCosLUT.h>
 
-#ifndef _OPENMP
-#define omp ignore
-#endif
-
 #define SQUARE(x) ( (x) * (x) )
 
 /******************************************************************************/
@@ -451,8 +447,9 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
   LIGOTimeGPSVector *datatimes = NULL;
 
-  REAL8 T0 = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
+  REAL8 pepoch = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
   REAL8 cgw = PulsarGetREAL8ParamOrZero(params, "CGW");
+  REAL8 T0 = LALInferenceGetREAL8Variable( ifo->params, "data_epoch" ); /* epoch of the data */
 
   /* glitch parameters */
   REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
@@ -487,7 +484,7 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   REAL8 freqstaylor[freqs->length];
   memcpy(freqstaylor, freqs->data, sizeof(REAL8)*freqs->length);
   REAL8 taylorcoeff = 1., taylorcoeffinner = 1;
-  DT = XLALGPSGetREAL8( &datatimes->data[0] ) - T0;
+  DT = T0 - pepoch;
   for ( i=0; i<freqs->length; i++ ){
     taylorcoeffinner = 1.;
     deltatupdate = DT;
@@ -499,7 +496,6 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
     taylorcoeff /= (REAL8)(i+1);
     freqstaylor[i] *= taylorcoeff;
   }
-  T0 = XLALGPSGetREAL8( &datatimes->data[0] ); /* update T0 to start of data */
 
   if ( PulsarCheckParam( params, "BINARY" ) ){ isbinary = 1; } /* see if pulsar is in binary */
   if ( PulsarCheckParam( params, "GLEP" ) ){ /* see if pulsar has glitch parameters */
