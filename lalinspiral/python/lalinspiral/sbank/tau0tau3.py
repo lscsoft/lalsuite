@@ -90,7 +90,8 @@ def set_default_constraints(constraints):
     not). By convention, we require mass1 limits to be set.
     '''
     # complain about unknown constraints; don't silently ignore!
-    known_constraints = ["mass1","mass2","mratio","mtotal","mchirp","spin1","spin2"]
+    known_constraints = ["mass1", "mass2", "mratio", "mtotal", "mchirp",
+                         "spin1", "spin2", "duration"]
     unknown_constraints = [k for k in constraints.keys() if k not in known_constraints]
     if len(unknown_constraints):
         raise ValueError("unknown constraints %s" % ', '.join(unknown_constraints))
@@ -462,6 +463,8 @@ def aligned_spin_param_generator(flow, tmplt_class, bank, **kwargs):
     max mass of the total mass and the min and max values for the
     z-axis spin angular momentum.
     """
+    dur_min, dur_max = kwargs.pop('duration', (None, None))
+
     if 'ns_bh_boundary_mass' in kwargs and 'bh_spin' in kwargs \
             and 'ns_spin' in kwargs:
         # get args
@@ -473,7 +476,12 @@ def aligned_spin_param_generator(flow, tmplt_class, bank, **kwargs):
         for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
             spin1 = uniform(*(bh_spin_bounds if mass1 > ns_bh_boundary else ns_spin_bounds))
             spin2 = uniform(*(bh_spin_bounds if mass2 > ns_bh_boundary else ns_spin_bounds))
-            yield mass1, mass2, spin1, spin2
+
+            t = tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
+            if (dur_min is not None and t._dur < dur_min) \
+                    or (dur_max is not None and t._dur > dur_max):
+                continue
+            yield t
     else:
         # get args
         spin1_bounds = kwargs.pop('spin1', (-1., 1.))
@@ -493,7 +501,11 @@ def aligned_spin_param_generator(flow, tmplt_class, bank, **kwargs):
             spin2 = uniform(s2min, s2max)
             spin1 = (chis*mtot - mass2*spin2)/mass1
 
-            yield tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
+            t = tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
+            if (dur_min is not None and t._dur < dur_min) \
+                    or (dur_max is not None and t._dur > dur_max):
+                continue
+            yield t
 
 def double_spin_precessing_param_generator(flow, tmplt_class, bank, **kwargs):
     """
