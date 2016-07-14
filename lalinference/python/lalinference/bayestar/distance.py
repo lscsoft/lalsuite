@@ -25,99 +25,146 @@ __all__ = (
     'parameters_to_moments',
     'conditional_distance_pdf',
     'conditional_distance_cdf',
+    'conditional_distance_ppf',
     'ud_grade',
     'cartesian_kde_to_moments')
 
 
 import numpy as np
 import healpy as hp
-from scipy.special import ndtr
-from .sky_map import distance_moments_to_parameters as moments_to_parameters
-from .sky_map import distance_parameters_to_moments as parameters_to_moments
-from .sky_map import marginal_distance_distribution as marginal_distribution
-from .sky_map import volume_render_kernel
+import scipy.special
+from ._distance import *
 
 
-def conditional_distance_pdf(r, distmu, distsigma, distnorm):
-    """Conditional distance probability density function (ansatz).
-
-    Parameters
-    ----------
-    r : `numpy.ndarray`
-        Distance (Mpc)
-    distmu : `numpy.ndarray`
-        Distance location parameter (Mpc)
-    distsigma : `numpy.ndarray`
-        Distance scale parameter (Mpc)
-    distnorm : `numpy.ndarray`
-        Distance normalization factor (Mpc^-2)
-
-    Returns
-    -------
-    pdf : `numpy.ndarray`
-        Conditional probability density according to ansatz.
-    """
-    return np.sqrt(0.5 / np.pi) * distnorm / distsigma * np.exp(
-        -0.5 * np.square((r - distmu) / distsigma)) * np.square(r)
+def _add_newdoc_ufunc(func, doc):
+    # The function `np.lib.add_newdoc_ufunc` can only change a ufunc's
+    # docstring if it is `NULL`. This workaround avoids an exception
+    # when the user tries to `reload()` this module.
+    if func.__doc__ is None:
+        np.lib.add_newdoc_ufunc(func, doc)
 
 
-def conditional_distance_cdf(r, distmu, distsigma, distnorm):
-    """Cumulative conditional distribution of distance (ansatz).
+_add_newdoc_ufunc(moments_to_parameters, """\
+Convert ansatz moments to parameters.
+This function is the inverse of `parameters_to_moments`.
 
-    Parameters
-    ----------
-    r : `numpy.ndarray`
-        Distance (Mpc)
-    distmu : `numpy.ndarray`
-        Distance location parameter (Mpc)
-    distsigma : `numpy.ndarray`
-        Distance scale parameter (Mpc)
-    distnorm : `numpy.ndarray`
-        Distance normalization factor (Mpc^-2)
+Parameters
+----------
+distmean : `numpy.ndarray`
+    Conditional mean of distance (Mpc)
+diststd : `numpy.ndarray`
+    Conditional standard deviation of distance (Mpc)
 
-    Returns
-    -------
-    pdf : `numpy.ndarray`
-        Conditional probability density according to ansatz.
+Returns
+-------
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+""")
 
-    Test against numerical integral of pdf:
-    >>> import scipy.integrate
-    >>> distmu = 10.0
-    >>> distsigma = 5.0
-    >>> distnorm = 1.0
-    >>> r = 8.0
-    >>> expected, _ = scipy.integrate.quad(
-    ...     conditional_distance_pdf, 0, r,
-    ...     (distmu, distsigma, distnorm))
-    >>> result = conditional_distance_cdf(
-    ...     r, distmu, distsigma, distnorm)
-    >>> np.testing.assert_almost_equal(expected, result)
-    """
-    mu = distmu
-    sigma = distsigma
-    mu2 = np.square(mu)
-    sigma2 = np.square(sigma)
-    arg1 = -mu / sigma
-    arg2 = (r - mu) / sigma
-    result = (
-        (mu2 + sigma2) * (ndtr(arg2) - ndtr(arg1))
-        + sigma / np.sqrt(2 * np.pi) * (mu * np.exp(-0.5 * np.square(arg1))
-        - (r + mu) * np.exp(-0.5 * np.square(arg2)))
-    ) * distnorm
 
-    good = (
-        np.isfinite(distmu) &
-        np.isfinite(distsigma) &
-        np.isfinite(distnorm))
-    result = np.where(good, result, 0.0)
-    isscalar = (
-        np.isscalar(r) &
-        np.isscalar(distmu) &
-        np.isscalar(distsigma) &
-        np.isscalar(distnorm))
-    if isscalar:
-        result = np.asscalar(result)
-    return result
+_add_newdoc_ufunc(parameters_to_moments, """\
+Convert ansatz parameters to moments.
+This function is the inverse of `moments_to_parameters`.
+
+Parameters
+----------
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+
+Returns
+-------
+distmean : `numpy.ndarray`
+    Conditional mean of distance (Mpc)
+diststd : `numpy.ndarray`
+    Conditional standard deviation of distance (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+""")
+
+
+conditional_distance_pdf = pdf
+_add_newdoc_ufunc(pdf, """\
+Conditional distance probability density function (ansatz).
+
+Parameters
+----------
+r : `numpy.ndarray`
+    Distance (Mpc)
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+
+Returns
+-------
+pdf : `numpy.ndarray`
+    Conditional probability density according to ansatz.
+""")
+
+
+conditional_distance_cdf = cdf
+_add_newdoc_ufunc(cdf, """\
+Cumulative conditional distribution of distance (ansatz).
+
+Parameters
+----------
+r : `numpy.ndarray`
+    Distance (Mpc)
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+
+Returns
+-------
+pdf : `numpy.ndarray`
+    Conditional probability density according to ansatz.
+
+Test against numerical integral of pdf:
+>>> import scipy.integrate
+>>> distmu = 10.0
+>>> distsigma = 5.0
+>>> distnorm = 1.0
+>>> r = 8.0
+>>> expected, _ = scipy.integrate.quad(
+...     conditional_distance_pdf, 0, r,
+...     (distmu, distsigma, distnorm))
+>>> result = conditional_distance_cdf(
+...     r, distmu, distsigma, distnorm)
+>>> np.testing.assert_almost_equal(expected, result)
+""")
+
+
+conditional_distance_ppf = ppf
+_add_newdoc_ufunc(ppf, """\
+Point percent function (inverse cdf) of distribution of distance (ansatz).
+
+Parameters
+----------
+p : `numpy.ndarray`
+    The cumulative distribution function
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+
+Returns
+-------
+r : `numpy.ndarray`
+    Distance at which the cdf is equal to `p`.
+""")
 
 
 def ud_grade(prob, distmu, distsigma, *args, **kwargs):
@@ -230,8 +277,10 @@ def cartesian_kde_to_moments(n, datasets, inverse_covariances, weights):
     >>> n /= np.sqrt(np.sum(np.square(n)))
     >>>
     >>> # Analytically evaluate conditional mean and std. dev. in direction n
+    >>> datasets = [_.dataset for _ in kdes]
+    >>> inverse_covariances = [_.inv_cov for _ in kdes]
     >>> result_prob, result_mean, result_std = cartesian_kde_to_moments(
-    ...     n, [_.dataset for _ in kdes], [_.inv_cov for _ in kdes], weights)
+    ...     n, datasets, inverse_covariances, weights)
     >>>
     >>> # Numerically integrate conditional distance moments
     >>> def rkbar(k):
@@ -256,6 +305,16 @@ def cartesian_kde_to_moments(n, datasets, inverse_covariances, weights):
     >>> np.testing.assert_almost_equal(result_prob, expected_prob)
     >>> np.testing.assert_almost_equal(result_mean, expected_mean)
     >>> np.testing.assert_almost_equal(result_std, expected_std)
+    >>>
+    >>> # Check that KDE is normalized over unit sphere.
+    >>> nside = 32
+    >>> npix = hp.nside2npix(nside)
+    >>> prob, _, _ = np.transpose([cartesian_kde_to_moments(
+    ...     np.asarray(hp.pix2vec(nside, ipix)),
+    ...     datasets, inverse_covariances, weights)
+    ...     for ipix in range(npix)])
+    >>> result_integral = prob.sum() * hp.nside2pixarea(nside)
+    >>> np.testing.assert_almost_equal(result_integral, 1.0, decimal=4)
     """
     # Initialize moments of conditional KDE.
     r0bar = 0
@@ -269,7 +328,7 @@ def cartesian_kde_to_moments(n, datasets, inverse_covariances, weights):
         # Accumulate moments of conditional KDE.
         c = 1 / cinv
         x2 = np.square(x)
-        a = ndtr(x * np.sqrt(cinv))
+        a = scipy.special.ndtr(x * np.sqrt(cinv))
         b = np.sqrt(0.5 / np.pi * c) * np.exp(-0.5 * cinv * x2)
         r0bar_ = (x2 + c) * a + x * b
         r1bar_ = x * (x2 + 3 * c) * a + (x2 + 2 * c) * b,

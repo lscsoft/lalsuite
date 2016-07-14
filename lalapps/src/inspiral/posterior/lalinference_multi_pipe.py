@@ -4,7 +4,7 @@
 # (C) 2012 John Veitch
 # 2013 Salvatore Vitale: extended to work with several ini files
 
-from lalapps import lalinference_pipe_utils as pipe_utils
+from lalinference import lalinference_pipe_utils as pipe_utils
 import ConfigParser
 from optparse import OptionParser,OptionValueError
 import sys

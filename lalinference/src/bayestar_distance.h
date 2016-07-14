@@ -25,6 +25,12 @@
 /* FIXME: maybe use GSL vector and matrix types that SWIG can wrap easily */
 #if !defined(SWIG) && !defined(__cplusplus)
 
+double bayestar_distance_pdf(double r, double mu, double sigma, double norm);
+
+double bayestar_distance_cdf(double r, double mu, double sigma, double norm);
+
+double bayestar_distance_ppf(double p, double mu, double sigma, double norm);
+
 int bayestar_distance_moments_to_parameters(
     double mean, double std, double *mu, double *sigma, double *norm);
 

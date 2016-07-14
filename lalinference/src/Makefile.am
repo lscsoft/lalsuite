@@ -10,11 +10,6 @@ lalinference_burst_SOURCES = LALInferenceBurst.c
 lalinference_datadump_SOURCES = LALInferenceDataDump.c
 lalinference_bench_SOURCES = LALInferenceBench.c
 
-if LALXML
-XMLHDR = LALInferenceXML.h
-XMLSRC = LALInferenceXML.c
-endif
-
 if HAVE_CHEALPIX
 BAYESTARHDR = bayestar_sky_map.h bayestar_distance.h
 BAYESTARSRC = bayestar_sky_map.c bayestar_distance.c
@@ -88,8 +83,6 @@ bin_PROGRAMS = \
 
 EXTRA_DIST = \
 	LALInferenceConfig.h.in \
-	LALInferenceXML.c \
-	LALInferenceXML.h \
 	$(ANALYTICFILES) \
 	config.h.in
 

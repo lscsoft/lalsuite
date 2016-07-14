@@ -1,8 +1,8 @@
 # End-to-end LALInference test pipeline
 # (C) 2014 John Veitch
 
-from lalapps import lalinference_pipe_utils as pipe_utils
-from lalapps.lalinference_pipe_utils import mkdirs
+from lalinference import lalinference_pipe_utils as pipe_utils
+from lalinference.lalinference_pipe_utils import mkdirs
 from lalapps import inspiralutils
 from glue import pipeline
 import ConfigParser

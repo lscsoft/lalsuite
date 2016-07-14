@@ -26,8 +26,124 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_roots.h>
 #include <gsl/gsl_sf_erf.h>
+#include <gsl/gsl_sf_exp.h>
+#include <gsl/gsl_cdf.h>
 
 #include <chealpix.h>
+
+
+double bayestar_distance_pdf(double r, double mu, double sigma, double norm)
+{
+    const double x = -0.5 * gsl_pow_2((r - mu) / sigma);
+    const double y = norm * gsl_pow_2(r) / sigma;
+    return gsl_sf_exp_mult(x, y);
+}
+
+
+static double ugaussian_integral(double x1, double x2)
+{
+    if (GSL_SIGN(x1) != GSL_SIGN(x2))
+    {
+        return gsl_cdf_ugaussian_P(x2) - gsl_cdf_ugaussian_P(x1);
+    } else if (x1 > 0) {
+        const double logerfc1 = gsl_sf_log_erfc(x1 * M_SQRT1_2);
+        const double logerfc2 = gsl_sf_log_erfc(x2 * M_SQRT1_2);
+        return gsl_sf_exp_mult(logerfc2, 0.5 * gsl_sf_expm1(logerfc1 - logerfc2));
+    } else {
+        const double logerfc1 = gsl_sf_log_erfc(-x1 * M_SQRT1_2);
+        const double logerfc2 = gsl_sf_log_erfc(-x2 * M_SQRT1_2);
+        return gsl_sf_exp_mult(logerfc1, 0.5 * gsl_sf_expm1(logerfc2 - logerfc1));
+    }
+}
+
+
+double bayestar_distance_cdf(double r, double mu, double sigma, double norm)
+{
+    if (!isfinite(mu))
+        return 0;
+
+    const double mu2 = gsl_pow_2(mu);
+    const double sigma2 = gsl_pow_2(sigma);
+    const double arg1 = -mu / sigma;
+    const double arg2 = (r - mu) / sigma;
+
+    return (
+        (mu2 + sigma2) * ugaussian_integral(arg1, arg2)
+        + sigma / sqrt(2 * M_PI) * (gsl_sf_exp_mult(-0.5 * gsl_pow_2(arg1), mu)
+        - gsl_sf_exp_mult(-0.5 * gsl_pow_2(arg2), r + mu))
+    ) * norm;
+}
+
+
+static double ppf_f(double r, void *params)
+{
+    const double p = ((double*) params)[0];
+    const double mu = ((double *) params)[1];
+    const double norm = ((double *) params)[2];
+    return bayestar_distance_cdf(r, mu, 1, norm) - p;
+}
+
+
+static double ppf_df(double r, void *params)
+{
+    const double mu = ((double *) params)[1];
+    const double norm = ((double *) params)[2];
+    return bayestar_distance_pdf(r, mu, 1, norm);
+}
+
+
+static void ppf_fdf(double r, void *params, double *f, double *df)
+{
+    const double p = ((double*) params)[0];
+    const double mu = ((double *) params)[1];
+    const double norm = ((double *) params)[2];
+    *f = bayestar_distance_cdf(r, mu, 1, norm) - p;
+    *df = bayestar_distance_pdf(r, mu, 1, norm);
+}
+
+
+double bayestar_distance_ppf(double p, double mu, double sigma, double norm)
+{
+    if (p <= 0)
+        return 0;
+    else if (p >= 1)
+        return GSL_POSINF;
+    else if (!(isfinite(p) && isfinite(mu) && isfinite(sigma) && isfinite(norm)))
+        return GSL_NAN;
+
+    /* Convert to standard distribution with sigma = 1. */
+    mu /= sigma;
+    norm *= gsl_pow_2(sigma);
+
+    /* Set up variables for tracking progress toward the solution. */
+    static const int max_iter = 50;
+    double params[] = {p, mu, norm};
+    int iter = 0;
+    double z = mu > 0 ? mu : 0.5; /* FIXME: better initial guess? */
+    int status;
+
+    /* Set up solver (on stack). */
+    const gsl_root_fdfsolver_type *algo = gsl_root_fdfsolver_steffenson;
+    char state[algo->size];
+    gsl_root_fdfsolver solver = {algo, NULL, 0, state};
+    gsl_function_fdf fun = {ppf_f, ppf_df, ppf_fdf, &params};
+    gsl_root_fdfsolver_set(&solver, &fun, z);
+
+    do
+    {
+        const double zold = z;
+        status = gsl_root_fdfsolver_iterate(&solver);
+        z = gsl_root_fdfsolver_root(&solver);
+        status = gsl_root_test_delta (z, zold, 0, GSL_SQRT_DBL_EPSILON);
+        iter++;
+    } while (status == GSL_CONTINUE && iter < max_iter);
+    /* FIXME: do something with status? */
+
+    /* Rescale to original value of sigma. */
+    z *= sigma;
+
+    return z;
+}
 
 
 static void integrals(

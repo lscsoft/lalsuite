@@ -97,7 +97,7 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
     # run Ntests times to get average
     for j in range(Ntests):
       # run code
-      commandline="%s --detectors %s --par-file %s --input-files %s --outhdf %s --prior-file %s --Nlive %d --Nmcmcinitial %d %s" \
+      commandline="%s --detectors %s --par-file %s --input-files %s --outfile %s --prior-file %s --Nlive %d --Nmcmcinitial %d %s" \
 % (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, prop)
 
       sp.check_call(commandline, shell=True)

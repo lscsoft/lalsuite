@@ -1,7 +1,7 @@
 # DAG generation code for running LALInference pipeline
 # (C) 2012 John Veitch, Vivien Raymond
 
-from lalapps import lalinference_pipe_utils as pipe_utils
+from lalinference import lalinference_pipe_utils as pipe_utils
 from lalapps import inspiralutils
 import ConfigParser
 from optparse import OptionParser,OptionValueError
@@ -48,6 +48,10 @@ if len(args)!=1:
   parser.print_help()
   print 'Error: must specify one ini file'
   sys.exit(1)
+
+if opts.condor_submit and opts.pegasus_submit:
+   print 'Error: Please only specify one of --condor-submit or --pegasus-submit'
+   sys.exit(1)
 
 inifile=args[0]
 
@@ -177,9 +181,6 @@ for sampler in samps:
         cp.set('engine','chirpmass-min',str(mc_min))
         cp.set('engine','chirpmass-max',str(mc_max))
         cp.set('engine','q-min',str(q_min))
-      if opts.condor_submit and opts.pegasus_submit:
-          print 'Error: Please only specify one of --condor-submit or --pegasus-submit'
-          sys.exit(1)
 
       if opts.run_path is not None:
         cp.set('paths','basedir',os.path.abspath(opts.run_path))

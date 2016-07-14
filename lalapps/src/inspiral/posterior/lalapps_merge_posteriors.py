@@ -7,7 +7,7 @@ import sys
 import os
 from pylal import bayespputils as bppu
 
-from lalapps.nest2pos import draw_posterior, draw_N_posterior
+from lalinference.nest2pos import draw_posterior, draw_N_posterior
 
 usage='''%prog [-N NPOS]-o output.dat -p pos1.dat -w weight1 [-p pos2.dat -w weight2 ...]
 %prog takes a list of posterior files and weights and draws samples from the combined,

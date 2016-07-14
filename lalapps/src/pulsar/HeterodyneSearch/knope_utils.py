@@ -775,8 +775,11 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_nest2pos_nodes = {} # condor nodes for the lalapps_nest2pos jobs (needed to use as parents for results processing jobs)
     self.pe_nest2pos_background_nodes = {} # nodes for background analysis
 
-    # see whether to run just as independent detectors, or independental AND coherently over all detectors
-    self.pe_incoherent_only = self.get_config_option('analysis', 'incoherent_only', cftype='boolean', default=False)
+    # see whether to run just as independent detectors, or independently AND coherently over all detectors
+    if len(self.ifos) == 1:
+      self.pe_incoherent_only = True # set to True for one detector
+    else:
+      self.pe_incoherent_only = self.get_config_option('analysis', 'incoherent_only', cftype='boolean', default=False)
 
     # see whether to run only the coherent multidetector analysis analysis
     self.pe_coherent_only = False
@@ -1227,7 +1230,11 @@ class knopeDAG(pipeline.CondorDAG):
 
         erritems = [] #  list of values with errors
 
+        ignore_pars = ["DM", "START", "FINISH", "NTOA", "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS", "ELAT", "ELONG"] # keys to ignore from par file
+
         for paritem in pppu.float_keys:
+          if paritem in ignore_pars:
+            continue
           if psr['%s_ERR' % paritem] != None and psr['%s_FIT' % paritem] != None: # get values with a given error (suffixed with _ERR)
             if psr['%s_FIT' % paritem] == 1:
               # set Gaussian prior with mean being the parameter value and sigma being the error
@@ -2402,6 +2409,34 @@ class knopeDAG(pipeline.CondorDAG):
     each segment.
     """
 
+    # check if segment file(s) is given
+    segfile = self.get_config_option('segmentfind', 'seg_files', cftype='string', allownone=True) # check if file is given
+    if segfile is None: # try getting dictionary
+      segfiles = self.get_config_option('segmentfind', 'seg_files', cftype='dict', allownone=True)
+      if segfiles is not None:
+        if ifo not in segfiles:
+          print("Error... No segment file given for '%s'" % ifo)
+          self.error_code = -1
+          return
+        else:
+          segfile = segfiles[ifo]
+
+    if segfile is not None:
+      # check segment file exists
+      if not os.path.isfile(segfile):
+        print("Error... segment file '%s' does not exist." % segfile)
+        self.error_code = -1
+        return
+      else:
+        # copy segment file to the 'outfile' location
+        try:
+          shutil.copyfile(segfile, outfile)
+        except:
+          print("Error... could not copy segment file to location of '%s'." % outfile)
+          self.error_code = -1
+        return # exit function
+
+    # otherwise try and get the segment list
     # get server
     if self.config.has_option('segmentfind', 'server'):
       server = self.config.get('segmentfind', 'server')
@@ -3134,7 +3169,7 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
   def set_outfile(self, of):
     # set the output file
-    self.add_var_opt('outhdf', of)
+    self.add_var_opt('outfile', of)
     self.__outfile = of
 
   def set_chunk_min(self, cmin):
