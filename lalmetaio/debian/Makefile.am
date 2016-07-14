@@ -10,5 +10,6 @@ EXTRA_DIST = \
 	lalmetaio.install \
 	lalmetaio-octave.install \
 	lalmetaio-python.install \
+	lalmetaio-python3.install \
 	rules \
 	source/format

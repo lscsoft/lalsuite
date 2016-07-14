@@ -1,2 +1,2 @@
-usr/lib/python*/dist-packages/lalburst/*.py
-usr/lib/python*/dist-packages/lalburst/_lalburst.so*
+usr/lib/python2*/dist-packages/lalburst/*.py
+usr/lib/python2*/dist-packages/lalburst/_lalburst.so*

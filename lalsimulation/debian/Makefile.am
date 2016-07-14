@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	lalsimulation-dev.install \
 	lalsimulation-octave.install \
 	lalsimulation-python.install \
+	lalsimulation-python3.install \
 	lalsimulation.dirs \
 	lalsimulation.install \
 	rules \

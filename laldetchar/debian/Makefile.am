@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	laldetchar-dev.install \
 	laldetchar-octave.install \
 	laldetchar-python.install \
+	laldetchar-python3.install \
 	laldetchar.dirs \
 	laldetchar.install \
 	rules \

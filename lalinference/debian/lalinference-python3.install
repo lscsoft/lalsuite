@@ -1,0 +1,11 @@
+# usr/bin/bayestar_*
+# usr/bin/rapidpe_*
+usr/lib/python3*/dist-packages/lalinference/*.py
+usr/lib/python3*/dist-packages/lalinference/bayestar/*.py
+usr/lib/python3*/dist-packages/lalinference/cylon.csv
+usr/lib/python3*/dist-packages/lalinference/imrtgr/*.py
+usr/lib/python3*/dist-packages/lalinference/ne_simplified_coastline.json
+usr/lib/python3*/dist-packages/lalinference/rapid_pe/*.py
+usr/lib/python3*/dist-packages/lalinference/_lalinference.so*
+usr/lib/python3*/dist-packages/lalinference/bayestar/_distance.so*
+usr/lib/python3*/dist-packages/lalinference/bayestar/sky_map.so*

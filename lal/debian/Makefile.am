@@ -10,5 +10,6 @@ EXTRA_DIST = \
 	lal.install \
 	lal-octave.install \
 	lal-python.install \
+	lal-python3.install \
 	rules \
 	source/format

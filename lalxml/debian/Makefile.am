@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	lalxml-dev.install \
 	lalxml-octave.install \
 	lalxml-python.install \
+	lalxml-python3.install \
 	lalxml.dirs \
 	lalxml.install \
 	rules \

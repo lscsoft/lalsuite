@@ -1,0 +1,3 @@
+usr/lib/python3*/dist-packages/lalframe/*.py
+usr/lib/python3*/dist-packages/lalframe/_lalframe.so*
+usr/lib/python3*/dist-packages/lalframe/utils/*.py

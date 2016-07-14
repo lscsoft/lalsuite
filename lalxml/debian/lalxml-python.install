@@ -1,2 +1,2 @@
-usr/lib/python*/dist-packages/lalxml/*.py
-usr/lib/python*/dist-packages/lalxml/_lalxml.so*
+usr/lib/python2*/dist-packages/lalxml/*.py
+usr/lib/python2*/dist-packages/lalxml/_lalxml.so*

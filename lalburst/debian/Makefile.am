@@ -10,5 +10,6 @@ EXTRA_DIST = \
 	lalburst.install \
 	lalburst-octave.install \
 	lalburst-python.install \
+	lalburst-python3.install \
 	rules \
 	source/format

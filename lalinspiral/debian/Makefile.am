@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	lalinspiral-dev.install \
 	lalinspiral-octave.install \
 	lalinspiral-python.install \
+	lalinspiral-python3.install \
 	lalinspiral.dirs \
 	lalinspiral.install \
 	rules \

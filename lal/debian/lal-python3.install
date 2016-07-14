@@ -1,0 +1,4 @@
+usr/lib/python3*/dist-packages/lal/*.py
+usr/lib/python3*/dist-packages/lal/spectrum/*.py
+usr/lib/python3*/dist-packages/lal/utils/*.py
+usr/lib/python3*/dist-packages/lal/_lal.so*
