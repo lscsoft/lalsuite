@@ -236,6 +236,29 @@ image : `numpy.ndarray`
 """)
 
 
+_add_newdoc_ufunc(marginal_pdf, """\
+Calculate all-sky marginal pdf (ansatz).
+
+Parameters
+----------
+r : `numpy.ndarray`
+    Distance (Mpc)
+prob : `numpy.ndarray`
+    Marginal probability (pix^-2)
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+
+Returns
+-------
+pdf : `numpy.ndarray`
+    Conditional probability density according to ansatz.
+""")
+
+
 def ud_grade(prob, distmu, distsigma, *args, **kwargs):
     """
     Upsample or downsample a distance-resolved sky map.
