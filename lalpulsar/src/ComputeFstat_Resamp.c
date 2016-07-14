@@ -432,6 +432,8 @@ XLALComputeFstatResamp ( FstatResults* Fstats,
   if ( ! ( same_skypos && same_refTime && same_binary) )
     {
       XLAL_CHECK ( XLALBarycentricResampleMultiCOMPLEX8TimeSeries ( resamp, &thisPoint, common ) == XLAL_SUCCESS, XLAL_EFUNC );
+      // record barycenter parameters in order to allow re-usal of this result ('buffering')
+      resamp->prev_doppler = thisPoint;
     }
 
   if ( ti->collectTiming ) {
