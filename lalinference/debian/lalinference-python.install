@@ -7,4 +7,5 @@ usr/lib/python*/dist-packages/lalinference/imrtgr/*.py
 usr/lib/python*/dist-packages/lalinference/ne_simplified_coastline.json
 usr/lib/python*/dist-packages/lalinference/rapid_pe/*.py
 usr/lib/python*/dist-packages/lalinference/_lalinference.so*
+usr/lib/python*/dist-packages/lalinference/bayestar/_distance.so*
 usr/lib/python*/dist-packages/lalinference/bayestar/sky_map.so*
