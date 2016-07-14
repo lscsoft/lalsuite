@@ -23,9 +23,9 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 __all__ = (
     'moments_to_parameters',
     'parameters_to_moments',
-    'conditional_distance_pdf',
-    'conditional_distance_cdf',
-    'conditional_distance_ppf',
+    'conditional_pdf',
+    'conditional_cdf',
+    'conditional_ppf',
     'ud_grade',
     'cartesian_kde_to_moments')
 
@@ -44,7 +44,7 @@ def _add_newdoc_ufunc(func, doc):
         np.lib.add_newdoc_ufunc(func, doc)
 
 
-conditional_distance_pdf = pdf
+conditional_pdf = pdf
 _add_newdoc_ufunc(pdf, """\
 Conditional distance probability density function (ansatz).
 
@@ -66,7 +66,7 @@ pdf : `numpy.ndarray`
 """)
 
 
-conditional_distance_cdf = cdf
+conditional_cdf = cdf
 _add_newdoc_ufunc(cdf, """\
 Cumulative conditional distribution of distance (ansatz).
 
@@ -93,15 +93,15 @@ Test against numerical integral of pdf:
 >>> distnorm = 1.0
 >>> r = 8.0
 >>> expected, _ = scipy.integrate.quad(
-...     conditional_distance_pdf, 0, r,
+...     conditional_pdf, 0, r,
 ...     (distmu, distsigma, distnorm))
->>> result = conditional_distance_cdf(
+>>> result = conditional_cdf(
 ...     r, distmu, distsigma, distnorm)
 >>> np.testing.assert_almost_equal(expected, result)
 """)
 
 
-conditional_distance_ppf = ppf
+conditional_ppf = ppf
 _add_newdoc_ufunc(ppf, """\
 Point percent function (inverse cdf) of distribution of distance (ansatz).
 
@@ -475,5 +475,5 @@ def parameters_to_marginal_moments(prob, distmu, distsigma):
 
 
 def find_injection_distance(true_dist, prob, distmu, distsigma, distnorm):
-    return np.sum(prob * conditional_distance_cdf(
+    return np.sum(prob * conditional_cdf(
         true_dist, distmu, distsigma, distnorm))
