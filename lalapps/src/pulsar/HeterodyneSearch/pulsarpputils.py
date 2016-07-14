@@ -2385,7 +2385,7 @@ def pulsar_nest_to_posterior(postfile):
 
   # remove any unchanging variables and randomly shuffle the rest
   pnames = pos.names
-  nsamps = len(pos[pnames[0].samples)
+  nsamps = len(pos[pnames[0]].samples)
   permarr = np.arange(nsamps)
   np.random.shuffle(permarr)
   for pname in pnames:
@@ -2451,9 +2451,6 @@ def pulsar_nest_to_posterior(postfile):
     B = np.loadtxt(postfile.replace('.gz', '')+'_B.txt')
     sigev = B[1]
     noiseev = B[2]
-
-  # randomly shuffle the samples to remove the ordering produced by nested sampling
-  for n in pos.names
 
   # return posterior samples, signal evidence (B[1]) and noise evidence (B[2])
   return pos, sigev, noiseev
