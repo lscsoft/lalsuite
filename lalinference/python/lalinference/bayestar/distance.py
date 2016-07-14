@@ -44,8 +44,7 @@ def _add_newdoc_ufunc(func, doc):
         np.lib.add_newdoc_ufunc(func, doc)
 
 
-conditional_pdf = pdf
-_add_newdoc_ufunc(pdf, """\
+_add_newdoc_ufunc(conditional_pdf, """\
 Conditional distance probability density function (ansatz).
 
 Parameters
@@ -66,8 +65,7 @@ pdf : `numpy.ndarray`
 """)
 
 
-conditional_cdf = cdf
-_add_newdoc_ufunc(cdf, """\
+_add_newdoc_ufunc(conditional_cdf, """\
 Cumulative conditional distribution of distance (ansatz).
 
 Parameters
@@ -101,8 +99,7 @@ Test against numerical integral of pdf:
 """)
 
 
-conditional_ppf = ppf
-_add_newdoc_ufunc(ppf, """\
+_add_newdoc_ufunc(conditional_ppf, """\
 Point percent function (inverse cdf) of distribution of distance (ansatz).
 
 Parameters

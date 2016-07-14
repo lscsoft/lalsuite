@@ -35,7 +35,7 @@ static void pdf_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
-        *(double *) &args[4][i * steps[4]] = bayestar_distance_pdf(
+        *(double *) &args[4][i * steps[4]] = bayestar_distance_conditional_pdf(
         *(double *) &args[0][i * steps[0]],
         *(double *) &args[1][i * steps[1]],
         *(double *) &args[2][i * steps[2]],
@@ -55,7 +55,7 @@ static void cdf_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
-        *(double *) &args[4][i * steps[4]] = bayestar_distance_cdf(
+        *(double *) &args[4][i * steps[4]] = bayestar_distance_conditional_cdf(
         *(double *) &args[0][i * steps[0]],
         *(double *) &args[1][i * steps[1]],
         *(double *) &args[2][i * steps[2]],
@@ -75,7 +75,7 @@ static void ppf_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
-        *(double *) &args[4][i * steps[4]] = bayestar_distance_ppf(
+        *(double *) &args[4][i * steps[4]] = bayestar_distance_conditional_ppf(
         *(double *) &args[0][i * steps[0]],
         *(double *) &args[1][i * steps[1]],
         *(double *) &args[2][i * steps[2]],
