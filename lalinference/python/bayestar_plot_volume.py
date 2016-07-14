@@ -65,7 +65,7 @@ from matplotlib import transforms
 from lalinference import fits
 from lalinference import marker
 from lalinference.bayestar.distance import (
-    principal_axes, volume_render_kernel, marginal_distribution)
+    principal_axes, volume_render, marginal_distribution)
 import healpy as hp
 import numpy as np
 import scipy.stats
@@ -115,7 +115,7 @@ for iface, (axis0, axis1, (sp0, sp1)) in enumerate((
     progress.update(text='Plotting projection {0}'.format(iface + 1))
 
     # Marginalize onto the given face
-    density = volume_render_kernel(
+    density = volume_render(
         xx.ravel(), yy.ravel(), opts.max_distance, axis0, axis1, R, False,
         prob, mu, sigma, norm).reshape(xx.shape)
 

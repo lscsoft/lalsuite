@@ -37,7 +37,7 @@ int bayestar_distance_moments_to_parameters(
 void bayestar_distance_parameters_to_moments(
     double mu, double sigma, double *mean, double *std, double *norm);
 
-double bayestar_volume_render_kernel(
+double bayestar_volume_render(
     double x, double y, double max_distance, int axis0, int axis1,
     const double *R, long nside, int nest,
     const double *prob, const double *mu,

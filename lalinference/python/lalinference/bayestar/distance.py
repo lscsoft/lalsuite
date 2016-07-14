@@ -167,7 +167,7 @@ distnorm : `numpy.ndarray`
 """)
 
 
-_add_newdoc_ufunc(volume_render_kernel, """\
+_add_newdoc_ufunc(volume_render, """\
 Perform volumetric rendering of a 3D sky map.
 
 Parameters
@@ -204,7 +204,7 @@ image : `numpy.ndarray`
 """)
 
 
-_add_newdoc_ufunc(volume_render_kernel, """\
+_add_newdoc_ufunc(volume_render, """\
 Perform volumetric rendering of a 3D sky map.
 
 Parameters

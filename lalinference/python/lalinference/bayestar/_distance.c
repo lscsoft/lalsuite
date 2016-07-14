@@ -128,7 +128,7 @@ static void parameters_to_moments_loop(
 }
 
 
-static void volume_render_kernel_loop(
+static void volume_render_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
@@ -143,7 +143,7 @@ static void volume_render_kernel_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
-        *(double *) &args[11][i * steps[11]] = bayestar_volume_render_kernel(
+        *(double *) &args[11][i * steps[11]] = bayestar_volume_render(
             *(double *)   &args[0][i * steps[0]],
             *(double *)   &args[1][i * steps[1]],
             *(double *)   &args[2][i * steps[2]],
@@ -194,10 +194,10 @@ static const PyUFuncGenericFunction
     ppf_loops[] = {ppf_loop},
     moments_to_parameters_loops[] = {moments_to_parameters_loop},
     parameters_to_moments_loops[] = {parameters_to_moments_loop},
-    volume_render_kernel_loops[] = {volume_render_kernel_loop},
+    volume_render_loops[] = {volume_render_loop},
     marginal_distribution_loops[] = {marginal_distribution_loop};
 
-static const char volume_render_kernel_ufunc_types[] = {
+static const char volume_render_ufunc_types[] = {
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_INT, NPY_INT, NPY_DOUBLE, NPY_BOOL,
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
 
@@ -266,10 +266,10 @@ PyMODINIT_FUNC PyInit__distance(void)
             "parameters_to_moments", NULL, 0));
 
     PyModule_AddObject(
-        module, "volume_render_kernel", PyUFunc_FromFuncAndDataAndSignature(
-            volume_render_kernel_loops, no_ufunc_data,
-            volume_render_kernel_ufunc_types, 1, 11, 1, PyUFunc_None,
-            "volume_render_kernel", NULL, 0,
+        module, "volume_render", PyUFunc_FromFuncAndDataAndSignature(
+            volume_render_loops, no_ufunc_data,
+            volume_render_ufunc_types, 1, 11, 1, PyUFunc_None,
+            "volume_render", NULL, 0,
             "(),(),(),(),(),(i,i),(),(n),(n),(n),(n)->()"));
 
     PyModule_AddObject(
