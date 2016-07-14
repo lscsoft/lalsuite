@@ -2394,7 +2394,10 @@ def pulsar_nest_to_posterior(postfile):
       pos.pop(pname)
     else:
       # shuffle
-      pos[pname].samples = pos[pname].samples[permarr]
+      shufpos = None
+      shufpos = bppu.PosteriorOneDPDF(pname, pos[pname].samples[permarr])
+      pos.pop(pname)
+      pos.append(shufpos)
 
   # check whether iota has been used
   try:
