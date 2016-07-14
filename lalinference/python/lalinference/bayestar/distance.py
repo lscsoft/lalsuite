@@ -20,20 +20,18 @@ Distance ansatz functions.
 """
 from __future__ import division
 __author__ = "Leo Singer <leo.singer@ligo.org>"
-__all__ = (
-    'moments_to_parameters',
-    'parameters_to_moments',
-    'conditional_pdf',
-    'conditional_cdf',
-    'conditional_ppf',
-    'ud_grade',
-    'cartesian_kde_to_moments')
 
 
 import numpy as np
 import healpy as hp
 import scipy.special
+from . import _distance
 from ._distance import *
+
+
+__all__ = tuple(_ for _ in _distance.__dict__ if not _.startswith('_')) + (
+    'ud_grade', 'conditional_kde', 'cartesian_kde_to_moments', 'principal_axes',
+    'parameters_to_moments', 'find_injection_distance')
 
 
 def _add_newdoc_ufunc(func, doc):
