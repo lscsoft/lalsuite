@@ -43,7 +43,7 @@ double bayestar_volume_render(
     const double *prob, const double *mu,
     const double *sigma, const double *norm);
 
-double bayestar_marginal_distance_distribution(
+double bayestar_distance_marginal_pdf(
     double r, long npix,
     const double *prob, const double *mu,
     const double *sigma, const double *norm);

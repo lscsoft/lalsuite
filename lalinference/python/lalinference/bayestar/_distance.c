@@ -162,7 +162,7 @@ static void volume_render_loop(
 }
 
 
-static void marginal_distribution_loop(
+static void marginal_pdf_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
@@ -176,7 +176,7 @@ static void marginal_distribution_loop(
     for (npy_intp i = 0; i < n; i ++)
     {
         *(double *) &args[5][i * steps[5]] =
-            bayestar_marginal_distance_distribution(
+            bayestar_distance_marginal_pdf(
             *(double *) &args[0][i * steps[0]], npix,
              (double *) &args[1][i * steps[1]],
              (double *) &args[2][i * steps[2]],
@@ -195,7 +195,7 @@ static const PyUFuncGenericFunction
     moments_to_parameters_loops[] = {moments_to_parameters_loop},
     parameters_to_moments_loops[] = {parameters_to_moments_loop},
     volume_render_loops[] = {volume_render_loop},
-    marginal_distribution_loops[] = {marginal_distribution_loop};
+    marginal_pdf_loops[] = {marginal_pdf_loop};
 
 static const char volume_render_ufunc_types[] = {
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_INT, NPY_INT, NPY_DOUBLE, NPY_BOOL,
@@ -273,10 +273,10 @@ PyMODINIT_FUNC PyInit__distance(void)
             "(),(),(),(),(),(i,i),(),(n),(n),(n),(n)->()"));
 
     PyModule_AddObject(
-        module, "marginal_distribution", PyUFunc_FromFuncAndDataAndSignature(
-            marginal_distribution_loops, no_ufunc_data,
+        module, "marginal_pdf", PyUFunc_FromFuncAndDataAndSignature(
+            marginal_pdf_loops, no_ufunc_data,
             double_ufunc_types, 1, 5, 1, PyUFunc_None,
-            "marginal_distribution", NULL, 0,
+            "marginal_pdf", NULL, 0,
             "(),(n),(n),(n),(n)->()"));
 
 #if PY_MAJOR_VERSION >= 3
