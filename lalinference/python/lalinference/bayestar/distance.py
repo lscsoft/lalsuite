@@ -44,50 +44,6 @@ def _add_newdoc_ufunc(func, doc):
         np.lib.add_newdoc_ufunc(func, doc)
 
 
-_add_newdoc_ufunc(moments_to_parameters, """\
-Convert ansatz moments to parameters.
-This function is the inverse of `parameters_to_moments`.
-
-Parameters
-----------
-distmean : `numpy.ndarray`
-    Conditional mean of distance (Mpc)
-diststd : `numpy.ndarray`
-    Conditional standard deviation of distance (Mpc)
-
-Returns
--------
-distmu : `numpy.ndarray`
-    Distance location parameter (Mpc)
-distsigma : `numpy.ndarray`
-    Distance scale parameter (Mpc)
-distnorm : `numpy.ndarray`
-    Distance normalization factor (Mpc^-2)
-""")
-
-
-_add_newdoc_ufunc(parameters_to_moments, """\
-Convert ansatz parameters to moments.
-This function is the inverse of `moments_to_parameters`.
-
-Parameters
-----------
-distmu : `numpy.ndarray`
-    Distance location parameter (Mpc)
-distsigma : `numpy.ndarray`
-    Distance scale parameter (Mpc)
-
-Returns
--------
-distmean : `numpy.ndarray`
-    Conditional mean of distance (Mpc)
-diststd : `numpy.ndarray`
-    Conditional standard deviation of distance (Mpc)
-distnorm : `numpy.ndarray`
-    Distance normalization factor (Mpc^-2)
-""")
-
-
 conditional_distance_pdf = pdf
 _add_newdoc_ufunc(pdf, """\
 Conditional distance probability density function (ansatz).
@@ -164,6 +120,50 @@ Returns
 -------
 r : `numpy.ndarray`
     Distance at which the cdf is equal to `p`.
+""")
+
+
+_add_newdoc_ufunc(moments_to_parameters, """\
+Convert ansatz moments to parameters.
+This function is the inverse of `parameters_to_moments`.
+
+Parameters
+----------
+distmean : `numpy.ndarray`
+    Conditional mean of distance (Mpc)
+diststd : `numpy.ndarray`
+    Conditional standard deviation of distance (Mpc)
+
+Returns
+-------
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+""")
+
+
+_add_newdoc_ufunc(parameters_to_moments, """\
+Convert ansatz parameters to moments.
+This function is the inverse of `moments_to_parameters`.
+
+Parameters
+----------
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+
+Returns
+-------
+distmean : `numpy.ndarray`
+    Conditional mean of distance (Mpc)
+diststd : `numpy.ndarray`
+    Conditional standard deviation of distance (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
 """)
 
 
