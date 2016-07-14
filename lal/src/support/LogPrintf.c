@@ -263,11 +263,7 @@ XLALGetCPUTime ( void )
 
   struct timespec ut;
   clockid_t clk_id;
-#ifdef CLOCK_THREAD_CPUTIME_ID
-  clk_id = CLOCK_THREAD_CPUTIME_ID;	// according to man-page: (since Linux 2.6.12)
-#else
   clk_id = CLOCK_REALTIME;	// use this as fallback, guaranteed to exist.
-#endif
 
   clock_gettime ( clk_id, &ut);	// don't bother testing to avoid overheads, and we would notice in timing if unavailable
 
