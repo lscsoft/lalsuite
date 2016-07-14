@@ -336,11 +336,7 @@ double bayestar_marginal_distance_distribution(
     const double *sigma, const double *norm)
 {
     double sum = 0;
-
     for (long i = 0; i < npix; i ++)
-    {
-        sum += prob[i] * norm[i] / sigma[i] * exp(-0.5 * gsl_pow_2((r - mu[i]) / sigma[i])) * gsl_pow_2(r);
-    }
-
-    return sum / (M_SQRT2 * M_SQRTPI);
+        sum += prob[i] * bayestar_distance_pdf(r, mu[i], sigma[i], norm[i]);
+    return sum;
 }
