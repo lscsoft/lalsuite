@@ -26,7 +26,7 @@
 #include <lal/bayestar_distance.h>
 
 
-static void pdf_loop(
+static void conditional_pdf_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
@@ -46,7 +46,7 @@ static void pdf_loop(
 }
 
 
-static void cdf_loop(
+static void conditional_cdf_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
@@ -66,7 +66,7 @@ static void cdf_loop(
 }
 
 
-static void ppf_loop(
+static void conditional_ppf_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
@@ -189,9 +189,9 @@ static void marginal_pdf_loop(
 
 
 static const PyUFuncGenericFunction
-    pdf_loops[] = {pdf_loop},
-    cdf_loops[] = {cdf_loop},
-    ppf_loops[] = {ppf_loop},
+    conditional_pdf_loops[] = {conditional_pdf_loop},
+    conditional_cdf_loops[] = {conditional_cdf_loop},
+    conditional_ppf_loops[] = {conditional_ppf_loop},
     moments_to_parameters_loops[] = {moments_to_parameters_loop},
     parameters_to_moments_loops[] = {parameters_to_moments_loop},
     volume_render_loops[] = {volume_render_loop},
@@ -236,22 +236,22 @@ PyMODINIT_FUNC PyInit__distance(void)
 #endif
 
     PyModule_AddObject(
-        module, "pdf", PyUFunc_FromFuncAndData(
-            pdf_loops, no_ufunc_data,
+        module, "conditional_pdf", PyUFunc_FromFuncAndData(
+            conditional_pdf_loops, no_ufunc_data,
             double_ufunc_types, 1, 4, 1, PyUFunc_None,
-            "pdf", NULL, 0));
+            "conditional_pdf", NULL, 0));
 
     PyModule_AddObject(
-        module, "cdf", PyUFunc_FromFuncAndData(
-            cdf_loops, no_ufunc_data,
+        module, "conditional_cdf", PyUFunc_FromFuncAndData(
+            conditional_cdf_loops, no_ufunc_data,
             double_ufunc_types, 1, 4, 1, PyUFunc_None,
-            "cdf", NULL, 0));
+            "conditional_cdf", NULL, 0));
 
     PyModule_AddObject(
-        module, "ppf", PyUFunc_FromFuncAndData(
-            ppf_loops, no_ufunc_data,
+        module, "conditional_ppf", PyUFunc_FromFuncAndData(
+            conditional_ppf_loops, no_ufunc_data,
             double_ufunc_types, 1, 4, 1, PyUFunc_None,
-            "ppf", NULL, 0));
+            "conditional_ppf", NULL, 0));
 
     PyModule_AddObject(
         module, "moments_to_parameters", PyUFunc_FromFuncAndData(
