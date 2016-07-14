@@ -204,6 +204,43 @@ image : `numpy.ndarray`
 """)
 
 
+_add_newdoc_ufunc(volume_render_kernel, """\
+Perform volumetric rendering of a 3D sky map.
+
+Parameters
+----------
+x : `numpy.ndarray`
+    X-coordinate in rendered image
+y : `numpy.ndarray`
+    Y-coordinate in rendered image
+max_distance : float
+    Limit of integration from `-max_distance` to `+max_distance`
+axis0 : int
+    Index of axis to assign to x-coordinate
+axis1 : int
+    Index of axis to assign to y-coordinate
+R : `numpy.ndarray`
+    Rotation matrix as provided by `principal_axes`
+nside : int
+    HEALPix resolution
+nest : bool
+    HEALPix ordering scheme
+prob : `numpy.ndarray`
+    Marginal probability (pix^-2)
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+
+Returns
+-------
+image : `numpy.ndarray`
+    Rendered image
+""")
+
+
 def ud_grade(prob, distmu, distsigma, *args, **kwargs):
     """
     Upsample or downsample a distance-resolved sky map.
