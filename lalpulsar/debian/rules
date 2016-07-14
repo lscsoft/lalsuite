@@ -1,39 +1,23 @@
 #!/usr/bin/make -f
+include /usr/share/dpkg/pkg-info.mk
 
-PYVERS=$(shell pyversions -r)
+CONFIGUREARGS = --enable-swig --enable-cfitsio
+
+MAKEARGS = \
+	-C {build_dir} V=1 \
+	pythondir={install_dir} pyexecdir={install_dir} \
+	pkgpythondir={install_dir}/$(DEB_SOURCE) \
+	pkgpyexecdir={install_dir}/$(DEB_SOURCE)
+export PYBUILD_SYSTEM = custom
+export PYBUILD_CLEAN_ARGS = $(MAKE) $(MAKEARGS) clean || true
+export PYBUILD_CONFIGURE_ARGS = cd {build_dir} && {dir}/configure \
+	--prefix=/usr --sysconfdir=/etc \
+	--mandir=/usr/share/man --infodir=/usr/share/info \
+	--disable-gcc-flags \
+	$(CONFIGUREARGS) PYTHON=$$(which {interpreter}) pythondir={install_dir}
+export PYBUILD_BUILD_ARGS = $(MAKE) $(MAKEARGS)
+export PYBUILD_INSTALL_ARGS = $(MAKE) $(MAKEARGS) DESTDIR={destdir} install
+export PYBUILD_TEST_ARGS = $(MAKE) $(MAKEARGS) check
 
 %:
-	dh $@ --with=python2
-
-override_dh_auto_configure:
-override_dh_auto_build:
-override_dh_auto_install:
-	for pyvers in $(PYVERS) ; do \
-	PYTHON="$$pyvers" \
-	PKG_CONFIG_PATH="" \
-	./configure \
-	    --prefix=/usr \
-	    --sysconfdir=/etc \
-	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
-	    --enable-swig \
-	    --enable-cfitsio \
-	    --disable-gcc-flags && \
-	(grep . /dev/null `find . -name config.log`; true) && \
-	$(MAKE) V=1 && \
-	$(if $(findstring nocheck,$(DEB_BUILD_OPTIONS)),true,$(MAKE) V=1 check) && \
-	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp && \
-	true; \
-	(grep . /dev/null `find $(CURDIR) -name test-suite.log`; true) ; \
-	$(MAKE) clean ; \
-	done
-	# fix python shebang lines
-	for file in `grep -l '^#!.*python' $(CURDIR)/debian/tmp/usr/bin/*` ; do \
-		sed -i -e 's~^#!.*~#!/usr/bin/python~' $$file ; \
-	done
-	dh_install
-
-override_dh_auto_test:
-
-override_dh_python2:
-	dh_python2 --no-guessing-versions
-
+	dh $@ --with=python2,python3 --buildsystem=pybuild
