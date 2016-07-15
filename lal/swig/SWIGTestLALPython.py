@@ -19,6 +19,18 @@ lal_c_si = lal.C_SI
 lal_180_pi = lal.LAL_180_PI
 print("PASSED module load")
 
+# look up version of swig used to generate the bindings
+# FIXME: delete this when we can depend on swig >= 3.0.9,
+# which fixed https://github.com/swig/swig/pull/617
+import inspect
+import re
+import distutils.version
+swig_version = distutils.version.StrictVersion(re.search(
+    r'^# Version (\d+(?:\.\d+)*)$',
+    inspect.getsource(lal.lal),
+    re.MULTILINE).group(1))
+swig_division_coercion_works = sys.version_info.major <= 2 or swig_version >= '3.0.9'
+
 # check memory allocation
 print("checking memory allocation ...")
 if not lal.NoDebug:
@@ -1032,21 +1044,25 @@ assert(t2 + 5.5 >= t1 and t2 + 3 != t2)
 assert(t2 - 5 == t0 and isinstance(t2 - 5, LIGOTimeGPS))
 assert(t1 * 3 == 31.5 and isinstance(t1 * 3, LIGOTimeGPS))
 assert(3 * t1 == 31.5 and isinstance(3 * t1, LIGOTimeGPS))
-assert(t2 / 2.5 == 2 and isinstance(t2 / 2.5, LIGOTimeGPS))
-assert(21 / t1  == 2 and isinstance(21 / t1, LIGOTimeGPS))
+if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
+    assert(t2 / 2.5 == 2 and isinstance(t2 / 2.5, LIGOTimeGPS))
+    assert(21 / t1  == 2 and isinstance(21 / t1, LIGOTimeGPS))
 assert(t1 + t2 == 15.5 and isinstance(t1 + t2, LIGOTimeGPS))
 assert(t1 - t2 == 5.5 and isinstance(t1 - t2, LIGOTimeGPS))
 assert(t1 * t2 == 52.5 and isinstance(t1 * t2, LIGOTimeGPS))
 assert(t2 * t1 == 52.5 and isinstance(t2 * t1, LIGOTimeGPS))
-assert(t1 / t2 == 2.1 and isinstance(t1 / t2, LIGOTimeGPS))
+if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
+    assert(t1 / t2 == 2.1 and isinstance(t1 / t2, LIGOTimeGPS))
 assert(t1 % t2 == 0.5 and isinstance(t1 % t2, LIGOTimeGPS))
 assert(t1 > t2 and t2 < t1 and t1 >= t2 and t2 <= t1)
-assert(LIGOTimeGPS(333333333,333333333) == LIGOTimeGPS(1000000000) / 3)
-assert(LIGOTimeGPS(666666666,666666667) == LIGOTimeGPS(2000000000) / 3)
+if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
+    assert(LIGOTimeGPS(333333333,333333333) == LIGOTimeGPS(1000000000) / 3)
+    assert(LIGOTimeGPS(666666666,666666667) == LIGOTimeGPS(2000000000) / 3)
 assert(LIGOTimeGPS("-62997760.825036067") == LIGOTimeGPS("-47044285.062262587") - LIGOTimeGPS("15953475.76277348"))
 assert(LIGOTimeGPS("-6542354.389038577") == LIGOTimeGPS("-914984.929117316") * 7.1502318572066237)
 assert(LIGOTimeGPS("-6542354.389038577") == 7.1502318572066237 * LIGOTimeGPS("-914984.929117316"))
-assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.1502318572066237)
+if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
+    assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.1502318572066237)
 t1 += 812345667.75
 assert(str(t1) == "812345678.250000000")
 assert(LIGOTimeGPS(repr(t1)) == t1)
@@ -1097,8 +1113,9 @@ assert(tsw - tmy == tsw - tsw and isinstance(tsw - tmy, LIGOTimeGPS))
 assert(tmy - tsw == tsw - tsw and isinstance(tmy - tsw, LIGOTimeGPS))
 assert(tsw * tmy == tsw * tsw and isinstance(tsw * tmy, LIGOTimeGPS))
 assert(tmy * tsw == tsw * tsw and isinstance(tmy * tsw, LIGOTimeGPS))
-assert(tsw / tmy == tsw / tsw and isinstance(tsw / tmy, LIGOTimeGPS))
-assert(tmy / tsw == tsw / tsw and isinstance(tmy / tsw, LIGOTimeGPS))
+if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
+    assert(tsw / tmy == tsw / tsw and isinstance(tsw / tmy, LIGOTimeGPS))
+    assert(tmy / tsw == tsw / tsw and isinstance(tmy / tsw, LIGOTimeGPS))
 assert(lal.swig_lal_test_noptrgps(tmy) == lal.swig_lal_test_noptrgps(tsw))
 del tsw
 lal.CheckMemoryLeaks()
@@ -1110,8 +1127,9 @@ u1 = lal.Unit("kg m s^-2")
 assert(isinstance(lal.Unit(u1), lal.Unit))
 assert(u1 == lal.NewtonUnit and isinstance(u1, lal.Unit))
 assert(str(u1) == "m kg s^-2")
-u2 = lal.MeterUnit * lal.KiloGramUnit / lal.SecondUnit ** 2
-assert(u1 == u2 and isinstance(u2, lal.Unit))
+if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
+    u2 = lal.MeterUnit * lal.KiloGramUnit / lal.SecondUnit ** 2
+    assert(u1 == u2 and isinstance(u2, lal.Unit))
 u2 = lal.MeterUnit**(1,2) * lal.KiloGramUnit**(1,2) * lal.SecondUnit ** -1
 assert(u1**(1,2) == u2 and isinstance(u2, lal.Unit))
 try:
@@ -1123,24 +1141,25 @@ assert(not expected_exception)
 u1 *= lal.MeterUnit
 assert(u1 == lal.JouleUnit and isinstance(u1, lal.Unit))
 assert(repr(u1) == "m^2 kg s^-2")
-u1 /= lal.SecondUnit
-assert(u1 == lal.WattUnit and isinstance(u1, lal.Unit))
-assert(u1 == "m^2 kg s^-3")
-u1 *= 1000
-assert(u1 == lal.KiloUnit * lal.WattUnit)
-assert(u1 == 1000 * lal.WattUnit)
-assert(u1 == lal.WattUnit * 1000)
-assert(u1 == lal.MegaUnit / 1000 * lal.WattUnit)
-assert(int(u1) == 1000)
-u1 /= 10000
-assert(u1 == 100 * lal.MilliUnit * lal.WattUnit)
-try:
-    u1 *= 1.234
-    expected_exception = True
-except:
-    pass
-assert(not expected_exception)
-assert(u1.norm() == u1)
+if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
+    u1 /= lal.SecondUnit
+    assert(u1 == lal.WattUnit and isinstance(u1, lal.Unit))
+    assert(u1 == "m^2 kg s^-3")
+    u1 *= 1000
+    assert(u1 == lal.KiloUnit * lal.WattUnit)
+    assert(u1 == 1000 * lal.WattUnit)
+    assert(u1 == lal.WattUnit * 1000)
+    assert(u1 == lal.MegaUnit / 1000 * lal.WattUnit)
+    assert(int(u1) == 1000)
+    u1 /= 10000
+    assert(u1 == 100 * lal.MilliUnit * lal.WattUnit)
+    try:
+        u1 *= 1.234
+        expected_exception = True
+    except:
+        pass
+    assert(not expected_exception)
+    assert(u1.norm() == u1)
 del u1
 del u2
 lal.CheckMemoryLeaks()
