@@ -26,7 +26,7 @@
 #include <lal/bayestar_distance.h>
 
 
-static void pdf_loop(
+static void conditional_pdf_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
@@ -35,7 +35,7 @@ static void pdf_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
-        *(double *) &args[4][i * steps[4]] = bayestar_distance_pdf(
+        *(double *) &args[4][i * steps[4]] = bayestar_distance_conditional_pdf(
         *(double *) &args[0][i * steps[0]],
         *(double *) &args[1][i * steps[1]],
         *(double *) &args[2][i * steps[2]],
@@ -46,7 +46,7 @@ static void pdf_loop(
 }
 
 
-static void cdf_loop(
+static void conditional_cdf_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
@@ -55,7 +55,7 @@ static void cdf_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
-        *(double *) &args[4][i * steps[4]] = bayestar_distance_cdf(
+        *(double *) &args[4][i * steps[4]] = bayestar_distance_conditional_cdf(
         *(double *) &args[0][i * steps[0]],
         *(double *) &args[1][i * steps[1]],
         *(double *) &args[2][i * steps[2]],
@@ -66,7 +66,7 @@ static void cdf_loop(
 }
 
 
-static void ppf_loop(
+static void conditional_ppf_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
@@ -75,7 +75,7 @@ static void ppf_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
-        *(double *) &args[4][i * steps[4]] = bayestar_distance_ppf(
+        *(double *) &args[4][i * steps[4]] = bayestar_distance_conditional_ppf(
         *(double *) &args[0][i * steps[0]],
         *(double *) &args[1][i * steps[1]],
         *(double *) &args[2][i * steps[2]],
@@ -128,7 +128,7 @@ static void parameters_to_moments_loop(
 }
 
 
-static void volume_render_kernel_loop(
+static void volume_render_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
@@ -143,7 +143,7 @@ static void volume_render_kernel_loop(
     #pragma omp parallel for
     for (npy_intp i = 0; i < n; i ++)
     {
-        *(double *) &args[11][i * steps[11]] = bayestar_volume_render_kernel(
+        *(double *) &args[11][i * steps[11]] = bayestar_volume_render(
             *(double *)   &args[0][i * steps[0]],
             *(double *)   &args[1][i * steps[1]],
             *(double *)   &args[2][i * steps[2]],
@@ -162,7 +162,7 @@ static void volume_render_kernel_loop(
 }
 
 
-static void marginal_distribution_loop(
+static void marginal_pdf_loop(
     char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
 {
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
@@ -176,7 +176,7 @@ static void marginal_distribution_loop(
     for (npy_intp i = 0; i < n; i ++)
     {
         *(double *) &args[5][i * steps[5]] =
-            bayestar_marginal_distance_distribution(
+            bayestar_distance_marginal_pdf(
             *(double *) &args[0][i * steps[0]], npix,
              (double *) &args[1][i * steps[1]],
              (double *) &args[2][i * steps[2]],
@@ -189,15 +189,15 @@ static void marginal_distribution_loop(
 
 
 static const PyUFuncGenericFunction
-    pdf_loops[] = {pdf_loop},
-    cdf_loops[] = {cdf_loop},
-    ppf_loops[] = {ppf_loop},
+    conditional_pdf_loops[] = {conditional_pdf_loop},
+    conditional_cdf_loops[] = {conditional_cdf_loop},
+    conditional_ppf_loops[] = {conditional_ppf_loop},
     moments_to_parameters_loops[] = {moments_to_parameters_loop},
     parameters_to_moments_loops[] = {parameters_to_moments_loop},
-    volume_render_kernel_loops[] = {volume_render_kernel_loop},
-    marginal_distribution_loops[] = {marginal_distribution_loop};
+    volume_render_loops[] = {volume_render_loop},
+    marginal_pdf_loops[] = {marginal_pdf_loop};
 
-static const char volume_render_kernel_ufunc_types[] = {
+static const char volume_render_ufunc_types[] = {
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_INT, NPY_INT, NPY_DOUBLE, NPY_BOOL,
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
 
@@ -236,22 +236,22 @@ PyMODINIT_FUNC PyInit__distance(void)
 #endif
 
     PyModule_AddObject(
-        module, "pdf", PyUFunc_FromFuncAndData(
-            pdf_loops, no_ufunc_data,
+        module, "conditional_pdf", PyUFunc_FromFuncAndData(
+            conditional_pdf_loops, no_ufunc_data,
             double_ufunc_types, 1, 4, 1, PyUFunc_None,
-            "pdf", NULL, 0));
+            "conditional_pdf", NULL, 0));
 
     PyModule_AddObject(
-        module, "cdf", PyUFunc_FromFuncAndData(
-            cdf_loops, no_ufunc_data,
+        module, "conditional_cdf", PyUFunc_FromFuncAndData(
+            conditional_cdf_loops, no_ufunc_data,
             double_ufunc_types, 1, 4, 1, PyUFunc_None,
-            "cdf", NULL, 0));
+            "conditional_cdf", NULL, 0));
 
     PyModule_AddObject(
-        module, "ppf", PyUFunc_FromFuncAndData(
-            ppf_loops, no_ufunc_data,
+        module, "conditional_ppf", PyUFunc_FromFuncAndData(
+            conditional_ppf_loops, no_ufunc_data,
             double_ufunc_types, 1, 4, 1, PyUFunc_None,
-            "ppf", NULL, 0));
+            "conditional_ppf", NULL, 0));
 
     PyModule_AddObject(
         module, "moments_to_parameters", PyUFunc_FromFuncAndData(
@@ -266,17 +266,17 @@ PyMODINIT_FUNC PyInit__distance(void)
             "parameters_to_moments", NULL, 0));
 
     PyModule_AddObject(
-        module, "volume_render_kernel", PyUFunc_FromFuncAndDataAndSignature(
-            volume_render_kernel_loops, no_ufunc_data,
-            volume_render_kernel_ufunc_types, 1, 11, 1, PyUFunc_None,
-            "volume_render_kernel", NULL, 0,
+        module, "volume_render", PyUFunc_FromFuncAndDataAndSignature(
+            volume_render_loops, no_ufunc_data,
+            volume_render_ufunc_types, 1, 11, 1, PyUFunc_None,
+            "volume_render", NULL, 0,
             "(),(),(),(),(),(i,i),(),(n),(n),(n),(n)->()"));
 
     PyModule_AddObject(
-        module, "marginal_distribution", PyUFunc_FromFuncAndDataAndSignature(
-            marginal_distribution_loops, no_ufunc_data,
+        module, "marginal_pdf", PyUFunc_FromFuncAndDataAndSignature(
+            marginal_pdf_loops, no_ufunc_data,
             double_ufunc_types, 1, 5, 1, PyUFunc_None,
-            "marginal_distribution", NULL, 0,
+            "marginal_pdf", NULL, 0,
             "(),(n),(n),(n),(n)->()"));
 
 #if PY_MAJOR_VERSION >= 3

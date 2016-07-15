@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
   SHOULD_WORK( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad6", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad7", NULL ), &status);
+  /* SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad7", NULL ), &status); */ // This line breaks the test due to the detector prefix "I1" now being a valid prefix
   SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad8", NULL ), &status);
   SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad9", NULL ), &status);
   SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad10", NULL ), &status );

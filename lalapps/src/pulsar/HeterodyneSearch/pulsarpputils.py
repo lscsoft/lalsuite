@@ -2383,12 +2383,21 @@ def pulsar_nest_to_posterior(postfile):
 
   pos = bppu.Posterior( nsResultsObject, SimInspiralTableEntry=None, votfile=None )
 
-  # remove any unchanging variables
+  # remove any unchanging variables and randomly shuffle the rest
   pnames = pos.names
+  nsamps = len(pos[pnames[0]].samples)
+  permarr = np.arange(nsamps)
+  np.random.shuffle(permarr)
   for pname in pnames:
     # check first and last samples are the same
     if pos[pname].samples[0] - pos[pname].samples[-1] == 0.:
       pos.pop(pname)
+    else:
+      # shuffle
+      shufpos = None
+      shufpos = bppu.PosteriorOneDPDF(pname, pos[pname].samples[permarr])
+      pos.pop(pname)
+      pos.append(shufpos)
 
   # check whether iota has been used
   try:

@@ -32,7 +32,7 @@
 #include <chealpix.h>
 
 
-double bayestar_distance_pdf(double r, double mu, double sigma, double norm)
+double bayestar_distance_conditional_pdf(double r, double mu, double sigma, double norm)
 {
     const double x = -0.5 * gsl_pow_2((r - mu) / sigma);
     const double y = norm * gsl_pow_2(r) / sigma;
@@ -57,7 +57,7 @@ static double ugaussian_integral(double x1, double x2)
 }
 
 
-double bayestar_distance_cdf(double r, double mu, double sigma, double norm)
+double bayestar_distance_conditional_cdf(double r, double mu, double sigma, double norm)
 {
     if (!isfinite(mu))
         return 0;
@@ -80,7 +80,7 @@ static double ppf_f(double r, void *params)
     const double p = ((double*) params)[0];
     const double mu = ((double *) params)[1];
     const double norm = ((double *) params)[2];
-    return bayestar_distance_cdf(r, mu, 1, norm) - p;
+    return bayestar_distance_conditional_cdf(r, mu, 1, norm) - p;
 }
 
 
@@ -88,7 +88,7 @@ static double ppf_df(double r, void *params)
 {
     const double mu = ((double *) params)[1];
     const double norm = ((double *) params)[2];
-    return bayestar_distance_pdf(r, mu, 1, norm);
+    return bayestar_distance_conditional_pdf(r, mu, 1, norm);
 }
 
 
@@ -97,12 +97,12 @@ static void ppf_fdf(double r, void *params, double *f, double *df)
     const double p = ((double*) params)[0];
     const double mu = ((double *) params)[1];
     const double norm = ((double *) params)[2];
-    *f = bayestar_distance_cdf(r, mu, 1, norm) - p;
-    *df = bayestar_distance_pdf(r, mu, 1, norm);
+    *f = bayestar_distance_conditional_cdf(r, mu, 1, norm) - p;
+    *df = bayestar_distance_conditional_pdf(r, mu, 1, norm);
 }
 
 
-double bayestar_distance_ppf(double p, double mu, double sigma, double norm)
+double bayestar_distance_conditional_ppf(double p, double mu, double sigma, double norm)
 {
     if (p <= 0)
         return 0;
@@ -273,7 +273,7 @@ void bayestar_distance_parameters_to_moments(
 }
 
 
-double bayestar_volume_render_kernel(
+double bayestar_volume_render(
     double x, double y, double max_distance, int axis0, int axis1,
     const double *R, long nside, int nest,
     const double *prob, const double *mu,
@@ -330,17 +330,13 @@ double bayestar_volume_render_kernel(
 }
 
 
-double bayestar_marginal_distance_distribution(
+double bayestar_distance_marginal_pdf(
     double r, long npix,
     const double *prob, const double *mu,
     const double *sigma, const double *norm)
 {
     double sum = 0;
-
     for (long i = 0; i < npix; i ++)
-    {
-        sum += prob[i] * norm[i] / sigma[i] * exp(-0.5 * gsl_pow_2((r - mu[i]) / sigma[i])) * gsl_pow_2(r);
-    }
-
-    return sum / (M_SQRT2 * M_SQRTPI);
+        sum += prob[i] * bayestar_distance_conditional_pdf(r, mu[i], sigma[i], norm[i]);
+    return sum;
 }

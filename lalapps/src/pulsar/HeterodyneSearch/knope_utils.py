@@ -2410,9 +2410,8 @@ class knopeDAG(pipeline.CondorDAG):
     """
 
     # check if segment file(s) is given
-    segfile = self.get_config_option('segmentfind', 'seg_files', cftype='string', allownone=True) # check if file is given
-    if segfile is None: # try getting dictionary
-      segfiles = self.get_config_option('segmentfind', 'seg_files', cftype='dict', allownone=True)
+    segfiles = self.get_config_option('segmentfind', 'seg_files', cftype='dict', allownone=True)
+    if segfiles is not None: # check if it is a dictionary
       if segfiles is not None:
         if ifo not in segfiles:
           print("Error... No segment file given for '%s'" % ifo)
@@ -2420,6 +2419,8 @@ class knopeDAG(pipeline.CondorDAG):
           return
         else:
           segfile = segfiles[ifo]
+    else: # check if is just a single segment file
+      segfile = self.get_config_option('segmentfind', 'seg_files', cftype='string', allownone=True)
 
     if segfile is not None:
       # check segment file exists

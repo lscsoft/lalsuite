@@ -20,20 +20,18 @@ Distance ansatz functions.
 """
 from __future__ import division
 __author__ = "Leo Singer <leo.singer@ligo.org>"
-__all__ = (
-    'moments_to_parameters',
-    'parameters_to_moments',
-    'conditional_distance_pdf',
-    'conditional_distance_cdf',
-    'conditional_distance_ppf',
-    'ud_grade',
-    'cartesian_kde_to_moments')
 
 
 import numpy as np
 import healpy as hp
 import scipy.special
+from . import _distance
 from ._distance import *
+
+
+__all__ = tuple(_ for _ in _distance.__dict__ if not _.startswith('_')) + (
+    'ud_grade', 'conditional_kde', 'cartesian_kde_to_moments', 'principal_axes',
+    'parameters_to_moments', 'find_injection_distance')
 
 
 def _add_newdoc_ufunc(func, doc):
@@ -42,6 +40,82 @@ def _add_newdoc_ufunc(func, doc):
     # when the user tries to `reload()` this module.
     if func.__doc__ is None:
         np.lib.add_newdoc_ufunc(func, doc)
+
+
+_add_newdoc_ufunc(conditional_pdf, """\
+Conditional distance probability density function (ansatz).
+
+Parameters
+----------
+r : `numpy.ndarray`
+    Distance (Mpc)
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+
+Returns
+-------
+pdf : `numpy.ndarray`
+    Conditional probability density according to ansatz.
+""")
+
+
+_add_newdoc_ufunc(conditional_cdf, """\
+Cumulative conditional distribution of distance (ansatz).
+
+Parameters
+----------
+r : `numpy.ndarray`
+    Distance (Mpc)
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+
+Returns
+-------
+pdf : `numpy.ndarray`
+    Conditional probability density according to ansatz.
+
+Test against numerical integral of pdf:
+>>> import scipy.integrate
+>>> distmu = 10.0
+>>> distsigma = 5.0
+>>> distnorm = 1.0
+>>> r = 8.0
+>>> expected, _ = scipy.integrate.quad(
+...     conditional_pdf, 0, r,
+...     (distmu, distsigma, distnorm))
+>>> result = conditional_cdf(
+...     r, distmu, distsigma, distnorm)
+>>> np.testing.assert_almost_equal(expected, result)
+""")
+
+
+_add_newdoc_ufunc(conditional_ppf, """\
+Point percent function (inverse cdf) of distribution of distance (ansatz).
+
+Parameters
+----------
+p : `numpy.ndarray`
+    The cumulative distribution function
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+
+Returns
+-------
+r : `numpy.ndarray`
+    Distance at which the cdf is equal to `p`.
+""")
 
 
 _add_newdoc_ufunc(moments_to_parameters, """\
@@ -88,14 +162,89 @@ distnorm : `numpy.ndarray`
 """)
 
 
-conditional_distance_pdf = pdf
-_add_newdoc_ufunc(pdf, """\
-Conditional distance probability density function (ansatz).
+_add_newdoc_ufunc(volume_render, """\
+Perform volumetric rendering of a 3D sky map.
+
+Parameters
+----------
+x : `numpy.ndarray`
+    X-coordinate in rendered image
+y : `numpy.ndarray`
+    Y-coordinate in rendered image
+max_distance : float
+    Limit of integration from `-max_distance` to `+max_distance`
+axis0 : int
+    Index of axis to assign to x-coordinate
+axis1 : int
+    Index of axis to assign to y-coordinate
+R : `numpy.ndarray`
+    Rotation matrix as provided by `principal_axes`
+nside : int
+    HEALPix resolution
+nest : bool
+    HEALPix ordering scheme
+prob : `numpy.ndarray`
+    Marginal probability (pix^-2)
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+
+Returns
+-------
+image : `numpy.ndarray`
+    Rendered image
+""")
+
+
+_add_newdoc_ufunc(volume_render, """\
+Perform volumetric rendering of a 3D sky map.
+
+Parameters
+----------
+x : `numpy.ndarray`
+    X-coordinate in rendered image
+y : `numpy.ndarray`
+    Y-coordinate in rendered image
+max_distance : float
+    Limit of integration from `-max_distance` to `+max_distance`
+axis0 : int
+    Index of axis to assign to x-coordinate
+axis1 : int
+    Index of axis to assign to y-coordinate
+R : `numpy.ndarray`
+    Rotation matrix as provided by `principal_axes`
+nside : int
+    HEALPix resolution
+nest : bool
+    HEALPix ordering scheme
+prob : `numpy.ndarray`
+    Marginal probability (pix^-2)
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+
+Returns
+-------
+image : `numpy.ndarray`
+    Rendered image
+""")
+
+
+_add_newdoc_ufunc(marginal_pdf, """\
+Calculate all-sky marginal pdf (ansatz).
 
 Parameters
 ----------
 r : `numpy.ndarray`
     Distance (Mpc)
+prob : `numpy.ndarray`
+    Marginal probability (pix^-2)
 distmu : `numpy.ndarray`
     Distance location parameter (Mpc)
 distsigma : `numpy.ndarray`
@@ -107,63 +256,6 @@ Returns
 -------
 pdf : `numpy.ndarray`
     Conditional probability density according to ansatz.
-""")
-
-
-conditional_distance_cdf = cdf
-_add_newdoc_ufunc(cdf, """\
-Cumulative conditional distribution of distance (ansatz).
-
-Parameters
-----------
-r : `numpy.ndarray`
-    Distance (Mpc)
-distmu : `numpy.ndarray`
-    Distance location parameter (Mpc)
-distsigma : `numpy.ndarray`
-    Distance scale parameter (Mpc)
-distnorm : `numpy.ndarray`
-    Distance normalization factor (Mpc^-2)
-
-Returns
--------
-pdf : `numpy.ndarray`
-    Conditional probability density according to ansatz.
-
-Test against numerical integral of pdf:
->>> import scipy.integrate
->>> distmu = 10.0
->>> distsigma = 5.0
->>> distnorm = 1.0
->>> r = 8.0
->>> expected, _ = scipy.integrate.quad(
-...     conditional_distance_pdf, 0, r,
-...     (distmu, distsigma, distnorm))
->>> result = conditional_distance_cdf(
-...     r, distmu, distsigma, distnorm)
->>> np.testing.assert_almost_equal(expected, result)
-""")
-
-
-conditional_distance_ppf = ppf
-_add_newdoc_ufunc(ppf, """\
-Point percent function (inverse cdf) of distribution of distance (ansatz).
-
-Parameters
-----------
-p : `numpy.ndarray`
-    The cumulative distribution function
-distmu : `numpy.ndarray`
-    Distance location parameter (Mpc)
-distsigma : `numpy.ndarray`
-    Distance scale parameter (Mpc)
-distnorm : `numpy.ndarray`
-    Distance normalization factor (Mpc^-2)
-
-Returns
--------
-r : `numpy.ndarray`
-    Distance at which the cdf is equal to `p`.
 """)
 
 
@@ -401,5 +493,5 @@ def parameters_to_marginal_moments(prob, distmu, distsigma):
 
 
 def find_injection_distance(true_dist, prob, distmu, distsigma, distnorm):
-    return np.sum(prob * conditional_distance_cdf(
+    return np.sum(prob * conditional_cdf(
         true_dist, distmu, distsigma, distnorm))
