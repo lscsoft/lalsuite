@@ -1,3 +1,9 @@
+lalsimulation (1.6.0.1-1) UNRELEASED; urgency=medium
+
+  * Add python3 package
+
+ -- Leo Singer <leo.singer@ligo.org>  Fri, 15 Jul 2016 00:03:38 -0400
+
 lalsimulation (1.6.0-1) unstable; urgency=low
 
   * LALSimulation 1.6.0

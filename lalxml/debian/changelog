@@ -1,3 +1,9 @@
+lalxml (1.2.2.1-1) UNRELEASED; urgency=medium
+
+  * Add python3 package
+
+ -- Leo Singer <leo.singer@ligo.org>  Fri, 15 Jul 2016 00:03:38 -0400
+
 lalxml (1.2.2-1) unstable; urgency=low
 
   * LALXML 1.2.2

@@ -1,3 +1,9 @@
+lalapps (6.19.0.1-1) UNRELEASED; urgency=medium
+
+  * Add python3 package
+
+ -- Leo Singer <leo.singer@ligo.org>  Fri, 15 Jul 2016 00:03:38 -0400
+
 lalapps (6.19.0-1) unstable; urgency=low
 
   * LALApps 6.19.0
