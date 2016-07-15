@@ -115,6 +115,16 @@ Returns
 -------
 r : `numpy.ndarray`
     Distance at which the cdf is equal to `p`.
+
+Test against numerical estimate:
+>>> import scipy.optimize
+>>> distmu = 10.0
+>>> distsigma = 5.0
+>>> distnorm = 1.0
+>>> p = 0.16  # "one-sigma" lower limit
+>>> expected_r16 = scipy.optimize.brentq(lambda r: conditional_cdf(r, distmu, distsigma, distnorm) - p, 0.0, 100.0)
+>>> r16 = conditional_ppf(p, distmu, distsigma, distnorm)
+>>> np.testing.assert_almost_equal(expected_r16, r16)
 """)
 
 
