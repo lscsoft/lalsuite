@@ -1264,10 +1264,10 @@ INT4 XLALFindBadBins
   /* printf ("Last bin is %f\n", f0 + length * deltaF); */
 
   INT4 newBinCount = binCount;
-  INT4 firstBadBin = (INT4) round ( ( flo - f0 ) / deltaF ); /*use round to get the lowest contaminated bin*/
+  INT4 firstBadBin = (INT4) floor ( ( flo - f0 ) / deltaF ); /*use floor to get the lowest contaminated bin*/
   /* printf ("firstBadBin = %d\n",firstBadBin); */
   if ( firstBadBin < 0 ) firstBadBin = 0;
-  INT4 lastBadBin = (INT4) round ( ( fhi - f0 ) / deltaF ); /*use round to get the highest contaminated bin*/
+  INT4 lastBadBin = (INT4) ceil ( ( fhi - f0 ) / deltaF ); /*use ceil to get the highest contaminated bin make sure to extend the boundary*/
   /* printf ("lastBadBin = %d\n",lastBadBin); */
   if ( lastBadBin >= (INT4) length ) lastBadBin = (INT4) (length-1);
 
