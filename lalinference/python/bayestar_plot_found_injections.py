@@ -30,8 +30,8 @@ parser = command.ArgumentParser()
 parser.add_argument('--cumulative', action='store_true')
 parser.add_argument('--normed', action='store_true')
 parser.add_argument('--group-by', choices=('far', 'snr'), metavar='far|snr',
-    default='far', help='Group plots by false alarm rate (FAR) or ' +
-    'signal to noise ratio (SNR) [default: %(default)s]')
+    help='Group plots by false alarm rate (FAR) or ' +
+    'signal to noise ratio (SNR) [default: do not group]')
 parser.add_argument('--pp-confidence-interval', type=float, metavar='PCT',
     default=95, help='If all inputs files have the same number of '
     'samples, overlay binomial confidence bands for this percentage on '
@@ -65,13 +65,15 @@ dataset_names = [os.path.splitext(file.name)[0] for file in opts.input]
 combined = np.concatenate([dataset['searched_area'] for dataset in datasets_])
 min_searched_area = np.min(combined)
 max_searched_area = np.max(combined)
-combined = np.concatenate([dataset['offset'] for dataset in datasets_])
-min_offset = np.min(combined)
-max_offset = np.max(combined)
-combined = np.concatenate([dataset['runtime'] for dataset in datasets_])
-if np.any(np.isfinite(combined)):
-    min_runtime = np.nanmin(combined)
-    max_runtime = np.nanmax(combined)
+if 'offset' in dataset.dtype.names:
+    combined = np.concatenate([dataset['offset'] for dataset in datasets_])
+    min_offset = np.min(combined)
+    max_offset = np.max(combined)
+if 'runtime' in dataset.dtype.names:
+    combined = np.concatenate([dataset['runtime'] for dataset in datasets_])
+    if np.any(np.isfinite(combined)):
+        min_runtime = np.nanmin(combined)
+        max_runtime = np.nanmax(combined)
 if opts.group_by == 'far':
     combined = np.concatenate([dataset['far'] for dataset in datasets_])
     log10_min_far = int(np.ceil(np.log10(np.min(combined))))
@@ -87,7 +89,10 @@ elif opts.group_by == 'snr':
     bin_edges = np.arange(min_snr, max_snr + 1)
     bin_names = ['snr_{0}'.format(e) for e in bin_edges]
     bin_titles = [r'$\mathrm{{SNR}} \geq {0}$'.format(e) for e in bin_edges]
-
+else:
+    bin_edges = [None]
+    bin_names = ['.']
+    bin_titles = ['All events']
 
 # Set maximum range of progress bar: one tick for each of 5 figures, for each
 # false alarm rate bin.
@@ -103,6 +108,8 @@ else:
     histlabel += 'number'
 histlabel += ' of injections'
 
+cwd = os.getcwd()
+
 # Loop over false alarm rate bins.
 for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titles)):
     pb.update(text=subdir)
@@ -113,6 +120,8 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
         datasets = [dataset[dataset['far'] <= bin_edge] for dataset in datasets_]
     elif opts.group_by == 'snr':
         datasets = [dataset[dataset['snr'] >= bin_edge] for dataset in datasets_]
+    else:
+        datasets = datasets_
     nsamples = list(set(len(dataset) for dataset in datasets))
 
     # Compute titles and labels for plots.
@@ -148,30 +157,38 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     ax2.set_title(title)
 
     # Set up figure 3.
-    fig3 = plt.figure(figsize=(6, 4.5))
-    ax3 = fig3.add_subplot(111)
-    ax3.set_xscale('log')
-    fig3.subplots_adjust(bottom=0.15)
-    ax3.set_xlabel('angle between true location and mode of posterior')
-    ax3.set_ylabel(histlabel)
-    ax3.set_title(title)
+    if 'offset' in dataset.dtype.names:
+        fig3 = plt.figure(figsize=(6, 4.5))
+        ax3 = fig3.add_subplot(111)
+        ax3.set_xscale('log')
+        fig3.subplots_adjust(bottom=0.15)
+        ax3.set_xlabel('angle between true location and mode of posterior')
+        ax3.set_ylabel(histlabel)
+        ax3.set_title(title)
 
     # Set up figure 4.
-    fig4 = plt.figure(figsize=(6, 4.5))
-    ax4 = fig4.add_subplot(111)
-    ax4.set_xscale('log')
-    fig4.subplots_adjust(bottom=0.15)
-    ax4.set_xlabel('run time (s)')
-    ax4.set_ylabel(histlabel)
+    if 'runtime' in dataset.dtype.names:
+        fig4 = plt.figure(figsize=(6, 4.5))
+        ax4 = fig4.add_subplot(111)
+        ax4.set_xscale('log')
+        fig4.subplots_adjust(bottom=0.15)
+        ax4.set_xlabel('run time (s)')
+        ax4.set_ylabel(histlabel)
 
     # Plot a histogram from each dataset onto each of the 5 figures.
     for (data, label) in zip(datasets, labels):
         if len(data): # Skip if data is empty
-            ax1.add_series(data['searched_prob'], label=label)
+            try:
+                searched_prob = data['searched_prob']
+            except ValueError:
+                searched_prob = data['p_value']
+            ax1.add_series(searched_prob, label=label)
             ax2.hist(data['searched_area'], histtype='step', label=label, bins=np.logspace(np.log10(min_searched_area), np.log10(max_searched_area), 20), cumulative=opts.cumulative, normed=opts.normed)
-            ax3.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 20), cumulative=opts.cumulative, normed=opts.normed)
-            if np.any(np.isfinite(data['runtime'])):
-                ax4.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative, normed=opts.normed)
+            if 'offset' in dataset.dtype.names:
+                ax3.hist(data['offset'], histtype='step', label=label, bins=np.logspace(np.log10(min_offset), np.log10(max_offset), 20), cumulative=opts.cumulative, normed=opts.normed)
+            if 'runtime' in dataset.dtype.names:
+                if np.any(np.isfinite(data['runtime'])):
+                    ax4.hist(data['runtime'], histtype='step', bins=np.logspace(np.log10(min_runtime), np.log10(max_runtime), 20), cumulative=opts.cumulative, normed=opts.normed)
 
     # Finish and save plot 1.
     pb.update(i * 4)
@@ -192,15 +209,17 @@ for i, (bin_edge, subdir, title) in enumerate(zip(bin_edges, bin_names, bin_titl
     fig2.savefig('searched_area_hist.pdf')
 
     # Finish and save plot 3.
-    pb.update(i * 4 + 2)
-    ax3.grid()
-    fig3.savefig('offset_hist.pdf')
+    if 'offset' in dataset.dtype.names:
+        pb.update(i * 4 + 2)
+        ax3.grid()
+        fig3.savefig('offset_hist.pdf')
 
     # Finish and save plot 4.
-    pb.update(i * 4 + 3)
-    ax4.grid()
-    fig4.savefig('runtime_hist.pdf')
-    plt.close()
+    if 'runtime' in dataset.dtype.names:
+        pb.update(i * 4 + 3)
+        ax4.grid()
+        fig4.savefig('runtime_hist.pdf')
+        plt.close()
 
     # Go back to starting directory.
-    os.chdir(os.pardir)
+    os.chdir(cwd)
