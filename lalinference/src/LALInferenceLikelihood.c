@@ -598,7 +598,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
           switch(errnum)
           {
             case XLAL_EUSR0: /* Template generation failed in a known way, set -Inf likelihood */
-              return (-DBL_MAX);
+              return (-INFINITY);
               break;
             default: /* Panic! */
               fprintf(stderr,"Unhandled error in template generation - exiting!\n");
@@ -1009,7 +1009,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 	if( cos(tilt_spin1)*a_spin1 <= 0.4 - 7*eta){
 		// the ROM breaks down for these parameter values so throw a large and negative likelihood to avoid 
 		// strange likelihood values
-		loglikelihood = -DBL_MAX;
+		loglikelihood = -INFINITY;
 		}
 	
 	return(loglikelihood); /* The ROQ isn't compatible with the stuff below, so we can just exit here */
@@ -1435,7 +1435,7 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
         switch(errnum)
         {
           case XLAL_EUSR0: /* Template generation failed in a known way, set -Inf likelihood */
-            return (-DBL_MAX);
+            return (-INFINITY);
             break;
           default: /* Panic! */
             fprintf(stderr,"Unhandled error in template generation - exiting!\n");

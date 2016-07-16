@@ -905,14 +905,17 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         fprintf(stdout,"Unable to open resume file %s. Starting anew.\n",resumefilename);
     /* Sprinkle points */
     LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
+    int sprinklewarning=0;
     for(i=0;i<Nlive;i++) {
-	threadState->currentParams=runState->livePoints[i];
-	do
-    {
-        runState->evolve(runState);
-    	logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,threadState->model);
-    }while(isnan(logLikelihoods[i]));
-	if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
+	    threadState->currentParams=runState->livePoints[i];
+	    j=0;
+	    do
+	    {
+		    runState->evolve(runState);
+		    logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,threadState->model);
+		    if(!sprinklewarning || j++==100) { fprintf(stderr,"Warning: having difficulty sampling prior, check your prior bounds\n"); sprinklewarning=1;}
+	    }while(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i]));
+	    if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
     }
   }
 
@@ -928,7 +931,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     logLtmp=logLikelihoods[i];
     logLmax=logLtmp>logLmax? logLtmp : logLmax;
-    if(isnan(logLikelihoods[i])) {
+    if(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i])) {
       fprintf(stderr,"Detected logL[%i]=%lf! Sanity checking...\n",i,logLikelihoods[i]);
       if(LALInferenceSanityCheck(runState))
 	exit(1);
@@ -1372,7 +1375,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
 
     logProposalRatio = threadState->proposal(threadState,threadState->currentParams,&proposedParams);
     REAL8 logPriorNew=runState->prior(runState, &proposedParams, threadState->model);
-    if(logPriorNew==-DBL_MAX || isnan(logPriorNew) || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
+    if(logPriorNew==-DBL_MAX || isnan(logPriorNew) || logPriorNew==-INFINITY || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
     {
 	/* Reject - don't need to copy new params back to currentParams */
         /*LALInferenceCopyVariables(oldParams,runState->currentParams); */
@@ -1677,7 +1680,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	  do{
 	    LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );
 	    logPrior=runState->prior(runState,runState->livePoints[i],threadState->model);
-	  }while(logPrior==-DBL_MAX || isnan(logPrior));
+	  }while(logPrior==-DBL_MAX || logPrior==-INFINITY || isnan(logPrior));
 	  /* Populate log likelihood */
 	  logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,threadState->model);
 	  LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
