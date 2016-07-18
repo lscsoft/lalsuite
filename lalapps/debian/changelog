@@ -1,6 +1,7 @@
 lalapps (6.19.0.1-1) UNRELEASED; urgency=medium
 
-  * Add python3 package
+  * Add some scaffolding for future python3 package.
+    LALApps depends on glue, which does not yet support Python 3.
 
  -- Leo Singer <leo.singer@ligo.org>  Fri, 15 Jul 2016 00:03:38 -0400
 

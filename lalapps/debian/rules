@@ -20,4 +20,4 @@ export PYBUILD_INSTALL_ARGS = $(MAKE) $(MAKEARGS) DESTDIR={destdir} install
 export PYBUILD_TEST_ARGS = $(MAKE) $(MAKEARGS) check
 
 %:
-	dh $@ --with=python2,python3 --buildsystem=pybuild
+	dh $@ --with=python2 --buildsystem=pybuild
