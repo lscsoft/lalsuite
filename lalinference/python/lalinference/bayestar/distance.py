@@ -192,8 +192,6 @@ axis1 : int
     Index of axis to assign to y-coordinate
 R : `numpy.ndarray`
     Rotation matrix as provided by `principal_axes`
-nside : int
-    HEALPix resolution
 nest : bool
     HEALPix ordering scheme
 prob : `numpy.ndarray`
