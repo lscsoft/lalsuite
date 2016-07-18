@@ -8,7 +8,6 @@ EXTRA_DIST = \
 	lalinference-dev.install \
 	lalinference-octave.install \
 	lalinference-python.install \
-	lalinference-python3.install \
 	lalinference.dirs \
 	lalinference.install \
 	rules \

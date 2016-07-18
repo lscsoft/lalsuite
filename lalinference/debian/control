@@ -2,37 +2,37 @@ Source: lalinference
 Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 9), pkg-config, dh-python, python-all-dev, python3-all-dev,
+Build-Depends: debhelper (>= 9), pkg-config, dh-python, python-all-dev,
   libchealpix-dev,
   zlib1g-dev, libgsl0-dev (>= 1.15), libmetaio-dev (>= 8.2), python-healpy (>= 1.8.5),
-  swig (>= 3.0.7), octave3.2-headers | liboctave-dev, python-numpy, python3-numpy, python-scipy,
+  swig (>= 3.0.7), octave3.2-headers | liboctave-dev, python-numpy, python-scipy,
   libhdf5-dev,
   python-glue (>= 1.49.1~),
   python-glue-common (>= 1.49.1~),
   python-glue-segments (>= 1.49.1~),
   lal-dev (>= 6.16.1~),
-  lal-python (>= 6.16.1~), lal-python3 (>= 6.16.1~),
+  lal-python (>= 6.16.1~),
   lal-octave (>= 6.16.1~),
   lalframe-dev (>= 1.4.1~),
-  lalframe-python (>= 1.4.1~), lalframe-python3 (>= 1.4.1~),
+  lalframe-python (>= 1.4.1~),
   lalframe-octave (>= 1.4.1~),
   lalmetaio-dev (>= 1.2.8~),
-  lalmetaio-python (>= 1.2.8~), lalmetaio-python3 (>= 1.2.8~),
+  lalmetaio-python (>= 1.2.8~),
   lalmetaio-octave (>= 1.2.8~),
   lalxml-dev (>= 1.2.2~),
-  lalxml-python (>= 1.2.2~), lalxml-python3 (>= 1.2.2~),
+  lalxml-python (>= 1.2.2~),
   lalxml-octave (>= 1.2.2~),
   lalsimulation-dev (>= 1.6.0~),
-  lalsimulation-python (>= 1.6.0~), lalsimulation-python3 (>= 1.6.0~),
+  lalsimulation-python (>= 1.6.0~),
   lalsimulation-octave (>= 1.6.0~),
   lalburst-dev (>= 1.4.2~),
-  lalburst-python (>= 1.4.2~), lalburst-python3 (>= 1.4.2~),
+  lalburst-python (>= 1.4.2~),
   lalburst-octave (>= 1.4.2~),
   lalinspiral-dev (>= 1.7.5~),
-  lalinspiral-python (>= 1.7.5~), lalinspiral-python3 (>= 1.7.5~),
+  lalinspiral-python (>= 1.7.5~),
   lalinspiral-octave (>= 1.7.5~),
   lalpulsar-dev (>= 1.14.0~),
-  lalpulsar-python (>= 1.14.0~), lalpulsar-python3 (>= 1.14.0~),
+  lalpulsar-python (>= 1.14.0~),
   lalpulsar-octave (>= 1.14.0~)
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
@@ -89,25 +89,6 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy, python-scipy, python-
   lalburst-python (>= 1.4.2~),
   lalinspiral-python (>= 1.7.5~),
   lalpulsar-python (>= 1.14.0~)
-Replaces: lalapps (<< 6.14.0-1)
-Breaks: lalapps (<< 6.14.0-1)
-Description: Python bindings for LALInference
-
-Package: lalinference-python3
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy, python3-scipy, python3-six,
-  python3-glue (>= 1.49.1~),
-  python3-glue-common (>= 1.49.1~),
-  python3-glue-segments (>= 1.49.1~),
-  lalinference (= ${binary:Version}),
-  lal-python3 (>= 6.16.1~),
-  lalframe-python3 (>= 1.4.1~),
-  lalmetaio-python3 (>= 1.2.8~),
-  lalxml-python3 (>= 1.2.2~),
-  lalsimulation-python3 (>= 1.6.0~),
-  lalburst-python3 (>= 1.4.2~),
-  lalinspiral-python3 (>= 1.7.5~),
-  lalpulsar-python3 (>= 1.14.0~)
 Replaces: lalapps (<< 6.14.0-1)
 Breaks: lalapps (<< 6.14.0-1)
 Description: Python bindings for LALInference
