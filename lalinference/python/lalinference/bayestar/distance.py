@@ -38,8 +38,11 @@ def _add_newdoc_ufunc(func, doc):
     # The function `np.lib.add_newdoc_ufunc` can only change a ufunc's
     # docstring if it is `NULL`. This workaround avoids an exception
     # when the user tries to `reload()` this module.
-    if func.__doc__ is None:
+    try:
         np.lib.add_newdoc_ufunc(func, doc)
+    except ValueError as e:
+        if e.message == 'Cannot change docstring of ufunc with non-NULL docstring':
+            pass
 
 
 _add_newdoc_ufunc(conditional_pdf, """\
