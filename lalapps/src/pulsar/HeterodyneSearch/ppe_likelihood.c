@@ -450,7 +450,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
   UINT4 cori = 0;
 
   /* check that parameters are within their prior ranges */
-  if( !in_range( runState->priorArgs, params ) ) { return -DBL_MAX; }
+  if( !in_range( runState->priorArgs, params ) ) { return -INFINITY; }
 
   /* if some correlated priors exist allocate corVals */
   if ( corlist ) { corVals = XLALCreateREAL8Vector( corlist->length ); }
@@ -477,7 +477,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
 
         /* make sure H0, Q22 or DIST are not negative */
         if ( !strcmp(item->name, "H0") || !strcmp(item->name, "DIST") || !strcmp(item->name, "DIST") ){
-          if ( value < 0. ) { return -DBL_MAX; }
+          if ( value < 0. ) { return -INFINITY; }
         }
 
         if ( !strcmp(item->name, "I21") ){ I21 = value; }
@@ -505,7 +505,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         LALInferenceGetFermiDiracPrior(runState->priorArgs, item->name, &sigma, &r);
 
         value = (*(REAL8 *)item->value);
-        if ( value < 0. ) { return -DBL_MAX; } /* value must be positive */
+        if ( value < 0. ) { return -INFINITY; } /* value must be positive */
         prior += LALInferenceFermiDiracPrior(value, sigma, r);
       }
       else if( LALInferenceCheckCorrelatedPrior(runState->priorArgs, item->name) && corlist ){
@@ -530,7 +530,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
 
     /* check if the I21 and I31 value have been set, and if so set the prior I31 >= I21 */
     if ( I21 != -INFINITY && I31 != -INFINITY ){
-      if ( I31 < I21 ) { return -DBL_MAX; }
+      if ( I31 < I21 ) { return -INFINITY; }
     }
   }
 
@@ -539,7 +539,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     /* in case one parameter is fixed check that */
     if ( C21 == -INFINITY ){ C21 = LALInferenceGetREAL8Variable( threadState->currentParams, "C21" ); }
     if ( C22 == -INFINITY ){ C22 = LALInferenceGetREAL8Variable( threadState->currentParams, "C22" ); }
-    if ( (C21 < 0. && C22 > 0.) || (C21 > 0. && C22 < 0.) ) { return -DBL_MAX; } /* if same sign this will be positive */
+    if ( (C21 < 0. && C22 > 0.) || (C21 > 0. && C22 < 0.) ) { return -INFINITY; } /* if same sign this will be positive */
   }
 
   /* if there are values for which the priors are defined by a correlation coefficient matrix then get add the prior from that */
