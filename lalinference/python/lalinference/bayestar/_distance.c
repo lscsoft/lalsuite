@@ -199,7 +199,7 @@ static const PyUFuncGenericFunction
 
 static const char volume_render_ufunc_types[] = {
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_INT, NPY_INT, NPY_DOUBLE, NPY_BOOL,
-    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
+    NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
 
 static const char double_ufunc_types[] = {
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE};
