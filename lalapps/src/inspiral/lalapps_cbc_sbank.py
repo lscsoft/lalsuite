@@ -469,7 +469,7 @@ for tmplt in proposal:
     # check if stopping criterion has been reached
     #
     if not (((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and \
-            (len(bank) < opts.templates_max)):
+            (len(tbl) < opts.templates_max)):
         break
 
     # accounting for number of proposals
