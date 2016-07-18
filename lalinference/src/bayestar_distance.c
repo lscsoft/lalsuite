@@ -34,6 +34,9 @@
 
 double bayestar_distance_conditional_pdf(double r, double mu, double sigma, double norm)
 {
+    if (!isfinite(mu))
+        return 0;
+
     const double x = -0.5 * gsl_pow_2((r - mu) / sigma);
     const double y = norm * gsl_pow_2(r) / sigma;
     return gsl_sf_exp_mult(x, y);
@@ -323,7 +326,10 @@ double bayestar_volume_render(
             vec2pix_ring(nside, vec, &ipix);
         double r = sqrt(gsl_pow_2(x) + gsl_pow_2(y) + gsl_pow_2(z));
 
-        ret += prob[ipix] / sigma[ipix] * exp(-0.5 * gsl_pow_2((r - mu[ipix]) / sigma[ipix])) * norm[ipix] * dz_dtheta;
+        if (isfinite(mu[ipix]))
+            ret += gsl_sf_exp_mult(
+                -0.5 * gsl_pow_2((r - mu[ipix]) / sigma[ipix]),
+                prob[ipix] / sigma[ipix] * norm[ipix] * dz_dtheta);
     }
 
     return ret / (M_SQRT2 * M_SQRTPI);
