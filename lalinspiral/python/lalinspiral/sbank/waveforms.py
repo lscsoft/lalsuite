@@ -395,7 +395,7 @@ class IMRPhenomDTemplate(IMRAlignedSpinTemplate):
             0, 0, df, # ref phase, ref frequency, df
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
             self.spin1z, self.spin2z,
-            self.bank.flow, f_final, 1000000 * PC_SI)
+            self.bank.flow, f_final, 1000000 * PC_SI, None)
 
     def _get_dur(self):
         dur = lalsim.SimIMRPhenomDChirpTime(self.m1 * MSUN_SI,
