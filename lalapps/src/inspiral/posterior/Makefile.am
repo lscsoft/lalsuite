@@ -39,7 +39,6 @@ noinst_PROGRAMS = \
 if HAVE_PYTHON
 pybin_scripts = \
 	lalapps_coherence_test \
-	lalinference_pipe \
 	lalapps_nest2pos \
 	lalinference_burst_pp_pipe \
 	lalinference_pp_pipe \
@@ -48,9 +47,6 @@ pybin_scripts = \
 	lalapps_compute_roq_weights \
 	lalapps_merge_posteriors \
 	lalapps_test_run_lalinference_pipe_example
-pkgpython_PYTHON = \
-	nest2pos.py \
-	lalinference_pipe_utils.py 
 endif
 
 EXTRA_DIST += \

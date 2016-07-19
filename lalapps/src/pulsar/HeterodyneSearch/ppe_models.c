@@ -30,10 +30,6 @@
 #include "ppe_models.h"
 #include <lal/SinCosLUT.h>
 
-#ifndef _OPENMP
-#define omp ignore
-#endif
-
 #define SQUARE(x) ( (x) * (x) )
 
 /******************************************************************************/
@@ -167,6 +163,7 @@ void get_pulsar_model( LALInferenceModel *model ){
   add_pulsar_parameter( model->params, pars, "PMRA" );
   add_pulsar_parameter( model->params, pars, "DEC" );
   add_pulsar_parameter( model->params, pars, "PMDEC" );
+  add_pulsar_parameter( model->params, pars, "PX" );
 
   /* check the number of frequency and frequency derivative parameters */
   if ( LALInferenceCheckVariable( model->params, "FREQNUM" ) ){
@@ -450,8 +447,9 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
   LIGOTimeGPSVector *datatimes = NULL;
 
-  REAL8 T0 = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
+  REAL8 pepoch = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
   REAL8 cgw = PulsarGetREAL8ParamOrZero(params, "CGW");
+  REAL8 T0 = LALInferenceGetREAL8Variable( ifo->params, "data_epoch" ); /* epoch of the data */
 
   /* glitch parameters */
   REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
@@ -486,7 +484,7 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   REAL8 freqstaylor[freqs->length];
   memcpy(freqstaylor, freqs->data, sizeof(REAL8)*freqs->length);
   REAL8 taylorcoeff = 1., taylorcoeffinner = 1;
-  DT = XLALGPSGetREAL8( &datatimes->data[0] ) - T0;
+  DT = T0 - pepoch;
   for ( i=0; i<freqs->length; i++ ){
     taylorcoeffinner = 1.;
     deltatupdate = DT;
@@ -498,7 +496,6 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
     taylorcoeff /= (REAL8)(i+1);
     freqstaylor[i] *= taylorcoeff;
   }
-  T0 = XLALGPSGetREAL8( &datatimes->data[0] ); /* update T0 to start of data */
 
   if ( PulsarCheckParam( params, "BINARY" ) ){ isbinary = 1; } /* see if pulsar is in binary */
   if ( PulsarCheckParam( params, "GLEP" ) ){ /* see if pulsar has glitch parameters */
@@ -662,7 +659,6 @@ REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
   REAL8 pepoch = PulsarGetREAL8ParamOrZero( pars, "PEPOCH" );
   REAL8 posepoch = PulsarGetREAL8ParamOrZero( pars, "POSEPOCH" );
   REAL8 px = PulsarGetREAL8ParamOrZero( pars, "PX" );     /* parallax */
-  REAL8 dist = PulsarGetREAL8ParamOrZero( pars, "DIST" ); /* distance */
 
    /* set the position and frequency epochs if not already set */
   if( pepoch == 0. && posepoch != 0.) { pepoch = posepoch; }
@@ -673,9 +669,8 @@ REAL8Vector *get_ssb_delay( PulsarParameters *pars, LIGOTimeGPSVector *datatimes
   /* allocate memory for times delays */
   dts = XLALCreateREAL8Vector( length );
 
-  /* set 1/distance if parallax or distance value is given (1/sec) */
-  if( px != 0. ) { bary.dInv = px*1e-3*LAL_C_SI/LAL_PC_SI; }
-  else if( dist != 0. ) { bary.dInv = LAL_C_SI/(dist*1e3*LAL_PC_SI); }
+  /* set 1/distance if parallax value is given (1/sec) */
+  if( px != 0. ) { bary.dInv = px*(LAL_C_SI/LAL_AU_SI); }
   else { bary.dInv = 0.; }
 
   /* make sure ra and dec are wrapped within 0--2pi and -pi.2--pi/2 respectively */

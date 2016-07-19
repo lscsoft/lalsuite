@@ -41,8 +41,8 @@
 /* Funny thing is: __GLIBC__ is not yet defined here.
    If you move features.h below where __GLIBC_ is defined, the the Linux build breaks.
    This seems a problem specific to gcc-4.4 (headers), though, so the workaround is
-   limited to that version. */
-#if defined (__linux__) && defined (__GNUC__) && (__GNUC__ == 4) && (__GNUC_MINOR__ == 4)
+   limited to that version. Addendum: still a problem in gcc-4.8 on Ubuntu 6.06 */
+#if defined (__linux__) && defined (__GNUC__) && (__GNUC__ == 4)
 #include <features.h>
 #ifdef __GLIBC__
 #ifndef __USE_BSD

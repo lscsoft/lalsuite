@@ -694,11 +694,16 @@ class posteriors:
   def get_bayes_factor(self, postfile):
     # return the Bayes factor extracted from a posterior file
     try:
-      # open hdf5 file
-      f = h5py.File(postfile, 'r')
-      a = f['lalinference']['lalinference_nest']
-      evdata = (a.attrs['log_bayes_factor'], a.attrs['log_evidence'], a.attrs['log_noise_evidence'], a.attrs['log_max_likelihood'])
-      f.close()
+      fe = os.path.splitext(postfile)[-1].lower() # file extension
+      if fe == '.h5' or fe == '.hdf': # HDF5 file
+        # open hdf5 file
+        f = h5py.File(postfile, 'r')
+        a = f['lalinference']['lalinference_nest']
+        evdata = (a.attrs['log_bayes_factor'], a.attrs['log_evidence'], a.attrs['log_noise_evidence'], a.attrs['log_max_likelihood'])
+        f.close()
+      else: # try old/legacy file format
+        B = np.loadtxt(postfile.replace('.gz', '')+'_B.txt')
+        evdata = tuple(B.tolist())
     except:
       print("Error... could not extract evidences from '%s'." % postfile, file=sys.stderr)
       sys.exit(1)

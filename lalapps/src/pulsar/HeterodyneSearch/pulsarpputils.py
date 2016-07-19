@@ -232,9 +232,9 @@ def pferrs(porf, porferr, pdorfd=None, pdorfderr=None):
 
 # class to read in a pulsar par file - this is heavily based on the function
 # in parfile.py in PRESTO
-float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9",
+float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10",
               "PEPOCH", "POSEPOCH", "DM", "START", "FINISH", "NTOA",
-              "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS", "DM",
+              "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS",
               "A1", "XDOT", "E", "ECC", "EDOT", "T0", "PB", "PBDOT", "OM",
               "OMDOT", "EPS1", "EPS2", "EPS1DOT", "EPS2DOT", "TASC", "LAMBDA",
               "BETA", "RA_RAD", "DEC_RAD", "GAMMA", "SINI", "M2", "MTOT",
@@ -1299,7 +1299,7 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
       'font.size': 15 }
 
   matplotlib.rcParams.update(mplparams)
-  matplotlib.rcParams['text.latex.preamble']=r'\usepackage{nicefrac}'
+  matplotlib.rcParams['text.latex.preamble']=r'\usepackage{xfrac}'
 
   # ifos line colour specs
   coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm'}
@@ -1417,9 +1417,9 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
             xl.append('0')
           else:
             if item < 0:
-              xl.append(r'$-\nicefrac{1}{%d}$' % (-1./item))
+              xl.append(r'$-\sfrac{1}{%d}$' % (-1./item))
             else:
-              xl.append(r'$\nicefrac{1}{%d}$' % (1./item))
+              xl.append(r'$\sfrac{1}{%d}$' % (1./item))
         ax.set_xticklabels(xl)
         #plt.setp(ax.get_xticklabels(), fontsize=16)  # increase font size
         plt.tick_params(axis='x', which='major', labelsize=14)
@@ -1446,9 +1446,9 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
             yl.append('0')
           else:
             if item < 0:
-              yl.append(r'$-\nicefrac{1}{%d}$' % (-1./item))
+              yl.append(r'$-\sfrac{1}{%d}$' % (-1./item))
             else:
-              yl.append(r'$\nicefrac{1}{%d}$' % (1./item))
+              yl.append(r'$\sfrac{1}{%d}$' % (1./item))
         ax.set_yticklabels(yl)
         plt.tick_params(axis='y', which='major', labelsize=14)
 
@@ -2376,19 +2376,28 @@ def pulsar_nest_to_posterior(postfile):
   elif fe == '.gz': # gzipped file
     import gzip
     peparser = bppu.PEOutputParser('common')
-    nsResultsObject = peparser.parse(gzip.open(nestfile, 'r'))
+    nsResultsObject = peparser.parse(gzip.open(postfile, 'r'))
   else: # assume an ascii text file
     peparser = bppu.PEOutputParser('common')
-    nsResultsObject = peparser.parse(open(nestfile, 'r'))
+    nsResultsObject = peparser.parse(open(postfile, 'r'))
 
   pos = bppu.Posterior( nsResultsObject, SimInspiralTableEntry=None, votfile=None )
 
-  # remove any unchanging variables
+  # remove any unchanging variables and randomly shuffle the rest
   pnames = pos.names
+  nsamps = len(pos[pnames[0]].samples)
+  permarr = np.arange(nsamps)
+  np.random.shuffle(permarr)
   for pname in pnames:
     # check first and last samples are the same
     if pos[pname].samples[0] - pos[pname].samples[-1] == 0.:
       pos.pop(pname)
+    else:
+      # shuffle
+      shufpos = None
+      shufpos = bppu.PosteriorOneDPDF(pname, pos[pname].samples[permarr])
+      pos.pop(pname)
+      pos.append(shufpos)
 
   # check whether iota has been used
   try:
@@ -2442,7 +2451,7 @@ def pulsar_nest_to_posterior(postfile):
     noiseev = a.attrs['log_noise_evidence']
     hdf.close()
   else:
-    B = np.loadtxt(nestfile.replace('.gz', '')+'_B.txt')
+    B = np.loadtxt(postfile.replace('.gz', '')+'_B.txt')
     sigev = B[1]
     noiseev = B[2]
 

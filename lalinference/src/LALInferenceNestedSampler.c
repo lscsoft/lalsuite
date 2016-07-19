@@ -599,7 +599,6 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
     --- Nested Sampling Algorithm Parameters -----\n\
     ----------------------------------------------\n\
     --Nlive N                        Number of live points to use\n\
-    (--outhdf <filename.h5>)         HDF5 file output path\n\
     (--Nmcmc M)                      Over-ride auto chain length determination and use <M> MCMC samples\n\
     (--maxmcmc M)                    Use at most M MCMC points when autodetermining the chain (5000)\n\
     (--Nmcmcinitial M)               Use M MCMC points when initially resampling from the prior\n\
@@ -744,7 +743,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   UINT4 iter=0,i,j,minpos;
   /* Single thread here */
   LALInferenceThreadState *threadState = runState->threads[0];
-
+  UINT4 HDFOUTPUT=1;
   UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   UINT4 Nruns=100;
   REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*logtarray;
@@ -810,24 +809,27 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   ppt = NULL;
   ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
   if(!ppt){
-    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outhdf");
-    if(!ppt){
-      fprintf(stderr,"Must specify --outfile <filename.dat> or --outhdf <filename.h5>\n");
+      fprintf(stderr,"Must specify --outfile <filename.hdf5>\n");
       exit(1);
-      }
   }
   char *outfile=ppt->value;
+  /* Check if the output file has hdf5 extension */
+  if(strstr(outfile,".h5") || strstr(outfile,".hdf")) HDFOUTPUT=1;
+  else HDFOUTPUT=0;
+  
+#ifndef HAVE_HDF5
+  if(HDFOUTPUT)
+  {
+      fprintf(stderr,"Error: LALSuite was compiled without HDF5 support. Unable to write HDF5 output files\n");
+      exit(1);
+  }
+#endif
+  
   double logvolume=0.0;
   if ( LALInferenceCheckVariable( runState->livePoints[0], "chirpmass" ) ){
     /* If a cbc run, calculate the mass-distance volume and store it to file*/ 
     /* Do it before algorithm starts so that we can kill the run and still get this */
     logvolume=log(LALInferenceMassDistancePriorVolume(runState));
-    /*moved to hdf5 below
-     * char priorfile[FILENAME_MAX];
-    sprintf(priorfile,"%s_prior_weight.txt",outfile);
-    fpout=fopen(priorfile,"w");
-    fprintf(fpout,"%10.10e\n",logvolume);
-    fclose(fpout);*/
   }
 
   if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
@@ -861,8 +863,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   /* Check for an interrupted run */
   char resumefilename[FILENAME_MAX];
   sprintf(resumefilename,"%s_resume",outfile);
-  char outfilebackup[FILENAME_MAX];
-  sprintf(outfilebackup,"%s.bak",outfile);
   int retcode=1;
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume")){
 #ifdef HAVE_HDF5
@@ -873,13 +873,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       if(retcode==0){
           for(i=0;i<Nlive;i++) logLikelihoods[i]=*(REAL8 *)LALInferenceGetVariable(runState->livePoints[i],"logL");
           iter=s->iteration;
-          /* back up the old file and get ready to append to it from the right place */
-          char commandline[1024];
-          sprintf(commandline,"cp %s %s",outfile,outfilebackup);
-          system(commandline);
-          sprintf(commandline,"head -n %i %s > %s",iter+1,outfilebackup,outfile);
-          system(commandline);
-          fpout=fopen(outfile,"a");
       }
       /* Install a periodic alarm that will trigger a checkpoint */
       int sigretcode=0;
@@ -891,7 +884,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       /* Condor sends SIGUSR2 to checkpoint and continue */
       sigretcode=sigaction(SIGUSR2,&sa,NULL);
       if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGUSR2.\n");
-      checkpoint_timer.it_interval.tv_sec=4*3600; /* Default timer 4 hours */
+      checkpoint_timer.it_interval.tv_sec=30*60; /* Default timer 30 mins */
       checkpoint_timer.it_interval.tv_usec=0;
       checkpoint_timer.it_value=checkpoint_timer.it_interval;
       setitimer(ITIMER_VIRTUAL,&checkpoint_timer,NULL);
@@ -912,22 +905,18 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         fprintf(stdout,"Unable to open resume file %s. Starting anew.\n",resumefilename);
     /* Sprinkle points */
     LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
+    int sprinklewarning=0;
     for(i=0;i<Nlive;i++) {
-	threadState->currentParams=runState->livePoints[i];
-	do
-    {
-        runState->evolve(runState);
-    	logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,threadState->model);
-    }while(isnan(logLikelihoods[i]));
-	if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
+	    threadState->currentParams=runState->livePoints[i];
+	    j=0;
+	    do
+	    {
+		    runState->evolve(runState);
+		    logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,threadState->model);
+		    if(!sprinklewarning || j++==100) { fprintf(stderr,"Warning: having difficulty sampling prior, check your prior bounds\n"); sprinklewarning=1;}
+	    }while(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i]));
+	    if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
     }
-    fpout=fopen(outfile,"w");
-  }
-  if(fpout==NULL) {fprintf(stderr,"Unable to open output file %s!\n",outfile); exit(1);}
-  else{
-    if(setvbuf(fpout,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
-      fprintf(stderr,"Warning: Unable to set output file buffer!");
-    LALInferenceAddVariable(runState->algorithmParams,"outfile",&fpout,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_FIXED);
   }
 
   logZarray=s->logZarray->data;
@@ -942,7 +931,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     logLtmp=logLikelihoods[i];
     logLmax=logLtmp>logLmax? logLtmp : logLmax;
-    if(isnan(logLikelihoods[i])) {
+    if(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i])) {
       fprintf(stderr,"Detected logL[%i]=%lf! Sanity checking...\n",i,logLikelihoods[i]);
       if(LALInferenceSanityCheck(runState))
 	exit(1);
@@ -968,12 +957,15 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     printAdaptiveJumpSizes(stdout, threadState);
   }
   /* Write out names of parameters */
-  FILE *lout=NULL;
-  char param_list[FILENAME_MAX];
-  sprintf(param_list,"%s_params.txt",outfile);
-  lout=fopen(param_list,"w");
-  LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
-  fclose(lout);
+  if(!HDFOUTPUT)
+  {
+      FILE *lout=NULL;
+      char param_list[FILENAME_MAX];
+      sprintf(param_list,"%s_params.txt",outfile);
+      lout=fopen(param_list,"w");
+      LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
+      fclose(lout);
+  }
   minpos=0;
   threadState->currentParams=currentVars;
   fprintf(stdout,"Starting nested sampling loop!\n");
@@ -1048,7 +1040,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     }
    /* Have we been told to quit? */
   if(__ns_exitFlag) {
-    fclose(fpout);
     exit(0);
   }
 
@@ -1100,36 +1091,42 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     logZ=incrementEvidenceSamples(runState->GSLrandom, Nlive-i, logLikelihoods[i], s);
     if(runState->logsample) runState->logsample(runState->algorithmParams,runState->livePoints[i]);
   }
-
-    /* Write out the evidence */
-    fclose(fpout);
-    
-    char bayesfile[FILENAME_MAX];
-    sprintf(bayesfile,"%s_B.txt",outfile);
-    fpout=fopen(bayesfile,"w");
-    fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
-    fclose(fpout);
-    
+  
+    LALInferenceVariables **output_array=NULL;
+    UINT4 N_output_array=0;
+    if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
+            &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
+    {
+            output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+            N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
+    }
     double logB=logZ-logZnoise;
     /* Pass output back through algorithmparams */
     LALInferenceAddVariable(runState->algorithmParams,"logZ",(void *)&logZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->algorithmParams,"logB",(void *)&logB,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->algorithmParams,"logLmax",(void *)&logLmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
-    LALInferenceVariables **output_array=NULL;
-
-    UINT4 N_output_array=0;
-    if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
-      &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
+    /* Write out the evidence */
+    if(!HDFOUTPUT)
     {
-      output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-      N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
+        fpout = fopen(outfile,"w");
+        for(i=0;i<N_output_array;i++) LALInferencePrintSample(fpout,output_array[i]);
+        fclose(fpout);
+    
+        char bayesfile[FILENAME_MAX];
+        sprintf(bayesfile,"%s_B.txt",outfile);
+        fpout=fopen(bayesfile,"w");
+        fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
+        fclose(fpout);
+    
+        
+     
     }
     /* Write HDF5 file */
-    if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outhdf")))
+    if(HDFOUTPUT)
     {
       
-      LALH5File *h5file=XLALH5FileOpen(ppt->value, "w");
+      LALH5File *h5file=XLALH5FileOpen(outfile, "w");
       // Create group heirarchy 
       char runID[256]="";
       if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--runid")))
@@ -1164,7 +1161,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
   {
     if(!access(resumefilename,W_OK)) remove(resumefilename);
-    if(!access(outfilebackup,W_OK)) remove(outfilebackup);
   }
 
   /* Free memory */
@@ -1379,7 +1375,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
 
     logProposalRatio = threadState->proposal(threadState,threadState->currentParams,&proposedParams);
     REAL8 logPriorNew=runState->prior(runState, &proposedParams, threadState->model);
-    if(logPriorNew==-DBL_MAX || isnan(logPriorNew) || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
+    if(logPriorNew==-DBL_MAX || isnan(logPriorNew) || logPriorNew==-INFINITY || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
     {
 	/* Reject - don't need to copy new params back to currentParams */
         /*LALInferenceCopyVariables(oldParams,runState->currentParams); */
@@ -1684,7 +1680,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	  do{
 	    LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );
 	    logPrior=runState->prior(runState,runState->livePoints[i],threadState->model);
-	  }while(logPrior==-DBL_MAX || isnan(logPrior));
+	  }while(logPrior==-DBL_MAX || logPrior==-INFINITY || isnan(logPrior));
 	  /* Populate log likelihood */
 	  logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,threadState->model);
 	  LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);

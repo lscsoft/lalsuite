@@ -43,7 +43,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalstochastic (= ${binary:Version}),
   lal-python (>= 6.16.1~),
   lalmetaio-python (>= 1.2.8~)
-Description: Python bindings for LALStochastiv
+Description: Python bindings for LALStochastic
 
 Package: lalstochastic-octave
 Architecture: any

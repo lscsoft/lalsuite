@@ -25,19 +25,28 @@
 /* FIXME: maybe use GSL vector and matrix types that SWIG can wrap easily */
 #if !defined(SWIG) && !defined(__cplusplus)
 
+double bayestar_distance_conditional_pdf(
+    double r, double mu, double sigma, double norm);
+
+double bayestar_distance_conditional_cdf(
+    double r, double mu, double sigma, double norm);
+
+double bayestar_distance_conditional_ppf(
+    double p, double mu, double sigma, double norm);
+
 int bayestar_distance_moments_to_parameters(
     double mean, double std, double *mu, double *sigma, double *norm);
 
 void bayestar_distance_parameters_to_moments(
     double mu, double sigma, double *mean, double *std, double *norm);
 
-double bayestar_volume_render_kernel(
+double bayestar_volume_render(
     double x, double y, double max_distance, int axis0, int axis1,
     const double *R, long nside, int nest,
     const double *prob, const double *mu,
     const double *sigma, const double *norm);
 
-double bayestar_marginal_distance_distribution(
+double bayestar_distance_marginal_pdf(
     double r, long npix,
     const double *prob, const double *mu,
     const double *sigma, const double *norm);
