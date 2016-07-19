@@ -55,7 +55,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   lalstochastic-python (>= 1.1.18~),
   lalinference (>= 1.7.0~),
   lalinference-python (>= 1.7.0~),
-  skyarea
+  python-skyarea
 Recommends: python (>= 2.6)
 Provides: python-bayestar-localization, python-bayestar
 Conflicts: python-bayestar-localization, python-bayestar
