@@ -21,3 +21,6 @@ export PYBUILD_TEST_ARGS = $(MAKE) $(MAKEARGS) check
 
 %:
 	dh $@ --with=python2 --buildsystem=pybuild
+
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/tmp
