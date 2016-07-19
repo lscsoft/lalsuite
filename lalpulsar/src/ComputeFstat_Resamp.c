@@ -86,6 +86,7 @@ typedef struct tagResampTimingInfo
   UINT4 numFreqBins;		// number of frequency bins to compute F-stat for
   UINT4 numSFTs;		// total number of SFTs used
   UINT4 numDetectors;		// number of detectors
+  REAL8 overResolution;		// over-resolution factor r = T_FFT/T_span = 1 / (df * Tspan)
   UINT4 numSamplesFFT0;		// 'original' length of barycentered timeseries to be FFT'ed
   UINT4 numSamplesFFT;		// actual length of FFT, potentially rounded up to power-of-2 for efficiency
   Timings_t tau;
@@ -371,6 +372,7 @@ XLALSetupFstatResamp ( void **method_data,
   // initialize struct for collecting timing data, store invariant 'meta' quantities about this setup
   XLAL_INIT_MEM ( resamp->timingInfo );
   resamp->timingInfo.collectTiming = optArgs->collectTiming;	// whether or not to collect timing info
+  resamp->timingInfo.overResolution = 1.0 * numSamplesFFT / numSamplesMax_SRC;
   resamp->timingInfo.numSamplesFFT0 = numSamplesFFT0;
   resamp->timingInfo.numSamplesFFT  = numSamplesFFT;
 
@@ -1036,9 +1038,11 @@ AppendFstatTimingInfo2File_Resamp ( const void* method_data, FILE *fp )
     fprintf (fp, "%%%% ----- Measured timing contributions: -----\n");
 
     fprintf (fp, "%%%%%8s %10s %10s", "NFbin", "NSamp0", "lg2(NSamp)" );
-    fprintf (fp, " %10s %10s %10s %10s %10s %10s %10s %10s",
+    fprintf (fp, " %10s %10s %10s %10s %10s %10s %11s %10s",
              "tauTotal", "tauBary", "tauFFT", "tauSpin", "tauCopy", "tauNorm", "tauFab2F", "tauSumFabX" );
-    fprintf (fp, " %10s %10s %10s\n", "tauSamp1", "tauSamp1Buf", "tauFbin1" );
+    fprintf (fp, " %10s %10s %10s", "tauSamp1", "tauSamp1Buf", "tauFbin1" );
+    fprintf (fp, " %4s %7s %6s", "Ndet", "overRes", "Nsft" );
+    fprintf (fp, "\n");
     print_header = 0;
   }
 
@@ -1049,8 +1053,11 @@ AppendFstatTimingInfo2File_Resamp ( const void* method_data, FILE *fp )
   fprintf (fp, " %10.1e %10.1e %10.1e %10.1e %10.1e %10.1e %10.1e %10.1e",
            ti->tau.Total, ti->tau.Bary, ti->tau.FFT, ti->tau.Spin, ti->tau.Copy, ti->tau.Norm, ti->tau.Fab2F, ti->tau.SumFabX );
 
-  fprintf (fp, " %10.1e %10.1e %10.1e\n",
+  fprintf (fp, " %10.1e %11.1e %10.1e",
            ti->tau.Samp1, ti->tau.Samp1Buf, ti->tau.Fbin1 );
+  fprintf (fp, " %4d %7.2f %6d", ti->numDetectors, ti->overResolution, ti->numSFTs );
+
+  fprintf (fp, "\n");
 
   return XLAL_SUCCESS;
 } // AppendFstatTimingInfo2File_Resamp()
