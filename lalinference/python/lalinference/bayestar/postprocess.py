@@ -612,6 +612,8 @@ def find_greedy_credible_levels(p, ranking=None):
     pflat = p.ravel()
     if ranking is None:
         ranking = pflat
+    else:
+        ranking = ranking.ravel()
     i = np.flipud(np.argsort(ranking))
     cs = np.cumsum(pflat[i])
     cls = np.empty_like(pflat)
