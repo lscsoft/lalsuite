@@ -588,7 +588,7 @@ def contour(m, levels, nest=False, degrees=False, simplify=True):
     return paths
 
 
-def find_greedy_credible_levels(p):
+def find_greedy_credible_levels(p, ranking=None):
     """Find the greedy credible levels of a (possibly multi-dimensional) array.
 
     Parameters
@@ -596,6 +596,10 @@ def find_greedy_credible_levels(p):
 
     p : np.ndarray
         The input array, typically a HEALPix image.
+
+    ranking : np.ndarray, optional
+        The array to rank in order to determine the greedy order.
+        The default is `p` itself.
 
     Returns
     -------
@@ -606,7 +610,9 @@ def find_greedy_credible_levels(p):
         entry in the array belongs.
     """
     pflat = p.ravel()
-    i = np.flipud(np.argsort(pflat))
+    if ranking is None:
+        ranking = pflat
+    i = np.flipud(np.argsort(ranking))
     cs = np.cumsum(pflat[i])
     cls = np.empty_like(pflat)
     cls[i] = cs
