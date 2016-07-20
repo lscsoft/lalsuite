@@ -47,7 +47,6 @@ HL-INJECTIONS_1_TEST-1000000000-10.xml:
 MOSTLYCLEANFILES = \
 	*.dat \
 	*.out \
-	*.xml \
 	test_bayestar_sample_model_psd.xml \
 	test_bayestar_realize_coincs.xml \
 	test_bayestar_sim_to_tmpltbank.xml \
