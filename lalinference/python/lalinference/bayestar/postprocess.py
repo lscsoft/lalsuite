@@ -276,6 +276,65 @@ def interpolate_nested(m, nest=False):
     return m
 
 
+def reconstruct_nested(m):
+    """Reconstruct the leaves of a multiresolution tree.
+
+    Parameters
+    ----------
+    m : `~numpy.ndarray`
+        A HEALPix array in the NESTED ordering scheme.
+
+    Yields
+    ------
+    nside : int
+        The HEALPix resolution parameter of the pixel.
+    ipix : int
+        The HEALPix index of the pixel at resolution `nside`.
+
+    Here are some examples...
+
+    An nside=1 array of all zeros:
+    >>> list(reconstruct_nested(np.zeros(12)))
+    [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
+
+    An nside=1 array of distinct values:
+    >>> list(reconstruct_nested(range(12)))
+    [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
+
+    An nside=8 array of zeros:
+    >>> list(reconstruct_nested(np.zeros(768)))
+    [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
+
+    An nside=2 array, all zeros except for four consecutive distinct elements:
+    >>> m = np.zeros(48); m[:4] = range(4); list(reconstruct_nested(m))
+    [(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11), (2, 0), (2, 1), (2, 2), (2, 3)]
+
+    An nside=2 array, all elements distinct except for four consecutive zeros:
+    >>> m = np.arange(48); m[:4] = 0; list(reconstruct_nested(m))
+    [(1, 0), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (2, 9), (2, 10), (2, 11), (2, 12), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21), (2, 22), (2, 23), (2, 24), (2, 25), (2, 26), (2, 27), (2, 28), (2, 29), (2, 30), (2, 31), (2, 32), (2, 33), (2, 34), (2, 35), (2, 36), (2, 37), (2, 38), (2, 39), (2, 40), (2, 41), (2, 42), (2, 43), (2, 44), (2, 45), (2, 46), (2, 47)]
+    """
+    max_npix = len(m)
+    max_nside = hp.npix2nside(max_npix)
+    max_order = hp.nside2order(max_nside)
+    seen = np.zeros(max_npix, dtype=bool)
+
+    for order in range(max_order + 1):
+        nside = hp.order2nside(order)
+        npix = hp.nside2npix(nside)
+        skip = max_npix // npix
+        if skip > 1:
+            b = m.reshape(-1, skip)
+            a = b[:, 0].reshape(-1, 1)
+            b = b[:, 1:]
+            aseen = seen.reshape(-1, skip)
+            eq = ((a == b) | ((a != a) & (b != b))).all(1) & (~aseen).all(1)
+        else:
+            eq = ~seen
+        for ipix in np.flatnonzero(eq):
+            yield nside, ipix
+            seen[ipix*skip:(ipix+1)*skip] = True
+
+
 def flood_fill(nside, ipix, m, nest=False):
     """Stack-based flood fill algorithm in HEALPix coordinates.
     Based on <http://en.wikipedia.org/w/index.php?title=Flood_fill&oldid=566525693#Alternative_implementations>.
