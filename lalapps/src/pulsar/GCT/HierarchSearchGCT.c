@@ -697,7 +697,14 @@ int MAIN( int argc, char *argv[]) {
     } /* end of logging */
 
   tic_Start = GETTIME();
+  BOOLEAN printHeader = 0;
   if ( uvar_outputTimingDetails != NULL ) {
+    FILE *tmp;
+    if ( (tmp = fopen ( uvar_outputTimingDetails, "r" )) == NULL ) {
+      printHeader = 1;
+    } else {
+      fclose (tmp );
+    }
     XLAL_CHECK ( (usefulParams.timingDetailsFP = fopen ( uvar_outputTimingDetails, "wb" )) != NULL, XLAL_ESYS, "Failed to open '%s' for writing\n", uvar_outputTimingDetails );
   } // if uvar_outputTimingDetails
 
@@ -1529,7 +1536,7 @@ int MAIN( int argc, char *argv[]) {
                     return xlalErrno;
                   }
                   if ( usefulParams.timingDetailsFP != NULL ) {
-                    XLAL_CHECK ( AppendFstatTimingInfo2File ( usefulParams.Fstat_in_vec->data[k], usefulParams.timingDetailsFP ) == XLAL_SUCCESS, XLAL_EFUNC );
+                    XLAL_CHECK ( AppendFstatTimingInfo2File ( usefulParams.Fstat_in_vec->data[k], usefulParams.timingDetailsFP, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
                   }
                   /* if single-only flag is given, add +4 to F-statistic */
                   if ( uvar_SignalOnly ) {

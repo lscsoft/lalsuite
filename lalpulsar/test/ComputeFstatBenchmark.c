@@ -186,11 +186,17 @@ main ( int argc, char *argv[] )
   optionalArgs.collectTiming = 1;
 
   FILE *timingLogFILE = NULL;
+  BOOLEAN printHeader = 0;
   if ( uvar->outputInfo != NULL )
     {
+      FILE *tmp;
+      if ( (tmp = fopen ( uvar->outputInfo, "r" )) == NULL ) {
+        printHeader = 1;
+      } else {
+        fclose (tmp );
+      }
       XLAL_CHECK ( (timingLogFILE = fopen (uvar->outputInfo, "ab")) != NULL, XLAL_ESYS, "Failed to open '%s' for appending\n", uvar->outputInfo );
     }
-
   FstatInputVector *inputs;
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_2F_PER_DET);
   FstatResults *results = NULL;
@@ -239,7 +245,7 @@ main ( int argc, char *argv[] )
           tauF1Buf_i   += Fstat_tauF1Buf;
           // ----- output timing details to file if requested
           if ( timingLogFILE != NULL ) {
-            XLAL_CHECK ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE ) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
 
         } // for l < numSegments

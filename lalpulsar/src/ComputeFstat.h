@@ -298,7 +298,7 @@ const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* in
 const MultiNoiseWeights* XLALGetFstatInputNoiseWeights ( const FstatInput* input );
 const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInput* input );
 int XLALGetFstatTiming ( const FstatInput* input, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
-int AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp );
+int AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader );
 
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));

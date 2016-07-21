@@ -1022,16 +1022,14 @@ XLALGetFstatTiming_Resamp ( const void* method_data, REAL8 *tauF1Buf, REAL8 *tau
 
 // append detailed (method-specific) timing info to given file
 int
-AppendFstatTimingInfo2File_Resamp ( const void* method_data, FILE *fp )
+AppendFstatTimingInfo2File_Resamp ( const void* method_data, FILE *fp, BOOLEAN printHeader )
 {
   XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
   XLAL_CHECK ( fp != NULL, XLAL_EINVAL );
 
   const ResampMethodData *resamp = (const ResampMethodData *)method_data;
-
-  // print header on first call
-  static BOOLEAN print_header = 1;
-  if ( print_header ) {
+  // print header if requested
+  if ( printHeader ) {
     fprintf (fp, "%%%% ----- Resampling F-stat timing: -----\n");
     fprintf (fp, "%%%% Measured time (in seconds) per F-stat frequency bin per detector (excluding barycentering):\n");
     fprintf (fp, "%%%% tau_RS = (TauTotal - TauBary) / NFbin\n");
@@ -1044,7 +1042,6 @@ AppendFstatTimingInfo2File_Resamp ( const void* method_data, FILE *fp )
     fprintf (fp, "%%%%%8s %8s %8s %6s %6s", "NFbin", "NsFFT0", "l2NsFFT", "Ndet", "R" );
     fprintf (fp, " %10s %10s %10s %10s %10s %10s", "TauTotal", "tau_RS", "tau_Fbin", "tau_FFT", "tau_spin", "tau_bary" );
     fprintf (fp, "\n");
-    print_header = 0;
   }
 
   const ResampTimingInfo *ti = &(resamp->timingInfo);
