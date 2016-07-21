@@ -2180,9 +2180,6 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   /* set Fstat spindown resolution (coarse grid) */
   in->df1dot = HSMIN(in->df1dot, in->spinRange_midTime.fkdotBand[1]);
 
-  /* set Fstat 2nd spindown resolution (coarse grid) */
-  in->df2dot = HSMIN(in->df2dot, in->spinRange_midTime.fkdotBand[2]);
-
   /* calculate number of bins for Fstat overhead due to residual spin-down */
   in->extraBinsFstat = (UINT4)( 0.25*(in->tObs*in->df1dot + in->tObs*in->tObs*in->df2dot)/in->dFreqStack + 1e-6) + 1;
 
