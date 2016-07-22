@@ -30,14 +30,9 @@ import lal
 import lalsimulation
 
 
-# Maximum 64-bit HEALPix resolution.
-HEALPIX_MACHINE_ORDER = 29
-HEALPIX_MACHINE_NSIDE = hp.order2nside(HEALPIX_MACHINE_ORDER)
-
-
-def nside2order(nside):
+def _nside2order(nside):
     """Convert lateral HEALPix resolution to order.
-    FIXME: see https://github.com/healpy/healpy/issues/163"""
+    FIXME: available as `hp.nside2order` in healpy >= 1.9.0."""
     order = np.log2(nside)
     int_order = int(order)
     if order != int_order:
@@ -45,8 +40,15 @@ def nside2order(nside):
     return int_order
 
 
-def order2nside(order):
+def _order2nside(order):
+    """Convert lateral HEALPix resolution to order.
+    FIXME: available as `hp.order2nside` in healpy >= 1.9.0."""
     return 1 << order
+
+
+# Maximum 64-bit HEALPix resolution.
+HEALPIX_MACHINE_ORDER = 29
+HEALPIX_MACHINE_NSIDE = _order2nside(HEALPIX_MACHINE_ORDER)
 
 
 class HEALPixTree(object):
@@ -133,7 +135,7 @@ class HEALPixTree(object):
     @property
     def flat_bitmap(self):
         """Return flattened HEALPix representation."""
-        m = np.empty(hp.nside2npix(hp.order2nside(self.order)))
+        m = np.empty(hp.nside2npix(_order2nside(self.order)))
         for nside, full_nside, ipix, ipix0, ipix1, samples in self.visit():
             m[ipix0:ipix1] = len(samples) / hp.nside2pixarea(nside)
         return m
@@ -160,11 +162,11 @@ def adaptive_healpix_histogram(theta, phi, max_samples_per_pixel, nside=-1, max_
     if nside == -1 and max_nside == -1:
         max_order = HEALPIX_MACHINE_ORDER
     elif nside == -1:
-        max_order = nside2order(max_nside)
+        max_order = _nside2order(max_nside)
     elif max_nside == -1:
-        max_order = nside2order(nside)
+        max_order = _nside2order(nside)
     else:
-        max_order = nside2order(min(nside, max_nside))
+        max_order = _nside2order(min(nside, max_nside))
     tree = HEALPixTree(ipix, max_samples_per_pixel, max_order)
 
     # Compute a flattened bitmap representation of the tree.
@@ -274,6 +276,65 @@ def interpolate_nested(m, nest=False):
 
     # Done!
     return m
+
+
+def reconstruct_nested(m):
+    """Reconstruct the leaves of a multiresolution tree.
+
+    Parameters
+    ----------
+    m : `~numpy.ndarray`
+        A HEALPix array in the NESTED ordering scheme.
+
+    Yields
+    ------
+    nside : int
+        The HEALPix resolution parameter of the pixel.
+    ipix : int
+        The HEALPix index of the pixel at resolution `nside`.
+
+    Here are some examples...
+
+    An nside=1 array of all zeros:
+    >>> list(reconstruct_nested(np.zeros(12)))
+    [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
+
+    An nside=1 array of distinct values:
+    >>> list(reconstruct_nested(range(12)))
+    [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
+
+    An nside=8 array of zeros:
+    >>> list(reconstruct_nested(np.zeros(768)))
+    [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
+
+    An nside=2 array, all zeros except for four consecutive distinct elements:
+    >>> m = np.zeros(48); m[:4] = range(4); list(reconstruct_nested(m))
+    [(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11), (2, 0), (2, 1), (2, 2), (2, 3)]
+
+    An nside=2 array, all elements distinct except for four consecutive zeros:
+    >>> m = np.arange(48); m[:4] = 0; list(reconstruct_nested(m))
+    [(1, 0), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (2, 9), (2, 10), (2, 11), (2, 12), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21), (2, 22), (2, 23), (2, 24), (2, 25), (2, 26), (2, 27), (2, 28), (2, 29), (2, 30), (2, 31), (2, 32), (2, 33), (2, 34), (2, 35), (2, 36), (2, 37), (2, 38), (2, 39), (2, 40), (2, 41), (2, 42), (2, 43), (2, 44), (2, 45), (2, 46), (2, 47)]
+    """
+    max_npix = len(m)
+    max_nside = hp.npix2nside(max_npix)
+    max_order = _nside2order(max_nside)
+    seen = np.zeros(max_npix, dtype=bool)
+
+    for order in range(max_order + 1):
+        nside = _order2nside(order)
+        npix = hp.nside2npix(nside)
+        skip = max_npix // npix
+        if skip > 1:
+            b = m.reshape(-1, skip)
+            a = b[:, 0].reshape(-1, 1)
+            b = b[:, 1:]
+            aseen = seen.reshape(-1, skip)
+            eq = ((a == b) | ((a != a) & (b != b))).all(1) & (~aseen).all(1)
+        else:
+            eq = ~seen
+        for ipix in np.flatnonzero(eq):
+            yield nside, ipix
+            seen[ipix*skip:(ipix+1)*skip] = True
 
 
 def flood_fill(nside, ipix, m, nest=False):
@@ -529,7 +590,7 @@ def contour(m, levels, nest=False, degrees=False, simplify=True):
     return paths
 
 
-def find_greedy_credible_levels(p):
+def find_greedy_credible_levels(p, ranking=None):
     """Find the greedy credible levels of a (possibly multi-dimensional) array.
 
     Parameters
@@ -537,6 +598,10 @@ def find_greedy_credible_levels(p):
 
     p : np.ndarray
         The input array, typically a HEALPix image.
+
+    ranking : np.ndarray, optional
+        The array to rank in order to determine the greedy order.
+        The default is `p` itself.
 
     Returns
     -------
@@ -547,7 +612,11 @@ def find_greedy_credible_levels(p):
         entry in the array belongs.
     """
     pflat = p.ravel()
-    i = np.flipud(np.argsort(pflat))
+    if ranking is None:
+        ranking = pflat
+    else:
+        ranking = ranking.ravel()
+    i = np.flipud(np.argsort(ranking))
     cs = np.cumsum(pflat[i])
     cls = np.empty_like(pflat)
     cls[i] = cs

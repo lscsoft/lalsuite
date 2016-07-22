@@ -36,11 +36,10 @@ int XLALGetDopplerShiftedFrequencyInfo
    SFTIndexList              *sftIndices, /**< List of indices for SFTs */
    MultiSFTVector             *inputSFTs, /**< SFT data (needed for f0) */
    MultiSSBtimes             *multiTimes, /**< SSB or Binary times */
+   MultiUINT4Vector             *badBins, /**< List of bin indices contaminated by known lines */
    REAL8                            Tsft  /**< SFT duration */
   )
 {
-  REAL8 timeDiff, factor, fhat, phiByTwoPi;
-
   UINT4 numSFTs = sftIndices->length;
   if ( expSignalPhases->length !=numSFTs
        || shiftedFreqs->length !=numSFTs
@@ -50,9 +49,13 @@ int XLALGetDopplerShiftedFrequencyInfo
     XLAL_ERROR(XLAL_EBADLEN );
   }
 
-  XLAL_CHECK ( ( inputSFTs->length == multiTimes->length ),
-	       XLAL_EBADLEN,
-	       "Lengths of detector-indexed lists don't match!" );
+  UINT4 numDets = inputSFTs->length;
+  if ( multiTimes->length !=numDets
+       || ( badBins && badBins->length !=numDets )
+       ) {
+    XLALPrintError("Lengths of detector-indexed lists don't match!");
+    XLAL_ERROR(XLAL_EBADLEN );
+  }
 
   if ( numBins < 1 ) {
     XLALPrintError("Must specify a positive number of bins to use!");
@@ -83,11 +86,11 @@ int XLALGetDopplerShiftedFrequencyInfo
 		 XLAL_EINVAL,
 		 "SFT asked for SFT index off end of list:\n sftNum=%"LAL_UINT4_FORMAT", detInd=%"LAL_UINT4_FORMAT", sftInd=%"LAL_UINT4_FORMAT", numSFTsDet=%"LAL_UINT4_FORMAT"\n",
 		 sftNum, detInd, sftInd, numSFTsDet );
-    timeDiff = times->DeltaT->data[sftInd]
+    REAL8 timeDiff = times->DeltaT->data[sftInd]
       + XLALGPSDiff( &(times->refTime), &(dopp->refTime));
-    fhat = dopp->fkdot[0]; /* initialization */
-    phiByTwoPi = fmod ( fhat * timeDiff , 1.0 );
-    factor = timeDiff;
+    REAL8 fhat = dopp->fkdot[0]; /* initialization */
+    REAL8 phiByTwoPi = fmod ( fhat * timeDiff , 1.0 );
+    REAL8 factor = timeDiff;
 
     for (UINT4 k = 1;  k < PULSAR_MAX_SPINS; k++) {
       fhat += dopp->fkdot[k] * factor;
@@ -105,16 +108,29 @@ int XLALGetDopplerShiftedFrequencyInfo
     lowestBins->data[sftNum] = ceil( fminusf0 * Tsft - 0.5*numBins );
 #define SINC_SAFETY 1e-5
     for (UINT4 l = 0; l < numBins; l++) {
-      REAL4 sinPiX, cosPiX;
-      REAL8 X;  /* Normalized sinc, i.e., sin(pi*x)/(pi*x) */
-      X =  lowestBins->data[sftNum] - fminusf0 * Tsft + l;
-      if(X > SINC_SAFETY || (X < - SINC_SAFETY)){
-	     XLAL_CHECK( XLALSinCos2PiLUT( &sinPiX, &cosPiX, 0.5 * X ) == XLAL_SUCCESS, XLAL_EFUNC ); /*sin(2*pi*0.5*x)=sin(pi*x)*/
-	     sincList->data[sftNum*numBins + l] = LAL_1_PI * sinPiX / X;/*1/(pi*x) =1/pi*1/x*/
-	   }
-	   else{
-	     sincList->data[sftNum*numBins + l] = 1;
-	   }
+      sincList->data[sftNum*numBins + l] = 1.0;
+      if ( badBins && badBins->data[detInd] ) {
+	for (UINT4 j = 0;
+	     sincList->data[sftNum*numBins + l] != 0.0
+	       && j < badBins->data[detInd]->length;
+	     j++) {
+	  if ( lowestBins->data[sftNum] + l
+	       == badBins->data[detInd]->data[j] ) {
+	    sincList->data[sftNum*numBins + l] = 0.0;
+	  }
+	}
+      }
+
+      if ( !badBins || !(badBins->data[detInd])
+	   || sincList->data[sftNum*numBins + l] != 0.0 ) {
+	/* Calculate normalized sinc, i.e., sin(pi*x)/(pi*x) */
+	REAL4 sinPiX, cosPiX;
+	REAL8 X = lowestBins->data[sftNum] - fminusf0 * Tsft + l;
+	if(X > SINC_SAFETY || (X < - SINC_SAFETY)){
+	  XLAL_CHECK( XLALSinCos2PiLUT( &sinPiX, &cosPiX, 0.5 * X ) == XLAL_SUCCESS, XLAL_EFUNC ); /*sin(2*pi*0.5*x)=sin(pi*x)*/
+	  sincList->data[sftNum*numBins + l] = LAL_1_PI * sinPiX / X;/*1/(pi*x) =1/pi*1/x*/
+	}
+      }
     }
 
     /* printf("f=%.7f, f0=%.7f, Tsft=%g, numbins=%d, lowestbin=%d, kappa=%g\n",

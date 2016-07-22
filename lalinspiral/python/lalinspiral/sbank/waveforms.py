@@ -23,7 +23,6 @@ np.seterr(all="ignore")
 import lal
 import lalsimulation as lalsim
 from lal import MSUN_SI, MTSUN_SI, PC_SI, PI, CreateREAL8Vector, CreateCOMPLEX8FrequencySeries
-from lalsimulation import SimInspiralTaylorF2RedSpinComputeNoiseMoments, SimInspiralTaylorF2RedSpinMetricChirpTimes, SimIMRPhenomPCalculateModelParameters
 from lalinspiral import InspiralSBankComputeMatch, InspiralSBankComputeMatchMaxSkyLoc
 from lalinspiral.sbank.psds import get_neighborhood_PSD
 from lalinspiral.sbank.tau0tau3 import m1m2_to_tau0tau3
@@ -389,18 +388,34 @@ class IMRPhenomCTemplate(IMRPhenomBTemplate):
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
             self.chieff, self.bank.flow, f_final, 1000000 * PC_SI)
 
-class IMRPhenomDTemplate(IMRPhenomBTemplate):
+class IMRPhenomDTemplate(IMRAlignedSpinTemplate):
     approximant = "IMRPhenomD"
     def _compute_waveform(self, df, f_final):
         return lalsim.SimIMRPhenomDGenerateFD(
             0, 0, df, # ref phase, ref frequency, df
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
             self.spin1z, self.spin2z,
-            self.bank.flow, f_final, 1000000 * PC_SI)
+            self.bank.flow, f_final, 1000000 * PC_SI, None)
 
+    def _get_dur(self):
+        dur = lalsim.SimIMRPhenomDChirpTime(self.m1 * MSUN_SI,
+                                            self.m2 * MSUN_SI, self.spin1z,
+                                            self.spin2z, self.bank.flow)
+        # add a 10% to be consistent with PyCBC's duration estimate,
+        # may want to FIXME if that changes
+        return dur * 1.1
 
 class SEOBNRv2Template(IMRAlignedSpinTemplate):
     approximant = "SEOBNRv2"
+
+    def _get_dur(self):
+        seff = lalsim.SimIMRPhenomBComputeChi(self.m1, self.m2,
+                                              self.spin1z, self.spin2z)
+        dur = lalsim.SimIMRSEOBNRv2ChirpTimeSingleSpin(
+                self.m1 * MSUN_SI, self.m2 * MSUN_SI, seff, self.bank.flow)
+        # add a 10% to be consistent with PyCBC's duration estimate,
+        # may want to FIXME if that changes
+        return dur * 1.1
 
 class SEOBNRv2ROMDoubleSpinTemplate(SEOBNRv2Template):
     approximant = "SEOBNRv2_ROM_DoubleSpin"
@@ -442,9 +457,9 @@ class TaylorF2RedSpinTemplate(InspiralAlignedSpinTemplate):
             real8vector_psd = CreateREAL8Vector(len(PSD))
             real8vector_psd.data[:] = PSD
             self.bank._moments[df] = create_moments(df, self.bank.flow, len(PSD))
-            SimInspiralTaylorF2RedSpinComputeNoiseMoments(*(self.bank._moments[df] + (real8vector_psd, self.bank.flow, df)))
+            lalsim.SimInspiralTaylorF2RedSpinComputeNoiseMoments(*(self.bank._moments[df] + (real8vector_psd, self.bank.flow, df)))
 
-        self._metric = SimInspiralTaylorF2RedSpinMetricChirpTimes(self._theta0, self._theta3, self._theta3s, self.bank.flow, df, *self.bank._moments[df])
+        self._metric = lalsim.SimInspiralTaylorF2RedSpinMetricChirpTimes(self._theta0, self._theta3, self._theta3s, self.bank.flow, df, *self.bank._moments[df])
         if isnan(self._metric[0]):
             raise ValueError("g00 is nan")
 
@@ -515,7 +530,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         self.iota = iota
         self.psi = psi
 
-        self.chieff, self.chipre = SimIMRPhenomPCalculateModelParameters(self.m1, self.m2, self.bank.flow, np.sin(iota), float(0), np.cos(iota), spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, 1)[:2]
+        self.chieff, self.chipre = lalsim.SimIMRPhenomPCalculateModelParameters(self.m1, self.m2, self.bank.flow, np.sin(iota), float(0), np.cos(iota), spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, 1)[:2]
 
         self._wf = {}
         self._metric = None

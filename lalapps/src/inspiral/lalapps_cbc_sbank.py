@@ -151,6 +151,8 @@ def parse_command_line():
     #
     parser.add_option("--approximant", choices=waveforms.keys(), metavar='|'.join(waveforms.keys()), default=None, help="Required. Specify the approximant to use for waveform generation.")
     parser.add_option("--use-metric", action="store_true", default=False, help="Use analytic approximation to the numerical match calculation (if available).")
+    parser.add_option("--duration-min", type=float, help="Set minimum allowed duration of the template waveform in seconds.")
+    parser.add_option("--duration-max", type=float, help="Set maximum allowed duration of the template waveform in seconds.")
 
     #
     # mass parameter options
@@ -443,6 +445,8 @@ else:
     else:
         params['spin1'] = (opts.spin1_min, opts.spin1_max)
         params['spin2'] = (opts.spin2_min, opts.spin2_max)
+    if opts.duration_min is not None or opts.duration_max is not None:
+        params['duration'] = (opts.duration_min, opts.duration_max)
 
     # get the correct generator for the chosen approximant
     proposal = proposals[opts.approximant](opts.flow, tmplt_class, bank,

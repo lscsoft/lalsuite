@@ -22,6 +22,7 @@ import lalinference.bayestar.distance
 import lalinference.bayestar.filter
 import lalinference.fits
 import lalinference.bayestar.timing
+import lalinference.bayestar.postprocess
 
 print('Running C unit tests.')
 total_failures = lalinference.bayestar.sky_map.test()
@@ -32,6 +33,7 @@ modules = [
     lalinference.bayestar.filter,
     lalinference.fits,
     lalinference.bayestar.timing,
+    lalinference.bayestar.postprocess,
 ]
 for module in modules:
     failures, tests = doctest.testmod(module)
