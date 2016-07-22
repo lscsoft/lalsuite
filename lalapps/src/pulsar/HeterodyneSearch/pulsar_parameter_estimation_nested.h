@@ -350,7 +350,7 @@ static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "H0", "PHI0", "PSI",
  * recognised within the code.
  */
 static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "F0", "F1", "F2", "F3",
-"F4", "F5", "F6", "F7", "F8", "F9", "PEPOCH", "CGW" };
+"F4", "F5", "F6", "F7", "F8", "F9", "F10", "PEPOCH", "CGW" };
 
 /**
  * A list of the sky position parameters. The names given here are those that
@@ -372,8 +372,6 @@ static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "PB", "ECC", "EPS1",
 static const CHAR glitchpars[NUMGLITCHPARS][VARNAME_MAX] = {"GLEP", "GLPH", "GLF0", "GLF1", "GLF2", "GLF0D", "GLTD"};
 
 extern LALStringVector *corlist;
-
-extern UINT4 verbose_output;
 
 #ifdef __cplusplus
 }

@@ -908,7 +908,6 @@ void setup_from_par_file( LALInferenceRunState *runState )
 {
   LALSource psr;
   PulsarParameters *pulsar;
-  REAL8Vector *phase_vector = NULL;
   LALInferenceIFOData *data = runState->data;
   ProcessParamsTable *ppt = NULL;
   REAL8 DeltaT = 0.; /* maximum data time span */
@@ -960,7 +959,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
   UINT4 glitches = 0;
   if ( LALInferenceCheckVariable( runState->threads[0]->currentParams, "GLNUM" ) ){ glitches = 1; }
 
-  /* Setup initial phase, and barycentring delays */
+  /* Setup barycentring delays */
   LALInferenceIFOModel *ifo_model = runState->threads[0]->model->ifo;
   while( data ){
     REAL8Vector *freqFactors = NULL;
@@ -972,7 +971,6 @@ void setup_from_par_file( LALInferenceRunState *runState )
     freqFactors = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "freqfactors" );
 
     for( j = 0; j < freqFactors->length; j++ ){
-      UINT4 i = 0;
       REAL8Vector *dts = NULL, *bdts = NULL;
 
       /* check whether using original Jones (2010) signal source model or a biaxial model (in the amplitude/phase parameterisation) */
@@ -999,16 +997,6 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
       bdts = get_bsb_delay( pulsar, ifo_model->times, dts, ifo_model->ephem );
       if ( bdts != NULL ){ LALInferenceAddVariable( ifo_model->params, "bsb_delays", &bdts, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED ); }
-
-      /* set the epoch of the data (for updating the frequencies in the phase model) */
-      REAL8 dataepoch = XLALGPSGetREAL8( &ifo_model->times->data[0] );
-      LALInferenceAddVariable( ifo_model->params, "data_epoch", &dataepoch, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
-      phase_vector = get_phase_model( pulsar, ifo_model, freqFactors->data[j] );
-
-      ifo_model->timeData = NULL;
-      ifo_model->timeData = XLALCreateREAL8TimeSeries( "", &ifo_model->times->data[0], 0., 1., &lalSecondUnit, phase_vector->length );
-
-      for ( i=0; i<phase_vector->length; i++ ) { ifo_model->timeData->data->data[i] = phase_vector->data[i]; }
 
       data = data->next;
       ifo_model = ifo_model->next;

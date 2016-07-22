@@ -23,7 +23,7 @@ LALInference tools */
 /**
  * \file
  * \ingroup lalapps_pulsar_HeterodyneSearch
- * \author Matthew Pitkin, John Veitch, Colin Gill
+ * \author Matthew Pitkin, John Veitch, Max Isi, Colin Gill
  *
  * \brief Parameter estimation code for known pulsar searches using the nested sampling algorithm.
  *
@@ -42,9 +42,11 @@ LALInference tools */
  * As input the code requires time domain data that has been heterodyned using the known (or close to) phase evolution of
  * the pulsar. The time domain input should consist of a three column text file containing the GPS time stamp of the data
  * point, the real part of the heterodyned data and the imaginary part of the heterodyned data, e.g.
+ * \code
  * 900000000.000000  1.867532e-24  -7.675329e-25
  * 900000060.000000  2.783651e-24  3.654386e-25
  * ...
+ * \endcode
  *
  * Most commonly such data will have a sample rate of 1/60 Hz, giving a bandwidth of the same amount, but the code can
  * accept any rate.
@@ -53,7 +55,7 @@ LALInference tools */
  * of the signal parameters can be searched over, including frequency, sky position and binary system parameters, although
  * the bandwidth of the data and search efficiency need to be taken into account.
  *
- * The 'Nested Sampling' algorithm (developed by \cite Skilling2006) used is that defined in LALinferenceNestedSampler
+ * The 'Nested Sampling' algorithm (developed by \cite Skilling2006) used is that defined in \c LALinferenceNestedSampler.c
  * (see \cite VeitchVecchio2010). It is essentially an efficient way to perform the integral
  * \f[
  * Z = \int^{\mathbf{\theta}} p(d|\mathbf{\theta}) p(\mathbf{\theta}) \mathrm{d}\mathbf{\theta},
@@ -70,12 +72,8 @@ LALInference tools */
  * \approx 1/N \f$ coming from the fact that the prior would be normalised to unity and therefore each point should occupy
  * an equal fraction and at each iteration the prior volume will decrease geometrically (for \f$\log{\Delta{}X_0} = 0\f$).
  * A new point is then drawn from the prior with the criterion that it has a higher likelihood than the previous lowest
- * point and substitutes that point. To draw the new point a Markov Chain Monte Carlo (MCMC) procedure is used - there are
- * two methods used to sample points within this: i) drawing from a proposal distributions based on the covariance matrix
- * if the current live points (although to keep things computationally efficient this no updated at every iteration), ii)
- * picking a point via differential evolution (two random live points are selected and a new point half way between the two
- * is created). The probability of using either method is currently set at 80\% and 20\% respectively. The procedure is
- * continued until a stopping criterion is reached, which in this case is that the remaining prior volume is less than the
+ * point and substitutes that point. To draw the new point a Markov Chain Monte Carlo (MCMC) procedure is used. The procedure
+ * is continued until a stopping criterion is reached, which in this case is that the remaining prior volume is less than the
  * \c tolerance value set (see below). The implementation of this can be seen in \cite VeitchVecchio2010 .
  *
  * ### Usage ###
@@ -85,18 +83,13 @@ LALInference tools */
  * lalapps_pulsar_parameter_estimation_nested --help
  * \endcode
  *
- * An example of running the code on to search over the four unknown parameters \f$ h_0 \f$, \f$ \phi_0 \f$, \f$ \psi \f$
+ * An example of running the code to search over the four unknown parameters \f$ h_0 \f$, \f$ \phi_0 \f$, \f$ \psi \f$
  * and \f$ \cos{\iota} \f$, for pulsar J0534-2200, given heterodyned time domain data from the H1 detector in the file
  * \c finehet_J0534-2200_H1, is:
  * \code
- * lalapps_pulsar_parameter_estimation_nested --detectors H1 --par-file
- * J0534-2200.par --input-files finehet_J0534-2200_H1 --outfile ns_J0534-2200
- * --prior-file prior_J0534-2200.txt --ephem-earth
- * lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun
- * lscsoft/share/lalpulsar/sun05-09.dat --model-type triaxial --Nlive 1000 --Nmcmc
- * 100 --Nruns 1 --tolerance 0.25
+ * lalapps_pulsar_parameter_estimation_nested --detectors H1 --par-file J0534-2200.par --input-files finehet_J0534-2200_H1 --outfile ns_J0534-2200.hdf --prior-file prior_J0534-2200.txt --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun lscsoft/share/lalpulsar/sun05-09.dat --Nlive 1000 --Nmcmcinitial 0 --tolerance 0.25
  * \endcode
- * The \c par-file is a TEMPO-style file containing the parameters of the pulsar used to perform the heterodyne (the
+ * The \c par-file is a TEMPO(2)-style file containing the parameters of the pulsar used to perform the heterodyne (the
  * frequency parameters are the rotation frequency and therefore not necessarily the gravitational wave frequency) e.g.
  * \code
  * RA      12:54:31.87523895
@@ -109,7 +102,7 @@ LALInference tools */
  * PEPOCH 54324.8753
  * \endcode
  * The \c prior-file is a text file containing a list of the parameters to be searched over, the prior type ("uniform" or
- * "gaussian" and their given lower/mean and upper/standard deviation ranges e.g.
+ * "gaussian") and their given lower/mean and upper/standard deviation ranges e.g.
  * \code
  * h0 uniform 0 1e-21
  * phi0 uniform 0 6.283185307179586
@@ -121,17 +114,13 @@ LALInference tools */
  * gravitational waves at 100 Hz (which will be at twice the rotation frequency) if you wanted to search over 99.999 to
  * 100.001 Hz then you should used
  * \code
- * f0 49.9995 50.0005
+ * f0 uniform 49.9995 50.0005
  * \endcode
  *
  * An example of running the code as above, but this time on fake data created using the Advanced LIGO design noise curves
  * and with a signal injected into the data is:
  * \code
- * lalapps_pulsar_parameter_estimation_nested --fake-data AH1 --inject-file
- * fake.par --par-file fake.par --outfile ns_fake --prior-file prior_fake.txt
- * --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun
- * lscsoft/share/lalpulsar/sun05-09.dat --model-type triaxial --Nlive 1000 --Nmcmc
- * 100 --Nruns 1 --tolerance 0.25
+ * lalapps_pulsar_parameter_estimation_nested --fake-data AH1 --inject-file fake.par --par-file fake.par --outfile ns_fake.hdf --prior-file prior_fake.txt --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun lscsoft/share/lalpulsar/sun05-09.dat --Nlive 1000 --Nmcmcinitial 0 --tolerance 0.25
  * \endcode
  * In this case the \c inject-file parameter file must contain the values of \c h0, \c phi0, \c psi and \c cosiota,
  * otherwise these will be set to zero by default. The parameter files given for \c inject-file and \c par-file do not
