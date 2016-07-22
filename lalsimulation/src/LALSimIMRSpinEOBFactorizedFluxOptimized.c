@@ -151,6 +151,10 @@ static REAL8 XLALInspiralSpinFactorizedFluxOptimized(
        tplspin = 0.0;
        break;
      case 2:
+        tplspin = (1.-2.* ak->eobParams->eta) * chiS + (ak->eobParams->m1
+                - ak->eobParams->m2)/(ak->eobParams->m1 + ak->eobParams->m2) * chiA;
+        break;
+     case 4:
        tplspin = (1.-2.* ak->eobParams->eta) * chiS + (ak->eobParams->m1
 			- ak->eobParams->m2)/(ak->eobParams->m1 + ak->eobParams->m2) * chiA;
        break;

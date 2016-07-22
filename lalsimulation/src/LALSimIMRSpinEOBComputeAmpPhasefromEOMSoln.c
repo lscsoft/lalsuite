@@ -218,8 +218,8 @@ static void GenerateAmpPhaseFromEOMSoln(UINT4 retLen,REAL8 *inputdata,SpinEOBPar
     REAL8 rOmega = r * omega; /*Location of this line of code: XLALSimIMREOBNonQCCorrection*/
     REAL8 rOmegaSq = rOmega*rOmega; /*Location of this line of code: XLALSimIMREOBNonQCCorrection*/
 
-    /*printf("a1 = %.16e, a2 = %.16e, a3 = %.16e, a3S = %.16e, a4 = %.16e, a5 = %.16e\n",coeffs->a1,coeffs->a2,coeffs->a3,coeffs->a3S, coeffs->a4,coeffs->a5);
-      printf("b1 = %.16e, b2 = %.16e, b3 = %.16e, b4 = %.16e\n",coeffs->b1,coeffs->b2,coeffs->b3,coeffs->b4);*/
+    /* printf("a1 = %.16e, a2 = %.16e, a3 = %.16e, a3S = %.16e, a4 = %.16e, a5 = %.16e\n",nqcCoeffs->a1,nqcCoeffs->a2,nqcCoeffs->a3,nqcCoeffs->a3S, nqcCoeffs->a4,nqcCoeffs->a5);
+      printf("b1 = %.16e, b2 = %.16e, b3 = %.16e, b4 = %.16e\n",nqcCoeffs->b1,nqcCoeffs->b2,nqcCoeffs->b3,nqcCoeffs->b4); */
     /* In EOBNRv2, coeffs->a3S, coeffs->a4 and coeffs->a5 are set to zero */
     /* through XLALSimIMREOBGetCalibratedNQCCoeffs() */
     /* and XLALSimIMREOBCalculateNQCCoefficients() */

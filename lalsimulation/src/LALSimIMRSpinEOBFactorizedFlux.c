@@ -152,6 +152,10 @@ static REAL8 XLALInspiralSpinFactorizedFlux(
        tplspin = (1.-2.* ak->eobParams->eta) * chiS + (ak->eobParams->m1
 			- ak->eobParams->m2)/(ak->eobParams->m1 + ak->eobParams->m2) * chiA;
        break;
+     case 4:
+        tplspin = (1.-2.* ak->eobParams->eta) * chiS + (ak->eobParams->m1
+            - ak->eobParams->m2)/(ak->eobParams->m1 + ak->eobParams->m2) * chiA;
+        break;
      default:
        XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
        XLAL_ERROR( XLAL_EINVAL );

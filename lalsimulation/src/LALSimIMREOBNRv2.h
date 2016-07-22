@@ -394,6 +394,19 @@ tagFacWaveformCoeffs
   REAL8 rho83v2;
   REAL8 rho82v2;
   REAL8 rho81v2;
+
+  REAL8 m1;
+  REAL8 m2;
+  REAL8 comp1;
+  REAL8 comp2;
+  REAL8 k2Tidal1;
+  REAL8 k2Tidal2;
+  REAL8 omega02Tidal1;
+  REAL8 omega02Tidal2;
+  REAL8 k3Tidal1;
+  REAL8 k3Tidal2;
+  REAL8 omega03Tidal1;
+  REAL8 omega03Tidal2;
 }
 FacWaveformCoeffs;
 
