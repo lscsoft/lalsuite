@@ -1198,6 +1198,32 @@ REAL8 LALInferenceComputeFrequencyDomainOverlap(LALInferenceIFOData * dataPtr,
   return overlap;
 }
 
+COMPLEX16 LALInferenceComputeFrequencyDomainComplexOverlap(LALInferenceIFOData * dataPtr,
+                                                COMPLEX16Vector * freqData1,
+                                                COMPLEX16Vector * freqData2)
+{
+  if (dataPtr==NULL || freqData1 ==NULL || freqData2==NULL){
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  }
+  
+  int lower, upper, i;
+  double deltaT, deltaF;
+  
+  COMPLEX16 overlap=0.0;
+  
+  /* determine frequency range & loop over frequency bins: */
+  deltaT = dataPtr->timeData->deltaT;
+  deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
+  lower = ceil(dataPtr->fLow / deltaF);
+  upper = floor(dataPtr->fHigh / deltaF);
+  
+  for (i=lower; i<=upper; ++i){
+    overlap += 4.0*deltaF * freqData1->data[i] * conj(freqData2->data[i]) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
+  }
+  
+  return overlap;
+}
+
 REAL8 LALInferenceNullLogLikelihood(LALInferenceIFOData *data)
 /*Identical to FreqDomainNullLogLikelihood                        */
 {
