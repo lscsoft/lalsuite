@@ -196,6 +196,15 @@ def allowed_m1m2(m1, m2, m1m2_constraints, tol=1e-10):
 
     return m1,m2
 
+# Copied out of pycbc.pnutils
+def mtotal_eta_to_mass1_mass2(m_total, eta):
+    mass1 = 0.5 * m_total * (1.0 + (1.0 - 4.0 * eta)**0.5)
+    mass2 = 0.5 * m_total * (1.0 - (1.0 - 4.0 * eta)**0.5)
+    return mass1,mass2
+
+def mchirp_eta_to_mass1_mass2(m_chirp, eta):
+    M = m_chirp / (eta**(3./5.))
+    return mtotal_eta_to_mass1_mass2(M, eta)
 
 def mchirpm1_to_m2(mc, m1, tol=1e-6):
     # solve cubic for m2
@@ -258,10 +267,43 @@ def tau0tau3_bound(flow, **constraints):
 
     # draw constant mchirp lines
     mcmin, mcmax = constraints.setdefault('mchirp', (None, None))
+    # Do not want to use global limits on m1,m2. Limit to possible allowed
+    # values for mcmin and mcmax, also use mass ratio constraints to determine
+    # this
+    mrmin, mrmax = constraints['mratio']
+    etamin = mrmax / (mrmax + 1.)**2
+    etamax = mrmin / (mrmin + 1.)**2
+
     if mcmax is not None:
-        m1m2_points += [(m1, mchirpm1_to_m2(mcmax, m1)) for m1 in numpy.linspace(m1min, m1max, npts)]
+        # Do not want to use global limits on m1,m2. Limit to possible allowed
+        # values for mcmin and mcmax, also use mass ratio constraints to
+        # determine this
+        mcmax_maxm1, mcmax_minm2 = mchirp_eta_to_mass1_mass2(mcmax, etamin)
+        mcmax_minm1, mcmax_maxm2 = mchirp_eta_to_mass1_mass2(mcmax, etamax)
+        if mcmax_maxm1 > m1max:
+            mcmax_maxm1 = m1max
+        if mcmax_minm1 < m1min:
+            mcmax_minm1 = m1min
+        if mcmax_minm2 < m2min:
+            mcmax_minm2 = m2min
+        if mcmax_maxm2 > m2max:
+            mcmax_maxm2 = m2max
+        m1m2_points += [(m1, mchirpm1_to_m2(mcmax, m1)) for m1 in numpy.linspace(mcmax_minm1, mcmax_maxm1, npts)]
+        m1m2_points += [(mchirpm1_to_m2(mcmax, m2), m2) for m2 in numpy.linspace(mcmax_minm2, mcmax_maxm2, npts)]
+
     if mcmin is not None:
-        m1m2_points += [(m1, mchirpm1_to_m2(mcmin, m1)) for m1 in numpy.linspace(m1min, m1max, npts)]
+        mcmin_maxm1, mcmin_minm2 = mchirp_eta_to_mass1_mass2(mcmin, etamin)
+        mcmin_minm1, mcmin_maxm2 = mchirp_eta_to_mass1_mass2(mcmin, etamax)
+        if mcmin_maxm1 > m1max:
+            mcmin_maxm1 = m1max
+        if mcmin_minm1 < m1min:
+            mcmin_minm1 = m1min
+        if mcmin_minm2 < m2min:
+            mcmin_minm2 = m2min
+        if mcmin_maxm2 > m2max:
+            mcmin_maxm2 = m2max
+        m1m2_points += [(m1, mchirpm1_to_m2(mcmin, m1)) for m1 in numpy.linspace(mcmin_minm1, mcmin_maxm1, npts)]
+        m1m2_points += [(mchirpm1_to_m2(mcmax, m2), m2) for m2 in numpy.linspace(mcmin_minm2, mcmin_maxm2, npts)]
 
     # filter these down to only those that satisfy ALL constraints
     m1 = numpy.array([i[0] for i in m1m2_points])
