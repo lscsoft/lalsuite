@@ -1105,9 +1105,9 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
       XLAL_CHECK ( (tmpstring = XLALStringDuplicate( uvar->linesToCleanFilenames )) != NULL, XLAL_EFUNC );
 
       for ( UINT4 i = 0 ; i < numfiles ; i++ ){
-	CHAR *tmpfile = NULL;
-	XLAL_CHECK ( (tmpfile = XLALStringToken( &tmpstring, ",", 0))!= NULL, XLAL_EFUNC );
-	XLAL_CHECK ( (config->lineFiles = XLALAppendString2Vector( config->lineFiles, tmpfile ))!= NULL, XLAL_EFUNC );
+	CHAR *pcc_tmpfile = NULL;
+	XLAL_CHECK ( (pcc_tmpfile = XLALStringToken( &tmpstring, ",", 0))!= NULL, XLAL_EFUNC );
+	XLAL_CHECK ( (config->lineFiles = XLALAppendString2Vector( config->lineFiles, pcc_tmpfile ))!= NULL, XLAL_EFUNC );
 
       }
     }
