@@ -101,11 +101,29 @@ class HEALPixTree(object):
                 for _ in child._visit(order + 1, full_order, (ipix << 2) + i):
                     yield _
 
-    def visit(self):
-        """Evaluate a function on each leaf node of the HEALPix tree.
+    def _visit_depthfirst(self):
+        order = self.order
+        for ipix, child in enumerate(self.children):
+            # FIXME: Replace with `yield from` in Python 3
+            for _ in child._visit(0, order, ipix):
+                yield _
+
+    def _visit_breadthfirst(self):
+        # FIXME: Replace with `yield from` in Python 3
+        for _ in sorted(self._visit_depthfirst()):
+            yield _
+
+    def visit(self, order='depthfirst'):
+        """Traverse the leaves of the HEALPix tree.
+
+        Parameters
+        ----------
+        order : string, optional
+            Traversal order: 'depthfirst' (the default) or 'breadthfirst'.
 
         Yields
-        -------------------
+        ------
+
         nside : int
             The HEALPix resolution of the node.
 
@@ -126,11 +144,12 @@ class HEALPixTree(object):
         samples : list
             The list of samples contained in the node.
         """
-        order = self.order
-        for ipix, child in enumerate(self.children):
-            # FIXME: Replace with `yield from` in Python 3
-            for _ in child._visit(0, order, ipix):
-                yield _
+        funcs = {'depthfirst': self._visit_depthfirst,
+                 'breadthfirst': self._visit_breadthfirst}
+        func = funcs[order]
+        # FIXME: Replace with `yield from` in Python 3
+        for _ in func():
+            yield _
 
     @property
     def flat_bitmap(self):
