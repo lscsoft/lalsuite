@@ -74,6 +74,68 @@ const char list_extra_parameters[34][16] = {"dchi0","dchi1","dchi2","dchi3","dch
 
 const UINT4 N_extra_params = 34;
 
+
+static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src, COMPLEX16FrequencySeries *dest);
+static int InterpolateWaveform(REAL8Vector *freqs, COMPLEX16FrequencySeries *src, COMPLEX16FrequencySeries *dest)
+{
+  REAL8 deltaF = dest->deltaF;
+  UINT4 j=ceil(freqs->data[0] / deltaF);
+  COMPLEX16 *d=dest->data->data;
+  memset(d, 0, sizeof(*(d))*j);
+  
+  /* Loop over reduced frequency set */
+  for(UINT4 i=0;i<freqs->length-1;i++)
+  {  
+    double startpsi = carg(src->data->data[i]);
+    double startamp = cabs(src->data->data[i]);
+    double endpsi = carg(src->data->data[i+1]);
+    double endamp = cabs(src->data->data[i+1]);
+
+    double startf=freqs->data[i];
+    double endf=freqs->data[i+1];
+
+    double df = endf - startf; /* Big freq step */
+    
+    /* linear interpolation setup */
+    double dpsi = (endpsi - startpsi);
+
+    /* Catch case where phase wraps around */
+    /* NOTE: If changing this check that waveforms are not corrupted
+     * at high frequencies when dpsi/df can go slightly -ve without
+     * the phase wrapping around (e.g. TF2 1.4-1.4 srate=4096)
+     */
+    if (dpsi/df<-LAL_PI ) {dpsi+=LAL_TWOPI;}
+    
+    double dpsidf = dpsi/df;
+    double dampdf = (endamp - startamp)/df;
+
+    double damp = dampdf *deltaF;
+    
+    const double dim = sin(dpsidf*deltaF);
+    const double dre = 2.0*sin(dpsidf*deltaF*0.5)*sin(dpsidf*deltaF*0.5);
+
+    /* Loop variables */
+    double newRe,newIm,f,re,im,a;
+    for(f=j*deltaF,
+	re = cos(startpsi), im = sin(startpsi),
+        a = startamp;
+        
+        f<endf;
+        
+        j++, f+=deltaF,
+        newRe = re - dre*re-dim*im,
+        newIm = im + re*dim-dre*im,
+        re=newRe, im = newIm,
+        a += damp )
+    {
+      d[j] = a * (re + I*im);
+    }
+  }
+  memset(&(d[j]), 0, sizeof(d[j])*(dest->data->length - j));
+  return 0;
+}
+
+
 void LALInferenceTemplateNullFreqdomain(LALInferenceModel *model)
 /**********************************************/
 /* returns a frequency-domain 'null' template */
@@ -1031,7 +1093,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
     INT4 order=-1;
     INT4 amporder;
 
-    unsigned long	i;
     static int sizeWarning = 0;
     int ret=0;
     INT4 errnum=0;
@@ -1239,92 +1300,10 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
             XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'hctilde'.\n");
             XLAL_ERROR_VOID(XLAL_EFAULT);
         }
-
-        double re_p, im_p, newRe_p, newIm_p, dre_p, dim_p;
-        double re_c, im_c, newRe_c, newIm_c, dre_c, dim_c;
-
-        /* Index of first freq bin in full waveform */
-        UINT4 j=ceil(frequencies->data[0] / model->freqhPlus->deltaF);
-
-        double f=0;
-        COMPLEX16 *modelPtrp=model->freqhPlus->data->data;
-        COMPLEX16 *modelPtrc=model->freqhCross->data->data;
-        memset(modelPtrp, 0, sizeof(*(modelPtrp))*j);
-        memset(modelPtrc, 0, sizeof(*(modelPtrc))*j);
-
-        double oldpsi_p = atan2(cimag(hptilde->data->data[0]),creal(hptilde->data->data[0]));
-        double oldpsi_c = atan2(cimag(hctilde->data->data[0]),creal(hctilde->data->data[0]));
-        double oldamp_p = cabs(hptilde->data->data[0]);
-        double oldamp_c = cabs(hctilde->data->data[0]);
-        /* Loop over reduced frequency set */
-        for(i=0;i<hptilde->data->length-1;i++)
-        {
-            double startamp_p = oldamp_p;
-            double startpsi_p = oldpsi_p;
-            double endpsi_p=atan2(cimag(hptilde->data->data[i+1]),creal(hptilde->data->data[i+1]));
-            double endamp_p = cabs(hptilde->data->data[i+1]);
-
-            double startamp_c = oldamp_c;
-            double startpsi_c = oldpsi_c;
-            double endpsi_c=atan2(cimag(hctilde->data->data[i+1]),creal(hctilde->data->data[i+1]));
-            double endamp_c = cabs(hctilde->data->data[i+1]);
-
-            double startf=frequencies->data[i];
-            double endf=frequencies->data[i+1];
-            double df=endf - startf;
-
-            double dpsidf_p=(endpsi_p - startpsi_p)/df;
-            double dpsidf_c=(endpsi_c - startpsi_c)/df;
-
-            double dampdf_p = (endamp_p - startamp_p)/df;
-            double dampdf_c = (endamp_c - startamp_c)/df;
-          
-            if (dpsidf_p<0.0){
-                dpsidf_p = dpsidf_p + 2*LAL_PI/df;
-            }
-            if (dpsidf_c<0.0){
-                dpsidf_c = dpsidf_c + 2*LAL_PI/df;
-            }
-
-            dim_p = sin(dpsidf_p*model->freqhPlus->deltaF);
-            dre_p = 2.0*sin(dpsidf_p*model->freqhPlus->deltaF*0.5)*sin(dpsidf_p*model->freqhPlus->deltaF*0.5);
-
-            dim_c = sin(dpsidf_c*model->freqhCross->deltaF);
-            dre_c = 2.0*sin(dpsidf_c*model->freqhCross->deltaF*0.5)*sin(dpsidf_c*model->freqhCross->deltaF*0.5);
-          
-          double a_p,a_c;
-            double damp_p = dampdf_p *model->freqhPlus->deltaF;
-            double damp_c = dampdf_c *model->freqhCross->deltaF;
-
-            /* Loop over the freq bins in full waveform that lie between f_i and f_{i+1} */
-            for(f=j*model->freqhPlus->deltaF,
-                re_p = cos(startpsi_p), im_p = sin(startpsi_p),
-                re_c = cos(startpsi_c), im_c = sin(startpsi_c),
-                a_p = startamp_p, a_c = startamp_c;
-                
-                f<endf;
-                
-                j++, f+=model->freqhPlus->deltaF,
-                newRe_p=re_p - dre_p*re_p-dim_p*im_p,
-                newIm_p = im_p + re_p*dim_p-dre_p*im_p,
-                re_p=newRe_p, im_p = newIm_p,
-                newRe_c=re_c - dre_c*re_c-dim_c*im_c,
-                newIm_c = im_c + re_c*dim_c-dre_c*im_c,
-                re_c=newRe_c, im_c = newIm_c,
-                a_p += damp_p, a_c+=damp_c )
-            {
-              modelPtrp[j] = a_p * (re_p + I*im_p);
-              modelPtrc[j] = a_c * (re_c + I*im_c);
-            }
-            oldpsi_p = endpsi_p;
-            oldpsi_c = endpsi_c;
-            oldamp_p = endamp_p;
-            oldamp_c = endamp_c;
-            //  if(f>fmax_checked) break;
-        }
-        memset(&(modelPtrp[j]), 0, sizeof(COMPLEX16)*(model->freqhPlus->data->length - j));
-        memset(&(modelPtrc[j]), 0, sizeof(COMPLEX16)*(model->freqhCross->data->length - j));
-
+        
+        
+        InterpolateWaveform(frequencies, hptilde, model->freqhPlus);
+        InterpolateWaveform(frequencies, hctilde, model->freqhCross);
 
         /* Destroy the nonGr params */
         XLALSimInspiralDestroyTestGRParam(nonGRparams);
