@@ -157,7 +157,8 @@ def ligolw_sky_map(
         log.warn('Using anti-FINDCHIRP phase convention; inverting phases. '
                  'This is currently the default and it is appropriate for '
                  'gstlal and MBTA but not pycbc as of observing run 1 ("O1"). '
-                 'The default setting is likely to change in the future.')
+                 'The default setting is likely to change in the future.',
+                 RuntimeWarning, stacklevel=2)
         phoas = -phoas
 
     # Extract SNRs from table.
