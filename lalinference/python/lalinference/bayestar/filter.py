@@ -359,7 +359,8 @@ def sngl_inspiral_psd(sngl, waveform, f_min=10, f_max=2048, f_ref=0):
     # FIXME: uberbank mass criterion. Should find a way to get this from
     # pipeline output metadata.
     if waveform == 'o1-uberbank':
-        log.warn('Template is unspecified; using ER8/O1 uberbank criterion')
+        log.warn('Template is unspecified; using ER8/O1 uberbank criterion',
+                 RuntimeWarning, stacklevel=2)
         if sngl.mass1 + sngl.mass2 < 4:
             waveform = 'TaylorF2threePointFivePN'
         else:
