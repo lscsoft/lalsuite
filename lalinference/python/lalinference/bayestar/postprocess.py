@@ -305,11 +305,12 @@ def find_greedy_credible_levels(p, ranking=None):
         to `p.sum()`, representing the greedy credible level to which each
         entry in the array belongs.
     """
+    p = np.asarray(p)
     pflat = p.ravel()
     if ranking is None:
         ranking = pflat
     else:
-        ranking = ranking.ravel()
+        ranking = np.ravel(ranking)
     i = np.flipud(np.argsort(ranking))
     cs = np.cumsum(pflat[i])
     cls = np.empty_like(pflat)
