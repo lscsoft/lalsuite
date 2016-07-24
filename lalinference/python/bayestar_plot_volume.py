@@ -72,7 +72,7 @@ import scipy.stats
 
 # Read input, determine input resolution.
 progress.update(-1, 'Loading FITS file')
-(prob, mu, sigma, norm), metadataa = fits.read_sky_map(
+(prob, mu, sigma, norm), metadata = fits.read_sky_map(
     opts.input.name, distances=True)
 npix = len(prob)
 nside = hp.npix2nside(npix)
