@@ -52,13 +52,11 @@ static double ugaussian_integral(double x1, double x2)
     } else if (x1 > 0) {
         const double logerfc1 = gsl_sf_log_erfc(x1 * M_SQRT1_2);
         const double logerfc2 = gsl_sf_log_erfc(x2 * M_SQRT1_2);
-        return gsl_sf_exp_mult(
-            logerfc2, 0.5 * gsl_sf_expm1(logerfc1 - logerfc2));
+        return 0.5 * (exp(logerfc1) - exp(logerfc2));
     } else {
         const double logerfc1 = gsl_sf_log_erfc(-x1 * M_SQRT1_2);
         const double logerfc2 = gsl_sf_log_erfc(-x2 * M_SQRT1_2);
-        return gsl_sf_exp_mult(
-            logerfc1, 0.5 * gsl_sf_expm1(logerfc2 - logerfc1));
+        return 0.5 * (exp(logerfc2) - exp(logerfc1));
     }
 }
 
