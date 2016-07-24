@@ -50,6 +50,9 @@ parser.add_argument(
 parser.add_argument(
     'input', metavar='INPUT.fits[.gz]', type=argparse.FileType('rb'),
     default='-', nargs='?', help='Input FITS file [default: stdin]')
+parser.add_argument(
+    '--align-to', metavar='SKYMAP.fits[.gz]', type=argparse.FileType('rb'),
+    help='Align to the principal axes of this sky map [default: input sky map]')
 parser.set_defaults(figure_width='3.5', figure_height='3.5')
 opts = parser.parse_args()
 
@@ -79,7 +82,12 @@ nside = hp.npix2nside(npix)
 
 progress.update(-1, 'Preparing projection')
 
-R = np.ascontiguousarray(principal_axes(prob, mu, sigma))
+if opts.align_to is None:
+    prob2, mu2, sigma2 = prob, mu, sigma
+else:
+    (prob2, mu2, sigma2, _), _ = fits.read_sky_map(
+        opts.align_to.name, distances=True)
+R = np.ascontiguousarray(principal_axes(prob2, mu2, sigma2))
 
 if opts.chain:
     chain = np.recfromtxt(opts.chain, names=True)
