@@ -51,6 +51,14 @@ HEALPIX_MACHINE_ORDER = 29
 HEALPIX_MACHINE_NSIDE = _order2nside(HEALPIX_MACHINE_ORDER)
 
 
+_HEALPixTreeVisitExtra = collections.namedtuple(
+    'HEALPixTreeVisit', 'nside full_nside ipix ipix0 ipix1 value')
+
+
+_HEALPixTreeVisit = collections.namedtuple(
+    'HEALPixTreeVisit', 'nside ipix')
+
+
 class HEALPixTree(object):
     """Data structure used internally by the function
     adaptive_healpix_histogram()."""
@@ -88,32 +96,36 @@ class HEALPixTree(object):
         else:
             return 1 + max(child.order for child in self.children)
 
-    def _visit(self, order, full_order, ipix):
+    def _visit(self, order, full_order, ipix, extra):
         if self.children is None:
             nside = 1 << order
             full_nside = 1 << order
             ipix0 = ipix << 2 * (full_order - order)
             ipix1 = (ipix + 1) << 2 * (full_order - order)
-            yield nside, full_nside, ipix, ipix0, ipix1, self.samples
+            if extra:
+                yield _HEALPixTreeVisitExtra(
+                    nside, full_nside, ipix, ipix0, ipix1, self.samples)
+            else:
+                yield _HEALPixTreeVisit(nside, ipix)
         else:
             for i, child in enumerate(self.children):
                 # FIXME: Replace with `yield from` in Python 3
-                for _ in child._visit(order + 1, full_order, (ipix << 2) + i):
+                for _ in child._visit(
+                        order + 1, full_order, (ipix << 2) + i, extra):
                     yield _
 
-    def _visit_depthfirst(self):
+    def _visit_depthfirst(self, extra):
         order = self.order
         for ipix, child in enumerate(self.children):
             # FIXME: Replace with `yield from` in Python 3
-            for _ in child._visit(0, order, ipix):
+            for _ in child._visit(0, order, ipix, extra):
                 yield _
 
-    def _visit_breadthfirst(self):
-        # FIXME: Replace with `yield from` in Python 3
-        for _ in sorted(self._visit_depthfirst()):
-            yield _
+    def _visit_breadthfirst(self, extra):
+        return sorted(
+            self._visit_depthfirst(extra), lambda _: (_.nside, _.ipix))
 
-    def visit(self, order='depthfirst'):
+    def visit(self, order='depthfirst', extra=True):
         """Traverse the leaves of the HEALPix tree.
 
         Parameters
@@ -121,27 +133,30 @@ class HEALPixTree(object):
         order : string, optional
             Traversal order: 'depthfirst' (the default) or 'breadthfirst'.
 
+        extra : bool
+            Whether to output extra information about the pixel
+            (default is True).
+
         Yields
         ------
-
         nside : int
             The HEALPix resolution of the node.
 
-        full_nside : int
+        full_nside : int, present if extra=True
             The HEALPix resolution of the deepest node in the tree.
 
         ipix : int
             The nested HEALPix index of the node.
 
-        ipix0 : int
+        ipix0 : int, present if extra=True
             The start index of the range of pixels spanned by the node at the
             resolution `full_nside`.
 
-        ipix1 : int
+        ipix1 : int, present if extra=True
             The end index of the range of pixels spanned by the node at the
             resolution `full_nside`.
 
-        samples : list
+        samples : list, present if extra=True
             The list of samples contained in the node.
         """
         funcs = {'depthfirst': self._visit_depthfirst,
@@ -297,43 +312,7 @@ def interpolate_nested(m, nest=False):
     return m
 
 
-def reconstruct_nested(m):
-    """Reconstruct the leaves of a multiresolution tree.
-
-    Parameters
-    ----------
-    m : `~numpy.ndarray`
-        A HEALPix array in the NESTED ordering scheme.
-
-    Yields
-    ------
-    nside : int
-        The HEALPix resolution parameter of the pixel.
-    ipix : int
-        The HEALPix index of the pixel at resolution `nside`.
-
-    Here are some examples...
-
-    An nside=1 array of all zeros:
-    >>> list(reconstruct_nested(np.zeros(12)))
-    [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
-
-    An nside=1 array of distinct values:
-    >>> list(reconstruct_nested(range(12)))
-    [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
-
-    An nside=8 array of zeros:
-    >>> list(reconstruct_nested(np.zeros(768)))
-    [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
-
-    An nside=2 array, all zeros except for four consecutive distinct elements:
-    >>> m = np.zeros(48); m[:4] = range(4); list(reconstruct_nested(m))
-    [(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11), (2, 0), (2, 1), (2, 2), (2, 3)]
-
-    An nside=2 array, all elements distinct except for four consecutive zeros:
-    >>> m = np.arange(48); m[:4] = 0; list(reconstruct_nested(m))
-    [(1, 0), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (2, 9), (2, 10), (2, 11), (2, 12), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21), (2, 22), (2, 23), (2, 24), (2, 25), (2, 26), (2, 27), (2, 28), (2, 29), (2, 30), (2, 31), (2, 32), (2, 33), (2, 34), (2, 35), (2, 36), (2, 37), (2, 38), (2, 39), (2, 40), (2, 41), (2, 42), (2, 43), (2, 44), (2, 45), (2, 46), (2, 47)]
-    """
+def _reconstruct_nested_breadthfirst(m, extra):
     max_npix = len(m)
     max_nside = hp.npix2nside(max_npix)
     max_order = _nside2order(max_nside)
@@ -352,8 +331,104 @@ def reconstruct_nested(m):
         else:
             eq = ~seen
         for ipix in np.flatnonzero(eq):
-            yield nside, ipix
-            seen[ipix*skip:(ipix+1)*skip] = True
+            ipix0 = ipix * skip
+            ipix1 = (ipix + 1) * skip
+            seen[ipix0:ipix1] = True
+            if extra:
+                yield _HEALPixTreeVisitExtra(
+                    nside, max_nside, ipix, ipix0, ipix1, m[ipix0])
+            else:
+                yield _HEALPixTreeVisit(nside, ipix)
+
+
+def _reconstruct_nested_depthfirst(m, extra):
+    result = sorted(
+        _reconstruct_nested_breadthfirst(m, True),
+        key=lambda _: _.ipix0)
+    if not extra:
+        result = (_HEALPixTreeVisit(_.nside, _.ipix) for _ in result)
+    return result
+
+
+def reconstruct_nested(m, order='depthfirst', extra=True):
+    """Reconstruct the leaves of a multiresolution tree.
+
+    Parameters
+    ----------
+    m : `~numpy.ndarray`
+        A HEALPix array in the NESTED ordering scheme.
+
+    order : {'depthfirst', 'breadthfirst'}, optional
+        Traversal order: 'depthfirst' (the default) or 'breadthfirst'.
+
+    extra : bool
+        Whether to output extra information about the pixel (default is True).
+
+    Yields
+    ------
+    nside : int
+        The HEALPix resolution of the node.
+
+    full_nside : int, present if extra=True
+        The HEALPix resolution of the deepest node in the tree.
+
+    ipix : int
+        The nested HEALPix index of the node.
+
+    ipix0 : int, present if extra=True
+        The start index of the range of pixels spanned by the node at the
+        resolution `full_nside`.
+
+    ipix1 : int, present if extra=True
+        The end index of the range of pixels spanned by the node at the
+        resolution `full_nside`.
+
+    value : list, present if extra=True
+        The value of the map at the node.
+
+    Here are some examples...
+
+    An nside=1 array of all zeros:
+    >>> m = np.zeros(12)
+    >>> result = reconstruct_nested(m, order='breadthfirst', extra=False)
+    >>> [tuple(_) for _ in result]
+    [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
+
+    An nside=1 array of distinct values:
+    >>> m = range(12)
+    >>> result = reconstruct_nested(m, order='breadthfirst', extra=False)
+    >>> [tuple(_) for _ in result]
+    [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
+
+    An nside=8 array of zeros:
+    >>> m = np.zeros(768)
+    >>> result = reconstruct_nested(m, order='breadthfirst', extra=False)
+    >>> [tuple(_) for _ in result]
+    [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
+
+    An nside=2 array, all zeros except for four consecutive distinct elements:
+    >>> m = np.zeros(48); m[:4] = range(4)
+    >>> result = reconstruct_nested(m, order='breadthfirst', extra=False)
+    >>> [tuple(_) for _ in result]
+    [(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11), (2, 0), (2, 1), (2, 2), (2, 3)]
+
+    Same, but in depthfirst order:
+    >>> result = reconstruct_nested(m, order='depthfirst', extra=False)
+    >>> [tuple(_) for _ in result]
+    [(2, 0), (2, 1), (2, 2), (2, 3), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
+
+    An nside=2 array, all elements distinct except for four consecutive zeros:
+    >>> m = np.arange(48); m[:4] = 0
+    >>> result = reconstruct_nested(m, order='breadthfirst', extra=False)
+    >>> [tuple(_) for _ in result]
+    [(1, 0), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (2, 9), (2, 10), (2, 11), (2, 12), (2, 13), (2, 14), (2, 15), (2, 16), (2, 17), (2, 18), (2, 19), (2, 20), (2, 21), (2, 22), (2, 23), (2, 24), (2, 25), (2, 26), (2, 27), (2, 28), (2, 29), (2, 30), (2, 31), (2, 32), (2, 33), (2, 34), (2, 35), (2, 36), (2, 37), (2, 38), (2, 39), (2, 40), (2, 41), (2, 42), (2, 43), (2, 44), (2, 45), (2, 46), (2, 47)]
+    """
+    funcs = {'depthfirst': _reconstruct_nested_depthfirst,
+             'breadthfirst': _reconstruct_nested_breadthfirst}
+    func = funcs[order]
+    # FIXME: Replace with `yield from` in Python 3
+    for _ in func(m, extra):
+        yield _
 
 
 def flood_fill(nside, ipix, m, nest=False):
