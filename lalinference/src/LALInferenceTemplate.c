@@ -1253,7 +1253,28 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
 
     /* Only use GR templates */
     LALSimInspiralTestGRParam *nonGRparams = NULL;
-
+    /* Fill in the extra parameters for testing GR, if necessary */
+    for (UINT4 k=0; k<N_extra_params; k++)
+    {
+        if(LALInferenceCheckVariable(model->params,list_extra_parameters[k]))
+        {
+            XLALSimInspiralAddTestGRParam(&nonGRparams,list_extra_parameters[k],*(REAL8 *)LALInferenceGetVariable(model->params,list_extra_parameters[k]));
+        }
+    }
+    /* Fill in PPE params if they are available */
+    char PPEparam[64]="";
+    const char *PPEnames[]= {"aPPE","alphaPPE","bPPE","betaPPE",NULL};
+    for(UINT4 idx=0; PPEnames[idx]; idx++)
+    {
+        for(UINT4 ppeidx=0;; ppeidx++)
+        {
+            sprintf(PPEparam, "%s%d",PPEnames[idx],ppeidx);
+            if(LALInferenceCheckVariable(model->params,PPEparam))
+                XLALSimInspiralAddTestGRParam(&nonGRparams,PPEparam,LALInferenceGetREAL8Variable(model->params,PPEparam));
+            else
+                break;
+        }
+    }
     INT4 Nbands=-1; /* Use optimum number of bands */
     double mc_min=1.0/pow(2,0.2); /* For min 1.0-1.0 waveform */
 
@@ -1288,7 +1309,14 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
                 default:
                     /* Another error occurred that we can't handle. Propogate upward */
                     XLALSetErrno(errnum);
-                    XLAL_ERROR_VOID(errnum,"%s: Template generation failed in XLALSimInspiralChooseFDWaveformFromCache",__func__);
+                    XLAL_ERROR_VOID(errnum,"%s: Template generation failed in XLALSimInspiralChooseFDWaveformFromCache:\n\
+XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, \
+%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, \
+model->waveFlags(%d,%d,%d,%d,numreldata),nonGRparams,%d,%d,%d,model->waveformCache)\n",__func__,
+		      phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
+		      f_start, f_max, f_ref, distance, inclination, lambda1, lambda2, (int) XLALSimInspiralGetSpinOrder(model->waveFlags),
+		      (int) XLALSimInspiralGetTidalOrder(model->waveFlags),(int) XLALSimInspiralGetFrameAxis(model->waveFlags),
+		      (int) XLALSimInspiralGetModesChoice(model->waveFlags),amporder, order, approximant);
             }
         }
 
