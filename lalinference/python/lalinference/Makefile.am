@@ -21,6 +21,7 @@ pymodule_PYTHON = \
 	__init__.py \
 	cmap.py \
 	fits.py \
+	healpix_tree.py \
 	marker.py \
 	plot.py \
 	lalinference_pipe_utils.py \
