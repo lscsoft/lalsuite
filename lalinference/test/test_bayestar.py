@@ -21,6 +21,7 @@ import lalinference.bayestar.sky_map
 import lalinference.bayestar.distance
 import lalinference.bayestar.filter
 import lalinference.fits
+import lalinference.healpix_tree
 import lalinference.bayestar.timing
 import lalinference.bayestar.postprocess
 
@@ -32,6 +33,7 @@ modules = [
     lalinference.bayestar.distance,
     lalinference.bayestar.filter,
     lalinference.fits,
+    lalinference.healpix_tree,
     lalinference.bayestar.timing,
     lalinference.bayestar.postprocess,
 ]
