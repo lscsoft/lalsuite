@@ -196,12 +196,14 @@ if not opts.projection:
         phi = np.deg2rad(ra)
         ipix = hp.ang2pix(nside, theta, phi)
         ax.fill_between(d, scipy.stats.norm(
-            mu[ipix], sigma[ipix]).pdf(d) * norm[ipix] * np.square(d), alpha=0.5, color=color)
+            mu[ipix], sigma[ipix]).pdf(d) * norm[ipix] * np.square(d),
+            alpha=0.5, color=color)
         ax.axvline(dist, color='black', linewidth=0.5)
         ax.plot(
             [dist], [-0.15], marker=truth_marker, markeredgecolor=color,
             markerfacecolor='none', markeredgewidth=1, clip_on=False,
-            transform=transforms.blended_transform_factory(ax.transData, ax.transAxes))
+            transform=transforms.blended_transform_factory(
+            ax.transData, ax.transAxes))
         ax.axvline(dist, color='black', linewidth=0.5)
 
     # Scale axes
