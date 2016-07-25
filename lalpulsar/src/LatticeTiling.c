@@ -45,6 +45,9 @@ typedef enum tagLT_Lattice {
   LT_LATTICE_MAX
 } LT_Lattice;
 
+// Maximum length of arbitrary data describing parameter-space bounds
+#define LT_DATA_MAX_SIZE 1024
+
 ///
 /// Lattice tiling parameter-space bound for one dimension.
 ///
@@ -52,8 +55,8 @@ typedef struct tagLT_Bound {
   bool is_tiled;                        ///< True if the dimension is tiled, false if it is a single point
   LatticeTilingBound func;              ///< Parameter space bound function
   size_t data_len;                      ///< Length of arbitrary data describing parameter-space bounds
-  void *data_lower;                     ///< Arbitrary data describing lower parameter-space bound
-  void *data_upper;                     ///< Arbitrary data describing upper parameter-space bound
+  char data_lower[LT_DATA_MAX_SIZE];    ///< Arbitrary data describing lower parameter-space bound
+  char data_upper[LT_DATA_MAX_SIZE];    ///< Arbitrary data describing upper parameter-space bound
 } LT_Bound;
 
 ///
@@ -149,12 +152,12 @@ static void LT_CallBoundFunc(
   const gsl_vector *phys_point_subv = ( dim == 0 ) ? NULL : &phys_point_subv_view.vector;
 
   // Get lower parameter-space bound
-  *phys_lower = ( bound->func )( bound->data_lower, dim, phys_point_subv );
+  *phys_lower = ( bound->func )( ( const void* ) bound->data_lower, dim, phys_point_subv );
 
   if ( bound->is_tiled ) {
 
     // Get upper parameter-space bound
-    *phys_upper = ( bound->func )( bound->data_upper, dim, phys_point_subv );
+    *phys_upper = ( bound->func )( ( const void* ) bound->data_upper, dim, phys_point_subv );
 
     // Do not allow upper parameter-space bound to be less than lower parameter-space bound
     if ( *phys_upper < *phys_lower ) {
@@ -764,13 +767,7 @@ void XLALDestroyLatticeTiling(
   )
 {
   if ( tiling != NULL ) {
-    if ( tiling->bounds != NULL ) {
-      for ( size_t i = 0; i < tiling->ndim; ++i ) {
-        XLALFree( tiling->bounds[i].data_lower );
-        XLALFree( tiling->bounds[i].data_upper );
-      }
-      XLALFree( tiling->bounds );
-    }
+    XLALFree( tiling->bounds );
     XLALFree( tiling->tiled_idx );
     XLALFree( tiling->stats );
     GFMAT( tiling->int_from_phys, tiling->phys_from_int, tiling->tiled_generator );
@@ -784,8 +781,8 @@ int XLALSetLatticeTilingBound(
   const size_t dim,
   const LatticeTilingBound func,
   const size_t data_len,
-  void *data_lower,
-  void *data_upper
+  const void *data_lower,
+  const void *data_upper
   )
 {
 
@@ -795,6 +792,7 @@ int XLALSetLatticeTilingBound(
   XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
   XLAL_CHECK( func != NULL, XLAL_EFAULT );
   XLAL_CHECK( data_len > 0, XLAL_EFAULT );
+  XLAL_CHECK( data_len < LT_DATA_MAX_SIZE, XLAL_EFAULT, "Arbitrary data is too long" );
   XLAL_CHECK( data_lower != NULL, XLAL_EFAULT );
   XLAL_CHECK( data_upper != NULL, XLAL_EFAULT );
 
@@ -808,8 +806,8 @@ int XLALSetLatticeTilingBound(
   tiling->bounds[dim].is_tiled = is_tiled;
   tiling->bounds[dim].func = func;
   tiling->bounds[dim].data_len = data_len;
-  tiling->bounds[dim].data_lower = data_lower;
-  tiling->bounds[dim].data_upper = data_upper;
+  memcpy( tiling->bounds[dim].data_lower, data_lower, data_len );
+  memcpy( tiling->bounds[dim].data_upper, data_upper, data_len );
 
   return XLAL_SUCCESS;
 
@@ -840,17 +838,10 @@ int XLALSetLatticeTilingConstantBound(
   XLAL_CHECK( isfinite( bound1 ), XLAL_EINVAL );
   XLAL_CHECK( isfinite( bound2 ), XLAL_EINVAL );
 
-  // Allocate memory
-  const size_t data_len = sizeof( double );
-  double *data_lower = XLALMalloc( data_len );
-  XLAL_CHECK( data_lower != NULL, XLAL_ENOMEM );
-  double *data_upper = XLALMalloc( data_len );
-  XLAL_CHECK( data_upper != NULL, XLAL_ENOMEM );
-
   // Set the parameter-space bound
-  *data_lower = GSL_MIN( bound1, bound2 );
-  *data_upper = GSL_MAX( bound1, bound2 );
-  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, dim, ConstantBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+  const double data_lower = GSL_MIN( bound1, bound2 );
+  const double data_upper = GSL_MAX( bound1, bound2 );
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, dim, ConstantBound, sizeof( data_lower ), &data_lower, &data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 

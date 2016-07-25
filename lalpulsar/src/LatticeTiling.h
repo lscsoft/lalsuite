@@ -102,8 +102,8 @@ int XLALSetLatticeTilingBound(
   const size_t dim,                     ///< [in] Dimension on which bound applies
   const LatticeTilingBound func,        ///< [in] Parameter space bound function
   const size_t data_len,                ///< [in] Length of arbitrary data describing parameter space bounds
-  void *data_lower,                     ///< [in] Arbitrary data describing lower parameter space bound
-  void *data_upper                      ///< [in] Arbitrary data describing upper parameter space bound
+  const void *data_lower,               ///< [in] Arbitrary data describing lower parameter space bound
+  const void *data_upper                ///< [in] Arbitrary data describing upper parameter space bound
   );
 
 ///
