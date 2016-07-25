@@ -27,6 +27,9 @@ nodist_liblaldetchar_la_SOURCES = LALDetCharBuildInfo.c
 
 liblaldetchar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
+dist_bin_SCRIPTS = \
+	laldetchar-idq-append-file-to-cache
+
 #bin_PROGRAMS = \
 	#laldetchar-hveto
 
