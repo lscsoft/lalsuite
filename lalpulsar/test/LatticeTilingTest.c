@@ -19,6 +19,7 @@
 
 // Tests of the lattice-based template generation code in LatticeTiling.[ch].
 
+#include <config.h>
 #include <stdio.h>
 
 #include <lal/LatticeTiling.h>
@@ -27,6 +28,7 @@
 #include <lal/DopplerFullScan.h>
 #include <lal/SuperskyMetrics.h>
 #include <lal/LALInitBarycenter.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #include <lal/GSLHelpers.h>
 
@@ -61,6 +63,97 @@ const double A3s_mism_hist[MISM_HIST_BINS] = {
   0.327328, 0.598545, 0.774909, 0.917710, 1.040699, 1.150991, 1.250963, 1.344026, 1.431020, 1.512883,
   1.590473, 1.664510, 1.595423, 1.391209, 1.194340, 1.004085, 0.729054, 0.371869, 0.098727, 0.011236
 };
+
+static int SerialisationTest(
+  const size_t n,
+  const LatticeTiling *tiling,
+  const UINT8 total_ref,
+  const UINT8 total_ckpt_0,
+  const UINT8 total_ckpt_1,
+  const UINT8 total_ckpt_2,
+  const UINT8 total_ckpt_3
+  )
+{
+
+  const UINT8 total_ckpt[4] = {total_ckpt_0, total_ckpt_1, total_ckpt_2, total_ckpt_3};
+
+#if !defined(HAVE_LIBCFITSIO)
+  printf( "Skipping serialisation test (CFITSIO library is not available)\n" );
+#else
+  printf( "Performing serialisation test ..." );
+
+  // Create lattice tiling iterator
+  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n );
+  XLAL_CHECK( itr != NULL, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingAlternatingIterator( itr, true ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Count number of points
+  const UINT8 total = XLALTotalLatticeTilingPoints( itr );
+  XLAL_CHECK( imaxabs( total - total_ref ) <= 1, XLAL_EFUNC, "\nERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", total, total_ref );
+
+  // Get all points
+  gsl_matrix *GAMAT( points, n, total );
+  XLAL_CHECK( XLALNextLatticeTilingPoints( itr, &points ) == ( int ) total, XLAL_EFUNC );
+  XLAL_CHECK( XLALNextLatticeTilingPoint( itr, NULL ) == 0, XLAL_EFUNC );
+  XLAL_CHECK( XLALResetLatticeTilingIterator( itr ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Iterate over all points again, this time with checkpointing
+  gsl_vector *GAVEC( point, n );
+  size_t k_ckpt = 0;
+  for ( UINT8 k = 0; k < total; ++k ) {
+
+    // Check next point for consistency
+    XLAL_CHECK( XLALNextLatticeTilingPoint( itr, point ) >= 0, XLAL_EFUNC );
+    gsl_vector_const_view points_k_view = gsl_matrix_const_column( points, k );
+    gsl_vector_sub( point, &points_k_view.vector );
+    double err = gsl_blas_dasum( point ) / n;
+    XLAL_CHECK( err < 1e-6, XLAL_EFAILED, "\nERROR: err = %e < 1e-6", err );
+
+    // Checkpoint iterator at certain intervals
+    if ( k_ckpt < XLAL_NUM_ELEM( total_ckpt ) && k + 1 >= total_ckpt[k_ckpt] ) {
+
+      // Save iterator to a FITS file
+      {
+        FITSFile *file = XLALFITSFileOpenWrite( "LatticeTilingTest.fits", lalPulsarVCSInfoList );
+        XLAL_CHECK( file != NULL, XLAL_EFUNC );
+        XLAL_CHECK( XLALSaveLatticeTilingIterator( itr, file, "itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLALFITSFileClose( file );
+      }
+
+      // Destroy and recreate lattice tiling iterator
+      XLALDestroyLatticeTilingIterator( itr );
+      itr = XLALCreateLatticeTilingIterator( tiling, n );
+      XLAL_CHECK( itr != NULL, XLAL_EFUNC );
+      XLAL_CHECK( XLALSetLatticeTilingAlternatingIterator( itr, true ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // Restore iterator to a FITS file
+      {
+        FITSFile *file = XLALFITSFileOpenRead( "LatticeTilingTest.fits" );
+        XLAL_CHECK( file != NULL, XLAL_EFUNC );
+        XLAL_CHECK( XLALRestoreLatticeTilingIterator( itr, file, "itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLALFITSFileClose( file );
+      }
+
+      printf( " checkpoint at %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " ...", k + 1, total );
+      ++k_ckpt;
+
+    }
+
+  }
+  XLAL_CHECK( XLALNextLatticeTilingPoint( itr, NULL ) == 0, XLAL_EFUNC );
+
+  printf( " done\n" );
+
+  // Cleanup
+  XLALDestroyLatticeTilingIterator( itr );
+  GFVEC( point );
+  GFMAT( points );
+
+#endif
+
+  return XLAL_SUCCESS;
+
+}
 
 static int BasicTest(
   const size_t n,
@@ -225,6 +318,9 @@ static int BasicTest(
 
   }
 
+  // Perform serialisation test
+  XLAL_CHECK( SerialisationTest( n, tiling, total_ref[n-1], total_ref_0, total_ref_1, total_ref_2, total_ref_3 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
   XLALDestroyLatticeTilingLocator( loc );
@@ -365,6 +461,9 @@ static int MismatchTest(
     XLALDestroyRandomParams( rng );
 
   }
+
+  // Perform serialisation test
+  XLAL_CHECK( SerialisationTest( n, tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyLatticeTilingIterator( itr );

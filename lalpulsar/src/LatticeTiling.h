@@ -25,6 +25,7 @@
 #include <gsl/gsl_matrix.h>
 #include <lal/LALStdlib.h>
 #include <lal/Random.h>
+#include <lal/FITSFileIO.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -287,6 +288,24 @@ int XLALCurrentLatticeTilingBlock(
   const size_t dim,                     ///< [in] Dimension in which to return block
   INT4 *left,                           ///< [out] Index of left-most point of block relative to current point
   INT4 *right                           ///< [out] Index of right-most point of block relative to current point
+  );
+
+///
+/// Save the state of a lattice tiling iterator to a FITS file.
+///
+int XLALSaveLatticeTilingIterator(
+  const LatticeTilingIterator *itr,     ///< [in] Lattice tiling iterator
+  FITSFile *file,                       ///< [in] FITS file to save iterator to
+  const char *name                      ///< [in] FITS HDU to save iterator to
+  );
+
+///
+/// Restore the state of a lattice tiling iterator from a FITS file.
+///
+int XLALRestoreLatticeTilingIterator(
+  LatticeTilingIterator *itr,           ///< [in] Lattice tiling iterator
+  FITSFile *file,                       ///< [in] FITS file to restore iterator from
+  const char *name                      ///< [in] FITS HDU to restore iterator from
   );
 
 ///

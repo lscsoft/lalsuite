@@ -59,6 +59,20 @@ typedef struct tagLT_Bound {
   char data_upper[LT_DATA_MAX_SIZE];    ///< Arbitrary data describing upper parameter-space bound
 } LT_Bound;
 
+typedef struct tagLT_FITSRecord {
+  BOOLEAN is_tiled;                     ///< True if the dimension is tiled, false if it is a single point
+  INT4 data_len;                        ///< Length of arbitrary data describing parameter-space bounds
+  UCHAR data_lower[LT_DATA_MAX_SIZE];   ///< Arbitrary data describing lower parameter-space bound
+  UCHAR data_upper[LT_DATA_MAX_SIZE];   ///< Arbitrary data describing upper parameter-space bound
+  REAL8 phys_bbox;                      ///< Metric ellipse bounding box
+  REAL8 phys_origin;                    ///< Parameter-space origin in physical coordinates
+  REAL8 phys_point;                     ///< Current lattice point in physical coordinates
+  INT4 int_point;                       ///< Current lattice point in generating integers
+  INT4 int_lower;                       ///< Current lower parameter-space bound in generating integers
+  INT4 int_upper;                       ///< Current upper parameter-space bound in generating integers
+  INT4 direction;                       ///< Direction of iteration in each tiled parameter-space dimension
+} LT_FITSRecord;
+
 ///
 /// Lattice tiling index trie for one dimension.
 ///
@@ -307,6 +321,26 @@ static INT4 LT_FastForwardIterator(
 
   return labs( d );
 
+}
+
+///
+/// Initialise FITS table for saving and restoring a lattice tiling iterator
+///
+static int LT_InitFITSRecordTable( FITSFile *file )
+{
+  XLAL_FITS_TABLE_COLUMN_BEGIN( LT_FITSRecord );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, BOOLEAN, is_tiled ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, UCHAR, data_lower ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, UCHAR, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, phys_bbox ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, phys_origin ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, phys_point ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, int_point ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, int_lower ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, int_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, direction ) == XLAL_SUCCESS, XLAL_EFUNC );
+  return XLAL_SUCCESS;
 }
 
 ///
@@ -1836,6 +1870,189 @@ int XLALCurrentLatticeTilingBlock(
       *right = itr->int_upper[ti] - itr->int_point[ti];
       break;
     }
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSaveLatticeTilingIterator(
+  const LatticeTilingIterator *itr,
+  FITSFile *file,
+  const char *name
+  )
+{
+
+  // Check input
+  XLAL_CHECK( itr != NULL, XLAL_EFAULT );
+  XLAL_CHECK( itr->state > 0, XLAL_EINVAL );
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK( name != NULL, XLAL_EFAULT );
+
+  const size_t n = itr->tiling->ndim;
+
+  // Open FITS table for writing
+  XLAL_CHECK( XLALFITSTableOpenWrite( file, name, "serialised lattice tiling iterator" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( LT_InitFITSRecordTable( file ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Write FITS records to table
+  for ( size_t i = 0, ti = 0; i < n; ++i ) {
+
+    // Fill record
+    LT_FITSRecord XLAL_INIT_DECL( record );
+    record.is_tiled = itr->tiling->bounds[i].is_tiled;
+    record.data_len = itr->tiling->bounds[i].data_len;
+    memcpy( record.data_lower, itr->tiling->bounds[i].data_lower, itr->tiling->bounds[i].data_len );
+    memcpy( record.data_upper, itr->tiling->bounds[i].data_upper, itr->tiling->bounds[i].data_len );
+    record.phys_bbox = gsl_vector_get( itr->tiling->phys_bbox, i );
+    record.phys_origin = gsl_vector_get( itr->tiling->phys_origin, i );
+    record.phys_point = gsl_vector_get( itr->phys_point, i );
+    if ( itr->tiling->bounds[i].is_tiled ) {
+      record.int_point = itr->int_point[ti];
+      record.int_lower = itr->int_lower[ti];
+      record.int_upper = itr->int_upper[ti];
+      record.direction = itr->direction[ti];
+      ++ti;
+    }
+
+    // Write record
+    XLAL_CHECK( XLALFITSTableWriteRow( file, &record ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  }
+
+  // Write tiling properties
+  {
+    INT4 ndim = itr->tiling->ndim;
+    XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "ndim", ndim, "number of parameter-space dimensions" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  } {
+    INT4 tiled_ndim = itr->tiling->tiled_ndim;
+    XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "tiled_ndim", tiled_ndim, "number of tiled parameter-space dimensions" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  } {
+    BOOLEAN padding = itr->tiling->padding;
+    XLAL_CHECK( XLALFITSHeaderWriteBOOLEAN( file, "padding", padding, "whether padding is added to parameter space bounds" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  } {
+    INT4 lattice = itr->tiling->lattice;
+    XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "lattice", lattice, "type of lattice to generate tiling with" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Write iterator properties
+  {
+    INT4 itr_ndim = itr->itr_ndim;
+    XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "itr_ndim", itr_ndim, "number of parameter-space dimensions to iterate over" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  } {
+    INT4 tiled_itr_ndim = itr->tiled_itr_ndim;
+    XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "tiled_itr_ndim", tiled_itr_ndim, "number of tiled parameter-space dimensions to iterate over" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  } {
+    BOOLEAN alternating = itr->alternating;
+    XLAL_CHECK( XLALFITSHeaderWriteBOOLEAN( file, "alternating", alternating, "if true, alternate iterator direction after every crossing" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  } {
+    INT4 state = itr->state;
+    XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "state", state, "iterator state" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  } {
+    INT8 index = itr->index;
+    XLAL_CHECK( XLALFITSHeaderWriteINT8( file, "index", index, "index of current lattice tiling point" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  } {
+    INT8 count = itr->count;
+    XLAL_CHECK( XLALFITSHeaderWriteINT8( file, "count", count, "total number of lattice tiling points" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALRestoreLatticeTilingIterator(
+  LatticeTilingIterator *itr,
+  FITSFile *file,
+  const char *name
+  )
+{
+
+  // Check input
+  XLAL_CHECK( itr != NULL, XLAL_EFAULT );
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK( name != NULL, XLAL_EFAULT );
+
+  const size_t n = itr->tiling->ndim;
+
+  // Open FITS table for reading
+  UINT8 nrows = 0;
+  XLAL_CHECK( XLALFITSTableOpenRead( file, name, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( nrows == ( UINT8 ) n, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+  XLAL_CHECK( LT_InitFITSRecordTable( file ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Read and check tiling properties
+  {
+    INT4 ndim;
+    XLAL_CHECK( XLALFITSHeaderReadINT4( file, "ndim", &ndim ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( ndim == ( INT4 ) itr->tiling->ndim, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+  } {
+    INT4 tiled_ndim;
+    XLAL_CHECK( XLALFITSHeaderReadINT4( file, "tiled_ndim", &tiled_ndim ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( tiled_ndim == ( INT4 ) itr->tiling->tiled_ndim, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+  } {
+    BOOLEAN padding;
+    XLAL_CHECK( XLALFITSHeaderReadBOOLEAN( file, "padding", &padding ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( !padding == !itr->tiling->padding, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+  } {
+    INT4 lattice;
+    XLAL_CHECK( XLALFITSHeaderReadINT4( file, "lattice", &lattice ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( lattice == ( INT4 ) itr->tiling->lattice, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+  }
+
+  // Read and check iterator properties
+  {
+    INT4 itr_ndim;
+    XLAL_CHECK( XLALFITSHeaderReadINT4( file, "itr_ndim", &itr_ndim ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( itr_ndim == ( INT4 ) itr->itr_ndim, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+  } {
+    INT4 tiled_itr_ndim;
+    XLAL_CHECK( XLALFITSHeaderReadINT4( file, "tiled_itr_ndim", &tiled_itr_ndim ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( tiled_itr_ndim == ( INT4 ) itr->tiled_itr_ndim, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+  } {
+    BOOLEAN alternating;
+    XLAL_CHECK( XLALFITSHeaderReadBOOLEAN( file, "alternating", &alternating ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( !alternating == !itr->alternating, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+  } {
+    INT4 state;
+    XLAL_CHECK( XLALFITSHeaderReadINT4( file, "state", &state ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( state >= 0, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    itr->state = state;
+  } {
+    INT8 index;
+    XLAL_CHECK( XLALFITSHeaderReadINT8( file, "index", &index ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( index >= 0, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    itr->index = index;
+  } {
+    INT8 count;
+    XLAL_CHECK( XLALFITSHeaderReadINT8( file, "count", &count ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( count > ( INT8 ) itr->index, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    itr->count = count;
+  }
+
+  // Read FITS records from table
+  for ( size_t i = 0, ti = 0; i < n; ++i ) {
+
+    // Read and check record
+    LT_FITSRecord XLAL_INIT_DECL( record );
+    XLAL_CHECK( XLALFITSTableReadRow( file, &record, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( !record.is_tiled == !itr->tiling->bounds[i].is_tiled, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    XLAL_CHECK( record.data_len == ( INT4 ) itr->tiling->bounds[i].data_len, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    XLAL_CHECK( memcmp( record.data_lower, itr->tiling->bounds[i].data_lower, itr->tiling->bounds[i].data_len ) == 0, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    XLAL_CHECK( memcmp( record.data_upper, itr->tiling->bounds[i].data_upper, itr->tiling->bounds[i].data_len ) == 0, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    XLAL_CHECK( record.phys_bbox == gsl_vector_get( itr->tiling->phys_bbox, i ), XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    XLAL_CHECK( record.phys_origin == gsl_vector_get( itr->tiling->phys_origin, i ), XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    gsl_vector_set( itr->phys_point, i, record.phys_point );
+    if ( itr->tiling->bounds[i].is_tiled ) {
+      itr->int_point[ti] = record.int_point;
+      XLAL_CHECK( record.int_lower <= record.int_point, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+      itr->int_lower[ti] = record.int_lower;
+      XLAL_CHECK( record.int_point <= record.int_upper, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+      itr->int_upper[ti] = record.int_upper;
+      XLAL_CHECK( record.direction != 0, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+      itr->direction[ti] = record.direction;
+      ++ti;
+    }
+
   }
 
   return XLAL_SUCCESS;
