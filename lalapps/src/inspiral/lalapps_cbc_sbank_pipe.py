@@ -410,12 +410,12 @@ iterative-match-df-max= 1.0
 ; space. To do so, we generate a "coarse" bank, i.e., a bank on the
 ; same parameter space but with a weaker convergence criteria. This
 ; process gives a rough measure of the density of templates the final
-; bank will require. Use the templates-max option to prevent the job
+; bank will require. Use the max-new-templates option to prevent the job
 ; from running forever, but the more templates you have in the coarse
 ; bank, the less "over-coverage" you will incur from the bank
 ; splitting process. A good rule of thumb is that you want ~1000
 ; templates per split bank.
-templates-max = 15000
+max-new-templates = 15000
 match-min = 0.93
 convergence-threshold = 1000
 
@@ -565,12 +565,12 @@ else:
         coarse_thresh = cp.get("coarse-sbank", "convergence-threshold")
         coarse_sbank_node.add_var_arg("--convergence-threshold %s" % coarse_thresh)
 
-        if cp.has_option("coarse-sbank", "templates-max"):
-            templates_max = cp.get("coarse-sbank", "templates-max")
+        if cp.has_option("coarse-sbank", "max-new-templates"):
+            templates_max = cp.get("coarse-sbank", "max-new-templates")
             assert templates_max >= 3*nbanks # you need at least a few templates per bank
         else:
             templates_max = 15*nbanks  # to prevent the coarse bank from running forever
-        coarse_sbank_node.add_var_arg("--templates-max %s" % templates_max)
+        coarse_sbank_node.add_var_arg("--max-new-templates %s" % templates_max)
 
         xmlCoarse, = coarse_sbank_node.get_output_files()
         pnode = [coarse_sbank_node]
