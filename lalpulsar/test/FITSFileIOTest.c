@@ -59,6 +59,7 @@ typedef struct {
   INT4 index;
   BOOLEAN flag;
   CHAR name[8];
+  UCHAR data[2];
   LIGOTimeGPS epoch;
   struct {
     REAL4 sky;
@@ -78,9 +79,9 @@ const TestSubRecord testsub[3][2] = {
 };
 
 const TestRecord testtable[3] = {
-  { .index=3, .flag=1, .name="CasA", .epoch={123456789, 5}, .pos={.sky=5.4321, .freq=100.999, .fkdot={1e-9, 5e-20}}, .values={13.24, 43.234}, .phasef=crectf( 1.2, 3.4 ), .phase=crect( 4.5, 0.2 ), .sub=testsub[0] },
-  { .index=2, .flag=0, .name="Vela", .epoch={452456245, 9}, .pos={.sky=34.454, .freq=1345.34, .fkdot={2e-8, 6e-21}}, .values={14.35, 94.128}, .phasef=crectf( 3.6, 9.3 ), .phase=crect( 8.3, 4.0 ), .sub=testsub[1] },
-  { .index=1, .flag=1, .name="Crab", .epoch={467846774, 4}, .pos={.sky=64.244, .freq=15.6463, .fkdot={4e-6,     0}}, .values={153.4, 3.0900}, .phasef=crectf( 6.7, 4.4 ), .phase=crect( 5.6, 6.3 ), .sub=testsub[2] },
+  { .index=3, .flag=1, .name="CasA", .data={17,55}, .epoch={123456789, 5}, .pos={.sky=5.4321, .freq=100.999, .fkdot={1e-9, 5e-20}}, .values={13.24, 43.234}, .phasef=crectf( 1.2, 3.4 ), .phase=crect( 4.5, 0.2 ), .sub=testsub[0] },
+  { .index=2, .flag=0, .name="Vela", .data={00,94}, .epoch={452456245, 9}, .pos={.sky=34.454, .freq=1345.34, .fkdot={2e-8, 6e-21}}, .values={14.35, 94.128}, .phasef=crectf( 3.6, 9.3 ), .phase=crect( 8.3, 4.0 ), .sub=testsub[1] },
+  { .index=1, .flag=1, .name="Crab", .data={35,00}, .epoch={467846774, 4}, .pos={.sky=64.244, .freq=15.6463, .fkdot={4e-6,     0}}, .values={153.4, 3.0900}, .phasef=crectf( 6.7, 4.4 ), .phase=crect( 5.6, 6.3 ), .sub=testsub[2] },
 };
 
 int main( void )
@@ -177,6 +178,7 @@ int main( void )
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, index ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, BOOLEAN, flag ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, CHAR, name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, UCHAR, data ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, epoch ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, pos.sky ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, pos.freq ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -388,6 +390,7 @@ int main( void )
         XLAL_CHECK_MAIN( errnum = XLAL_EIO, XLAL_EFAILED );
       }
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, CHAR, name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, UCHAR, data ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, epoch ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, pos.sky ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, pos.freq ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -424,6 +427,7 @@ int main( void )
       XLAL_CHECK_MAIN( record.index == testtable[i].index, XLAL_EFAILED );
       XLAL_CHECK_MAIN( record.flag == testtable[i].flag, XLAL_EFAILED );
       XLAL_CHECK_MAIN( strcmp( record.name, testtable[i].name ) == 0, XLAL_EFAILED );
+      XLAL_CHECK_MAIN( memcmp( record.data, testtable[i].data, sizeof( testtable[i].data ) ) == 0, XLAL_EFAILED );
       XLAL_CHECK_MAIN( XLALGPSCmp( &record.epoch, &testtable[i].epoch ) == 0, XLAL_EFAILED );
       XLAL_CHECK_MAIN( record.pos.sky == testtable[i].pos.sky, XLAL_EFAILED );
       XLAL_CHECK_MAIN( record.pos.freq == testtable[i].pos.freq, XLAL_EFAILED );

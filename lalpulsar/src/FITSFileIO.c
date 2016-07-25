@@ -1527,6 +1527,14 @@ int XLALFITSTableColumnAddCOMPLEX16( FITSFile *file, const CHAR *col_name, const
   return XLAL_SUCCESS;
 }
 
+int XLALFITSTableColumnAddUCHAR( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *field, const size_t field_size )
+{
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, "", noffsets, offsets, record, record_size, field, field_size, sizeof( UCHAR ), 'B', TBYTE ) == XLAL_SUCCESS, XLAL_EFUNC );
+  return XLAL_SUCCESS;
+}
+
 int XLALFITSTableColumnAddCHAR( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *field, const size_t field_size )
 {
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
