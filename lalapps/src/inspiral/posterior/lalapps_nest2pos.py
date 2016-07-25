@@ -6,8 +6,8 @@ import os
 import sys
 
 import lalinference
-from lalinference import LALInferenceHDF5PosteriorSamplesGroupName as posterior_grp_name
-from lalinference import LALInferenceHDF5NestedSamplesGroupName as nested_grp_name
+from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
+from lalinference import LALInferenceHDF5NestedSamplesDatasetName as nested_grp_name
 from lalinference.nest2pos import draw_posterior_many, draw_N_posterior_many, compute_weights
 
 usage = '''%prog [-N Nlive] [-p posterior.hdf5] [-H header.txt] [--npos Npos] datafile1.hdf5 [datafile2.hdf5 ...]
