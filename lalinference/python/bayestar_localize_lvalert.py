@@ -68,9 +68,7 @@ log = logging.getLogger('BAYESTAR')
 
 methods = '''
     toa_phoa_snr
-    toa_snr_mcmc
     toa_phoa_snr_mcmc
-    toa_snr_mcmc_kde
     toa_phoa_snr_mcmc_kde
     '''.split()
 default_method = 'toa_phoa_snr'

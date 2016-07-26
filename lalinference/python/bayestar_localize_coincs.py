@@ -48,9 +48,7 @@ from lalinference.bayestar import command
 
 methods = '''
     toa_phoa_snr
-    toa_snr_mcmc
     toa_phoa_snr_mcmc
-    toa_snr_mcmc_kde
     toa_phoa_snr_mcmc_kde
     '''.split()
 default_method = 'toa_phoa_snr'
@@ -95,7 +93,7 @@ import numpy as np
 # Read coinc file.
 log.info('%s:reading input XML file', opts.input.name)
 xmldoc, _ = ligolw_utils.load_fileobj(
-    opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
+    opts.input, contenthandler=ligolw_bayestar.LSCTablesAndSeriesContentHandler)
 
 if opts.psd_files: # read pycbc psds here
     import lal
@@ -165,6 +163,8 @@ else:
             reference_psd_filenames_by_process_id[sngl_inspiral.process_id])
             for sngl_inspiral in sngl_inspirals)
 
+snr_dict = ligolw_bayestar.snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc)
+
 count_sky_maps_failed = 0
 
 # Loop over all coinc_event <-> sim_inspiral coincs.
@@ -175,6 +175,12 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
     # Look up PSDs
     log.info('%s:reading PSDs', coinc.coinc_event_id)
     psds = reference_psds_for_sngls(sngl_inspirals)
+
+    # Look up SNR time series
+    try:
+        snrs = [snr_dict[sngl.event_id] for sngl in sngl_inspirals]
+    except KeyError:
+        snrs = None
 
     # Loop over sky localization methods
     for method in opts.method:
@@ -188,7 +194,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
                 sngl_inspirals, opts.waveform, opts.f_low, opts.min_distance,
                 opts.max_distance, opts.prior_distance_power, psds=psds,
                 method=method, nside=opts.nside, chain_dump=chain_dump,
-                phase_convention=opts.phase_convention)
+                phase_convention=opts.phase_convention, snr_series=snrs)
             prob, distmu, distsigma, _ = sky_map
             distmean, diststd = distance.parameters_to_marginal_moments(
                 prob, distmu, distsigma)

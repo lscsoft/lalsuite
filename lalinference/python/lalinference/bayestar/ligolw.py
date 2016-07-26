@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2015  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -29,9 +29,12 @@ import operator
 from pylal import ligolw_inspinjfind
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw import ligolw
+from glue.ligolw import array as ligolw_array
+from glue.ligolw import param as ligolw_param
 from glue.ligolw import table as ligolw_table
 from pylal import ligolw_thinca
 from glue.ligolw import lsctables
+import lal.series
 
 
 def get_template_bank_f_low(xmldoc):
@@ -152,6 +155,33 @@ def psd_filenames_by_process_id_for_xmldoc(xmldoc):
         if process_param.param == '--reference-psd')
 
 
+def _snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc):
+    for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName):
+        try:
+            if elem.Name != lal.COMPLEX16TimeSeries.__name__:
+                continue
+            array_elem = ligolw_array.get_array(elem, 'snr')
+            event_id = ligolw_param.get_pyvalue(elem, 'event_id')
+            if not isinstance(event_id, lsctables.SnglInspiralID):
+                continue
+        except (AttributeError, ValueError):
+            continue
+        else:
+            yield event_id, lal.series.parse_COMPLEX16TimeSeries(elem)
+
+
+def snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc):
+    return dict(_snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc))
+
+
 @lsctables.use_in
 class LSCTablesContentHandler(ligolw.LIGOLWContentHandler):
 	"""Content handler for reading LIGO-LW XML files with LSC table schema."""
+
+
+@ligolw_array.use_in
+@ligolw_param.use_in
+@lsctables.use_in
+class LSCTablesAndSeriesContentHandler(ligolw.LIGOLWContentHandler):
+    """Content handler for reading LIGO-LW XML files with LSC table schema and
+    gridded arrays."""

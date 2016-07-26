@@ -155,24 +155,22 @@ static PyObject *sky_map_toa_phoa_snr(
     unsigned int nifos;
     unsigned long nsamples = 0;
     double sample_rate;
-    PyObject *acors_obj;
+    PyObject *epochs_obj;
+    PyObject *snrs_obj;
     PyObject *responses_obj;
     PyObject *locations_obj;
     PyObject *horizons_obj;
-    PyObject *toas_obj;
-    PyObject *phoas_obj;
-    PyObject *snrs_obj;
 
     /* Names of arguments */
     static const char *keywords[] = {"min_distance", "max_distance",
-        "prior_distance_power", "gmst", "sample_rate", "acors", "responses",
-        "locations", "horizons", "toas", "phoas", "snrs", "nside", NULL};
+        "prior_distance_power", "gmst", "sample_rate", "epochs", "snrs",
+        "responses", "locations", "horizons", "nside", NULL};
 
     /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddiddOOOOOOO|l",
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ddiddOOOOO|l",
         keywords, &min_distance, &max_distance, &prior_distance_power, &gmst,
-        &sample_rate, &acors_obj, &responses_obj, &locations_obj,
-        &horizons_obj, &toas_obj, &phoas_obj, &snrs_obj, &nside)) return NULL;
+        &sample_rate, &epochs_obj, &snrs_obj, &responses_obj, &locations_obj,
+        &horizons_obj, &nside)) return NULL;
 
     /* Determine HEALPix resolution, if specified */
     if (nside == -1)
@@ -189,7 +187,7 @@ static PyObject *sky_map_toa_phoa_snr(
 
     /* Determine number of detectors */
     {
-        Py_ssize_t n = PySequence_Length(acors_obj);
+        Py_ssize_t n = PySequence_Length(epochs_obj);
         if (n < 0) return NULL;
         nifos = n;
     }
@@ -198,27 +196,27 @@ static PyObject *sky_map_toa_phoa_snr(
     PyObject *out = NULL;
 
     /* Numpy array objects */
-    PyArrayObject *acors_npy[nifos], *responses_npy[nifos],
-        *locations_npy[nifos], *horizons_npy = NULL, *toas_npy = NULL,
-        *phoas_npy = NULL, *snrs_npy = NULL;
-    memset(acors_npy, 0, sizeof(acors_npy));
+    PyArrayObject *epochs_npy = NULL, *snrs_npy[nifos], *responses_npy[nifos],
+        *locations_npy[nifos], *horizons_npy = NULL;
+    memset(snrs_npy, 0, sizeof(snrs_npy));
     memset(responses_npy, 0, sizeof(responses_npy));
     memset(locations_npy, 0, sizeof(locations_npy));
 
     /* Arrays of pointers for inputs with multiple dimensions */
-    const double complex *acors[nifos];
+    const double complex *snrs[nifos];
     const float (*responses[nifos])[3];
     const double *locations[nifos];
 
     /* Gather C-aligned arrays from Numpy types */
-    INPUT_LIST_OF_ARRAYS(acors, NPY_CDOUBLE, 1,
+    INPUT_VECTOR_DOUBLE_NIFOS(epochs)
+    INPUT_LIST_OF_ARRAYS(snrs, NPY_CDOUBLE, 1,
         npy_intp dim = PyArray_DIM(npy, 0);
         if (iifo == 0)
             nsamples = dim;
         else if ((unsigned long)dim != nsamples)
         {
             PyErr_SetString(PyExc_ValueError,
-                "expected elements of acors to be vectors of the same length");
+                "expected elements of snrs to be vectors of the same length");
             goto fail;
         }
     )
@@ -239,15 +237,12 @@ static PyObject *sky_map_toa_phoa_snr(
         }
     )
     INPUT_VECTOR_DOUBLE_NIFOS(horizons)
-    INPUT_VECTOR_DOUBLE_NIFOS(toas)
-    INPUT_VECTOR_DOUBLE_NIFOS(phoas)
-    INPUT_VECTOR_DOUBLE_NIFOS(snrs)
 
     /* Call function */
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     double (*ret)[4] = bayestar_sky_map_toa_phoa_snr(&npix, min_distance,
         max_distance, prior_distance_power, gmst, nifos, nsamples, sample_rate,
-        acors, responses, locations, horizons, toas, phoas, snrs);
+        epochs, snrs, responses, locations, horizons);
     gsl_set_error_handler(old_handler);
 
     /* Prepare output object */
@@ -258,120 +253,11 @@ static PyObject *sky_map_toa_phoa_snr(
     }
 
 fail: /* Cleanup */
-    FREE_INPUT_LIST_OF_ARRAYS(acors)
+    Py_XDECREF(epochs_npy);
+    FREE_INPUT_LIST_OF_ARRAYS(snrs)
     FREE_INPUT_LIST_OF_ARRAYS(responses)
     FREE_INPUT_LIST_OF_ARRAYS(locations)
     Py_XDECREF(horizons_npy);
-    Py_XDECREF(toas_npy);
-    Py_XDECREF(phoas_npy);
-    Py_XDECREF(snrs_npy);
-    return out;
-};
-
-
-static PyObject *log_likelihood_toa_snr(
-    PyObject *NPY_UNUSED(module), PyObject *args, PyObject *kwargs)
-{
-    /* Input arguments */
-    double ra;
-    double sin_dec;
-    double distance;
-    double u;
-    double twopsi;
-    double t;
-    double gmst;
-    unsigned int nifos;
-    unsigned long nsamples = 0;
-    double sample_rate;
-    PyObject *acors_obj;
-    PyObject *responses_obj;
-    PyObject *locations_obj;
-    PyObject *horizons_obj;
-    PyObject *toas_obj;
-    PyObject *snrs_obj;
-
-    /* Names of arguments */
-    static const char *keywords[] = {"params", "gmst", "sample_rate", "acors",
-        "responses", "locations", "horizons", "toas", "snrs", NULL};
-
-    /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "(dddddd)ddOOOOOO",
-        keywords, &ra, &sin_dec, &distance, &u, &twopsi, &t, &gmst,
-        &sample_rate, &acors_obj, &responses_obj, &locations_obj, &horizons_obj,
-        &toas_obj, &snrs_obj)) return NULL;
-
-    /* Determine number of detectors */
-    {
-        Py_ssize_t n = PySequence_Length(acors_obj);
-        if (n < 0) return NULL;
-        nifos = n;
-    }
-
-    /* Return value */
-    PyObject *out = NULL;
-
-    /* Numpy array objects */
-    PyArrayObject *acors_npy[nifos], *responses_npy[nifos],
-        *locations_npy[nifos], *horizons_npy = NULL, *toas_npy = NULL,
-        *snrs_npy = NULL;
-    memset(acors_npy, 0, sizeof(acors_npy));
-    memset(responses_npy, 0, sizeof(responses_npy));
-    memset(locations_npy, 0, sizeof(locations_npy));
-
-    /* Arrays of pointers for inputs with multiple dimensions */
-    const double complex *acors[nifos];
-    const float (*responses[nifos])[3];
-    const double *locations[nifos];
-
-    /* Gather C-aligned arrays from Numpy types */
-    INPUT_LIST_OF_ARRAYS(acors, NPY_CDOUBLE, 1,
-        npy_intp dim = PyArray_DIM(npy, 0);
-        if (iifo == 0)
-            nsamples = dim;
-        else if ((unsigned long)dim != nsamples)
-        {
-            PyErr_SetString(PyExc_ValueError,
-                "expected elements of acors to be vectors of the same length");
-            goto fail;
-        }
-    )
-    INPUT_LIST_OF_ARRAYS(responses, NPY_FLOAT, 2,
-        if (PyArray_DIM(npy, 0) != 3 || PyArray_DIM(npy, 1) != 3)
-        {
-            PyErr_SetString(PyExc_ValueError,
-                "expected elements of responses to be 3x3 arrays");
-            goto fail;
-        }
-    )
-    INPUT_LIST_OF_ARRAYS(locations, NPY_DOUBLE, 1,
-        if (PyArray_DIM(npy, 0) != 3)
-        {
-            PyErr_SetString(PyExc_ValueError,
-                "expected elements of locations to be vectors of length 3");
-            goto fail;
-        }
-    )
-    INPUT_VECTOR_DOUBLE_NIFOS(horizons)
-    INPUT_VECTOR_DOUBLE_NIFOS(toas)
-    INPUT_VECTOR_DOUBLE_NIFOS(snrs)
-
-    /* Call function */
-    gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
-    const double ret = bayestar_log_likelihood_toa_snr(ra, sin_dec,
-        distance, u, twopsi, t, gmst, nifos, nsamples, sample_rate, acors,
-        responses, locations, horizons, toas, snrs);
-    gsl_set_error_handler(old_handler);
-
-    /* Prepare output object */
-    out = PyFloat_FromDouble(ret);
-
-fail: /* Cleanup */
-    FREE_INPUT_LIST_OF_ARRAYS(acors)
-    FREE_INPUT_LIST_OF_ARRAYS(responses)
-    FREE_INPUT_LIST_OF_ARRAYS(locations)
-    Py_XDECREF(horizons_npy);
-    Py_XDECREF(toas_npy);
-    Py_XDECREF(snrs_npy);
     return out;
 };
 
@@ -390,27 +276,25 @@ static PyObject *log_likelihood_toa_phoa_snr(
     unsigned int nifos;
     unsigned long nsamples = 0;
     double sample_rate;
-    PyObject *acors_obj;
+    PyObject *epochs_obj;
+    PyObject *snrs_obj;
     PyObject *responses_obj;
     PyObject *locations_obj;
     PyObject *horizons_obj;
-    PyObject *toas_obj;
-    PyObject *phoas_obj;
-    PyObject *snrs_obj;
 
     /* Names of arguments */
-    static const char *keywords[] = {"params", "gmst", "sample_rate", "acors",
-        "responses", "locations", "horizons", "toas", "phoas", "snrs", NULL};
+    static const char *keywords[] = {"params", "gmst", "sample_rate", "epochs",
+        "snrs", "responses", "locations", "horizons", NULL};
 
     /* Parse arguments */
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "(dddddd)ddOOOOOOO",
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "(dddddd)ddOOOOO",
         keywords, &ra, &sin_dec, &distance, &u, &twopsi, &t, &gmst,
-        &sample_rate, &acors_obj, &responses_obj, &locations_obj, &horizons_obj,
-        &toas_obj, &phoas_obj, &snrs_obj)) return NULL;
+        &sample_rate, &epochs_obj, &snrs_obj, &responses_obj, &locations_obj,
+        &horizons_obj)) return NULL;
 
     /* Determine number of detectors */
     {
-        Py_ssize_t n = PySequence_Length(acors_obj);
+        Py_ssize_t n = PySequence_Length(epochs_obj);
         if (n < 0) return NULL;
         nifos = n;
     }
@@ -419,27 +303,27 @@ static PyObject *log_likelihood_toa_phoa_snr(
     PyObject *out = NULL;
 
     /* Numpy array objects */
-    PyArrayObject *acors_npy[nifos], *responses_npy[nifos],
-        *locations_npy[nifos], *horizons_npy = NULL, *toas_npy = NULL,
-        *phoas_npy = NULL, *snrs_npy = NULL;
-    memset(acors_npy, 0, sizeof(acors_npy));
+    PyArrayObject *epochs_npy = NULL, *snrs_npy[nifos], *responses_npy[nifos],
+        *locations_npy[nifos], *horizons_npy = NULL;
+    memset(snrs_npy, 0, sizeof(snrs_npy));
     memset(responses_npy, 0, sizeof(responses_npy));
     memset(locations_npy, 0, sizeof(locations_npy));
 
     /* Arrays of pointers for inputs with multiple dimensions */
-    const double complex *acors[nifos];
+    const double complex *snrs[nifos];
     const float (*responses[nifos])[3];
     const double *locations[nifos];
 
     /* Gather C-aligned arrays from Numpy types */
-    INPUT_LIST_OF_ARRAYS(acors, NPY_CDOUBLE, 1,
+    INPUT_VECTOR_DOUBLE_NIFOS(epochs)
+    INPUT_LIST_OF_ARRAYS(snrs, NPY_CDOUBLE, 1,
         npy_intp dim = PyArray_DIM(npy, 0);
         if (iifo == 0)
             nsamples = dim;
         else if ((unsigned long)dim != nsamples)
         {
             PyErr_SetString(PyExc_ValueError,
-                "expected elements of acors to be vectors of the same length");
+                "expected elements of snrs to be vectors of the same length");
             goto fail;
         }
     )
@@ -460,28 +344,23 @@ static PyObject *log_likelihood_toa_phoa_snr(
         }
     )
     INPUT_VECTOR_DOUBLE_NIFOS(horizons)
-    INPUT_VECTOR_DOUBLE_NIFOS(toas)
-    INPUT_VECTOR_DOUBLE_NIFOS(phoas)
-    INPUT_VECTOR_DOUBLE_NIFOS(snrs)
 
     /* Call function */
     gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     const double ret = bayestar_log_likelihood_toa_phoa_snr(ra, sin_dec,
-        distance, u, twopsi, t, gmst, nifos, nsamples, sample_rate, acors,
-        responses, locations, horizons, toas, phoas, snrs);
+        distance, u, twopsi, t, gmst, nifos, nsamples, sample_rate, epochs,
+        snrs, responses, locations, horizons);
     gsl_set_error_handler(old_handler);
 
     /* Prepare output object */
     out = PyFloat_FromDouble(ret);
 
 fail: /* Cleanup */
-    FREE_INPUT_LIST_OF_ARRAYS(acors)
+    Py_XDECREF(epochs_npy);
+    FREE_INPUT_LIST_OF_ARRAYS(snrs)
     FREE_INPUT_LIST_OF_ARRAYS(responses)
     FREE_INPUT_LIST_OF_ARRAYS(locations)
     Py_XDECREF(horizons_npy);
-    Py_XDECREF(toas_npy);
-    Py_XDECREF(phoas_npy);
-    Py_XDECREF(snrs_npy);
     return out;
 };
 
@@ -498,8 +377,6 @@ static PyObject *test(
 
 static PyMethodDef methods[] = {
     {"toa_phoa_snr", (PyCFunction)sky_map_toa_phoa_snr,
-        METH_VARARGS | METH_KEYWORDS, "fill me in"},
-    {"log_likelihood_toa_snr", (PyCFunction)log_likelihood_toa_snr,
         METH_VARARGS | METH_KEYWORDS, "fill me in"},
     {"log_likelihood_toa_phoa_snr", (PyCFunction)log_likelihood_toa_phoa_snr,
         METH_VARARGS | METH_KEYWORDS, "fill me in"},
