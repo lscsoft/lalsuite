@@ -423,14 +423,14 @@ BOOLEAN swig_lal_test_copyinout_gsl_vector_complex(gsl_vector_complex* copyinout
   return 1;
 }
 BOOLEAN swig_lal_test_viewin_gsl_matrix_float(gsl_matrix_float* copyout, const gsl_matrix_float* viewin) {
-  if (!copyout || !viewin || copyout->size1 != copyout->size1 || copyout->size2 != copyout->size2) {
+  if (!copyout || !viewin || copyout->size1 != viewin->size1 || copyout->size2 != viewin->size2) {
     return 0;
   }
   gsl_matrix_float_memcpy(copyout, viewin);
   return 1;
 }
 BOOLEAN swig_lal_test_viewinout_gsl_matrix_float(gsl_matrix_float* viewout, gsl_matrix_float* viewin) {
-  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewout->size1 || viewout->size2 != viewout->size2) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewin->size1 || viewout->size2 != viewin->size2) {
     return 0;
   }
   gsl_matrix_float_memcpy(viewout, viewin);
@@ -445,14 +445,14 @@ BOOLEAN swig_lal_test_copyinout_gsl_matrix_float(gsl_matrix_float* copyinout) {
   return 1;
 }
 BOOLEAN swig_lal_test_viewin_gsl_matrix(gsl_matrix* copyout, const gsl_matrix* viewin) {
-  if (!copyout || !viewin || copyout->size1 != copyout->size1 || copyout->size2 != copyout->size2) {
+  if (!copyout || !viewin || copyout->size1 != viewin->size1 || copyout->size2 != viewin->size2) {
     return 0;
   }
   gsl_matrix_memcpy(copyout, viewin);
   return 1;
 }
 BOOLEAN swig_lal_test_viewinout_gsl_matrix(gsl_matrix* viewout, gsl_matrix* viewin) {
-  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewout->size1 || viewout->size2 != viewout->size2) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewin->size1 || viewout->size2 != viewin->size2) {
     return 0;
   }
   gsl_matrix_memcpy(viewout, viewin);
@@ -467,14 +467,14 @@ BOOLEAN swig_lal_test_copyinout_gsl_matrix(gsl_matrix* copyinout) {
   return 1;
 }
 BOOLEAN swig_lal_test_viewin_gsl_matrix_complex_float(gsl_matrix_complex_float* copyout, const gsl_matrix_complex_float* viewin) {
-  if (!copyout || !viewin || copyout->size1 != copyout->size1 || copyout->size2 != copyout->size2) {
+  if (!copyout || !viewin || copyout->size1 != viewin->size1 || copyout->size2 != viewin->size2) {
     return 0;
   }
   gsl_matrix_complex_float_memcpy(copyout, viewin);
   return 1;
 }
 BOOLEAN swig_lal_test_viewinout_gsl_matrix_complex_float(gsl_matrix_complex_float* viewout, gsl_matrix_complex_float* viewin) {
-  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewout->size1 || viewout->size2 != viewout->size2) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewin->size1 || viewout->size2 != viewin->size2) {
     return 0;
   }
   gsl_matrix_complex_float_memcpy(viewout, viewin);
@@ -493,14 +493,14 @@ BOOLEAN swig_lal_test_copyinout_gsl_matrix_complex_float(gsl_matrix_complex_floa
   return 1;
 }
 BOOLEAN swig_lal_test_viewin_gsl_matrix_complex(gsl_matrix_complex* copyout, const gsl_matrix_complex* viewin) {
-  if (!copyout || !viewin || copyout->size1 != copyout->size1 || copyout->size2 != copyout->size2) {
+  if (!copyout || !viewin || copyout->size1 != viewin->size1 || copyout->size2 != viewin->size2) {
     return 0;
   }
   gsl_matrix_complex_memcpy(copyout, viewin);
   return 1;
 }
 BOOLEAN swig_lal_test_viewinout_gsl_matrix_complex(gsl_matrix_complex* viewout, gsl_matrix_complex* viewin) {
-  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewout->size1 || viewout->size2 != viewout->size2) {
+  if (!viewout || !viewout->data || !viewin || !viewin->data || viewout->size1 != viewin->size1 || viewout->size2 != viewin->size2) {
     return 0;
   }
   gsl_matrix_complex_memcpy(viewout, viewin);
