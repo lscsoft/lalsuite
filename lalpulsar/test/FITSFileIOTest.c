@@ -26,6 +26,12 @@
 #include <limits.h>
 #include <float.h>
 
+#include <lal/FITSFileIO.h>
+#include <lal/LALPulsarVCSInfo.h>
+#include <lal/StringVector.h>
+#include <lal/Date.h>
+#include <lal/GSLHelpers.h>
+
 #if !defined(HAVE_LIBCFITSIO)
 
 int main( void )
@@ -34,13 +40,7 @@ int main( void )
   return 77;
 }
 
-#else
-
-#include <lal/FITSFileIO.h>
-#include <lal/LALPulsarVCSInfo.h>
-#include <lal/StringVector.h>
-#include <lal/Date.h>
-#include <lal/GSLHelpers.h>
+#else // defined(HAVE_LIBCFITSIO)
 
 const CHAR *longstring_ref = \
   "This is a long string #1. This is a long string #2. " \

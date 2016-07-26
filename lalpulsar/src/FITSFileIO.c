@@ -28,10 +28,8 @@
 #include <float.h>
 
 #if defined(HAVE_LIBCFITSIO)
+
 #include <fitsio.h>
-#else
-#error CFITSIO library is not available
-#endif
 
 // If fffree() is missing, use free() instead
 #if !defined(HAVE_FFFREE)
@@ -46,13 +44,15 @@ int fffree( void *, int * );
 
 #endif // ffree()
 
+#endif // !defined(HAVE_LIBCFITSIO)
+
 #include <lal/FITSFileIO.h>
 #include <lal/LALString.h>
 #include <lal/StringVector.h>
 #include <lal/Date.h>
 #include <lal/GSLHelpers.h>
 
-#ifdef __GNUC__
+#if defined(__GNUC__)
 #define UNUSED __attribute__ ((unused))
 #else
 #define UNUSED
@@ -73,6 +73,7 @@ int fffree( void *, int * );
   } while(0)
 
 // Internal representation of a FITS file opened for reading or writing
+#if defined(HAVE_LIBCFITSIO)
 struct tagFITSFile {
   fitsfile *ff;                         // Pointer to a CFITSIO FITS file representation
   int write;                            // True if the file is open for writing (otherwise reading)
@@ -99,12 +100,17 @@ struct tagFITSFile {
     LONGLONG irow;                              // Index of current row in table
   } table;
 };
+#endif // !defined(HAVE_LIBCFITSIO)
 
 ///
 /// Extract unit from a keyword or column name
 ///
-static int ExtractUnit( const CHAR *name_unit, CHAR *name, CHAR unit[FLEN_VALUE] )
+static int UNUSED ExtractUnit( const CHAR UNUSED *name_unit, CHAR UNUSED *name, CHAR UNUSED *unit )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -131,13 +137,18 @@ static int ExtractUnit( const CHAR *name_unit, CHAR *name, CHAR unit[FLEN_VALUE]
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
 ///
 /// Format and check a FITS keyword
 ///
-static int CheckFITSKeyword( const CHAR *key, CHAR keyword[FLEN_KEYWORD], CHAR unit[FLEN_VALUE] )
+static int UNUSED CheckFITSKeyword( const CHAR UNUSED *key, CHAR UNUSED *keyword, CHAR UNUSED *unit )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -171,10 +182,15 @@ static int CheckFITSKeyword( const CHAR *key, CHAR keyword[FLEN_KEYWORD], CHAR u
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-void XLALFITSFileClose( FITSFile *file )
+void XLALFITSFileClose( FITSFile UNUSED *file )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR_VOID( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
   if ( file != NULL ) {
     if ( file->ff != NULL ) {
@@ -182,10 +198,16 @@ void XLALFITSFileClose( FITSFile *file )
     }
     XLALFree( file );
   }
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-FITSFile *XLALFITSFileOpenWrite( const CHAR *file_name, const LALVCSInfo *const vcs_list[] )
+FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name, const LALVCSInfo UNUSED *const vcs_list[] )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR_NULL( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
   FITSFile *file = NULL;
 
@@ -242,10 +264,15 @@ XLAL_FAIL:
 
   return NULL;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-FITSFile *XLALFITSFileOpenRead( const CHAR *file_name )
+FITSFile *XLALFITSFileOpenRead( const CHAR UNUSED *file_name )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR_NULL( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
   FITSFile *file = NULL;
 
@@ -262,11 +289,11 @@ FITSFile *XLALFITSFileOpenRead( const CHAR *file_name )
   // Open FITS file for reading
   CALL_FITS( fits_open_diskfile, &file->ff, file_name, READONLY );
 
-  // Return FITS file on success
   return file;
 
-  // Close FITS file and free memory on error
 XLAL_FAIL:
+
+  // Close FITS file and free memory on error
   if ( file != NULL ) {
     if ( file->ff != NULL ) {
       fits_close_file( file->ff, &status );
@@ -275,10 +302,15 @@ XLAL_FAIL:
   }
   return NULL;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteHistory( FITSFile *file, const CHAR *format, ... )
+int XLALFITSHeaderWriteHistory( FITSFile UNUSED *file, const CHAR UNUSED *format, ... )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -311,10 +343,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *format, ... )
+int XLALFITSHeaderWriteComment( FITSFile UNUSED *file, const CHAR UNUSED *format, ... )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -347,10 +384,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteBOOLEAN( FITSFile *file, const CHAR *key, const BOOLEAN value, const CHAR *comment )
+int XLALFITSHeaderWriteBOOLEAN( FITSFile UNUSED *file, const CHAR UNUSED *key, const BOOLEAN UNUSED value, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -375,10 +417,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderReadBOOLEAN( FITSFile *file, const CHAR *key, BOOLEAN *value )
+int XLALFITSHeaderReadBOOLEAN( FITSFile UNUSED *file, const CHAR UNUSED *key, BOOLEAN UNUSED *value )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -399,10 +446,15 @@ int XLALFITSHeaderReadBOOLEAN( FITSFile *file, const CHAR *key, BOOLEAN *value )
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteINT4( FITSFile *file, const CHAR *key, const INT4 value, const CHAR *comment )
+int XLALFITSHeaderWriteINT4( FITSFile UNUSED *file, const CHAR UNUSED *key, const INT4 UNUSED value, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -428,10 +480,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderReadINT4( FITSFile *file, const CHAR *key, INT4 *value )
+int XLALFITSHeaderReadINT4( FITSFile UNUSED *file, const CHAR UNUSED *key, INT4 UNUSED *value )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -453,10 +510,15 @@ int XLALFITSHeaderReadINT4( FITSFile *file, const CHAR *key, INT4 *value )
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteINT8( FITSFile *file, const CHAR *key, const INT8 value, const CHAR *comment )
+int XLALFITSHeaderWriteINT8( FITSFile UNUSED *file, const CHAR UNUSED *key, const INT8 UNUSED value, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -482,10 +544,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderReadINT8( FITSFile *file, const CHAR *key, INT8 *value )
+int XLALFITSHeaderReadINT8( FITSFile UNUSED *file, const CHAR UNUSED *key, INT8 UNUSED *value )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -507,10 +574,15 @@ int XLALFITSHeaderReadINT8( FITSFile *file, const CHAR *key, INT8 *value )
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteREAL4( FITSFile *file, const CHAR *key, const REAL4 value, const CHAR *comment )
+int XLALFITSHeaderWriteREAL4( FITSFile UNUSED *file, const CHAR UNUSED *key, const REAL4 UNUSED value, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -536,10 +608,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderReadREAL4( FITSFile *file, const CHAR *key, REAL4 *value )
+int XLALFITSHeaderReadREAL4( FITSFile UNUSED *file, const CHAR UNUSED *key, REAL4 UNUSED *value )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -558,10 +635,15 @@ int XLALFITSHeaderReadREAL4( FITSFile *file, const CHAR *key, REAL4 *value )
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteREAL8( FITSFile *file, const CHAR *key, const REAL8 value, const CHAR *comment )
+int XLALFITSHeaderWriteREAL8( FITSFile UNUSED *file, const CHAR UNUSED *key, const REAL8 UNUSED value, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -587,10 +669,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderReadREAL8( FITSFile *file, const CHAR *key, REAL8 *value )
+int XLALFITSHeaderReadREAL8( FITSFile UNUSED *file, const CHAR UNUSED *key, REAL8 UNUSED *value )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -609,10 +696,15 @@ int XLALFITSHeaderReadREAL8( FITSFile *file, const CHAR *key, REAL8 *value )
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteCOMPLEX8( FITSFile *file, const CHAR *key, const COMPLEX8 value, const CHAR *comment )
+int XLALFITSHeaderWriteCOMPLEX8( FITSFile UNUSED *file, const CHAR UNUSED *key, const COMPLEX8 UNUSED value, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -639,10 +731,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderReadCOMPLEX8( FITSFile *file, const CHAR *key, COMPLEX8 *value )
+int XLALFITSHeaderReadCOMPLEX8( FITSFile UNUSED *file, const CHAR UNUSED *key, COMPLEX8 UNUSED *value )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -663,10 +760,15 @@ int XLALFITSHeaderReadCOMPLEX8( FITSFile *file, const CHAR *key, COMPLEX8 *value
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteCOMPLEX16( FITSFile *file, const CHAR *key, const COMPLEX16 value, const CHAR *comment )
+int XLALFITSHeaderWriteCOMPLEX16( FITSFile UNUSED *file, const CHAR UNUSED *key, const COMPLEX16 UNUSED value, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -693,10 +795,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderReadCOMPLEX16( FITSFile *file, const CHAR *key, COMPLEX16 *value )
+int XLALFITSHeaderReadCOMPLEX16( FITSFile UNUSED *file, const CHAR UNUSED *key, COMPLEX16 UNUSED *value )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -717,10 +824,15 @@ int XLALFITSHeaderReadCOMPLEX16( FITSFile *file, const CHAR *key, COMPLEX16 *val
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteString( FITSFile *file, const CHAR *key, const CHAR *value, const CHAR *comment )
+int XLALFITSHeaderWriteString( FITSFile UNUSED *file, const CHAR UNUSED *key, const CHAR UNUSED *value, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -753,10 +865,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderReadString( FITSFile *file, const CHAR *key, CHAR **value )
+int XLALFITSHeaderReadString( FITSFile UNUSED *file, const CHAR UNUSED *key, CHAR UNUSED **value )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
   CHAR *val = NULL;
 
@@ -783,10 +900,15 @@ XLAL_FAIL:
   }
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteStringVector( FITSFile *file, const CHAR *key, const LALStringVector *values, const CHAR *comment )
+int XLALFITSHeaderWriteStringVector( FITSFile UNUSED *file, const CHAR UNUSED *key, const LALStringVector UNUSED *values, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -822,10 +944,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderReadStringVector( FITSFile *file, const CHAR *key, LALStringVector **values )
+int XLALFITSHeaderReadStringVector( FITSFile UNUSED *file, const CHAR UNUSED *key, LALStringVector UNUSED **values )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -855,10 +982,15 @@ int XLALFITSHeaderReadStringVector( FITSFile *file, const CHAR *key, LALStringVe
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteGPSTime( FITSFile *file, const CHAR *key, const LIGOTimeGPS *value, const CHAR *comment )
+int XLALFITSHeaderWriteGPSTime( FITSFile UNUSED *file, const CHAR UNUSED *key, const LIGOTimeGPS UNUSED *value, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -899,10 +1031,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderReadGPSTime( FITSFile *file, const CHAR *key, LIGOTimeGPS *value )
+int XLALFITSHeaderReadGPSTime( FITSFile UNUSED *file, const CHAR UNUSED *key, LIGOTimeGPS UNUSED *value )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
   CHAR *utc_str = NULL;
 
@@ -934,10 +1071,15 @@ XLAL_FAIL:
   XLALFree( utc_str );
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayOpenWrite( FITSFile *file, const CHAR *name, const size_t ndim, const size_t dims[], const CHAR *comment )
+int XLALFITSArrayOpenWrite( FITSFile UNUSED *file, const CHAR UNUSED *name, const size_t UNUSED ndim, const size_t UNUSED dims[], const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -976,10 +1118,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayOpenRead( FITSFile *file, const CHAR *name, size_t *ndim, size_t dims[] )
+int XLALFITSArrayOpenRead( FITSFile UNUSED *file, const CHAR UNUSED *name, size_t UNUSED *ndim, size_t UNUSED dims[] )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -1016,17 +1163,28 @@ int XLALFITSArrayOpenRead( FITSFile *file, const CHAR *name, size_t *ndim, size_
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayOpenWrite1( FITSFile *file, const CHAR *name, const size_t dim0, const CHAR *comment )
+int XLALFITSArrayOpenWrite1( FITSFile UNUSED *file, const CHAR UNUSED *name, const size_t UNUSED dim0, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   const size_t dims[1] = { dim0 };
   XLAL_CHECK( XLALFITSArrayOpenWrite( file, name, 1, dims, comment ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayOpenRead1( FITSFile *file, const CHAR *name, size_t *dim0 )
+int XLALFITSArrayOpenRead1( FITSFile UNUSED *file, const CHAR UNUSED *name, size_t UNUSED *dim0 )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   size_t ndim = 0, dims[FFIO_MAX];
   XLAL_CHECK( XLALFITSArrayOpenRead( file, name, &ndim, dims ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( ndim == 1, XLAL_EIO );
@@ -1034,17 +1192,29 @@ int XLALFITSArrayOpenRead1( FITSFile *file, const CHAR *name, size_t *dim0 )
     *dim0 = dims[0];
   }
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayOpenWrite2( FITSFile *file, const CHAR *name, const size_t dim0, const size_t dim1, const CHAR *comment )
+int XLALFITSArrayOpenWrite2( FITSFile UNUSED *file, const CHAR UNUSED *name, const size_t UNUSED dim0, const size_t UNUSED dim1, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   const size_t dims[2] = { dim0, dim1 };
   XLAL_CHECK( XLALFITSArrayOpenWrite( file, name, 2, dims, comment ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayOpenRead2( FITSFile *file, const CHAR *name, size_t *dim0, size_t *dim1 )
+int XLALFITSArrayOpenRead2( FITSFile UNUSED *file, const CHAR UNUSED *name, size_t UNUSED *dim0, size_t UNUSED *dim1 )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   size_t ndim = 0, dims[FFIO_MAX];
   XLAL_CHECK( XLALFITSArrayOpenRead( file, name, &ndim, dims ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( ndim == 2, XLAL_EIO );
@@ -1055,10 +1225,16 @@ int XLALFITSArrayOpenRead2( FITSFile *file, const CHAR *name, size_t *dim0, size
     *dim1 = dims[1];
   }
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-static int XLALFITSArrayWrite( FITSFile *file, const size_t idx[], const int bitpix, const int datatype, const void *elem )
+static int UNUSED XLALFITSArrayWrite( FITSFile UNUSED *file, const size_t UNUSED idx[], const int UNUSED bitpix, const int UNUSED datatype, const void UNUSED *elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -1111,10 +1287,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-static int XLALFITSArrayRead( FITSFile *file, const size_t idx[], const int bitpix, const int datatype, void *elem, void *nulelem )
+static int UNUSED XLALFITSArrayRead( FITSFile UNUSED *file, const size_t UNUSED idx[], const int UNUSED bitpix, const int UNUSED datatype, void UNUSED *elem, void UNUSED *nulelem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -1153,88 +1334,165 @@ static int XLALFITSArrayRead( FITSFile *file, const size_t idx[], const int bitp
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayWriteUINT2( FITSFile *file, const size_t idx[], const UINT2 elem )
+int XLALFITSArrayWriteUINT2( FITSFile UNUSED *file, const size_t UNUSED idx[], const UINT2 UNUSED elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( XLALFITSArrayWrite( file, idx, USHORT_IMG, TUSHORT, &elem ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayReadUINT2( FITSFile *file, const size_t idx[], UINT2 *elem )
+int XLALFITSArrayReadUINT2( FITSFile UNUSED *file, const size_t UNUSED idx[], UINT2 UNUSED *elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   UINT2 nulelem = 0;
   XLAL_CHECK( XLALFITSArrayRead( file, idx, USHORT_IMG, TUSHORT, elem, &nulelem ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayWriteUINT4( FITSFile *file, const size_t idx[], const UINT4 elem )
+int XLALFITSArrayWriteUINT4( FITSFile UNUSED *file, const size_t UNUSED idx[], const UINT4 UNUSED elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( XLALFITSArrayWrite( file, idx, ULONG_IMG, TULONG, &elem ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayReadUINT4( FITSFile *file, const size_t idx[], UINT4 *elem )
+int XLALFITSArrayReadUINT4( FITSFile UNUSED *file, const size_t UNUSED idx[], UINT4 UNUSED *elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   UINT4 nulelem = 0;
   XLAL_CHECK( XLALFITSArrayRead( file, idx, ULONG_IMG, TULONG, elem, &nulelem ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayWriteINT2( FITSFile *file, const size_t idx[], const INT2 elem )
+int XLALFITSArrayWriteINT2( FITSFile UNUSED *file, const size_t UNUSED idx[], const INT2 UNUSED elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( XLALFITSArrayWrite( file, idx, SHORT_IMG, TSHORT, &elem ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayReadINT2( FITSFile *file, const size_t idx[], INT2 *elem )
+int XLALFITSArrayReadINT2( FITSFile UNUSED *file, const size_t UNUSED idx[], INT2 UNUSED *elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   INT2 nulelem = 0;
   XLAL_CHECK( XLALFITSArrayRead( file, idx, SHORT_IMG, TSHORT, elem, &nulelem ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayWriteINT4( FITSFile *file, const size_t idx[], const INT4 elem )
+int XLALFITSArrayWriteINT4( FITSFile UNUSED *file, const size_t UNUSED idx[], const INT4 UNUSED elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( XLALFITSArrayWrite( file, idx, LONG_IMG, TLONG, &elem ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayReadINT4( FITSFile *file, const size_t idx[], INT4 *elem )
+int XLALFITSArrayReadINT4( FITSFile UNUSED *file, const size_t UNUSED idx[], INT4 UNUSED *elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   INT4 nulelem = 0;
   XLAL_CHECK( XLALFITSArrayRead( file, idx, LONG_IMG, TLONG, elem, &nulelem ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayWriteREAL4( FITSFile *file, const size_t idx[], const REAL4 elem )
+int XLALFITSArrayWriteREAL4( FITSFile UNUSED *file, const size_t UNUSED idx[], const REAL4 UNUSED elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( XLALFITSArrayWrite( file, idx, FLOAT_IMG, TFLOAT, &elem ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayReadREAL4( FITSFile *file, const size_t idx[], REAL4 *elem )
+int XLALFITSArrayReadREAL4( FITSFile UNUSED *file, const size_t UNUSED idx[], REAL4 UNUSED *elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   REAL4 nulelem = 0;
   XLAL_CHECK( XLALFITSArrayRead( file, idx, FLOAT_IMG, TFLOAT, elem, &nulelem ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayWriteREAL8( FITSFile *file, const size_t idx[], const REAL8 elem )
+int XLALFITSArrayWriteREAL8( FITSFile UNUSED *file, const size_t UNUSED idx[], const REAL8 UNUSED elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( XLALFITSArrayWrite( file, idx, DOUBLE_IMG, TDOUBLE, &elem ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayReadREAL8( FITSFile *file, const size_t idx[], REAL8 *elem )
+int XLALFITSArrayReadREAL8( FITSFile UNUSED *file, const size_t UNUSED idx[], REAL8 UNUSED *elem )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   REAL8 nulelem = 0;
   XLAL_CHECK( XLALFITSArrayRead( file, idx, DOUBLE_IMG, TDOUBLE, elem, &nulelem ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayWriteGSLMatrix( FITSFile *file, const size_t idx[], const gsl_matrix *elems )
+int XLALFITSArrayWriteGSLMatrix( FITSFile UNUSED *file, const size_t UNUSED idx[], const gsl_matrix UNUSED *elems )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -1274,10 +1532,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSArrayReadGSLMatrix( FITSFile *file, const size_t idx[], gsl_matrix **elems )
+int XLALFITSArrayReadGSLMatrix( FITSFile UNUSED *file, const size_t UNUSED idx[], gsl_matrix UNUSED **elems )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -1313,10 +1576,15 @@ int XLALFITSArrayReadGSLMatrix( FITSFile *file, const size_t idx[], gsl_matrix *
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableOpenWrite( FITSFile *file, const CHAR *name, const CHAR *comment )
+int XLALFITSTableOpenWrite( FITSFile UNUSED *file, const CHAR UNUSED *name, const CHAR UNUSED *comment )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -1344,10 +1612,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableOpenRead( FITSFile *file, const CHAR *name, UINT8 *nrows )
+int XLALFITSTableOpenRead( FITSFile UNUSED *file, const CHAR UNUSED *name, UINT8 UNUSED *nrows )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -1376,10 +1649,15 @@ int XLALFITSTableOpenRead( FITSFile *file, const CHAR *name, UINT8 *nrows )
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-static int XLALFITSTableColumnAdd( FITSFile *file, const CHAR *name, const CHAR *unit, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *field, const size_t field_size, const size_t elem_size, const int typechar, const int datatype )
+static int UNUSED XLALFITSTableColumnAdd( FITSFile UNUSED *file, const CHAR UNUSED *name, const CHAR UNUSED *unit, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const void UNUSED *field, const size_t UNUSED field_size, const size_t UNUSED elem_size, const int UNUSED typechar, const int UNUSED datatype )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Save previous number of table columns
@@ -1457,94 +1735,153 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableColumnAddBOOLEAN( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const BOOLEAN *field, const size_t field_size )
+int XLALFITSTableColumnAddBOOLEAN( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const BOOLEAN UNUSED *field, const size_t UNUSED field_size )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, "", noffsets, offsets, record, record_size, field, field_size, sizeof( BOOLEAN ), 'L', TLOGICAL ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableColumnAddINT2( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT2 *field, const size_t field_size )
+int XLALFITSTableColumnAddINT2( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const INT2 UNUSED *field, const size_t UNUSED field_size )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
   XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( INT2 ), 'I', TSHORT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableColumnAddINT4( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const INT4 *field, const size_t field_size )
+int XLALFITSTableColumnAddINT4( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const INT4 UNUSED *field, const size_t UNUSED field_size )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
   XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( INT4 ), 'J', TINT32BIT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableColumnAddREAL4( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL4 *field, const size_t field_size )
+int XLALFITSTableColumnAddREAL4( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const REAL4 UNUSED *field, const size_t UNUSED field_size )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
   XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( REAL4 ), 'E', TFLOAT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableColumnAddREAL8( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL8 *field, const size_t field_size )
+int XLALFITSTableColumnAddREAL8( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const REAL8 UNUSED *field, const size_t UNUSED field_size )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
   XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( REAL8 ), 'D', TDOUBLE ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableColumnAddCOMPLEX8( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX8 *field, const size_t field_size )
+int XLALFITSTableColumnAddCOMPLEX8( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const COMPLEX8 UNUSED *field, const size_t UNUSED field_size )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
   XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( COMPLEX8 ), 'C', TCOMPLEX ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableColumnAddCOMPLEX16( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX16 *field, const size_t field_size )
+int XLALFITSTableColumnAddCOMPLEX16( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const COMPLEX16 UNUSED *field, const size_t UNUSED field_size )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
   XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( COMPLEX16 ), 'M', TDBLCOMPLEX ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableColumnAddUCHAR( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *field, const size_t field_size )
+int XLALFITSTableColumnAddUCHAR( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const void UNUSED *field, const size_t UNUSED field_size )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, "", noffsets, offsets, record, record_size, field, field_size, sizeof( UCHAR ), 'B', TBYTE ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableColumnAddCHAR( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *field, const size_t field_size )
+int XLALFITSTableColumnAddCHAR( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const void UNUSED *field, const size_t UNUSED field_size )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   XLAL_CHECK( XLALFITSTableColumnAdd( file, col_name, "", noffsets, offsets, record, record_size, field, field_size, sizeof( CHAR ), 'A', TSTRING ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableColumnAddGPSTime( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size )
+int XLALFITSTableColumnAddGPSTime( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const LIGOTimeGPS UNUSED *field, const size_t UNUSED field_size )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
   XLAL_CHECK( strlen( col_name ) + 3 < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   XLAL_CHECK( field_size == sizeof( LIGOTimeGPS ), XLAL_EINVAL, "Array of GPS times is not supported" );
@@ -1554,10 +1891,16 @@ int XLALFITSTableColumnAddGPSTime( FITSFile *file, const CHAR *col_name, const s
   snprintf( name, sizeof( name ), "%s_ns", col_name );
   XLAL_CHECK( XLALFITSTableColumnAdd( file, name, "ns", noffsets, offsets, record, record_size, &( field->gpsNanoSeconds ), sizeof( field->gpsNanoSeconds ), sizeof( field->gpsNanoSeconds ), 'J', TINT32BIT ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableWriteRow( FITSFile *file, const void *record )
+int XLALFITSTableWriteRow( FITSFile UNUSED *file, const void UNUSED *record )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -1612,10 +1955,15 @@ XLAL_FAIL:
 
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSTableReadRow( FITSFile *file, void *record, UINT8 *rem_nrows )
+int XLALFITSTableReadRow( FITSFile UNUSED *file, void UNUSED *record, UINT8 UNUSED *rem_nrows )
 {
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
   int UNUSED status = 0;
 
   // Check input
@@ -1655,4 +2003,5 @@ int XLALFITSTableReadRow( FITSFile *file, void *record, UINT8 *rem_nrows )
 XLAL_FAIL:
   return XLAL_FAILURE;
 
+#endif // !defined(HAVE_LIBCFITSIO)
 }
