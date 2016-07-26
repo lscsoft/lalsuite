@@ -32,6 +32,12 @@
 
 #include <lal/GSLHelpers.h>
 
+#if defined(__GNUC__)
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #define MISM_HIST_BINS 20
 
 // The reference mismatch histograms were generated in Octave
@@ -65,22 +71,22 @@ const double A3s_mism_hist[MISM_HIST_BINS] = {
 };
 
 static int SerialisationTest(
-  const size_t n,
-  const LatticeTiling *tiling,
-  const UINT8 total_ref,
-  const UINT8 total_ckpt_0,
-  const UINT8 total_ckpt_1,
-  const UINT8 total_ckpt_2,
-  const UINT8 total_ckpt_3
+  const size_t UNUSED n,
+  const LatticeTiling UNUSED *tiling,
+  const UINT8 UNUSED total_ref,
+  const UINT8 UNUSED total_ckpt_0,
+  const UINT8 UNUSED total_ckpt_1,
+  const UINT8 UNUSED total_ckpt_2,
+  const UINT8 UNUSED total_ckpt_3
   )
 {
 
-  const UINT8 total_ckpt[4] = {total_ckpt_0, total_ckpt_1, total_ckpt_2, total_ckpt_3};
-
 #if !defined(HAVE_LIBCFITSIO)
   printf( "Skipping serialisation test (CFITSIO library is not available)\n" );
-#else
+#else // defined(HAVE_LIBCFITSIO)
   printf( "Performing serialisation test ..." );
+
+  const UINT8 total_ckpt[4] = {total_ckpt_0, total_ckpt_1, total_ckpt_2, total_ckpt_3};
 
   // Create lattice tiling iterator
   LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n );
@@ -149,7 +155,7 @@ static int SerialisationTest(
   GFVEC( point );
   GFMAT( points );
 
-#endif
+#endif // !defined(HAVE_LIBCFITSIO)
 
   return XLAL_SUCCESS;
 
