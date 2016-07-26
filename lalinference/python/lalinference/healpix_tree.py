@@ -159,12 +159,18 @@ class HEALPixTree(object):
 
         samples : list, present if extra=True
             The list of samples contained in the node.
+
+        Example:
+        >>> ipix = np.arange(12, dtype=np.uint64) * HEALPIX_MACHINE_NSIDE**2
+        >>> tree = HEALPixTree(ipix, max_samples_per_pixel=1, max_order=1)
+        >>> [tuple(_) for _ in tree.visit(extra=False)]
+        [(1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10), (1, 11)]
         """
         funcs = {'depthfirst': self._visit_depthfirst,
                  'breadthfirst': self._visit_breadthfirst}
         func = funcs[order]
         # FIXME: Replace with `yield from` in Python 3
-        for _ in func():
+        for _ in func(extra):
             yield _
 
     @property
