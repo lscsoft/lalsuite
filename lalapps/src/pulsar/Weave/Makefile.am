@@ -41,4 +41,5 @@ TESTS = \
 	TestInterpolating.sh \
 	TestFreqPartition.sh \
 	TestCacheMaxSize.sh \
+	TestCheckpointing.sh \
 	$(END_OF_LIST)

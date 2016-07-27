@@ -48,12 +48,12 @@ int main( int argc, char *argv[] )
   // Initialise user input variables
   struct uvar_type {
     BOOLEAN interpolation, output_per_detector, output_per_segment, output_info_per_seg;
-    CHAR *setup_file, *lattice, *sft_files, *Fstat_method, *output_file;
+    CHAR *setup_file, *lattice, *sft_files, *Fstat_method, *output_file, *ckpt_output_file;
     INT4 sky_patch_count, sky_patch_index, freq_partitions, output_max_size;
     INT4 sft_noise_rand_seed, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision;
     INT4 cache_max_size, cache_gc_limit;
     LALStringVector *sft_detectors, *sft_noise_psd, *sft_timestamps_files, *injections, *Fstat_assume_psd;
-    REAL8 semi_max_mismatch, coh_max_mismatch, sft_timebase;
+    REAL8 semi_max_mismatch, coh_max_mismatch, sft_timebase, ckpt_output_period, ckpt_output_pc_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
@@ -255,6 +255,22 @@ int main( int argc, char *argv[] )
     output_info_per_seg, BOOLEAN, 0, DEVELOPER,
     "If TRUE, output various information for each segment: SFT properties, cache usage, etc. "
     );
+  //
+  // - Checkpointing
+  //
+  XLALRegisterUvarMember(
+    ckpt_output_file, STRING, 0, DEVELOPER,
+    "File to which to periodically write checkpoints of output results. "
+    );
+  XLALRegisterUvarMember(
+    ckpt_output_period, REAL8, 0, DEVELOPER,
+    "Write checkpoints of output results after this CPU time period, in seconds, has elapsed. "
+    );
+  XLALRegisterUvarMember(
+    ckpt_output_pc_exit, REAL8, 0, DEVELOPER,
+    "Write a checkpoint of output results after this percentage of the search has been completed, then exit. "
+    "(This option is only really useful for testing the checkpointing feature.) "
+    );
 
   // Parse user input
   XLAL_CHECK_MAIN( xlalErrno == 0, XLAL_EFUNC, "A call to XLALRegisterUvarMember() failed" );
@@ -343,6 +359,18 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     uvar->output_max_size >= 0,
                     UVAR_STR( output_max_size ) " must be positive" );
+  //
+  // - Checkpointing
+  //
+  XLALUserVarCheck( &should_exit,
+                    !UVAR_ALLSET2( ckpt_output_period, ckpt_output_pc_exit ),
+                    UVAR_STR2AND( ckpt_output_period, ckpt_output_pc_exit ) " are mutually exclusive" );
+  XLALUserVarCheck( &should_exit,
+                    !UVAR_SET( ckpt_output_period ) || uvar->ckpt_output_period > 0,
+                    UVAR_STR( ckpt_output_period ) " must be strictly positive" );
+  XLALUserVarCheck( &should_exit,
+                    !UVAR_SET( ckpt_output_pc_exit ) || ( 0 <= uvar->ckpt_output_pc_exit && uvar->ckpt_output_pc_exit <= 100 ),
+                    UVAR_STR( ckpt_output_pc_exit ) " must be in range [0,100]" );
 
   // Exit if required
   if ( should_exit ) {
@@ -717,7 +745,7 @@ int main( int argc, char *argv[] )
   WeaveSemiResults *semi_res = XLALWeaveSemiResultsCreate( per_detectors, per_nsegments, dfreq );
   XLAL_CHECK_MAIN( semi_res != NULL, XLAL_EFUNC );
 
-  // Create output data structure
+  // Create output results structure
   WeaveOutput *out = XLALWeaveOutputCreate( &setup.ref_time, uvar->output_max_size, ninputspins, per_detectors, per_nsegments );
   XLAL_CHECK_MAIN( out != NULL, XLAL_EFUNC );
 
@@ -730,6 +758,47 @@ int main( int argc, char *argv[] )
   // Semicoherent template and partition indexes
   UINT8 semi_index = 0;
   INT4 partition_index = 0;
+
+  // Number of times output results have been restored from a checkpoint
+  INT4 ckpt_output_count = 0;
+
+  // Try to restore output results from a checkpoint file, if given
+  if ( UVAR_SET( ckpt_output_file ) ) {
+
+    // Try to open output checkpoint file
+    LogPrintf( LOG_NORMAL, "Trying to open output checkpoint file '%s' for reading ...\n", uvar->ckpt_output_file );
+    int errnum = 0;
+    FITSFile *file = NULL;
+    XLAL_TRY( file = XLALFITSFileOpenRead( uvar->ckpt_output_file ), errnum );
+    if ( errnum == XLAL_ENOENT ) {
+      LogPrintf( LOG_NORMAL, "Output checkpoint file '%s' does not exist; no checkpoint will be loaded\n", uvar->ckpt_output_file );
+    } else {
+      XLAL_CHECK_MAIN( errnum == 0 && file != NULL, XLAL_EFUNC );
+      LogPrintf( LOG_NORMAL, "Output checkpoint file '%s' exists; checkpoint will be loaded\n", uvar->ckpt_output_file );
+
+      // Read number of times output results have been restored from a checkpoint
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadINT4( file, "ckptcnt", &ckpt_output_count ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( ckpt_output_count > 0, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
+
+      // Read output results
+      XLAL_CHECK_MAIN( XLALWeaveOutputRead( file, &out ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // Read state of iterator over semicoherent tiling
+      XLAL_CHECK_MAIN( XLALRestoreLatticeTilingIterator( semi_itr, file, "semi_itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      semi_index = XLALCurrentLatticeTilingIndex( semi_itr );
+      XLAL_CHECK_MAIN( semi_index < semi_total, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
+
+      // Read partition index
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadINT4( file, "partindx", &partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( 0 <= partition_index && partition_index < uvar->freq_partitions, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
+
+      // Close output checkpoint file
+      XLALFITSFileClose( file );
+      LogPrintf( LOG_NORMAL, "Closed output checkpoint file '%s'\n", uvar->ckpt_output_file );
+
+    }
+
+  }
 
   // Record zero of CPU time counter
   const double time_zero = XLALGetCPUTime();
@@ -748,7 +817,9 @@ int main( int argc, char *argv[] )
   // Begin main search loop
   double prog_time = time_zero;
   double prog_period = 5.0;
-  while ( true ) {
+  double ckpt_output_time = time_zero;
+  BOOLEAN search_complete = 0;
+  while ( !search_complete ) {
 
     // Get mid-point of the next semicoherent frequency block
     // - XLALNextLatticeTilingPoint() returns mid-point in non-iterated dimensions
@@ -762,7 +833,8 @@ int main( int argc, char *argv[] )
       if ( partition_index == uvar->freq_partitions ) {
 
         // Search is complete
-        break;
+        search_complete = 1;
+        continue;
 
       }
 
@@ -809,14 +881,14 @@ int main( int argc, char *argv[] )
     ++semi_index;
 
     // Print iteration progress, if required
+    const UINT8 prog_index = partition_index * semi_total + semi_index;
+    const double prog_per_cent = 100.0 * prog_index / prog_total;
     const double prog_time_now = XLALGetCPUTime();
     const double prog_time_elapsed = prog_time_now - prog_time;
     if ( prog_time_elapsed >= prog_period ) {
       prog_time = prog_time_now;
 
       // Print progress in frequency blocks and partitions
-      const UINT8 prog_index = partition_index * semi_total + semi_index;
-      const double prog_per_cent = 100.0 * prog_index / prog_total;
       LogPrintf( LOG_NORMAL, "Searched %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_total, prog_per_cent );
       if ( uvar->freq_partitions > 1 ) {
         LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
@@ -834,6 +906,56 @@ int main( int argc, char *argv[] )
 
       // Increase progress period, up to a maximum
       prog_period = GSL_MIN( 1200, prog_period * 1.5 );
+
+    }
+
+    // Checkpoint output results, if required
+    if ( UVAR_SET( ckpt_output_file ) ) {
+
+      // Decide whether to checkpoint output results
+      const double ckpt_output_time_now = XLALGetCPUTime();
+      const double ckpt_output_time_elapsed = ckpt_output_time_now - ckpt_output_time;
+      const BOOLEAN do_ckpt_output_period = UVAR_SET( ckpt_output_period ) && ckpt_output_time_elapsed >= uvar->ckpt_output_period;
+      const BOOLEAN do_ckpt_output_pc_exit = UVAR_SET( ckpt_output_pc_exit ) && prog_per_cent >= uvar->ckpt_output_pc_exit;
+      if ( do_ckpt_output_period || do_ckpt_output_pc_exit ) {
+
+        // Open output checkpoint file
+        FITSFile *file = XLALFITSFileOpenWrite( uvar->ckpt_output_file );
+        XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALFITSFileWriteVCSInfo( file, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALFITSFileWriteUVarCmdLine( file ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+        // Write number of times output results have been restored from a checkpoint
+        ++ckpt_output_count;
+        XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "ckptcnt", ckpt_output_count, "number of checkpoints" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+        // Write output results
+        XLAL_CHECK_MAIN( XLALWeaveOutputWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+        // Write state of iterator over semicoherent tiling
+        XLAL_CHECK_MAIN( XLALSaveLatticeTilingIterator( semi_itr, file, "semi_itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+        // Write partition index
+        XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "partindx", partition_index, "partition index" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+        // Close output checkpoint file
+        XLALFITSFileClose( file );
+
+        // Print progress
+        LogPrintf( LOG_NORMAL, "Wrote output checkpoint to file '%s' after %.1f time elapsed, %" LAL_UINT8_FORMAT " frequency blocks\n", uvar->ckpt_output_file, ckpt_output_time_elapsed, semi_index );
+
+      }
+
+      // Update checkpoint time, if checkpointing was triggered by 'do_ckpt_output_period'
+      if ( do_ckpt_output_period ) {
+        ckpt_output_time = ckpt_output_time_now;
+      }
+
+      // Exit main search loop, if checkpointing was triggered by 'do_ckpt_output_pc_exit'
+      if ( do_ckpt_output_pc_exit ) {
+        LogPrintf( LOG_NORMAL, "Exiting main seach loop after writing output checkpoint\n" );
+        break;
+      }
 
     }
 
@@ -855,7 +977,8 @@ int main( int argc, char *argv[] )
 
   ////////// Output search results //////////
 
-  {
+  if ( search_complete ) {
+
     // Open output file
     LogPrintf( LOG_NORMAL, "Opening output file '%s' for writing ...\n", uvar->output_file );
     FITSFile *file = XLALFITSFileOpenWrite( uvar->output_file );
@@ -877,7 +1000,7 @@ int main( int argc, char *argv[] )
 
   ////////// Cleanup memory and exit //////////
 
-  // Cleanup memory from output data
+  // Cleanup memory from output results
   XLALWeaveOutputDestroy( out );
 
   // Cleanup memory from parameter-space iteration
@@ -908,7 +1031,11 @@ int main( int argc, char *argv[] )
   // Check for memory leaks
   LALCheckMemoryLeaks();
 
-  LogPrintf( LOG_NORMAL, "Finished successfully!\n" );
+  if ( search_complete ) {
+    LogPrintf( LOG_NORMAL, "Finished successfully!\n" );
+  } else {
+    LogPrintf( LOG_NORMAL, "Finished but search not completed!\n" );
+  }
 
   return EXIT_SUCCESS;
 
