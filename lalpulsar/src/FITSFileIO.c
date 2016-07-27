@@ -116,10 +116,10 @@ static int UNUSED ExtractUnit( const CHAR UNUSED *name_unit, CHAR UNUSED *name, 
   // Check input
   XLAL_CHECK_FAIL( name_unit != NULL, XLAL_EFAULT );
 
-  // Copy name/unit
+  // Copy name, possibly with unit
   strcpy( name, name_unit );
 
-  // Extract unit, if any
+  // If name contains a unit, extract it, and remove unit and any trailing whitespace from name
   if ( unit != NULL ) {
     unit[0] = '\0';
     CHAR *unit_start = strchr( name, '[' );
@@ -129,6 +129,9 @@ static int UNUSED ExtractUnit( const CHAR UNUSED *name_unit, CHAR UNUSED *name, 
       XLAL_CHECK_FAIL( unit_end - unit_start - 1 < FLEN_VALUE, XLAL_EINVAL, "Unit in '%s' are too long", name );
       *unit_start = *unit_end = '\0';
       strcpy( unit, unit_start + 1 );
+      while ( --unit_start > name && isspace( *unit_start ) ) {
+        *unit_start = '\0';
+      }
     }
   }
 
