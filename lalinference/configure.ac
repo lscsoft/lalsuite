@@ -20,6 +20,7 @@ AC_CONFIG_FILES([ \
   python/lalinference/rapid_pe/Makefile \
   python/lalinference/imrtgr/Makefile \
   python/lalinference/tiger/Makefile \
+  python/lalinference/popprior/Makefile \
   src/LALInferenceVCSInfo.c \
   src/LALInferenceVCSInfo.h \
   src/Makefile \

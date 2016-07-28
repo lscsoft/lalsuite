@@ -9,6 +9,7 @@ SUBDIRS = \
 	rapid_pe \
 	imrtgr \
 	tiger \
+	popprior \
 	$(END_OF_LIST)
 
 vcs_info_sources = git_version.py
