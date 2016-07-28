@@ -2198,7 +2198,7 @@ def pulsar_mcmc_to_posterior(chainfiles):
       mcmcChain = read_pulsar_mcmc_file(cfile)
 
       # if no chain found then exit with None's
-      if mcmcChain == None:
+      if mcmcChain is None:
         return None, None, None, None
 
       # find number of effective samples for the chain
@@ -2213,7 +2213,7 @@ def pulsar_mcmc_to_posterior(chainfiles):
       neffs.append(math.floor(np.mean(neffstmp)))
 
       #nskip = math.ceil(mcmcChain.shape[0]/min(neffstmp))
-      nskip = math.ceil(mcmcChain.shape[0]/np.mean(neffstmp))
+      nskip = int(math.ceil(mcmcChain.shape[0]/np.mean(neffstmp)))
 
       # output every nskip (independent) value
       mcmc.append(mcmcChain[::nskip,:])

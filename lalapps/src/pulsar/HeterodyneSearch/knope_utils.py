@@ -534,6 +534,12 @@ class knopeDAG(pipeline.CondorDAG):
     # check whether to show joint posterior plot for all parameters
     self.show_all_posteriors = self.get_config_option('results_page', 'show_all_posteriors', cftype='boolean', default=False)
 
+    # check whether to subtract injected/heterodyned values from phase parameters for plots
+    self.subtract_truths = self.get_config_option('results_page', 'subtract_truths', cftype='boolean', default=False)
+
+    # check whether to plot priors on 1D posteriors plots
+    self.show_priors = self.get_config_option('results_page', 'show_priors', cftype='boolean', default=False)
+
     # create parameter estimation job
     resultpagejob = resultpageJob(self.results_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
     collatejob = collateJob(self.collate_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
@@ -595,6 +601,9 @@ class knopeDAG(pipeline.CondorDAG):
       cp.set('general', 'model_type', self.pe_model_type) # set 'waveform' or 'source' model type
       cp.set('general', 'biaxial', self.pe_biaxial)       # set if using a biaxial source model
 
+      if self.show_priors:
+        cp.set('general', 'priorfile', self.pe_prior_files[pname]) # set the prior file
+
       # get posterior files (and background directories)
       posteriorsfiles = {}
       backgrounddir = {}
@@ -645,6 +654,7 @@ class knopeDAG(pipeline.CondorDAG):
       cp.set('data', 'files', datafiles)
 
       cp.set('plotting', 'all_posteriors', self.show_all_posteriors)
+      cp.set('plotting', 'subtract_truths', self.subtract_truths)
 
       # output configuration file
       try:
@@ -1029,6 +1039,8 @@ class knopeDAG(pipeline.CondorDAG):
           if j == 0:
             # create prior file for analysis (use this same file for all background runs)
             priorfile = self.create_prior_file(psr, psrdir, dets, self.freq_factors, ffdir)
+            if pname not in self.pe_prior_files:
+              self.pe_prior_files[pname] = priorfile # set prior file (just use first one as they should be the same for each combination of detectors)
 
             nruns = self.pe_nruns
             nlive = self.pe_nlive
