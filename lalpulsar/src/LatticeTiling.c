@@ -27,6 +27,7 @@
 #include <lal/LatticeTiling.h>
 #include <lal/LALStdio.h>
 #include <lal/LALString.h>
+#include <lal/LALHashFunc.h>
 #include <lal/MetricUtils.h>
 #include <lal/GSLHelpers.h>
 
@@ -61,9 +62,7 @@ typedef struct tagLT_Bound {
 
 typedef struct tagLT_FITSRecord {
   BOOLEAN is_tiled;                     ///< True if the dimension is tiled, false if it is a single point
-  INT4 data_len;                        ///< Length of arbitrary data describing parameter-space bounds
-  UCHAR data_lower[LT_DATA_MAX_SIZE];   ///< Arbitrary data describing lower parameter-space bound
-  UCHAR data_upper[LT_DATA_MAX_SIZE];   ///< Arbitrary data describing upper parameter-space bound
+  INT4 data_hash;                       ///< Checksum of arbitrary data describing parameter-space bounds
   REAL8 phys_bbox;                      ///< Metric ellipse bounding box
   REAL8 phys_origin;                    ///< Parameter-space origin in physical coordinates
   REAL8 phys_point;                     ///< Current lattice point in physical coordinates
@@ -330,9 +329,7 @@ static int LT_InitFITSRecordTable( FITSFile *file )
 {
   XLAL_FITS_TABLE_COLUMN_BEGIN( LT_FITSRecord );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, BOOLEAN, is_tiled ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, UCHAR, data_lower ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, UCHAR, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, data_hash ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, phys_bbox ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, phys_origin ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, phys_point ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1901,9 +1898,8 @@ int XLALSaveLatticeTilingIterator(
     // Fill record
     LT_FITSRecord XLAL_INIT_DECL( record );
     record.is_tiled = itr->tiling->bounds[i].is_tiled;
-    record.data_len = itr->tiling->bounds[i].data_len;
-    memcpy( record.data_lower, itr->tiling->bounds[i].data_lower, itr->tiling->bounds[i].data_len );
-    memcpy( record.data_upper, itr->tiling->bounds[i].data_upper, itr->tiling->bounds[i].data_len );
+    XLAL_CHECK( XLALPearsonHash( &record.data_hash, sizeof( record.data_hash ), itr->tiling->bounds[i].data_lower, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALPearsonHash( &record.data_hash, sizeof( record.data_hash ), itr->tiling->bounds[i].data_upper, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
     record.phys_bbox = gsl_vector_get( itr->tiling->phys_bbox, i );
     record.phys_origin = gsl_vector_get( itr->tiling->phys_origin, i );
     record.phys_point = gsl_vector_get( itr->phys_point, i );
@@ -2036,9 +2032,12 @@ int XLALRestoreLatticeTilingIterator(
     LT_FITSRecord XLAL_INIT_DECL( record );
     XLAL_CHECK( XLALFITSTableReadRow( file, &record, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( !record.is_tiled == !itr->tiling->bounds[i].is_tiled, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
-    XLAL_CHECK( record.data_len == ( INT4 ) itr->tiling->bounds[i].data_len, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
-    XLAL_CHECK( memcmp( record.data_lower, itr->tiling->bounds[i].data_lower, itr->tiling->bounds[i].data_len ) == 0, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
-    XLAL_CHECK( memcmp( record.data_upper, itr->tiling->bounds[i].data_upper, itr->tiling->bounds[i].data_len ) == 0, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    {
+      INT4 data_hash = 0;
+      XLAL_CHECK( XLALPearsonHash( &data_hash, sizeof( data_hash ), itr->tiling->bounds[i].data_lower, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALPearsonHash( &data_hash, sizeof( data_hash ), itr->tiling->bounds[i].data_upper, itr->tiling->bounds[i].data_len ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( record.data_hash == data_hash, XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
+    }
     XLAL_CHECK( record.phys_bbox == gsl_vector_get( itr->tiling->phys_bbox, i ), XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
     XLAL_CHECK( record.phys_origin == gsl_vector_get( itr->tiling->phys_origin, i ), XLAL_EIO, "Could not restore iterator; invalid HDU '%s'", name );
     gsl_vector_set( itr->phys_point, i, record.phys_point );
