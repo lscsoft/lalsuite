@@ -4,9 +4,7 @@ EXTRA_DIST = \
 	control \
 	copyright \
 	docs \
-	lal-dev.dirs \
 	lal-dev.install \
-	lal.dirs \
 	lal.install \
 	lal-octave.install \
 	lal-python.install \

@@ -4,9 +4,7 @@ EXTRA_DIST = \
 	control \
 	copyright \
 	docs \
-	lalburst-dev.dirs \
 	lalburst-dev.install \
-	lalburst.dirs \
 	lalburst.install \
 	lalburst-octave.install \
 	lalburst-python.install \
