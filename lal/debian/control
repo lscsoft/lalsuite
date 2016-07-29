@@ -10,7 +10,7 @@ Standards-Version: 3.8.6
 
 Package: lal
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, ${python:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, ${python:Depends},
   libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw3, libhdf5-7
 Description: LSC Algorithm Library
  The LSC Algorithm Library for gravitational wave analysis.
