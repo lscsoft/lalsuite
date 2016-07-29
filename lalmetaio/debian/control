@@ -38,13 +38,17 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalmetaio (= ${binary:Version}),
   lal-python (>= 6.16.1~)
 Description: Python bindings for LALMetaIO
+ The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+ This package contains Python bindings for the LAL MetaIO library.
 
 Package: lalmetaio-python3
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
   lalmetaio (= ${binary:Version}),
   lal-python3 (>= 6.16.1~)
-Description: Python bindings for LALMetaIO
+Description: Python 3 bindings for LALMetaIO
+ The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+ This package contains Python 3 bindings for the LAL MetaIO library.
 
 Package: lalmetaio-octave
 Architecture: any
@@ -52,4 +56,6 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lalmetaio (= ${binary:Version}),
   lal-octave (>= 6.16.1~)
 Description: Octave bindings for LALMetaIO
+ The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+ This package contains Octave bindings for the LAL MetaIO library.
 

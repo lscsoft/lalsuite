@@ -92,6 +92,8 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy, python-scipy, python-
 Replaces: lalapps (<< 6.14.0-1)
 Breaks: lalapps (<< 6.14.0-1)
 Description: Python bindings for LALInference
+ The LSC Algorithm Inference Library for gravitational wave data analysis.
+ This package contains Python bindings for the LAL Inference library.
 
 Package: lalinference-octave
 Architecture: any
@@ -106,3 +108,5 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lalinspiral-octave (>= 1.7.5~),
   lalpulsar-octave (>= 1.14.0~)
 Description: Octave bindings for LALInference
+ The LSC Algorithm Inference Library for gravitational wave data analysis.
+ This package contains Octave bindings for the LAL Inference library.

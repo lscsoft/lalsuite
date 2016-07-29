@@ -39,13 +39,17 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalxml (= ${binary:Version}),
   lal-python (>= 6.16.1~)
 Description: Python bindings for LALXML
+ The LSC Algorithm XML Library for gravitational wave data analysis.
+ This package contains Python bindings for the LAL XML library.
 
 Package: lalxml-python3
 Architecture: any
 Depends: ${shilibs:Depends}, ${misc:Depends}, python3-numpy,
   lalxml (= ${binary:Version}),
   lal-python3 (>= 6.16.1~)
-Description: Python bindings for LALXML
+Description: Python 3 bindings for LALXML
+ The LSC Algorithm XML Library for gravitational wave data analysis.
+ This package contains Python 3 bindings for the LAL XML library.
 
 Package: lalxml-octave
 Architecture: any
@@ -53,3 +57,5 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lalxml (= ${binary:Version}),
   lal-octave (>= 6.16.1~)
 Description: Octave bindings for LALXML
+ The LSC Algorithm XML Library for gravitational wave data analysis.
+ This package contains Octave bindings for the LAL XML library.

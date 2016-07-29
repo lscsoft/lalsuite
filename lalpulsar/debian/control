@@ -43,6 +43,8 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lal-python (>= 6.16.1~),
   lalxml-python (>= 1.2.2~)
 Description: Python bindings for LALPulsar.
+ The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+ This package contains Python bindings for the LAL Pulsar library.
 
 Package: lalpulsar-python3
 Architecture: any
@@ -50,7 +52,9 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
   lalpulsar (= ${binary:Version}),
   lal-python3 (>= 6.16.1~),
   lalxml-python3 (>= 1.2.2~)
-Description: Python bindings for LALPulsar.
+Description: Python 3 bindings for LALPulsar.
+ The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+ This package contains Python 3 bindings for the LAL Pulsar library.
 
 Package: lalpulsar-octave
 Architecture: any
@@ -59,3 +63,5 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lal-octave (>= 6.16.1~),
   lalxml (>= 1.2.2~)
 Description: Octave bindings for LALPulsar.
+ The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+ This package contains Octave bindings for the LAL Pulsar library.

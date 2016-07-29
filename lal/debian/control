@@ -32,15 +32,21 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, lal (= ${binary:Version}),
   ${python:Depends}, python-numpy
 Description: Python bindings for LAL
+ The LSC Algorithm Library for gravitational wave analysis.
+ This package contains Python bindings for the LAL library.
 
 Package: lal-python3
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, lal (= ${binary:Version}),
   ${python3:Depends}, python3-numpy
-Description: Python bindings for LAL
+Description: Python 3 bindings for LAL
+ The LSC Algorithm Library for gravitational wave analysis.
+ This package contains Python 3 bindings for the LAL library.
 
 Package: lal-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, lal (= ${binary:Version}),
   octave
 Description: Octave bindings for LAL
+ The LSC Algorithm Library for gravitational wave analysis.
+ This package contains Octave bindings for the LAL library.

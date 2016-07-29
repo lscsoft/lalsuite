@@ -38,13 +38,17 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalsimulation (= ${binary:Version}),
   lal-python (>= 6.16.1~)
 Description: Python bindings for LALSimulation
+ The LSC Algorithm Simulation Library for gravitational wave data analysis.
+ This package contains Python bindings for the LAL Simulation library.
 
 Package: lalsimulation-python3
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
   lalsimulation (= ${binary:Version}),
   lal-python3 (>= 6.16.1~)
-Description: Python bindings for LALSimulation
+Description: Python 3 bindings for LALSimulation
+ The LSC Algorithm Simulation Library for gravitational wave data analysis.
+ This package contains Python 3 bindings for the LAL Simulation library.
 
 Package: lalsimulation-octave
 Architecture: any
@@ -52,3 +56,5 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lalsimulation (= ${binary:Version}),
   lal-octave (>= 6.16.1~)
 Description: Octave bindings for LALSimulation
+ The LSC Algorithm Simulation Library for gravitational wave data analysis.
+ This package contains Octave bindings for the LAL Simulation library.

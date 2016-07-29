@@ -39,13 +39,17 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalframe (= ${binary:Version}),
   lal-python (>= 6.16.1~)
 Description: Python bindings for LALFrame
+ The LSC Algorithm Frame Library for gravitational wave data analysis.
+ This package contains Python bindings for the LAL Frame library.
 
 Package: lalframe-python3
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
   lalframe (= ${binary:Version}),
   lal-python3 (>= 6.16.1~)
-Description: Python bindings for LALFrame
+Description: Python 3 bindings for LALFrame
+ The LSC Algorithm Frame Library for gravitational wave data analysis.
+ This package contains Python 3 bindings for the LAL Frame library.
 
 Package: lalframe-octave
 Architecture: any
@@ -53,3 +57,5 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lalframe (= ${binary:Version}),
   lal-octave (>= 6.16.1~)
 Description: Octave bindings for LALFrame
+ The LSC Algorithm Frame Library for gravitational wave data analysis.
+ This package contains Octave bindings for the LAL Frame library.

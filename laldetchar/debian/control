@@ -57,6 +57,8 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalsimulation-python (>= 1.6.0~),
   lalburst-python (>= 1.4.2~)
 Description: Python bindings for LALDetChar
+ The LSC Algorithm Detchar Library for gravitational wave data analysis.
+ This package contains Python bindings for the LAL Detchar library.
 
 Package: laldetchar-octave
 Architecture: any
@@ -67,3 +69,5 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lalsimulation-octave (>= 1.6.0~),
   lalburst-python (>= 1.4.2~)
 Description: Octave bindings for LALDetChar
+ The LSC Algorithm Detchar Library for gravitational wave data analysis.
+ This package contains Octave bindings for the LAL Detchar library.
