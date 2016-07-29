@@ -47,7 +47,7 @@ Description: LSC Algorithm Library Burst Developers
 Package: lalburst-python
 Section: python
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   lalburst (= ${binary:Version}),
   lal-python (>= 6.16.1~),
   lalmetaio-python (>= 1.2.8~),
@@ -59,7 +59,7 @@ Description: Python bindings for LALBurst
 Package: lalburst-python3
 Section: python
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends},
   lalburst (= ${binary:Version}),
   lal-python3 (>= 6.16.1~),
   lalmetaio-python3 (>= 1.2.8~),

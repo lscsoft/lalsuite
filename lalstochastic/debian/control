@@ -42,7 +42,7 @@ Description: LSC Algorithm Library Stochastic Developers
 Package: lalstochastic-python
 Section: python
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   lalstochastic (= ${binary:Version}),
   lal-python (>= 6.16.1~),
   lalmetaio-python (>= 1.2.8~)
@@ -53,7 +53,7 @@ Description: Python bindings for LALStochastic
 Package: lalstochastic-python3
 Section: python
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends},
   lalstochastic (= ${binary:Version}),
   lal-python3 (>= 6.16.1~),
   lalmetaio-python3 (>= 1.2.8~)

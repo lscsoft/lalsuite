@@ -52,7 +52,7 @@ Description: LSC Algorithm Library Detector Characterisation Developers
 Package: laldetchar-python
 Section: python
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   laldetchar (= ${binary:Version}),
   lal-python (>= 6.16.1~),
   lalmetaio-python (>= 1.2.8~),

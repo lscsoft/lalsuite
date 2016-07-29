@@ -36,7 +36,7 @@ Description: LSC Algorithm Library MetaIO Developers
 Package: lalmetaio-python
 Section: python
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   lalmetaio (= ${binary:Version}),
   lal-python (>= 6.16.1~)
 Description: Python bindings for LALMetaIO
@@ -46,7 +46,7 @@ Description: Python bindings for LALMetaIO
 Package: lalmetaio-python3
 Section: python
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends},
   lalmetaio (= ${binary:Version}),
   lal-python3 (>= 6.16.1~)
 Description: Python 3 bindings for LALMetaIO
