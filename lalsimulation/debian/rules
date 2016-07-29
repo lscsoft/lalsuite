@@ -23,3 +23,6 @@ export PYBUILD_TEST_ARGS = $(MAKE) $(MAKEARGS) check
 
 %:
 	dh $@ --with=python2,python3 --buildsystem=pybuild
+
+override_dh_fixperms:
+	dh_fixperms && chmod -x debian/*/usr/lib/*/octave/*/site/oct/*/*.oct*
