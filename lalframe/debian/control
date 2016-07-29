@@ -1,5 +1,5 @@
 Source: lalframe
-Section: lscsoft
+Section: science
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7.0.0), dh-python, python-all-dev, python3-all-dev, pkg-config,
@@ -23,6 +23,7 @@ Description: LSC Algorithm Library Frame
  that use the LAL Frame library.
 
 Package: lalframe-dev
+Section: libdevel
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   libframe-dev (>= 8.0), ldas-tools-framecpp-c-dev,
@@ -34,6 +35,7 @@ Description: LSC Algorithm Library Frame Developers
  Frame library.
 
 Package: lalframe-python
+Section: python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalframe (= ${binary:Version}),
@@ -43,6 +45,7 @@ Description: Python bindings for LALFrame
  This package contains Python bindings for the LAL Frame library.
 
 Package: lalframe-python3
+Section: python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python3-numpy,
   lalframe (= ${binary:Version}),
