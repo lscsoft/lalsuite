@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 85
+# serial 86
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -35,7 +35,21 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
       swig_build_all=
     ]
   )
-  swig_build_any=false
+  AC_ARG_ENABLE(
+    [swig_iface],
+    AC_HELP_STRING(
+      [--enable-swig-iface],
+      [generate SWIG interface only]
+    ),[
+      AS_CASE(["${enableval}"],
+        [yes],[swig_build_iface=true],
+        [no],[swig_build_iface=false],
+        [AC_MSG_ERROR([invalid value "${enableval}" for --enable-swig-iface])]
+      )
+    ],[
+      swig_build_iface=false
+    ]
+  )
   LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[LALSUITE_REQUIRE_CXX])
   LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[LALSUITE_REQUIRE_PYTHON([2.6])])
   # Python is required to run generate_swig_iface.py
@@ -63,7 +77,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
     ]
   )
   AS_IF([test "${swig_build_]lowercase[}" = true],[
-    swig_build_any=true
+    swig_build_iface=true
     SWIG_BUILD_]uppercase[_ENABLE_VAL=ENABLED
     $3
   ],[
@@ -77,7 +91,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
 
 AC_DEFUN([LALSUITE_USE_SWIG],[
   # $0: configure enabled SWIG bindings
-  AS_IF([test "${swig_build_any}" = true],[
+  AS_IF([test "${swig_build_iface}" = true],[
 
     # configure SWIG binding languages
     swig_min_version=2.0.11
@@ -163,7 +177,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     ])
 
   ])
-  AM_CONDITIONAL([SWIG_BUILD],[test "${swig_build_any}" = true])
+  AM_CONDITIONAL([SWIG_BUILD],[test "${swig_build_iface}" = true])
   # end $0
 ])
 
