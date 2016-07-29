@@ -119,11 +119,11 @@ int XLALSetLatticeTilingConstantBound(
   );
 
 ///
-/// Set whether padding is added to the lattice tiling parameter space bounds.
+/// Set the level of padding added to the lattice tiling parameter space bounds.
 ///
 int XLALSetLatticeTilingPadding(
   LatticeTiling *tiling,                ///< [in] Lattice tiling
-  const bool padding                    ///< [in] Whether padding is added to parameter space bounds
+  const UINT4 padding                   ///< [in] Level of padding added to parameter space bounds
   );
 
 ///
@@ -199,7 +199,7 @@ int XLALRandomLatticeTilingPoints(
 ///
 int XLALLatticeTilingDimensionBounds(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
-  const bool padding,                   ///< [in] Whether padding is added to parameter space bounds
+  const UINT4 padding,                  ///< [in] Level of padding added to parameter space bounds
   const gsl_vector *point,              ///< [in] Point at which to return bounds
   const size_t y_dim,                   ///< [in] Dimension 'y' of which to return bounds
   const double x_scale,                 ///< [in] Scale of steps in 'x', in units of lattice step size
