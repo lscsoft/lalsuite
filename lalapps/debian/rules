@@ -31,4 +31,4 @@ override_dh_auto_install:
 	dh_auto_install --destdir=debian/tmp
 
 override_dh_shlibdeps:
-	dh_shlibdeps && dh_numpy && dh_numpy3
+	dh_shlibdeps && dh_numpy

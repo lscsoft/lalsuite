@@ -28,7 +28,10 @@ export PYBUILD_TEST_ARGS = $(MAKE) $(MAKEARGS) check
 	dh $@ --with=python2 --buildsystem=pybuild
 
 override_dh_fixperms:
-	dh_fixperms && chmod -x debian/*/usr/lib/*/octave/*/site/oct/*/*.oct*
+	dh_fixperms && find debian -name '*.oct' | xargs chmod -x
+
+override_dh_strip:
+	dh_strip && find debian -name '*.oct' | xargs strip --strip-unneeded
 
 override_dh_shlibdeps:
-	dh_shlibdeps && dh_numpy && dh_numpy3
+	dh_shlibdeps && dpkg-shlibdeps -Odebian/$(DEB_SOURCE)-octave.substvars $(shell find debian -name '*.oct') && dh_numpy
