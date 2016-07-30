@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 9), pkg-config, dh-python, python-all-dev, python3-
   octave3.2-headers | liboctave-dev, python-numpy, python3-numpy, bc, libhdf5-dev
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
-Standards-Version: 3.8.6
+Standards-Version: 3.9.8
 
 Package: lal
 Architecture: any
