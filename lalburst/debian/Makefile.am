@@ -10,4 +10,5 @@ EXTRA_DIST = \
 	lalburst-python.install \
 	lalburst-python3.install \
 	rules \
+	lalsuite.mk \
 	source/format

@@ -9,4 +9,5 @@ EXTRA_DIST = \
 	laldetchar-python.install \
 	laldetchar.install \
 	rules \
+	lalsuite.mk \
 	source/format

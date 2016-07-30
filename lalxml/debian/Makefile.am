@@ -10,4 +10,5 @@ EXTRA_DIST = \
 	lalxml-python3.install \
 	lalxml.install \
 	rules \
+	lalsuite.mk \
 	source/format

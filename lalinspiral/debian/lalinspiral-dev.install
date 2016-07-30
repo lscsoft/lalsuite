@@ -1,4 +1,1 @@
-usr/lib/*/*.a
-usr/lib/*/*.so
-usr/lib/*/pkgconfig
-usr/include/lal*
+../../debian/pkg-dev.install

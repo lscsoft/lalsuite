@@ -10,4 +10,5 @@ EXTRA_DIST = \
 	lalmetaio-python.install \
 	lalmetaio-python3.install \
 	rules \
+	lalsuite.mk \
 	source/format

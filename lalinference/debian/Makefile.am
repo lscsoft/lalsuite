@@ -9,4 +9,5 @@ EXTRA_DIST = \
 	lalinference-python.install \
 	lalinference.install \
 	rules \
+	lalsuite.mk \
 	source/format

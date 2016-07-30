@@ -10,4 +10,5 @@ EXTRA_DIST = \
 	lalstochastic-python3.install \
 	lalstochastic.install \
 	rules \
+	lalsuite.mk \
 	source/format

@@ -10,4 +10,5 @@ EXTRA_DIST = \
 	lalpulsar-python3.install \
 	lalpulsar.install \
 	rules \
+	lalsuite.mk \
 	source/format

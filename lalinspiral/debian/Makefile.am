@@ -10,4 +10,5 @@ EXTRA_DIST = \
 	lalinspiral-python3.install \
 	lalinspiral.install \
 	rules \
+	lalsuite.mk \
 	source/format

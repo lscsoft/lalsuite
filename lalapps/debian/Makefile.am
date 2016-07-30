@@ -7,4 +7,5 @@ EXTRA_DIST = \
 	docs \
 	install \
 	rules \
+	lalsuite.mk \
 	source/format

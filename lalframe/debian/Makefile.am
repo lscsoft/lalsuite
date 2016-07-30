@@ -10,4 +10,5 @@ EXTRA_DIST = \
 	lalframe-python3.install \
 	lalframe.install \
 	rules \
+	lalsuite.mk \
 	source/format

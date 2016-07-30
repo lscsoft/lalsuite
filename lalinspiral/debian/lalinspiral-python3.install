@@ -1,3 +1,1 @@
-usr/lib/python3*/dist-packages/lalinspiral/*.py
-usr/lib/python3*/dist-packages/lalinspiral/_lalinspiral.so*
-usr/lib/python3*/dist-packages/lalinspiral/sbank/*.py
+../../debian/pkg-python3.install
