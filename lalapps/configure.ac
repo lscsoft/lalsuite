@@ -119,6 +119,9 @@ LALSUITE_ENABLE_LALSTOCHASTIC
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
 
+# enable help2man documentation
+LALSUITE_ENABLE_HELP2MAN
+
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
 
@@ -496,6 +499,7 @@ LALApps has now been successfully configured:
 * CUDA support is $CUDA_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL
+* help2man documentation is $HELP2MAN_ENABLE_VAL
 
 and will be installed under the directory:
 

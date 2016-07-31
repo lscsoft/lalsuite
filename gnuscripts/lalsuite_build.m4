@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 127
+# serial 128
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1376,5 +1376,14 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
     AC_SUBST([PAGER_CPPFLAGS],["-DPAGER='\"\$(PAGER)\"'"])
     AC_CHECK_FUNCS([popen pclose])
   ])
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_ENABLE_HELP2MAN],[
+  # $0: check for help2man utility
+  AC_PATH_PROG([HELP2MAN], [help2man])
+  AC_SUBST([HELP2MAN], ["${HELP2MAN}"])
+  AS_IF([test -n "${HELP2MAN}"], [help2man=true], [help2man=false])
+  LALSUITE_ENABLE_MODULE([HELP2MAN])
   # end $0
 ])

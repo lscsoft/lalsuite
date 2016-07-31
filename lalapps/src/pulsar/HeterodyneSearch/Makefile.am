@@ -2,6 +2,7 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
+include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 # Makefile for HeterodyneSearch
 

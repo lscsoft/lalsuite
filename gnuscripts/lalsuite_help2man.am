@@ -1,0 +1,16 @@
+if HELP2MAN
+
+man1_MANS = $(bin_PROGRAMS:=.man)
+if HAVE_PYTHON
+man1_MANS += $(pybin_scripts:=.pyman)
+endif
+
+MOSTLYCLEANFILES += $(man1_MANS)
+
+endif
+
+%.pyman: %.py
+	$(AM_V_GEN)$(HELP2MAN) --no-discard-stderr --no-info --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@ $(builddir)/$*
+
+%.man: %
+	$(AM_V_GEN)$(LIBTOOL) --mode=execute $(LDADD:%=-dlopen %) $(HELP2MAN) --no-discard-stderr --no-info --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@ $(builddir)/$*
