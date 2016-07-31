@@ -1,4 +1,5 @@
 usr/bin/bayestar_*
+usr/bin/lalinference_pipe
 usr/bin/rapidpe_*
 usr/lib/python*/dist-packages/lalinference/*.py
 usr/lib/python*/dist-packages/lalinference/bayestar/*.py
