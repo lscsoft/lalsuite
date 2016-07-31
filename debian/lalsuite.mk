@@ -36,7 +36,7 @@ override_dh_strip:
 	dh_strip $(if $(HAVE_OCTAVE),&& find debian -name '*.oct' | xargs strip --strip-unneeded)
 
 override_dh_shlibdeps:
-	dh_shlibdeps && \
-	$(if $(HAVE_OCTAVE),dpkg-shlibdeps -Odebian/$(DEB_SOURCE)-octave.substvars $$(find debian -name '*.oct')) \
+	dh_shlibdeps \
+	$(if $(HAVE_OCTAVE),&& dpkg-shlibdeps -Odebian/$(DEB_SOURCE)-octave.substvars $$(find debian -name '*.oct')) \
 	$(if $(HAVE_PYTHON2),&& dh_numpy) \
 	$(if $(HAVE_PYTHON3),&& dh_numpy3)
