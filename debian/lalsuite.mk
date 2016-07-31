@@ -37,6 +37,7 @@ override_dh_strip:
 
 override_dh_shlibdeps:
 	dh_shlibdeps \
+	&& find debian -name '*.la' -delete \
 	$(if $(HAVE_OCTAVE),&& dpkg-shlibdeps -Odebian/$(DEB_SOURCE)-octave.substvars $$(find debian -name '*.oct')) \
 	$(if $(HAVE_PYTHON2),&& dh_numpy) \
 	$(if $(HAVE_PYTHON3),&& dh_numpy3)
