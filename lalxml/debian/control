@@ -41,7 +41,7 @@ Description: Python bindings for LALXML
 
 Package: lalxml-octave
 Architecture: any
-Depends: ${shlivs:Depends}, ${misc:Depends}, octave,
+Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lalxml (= ${binary:Version}),
   lal-octave (>= 6.16.1~)
 Description: Octave bindings for LALXML
