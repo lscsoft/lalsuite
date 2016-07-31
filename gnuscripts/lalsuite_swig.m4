@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 86
+# serial 87
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -50,10 +50,18 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
       swig_build_iface=false
     ]
   )
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[LALSUITE_REQUIRE_CXX])
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[LALSUITE_REQUIRE_PYTHON([2.6])])
-  # Python is required to run generate_swig_iface.py
-  LALSUITE_REQUIRE_PYTHON([2.6])
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[
+    # C++ is required to build Octave wrappings
+    LALSUITE_REQUIRE_CXX
+  ])
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[
+    # Python is required to configure Python wrappings
+    LALSUITE_REQUIRE_PYTHON([2.6])
+  ])
+  AS_IF([test "${swig_build_iface}" = true],[
+    # Python is required to run generate_swig_iface.py
+    LALSUITE_REQUIRE_PYTHON([2.6])
+  ])
   # end $0
 ])
 
