@@ -1087,11 +1087,10 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "Use --Alpha instead" );
   XLALRegisterUvarMember ( Dec, STRING, 0, DEPRECATED, "Use --Delta instead");
 
-  XLALRegisterUvarMember ( internalRefTime, EPOCH, 0, DEPRECATED, "HAS NO EFFECT and should no longer be used: XLALComputeFstat() now always uses midtime internally ... ");
-  XLALRegisterUvarMember ( dopplermax,      REAL8, 0, DEPRECATED, "HAS NO EFFECT and should no longer be used: maximum Doppler shift is accounted for internally");
-
   // ---------- obsolete and unsupported options ----------
-  XLALRegisterUvarMember(outputLogPrintf, STRING, 0,  DEFUNCT, "DEFUNCT; used to send all output from LogPrintf statements to this file");
+  XLALRegisterUvarMember ( outputLogPrintf, STRING,0, DEFUNCT, "DEFUNCT: Used to send all output from LogPrintf statements to this file");
+  XLALRegisterUvarMember ( internalRefTime, EPOCH, 0, DEFUNCT, "Should no longer be used: XLALComputeFstat() now always uses midtime internally ... ");
+  XLALRegisterUvarMember ( dopplermax,      REAL8, 0, DEFUNCT, "Should no longer be used: maximum Doppler shift is accounted for internally");
 
   return XLAL_SUCCESS;
 
