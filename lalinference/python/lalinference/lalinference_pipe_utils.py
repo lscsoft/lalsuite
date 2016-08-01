@@ -498,7 +498,16 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid):
  
   return mc_priors, trigger_mchirp
 
-
+def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp):
+  mc_max = mc_priors['4s'][1]
+  mc_min = mc_priors['128s'][0]
+  scale_factor = 1
+  if trigger_mchirp >= mc_max: 
+  	scale_factor = 2**(math.floor(trigger_mchirp/mc_max))
+  if trigger_mchirp <= mc_min:
+	scale_factor = 1./2**(math.floor(trigger_mchirp/mc_min))
+  print scale_factor
+  return scale_factor
 
 def create_pfn_tuple(filename,protocol='file://',site='local'):
     return( (os.path.basename(filename),protocol+os.path.abspath(filename),site) )
