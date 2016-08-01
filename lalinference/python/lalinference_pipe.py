@@ -98,7 +98,7 @@ if cp.has_option('paths','roq_b_matrix_directory'):
 
   print "WARNING: Overwriting user choice of flow, srate, seglen,mc_min, mc_max and q-min"
  
-  mc_priors = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key)
+  mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, opts.gid)
  
 else:
   roq_paths=[None]

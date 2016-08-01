@@ -441,7 +441,40 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     out[ifo]=os.path.join(outpath,ifo+'_psd_'+time+'.txt')
   return out
 
-def get_roq_mchirp_priors(path, roq_paths, roq_params, key):
+def get_trigger_chirpmass(gid=None,gracedb="gracedb"):
+  from glue.ligolw import lsctables
+  from glue.ligolw import ligolw
+  from glue.ligolw import utils
+  class PSDContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+  lsctables.use_in(PSDContentHandler)
+  import subprocess
+
+  cwd=os.getcwd()
+  subprocess.call([gracedb,"download", gid ,"coinc.xml"])
+  xmldoc=utils.load_filename("coinc.xml",contenthandler = PSDContentHandler)
+  coinctable = lsctables.CoincInspiralTable.get_table(xmldoc)
+  coinc_events = [event for event in coinctable]
+  sngltable = lsctables.SnglInspiralTable.get_table(xmldoc)
+  sngl_events = [event for event in sngltable]
+  coinc_map = lsctables.CoincMapTable.get_table(xmldoc)
+  mass1 = []
+  mass2 = []
+  for coinc in coinc_events:
+    these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
+    for e in these_sngls:
+      mass1.append(e.mass1)
+      mass2.append(e.mass2)
+  # check that trigger masses are identical in each IFO    
+  assert len(set(mass1)) == 1
+  assert len(set(mass2)) == 1
+
+  mchirp = (mass1[0]*mass2[0])**(3./5.) / ( (mass1[0] + mass2[0])**(1./5.) ) 
+  os.remove("coinc.xml")
+
+  return mchirp
+
+def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid):
 
   mc_priors = {}
 
@@ -459,8 +492,13 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key):
     if i<len(roq_paths)-1:
       mc_priors[roq][1]-= (mc_priors[roq][1]- mc_priors[ordered_roq_paths[i+1]][0])/2.
     i+=1
-  
-  return mc_priors
+
+  # used to scale mass-frequency range of basis to accommodate trigger mass 
+  trigger_mchirp = get_trigger_chirpmass(gid)
+ 
+  return mc_priors, trigger_mchirp
+
+
 
 def create_pfn_tuple(filename,protocol='file://',site='local'):
     return( (os.path.basename(filename),protocol+os.path.abspath(filename),site) )
