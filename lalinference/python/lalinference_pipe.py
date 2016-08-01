@@ -93,25 +93,13 @@ if cp.has_option('paths','roq_b_matrix_directory'):
   use_roq=True
   roq_paths=os.listdir(path)
   roq_params={}
-  mc_ranges={}
   def key(item): # to order the ROQ bases
     return float(item[1]['seglen'])
 
   print "WARNING: Overwriting user choice of flow, srate, seglen,mc_min, mc_max and q-min"
-  for roq in roq_paths:
-    params=os.path.join(path,roq,'params.dat')
-    roq_params[roq]=genfromtxt(params,names=True)
-    mc_ranges[roq]=[float(roq_params[roq]['chirpmassmin']),float(roq_params[roq]['chirpmassmax'])]
-  ordered_roq_paths=[item[0] for item in sorted(roq_params.items(), key=key)][::-1]
-  i=0
-  for roq in ordered_roq_paths:
-    if i>0:
-      # change min, just set to the max of the previous one since we have already aligned it in the previous iteration of this loop
-      #mc_ranges[roq][0]+= (mc_ranges[roq_lengths[i-1]][1]-mc_ranges[roq][0])/2.
-      mc_ranges[roq][0]=mc_ranges[ordered_roq_paths[i-1]][1]
-    if i<len(roq_paths)-1:
-      mc_ranges[roq][1]-= (mc_ranges[roq][1]- mc_ranges[ordered_roq_paths[i+1]][0])/2.
-    i+=1
+ 
+  mc_priors = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key)
+ 
 else:
   roq_paths=[None]
 
@@ -164,8 +152,8 @@ for sampler in samps:
         path=cp.get('paths','roq_b_matrix_directory')
         thispath=os.path.join(path,roq)
         cp.set('paths','roq_b_matrix_directory',thispath)
-        mc_min=mc_ranges[roq][0]
-        mc_max=mc_ranges[roq][1]
+        mc_min=mc_priors[roq][0]
+        mc_max=mc_priors[roq][1]
         flow=int(roq_params[roq]['flow'])
         srate=int(2.*roq_params[roq]['fhigh'])
         seglen=int(roq_params[roq]['seglen'])

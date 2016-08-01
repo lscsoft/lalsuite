@@ -441,6 +441,27 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     out[ifo]=os.path.join(outpath,ifo+'_psd_'+time+'.txt')
   return out
 
+def get_roq_mchirp_priors(path, roq_paths, roq_params, key):
+
+  mc_priors = {}
+
+  for roq in roq_paths:
+    params=os.path.join(path,roq,'params.dat')
+    roq_params[roq]=np.genfromtxt(params,names=True)
+    mc_priors[roq]=[float(roq_params[roq]['chirpmassmin']),float(roq_params[roq]['chirpmassmax'])]
+  ordered_roq_paths=[item[0] for item in sorted(roq_params.items(), key=key)][::-1]
+  i=0
+  for roq in ordered_roq_paths:
+    if i>0:
+      # change min, just set to the max of the previous one since we have already aligned it in the previous iteration of this loop
+      #mc_priors[roq][0]+= (mc_priors[roq_lengths[i-1]][1]-mc_priors[roq][0])/2.
+      mc_priors[roq][0]=mc_priors[ordered_roq_paths[i-1]][1]
+    if i<len(roq_paths)-1:
+      mc_priors[roq][1]-= (mc_priors[roq][1]- mc_priors[ordered_roq_paths[i+1]][0])/2.
+    i+=1
+  
+  return mc_priors
+
 def create_pfn_tuple(filename,protocol='file://',site='local'):
     return( (os.path.basename(filename),protocol+os.path.abspath(filename),site) )
 
