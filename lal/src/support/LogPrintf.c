@@ -339,7 +339,7 @@ XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij )
   rows = gij->size1;
   cols = gij->size2;
 
-  fprintf (fp, " [ \\\n" );
+  fprintf (fp, " [ \n" );
   for ( i=0; i < rows; i ++ )
     {
       for (j=0; j < cols; j ++ )
