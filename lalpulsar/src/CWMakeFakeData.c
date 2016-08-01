@@ -585,7 +585,7 @@ XLALFindSmallestValidSamplingRate ( UINT4 *n1,				//< [out] minimal valid sampli
   XLAL_CHECK ( n0 > 0, XLAL_EINVAL );
   XLAL_CHECK ( timestamps && (timestamps->length > 0), XLAL_EINVAL );
   REAL8 TsftREAL = timestamps->deltaT;
-  XLAL_CHECK ( TsftREAL == round(TsftREAL), XLAL_EDOM, "Only exact integer-second Tsft allowed, got Tsft = %g s\n", TsftREAL );
+  XLAL_CHECK ( TsftREAL == round(TsftREAL), XLAL_EDOM, "Only exact integer-second Tsft allowed, got Tsft = %.16g s\n", TsftREAL );
   UINT4 Tsft = (UINT4)TsftREAL;
   XLAL_CHECK ( Tsft > 0, XLAL_EINVAL );
 

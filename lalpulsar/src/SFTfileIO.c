@@ -154,6 +154,7 @@ static int compareDetNameCatalogs ( const void *ptr1, const void *ptr2 );
 
 static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
 static int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
+REAL8 TSFTfromDFreq ( REAL8 dFreq );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -1214,7 +1215,7 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
   rawheader.version        		= 2;
   rawheader.gps_sec        		= sft->epoch.gpsSeconds;
   rawheader.gps_nsec       		= sft->epoch.gpsNanoSeconds;
-  rawheader.tbase          		= 1.0 / sft->deltaF;
+  rawheader.tbase          		= TSFTfromDFreq ( sft->deltaF );
   rawheader.first_frequency_index 	= lround ( sft->f0 / sft->deltaF );
   rawheader.nsamples       		= sft->data->length;
   rawheader.crc64          		= 0;	/* set to 0 for crc-calculation */
