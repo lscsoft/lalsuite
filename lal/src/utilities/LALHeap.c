@@ -376,3 +376,35 @@ int XLALHeapModify(
   return XLAL_SUCCESS;
 
 }
+
+static int heap_get_elems_visitor(
+  void *param,
+  const void *x
+  )
+{
+  const void ***elem = ( const void *** ) param;
+  **elem = x;
+  ++(*elem);
+  return XLAL_SUCCESS;
+}
+
+const void **XLALHeapElements(
+  LALHeap *h
+  )
+{
+
+  /* Check input */
+  XLAL_CHECK_NULL( h != NULL, XLAL_EFAULT );
+
+  /* Allocate memory */
+  const void **elems = XLALMalloc( h->n * sizeof( *elems ) );
+  XLAL_CHECK_NULL( elems != NULL, XLAL_ENOMEM );
+
+  /* Get elements */
+  const void **elem = elems;
+  XLAL_CHECK_NULL( XLALHeapVisit( h, heap_get_elems_visitor, &elem ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL( elems + h->n == elem, XLAL_EFAILED );
+
+  return elems;
+
+}

@@ -172,6 +172,13 @@ int XLALHeapModify(
   void *modify_param            /**< [in] Parameter to pass to modifier function */
   );
 
+/**
+ * Allocate and return an array containing all elements in the heap
+ */
+const void **XLALHeapElements(
+  LALHeap *h                    /**< [in] Pointer to heap */
+  );
+
 /*@}*/
 
 #ifdef __cplusplus

@@ -264,11 +264,21 @@ int main( void )
       XLAL_CHECK_MAIN( XLALHeapResize( minh, 20 ) == XLAL_SUCCESS, XLAL_EFUNC );
       int **ref0 = &ref[80];
       XLAL_CHECK_MAIN( XLALHeapVisit( minh, check_ptr_int, &ref0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+      const int **elems = ( const int ** ) XLALHeapElements( minh );
+      for ( int j = 0; j < XLALHeapSize( minh ); ++j ) {
+        XLAL_CHECK_MAIN( *elems[j] == *ref[80 + j], XLAL_EFAILED, "(elems) %i != %i (ref)", *elems[j], *ref[80 + j] );
+      }
+      XLALFree( elems );
     }
     {
       XLAL_CHECK_MAIN( XLALHeapResize( maxh, 33 ) == XLAL_SUCCESS, XLAL_EFUNC );
       int **ref0 = &ref[0];
       XLAL_CHECK_MAIN( XLALHeapVisit( maxh, check_ptr_int, &ref0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+      const int **elems = ( const int ** ) XLALHeapElements( maxh );
+      for ( int j = 0; j < XLALHeapSize( maxh ); ++j ) {
+        XLAL_CHECK_MAIN( *elems[j] == *ref[j], XLAL_EFAILED, "(elems) %i != %i (ref)", *elems[j], *ref[j] );
+      }
+      XLALFree( elems );
     }
     fflush( stdout );
   }
