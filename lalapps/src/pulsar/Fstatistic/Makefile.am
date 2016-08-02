@@ -34,9 +34,15 @@ lalapps_PredictFstat_SOURCES = PredictFstat.c
 eah_PredictFstat_SOURCES = \
 	$(lalapps_PredictFstat_SOURCES) \
 	win_lib.cpp
+eah_PredictFstat_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-I$(top_srcdir)/src/pulsar/EinsteinAtHome
 eah_ComputeFstatistic_v2_SOURCES = \
 	$(ComputeFstatisticV2Sources) \
 	win_lib.cpp
+eah_ComputeFstatistic_v2_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	-I$(top_srcdir)/src/pulsar/EinsteinAtHome
 
 lalapps_ComputeFstatMCUpperLimit_SOURCES = ComputeFstatMCUpperLimit.c
 

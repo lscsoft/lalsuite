@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2015  Leo Singer
+ * Copyright (C) 2013-2016  Leo Singer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,12 +17,14 @@
  * MA  02111-1307  USA
  */
 
+#include "config.h"
 #include <Python.h>
 #include <numpy/arrayobject.h>
 #include <chealpix.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_nan.h>
 #include <lal/bayestar_sky_map.h>
+#include <assert.h>
 
 
 /**
@@ -39,7 +41,7 @@ typedef struct {
 static void premalloced_dealloc(premalloced_object *self)
 {
     free(self->data);
-    self->ob_type->tp_free((PyObject *) self);
+    Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
 
@@ -64,16 +66,14 @@ static PyObject *premalloced_new(void *data)
 }
 
 
-static PyObject *premalloced_npy_double_array(double *data, npy_intp len)
+static PyObject *premalloced_npy_double_array(double *data, int ndims, npy_intp *dims)
 {
     PyObject *premalloced = premalloced_new(data);
     if (!premalloced)
         return NULL;
 
-    npy_intp dims[1] = {len};
-
     PyArrayObject *out = (PyArrayObject *)
-        PyArray_SimpleNewFromData(1, dims, NPY_DOUBLE, data);
+        PyArray_SimpleNewFromData(ndims, dims, NPY_DOUBLE, data);
     if (!out)
     {
         Py_DECREF(premalloced);
@@ -265,14 +265,17 @@ static PyObject *sky_map_toa_phoa_snr(
 
     /* Call function */
     gsl_error_handler_t *old_handler = gsl_set_error_handler(my_gsl_error);
-    double *ret = bayestar_sky_map_toa_phoa_snr(&npix, min_distance,
+    double (*ret)[4] = bayestar_sky_map_toa_phoa_snr(&npix, min_distance,
         max_distance, prior_distance_power, gmst, nifos, nsamples, sample_rate,
         acors, responses, locations, horizons, toas, phoas, snrs);
     gsl_set_error_handler(old_handler);
 
     /* Prepare output object */
     if (ret)
-        out = premalloced_npy_double_array(ret, npix);
+    {
+        npy_intp dims[] = {npix, 4};
+        out = premalloced_npy_double_array(ret, 2, dims);
+    }
 
 fail: /* Cleanup */
     FREE_INPUT_LIST_OF_ARRAYS(acors)
@@ -502,7 +505,7 @@ fail: /* Cleanup */
 static PyObject *test(
     PyObject *NPY_UNUSED(module), PyObject *NPY_UNUSED(arg))
 {
-    return PyInt_FromLong(bayestar_test());
+    return PyLong_FromLong(bayestar_test());
 }
 
 
@@ -528,7 +531,7 @@ typedef struct {
 static void LogRadialIntegrator_dealloc(LogRadialIntegrator *self)
 {
     log_radial_integrator_free(self->integrator);
-    self->ob_type->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 
@@ -576,8 +579,7 @@ static PyObject *LogRadialIntegrator_call(
 
 
 static PyTypeObject LogRadialIntegrator_type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                                      /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "sky_map.LogRadialIntegrator",          /*tp_name*/
     sizeof(LogRadialIntegrator),            /*tp_basicsize*/
     0,                                      /*tp_itemsize*/
@@ -661,10 +663,10 @@ PyMODINIT_FUNC PyInit_sky_map(void)
 #if PY_MAJOR_VERSION < 3
     module = Py_InitModule(modulename, methods);
 #else
-    module = PyModule_Create(moduledef);
+    module = PyModule_Create(&moduledef);
 #endif
 
-    Py_INCREF(&LogRadialIntegrator_type);
+    Py_INCREF((PyObject *)&LogRadialIntegrator_type);
     PyModule_AddObject(
         module, "LogRadialIntegrator", (PyObject *)&LogRadialIntegrator_type);
 

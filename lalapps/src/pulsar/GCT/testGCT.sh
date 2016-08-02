@@ -380,6 +380,113 @@ if [ -n "${diff_F}" -o -n "${diff_BSGL}" ]; then
     exit 1
 fi
 
+echo
+echo "----------------------------------------------------------------------------------------------------"
+echo " STEP 7: run HierarchSearchGCT using Resampling (perfect match), triple toplist and recalc "
+echo "----------------------------------------------------------------------------------------------------"
+echo
+
+rm -f checkpoint.cpt # delete checkpoint to start correctly
+outfile_GCT_RS_triple="${testDir}/GCT_RS_triple.dat"
+timingsfile_RS_triple="${testDir}/timing_RS_triple.dat"
+
+
+# set plan mode so that results should be deterministic, easier to compare results of different runs this way
+
+export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
+export LAL_FSTAT_FFT_PLAN_TIMEOUT=30
+
+
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' --outputTiming='$timingsfile_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=6"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline"
+else
+    cmdline="$cmdline &> /dev/null"
+fi
+
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$gct_code' ..."
+    exit 1
+fi
+
+
+## re-run, but now create the three toplists one by one, then compare results
+
+outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_1.dat"
+
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=2"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline"
+else
+    cmdline="$cmdline &> /dev/null"
+fi
+
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$gct_code' ..."
+    exit 1
+fi
+
+outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_2.dat"
+
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=4"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline"
+else
+    cmdline="$cmdline &> /dev/null"
+fi
+
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$gct_code' ..."
+    exit 1
+fi
+
+outfile_GCT_RS_triple="${testDir}/GCT_RS_triple_3.dat"
+
+cmdline="$gct_code $gct_CL_common --FstatMethod=ResampGeneric --fnameout='$outfile_GCT_RS_triple' ${BSGL_flags} --getMaxFperSeg --loudestSegOutput --SortToplist=5"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline"
+else
+    cmdline="$cmdline &> /dev/null"
+fi
+
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$gct_code' ..."
+    exit 1
+fi
+
+
+# filter out comments
+
+egrep -v "^%" ${testDir}/GCT_RS_triple_1.dat > ${testDir}/GCT_RS_triple_1.txt
+egrep -v "^%" ${testDir}/GCT_RS_triple_2.dat > ${testDir}/GCT_RS_triple_2.txt
+egrep -v "^%" ${testDir}/GCT_RS_triple_3.dat > ${testDir}/GCT_RS_triple_3.txt
+
+
+egrep -v "^%" ${testDir}/GCT_RS_triple.dat > ${testDir}/GCT_RS_triple.txt
+egrep -v "^%" ${testDir}/GCT_RS_triple.dat-BSGLtL > ${testDir}/GCT_RS_triple-BSGLtL.txt
+egrep -v "^%" ${testDir}/GCT_RS_triple.dat-BtSGLtL > ${testDir}/GCT_RS_triple-BtSGLtL.txt
+
+if ! eval "diff ${testDir}/GCT_RS_triple_1.txt ${testDir}/GCT_RS_triple.txt"; then
+    echo "Error: tripple toplists do not match separately generated toplists  (1) "
+    exit 1
+fi
+
+if ! eval "diff ${testDir}/GCT_RS_triple_2.txt ${testDir}/GCT_RS_triple-BSGLtL.txt"; then
+    echo "Error: tripple toplists do not match separately generated toplists  (2) "
+    exit 1
+fi
+
+if ! eval "diff ${testDir}/GCT_RS_triple_3.txt ${testDir}/GCT_RS_triple-BtSGLtL.txt"; then
+    echo "Error: tripple toplists do not match separately generated toplists  (3) "
+    exit 1
+fi
+
+
+
 ## ---------- compute relative differences and check against tolerance --------------------
 awk_reldev='{printf "%.2e", sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
 
@@ -412,13 +519,19 @@ awk_isgtr='{if($1>$2) {print "1"}}'
 
 echo
 echo "--------- Timings ------------------------------------------------------------------------------------------------"
-awk_timing='{printf "c0ic = %-6.1e s, c1co = %-6.1e s, c0Demod = %-6.1e s,  (%s)", $8, $9, $10, $11, $12}'
+echo "Timing model: tau = Nseg * Ndet * Ncoh * tau_Fstat + Nseg * Ninc * tau_SumF + Ninc * tau_Bayes + Ncand * tau_Recalc + time_Other"
+echo
+awk_timing='{printf "tau_Fstat = %-6.1e s, tau_SumF = %-6.1e s, tau_Bayes = %-6.1e s, tau_Recalc = %-6.1e s, time_Other = %-6.1e s", $1, $2, $3, $4, $5}'
 timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
 timing_DM_BSGL=$(sed '/^%.*/d' $timingsfile_DM_BSGL | awk "$awk_timing")
+timing_DM_DUAL=$(sed '/^%.*/d' $timingsfile_DM_DUAL | awk "$awk_timing")
 timing_RS=$(sed '/^%.*/d' $timingsfile_RS | awk "$awk_timing")
-echo " GCT-LALDemod:      $timing_DM"
+timing_RS_triple=$(sed '/^%.*/d' $timingsfile_RS_triple | awk "$awk_timing")
+echo " GCT-LALDemod:       $timing_DM"
 echo " GCT-LALDemod-BSGL:  $timing_DM_BSGL"
-echo " GCT-Resamp:        $timing_RS"
+echo " GCT-LALDemod-2top:  $timing_DM_DUAL"
+echo " GCT-Resamp:         $timing_RS"
+echo " GCT-Resamp-3top:    $timing_RS_triple"
 
 echo
 echo "--------- Compare results ----------------------------------------------------------------------------------------"

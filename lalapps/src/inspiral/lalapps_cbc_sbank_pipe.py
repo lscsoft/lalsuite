@@ -88,6 +88,8 @@ class SBankJob(inspiral.InspiralAnalysisJob):
         self.set_sub_file(tag_base+'.sub')
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         self.add_condor_cmd('getenv','True')
         self.add_condor_cmd('request_memory', '1999')
         if "OMP_NUM_THREADS" in os.environ:
@@ -128,6 +130,8 @@ class SBankSplitJob(inspiral.InspiralAnalysisJob):
         self.tag_base = tag_base
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         self.add_condor_cmd('getenv','True')
 
 
@@ -156,6 +160,8 @@ class SBankChooseMchirpBoundariesJob(inspiral.InspiralAnalysisJob):
         self.tag_base = tag_base
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         self.add_condor_cmd('getenv','True')
 
 
@@ -186,6 +192,9 @@ class InspinjJob(inspiral.InspiralAnalysisJob):
         self.tag_base = tag_base
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
+
 
 class InspinjNode(pipeline.CondorDAGNode):
     def __init__(self,job, dag, tag=None,seed=0, p_node=[]):
@@ -214,6 +223,8 @@ class BankSimJob(inspiral.InspiralAnalysisJob):
         self.add_condor_cmd('getenv','True')
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         if "OMP_NUM_THREADS" in os.environ:
             self.add_condor_cmd('request_cpus', os.environ["OMP_NUM_THREADS"])
 
@@ -279,6 +290,8 @@ class MergeSimsJob(inspiral.InspiralAnalysisJob):
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
         self.add_condor_cmd('getenv','True')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         self.add_condor_cmd('request_memory', '1999')
 
 
@@ -307,6 +320,8 @@ class PlotSimJob(inspiral.InspiralAnalysisJob):
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
         self.add_condor_cmd('getenv','True')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         self.add_condor_cmd('request_memory', '1999')
 
 
@@ -355,6 +370,9 @@ lalapps_cbc_sbank_plot_sim = /home/sprivite/local/opt/master/bin/lalapps_cbc_sba
 lalapps_cbc_sbank_merge_sims = /home/sprivite/local/opt/master/bin/lalapps_cbc_sbank_merge_sims
 lalapps_inspinj = /home/sprivite/local/opt/master/bin/lalapps_inspinj
 
+;[accounting]
+;accounting-group = ???
+
 [sbank]
 ; This section contains the parameters of the entire bank parameter
 ; space you wish to cover. sbank_pipe will divide the space for you.
@@ -392,12 +410,12 @@ iterative-match-df-max= 1.0
 ; space. To do so, we generate a "coarse" bank, i.e., a bank on the
 ; same parameter space but with a weaker convergence criteria. This
 ; process gives a rough measure of the density of templates the final
-; bank will require. Use the templates-max option to prevent the job
+; bank will require. Use the max-new-templates option to prevent the job
 ; from running forever, but the more templates you have in the coarse
 ; bank, the less "over-coverage" you will incur from the bank
 ; splitting process. A good rule of thumb is that you want ~1000
 ; templates per split bank.
-templates-max = 15000
+max-new-templates = 15000
 match-min = 0.93
 convergence-threshold = 1000
 
@@ -547,12 +565,12 @@ else:
         coarse_thresh = cp.get("coarse-sbank", "convergence-threshold")
         coarse_sbank_node.add_var_arg("--convergence-threshold %s" % coarse_thresh)
 
-        if cp.has_option("coarse-sbank", "templates-max"):
-            templates_max = cp.get("coarse-sbank", "templates-max")
+        if cp.has_option("coarse-sbank", "max-new-templates"):
+            templates_max = cp.get("coarse-sbank", "max-new-templates")
             assert templates_max >= 3*nbanks # you need at least a few templates per bank
         else:
             templates_max = 15*nbanks  # to prevent the coarse bank from running forever
-        coarse_sbank_node.add_var_arg("--templates-max %s" % templates_max)
+        coarse_sbank_node.add_var_arg("--max-new-templates %s" % templates_max)
 
         xmlCoarse, = coarse_sbank_node.get_output_files()
         pnode = [coarse_sbank_node]
@@ -637,7 +655,7 @@ for inj_run in cp.options("injections"):
 
     # merge and plot the partial sims
     sim_names = [node.get_output_files()[0] for node in sim_nodes]
-    merge_sims_node = MergeSimsNode(merge_simsJob, dag, inj_run.upper(), sim_names, sim_nodes )
+    merge_sims_node = MergeSimsNode(merge_simsJob, dag, tag, sim_names, sim_nodes )
     PlotSimNode(plotsimJob, dag, merge_sims_node.get_output_files(), [merge_sims_node])
 
 # write the dag

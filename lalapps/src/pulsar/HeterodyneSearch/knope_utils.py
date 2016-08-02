@@ -27,6 +27,7 @@ import urlparse
 from copy import deepcopy
 import numpy as np
 import pickle
+from scipy import optimize
 
 from lalapps import pulsarpputils as pppu
 
@@ -467,7 +468,7 @@ class knopeDAG(pipeline.CondorDAG):
           subject = "lalapps_knope: successful setup"
           messagetxt = "Hi User,\n\nYour analysis using configuration file '%s' has successfully setup the analysis. Once complete the results will be found at %s.\n\nRegards lalapps_knope\n" % (configfilename, self.results_url)
 
-          emailtemplate = "From: {0}\nTo: {1}\nSubject: {3}\n\n{4}"
+          emailtemplate = "From: {0}\nTo: {1}\nSubject: {2}\n\n{3}"
           message = emailtemplate.format(FROM, email, subject, messagetxt)
           server = smtplib.SMTP('localhost')
           server.sendmail(FROM, email, message)
@@ -533,6 +534,12 @@ class knopeDAG(pipeline.CondorDAG):
     # check whether to show joint posterior plot for all parameters
     self.show_all_posteriors = self.get_config_option('results_page', 'show_all_posteriors', cftype='boolean', default=False)
 
+    # check whether to subtract injected/heterodyned values from phase parameters for plots
+    self.subtract_truths = self.get_config_option('results_page', 'subtract_truths', cftype='boolean', default=False)
+
+    # check whether to plot priors on 1D posteriors plots
+    self.show_priors = self.get_config_option('results_page', 'show_priors', cftype='boolean', default=False)
+
     # create parameter estimation job
     resultpagejob = resultpageJob(self.results_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
     collatejob = collateJob(self.collate_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
@@ -594,6 +601,9 @@ class knopeDAG(pipeline.CondorDAG):
       cp.set('general', 'model_type', self.pe_model_type) # set 'waveform' or 'source' model type
       cp.set('general', 'biaxial', self.pe_biaxial)       # set if using a biaxial source model
 
+      if self.show_priors:
+        cp.set('general', 'priorfile', self.pe_prior_files[pname]) # set the prior file
+
       # get posterior files (and background directories)
       posteriorsfiles = {}
       backgrounddir = {}
@@ -623,7 +633,7 @@ class knopeDAG(pipeline.CondorDAG):
             dirpostfix = '%.2ff' % self.freq_factors[0]
 
         posteriorsfiles[det] = os.path.join(posteriorsfiles[det], dirpostfix)
-        posteriorsfiles[det] = os.path.join(posteriorsfiles[det], 'posterior_samples_%s.txt.gz' % pname)
+        posteriorsfiles[det] = os.path.join(posteriorsfiles[det], 'posterior_samples_%s.hdf' % pname)
         if self.pe_num_background > 0: backgrounddir[det] = os.path.join(backgrounddir[det], dirpostfix)
 
       cp.set('parameter_estimation', 'posteriors', posteriorsfiles)
@@ -644,6 +654,7 @@ class knopeDAG(pipeline.CondorDAG):
       cp.set('data', 'files', datafiles)
 
       cp.set('plotting', 'all_posteriors', self.show_all_posteriors)
+      cp.set('plotting', 'subtract_truths', self.subtract_truths)
 
       # output configuration file
       try:
@@ -774,8 +785,11 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_nest2pos_nodes = {} # condor nodes for the lalapps_nest2pos jobs (needed to use as parents for results processing jobs)
     self.pe_nest2pos_background_nodes = {} # nodes for background analysis
 
-    # see whether to run just as independent detectors, or independental AND coherently over all detectors
-    self.pe_incoherent_only = self.get_config_option('analysis', 'incoherent_only', cftype='boolean', default=False)
+    # see whether to run just as independent detectors, or independently AND coherently over all detectors
+    if len(self.ifos) == 1:
+      self.pe_incoherent_only = True # set to True for one detector
+    else:
+      self.pe_incoherent_only = self.get_config_option('analysis', 'incoherent_only', cftype='boolean', default=False)
 
     # see whether to run only the coherent multidetector analysis analysis
     self.pe_coherent_only = False
@@ -819,12 +833,17 @@ class knopeDAG(pipeline.CondorDAG):
     self.pe_nruns_background = self.get_config_option('pe', 'n_runs_background', cftype='int', default=1)
     self.pe_nlive_background = self.get_config_option('pe', 'n_live_background', cftype='int', default=1024)
 
+    # parameters for ROQ
+    self.pe_roq = self.get_config_option('pe', 'use_roq', cftype='boolean', default=False)                # check if using Reduced Order Quadrature (ROQ)
+    self.pe_roq_ntraining = self.get_config_option('pe', 'roq_ntraining', cftype='int', default=2500)     # number of training waveforms for reduced basis generation
+    self.pe_roq_tolerance = self.get_config_option('pe', 'roq_tolerance', cftype='float', default=5e-12)  # mis-match tolerance when producing reduced basis
+    self.pe_roq_uniform = self.get_config_option('pe', 'roq_uniform', cftype='boolean', default=False)        # check if setting uniform distributions for sprinkling traning waveform parameters
+    self.pe_roq_chunkmax = self.get_config_option('pe', 'roq_chunkmax', cftype='int', default=1440)       # maximum data chunk length for creating ROQ
+
     # FIXME: Currently this won't run with non-GR parameters, so output a warning and default back to GR!
     if self.pe_non_gr:
       print("Warning... currently this will not run with non-GR parameters. Reverting to GR-mode.")
       self.pe_non_gr = False
-
-    self.pe_gzip = self.get_config_option('pe', 'gzip_output', cftype='boolean', default=True) # gzip output files by default
 
     # if searching at both the rotation frequency and twice rotation frequency set which parameterisation to use
     self.pe_model_type = self.get_config_option('pe', 'model_type', default='waveform')
@@ -853,24 +872,13 @@ class knopeDAG(pipeline.CondorDAG):
         return
 
     self.pe_derive_amplitude_prior = self.get_config_option('pe', 'derive_amplitude_prior', cftype='boolean', default=False)
-    self.pe_derive_amplitude_prior_job = None
+
     if self.pe_derive_amplitude_prior:
-      # get exectable
-      self.pe_derive_amplitude_prior_exec = self.get_config_option('pe', 'derive_amplitude_prior_exec')
-      if self.error_code != 0: return
-
-      # check file exists and is executable
-      if not os.path.isfile(self.pe_derive_amplitude_prior_exec) or not os.access(self.pe_derive_amplitude_prior_exec, os.X_OK):
-        print("Warning... 'pe_derive_amplitude_prior_exec' in '[pe]' does not exist or is not an executable. Try finding code in path.")
-        self.pe_derive_amplitude_prior_exec = self.find_exec_file('lalapps_known_pulsar_pipeline_create_prior')
-
-        if self.pe_derive_amplitude_prior_exec == None:
-          print("Error... could not find 'lalapps_knope_create_prior' in 'PATH'", file=sys.stderr)
-          self.error_code = -1
-          return
-
       # get JSON file containing any previous amplitude upper limits for pulsars
       self.pe_amplitude_prior_file = self.get_config_option('pe', 'amplitude_prior_file', allownone=True)
+
+      self.pe_prior_info = None
+      self.pe_prior_asds = {}
 
       # get file, or dictionary of amplitude spectral density files (e.g. from a previous run) to derive amplitude priors
       try:
@@ -882,9 +890,6 @@ class knopeDAG(pipeline.CondorDAG):
         self.pe_amplitude_prior_obstimes = ast.literal_eval(self.get_config_option('pe', 'amplitude_prior_obstimes', allownone=True))
       except:
         self.pe_amplitude_prior_obstimes = self.get_config_option('pe', 'amplitude_prior_obstimes', allownone=True)
-
-      # create a derive amplitude prior job
-      self.pe_derive_amplitude_prior_job = derivePriorJob(self.pe_derive_amplitude_prior_exec, univ='local', accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
 
       self.pe_amplitude_prior_type = self.get_config_option('pe', 'amplitude_prior_type', default='fermidirac')
 
@@ -980,6 +985,11 @@ class knopeDAG(pipeline.CondorDAG):
         else: # subsequent iterations are for background jobs
           psrpostdir = os.path.join(self.pe_posterior_background_basedir, pname)
 
+        if self.pe_roq:
+          nroqruns = 1 # add one run for the ROQ weights calculation
+        else:
+          nroqruns = 0
+
         # create directory for that pulsar
         self.mkdirs(psrdir)
         if self.error_code != 0: return
@@ -1028,7 +1038,9 @@ class knopeDAG(pipeline.CondorDAG):
           randomiseseed = ''
           if j == 0:
             # create prior file for analysis (use this same file for all background runs)
-            priorfile, priornode = self.create_prior_file(psr, psrdir, dets, self.freq_factors, ffdir)
+            priorfile = self.create_prior_file(psr, psrdir, dets, self.freq_factors, ffdir)
+            if pname not in self.pe_prior_files:
+              self.pe_prior_files[pname] = priorfile # set prior file (just use first one as they should be the same for each combination of detectors)
 
             nruns = self.pe_nruns
             nlive = self.pe_nlive
@@ -1038,11 +1050,17 @@ class knopeDAG(pipeline.CondorDAG):
             # set seed for randomising data (this needs to be the same over each nruns)
             randomiseseed = ''.join([str(f) for f in np.random.randint(1, 10, size=15).tolist()])
 
+          # set output ROQ weights file
+          if self.pe_roq:
+            roqweightsfile = os.path.join(ffdir, 'roqweights.bin')
+
           nestfiles = [] # list of nested sample file names
           penodes = []
+          roqinputnode = None
 
           # setup job(s)
-          for i in range(nruns): # loop over the required number of runs
+          i = counter = 0
+          while counter < nruns+nroqruns: # loop over the required number of runs
             penode = ppeNode(pejob)
             if self.pe_random_seed != None:
               penode.set_randomseed(self.pe_random_seed)      # set seed for RNG
@@ -1060,8 +1078,21 @@ class knopeDAG(pipeline.CondorDAG):
             penode.set_tolerance(self.pe_tolerance)           # set tolerance for ending nested sampling
 
             # set the output nested samples file
-            nestfiles.append(os.path.join(ffdir, 'nested_samples_%s_%05d.txt' % (pname, i)))
+            nestfiles.append(os.path.join(ffdir, 'nested_samples_%s_%05d.hdf' % (pname, i)))
             penode.set_outfile(nestfiles[i])
+
+            if self.pe_roq:
+              penode.set_roq()
+              penode.set_roq_chunkmax(str(self.pe_roq_chunkmax))
+
+              if counter == 0: # first time round just output weights
+                penode.set_roq_ntraining(str(self.pe_roq_ntraining))
+                penode.set_roq_tolerance(str(self.pe_roq_tolerance))
+                penode.set_roq_outputweights(roqweightsfile)
+                if self.pe_roq_uniform:
+                  penode.set_roq_uniform()
+              else: # use pre-created weights file
+                penode.set_roq_inputweights(roqweightsfile)
 
             # for background runs set the randomise seed
             if j > 0:
@@ -1086,11 +1117,6 @@ class knopeDAG(pipeline.CondorDAG):
               # set whether using a biaxial signal
               if self.pe_biaxial:
                 penode.set_biaxial()
-
-            # set whether to gzip the output nested sample files
-            if self.pe_gzip:
-              penode.set_gzip()
-              nestfiles[i] += '.gz'
 
             # set Earth, Sun and time ephemeris files
             if psr['EPHEM'] != None and self.ephem_path != None:
@@ -1122,8 +1148,17 @@ class knopeDAG(pipeline.CondorDAG):
                       elif pname in self.splinter_unmodified_pars:
                         penode.add_parent(self.splinter_nodes_unmodified[det][ff])
 
-            # add prior creation node as parent
-            penode.add_parent(priornode)
+            # if using ROQ add first PE node as parent to the rest
+            if self.pe_roq:
+              if roqinputnode is not None: # add first penode (which generates the ROQ interpolant) as a parent to subsequent nodes
+                penode.add_parent(roqinputnode)
+
+              if counter == 0: # get first penode (generating and outputting the ROQ interpolant) to add as parents to subsequent nodes
+                roqinputnode = penode
+                self.add_node(penode)
+                counter = counter+1 # increment "counter", but not "i"
+                del nestfiles[-1]   # remove last element of nestfiles
+                continue
 
             # add node to dag
             self.add_node(penode)
@@ -1131,20 +1166,21 @@ class knopeDAG(pipeline.CondorDAG):
 
             # move SNR files into posterior directory
             mvnode = moveNode(mvjob)
-            snrsourcefile = nestfiles[i].rstrip('.gz')+'_SNR' # source SNR file
+            snrsourcefile = os.path.splitext(nestfiles[i])[0]+'_SNR' # source SNR file
             snrdestfile = os.path.join(ffpostdir, 'SNR_%05d.txt' % i) # destination SNR file in posterior directory
             mvnode.set_source(snrsourcefile)
             mvnode.set_destination(snrdestfile)
             mvnode.add_parent(penode)
             self.add_node(mvnode)
 
+            counter = counter+1
+            i = i+1
+
           # add lalapps_nest2pos node to combine outputs/convert to posterior samples
           n2pnode = nest2posNode(n2pjob)
-          postfile = os.path.join(ffpostdir, 'posterior_samples_%s.txt' % pname)
+          postfile = os.path.join(ffpostdir, 'posterior_samples_%s.hdf' % pname)
           n2pnode.set_outfile(postfile)     # output posterior file
           n2pnode.set_nest_files(nestfiles) # nested sample files
-          n2pnode.set_nest_live(nlive)      # number of nested sample live points
-          n2pnode.set_gzip()                # gzip output posterior sample files
 
           n2pnodes[pname].append(n2pnode)
 
@@ -1158,7 +1194,6 @@ class knopeDAG(pipeline.CondorDAG):
           if self.pe_clean_nest_samples:
             rmnode = removeNode(rmjob)
             # add name of header file
-            nestfiles.append(nestfiles[0].rstrip('.gz')+'_params.txt')
             rmnode.set_files(nestfiles)
             rmnode.add_parent(n2pnode)
             self.add_node(rmnode)
@@ -1188,11 +1223,11 @@ class knopeDAG(pipeline.CondorDAG):
     # if using a pre-made prior file then just create a symbolic link to that file into outputpath
     if self.pe_premade_prior_file != None:
       try:
-        os.symlink(self.pe_premade_prior_file, outputpath)
+        os.symlink(self.pe_premade_prior_file, outfile)
       except:
         print("Error... could not create symbolic link to prior file '%s'" % self.pe_premade_prior_file, file=sys.stderr)
         self.error_code = -1
-      return outfile, None
+      return outfile
 
     # check if requiring to add parameters with errors in the .par file to the prior options
     prior_options = {}
@@ -1207,7 +1242,11 @@ class knopeDAG(pipeline.CondorDAG):
 
         erritems = [] #  list of values with errors
 
+        ignore_pars = ["DM", "START", "FINISH", "NTOA", "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS", "ELAT", "ELONG"] # keys to ignore from par file
+
         for paritem in pppu.float_keys:
+          if paritem in ignore_pars:
+            continue
           if psr['%s_ERR' % paritem] != None and psr['%s_FIT' % paritem] != None: # get values with a given error (suffixed with _ERR)
             if psr['%s_FIT' % paritem] == 1:
               # set Gaussian prior with mean being the parameter value and sigma being the error
@@ -1253,52 +1292,195 @@ class knopeDAG(pipeline.CondorDAG):
         else: # no error value were found so remove corfile
           os.remove(corfile)
 
-    # check if deriving amplitude priors from heterodyned/spectrally interpolated data
-    createpriornode = None
+    # check if deriving amplitude priors
     if self.pe_derive_amplitude_prior:
-      # get the list of files to use in calculating the
-      cpp = ConfigParser.ConfigParser()
-
-      cpp.add_section('pulsar')
-      cpp.set('pulsar', 'name', pname)
-      cpp.set('pulsar', 'freqfactors', self.freq_factors)
-      cpp.set('pulsar', 'f0', psr['F0'])
-
-      cpp.add_section('parameters')
-      for prioritem in prior_options:
-        cpp.set('parameters', prioritem, prior_options[prioritem])
-
-      cpp.add_section('prior')
-      if not os.path.isfile(self.pe_amplitude_prior_file) and (self.pe_amplitude_prior_asds == None or self.pe_amplitude_prior_obstimes == None):
-        print("Error... no prior upper limit file or ASD files set.", file=sys.stderr)
-        self.error_code = -1
-        return outfile, None
-      if os.path.isfile(self.pe_amplitude_prior_file):
-        cpp.set('prior', 'priorfile', self.pe_amplitude_prior_file)
-      if self.pe_amplitude_prior_asds != None and self.pe_amplitude_prior_obstimes != None:
-        cpp.set('prior', 'asd_files', self.pe_amplitude_prior_asds)
-        cpp.set('prior', 'obs_times', self.pe_amplitude_prior_obstimes)
-      cpp.set('prior', 'priortype', self.pe_amplitude_prior_type)
-      cpp.set('prior', 'modeltype', self.pe_model_type)
-
-      cpp.add_section('output')
-      cpp.set('output', 'outputfile', outfile)
-
-      configfile = os.path.join(outputpath, 'prior.ini')
-      createpriornode = derivePriorNode(self.pe_derive_amplitude_prior_job)
-      createpriornode.set_config(configfile)
-
-      # output configuration file and make job node
+      # open output prior file
       try:
-        fp = open(configfile, 'w')
-        cpp.write(fp)
-        fp.close()
+        fp = open(outfile, 'w')
       except:
-        print("Error... could not write prior creation configuration file '%s'" % configfile, file=sys.stderr)
+        print("Error... could no open prior file '%s'" % outfile, file=sys.stderr)
         self.error_code = -1
-        return outfile, None
+        return outfile
 
-      self.add_node(createpriornode)
+      # write out any priors that have been given
+      for prioritem in prior_options:
+        if 'priortype' not in prior_options[prioritem]:
+          print("Error... no 'priortype' given for parameter '%s'" % prioritem, file=sys.stderr)
+          self.error_code = -1
+          return outfile
+        if 'ranges' not in prior_options[prioritem]:
+          print("Error... no 'ranges' given for parameter '%s'" % prioritem, file=sys.stderr)
+          self.error_code = -1
+          return outfile
+
+        ptype = prior_options[prioritem]['priortype']
+        rangevals = prior_options[prioritem]['ranges']
+
+        if len(rangevals) != 2:
+          print("Error... 'ranges' for parameter '%s' must be a list or tuple with two entries" % prioritem, file=sys.stderr)
+          self.error_code = -1
+          return outfile
+
+        fp.write('%s\t%s\t%.16le\t%.16le\n' % (prioritem, ptype, rangevals[0], rangevals[1]))
+
+      # set the required amplitude priors
+      requls = {} # dictionary to contain the required upper limits
+      if self.pe_model_type == 'waveform':
+        if 2. in self.freq_factors:
+          requls['C22'] = None
+        if 1. in self.freq_factors:
+          requls['C21'] = None
+      elif self.pe_model_type == 'source':
+        if len(self.freq_factors) == 1:
+          requls['H0'] = None
+        if len(self.freq_factors) == 2:
+          if 1. in self.freq_factors and 2. in self.freq_factors:
+            requls['I21'] = None
+            requls['I31'] = None
+
+      if len(requls) == 0:
+        print("Error... unknown frequency factors or model type in configuration file.", file=sys.stderr)
+        self.error_code = -1
+        return outfile
+
+      # try and get the file containing previous upper limits
+      if os.path.isfile(self.pe_amplitude_prior_file):
+        # check file can be read
+        if self.pe_prior_info is None:
+          try:
+            fpp = open(self.pe_amplitude_prior_file, 'r')
+            self.pe_prior_info = json.load(fpp) # should be JSON file
+            fpp.close()
+          except:
+            print("Error... could not parse prior file '%s'." % self.pe_amplitude_prior_file, file=sys.stderr)
+            self.error_code = -1
+            return outfile
+
+        # see if pulsar is in prior file
+        if pname in self.pe_prior_info:
+          uls = self.pe_prior_info[pname]
+          for ult in requls:
+            if ult == 'C22':
+              if 'C22UL' not in uls and 'H0UL' in uls:
+                # use 'H0' value for 'C22' if present
+                requls['C22'] = uls['H0UL']
+            else:
+              if ult+'UL' in uls:
+                requls[ult] = uls[ult+'UL']
+
+      # if there are some required amplitude limits that have not been obtained try and get amplitude spectral densities
+      freq = psr['F0']
+
+      if None in requls.values() and freq > 0.0:
+        if self.pe_amplitude_prior_asds != None and self.pe_amplitude_prior_obstimes != None:
+          asdfiles = self.pe_amplitude_prior_asds
+          obstimes = self.pe_amplitude_prior_obstimes
+
+          if not isinstance(asdfiles, dict): # if a single file is given convert into dictionary
+            asdfilestmp = {}
+            obstimestmp = {}
+            asdfilestmp['det'] = asdfiles
+            obstimestmp['det'] = float(obstimes)
+            asdfiles = asdfilestmp
+            obstimes = obstimestmp
+
+          asdlist = []
+          for dk in asdfiles: # read in all the ASD files
+            if dk not in obstimes:
+              print("Error... no corresponding observation times for detector '%s'" % dk, file=sys.stderr)
+              self.error_code = -1
+              return outfile
+            else:
+              if not isinstance(obstimes[dk], float) and not isinstance(obstimes[dk], int):
+                print("Error... observation time must be a float or int.", file=sys.stderr)
+                self.error_code = -1
+                return outfile
+              if dk not in self.pe_prior_asds:
+                if not os.path.isfile(asdfiles[dk]):
+                  print("Error... ASD file '%s' does not exist." % asdfiles[dk], file=sys.stderr)
+                  self.error_code = -1
+                  return outfile
+                else:
+                  try:
+                    self.pe_prior_asds[dk] = np.loadtxt(asdfiles[dk], comments=['%', '#'])
+                  except:
+                    print("Error... could not load file '%s'." % asdfiles[dk], file=sys.stderr)
+                    self.error_code = -1
+                    return outfile
+
+              asd = self.pe_prior_asds[dk]
+              asdv = [] # empty array
+              if 1. in self.freq_factors and (asd[0,0] <= freq and asd[-1,0] >= freq): # add ASD at 1f
+                idxf = (np.abs(asd[:,0]-freq)).argmin() # get value nearest required frequency
+                asdv.append(asd[idxf,1])
+              if 2. in self.freq_factors and (asd[0,0] <= 2.*freq and asd[-1,0] >= 2.*freq):
+                idxf = (np.abs(asd[:,0]-2.*freq)).argmin() # get value nearest required frequency
+                asdv.append(asd[idxf,1])
+
+              if len(asdv) > 0:
+                asdlist.append(np.array(asdv)**2/(obstimes[dk]*86400.))
+              else:
+                print("Error... frequency range in ASD file does not span pulsar frequency.", file=sys.stderr)
+                self.error_code = -1
+                return outfile
+
+
+          # get upper limit spectrum (harmonic mean of all the weighted spectra)
+          mspec = np.zeros(len(self.freq_factors))
+          for asdv in asdlist:
+            # interpolate frequencies
+            mspec = mspec + (1./asdv)
+
+          mspec = np.sqrt(1./mspec) # final weighted spectrum
+          ulspec = 10.8*mspec # scaled to given "averaged" 95% upper limit estimate
+
+          # set upper limits for creating priors
+          if self.pe_model_type == 'waveform':
+            if 1. in self.freq_factors:
+              if requls['C21'] == None:
+                requls['C21'] = ulspec[self.freq_factors.index(1.0)]
+            if 2. in self.freq_factors:
+              if requls['C22'] == None:
+                requls['C22'] = ulspec[self.freq_factors.index(2.0)]
+          if self.pe_model_type == 'source':
+            if len(self.freq_factors) == 1:
+              if requls['H0'] == None:
+                requls['H0'] = ulspec[0]
+            else:
+              if 1. in self.freq_factors and 2. in self.freq_factors:
+                # set both I21 and I31 to use the maximum of the 1f and 2f es
+                if requls['I21'] == None:
+                  requls['I21'] = np.max(ulspec)
+                if requls['I31'] == None:
+                  requls['I31'] = np.max(ulspec)
+
+      # get amplitude prior type
+      if self.pe_amplitude_prior_type not in ['fermidirac', 'uniform']:
+        print("Error... prior type must be 'fermidirac' or 'uniform'", file=sys.stderr)
+        self.error_code = -1
+        return outfile
+
+      # go through required upper limits and output a Fermi-Dirac prior that also has a 95% limit at that value
+      for ult in requls:
+        if requls[ult] == None:
+          print("Error... a required upper limit for '%s' is not available." % ult, file=sys.stderr)
+          self.error_code = -1
+          return outfile
+        else:
+          if self.pe_amplitude_prior_type == 'fermidirac':
+            try:
+              b, a = self.fermidirac_rsigma(requls[ult])
+            except:
+              print("Error... problem deriving the Fermi-Dirac prior for '%s'." % ult, file=sys.stderr)
+              self.error_code = -1
+              return outfile
+          else:
+            a = 0. # uniform prior bound at 0
+            b = requls[utl]/0.95 # stretch limit to ~100% bound
+
+          fp.write('%s\t%s\t%.16le\t%.16le\n' % (ult, self.pe_amplitude_prior_type, a, b))
+
+      fp.close()
     else:
       # make prior file from parameters
       try:
@@ -1306,7 +1488,7 @@ class knopeDAG(pipeline.CondorDAG):
       except:
         print("Error... could not write prior file '%s'" % outfile, file=sys.stderr)
         self.error_code = -1
-        return outfile, None
+        return outfile
 
       for prioritem in prior_options:
         ptype = prior_options[prioritem]['priortype']
@@ -1314,11 +1496,32 @@ class knopeDAG(pipeline.CondorDAG):
         if len(rangevals) != 2:
           print("Error... the ranges in the prior for '%s' are not set properly" % prioritem, file=sys.stderr)
           self.error_code = -1
-          return outfile, None
+          return outfile
         fp.write("%s\t%s\t%.9e\t%.9e\n" % (prioritem, ptype, rangevals[0], rangevals[1]))
       fp.close()
 
-    return outfile, createpriornode
+    return outfile
+
+
+  def fermidirac_rsigma(self, ul, mufrac=0.4, cdf=0.95):
+    """
+    Calculate the r and sigma parameter of the Fermi-Dirac distribution to be used.
+
+    Based on the definition of the distribution given in https://www.authorea.com/users/50521/articles/65214/_show_article
+    the distribution will be defined by a mu parameter at which the distribution has 50% of it's maximum
+    probability, and mufrac which is the fraction of mu defining the range from which the distribution falls from
+    97.5% of the maximum down to 2.5%. Using an upper limit defining a given cdf of the distribution the parameters
+    r and sigma will be returned.
+    """
+
+    Z = 7.33 # factor that defined the 97.5% -> 2.5% probability attenuation band around mu
+    r = 0.5*Z/mufrac # set r
+
+    # using the Fermi-Dirac CDF to find sigma given a distribution where the cdf value is found at ul
+    solution = optimize.root(lambda s: cdf*np.log(1.+np.exp(r))-np.log(1.+np.exp(-r))-(ul/s)-np.log(1.+np.exp((ul/s)-r)), ul)
+    sigma = solution.x[0]
+
+    return r, sigma
 
 
   def setup_heterodyne(self):
@@ -2218,6 +2421,35 @@ class knopeDAG(pipeline.CondorDAG):
     each segment.
     """
 
+    # check if segment file(s) is given
+    segfiles = self.get_config_option('segmentfind', 'seg_files', cftype='dict', allownone=True)
+    if segfiles is not None: # check if it is a dictionary
+      if segfiles is not None:
+        if ifo not in segfiles:
+          print("Error... No segment file given for '%s'" % ifo)
+          self.error_code = -1
+          return
+        else:
+          segfile = segfiles[ifo]
+    else: # check if is just a single segment file
+      segfile = self.get_config_option('segmentfind', 'seg_files', cftype='string', allownone=True)
+
+    if segfile is not None:
+      # check segment file exists
+      if not os.path.isfile(segfile):
+        print("Error... segment file '%s' does not exist." % segfile)
+        self.error_code = -1
+        return
+      else:
+        # copy segment file to the 'outfile' location
+        try:
+          shutil.copyfile(segfile, outfile)
+        except:
+          print("Error... could not copy segment file to location of '%s'." % outfile)
+          self.error_code = -1
+        return # exit function
+
+    # otherwise try and get the segment list
     # get server
     if self.config.has_option('segmentfind', 'server'):
       server = self.config.get('segmentfind', 'server')
@@ -2644,55 +2876,6 @@ class splinterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
 
 """
-  Job for deriving amplitude prior ranges from preprocessed pulsar data files
-"""
-class derivePriorJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
-  def __init__(self, execu, univ='local', accgroup=None, accuser=None, logdir=None, rundir=None):
-    self.__executable = execu
-    self.__universe = univ
-    pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
-    pipeline.AnalysisJob.__init__(self, None)
-
-    if accgroup != None: self.add_condor_cmd('accounting_group', accgroup)
-    if accuser != None: self.add_condor_cmd('accounting_group_user', accuser)
-
-    self.add_condor_cmd('getenv','True')
-
-    # set log files for job
-    if logdir != None:
-      self.set_stdout_file(os.path.join(logdir, 'deriveprior-$(cluster).out'))
-      self.set_stderr_file(os.path.join(logdir, 'deriveprior-$(cluster).err'))
-    else:
-      self.set_stdout_file('deriveprior-$(cluster).out')
-      self.set_stderr_file('deriveprior-$(cluster).err')
-
-    if rundir != None:
-      self.set_sub_file(os.path.join(rundir, 'deriveprior.sub'))
-    else:
-      self.set_sub_file('deriveprior.sub')
-
-    self.add_arg('$(macroconfigfile)') # macro for input configuration file
-
-
-class derivePriorNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
-  """
-  A derivePriorNode runs an instance of lalapps_knope_create_prior in a condor DAG.
-  """
-  def __init__(self,job):
-    """
-    job = A CondorDAGJob that can run an instance of lalapps_knope_create_prior
-    """
-    pipeline.CondorDAGNode.__init__(self,job)
-    pipeline.AnalysisNode.__init__(self)
-
-    self.__configfile = None
-
-  def set_config(self, configfile):
-    self.add_macro('macroconfigfile', configfile)
-    self.__configfile = configfile
-
-
-"""
   Job for concatenating processed (heterodyned or spectrally interpolated) files
 """
 class concatJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
@@ -2910,7 +3093,6 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__cor_file = None
     self.__input_files = None
     self.__outfile = None
-    self.__outXML = None
     self.__chunk_min = None
     self.__chunk_max = None
     self.__psi_bins = None
@@ -2931,6 +3113,13 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__tolerance = None
     self.__randomseed = None
 
+    self.__use_roq = False
+    self.__roq_ntraining = None
+    self.__roq_tolerance = None
+    self.__roq_uniform = False
+    self.__roq_output_weights = None
+    self.__roq_input_weights = None
+
     self.__temperature = None
     self.__ensmeble_walk = None
     self.__ensemble_stretch = None
@@ -2948,9 +3137,6 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__sample_files = None
     self.__sample_nlives = None
     self.__prior_cell = None
-
-    self.__nonfixedonly = False
-    self.__gzip = False
 
     # legacy inputs
     self.__oldChunks = None
@@ -2998,11 +3184,6 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set the output file
     self.add_var_opt('outfile', of)
     self.__outfile = of
-
-  def set_outXML(self, ox):
-    # set the output XML file
-    self.add_var_opt('outXML',ox)
-    self.__outXML = ox
 
   def set_chunk_min(self, cmin):
     # set the minimum chunk length
@@ -3159,16 +3340,6 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('prior-cell',pc)
     self.__prior_cell = pc
 
-  def set_gzip(self):
-    # set to gzip the output file
-    self.add_var_opt('gzip', '')
-    self.__gzip = True
-
-  def set_non_fixed_only(self):
-    # set to only output the non-fixed parameters
-    self.add_var_opt('non-fixed-only', '')
-    self.__nonfixedonly = True
-
   def set_OldChunks(self):
     # use the old data segmentation routine i.e. 30 min segments
     self.add_var_opt('oldChunks', '')
@@ -3214,6 +3385,84 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     curmacroval = curmacroval + ' --randomise ' + f
     self.add_macro('macroargs', curmacroval)
     self.__randomise = f
+
+  def set_roq(self):
+    # set to use Reduced Order Quadrature (ROQ)
+
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --roq'
+    self.add_macro('macroargs', curmacroval)
+    self.__use_roq = True
+
+  def set_roq_ntraining(self, f):
+    # set the number of training waveforms to use in ROQ basis generation
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --ntraining ' + f
+    self.add_macro('macroargs', curmacroval)
+    self.__roq_ntraining = f
+
+  def set_roq_tolerance(self, f):
+    # set the tolerance to use in ROQ basis generation
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --roq-tolerance ' + f
+    self.add_macro('macroargs', curmacroval)
+    self.__roq_tolerance = f
+
+  def set_roq_uniform(self):
+    # set to use uniform distributions when sprinkling (phase) parameters for ROQ training basis generation
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --roq-uniform'
+    self.add_macro('macroargs', curmacroval)
+    self.__roq_uniform = True
+
+  def set_roq_inputweights(self,f):
+    # set the location of the file containing pregenerated ROQ interpolants
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --input-weights ' + f
+    self.add_macro('macroargs', curmacroval)
+    self.__roq_input_weights = f
+
+  def set_roq_outputweights(self,f):
+    # set the location of the file to output ROQ interpolants
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --output-weights ' + f
+    self.add_macro('macroargs', curmacroval)
+    self.__roq_output_weights = f
+
+  def set_roq_chunkmax(self,f):
+    # set the maximum chunk length for if using ROQ (just adding using the chunk-max argument)
+    # add this into the generic 'macroargs' macro as it is not a value that is always required
+    if 'macroargs' in self.get_opts():
+      curmacroval = self.get_opts()['macroargs']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + ' --chunk-max ' + f
+    self.add_macro('macroargs', curmacroval)
+    self.__chunk_max = int(f)
 
 
 """
@@ -3369,10 +3618,12 @@ class nest2posNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set all the nested sample files
     self.__nest_files = nestfiles
 
-    # set header fo;e
-    header = nestfiles[0].rstrip('.gz')+'_params.txt'
-    self.__header = header
-    self.add_var_opt('headers', header)
+    fe = os.path.splitext(nestfiles[0])[-1].lower()
+    # set header file (only if not using hdf5 output)
+    if fe != '.hdf' and fe != '.h5':
+      header = nestfiles[0].rstrip('.gz')+'_params.txt'
+      self.__header = header
+      self.add_var_opt('headers', header)
     self.add_macro('macroinputfiles', ' '.join(nestfiles))
 
   def set_nest_live(self,nestlive):

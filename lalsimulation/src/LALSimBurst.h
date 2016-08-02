@@ -94,6 +94,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	REAL8 frequency,
 	REAL8 bandwidth,
 	REAL8 eccentricity,
+	REAL8 phase,
 	REAL8 int_hdot_squared,
 	REAL8 delta_t,
 	gsl_rng *rng

@@ -1098,8 +1098,6 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   REAL8 filtphase=0.;
   UINT4 position=0, middle=0;
 
-  REAL8 lyr_pc = LAL_PC_SI/LAL_LYR_SI; /* light years per parsec */
-
   REAL8 om = PulsarGetREAL8ParamOrZero( hetParams.het, "WAVE_OM" ), omu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "WAVE_OM" );
 
   /* set the position, frequency and whitening epochs if not already set */
@@ -1142,22 +1140,16 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     baryinput.site.location[1] = hetParams.detector.location[1]/LAL_C_SI;
     baryinput.site.location[2] = hetParams.detector.location[2]/LAL_C_SI;
 
-    /* set 1/distance using parallax or distance value is given (try parallax first) - in 1/secs */
+    /* set 1/distance using parallax value if given - in 1/secs */
     if( hetParams.heterodyneflag != 2 && hetParams.heterodyneflag != 4 ){ /* not
       using updated params */
       REAL8 px = PulsarGetREAL8ParamOrZero( hetParams.het, "PX" );
-      REAL8 dist = PulsarGetREAL8ParamOrZero( hetParams.het, "DIST" );
-
-      if ( px != 0. ){ baryinput.dInv = ( 3600. / LAL_PI_180 )*px / (LAL_C_SI*lyr_pc); }
-      else if ( dist != 0. ){ baryinput.dInv = 1./(dist*1e3*LAL_C_SI*lyr_pc); }
+      if ( px != 0. ){ baryinput.dInv = px*(LAL_C_SI/LAL_AU_SI); }
       else { baryinput.dInv = 0.; } /* no parallax */
     }
     else{                                /* using updated params */
       REAL8 pxu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "PX" );
-      REAL8 distu = PulsarGetREAL8ParamOrZero( hetParams.hetUpdate, "DIST" );
-
-      if ( pxu != 0. ){ baryinput.dInv = ( 3600. / LAL_PI_180 )*pxu / (LAL_C_SI*lyr_pc); }
-      else if( distu != 0. ){ baryinput.dInv = 1./(distu*1e3*LAL_C_SI*lyr_pc); }
+      if ( pxu != 0. ){ baryinput.dInv = pxu*(LAL_C_SI/LAL_AU_SI); }
       else { baryinput.dInv = 0.; } /* no parallax */
     }
   }

@@ -73,6 +73,7 @@ MOSTLYCLEANFILES = \
 	H-*_H1*.sft \
 	LFT_C8.dat \
 	LFT_R4.dat \
+	LatticeTilingTest.fits \
 	OutHistogram.asc \
 	OutHough.asc \
 	TEMPOcomparison.par \

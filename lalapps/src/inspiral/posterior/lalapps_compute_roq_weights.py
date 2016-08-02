@@ -241,3 +241,9 @@ fnodes_quadratic_file = open(fnodes_quadratic_path, "wb")
 
 fnodes_quadratic.tofile(fnodes_quadratic_file)
 fnodes_quadratic_file.close()
+
+tcs_file_path = os.path.join(options.outpath,"tcs.dat")
+tcs_file = open(tcs_file_path, "wb")
+
+tcs.tofile(tcs_file)
+tcs_file.close()

@@ -1087,11 +1087,10 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember ( RA,	STRING, 0, DEPRECATED, "Use --Alpha instead" );
   XLALRegisterUvarMember ( Dec, STRING, 0, DEPRECATED, "Use --Delta instead");
 
-  XLALRegisterUvarMember ( internalRefTime, EPOCH, 0, DEPRECATED, "HAS NO EFFECT and should no longer be used: XLALComputeFstat() now always uses midtime internally ... ");
-  XLALRegisterUvarMember ( dopplermax,      REAL8, 0, DEPRECATED, "HAS NO EFFECT and should no longer be used: maximum Doppler shift is accounted for internally");
-
   // ---------- obsolete and unsupported options ----------
-  XLALRegisterUvarMember(outputLogPrintf, STRING, 0,  DEFUNCT, "DEFUNCT; used to send all output from LogPrintf statements to this file");
+  XLALRegisterUvarMember ( outputLogPrintf, STRING,0, DEFUNCT, "DEFUNCT: Used to send all output from LogPrintf statements to this file");
+  XLALRegisterUvarMember ( internalRefTime, EPOCH, 0, DEFUNCT, "Should no longer be used: XLALComputeFstat() now always uses midtime internally ... ");
+  XLALRegisterUvarMember ( dopplermax,      REAL8, 0, DEFUNCT, "Should no longer be used: maximum Doppler shift is accounted for internally");
 
   return XLAL_SUCCESS;
 
@@ -1495,7 +1494,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
           oLGX_p = &oLGX[0];
         } // if uvar->oLGX != NULL
 
-      XLAL_CHECK ( (cfg->BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar->Fstar0, oLGX_p, uvar->BSGLlogcorr )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (cfg->BSGLsetup = XLALCreateBSGLSetup ( numDetectors, uvar->Fstar0, oLGX_p, uvar->BSGLlogcorr, 1 )) != NULL, XLAL_EFUNC ); // coherent F-stat: NSeg=1
     } // if uvar_computeBSGL
 
   return XLAL_SUCCESS;

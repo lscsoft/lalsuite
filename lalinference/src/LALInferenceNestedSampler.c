@@ -19,9 +19,9 @@
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceProposal.h>
-#ifdef HAVE_LIBLALXML
-#include <lal/LALInferenceXML.h>
-#endif
+#include <lal/LALInferenceHDF5.h>
+#include <lal/LALInferencePriorVolumes.h>
+
 #include "logaddexp.h"
 
 #define PROGRAM_NAME "LALInferenceNestedSampler.c"
@@ -48,7 +48,7 @@ static int __chainfile_iter;
 typedef struct tagNSintegralState
 {
   UINT4 size,iteration;
-  REAL8 *logZarray,
+  REAL8Vector *logZarray,
 	*oldZarray,
 	*Harray,
 	*logwarray,
@@ -58,10 +58,227 @@ typedef struct tagNSintegralState
 
 static struct itimerval checkpoint_timer;
 
+/** Utility functions for the resume functionality */
 /** Write the current state to a checkpoint file the given filename */
-static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s);
 /** Read the given filename to populate a given LALInferenceRunState and NSintegralState */
+#ifdef HAVE_HDF5
+static int _saveNSintegralStateH5(LALH5File *group, NSintegralState *s);
+static int _saveNSintegralStateH5(LALH5File *group, NSintegralState *s)
+{
+  XLALH5FileAddScalarAttribute(group, "iteration", &(s->iteration), LAL_U4_TYPE_CODE );
+  XLALH5FileWriteREAL8Vector(group, "logZarray", s->logZarray);
+  XLALH5FileWriteREAL8Vector(group, "oldZarray", s->oldZarray);
+  XLALH5FileWriteREAL8Vector(group, "Harray", s->Harray);
+  XLALH5FileWriteREAL8Vector(group, "logwarray", s->logwarray);
+  XLALH5FileWriteREAL8Vector(group, "logtarray", s->logtarray);
+  XLALH5FileWriteREAL8Vector(group, "logt2array", s->logt2array);
+  return(0);
+}
+
+static int _loadNSintegralStateH5(LALH5File *group, NSintegralState *s);
+static int _loadNSintegralStateH5(LALH5File *group, NSintegralState *s)
+{
+  XLALH5FileQueryScalarAttributeValue(&(s->iteration), group, "iteration");
+  s->logZarray = XLALH5FileReadREAL8Vector(group, "logZarray");
+  s->oldZarray = XLALH5FileReadREAL8Vector(group, "oldZarray");
+  s->Harray = XLALH5FileReadREAL8Vector(group, "Harray");
+  s->logwarray = XLALH5FileReadREAL8Vector(group, "logwarray");
+  s->logtarray = XLALH5FileReadREAL8Vector(group, "logtarray");
+  s->logt2array = XLALH5FileReadREAL8Vector(group, "logt2array");
+  s->size = s->logZarray->length;
+  return(0);
+}
+
+
+static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NSintegralState *s);
+static int WriteNSCheckPointH5(char *filename, LALInferenceRunState *runState, NSintegralState *s);
+
+static int WriteNSCheckPointH5(char *filename, LALInferenceRunState *runState, NSintegralState *s)
+{
+  LALH5File *h5file = XLALH5FileOpen(filename,"w");
+  if(!h5file)
+  {
+    fprintf(stderr,"Unable to save resume file %s!\n",filename);
+    return(1);
+  }
+  UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
+  LALH5File *group = XLALH5GroupOpen(h5file, "lalinferencenest_checkpoint");
+  if(!group) XLAL_ERROR(XLAL_EFAILED,"Unable to read group lalinferencenest_checkpoint\n");
+  int retcode = _saveNSintegralStateH5(group,s);
+  if(retcode) XLAL_ERROR(XLAL_EFAILED,"Unable to save integral state\n");
+  LALInferenceH5VariablesArray2Group(group, runState->livePoints, Nlive, "live_points");
+  INT4 N_output_array=0;
+  if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) N_output_array=LALInferenceGetINT4Variable(runState->algorithmParams,"N_outputarray");
+  if(N_output_array>0)
+  {
+    LALInferenceVariables **output_array=NULL;
+    output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+    LALInferenceH5VariablesArray2Group(group, output_array, N_output_array, "past_chain");
+    XLALH5FileAddScalarAttribute(group, "N_outputarray", &N_output_array, LAL_I4_TYPE_CODE);
+  }
+  
+  XLALH5FileClose(group);
+  XLALH5FileClose(h5file);
+  return(retcode);
+}
+
+static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NSintegralState *s)
+{
+  int retcode;
+  LALH5File *h5file;
+  UINT4 Nlive;
+  if( access( filename, F_OK ) == -1 ) return(1);
+  XLAL_TRY(h5file = XLALH5FileOpen(filename,"r"),retcode);
+  if(retcode!=XLAL_SUCCESS) return(retcode);
+  LALH5File *group;
+  XLAL_TRY(group = XLALH5GroupOpen(h5file,"lalinferencenest_checkpoint"),retcode);
+  if(retcode!=XLAL_SUCCESS) return(retcode);
+  UINT4 N_outputarray;
+  LALInferenceVariables **outputarray;
+  XLALH5FileQueryScalarAttributeValue(&N_outputarray, group, "N_outputarray");
+  if(!h5file)
+  {
+    fprintf(stderr,"Unable to load resume file %s!\n",filename);
+    return(1);
+  }
+  printf("restoring nested sampling integral state\n");
+  retcode=_loadNSintegralStateH5(group,s);
+  if(retcode){
+    fprintf(stderr,"Unable to read nested sampling state - unable to resume!\n");
+    XLALH5FileClose(h5file);
+    return 1;
+  }
+  LALH5File *liveGroup = XLALH5GroupOpen(group,"live_points");
+  retcode = LALInferenceH5GroupToVariablesArray(liveGroup , &(runState->livePoints), &Nlive );
+  printf("restored %i live points\n",s->size);
+  XLALH5FileClose(liveGroup);
+  if(N_outputarray>0)
+  {
+    printf("restoring %i past iterations\n",N_outputarray);
+    LALH5File *outputGroup = XLALH5GroupOpen(group, "past_chain");
+    retcode |= LALInferenceH5GroupToVariablesArray(outputGroup, &outputarray, &N_outputarray);
+    LALInferenceAddVariable(runState->algorithmParams,"N_outputarray",&N_outputarray,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->algorithmParams,"outputarray",&outputarray,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
+    XLALH5FileClose(outputGroup);
+  }
+  XLALH5FileClose(group);
+  XLALH5FileClose(h5file);
+  printf("done restoring\n");
+  return(retcode);
+  
+}
+
+#else
+static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s);
 static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s);
+
+static int _saveNSintegralState(FILE *fp, NSintegralState *s);
+static int _saveNSintegralState(FILE *fp, NSintegralState *s)
+{
+  UINT4 N=s->size;
+  if(1!=fwrite(&N,sizeof(UINT4),1,fp)) return 1;
+  if(1!=fwrite(&(s->iteration),sizeof(s->iteration),1,fp)) return 1;
+  if(N!=fwrite(s->logZarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fwrite(s->oldZarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fwrite(s->Harray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fwrite(s->logwarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fwrite(s->logtarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fwrite(s->logt2array->data,sizeof(REAL8),N,fp)) return 1;
+  return 0;
+}
+static int _loadNSintegralState(FILE *fp, NSintegralState *s);
+static int _loadNSintegralState(FILE *fp, NSintegralState *s)
+{
+  if(1!=fread(& (s->size) , sizeof(UINT4), 1, fp)) return 1;
+  UINT4 N=s->size;
+  s->logZarray = XLALCreateREAL8Vector(N);
+  s->oldZarray = XLALCreateREAL8Vector(N);
+  s->Harray = XLALCreateREAL8Vector(N);
+  s->logwarray = XLALCreateREAL8Vector(N);
+  s->logtarray = XLALCreateREAL8Vector(N);
+  s->logt2array = XLALCreateREAL8Vector(N);
+  if(1!=fread(&(s->iteration),sizeof(UINT4),1,fp)) return 1;
+  if(N!=fread(s->logZarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fread(s->oldZarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fread(s->Harray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fread(s->logwarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fread(s->logtarray->data,sizeof(REAL8),N,fp)) return 1;
+  if(N!=fread(s->logt2array->data,sizeof(REAL8),N,fp)) return 1;
+  return 0;
+}
+
+static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
+{
+  FILE *progfile=fopen(filename,"w");
+  if(!progfile)
+  {
+    fprintf(stderr,"Unable to save resume file %s!\n",filename);
+    return 1;
+  }
+  else
+  {
+    if(setvbuf(progfile,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
+      fprintf(stderr,"Warning: Unable to set resume file buffer!");
+    UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
+    int retcode= _saveNSintegralState(progfile,s);
+    if(retcode) {
+      fprintf(stderr,"Unable to write nested sampling state - will not be able to resume!\n");
+      fclose(progfile);
+      return 1;
+    }
+    LALInferenceWriteVariablesArrayBinary(progfile,runState->livePoints, Nlive);
+    INT4 N_output_array=0;
+    if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) N_output_array=LALInferenceGetINT4Variable(runState->algorithmParams,"N_outputarray");
+    fwrite(&N_output_array,sizeof(INT4),1,progfile);
+    if(N_output_array!=0 )
+    {
+      LALInferenceVariables **output_array=NULL;
+      output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+      LALInferenceWriteVariablesArrayBinary(progfile,output_array, N_output_array);
+      fprintf(stderr,"Resume --> wrote %d past chain samples\n\n",N_output_array);
+    }
+    fclose(progfile);
+    return 0;
+  }
+}
+
+static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
+{
+  FILE *progfile=fopen(filename,"r");
+  if(!progfile)
+  {
+    fprintf(stderr,"Unable to load resume file %s!\n",filename);
+    return 1;
+  }
+  else
+  {
+    UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
+    int retcode=_loadNSintegralState(progfile,s);
+    if(retcode){
+      fprintf(stderr,"Unable to read nested sampling state - unable to resume!\n");
+      fclose(progfile);
+      return 1;
+    }
+    //if(retcode) return 1;
+    LALInferenceReadVariablesArrayBinary(progfile,runState->livePoints,Nlive);
+    INT4 N_output_array;
+    fread(&N_output_array,sizeof(INT4),1,progfile);
+    LALInferenceVariables **output_array=NULL;
+    if(N_output_array!=0){
+      output_array=XLALCalloc(N_output_array,sizeof(LALInferenceVariables *));
+      fprintf(stderr,"Resume --> read %d past chain samples\n",N_output_array);
+      LALInferenceReadVariablesArrayBinary(progfile,output_array,N_output_array);
+      if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) LALInferenceRemoveVariable(runState->algorithmParams,"N_outputarray");
+      if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")) LALInferenceRemoveVariable(runState->algorithmParams,"outputarray");
+      LALInferenceAddVariable(runState->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(runState->algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
+    }
+    fclose(progfile);
+    return 0;
+  }
+}
+
+#endif
 
 /** Sync the live points to the differential evolution buffer */
 static int syncLivePointsDifferentialPoints(LALInferenceRunState *state, LALInferenceThreadState *thread);
@@ -100,6 +317,20 @@ static REAL8 mean(REAL8 *array,int N);
 /** Calculate covariance matrix from a collection of live points */
 static void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4 Nlive);
 
+/* log( exp(a) - exp(b) ) */
+static double logsubexp(double a, double b);
+static double logsubexp(double a, double b)
+{
+		if(b>a)
+		{
+				fprintf(stderr,"Cannot take log of negative number %lf - %lf = %lf !\n",exp(a),exp(b),exp(a)-exp(b));
+				return -INFINITY;
+		}
+		else
+		{
+				return a + log1p(-exp(b-a));
+		}
+}
 
 static void SetupEigenProposals(LALInferenceRunState *runState);
 
@@ -107,25 +338,25 @@ static void SetupEigenProposals(LALInferenceRunState *runState);
  * Update the internal state of the integrator after receiving the lowest logL
  * value logL
  */
-static REAL8 incrementEvidenceSamples(LALInferenceRunState *runState, REAL8 logL, NSintegralState *s);
-static REAL8 incrementEvidenceSamples(LALInferenceRunState *runState, REAL8 logL, NSintegralState *s)
+static REAL8 incrementEvidenceSamples(gsl_rng *GSLrandom, UINT4 Nlive, REAL8 logL, NSintegralState *s);
+static REAL8 incrementEvidenceSamples(gsl_rng *GSLrandom, UINT4 Nlive, REAL8 logL, NSintegralState *s)
 {
   REAL8 Wtarray[s->size];
-  UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
+  //UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   /* Update evidence array */
   for(UINT4 j=0;j<s->size;j++){
-    Wtarray[j]=s->logwarray[j]+logL+logaddexp(0,s->logt2array[j]*s->logtarray[j])-log(2.0);
-    s->logZarray[j]=logaddexp(s->logZarray[j],Wtarray[j]);
-    s->Harray[j]= exp(Wtarray[j]-s->logZarray[j])*logL
-    + exp(s->oldZarray[j]-s->logZarray[j])*(s->Harray[j]+s->oldZarray[j])-s->logZarray[j];
-    REAL8 tmp=s->logtarray[j];
-    s->logtarray[j]=s->logt2array[j];
-    s->logt2array[j]=tmp;
-    s->logtarray[j]=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
-    s->logwarray[j]+=s->logtarray[j];
+    Wtarray[j]=s->logwarray->data[j]+logL+logsubexp(0,s->logt2array->data[j] + s->logtarray->data[j])-log(2.0);
+    s->logZarray->data[j]=logaddexp(s->logZarray->data[j],Wtarray[j]);
+    s->Harray->data[j]= exp(Wtarray[j]-s->logZarray->data[j])*logL
+    + exp(s->oldZarray->data[j]-s->logZarray->data[j])*(s->Harray->data[j]+s->oldZarray->data[j])-s->logZarray->data[j];
+    REAL8 tmp=s->logtarray->data[j];
+    s->logtarray->data[j]=s->logt2array->data[j];
+    s->logt2array->data[j]=tmp;
+    s->logtarray->data[j]=LALInferenceNSSample_logt(Nlive,GSLrandom);
+    s->logwarray->data[j]+=s->logtarray->data[j];
   }
   s->iteration++;
-  return(mean(s->logZarray,s->size));
+  return(mean(s->logZarray->data,s->logZarray->length));
 }
 
 static void printAdaptiveJumpSizes(FILE *file, LALInferenceThreadState *threadState);
@@ -156,19 +387,19 @@ static NSintegralState *initNSintegralState(UINT4 Nruns, UINT4 Nlive)
   NSintegralState *s=XLALMalloc(sizeof(NSintegralState));
   s->iteration=0;
   s->size=Nruns;
-  s->logZarray = XLALCalloc(Nruns,sizeof(REAL8));
-  s->oldZarray = XLALCalloc(Nruns,sizeof(REAL8));
-  s->Harray = XLALCalloc(Nruns,sizeof(REAL8));
-  s->logwarray = XLALCalloc(Nruns,sizeof(REAL8));
-  s->logtarray=XLALCalloc(Nruns,sizeof(REAL8));
-  s->logt2array=XLALCalloc(Nruns,sizeof(REAL8));
-  REAL8 logw=log(1.0-exp(-1.0/Nlive));
+  s->logZarray = XLALCreateREAL8Vector(Nruns);
+  s->oldZarray = XLALCreateREAL8Vector(Nruns);
+  s->Harray = XLALCreateREAL8Vector(Nruns);
+  s->logwarray = XLALCreateREAL8Vector(Nruns);
+  s->logtarray=XLALCreateREAL8Vector(Nruns);
+  s->logt2array=XLALCreateREAL8Vector(Nruns);
+  REAL8 logw=0;
 
   if(s->logZarray==NULL || s->Harray==NULL || s->oldZarray==NULL || s->logwarray==NULL)
   {fprintf(stderr,"Unable to allocate RAM\n"); exit(-1);}
-  for(UINT4 i=0;i<Nruns;i++)  {s->logwarray[i]=logw; s->logZarray[i]=-DBL_MAX;
-    s->oldZarray[i]=-DBL_MAX; s->Harray[i]=0.0;s->logtarray[i]=-1.0/Nlive;
-    s->logt2array[i]=-1.0/Nlive;
+  for(UINT4 i=0;i<Nruns;i++)  {s->logwarray->data[i]=logw; s->logZarray->data[i]=-DBL_MAX;
+    s->oldZarray->data[i]=-DBL_MAX; s->Harray->data[i]=0.0;s->logtarray->data[i]=-1.0/Nlive;
+    s->logt2array->data[i]=-1.0/Nlive;
   }
   return s;
 }
@@ -439,11 +670,7 @@ void LALInferenceNestedSamplingAlgorithmInit(LALInferenceRunState *runState)
   REAL8 temp=1.0;
   LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
-#ifdef HAVE_LIBLALXML
   runState->logsample=LALInferenceLogSampleToArray;
-#else
-  runState->logsample=LALInferenceLogSampleToFile;
-#endif
 
   /* Number of live points */
   ppt=LALInferenceGetProcParamVal(commandLine,"--Nlive");
@@ -516,7 +743,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   UINT4 iter=0,i,j,minpos;
   /* Single thread here */
   LALInferenceThreadState *threadState = runState->threads[0];
-
+  UINT4 HDFOUTPUT=1;
   UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   UINT4 Nruns=100;
   REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*logtarray;
@@ -534,13 +761,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   UINT4 samplePrior=0; //If this flag is set to a positive integer, code will just draw this many samples from the prior
   ProcessParamsTable *ppt=NULL;
 
-  /* Default sample logging functions with and without XML */
-  #ifdef HAVE_LIBLALXML
-  char *outVOTable=NULL;
   if(!runState->logsample) runState->logsample=LALInferenceLogSampleToArray;
-  #else
-  if(!runState->logsample) runState->logsample=LALInferenceLogSampleToFile;
-  #endif
 
   if ( !LALInferenceCheckVariable(runState->algorithmParams, "logZnoise" ) ){
     logZnoise=LALInferenceNullLogLikelihood(runState->data);
@@ -588,26 +809,31 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   ppt = NULL;
   ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
   if(!ppt){
-    fprintf(stderr,"Must specify --outfile <filename.dat>\n");
-    exit(1);
+      fprintf(stderr,"Must specify --outfile <filename.hdf5>\n");
+      exit(1);
   }
   char *outfile=ppt->value;
+  /* Check if the output file has hdf5 extension */
+  if(strstr(outfile,".h5") || strstr(outfile,".hdf")) HDFOUTPUT=1;
+  else HDFOUTPUT=0;
+  
+#ifndef HAVE_HDF5
+  if(HDFOUTPUT)
+  {
+      fprintf(stderr,"Error: LALSuite was compiled without HDF5 support. Unable to write HDF5 output files\n");
+      exit(1);
+  }
+#endif
+  
+  double logvolume=0.0;
+  if ( LALInferenceCheckVariable( runState->livePoints[0], "chirpmass" ) ){
+    /* If a cbc run, calculate the mass-distance volume and store it to file*/ 
+    /* Do it before algorithm starts so that we can kill the run and still get this */
+    logvolume=log(LALInferenceMassDistancePriorVolume(runState));
+  }
 
   if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
     displayprogress=1;
-
-  #ifdef HAVE_LIBLALXML
-  ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outxml");
-  if(!ppt){
-    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
-  }
-  if(!ppt){
-    fprintf(stderr,"Can specify --outXML <filename.dat> for VOTable output\n");
-  }
-  else{
-    outVOTable=ppt->value;
-  }
-  #endif
 
   minpos=0;
 
@@ -637,21 +863,16 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   /* Check for an interrupted run */
   char resumefilename[FILENAME_MAX];
   sprintf(resumefilename,"%s_resume",outfile);
-  char outfilebackup[FILENAME_MAX];
-  sprintf(outfilebackup,"%s.bak",outfile);
   int retcode=1;
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume")){
+#ifdef HAVE_HDF5
+      retcode=ReadNSCheckPointH5(resumefilename,runState,s);
+#else
       retcode=ReadNSCheckPoint(resumefilename,runState,s);
+#endif
       if(retcode==0){
           for(i=0;i<Nlive;i++) logLikelihoods[i]=*(REAL8 *)LALInferenceGetVariable(runState->livePoints[i],"logL");
           iter=s->iteration;
-          /* back up the old file and get ready to append to it from the right place */
-          char commandline[1024];
-          sprintf(commandline,"cp %s %s",outfile,outfilebackup);
-          system(commandline);
-          sprintf(commandline,"head -n %i %s > %s",iter+1,outfilebackup,outfile);
-          system(commandline);
-          fpout=fopen(outfile,"a");
       }
       /* Install a periodic alarm that will trigger a checkpoint */
       int sigretcode=0;
@@ -663,7 +884,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
       /* Condor sends SIGUSR2 to checkpoint and continue */
       sigretcode=sigaction(SIGUSR2,&sa,NULL);
       if(sigretcode!=0) fprintf(stderr,"WARNING: Cannot establish checkpoint on SIGUSR2.\n");
-      checkpoint_timer.it_interval.tv_sec=4*3600; /* Default timer 4 hours */
+      checkpoint_timer.it_interval.tv_sec=30*60; /* Default timer 30 mins */
       checkpoint_timer.it_interval.tv_usec=0;
       checkpoint_timer.it_value=checkpoint_timer.it_interval;
       setitimer(ITIMER_VIRTUAL,&checkpoint_timer,NULL);
@@ -684,29 +905,25 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         fprintf(stdout,"Unable to open resume file %s. Starting anew.\n",resumefilename);
     /* Sprinkle points */
     LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
+    int sprinklewarning=0;
     for(i=0;i<Nlive;i++) {
-	threadState->currentParams=runState->livePoints[i];
-	do
-    {
-        runState->evolve(runState);
-    	logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,threadState->model);
-    }while(isnan(logLikelihoods[i]));
-	if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
+	    threadState->currentParams=runState->livePoints[i];
+	    j=0;
+	    do
+	    {
+		    runState->evolve(runState);
+		    logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,threadState->model);
+		    if(!sprinklewarning && j++==100) { fprintf(stderr,"Warning: having difficulty sampling prior, check your prior bounds\n"); sprinklewarning=1;}
+	    }while(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i]));
+	    if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
     }
-    fpout=fopen(outfile,"w");
-  }
-  if(fpout==NULL) {fprintf(stderr,"Unable to open output file %s!\n",outfile); exit(1);}
-  else{
-    if(setvbuf(fpout,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
-      fprintf(stderr,"Warning: Unable to set output file buffer!");
-    LALInferenceAddVariable(runState->algorithmParams,"outfile",&fpout,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_FIXED);
   }
 
-  logZarray=s->logZarray;
-  logtarray=s->logtarray;
-  oldZarray=s->oldZarray;
-  logwarray=s->logwarray;
-  Harray=s->Harray;
+  logZarray=s->logZarray->data;
+  logtarray=s->logtarray->data;
+  oldZarray=s->oldZarray->data;
+  logwarray=s->logwarray->data;
+  Harray=s->Harray->data;
 
   /* Find maximum likelihood and sanity check */
   for(i=0;i<Nlive;i++)
@@ -714,7 +931,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     logLtmp=logLikelihoods[i];
     logLmax=logLtmp>logLmax? logLtmp : logLmax;
-    if(isnan(logLikelihoods[i])) {
+    if(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i])) {
       fprintf(stderr,"Detected logL[%i]=%lf! Sanity checking...\n",i,logLikelihoods[i]);
       if(LALInferenceSanityCheck(runState))
 	exit(1);
@@ -740,13 +957,16 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     printAdaptiveJumpSizes(stdout, threadState);
   }
   /* Write out names of parameters */
-  FILE *lout=NULL;
-  char param_list[FILENAME_MAX];
-  sprintf(param_list,"%s_params.txt",outfile);
-  lout=fopen(param_list,"w");
+  if(!HDFOUTPUT)
+  {
+      FILE *lout=NULL;
+      char param_list[FILENAME_MAX];
+      sprintf(param_list,"%s_params.txt",outfile);
+      lout=fopen(param_list,"w");
+      LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
+      fclose(lout);
+  }
   minpos=0;
-  LALInferenceFprintParameterHeaders(lout,runState->livePoints[0]);
-  fclose(lout);
   threadState->currentParams=currentVars;
   fprintf(stdout,"Starting nested sampling loop!\n");
   /* Iterate until termination condition is met */
@@ -760,12 +980,12 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     logLmin=logLikelihoods[minpos];
     if(samplePrior) logLmin=-DBL_MAX;
 
-    logZnew=incrementEvidenceSamples(runState, logLikelihoods[minpos], s);
+    logZnew=incrementEvidenceSamples(runState->GSLrandom, Nlive, logLikelihoods[minpos], s);
     //deltaZ=logZnew-logZ; - set but not used
     H=mean(Harray,Nruns);
     logZ=logZnew;
     for(j=0;j<Nruns;j++) oldZarray[j]=logZarray[j];
-    if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
+    if(runState->logsample) runState->logsample(runState->algorithmParams,runState->livePoints[minpos]);
     UINT4 itercounter=0;
 
     /* Generate a new live point */
@@ -809,19 +1029,24 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   if(__ns_saveStateFlag!=0)
     {
       if(__ns_exitFlag) fprintf(stdout,"Saving state to %s.\n",resumefilename);
+#ifdef HAVE_HDF5
+
+      WriteNSCheckPointH5(resumefilename,runState,s);
+#else
       WriteNSCheckPoint(resumefilename,runState,s);
+#endif
       fflush(fpout);
       __ns_saveStateFlag=0;
     }
    /* Have we been told to quit? */
   if(__ns_exitFlag) {
-    fclose(fpout);
     exit(0);
   }
 
   /* Update the proposal */
   if(!(iter%(Nlive/10))) {
     /* Update the covariance matrix */
+    //WriteNSCheckPointH5(resumefilename, runState, s);
     if ( LALInferenceCheckVariable( threadState->proposalArgs,"covarianceMatrix" ) ){
       SetupEigenProposals(runState);
     }
@@ -863,75 +1088,79 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   }
   /* final corrections */
   for(i=0;i<Nlive;i++){
-    logZ=logaddexp(logZ,logLikelihoods[i]+logw);
-    for(j=0;j<Nruns;j++){
-      //logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
-      logZarray[j]=logaddexp(logZarray[j],logLikelihoods[i]+logwarray[j]-log(Nlive));
-    }
-
-    if(runState->logsample) runState->logsample(runState,runState->livePoints[i]);
-
+    logZ=incrementEvidenceSamples(runState->GSLrandom, Nlive-i, logLikelihoods[i], s);
+    if(runState->logsample) runState->logsample(runState->algorithmParams,runState->livePoints[i]);
   }
-
-    /* Write out the evidence */
-    fclose(fpout);
-    char bayesfile[FILENAME_MAX];
-    sprintf(bayesfile,"%s_B.txt",outfile);
-    fpout=fopen(bayesfile,"w");
-    fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
-    fclose(fpout);
+  
+    LALInferenceVariables **output_array=NULL;
+    UINT4 N_output_array=0;
+    if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
+            &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
+    {
+            output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+            N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
+    }
     double logB=logZ-logZnoise;
     /* Pass output back through algorithmparams */
     LALInferenceAddVariable(runState->algorithmParams,"logZ",(void *)&logZ,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->algorithmParams,"logB",(void *)&logB,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->algorithmParams,"logLmax",(void *)&logLmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
-    #ifdef HAVE_LIBLALXML
-    /* Write out the XML if requested */
-    LALInferenceVariables **output_array=NULL;
-
-    UINT4 N_output_array=0;
-    if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")
-      &&LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray") )
+    /* Write out the evidence */
+    if(!HDFOUTPUT)
     {
-      output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-      N_output_array=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"N_outputarray");
+        fpout = fopen(outfile,"w");
+        for(i=0;i<N_output_array;i++) LALInferencePrintSample(fpout,output_array[i]);
+        fclose(fpout);
+    
+        char bayesfile[FILENAME_MAX];
+        sprintf(bayesfile,"%s_B.txt",outfile);
+        fpout=fopen(bayesfile,"w");
+        fprintf(fpout,"%lf %lf %lf %lf\n",logZ-logZnoise,logZ,logZnoise,logLmax);
+        fclose(fpout);
+    
+        
+     
     }
-    if(output_array && outVOTable && N_output_array>0){
-      xmlNodePtr votable=XLALInferenceVariablesArray2VOTTable(output_array, N_output_array, "Nested Samples");
-      xmlNewProp(votable, CAST_CONST_XMLCHAR("utype"), votype_nested_samples); /*CAST_CONST_XMLCHAR("lalinference:nestedsampling:samples")); */
+    /* Write HDF5 file */
+    if(HDFOUTPUT)
+    {
+      
+      LALH5File *h5file=XLALH5FileOpen(outfile, "w");
+      // Create group heirarchy 
+      char runID[256]="";
+      if((ppt=LALInferenceGetProcParamVal(runState->commandLine,"--runid")))
+        snprintf(runID,255,"%s_%s","lalinference_nest",ppt->value);
+      else
+        snprintf(runID,255,"lalinference_nest");
 
-    xmlNodePtr stateResource=XLALInferenceStateVariables2VOTResource(runState, "Run State Configuration");
+      LALH5File *groupPtr = LALInferenceH5CreateGroupStructure(h5file, "lalinference", runID);
+      /* Create run identifier group */
+      LALInferenceH5VariablesArray2Group(groupPtr, output_array, N_output_array, LALInferenceHDF5NestedSamplesGroupName);
+      /* TODO: Write metadata */
+      XLALH5FileAddScalarAttribute(groupPtr, "log_evidence", &logZ, LAL_D_TYPE_CODE);
+      XLALH5FileAddScalarAttribute(groupPtr, "log_bayes_factor", &logB, LAL_D_TYPE_CODE);
+      XLALH5FileAddScalarAttribute(groupPtr, "information_nats", &H, LAL_D_TYPE_CODE);
+      XLALH5FileAddScalarAttribute(groupPtr, "log_noise_evidence", &logZnoise, LAL_D_TYPE_CODE );
+      XLALH5FileAddScalarAttribute(groupPtr, "log_max_likelihood", &logLmax , LAL_D_TYPE_CODE);
+      XLALH5FileAddScalarAttribute(groupPtr, "number_live_points", &Nlive, LAL_U4_TYPE_CODE);
+      XLALH5FileAddScalarAttribute(groupPtr, "log_prior_volume", &logvolume, LAL_D_TYPE_CODE);
 
-    xmlNodePtr nestResource=XLALCreateVOTResourceNode("lalinference:nestedsampling","Nested sampling run",votable);
-
-    if(stateResource)
-      xmlAddChild(nestResource,stateResource);
-
-
-    char *xmlString = XLALCreateVOTStringFromTree ( nestResource );
-
-    /* Write to disk */
-    fpout=fopen(outVOTable,"w");
-    fprintf(fpout,"%s",xmlString);
-    fclose(fpout);
-
-
-  }
-  if(output_array) {
-    for(i=0;i<N_output_array;i++){
-      LALInferenceClearVariables(output_array[i]);
-      XLALFree(output_array[i]);
+      XLALH5FileClose(h5file);
     }
-    XLALFree(output_array);
-  }
-  #endif
-
+  
+    if(output_array) {
+      for(i=0;i<N_output_array;i++){
+        LALInferenceClearVariables(output_array[i]);
+        XLALFree(output_array[i]);
+      }
+      XLALFree(output_array);
+    }
+  
   /* Clean up resume file */
   if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
   {
     if(!access(resumefilename,W_OK)) remove(resumefilename);
-    if(!access(outfilebackup,W_OK)) remove(outfilebackup);
   }
 
   /* Free memory */
@@ -1016,12 +1245,12 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   }
   while(0.==accept);
 	/* log the first sample*/
-  LALInferenceLogSampleToArray(runState,threadState->currentParams);
+  LALInferenceLogSampleToArray(runState->algorithmParams,threadState->currentParams);
   /* Evolve the initial sample (i starts at 1)*/
   for(i=1;i<max_iterations;i++)
   {
    evolve(runState);
-   LALInferenceLogSampleToArray(runState,threadState->currentParams);
+   LALInferenceLogSampleToArray(runState->algorithmParams,threadState->currentParams);
   }
 
   /* Get the location of the sample array */
@@ -1146,7 +1375,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
 
     logProposalRatio = threadState->proposal(threadState,threadState->currentParams,&proposedParams);
     REAL8 logPriorNew=runState->prior(runState, &proposedParams, threadState->model);
-    if(logPriorNew==-DBL_MAX || isnan(logPriorNew) || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
+    if(logPriorNew==-DBL_MAX || isnan(logPriorNew) || logPriorNew==-INFINITY || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
     {
 	/* Reject - don't need to copy new params back to currentParams */
         /*LALInferenceCopyVariables(oldParams,runState->currentParams); */
@@ -1237,6 +1466,7 @@ INT4 LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState)
   }
   REAL8 logL=-DBL_MAX;
   REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
+
   /* Draw the last sample from the cache and reduce the size of the cache by one
    until we find one that has a high enough likelihood */
   do {
@@ -1450,7 +1680,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	  do{
 	    LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );
 	    logPrior=runState->prior(runState,runState->livePoints[i],threadState->model);
-	  }while(logPrior==-DBL_MAX || isnan(logPrior));
+	  }while(logPrior==-DBL_MAX || logPrior==-INFINITY || isnan(logPrior));
 	  /* Populate log likelihood */
 	  logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,threadState->model);
 	  LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
@@ -1523,105 +1753,6 @@ static void SetupEigenProposals(LALInferenceRunState *runState)
   XLALFree(cvm);
 }
 
-static int _saveNSintegralState(FILE *fp, NSintegralState *s);
-static int _saveNSintegralState(FILE *fp, NSintegralState *s)
-{
-  UINT4 N=s->size;
-  if(1!=fwrite(&N,sizeof(UINT4),1,fp)) return 1;
-  if(1!=fwrite(&(s->iteration),sizeof(s->iteration),1,fp)) return 1;
-  if(N!=fwrite(s->logZarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->oldZarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->Harray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->logwarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->logtarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fwrite(s->logt2array,sizeof(REAL8),N,fp)) return 1;
-  return 0;
-}
-static int _loadNSintegralState(FILE *fp, NSintegralState *s);
-static int _loadNSintegralState(FILE *fp, NSintegralState *s)
-{
-  if(1!=fread(& (s->size) , sizeof(UINT4), 1, fp)) return 1;
-  UINT4 N=s->size;
-  if(1!=fread(&(s->iteration),sizeof(UINT4),1,fp)) return 1;
-  if(N!=fread(s->logZarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->oldZarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->Harray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->logwarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->logtarray,sizeof(REAL8),N,fp)) return 1;
-  if(N!=fread(s->logt2array,sizeof(REAL8),N,fp)) return 1;
-  return 0;
-}
-
-static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
-{
-  FILE *progfile=fopen(filename,"w");
-  if(!progfile)
-  {
-    fprintf(stderr,"Unable to save resume file %s!\n",filename);
-    return 1;
-  }
-  else
-  {
-    if(setvbuf(progfile,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
-      fprintf(stderr,"Warning: Unable to set resume file buffer!");
-    UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
-    int retcode= _saveNSintegralState(progfile,s);
-    if(retcode) {
-        fprintf(stderr,"Unable to write nested sampling state - will not be able to resume!\n");
-        fclose(progfile);
-        return 1;
-    }
-    LALInferenceWriteVariablesArrayBinary(progfile,runState->livePoints, Nlive);
-    INT4 N_output_array=0;
-    if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) N_output_array=LALInferenceGetINT4Variable(runState->algorithmParams,"N_outputarray");
-      fwrite(&N_output_array,sizeof(INT4),1,progfile);
-    if(N_output_array!=0 )
-    {
-      LALInferenceVariables **output_array=NULL;
-      output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-      LALInferenceWriteVariablesArrayBinary(progfile,output_array, N_output_array);
-      fprintf(stderr,"Resume --> wrote %d past chain samples\n\n",N_output_array);
-    }
-    fclose(progfile);
-    return 0;
-  }
-}
-
-static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
-{
-  FILE *progfile=fopen(filename,"r");
-  if(!progfile)
-  {
-    fprintf(stderr,"Unable to load resume file %s!\n",filename);
-    return 1;
-  }
-  else
-  {
-    UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
-    int retcode=_loadNSintegralState(progfile,s);
-    if(retcode){
-        fprintf(stderr,"Unable to read nested sampling state - unable to resume!\n");
-        fclose(progfile);
-        return 1;
-    }
-    //if(retcode) return 1;
-    LALInferenceReadVariablesArrayBinary(progfile,runState->livePoints,Nlive);
-      INT4 N_output_array;
-      fread(&N_output_array,sizeof(INT4),1,progfile);
-      LALInferenceVariables **output_array=NULL;
-      if(N_output_array!=0){
-          output_array=XLALCalloc(N_output_array,sizeof(LALInferenceVariables *));
-          fprintf(stderr,"Resume --> read %d past chain samples\n",N_output_array);
-          LALInferenceReadVariablesArrayBinary(progfile,output_array,N_output_array);
-          if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) LALInferenceRemoveVariable(runState->algorithmParams,"N_outputarray");
-          if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")) LALInferenceRemoveVariable(runState->algorithmParams,"outputarray");
-          LALInferenceAddVariable(runState->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
-          LALInferenceAddVariable(runState->algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
-    }
-    fclose(progfile);
-    return 0;
-  }
-}
 
 static int syncLivePointsDifferentialPoints(LALInferenceRunState *state, LALInferenceThreadState *thread)
 {

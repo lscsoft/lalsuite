@@ -1,3 +1,10 @@
+lalpulsar (1.14.0-1) unstable; urgency=low
+
+  * LALPulsar 1.14.0
+  * ER9 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 23 Jun 2016 16:50:47 -0500
+
 lalpulsar (1.13.0-1) unstable; urgency=low
 
   * LALPulsar 1.13.0

@@ -1,0 +1,108 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: helvetica, sans-serif;
+	font-size: 1em;
+}
+section {
+  margin-left: 100px;
+}
+table, th, td {
+    border: 1px solid #D8D8D8;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+th, td {
+    padding: 5px;
+}
+th {
+    text-align: left;
+    background-color: #ccc;
+}
+header {
+  background-color: #800000;
+  padding: 1px;
+  position: relative;
+  margin-bottom: 50px;
+}
+.main-heading {
+  font-size: 1.5em;
+  color: #EBD699;
+  text-align: left;
+  padding-left: 40px;
+}
+nav {
+   position: absolute;
+   bottom: -29px;
+   right: 300px;
+}
+li {
+  display: inline-block;
+  list-style: none;
+  margin: 0 -2px;
+  text-align: left;
+}
+.nav-items {
+   text-decoration: none;
+   color: #000000;
+   background-color: #D8D8D8;
+   display: block;
+   padding: 5px 10px;
+   font-size: 0.8em;
+}
+.nav-items:hover {
+  color: #FFFFFF;
+}
+.analysis-table, .analysis-heading {
+  width: 45%;
+  border: 1px solid #ccc !important;
+}
+.analysis {
+  font-size: 0.9em;
+}
+.graph {
+   width: 300px;
+   height: 300px; 
+   border: 1px solid #D8D8D8;
+   padding: 4px;
+}
+img {
+ width: 100%;
+}
+.graph-caption {
+  font-style:italic;
+  font-size: 0.9em;
+  margin: 5px 5px 5px 0;
+}
+.posteriors-graph-caption{
+  font-size: 0.9em;
+}
+
+.heading {
+  font-size: 1.1em;
+}
+
+.graph-image {
+  width: 280px;
+  height: 280px;
+}
+.graph-image-big {
+  position: absolute;
+  width: 50%;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  display: none;
+  z-index: 1;
+}
+.graph-image-big-show {
+  display: block;
+}
+.link {
+  font-size: 0.8em;
+}
+.report {
+ margin: 20px 0;
+ position: relative;
+}

@@ -71,7 +71,8 @@ const FstatOptionalArgs FstatOptionalArgsDefaults = {
   .injectSources = NULL,
   .injectSqrtSX = NULL,
   .assumeSqrtSX = NULL,
-  .prevInput = NULL
+  .prevInput = NULL,
+  .collectTiming = 0
 };
 
 // hidden global variables used to pass timings to test/benchmark programs
@@ -999,3 +1000,39 @@ XLALParseFstatMethodString ( FstatMethodType *Fmethod,          //!< [out] Parse
   XLAL_ERROR ( XLAL_EINVAL, "Unknown FstatMethod '%s'\n", s );
 
 } // XLALParseFstatMethodString()
+
+int
+XLALGetFstatTiming ( const FstatInput* input, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf )
+{
+  XLAL_CHECK ( input != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( (tauF1Buf != NULL) && (tauF1NoBuf != NULL), XLAL_EINVAL );
+
+  if ( input->method < FMETHOD_RESAMP_GENERIC )
+    {
+      XLAL_CHECK ( XLALGetFstatTiming_Demod ( input->method_data, tauF1Buf, tauF1NoBuf ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  else
+    {
+      XLAL_CHECK ( XLALGetFstatTiming_Resamp ( input->method_data, tauF1Buf, tauF1NoBuf ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+  return XLAL_SUCCESS;
+} // XLALGetFstatTiming()
+
+int
+AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader )
+{
+  XLAL_CHECK ( input != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( fp != NULL, XLAL_EINVAL );
+
+  if ( input->method < FMETHOD_RESAMP_GENERIC )
+    {
+      XLAL_CHECK ( AppendFstatTimingInfo2File_Demod ( input->method_data, fp, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  else
+    {
+      XLAL_CHECK ( AppendFstatTimingInfo2File_Resamp ( input->method_data, fp, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+  return XLAL_SUCCESS;
+} // AppendFstatTimingInfo2File()

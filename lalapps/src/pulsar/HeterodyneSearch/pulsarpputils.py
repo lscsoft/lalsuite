@@ -33,6 +33,7 @@ import os
 import numpy as np
 import struct
 import re
+import h5py
 
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
@@ -231,9 +232,9 @@ def pferrs(porf, porferr, pdorfd=None, pdorfderr=None):
 
 # class to read in a pulsar par file - this is heavily based on the function
 # in parfile.py in PRESTO
-float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9",
+float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10",
               "PEPOCH", "POSEPOCH", "DM", "START", "FINISH", "NTOA",
-              "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS", "DM",
+              "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS",
               "A1", "XDOT", "E", "ECC", "EDOT", "T0", "PB", "PBDOT", "OM",
               "OMDOT", "EPS1", "EPS2", "EPS1DOT", "EPS2DOT", "TASC", "LAMBDA",
               "BETA", "RA_RAD", "DEC_RAD", "GAMMA", "SINI", "M2", "MTOT",
@@ -1298,7 +1299,7 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
       'font.size': 15 }
 
   matplotlib.rcParams.update(mplparams)
-  matplotlib.rcParams['text.latex.preamble']=r'\usepackage{nicefrac}'
+  matplotlib.rcParams['text.latex.preamble']=r'\usepackage{xfrac}'
 
   # ifos line colour specs
   coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm'}
@@ -1416,9 +1417,9 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
             xl.append('0')
           else:
             if item < 0:
-              xl.append(r'$-\nicefrac{1}{%d}$' % (-1./item))
+              xl.append(r'$-\sfrac{1}{%d}$' % (-1./item))
             else:
-              xl.append(r'$\nicefrac{1}{%d}$' % (1./item))
+              xl.append(r'$\sfrac{1}{%d}$' % (1./item))
         ax.set_xticklabels(xl)
         #plt.setp(ax.get_xticklabels(), fontsize=16)  # increase font size
         plt.tick_params(axis='x', which='major', labelsize=14)
@@ -1445,9 +1446,9 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
             yl.append('0')
           else:
             if item < 0:
-              yl.append(r'$-\nicefrac{1}{%d}$' % (-1./item))
+              yl.append(r'$-\sfrac{1}{%d}$' % (-1./item))
             else:
-              yl.append(r'$\nicefrac{1}{%d}$' % (1./item))
+              yl.append(r'$\sfrac{1}{%d}$' % (1./item))
         ax.set_yticklabels(yl)
         plt.tick_params(axis='y', which='major', labelsize=14)
 
@@ -2197,7 +2198,7 @@ def pulsar_mcmc_to_posterior(chainfiles):
       mcmcChain = read_pulsar_mcmc_file(cfile)
 
       # if no chain found then exit with None's
-      if mcmcChain == None:
+      if mcmcChain is None:
         return None, None, None, None
 
       # find number of effective samples for the chain
@@ -2212,7 +2213,7 @@ def pulsar_mcmc_to_posterior(chainfiles):
       neffs.append(math.floor(np.mean(neffstmp)))
 
       #nskip = math.ceil(mcmcChain.shape[0]/min(neffstmp))
-      nskip = math.ceil(mcmcChain.shape[0]/np.mean(neffstmp))
+      nskip = int(math.ceil(mcmcChain.shape[0]/np.mean(neffstmp)))
 
       # output every nskip (independent) value
       mcmc.append(mcmcChain[::nskip,:])
@@ -2355,44 +2356,60 @@ def read_pulsar_mcmc_file(cf):
   return cfdata
 
 
-# Function to convert nested sample files output from pulsar_parameter_estimation_nested, and already
-# parsed through lalapps_nest2pos into a posterior object. The log(evidence ratio) (signal versus Gaussian
-# noise) is also returned.
+# Function to import a posterior sample file created by lalapps_nest2pos. The log(evidence ratio)
+# (signal versus Gaussian noise) is also returned.
 #
-# The inputs are a list of nested sample files and the number of live points used to produce them.
+# The input is a HDF5, or acsii text, or gzipped, posterior sample files.
 #
 # Any non-varying parameters in the files are removed from the posterior object. iota is converted
 # back into cos(iota), and if only C22 is varying then it is converted back into h0, and phi22
 # is converted back into phi0.
-def pulsar_nest_to_posterior(nestfile):
+def pulsar_nest_to_posterior(postfile):
   from pylal import bayespputils as bppu
 
-  # combine multiple nested sample files for an IFO into a single posterior (copied from lalapps_nest2pos)
-  peparser = bppu.PEOutputParser('common')
+  fe = os.path.splitext(postfile)[-1].lower() # file extension
 
-  if '.gz' in nestfile:
+  # combine multiple nested sample files for an IFO into a single posterior (copied from lalapps_nest2pos)
+  if fe == '.h5' or fe == '.hdf': # HDF5 file
+    peparser = bppu.PEOutputParser('hdf5')
+    nsResultsObject = peparser.parse(postfile)
+  elif fe == '.gz': # gzipped file
     import gzip
-    nsResultsObject = peparser.parse(gzip.open(nestfile, 'r'))
-  else:
-    nsResultsObject = peparser.parse(open(nestfile, 'r'))
+    peparser = bppu.PEOutputParser('common')
+    nsResultsObject = peparser.parse(gzip.open(postfile, 'r'))
+  else: # assume an ascii text file
+    peparser = bppu.PEOutputParser('common')
+    nsResultsObject = peparser.parse(open(postfile, 'r'))
 
   pos = bppu.Posterior( nsResultsObject, SimInspiralTableEntry=None, votfile=None )
 
-  # convert iota back to cos(iota)
-  # create 1D posterior class of cos(iota) values
-  cipos = None
-  cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(pos['iota'].samples))
-
-  # add it back to posterior and remove iota samples
-  pos.append(cipos)
-  pos.pop('iota')
-
-  # remove any unchanging variables
+  # remove any unchanging variables and randomly shuffle the rest
   pnames = pos.names
+  nsamps = len(pos[pnames[0]].samples)
+  permarr = np.arange(nsamps)
+  np.random.shuffle(permarr)
   for pname in pnames:
     # check first and last samples are the same
     if pos[pname].samples[0] - pos[pname].samples[-1] == 0.:
       pos.pop(pname)
+    else:
+      # shuffle
+      shufpos = None
+      shufpos = bppu.PosteriorOneDPDF(pname, pos[pname].samples[permarr])
+      pos.pop(pname)
+      pos.append(shufpos)
+
+  # check whether iota has been used
+  try:
+    posIota = pos['iota'].samples
+  except:
+    posIota = None
+
+  if posIota is not None:
+    cipos = None
+    cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(posIota))
+    pos.append(cipos)
+    pos.pop('iota')
 
   # convert C22 back into h0, and phi22 back into phi0 if required
   try:
@@ -2425,11 +2442,21 @@ def pulsar_nest_to_posterior(nestfile):
       pos.append(phi0pos)
       pos.pop('phi22')
 
-  # get evidence (as in lalapps_nest2pos) (assume evidence in files suffixed '_B.txt')
-  B = np.loadtxt(nestfile.replace('.gz', '')+'_B.txt')
+  # get evidence (as in lalapps_nest2pos)
+  if fe == '.h5' or fe == '.hdf':
+    # read evidence from HDF5 file
+    hdf = h5py.File(postfile, 'r')
+    a = hdf['lalinference']['lalinference_nest']
+    sigev = a.attrs['log_evidence']
+    noiseev = a.attrs['log_noise_evidence']
+    hdf.close()
+  else:
+    B = np.loadtxt(postfile.replace('.gz', '')+'_B.txt')
+    sigev = B[1]
+    noiseev = B[2]
 
   # return posterior samples, signal evidence (B[1]) and noise evidence (B[2])
-  return pos, B[1], B[2]
+  return pos, sigev, noiseev
 
 
 # function to add two exponentiated log values and return the log of the result

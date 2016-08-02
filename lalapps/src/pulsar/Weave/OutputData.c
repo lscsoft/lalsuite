@@ -121,7 +121,7 @@ static int toplist_fits_table_init(
 ///
 static int toplist_fits_write_visitor(
   void *param,
-  void *x
+  const void *x
   )
 {
   FITSFile *file = ( FITSFile * ) param;

@@ -1,7 +1,7 @@
 """ 
 Various fitting formulas provided by numerical relativity 
 
-P. Ajith, 2015-04-09 
+Archisman Ghosh, Nathan K. Johnson-McDaniel, P. Ajith, 2015-04-09 
 """
 
 import numpy as np 
@@ -10,6 +10,30 @@ try:
     import lal
 except ImportError:
     print('Cannot import lal SWIG bindings')
+
+# Functions to check that input values are physical
+
+def _check_m(m1,m2):
+    if np.any(m1<=0):
+        raise ValueError("m1 has to be positive")
+    if np.any(m2<=0):
+        raise ValueError("m2 has to be positive")
+
+def _check_chi(chi1, chi2):
+    if np.any(chi1>1):
+      raise ValueError("chi1 has to be <= 1")
+    if np.any(chi2>1):
+      raise ValueError("chi2 has to be <= 1")
+    if np.any(chi1<0):
+      raise ValueError("chi1 has to be nonnegative")
+    if np.any(chi2<0):
+      raise ValueError("chi2 has to be nonnegative")
+
+def _check_mchi(m1,m2,chi1,chi2):
+    _check_m(m1,m2)
+    _check_chi(chi1,chi2)
+
+# Final mass and spin functions
 
 def bbh_final_mass_non_spinning_Panetal(m1, m2):
     """
@@ -60,8 +84,9 @@ def calc_isco_radius(a):
     -------
     ISCO radius
     """
-    a = np.array(a)
      
+    a = np.minimum(np.array(a),1.) # Only consider a <=1, to avoid numerical problems
+
     # Ref. Eq. (2.5) of Ori, Thorne Phys Rev D 62 124022 (2000)
     z1 = 1.+(1.-a**2.)**(1./3)*((1.+a)**(1./3) + (1.-a)**(1./3))
     z2 = np.sqrt(3.*a**2 + z1**2)
@@ -271,6 +296,46 @@ def bbh_final_mass_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2, ch
     final mass, mf
     """
     return bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1*np.cos(tilt1), chi2*np.cos(tilt2), chif=chif)
+
+def bbh_final_spin_precessing_Healyetal_extension_Minit(m1, m2, chi1, chi2, tilt1, tilt2, phi12):
+    """
+    Calculate the spin of the final BH resulting from the merger of two black holes including the in-plane spine by projecting the spins along the angular momentum and using fit from Healy et al Phys Rev D 90, 104004 (2014) and then adding in quadrature the in-plane dimensionful spin scaled by the initial mass squared.
+
+    Parameters
+    ----------
+    m1, m2 : component masses
+    chi1, chi2 : dimensionless spins of two BHs
+    tilt1, tilt2 : tilts (in radians) in the new spin convention
+    phi12: angle (in radians) between in-plane spin components
+
+    Returns
+    -------
+    final spin, chif
+    """
+
+    m1 = np.vectorize(float)(np.array(m1))
+    m2 = np.vectorize(float)(np.array(m2))
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
+    tilt1 = np.vectorize(float)(np.array(tilt1))
+    tilt2 = np.vectorize(float)(np.array(tilt2))
+    phi12 = np.vectorize(float)(np.array(phi12))
+
+    _check_mchi(m1,m2,chi1,chi2) # Check that inputs are physical
+
+    # First compute the final mass and parallel component of the final spin using the aligned components of the initial spins
+    chifpara = bbh_final_spin_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2)
+
+    # Now compute the squared magnitude of the in-plane dimensionful spin, first computing the magnitudes of the initial in-plane spins
+
+    S1perpmag = m1*m1*chi1*np.sin(tilt1)
+    S2perpmag = m2*m2*chi2*np.sin(tilt2)
+
+    Sperpmag2 = S1perpmag*S1perpmag + S2perpmag*S2perpmag + 2.*S1perpmag*S2perpmag*np.cos(phi12)
+
+    # Combine together and return
+
+    return (chifpara*chifpara + Sperpmag2/(m1+m2)**4.)**0.5
 
 def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2): 
     """ 

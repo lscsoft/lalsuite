@@ -74,6 +74,7 @@ test/LALBarycenterTest
 test/LALPulsarXMLTest
 test/LFTandTSutilsTest
 test/LatticeTilingTest
+test/LatticeTilingTest.fits
 test/LineRobustStatsTest
 test/MetricUtilsTest
 test/NDConstructPLUTTest

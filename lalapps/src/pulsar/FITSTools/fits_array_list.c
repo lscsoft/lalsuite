@@ -41,8 +41,8 @@ int main(int argc, char *argv[])
 {
   fitsfile *fptr = 0;   /* FITS file pointer, defined in fitsio.h */
   int status = 0;   /* CFITSIO status value MUST be initialized to zero! */
-  int bitpix = 0, naxis = 0, ii = 0;
-  long naxes[3] = {1,1,1}, fpixel[3] = {1,1,1};
+  int bitpix = 0, naxis = 0, ii = 0, d = 0;
+  long naxes[9] = {1,1,1,1,1,1,1,1,1}, fpixel[9] = {1,1,1,1,1,1,1,1,1};
   double *pixels = 0;
   char format[20], hdformat[20];
 
@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
   }
 
   if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
-    if (!fits_get_img_param(fptr, 3, &bitpix, &naxis, naxes, &status)) {
-      if (naxis > 3 || naxis == 0) {
-        fprintf(stderr, "Error: only 1D, 2D, or 3D arrays are supported\n");
+    if (!fits_get_img_param(fptr, 9, &bitpix, &naxis, naxes, &status)) {
+      if (naxis > 9 || naxis == 0) {
+        fprintf(stderr, "Error: only 1- to 9-dimensional arrays are supported\n");
       } else {
         /* get memory for 1 row */
         pixels = (double *) malloc(naxes[0] * sizeof(double));
@@ -87,21 +87,44 @@ int main(int argc, char *argv[])
           strcpy(format,   "   %15.5g");
         }
 
-        /* loop over all the rows in the array */
-        for (fpixel[2] = 1; fpixel[2] <= naxes[2]; fpixel[2]++) {
-          for (fpixel[1] = 1; fpixel[1] <= naxes[1]; fpixel[1]++) {
-            if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0], NULL,
-                              pixels, NULL, &status)) { /* read row of pixels */
-              break;  /* jump out of loop on error */
-            }
+        if (naxis > 2) {  /* label higher dimensions */
+          fprintf(fout, "#");
+          for (d = naxis - 1; d > 0; d--) {
+            fprintf(fout, "%1iD ", d+1);
+          }
+          fprintf(fout, "\n");
+        }
 
-            if (naxes[2] > 1) {
-              fprintf(fout, "%02li:", fpixel[2]);  /* print 3rd dimension */
+        /* loop over all the rows in the array */
+        for (fpixel[8] = 1; fpixel[8] <= naxes[8]; fpixel[8]++) {
+          for (fpixel[7] = 1; fpixel[7] <= naxes[7]; fpixel[7]++) {
+            for (fpixel[6] = 1; fpixel[6] <= naxes[6]; fpixel[6]++) {
+              for (fpixel[5] = 1; fpixel[5] <= naxes[5]; fpixel[5]++) {
+                for (fpixel[4] = 1; fpixel[4] <= naxes[4]; fpixel[4]++) {
+                  for (fpixel[3] = 1; fpixel[3] <= naxes[3]; fpixel[3]++) {
+                    for (fpixel[2] = 1; fpixel[2] <= naxes[2]; fpixel[2]++) {
+                      for (fpixel[1] = 1; fpixel[1] <= naxes[1]; fpixel[1]++) {
+                        if (fits_read_pix(fptr, TDOUBLE, fpixel, naxes[0], NULL,
+                                          pixels, NULL, &status)) { /* read row of pixels */
+                          break;  /* jump out of loop on error */
+                        }
+
+                        if (naxis > 2) {  /* print higher dimensions */
+                          fprintf(fout, " ");
+                          for (d = naxis - 1; d > 0; d--) {
+                            fprintf(fout, "% 2li ", fpixel[d]);
+                          }
+                        }
+                        for (ii = 0; ii < naxes[0]; ii++) {
+                          fprintf(fout, format, pixels[ii]);  /* print each value  */
+                        }
+                        fprintf(fout, "\n");                    /* terminate line */
+                      }
+                    }
+                  }
+                }
+              }
             }
-            for (ii = 0; ii < naxes[0]; ii++) {
-              fprintf(fout, format, pixels[ii]);  /* print each value  */
-            }
-            fprintf(fout, "\n");                    /* terminate line */
           }
         }
         free(pixels);

@@ -637,7 +637,7 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const Dop
   /* ----- output phase metric ---------- */
   if ( Pmetric != NULL )
     {
-      fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Pmetric->g_ij );
+      fprintf ( fp, "\ng_ij = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Pmetric->g_ij );
       fprintf ( fp, "maxrelerr_gPh = %.2e;\n", Pmetric->maxrelerr );
 
       gsl_matrix *gN_ij = NULL;
@@ -645,7 +645,7 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const Dop
         XLALPrintError ("%s: something failed Naturalizing phase metric g_ij!\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
-      fprintf ( fp, "\ngN_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gN_ij );
+      fprintf ( fp, "\ngN_ij = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gN_ij );
       gsl_matrix_free ( gN_ij );
 
       gsl_matrix *gDN_ij = NULL;
@@ -653,18 +653,18 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const Dop
         XLALPrintError ("%s: something failed NormDiagonalizing phase metric g_ij!\n", __func__ );
         XLAL_ERROR ( XLAL_EFUNC );
       }
-      fprintf ( fp, "\ngDN_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gDN_ij );
+      fprintf ( fp, "\ngDN_ij = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gDN_ij );
       gsl_matrix_free ( gDN_ij );
     }
 
   /* ----- output F-metric (and related matrices ---------- */
   if ( Fmetric != NULL )
     {
-      fprintf ( fp, "\ngF_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->gF_ij );
-      fprintf ( fp, "\ngFav_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->gFav_ij );
-      fprintf ( fp, "\nm1_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m1_ij );
-      fprintf ( fp, "\nm2_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m2_ij );
-      fprintf ( fp, "\nm3_ij = \\\n" );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m3_ij );
+      fprintf ( fp, "\ngF_ij = " );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->gF_ij );
+      fprintf ( fp, "\ngFav_ij = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->gFav_ij );
+      fprintf ( fp, "\nm1_ij = " );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m1_ij );
+      fprintf ( fp, "\nm2_ij = " );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m2_ij );
+      fprintf ( fp, "\nm3_ij = " );   XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->m3_ij );
       fprintf ( fp, "maxrelerr_gF = %.2e;\n", Fmetric->maxrelerr );
     }
 
@@ -680,7 +680,7 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerPhaseMetric *Pmetric, const Dop
       fprintf ( fp, "\nA = %.16g;\nB = %.16g;\nC = %.16g;\nD = %.16g;\n", A, B, C, D );
       fprintf ( fp, "\nrho2 = %.16g;\n", Fmetric->rho2 );
 
-      fprintf (fp, "\nFisher_ab = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->Fisher_ab );
+      fprintf (fp, "\nFisher_ab = " ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  Fmetric->Fisher_ab );
     }
 
   // ---------- output segment list at the end, as this can potentially become quite long and distracting

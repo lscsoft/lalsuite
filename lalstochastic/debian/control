@@ -5,12 +5,12 @@ Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   zlib1g-dev, libmetaio-dev (>= 8.2), swig (>= 2.0.11~),
   octave3.2-headers | liboctave-dev, python-numpy (>= 1.3),
-  lal-dev (>= 6.16.0~),
-  lal-python (>= 6.16.0~),
-  lal-octave (>= 6.16.0~),
-  lalmetaio-dev (>= 1.2.7~),
-  lalmetaio-python (>= 1.2.7~),
-  lalmetaio-octave (>= 1.2.7~)
+  lal-dev (>= 6.16.1~),
+  lal-python (>= 6.16.1~),
+  lal-octave (>= 6.16.1~),
+  lalmetaio-dev (>= 1.2.8~),
+  lalmetaio-python (>= 1.2.8~),
+  lalmetaio-octave (>= 1.2.8~)
 X-Python-Version: >= 2.7
 Standards-Version: 3.8.6
 
@@ -18,8 +18,8 @@ Package: lalstochastic
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   libmetaio1 (>= 8.2),
-  lal (>= 6.16.0~),
-  lalmetaio (>= 1.2.7~)
+  lal (>= 6.16.1~),
+  lalmetaio (>= 1.2.8~)
 Description: LSC Algorithm Library Stochastic
  The LSC Algorithm Stochastic Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -29,8 +29,8 @@ Package: lalstochastic-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   libmetaio-dev (>= 8.2),
-  lal-dev (>= 6.16.0~),
-  lalmetaio-dev (>= 1.2.7~),
+  lal-dev (>= 6.16.1~),
+  lalmetaio-dev (>= 1.2.8~),
   lalstochastic (= ${binary:Version})
 Description: LSC Algorithm Library Stochastic Developers
  The LSC Algorithm Stochastic Library for gravitational wave data analysis.
@@ -41,14 +41,14 @@ Package: lalstochastic-python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalstochastic (= ${binary:Version}),
-  lal-python (>= 6.16.0~),
-  lalmetaio-python (>= 1.2.7~)
-Description: Python bindings for LALStochastiv
+  lal-python (>= 6.16.1~),
+  lalmetaio-python (>= 1.2.8~)
+Description: Python bindings for LALStochastic
 
 Package: lalstochastic-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lalstochastic (= ${binary:Version}),
-  lal-octave (>= 6.16.0~),
-  lalmetaio-octave (>= 1.2.7~)
+  lal-octave (>= 6.16.1~),
+  lalmetaio-octave (>= 1.2.8~)
 Description: Octave bindings for LALStochastic

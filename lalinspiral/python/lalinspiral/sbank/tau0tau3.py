@@ -16,20 +16,15 @@
 
 from __future__ import division
 
-# standard
 from math import sqrt
 
 import numpy
 from numpy.random.mtrand import uniform
 from scipy.optimize import fsolve
 
-# local
-try:
-    from glue.iterutils import choices
-except ImportError:
-    raise ImportError("The sbank subpackage of lalinspiral depends on the glue and pylal packages.")
-
+from glue.iterutils import choices
 from lal import PI, MTSUN_SI
+
 #
 # functions for converting between m1-m2 and tau0-tau3 coords
 #
@@ -95,7 +90,8 @@ def set_default_constraints(constraints):
     not). By convention, we require mass1 limits to be set.
     '''
     # complain about unknown constraints; don't silently ignore!
-    known_constraints = ["mass1","mass2","mratio","mtotal","mchirp","spin1","spin2"]
+    known_constraints = ["mass1", "mass2", "mratio", "mtotal", "mchirp",
+                         "spin1", "spin2", "duration"]
     unknown_constraints = [k for k in constraints.keys() if k not in known_constraints]
     if len(unknown_constraints):
         raise ValueError("unknown constraints %s" % ', '.join(unknown_constraints))
@@ -200,6 +196,15 @@ def allowed_m1m2(m1, m2, m1m2_constraints, tol=1e-10):
 
     return m1,m2
 
+# Copied out of pycbc.pnutils
+def mtotal_eta_to_mass1_mass2(m_total, eta):
+    mass1 = 0.5 * m_total * (1.0 + (1.0 - 4.0 * eta)**0.5)
+    mass2 = 0.5 * m_total * (1.0 - (1.0 - 4.0 * eta)**0.5)
+    return mass1,mass2
+
+def mchirp_eta_to_mass1_mass2(m_chirp, eta):
+    M = m_chirp / (eta**(3./5.))
+    return mtotal_eta_to_mass1_mass2(M, eta)
 
 def mchirpm1_to_m2(mc, m1, tol=1e-6):
     # solve cubic for m2
@@ -238,7 +243,7 @@ def tau0tau3_bound(flow, **constraints):
     # FIXME: As this is discrete, this can cause the bank sizes to be smaller
     # than expected. Raising this to 1e5, raising it higher starts to cause
     # slowdown as computing m2 from m1 and mchirp is expensive.
-    npts = 1e5
+    npts = 1e4
 
     # draw constant component mass lines
     m1min, m1max = constraints['mass1']
@@ -262,10 +267,43 @@ def tau0tau3_bound(flow, **constraints):
 
     # draw constant mchirp lines
     mcmin, mcmax = constraints.setdefault('mchirp', (None, None))
+    # Do not want to use global limits on m1,m2. Limit to possible allowed
+    # values for mcmin and mcmax, also use mass ratio constraints to determine
+    # this
+    mrmin, mrmax = constraints['mratio']
+    etamin = mrmax / (mrmax + 1.)**2
+    etamax = mrmin / (mrmin + 1.)**2
+
     if mcmax is not None:
-        m1m2_points += [(m1, mchirpm1_to_m2(mcmax, m1)) for m1 in numpy.linspace(m1min, m1max, npts)]
+        # Do not want to use global limits on m1,m2. Limit to possible allowed
+        # values for mcmin and mcmax, also use mass ratio constraints to
+        # determine this
+        mcmax_maxm1, mcmax_minm2 = mchirp_eta_to_mass1_mass2(mcmax, etamin)
+        mcmax_minm1, mcmax_maxm2 = mchirp_eta_to_mass1_mass2(mcmax, etamax)
+        if mcmax_maxm1 > m1max:
+            mcmax_maxm1 = m1max
+        if mcmax_minm1 < m1min:
+            mcmax_minm1 = m1min
+        if mcmax_minm2 < m2min:
+            mcmax_minm2 = m2min
+        if mcmax_maxm2 > m2max:
+            mcmax_maxm2 = m2max
+        m1m2_points += [(m1, mchirpm1_to_m2(mcmax, m1)) for m1 in numpy.linspace(mcmax_minm1, mcmax_maxm1, npts)]
+        m1m2_points += [(mchirpm1_to_m2(mcmax, m2), m2) for m2 in numpy.linspace(mcmax_minm2, mcmax_maxm2, npts)]
+
     if mcmin is not None:
-        m1m2_points += [(m1, mchirpm1_to_m2(mcmin, m1)) for m1 in numpy.linspace(m1min, m1max, npts)]
+        mcmin_maxm1, mcmin_minm2 = mchirp_eta_to_mass1_mass2(mcmin, etamin)
+        mcmin_minm1, mcmin_maxm2 = mchirp_eta_to_mass1_mass2(mcmin, etamax)
+        if mcmin_maxm1 > m1max:
+            mcmin_maxm1 = m1max
+        if mcmin_minm1 < m1min:
+            mcmin_minm1 = m1min
+        if mcmin_minm2 < m2min:
+            mcmin_minm2 = m2min
+        if mcmin_maxm2 > m2max:
+            mcmin_maxm2 = m2max
+        m1m2_points += [(m1, mchirpm1_to_m2(mcmin, m1)) for m1 in numpy.linspace(mcmin_minm1, mcmin_maxm1, npts)]
+        m1m2_points += [(mchirpm1_to_m2(mcmax, m2), m2) for m2 in numpy.linspace(mcmin_minm2, mcmin_maxm2, npts)]
 
     # filter these down to only those that satisfy ALL constraints
     m1 = numpy.array([i[0] for i in m1m2_points])
@@ -281,6 +319,32 @@ def tau0tau3_bound(flow, **constraints):
     lims_tau3 = [min( lims_tau3 ), max( lims_tau3 )]
 
     return lims_tau0, lims_tau3
+
+
+def urand_mtotal_generator(mtotal_min, mtotal_max):
+    """
+    This is a generator for random total mass values corresponding to a
+    uniform distribution of mass pairs in (tau0, tau3) space.  See also
+    urand_eta_generator(), and see LIGO-T1300127 for details.
+    """
+    alpha = mtotal_min*(1-(mtotal_min/mtotal_max)**(7./3.))**(-3./7.)
+    beta = (mtotal_min/mtotal_max)**(7./3.)/(1-(mtotal_min/mtotal_max)**(7./3.))
+    n = -3./7.
+    while 1:   # NB: "while 1" is inexplicably much faster than "while True"
+        yield alpha*(uniform(0, 1)+beta)**n
+
+
+def urand_eta_generator(eta_min, eta_max):
+    """
+    This is a generator for random eta (symmetric mass ratio) values
+    corresponding to a uniform distribution of mass pairs in (tau0, tau3)
+    space.  See also urand_mtotal_generator(), and see LIGO-T1300127 for
+    details.
+    """
+    alpha = eta_min/sqrt(1-(eta_min/eta_max)**2)
+    beta = (eta_min/eta_max)**2/(1-(eta_min/eta_max)**2)
+    while 1:   # NB: "while 1" is inexplicably much faster than "while True"
+        yield alpha/sqrt(uniform(0, 1)+beta)
 
 
 def urand_tau0tau3_generator(flow, **constraints):
@@ -348,7 +412,7 @@ def urand_tau0tau3_generator(flow, **constraints):
                 qmin < mass1/mass2 < qmax:
             yield mass1, mass2
 
-def nonspin_param_generator(flow, **constraints):
+def nonspin_param_generator(flow, tmplt_class, bank, **constraints):
     """
     Wrapper for urand_tau0tau3_generator() to remove spin options
     for EOBNRv2 waveforms.
@@ -358,16 +422,19 @@ def nonspin_param_generator(flow, **constraints):
     if constraints.has_key('spin2'):
         constraints.pop('spin2')
 
-    return urand_tau0tau3_generator(flow, **constraints)
+    for mass1, mass2 in urand_tau0tau3_generator(flow, **constraints):
+        yield tmplt_class(mass1, mass2, bank=bank)
 
-def IMRPhenomB_param_generator(flow, **kwargs):
+def IMRPhenomB_param_generator(flow, tmplt_class, bank, **kwargs):
     """
     Specify the min and max mass of the bigger component, then
     the min and max mass of the total mass. This function includes
     restrictions on q and chi based on IMRPhenomB's range of believability.
     Ref: http://arxiv.org/pdf/0908.2090
 
-    @param flow UNDOCUMENTED
+    @param flow: Lower frequency at which to generate waveform
+    @param tmplt_class: Template generation class for this waveform
+    @param bank: sbank bank object
     @param kwargs: must specify a component_mass range; mtotal, q, chi, and tau0
     ranges are optional. If no chi is specified, the IMRPhenomB limits will be used.
     See urand_tau0tau3_generator for more usage help.
@@ -396,10 +463,10 @@ def IMRPhenomB_param_generator(flow, **kwargs):
             spin2 = uniform(*chi_low_bounds)
         else:
             raise ValueError("mass ratio out of range")
-        yield mass1, mass2, spin1, spin2
+        yield tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
 
 
-def IMRPhenomC_param_generator(flow, **kwargs):
+def IMRPhenomC_param_generator(flow, tmplt_class, bank, **kwargs):
     """
     Generate random parameters for the IMRPhenomC waveform model.
     Specify the min and max mass of the bigger component, then the min
@@ -408,6 +475,8 @@ def IMRPhenomC_param_generator(flow, **kwargs):
     believability, namely q <=20 and |chi| <= 0.9.
 
     @param flow: low frequency cutoff
+    @param tmplt_class: Template generation class for this waveform
+    @param bank: sbank bank object
     @param kwargs: constraints on waveform parameters. See urand_tau0tau3_generator for more usage help. If no spin limits are specified, the IMRPhenomC limits will be used.
     """
 
@@ -427,15 +496,17 @@ def IMRPhenomC_param_generator(flow, **kwargs):
         else:
             raise ValueError("mass ratio out of range")
 
-        yield mass1, mass2, spin1, spin2
+        yield tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
 
 
-def aligned_spin_param_generator(flow, **kwargs):
+def aligned_spin_param_generator(flow, tmplt_class, bank, **kwargs):
     """
     Specify the min and max mass of the bigger component, the min and
     max mass of the total mass and the min and max values for the
     z-axis spin angular momentum.
     """
+    dur_min, dur_max = kwargs.pop('duration', (None, None))
+
     if 'ns_bh_boundary_mass' in kwargs and 'bh_spin' in kwargs \
             and 'ns_spin' in kwargs:
         # get args
@@ -447,30 +518,108 @@ def aligned_spin_param_generator(flow, **kwargs):
         for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
             spin1 = uniform(*(bh_spin_bounds if mass1 > ns_bh_boundary else ns_spin_bounds))
             spin2 = uniform(*(bh_spin_bounds if mass2 > ns_bh_boundary else ns_spin_bounds))
-            yield mass1, mass2, spin1, spin2
+
+            t = tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
+            if (dur_min is not None and t._dur < dur_min) \
+                    or (dur_max is not None and t._dur > dur_max):
+                continue
+            yield t
     else:
         # get args
         spin1_bounds = kwargs.pop('spin1', (-1., 1.))
         spin2_bounds = kwargs.pop('spin2', (-1., 1.))
+
         # the rest will be checked in the call to urand_tau0tau3_generator
-
         for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
-            spin1 = uniform(*spin1_bounds)
-            spin2 = uniform(*spin2_bounds)
-            yield mass1, mass2, spin1, spin2
+
+            mtot = mass1 + mass2
+            chis_min = (mass1*spin1_bounds[0] + mass2*spin2_bounds[0])/mtot
+            chis_max = (mass1*spin1_bounds[1] + mass2*spin2_bounds[1])/mtot
+            chis = uniform(chis_min, chis_max)
+
+            s2min = max(spin2_bounds[0], (mtot*chis - mass1*spin1_bounds[1])/mass2)
+            s2max = min(spin2_bounds[1], (mtot*chis - mass1*spin1_bounds[0])/mass2)
+
+            spin2 = uniform(s2min, s2max)
+            spin1 = (chis*mtot - mass2*spin2)/mass1
+
+            t = tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
+            if (dur_min is not None and t._dur < dur_min) \
+                    or (dur_max is not None and t._dur > dur_max):
+                continue
+            yield t
+
+def double_spin_precessing_param_generator(flow, tmplt_class, bank, **kwargs):
+    """
+    Currently a stub to test precessing template generation.
+    """
+    spin1_bounds = kwargs.pop('spin1', (0., 0.9))
+    spin2_bounds = kwargs.pop('spin2', (0., 0.9))
+
+    for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
+        # Choose the rest from hardcoded limits
+        spin1mag = uniform(*spin1_bounds)
+        spin2mag = uniform(*spin2_bounds)
+        spin1ang1 = uniform(0, numpy.pi)
+        spin1ang2 = uniform(0, 2*numpy.pi)
+        spin2ang1 = uniform(0, numpy.pi)
+        spin2ang2 = uniform(0, 2*numpy.pi)
+        spin1z = spin1mag * numpy.cos(spin1ang1)
+        spin1x = spin1mag * numpy.sin(spin1ang1) * numpy.cos(spin1ang2)
+        spin1y = spin1mag * numpy.sin(spin1ang1) * numpy.sin(spin1ang2)    
+        spin2z = spin2mag * numpy.cos(spin2ang1)
+        spin2x = spin2mag * numpy.sin(spin2ang1) * numpy.cos(spin2ang2)
+        spin2y = spin2mag * numpy.sin(spin2ang1) * numpy.sin(spin2ang2)
+        # Check orientation angles use correct limits
+        theta = uniform(0, numpy.pi)
+        phi = uniform(0, 2*numpy.pi)
+        psi = uniform(0, 2*numpy.pi)
+        iota = uniform(0, numpy.pi)
+        yield tmplt_class(mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y,
+                          spin2z, theta, phi, iota, psi, bank=bank)
+
+def single_spin_precessing_param_generator(flow, tmplt_class, bank, **kwargs):
+    """
+    Currently a stub to test precessing template generation.
+    """
+    spin1_bounds = kwargs.pop('spin1', (0., 0.9))
+    spin2_bounds = kwargs.pop('spin2', (0., 0.9))
+
+    for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
+        # Choose the rest from hardcoded limits
+        spin1mag = uniform(*spin1_bounds)
+        spin1ang1 = uniform(0, numpy.pi)
+        spin1ang2 = uniform(0, 2*numpy.pi)
+        spin1z = spin1mag * numpy.cos(spin1ang1)
+        spin1x = spin1mag * numpy.sin(spin1ang1) * numpy.cos(spin1ang2)
+        spin1y = spin1mag * numpy.sin(spin1ang1) * numpy.sin(spin1ang2)
+
+        # Check orientation angles use correct limits
+        theta = uniform(0, numpy.pi)
+        phi = uniform(0, 2*numpy.pi)
+        psi = uniform(0, 2*numpy.pi)
+        iota = uniform(0, numpy.pi)
+        yield tmplt_class(mass1, mass2, spin1x, spin1y, spin1z, theta, phi,
+                          iota, psi, bank=bank)
 
 
-def SpinTaylorT4_param_generator(flow, **kwargs):
+def SpinTaylorT4_param_generator(flow, tmplt_class, bank, **kwargs):
     # FIXME implement!
     raise NotImplementedError
 
 proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
              "IMRPhenomC":IMRPhenomC_param_generator,
              "IMRPhenomD":aligned_spin_param_generator,
+             "TaylorF2": aligned_spin_param_generator,
+             "IMRPhenomP":double_spin_precessing_param_generator,
+             "IMRPhenomPv2":double_spin_precessing_param_generator,
              "TaylorF2RedSpin":aligned_spin_param_generator,
              "EOBNRv2":nonspin_param_generator,
              "SEOBNRv1":aligned_spin_param_generator,
              "SEOBNRv2":aligned_spin_param_generator,
              "SEOBNRv2_ROM_DoubleSpin":aligned_spin_param_generator,
              "SEOBNRv2_ROM_DoubleSpin_HI":aligned_spin_param_generator,
-             "SpinTaylorT4":SpinTaylorT4_param_generator}
+             "SpinTaylorT4":SpinTaylorT4_param_generator,
+             "SpinTaylorF2":single_spin_precessing_param_generator,
+             "SpinTaylorT2Fourier":double_spin_precessing_param_generator,
+             "SEOBNRv3":double_spin_precessing_param_generator}

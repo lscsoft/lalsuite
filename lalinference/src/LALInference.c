@@ -113,6 +113,7 @@ LALInferenceThreadState *LALInferenceInitThread(void) {
     thread->creation_time = tv.tv_sec + tv.tv_usec/1E6;
     thread->currentPropDensity = -DBL_MAX;
     thread->currentParams = XLALCalloc(1, sizeof(LALInferenceVariables));
+    thread->algorithmParams = XLALCalloc(1, sizeof(LALInferenceVariables));
     thread->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
     thread->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
     thread->preProposalParams=XLALCalloc(1,sizeof(LALInferenceVariables));
@@ -2195,11 +2196,11 @@ void LALInferenceSortVariablesByName(LALInferenceVariables *vars)
  * Caller is responsible for opening and closing file.
  * Variables are alphabetically sorted before being written
  */
-void LALInferenceLogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars)
+void LALInferenceLogSampleToFile(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars)
 {
   FILE *outfile=NULL;
-  if(LALInferenceCheckVariable(state->algorithmParams,"outfile"))
-    outfile=*(FILE **)LALInferenceGetVariable(state->algorithmParams,"outfile");
+  if(LALInferenceCheckVariable(algorithmParams,"outfile"))
+    outfile=*(FILE **)LALInferenceGetVariable(algorithmParams,"outfile");
   /* Write out old sample */
   if(outfile==NULL) return;
   LALInferenceSortVariablesByName(vars);
@@ -2215,23 +2216,23 @@ void LALInferenceLogSampleToFile(LALInferenceRunState *state, LALInferenceVariab
  * DOES NOT FREE ARRAY, user must clean up after use.
  * Also outputs sample to disk if possible
  */
-void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars)
+void LALInferenceLogSampleToArray(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars)
 {
   LALInferenceVariables **output_array=NULL;
   UINT4 N_output_array=0;
   LALInferenceSortVariablesByName(vars);
-  LALInferenceLogSampleToFile(state,vars);
+  LALInferenceLogSampleToFile(algorithmParams,vars);
 
   /* Set up the array if it is not already allocated */
-  if(LALInferenceCheckVariable(state->algorithmParams,"outputarray"))
-    output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(state->algorithmParams,"outputarray");
+  if(LALInferenceCheckVariable(algorithmParams,"outputarray"))
+    output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(algorithmParams,"outputarray");
   else
-    LALInferenceAddVariable(state->algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(algorithmParams,"outputarray",&output_array,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
 
-  if(LALInferenceCheckVariable(state->algorithmParams,"N_outputarray"))
-    N_output_array=*(INT4 *)LALInferenceGetVariable(state->algorithmParams,"N_outputarray");
+  if(LALInferenceCheckVariable(algorithmParams,"N_outputarray"))
+    N_output_array=*(INT4 *)LALInferenceGetVariable(algorithmParams,"N_outputarray");
   else
-    LALInferenceAddVariable(state->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
 
   /* Expand the array for new sample */
   output_array=XLALRealloc(output_array, (N_output_array+1) *sizeof(LALInferenceVariables *));
@@ -2246,8 +2247,8 @@ void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVaria
     LALInferenceCopyVariables(vars,output_array[N_output_array]);
     N_output_array++;
 
-    LALInferenceSetVariable(state->algorithmParams,"outputarray",&output_array);
-    LALInferenceSetVariable(state->algorithmParams,"N_outputarray",&N_output_array);
+    LALInferenceSetVariable(algorithmParams,"outputarray",&output_array);
+    LALInferenceSetVariable(algorithmParams,"N_outputarray",&N_output_array);
   }
   return;
 }
@@ -3993,15 +3994,13 @@ int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
 					REAL8Vector *deltaAmps,
 					REAL8Vector *deltaPhases,
 					REAL8Sequence *freqNodesLin,
-					COMPLEX16Sequence *calFactorROQLin,
+					COMPLEX16Sequence **calFactorROQLin,
 					REAL8Sequence *freqNodesQuad,
-					COMPLEX16Sequence *calFactorROQQuad) {
+					COMPLEX16Sequence **calFactorROQQuad) {
 
   gsl_interp_accel *ampAcc = NULL, *phaseAcc = NULL;
   gsl_interp *ampInterp = NULL, *phaseInterp = NULL;
-  calFactorROQLin = XLALCreateCOMPLEX16Sequence(freqNodesLin->length);
-  calFactorROQQuad = XLALCreateCOMPLEX16Sequence(freqNodesQuad->length);
-
+ 
   int status = XLAL_SUCCESS;
   const char *fmt = "";
 
@@ -4015,7 +4014,7 @@ int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
     goto cleanup;
   }
 
-  if (logfreqs->length != deltaAmps->length || deltaAmps->length != deltaPhases->length || freqNodesLin->length != calFactorROQLin->length || freqNodesQuad->length != calFactorROQQuad->length) {
+  if (logfreqs->length != deltaAmps->length || deltaAmps->length != deltaPhases->length || freqNodesLin->length != (*calFactorROQLin)->length || freqNodesQuad->length != (*calFactorROQQuad)->length) {
     status = XLAL_EINVAL;
     fmt = "input lengths differ";
     goto cleanup;
@@ -4059,7 +4058,7 @@ int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
       dPhi = gsl_interp_eval(phaseInterp, logfreqs->data, deltaPhases->data, log(f), phaseAcc);
     }
     
-    calFactorROQLin->data[i] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
+    (*calFactorROQLin)->data[i] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
   }
   
   for (unsigned int j = 0; j < freqNodesQuad->length; j++) {
@@ -4072,7 +4071,7 @@ int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
       dPhi = gsl_interp_eval(phaseInterp, logfreqs->data, deltaPhases->data, log(f), phaseAcc);
     }
 
-    calFactorROQQuad->data[j] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
+    (*calFactorROQQuad)->data[j] = (1.0 + dA)*(2.0 + I*dPhi)/(2.0 - I*dPhi);
 
   }
 

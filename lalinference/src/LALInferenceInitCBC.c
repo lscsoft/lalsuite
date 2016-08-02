@@ -37,10 +37,33 @@
 #include <lal/LALInferenceInit.h>
 #include <lal/LALInferenceCalibrationErrors.h>
 
+static int checkParamInList(const char *list, const char *param);
+static int checkParamInList(const char *list, const char *param)
+{
+  /* Check for param in comma-seperated list */
+  char *post=NULL,*pos=NULL;
+  if (list==NULL) return 0;
+  if (param==NULL) return 0;
+  
+  if(!(pos=strstr(list,param))) return 0;
+  
+  /* The string is a substring. Check that it is a token */
+  /* Check the character before and after */
+  if(pos!=list)
+  if(*(pos-1)!=',')
+  return 0;
+  
+  post=&(pos[strlen(param)]);
+  if(*post!='\0')
+  if(*post!=',')
+  return 0;
+  return 1;
+}
 
 static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTable *commline);
 static void LALInferenceInitSpinVariables(LALInferenceRunState *state, LALInferenceModel *model);
 static void LALInferenceInitMassVariables(LALInferenceRunState *state);
+static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenceModel *model);
 static void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approximant approx);
 
 
@@ -198,6 +221,7 @@ void LALInferenceInitCBCThreads(LALInferenceRunState *run_state, INT4 nthreads) 
 
     /* Set up CBC model and parameter array */
     thread->model = LALInferenceInitCBCModel(run_state);
+    thread->model->roq_flag = 0;
 
     /* Allocate IFO likelihood holders */
     nifo = 0;
@@ -396,8 +420,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
     LALInferenceAddVariable(currentParams, "spcal_active", &calOn, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(currentParams, "spcal_npts", &ncal, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
-    ifo = runState->data;
-    do {
+    for(ifo=runState->data;ifo;ifo=ifo->next) {
       size_t i;
 
       char freqVarName[VARNAME_MAX];
@@ -462,9 +485,7 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       LALInferenceAddVariable(runState->priorArgs, pha_uncert, &phaseUncertaintyPrior,
             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
-      ifo = ifo->next;
-
-    } while (ifo);
+    }
   }
   else if(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp") ||LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")){
     /* Use constant (in frequency) approximation for the errors */
@@ -606,11 +627,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
                                                        PhenSpinTaylorRD, NumRel.\n\
                          default modeldomain=\"frequency\": TaylorF1, TaylorF2, TaylorF2RedSpin,\n\
                                                        TaylorF2RedSpinTidal, IMRPhenomA,\n\
-                                                       IMRPhenomB, IMRPhenomP.\n\
+                                                       IMRPhenomB, IMRPhenomP, IMRPhenomPv2.\n\
     (--amporder PNorder)            Specify a PN order in amplitude to use (defaults: LALSimulation: max available; LALInspiral: newtownian).\n\
     (--fref f_ref)                  Specify a reference frequency at which parameters are defined (default 100).\n\
-    (--use-tidal)                   Enables tidal corrections, only with LALSimulation.\n\
-    (--use-tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
+    (--tidal)                   Enables tidal corrections, only with LALSimulation.\n\
+    (--tidalT)                  Enables reparmeterized tidal corrections, only with LALSimulation.\n\
     (--spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
     (--tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
     (--numreldata FileName)         Location of NR data file for NR waveforms (with NR_hdf5 approx).\n\
@@ -619,6 +640,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
     (--noSpin, --disable-spin)      template will assume no spins (giving this will void spinOrder!=0) \n\
     (--no-detector-frame)              model will NOT use detector-centred coordinates and instead RA,dec\n\
+    (--grtest-parameters dchi0,..,dxi1,..,dalpha1,..) template will assume deformations in the corresponding phase coefficients.\n\
+    (--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
 \n\
     ----------------------------------------------\n\
     --- Starting Parameters ----------------------\n\
@@ -654,11 +677,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     Component masses, total mass and time have dedicated options listed here:\n\n\
     (--trigtime time)                       Center of the prior for the time variable.\n\
     (--comp-min min)                        Minimum component mass (1.0).\n\
-    (--comp-max max)                        Maximum component mass (30.0).\n\
+    (--comp-max max)                        Maximum component mass (100.0).\n\
     (--mass1-min min, --mass1-max max)      Min and max for mass1 (default: same as comp-min,comp-max, will over-ride these.\n\
     (--mass2-min min, --mass2-max max)      Min and max for mass2 (default: same as comp-min,comp-max, will over-ride these.\n\
     (--mtotal-min min)                      Minimum total mass (2.0).\n\
-    (--mtotal-max max)                      Maximum total mass (35.0).\n\
+    (--mtotal-max max)                      Maximum total mass (200.0).\n\
     (--dt time)                             Width of time prior, centred around trigger (0.2s).\n\
 \n\
     (--varyFlow, --flowMin, --flowMax)       Allow the lower frequency bound of integration to vary in given range.\n\
@@ -703,6 +726,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   /* Default priors */
   REAL8 Dmin=1.0;
   REAL8 Dmax=2000.0;
+  REAL8 Dinitial = (Dmax + Dmin)/2.0;
   REAL8 mcMin=1.0;
   REAL8 mcMax=15.3;
   REAL8 etaMin=0.0312;
@@ -812,7 +836,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   }
   if(approx==NumApproximants){
        approx=TaylorF2; /* Defaults to TF2 */
-       XLALPrintWarning("You did not provide an approximant for the templates. Using default %s, which might now be what you want!\n",XLALGetStringFromApproximant(approx));
+       XLALPrintWarning("You did not provide an approximant for the templates. Using default %s, which might now be what you want!\n",XLALSimInspiralGetStringFromApproximant(approx));
   }
 
   /* Set the model domain appropriately */
@@ -1110,8 +1134,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   /* Check for distance prior for use if the user samples in logdistance */
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--distance-max"))) Dmax=atof(ppt->value);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--distance-min"))) Dmin=atof(ppt->value);
+  LALInferenceParamVaryType distanceVary = LALINFERENCE_PARAM_LINEAR;
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--fix-distance")))
+  {
+    Dinitial=atof(ppt->value);
+    distanceVary = LALINFERENCE_PARAM_FIXED;
+  }
 
-  LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", zero, log(Dmin), log(Dmax),LALINFERENCE_PARAM_LINEAR);
+  LALInferenceRegisterUniformVariableREAL8(state, model->params, "logdistance", log(Dinitial), log(Dmin), log(Dmax), distanceVary);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "polarisation", zero, psiMin, psiMax, LALINFERENCE_PARAM_LINEAR);
   LALInferenceRegisterUniformVariableREAL8(state, model->params, "costheta_jn", zero, costhetaJNmin, costhetaJNmax,LALINFERENCE_PARAM_LINEAR);
 
@@ -1150,6 +1180,11 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 	  }
   }
 
+    /* If requested by the user populate the testing GR or PPE model parameters */
+  if (LALInferenceGetProcParamVal(commandLine,"--grtest-parameters") || LALInferenceGetProcParamVal(commandLine,"--ppe-parameters"))
+  {
+    LALInferenceInitNonGRParams(state, model);
+  }
   /* PPE parameters */
 
   ppt=LALInferenceGetProcParamVal(commandLine, "--TaylorF2ppE");
@@ -1216,7 +1251,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
 
      /* Print info about orders and waveflags used for templates */
 
-     fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i tidal order %i in the %s domain.\n",approx,XLALGetStringFromApproximant(approx),PhaseOrder,AmpOrder,(int) spinO, (int) tideO, model->domain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
+     fprintf(stdout,"Templates will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i tidal order %i in the %s domain.\n",approx,XLALSimInspiralGetStringFromApproximant(approx),PhaseOrder,AmpOrder,(int) spinO, (int) tideO, model->domain==LAL_SIM_DOMAIN_TIME?"time":"frequency");
      fprintf(stdout,"---\t\t ---\n\n");
   }//end of signal only flag
   else
@@ -1252,6 +1287,15 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
                                                 model->deltaF,
                                                 &lalDimensionlessUnit,
                                                 state->data->freqData->data->length);
+
+  model->freqhs = XLALCalloc(nifo, sizeof(COMPLEX16FrequencySeries *));
+  for (i=0; i<nifo; i++)
+      model->freqhs[i] = XLALCreateCOMPLEX16FrequencySeries("freqh",
+                                                            &(state->data->freqData->epoch),
+                                                            0.0,
+                                                            model->deltaF,
+                                                            &lalDimensionlessUnit,
+                                                            state->data->freqData->data->length);
 
   /* Create arrays for holding single-IFO likelihoods, etc. */
   model->ifo_loglikelihoods = XLALCalloc(nifo, sizeof(REAL8));
@@ -1306,7 +1350,6 @@ LALInferenceModel *LALInferenceInitModelReviewEvidence(LALInferenceRunState *sta
     model->ifo_SNRs = XLALCalloc(nifo, sizeof(REAL8));
 
 	i=0;
-
  
   /* Parameter bounds at ±5 sigma */
   fprintf(stdout,"Setting up priors\n");
@@ -1467,7 +1510,7 @@ static void print_flags_orders_warning(SimInspiralTable *injt, ProcessParamsTabl
      /* check approximant is given */
     if (approx==NumApproximants){
         approx=XLALGetApproximantFromString(injt->waveform);
-        XLALPrintWarning("WARNING: You did not provide an approximant for the templates. Using value in injtable (%s), which might not what you want!\n",XLALGetStringFromApproximant(approx));
+        XLALPrintWarning("WARNING: You did not provide an approximant for the templates. Using value in injtable (%s), which might not what you want!\n",XLALSimInspiralGetStringFromApproximant(approx));
      }
 
     /* check inj/rec amporder */
@@ -1794,8 +1837,8 @@ void LALInferenceInitMassVariables(LALInferenceRunState *state){
   LALInferenceVariables *priorArgs=state->priorArgs;
 
   REAL8 m1_min=1.0,m2_min=1.0;
-  REAL8 m1_max=30.0,m2_max=30.0;
-  REAL8 MTotMax=35.0;
+  REAL8 m1_max=100.0,m2_max=100.0;
+  REAL8 MTotMax=200.0;
   REAL8 MTotMin=2.0;
 
   /* Over-ride component masses */
@@ -1914,3 +1957,99 @@ void LALInferenceCheckApproximantNeeds(LALInferenceRunState *state,Approximant a
   (void) max;
   return;
 }
+
+/*******************************************************************
+ * LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenceModel *model)
+ * Function to initialise either the TaylorF2Test of SpinTaylorT4Test waveform models
+ * or the PPE waveform model
+ *******************************************************************/
+static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenceModel *model)
+{
+    ProcessParamsTable *commandLine = state->commandLine;
+    ProcessParamsTable *ppt=NULL;
+    /* check that the user does not request both a TaylorF2Test and a PPE waveform model */
+    if (LALInferenceGetProcParamVal(commandLine,"--grtest-parameters") && LALInferenceGetProcParamVal(commandLine,"--ppe-parameters"))
+    {
+        fprintf(stderr,"--grtest-parameters and --ppe-parameters are not simultaneously supported. Please choose one. Aborting\n");
+        exit(-1);
+    }
+    ppt=LALInferenceGetProcParamVal(commandLine,"--grtest-parameters");
+    if (ppt)
+    {
+        REAL8 dchi_max=1.;
+        REAL8 dchi_min=-1.;
+        REAL8 dxi_max=1.;
+        REAL8 dxi_min=-1.;
+        REAL8 dalpha_max=1.;
+        REAL8 dalpha_min=-1.;
+        REAL8 dbeta_max=1.;
+        REAL8 dbeta_min=-1.;
+        REAL8 dsigma_max=1.;
+        REAL8 dsigma_min=-1.;
+        REAL8 tmpVal=0.0;
+	/* Relative shifts for inspiral phase PN coefficients (absolute value for dchi1) */
+        if (checkParamInList(ppt->value,"dchi0")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi0", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi1", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi2", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi3", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi4")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi4", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi5")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi5l")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5l", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi6")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi6", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi6l")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi6l", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi7")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi7", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+	/* Relative shifts for pre-merger phase coefficients (PhenomC/P) */
+        if (checkParamInList(ppt->value,"dxi1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dxi1", tmpVal, dxi_min, dxi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dxi2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dxi2", tmpVal, dxi_min, dxi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dxi3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dxi3", tmpVal, dxi_min, dxi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dxi4")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dxi4", tmpVal, dxi_min, dxi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dxi5")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dxi5", tmpVal, dxi_min, dxi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dxi6")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dxi6", tmpVal, dxi_min, dxi_max, LALINFERENCE_PARAM_LINEAR);
+	/* Relative shifts for merger-ringdown phase coefficients  (PhenomD/Pv2) */
+        if (checkParamInList(ppt->value,"dalpha1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dalpha1", tmpVal, dalpha_min, dalpha_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dalpha2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dalpha2", tmpVal, dalpha_min, dalpha_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dalpha3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dalpha3", tmpVal, dalpha_min, dalpha_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dalpha4")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dalpha4", tmpVal, dalpha_min, dalpha_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dalpha5")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dalpha5", tmpVal, dalpha_min, dalpha_max, LALINFERENCE_PARAM_LINEAR);
+	/* Relative shifts for phenomenological inspiral phase coefficients (PhenomD/Pv2) */
+        if (checkParamInList(ppt->value,"dsigma1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dsigma1", tmpVal, dsigma_min, dsigma_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dsigma2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dsigma2", tmpVal, dsigma_min, dsigma_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dsigma3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dsigma3", tmpVal, dsigma_min, dsigma_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dsigma4")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dsigma4", tmpVal, dsigma_min, dsigma_max, LALINFERENCE_PARAM_LINEAR);
+	/* Relative shifts for intermediate phase coefficients (PhenomD/Pv2) */
+        if (checkParamInList(ppt->value,"dbeta1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dbeta1", tmpVal, dbeta_min, dbeta_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dbeta2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dbeta2", tmpVal, dbeta_min, dbeta_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dbeta3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dbeta3", tmpVal, dbeta_min, dbeta_max, LALINFERENCE_PARAM_LINEAR);
+    }
+    ppt=LALInferenceGetProcParamVal(commandLine,"--ppe-parameters");
+    if (ppt)
+    {
+        /* amplitude parameters */
+        REAL8 appe_min = -5.0,appe_max=5.0;
+        REAL8 alphappe_min = -1000.0,alphappe_max=1000.0;
+        REAL8 bppe_min = -5.0,bppe_max=5.0;
+        REAL8 betappe_min = -1000.0,betappe_max=1000.0;
+        char aPPEparam[64]="";
+        char alphaPPEparam[64]="";
+        /* phase parameters */
+        char bPPEparam[64]="";
+        char betaPPEparam[64]="";
+        int counters[4]={0};
+        do
+        {
+            sprintf(aPPEparam, "%s%d","aPPE",++counters[0]);
+            if (checkParamInList(ppt->value,aPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, aPPEparam, 0.0, appe_min, appe_max, LALINFERENCE_PARAM_LINEAR);
+            sprintf(alphaPPEparam, "%s%d","alphaPPE",++counters[1]);
+            if (checkParamInList(ppt->value,alphaPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, alphaPPEparam, 0.0, alphappe_min, alphappe_max, LALINFERENCE_PARAM_LINEAR);
+            sprintf(bPPEparam, "%s%d","bPPE",++counters[2]);
+            if (checkParamInList(ppt->value,bPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, bPPEparam, 0.0, bppe_min, bppe_max, LALINFERENCE_PARAM_LINEAR);
+            sprintf(betaPPEparam, "%s%d","betaPPE",++counters[3]);
+            if (checkParamInList(ppt->value,betaPPEparam)) LALInferenceRegisterUniformVariableREAL8(state, model->params, betaPPEparam, 0.0, betappe_min, betappe_max, LALINFERENCE_PARAM_LINEAR);
+            
+        } while((checkParamInList(ppt->value,aPPEparam))||(checkParamInList(ppt->value,alphaPPEparam))||(checkParamInList(ppt->value,bPPEparam))||(checkParamInList(ppt->value,betaPPEparam)));
+        if ((counters[0]!=counters[1])||(counters[2]!=counters[3])) {fprintf(stderr,"Unequal number of PPE parameters detected! Check your command line!\n"); exit(-1);}
+    }
+    
+}
+
+

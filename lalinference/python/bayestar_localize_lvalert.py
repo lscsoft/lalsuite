@@ -25,13 +25,17 @@ explicitly specify the GraceDb ID on the command line, as in:
 
 Or, `bayetar_localize_lvalert` can accept an LVAlert XML packet read from
 stdin. This is handy for quickly setting up automatic processing of events in
-response to LVAlert notifications. To do this, first subscribe to events of
-types that you are interested in (probably `cbc_lowmass` or `test_lowmass`):
+response to LVAlert notifications. To do this, first put your LVAlert login
+credentials in the file `~/.netrc` in your home directory:
 
-    $ lvalert_admin --username albert.einstein --password supersecret \
-      --subscribe --node cbc_lowmass
-    $ lvalert_admin --username albert.einstein --password supersecret \
-      --subscribe --node test_lowmass
+    machine lvalert.cgca.uwm.edu login albert.einstein password ligorocks
+
+replacing `albert.einstein` and `ligorocks` with your actual username and
+password. Then, subscribe to events of types that you are interested in
+(probably `cbc_lowmass` or `test_lowmass`):
+
+    $ lvalert_admin --subscribe --node cbc_lowmass
+    $ lvalert_admin --subscribe --node test_lowmass
 
 Create a configuration file that will tell `lvalert_listen` what to do in
 response to those event types. For example, you might create a file called
@@ -44,8 +48,7 @@ response to those event types. For example, you might create a file called
 
 Finally, start `lvalert_listen`:
 
-    $ lvalert_listen  --username albert.einstein --password supersecret \
-      --config-file lvalert_listen.ini
+    $ lvalert_listen --config-file lvalert_listen.ini
 """
 __author__ = "Leo Singer <leo.singer@ligo.org>"
 
@@ -129,6 +132,7 @@ if not opts.dry_run:
 import os
 import shutil
 import tempfile
+from lalinference.bayestar import distance
 from lalinference.bayestar.ligolw_sky_map import gracedb_sky_map
 from lalinference import fits
 
@@ -155,6 +159,9 @@ try:
         phase_convention=opts.phase_convention, nside=opts.nside,
         f_high_truncate=opts.f_high_truncate,
         method=opts.method, chain_dump=chain_dump)
+    prob, distmu, distsigma, _ = sky_map
+    distmean, diststd = distance.parameters_to_marginal_moments(
+        prob, distmu, distsigma)
     log.info("sky localization complete")
 
     # upload FITS file
@@ -165,6 +172,7 @@ try:
             creator=parser.prog, objid=str(graceid),
             url='https://gracedb.ligo.org/events/{0}'.format(graceid),
             runtime=elapsed_time, instruments=instruments,
+            distmean=distmean, diststd=diststd,
             origin='LIGO/Virgo', nest=True)
         if not opts.dry_run:
             gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",

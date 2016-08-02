@@ -40,7 +40,7 @@
 int main(int argc, char *argv[])
 {
   fitsfile *fptr = 0;      /* FITS file pointer, defined in fitsio.h */
-  char *val = 0, value[1000], nullstr[]="*";
+  char *val = 0, value[1000], nullstr[]="NAN";
   char keyword[FLEN_KEYWORD], colname[1000][FLEN_VALUE];
   int status = 0;   /*  CFITSIO status value MUST be initialized to zero!  */
   int hdunum = 0, hdutype = 0, ncols = 0, ii = 0, anynul = 0, dispwidth[1000];

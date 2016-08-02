@@ -1,0 +1,19 @@
+#!/usr/bin/perl
+use strict;
+open IN, "git shortlog -s -e -n |" or die $!;
+my %authors;
+my %emails;
+while (<IN>) {
+    chomp;
+    $_ =~ m/^\s*\d+\s+([^<>]+)\s+<([^>]+)>\s*$/ or die;
+    my $author = $1;
+    my $email = $2;
+    next if $author =~ /^UNKNOWN/;
+    if (defined($authors{$author})) {
+        print "$authors{$author} <$email>\n";
+    } elsif (defined($emails{$email})) {
+        print "$emails{$email} <$email>\n";
+    } else {
+        $authors{$author} = $emails{$email} = "$author <$email>";
+    }
+}

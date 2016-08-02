@@ -1,3 +1,4 @@
+#include "config.h"
 #include "coh_PTF.h"
 
 INT4 coh_PTF_data_condition(

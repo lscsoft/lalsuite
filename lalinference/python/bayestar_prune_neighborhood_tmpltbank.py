@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -24,25 +24,20 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 # Command line interface.
-from optparse import Option, OptionParser
+import argparse
 from lalinference.bayestar import command
-import sys
 
-parser = OptionParser(
-    formatter = command.NewlinePreservingHelpFormatter(),
-    description = __doc__,
-    usage = '%prog [options] --mass1 MSUN --mass2 MSUN [INPUT.xml[.gz]] [-o OUTPUT.xml[.gz]]',
-    option_list = [
-        Option("-o", "--output", metavar="OUTPUT.xml[.gz]", default="/dev/stdout",
-            help="Name of output file [default: %default]"),
-        Option("--mass1", type=float, metavar="MSUN"),
-        Option("--mass2", type=float, metavar="MSUN"),
-        Option("--snr", type=float, metavar="SNR")
-    ]
-)
-opts, args = parser.parse_args()
-infilename = command.get_input_filename(parser, args)
-command.check_required_arguments(parser, opts, "mass1", "mass2", "snr")
+parser = command.ArgumentParser()
+parser.add_argument("--mass1", type=float, metavar="MSUN", required=True)
+parser.add_argument("--mass2", type=float, metavar="MSUN", required=True)
+parser.add_argument("--snr", type=float, metavar="SNR", required=True)
+parser.add_argument(
+    'input', metavar='IN.xml[.gz]', type=argparse.FileType('rb'),
+    default='-', help='Name of input file [default: stdin]')
+parser.add_argument(
+    '-o', '--output', metavar='OUT.xml[.gz]', type=argparse.FileType('wb'),
+    default='-', help='Name of output file [default: stdout]')
+opts = parser.parse_args()
 
 
 # Python standard library imports.
@@ -64,19 +59,18 @@ import numpy as np
 from scipy import linalg
 
 # BAYESTAR imports.
-from lalinference import bayestar.ligolw
+from lalinference.bayestar import ligolw as ligolw_bayestar
 
 
 # Read input file.
-xmldoc = ligolw_utils.load_filename(,
-    infilename, contenthandler=bayestar.ligolw.LSCTablesContentHandler)
+xmldoc, _ = ligolw_utils.load_fileobj(
+    opts.input, contenthandler=ligolw_bayestar.LSCTablesContentHandler)
 
 # Write process metadata to output file.
-process = ligolw_process.register_to_xmldoc(xmldoc, parser.get_prog_name(),
-    opts.__dict__)
+process = command.register_to_xmldoc(xmldoc, parser, opts)
 
 # Determine the low frequency cutoff from the template bank file.
-f_low = bayestar.ligolw.get_template_bank_f_low(xmldoc)
+f_low = ligolw_bayestar.get_template_bank_f_low(xmldoc)
 
 # Get the SnglInspiral table.
 sngl_inspiral_table = ligolw_table.get_table(xmldoc,
@@ -142,5 +136,5 @@ sngl_inspiral_table.extend(rows_to_keep)
 ligolw_process.set_process_end_time(process)
 
 # Write output.
-ligolw_utils.write_filename(xmldoc, opts.output,
-    gz=(os.path.splitext(opts.output)[-1] == '.gz'))
+ligolw_utils.write_fileobj(xmldoc, opts.output,
+    gz=(os.path.splitext(opts.output.name)[-1] == '.gz'))

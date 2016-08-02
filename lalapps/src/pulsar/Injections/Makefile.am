@@ -18,6 +18,7 @@ lalapps_Makefakedata_v5_SOURCES = makefakedata_v5.c
 eah_Makefakedata_v4_SOURCES = $(lalapps_Makefakedata_v4_SOURCES) win_lib.cpp
 
 eah_Makefakedata_v5_SOURCES = $(lalapps_Makefakedata_v5_SOURCES) win_lib.cpp
+eah_Makefakedata_v5_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/src/pulsar/EinsteinAtHome
 
 lalapps_compareTS_SOURCES = compareTS.c
 

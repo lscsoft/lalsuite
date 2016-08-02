@@ -121,6 +121,11 @@ struct fvec *interpFromFile(char *filename){
 	interp=XLALRealloc(interp,fileLength*sizeof(struct fvec)); /* Resize array */
 	fclose(interpfile);
 	printf("Read %i records from %s\n",fileLength-1,filename);
+    if(fileLength-1 <1)
+    {
+            XLALPrintError("Error: read no records from %s\n",filename);
+            exit(1);
+    }
 	return interp;
 }
 
@@ -718,33 +723,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         if(!strcmp(IFOnames[i],"K1")){
             memcpy(IFOdata[i].detector, &lalCachedDetectors[LALDetectorIndexKAGRADIFF],sizeof(LALDetector));
             if(!Nchannel) sprintf((channels[i]),"K1:STRAIN"); continue;}
-        if(!strcmp(IFOnames[i],"I1")||!strcmp(IFOnames[i],"LIGOIndia")){
-            /* Detector in India with 4k arms */
-            LALFrDetector LIGOIndiaFr;
-            sprintf(LIGOIndiaFr.name,"LIGO_India");
-            sprintf(LIGOIndiaFr.prefix,"I1");
-            /* Location of India site is */
-            /* 14d14' N 76d26' E */
-            LIGOIndiaFr.vertexLatitudeRadians = (14. + 14./60.)*LAL_PI/180.0;
-            LIGOIndiaFr.vertexLongitudeRadians = (76. + 26./60.)*LAL_PI/180.0;
-            LIGOIndiaFr.vertexElevation = 0.0;
-            LIGOIndiaFr.xArmAltitudeRadians = 0.0;
-            LIGOIndiaFr.yArmAltitudeRadians = 0.0;
-            LIGOIndiaFr.yArmMidpoint = 2000.;
-            LIGOIndiaFr.xArmMidpoint = 2000.;
-            LIGOIndiaFr.xArmAzimuthRadians = LAL_PI/2.;
-            LIGOIndiaFr.yArmAzimuthRadians = 0.;
-            IFOdata[i].detector=XLALMalloc(sizeof(LALDetector));
-            memset(IFOdata[i].detector,0,sizeof(LALDetector));
-            XLALCreateDetector(IFOdata[i].detector,&LIGOIndiaFr,LALDETECTORTYPE_IFODIFF);
-            printf("Created LIGO India Detector, location %lf, %lf, %lf\n",IFOdata[i].detector->location[0],IFOdata[i].detector->location[1],IFOdata[i].detector->location[2]);
-            printf("Detector tensor:\n");
-            for(int jdx=0;jdx<3;jdx++){
-                for(j=0;j<3;j++) printf("%f ",IFOdata[i].detector->response[jdx][j]);
-                printf("\n");
-            }
-            continue;
-        }
+	    if(!strcmp(IFOnames[i],"I1")){
+	        memcpy(IFOdata[i].detector, &lalCachedDetectors[LALDetectorIndexLIODIFF],sizeof(LALDetector));
+	        if(!Nchannel) sprintf((channels[i]),"I1:STRAIN"); continue;}
         if(!strcmp(IFOnames[i],"A1")||!strcmp(IFOnames[i],"LIGOSouth")){
             /* Construct a detector at AIGO with 4k arms */
             LALFrDetector LIGOSouthFr;
@@ -1592,7 +1573,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       }
       LALSimInspiralTestGRParam *nonGRparams = NULL;
       /* Print a line with information about approximant, amporder, phaseorder, tide order and spin order */
-      fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the time domain with a reference frequency of %f.\n",approximant,XLALGetStringFromApproximant(approximant),order,amporder,(int) spinO, (int) tideO, (float) fref);
+      fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the time domain with a reference frequency of %f.\n",approximant,XLALSimInspiralGetStringFromApproximant(approximant),order,amporder,(int) spinO, (int) tideO, (float) fref);
 
       /* ChooseWaveform starts the (2,2) mode of the waveform at the given minimum frequency.  We want the highest order contribution to start at the f_lower of the injection file */
       REAL8 f_min = fLow2fStart(injEvent->f_lower, amporder, approximant);
@@ -2289,7 +2270,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
  /* Print a line with information about approximant, amp_order, phaseorder, tide order and spin order */
   fprintf(stdout,"\n\n---\t\t ---\n");
- fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the frequency domain.\n",approximant,XLALGetStringFromApproximant(approximant),phase_order,amp_order,(int) spinO,(int) tideO);
+ fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the frequency domain.\n",approximant,XLALSimInspiralGetStringFromApproximant(approximant),phase_order,amp_order,(int) spinO,(int) tideO);
    fprintf(stdout,"---\t\t ---\n\n");
 
   COMPLEX16FrequencySeries *hptilde=NULL, *hctilde=NULL;
@@ -2733,6 +2714,11 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	  
 	  model->roq->trigtime = endtime;
 
+          model->roq->frequencyNodesLinear = XLALCreateREAL8Sequence(n_basis_linear);
+          model->roq->frequencyNodesQuadratic = XLALCreateREAL8Sequence(n_basis_quadratic);
+          model->roq->calFactorLinear = XLALCreateCOMPLEX16Sequence(model->roq->frequencyNodesLinear->length);
+          model->roq->calFactorQuadratic = XLALCreateCOMPLEX16Sequence(model->roq->frequencyNodesQuadratic->length);
+
 	  if(LALInferenceGetProcParamVal(commandLine,"--roqnodesLinear")){
 	    ppt=LALInferenceGetProcParamVal(commandLine,"--roqnodesLinear");
 
@@ -2826,24 +2812,71 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 
 
 
+
     thisData=IFOdata;
     while (thisData) {
+
+
+
       thisData->roq = XLALMalloc(sizeof(LALInferenceROQData));
+
+      thisData->roq->weights_linear = XLALMalloc(n_basis_linear*sizeof(LALInferenceROQSplineWeights));
 
       sprintf(tmp, "--%s-roqweightsLinear", thisData->name);
       ppt = LALInferenceGetProcParamVal(commandLine,tmp);
 
       thisData->roq->weightsFileLinear = fopen(ppt->value, "rb");
-	assert(thisData->roq->weightsFileLinear!=NULL);
+      assert(thisData->roq->weightsFileLinear!=NULL);
       thisData->roq->weightsLinear = (double complex*)malloc(n_basis_linear*time_steps*(sizeof(double complex)));
 
+      thisData->roq->time_weights_width = 2*dt + 2*0.026;
+      thisData->roq->time_step_size = thisData->roq->time_weights_width/time_steps;
+      thisData->roq->n_time_steps = time_steps;
+
+
+	fprintf(stderr, "basis_size = %d\n", n_basis_linear);
+	fprintf(stderr, "time steps = %d\n", time_steps);
+
+      double *tmp_real_weight = malloc(time_steps*(sizeof(double)));
+      double *tmp_imag_weight = malloc(time_steps*(sizeof(double)));
+
+      double *tmp_tcs = malloc(time_steps*(sizeof(double)));
+
+      sprintf(tmp, "--roq-times");
+      ppt = LALInferenceGetProcParamVal(commandLine,tmp);
+
+	FILE *tcFile = fopen(ppt->value, "rb");
+      assert(tcFile!=NULL);
+
+	for(unsigned int gg=0;gg < time_steps; gg++){
+
+		fread(&(tmp_tcs[gg]), sizeof(double), 1, tcFile); 
+	}
+
+	
       for(unsigned int ii=0; ii<n_basis_linear;ii++){
 		for(unsigned int jj=0; jj<time_steps;jj++){
 
       		fread(&(thisData->roq->weightsLinear[ii*time_steps + jj]), sizeof(double complex), 1, thisData->roq->weightsFileLinear);
+		tmp_real_weight[jj] = creal(thisData->roq->weightsLinear[ii*time_steps + jj]);
+		tmp_imag_weight[jj] = cimag(thisData->roq->weightsLinear[ii*time_steps + jj]);
+
       		}
+
+	thisData->roq->weights_linear[ii].acc_real_weight_linear = gsl_interp_accel_alloc ();
+ 	thisData->roq->weights_linear[ii].acc_imag_weight_linear = gsl_interp_accel_alloc ();
+
+	thisData->roq->weights_linear[ii].spline_real_weight_linear = gsl_spline_alloc (gsl_interp_linear, time_steps);
+        gsl_spline_init(thisData->roq->weights_linear[ii].spline_real_weight_linear, tmp_tcs, tmp_real_weight, time_steps);
+      
+        thisData->roq->weights_linear[ii].spline_imag_weight_linear = gsl_spline_alloc (gsl_interp_linear, time_steps);
+        gsl_spline_init(thisData->roq->weights_linear[ii].spline_imag_weight_linear, tmp_tcs, tmp_imag_weight, time_steps);
+
       }
 
+
+      fclose(thisData->roq->weightsFileLinear);
+      fclose(tcFile);
       sprintf(tmp, "--%s-roqweightsQuadratic", thisData->name);
 
       ppt = LALInferenceGetProcParamVal(commandLine,tmp);
@@ -2855,13 +2888,10 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
       for(unsigned int ii=0; ii<n_basis_quadratic;ii++){
 
 		fread(&(thisData->roq->weightsQuadratic[ii]), sizeof(double), 1, thisData->roq->weightsFileQuadratic);
-	}
+      }	
 
 
-      thisData->roq->time_weights_width = 2*dt + 2*0.026;
-      thisData->roq->time_step_size = thisData->roq->time_weights_width/time_steps;
-      thisData->roq->n_time_steps = time_steps;
-
+      
       fprintf(stderr, "loaded %s ROQ weights\n", thisData->name);
       thisData = thisData->next;
     }

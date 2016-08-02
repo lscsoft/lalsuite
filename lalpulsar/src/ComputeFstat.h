@@ -132,7 +132,7 @@ typedef struct tagFstatOptionalArgs {
   MultiNoiseFloor *injectSqrtSX;  	///< Single-sided PSD values for fake Gaussian noise to be added to SFT data.
   MultiNoiseFloor *assumeSqrtSX;  	///< Single-sided PSD values to be used for computing SFT noise weights instead of from a running median of the SFTs themselves.
   FstatInput *prevInput;		///< An \c FstatInput structure from a previous call to XLALCreateFstatInput(); may contain common workspace data than can be re-used to save memory.
-  FILE *timingLogFile;			///< Pointer to a file which might be used to log timing information by some \f$\mathcal{F}\f$-statistic methods.
+  BOOLEAN collectTiming;		///< a flag to turn on/off the collection of F-stat-method-specific timing-data
 } FstatOptionalArgs;
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(COPY_CONSTRUCTOR(tagFstatOptionalArgs));
@@ -297,6 +297,8 @@ const MultiLALDetector* XLALGetFstatInputDetectors ( const FstatInput* input );
 const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* input );
 const MultiNoiseWeights* XLALGetFstatInputNoiseWeights ( const FstatInput* input );
 const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInput* input );
+int XLALGetFstatTiming ( const FstatInput* input, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
+int AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader );
 
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));

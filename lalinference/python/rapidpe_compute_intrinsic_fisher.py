@@ -25,7 +25,7 @@ import select
 import sys
 import stat
 from functools import partial
-from optparse import OptionParser, OptionGroup
+from argparse import ArgumentParser
 
 import numpy as np
 
@@ -46,36 +46,35 @@ from lalinference.rapid_pe import common_cl
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gravity.phys.uwm.edu>, R. O'Shaughnessy"
 
-optp = OptionParser()
+argp = ArgumentParser()
 # Options needed by this program only.
-optp.add_option("-X", "--mass-points-xml", action="store_true", help="Output mass points as a sim_inspiral table.")
-optp.add_option("--save-ellipsoid-data", action="store_true", help="Save the parameters and eigenvalues of the ellipsoid.")
+argp.add_argument("-X", "--mass-points-xml", action="store_true", help="Output mass points as a sim_inspiral table.")
+argp.add_argument("--save-ellipsoid-data", action="store_true", help="Save the parameters and eigenvalues of the ellipsoid.")
 
-optp.add_option("-N", "--N-mass-pts", type=int, default=200, help="Number of intrinsic parameter (mass) values at which to compute marginalized likelihood. Default is 200.")
-optp.add_option("-t", "--N-tidal-pts", type=int, default=None, help="Number of intrinsic parameter (tidal) values at which to compute marginalized likelihood. Default is None, meaning 'don't grid in lambda'")
-optp.add_option("--linear-spoked", action="store_true", help="Place mass pts along spokes linear in radial distance (if omitted placement will be random and uniform in volume")
-optp.add_option("--uniform-spoked", action="store_true", help="Place mass pts along spokes uniform in radial distance (if omitted placement will be random and uniform in volume")
-optp.add_option("--match-value", type=float, default=0.97, help="Use this as the minimum match value. Default is 0.97")
+argp.add_argument("-N", "--N-mass-pts", type=int, default=200, help="Number of intrinsic parameter (mass) values at which to compute marginalized likelihood. Default is 200.")
+argp.add_argument("-t", "--N-tidal-pts", type=int, default=None, help="Number of intrinsic parameter (tidal) values at which to compute marginalized likelihood. Default is None, meaning 'don't grid in lambda'")
+argp.add_argument("--linear-spoked", action="store_true", help="Place mass pts along spokes linear in radial distance (if omitted placement will be random and uniform in volume")
+argp.add_argument("--uniform-spoked", action="store_true", help="Place mass pts along spokes uniform in radial distance (if omitted placement will be random and uniform in volume")
+argp.add_argument("--match-value", type=float, default=0.97, help="Use this as the minimum match value. Default is 0.97")
 
 # Options transferred to ILE
-optp.add_option("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Not required except to name the output file properly. Can be given multiple times for different instruments.")
-optp.add_option("-p", "--psd-file", action="append", help="instrument=psd-file-name e.g. H1=psd.xml.gz. Can be given multiple times for different instruments.")
-optp.add_option("-x", "--coinc-xml", help="gstlal_inspiral XML file containing coincidence information.")
-optp.add_option("-s", "--sim-xml", help="XML file containing injected event information.")
+argp.add_argument("-C", "--channel-name", action="append", help="instrument=channel-name, e.g. H1=FAKE-STRAIN. Not required except to name the output file properly. Can be given multiple times for different instruments.")
+argp.add_argument("-p", "--psd-file", action="append", help="instrument=psd-file-name e.g. H1=psd.xml.gz. Can be given multiple times for different instruments.")
+argp.add_argument("-x", "--coinc-xml", help="gstlal_inspiral XML file containing coincidence information.")
+argp.add_argument("-s", "--sim-xml", help="XML file containing injected event information.")
 
 #
 # Add the intrinsic parameters
 #
-intrinsic_params = OptionGroup(optp, "Intrinsic Parameters", "Intrinsic parameters (e.g component mass) to use.")
-intrinsic_params.add_option("--mass1", type=float, help="Value of first component mass, in solar masses. Required if not providing coinc tables.")
-intrinsic_params.add_option("--mass2", type=float, help="Value of second component mass, in solar masses. Required if not providing coinc tables.")
-intrinsic_params.add_option("--eff-lambda", type=float, help="Value of the effective tidal parameter. Optional, ignored if not given.")
-intrinsic_params.add_option("--delta-eff-lambda", type=float, help="Value of second effective tidal parameter. Optional, ignored if not given.")
-intrinsic_params.add_option("--event-time", type=float, help="Event coalescence GPS time.")
-intrinsic_params.add_option("--approximant", help="Waveform family approximant to use. Required.")
-optp.add_option_group(intrinsic_params)
+intrinsic_params = argp.add_argument_group("Intrinsic Parameters", "Intrinsic parameters (e.g component mass) to use.")
+intrinsic_params.add_argument("--mass1", type=float, help="Value of first component mass, in solar masses. Required if not providing coinc tables.")
+intrinsic_params.add_argument("--mass2", type=float, help="Value of second component mass, in solar masses. Required if not providing coinc tables.")
+intrinsic_params.add_argument("--eff-lambda", type=float, help="Value of the effective tidal parameter. Optional, ignored if not given.")
+intrinsic_params.add_argument("--delta-eff-lambda", type=float, help="Value of second effective tidal parameter. Optional, ignored if not given.")
+intrinsic_params.add_argument("--event-time", type=float, help="Event coalescence GPS time.")
+intrinsic_params.add_argument("--approximant", help="Waveform family approximant to use. Required.")
 
-opts, args = optp.parse_args()
+opts = argp.parse_args()
 
 if opts.delta_eff_lambda and opts.eff_lambda is None:
     exit("If you specify delta_eff_lambda and not eff_lambda, you're gonna have a bad time.")

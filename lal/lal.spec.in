@@ -12,15 +12,17 @@ Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig
-BuildRequires: python-devel
-BuildRequires: octave-devel
-BuildRequires: gsl-devel
-BuildRequires: fftw-devel
-BuildRequires: numpy
 BuildRequires: bc
-Requires: gsl
+BuildRequires: fftw-devel
+BuildRequires: gsl-devel
+BuildRequires: hdf5-devel
+BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
+BuildRequires: swig
 Requires: fftw
+Requires: gsl
+Requires: hdf5
 Prefix: %{_prefix}
 
 %description
@@ -33,8 +35,8 @@ Summary: Files and documentation needed for compiling programs that use LAL
 Group: LAL
 Requires: %{name} = %{version}
 Requires: fftw-devel
-Requires: fftw-static
 Requires: gsl-devel
+Requires: hdf5-devel
 %description devel
 The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library
@@ -115,5 +117,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Tue Jun 21 2016 Adam Mercer <adam.mercer@ligo.org> 6.16.1-1
+- ER9 Release
+
 * Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 6.16.0-1
 - Pre O2 packaging test release

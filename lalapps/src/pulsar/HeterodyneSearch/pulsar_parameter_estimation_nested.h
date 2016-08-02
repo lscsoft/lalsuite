@@ -73,10 +73,6 @@
 
 #include <lal/LALSimNoise.h>
 
-#ifdef HAVE_LIBLALXML
-#include <lal/LALInferenceXML.h>
-#endif
-
 /* check whether openmp is enabled and if so include omp.h */
 #ifdef HAVE_OPENMP
 #include <omp.h>
@@ -157,9 +153,9 @@ extern "C" {
 
 /**
  * The total number of sky position parameters that can define a signal e.g.
- * right ascension, declination, proper motion and the positional epoch.
+ * right ascension, declination, proper motion, parallax and the positional epoch.
  */
-#define NUMSKYPARS 5
+#define NUMSKYPARS 6
 
 /**
  * The total number of binary system parameters that can define a signal e.g.
@@ -191,12 +187,9 @@ extern "C" {
                      same order) delimited by commas. These files can be gzipped.\n\
                      If not set you can generate fake data (see --fake-data below)\n"\
 " --sample-interval   (REAL8) the time interval bewteen samples (default to 60 s)\n"\
-" --outfile           name of output data file [required]\n"\
-" --output-all-params Output all stored parameters, otherwise the default will be\n\
-                     to only output the non-fixed (i.e. variable) parameters\n\
-                     specified in the prior and .par files\n"\
+" --outfile           name of output data file (a HDF5 formated file with the\n\
+                     extension '.hdf' or '.h5' [required])\n"\
 " --output-chunks     Output lists of stationary chunks into which the data has been split\n"\
-" --gzip              gzip the output text file\n"\
 " --outXML            name of output XML file [not required]\n"\
 " --chunk-min         (INT4) minimum stationary length of data to be used in\n\
                      the likelihood e.g. 5 mins\n"\
@@ -246,18 +239,26 @@ extern "C" {
                      greatly increases the autocorrelation lengths, so in\n\
                      general should be avoided]\n"\
 " --ensembleWalk      (UINT4) relative weight of the ensemble walk\n\
-                     proposal (DEFAULT = 1, e.g. 100%%)\n"\
+                     proposal (DEFAULT = 3, e.g. 75%%)\n"\
+" --uniformprop       (UINT4) relative weights of uniform proposal\n\
+                     (DEFAULT = 1, e.g. 25%%)\n"\
 "\n"\
-" Reduced order quadrature parameters:\n"\
+" Reduced order quadrature (ROQ) parameters:\n"\
 " --roq               Set this to use reduced order quadrature to compute the\n\
                      likelihood\n"\
-" --ntraining         (UNIT4) The number of training models used to generate an\n\
+" --ntraining         (UINT4) The number of training models used to generate an\n\
                      orthonormal basis of waveform models\n"\
 " --roq-tolerance     (REAL8) The tolerance used during the basis generation\n\
                      (DEFAULT = 1e-11)\n"\
-" --test-basis        If this is set then the reduced basis set will be tested\n\
-                     against another set of waveforms to check they really are\n\
-                     within the required tolerance\n"\
+" --enrich-max        (UINT4) The number of times to try and \"enrich\" the\n\
+                     basis set using new training data. The enrichment process\n\
+                     stop before this value is reached if three consecutive\n\
+                     enrichment steps produce no new bases (DEFAULT = 100)\n"\
+" --roq-uniform       Set this flag to cause training model parameters for\n\
+                     parameters with Gaussian prior distributions to be drawn\n\
+                     from a uniform distribution spanning mu +/- 5 sigma.\n\
+                     Otherwise, by default parameters are drawn from their given\n\
+                     prior distributions\n"\
 " --output-weights    (CHAR) If this is set then the weights will be output to\n\
                      the (binary) file that is named and the programme will\n\
                      exit. These could be read in later instead of being\n\
@@ -349,14 +350,14 @@ static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "H0", "PHI0", "PSI",
  * recognised within the code.
  */
 static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "F0", "F1", "F2", "F3",
-"F4", "F5", "F6", "F7", "F8", "F9", "PEPOCH", "CGW" };
+"F4", "F5", "F6", "F7", "F8", "F9", "F10", "PEPOCH", "CGW" };
 
 /**
  * A list of the sky position parameters. The names given here are those that
  * are recognised within the code.
  */
 static const CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "RA", "PMRA", "DEC",
-"PMDEC", "POSEPOCH" };
+"PMDEC", "POSEPOCH", "PX" };
 
 /**
  * A list of the binary system parameters. The names given here are those that
@@ -371,8 +372,6 @@ static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "PB", "ECC", "EPS1",
 static const CHAR glitchpars[NUMGLITCHPARS][VARNAME_MAX] = {"GLEP", "GLPH", "GLF0", "GLF1", "GLF2", "GLF0D", "GLTD"};
 
 extern LALStringVector *corlist;
-
-extern UINT4 verbose_output;
 
 #ifdef __cplusplus
 }

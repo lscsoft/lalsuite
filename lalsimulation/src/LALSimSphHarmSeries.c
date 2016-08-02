@@ -285,6 +285,8 @@ SphHarmFrequencySeries *XLALSphHarmFrequencySeriesFromSphHarmTimeSeries(
             }
         }
     }
+    XLALDestroyCOMPLEX16FFTPlan(fwdplan);
+    XLALDestroyCOMPLEX16FrequencySeries(hf);
 
     return hlms_FD;
 

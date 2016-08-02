@@ -34,6 +34,7 @@ mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
 from matplotlib.axes import Axes
 from matplotlib import text
 from matplotlib import ticker
+from matplotlib import patheffects
 from matplotlib.ticker import Formatter, FixedLocator
 from matplotlib.projections import projection_registry
 from matplotlib.transforms import Transform, Affine2D
@@ -540,6 +541,27 @@ def contour(func, *args, **kwargs):
     return ax
 
 
+def contourf(func, *args, **kwargs):
+    "Plot a function on the sphere using the current geographic projection."""
+
+    # Get current axis.
+    ax = plt.gca()
+
+    # Set up a regular grid tiling in right ascension and declination
+    x = np.linspace(*ax.get_xlim(), num=500)
+    y = np.linspace(*ax.get_ylim(), num=500)
+    xx, yy = np.meshgrid(x, y)
+
+    # Evaluate the function everywhere.
+    zz = func(xx, yy)
+
+    # Add contour plot
+    ax = plt.contourf(xx, yy, zz, *args, **kwargs)
+
+    # Done.
+    return ax
+
+
 def _healpix_lookup(map, lon, lat, nest=False, dlon=0):
     """Look up the value of a HEALPix map in the pixel containing the point
     with the specified longitude and latitude."""
@@ -563,6 +585,16 @@ def healpix_contour(map, *args, **kwargs):
     dlon = mpl_kwargs.pop('dlon', 0)
     nest = mpl_kwargs.pop('nest', False)
     return contour(
+        functools.partial(_healpix_lookup, map, nest=nest, dlon=dlon),
+        *args, **mpl_kwargs)
+
+
+def healpix_contourf(map, *args, **kwargs):
+    """Produce a contour plot from a HEALPix map."""
+    mpl_kwargs = dict(kwargs)
+    dlon = mpl_kwargs.pop('dlon', 0)
+    nest = mpl_kwargs.pop('nest', False)
+    return contourf(
         functools.partial(_healpix_lookup, map, nest=nest, dlon=dlon),
         *args, **mpl_kwargs)
 
@@ -608,17 +640,9 @@ def colorbar():
 def outline_text(ax):
     """If we are using a new enough version of matplotlib, then
     add a white outline to all text to make it stand out from the background."""
-    try:
-        # Try to import matplotlib.patheffects (requires matplotlib 1.0+).
-        from matplotlib import patheffects
-    except ImportError:
-        # If import failed, print a warning and do nothing.
-        warnings.warn("This version of matplotlib does not support path effects.")
-    else:
-        # Otherwise, add the path effects.
-        effects = [patheffects.withStroke(linewidth=2, foreground='w')]
-        for artist in ax.findobj(text.Text):
-            artist.set_path_effects(effects)
+    effects = [patheffects.withStroke(linewidth=2, foreground='w')]
+    for artist in ax.findobj(text.Text):
+        artist.set_path_effects(effects)
 
 
 class PPPlot(Axes):

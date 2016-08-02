@@ -1,3 +1,10 @@
+lalinspiral (1.7.5-1) unstable; urgency=low
+
+  * LALInspiral 1.7.5
+  * ER9 release
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 23 Jun 2016 16:42:06 -0500
+
 lalinspiral (1.7.4-1) unstable; urgency=low
 
   * LALInspiral 1.7.4

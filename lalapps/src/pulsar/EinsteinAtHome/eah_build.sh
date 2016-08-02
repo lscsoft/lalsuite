@@ -1756,7 +1756,7 @@ if [ -n "${eah_release}" ]; then
     eah_next="tar cf ${eah_canonical_name}.tar ${eah_release_binaries} ${eah_build_log}"
     echo "${eah_next}"
     eval ${eah_next} || fail
-    eah_next="gzip ${eah_canonical_name}.tar"
+    eah_next="gzip -f ${eah_canonical_name}.tar"
     echo ${eah_next}
     eval ${eah_next} || fail 
     ## and move the final release-tar.gz into the 'pwd' where this script was started
