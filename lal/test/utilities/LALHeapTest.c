@@ -200,31 +200,38 @@ int main( void )
       }
     }
 
-  }
-  printf( "\n----- i=end -----\n\n" );
-
-  /* Resize unlimited min-heap, and check properties */
-  {
-    XLAL_CHECK_MAIN( XLALHeapResize( minh, 20 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    int **ref0 = &ref[80];
-    XLAL_CHECK_MAIN( XLALHeapVisit( minh, check_ptr_int, &ref0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fflush( stdout );
   }
 
-  /* Resize unlimited min-heap, and check properties */
+  /* Resize unlimited heaps, and check properties */
   {
-    XLAL_CHECK_MAIN( XLALHeapResize( maxh, 33 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    int **ref0 = &ref[0];
-    XLAL_CHECK_MAIN( XLALHeapVisit( maxh, check_ptr_int, &ref0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    printf( "\n----- XLALHeapResize() -----\n" );
+    {
+      XLAL_CHECK_MAIN( XLALHeapResize( minh, 20 ) == XLAL_SUCCESS, XLAL_EFUNC );
+      int **ref0 = &ref[80];
+      XLAL_CHECK_MAIN( XLALHeapVisit( minh, check_ptr_int, &ref0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+    {
+      XLAL_CHECK_MAIN( XLALHeapResize( maxh, 33 ) == XLAL_SUCCESS, XLAL_EFUNC );
+      int **ref0 = &ref[0];
+      XLAL_CHECK_MAIN( XLALHeapVisit( maxh, check_ptr_int, &ref0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+    fflush( stdout );
   }
 
   /* Cleanup */
-  XLALHeapDestroy( minh );
-  XLALHeapDestroy( maxh );
-  XLALHeapDestroy( min10h );
-  XLALHeapDestroy( max10h );
+  {
+    printf( "\n----- cleanup -----\n" );
+    XLALHeapDestroy( minh );
+    XLALHeapDestroy( maxh );
+    XLALHeapDestroy( min10h );
+    XLALHeapDestroy( max10h );
 
-  /* Check for memory leaks */
-  LALCheckMemoryLeaks();
+    /* Check for memory leaks */
+    LALCheckMemoryLeaks();
+
+    fflush( stdout );
+  }
 
   return EXIT_SUCCESS;
 
