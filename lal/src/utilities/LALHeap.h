@@ -96,6 +96,13 @@ int XLALHeapSize(
   );
 
 /**
+ * Return the maximum size of a heap
+ */
+int XLALHeapMaxSize(
+  const LALHeap *h              /**< [in] Pointer to heap */
+  );
+
+/**
  * Return the root element of a heap
  */
 const void *XLALHeapRoot(

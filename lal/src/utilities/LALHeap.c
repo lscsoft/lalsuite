@@ -163,6 +163,14 @@ int XLALHeapSize(
   return h->n;
 }
 
+int XLALHeapMaxSize(
+  const LALHeap *h
+  )
+{
+  XLAL_CHECK( h != NULL, XLAL_EFAULT );
+  return h->max_size;
+}
+
 const void *XLALHeapRoot(
   const LALHeap *h
   )

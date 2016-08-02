@@ -60,12 +60,16 @@ int main( void )
   /* Create heaps for storing integers */
   LALHeap *minh = XLALHeapCreate( XLALFree, 0, -1, cmp_ptr_int );
   XLAL_CHECK_MAIN( minh != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALHeapMaxSize( minh ) == 0, XLAL_EFAILED );
   LALHeap *maxh = XLALHeapCreate( XLALFree, 0, +1, cmp_ptr_int );
   XLAL_CHECK_MAIN( maxh != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALHeapMaxSize( minh ) == 0, XLAL_EFAILED );
   LALHeap *min10h = XLALHeapCreate( XLALFree, 10, -1, cmp_ptr_int );
   XLAL_CHECK_MAIN( min10h != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALHeapMaxSize( min10h ) == 10, XLAL_EFAILED );
   LALHeap *max10h = XLALHeapCreate( XLALFree, 10, +1, cmp_ptr_int );
   XLAL_CHECK_MAIN( max10h != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALHeapMaxSize( min10h ) == 10, XLAL_EFAILED );
 
   /* Check some properties of empty heaps */
   xlalErrno = 0;
