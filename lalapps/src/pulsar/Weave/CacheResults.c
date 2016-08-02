@@ -25,6 +25,11 @@
 #include <lal/LALHeap.h>
 #include <lal/LALHashTbl.h>
 
+static UINT8 cache_item_hash( const void *x );
+static int cache_item_compare_by_coh_index( const void *x, const void *y );
+static int cache_item_compare_by_relevance( const void *x, const void *y );
+static void cache_item_destroy( void *x );
+
 ///
 /// Internal definition of an item stored in the cache
 ///
@@ -113,7 +118,7 @@ struct tagWeaveCacheQueries {
 ///
 /// Destroy a cache item
 ///
-static void cache_item_destroy(
+void cache_item_destroy(
   void *x
   )
 {
@@ -127,7 +132,7 @@ static void cache_item_destroy(
 ///
 /// Compare cache items by partition index, then relevance
 ///
-static int cache_item_compare_by_relevance(
+int cache_item_compare_by_relevance(
   const void *x,
   const void *y
   )
@@ -152,7 +157,7 @@ static int cache_item_compare_by_relevance(
 ///
 /// Compare cache items by partition index, then locator index
 ///
-static int cache_item_compare_by_coh_index(
+int cache_item_compare_by_coh_index(
   const void *x,
   const void *y
   )
@@ -177,7 +182,7 @@ static int cache_item_compare_by_coh_index(
 ///
 /// Hash cache items by partition index and locator index
 ///
-static UINT8 cache_item_hash(
+UINT8 cache_item_hash(
   const void *x
   )
 {

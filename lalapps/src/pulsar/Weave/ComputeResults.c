@@ -23,6 +23,8 @@
 #include <lal/LALString.h>
 #include <lal/GSLHelpers.h>
 
+static int semi_results_add_REAL4( const size_t nsum, REAL4 *sum, const REAL4 *x, const size_t nbins );
+
 ///
 /// Internal definition of input data required for computing coherent results
 ///
@@ -309,7 +311,7 @@ int XLALWeaveSemiResultsInit(
 ///
 /// Add 'nbins' of REAL4 array 'x' to 'sum', and keep track of the number of summations 'nsum'
 ///
-static int semi_results_add_REAL4( const size_t nsum, REAL4 *sum, const REAL4 *x, const size_t nbins )
+int semi_results_add_REAL4( const size_t nsum, REAL4 *sum, const REAL4 *x, const size_t nbins )
 {
   if ( nsum == 0 ) { // If this is the first summation, just use memcpy()
     memcpy( sum, x, sizeof( *sum ) * nbins );

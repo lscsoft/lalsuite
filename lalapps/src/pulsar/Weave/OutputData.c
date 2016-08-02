@@ -24,6 +24,12 @@
 #include <lal/LALHeap.h>
 #include <lal/UserInput.h>
 
+static int output_toplist_item_add( BOOLEAN *full_init, WeaveOutput *out, LALHeap *toplist, const WeaveSemiResults *semi_res, const size_t freq_idx );
+static int output_toplist_item_compare_by_mean_twoF( const void *x, const void *y );
+static int toplist_fits_table_init( FITSFile *file, const size_t nspins, const LALStringVector *per_detectors, const UINT4 per_nsegments );
+static int toplist_fits_write_visitor( void *param, const void *x );
+static void output_toplist_item_destroy( void *x );
+
 ///
 /// Internal definition of output data from a search
 ///
@@ -47,7 +53,7 @@ struct tagWeaveOutput {
 ///
 /// Initialise a FITS table for writing/reading a toplist
 ///
-static int toplist_fits_table_init(
+int toplist_fits_table_init(
   FITSFile *file,
   const size_t nspins,
   const LALStringVector *per_detectors,
@@ -119,7 +125,7 @@ static int toplist_fits_table_init(
 ///
 /// Visitor function for writing a toplist to a FITS table
 ///
-static int toplist_fits_write_visitor(
+int toplist_fits_write_visitor(
   void *param,
   const void *x
   )
@@ -132,7 +138,7 @@ static int toplist_fits_write_visitor(
 ///
 /// Destroy an output toplist item
 ///
-static void output_toplist_item_destroy(
+void output_toplist_item_destroy(
   void *x
   )
 {
@@ -146,7 +152,7 @@ static void output_toplist_item_destroy(
 ///
 /// Compare output toplist items by mean multi-detector F-statistic
 ///
-static int output_toplist_item_compare_by_mean_twoF(
+int output_toplist_item_compare_by_mean_twoF(
   const void *x,
   const void *y
   )
@@ -165,7 +171,7 @@ static int output_toplist_item_compare_by_mean_twoF(
 ///
 /// Fill a output toplist item, creating a new one if needed
 ///
-static int output_toplist_item_add(
+int output_toplist_item_add(
   BOOLEAN *full_init,
   WeaveOutput *out,
   LALHeap *toplist,
