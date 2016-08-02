@@ -14,7 +14,7 @@ Standards-Version: 3.9.8
 
 Package: lalsimulation
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
+Depends: ${shlibs:Depends}, ${misc:Depends},
   lal (>= 6.16.1~)
 Description: LSC Algorithm Library Simulation
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
@@ -24,7 +24,7 @@ Description: LSC Algorithm Library Simulation
 Package: lalsimulation-dev
 Section: libdevel
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g-dev,
   libgsl-dev | libgsl0-dev (>= 1.9),
   lal-dev (>= 6.16.1~),
   lalsimulation (= ${binary:Version})

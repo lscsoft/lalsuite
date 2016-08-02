@@ -11,7 +11,7 @@ Standards-Version: 3.9.8
 
 Package: lal
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, fftw3
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: LSC Algorithm Library
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains the shared-object libraries needed to run applications
