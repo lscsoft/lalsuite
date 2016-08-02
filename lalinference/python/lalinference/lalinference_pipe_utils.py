@@ -492,10 +492,11 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid):
     if i<len(roq_paths)-1:
       mc_priors[roq][1]-= (mc_priors[roq][1]- mc_priors[ordered_roq_paths[i+1]][0])/2.
     i+=1
+  if gid is not None:
+  	trigger_mchirp = get_trigger_chirpmass(gid)
+  else:
+	trigger_mchirp = None
 
-  # used to scale mass-frequency range of basis to accommodate trigger mass 
-  trigger_mchirp = get_trigger_chirpmass(gid)
- 
   return mc_priors, trigger_mchirp
 
 def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp):

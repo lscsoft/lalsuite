@@ -97,10 +97,13 @@ if cp.has_option('paths','roq_b_matrix_directory'):
     return float(item[1]['seglen'])
 
   print "WARNING: Overwriting user choice of flow, srate, seglen,mc_min, mc_max and q-min"
- 
-  mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, opts.gid)
 
-  roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp)
+  if opts.gid is not None: 
+  	mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, opts.gid)
+        roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp)
+  else:
+	mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, None)
+  	roq_mass_freq_scale_factor = 1
  
 else:
   roq_paths=[None]
