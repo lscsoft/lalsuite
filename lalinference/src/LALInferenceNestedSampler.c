@@ -913,7 +913,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	    {
 		    runState->evolve(runState);
 		    logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,threadState->model);
-		    if(!sprinklewarning || j++==100) { fprintf(stderr,"Warning: having difficulty sampling prior, check your prior bounds\n"); sprinklewarning=1;}
+		    if(!sprinklewarning && j++==100) { fprintf(stderr,"Warning: having difficulty sampling prior, check your prior bounds\n"); sprinklewarning=1;}
 	    }while(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i]));
 	    if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
     }
