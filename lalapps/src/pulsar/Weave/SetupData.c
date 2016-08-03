@@ -25,6 +25,40 @@
 #include <lal/GSLHelpers.h>
 #include <lal/LALInitBarycenter.h>
 
+static int setup_LALSeg_fits_table_init( FITSFile *file );
+static int setup_PosVelAcc_fits_table_init( FITSFile *file );
+
+///
+/// Initialise a FITS table for writing/reading a table of LALSeg entries
+///
+int setup_LALSeg_fits_table_init(
+  FITSFile *file
+  )
+{
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_FITS_TABLE_COLUMN_BEGIN( LALSeg );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, start ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, end ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, id ) == XLAL_SUCCESS, XLAL_EFUNC );
+  return XLAL_SUCCESS;
+}
+
+///
+/// Initialise a FITS table for writing/reading a table of PosVelAcc entries
+///
+int setup_PosVelAcc_fits_table_init(
+  FITSFile *file
+  )
+{
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_FITS_TABLE_COLUMN_BEGIN( PosVelAcc );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, gps ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, pos ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, vel ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, acc ) == XLAL_SUCCESS, XLAL_EFUNC );
+  return XLAL_SUCCESS;
+}
+
 ///
 /// Free contents of setup data
 ///
@@ -66,12 +100,7 @@ int XLALWeaveSetupWrite(
   // Write segment list
   {
     XLAL_CHECK( XLALFITSTableOpenWrite( file, "segments", "segment list" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    {
-      XLAL_FITS_TABLE_COLUMN_BEGIN( LALSeg );
-      XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, start );
-      XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, end );
-      XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, id );
-    }
+    XLAL_CHECK( setup_LALSeg_fits_table_init( file ) == XLAL_SUCCESS, XLAL_EFUNC );
     for ( size_t i = 0; i < setup->segments->length; ++i ) {
       XLAL_CHECK( XLALFITSTableWriteRow( file, &setup->segments->segs[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
@@ -124,13 +153,7 @@ int XLALWeaveSetupWrite(
     // Write Earth ephemerides
     {
       XLAL_CHECK( XLALFITSTableOpenWrite( file, "earth_ephem", "Earth ephemeris" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      {
-        XLAL_FITS_TABLE_COLUMN_BEGIN( PosVelAcc );
-        XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, gps );
-        XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, pos );
-        XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, vel );
-        XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, acc );
-      }
+      XLAL_CHECK( setup_PosVelAcc_fits_table_init( file ) == XLAL_SUCCESS, XLAL_EFUNC );
       for ( INT4 i = 0; i < setup->ephemerides->nentriesE; ++i ) {
         XLAL_CHECK( XLALFITSTableWriteRow( file, &setup->ephemerides->ephemE[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
@@ -143,13 +166,7 @@ int XLALWeaveSetupWrite(
     // Write Sun ephemerides
     {
       XLAL_CHECK( XLALFITSTableOpenWrite( file, "sun_ephem", "Sun ephemeris" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      {
-        XLAL_FITS_TABLE_COLUMN_BEGIN( PosVelAcc );
-        XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, gps );
-        XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, pos );
-        XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, vel );
-        XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, acc );
-      }
+      XLAL_CHECK( setup_PosVelAcc_fits_table_init( file ) == XLAL_SUCCESS, XLAL_EFUNC );
       for ( INT4 i = 0; i < setup->ephemerides->nentriesS; ++i ) {
         XLAL_CHECK( XLALFITSTableWriteRow( file, &setup->ephemerides->ephemS[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
@@ -189,12 +206,7 @@ int XLALWeaveSetupRead(
   {
     UINT8 nrows = 0;
     XLAL_CHECK( XLALFITSTableOpenRead( file, "segments", &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
-    {
-      XLAL_FITS_TABLE_COLUMN_BEGIN( LALSeg );
-      XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, start );
-      XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, end );
-      XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, id );
-    }
+    XLAL_CHECK( setup_LALSeg_fits_table_init( file ) == XLAL_SUCCESS, XLAL_EFUNC );
     setup->segments = XLALSegListCreate();
     XLAL_CHECK( setup->segments != NULL, XLAL_EFUNC );
     while ( nrows > 0 ) {
@@ -260,13 +272,7 @@ int XLALWeaveSetupRead(
     {
       UINT8 nrows = 0;
       XLAL_CHECK( XLALFITSTableOpenRead( file, "earth_ephem", &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
-      {
-        XLAL_FITS_TABLE_COLUMN_BEGIN( PosVelAcc );
-        XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, gps );
-        XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, pos );
-        XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, vel );
-        XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, acc );
-      }
+      XLAL_CHECK( setup_PosVelAcc_fits_table_init( file ) == XLAL_SUCCESS, XLAL_EFUNC );
       setup->ephemerides->nentriesE = nrows;
       setup->ephemerides->ephemE = XLALCalloc( setup->ephemerides->nentriesE, sizeof( setup->ephemerides->ephemE[0] ) );
       XLAL_CHECK( setup->ephemerides->ephemE != NULL, XLAL_EINVAL );
@@ -284,13 +290,7 @@ int XLALWeaveSetupRead(
     {
       UINT8 nrows = 0;
       XLAL_CHECK( XLALFITSTableOpenRead( file, "sun_ephem", &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
-      {
-        XLAL_FITS_TABLE_COLUMN_BEGIN( PosVelAcc );
-        XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, gps );
-        XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, pos );
-        XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, vel );
-        XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, acc );
-      }
+      XLAL_CHECK( setup_PosVelAcc_fits_table_init( file ) == XLAL_SUCCESS, XLAL_EFUNC );
       setup->ephemerides->nentriesS = nrows;
       setup->ephemerides->ephemS = XLALCalloc( setup->ephemerides->nentriesS, sizeof( setup->ephemerides->ephemS[0] ) );
       XLAL_CHECK( setup->ephemerides->ephemS != NULL, XLAL_EINVAL );
