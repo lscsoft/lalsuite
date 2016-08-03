@@ -48,8 +48,8 @@ echo
 
 echo "=== Extract F-statistics from WeaveOut{NoMax|Max}.fits as ASCII table ==="
 set -x
-${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=mean_twoF]" > WeaveFstatsNoMax.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=mean_twoF]" > WeaveFstatsMax.txt
+${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF,-999)]" > WeaveFstatsNoMax.txt
+${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF,-999)]" > WeaveFstatsMax.txt
 set +x
 echo
 

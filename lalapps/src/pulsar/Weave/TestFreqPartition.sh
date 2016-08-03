@@ -30,8 +30,8 @@ echo
 
 echo "=== Extract F-statistics from WeaveOut{NoPart|Part}.fits as ASCII table ==="
 set -x
-${fitsdir}/lalapps_fits_table_list "WeaveOutNoPart.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=mean_twoF]" > WeaveFstatsNoPart.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOutPart.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=mean_twoF]" > WeaveFstatsPart.txt
+${fitsdir}/lalapps_fits_table_list "WeaveOutNoPart.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF,-999)]" > WeaveFstatsNoPart.txt
+${fitsdir}/lalapps_fits_table_list "WeaveOutPart.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF,-999)]" > WeaveFstatsPart.txt
 set +x
 echo
 

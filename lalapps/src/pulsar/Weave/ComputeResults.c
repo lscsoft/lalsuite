@@ -448,13 +448,9 @@ int XLALWeaveFillOutputToplistItem(
       if ( semi_res->coh_res[s].twoF_per_det[i] != NULL ) {
         ( *item )->per_seg[s].twoF_per_det[i] = semi_res->coh_res[s].twoF_per_det[i][freq_idx];
       } else {
-        // There is not per-detector F-statistic for this segment, usually because this segment
-        // contains no data from this detector. In this case we output a clearly invalid
-        // F-statistic value that is nevertheless a number and will therefore still be parsed,
-        // compared, etc. as a number. (If instead we used e.g. NAN, CFITSIO would write "*" when
-        // writing tables as ASCII text, which is no longer a number and would therefore run afoul
-        // of anything expecting an ASCII table.)
-        ( *item )->per_seg[s].twoF_per_det[i] = -999;
+        // There is not per-detector F-statistic for this segment, usually because this segment contains
+        // no data from this detector. In this case we output a clearly invalid F-statistic value.
+        ( *item )->per_seg[s].twoF_per_det[i] = NAN;
       }
     }
   }
