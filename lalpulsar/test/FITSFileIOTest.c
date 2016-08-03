@@ -30,6 +30,7 @@
 #include <lal/LALPulsarVCSInfo.h>
 #include <lal/StringVector.h>
 #include <lal/Date.h>
+#include <lal/UserInput.h>
 #include <lal/GSLHelpers.h>
 
 #if !defined(HAVE_LIBCFITSIO)
@@ -83,14 +84,24 @@ const TestRecord testtable[3] = {
   { .index=1, .flag=1, .name="Crab", .epoch={467846774, 4}, .pos={.sky=64.244, .freq=15.6463, .fkdot={4e-6,     0}}, .values={153.4, 3.0900}, .phasef=crectf( 6.7, 4.4 ), .phase=crect( 5.6, 6.3 ), .sub=testsub[2] },
 };
 
-int main( void )
+int main( int argc, char *argv[] )
 {
+
+  // Create a dummy user enviroment, for testing XLALFITSFileWriteUVarCmdLine()
+  struct uvar_type { INT4 dummy; } uvar_struct = { .dummy = 0 };
+  struct uvar_type *const uvar = &uvar_struct;
+  XLAL_CHECK_MAIN( XLALRegisterUvarMember( dummy, INT4, 0, OPTIONAL, "Dummy option" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( !should_exit, XLAL_EFAILED );
 
   // Write an example FITS file
   {
-    FITSFile *file = XLALFITSFileOpenWrite( "FITSFileIOTest.fits", lalPulsarVCSInfoList );
+    FITSFile *file = XLALFITSFileOpenWrite( "FITSFileIOTest.fits" );
     XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteHistory( file, "%s\n%s", "This is a test history", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileWriteVCSInfo( file, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileWriteUVarCmdLine( file ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileWriteHistory( file, "%s\n%s", "This is a test history", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteComment( file, "%s\n%s", "This is a test comment", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: opened 'FITSFileIOTest.fits' for writing\n" );
 
@@ -200,8 +211,8 @@ int main( void )
     }
     fprintf( stderr, "PASSED: wrote a table\n" );
 
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteComment( file, "%s", "This is another test comment" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLALFITSFileClose( file );
-    LALCheckMemoryLeaks();
     fprintf( stderr, "PASSED: closed 'FITSFileIOTest.fits'\n" );
   }
   fprintf( stderr, "\n" );
@@ -449,11 +460,14 @@ int main( void )
     fprintf( stderr, "PASSED: read and verified a table\n" );
 
     XLALFITSFileClose( file );
-    LALCheckMemoryLeaks();
     fprintf( stderr, "PASSED: closed 'FITSFileIOTest.fits'\n" );
   }
   fprintf( stderr, "\n" );
   fflush( stderr );
+
+  // Cleanup
+  XLALDestroyUserVars();
+  LALCheckMemoryLeaks();
 
   return EXIT_SUCCESS;
 

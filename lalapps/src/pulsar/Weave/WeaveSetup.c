@@ -249,8 +249,9 @@ int main( int argc, char *argv[] )
 
   // Open output file
   LogPrintf( LOG_NORMAL, "Opening output file '%s' for writing ...\n", uvar->output_file );
-  FITSFile *file = XLALFITSFileOpenWrite( uvar->output_file, lalAppsVCSInfoList );
+  FITSFile *file = XLALFITSFileOpenWrite( uvar->output_file );
   XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALFITSFileWriteVCSInfo( file, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write setup data
   XLAL_CHECK_MAIN( XLALWeaveSetupWrite( file, &setup ) == XLAL_SUCCESS, XLAL_EFUNC );

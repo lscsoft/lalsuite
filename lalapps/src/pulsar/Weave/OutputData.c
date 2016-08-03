@@ -293,7 +293,7 @@ int XLALWeaveOutputWrite(
   {
     char *command_line = XLALUserVarGetLog( UVAR_LOGFMT_CMDLINE );
     XLAL_CHECK( command_line != NULL, XLAL_EFUNC );
-    XLAL_CHECK( XLALFITSHeaderWriteHistory( file, "Command line: %s", command_line ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALFITSFileWriteHistory( file, "Command line: %s", command_line ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLALFree( command_line );
   }
 

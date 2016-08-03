@@ -44,12 +44,13 @@ int fffree( void *, int * );
 
 #endif // ffree()
 
-#endif // !defined(HAVE_LIBCFITSIO)
+#endif // defined(HAVE_LIBCFITSIO)
 
 #include <lal/FITSFileIO.h>
 #include <lal/LALString.h>
 #include <lal/StringVector.h>
 #include <lal/Date.h>
+#include <lal/UserInput.h>
 #include <lal/GSLHelpers.h>
 
 #if defined(__GNUC__)
@@ -57,6 +58,8 @@ int fffree( void *, int * );
 #else
 #define UNUSED
 #endif
+
+#if defined(HAVE_LIBCFITSIO)
 
 // Call a CFITSIO function, or print error messages on failure
 #define CALL_FITS(function, ...) \
@@ -73,7 +76,6 @@ int fffree( void *, int * );
   } while(0)
 
 // Internal representation of a FITS file opened for reading or writing
-#if defined(HAVE_LIBCFITSIO)
 struct tagFITSFile {
   fitsfile *ff;                         // Pointer to a CFITSIO FITS file representation
   int write;                            // True if the file is open for writing (otherwise reading)
@@ -100,16 +102,54 @@ struct tagFITSFile {
     LONGLONG irow;                              // Index of current row in table
   } table;
 };
-#endif // !defined(HAVE_LIBCFITSIO)
+
+///
+/// Write a formatted string to a FITS file using the given function
+///
+static int WriteFormattedString( FITSFile *file, const CHAR *format, va_list ap, int (*fcn)( fitsfile *, const char*, int* ) )
+{
+
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( format != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( fcn != NULL, XLAL_EFAULT );
+
+  // Format the string
+  CHAR buf[4096];
+  XLAL_CHECK_FAIL( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_ESYS, "Formatted string is too long" );
+
+  // Split the string by newlines, removing any empty lines
+  CHAR *p = buf;
+  CHAR *t = XLALStringToken( &p, "\n", 0 );
+  while ( t != NULL ) {
+
+    // Replace any nonprintable characters with spaces
+    for ( CHAR *u = t; *u != '\0'; ++u ) {
+      if ( !isprint( *u ) ) {
+        *u = ' ';
+      }
+    }
+
+    // Write the string
+    CALL_FITS( fcn, file->ff, t );
+
+    t = XLALStringToken( &p, "\n", 0 );
+  }
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+  return XLAL_FAILURE;
+
+}
 
 ///
 /// Extract unit from a keyword or column name
 ///
-static int UNUSED ExtractUnit( const CHAR UNUSED *name_unit, CHAR UNUSED *name, CHAR UNUSED *unit )
+static int ExtractUnit( const CHAR *name_unit, CHAR *name, CHAR *unit )
 {
-#if !defined(HAVE_LIBCFITSIO)
-  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
-#else // defined(HAVE_LIBCFITSIO)
 
   int UNUSED status = 0;
 
@@ -140,17 +180,13 @@ static int UNUSED ExtractUnit( const CHAR UNUSED *name_unit, CHAR UNUSED *name, 
 XLAL_FAIL:
   return XLAL_FAILURE;
 
-#endif // !defined(HAVE_LIBCFITSIO)
 }
 
 ///
 /// Format and check a FITS keyword
 ///
-static int UNUSED CheckFITSKeyword( const CHAR UNUSED *key, CHAR UNUSED *keyword, CHAR UNUSED *unit )
+static int CheckFITSKeyword( const CHAR *key, CHAR *keyword, CHAR *unit )
 {
-#if !defined(HAVE_LIBCFITSIO)
-  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
-#else // defined(HAVE_LIBCFITSIO)
 
   int UNUSED status = 0;
 
@@ -185,8 +221,9 @@ static int UNUSED CheckFITSKeyword( const CHAR UNUSED *key, CHAR UNUSED *keyword
 XLAL_FAIL:
   return XLAL_FAILURE;
 
-#endif // !defined(HAVE_LIBCFITSIO)
 }
+
+#endif // defined(HAVE_LIBCFITSIO)
 
 void XLALFITSFileClose( FITSFile UNUSED *file )
 {
@@ -205,7 +242,7 @@ void XLALFITSFileClose( FITSFile UNUSED *file )
 #endif // !defined(HAVE_LIBCFITSIO)
 }
 
-FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name, const LALVCSInfo UNUSED *const vcs_list[] )
+FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name )
 {
 #if !defined(HAVE_LIBCFITSIO)
   XLAL_ERROR_NULL( XLAL_EFAILED, "CFITSIO is not available" );
@@ -216,7 +253,6 @@ FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name, const LALVCSInfo 
 
   // Check input
   XLAL_CHECK_FAIL( file_name != NULL, XLAL_EFAULT );
-  XLAL_CHECK_FAIL( vcs_list != NULL, XLAL_EFAULT );
 
   // Create FITSFile struct
   file = XLALCalloc( 1, sizeof( *file ) );
@@ -241,17 +277,6 @@ FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name, const LALVCSInfo 
 
   // Write the current system date to the FITS file
   CALL_FITS( fits_write_date, file->ff );
-
-  // Write the VCS information list to the FITS file
-  for ( size_t i = 0; vcs_list[i] != NULL; ++i ) {
-    CHAR buf[FLEN_COMMENT];
-    snprintf( buf, sizeof( buf ), "%s version: %s", vcs_list[i]->name, vcs_list[i]->version );
-    CALL_FITS( fits_write_history, file->ff, buf );
-    snprintf( buf, sizeof( buf ), "%s commit : %s", vcs_list[i]->name, vcs_list[i]->vcsId );
-    CALL_FITS( fits_write_history, file->ff, buf );
-    snprintf( buf, sizeof( buf ), "%s status : %s", vcs_list[i]->name, vcs_list[i]->vcsStatus );
-    CALL_FITS( fits_write_history, file->ff, buf );
-  }
 
   return file;
 
@@ -308,7 +333,7 @@ XLAL_FAIL:
 #endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteHistory( FITSFile UNUSED *file, const CHAR UNUSED *format, ... )
+int XLALFITSFileWriteHistory( FITSFile UNUSED *file, const CHAR UNUSED *format, ... )
 {
 #if !defined(HAVE_LIBCFITSIO)
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
@@ -321,18 +346,17 @@ int XLALFITSHeaderWriteHistory( FITSFile UNUSED *file, const CHAR UNUSED *format
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
   XLAL_CHECK_FAIL( format != NULL, XLAL_EFAULT );
 
-  // Write history to current header
-  CHAR buf[4096];
+  // Check that we are writing to the primary header
+  int hdu_num = 0;
+  fits_get_hdu_num( file->ff, &hdu_num );
+  XLAL_CHECK_FAIL( hdu_num > 0, XLAL_EIO );
+  XLAL_CHECK_FAIL( hdu_num == 1, XLAL_EIO, "FITS file is not at primary HDU" );
+
+  // Write history to primary header
   va_list ap;
   va_start( ap, format );
-  XLAL_CHECK( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_ESYS, "Formatted string is too long" );
+  XLAL_CHECK_FAIL( WriteFormattedString( file, format, ap, fits_write_history ) == XLAL_SUCCESS, XLAL_EFUNC );
   va_end( ap );
-  for ( size_t i = 0; i < strlen( buf ); ++ i ) {
-    if ( !isprint( buf[i] ) ) {
-      buf[i] = ' ';
-    }
-  }
-  CALL_FITS( fits_write_history, file->ff, buf );
 
   return XLAL_SUCCESS;
 
@@ -344,6 +368,78 @@ XLAL_FAIL:
     file->ff = NULL;
   }
 
+  return XLAL_FAILURE;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
+int XLALFITSFileWriteVCSInfo( FITSFile UNUSED *file, const LALVCSInfo UNUSED *const vcs_list[] )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
+  XLAL_CHECK_FAIL( vcs_list != NULL, XLAL_EFAULT );
+
+  // Write VCS information to history
+  for ( size_t i = 0; vcs_list[i] != NULL; ++i ) {
+    XLAL_CHECK_FAIL( XLALFITSFileWriteHistory( file, "%s version: %s\n%s commit : %s\n%s status : %s",
+                                               vcs_list[i]->name, vcs_list[i]->version,
+                                               vcs_list[i]->name, vcs_list[i]->vcsId,
+                                               vcs_list[i]->name, vcs_list[i]->vcsStatus
+                       ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+
+  // Delete FITS file on error
+  if ( file != NULL && file->ff != NULL ) {
+    fits_delete_file( file->ff, &status );
+    file->ff = NULL;
+  }
+
+  return XLAL_FAILURE;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
+int XLALFITSFileWriteUVarCmdLine( FITSFile UNUSED *file )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  int UNUSED status = 0;
+  CHAR *cmd_line = NULL;
+
+  // Check input
+  XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
+
+  // Write command line to history
+  cmd_line = XLALUserVarGetLog( UVAR_LOGFMT_CMDLINE );
+  XLAL_CHECK_FAIL( cmd_line != NULL, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( XLALFITSFileWriteHistory( file, "Command line: %s", cmd_line ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLALFree( cmd_line );
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+
+  // Delete FITS file on error
+  if ( file != NULL && file->ff != NULL ) {
+    fits_delete_file( file->ff, &status );
+    file->ff = NULL;
+  }
+
+  XLALFree( cmd_line );
   return XLAL_FAILURE;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -363,17 +459,10 @@ int XLALFITSHeaderWriteComment( FITSFile UNUSED *file, const CHAR UNUSED *format
   XLAL_CHECK_FAIL( format != NULL, XLAL_EFAULT );
 
   // Write comment to current header
-  CHAR buf[4096];
   va_list ap;
   va_start( ap, format );
-  XLAL_CHECK( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_ESYS, "Formatted string is too long" );
+  XLAL_CHECK_FAIL( WriteFormattedString( file, format, ap, fits_write_comment ) == XLAL_SUCCESS, XLAL_EFUNC );
   va_end( ap );
-  for ( size_t i = 0; i < strlen( buf ); ++ i ) {
-    if ( !isprint( buf[i] ) ) {
-      buf[i] = ' ';
-    }
-  }
-  CALL_FITS( fits_write_comment, file->ff, buf );
 
   return XLAL_SUCCESS;
 

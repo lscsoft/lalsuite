@@ -176,7 +176,7 @@ int XLALHeapModify(
  * Allocate and return an array containing all elements in the heap
  */
 const void **XLALHeapElements(
-  LALHeap *h                    /**< [in] Pointer to heap */
+  const LALHeap *h              /**< [in] Pointer to heap */
   );
 
 /*@}*/

@@ -389,7 +389,7 @@ static int heap_get_elems_visitor(
 }
 
 const void **XLALHeapElements(
-  LALHeap *h
+  const LALHeap *h
   )
 {
 
