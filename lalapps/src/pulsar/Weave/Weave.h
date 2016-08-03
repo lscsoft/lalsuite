@@ -98,6 +98,10 @@ typedef struct tagWeaveOutput WeaveOutput;
 /// Setup data which is computed only once for a given search setup
 ///
 typedef struct {
+  /// Physical to lattice coordinate transform
+  WeavePhysicalToLattice phys_to_latt;
+  /// Lattice to physical coordinate transform
+  WeaveLatticeToPhysical latt_to_phys;
   /// Reference time at which search is conducted
   LIGOTimeGPS ref_time;
   /// List of detector names for which metrics were computed

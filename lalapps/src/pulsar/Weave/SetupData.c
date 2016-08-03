@@ -196,6 +196,10 @@ int XLALWeaveSetupRead(
   // Erase memory
   XLAL_INIT_MEM( *setup );
 
+  // Set coordinate transforms between physical and lattice coordinates
+  setup->phys_to_latt = ( WeavePhysicalToLattice ) XLALConvertPhysicalToSuperskyPoint;
+  setup->latt_to_phys = ( WeaveLatticeToPhysical ) XLALConvertSuperskyToPhysicalPoint;
+
   // Read reference time
   XLAL_CHECK( XLALFITSHeaderReadGPSTime( file, "date-obs", &setup->ref_time ) == XLAL_SUCCESS, XLAL_EFUNC );
 

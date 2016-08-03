@@ -378,10 +378,6 @@ int main( int argc, char *argv[] )
   XLAL_CHECK_MAIN( XLALSegListRange( setup.segments, &segments_start, &segments_end ) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Setup file segment list range = [%" LAL_GPS_FORMAT ", %" LAL_GPS_FORMAT "] GPS, segment count = %u\n", LAL_GPS_PRINT( segments_start ), LAL_GPS_PRINT( segments_end ), nsegments );
 
-  // Pointers to reduced supersky coordinate transform functions
-  const WeavePhysicalToLattice phys_to_latt = ( WeavePhysicalToLattice ) XLALConvertPhysicalToSuperskyPoint;
-  const WeaveLatticeToPhysical latt_to_phys = ( WeaveLatticeToPhysical ) XLALConvertSuperskyToPhysicalPoint;
-
   // Create array of output details for each segment
   WeaveOutputDetails XLAL_INIT_ARRAY_DECL( details, nsegments );
   for ( size_t i = 0; i < nsegments; ++i ) {
@@ -698,7 +694,7 @@ int main( int argc, char *argv[] )
   for ( size_t i = 0; i < nsegments; ++i ) {
     const size_t cache_max_size = interpolation ? uvar->cache_max_size : 1;
     const size_t cache_gc_limit = interpolation ? uvar->cache_gc_limit : 0;
-    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, phys_to_latt, latt_to_phys, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit, uvar->output_details );
+    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, setup.phys_to_latt, setup.latt_to_phys, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit, uvar->output_details );
     XLAL_CHECK_MAIN( coh_cache[i] != NULL, XLAL_EFUNC );
   }
 
@@ -714,7 +710,7 @@ int main( int argc, char *argv[] )
   gsl_vector *GAVEC_MAIN( semi_rssky, ndim );
 
   // Create storage for cache queries for coherent results in each segment
-  WeaveCacheQueries *queries = XLALWeaveCacheQueriesCreate( tiling[isemi], phys_to_latt, latt_to_phys, rssky_transf[isemi], nsegments, uvar->freq_partitions );
+  WeaveCacheQueries *queries = XLALWeaveCacheQueriesCreate( tiling[isemi], setup.phys_to_latt, setup.latt_to_phys, rssky_transf[isemi], nsegments, uvar->freq_partitions );
   XLAL_CHECK_MAIN( queries != NULL, XLAL_EFUNC );
 
   // Create storage for semicoherent results
