@@ -117,9 +117,9 @@ int XLALFITSHeaderReadGPSTime( FITSFile *file, const CHAR *key, LIGOTimeGPS *val
 ///
 /// \name Write/Read Array To/From FITS File
 ///
-/// These function write/read arbitrary-dimensional array to/from a FITS image extension HDU. A call
-/// to XLALFITSArrayOpenWrite() or XLALFITSArrayOpenRead() is required first to write/read the
-/// dimension count \p ndim and sizes \p dims[]; the functions
+/// These function write/read arbitrary-dimensional array to/from a FITS image extension data
+/// unit. A call to XLALFITSArrayOpenWrite() or XLALFITSArrayOpenRead() is required first to
+/// write/read the dimension count \p ndim and sizes \p dims[]; the functions
 /// <tt>XLALFITSArrayOpenWrite<i>N</i>()</tt> and <tt>XLALFITSArrayOpenRead<i>N</i>()</tt> are
 /// convenience functions for 1- and 2-dimensional arrays. The functions
 /// <tt>XLALFITSArrayWrite<i>TYPE</i>()</tt> and <tt>XLALFITSArrayRead<i>TYPE</i>()</tt> are then
@@ -153,10 +153,10 @@ int XLALFITSArrayReadGSLMatrix( FITSFile *file, const size_t idx[], gsl_matrix *
 ///
 /// \name Write/Read Table To/From FITS File
 ///
-/// These functions write/read arbitrary tables to/from a FITS table extension HDU. A call to
-/// XLALFITSTableOpenWrite() or XLALFITSTableOpenRead() is required first; the latter returns the
-/// number of rows in the table \p nrows, if needed. The table columns must then be specified using
-/// the <tt>XLAL_FITS_TABLE_COLUMN_...()</tt> macros:
+/// These functions write/read arbitrary tables to/from a FITS binary table extension data unit.
+/// A call to XLALFITSTableOpenWrite() or XLALFITSTableOpenRead() is required first; the latter
+/// returns the number of rows in the table \p nrows, if needed. The table columns must then be
+/// specified using the <tt>XLAL_FITS_TABLE_COLUMN_...()</tt> macros:
 ///
 /// First, \ref XLAL_FITS_TABLE_COLUMN_BEGIN(\p record_type) is called, where \p record_type is the
 /// name of a C structure that will store the values of the columns written to or read from the
