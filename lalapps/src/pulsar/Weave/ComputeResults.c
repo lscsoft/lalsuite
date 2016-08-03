@@ -397,22 +397,6 @@ int XLALWeaveFillOutputToplistItem(
   const UINT4 per_nsegments = ( semi_res->coh_res != NULL ) ? semi_res->nsegments : 0;
   const UINT4 per_ndetectors = semi_res->ndetectors;
 
-  // Create a new toplist item if needed
-  if ( *item == NULL ) {
-
-    // Allocate memory
-    *item = XLALCalloc( 1, sizeof( **item ) );
-    XLAL_CHECK( *item != NULL, XLAL_ENOMEM );
-    if ( per_nsegments > 0 ) {
-      ( *item )->per_seg = XLALCalloc( per_nsegments, sizeof( *( *item )->per_seg ) );
-      XLAL_CHECK( ( *item )->per_seg != NULL, XLAL_ENOMEM );
-    }
-
-    // Toplist item must be fully initialised
-    *full_init = 1;
-
-  }
-
   // Fully initialise all toplist item field, if requested
   // - Otherwise only toplist item fields that change with 'freq_idx' are updated
   if ( *full_init ) {

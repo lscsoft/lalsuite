@@ -24,6 +24,8 @@
 #include <lal/LALHeap.h>
 #include <lal/UserInput.h>
 
+static LALHeap *toplist_create( int toplist_limit, LALHeapCmpFcn toplist_item_compare_fcn );
+static WeaveOutputToplistItem *toplist_item_create( const UINT4 per_nsegments );
 static int toplist_fits_table_init( FITSFile *file, const size_t nspins, const LALStringVector *per_detectors, const UINT4 per_nsegments );
 static int toplist_fits_write_visitor( void *param, const void *x );
 static int toplist_item_add( BOOLEAN *full_init, WeaveOutput *out, LALHeap *toplist, const WeaveSemiResults *semi_res, const size_t freq_idx );
@@ -49,6 +51,19 @@ struct tagWeaveOutput {
   /// Save a no-longer-used toplist item for re-use
   WeaveOutputToplistItem *saved_item;
 };
+
+///
+/// Create a toplist
+///
+LALHeap *toplist_create(
+  int toplist_limit,
+  LALHeapCmpFcn toplist_item_compare_fcn
+  )
+{
+  LALHeap *toplist = XLALHeapCreate( toplist_item_destroy, toplist_limit, +1, toplist_item_compare_fcn );
+  XLAL_CHECK_NULL( toplist != NULL, XLAL_EFUNC );
+  return toplist;
+}
 
 ///
 /// Initialise a FITS table for writing/reading a toplist
@@ -136,6 +151,26 @@ int toplist_fits_write_visitor(
 }
 
 ///
+/// Create a toplist item
+///
+WeaveOutputToplistItem *toplist_item_create(
+  const UINT4 per_nsegments
+  )
+{
+
+  // Allocate memory
+  WeaveOutputToplistItem *item = XLALCalloc( 1, sizeof( *item ) );
+  XLAL_CHECK_NULL( item != NULL, XLAL_ENOMEM );
+  if ( per_nsegments > 0 ) {
+    item->per_seg = XLALCalloc( per_nsegments, sizeof( *item->per_seg ) );
+    XLAL_CHECK_NULL( item->per_seg != NULL, XLAL_ENOMEM );
+  }
+
+  return item;
+
+}
+
+///
 /// Destroy a toplist item
 ///
 void toplist_item_destroy(
@@ -186,6 +221,16 @@ int toplist_item_add(
   XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
 
+  // Create a new toplist item if needed
+  if ( out->saved_item == NULL ) {
+    out->saved_item = toplist_item_create( out->per_nsegments );
+    XLAL_CHECK( out->saved_item != NULL, XLAL_ENOMEM );
+
+    // Toplist item must be fully initialised
+    *full_init = 1;
+
+  }
+
   // Fill toplist item, creating a new one if needed
   XLAL_CHECK( XLALWeaveFillOutputToplistItem( &out->saved_item, full_init, semi_res, freq_idx ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -229,7 +274,7 @@ WeaveOutput *XLALWeaveOutputCreate(
   out->semi_total = 0;
 
   // Create a toplist ranked by mean multi-detector F-statistic
-  out->toplist_mean_twoF = XLALHeapCreate( toplist_item_destroy, toplist_limit, +1, toplist_item_compare_by_mean_twoF );
+  out->toplist_mean_twoF = toplist_create( toplist_limit, toplist_item_compare_by_mean_twoF );
   XLAL_CHECK_NULL( out->toplist_mean_twoF != NULL, XLAL_EFUNC );
 
   return out;
