@@ -88,8 +88,9 @@ int main( void )
 
   // Write an example FITS file
   {
-    FITSFile *file = XLALFITSFileOpenWrite( "FITSFileIOTest.fits", lalPulsarVCSInfoList );
+    FITSFile *file = XLALFITSFileOpenWrite( "FITSFileIOTest.fits" );
     XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileWriteVCSInfo( file, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileWriteHistory( file, "%s\n%s", "This is a test history", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteComment( file, "%s\n%s", "This is a test comment", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: opened 'FITSFileIOTest.fits' for writing\n" );

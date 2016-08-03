@@ -28,7 +28,6 @@
 #include <lal/DopplerFullScan.h>
 #include <lal/SuperskyMetrics.h>
 #include <lal/LALInitBarycenter.h>
-#include <lal/LALPulsarVCSInfo.h>
 
 #include <lal/GSLHelpers.h>
 
@@ -120,7 +119,7 @@ static int SerialisationTest(
 
       // Save iterator to a FITS file
       {
-        FITSFile *file = XLALFITSFileOpenWrite( "LatticeTilingTest.fits", lalPulsarVCSInfoList );
+        FITSFile *file = XLALFITSFileOpenWrite( "LatticeTilingTest.fits" );
         XLAL_CHECK( file != NULL, XLAL_EFUNC );
         XLAL_CHECK( XLALSaveLatticeTilingIterator( itr, file, "itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLALFITSFileClose( file );

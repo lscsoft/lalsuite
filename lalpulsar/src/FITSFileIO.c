@@ -242,7 +242,7 @@ void XLALFITSFileClose( FITSFile UNUSED *file )
 #endif // !defined(HAVE_LIBCFITSIO)
 }
 
-FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name, const LALVCSInfo UNUSED *const vcs_list[] )
+FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name )
 {
 #if !defined(HAVE_LIBCFITSIO)
   XLAL_ERROR_NULL( XLAL_EFAILED, "CFITSIO is not available" );
@@ -253,7 +253,6 @@ FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name, const LALVCSInfo 
 
   // Check input
   XLAL_CHECK_FAIL( file_name != NULL, XLAL_EFAULT );
-  XLAL_CHECK_FAIL( vcs_list != NULL, XLAL_EFAULT );
 
   // Create FITSFile struct
   file = XLALCalloc( 1, sizeof( *file ) );
@@ -278,17 +277,6 @@ FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name, const LALVCSInfo 
 
   // Write the current system date to the FITS file
   CALL_FITS( fits_write_date, file->ff );
-
-  // Write the VCS information list to the FITS file
-  for ( size_t i = 0; vcs_list[i] != NULL; ++i ) {
-    CHAR buf[FLEN_COMMENT];
-    snprintf( buf, sizeof( buf ), "%s version: %s", vcs_list[i]->name, vcs_list[i]->version );
-    CALL_FITS( fits_write_history, file->ff, buf );
-    snprintf( buf, sizeof( buf ), "%s commit : %s", vcs_list[i]->name, vcs_list[i]->vcsId );
-    CALL_FITS( fits_write_history, file->ff, buf );
-    snprintf( buf, sizeof( buf ), "%s status : %s", vcs_list[i]->name, vcs_list[i]->vcsStatus );
-    CALL_FITS( fits_write_history, file->ff, buf );
-  }
 
   return file;
 
@@ -369,6 +357,43 @@ int XLALFITSFileWriteHistory( FITSFile UNUSED *file, const CHAR UNUSED *format, 
   va_start( ap, format );
   XLAL_CHECK_FAIL( WriteFormattedString( file, format, ap, fits_write_history ) == XLAL_SUCCESS, XLAL_EFUNC );
   va_end( ap );
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+
+  // Delete FITS file on error
+  if ( file != NULL && file->ff != NULL ) {
+    fits_delete_file( file->ff, &status );
+    file->ff = NULL;
+  }
+
+  return XLAL_FAILURE;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
+int XLALFITSFileWriteVCSInfo( FITSFile UNUSED *file, const LALVCSInfo UNUSED *const vcs_list[] )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
+  XLAL_CHECK_FAIL( vcs_list != NULL, XLAL_EFAULT );
+
+  // Write VCS information to history
+  for ( size_t i = 0; vcs_list[i] != NULL; ++i ) {
+    XLAL_CHECK_FAIL( XLALFITSFileWriteHistory( file, "%s version: %s\n%s commit : %s\n%s status : %s",
+                                               vcs_list[i]->name, vcs_list[i]->version,
+                                               vcs_list[i]->name, vcs_list[i]->vcsId,
+                                               vcs_list[i]->name, vcs_list[i]->vcsStatus
+                       ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
   return XLAL_SUCCESS;
 
