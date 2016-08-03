@@ -78,30 +78,6 @@ struct tagWeaveSemiResults {
 };
 
 ///
-/// Fill an output #WeaveOutputToplistParams from a #PulsarDopplerParams
-///
-static int output_toplist_params_fill(
-  WeaveOutputToplistParams *par,
-  const PulsarDopplerParams *phys
-  )
-{
-
-  // Check input
-  XLAL_CHECK( par != NULL, XLAL_EFAULT );
-  XLAL_CHECK( phys != NULL, XLAL_EFAULT );
-
-  // Fill sky positions
-  par->alpha = phys->Alpha;
-  par->delta = phys->Delta;
-
-  // Fill frequency and spindowns
-  memcpy( par->fkdot, phys->fkdot, sizeof( par->fkdot ) );
-
-  return XLAL_SUCCESS;
-
-}
-
-///
 /// Create coherent input data
 ///
 WeaveCohInput *XLALWeaveCohInputCreate(
@@ -440,9 +416,9 @@ int XLALWeaveFillOutputToplistItem(
   if ( *full_init ) {
 
     // Set all semicoherent and coherent template parameters
-    XLAL_CHECK( output_toplist_params_fill( &( *item )->semi_par, &semi_res->semi_phys ) == XLAL_SUCCESS, XLAL_EFUNC );
+    ( *item )->semi_phys = semi_res->semi_phys;
     for ( size_t s = 0; s < per_nsegments; ++s ) {
-      XLAL_CHECK( output_toplist_params_fill( &( *item )->per_seg[s].coh_par, &semi_res->coh_res[s].coh_phys ) == XLAL_SUCCESS, XLAL_EFUNC );
+      ( *item )->per_seg[s].coh_phys = semi_res->coh_res[s].coh_phys;
     }
 
     // Next time, only toplist item fields that change with 'freq_idx' should need updating
@@ -452,9 +428,9 @@ int XLALWeaveFillOutputToplistItem(
 
   // Update semicoherent and coherent template frequency
   const double foffset = freq_idx * semi_res->dfreq;
-  ( *item )->semi_par.fkdot[0] = semi_res->semi_phys.fkdot[0] + foffset;
+  ( *item )->semi_phys.fkdot[0] = semi_res->semi_phys.fkdot[0] + foffset;
   for ( size_t s = 0; s < per_nsegments; ++s ) {
-    ( *item )->per_seg[s].coh_par.fkdot[0] = semi_res->coh_res[s].coh_phys.fkdot[0] + foffset;
+    ( *item )->per_seg[s].coh_phys.fkdot[0] = semi_res->coh_res[s].coh_phys.fkdot[0] + foffset;
   }
 
   // Update multi-detector F-statistics

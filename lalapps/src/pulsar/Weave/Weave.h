@@ -111,23 +111,11 @@ typedef struct {
 } WeaveSetup;
 
 ///
-/// Output toplist item template parameters
-///
-typedef struct tagWeaveOutputToplistParams {
-  /// Sky position right ascension in radians
-  REAL8 alpha;
-  /// Sky position declination in radians
-  REAL8 delta;
-  /// Frequency and spindowns in Hz/s^2
-  PulsarSpins fkdot;
-} WeaveOutputToplistParams;
-
-///
 /// Per-segment output toplist item
 ///
 typedef struct tagWeaveOutputToplistPerSegItem {
-  /// Coherent template parameters
-  WeaveOutputToplistParams coh_par;
+  /// Physical coordinates of coherent template
+  PulsarDopplerParams coh_phys;
   /// Coherent multi-detector F-statistic
   REAL4 twoF;
   /// Coherent per-detector F-statistic
@@ -140,8 +128,8 @@ typedef struct tagWeaveOutputToplistPerSegItem {
 typedef struct tagWeaveOutputToplistItem {
   /// Per-segment items (optional)
   WeaveOutputToplistPerSegItem *per_seg;
-  /// Semicoherent template parameters
-  WeaveOutputToplistParams semi_par;
+  /// Physical coordinates of semicoherent template
+  PulsarDopplerParams semi_phys;
   /// Mean multi-detector F-statistic
   REAL4 mean_twoF;
   /// Mean per-detector F-statistic

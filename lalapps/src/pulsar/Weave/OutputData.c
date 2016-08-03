@@ -65,12 +65,12 @@ static int toplist_fits_table_init(
   XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveOutputToplistItem );
 
   // Add columns for semicoherent template parameters
-  XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_par.alpha, "alpha [rad]" );
-  XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_par.delta, "delta [rad]" );
-  XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_par.fkdot[0], "freq [Hz]" );
+  XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_phys.Alpha, "alpha [rad]" );
+  XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_phys.Delta, "delta [rad]" );
+  XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_phys.fkdot[0], "freq [Hz]" );
   for ( size_t k = 1; k <= nspins; ++k ) {
     snprintf( col_name, sizeof( col_name ), "f%zudot [Hz/s^%zu]", k, k );
-    XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_par.fkdot[k], col_name );
+    XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, semi_phys.fkdot[k], col_name );
   }
 
   // Add columns for mean multi- and per-detector F-statistic
@@ -89,14 +89,14 @@ static int toplist_fits_table_init(
 
       // Add columns for coherent template parameters
       snprintf( col_name, sizeof( col_name ), "seg%zu_alpha [rad]", s + 1 );
-      XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL8, coh_par.alpha, col_name );
+      XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL8, coh_phys.Alpha, col_name );
       snprintf( col_name, sizeof( col_name ), "seg%zu_delta [rad]", s + 1 );
-      XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL8, coh_par.delta, col_name );
+      XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL8, coh_phys.Delta, col_name );
       snprintf( col_name, sizeof( col_name ), "seg%zu_freq [Hz]", s + 1 );
-      XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL8, coh_par.fkdot[0], col_name );
+      XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL8, coh_phys.fkdot[0], col_name );
       for ( size_t k = 1; k <= nspins; ++k ) {
         snprintf( col_name, sizeof( col_name ), "seg%zu_f%zudot [Hz/s^%zu]", s + 1, k, k );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL8, coh_par.fkdot[k], col_name );
+        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL8, coh_phys.fkdot[k], col_name );
       }
 
       // Add columns for coherent multi- and per-detector F-statistic
