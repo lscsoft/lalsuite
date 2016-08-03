@@ -200,6 +200,7 @@ int main( void )
     }
     fprintf( stderr, "PASSED: wrote a table\n" );
 
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteComment( file, "%s", "This is another test comment" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLALFITSFileClose( file );
     LALCheckMemoryLeaks();
     fprintf( stderr, "PASSED: closed 'FITSFileIOTest.fits'\n" );

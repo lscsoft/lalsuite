@@ -104,6 +104,48 @@ struct tagFITSFile {
 };
 
 ///
+/// Write a formatted string to a FITS file using the given function
+///
+static int WriteFormattedString( FITSFile *file, const CHAR *format, va_list ap, int (*fcn)( fitsfile *, const char*, int* ) )
+{
+
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( format != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( fcn != NULL, XLAL_EFAULT );
+
+  // Format the string
+  CHAR buf[4096];
+  XLAL_CHECK_FAIL( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_ESYS, "Formatted string is too long" );
+
+  // Split the string by newlines, removing any empty lines
+  CHAR *p = buf;
+  CHAR *t = XLALStringToken( &p, "\n", 0 );
+  while ( t != NULL ) {
+
+    // Replace any nonprintable characters with spaces
+    for ( CHAR *u = t; *u != '\0'; ++u ) {
+      if ( !isprint( *u ) ) {
+        *u = ' ';
+      }
+    }
+
+    // Write the string
+    CALL_FITS( fcn, file->ff, t );
+
+    t = XLALStringToken( &p, "\n", 0 );
+  }
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+  return XLAL_FAILURE;
+
+}
+
+///
 /// Extract unit from a keyword or column name
 ///
 static int ExtractUnit( const CHAR *name_unit, CHAR *name, CHAR *unit )
@@ -323,17 +365,10 @@ int XLALFITSFileWriteHistory( FITSFile UNUSED *file, const CHAR UNUSED *format, 
   XLAL_CHECK_FAIL( hdu_num == 1, XLAL_EIO, "FITS file is not at primary HDU" );
 
   // Write history to primary header
-  CHAR buf[4096];
   va_list ap;
   va_start( ap, format );
-  XLAL_CHECK( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_ESYS, "Formatted string is too long" );
+  XLAL_CHECK_FAIL( WriteFormattedString( file, format, ap, fits_write_history ) == XLAL_SUCCESS, XLAL_EFUNC );
   va_end( ap );
-  for ( size_t i = 0; i < strlen( buf ); ++ i ) {
-    if ( !isprint( buf[i] ) ) {
-      buf[i] = ' ';
-    }
-  }
-  CALL_FITS( fits_write_history, file->ff, buf );
 
   return XLAL_SUCCESS;
 
@@ -364,17 +399,10 @@ int XLALFITSHeaderWriteComment( FITSFile UNUSED *file, const CHAR UNUSED *format
   XLAL_CHECK_FAIL( format != NULL, XLAL_EFAULT );
 
   // Write comment to current header
-  CHAR buf[4096];
   va_list ap;
   va_start( ap, format );
-  XLAL_CHECK( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_ESYS, "Formatted string is too long" );
+  XLAL_CHECK_FAIL( WriteFormattedString( file, format, ap, fits_write_comment ) == XLAL_SUCCESS, XLAL_EFUNC );
   va_end( ap );
-  for ( size_t i = 0; i < strlen( buf ); ++ i ) {
-    if ( !isprint( buf[i] ) ) {
-      buf[i] = ' ';
-    }
-  }
-  CALL_FITS( fits_write_comment, file->ff, buf );
 
   return XLAL_SUCCESS;
 
