@@ -27,6 +27,7 @@
 static LALHeap *toplist_create( int toplist_limit, LALHeapCmpFcn toplist_item_compare_fcn );
 static WeaveOutputToplistItem *toplist_item_create( const UINT4 per_nsegments );
 static int toplist_fits_table_init( FITSFile *file, const size_t nspins, const LALStringVector *per_detectors, const UINT4 per_nsegments );
+static int toplist_fits_table_read( FITSFile *file, const char *name, WeaveOutput *out, LALHeap **toplist, LALHeapCmpFcn toplist_item_compare_fcn );
 static int toplist_fits_table_write( FITSFile *file, const char *name, const char *comment, const WeaveOutput *out, LALHeap *toplist );
 static int toplist_fits_table_write_visitor( void *param, const void *x );
 static int toplist_item_add( BOOLEAN *full_init, WeaveOutput *out, LALHeap *toplist, const WeaveSemiResults *semi_res, const size_t freq_idx );
@@ -179,6 +180,63 @@ int toplist_fits_table_write(
 
   // Write maximum size of toplist to FITS header
   XLAL_CHECK( XLALFITSHeaderWriteINT8( file, "toplimit", XLALHeapMaxSize( toplist ), "maximum size of toplist" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+}
+
+///
+/// Read items from a FITS table and either create, or append to existing, toplist
+///
+int toplist_fits_table_read(
+  FITSFile *file,
+  const char *name,
+  WeaveOutput *out,
+  LALHeap **toplist,
+  LALHeapCmpFcn toplist_item_compare_fcn
+  )
+{
+
+  // Check input
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK( name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( out != NULL, XLAL_EFAULT );
+  XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
+
+  // Decide whether to create, or append to existing, toplist
+  const BOOLEAN create = ( *toplist == NULL );
+
+  // Open FITS table for reading and initialise
+  UINT8 nrows = 0;
+  XLAL_CHECK( XLALFITSTableOpenRead( file, name, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( toplist_fits_table_init( file, out->nspins, out->per_detectors, out->per_nsegments ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Read maximum size of toplist to FITS header
+  INT8 toplist_limit = 0;
+  XLAL_CHECK( XLALFITSHeaderReadINT8( file, "toplimit", &toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Create a new toplist if required
+  if ( create ) {
+    *toplist = toplist_create( toplist_limit, toplist_item_compare_fcn );
+    XLAL_CHECK( *toplist != NULL, XLAL_EFUNC );
+  }
+
+  // Read all items from FITS table
+  while ( nrows > 0 ) {
+
+    // Create a new toplist item if needed
+    if ( out->saved_item == NULL ) {
+      out->saved_item = toplist_item_create( out->per_nsegments );
+      XLAL_CHECK( out->saved_item != NULL, XLAL_ENOMEM );
+    }
+
+    // Read item from FITS table
+    XLAL_CHECK( XLALFITSTableReadRow( file, out->saved_item, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Add item to toplist
+    XLAL_CHECK( XLALHeapAdd( *toplist, ( void ** ) &out->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  }
 
   return XLAL_SUCCESS;
 
@@ -451,6 +509,111 @@ int XLALWeaveOutputWriteExtra(
     }
 
   }
+
+  return XLAL_SUCCESS;
+
+}
+
+///
+/// Read output data from a FITS file and either create, or append to existing, output data
+///
+int XLALWeaveOutputRead(
+  FITSFile *file,
+  WeaveOutput **out
+  )
+{
+
+  // Check input
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK( out != NULL, XLAL_EFAULT );
+
+  // Decide whether to create, or append to existing, output data
+  const BOOLEAN create = ( *out == NULL );
+
+  // Allocate memory if required
+  if ( create ) {
+    *out = XLALCalloc( 1, sizeof( **out ) );
+    XLAL_CHECK( *out != NULL, XLAL_ENOMEM );
+  }
+
+  // Read and either set, or check, reference time
+  {
+    LIGOTimeGPS ref_time;
+    XLAL_CHECK( XLALFITSHeaderReadGPSTime( file, "date-obs", &ref_time ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( create ) {
+      ( *out )->ref_time = ref_time;
+    } else {
+      XLAL_CHECK( XLALGPSCmp( &ref_time, &( *out )->ref_time ) == 0, XLAL_EIO, "Inconsistent reference time: %" LAL_GPS_FORMAT " != %" LAL_GPS_FORMAT, LAL_GPS_PRINT( ref_time ), LAL_GPS_PRINT( ( *out )->ref_time ) );
+    }
+  }
+
+  // Read and either set, or check, number of spindowns
+  {
+    INT4 nspins = 0;
+    XLAL_CHECK( XLALFITSHeaderReadINT4( file, "nspins", &nspins ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( create ) {
+      ( *out )->nspins = nspins;
+    } else {
+      XLAL_CHECK( (size_t) nspins == ( *out )->nspins, XLAL_EIO, "Inconsistent number of spindowns: %i != %zu", nspins, ( *out )->nspins );
+    }
+  }
+
+  // Read and either set, or check, if outputting per-detector quantities, and list of detectors
+  {
+    BOOLEAN perdet = 0;
+    XLAL_CHECK( XLALFITSHeaderReadBOOLEAN( file, "perdet", &perdet ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( perdet ) {
+      LALStringVector *per_detectors = NULL;
+      XLAL_CHECK( XLALFITSHeaderReadStringVector( file, "detect", &per_detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+      if ( create ) {
+        ( *out )->per_detectors = per_detectors;
+      } else {
+        XLAL_CHECK( ( *out )->per_detectors != NULL, XLAL_EIO, "Inconsistent output per detector?" );
+        XLAL_CHECK( per_detectors->length == ( *out )->per_detectors->length, XLAL_EIO, "Inconsistent number of detectors: %u != %u", per_detectors->length, ( *out )->per_detectors->length );
+        for ( size_t i = 0; i < per_detectors->length; ++i ) {
+          XLAL_CHECK( strcmp( per_detectors->data[i], ( *out )->per_detectors->data[i] ) == 0, XLAL_EIO, "Inconsistent detectors: %s != %s", per_detectors->data[i], ( *out )->per_detectors->data[i] );
+        }
+        XLALDestroyStringVector( per_detectors );
+      }
+    } else {
+      if ( create ) {
+        ( *out )->per_detectors = NULL;
+      } else {
+        XLAL_CHECK( ( *out )->per_detectors == NULL, XLAL_EIO, "Inconsistent output per detector?" );
+      }
+    }
+  }
+
+  // Read and either set, or check, if outputting per-segment quantities, and number of per-segment items
+  {
+    BOOLEAN perseg = 0;
+    XLAL_CHECK( XLALFITSHeaderReadBOOLEAN( file, "perseg", &perseg ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( perseg ) {
+      INT4 per_nsegments = 0;
+      XLAL_CHECK( XLALFITSHeaderReadINT4( file, "nsegment", &per_nsegments ) == XLAL_SUCCESS, XLAL_EFUNC );
+      if ( create ) {
+        ( *out )->per_nsegments = per_nsegments;
+      } else {
+        XLAL_CHECK( (size_t) per_nsegments == ( *out )->per_nsegments, XLAL_EIO, "Inconsistent number of segments: %i != %u", per_nsegments, ( *out )->per_nsegments );
+      }
+    } else {
+      if ( create ) {
+        ( *out )->per_nsegments = 0;
+      } else {
+        XLAL_CHECK( ( *out )->per_nsegments == 0, XLAL_EIO, "Inconsistent output per segment?" );
+      }
+    }
+  }
+
+  // Read and increment total number of semicoherent results added to output
+  {
+    INT8 semi_total = 0;
+    XLAL_CHECK( XLALFITSHeaderReadINT8( file, "semitot", &semi_total ) == XLAL_SUCCESS, XLAL_EFUNC );
+    ( *out )->semi_total += semi_total;
+  }
+
+  // Read and append to toplist ranked by mean multi-detector F-statistic
+  XLAL_CHECK( toplist_fits_table_read( file, "toplist_mean_twoF", *out, &( *out )->toplist_mean_twoF, toplist_item_compare_by_mean_twoF ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 

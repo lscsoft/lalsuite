@@ -329,6 +329,10 @@ int XLALWeaveOutputWriteExtra(
   const size_t nsegments,
   const WeaveOutputPerSegInfo *per_seg_info
   );
+int XLALWeaveOutputRead(
+  FITSFile *file,
+  WeaveOutput **out
+  );
 
 /// @}
 
