@@ -2262,11 +2262,12 @@ class knopeDAG(pipeline.CondorDAG):
         if not isinstance(value, dict) and isinstance(default, dict):
           print("Warning... could not parse '%s' dictionary option from '[%s]' section. Defaulting to %s." % (option, section, str(default)))
           value = default
-        elif not isinstance(value, dict) and not isinstance(default, dict) and not allownone:
-          print("Error... could not parse '%s' dictionary option from '[%s]' section." % (option, section), file=sys.stderr)
-          self.error_code = -1
-        else:
-          value = None
+        elif not isinstance(value, dict) and not isinstance(default, dict):
+          if not allownone:
+            print("Error... could not parse '%s' dictionary option from '[%s]' section." % (option, section), file=sys.stderr)
+            self.error_code = -1
+          else:
+            value = None
       except:
         if not allownone:
           if not isinstance(default, dict):
@@ -2491,7 +2492,7 @@ class knopeDAG(pipeline.CondorDAG):
     ligolwprint = self.get_config_option('segmentfind', 'ligolw_print', default='ligolw_print')
 
     # check ligolw_print file exists and is executable
-    if not os.path.isfile(ligolwprint) or not os.access(ligolw_print, os.X_OK):
+    if not os.path.isfile(ligolwprint) or not os.access(ligolwprint, os.X_OK):
       print("Warning... '%s' executable does not exist or is not an executable. Try finding code in path." % ligolwprint)
       ligolwprint = self.find_exec_file('ligolw_print')
 
