@@ -44,12 +44,13 @@ int fffree( void *, int * );
 
 #endif // ffree()
 
-#endif // !defined(HAVE_LIBCFITSIO)
+#endif // defined(HAVE_LIBCFITSIO)
 
 #include <lal/FITSFileIO.h>
 #include <lal/LALString.h>
 #include <lal/StringVector.h>
 #include <lal/Date.h>
+#include <lal/UserInput.h>
 #include <lal/GSLHelpers.h>
 
 #if defined(__GNUC__)
@@ -57,6 +58,8 @@ int fffree( void *, int * );
 #else
 #define UNUSED
 #endif
+
+#if defined(HAVE_LIBCFITSIO)
 
 // Call a CFITSIO function, or print error messages on failure
 #define CALL_FITS(function, ...) \
@@ -73,7 +76,6 @@ int fffree( void *, int * );
   } while(0)
 
 // Internal representation of a FITS file opened for reading or writing
-#if defined(HAVE_LIBCFITSIO)
 struct tagFITSFile {
   fitsfile *ff;                         // Pointer to a CFITSIO FITS file representation
   int write;                            // True if the file is open for writing (otherwise reading)
@@ -100,16 +102,12 @@ struct tagFITSFile {
     LONGLONG irow;                              // Index of current row in table
   } table;
 };
-#endif // !defined(HAVE_LIBCFITSIO)
 
 ///
 /// Extract unit from a keyword or column name
 ///
-static int UNUSED ExtractUnit( const CHAR UNUSED *name_unit, CHAR UNUSED *name, CHAR UNUSED *unit )
+static int ExtractUnit( const CHAR *name_unit, CHAR *name, CHAR *unit )
 {
-#if !defined(HAVE_LIBCFITSIO)
-  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
-#else // defined(HAVE_LIBCFITSIO)
 
   int UNUSED status = 0;
 
@@ -140,17 +138,13 @@ static int UNUSED ExtractUnit( const CHAR UNUSED *name_unit, CHAR UNUSED *name, 
 XLAL_FAIL:
   return XLAL_FAILURE;
 
-#endif // !defined(HAVE_LIBCFITSIO)
 }
 
 ///
 /// Format and check a FITS keyword
 ///
-static int UNUSED CheckFITSKeyword( const CHAR UNUSED *key, CHAR UNUSED *keyword, CHAR UNUSED *unit )
+static int CheckFITSKeyword( const CHAR *key, CHAR *keyword, CHAR *unit )
 {
-#if !defined(HAVE_LIBCFITSIO)
-  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
-#else // defined(HAVE_LIBCFITSIO)
 
   int UNUSED status = 0;
 
@@ -185,8 +179,9 @@ static int UNUSED CheckFITSKeyword( const CHAR UNUSED *key, CHAR UNUSED *keyword
 XLAL_FAIL:
   return XLAL_FAILURE;
 
-#endif // !defined(HAVE_LIBCFITSIO)
 }
+
+#endif // defined(HAVE_LIBCFITSIO)
 
 void XLALFITSFileClose( FITSFile UNUSED *file )
 {
