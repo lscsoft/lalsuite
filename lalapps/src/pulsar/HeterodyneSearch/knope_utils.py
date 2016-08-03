@@ -2202,15 +2202,12 @@ class knopeDAG(pipeline.CondorDAG):
       try:
         value = self.config.get(section, option)
       except:
-        if cftype != 'dir':
-          if not allownone:
-            if not isinstance(default, str):
-              print("Error... could not parse '%s' option from '[%s]' section." % (option, section), file=sys.stderr)
-              self.error_code = -1
-            else:
-              print("Warning... could not parse '%s' option from '[%s]' section. Defaulting to %s." % (option, section, default))
-              value = default
-          else: # check directory exists
+        if not allownone:
+          if not isinstance(default, str):
+            print("Error... could not parse '%s' option from '[%s]' section." % (option, section), file=sys.stderr)
+            self.error_code = -1
+          else:
+            print("Warning... could not parse '%s' option from '[%s]' section. Defaulting to %s." % (option, section, default))
             value = default
     elif cftype == 'float':
       try:
@@ -2265,9 +2262,11 @@ class knopeDAG(pipeline.CondorDAG):
         if not isinstance(value, dict) and isinstance(default, dict):
           print("Warning... could not parse '%s' dictionary option from '[%s]' section. Defaulting to %s." % (option, section, str(default)))
           value = default
-        elif not isinstance(value, dict) and not isinstance(default, dict):
+        elif not isinstance(value, dict) and not isinstance(default, dict) and not allownone:
           print("Error... could not parse '%s' dictionary option from '[%s]' section." % (option, section), file=sys.stderr)
           self.error_code = -1
+        else:
+          value = None
       except:
         if not allownone:
           if not isinstance(default, dict):
@@ -2425,8 +2424,8 @@ class knopeDAG(pipeline.CondorDAG):
     each segment.
     """
 
-    # check if segment file(s) is given
-    segfiles = self.get_config_option('segmentfind', 'seg_files', cftype='dict', allownone=True)
+    # check if segment file(s) given (as a dictionary)
+    segfiles = self.get_config_option('segmentfind', 'segfind', cftype='dict', allownone=True)
     if segfiles is not None: # check if it is a dictionary
       if segfiles is not None:
         if ifo not in segfiles:
@@ -2435,31 +2434,36 @@ class knopeDAG(pipeline.CondorDAG):
           return
         else:
           segfile = segfiles[ifo]
-    else: # check if is just a single segment file
-      segfile = self.get_config_option('segmentfind', 'seg_files', cftype='string', allownone=True)
 
-    if segfile is not None:
-      # check segment file exists
-      if not os.path.isfile(segfile):
-        print("Error... segment file '%s' does not exist." % segfile)
-        self.error_code = -1
-        return
-      else:
-        # copy segment file to the 'outfile' location
-        try:
-          shutil.copyfile(segfile, outfile)
-        except:
-          print("Error... could not copy segment file to location of '%s'." % outfile)
-          self.error_code = -1
-        return # exit function
+          # check segment file exists
+          if not os.path.isfile(segfile):
+            print("Error... segment file '%s' does not exist." % segfile)
+            self.error_code = -1
+            return
+          else:
+            # copy segment file to the 'outfile' location
+            try:
+              shutil.copyfile(segfile, outfile)
+            except:
+              print("Error... could not copy segment file to location of '%s'." % outfile)
+              self.error_code = -1
+            return # exit function
 
     # otherwise try and get the segment list
+    segfind = self.get_config_option('segmentfind', 'segfind', default='ligolw_segment_query_dqsegdb')
+
+    # check segment finding file exists and is executable
+    if not os.path.isfile(segfind) or not os.access(segfind, os.X_OK):
+      print("Warning... '%s' executable for segment finding does not exist or is not an executable. Try finding code in path." % segfind)
+      segfind = self.find_exec_file('ligolw_segment_query_dqsegdb')
+
+      if segfind is None:
+        print("Error... could not find 'ligolw_segment_query_dqsegdb' in 'PATH'", file=sys.stderr)
+        self.error_code = -1
+        return
+
     # get server
-    if self.config.has_option('segmentfind', 'server'):
-      server = self.config.get('segmentfind', 'server')
-    else:
-      print("No segment server specified: defaulting to 'https://segments.ligo.org'")
-      server = 'https://segments.ligo.org'
+    server = self.get_config_option('segmentfind', 'server', default='https://segments.ligo.org')
 
     # get segment types to include
     segmenttypes = self.get_config_option('segmentfind', 'segmenttype', cftype='dict')
@@ -2473,8 +2477,7 @@ class knopeDAG(pipeline.CondorDAG):
       self.error_code = -1
       return
 
-    segFindCall = ' '.join([self.config.get('segmentfind', 'segfind'),
-                            '--segment-url', server,
+    segFindCall = ' '.join([segfind, '--segment-url', server,
                             '--query-segments',
                             '--include-segments', segmenttypes[ifo],
                             '--gps-start-time', str(starttime),
@@ -2485,7 +2488,19 @@ class knopeDAG(pipeline.CondorDAG):
         if len(excludesegs[ifo]) > 0:
           segFindCall += ' --exclude-segments ' + excludesegs[ifo]
 
-    xmlToTxtCall = ' '.join([self.config.get('segmentfind', 'ligolw_print'),
+    ligolwprint = self.get_config_option('segmentfind', 'ligolw_print', default='ligolw_print')
+
+    # check ligolw_print file exists and is executable
+    if not os.path.isfile(ligolwprint) or not os.access(ligolw_print, os.X_OK):
+      print("Warning... '%s' executable does not exist or is not an executable. Try finding code in path." % ligolwprint)
+      ligolwprint = self.find_exec_file('ligolw_print')
+
+      if ligolwprint is None:
+        print("Error... could not find 'ligolw_print' in 'PATH'", file=sys.stderr)
+        self.error_code = -1
+        return
+
+    xmlToTxtCall = ' '.join([ligolwprint,
                              "--table segment --column start_time --column end_time --delimiter ' '",
                              ' > ', outfile])
 
