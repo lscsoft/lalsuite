@@ -68,6 +68,7 @@ FITSFile *XLALFITSFileOpenWrite( const CHAR *file_name );
 FITSFile *XLALFITSFileOpenRead( const CHAR *file_name );
 int XLALFITSFileWriteHistory( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
 int XLALFITSFileWriteVCSInfo( FITSFile *file, const LALVCSInfo *const vcs_list[] );
+int XLALFITSFileWriteUVarCmdLine( FITSFile *file );
 /// @}
 
 ///

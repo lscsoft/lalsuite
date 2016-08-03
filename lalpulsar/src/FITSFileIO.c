@@ -410,6 +410,41 @@ XLAL_FAIL:
 #endif // !defined(HAVE_LIBCFITSIO)
 }
 
+int XLALFITSFileWriteUVarCmdLine( FITSFile UNUSED *file )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  int UNUSED status = 0;
+  CHAR *cmd_line = NULL;
+
+  // Check input
+  XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
+
+  // Write command line to history
+  cmd_line = XLALUserVarGetLog( UVAR_LOGFMT_CMDLINE );
+  XLAL_CHECK_FAIL( cmd_line != NULL, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( XLALFITSFileWriteHistory( file, "Command line: %s", cmd_line ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLALFree( cmd_line );
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+
+  // Delete FITS file on error
+  if ( file != NULL && file->ff != NULL ) {
+    fits_delete_file( file->ff, &status );
+    file->ff = NULL;
+  }
+
+  XLALFree( cmd_line );
+  return XLAL_FAILURE;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
 int XLALFITSHeaderWriteComment( FITSFile UNUSED *file, const CHAR UNUSED *format, ... )
 {
 #if !defined(HAVE_LIBCFITSIO)
