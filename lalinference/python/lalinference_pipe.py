@@ -85,7 +85,7 @@ else:
 
 use_roq=False
 if cp.has_option('paths','roq_b_matrix_directory'):
-  from numpy import genfromtxt
+  from numpy import genfromtxt, array
   path=cp.get('paths','roq_b_matrix_directory')
   if not os.path.isdir(path):
     print "The ROQ directory %s does not seem to exist\n"%path
@@ -101,6 +101,19 @@ if cp.has_option('paths','roq_b_matrix_directory'):
   if opts.gid is not None: 
   	mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, opts.gid)
         roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp)
+
+	for mc_prior in mc_priors:
+		mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
+
+	# find mass bin containing the trigger
+	trigger_bin = None
+	for roq in roq_paths:
+		print 	
+		if mc_priors[roq][0] <= trigger_mchirp <= mc_priors[roq][1]:
+			trigger_bin = roq
+			break
+
+	roq_paths = [trigger_bin]
   else:
 	mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, None)
   	roq_mass_freq_scale_factor = 1
@@ -159,9 +172,9 @@ for sampler in samps:
         cp.set('paths','roq_b_matrix_directory',thispath)
         mc_min=mc_priors[roq][0]
         mc_max=mc_priors[roq][1]
-        flow=int(roq_params[roq]['flow'])
-        srate=int(2.*roq_params[roq]['fhigh'])
-        seglen=int(roq_params[roq]['seglen'])
+        flow=int(roq_params[roq]['flow']) / roq_mass_freq_scale_factor
+        srate=int(2.*roq_params[roq]['fhigh']) / roq_mass_freq_scale_factor
+        seglen=int(roq_params[roq]['seglen']) * roq_mass_freq_scale_factor
         # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
         q_min=1./float(roq_params[roq]['qmax'])
         cp.set('engine','srate',str(srate))
