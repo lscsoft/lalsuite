@@ -1010,7 +1010,7 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 		// the ROM breaks down for these parameter values so throw a large and negative likelihood to avoid 
 		// strange likelihood values
 		loglikelihood = -1e15;
-		fprintf(stdout, "WARNING: sampling a bad region of parameter space; skipping\n");
+		//fprintf(stdout, "WARNING: sampling a bad region of parameter space; skipping\n");
 		}
 	
 	return(loglikelihood); /* The ROQ isn't compatible with the stuff below, so we can just exit here */
