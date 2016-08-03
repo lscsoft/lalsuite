@@ -725,20 +725,33 @@ int main( int argc, char *argv[] )
   WeaveOutput *out = XLALWeaveOutputCreate( &setup.ref_time, uvar->output_max_size, ninputspins, per_detectors, per_nsegments );
   XLAL_CHECK_MAIN( out != NULL, XLAL_EFUNC );
 
-  // Count number of semicoherent frequency blocks, for progress counter
+  // Count number of semicoherent frequency blocks
   LogPrintf( LOG_NORMAL, "Counting number of semicoherent frequency blocks ...\n" );
-  const UINT8 prog_total = uvar->freq_partitions * XLALTotalLatticeTilingPoints( semi_itr );
-  LogPrintf( LOG_NORMAL, "Number of semicoherent frequency blocks = %" LAL_UINT8_FORMAT "\n", prog_total );
+  const UINT8 semi_total = XLALTotalLatticeTilingPoints( semi_itr );
+  LogPrintf( LOG_NORMAL, "Number of semicoherent frequency blocks = %" LAL_UINT8_FORMAT "\n", semi_total );
+  const UINT8 prog_total = uvar->freq_partitions * semi_total;
 
-  // Period after which to print iteration progress, in seconds
-  double prog_period = 5.0;
+  // Semicoherent template and partition indexes
+  UINT8 semi_index = 0;
+  INT4 partition_index = 0;
+
+  // Record zero of CPU time counter
+  const double time_zero = XLALGetCPUTime();
+
+  // Print initial progress in frequency blocks and partitions
+  {
+    const UINT8 prog_index = partition_index * semi_total + semi_index;
+    const double prog_per_cent = 100.0 * prog_index / prog_total;
+    LogPrintf( LOG_NORMAL, "Starting main search loop at %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_total, prog_per_cent );
+    if ( uvar->freq_partitions > 1 ) {
+      LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
+    }
+    LogPrintfVerbatim( LOG_NORMAL, ", peak memory = %.1fMB ...\n", XLALGetPeakHeapUsageMB() );
+  }
 
   // Begin main search loop
-  LogPrintf( LOG_NORMAL, "Starting main search loop, peak memory = %.1fMB ...\n", XLALGetPeakHeapUsageMB() );
-  UINT8 semi_index = 0, prog_count = 0;
-  INT4 partition_index = 0;
-  const double prog_time_zero = XLALGetTimeOfDay();
-
+  double prog_time = time_zero;
+  double prog_period = 5.0;
   while ( true ) {
 
     // Get mid-point of the next semicoherent frequency block
@@ -749,6 +762,7 @@ int main( int argc, char *argv[] )
 
       // Move to the next partition
       ++partition_index;
+      semi_index = 0;
       if ( partition_index == uvar->freq_partitions ) {
 
         // Search is complete
@@ -757,7 +771,6 @@ int main( int argc, char *argv[] )
       }
 
       // Reset iterator over semicoherent tiling
-      semi_index = 0;
       XLAL_CHECK_MAIN( XLALResetLatticeTilingIterator( semi_itr ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLALNextLatticeTilingPoint( semi_itr, semi_rssky ) > 0, XLAL_EFUNC );
 
@@ -800,20 +813,22 @@ int main( int argc, char *argv[] )
     ++semi_index;
 
     // Print iteration progress, if required
-    ++prog_count;
-    const double prog_time_elapsed = XLALGetTimeOfDay() - prog_time_zero;
-    if ( prog_time_elapsed >= prog_period || prog_count >= prog_total ) {
+    const double prog_time_now = XLALGetCPUTime();
+    const double prog_time_elapsed = prog_time_now - prog_time;
+    if ( prog_time_elapsed >= prog_period ) {
+      prog_time = prog_time_now;
 
       // Print progress in frequency blocks and partitions
-      const double prog_per_cent = 100.0 * prog_count / prog_total;
-      LogPrintf( LOG_NORMAL, "Searched %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_count, prog_total, prog_per_cent );
+      const UINT8 prog_index = partition_index * semi_total + semi_index;
+      const double prog_per_cent = 100.0 * prog_index / prog_total;
+      LogPrintf( LOG_NORMAL, "Searched %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_total, prog_per_cent );
       if ( uvar->freq_partitions > 1 ) {
         LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
       }
 
       // Print progress in time
-      const double prog_time_remain = prog_time_elapsed * ( prog_total - prog_count ) / prog_count;
-      LogPrintfVerbatim( LOG_NORMAL, ", time elapsed %.1f sec, remaining ~%.1f sec", prog_time_elapsed, prog_time_remain );
+      const double prog_time_remain = prog_time_elapsed * ( prog_total - prog_index ) / prog_index;
+      LogPrintfVerbatim( LOG_NORMAL, ", CPU time elapsed %.1f sec, remaining ~%.1f sec", prog_time_elapsed, prog_time_remain );
 
       // Print memory usage
       LogPrintfVerbatim( LOG_NORMAL, ", peak memory = %.1fMB", XLALGetPeakHeapUsageMB() );
@@ -828,8 +843,19 @@ int main( int argc, char *argv[] )
 
   }
 
-  const double prog_time_elapsed = XLALGetTimeOfDay() - prog_time_zero;
-  LogPrintf( LOG_NORMAL, "Finished main search loop, time elapsed %.1f sec, peak memory = %.1fMB\n", prog_time_elapsed, XLALGetPeakHeapUsageMB() );
+  // Record elapsed CPU time
+  const double time_elapsed = XLALGetCPUTime() - time_zero;
+
+  // Print final progress in frequency blocks and partitions
+  {
+    const UINT8 prog_index = partition_index * semi_total + semi_index;
+    const double prog_per_cent = 100.0 * prog_index / prog_total;
+    LogPrintf( LOG_NORMAL, "Finished main search loop at %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_total, prog_per_cent );
+    if ( uvar->freq_partitions > 1 ) {
+      LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
+    }
+    LogPrintfVerbatim( LOG_NORMAL, ", CPU time elapsed %.1f sec, peak memory = %.1fMB\n", time_elapsed, XLALGetPeakHeapUsageMB() );
+  }
 
   ////////// Output search results //////////
 
