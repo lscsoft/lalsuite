@@ -27,7 +27,8 @@
 static LALHeap *toplist_create( int toplist_limit, LALHeapCmpFcn toplist_item_compare_fcn );
 static WeaveOutputToplistItem *toplist_item_create( const UINT4 per_nsegments );
 static int toplist_fits_table_init( FITSFile *file, const size_t nspins, const LALStringVector *per_detectors, const UINT4 per_nsegments );
-static int toplist_fits_write_visitor( void *param, const void *x );
+static int toplist_fits_table_write( FITSFile *file, const char *name, const char *comment, const WeaveOutput *out, LALHeap *toplist );
+static int toplist_fits_table_write_visitor( void *param, const void *x );
 static int toplist_item_add( BOOLEAN *full_init, WeaveOutput *out, LALHeap *toplist, const WeaveSemiResults *semi_res, const size_t freq_idx );
 static int toplist_item_compare_by_mean_twoF( const void *x, const void *y );
 static void toplist_item_destroy( void *x );
@@ -140,7 +141,7 @@ int toplist_fits_table_init(
 ///
 /// Visitor function for writing a toplist to a FITS table
 ///
-int toplist_fits_write_visitor(
+int toplist_fits_table_write_visitor(
   void *param,
   const void *x
   )
@@ -148,6 +149,39 @@ int toplist_fits_write_visitor(
   FITSFile *file = ( FITSFile * ) param;
   XLAL_CHECK( XLALFITSTableWriteRow( file, x ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
+}
+
+///
+/// Write toplist items to a FITS table
+///
+int toplist_fits_table_write(
+  FITSFile *file,
+  const char *name,
+  const char *comment,
+  const WeaveOutput *out,
+  LALHeap *toplist
+  )
+{
+
+  // Check input
+  XLAL_CHECK( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK( name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( comment != NULL, XLAL_EFAULT );
+  XLAL_CHECK( out != NULL, XLAL_EFAULT );
+  XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
+
+  // Open FITS table for writing and initialise
+  XLAL_CHECK( XLALFITSTableOpenWrite( file, name, comment ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( toplist_fits_table_init( file, out->nspins, out->per_detectors, out->per_nsegments ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Write all items to FITS table
+  XLAL_CHECK( XLALHeapVisit( toplist, toplist_fits_table_write_visitor, file ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Write maximum size of toplist to FITS header
+  XLAL_CHECK( XLALFITSHeaderWriteINT8( file, "toplimit", XLALHeapMaxSize( toplist ), "maximum size of toplist" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
 }
 
 ///
@@ -362,9 +396,7 @@ int XLALWeaveOutputWrite(
   XLAL_CHECK( XLALFITSHeaderWriteINT8( file, "semitot", out->semi_total, "total semicoherent templates searched" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write toplist ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALFITSTableOpenWrite( file, "toplist_mean_twoF", "toplist ranked by mean multi-detector F-statistic" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( toplist_fits_table_init( file, out->nspins, out->per_detectors, out->per_nsegments ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALHeapVisit( out->toplist_mean_twoF, toplist_fits_write_visitor, file ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( toplist_fits_table_write( file, "toplist_mean_twoF", "toplist ranked by mean multi-detector F-statistic", out, out->toplist_mean_twoF ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
