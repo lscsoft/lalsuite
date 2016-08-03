@@ -1497,7 +1497,7 @@ class knopeDAG(pipeline.CondorDAG):
           print("Error... the ranges in the prior for '%s' are not set properly" % prioritem, file=sys.stderr)
           self.error_code = -1
           return outfile
-        fp.write("%s\t%s\t%.9e\t%.9e\n" % (prioritem, ptype, rangevals[0], rangevals[1]))
+        fp.write("%s\t%s\t%.16e\t%.16e\n" % (prioritem, ptype, rangevals[0], rangevals[1]))
       fp.close()
 
     return outfile
@@ -1703,7 +1703,8 @@ class knopeDAG(pipeline.CondorDAG):
           coarsenode = heterodyneNode(chetjob)
 
           # add data find parent to coarse job
-          coarsenode.add_parent(self.datafind_nodes[ifo])
+          if self.datafind_nodes is not None:
+            coarsenode.add_parent(self.datafind_nodes[ifo])
 
           # set data, segment location, channel and output location
           coarsenode.set_data_file(self.cache_files[ifo])
@@ -2302,9 +2303,9 @@ class knopeDAG(pipeline.CondorDAG):
     self.datafind_job = None
     if self.config.has_option('condor', 'datafind'):
       # check if a dictionary of ready made cache files has been given
-      datafind = self.config.get('condor', 'datafind')
+      datafind = self.get_config_option('condor', 'datafind', cftype='dict', allownone=True)
 
-      if isinstance(datafind, dict):
+      if datafind is not None:
         # check there is a file for each detector and that they exist
         for ifo in self.ifos:
           if ifo not in datafind:
@@ -2333,6 +2334,8 @@ class knopeDAG(pipeline.CondorDAG):
         if len(self.cache_files) < len(self.ifos):
           self.datafind_job = pipeline.LSCDataFindJob(self.preprocessing_base_dir.values()[0], self.log_dir, self.config)
       else: # a data find exectable has been given
+        datafind = self.get_config_option('condor', 'datafind')
+
         if os.path.isfile(datafind) and os.access(datafind, os.X_OK):
           self.datafind_job = pipeline.LSCDataFindJob(self.preprocessing_base_dir.values()[0], self.log_dir, self.config)
         else:
@@ -2363,13 +2366,14 @@ class knopeDAG(pipeline.CondorDAG):
       if self.accounting_group_user != None:
         self.datafind_job.add_condor_cmd('accounting_group_user', self.accounting_group_user)
 
-    # reset the sub file location
-    self.datafind_job.set_sub_file(os.path.join(self.run_dir, 'datafind.sub'))
+      # reset the sub file location
+      self.datafind_job.set_sub_file(os.path.join(self.run_dir, 'datafind.sub'))
 
-    # Set gw_data_find nodes (one for each detector)
-    if len(self.cache_files) < len(self.ifos):
-      self.set_datafind_nodes()
-
+      # Set gw_data_find nodes (one for each detector)
+      if len(self.cache_files) < len(self.ifos):
+        self.set_datafind_nodes()
+    else:
+      self.datafind_nodes = None
 
   def set_datafind_nodes(self):
     """
