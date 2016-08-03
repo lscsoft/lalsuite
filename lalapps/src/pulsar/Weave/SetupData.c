@@ -57,14 +57,6 @@ int XLALWeaveSetupWrite(
   XLAL_CHECK( setup->metrics != NULL, XLAL_EFAULT );
   XLAL_CHECK( setup->ephemerides != NULL, XLAL_EFAULT );
 
-  // Write command line
-  {
-    char *command_line = XLALUserVarGetLog( UVAR_LOGFMT_CMDLINE );
-    XLAL_CHECK( command_line != NULL, XLAL_EFUNC );
-    XLAL_CHECK( XLALFITSFileWriteHistory( file, "Command line: %s", command_line ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLALFree( command_line );
-  }
-
   // Write reference time
   XLAL_CHECK( XLALFITSHeaderWriteGPSTime( file, "date-obs", &setup->ref_time, "reference time" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -313,6 +305,12 @@ int XLALWeaveSetupRead(
     }
 
   }
+
+  // Check output
+  XLAL_CHECK( setup->detectors != NULL, XLAL_EFAULT );
+  XLAL_CHECK( setup->segments != NULL, XLAL_EFAULT );
+  XLAL_CHECK( setup->metrics != NULL, XLAL_EFAULT );
+  XLAL_CHECK( setup->ephemerides != NULL, XLAL_EFAULT );
 
   return XLAL_SUCCESS;
 

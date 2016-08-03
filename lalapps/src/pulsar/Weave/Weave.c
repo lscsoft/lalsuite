@@ -366,15 +366,8 @@ int main( int argc, char *argv[] )
 
     // Close output file
     XLALFITSFileClose( file );
-    LogPrintf( LOG_NORMAL, "Closed setup file\n" );
+    LogPrintf( LOG_NORMAL, "Closed setup file '%s'\n", uvar->setup_file );
   }
-
-  // Check setup data
-  XLAL_CHECK_MAIN( setup.ref_time.gpsSeconds != 0, XLAL_EIO );
-  XLAL_CHECK_MAIN( setup.detectors != NULL, XLAL_EIO );
-  XLAL_CHECK_MAIN( setup.segments != NULL, XLAL_EIO );
-  XLAL_CHECK_MAIN( setup.metrics != NULL, XLAL_EIO );
-  XLAL_CHECK_MAIN( setup.ephemerides != NULL, XLAL_EIO );
 
   // Print reference time
   LogPrintf( LOG_NORMAL, "Setup file reference time = %" LAL_GPS_FORMAT "\n", LAL_GPS_PRINT( setup.ref_time ) );
@@ -846,6 +839,7 @@ int main( int argc, char *argv[] )
     FITSFile *file = XLALFITSFileOpenWrite( uvar->output_file );
     XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileWriteVCSInfo( file, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileWriteUVarCmdLine( file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write search results
     XLAL_CHECK_MAIN( XLALWeaveOutputWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -857,7 +851,7 @@ int main( int argc, char *argv[] )
 
     // Close output file
     XLALFITSFileClose( file );
-    LogPrintf( LOG_NORMAL, "Closed output file\n" );
+    LogPrintf( LOG_NORMAL, "Closed output file '%s'\n", uvar->output_file );
   }
 
   ////////// Cleanup memory and exit //////////
@@ -883,7 +877,7 @@ int main( int argc, char *argv[] )
     XLALDestroyLatticeTiling( tiling[i] );
   }
 
-  // Cleanup memory from setup
+  // Cleanup memory from setup data
   XLALWeaveSetupClear( &setup );
 
   // Cleanup memory from user input

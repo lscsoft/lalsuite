@@ -289,14 +289,6 @@ int XLALWeaveOutputWrite(
   XLAL_CHECK( file != NULL, XLAL_EFAULT );
   XLAL_CHECK( out != NULL, XLAL_EFAULT );
 
-  // Write command line
-  {
-    char *command_line = XLALUserVarGetLog( UVAR_LOGFMT_CMDLINE );
-    XLAL_CHECK( command_line != NULL, XLAL_EFUNC );
-    XLAL_CHECK( XLALFITSFileWriteHistory( file, "Command line: %s", command_line ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLALFree( command_line );
-  }
-
   // Write reference time
   XLAL_CHECK( XLALFITSHeaderWriteGPSTime( file, "date-obs", &out->ref_time, "reference time" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -310,7 +302,7 @@ int XLALWeaveOutputWrite(
   }
 
   // Write if outputting per-segment quantities
-  XLAL_CHECK( XLALFITSHeaderWriteBOOLEAN( file, "perdet", out->per_nsegments > 0, "output per segment?" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteBOOLEAN( file, "perseg", out->per_nsegments > 0, "output per segment?" ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( out->per_nsegments > 0 ) {
     XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "nsegment", out->per_nsegments, "number of segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
   }

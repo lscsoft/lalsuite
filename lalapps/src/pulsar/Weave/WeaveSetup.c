@@ -252,17 +252,18 @@ int main( int argc, char *argv[] )
   FITSFile *file = XLALFITSFileOpenWrite( uvar->output_file );
   XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALFITSFileWriteVCSInfo( file, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALFITSFileWriteUVarCmdLine( file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write setup data
   XLAL_CHECK_MAIN( XLALWeaveSetupWrite( file, &setup ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Close output file
   XLALFITSFileClose( file );
-  LogPrintf( LOG_NORMAL, "Closed output file\n" );
+  LogPrintf( LOG_NORMAL, "Closed output file '%s'\n", uvar->output_file );
 
   ////////// Cleanup memory and exit //////////
 
-  // Cleanup memory from setup
+  // Cleanup memory from setup data
   XLALWeaveSetupClear( &setup );
 
   // Cleanup memory from user input
