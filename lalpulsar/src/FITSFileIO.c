@@ -303,7 +303,7 @@ XLAL_FAIL:
 #endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSHeaderWriteHistory( FITSFile UNUSED *file, const CHAR UNUSED *format, ... )
+int XLALFITSFileWriteHistory( FITSFile UNUSED *file, const CHAR UNUSED *format, ... )
 {
 #if !defined(HAVE_LIBCFITSIO)
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
@@ -316,7 +316,13 @@ int XLALFITSHeaderWriteHistory( FITSFile UNUSED *file, const CHAR UNUSED *format
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
   XLAL_CHECK_FAIL( format != NULL, XLAL_EFAULT );
 
-  // Write history to current header
+  // Check that we are writing to the primary header
+  int hdu_num = 0;
+  fits_get_hdu_num( file->ff, &hdu_num );
+  XLAL_CHECK_FAIL( hdu_num > 0, XLAL_EIO );
+  XLAL_CHECK_FAIL( hdu_num == 1, XLAL_EIO, "FITS file is not at primary HDU" );
+
+  // Write history to primary header
   CHAR buf[4096];
   va_list ap;
   va_start( ap, format );

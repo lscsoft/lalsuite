@@ -56,27 +56,28 @@ typedef struct tagFITSFile FITSFile;
 /// @}
 
 ///
-/// \name Open/Close FITS File
+/// \name Open/Close FITS File, and Write History Information to Primary FITS Header-Data Unit
 ///
 /// These functions open a FITS file \p file_name for writing or reading, and close a FITS file
-/// represented by \p file. Writing a FITS file required a list of LALVCSInfo from the appropriate
-/// LAL library VCS header, e.g. #lalVCSInfoList from \ref LALVCSInfo_h
+/// represented by \p file. History information may also be written to the primary (first) FITS
+/// header-data unit (HDU).
 ///
 /// @{
 void XLALFITSFileClose( FITSFile *file );
 FITSFile *XLALFITSFileOpenWrite( const CHAR *file_name, const LALVCSInfo *const vcs_list[] );
 FITSFile *XLALFITSFileOpenRead( const CHAR *file_name );
+int XLALFITSFileWriteHistory( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
 /// @}
 
 ///
-/// \name Write/Read Key-Value Pairs To/From FITS Header Data Unit
+/// \name Write/Read Key-Value Pairs To/From FITS Header-Data Unit
 ///
-/// These functions write/read key-value pairs (\p key, \p value) to/from a FITS Header Data
-/// Unit (HDU).  Scalar #BOOLEAN, #INT4, #INT8, #REAL4, #REAL8, #COMPLEX8, and #COMPLEX16 values,
+/// These functions write/read key-value pairs (\p key, \p value) to/from a FITS header-data unit
+/// (HDU).  Scalar #BOOLEAN, #INT4, #INT8, #REAL4, #REAL8, #COMPLEX8, and #COMPLEX16 values,
 /// strings, string vectors (#LALStringVector) and GPS times (#LIGOTimeGPS) can be written and read.
 /// A \p comment string describing the value is required when writing to an HDU, and an arbitrary
-/// formatted history or comment string can also be written. Units for numeric header values may be
-/// specified in square brackets after the header key, e.g. "freq [Hz]".
+/// formatted comment string can also be written. Units for numeric header values may be specified
+/// in square brackets after the header key, e.g. "freq [Hz]".
 ///
 /// There are some usage restrictions:
 ///
@@ -90,7 +91,6 @@ FITSFile *XLALFITSFileOpenRead( const CHAR *file_name );
 ///   used after the array or table is opened for reading.
 ///
 /// @{
-int XLALFITSHeaderWriteHistory( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
 int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
 int XLALFITSHeaderWriteBOOLEAN( FITSFile *file, const CHAR *key, const BOOLEAN value, const CHAR *comment );
 int XLALFITSHeaderReadBOOLEAN( FITSFile *file, const CHAR *key, BOOLEAN *value );
