@@ -82,7 +82,7 @@ from glue.ligolw import utils as ligolw_utils
 
 # BAYESTAR imports.
 from lalinference.bayestar.decorator import memoized
-from lalinference import fits
+from lalinference.io import fits
 from lalinference.bayestar import ligolw as ligolw_bayestar
 from lalinference.bayestar import distance
 from lalinference.bayestar import filter
