@@ -22,6 +22,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 import argparse
+import contextlib
 from distutils.dir_util import mkpath
 from distutils.errors import DistutilsFileError
 import errno
@@ -35,6 +36,16 @@ import tempfile
 from matplotlib import cm
 from .. import cmap
 
+
+
+@contextlib.contextmanager
+def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
+    try:
+        dir = tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+        yield dir
+    finally:
+        if delete:
+            shutil.rmtree(dir)
 
 
 def chainglob(patterns):
