@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015  Leo Singer
+# Copyright (C) 2015-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -22,13 +22,17 @@ import lalinference.bayestar.sky_map
 import lalinference.bayestar.distance
 import lalinference.bayestar.filter
 import lalinference.fits
+import lalinference.healpix_tree
 import lalinference.bayestar.timing
+import lalinference.bayestar.postprocess
 
 modules = [
     lalinference.bayestar.distance,
     lalinference.bayestar.filter,
     lalinference.fits,
+    lalinference.healpix_tree,
     lalinference.bayestar.timing,
+    lalinference.bayestar.postprocess,
 ]
 
 
