@@ -43,9 +43,6 @@ def _remap_colnames(table):
 def read_samples(filename, path=None):
     """Read an HDF5 sample chain file.
 
-    DEPRECATED! This function will eventually be deleted once text formatted
-    sample chains are retired.
-
     Parameters
     ----------
     filename : str
