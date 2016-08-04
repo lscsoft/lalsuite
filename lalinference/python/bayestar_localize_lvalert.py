@@ -134,7 +134,7 @@ import shutil
 import tempfile
 from lalinference.bayestar import distance
 from lalinference.bayestar.ligolw_sky_map import gracedb_sky_map
-from lalinference import fits
+from lalinference.io import fits
 
 # A little bit of Cylon humor
 log.info('by your command...')
