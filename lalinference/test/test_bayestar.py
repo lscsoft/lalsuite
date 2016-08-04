@@ -30,6 +30,7 @@ modules = [
     lalinference.bayestar.distance,
     lalinference.bayestar.filter,
     lalinference.io.fits,
+    lalinference.io.hdf5,
     lalinference.healpix_tree,
     lalinference.bayestar.timing,
     lalinference.bayestar.postprocess,

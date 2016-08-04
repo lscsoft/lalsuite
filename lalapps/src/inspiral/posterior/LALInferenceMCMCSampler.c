@@ -1047,10 +1047,18 @@ void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
     for (t = 0; t < n_local_threads; t++) {
         thread = runState->threads[t];
 
+        char chain_group_name[1024];
+        snprintf(chain_group_name, sizeof(chain_group_name), "%s-checkpoint", thread->name);
+        LALH5File *chain_group = XLALH5GroupOpen(group, chain_group_name);
+        /*
+         * FIXME: use GNUism asprintf or fall back to libiberty
+         *
+
         char *chain_group_name = NULL;
         asprintf(&chain_group_name, "%s-checkpoint", thread->name);
         LALH5File *chain_group = XLALH5GroupOpen(group, chain_group_name);
         free(chain_group_name);
+        */
 
         /* Create run identifier group */
         LALInferenceH5VariablesArrayToDataset(chain_group, thread->differentialPoints, thread->differentialPointsLength, "differential_points");
@@ -1094,10 +1102,18 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
     for (t = 0; t < n_local_threads; t++) {
         thread = runState->threads[t];
 
+        char chain_group_name[1024];
+        snprintf(chain_group_name, sizeof(chain_group_name), "%s-checkpoint", thread->name);
+        LALH5File *chain_group = XLALH5GroupOpen(group, chain_group_name);
+        /*
+         * FIXME: use GNUism asprintf or fall back to libiberty
+         *
+
         char *chain_group_name = NULL;
         asprintf(&chain_group_name, "%s-checkpoint", thread->name);
         LALH5File *chain_group = XLALH5GroupOpen(group, chain_group_name);
         free(chain_group_name);
+        */
 
         /* Restore differential evolution buffer */
         LALH5Dataset *de_group = XLALH5DatasetRead(chain_group, "differential_points");

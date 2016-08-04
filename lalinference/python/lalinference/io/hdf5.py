@@ -18,7 +18,7 @@
 Reading HDF5 posterior sample chain HDF5 files.
 """
 __author__ = "Leo Singer <leo.singer@ligo.org>"
-__all__ = ("read_samples",)
+__all__ = ('read_samples', 'write_samples')
 
 
 import h5py
@@ -91,3 +91,44 @@ def read_samples(filename, path=None):
 
     # Done!
     return table
+
+
+def write_samples(table, filename, path):
+    """Write an HDF5 sample chain file.
+
+    Parameters
+    ----------
+    table : `astropy.table.Table`
+        The sample chain as an Astropy table.
+    filename : str
+        The path of the HDF5 file on the filesystem.
+    path : str
+        The path of the dataset within the HDF5 file.
+
+    Example:
+    >>> from lalinference import LALINFERENCE_PARAM_LINEAR as LINEAR
+    >>> from lalinference import LALINFERENCE_PARAM_CIRCULAR as CIRCULAR
+    >>> from lalinference import LALINFERENCE_PARAM_FIXED as FIXED
+    >>> from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
+    >>> table = Table([
+    ...     Column(np.arange(10), name='foo', meta={'vary': FIXED})
+    ... ])
+    >>> write_samples(table, 'bar.hdf5', 'bat')
+    """
+    # Copy the table so that we do not modify the original.
+    table = table.copy()
+
+    # Reconstruct table attributes.
+    vary = []
+    for colname, column in table.columns.items():
+        if column.meta['vary'] == lalinference.LALINFERENCE_PARAM_FIXED:
+            np.testing.assert_array_equal(column[1:], column[0],
+                                          'Column {0} is a `fixed` column, '
+                                          'but its values are not identical')
+            table.meta[colname] = column[0]
+            del table[colname]
+        else:
+            vary.push(column.meta.pop('vary'))
+    table.meta['vary'] = np.asarray(vary)
+
+    table.write(filename, format='hdf5', path=path)
