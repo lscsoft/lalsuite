@@ -916,7 +916,7 @@ class posteriors:
     for ftype in figformats:
       outfile = outfilepre+'.'+ftype
       try:
-        sc.fig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+        sc.fig.subplots_adjust(left=0.18, bottom=0.18) # adjust size to accommodate axes labels
         sc.savefig(outfile)
       except:
         print("Error... could not output posterior plot file '%s'." % outfile, file=sys.stderr)
