@@ -2084,9 +2084,9 @@ UNUSED static int XLALSimIMREOBCalcPrecNoSpinFacWaveformCoefficients (FacWavefor
   coeffs->delta22vh9 = -2203. / 81. + (1712. * LAL_PI * LAL_PI) / 315.;
   coeffs->delta22v5 = -24. * eta;
   coeffs->delta22v6 = 0.0;
-  if (SpinAlignedEOBversion == 2 && chiS + chiA * dM / (1. - 2. * eta) > 0.)
+  if ( SpinAlignedEOBversion == 2 )//&& chiS+chiA*dM/(1.-2.*eta) > 0. )
     {
-      coeffs->delta22v6 = -580. * eta * (chiS + chiA * dM / (1. - 2. * eta));
+        coeffs->delta22v6  = 0.;//-580. * eta * (chiS+chiA*dM/(1.-2.*eta));
     }
 
   coeffs->rho22v2 = -43. / 42. + (55. * eta) / 84.;
