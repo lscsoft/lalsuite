@@ -171,6 +171,20 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 # check for libmetaio headers
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
+# check for hdf5 support
+HDF5_ENABLE_VAL="DISABLED"
+# Note that AX_LIB_HDF5 uses h5cc to determine compiler for configure tests.
+# Make sure that it uses the same compiler as we are using.
+# Otherwise the configure tests may fail if we are using icc.
+HDF5_CC="${CC}"; export HDF5_CC
+HDF5_CLINKER="${CC}"; export HDF5_CLINKER
+AX_LIB_HDF5()
+unset HDF5_CC
+unset HDF5_CLINKER
+if test "${with_hdf5}" != "yes"; then
+  AC_MSG_ERROR([could not find the HDF5 library])
+fi
+
 if test "$lalxml" = "true"; then
   # check for libxml2
   PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
@@ -236,20 +250,6 @@ AS_IF(
     LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
   ]
 )
-
-# check for hdf5 support
-HDF5_ENABLE_VAL="DISABLED"
-# Note that AX_LIB_HDF5 uses h5cc to determine compiler for configure tests.
-# Make sure that it uses the same compiler as we are using.
-# Otherwise the configure tests may fail if we are using icc.
-HDF5_CC="${CC}"; export HDF5_CC
-HDF5_CLINKER="${CC}"; export HDF5_CLINKER
-AX_LIB_HDF5()
-unset HDF5_CC
-unset HDF5_CLINKER
-if test "${with_hdf5}" != "yes"; then
-  AC_MSG_ERROR([could not find the HDF5 library])
-fi
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
