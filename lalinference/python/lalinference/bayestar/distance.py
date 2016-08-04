@@ -193,6 +193,22 @@ Check that the moments scale as expected when we vary sigma.
 >>> np.testing.assert_allclose(mean, expected_mean * sigma)
 >>> np.testing.assert_allclose(std, expected_std * sigma)
 >>> np.testing.assert_allclose(norm, expected_norm / sigma**2)
+
+Check some more arbitrary values using numerical quadrature:
+>>> sigma = 1.0
+>>> for mu in np.linspace(-10, 10):
+...     mean, std, norm = parameters_to_moments(mu, sigma)
+...     moments = np.empty(3)
+...     for k in range(3):
+...         moments[k], _ = scipy.integrate.quad(
+...             lambda r: r**k * conditional_pdf(r, mu, sigma, 1.0),
+...             0, np.inf)
+...     expected_norm = 1 / moments[0]
+...     expected_mean, r2 = moments[1:] * expected_norm
+...     expected_std = np.sqrt(r2 - np.square(expected_mean))
+...     np.testing.assert_approx_equal(mean, expected_mean, 5)
+...     np.testing.assert_approx_equal(std, expected_std, 5)
+...     np.testing.assert_approx_equal(norm, expected_norm, 5)
 """)
 
 
