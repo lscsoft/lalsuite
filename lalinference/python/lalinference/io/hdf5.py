@@ -21,6 +21,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 __all__ = ('read_samples', 'write_samples')
 
 
+import numpy as np
 import h5py
 import lalinference
 from astropy.table import Column, Table
@@ -105,15 +106,37 @@ def write_samples(table, filename, path):
     path : str
         The path of the dataset within the HDF5 file.
 
-    Example:
+    Example... first some imports:
     >>> from lalinference import LALINFERENCE_PARAM_LINEAR as LINEAR
     >>> from lalinference import LALINFERENCE_PARAM_CIRCULAR as CIRCULAR
     >>> from lalinference import LALINFERENCE_PARAM_FIXED as FIXED
     >>> from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
+
+    Check that we catch columns that are supposed to be FIXED but are not:
     >>> table = Table([
     ...     Column(np.arange(10), name='foo', meta={'vary': FIXED})
     ... ])
-    >>> write_samples(table, 'bar.hdf5', 'bat')
+    >>> write_samples(table, 'bar.hdf5', 'bat/baz')
+    Traceback (most recent call last):
+        ...
+    AssertionError: 
+    Arrays are not equal
+    Column {0} is a `fixed` column, but its values are not identical
+    (mismatch 100.0%)
+     x: Column([1, 2, 3, 4, 5, 6, 7, 8, 9])
+     y: array(0)
+
+    And now try writing an arbitrary example to a temporary file:
+    >>> import os.path
+    >>> from lalinference.bayestar.command import TemporaryDirectory
+    >>> table = Table([
+    ...     Column(np.ones(10), name='foo', meta={'vary': FIXED}),
+    ...     Column(np.arange(10), name='bar', meta={'vary': LINEAR}),
+    ...     Column(np.arange(10) * np.pi, name='bat', meta={'vary': CIRCULAR}),
+    ...     Column(np.arange(10), name='baz', meta={'vary': OUTPUT})
+    ... ])
+    >>> with TemporaryDirectory() as dir:
+    ...     write_samples(table, os.path.join(dir, 'test.hdf5'), 'bat/baz')
     """
     # Copy the table so that we do not modify the original.
     table = table.copy()
@@ -128,7 +151,7 @@ def write_samples(table, filename, path):
             table.meta[colname] = column[0]
             del table[colname]
         else:
-            vary.push(column.meta.pop('vary'))
+            vary.insert(0, column.meta.pop('vary'))
     table.meta['vary'] = np.asarray(vary)
 
     table.write(filename, format='hdf5', path=path)
