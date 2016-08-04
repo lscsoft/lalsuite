@@ -205,26 +205,29 @@ LALSUITE_CHECK_LIB([LALBurst],[1.4.2],[XLALEPSearch],[lal/EPSearch.h])
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.2],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
-AC_MSG_CHECKING([if LAL was built with HDF5 support])
-AC_RUN_IFELSE(
-  [AC_LANG_PROGRAM(
-    [
-      #include <lal/H5FileIO.h>
-      #include <lal/XLALError.h>
-    ],
-    [
-      int ret;
-      (void)XLALSetSilentErrorHandler();
-      (void)XLALH5FileOpen(NULL, NULL);
-      return xlalErrno != XLAL_EFAULT;
-    ]
-  )],
-  [AC_MSG_RESULT([yes])],
-  [
-    AC_MSG_RESULT([no])
-    AC_MSG_ERROR([LAL must be built with HDF5 support in order to build LALInference])
-  ]
-)
+dnl FIXME: This doesn't work in the top-level build, because it tries
+dnl to compile and link against LAL itself, which will not have been built yet.
+dnl
+dnl AC_MSG_CHECKING([if LAL was built with HDF5 support])
+dnl AC_RUN_IFELSE(
+dnl   [AC_LANG_PROGRAM(
+dnl     [
+dnl       #include <lal/H5FileIO.h>
+dnl       #include <lal/XLALError.h>
+dnl     ],
+dnl     [
+dnl       int ret;
+dnl       (void)XLALSetSilentErrorHandler();
+dnl       (void)XLALH5FileOpen(NULL, NULL);
+dnl       return xlalErrno != XLAL_EFAULT;
+dnl     ]
+dnl   )],
+dnl   [AC_MSG_RESULT([yes])],
+dnl   [
+dnl     AC_MSG_RESULT([no])
+dnl     AC_MSG_ERROR([LAL must be built with HDF5 support in order to build LALInference])
+dnl   ]
+dnl )
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
