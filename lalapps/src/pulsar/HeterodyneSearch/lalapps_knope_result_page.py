@@ -1119,7 +1119,7 @@ class posteriors:
         pdisp = paramhtmldict[pu]
 
         # some different display styles (compared to the defaults) for certain parameters
-        if pu == 'RA' or pu == 'DEC' or pu == 'RAJ' or pu == 'DECJ':
+        if pu in ['RA', 'DEC', 'RAJ', 'DECJ']:
           dispkwargs = {'stype': 'rads'} # display as rad rather than hh/dd:mm:ss string
         if pu == 'F0': dispkwargs = {'dp': 2} # just display with 2 decimal places
       else:
@@ -1148,6 +1148,8 @@ class posteriors:
         table.adddata(dispfunc(str(maxLparams[param]), **dispkwargs))    # maximum likelihood
         table.adddata(dispfunc(str(self._posteriors[ifo].means[param]), **dispkwargs))   # mean value
         table.adddata(dispfunc(str(self._posteriors[ifo].medians[param]), **dispkwargs)) # median value
+        if param.upper() in ['T0', 'TASC']:
+          dispkwargs = {'stype': 'diff'} # don't display values in MJD
         table.adddata(dispfunc(str(self._posteriors[ifo].stdevs[param]), **dispkwargs))  # standard deviations
 
         for k, ci in enumerate(credints):
