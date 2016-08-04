@@ -39,7 +39,7 @@ double bayestar_distance_conditional_pdf(
         return 0;
 
     const double x = -0.5 * gsl_pow_2((r - mu) / sigma);
-    const double y = norm * gsl_pow_2(r) / sigma;
+    const double y = norm * gsl_pow_2(r) / (sqrt(2 * M_PI) * sigma);
     return gsl_sf_exp_mult(x, y);
 }
 
