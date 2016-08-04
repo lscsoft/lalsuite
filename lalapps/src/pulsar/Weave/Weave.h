@@ -115,7 +115,7 @@ typedef struct {
 } WeaveSetup;
 
 ///
-/// Per-segment output toplist item
+/// Output toplist per-segment item
 ///
 typedef struct tagWeaveOutputToplistPerSegItem {
   /// Physical coordinates of coherent template
@@ -141,9 +141,9 @@ typedef struct tagWeaveOutputToplistItem {
 } WeaveOutputToplistItem;
 
 ///
-/// Output detailed information per segment
+/// Output various information for each segment
 ///
-typedef struct tagWeaveOutputDetails {
+typedef struct tagWeaveOutputPerSegInfo {
   /// Start time of segment
   LIGOTimeGPS segment_start;
   /// End time of segment
@@ -162,7 +162,7 @@ typedef struct tagWeaveOutputDetails {
   INT4 coh_total;
   /// Total number of recomputed coherent results
   INT4 coh_total_recomp;
-} WeaveOutputDetails;
+} WeaveOutputPerSegInfo;
 
 ///
 /// \name Routines which handle the setup data
@@ -246,7 +246,7 @@ WeaveCache *XLALWeaveCacheCreate(
   WeaveCohInput *coh_input,
   const size_t max_size,
   const size_t gc_limit,
-  const BOOLEAN details
+  const BOOLEAN per_seg_info
   );
 void XLALWeaveCacheDestroy(
   WeaveCache *cache
@@ -286,7 +286,7 @@ int XLALWeaveCacheRetrieve(
   const UINT4 query_index,
   const WeaveCohResults **coh_res,
   UINT4 *coh_offset,
-  WeaveOutputDetails *details
+  WeaveOutputPerSegInfo *per_seg_info
   );
 
 /// @}
@@ -315,11 +315,11 @@ int XLALWeaveOutputWrite(
   FITSFile *file,
   const WeaveOutput *out
   );
-int XLALWeaveOutputWriteDetails(
+int XLALWeaveOutputWriteExtra(
   FITSFile *file,
   const LALStringVector *detectors,
   const size_t nsegments,
-  WeaveOutputDetails details[]
+  const WeaveOutputPerSegInfo *per_seg_info
   );
 
 /// @}

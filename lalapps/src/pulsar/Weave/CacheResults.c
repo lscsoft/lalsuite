@@ -206,7 +206,7 @@ WeaveCache *XLALWeaveCacheCreate(
   WeaveCohInput *coh_input,
   const size_t max_size,
   const size_t gc_limit,
-  const BOOLEAN details
+  const BOOLEAN per_seg_info
   )
 {
 
@@ -295,8 +295,8 @@ WeaveCache *XLALWeaveCacheCreate(
   cache->coh_index_hash = XLALHashTblCreate( NULL, cache_item_hash, cache_item_compare_by_coh_index );
   XLAL_CHECK_NULL( cache->coh_index_hash != NULL, XLAL_EFUNC );
 
-  // If output details are requested:
-  if ( details ) {
+  // If per-segment cache information is requested:
+  if ( per_seg_info ) {
 
     // Create a hash table which independently records which cache items were computed.
     cache->coh_computed_hash = XLALHashTblCreate( cache_item_destroy, cache_item_hash, cache_item_compare_by_coh_index );
@@ -593,7 +593,7 @@ int XLALWeaveCacheRetrieve(
   const UINT4 query_index,
   const WeaveCohResults **coh_res,
   UINT4 *coh_offset,
-  WeaveOutputDetails *details
+  WeaveOutputPerSegInfo *per_seg_info
   )
 {
 
@@ -714,7 +714,7 @@ int XLALWeaveCacheRetrieve(
 
     }
 
-    // If output details are available:
+    // If per-segment cache information is available:
     if ( cache->coh_computed_hash != NULL ) {
 
       // Check if coherent results have been computed previously
@@ -723,7 +723,7 @@ int XLALWeaveCacheRetrieve(
       if ( computed == NULL ) {
 
         // Coherent results have not been computed before: increase the total count
-        details->coh_total += coh_nfreqs;
+        per_seg_info->coh_total += coh_nfreqs;
 
         // Create a copy of the cache item key, and add it to the hash
         // table to indicate these coherent results have been computed
@@ -735,7 +735,7 @@ int XLALWeaveCacheRetrieve(
       } else {
 
         // Coherent results have been computed previously: increase the total recomputed count
-        details->coh_total_recomp += coh_nfreqs;
+        per_seg_info->coh_total_recomp += coh_nfreqs;
 
       }
 

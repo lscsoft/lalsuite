@@ -47,7 +47,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN interpolation, output_per_detector, output_per_segment, output_details;
+    BOOLEAN interpolation, output_per_detector, output_per_segment, output_info_per_seg;
     CHAR *setup_file, *lattice, *sft_files, *Fstat_method, *output_file;
     INT4 sky_patch_count, sky_patch_index, freq_partitions, output_max_size;
     INT4 sft_noise_rand_seed, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision;
@@ -252,8 +252,8 @@ int main( int argc, char *argv[] )
     "May be combined with " UVAR_STR( output_per_detector ) ". "
     );
   XLALRegisterUvarMember(
-    output_details, BOOLEAN, 0, DEVELOPER,
-    "If TRUE, output detailed information for each segment: SFT properties, cache usage, etc. "
+    output_info_per_seg, BOOLEAN, 0, DEVELOPER,
+    "If TRUE, output various information for each segment: SFT properties, cache usage, etc. "
     );
 
   // Parse user input
@@ -378,11 +378,11 @@ int main( int argc, char *argv[] )
   XLAL_CHECK_MAIN( XLALSegListRange( setup.segments, &segments_start, &segments_end ) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Setup file segment list range = [%" LAL_GPS_FORMAT ", %" LAL_GPS_FORMAT "] GPS, segment count = %u\n", LAL_GPS_PRINT( segments_start ), LAL_GPS_PRINT( segments_end ), nsegments );
 
-  // Create array of output details for each segment
-  WeaveOutputDetails XLAL_INIT_ARRAY_DECL( details, nsegments );
+  // Create array of various information for each segment
+  WeaveOutputPerSegInfo XLAL_INIT_ARRAY_DECL( per_seg_info, nsegments );
   for ( size_t i = 0; i < nsegments; ++i ) {
-    details[i].segment_start = setup.segments->segs[i].start;
-    details[i].segment_end = setup.segments->segs[i].end;
+    per_seg_info[i].segment_start = setup.segments->segs[i].start;
+    per_seg_info[i].segment_end = setup.segments->segs[i].end;
   }
 
   ////////// Set up lattice tilings //////////
@@ -664,20 +664,20 @@ int main( int argc, char *argv[] )
     coh_input[i] = XLALWeaveCohInputCreate( Fstat_input, per_detectors );
     XLAL_CHECK_MAIN( coh_input[i] != NULL, XLAL_EFUNC );
 
-    // Record detailed SFT information
+    // Record SFT information
     for ( size_t j = 0; j < sft_catalog_i_view->length; ++j ) {
       char *det_name = XLALGetChannelPrefix( sft_catalog_i_view->data[j].data[0].header.name );
       const int k = XLALFindStringInVector( det_name, setup.detectors );
       if ( k >= 0 ) {
         const UINT4 length = sft_catalog_i_view->data[j].length;
-        details[i].sft_first[k] = sft_catalog_i_view->data[j].data[0].header.epoch;
-        details[i].sft_last[k] = sft_catalog_i_view->data[j].data[length - 1].header.epoch;
-        details[i].sft_count[k] = length;
+        per_seg_info[i].sft_first[k] = sft_catalog_i_view->data[j].data[0].header.epoch;
+        per_seg_info[i].sft_last[k] = sft_catalog_i_view->data[j].data[length - 1].header.epoch;
+        per_seg_info[i].sft_count[k] = length;
       }
       XLALFree( det_name );
     }
-    details[i].min_cover_freq = min_cover_freq;
-    details[i].max_cover_freq = max_cover_freq;
+    per_seg_info[i].min_cover_freq = min_cover_freq;
+    per_seg_info[i].max_cover_freq = max_cover_freq;
 
     // Cleanup
     XLALDestroyMultiSFTCatalogView( sft_catalog_i_view );
@@ -694,7 +694,7 @@ int main( int argc, char *argv[] )
   for ( size_t i = 0; i < nsegments; ++i ) {
     const size_t cache_max_size = interpolation ? uvar->cache_max_size : 1;
     const size_t cache_gc_limit = interpolation ? uvar->cache_gc_limit : 0;
-    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, setup.phys_to_latt, setup.latt_to_phys, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit, uvar->output_details );
+    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, setup.phys_to_latt, setup.latt_to_phys, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit, uvar->output_info_per_seg );
     XLAL_CHECK_MAIN( coh_cache[i] != NULL, XLAL_EFUNC );
   }
 
@@ -794,7 +794,7 @@ int main( int argc, char *argv[] )
       // Retrieve coherent results for this segment
       const WeaveCohResults *coh_res = NULL;
       UINT4 coh_offset = 0;
-      XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res, &coh_offset, &details[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res, &coh_offset, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( coh_res != NULL, XLAL_EFUNC );
 
       // Add coherent results to semicoherent results
@@ -866,10 +866,9 @@ int main( int argc, char *argv[] )
     // Write search results
     XLAL_CHECK_MAIN( XLALWeaveOutputWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Write detailed information for each segment, if requested
-    if ( uvar->output_details ) {
-      XLAL_CHECK_MAIN( XLALWeaveOutputWriteDetails( file, setup.detectors, nsegments, details ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
+    // Write extra information
+    const WeaveOutputPerSegInfo *p_per_seg_info = uvar->output_info_per_seg ? per_seg_info : NULL;
+    XLAL_CHECK_MAIN( XLALWeaveOutputWriteExtra( file, setup.detectors, nsegments, p_per_seg_info ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Close output file
     XLALFITSFileClose( file );

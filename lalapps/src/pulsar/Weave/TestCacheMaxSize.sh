@@ -9,7 +9,7 @@ echo
 echo "=== Perform interpolating search without a maximum cache size ==="
 set -x
 ${builddir}/lalapps_Weave --cache-max-size=0 \
-    --output-file=WeaveOutNoMax.fits --output-max-size=5000 --output-details --setup-file=WeaveSetup.fits \
+    --output-file=WeaveOutNoMax.fits --output-max-size=5000 --output-info-per-seg --setup-file=WeaveSetup.fits \
     --sft-detectors=H1,L1 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 --sft-timebase=1800 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{refTime=1122332211; h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
@@ -20,7 +20,7 @@ echo
 echo "=== Perform interpolating search with a maximum cache size ==="
 set -x
 ${builddir}/lalapps_Weave --cache-max-size=50 \
-    --output-file=WeaveOutMax.fits --output-max-size=5000 --output-details --setup-file=WeaveSetup.fits \
+    --output-file=WeaveOutMax.fits --output-max-size=5000 --output-info-per-seg --setup-file=WeaveSetup.fits \
     --sft-detectors=H1,L1 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 --sft-timebase=1800 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{refTime=1122332211; h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
@@ -31,13 +31,13 @@ echo
 echo "=== Check that coherent template counts are equal, and that WeaveOut{NoMax|Max}.fits {did not|did} recompute results ==="
 set -x
 for seg in 1 2 3; do
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[details][col coh_total][#row == ${seg}]" > tmp
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[per_seg_info][col coh_total][#row == ${seg}]" > tmp
     coh_total_no_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[details][col coh_total_recomp][#row == ${seg}]" > tmp
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[per_seg_info][col coh_total_recomp][#row == ${seg}]" > tmp
     coh_total_recomp_no_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[details][col coh_total][#row == ${seg}]" > tmp
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[per_seg_info][col coh_total][#row == ${seg}]" > tmp
     coh_total_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[details][col coh_total_recomp][#row == ${seg}]" > tmp
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[per_seg_info][col coh_total_recomp][#row == ${seg}]" > tmp
     coh_total_recomp_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
     [ ${coh_total_no_max} -eq ${coh_total_no_max} ]
     [ ${coh_total_recomp_no_max} -eq 0 ]
