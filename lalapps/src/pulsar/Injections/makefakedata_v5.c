@@ -94,10 +94,9 @@ typedef struct
 // ----- User variables
 typedef struct
 {
-  /* output */
+  /* SFT output */
   CHAR *outSFTdir;		/**< Output directory for SFTs */
   CHAR *outLabel;		/**< 'misc' entry in SFT-filenames, and description entry of output frame filenames */
-  CHAR *outFrameDir;		/**< directory for writing output timeseries in frame files */
   BOOLEAN outSingleSFT;	        /**< use to output a single concatenated SFT */
 
   CHAR *TDDfile;		/**< Filename for ASCII output time-series */
@@ -123,8 +122,11 @@ typedef struct
 
   CHAR *noiseSFTs;		/**< Glob-like pattern specifying noise-SFTs to be added to signal */
 
+  /* Frame input and output */
+  CHAR *outFrameDir;		/**< directory for writing output timeseries in frame files */
   LALStringVector *inFrames;	/**< frame glob-patterns or cache files of time-series data to be added to output (one per IFO) */
   LALStringVector *inFrChannels;/**< list of frame channels to read time-series data from (one per IFO) */
+  LALStringVector *outFrChannels;/**< list of output frame channel names to write (one per IFO) */
 
   /* Window function [OPTIONAL] */
   CHAR *SFTWindowType;		/**< Windowing function to apply to the SFT time series */
@@ -279,6 +281,10 @@ main(int argc, char *argv[])
       char *fname;
 
       char *hist = XLALUserVarGetLog (UVAR_LOGFMT_CMDLINE);
+      if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) {
+        XLAL_CHECK ( uvar.outFrChannels->length == mTseries->length, XLAL_EINVAL, "--outFrChannels: number of channel names (%d) must agree with number of IFOs (%d)\n",
+                     uvar.outFrChannels->length, mTseries->length );
+      }
 
       for ( UINT4 X=0; X < mTseries->length; X ++ )
         {
@@ -299,8 +305,19 @@ main(int argc, char *argv[])
 
           /* add timeseries to the frame - make sure to change the timeseries name since this is used as the channel name */
           char buffer[LALNameLength];
-          written = snprintf ( buffer, LALNameLength, "%s:%s", Tseries->name, uvar.outLabel );
-          XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Updated frame name exceeds max length (%d): '%s'\n", LALNameLength, buffer );
+          // if output frame channel names given, use those
+          if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) {
+            written = snprintf ( buffer, sizeof(buffer), "%s", uvar.outFrChannels->data[X] );
+            if ( buffer[2] == ':' ) { // check we got correct IFO association
+              XLAL_CHECK ( (buffer[0] == Tseries->name[0]) && (buffer[1] == Tseries->name[1]), XLAL_EINVAL,
+                           "Possible IFO mismatch: outFrChannel[%d] = '%s', IFO = '%c%c': be careful about --outFrChannel ordering\n", X, buffer, Tseries->name[0], Tseries->name[1] );
+            } // if buffer[2]==':'
+          } else if ( XLALUserVarWasSet ( &uvar.inFrChannels ) ) { // otherwise: if input frame channel names given, use them for output, append "-<outLabel>"
+            written = snprintf ( buffer, sizeof(buffer), "%s-%s", uvar.inFrChannels->data[X], uvar.outLabel );
+          } else { // otherwise: fall back to <IFO>:<outLabel> channel name
+            written = snprintf ( buffer, sizeof(buffer), "%c%c:%s", Tseries->name[0], Tseries->name[1], uvar.outLabel );
+          }
+          XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Output frame name exceeded max length (%d): '%s'\n", LALNameLength, buffer );
           strcpy ( Tseries->name, buffer );
 
           XLAL_CHECK ( (XLALFrameAddREAL8TimeSeriesProcData ( outFrame, Tseries ) == XLAL_SUCCESS ) , XLAL_EFUNC );
@@ -555,10 +572,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember(   outSingleSFT,       BOOLEAN, 's', OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
   XLALRegisterUvarMember( outSFTdir,          STRING, 'n', OPTIONAL, "Output SFTs:  directory for output SFTs");
   XLALRegisterUvarMember(  outLabel,	         STRING, 0, OPTIONAL, "'misc' entry in SFT-filenames or 'description' entry of frame filenames" );
-#ifdef HAVE_LIBLALFRAME
-  XLALRegisterUvarMember ( outFrameDir,	STRING, 'F', OPTIONAL,      "Output Frames: directory for output timeseries frame files");
-#endif
-
   XLALRegisterUvarMember( TDDfile,            STRING, 't', OPTIONAL, "Filename to output time-series into");
 
   XLALRegisterUvarMember( logfile,            STRING, 'l', OPTIONAL, "Filename for log-output");
@@ -591,9 +604,17 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   /* noise */
   XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps)");
 
+  /* frame input/output options */
 #ifdef HAVE_LIBLALFRAME
-  XLALRegisterUvarMember ( inFrames, 	 STRINGVector,'C', OPTIONAL,  "CSV list (one per IFO) of input frame cache files");
-  XLALRegisterUvarMember ( inFrChannels, STRINGVector,'N', OPTIONAL,  "CSV list (one per IFO) of frame channels to read timeseries from");
+  XLALRegisterUvarMember ( outFrameDir,	  STRING,      'F', OPTIONAL,  "Output Frames: directory for output timeseries frame files");
+  XLALRegisterUvarMember ( inFrames, 	  STRINGVector,'C', OPTIONAL,  "CSV list (one per IFO) of input frame cache files");
+  XLALRegisterUvarMember ( inFrChannels,  STRINGVector,'N', OPTIONAL,  "CSV list (one per IFO) of frame channels to read timeseries from");
+  XLALRegisterUvarMember ( outFrChannels, STRINGVector, 0,  NODEFAULT, "CSV list (one per IFO) of output frame channel names [default: <inFrChannels>-<outLabel> or <IFO>:<outLabel>]");
+#else
+  XLALRegisterUvarMember ( outFrameDir,	 STRING,       'F', DEFUNCT, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( inFrames,     STRINGVector, 'C', DEFUNCT, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( inFrChannels, STRINGVector, 'N', DEFUNCT, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( outFrChannels, STRINGVector, 0,  DEFUNCT, "Need to compile with lalframe support for this option to work");
 #endif
 
   XLALRegisterUvarMember(  version,             BOOLEAN, 'V', SPECIAL, "Output version information");
@@ -603,16 +624,12 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   // ----- deprecated but still supported options [throw warning if used] (only shown in help at lalDebugLevel >= info) ----------
 #ifdef HAVE_LIBLALFRAME
-  XLALRegisterUvarMember ( TDDframedir,	STRING,  0, DEPRECATED, "Use --outFrameDir instead");
+  XLALRegisterUvarMember ( TDDframedir,	STRING,  0,  DEPRECATED, "Use --outFrameDir instead");
+#else
+  XLALRegisterUvarMember ( TDDframedir,	 STRING, 0,  DEFUNCT,   "Need to compile with lalframe support. BUT this option is deprecated and --outFrameDir should be used instead");
 #endif
-
   // ----- obsolete and unsupported options [throw error if used] (never shown in help) ----------
-#if !defined(HAVE_LIBLALFRAME)
-  XLALRegisterUvarMember ( outFrameDir,	 STRING,       'F', DEFUNCT, "Need to compile with lalframe support for this option to work");
-  XLALRegisterUvarMember ( TDDframedir,	 STRING,        0,  DEFUNCT, "Need to compile with lalframe support for this option to work");
-  XLALRegisterUvarMember ( inFrames,     STRINGVector, 'C', DEFUNCT, "Need to compile with lalframe support for this option to work");
-  XLALRegisterUvarMember ( inFrChannels, STRINGVector, 'N', DEFUNCT, "Need to compile with lalframe support for this option to work");
-#endif
+
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
