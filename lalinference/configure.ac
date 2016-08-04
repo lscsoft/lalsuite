@@ -17,6 +17,7 @@ AC_CONFIG_FILES([ \
   python/lalinference/Makefile \
   python/lalinference/__init__.py \
   python/lalinference/bayestar/Makefile \
+  python/lalinference/io/Makefile \
   python/lalinference/rapid_pe/Makefile \
   python/lalinference/imrtgr/Makefile \
   python/lalinference/tiger/Makefile \
