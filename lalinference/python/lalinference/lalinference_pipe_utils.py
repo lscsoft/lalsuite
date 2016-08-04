@@ -507,8 +507,8 @@ def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp):
   if trigger_mchirp >= mc_max: 
   	scale_factor = 2**(floor(trigger_mchirp/mc_max))
   if trigger_mchirp <= mc_min:
-	scale_factor = 1./2**(floor(trigger_mchirp/mc_min))
-  return int(scale_factor)
+	scale_factor = 1./2**(ceil(trigger_mchirp/mc_min))
+  return scale_factor
 
 def create_pfn_tuple(filename,protocol='file://',site='local'):
     return( (os.path.basename(filename),protocol+os.path.abspath(filename),site) )

@@ -104,7 +104,6 @@ if cp.has_option('paths','roq_b_matrix_directory'):
 
 	for mc_prior in mc_priors:
 		mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
-
 	# find mass bin containing the trigger
 	trigger_bin = None
 	for roq in roq_paths:
@@ -112,7 +111,6 @@ if cp.has_option('paths','roq_b_matrix_directory'):
 		if mc_priors[roq][0] <= trigger_mchirp <= mc_priors[roq][1]:
 			trigger_bin = roq
 			break
-
 	roq_paths = [trigger_bin]
   else:
 	mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, None)
@@ -172,9 +170,9 @@ for sampler in samps:
         cp.set('paths','roq_b_matrix_directory',thispath)
         mc_min=mc_priors[roq][0]
         mc_max=mc_priors[roq][1]
-        flow=int(roq_params[roq]['flow']) / roq_mass_freq_scale_factor
-        srate=int(2.*roq_params[roq]['fhigh']) / roq_mass_freq_scale_factor
-        seglen=int(roq_params[roq]['seglen']) * roq_mass_freq_scale_factor
+        flow=int(roq_params[roq]['flow'] / roq_mass_freq_scale_factor)
+        srate=int(2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor)
+        seglen=int(roq_params[roq]['seglen'] * roq_mass_freq_scale_factor)
         # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
         q_min=1./float(roq_params[roq]['qmax'])
         cp.set('engine','srate',str(srate))
