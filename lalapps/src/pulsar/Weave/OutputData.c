@@ -42,7 +42,7 @@ struct tagWeaveOutput {
   /// Number of spindown parameters to output
   size_t nspins;
   /// If outputting per-detector quantities, list of detectors
-  const LALStringVector *per_detectors;
+  LALStringVector *per_detectors;
   /// Number of per-segment items to output (may be zero)
   UINT4 per_nsegments;
   /// Total number of semicoherent results added to output
@@ -303,9 +303,14 @@ WeaveOutput *XLALWeaveOutputCreate(
   // Set fields
   out->ref_time = *ref_time;
   out->nspins = nspins;
-  out->per_detectors = per_detectors;
   out->per_nsegments = per_nsegments;
   out->semi_total = 0;
+
+  // Copy list of detectors
+  if ( per_detectors != NULL ) {
+    out->per_detectors = XLALCopyStringVector( per_detectors );
+    XLAL_CHECK_NULL( out->per_detectors != NULL, XLAL_EFUNC );
+  }
 
   // Create a toplist ranked by mean multi-detector F-statistic
   out->toplist_mean_twoF = toplist_create( toplist_limit, toplist_item_compare_by_mean_twoF );
@@ -325,6 +330,7 @@ void XLALWeaveOutputDestroy(
   if ( out != NULL ) {
     toplist_item_destroy( out->saved_item );
     XLALHeapDestroy( out->toplist_mean_twoF );
+    XLALDestroyStringVector( out->per_detectors );
     XLALFree( out );
   }
 }
