@@ -176,6 +176,23 @@ diststd : `numpy.ndarray`
     Conditional standard deviation of distance (Mpc)
 distnorm : `numpy.ndarray`
     Distance normalization factor (Mpc^-2)
+
+For mu=0, sigma=1, the ansatz is a chi distribution with 3 degrees of
+freedom, and the moments have simple expressions.
+>>> mean, std, norm = parameters_to_moments(0, 1)
+>>> expected_mean = 2 * np.sqrt(2 / np.pi)
+>>> expected_std = np.sqrt(3 - expected_mean**2)
+>>> expected_norm = 2.0
+>>> np.testing.assert_allclose(mean, expected_mean)
+>>> np.testing.assert_allclose(std, expected_std)
+>>> np.testing.assert_allclose(norm, expected_norm)
+
+Check that the moments scale as expected when we vary sigma.
+>>> sigma = np.logspace(-8, 8)
+>>> mean, std, norm = parameters_to_moments(0, sigma)
+>>> np.testing.assert_allclose(mean, expected_mean * sigma)
+>>> np.testing.assert_allclose(std, expected_std * sigma)
+>>> np.testing.assert_allclose(norm, expected_norm / sigma**2)
 """)
 
 
