@@ -40,6 +40,15 @@ def _remap_colnames(table):
             table.rename_column(old_name, new_name)
 
 
+def _find_table(group, tablename):
+    table = f.visititems(
+        lambda name, val: val if name.rsplit('/')[-1] == tablename else None)
+    if table is None:
+        raise KeyError('Table not found: {0}'.format(tablename))
+    else:
+        return table
+
+
 def read_samples(filename, path=None, tablename=None):
     """Read an HDF5 sample chain file.
 
@@ -50,6 +59,8 @@ def read_samples(filename, path=None, tablename=None):
     path : str, optional
         The path of the dataset within the HDF5 file. By default, try the
         conventional path for lalinference_mcmc and lalinference_nest.
+    tablename : str, optional
+        The name of table to search for recursively within the HDF5 file.
 
     Returns
     -------
@@ -57,14 +68,11 @@ def read_samples(filename, path=None, tablename=None):
         The sample chain as an Astropy table.
     """
     with h5py.File(filename, 'r') as f:
-	# Look for a given path
-        if path is not None:
+        if path is not None: # Look for a given path
             table = f[path]
-        # Look for a given table name
-        elif tablename is not None:
-	    table = f.visititems(lambda name,val: val if name.rsplit('/')[-1]==tablename else None)
-	# Look for some common paths
-        else:
+        elif tablename is not None: # Look for a given table name
+            table = _find_table(f, tablename)
+        else: # Look for some common paths
             try:
                 try:
                     table = f[_mcmc_path]
@@ -107,7 +115,7 @@ def write_samples(table, filename, path, metadata=None):
         The path of the HDF5 file on the filesystem.
     path : str
         The path of the dataset within the HDF5 file.
-    metadata: dict (Optional)
+    metadata: dict (optional)
         Dictionary of (path, value) pairs of metadata attributes
         to add to the output file
 
@@ -160,10 +168,12 @@ def write_samples(table, filename, path, metadata=None):
     table.meta['vary'] = np.asarray(vary)
     table.write(filename, format='hdf5', path=path)
     if metadata:
-      with h5py.File(filename) as hdf:
-        for internal_path, attributes in metadata.items():
-	  for key, value in attributes.items():
-	    try:
-	      hdf[internal_path].attrs[key] = value
-            except:
-	      print('Unable to set metadata %s[%s] = %s'%(internal_path,key,str(value)))
+        with h5py.File(filename) as hdf:
+            for internal_path, attributes in metadata.items():
+                for key, value in attributes.items():
+                    try:
+                        hdf[internal_path].attrs[key] = value
+                    except KeyError:
+                        raise KeyError(
+                            'Unable to set metadata {0}[{1}] = {2}'.format(
+                            internal_path, key, value))
