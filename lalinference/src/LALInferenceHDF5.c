@@ -41,17 +41,23 @@ static void assert_not_reached(void)
 
 /* BEGIN COPIED FROM H5FILEIOLowLevel.c */
 
+struct tagLALH5Object {
+	hid_t object_id; /* this object's id must be first */
+};
+
 struct tagLALH5File {
-	char fname[FILENAME_MAX];
-	hid_t file_id;
+	hid_t file_id; /* this object's id must be first */
 	unsigned int mode;
 	int is_a_group;
+	char fname[FILENAME_MAX];
 };
 
 struct tagLALH5Dataset {
-	hid_t dataset_id;
+	hid_t dataset_id; /* this object's id must be first */
+	hid_t parent_id;
 	hid_t space_id;
 	hid_t dtype_id; /* note: this is the in-memory type */
+	char name[]; /* flexible array member must be last */
 };
 
 /* creates HDF5 float complex data type; use H5Tclose() to free */
