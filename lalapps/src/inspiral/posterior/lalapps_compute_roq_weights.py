@@ -133,20 +133,18 @@ for ifo in options.IFOs:
 	fseries = dat_file[0]
         deltaF = fseries[1] - fseries[0]
 	fHigh = fseries[-1]
+	fHigh_index = fHigh / deltaF
+
 	
 	if options.fLow: 
 		fLow = options.fLow
 		scale_factor = int(basis_params[0] / fLow)
-		if fHigh < basis_params[1]:
-			fHigh_index = fHigh / deltaF
-
 
 	else:
 		fLow = basis_params[0]
 
 
 		assert fHigh == basis_params[1]
-		fHigh_index = fHigh/deltaF
 		
 	fseries = fseries[int(fLow/deltaF):fHigh_index]
 	data = data[int(fLow/deltaF):fHigh_index]
@@ -161,9 +159,9 @@ for ifo in options.IFOs:
 	data /= psd
 
 	# only get frequency components up to fHigh
-	B_linear = B_linear.T[0:fHigh][:].T
-	B_quadratic = B_quadratic.T[0:fHigh][:].T
-
+	B_linear = B_linear.T[0:(fHigh_index - fLow/deltaF)][:].T
+	B_quadratic = B_quadratic.T[0:(fHigh_index-fLow/deltaF)][:].T
+	print B_linear.shape[1], B_quadratic.shape[1], len(data), len(psd) 
 	assert len(data) == len(psd) == B_linear.shape[1] == B_quadratic.shape[1]
 
 
