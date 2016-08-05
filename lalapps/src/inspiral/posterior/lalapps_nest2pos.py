@@ -6,8 +6,8 @@ import os
 import sys
 
 import lalinference
-from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
-from lalinference import LALInferenceHDF5NestedSamplesDatasetName as nested_grp_name
+from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_dset_name
+from lalinference import LALInferenceHDF5NestedSamplesDatasetName as nested_dset_name
 from lalinference.nest2pos import draw_posterior_many, draw_N_posterior_many, compute_weights
 
 usage = '''%prog [-N Nlive] [-p posterior.hdf5] [-H header.txt] [--npos Npos] datafile1.hdf5 [datafile2.hdf5 ...]
@@ -91,8 +91,8 @@ def read_nested_from_hdf5(nested_path_list):
 
             # storing the metadata under the posterior_group name simplifies
             # writing it into the output hdf file.
-            current_level = '/lalinference/' + run_identifier + '/' + nested_grp_name
-            current_level_posterior = '/lalinference/' + run_identifier + '/' + posterior_grp_name
+            current_level = '/lalinference/' + run_identifier + '/' + nested_dset_name
+            current_level_posterior = '/lalinference/' + run_identifier + '/' + posterior_dset_name
             group = hdf[current_level]
             update_metadata(current_level_posterior, group.attrs, collision='ignore')
 
