@@ -46,15 +46,9 @@ done
 set +x
 echo
 
-echo "=== Extract F-statistics from WeaveOut{NoMax|Max}.fits as ASCII table ==="
-set -x
-${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF,-999)]" > WeaveFstatsNoMax.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF,-999)]" > WeaveFstatsMax.txt
-set +x
-echo
-
 echo "=== Compare F-statistics from lalapps_Weave without/with frequency partitions ==="
 set -x
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstatsNoMax.txt --Fname2=WeaveFstatsMax.txt
+LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info"
+${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --output-file-1=WeaveOutNoMax.fits --output-file-2=WeaveOutMax.fits
 set +x
 echo

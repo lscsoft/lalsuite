@@ -26,12 +26,16 @@
 
 static LALHeap *toplist_create( int toplist_limit, LALHeapCmpFcn toplist_item_compare_fcn );
 static WeaveOutputToplistItem *toplist_item_create( const UINT4 per_nsegments );
+static int toplist_compare( BOOLEAN *equal, const WeaveSetup *setup, const REAL8 param_tol_mism, const VectorComparison *result_tol, const LALStringVector *detectors, const size_t nsegments, const LALHeap *toplist_1, const LALHeap *toplist_2 );
+static int toplist_compare_results( BOOLEAN *equal, const VectorComparison *result_tol, const REAL4Vector *res_1, const REAL4Vector *res_2 );
+static int toplist_compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const REAL8 param_tol_mism, const WeavePhysicalToLattice phys_to_latt, const gsl_matrix *metric, const void *transf_data, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
 static int toplist_fits_table_init( FITSFile *file, const size_t nspins, const LALStringVector *per_detectors, const UINT4 per_nsegments );
 static int toplist_fits_table_read( FITSFile *file, const char *name, WeaveOutput *out, LALHeap **toplist, LALHeapCmpFcn toplist_item_compare_fcn );
 static int toplist_fits_table_write( FITSFile *file, const char *name, const char *comment, const WeaveOutput *out, LALHeap *toplist );
 static int toplist_fits_table_write_visitor( void *param, const void *x );
 static int toplist_item_add( BOOLEAN *full_init, WeaveOutput *out, LALHeap *toplist, const WeaveSemiResults *semi_res, const size_t freq_idx );
 static int toplist_item_compare_by_mean_twoF( const void *x, const void *y );
+static int toplist_item_sort_by_semi_phys( const void *x, const void *y );
 static void toplist_item_destroy( void *x );
 
 ///
@@ -243,6 +247,262 @@ int toplist_fits_table_read(
 }
 
 ///
+/// Compute two template parameters
+///
+int toplist_compare_templates(
+  BOOLEAN *equal,
+  const char *loc_str,
+  const char *tmpl_str,
+  const REAL8 param_tol_mism,
+  const WeavePhysicalToLattice phys_to_latt,
+  const gsl_matrix *metric,
+  const void *transf_data,
+  const PulsarDopplerParams *phys_1,
+  const PulsarDopplerParams *phys_2
+  )
+{
+
+  // Check input
+  XLAL_CHECK( equal != NULL, XLAL_EINVAL );
+  XLAL_CHECK( loc_str != NULL, XLAL_EINVAL );
+  XLAL_CHECK( tmpl_str != NULL, XLAL_EINVAL );
+  XLAL_CHECK( param_tol_mism > 0, XLAL_EINVAL );
+  XLAL_CHECK( phys_to_latt != NULL, XLAL_EFAULT );
+  XLAL_CHECK( metric != NULL, XLAL_EFAULT );
+  XLAL_CHECK( transf_data != NULL, XLAL_EFAULT );
+  XLAL_CHECK( phys_1 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( phys_2 != NULL, XLAL_EFAULT );
+
+  // Transform physical point to lattice coordinates
+  double latt_1_array[metric->size1];
+  gsl_vector_view latt_1_view = gsl_vector_view_array( latt_1_array, metric->size1 );
+  gsl_vector *const latt_1 = &latt_1_view.vector;
+  XLAL_CHECK( ( phys_to_latt )( latt_1, phys_1, transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+  double latt_2_array[metric->size1];
+  gsl_vector_view latt_2_view = gsl_vector_view_array( latt_2_array, metric->size1 );
+  gsl_vector *const latt_2 = &latt_2_view.vector;
+  XLAL_CHECK( ( phys_to_latt )( latt_2, phys_2, transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Store difference between lattice coordinates in 'u'
+  double u_array[metric->size1];
+  gsl_vector_view u_view = gsl_vector_view_array( u_array, metric->size1 );
+  gsl_vector *const u = &u_view.vector;
+  gsl_vector_memcpy( u, latt_1 );
+  gsl_vector_sub( u, latt_2 );
+
+  // Multiply 'u' by metric, storing result in 'v'
+  double v_array[metric->size1];
+  gsl_vector_view v_view = gsl_vector_view_array( v_array, metric->size1 );
+  gsl_vector *const v = &v_view.vector;
+  gsl_blas_dsymv( CblasUpper, 1.0, metric, u, 0.0, v );
+
+  // Compute mismatch and compare to tolerance
+  REAL8 mism = 0;
+  gsl_blas_ddot( u, v, &mism );
+
+  // If mismatch is above tolerance, print error message
+  if ( mism > param_tol_mism ) {
+    *equal = 0;
+    XLALPrintInfo( "%s: at %s, mismatch between %s template parameters exceeds tolerance: %g > %g\n", __func__, loc_str, tmpl_str, mism, param_tol_mism );
+    const PulsarDopplerParams *phys[2] = { phys_1, phys_2 };
+    gsl_vector *latt[2] = { latt_1, latt_2 };
+    for ( size_t i = 0; i < 2; ++i ) {
+      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g}\n", __func__, i, phys[i]->Alpha, phys[i]->Delta, phys[i]->fkdot[0], phys[i]->fkdot[1] );
+    }
+    for ( size_t i = 0; i < 2; ++i ) {
+      XLALPrintInfo( "%s:     lattice %zu = ", __func__, i );
+      for ( size_t j = 0; j < latt[i]->size; ++j ) {
+        XLALPrintInfo( "%c%.15g", j == 0 ? '{' : ',', gsl_vector_get( latt[i], j ) );
+      }
+      XLALPrintInfo( "}\n" );
+    }
+    XLALPrintInfo( "%s:     lattice diff = ", __func__ );
+    for ( size_t j = 0; j < u->size; ++j ) {
+      XLALPrintInfo( "%c%.15g", j == 0 ? '{' : ',', gsl_vector_get( u, j ) );
+    }
+    XLALPrintInfo( "}\n" );
+    XLALPrintInfo( "%s:     metric dot = ", __func__ );
+    for ( size_t j = 0; j < u->size; ++j ) {
+      XLALPrintInfo( "%c%.15g", j == 0 ? '{' : ',', gsl_vector_get( u, j ) * gsl_vector_get( v, j ) );
+    }
+    XLALPrintInfo( "}\n" );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+///
+/// Compare vectors of results from two toplists
+///
+int toplist_compare_results(
+  BOOLEAN *equal,
+  const VectorComparison *result_tol,
+  const REAL4Vector *res_1,
+  const REAL4Vector *res_2
+  )
+{
+  VectorComparison XLAL_INIT_DECL( result_diff );
+  int errnum = 0;
+  XLAL_TRY( XLALCompareREAL4Vectors( &result_diff, res_1, res_2, result_tol ), errnum );
+  if ( errnum == XLAL_ETOL ) {
+    *equal = 0;
+  } else if ( errnum != 0 ) {
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+  return XLAL_SUCCESS;
+}
+
+///
+/// Compare two toplists and return whether they are equal
+///
+int toplist_compare(
+  BOOLEAN *equal,
+  const WeaveSetup *setup,
+  const REAL8 param_tol_mism,
+  const VectorComparison *result_tol,
+  const LALStringVector *detectors,
+  const size_t nsegments,
+  const LALHeap *toplist_1,
+  const LALHeap *toplist_2
+  )
+{
+
+  // Check input
+  XLAL_CHECK( equal != NULL, XLAL_EFAULT );
+  XLAL_CHECK( setup != NULL, XLAL_EFAULT );
+  XLAL_CHECK( param_tol_mism > 0, XLAL_EINVAL );
+  XLAL_CHECK( result_tol != NULL, XLAL_EFAULT );
+  XLAL_CHECK( toplist_1 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( toplist_2 != NULL, XLAL_EFAULT );
+
+  // Compare lengths of toplists
+  const size_t n = XLALHeapSize( toplist_1 );
+  {
+    const size_t n_2 = XLALHeapSize( toplist_2 );
+    if ( n != n_2 ) {
+      *equal = 0;
+      XLALPrintInfo( "%s: unequal toplist sizes: %zu != %zu\n", __func__, n, n_2 );
+      return XLAL_SUCCESS;
+    }
+  }
+
+  // Get lists of toplist items
+  const WeaveOutputToplistItem **items_1 = ( const WeaveOutputToplistItem ** ) XLALHeapElements( toplist_1 );
+  XLAL_CHECK( items_1 != NULL, XLAL_EFUNC );
+  XLAL_CHECK( nsegments == 0 || items_1[0]->per_seg != NULL, XLAL_EINVAL );
+  const WeaveOutputToplistItem **items_2 = ( const WeaveOutputToplistItem ** ) XLALHeapElements( toplist_2 );
+  XLAL_CHECK( items_2 != NULL, XLAL_EFUNC );
+  XLAL_CHECK( nsegments == 0 || items_2[0]->per_seg != NULL, XLAL_EINVAL );
+
+  // Sort toplist items by physical coordinates of semicoherent template
+  // - Template coordinates are less likely to suffer from numerical differences
+  //   than result values, and therefore provide more stable sort values to ensure
+  //   that equivalent items in both templates match up with each other.
+  // - Ideally one would compare toplist items with possess the minimum mismatch
+  //   in template parameters with respect to each other, but that would require
+  //   of order 'n^2' mismatch calculations, which may be too expensive
+  qsort( items_1, n, sizeof( *items_1 ), toplist_item_sort_by_semi_phys );
+  qsort( items_2, n, sizeof( *items_2 ), toplist_item_sort_by_semi_phys );
+
+  // Allocate vectors for storing results for comparison with toplist_compare_results()
+  REAL4Vector *res_1 = XLALCreateREAL4Vector( n );
+  XLAL_CHECK( res_1 != NULL, XLAL_EFUNC );
+  REAL4Vector *res_2 = XLALCreateREAL4Vector( n );
+  XLAL_CHECK( res_2 != NULL, XLAL_EFUNC );
+
+  // Compare toplist semicoherent and coherent template parameters
+  for ( size_t i = 0; i < n; ++i ) {
+    char loc_str[256];
+
+    // Compare semicoherent template parameters
+    snprintf( loc_str, sizeof(loc_str), "toplist item %zu", i );
+    XLAL_CHECK( toplist_compare_templates( equal, loc_str, "semicoherent", param_tol_mism, setup->phys_to_latt, setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf, &items_1[i]->semi_phys, &items_2[i]->semi_phys ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Compare coherent template parameters
+    for ( size_t j = 0; j < nsegments; ++j ) {
+      snprintf( loc_str, sizeof(loc_str), "toplist item %zu, segment %zu", i, j );
+      XLAL_CHECK( toplist_compare_templates( equal, loc_str, "coherent", param_tol_mism, setup->phys_to_latt, setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j], &items_1[i]->per_seg[j].coh_phys, &items_2[i]->per_seg[j].coh_phys ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+  }
+  if ( !*equal ) {
+    goto CLEANUP;
+  }
+
+  // Compare mean multi-detector F-statistics
+  XLALPrintInfo( "%s: comparing mean multi-detector F-statistics ...\n", __func__ );
+  for ( size_t i = 0; i < n; ++i ) {
+    res_1->data[i] = items_1[i]->mean_twoF;
+    res_2->data[i] = items_2[i]->mean_twoF;
+  }
+  XLAL_CHECK( toplist_compare_results( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( !*equal ) {
+    goto CLEANUP;
+  }
+
+  // Compare mean per-detector F-statistic
+  if ( detectors != NULL ) {
+    for ( size_t k = 0; k < detectors->length; ++k ) {
+      XLALPrintInfo( "%s: comparing mean per-detector F-statistics for detector '%s'...\n", __func__, detectors->data[k] );
+      for ( size_t i = 0; i < n; ++i ) {
+        res_1->data[i] = items_1[i]->mean_twoF_per_det[k];
+        res_2->data[i] = items_2[i]->mean_twoF_per_det[k];
+      }
+      XLAL_CHECK( toplist_compare_results( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+    if ( !*equal ) {
+      goto CLEANUP;
+    }
+  }
+
+  // Compare per-segment coherent multi-detector F-statistics
+  for ( size_t j = 0; j < nsegments; ++j ) {
+    XLALPrintInfo( "%s: comparing coherent multi-detector F-statistics for segment %zu...\n", __func__, j );
+    for ( size_t i = 0; i < n; ++i ) {
+      res_1->data[i] = items_1[i]->per_seg[j].twoF;
+      res_2->data[i] = items_2[i]->per_seg[j].twoF;
+    }
+    XLAL_CHECK( toplist_compare_results( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+  if ( !*equal ) {
+    goto CLEANUP;
+  }
+
+  // Compare per-segment per-detector F-statistics
+  if ( detectors != NULL ) {
+    for ( size_t j = 0; j < nsegments; ++j ) {
+      for ( size_t k = 0; k < detectors->length; ++k ) {
+        if ( isfinite( items_1[0]->per_seg[j].twoF_per_det[k] ) || isfinite( items_2[0]->per_seg[j].twoF_per_det[k] ) ) {
+          XLALPrintInfo( "%s: comparing per-segment per-detector F-statistics for segment %zu, detector '%s'...\n", __func__, j, detectors->data[k] );
+          for ( size_t i = 0; i < n; ++i ) {
+            res_1->data[i] = items_1[i]->per_seg[j].twoF_per_det[k];
+            res_2->data[i] = items_2[i]->per_seg[j].twoF_per_det[k];
+          }
+          XLAL_CHECK( toplist_compare_results( equal, result_tol, res_1, res_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        } else {
+          XLALPrintInfo( "%s: no per-segment per-detector F-statistics for segment %zu, detector '%s'; skipping comparison\n", __func__, j, detectors->data[k] );
+        }
+      }
+    }
+  }
+  if ( !*equal ) {
+    goto CLEANUP;
+  }
+
+CLEANUP:
+
+  // Cleanup
+  XLALFree( items_1 );
+  XLALFree( items_2 );
+  XLALDestroyREAL4Vector( res_1 );
+  XLALDestroyREAL4Vector( res_2 );
+
+  return XLAL_SUCCESS;
+
+}
+
+///
 /// Create a toplist item
 ///
 WeaveOutputToplistItem *toplist_item_create(
@@ -274,6 +534,24 @@ void toplist_item_destroy(
     XLALFree( ix->per_seg );
     XLALFree( ix );
   }
+}
+
+///
+/// Sort toplist items by physical coordinates of semicoherent template
+///
+int toplist_item_sort_by_semi_phys(
+  const void *x,
+  const void *y
+  )
+{
+  const WeaveOutputToplistItem *ix = *( const WeaveOutputToplistItem *const * ) x;
+  const WeaveOutputToplistItem *iy = *( const WeaveOutputToplistItem *const * ) y;
+  WEAVE_COMPARE_BY( ix->semi_phys.Alpha, iy->semi_phys.Alpha );   // Compare in ascending order
+  WEAVE_COMPARE_BY( ix->semi_phys.Delta, iy->semi_phys.Delta );   // Compare in ascending order
+  for ( size_t s = 0; s < XLAL_NUM_ELEM( ix->semi_phys.fkdot ); ++s ) {
+    WEAVE_COMPARE_BY( ix->semi_phys.fkdot[s], iy->semi_phys.fkdot[s] );   // Compare in ascending order
+  }
+  return 0;
 }
 
 ///
@@ -614,6 +892,95 @@ int XLALWeaveOutputRead(
 
   // Read and append to toplist ranked by mean multi-detector F-statistic
   XLAL_CHECK( toplist_fits_table_read( file, "toplist_mean_twoF", *out, &( *out )->toplist_mean_twoF, toplist_item_compare_by_mean_twoF ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+}
+
+///
+/// Compare two output data and return whether they are equal
+///
+int XLALWeaveOutputCompare(
+  BOOLEAN *equal,
+  const WeaveSetup *setup,
+  const REAL8 param_tol_mism,
+  const VectorComparison *result_tol,
+  const WeaveOutput *out_1,
+  const WeaveOutput *out_2
+  )
+{
+
+  // Check input
+  XLAL_CHECK( equal != NULL, XLAL_EFAULT );
+  XLAL_CHECK( setup != NULL, XLAL_EFAULT );
+  XLAL_CHECK( param_tol_mism > 0, XLAL_EINVAL );
+  XLAL_CHECK( result_tol != NULL, XLAL_EFAULT );
+  XLAL_CHECK( out_1 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( out_2 != NULL, XLAL_EFAULT );
+
+  // Output data are assumed equal until we find otherwise
+  *equal = 1;
+
+  // Compare reference times
+  if ( XLALGPSCmp( &out_1->ref_time, &out_2->ref_time ) != 0 ) {
+    *equal = 0;
+    XLALPrintInfo( "%s: unequal reference times: %" LAL_GPS_FORMAT " != %" LAL_GPS_FORMAT "\n", __func__, LAL_GPS_PRINT( out_1->ref_time ), LAL_GPS_PRINT( out_2->ref_time ) );
+    return XLAL_SUCCESS;
+  }
+
+  // Compare number of spindowns
+  if ( out_1->nspins != out_2->nspins ) {
+    *equal = 0;
+    XLALPrintInfo( "%s: unequal number of spindowns: %zu != %zu\n", __func__, out_1->nspins, out_2->nspins );
+    return XLAL_SUCCESS;
+  }
+
+  // Compare if outputting per-detector quantities, and list of detectors
+  {
+    const BOOLEAN perdet_1 = ( out_1->per_detectors != NULL ), perdet_2 = ( out_2->per_detectors != NULL );
+    if ( perdet_1 != perdet_2 ) {
+      *equal = 0;
+      XLALPrintInfo( "%s: unequal output per detector?: %i != %i\n", __func__, perdet_1, perdet_2 );
+      return XLAL_SUCCESS;
+    }
+    if ( perdet_1 ) {
+      if ( out_1->per_detectors->length != out_2->per_detectors->length ) {
+        *equal = 0;
+        XLALPrintInfo( "%s: unequal number of detectors: %u != %u\n", __func__, out_1->per_detectors->length, out_2->per_detectors->length );
+        return XLAL_SUCCESS;
+      }
+      for ( size_t i = 0; i < out_1->per_detectors->length; ++i ) {
+        if ( strcmp( out_1->per_detectors->data[i], out_2->per_detectors->data[i] ) != 0 ) {
+          *equal = 0;
+          XLALPrintInfo( "%s: unequal detectors: %s != %s\n", __func__, out_1->per_detectors->data[i], out_2->per_detectors->data[i] );
+          return XLAL_SUCCESS;
+        }
+      }
+    }
+  }
+  const LALStringVector *detectors = out_1->per_detectors;
+
+  // Compare number of per-segment items
+  if ( out_1->per_nsegments != out_2->per_nsegments ) {
+    *equal = 0;
+    XLALPrintInfo( "%s: unequal number of segments: %u != %u\n", __func__, out_1->per_nsegments, out_2->per_nsegments );
+    return XLAL_SUCCESS;
+  }
+  const size_t nsegments = out_1->per_nsegments;
+
+  // Compare total number of semicoherent results
+  if ( out_1->semi_total != out_2->semi_total ) {
+    *equal = 0;
+    XLALPrintInfo( "%s: unequal total number of semicoherent results: %" LAL_INT8_FORMAT " != %" LAL_INT8_FORMAT "\n", __func__, out_1->semi_total, out_2->semi_total );
+    return XLAL_SUCCESS;
+  }
+
+  // Compare toplists ranked by mean multi-detector F-statistic
+  XLALPrintInfo( "%s: comparing toplists ranked by mean multi-detector F-statistic ...\n", __func__ );
+  XLAL_CHECK( toplist_compare( equal, setup, param_tol_mism, result_tol, detectors, nsegments, out_1->toplist_mean_twoF, out_2->toplist_mean_twoF ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( !*equal ) {
+    return XLAL_SUCCESS;
+  }
 
   return XLAL_SUCCESS;
 

@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_blas.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/ComputeFstat.h>
@@ -43,6 +44,7 @@
 #include <lal/LatticeTiling.h>
 #include <lal/SuperskyMetrics.h>
 #include <lal/VectorMath.h>
+#include <lal/LFTandTSutils.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -332,6 +334,14 @@ int XLALWeaveOutputWriteExtra(
 int XLALWeaveOutputRead(
   FITSFile *file,
   WeaveOutput **out
+  );
+int XLALWeaveOutputCompare(
+  BOOLEAN *equal,
+  const WeaveSetup *setup,
+  const REAL8 param_tol_mism,
+  const VectorComparison *result_tol,
+  const WeaveOutput *out_1,
+  const WeaveOutput *out_2
   );
 
 /// @}

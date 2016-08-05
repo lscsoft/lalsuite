@@ -7,6 +7,7 @@ if CFITSIO
 bin_PROGRAMS = \
 	lalapps_WeaveSetup \
 	lalapps_Weave \
+	lalapps_WeaveCompare \
 	$(END_OF_LIST)
 else
 SH_LOG_COMPILER += skip
@@ -25,6 +26,13 @@ lalapps_Weave_SOURCES = \
 	SetupData.c \
 	Weave.c \
 	Weave.h \
+	$(END_OF_LIST)
+
+lalapps_WeaveCompare_SOURCES = \
+	OutputData.c \
+	SetupData.c \
+	Weave.h \
+	WeaveCompare.c \
 	$(END_OF_LIST)
 
 TESTS = \

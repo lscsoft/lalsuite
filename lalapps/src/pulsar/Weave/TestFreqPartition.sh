@@ -28,15 +28,9 @@ ${builddir}/lalapps_Weave --freq-partitions=11 \
 set +x
 echo
 
-echo "=== Extract F-statistics from WeaveOut{NoPart|Part}.fits as ASCII table ==="
-set -x
-${fitsdir}/lalapps_fits_table_list "WeaveOutNoPart.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF,-999)]" > WeaveFstatsNoPart.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOutPart.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF,-999)]" > WeaveFstatsPart.txt
-set +x
-echo
-
 echo "=== Compare F-statistics from lalapps_Weave without/with frequency partitions ==="
 set -x
-${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstatsNoPart.txt --Fname2=WeaveFstatsPart.txt
+LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info"
+${builddir}/lalapps_WeaveCompare --setup-file=WeaveSetup.fits --output-file-1=WeaveOutNoPart.fits --output-file-2=WeaveOutPart.fits
 set +x
 echo
