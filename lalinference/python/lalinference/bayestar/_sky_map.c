@@ -618,7 +618,7 @@ static PyTypeObject LogRadialIntegrator_type = {
 };
 
 
-static const char modulename[] = "sky_map";
+static const char modulename[] = "_sky_map";
 
 
 #if PY_MAJOR_VERSION >= 3
@@ -630,11 +630,11 @@ static PyModuleDef moduledef = {
 
 
 #if PY_MAJOR_VERSION < 3
-PyMODINIT_FUNC initsky_map(void); /* Silence -Wmissing-prototypes */
-PyMODINIT_FUNC initsky_map(void)
+PyMODINIT_FUNC init_sky_map(void); /* Silence -Wmissing-prototypes */
+PyMODINIT_FUNC init_sky_map(void)
 #else
-PyMODINIT_FUNC PyInit_sky_map(void); /* Silence -Wmissing-prototypes */
-PyMODINIT_FUNC PyInit_sky_map(void)
+PyMODINIT_FUNC PyInit__sky_map(void); /* Silence -Wmissing-prototypes */
+PyMODINIT_FUNC PyInit__sky_map(void)
 #endif
 {
     PyObject *module;

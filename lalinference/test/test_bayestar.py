@@ -29,6 +29,7 @@ import lalinference.bayestar.postprocess
 modules = [
     lalinference.bayestar.distance,
     lalinference.bayestar.filter,
+    lalinference.bayestar.sky_map,
     lalinference.io.fits,
     lalinference.io.hdf5,
     lalinference.healpix_tree,
@@ -36,11 +37,6 @@ modules = [
     lalinference.bayestar.postprocess,
 ]
 
-
-print('Running C unit tests.')
-total_failures = lalinference.bayestar.sky_map.test()
-
-print('Running Python unit tests.')
 
 finder = doctest.DocTestFinder()
 runner = doctest.DocTestRunner()
@@ -53,6 +49,7 @@ for module in modules:
     for ufunc in set(_ for _ in module.__dict__.values() if isinstance(_, np.ufunc)):
         tests += finder.find(ufunc, module=module)
 
+total_failures = 0
 for test in tests:
     failures, tests = runner.run(test)
     total_failures += failures
