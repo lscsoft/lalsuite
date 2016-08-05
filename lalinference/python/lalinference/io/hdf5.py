@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Leo Singer
+# Copyright (C) 2016  Leo Singer, John Veitch
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -40,7 +40,7 @@ def _remap_colnames(table):
             table.rename_column(old_name, new_name)
 
 
-def read_samples(filename, path=None):
+def read_samples(filename, path=None, tablename=None):
     """Read an HDF5 sample chain file.
 
     Parameters
@@ -57,8 +57,13 @@ def read_samples(filename, path=None):
         The sample chain as an Astropy table.
     """
     with h5py.File(filename, 'r') as f:
+	# Look for a given path
         if path is not None:
             table = f[path]
+        # Look for a given table name
+        elif tablename is not None:
+	    table = f.visititems(lambda name,val: val if name.rsplit('/')[-1]==tablename else None)
+	# Look for some common paths
         else:
             try:
                 try:
@@ -91,7 +96,7 @@ def read_samples(filename, path=None):
     return table
 
 
-def write_samples(table, filename, path):
+def write_samples(table, filename, path, metadata=None):
     """Write an HDF5 sample chain file.
 
     Parameters
@@ -102,6 +107,9 @@ def write_samples(table, filename, path):
         The path of the HDF5 file on the filesystem.
     path : str
         The path of the dataset within the HDF5 file.
+    metadata: dict (Optional)
+        Dictionary of (path, value) pairs of metadata attributes
+        to add to the output file
 
     Example... first some imports:
     >>> from lalinference import LALINFERENCE_PARAM_LINEAR as LINEAR
@@ -150,5 +158,12 @@ def write_samples(table, filename, path):
         else:
             vary.insert(0, column.meta.pop('vary'))
     table.meta['vary'] = np.asarray(vary)
-
     table.write(filename, format='hdf5', path=path)
+    if metadata:
+      with h5py.File(filename) as hdf:
+        for internal_path, attributes in metadata.items():
+	  for key, value in attributes.items():
+	    try:
+	      hdf[internal_path].attrs[key] = value
+            except:
+	      print('Unable to set metadata %s[%s] = %s'%(internal_path,key,str(value)))
