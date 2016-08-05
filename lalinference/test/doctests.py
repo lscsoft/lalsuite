@@ -26,6 +26,7 @@ import lalinference.bayestar.sky_map
 import lalinference.bayestar.distance
 import lalinference.bayestar.filter
 import lalinference.io.fits
+import lalinference.io.hdf5
 import lalinference.healpix_tree
 import lalinference.bayestar.timing
 import lalinference.bayestar.postprocess
