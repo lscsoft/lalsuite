@@ -172,6 +172,9 @@ for sampler in samps:
         mc_max=mc_priors[roq][1]
         flow=int(roq_params[roq]['flow'] / roq_mass_freq_scale_factor)
         srate=int(2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor)
+	if srate > 8192:
+		srate = 4096
+	
         seglen=int(roq_params[roq]['seglen'] * roq_mass_freq_scale_factor)
         # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
         q_min=1./float(roq_params[roq]['qmax'])
