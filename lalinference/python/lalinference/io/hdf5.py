@@ -35,8 +35,6 @@ from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
 _colname_map = (('rightascension', 'ra'),
                 ('declination', 'dec'),
                 ('distance', 'dist'))
-_mcmc_path = 'lalinference/lalinference_mcmc/posterior_samples'
-_nest_path = 'lalinference/lalinference_nest/nested_samples'
 
 
 def _remap_colnames(table):
