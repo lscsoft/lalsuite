@@ -808,7 +808,7 @@ class knopeDAG(pipeline.CondorDAG):
     if self.error_code != 0: return
 
     # set background run directories if required
-    self.pe_output_background_basedir = self.get_config_option('pe', 'pe_output_dir_background', cftype='dir')
+    self.pe_output_background_basedir = self.get_config_option('pe', 'pe_output_dir_background', cftype='dir', allownone=True)
     if self.pe_num_background != 0:
       if self.pe_output_background_basedir == None:
         print("Error... no background analysis directory has been set", file=sys.stderr)
