@@ -139,18 +139,8 @@ int cache_item_compare_by_relevance(
 {
   const cache_item *ix = ( const cache_item * ) x;
   const cache_item *iy = ( const cache_item * ) y;
-  if ( ix->partition_index < iy->partition_index ) {
-    return -1;
-  }
-  if ( ix->partition_index > iy->partition_index ) {
-    return +1;
-  }
-  if ( ix->relevance < iy->relevance ) {
-    return -1;
-  }
-  if ( ix->relevance > iy->relevance ) {
-    return +1;
-  }
+  WEAVE_COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
+  WEAVE_COMPARE_BY( ix->relevance, iy->relevance );   // Compare in ascending order
   return 0;
 }
 
@@ -164,18 +154,8 @@ int cache_item_compare_by_coh_index(
 {
   const cache_item *ix = ( const cache_item * ) x;
   const cache_item *iy = ( const cache_item * ) y;
-  if ( ix->partition_index < iy->partition_index ) {
-    return -1;
-  }
-  if ( ix->partition_index > iy->partition_index ) {
-    return +1;
-  }
-  if ( ix->coh_index < iy->coh_index ) {
-    return -1;
-  }
-  if ( ix->coh_index > iy->coh_index ) {
-    return +1;
-  }
+  WEAVE_COMPARE_BY( ix->partition_index, iy->partition_index );   // Compare in ascending order
+  WEAVE_COMPARE_BY( ix->coh_index, iy->coh_index );   // Compare in ascending order
   return 0;
 }
 

@@ -55,6 +55,14 @@ extern "C" {
 #endif
 
 ///
+/// Compare two quantities, and return a sort order value if they are unequal
+///
+#define WEAVE_COMPARE_BY( x, y ) do { \
+    if ( (x) < (y) ) return -1; \
+    if ( (x) > (y) ) return +1; \
+  } while(0)
+
+///
 /// Function which transforms a point from physical coordinates to lattice tiling coordinates
 ///
 typedef int ( *WeavePhysicalToLattice )( gsl_vector *out_latt, const PulsarDopplerParams *in_phys, const void *transf_data );

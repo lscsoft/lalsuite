@@ -228,12 +228,7 @@ int toplist_item_compare_by_mean_twoF(
 {
   const WeaveOutputToplistItem *ix = ( const WeaveOutputToplistItem * ) x;
   const WeaveOutputToplistItem *iy = ( const WeaveOutputToplistItem * ) y;
-  if ( ix->mean_twoF > iy->mean_twoF ) {
-    return -1;
-  }
-  if ( ix->mean_twoF < iy->mean_twoF ) {
-    return +1;
-  }
+  WEAVE_COMPARE_BY( iy->mean_twoF, ix->mean_twoF );   // Compare in descending order
   return 0;
 }
 
