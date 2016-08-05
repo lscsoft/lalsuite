@@ -1148,9 +1148,10 @@ class posteriors:
         table.adddata(dispfunc(str(maxLparams[param]), **dispkwargs))    # maximum likelihood
         table.adddata(dispfunc(str(self._posteriors[ifo].means[param]), **dispkwargs))   # mean value
         table.adddata(dispfunc(str(self._posteriors[ifo].medians[param]), **dispkwargs)) # median value
+        tdispkwargs = dispkwargs
         if param.upper() in ['T0', 'TASC']:
-          dispkwargs = {'stype': 'diff'} # don't display values in MJD
-        table.adddata(dispfunc(str(self._posteriors[ifo].stdevs[param]), **dispkwargs))  # standard deviations
+          tdispkwargs = {'stype': 'diff'} # don't display values in MJD
+        table.adddata(dispfunc(str(self._posteriors[ifo].stdevs[param]), **tdispkwargs))  # standard deviations
 
         for k, ci in enumerate(credints):
           paramval = None
