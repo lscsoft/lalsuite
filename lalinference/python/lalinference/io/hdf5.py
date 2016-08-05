@@ -41,7 +41,7 @@ def _remap_colnames(table):
 
 
 def _find_table(group, tablename):
-    table = f.visititems(
+    table = group.visititems(
         lambda name, val: val if name.rsplit('/')[-1] == tablename else None)
     if table is None:
         raise KeyError('Table not found: {0}'.format(tablename))
