@@ -1,4 +1,4 @@
-# Copyright (C) 2016  Leo Singer
+# Copyright (C) 2016  Leo Singer, John Veitch
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -21,6 +21,7 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 __all__ = ('read_samples', 'write_samples')
 
 
+import numpy as np
 import h5py
 import lalinference
 from astropy.table import Column, Table
@@ -39,11 +40,17 @@ def _remap_colnames(table):
             table.rename_column(old_name, new_name)
 
 
-def read_samples(filename, path=None):
-    """Read an HDF5 sample chain file.
+def _find_table(group, tablename):
+    table = f.visititems(
+        lambda name, val: val if name.rsplit('/')[-1] == tablename else None)
+    if table is None:
+        raise KeyError('Table not found: {0}'.format(tablename))
+    else:
+        return table
 
-    DEPRECATED! This function will eventually be deleted once text formatted
-    sample chains are retired.
+
+def read_samples(filename, path=None, tablename=None):
+    """Read an HDF5 sample chain file.
 
     Parameters
     ----------
@@ -52,6 +59,8 @@ def read_samples(filename, path=None):
     path : str, optional
         The path of the dataset within the HDF5 file. By default, try the
         conventional path for lalinference_mcmc and lalinference_nest.
+    tablename : str, optional
+        The name of table to search for recursively within the HDF5 file.
 
     Returns
     -------
@@ -59,9 +68,11 @@ def read_samples(filename, path=None):
         The sample chain as an Astropy table.
     """
     with h5py.File(filename, 'r') as f:
-        if path is not None:
+        if path is not None: # Look for a given path
             table = f[path]
-        else:
+        elif tablename is not None: # Look for a given table name
+            table = _find_table(f, tablename)
+        else: # Look for some common paths
             try:
                 try:
                     table = f[_mcmc_path]
@@ -93,7 +104,7 @@ def read_samples(filename, path=None):
     return table
 
 
-def write_samples(table, filename, path):
+def write_samples(table, filename, path, metadata=None):
     """Write an HDF5 sample chain file.
 
     Parameters
@@ -104,16 +115,41 @@ def write_samples(table, filename, path):
         The path of the HDF5 file on the filesystem.
     path : str
         The path of the dataset within the HDF5 file.
+    metadata: dict (optional)
+        Dictionary of (path, value) pairs of metadata attributes
+        to add to the output file
 
-    Example:
+    Example... first some imports:
     >>> from lalinference import LALINFERENCE_PARAM_LINEAR as LINEAR
     >>> from lalinference import LALINFERENCE_PARAM_CIRCULAR as CIRCULAR
     >>> from lalinference import LALINFERENCE_PARAM_FIXED as FIXED
     >>> from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
+
+    Check that we catch columns that are supposed to be FIXED but are not:
     >>> table = Table([
     ...     Column(np.arange(10), name='foo', meta={'vary': FIXED})
     ... ])
-    >>> write_samples(table, 'bar.hdf5', 'bat')
+    >>> write_samples(table, 'bar.hdf5', 'bat/baz')
+    Traceback (most recent call last):
+        ...
+    AssertionError: 
+    Arrays are not equal
+    Column {0} is a `fixed` column, but its values are not identical
+    (mismatch 100.0%)
+     x: Column([1, 2, 3, 4, 5, 6, 7, 8, 9])
+     y: array(0)
+
+    And now try writing an arbitrary example to a temporary file:
+    >>> import os.path
+    >>> from lalinference.bayestar.command import TemporaryDirectory
+    >>> table = Table([
+    ...     Column(np.ones(10), name='foo', meta={'vary': FIXED}),
+    ...     Column(np.arange(10), name='bar', meta={'vary': LINEAR}),
+    ...     Column(np.arange(10) * np.pi, name='bat', meta={'vary': CIRCULAR}),
+    ...     Column(np.arange(10), name='baz', meta={'vary': OUTPUT})
+    ... ])
+    >>> with TemporaryDirectory() as dir:
+    ...     write_samples(table, os.path.join(dir, 'test.hdf5'), 'bat/baz')
     """
     # Copy the table so that we do not modify the original.
     table = table.copy()
@@ -128,7 +164,16 @@ def write_samples(table, filename, path):
             table.meta[colname] = column[0]
             del table[colname]
         else:
-            vary.push(column.meta.pop('vary'))
+            vary.insert(0, column.meta.pop('vary'))
     table.meta['vary'] = np.asarray(vary)
-
     table.write(filename, format='hdf5', path=path)
+    if metadata:
+        with h5py.File(filename) as hdf:
+            for internal_path, attributes in metadata.items():
+                for key, value in attributes.items():
+                    try:
+                        hdf[internal_path].attrs[key] = value
+                    except KeyError:
+                        raise KeyError(
+                            'Unable to set metadata {0}[{1}] = {2}'.format(
+                            internal_path, key, value))

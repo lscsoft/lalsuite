@@ -543,7 +543,51 @@ class knopeDAG(pipeline.CondorDAG):
     # create parameter estimation job
     resultpagejob = resultpageJob(self.results_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
     collatejob = collateJob(self.collate_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
-    collatenode = collateNode(collatejob)
+
+    # create config file for collating results into a results table
+    cpc = ConfigParser.ConfigParser() # create config parser to output .ini file
+    # create configuration .ini file
+    cinifile = os.path.join(self.results_basedir, 'collate.ini')
+
+    # create sections
+    cpc.add_section('output')
+    cpc.add_section('input')
+    cpc.add_section('general')
+
+    cpc.set('output', 'path', self.results_basedir) # set output directory
+    cpc.set('input', 'path', self.results_basedir)  # set directory containing individual results directories
+
+    # get sort type and direction
+    sorttype = self.get_config_option('results_page', 'sort_value', default='name') # default sorting on name
+    cpc.set('general', 'sort_value', sorttype)
+    sortdirection = self.get_config_option('results_page', 'sort_direction', default='ascending') # default sorting in ascending order
+    cpc.set('general', 'sort_direction', sortdirection)
+    if self.pe_coherent_only:
+      cpc.set('general', 'detectors', ['Joint'])
+    elif self.pe_incoherent_only:
+      cpc.set('general', 'detectors', self.ifos)
+    else:
+      cdets = deepcopy(self.ifos)
+      cdets.append('Joint')
+      cpc.set('general', 'detectors', cdets)
+
+    # get pulsar parameters to output
+    paramout = self.get_config_option('results_page', 'parameters', cftype='list', default=['f0'])
+    cpc.set('general', 'parameters', paramout)
+
+    # get results to output
+    resout = self.get_config_option('results_page', 'results', cftype='list', default=['h0ul'])
+    cpc.set('general', 'results', resout)
+
+    # write and set ini file
+    try:
+      fp = open(cinifile, 'w')
+      cpc.write(fp)
+      fp.close()
+    except:
+      print("Error... could not write configuration file '%s' for results collation page" % cinifile, file=sys.stderr)
+      self.error_code = -1
+      return
 
     # loop through pulsars
     for pname in self.analysed_pulsars:
@@ -681,56 +725,10 @@ class knopeDAG(pipeline.CondorDAG):
       self.add_node(resultsnode)
 
       # add as parent to the collation node
+      collatenode = collateNode(collatejob) # create a collate node for each pulsar, so that the table gets regenerated as each new reults comes in
+      collatenode.set_config(cinifile)
       collatenode.add_parent(resultsnode)
-
-    # collate results into a results table
-    cpc = ConfigParser.ConfigParser() # create config parser to output .ini file
-    # create configuration .ini file
-    cinifile = os.path.join(self.results_basedir, 'collate.ini')
-
-    # create sections
-    cpc.add_section('output')
-    cpc.add_section('input')
-    cpc.add_section('general')
-
-    cpc.set('output', 'path', self.results_basedir) # set output directory
-    cpc.set('input', 'path', self.results_basedir)  # set directory containing individual results directories
-
-    # get sort type and direction
-    sorttype = self.get_config_option('results_page', 'sort_value', default='name') # default sorting on name
-    cpc.set('general', 'sort_value', sorttype)
-    sortdirection = self.get_config_option('results_page', 'sort_direction', default='ascending') # default sorting in ascending order
-    cpc.set('general', 'sort_direction', sortdirection)
-    if self.pe_coherent_only:
-      cpc.set('general', 'detectors', ['Joint'])
-    elif self.pe_incoherent_only:
-      cpc.set('general', 'detectors', self.ifos)
-    else:
-      cdets = deepcopy(self.ifos)
-      cdets.append('Joint')
-      cpc.set('general', 'detectors', cdets)
-
-    # get pulsar parameters to output
-    paramout = self.get_config_option('results_page', 'parameters', cftype='list', default=['f0'])
-    cpc.set('general', 'parameters', paramout)
-
-    # get results to output
-    resout = self.get_config_option('results_page', 'results', cftype='list', default=['h0ul'])
-    cpc.set('general', 'results', resout)
-
-    # write and set ini file
-    try:
-      fp = open(cinifile, 'w')
-      cpc.write(fp)
-      fp.close()
-    except:
-      print("Error... could not write configuration file '%s' for results collation page" % cinifile, file=sys.stderr)
-      self.error_code = -1
-      return
-
-    collatenode.set_config(cinifile)
-
-    self.add_node(collatenode)
+      self.add_node(collatenode)
 
 
   def setup_preprocessing(self):
@@ -810,7 +808,7 @@ class knopeDAG(pipeline.CondorDAG):
     if self.error_code != 0: return
 
     # set background run directories if required
-    self.pe_output_background_basedir = self.get_config_option('pe', 'pe_output_dir_background', cftype='dir')
+    self.pe_output_background_basedir = self.get_config_option('pe', 'pe_output_dir_background', cftype='dir', allownone=True)
     if self.pe_num_background != 0:
       if self.pe_output_background_basedir == None:
         print("Error... no background analysis directory has been set", file=sys.stderr)
