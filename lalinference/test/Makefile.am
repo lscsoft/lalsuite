@@ -9,6 +9,7 @@ test_programs += LALInferenceGenerateROQTest
 #test_programs += LALInferenceInjectionTest
 #test_programs += LALInferenceLikelihoodTest
 #test_programs += LALInferenceProposalTest
+test_programs += LALInferenceHDF5Test
 
 # Add shell, Python, etc. test scripts to this variable
 # Disable test_multiband.sh for now
@@ -47,6 +48,7 @@ HL-INJECTIONS_1_TEST-1000000000-10.xml:
 MOSTLYCLEANFILES = \
 	*.dat \
 	*.out \
+	test.hdf5 \
 	test_bayestar_sample_model_psd.xml \
 	test_bayestar_realize_coincs.xml \
 	test_bayestar_sim_to_tmpltbank.xml \

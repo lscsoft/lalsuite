@@ -588,6 +588,12 @@ void get_loudest_snr( LALInferenceRunState *runState ){
         LALInferenceAddVariable( ifo_model->params, "bsb_delays", &bsbdelays, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
       }
 
+      /* make sure varyphase is set (this is required if having used ROQ for a non-varyphase model) */
+      if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
+        UINT4 varyphasetmp = 1;
+        LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphasetmp, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+      }
+
       ifo_model = ifo_model->next;
     }
   }

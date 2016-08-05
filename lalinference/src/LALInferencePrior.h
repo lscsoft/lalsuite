@@ -264,7 +264,6 @@ REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceV
  */
 UINT4 LALInferenceCubeToPSDScaleParams(LALInferenceVariables *priorParams, LALInferenceVariables *params, INT4 *idx, double *Cube, void *context);
 UINT4 LALInferenceCubeToConstantCalibrationPrior(LALInferenceRunState *runState, LALInferenceVariables *params, INT4 *idx, double *Cube, void *context);
-UINT4 LALInferenceCubeToSplineCalibrationPrior(LALInferenceRunState *runState, LALInferenceVariables *params, INT4 *idx, double *Cube, void *context);
 
 /**
  * Prior that converts from a Cube parameter in [0,1] to the flat prior bounded by x1 and x2.

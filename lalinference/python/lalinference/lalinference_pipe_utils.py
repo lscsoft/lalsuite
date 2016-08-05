@@ -483,7 +483,8 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid):
     roq_params[roq]=np.genfromtxt(params,names=True)
     mc_priors[roq]=[float(roq_params[roq]['chirpmassmin']),float(roq_params[roq]['chirpmassmax'])]
   ordered_roq_paths=[item[0] for item in sorted(roq_params.items(), key=key)][::-1]
-  i=0
+  # below is to construct non-overlapping mc priors for multiple roq mass-bin runs
+  '''i=0
   for roq in ordered_roq_paths:
     if i>0:
       # change min, just set to the max of the previous one since we have already aligned it in the previous iteration of this loop
@@ -491,7 +492,7 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid):
       mc_priors[roq][0]=mc_priors[ordered_roq_paths[i-1]][1]
     if i<len(roq_paths)-1:
       mc_priors[roq][1]-= (mc_priors[roq][1]- mc_priors[ordered_roq_paths[i+1]][0])/2.
-    i+=1
+    i+=1'''
   if gid is not None:
   	trigger_mchirp = get_trigger_chirpmass(gid)
   else:
@@ -504,10 +505,9 @@ def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp):
   mc_min = mc_priors['128s'][0]
   scale_factor = 1
   if trigger_mchirp >= mc_max: 
-  	scale_factor = 2**(math.floor(trigger_mchirp/mc_max))
+  	scale_factor = 2**(floor(trigger_mchirp/mc_max))
   if trigger_mchirp <= mc_min:
-	scale_factor = 1./2**(math.floor(trigger_mchirp/mc_min))
-  print scale_factor
+	scale_factor = 1./2**(ceil(trigger_mchirp/mc_min))
   return scale_factor
 
 def create_pfn_tuple(filename,protocol='file://',site='local'):

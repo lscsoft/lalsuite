@@ -73,7 +73,10 @@ liblalinference_la_SOURCES = \
 	$(XMLSRC)
 nodist_liblalinference_la_SOURCES = LALInferenceBuildInfo.c
 
-liblalinference_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
+liblalinference_la_LDFLAGS = $(AM_LDFLAGS) $(HDF5_LDFLAGS) -version-info $(LIBVERSION)
+liblalinference_la_LIBADD = $(HDF5_LIBS)
+liblalinference_la_CFLAGS = $(AM_CFLAGS) $(HDF5_CFLAGS)
+liblalinference_la_CPPFLAGS = $(AM_CPPFLAGS) $(HDF5_CPPFLAGS)
 
 bin_PROGRAMS = \
 	lalinference_nest \

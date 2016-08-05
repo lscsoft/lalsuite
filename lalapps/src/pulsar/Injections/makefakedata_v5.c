@@ -474,7 +474,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
         }
       for ( UINT4 X = 0; X < numDetectors; X ++ )
         {
-          const LIGOTimeGPSVector *timestampsX = cfg->multiTimestamps->data[X];
           LALCache *cache;
           XLAL_CHECK ( (cache = XLALCacheImport ( uvar->inFrames->data[X] )) != NULL, XLAL_EFUNC, "Failed to import cache file '%s'\n", uvar->inFrames->data[X] );
           // this is a sorted cache, so extract its time-range:
@@ -484,8 +483,9 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
           LIGOTimeGPS ts_start;
           REAL8 ts_duration;
           // check that it's consistent with timestamps, if given, otherwise create timestamps from this
-          if ( timestampsX != NULL )	// FIXME: implicitly assumes timestamps are sorted, which is not guaranteed by timestamps-reading from file
+          if ( cfg->multiTimestamps->data[X] != NULL )	// FIXME: implicitly assumes timestamps are sorted, which is not guaranteed by timestamps-reading from file
             {
+              const LIGOTimeGPSVector *timestampsX = cfg->multiTimestamps->data[X];
               REAL8 tStart = XLALGPSGetREAL8( &timestampsX->data[0] );
               REAL8 tEnd   = XLALGPSGetREAL8( &timestampsX->data[timestampsX->length-1]) + timestampsX->deltaT;
               XLAL_CHECK ( tStart >= cache_tStart && tEnd <= cache_tEnd, XLAL_EINVAL, "Detector X=%d: Requested timestamps-range [%.0f, %.0f]s outside of cache range [%.0f,%.0f]s\n",
@@ -497,7 +497,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
             {
               XLALGPSSetREAL8 ( &ts_start, (REAL8)cache_tStart + 1); // cache times can apparently be by rounded up or down by 1s, so shift by 1s to be safe
               ts_duration = cache_duration - 1;
-              XLAL_CHECK ( (timestampsX = XLALMakeTimestamps ( ts_start, ts_duration, uvar->Tsft, uvar->SFToverlap ) ) != NULL, XLAL_EFUNC );
+              XLAL_CHECK ( (cfg->multiTimestamps->data[X] = XLALMakeTimestamps ( ts_start, ts_duration, uvar->Tsft, uvar->SFToverlap ) ) != NULL, XLAL_EFUNC );
             }
           // ----- now open frame stream and read *all* the data within this time-range [FIXME] ----------
           LALFrStream *stream;

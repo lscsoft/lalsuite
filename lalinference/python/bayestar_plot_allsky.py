@@ -68,7 +68,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import healpy as hp
 import lal
-from lalinference import fits
+from lalinference.io import fits
 from lalinference import plot
 from lalinference.bayestar import postprocess
 

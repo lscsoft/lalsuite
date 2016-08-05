@@ -352,6 +352,28 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
   /* Only use GR templates */
   LALSimInspiralTestGRParam *nonGRparams = NULL;
 
+  /* Fill in the extra parameters for testing GR, if necessary */
+  for (UINT4 k=0; k<N_extra_params; k++)
+  {
+    if(LALInferenceCheckVariable(model->params,list_extra_parameters[k]))
+    {
+      XLALSimInspiralAddTestGRParam(&nonGRparams,list_extra_parameters[k],*(REAL8 *)LALInferenceGetVariable(model->params,list_extra_parameters[k]));
+    }
+  }
+  /* Fill in PPE params if they are available */
+  char PPEparam[64]="";
+  const char *PPEnames[]={"aPPE","alphaPPE","bPPE","betaPPE",NULL};
+  for(UINT4 idx=0;PPEnames[idx];idx++)
+  {
+    for(UINT4 ppeidx=0;;ppeidx++)
+    {
+      sprintf(PPEparam, "%s%d",PPEnames[idx],ppeidx);
+      if(LALInferenceCheckVariable(model->params,PPEparam))
+        XLALSimInspiralAddTestGRParam(&nonGRparams,PPEparam,LALInferenceGetREAL8Variable(model->params,PPEparam));
+      else
+        break;
+    }
+  }
 
   /* ==== Call the waveform generator ==== */
   XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformSequence (&(model->roq->hptildeLinear), &(model->roq->hctildeLinear), phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,

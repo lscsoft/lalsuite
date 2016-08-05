@@ -8,6 +8,7 @@ SUBDIRS = \
 	bayestar \
 	rapid_pe \
 	imrtgr \
+	io \
 	tiger \
 	popprior \
 	$(END_OF_LIST)
