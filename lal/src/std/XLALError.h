@@ -402,6 +402,7 @@ enum XLALErrorValue {
     XLAL_FAILURE = -1,     /**< Failure return value (not an error number) */
 
     /* these are standard error numbers */
+    XLAL_ENOENT = 2,        /**< No such file or directory */
     XLAL_EIO = 5,           /**< I/O error */
     XLAL_ENOMEM = 12,       /**< Memory allocation error */
     XLAL_EFAULT = 14,       /**< Invalid pointer */
