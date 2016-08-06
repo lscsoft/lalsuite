@@ -30,7 +30,7 @@ import healpy as hp
 from . import filter
 from . import postprocess
 from . import timing
-from . import sky_map
+from . import _sky_map
 import lal, lalsimulation
 
 # FIXME: Remove this Python 2 workaround.
@@ -254,7 +254,7 @@ def ligolw_sky_map(
     # Time and run sky localization.
     start_time = time.time()
     if method == "toa_phoa_snr":
-        prob = sky_map.toa_phoa_snr(
+        prob = _sky_map.toa_phoa_snr(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,
             acors, responses, locations, horizons, toas, phoas, snrs, nside).T
         prob[1] *= max_horizon * fudge
@@ -262,7 +262,7 @@ def ligolw_sky_map(
         prob[3] /= np.square(max_horizon * fudge)
     elif method == "toa_snr_mcmc":
         prob = emcee_sky_map(
-            logl=sky_map.log_likelihood_toa_snr,
+            logl=_sky_map.log_likelihood_toa_snr,
             loglargs=(gmst, sample_rate, acors, responses, locations, horizons,
                 toas, snrs),
             logp=toa_phoa_snr_log_prior,
@@ -274,7 +274,7 @@ def ligolw_sky_map(
             max_horizon=max_horizon)
     elif method == "toa_phoa_snr_mcmc":
         prob = emcee_sky_map(
-            logl=sky_map.log_likelihood_toa_phoa_snr,
+            logl=_sky_map.log_likelihood_toa_phoa_snr,
             loglargs=(gmst, sample_rate, acors, responses, locations, horizons,
                 toas, phoas, snrs),
             logp=toa_phoa_snr_log_prior,
@@ -348,3 +348,11 @@ def gracedb_sky_map(
         chain_dump=chain_dump)
 
     return prob, epoch, elapsed_time, instruments
+
+
+def test():
+    """Run BAYESTAR C unit tests.
+    >>> test()
+    0
+    """
+    return int(_sky_map.test())

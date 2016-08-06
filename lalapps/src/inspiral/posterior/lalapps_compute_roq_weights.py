@@ -133,6 +133,8 @@ for ifo in options.IFOs:
 	fseries = dat_file[0]
         deltaF = fseries[1] - fseries[0]
 	fHigh = fseries[-1]
+	fHigh_index = fHigh / deltaF
+
 	
 	if options.fLow: 
 		fLow = options.fLow
@@ -141,10 +143,11 @@ for ifo in options.IFOs:
 	else:
 		fLow = basis_params[0]
 
-		assert fHigh == basis_params[1]
 
-	fseries = fseries[int(fLow/deltaF):len(fseries)+1]
-	data = data[int(fLow/deltaF):len(data)+1]
+		assert fHigh == basis_params[1]
+		
+	fseries = fseries[int(fLow/deltaF):fHigh_index]
+	data = data[int(fLow/deltaF):fHigh_index]
 
 
 	psdfile = np.column_stack( np.loadtxt(options.psd_file[i]) )
@@ -152,10 +155,16 @@ for ifo in options.IFOs:
 
 	psd[-1] = psd[-1 -1 ]
 
-	psd = psd[int(fLow/deltaF):len(psd)+1]
+	psd = psd[int(fLow/deltaF):fHigh_index]
 	data /= psd
 
+	# only get frequency components up to fHigh
+	B_linear = B_linear.T[0:(fHigh_index - fLow/deltaF)][:].T
+	B_quadratic = B_quadratic.T[0:(fHigh_index-fLow/deltaF)][:].T
+	print B_linear.shape[1], B_quadratic.shape[1], len(data), len(psd) 
 	assert len(data) == len(psd) == B_linear.shape[1] == B_quadratic.shape[1]
+
+
 
 	#for the dot product, it's convenient to work with transpose of B:
 	B_linear = B_linear.T 

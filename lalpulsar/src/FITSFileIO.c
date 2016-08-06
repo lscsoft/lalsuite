@@ -62,7 +62,7 @@ int fffree( void *, int * );
 #if defined(HAVE_LIBCFITSIO)
 
 // Call a CFITSIO function, or print error messages on failure
-#define CALL_FITS(function, ...) \
+#define CALL_FITS_VAL(errnum, function, ...) \
   do { \
     if (function(__VA_ARGS__, &status) != 0) { \
       CHAR CALL_FITS_buf[FLEN_STATUS + FLEN_ERRMSG]; \
@@ -74,6 +74,7 @@ int fffree( void *, int * );
       XLAL_ERROR_FAIL(XLAL_EIO); \
     } \
   } while(0)
+#define CALL_FITS(function, ...) CALL_FITS_VAL(XLAL_EIO, function, __VA_ARGS__)
 
 // Internal representation of a FITS file opened for reading or writing
 struct tagFITSFile {
@@ -118,7 +119,7 @@ static int WriteFormattedString( FITSFile *file, const CHAR *format, va_list ap,
 
   // Format the string
   CHAR buf[4096];
-  XLAL_CHECK_FAIL( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_ESYS, "Formatted string is too long" );
+  XLAL_CHECK_FAIL( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_EERR, "Formatted string is too long" );
 
   // Split the string by newlines, removing any empty lines
   CHAR *p = buf;
@@ -250,6 +251,7 @@ FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name )
 
   int UNUSED status = 0;
   FITSFile *file = NULL;
+  CHAR *url = NULL;
 
   // Check input
   XLAL_CHECK_FAIL( file_name != NULL, XLAL_EFAULT );
@@ -261,14 +263,12 @@ FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name )
   // Set FITSFile fields
   file->write = 1;
 
-  // Remove any previous file, otherwise fits_create_diskfile() will fail
-  if ( remove( file_name ) != 0 && errno != ENOENT ) {
-    XLAL_ERROR_FAIL( XLAL_ESYS, "System function remove('%s') failed: %s (%i)", file_name, strerror( errno ), errno );
-  }
-  errno = 0;
+  // Create FITS file URL which will overwrite any existing file
+  url = XLALStringAppendFmt( NULL, "!file://%s", file_name );
+  XLAL_CHECK_FAIL( url != NULL, XLAL_EFUNC );
 
   // Open FITS file for writing
-  CALL_FITS( fits_create_diskfile, &file->ff, file_name );
+  CALL_FITS_VAL( XLAL_ESYS, fits_create_file, &file->ff, url );
 
   // By convention, create an empty image for the first HDU,
   // so that the correct FITS header 'SIMPLE = T' is written
@@ -278,6 +278,7 @@ FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name )
   // Write the current system date to the FITS file
   CALL_FITS( fits_write_date, file->ff );
 
+  XLALFree( url );
   return file;
 
 XLAL_FAIL:
@@ -290,6 +291,7 @@ XLAL_FAIL:
     XLALFree( file );
   }
 
+  XLALFree( url );
   return NULL;
 
 #endif // !defined(HAVE_LIBCFITSIO)
@@ -303,6 +305,7 @@ FITSFile *XLALFITSFileOpenRead( const CHAR UNUSED *file_name )
 
   int UNUSED status = 0;
   FITSFile *file = NULL;
+  FILE *f = NULL;
 
   // Check input
   XLAL_CHECK_FAIL( file_name != NULL, XLAL_EFAULT );
@@ -314,9 +317,24 @@ FITSFile *XLALFITSFileOpenRead( const CHAR UNUSED *file_name )
   // Set FITSFile fields
   file->write = 0;
 
-  // Open FITS file for reading
-  CALL_FITS( fits_open_diskfile, &file->ff, file_name, READONLY );
+  // Check that file can be opened for reading
+  errno = 0;
+  f = fopen( file_name, "r" );
+  if ( f == NULL ) {
+    switch ( errno ) {
+    case ENOENT:
+      XLAL_ERROR_FAIL( XLAL_ENOENT );
+    default:
+      XLAL_ERROR_FAIL( XLAL_ESYS );
+    }
+  }
 
+  // Open FITS file for reading
+  CALL_FITS_VAL( XLAL_ESYS, fits_open_diskfile, &file->ff, file_name, READONLY );
+
+  if ( f != NULL ) {
+    fclose( f );
+  }
   return file;
 
 XLAL_FAIL:
@@ -327,6 +345,10 @@ XLAL_FAIL:
       fits_close_file( file->ff, &status );
     }
     XLALFree( file );
+  }
+
+  if ( f != NULL ) {
+    fclose( f );
   }
   return NULL;
 
