@@ -407,7 +407,7 @@ typedef struct {
     LALUnit* unit = %swiglal_new_instance(LALUnit);
     if (XLALParseUnitString(unit, str) == NULL) {
       XLALFree(unit);
-      xlalErrno = XLAL_EFUNC; /* Silently signal an error to constructor */
+      XLALSetErrno(XLAL_EFUNC); /* Silently signal an error to wrapper function */
       return NULL;
     }
     return unit;
@@ -483,7 +483,7 @@ typedef struct {
   /// Return the rational exponentiation of a ::LALUnit.
   LALUnit* __pow__(INT2 r[2], void* SWIGLAL_OP_POW_3RDARG) {
     if (r[1] == 0) {
-      xlalErrno = XLAL_EDOM; /* Silently signal an error to caller */
+      XLALSetErrno(XLAL_EDOM); /* Silently signal an error to wrapper function */
       return NULL;
     }
     RAT4 rat;
