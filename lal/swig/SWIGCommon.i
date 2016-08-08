@@ -363,8 +363,8 @@ if (swiglal_release_parent(PTR)) {
 %enddef
 
 ///
-/// Create constructors and destructors for a <tt>struct TAGNAME</tt>.
-%define %swiglal_struct_create_cdtors(TAGNAME, OPAQUE, DTORFUNC)
+/// Extend a <tt>struct TAGNAME</tt>.
+%define %swiglal_struct_extend(TAGNAME, OPAQUE, DTORFUNC)
 /// <ul><li>
 
 /// If this is an opaque struct, create an empty struct to represent the opaque struct, so that SWIG
