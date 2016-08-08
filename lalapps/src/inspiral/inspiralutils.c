@@ -1144,7 +1144,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   s2y=inj->spin2y;
   s2z=inj->spin2z;
   iota=inj->inclination;
-  f_min=fLow2fStart(inj->f_lower,amporder,XLALGetApproximantFromString(inj->waveform));
+  f_min=XLALSimInspiralfLow2fStart(inj->f_lower,amporder,XLALGetApproximantFromString(inj->waveform));
   phi0=inj->coa_phase;
   polarization=inj->polarization;
   REAL8 latitude=inj->latitude;
