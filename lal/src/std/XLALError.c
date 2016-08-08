@@ -443,6 +443,8 @@ const char *XLALErrorString(int code)
         return XLAL_ERROR_STRING("Input domain error");
     case XLAL_ERANGE:
         return XLAL_ERROR_STRING("Output range error");
+    case XLAL_ENOSYS:
+        return XLAL_ERROR_STRING("Function not implemented");
 
         /* extended error numbers start at 128 ...
          * should be beyond normal errnos */

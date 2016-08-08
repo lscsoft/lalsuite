@@ -409,6 +409,7 @@ enum XLALErrorValue {
     XLAL_EINVAL = 22,       /**< Invalid argument */
     XLAL_EDOM = 33,         /**< Input domain error */
     XLAL_ERANGE = 34,       /**< Output range error */
+    XLAL_ENOSYS = 38,       /**< Function not implemented */
 
     /* extended error numbers start at 128 ...
      * should be beyond normal errnos */
