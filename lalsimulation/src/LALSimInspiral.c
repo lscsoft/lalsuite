@@ -5091,6 +5091,37 @@ int XLALSimInspiralTDConditionStage2(REAL8TimeSeries *hplus, REAL8TimeSeries *hc
     return 0;
 }
 
+
+/**
+ * @brief Function for determining the starting frequency 
+ * of the (2,2) mode when the highest order contribution starts at fLow.
+ * @details
+ * Compute the minimum frequency for waveform generation 
+ *  using amplitude orders above Newtonian.  The waveform 
+ *  generator turns on all orders at the orbital          
+ *  associated with fMin, so information from higher      
+ *  orders is not included at fLow unless fMin is         
+ *  sufficiently low.
+ *
+ * @param fLow  Requested lower frequency.
+ * @param ampOrder Requested amplitude order.
+ * @param approximant LALApproximant 
+ * @retval fStart The lower frequency to use to include corrections.
+ */
+REAL8 XLALSimInspiralfLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant)
+{
+  if (ampOrder == -1) {
+      if (approximant == SpinTaylorT2 || approximant == SpinTaylorT4)
+          ampOrder = MAX_PRECESSING_AMP_PN_ORDER;
+      else
+          ampOrder = MAX_NONPRECESSING_AMP_PN_ORDER;
+  }
+
+    REAL8 fStart;
+    fStart = fLow * 2./(ampOrder+2);
+    return fStart;
+}
+
 /** @} */
 
 /** @} */
