@@ -370,7 +370,7 @@ if (swiglal_release_parent(PTR)) {
 /// If this is an opaque struct, create an empty struct to represent the opaque struct, so that SWIG
 /// has something to attach the destructor to.  No constructors are generated, since it is assumed
 /// that the struct will have a creator function. Otherwise, if this is not an opaque struct,
-/// generate a basic constructor, using XLALCalloc() to allocate memory.
+/// generate basic constructor and (shallow) copy constructor, using XLALCalloc() to allocate memory.
 #if OPAQUE
 struct TAGNAME {
 };
@@ -378,6 +378,9 @@ struct TAGNAME {
 %extend TAGNAME {
   TAGNAME() {
     return %swiglal_new_instance(struct TAGNAME);
+  }
+  TAGNAME(const struct TAGNAME *src) {
+    return %swiglal_new_copy(*src, struct TAGNAME);
   }
 }
 #endif
@@ -2039,20 +2042,6 @@ typedef struct {} NAME;
 }
 %enddef
 #define %swiglal_public_clear_EXTERNAL_STRUCT(NAME, DTORFUNC)
-
-///
-/// The <b>SWIGLAL(COPY_CONSTRUCTOR(TAGNAME))</b> macro can be used to add a copy constructor to the
-/// struct TAGNAME, if that is a valid operation. Note that this performs only a <i>struct copy</i>,
-/// not a <i>deep copy</i>. The macro should first appear after the definition of struct TAGNAME.
-///
-%define %swiglal_public_COPY_CONSTRUCTOR(TAGNAME)
-%extend TAGNAME {
-  TAGNAME(const struct TAGNAME* src) {
-    return %swiglal_new_copy(*src, struct TAGNAME);
-  }
-}
-%enddef
-#define %swiglal_public_clear_COPY_CONSTRUCTOR(...)
 
 ///
 /// The <b>SWIGLAL(CAST_STRUCT_TO(...))</b> macro adds to the containing struct methods which cast
