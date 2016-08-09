@@ -452,9 +452,6 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
   /* check that parameters are within their prior ranges */
   if( !in_range( runState->priorArgs, params ) ) { return -INFINITY; }
 
-  /* if some correlated priors exist allocate corVals */
-  if ( corlist ) { corVals = XLALCreateREAL8Vector( corlist->length ); }
-
   /* I31 and I21 values required to check/set I31 >= I21 */
   REAL8 I31 = -INFINITY, I21 = -INFINITY;
 
@@ -467,18 +464,23 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     if( item->vary == LALINFERENCE_PARAM_FIXED || item->vary == LALINFERENCE_PARAM_OUTPUT ){ continue; }
 
     if( item->vary == LALINFERENCE_PARAM_LINEAR || item->vary == LALINFERENCE_PARAM_CIRCULAR ){
+      value = (*(REAL8 *)item->value);
+
+      /* make sure certain values are not negative (H0, Q22, DIST, PX, CGW, ECC, A1, MTOT, M2) NOTE: I'm not sure if DR and DTHETA should also be only positive */
+      if ( value < 0. ) {
+        if ( !strcmp(item->name, "H0") || !strcmp(item->name, "Q22") || !strcmp(item->name, "DIST") ||
+             !strcmp(item->name, "PX") || !strcmp(item->name, "CGW") || !strncmp(item->name, "ECC", sizeof(CHAR)*3) ||
+             !strncmp(item->name, "A1", sizeof(CHAR)*2) || !strcmp(item->name, "MTOT") || !strcmp(item->name, "M2") ){
+          return -INFINITY;
+        }
+      }
+
       /* Check for a gaussian */
       if ( LALInferenceCheckGaussianPrior(runState->priorArgs, item->name) ){
         REAL8 mu = 0., sigma = 0.;
         LALInferenceGetGaussianPrior(runState->priorArgs, item->name, &mu, &sigma);
 
-        value = (*(REAL8 *)item->value);
         prior -= 0.5*((*(REAL8 *)item->value - mu)*(*(REAL8 *)item->value - mu))/(sigma*sigma);
-
-        /* make sure H0, Q22 or DIST are not negative */
-        if ( !strcmp(item->name, "H0") || !strcmp(item->name, "DIST") || !strcmp(item->name, "DIST") ){
-          if ( value < 0. ) { return -INFINITY; }
-        }
 
         if ( !strcmp(item->name, "I21") ){ I21 = value; }
         if ( !strcmp(item->name, "I31") ){ I31 = value; }
@@ -487,8 +489,6 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
       }
       /* check for a flat prior */
       else if( LALInferenceCheckMinMaxPrior(runState->priorArgs, item->name) ){
-        value = (*(REAL8 *)item->value);
-
         /* check if either using theta or iota rather than their cosines */
         if ( !strcmp(item->name, "IOTA") || !strcmp(item->name, "THETA") ){
           prior += theta_prior( value );
@@ -504,7 +504,6 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         REAL8 r = 0., sigma = 0.;
         LALInferenceGetFermiDiracPrior(runState->priorArgs, item->name, &sigma, &r);
 
-        value = (*(REAL8 *)item->value);
         if ( value < 0. ) { return -INFINITY; } /* value must be positive */
         prior += LALInferenceFermiDiracPrior(value, sigma, r);
       }
@@ -515,10 +514,13 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         UINT4 idx = 0;
         LALInferenceGetCorrelatedPrior(runState->priorArgs, item->name, &cor, &invcor, &mu, &sigma, &idx);
 
+        /* if some correlated priors exist allocate corVals */
+        if ( corVals == NULL ) { corVals = XLALCreateREAL8Vector( corlist->length ); }
+
         for( cori = 0; cori < corlist->length; cori++ ){
           if( !strcmp(item->name, corlist->data[cori]) ){
             /* scale to a zero mean and unit variance Gaussian */
-            corVals->data[cori] = (*(REAL8 *)item->value - mu)/sigma;
+            corVals->data[cori] = (value - mu)/sigma;
             break;
           }
         }
