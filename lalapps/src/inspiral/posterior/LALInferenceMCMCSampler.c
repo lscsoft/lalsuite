@@ -531,7 +531,7 @@ void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile) {
 
     /* Return if running with only a single temperature */
     if (ntemps == 1)
-        return
+        return;
 
     cold_inds = XLALCalloc(ntemps-1, sizeof(INT4));
 
