@@ -168,12 +168,18 @@ LALSUITE_USE_LIBTOOL
 
 # check for system libraries
 AC_CHECK_LIB([m],[sin])
-AC_CHECK_LIB([z],[compress],,[AC_MSG_ERROR([could not find the zlib library])])
 
 # check for system headers
 AC_HEADER_STDC
-AC_CHECK_HEADERS([zlib.h],,[AC_MSG_ERROR([could not find zlib.h])])
 AC_CHECK_HEADERS([unistd.h glob.h])
+
+# check for zlib libraries and headers
+PKG_CHECK_MODULES([ZLIB],[zlib],[true],[false])
+LALSUITE_PUSH_UVARS
+LALSUITE_ADD_FLAGS([C],[${ZLIB_CFLAGS}],[${ZLIB_LIBS}])
+AC_SEARCH_LIBS([compress],[],[:],[AC_MSG_ERROR([could not find the zlib library])])
+AC_CHECK_HEADER([zlib.h],[:],[AC_MSG_ERROR([could not find the zlib.h header])])
+LALSUITE_POP_UVARS
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
