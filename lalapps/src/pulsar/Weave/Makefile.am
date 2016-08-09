@@ -43,3 +43,10 @@ TESTS = \
 	TestCacheMaxSize.sh \
 	TestCheckpointing.sh \
 	$(END_OF_LIST)
+
+EXTRA_DIST = \
+	$(TESTS) \
+	test-compiler.sh \
+	timestamps-irregular.txt \
+	timestamps-regular.txt \
+	$(END_OF_LIST)
