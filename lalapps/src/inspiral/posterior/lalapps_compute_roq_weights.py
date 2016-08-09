@@ -138,7 +138,7 @@ for ifo in options.IFOs:
 	
 	if options.fLow: 
 		fLow = options.fLow
-		scale_factor = int(basis_params[0] / fLow)
+		scale_factor = basis_params[0] / fLow
 
 	else:
 		fLow = basis_params[0]
@@ -234,7 +234,7 @@ fnodes_linear = np.load(options.b_matrix_directory + "/fnodes_linear.npy")
 fnodes_quadratic = np.load(options.b_matrix_directory + "/fnodes_quadratic.npy")
 
 if scale_factor:
-
+	print "scale factor = %f"%scale_factor
 	fnodes_linear /= scale_factor
 	fnodes_quadratic  /= scale_factor
 

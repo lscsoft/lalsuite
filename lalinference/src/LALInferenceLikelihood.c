@@ -1027,14 +1027,15 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
       } else {
         eta = *(REAL8*) LALInferenceGetVariable(model->params, "eta");
       }
-	REAL8 tilt_spin1 = *(REAL8 *) LALInferenceGetVariable(model->params, "tilt_spin1");
-	REAL8 a_spin1 = *(REAL8 *) LALInferenceGetVariable(model->params, "a_spin1");
-	if( cos(tilt_spin1)*a_spin1 <= 0.4 - 7*eta){
-		// the ROM breaks down for these parameter values so throw a large and negative likelihood to avoid 
-		// strange likelihood values
-		loglikelihood = -1e15;
-		//fprintf(stdout, "WARNING: sampling a bad region of parameter space; skipping\n");
-		}
+ 	if(LALInferenceCheckVariable(model->params, "tilt_spin1")){	
+		REAL8 tilt_spin1 = *(REAL8 *) LALInferenceGetVariable(model->params, "tilt_spin1");
+		REAL8 a_spin1 = *(REAL8 *) LALInferenceGetVariable(model->params, "a_spin1");
+		if( cos(tilt_spin1)*a_spin1 <= 0.4 - 7*eta){
+			// the ROM breaks down for these parameter values so throw a large and negative likelihood to avoid 
+			// strange likelihood values
+			loglikelihood = -1e15;
+			//fprintf(stdout, "WARNING: sampling a bad region of parameter space; skipping\n");
+	}		}
 	
 	return(loglikelihood); /* The ROQ isn't compatible with the stuff below, so we can just exit here */
 
