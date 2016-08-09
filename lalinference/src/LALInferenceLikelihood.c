@@ -1015,19 +1015,20 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   	if ( model->roq->hptildeQuadratic ) XLALDestroyCOMPLEX16FrequencySeries(model->roq->hptildeQuadratic);
   	if ( model->roq->hctildeQuadratic ) XLALDestroyCOMPLEX16FrequencySeries(model->roq->hctildeQuadratic);
 
-	mc  = *(REAL8*) LALInferenceGetVariable(model->params, "chirpmass");
-	REAL8 eta=0;
-	REAL8 m1=0;
-	REAL8 m2=0; 
-     if (LALInferenceCheckVariable(model->params,"q")) {
-        REAL8 q = *(REAL8 *)LALInferenceGetVariable(model->params,"q");
-	m1 = mc * pow(q, -3.0/5.0) * pow(q+1, 1.0/5.0);
-  	m2 = (m1) * q;
-	eta = (m1*m2) / ((m1+m2)*(m1+m2));
-      } else {
-        eta = *(REAL8*) LALInferenceGetVariable(model->params, "eta");
-      }
  	if(LALInferenceCheckVariable(model->params, "tilt_spin1")){	
+		mc  = *(REAL8*) LALInferenceGetVariable(model->params, "chirpmass");
+        	REAL8 eta=0;
+        	REAL8 m1=0;
+        	REAL8 m2=0;
+     		if(LALInferenceCheckVariable(model->params,"q")) {
+        		REAL8 q = *(REAL8 *)LALInferenceGetVariable(model->params,"q");
+        		m1 = mc * pow(q, -3.0/5.0) * pow(q+1, 1.0/5.0);
+        		m2 = (m1) * q;
+        		eta = (m1*m2) / ((m1+m2)*(m1+m2));
+      			} else {
+        		eta = *(REAL8*) LALInferenceGetVariable(model->params, "eta");
+      		}	
+	
 		REAL8 tilt_spin1 = *(REAL8 *) LALInferenceGetVariable(model->params, "tilt_spin1");
 		REAL8 a_spin1 = *(REAL8 *) LALInferenceGetVariable(model->params, "a_spin1");
 		if( cos(tilt_spin1)*a_spin1 <= 0.4 - 7*eta){
@@ -1035,7 +1036,8 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 			// strange likelihood values
 			loglikelihood = -1e15;
 			//fprintf(stdout, "WARNING: sampling a bad region of parameter space; skipping\n");
-	}		}
+		}		
+        }
 	
 	return(loglikelihood); /* The ROQ isn't compatible with the stuff below, so we can just exit here */
 
