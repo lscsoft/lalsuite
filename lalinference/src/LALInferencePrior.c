@@ -443,8 +443,10 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
       }
     }
   }
-  if(LALInferenceCheckVariable(params,"flow"))
+  if(LALInferenceCheckVariable(params, "flow") &&
+          LALInferenceCheckVariableNonFixed(params, "flow")) {
     logPrior+=log(*(REAL8 *)LALInferenceGetVariable(params,"flow"));
+  }
 
   if(LALInferenceCheckVariable(params,"logdistance"))
     if (!(LALInferenceCheckVariable(priorParams,"uniform_distance") && LALInferenceGetINT4Variable(priorParams,"uniform_distance")))
@@ -1142,8 +1144,10 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
 
   /*Use a uniform in log D distribution*/
 
-  if(LALInferenceCheckVariable(params,"flow"))
+  if(LALInferenceCheckVariable(params, "flow") &&
+          LALInferenceCheckVariableNonFixed(params, "flow")) {
     logPrior+=log(*(REAL8 *)LALInferenceGetVariable(params,"flow"));
+  }
 
   if(LALInferenceCheckVariable(params,"distance"))
     logPrior-=log(*(REAL8 *)LALInferenceGetVariable(params,"distance"));
