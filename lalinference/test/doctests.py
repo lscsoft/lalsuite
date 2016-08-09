@@ -19,6 +19,15 @@
 Run doctests for selected LALInference modules.
 """
 
+# If we are missing Astropy and Healpy, then return exit code 77
+# to mark the entire test as skipped.
+import pkg_resources
+try:
+    pkg_resources.require(['astropy', 'healpy >= 1.9'])
+except pkg_resources.ResolutionError as e:
+    print(e)
+    raise SystemExit(77)
+
 import sys
 import doctest
 import numpy as np

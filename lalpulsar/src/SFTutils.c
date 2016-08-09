@@ -49,7 +49,7 @@ static REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
 
 /*---------- internal prototypes ----------*/
-
+REAL8 TSFTfromDFreq ( REAL8 dFreq );
 int compareSFTdesc(const void *ptr1, const void *ptr2);     // defined in SFTfileIO.c
 
 /*==================== FUNCTION DEFINITIONS ====================*/
@@ -405,8 +405,7 @@ XLALExtractTimestampsFromSFTs ( const SFTVector *sfts )		/**< [in] input SFT-vec
     XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", __func__, numSFTs );
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
-  REAL8 Tsft = 1.0 / sfts->data[0].deltaF;
-  ret->deltaT = Tsft;
+  ret->deltaT = TSFTfromDFreq ( sfts->data[0].deltaF );
 
   UINT4 i;
   for ( i=0; i < numSFTs; i ++ )
@@ -477,8 +476,12 @@ XLALTimestampsFromSFTCatalog ( const SFTCatalog *catalog )		/**< [in] input SFT-
   LIGOTimeGPSVector *ret;
   XLAL_CHECK_NULL ( ( ret = XLALCreateTimestampVector ( numSFTs )) != NULL, XLAL_EINVAL, "Failed to XLALCreateTimestampVector ( %d )\n", numSFTs );
 
-  REAL8 Tsft = 1.0 / catalog->data[0].header.deltaF;
-  ret->deltaT = Tsft;
+  REAL8 Tsft0 = 1.0 / catalog->data[0].header.deltaF;
+  if ( fabs ( (Tsft0 - round(Tsft0)) ) / Tsft0 < 10 * LAL_REAL8_EPS ) {
+    ret->deltaT = round(Tsft0);
+  } else {
+    ret->deltaT = Tsft0;
+  }
 
   for ( UINT4 i = 0; i < numSFTs; i ++ ) {
     ret->data[i] = catalog->data[i].header.epoch;
@@ -864,7 +867,7 @@ XLALComputeMultiNoiseWeights ( const MultiPSDVector  *rngmed,
   XLAL_CHECK_NULL ( rngmed->length != 0, XLAL_EINVAL );
 
   UINT4 numIFOs = rngmed->length;
-  REAL8 Tsft = 1.0 / rngmed->data[0]->data[0].deltaF;
+  REAL8 Tsft = TSFTfromDFreq ( rngmed->data[0]->data[0].deltaF );
 
   /* create multi noise weights for output */
   MultiNoiseWeights *multiWeights = NULL;
@@ -1199,7 +1202,7 @@ XLALExtractBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed or re
   XLAL_CHECK ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
 
   REAL8 df      = inSFT->deltaF;
-  REAL8 Tsft    = 1.0 / df;
+  REAL8 Tsft    = TSFTfromDFreq ( df );
 
   REAL8 fMinSFT    = inSFT->f0;
   UINT4 numBinsSFT = inSFT->data->length;
@@ -1350,7 +1353,7 @@ XLALSFTResizeBand ( SFTtype *SFT,	///< [in/out] SFT to resize
   XLAL_CHECK ( Band >= 0, XLAL_EINVAL );
 
 
-  REAL8 Tsft = 1.0 / SFT->deltaF;
+  REAL8 Tsft = TSFTfromDFreq ( SFT->deltaF );
   REAL8 f0In = SFT->f0;
 
   UINT4 firstBinIn = (UINT4) lround ( f0In / SFT->deltaF );
@@ -1584,7 +1587,6 @@ XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest GPS 
 {
   UINT4 i,j;
   SFTtype *firstSFT;
-  REAL8 Tsft;
 
   /* check sanity of input */
   if ( !multisfts || (multisfts->length == 0) )
@@ -1603,7 +1605,7 @@ XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest GPS 
 
   /* define some useful quantities */
   firstSFT = (multisfts->data[0]->data);        /* a pointer to the first SFT of the first detector */
-  Tsft = 1.0 / firstSFT->deltaF;                /* the length of the SFTs in seconds assuming 1/T freq resolution */
+  REAL8 Tsft = TSFTfromDFreq ( firstSFT->deltaF );    /* the length of the SFTs in seconds assuming 1/T freq resolution */
 
   /* initialise the latest sample value */
   out->gpsSeconds = firstSFT->epoch.gpsSeconds;
@@ -1962,3 +1964,23 @@ int XLALReorderMultiSFTVector( MultiSFTVector *multiSFTs, const LALStringVector 
   return XLAL_SUCCESS;
 
 } // XLALReorderMultiSFTVector()
+
+///
+/// Function to 'safely' invert Tsft=1/dFreq to avoid roundoff error for close-but-not-quite integers after inversion
+/// policy: if (1/dFreq) is within 10 * eps of an integer, round, otherwise leave as a fractional number
+/// comment: unfortunately Tsft is allowed by spec to be a double, but really should be limited to integer seconds,
+/// however with this function we should be able to safely work with integer-valued Tsft without leaving spec (yet)
+REAL8
+TSFTfromDFreq ( REAL8 dFreq )
+{
+  REAL8 Tsft0 = 1.0 / dFreq;
+  REAL8 Tsft;
+  if ( fabs ( (Tsft0 - round(Tsft0)) ) / Tsft0 < 10 * LAL_REAL8_EPS ) {
+    Tsft = round(Tsft0);
+  } else {
+    Tsft = Tsft0;
+  }
+
+  return Tsft;
+
+} // TSFTfromDFreq()
