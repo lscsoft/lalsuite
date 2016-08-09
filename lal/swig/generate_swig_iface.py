@@ -364,10 +364,10 @@ for header_name in ordered_headers:
         f.write('SWIGLAL_CLEAR(%s);\n' % macro_name)
 f.write('%%include <lal/SWIG%sOmega.i>\n' % package_name)
 
-# create constructors and destructors for structs
+# add extensions to structs, e.g. constructors and destructors
 for struct_name in sorted(tdstructs):
     struct_tagname = tdstruct_names[struct_name]
     struct_opaque = '%i' % (not struct_tagname in structs)
     struct_dtor_function = dtor_functions.get(struct_name, '')
     struct_args = (struct_tagname, struct_opaque, struct_dtor_function)
-    f.write('%%swiglal_struct_create_cdtors(%s)\n' % ','.join(struct_args))
+    f.write('%%swiglal_struct_extend(%s)\n' % ','.join(struct_args))

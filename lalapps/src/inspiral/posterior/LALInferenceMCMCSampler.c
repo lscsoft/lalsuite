@@ -529,6 +529,10 @@ void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile) {
     n_local_threads = runState->nthreads;
     ntemps = MPIsize*n_local_threads;
 
+    /* Return if running with only a single temperature */
+    if (ntemps == 1)
+        return;
+
     cold_inds = XLALCalloc(ntemps-1, sizeof(INT4));
 
     /* Have the root process choose a random order of ladder swaps and share it */
