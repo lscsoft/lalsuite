@@ -1471,6 +1471,9 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
   /* Short-circuit for pointer equality */
   if (var1 == var2) return 0;
 
+  /* Short-circuit if passed NULL pointers */
+  if ((var1 == NULL) || (var2 == NULL)) return 1;
+
   int result = 0;
   UINT4 i;
   LALInferenceVariableItem *ptr1 = var1->head;
