@@ -210,9 +210,7 @@ def write_samples(table, filename, path, metadata=None):
     AssertionError: 
     Arrays are not equal
     Column {0} is a `fixed` column, but its values are not identical
-    (mismatch 100.0%)
-     x: Column([1, 2, 3, 4, 5, 6, 7, 8, 9])
-     y: array(0)
+        ...
 
     And now try writing an arbitrary example to a temporary file:
     >>> import os.path
