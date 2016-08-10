@@ -72,12 +72,12 @@ def _find_table(group, tablename):
     Check that we can find a file by name:
     >>> import os.path
     >>> from lalinference.bayestar.command import TemporaryDirectory
-    >>> tbl = Table(np.eye(3), names=['a', 'b', 'c'])
+    >>> table = Table(np.eye(3), names=['a', 'b', 'c'])
     >>> with TemporaryDirectory() as dir:
     ...     filename = os.path.join(dir, 'test.hdf5')
-    ...     tbl.write(filename, path='foo/bar', append=True)
-    ...     tbl.write(filename, path='foo/bat', append=True)
-    ...     tbl.write(filename, path='foo/xyzzy/bat', append=True)
+    ...     table.write(filename, path='foo/bar', append=True)
+    ...     table.write(filename, path='foo/bat', append=True)
+    ...     table.write(filename, path='foo/xyzzy/bat', append=True)
     ...     with h5py.File(filename, 'r') as f:
     ...         _find_table(f, 'bar')
     <HDF5 dataset "bar": shape (3,), type "|V24">
@@ -85,9 +85,9 @@ def _find_table(group, tablename):
     Check that an exception is raised if the table is not found:
     >>> with TemporaryDirectory() as dir:
     ...     filename = os.path.join(dir, 'test.hdf5')
-    ...     tbl.write(filename, path='foo/bar', append=True)
-    ...     tbl.write(filename, path='foo/bat', append=True)
-    ...     tbl.write(filename, path='foo/xyzzy/bat', append=True)
+    ...     table.write(filename, path='foo/bar', append=True)
+    ...     table.write(filename, path='foo/bat', append=True)
+    ...     table.write(filename, path='foo/xyzzy/bat', append=True)
     ...     with h5py.File(filename, 'r') as f:
     ...         _find_table(f, 'plugh')
     Traceback (most recent call last):
@@ -97,9 +97,9 @@ def _find_table(group, tablename):
     Check that an exception is raised if multiple tables are found:
     >>> with TemporaryDirectory() as dir:
     ...     filename = os.path.join(dir, 'test.hdf5')
-    ...     tbl.write(filename, path='foo/bar', append=True)
-    ...     tbl.write(filename, path='foo/bat', append=True)
-    ...     tbl.write(filename, path='foo/xyzzy/bat', append=True)
+    ...     table.write(filename, path='foo/bar', append=True)
+    ...     table.write(filename, path='foo/bat', append=True)
+    ...     table.write(filename, path='foo/xyzzy/bat', append=True)
     ...     with h5py.File(filename, 'r') as f:
     ...         _find_table(f, 'bat')
     Traceback (most recent call last):
@@ -146,7 +146,7 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
 
     >>> import os.path
     >>> from lalinference.bayestar.command import TemporaryDirectory
-    >>> tbl = Table([
+    >>> table = Table([
     ...     Column(np.ones(10), name='foo', meta={'vary': FIXED}),
     ...     Column(np.arange(10), name='bar', meta={'vary': LINEAR}),
     ...     Column(np.arange(10) * np.pi, name='bat', meta={'vary': CIRCULAR}),
@@ -154,22 +154,9 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     ... ])
     >>> with TemporaryDirectory() as dir:
     ...     filename = os.path.join(dir, 'test.hdf5')
-    ...     write_samples(tbl, filename, 'foo/bar/posterior_samples')
-    ...     read_samples(filename)
-    <Table length=10>
-     bar       bat       baz    foo  
-    int64    float64    int64 float64
-    ----- ------------- ----- -------
-        0           0.0     0     1.0
-        1 3.14159265359     1     1.0
-        2 6.28318530718     2     1.0
-        3 9.42477796077     3     1.0
-        4 12.5663706144     4     1.0
-        5 15.7079632679     5     1.0
-        6 18.8495559215     6     1.0
-        7 21.9911485751     7     1.0
-        8 25.1327412287     8     1.0
-        9 28.2743338823     9     1.0
+    ...     write_samples(table, filename, 'foo/bar/posterior_samples')
+    ...     len(read_samples(filename))
+    10
     """
     with h5py.File(filename, 'r') as f:
         if path is not None: # Look for a given path
@@ -214,10 +201,10 @@ def write_samples(table, filename, path, metadata=None):
         to add to the output file
 
     Check that we catch columns that are supposed to be FIXED but are not:
-    >>> tbl = Table([
+    >>> table = Table([
     ...     Column(np.arange(10), name='foo', meta={'vary': FIXED})
     ... ])
-    >>> write_samples(tbl, 'bar.hdf5', 'bat/baz')
+    >>> write_samples(table, 'bar.hdf5', 'bat/baz')
     Traceback (most recent call last):
         ...
     AssertionError: 
@@ -230,14 +217,14 @@ def write_samples(table, filename, path, metadata=None):
     And now try writing an arbitrary example to a temporary file:
     >>> import os.path
     >>> from lalinference.bayestar.command import TemporaryDirectory
-    >>> tbl = Table([
+    >>> table = Table([
     ...     Column(np.ones(10), name='foo', meta={'vary': FIXED}),
     ...     Column(np.arange(10), name='bar', meta={'vary': LINEAR}),
     ...     Column(np.arange(10) * np.pi, name='bat', meta={'vary': CIRCULAR}),
     ...     Column(np.arange(10), name='baz', meta={'vary': OUTPUT})
     ... ])
     >>> with TemporaryDirectory() as dir:
-    ...     write_samples(tbl, os.path.join(dir, 'test.hdf5'), 'bat/baz')
+    ...     write_samples(table, os.path.join(dir, 'test.hdf5'), 'bat/baz')
     """
     # Copy the table so that we do not modify the original.
     table = table.copy()

@@ -36,7 +36,7 @@ extern "C" {
 
 // Test various combinations of 1D and 2D fixed arrays
 // with structs, struct/enum type, and global variables.
-typedef enum {
+typedef enum tagswig_lal_test_enum {
   swig_lal_test_enum_a,
   swig_lal_test_enum_b,
   swig_lal_test_enum_c

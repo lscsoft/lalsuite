@@ -642,8 +642,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
     }
     /* Check for remaining required options */
-	if(!(LALInferenceGetProcParamVal(commandLine,"--PSDstart")||LALInferenceGetProcParamVal(commandLine,"--psdstart")) ||
-            !(LALInferenceGetProcParamVal(commandLine,"--PSDlength")||LALInferenceGetProcParamVal(commandLine,"--psdlength")) ||!LALInferenceGetProcParamVal(commandLine,"--seglen"))
+	if(!LALInferenceGetProcParamVal(commandLine,"--seglen"))
     {fprintf(stderr,USAGE); return(NULL);}
 
     if(LALInferenceGetProcParamVal(commandLine,"--dataseed")){
@@ -655,20 +654,25 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     if(!IFOdata) XLAL_ERROR_NULL(XLAL_ENOMEM);
 
     procparam=LALInferenceGetProcParamVal(commandLine,"--psdstart");
-    if (!procparam) procparam=LALInferenceGetProcParamVal(commandLine,"--PSDstart");
-    LALStringToGPS(&status,&GPSstart,procparam->value,&chartmp);
-    if(status.statusCode) REPORTSTATUS(&status);
+    if (procparam) {
+        LALStringToGPS(&status,&GPSstart,procparam->value,&chartmp);
+        if(status.statusCode) REPORTSTATUS(&status);
+    } else
+        XLALINT8NSToGPS(&GPSstart, 0);
 
     /*Set trigtime in GPStrig using either inj file or --trigtime*/
     LALInferenceSetGPSTrigtime(&GPStrig,commandLine);
 
     if(status.statusCode) REPORTSTATUS(&status);
-    ppt=LALInferenceGetProcParamVal(commandLine,"--psdlength");
-    if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--PSDlength");
-    PSDdatalength=atof(ppt->value);
+
     SegmentLength=atof(LALInferenceGetProcParamVal(commandLine,"--seglen")->value);
     seglen=(size_t)(SegmentLength*SampleRate);
-    nSegs=(int)floor(PSDdatalength/SegmentLength);
+
+    ppt=LALInferenceGetProcParamVal(commandLine,"--psdlength");
+    if(ppt) {
+        PSDdatalength=atof(ppt->value);
+        nSegs=(int)floor(PSDdatalength/SegmentLength);
+    }
 
     CHAR df_argument_name[128];
     REAL8 dof;
@@ -910,6 +914,11 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     //fprintf(stdout,"%lf\n",IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]);
                 }
             }else{
+                /* Make sure required PSD arguments were provided */
+                if(!LALInferenceGetProcParamVal(commandLine,"--psdstart") ||
+                        !LALInferenceGetProcParamVal(commandLine,"--psdlength"))
+                {fprintf(stderr,USAGE); return(NULL);}
+
                 fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
                 /*LIGOTimeGPS trueGPSstart=GPSstart;
                 if(Ntimeslides) {

@@ -92,7 +92,7 @@ extern "C" {
 
 
 /** Constants defining different types of pulsar-metrics. */
-typedef enum
+typedef enum tagLALPulsarMetricType
 {
   LAL_PMETRIC_NONE = 0,
   LAL_PMETRIC_COH_PTOLE_ANALYTIC,

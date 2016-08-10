@@ -230,6 +230,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
         tmpRS->threads[0]->model->ifo = ifotmp;
         tmpRS->GSLrandom = runState->GSLrandom;
         tmpRS->priorArgs = runState->priorArgs;
+        tmpRS->prior = runState->prior;
         tmpRS->commandLine = runState->commandLine;
 
         ifotmp->times = XLALCreateTimestampVector( tlen );

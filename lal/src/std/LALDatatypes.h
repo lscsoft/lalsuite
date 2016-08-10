@@ -46,7 +46,7 @@ enum {
 };
 
 /** Type codes: use these type codes to identify a LAL atomic data type, see \ref LALDatatypes for more details. */
-typedef enum {
+typedef enum tagLALTYPECODE {
     LAL_CHAR_TYPE_CODE = LAL_1_BYTE_TYPE_SIZE,  /**< CHAR type code (0) */
     LAL_I2_TYPE_CODE = LAL_2_BYTE_TYPE_SIZE,    /**< INT2 type code (1) */
     LAL_I4_TYPE_CODE = LAL_4_BYTE_TYPE_SIZE,    /**< INT4 type code (2) */

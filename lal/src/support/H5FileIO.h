@@ -66,8 +66,18 @@ extern "C" {
  * @defgroup H5FileIOLowLevel_c Low-Level Routines
  * @defgroup H5FileIOMidLevel_c Mid-Level Routines
  * @defgroup H5FileIOHighLevel_c High-Level Routines
+ * @defgroup H5Table_group Table Reading/Writing Routines
  * @}
  */
+
+struct tagLALH5Object;
+/**
+ * @brief Incomplete type for a generic HDF5 object.
+ * @details
+ * The #LALH5Generic is a structure that contains the identifier
+ * of a generic HDF5 file, group, or dataset.
+ */
+typedef struct tagLALH5Object LALH5Object;
 
 struct tagLALH5File;
 /**
@@ -91,9 +101,30 @@ struct tagLALH5Dataset;
  */
 typedef struct tagLALH5Dataset LALH5Dataset;
 
+/** 
+ * @brief Incomplete type for a pointer to an HDF5 file or group or dataset.
+ * @details
+ * The #LALH5Generic is a union that is associated with a HDF5 file or
+ * group or dataset.
+ */
+typedef union tagLALH5Generic {
+	LALH5Object  *generic; /**< Pointer to generic HDF5 object */
+	LALH5File    *file;    /**< Pointer to a #LALH5File file */
+	LALH5Dataset *dset;    /**< Pointer to a #LALH5Dataset dataset */
+} LALH5Generic;
+
 void XLALH5FileClose(LALH5File *file);
 LALH5File * XLALH5FileOpen(const char *path, const char *mode);
 LALH5File * XLALH5GroupOpen(LALH5File *file, const char *name);
+
+int XLALH5FileCheckGroupExists(const LALH5File *file, const char *name);
+int XLALH5FileCheckDatasetExists(const LALH5File *file, const char *name);
+size_t XLALH5FileQueryNGroups(const LALH5File *file);
+int XLALH5FileQueryGroupName(char *name, size_t size, const LALH5File *file, int pos);
+size_t XLALH5FileQueryNDatasets(const LALH5File *file);
+int XLALH5FileQueryDatasetName(char *name, size_t size, const LALH5File *file, int pos);
+
+/* this routine is deprecated */
 int XLALH5CheckGroupExists(LALH5File *file, const char *name);
 
 /* LOW-LEVEL ROUTINES */
@@ -103,15 +134,15 @@ void XLALH5DatasetFree(LALH5Dataset *dset);
 LALH5Dataset * XLALH5DatasetAlloc(LALH5File *file, const char *name, LALTYPECODE dtype, UINT4Vector *dimLength);
 LALH5Dataset * XLALH5DatasetAlloc1D(LALH5File *file, const char *name, LALTYPECODE dtype, size_t length);
 int XLALH5DatasetWrite(LALH5Dataset *dset, void *data);
-int XLALH5FileGetDatasetNames(LALH5File *file, char *** names, UINT4 *N);
 
-/** Read list of attributes from group */
+/* these routines are deprecated */
+int XLALH5FileGetDatasetNames(LALH5File *file, char *** names, UINT4 *N);
 int XLALH5FileGetAttributeNames(LALH5File *file, char *** names, UINT4 *N);
 
+/* these routines are deprecated */
 int XLALH5FileAddScalarAttribute(LALH5File *file, const char *key, const void *value, LALTYPECODE dtype);
 int XLALH5FileAddStringAttribute(LALH5File *file, const char *key, const char *value);
 int XLALH5FileAddLIGOTimeGPSAttribute(LALH5File *file, const char *key, const LIGOTimeGPS *value);
-
 LALTYPECODE XLALH5FileQueryScalarAttributeType(LALH5File *file, const char *key);
 int XLALH5FileQueryScalarAttributeValue(void *value, LALH5File *file, const char *key);
 int XLALH5FileQueryStringAttributeValue(char *value, size_t size, LALH5File *file, const char *key);
@@ -125,14 +156,46 @@ int XLALH5DatasetQueryNDim(LALH5Dataset *dset);
 UINT4Vector * XLALH5DatasetQueryDims(LALH5Dataset *dset);
 int XLALH5DatasetQueryData(void *data, LALH5Dataset *dset);
 
+/* these routines are deprecated */
 int XLALH5DatasetAddScalarAttribute(LALH5Dataset *dset, const char *key, const void *value, LALTYPECODE dtype);
 int XLALH5DatasetAddStringAttribute(LALH5Dataset *dset, const char *key, const char *value);
 int XLALH5DatasetAddLIGOTimeGPSAttribute(LALH5Dataset *dset, const char *key, const LIGOTimeGPS *value);
-
 LALTYPECODE XLALH5DatasetQueryScalarAttributeType(LALH5Dataset *dset, const char *key);
 int XLALH5DatasetQueryScalarAttributeValue(void *value, LALH5Dataset *dset, const char *key);
 int XLALH5DatasetQueryStringAttributeValue(char *value, size_t size, LALH5Dataset *dset, const char *key);
 LIGOTimeGPS * XLALH5DatasetQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS *value, LALH5Dataset *dset, const char *key);
+
+size_t XLALH5AttributeCheckExists(const LALH5Generic object, const char *name);
+size_t XLALH5AttributeQueryN(const LALH5Generic object);
+int XLALH5AttributeQueryName(char *name, size_t size, const LALH5Generic object, int pos);
+int XLALH5AttributeAddScalar(LALH5Generic object, const char *key, const void *value, LALTYPECODE dtype);
+int XLALH5AttributeAddString(LALH5Generic object, const char *key, const char *value);
+int XLALH5AttributeAddLIGOTimeGPS(LALH5Generic object, const char *key, const LIGOTimeGPS *value);
+int XLALH5AttributeAddEnumArray1D(LALH5Generic object, const char *enumnames[], const int enumvals[], size_t nenum, const char *key, const int value[], size_t length);
+LALTYPECODE XLALH5AttributeQueryScalarType(const LALH5Generic object, const char *key);
+int XLALH5AttributeQueryScalarValue(void *value, const LALH5Generic object, const char *key);
+int XLALH5AttributeQueryStringValue(char *value, size_t size, const LALH5Generic object, const char *key);
+LIGOTimeGPS * XLALH5AttributeQueryLIGOTimeGPSValue(LIGOTimeGPS *value, const LALH5Generic object, const char *key);
+size_t XLALH5AttributeQueryEnumArray1DLength(const LALH5Generic object, const char *key);
+int XLALH5AttributeQueryEnumArray1DValue(int value[], const LALH5Generic object, const char *key);
+size_t XLALH5AttributeQueryNEnum(const LALH5Generic object, const char *key);
+int XLALH5AttributeQueryEnumName(char *name, size_t size, const LALH5Generic object, const char *key, int pos);
+int XLALH5AttributeQueryEnumValue(const LALH5Generic object, const char *key, int pos);
+
+LALH5Dataset * XLALH5TableAlloc(LALH5File *file, const char *name, size_t ncols, const char **cols, const LALTYPECODE *types, const size_t *offsets, size_t rowsz);
+int XLALH5TableAppend(LALH5Dataset *dset, const size_t *offsets, const size_t *colsz, size_t nrows, size_t rowsz, const void *data);
+
+int XLALH5TableRead(void *data, const LALH5Dataset *dset, const size_t *offsets, const size_t *colsz, size_t rowsz);
+int XLALH5TableReadRows(void *data, const LALH5Dataset *dset, const size_t *offsets, const size_t *colsz, size_t row0, size_t nrows, size_t rowsz);
+int XLALH5TableReadColumns(void *data, const LALH5Dataset *dset, const char *cols, const size_t *offsets, const size_t *colsz, size_t row0, size_t nrows, size_t rowsz);
+
+size_t XLALH5TableQueryNRows(const LALH5Dataset *dset);
+size_t XLALH5TableQueryNColumns(const LALH5Dataset *dset);
+size_t XLALH5TableQueryRowSize(const LALH5Dataset *dset);
+int XLALH5TableQueryColumnName(char *name, size_t size, const LALH5Dataset *dset, int pos);
+size_t XLALH5TableQueryColumnSize(const LALH5Dataset *dset, int pos);
+LALTYPECODE XLALH5TableQueryColumnType(const LALH5Dataset *dset, int pos);
+size_t XLALH5TableQueryColumnOffset(const LALH5Dataset *dset, int pos);
 
 /* MID-LEVEL ROUTINES */
 

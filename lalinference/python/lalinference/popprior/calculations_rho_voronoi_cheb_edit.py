@@ -167,7 +167,3 @@ if save_data:
     f.close()
     print "Data saved. Time elapsed:", time.time()-start_time
 
-
-# voronoi 4D test
-# put in lalinference - Kipp made a folder in lalsuite/lalinference/python/lalinference/popprior
-# change permissions to read-only for sqlite - calling code will need to do this (dag file)
