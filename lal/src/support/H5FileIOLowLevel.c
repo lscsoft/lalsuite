@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
