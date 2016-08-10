@@ -86,6 +86,8 @@ for i; do
 	--static)
 	    shared_copt="--disable-shared" ;;
 	--rebuild)
+	    rebuild_zlib=true
+	    rebuild_binutils=true
 	    rebuild_boinc=true
 	    rebuild_lal=true
 	    rebuild=true ;;
