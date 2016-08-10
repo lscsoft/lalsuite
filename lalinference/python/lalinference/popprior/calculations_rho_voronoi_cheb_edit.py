@@ -2,7 +2,7 @@
 # sample mass distribution directly from template bank
 # new P_tj calculation: using Voronoi diagram
 # use Chebyshev nodes to compute values of rho
-# Edited with Kipp, July 25
+# Edited with Kipp, July 25-28
 
 import matplotlib
 import matplotlib.pyplot as plt
