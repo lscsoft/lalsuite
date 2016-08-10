@@ -198,7 +198,7 @@ double XLALComovingVolume(
 }
 
 /**
- * This function computes the comoving volume element (a 4\pi shell) between redshift z and z+dz.
+ * This function computes the comoving volume element (a 4&pi shell) between redshift z and z+dz.
  */
 
 double XLALComovingVolumeElement(
