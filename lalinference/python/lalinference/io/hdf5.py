@@ -149,21 +149,8 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     >>> with TemporaryDirectory() as dir:
     ...     filename = os.path.join(dir, 'test.hdf5')
     ...     write_samples(table, filename, 'foo/bar/posterior_samples')
-    ...     read_samples(filename)
-    <Table length=10>
-     bar       bat       baz    foo  
-    int64    float64    int64 float64
-    ----- ------------- ----- -------
-        0           0.0     0     1.0
-        1 3.14159265359     1     1.0
-        2 6.28318530718     2     1.0
-        3 9.42477796077     3     1.0
-        4 12.5663706144     4     1.0
-        5 15.7079632679     5     1.0
-        6 18.8495559215     6     1.0
-        7 21.9911485751     7     1.0
-        8 25.1327412287     8     1.0
-        9 28.2743338823     9     1.0
+    ...     len(read_samples(filename))
+    10
     """
     with h5py.File(filename, 'r') as f:
         if path is not None: # Look for a given path
