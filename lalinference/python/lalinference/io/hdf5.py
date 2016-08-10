@@ -209,7 +209,7 @@ def write_samples(table, filename, path, metadata=None):
         ...
     AssertionError: 
     Arrays are not equal
-    Column {0} is a `fixed` column, but its values are not identical
+    Column foo is a fixed column, but its values are not identical
         ...
 
     And now try writing an arbitrary example to a temporary file:
@@ -232,8 +232,9 @@ def write_samples(table, filename, path, metadata=None):
     for colname, column in table.columns.items():
         if column.meta['vary'] == FIXED:
             np.testing.assert_array_equal(column[1:], column[0],
-                                          'Column {0} is a `fixed` column, '
-                                          'but its values are not identical')
+                                          'Column {0} is a fixed column, but '
+                                          'its values are not identical'
+                                          .format(column.name))
             table.meta[colname] = column[0]
             del table[colname]
         else:
