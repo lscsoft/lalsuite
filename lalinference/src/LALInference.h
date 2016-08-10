@@ -104,7 +104,7 @@ struct tagLALInferenceModel;
  * An enumerated type for denoting the type of a variable. Several LAL
  * types are supported as well as others.
  */
-typedef enum {
+typedef enum tagLALInferenceVariableType {
   LALINFERENCE_INT4_t,
   LALINFERENCE_INT8_t,
   LALINFERENCE_UINT4_t,
@@ -127,7 +127,7 @@ typedef enum {
  * This information is used by the sampling routines when deciding
  * what to vary in a proposal, etc.
  */
-typedef enum {
+typedef enum tagLALInferenceParamVaryType {
 	LALINFERENCE_PARAM_LINEAR,   /** A parameter that simply has a maximum and a minimum */
 	LALINFERENCE_PARAM_CIRCULAR, /** A parameter that is cyclic, such as an angle between 0 and 2pi */
 	LALINFERENCE_PARAM_FIXED,    /** A parameter that never changes, functions should respect this */
@@ -180,7 +180,7 @@ tagLALInferenceVariables
  * Phase of MCMC run (depending on burn-in status, different actions
  * are performed during the run, and this tag controls the activity).
  */
-typedef enum {
+typedef enum tagLALInferenceMCMCRunPhase {
 	LALINFERENCE_ONLY_PT,          /** Run only parallel tempers. */
 	LALINFERENCE_TEMP_PT,          /** In the parallel tempering phase of an annealed run */
 	LALINFERENCE_ANNEALING,        /** In the annealing phase of an annealed run */

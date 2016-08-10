@@ -73,7 +73,7 @@ extern "C" {
 #define NINJA_MAX_MODE 5
 
 /** enum for list of numrel groups */
-typedef enum{
+typedef enum tagNumRelGroup {
   NINJA_GROUP_AEI = 0,
   NINJA_GROUP_CIT,
   NINJA_GROUP_LSU,

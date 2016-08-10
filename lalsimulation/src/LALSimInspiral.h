@@ -216,7 +216,7 @@ extern "C" {
 /**
  * Enum that specifies the PN approximant to be used in computing the waveform.
  */
-typedef enum {
+typedef enum tagApproximant {
    TaylorT1, 		/**< Time domain Taylor approximant in which the energy and flux are both kept
                          * as Taylor expansions and a first order ordinary differential equation is solved
                          * or the GW phase as a function of \f$t\f$; Outputs a time-domain wave.
@@ -365,7 +365,7 @@ typedef enum {
  } Approximant;
 
 /** Enum of various frequency functions */
-typedef enum {
+typedef enum tagFrequencyFunction {
     fSchwarzISCO, /**< Schwarzschild ISCO */
     fIMRPhenomAFinal, /**< Final frequency of IMRPhenomA */
     fIMRPhenomBFinal, /**< Final of IMRPhenomB */
@@ -381,7 +381,7 @@ typedef enum {
  } FrequencyFunction;
 
 /** Enum of possible values to use for post-Newtonian order. */
-typedef enum {
+typedef enum tagLALPNOrder {
   LAL_PNORDER_NEWTONIAN,	/**< Newtonain (leading) order */
   LAL_PNORDER_HALF,		/**< 0.5PN <==> O(v) */
   LAL_PNORDER_ONE,		/**< 1PN <==> O(v^2) */
@@ -395,7 +395,7 @@ typedef enum {
  } LALPNOrder;
 
 /** Enumeration to specify the tapering method to apply to the waveform */
-typedef enum
+typedef enum tagLALSimInspiralApplyTaper
 {
   LAL_SIM_INSPIRAL_TAPER_NONE,		/**< No tapering */
   LAL_SIM_INSPIRAL_TAPER_START,		/**< Taper the start of the waveform */
@@ -405,12 +405,12 @@ typedef enum
 }  LALSimInspiralApplyTaper;
 
 /** Enumeration to specify time or frequency domain */
-typedef enum {
+typedef enum tagLALSimulationDomain {
   LAL_SIM_DOMAIN_TIME,
   LAL_SIM_DOMAIN_FREQUENCY
  } LALSimulationDomain;
 
-typedef enum {
+typedef enum tagSpinSupport {
    LAL_SIM_INSPIRAL_SPINLESS, /** These approximants cannot include spin terms */
    LAL_SIM_INSPIRAL_SINGLESPIN, /** These approximants support a signle spin (by default that is the object 1)*/
    LAL_SIM_INSPIRAL_ALIGNEDSPIN, /** These approximants can include spins aligned with L_N */
@@ -418,7 +418,7 @@ typedef enum {
    LAL_SIM_INSPIRAL_NUMSPINSUPPORT	/**< Number of elements in enum, useful for checking bounds */
  } SpinSupport;
 
-typedef enum {
+typedef enum tagTestGRaccept {
   LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS,   /** These approximants cannot accept testGR params as input params */
   LAL_SIM_INSPIRAL_TESTGR_PARAMS,      /** These approximants accept testGR params as input params */
   LAL_SIM_INSPIRAL_NUM_TESTGR_ACCEPT  /**< Number of elements in enum, useful for checking bounds */

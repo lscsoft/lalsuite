@@ -66,7 +66,7 @@ extern "C" {
 
 
 /** An enumerated type for denoting the type of a variable. Several LAL types are supported. */
-typedef enum {
+typedef enum tagPulsarParamType {
   PULSARTYPE_UINT4_t = 0,
   PULSARTYPE_REAL8_t,
   PULSARTYPE_REAL8Vector_t,

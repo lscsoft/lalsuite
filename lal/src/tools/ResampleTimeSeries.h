@@ -84,6 +84,7 @@ extern "C" {
  * time series due to aliasing.
  */
 typedef enum
+tagResampleTSFilter
 {
   defaultButterworth,	/**< An IIR butterwoth filter of order 20 with attenuation 0.1 at the new Nyquist frequency.
                          * See the package tdfilters for documentation of butterworth filters in LAL.

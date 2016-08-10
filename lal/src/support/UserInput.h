@@ -158,7 +158,7 @@ someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
   XLALRegister ##type## UserVar( &(uvar-> name), #name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
 
 /// (mutually exclusive) UserVariable categories: optional, required, help, developer, ...
-typedef enum {
+typedef enum tagUserVarCategory {
   UVAR_CATEGORY_START = 0,	///< internal start marker for range checking
 
   UVAR_CATEGORY_OPTIONAL,	///< optional
@@ -182,7 +182,7 @@ typedef enum {
  * Format for logging User-input: configFile- or cmdLine-style.
  * This determines the format of the string returned from XLALUserVarGetLog().
  */
-typedef enum {
+typedef enum tagUserVarLogFormat {
   UVAR_LOGFMT_CFGFILE,		/**< return UserVars as a config-file */
   UVAR_LOGFMT_CMDLINE,		/**< return UserVars as a command-line */
   UVAR_LOGFMT_PROCPARAMS, 	/**< return UserVars suitable for filling in process-params struct */
