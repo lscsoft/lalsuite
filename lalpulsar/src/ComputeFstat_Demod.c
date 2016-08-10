@@ -391,20 +391,16 @@ XLALGetFstatTiming_Demod ( const void* method_data, REAL8 *tauF1Buf, REAL8 *tauF
 
 // append detailed (method-specific) timing info to given file
 int
-AppendFstatTimingInfo2File_Demod ( const void* method_data, FILE *fp )
+AppendFstatTimingInfo2File_Demod ( const void* method_data, FILE *fp, BOOLEAN printHeader )
 {
   XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
   XLAL_CHECK ( fp != NULL, XLAL_EINVAL );
 
   const DemodMethodData *demod = (const DemodMethodData *)method_data;
-
-  // print header on first call
-  static BOOLEAN print_header = 1;
-  if ( print_header ) {
+  if ( printHeader ) {
     fprintf (fp, "%%%%%8s %4s %10s ", "Nfreq", "Ndet", "Nsft" );
     fprintf (fp, "%10s %10s %10s %10s %10s\n",
              "tauTotal", "tauBary", "tauF1NoBuf", "tauF1Buf", "tauF0Demod" );
-    print_header = 0;
   }
 
   const DemodTimingInfo *ti = &(demod->timingInfo);

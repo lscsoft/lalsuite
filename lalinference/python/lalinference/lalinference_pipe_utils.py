@@ -441,6 +441,75 @@ def get_xml_psds(psdxml,ifos,outpath,end_time=None):
     out[ifo]=os.path.join(outpath,ifo+'_psd_'+time+'.txt')
   return out
 
+def get_trigger_chirpmass(gid=None,gracedb="gracedb"):
+  from glue.ligolw import lsctables
+  from glue.ligolw import ligolw
+  from glue.ligolw import utils
+  class PSDContentHandler(ligolw.LIGOLWContentHandler):
+    pass
+  lsctables.use_in(PSDContentHandler)
+  import subprocess
+
+  cwd=os.getcwd()
+  subprocess.call([gracedb,"download", gid ,"coinc.xml"])
+  xmldoc=utils.load_filename("coinc.xml",contenthandler = PSDContentHandler)
+  coinctable = lsctables.CoincInspiralTable.get_table(xmldoc)
+  coinc_events = [event for event in coinctable]
+  sngltable = lsctables.SnglInspiralTable.get_table(xmldoc)
+  sngl_events = [event for event in sngltable]
+  coinc_map = lsctables.CoincMapTable.get_table(xmldoc)
+  mass1 = []
+  mass2 = []
+  for coinc in coinc_events:
+    these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
+    for e in these_sngls:
+      mass1.append(e.mass1)
+      mass2.append(e.mass2)
+  # check that trigger masses are identical in each IFO    
+  assert len(set(mass1)) == 1
+  assert len(set(mass2)) == 1
+
+  mchirp = (mass1[0]*mass2[0])**(3./5.) / ( (mass1[0] + mass2[0])**(1./5.) ) 
+  os.remove("coinc.xml")
+
+  return mchirp
+
+def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid):
+
+  mc_priors = {}
+
+  for roq in roq_paths:
+    params=os.path.join(path,roq,'params.dat')
+    roq_params[roq]=np.genfromtxt(params,names=True)
+    mc_priors[roq]=[float(roq_params[roq]['chirpmassmin']),float(roq_params[roq]['chirpmassmax'])]
+  ordered_roq_paths=[item[0] for item in sorted(roq_params.items(), key=key)][::-1]
+  # below is to construct non-overlapping mc priors for multiple roq mass-bin runs
+  '''i=0
+  for roq in ordered_roq_paths:
+    if i>0:
+      # change min, just set to the max of the previous one since we have already aligned it in the previous iteration of this loop
+      #mc_priors[roq][0]+= (mc_priors[roq_lengths[i-1]][1]-mc_priors[roq][0])/2.
+      mc_priors[roq][0]=mc_priors[ordered_roq_paths[i-1]][1]
+    if i<len(roq_paths)-1:
+      mc_priors[roq][1]-= (mc_priors[roq][1]- mc_priors[ordered_roq_paths[i+1]][0])/2.
+    i+=1'''
+  if gid is not None:
+  	trigger_mchirp = get_trigger_chirpmass(gid)
+  else:
+	trigger_mchirp = None
+
+  return mc_priors, trigger_mchirp
+
+def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp):
+  mc_max = mc_priors['4s'][1]
+  mc_min = mc_priors['128s'][0]
+  scale_factor = 1
+  if trigger_mchirp >= mc_max: 
+  	scale_factor = 2**(floor(trigger_mchirp/mc_max))
+  if trigger_mchirp <= mc_min:
+	scale_factor = 1./2**(ceil(trigger_mchirp/mc_min))
+  return scale_factor
+
 def create_pfn_tuple(filename,protocol='file://',site='local'):
     return( (os.path.basename(filename),protocol+os.path.abspath(filename),site) )
 

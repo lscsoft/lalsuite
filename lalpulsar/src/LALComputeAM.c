@@ -665,7 +665,7 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
       }
     } // for X < numDetectors
 
-  REAL4 Ad = 0, Bd = 0, Cd = 0;	// multi-IFO values
+  REAL4 Ad = 0, Bd = 0, Cd = 0, Ed = 0;	// multi-IFO values
   /* ---------- main loop over detectors X ---------- */
   for ( X=0; X < numDetectors; X ++)
     {
@@ -687,7 +687,7 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
         } // if weights
 
       UINT4 alpha;	// SFT-index
-      REAL4 AdX = 0, BdX = 0, CdX = 0;	// single-IFO values
+      REAL4 AdX = 0, BdX = 0, CdX = 0, EdX = 0;	// single-IFO values
       /* compute single-IFO antenna-pattern coefficients AX,BX,CX, by summing over time-steps 'alpha' */
       for(alpha = 0; alpha < numStepsX; alpha++)
         {
@@ -697,33 +697,34 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
           AdX += ahat * ahat;
           BdX += bhat * bhat;
           CdX += ahat * bhat;
+          // EdX = 0; // trivial for real-values a,b
         } /* for alpha < numStepsX */
 
       /* store those */
       amcoeX->A = AdX;
       amcoeX->B = BdX;
       amcoeX->C = CdX;
-      amcoeX->D = AdX * BdX - CdX * CdX;
+      amcoeX->D = AdX * BdX - CdX * CdX - EdX * EdX;
 
-      // in the unlikely event of a degenerate M-matrix with D = det[A, C; C, B] <= 0,
+      // in the unlikely event of a degenerate M-matrix with D = sqrt ( det M ) <= 0,
       // we set D->inf, in order to set the corresponding F-value to zero rather than >>1
       // By setting 'D=inf', we also allow upstream catching/filtering on such singular cases
       if ( amcoeX->D <= 0 ) {
 	amcoeX->D = INFINITY;
       }
-      /* compute multi-IFO antenna-pattern coefficients A,B,C by summing over IFOs X */
+      /* compute multi-IFO antenna-pattern coefficients A,B,C,E by summing over IFOs X */
       Ad += AdX;
       Bd += BdX;
       Cd += CdX;
-
+      // Ed = 0; // trivial for real-valued a,b
     } /* for X < numDetectors */
 
   multiAMcoef->Mmunu.Ad = Ad;
   multiAMcoef->Mmunu.Bd = Bd;
   multiAMcoef->Mmunu.Cd = Cd;
-  multiAMcoef->Mmunu.Dd = Ad * Bd - Cd * Cd;
+  multiAMcoef->Mmunu.Dd = Ad * Bd - Cd * Cd - Ed * Ed;
 
-  // in the unlikely event of a degenerate M-matrix with D = det[A, C; C, B] <= 0,
+  // in the unlikely event of a degenerate M-matrix with D = sqrt(det M_munu) <= 0,
   // we set D->inf, in order to set the corresponding F-value to zero rather than >>1
   // By setting 'D=inf', we also allow upstream catching/filtering on such singular cases
   if ( multiAMcoef->Mmunu.Dd <= 0 ) {

@@ -82,6 +82,7 @@ test/LALInferencePriorTest
 test/LALInferenceProposalTest
 test/LALInferenceTest
 test/LALInferenceXMLTest
+test/test.hdf5
 test/test_bayestar_lattice_tmpltbank.xml
 test/test_bayestar_littlehope.xml
 test/test_bayestar_prune_neighborhood_tmpltbank.xml

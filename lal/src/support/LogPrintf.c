@@ -263,11 +263,7 @@ XLALGetCPUTime ( void )
 
   struct timespec ut;
   clockid_t clk_id;
-#ifdef CLOCK_THREAD_CPUTIME_ID
-  clk_id = CLOCK_THREAD_CPUTIME_ID;	// according to man-page: (since Linux 2.6.12)
-#else
   clk_id = CLOCK_REALTIME;	// use this as fallback, guaranteed to exist.
-#endif
 
   clock_gettime ( clk_id, &ut);	// don't bother testing to avoid overheads, and we would notice in timing if unavailable
 
@@ -339,7 +335,7 @@ XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij )
   rows = gij->size1;
   cols = gij->size2;
 
-  fprintf (fp, " [ \\\n" );
+  fprintf (fp, " [ \n" );
   for ( i=0; i < rows; i ++ )
     {
       for (j=0; j < cols; j ++ )

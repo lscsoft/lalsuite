@@ -118,6 +118,8 @@ int global_argc;
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
 
+#define GETTIME() (uvar_outputTiming ? XLALGetCPUTime() : 0)
+//#define GETTIME() (uvar_outputTiming ? XLALGetTimeOfDay() : 0)
 
 /* ---------- Exported types ---------- */
 /** useful variables for each hierarchical stage */
@@ -177,17 +179,24 @@ typedef struct
   UINT4 Ndet;			///< number of detectors
   UINT4 Tcoh;			///< length of coherent segments in seconds
   UINT4 Nsft;			///< total number of SFTs
+  UINT4 Ncand;			///< length of toplists
 
   UINT4 NFreqCo;		///< total number of frequency bins computed in coarse grid (including sidebands!)
-  UINT4 Nco;			///< number of coarse-grid Fstat templates ('coherent')
-  UINT4 Nic;			///< number of fine-grid templates ('incoherent')
+  REAL8 Ncoh;			///< number of coarse-grid Fstat templates ('coherent')
+  REAL8 Ninc;			///< number of fine-grid templates ('incoherent')
 
-  REAL8 c0ic;			///< incoherent time per segment per (fine-grid) template (should be a constant)
+  const char* FstatMethodStr;	///< Fstat-method used
+  const char* RecalcMethodStr;	///< Fstat-method used
 
-  REAL8 c1co;			///< coherent time per segment per (coarse-grid) template (fct of search parameters)
-  REAL8 c0Demod;		///< coherent time per SFT per template, should be constant for 'Demod' Fstat methods
-
-  FstatMethodType FstatMethod;	///< Fstat-method used */
+  // ----------
+  // extended timing model:
+  // runtime = Nseg * Ndet * Ncoh * tauF + Nseg * Ninc * tauSumFine + Ninc * tauExtraStats + Ntop * tauRecalc + time_Other
+  REAL8 tau_Fstat;		//< time to compute F-stat for one coarse-grid template, one detector, one segment
+  REAL8 tau_SumF;		//< time to sum F-stat values of one segment for one fine-grid point
+  REAL8 tau_Bayes;		//< time to compute final Bayes-factor statistics for one fine-grid point
+  REAL8 tau_Recalc;		//< time to recalc one toplist-entry
+  REAL8 time_Other;		//< all non-scaling leftovers in overall timeing
+  // ----------
 
 } timingInfo_t;
 
@@ -230,7 +239,7 @@ int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,
 					const LIGOTimeGPS usefulParamsRefTime,
 					const LIGOTimeGPS finegridRefTime);
 
-static int write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti, const FstatInputVector* Fstat_in_vec );
+static int write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti );
 
 /* ---------- Global variables -------------------- */
 LALStatus *global_status; /* a global pointer to MAIN()s head of the LALStatus structure */
@@ -438,6 +447,13 @@ int MAIN( int argc, char *argv[]) {
   CHAR *uvar_FstatMethodRecalc = XLALStringDuplicate("DemodBest");
 
   timingInfo_t XLAL_INIT_DECL(timing);
+
+  // timing values
+  REAL8 tic_RecalcToplist, time_RecalcToplist = 0;
+  REAL8 tic_Fstat, time_Fstat = 0;
+  REAL8 tic_SumFine, time_SumFine = 0;
+  REAL8 tic_ExtraStats, time_ExtraStats = 0;
+  REAL8 tic_Start, time_Total = 0;
 
   global_status = &status;
 
@@ -680,7 +696,15 @@ int MAIN( int argc, char *argv[]) {
 
     } /* end of logging */
 
+  tic_Start = GETTIME();
+  BOOLEAN printHeader = 0;
   if ( uvar_outputTimingDetails != NULL ) {
+    FILE *tmp;
+    if ( (tmp = fopen ( uvar_outputTimingDetails, "r" )) == NULL ) {
+      printHeader = 1;
+    } else {
+      fclose (tmp );
+    }
     XLAL_CHECK ( (usefulParams.timingDetailsFP = fopen ( uvar_outputTimingDetails, "wb" )) != NULL, XLAL_ESYS, "Failed to open '%s' for writing\n", uvar_outputTimingDetails );
   } // if uvar_outputTimingDetails
 
@@ -1192,15 +1216,6 @@ int MAIN( int argc, char *argv[]) {
       XLALNextDopplerSkyPos(&dopplerpos, &thisScan);
   }
 
-  // timing values
-  REAL8 costFstat = 0, costIncoh = 0, costLoop = 0, costToplist = 0;
-
-  REAL8 timeLoopStart = XLALGetTimeOfDay();
-  REAL8 timeFstatStart, timeFstatEnd;
-  REAL8 timeIncohStart, timeIncohEnd;
-  REAL8 timeToplistStart, timeToplistEnd;
-  REAL8 timeLoopEnd;
-
   /* ################## loop over SKY coarse-grid points ################## */
   while(thisScan.state != STATE_FINISHED)
     {
@@ -1514,14 +1529,14 @@ int MAIN( int argc, char *argv[]) {
                 /************************ Compute F-Statistic ************************/
                 if (doComputeFstats) { /* if first time through fine grid fdots loop */
 
-                  timeFstatStart = XLALGetTimeOfDay();
+                  tic_Fstat = GETTIME();
                   const int retn = XLALComputeFstat(&Fstat_res, usefulParams.Fstat_in_vec->data[k], &thisPoint, binsFstat1, Fstat_what);
                   if ( retn != XLAL_SUCCESS ) {
                     XLALPrintError ("%s: XLALComputeFstat() failed with errno=%d\n", __func__, xlalErrno );
                     return xlalErrno;
                   }
                   if ( usefulParams.timingDetailsFP != NULL ) {
-                    XLAL_CHECK ( AppendFstatTimingInfo2File ( usefulParams.Fstat_in_vec->data[k], usefulParams.timingDetailsFP ) == XLAL_SUCCESS, XLAL_EFUNC );
+                    XLAL_CHECK ( AppendFstatTimingInfo2File ( usefulParams.Fstat_in_vec->data[k], usefulParams.timingDetailsFP, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
                   }
                   /* if single-only flag is given, add +4 to F-statistic */
                   if ( uvar_SignalOnly ) {
@@ -1585,14 +1600,13 @@ int MAIN( int argc, char *argv[]) {
                   /* --- Holger: This is not needed in U1-only case. Sort the coarse grid in Uindex --- */
                   /* qsort(coarsegrid.list, (size_t)coarsegrid.length, sizeof(CoarseGridPoint), compareCoarseGridUindex); */
 
-                  timeFstatEnd = XLALGetTimeOfDay();
-                  costFstat += (timeFstatEnd - timeFstatStart);
+                  time_Fstat += (GETTIME() - tic_Fstat);
 
                 } // if (doComputeFstats)
                 /* -------------------- END Compute F-Statistic -------------------- */
 
                 /* -------------------- Map fine grid to coarse grid -------------------- */
-                timeIncohStart = XLALGetTimeOfDay();
+                tic_SumFine = GETTIME();
 
                 /* get the frequency of this fine-grid point at mid point of segment */
                 /* OLD: ifreq_fg = 0; freq_tmp = finegrid.freqmin_fg + ifreq_fg * finegrid.dfreq_fg + f1dot_tmp * timeDiffSeg; */
@@ -1704,14 +1718,13 @@ int MAIN( int argc, char *argv[]) {
                   }
                 }
 #endif // GC_SSE2_OPT
-                timeIncohEnd = XLALGetTimeOfDay();
-                costIncoh += (timeIncohEnd - timeIncohStart);
+                time_SumFine += ( GETTIME() - tic_SumFine );
 
               } /* end: ------------- MAIN LOOP over Segments --------------------*/
 
               /* ############################################################### */
 
-              timeToplistStart = XLALGetTimeOfDay();
+              tic_ExtraStats = GETTIME();
 
               if( uvar_semiCohToplist ) {
                 /* this is necessary here, because UpdateSemiCohToplists() might set
@@ -1722,12 +1735,11 @@ int MAIN( int argc, char *argv[]) {
                 } else {
                   LAL_CALL( UpdateSemiCohToplists (&status, semiCohToplist, semiCohToplist2, semiCohToplist3, &finegrid, f1dot_fg, f2dot_fg, f3dot_fg, &usefulParams, NSegmentsInv, usefulParams.NSegmentsInvX, XLALUserVarWasSet(&uvar_f3dot) ), &status);
                 }
-              }
-              timeToplistEnd = XLALGetTimeOfDay();
-              costToplist += ( timeToplistEnd - timeToplistStart );
+              } // if semiCohToplist
+              time_ExtraStats += ( GETTIME() - tic_ExtraStats );
 
             } /* for( if1dot_fg = 0; if1dot_fg < nf1dots_fg; if1dot_fg++ ) */
-          } /* for( if2dot_fg = 0; if2dot_fg < nf2dots_fg; if2dot_fg++ ) */
+            } /* for( if2dot_fg = 0; if2dot_fg < nf2dots_fg; if2dot_fg++ ) */
           } /* for( if3dot_fg = 0; if3dot_fg < nf3dots_fg; if3dot_fg++ ) */
           /* ---------- END walk through fine grid fdots --------------- */
           if3dot++;  /* Increment if3dot counter */
@@ -1766,11 +1778,9 @@ int MAIN( int argc, char *argv[]) {
 
     } /* ######## End of while loop over 1st stage SKY coarse-grid points ############ */
 #ifdef EAH_BOINC
-      fprintf(stderr, "\n");
+  fprintf(stderr, "\n");
 #endif
   /*---------------------------------------------------------------------------------*/
-  timeLoopEnd = XLALGetTimeOfDay();
-  costLoop = (timeLoopEnd - timeLoopStart);
 
   /* now that we have the final toplist, translate all pulsar parameters to correct reftime */
   xlalErrno = 0;
@@ -1785,10 +1795,10 @@ int MAIN( int argc, char *argv[]) {
     XLALPrintError ("%s line %d : XLALExtrapolateToplistPulsarSpins() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
     return(HIERARCHICALSEARCH_EXLAL);
   }
-
   LogPrintf( LOG_NORMAL, "Finished main analysis.\n");
 
   /* Also compute F, FX (for line-robust statistics) for all candidates in final toplist */
+  tic_RecalcToplist = GETTIME();
   if ( uvar_recalcToplistStats ) {
 
     LogPrintf( LOG_NORMAL, "Recalculating statistics for the final toplist...\n");
@@ -1799,6 +1809,7 @@ int MAIN( int argc, char *argv[]) {
     } else {
       recalcParams.Fstat_in_vec		= usefulParams.Fstat_in_vec;
     }
+    timing.RecalcMethodStr = XLALGetFstatInputMethodName ( recalcParams.Fstat_in_vec->data[0] );
     recalcParams.detectorIDs		= usefulParams.detectorIDs;
     recalcParams.startTstack		= usefulParams.startTstack;
     recalcParams.refTimeGPS		= refTimeGPS;
@@ -1821,33 +1832,35 @@ int MAIN( int argc, char *argv[]) {
     }
 
     LogPrintf( LOG_NORMAL, "Finished recalculating toplist statistics.\n");
-  }
+  } // if recalcToplist
+  time_RecalcToplist = GETTIME() - tic_RecalcToplist;
 
   if ( uvar_outputTiming )
     {
+      timing.FstatMethodStr  = XLALGetFstatInputMethodName ( usefulParams.Fstat_in_vec->data[0] );
+      timing.RecalcMethodStr = (timing.RecalcMethodStr == NULL) ? "NONE" : timing.RecalcMethodStr;
       timing.Nseg = coarsegrid.nStacks;
       timing.Ndet = coarsegrid.numDetectors;
       timing.Tcoh = usefulParams.tStack;
       timing.Nsft = usefulParams.nSFTs;
+      timing.Ncand = uvar_nCand1;
 
       timing.NFreqCo = coarsegrid.freqlength;		// includes Fstat sideband bins
-      timing.Nco = thisScan.numSkyGridPoints * timing.NFreqCo * usefulParams.nf1dot * usefulParams.nf2dot;
+      timing.Ncoh    = thisScan.numSkyGridPoints * timing.NFreqCo * usefulParams.nf1dot * usefulParams.nf2dot;
 
       REAL8 nf1dot_fine = usefulParams.nf1dot * nf1dots_fg;	// 'nf1dots_fg' is the number of fine-grid points *per coarse-grid point*!
       REAL8 nf2dot_fine = usefulParams.nf2dot * nf2dots_fg;	// 'nf1dots_fg' is the number of fine-grid points *per coarse-grid point*!
-      timing.Nic = thisScan.numSkyGridPoints * usefulParams.binsFstatSearch * nf1dot_fine * nf2dot_fine;	// excludes F-stat sideband bins
+      timing.Ninc = thisScan.numSkyGridPoints * usefulParams.binsFstatSearch * nf1dot_fine * nf2dot_fine;	// excludes F-stat sideband bins
 
-      timing.c0ic = (costLoop - costFstat) / (1.0 * timing.Nseg * timing.Nic);	// safe estimate: everything except coherent time
-      timing.c1co = costFstat / (1.0 * timing.Nseg * timing.Nco);
-
-      LogPrintf ( LOG_DEBUG, "costLoop = %.1e s, costCoh = %.1e s, costIncoh = %.1e s, costToplist = %.1e s (missing = %.1e s)\n\n",
-                  costLoop, costFstat, costIncoh, costToplist, costLoop - costFstat - costIncoh - costToplist );
-
-      timing.c0Demod = timing.c1co * timing.Nseg / timing.Nsft;
-      timing.FstatMethod = usefulParams.Fmethod;
+      timing.tau_Fstat 		= time_Fstat / ( timing.Nseg * timing.Ncoh * timing.Ndet );
+      timing.tau_SumF	 	= time_SumFine  / ( timing.Nseg * timing.Ninc );
+      timing.tau_Bayes	 	= time_ExtraStats / timing.Ninc;
+      timing.tau_Recalc     	= time_RecalcToplist / timing.Ncand;
+      time_Total = GETTIME() - tic_Start;
+      timing.time_Other	= time_Total - (time_Fstat + time_SumFine + time_ExtraStats + time_RecalcToplist);	// what's left
 
       if ( uvar_outputTiming ) {
-        XLAL_CHECK ( write_TimingInfo ( uvar_outputTiming, &timing, usefulParams.Fstat_in_vec ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK ( write_TimingInfo ( uvar_outputTiming, &timing ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     } // if uvar_outputTiming
 
@@ -2179,9 +2192,6 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
   /* set Fstat spindown resolution (coarse grid) */
   in->df1dot = HSMIN(in->df1dot, in->spinRange_midTime.fkdotBand[1]);
-
-  /* set Fstat 2nd spindown resolution (coarse grid) */
-  in->df2dot = HSMIN(in->df2dot, in->spinRange_midTime.fkdotBand[2]);
 
   /* calculate number of bins for Fstat overhead due to residual spin-down */
   in->extraBinsFstat = (UINT4)( 0.25*(in->tObs*in->df1dot + in->tObs*in->tObs*in->df2dot)/in->dFreqStack + 1e-6) + 1;
@@ -3201,7 +3211,7 @@ int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,              /**< [out/
  *
  */
 static int
-write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti, const FstatInputVector* Fstat_in_vec )
+write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti )
 {
   /* input sanity */
   if ( !fname || !ti ) {
@@ -3213,8 +3223,14 @@ write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti, const FstatInputVe
   if ( (fp = fopen ( fname,"rb" )) == NULL )
     {
       XLAL_CHECK ( (fp = fopen( fname, "wb" )) != NULL, XLAL_ESYS, "Failed to open new timing-file '%s' for writing\n", fname );
-      fprintf ( fp, "%2s%6s %6s %10s %6s %10s %10s %10s %10s %10s %10s %15s\n",
-                "%%", "Nseg", "Ndet", "Tcoh[s]", "Nsft", "NFreqCo", "Nco", "Nic", "c0ic[s]", "c1co[s]", "c0Demod[s]", "FstatMethod" );
+      fprintf ( fp, "%%%%--------------------------------------------------------------------------------\n");
+      fprintf ( fp, "%%%% GCT Timing model:\n");
+      fprintf ( fp, "%%%% runtime = Nseg * Ndet * Ncoh * tau_Fstat + Nseg * Ninc * tau_SumF + Ninc * tau_Bayes + Ncan * tau_Recalc + time_Other\n" );
+      fprintf ( fp, "%%%%--------------------------------------------------------------------------------\n");
+      fprintf ( fp, "%%%%\n");
+      fprintf ( fp, "%2s%10s %10s %10s %10s %10s | %6s %6s %10s %6s %10s %10s %10s %10s %%%15s %15s\n",
+                "%%", "tau_Fstat", "tau_SumF", "tau_Bayes", "tau_Recalc", "time_Other",
+                "Nseg", "Ndet", "Tcoh[s]", "Nsft", "NFreqCo", "Ncoh", "Ninc", "Ncand", "FstatMethod", "RecalcMethod" );
     }
   else
     {
@@ -3222,8 +3238,9 @@ write_TimingInfo ( const CHAR *fname, const timingInfo_t *ti, const FstatInputVe
       XLAL_CHECK ( (fp = fopen( fname, "ab" )) != NULL, XLAL_ESYS, "Failed to open existing timing-file '%s' for appending\n", fname );
     }
 
-  fprintf ( fp, "%8d %6d %10d %6d %10d %10d %10d %10.1e %10.1e %10.1e %15s\n",
-            ti->Nseg, ti->Ndet, ti->Tcoh, ti->Nsft, ti->NFreqCo, ti->Nco, ti->Nic, ti->c0ic, ti->c1co, ti->c0Demod, XLALGetFstatInputMethodName( Fstat_in_vec->data[0] ) );
+  fprintf ( fp, "%12.1e %10.1e %10.1e %10.1e %10.1e   %6d %6d %10d %6d %10d %10.1e %10.1e %10d %%%15s %15s\n",
+            ti->tau_Fstat, ti->tau_SumF, ti->tau_Bayes, ti->tau_Recalc, ti->time_Other,
+            ti->Nseg, ti->Ndet, ti->Tcoh, ti->Nsft, ti->NFreqCo, ti->Ncoh, ti->Ninc, ti->Ncand, ti->FstatMethodStr, ti->RecalcMethodStr  );
 
   fclose ( fp );
   return XLAL_SUCCESS;

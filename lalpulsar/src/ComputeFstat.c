@@ -1020,18 +1020,18 @@ XLALGetFstatTiming ( const FstatInput* input, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf
 } // XLALGetFstatTiming()
 
 int
-AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp )
+AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader )
 {
   XLAL_CHECK ( input != NULL, XLAL_EINVAL );
   XLAL_CHECK ( fp != NULL, XLAL_EINVAL );
 
   if ( input->method < FMETHOD_RESAMP_GENERIC )
     {
-      XLAL_CHECK ( AppendFstatTimingInfo2File_Demod ( input->method_data, fp ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( AppendFstatTimingInfo2File_Demod ( input->method_data, fp, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
   else
     {
-      XLAL_CHECK ( AppendFstatTimingInfo2File_Resamp ( input->method_data, fp ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( AppendFstatTimingInfo2File_Resamp ( input->method_data, fp, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
   return XLAL_SUCCESS;

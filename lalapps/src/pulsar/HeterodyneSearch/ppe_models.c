@@ -486,7 +486,8 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
 
   if( LALInferenceCheckVariable( ifo->params, "varybinary" ) ){
     /* get binary system time delays */
-    bdts = get_bsb_delay( params, datatimes, dts, ifo->ephem );
+    if ( dts != NULL ){ bdts = get_bsb_delay( params, datatimes, dts, ifo->ephem ); }
+    else{ bdts = get_bsb_delay( params, datatimes, fixdts, ifo->ephem ); }
   }
   if( LALInferenceCheckVariable( ifo->params, "bsb_delays" ) ){
     fixbdts = LALInferenceGetREAL8VectorVariable( ifo->params, "bsb_delays" );

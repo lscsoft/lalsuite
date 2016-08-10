@@ -108,8 +108,8 @@ opts, args = parse_command_line()
 # Choose noise model
 if opts.reference_psd is not None:
     psd = read_psd(opts.reference_psd)[opts.instrument]
-    f_orig = psd.f0 + np.arange(len(psd.data)) * psd.deltaF
-    interpolator = UnivariateSpline(f_orig, np.log(psd.data), s=0)
+    f_orig = psd.f0 + np.arange(len(psd.data.data)) * psd.deltaF
+    interpolator = UnivariateSpline(f_orig, np.log(psd.data.data), s=0)
     noise_model = lambda g: np.exp(interpolator(g))
 else:
     noise_model = noise_models[opts.noise_model]

@@ -163,6 +163,14 @@ int XLALHeapSize(
   return h->n;
 }
 
+int XLALHeapMaxSize(
+  const LALHeap *h
+  )
+{
+  XLAL_CHECK( h != NULL, XLAL_EFAULT );
+  return h->max_size;
+}
+
 const void *XLALHeapRoot(
   const LALHeap *h
   )
@@ -291,7 +299,7 @@ int XLALHeapExchangeRoot(
 }
 
 int XLALHeapVisit(
-  LALHeap *h,
+  const LALHeap *h,
   LALHeapVisitFcn visit,
   void *visit_param
   )
@@ -300,6 +308,41 @@ int XLALHeapVisit(
   /* Check input */
   XLAL_CHECK( h != NULL, XLAL_EFAULT );
   XLAL_CHECK( visit != NULL, XLAL_EFAULT );
+
+  /* Create internal min-heap (without destructor) to get elements in order */
+  LALHeap *h2 = XLALHeapCreate2( NULL, 0, -1, h->cmp, h->cmp_param );
+  XLAL_CHECK( h2 != NULL, XLAL_EFUNC );
+
+  /* Add all elements in heap to internal min-heap */
+  for ( int i = 0; i < h->n; ++i ) {
+    void *x = h->data[i];
+    XLAL_CHECK( XLALHeapAdd( h2, &x ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  /* Visit root element of internal min-heap and remove, until empty */
+  while ( h2->n > 0 ) {
+    const void *x = XLALHeapRoot( h2 );
+    XLAL_CHECK( visit( visit_param, x ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALHeapRemoveRoot( h2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  /* Cleanup */
+  XLALHeapDestroy( h2 );
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALHeapModify(
+  LALHeap *h,
+  LALHeapModifyFcn modify,
+  void *modify_param
+  )
+{
+
+  /* Check input */
+  XLAL_CHECK( h != NULL, XLAL_EFAULT );
+  XLAL_CHECK( modify != NULL, XLAL_EFAULT );
 
   /* Create internal min-heap (without destructor) to get elements in order */
   LALHeap *h2 = XLALHeapCreate2( NULL, 0, -1, h->cmp, h->cmp_param );
@@ -320,7 +363,7 @@ int XLALHeapVisit(
     XLAL_CHECK( x != NULL, XLAL_EFUNC );
 
     /* Visit element, possibly modifying it */
-    XLAL_CHECK( visit( visit_param, x ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( modify( modify_param, x ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     /* Add element back to original heap */
     XLAL_CHECK( XLALHeapAdd( h, &x ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -331,5 +374,37 @@ int XLALHeapVisit(
   XLALHeapDestroy( h2 );
 
   return XLAL_SUCCESS;
+
+}
+
+static int heap_get_elems_visitor(
+  void *param,
+  const void *x
+  )
+{
+  const void ***elem = ( const void *** ) param;
+  **elem = x;
+  ++(*elem);
+  return XLAL_SUCCESS;
+}
+
+const void **XLALHeapElements(
+  const LALHeap *h
+  )
+{
+
+  /* Check input */
+  XLAL_CHECK_NULL( h != NULL, XLAL_EFAULT );
+
+  /* Allocate memory */
+  const void **elems = XLALMalloc( h->n * sizeof( *elems ) );
+  XLAL_CHECK_NULL( elems != NULL, XLAL_ENOMEM );
+
+  /* Get elements */
+  const void **elem = elems;
+  XLAL_CHECK_NULL( XLALHeapVisit( h, heap_get_elems_visitor, &elem ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_NULL( elems + h->n == elem, XLAL_EFAILED );
+
+  return elems;
 
 }

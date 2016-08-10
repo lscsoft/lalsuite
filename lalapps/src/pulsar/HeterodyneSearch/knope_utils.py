@@ -447,7 +447,7 @@ class knopeDAG(pipeline.CondorDAG):
     fps.close()
 
     # email notification that the analysis has finished if required
-    email = self.get_config_option('analysis', 'email')
+    email = self.get_config_option('analysis', 'email', allownone=True)
     if email != None:
       if '@' not in email:
         print("Warning... email address '%s' is invalid. No notification will be sent." % email)
@@ -466,7 +466,7 @@ class knopeDAG(pipeline.CondorDAG):
             FROM = 'matthew.pitkin@ligo.org'
 
           subject = "lalapps_knope: successful setup"
-          messagetxt = "Hi User,\n\nYour analysis using configuration file '%s' has successfully setup the analysis. Once complete the results will be found at %s.\n\nRegards lalapps_knope\n" % (configfilename, self.results_url)
+          messagetxt = "Hi User,\n\nYour analysis using configuration file '%s' has successfully setup the analysis. Once complete the results will be found at %s.\n\nRegards\n\nlalapps_knope\n" % (configfilename, self.results_url)
 
           emailtemplate = "From: {0}\nTo: {1}\nSubject: {2}\n\n{3}"
           message = emailtemplate.format(FROM, email, subject, messagetxt)
@@ -534,10 +534,60 @@ class knopeDAG(pipeline.CondorDAG):
     # check whether to show joint posterior plot for all parameters
     self.show_all_posteriors = self.get_config_option('results_page', 'show_all_posteriors', cftype='boolean', default=False)
 
+    # check whether to subtract injected/heterodyned values from phase parameters for plots
+    self.subtract_truths = self.get_config_option('results_page', 'subtract_truths', cftype='boolean', default=False)
+
+    # check whether to plot priors on 1D posteriors plots
+    self.show_priors = self.get_config_option('results_page', 'show_priors', cftype='boolean', default=False)
+
     # create parameter estimation job
     resultpagejob = resultpageJob(self.results_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
     collatejob = collateJob(self.collate_exec, univ=self.results_universe, accgroup=self.accounting_group, accuser=self.accounting_group_user, logdir=self.log_dir, rundir=self.run_dir)
-    collatenode = collateNode(collatejob)
+
+    # create config file for collating results into a results table
+    cpc = ConfigParser.ConfigParser() # create config parser to output .ini file
+    # create configuration .ini file
+    cinifile = os.path.join(self.results_basedir, 'collate.ini')
+
+    # create sections
+    cpc.add_section('output')
+    cpc.add_section('input')
+    cpc.add_section('general')
+
+    cpc.set('output', 'path', self.results_basedir) # set output directory
+    cpc.set('input', 'path', self.results_basedir)  # set directory containing individual results directories
+
+    # get sort type and direction
+    sorttype = self.get_config_option('results_page', 'sort_value', default='name') # default sorting on name
+    cpc.set('general', 'sort_value', sorttype)
+    sortdirection = self.get_config_option('results_page', 'sort_direction', default='ascending') # default sorting in ascending order
+    cpc.set('general', 'sort_direction', sortdirection)
+    if self.pe_coherent_only:
+      cpc.set('general', 'detectors', ['Joint'])
+    elif self.pe_incoherent_only:
+      cpc.set('general', 'detectors', self.ifos)
+    else:
+      cdets = deepcopy(self.ifos)
+      cdets.append('Joint')
+      cpc.set('general', 'detectors', cdets)
+
+    # get pulsar parameters to output
+    paramout = self.get_config_option('results_page', 'parameters', cftype='list', default=['f0'])
+    cpc.set('general', 'parameters', paramout)
+
+    # get results to output
+    resout = self.get_config_option('results_page', 'results', cftype='list', default=['h0ul'])
+    cpc.set('general', 'results', resout)
+
+    # write and set ini file
+    try:
+      fp = open(cinifile, 'w')
+      cpc.write(fp)
+      fp.close()
+    except:
+      print("Error... could not write configuration file '%s' for results collation page" % cinifile, file=sys.stderr)
+      self.error_code = -1
+      return
 
     # loop through pulsars
     for pname in self.analysed_pulsars:
@@ -595,6 +645,9 @@ class knopeDAG(pipeline.CondorDAG):
       cp.set('general', 'model_type', self.pe_model_type) # set 'waveform' or 'source' model type
       cp.set('general', 'biaxial', self.pe_biaxial)       # set if using a biaxial source model
 
+      if self.show_priors:
+        cp.set('general', 'priorfile', self.pe_prior_files[pname]) # set the prior file
+
       # get posterior files (and background directories)
       posteriorsfiles = {}
       backgrounddir = {}
@@ -645,6 +698,7 @@ class knopeDAG(pipeline.CondorDAG):
       cp.set('data', 'files', datafiles)
 
       cp.set('plotting', 'all_posteriors', self.show_all_posteriors)
+      cp.set('plotting', 'subtract_truths', self.subtract_truths)
 
       # output configuration file
       try:
@@ -671,56 +725,10 @@ class knopeDAG(pipeline.CondorDAG):
       self.add_node(resultsnode)
 
       # add as parent to the collation node
+      collatenode = collateNode(collatejob) # create a collate node for each pulsar, so that the table gets regenerated as each new reults comes in
+      collatenode.set_config(cinifile)
       collatenode.add_parent(resultsnode)
-
-    # collate results into a results table
-    cpc = ConfigParser.ConfigParser() # create config parser to output .ini file
-    # create configuration .ini file
-    cinifile = os.path.join(self.results_basedir, 'collate.ini')
-
-    # create sections
-    cpc.add_section('output')
-    cpc.add_section('input')
-    cpc.add_section('general')
-
-    cpc.set('output', 'path', self.results_basedir) # set output directory
-    cpc.set('input', 'path', self.results_basedir)  # set directory containing individual results directories
-
-    # get sort type and direction
-    sorttype = self.get_config_option('results_page', 'sort_value', default='name') # default sorting on name
-    cpc.set('general', 'sort_value', sorttype)
-    sortdirection = self.get_config_option('results_page', 'sort_direction', default='ascending') # default sorting in ascending order
-    cpc.set('general', 'sort_direction', sortdirection)
-    if self.pe_coherent_only:
-      cpc.set('general', 'detectors', ['Joint'])
-    elif self.pe_incoherent_only:
-      cpc.set('general', 'detectors', self.ifos)
-    else:
-      cdets = deepcopy(self.ifos)
-      cdets.append('Joint')
-      cpc.set('general', 'detectors', cdets)
-
-    # get pulsar parameters to output
-    paramout = self.get_config_option('results_page', 'parameters', cftype='list', default=['f0'])
-    cpc.set('general', 'parameters', paramout)
-
-    # get results to output
-    resout = self.get_config_option('results_page', 'results', cftype='list', default=['h0ul'])
-    cpc.set('general', 'results', resout)
-
-    # write and set ini file
-    try:
-      fp = open(cinifile, 'w')
-      cpc.write(fp)
-      fp.close()
-    except:
-      print("Error... could not write configuration file '%s' for results collation page" % cinifile, file=sys.stderr)
-      self.error_code = -1
-      return
-
-    collatenode.set_config(cinifile)
-
-    self.add_node(collatenode)
+      self.add_node(collatenode)
 
 
   def setup_preprocessing(self):
@@ -800,7 +808,7 @@ class knopeDAG(pipeline.CondorDAG):
     if self.error_code != 0: return
 
     # set background run directories if required
-    self.pe_output_background_basedir = self.get_config_option('pe', 'pe_output_dir_background', cftype='dir')
+    self.pe_output_background_basedir = self.get_config_option('pe', 'pe_output_dir_background', cftype='dir', allownone=True)
     if self.pe_num_background != 0:
       if self.pe_output_background_basedir == None:
         print("Error... no background analysis directory has been set", file=sys.stderr)
@@ -1029,6 +1037,8 @@ class knopeDAG(pipeline.CondorDAG):
           if j == 0:
             # create prior file for analysis (use this same file for all background runs)
             priorfile = self.create_prior_file(psr, psrdir, dets, self.freq_factors, ffdir)
+            if pname not in self.pe_prior_files:
+              self.pe_prior_files[pname] = priorfile # set prior file (just use first one as they should be the same for each combination of detectors)
 
             nruns = self.pe_nruns
             nlive = self.pe_nlive
@@ -1049,7 +1059,7 @@ class knopeDAG(pipeline.CondorDAG):
           # setup job(s)
           i = counter = 0
           while counter < nruns+nroqruns: # loop over the required number of runs
-            penode = ppeNode(pejob)
+            penode = ppeNode(pejob, psrname=pname)
             if self.pe_random_seed != None:
               penode.set_randomseed(self.pe_random_seed)      # set seed for RNG
             penode.set_detectors(','.join(dets))              # add detectors
@@ -1107,18 +1117,10 @@ class knopeDAG(pipeline.CondorDAG):
                 penode.set_biaxial()
 
             # set Earth, Sun and time ephemeris files
-            if psr['EPHEM'] != None and self.ephem_path != None:
-              earthfile = os.path.join(self.ephem_path, 'earth00-19-%s.dat.gz' % psr['EPHEM'])
-              penode.set_ephem_earth(earthfile)
-              sunfile = os.path.join(self.ephem_path, 'sun00-19-%s.dat.gz' % psr['EPHEM'])
-              penode.set_ephem_sun(sunfile)
-
-            if psr['UNITS'] != None and self.ephem_path != None:
-              if psr['UNITS'] == 'TDB':
-                timefile = os.path.join(self.ephem_path, 'tdb_2000-2019.dat.gz')
-              else:
-                timefile = os.path.join(self.ephem_path, 'te405_2000-2019.dat.gz')
-              penode.set_ephem_time(timefile)
+            earthfile, sunfile, timefile = self.get_ephemeris(psr)
+            penode.set_ephem_earth(earthfile)
+            penode.set_ephem_sun(sunfile)
+            penode.set_ephem_time(timefile)
 
             # add parents (unless just doing post-processing)
             if not self.postonly:
@@ -1485,7 +1487,7 @@ class knopeDAG(pipeline.CondorDAG):
           print("Error... the ranges in the prior for '%s' are not set properly" % prioritem, file=sys.stderr)
           self.error_code = -1
           return outfile
-        fp.write("%s\t%s\t%.9e\t%.9e\n" % (prioritem, ptype, rangevals[0], rangevals[1]))
+        fp.write("%s\t%s\t%.16e\t%.16e\n" % (prioritem, ptype, rangevals[0], rangevals[1]))
       fp.close()
 
     return outfile
@@ -1691,7 +1693,8 @@ class knopeDAG(pipeline.CondorDAG):
           coarsenode = heterodyneNode(chetjob)
 
           # add data find parent to coarse job
-          coarsenode.add_parent(self.datafind_nodes[ifo])
+          if self.datafind_nodes is not None:
+            coarsenode.add_parent(self.datafind_nodes[ifo])
 
           # set data, segment location, channel and output location
           coarsenode.set_data_file(self.cache_files[ifo])
@@ -2189,15 +2192,12 @@ class knopeDAG(pipeline.CondorDAG):
       try:
         value = self.config.get(section, option)
       except:
-        if cftype != 'dir':
-          if not allownone:
-            if not isinstance(default, str):
-              print("Error... could not parse '%s' option from '[%s]' section." % (option, section), file=sys.stderr)
-              self.error_code = -1
-            else:
-              print("Warning... could not parse '%s' option from '[%s]' section. Defaulting to %s." % (option, section, default))
-              value = default
-          else: # check directory exists
+        if not allownone:
+          if not isinstance(default, str):
+            print("Error... could not parse '%s' option from '[%s]' section." % (option, section), file=sys.stderr)
+            self.error_code = -1
+          else:
+            print("Warning... could not parse '%s' option from '[%s]' section. Defaulting to %s." % (option, section, default))
             value = default
     elif cftype == 'float':
       try:
@@ -2253,8 +2253,11 @@ class knopeDAG(pipeline.CondorDAG):
           print("Warning... could not parse '%s' dictionary option from '[%s]' section. Defaulting to %s." % (option, section, str(default)))
           value = default
         elif not isinstance(value, dict) and not isinstance(default, dict):
-          print("Error... could not parse '%s' dictionary option from '[%s]' section." % (option, section), file=sys.stderr)
-          self.error_code = -1
+          if not allownone:
+            print("Error... could not parse '%s' dictionary option from '[%s]' section." % (option, section), file=sys.stderr)
+            self.error_code = -1
+          else:
+            value = None
       except:
         if not allownone:
           if not isinstance(default, dict):
@@ -2290,9 +2293,9 @@ class knopeDAG(pipeline.CondorDAG):
     self.datafind_job = None
     if self.config.has_option('condor', 'datafind'):
       # check if a dictionary of ready made cache files has been given
-      datafind = self.config.get('condor', 'datafind')
+      datafind = self.get_config_option('condor', 'datafind', cftype='dict', allownone=True)
 
-      if isinstance(datafind, dict):
+      if datafind is not None:
         # check there is a file for each detector and that they exist
         for ifo in self.ifos:
           if ifo not in datafind:
@@ -2321,6 +2324,8 @@ class knopeDAG(pipeline.CondorDAG):
         if len(self.cache_files) < len(self.ifos):
           self.datafind_job = pipeline.LSCDataFindJob(self.preprocessing_base_dir.values()[0], self.log_dir, self.config)
       else: # a data find exectable has been given
+        datafind = self.get_config_option('condor', 'datafind')
+
         if os.path.isfile(datafind) and os.access(datafind, os.X_OK):
           self.datafind_job = pipeline.LSCDataFindJob(self.preprocessing_base_dir.values()[0], self.log_dir, self.config)
         else:
@@ -2351,13 +2356,14 @@ class knopeDAG(pipeline.CondorDAG):
       if self.accounting_group_user != None:
         self.datafind_job.add_condor_cmd('accounting_group_user', self.accounting_group_user)
 
-    # reset the sub file location
-    self.datafind_job.set_sub_file(os.path.join(self.run_dir, 'datafind.sub'))
+      # reset the sub file location
+      self.datafind_job.set_sub_file(os.path.join(self.run_dir, 'datafind.sub'))
 
-    # Set gw_data_find nodes (one for each detector)
-    if len(self.cache_files) < len(self.ifos):
-      self.set_datafind_nodes()
-
+      # Set gw_data_find nodes (one for each detector)
+      if len(self.cache_files) < len(self.ifos):
+        self.set_datafind_nodes()
+    else:
+      self.datafind_nodes = None
 
   def set_datafind_nodes(self):
     """
@@ -2409,8 +2415,8 @@ class knopeDAG(pipeline.CondorDAG):
     each segment.
     """
 
-    # check if segment file(s) is given
-    segfiles = self.get_config_option('segmentfind', 'seg_files', cftype='dict', allownone=True)
+    # check if segment file(s) given (as a dictionary)
+    segfiles = self.get_config_option('segmentfind', 'segfind', cftype='dict', allownone=True)
     if segfiles is not None: # check if it is a dictionary
       if segfiles is not None:
         if ifo not in segfiles:
@@ -2419,31 +2425,36 @@ class knopeDAG(pipeline.CondorDAG):
           return
         else:
           segfile = segfiles[ifo]
-    else: # check if is just a single segment file
-      segfile = self.get_config_option('segmentfind', 'seg_files', cftype='string', allownone=True)
 
-    if segfile is not None:
-      # check segment file exists
-      if not os.path.isfile(segfile):
-        print("Error... segment file '%s' does not exist." % segfile)
-        self.error_code = -1
-        return
-      else:
-        # copy segment file to the 'outfile' location
-        try:
-          shutil.copyfile(segfile, outfile)
-        except:
-          print("Error... could not copy segment file to location of '%s'." % outfile)
-          self.error_code = -1
-        return # exit function
+          # check segment file exists
+          if not os.path.isfile(segfile):
+            print("Error... segment file '%s' does not exist." % segfile)
+            self.error_code = -1
+            return
+          else:
+            # copy segment file to the 'outfile' location
+            try:
+              shutil.copyfile(segfile, outfile)
+            except:
+              print("Error... could not copy segment file to location of '%s'." % outfile)
+              self.error_code = -1
+            return # exit function
 
     # otherwise try and get the segment list
+    segfind = self.get_config_option('segmentfind', 'segfind', default='ligolw_segment_query_dqsegdb')
+
+    # check segment finding file exists and is executable
+    if not os.path.isfile(segfind) or not os.access(segfind, os.X_OK):
+      print("Warning... '%s' executable for segment finding does not exist or is not an executable. Try finding code in path." % segfind)
+      segfind = self.find_exec_file('ligolw_segment_query_dqsegdb')
+
+      if segfind is None:
+        print("Error... could not find 'ligolw_segment_query_dqsegdb' in 'PATH'", file=sys.stderr)
+        self.error_code = -1
+        return
+
     # get server
-    if self.config.has_option('segmentfind', 'server'):
-      server = self.config.get('segmentfind', 'server')
-    else:
-      print("No segment server specified: defaulting to 'https://segments.ligo.org'")
-      server = 'https://segments.ligo.org'
+    server = self.get_config_option('segmentfind', 'server', default='https://segments.ligo.org')
 
     # get segment types to include
     segmenttypes = self.get_config_option('segmentfind', 'segmenttype', cftype='dict')
@@ -2457,8 +2468,7 @@ class knopeDAG(pipeline.CondorDAG):
       self.error_code = -1
       return
 
-    segFindCall = ' '.join([self.config.get('segmentfind', 'segfind'),
-                            '--segment-url', server,
+    segFindCall = ' '.join([segfind, '--segment-url', server,
                             '--query-segments',
                             '--include-segments', segmenttypes[ifo],
                             '--gps-start-time', str(starttime),
@@ -2469,7 +2479,19 @@ class knopeDAG(pipeline.CondorDAG):
         if len(excludesegs[ifo]) > 0:
           segFindCall += ' --exclude-segments ' + excludesegs[ifo]
 
-    xmlToTxtCall = ' '.join([self.config.get('segmentfind', 'ligolw_print'),
+    ligolwprint = self.get_config_option('segmentfind', 'ligolw_print', default='ligolw_print')
+
+    # check ligolw_print file exists and is executable
+    if not os.path.isfile(ligolwprint) or not os.access(ligolwprint, os.X_OK):
+      print("Warning... '%s' executable does not exist or is not an executable. Try finding code in path." % ligolwprint)
+      ligolwprint = self.find_exec_file('ligolw_print')
+
+      if ligolwprint is None:
+        print("Error... could not find 'ligolw_print' in 'PATH'", file=sys.stderr)
+        self.error_code = -1
+        return
+
+    xmlToTxtCall = ' '.join([ligolwprint,
                              "--table segment --column start_time --column end_time --delimiter ' '",
                              ' > ', outfile])
 
@@ -3050,11 +3072,11 @@ class ppeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
     # set log files for job
     if logdir != None:
-      self.set_stdout_file(os.path.join(logdir, 'ppe-$(cluster).out'))
-      self.set_stderr_file(os.path.join(logdir, 'ppe-$(cluster).err'))
+      self.set_stdout_file(os.path.join(logdir, 'ppe$(logname)-$(cluster).out'))
+      self.set_stderr_file(os.path.join(logdir, 'ppe$(logname)-$(cluster).err'))
     else:
-      self.set_stdout_file('ppe-$(cluster).out')
-      self.set_stderr_file('ppe-$(cluster).err')
+      self.set_stdout_file('ppe$(logname)-$(cluster).out')
+      self.set_stderr_file('ppe$(logname)-$(cluster).err')
 
     if rundir != None:
       self.set_sub_file(os.path.join(rundir, 'ppe.sub'))
@@ -3068,7 +3090,7 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A pes runs an instance of the parameter estimation code in a condor DAG.
   """
-  def __init__(self,job):
+  def __init__(self,job,psrname=''):
     """
     job = A CondorDAGJob that can run an instance of parameter estimation code.
     """
@@ -3135,10 +3157,24 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set macroargs to be empty
     self.add_macro('macroargs', '')
 
+    # set unique log name (set to pulsar name)
+    if len(psrname) > 0:
+      self.add_macro('logname', '-'+psrname)
+    else:
+      self.add_macro('logname', '')
+
   def set_detectors(self,detectors):
     # set detectors
     self.add_var_opt('detectors',detectors)
     self.__detectors = detectors
+
+    # at detector names to logname
+    if 'logname' in self.get_opts():
+      curmacroval = self.get_opts()['logname']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + '-' + detectors.replace(',', '')
+    self.add_macro('logname', curmacroval)
 
   def set_verbose(self):
     # set to run code in verbose mode

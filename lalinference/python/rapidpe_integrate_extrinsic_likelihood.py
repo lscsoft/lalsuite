@@ -38,7 +38,7 @@ import pylal
 from lalinference.rapid_pe import lalsimutils, factored_likelihood, mcsampler, xmlutils, common_cl
 from lalinference.rapid_pe.common_cl import param_limits
 
-from lalinference import fits as bfits
+from lalinference.io import fits as bfits
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gravity.phys.uwm.edu>, R. O'Shaughnessy"
 

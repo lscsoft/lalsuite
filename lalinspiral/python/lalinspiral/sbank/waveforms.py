@@ -49,6 +49,8 @@ class SnglInspiralTable(gluesit):
                     setattr(self,entry,0)
                 elif _sit_cols[entry] == 'lstring':
                     setattr(self,entry,'')
+                elif _sit_cols[entry] == 'ilwd:char':
+                    setattr(self,entry,'')
             else:
                 print >> sys.stderr, "Column %s not recognized" %(entry)
                 raise ValueError

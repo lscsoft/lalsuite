@@ -67,7 +67,7 @@ htmlpage = """
 
 <body>
 
-<h1>Results table</h1>
+<h1>Results table {nsources}</h1>
 
 <!-- The table of pulsars and results -->
 <div class="tablediv">
@@ -205,49 +205,51 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
     sys.exit(1)
 
   resultsdata = {} # dictionary to hold results data
+  sourcedirs = [os.path.join(inpath, rd) for rd in resdirs if os.path.isdir(os.path.join(inpath, rd))]
+  totalsources = len(sourcedirs)
+  cursources = 0 # currently number of completed sources
+  for d in sourcedirs:
+    ld = os.listdir(d)
+    jsonfile = None
+    for fd in ld:
+      if '.json' in fd:
+        jsonfile = os.path.join(d, fd)
+        break
+    if jsonfile == None: # no file found, so move on to next directory
+      continue
 
-  for d in [os.path.join(inpath, rd) for rd in resdirs]:
-    if os.path.isdir(d): # if path is a directory look for a json file within it
-      ld = os.listdir(d)
-      jsonfile = None
-      for fd in ld:
-        if '.json' in fd:
-          jsonfile = os.path.join(d, fd)
-          break
-      if jsonfile == None: # no file found, so move on to next directory
-        continue
+    # read in json file
+    try:
+      fp = open(jsonfile, 'r')
+      pdata = json.load(fp)
+      fp.close()
+    except:
+      print("Warning... could not read JSON file '%s'. Skipping this directory." % jsonfile)
+      continue
 
-      # read in json file
-      try:
-        fp = open(jsonfile, 'r')
-        pdata = json.load(fp)
-        fp.close()
-      except:
-        print("Warning... could not read JSON file '%s'. Skipping this directory." % jsonfile)
-        continue
+    # check dictionary contains a 'Pulsar data' key
+    if 'Pulsar data' not in pdata:
+      print("Warning... no 'Pulsar data' field in JSON file '%s'. Skipping this directory." % jsonfile)
+      continue
 
-      # check dictionary contains a 'Pulsar data' key
-      if 'Pulsar data' not in pdata:
-        print("Warning... no 'Pulsar data' field in JSON file '%s'. Skipping this directory." % jsonfile)
-        continue
+    # check dictionary contains 'PSR' key
+    if 'PSR' not in pdata:
+      print("Warning... no 'PSR' pulsar name field in JSON file '%s'. Skipping this directory." % jsonfile)
+      continue
 
-      # check dictionary contains 'PSR' key
-      if 'PSR' not in pdata:
-        print("Warning... no 'PSR' pulsar name field in JSON file '%s'. Skipping this directory." % jsonfile)
-        continue
+    # check that the request detectors are within the dictionary
+    ifopresent = True
+    for ifo in ifos:
+      if ifo not in pdata:
+        print("Warning... no key for detector '%s' in JSON file '%s'. Skipping this directory." % (ifo, jsonfile))
+        ifopresent = False
+        break
+    if not ifopresent: continue
 
-      # check that the request detectors are within the dictionary
-      ifopresent = True
-      for ifo in ifos:
-        if ifo not in pdata:
-          print("Warning... no key for detector '%s' in JSON file '%s'. Skipping this directory." % (ifo, jsonfile))
-          ifopresent = False
-          break
-      if not ifopresent: continue
-
-      # add data into dictionary
-      resultsdata[pdata['PSR']] = pdata
-      resultsdata[pdata['PSR']]['path'] = os.path.relpath(d, outpath) # relative path to result directory
+    # add data into dictionary
+    resultsdata[pdata['PSR']] = pdata
+    resultsdata[pdata['PSR']]['path'] = os.path.relpath(d, outpath) # relative path to result directory
+    cursources += 1
 
   if len(resultsdata) == 0:
     print("Error... no reults were found!", file=sys.stderr)
@@ -450,6 +452,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
             dataclass = ""
             ltable.adddata(bvallatex)
 
+  htmlinput['nsources'] = '(%d/%d sources)' % (cursources, totalsources)
   htmlinput['resultstable'] = restable.tabletext
 
   # add footnotes

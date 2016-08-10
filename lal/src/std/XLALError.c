@@ -429,6 +429,8 @@ const char *XLALErrorString(int code)
     ( ( code & XLAL_EFUNC ) ? "Internal function call failed: " s : (const char *) s )
     switch (code & ~XLAL_EFUNC) {
         /* these are standard error numbers */
+    case XLAL_ENOENT:
+        return XLAL_ERROR_STRING("No such file or directory");
     case XLAL_EIO:
         return XLAL_ERROR_STRING("I/O error");
     case XLAL_ENOMEM:
@@ -441,6 +443,8 @@ const char *XLALErrorString(int code)
         return XLAL_ERROR_STRING("Input domain error");
     case XLAL_ERANGE:
         return XLAL_ERROR_STRING("Output range error");
+    case XLAL_ENOSYS:
+        return XLAL_ERROR_STRING("Function not implemented");
 
         /* extended error numbers start at 128 ...
          * should be beyond normal errnos */

@@ -142,6 +142,7 @@ struct CommandLineArgsTag {
   REAL8 PSSCleanHPf;       /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES.*/
   INT4 PSSCleanExt;        /* Extend the timeseries at the beginning before calculating the autoregressive mean */
   INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
+  REAL8 windowR;
   REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
   BOOLEAN useSingle;       /* 11/19/05 gam; use single rather than double precision */
   char *frameStructType;   /* 01/10/07 gam */
@@ -594,6 +595,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"frame-struct-type",    required_argument, NULL,          'u'},
     {"ifo",                  required_argument, NULL,          'i'},
     {"window-type",          required_argument, NULL,          'w'},
+    {"window-radius",        required_argument, NULL,          'r'},
     {"overlap-fraction",     required_argument, NULL,          'P'},
     {"td-cleaning",          no_argument,       NULL,          'a'},
 #ifdef PSS_ENABLED
@@ -611,7 +613,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"version",              no_argument,       NULL,          'V'},
     {0, 0, 0, 0}
   };
-  char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:X:u:w:P:p:ab:";
+  char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:X:u:w:r:P:p:ab:";
 
   /* Initialize default values */
   CLA->HPf=-1.0;
@@ -628,6 +630,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->miscDesc=NULL;   /* 12/28/05 gam; misc. part of the SFT description field in the filename (also used if makeGPSDirs > 0) */
   CLA->commentField=NULL; /* 12/28/05 gam; comment for version 2 SFT header. */
   CLA->windowOption=1;  /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
+  CLA->windowR = 0.001;
   CLA->overlapFraction=0.0; /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0). */
   CLA->htdata = 0;
   CLA->makeTmpFile = 0; /* 01/09/06 gam */  
@@ -749,6 +752,10 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
       CLA->windowOption=atoi(LALoptarg);
       break;
+    case 'r':
+      /* defulat 0.001 */
+      CLA->windowR=(REAL8)atof(LALoptarg);
+      break;
     case 'P':
       /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
       CLA->overlapFraction=(REAL8)atof(LALoptarg);
@@ -812,6 +819,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tmake-tmp-file (-Z)\tINT\t (optional) Write SFT to .*.tmp file, then move to final filename.\n");
       fprintf(stdout,"\tmisc-desc (-X)   \tSTRING\t (optional) Misc. part of the SFT description field in the filename (also used if make-gps-dirs, -D option, is > 0)\n");
       fprintf(stdout,"\twindow-type (-w)\tINT\t (optional) 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window\n");
+      fprintf(stdout,"\twindow-radius (-r)\tFLOAT\t (optional) default = 0.001\n");
       fprintf(stdout,"\toverlap-fraction (-P)\tFLOAT\t (optional) Overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0).\n");
       fprintf(stdout,"\tht-data (-H)\t\tFLAG\t (optional) Input data is h(t) data (input is PROC_REAL8 data ).\n");
       fprintf(stdout,"\tuse-single (-S)\t\tFLAG\t (optional) Use single precision for window, plan, and fft; double precision filtering is always done.\n");
@@ -1495,7 +1503,7 @@ int HighPass(struct CommandLineArgsTag CLA)
 /*******************************************************************************/
 int WindowData(struct CommandLineArgsTag CLA)
 {
-  REAL8 r = 0.001;
+  REAL8 r = CLA.windowR;
   INT4 k, N, kl, kh;
   /* 10/05/12 gam */
   REAL8 win;

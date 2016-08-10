@@ -90,7 +90,7 @@ typedef struct tagPosVel3D_t {
 
 
 /** Bitfield of different types of detector-motion to use in order to compute the Doppler-metric */
-typedef enum {
+typedef enum tagDetectorMotionType {
   DETMOTION_SPIN       = 0x01,   /**< Full spin motion */
   DETMOTION_SPINZ      = 0x02,   /**< Ecliptic-Z component of spin motion only */
   DETMOTION_SPINXY     = 0x03,   /**< Ecliptic-X+Y components of spin motion only */
@@ -106,7 +106,7 @@ typedef enum {
  * enum listing symbolic 'names' for all Doppler Coordinates
  * supported by the metric codes in FstatMetric
  */
-typedef enum {
+typedef enum tagDopplerCoordinateID {
   DOPPLERCOORD_NONE = -1,	/**< No Doppler component */
 
   DOPPLERCOORD_FREQ,		/**< Frequency [Units: Hz]. */

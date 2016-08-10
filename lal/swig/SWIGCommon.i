@@ -363,14 +363,14 @@ if (swiglal_release_parent(PTR)) {
 %enddef
 
 ///
-/// Create constructors and destructors for a <tt>struct TAGNAME</tt>.
-%define %swiglal_struct_create_cdtors(TAGNAME, OPAQUE, DTORFUNC)
+/// Extend a <tt>struct TAGNAME</tt>.
+%define %swiglal_struct_extend(TAGNAME, OPAQUE, DTORFUNC)
 /// <ul><li>
 
 /// If this is an opaque struct, create an empty struct to represent the opaque struct, so that SWIG
 /// has something to attach the destructor to.  No constructors are generated, since it is assumed
 /// that the struct will have a creator function. Otherwise, if this is not an opaque struct,
-/// generate a basic constructor, using XLALCalloc() to allocate memory.
+/// generate basic constructor and (shallow) copy constructor, using XLALCalloc() to allocate memory.
 #if OPAQUE
 struct TAGNAME {
 };
@@ -378,6 +378,9 @@ struct TAGNAME {
 %extend TAGNAME {
   TAGNAME() {
     return %swiglal_new_instance(struct TAGNAME);
+  }
+  TAGNAME(const struct TAGNAME *src) {
+    return %swiglal_new_copy(*src, struct TAGNAME);
   }
 }
 #endif
@@ -397,6 +400,49 @@ struct TAGNAME {
   ~TAGNAME() {
     %swiglal_struct_call_dtor(%arg(DTORFUNC), $self);
   }
+}
+#endif
+
+/// </li><li>
+
+/// Create shallow copy function __copy__() for the use of Python's copy.copy() function. It is
+/// always defined but will fail for opaque structs, which cannot be copied.
+#if !OPAQUE
+%extend TAGNAME {
+  struct TAGNAME *__copy__() {
+    return %swiglal_new_copy(*$self, struct TAGNAME);
+  }
+}
+#else
+%extend TAGNAME {
+  struct TAGNAME *__copy__() {
+    XLALSetErrno(XLAL_ENOSYS); /* Silently signal an error to wrapper function */
+    return NULL;
+  }
+}
+#endif
+
+/// </li><li>
+
+/// Create deep copy function __deepcopy__() for the use of Python's copy.deepcopy() function. It is
+/// always defined but will fail for opaque structs, which cannot be copied, and for structs with a
+/// destructor, which presumably cannot be trivially copied with memcpy().
+#if !OPAQUE && #DTORFUNC == ""
+%extend TAGNAME {
+  %typemap(in, noblock=1) const void *memo "";
+  struct TAGNAME *__deepcopy__(const void *memo) {
+    return %swiglal_new_copy(*$self, struct TAGNAME);
+  }
+  %clear const void *memo;
+}
+#else
+%extend TAGNAME {
+  %typemap(in, noblock=1) const void *memo "";
+  struct TAGNAME *__deepcopy__(const void *memo) {
+    XLALSetErrno(XLAL_ENOSYS); /* Silently signal an error to wrapper function */
+    return NULL;
+  }
+  %clear const void *memo;
 }
 #endif
 
@@ -2039,20 +2085,6 @@ typedef struct {} NAME;
 }
 %enddef
 #define %swiglal_public_clear_EXTERNAL_STRUCT(NAME, DTORFUNC)
-
-///
-/// The <b>SWIGLAL(COPY_CONSTRUCTOR(TAGNAME))</b> macro can be used to add a copy constructor to the
-/// struct TAGNAME, if that is a valid operation. Note that this performs only a <i>struct copy</i>,
-/// not a <i>deep copy</i>. The macro should first appear after the definition of struct TAGNAME.
-///
-%define %swiglal_public_COPY_CONSTRUCTOR(TAGNAME)
-%extend TAGNAME {
-  TAGNAME(const struct TAGNAME* src) {
-    return %swiglal_new_copy(*src, struct TAGNAME);
-  }
-}
-%enddef
-#define %swiglal_public_clear_COPY_CONSTRUCTOR(...)
 
 ///
 /// The <b>SWIGLAL(CAST_STRUCT_TO(...))</b> macro adds to the containing struct methods which cast

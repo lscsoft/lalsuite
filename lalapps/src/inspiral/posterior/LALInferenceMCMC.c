@@ -44,8 +44,6 @@
 #include <mpi.h>
 
 
-int MPIrank, MPIsize;
-
 void init_mpi_randomstate(LALInferenceRunState *run_state);
 void initializeMCMC(LALInferenceRunState *runState);
 INT4 init_ptmcmc(LALInferenceRunState *runState);
@@ -364,10 +362,11 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
     REAL8 *ladder=NULL;
     INT4 flexible_tempmax=0;
     INT4 ntemps, ntemps_per_thread;
-    INT4 mpi_size;
+    INT4 mpi_rank, mpi_size;
     INT4 t;
     LALInferenceIFOData *ifo;
 
+    mpi_rank = LALInferenceGetINT4Variable(runState->algorithmParams, "mpirank");
     mpi_size = LALInferenceGetINT4Variable(runState->algorithmParams, "mpisize");
 
     ntemps = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemps");
@@ -380,13 +379,13 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
 
     /* Set maximum temperature (command line value take precidence) */
     if (LALInferenceGetProcParamVal(runState->commandLine,"--temp-max")) {
-        if (MPIrank==0)
+        if (mpi_rank==0)
             fprintf(stdout,"Using tempMax specified by commandline: %f.\n", tempMax);
     } else if (trigSNR > 0) {
         networkSNRsqrd = trigSNR * trigSNR;
         tempMax = networkSNRsqrd/(2*targetHotLike);
 
-        if (MPIrank==0)
+        if (mpi_rank==0)
             fprintf(stdout,"Trigger SNR of %f specified, setting max temperature to %f.\n", trigSNR, tempMax);
 
     } else {
@@ -399,12 +398,12 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
 
         if (networkSNRsqrd > 0.0) {
             tempMax = networkSNRsqrd/(2*targetHotLike);
-            if (MPIrank==0)
+            if (mpi_rank==0)
                 fprintf(stdout,"Injecting SNR of %f, setting tempMax to %f.\n", sqrt(networkSNRsqrd), tempMax);
 
         /* If all else fails, use the default */
         } else {
-            if (MPIrank==0) {
+            if (mpi_rank==0) {
                 fprintf(stdout, "No --trigger-snr or --temp-max specified, and ");
                 fprintf(stdout, "not injecting a signal. Setting max temperature");
                 fprintf(stdout, "to default of %f.\n", tempMax);

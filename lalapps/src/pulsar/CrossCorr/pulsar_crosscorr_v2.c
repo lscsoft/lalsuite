@@ -538,13 +538,13 @@ int main(int argc, char *argv[]){
 	    LogPrintf ( LOG_CRITICAL, "Error in file %s: comb with firstindex=%d,lastindex=%d\n", config.lineFiles->data[i_f], firstindex, lastindex );
 	    XLAL_ERROR( XLAL_EINVAL );
 	  }
-	  for ( UINT4 index = firstindex ; index <= lastindex; index++ ) {
-	    binCount = XLALFindBadBins( badBins->data[detInd], binCount, offset+index*spacing-leftwidth, offset+index*spacing+rightwidth, f0, deltaF, numSFTFreqs);
+	  for ( UINT4 index0 = firstindex ; index0 <= lastindex; index0++ ) {
+	    binCount = XLALFindBadBins( badBins->data[detInd], binCount, offset+index0*spacing-leftwidth, offset+index0*spacing+rightwidth, f0, deltaF, numSFTFreqs);
 	    if (binCount < 0){
 	      LogPrintf ( LOG_CRITICAL, "%s: XLALFindBadBins() failed with errno=%d\n", __func__, xlalErrno );
 	      XLAL_ERROR( XLAL_EFUNC );
 	    }
-	    /* printf ("veto %f to %f\n", offset+index*spacing-leftwidth, offset+index*spacing+rightwidth); */
+	    /* printf ("veto %f to %f\n", offset+index0*spacing-leftwidth, offset+index0*spacing+rightwidth); */
 	  }
 	  break;
 	case 2: /* scaling-width comb */
@@ -552,13 +552,13 @@ int main(int argc, char *argv[]){
 	    LogPrintf ( LOG_CRITICAL, "Error in file %s: comb with firstindex=%d,lastindex=%d\n", config.lineFiles->data[i_f], firstindex, lastindex );
 	    XLAL_ERROR( XLAL_EINVAL );
 	  }
-	  for ( UINT4 index = firstindex ; index <= lastindex; index++ ) {
-	    binCount = XLALFindBadBins( badBins->data[detInd], binCount, offset+index*spacing-index*leftwidth, offset+index*spacing+index*rightwidth, f0, deltaF, numSFTFreqs);
+	  for ( UINT4 index0 = firstindex ; index0 <= lastindex; index0++ ) {
+	    binCount = XLALFindBadBins( badBins->data[detInd], binCount, offset+index0*spacing-index0*leftwidth, offset+index0*spacing+index0*rightwidth, f0, deltaF, numSFTFreqs);
 	    if (binCount < 0){
 	      LogPrintf ( LOG_CRITICAL, "%s: XLALFindBadBins() failed with errno=%d\n", __func__, xlalErrno );
 	      XLAL_ERROR( XLAL_EFUNC );
 	    }
-	    /* printf ("veto %f to %f\n", offset+index*spacing-index*leftwidth, offset+index*spacing+index*rightwidth); */
+	    /* printf ("veto %f to %f\n", offset+index0*spacing-index0*leftwidth, offset+index0*spacing+index0*rightwidth); */
 	  }
 	  break;
 	default:

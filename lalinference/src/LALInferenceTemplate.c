@@ -352,6 +352,28 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
   /* Only use GR templates */
   LALSimInspiralTestGRParam *nonGRparams = NULL;
 
+  /* Fill in the extra parameters for testing GR, if necessary */
+  for (UINT4 k=0; k<N_extra_params; k++)
+  {
+    if(LALInferenceCheckVariable(model->params,list_extra_parameters[k]))
+    {
+      XLALSimInspiralAddTestGRParam(&nonGRparams,list_extra_parameters[k],*(REAL8 *)LALInferenceGetVariable(model->params,list_extra_parameters[k]));
+    }
+  }
+  /* Fill in PPE params if they are available */
+  char PPEparam[64]="";
+  const char *PPEnames[]={"aPPE","alphaPPE","bPPE","betaPPE",NULL};
+  for(UINT4 idx=0;PPEnames[idx];idx++)
+  {
+    for(UINT4 ppeidx=0;;ppeidx++)
+    {
+      sprintf(PPEparam, "%s%d",PPEnames[idx],ppeidx);
+      if(LALInferenceCheckVariable(model->params,PPEparam))
+        XLALSimInspiralAddTestGRParam(&nonGRparams,PPEparam,LALInferenceGetREAL8Variable(model->params,PPEparam));
+      else
+        break;
+    }
+  }
 
   /* ==== Call the waveform generator ==== */
   XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformSequence (&(model->roq->hptildeLinear), &(model->roq->hctildeLinear), phi0, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
@@ -369,31 +391,6 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
 
         return;
 }
-
-
-
-REAL8 fLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant)
-/*  Compute the minimum frequency for waveform generation */
-/*  using amplitude orders above Newtonian.  The waveform */
-/*  generator turns on all orders at the orbital          */
-/*  associated with fMin, so information from higher      */
-/*  orders is not included at fLow unless fMin is         */
-/*  sufficiently low.                                     */
-{
-  if (ampOrder == -1) {
-      if (approximant == SpinTaylorT2 || approximant == SpinTaylorT4)
-          ampOrder = MAX_PRECESSING_AMP_PN_ORDER;
-      else
-          ampOrder = MAX_NONPRECESSING_AMP_PN_ORDER;
-  }
-
-    REAL8 fStart;
-    fStart = fLow * 2./(ampOrder+2);
-    return fStart;
-}
-
-
-
 
 void LALInferenceTemplateSineGaussian(LALInferenceModel *model)
 /*****************************************************/
@@ -693,7 +690,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   else
     f_low = model->fLow;
 
-  f_start = fLow2fStart(f_low, amporder, approximant);
+  f_start = XLALSimInspiralfLow2fStart(f_low, amporder, approximant);
   f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using model->fHigh causes NaNs in waveform (see redmine issue #750)*/
 
   /* ==== SPINS ==== */
@@ -1172,7 +1169,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
     else
         f_low = model->fLow;
 
-    f_start = fLow2fStart(f_low, amporder, approximant);
+    f_start = XLALSimInspiralfLow2fStart(f_low, amporder, approximant);
     f_max = 0.0; /* for freq domain waveforms this will stop at ISCO. Previously found using model->fHigh causes NaNs in waveform (see redmine issue #750)*/
 
     /* ==== SPINS ==== */

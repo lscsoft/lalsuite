@@ -34,14 +34,14 @@ Description: LSC Algorithm Library XML Developers
 
 Package: lalxml-python
 Architecture: any
-Depends: ${shilibs:Depends}, ${misc:Depends}, python-numpy,
+Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
   lalxml (= ${binary:Version}),
   lal-python (>= 6.16.1~)
 Description: Python bindings for LALXML
 
 Package: lalxml-octave
 Architecture: any
-Depends: ${shlivs:Depends}, ${misc:Depends}, octave,
+Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   lalxml (= ${binary:Version}),
   lal-octave (>= 6.16.1~)
 Description: Octave bindings for LALXML

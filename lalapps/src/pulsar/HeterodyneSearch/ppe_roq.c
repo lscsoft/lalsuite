@@ -230,6 +230,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
         tmpRS->threads[0]->model->ifo = ifotmp;
         tmpRS->GSLrandom = runState->GSLrandom;
         tmpRS->priorArgs = runState->priorArgs;
+        tmpRS->prior = runState->prior;
         tmpRS->commandLine = runState->commandLine;
 
         ifotmp->times = XLALCreateTimestampVector( tlen );
@@ -686,6 +687,7 @@ COMPLEX16Array *generate_training_set( LALInferenceRunState *rs, UINT4 n ){
   COMPLEX16Array *ts = XLALCreateCOMPLEX16Array( dims );
   gsl_matrix_complex_view tsview = gsl_matrix_complex_view_array( (double *)ts->data, dims->data[0], dims->data[1] );
   XLALDestroyUINT4Vector( dims );
+  REAL8 logprior = 0.;
 
   rs->threads[0]->model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
 
@@ -722,12 +724,16 @@ COMPLEX16Array *generate_training_set( LALInferenceRunState *rs, UINT4 n ){
   }
 
   /* choose random variables values and fill in runState->threads[0]->model->params */
-  for ( j=0; j<n; j++ ){
+  while ( j < n ){
     /* copy values to model parameters */
     LALInferenceCopyVariables(rs->threads[0]->currentParams, rs->threads[0]->model->params);
 
     /* draw from the prior distributions */
     LALInferenceDrawFromPrior( rs->threads[0]->model->params, rs->priorArgs, rs->GSLrandom );
+
+    /* check prior is non-zero */
+    logprior = rs->prior(rs, rs->threads[0]->model->params, rs->threads[0]->model);
+    if ( logprior == -DBL_MAX || logprior == -INFINITY || isnan(logprior) ){ continue; }
 
     /* generate model */
     rs->threads[0]->model->templt( rs->threads[0]->model );
@@ -736,6 +742,7 @@ COMPLEX16Array *generate_training_set( LALInferenceRunState *rs, UINT4 n ){
     gsl_vector_complex_view cview;
     cview = gsl_vector_complex_view_array((double*)rs->threads[0]->model->ifo->compTimeSignal->data->data, rs->threads[0]->model->ifo->times->length);
     gsl_matrix_complex_set_row(&tsview.matrix, j, &cview.vector);
+    j++;
   }
 
   LALInferenceClearVariables(rs->threads[0]->model->params);
@@ -771,6 +778,7 @@ REAL8Array *generate_training_set_quad( LALInferenceRunState *rs, UINT4 n ){
   REAL8Array *ts = XLALCreateREAL8Array( dims );
   gsl_matrix_view tsview = gsl_matrix_view_array( ts->data, dims->data[0], dims->data[1] );
   XLALDestroyUINT4Vector( dims );
+  REAL8 logprior = 0.;
 
   rs->threads[0]->model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
 
@@ -806,12 +814,16 @@ REAL8Array *generate_training_set_quad( LALInferenceRunState *rs, UINT4 n ){
   }
 
   /* choose random variables values and fill in runState->threads[0]->model->params */
-  for ( j=0; j<n; j++ ){
+  while ( j < n ){
     /* copy values to model parameters */
     LALInferenceCopyVariables(rs->threads[0]->currentParams, rs->threads[0]->model->params);
 
     /* draw from the prior distributions */
     LALInferenceDrawFromPrior( rs->threads[0]->model->params, rs->priorArgs, rs->GSLrandom );
+
+    /* check prior is non-zero */
+    logprior = rs->prior(rs, rs->threads[0]->model->params, rs->threads[0]->model);
+    if ( logprior == -DBL_MAX || logprior == -INFINITY || isnan(logprior) ){ continue; }
 
     /* generate model */
     rs->threads[0]->model->templt( rs->threads[0]->model );
@@ -821,6 +833,7 @@ REAL8Array *generate_training_set_quad( LALInferenceRunState *rs, UINT4 n ){
       COMPLEX16 cval = rs->threads[0]->model->ifo->compTimeSignal->data->data[k];
       gsl_matrix_set(&tsview.matrix, j, k, creal(cval*conj(cval)));
     }
+    j++;
   }
 
   LALInferenceClearVariables(rs->threads[0]->model->params);

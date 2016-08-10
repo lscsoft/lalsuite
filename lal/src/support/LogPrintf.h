@@ -49,7 +49,7 @@ extern "C" {
 /*---------- TYPES ----------*/
 
 /** Argument-type for LogPrintf(): determines log-level of this message */
-typedef enum
+typedef enum tagLogLevel_t
   {
     LOG_NONE = 0,	/**< internal: don't use */
     LOG_CRITICAL,	/**< log-level for critical errors */

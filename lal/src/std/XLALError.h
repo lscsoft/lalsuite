@@ -402,12 +402,14 @@ enum XLALErrorValue {
     XLAL_FAILURE = -1,     /**< Failure return value (not an error number) */
 
     /* these are standard error numbers */
+    XLAL_ENOENT = 2,        /**< No such file or directory */
     XLAL_EIO = 5,           /**< I/O error */
     XLAL_ENOMEM = 12,       /**< Memory allocation error */
     XLAL_EFAULT = 14,       /**< Invalid pointer */
     XLAL_EINVAL = 22,       /**< Invalid argument */
     XLAL_EDOM = 33,         /**< Input domain error */
     XLAL_ERANGE = 34,       /**< Output range error */
+    XLAL_ENOSYS = 38,       /**< Function not implemented */
 
     /* extended error numbers start at 128 ...
      * should be beyond normal errnos */

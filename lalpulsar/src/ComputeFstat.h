@@ -134,9 +134,6 @@ typedef struct tagFstatOptionalArgs {
   FstatInput *prevInput;		///< An \c FstatInput structure from a previous call to XLALCreateFstatInput(); may contain common workspace data than can be re-used to save memory.
   BOOLEAN collectTiming;		///< a flag to turn on/off the collection of F-stat-method-specific timing-data
 } FstatOptionalArgs;
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(COPY_CONSTRUCTOR(tagFstatOptionalArgs));
-#endif // SWIG
 
 ///
 /// Global initializer for setting #FstatOptionalArgs to default values
@@ -298,7 +295,7 @@ const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* in
 const MultiNoiseWeights* XLALGetFstatInputNoiseWeights ( const FstatInput* input );
 const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInput* input );
 int XLALGetFstatTiming ( const FstatInput* input, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
-int AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp );
+int AppendFstatTimingInfo2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader );
 
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));

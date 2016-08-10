@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 124
+# serial 125
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -418,25 +418,44 @@ AC_DEFUN([LALSUITE_REQUIRE_PYTHON],[
 
 AC_DEFUN([LALSUITE_CHECK_PYTHON],[
   # $0: check for Python
+  AC_ARG_ENABLE(
+    [python],
+    AC_HELP_STRING(
+      [--enable-python],
+      [build Python programs and modules]
+    ),[
+      AS_CASE(["${enableval}"],
+        [yes],[python=true],
+        [no],[python=false],
+        [AC_MSG_ERROR([invalid value "${enableval}" for --enable-python])]
+      )
+    ],[
+      python=
+    ]
+  )
   lalsuite_pyvers="$1"
   AS_IF([test "x${lalsuite_require_pyvers}" != x],[
     LALSUITE_VERSION_COMPARE([${lalsuite_require_pyvers}],[>],[${lalsuite_pyvers}],[
       lalsuite_pyvers="${lalsuite_require_pyvers}"
     ])
   ])
-  AS_IF([test "x${PYTHON}" != xfalse],[
-    AM_PATH_PYTHON([${lalsuite_pyvers}],,[
-      AS_IF([test "x${lalsuite_require_pyvers}" = x],[
-        PYTHON=false
-      ],[
+  AS_IF([test "x${python}" != xfalse || test "x${lalsuite_require_pyvers}" != x],[
+    AM_PATH_PYTHON([${lalsuite_pyvers}],[
+      AC_SUBST([python_prefix], [`${PYTHON} -c 'import sys; print(sys.prefix)' 2>/dev/null`])
+      AC_SUBST([python_exec_prefix], [`${PYTHON} -c 'import sys; print(sys.exec_prefix)' 2>/dev/null`])
+    ],[
+      AS_IF([test "x${python}" = xtrue || test "x${lalsuite_require_pyvers}" != x],[
         AC_MSG_ERROR([Python version ${lalsuite_pyvers} or later is required])
+      ],[
+        python=false
       ])
     ])
   ])
-  AM_CONDITIONAL([HAVE_PYTHON],[test "x${PYTHON}" != xfalse])
+  AS_IF([test "x${python}" = xfalse && test "x${lalsuite_require_pyvers}" = x],[
+    AC_SUBST([PYTHON],["${SHELL} -c 'echo ERROR: Python is missing >&2; exit 1' --"])
+  ])
+  AM_CONDITIONAL([HAVE_PYTHON],[test "x${python}" != xfalse])
   AM_COND_IF([HAVE_PYTHON],[
-    AC_SUBST([python_prefix], [`${PYTHON} -c 'import sys; print(sys.prefix)' 2>/dev/null`])
-    AC_SUBST([python_exec_prefix], [`${PYTHON} -c 'import sys; print(sys.exec_prefix)' 2>/dev/null`])
     PYTHON_ENABLE_VAL=ENABLED
   ],[
     PYTHON_ENABLE_VAL=DISABLED
