@@ -106,6 +106,7 @@ for detector in detectors:
     series.data.data *= scale
     psds[detector] = series
 
-glue.ligolw.utils.write_fileobj(
-    lal.series.make_psd_xmldoc(psds), opts.output,
-    gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
+with glue.ligolw.utils.SignalsTrap():
+  glue.ligolw.utils.write_fileobj(
+      lal.series.make_psd_xmldoc(psds), opts.output,
+      gz=(os.path.splitext(opts.output.name)[-1]==".gz"))
