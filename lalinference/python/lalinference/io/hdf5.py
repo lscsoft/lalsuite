@@ -204,13 +204,13 @@ def write_samples(table, filename, path, metadata=None):
     >>> table = Table([
     ...     Column(np.arange(10), name='foo', meta={'vary': FIXED})
     ... ])
-    >>> write_samples(table, 'bar.hdf5', 'bat/baz')
+    >>> write_samples(table, 'bar.hdf5', 'bat/baz') # doctest: +ELLIPSIS
     Traceback (most recent call last):
         ...
     AssertionError: 
     Arrays are not equal
     Column foo is a fixed column, but its values are not identical
-        ...
+    ...
 
     And now try writing an arbitrary example to a temporary file:
     >>> import os.path
