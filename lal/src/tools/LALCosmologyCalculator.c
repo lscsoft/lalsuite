@@ -183,9 +183,7 @@ double XLALUniformComovingVolumeDensity(
     LALCosmologicalParameters *p = (LALCosmologicalParameters *)omega;
 
     double x = 1.0+z;
-    double dm = XLALComovingTransverseDistance(omega,z);
-    double E = XLALHubbleParameter(z,omega);
-    double unnorm_density = 4.0*M_PI*dm*dm*E*XLALHubbleDistance(p)/x;
+    double unnorm_density = XLALComovingVolumeElement(z,p)/x;
     return unnorm_density;
 }
 /**
