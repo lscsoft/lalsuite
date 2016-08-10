@@ -642,8 +642,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
     }
     /* Check for remaining required options */
-	if(!(LALInferenceGetProcParamVal(commandLine,"--PSDstart")||LALInferenceGetProcParamVal(commandLine,"--psdstart")) ||
-            !(LALInferenceGetProcParamVal(commandLine,"--PSDlength")||LALInferenceGetProcParamVal(commandLine,"--psdlength")) ||!LALInferenceGetProcParamVal(commandLine,"--seglen"))
+	if(!LALInferenceGetProcParamVal(commandLine,"--seglen"))
     {fprintf(stderr,USAGE); return(NULL);}
 
     if(LALInferenceGetProcParamVal(commandLine,"--dataseed")){
@@ -655,20 +654,25 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
     if(!IFOdata) XLAL_ERROR_NULL(XLAL_ENOMEM);
 
     procparam=LALInferenceGetProcParamVal(commandLine,"--psdstart");
-    if (!procparam) procparam=LALInferenceGetProcParamVal(commandLine,"--PSDstart");
-    LALStringToGPS(&status,&GPSstart,procparam->value,&chartmp);
-    if(status.statusCode) REPORTSTATUS(&status);
+    if (procparam) {
+        LALStringToGPS(&status,&GPSstart,procparam->value,&chartmp);
+        if(status.statusCode) REPORTSTATUS(&status);
+    } else
+        XLALINT8NSToGPS(&GPSstart, 0);
 
     /*Set trigtime in GPStrig using either inj file or --trigtime*/
     LALInferenceSetGPSTrigtime(&GPStrig,commandLine);
 
     if(status.statusCode) REPORTSTATUS(&status);
-    ppt=LALInferenceGetProcParamVal(commandLine,"--psdlength");
-    if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--PSDlength");
-    PSDdatalength=atof(ppt->value);
+
     SegmentLength=atof(LALInferenceGetProcParamVal(commandLine,"--seglen")->value);
     seglen=(size_t)(SegmentLength*SampleRate);
-    nSegs=(int)floor(PSDdatalength/SegmentLength);
+
+    ppt=LALInferenceGetProcParamVal(commandLine,"--psdlength");
+    if(ppt) {
+        PSDdatalength=atof(ppt->value);
+        nSegs=(int)floor(PSDdatalength/SegmentLength);
+    }
 
     CHAR df_argument_name[128];
     REAL8 dof;
@@ -910,6 +914,11 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
                     //fprintf(stdout,"%lf\n",IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]);
                 }
             }else{
+                /* Make sure required PSD arguments were provided */
+                if(!LALInferenceGetProcParamVal(commandLine,"--psdstart") ||
+                        !LALInferenceGetProcParamVal(commandLine,"--psdlength"))
+                {fprintf(stderr,USAGE); return(NULL);}
+
                 fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
                 /*LIGOTimeGPS trueGPSstart=GPSstart;
                 if(Ntimeslides) {
@@ -1576,7 +1585,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       fprintf(stdout,"Injection will run using Approximant %i (%s), phase order %i, amp order %i, spin order %i, tidal order %i, in the time domain with a reference frequency of %f.\n",approximant,XLALSimInspiralGetStringFromApproximant(approximant),order,amporder,(int) spinO, (int) tideO, (float) fref);
 
       /* ChooseWaveform starts the (2,2) mode of the waveform at the given minimum frequency.  We want the highest order contribution to start at the f_lower of the injection file */
-      REAL8 f_min = fLow2fStart(injEvent->f_lower, amporder, approximant);
+      REAL8 f_min = XLALSimInspiralfLow2fStart(injEvent->f_lower, amporder, approximant);
       printf("Injecting with f_min = %f.\n", f_min);
 
       XLALSimInspiralChooseTDWaveform(&hplus, &hcross, injEvent->coa_phase, 1.0/InjSampleRate,
@@ -2258,7 +2267,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   REAL8 deltaT = IFOdata->timeData->deltaT;
   REAL8 deltaF = IFOdata->freqData->deltaF;
 
-  REAL8 f_min = fLow2fStart(inj_table->f_lower, amp_order, approximant);
+  REAL8 f_min = XLALSimInspiralfLow2fStart(inj_table->f_lower, amp_order, approximant);
   REAL8 f_max = 0.0;
 
   REAL8 fref = 100.;

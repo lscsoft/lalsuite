@@ -58,7 +58,13 @@ typedef int ( *LALHeapCmpParamFcn )( void *param, const void *x, const void *y )
  * Function to call when visiting heap element <tt>x</tt>, with a parameter \c param.
  * Return XLAL_SUCCESS if successful, or XLAL_FAILURE otherwise.
  */
-typedef int ( *LALHeapVisitFcn )( void *param, void *x );
+typedef int ( *LALHeapVisitFcn )( void *param, const void *x );
+
+/**
+ * Function to call when visiting (and possibly modify) heap element <tt>x</tt>, with a parameter \c param.
+ * Return XLAL_SUCCESS if successful, or XLAL_FAILURE otherwise.
+ */
+typedef int ( *LALHeapModifyFcn )( void *param, void *x );
 
 /**
  * Create a heap
@@ -92,6 +98,13 @@ void XLALHeapDestroy(
  * Return the size of a heap
  */
 int XLALHeapSize(
+  const LALHeap *h              /**< [in] Pointer to heap */
+  );
+
+/**
+ * Return the maximum size of a heap
+ */
+int XLALHeapMaxSize(
   const LALHeap *h              /**< [in] Pointer to heap */
   );
 
@@ -142,12 +155,28 @@ int XLALHeapExchangeRoot(
   );
 
 /**
- * Visit (and possibly modify) each element in the heap in the order given by the comparison function
+ * Visit each element in the heap in the order given by the comparison function
  */
 int XLALHeapVisit(
-  LALHeap *h,                   /**< [in] Pointer to heap */
+  const LALHeap *h,             /**< [in] Pointer to heap */
   LALHeapVisitFcn visit,        /**< [in] Visitor function to call for each heap element */
   void *visit_param             /**< [in] Parameter to pass to visitor function */
+  );
+
+/**
+ * Visit (and possibly modify) each element in the heap in the order given by the comparison function
+ */
+int XLALHeapModify(
+  LALHeap *h,                   /**< [in] Pointer to heap */
+  LALHeapModifyFcn modify,      /**< [in] Modifier function to call for each heap element */
+  void *modify_param            /**< [in] Parameter to pass to modifier function */
+  );
+
+/**
+ * Allocate and return an array containing all elements in the heap
+ */
+const void **XLALHeapElements(
+  const LALHeap *h              /**< [in] Pointer to heap */
   );
 
 /*@}*/

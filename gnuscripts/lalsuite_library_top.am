@@ -32,8 +32,8 @@ if HAVE_GIT_REPO
 # 'since' is any public, non-tag commit ancestral to when .AUTHORS was last updated.
 # It should not be changed without first updating .AUTHORS. See Redmine issue #1877.
 AUTHORS: force-author-generation
-	$(AM_V_GEN)export LC_ALL=C; since=8ac5f8d18482c381c4bb1a96f7f29692e1528606; \
-	( cd $(srcdir) && cat .AUTHORS && git log --pretty="%aN" $${since}..HEAD -- . 2>/dev/null ) | sort -f -u > $@
+	$(AM_V_GEN)export LC_ALL=C; since=c31bce07b892efeab430bfe1ce2bf2c758107776; \
+	( cd $(srcdir) && cat .AUTHORS && git log --pretty="%aN" $${since}..HEAD -- . 2>/dev/null ) | $(SED) -e '/^UNKNOWN/d' | sort -f -u > $@
 endif # HAVE_GIT_REPO
 
 .PHONY: print-build-success

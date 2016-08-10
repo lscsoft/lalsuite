@@ -26,6 +26,13 @@
 #include <limits.h>
 #include <float.h>
 
+#include <lal/FITSFileIO.h>
+#include <lal/LALPulsarVCSInfo.h>
+#include <lal/StringVector.h>
+#include <lal/Date.h>
+#include <lal/UserInput.h>
+#include <lal/GSLHelpers.h>
+
 #if !defined(HAVE_LIBCFITSIO)
 
 int main( void )
@@ -34,13 +41,7 @@ int main( void )
   return 77;
 }
 
-#else
-
-#include <lal/FITSFileIO.h>
-#include <lal/LALPulsarVCSInfo.h>
-#include <lal/StringVector.h>
-#include <lal/Date.h>
-#include <lal/GSLHelpers.h>
+#else // defined(HAVE_LIBCFITSIO)
 
 const CHAR *longstring_ref = \
   "This is a long string #1. This is a long string #2. " \
@@ -83,14 +84,24 @@ const TestRecord testtable[3] = {
   { .index=1, .flag=1, .name="Crab", .epoch={467846774, 4}, .pos={.sky=64.244, .freq=15.6463, .fkdot={4e-6,     0}}, .values={153.4, 3.0900}, .phasef=crectf( 6.7, 4.4 ), .phase=crect( 5.6, 6.3 ), .sub=testsub[2] },
 };
 
-int main( void )
+int main( int argc, char *argv[] )
 {
+
+  // Create a dummy user enviroment, for testing XLALFITSFileWriteUVarCmdLine()
+  struct uvar_type { INT4 dummy; } uvar_struct = { .dummy = 0 };
+  struct uvar_type *const uvar = &uvar_struct;
+  XLAL_CHECK_MAIN( XLALRegisterUvarMember( dummy, INT4, 0, OPTIONAL, "Dummy option" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( !should_exit, XLAL_EFAILED );
 
   // Write an example FITS file
   {
-    FITSFile *file = XLALFITSFileOpenWrite( "FITSFileIOTest.fits", lalPulsarVCSInfoList );
+    FITSFile *file = XLALFITSFileOpenWrite( "FITSFileIOTest.fits" );
     XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteHistory( file, "%s\n%s", "This is a test history", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileWriteVCSInfo( file, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileWriteUVarCmdLine( file ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileWriteHistory( file, "%s\n%s", "This is a test history", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteComment( file, "%s\n%s", "This is a test comment", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: opened 'FITSFileIOTest.fits' for writing\n" );
 
@@ -200,8 +211,8 @@ int main( void )
     }
     fprintf( stderr, "PASSED: wrote a table\n" );
 
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteComment( file, "%s", "This is another test comment" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLALFITSFileClose( file );
-    LALCheckMemoryLeaks();
     fprintf( stderr, "PASSED: closed 'FITSFileIOTest.fits'\n" );
   }
   fprintf( stderr, "\n" );
@@ -330,7 +341,7 @@ int main( void )
               const INT4 value_ref = idx[0] + 2*idx[1] + 3*idx[2] + 4*idx[3];
               INT4 value = 0;
               XLAL_CHECK_MAIN( XLALFITSArrayReadINT4( file, idx, &value ) == XLAL_SUCCESS, XLAL_EFUNC );
-              XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED );
+              XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu,%zu,%zu,%zu] = %i != %i", idx[0], idx[1], idx[2], idx[3], value, value_ref );
             }
           }
         }
@@ -347,7 +358,7 @@ int main( void )
         const REAL4 value_ref = 21 + 0.5*i;
         REAL4 value = 0;
         XLAL_CHECK_MAIN( XLALFITSArrayReadREAL4( file, idx, &value ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED );
+        XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu] = %g != %g", i, value, value_ref );
       }
     }
     fprintf( stderr, "PASSED: read and verified a REAL4 array\n" );
@@ -363,7 +374,7 @@ int main( void )
         for ( size_t j = 0; j < n; ++j ) {
           const double value_ref = 7.0 + 2.5*i + 3.0*j;
           double value = gsl_matrix_get( elems, i, j );
-          XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED );
+          XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu,%zu] = %g != %g", i, j, value, value_ref );
         }
       }
       GFMAT( elems );
@@ -396,8 +407,8 @@ int main( void )
         XLAL_TRY_SILENT( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[0], "wrong" ), errnum );
         XLAL_CHECK_MAIN( errnum = XLAL_EIO, XLAL_EFAILED );
       }
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[0], "f1dot" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[1], "f2dot" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[0], "f1dot [Hz/s]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[1], "f2dot [Hz/s^2]" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, values ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX8, phasef ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX16, phase ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -449,11 +460,14 @@ int main( void )
     fprintf( stderr, "PASSED: read and verified a table\n" );
 
     XLALFITSFileClose( file );
-    LALCheckMemoryLeaks();
     fprintf( stderr, "PASSED: closed 'FITSFileIOTest.fits'\n" );
   }
   fprintf( stderr, "\n" );
   fflush( stderr );
+
+  // Cleanup
+  XLALDestroyUserVars();
+  LALCheckMemoryLeaks();
 
   return EXIT_SUCCESS;
 

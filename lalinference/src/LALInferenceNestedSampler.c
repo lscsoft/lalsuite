@@ -106,14 +106,14 @@ static int WriteNSCheckPointH5(char *filename, LALInferenceRunState *runState, N
   if(!group) XLAL_ERROR(XLAL_EFAILED,"Unable to read group lalinferencenest_checkpoint\n");
   int retcode = _saveNSintegralStateH5(group,s);
   if(retcode) XLAL_ERROR(XLAL_EFAILED,"Unable to save integral state\n");
-  LALInferenceH5VariablesArray2Group(group, runState->livePoints, Nlive, "live_points");
+  LALInferenceH5VariablesArrayToDataset(group, runState->livePoints, Nlive, "live_points");
   INT4 N_output_array=0;
   if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) N_output_array=LALInferenceGetINT4Variable(runState->algorithmParams,"N_outputarray");
   if(N_output_array>0)
   {
     LALInferenceVariables **output_array=NULL;
     output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-    LALInferenceH5VariablesArray2Group(group, output_array, N_output_array, "past_chain");
+    LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, "past_chain");
     XLALH5FileAddScalarAttribute(group, "N_outputarray", &N_output_array, LAL_I4_TYPE_CODE);
   }
   
@@ -148,18 +148,18 @@ static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NS
     XLALH5FileClose(h5file);
     return 1;
   }
-  LALH5File *liveGroup = XLALH5GroupOpen(group,"live_points");
-  retcode = LALInferenceH5GroupToVariablesArray(liveGroup , &(runState->livePoints), &Nlive );
+  LALH5Dataset *liveGroup = XLALH5DatasetRead(group,"live_points");
+  retcode = LALInferenceH5DatasetToVariablesArray(liveGroup , &(runState->livePoints), &Nlive );
   printf("restored %i live points\n",s->size);
-  XLALH5FileClose(liveGroup);
+  XLALH5DatasetFree(liveGroup);
   if(N_outputarray>0)
   {
     printf("restoring %i past iterations\n",N_outputarray);
-    LALH5File *outputGroup = XLALH5GroupOpen(group, "past_chain");
-    retcode |= LALInferenceH5GroupToVariablesArray(outputGroup, &outputarray, &N_outputarray);
+    LALH5Dataset *outputGroup = XLALH5DatasetRead(group, "past_chain");
+    retcode |= LALInferenceH5DatasetToVariablesArray(outputGroup, &outputarray, &N_outputarray);
     LALInferenceAddVariable(runState->algorithmParams,"N_outputarray",&N_outputarray,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->algorithmParams,"outputarray",&outputarray,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
-    XLALH5FileClose(outputGroup);
+    XLALH5DatasetFree(outputGroup);
   }
   XLALH5FileClose(group);
   XLALH5FileClose(h5file);
@@ -913,7 +913,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	    {
 		    runState->evolve(runState);
 		    logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,threadState->model);
-		    if(!sprinklewarning || j++==100) { fprintf(stderr,"Warning: having difficulty sampling prior, check your prior bounds\n"); sprinklewarning=1;}
+		    if(!sprinklewarning && j++==100) { fprintf(stderr,"Warning: having difficulty sampling prior, check your prior bounds\n"); sprinklewarning=1;}
 	    }while(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i]));
 	    if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
     }
@@ -1136,7 +1136,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
       LALH5File *groupPtr = LALInferenceH5CreateGroupStructure(h5file, "lalinference", runID);
       /* Create run identifier group */
-      LALInferenceH5VariablesArray2Group(groupPtr, output_array, N_output_array, LALInferenceHDF5NestedSamplesGroupName);
+      LALInferenceH5VariablesArrayToDataset(groupPtr, output_array, N_output_array, LALInferenceHDF5NestedSamplesDatasetName);
       /* TODO: Write metadata */
       XLALH5FileAddScalarAttribute(groupPtr, "log_evidence", &logZ, LAL_D_TYPE_CODE);
       XLALH5FileAddScalarAttribute(groupPtr, "log_bayes_factor", &logB, LAL_D_TYPE_CODE);

@@ -59,7 +59,7 @@ extern "C" {
  */
 #define EOB_RD_EFOLDS 10.0
 
-typedef enum {
+typedef enum tagIMRPhenomP_version_type {
  IMRPhenomPv1_V, /**< version 1: based on IMRPhenomC */
  IMRPhenomPv2_V  /**< version 2: based on IMRPhenomD */
 } IMRPhenomP_version_type;
@@ -85,6 +85,7 @@ int XLALSimIMRPhenomCGenerateTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcros
 int XLALSimIMRPhenomDGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phi0, const REAL8 fRef, const REAL8 deltaF, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 chi1, const REAL8 chi2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const LALSimInspiralTestGRParam *extraParams);
 double XLALIMRPhenomDGetPeakFreq(const REAL8 m1_in, const REAL8 m2_in, const REAL8 chi1_in, const REAL8 chi2_in);
 double XLALSimIMRPhenomDChirpTime(const REAL8 m1_in, const REAL8 m2_in, const REAL8 chi1_in, const REAL8 chi2_in, const REAL8 fHz);
+double XLALSimIMRPhenomDFinalSpin(const REAL8 m1_in, const REAL8 m2_in, const REAL8 chi1_in, const REAL8 chi2_in);
 
 int XLALSimIMRPhenomP(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8 chi1_l, const REAL8 chi2_l, const REAL8 chip, const REAL8 thetaJ, const REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 alpha0, const REAL8 phic, const REAL8 deltaF, const REAL8 f_min, const REAL8 f_max, const REAL8 f_ref, IMRPhenomP_version_type IMRPhenomP_version, const LALSimInspiralTestGRParam *extraParams);
 int XLALSimIMRPhenomPFrequencySequence(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, const REAL8 chi1_l, const REAL8 chi2_l, const REAL8 chip, const REAL8 thetaJ, REAL8 m1_SI, const REAL8 m2_SI, const REAL8 distance, const REAL8 alpha0, const REAL8 phic, const REAL8 f_ref, IMRPhenomP_version_type IMRPhenomP_version, const LALSimInspiralTestGRParam *extraParams);
@@ -101,6 +102,7 @@ SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(const REAL8 phiRef, const REAL8 deltaT
 
 double XLALSimIMRSpinAlignedEOBPeakFrequency(REAL8 m1SI, REAL8 m2SI, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion);
 int XLALSimIMRSpinAlignedEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion);
+int XLALSimIMRSpinAlignedEOBWaveformAll(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, const REAL8 comp1, const REAL8 comp2, const REAL8 k2Tidal1, const REAL8 k2Tidal2, const REAL8 omega02Tidal1, const REAL8 omega02Tidal2, const REAL8 k3Tidal1, const REAL8 k3Tidal2, const REAL8 omega03Tidal1, const REAL8 omega03Tidal2, UINT4 SpinAlignedEOBversion);
 /*int XLALSimIMRSpinEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1[], const REAL8 spin2[]);
  */
 
@@ -194,6 +196,16 @@ int XLALSimSpinInspiralGenerator(REAL8TimeSeries **hPlus, REAL8TimeSeries **hCro
 int XLALSimIMRPhenSpinInspiralRDGenerator(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 phi0, REAL8 deltaT, REAL8 m1, REAL8 m2, REAL8 f_min, REAL8 f_ref, REAL8 r, REAL8 iota, REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, int phaseO, int ampO, REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2, LALSimInspiralWaveformFlags *waveFlag, LALSimInspiralTestGRParam *testGRparam);
 
 /* in module LALSimInspiralNRWaveforms.c */
+
+int XLALSimInspiralNRWaveformGetSpinsFromHDF5File(
+  REAL8 *S1x,             /**< [out] Dimensionless spin1x in LAL frame */
+  REAL8 *S1y,             /**< [out] Dimensionless spin1y in LAL frame */
+  REAL8 *S1z,             /**< [out] Dimensionless spin1z in LAL frame */
+  REAL8 *S2x,             /**< [out] Dimensionless spin2x in LAL frame */
+  REAL8 *S2y,             /**< [out] Dimensionless spin2y in LAL frame */
+  REAL8 *S2z,             /**< [out] Dimensionless spin2z in LAL frame */
+  const char *NRDataFile  /**< Location of NR HDF file */
+);
 
 int XLALSimInspiralNRWaveformGetHplusHcross(
         REAL8TimeSeries **hplus,        /**< OUTPUT h_+ vector */

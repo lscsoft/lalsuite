@@ -424,11 +424,11 @@ class psr_par:
 
     # masses
     for mass in ['M2', 'MTOT']:
-      if hasattr(self, 'M2'): # convert solar masses to kg
-        setattr(self, 'M2', self['M2']*MSUN)
+      if hasattr(self, mass): # convert solar masses to kg
+        setattr(self, mass, self[mass]*MSUN)
 
-        if hasattr(self, 'M2_ERR'):
-          setattr(self, 'M2_ERR', self['M2_ERR'] * MSUN)
+        if hasattr(self, mass+'_ERR'):
+          setattr(self, mass+'_ERR', self[mass+'_ERR'] * MSUN)
 
     # D_AOP
     if hasattr(self, 'D_AOP'): # convert from inverse arcsec to inverse radians
@@ -2198,7 +2198,7 @@ def pulsar_mcmc_to_posterior(chainfiles):
       mcmcChain = read_pulsar_mcmc_file(cfile)
 
       # if no chain found then exit with None's
-      if mcmcChain == None:
+      if mcmcChain is None:
         return None, None, None, None
 
       # find number of effective samples for the chain
@@ -2213,7 +2213,7 @@ def pulsar_mcmc_to_posterior(chainfiles):
       neffs.append(math.floor(np.mean(neffstmp)))
 
       #nskip = math.ceil(mcmcChain.shape[0]/min(neffstmp))
-      nskip = math.ceil(mcmcChain.shape[0]/np.mean(neffstmp))
+      nskip = int(math.ceil(mcmcChain.shape[0]/np.mean(neffstmp)))
 
       # output every nskip (independent) value
       mcmc.append(mcmcChain[::nskip,:])
@@ -2410,6 +2410,18 @@ def pulsar_nest_to_posterior(postfile):
     cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(posIota))
     pos.append(cipos)
     pos.pop('iota')
+
+  # check whether sin(i) binary parameter has been used
+  try:
+    posI = pos['i'].samples
+  except:
+    posI = None
+
+  if posI is not None:
+    sinipos = None
+    sinipos = bppu.PosteriorOneDPDF('sini', np.sin(posI))
+    pos.append(sinipos)
+    pos.pop('i')
 
   # convert C22 back into h0, and phi22 back into phi0 if required
   try:

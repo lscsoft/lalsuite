@@ -41,7 +41,7 @@ extern "C" {
 /*---------- exported types ----------*/
 
 /** The precision in calculating the barycentric transformation */
-typedef enum {
+typedef enum tagSSBprecision {
   SSBPREC_NEWTONIAN,		/**< simple Newtonian: \f$\tau = t + \vec{r}\cdot\vec{n}/c\f$ */
   SSBPREC_RELATIVISTIC,		/**< detailed relativistic: \f$\tau=\tau(t; \vec{n}, \vec{r})\f$ */
   SSBPREC_RELATIVISTICOPT,  	/**< optimized relativistic, numerically equivalent to #SSBPREC_RELATIVISTIC, but faster */

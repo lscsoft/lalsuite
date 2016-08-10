@@ -1633,13 +1633,13 @@ int bayestar_test(void)
     test_real_catrom();
     test_eval_acor();
 
-    for (double ra = -M_PI; ra <= M_PI; ra += 0.1 * M_PI)
-        for (double dec = -M_PI_2; dec <= M_PI_2; dec += 0.1 * M_PI)
-            for (double inc = -M_PI; inc <= M_PI; inc += 0.1 * M_PI)
-                for (double pol = -M_PI; pol <= M_PI; pol += 0.1 * M_PI)
+    for (double ra = -M_PI; ra <= M_PI; ra += 0.4 * M_PI)
+        for (double dec = -M_PI_2; dec <= M_PI_2; dec += 0.4 * M_PI)
+            for (double inc = -M_PI; inc <= M_PI; inc += 0.4 * M_PI)
+                for (double pol = -M_PI; pol <= M_PI; pol += 0.4 * M_PI)
                     for (unsigned long epoch = 1000000000000000000;
                          epoch <= 1000086400000000000;
-                         epoch += 3600000000000)
+                         epoch += 7200000000000)
                         test_signal_amplitude_model(ra, dec, inc, pol, epoch, "H1");
 
     /* Tests of radial integrand with p2=0, b=0. */

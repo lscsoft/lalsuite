@@ -119,7 +119,7 @@ int XLALGetInteractionFromString(const CHAR *inString);
  * generation. Their combination also can be used by the bitwise or.
  * DEPRECATED: USE LALSimInspiralSpinOrder, LALSimInspiralTidalOrder INSTEAD
  */
-typedef enum {
+typedef enum tagLALInspiralInteraction {
     LAL_INSPIRAL_INTERACTION_NONE = 0, /**< No spin, tidal or other interactions */
     LAL_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN = 1, /**< Leading order spin-orbit interaction */
     LAL_INSPIRAL_INTERACTION_SPIN_SPIN_2PN = 1 << 1,  /**< Spin-spin interaction */
@@ -181,7 +181,7 @@ tagEtaTau04In
  * bhns, fixedMasses, fixedPsi, fixedTau
  *
  */
-typedef enum {
+typedef enum tagInputMasses {
   m1Andm2,		/**< component masses */
   totalMassAndEta,	/**< total mass and symmetric mass ratio */
   totalMassUAndEta,	/**< total mass and eta but uniform distribution in totalMass */

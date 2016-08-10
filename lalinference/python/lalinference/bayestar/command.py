@@ -22,6 +22,9 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 import argparse
+import contextlib
+from distutils.dir_util import mkpath
+from distutils.errors import DistutilsFileError
 import errno
 import glob
 import inspect
@@ -33,6 +36,16 @@ import tempfile
 from matplotlib import cm
 from .. import cmap
 
+
+
+@contextlib.contextmanager
+def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
+    try:
+        dir = tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+        yield dir
+    finally:
+        if delete:
+            shutil.rmtree(dir)
 
 
 def chainglob(patterns):
@@ -244,6 +257,26 @@ class ArgumentParser(argparse.ArgumentParser):
                  conflict_handler=conflict_handler,
                  add_help=add_help)
         self.add_argument('--version', action=VersionAction)
+
+
+class DirType(object):
+    """Factory for directory arguments."""
+
+    def __init__(self, create=False):
+        self._create = create
+
+    def __call__(self, string):
+        if self._create:
+            try:
+                mkpath(string)
+            except DistutilsFileError as e:
+                raise argparse.ArgumentTypeError(e.message)
+        else:
+            try:
+                os.listdir(string)
+            except OSError as e:
+                raise argparse.ArgumentTypeError(e)
+        return string
 
 
 class SQLiteType(argparse.FileType):

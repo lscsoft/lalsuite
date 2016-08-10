@@ -34,6 +34,7 @@ mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
 from matplotlib.axes import Axes
 from matplotlib import text
 from matplotlib import ticker
+from matplotlib import patheffects
 from matplotlib.ticker import Formatter, FixedLocator
 from matplotlib.projections import projection_registry
 from matplotlib.transforms import Transform, Affine2D
@@ -639,17 +640,9 @@ def colorbar():
 def outline_text(ax):
     """If we are using a new enough version of matplotlib, then
     add a white outline to all text to make it stand out from the background."""
-    try:
-        # Try to import matplotlib.patheffects (requires matplotlib 1.0+).
-        from matplotlib import patheffects
-    except ImportError:
-        # If import failed, print a warning and do nothing.
-        warnings.warn("This version of matplotlib does not support path effects.")
-    else:
-        # Otherwise, add the path effects.
-        effects = [patheffects.withStroke(linewidth=2, foreground='w')]
-        for artist in ax.findobj(text.Text):
-            artist.set_path_effects(effects)
+    effects = [patheffects.withStroke(linewidth=2, foreground='w')]
+    for artist in ax.findobj(text.Text):
+        artist.set_path_effects(effects)
 
 
 class PPPlot(Axes):

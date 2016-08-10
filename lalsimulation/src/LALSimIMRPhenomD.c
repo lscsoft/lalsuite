@@ -516,3 +516,44 @@ double XLALSimIMRPhenomDChirpTime(
     return ChirpTimeSec;
 
 }
+
+/**
+* Function to return the final spin (spin of the remnant black hole)
+* as predicted by the IMRPhenomD model. The final spin is calculated using
+* the phenomenological fit described in PhysRevD.93.044006 Eq. 3.6.
+* unreviewed
+*/
+double XLALSimIMRPhenomDFinalSpin(
+    const REAL8 m1_in,                 /**< mass of companion 1 [Msun] */
+    const REAL8 m2_in,                 /**< mass of companion 2 [Msun] */
+    const REAL8 chi1_in,               /**< aligned-spin of companion 1 */
+    const REAL8 chi2_in               /**< aligned-spin of companion 2 */
+) {
+    // Ensure that m1 > m2 and that chi1 is the spin on m1
+    REAL8 chi1, chi2, m1, m2;
+    if (m1_in>m2_in) {
+       chi1 = chi1_in;
+       chi2 = chi2_in;
+       m1   = m1_in;
+       m2   = m2_in;
+    } else { // swap spins and masses
+       chi1 = chi2_in;
+       chi2 = chi1_in;
+       m1   = m2_in;
+       m2   = m1_in;
+    }
+
+    const REAL8 M = m1 + m2;
+
+    REAL8 eta = m1 * m2 / (M * M);
+    if (eta > 0.25 || eta < 0.0)
+      XLAL_ERROR(XLAL_EDOM, "Unphysical eta. Must be between 0. and 0.25\n");
+
+    REAL8 finspin = FinalSpin0815(eta, chi1, chi2);
+
+    if (finspin < MIN_FINAL_SPIN)
+          XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
+                          the model might misbehave here.", finspin);
+
+    return finspin;
+}

@@ -3846,29 +3846,28 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LAL
 
   ifo_names = *(char ***)LALInferenceGetVariable(thread->proposalArgs, "detector_names");
   for (ifo=0; ifo<nifo; ifo++) {
-    size_t i;
+    UINT4 i;
 
     char ampName[VARNAME_MAX];
     char phaseName[VARNAME_MAX];
+    REAL8 dummy;
 
-    REAL8Vector *amps;
-    REAL8Vector *phases;
+    REAL8 ampWidth;
+    REAL8 phaseWidth;
+    UINT4 nspl = LALInferenceGetUINT4Variable(proposedParams, "spcal_npts");
+    for (i = 0; i < nspl; i++) {
+      snprintf(ampName, VARNAME_MAX, "%s_spcal_amp_%i", ifo_names[ifo], i);
+      snprintf(phaseName, VARNAME_MAX, "%s_spcal_phase_%i", ifo_names[ifo], i);
 
-    snprintf(ampName, VARNAME_MAX, "%s_spcal_amp", ifo_names[ifo]);
-    snprintf(phaseName, VARNAME_MAX, "%s_spcal_phase", ifo_names[ifo]);
+      LALInferenceGetGaussianPrior(thread->priorArgs, ampName, &dummy, &ampWidth);
+      REAL8 amp = LALInferenceGetREAL8Variable(proposedParams, ampName);
+      amp += ampWidth*gsl_ran_ugaussian(thread->GSLrandom)/sqrt(nifo*(REAL8)nspl);
+      LALInferenceSetREAL8Variable(proposedParams, ampName, amp);
 
-    amps = *(REAL8Vector **)LALInferenceGetVariable(proposedParams, ampName);
-    phases = *(REAL8Vector **)LALInferenceGetVariable(proposedParams, phaseName);
-
-    char amp_uncert[VARNAME_MAX];
-    char pha_uncert[VARNAME_MAX];
-    snprintf(amp_uncert, VARNAME_MAX, "%s_spcal_amp_uncertainty",ifo_names[ifo]);
-    snprintf(pha_uncert, VARNAME_MAX, "%s_spcal_phase_uncertainty", ifo_names[ifo]);
-    REAL8 ampWidth = *(REAL8 *)LALInferenceGetVariable(thread->priorArgs, amp_uncert);
-    REAL8 phaseWidth = *(REAL8 *)LALInferenceGetVariable(thread->priorArgs, pha_uncert);
-    for (i = 0; i < amps->length; i++) {
-      amps->data[i] += ampWidth*gsl_ran_ugaussian(thread->GSLrandom)/sqrt(nifo*amps->length);
-      phases->data[i] += phaseWidth*gsl_ran_ugaussian(thread->GSLrandom)/sqrt(nifo*amps->length);
+      LALInferenceGetGaussianPrior(thread->priorArgs, phaseName, &dummy, &phaseWidth);
+      REAL8 ph = LALInferenceGetREAL8Variable(proposedParams, phaseName);
+      ph += phaseWidth*gsl_ran_ugaussian(thread->GSLrandom)/sqrt(nifo*(REAL8)nspl);
+      LALInferenceSetREAL8Variable(proposedParams, phaseName, ph);
     }
   };
 

@@ -1271,14 +1271,11 @@ int XLALSetSuperskyPhysicalSkyBounds(
 
   }
 
-  // Allocate and initialise bounds data
-  const size_t data_len = sizeof( PhysicalSkyBoundData );
-  PhysicalSkyBoundData *data_lower = XLALCalloc( 1, data_len );
-  XLAL_CHECK( data_lower != NULL, XLAL_ENOMEM );
-  PhysicalSkyBoundData *data_upper = XLALCalloc( 1, data_len );
-  XLAL_CHECK( data_upper != NULL, XLAL_ENOMEM );
-  for ( size_t i = 0; i < XLAL_NUM_ELEM( data_lower->pieces ); ++i ) {
-    data_lower->pieces[i].max_A = data_upper->pieces[i].max_A = GSL_NEGINF;
+  // Initialise bounds data
+  PhysicalSkyBoundData XLAL_INIT_DECL( data_lower );
+  PhysicalSkyBoundData XLAL_INIT_DECL( data_upper );
+  for ( size_t i = 0; i < XLAL_NUM_ELEM( data_lower.pieces ); ++i ) {
+    data_lower.pieces[i].max_A = data_upper.pieces[i].max_A = GSL_NEGINF;
   }
 
   // Special bounds data representing the lower/upper circular bounds on reduced supersky coordinate B
@@ -1289,18 +1286,18 @@ int XLALSetSuperskyPhysicalSkyBounds(
   if ( fabs( alpha1 - alpha2 ) >= LAL_TWOPI ) {
 
     // Set bounds data to lower/upper circular bounds
-    data_lower->min_A = data_upper->min_A = -2;
-    data_lower->min_A_bound = data_upper->min_A_bound = 0;
-    data_lower->max_A = data_upper->max_A = 2;
-    data_lower->max_A_bound = data_upper->max_A_bound = 0;
-    data_lower->pieces[0] = lower_circular;
-    data_lower->pieces[0].max_A = GSL_POSINF;
-    data_upper->pieces[0] = upper_circular;
-    data_upper->pieces[0].max_A = GSL_POSINF;
+    data_lower.min_A = data_upper.min_A = -2;
+    data_lower.min_A_bound = data_upper.min_A_bound = 0;
+    data_lower.max_A = data_upper.max_A = 2;
+    data_lower.max_A_bound = data_upper.max_A_bound = 0;
+    data_lower.pieces[0] = lower_circular;
+    data_lower.pieces[0].max_A = GSL_POSINF;
+    data_upper.pieces[0] = upper_circular;
+    data_upper.pieces[0].max_A = GSL_POSINF;
 
     // Set the parameter-space bounds on reduced supersky sky coordinates A and B
-    XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, data_lower->min_A, data_lower->max_A ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, data_lower.min_A, data_lower.max_A ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, sizeof( data_lower ), &data_lower, &data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     return XLAL_SUCCESS;
 
@@ -1468,8 +1465,8 @@ int XLALSetSuperskyPhysicalSkyBounds(
   }
 
   // Use corner points to classify parameter space into different shapes and set bounds data
-  data_lower->min_A = data_upper->min_A = GSL_NEGINF;
-  data_lower->max_A = data_upper->max_A = GSL_POSINF;
+  data_lower.min_A = data_upper.min_A = GSL_NEGINF;
+  data_lower.max_A = data_upper.max_A = GSL_POSINF;
   if ( corner_A[1][0] < 0 && corner_A[1][1] <= 0 ) {
 
     if ( corner_A[1][1] < corner_A[1][0] ) {
@@ -1488,19 +1485,19 @@ int XLALSetSuperskyPhysicalSkyBounds(
       //      -1 |__.________.________.________.________.__|
       //            '        '        '        '        '
       //       A = -2       -1        0        1        2
-      data_lower->min_A = data_upper->min_A = corner_A[1][1];
-      data_lower->min_A_bound = data_upper->min_A_bound = corner_B[1][1];
-      data_lower->max_A = data_upper->max_A = corner_A[0][1];
-      data_lower->max_A_bound = data_upper->max_A_bound = corner_B[0][1];
-      data_lower->pieces[0] = const_delta[1];
-      data_lower->pieces[0].max_A = GSL_POSINF;
-      data_upper->pieces[0] = const_alpha[1];
-      data_upper->pieces[0].max_A = corner_A[1][0];
-      data_upper->pieces[1] = const_delta[0];
-      data_upper->pieces[1].max_A = corner_A[0][0];
-      data_upper->pieces[2] = const_alpha[0];
-      data_upper->pieces[2].max_A = GSL_POSINF;
-      data_upper->pieces[2].altroot = true;
+      data_lower.min_A = data_upper.min_A = corner_A[1][1];
+      data_lower.min_A_bound = data_upper.min_A_bound = corner_B[1][1];
+      data_lower.max_A = data_upper.max_A = corner_A[0][1];
+      data_lower.max_A_bound = data_upper.max_A_bound = corner_B[0][1];
+      data_lower.pieces[0] = const_delta[1];
+      data_lower.pieces[0].max_A = GSL_POSINF;
+      data_upper.pieces[0] = const_alpha[1];
+      data_upper.pieces[0].max_A = corner_A[1][0];
+      data_upper.pieces[1] = const_delta[0];
+      data_upper.pieces[1].max_A = corner_A[0][0];
+      data_upper.pieces[2] = const_alpha[0];
+      data_upper.pieces[2].max_A = GSL_POSINF;
+      data_upper.pieces[2].altroot = true;
 
     } else {
 
@@ -1518,20 +1515,20 @@ int XLALSetSuperskyPhysicalSkyBounds(
       //      -1 |__.________.________.________.________.__|
       //            '        '        '        '        '
       //       A = -2       -1        0        1        2
-      data_lower->min_A = data_upper->min_A = corner_A[1][0];
-      data_lower->min_A_bound = data_upper->min_A_bound = corner_B[1][0];
-      data_lower->max_A = data_upper->max_A = corner_A[0][1];
-      data_lower->max_A_bound = data_upper->max_A_bound = corner_B[0][1];
-      data_lower->pieces[0] = const_alpha[1];
-      data_lower->pieces[0].max_A = corner_A[1][1];
-      data_lower->pieces[0].altroot = true;
-      data_lower->pieces[1] = const_delta[1];
-      data_lower->pieces[1].max_A = GSL_POSINF;
-      data_upper->pieces[0] = const_delta[0];
-      data_upper->pieces[0].max_A = corner_A[0][0];
-      data_upper->pieces[1] = const_alpha[0];
-      data_upper->pieces[1].max_A = GSL_POSINF;
-      data_upper->pieces[1].altroot = true;
+      data_lower.min_A = data_upper.min_A = corner_A[1][0];
+      data_lower.min_A_bound = data_upper.min_A_bound = corner_B[1][0];
+      data_lower.max_A = data_upper.max_A = corner_A[0][1];
+      data_lower.max_A_bound = data_upper.max_A_bound = corner_B[0][1];
+      data_lower.pieces[0] = const_alpha[1];
+      data_lower.pieces[0].max_A = corner_A[1][1];
+      data_lower.pieces[0].altroot = true;
+      data_lower.pieces[1] = const_delta[1];
+      data_lower.pieces[1].max_A = GSL_POSINF;
+      data_upper.pieces[0] = const_delta[0];
+      data_upper.pieces[0].max_A = corner_A[0][0];
+      data_upper.pieces[1] = const_alpha[0];
+      data_upper.pieces[1].max_A = GSL_POSINF;
+      data_upper.pieces[1].altroot = true;
 
     }
 
@@ -1553,19 +1550,19 @@ int XLALSetSuperskyPhysicalSkyBounds(
       //      -1 |__.________.________.________.________.__|
       //            '        '        '        '        '
       //       A = -2       -1        0        1        2
-      data_lower->min_A = data_upper->min_A = corner_A[0][0];
-      data_lower->min_A_bound = data_upper->min_A_bound = corner_B[0][0];
-      data_lower->max_A = data_upper->max_A = corner_A[1][0];
-      data_lower->max_A_bound = data_upper->max_A_bound = corner_B[1][0];
-      data_lower->pieces[0] = const_delta[0];
-      data_lower->pieces[0].max_A = GSL_POSINF;
-      data_upper->pieces[0] = const_alpha[0];
-      data_upper->pieces[0].max_A = corner_A[0][1];
-      data_upper->pieces[1] = const_delta[1];
-      data_upper->pieces[1].max_A = corner_A[1][1];
-      data_upper->pieces[2] = const_alpha[1];
-      data_upper->pieces[2].max_A = GSL_POSINF;
-      data_upper->pieces[2].altroot = true;
+      data_lower.min_A = data_upper.min_A = corner_A[0][0];
+      data_lower.min_A_bound = data_upper.min_A_bound = corner_B[0][0];
+      data_lower.max_A = data_upper.max_A = corner_A[1][0];
+      data_lower.max_A_bound = data_upper.max_A_bound = corner_B[1][0];
+      data_lower.pieces[0] = const_delta[0];
+      data_lower.pieces[0].max_A = GSL_POSINF;
+      data_upper.pieces[0] = const_alpha[0];
+      data_upper.pieces[0].max_A = corner_A[0][1];
+      data_upper.pieces[1] = const_delta[1];
+      data_upper.pieces[1].max_A = corner_A[1][1];
+      data_upper.pieces[2] = const_alpha[1];
+      data_upper.pieces[2].max_A = GSL_POSINF;
+      data_upper.pieces[2].altroot = true;
 
     } else {
 
@@ -1583,18 +1580,18 @@ int XLALSetSuperskyPhysicalSkyBounds(
       //      -1 |__.________.________.________.________.__|
       //            '        '        '        '        '
       //       A = -2       -1        0        1        2
-      data_lower->min_A = data_upper->min_A = corner_A[0][0];
-      data_lower->min_A_bound = data_upper->min_A_bound = corner_B[0][0];
-      data_lower->max_A = data_upper->max_A = corner_A[1][1];
-      data_lower->max_A_bound = data_upper->max_A_bound = corner_B[1][1];
-      data_lower->pieces[0] = const_delta[0];
-      data_lower->pieces[0].max_A = corner_A[1][0];
-      data_lower->pieces[1] = const_alpha[1];
-      data_lower->pieces[1].max_A = GSL_POSINF;
-      data_upper->pieces[0] = const_alpha[0];
-      data_upper->pieces[0].max_A = corner_A[0][1];
-      data_upper->pieces[1] = const_delta[1];
-      data_upper->pieces[1].max_A = GSL_POSINF;
+      data_lower.min_A = data_upper.min_A = corner_A[0][0];
+      data_lower.min_A_bound = data_upper.min_A_bound = corner_B[0][0];
+      data_lower.max_A = data_upper.max_A = corner_A[1][1];
+      data_lower.max_A_bound = data_upper.max_A_bound = corner_B[1][1];
+      data_lower.pieces[0] = const_delta[0];
+      data_lower.pieces[0].max_A = corner_A[1][0];
+      data_lower.pieces[1] = const_alpha[1];
+      data_lower.pieces[1].max_A = GSL_POSINF;
+      data_upper.pieces[0] = const_alpha[0];
+      data_upper.pieces[0].max_A = corner_A[0][1];
+      data_upper.pieces[1] = const_delta[1];
+      data_upper.pieces[1].max_A = GSL_POSINF;
 
     }
 
@@ -1629,26 +1626,26 @@ int XLALSetSuperskyPhysicalSkyBounds(
         //      -1 |__.________.________.________.________.__|
         //            '        '        '        '        '
         //       A = -2       -1        0        1        2
-        data_lower->min_A = data_upper->min_A = split_A[0];
-        data_lower->min_A_bound = data_upper->min_A_bound = split_B;
-        data_lower->max_A = data_upper->max_A = split_A[1];
-        data_lower->max_A_bound = data_upper->max_A_bound = split_B;
-        data_lower->pieces[0] = lower_circular;
-        data_lower->pieces[0].max_A = GSL_POSINF;
-        data_upper->pieces[0] = const_alpha[1];
-        data_upper->pieces[0].max_A = corner_A[1][0];
-        data_upper->pieces[1] = const_delta[0];
-        data_upper->pieces[1].max_A = corner_A[0][0];
-        data_upper->pieces[2] = const_alpha[0];
-        data_upper->pieces[2].max_A = 0;
-        data_upper->pieces[2].altroot = true;
-        data_upper->pieces[3] = const_alpha[0];
-        data_upper->pieces[3].max_A = corner_A[0][1];
-        data_upper->pieces[4] = const_delta[1];
-        data_upper->pieces[4].max_A = corner_A[1][1];
-        data_upper->pieces[5] = const_alpha[1];
-        data_upper->pieces[5].max_A = GSL_POSINF;
-        data_upper->pieces[5].altroot = true;
+        data_lower.min_A = data_upper.min_A = split_A[0];
+        data_lower.min_A_bound = data_upper.min_A_bound = split_B;
+        data_lower.max_A = data_upper.max_A = split_A[1];
+        data_lower.max_A_bound = data_upper.max_A_bound = split_B;
+        data_lower.pieces[0] = lower_circular;
+        data_lower.pieces[0].max_A = GSL_POSINF;
+        data_upper.pieces[0] = const_alpha[1];
+        data_upper.pieces[0].max_A = corner_A[1][0];
+        data_upper.pieces[1] = const_delta[0];
+        data_upper.pieces[1].max_A = corner_A[0][0];
+        data_upper.pieces[2] = const_alpha[0];
+        data_upper.pieces[2].max_A = 0;
+        data_upper.pieces[2].altroot = true;
+        data_upper.pieces[3] = const_alpha[0];
+        data_upper.pieces[3].max_A = corner_A[0][1];
+        data_upper.pieces[4] = const_delta[1];
+        data_upper.pieces[4].max_A = corner_A[1][1];
+        data_upper.pieces[5] = const_alpha[1];
+        data_upper.pieces[5].max_A = GSL_POSINF;
+        data_upper.pieces[5].altroot = true;
 
       } else {
 
@@ -1666,25 +1663,25 @@ int XLALSetSuperskyPhysicalSkyBounds(
         //      -1 |__.________.________.________.________.__|
         //            '        '        '        '        '
         //       A = -2       -1        0        1        2
-        data_lower->min_A = data_upper->min_A = split_A[0];
-        data_lower->min_A_bound = data_upper->min_A_bound = split_B;
-        data_lower->max_A = data_upper->max_A = corner_A[1][1];
-        data_lower->max_A_bound = data_upper->max_A_bound = corner_B[1][1];
-        data_lower->pieces[0] = lower_circular;
-        data_lower->pieces[0].max_A = split_A[1];
-        data_lower->pieces[1] = const_alpha[1];
-        data_lower->pieces[1].max_A = GSL_POSINF;
-        data_upper->pieces[0] = const_alpha[1];
-        data_upper->pieces[0].max_A = corner_A[1][0];
-        data_upper->pieces[1] = const_delta[0];
-        data_upper->pieces[1].max_A = corner_A[0][0];
-        data_upper->pieces[2] = const_alpha[0];
-        data_upper->pieces[2].max_A = 0;
-        data_upper->pieces[2].altroot = true;
-        data_upper->pieces[3] = const_alpha[0];
-        data_upper->pieces[3].max_A = corner_A[0][1];
-        data_upper->pieces[4] = const_delta[1];
-        data_upper->pieces[4].max_A = GSL_POSINF;
+        data_lower.min_A = data_upper.min_A = split_A[0];
+        data_lower.min_A_bound = data_upper.min_A_bound = split_B;
+        data_lower.max_A = data_upper.max_A = corner_A[1][1];
+        data_lower.max_A_bound = data_upper.max_A_bound = corner_B[1][1];
+        data_lower.pieces[0] = lower_circular;
+        data_lower.pieces[0].max_A = split_A[1];
+        data_lower.pieces[1] = const_alpha[1];
+        data_lower.pieces[1].max_A = GSL_POSINF;
+        data_upper.pieces[0] = const_alpha[1];
+        data_upper.pieces[0].max_A = corner_A[1][0];
+        data_upper.pieces[1] = const_delta[0];
+        data_upper.pieces[1].max_A = corner_A[0][0];
+        data_upper.pieces[2] = const_alpha[0];
+        data_upper.pieces[2].max_A = 0;
+        data_upper.pieces[2].altroot = true;
+        data_upper.pieces[3] = const_alpha[0];
+        data_upper.pieces[3].max_A = corner_A[0][1];
+        data_upper.pieces[4] = const_delta[1];
+        data_upper.pieces[4].max_A = GSL_POSINF;
 
       }
 
@@ -1705,27 +1702,27 @@ int XLALSetSuperskyPhysicalSkyBounds(
         //      -1 |__.________.________.________.________.__|
         //            '        '        '        '        '
         //       A = -2       -1        0        1        2
-        data_lower->min_A = data_upper->min_A = corner_A[1][0];
-        data_lower->min_A_bound = data_upper->min_A_bound = corner_B[1][0];
-        data_lower->max_A = data_upper->max_A = split_A[1];
-        data_lower->max_A_bound = data_upper->max_A_bound = split_B;
-        data_lower->pieces[0] = const_alpha[1];
-        data_lower->pieces[0].max_A = split_A[0];
-        data_lower->pieces[0].altroot = true;
-        data_lower->pieces[1] = lower_circular;
-        data_lower->pieces[1].max_A = GSL_POSINF;
-        data_upper->pieces[0] = const_delta[0];
-        data_upper->pieces[0].max_A = corner_A[0][0];
-        data_upper->pieces[1] = const_alpha[0];
-        data_upper->pieces[1].max_A = 0;
-        data_upper->pieces[1].altroot = true;
-        data_upper->pieces[2] = const_alpha[0];
-        data_upper->pieces[2].max_A = corner_A[0][1];
-        data_upper->pieces[3] = const_delta[1];
-        data_upper->pieces[3].max_A = corner_A[1][1];
-        data_upper->pieces[4] = const_alpha[1];
-        data_upper->pieces[4].max_A = GSL_POSINF;
-        data_upper->pieces[4].altroot = true;
+        data_lower.min_A = data_upper.min_A = corner_A[1][0];
+        data_lower.min_A_bound = data_upper.min_A_bound = corner_B[1][0];
+        data_lower.max_A = data_upper.max_A = split_A[1];
+        data_lower.max_A_bound = data_upper.max_A_bound = split_B;
+        data_lower.pieces[0] = const_alpha[1];
+        data_lower.pieces[0].max_A = split_A[0];
+        data_lower.pieces[0].altroot = true;
+        data_lower.pieces[1] = lower_circular;
+        data_lower.pieces[1].max_A = GSL_POSINF;
+        data_upper.pieces[0] = const_delta[0];
+        data_upper.pieces[0].max_A = corner_A[0][0];
+        data_upper.pieces[1] = const_alpha[0];
+        data_upper.pieces[1].max_A = 0;
+        data_upper.pieces[1].altroot = true;
+        data_upper.pieces[2] = const_alpha[0];
+        data_upper.pieces[2].max_A = corner_A[0][1];
+        data_upper.pieces[3] = const_delta[1];
+        data_upper.pieces[3].max_A = corner_A[1][1];
+        data_upper.pieces[4] = const_alpha[1];
+        data_upper.pieces[4].max_A = GSL_POSINF;
+        data_upper.pieces[4].altroot = true;
 
       } else {
 
@@ -1743,26 +1740,26 @@ int XLALSetSuperskyPhysicalSkyBounds(
         //      -1 |__.________.________.________.________.__|
         //            '        '        '        '        '
         //       A = -2       -1        0        1        2
-        data_lower->min_A = data_upper->min_A = corner_A[1][0];
-        data_lower->min_A_bound = data_upper->min_A_bound = corner_B[1][0];
-        data_lower->max_A = data_upper->max_A = corner_A[1][1];
-        data_lower->max_A_bound = data_upper->max_A_bound = corner_B[1][1];
-        data_lower->pieces[0] = const_alpha[1];
-        data_lower->pieces[0].max_A = split_A[0];
-        data_lower->pieces[0].altroot = true;
-        data_lower->pieces[1] = lower_circular;
-        data_lower->pieces[1].max_A = split_A[1];
-        data_lower->pieces[2] = const_alpha[1];
-        data_lower->pieces[2].max_A = GSL_POSINF;
-        data_upper->pieces[0] = const_delta[0];
-        data_upper->pieces[0].max_A = corner_A[0][0];
-        data_upper->pieces[1] = const_alpha[0];
-        data_upper->pieces[1].max_A = 0;
-        data_upper->pieces[1].altroot = true;
-        data_upper->pieces[2] = const_alpha[0];
-        data_upper->pieces[2].max_A = corner_A[0][1];
-        data_upper->pieces[3] = const_delta[1];
-        data_upper->pieces[3].max_A = GSL_POSINF;
+        data_lower.min_A = data_upper.min_A = corner_A[1][0];
+        data_lower.min_A_bound = data_upper.min_A_bound = corner_B[1][0];
+        data_lower.max_A = data_upper.max_A = corner_A[1][1];
+        data_lower.max_A_bound = data_upper.max_A_bound = corner_B[1][1];
+        data_lower.pieces[0] = const_alpha[1];
+        data_lower.pieces[0].max_A = split_A[0];
+        data_lower.pieces[0].altroot = true;
+        data_lower.pieces[1] = lower_circular;
+        data_lower.pieces[1].max_A = split_A[1];
+        data_lower.pieces[2] = const_alpha[1];
+        data_lower.pieces[2].max_A = GSL_POSINF;
+        data_upper.pieces[0] = const_delta[0];
+        data_upper.pieces[0].max_A = corner_A[0][0];
+        data_upper.pieces[1] = const_alpha[0];
+        data_upper.pieces[1].max_A = 0;
+        data_upper.pieces[1].altroot = true;
+        data_upper.pieces[2] = const_alpha[0];
+        data_upper.pieces[2].max_A = corner_A[0][1];
+        data_upper.pieces[3] = const_delta[1];
+        data_upper.pieces[3].max_A = GSL_POSINF;
 
       }
     }
@@ -1770,8 +1767,8 @@ int XLALSetSuperskyPhysicalSkyBounds(
   }
 
   // Set the parameter-space bounds on reduced supersky sky coordinates A and B
-  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, data_lower->min_A, data_lower->max_A ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, data_lower.min_A, data_lower.max_A ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, PhysicalSkyBound, sizeof( data_lower ), &data_lower, &data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -1895,22 +1892,16 @@ int XLALSetSuperskyPhysicalSpinBound(
   DECOMPOSE_CONST_RSSKY_TRANSF( rssky_transf );
   XLAL_CHECK( s <= smax, XLAL_ESIZE );
 
-  // Allocate memory
-  const size_t data_len = 4 * sizeof( double );
-  double *data_lower = XLALMalloc( data_len );
-  XLAL_CHECK( data_lower != NULL, XLAL_ENOMEM );
-  double *data_upper = XLALMalloc( data_len );
-  XLAL_CHECK( data_upper != NULL, XLAL_ENOMEM );
-
   // Copy the sky offset vector to bounds data
+  double data_lower[4], data_upper[4];
   for ( size_t j = 0; j < 3; ++j ) {
     data_lower[j] = data_upper[j] = gsl_matrix_get( &sky_offsets.matrix, RSSKY_FKDOT_OFFSET( s ), j );
   }
-
-  // Set the parameter-space bound on physical frequency/spindown coordinate
   data_lower[3] = GSL_MIN( bound1, bound2 );
   data_upper[3] = GSL_MAX( bound1, bound2 );
-  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, RSSKY_FKDOT_DIM( s ), PhysicalSpinBound, data_len, data_lower, data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Set the parameter-space bound on physical frequency/spindown coordinate
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, RSSKY_FKDOT_DIM( s ), PhysicalSpinBound, sizeof( data_lower ), &data_lower, &data_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 

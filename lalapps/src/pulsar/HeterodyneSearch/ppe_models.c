@@ -168,14 +168,19 @@ void get_pulsar_model( LALInferenceModel *model ){
   /* check the number of frequency and frequency derivative parameters */
   if ( LALInferenceCheckVariable( model->params, "FREQNUM" ) ){
     UINT4 freqnum = LALInferenceGetUINT4Variable( model->params, "FREQNUM" );
-    REAL8Vector *freqs = NULL;
-    freqs = XLALCreateREAL8Vector( freqnum );
+    REAL8Vector *freqs = XLALCreateREAL8Vector( freqnum );
+    REAL8Vector *deltafreqs = XLALCreateREAL8Vector( freqnum );
     for ( UINT4 i = 0; i < freqnum; i++ ){
       CHAR varname[256];
       snprintf(varname, sizeof(varname), "F%u", i);
-      freqs->data[i] = LALInferenceGetREAL8Variable( model->params, varname );
+      REAL8 f0new = LALInferenceGetREAL8Variable( model->params, varname );
+      freqs->data[i] = f0new; /* current frequency (derivative) */
+      snprintf(varname, sizeof(varname), "F%u_FIXED", i);
+      REAL8 f0fixed = LALInferenceGetREAL8Variable( model->params, varname );
+      deltafreqs->data[i] = f0new-f0fixed; /* frequency (derivative) difference */
     }
     PulsarAddParam( pars, "F", &freqs, PULSARTYPE_REAL8Vector_t );
+    PulsarAddParam( pars, "DELTAF", &deltafreqs, PULSARTYPE_REAL8Vector_t );
   }
 
   /* check if there are glitch parameters */
@@ -349,10 +354,12 @@ void add_variable_parameter( PulsarParameters *params, LALInferenceVariables *va
  * Firstly the time varying amplitude of the signal will be calculated based on the antenna pattern and amplitude
  * parameters. Then, if searching over phase parameters, the phase evolution of the signal will be calculated. The
  * difference between the new phase model, \f$\phi(t)_n\f$, and that used to heterodyne the data, \f$\phi(t)_h\f$,
- * (stored in \c ifo->timeData->data) will be calculated and the complex signal model, \f$M\f$, modified accordingly:
+ * will be calculated and the complex signal model, \f$M\f$, modified accordingly:
  * \f[
- * M'(t) = M(t)\exp{i(-(\phi(t)_n - \phi(t)_h))}.
+ * M'(t) = M(t)\exp{i((\phi(t)_n - \phi(t)_h))}.
  * \f]
+ * This does not try to undo the signal modulation in the data, but instead replicates the modulation in the model,
+ * hence the positive phase difference rather than a negative phase in the exponential function.
  *
  * \param params [in] A \c BinaryPulsarParams structure containing the model parameters
  * \param ifo [in] The ifo model structure containing the detector paramters and buffers
@@ -380,18 +387,16 @@ void pulsar_model( PulsarParameters *params, LALInferenceIFOModel *ifo ){
       for( j = 0; j < freqFactors->length; j++ ){
         REAL8Vector *dphi = NULL;
         COMPLEX16 M = 0., expp = 0.;
-        REAL8 dphit = 0.;
 
         length = ifomodel2->compTimeSignal->data->length;
-
-        /* the timeData vector within the LALIFOModel structure contains the phase calculated using the initial (heterodyne)
-         * values of the phase parameters */
 
         /* reheterodyne with the phase */
         if ( (dphi = get_phase_model( params, ifomodel2, freqFactors->data[j] )) != NULL ){
           for( i=0; i<length; i++ ){
-            dphit = dphi->data[i] - ifomodel2->timeData->data->data[i];
-            expp = cexp( LAL_TWOPI * I * dphit );
+            /* phase factor by which to multiply the (almost) DC signal model. NOTE: this does not try to undo
+             * the signal modulation in the data, but instead replicates it in the model, hence the positive
+             * phase rather than a negative phase in the cexp function. */
+            expp = cexp( LAL_TWOPI * I * dphi->data[i] );
 
             M = ifomodel2->compTimeSignal->data->data[i];
 
@@ -412,44 +417,51 @@ void pulsar_model( PulsarParameters *params, LALInferenceIFOModel *ifo ){
 /**
  * \brief The phase evolution of a source
  *
- * This function will calculate the phase evolution of a source at a particular sky location as observed at Earth. The
- * phase evolution is described by a Taylor expansion:
+ * This function will calculate the difference in the phase evolution of a source at a particular sky location as
+ * observed at Earth compared with that used to heterodyne (or SpectralInterpolate) the data. If the phase
+ * evolution is described by a Taylor expansion:
  * \f[
  * \phi(T) = \sum_{k=1}^n \frac{f^{(k-1)}}{k!} T^k,
  * \f]
- * where \f$f^x\f$ is the xth time derivative of the gravitational wave frequency, and \f$T\f$ is the pulsar proper
- * time. Frequency time derivatives are currently allowed up to the fifth derivative. The pulsar proper time is
+ * where \f$f^(x)\f$ is the xth time derivative of the gravitational wave frequency, and \f$T\f$ is the pulsar proper
+ * time, then the phase difference is given by
+ * \f[
+ * \Delta\phi(t) = \sum_{k=1}^n \left( \frac{\Delta f^{(k-1)}}{k!}(t+\delta t_1)^k + \frac{f^{(k-1)}_2}{k!} \sum_{i=0}^{i<k} \left(\begin{array}{c}k \\ i\end{array}\right) (\Delta t)^{k-i} (t+\delta t_1)^i \right),
+ * \f]
+ * where \f$t\f$ is the signal arrival time at the detector minus the given pulsar period epoch, \f$\delta t_1\f$ is the barycentring time delay
+ * (from both solar system and binary orbital effects) calculated at the heterodyned values, \f$\Delta f^{(x)} = f_2^{(x)}-f1^{(x)}\f$
+ * is the diffence in frequency (derivative) between the current value (\f$f_2^{(x)}\f$) and the heterodyne value (\f$\f_1^{(x)}\f$),
+ * and \f$\Delta t = \delta t_2 - \delta t_1\f$ is the difference between the barycentring time delay calculated at the
+ * current values (\f$\delta t_1\f$) and the heterodyned values.
+ * Frequency time derivatives are currently allowed up to the tenth derivative. The pulsar proper time is
  * calculated by correcting the time of arrival at Earth, \f$t\f$ to the solar system barycentre and if necessary the
  * binary system barycenter, so \f$T = t + \delta{}t_{\rm SSB} + \delta{}t_{\rm BSB}\f$.
  *
- * In this function the time delay caused needed to correct to the solar system barycenter is only calculated if
- * required i.e. if it's not been previously calculated and an update is required due to a change in the sky position.
- * The same is true for the binary system time delay, which is only calculated if it has not previously been obtained or
+ * In this function the time delay needed to correct to the solar system barycenter is only calculated if
+ * required i.e. if an update is required due to a change in the sky position.
+ * The same is true for the binary system time delay, which is only calculated if it
  * needs updating due to a change in the binary system parameters.
  *
- * The solar system barycentre delay does not have to be explicitly computed for every time stamp passed to it, but
- * instead will just use linear interpolation within a time range set by \c interptime.
- *
-  * \param params [in] A set of pulsar parameters
+ * \param params [in] A set of pulsar parameters
  * \param ifo [in] The ifo model structure containing the detector parameters and buffers
  * \param freqFactor [in] the multiplicative factor on the pulsar frequency for a particular model
  *
- * \return A vector of rotational phase values
+ * \return A vector of rotational phase difference values
  *
  * \sa get_ssb_delay
  * \sa get_bsb_delay
  */
 REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *ifo, REAL8 freqFactor ){
-  UINT4 i = 0, j = 0, length = 0, isbinary = 0;
+  UINT4 i = 0, j = 0, k = 0, length = 0, isbinary = 0;
 
-  REAL8 DT = 0., deltat = 0., deltatupdate = 0.;
+  REAL8 DT = 0., deltat = 0., deltatpow = 0., deltatpowinner = 1., taylorcoeff = 1., Ddelay = 0., Ddelaypow = 0.;
 
-  REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
+  REAL8Vector *phis = NULL, *dts = NULL, *fixdts = NULL, *bdts = NULL, *fixbdts = NULL;
   LIGOTimeGPSVector *datatimes = NULL;
 
   REAL8 pepoch = PulsarGetREAL8ParamOrZero(params, "PEPOCH"); /* time of ephem info */
   REAL8 cgw = PulsarGetREAL8ParamOrZero(params, "CGW");
-  REAL8 T0 = LALInferenceGetREAL8Variable( ifo->params, "data_epoch" ); /* epoch of the data */
+  REAL8 T0 = pepoch;
 
   /* glitch parameters */
   REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
@@ -467,35 +479,23 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   phis = XLALCreateREAL8Vector( length );
 
   /* get time delays */
-  if( (dts = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "ssb_delays" )) == NULL || LALInferenceCheckVariable( ifo->params, "varyskypos" ) ){
+  fixdts = LALInferenceGetREAL8VectorVariable( ifo->params, "ssb_delays" );
+  if( LALInferenceCheckVariable( ifo->params, "varyskypos" ) ){
     dts = get_ssb_delay( params, datatimes, ifo->ephem, ifo->tdat, ifo->ttype, ifo->detector );
   }
 
   if( LALInferenceCheckVariable( ifo->params, "varybinary" ) ){
     /* get binary system time delays */
-    bdts = get_bsb_delay( params, datatimes, dts, ifo->ephem );
+    if ( dts != NULL ){ bdts = get_bsb_delay( params, datatimes, dts, ifo->ephem ); }
+    else{ bdts = get_bsb_delay( params, datatimes, fixdts, ifo->ephem ); }
   }
-  else if( LALInferenceCheckVariable( ifo->params, "bsb_delays" ) ){
-    bdts = *(REAL8Vector **)LALInferenceGetVariable( ifo->params, "bsb_delays" );
+  if( LALInferenceCheckVariable( ifo->params, "bsb_delays" ) ){
+    fixbdts = LALInferenceGetREAL8VectorVariable( ifo->params, "bsb_delays" );
   }
 
-  /* get vector of frequencies (updated to the start of the data) divided by the appropriate Taylor series coefficient factor */
+  /* get vector of frequencies and frequency differences */
   REAL8Vector *freqs = PulsarGetREAL8VectorParam( params, "F" );
-  REAL8 freqstaylor[freqs->length];
-  memcpy(freqstaylor, freqs->data, sizeof(REAL8)*freqs->length);
-  REAL8 taylorcoeff = 1., taylorcoeffinner = 1;
-  DT = T0 - pepoch;
-  for ( i=0; i<freqs->length; i++ ){
-    taylorcoeffinner = 1.;
-    deltatupdate = DT;
-    for ( j=i+1; j<freqs->length; j++ ){
-      taylorcoeffinner /= (REAL8)(j-i);
-      freqstaylor[i] += taylorcoeffinner*freqstaylor[j]*deltatupdate;
-      deltatupdate *= DT;
-    }
-    taylorcoeff /= (REAL8)(i+1);
-    freqstaylor[i] *= taylorcoeff;
-  }
+  REAL8Vector *deltafs = PulsarGetREAL8VectorParam( params, "DELTAF" );
 
   if ( PulsarCheckParam( params, "BINARY" ) ){ isbinary = 1; } /* see if pulsar is in binary */
   if ( PulsarCheckParam( params, "GLEP" ) ){ /* see if pulsar has glitch parameters */
@@ -551,22 +551,45 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   }
 
   for( i=0; i<length; i++){
-    REAL8 thisphi = 0.;
+    REAL8 deltaphi = 0., innerphi = 0.; /* change in phase */
+    Ddelay = 0.;                        /* change in SSB/BSB delay */
 
     REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /* time of data */
     DT = realT - T0; /* time diff between data and start of data */
 
-    if ( isbinary ) { deltat = DT + dts->data[i] + bdts->data[i]; }
-    else { deltat = DT + dts->data[i]; }
+    /* get difference in solar system barycentring time delays */
+    if ( dts != NULL ){ Ddelay += ( dts->data[i] - fixdts->data[i] ); }
+    deltat = DT + fixdts->data[i];
+
+    if ( isbinary ){
+      /* get difference in binary system barycentring time delays */
+      if ( bdts != NULL && fixbdts != NULL ) { Ddelay += ( bdts->data[i] - fixbdts->data[i] ); }
+      deltat += fixbdts->data[i];
+    }
 
     /* correct for speed of GW compared to speed of light */
-    if ( cgw > 0.0 && cgw < 1. ) { deltat /= cgw; }
+    if ( cgw > 0.0 && cgw < 1. ) {
+      deltat /= cgw;
+      Ddelay /= cgw;
+    }
 
-    /* work out phase */
-    deltatupdate = deltat;
+    /* get the change in phase (compared to the heterodyned phase) */
+    deltatpow = deltat;
     for ( j=0; j<freqs->length; j++ ){
-      thisphi += deltatupdate*freqstaylor[j];
-      deltatupdate *= deltat;
+      taylorcoeff = gsl_sf_fact(j+1);
+      deltaphi += deltafs->data[j]*deltatpow/taylorcoeff;
+      if ( Ddelay != 0. ){
+        innerphi = 0.;
+        deltatpowinner = 1.; /* this starts as one as it is first raised to the power of zero */
+        Ddelaypow = pow(Ddelay, j+1);
+        for ( k=0; k<j+1; k++ ){
+          innerphi += gsl_sf_choose(j+1, k) * Ddelaypow * deltatpowinner;
+          deltatpowinner *= deltat; /* raise power */
+          Ddelaypow /= Ddelay;      /* reduce power */
+        }
+        deltaphi += innerphi*freqs->data[j]/taylorcoeff;
+      }
+      deltatpow *= deltat;
     }
 
     /* check for glitches */
@@ -577,18 +600,18 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
           REAL8 dtg = 0, expd = 1.;
           dtg = deltat - (glep[j]-T0); /* time since glitch */
           if ( gltd[j] != 0. ) { expd = exp(-dtg/gltd[j]); } /* decaying part of glitch */
-          thisphi += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
+          deltaphi += glph[j] + glf0[j]*dtg + 0.5*glf1[j]*dtg*dtg + (1./6.)*glf2[j]*dtg*dtg*dtg + glf0d[j]*gltd[j]*(1.-expd);
         }
       }
     }
 
-    thisphi *= freqFactor; /* multiply by frequency factor */
-    phis->data[i] = thisphi - floor(thisphi); /* only need to keep the fractional part of the phase */
+    deltaphi *= freqFactor; /* multiply by frequency factor */
+    phis->data[i] = deltaphi - floor(deltaphi); /* only need to keep the fractional part of the phase */
   }
 
   /* free memory */
-  if ( !LALInferenceCheckVariable( ifo->params, "ssb_delays") || LALInferenceCheckVariable( ifo->params, "varyskypos" ) ){ XLALDestroyREAL8Vector( dts ); }
-  if ( !LALInferenceCheckVariable( ifo->params, "bsb_delays") || LALInferenceCheckVariable( ifo->params, "varybinary" ) ){ XLALDestroyREAL8Vector( bdts ); }
+  if ( dts != NULL ){ XLALDestroyREAL8Vector( dts ); }
+  if ( bdts != NULL ){ XLALDestroyREAL8Vector( bdts ); }
 
   if ( glnum > 0 ){
     XLALFree( glep );

@@ -199,7 +199,7 @@ def parse_command_line():
     parser.add_option("--flow", type="float", help="Required. Set the low-frequency cutoff to use for the match caluclation.")
     parser.add_option("--match-min",help="Set minimum match of the bank. Note that since this is a stochastic process, the requested minimal match may not be strictly guaranteed but should be fulfilled on a statistical basis. Default: 0.95.", type="float", default=0.95)
     parser.add_option("--convergence-threshold", metavar="N", help="Set the criterion for convergence of the stochastic bank. The code terminates when there are N rejected proposals for each accepted proposal, averaged over the last ten acceptances. Default 1000.", type="int", default=1000)
-    parser.add_option("--templates-max", metavar="N", help="Use this option to force the code to exit after generating a specified number N of templates. Note that the code may exit with fewer than N templates if the convergence criterion is met first.", type="int", default=float('inf'))
+    parser.add_option("--max-new-templates", metavar="N", help="Use this option to force the code to exit after accepting a specified number N of new templates. Note that the code may exit with fewer than N templates if the convergence criterion is met first.", type="int", default=float('inf'))
     parser.add_option("--cache-waveforms", default = False, action="store_true", help="A given waveform in the template bank will be used many times throughout the bank generation process. You can save a considerable amount of CPU by caching the waveform from the first time it is generated; however, do so only if you are sure that storing the waveforms in memory will not overload the system memory.")
     parser.add_option("--coarse-match-df", type="float", default=None, help="If given, use this value of df to quickly test if the mismatch is less than 4 times the minimal mismatch. This can quickly reject points at high values of df, that will not have high overlaps at smaller df values. This can be used to speed up the sbank process.")
     parser.add_option("--iterative-match-df-max", type="float", default=None, help="If this option is given it will enable sbank using larger df values than 1 / data length when computing overlaps. Sbank will then compute a match at this value, and at half this value, if the two values agree to 0.1% the value obtained will be taken as the actual value. If the values disagree the match will be computed again using a df another factor of 2 smaller until convergence or a df of 1/ data_length, is reached.")
@@ -469,7 +469,7 @@ for tmplt in proposal:
     # check if stopping criterion has been reached
     #
     if not (((k + float(sum(ks)))/len(ks) < opts.convergence_threshold) and \
-            (len(bank) < opts.templates_max)):
+            (len(tbl) < opts.max_new_templates)):
         break
 
     # accounting for number of proposals

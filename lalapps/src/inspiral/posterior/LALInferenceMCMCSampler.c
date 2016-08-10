@@ -529,6 +529,10 @@ void LALInferencePTswap(LALInferenceRunState *runState, FILE *swapfile) {
     n_local_threads = runState->nthreads;
     ntemps = MPIsize*n_local_threads;
 
+    /* Return if running with only a single temperature */
+    if (ntemps == 1)
+        return;
+
     cold_inds = XLALCalloc(ntemps-1, sizeof(INT4));
 
     /* Have the root process choose a random order of ladder swaps and share it */
@@ -1047,12 +1051,23 @@ void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
     for (t = 0; t < n_local_threads; t++) {
         thread = runState->threads[t];
 
-        LALH5File *chain_group = XLALH5GroupOpen(group, thread->name);
+        char chain_group_name[1024];
+        snprintf(chain_group_name, sizeof(chain_group_name), "%s-checkpoint", thread->name);
+        LALH5File *chain_group = XLALH5GroupOpen(group, chain_group_name);
+        /*
+         * FIXME: use GNUism asprintf or fall back to libiberty
+         *
+
+        char *chain_group_name = NULL;
+        asprintf(&chain_group_name, "%s-checkpoint", thread->name);
+        LALH5File *chain_group = XLALH5GroupOpen(group, chain_group_name);
+        free(chain_group_name);
+        */
 
         /* Create run identifier group */
-        LALInferenceH5VariablesArray2Group(chain_group, thread->differentialPoints, thread->differentialPointsLength, "differential_points");
-        LALInferenceH5VariablesArray2Group(chain_group, &(thread->proposalArgs), 1, "proposal_arguments");
-        LALInferenceH5VariablesArray2Group(chain_group, &(thread->currentParams), 1, "current_parameters");
+        LALInferenceH5VariablesArrayToDataset(chain_group, thread->differentialPoints, thread->differentialPointsLength, "differential_points");
+        LALInferenceH5VariablesArrayToDataset(chain_group, &(thread->proposalArgs), 1, "proposal_arguments");
+        LALInferenceH5VariablesArrayToDataset(chain_group, &(thread->currentParams), 1, "current_parameters");
         XLALH5FileAddScalarAttribute(chain_group, "last_step", &(thread->step), LAL_D_TYPE_CODE);
         XLALH5FileAddScalarAttribute(chain_group, "effective_sample_size", &(thread->effective_sample_size), LAL_D_TYPE_CODE);
         XLALH5FileAddScalarAttribute(chain_group, "differential_point_skip", &(thread->differentialPointsSkip), LAL_D_TYPE_CODE);
@@ -1091,17 +1106,28 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
     for (t = 0; t < n_local_threads; t++) {
         thread = runState->threads[t];
 
-        LALH5File *chain_group = XLALH5GroupOpen(group, thread->name);
+        char chain_group_name[1024];
+        snprintf(chain_group_name, sizeof(chain_group_name), "%s-checkpoint", thread->name);
+        LALH5File *chain_group = XLALH5GroupOpen(group, chain_group_name);
+        /*
+         * FIXME: use GNUism asprintf or fall back to libiberty
+         *
+
+        char *chain_group_name = NULL;
+        asprintf(&chain_group_name, "%s-checkpoint", thread->name);
+        LALH5File *chain_group = XLALH5GroupOpen(group, chain_group_name);
+        free(chain_group_name);
+        */
 
         /* Restore differential evolution buffer */
-        LALH5File *de_group = XLALH5GroupOpen(chain_group, "differential_points");
-        LALInferenceH5GroupToVariablesArray(de_group, &(thread->differentialPoints), (UINT4 *)&(thread->differentialPointsLength));
+        LALH5Dataset *de_group = XLALH5DatasetRead(chain_group, "differential_points");
+        LALInferenceH5DatasetToVariablesArray(de_group, &(thread->differentialPoints), (UINT4 *)&(thread->differentialPointsLength));
         thread->differentialPointsSize = thread->differentialPointsLength;
 
         /* Restore proposal arguments, most importantly adaptation settings */
         LALInferenceVariables **propArgs;
-        LALH5File *prop_arg_group = XLALH5GroupOpen(chain_group, "proposal_arguments");
-        LALInferenceH5GroupToVariablesArray(prop_arg_group, &propArgs, &n);
+        LALH5Dataset *prop_arg_group = XLALH5DatasetRead(chain_group, "proposal_arguments");
+        LALInferenceH5DatasetToVariablesArray(prop_arg_group, &propArgs, &n);
         LALInferenceCopyVariables(propArgs[0], thread->proposalArgs);
 
         /* We don't save strings, so we can't tell which parameter was last updated with adaptation.
@@ -1112,8 +1138,8 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
 
         /* Restore the parameters of the last sample */
         LALInferenceVariables **currentParams;
-        LALH5File *current_param_group = XLALH5GroupOpen(chain_group, "current_parameters");
-        LALInferenceH5GroupToVariablesArray(current_param_group, &currentParams, &n);
+        LALH5Dataset *current_param_group = XLALH5DatasetRead(chain_group, "current_parameters");
+        LALInferenceH5DatasetToVariablesArray(current_param_group, &currentParams, &n);
         LALInferenceCopyVariables(currentParams[0], thread->currentParams);
 
         /* Recalculate the likelihood and prior for the restored parameters */
@@ -1131,9 +1157,9 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
         XLALH5FileQueryScalarAttributeValue(&(thread->differentialPointsSkip), chain_group, "differential_point_skip");
 
         /* TODO: Write metadata */
-        XLALH5FileClose(current_param_group);
-        XLALH5FileClose(prop_arg_group);
-        XLALH5FileClose(de_group);
+        XLALH5DatasetFree(current_param_group);
+        XLALH5DatasetFree(prop_arg_group);
+        XLALH5DatasetFree(de_group);
         XLALH5FileClose(chain_group);
     }
     XLALH5FileClose(group);
@@ -1155,16 +1181,16 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
     for (t = 0; t < n_local_threads; t++) {
         thread = runState->threads[t];
 
-        LALH5File *chain_group = XLALH5GroupOpen(group, thread->name);
+        LALH5Dataset *chain_dataset = XLALH5DatasetRead(group, thread->name);
 
         LALInferenceVariables **input_array;
         UINT4 i,N;
-        LALInferenceH5GroupToVariablesArray(chain_group, &input_array, &N);
+        LALInferenceH5DatasetToVariablesArray(chain_dataset, &input_array, &N);
         for (i=0; i<N; i++)
             LALInferenceLogSampleToArray(thread->algorithmParams, input_array[i]);
 
         /* TODO: Write metadata */
-        XLALH5FileClose(chain_group);
+        XLALH5DatasetFree(chain_dataset);
     }
     XLALH5FileClose(group);
     XLALH5FileClose(li_group);
@@ -1205,7 +1231,7 @@ void LALInferenceWriteMCMCSamples(LALInferenceRunState *runState) {
         }
 
         /* Create run identifier group */
-        LALInferenceH5VariablesArray2Group(group, output_array, N_output_array, thread->name);
+        LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, thread->name);
 
         /* TODO: Write metadata */
     }

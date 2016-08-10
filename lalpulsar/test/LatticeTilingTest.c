@@ -19,6 +19,7 @@
 
 // Tests of the lattice-based template generation code in LatticeTiling.[ch].
 
+#include <config.h>
 #include <stdio.h>
 
 #include <lal/LatticeTiling.h>
@@ -29,6 +30,12 @@
 #include <lal/LALInitBarycenter.h>
 
 #include <lal/GSLHelpers.h>
+
+#if defined(__GNUC__)
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 #define MISM_HIST_BINS 20
 
@@ -62,12 +69,104 @@ const double A3s_mism_hist[MISM_HIST_BINS] = {
   1.590473, 1.664510, 1.595423, 1.391209, 1.194340, 1.004085, 0.729054, 0.371869, 0.098727, 0.011236
 };
 
+static int SerialisationTest(
+  const size_t UNUSED n,
+  const LatticeTiling UNUSED *tiling,
+  const UINT8 UNUSED total_ref,
+  const UINT8 UNUSED total_ckpt_0,
+  const UINT8 UNUSED total_ckpt_1,
+  const UINT8 UNUSED total_ckpt_2,
+  const UINT8 UNUSED total_ckpt_3
+  )
+{
+
+#if !defined(HAVE_LIBCFITSIO)
+  printf( "Skipping serialisation test (CFITSIO library is not available)\n" );
+#else // defined(HAVE_LIBCFITSIO)
+  printf( "Performing serialisation test ..." );
+
+  const UINT8 total_ckpt[4] = {total_ckpt_0, total_ckpt_1, total_ckpt_2, total_ckpt_3};
+
+  // Create lattice tiling iterator
+  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n );
+  XLAL_CHECK( itr != NULL, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingAlternatingIterator( itr, true ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Count number of points
+  const UINT8 total = XLALTotalLatticeTilingPoints( itr );
+  XLAL_CHECK( imaxabs( total - total_ref ) <= 1, XLAL_EFUNC, "\nERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", total, total_ref );
+
+  // Get all points
+  gsl_matrix *GAMAT( points, n, total );
+  XLAL_CHECK( XLALNextLatticeTilingPoints( itr, &points ) == ( int ) total, XLAL_EFUNC );
+  XLAL_CHECK( XLALNextLatticeTilingPoint( itr, NULL ) == 0, XLAL_EFUNC );
+  XLAL_CHECK( XLALResetLatticeTilingIterator( itr ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Iterate over all points again, this time with checkpointing
+  gsl_vector *GAVEC( point, n );
+  size_t k_ckpt = 0;
+  for ( UINT8 k = 0; k < total; ++k ) {
+
+    // Check next point for consistency
+    XLAL_CHECK( XLALNextLatticeTilingPoint( itr, point ) >= 0, XLAL_EFUNC );
+    gsl_vector_const_view points_k_view = gsl_matrix_const_column( points, k );
+    gsl_vector_sub( point, &points_k_view.vector );
+    double err = gsl_blas_dasum( point ) / n;
+    XLAL_CHECK( err < 1e-6, XLAL_EFAILED, "\nERROR: err = %e < 1e-6", err );
+
+    // Checkpoint iterator at certain intervals
+    if ( k_ckpt < XLAL_NUM_ELEM( total_ckpt ) && k + 1 >= total_ckpt[k_ckpt] ) {
+
+      // Save iterator to a FITS file
+      {
+        FITSFile *file = XLALFITSFileOpenWrite( "LatticeTilingTest.fits" );
+        XLAL_CHECK( file != NULL, XLAL_EFUNC );
+        XLAL_CHECK( XLALSaveLatticeTilingIterator( itr, file, "itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLALFITSFileClose( file );
+      }
+
+      // Destroy and recreate lattice tiling iterator
+      XLALDestroyLatticeTilingIterator( itr );
+      itr = XLALCreateLatticeTilingIterator( tiling, n );
+      XLAL_CHECK( itr != NULL, XLAL_EFUNC );
+      XLAL_CHECK( XLALSetLatticeTilingAlternatingIterator( itr, true ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // Restore iterator to a FITS file
+      {
+        FITSFile *file = XLALFITSFileOpenRead( "LatticeTilingTest.fits" );
+        XLAL_CHECK( file != NULL, XLAL_EFUNC );
+        XLAL_CHECK( XLALRestoreLatticeTilingIterator( itr, file, "itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLALFITSFileClose( file );
+      }
+
+      printf( " checkpoint at %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " ...", k + 1, total );
+      ++k_ckpt;
+
+    }
+
+  }
+  XLAL_CHECK( XLALNextLatticeTilingPoint( itr, NULL ) == 0, XLAL_EFUNC );
+
+  printf( " done\n" );
+
+  // Cleanup
+  XLALDestroyLatticeTilingIterator( itr );
+  GFVEC( point );
+  GFMAT( points );
+
+#endif // !defined(HAVE_LIBCFITSIO)
+
+  return XLAL_SUCCESS;
+
+}
+
 static int BasicTest(
-  size_t n,
+  const size_t n,
   const int bound_on_0,
   const int bound_on_1,
   const int bound_on_2,
   const int bound_on_3,
+  const UINT4 padding,
   const char *lattice_name,
   const UINT8 total_ref_0,
   const UINT8 total_ref_1,
@@ -88,6 +187,10 @@ static int BasicTest(
     XLAL_CHECK( bound_on[i] == 0 || bound_on[i] == 1, XLAL_EFAILED );
     XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, i, 0.0, bound_on[i] * pow( 100.0, 1.0/n ) ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
+
+  // Set padding level
+  printf( "Padding level: %u\n", padding );
+  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, padding ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set metric to the Lehmer matrix
   const double max_mismatch = 0.3;
@@ -220,6 +323,9 @@ static int BasicTest(
 
   }
 
+  // Perform serialisation test
+  XLAL_CHECK( SerialisationTest( n, tiling, total_ref[n-1], total_ref_0, total_ref_1, total_ref_2, total_ref_3 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
   XLALDestroyLatticeTilingLocator( loc );
@@ -232,8 +338,8 @@ static int BasicTest(
 }
 
 static int MismatchTest(
-  LatticeTiling *tiling,
-  gsl_matrix *metric,
+  const LatticeTiling *tiling,
+  const gsl_matrix *metric,
   const double max_mismatch,
   const UINT8 total_ref,
   const double mism_hist_ref[MISM_HIST_BINS]
@@ -361,12 +467,13 @@ static int MismatchTest(
 
   }
 
+  // Perform serialisation test
+  XLAL_CHECK( SerialisationTest( n, tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Cleanup
-  XLALDestroyLatticeTiling( tiling );
   XLALDestroyLatticeTilingIterator( itr );
   XLALDestroyLatticeTilingLocator( loc );
-  GFMAT( metric, points );
-  LALCheckMemoryLeaks();
+  GFMAT( points );
   printf( "\n" );
   fflush( stdout );
 
@@ -414,6 +521,11 @@ static int MismatchSquareTest(
   // Perform mismatch test
   XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Cleanup
+  XLALDestroyLatticeTiling( tiling );
+  GFMAT( metric );
+  LALCheckMemoryLeaks();
+
   return XLAL_SUCCESS;
 
 }
@@ -454,6 +566,11 @@ static int MismatchAgeBrakeTest(
 
   // Perform mismatch test
   XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Cleanup
+  XLALDestroyLatticeTiling( tiling );
+  GFMAT( metric );
+  LALCheckMemoryLeaks();
 
   return XLAL_SUCCESS;
 
@@ -498,9 +615,6 @@ static int SuperskyTest(
   XLAL_CHECK( edat != NULL, XLAL_EFUNC );
   SuperskyMetrics *metrics = XLALComputeSuperskyMetrics( 0, &ref_time, &segments, freq, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
   XLAL_CHECK( metrics != NULL, XLAL_EFUNC );
-  gsl_matrix *rssky_metric = metrics->semi_rssky_metric, *rssky_transf = metrics->semi_rssky_transf;
-  metrics->semi_rssky_metric = metrics->semi_rssky_transf = NULL;
-  XLALDestroySuperskyMetrics( metrics );
   XLALSegListClear( &segments );
   XLALDestroyEphemerisData( edat );
 
@@ -508,16 +622,20 @@ static int SuperskyTest(
   printf( "Bounds: supersky, sky patch 0/%" LAL_UINT8_FORMAT ", freq=%0.3g, freqband=%0.3g\n", patch_count, freq, freqband );
   double alpha1 = 0, alpha2 = 0, delta1 = 0, delta2 = 0;
   XLAL_CHECK( XLALComputePhysicalSkyEqualAreaPatch( &alpha1, &alpha2, &delta1, &delta2, patch_count, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( tiling, rssky_metric, rssky_transf, alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( tiling, rssky_transf, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
-  GFMAT( rssky_transf );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( tiling, metrics->semi_rssky_metric, metrics->semi_rssky_transf, alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( tiling, metrics->semi_rssky_transf, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set metric
   printf( "Lattice type: %s\n", lattice_name );
-  XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, rssky_metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, metrics->semi_rssky_metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch test
-  XLAL_CHECK( MismatchTest( tiling, rssky_metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( tiling, metrics->semi_rssky_metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Cleanup
+  XLALDestroyLatticeTiling( tiling );
+  XLALDestroySuperskyMetrics( metrics );
+  LALCheckMemoryLeaks();
 
   return XLAL_SUCCESS;
 
@@ -638,32 +756,36 @@ int main( void )
   setvbuf( stderr, NULL, _IONBF, 0 );
 
   // Perform basic tests
-  XLAL_CHECK_MAIN( BasicTest( 1, 0, 0, 0, 0, "Zn" ,    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 1, 1, 1, 1, 1, "Ans",   93,    0,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 1, 1, 1, 1, 1, "Zn" ,   93,    0,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 2, 0, 0, 0, 0, "Ans",    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 2, 1, 1, 1, 1, "Ans",   12,  144,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 2, 1, 1, 1, 1, "Zn" ,   13,  190,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 3, 0, 0, 0, 0, "Zn" ,    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 3, 1, 1, 1, 1, "Ans",    8,   46,  332,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 3, 1, 1, 1, 1, "Zn" ,    8,   60,  583,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 0, 0, "Ans",    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 0, 1, "Ans",    1,    1,    1,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 1, 0, "Ans",    1,    1,    4,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 1, 1, "Ans",    1,    1,    4,   20 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 0, 0, "Ans",    1,    4,    4,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 0, 1, "Ans",    1,    5,    5,   25 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 1, 0, "Ans",    1,    5,   24,   24 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 1, 1, "Ans",    1,    5,   20,  115 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 0, 0, "Ans",    4,    4,    4,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 0, 1, "Ans",    5,    5,    5,   23 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 1, 0, "Ans",    5,    5,   23,   23 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 1, 1, "Ans",    6,    6,   24,  139 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 0, 0, "Ans",    5,   25,   25,   25 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 0, 1, "Ans",    6,   30,   30,  162 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 0, "Ans",    6,   27,  151,  151 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, "Ans",    6,   30,  145,  897 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, "Zn" ,    7,   46,  287, 2543 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 1, 0, 0, 0, 0, 1, "Zn" ,    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 1, 1, 1, 1, 1, 1, "Ans",   93,    0,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 1, 1, 1, 1, 1, 1, "Zn" ,   93,    0,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 2, 0, 0, 0, 0, 1, "Ans",    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 2, 1, 1, 1, 1, 1, "Ans",   12,  144,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 2, 1, 1, 1, 1, 1, "Zn" ,   13,  190,    0,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 3, 0, 0, 0, 0, 1, "Zn" ,    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 3, 1, 1, 1, 1, 1, "Ans",    8,   46,  332,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 3, 1, 1, 1, 1, 1, "Zn" ,    8,   60,  583,    0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 0, 0, 1, "Ans",    1,    1,    1,    1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 0, 1, 1, "Ans",    1,    1,    1,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 1, 0, 1, "Ans",    1,    1,    4,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 0, 1, 1, 1, "Ans",    1,    1,    4,   20 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 0, 0, 1, "Ans",    1,    4,    4,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 0, 1, 1, "Ans",    1,    5,    5,   25 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 1, 0, 1, "Ans",    1,    5,   24,   24 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 0, 1, 1, 1, 1, "Ans",    1,    5,   20,  115 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 0, 0, 1, "Ans",    4,    4,    4,    4 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 0, 1, 1, "Ans",    5,    5,    5,   23 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 1, 0, 1, "Ans",    5,    5,   23,   23 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 0, 1, 1, 1, "Ans",    6,    6,   24,  139 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 0, 0, 1, "Ans",    5,   25,   25,   25 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 0, 1, 1, "Ans",    6,   30,   30,  162 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 0, 1, "Ans",    6,   27,  151,  151 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 1, "Ans",    6,   30,  145,  897 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 1, "Zn" ,    7,   46,  287, 2543 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 0, "Ans",    4,   13,   39,  160 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 0, "Zn" ,    5,   21,   81,  474 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 2, "Ans",    8,   54,  336, 2804 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 2, "Zn" ,    9,   77,  661, 7822 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch tests with a square parameter space
   XLAL_CHECK_MAIN( MismatchSquareTest( "Zn",  0.03,     0,     0, 21460,  Z1_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );

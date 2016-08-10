@@ -63,8 +63,8 @@ typedef struct {
 // ---------- Shared internal functions ---------- //
 int XLALGetFstatTiming_Demod ( const void* method_data, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
 int XLALGetFstatTiming_Resamp ( const void* method_data, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf );
-int AppendFstatTimingInfo2File_Demod ( const void* method_data, FILE *fp );
-int AppendFstatTimingInfo2File_Resamp ( const void *method_data, FILE *fp );
+int AppendFstatTimingInfo2File_Demod ( const void* method_data, FILE *fp, BOOLEAN printHeader );
+int AppendFstatTimingInfo2File_Resamp ( const void *method_data, FILE *fp, BOOLEAN printHeader );
 
 static inline REAL4
 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv )

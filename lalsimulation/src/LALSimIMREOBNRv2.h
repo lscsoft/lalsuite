@@ -37,9 +37,10 @@
 #define _LALSIMIMREOBNRv2_H
 
 #if defined(__cplusplus)
-extern "C" {
+extern "C"
+{
 #elif 0
-} /* so that editors will match preceding brace */
+}				/* so that editors will match preceding brace */
 #endif
 
 /**
@@ -55,8 +56,7 @@ extern "C" {
  * coefficient. For example, the coefficient of r^5 in the numerator
  * will be called n5.
  */
-typedef struct
-tagEOBACoefficients
+typedef struct tagEOBACoefficients
 {
   REAL8 n4;
   REAL8 n5;
@@ -74,8 +74,7 @@ EOBACoefficients;
  * waveform. The coefficients are precomputed in the function
  * XLALCalcFacWaveformCoefficients()
  */
-typedef struct
-tagFacWaveformCoeffs
+typedef struct tagFacWaveformCoeffs
 {
   REAL8 delta22vh3;
   REAL8 delta22vh6;
@@ -394,6 +393,19 @@ tagFacWaveformCoeffs
   REAL8 rho83v2;
   REAL8 rho82v2;
   REAL8 rho81v2;
+
+  REAL8 m1;
+  REAL8 m2;
+  REAL8 comp1;
+  REAL8 comp2;
+  REAL8 k2Tidal1;
+  REAL8 k2Tidal2;
+  REAL8 omega02Tidal1;
+  REAL8 omega02Tidal2;
+  REAL8 k3Tidal1;
+  REAL8 k3Tidal2;
+  REAL8 omega03Tidal1;
+  REAL8 omega03Tidal2;
 }
 FacWaveformCoeffs;
 
@@ -404,10 +416,9 @@ FacWaveformCoeffs;
  * indexed as values[l][m]. Since m has to be <= l, this structure
  * is larger than it needs to be; but it makes the coding a bit neater...
  */
-typedef
-struct tagNewtonMultipolePrefixes
+typedef struct tagNewtonMultipolePrefixes
 {
-  COMPLEX16 values[LALEOB_MAX_MULTIPOLE+1][LALEOB_MAX_MULTIPOLE+1];
+  COMPLEX16 values[LALEOB_MAX_MULTIPOLE + 1][LALEOB_MAX_MULTIPOLE + 1];
 }
 NewtonMultipolePrefixes;
 
@@ -416,8 +427,7 @@ NewtonMultipolePrefixes;
  * correction to the EOBNRv2 model. The precise definitions of these
  * coefficients and their use can be found in DCC document T1100433.
  */
-typedef struct
-tagEOBNonQCCoeffs
+typedef struct tagEOBNonQCCoeffs
 {
   REAL8 a1;
   REAL8 a2;
@@ -437,17 +447,16 @@ tagEOBNonQCCoeffs
  * and the pre-computed parameters for the factorized waveform
  */
 
-typedef
-struct tagEOBParams
+typedef struct tagEOBParams
 {
   REAL8 eta;
   REAL8 omega;
   UINT4 omegaPeaked;
   REAL8 m1;
   REAL8 m2;
-  EOBACoefficients        *aCoeffs;
-  FacWaveformCoeffs       *hCoeffs;
-  EOBNonQCCoeffs          *nqcCoeffs;
+  EOBACoefficients *aCoeffs;
+  FacWaveformCoeffs *hCoeffs;
+  EOBNonQCCoeffs *nqcCoeffs;
   NewtonMultipolePrefixes *prefixes;
 }
 EOBParams;
@@ -459,9 +468,10 @@ EOBParams;
  * with the exception of the current guess of the radius within
  * a structure.
  */
-typedef struct tagrOfOmegaIn {
-   REAL8 eta;   /**<< Symmetric mass ratio */
-   REAL8 omega; /**<< Angular frequency (dimensionless combination M omega) */
+typedef struct tagrOfOmegaIn
+{
+  REAL8 eta;	/**<< Symmetric mass ratio */
+  REAL8 omega;	/**<< Angular frequency (dimensionless combination M omega) */
 } rOfOmegaIn;
 
 
@@ -471,19 +481,20 @@ typedef struct tagrOfOmegaIn {
  * it is necessary to place all parameters with the exception of the
  * current guess of the radial momentum within a structure.
  */
-typedef struct tagPr3In {
-  REAL8 eta;                 /**<< Symmetric mass ratio */
-  REAL8 omega;               /**<< Angular frequency (dimensionless combination M omega) */
-  REAL8 vr;                  /**<< Radial velocity (dimensionless) */
-  REAL8 r;                   /**<< Orbital separation (units of total mass) */
-  REAL8 q;                   /**<< Momentum pphi */
+typedef struct tagPr3In
+{
+  REAL8 eta;		     /**<< Symmetric mass ratio */
+  REAL8 omega;		     /**<< Angular frequency (dimensionless combination M omega) */
+  REAL8 vr;		     /**<< Radial velocity (dimensionless) */
+  REAL8 r;		     /**<< Orbital separation (units of total mass) */
+  REAL8 q;		     /**<< Momentum pphi */
   EOBACoefficients *aCoeffs; /**<< Pre-computed coefficients of EOB A function */
 
 } pr3In;
 
 
 #if 0
-{ /* so that editors will match succeeding brace */
+{				/* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
 }
 #endif

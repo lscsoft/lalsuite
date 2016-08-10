@@ -31,6 +31,7 @@
 #include <lal/UserInput.h>
 
 // benchmark ComputeFstat() functions for performance and memory usage
+REAL8 XLALGetCurrentHeapUsageMB ( void );
 
 typedef struct
 {
@@ -62,8 +63,8 @@ main ( int argc, char *argv[] )
   uvar->Freq = 100;
   uvar->f1dot = -3e-9;
   uvar->FreqResolution = XLALCreateREAL8Vector ( 2 );
-  uvar->FreqResolution->data[0] = 1;
-  uvar->FreqResolution->data[1] = 10;
+  uvar->FreqResolution->data[0] = 0.1;
+  uvar->FreqResolution->data[1] = 1;
   uvar->numFreqBins = XLALCreateINT4Vector ( 2 );
   uvar->numFreqBins->data[0] = 1000;
   uvar->numFreqBins->data[1] = 100000;
@@ -80,14 +81,14 @@ main ( int argc, char *argv[] )
   XLAL_CHECK ( XLALRegisterUvarMember ( FstatMethod,    STRING,         0, OPTIONAL,  "F-statistic method to use. Available methods: %s", XLALFstatMethodHelpString() ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( Freq,           REAL8,          0, OPTIONAL,  "Search frequency in Hz" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( f1dot,          REAL8,          0, OPTIONAL,  "Search spindown f1dot in Hz/s" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( FreqResolution, REAL8Vector,    0, OPTIONAL,  "Range of frequency resolution factor 'r' (st dFreq = 1/(r*T)) [2-number range input]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember ( FreqResolution, REAL8Vector,    0, OPTIONAL,  "Frequency resolution 'R' in natural units 1/Tseg such that: dFreq = R/Tseg) [range]" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( Tseg,           REAL8,          0, OPTIONAL,  "Coherent segment length" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( numSegments,    INT4,           0, OPTIONAL,  "Number of semi-coherent segment" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( numFreqBins,    INT4Vector,     0, OPTIONAL,  "Range of number of frequency bins to search [2-number range input]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember ( IFOs,    	STRINGVector,   0, OPTIONAL,  "IFOs to use" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember ( numSegments,    INT4,           0, OPTIONAL,  "Number of semi-coherent segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember ( numFreqBins,    INT4Vector,     0, OPTIONAL,  "Number of frequency bins to search [range]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember ( IFOs,    	STRINGVector,   0, OPTIONAL,  "IFOs to use [list]" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( numTrials,    	INT4,           0, OPTIONAL,  "Number of repeated trials to run (with potentially randomized parameters)" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALRegisterUvarMember ( outputInfo,     STRING,         0, OPTIONAL, "Append Resampling internal info into this file") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember ( outputInfo,     STRING,         0, OPTIONAL,  "Append Resampling internal info into this file") == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLAL_CHECK ( XLALRegisterUvarMember ( Tsft,           REAL8,          0, DEVELOPER, "SFT length" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember ( reuseInput,     BOOLEAN,        0, DEVELOPER, "Re-use FstatInput from previous setups (only useful for checking workspace management)" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -133,7 +134,7 @@ main ( int argc, char *argv[] )
 
   EphemerisData *ephem;
   XLAL_CHECK ( (ephem = XLALInitBarycenter ( TEST_DATA_DIR "earth00-19-DE405.dat.gz", TEST_DATA_DIR "sun00-19-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
-  REAL8 memBase = XLALGetPeakHeapUsageMB();
+  REAL8 memBase = XLALGetCurrentHeapUsageMB();
 
   UINT4 numDetectors = uvar->IFOs->length;
   // ----- setup injection and data parameters
@@ -154,7 +155,6 @@ main ( int argc, char *argv[] )
       startTime_l = endTime_l;
     } // for l < numSegments
   LIGOTimeGPS endTime = endTime_l;
-  UINT4 numSFTsPerSeg = catalogs[0]->length;
 
   PulsarSpinRange XLAL_INIT_DECL(spinRange);
   LIGOTimeGPS refTime = { startTime.gpsSeconds - 2.3 * uvar->Tseg, 0 };
@@ -186,11 +186,17 @@ main ( int argc, char *argv[] )
   optionalArgs.collectTiming = 1;
 
   FILE *timingLogFILE = NULL;
+  BOOLEAN printHeader = 0;
   if ( uvar->outputInfo != NULL )
     {
+      FILE *tmp;
+      if ( (tmp = fopen ( uvar->outputInfo, "r" )) == NULL ) {
+        printHeader = 1;
+      } else {
+        fclose (tmp );
+      }
       XLAL_CHECK ( (timingLogFILE = fopen (uvar->outputInfo, "ab")) != NULL, XLAL_ESYS, "Failed to open '%s' for appending\n", uvar->outputInfo );
     }
-
   FstatInputVector *inputs;
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_2F_PER_DET);
   FstatResults *results = NULL;
@@ -202,21 +208,18 @@ main ( int argc, char *argv[] )
       // randomize numFreqBins
       UINT4 numFreqBins_i = numFreqBinsMin + (UINT4)round ( 1.0 * (numFreqBinsMax - numFreqBinsMin) * rand() / RAND_MAX );
       // randomize FreqResolution
-      REAL8 FreqResolution_i = FreqResolutionMin + 1.0 * ( FreqResolutionMax - FreqResolutionMin ) * rand() / RAND_MAX;
+      REAL8 FreqResolution_i = FreqResolutionMin + ( FreqResolutionMax - FreqResolutionMin ) * rand() / RAND_MAX;
 
       XLAL_CHECK ( (inputs = XLALCreateFstatInputVector ( uvar->numSegments )) != NULL, XLAL_EFUNC );
 
-      REAL8 dFreq = 1.0 / ( FreqResolution_i * uvar->Tseg );
+      REAL8 dFreq = FreqResolution_i / uvar->Tseg;
 
       REAL8 FreqBand = numFreqBins_i * dFreq;
-      fprintf ( stderr, "trial %d/%d: Tseg = %.1f d, numSegments = %d, Freq = %.1f Hz, f1dot = %.1e Hz/s, FreqResolution r = %f, numFreqBins = %d [dFreq = %.2e Hz, FreqBand = %.2e Hz]\n",
+      fprintf ( stderr, "trial %d/%d: Tseg = %.1f d, numSegments = %d, Freq = %.1f Hz, f1dot = %.1e Hz/s, FreqResolution R = %.2f, numFreqBins = %d [dFreq = %.2e Hz, FreqBand = %.2e Hz]\n",
                 i+1, uvar->numTrials, uvar->Tseg / 86400.0, uvar->numSegments, uvar->Freq, uvar->f1dot, FreqResolution_i, numFreqBins_i, dFreq, FreqBand );
 
       spinRange.fkdotBand[0] = FreqBand;
       XLAL_CHECK ( XLALCWSignalCoveringBand ( &minCoverFreq, &maxCoverFreq, &startTime, &endTime, &spinRange, asini, Period, ecc ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      UINT4 numBinsSFT = ceil ( (maxCoverFreq - minCoverFreq) * uvar->Tsft + 2 * 8 );
-      REAL8 memSFTs = uvar->numSegments * numSFTsPerSeg * ( sizeof(SFTtype) + numBinsSFT * sizeof(COMPLEX8)) / 1e6;
 
       // create per-segment input structs
       for ( INT4 l = 0; l < uvar->numSegments; l ++ )
@@ -242,21 +245,21 @@ main ( int argc, char *argv[] )
           tauF1Buf_i   += Fstat_tauF1Buf;
           // ----- output timing details to file if requested
           if ( timingLogFILE != NULL ) {
-            XLAL_CHECK ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE ) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK ( AppendFstatTimingInfo2File ( inputs->data[l], timingLogFILE, printHeader ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
 
         } // for l < numSegments
 
       tauF1NoBuf_i /= uvar->numSegments;
       tauF1Buf_i   /= uvar->numSegments;
-      REAL8 memMaxCompute = XLALGetPeakHeapUsageMB() - memBase;
+      tauF1Buf     += tauF1Buf_i;
+      tauF1NoBuf   += tauF1NoBuf_i;
 
-      tauF1Buf   += tauF1Buf_i;
-      tauF1NoBuf += tauF1NoBuf_i;
+      REAL8 memEnd = XLALGetCurrentHeapUsageMB();
+      const char *FmethodName = XLALGetFstatInputMethodName ( inputs->data[0] );
 
-      fprintf (stderr, "%-15s: tauF1Buf = %.2g s, tauF1NoBuf = %.2g s, memSFTs = %.1f MB, memMaxCompute = %.1f MB\n",
-               XLALGetFstatInputMethodName ( inputs->data[0] ), tauF1Buf_i, tauF1NoBuf_i, memSFTs, memMaxCompute  );
-
+      fprintf (stderr, "%-15s: tauF1Buf = %8.2g s, tauF1NoBuf = %8.2g s, memResamp = %6.1f MB\n",
+               FmethodName, tauF1Buf_i, tauF1NoBuf_i, memEnd - memBase );
       XLALDestroyFstatInputVector ( inputs );
     } // for i < numTrials
 
@@ -284,3 +287,41 @@ main ( int argc, char *argv[] )
   return XLAL_SUCCESS;
 
 } // main()
+
+
+// --------------------------------------------------------------------------------
+// code to read current process RSS memory usage from /proc, taken from
+// https://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
+static int parseLine(char* line);
+
+REAL8
+XLALGetCurrentHeapUsageMB ( void )
+{
+  FILE* file = fopen("/proc/self/status", "r");
+  int result = -1;
+  char line[128];
+  if ( file == NULL ) {
+    return result;
+  }
+  while ( fgets ( line, sizeof(line), file) != NULL )
+    {
+      if (strncmp(line, "VmRSS:", 6) == 0){
+        result = parseLine(line);
+        break;
+      }
+    }
+  fclose(file);
+  return (result / 1024.0);
+} // XLALGetCurrentHeapUsageMB()
+
+static int parseLine(char* line)
+{
+  // This assumes that a digit will be found and the line ends in " Kb".
+  int i = strlen(line);
+  const char* p = line;
+  while (*p <'0' || *p > '9') p++;
+  line[i-3] = '\0';
+  i = atoi(p);
+  return i;
+}
+// --------------------------------------------------------------------------------

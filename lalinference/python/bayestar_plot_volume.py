@@ -50,6 +50,9 @@ parser.add_argument(
 parser.add_argument(
     'input', metavar='INPUT.fits[.gz]', type=argparse.FileType('rb'),
     default='-', nargs='?', help='Input FITS file [default: stdin]')
+parser.add_argument(
+    '--align-to', metavar='SKYMAP.fits[.gz]', type=argparse.FileType('rb'),
+    help='Align to the principal axes of this sky map [default: input sky map]')
 parser.set_defaults(figure_width='3.5', figure_height='3.5')
 opts = parser.parse_args()
 
@@ -62,7 +65,7 @@ progress.update(-1, 'Starting up')
 from matplotlib import pyplot as plt
 from matplotlib import gridspec
 from matplotlib import transforms
-from lalinference import fits
+from lalinference.io import fits
 from lalinference import marker
 from lalinference.bayestar.distance import (
     principal_axes, volume_render, marginal_pdf)
@@ -72,14 +75,19 @@ import scipy.stats
 
 # Read input, determine input resolution.
 progress.update(-1, 'Loading FITS file')
-(prob, mu, sigma, norm), metadataa = fits.read_sky_map(
+(prob, mu, sigma, norm), metadata = fits.read_sky_map(
     opts.input.name, distances=True)
 npix = len(prob)
 nside = hp.npix2nside(npix)
 
 progress.update(-1, 'Preparing projection')
 
-R = np.ascontiguousarray(principal_axes(prob, mu, sigma))
+if opts.align_to is None:
+    prob2, mu2, sigma2 = prob, mu, sigma
+else:
+    (prob2, mu2, sigma2, _), _ = fits.read_sky_map(
+        opts.align_to.name, distances=True)
+R = np.ascontiguousarray(principal_axes(prob2, mu2, sigma2))
 
 if opts.chain:
     chain = np.recfromtxt(opts.chain, names=True)
@@ -196,12 +204,14 @@ if not opts.projection:
         phi = np.deg2rad(ra)
         ipix = hp.ang2pix(nside, theta, phi)
         ax.fill_between(d, scipy.stats.norm(
-            mu[ipix], sigma[ipix]).pdf(d) * norm[ipix] * np.square(d), alpha=0.5, color=color)
+            mu[ipix], sigma[ipix]).pdf(d) * norm[ipix] * np.square(d),
+            alpha=0.5, color=color)
         ax.axvline(dist, color='black', linewidth=0.5)
         ax.plot(
             [dist], [-0.15], marker=truth_marker, markeredgecolor=color,
             markerfacecolor='none', markeredgewidth=1, clip_on=False,
-            transform=transforms.blended_transform_factory(ax.transData, ax.transAxes))
+            transform=transforms.blended_transform_factory(
+            ax.transData, ax.transAxes))
         ax.axvline(dist, color='black', linewidth=0.5)
 
     # Scale axes

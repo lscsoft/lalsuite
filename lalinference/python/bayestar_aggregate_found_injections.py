@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
 # Imports.
 import sqlite3
-from lalinference import fits
+from lalinference.io import fits
 from lalinference.bayestar import postprocess
 
 

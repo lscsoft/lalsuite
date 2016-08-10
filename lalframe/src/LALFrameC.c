@@ -688,8 +688,8 @@ int XLALFrameUFrChanVectorCompress_FrameC_(LALFrameUFrChan * channel, int compre
 {
     /* Work around bug in FrameC FrameCFrChanVectorCompress() by disabling
      * compression.  Revert this once FrameCFrChanVectorCompress() works. */
-    channel = NULL;
-    compressLevel = 0;
+    (void)channel;
+    (void)compressLevel;
     XLAL_PRINT_WARNING("Compression not currently implemented with FrameC");
     return 0;
     /*

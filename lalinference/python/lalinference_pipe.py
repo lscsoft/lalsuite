@@ -85,7 +85,7 @@ else:
 
 use_roq=False
 if cp.has_option('paths','roq_b_matrix_directory'):
-  from numpy import genfromtxt
+  from numpy import genfromtxt, array
   path=cp.get('paths','roq_b_matrix_directory')
   if not os.path.isdir(path):
     print "The ROQ directory %s does not seem to exist\n"%path
@@ -93,25 +93,29 @@ if cp.has_option('paths','roq_b_matrix_directory'):
   use_roq=True
   roq_paths=os.listdir(path)
   roq_params={}
-  mc_ranges={}
   def key(item): # to order the ROQ bases
     return float(item[1]['seglen'])
 
   print "WARNING: Overwriting user choice of flow, srate, seglen,mc_min, mc_max and q-min"
-  for roq in roq_paths:
-    params=os.path.join(path,roq,'params.dat')
-    roq_params[roq]=genfromtxt(params,names=True)
-    mc_ranges[roq]=[float(roq_params[roq]['chirpmassmin']),float(roq_params[roq]['chirpmassmax'])]
-  ordered_roq_paths=[item[0] for item in sorted(roq_params.items(), key=key)][::-1]
-  i=0
-  for roq in ordered_roq_paths:
-    if i>0:
-      # change min, just set to the max of the previous one since we have already aligned it in the previous iteration of this loop
-      #mc_ranges[roq][0]+= (mc_ranges[roq_lengths[i-1]][1]-mc_ranges[roq][0])/2.
-      mc_ranges[roq][0]=mc_ranges[ordered_roq_paths[i-1]][1]
-    if i<len(roq_paths)-1:
-      mc_ranges[roq][1]-= (mc_ranges[roq][1]- mc_ranges[ordered_roq_paths[i+1]][0])/2.
-    i+=1
+
+  if opts.gid is not None: 
+  	mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, opts.gid)
+        roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp)
+
+	for mc_prior in mc_priors:
+		mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
+	# find mass bin containing the trigger
+	trigger_bin = None
+	for roq in roq_paths:
+		print 	
+		if mc_priors[roq][0] <= trigger_mchirp <= mc_priors[roq][1]:
+			trigger_bin = roq
+			break
+	roq_paths = [trigger_bin]
+  else:
+	mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, None)
+  	roq_mass_freq_scale_factor = 1
+ 
 else:
   roq_paths=[None]
 
@@ -164,11 +168,14 @@ for sampler in samps:
         path=cp.get('paths','roq_b_matrix_directory')
         thispath=os.path.join(path,roq)
         cp.set('paths','roq_b_matrix_directory',thispath)
-        mc_min=mc_ranges[roq][0]
-        mc_max=mc_ranges[roq][1]
-        flow=int(roq_params[roq]['flow'])
-        srate=int(2.*roq_params[roq]['fhigh'])
-        seglen=int(roq_params[roq]['seglen'])
+        mc_min=mc_priors[roq][0]
+        mc_max=mc_priors[roq][1]
+        flow=int(roq_params[roq]['flow'] / roq_mass_freq_scale_factor)
+        srate=int(2.*roq_params[roq]['fhigh'] / roq_mass_freq_scale_factor)
+	if srate > 8192:
+		srate = 8192
+	
+        seglen=int(roq_params[roq]['seglen'] * roq_mass_freq_scale_factor)
         # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
         q_min=1./float(roq_params[roq]['qmax'])
         cp.set('engine','srate',str(srate))

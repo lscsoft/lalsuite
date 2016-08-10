@@ -25,6 +25,7 @@
 #include <gsl/gsl_matrix.h>
 #include <lal/LALStdlib.h>
 #include <lal/Random.h>
+#include <lal/FITSFileIO.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -102,8 +103,8 @@ int XLALSetLatticeTilingBound(
   const size_t dim,                     ///< [in] Dimension on which bound applies
   const LatticeTilingBound func,        ///< [in] Parameter space bound function
   const size_t data_len,                ///< [in] Length of arbitrary data describing parameter space bounds
-  void *data_lower,                     ///< [in] Arbitrary data describing lower parameter space bound
-  void *data_upper                      ///< [in] Arbitrary data describing upper parameter space bound
+  const void *data_lower,               ///< [in] Arbitrary data describing lower parameter space bound
+  const void *data_upper                ///< [in] Arbitrary data describing upper parameter space bound
   );
 
 ///
@@ -115,6 +116,14 @@ int XLALSetLatticeTilingConstantBound(
   const size_t dim,                     ///< [in] Dimension on which bound applies
   const double bound1,                  ///< [in] First bound on dimension
   const double bound2                   ///< [in] Second bound on dimension
+  );
+
+///
+/// Set the level of padding added to the lattice tiling parameter space bounds.
+///
+int XLALSetLatticeTilingPadding(
+  LatticeTiling *tiling,                ///< [in] Lattice tiling
+  const UINT4 padding                   ///< [in] Level of padding added to parameter space bounds
   );
 
 ///
@@ -190,7 +199,7 @@ int XLALRandomLatticeTilingPoints(
 ///
 int XLALLatticeTilingDimensionBounds(
   const LatticeTiling *tiling,          ///< [in] Lattice tiling
-  const bool padding,                   ///< [in] Whether padding is added to parameter space bounds
+  const UINT4 padding,                  ///< [in] Level of padding added to parameter space bounds
   const gsl_vector *point,              ///< [in] Point at which to return bounds
   const size_t y_dim,                   ///< [in] Dimension 'y' of which to return bounds
   const double x_scale,                 ///< [in] Scale of steps in 'x', in units of lattice step size
@@ -279,6 +288,24 @@ int XLALCurrentLatticeTilingBlock(
   const size_t dim,                     ///< [in] Dimension in which to return block
   INT4 *left,                           ///< [out] Index of left-most point of block relative to current point
   INT4 *right                           ///< [out] Index of right-most point of block relative to current point
+  );
+
+///
+/// Save the state of a lattice tiling iterator to a FITS file.
+///
+int XLALSaveLatticeTilingIterator(
+  const LatticeTilingIterator *itr,     ///< [in] Lattice tiling iterator
+  FITSFile *file,                       ///< [in] FITS file to save iterator to
+  const char *name                      ///< [in] FITS HDU to save iterator to
+  );
+
+///
+/// Restore the state of a lattice tiling iterator from a FITS file.
+///
+int XLALRestoreLatticeTilingIterator(
+  LatticeTilingIterator *itr,           ///< [in] Lattice tiling iterator
+  FITSFile *file,                       ///< [in] FITS file to restore iterator from
+  const char *name                      ///< [in] FITS HDU to restore iterator from
   );
 
 ///

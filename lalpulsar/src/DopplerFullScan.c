@@ -913,18 +913,13 @@ int XLALSetLatticeTilingF1DotAgeBrakingBound(
   XLAL_CHECK(max_braking > 1.0, XLAL_EINVAL);
   XLAL_CHECK(min_braking <= max_braking, XLAL_EINVAL);
 
-  // Allocate memory
-  const size_t info_len = sizeof(F1DotAgeBrakingBoundInfo);
-  F1DotAgeBrakingBoundInfo* info_lower = XLALMalloc(info_len);
-  XLAL_CHECK(info_lower != NULL, XLAL_ENOMEM);
-  F1DotAgeBrakingBoundInfo* info_upper = XLALMalloc(info_len);
-  XLAL_CHECK(info_upper != NULL, XLAL_ENOMEM);
-
   // Set the parameter-space bound
-  info_lower->freq_dim = info_upper->freq_dim = freq_dimension;
-  info_lower->scale = -1.0 / ((min_braking - 1.0) * age);
-  info_upper->scale = -1.0 / ((max_braking - 1.0) * age);
-  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, f1dot_dimension, F1DotAgeBrakingBound, info_len, info_lower, info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+  F1DotAgeBrakingBoundInfo XLAL_INIT_DECL( info_lower );
+  F1DotAgeBrakingBoundInfo XLAL_INIT_DECL( info_upper );
+  info_lower.freq_dim = info_upper.freq_dim = freq_dimension;
+  info_lower.scale = -1.0 / ((min_braking - 1.0) * age);
+  info_upper.scale = -1.0 / ((max_braking - 1.0) * age);
+  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, f1dot_dimension, F1DotAgeBrakingBound, sizeof( info_lower ), &info_lower, &info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
@@ -973,19 +968,14 @@ int XLALSetLatticeTilingF2DotBrakingBound(
   XLAL_CHECK(max_braking > 0.0, XLAL_EINVAL);
   XLAL_CHECK(min_braking <= max_braking, XLAL_EINVAL);
 
-  // Allocate memory
-  const size_t info_len = sizeof(F2DotBrakingBoundInfo);
-  F2DotBrakingBoundInfo* info_lower = XLALMalloc(info_len);
-  XLAL_CHECK(info_lower != NULL, XLAL_ENOMEM);
-  F2DotBrakingBoundInfo* info_upper = XLALMalloc(info_len);
-  XLAL_CHECK(info_upper != NULL, XLAL_ENOMEM);
-
   // Set the parameter-space bound
-  info_lower->freq_dim = info_upper->freq_dim = freq_dimension;
-  info_lower->f1dot_dim = info_upper->f1dot_dim = f1dot_dimension;
-  info_lower->scale = min_braking;
-  info_upper->scale = max_braking;
-  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, f2dot_dimension, F2DotBrakingBound, info_len, info_lower, info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+  F2DotBrakingBoundInfo XLAL_INIT_DECL( info_lower );
+  F2DotBrakingBoundInfo XLAL_INIT_DECL( info_upper );
+  info_lower.freq_dim = info_upper.freq_dim = freq_dimension;
+  info_lower.f1dot_dim = info_upper.f1dot_dim = f1dot_dimension;
+  info_lower.scale = min_braking;
+  info_upper.scale = max_braking;
+  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, f2dot_dimension, F2DotBrakingBound, sizeof( info_lower ), &info_lower, &info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 

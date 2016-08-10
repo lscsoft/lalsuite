@@ -219,7 +219,7 @@ enum {
  * provides a way to keep track of that.
  *
  */
-typedef enum {
+typedef enum tagLALDetectorType {
 	LALDETECTORTYPE_ABSENT,		/**< No FrDetector associated with this detector */
 	LALDETECTORTYPE_IFODIFF,	/**< IFO in differential mode */
 	LALDETECTORTYPE_IFOXARM,	/**< IFO in one-armed mode (X arm) */

@@ -17,9 +17,11 @@ AC_CONFIG_FILES([ \
   python/lalinference/Makefile \
   python/lalinference/__init__.py \
   python/lalinference/bayestar/Makefile \
+  python/lalinference/io/Makefile \
   python/lalinference/rapid_pe/Makefile \
   python/lalinference/imrtgr/Makefile \
   python/lalinference/tiger/Makefile \
+  python/lalinference/popprior/Makefile \
   src/LALInferenceVCSInfo.c \
   src/LALInferenceVCSInfo.h \
   src/Makefile \
@@ -171,10 +173,16 @@ AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])
 
 # check for hdf5 support
 HDF5_ENABLE_VAL="DISABLED"
+# Note that AX_LIB_HDF5 uses h5cc to determine compiler for configure tests.
+# Make sure that it uses the same compiler as we are using.
+# Otherwise the configure tests may fail if we are using icc.
+HDF5_CC="${CC}"; export HDF5_CC
+HDF5_CLINKER="${CC}"; export HDF5_CLINKER
 AX_LIB_HDF5()
-if test "${with_hdf5}" = "yes"; then
-          AC_DEFINE([LAL_HDF5_ENABLED],[1],[Define if using HDF5 library])
-            HDF5_ENABLE_VAL="ENABLED"
+unset HDF5_CC
+unset HDF5_CLINKER
+if test "${with_hdf5}" != "yes"; then
+  AC_MSG_ERROR([could not find the HDF5 library])
 fi
 
 if test "$lalxml" = "true"; then
@@ -196,6 +204,30 @@ LALSUITE_CHECK_LIB([LALBurst],[1.4.2],[XLALEPSearch],[lal/EPSearch.h])
 
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.2],[XLALXMLFilePrintElements],[lal/LALXML.h])
+
+dnl FIXME: This doesn't work in the top-level build, because it tries
+dnl to compile and link against LAL itself, which will not have been built yet.
+dnl
+dnl AC_MSG_CHECKING([if LAL was built with HDF5 support])
+dnl AC_RUN_IFELSE(
+dnl   [AC_LANG_PROGRAM(
+dnl     [
+dnl       #include <lal/H5FileIO.h>
+dnl       #include <lal/XLALError.h>
+dnl     ],
+dnl     [
+dnl       int ret;
+dnl       (void)XLALSetSilentErrorHandler();
+dnl       (void)XLALH5FileOpen(NULL, NULL);
+dnl       return xlalErrno != XLAL_EFAULT;
+dnl     ]
+dnl   )],
+dnl   [AC_MSG_RESULT([yes])],
+dnl   [
+dnl     AC_MSG_RESULT([no])
+dnl     AC_MSG_ERROR([LAL must be built with HDF5 support in order to build LALInference])
+dnl   ]
+dnl )
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
@@ -247,7 +279,6 @@ AC_MSG_NOTICE([
 LALInference has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
-* HDF5 support is $HDF5_ENABLE_VAL
 * LALXML library support is $LALXML_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL

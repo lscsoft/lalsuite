@@ -131,11 +131,25 @@ void inject_signal( LALInferenceRunState *runState ){
 
   /* create signal to inject */
   /* for injection always attempt to include the signal phase model even if the search is not going to be over phase */
-  INT4 varyphase = 1;
+  INT4 varyphase = 1, varyskypos = 1, varybinary = 1;
+  while ( ifo_model ) {
+    if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
+      LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+      varyphase = 0; /* set to zero so varyphase is removed after the model is created */
 
-  if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
-    LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-    varyphase = 0; /* set to zero so varyphase is removed after the model is created */
+      if ( !LALInferenceCheckVariable( ifo_model->params, "varyskypos" ) ){
+        LALInferenceAddVariable( ifo_model->params, "varyskypos", &varyskypos, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+        varyskypos = 0;
+      }
+
+      if ( PulsarCheckParam( injpars, "BINARY" ) ){
+        if ( !LALInferenceCheckVariable( ifo_model->params, "varybinary" ) ){
+          LALInferenceAddVariable( ifo_model->params, "varybinary", &varybinary, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+          varybinary = 0;
+        }
+      }
+    }
+    ifo_model = runState->threads[0]->model->ifo;
   }
 
   /* check whether to inject a non-GR signal (the default will ALWAYS be GR) */
@@ -191,15 +205,7 @@ void inject_signal( LALInferenceRunState *runState ){
   while ( data ){
     REAL8 snrval = 0.;
 
-    if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
-      LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-    }
-
     snrval = calculate_time_domain_snr( data, ifo_model );
-
-    /* reset varyphase to its original value */
-    if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
-
     snrmulti += SQUARE(snrval);
 
     /* if not scaling print out individual detector/datastream SNRs */
@@ -229,17 +235,9 @@ void inject_signal( LALInferenceRunState *runState ){
     PulsarAddParam( injpars, "C22", &C22, PULSARTYPE_REAL8_t );
     PulsarAddParam( injpars, "C21", &C21, PULSARTYPE_REAL8_t );
 
-    /* recreate the signal with scaled amplitude */
-    varyphase = 1;
-
     /* reset to head */
     ifo_model = runState->threads[0]->model->ifo;
     data = runState->data;
-
-    if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
-      LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-      varyphase = 0; /* set to zero so varyphase is removed after the model is created */
-    }
 
     pulsar_model( injpars, ifo_model );
 
@@ -255,16 +253,8 @@ void inject_signal( LALInferenceRunState *runState ){
     while( data ){
       REAL8 snrval = 0.;
 
-      if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
-        LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-      }
-
       /* recalculate the SNR */
       snrval = calculate_time_domain_snr( data, ifo_model );
-
-      /* reset varyphase to its original value */
-      if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
-
       snrmulti += SQUARE(snrval);
 
       fprintf(fpsnr, "%s\t%.3lf\t%le\n", data->name, freqFactors->data[ndats%(INT4)freqFactors->length], snrval);
@@ -362,6 +352,9 @@ void inject_signal( LALInferenceRunState *runState ){
       while ( ifo_model ){
         LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
         ifo_model = ifo_model->next;
+        if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
+        if ( !varyskypos ){ LALInferenceRemoveVariable( ifo_model->params, "varyskypos" ); }
+        if ( !varybinary ){ LALInferenceRemoveVariable( ifo_model->params, "varybinary" ); }
       }
       ifo_model = runState->threads[0]->model->ifo;
     }
@@ -369,6 +362,9 @@ void inject_signal( LALInferenceRunState *runState ){
   else {
     while ( ifo_model ){
       LALInferenceRemoveVariable(ifo_model->params, "nonGR");
+      if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
+      if ( !varyskypos ){ LALInferenceRemoveVariable( ifo_model->params, "varyskypos" ); }
+      if ( !varybinary ){ LALInferenceRemoveVariable( ifo_model->params, "varybinary" ); }
       ifo_model = ifo_model->next;
     }
     ifo_model = runState->threads[0]->model->ifo;
@@ -566,35 +562,19 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     roq = 1;
 
     while ( ifo_model ){
-      UINT4 varyphase = 1; /* must set varyphase */
-
       REAL8Vector *sidtime = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "siderealDayFull" );
       LALInferenceRemoveVariable( ifo_model->params, "siderealDay" );
       LALInferenceAddVariable( ifo_model->params, "siderealDay", &sidtime, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
 
       LIGOTimeGPSVector *timestamps = *(LIGOTimeGPSVector **)LALInferenceGetVariable( ifo_model->params, "timeStampVectorFull" );
-      //REAL8Vector *timestamps = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "timeStampVectorFull" );
       XLALDestroyTimestampVector( ifo_model->times );
       ifo_model->times = timestamps;
-      //ifo_model->times = XLALCreateTimestampVector( timestamps->length );
-      //for ( i=0; i<timestamps->length; i++ ){ XLALGPSSetREAL8( &ifo_model->times->data[i], timestamps->data[i] ); }
       //fprintf(stderr, "timestamps->length = %d, ifo_model->times->data[0] = %d, ifo_model->times->data[-1] = %d\n", timestamps->length, ifo_model->times->data[0].gpsSeconds, ifo_model->times->data[timestamps->length-1].gpsSeconds);
-
-      //REAL8Vector *timedata = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "timeDataFull" );
-      REAL8TimeSeries *timedata = *(REAL8TimeSeries **)LALInferenceGetVariable( ifo_model->params, "timeDataFull" );
-      XLALDestroyREAL8TimeSeries( ifo_model->timeData );
-      ifo_model->timeData = timedata;
-      //ifo_model->timeData = XLALCreateREAL8TimeSeries( "", &ifo_model->times->data[0], 0., 1., &lalSecondUnit, timedata->length );
-      //memcpy(ifo_model->timeData->data->data, timedata->data, sizeof(REAL8)*timedata->length );
 
       ifo_model->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo_model->compTimeSignal, 0, ifo_model->times->length );
 
       /* remove the ROQ variable for calculating the likelihood */
       LALInferenceRemoveVariable( ifo_model->params, "roq" );
-
-      if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
-        LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphase, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
-      }
 
       if ( LALInferenceCheckVariable( ifo_model->params, "ssb_delays" ) ){
         REAL8Vector *ssbdelays = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "ssb_delays_full" );
@@ -606,6 +586,12 @@ void get_loudest_snr( LALInferenceRunState *runState ){
         REAL8Vector *bsbdelays = *(REAL8Vector **)LALInferenceGetVariable( ifo_model->params, "bsb_delays_full" );
         LALInferenceRemoveVariable( ifo_model->params, "bsb_delays" );
         LALInferenceAddVariable( ifo_model->params, "bsb_delays", &bsbdelays, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+      }
+
+      /* make sure varyphase is set (this is required if having used ROQ for a non-varyphase model) */
+      if ( !LALInferenceCheckVariable( ifo_model->params, "varyphase" ) ){
+        UINT4 varyphasetmp = 1;
+        LALInferenceAddVariable( ifo_model->params, "varyphase", &varyphasetmp, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
       }
 
       ifo_model = ifo_model->next;

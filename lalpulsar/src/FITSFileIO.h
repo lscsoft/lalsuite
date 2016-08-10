@@ -56,27 +56,30 @@ typedef struct tagFITSFile FITSFile;
 /// @}
 
 ///
-/// \name Open/Close FITS File
+/// \name Open/Close FITS File, and Write History Information to Primary FITS Header-Data Unit
 ///
 /// These functions open a FITS file \p file_name for writing or reading, and close a FITS file
-/// represented by \p file. Writing a FITS file required a list of LALVCSInfo from the appropriate
-/// LAL library VCS header, e.g. #lalVCSInfoList from \ref LALVCSInfo_h
+/// represented by \p file. History information may also be written to the primary (first) FITS
+/// header-data unit (HDU).
 ///
 /// @{
 void XLALFITSFileClose( FITSFile *file );
-FITSFile *XLALFITSFileOpenWrite( const CHAR *file_name, const LALVCSInfo *const vcs_list[] );
+FITSFile *XLALFITSFileOpenWrite( const CHAR *file_name );
 FITSFile *XLALFITSFileOpenRead( const CHAR *file_name );
+int XLALFITSFileWriteHistory( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
+int XLALFITSFileWriteVCSInfo( FITSFile *file, const LALVCSInfo *const vcs_list[] );
+int XLALFITSFileWriteUVarCmdLine( FITSFile *file );
 /// @}
 
 ///
-/// \name Write/Read Key-Value Pairs To/From FITS Header Data Unit
+/// \name Write/Read Key-Value Pairs To/From FITS Header-Data Unit
 ///
-/// These functions write/read key-value pairs (\p key, \p value) to/from a FITS Header Data
-/// Unit (HDU).  Scalar #BOOLEAN, #INT4, #INT8, #REAL4, #REAL8, #COMPLEX8, and #COMPLEX16 values,
+/// These functions write/read key-value pairs (\p key, \p value) to/from a FITS header-data unit
+/// (HDU).  Scalar #BOOLEAN, #INT4, #INT8, #REAL4, #REAL8, #COMPLEX8, and #COMPLEX16 values,
 /// strings, string vectors (#LALStringVector) and GPS times (#LIGOTimeGPS) can be written and read.
 /// A \p comment string describing the value is required when writing to an HDU, and an arbitrary
-/// formatted history or comment string can also be written. Units for numeric header values may be
-/// specified in square brackets after the header key, e.g. "freq [Hz]".
+/// formatted comment string can also be written. Units for numeric header values may be specified
+/// in square brackets after the header key, e.g. "freq [Hz]".
 ///
 /// There are some usage restrictions:
 ///
@@ -90,7 +93,6 @@ FITSFile *XLALFITSFileOpenRead( const CHAR *file_name );
 ///   used after the array or table is opened for reading.
 ///
 /// @{
-int XLALFITSHeaderWriteHistory( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
 int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
 int XLALFITSHeaderWriteBOOLEAN( FITSFile *file, const CHAR *key, const BOOLEAN value, const CHAR *comment );
 int XLALFITSHeaderReadBOOLEAN( FITSFile *file, const CHAR *key, BOOLEAN *value );
@@ -117,9 +119,9 @@ int XLALFITSHeaderReadGPSTime( FITSFile *file, const CHAR *key, LIGOTimeGPS *val
 ///
 /// \name Write/Read Array To/From FITS File
 ///
-/// These function write/read arbitrary-dimensional array to/from a FITS image extension HDU. A call
-/// to XLALFITSArrayOpenWrite() or XLALFITSArrayOpenRead() is required first to write/read the
-/// dimension count \p ndim and sizes \p dims[]; the functions
+/// These function write/read arbitrary-dimensional array to/from a FITS image extension data
+/// unit. A call to XLALFITSArrayOpenWrite() or XLALFITSArrayOpenRead() is required first to
+/// write/read the dimension count \p ndim and sizes \p dims[]; the functions
 /// <tt>XLALFITSArrayOpenWrite<i>N</i>()</tt> and <tt>XLALFITSArrayOpenRead<i>N</i>()</tt> are
 /// convenience functions for 1- and 2-dimensional arrays. The functions
 /// <tt>XLALFITSArrayWrite<i>TYPE</i>()</tt> and <tt>XLALFITSArrayRead<i>TYPE</i>()</tt> are then
@@ -153,10 +155,10 @@ int XLALFITSArrayReadGSLMatrix( FITSFile *file, const size_t idx[], gsl_matrix *
 ///
 /// \name Write/Read Table To/From FITS File
 ///
-/// These functions write/read arbitrary tables to/from a FITS table extension HDU. A call to
-/// XLALFITSTableOpenWrite() or XLALFITSTableOpenRead() is required first; the latter returns the
-/// number of rows in the table \p nrows, if needed. The table columns must then be specified using
-/// the <tt>XLAL_FITS_TABLE_COLUMN_...()</tt> macros:
+/// These functions write/read arbitrary tables to/from a FITS binary table extension data unit.
+/// A call to XLALFITSTableOpenWrite() or XLALFITSTableOpenRead() is required first; the latter
+/// returns the number of rows in the table \p nrows, if needed. The table columns must then be
+/// specified using the <tt>XLAL_FITS_TABLE_COLUMN_...()</tt> macros:
 ///
 /// First, \ref XLAL_FITS_TABLE_COLUMN_BEGIN(\p record_type) is called, where \p record_type is the
 /// name of a C structure that will store the values of the columns written to or read from the
@@ -199,7 +201,7 @@ int XLALFITSTableColumnAddREAL4( FITSFile *file, const CHAR *col_name, const siz
 int XLALFITSTableColumnAddREAL8( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const REAL8 *field, const size_t field_size );
 int XLALFITSTableColumnAddCOMPLEX8( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX8 *field, const size_t field_size );
 int XLALFITSTableColumnAddCOMPLEX16( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const COMPLEX16 *field, const size_t field_size );
-int XLALFITSTableColumnAddCHAR( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *CHAR, const size_t field_size );
+int XLALFITSTableColumnAddCHAR( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const void *field, const size_t field_size );
 int XLALFITSTableColumnAddGPSTime( FITSFile *file, const CHAR *col_name, const size_t noffsets, const size_t offsets[2], const void *record, const size_t record_size, const LIGOTimeGPS *field, const size_t field_size );
 /// \endcond
 

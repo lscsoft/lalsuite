@@ -216,7 +216,7 @@ extern "C" {
 /**
  * Enum that specifies the PN approximant to be used in computing the waveform.
  */
-typedef enum {
+typedef enum tagApproximant {
    TaylorT1, 		/**< Time domain Taylor approximant in which the energy and flux are both kept
                          * as Taylor expansions and a first order ordinary differential equation is solved
                          * or the GW phase as a function of \f$t\f$; Outputs a time-domain wave.
@@ -313,6 +313,9 @@ typedef enum {
                          * @remarks Implemented in lalsimulation (time domain). */
    SEOBNRv3,		/**< Spin precessing EOBNR model v3
                          * @todo Fix implementation in lalsimulation (time domain). */
+   SEOBNRv4,		/**< Spin nonprecessing EOBNR model v4 */
+   SEOBNRv4_opt,	/**< Optimized Spin-aligned EOBNR model v4
+                         * @remarks Implemented in lalsimulation (time domain). */
    SEOBNRv1_ROM_EffectiveSpin, /**< Single-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza]
                                 * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv1_ROM_DoubleSpin, /**< Double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv1 See [Purrer:2014fza]
@@ -362,7 +365,7 @@ typedef enum {
  } Approximant;
 
 /** Enum of various frequency functions */
-typedef enum {
+typedef enum tagFrequencyFunction {
     fSchwarzISCO, /**< Schwarzschild ISCO */
     fIMRPhenomAFinal, /**< Final frequency of IMRPhenomA */
     fIMRPhenomBFinal, /**< Final of IMRPhenomB */
@@ -378,7 +381,7 @@ typedef enum {
  } FrequencyFunction;
 
 /** Enum of possible values to use for post-Newtonian order. */
-typedef enum {
+typedef enum tagLALPNOrder {
   LAL_PNORDER_NEWTONIAN,	/**< Newtonain (leading) order */
   LAL_PNORDER_HALF,		/**< 0.5PN <==> O(v) */
   LAL_PNORDER_ONE,		/**< 1PN <==> O(v^2) */
@@ -392,7 +395,7 @@ typedef enum {
  } LALPNOrder;
 
 /** Enumeration to specify the tapering method to apply to the waveform */
-typedef enum
+typedef enum tagLALSimInspiralApplyTaper
 {
   LAL_SIM_INSPIRAL_TAPER_NONE,		/**< No tapering */
   LAL_SIM_INSPIRAL_TAPER_START,		/**< Taper the start of the waveform */
@@ -402,12 +405,12 @@ typedef enum
 }  LALSimInspiralApplyTaper;
 
 /** Enumeration to specify time or frequency domain */
-typedef enum {
+typedef enum tagLALSimulationDomain {
   LAL_SIM_DOMAIN_TIME,
   LAL_SIM_DOMAIN_FREQUENCY
  } LALSimulationDomain;
 
-typedef enum {
+typedef enum tagSpinSupport {
    LAL_SIM_INSPIRAL_SPINLESS, /** These approximants cannot include spin terms */
    LAL_SIM_INSPIRAL_SINGLESPIN, /** These approximants support a signle spin (by default that is the object 1)*/
    LAL_SIM_INSPIRAL_ALIGNEDSPIN, /** These approximants can include spins aligned with L_N */
@@ -415,7 +418,7 @@ typedef enum {
    LAL_SIM_INSPIRAL_NUMSPINSUPPORT	/**< Number of elements in enum, useful for checking bounds */
  } SpinSupport;
 
-typedef enum {
+typedef enum tagTestGRaccept {
   LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS,   /** These approximants cannot accept testGR params as input params */
   LAL_SIM_INSPIRAL_TESTGR_PARAMS,      /** These approximants accept testGR params as input params */
   LAL_SIM_INSPIRAL_NUM_TESTGR_ACCEPT  /**< Number of elements in enum, useful for checking bounds */
@@ -768,6 +771,8 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(REAL8 *gamma00, REAL8 *gamma0
 int XLALSimInspiralTaylorF2RedSpinComputeNoiseMoments(REAL8Vector *momI_0, REAL8Vector *momI_2, REAL8Vector *momI_3, REAL8Vector *momI_4, REAL8Vector *momI_5, REAL8Vector *momI_6, REAL8Vector *momI_7, REAL8Vector *momI_8, REAL8Vector *momI_9, REAL8Vector *momI_10, REAL8Vector *momI_11, REAL8Vector *momI_12, REAL8Vector *momI_13, REAL8Vector *momI_14, REAL8Vector *momI_15, REAL8Vector *momI_16, REAL8Vector *momJ_5, REAL8Vector *momJ_6, REAL8Vector *momJ_7, REAL8Vector *momJ_8, REAL8Vector *momJ_9, REAL8Vector *momJ_10, REAL8Vector *momJ_11, REAL8Vector *momJ_12, REAL8Vector *momJ_13, REAL8Vector *momJ_14, REAL8Vector *momK_10, REAL8Vector *momK_11, REAL8Vector *momK_12, REAL8Vector *Sh, REAL8 fLow, REAL8 df);
 void XLALSimInspiralTaylorF2RedSpinChirpTimesFromMchirpEtaChi(double *theta0, double *theta3, double *theta3s, double mc, double eta, double chi, double fLow);
 void XLALSimInspiralTaylorF2RedSpinMchirpEtaChiFromChirpTimes(double *mc, double *eta, double *chi, double theta0, double theta3, double theta3s, double fLow);
+
+REAL8 XLALSimInspiralfLow2fStart(REAL8 fLow, INT4 ampOrder, INT4 approximant);
 
 /* waveform tapering routines */
 /* in module LALSimInspiralWaveformTaper.c */

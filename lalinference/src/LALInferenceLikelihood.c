@@ -22,6 +22,7 @@
  */
 
 #include <complex.h>
+#include <assert.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInference.h>
@@ -64,6 +65,32 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
 static double integrate_interpolated_log(double h, REAL8 *log_ys, size_t n, double *imean, size_t *imax);
 
+static int get_calib_spline(LALInferenceVariables *vars, const char *ifoname, REAL8Vector **logfreqs, REAL8Vector **amps, REAL8Vector **phases);
+static int get_calib_spline(LALInferenceVariables *vars, const char *ifoname, REAL8Vector **logfreqs, REAL8Vector **amps, REAL8Vector **phases)
+{
+  UINT4 npts = LALInferenceGetUINT4Variable(vars, "spcal_npts");
+  char ampname[VARNAME_MAX];
+  char phasename[VARNAME_MAX];
+  char freqname[VARNAME_MAX];
+  if(!*logfreqs) *logfreqs = XLALCreateREAL8Vector(npts);
+  if(!*amps) *amps = XLALCreateREAL8Vector(npts);
+  if(!*phases) *phases = XLALCreateREAL8Vector(npts);
+  assert((*logfreqs)->length==npts);
+  assert((*amps)->length==npts);
+  assert((*phases)->length==npts);
+  
+  for(UINT4 i=0;i<npts;i++)
+  {
+    snprintf(freqname, VARNAME_MAX, "%s_spcal_logfreq_%i", ifoname, i);
+    snprintf(ampname, VARNAME_MAX, "%s_spcal_amp_%i", ifoname, i);
+    snprintf(phasename, VARNAME_MAX, "%s_spcal_phase_%i", ifoname, i);
+
+    (*logfreqs)->data[i] = LALInferenceGetREAL8Variable(vars, freqname);
+    (*amps)->data[i] =  LALInferenceGetREAL8Variable(vars, ampname);
+    (*phases)->data[i] = LALInferenceGetREAL8Variable(vars, phasename);
+  }
+  return(XLAL_SUCCESS);
+}
 
 void LALInferenceInitLikelihood(LALInferenceRunState *runState)
 {
@@ -319,10 +346,6 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
   COMPLEX16FrequencySeries *calFactor = NULL;
   COMPLEX16 calF = 0.0;
-
-  char freqVarName[VARNAME_MAX];
-  char ampVarName[VARNAME_MAX];
-  char phaseVarName[VARNAME_MAX];
 
   REAL8Vector *logfreqs = NULL;
   REAL8Vector *amps = NULL;
@@ -620,33 +643,33 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
         /* Calibration stuff if necessary */
         /*spline*/
         if (spcal_active) {
-          snprintf(freqVarName, VARNAME_MAX, "%s_spcal_logfreq", dataPtr->name);
-          snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", dataPtr->name);
-          snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", dataPtr->name);
-
-          logfreqs = *(REAL8Vector **)LALInferenceGetVariable(currentParams, freqVarName);
-          amps = *(REAL8Vector **)LALInferenceGetVariable(currentParams, ampVarName);
-          phases = *(REAL8Vector **)LALInferenceGetVariable(currentParams, phaseVarName);
-
-	if (model->roq_flag) {
+          logfreqs = NULL;
+          amps = NULL; 
+          phases = NULL;
+	  /* get_calib_spline creates and fills the logfreqs, amps, phases arrays */
+	  get_calib_spline(currentParams, dataPtr->name, &logfreqs, &amps, &phases);
+	  if (model->roq_flag) {
 
              LALInferenceSplineCalibrationFactorROQ(logfreqs, amps, phases,
 						model->roq->frequencyNodesLinear,
 						&(model->roq->calFactorLinear),
 						model->roq->frequencyNodesQuadratic,
 						&(model->roq->calFactorQuadratic));
-          }
+	  }
 
-	else{
-          if (calFactor == NULL) {
-            calFactor = XLALCreateCOMPLEX16FrequencySeries("calibration factors",
+	  else{
+	    if (calFactor == NULL) {
+	      calFactor = XLALCreateCOMPLEX16FrequencySeries("calibration factors",
                        &(dataPtr->freqData->epoch),
                        0, dataPtr->freqData->deltaF,
                        &lalDimensionlessUnit,
                        dataPtr->freqData->data->length);
-          }
+	    }
           LALInferenceSplineCalibrationFactor(logfreqs, amps, phases, calFactor);
 	}
+	if(logfreqs) XLALDestroyREAL8Vector(logfreqs);
+	if(amps) XLALDestroyREAL8Vector(amps);
+	if(phases) XLALDestroyREAL8Vector(phases);
 
         }
         /*constant*/
@@ -992,25 +1015,29 @@ static REAL8 LALInferenceFusedFreqDomainLogLikelihood(LALInferenceVariables *cur
   	if ( model->roq->hptildeQuadratic ) XLALDestroyCOMPLEX16FrequencySeries(model->roq->hptildeQuadratic);
   	if ( model->roq->hctildeQuadratic ) XLALDestroyCOMPLEX16FrequencySeries(model->roq->hctildeQuadratic);
 
-	mc  = *(REAL8*) LALInferenceGetVariable(model->params, "chirpmass");
-	REAL8 eta=0;
-	REAL8 m1=0;
-	REAL8 m2=0; 
-     if (LALInferenceCheckVariable(model->params,"q")) {
-        REAL8 q = *(REAL8 *)LALInferenceGetVariable(model->params,"q");
-	m1 = mc * pow(q, -3.0/5.0) * pow(q+1, 1.0/5.0);
-  	m2 = (m1) * q;
-	eta = (m1*m2) / ((m1+m2)*(m1+m2));
-      } else {
-        eta = *(REAL8*) LALInferenceGetVariable(model->params, "eta");
-      }
-	REAL8 tilt_spin1 = *(REAL8 *) LALInferenceGetVariable(model->params, "tilt_spin1");
-	REAL8 a_spin1 = *(REAL8 *) LALInferenceGetVariable(model->params, "a_spin1");
-	if( cos(tilt_spin1)*a_spin1 <= 0.4 - 7*eta){
-		// the ROM breaks down for these parameter values so throw a large and negative likelihood to avoid 
-		// strange likelihood values
-		loglikelihood = -1e15;
-		}
+ 	if(LALInferenceCheckVariable(model->params, "tilt_spin1")){	
+		mc  = *(REAL8*) LALInferenceGetVariable(model->params, "chirpmass");
+        	REAL8 eta=0;
+        	REAL8 m1=0;
+        	REAL8 m2=0;
+     		if(LALInferenceCheckVariable(model->params,"q")) {
+        		REAL8 q = *(REAL8 *)LALInferenceGetVariable(model->params,"q");
+        		m1 = mc * pow(q, -3.0/5.0) * pow(q+1, 1.0/5.0);
+        		m2 = (m1) * q;
+        		eta = (m1*m2) / ((m1+m2)*(m1+m2));
+      			} else {
+        		eta = *(REAL8*) LALInferenceGetVariable(model->params, "eta");
+      		}	
+	
+		REAL8 tilt_spin1 = *(REAL8 *) LALInferenceGetVariable(model->params, "tilt_spin1");
+		REAL8 a_spin1 = *(REAL8 *) LALInferenceGetVariable(model->params, "a_spin1");
+		if( cos(tilt_spin1)*a_spin1 <= 0.4 - 7*eta){
+			// the ROM breaks down for these parameter values so throw a large and negative likelihood to avoid 
+			// strange likelihood values
+			loglikelihood = -1e15;
+			//fprintf(stdout, "WARNING: sampling a bad region of parameter space; skipping\n");
+		}		
+        }
 	
 	return(loglikelihood); /* The ROQ isn't compatible with the stuff below, so we can just exit here */
 
@@ -1195,6 +1222,32 @@ REAL8 LALInferenceComputeFrequencyDomainOverlap(LALInferenceIFOData * dataPtr,
                  / dataPtr->oneSidedNoisePowerSpectrum->data->data[i]);
   }
 
+  return overlap;
+}
+
+COMPLEX16 LALInferenceComputeFrequencyDomainComplexOverlap(LALInferenceIFOData * dataPtr,
+                                                COMPLEX16Vector * freqData1,
+                                                COMPLEX16Vector * freqData2)
+{
+  if (dataPtr==NULL || freqData1 ==NULL || freqData2==NULL){
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  }
+  
+  int lower, upper, i;
+  double deltaT, deltaF;
+  
+  COMPLEX16 overlap=0.0;
+  
+  /* determine frequency range & loop over frequency bins: */
+  deltaT = dataPtr->timeData->deltaT;
+  deltaF = 1.0 / (((double)dataPtr->timeData->data->length) * deltaT);
+  lower = ceil(dataPtr->fLow / deltaF);
+  upper = floor(dataPtr->fHigh / deltaF);
+  
+  for (i=lower; i<=upper; ++i){
+    overlap += 4.0*deltaF * freqData1->data[i] * conj(freqData2->data[i]) / dataPtr->oneSidedNoisePowerSpectrum->data->data[i];
+  }
+  
   return overlap;
 }
 

@@ -6,8 +6,8 @@ import os
 import sys
 
 import lalinference
-from lalinference import LALInferenceHDF5PosteriorSamplesGroupName as posterior_grp_name
-from lalinference import LALInferenceHDF5NestedSamplesGroupName as nested_grp_name
+from lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_dset_name
+from lalinference import LALInferenceHDF5NestedSamplesDatasetName as nested_dset_name
 from lalinference.nest2pos import draw_posterior_many, draw_N_posterior_many, compute_weights
 
 usage = '''%prog [-N Nlive] [-p posterior.hdf5] [-H header.txt] [--npos Npos] datafile1.hdf5 [datafile2.hdf5 ...]
@@ -31,6 +31,7 @@ def read_nested_from_hdf5(nested_path_list):
     log_noise_evidences = []
     log_max_likelihoods = []
     nlive = []
+    from lalinference.io import read_samples
 
     def update_metadata(level, attrs, collision='raise'):
         """Updates the sub-dictionary 'key' of 'metadata' with the values from
@@ -59,10 +60,17 @@ def read_nested_from_hdf5(nested_path_list):
         return
 
     for path in nested_path_list:
+        try:
+	  tab = read_samples(path,path='lalinference/lalinference_nest/nested_samples')
+          input_arrays.append(tab)
+        except:
+	  print('Unable to read table from %s, skipping'%(path))
+	  continue
+        
         with h5py.File(path, 'r') as hdf:
             # walk down the groups until the actual data is reached, storing
             # metadata for each step.
-            current_level = 'lalinference'
+            current_level = '/lalinference'
             group = hdf[current_level]
             update_metadata(current_level, group.attrs)
 
@@ -72,7 +80,7 @@ def read_nested_from_hdf5(nested_path_list):
             # we ensured above that there is only one identifier in the group.
             run_identifier = list(hdf[current_level].keys())[0]
 
-            current_level = 'lalinference/' + run_identifier
+            current_level = '/lalinference/' + run_identifier
             group = hdf[current_level]
             update_metadata(current_level, group.attrs, collision='append')
 
@@ -83,21 +91,10 @@ def read_nested_from_hdf5(nested_path_list):
 
             # storing the metadata under the posterior_group name simplifies
             # writing it into the output hdf file.
-            current_level = 'lalinference/' + run_identifier + '/' + nested_grp_name
-            current_level_posterior = 'lalinference/' + run_identifier + '/' + posterior_grp_name
+            current_level = '/lalinference/' + run_identifier + '/' + nested_dset_name
+            current_level_posterior = '/lalinference/' + run_identifier + '/' + posterior_dset_name
             group = hdf[current_level]
             update_metadata(current_level_posterior, group.attrs, collision='ignore')
-            # copy the data into memory
-            input_data_dict = {}
-            for key in group:
-                input_data_dict[key] = group[key][...]
-            # copy the parameter names and crosscheck with possible previous files
-            if headers is None:
-                headers = sorted(group.keys())
-            elif headers != sorted(group.keys()):
-                raise ValueError('Mismatch in input parameters:\n\t%r\n\t\t!=\n\t%r'
-                                 % (headers, sorted(group.keys())))
-        input_arrays.append(array([input_data_dict[key] for key in headers]).T)
 
     # for metadata which is in a list, take the average.
     for level in metadata:
@@ -108,7 +105,7 @@ def read_nested_from_hdf5(nested_path_list):
     log_noise_evidence = reduce(logaddexp, log_noise_evidences)
     log_max_likelihood = max(log_max_likelihoods)
 
-    return headers, input_arrays, log_noise_evidence, log_max_likelihood, metadata, nlive, run_identifier
+    return input_arrays, log_noise_evidence, log_max_likelihood, metadata, nlive, run_identifier
 
 
 def read_nested_from_ascii(nested_path_list):
@@ -154,17 +151,8 @@ def read_nested_from_ascii(nested_path_list):
 
 def write_posterior_to_hdf(posterior_path, headers, posterior, metadata,
                            run_identifier):
-    with h5py.File(posterior_path, 'w') as hdf:
-        group = hdf.create_group('lalinference')
-        group = group.create_group(run_identifier)
-        group = group.create_group(posterior_grp_name)
-        for i, key in enumerate(headers):
-            group.create_dataset(key, data=posterior[:, i],
-                                 shuffle=True, compression='gzip')
-        for internal_path, attributes in metadata.items():
-            for key, value in attributes.items():
-                hdf[internal_path].attrs[key] = value
-
+  from lalinference.io import write_samples
+  write_samples(posterior, posterior_path, path='/'.join(['','lalinference',run_identifier,'posterior_samples']), metadata=metadata)
 
 def write_posterior_to_ascii(posterior_path, headers, posterior,
                              log_bayes_factor, log_evidence,
@@ -285,30 +273,18 @@ if __name__ == '__main__':
         print('Nlive is ignored in favor of the value in the HDF metadata.')
 
     # Read the input file
-    if hdf_input:
-        return_values = read_nested_from_hdf5(datafiles)
-        (headers, input_arrays, log_noise_evidence, log_max_likelihood,
-         metadata, nlive, run_identifier) = return_values
-    else:
-        return_values = read_nested_from_ascii(datafiles)
-        headers, input_arrays, log_noise_evidence, log_max_likelihood = return_values
-        metadata = {}
-        nlive = [opts.Nlive for d in datafiles]
-        run_identifier = 'default_run_identifier'
-        print("Input was not read from HDF5, so no run_identifier was read. "
-              "Will fall back to 'default_run_identifier'.")
+    return_values = read_nested_from_hdf5(datafiles)
+    (input_arrays, log_noise_evidence, log_max_likelihood,
+       metadata, nlive, run_identifier) = return_values
+    if len(input_arrays)==0:
+      print('Error: No input file were read')
+      sys.exit(1)
+    headers = input_arrays[0].dtype.names
     nlive = map(int, nlive)
 
-    # Prepare the sampler
-    lowercase_headers = [field.lower() for field in headers]
-    if 'logl' not in lowercase_headers:
-        raise KeyError("Key 'logl' not found. Available: %r" % headers)
-    logLcol = lowercase_headers.index('logl')
-
     if opts.npos is not None:
-        def sampler(datas, Nlives, logLcols, **kwargs):
-            return draw_N_posterior_many(datas, Nlives, opts.npos,
-                                         logLcols=logLcols, **kwargs)
+        def sampler(datas, Nlives, **kwargs):
+            return draw_N_posterior_many(datas, Nlives, opts.npos, **kwargs)
     else:
         sampler = draw_posterior_many
 
@@ -316,12 +292,11 @@ if __name__ == '__main__':
     # inarrays has shape (nfiles, nsamples. nfields)
     posterior = sampler(input_arrays,
                         nlive,
-                        logLcols=[logLcol for d in datafiles],
                         verbose=opts.verbose)
     # posterior is a list of lists/array with overall shape (nsamples, nfields)
-    posterior = array(posterior)
+    # posterior = array(posterior)
 
-    log_evs, log_wts = zip(*[compute_weights(data[:, logLcol], n)
+    log_evs, log_wts = zip(*[compute_weights(data['logL'], n)
                              for data, n in zip(input_arrays, nlive)])
     if opts.verbose:
         print('Log evidences from input files: %s' % str(log_evs))
@@ -331,14 +306,13 @@ if __name__ == '__main__':
     log_bayes_factor = log_evidence - log_noise_evidence
 
     # Update the metadata with the new evidences
-    run_level = 'lalinference/'+run_identifier
+    run_level = '/lalinference/'+run_identifier
     if run_level not in metadata:
         metadata[run_level] = {}
     metadata[run_level]['log_bayes_factor'] = log_bayes_factor
     metadata[run_level]['log_evidence'] = log_evidence
     metadata[run_level]['log_noise_evidence'] = log_noise_evidence
     metadata[run_level]['log_max_likelihood'] = log_max_likelihood
-
     if hdf_output:
         write_posterior_to_hdf(opts.pos, headers, posterior, metadata,
                                run_identifier)

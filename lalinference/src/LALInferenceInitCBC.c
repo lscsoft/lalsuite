@@ -21,6 +21,7 @@
 
 
 #include <stdio.h>
+#include <assert.h>
 #include <lal/Date.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/LALInference.h>
@@ -421,15 +422,11 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
     LALInferenceAddVariable(currentParams, "spcal_npts", &ncal, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
     for(ifo=runState->data;ifo;ifo=ifo->next) {
-      size_t i;
+      UINT4 i;
 
       char freqVarName[VARNAME_MAX];
       char ampVarName[VARNAME_MAX];
       char phaseVarName[VARNAME_MAX];
-
-      REAL8Vector *logfreqs = NULL;
-      REAL8Vector *amps = NULL;
-      REAL8Vector *phase = NULL;
 
       REAL8 fMin = ifo->fLow;
       REAL8 fMax = ifo->fHigh;
@@ -437,25 +434,6 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
       REAL8 logFMax = log(fMax);
       REAL8 dLogF = (logFMax - logFMin)/(ncal-1);
 
-
-      snprintf(freqVarName, VARNAME_MAX, "%s_spcal_logfreq", ifo->name);
-      snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp", ifo->name);
-      snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase", ifo->name);
-
-      logfreqs = XLALCreateREAL8Vector(ncal);
-      amps = XLALCreateREAL8Vector(ncal);
-      phase = XLALCreateREAL8Vector(ncal);
-
-      for (i = 0; i < ncal; i++) {
-        logfreqs->data[i] = logFMin + i*dLogF;
-        amps->data[i] = 0.0;
-        phase->data[i] = 0.0;
-      }
-
-      LALInferenceAddVariable(currentParams, freqVarName, &logfreqs, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(currentParams, ampVarName, &amps, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_LINEAR);
-      LALInferenceAddVariable(currentParams, phaseVarName, &phase, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_LINEAR);
-      
       char amp_uncert_op[VARNAME_MAX];
       char pha_uncert_op[VARNAME_MAX];
       snprintf(amp_uncert_op, VARNAME_MAX, "--%s-spcal-amp-uncertainty", ifo->name);
@@ -475,18 +453,22 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
         fprintf(stderr,"Error, missing --%s-spcal-phase-uncertainty\n",ifo->name);
         exit(1);
       }
+      
+      /* Now add each spline node */
+      for(i=0;i<ncal;i++)
+      {
+	snprintf(freqVarName, VARNAME_MAX, "%s_spcal_logfreq_%i",ifo->name,i);
+	snprintf(ampVarName, VARNAME_MAX, "%s_spcal_amp_%i", ifo->name,i);
+	snprintf(phaseVarName, VARNAME_MAX, "%s_spcal_phase_%i", ifo->name,i);
+	
+	REAL8 logFreq = logFMin + i*dLogF;
+	LALInferenceAddREAL8Variable(currentParams,freqVarName,logFreq,LALINFERENCE_PARAM_FIXED);
+	LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, ampVarName, 0, 0, ampUncertaintyPrior, LALINFERENCE_PARAM_LINEAR);
+	LALInferenceRegisterGaussianVariableREAL8(runState, currentParams, phaseVarName, 0, 0, phaseUncertaintyPrior, LALINFERENCE_PARAM_LINEAR);
+      } /* End loop over spline nodes */
 
-      char amp_uncert[VARNAME_MAX];
-      char pha_uncert[VARNAME_MAX];
-      snprintf(amp_uncert, VARNAME_MAX, "%s_spcal_amp_uncertainty", ifo->name);
-      snprintf(pha_uncert, VARNAME_MAX, "%s_spcal_phase_uncertainty", ifo->name);
-      LALInferenceAddVariable(runState->priorArgs, amp_uncert, &ampUncertaintyPrior,
-            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(runState->priorArgs, pha_uncert, &phaseUncertaintyPrior,
-            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-
-    }
-  }
+    } /* End loop over IFOs */
+  } /* End case of spline calibration error */
   else if(LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp") ||LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalPha")){
     /* Use constant (in frequency) approximation for the errors */
     if (LALInferenceGetProcParamVal(runState->commandLine, "--MarginalizeConstantCalAmp")){
@@ -540,6 +522,34 @@ void LALInferenceInitCalibrationVariables(LALInferenceRunState *runState, LALInf
     /* No calibration marginalization asked. Just exit */
     return;
   }
+}
+
+void LALInferenceRegisterGaussianVariableREAL8(LALInferenceRunState *state, LALInferenceVariables *var, const char name[VARNAME_MAX], REAL8 startval, REAL8 mean, REAL8 stdev, LALInferenceParamVaryType varytype)
+{
+  char meanopt[VARNAME_MAX+8];
+  char sigmaopt[VARNAME_MAX+9];
+  char valopt[VARNAME_MAX+3];
+  char fixopt[VARNAME_MAX+7];
+  ProcessParamsTable *ppt=NULL;
+  
+  sprintf(meanopt,"--%s-mean",name);
+  sprintf(sigmaopt,"--%s-sigma",name);
+  sprintf(valopt,"--%s",name);
+  sprintf(fixopt,"--fix-%s",name);
+  
+  if((ppt=LALInferenceGetProcParamVal(state->commandLine,meanopt))) mean=atof(ppt->value);
+  if((ppt=LALInferenceGetProcParamVal(state->commandLine,sigmaopt))) stdev=atof(ppt->value);
+  if((ppt=LALInferenceGetProcParamVal(state->commandLine,fixopt)))
+  {
+    varytype = LALINFERENCE_PARAM_FIXED;
+    startval = atof(ppt->value);
+  }
+  if((ppt=LALInferenceGetProcParamVal(state->commandLine,valopt))) startval=atof(ppt->value);
+  
+  assert(stdev>0);
+  LALInferenceAddVariable(var,name,&startval,LALINFERENCE_REAL8_t,varytype);
+  LALInferenceAddGaussianPrior(state->priorArgs, name, &mean, &stdev, LALINFERENCE_REAL8_t);
+
 }
 
 void LALInferenceRegisterUniformVariableREAL8(LALInferenceRunState *state, LALInferenceVariables *var, const char name[VARNAME_MAX], REAL8 startval, REAL8 min, REAL8 max, LALInferenceParamVaryType varytype)
@@ -1574,19 +1584,16 @@ void LALInferenceCheckOptionsConsistency(ProcessParamsTable *commandLine)
   if (ppt)
     return;
 
-  // Check PSDlength > 0
+  // Check PSDlength > 0 if specified
   ppt=LALInferenceGetProcParamVal(commandLine,"--psdlength");
-  if (!ppt)
-      ppt=LALInferenceGetProcParamVal(commandLine,"--PSDlength");
-  if (!ppt) {
-      printf("ERROR: PSD length not specified. Exiting...\n");
-      exit(1);
+  if (ppt) {
+      tmp=atof(ppt->value);
+      if (tmp<0.0){
+        fprintf(stderr,"ERROR: PSD length must be positive. Exiting...\n");
+        exit(1);
+      }
   }
-  tmp=atof(ppt->value);
-  if (tmp<0.0){
-    fprintf(stderr,"ERROR: PSD length must be positive. Exiting...\n");
-    exit(1);
-  }
+
   // Check seglen > 0
   REAL8 seglen=0.;
   ppt=LALInferenceGetProcParamVal(commandLine,"--seglen");

@@ -5,8 +5,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 SUBDIRS = laldetchar
 
-dist_bin_SCRIPTS = \
-	laldetchar-idq-append-file-to-cache
 if HAVE_PYTHON
 
 pybin_scripts = \

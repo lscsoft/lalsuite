@@ -82,12 +82,12 @@ from glue.ligolw import utils as ligolw_utils
 
 # BAYESTAR imports.
 from lalinference.bayestar.decorator import memoized
-from lalinference import fits
+from lalinference.io import fits
 from lalinference.bayestar import ligolw as ligolw_bayestar
 from lalinference.bayestar import distance
 from lalinference.bayestar import filter
 from lalinference.bayestar import timing
-from lalinference.bayestar import ligolw_sky_map
+from lalinference.bayestars.sky_map import ligolw_sky_map
 
 # Other imports.
 import numpy as np
@@ -184,7 +184,7 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
         else:
             chain_dump = None
         try:
-            sky_map, epoch, elapsed_time = ligolw_sky_map.ligolw_sky_map(
+            sky_map, epoch, elapsed_time = ligolw_sky_map(
                 sngl_inspirals, opts.waveform, opts.f_low, opts.min_distance,
                 opts.max_distance, opts.prior_distance_power, psds=psds,
                 method=method, nside=opts.nside, chain_dump=chain_dump,

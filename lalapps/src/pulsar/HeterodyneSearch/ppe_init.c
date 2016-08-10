@@ -372,12 +372,14 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
   if ( PulsarCheckParam(pars, "F") ){ /* frequency and frequency derivative parameters */
     UINT4 i = 0;
     REAL8Vector *freqs = PulsarGetREAL8VectorParam( pars, "F" );
-    /* add each frequency and derivative value as a seperate parameter */
+    /* add each frequency and derivative value as a seperate parameter (also set a value that is the FIXED value to be used for calculating phase differences) */
     for ( i = 0; i < freqs->length; i++ ){
       CHAR varname[256];
       snprintf(varname, sizeof(varname), "F%u", i);
       REAL8 fval = PulsarGetREAL8VectorParamIndividual( pars, varname );
       LALInferenceAddVariable( ini, varname, &fval, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+      snprintf(varname, sizeof(varname), "F%u_FIXED", i);
+      LALInferenceAddVariable( ini, varname, &fval, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add FIXED value */
     }
     /* add value with the number of FB parameters given */
     LALInferenceAddVariable( ini, "FREQNUM", &i, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );

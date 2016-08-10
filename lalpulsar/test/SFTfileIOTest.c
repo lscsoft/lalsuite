@@ -135,8 +135,8 @@ static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
   for(sft=0; sft < sft_vect->length; sft++) {
     SFTtype sft1 = sft_vect->data[sft];
     SFTtype sft2 = sft_vect2->data[sft];
-    if ((sft1.epoch.gpsSeconds != sft1.epoch.gpsSeconds) ||
-	(sft1.epoch.gpsNanoSeconds != sft1.epoch.gpsNanoSeconds)) {
+    if ((sft1.epoch.gpsSeconds != sft2.epoch.gpsSeconds) ||
+	(sft1.epoch.gpsNanoSeconds != sft2.epoch.gpsNanoSeconds)) {
       XLALPrintError ( "CompareSFTVectors(): SFT#%u epochs differ (%f/%f)!\n",
 		       sft, GPS2REAL8(sft1.epoch), GPS2REAL8(sft2.epoch) );
       return(-1);
@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
   SHOULD_WORK( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad6", NULL ), &status );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
-  /* SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad7", NULL ), &status); */ // This line breaks the test due to the detector prefix "I1" now being a valid prefix
+  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad7", NULL ), &status);
   SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad8", NULL ), &status);
   SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad9", NULL ), &status);
   SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad10", NULL ), &status );
