@@ -466,15 +466,6 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
     if( item->vary == LALINFERENCE_PARAM_LINEAR || item->vary == LALINFERENCE_PARAM_CIRCULAR ){
       value = (*(REAL8 *)item->value);
 
-      /* make sure certain values are not negative (H0, Q22, DIST, PX, CGW, ECC, A1, MTOT, M2) NOTE: I'm not sure if DR and DTHETA should also be only positive */
-      if ( value < 0. ) {
-        if ( !strcmp(item->name, "H0") || !strcmp(item->name, "Q22") || !strcmp(item->name, "DIST") ||
-             !strcmp(item->name, "PX") || !strcmp(item->name, "CGW") || !strncmp(item->name, "ECC", sizeof(CHAR)*3) ||
-             !strncmp(item->name, "A1", sizeof(CHAR)*2) || !strcmp(item->name, "MTOT") || !strcmp(item->name, "M2") ){
-          return -INFINITY;
-        }
-      }
-
       /* Check for a gaussian */
       if ( LALInferenceCheckGaussianPrior(runState->priorArgs, item->name) ){
         REAL8 mu = 0., sigma = 0.;
@@ -914,7 +905,7 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
 /**
  * \brief Check that any parameters with minimum and maximum ranges are within that range
  *
- * This function performs any cylcic/reflective transform and then makes sure that all parameters in \c params, that
+ * This function performs any cylcic transform and then makes sure that all parameters in \c params, that
  * have a defined minimum and maximum value, are within their allowed prior ranges.
  *
  * \param priors [in] A pointer to the prior args LALInferenceVariables
@@ -924,18 +915,32 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
  */
 UINT4 in_range( LALInferenceVariables *priors, LALInferenceVariables *params ){
   LALInferenceVariableItem *item = params->head;
-  REAL8 min, max;
+  REAL8 min, max, val;
 
   /* loop over variables */
   for(; item; item = item->next ){
     if( item->vary == LALINFERENCE_PARAM_FIXED || item->vary == LALINFERENCE_PARAM_OUTPUT ){ continue; }
+    val = *(REAL8 *)item->value;
+
+    /* make sure certain values are not negative (H0, Q22, DIST, PX, CGW, ECC, A1, MTOT, M2) NOTE: I'm not sure if DR and DTHETA should also be only positive */
+    if ( val < 0. ) {
+      if ( !strcmp(item->name, "H0") || !strcmp(item->name, "Q22") || !strcmp(item->name, "DIST") ||
+           !strcmp(item->name, "PX") || !strcmp(item->name, "CGW") || !strncmp(item->name, "ECC", sizeof(CHAR)*3) ||
+           !strncmp(item->name, "A1", sizeof(CHAR)*2) || !strcmp(item->name, "MTOT") || !strcmp(item->name, "M2") ){
+          return 0;
+      }
+    }
+
+    /* make sure any sin or cos parameters are within -1 and 1 */
+    if ( fabs(val) > 1. ){
+      if ( !strncmp(item->name, "SIN", sizeof(CHAR)*3) || !strncmp(item->name, "COS", sizeof(CHAR)*3) ){ return 0; }
+    }
 
     if( LALInferenceCheckMinMaxPrior( priors, item->name ) ){
       LALInferenceGetMinMaxPrior( priors, item->name, &min, &max );
 
       /* For cyclic boundaries, mod out by range. */
       if( item->vary == LALINFERENCE_PARAM_CIRCULAR ) {
-        REAL8 val = *(REAL8 *)item->value;
         REAL8 delta = max - min;
 
         if (val > max) {
