@@ -1059,7 +1059,7 @@ class knopeDAG(pipeline.CondorDAG):
           # setup job(s)
           i = counter = 0
           while counter < nruns+nroqruns: # loop over the required number of runs
-            penode = ppeNode(pejob)
+            penode = ppeNode(pejob, psrname=pname)
             if self.pe_random_seed != None:
               penode.set_randomseed(self.pe_random_seed)      # set seed for RNG
             penode.set_detectors(','.join(dets))              # add detectors
@@ -3072,11 +3072,11 @@ class ppeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
     # set log files for job
     if logdir != None:
-      self.set_stdout_file(os.path.join(logdir, 'ppe-$(cluster).out'))
-      self.set_stderr_file(os.path.join(logdir, 'ppe-$(cluster).err'))
+      self.set_stdout_file(os.path.join(logdir, 'ppe$(logname)-$(cluster).out'))
+      self.set_stderr_file(os.path.join(logdir, 'ppe$(logname)-$(cluster).err'))
     else:
-      self.set_stdout_file('ppe-$(cluster).out')
-      self.set_stderr_file('ppe-$(cluster).err')
+      self.set_stdout_file('ppe$(logname)-$(cluster).out')
+      self.set_stderr_file('ppe$(logname)-$(cluster).err')
 
     if rundir != None:
       self.set_sub_file(os.path.join(rundir, 'ppe.sub'))
@@ -3090,7 +3090,7 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A pes runs an instance of the parameter estimation code in a condor DAG.
   """
-  def __init__(self,job):
+  def __init__(self,job,psrname=''):
     """
     job = A CondorDAGJob that can run an instance of parameter estimation code.
     """
@@ -3157,10 +3157,24 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set macroargs to be empty
     self.add_macro('macroargs', '')
 
+    # set unique log name (set to pulsar name)
+    if len(psrname) > 0:
+      self.add_macro('logname', '-'+psrname)
+    else:
+      self.add_macro('logname', '')
+
   def set_detectors(self,detectors):
     # set detectors
     self.add_var_opt('detectors',detectors)
     self.__detectors = detectors
+
+    # at detector names to logname
+    if 'logname' in self.get_opts():
+      curmacroval = self.get_opts()['logname']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + '-' + detectors.replace(',', '')
+    self.add_macro('logname', curmacroval)
 
   def set_verbose(self):
     # set to run code in verbose mode
