@@ -85,8 +85,7 @@ double XLALComovingVolumeElement(
 
 double XLALComovingVolume(
                          LALCosmologicalParameters *omega,
-                         double z,
-                         double zmax);
+                         double z);
 
 
 double XLALUniformComovingVolumeDensity(
