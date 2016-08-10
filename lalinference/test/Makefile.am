@@ -18,7 +18,7 @@ if SWIG_BUILD_PYTHON
 #test_scripts += test_plot.py
 test_scripts += test_detframe.py
 if HAVE_CHEALPIX
-test_scripts += doctests.py
+#test_scripts += doctests.py
 
 # installcheck-local:
 # 	../python/bayestar_sample_model_psd --H1=aLIGOZeroDetHighPower --L1=aLIGOZeroDetHighPower -o test_bayestar_sample_model_psd.xml && \
