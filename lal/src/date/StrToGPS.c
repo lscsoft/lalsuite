@@ -276,10 +276,10 @@ char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 	/* make sure we've got a buffer */
 
 	if(!s) {
-		/* 21 = 9 digits to the right of the decimal point +
+		/* 22 = 9 digits to the right of the decimal point +
 		 * decimal point + upto 10 digits to the left of the
 		 * decimal point plus an optional sign + a null */
-		s = XLALMalloc(21 * sizeof(*s));
+		s = XLALMalloc(22 * sizeof(*s));
 		if(!s)
 			XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
