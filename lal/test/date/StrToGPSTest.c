@@ -26,8 +26,7 @@
 #include <lal/XLALError.h>
 
 
-
-struct TESTCASE {
+struct TESTCASE_StrToGPS {
 	const char *string;
 	long int sec, ns;
 	const char *remainder;
@@ -35,7 +34,7 @@ struct TESTCASE {
 };
 
 
-static int runtest(const struct TESTCASE *testcase)
+static int runtest_XLALStrToGPS(const struct TESTCASE_StrToGPS *testcase)
 {
 	int retval;
 	LIGOTimeGPS gps;
@@ -61,11 +60,11 @@ static int runtest(const struct TESTCASE *testcase)
 }
 
 
-int main(void)
+static int test_XLALStrToGPS(void)
 {
 	/* Most of these test were shamelessly stolen from Peter's original
 	 * code for testing LALStringToGPS() */
-	struct TESTCASE general_testcases[] = {
+	struct TESTCASE_StrToGPS general_testcases[] = {
 		{"1234.5", 1234, 500000000, "", 0},
 		{"712345678", 712345678, 0, "", 0},
 		{"00000000712346678", 712346678, 0, "", 0},
@@ -149,13 +148,13 @@ int main(void)
 		{"10000000000000000000000000000000000000000e-40", 1, 0, "", 0},
 		{NULL, 0, 0, NULL, 0}
 	};
-	struct TESTCASE overflow_testcases[] = {
+	struct TESTCASE_StrToGPS overflow_testcases[] = {
 		{"7323456785", LONG_MAX, 0, "", XLAL_ERANGE},
 		{"7423456785234", LONG_MAX, 0, "", XLAL_ERANGE},
 		{"-73234567800.5233", LONG_MIN, 0, "", XLAL_ERANGE},
 		{NULL, 0, 0, NULL, 0}
 	};
-	struct TESTCASE hexfloat_testcases[] = {
+	struct TESTCASE_StrToGPS hexfloat_testcases[] = {
 		{"0x0", 0, 0, "", 0},
 		{"0x00", 0, 0, "", 0},
 		{"00x0", 0, 0, "x0", 0},
@@ -164,13 +163,13 @@ int main(void)
 		{"0x10P-6", 0, 250000000, "", 0},
 		{NULL, 0, 0, NULL, 0}
 	};
-	struct TESTCASE *testcase;
+	struct TESTCASE_StrToGPS *testcase;
 	int failures = 0;
 
 
 	/* run tests that all platforms must pass */
 	for(testcase = general_testcases; testcase->string; testcase++)
-		failures += runtest(testcase);
+		failures += runtest_XLALStrToGPS(testcase);
 
 	/* do extra tests if ints > 32 bits overflow strtol() */
 	long int rc;
@@ -178,7 +177,7 @@ int main(void)
 	rc = strtol("7323456785", NULL, 0);
 	if ((rc == 0) && (errno == ERANGE))
 		for(testcase = overflow_testcases; testcase->string; testcase++)
-			failures += runtest(testcase);
+			failures += runtest_XLALStrToGPS(testcase);
 	else
 		fprintf(stderr, "WARNING: your C library can parse ints that LIGOTimeGPS can't store!\n");
 	errno = 0;
@@ -186,9 +185,19 @@ int main(void)
 	/* do more tests if C library is smart enough to handle hex floats */
 	if(strtod("0x.8", NULL) == 0.5)
 		for(testcase = hexfloat_testcases; testcase->string; testcase++)
-			failures += runtest(testcase);
+			failures += runtest_XLALStrToGPS(testcase);
 	else
 		fprintf(stderr, "WARNING: your C library can't parse hex floats!\n");
+
+	return failures;
+}
+
+
+int main(void)
+{
+	int failures = 0;
+
+	failures += test_XLALStrToGPS();
 
 	fprintf(stdout, "Summary of GPS string conversion tests: ");
 	if(failures) {
@@ -196,6 +205,5 @@ int main(void)
 		exit(9);
 	} else
 		fprintf(stdout, "all succeeded\n");
-
 	exit(0);
 }
