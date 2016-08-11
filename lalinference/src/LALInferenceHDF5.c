@@ -372,7 +372,7 @@ int LALInferenceH5VariablesArrayToDataset(LALH5File *h5file, LALInferenceVariabl
     dataset->space_id = H5Screate_simple(1, dims, NULL);
     assert(dataset->space_id >= 0);
   }
-  dataset->dataset_id = H5Dcreate(
+  dataset->dataset_id = H5Dcreate2(
     h5file->file_id, TableName, dataset->dtype_id, dataset->space_id,
   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   assert(dataset->dataset_id >= 0);
@@ -399,12 +399,12 @@ int LALInferenceH5VariablesArrayToDataset(LALH5File *h5file, LALInferenceVariabl
   hid_t vary_type_id = create_vary_type();
   assert(vary_type_id >= 0);
   hsize_t vary_array_type_dims[] = {Nvary};
-  hid_t vary_array_type_id = H5Tarray_create(
+  hid_t vary_array_type_id = H5Tarray_create2(
     vary_type_id, 1, vary_array_type_dims);
   assert(vary_array_type_id >= 0);
   hid_t space_id = H5Screate(H5S_SCALAR);
   assert(space_id >= 0);
-  hid_t attr_id = H5Acreate(
+  hid_t attr_id = H5Acreate2(
     dataset->dataset_id, "vary", vary_array_type_id, space_id,
     H5P_DEFAULT, H5P_DEFAULT);
   assert(attr_id >= 0);

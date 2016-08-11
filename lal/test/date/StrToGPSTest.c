@@ -26,8 +26,7 @@
 #include <lal/XLALError.h>
 
 
-
-struct TESTCASE {
+struct TESTCASE_StrToGPS {
 	const char *string;
 	long int sec, ns;
 	const char *remainder;
@@ -35,7 +34,7 @@ struct TESTCASE {
 };
 
 
-static int runtest(const struct TESTCASE *testcase)
+static int runtest_XLALStrToGPS(const struct TESTCASE_StrToGPS *testcase)
 {
 	int retval;
 	LIGOTimeGPS gps;
@@ -61,11 +60,11 @@ static int runtest(const struct TESTCASE *testcase)
 }
 
 
-int main(void)
+static int test_XLALStrToGPS(void)
 {
 	/* Most of these test were shamelessly stolen from Peter's original
 	 * code for testing LALStringToGPS() */
-	struct TESTCASE general_testcases[] = {
+	struct TESTCASE_StrToGPS general_testcases[] = {
 		{"1234.5", 1234, 500000000, "", 0},
 		{"712345678", 712345678, 0, "", 0},
 		{"00000000712346678", 712346678, 0, "", 0},
@@ -149,13 +148,13 @@ int main(void)
 		{"10000000000000000000000000000000000000000e-40", 1, 0, "", 0},
 		{NULL, 0, 0, NULL, 0}
 	};
-	struct TESTCASE overflow_testcases[] = {
+	struct TESTCASE_StrToGPS overflow_testcases[] = {
 		{"7323456785", LONG_MAX, 0, "", XLAL_ERANGE},
 		{"7423456785234", LONG_MAX, 0, "", XLAL_ERANGE},
 		{"-73234567800.5233", LONG_MIN, 0, "", XLAL_ERANGE},
 		{NULL, 0, 0, NULL, 0}
 	};
-	struct TESTCASE hexfloat_testcases[] = {
+	struct TESTCASE_StrToGPS hexfloat_testcases[] = {
 		{"0x0", 0, 0, "", 0},
 		{"0x00", 0, 0, "", 0},
 		{"00x0", 0, 0, "x0", 0},
@@ -164,13 +163,13 @@ int main(void)
 		{"0x10P-6", 0, 250000000, "", 0},
 		{NULL, 0, 0, NULL, 0}
 	};
-	struct TESTCASE *testcase;
+	struct TESTCASE_StrToGPS *testcase;
 	int failures = 0;
 
 
 	/* run tests that all platforms must pass */
 	for(testcase = general_testcases; testcase->string; testcase++)
-		failures += runtest(testcase);
+		failures += runtest_XLALStrToGPS(testcase);
 
 	/* do extra tests if ints > 32 bits overflow strtol() */
 	long int rc;
@@ -178,7 +177,7 @@ int main(void)
 	rc = strtol("7323456785", NULL, 0);
 	if ((rc == 0) && (errno == ERANGE))
 		for(testcase = overflow_testcases; testcase->string; testcase++)
-			failures += runtest(testcase);
+			failures += runtest_XLALStrToGPS(testcase);
 	else
 		fprintf(stderr, "WARNING: your C library can parse ints that LIGOTimeGPS can't store!\n");
 	errno = 0;
@@ -186,9 +185,100 @@ int main(void)
 	/* do more tests if C library is smart enough to handle hex floats */
 	if(strtod("0x.8", NULL) == 0.5)
 		for(testcase = hexfloat_testcases; testcase->string; testcase++)
-			failures += runtest(testcase);
+			failures += runtest_XLALStrToGPS(testcase);
 	else
 		fprintf(stderr, "WARNING: your C library can't parse hex floats!\n");
+
+	return failures;
+}
+
+
+struct TESTCASE_GPSToStr {
+	long int sec, ns;
+	const char *correct;
+};
+
+
+static int runtest_XLALGPSToStr(const struct TESTCASE_GPSToStr *testcase)
+{
+	LIGOTimeGPS gps;
+	char *s;
+	int failure = 0;
+
+	XLALGPSSet(&gps, testcase->sec, testcase->ns);
+
+	XLALClearErrno();
+	s = XLALGPSToStr(NULL, &gps);
+	if(!s)
+		failure = 1;
+	else if(strcmp(s, testcase->correct))
+		failure = 1;
+
+	if(lalDebugLevel || failure)
+		fprintf(stdout, "Input = LIGOTimeGPS(%ld,%ld)\n\tOutput =\t\"%s\"\n\tCorrect =\t\"%s\"\n\t\t===> %s\n", testcase->sec, testcase->ns, s, testcase->correct, failure ? "*** FAIL ***" : "Pass");
+	LALFree(s);
+
+	return failure;
+}
+
+
+static int test_XLALGPSToStr(void)
+{
+	struct TESTCASE_GPSToStr general_testcases[] = {
+		/* check determination of overall sign and the correct
+		 * combining of interger and fractional parts */
+		{1, 1, "1.000000001"},
+		{1, 0, "1.000000000"},
+		{1, -1, "0.999999999"},
+		{0, 1, "0.000000001"},
+		{0, 0, "0.000000000"},
+		{0, -1, "-0.000000001"},
+		{-1, 1, "-0.999999999"},
+		{-1, 0, "-1.000000000"},
+		{-1, -1, "-1.000000001"},
+		/* check for boundary cases in handling of de-normalized
+		 * numbers */
+		{0, 999999999, "0.999999999"},
+		{0, -999999999, "-0.999999999"},
+		{0, 1000000000, "1.000000000"},
+		{0, -1000000000, "-1.000000000"},
+		{0, 1000000001, "1.000000001"},
+		{0, -1000000001, "-1.000000001"},
+		{0, 2345678901, "2.345678901"},
+		{0, -2345678901, "-2.345678901"},
+		/* confirm that precision is preserved */
+		{2145678901, 0, "2145678901.000000000"},
+		{2145678901, 1, "2145678901.000000001"},
+		{2145678901, 2, "2145678901.000000002"},
+		{2145678901, 3, "2145678901.000000003"},
+		{2145678901, 4, "2145678901.000000004"},
+		{2145678901, 5, "2145678901.000000005"},
+		{-2145678901, 0, "-2145678901.000000000"},
+		{-2145678901, -1, "-2145678901.000000001"},
+		{-2145678901, -2, "-2145678901.000000002"},
+		{-2145678901, -3, "-2145678901.000000003"},
+		{-2145678901, -4, "-2145678901.000000004"},
+		{-2145678901, -5, "-2145678901.000000005"},
+		/* done */
+		{0, 0, NULL}
+	};
+	struct TESTCASE_GPSToStr *testcase;
+	int failures = 0;
+
+
+	for(testcase = general_testcases; testcase->correct; testcase++)
+		failures += runtest_XLALGPSToStr(testcase);
+
+	return failures;
+}
+
+
+int main(void)
+{
+	int failures = 0;
+
+	failures += test_XLALStrToGPS();
+	failures += test_XLALGPSToStr();
 
 	fprintf(stdout, "Summary of GPS string conversion tests: ");
 	if(failures) {
@@ -196,6 +286,5 @@ int main(void)
 		exit(9);
 	} else
 		fprintf(stdout, "all succeeded\n");
-
 	exit(0);
 }

@@ -204,15 +204,13 @@ def write_samples(table, filename, path, metadata=None):
     >>> table = Table([
     ...     Column(np.arange(10), name='foo', meta={'vary': FIXED})
     ... ])
-    >>> write_samples(table, 'bar.hdf5', 'bat/baz')
+    >>> write_samples(table, 'bar.hdf5', 'bat/baz') # doctest: +ELLIPSIS
     Traceback (most recent call last):
         ...
     AssertionError: 
     Arrays are not equal
-    Column {0} is a `fixed` column, but its values are not identical
-    (mismatch 100.0%)
-     x: Column([1, 2, 3, 4, 5, 6, 7, 8, 9])
-     y: array(0)
+    Column foo is a fixed column, but its values are not identical
+    ...
 
     And now try writing an arbitrary example to a temporary file:
     >>> import os.path
@@ -234,8 +232,9 @@ def write_samples(table, filename, path, metadata=None):
     for colname, column in table.columns.items():
         if column.meta['vary'] == FIXED:
             np.testing.assert_array_equal(column[1:], column[0],
-                                          'Column {0} is a `fixed` column, '
-                                          'but its values are not identical')
+                                          'Column {0} is a fixed column, but '
+                                          'its values are not identical'
+                                          .format(column.name))
             table.meta[colname] = column[0]
             del table[colname]
         else:
