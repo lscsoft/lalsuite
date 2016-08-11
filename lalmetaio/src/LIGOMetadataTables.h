@@ -99,6 +99,7 @@ extern "C" {
  * database tables that are provided.
  */
 typedef enum
+tagMetadataTableType
 {
   no_table,
   process_table,
@@ -130,6 +131,7 @@ MetadataTableType;
  * interferometer.
  */
 typedef enum
+tagInterferometerNumber
 {
   LAL_IFO_G1,
   LAL_IFO_H1,

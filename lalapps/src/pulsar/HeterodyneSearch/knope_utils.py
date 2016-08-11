@@ -447,7 +447,7 @@ class knopeDAG(pipeline.CondorDAG):
     fps.close()
 
     # email notification that the analysis has finished if required
-    email = self.get_config_option('analysis', 'email')
+    email = self.get_config_option('analysis', 'email', allownone=True)
     if email != None:
       if '@' not in email:
         print("Warning... email address '%s' is invalid. No notification will be sent." % email)
@@ -466,7 +466,7 @@ class knopeDAG(pipeline.CondorDAG):
             FROM = 'matthew.pitkin@ligo.org'
 
           subject = "lalapps_knope: successful setup"
-          messagetxt = "Hi User,\n\nYour analysis using configuration file '%s' has successfully setup the analysis. Once complete the results will be found at %s.\n\nRegards lalapps_knope\n" % (configfilename, self.results_url)
+          messagetxt = "Hi User,\n\nYour analysis using configuration file '%s' has successfully setup the analysis. Once complete the results will be found at %s.\n\nRegards\n\nlalapps_knope\n" % (configfilename, self.results_url)
 
           emailtemplate = "From: {0}\nTo: {1}\nSubject: {2}\n\n{3}"
           message = emailtemplate.format(FROM, email, subject, messagetxt)
@@ -1059,7 +1059,7 @@ class knopeDAG(pipeline.CondorDAG):
           # setup job(s)
           i = counter = 0
           while counter < nruns+nroqruns: # loop over the required number of runs
-            penode = ppeNode(pejob)
+            penode = ppeNode(pejob, psrname=pname)
             if self.pe_random_seed != None:
               penode.set_randomseed(self.pe_random_seed)      # set seed for RNG
             penode.set_detectors(','.join(dets))              # add detectors
@@ -1117,18 +1117,10 @@ class knopeDAG(pipeline.CondorDAG):
                 penode.set_biaxial()
 
             # set Earth, Sun and time ephemeris files
-            if psr['EPHEM'] != None and self.ephem_path != None:
-              earthfile = os.path.join(self.ephem_path, 'earth00-19-%s.dat.gz' % psr['EPHEM'])
-              penode.set_ephem_earth(earthfile)
-              sunfile = os.path.join(self.ephem_path, 'sun00-19-%s.dat.gz' % psr['EPHEM'])
-              penode.set_ephem_sun(sunfile)
-
-            if psr['UNITS'] != None and self.ephem_path != None:
-              if psr['UNITS'] == 'TDB':
-                timefile = os.path.join(self.ephem_path, 'tdb_2000-2019.dat.gz')
-              else:
-                timefile = os.path.join(self.ephem_path, 'te405_2000-2019.dat.gz')
-              penode.set_ephem_time(timefile)
+            earthfile, sunfile, timefile = self.get_ephemeris(psr)
+            penode.set_ephem_earth(earthfile)
+            penode.set_ephem_sun(sunfile)
+            penode.set_ephem_time(timefile)
 
             # add parents (unless just doing post-processing)
             if not self.postonly:
@@ -3080,11 +3072,11 @@ class ppeJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
     # set log files for job
     if logdir != None:
-      self.set_stdout_file(os.path.join(logdir, 'ppe-$(cluster).out'))
-      self.set_stderr_file(os.path.join(logdir, 'ppe-$(cluster).err'))
+      self.set_stdout_file(os.path.join(logdir, 'ppe$(logname)-$(cluster).out'))
+      self.set_stderr_file(os.path.join(logdir, 'ppe$(logname)-$(cluster).err'))
     else:
-      self.set_stdout_file('ppe-$(cluster).out')
-      self.set_stderr_file('ppe-$(cluster).err')
+      self.set_stdout_file('ppe$(logname)-$(cluster).out')
+      self.set_stderr_file('ppe$(logname)-$(cluster).err')
 
     if rundir != None:
       self.set_sub_file(os.path.join(rundir, 'ppe.sub'))
@@ -3098,7 +3090,7 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   A pes runs an instance of the parameter estimation code in a condor DAG.
   """
-  def __init__(self,job):
+  def __init__(self,job,psrname=''):
     """
     job = A CondorDAGJob that can run an instance of parameter estimation code.
     """
@@ -3165,10 +3157,24 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set macroargs to be empty
     self.add_macro('macroargs', '')
 
+    # set unique log name (set to pulsar name)
+    if len(psrname) > 0:
+      self.add_macro('logname', '-'+psrname)
+    else:
+      self.add_macro('logname', '')
+
   def set_detectors(self,detectors):
     # set detectors
     self.add_var_opt('detectors',detectors)
     self.__detectors = detectors
+
+    # at detector names to logname
+    if 'logname' in self.get_opts():
+      curmacroval = self.get_opts()['logname']
+    else:
+      curmacroval = ''
+    curmacroval = curmacroval + '-' + detectors.replace(',', '')
+    self.add_macro('logname', curmacroval)
 
   def set_verbose(self):
     # set to run code in verbose mode

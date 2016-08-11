@@ -27,7 +27,7 @@ char output[FILENAME_MAX];
 
 int usage(const char *program);
 int parseargs(int argc, char **argv);
-int fprintgps(FILE *fp, LIGOTimeGPS *t);
+int fprintgps(FILE *fp, const LIGOTimeGPS *t);
 
 #define CAT(a,b) a ## b
 #define FLT(i) CAT(i,.)
@@ -226,10 +226,10 @@ int usage( const char *program )
 	return 0;
 }
 
-int fprintgps(FILE *fp, LIGOTimeGPS *t)
+int fprintgps(FILE *fp, const LIGOTimeGPS *t)
 {
-	int s = t->gpsSeconds;
-	int ns = t->gpsNanoSeconds;
-	int sgn = signbit(s + ns);
-	return fprintf(fp, "%s%d.%09d", sgn ? "-" : "", abs(s), abs(ns));
+	char *s = XLALGPSToStr(NULL, t);
+	int result = fprintf(fp, "%s", s);
+	free(s);
+	return result;
 }

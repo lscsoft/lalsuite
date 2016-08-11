@@ -48,7 +48,7 @@ extern "C" {
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-typedef enum {
+typedef enum tagVOTABLE_DATATYPE {
     VOT_BOOL = 1,
     VOT_BIT,
     VOT_CHAR,
@@ -75,7 +75,7 @@ typedef enum {
  * \author Oliver Bock\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-typedef enum {
+typedef enum tagVOTABLE_ATTRIBUTE {
     VOT_ID = 1,
     VOT_UNIT,
     VOT_DATATYPE,
@@ -95,7 +95,7 @@ typedef enum {
  * List of supported VOTable "leaf" elements
  *
  */
-typedef enum {
+typedef enum tagVOTABLE_ELEMENT {
   VOT_RESOURCE = 1,
   VOT_TABLE,
   VOT_STREAM,
@@ -117,7 +117,7 @@ typedef enum {
  * \author Reinhard Prix\n
  * Albert-Einstein-Institute Hannover, Germany
  */
-typedef enum {
+typedef enum tagVOTABLE_SERIALIZATION_TYPE {
   VOT_SERIALIZE_TABLEDATA = 1,	/**< embedded TABLEDATA inside TABLE element */
   VOT_SERIALIZE_BINARY, 	/**< external binary stream, referenced within TABLE element */
   VOT_SERIALIZE_LAST

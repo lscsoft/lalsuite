@@ -91,7 +91,7 @@ extern "C" {
  * The \c LALPlaygroundDataMask contains an enum type for describing the
  * subset of data to be used, \c playground_only, \c exclude_play and \c all_data.
  */
-typedef enum
+typedef enum tagLALPlaygroundDataMask
 {
   unspecified_data_type,
   playground_only,

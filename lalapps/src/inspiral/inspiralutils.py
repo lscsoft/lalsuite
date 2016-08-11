@@ -372,7 +372,8 @@ def veto_segments(ifo, config, categories, generateVetoes):
         # write file
         ligolw_process.set_process_end_time(process)
         fp = open(combinedFileXML, 'w')
-        utils.write_fileobj(xmldoc, fp, gz=False)
+        with utils.SignalsTrap():
+          utils.write_fileobj(xmldoc, fp, gz=False)
         fp.close()
 
     else: vetoFiles[category] = vetoFile
@@ -579,7 +580,8 @@ def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
     # write file
     ligolw_process.set_process_end_time(process)
     fp = open(segFileXML, 'w')
-    utils.write_fileobj(xmldoc, fp, gz=False)
+    with utils.SignalsTrap():
+      utils.write_fileobj(xmldoc, fp, gz=False)
     fp.close()
 
     print "Writing " + ifo + " segments of total time " + \

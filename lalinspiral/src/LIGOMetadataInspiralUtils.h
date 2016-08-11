@@ -42,6 +42,7 @@ extern "C" {
  * tests of mass parameters which are used.
  */
 typedef enum
+tagSnglInspiralParameterTest
 {
   unspecified_test,
   no_test,
@@ -134,6 +135,7 @@ CoincInspiralStatParams;
  * in arXiv:1111.7314.
  */
 typedef enum
+tagSnglInspiralClusterChoice
 {
   SNGL_INSPIRAL_CLUSTER_CHOICE_NONE,
   snr_and_chisq,
@@ -156,6 +158,7 @@ SnglInspiralClusterChoice;
  * \c new_snrsq, \c bitten_lsq, \c ifar.
  */
 typedef enum
+tagCoincInspiralStatistic
 {
   no_stat,
   snrsq,
@@ -175,6 +178,7 @@ CoincInspiralStatistic;
  * clustering returns the trigger with the smallest null-statistic value.
  */
 typedef enum
+tagMultiInspiralClusterChoice
 {
   no_statistic,
   nullstat,
@@ -195,6 +199,7 @@ MultiInspiralClusterChoice;
  * analysis (cohbank) or the outputs of multiple single-ifo filtering.
  */
 typedef enum
+tagCohbankRunType
 {
   cohbank,
   cohinspbank

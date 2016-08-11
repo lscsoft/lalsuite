@@ -80,7 +80,7 @@ extern "C" {
  *  Structure, enum, union, etc., typdefs.
  */
 
-  typedef enum
+  typedef enum tagDetChoice
   { SAME,
     DIFFERENT,
     ALL

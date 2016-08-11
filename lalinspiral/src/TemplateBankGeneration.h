@@ -66,7 +66,7 @@
 #define TEMPLATEBANKGENERATIONH_MSGENULL "Unexpected NULL pointer to an input type"
 /*@}*/
 
-typedef enum {
+typedef enum tagTemplateBankType {
   /* Binary Inspiral Searches 100-199 */
      BCVType,
      BCVSpinType,

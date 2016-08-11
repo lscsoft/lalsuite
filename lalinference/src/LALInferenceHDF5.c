@@ -41,17 +41,23 @@ static void assert_not_reached(void)
 
 /* BEGIN COPIED FROM H5FILEIOLowLevel.c */
 
+struct tagLALH5Object {
+	hid_t object_id; /* this object's id must be first */
+};
+
 struct tagLALH5File {
-	char fname[FILENAME_MAX];
-	hid_t file_id;
+	hid_t file_id; /* this object's id must be first */
 	unsigned int mode;
 	int is_a_group;
+	char fname[FILENAME_MAX];
 };
 
 struct tagLALH5Dataset {
-	hid_t dataset_id;
+	hid_t dataset_id; /* this object's id must be first */
+	hid_t parent_id;
 	hid_t space_id;
 	hid_t dtype_id; /* note: this is the in-memory type */
+	char name[]; /* flexible array member must be last */
 };
 
 /* creates HDF5 float complex data type; use H5Tclose() to free */
@@ -366,7 +372,7 @@ int LALInferenceH5VariablesArrayToDataset(LALH5File *h5file, LALInferenceVariabl
     dataset->space_id = H5Screate_simple(1, dims, NULL);
     assert(dataset->space_id >= 0);
   }
-  dataset->dataset_id = H5Dcreate(
+  dataset->dataset_id = H5Dcreate2(
     h5file->file_id, TableName, dataset->dtype_id, dataset->space_id,
   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   assert(dataset->dataset_id >= 0);
@@ -393,12 +399,12 @@ int LALInferenceH5VariablesArrayToDataset(LALH5File *h5file, LALInferenceVariabl
   hid_t vary_type_id = create_vary_type();
   assert(vary_type_id >= 0);
   hsize_t vary_array_type_dims[] = {Nvary};
-  hid_t vary_array_type_id = H5Tarray_create(
+  hid_t vary_array_type_id = H5Tarray_create2(
     vary_type_id, 1, vary_array_type_dims);
   assert(vary_array_type_id >= 0);
   hid_t space_id = H5Screate(H5S_SCALAR);
   assert(space_id >= 0);
-  hid_t attr_id = H5Acreate(
+  hid_t attr_id = H5Acreate2(
     dataset->dataset_id, "vary", vary_array_type_id, space_id,
     H5P_DEFAULT, H5P_DEFAULT);
   assert(attr_id >= 0);

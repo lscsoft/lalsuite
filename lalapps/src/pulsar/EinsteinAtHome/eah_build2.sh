@@ -86,6 +86,8 @@ for i; do
 	--static)
 	    shared_copt="--disable-shared" ;;
 	--rebuild)
+	    rebuild_zlib=true
+	    rebuild_binutils=true
 	    rebuild_boinc=true
 	    rebuild_lal=true
 	    rebuild=true ;;
@@ -620,7 +622,7 @@ else
         sed -i~ '/#include "boinc_win.h"/d' "$INSTALL/include/boinc/filesys.h"
     else
 	log_and_do cd "$SOURCE/boinc"
-	log_and_do ./_autosetup
+	log_and_do ./_autosetup -f
 	log_and_do cd "$BUILD/boinc"
 	log_and_do "$SOURCE/boinc/configure" --disable-server --disable-manager --disable-client "$WITH_SSL" "$shared_copt" "$cross_copt" --prefix="$INSTALL" # --target=powerpc-apple-darwin7.9.0
 	log_and_dont_fail make uninstall

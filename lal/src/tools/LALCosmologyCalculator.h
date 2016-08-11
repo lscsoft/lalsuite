@@ -79,6 +79,15 @@ double XLALIntegrateHubbleParameter(
             LALCosmologicalParameters *omega, 
             double z);
 
+double XLALComovingVolumeElement(
+                                double z,
+                                void *omega);
+
+double XLALComovingVolume(
+                         LALCosmologicalParameters *omega,
+                         double z);
+
+
 double XLALUniformComovingVolumeDensity(
             double z,
             void *omega);
@@ -87,6 +96,8 @@ double XLALUniformComovingVolumeDistribution(
             LALCosmologicalParameters *omega, 
             double z,
             double zmax);
+
+double XLALIntegrateComovingVolume(LALCosmologicalParameters *omega, double z);
 
 double XLALIntegrateComovingVolumeDensity(LALCosmologicalParameters *omega, double z);
             

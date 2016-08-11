@@ -59,7 +59,7 @@ extern "C" {
  */
 #define EOB_RD_EFOLDS 10.0
 
-typedef enum {
+typedef enum tagIMRPhenomP_version_type {
  IMRPhenomPv1_V, /**< version 1: based on IMRPhenomC */
  IMRPhenomPv2_V  /**< version 2: based on IMRPhenomD */
 } IMRPhenomP_version_type;
