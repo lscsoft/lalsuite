@@ -286,7 +286,7 @@ char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 
 	/* normalize the fractional part */
 
-	while(labs(copy.gpsNanoSeconds) > XLAL_BILLION_INT4) {
+	while(labs(copy.gpsNanoSeconds) >= XLAL_BILLION_INT4) {
 		if(copy.gpsNanoSeconds < 0) {
 			copy.gpsSeconds -= 1;
 			copy.gpsNanoSeconds += XLAL_BILLION_INT4;
