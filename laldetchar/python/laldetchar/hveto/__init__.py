@@ -193,7 +193,6 @@ def write_coinc_tables( vetotrigs, xmldoc, refchannel, twind, time_slide_id=None
 
 	# Insert a time slide ID. It's not yet really necessary
 	if time_slide_id is None:
-		from pylal import ligolw_tisi
 		timeslidetable = lsctables.New(lsctables.TimeSlideTable)
 		time_slide = timeslidetable.RowType
 		time_slide.process_id = process_id

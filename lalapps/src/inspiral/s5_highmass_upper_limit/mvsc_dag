@@ -12,7 +12,6 @@ from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import utils
-from pylal import ligolw_tisi
 from pylal import llwapp
 from pylal import ligolw_cafe
 from glue import pipeline
