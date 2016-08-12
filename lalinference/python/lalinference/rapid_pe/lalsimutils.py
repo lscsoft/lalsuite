@@ -37,7 +37,7 @@ import lalmetaio
 
 import pylal
 from pylal import frutils
-from pylal import series
+from lal import series
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, R. O'Shaughnessy"
 
