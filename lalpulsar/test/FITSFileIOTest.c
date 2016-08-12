@@ -101,7 +101,6 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileWriteVCSInfo( file, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileWriteUVarCmdLine( file ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSFileWriteHistory( file, "%s\n%s", "This is a test history", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteComment( file, "%s\n%s", "This is a test comment", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: opened 'FITSFileIOTest.fits' for writing\n" );
 
@@ -212,6 +211,12 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "PASSED: wrote a table\n" );
 
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteComment( file, "%s", "This is another test comment" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "table1" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array1" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileWriteHistory( file, "%s\n%s", "This is a test history", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fprintf( stderr, "PASSED: HDU seeking in write mode\n" );
+
     XLALFITSFileClose( file );
     fprintf( stderr, "PASSED: closed 'FITSFileIOTest.fits'\n" );
   }
@@ -219,10 +224,145 @@ int main( int argc, char *argv[] )
   fflush( stderr );
 
   // Read the example FITS file and check data is consistent
+  // - Data is read in reverse order to check HDU seeking
   {
     FITSFile *file = XLALFITSFileOpenRead( "FITSFileIOTest.fits" );
     XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
     fprintf( stderr, "PASSED: opened 'FITSFileIOTest.fits' for reading\n" );
+
+    {
+      UINT8 nrows = LAL_UINT8_MAX;
+      XLAL_CHECK_MAIN( XLALFITSTableOpenRead( file, "table1", &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( nrows == XLAL_NUM_ELEM( testtable ), XLAL_EFAILED );
+      {
+        XLAL_FITS_TABLE_COLUMN_BEGIN( TestRecord );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, index ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, BOOLEAN, flag ) == XLAL_SUCCESS, XLAL_EFUNC );
+        {
+          int errnum = 0;
+          XLAL_TRY_SILENT( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, index ), errnum );
+          XLAL_CHECK_MAIN( errnum = XLAL_EIO, XLAL_EFAILED );
+        }
+        {
+          int errnum = 0;
+          XLAL_TRY_SILENT( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, pos.freq ), errnum );
+          XLAL_CHECK_MAIN( errnum = XLAL_EIO, XLAL_EFAILED );
+        }
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, CHAR, name ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, epoch ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, pos.sky ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, pos.freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+        {
+          int errnum = 0;
+          XLAL_TRY_SILENT( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[0], "wrong" ), errnum );
+          XLAL_CHECK_MAIN( errnum = XLAL_EIO, XLAL_EFAILED );
+        }
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[0], "f1dot [Hz/s]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[1], "f2dot [Hz/s^2]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, values ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX8, phasef ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX16, phase ) == XLAL_SUCCESS, XLAL_EFUNC );
+        {
+          XLAL_FITS_TABLE_COLUMN_PTR_BEGIN( sub, TestSubRecord, 2 );
+          for ( size_t s = 0; s < 2; ++s ) {
+            char col_name[32];
+            snprintf( col_name, sizeof( col_name ), "n%zu", s + 1 );
+            XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, INT4, n, col_name );
+            snprintf( col_name, sizeof( col_name ), "v%zu", s + 1 );
+            XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL4, v, col_name );
+            snprintf( col_name, sizeof( col_name ), "desc%zu", s + 1 );
+            XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, s, CHAR, desc, col_name );
+          }
+        }
+      }
+      TestRecord XLAL_INIT_DECL( record );
+      TestSubRecord XLAL_INIT_ARRAY_DECL( record_sub, 2 );
+      record.sub = record_sub;
+      size_t i = 0;
+      while ( nrows > 0 ) {
+        XLAL_CHECK_MAIN( XLALFITSTableReadRow( file, &record, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( nrows == XLAL_NUM_ELEM( testtable ) - i - 1, XLAL_EFAILED );
+        XLAL_CHECK_MAIN( record.index == testtable[i].index, XLAL_EFAILED );
+        XLAL_CHECK_MAIN( record.flag == testtable[i].flag, XLAL_EFAILED );
+        XLAL_CHECK_MAIN( strcmp( record.name, testtable[i].name ) == 0, XLAL_EFAILED );
+        XLAL_CHECK_MAIN( XLALGPSCmp( &record.epoch, &testtable[i].epoch ) == 0, XLAL_EFAILED );
+        XLAL_CHECK_MAIN( record.pos.sky == testtable[i].pos.sky, XLAL_EFAILED );
+        XLAL_CHECK_MAIN( record.pos.freq == testtable[i].pos.freq, XLAL_EFAILED );
+        for ( size_t j = 0; j < XLAL_NUM_ELEM( record.pos.fkdot ); ++j ) {
+          XLAL_CHECK_MAIN( record.pos.fkdot[j] == testtable[i].pos.fkdot[j], XLAL_EFAILED );
+        }
+        for ( size_t j = 0; j < XLAL_NUM_ELEM( record.values ); ++j ) {
+          XLAL_CHECK_MAIN( record.values[j] == testtable[i].values[j], XLAL_EFAILED );
+        }
+        XLAL_CHECK_MAIN( record.phasef == testtable[i].phasef, XLAL_EFAILED );
+        XLAL_CHECK_MAIN( record.phase == testtable[i].phase, XLAL_EFAILED );
+        for ( size_t s = 0; s < 2; ++s ) {
+          XLAL_CHECK_MAIN( record.sub[s].n == testtable[i].sub[s].n, XLAL_EFAILED );
+          XLAL_CHECK_MAIN( record.sub[s].v == testtable[i].sub[s].v, XLAL_EFAILED );
+          XLAL_CHECK_MAIN( strcmp( record.sub[s].desc, testtable[i].sub[s].desc ) == 0, XLAL_EFAILED );
+        }
+        ++i;
+      }
+      XLAL_CHECK_MAIN( i == XLAL_NUM_ELEM( testtable ), XLAL_EFAILED );
+      XLAL_CHECK_MAIN( XLALFITSTableReadRow( file, &record, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( nrows == 0, XLAL_EFAILED );
+      XLAL_CHECK_MAIN( XLALFITSTableReadRow( file, &record, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+    fprintf( stderr, "PASSED: read and verified a table\n" );
+
+    {
+      size_t m = 0, n = 0;
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead2( file, "array3", &m, &n ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( m == 2, XLAL_EFAILED );
+      XLAL_CHECK_MAIN( n == 3, XLAL_EFAILED );
+      gsl_matrix *elems = NULL;
+      XLAL_CHECK_MAIN( XLALFITSArrayReadGSLMatrix( file, NULL, &elems ) == XLAL_SUCCESS, XLAL_EFUNC );
+      for ( size_t i = 0; i < m; ++i ) {
+        for ( size_t j = 0; j < n; ++j ) {
+          const double value_ref = 7.0 + 2.5*i + 3.0*j;
+          double value = gsl_matrix_get( elems, i, j );
+          XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu,%zu] = %g != %g", i, j, value, value_ref );
+        }
+      }
+      GFMAT( elems );
+    }
+    fprintf( stderr, "PASSED: read and verified a gsl_matrix\n" );
+
+    {
+      size_t dim = 0;
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead1( file, "array2", &dim ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( dim == 14, XLAL_EFAILED );
+      for ( size_t i = 0; i < dim; ++i ) {
+        const size_t idx[] = { i };
+        const REAL4 value_ref = 21 + 0.5*i;
+        REAL4 value = 0;
+        XLAL_CHECK_MAIN( XLALFITSArrayReadREAL4( file, idx, &value ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu] = %g != %g", i, value, value_ref );
+      }
+    }
+    fprintf( stderr, "PASSED: read and verified a REAL4 array\n" );
+
+    {
+      size_t ndim, dims[FFIO_MAX];
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead( file, "array1", &ndim, dims ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( ndim == 4, XLAL_EFAILED );
+      size_t idx[4];
+      for ( idx[0] = 0; idx[0] < dims[0]; ++idx[0] ) {
+        for ( idx[1] = 0; idx[1] < dims[1]; ++idx[1] ) {
+          for ( idx[2] = 0; idx[2] < dims[2]; ++idx[2] ) {
+            for ( idx[3] = 0; idx[3] < dims[3]; ++idx[3] ) {
+              const INT4 value_ref = idx[0] + 2*idx[1] + 3*idx[2] + 4*idx[3];
+              INT4 value = 0;
+              XLAL_CHECK_MAIN( XLALFITSArrayReadINT4( file, idx, &value ) == XLAL_SUCCESS, XLAL_EFUNC );
+              XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu,%zu,%zu,%zu] = %i != %i", idx[0], idx[1], idx[2], idx[3], value, value_ref );
+            }
+          }
+        }
+      }
+    }
+    fprintf( stderr, "PASSED: read and verified a INT4 array\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSFileSeekPrimaryHDU( file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     {
       BOOLEAN testbool;
@@ -329,135 +469,10 @@ int main( int argc, char *argv[] )
     }
     fprintf( stderr, "PASSED: read and verified a GPS time\n" );
 
-    {
-      size_t ndim, dims[FFIO_MAX];
-      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead( file, "array1", &ndim, dims ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( ndim == 4, XLAL_EFAILED );
-      size_t idx[4];
-      for ( idx[0] = 0; idx[0] < dims[0]; ++idx[0] ) {
-        for ( idx[1] = 0; idx[1] < dims[1]; ++idx[1] ) {
-          for ( idx[2] = 0; idx[2] < dims[2]; ++idx[2] ) {
-            for ( idx[3] = 0; idx[3] < dims[3]; ++idx[3] ) {
-              const INT4 value_ref = idx[0] + 2*idx[1] + 3*idx[2] + 4*idx[3];
-              INT4 value = 0;
-              XLAL_CHECK_MAIN( XLALFITSArrayReadINT4( file, idx, &value ) == XLAL_SUCCESS, XLAL_EFUNC );
-              XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu,%zu,%zu,%zu] = %i != %i", idx[0], idx[1], idx[2], idx[3], value, value_ref );
-            }
-          }
-        }
-      }
-    }
-    fprintf( stderr, "PASSED: read and verified a INT4 array\n" );
-
-    {
-      size_t dim = 0;
-      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead1( file, "array2", &dim ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( dim == 14, XLAL_EFAILED );
-      for ( size_t i = 0; i < dim; ++i ) {
-        const size_t idx[] = { i };
-        const REAL4 value_ref = 21 + 0.5*i;
-        REAL4 value = 0;
-        XLAL_CHECK_MAIN( XLALFITSArrayReadREAL4( file, idx, &value ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu] = %g != %g", i, value, value_ref );
-      }
-    }
-    fprintf( stderr, "PASSED: read and verified a REAL4 array\n" );
-
-    {
-      size_t m = 0, n = 0;
-      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead2( file, "array3", &m, &n ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( m == 2, XLAL_EFAILED );
-      XLAL_CHECK_MAIN( n == 3, XLAL_EFAILED );
-      gsl_matrix *elems = NULL;
-      XLAL_CHECK_MAIN( XLALFITSArrayReadGSLMatrix( file, NULL, &elems ) == XLAL_SUCCESS, XLAL_EFUNC );
-      for ( size_t i = 0; i < m; ++i ) {
-        for ( size_t j = 0; j < n; ++j ) {
-          const double value_ref = 7.0 + 2.5*i + 3.0*j;
-          double value = gsl_matrix_get( elems, i, j );
-          XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu,%zu] = %g != %g", i, j, value, value_ref );
-        }
-      }
-      GFMAT( elems );
-    }
-    fprintf( stderr, "PASSED: read and verified a gsl_matrix\n" );
-
-    UINT8 nrows = LAL_UINT8_MAX;
-    XLAL_CHECK_MAIN( XLALFITSTableOpenRead( file, "table1", &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( nrows == XLAL_NUM_ELEM( testtable ), XLAL_EFAILED );
-    {
-      XLAL_FITS_TABLE_COLUMN_BEGIN( TestRecord );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, index ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, BOOLEAN, flag ) == XLAL_SUCCESS, XLAL_EFUNC );
-      {
-        int errnum = 0;
-        XLAL_TRY_SILENT( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, index ), errnum );
-        XLAL_CHECK_MAIN( errnum = XLAL_EIO, XLAL_EFAILED );
-      }
-      {
-        int errnum = 0;
-        XLAL_TRY_SILENT( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, pos.freq ), errnum );
-        XLAL_CHECK_MAIN( errnum = XLAL_EIO, XLAL_EFAILED );
-      }
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, CHAR, name ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, epoch ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, pos.sky ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, pos.freq ) == XLAL_SUCCESS, XLAL_EFUNC );
-      {
-        int errnum = 0;
-        XLAL_TRY_SILENT( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[0], "wrong" ), errnum );
-        XLAL_CHECK_MAIN( errnum = XLAL_EIO, XLAL_EFAILED );
-      }
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[0], "f1dot [Hz/s]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[1], "f2dot [Hz/s^2]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, values ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX8, phasef ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX16, phase ) == XLAL_SUCCESS, XLAL_EFUNC );
-      {
-        XLAL_FITS_TABLE_COLUMN_PTR_BEGIN( sub, TestSubRecord, 2 );
-        for ( size_t s = 0; s < 2; ++s ) {
-          char col_name[32];
-          snprintf( col_name, sizeof( col_name ), "n%zu", s + 1 );
-          XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, INT4, n, col_name );
-          snprintf( col_name, sizeof( col_name ), "v%zu", s + 1 );
-          XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL4, v, col_name );
-          snprintf( col_name, sizeof( col_name ), "desc%zu", s + 1 );
-          XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, s, CHAR, desc, col_name );
-        }
-      }
-    }
-    TestRecord XLAL_INIT_DECL( record );
-    TestSubRecord XLAL_INIT_ARRAY_DECL( record_sub, 2 );
-    record.sub = record_sub;
-    size_t i = 0;
-    while ( nrows > 0 ) {
-      XLAL_CHECK_MAIN( XLALFITSTableReadRow( file, &record, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( nrows == XLAL_NUM_ELEM( testtable ) - i - 1, XLAL_EFAILED );
-      XLAL_CHECK_MAIN( record.index == testtable[i].index, XLAL_EFAILED );
-      XLAL_CHECK_MAIN( record.flag == testtable[i].flag, XLAL_EFAILED );
-      XLAL_CHECK_MAIN( strcmp( record.name, testtable[i].name ) == 0, XLAL_EFAILED );
-      XLAL_CHECK_MAIN( XLALGPSCmp( &record.epoch, &testtable[i].epoch ) == 0, XLAL_EFAILED );
-      XLAL_CHECK_MAIN( record.pos.sky == testtable[i].pos.sky, XLAL_EFAILED );
-      XLAL_CHECK_MAIN( record.pos.freq == testtable[i].pos.freq, XLAL_EFAILED );
-      for ( size_t j = 0; j < XLAL_NUM_ELEM( record.pos.fkdot ); ++j ) {
-        XLAL_CHECK_MAIN( record.pos.fkdot[j] == testtable[i].pos.fkdot[j], XLAL_EFAILED );
-      }
-      for ( size_t j = 0; j < XLAL_NUM_ELEM( record.values ); ++j ) {
-        XLAL_CHECK_MAIN( record.values[j] == testtable[i].values[j], XLAL_EFAILED );
-      }
-      XLAL_CHECK_MAIN( record.phasef == testtable[i].phasef, XLAL_EFAILED );
-      XLAL_CHECK_MAIN( record.phase == testtable[i].phase, XLAL_EFAILED );
-      for ( size_t s = 0; s < 2; ++s ) {
-        XLAL_CHECK_MAIN( record.sub[s].n == testtable[i].sub[s].n, XLAL_EFAILED );
-        XLAL_CHECK_MAIN( record.sub[s].v == testtable[i].sub[s].v, XLAL_EFAILED );
-        XLAL_CHECK_MAIN( strcmp( record.sub[s].desc, testtable[i].sub[s].desc ) == 0, XLAL_EFAILED );
-      }
-      ++i;
-    }
-    XLAL_CHECK_MAIN( i == XLAL_NUM_ELEM( testtable ), XLAL_EFAILED );
-    XLAL_CHECK_MAIN( XLALFITSTableReadRow( file, &record, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( nrows == 0, XLAL_EFAILED );
-    XLAL_CHECK_MAIN( XLALFITSTableReadRow( file, &record, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-    fprintf( stderr, "PASSED: read and verified a table\n" );
+    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "table1" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array1" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fprintf( stderr, "PASSED: HDU seeking in read mode\n" );
 
     XLALFITSFileClose( file );
     fprintf( stderr, "PASSED: closed 'FITSFileIOTest.fits'\n" );
