@@ -203,6 +203,7 @@ int XLALCalculateLMXBCrossCorrDiagMetric
    REAL8                       *g_aa,
    REAL8                       *g_TT,
    REAL8                       *g_pp,
+   REAL8             *weightedMuTAve,
    PulsarDopplerParams DopplerParams,
    REAL8Vector              *G_alpha,
    SFTPairIndexList   *pairIndexList,
