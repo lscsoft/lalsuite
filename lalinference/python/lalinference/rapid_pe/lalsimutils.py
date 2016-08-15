@@ -1473,7 +1473,7 @@ def pylal_psd_to_swig_psd(raw_pylal_psd):
     return psdNew
 
 def get_psd_series_from_xmldoc(fname, inst):
-    return series.read_psd_xmldoc(utils.load_filename(fname, contenthandler=series.LIGOLWContentHandler))[inst]  # return value is pylal wrapping of the data type; index data by a.data[k]
+    return series.read_psd_xmldoc(utils.load_filename(fname, contenthandler=series.PSDContentHandler))[inst]  # return value is pylal wrapping of the data type; index data by a.data[k]
 
 def get_intp_psd_series_from_xmldoc(fname, inst):
     psd = get_psd_series_from_xmldoc(fname, inst)
