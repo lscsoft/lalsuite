@@ -507,47 +507,44 @@ def aligned_spin_param_generator(flow, tmplt_class, bank, **kwargs):
     """
     dur_min, dur_max = kwargs.pop('duration', (None, None))
 
+    # define a helper function to apply the appropriate spin bounds
     if 'ns_bh_boundary_mass' in kwargs and 'bh_spin' in kwargs \
             and 'ns_spin' in kwargs:
-        # get args
         bh_spin_bounds = kwargs.pop('bh_spin')
         ns_spin_bounds = kwargs.pop('ns_spin')
         ns_bh_boundary = kwargs.pop('ns_bh_boundary_mass')
-        # the rest will be checked in the call to urand_tau0tau3_generator
 
-        for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
-            spin1 = uniform(*(bh_spin_bounds if mass1 > ns_bh_boundary else ns_spin_bounds))
-            spin2 = uniform(*(bh_spin_bounds if mass2 > ns_bh_boundary else ns_spin_bounds))
-
-            t = tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
-            if (dur_min is not None and t._dur < dur_min) \
-                    or (dur_max is not None and t._dur > dur_max):
-                continue
-            yield t
+        def spin_bounds(mass1, mass2):
+            return (bh_spin_bounds if mass1 > ns_bh_boundary else ns_spin_bounds), \
+                   (bh_spin_bounds if mass2 > ns_bh_boundary else ns_spin_bounds)
     else:
-        # get args
-        spin1_bounds = kwargs.pop('spin1', (-1., 1.))
-        spin2_bounds = kwargs.pop('spin2', (-1., 1.))
+        spin1b = kwargs.pop('spin1', (-1., 1.))
+        spin2b = kwargs.pop('spin2', (-1., 1.))
 
-        # the rest will be checked in the call to urand_tau0tau3_generator
-        for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
+        def spin_bounds(mass1, mass2):
+            return spin1b, spin2b
 
-            mtot = mass1 + mass2
-            chis_min = (mass1*spin1_bounds[0] + mass2*spin2_bounds[0])/mtot
-            chis_max = (mass1*spin1_bounds[1] + mass2*spin2_bounds[1])/mtot
-            chis = uniform(chis_min, chis_max)
+    # the rest will be checked in the call to urand_tau0tau3_generator
+    for mass1, mass2 in urand_tau0tau3_generator(flow, **kwargs):
 
-            s2min = max(spin2_bounds[0], (mtot*chis - mass1*spin1_bounds[1])/mass2)
-            s2max = min(spin2_bounds[1], (mtot*chis - mass1*spin1_bounds[0])/mass2)
+        spin1_bounds, spin2_bounds = spin_bounds(mass1, mass2)
 
-            spin2 = uniform(s2min, s2max)
-            spin1 = (chis*mtot - mass2*spin2)/mass1
+        mtot = mass1 + mass2
+        chis_min = (mass1*spin1_bounds[0] + mass2*spin2_bounds[0])/mtot
+        chis_max = (mass1*spin1_bounds[1] + mass2*spin2_bounds[1])/mtot
+        chis = uniform(chis_min, chis_max)
 
-            t = tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
-            if (dur_min is not None and t._dur < dur_min) \
-                    or (dur_max is not None and t._dur > dur_max):
-                continue
-            yield t
+        s2min = max(spin2_bounds[0], (mtot*chis - mass1*spin1_bounds[1])/mass2)
+        s2max = min(spin2_bounds[1], (mtot*chis - mass1*spin1_bounds[0])/mass2)
+
+        spin2 = uniform(s2min, s2max)
+        spin1 = (chis*mtot - mass2*spin2)/mass1
+
+        t = tmplt_class(mass1, mass2, spin1, spin2, bank=bank)
+        if (dur_min is not None and t._dur < dur_min) \
+                or (dur_max is not None and t._dur > dur_max):
+            continue
+        yield t
 
 def double_spin_precessing_param_generator(flow, tmplt_class, bank, **kwargs):
     """
