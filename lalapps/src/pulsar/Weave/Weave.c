@@ -168,7 +168,7 @@ int main( int argc, char *argv[] )
   //
   XLALRegisterUvarMember(
     semi_max_mismatch, REAL8, 's', REQUIRED,
-    "Maximum metric metric of the lattice tiling on which semicoherent quantities are computed, e.g. F-statistics averaged over segments. "
+    "Maximum metric mismatch of the lattice tiling on which semicoherent quantities are computed, e.g. F-statistics averaged over segments. "
     );
   XLALRegisterUvarMember(
     coh_max_mismatch, REAL8, 'c', OPTIONAL,
