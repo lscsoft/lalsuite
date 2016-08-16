@@ -222,11 +222,8 @@ def write_samples(table, filename, path, metadata=None):
     Column foo is a fixed column, but its values are not identical
     ...
 
-    And now try writing an arbitrary example to a temporary file
-    and reading it back with the LAL HDF5 C API:
+    And now try writing an arbitrary example to a temporary file.
     >>> import os.path
-    >>> import lal
-    >>> import lalinference
     >>> from lalinference.bayestar.command import TemporaryDirectory
     >>> table = Table([
     ...     Column(np.ones(10), name='foo', meta={'vary': FIXED}),
@@ -234,6 +231,8 @@ def write_samples(table, filename, path, metadata=None):
     ...     Column(np.arange(10) * np.pi, name='bat', meta={'vary': CIRCULAR}),
     ...     Column(np.arange(10), name='baz', meta={'vary': OUTPUT})
     ... ])
+    >>> with TemporaryDirectory() as dir:
+    ...     write_samples(table, os.path.join(dir, 'test.hdf5'), 'bat/baz')
     """
     # Copy the table so that we do not modify the original.
     table = table.copy()
