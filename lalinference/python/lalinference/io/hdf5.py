@@ -144,6 +144,7 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     table : `astropy.table.Table`
         The sample chain as an Astropy table.
 
+    Test reading a file written using the Python API:
     >>> import os.path
     >>> from lalinference.bayestar.command import TemporaryDirectory
     >>> table = Table([
@@ -157,6 +158,11 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     ...     write_samples(table, filename, 'foo/bar/posterior_samples')
     ...     len(read_samples(filename))
     10
+
+    Test reading a file that was written using the LAL HDF5 C API:
+    >>> table = read_samples('test.hdf5')
+    >>> table.colnames
+    ['uvw', 'opq', 'lmn', 'ijk', 'def', 'abc', 'rst', 'ghi']
     """
     with h5py.File(filename, 'r') as f:
         if path is not None: # Look for a given path
@@ -171,6 +177,10 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
 
     # Restore fixed columns from table attributes.
     for key, value in table.meta.items():
+        # Skip attributes from H5TB interface
+        # (https://www.hdfgroup.org/HDF5/doc/HL/H5TB_Spec.html).
+        if key == 'CLASS' or key == 'VERSION' or key == 'TITLE' or key.startswith('FIELD_'):
+            continue
         table.add_column(Column([value] * len(table), name=key,
                          meta={'vary': FIXED}))
 
@@ -212,8 +222,11 @@ def write_samples(table, filename, path, metadata=None):
     Column foo is a fixed column, but its values are not identical
     ...
 
-    And now try writing an arbitrary example to a temporary file:
+    And now try writing an arbitrary example to a temporary file
+    and reading it back with the LAL HDF5 C API:
     >>> import os.path
+    >>> import lal
+    >>> import lalinference
     >>> from lalinference.bayestar.command import TemporaryDirectory
     >>> table = Table([
     ...     Column(np.ones(10), name='foo', meta={'vary': FIXED}),
@@ -221,8 +234,6 @@ def write_samples(table, filename, path, metadata=None):
     ...     Column(np.arange(10) * np.pi, name='bat', meta={'vary': CIRCULAR}),
     ...     Column(np.arange(10), name='baz', meta={'vary': OUTPUT})
     ... ])
-    >>> with TemporaryDirectory() as dir:
-    ...     write_samples(table, os.path.join(dir, 'test.hdf5'), 'bat/baz')
     """
     # Copy the table so that we do not modify the original.
     table = table.copy()
