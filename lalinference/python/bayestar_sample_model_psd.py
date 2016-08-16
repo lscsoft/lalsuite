@@ -95,8 +95,9 @@ for detector in detectors:
 
         # Find indices of first and last nonzero samples.
         nonzero = np.flatnonzero(series.data.data)
-        first_nonzero = nonzero[0]
-        last_nonzero = nonzero[-1]
+        # FIXME: int cast seems to be needed on old versions of Numpy
+        first_nonzero = int(nonzero[0])
+        last_nonzero = int(nonzero[-1])
 
         # Truncate
         series = lal.CutREAL8FrequencySeries(series, first_nonzero, last_nonzero - first_nonzero + 1)
