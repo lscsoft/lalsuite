@@ -172,8 +172,8 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
         table = Table.read(table)
 
     # Restore vary types.
-    for column, vary in zip(table.columns.values(), table.meta.pop('vary')):
-        column.meta['vary'] = vary
+    for i, column in enumerate(table.columns.values()):
+        column.meta['vary'] = table.meta['FIELD_{0}_VARY'.format(i)]
 
     # Restore fixed columns from table attributes.
     for key, value in table.meta.items():
@@ -238,7 +238,6 @@ def write_samples(table, filename, path, metadata=None):
     table = table.copy()
 
     # Reconstruct table attributes.
-    vary = []
     for colname, column in table.columns.items():
         if column.meta['vary'] == FIXED:
             np.testing.assert_array_equal(column[1:], column[0],
@@ -247,9 +246,8 @@ def write_samples(table, filename, path, metadata=None):
                                           .format(column.name))
             table.meta[colname] = column[0]
             del table[colname]
-        else:
-            vary.insert(0, column.meta.pop('vary'))
-    table.meta['vary'] = np.asarray(vary)
+    for i, column in enumerate(table.columns.values()):
+        table.meta['FIELD_{0}_VARY'.format(i)] = column.meta['vary']
     table.write(filename, format='hdf5', path=path)
     if metadata:
         with h5py.File(filename) as hdf:

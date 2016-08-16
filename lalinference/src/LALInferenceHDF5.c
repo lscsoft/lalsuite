@@ -100,9 +100,15 @@ int LALInferenceH5DatasetToVariablesArray(LALH5Dataset *dataset, LALInferenceVar
   for (size_t i = 0; i < Nsamples; i++)
     va[i] = XLALCalloc(1, sizeof(LALInferenceVariables));
 
-  assert(XLALH5AttributeQueryEnumArray1DLength(gdataset, "vary") == Nvary);
-  ret = XLALH5AttributeQueryEnumArray1DValue(vary, gdataset, "vary");
-  assert(ret == 0);
+  for (UINT4 i = 0; i < Nvary; i ++)
+  {
+    char pname[] = "FIELD_NNN_VARY";
+    snprintf(pname, sizeof(pname), "FIELD_%d_VARY", i);
+    INT4 value;
+    ret = XLALH5AttributeQueryScalarValue(&value, gdataset, pname);
+    assert(ret == 0);
+    vary[i] = value;
+  }
 
   /* Read the group datasets in as arrays */
   for (UINT4 i=0;i<Nsamples;i++)
@@ -123,7 +129,7 @@ int LALInferenceH5DatasetToVariablesArray(LALH5Dataset *dataset, LALInferenceVar
 
     /* Skip the "vary" attribute as well as any attribute associated with the
      * H5TB interface (https://www.hdfgroup.org/HDF5/doc/HL/H5TB_Spec.html). */
-    if (strcmp(pname, "vary") == 0 || strcmp(pname, "CLASS") == 0 || strcmp(pname, "VERSION") == 0 || strcmp(pname, "TITLE") == 0 || strncmp(pname, "FIELD_", 6) == 0)
+    if (strcmp(pname, "CLASS") == 0 || strcmp(pname, "VERSION") == 0 || strcmp(pname, "TITLE") == 0 || strncmp(pname, "FIELD_", 6) == 0)
       continue;
 
     LALTYPECODE LALtype = XLALH5AttributeQueryScalarType(gdataset, pname);
@@ -278,9 +284,14 @@ int LALInferenceH5VariablesArrayToDataset(LALH5File *h5file, LALInferenceVariabl
   XLALFree(data);
 
   LALH5Generic gdataset = {.dset = dataset};
-  static const char *enumnames[] = {"linear", "circular", "fixed", "output"};
-  static const int enumvals[] = {LALINFERENCE_PARAM_LINEAR, LALINFERENCE_PARAM_CIRCULAR, LALINFERENCE_PARAM_FIXED, LALINFERENCE_PARAM_OUTPUT};
-  XLALH5AttributeAddEnumArray1D(gdataset, enumnames, enumvals, 4, "vary", vary, Nvary);
+  for (UINT4 i = 0; i < Nvary; i ++)
+  {
+    INT4 value = vary[i];
+    char pname[] = "FIELD_NNN_VARY";
+    snprintf(pname, sizeof(pname), "FIELD_%d_VARY", i);
+    ret = XLALH5AttributeAddScalar(gdataset, pname, &value, LAL_I4_TYPE_CODE);
+    assert(ret == 0);
+  }
 
   /* Write attributes, if any */
   for(UINT4 i=0;i<Nfixed;i++)
