@@ -35,12 +35,12 @@ from lalinference import LALINFERENCE_PARAM_OUTPUT as OUTPUT
 _colname_map = (('rightascension', 'ra'),
                 ('declination', 'dec'),
                 ('distance', 'dist'),
-		('polarisation','psi'),
-		('chirpmass', 'mc'),
-		('a_spin1', 'a1'),
-		('a_spin2','a2'),
-		('tilt_spin1', 'tilt1'),
-		('tilt_spin2', 'tilt2'))
+                ('polarisation','psi'),
+                ('chirpmass', 'mc'),
+                ('a_spin1', 'a1'),
+                ('a_spin2','a2'),
+                ('tilt_spin1', 'tilt1'),
+                ('tilt_spin2', 'tilt2'))
 
 
 def _remap_colnames(table):
