@@ -87,7 +87,7 @@ from lalinference.bayestar import ligolw as ligolw_bayestar
 from lalinference.bayestar import distance
 from lalinference.bayestar import filter
 from lalinference.bayestar import timing
-from lalinference.bayestars.sky_map import ligolw_sky_map
+from lalinference.bayestar.sky_map import ligolw_sky_map
 
 # Other imports.
 import numpy as np
