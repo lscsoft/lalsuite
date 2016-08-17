@@ -52,9 +52,7 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     elem = ligolw.LIGO_LW(Attributes({u"Name": unicode(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
-    # FIXME:  make Time class smart so we don't have to build it by
-    # hand
-    elem.appendChild(ligolw.Time(Attributes({u"Name": u"epoch", u"Type": u"GPS"}))).pcdata = unicode(series.epoch)
+    elem.appendChild(ligolw.Time.from_gps(series.epoch, u"epoch"))
     elem.appendChild(ligolw_param.from_pyvalue(u"f0", series.f0, unit=u"s^-1"))
     delta = getattr(series, delta_name)
     if np.iscomplexobj(series.data.data):
@@ -77,7 +75,9 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
     dims = a.getElementsByTagName(ligolw.Dim.tagName)
     f0 = ligolw_param.get_param(elem, u"f0")
 
-    epoch = lal.LIGOTimeGPS(str(t.pcdata))
+    if t.Type != u"GPS":
+        raise ValueError("epoch Type must be GPS")
+    epoch = t.pcdata
 
     # Target units: inverse seconds
     inverse_seconds_unit = lal.Unit("s^-1")
