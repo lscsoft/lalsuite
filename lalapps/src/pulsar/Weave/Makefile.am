@@ -50,3 +50,6 @@ EXTRA_DIST = \
 	timestamps-irregular.txt \
 	timestamps-regular.txt \
 	$(END_OF_LIST)
+
+clean-local:
+	-rm -rf Test*.testdir/
