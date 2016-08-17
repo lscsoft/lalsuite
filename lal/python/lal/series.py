@@ -97,7 +97,7 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
     series = creatorfunc(
         str(a.Name),
         epoch,
-        float(f0.pcdata) * float(f0_unit / inverse_seconds_unit),
+        f0.pcdata * float(f0_unit / inverse_seconds_unit),
         dims[0].Scale * float(delta_unit / delta_target_unit),
         sample_unit,
         len(a.array.T)
