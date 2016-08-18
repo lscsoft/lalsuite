@@ -1493,7 +1493,7 @@ XLALshowSFTLocator ( const struct tagSFTLocator *locator )
 
 
 /**
- * Return a string vector listing the unique IFOs in the given catalog.
+ * Return a sorted string vector listing the unique IFOs in the given catalog.
  */
 LALStringVector *XLALListIFOsInCatalog( const SFTCatalog *catalog )
 {
@@ -1509,6 +1509,7 @@ LALStringVector *XLALListIFOsInCatalog( const SFTCatalog *catalog )
         }
       XLALFree( name );
     }
+  XLAL_CHECK_NULL( XLALSortStringVector( ifos ) == XLAL_SUCCESS, XLAL_EFUNC );
   return ifos;
 } // XLALListIFOsInCatalog()
 
