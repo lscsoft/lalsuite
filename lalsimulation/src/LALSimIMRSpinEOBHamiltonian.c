@@ -685,23 +685,58 @@ static int XLALSimIMRCalculateSpinEOBHCoeffs (SpinEOBHCoeffs * coeffs,
   UNUSED REAL8 coeff30, coeff31, coeff32, coeff33;
   if (SpinAlignedEOBversion == 4)
     {
-        // Calibrationv21_Aug3c_nonbcycles_noISCO_BAMq8s85
-        coeff00 = 1.7336;
-        coeff01 = -1.51856;
-        coeff02 = -1.15833;
-        coeff03 = 1.35244;
-        coeff10 = 10.2573;
-        coeff11 = 1.87109;
-        coeff12 = 0.;
-        coeff13 = -0.779168;
-        coeff20 = -126.687;
-        coeff21 = 17.0214;
-        coeff22 = 4.8223;
-        coeff23 = 0.;
-        coeff30 = 267.788;
-        coeff31 = -21.2904;
-        coeff32 = 31.9452;
-        coeff33 = -63.2452;
+      // Model:Calibrationv21_Jun2a_nbcycles_q8q10s075085095andq4s095newfitwithGaTechchio_noISCO
+      coeff00 = 1.7336;
+      coeff01 = -1.66631;
+      coeff02 = -0.459572;
+      coeff03 = 1.01496;
+      coeff10 = 10.2573;
+      coeff11 = 2.08766;
+      coeff12 = 0.;
+      coeff13 = 0.;
+      coeff20 = -126.687;
+      coeff21 = 18.2915;
+      coeff22 = 0.;
+      coeff23 = 0.;
+      coeff30 = 267.788;
+      coeff31 = -34.5472;
+      coeff32 = 0.;
+      coeff33 = -34.7164;
+      //  Calibrationv21_Jul6b_nonbcycles_noISCO_noPhDq8s85
+      coeff00 = 1.7336;
+      coeff01 = -1.39086;
+      coeff02 = -0.796853;
+      coeff03 = 1.09267;
+      coeff10 = 10.2573;
+      coeff11 = 1.72551;
+      coeff12 = 0.00001;
+      coeff13 = -0.653256;
+      coeff20 = -126.687;
+      coeff21 = 16.7987;
+      coeff22 = 2.38058;
+      coeff23 = 0.00001;
+      coeff30 = 267.788;
+      coeff31 = -24.5857;
+      coeff32 = 16.5148;
+      coeff33 = -48.5175;
+      // Calibrationv21_Jul21_nonbcycles_noISCO_noPhDq8s85_inicondsfromrun7_chop
+      coeff00 = 1.7336;
+      coeff01 = -1.38671;
+      coeff02 = -0.79653;
+      coeff03 = 1.08023;
+      coeff10 = 10.2573;
+      coeff11 = 1.70686;
+      coeff12 = 0.;
+      coeff13 = -0.6687;
+      coeff20 = -126.687;
+      coeff21 = 16.6771;
+      coeff22 = 2.26562;
+      coeff23 = 0.;
+      coeff30 = 267.788;
+      coeff31 = -23.6745;
+      coeff32 = 17.0039;
+      coeff33 = -47.8904;
+
       coeffs->KK = KK =
 	coeff00 + coeff01 * chi + coeff02 * chi2 + coeff03 * chi3 +
 	coeff10 * eta + coeff11 * eta * chi + coeff12 * eta * chi2 +
@@ -787,23 +822,59 @@ static int XLALSimIMRCalculateSpinEOBHCoeffs (SpinEOBHCoeffs * coeffs,
       coeffs->dheffSSv2 = 8.127 - 154.2 * eta + 830.8 * eta * eta;
       break;
     case 4:
-            // Calibrationv21_Aug3c_nonbcycles_noISCO_BAMq8s85
-            coeff00 = -58.9316;
-            coeff01 = 0;
-            coeff02 = 0;
-            coeff03 = 0;
-            coeff10 = 0;
-            coeff11 = 0;
-            coeff12 = 0;
-            coeff13 = -576.594;
-            coeff20 = 0;
-            coeff21 = 1903.59;
-            coeff22 = 0;
-            coeff23 = 181.866;
-            coeff30 = 0;
-            coeff31 = 0.080688;
-            coeff32 = 0;
-            coeff33 = 0;
+      // Model:Calibrationv21_Jun2a_nbcycles_q8q10s075085095andq4s095newfitwithGaTechchio_noISCO
+      // dSO
+      coeff00 = -62.2539;
+      coeff01 = 0.;
+      coeff02 = 0.;
+      coeff03 = 0.;
+      coeff10 = -0.000017;
+      coeff11 = -99.0943;
+      coeff12 = 8.11119;
+      coeff13 = -960.578;
+      coeff20 = -0.000018;
+      coeff21 = 0.015074;
+      coeff22 = 0.000322;
+      coeff23 = 2269.;
+      coeff30 = 1158.;
+      coeff31 = 9575.51;
+      coeff32 = 0.;
+      coeff33 = 0.;
+      //Calibrationv21_Jul6b_nonbcycles_noISCO_noPhDq8s85
+      coeff00 = -63.6167;
+      coeff01 = 0.00001;
+      coeff02 = 0.00001;
+      coeff03 = 0.000017;
+      coeff10 = 0.00001;
+      coeff11 = 0.00001;
+      coeff12 = -0.014291;
+      coeff13 = -1318.;
+      coeff20 = -0.000016;
+      coeff21 = 73.1771;
+      coeff22 = 0.00001;
+      coeff23 = 3215.52;
+      coeff30 = 0.00001;
+      coeff31 = 7688.79;
+      coeff32 = 0.00001;
+      coeff33 = -0.002531;
+
+      // Calibrationv21_Jul21_nonbcycles_noISCO_noPhDq8s85_inicondsfromrun7_chop
+      coeff00 = -63.7829;
+      coeff01 = 0;
+      coeff02 = 0;
+      coeff03 = 0;
+      coeff10 = 0;
+      coeff11 = 0;
+      coeff12 = 0;
+      coeff13 = -1318.03;
+      coeff20 = 0;
+      coeff21 = 0.534604;
+      coeff22 = 0;
+      coeff23 = 3241.75;
+      coeff30 = 0;
+      coeff31 = 7901.41;
+      coeff32 = 0;
+      coeff33 = 0;
       coeffs->d1v2 =
 	coeff00 + coeff01 * chi + coeff02 * chi2 + coeff03 * chi3 +
 	coeff10 * eta + coeff11 * eta * chi + coeff12 * eta * chi2 +
@@ -811,24 +882,59 @@ static int XLALSimIMRCalculateSpinEOBHCoeffs (SpinEOBHCoeffs * coeffs,
 	coeff22 * eta2 * chi2 + coeff23 * eta2 * chi3 + coeff30 * eta3 +
 	coeff31 * eta3 * chi + coeff32 * eta3 * chi2 + coeff33 * eta3 * chi3;
 
-            //Calibrationv21_Aug3c_nonbcycles_noISCO_BAMq8s85
-            coeff00 = 0;
-            coeff01 = 0;
-            coeff02 = 5.26629;
-            coeff03 = 6.92787;
-            coeff10 = -40.9768;
-            coeff11 = 0;
-            coeff12 = 99.6977;
-            coeff13 = -66.992;
-            coeff20 = 0;
-            coeff21 = 0;
-            coeff22 = 0;
-            coeff23 = 0;
-            coeff30 = 0;
-            coeff31 = 0;
-            coeff32 = 2229.54;
-            coeff33 = 0;
-        coeffs->dheffSSv2 =
+      // dSS
+      coeff00 = -4.03659;
+      coeff01 = 2.86893;
+      coeff02 = 20.6697;
+      coeff03 = 0.;
+      coeff10 = 2.64305;
+      coeff11 = 0.00001;
+      coeff12 = 108.084;
+      coeff13 = -189.577;
+      coeff20 = 0.;
+      coeff21 = -0.00007;
+      coeff22 = 0.;
+      coeff23 = 438.749;
+      coeff30 = 0.;
+      coeff31 = -0.000494;
+      coeff32 = 0.;
+      coeff33 = 0.000356;
+      //Calibrationv21_Jul6b_nonbcycles_noISCO_noPhDq8s85
+      coeff00 = 0.00001;
+      coeff01 = 0.003626;
+      coeff02 = 2.67274;
+      coeff03 = 2.2696;
+      coeff10 = -37.8804;
+      coeff11 = 0.000652;
+      coeff12 = 210.705;
+      coeff13 = -28.4984;
+      coeff20 = 0.00001;
+      coeff21 = 0.00001;
+      coeff22 = 0.00001;
+      coeff23 = 0.000068;
+      coeff30 = 0.00001;
+      coeff31 = 0.000021;
+      coeff32 = 159.661;
+      coeff33 = 0.000107;
+
+      //Calibrationv21_Jul21_nonbcycles_noISCO_noPhDq8s85_inicondsfromrun7_chop
+      coeff00 = 0;
+      coeff01 = 0;
+      coeff02 = 3.81988;
+      coeff03 = 3.44509;
+      coeff10 = -37.3544;
+      coeff11 = 0;
+      coeff12 = 205.74;
+      coeff13 = -32.8595;
+      coeff20 = 0;
+      coeff21 = 0;
+      coeff22 = 0;
+      coeff23 = 0;
+      coeff30 = 0;
+      coeff31 = 0;
+      coeff32 = 144.279;
+      coeff33 = 0.;
+      coeffs->dheffSSv2 =
 	coeff00 + coeff01 * chi + coeff02 * chi2 + coeff03 * chi3 +
 	coeff10 * eta + coeff11 * eta * chi + coeff12 * eta * chi2 +
 	coeff13 * eta * chi3 + coeff20 * eta2 + coeff21 * eta2 * chi +
