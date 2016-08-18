@@ -36,7 +36,7 @@ _colname_map = (('rightascension', 'ra'),
                 ('declination', 'dec'),
                 ('distance', 'dist'),
                 ('polarisation','psi'),
-                ('mchirp', 'mc'),
+                ('chirpmass', 'mc'),
                 ('a_spin1', 'a1'),
                 ('a_spin2','a2'),
                 ('tilt_spin1', 'tilt1'),
@@ -144,6 +144,7 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     table : `astropy.table.Table`
         The sample chain as an Astropy table.
 
+    Test reading a file written using the Python API:
     >>> import os.path
     >>> from lalinference.bayestar.command import TemporaryDirectory
     >>> table = Table([
@@ -157,6 +158,11 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
     ...     write_samples(table, filename, 'foo/bar/posterior_samples')
     ...     len(read_samples(filename))
     10
+
+    Test reading a file that was written using the LAL HDF5 C API:
+    >>> table = read_samples('test.hdf5')
+    >>> table.colnames
+    ['uvw', 'opq', 'lmn', 'ijk', 'def', 'abc', 'rst', 'ghi']
     """
     with h5py.File(filename, 'r') as f:
         if path is not None: # Look for a given path
@@ -166,11 +172,15 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
         table = Table.read(table)
 
     # Restore vary types.
-    for column, vary in zip(table.columns.values(), table.meta.pop('vary')):
-        column.meta['vary'] = vary
+    for i, column in enumerate(table.columns.values()):
+        column.meta['vary'] = table.meta['FIELD_{0}_VARY'.format(i)]
 
     # Restore fixed columns from table attributes.
     for key, value in table.meta.items():
+        # Skip attributes from H5TB interface
+        # (https://www.hdfgroup.org/HDF5/doc/HL/H5TB_Spec.html).
+        if key == 'CLASS' or key == 'VERSION' or key == 'TITLE' or key.startswith('FIELD_'):
+            continue
         table.add_column(Column([value] * len(table), name=key,
                          meta={'vary': FIXED}))
 
@@ -212,7 +222,7 @@ def write_samples(table, filename, path, metadata=None):
     Column foo is a fixed column, but its values are not identical
     ...
 
-    And now try writing an arbitrary example to a temporary file:
+    And now try writing an arbitrary example to a temporary file.
     >>> import os.path
     >>> from lalinference.bayestar.command import TemporaryDirectory
     >>> table = Table([
@@ -228,7 +238,6 @@ def write_samples(table, filename, path, metadata=None):
     table = table.copy()
 
     # Reconstruct table attributes.
-    vary = []
     for colname, column in table.columns.items():
         if column.meta['vary'] == FIXED:
             np.testing.assert_array_equal(column[1:], column[0],
@@ -237,9 +246,8 @@ def write_samples(table, filename, path, metadata=None):
                                           .format(column.name))
             table.meta[colname] = column[0]
             del table[colname]
-        else:
-            vary.insert(0, column.meta.pop('vary'))
-    table.meta['vary'] = np.asarray(vary)
+    for i, column in enumerate(table.columns.values()):
+        table.meta['FIELD_{0}_VARY'.format(i)] = column.meta['vary']
     table.write(filename, format='hdf5', path=path)
     if metadata:
         with h5py.File(filename) as hdf:

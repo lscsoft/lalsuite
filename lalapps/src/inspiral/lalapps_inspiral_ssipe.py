@@ -26,7 +26,7 @@ import urlparse
 from glue import pipeline
 from glue import segments as glue_segments
 from glue import lal
-from pylal import ligolw_tisi
+from lalburst import timeslides as ligolw_tisi
 from pylal import ligolw_cafe
 from lalapps import inspiral
 from lalapps import power

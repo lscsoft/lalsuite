@@ -59,13 +59,16 @@ typedef struct tagFITSFile FITSFile;
 /// \name Open/Close FITS File, and Write History Information to Primary FITS Header-Data Unit
 ///
 /// These functions open a FITS file \p file_name for writing or reading, and close a FITS file
-/// represented by \p file. History information may also be written to the primary (first) FITS
-/// header-data unit (HDU).
+/// represented by \p file. The current header-data unit (HDU) may be changed, either by seeking a
+/// named HDU or by returning to the primary (first) HDU. History information may also be written to
+/// the primary HDU.
 ///
 /// @{
 void XLALFITSFileClose( FITSFile *file );
 FITSFile *XLALFITSFileOpenWrite( const CHAR *file_name );
 FITSFile *XLALFITSFileOpenRead( const CHAR *file_name );
+int XLALFITSFileSeekPrimaryHDU( FITSFile *file );
+int XLALFITSFileSeekNamedHDU( FITSFile *file, const CHAR *name );
 int XLALFITSFileWriteHistory( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
 int XLALFITSFileWriteVCSInfo( FITSFile *file, const LALVCSInfo *const vcs_list[] );
 int XLALFITSFileWriteUVarCmdLine( FITSFile *file );

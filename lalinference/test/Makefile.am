@@ -20,6 +20,9 @@ test_scripts += test_detframe.py
 if HAVE_CHEALPIX
 test_scripts += doctests.py
 
+# enforce ordering between certain tests
+doctests.log: LALInferenceHDF5Test.log
+
 # installcheck-local:
 # 	../python/bayestar_sample_model_psd --H1=aLIGOZeroDetHighPower --L1=aLIGOZeroDetHighPower -o test_bayestar_sample_model_psd.xml && \
 # 	../python/bayestar_realize_coincs --detector H1 L1 --reference-psd test_bayestar_sample_model_psd.xml $(srcdir)/HL-INJECTIONS_1_TEST-1000000000-10.xml -o test_bayestar_realize_coincs.xml && \

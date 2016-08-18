@@ -355,6 +355,57 @@ XLAL_FAIL:
 #endif // !defined(HAVE_LIBCFITSIO)
 }
 
+int XLALFITSFileSeekPrimaryHDU( FITSFile UNUSED *file )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
+
+  // Seek primary HDU
+  CALL_FITS( fits_movabs_hdu, file->ff, 1, NULL );
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+  return XLAL_FAILURE;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
+int XLALFITSFileSeekNamedHDU( FITSFile UNUSED *file, const CHAR UNUSED *name )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  int UNUSED status = 0;
+
+  // Check input
+  XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK_FAIL( name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( name ) < FLEN_VALUE, XLAL_EINVAL, "HDU name '%s' is too long", name );
+
+  // Set current HDU
+  file->hdutype = ANY_HDU;
+  strncpy( file->hduname, name, sizeof( file->hduname ) - 1 );
+
+  // Seek any HDU with given name, starting from primary HDU
+  CALL_FITS( fits_movabs_hdu, file->ff, 1, NULL );
+  CALL_FITS( fits_movnam_hdu, file->ff, file->hdutype, file->hduname, 0 );
+
+  return XLAL_SUCCESS;
+
+XLAL_FAIL:
+  return XLAL_FAILURE;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
 int XLALFITSFileWriteHistory( FITSFile UNUSED *file, const CHAR UNUSED *format, ... )
 {
 #if !defined(HAVE_LIBCFITSIO)
@@ -368,11 +419,8 @@ int XLALFITSFileWriteHistory( FITSFile UNUSED *file, const CHAR UNUSED *format, 
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
   XLAL_CHECK_FAIL( format != NULL, XLAL_EFAULT );
 
-  // Check that we are writing to the primary header
-  int hdu_num = 0;
-  fits_get_hdu_num( file->ff, &hdu_num );
-  XLAL_CHECK_FAIL( hdu_num > 0, XLAL_EIO );
-  XLAL_CHECK_FAIL( hdu_num == 1, XLAL_EIO, "FITS file is not at primary HDU" );
+  // Seek primary HDU
+  CALL_FITS( fits_movabs_hdu, file->ff, 1, NULL );
 
   // Write history to primary header
   va_list ap;
@@ -1259,7 +1307,8 @@ int XLALFITSArrayOpenRead( FITSFile UNUSED *file, const CHAR UNUSED *name, size_
   file->array.bitpix = INT_MAX;
   file->array.datatype = INT_MAX;
 
-  // Go to HDU with given name
+  // Seek image HDU with given name, starting from primary HDU
+  CALL_FITS( fits_movabs_hdu, file->ff, 1, NULL );
   CALL_FITS( fits_movnam_hdu, file->ff, file->hdutype, file->hduname, 0 );
 
   // Get image dimensions
@@ -1761,7 +1810,8 @@ int XLALFITSTableOpenRead( FITSFile UNUSED *file, const CHAR UNUSED *name, UINT8
   // Set current HDU data
   XLAL_INIT_MEM( file->table );
 
-  // Go to HDU with given name
+  // Seek table HDU with given name, starting from primary HDU
+  CALL_FITS( fits_movabs_hdu, file->ff, 1, NULL );
   CALL_FITS( fits_movnam_hdu, file->ff, file->hdutype, file->hduname, 0 );
 
   // Get number of table rows

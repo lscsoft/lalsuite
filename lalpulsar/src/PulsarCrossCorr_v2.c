@@ -21,7 +21,7 @@
 #include <lal/PulsarCrossCorr_v2.h>
 
 #define SQUARE(x) ((x)*(x))
-#define QUAD(x) (x*x*x*x)
+#define QUAD(x) ((x)*(x)*(x)*(x))
 /** Calculate the Doppler-shifted frequency associated with each SFT in a list */
 /* This is according to Eqns 2.11 and 2.12 of Dhurandhar et al 2008 */
 /* Also returns the signal phase according to eqn 2.4 */
@@ -554,6 +554,7 @@ int XLALCalculateLMXBCrossCorrDiagMetric
    REAL8                       *g_aa, /* Output: Diagonal binary projected semimajor axis metric element*/
    REAL8                       *g_TT, /* Output: Diagonal reference time metric element*/
    REAL8                       *g_pp, /* Output: Diagonal orbital period metric element */
+   REAL8             *weightedMuTAve, /* output: weighred T mean*/
    PulsarDopplerParams DopplerParams, /*  Input: pulsar/binary orbit paramaters*/
    REAL8Vector              *G_alpha, /*  Input: vector of curlyGunshifted values */
    SFTPairIndexList   *pairIndexList, /*  Input: list of SFT pairs */
@@ -614,6 +615,7 @@ int XLALCalculateLMXBCrossCorrDiagMetric
   *g_aa = SinSquaWeightedAve * SQUARE(2. * LAL_PI * DopplerParams.fkdot[0]);
   *g_TT = SinSquaWeightedAve * SQUARE(SQUARE(2. * LAL_PI) * (DopplerParams.fkdot[0]) * (DopplerParams.asini) / (DopplerParams.period));
   *g_pp = SinSquaWeightedAve * sigmaTSqr * 16 * QUAD(LAL_PI) * SQUARE(DopplerParams.fkdot[0]) * SQUARE(DopplerParams.asini) / (QUAD(DopplerParams.period));
+  *weightedMuTAve = muTAve;
 
   return XLAL_SUCCESS;
 
