@@ -52,7 +52,7 @@ int main( int argc, char *argv[] )
     INT4 sky_patch_count, sky_patch_index, freq_partitions, output_max_size;
     INT4 sft_noise_rand_seed, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision;
     INT4 cache_max_size, cache_gc_limit;
-    LALStringVector *sft_detectors, *sft_noise_psd, *sft_timestamps_files, *injections, *Fstat_assume_psd;
+    LALStringVector *sft_noise_psd, *sft_timestamps_files, *injections, *Fstat_assume_psd;
     REAL8 semi_max_mismatch, coh_max_mismatch, sft_timebase, ckpt_output_period, ckpt_output_pc_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
   } uvar_struct = {
@@ -87,26 +87,24 @@ int main( int argc, char *argv[] )
     " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'"
     );
   XLALRegisterUvarMember(
-    sft_detectors, STRINGVector, 'I', OPTIONAL,
-    "Generate SFTs instead of loading from files; the detectors for which SFTs are generated are listed here. "
+    sft_timebase, REAL8, 't', OPTIONAL,
+    "Generate SFTs with this timebase instead of loading from files. "
+    );
+  XLALRegisterUvarMember(
+    sft_timestamps_files, STRINGVector, 'T', DEVELOPER,
+    "Files containing timestamps for the generated SFTs. "
+    "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file ) ". "
+    "Timebase of the generated SFTs is specified by " UVAR_STR( sft_timebase ) ". "
+    "If not given, SFTs with contiguous timestamps are generated. "
     );
   XLALRegisterUvarMember(
     sft_noise_psd, STRINGVector, 'p', OPTIONAL,
-    "Noise spectral densities for the generated SFTs; order should match the detectors in " UVAR_STR( sft_detectors ) ". "
+    "Inject fake Gaussian noise with these power spectral densities into the generated SFTs. "
+    "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file ) ". "
     );
   XLALRegisterUvarMember(
     sft_noise_rand_seed, INT4, 0, OPTIONAL,
     "Random seed used to generate fake Gaussian noise for generated SFTs. "
-    );
-  XLALRegisterUvarMember(
-    sft_timebase, REAL8, 't', OPTIONAL,
-    "Timebase of the generated SFTs. "
-    "If " UVAR_STR( sft_timestamps_files ) " is not given, generate contiguous SFTs with this timebase. "
-    );
-  XLALRegisterUvarMember(
-    sft_timestamps_files, STRINGVector, 'T', DEVELOPER,
-    "Files containing timestamps for the generated SFTs; order should match the detectors in " UVAR_STR( sft_detectors ) ". "
-    "Timebase of the generated SFTs is specified by " UVAR_STR( sft_timebase ) ". "
     );
   XLALRegisterUvarMember(
     injections, STRINGVector, 'J', OPTIONAL,
@@ -282,17 +280,11 @@ int main( int argc, char *argv[] )
   // - SFT input/generation and signal generation
   //
   XLALUserVarCheck( &should_exit,
-                    UVAR_SET2( sft_files, sft_detectors ) == 1,
-                    "Exactly one of " UVAR_STR2OR( sft_files, sft_detectors ) " must be specified" );
+                    UVAR_SET2( sft_files, sft_timebase ) == 1,
+                    "Exactly one of " UVAR_STR2OR( sft_files, sft_timebase ) " must be specified" );
   XLALUserVarCheck( &should_exit,
-                    !UVAR_SET( sft_files ) || !UVAR_ALLSET3( sft_noise_psd, sft_timestamps_files, sft_timebase ),
-                    UVAR_STR3AND( sft_noise_psd, sft_timestamps_files, sft_timebase ) " are mutually exclusive with " UVAR_STR( sft_files ) );
-  XLALUserVarCheck( &should_exit,
-                    !UVAR_SET( sft_detectors ) || UVAR_SET( sft_noise_psd ),
-                    UVAR_STR( sft_detectors ) " requires that " UVAR_STR( sft_noise_psd ) " must be specified" );
-  XLALUserVarCheck( &should_exit,
-                    !UVAR_SET( sft_detectors ) || UVAR_SET( sft_timebase ),
-                    UVAR_STR( sft_detectors ) " requires that " UVAR_STR( sft_timebase ) " must be specified" );
+                    !UVAR_SET( sft_files ) || !UVAR_ALLSET4( sft_timebase, sft_timestamps_files, sft_noise_psd, sft_noise_rand_seed ),
+                    UVAR_STR( sft_files ) " are mutually exclusive with " UVAR_STR4AND( sft_timebase, sft_timestamps_files, sft_noise_psd, sft_noise_rand_seed ) );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( sft_timebase ) || uvar->sft_timebase > 0,
                     UVAR_STR( sft_timebase ) " must be strictly positive" );
@@ -399,6 +391,10 @@ int main( int argc, char *argv[] )
 
   // Print reference time
   LogPrintf( LOG_NORMAL, "Setup file reference time = %" LAL_GPS_FORMAT "\n", LAL_GPS_PRINT( setup.ref_time ) );
+
+  // Concatenate list of detector into a string
+  char *setup_detectors_string = XLALConcatStringVector( setup.detectors, "," );
+  XLAL_CHECK_MAIN( setup_detectors_string != NULL, XLAL_EFUNC );
 
   // Compute segment list range
   const UINT4 nsegments = setup.segments->length;
@@ -572,27 +568,27 @@ int main( int argc, char *argv[] )
     if ( UVAR_SET( sft_timestamps_files ) ) {
 
       // Check that the number of SFT timestamp files is consistent with the number of detectors
-      XLAL_CHECK_MAIN( uvar->sft_timestamps_files->length == uvar->sft_detectors->length, XLAL_EINVAL, "Number SFT timestamp files (%i) is inconsistent with number of detectors (%i)", uvar->sft_timestamps_files->length, uvar->sft_detectors->length );
+      XLAL_CHECK_MAIN( uvar->sft_timestamps_files->length == setup.detectors->length, XLAL_EINVAL, "Number SFT timestamp files (%i) is inconsistent with number of detectors (%i) in setup file '%s'", uvar->sft_timestamps_files->length, setup.detectors->length, uvar->setup_file );
 
       // Load SFT timestamps from files given by 'sft_timestamps_files'
       sft_timestamps = XLALReadMultiTimestampsFiles( uvar->sft_timestamps_files );
       XLAL_CHECK_MAIN( sft_timestamps != NULL, XLAL_EFUNC );
-      for ( size_t i = 0; i < uvar->sft_detectors->length; ++i ) {
+      for ( size_t i = 0; i < setup.detectors->length; ++i ) {
         sft_timestamps->data[i]->deltaT = uvar->sft_timebase;
-        LogPrintf( LOG_NORMAL, "Loaded SFT timestamps for detector '%s' from file '%s'\n", uvar->sft_detectors->data[i], uvar->sft_timestamps_files->data[i] );
+        LogPrintf( LOG_NORMAL, "Loaded SFT timestamps for detector '%s' from file '%s'\n", setup.detectors->data[i], uvar->sft_timestamps_files->data[i] );
       }
 
     } else {
 
       // Generate identical SFT timestamps for each detector, starting from beginning of segment list, with timebase given by 'sft_timebase'
-      sft_timestamps = XLALMakeMultiTimestamps( segments_start, XLALGPSDiff( &segments_end, &segments_start ), uvar->sft_timebase, 0, uvar->sft_detectors->length );
+      sft_timestamps = XLALMakeMultiTimestamps( segments_start, XLALGPSDiff( &segments_end, &segments_start ), uvar->sft_timebase, 0, setup.detectors->length );
       XLAL_CHECK_MAIN( sft_timestamps != NULL, XLAL_EFUNC );
-      LogPrintf( LOG_NORMAL, "Generated SFT timestamps for %i detectors, timebase = %.15g sec\n", uvar->sft_detectors->length, uvar->sft_timebase );
+      LogPrintf( LOG_NORMAL, "Generated SFT timestamps for %i detectors, timebase = %.15g sec\n", setup.detectors->length, uvar->sft_timebase );
 
     }
 
     // Generate SFT catalog for detectors 'sft_detectors' and timestamps 'sft_timestamps'
-    sft_catalog = XLALMultiAddToFakeSFTCatalog( sft_catalog, uvar->sft_detectors, sft_timestamps );
+    sft_catalog = XLALMultiAddToFakeSFTCatalog( sft_catalog, setup.detectors, sft_timestamps );
     XLAL_CHECK_MAIN( sft_catalog != NULL, XLAL_EFUNC );
 
     // Cleanup
@@ -602,17 +598,13 @@ int main( int argc, char *argv[] )
 
   // Check that all SFT catalog detectors were included in metrics computed in setup file
   {
-    MultiSFTCatalogView *sft_catalog_view = XLALGetMultiSFTCatalogView( sft_catalog );
-    XLAL_CHECK_MAIN( sft_catalog_view != NULL, XLAL_EFUNC );
-    char *setup_detectors_string = XLALConcatStringVector( setup.detectors, "," );
-    for ( size_t i = 0; i < sft_catalog_view->length; ++i ) {
-      char *det_name = XLALGetChannelPrefix( sft_catalog_view->data[i].data[0].header.name );
-      XLAL_CHECK_MAIN( XLALFindStringInVector( det_name, setup.detectors ) >= 0, XLAL_EINVAL, "Detector '%s' in SFT catalog not found in list of detectors '%s' used to compute metrics in setup file '%s'", det_name, setup_detectors_string, uvar->setup_file );
-      LogPrintf( LOG_NORMAL, "Using %u SFTs from detector '%s'\n", sft_catalog_view->data[i].length, det_name );
-      XLALFree( det_name );
-    }
-    XLALFree( setup_detectors_string );
-    XLALDestroyMultiSFTCatalogView( sft_catalog_view );
+    LALStringVector *sft_catalog_detectors = XLALListIFOsInCatalog( sft_catalog );
+    XLAL_CHECK_MAIN( sft_catalog_detectors != NULL, XLAL_EFUNC );
+    char *sft_catalog_detectors_string = XLALConcatStringVector( sft_catalog_detectors, "," );
+    XLAL_CHECK_MAIN( sft_catalog_detectors_string != NULL, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( strcmp( sft_catalog_detectors_string, setup_detectors_string ) == 0, XLAL_EINVAL, "List of detectors '%s' in SFT catalog differs from list of detectors '%s' in setup file '%s'", sft_catalog_detectors_string, setup_detectors_string, uvar->setup_file );
+    XLALDestroyStringVector( sft_catalog_detectors );
+    XLALFree( sft_catalog_detectors_string );
   }
 
   // Record SFT timebase
@@ -672,14 +664,14 @@ int main( int argc, char *argv[] )
     // Parse SFT noise PSD string vector
     MultiNoiseFloor sft_noise_psd;
     if ( UVAR_SET( sft_noise_psd ) ) {
-      XLAL_CHECK_MAIN( XLALParseMultiNoiseFloorMapped( &sft_noise_psd, sft_catalog_i_detectors, uvar->sft_noise_psd, uvar->sft_detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALParseMultiNoiseFloorMapped( &sft_noise_psd, sft_catalog_i_detectors, uvar->sft_noise_psd, setup.detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
       Fstat_opt_args.injectSqrtSX = &sft_noise_psd;
     }
 
     // Parse F-statistic assumed PSD string vector
     MultiNoiseFloor Fstat_assume_psd;
     if ( UVAR_SET( Fstat_assume_psd ) ) {
-      XLAL_CHECK_MAIN( XLALParseMultiNoiseFloorMapped( &Fstat_assume_psd, sft_catalog_i_detectors, uvar->Fstat_assume_psd, uvar->sft_detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALParseMultiNoiseFloorMapped( &Fstat_assume_psd, sft_catalog_i_detectors, uvar->Fstat_assume_psd, setup.detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
       Fstat_opt_args.injectSqrtSX = &Fstat_assume_psd;
     }
 
@@ -1023,6 +1015,7 @@ int main( int argc, char *argv[] )
 
   // Cleanup memory from setup data
   XLALWeaveSetupClear( &setup );
+  XLALFree( setup_detectors_string );
 
   // Cleanup memory from user input
   XLALDestroyUserVars();

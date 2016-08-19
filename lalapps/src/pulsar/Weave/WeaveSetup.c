@@ -161,9 +161,10 @@ int main( int argc, char *argv[] )
   // Initialise setup data
   WeaveSetup XLAL_INIT_DECL( setup );
 
-  // Copy list of detector names
+  // Copy and sort list of detector names
   setup.detectors = XLALCopyStringVector( uvar->detectors );
   XLAL_CHECK_MAIN( setup.detectors != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALSortStringVector( setup.detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Load ephemerides
   LogPrintf( LOG_NORMAL, "Loading ephemerides from '%s' and '%s' ...\n", uvar->ephem_earth, uvar->ephem_sun );

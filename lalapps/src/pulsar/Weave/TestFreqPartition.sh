@@ -10,7 +10,7 @@ echo "=== Perform non-interpolating search without frequency partitions ==="
 set -x
 ${builddir}/lalapps_Weave --freq-partitions=1 \
     --output-file=WeaveOutNoPart.fits --output-max-size=0 --output-info-per-seg --setup-file=WeaveSetup.fits \
-    --sft-detectors=H1,L1 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 --sft-timebase=1800 \
+    --sft-timebase=1800 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{refTime=1122332211; h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
     --alpha=2.72 --delta=-0.38 --freq=50/2e-2 --f1dot=-1e-9 --semi-max-mismatch=0.5 --interpolation=no --Fstat-method=DemodBest
@@ -21,7 +21,7 @@ echo "=== Perform non-interpolating search with frequency partitions ==="
 set -x
 ${builddir}/lalapps_Weave --freq-partitions=11 \
     --output-file=WeaveOutPart.fits --output-max-size=0 --output-info-per-seg --setup-file=WeaveSetup.fits \
-    --sft-detectors=H1,L1 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 --sft-timebase=1800 \
+    --sft-timebase=1800 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{refTime=1122332211; h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
     --alpha=2.72 --delta=-0.38 --freq=50/2e-2 --f1dot=-1e-9 --semi-max-mismatch=0.5 --interpolation=no --Fstat-method=DemodBest
