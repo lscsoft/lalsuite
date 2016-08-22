@@ -1095,7 +1095,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 
   if (use_optimized_v2)
     {
-      /* OPTIMIZED: */
+      /* BEGIN OPTIMIZED: */
       retLen_fromOptStep3 =
 	XLALAdaptiveRungeKutta4NoInterpolate (integrator, &seobParams,
 					      values->data, 0.,
@@ -1568,6 +1568,18 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       // maybe dynamicstmp and dynamicsHitmp should be called "intermediateDynamics(Hi)" now since they aren't so temporary anymore?
       GenerateAmpPhaseFromEOMSoln (retLen_fromOptStep2, dynamicstmp->data,
 				   &seobParams);
+      /* 
+       * We used dynamics and dynamicsHi to store solution to equations of motion.
+       *   The solution was needed to find, e.g., the time at peak freq (STEP 4).
+       *   At this point, the solution to the EOMs is no longer needed, so we
+       *   now repurpose dynamics and dynamicsHi to store amplitude and phase
+       *   information only.
+`      * This is the most efficient solution, as it frees up unused memory.
+       */
+      XLALDestroyREAL8Array (dynamics);
+      XLALDestroyREAL8Array (dynamicsHi);
+      dynamics = NULL;
+      dynamicsHi = NULL;
       retLen =
 	SEOBNRv2OptimizedInterpolatorOnlyAmpPhase (dynamicstmp, 0.,
 						   deltaT / mTScaled,

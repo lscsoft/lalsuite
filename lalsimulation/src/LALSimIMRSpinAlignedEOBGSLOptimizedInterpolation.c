@@ -173,9 +173,6 @@ SEOBNRv2OptimizedInterpolatorNoAmpPhase (REAL8Array * yin, REAL8 tinit,
 {
   int errnum = 0;
 
-  /* needed for the integration */
-  size_t dim = 4;
-
   /* needed for the final interpolation */
   gsl_spline *interp = NULL;
   gsl_interp_accel *accel = NULL;
@@ -183,11 +180,11 @@ SEOBNRv2OptimizedInterpolatorNoAmpPhase (REAL8Array * yin, REAL8 tinit,
   REAL8Array *output = NULL;
   REAL8 *times, *vector;	/* aliases */
 
-  /* note: for speed, this replaces the single CALLGSL wrapper applied before each GSL call */
+  /* needed for the integration */
+  size_t dim = 4;
+  
   interp = gsl_spline_alloc (gsl_interp_cspline, num_input_times);
   accel = gsl_interp_accel_alloc ();
-
-  //printf("heya?\n");
 
   outputlen = (int) (yin->data[num_input_times - 1] / deltat) + 1;
   output = XLALCreateREAL8ArrayL (2, dim + 1, outputlen);	/* Only dim + 1 rather than dim + 3 since we're not adding amp & phase */
