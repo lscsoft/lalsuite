@@ -499,7 +499,7 @@ static void GluePhasing(
 
 /** Setup SEOBNRv2ROMDoubleSpin model using data files installed in dir
  */
-int SEOBNRv2ROMDoubleSpin_Init(const char dir[]) {
+static int SEOBNRv2ROMDoubleSpin_Init(const char dir[]) {
   if(__lalsim_SEOBNRv2ROMDS_data.setup) {
     XLALPrintError("Error: DSEOBNRROMdata was already set up!");
     XLAL_ERROR(XLAL_EFAILED);
@@ -516,7 +516,7 @@ int SEOBNRv2ROMDoubleSpin_Init(const char dir[]) {
 }
 
 /** Helper function to check if the SEOBNRv2ROMDoubleSpin model has been initialised */
-bool SEOBNRv2ROMDoubleSpin_IsSetup(void) {
+static bool SEOBNRv2ROMDoubleSpin_IsSetup(void) {
   if(__lalsim_SEOBNRv2ROMDS_data.setup)
     return true;
   else
@@ -676,7 +676,7 @@ static void SplineData_Init(
   if(!splinedata) exit(1);
   if(*splinedata) SplineData_Destroy(*splinedata);
 
-  (*splinedata)=malloc(sizeof(SplineData));
+  (*splinedata)=XLALCalloc(1,sizeof(SplineData));
 
   // Set up B-spline basis for desired knots
   const size_t nbreak_x = ncx-2;  // must have nbreak = n-2 for cubic splines
@@ -718,7 +718,7 @@ static void SplineData_Destroy(SplineData *splinedata)
   if(splinedata->bwx) gsl_bspline_free(splinedata->bwx);
   if(splinedata->bwy) gsl_bspline_free(splinedata->bwy);
   if(splinedata->bwz) gsl_bspline_free(splinedata->bwz);
-  free(splinedata);
+  XLALFree(splinedata);
 }
 
 // Interpolate projection coefficients for amplitude and phase over the parameter space (q, chi).
@@ -803,7 +803,7 @@ static int SEOBNRROMdataDS_Init_submodel(
   if(!submodel) exit(1);
   /* Create storage for submodel structures */
   if (!*submodel)
-    *submodel = malloc(sizeof(SEOBNRROMdataDS_submodel));
+    *submodel = XLALCalloc(1,sizeof(SEOBNRROMdataDS_submodel));
   else
     SEOBNRROMdataDS_Cleanup_submodel(*submodel);
 
@@ -836,7 +836,7 @@ static int SEOBNRROMdataDS_Init_submodel(
 }
 
 /* Deallocate contents of the given SEOBNRROMdataDS_submodel structure */
-void SEOBNRROMdataDS_Cleanup_submodel(SEOBNRROMdataDS_submodel *submodel) {
+static void SEOBNRROMdataDS_Cleanup_submodel(SEOBNRROMdataDS_submodel *submodel) {
   if(submodel->cvec_amp) gsl_vector_free(submodel->cvec_amp);
   if(submodel->cvec_phi) gsl_vector_free(submodel->cvec_phi);
   if(submodel->Bamp) gsl_matrix_free(submodel->Bamp);
@@ -895,9 +895,9 @@ int SEOBNRROMdataDS_Init(SEOBNRROMdataDS *romdata, const char dir[]) {
 }
 
 /* Deallocate contents of the given SEOBNRROMdataDS structure */
-void SEOBNRROMdataDS_Cleanup(SEOBNRROMdataDS *romdata) {
+static void SEOBNRROMdataDS_Cleanup(SEOBNRROMdataDS *romdata) {
   SEOBNRROMdataDS_Cleanup_submodel((romdata)->sub1);
-  free((romdata)->sub1);
+  XLALFree((romdata)->sub1);
   (romdata)->sub1 = NULL;
   romdata->setup=0;
 }
@@ -907,7 +907,7 @@ static void SEOBNRROMdataDS_coeff_Init(SEOBNRROMdataDS_coeff **romdatacoeff, int
   if(!romdatacoeff) exit(1);
   /* Create storage for structures */
   if(!*romdatacoeff)
-    *romdatacoeff=malloc(sizeof(SEOBNRROMdataDS_coeff));
+    *romdatacoeff=XLALCalloc(1,sizeof(SEOBNRROMdataDS_coeff));
   else
     SEOBNRROMdataDS_coeff_Cleanup(*romdatacoeff);
 
@@ -919,7 +919,7 @@ static void SEOBNRROMdataDS_coeff_Init(SEOBNRROMdataDS_coeff **romdatacoeff, int
 static void SEOBNRROMdataDS_coeff_Cleanup(SEOBNRROMdataDS_coeff *romdatacoeff) {
   if(romdatacoeff->c_amp) gsl_vector_free(romdatacoeff->c_amp);
   if(romdatacoeff->c_phi) gsl_vector_free(romdatacoeff->c_phi);
-  free(romdatacoeff);
+  XLALFree(romdatacoeff);
 }
 
 /* Return the closest higher power of 2  */
@@ -1159,7 +1159,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
   }
 
   if (eta<0.01 || eta > 0.25) {
-    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMDoubleSpin is only available for spins in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv2ROMDoubleSpin is only available for eta in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
     XLAL_ERROR( XLAL_EDOM );
   }
 
@@ -1197,8 +1197,10 @@ static int SEOBNRv2ROMDoubleSpinCore(
     fHigh_geom = Mf_ROM_max;
   else if (fHigh_geom < Mf_ROM_min)
     XLAL_ERROR(XLAL_EDOM, "End frequency %g is smaller than starting frequency %g!\n", fHigh_geom, fLow_geom);
-  if (fRef_geom > Mf_ROM_max)
+  if (fRef_geom > Mf_ROM_max) {
+    XLALPrintWarning("Reference frequency Mf_ref=%g is greater than maximal frequency in ROM Mf=%g. Starting at maximal frequency in ROM.\n", fRef_geom, Mf_ROM_max);
     fRef_geom = Mf_ROM_max; // If fref > fhigh we reset fref to default value of cutoff frequency.
+  }
   if (fRef_geom < Mf_ROM_min) {
     XLALPrintWarning("Reference frequency Mf_ref=%g is smaller than lowest frequency in ROM Mf=%g. Starting at lowest frequency in ROM.\n", fLow_geom, Mf_ROM_min);
     fRef_geom = Mf_ROM_min;
@@ -1349,8 +1351,8 @@ static int SEOBNRv2ROMDoubleSpinCore(
   memset((*hptilde)->data->data, 0, npts * sizeof(COMPLEX16));
   memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
 
-  XLALUnitDivide(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
-  XLALUnitDivide(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
+  XLALUnitMultiply(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
+  XLALUnitMultiply(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
 
   COMPLEX16 *pdata=(*hptilde)->data->data;
   COMPLEX16 *cdata=(*hctilde)->data->data;
@@ -1404,11 +1406,10 @@ static int SEOBNRv2ROMDoubleSpinCore(
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   // We compute the dimensionless time correction t/M since we use geometric units.
   REAL8 t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI);
-  XLAL_PRINT_INFO("t_corr [s] = %g\n", t_corr * Mtot_sec);
 
   // Now correct phase
   for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
-    double f = freqs->data[i];
+    double f = freqs->data[i] - fRef_geom;
     int j = i + offset; // shift index for frequency series if needed
     pdata[j] *= cexp(-2*LAL_PI * I * f * t_corr);
     cdata[j] *= cexp(-2*LAL_PI * I * f * t_corr);
@@ -1897,7 +1898,7 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinHIFrequencyOfTime(
 
 /** Setup SEOBNRv2ROMDoubleSpin model using data files installed in $LAL_DATA_PATH
  */
-void SEOBNRv2ROMDoubleSpin_Init_LALDATA(void)
+static void SEOBNRv2ROMDoubleSpin_Init_LALDATA(void)
 {
   if (SEOBNRv2ROMDoubleSpin_IsSetup()) return;
 
