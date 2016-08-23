@@ -28,7 +28,7 @@
 
 struct TESTCASE_StrToGPS {
 	const char *string;
-	long int sec, ns;
+	UINT8 sec, ns;
 	const char *remainder;
 	int xlal_errno;
 };
@@ -172,7 +172,7 @@ static int test_XLALStrToGPS(void)
 		failures += runtest_XLALStrToGPS(testcase);
 
 	/* do extra tests if ints > 32 bits overflow strtol() */
-	long int rc;
+	UINT8 rc;
 	errno = 0;
 	rc = strtol("7323456785", NULL, 0);
 	if ((rc == 0) && (errno == ERANGE))
@@ -194,7 +194,7 @@ static int test_XLALStrToGPS(void)
 
 
 struct TESTCASE_GPSToStr {
-	long int sec, ns;
+	UINT8 sec, ns;
 	const char *correct;
 };
 
@@ -215,7 +215,7 @@ static int runtest_XLALGPSToStr(const struct TESTCASE_GPSToStr *testcase)
 		failure = 1;
 
 	if(lalDebugLevel || failure)
-		fprintf(stdout, "Input = LIGOTimeGPS(%ld,%ld)\n\tOutput =\t\"%s\"\n\tCorrect =\t\"%s\"\n\t\t===> %s\n", testcase->sec, testcase->ns, s, testcase->correct, failure ? "*** FAIL ***" : "Pass");
+		fprintf(stdout, "Input = LIGOTimeGPS(%" LAL_UINT8_FORMAT ",%" LAL_UINT8_FORMAT ")\n\tOutput =\t\"%s\"\n\tCorrect =\t\"%s\"\n\t\t===> %s\n", testcase->sec, testcase->ns, s, testcase->correct, failure ? "*** FAIL ***" : "Pass");
 	LALFree(s);
 
 	return failure;
