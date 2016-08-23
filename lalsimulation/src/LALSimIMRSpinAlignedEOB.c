@@ -580,6 +580,9 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   FacWaveformCoeffs hCoeffs;
   NewtonMultipolePrefixes prefixes;
 
+  /* fStart is the start frequency of the waveform generation */
+  REAL8 fStart;
+
   /* Initialize parameters */
   m1 = m1SI / LAL_MSUN_SI;
   m2 = m2SI / LAL_MSUN_SI;
@@ -599,12 +602,22 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 
   amp0 = mTotal * LAL_MRSUN_SI / r;
 
+  fStart = fMin;
+
+   /* If fMin is too high, then for safety in the initial conditions we integrate nonetheless from r=10M */
+  if (pow (10., -3. / 2.)/(LAL_PI * mTScaled) < fMin) {
+    fStart = pow (10., -3. / 2.)/(LAL_PI * mTScaled);
+    //FP    XLAL_PRINT_WARNING ("Waveform will be generated from %f and stored from %f.",fStart,fMin);
+  }
+
+  /*
   if (pow (LAL_PI * fMin * mTScaled, -2. / 3.) < 10.0)
     {
       XLAL_PRINT_WARNING
 	("Waveform generation may fail due to high starting frequency. The starting frequency corresponds to a small initial radius of %.2fM. We recommend a lower starting frequency that corresponds to an estimated starting radius > 10M.",
 	 pow (LAL_PI * fMin * mTScaled, -2.0 / 3.0));
     }
+  */
 
   /* TODO: Insert potentially necessary checks on the arguments */
 
@@ -662,6 +675,20 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
     {
       XLALDestroyREAL8Vector (values);
       XLAL_ERROR (XLAL_EFUNC);
+    }
+
+    /* Check if fMin exceeds 95% the ringdown frequency; if so, don't generate a wf */
+    REAL8 fRD = 0.95*creal (modeFreq)/(2.*LAL_PI);
+//    UNUSED REAL8 fMerger = GetNRSpinPeakOmegaV4 (2, 2, eta, 0.5*(spin1z + spin2z) + 0.5*(spin1z - spin2z)*(m1 - m2)/(m1 + m2)/(1. - 2.*eta))/(2.*LAL_PI*mTScaled);
+//    printf("fMin %.16e\n", fMin);
+//    printf("fStart %.16e\n", fStart);
+//    printf("fMerger %.16e\n", fMerger);
+//    printf("fRD %.16e\n", fRD);
+    if ( fMin > fRD ) {
+        XLALPrintError
+        ("XLAL Error - Starting frequency is above ringdown frequency!\n");
+        XLALDestroyREAL8Vector (values);
+        XLAL_ERROR (XLAL_EINVAL);
     }
 
   /* If Nyquist freq < 220 QNM freq, exit */
@@ -917,7 +944,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   /* inc is not zero in generating the final h+ and hx */
 
   if (XLALSimIMRSpinEOBInitialConditions
-      (tmpValues, m1, m2, fMin, 0, s1Data, s2Data, &seobParams,
+      (tmpValues, m1, m2, fStart, 0, s1Data, s2Data, &seobParams,
        use_optimized_v2) == XLAL_FAILURE)
     {
       XLALDestroyREAL8Vector (tmpValues);
@@ -1631,8 +1658,8 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 
 	  /* Do not need to add an if(use_optimized_v2), since this is strictly unoptimized code (see if(use_optimized_v2) above) */
 	  omega =
-	    XLALSimIMRSpinAlignedEOBCalcOmega (values->data, &seobParams);
-	  v = cbrt (omega);
+        XLALSimIMRSpinAlignedEOBCalcOmega (values->data, &seobParams);
+    v = cbrt (omega);
 
 	  /* Calculate the value of the Hamiltonian */
 	  cartPosVec.data[0] = values->data[0];
@@ -1678,6 +1705,58 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       sigImVec->data[i + hiSRndx] = sigImHi->data[i * resampFac];
     }
 
+    /* Cut wf if fMin requested by user was high */
+    INT4 kMin = 0;
+    if ( fStart != fMin ) {
+        REAL8 finst;
+        gsl_spline *splineRe = NULL;
+        gsl_interp_accel *accRe = NULL;
+        gsl_spline *splineIm = NULL;
+        gsl_interp_accel *accIm = NULL;
+        REAL8Vector *tmpRe = XLALCreateREAL8Vector(sigReVec->length), *tmpIm = XLALCreateREAL8Vector(sigReVec->length);
+        for ( i=0; i < (INT4) sigReVec->length; i++) {
+            tmpRe->data[i] = sigReVec->data[i] / amp0;
+            tmpIm->data[i] = sigImVec->data[i] / amp0;
+        }
+        splineRe = gsl_spline_alloc (gsl_interp_cspline, sigReVec->length);
+        splineIm = gsl_spline_alloc (gsl_interp_cspline, sigImVec->length);
+        accRe = gsl_interp_accel_alloc ();
+        accIm = gsl_interp_accel_alloc ();
+        REAL8 dRe, dIm;
+        REAL8Vector *timeList;
+        timeList = XLALCreateREAL8Vector (sigReVec->length);
+        for ( i=0; i < (INT4) sigReVec->length; i++) {
+            timeList->data[i] = i*deltaT/mTScaled;
+        }
+        gsl_spline_init (splineRe, timeList->data, tmpRe->data, tmpRe->length);
+        gsl_spline_init (splineIm, timeList->data, tmpIm->data, tmpIm->length);
+        REAL8 norm;
+        for ( i=1; i < (INT4) tmpRe->length - 1; i++) {
+            norm = tmpRe->data[i]*tmpRe->data[i] + tmpIm->data[i]*tmpIm->data[i];
+            if ( norm > 0. ) {
+                dRe = gsl_spline_eval_deriv (splineRe, timeList->data[i], accRe);
+                dIm = gsl_spline_eval_deriv (splineIm, timeList->data[i], accIm);
+                finst = (dRe*tmpIm->data[i] - dIm*tmpRe->data[i])/norm;
+//                printf("%.16e %.16e\n", timeList->data[i], finst);
+                finst = finst/(2.*LAL_PI*mTScaled);
+//                printf("%.16e %.16e %.16e\n", timeList->data[i], finst, fMin);
+                if ( finst > fMin ) {
+                    kMin = i;
+                    break;
+                }
+            }
+            else {
+                continue;
+            }
+        }
+        gsl_spline_free( splineRe );
+        gsl_interp_accel_free( accRe );
+        gsl_spline_free( splineIm );
+        gsl_interp_accel_free( accIm );
+        XLALDestroyREAL8Vector( tmpRe );
+        XLALDestroyREAL8Vector( tmpIm );
+    }
+
   /*
    * STEP 9) Generate full IMR hp and hx waveforms
    */
@@ -1685,10 +1764,10 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   /* For now, let us just try to create a waveform */
   REAL8TimeSeries *hPlusTS =
     XLALCreateREAL8TimeSeries ("H_PLUS", &tc, 0.0, deltaT, &lalStrainUnit,
-			       sigReVec->length);
+			       sigReVec->length - kMin);
   REAL8TimeSeries *hCrossTS =
     XLALCreateREAL8TimeSeries ("H_CROSS", &tc, 0.0, deltaT, &lalStrainUnit,
-			       sigImVec->length);
+			       sigImVec->length - kMin);
 
   /* TODO change to using XLALSimAddMode function to combine modes */
   /* For now, calculate -2Y22 * h22 + -2Y2-2 * h2-2 directly (all terms complex) */
@@ -1704,13 +1783,13 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   z1 = -cimag (MultSphHarmM) - cimag (MultSphHarmP);
   z2 = creal (MultSphHarmM) - creal (MultSphHarmP);
 
-  for (i = 0; i < (INT4) sigReVec->length; i++)
+  for (i = kMin; i < (INT4) sigReVec->length; i++)
     {
       REAL8 x1 = sigReVec->data[i];
       REAL8 x2 = sigImVec->data[i];
 
-      hPlusTS->data->data[i] = (x1 * y_1) + (x2 * y_2);
-      hCrossTS->data->data[i] = (x1 * z1) + (x2 * z2);
+      hPlusTS->data->data[i - kMin] = (x1 * y_1) + (x2 * y_2);
+      hCrossTS->data->data[i - kMin] = (x1 * z1) + (x2 * z2);
     }
 
   /* Point the output pointers to the relevant time series and return */
