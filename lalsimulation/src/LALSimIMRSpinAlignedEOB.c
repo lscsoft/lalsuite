@@ -143,7 +143,7 @@ XLALSpinAlignedHiSRStopCondition (double UNUSED t, /**< UNUSED */
 				  void UNUSED * funcParams     /**< physical parameters */
   )
 {
-  if (dvalues[2] >= 0. || isnan (dvalues[3]) || isnan (dvalues[2])
+  if (dvalues[0] >= 0. || dvalues[2] >= 0. || isnan (dvalues[3]) || isnan (dvalues[2])
       || isnan (dvalues[1]) || isnan (dvalues[0]))
     {
       return 1;
