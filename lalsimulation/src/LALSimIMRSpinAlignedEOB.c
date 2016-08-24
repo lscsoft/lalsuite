@@ -327,12 +327,11 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
 
   ret =
     XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, phiC, deltaT, m1SI,
-					 m2SI, fMin, r, inc, spin1z, spin2z,
+					 m2SI, fMin, r, inc, spin1z, spin2z, SpinAlignedEOBversion,
 					 comp1, comp2, k2Tidal1, k2Tidal2,
 					 omega02Tidal1, omega02Tidal2,
 					 k3Tidal1, k3Tidal2, omega03Tidal1,
-					 omega03Tidal2,
-					 SpinAlignedEOBversion);
+					 omega03Tidal2);
   return ret;
 }
 
@@ -375,6 +374,8 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 				     /**<< z-component of spin-1, dimensionless */
 				     const REAL8 spin2z,
 				      /**<< z-component of spin-2, dimensionless */
+                     UINT4 SpinAlignedEOBversion,
+                     /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4 */
 				     const REAL8 comp1,
 			   /**<< compactness of body 1 (for NS) */
 				     const REAL8 comp2,
@@ -393,10 +394,8 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 			      /**<< adiabatic octupole Love number for body 2 (for NS) */
 				     const REAL8 omega03Tidal1,
 				   /**<< octupole f-mode freq for body 1 (for NS) */
-				     const REAL8 omega03Tidal2,
+				     const REAL8 omega03Tidal2
 				   /**<< octupole f-mode freq for body 2 (for NS) */
-				     UINT4 SpinAlignedEOBversion
-					      /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4 */
   )
 {
   INT4 use_tidal = 0;
