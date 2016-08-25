@@ -113,11 +113,12 @@ my_gsl_error (const char *reason, const char *file, int line, int gsl_errno)
 }
 
 
-/* Custom error handler that ignores underflow errors. */
+/* Custom error handler that ignores underflow errors and other errors
+ * that are a consequence of underflow errors. */
 static void
 ignore_underflow (const char *reason, const char *file, int line, int gsl_errno)
 {
-    if (gsl_errno != GSL_EUNDRFLW)
+    if (gsl_errno != GSL_EUNDRFLW && gsl_errno != GSL_EMAXITER && gsl_errno != GSL_EROUND && gsl_errno != GSL_ESING && gsl_errno != GSL_EDIVERGE)
         old_handler(reason, file, line, gsl_errno);
 }
 
@@ -1584,10 +1585,14 @@ static void test_distance_moments_to_parameters_round_trip(double mean, double s
     static const double min_mean_std = M_SQRT3 + 0.1;
     double mu, sigma, norm, mean2, std2, norm2;
 
+    old_handler = gsl_set_error_handler(ignore_underflow);
+
     bayestar_distance_moments_to_parameters(
         mean, std, &mu, &sigma, &norm);
     bayestar_distance_parameters_to_moments(
         mu, sigma, &mean2, &std2, &norm2);
+
+    gsl_set_error_handler(old_handler);
 
     if (gsl_finite(mean / std) && mean / std >= min_mean_std)
     {
@@ -1625,8 +1630,6 @@ static void test_distance_moments_to_parameters_round_trip(double mean, double s
 
 int bayestar_test(void)
 {
-    old_handler = gsl_set_error_handler(ignore_underflow);
-
     for (double re = -1; re < 1; re += 0.1)
         for (double im = -1; im < 1; im += 0.1)
             test_cabs2(re + im * 1.0j);
@@ -1676,6 +1679,7 @@ int bayestar_test(void)
         log_radial_integrator *integrator = log_radial_integrator_init(
             r1, r2, k, pmax, default_log_radial_integrator_size);
 
+        old_handler = gsl_set_error_handler(ignore_underflow);
         gsl_test(!integrator, "testing that integrator object is non-NULL");
         if (integrator)
         {
@@ -1693,6 +1697,7 @@ int bayestar_test(void)
                         "r1=%g, r2=%g, p=%g, b=%g, k=%d, x=%g, y=%g)", r1, r2, p, b, k, x, y);
                 }
             }
+            gsl_set_error_handler(old_handler);
             log_radial_integrator_free(integrator);
         }
     }
@@ -1700,8 +1705,6 @@ int bayestar_test(void)
     for (double mean = 0; mean < 100; mean ++)
         for (double std = 0; std < 100; std ++)
             test_distance_moments_to_parameters_round_trip(mean, std);
-
-    gsl_set_error_handler(old_handler);
 
     return gsl_test_summary();
 }
