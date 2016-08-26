@@ -135,6 +135,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv2ROMDoubleSpin.c \
 	LALSimIMRSEOBNRv2ROMDoubleSpinHI.c \
 	LALSimIMRSEOBNRv2ChirpTime.c \
+  LALSimIMRSEOBNRv4ROM.c \
 	LALSimIMREOBNRv2HMROM.c \
 	LALSimIMRPhenom.c \
 	LALSimIMRPhenomC.c \
