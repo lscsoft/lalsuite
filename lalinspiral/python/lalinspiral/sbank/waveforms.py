@@ -203,11 +203,6 @@ class AlignedSpinTemplate(object):
     def _get_isco_f_final(self):
         return 6**-1.5 / (PI * (self.m1 + self.m2) * MTSUN_SI)  # ISCO
 
-    def _get_imr_f_final(self):
-        return lalsim.SimInspiralGetFrequency(self.m1*lal.MSUN_SI,
-                                self.m2*lal.MSUN_SI, 0., 0., self.spin1z, 0, 0,
-                                self.spin2z, lalsim.fSEOBNRv2RD)
-
     def _get_chirp_dur(self):
         return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chieff, 7)
@@ -348,7 +343,8 @@ class IMRAlignedSpinTemplate(AlignedSpinTemplate):
         return self._get_imr_dur()
 
     def _get_f_final(self):
-        return self._get_imr_f_final()
+        # assume IMR waveforms have their own physical termination
+        return self._fhigh_max or 4096.
 
 
 class InspiralAlignedSpinTemplate(AlignedSpinTemplate):
@@ -693,7 +689,8 @@ class IMRPrecessingSpinTemplate(PrecessingSpinTemplate):
         return self._get_imr_dur()
 
     def _get_f_final(self):
-        return self._get_imr_f_final()
+        # assume IMR waveforms have their own physical termination
+        return self._fhigh_max or 4096.
 
 
 class InspiralPrecessingSpinTemplate(PrecessingSpinTemplate):
