@@ -74,7 +74,7 @@ class Event():
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
-def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",basepath="./",downloadpsd=True):
+def readLValert(threshold_snr=None,gid=None,flow=40.0,gracedb="gracedb",basepath="./",downloadpsd=True):
   """
   Parse LV alert file, containing coinc, sngl, coinc_event_map.
   and create a list of Events as input for pipeline
@@ -137,13 +137,22 @@ def readLValert(SNRthreshold=0,gid=None,flow=40.0,gracedb="gracedb",basepath="./
       strlen = p.stdout.read()
       dur.append(pow(2.0, ceil( log(max(8.0,float(strlen.splitlines()[2].split()[5]) + 2.0), 2) ) ) )
       srate.append(pow(2.0, ceil( log(float(strlen.splitlines()[1].split()[5]), 2) ) ) * 2 )
+      snr = e.snr
+      eff_dist = e.eff_distance
+      if threshold_snr is not None:
+          if snr > threshold_snr:
+              horizon_distance.append(eff_dist * snr/threshold_snr)
+          else:
+              horizon_distance.append(2 * eff_dist)
     if max(srate)<srate_psdfile:
       srate = max(srate)
     else:
       srate = srate_psdfile
       fhigh = srate_psdfile/2.0 * 0.95 # Because of the drop-off near Nyquist of the PSD from gstlal
-    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = max(dur), srate = srate, trigSNR = trigSNR, fhigh = fhigh)
-    if(coinc.snr>SNRthreshold): output.append(ev)
+    horizon_distance = max(horizon_distance) if len(horizon_distance) > 0 else None
+    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = max(dur), srate = srate,
+             trigSNR = trigSNR, fhigh = fhigh, horizon_distance=horizon_distance)
+    output.append(ev)
 
   print "Found %d coinc events in table." % len(coinc_events)
   os.chdir(cwd)
@@ -842,7 +851,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if self.config.has_option('input','ignore-gracedb-psd'):
         if self.config.getboolean('input','ignore-gracedb-psd'):
           downloadgracedbpsd=False
-      events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),basepath=self.basepath,downloadpsd=downloadgracedbpsd)
+      threshold_snr = None
+      if not self.config.has_option('engine','distance-max') and self.config.has_option('input','threshold-snr'):
+        threshold_snr=self.config.getfloat('input','threshold-snr')
+      events = readLValert(gid=gid,flow=flow,gracedb=self.config.get('condor','gracedb'),basepath=self.basepath,downloadpsd=downloadgracedbpsd,threshold_snr=threshold_snr)
     else: gid=None
     # pipedown-database
     if self.config.has_option('input','gstlal-db'):
