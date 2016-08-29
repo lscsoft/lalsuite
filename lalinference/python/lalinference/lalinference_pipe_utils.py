@@ -28,7 +28,7 @@ class Event():
   Represents a unique event to run on
   """
   new_id=itertools.count().next
-  def __init__(self,trig_time=None,SimInspiral=None,SimBurst=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None,trigSNR=None,fhigh=None):
+  def __init__(self,trig_time=None,SimInspiral=None,SimBurst=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None,trigSNR=None,fhigh=None,horizon_distance=None):
     self.trig_time=trig_time
     self.injection=SimInspiral
     self.burstinjection=SimBurst
@@ -47,6 +47,7 @@ class Event():
     self.srate = srate
     self.trigSNR = trigSNR
     self.fhigh = fhigh
+    self.horizon_distance = horizon_distance
     if event_id is not None:
         self.event_id=event_id
     else:
@@ -131,6 +132,7 @@ def readLValert(threshold_snr=None,gid=None,flow=40.0,gracedb="gracedb",basepath
     these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
     dur=[]
     srate=[]
+    horizon_distance=[]
     for e in these_sngls:
       # Review: Replace this with a call to LALSimulation function at some point
       p=Popen(["lalapps_chirplen","--flow",str(flow),"-m1",str(e.mass1),"-m2",str(e.mass2)],stdout=PIPE, stderr=PIPE, stdin=PIPE)
@@ -1169,6 +1171,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       prenode.set_srate(srate)
     if event.trigSNR:
       node.set_trigSNR(event.trigSNR)
+    if event.horizon_distance:
+        node.set_horizon_distance(event.horizon_distance)
     if self.dataseed:
       node.set_dataseed(self.dataseed+event.event_id)
       prenode.set_dataseed(self.dataseed+event.event_id)
@@ -1604,6 +1608,9 @@ class EngineNode(pipeline.CondorDAGNode):
 
   def set_trigSNR(self,trigSNR):
     self.add_var_opt('trigger-snr',str(trigSNR))
+
+  def set_horizon_distance(self,horizon_distance):
+    self.add_var_opt('--distance-max',str(horizon_distance))
 
   def set_dataseed(self,seed):
     self.add_var_opt('dataseed',str(seed))
