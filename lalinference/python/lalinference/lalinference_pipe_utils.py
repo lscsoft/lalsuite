@@ -1610,7 +1610,7 @@ class EngineNode(pipeline.CondorDAGNode):
     self.add_var_opt('trigger-snr',str(trigSNR))
 
   def set_horizon_distance(self,horizon_distance):
-    self.add_var_opt('--distance-max',str(horizon_distance))
+    self.add_var_opt('distance-max',str(horizon_distance))
 
   def set_dataseed(self,seed):
     self.add_var_opt('dataseed',str(seed))
