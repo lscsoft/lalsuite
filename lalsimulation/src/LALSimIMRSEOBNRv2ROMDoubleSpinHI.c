@@ -1434,13 +1434,13 @@ static int SEOBNRv2ROMDoubleSpinCore(
  *
  * \brief C code for SEOBNRv2 reduced order model
  * (double spin high resolution low mass version).
- * See CQG 31 195010, 2014, arXiv:1402.4146 for the basic approach.
+ * See M. Pürrer ,CQG 31 195010, 2014, arXiv:1402.4146 for the basic approach.
  * Further details in PRD 93, 064041, 2016, arXiv:1512.02248.
  *
  * This is a frequency domain model that approximates the time domain SEOBNRv2 model.
  *
- * The binary data HDF5 file (SEOBNRv2ROM_DS_HI_vXYZ.hdf5) and the gsl-binary data files (SEOBNRv2ROM_DS_HI_vXYZ.tar)
- * will be available at on LIGO clusters in /home/cbc/.
+ * The binary data HDF5 file (SEOBNRv2ROM_DS_HI_v1.0.hdf5)
+ * is available at on LIGO clusters in /home/cbc/.
  * Make sure the files are in your LAL_DATA_PATH.
  *
  * @note Note that due to its construction the iFFT of the ROM has a small (~ 20 M) offset
@@ -1449,7 +1449,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
  * @note Parameter ranges:
  *   * 0.01 <= eta <= 0.25
  *   * -1 <= chi_i <= 0.99
- *   * Mtot >= 3 Msun
+ *   * Mtot >= 2 Msun
  *
  *  Aligned component spins chi1, chi2.
  *  Symmetric mass-ratio eta = m1*m2/(m1+m2)^2.

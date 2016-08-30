@@ -326,6 +326,8 @@ typedef enum tagApproximant {
                              * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv2_ROM_DoubleSpin_HI, /**< High resolution low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv2
                                 * @remarks Implemented in lalsimulation (frequency domain). */
+   Lackey_Tidal_2013_SEOBNRv2_ROM, /**< Frequency domain tidal model based on reduced order model of SEOBNRv2
+                                * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4
                                 * @remarks Implemented in lalsimulation (frequency domain). */
    HGimri,		/**< Time domain inspiral-merger-ringdown waveform for quasi-circular intermediate mass-ratio inspirals [Huerta & Gair arXiv:1009.1985]
