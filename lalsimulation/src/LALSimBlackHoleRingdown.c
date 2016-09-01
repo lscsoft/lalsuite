@@ -668,6 +668,37 @@ int XLALSimBlackHoleRingdown(REAL8TimeSeries ** hplus,
     return 0;
 }
 
+REAL8 XLALSimRadiusKerrISCO ( REAL8 a ) {
+    REAL8 z1, z2;
+    if ( 1. - a * a < 0. || 1. + a < 0. || 1. - a < 0. ) {
+        XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    z1 = 1. + pow(1. - a * a, 1. / 3.) * (pow(1. + a, 1. / 3.) + pow(1. - a, 1. / 3.));
+    z2 = sqrt(3. * a * a + z1 * z1);
+    if ( (3. - z1) * (3. + z1 + 2. * z2) < 0. ) {
+        XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    return 3. + z2 - (a < 0. ? -1. : 1.) * sqrt((3. - z1) * (3. + z1 + 2. * z2));
+}
+
+REAL8 XLALSimEnergyKerrISCO ( REAL8 rISCO ) {
+    if ( 1. - 2. / (3. * rISCO) < 0. ) {
+        XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    return sqrt(1. - 2. / (3. * rISCO));
+}
+
+REAL8 XLALSimAngMomKerrISCO ( REAL8 rISCO ) {
+    if ( 3. * rISCO - 2. < 0. ) {
+        XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    return 2. / (3. * sqrt(3.)) * (1. + 2. * sqrt(3. * rISCO - 2.));
+}
+
 /**
  * Computes the final mass and spin of the black hole resulting from merger.
  * They are given by fittings of NR simulations results. Specifically,
@@ -697,32 +728,10 @@ INT4 XLALSimIMREOBFinalMassSpin(REAL8 * finalMass,
     static const REAL8 root9ovr8minus1 = -0.057190958417936644;
     static const REAL8 root12 = 3.4641016151377544;
 
-    /* Constants used for the spinning EOB model */
-    /* See http://arxiv.org/pdf/1206.3803.pdf */
-    static const REAL8 p0 = 0.04826;
-    static const REAL8 p1 = 0.01559;
-    static const REAL8 p2 = 0.00485;
-    /* See http://arxiv.org/pdf/0904.2577.pdf */
-    static const REAL8 t0 = -2.8904;
-    static const REAL8 t2 = -3.5171;
-    static const REAL8 t3 = 2.5763;
-    static const REAL8 s4 = -0.1229;
-    static const REAL8 s5 = 0.4537;
-    /* See https://dcc.ligo.org/T1400476 */
-    static const REAL8 s9 = 2.763032781169752;
-    static const REAL8 s8 = -2.6081232221537394;
-    static const REAL8 s7 = 1.2657111864932808;
-    static const REAL8 s6 = -0.7835007857591175;
-    static const REAL8 s5v2 = -0.3264724801557159;
-    static const REAL8 s4v2 = -0.27506210736300474;
-    static const REAL8 t0v2 = -2.649826989941522;
-    static const REAL8 t3v2 = 3.910637513328723;
-    static const REAL8 t2v2 = -3.850983155206041;
-
     REAL8 totalMass;
     REAL8 eta, eta2, eta3;
     REAL8 a1, a2, chiS, q;
-    REAL8 z1, z2, rISCO, eISCO, LISCO, atl, tmpVar, csi, S1, S2, Seff, atot, aeff, physpart, fitpart;
+    REAL8 rISCO, eISCO, LISCO, atl, tmpVar, csi, S1, S2, Seff, atot, aeff, physpart, fitpart;
 
     /* get a local copy of the intrinsic parameters */
     totalMass = mass1 + mass2;
@@ -731,6 +740,7 @@ INT4 XLALSimIMREOBFinalMassSpin(REAL8 * finalMass,
     eta3 = eta2 * eta;
 //printf("Approximant: %d\n",approximant);
 
+    /* Coefficients entering the final mass formulas are defined in LALSimBlackHoleRingdown.h */
     switch (approximant) {
     case EOBNRv2:
     case EOBNRv2HM:
@@ -750,31 +760,19 @@ INT4 XLALSimIMREOBFinalMassSpin(REAL8 * finalMass,
         a1 = spin1[Z_COORDINATE];
         a2 = spin2[Z_COORDINATE];
         q = mass1 / mass2;
-        double InvQ = 1./q;
-        double OnePlusInvQ = 1. + InvQ;
-        atl = (a1 + a2 * InvQ * InvQ) / OnePlusInvQ / OnePlusInvQ;
-        tmpVar = (a1 + a2 * InvQ * InvQ) / (1. + InvQ * InvQ);
-        if ( 1. - atl * atl < 0. || 1. + atl < 0. || 1. - atl < 0. ) {
-            XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
-            XLAL_ERROR(XLAL_EINVAL);
-        }
-        z1 = 1. + pow(1. - atl * atl, 1. / 3.) * (pow(1. + atl, 1. / 3.) + pow(1. - atl, 1. / 3.));
-        z2 = sqrt(3. * atl * atl + z1 * z1);
-        if ( (3. - z1) * (3. + z1 + 2. * z2) < 0. ) {
-            XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
-            XLAL_ERROR(XLAL_EINVAL);
-        }
-        rISCO = 3. + z2 - (atl < 0. ? -1. : 1.) * sqrt((3. - z1) * (3. + z1 + 2. * z2));
-        if ( 1. - 2. / (3. * rISCO) < 0. ) {
-            XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
-            XLAL_ERROR(XLAL_EINVAL);
-        }
-        eISCO = sqrt(1. - 2. / (3. * rISCO));
-        *finalMass = 1. - ((1. - eISCO) * eta + 16. * eta * eta * (0.00258 - 0.0773 / (1. / ((1. + InvQ * InvQ) / OnePlusInvQ / OnePlusInvQ) * atl - 1.6939) - 0.25 * (1. - eISCO)));
+        REAL8 InvQ = 1./q;
+        REAL8 OnePlusInvQ = 1. + InvQ;
+        REAL8 InvQ2 = InvQ * InvQ;
+            
+        atl = (a1 + a2 * InvQ2) / (OnePlusInvQ * OnePlusInvQ);
+        tmpVar = (a1 + a2 * InvQ2) / (1. + InvQ2);
+        rISCO = XLALSimRadiusKerrISCO( atl );
+        eISCO = XLALSimEnergyKerrISCO( rISCO );
+        *finalMass = 1. - ((1. - eISCO) * eta + 16. * eta * eta * (0.00258 - 0.0773 / (1. / ((1. + InvQ2) / (OnePlusInvQ * OnePlusInvQ)) * atl - 1.6939) - 0.25 * (1. - eISCO)));
         if ( approximant == SEOBNRv2 ) {
             /* See page 3 of the dcc document T1400476-v3, quantity aFinal, for expression below. */
-            *finalSpin = tmpVar + tmpVar * eta * (s9 * eta * tmpVar * tmpVar + s8 * eta * eta * tmpVar + s7 * eta * tmpVar + s6 * tmpVar * tmpVar + s4v2 * tmpVar + s5v2 * eta + t0v2)
-            + eta * (2. * sqrt(3.) + t2v2 * eta + t3v2 * eta * eta);
+            *finalSpin = tmpVar + tmpVar * eta * (s9coeff * eta * tmpVar * tmpVar + s8coeff * eta * eta * tmpVar + s7coeff * eta * tmpVar + s6coeff * tmpVar * tmpVar + s4v2coeff * tmpVar + s5v2coeff * eta + t0v2coeff)
+            + eta * (2. * sqrt(3.) + t2v2coeff * eta + t3v2coeff * eta * eta);
         }
         else {
             /* Final spin formula from Barausse+16 http://arxiv.org/pdf/1605.01938.pdf */
@@ -782,52 +780,14 @@ INT4 XLALSimIMREOBFinalMassSpin(REAL8 * finalMass,
             S1 = mass1 * mass1 * a1;
             S2 = mass2 * mass2 * a2;
             Seff = (1. + csi * InvQ) * S1 + (1. + csi * q) * S2;
-            aeff = Seff / totalMass / totalMass;
-            atot = (S1 + S2) / totalMass / totalMass;
-            if ( 1. - aeff * aeff < 0. || 1. + aeff < 0. || 1. - aeff < 0. ) {
-                XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
-                XLAL_ERROR(XLAL_EINVAL);
-            }
-            z1 = 1. + pow(1. - aeff * aeff, 1. / 3.) * (pow(1. + aeff, 1. / 3.) + pow(1. - aeff, 1. / 3.));
-            z2 = sqrt(3. * aeff * aeff + z1 * z1);
-            if ( (3. - z1) * (3. + z1 + 2. * z2) < 0. ) {
-                XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
-                XLAL_ERROR(XLAL_EINVAL);
-            }
-            rISCO = 3. + z2 - (aeff < 0. ? -1. : 1.) * sqrt((3. - z1) * (3. + z1 + 2. * z2));
-            if ( 1. - 2. / (3. * rISCO) < 0. ) {
-                XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
-                XLAL_ERROR(XLAL_EINVAL);
-            }
-            eISCO = sqrt(1. - 2. / (3. * rISCO));
-            if ( 3. * rISCO - 2. < 0. ) {
-                XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
-                XLAL_ERROR(XLAL_EINVAL);
-            }
-            LISCO = 2. / (3. * sqrt(3.)) * (1. + 2. * sqrt(3. * rISCO - 2.));
+            aeff = Seff / (totalMass * totalMass);
+            atot = (S1 + S2) / (totalMass * totalMass);
+            rISCO = XLALSimRadiusKerrISCO( aeff );
+            eISCO = XLALSimEnergyKerrISCO( rISCO );
+            LISCO = XLALSimAngMomKerrISCO( rISCO );
             physpart = atot + eta * (LISCO - 2. * atot * (eISCO - 1.));
-            /* Table I of https://arxiv.org/pdf/1605.01938v2.pdf */
-            static const REAL8 k00 = -5.977230835551017; // Solving Eq.(11) of https://arxiv.org/pdf/1605.01938v2.pdf
-            static const REAL8 k01 = 3.39221;
-            static const REAL8 k02 = 4.48865;
-            static const REAL8 k03 = -5.77101;
-            static const REAL8 k04 = -13.0459;
-            static const REAL8 k10 = 35.1278;
-            static const REAL8 k11 = -72.9336;
-            static const REAL8 k12 = -86.0036;
-            static const REAL8 k13 = 93.7371;
-            static const REAL8 k14 = 200.975;
-            static const REAL8 k20 = - 146.822;
-            static const REAL8 k21 = 387.184;
-            static const REAL8 k22 = 447.009;
-            static const REAL8 k23 = -467.383;
-            static const REAL8 k24 = -884.339;
-            static const REAL8 k30 = 223.911;
-            static const REAL8 k31 = -648.502;
-            static const REAL8 k32 = -697.177;
-            static const REAL8 k33 = 753.738;
-            static const REAL8 k34 = 1166.89;
-            
+
+            /* The k00, k01, ... coefficients are defined in LALSimBlackHoleRingdown.h */
             REAL8 eta4 = eta * eta3;
             REAL8 eta5 = eta * eta4;
             if (fabs(aeff) > 0.) {
@@ -854,10 +814,10 @@ INT4 XLALSimIMREOBFinalMassSpin(REAL8 * finalMass,
 
         chiS = 0.5 * (a1 + a2);
         q = mass1 / mass2;
-        *finalMass = 1. - p0 + 2. * p1 * chiS + 4. * p2 * chiS * chiS;
+        *finalMass = 1. - p0coeff + 2. * p1coeff * chiS + 4. * p2coeff * chiS * chiS;
         *finalMass = 1. + (0.9515 - 1.0) * 4. * eta - 0.013 * 16. * eta2 * (a1 + a2);
         tmpVar = (a1 + a2 / q / q) / (1. + 1 / q / q);
-        *finalSpin = tmpVar + tmpVar * eta * (s4 * tmpVar + s5 * eta + t0) + eta * (2. * sqrt(3.) + t2 * eta + t3 * eta * eta);
+        *finalSpin = tmpVar + tmpVar * eta * (s4coeff * tmpVar + s5coeff * eta + t0coeff) + eta * (2. * sqrt(3.) + t2coeff * eta + t3coeff * eta * eta);
         break;
     default:
         XLALPrintError("XLAL Error %s - Unsupported approximant.\n", __func__);
