@@ -225,7 +225,7 @@ XLALSimIMRSpinAlignedEOBPeakFrequency (REAL8 m1SI,
 				       const REAL8 spin2z,
 				/**< z-component of the dimensionless spin of object 2 */
 				       UINT4 SpinAlignedEOBversion
-				/**< 1 for SEOBNRv1, 2 for SEOBNRv2 */
+				/**< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4 */
   )
 {
 
@@ -281,9 +281,12 @@ XLALSimIMRSpinAlignedEOBPeakFrequency (REAL8 m1SI,
     case 2:
       nrOmega = GetNRSpinPeakOmegav2 (ll, mm, eta, aa);
       break;
+    case 4:
+      nrOmega = GetNRSpinPeakOmegaV4 (ll, mm, eta, aa);
+      break;
     default:
       XLALPrintError
-	("XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n",
+	("XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1, v2 and v4 are available.\n",
 	 __func__);
       XLAL_ERROR (XLAL_EINVAL);
       break;

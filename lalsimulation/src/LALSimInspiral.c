@@ -4771,6 +4771,7 @@ double XLALSimInspiralGetFrequency(
         case fEOBNRv2RD:
         case fSEOBNRv1RD:
         case fSEOBNRv2RD:
+        case fSEOBNRv4RD:
             // FIXME: Probably shouldn't hard code the modes.
             if ( freqFunc == fEOBNRv2HMRD )
             {
@@ -4785,6 +4786,7 @@ double XLALSimInspiralGetFrequency(
                 if (freqFunc == fEOBNRv2RD) approximant = EOBNRv2;
                 if (freqFunc == fSEOBNRv1RD) approximant = SEOBNRv1;
                 if (freqFunc == fSEOBNRv2RD) approximant = SEOBNRv2;
+                if (freqFunc == fSEOBNRv4RD) approximant = SEOBNRv4;
             }
             if ( freqFunc == fEOBNRv2RD || freqFunc == fEOBNRv2HMRD )
             {
@@ -4815,12 +4817,13 @@ double XLALSimInspiralGetFrequency(
 
         case fSEOBNRv1Peak:
         case fSEOBNRv2Peak:
+        case fSEOBNRv4Peak:
             if ( freqFunc == fSEOBNRv1Peak ) SpinAlignedEOBVersion = 1;
             if ( freqFunc == fSEOBNRv2Peak ) SpinAlignedEOBVersion = 2;
+            if ( freqFunc == fSEOBNRv4Peak ) SpinAlignedEOBVersion = 4;
             freq = XLALSimIMRSpinAlignedEOBPeakFrequency(m1, m2, S1z, S2z,
                     SpinAlignedEOBVersion);
             break;
-
         default:
             XLALPrintError("Unsupported approximant\n");
             XLAL_ERROR(XLAL_EINVAL);
@@ -4916,8 +4919,6 @@ double XLALSimInspiralGetFinalFreq(
             break;
 
         case SEOBNRv2:
-        case SEOBNRv4:
-        case SEOBNRv4_opt:
         case SEOBNRv2_opt:
             /* Check that the transverse spins are zero */
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
@@ -4928,6 +4929,17 @@ double XLALSimInspiralGetFinalFreq(
             freqFunc = fSEOBNRv2RD;
             break;
 
+        case SEOBNRv4:
+        case SEOBNRv4_opt:
+            /* Check that the transverse spins are zero */
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+            {
+                XLALPrintError("Non-zero transverse spins were given, but this is a non-precessing approximant.\n");
+                XLAL_ERROR(XLAL_EINVAL);
+            }
+            freqFunc = fSEOBNRv4RD;
+            break;
+            
         case IMRPhenomA:
             /* Check that spins are zero */
             if( !checkSpinsZero(S1x, S1y, S1z, S2x, S2y, S2z) )
