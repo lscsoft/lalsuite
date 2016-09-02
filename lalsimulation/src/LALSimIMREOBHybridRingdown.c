@@ -55,6 +55,42 @@
 #else
 #define UNUSED
 #endif
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+/* Fit coefficients that enter amplitude and phase of the RD signal of SEOBNRv4 */
+/* Eq. (28) of https://dcc.ligo.org/T1600383 */
+static const REAL8 A1coeff00 = 0.0830664;
+static const REAL8 A1coeff01 = -0.0196758;
+static const REAL8 A1coeff02 = -0.0136459;
+static const REAL8 A1coeff10 = 0.0612892;
+static const REAL8 A1coeff11 = 0.00146142;
+static const REAL8 A1coeff20 = -0.0893454;
+
+/* Eq. (29) of https://dcc.ligo.org/T1600383 */
+static const REAL8 A2coeff00 = -0.623953;
+static const REAL8 A2coeff01 = -0.371365;
+static const REAL8 A2coeff10 = 1.39777;
+static const REAL8 A2coeff11 = 2.40203;
+static const REAL8 A2coeff20 = -1.82173;
+static const REAL8 A2coeff21 = -5.25339;
+
+/* Eq. (36) of https://dcc.ligo.org/T1600383 */
+static const REAL8 P1coeff00 = 0.147584;
+static const REAL8 P1coeff01 = 0.00779176;
+static const REAL8 P1coeff02 = -0.0244358;
+static const REAL8 P1coeff10 = 0.263456;
+static const REAL8 P1coeff11 = -0.120853;
+static const REAL8 P1coeff20 = -0.808987;
+
+/* Eq. (37) of https://dcc.ligo.org/T1600383 */
+static const REAL8 P2coeff00 = 2.46654;
+static const REAL8 P2coeff01 = 3.13067;
+static const REAL8 P2coeff02 = 0.581626;
+static const REAL8 P2coeff10 = -6.99396;
+static const REAL8 P2coeff11 = -9.61861;
+static const REAL8 P2coeff20 = 17.5646;
+//////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static INT4 XLALSimFindIndexMaxAmpli( UINT4 * indAmax, REAL8Vector * timeVec, REAL8Vector * ampWave, REAL8 * valAmax, REAL8 tofAmax );
 
 /**
  * Generates the ringdown wave associated with the given real
@@ -693,6 +729,29 @@ printf("w4 = %f, t4 = %f\n",creal(modefreqs->data[5])*mTot, 1./cimag(modefreqs->
     return XLAL_SUCCESS;
 }
 
+/* Search for index at which the maximum of the amplitude occurs */
+static INT4 XLALSimFindIndexMaxAmpli( UINT4 * indAmax, REAL8Vector * timeVec, REAL8Vector * ampWave, REAL8 * valAmax, REAL8 tofAmax ) {
+    INT4 debugSB = 0;
+    *indAmax = 0;
+    INT4 found = 0;
+    for (UINT4 i = 1; i < timeVec->length - 1; i++) {
+        if (timeVec->data[i] == tofAmax) {
+            found = 1;
+            *indAmax = i;
+            *valAmax = ampWave->data[i];
+        }
+    }
+    if (found == 0) {
+        return XLAL_FAILURE;
+    }
+    else {
+        if (debugSB) {
+            printf(" found maximum times: %f,   %f \n", timeVec->data[*indAmax], tofAmax );
+        }
+        return XLAL_SUCCESS;
+    }
+}
+
 /**
  * The main  function for performing the ringdown attachment for SEOBNRv4 (and beyond)
  * This is the function which gets called by the code generating the full IMR waveform once
@@ -723,10 +782,8 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     Approximant approximant/**<<The waveform approximant being used */
     ) {
     INT4 debugSB = 0;
-    UINT4 nmodes;
     UINT4 i;
     UNUSED INT4 phasecount;
-    REAL8 finalMass, finalSpin;
     REAL8Vector *ampWave;
     REAL8Vector *phWave;
     REAL8Vector *rdtime;
@@ -752,19 +809,16 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
         printf("RDfit: we use spin1 %f, spin2 %f, and it should be dimensionless [-1,1] \n", chi1, chi2);
         printf("We use approximant = %d \n", appr);
     }
-    REAL8 chis = 0.5 * (chi1 + chi2);
-    REAL8 chia = 0.5 * (chi1 - chi2);
-    REAL8 chi = chis + chia * sqrt(fabs(1 - 4. * eta)) / (1.0 - 2.0 * eta);
+    REAL8 chi = 0.5 * (chi1 + chi2) + 0.5 * (chi1 - chi2) * (mass1 - mass2)/(mass1 + mass2) / (1.0 - 2.0 * eta);
 
         
         
     /*********************************************************************************************/
-    /*                        Remnant properties: QNMs, mass, and spin                       */
+    /*                                          QNMs of the remnant                                        */
     /*********************************************************************************************/
     /* Getting  QNMs */
-    nmodes = 8;
-    modefreqs = XLALCreateCOMPLEX16Vector(nmodes);
-    if (XLALSimIMREOBGenerateQNMFreqV2(modefreqs, mass1, mass2, spin1, spin2, l, m, nmodes, appr) == XLAL_FAILURE) {
+    modefreqs = XLALCreateCOMPLEX16Vector(1);
+    if (XLALSimIMREOBGenerateQNMFreqV2(modefreqs, mass1, mass2, spin1, spin2, l, m, 1, appr) == XLAL_FAILURE) {
         XLALDestroyCOMPLEX16Vector(modefreqs);
         XLAL_ERROR(XLAL_EFUNC);
     }
@@ -773,12 +827,7 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     //sigma220 = -0.0609 - I*0.8326;
     sigma220 = (-cimag(modefreqs->data[0]) - I * creal(modefreqs->data[0])) * (mtot * LAL_MTSUN_SI);
 
-    /* Compute final mass final spin */
-    if (XLALSimIMREOBFinalMassSpin(&finalMass, &finalSpin, mass1, mass2, spin1, spin2, appr) == XLAL_FAILURE) {
-        XLAL_ERROR(XLAL_EFUNC);
-    }
     if (debugSB) {
-        printf("Final mass = %f, final spin = %f\n", finalMass, finalSpin);
         printf("matchpoints are: %f,  %f,   %f \n", matchrange->data[0], matchrange->data[1], matchrange->data[2]);
         printf("the 0-overtone is: %f + i %f \n", creal(sigma220), cimag(sigma220));
     }
@@ -822,27 +871,14 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
         fclose(fout);
     }
      /* Search for index at which the maximum of the amplitude occurs */
+    REAL8 valAmax = ampWave->data[0];
+    REAL8 tofAmax = matchrange->data[1];
     UINT4 indAmax;
-    REAL8 valAmax;
-    REAL8 tofAmax;
-    indAmax = 0;
-    valAmax = ampWave->data[0];
-    tofAmax = matchrange->data[1];
-    INT4 found = 0;
-    for (i = 1; i < timeVec->length - 1; i++) {
-        if (timeVec->data[i] == tofAmax) {
-            found = 1;
-            indAmax = i;
-            valAmax = ampWave->data[i];
-        }
-    }
-    if (found == 0) {
-        printf(" time of maximum amplitude is not found ");
-        exit(1);
-    } else {
-        if (debugSB) {
-            printf(" found maximum times: %f,   %f \n", timeVec->data[indAmax], matchrange->data[1]);
-        }
+    if ( XLALSimFindIndexMaxAmpli( &indAmax, timeVec, ampWave, &valAmax, tofAmax ) == XLAL_FAILURE )
+    {
+        XLALPrintError("Time of maximum amplitude is not found .\n");
+        XLALDestroyCOMPLEX16Vector(modefreqs);
+        XLAL_ERROR(XLAL_EFUNC);
     }
     if (debugSB) {
         printf("Check: The maximum of amplitude is %.16e found at t=%f, index = %d (out of %d) \n", valAmax, tofAmax, indAmax, timeVec->length);
@@ -854,23 +890,12 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     /*                  Constant coefficients entering RD fitting formulas                      */
     /*********************************************************************************************/
     /* Computing fit coefficients that enter amplitude and phase of the RD signal */
+    /* Numeircal constants are defined at the top of this file */
     /* Eq. (28) of https://dcc.ligo.org/T1600383 */
-    static const REAL8 A1coeff00 = 0.0830664;
-    static const REAL8 A1coeff01 = -0.0196758;
-    static const REAL8 A1coeff02 = -0.0136459;
-    static const REAL8 A1coeff10 = 0.0612892;
-    static const REAL8 A1coeff11 = 0.00146142;
-    static const REAL8 A1coeff20 = -0.0893454;
     REAL8 ampcf1;
     ampcf1 = A1coeff00 + A1coeff01 * chi + A1coeff02 * chi * chi + A1coeff10 * eta + A1coeff11 * eta * chi + A1coeff20 * eta * eta;
   
     /* Eq. (29) of https://dcc.ligo.org/T1600383 */
-    static const REAL8 A2coeff00 = -0.623953;
-    static const REAL8 A2coeff01 = -0.371365;
-    static const REAL8 A2coeff10 = 1.39777;
-    static const REAL8 A2coeff11 = 2.40203;
-    static const REAL8 A2coeff20 = -1.82173;
-    static const REAL8 A2coeff21 = -5.25339;
     REAL8 ampcf2;
     ampcf2 = A2coeff00 + A2coeff01 * chi + A2coeff10 * eta + A2coeff11 * eta * chi + A2coeff20 * eta * eta + A2coeff21 * eta * eta * chi;
 
@@ -881,22 +906,10 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     }
         
     /* Eq. (36) of https://dcc.ligo.org/T1600383 */
-    static const REAL8 P1coeff00 = 0.147584;
-    static const REAL8 P1coeff01 = 0.00779176;
-    static const REAL8 P1coeff02 = -0.0244358;
-    static const REAL8 P1coeff10 = 0.263456;
-    static const REAL8 P1coeff11 = -0.120853;
-    static const REAL8 P1coeff20 = -0.808987;
     REAL8 phasecf1;
     phasecf1 = P1coeff00 + P1coeff01 * chi + P1coeff02 * chi * chi + P1coeff10 * eta + P1coeff11 * eta * chi + P1coeff20 * eta * eta;
         
     /* Eq. (37) of https://dcc.ligo.org/T1600383 */
-    static const REAL8 P2coeff00 = 2.46654;
-    static const REAL8 P2coeff01 = 3.13067;
-    static const REAL8 P2coeff02 = 0.581626;
-    static const REAL8 P2coeff10 = -6.99396;
-    static const REAL8 P2coeff11 = -9.61861;
-    static const REAL8 P2coeff20 = 17.5646;
     REAL8 phasecf2;
     phasecf2 = P2coeff00 + P2coeff01 * chi + P2coeff02 * chi * chi + P2coeff10 * eta + P2coeff11 * eta * chi + P2coeff20 * eta * eta;
 
