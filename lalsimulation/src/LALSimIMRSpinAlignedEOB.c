@@ -1,6 +1,6 @@
 /*
 *  Copyright (C) 2011 Craig Robinson, Enrico Barausse, Yi Pan, Prayush Kumar
-*  (minor changes)
+*  (minor changes), Andrea Taracchini
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -323,15 +323,28 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
   REAL8 omega02Tidal2 = 0.;
   REAL8 k3Tidal2 = 0.;
   REAL8 omega03Tidal2 = 0.;
-
-
+  REAL8Vector   *tVec = NULL;
+  REAL8Vector   *rVec = NULL;
+  REAL8Vector   *phiVec = NULL;
+  REAL8Vector   *prVec = NULL;
+  REAL8Vector   *pPhiVec = NULL;
   ret =
-    XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, phiC, deltaT, m1SI,
-					 m2SI, fMin, r, inc, spin1z, spin2z, SpinAlignedEOBversion,
+    XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, tVec, rVec, phiVec, prVec, pPhiVec,
+                     phiC, deltaT, m1SI, m2SI, fMin, r, inc, spin1z, spin2z, SpinAlignedEOBversion,
 					 comp1, comp2, k2Tidal1, k2Tidal2,
 					 omega02Tidal1, omega02Tidal2,
-					 k3Tidal1, k3Tidal2, omega03Tidal1,
-					 omega03Tidal2);
+					 k3Tidal1, k3Tidal2, omega03Tidal1, omega03Tidal2);
+    
+  if( tVec )
+        XLALDestroyREAL8Vector( tVec );
+  if( rVec )
+        XLALDestroyREAL8Vector( rVec );
+  if( phiVec )
+        XLALDestroyREAL8Vector( phiVec );
+  if( prVec )
+        XLALDestroyREAL8Vector( prVec );
+  if( pPhiVec )
+        XLALDestroyREAL8Vector( pPhiVec );
   return ret;
 }
 
@@ -356,6 +369,16 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 				     /**<< OUTPUT, +-polarization waveform */
 				     REAL8TimeSeries ** hcross,
 				     /**<< OUTPUT, x-polarization waveform */
+                     REAL8Vector * tVecOut,
+                     /**<<  OUTPUT, time associated to the output dynamics */
+                     REAL8Vector * rVecOut,
+                     /**<<  OUTPUT, radius */
+                     REAL8Vector * phiVecOut,
+                     /**<<  OUTPUT, orbital phase */
+                     REAL8Vector * prVecOut,
+                     /**<<  OUTPUT, radial momentum */
+                     REAL8Vector * pPhiVecOut,
+                     /**<<  OUTPUT, azimuthal momentum */
 				     const REAL8 phiC,
 				     /**<< coalescence orbital phase (rad) */
 				     REAL8 deltaT,
@@ -377,25 +400,25 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
                      UINT4 SpinAlignedEOBversion,
                      /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4 */
 				     const REAL8 comp1,
-			   /**<< compactness of body 1 (for NS) */
+                     /**<< compactness of body 1 (for NS) */
 				     const REAL8 comp2,
-			   /**<< compactness of body 2 (for NS) */
+                     /**<< compactness of body 2 (for NS) */
 				     const REAL8 k2Tidal1,
-			      /**<< adiabatic quadrupole Love number for body 1 (for NS) */
+                     /**<< adiabatic quadrupole Love number for body 1 (for NS) */
 				     const REAL8 k2Tidal2,
-			      /**<< adiabatic quadrupole Love number for body 2 (for NS) */
+                     /**<< adiabatic quadrupole Love number for body 2 (for NS) */
 				     const REAL8 omega02Tidal1,
-				   /**<< quadrupole f-mode freq for body 1 (for NS) */
+                     /**<< quadrupole f-mode freq for body 1 (for NS) */
 				     const REAL8 omega02Tidal2,
-				   /**<< quadrupole f-mode freq for body 2 (for NS) */
+                     /**<< quadrupole f-mode freq for body 2 (for NS) */
 				     const REAL8 k3Tidal1,
-			      /**<< adiabatic octupole Love number for body 1 (for NS) */
+                     /**<< adiabatic octupole Love number for body 1 (for NS) */
 				     const REAL8 k3Tidal2,
-			      /**<< adiabatic octupole Love number for body 2 (for NS) */
+                     /**<< adiabatic octupole Love number for body 2 (for NS) */
 				     const REAL8 omega03Tidal1,
-				   /**<< octupole f-mode freq for body 1 (for NS) */
+                     /**<< octupole f-mode freq for body 1 (for NS) */
 				     const REAL8 omega03Tidal2
-				   /**<< octupole f-mode freq for body 2 (for NS) */
+                     /**<< octupole f-mode freq for body 2 (for NS) */
   )
 {
   INT4 use_tidal = 0;
@@ -960,26 +983,6 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   /* Taken from Andrea's code */
 /*  memset( tmpValues->data, 0, tmpValues->length*sizeof(tmpValues->data[0]));*/
 #if 0
-  tmpValues->data[0] = 19.9947984026;
-  tmpValues->data[3] = -0.000433854158413;
-  tmpValues->data[4] = 4.84217964546 / tmpValues->data[0];	// q=1
-#endif
-#if 0
-  tmpValues->data[0] = 19.9982539582;
-  tmpValues->data[3] = -0.000390702473305;
-  tmpValues->data[4] = 4.71107185264 / tmpValues->data[0];	// q=1, chi1=chi2=0.98
-#endif
-#if 0
-  tmpValues->data[0] = 19.996332305;
-  tmpValues->data[3] = -0.000176807206312;
-  tmpValues->data[4] = 4.84719922687 / tmpValues->data[0];	// q=8
-#endif
-#if 0
-  tmpValues->data[0] = 6.22645094958;
-  tmpValues->data[3] = -0.00851784427559;
-  tmpValues->data[4] = 3.09156589713 / tmpValues->data[0];	// q=8 chi1=0.5 TEST DYNAMICS
-#endif
-#if 0
   tmpValues->data[0] = 19.9996712714;
   tmpValues->data[3] = -0.00016532905477;
   tmpValues->data[4] = 4.77661989696 / tmpValues->data[0];	// q=8 chi1=0.5
@@ -1062,12 +1065,13 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
     }
 
   /* Set up pointers to the dynamics */
-  rVec.length = phiVec.length = prVec.length = pPhiVec.length = retLen;
+  REAL8Vector tVec;
+  tVec.data = dynamics->data;
+  tVec.length = rVec.length = phiVec.length = prVec.length = pPhiVec.length = retLen;
   rVec.data = dynamics->data + retLen;
   phiVec.data = dynamics->data + 2 * retLen;
   prVec.data = dynamics->data + 3 * retLen;
   pPhiVec.data = dynamics->data + 4 * retLen;
-
 
   //printf( "We think we hit the peak at time %e\n", dynamics->data[retLen-1] );
 
@@ -1081,6 +1085,14 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
     }
   fclose (out);
 #endif
+    
+  // Output low sample rate dynamics
+
+  tVecOut = &tVec;
+  rVecOut = &rVec;
+  phiVecOut = &phiVec;
+  prVecOut = &prVec;
+  pPhiVecOut = &pPhiVec;
 
   if (tStepBack > retLen * deltaT)
     {
