@@ -29,6 +29,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_math.h>
+#include <gsl/gsl_sf_trig.h>
 
 #include <lal/Date.h>
 #include <lal/FrequencySeries.h>
@@ -715,7 +716,7 @@ static int PhenomPCore(
   /* Now correct phase */
   for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
     double f = freqs->data[i];
-    COMPLEX16 phase_corr = cexp(-2*LAL_PI * I * f * t_corr);
+    COMPLEX16 phase_corr = (cos(2*LAL_PI * f * t_corr) - I*sin(2*LAL_PI * f * t_corr));//cexp(-2*LAL_PI * I * f * t_corr);
     int j = i + offset; // shift index for frequency series if needed
     ((*hptilde)->data->data)[j] *= phase_corr;
     ((*hctilde)->data->data)[j] *= phase_corr;
@@ -876,7 +877,7 @@ static int PhenomPCoreOneFrequency(
 
   phPhenom -= 2.*phic; /* Note: phic is orbital phase */
   REAL8 amp0 = M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
-  COMPLEX16 hP = amp0 * aPhenom * cexp(-I*phPhenom); /* Assemble IMRPhenom waveform. */
+  COMPLEX16 hP = amp0 * aPhenom * (cos(phPhenom) - I*sin(phPhenom));//cexp(-I*phPhenom); /* Assemble IMRPhenom waveform. */
 
   /* Compute PN NNLO angles */
   const REAL8 omega = LAL_PI * f;
@@ -931,7 +932,7 @@ static int PhenomPCoreOneFrequency(
 
   /* Sum up contributions to \tilde h+ and \tilde hx */
   /* Precompute powers of e^{i m alpha} */
-  COMPLEX16 cexp_i_alpha = cexp(+I*alpha);
+  COMPLEX16 cexp_i_alpha = cos(alpha) + I*sin(alpha);//cexp(+I*alpha);
   COMPLEX16 cexp_2i_alpha = cexp_i_alpha*cexp_i_alpha;
   COMPLEX16 cexp_mi_alpha = 1.0/cexp_i_alpha;
   COMPLEX16 cexp_m2i_alpha = cexp_mi_alpha*cexp_mi_alpha;
@@ -943,7 +944,7 @@ static int PhenomPCoreOneFrequency(
     hc_sum += +I*(T2m - Tm2m);
   }
 
-  COMPLEX16 eps_phase_hP = cexp(-2*I*epsilon) * hP / 2.0;
+  COMPLEX16 eps_phase_hP = (cos(2*epsilon) - I*sin(2*epsilon)) *hP /2.0;//cexp(-2*I*epsilon) * hP / 2.0;
   *hp = eps_phase_hP * hp_sum;
   *hc = eps_phase_hP * hc_sum;
 

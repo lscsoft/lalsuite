@@ -161,6 +161,13 @@ int main( int argc, char *argv[] )  {
   /* make temporary directory */
   if (uvar.tempdir) {
 
+    struct stat st;
+    if (stat(uvar.tempdir, &st)) {
+      if (mkdir(uvar.tempdir,0755)) {
+        LogPrintf(LOG_DEBUG,"%s : Unable to make temporary directory %s.  Might be a problem.\n",__func__,uvar.tempdir);
+      }
+    }
+
     /* initialise the random number generator  - use the clock */
     gsl_rng * q;
     if (XLALInitgslrand(&q,0)) {
@@ -178,6 +185,16 @@ int main( int argc, char *argv[] )  {
     if (mkdir(newnewtemp,0755)) {
       LogPrintf(LOG_CRITICAL,"%s : Unable to make temporary directory %s\n",__func__,newnewtemp);
       return 1;
+    }
+  }
+
+  /* make output directory */
+  {
+    struct stat st;
+    if (stat(uvar.outputdir, &st)) {
+      if (mkdir(uvar.outputdir,0755)) {
+        LogPrintf(LOG_DEBUG,"%s : Unable to make output directory %s.  Might be a problem.\n",__func__,uvar.outputdir);
+      }
     }
   }
 

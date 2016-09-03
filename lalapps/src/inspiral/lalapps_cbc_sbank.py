@@ -263,7 +263,7 @@ def parse_command_line():
             parser.error("unphysical spin2 bounds: [%.2f, %.2f]" % (opts.spin2_min, opts.spin2_max))
     elif all_nsbh_spin_opts:
         if not -1 <= opts.bh_spin_min <= opts.bh_spin_max <= 1:
-            parser.error("unphysical BH spin bounds: [%.2f, %.2f]" % (opts.bh_spin_min, opts.bs_spin_max))
+            parser.error("unphysical BH spin bounds: [%.2f, %.2f]" % (opts.bh_spin_min, opts.bh_spin_max))
         if not -1 <= opts.ns_spin_min <= opts.ns_spin_max <= 1:
             parser.error("unphysical NS spin bounds: [%.2f, %.2f]" % (opts.ns_spin_min, opts.ns_spin_max))
     else:

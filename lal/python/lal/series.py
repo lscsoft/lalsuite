@@ -115,7 +115,7 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
 
 def build_REAL4FrequencySeries(series, comment=None):
     assert isinstance(series, lal.REAL4FrequencySeries)
-    return _build_series(series, (u"Frequency", u"Frequency,Real"), comment, 'deltaF', 's^-1')
+    return _build_series(series, (u"Frequency,Real", u"Frequency"), comment, 'deltaF', 's^-1')
 
 
 def parse_REAL4FrequencySeries(elem):
@@ -124,7 +124,7 @@ def parse_REAL4FrequencySeries(elem):
 
 def build_REAL8FrequencySeries(series, comment=None):
     assert isinstance(series, lal.REAL8FrequencySeries)
-    return _build_series(series, (u"Frequency", u"Frequency,Real"), comment, 'deltaF', 's^-1')
+    return _build_series(series, (u"Frequency,Real", u"Frequency"), comment, 'deltaF', 's^-1')
 
 
 def parse_REAL8FrequencySeries(elem):
@@ -133,7 +133,7 @@ def parse_REAL8FrequencySeries(elem):
 
 def build_COMPLEX8FrequencySeries(series, comment=None):
     assert isinstance(series, lal.COMPLEX8FrequencySeries)
-    return _build_series(series, (u"Frequency", u"Frequency,Real,Imaginary"), comment, 'deltaF', 's^-1')
+    return _build_series(series, (u"Frequency,Real,Imaginary", u"Frequency"), comment, 'deltaF', 's^-1')
 
 
 def parse_COMPLEX8FrequencySeries(elem):
@@ -142,7 +142,7 @@ def parse_COMPLEX8FrequencySeries(elem):
 
 def build_COMPLEX16FrequencySeries(series, comment=None):
     assert isinstance(series, lal.COMPLEX16FrequencySeries)
-    return _build_series(series, (u"Frequency", u"Frequency,Real,Imaginary"), comment, 'deltaF', 's^-1')
+    return _build_series(series, (u"Frequency,Real,Imaginary", u"Frequency"), comment, 'deltaF', 's^-1')
 
 
 def parse_COMPLEX16FrequencySeries(elem):
@@ -151,7 +151,7 @@ def parse_COMPLEX16FrequencySeries(elem):
 
 def build_REAL4TimeSeries(series, comment=None):
     assert isinstance(series, lal.REAL4TimeSeries)
-    return _build_series(series, (u"Time", u"Time,Real"), comment, 'deltaT', 's')
+    return _build_series(series, (u"Time,Real", u"Time"), comment, 'deltaT', 's')
 
 
 def parse_REAL4TimeSeries(elem):
@@ -160,7 +160,7 @@ def parse_REAL4TimeSeries(elem):
 
 def build_REAL8TimeSeries(series, comment=None):
     assert isinstance(series, lal.REAL8TimeSeries)
-    return _build_series(series, (u"Time", u"Time,Real"), comment, 'deltaT', 's')
+    return _build_series(series, (u"Time,Real", u"Time"), comment, 'deltaT', 's')
 
 
 def parse_REAL8TimeSeries(elem):
@@ -169,7 +169,7 @@ def parse_REAL8TimeSeries(elem):
 
 def build_COMPLEX8TimeSeries(series, comment=None):
     assert isinstance(series, lal.COMPLEX8TimeSeries)
-    return _build_series(series, (u"Time", u"Time,Real,Imaginary"), comment, 'deltaT', 's')
+    return _build_series(series, (u"Time,Real,Imaginary", u"Time"), comment, 'deltaT', 's')
 
 
 def parse_COMPLEX8TimeSeries(elem):
@@ -178,7 +178,7 @@ def parse_COMPLEX8TimeSeries(elem):
 
 def build_COMPLEX16TimeSeries(series, comment=None):
     assert isinstance(series, lal.COMPLEX16TimeSeries)
-    return _build_series(series, (u"Time", u"Time,Real,Imaginary"), comment, 'deltaT', 's')
+    return _build_series(series, (u"Time,Real,Imaginary", u"Time"), comment, 'deltaT', 's')
 
 
 def parse_COMPLEX16TimeSeries(elem):

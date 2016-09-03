@@ -140,7 +140,9 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #endif
 
-#define DEBUG_COMMAND_LINE_MANGLING 1
+#ifndef DEBUG_COMMAND_LINE_MANGLING
+#define DEBUG_COMMAND_LINE_MANGLING 0
+#endif
 
 typedef enum gdbcmd { gdb_dump_core, gdb_attach } gdb_cmd;
 

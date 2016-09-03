@@ -121,7 +121,7 @@ int main( int argc, char *argv[] )  {
     return 1;
   }
   i = 0;
-  while (fscanf(cachefp,"%*s %*d %*d")!=EOF) i++;
+  while (fscanf(cachefp,"%*s %*d %*d%*s\n")!=EOF) i++;
   INT4 Nfiles = i;
   fclose(cachefp);
   LogPrintf(LOG_DEBUG,"%s : counted %d files listed in the cache file.\n",__func__,Nfiles);
@@ -138,7 +138,7 @@ int main( int argc, char *argv[] )  {
   }
 
   for (i=0;i<Nfiles;i++) {
-    fscanf(cachefp,"%s %d %d %*d",filenames[i],&(fileStart.data[i].gpsSeconds),&(fileStart.data[i].gpsNanoSeconds));
+    fscanf(cachefp,"%s %d %d%*s\n",filenames[i],&(fileStart.data[i].gpsSeconds),&(fileStart.data[i].gpsNanoSeconds));
   }
   fclose(cachefp);
 

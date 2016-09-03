@@ -56,6 +56,7 @@ AM_INIT_AUTOMAKE([ \
   dist-xz \
   no-dist-gzip \
 ])
+LT_INIT()
 
 AC_CANONICAL_HOST
 
@@ -130,6 +131,13 @@ if test "x$mpi" = "xtrue"; then
 fi
 LALSUITE_ENABLE_MODULE([MPI])
 
+# link tests using libtool
+if test "${static_binaries}" = "true"; then
+  LALSUITE_USE_LIBTOOL([-all-static])
+else
+  LALSUITE_USE_LIBTOOL
+fi
+
 # checks for programs
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -141,7 +149,6 @@ LALSUITE_CHECK_PYTHON([2.6])
 LALSUITE_CHECK_PAGER
 
 # check for condor_compile
-AC_ENABLE_SHARED
 if test "x$condor" = "xtrue"; then
   AC_CHECK_PROGS([CONDOR_COMPILE],[condor_compile],[false])
   if test "x$CONDOR_COMPILE" = "xfalse"; then
@@ -156,6 +163,9 @@ if test "x$condor" = "xtrue"; then
     AC_MSG_RESULT([yes])
     LD=/usr/bin/ld
   fi
+
+  CC="$CONDOR_COMPILE $CC"
+
   CONDOR_ENABLE_VAL="ENABLED"
 else
   CONDOR_ENABLE_VAL="DISABLED"
@@ -163,9 +173,6 @@ fi
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
-
-# link tests using libtool
-LALSUITE_USE_LIBTOOL
 
 # check for system libraries
 AC_CHECK_LIB([m],[sin])
@@ -384,19 +391,6 @@ AC_DEFINE_UNQUOTED([PREFIX],["$prefix"],[Install prefix])
 # define if CUDA is enabled
 if test "${cuda}" = "true"; then
   AC_DEFINE([LALAPPS_CUDA_ENABLED],[1],[Define if using cuda library])
-fi
-
-# enable condor compile
-if test "x${condor}" = "xtrue" ; then
-  CC="$CONDOR_COMPILE $CC"
-  LALSUITE_ADD_FLAGS([],[],[-all-static])
-  AC_DISABLE_SHARED
-fi
-
-# add -all-static to AM_LDFLAGS for --enable-static-binaries
-if test "${static_binaries}" = "true"; then
-  LALSUITE_ADD_FLAGS([],[],[-all-static])
-  AC_DISABLE_SHARED
 fi
 
 # check for OpenMP
