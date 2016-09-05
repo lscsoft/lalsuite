@@ -189,7 +189,7 @@ main ( int argc, char *argv[] )
     xIn[i] = 20 * ( frand() - 0.5 );
   }
 
-  abstol = 3e-3, reltol = 2e-7;
+  abstol = 4e-3, reltol = 3e-7;
   TESTBENCH_VECTORMATH_S2S(Exp,xIn);
 
   // ==================== LOG() ====================
