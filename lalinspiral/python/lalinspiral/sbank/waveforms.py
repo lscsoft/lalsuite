@@ -425,6 +425,20 @@ class SEOBNRv2ROMDoubleSpinTemplate(SEOBNRv2Template):
 class SEOBNRv2ROMDoubleSpinHITemplate(SEOBNRv2Template):
     approximant = "SEOBNRv2_ROM_DoubleSpin_HI"
 
+class SEOBNRv4Template(IMRAlignedSpinTemplate):
+    approximant = "SEOBNRv4"
+
+    def _get_dur(self):
+        dur = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
+                self.bank.flow, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
+                self.spin1z, self.spin2z)
+        # Allow a 10% margin of error
+        return dur * 1.1
+
+class SEOBNRv4ROMTemplate(SEOBNRv4Template):
+    approximant = "SEOBNRv4_ROM"
+
+
 class EOBNRv2Template(SEOBNRv2Template):
     approximant = "EOBNRv2"
     param_names = ("m1", "m2")
@@ -776,6 +790,8 @@ waveforms = {
     "SEOBNRv2": SEOBNRv2Template,
     "SEOBNRv2_ROM_DoubleSpin": SEOBNRv2ROMDoubleSpinTemplate,
     "SEOBNRv2_ROM_DoubleSpin_HI": SEOBNRv2ROMDoubleSpinHITemplate,
+    "SEOBNRv4" : SEOBNRv4ROMTemplate,
+    "SEOBNRv4_ROM" : SEOBNRv4ROMTemplate,
     "EOBNRv2": EOBNRv2Template,
     "SpinTaylorT4": SpinTaylorT4Template,
     "SpinTaylorT5": SpinTaylorT5Template,
