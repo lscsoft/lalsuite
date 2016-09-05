@@ -918,33 +918,39 @@ GetNRSpinPeakAmplitudeV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
   REAL8 chi = a, chi2 = chi * chi, chi3 = chi * chi2;
   REAL8 eta2 = eta * eta;
   REAL8 res;
-  res = eta * (1.0000160002560041 * (1.4528573105413543 +
-				     0.16613449160880395 * chi +
-				     0.027355646661735258 * chi2 -
-				     0.020072844926136438 * chi3) -
-	       0.000016000256004096065 *
-	       (1.577457498227 - 0.0076949474494639085 * chi +
-		0.02188705616693344 * chi2 +
-		0.023268366492696667 * chi3) -
-	       0.00099601593625498 * (-0.03442402416125921 -
-				      1.2180662644198392 * chi -
-				      0.5683726304811634 * chi2 +
-				      0.40111437614653417 * chi3) +
-	       (-0.03442402416125921 - 1.2180662644198392 * chi -
-		0.5683726304811634 * chi2 +
-		0.40111437614653417 * chi3) * eta +
-	       (-16.0002560041612 * (1.4528573105413543 +
-				     0.16613449160880395 * chi +
-				     0.027355646661735258 * chi2 -
-				     0.020072844926136438 * chi3) +
-		16.000256004096066 *
-		(1.577457498227 - 0.0076949474494639085 * chi +
-		 0.02188705616693344 * chi2 +
-		 0.023268366492696667 * chi3) -
-		3.9840637450199665 *
-		(-0.03442402416125921 - 1.2180662644198392 * chi -
-		 0.5683726304811634 * chi2 +
-		 0.40111437614653417 * chi3)) * eta2);
+  REAL8 fTPL, fEQ, A0, A1, A2, e0, e1, e2, e3;
+  switch (l) {
+      case 2:
+          switch (m) {
+              case 2:
+                  // TPL fit
+                  fTPL = 1.4528573105413543 + 0.16613449160880395 * chi + 0.027355646661735258 * chi2 - 0.020072844926136438 * chi3;
+                  // Equal-mass fit
+                  fEQ = 1.577457498227 - 0.0076949474494639085 * chi +  0.02188705616693344 * chi2 + 0.023268366492696667 * chi3;
+                  // Global fit coefficients
+                  e0 = -0.03442402416125921;
+                  e1 = -1.218066264419839;
+                  e2 = -0.5683726304811634;
+                  e3 = 0.4011143761465342;
+                  A1 = e0 + e1 * chi + e2 * chi2 + e3 * chi3;
+                  // Impose that TPL and equal-mass limit are exactly recovered
+                  A0 = -0.00099601593625498 * A1 - 0.00001600025600409607 * fEQ + 1.000016000256004 * fTPL;
+                  A2 = -3.984063745019967 * A1 + 16.00025600409607 * fEQ - 16.0002560041612 * fTPL;
+                  // Final formula
+                  res = eta * (A0 + A1 * eta + A2 * eta2);
+                  break;
+              default:
+                  XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
+                  XLAL_ERROR (XLAL_EINVAL);
+                  break;
+          }
+          break;
+      
+      default:
+          XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
+          XLAL_ERROR (XLAL_EINVAL);
+          break;
+  }
 //    printf("A %.16e\n", res);
   return res;
 }
@@ -996,24 +1002,37 @@ GetNRSpinPeakADDotV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
   REAL8 chiMinus1 = -1. + chi;
   REAL8 eta2 = eta * eta;
   REAL8 res;
-  res = eta * (1.0000160002560041 * (0.002395610769995033 * chiMinus1 -
-				     0.00019273850675004356 * chiMinus1 *
-				     chiMinus1 -
-				     0.00029666193167435337 * chiMinus1 *
-				     chiMinus1 * chiMinus1) -
-	       0.00099601593625498 * (-0.005776537350356959 +
-				      0.0010308574828852665 * chi) -
-	       0.000016000256004096065 * (-0.0041265090713775085 +
-					  0.0022239991387358092 * chi) +
-	       (-0.005776537350356959 + 0.0010308574828852665 * chi) * eta +
-	       (-16.0002560041612 *
-		(0.002395610769995033 * chiMinus1 -
-		 0.00019273850675004356 * chiMinus1 * chiMinus1 -
-		 0.00029666193167435337 * chiMinus1 * chiMinus1 * chiMinus1) -
-		3.9840637450199665 * (-0.005776537350356959 +
-				      0.0010308574828852665 * chi) +
-		16.000256004096066 * (-0.0041265090713775085 +
-				      0.0022239991387358092 * chi)) * eta2);
+  REAL8 fTPL, fEQ, A0, A1, A2, e0, e1;
+  switch (l) {
+      case 2:
+          switch (m) {
+                case 2:
+                  // TPL fit
+                  fTPL = 0.002395610769995033 * chiMinus1 -  0.00019273850675004356 * chiMinus1 * chiMinus1 - 0.00029666193167435337 * chiMinus1 * chiMinus1 * chiMinus1;
+                  // Equal-mass fit
+                  fEQ = -0.004126509071377509 + 0.002223999138735809 * chi;
+                  // Global fit coefficients
+                  e0 = -0.005776537350356959;
+                  e1 = 0.001030857482885267;
+                  A1 = e0 + e1 * chi;
+                  // Impose that TPL and equal-mass limit are exactly recovered
+                  A0 = -0.00099601593625498 * A1 - 0.00001600025600409607 * fEQ + 1.000016000256004 * fTPL;
+                  A2 = -3.984063745019967 * A1 + 16.00025600409607 * fEQ - 16.0002560041612 * fTPL;
+                  // Final formula
+                  res = eta * (A0 + A1 * eta + A2 * eta2);
+                  break;
+                default:
+                    XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
+                    XLAL_ERROR (XLAL_EINVAL);
+                    break;
+            }
+          break;
+      
+      default:
+          XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
+          XLAL_ERROR (XLAL_EINVAL);
+          break;
+  }
 //    printf("ddA %.16e\n", res);
   return res;
 }
@@ -1093,12 +1112,38 @@ GetNRSpinPeakOmegaV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
 {
   REAL8 chi = a;
   REAL8 res;
-  res = 0.5626787200433265 + (-0.08706198756945482 +
-			      0.0017434519312586804 * chi) *
-    log (10.26207326082448 -
-	 chi * (7.629921628648589 -
-		72.75949266353584 * (-0.25 + eta)) -
-	 62.353217004599784 * (-0.25 + eta));
+  REAL8 c0, c1, c2, c3, c4, d2, d3;
+  switch (l) {
+      case 2:
+          switch (m) {
+              case 2:
+                  // From TPL fit
+                  c0 = 0.5626787200433265;
+                  c1 = -0.08706198756945482;
+                  c2 = 25.81979479453255;
+                  c3 = 25.85037751197443;
+                  // From equal-mass fit
+                  d2 = 7.629921628648589;
+                  d3 = 10.26207326082448;
+                  // Combine TPL and equal-mass
+                  c2 = d2 + 4 * (d2 - c2) * (eta - 0.25);
+                  c3 = d3 + 4 * (d3 - c3) * (eta - 0.25);
+                  c4 = 0.00174345193125868;
+                  // Final formula
+                  res = c0 + (c1 + c4 * chi) * log(c3 - c2 * chi);
+                  break;
+              default:
+                    XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
+                    XLAL_ERROR (XLAL_EINVAL);
+                    break;
+            }
+            break;
+            
+        default:
+            XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
+            XLAL_ERROR (XLAL_EINVAL);
+            break;
+    }
 //    printf("w %.16e\n", res);
   return res;
 }
@@ -1148,25 +1193,38 @@ GetNRSpinPeakOmegaDotV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
 {
   REAL8 chi = a;
   REAL8 res;
-  res = -0.000016000256004096065 * (0.011281566669958594 +
-				    0.0002869276768158971 * chi) -
-    0.00099601593625498 * (0.01574321112717377 +
-			   0.02244178140869133 * chi) +
-    (0.01574321112717377 + 0.02244178140869133 * chi) * eta +
-    1.0000160002560041 * (-0.011209791668428353 +
-			  (0.0040867958978563915 +
-			   0.0006333925136134493 * chi) *
-			  log (68.47466578100956 -
-			       58.301487557007206 * chi)) +
-    eta * eta * (16.000256004096066 *
-		 (0.011281566669958594 + 0.0002869276768158971 * chi) -
-		 3.9840637450199665 * (0.01574321112717377 +
-				       0.02244178140869133 * chi) -
-		 16.0002560041612 * (-0.011209791668428353 +
-				     (0.0040867958978563915 +
-				      0.0006333925136134493 * chi) *
-				     log (68.47466578100956 -
-					  58.301487557007206 * chi)));
+  REAL8 fTPL, fEQ, A0, A1, A2, e0, e1;
+  switch (l) {
+      case 2:
+          switch (m) {
+              case 2:
+                  // TPL fit
+                  fTPL = -0.011209791668428353 +  (0.0040867958978563915 + 0.0006333925136134493 * chi) * log(68.47466578100956 - 58.301487557007206 * chi);
+                  // Equal-mass fit
+                  fEQ = 0.01128156666995859 + 0.0002869276768158971* chi;
+                  // Global fit coefficients
+                  e0 = 0.01574321112717377;
+                  e1 = 0.02244178140869133;
+                  A1 = e0 + e1 * chi;
+                  // Impose that TPL and equal-mass limit are exactly recovered
+                  A0 = -0.00099601593625498 * A1 - 0.00001600025600409607 * fEQ + 1.000016000256004 * fTPL;
+                  A2 = -3.984063745019967 * A1 + 16.00025600409607 * fEQ - 16.0002560041612 * fTPL;
+                  // Final formula
+                  res = A0 + A1 * eta + A2 * eta * eta;
+                  break;
+              
+              default:
+                  XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
+                  XLAL_ERROR (XLAL_EINVAL);
+                  break;
+          }
+          break;
+      
+      default:
+          XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
+          XLAL_ERROR (XLAL_EINVAL);
+          break;
+  }
 //    printf("dw %.16e\n", res);
   return res;
 }
@@ -1283,7 +1341,6 @@ XLALSimIMREOBGetNRSpinPeakDeltaTv2 (INT4 UNUSED l,
 /**
  * The time difference between the orbital peak and the peak amplitude
  * of the mode in question (currently only 2,2 implemented ).
- * Model:Calibrationv21_Jun2a_nbcycles_q8q10s075085095andq4s095newfitwithGaTechchio_noISCO
  */
 UNUSED static inline REAL8
 XLALSimIMREOBGetNRSpinPeakDeltaTv4 (INT4 UNUSED l,				/**<< Mode l */
@@ -1305,62 +1362,49 @@ XLALSimIMREOBGetNRSpinPeakDeltaTv4 (INT4 UNUSED l,				/**<< Mode l */
   REAL8 coeff10, coeff11, coeff12, coeff13;
   REAL8 coeff20, coeff21, coeff22, coeff23;
   REAL8 coeff30, coeff31, coeff32, coeff33;
-  coeff00 = 2.50499;
-  coeff01 = 7.68567;
-  coeff02 = 9.76792;
-  coeff03 = 4.42568;
-  coeff10 = 45.8838;
-  coeff11 = -14.69;
-  coeff12 = 0.;
-  coeff13 = -112.03;
-  coeff20 = 13.0879;
-  coeff21 = -0.223135;
-  coeff22 = -0.000026;
-  coeff23 = 0.000404;
-  coeff30 = -716.044;
-  coeff31 = 128.449;
-  coeff32 = 182.929;
-  coeff33 = 1080.65;
-  //Calibrationv21_Jul6b_nonbcycles_noISCO_noPhDq8s85
-  coeff00 = 2.50499;
-  coeff01 = 11.4509;
-  coeff02 = 8.99357;
-  coeff03 = 0.003087;
-  coeff10 = 45.8838;
-  coeff11 = -48.9242;
-  coeff12 = 0.00001;
-  coeff13 = -42.2166;
-  coeff20 = 13.0879;
-  coeff21 = -0.000078;
-  coeff22 = 0.000329;
-  coeff23 = 198.364;
-  coeff30 = -716.044;
-  coeff31 = 0.000057;
-  coeff32 = 127.152;
-  coeff33 = 0.000845;
-  //Calibrationv21_Jul21_nonbcycles_noISCO_noPhDq8s85_inicondsfromrun7_chop
-  coeff00 = 2.50499;
-  coeff01 = 11.5159;
-  coeff02 = 9.20186;
-  coeff03 = 0.;
-  coeff10 = 45.8838;
-  coeff11 = -49.1423;
-  coeff12 = 0.;
-  coeff13 = -42.163;
-  coeff20 = 13.0879;
-  coeff21 = 0.;
-  coeff22 = 0.;
-  coeff23 = 198.376;
-  coeff30 = -716.044;
-  coeff31 = 0.;
-  coeff32 = 110.537;
-  coeff33 = 0.;
-//    printf("deltaNQC %.16e\n",coeff00  + coeff01*chi  + coeff02*chiTo2  + coeff03*chiTo3  + coeff10*eta  + coeff11*eta*chi  + coeff12*eta*chiTo2  + coeff13*eta*chiTo3  + coeff20*eta2  + coeff21*eta2*chi  + coeff22*eta2*chiTo2  + coeff23*eta2*chiTo3  + coeff30*eta3  + coeff31*eta3*chi  + coeff32*eta3*chiTo2  + coeff33*eta3*chiTo3);
-  return coeff00 + coeff01 * chi + coeff02 * chiTo2 + coeff03 * chiTo3 +
-    coeff10 * eta + coeff11 * eta * chi + coeff12 * eta * chiTo2 +
-    coeff13 * eta * chiTo3 + coeff20 * eta2 + coeff21 * eta2 * chi +
-    coeff22 * eta2 * chiTo2 + coeff23 * eta2 * chiTo3 + coeff30 * eta3 +
-    coeff31 * eta3 * chi + coeff32 * eta3 * chiTo2 + coeff33 * eta3 * chiTo3;
+  REAL8 res;
+  switch (l) {
+      case 2:
+          switch (m) {
+              case 2:
+                  //Calibrationv21_Jul21_nonbcycles_noISCO_noPhDq8s85_inicondsfromrun7_chop
+                  coeff00 = 2.50499;
+                  coeff01 = 11.5159;
+                  coeff02 = 9.20186;
+                  coeff03 = 0.;
+                  coeff10 = 45.8838;
+                  coeff11 = -49.1423;
+                  coeff12 = 0.;
+                  coeff13 = -42.163;
+                  coeff20 = 13.0879;
+                  coeff21 = 0.;
+                  coeff22 = 0.;
+                  coeff23 = 198.376;
+                  coeff30 = -716.044;
+                  coeff31 = 0.;
+                  coeff32 = 110.537;
+                  coeff33 = 0.;
+                  res = coeff00 + coeff01 * chi + coeff02 * chiTo2 + coeff03 * chiTo3 +
+                    coeff10 * eta + coeff11 * eta * chi + coeff12 * eta * chiTo2 +
+                    coeff13 * eta * chiTo3 + coeff20 * eta2 + coeff21 * eta2 * chi +
+                    coeff22 * eta2 * chiTo2 + coeff23 * eta2 * chiTo3 + coeff30 * eta3 +
+                    coeff31 * eta3 * chi + coeff32 * eta3 * chiTo2 + coeff33 * eta3 * chiTo3;
+                  break;
+
+              default:
+                  XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
+                  XLAL_ERROR (XLAL_EINVAL);
+                  break;
+          }
+          break;
+          
+      default:
+          XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
+          XLAL_ERROR (XLAL_EINVAL);
+          break;
+  }
+//    printf("deltaNQC %.16e\n",res);
+  return res;
 }
 
 /**
