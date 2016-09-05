@@ -3154,8 +3154,21 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceThreadState *thread, REAL8 targ
 
             sigma = LALInferenceGetREAL8Variable(args, tmpname);
 
-            LALInferenceGetMinMaxPrior(thread->priorArgs, name, &priorMin, &priorMax);
-            dprior = priorMax - priorMin;
+            if(LALInferenceCheckMinMaxPrior(thread->priorArgs,name))
+			{
+					LALInferenceGetMinMaxPrior(thread->priorArgs, name, &priorMin, &priorMax);
+		            dprior = priorMax - priorMin;
+			}
+			else if(LALInferenceCheckGaussianPrior(thread->priorArgs,name))
+			{
+					REAL8 mu;
+					/* Get std. dev. as dprior */
+					LALInferenceGetGaussianPrior(thread->priorArgs,name,&mu,&dprior);
+			}
+			else
+			{
+					return;
+			}
 
             if (thread->accepted == 1){
                 sigma += s_gamma * (dprior/100.0) * (1.0-targetAcceptance);
