@@ -150,7 +150,7 @@ static int ReadNSCheckPointH5(char *filename, LALInferenceRunState *runState, NS
   }
   LALH5Dataset *liveGroup = XLALH5DatasetRead(group,"live_points");
   retcode = LALInferenceH5DatasetToVariablesArray(liveGroup , &(runState->livePoints), &Nlive );
-  printf("restored %i live points\n",s->size);
+  printf("restored %i live points\n",Nlive);
   XLALH5DatasetFree(liveGroup);
   if(N_outputarray>0)
   {
