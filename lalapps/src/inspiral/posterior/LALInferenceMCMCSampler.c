@@ -154,6 +154,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
     INT4 Neff = LALInferenceGetINT4Variable(algorithm_params, "neff");
     INT4 Nskip = LALInferenceGetINT4Variable(algorithm_params, "skip");
     INT4 temp_skip = LALInferenceGetINT4Variable(algorithm_params, "tskip");
+    INT4 adapt_temps = LALInferenceGetINT4Variable(algorithm_params, "adapt_temps");
     INT4 de_buffer_limit = LALInferenceGetINT4Variable(algorithm_params, "de_buffer_limit");
     INT4 randomseed = LALInferenceGetINT4Variable(algorithm_params, "random_seed");
 
@@ -186,12 +187,17 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
     if (tempVerbose) {
         sprintf(verbose_filename, "PTMCMC.tempswaps.%u.%2.2d", randomseed, MPIrank);
-        verbose_file = fopen(verbose_filename, "w");
 
-        fprintf(verbose_file,
-            "cycle\tlow_temp_idx\tlow_temp\thigh_temp_idx\thigh_temp\tlog(chain_swap)\tlow_temp_likelihood\thigh_temp_likelihood\tswap_accepted\tacceptance_fraction\n");
+        /* Don't overwrite existing file if resuming */
+        if (!LALInferenceGetProcParamVal(runState->commandLine, "--resume") ||
+                access(verbose_filename, R_OK) != 0) {
+            verbose_file = fopen(verbose_filename, "w");
 
-        fclose(verbose_file);
+            fprintf(verbose_file,
+                "cycle\tlow_temp_idx\tlow_temp\thigh_temp_idx\thigh_temp\tlog(chain_swap)\tlow_temp_likelihood\thigh_temp_likelihood\tswap_accepted\tacceptance_fraction\n");
+
+            fclose(verbose_file);
+        }
     }
 
     for (t = 0; t < n_local_threads; t++) {
@@ -200,31 +206,46 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
         if (adaptVerbose & !no_adapt) {
             sprintf(verbose_filename, "PTMCMC.statistics.%u.%2.2d",
                     randomseed, n_local_threads*MPIrank+t);
-            verbose_file = fopen(verbose_filename, "w");
 
-            fprintf(verbose_file, "cycle\ts_gamma");
-            LALInferencePrintAdaptationHeader(verbose_file, thread);
-            fclose(verbose_file);
+            /* Don't overwrite existing file if resuming */
+            if (!LALInferenceGetProcParamVal(runState->commandLine, "--resume") ||
+                    access(verbose_filename, R_OK) != 0) {
+                verbose_file = fopen(verbose_filename, "w");
+
+                fprintf(verbose_file, "cycle\ts_gamma");
+                LALInferencePrintAdaptationHeader(verbose_file, thread);
+                fclose(verbose_file);
+            }
         }
 
         if (propVerbose) {
             sprintf(verbose_filename, "PTMCMC.propstats.%u.%2.2d",
                     randomseed, n_local_threads*MPIrank+t);
-            verbose_file = fopen(verbose_filename, "w");
 
-            fprintf(verbose_file, "cycle\t");
-            LALInferencePrintProposalStatsHeader(verbose_file, thread->cycle);
-            fclose(verbose_file);
+            /* Don't overwrite existing file if resuming */
+            if (!LALInferenceGetProcParamVal(runState->commandLine, "--resume") ||
+                    access(verbose_filename, R_OK) != 0) {
+                verbose_file = fopen(verbose_filename, "w");
+
+                fprintf(verbose_file, "cycle\t");
+                LALInferencePrintProposalStatsHeader(verbose_file, thread->cycle);
+                fclose(verbose_file);
+            }
         }
 
         if (propTrack) {
             sprintf(verbose_filename, "PTMCMC.proptrack.%u.%2.2d",
                     randomseed, n_local_threads*MPIrank+t);
-            verbose_file = fopen(verbose_filename, "w");
 
-            fprintf(verbose_file, "cycle\t");
-            LALInferencePrintProposalTrackingHeader(verbose_file, thread->currentParams);
-            fclose(verbose_file);
+            /* Don't overwrite existing file if resuming */
+            if (!LALInferenceGetProcParamVal(runState->commandLine, "--resume") ||
+                    access(verbose_filename, R_OK) != 0) {
+                verbose_file = fopen(verbose_filename, "w");
+
+                fprintf(verbose_file, "cycle\t");
+                LALInferencePrintProposalTrackingHeader(verbose_file, thread->currentParams);
+                fclose(verbose_file);
+            }
         }
     }
 
@@ -376,7 +397,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState) {
 
         /* Excute swap proposal. */
         runState->parallelSwap(runState, verbose_file);
-        LALInferenceAdaptLadder(runState);
+
+        /* Modify temperatures to strive for uniform swap acceptance rates */
+        if (adapt_temps)
+            LALInferenceAdaptLadder(runState);
 
         if (tempVerbose)
             fclose(verbose_file);
@@ -1156,7 +1180,7 @@ void LALInferenceResumeMCMC(LALInferenceRunState *runState) {
 /* Store the MCMC run state to HDF5 for use by --resume */
 void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
     //ProcessParamsTable *ppt;
-    INT4 t, n_local_threads;
+    INT4 i, t, n_local_threads;
     INT4 MPIrank;
     LALH5File *resume_file = NULL;
     LALInferenceThreadState *thread;
@@ -1193,9 +1217,17 @@ void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
         LALInferenceH5VariablesArrayToDataset(chain_group, thread->differentialPoints, thread->differentialPointsLength, "differential_points");
         LALInferenceH5VariablesArrayToDataset(chain_group, &(thread->proposalArgs), 1, "proposal_arguments");
         LALInferenceH5VariablesArrayToDataset(chain_group, &(thread->currentParams), 1, "current_parameters");
-        XLALH5FileAddScalarAttribute(chain_group, "last_step", &(thread->step), LAL_D_TYPE_CODE);
+        XLALH5FileAddScalarAttribute(chain_group, "temperature", &(thread->temperature), LAL_D_TYPE_CODE);
+        XLALH5FileAddScalarAttribute(chain_group, "last_step", &(thread->step), LAL_I4_TYPE_CODE);
         XLALH5FileAddScalarAttribute(chain_group, "effective_sample_size", &(thread->effective_sample_size), LAL_D_TYPE_CODE);
-        XLALH5FileAddScalarAttribute(chain_group, "differential_point_skip", &(thread->differentialPointsSkip), LAL_D_TYPE_CODE);
+        XLALH5FileAddScalarAttribute(chain_group, "differential_point_skip", &(thread->differentialPointsSkip), LAL_I4_TYPE_CODE);
+
+        /* Store the total number of temperature swaps accepted over the stored window */
+        REAL8 temp_acc_rate = 0;
+        for (i=0; i<thread->temp_swap_window; i++)
+            temp_acc_rate += thread->temp_swap_accepts[i];
+        temp_acc_rate /= thread->temp_swap_window;
+        XLALH5FileAddScalarAttribute(chain_group, "temperature_swap_acceptance_rate", &(temp_acc_rate), LAL_D_TYPE_CODE);
 
         /* TODO: Write metadata */
         XLALH5FileClose(chain_group);
@@ -1210,7 +1242,7 @@ void LALInferenceCheckpointMCMC(LALInferenceRunState *runState) {
 /* Read in and restore the run state from an MCMC checkpoint */
 void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
     //ProcessParamsTable *ppt;
-    INT4 t, n_local_threads;
+    INT4 i, t, n_local_threads;
     UINT4 n;
     LALH5File *resume_file = NULL;
     LALH5File *output = NULL;
@@ -1278,8 +1310,16 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
 
         /* Recover the estimated effective sample size, iteration number, and DE buffer thinning multiplier */
         XLALH5FileQueryScalarAttributeValue(&(thread->effective_sample_size), chain_group, "effective_sample_size");
+        XLALH5FileQueryScalarAttributeValue(&(thread->temperature), chain_group, "temperature");
         XLALH5FileQueryScalarAttributeValue(&(thread->step), chain_group, "last_step");
         XLALH5FileQueryScalarAttributeValue(&(thread->differentialPointsSkip), chain_group, "differential_point_skip");
+
+        /* Spread the count of accepted temp swaps at checkpoint evenly across the window */
+        REAL8 temp_acc_rate;
+        XLALH5FileQueryScalarAttributeValue(&(temp_acc_rate), chain_group, "temperature_swap_acceptance_rate");
+
+        for (i=0; i<thread->temp_swap_window; i++)
+            thread->temp_swap_accepts[i] = gsl_rng_uniform(thread->GSLrandom) < temp_acc_rate ? 1 : 0;
 
         /* TODO: Write metadata */
         XLALH5DatasetFree(current_param_group);
