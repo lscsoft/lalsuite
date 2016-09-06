@@ -1849,6 +1849,7 @@ void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *na
     return;
 }
 
+
 /* Check for a Gaussian Prior of the standard form */
 int LALInferenceCheckGaussianPrior(LALInferenceVariables *priorArgs, const char *name)
 {
@@ -2266,6 +2267,10 @@ void LALInferenceAddLogUniformPrior(LALInferenceVariables *priorArgs,
                                     const char *name, REAL8 *xmin, REAL8 *xmax,
                                     LALInferenceVariableType type )
 {
+  if (*xmin >= *xmax || *xmin < 0. ){
+    XLAL_ERROR_VOID(XLAL_EINVAL, "Minimum must be less than maximum (and minumum must be greater than zero), but %f >= %f.", *xmin, *xmax);
+  }
+
   char xminName[VARNAME_MAX];
   char xmaxName[VARNAME_MAX];
 
@@ -3008,4 +3013,19 @@ REAL8 LALInference1DGMMPrior(LALInferenceVariables *priorArgs, const char *name,
     logPrior -= 0.5*(LAL_LNPI + LAL_LN2 + log(gmmsigmas->data[i])); /* Gaussian normalisation */
   }
   return logPrior;
+}
+
+/* Return the log Prior for a parameter that has a prior that is uniform in log space */
+REAL8 LALInferenceLogUniformPrior( LALInferenceVariables *priorArgs, const char *name, REAL8 value ){
+  if ( !LALInferenceCheckLogUniformPrior( priorArgs, name ) ){
+    XLAL_ERROR_REAL8( XLAL_EINVAL, "No log uniform prior given for parameter '%s'", name);
+  }
+
+  REAL8 min = 0., max = 0., lrat = 0.;
+  LALInferenceGetLogUniformPrior( priorArgs, name, &min, &max );
+
+  if ( value < 0. || value < min || value > max ){ return -INFINITY; }
+  lrat = log(max/min);
+
+  return -log(value*lrat);
 }

@@ -128,9 +128,10 @@ void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *na
 void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max);
 
 /**
- * Function to remove the mininum and maximum values for the uniform prior onto the \c priorArgs.
+ * Function to remove the minimum and maximum values for the uniform prior onto the \c priorArgs.
  */
 void LALInferenceRemoveMinMaxPrior(LALInferenceVariables *priorArgs, const char *name);
+
 
 /**
  * Function to add the mu and sigma values for the Gaussian prior onto the \c priorArgs.
@@ -233,7 +234,7 @@ void LALInferenceGetFermiDiracPrior(LALInferenceVariables *priorArgs,
 void LALInferenceRemoveFermiDiracPrior(LALInferenceVariables *priorArgs, const char *name);
 
 /** Check for types of standard prior */
-/** Check for a uniform prior (with mininum and maximum) */
+/** Check for a uniform prior (with minimum and maximum) */
 int LALInferenceCheckMinMaxPrior(LALInferenceVariables *priorArgs, const char *name);
 /** Check for a Gaussian prior (with a mean and variance) */
 int LALInferenceCheckGaussianPrior(LALInferenceVariables *priorArgs, const char *name);
@@ -359,6 +360,9 @@ REAL8 LALInferenceFermiDiracPrior(LALInferenceVariables *priorArgs, const char *
  * \brief Calculate the log probability for the Gaussian Mixture Model prior
  */
 REAL8 LALInference1DGMMPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 value);
+
+/* Return the log Prior for a parameter that has a prior that is uniform in log space */
+REAL8 LALInferenceLogUniformPrior( LALInferenceVariables *priorArgs, const char *name, REAL8 value );
 
 /*@}*/
 
