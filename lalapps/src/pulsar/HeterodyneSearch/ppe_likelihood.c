@@ -492,10 +492,6 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
         }
       }
       else if( LALInferenceCheckFermiDiracPrior(runState->priorArgs, item->name) ){
-        REAL8 r = 0., sigma = 0.;
-        LALInferenceGetFermiDiracPrior(runState->priorArgs, item->name, &sigma, &r);
-
-        if ( value < 0. ) { return -INFINITY; } /* value must be positive */
         prior += LALInferenceFermiDiracPrior(value, sigma, r);
       }
       else if( LALInferenceCheckLogUniformPrior(runState->priorArgs, item->name) ){
@@ -523,6 +519,10 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
             break;
           }
         }
+      }
+      /* check if using a 1d Gaussian Mixture Model prior */
+      else if( LALInferenceCheck1DGMMPrior(runState->priorArgs, item->name) ){
+        prior += LALInference1DGMMPrior( runState->priorArgs, item->name, value)
       }
       else{
         XLAL_ERROR_REAL8( XLAL_EFUNC, "Error... no prior specified!" );
