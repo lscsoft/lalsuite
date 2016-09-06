@@ -639,7 +639,14 @@ REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread,
         /* Save the name of the proposed variable */
         LALInferenceAddstringVariable(args, "proposedVariableName", param->name, LALINFERENCE_PARAM_OUTPUT);
 
-        *((REAL8 *)param->value) += gsl_ran_ugaussian(rng) * sigma * sqrttemp;
+        /* If temperature is infinite, scale sigma to the prior width */
+        if (sqrttemp == INFINITY) {
+            REAL8 min, max;
+            LALInferenceGetMinMaxPrior(thread->priorArgs, param->name, &min, &max);
+
+            *((REAL8 *)param->value) += gsl_ran_ugaussian(rng) * (max - min);
+        } else
+            *((REAL8 *)param->value) += gsl_ran_ugaussian(rng) * sigma * sqrttemp;
 
         LALInferenceCyclicReflectiveBound(proposedParams, thread->priorArgs);
 
