@@ -591,7 +591,7 @@ void initialise_prior( LALInferenceRunState *runState )
       }
     }
 
-    if ( strcmp(tempPrior, "uniform") && strcmp(tempPrior, "predefined") && strcmp(tempPrior, "gaussian") && strcmp(tempPrior, "fermidirac") ){
+    if ( strcmp(tempPrior, "uniform") && strcmp(tempPrior, "predefined") && strcmp(tempPrior, "gaussian") && strcmp(tempPrior, "loguniform") && strcmp(tempPrior, "fermidirac") ){
       XLAL_ERROR_VOID( XLAL_EINVAL, "Error... prior type '%s' not recognised", tempPrior );
     }
 
@@ -605,6 +605,9 @@ void initialise_prior( LALInferenceRunState *runState )
     }
     else if( !strcmp(tempPrior, "gaussian") ){
       LALInferenceAddGaussianPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
+    }
+    else if( !strcmp(tempPrior, "loguniform") ){
+      LALInferenceAddLogUniformPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
     }
     else if( !strcmp(tempPrior, "fermidirac") ){
       LALInferenceAddFermiDiracPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );

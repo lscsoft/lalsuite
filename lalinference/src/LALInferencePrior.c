@@ -2115,6 +2115,82 @@ void LALInferenceGetFermiDiracPrior(LALInferenceVariables *priorArgs,
   return;
 }
 
+
+/* Check for a prior uniform in the log */
+int LALInferenceCheckLogUniformPrior(LALInferenceVariables *priorArgs,
+                                     const char *name)
+{
+  char xminName[VARNAME_MAX];
+  char xmaxName[VARNAME_MAX];
+
+  sprintf(xminName, "%s_loguniform_xmin", name);
+  sprintf(xmaxName, "%s_loguniform_xmax", name);
+
+  return (LALInferenceCheckVariable(priorArgs, xminName) &&
+          LALInferenceCheckVariable(priorArgs, xmaxName));
+}
+
+/* Add domain boundary values for the prior onto the priorArgs */
+void LALInferenceAddLogUniformPrior(LALInferenceVariables *priorArgs,
+                                    const char *name, REAL8 *xmin, REAL8 *xmax,
+                                    LALInferenceVariableType type )
+{
+  char xminName[VARNAME_MAX];
+  char xmaxName[VARNAME_MAX];
+
+  sprintf(xminName, "%s_loguniform_xmin", name);
+  sprintf(xmaxName, "%s_loguniform_xmax", name);
+
+  LALInferenceAddVariable(priorArgs, xminName, xmin, type,
+                          LALINFERENCE_PARAM_FIXED);
+  LALInferenceAddVariable(priorArgs, xmaxName, xmax, type,
+                          LALINFERENCE_PARAM_FIXED);
+  return;
+}
+
+/* Remove the domain boundary values for the prior onto the priorArgs */
+void LALInferenceRemoveLogUniformPrior(LALInferenceVariables *priorArgs,
+                                       const char *name)
+{
+  char xminName[VARNAME_MAX];
+  char xmaxName[VARNAME_MAX];
+
+  sprintf(xminName, "%s_loguniform_xmin", name);
+  sprintf(xmaxName, "%s_loguniform_xmax", name);
+
+  LALInferenceRemoveVariable(priorArgs, xminName);
+  LALInferenceRemoveVariable(priorArgs, xmaxName);
+  return;
+}
+
+/* Get domain boundary values of the prior from priorArgs list, given a name */
+void LALInferenceGetLogUniformPrior(LALInferenceVariables *priorArgs,
+                                    const char *name, REAL8 *xmin, REAL8 *xmax)
+{
+  char xminName[VARNAME_MAX];
+  char xmaxName[VARNAME_MAX];
+  void *ptr=NULL;
+
+  sprintf(xminName, "%s_loguniform_xmin", name);
+  sprintf(xmaxName, "%s_loguniform_xmax", name);
+
+  ptr = LALInferenceGetVariable(priorArgs, xminName);
+  if ( ptr ) {
+    *xmin = *(REAL8*)ptr;
+  } else {
+    XLAL_ERROR_VOID(XLAL_EFAILED);
+  }
+
+  ptr = LALInferenceGetVariable(priorArgs, xmaxName);
+  if ( ptr ) {
+    *xmax = *(REAL8*)ptr;
+  } else {
+    XLAL_ERROR_VOID(XLAL_EFAILED);
+  }
+
+  return;
+}
+
 void LALInferenceDrawFromPrior( LALInferenceVariables *output,
                                 LALInferenceVariables *priorArgs,
                                 gsl_rng *rdm) {
@@ -2195,6 +2271,25 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
       tmp = log(-exp(-r) + pow(1. + exp(r), -cp) + exp(1.-r)*pow(1. + exp(r), -cp));
       tmp *= -sigma;
     } while ( tmp < 0. );
+  }
+  /* test for a prior uniform in the log */
+  else if( LALInferenceCheckLogUniformPrior( priorArgs, name ) ){
+    REAL8 xmin = 0., xmax = 0., cp;
+
+    LALInferenceGetLogUniformPrior(priorArgs, name, &xmin, &xmax);
+
+    if( xmin <= 0 ) {
+      XLAL_ERROR_VOID(XLAL_EDOM, "Log-uniform min value not positive.");
+    } else if( xmax < xmin ) {
+      XLAL_ERROR_VOID(XLAL_EDOM, "Log-uniform min value greater than max.");
+    }
+
+    /* use the inverse sampling transform to draw a new sample */
+    cp = gsl_rng_uniform( rdm ); /* draw a point uniformly between 0 and 1 */
+
+    /* the percentage-point function (PPF, or inverse CDF) for PDF~1/x is:
+    \f$x = (\frac{x_{\rm max}}{x_{\rm min}})^{\rm cdf} x_{\rm min}\f$ */
+    tmp = xmin * pow(xmax/xmin, cp);
   }
   /* test for a prior drawn from correlated values */
   else if( LALInferenceCheckCorrelatedPrior( priorArgs, name ) ){

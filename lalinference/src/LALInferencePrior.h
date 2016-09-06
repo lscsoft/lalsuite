@@ -152,6 +152,31 @@ void LALInferenceGetGaussianPrior(LALInferenceVariables *priorArgs,
 void LALInferenceRemoveGaussianPrior(LALInferenceVariables *priorArgs, const char *name);
 
 /**
+ * \brief Add a log-uniform prior
+ *
+ * Add a prior uniform in the log, i.e. PDF(x)~1/x
+ * \f[p(h|h_{\rm min}, h_{\rm max}, I) = \frac{1/h}{\log{(h_{\rm max}/h_{\rm min})}},\f]
+ * where \f$h_{\rm min}\f$ and \f$h_{\rm max}\f$ limit the domain of the PDF.
+ * The function has no support outside this range.
+ *
+ * This function adds \c xmin  and \c xmax values for the Fermi-Dirac prior to the \c priorArgs.
+ */
+void LALInferenceAddLogUniformPrior(LALInferenceVariables *priorArgs,
+                                    const char *name, REAL8 *xmin, REAL8 *xmax,
+                                    LALInferenceVariableType type);
+
+/**
+ * Get the xmin and xmax values of the log-uniform prior from the \c priorArgs list, given a name.
+ */
+void LALInferenceGetLogUniformPrior(LALInferenceVariables *priorArgs,
+                                    const char *name, REAL8 *xmin, REAL8 *xmax);
+
+/**
+ * Function to remove the min and max values for the log-uniform prior from the \c priorArgs.
+ */
+void LALInferenceRemoveLogUniformPrior(LALInferenceVariables *priorArgs, const char *name);
+
+/**
  * \brief Add a Fermi-Dirac prior
  *
  * Add a prior defined by the Fermi-Dirac PDF
@@ -181,6 +206,8 @@ void LALInferenceRemoveFermiDiracPrior(LALInferenceVariables *priorArgs, const c
 int LALInferenceCheckMinMaxPrior(LALInferenceVariables *priorArgs, const char *name);
 /** Check for a Gaussian prior (with a mean and variance) */
 int LALInferenceCheckGaussianPrior(LALInferenceVariables *priorArgs, const char *name);
+/** Check for a log-uniform prior (with xmin and xmax parameters) */
+int LALInferenceCheckLogUniformPrior(LALInferenceVariables *priorArgs, const char *name);
 /** Check for a Fermi-Dirac prior (with a r and sigma parameter) */
 int LALInferenceCheckFermiDiracPrior(LALInferenceVariables *priorArgs, const char *name);
 
