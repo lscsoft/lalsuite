@@ -152,6 +152,9 @@ int main( int argc, char *argv[] )  {
   }
   LogPrintf(LOG_DEBUG,"%s : read in uservars\n",__func__);
 
+  /* initialise sin-cosine lookup table */
+  XLALSinCosLUTInit();
+
   /* initialise the random number generator */
   if (XLALInitgslrand(&r,uvar.seed)) {
     LogPrintf(LOG_CRITICAL,"%s: XLALinitgslrand() failed with error = %d\n",__func__,xlalErrno);

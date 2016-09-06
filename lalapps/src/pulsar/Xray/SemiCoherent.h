@@ -85,6 +85,8 @@
 #include <lal/StringVector.h>
 #include <lal/NormalizeSFTRngMed.h>
 
+#include <lal/SinCosLUT.h>
+
 #include <gsl/gsl_rng.h>           /* for random number generation */
 #include <gsl/gsl_randist.h>       /* for random number generation */
 

@@ -168,13 +168,20 @@ int XLALComputeBinaryFreqDerivitives(Template *fdots,                        /**
   REAL8 orbphase = omega*(tmid-tasc);
   REAL8 omegan = 1;
 
+  /* compute sine and cosine of orbital phase */
+  REAL4 sin_orbphase, cos_orbphase;
+  XLALSinCosLUT( &sin_orbphase, &cos_orbphase, orbphase );
+
+  /* derivates of orbital phase */
+  REAL4 d_orbphase[4] = { cos_orbphase, -sin_orbphase, -cos_orbphase, sin_orbphase };
+
   /* the instantanous frequency is therefore f0 = nu - a*nu*W*cos(W*(t-tasc) ) */
-  fdots->x[0] = nu - nuasiniomega*cos(orbphase);
+  fdots->x[0] = nu - nuasiniomega*d_orbphase[0];
 
   /* the instantanous nth frequency derivitive is therefore fn = - a * nu * W^(n+1) * cos ( W*(t-tasc) + n*pi/2 ) */
   for (n=1;n<fdots->ndim;n++) {
     omegan *= omega;
-    fdots->x[n] = (-1.0)*nuasiniomega*omegan*cos(orbphase + 0.5*n*LAL_PI);
+    fdots->x[n] = (-1.0)*nuasiniomega*omegan*d_orbphase[n % 4];
   }
 
   return XLAL_SUCCESS;
