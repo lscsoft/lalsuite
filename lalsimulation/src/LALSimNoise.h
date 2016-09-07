@@ -45,6 +45,7 @@ extern "C" {
 #ifdef SWIG // SWIG interface directives
 SWIGLAL(FUNCTION_POINTER(XLALSimNoisePSDiLIGOSRD, XLALSimNoisePSDiLIGOModel,
 	XLALSimNoisePSDeLIGOModel, XLALSimNoisePSDVirgo, XLALSimNoisePSDGEO,
+	XLALSimNoisePSDGEOHF,
 	XLALSimNoisePSDTAMA, XLALSimNoisePSDaLIGONoSRMLowPower,
 	XLALSimNoisePSDaLIGONoSRMHighPower,
 	XLALSimNoisePSDaLIGOZeroDetLowPower,
