@@ -618,7 +618,6 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
 	LogPrintf(LOG_CRITICAL,"%s : XLALSFTCOMPLEX8TimeseriesToCOMPLEX8FrequencySeries() failed with error = %d\n",__func__,xlalErrno);
 	XLAL_ERROR(XLAL_EINVAL);
       }
-      LogPrintf(LOG_DEBUG,"%s : computed demodulated frequency series for SFT %d/%d\n",__func__,i+1,dsdata->length);
 
       /* compute power and store it */
       for (j=0;j<fs->data->length;j++) {
@@ -643,6 +642,7 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
       XLALDestroyCOMPLEX8FrequencySeries(fs);
 
     } /* end loop over spin derivitive templates */
+    LogPrintf(LOG_NORMAL,"%s : computed demodulated frequency series for SFT %d/%d\n",__func__,i+1,dsdata->length);
 
     /* output loudest segment candidate - normalise to be a chi-squared variable */
     if (fp!=NULL) {
@@ -795,7 +795,6 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
       LogPrintf(LOG_CRITICAL,"%s: dimensionality of frequency space < 0.  No templates required.\n",__func__);
       return XLAL_EINVAL;
    }
-   LogPrintf(LOG_DEBUG,"%s : determined dimensionality of frequency space = %d.\n",__func__,ndim);
 
    /* allocate memory to the output */
    if ( ((*gridparams)->grid = XLALCalloc(ndim,sizeof(Grid))) == NULL) {
@@ -901,6 +900,7 @@ int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /*
       XLAL_ERROR(XLAL_EINVAL);
     }
     LogPrintf(LOG_DEBUG,"%s : computed frequency grid for SFT %d/%d\n",__func__,i+1,sftvec->length);
+    LogPrintf(LOG_NORMAL,"%s : determined dimensionality of frequency space = %d for SFT %d/%d\n",__func__,(*freqgridparams)->segment[i]->ndim,i+1,sftvec->length);
 
   }
 
