@@ -185,10 +185,13 @@ int main( int argc, char *argv[] )  {
       LogPrintf(LOG_DEBUG,"%s : Unable to make temporary directory %s.  Might be a problem.\n",__func__,newtemp);
     }
     sprintf(newnewtemp,"%s/%.3f-%.3f",newtemp,uvar.freq,uvar.freq+uvar.freqband);
-    if (mkdir(newnewtemp,0755)) {
-      LogPrintf(LOG_CRITICAL,"%s : Unable to make temporary directory %s\n",__func__,newnewtemp);
-      return 1;
-    }
+
+  } else {
+    sprintf(newnewtemp,"%s/%.3f-%.3f",uvar.outputdir,uvar.freq,uvar.freq+uvar.freqband);
+  }
+  if (mkdir(newnewtemp,0755)) {
+    LogPrintf(LOG_CRITICAL,"%s : Unable to make temporary directory %s\n",__func__,newnewtemp);
+    return 1;
   }
 
   /* make output directory */
