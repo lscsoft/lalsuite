@@ -1110,7 +1110,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     if(!HDFOUTPUT)
     {
         fpout = fopen(outfile,"w");
-        for(i=0;i<N_output_array;i++) LALInferencePrintSample(fpout,output_array[i]);
+        for(i=0;i<N_output_array;i++)
+		{
+				LALInferencePrintSample(fpout,output_array[i]);
+				fprintf(fpout,"\n");
+		}
         fclose(fpout);
     
         char bayesfile[FILENAME_MAX];
