@@ -553,6 +553,7 @@ LALSnglInspiralTableFromLIGOLw (
     {"spin2x",                  -1, 60},
     {"spin2y",                  -1, 61},
     {"spin2z",                  -1, 62},
+    {"process_id",              -1, 63},
     {NULL,                       0, 0}
   };
 
@@ -930,6 +931,15 @@ LALSnglInspiralTableFromLIGOLw (
         else if ( tableDir[j].idx == 62 )
         {
           thisEvent->spin2z = r4colData;
+        }
+        else if ( tableDir[j].idx == 64 )
+        {
+          if ( tableDir[j].pos > 0 )
+          {
+            thisEvent->process_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "process", "process_id");
+            if ( thisEvent->process_id < 0 )
+              return -1;
+          }
         }
         else
         {

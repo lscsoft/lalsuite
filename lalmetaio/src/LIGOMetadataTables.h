@@ -295,6 +295,7 @@ typedef struct
 tagSnglInspiralTable
 {
   struct tagSnglInspiralTable *next;
+  long          process_id;
   CHAR          ifo[LIGOMETA_IFO_MAX];
   CHAR          search[LIGOMETA_SEARCH_MAX];
   CHAR          channel[LIGOMETA_CHANNEL_MAX];
