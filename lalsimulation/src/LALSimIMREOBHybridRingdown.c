@@ -731,6 +731,9 @@ printf("w4 = %f, t4 = %f\n",creal(modefreqs->data[5])*mTot, 1./cimag(modefreqs->
 
 /* Search for index at which the maximum of the amplitude occurs */
 static INT4 XLALSimFindIndexMaxAmpli( UINT4 * indAmax, REAL8Vector * timeVec, REAL8Vector * ampWave, REAL8 * valAmax, REAL8 tofAmax ) {
+    if ( indAmax == NULL || timeVec == NULL || ampWave == NULL || valAmax == NULL ) {
+        return XLAL_FAILURE;
+    }
     INT4 debugSB = 0;
     *indAmax = 0;
     INT4 found = 0;
