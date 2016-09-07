@@ -2356,23 +2356,50 @@ def read_pulsar_mcmc_file(cf):
   return cfdata
 
 
-# Function to import a posterior sample file created by lalapps_nest2pos. The log(evidence ratio)
-# (signal versus Gaussian noise) is also returned.
-#
-# The input is a HDF5, or acsii text, or gzipped, posterior sample files.
-#
-# Any non-varying parameters in the files are removed from the posterior object. iota is converted
-# back into cos(iota), and if only C22 is varying then it is converted back into h0, and phi22
-# is converted back into phi0.
-def pulsar_nest_to_posterior(postfile):
+def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
+  """
+  This function will import a posterior sample file created by `lalapps_nest2pos` (or a nested
+  sample file). It will be returned as a Posterior class object from `bayespputils`. The
+  signal evidence and noise evidence are also returned.
+
+  Parameters
+  ----------
+  postfile : str, required
+      The file name of the posterior or nested sample file. In general this should be a HDF5 file with the extension
+      '.hdf' or '.h5', although older format ascii files are still supported at the moment.
+  nestedsamples : bool, default: False
+      If the file being input contains nested samples, rather than posterior samples, then this flag must be set to
+      True
+  removeuntrig : bool, default: True
+      If this is True then any parameters that are sines or cosines of a value will have the value removed if present
+      e.g. if cosiota and iota exist then iota will be removed.
+  """
+
   from pylal import bayespputils as bppu
 
   fe = os.path.splitext(postfile)[-1].lower() # file extension
 
   # combine multiple nested sample files for an IFO into a single posterior (copied from lalapps_nest2pos)
   if fe == '.h5' or fe == '.hdf': # HDF5 file
-    peparser = bppu.PEOutputParser('hdf5')
-    nsResultsObject = peparser.parse(postfile)
+    if nestedsamples:
+      # use functions from lalapps_nest2pos to read values from nested sample files i.e. not a posterior file created by lalapps_nest2pos
+      try:
+        from lalinference.io import read_samples
+        import lalinference
+
+        samples = read_samples(postfile, tablename=lalinference.LALInferenceHDF5NestedSamplesDatasetName)
+        params = samples.colnames
+
+        # make everything a float, since that's what's excected of a CommonResultsObj
+        for param in params:
+          samples.replace_column(param, samples[param].astype(float))
+
+        nsResultsObject = (samples.colnames, samples.as_array().view(float).reshape(-1, len(params)))
+      except:
+        raise IOError, "Could not import nested samples"
+    else: # assume posterior file has been created with lalapps_nest2pos
+      peparser = bppu.PEOutputParser('hdf5')
+      nsResultsObject = peparser.parse(postfile)
   elif fe == '.gz': # gzipped file
     import gzip
     peparser = bppu.PEOutputParser('common')
@@ -2409,7 +2436,8 @@ def pulsar_nest_to_posterior(postfile):
     cipos = None
     cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(posIota))
     pos.append(cipos)
-    pos.pop('iota')
+    if removeuntrig:
+      pos.pop('iota')
 
   # check whether sin(i) binary parameter has been used
   try:
@@ -2421,7 +2449,8 @@ def pulsar_nest_to_posterior(postfile):
     sinipos = None
     sinipos = bppu.PosteriorOneDPDF('sini', np.sin(posI))
     pos.append(sinipos)
-    pos.pop('i')
+    if removeuntrig:
+      pos.pop('i')
 
   # convert C22 back into h0, and phi22 back into phi0 if required
   try:
