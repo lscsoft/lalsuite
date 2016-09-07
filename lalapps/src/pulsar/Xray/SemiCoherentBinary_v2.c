@@ -161,6 +161,16 @@ int main( int argc, char *argv[] )  {
     XLAL_ERROR(XLAL_EFAULT);
   }
 
+  /* make output directory */
+  {
+    struct stat st;
+    if (stat(uvar.outputdir, &st)) {
+      if (mkdir(uvar.outputdir,0755) != 0 && errno != EEXIST) {
+        LogPrintf(LOG_DEBUG,"%s : Unable to make output directory %s.  Might be a problem.\n",__func__,uvar.outputdir);
+      }
+    }
+  }
+
   /* make temporary directory */
   if (uvar.tempdir) {
 
@@ -189,19 +199,11 @@ int main( int argc, char *argv[] )  {
   } else {
     sprintf(newnewtemp,"%s/%.3f-%.3f",uvar.outputdir,uvar.freq,uvar.freq+uvar.freqband);
   }
-  if (mkdir(newnewtemp,0755) != 0 && errno != EEXIST) {
-    LogPrintf(LOG_CRITICAL,"%s : Unable to make temporary directory %s\n",__func__,newnewtemp);
-    return 1;
-  }
 
-  /* make output directory */
-  {
-    struct stat st;
-    if (stat(uvar.outputdir, &st)) {
-      if (mkdir(uvar.outputdir,0755) != 0 && errno != EEXIST) {
-        LogPrintf(LOG_DEBUG,"%s : Unable to make output directory %s.  Might be a problem.\n",__func__,uvar.outputdir);
-      }
-    }
+  /* make frequency+band directory inside output/temporary directory */
+  if (mkdir(newnewtemp,0755) != 0 && errno != EEXIST) {
+    LogPrintf(LOG_CRITICAL,"%s : Unable to make frequency+band directory %s\n",__func__,newnewtemp);
+    return 1;
   }
 
   /* initialise the random number generator */
