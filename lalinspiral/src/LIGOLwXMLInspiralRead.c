@@ -477,7 +477,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
 int
 LALSnglInspiralTableFromLIGOLw (
     SnglInspiralTable **eventHead,
-    CHAR               *fileName,
+    const CHAR         *fileName,
     INT4                startEvent,
     INT4                stopEvent
     )
