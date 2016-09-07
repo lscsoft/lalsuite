@@ -166,7 +166,7 @@ int main( int argc, char *argv[] )  {
 
     struct stat st;
     if (stat(uvar.tempdir, &st)) {
-      if (mkdir(uvar.tempdir,0755)) {
+      if (mkdir(uvar.tempdir,0755) != 0 && errno != EEXIST) {
         LogPrintf(LOG_DEBUG,"%s : Unable to make temporary directory %s.  Might be a problem.\n",__func__,uvar.tempdir);
       }
     }
@@ -181,7 +181,7 @@ int main( int argc, char *argv[] )  {
     CHAR newtemp[LONGSTRINGLENGTH];
     INT4 id = (INT4)(1e9*gsl_rng_uniform(q));
     sprintf(newtemp,"%s/%09d",uvar.tempdir,id);
-    if (mkdir(newtemp,0755)) {
+    if (mkdir(newtemp,0755) != 0 && errno != EEXIST) {
       LogPrintf(LOG_DEBUG,"%s : Unable to make temporary directory %s.  Might be a problem.\n",__func__,newtemp);
     }
     sprintf(newnewtemp,"%s/%.3f-%.3f",newtemp,uvar.freq,uvar.freq+uvar.freqband);
@@ -189,7 +189,7 @@ int main( int argc, char *argv[] )  {
   } else {
     sprintf(newnewtemp,"%s/%.3f-%.3f",uvar.outputdir,uvar.freq,uvar.freq+uvar.freqband);
   }
-  if (mkdir(newnewtemp,0755)) {
+  if (mkdir(newnewtemp,0755) != 0 && errno != EEXIST) {
     LogPrintf(LOG_CRITICAL,"%s : Unable to make temporary directory %s\n",__func__,newnewtemp);
     return 1;
   }
@@ -198,7 +198,7 @@ int main( int argc, char *argv[] )  {
   {
     struct stat st;
     if (stat(uvar.outputdir, &st)) {
-      if (mkdir(uvar.outputdir,0755)) {
+      if (mkdir(uvar.outputdir,0755) != 0 && errno != EEXIST) {
         LogPrintf(LOG_DEBUG,"%s : Unable to make output directory %s.  Might be a problem.\n",__func__,uvar.outputdir);
       }
     }
