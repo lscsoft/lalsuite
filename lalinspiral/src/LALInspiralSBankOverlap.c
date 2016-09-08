@@ -334,9 +334,6 @@ REAL8 XLALInspiralSBankComputeMatchMaxSkyLocNoPhase(const COMPLEX8FrequencySerie
 
         det_stat_sq = det_stat_sq / denom;
 
-        /* FIXME: TESTING, remove!!!! */
-        det_stat_sq = hcdata[k]*hcdata[k];
-
         if (det_stat_sq > max) {
             /*argmax = k;*/
             max = det_stat_sq;
