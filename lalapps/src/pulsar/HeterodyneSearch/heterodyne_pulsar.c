@@ -507,12 +507,14 @@ data!\n");
 
       fprintf(stderr, "Reading heterodyned data from %s.\n", inputParams.datafile);
 
-      /* read in header info */
+      /* read in header info (if not working on legacy files without the header) */
       CHAR headerdata[HEADERSIZE];
-      size_t rch = XLALFileRead((void*)&headerdata[0], sizeof(CHAR), HEADERSIZE, fpin);
-      if ( !rch ){
-        fprintf(stderr, "Error... problem reading in header data!\n");
-        exit(1);
+      if ( !inputParams.legacyinput ){
+        size_t rch = XLALFileRead((void*)&headerdata[0], sizeof(CHAR), HEADERSIZE, fpin);
+        if ( !rch ){
+          fprintf(stderr, "Error... problem reading in header data!\n");
+          exit(1);
+        }
       }
 
       /* read in file - depends on if file is binary or not */
@@ -815,11 +817,12 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
     { "binary-input",             no_argument,     NULL, 'B' },
     { "binary-output",            no_argument,     NULL, 'b' },
     { "gzip-output",              no_argument,     NULL, 'Z' },
+    { "legacy-input",             no_argument,     NULL, 'L' },
     { "verbose",                  no_argument,     NULL, 'v' },
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:t:l:R:C:F:O:T:m:G:H:M:ABbZv";
+  char args[] = "hi:p:z:f:g:k:s:r:d:c:o:e:S:t:l:R:C:F:O:T:m:G:H:M:ABbZLv";
   char *program = argv[0];
 
   /* set defaults */
@@ -829,8 +832,8 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   inputParams->samplerate = 0.;
   inputParams->calibrate = 0; /* default is not to calibrate */
   inputParams->verbose = 0; /* default is not to do verbose */
-  inputParams->binaryinput = 0; /* default to NOT read in data from a binary
-file */
+  inputParams->binaryinput = 0; /* default to NOT read in data from a binary file */
+  inputParams->legacyinput = 0; /* default is that input files are not legacy files without the header information */
   inputParams->binaryoutput = 0; /* default is to output data as ASCII text */
   inputParams->gzipoutput = 0; /* default is to not gzip the output */
   inputParams->stddevthresh = 0.; /* default is not to threshold */
@@ -1030,6 +1033,9 @@ the pulsar parameter file */
         break;
       case 'M':
         inputParams->manualEpoch = atof(LALoptarg);
+        break;
+      case 'L':
+        inputParams->legacyinput = 1;
         break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );
