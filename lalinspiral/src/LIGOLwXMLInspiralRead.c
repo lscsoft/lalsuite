@@ -932,7 +932,7 @@ LALSnglInspiralTableFromLIGOLw (
         {
           thisEvent->spin2z = r4colData;
         }
-        else if ( tableDir[j].idx == 64 )
+        else if ( tableDir[j].idx == 63 )
         {
           if ( tableDir[j].pos > 0 )
           {
