@@ -187,9 +187,9 @@ if options.remove_zero_lag:
 	if options.verbose:
 		print >>sys.stderr, "Identifying and removing zero-lag ..."
 
-	null_ids = [id for id, offsetvect in time_slides.items() if not any(offsetvect.deltas.values())]
-	for id in null_ids:
-		del time_slides[id]
+	null_ids = [time_slide_id for time_slide_id, offsetvect in time_slides.items() if not any(offsetvect.deltas.values())]
+	for time_slide_id in null_ids:
+		del time_slides[time_slide_id]
 
 	if options.verbose:
 		print >>sys.stderr, "%d time slides remain." % len(time_slides)
