@@ -276,13 +276,13 @@ XLALSimIMRSpinAlignedEOBPeakFrequency (REAL8 m1SI,
   switch (SpinAlignedEOBversion)
     {
     case 1:
-      nrOmega = GetNRSpinPeakOmega (ll, mm, eta, aa);
+      nrOmega = XLALSimIMREOBGetNRSpinPeakOmega (ll, mm, eta, aa);
       break;
     case 2:
-      nrOmega = GetNRSpinPeakOmegav2 (ll, mm, eta, aa);
+      nrOmega = XLALSimIMREOBGetNRSpinPeakOmegav2 (ll, mm, eta, aa);
       break;
     case 4:
-      nrOmega = GetNRSpinPeakOmegaV4 (ll, mm, eta, aa);
+      nrOmega = XLALSimIMREOBGetNRSpinPeakOmegaV4 (ll, mm, eta, aa);
       break;
     default:
       XLALPrintError

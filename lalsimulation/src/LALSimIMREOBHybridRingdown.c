@@ -19,7 +19,7 @@
 */
 
 /**
- * \author Yi Pan, Craig Robinson
+ * \author Yi Pan, Craig Robinson, Stas Babak, Andrea Taracchini
  * \file
  *
  * \brief Module to compute the ring-down waveform as linear combination
@@ -490,7 +490,7 @@ static UNUSED INT4 XLALSimIMREOBHybridAttachRingdown(REAL8Vector * signal1,
         /* Replace the last QNM with pQNM */
         /* We assume aligned/antialigned spins here */
         a = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * (mass1 - mass2) / (mass1 + mass2);
-        NRPeakOmega22 = GetNRSpinPeakOmega(l, m, eta, a) / mTot;
+        NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmega(l, m, eta, a) / mTot;
         /*printf("a and NRomega in QNM freq: %.16e %.16e %.16e %.16e %.16e\n",spin1[2],spin2[2],
          * mTot/LAL_MTSUN_SI,a,NRPeakOmega22*mTot); */
         modefreqs->data[7] = (NRPeakOmega22 / finalMass + creal(modefreqs->data[0])) / 2.;
@@ -503,7 +503,7 @@ static UNUSED INT4 XLALSimIMREOBHybridAttachRingdown(REAL8Vector * signal1,
         /* We assume aligned/antialigned spins here */
         /* Definitions of a, chi and NRPeakOmega22, where the last one is an approximation of \phi'[tmatch] in T1400476-v3. */
         a = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * (mass1 - mass2) / (mass1 + mass2);
-        NRPeakOmega22 = GetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
+        NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
 
         /* Define chi */
         chi = (spin1[2] + spin2[2]) / 2. + (spin1[2] - spin2[2]) / 2. * ((mass1 - mass2) / (mass1 + mass2)) / (1. - 2. * eta);
@@ -737,7 +737,7 @@ static INT4 XLALSimFindIndexMaxAmpli( UINT4 * indAmax, REAL8Vector * timeVec, RE
     INT4 debugSB = 0;
     *indAmax = 0;
     INT4 found = 0;
-    for (UINT4 i = 1; i < timeVec->length - 1; i++) {
+    for (UINT4 i = 0; i < timeVec->length - 1; i++) {
         if (timeVec->data[i] == tofAmax) {
             found = 1;
             *indAmax = i;
@@ -764,6 +764,7 @@ static INT4 XLALSimFindIndexMaxAmpli( UINT4 * indAmax, REAL8Vector * timeVec, RE
  * STEP 2) Apply the fit function from the attachment time
  * STEP 3) Construct the full RD by applying (factor) of less damped 220 mode
  * STEP 4) Constructing the RD stitched to the inspiral-merger
+ * See Section 5.2 of https://dcc.ligo.org/T1600383
  */
 static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     REAL8Vector * signal1, /**<< OUTPUT, Real of inspiral waveform to which we attach ringdown */
@@ -784,6 +785,14 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
                            /**<< Time values chosen as points for performing comb matching */
     Approximant approximant/**<<The waveform approximant being used */
     ) {
+    if ( mass1 <= 0. || mass2 <= 0.
+        || fabs(spin1x) > 1. || fabs(spin1y) > 1. || fabs(spin1z) > 1.
+        || fabs(spin2x) > 1. || fabs(spin2y) > 1. || fabs(spin2z) > 1.
+        || spin1x*spin1x + spin1y*spin1y + spin1z*spin1z > 1.
+        || spin2x*spin2x + spin2y*spin2y + spin2z*spin2z > 1.
+        ) {
+            return XLAL_FAILURE;
+        }
     INT4 debugSB = 0;
     UINT4 i;
     UNUSED INT4 phasecount;

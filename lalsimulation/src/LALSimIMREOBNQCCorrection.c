@@ -863,14 +863,12 @@ XLALSimIMREOBGetNRSpinPeakDeltaT (INT4 l,
   XLAL_ERROR_REAL8 (XLAL_EINVAL);
 }
 
-/* FIXME: Add XLALSimIMREOB to these function names */
-
 /**
  * Peak amplitude predicted by fitting NR results (currently only 2,2 available).
  * Unpublished. Used in building SEOBNRv2 tables.
  */
 UNUSED static inline REAL8
-GetNRSpinPeakAmplitudeV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
+XLALSimIMREOBGetNRSpinPeakAmplitudeV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
 			  REAL8 UNUSED a)
 {
   REAL8 chi = a, chi2 = chi * chi, chi3 = chi * chi2;
@@ -912,7 +910,7 @@ GetNRSpinPeakAmplitudeV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
  * Unpublished. Used in building SEOBNRv4.
  */
 UNUSED static inline REAL8
-GetNRSpinPeakAmplitudeV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
+XLALSimIMREOBGetNRSpinPeakAmplitudeV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
 			  REAL8 UNUSED a)
 {
   REAL8 chi = a, chi2 = chi * chi, chi3 = chi * chi2;
@@ -960,7 +958,7 @@ GetNRSpinPeakAmplitudeV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
  * Unpublished. Used in building SEOBNRv2 tables.
  */
 UNUSED static inline REAL8
-GetNRSpinPeakADDotV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
+XLALSimIMREOBGetNRSpinPeakADDotV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
 		      REAL8 UNUSED a)
 {
   REAL8 chi = a;
@@ -995,7 +993,7 @@ GetNRSpinPeakADDotV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
  * Unpublished. Used in building SEOBNRv4.
  */
 UNUSED static inline REAL8
-GetNRSpinPeakADDotV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
+XLALSimIMREOBGetNRSpinPeakADDotV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
 		      REAL8 UNUSED a)
 {
   REAL8 chi = a;
@@ -1042,7 +1040,7 @@ GetNRSpinPeakADDotV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
  * Unpublished. Used in building SEOBNRv2 tables.
  */
 UNUSED static inline REAL8
-GetNRSpinPeakOmegaV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
+XLALSimIMREOBGetNRSpinPeakOmegaV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
 {
   REAL8 chi = a;
   REAL8 eta2 = eta * eta, eta3 = eta * eta2;
@@ -1108,7 +1106,7 @@ GetNRSpinPeakOmegaV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
  * Unpublished. Used in building SEOBNRv4.
  */
 UNUSED static inline REAL8
-GetNRSpinPeakOmegaV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
+XLALSimIMREOBGetNRSpinPeakOmegaV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
 {
   REAL8 chi = a;
   REAL8 res;
@@ -1153,7 +1151,7 @@ GetNRSpinPeakOmegaV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
  * Unpublished. Used in building SEOBNRv2 tables.
  */
 UNUSED static inline REAL8
-GetNRSpinPeakOmegaDotV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
+XLALSimIMREOBGetNRSpinPeakOmegaDotV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
 			 REAL8 UNUSED a)
 {
   REAL8 chi = a;
@@ -1188,7 +1186,7 @@ GetNRSpinPeakOmegaDotV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
  * Unpublished. Used in building SEOBNRv4.
  */
 UNUSED static inline REAL8
-GetNRSpinPeakOmegaDotV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
+XLALSimIMREOBGetNRSpinPeakOmegaDotV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
 			 REAL8 UNUSED a)
 {
   REAL8 chi = a;
@@ -1234,7 +1232,7 @@ GetNRSpinPeakOmegaDotV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
  * Tables IV and V and Eq. 42 of Taracchini et al. PRD 86, 024011 (2012).
  */
 UNUSED static inline REAL8
-GetNRSpinPeakAmplitude (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
+XLALSimIMREOBGetNRSpinPeakAmplitude (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
 			REAL8 UNUSED a)
 {
   /* Fit for HOMs missing */
@@ -1246,7 +1244,7 @@ GetNRSpinPeakAmplitude (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
  * Tables IV and V and Eq. 42 of Taracchini et al. PRD 86, 024011 (2012).
  */
 UNUSED static inline REAL8
-GetNRSpinPeakADDot (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
+XLALSimIMREOBGetNRSpinPeakADDot (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
 		    REAL8 UNUSED a)
 {
   /* Fit for HOMs missing */
@@ -1260,7 +1258,7 @@ GetNRSpinPeakADDot (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
  * Tables IV and V and Eq. 42 of Taracchini et al. PRD 86, 024011 (2012).
  */
 UNUSED static inline REAL8
-GetNRSpinPeakOmega (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
+XLALSimIMREOBGetNRSpinPeakOmega (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
 {
   /* Fit for HOMs missing */
   return 0.27581190323955274 + 0.19347381066059993 * eta
@@ -1276,7 +1274,7 @@ GetNRSpinPeakOmega (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
  * Tables IV and V and Eq. 42 of Taracchini et al. PRD 86, 024011 (2012).
  */
 UNUSED static inline REAL8
-GetNRSpinPeakOmegaDot (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
+XLALSimIMREOBGetNRSpinPeakOmegaDot (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
 		       REAL8 UNUSED a)
 {
   /* Fit for HOMs missing */
@@ -1412,7 +1410,7 @@ XLALSimIMREOBGetNRSpinPeakDeltaTv4 (INT4 UNUSED l,				/**<< Mode l */
  * Take from unpublished SEOBNRv2 results.
  */
 UNUSED static inline REAL8
-GetNRSpinPeakOmegav2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
+XLALSimIMREOBGetNRSpinPeakOmegav2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
 {
   REAL8 chi = a / (1.0 - 2.0 * eta);
   REAL8 eta2 = eta * eta;
@@ -1471,7 +1469,7 @@ GetNRSpinPeakOmegav2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a)
  * Take from unpublished SEOBNRv2 results.
  */
 UNUSED static inline REAL8
-GetNRSpinPeakOmegaDotv2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
+XLALSimIMREOBGetNRSpinPeakOmegaDotv2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta,
 			 REAL8 UNUSED a)
 {
   REAL8 chi = a / (1.0 - 2.0 * eta);
@@ -1811,8 +1809,8 @@ XLALSimIMRSpinEOBCalculateNQCCoefficients (REAL8Vector * restrict amplitude,
   qNSLMDot = gsl_spline_eval_deriv (spline, nrTimePeak, acc);
   qNSLMDDot = gsl_spline_eval_deriv2 (spline, nrTimePeak, acc);
 
-  nra = GetNRSpinPeakAmplitude (l, m, eta, a);
-  nraDDot = -GetNRSpinPeakADDot (l, m, eta, a);
+  nra = XLALSimIMREOBGetNRSpinPeakAmplitude (l, m, eta, a);
+  nraDDot = -XLALSimIMREOBGetNRSpinPeakADDot (l, m, eta, a);
 
   if (XLAL_IS_REAL8_FAIL_NAN (nra) || XLAL_IS_REAL8_FAIL_NAN (nraDDot))
     {
@@ -1889,12 +1887,12 @@ XLALSimIMRSpinEOBCalculateNQCCoefficients (REAL8Vector * restrict amplitude,
   switch (SpinAlignedEOBversion)
     {
     case 1:
-      nromega = GetNRSpinPeakOmega (l, m, eta, a);
-      nromegaDot = GetNRSpinPeakOmegaDot (l, m, eta, a);
+      nromega = XLALSimIMREOBGetNRSpinPeakOmega (l, m, eta, a);
+      nromegaDot = XLALSimIMREOBGetNRSpinPeakOmegaDot (l, m, eta, a);
       break;
     case 2:
-      nromega = GetNRSpinPeakOmegav2 (l, m, eta, a);
-      nromegaDot = GetNRSpinPeakOmegaDotv2 (l, m, eta, a);
+      nromega = XLALSimIMREOBGetNRSpinPeakOmegav2 (l, m, eta, a);
+      nromegaDot = XLALSimIMREOBGetNRSpinPeakOmegaDotv2 (l, m, eta, a);
       break;
     default:
       XLALPrintError
@@ -2318,12 +2316,12 @@ XLALSimIMRSpinEOBCalculateNQCCoefficientsV4 (REAL8Vector * restrict amplitude,		
   qNSLMDDot = gsl_spline_eval_deriv2 (spline, nrTimePeak, acc);
 
   nra =
-    GetNRSpinPeakAmplitudeV4 (l, m, eta,
+    XLALSimIMREOBGetNRSpinPeakAmplitudeV4 (l, m, eta,
 			      chiS + chiA * (m1 - m2) / (m1 + m2) / (1. -
 								     2. *
 								     eta));
   nraDDot =
-    GetNRSpinPeakADDotV4 (l, m, eta,
+    XLALSimIMREOBGetNRSpinPeakADDotV4 (l, m, eta,
 			  chiS + chiA * (m1 - m2) / (m1 + m2) / (1. -
 								 2. * eta));
 //    printf("eta, chiS, chiA, dM/M, chi = %.16e %.16e %.16e %.16e %.16e\n",eta,chiS,chiA, (m1 - m2)/(m1 + m2),chiS + chiA*(m1 - m2)/(m1 + m2)/(1. - 2.*eta));
@@ -2417,11 +2415,11 @@ XLALSimIMRSpinEOBCalculateNQCCoefficientsV4 (REAL8Vector * restrict amplitude,		
     }
 
   nromega =
-    GetNRSpinPeakOmegaV4 (l, m, eta,
+    XLALSimIMREOBGetNRSpinPeakOmegaV4 (l, m, eta,
 			  chiS + chiA * (m1 - m2) / (m1 + m2) / (1. -
 								 2. * eta));
   nromegaDot =
-    GetNRSpinPeakOmegaDotV4 (l, m, eta,
+    XLALSimIMREOBGetNRSpinPeakOmegaDotV4 (l, m, eta,
 			     chiS + chiA * (m1 - m2) / (m1 + m2) / (1. -
 								    2. *
 								    eta));
