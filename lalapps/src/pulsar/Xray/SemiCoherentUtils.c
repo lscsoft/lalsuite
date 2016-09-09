@@ -1152,11 +1152,11 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
 				REAL8 T,                            /**< [in] the duration of the observation */
 				REAL8 DT,                           /**< [in] the length of the coherent segments */
 				REAL8 mu,                           /**< [in] the mismatch */
-				REAL8 coverage		/**< UNDOCUMENTED */
+				REAL8 coverage,		/**< UNDOCUMENTED */
+                                INT4 ndim                           /**< [in] if >0, fix dimensionality of parameter space */
 				)
 {
   REAL8 gnn[NBINMAX];                    /* stores the diagonal metric elements */
-  INT4 ndim = 0;                         /* the number of actual search dimensions */
   INT4 n,k;                              /* counters */
 
   /* validate input arguments */
@@ -1209,16 +1209,22 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
     LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
     XLAL_ERROR(XLAL_ENOMEM);
   }
-  (*binarygridparams)->ndim = NBINMAX;
   LogPrintf(LOG_DEBUG,"%s : allocated memory for the output grid parameters.\n",__func__);
 
-  /* we need to determine the true number of searchable dimensions */
-  /* we check the width of a 1-D template across each dimension span */
-  for (n=0;n<NBINMAX;n++) {
-    REAL8 deltax = 2.0*sqrt(mu/gnn[n]);
-    if (space->data[n].span > deltax) ndim++;
+  if ( ndim > 0 ) {
+    (*binarygridparams)->ndim = ndim;
+    LogPrintf(LOG_NORMAL,"%s : set fixed dimensionality of binary space = %d.\n",__func__,ndim);
+  } else {
+    /* we need to determine the true number of searchable dimensions */
+    /* we check the width of a 1-D template across each dimension span */
+    ndim = 0;
+    for (n=0;n<NBINMAX;n++) {
+      REAL8 deltax = 2.0*sqrt(mu/gnn[n]);
+      if (space->data[n].span > deltax) ndim++;
+    }
+    (*binarygridparams)->ndim = ndim;
+    LogPrintf(LOG_NORMAL,"%s : determined true dimensionality of binary space = %d.\n",__func__,ndim);
   }
-  LogPrintf(LOG_DEBUG,"%s : determined true dimensionality of binary space = %d.\n",__func__,ndim);
 
   /* Compute the grid spacing, grid start and span for each spin derivitive dimension */
   for (n=0;n<NBINMAX;n++) {
