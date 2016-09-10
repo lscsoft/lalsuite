@@ -18,14 +18,21 @@
 
 from matplotlib import cm
 from matplotlib import colors
+import pkg_resources
 import numpy as np
+import errno
 import os
+import warnings
 
 
 for name in ['cylon']:
     # Read in color map RGB data.
-    filename = os.path.join(os.path.dirname(__file__), name + '.csv')
-    data = np.loadtxt(filename, delimiter=',')
+    try:
+        with pkg_resources.resource_stream(__name__, name + '.csv') as f:
+            data = np.loadtxt(f, delimiter=',')
+    except IOError as e:
+        warnings.warn('Failed to load "{0}" colormap'.format(name))
+        continue
 
     # Create color map.
     cmap = colors.LinearSegmentedColormap.from_list(name, data)
@@ -42,5 +49,3 @@ for name in ['cylon']:
     locals().update({name: cmap})
     # Register with Matplotlib.
     cm.register_cmap(cmap=cmap)
-
-del name, filename, data, cmap, cm, colors, np, os
