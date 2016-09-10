@@ -43,10 +43,6 @@ def _add_newdoc_ufunc(func, doc):
     except ValueError as e:
         if e.message == 'Cannot change docstring of ufunc with non-NULL docstring':
             pass
-    except AttributeError as e:
-        # FIXME: workaround for Numpy < 1.7.0. Remove when no longer needed.
-        if e.message == "'module' object has no attribute 'add_newdoc_ufunc'":
-            pass
 
 
 _add_newdoc_ufunc(conditional_pdf, """\
