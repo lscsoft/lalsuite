@@ -2395,6 +2395,7 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
   """
 
   from pylal import bayespputils as bppu
+  from pylal.bayespputils import replace_column
 
   fe = os.path.splitext(postfile)[-1].lower() # file extension
 
@@ -2411,7 +2412,7 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
 
         # make everything a float, since that's what's excected of a CommonResultsObj
         for param in params:
-          samples.replace_column(param, samples[param].astype(float))
+          replace_column(samples, param, samples[param].astype(float))
 
         nsResultsObject = (samples.colnames, samples.as_array().view(float).reshape(-1, len(params)))
       except:
