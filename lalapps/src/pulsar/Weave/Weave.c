@@ -251,7 +251,7 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     output_info_per_seg, BOOLEAN, 0, DEVELOPER,
-    "If TRUE, output various information for each segment: SFT properties, cache usage, etc. "
+    "If TRUE, output various per-segment information: SFT properties, cache usage, etc. "
     );
   //
   // - Checkpointing
@@ -402,7 +402,7 @@ int main( int argc, char *argv[] )
   XLAL_CHECK_MAIN( XLALSegListRange( setup.segments, &segments_start, &segments_end ) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Setup file segment list range = [%" LAL_GPS_FORMAT ", %" LAL_GPS_FORMAT "] GPS, segment count = %u\n", LAL_GPS_PRINT( segments_start ), LAL_GPS_PRINT( segments_end ), nsegments );
 
-  // Create array of various information for each segment
+  // Create array of various per-segment information
   WeaveOutputPerSegInfo XLAL_INIT_ARRAY_DECL( per_seg_info, nsegments );
   for ( size_t i = 0; i < nsegments; ++i ) {
     per_seg_info[i].segment_start = setup.segments->segs[i].start;
@@ -981,9 +981,38 @@ int main( int argc, char *argv[] )
     // Write search results
     XLAL_CHECK_MAIN( XLALWeaveOutputWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Write extra information
-    const WeaveOutputPerSegInfo *p_per_seg_info = uvar->output_info_per_seg ? per_seg_info : NULL;
-    XLAL_CHECK_MAIN( XLALWeaveOutputWriteExtra( file, setup.detectors, nsegments, p_per_seg_info ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Write various per-segment information
+    if ( uvar->output_info_per_seg ) {
+
+      // Begin FITS table
+      XLAL_CHECK( XLALFITSTableOpenWrite( file, "per_seg_info", "various information per segment" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      // Describe FITS table
+      {
+        char col_name[32];
+        XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveOutputPerSegInfo );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_start ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_end ) == XLAL_SUCCESS, XLAL_EFUNC );
+        for ( size_t i = 0; i < setup.detectors->length; ++i ) {
+          snprintf( col_name, sizeof( col_name ), "sft_first_%s", setup.detectors->data[i] );
+          XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_first[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+          snprintf( col_name, sizeof( col_name ), "sft_last_%s", setup.detectors->data[i] );
+          XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_last[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+          snprintf( col_name, sizeof( col_name ), "sft_count_%s", setup.detectors->data[i] );
+          XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, INT4, sft_count[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, min_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, max_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, coh_total ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, coh_total_recomp ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+
+      // Write FITS table
+      for ( size_t i = 0; i < nsegments; ++i ) {
+        XLAL_CHECK( XLALFITSTableWriteRow( file, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+
+    }
 
     // Close output file
     XLALFITSFileClose( file );

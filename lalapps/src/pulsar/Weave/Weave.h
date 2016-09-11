@@ -151,7 +151,7 @@ typedef struct tagWeaveOutputToplistItem {
 } WeaveOutputToplistItem;
 
 ///
-/// Output various information for each segment
+/// Output various per-segment information
 ///
 typedef struct tagWeaveOutputPerSegInfo {
   /// Start time of segment
@@ -324,12 +324,6 @@ int XLALWeaveOutputAdd(
 int XLALWeaveOutputWrite(
   FITSFile *file,
   const WeaveOutput *out
-  );
-int XLALWeaveOutputWriteExtra(
-  FITSFile *file,
-  const LALStringVector *detectors,
-  const size_t nsegments,
-  const WeaveOutputPerSegInfo *per_seg_info
   );
 int XLALWeaveOutputRead(
   FITSFile *file,
