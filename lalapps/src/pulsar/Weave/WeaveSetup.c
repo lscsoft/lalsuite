@@ -159,7 +159,7 @@ int main( int argc, char *argv[] )
   ////////// Create setup data //////////
 
   // Initialise setup data
-  WeaveSetup XLAL_INIT_DECL( setup );
+  WeaveSetupData XLAL_INIT_DECL( setup );
 
   // Copy and sort list of detector names
   setup.detectors = XLALCopyStringVector( uvar->detectors );
@@ -256,7 +256,7 @@ int main( int argc, char *argv[] )
   XLAL_CHECK_MAIN( XLALFITSFileWriteUVarCmdLine( file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write setup data
-  XLAL_CHECK_MAIN( XLALWeaveSetupWrite( file, &setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALWeaveSetupDataWrite( file, &setup ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Close output file
   XLALFITSFileClose( file );
@@ -265,7 +265,7 @@ int main( int argc, char *argv[] )
   ////////// Cleanup memory and exit //////////
 
   // Cleanup memory from setup data
-  XLALWeaveSetupClear( &setup );
+  XLALWeaveSetupDataClear( &setup );
 
   // Cleanup memory from user input
   XLALDestroyUserVars();

@@ -122,7 +122,7 @@ typedef struct {
   SuperskyMetrics *metrics;
   /// Ephemeris data over time-span of segments
   EphemerisData *ephemerides;
-} WeaveSetup;
+} WeaveSetupData;
 
 ///
 /// Output toplist per-segment item
@@ -179,16 +179,16 @@ typedef struct tagWeaveOutputPerSegInfo {
 ///
 /// @{
 
-void XLALWeaveSetupClear(
-  WeaveSetup *setup
+void XLALWeaveSetupDataClear(
+  WeaveSetupData *setup
   );
-int XLALWeaveSetupWrite(
+int XLALWeaveSetupDataWrite(
   FITSFile *file,
-  const WeaveSetup *setup
+  const WeaveSetupData *setup
   );
-int XLALWeaveSetupRead(
+int XLALWeaveSetupDataRead(
   FITSFile *file,
-  WeaveSetup *setup
+  WeaveSetupData *setup
   );
 
 /// @}
@@ -337,7 +337,7 @@ int XLALWeaveOutputRead(
   );
 int XLALWeaveOutputCompare(
   BOOLEAN *equal,
-  const WeaveSetup *setup,
+  const WeaveSetupData *setup,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
   const WeaveOutput *out_1,

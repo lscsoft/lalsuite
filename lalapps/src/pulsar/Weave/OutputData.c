@@ -26,7 +26,7 @@
 
 static LALHeap *toplist_create( int toplist_limit, LALHeapCmpFcn toplist_item_compare_fcn );
 static WeaveOutputToplistItem *toplist_item_create( const LIGOTimeGPS *ref_time, const UINT4 per_nsegments );
-static int toplist_compare( BOOLEAN *equal, const WeaveSetup *setup, const REAL8 param_tol_mism, const VectorComparison *result_tol, const LALStringVector *detectors, const size_t nsegments, const LALHeap *toplist_1, const LALHeap *toplist_2 );
+static int toplist_compare( BOOLEAN *equal, const WeaveSetupData *setup, const REAL8 param_tol_mism, const VectorComparison *result_tol, const LALStringVector *detectors, const size_t nsegments, const LALHeap *toplist_1, const LALHeap *toplist_2 );
 static int toplist_compare_results( BOOLEAN *equal, const VectorComparison *result_tol, const REAL4Vector *res_1, const REAL4Vector *res_2 );
 static int toplist_compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const REAL8 param_tol_mism, const WeavePhysicalToLattice phys_to_latt, const gsl_matrix *metric, const void *transf_data, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
 static int toplist_fits_table_init( FITSFile *file, const size_t nspins, const LALStringVector *per_detectors, const UINT4 per_nsegments );
@@ -358,7 +358,7 @@ int toplist_compare_results(
 ///
 int toplist_compare(
   BOOLEAN *equal,
-  const WeaveSetup *setup,
+  const WeaveSetupData *setup,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
   const LALStringVector *detectors,
@@ -909,7 +909,7 @@ int XLALWeaveOutputRead(
 ///
 int XLALWeaveOutputCompare(
   BOOLEAN *equal,
-  const WeaveSetup *setup,
+  const WeaveSetupData *setup,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
   const WeaveOutput *out_1,

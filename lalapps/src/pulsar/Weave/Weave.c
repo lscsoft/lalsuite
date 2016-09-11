@@ -373,7 +373,7 @@ int main( int argc, char *argv[] )
   ////////// Load setup data //////////
 
   // Initialise setup data
-  WeaveSetup XLAL_INIT_DECL( setup );
+  WeaveSetupData XLAL_INIT_DECL( setup );
 
   {
     // Open setup file
@@ -382,7 +382,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
 
     // Read setup data
-    XLAL_CHECK_MAIN( XLALWeaveSetupRead( file, &setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveSetupDataRead( file, &setup ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Close output file
     XLALFITSFileClose( file );
@@ -1014,7 +1014,7 @@ int main( int argc, char *argv[] )
   }
 
   // Cleanup memory from setup data
-  XLALWeaveSetupClear( &setup );
+  XLALWeaveSetupDataClear( &setup );
   XLALFree( setup_detectors_string );
 
   // Cleanup memory from user input

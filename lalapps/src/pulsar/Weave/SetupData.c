@@ -62,8 +62,8 @@ int setup_PosVelAcc_fits_table_init(
 ///
 /// Free contents of setup data
 ///
-void XLALWeaveSetupClear(
-  WeaveSetup *setup
+void XLALWeaveSetupDataClear(
+  WeaveSetupData *setup
   )
 {
   if ( setup != NULL ) {
@@ -77,9 +77,9 @@ void XLALWeaveSetupClear(
 ///
 /// Write setup data to a FITS file
 ///
-int XLALWeaveSetupWrite(
+int XLALWeaveSetupDataWrite(
   FITSFile *file,
-  const WeaveSetup *setup
+  const WeaveSetupData *setup
   )
 {
 
@@ -183,9 +183,9 @@ int XLALWeaveSetupWrite(
 ///
 /// Read setup data from a FITS file
 ///
-int XLALWeaveSetupRead(
+int XLALWeaveSetupDataRead(
   FITSFile *file,
-  WeaveSetup *setup
+  WeaveSetupData *setup
   )
 {
 
