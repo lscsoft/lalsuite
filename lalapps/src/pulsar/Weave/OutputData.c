@@ -53,7 +53,7 @@ struct tagWeaveOutput {
   /// Total number of semicoherent results added to output
   INT8 semi_total;
   /// Toplist ranked by mean multi-detector F-statistic
-  LALHeap *toplist_mean_twoF;
+  LALHeap *mean_twoF_toplist;
   /// Save a no-longer-used toplist item for re-use
   WeaveOutputToplistItem *saved_item;
 };
@@ -651,8 +651,8 @@ WeaveOutput *XLALWeaveOutputCreate(
   }
 
   // Create a toplist ranked by mean multi-detector F-statistic
-  out->toplist_mean_twoF = toplist_create( toplist_limit, toplist_item_compare_by_mean_twoF );
-  XLAL_CHECK_NULL( out->toplist_mean_twoF != NULL, XLAL_EFUNC );
+  out->mean_twoF_toplist = toplist_create( toplist_limit, toplist_item_compare_by_mean_twoF );
+  XLAL_CHECK_NULL( out->mean_twoF_toplist != NULL, XLAL_EFUNC );
 
   return out;
 
@@ -667,7 +667,7 @@ void XLALWeaveOutputDestroy(
 {
   if ( out != NULL ) {
     toplist_item_destroy( out->saved_item );
-    XLALHeapDestroy( out->toplist_mean_twoF );
+    XLALHeapDestroy( out->mean_twoF_toplist );
     XLALDestroyStringVector( out->per_detectors );
     XLALFree( out );
   }
@@ -694,7 +694,7 @@ int XLALWeaveOutputAdd(
   for ( size_t i = 0; i < semi_nfreqs; ++i ) {
 
     // Add item to toplist ranked by mean multi-detector F-statistic
-    XLAL_CHECK( toplist_item_add( &full_init, out, out->toplist_mean_twoF, semi_res, i ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( toplist_item_add( &full_init, out, out->mean_twoF_toplist, semi_res, i ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   }
 
@@ -740,7 +740,7 @@ int XLALWeaveOutputWrite(
   XLAL_CHECK( XLALFITSHeaderWriteINT8( file, "semitot", out->semi_total, "total semicoherent templates searched" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write toplist ranked by mean multi-detector F-statistic
-  XLAL_CHECK( toplist_fits_table_write( file, "toplist_mean_twoF", "toplist ranked by mean multi-detector F-statistic", out, out->toplist_mean_twoF ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( toplist_fits_table_write( file, "mean_twoF_toplist", "toplist ranked by mean multi-detector F-statistic", out, out->mean_twoF_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -898,7 +898,7 @@ int XLALWeaveOutputRead(
   }
 
   // Read and append to toplist ranked by mean multi-detector F-statistic
-  XLAL_CHECK( toplist_fits_table_read( file, "toplist_mean_twoF", *out, &( *out )->toplist_mean_twoF, toplist_item_compare_by_mean_twoF ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( toplist_fits_table_read( file, "mean_twoF_toplist", *out, &( *out )->mean_twoF_toplist, toplist_item_compare_by_mean_twoF ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -984,7 +984,7 @@ int XLALWeaveOutputCompare(
 
   // Compare toplists ranked by mean multi-detector F-statistic
   XLALPrintInfo( "%s: comparing toplists ranked by mean multi-detector F-statistic ...\n", __func__ );
-  XLAL_CHECK( toplist_compare( equal, setup, param_tol_mism, result_tol, detectors, nsegments, out_1->toplist_mean_twoF, out_2->toplist_mean_twoF ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( toplist_compare( equal, setup, param_tol_mism, result_tol, detectors, nsegments, out_1->mean_twoF_toplist, out_2->mean_twoF_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( !*equal ) {
     return XLAL_SUCCESS;
   }

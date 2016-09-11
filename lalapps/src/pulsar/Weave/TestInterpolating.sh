@@ -37,15 +37,15 @@ for seg in 1 2 3; do
 
     echo "=== Extract coherent template bank from WeaveOut.fits as ASCII table ==="
     set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[toplist_mean_twoF][col c1=seg${seg}_freq; c2=seg${seg}_alpha; c3=seg${seg}_delta; c4=seg${seg}_f1dot; c5=0; c6=0]" > WeaveSeg${seg}CohBank.txt
+    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=seg${seg}_freq; c2=seg${seg}_alpha; c3=seg${seg}_delta; c4=seg${seg}_f1dot; c5=0; c6=0]" > WeaveSeg${seg}CohBank.txt
     set +x
     echo
 
     echo "=== Segment #${seg}: Extract coherent template bank and coherent F-statistics from WeaveOut.fits as ASCII table ==="
     set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[toplist_mean_twoF][col c1=seg${seg}_freq; c2=seg${seg}_alpha; c3=seg${seg}_delta; c4=seg${seg}_f1dot; c5=0; c6=0; c7=DEFNULL(seg${seg}_twoF,-999)]" > WeaveSeg${seg}CohBankCohFstats.txt
-    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[toplist_mean_twoF][col c1=seg${seg}_freq; c2=seg${seg}_alpha; c3=seg${seg}_delta; c4=seg${seg}_f1dot; c5=0; c6=0; c7=DEFNULL(seg${seg}_twoF_H1,-999)]" > WeaveSeg${seg}CohBankCohFstatsH1.txt
-    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[toplist_mean_twoF][col c1=seg${seg}_freq; c2=seg${seg}_alpha; c3=seg${seg}_delta; c4=seg${seg}_f1dot; c5=0; c6=0; c7=DEFNULL(seg${seg}_twoF_L1,-999)]" > WeaveSeg${seg}CohBankCohFstatsL1.txt
+    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=seg${seg}_freq; c2=seg${seg}_alpha; c3=seg${seg}_delta; c4=seg${seg}_f1dot; c5=0; c6=0; c7=DEFNULL(seg${seg}_twoF,-999)]" > WeaveSeg${seg}CohBankCohFstats.txt
+    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=seg${seg}_freq; c2=seg${seg}_alpha; c3=seg${seg}_delta; c4=seg${seg}_f1dot; c5=0; c6=0; c7=DEFNULL(seg${seg}_twoF_H1,-999)]" > WeaveSeg${seg}CohBankCohFstatsH1.txt
+    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=seg${seg}_freq; c2=seg${seg}_alpha; c3=seg${seg}_delta; c4=seg${seg}_f1dot; c5=0; c6=0; c7=DEFNULL(seg${seg}_twoF_L1,-999)]" > WeaveSeg${seg}CohBankCohFstatsL1.txt
     set +x
     echo
 
@@ -74,16 +74,16 @@ done
 
 echo "=== Extract semicoherent template bank from WeaveOut.fits as ASCII table ==="
 set -x
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0]" > WeaveSemiBank.txt
+${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0]" > WeaveSemiBank.txt
 sed -i '/^#/d' WeaveSemiBank.txt
 set +x
 echo
 
 echo "=== Extract semicoherent F-statistics from WeaveOut.fits as ASCII table ==="
 set -x
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF,-999)]" > WeaveSemiFstats.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF_H1,-999)]" > WeaveSemiFstatsH1.txt
-${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[toplist_mean_twoF][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF_L1,-999)]" > WeaveSemiFstatsL1.txt
+${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF,-999)]" > WeaveSemiFstats.txt
+${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF_H1,-999)]" > WeaveSemiFstatsH1.txt
+${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0; c7=DEFNULL(mean_twoF_L1,-999)]" > WeaveSemiFstatsL1.txt
 set +x
 echo
 
