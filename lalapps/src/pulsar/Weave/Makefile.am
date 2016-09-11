@@ -22,14 +22,14 @@ lalapps_WeaveSetup_SOURCES = \
 lalapps_Weave_SOURCES = \
 	CacheResults.c \
 	ComputeResults.c \
-	OutputData.c \
+	OutputResults.c \
 	SetupData.c \
 	Weave.c \
 	Weave.h \
 	$(END_OF_LIST)
 
 lalapps_WeaveCompare_SOURCES = \
-	OutputData.c \
+	OutputResults.c \
 	SetupData.c \
 	Weave.h \
 	WeaveCompare.c \

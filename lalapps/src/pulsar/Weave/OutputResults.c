@@ -30,18 +30,18 @@ static int toplist_compare( BOOLEAN *equal, const WeaveSetupData *setup, const R
 static int toplist_compare_results( BOOLEAN *equal, const VectorComparison *result_tol, const REAL4Vector *res_1, const REAL4Vector *res_2 );
 static int toplist_compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const REAL8 param_tol_mism, const WeavePhysicalToLattice phys_to_latt, const gsl_matrix *metric, const void *transf_data, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
 static int toplist_fits_table_init( FITSFile *file, const size_t nspins, const LALStringVector *per_detectors, const UINT4 per_nsegments );
-static int toplist_fits_table_read( FITSFile *file, const char *name, WeaveOutput *out, LALHeap **toplist, LALHeapCmpFcn toplist_item_compare_fcn );
-static int toplist_fits_table_write( FITSFile *file, const char *name, const char *comment, const WeaveOutput *out, LALHeap *toplist );
+static int toplist_fits_table_read( FITSFile *file, const char *name, WeaveOutputResults *out, LALHeap **toplist, LALHeapCmpFcn toplist_item_compare_fcn );
+static int toplist_fits_table_write( FITSFile *file, const char *name, const char *comment, const WeaveOutputResults *out, LALHeap *toplist );
 static int toplist_fits_table_write_visitor( void *param, const void *x );
-static int toplist_item_add( BOOLEAN *full_init, WeaveOutput *out, LALHeap *toplist, const WeaveSemiResults *semi_res, const size_t freq_idx );
+static int toplist_item_add( BOOLEAN *full_init, WeaveOutputResults *out, LALHeap *toplist, const WeaveSemiResults *semi_res, const size_t freq_idx );
 static int toplist_item_compare_by_mean_twoF( const void *x, const void *y );
 static int toplist_item_sort_by_semi_phys( const void *x, const void *y );
 static void toplist_item_destroy( void *x );
 
 ///
-/// Internal definition of output data from a search
+/// Internal definition of output results from a search
 ///
-struct tagWeaveOutput {
+struct tagWeaveOutputResults {
   /// Reference time at which search is conducted
   LIGOTimeGPS ref_time;
   /// Number of spindown parameters to output
@@ -163,7 +163,7 @@ int toplist_fits_table_write(
   FITSFile *file,
   const char *name,
   const char *comment,
-  const WeaveOutput *out,
+  const WeaveOutputResults *out,
   LALHeap *toplist
   )
 {
@@ -195,7 +195,7 @@ int toplist_fits_table_write(
 int toplist_fits_table_read(
   FITSFile *file,
   const char *name,
-  WeaveOutput *out,
+  WeaveOutputResults *out,
   LALHeap **toplist,
   LALHeapCmpFcn toplist_item_compare_fcn
   )
@@ -580,7 +580,7 @@ int toplist_item_compare_by_mean_twoF(
 ///
 int toplist_item_add(
   BOOLEAN *full_init,
-  WeaveOutput *out,
+  WeaveOutputResults *out,
   LALHeap *toplist,
   const WeaveSemiResults *semi_res,
   const size_t freq_idx
@@ -619,9 +619,9 @@ int toplist_item_add(
 }
 
 ///
-/// Create output data
+/// Create output results
 ///
-WeaveOutput *XLALWeaveOutputCreate(
+WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const LIGOTimeGPS *ref_time,
   const int toplist_limit,
   const size_t nspins,
@@ -635,7 +635,7 @@ WeaveOutput *XLALWeaveOutputCreate(
   XLAL_CHECK_NULL( toplist_limit >= 0, XLAL_EINVAL );
 
   // Allocate memory
-  WeaveOutput *out = XLALCalloc( 1, sizeof( *out ) );
+  WeaveOutputResults *out = XLALCalloc( 1, sizeof( *out ) );
   XLAL_CHECK_NULL( out != NULL, XLAL_ENOMEM );
 
   // Set fields
@@ -659,10 +659,10 @@ WeaveOutput *XLALWeaveOutputCreate(
 }
 
 ///
-/// Free output data
+/// Free output results
 ///
-void XLALWeaveOutputDestroy(
-  WeaveOutput *out
+void XLALWeaveOutputResultsDestroy(
+  WeaveOutputResults *out
   )
 {
   if ( out != NULL ) {
@@ -676,8 +676,8 @@ void XLALWeaveOutputDestroy(
 ///
 /// Add semicoherent results to output
 ///
-int XLALWeaveOutputAdd(
-  WeaveOutput *out,
+int XLALWeaveOutputResultsAdd(
+  WeaveOutputResults *out,
   const WeaveSemiResults *semi_res,
   const UINT4 semi_nfreqs
   )
@@ -706,11 +706,11 @@ int XLALWeaveOutputAdd(
 }
 
 ///
-/// Write output data to a FITS file
+/// Write output results to a FITS file
 ///
-int XLALWeaveOutputWrite(
+int XLALWeaveOutputResultsWrite(
   FITSFile *file,
-  const WeaveOutput *out
+  const WeaveOutputResults *out
   )
 {
 
@@ -747,11 +747,11 @@ int XLALWeaveOutputWrite(
 }
 
 ///
-/// Read output data from a FITS file and either create, or append to existing, output data
+/// Read output results from a FITS file and either create, or append to existing, output results
 ///
-int XLALWeaveOutputRead(
+int XLALWeaveOutputResultsReadAppend(
   FITSFile *file,
-  WeaveOutput **out
+  WeaveOutputResults **out
   )
 {
 
@@ -759,7 +759,7 @@ int XLALWeaveOutputRead(
   XLAL_CHECK( file != NULL, XLAL_EFAULT );
   XLAL_CHECK( out != NULL, XLAL_EFAULT );
 
-  // Decide whether to create, or append to existing, output data
+  // Decide whether to create, or append to existing, output results
   const BOOLEAN create = ( *out == NULL );
 
   // Allocate memory if required
@@ -852,15 +852,15 @@ int XLALWeaveOutputRead(
 }
 
 ///
-/// Compare two output data and return whether they are equal
+/// Compare two output results and return whether they are equal
 ///
-int XLALWeaveOutputCompare(
+int XLALWeaveOutputResultsCompare(
   BOOLEAN *equal,
   const WeaveSetupData *setup,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
-  const WeaveOutput *out_1,
-  const WeaveOutput *out_2
+  const WeaveOutputResults *out_1,
+  const WeaveOutputResults *out_2
   )
 {
 
@@ -872,7 +872,7 @@ int XLALWeaveOutputCompare(
   XLAL_CHECK( out_1 != NULL, XLAL_EFAULT );
   XLAL_CHECK( out_2 != NULL, XLAL_EFAULT );
 
-  // Output data are assumed equal until we find otherwise
+  // Output results are assumed equal until we find otherwise
   *equal = 1;
 
   // Compare reference times

@@ -130,7 +130,7 @@ int main( int argc, char *argv[] )
   }
   LogPrintf( LOG_NORMAL, "Parsed user input successfully\n" );
 
-  ////////// Load setup and output data //////////
+  ////////// Load setup data //////////
 
   // Initialise setup data
   WeaveSetupData XLAL_INIT_DECL( setup );
@@ -149,8 +149,10 @@ int main( int argc, char *argv[] )
     LogPrintf( LOG_NORMAL, "Closed setup file '%s'\n", uvar->setup_file );
   }
 
-  // Initialise output data
-  WeaveOutput *out_1 = NULL, *out_2 = NULL;
+  ////////// Load output results //////////
+
+  // Initialise output results
+  WeaveOutputResults *out_1 = NULL, *out_2 = NULL;
 
   {
     // Open output file #1
@@ -158,8 +160,8 @@ int main( int argc, char *argv[] )
     FITSFile *file = XLALFITSFileOpenRead( uvar->output_file_1 );
     XLAL_CHECK_FAIL( file != NULL, XLAL_EFUNC );
 
-    // Read setup data
-    XLAL_CHECK_FAIL( XLALWeaveOutputRead( file, &out_1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Read output results
+    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_1 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Close output file
     XLALFITSFileClose( file );
@@ -172,15 +174,15 @@ int main( int argc, char *argv[] )
     FITSFile *file = XLALFITSFileOpenRead( uvar->output_file_2 );
     XLAL_CHECK_FAIL( file != NULL, XLAL_EFUNC );
 
-    // Read setup data
-    XLAL_CHECK_FAIL( XLALWeaveOutputRead( file, &out_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Read output results
+    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Close output file
     XLALFITSFileClose( file );
     LogPrintf( LOG_NORMAL, "Closed output file '%s'\n", uvar->output_file_2 );
   }
 
-  ////////// Compare output files //////////
+  ////////// Compare output results //////////
 
   // Initalise struct with comparison tolerances
   const VectorComparison result_tol = {
@@ -191,17 +193,17 @@ int main( int argc, char *argv[] )
     .relErr_atMaxAbsy = uvar->result_tol_at_max,
   };
 
-  // Compare output files
+  // Compare output results
   BOOLEAN equal = 0;
   LogPrintf( LOG_NORMAL, "Comparing output files '%s' and '%s ...\n", uvar->output_file_1, uvar->output_file_2 );
-  XLAL_CHECK_FAIL( XLALWeaveOutputCompare( &equal, &setup, uvar->param_tol_mism, &result_tol, out_1, out_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( XLALWeaveOutputResultsCompare( &equal, &setup, uvar->param_tol_mism, &result_tol, out_1, out_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Output files compare %s\n", equal ? "EQUAL" : "NOT EQUAL" );
 
   ////////// Cleanup memory and exit //////////
 
-  // Cleanup memory from output data
-  XLALWeaveOutputDestroy( out_1 );
-  XLALWeaveOutputDestroy( out_2 );
+  // Cleanup memory from output results
+  XLALWeaveOutputResultsDestroy( out_1 );
+  XLALWeaveOutputResultsDestroy( out_2 );
 
   // Cleanup memory from setup data
   XLALWeaveSetupDataClear( &setup );
@@ -225,7 +227,7 @@ XLAL_FAIL:
 }
 
 // This function is not required by WeaveCompare.c, but
-// must be defined since it is called from OutputData.c
+// must be defined since it is called from OutputResults.c
 int XLALWeaveFillOutputToplistItem(
   WeaveOutputToplistItem UNUSED **item,
   BOOLEAN UNUSED *full_init,

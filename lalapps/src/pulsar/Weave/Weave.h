@@ -100,9 +100,9 @@ typedef struct tagWeaveCache WeaveCache;
 typedef struct tagWeaveCacheQueries WeaveCacheQueries;
 
 ///
-/// Output data from a search
+/// Output results from a search
 ///
-typedef struct tagWeaveOutput WeaveOutput;
+typedef struct tagWeaveOutputResults WeaveOutputResults;
 
 ///
 /// Setup data which is computed only once for a given search setup
@@ -302,40 +302,40 @@ int XLALWeaveCacheRetrieve(
 /// @}
 
 ///
-/// \name Routines which handle the output data
+/// \name Routines which handle the output results
 ///
 /// @{
 
-WeaveOutput *XLALWeaveOutputCreate(
+WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const LIGOTimeGPS *ref_time,
   const int toplist_limit,
   const size_t nspins,
   const LALStringVector *per_detectors,
   const UINT4 per_nsegments
   );
-void XLALWeaveOutputDestroy(
-  WeaveOutput *out
+void XLALWeaveOutputResultsDestroy(
+  WeaveOutputResults *out
   );
-int XLALWeaveOutputAdd(
-  WeaveOutput *out,
+int XLALWeaveOutputResultsAdd(
+  WeaveOutputResults *out,
   const WeaveSemiResults *semi_res,
   const UINT4 semi_nfreqs
   );
-int XLALWeaveOutputWrite(
+int XLALWeaveOutputResultsWrite(
   FITSFile *file,
-  const WeaveOutput *out
+  const WeaveOutputResults *out
   );
-int XLALWeaveOutputRead(
+int XLALWeaveOutputResultsReadAppend(
   FITSFile *file,
-  WeaveOutput **out
+  WeaveOutputResults **out
   );
-int XLALWeaveOutputCompare(
+int XLALWeaveOutputResultsCompare(
   BOOLEAN *equal,
   const WeaveSetupData *setup,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
-  const WeaveOutput *out_1,
-  const WeaveOutput *out_2
+  const WeaveOutputResults *out_1,
+  const WeaveOutputResults *out_2
   );
 
 /// @}

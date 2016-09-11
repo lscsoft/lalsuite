@@ -738,7 +738,7 @@ int main( int argc, char *argv[] )
   XLAL_CHECK_MAIN( semi_res != NULL, XLAL_EFUNC );
 
   // Create output results structure
-  WeaveOutput *out = XLALWeaveOutputCreate( &setup.ref_time, uvar->output_max_size, ninputspins, per_detectors, per_nsegments );
+  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, uvar->output_max_size, ninputspins, per_detectors, per_nsegments );
   XLAL_CHECK_MAIN( out != NULL, XLAL_EFUNC );
 
   // Count number of semicoherent frequency blocks
@@ -773,7 +773,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( ckpt_output_count > 0, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Read output results
-      XLAL_CHECK_MAIN( XLALWeaveOutputRead( file, &out ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Read state of iterator over semicoherent tiling
       XLAL_CHECK_MAIN( XLALRestoreLatticeTilingIterator( semi_itr, file, "semi_itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -867,7 +867,7 @@ int main( int argc, char *argv[] )
     }
 
     // Add semicoherent results to output
-    XLAL_CHECK_MAIN( XLALWeaveOutputAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Increment semicoherent template index
     ++semi_index;
@@ -922,7 +922,7 @@ int main( int argc, char *argv[] )
         XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "ckptcnt", ckpt_output_count, "number of checkpoints" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         // Write output results
-        XLAL_CHECK_MAIN( XLALWeaveOutputWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         // Write state of iterator over semicoherent tiling
         XLAL_CHECK_MAIN( XLALSaveLatticeTilingIterator( semi_itr, file, "semi_itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -979,7 +979,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALFITSFileWriteUVarCmdLine( file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write search results
-    XLAL_CHECK_MAIN( XLALWeaveOutputWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write various per-segment information
     if ( uvar->output_info_per_seg ) {
@@ -1022,7 +1022,7 @@ int main( int argc, char *argv[] )
   ////////// Cleanup memory and exit //////////
 
   // Cleanup memory from output results
-  XLALWeaveOutputDestroy( out );
+  XLALWeaveOutputResultsDestroy( out );
 
   // Cleanup memory from parameter-space iteration
   XLALDestroyLatticeTilingIterator( semi_itr );
