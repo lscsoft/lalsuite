@@ -19,7 +19,7 @@
 
 
 /**
- * \author Craig Robinson, Yi Pan
+ * \author Craig Robinson, Yi Pan, Andrea Taracchini
  *
  * \brief More recent versions of the EOB models, such as EOBNRv2 and SEOBNRv1, utilise
  * a non-quasicircular correction (NQC) to bring the peak of the EOB frequency
@@ -906,6 +906,23 @@ XLALSimIMREOBGetNRSpinPeakAmplitudeV2 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSE
 }
 
 /**
+ * Combine two spin-dependent fits of NR input values in a quardatic-in-eta polynomial
+ * with the linear-in-eta coefficient A1 being provided by a polyinamial-in-spin global
+ * fit to NR in the whole eta-chi plane. See Eqs. (20)-(21) in https://dcc.ligo.org/T1600383
+ */
+static inline REAL8 CombineTPLEQMFits (REAL8 eta, REAL8 A1, REAL8 fEQ, REAL8 fTPL)
+{
+    REAL8 A0, A2;
+    REAL8 eta2 = eta * eta;
+    // Impose that TPL and equal-mass limit are exactly recovered
+    A0 = -0.00099601593625498 * A1 - 0.00001600025600409607 * fEQ + 1.000016000256004 * fTPL;
+    A2 = -3.984063745019967 * A1 + 16.00025600409607 * fEQ - 16.0002560041612 * fTPL;
+    // Final formula
+    return A0 + A1 * eta + A2 * eta2;
+}
+
+
+/**
  * Peak amplitude predicted by fitting NR results (currently only 2,2 available).
  * Unpublished. Used in building SEOBNRv4.
  */
@@ -914,9 +931,8 @@ XLALSimIMREOBGetNRSpinPeakAmplitudeV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSE
 			  REAL8 UNUSED a)
 {
   REAL8 chi = a, chi2 = chi * chi, chi3 = chi * chi2;
-  REAL8 eta2 = eta * eta;
   REAL8 res;
-  REAL8 fTPL, fEQ, A0, A1, A2, e0, e1, e2, e3;
+  REAL8 fTPL, fEQ, A1, e0, e1, e2, e3;
   switch (l) {
       case 2:
           switch (m) {
@@ -931,11 +947,7 @@ XLALSimIMREOBGetNRSpinPeakAmplitudeV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSE
                   e2 = -0.5683726304811634;
                   e3 = 0.4011143761465342;
                   A1 = e0 + e1 * chi + e2 * chi2 + e3 * chi3;
-                  // Impose that TPL and equal-mass limit are exactly recovered
-                  A0 = -0.00099601593625498 * A1 - 0.00001600025600409607 * fEQ + 1.000016000256004 * fTPL;
-                  A2 = -3.984063745019967 * A1 + 16.00025600409607 * fEQ - 16.0002560041612 * fTPL;
-                  // Final formula
-                  res = eta * (A0 + A1 * eta + A2 * eta2);
+                  res = eta * CombineTPLEQMFits(eta, A1, fEQ, fTPL);
                   break;
               default:
                   XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
@@ -998,9 +1010,8 @@ XLALSimIMREOBGetNRSpinPeakADDotV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED et
 {
   REAL8 chi = a;
   REAL8 chiMinus1 = -1. + chi;
-  REAL8 eta2 = eta * eta;
   REAL8 res;
-  REAL8 fTPL, fEQ, A0, A1, A2, e0, e1;
+  REAL8 fTPL, fEQ, A1, e0, e1;
   switch (l) {
       case 2:
           switch (m) {
@@ -1013,11 +1024,7 @@ XLALSimIMREOBGetNRSpinPeakADDotV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED et
                   e0 = -0.005776537350356959;
                   e1 = 0.001030857482885267;
                   A1 = e0 + e1 * chi;
-                  // Impose that TPL and equal-mass limit are exactly recovered
-                  A0 = -0.00099601593625498 * A1 - 0.00001600025600409607 * fEQ + 1.000016000256004 * fTPL;
-                  A2 = -3.984063745019967 * A1 + 16.00025600409607 * fEQ - 16.0002560041612 * fTPL;
-                  // Final formula
-                  res = eta * (A0 + A1 * eta + A2 * eta2);
+                  res = eta * CombineTPLEQMFits(eta, A1, fEQ, fTPL);;
                   break;
                 default:
                     XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
@@ -1110,7 +1117,7 @@ XLALSimIMREOBGetNRSpinPeakOmegaV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED et
 {
   REAL8 chi = a;
   REAL8 res;
-  REAL8 c0, c1, c2, c3, c4, d2, d3;
+  REAL8 c0, c1, c2, c3, c4, d2, d3, A3, A4;
   switch (l) {
       case 2:
           switch (m) {
@@ -1124,11 +1131,11 @@ XLALSimIMREOBGetNRSpinPeakOmegaV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED et
                   d2 = 7.629921628648589;
                   d3 = 10.26207326082448;
                   // Combine TPL and equal-mass
-                  c2 = d2 + 4 * (d2 - c2) * (eta - 0.25);
-                  c3 = d3 + 4 * (d3 - c3) * (eta - 0.25);
+                  A4 = d2 + 4 * (d2 - c2) * (eta - 0.25);
+                  A3 = d3 + 4 * (d3 - c3) * (eta - 0.25);
                   c4 = 0.00174345193125868;
                   // Final formula
-                  res = c0 + (c1 + c4 * chi) * log(c3 - c2 * chi);
+                  res = c0 + (c1 + c4 * chi) * log(A3 - A4 * chi);
                   break;
               default:
                     XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
@@ -1191,7 +1198,7 @@ XLALSimIMREOBGetNRSpinPeakOmegaDotV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED
 {
   REAL8 chi = a;
   REAL8 res;
-  REAL8 fTPL, fEQ, A0, A1, A2, e0, e1;
+  REAL8 fTPL, fEQ, A1, e0, e1;
   switch (l) {
       case 2:
           switch (m) {
@@ -1204,11 +1211,7 @@ XLALSimIMREOBGetNRSpinPeakOmegaDotV4 (INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED
                   e0 = 0.01574321112717377;
                   e1 = 0.02244178140869133;
                   A1 = e0 + e1 * chi;
-                  // Impose that TPL and equal-mass limit are exactly recovered
-                  A0 = -0.00099601593625498 * A1 - 0.00001600025600409607 * fEQ + 1.000016000256004 * fTPL;
-                  A2 = -3.984063745019967 * A1 + 16.00025600409607 * fEQ - 16.0002560041612 * fTPL;
-                  // Final formula
-                  res = A0 + A1 * eta + A2 * eta * eta;
+                  res = CombineTPLEQMFits(eta, A1, fEQ, fTPL);;
                   break;
               
               default:
@@ -2010,7 +2013,7 @@ XLALSimIMRSpinEOBCalculateNQCCoefficients (REAL8Vector * restrict amplitude,
  * non-quasicircular correction. The details of the calculation of these
  * coefficients are found in the DCC document T1100433.
  * In brief, this function populates and solves the linear equations
- * Eq. 18 (for amplitude) and Eq. 19 (for phase) of the DCC document T1100433v2.
+ * Eq. 18 (for amplitude) and Eq. 19 (for phase) of https://dcc.ligo.org/T1100433
  */
 UNUSED static int
 XLALSimIMRSpinEOBCalculateNQCCoefficientsV4 (REAL8Vector * restrict amplitude,			   /**<< Waveform amplitude, func of time */
@@ -2110,52 +2113,6 @@ XLALSimIMRSpinEOBCalculateNQCCoefficientsV4 (REAL8Vector * restrict amplitude,		
       XLALDestroyREAL8Vector (qNSLM);
       XLAL_ERROR (XLAL_EFUNC);
     }
-
-  /* We need the calibrated non-spinning NQC coefficients */
-//    switch ( SpinAlignedEOBversion)
-//    {
-//        case 1:
-//            if ( XLALSimIMRGetEOBCalibratedSpinNQC( coeffs, l, m, eta, a ) == XLAL_FAILURE )
-//            {
-//                XLALDestroyREAL8Vector( timeVec );
-//                XLALDestroyREAL8Vector( q3 );
-//                XLALDestroyREAL8Vector( q4 );
-//                XLALDestroyREAL8Vector( q5 );
-//                XLALDestroyREAL8Vector( p3 );
-//                XLALDestroyREAL8Vector( p4 );
-//                XLALDestroyREAL8Vector( qNS );
-//                XLALDestroyREAL8Vector( pNS );
-//                XLALDestroyREAL8Vector( q3LM );
-//                XLALDestroyREAL8Vector( q4LM );
-//                XLALDestroyREAL8Vector( q5LM );
-//                XLALDestroyREAL8Vector( qNSLM );
-//                XLAL_ERROR( XLAL_EFUNC );
-//            }
-//            break;
-//        case 2:
-//            // if ( XLALSimIMRGetEOBCalibratedSpinNQCv2( coeffs, l, m, eta, a ) == XLAL_FAILURE )
-//            if ( XLALSimIMRGetEOBCalibratedSpinNQC3D( coeffs, l, m, m1, m2, a, chiA ) == XLAL_FAILURE )
-//            {
-//                XLALDestroyREAL8Vector( timeVec );
-//                XLALDestroyREAL8Vector( q3 );
-//                XLALDestroyREAL8Vector( q4 );
-//                XLALDestroyREAL8Vector( q5 );
-//                XLALDestroyREAL8Vector( p3 );
-//                XLALDestroyREAL8Vector( p4 );
-//                XLALDestroyREAL8Vector( qNS );
-//                XLALDestroyREAL8Vector( pNS );
-//                XLALDestroyREAL8Vector( q3LM );
-//                XLALDestroyREAL8Vector( q4LM );
-//                XLALDestroyREAL8Vector( q5LM );
-//                XLALDestroyREAL8Vector( qNSLM );
-//                XLAL_ERROR( XLAL_EFUNC );
-//            }
-//            break;
-//        default:
-//            XLALPrintError( "XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1 and v2 are available.\n", __func__);
-//            XLAL_ERROR( XLAL_EINVAL );
-//            break;
-//    }
 
   /* Populate vectors as necessary. Eqs. 14 - 17 of the LIGO DCC document T1100433v2 */
 //        FILE *out = fopen( "out.dat","w");
@@ -2479,13 +2436,6 @@ XLALSimIMRSpinEOBCalculateNQCCoefficientsV4 (REAL8Vector * restrict amplitude,		
   coeffs->a3 = gsl_vector_get (aCoeff, 2);
   coeffs->b1 = gsl_vector_get (bCoeff, 0);
   coeffs->b2 = gsl_vector_get (bCoeff, 1);
-
-  //  coeffs->b3  = -778.891568845;
-  //  coeffs->b4  = 1237.46952422;
-  //  coeffs->b3  = -876.669217307;
-  //  coeffs->b4  = 1386.13223658;
-  //  coeffs->b3 = 41583.9402122;
-  //  coeffs->b4 = 68359.70064;
 
 //    printf( "NQC coefficients:\n" );
 //    printf( "{%f,%f,%f,%f,%f,%f}\n",  coeffs->a1, coeffs->a2, coeffs->a3, coeffs->a3S, coeffs->a4, coeffs->a5 );
