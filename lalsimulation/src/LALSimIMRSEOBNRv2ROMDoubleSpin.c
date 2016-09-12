@@ -371,10 +371,15 @@ static int SEOBNRv2ROMDoubleSpinCore(
   double chi1,
   double chi2,
   const REAL8Sequence *freqs, /* Frequency points at which to evaluate the waveform (Hz) */
-  double deltaF
+  double deltaF,
   /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
+  int return_af_interpolants,
+  REAL8Vector **amplitude_interp,     /**< Output: amplitude interpolants */
+  REAL8Vector **amplitude_freq_points /**< Output: frequencies of amp interpolants */
+  REAL8Vector **phase_interp,         /**< Output: phase interpolants */
+  REAL8Vector **phase_freq_points     /**< Output: frequencies of phase interpolants */
 );
 
 static void SEOBNRROMdataDS_coeff_Init(SEOBNRROMdataDS_coeff **romdatacoeff, int nk_amp, int nk_phi);
@@ -751,10 +756,15 @@ static int SEOBNRv2ROMDoubleSpinCore(
   double chi1,
   double chi2,
   const REAL8Sequence *freqs_in, /* Frequency points at which to evaluate the waveform (Hz) */
-  double deltaF
+  double deltaF,
   /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
+  int return_af_interpolants,
+  REAL8Vector **amplitude_interp,     /**< Output: amplitude interpolants */
+  REAL8Vector **amplitude_freq_points /**< Output: frequencies of amp interpolants */
+  REAL8Vector **phase_interp,         /**< Output: phase interpolants */
+  REAL8Vector **phase_freq_points     /**< Output: frequencies of phase interpolants */
   )
 {
 
@@ -880,6 +890,26 @@ static int SEOBNRv2ROMDoubleSpinCore(
   gsl_spline *spline_phi = gsl_spline_alloc(gsl_interp_cspline, submodel->nk_phi);
   gsl_spline_init(spline_phi, submodel->gPhi, gsl_vector_const_ptr(phi_f,0), submodel->nk_phi);
 
+  if ( return_af_interpolants)
+  {
+    int interp_idx;
+
+    /* create memory to store the interpolants for this M,q,chi */
+    *amplitude_interp = XLALCreateREAL8Vector( submodel->nk_amp );
+    *amplitude_freq_points = XLALCreateREAL8Vector( submodel->nk_amp );
+    *phase_interp = XLALCreateREAL8Vector( submodel->nk_phi );
+    *phase_freq_points = XLALCreateREAL8Vector( submodel->nk_phi );
+
+    /* store the amplitude and phase interpolant frequency points */
+    for ( interp_idx = 0; interp_idx < submodel->nk_amp; ++interp_idx )
+    {
+      amplitude_freq_points[interp_idx] = (REAL8) submodel->gA[interp_idx];
+    }
+    for  ( interp_idx = 0; interp_idx < submodel->nk_phi; ++interp_idx )
+    {
+      phase_freq_points[interp_idx] = (REAL8) submodel->gPhi[interp_idx];
+    }
+  }
 
   size_t npts = 0;
   LIGOTimeGPS tC = {0, 0};
@@ -953,6 +983,21 @@ static int SEOBNRv2ROMDoubleSpinCore(
 
   // Evaluate reference phase for setting phiRef correctly
   double phase_change = gsl_spline_eval(spline_phi, fRef_geom, acc_phi) - 2*phiRef;
+
+  if ( return_af_interpolants)
+  {
+    int interp_idx;
+
+    /* store the amplitude and phase interpolant frequency points */
+    for ( interp_idx = 0; interp_idx < submodel->nk_amp; ++interp_idx )
+    {
+      amplitude_interp[interp_idx] = (REAL8) s * amp0 * gsl_vector_get( amp_f, interp_idx);
+    }
+    for  ( interp_idx = 0; interp_idx < submodel->nk_phi; ++interp_idx )
+    {
+      phase_interp[interp_idx] = (REAL8) gsl_vector_get( phi_f, interp_idx) - phase_change;
+    }
+  }
 
   // Assemble waveform from aplitude and phase
   for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
@@ -1108,7 +1153,9 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = SEOBNRv2ROMDoubleSpinCore(hptilde,hctilde,
-            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, 0);
+            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, 0, 
+            0, NULL, NULL, NULL, NULL);
+
 
   return(retcode);
 }
@@ -1174,9 +1221,86 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpin(
   freqs->data[1] = fHigh;
 
   int retcode = SEOBNRv2ROMDoubleSpinCore(hptilde,hctilde,
-            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, deltaF);
+            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, deltaF,
+            0, NULL, NULL, NULL, NULL);
 
   XLALDestroyREAL8Sequence(freqs);
+
+  return(retcode);
+}
+
+/**
+ * Compute the Amplitude and Phase interpolants for the SEOBNRv2DoubleSpin
+ * model. Return A, psi, f_A, and f_Psi, given the parameters of a waveform
+ *
+ */
+int XLALSimIMRSEOBNRv2ROMDoubleSpinAmpPhaseInterpolants(
+  struct tagREAL8Vector **amplitude_interp,     /**< Output: amplitude interpolants */
+  struct tagREAL8Vector **amplitude_freq_points,/**< Output: frequencies of amp interpolants */
+  struct tagREAL8Vector **phase_interp,         /**< Output: phase interpolants */
+  struct tagREAL8Vector **phase_freq_points,    /**< Output: frequencies of phase interpolants */
+  REAL8 phiRef,                                 /**< Orbital phase at reference frequency*/
+  REAL8 deltaF,                                 /**< Sampling frequency (Hz) */
+  REAL8 fLow,                                   /**< Starting GW frequency (Hz) */
+  REAL8 fHigh,                                  /**< End frequency; 0 defaults to Mf=0.14 */
+  REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
+  REAL8 distance,                               /**< Distance of source (m) */
+  REAL8 inclination,                            /**< Inclination of source (rad) */
+  REAL8 m1SI,                                   /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,                                   /**< Mass of companion 2 (kg) */
+  REAL8 chi1,                                   /**< Dimensionless aligned component spin 1 */
+  REAL8 chi2)                                   /**< Dimensionless aligned component spin 2 */
+{
+  int return_af_interpolants = 1;
+
+  /* Internally we need m1 > m2, so change around if this is not the case */
+  if (m1SI < m2SI) {
+    // Swap m1 and m2
+    double m1temp = m1SI;
+    double chi1temp = chi1;
+    m1SI = m2SI;
+    chi1 = chi2;
+    m2SI = m1temp;
+    chi2 = chi1temp;
+  }
+
+  /* Get masses in terms of solar mass */
+  double mass1 = m1SI / LAL_MSUN_SI;
+  double mass2 = m2SI / LAL_MSUN_SI;
+  double Mtot = mass1+mass2;
+  double eta = mass1 * mass2 / (Mtot*Mtot);    /* Symmetric mass-ratio */
+  double Mtot_sec = Mtot * LAL_MTSUN_SI;       /* Total mass in seconds */
+
+  if(fRef==0.0)
+    fRef=fLow;
+
+  // Load ROM data if not loaded already
+#ifdef LAL_PTHREAD_LOCK
+  (void) pthread_once(&SEOBNRv2ROMDoubleSpin_is_initialized, SEOBNRv2ROMDoubleSpin_Init_LALDATA);
+#else
+  SEOBNRv2ROMDoubleSpin_Init_LALDATA();
+#endif
+
+  if(!SEOBNRv2ROMDoubleSpin_IsSetup()) XLAL_ERROR(XLAL_EFAILED,"Error setting up SEOBNRv2ROMDoubleSpin data - check your $LAL_DATA_PATH\n");
+
+  // Use fLow, fHigh, deltaF to compute freqs sequence
+  // Instead of building a full sequency we only transfer the boundaries and let
+  // the internal core function do the rest (and properly take care of corner cases).
+  REAL8Sequence *freqs = XLALCreateREAL8Sequence(2);
+  freqs->data[0] = fLow;
+  freqs->data[1] = fHigh;
+
+  COMPLEX16FrequencySeries *hptilde = NULL;
+  COMPLEX16FrequencySeries *hctilde = NULL;
+
+  int retcode = SEOBNRv2ROMDoubleSpinCore(&hptilde,&hctilde,
+            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, deltaF,
+            return_af_interpolants, amplitude_interp, amplitude_freq_points, phase_interp, phase_freq_points);
+
+  XLALDestroyREAL8Sequence(freqs);
+
+  XLALDestroyCOMPLEX16FrequencySeries( hptilde );
+  XLALDestroyCOMPLEX16FrequencySeries( hctilde );
 
   return(retcode);
 }
