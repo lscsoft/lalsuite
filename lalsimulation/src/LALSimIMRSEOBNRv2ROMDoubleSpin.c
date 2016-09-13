@@ -40,6 +40,7 @@
 #include <gsl/gsl_min.h>
 #include <gsl/gsl_spline.h>
 #include <lal/Units.h>
+#include <lal/LALDatatypes.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
@@ -377,7 +378,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
    * Then we will use deltaF = 0 to create the frequency series we return. */
   int return_af_interpolants,
   REAL8Vector **amplitude_interp,     /**< Output: amplitude interpolants */
-  REAL8Vector **amplitude_freq_points /**< Output: frequencies of amp interpolants */
+  REAL8Vector **amplitude_freq_points,/**< Output: frequencies of amp interpolants */
   REAL8Vector **phase_interp,         /**< Output: phase interpolants */
   REAL8Vector **phase_freq_points     /**< Output: frequencies of phase interpolants */
 );
@@ -762,7 +763,7 @@ static int SEOBNRv2ROMDoubleSpinCore(
    * Then we will use deltaF = 0 to create the frequency series we return. */
   int return_af_interpolants,
   REAL8Vector **amplitude_interp,     /**< Output: amplitude interpolants */
-  REAL8Vector **amplitude_freq_points /**< Output: frequencies of amp interpolants */
+  REAL8Vector **amplitude_freq_points,/**< Output: frequencies of amp interpolants */
   REAL8Vector **phase_interp,         /**< Output: phase interpolants */
   REAL8Vector **phase_freq_points     /**< Output: frequencies of phase interpolants */
   )
@@ -903,11 +904,11 @@ static int SEOBNRv2ROMDoubleSpinCore(
     /* store the amplitude and phase interpolant frequency points */
     for ( interp_idx = 0; interp_idx < submodel->nk_amp; ++interp_idx )
     {
-      amplitude_freq_points[interp_idx] = (REAL8) submodel->gA[interp_idx];
+      (*amplitude_freq_points)->data[interp_idx] = (REAL8) submodel->gA[interp_idx];
     }
     for  ( interp_idx = 0; interp_idx < submodel->nk_phi; ++interp_idx )
     {
-      phase_freq_points[interp_idx] = (REAL8) submodel->gPhi[interp_idx];
+      (*phase_freq_points)->data[interp_idx] = (REAL8) submodel->gPhi[interp_idx];
     }
   }
 
@@ -991,11 +992,11 @@ static int SEOBNRv2ROMDoubleSpinCore(
     /* store the amplitude and phase interpolant frequency points */
     for ( interp_idx = 0; interp_idx < submodel->nk_amp; ++interp_idx )
     {
-      amplitude_interp[interp_idx] = (REAL8) s * amp0 * gsl_vector_get( amp_f, interp_idx);
+      (*amplitude_interp)->data[interp_idx] = (REAL8) s * amp0 * gsl_vector_get( amp_f, interp_idx);
     }
     for  ( interp_idx = 0; interp_idx < submodel->nk_phi; ++interp_idx )
     {
-      phase_interp[interp_idx] = (REAL8) gsl_vector_get( phi_f, interp_idx) - phase_change;
+      (*phase_interp)->data[interp_idx] = (REAL8) gsl_vector_get( phi_f, interp_idx) - phase_change;
     }
   }
 
