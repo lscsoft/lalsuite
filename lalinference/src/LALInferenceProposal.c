@@ -641,10 +641,17 @@ REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread,
 
         /* If temperature is infinite, scale sigma to the prior width */
         if (sqrttemp == INFINITY) {
-            REAL8 min, max;
-            LALInferenceGetMinMaxPrior(thread->priorArgs, param->name, &min, &max);
+            if (LALInferenceCheckGaussianPrior(thread->priorArgs, param->name)) {
+                REAL8 mu, sigma;
+                LALInferenceGetGaussianPrior(thread->priorArgs, param->name, &mu, &sigma);
 
-            *((REAL8 *)param->value) += gsl_ran_ugaussian(rng) * (max - min);
+                *((REAL8 *)param->value) += gsl_ran_ugaussian(rng) * sigma;
+            } else {
+                REAL8 min, max;
+                LALInferenceGetMinMaxPrior(thread->priorArgs, param->name, &min, &max);
+
+                *((REAL8 *)param->value) += gsl_ran_ugaussian(rng) * (max - min);
+            }
         } else
             *((REAL8 *)param->value) += gsl_ran_ugaussian(rng) * sigma * sqrttemp;
 
