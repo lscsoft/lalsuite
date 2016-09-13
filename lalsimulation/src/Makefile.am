@@ -121,7 +121,7 @@ noinst_HEADERS = \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
-        LALSimIMRSpinEOBHamiltonian.h
+	LALSimIMRSpinEOBHamiltonian.h
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
