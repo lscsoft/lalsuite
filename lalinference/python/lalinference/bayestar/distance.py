@@ -430,7 +430,7 @@ def cartesian_kde_to_moments(n, datasets, inverse_covariances, weights):
         a = scipy.special.ndtr(x * np.sqrt(cinv))
         b = np.sqrt(0.5 / np.pi * c) * np.exp(-0.5 * cinv * x2)
         r0bar_ = (x2 + c) * a + x * b
-        r1bar_ = x * (x2 + 3 * c) * a + (x2 + 2 * c) * b,
+        r1bar_ = x * (x2 + 3 * c) * a + (x2 + 2 * c) * b
         r2bar_ = (x2 * x2 + 6 * x2 * c + 3 * c * c) * a + x * (x2 + 5 * c) * b
         r0bar += np.mean(w * r0bar_)
         r1bar += np.mean(w * r1bar_)
