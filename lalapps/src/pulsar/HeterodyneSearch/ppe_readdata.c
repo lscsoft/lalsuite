@@ -492,37 +492,6 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       }
     }
 
-    /* check if truncating data */
-    /* there are three truncation modes: "--truncate-time" uses a maximum */
-    /* GPS time, "--truncate-samples" uses maximum number of samples and */
-    /* "--truncate-fraction" uses a fraction of the number of samples. */
-    UINT4 truncate;
-    REAL8 truncateValue;
-    char truncationFlags[][25] = { "--truncate-time", "--truncate-samples", "--truncate-fraction" };
-
-    size_t trunci = 0;
-    for( trunci = 0; trunci < sizeof(truncationFlags) / sizeof(truncationFlags[0]); trunci++)
-    {
-      if ( LALInferenceGetProcParamVal( commandLine, truncationFlags[trunci] ) ){
-        if ( *LALInferenceGetProcParamVal( commandLine, truncationFlags[trunci] )-> value != '\0'){
-         truncate++;
-         truncateValue = atof( LALInferenceGetProcParamVal( commandLine, truncationFlags[trunci] )->value );
-        }
-        else {
-          fprintf(stderr, "Error... truncation option requires a value.\n");
-          fprintf(stderr, USAGE, commandLine->program);
-          exit(0);
-        }
-      }
-    }
-
-    if ( truncate > 1 ){
-      fprintf(stderr, "Error... can only take one truncation flag.\n");
-      fprintf(stderr, USAGE, commandLine->program);
-      exit(0);
-    }
-
-
     if( i == 0 ) {
         runState->data = ifodata;
         runState->threads[0]->model->ifo = ifomodel;
@@ -606,23 +575,6 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
           /* ignore excessively large spurious values as they can screw things up */
           if ( fabs(dataValsRe) > 1e-18 || fabs(dataValsIm) > 1e-18 ){ continue; }
         }
-        /* at this point, wa haven't added this item to the data yet */
-        /* check truncation conditions before doing so */
-        if ( LALInferenceGetProcParamVal( commandLine, "--truncate-time" ) ){
-          /* assume truncateValue is a GPS time */
-          if ( times > truncateValue ){
-            /* exit loop */
-            break;
-          }
-        }
-        if ( LALInferenceGetProcParamVal( commandLine, "--truncate-samples" ) ){
-          /* assume truncateValue is an index */
-          if ( j >= truncateValue ){
-            /* exit loop */
-            break;
-          }
-        }
-        
         j++;
 
         /* dynamically allocate more memory */
@@ -659,25 +611,6 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       XLALFree( filebuf );
 
       datalength = j;
-
-      /* truncate data if --truncate-fraction was passed */
-      if ( LALInferenceGetProcParamVal( commandLine, "--truncate-fraction" ) ){
-        /* assume truncateValue is a decimal between 0 and 1 */
-        /* (fraction of the number of samples) */
-        if ( truncateValue <= 0 || truncateValue > 1 ){
-            fprintf(stderr, "Error... truncation fraction must be between 0 and 1");
-            exit(3);
-        } else {
-          /* discard excess data */
-          int truncationIndex = floor(truncateValue * datalength );
-          ifodata->compTimeData = XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, truncationIndex );
-          ifomodel->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifomodel->compTimeSignal, 0, truncationIndex );
-          ifodata->varTimeData = XLALResizeREAL8TimeSeries( ifodata->varTimeData, 0, truncationIndex );
-
-        }
-      }
-
-      datalength = ifodata->compTimeData->data->length;
 
       /* allocate data time stamps */
       ifomodel->times = NULL;
