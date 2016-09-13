@@ -496,8 +496,8 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     /* there are three truncation modes: "--truncate-time" uses a maximum */
     /* GPS time, "--truncate-samples" uses maximum number of samples and */
     /* "--truncate-fraction" uses a fraction of the number of samples. */
-    UINT4 truncate;
-    REAL8 truncateValue;
+    UINT4 truncate = 0;
+    REAL8 truncateValue = 0;
     char truncationFlags[][25] = { "--truncate-time", "--truncate-samples", "--truncate-fraction" };
 
     size_t trunci = 0;
