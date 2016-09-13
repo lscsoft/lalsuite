@@ -617,6 +617,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   EOBParams eobParams;
   FacWaveformCoeffs hCoeffs;
   NewtonMultipolePrefixes prefixes;
+  TidalEOBParams tidal1, tidal2;
 
   /* fStart is the start frequency of the waveform generation */
   REAL8 fStart;
@@ -754,45 +755,25 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 
   if (use_tidal == 1)
     {
-      seobParams.m1 = m1SI / (m1SI + m2SI);
-      seobParams.m2 = m2SI / (m1SI + m2SI);
-      seobParams.comp2 = comp2;
-      seobParams.comp1 = comp1;
-      seobParams.comp2 = comp2;
-      seobParams.k2Tidal1 = k2Tidal1;
-      seobParams.k2Tidal2 = k2Tidal2;
-      seobParams.omega02Tidal1 = omega02Tidal1;
-      seobParams.omega02Tidal2 = omega02Tidal2;
-      seobParams.k3Tidal1 = k3Tidal1;
-      seobParams.k3Tidal2 = k3Tidal2;
-      seobParams.omega03Tidal1 = omega03Tidal1;
-      seobParams.omega03Tidal2 = omega03Tidal2;
+      tidal1.mass = m1SI / (m1SI + m2SI);
+      tidal1.comp = comp1;
+      tidal1.k2Tidal = k2Tidal1;
+      tidal1.omega02Tidal = omega02Tidal1;
+      tidal1.k3Tidal = k3Tidal1;
+      tidal1.omega03Tidal = omega03Tidal1;
+    
+      tidal2.mass = m2SI / (m1SI + m2SI);
+      tidal2.comp = comp2;
+      tidal2.k2Tidal = k2Tidal2;
+      tidal2.omega02Tidal = omega02Tidal2;
+      tidal2.k3Tidal = k3Tidal2;
+      tidal2.omega03Tidal = omega03Tidal2;
+      
+      seobCoeffs.tidal1 = &tidal1;
+      seobCoeffs.tidal2 = &tidal2;
 
-      seobCoeffs.m1 = m1SI / (m1SI + m2SI);
-      seobCoeffs.m2 = m2SI / (m1SI + m2SI);
-      seobCoeffs.comp1 = comp1;
-      seobCoeffs.comp2 = comp2;
-      seobCoeffs.k2Tidal1 = k2Tidal1;
-      seobCoeffs.k2Tidal2 = k2Tidal2;
-      seobCoeffs.omega02Tidal1 = omega02Tidal1;
-      seobCoeffs.omega02Tidal2 = omega02Tidal2;
-      seobCoeffs.k3Tidal1 = k3Tidal1;
-      seobCoeffs.k3Tidal2 = k3Tidal2;
-      seobCoeffs.omega03Tidal1 = omega03Tidal1;
-      seobCoeffs.omega03Tidal2 = omega03Tidal2;
-
-      hCoeffs.m1 = m1SI / (m1SI + m2SI);
-      hCoeffs.m2 = m2SI / (m1SI + m2SI);
-      hCoeffs.comp1 = comp1;
-      hCoeffs.comp2 = comp2;
-      hCoeffs.k2Tidal1 = k2Tidal1;
-      hCoeffs.k2Tidal2 = k2Tidal2;
-      hCoeffs.omega02Tidal1 = omega02Tidal1;
-      hCoeffs.omega02Tidal2 = omega02Tidal2;
-      hCoeffs.k3Tidal1 = k3Tidal1;
-      hCoeffs.k3Tidal2 = k3Tidal2;
-      hCoeffs.omega03Tidal1 = omega03Tidal1;
-      hCoeffs.omega03Tidal2 = omega03Tidal2;
+      hCoeffs.tidal1 = &tidal1;
+      hCoeffs.tidal2 = &tidal2;
     }
 
   seobParams.alignedSpins = 1;
