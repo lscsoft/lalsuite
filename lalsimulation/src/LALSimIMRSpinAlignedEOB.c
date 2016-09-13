@@ -385,15 +385,15 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 				     /**<< OUTPUT, +-polarization waveform */
 				     REAL8TimeSeries ** hcross,
 				     /**<< OUTPUT, x-polarization waveform */
-                     REAL8Vector * tVecOut,
+                     UNUSED REAL8Vector * tVecOut,
                      /**<<  OUTPUT, time associated to the output dynamics */
-                     REAL8Vector * rVecOut,
+                     UNUSED REAL8Vector * rVecOut,
                      /**<<  OUTPUT, radius */
-                     REAL8Vector * phiVecOut,
+                     UNUSED REAL8Vector * phiVecOut,
                      /**<<  OUTPUT, orbital phase */
-                     REAL8Vector * prVecOut,
+                     UNUSED REAL8Vector * prVecOut,
                      /**<<  OUTPUT, radial momentum */
-                     REAL8Vector * pPhiVecOut,
+                     UNUSED REAL8Vector * pPhiVecOut,
                      /**<<  OUTPUT, azimuthal momentum */
 				     const REAL8 phiC,
 				     /**<< coalescence orbital phase (rad) */
