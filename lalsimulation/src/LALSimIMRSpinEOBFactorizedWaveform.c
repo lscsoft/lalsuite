@@ -617,6 +617,7 @@ XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
  * This function calculates coefficients for hlm mode factorized-resummed waveform.
  * The coefficients are pre-computed and stored in the SpinEOBParams structure.
  * Appendix of the paper, and papers DIN (PRD 79, 064004 (2009)) and PBFRT (PRD 83, 064003 (2011)).
+ * Concerning SEOBNRv4 see also https://dcc.ligo.org/T1600383
  */
 
 static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * const coeffs,
@@ -634,9 +635,17 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 							 const REAL8 chiA,
 					    /**< (chi1-chi2)/2 */
 							 const UINT4 SpinAlignedEOBversion
-							   /**< 1 for SEOBNRv1; 2 for SEOBNRv2 */
+							   /**< 1 for SEOBNRv1; 2 for SEOBNRv2; 4 for SEOBNRv4 */
   )
 {
+  if ( SpinAlignedEOBversion != 1 && SpinAlignedEOBversion != 2 && SpinAlignedEOBversion != 4)
+   {
+        XLALPrintError
+        ("XLAL Error - %s: wrong SpinAlignedEOBversion value, must be 1 or 2 or 4!\n",
+         __func__);
+        XLAL_ERROR (XLAL_EINVAL);
+   }
+    
   REAL8 eta2 = eta * eta;
   REAL8 eta3 = eta2 * eta;
 
@@ -666,7 +675,7 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
     }
   //dM3 = dM2 * dM;
 
-  aDelta = 0.;			// a value in delta_lm is 0 in both SEOBNRv1 and SEOBNRv2
+  aDelta = 0.;			// a value in delta_lm is 0 in SEOBNRv1, SEOBNRv2, and SEOBNRv4
   a2 = a * a;
   a3 = a2 * a;
 
@@ -684,6 +693,7 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 
   coeffs->delta22vh3 = 7. / 3.;
   coeffs->delta22vh6 = (-4. * aDelta) / 3. + (428. * LAL_PI) / 105.;
+  /* See https://dcc.ligo.org/T1600383 */
   if (SpinAlignedEOBversion == 4)
     {
       coeffs->delta22vh6 =
@@ -708,10 +718,6 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 	- (33025. * eta) / 21168. + (19583. * eta2) / 42336.;
       break;
     case 2:
-      coeffs->rho22v4 =
-	-20555. / 10584. + 0.5 * (chiS + chiA * dM) * (chiS + chiA * dM) -
-	(33025. * eta) / 21168. + (19583. * eta2) / 42336.;
-      break;
     case 4:
       coeffs->rho22v4 =
 	-20555. / 10584. + 0.5 * (chiS + chiA * dM) * (chiS + chiA * dM) -
@@ -725,6 +731,7 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
       break;
     }
   coeffs->rho22v5 = (-34. * a) / 21.;
+  /* See https://dcc.ligo.org/T1600383 */
   if (SpinAlignedEOBversion == 4)
     {
       coeffs->rho22v5 =
@@ -737,6 +744,7 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
     (10620745. * eta3) / 39118464. + (41. * eta * LAL_PI * LAL_PI) / 192.;
   coeffs->rho22v6l = -428. / 105.;
   coeffs->rho22v7 = (18733. * a) / 15876. + a * a2 / 3.;
+  /* See https://dcc.ligo.org/T1600383 */
   if (SpinAlignedEOBversion == 4)
     {
       coeffs->rho22v7 =
@@ -753,10 +761,6 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 	(18353. * a2) / 21168. - a2 * a2 / 8.;
       break;
     case 2:
-      coeffs->rho22v8 =
-	-387216563023. / 160190110080. + (18353. * a2) / 21168. -
-	a2 * a2 / 8.;
-      break;
     case 4:
       coeffs->rho22v8 =
 	-387216563023. / 160190110080. + (18353. * a2) / 21168. -
@@ -797,10 +801,7 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 	  coeffs->rho21v3 = 1177. / 672. * a - 27. / 128. * a3;
 	  break;
 	case 2:
-	  coeffs->rho21v2 = -59. / 56 + (23. * eta) / 84.;
-	  coeffs->rho21v3 = 0.0;
-	  break;
-	case 4:
+    case 4:
 	  coeffs->rho21v2 = -59. / 56 + (23. * eta) / 84.;
 	  coeffs->rho21v3 = 0.0;
 	  break;
@@ -841,11 +842,7 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 	  coeffs->f21v3 = 0.0;
 	  break;
 	case 2:
-	  coeffs->f21v3 =
-	    (chiS * dM * (427. + 79. * eta) +
-	     chiA * (147. + 280. * dM * dM + 1251. * eta)) / 84. / dM;
-	  break;
-	case 4:
+    case 4:
 	  coeffs->f21v3 =
 	    (chiS * dM * (427. + 79. * eta) +
 	     chiA * (147. + 280. * dM * dM + 1251. * eta)) / 84. / dM;
@@ -867,11 +864,7 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
 	  coeffs->f21v3 = 0.0;
 	  break;
 	case 2:
-	  coeffs->f21v3 =
-	    (chiS * dM * (427. + 79. * eta) +
-	     chiA * (147. + 280. * dM * dM + 1251. * eta)) / 84.;
-	  break;
-	case 4:
+    case 4:
 	  coeffs->f21v3 =
 	    (chiS * dM * (427. + 79. * eta) +
 	     chiA * (147. + 280. * dM * dM + 1251. * eta)) / 84.;
