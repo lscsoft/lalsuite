@@ -151,6 +151,19 @@ XLALSpinAlignedHiSRStopCondition (double UNUSED t, /**< UNUSED */
   return GSL_SUCCESS;
 }
 
+/**
+ * This function defines the stopping criteria for the high-sample-rate
+ * portion of the EOB trajectory for SEOBNRv4
+ * Note that here
+ * values[0] = r
+ * values[1] = phi
+ * values[2] = pr
+ * values[3] = pphi
+ * dvalues[0] = dr/dt
+ * dvalues[1] = dphi/dt
+ * dvalues[2] = dpr/dt
+ * dvalues[3] = dpphi/dt = omega
+ */
 static int
 XLALSpinAlignedHiSRStopConditionV4 (double UNUSED t, /**< UNUSED */
 				    const double UNUSED values[],
