@@ -50,7 +50,7 @@ extern "C"
 
 /**
  * Tidal parameters for EOB model of NS:
- * mass
+ * mass - dimensionless ratio mass/M
  * comp - compactness
  * k2Tidal - adiabatic quadrupole Love number
  * omega02Tidal - quadrupole f-mode freq
