@@ -310,9 +310,6 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
         verbose = 1;
     LALInferenceAddINT4Variable(propArgs, "verbose", verbose, LALINFERENCE_PARAM_FIXED);
 
-    LIGOTimeGPS epoch = ifo->epoch;
-    LALInferenceAddVariable(propArgs, "epoch", &(epoch), LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
-
     /* Determine the number of iterations between each entry in the DE buffer */
     if (LALInferenceCheckVariable(runState->algorithmParams, "Nskip"))
         Nskip = LALInferenceGetINT4Variable(runState->algorithmParams, "Nskip");
@@ -329,18 +326,6 @@ LALInferenceVariables *LALInferenceParseProposalArgs(LALInferenceRunState *runSt
 
     INT4 nUniqueDet = numDetectorsUniquePositions(runState->data);
     LALInferenceAddINT4Variable(propArgs, "nUniqueDet", nUniqueDet, LALINFERENCE_PARAM_FIXED);
-
-    LALDetector *detectors = XLALCalloc(nDet, sizeof(LALDetector));
-    for (i=0,ifo=runState->data; i<nDet; i++,ifo=ifo->next)
-        detectors[i] = *(ifo->detector);
-    LALInferenceAddVariable(propArgs, "detectors", &detectors, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
-
-    char **ifo_names = XLALCalloc(nDet, sizeof(char*));
-    for(ifo=runState->data,i=0;ifo;ifo=ifo->next,i++) {
-        ifo_names[i] = XLALCalloc(DETNAMELEN, sizeof(char));
-        strcpy(ifo_names[i], ifo->name);
-    }
-    LALInferenceAddVariable(propArgs, "detector_names", &ifo_names, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED);
 
     INT4 marg_timephi = 0;
     if (LALInferenceGetProcParamVal(command_line, "--margtimephi"))
@@ -1437,6 +1422,32 @@ static void reflect_plane(REAL8 pref[3], const REAL8 p[3],
     vsub(pref, pnperp, pn);
 }
 
+static void get_detectors(LALInferenceIFOData *data, LALDetector **detectors) {
+    INT4 i;
+    INT4 nDet = 0;
+    LALInferenceIFOData *ifo;
+    for (i=0,ifo=data; ifo; i++,ifo=ifo->next)
+        nDet++;
+
+    *detectors = XLALCalloc(nDet, sizeof(LALDetector));
+    for (i=0,ifo=data; ifo; i++,ifo=ifo->next)
+        *detectors[i] = *(ifo->detector);
+}
+
+static void get_detector_names(LALInferenceIFOData *data, char ***ifo_names) {
+    INT4 i;
+    INT4 nDet = 0;
+    LALInferenceIFOData *ifo;
+    for (i=0,ifo=data; ifo; i++,ifo=ifo->next)
+        nDet++;
+
+    *ifo_names = XLALCalloc(nDet, sizeof(char*));
+    for(ifo=data,i=0;ifo;ifo=ifo->next,i++) {
+        (*ifo_names)[i] = XLALCalloc(DETNAMELEN, sizeof(char));
+        strcpy((*ifo_names)[i], ifo->name);
+    }
+}
+
 static void sph_to_cart(REAL8 cart[3], const REAL8 lat, const REAL8 longi) {
     cart[0] = cos(longi)*cos(lat);
     cart[1] = sin(longi)*cos(lat);
@@ -1454,7 +1465,7 @@ static void reflected_position_and_time(LALInferenceThreadState *thread, const R
     memset(&status, 0, sizeof(status));
     SkyPosition currentEqu, currentGeo, newEqu, newGeo;
     LALDetector *detectors;
-    LIGOTimeGPS *epoch;
+    LIGOTimeGPS epoch;
     REAL8 x[3], y[3], z[3];
     REAL8 currentLoc[3], newLoc[3];
     REAL8 newGeoLat, newGeoLongi;
@@ -1468,10 +1479,10 @@ static void reflected_position_and_time(LALInferenceThreadState *thread, const R
 
     LALInferenceVariables *args = thread->proposalArgs;
 
-    epoch = (LIGOTimeGPS *)LALInferenceGetVariable(args, "epoch");
-    detectors = *(LALDetector **)LALInferenceGetVariable(args, "detectors");
+    epoch = thread->parent->data->epoch;
+    get_detectors(thread->parent->data, &detectors);
 
-    LALEquatorialToGeographic(&status, &currentGeo, &currentEqu, epoch);
+    LALEquatorialToGeographic(&status, &currentGeo, &currentEqu, &epoch);
 
     /* This function should only be called when we know that we have
      three detectors, or the following will crash. */
@@ -1504,12 +1515,12 @@ static void reflected_position_and_time(LALInferenceThreadState *thread, const R
     newGeo.longitude = newGeoLongi;
     newGeo.system = COORDINATESYSTEM_GEOGRAPHIC;
     newEqu.system = COORDINATESYSTEM_EQUATORIAL;
-    LALGeographicToEquatorial(&status, &newEqu, &newGeo, epoch);
+    LALGeographicToEquatorial(&status, &newEqu, &newGeo, &epoch);
 
     oldDt = XLALTimeDelayFromEarthCenter(detectors[0].location, currentEqu.longitude,
-                                         currentEqu.latitude, epoch);
+                                         currentEqu.latitude, &epoch);
     newDt = XLALTimeDelayFromEarthCenter(detectors[0].location, newEqu.longitude,
-                                         newEqu.latitude, epoch);
+                                         newEqu.latitude, &epoch);
 
     *newRA = newEqu.longitude;
     *newDec = newEqu.latitude;
@@ -1603,7 +1614,7 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     REAL8 pForward, pReverse;
     REAL8 n[3];
     REAL8 kp[3];
-    LIGOTimeGPS GPSlal, *epoch;
+    LIGOTimeGPS GPSlal, epoch;
     LALDetector *detectors;
     gsl_matrix *IFO;
 
@@ -1612,8 +1623,8 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     LALInferenceVariables *args = thread->proposalArgs;
     gsl_rng *rng = thread->GSLrandom;
 
-    epoch = (LIGOTimeGPS *)LALInferenceGetVariable(args, "epoch");
-    detectors = *(LALDetector **)LALInferenceGetVariable(args, "detectors");
+    epoch = thread->parent->data->epoch;
+    get_detectors(thread->parent->data, &detectors);
 
     ra = LALInferenceGetREAL8Variable(proposedParams, "rightascension");
     dec = LALInferenceGetREAL8Variable(proposedParams, "declination");
@@ -1622,7 +1633,7 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
         baryTime = LALInferenceGetREAL8Variable(proposedParams, "time");
         timeflag = 1;
     } else {
-        baryTime = XLALGPSGetREAL8(epoch);
+        baryTime = XLALGPSGetREAL8(&epoch);
     }
 
     XLALGPSSetREAL8(&GPSlal, baryTime);
@@ -1762,7 +1773,7 @@ REAL8 LALInferenceSkyReflectDetPlane(LALInferenceThreadState *thread,
     REAL8 pForward, pReverse;
     REAL8 logPropRatio = 0.0;
     INT4 nUniqueDet;
-    LIGOTimeGPS *epoch;
+    LIGOTimeGPS epoch;
 
 
     /* Find the number of distinct-position detectors. */
@@ -1773,7 +1784,7 @@ REAL8 LALInferenceSkyReflectDetPlane(LALInferenceThreadState *thread,
     LALInferenceVariables *args = thread->proposalArgs;
     gsl_rng *rng = thread->GSLrandom;
 
-    epoch = (LIGOTimeGPS *)LALInferenceGetVariable(args, "epoch");
+    epoch = thread->parent->data->epoch;
     nUniqueDet = LALInferenceGetINT4Variable(args, "nUniqueDet");
 
     if (nUniqueDet != 3) {
@@ -1796,7 +1807,7 @@ REAL8 LALInferenceSkyReflectDetPlane(LALInferenceThreadState *thread,
         baryTime = LALInferenceGetREAL8Variable(currentParams, "time");
         timeflag=1;
     } else {
-        baryTime = XLALGPSGetREAL8(epoch);
+        baryTime = XLALGPSGetREAL8(&epoch);
     }
 
     reflected_position_and_time(thread, ra, dec, baryTime, &newRA, &newDec, &newTime);
@@ -2648,7 +2659,7 @@ static void reflected_extrinsic_parameters(LALInferenceThreadState *thread, cons
     INT4 nUniqueDet, det;
     LALDetector *detectors;
 
-    detectors = (LALDetector *)LALInferenceGetVariable(thread->proposalArgs, "detectors");
+    get_detectors(thread->parent->data, &detectors);
     nUniqueDet = LALInferenceGetINT4Variable(thread->proposalArgs, "nUniqueDet");
 
     XLALGPSSetREAL8(&GPSlal, baryTime);
@@ -2866,12 +2877,12 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread,
     /* Exit with same parameters (with a warning the first time) if
        there are not EXACTLY three unique detector locations. */
     static INT4 warningDelivered = 0;
-    LIGOTimeGPS *epoch;
+    LIGOTimeGPS epoch;
 
 
     LALInferenceVariables *args = thread->proposalArgs;
     gsl_rng *rng = thread->GSLrandom;
-    epoch = (LIGOTimeGPS *)LALInferenceGetVariable(args, "epoch");
+    epoch = thread->parent->data->epoch;
 
     nUniqueDet = LALInferenceGetINT4Variable(args, "nUniqueDet");
     if (nUniqueDet != 3) {
@@ -2895,7 +2906,7 @@ REAL8 LALInferenceExtrinsicParamProposal(LALInferenceThreadState *thread,
         baryTime = LALInferenceGetREAL8Variable(proposedParams, "time");
         timeflag = 1;
     } else {
-        baryTime = XLALGPSGetREAL8(epoch);
+        baryTime = XLALGPSGetREAL8(&epoch);
     }
 
     if (LALInferenceCheckVariable(proposedParams,"costheta_jn"))
@@ -3857,7 +3868,7 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LAL
 
   LALInferenceCopyVariables(currentParams, proposedParams);
 
-  ifo_names = *(char ***)LALInferenceGetVariable(thread->proposalArgs, "detector_names");
+  get_detector_names(thread->parent->data, &ifo_names);
   for (ifo=0; ifo<nifo; ifo++) {
     UINT4 i;
 
