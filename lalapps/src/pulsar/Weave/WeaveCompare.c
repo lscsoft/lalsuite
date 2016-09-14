@@ -23,12 +23,11 @@
 ///
 
 #include "Weave.h"
-#include "LALAppsVCSInfo.h"
+#include "SetupData.h"
+#include "OutputResults.h"
 
-#include <lal/LALString.h>
 #include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
-#include <lal/GSLHelpers.h>
 
 int main( int argc, char *argv[] )
 {

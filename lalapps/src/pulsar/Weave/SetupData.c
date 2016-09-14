@@ -17,16 +17,24 @@
 // MA 02111-1307 USA
 //
 
-#include "Weave.h"
+///
+/// \file
+/// \ingroup lalapps_pulsar_Weave
+///
 
-#include <lal/LALStdio.h>
-#include <lal/LALString.h>
-#include <lal/UserInput.h>
-#include <lal/GSLHelpers.h>
+#include "SetupData.h"
+
 #include <lal/LALInitBarycenter.h>
+
+///
+/// \name Internal routines
+///
+/// @{
 
 static int setup_LALSeg_fits_table_init( FITSFile *file );
 static int setup_PosVelAcc_fits_table_init( FITSFile *file );
+
+/// @}
 
 ///
 /// Initialise a FITS table for writing/reading a table of PosVelAcc entries

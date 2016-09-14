@@ -33,27 +33,24 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_math.h>
 #include <gsl/gsl_blas.h>
+#include <gsl/gsl_vector.h>
+#include <gsl/gsl_matrix.h>
 
 #include <lal/LALStdlib.h>
-#include <lal/ComputeFstat.h>
+#include <lal/LALStdio.h>
+#include <lal/LALString.h>
+#include <lal/PulsarDataTypes.h>
+#include <lal/GSLHelpers.h>
 #include <lal/FITSFileIO.h>
-#include <lal/LALBarycenter.h>
-#include <lal/Segments.h>
-#include <lal/LatticeTiling.h>
-#include <lal/SuperskyMetrics.h>
-#include <lal/VectorMath.h>
-#include <lal/LFTandTSutils.h>
+
+#include <LALAppsVCSInfo.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
 #define UNUSED
-#endif
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
 ///
@@ -64,6 +61,10 @@ extern "C" {
     if ( (x) > (y) ) return +1; \
   } while(0)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 ///
 /// Function which transforms a point from physical coordinates to lattice tiling coordinates
 ///
@@ -73,56 +74,6 @@ typedef int ( *WeavePhysicalToLattice )( gsl_vector *out_latt, const PulsarDoppl
 /// Function which transforms a point from lattice tiling coordinates to physical coordinates
 ///
 typedef int ( *WeaveLatticeToPhysical )( PulsarDopplerParams *out_phys, const gsl_vector *in_latt, const void *transf_data );
-
-///
-/// Input data required for computing coherent results
-///
-typedef struct tagWeaveCohInput WeaveCohInput;
-
-///
-/// Results of a coherent computation on a single segment
-///
-typedef struct tagWeaveCohResults WeaveCohResults;
-
-///
-/// Results of a semicoherent computation over many segments
-///
-typedef struct tagWeaveSemiResults WeaveSemiResults;
-
-///
-/// Cache used to store coherent results
-///
-typedef struct tagWeaveCache WeaveCache;
-
-///
-/// Storage for a series of cache queries
-///
-typedef struct tagWeaveCacheQueries WeaveCacheQueries;
-
-///
-/// Output results from a search
-///
-typedef struct tagWeaveOutputResults WeaveOutputResults;
-
-///
-/// Setup data which is computed only once for a given search setup
-///
-typedef struct {
-  /// Physical to lattice coordinate transform
-  WeavePhysicalToLattice phys_to_latt;
-  /// Lattice to physical coordinate transform
-  WeaveLatticeToPhysical latt_to_phys;
-  /// Reference time at which search is conducted
-  LIGOTimeGPS ref_time;
-  /// List of detector names for which metrics were computed
-  LALStringVector *detectors;
-  /// Segment list for which metrics were computed
-  LALSegList *segments;
-  /// Reduced supersky parameter-space metrics
-  SuperskyMetrics *metrics;
-  /// Ephemeris data over time-span of segments
-  EphemerisData *ephemerides;
-} WeaveSetupData;
 
 ///
 /// Output toplist per-segment item
@@ -173,172 +124,6 @@ typedef struct tagWeaveOutputPerSegInfo {
   /// Total number of recomputed coherent results
   INT4 coh_total_recomp;
 } WeaveOutputPerSegInfo;
-
-///
-/// \name Routines which handle the setup data
-///
-/// @{
-
-void XLALWeaveSetupDataClear(
-  WeaveSetupData *setup
-  );
-int XLALWeaveSetupDataWrite(
-  FITSFile *file,
-  const WeaveSetupData *setup
-  );
-int XLALWeaveSetupDataRead(
-  FITSFile *file,
-  WeaveSetupData *setup
-  );
-
-/// @}
-
-///
-/// \name Routines which compute coherent and semicoherent results
-///
-/// @{
-
-WeaveCohInput *XLALWeaveCohInputCreate(
-  FstatInput *Fstat_input,
-  const LALStringVector *per_detectors
-  );
-void XLALWeaveCohInputDestroy(
-  WeaveCohInput *coh_input
-  );
-int XLALWeaveCohResultsCompute(
-  WeaveCohResults **coh_res,
-  WeaveCohInput *coh_input,
-  const PulsarDopplerParams *coh_phys,
-  const UINT4 coh_nfreqs
-  );
-void XLALWeaveCohResultsDestroy(
-  WeaveCohResults *coh_res
-  );
-WeaveSemiResults *XLALWeaveSemiResultsCreate(
-  const LALStringVector *per_detectors,
-  const UINT4 per_nsegments,
-  const double dfreq
-  );
-void XLALWeaveSemiResultsDestroy(
-  WeaveSemiResults *semi_res
-  );
-int XLALWeaveSemiResultsInit(
-  WeaveSemiResults *semi_res,
-  const PulsarDopplerParams *semi_phys,
-  const UINT4 semi_nfreqs
-  );
-int XLALWeaveSemiResultsAdd(
-  WeaveSemiResults *semi_res,
-  const WeaveCohResults *coh_res,
-  const UINT4 coh_offset
-  );
-int XLALWeaveFillOutputToplistItem(
-  WeaveOutputToplistItem **item,
-  BOOLEAN *full_init,
-  const WeaveSemiResults *semi_res,
-  const size_t freq_idx
-  );
-
-/// @}
-
-///
-/// \name Routines which cache computed coherent results
-///
-/// @{
-
-WeaveCache *XLALWeaveCacheCreate(
-  const LatticeTiling *coh_tiling,
-  const BOOLEAN interpolation,
-  const WeavePhysicalToLattice phys_to_latt,
-  const WeaveLatticeToPhysical latt_to_phys,
-  const void *coh_transf_data,
-  const void *semi_transf_data,
-  WeaveCohInput *coh_input,
-  const size_t max_size,
-  const size_t gc_limit,
-  const BOOLEAN per_seg_info
-  );
-void XLALWeaveCacheDestroy(
-  WeaveCache *cache
-  );
-WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
-  const LatticeTiling *semi_tiling,
-  const WeavePhysicalToLattice phys_to_latt,
-  const WeaveLatticeToPhysical latt_to_phys,
-  const void *semi_transf_data,
-  const UINT4 nqueries,
-  const UINT4 npartitions
-  );
-void XLALWeaveCacheQueriesDestroy(
-  WeaveCacheQueries *queries
-  );
-int XLALWeaveCacheQueriesInit(
-  WeaveCacheQueries *queries,
-  const LatticeTilingIterator *semi_itr,
-  const gsl_vector *semi_point
-  );
-int XLALWeaveCacheQuery(
-  const WeaveCache *cache,
-  const UINT8 semi_index,
-  WeaveCacheQueries *queries,
-  const UINT4 query_index
-  );
-int XLALWeaveCacheQueriesFinal(
-  WeaveCacheQueries *queries,
-  const UINT4 partition_index,
-  PulsarDopplerParams *semi_phys,
-  const double dfreq,
-  UINT4 *semi_nfreqs
-  );
-int XLALWeaveCacheRetrieve(
-  WeaveCache *cache,
-  WeaveCacheQueries *queries,
-  const UINT4 query_index,
-  const WeaveCohResults **coh_res,
-  UINT4 *coh_offset,
-  WeaveOutputPerSegInfo *per_seg_info
-  );
-
-/// @}
-
-///
-/// \name Routines which handle the output results
-///
-/// @{
-
-WeaveOutputResults *XLALWeaveOutputResultsCreate(
-  const LIGOTimeGPS *ref_time,
-  const int toplist_limit,
-  const size_t nspins,
-  const LALStringVector *per_detectors,
-  const UINT4 per_nsegments
-  );
-void XLALWeaveOutputResultsDestroy(
-  WeaveOutputResults *out
-  );
-int XLALWeaveOutputResultsAdd(
-  WeaveOutputResults *out,
-  const WeaveSemiResults *semi_res,
-  const UINT4 semi_nfreqs
-  );
-int XLALWeaveOutputResultsWrite(
-  FITSFile *file,
-  const WeaveOutputResults *out
-  );
-int XLALWeaveOutputResultsReadAppend(
-  FITSFile *file,
-  WeaveOutputResults **out
-  );
-int XLALWeaveOutputResultsCompare(
-  BOOLEAN *equal,
-  const WeaveSetupData *setup,
-  const REAL8 param_tol_mism,
-  const VectorComparison *result_tol,
-  const WeaveOutputResults *out_1,
-  const WeaveOutputResults *out_2
-  );
-
-/// @}
 
 #ifdef __cplusplus
 }

@@ -17,18 +17,15 @@
 // MA 02111-1307 USA
 //
 
-#include "Weave.h"
+///
+/// \file
+/// \ingroup lalapps_pulsar_Weave
+///
 
-#include <lal/LALStdio.h>
-#include <lal/LALString.h>
-#include <lal/GSLHelpers.h>
+#include "CacheResults.h"
+
 #include <lal/LALHeap.h>
 #include <lal/LALHashTbl.h>
-
-static UINT8 cache_item_hash( const void *x );
-static int cache_item_compare_by_coh_index( const void *x, const void *y );
-static int cache_item_compare_by_relevance( const void *x, const void *y );
-static void cache_item_destroy( void *x );
 
 ///
 /// Internal definition of an item stored in the cache
@@ -114,6 +111,18 @@ struct tagWeaveCacheQueries {
   // Index of right-most point in current semicoherent frequency block
   INT4 semi_right;
 };
+
+///
+/// \name Internal routines
+///
+/// @{
+
+static UINT8 cache_item_hash( const void *x );
+static int cache_item_compare_by_coh_index( const void *x, const void *y );
+static int cache_item_compare_by_relevance( const void *x, const void *y );
+static void cache_item_destroy( void *x );
+
+/// @}
 
 ///
 /// Destroy a cache item

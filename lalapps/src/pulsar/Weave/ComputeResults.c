@@ -17,13 +17,14 @@
 // MA 02111-1307 USA
 //
 
-#include "Weave.h"
+///
+/// \file
+/// \ingroup lalapps_pulsar_Weave
+///
 
-#include <lal/LALStdio.h>
-#include <lal/LALString.h>
-#include <lal/GSLHelpers.h>
+#include "ComputeResults.h"
 
-static int semi_results_add_REAL4( const size_t nsum, REAL4 *sum, const REAL4 *x, const size_t nbins );
+#include <lal/VectorMath.h>
 
 ///
 /// Internal definition of input data required for computing coherent results
@@ -78,6 +79,15 @@ struct tagWeaveSemiResults {
   /// Summed per-detector F-statistics per frequency
   REAL4VectorAligned *sum_twoF_per_det[PULSAR_MAX_DETECTORS];
 };
+
+///
+/// \name Internal routines
+///
+/// @{
+
+static int semi_results_add_REAL4( const size_t nsum, REAL4 *sum, const REAL4 *x, const size_t nbins );
+
+/// @}
 
 ///
 /// Create coherent input data

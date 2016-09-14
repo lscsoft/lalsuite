@@ -15,22 +15,29 @@ endif
 
 lalapps_WeaveSetup_SOURCES = \
 	SetupData.c \
+	SetupData.h \
 	Weave.h \
 	WeaveSetup.c \
 	$(END_OF_LIST)
 
 lalapps_Weave_SOURCES = \
 	CacheResults.c \
+	CacheResults.h \
 	ComputeResults.c \
+	ComputeResults.h \
 	OutputResults.c \
+	OutputResults.h \
 	SetupData.c \
+	SetupData.h \
 	Weave.c \
 	Weave.h \
 	$(END_OF_LIST)
 
 lalapps_WeaveCompare_SOURCES = \
 	OutputResults.c \
+	OutputResults.h \
 	SetupData.c \
+	SetupData.h \
 	Weave.h \
 	WeaveCompare.c \
 	$(END_OF_LIST)

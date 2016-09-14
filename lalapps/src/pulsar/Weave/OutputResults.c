@@ -17,26 +17,14 @@
 // MA 02111-1307 USA
 //
 
-#include "Weave.h"
+///
+/// \file
+/// \ingroup lalapps_pulsar_Weave
+///
 
-#include <lal/LALStdio.h>
-#include <lal/LALString.h>
+#include "OutputResults.h"
+
 #include <lal/LALHeap.h>
-#include <lal/UserInput.h>
-
-static LALHeap *toplist_create( int toplist_limit, LALHeapCmpFcn toplist_item_compare_fcn );
-static WeaveOutputToplistItem *toplist_item_create( const LIGOTimeGPS *ref_time, const UINT4 per_nsegments );
-static int toplist_compare( BOOLEAN *equal, const WeaveSetupData *setup, const REAL8 param_tol_mism, const VectorComparison *result_tol, const LALStringVector *detectors, const size_t nsegments, const LALHeap *toplist_1, const LALHeap *toplist_2 );
-static int toplist_compare_results( BOOLEAN *equal, const VectorComparison *result_tol, const REAL4Vector *res_1, const REAL4Vector *res_2 );
-static int toplist_compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const REAL8 param_tol_mism, const WeavePhysicalToLattice phys_to_latt, const gsl_matrix *metric, const void *transf_data, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
-static int toplist_fits_table_init( FITSFile *file, const size_t nspins, const LALStringVector *per_detectors, const UINT4 per_nsegments );
-static int toplist_fits_table_read( FITSFile *file, const char *name, WeaveOutputResults *out, LALHeap **toplist, LALHeapCmpFcn toplist_item_compare_fcn );
-static int toplist_fits_table_write( FITSFile *file, const char *name, const char *comment, const WeaveOutputResults *out, LALHeap *toplist );
-static int toplist_fits_table_write_visitor( void *param, const void *x );
-static int toplist_item_add( BOOLEAN *full_init, WeaveOutputResults *out, LALHeap *toplist, const WeaveSemiResults *semi_res, const size_t freq_idx );
-static int toplist_item_compare_by_mean_twoF( const void *x, const void *y );
-static int toplist_item_sort_by_semi_phys( const void *x, const void *y );
-static void toplist_item_destroy( void *x );
 
 ///
 /// Internal definition of output results from a search
@@ -57,6 +45,27 @@ struct tagWeaveOutputResults {
   /// Save a no-longer-used toplist item for re-use
   WeaveOutputToplistItem *saved_item;
 };
+
+///
+/// \name Internal routines
+///
+/// @{
+
+static LALHeap *toplist_create( int toplist_limit, LALHeapCmpFcn toplist_item_compare_fcn );
+static WeaveOutputToplistItem *toplist_item_create( const LIGOTimeGPS *ref_time, const UINT4 per_nsegments );
+static int toplist_compare( BOOLEAN *equal, const WeaveSetupData *setup, const REAL8 param_tol_mism, const VectorComparison *result_tol, const LALStringVector *detectors, const size_t nsegments, const LALHeap *toplist_1, const LALHeap *toplist_2 );
+static int toplist_compare_results( BOOLEAN *equal, const VectorComparison *result_tol, const REAL4Vector *res_1, const REAL4Vector *res_2 );
+static int toplist_compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const REAL8 param_tol_mism, const WeavePhysicalToLattice phys_to_latt, const gsl_matrix *metric, const void *transf_data, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
+static int toplist_fits_table_init( FITSFile *file, const size_t nspins, const LALStringVector *per_detectors, const UINT4 per_nsegments );
+static int toplist_fits_table_read( FITSFile *file, const char *name, WeaveOutputResults *out, LALHeap **toplist, LALHeapCmpFcn toplist_item_compare_fcn );
+static int toplist_fits_table_write( FITSFile *file, const char *name, const char *comment, const WeaveOutputResults *out, LALHeap *toplist );
+static int toplist_fits_table_write_visitor( void *param, const void *x );
+static int toplist_item_add( BOOLEAN *full_init, WeaveOutputResults *out, LALHeap *toplist, const WeaveSemiResults *semi_res, const size_t freq_idx );
+static int toplist_item_compare_by_mean_twoF( const void *x, const void *y );
+static int toplist_item_sort_by_semi_phys( const void *x, const void *y );
+static void toplist_item_destroy( void *x );
+
+/// @}
 
 ///
 /// Create a toplist
