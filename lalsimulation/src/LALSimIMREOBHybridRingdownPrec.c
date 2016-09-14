@@ -502,7 +502,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
 		/* Replace the last QNM with pQNM */
 		/* We assume aligned/antialigned spins here */
 		a = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * (mass1 - mass2) / (mass1 + mass2);
-		NRPeakOmega22 = GetNRSpinPeakOmega(l, m, eta, a) / mTot;
+		NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmega(l, m, eta, a) / mTot;
 		/*
 		 * XLAL_PRINT_INFO("a and NRomega in QNM freq: %.16e %.16e %.16e %.16e
 		 * %.16e\n",spin1[2],spin2[2],
@@ -523,7 +523,7 @@ XLALSimIMREOBHybridAttachRingdownPrec(
 			 * T1400476-v3.
 			 */
 			a = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * (mass1 - mass2) / (mass1 + mass2);
-			NRPeakOmega22 = GetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
+			NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
 
 			/* Define chi */
 			chi = (spin1[2] + spin2[2]) / 2. + (spin1[2] - spin2[2]) / 2. * ((mass1 - mass2) / (mass1 + mass2)) / (1. - 2. * eta);
@@ -763,13 +763,13 @@ XLALSimIMREOBHybridAttachRingdownPrec(
 
 		a = (chi1 + chi2) / 2. * (1.0 - 2.0 * eta) + (chi1 - chi2) / 2. * (mass1 - mass2) / (mass1 + mass2);
         NRPeakOmega22 = fabs(omegaWavePeak);
-//        NRPeakOmega22 = GetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
+//        NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
         gsl_spline_free(spline);
         gsl_interp_accel_free(acc);
         LALFree(y);
         // FIXME
         //NRPeakOmega22 = 0.3;
-		//NRPeakOmega22 = GetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
+		//NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmegav2(l, m, eta, a) / mTot;
 //        NRPeakOmega22 = omegaWavePeak/mTot;
 //        XLAL_PRINT_INFO("(hRe, hIm, dhRe, dhIm)=(%.16e, %.16e, %.16e, %.16e)\n", hRe, hIm, dhRe, dhIm);
 //        XLAL_PRINT_INFO("hNorm %.16e, tmatch %.16e\n",sqrt(hNorm2), matchrange->data[1]);

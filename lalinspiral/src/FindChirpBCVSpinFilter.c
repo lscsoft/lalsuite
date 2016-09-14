@@ -575,7 +575,7 @@ LALFindChirpBCVSpinFilterSegment (
 
           		/* record the data that we need
 			for the clustering algorithm */
-          		thisEvent->end_time.gpsSeconds = j;
+          		thisEvent->end.gpsSeconds = j;
           		thisEvent->snr = rho;
 
 			alpha1hat = crealf(q[j]) * invRho * normFac;
@@ -604,11 +604,11 @@ LALFindChirpBCVSpinFilterSegment (
                 deltaEventIndex */
 
 		else if ( !(params->clusterMethod == FindChirpClustering_none) &&
-	        j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
+	        j <= thisEvent->end.gpsSeconds + deltaEventIndex &&
 		rho > thisEvent->snr )
         	{
           		/* this is the same event so update maximum */
-          		thisEvent->end_time.gpsSeconds = j;
+          		thisEvent->end.gpsSeconds = j;
           		thisEvent->snr = rho;
 
                          alpha1hat = crealf(q[j]) * invRho * normFac;
@@ -632,13 +632,13 @@ LALFindChirpBCVSpinFilterSegment (
 
                 }
 
-                else if (j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
+                else if (j > thisEvent->end.gpsSeconds + deltaEventIndex ||
 		         params->clusterMethod == FindChirpClustering_none )
         	{
           		/* clean up this event */
           		SnglInspiralTable *lastEvent;
           		INT8 timeNS;
-          		INT4 timeIndex = thisEvent->end_time.gpsSeconds;
+          		INT4 timeIndex = thisEvent->end.gpsSeconds;
 
           		/* set the event LIGO GPS time of the event */
           		timeNS = 1000000000L *
@@ -646,13 +646,13 @@ LALFindChirpBCVSpinFilterSegment (
           		timeNS +=
 			(INT8) (input->segment->data->epoch.gpsNanoSeconds);
           		timeNS += (INT8) (1e9 * timeIndex * deltaT);
-          		thisEvent->end_time.gpsSeconds
+          		thisEvent->end.gpsSeconds
 				= (INT4) (timeNS/1000000000L);
-          		thisEvent->end_time.gpsNanoSeconds
+          		thisEvent->end.gpsNanoSeconds
 				= (INT4) (timeNS%1000000000L);
           		thisEvent->end_time_gmst
 				= fmod(XLALGreenwichMeanSiderealTime(
-				&thisEvent->end_time),
+				&thisEvent->end),
 				LAL_TWOPI) * 24.0 / LAL_TWOPI;	/* hours */
           		ASSERT( !XLAL_IS_REAL8_FAIL_NAN(thisEvent->end_time_gmst), status, LAL_FAIL_ERR, LAL_FAIL_MSG );
 
@@ -665,7 +665,7 @@ LALFindChirpBCVSpinFilterSegment (
           		strncpy( thisEvent->channel,
 				input->segment->data->name + 3,
               			(LALNameLength - 3) * sizeof(CHAR) );
-         		thisEvent->impulse_time = thisEvent->end_time;
+         		thisEvent->impulse_time = thisEvent->end;
 
                 	/* record the beta value */
                		/* eventually beta will be provided FROM
@@ -709,7 +709,7 @@ LALFindChirpBCVSpinFilterSegment (
          		}
 
           		/* stick minimal data into the event */
-          		thisEvent->end_time.gpsSeconds = j;
+          		thisEvent->end.gpsSeconds = j;
           		thisEvent->snr = rho;
 
   			alpha1hat = crealf(q[j]) * invRho * normFac;
@@ -745,7 +745,7 @@ LALFindChirpBCVSpinFilterSegment (
  {
  	/* clean up this event */
 	INT8 timeNS;
-	INT4 timeIndex = thisEvent->end_time.gpsSeconds;
+	INT4 timeIndex = thisEvent->end.gpsSeconds;
 
 	/* set the event LIGO GPS time of the event */
 	timeNS = 1000000000L *
@@ -753,12 +753,12 @@ LALFindChirpBCVSpinFilterSegment (
 	timeNS +=
 	   (INT8) (input->segment->data->epoch.gpsNanoSeconds);
 	timeNS += (INT8) (1e9 * timeIndex * deltaT);
-	thisEvent->end_time.gpsSeconds
+	thisEvent->end.gpsSeconds
 	        = (INT4) (timeNS/1000000000L);
-	thisEvent->end_time.gpsNanoSeconds
+	thisEvent->end.gpsNanoSeconds
 	        = (INT4) (timeNS%1000000000L);
 	thisEvent->end_time_gmst
-	        = fmod(XLALGreenwichMeanSiderealTime(&thisEvent->end_time),
+	        = fmod(XLALGreenwichMeanSiderealTime(&thisEvent->end),
 	        LAL_TWOPI) * 24.0 / LAL_TWOPI;	/* hours */
 	ASSERT( !XLAL_IS_REAL8_FAIL_NAN(thisEvent->end_time_gmst), status, LAL_FAIL_ERR, LAL_FAIL_MSG );
 
@@ -771,7 +771,7 @@ LALFindChirpBCVSpinFilterSegment (
 	         strncpy( thisEvent->channel,
 	         input->segment->data->name + 3,
 	         (LALNameLength - 3) * sizeof(CHAR) );
-	         thisEvent->impulse_time = thisEvent->end_time;
+	         thisEvent->impulse_time = thisEvent->end;
 																																	                          thisEvent->beta   = input->fcTmplt->tmplt.beta;
 	thisEvent->psi0   = (REAL4) input->fcTmplt->tmplt.psi0;
 	thisEvent->psi3   = (REAL4) input->fcTmplt->tmplt.psi3;

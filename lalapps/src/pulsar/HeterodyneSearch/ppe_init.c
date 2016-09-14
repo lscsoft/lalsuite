@@ -508,14 +508,26 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
  * \brief Sets up the parameters to be searched over and their prior ranges
  *
  * This function sets up any parameters that you require the code to search over and specifies the prior range and type
- * for each. This information is contained in a prior file specified by the command line argument \c prior-file. This
- * file should contain four columns: the first has the name of a parameter to be searched over; the second has the prior
- * type (e.g. "uniform" for a prior that is flat over the given range, or "gaussian" with a certain mean and standard
- * deviation, or "fermidirac" for a Fermi-Dirac distribution defined by a sigma and r parameters (where r is mu/sigma),
- * or "predefined", which means that the prior for that variable is already hardcoded into the prior function);
- * the third has the lower limit, or mean, of the prior, for "uniform"/"predefined" and "gaussian" priors respectively;
- * and the fourth has the upper limit, or standard deviation, for "uniform"/"predefined" and "gaussian" priors respectively.
- * E.g.
+ * for each. This information is contained in a prior file specified by the command line argument \c prior-file. There
+ * are currently five different allowed prior distributions:
+ *   - "uniform": A flat distribution between a minimum and maximum range (with zero probabiility outside that range);
+ *   - "gaussian": A Gaussian/Normal distribution defined by a mean and standard devaition;
+ *   - "fermidirac": A Fermi-Dirac-like distribution defined by a knee and attenuation width;
+ *   - "gmm": A one-dimensional Gaussian Mixture model defined by the means, standard deviations and weights of each mode.
+ *   - "loguniform": A flat distribution in log-space (proportional to the inverse of the value in non-log-space)
+ * For all priors the first two columns of the prior definition should be:
+ *   -# the name of a parameter to be searched over, and
+ *   -# the prior type (e.g. "uniform", "gaussian", "fermidirac", "gmm" or "loguniform".
+ * For the "uniform, "loguniform", "gaussian", "fermidirac" priors the prior file should contain the a further two columns containing:
+ *   -# the lower limit ("uniform" and "loguniform"), mean ("gaussian"), or sigma ("fermidirac") of the distribution;
+ *   -# the upper limit ("uniform" and "loguniform"), standard deviation ("gaussian"), or r ("fermidirac") of the distribution.
+ * For the "gmm" prior the file should contain at least a further four columns. The third column gives the number of modes
+ * for the mixture. For each mode there should then be a tuple of numbers giving the mean, standard deviation and weight
+ * of each mode (weights can be relative weights as they will be normalised when parsed by the code). Finally, there can
+ * be two additional columns giving lower and upper limits of the distribution (note that the weights given are weights
+ * assuming that there are no bounds on the distributions).
+ *
+ * Some examples of files are:
  * \code
  * H0 uniform 0 1e-21
  * PHI0 uniform 0 3.14159265359
@@ -524,9 +536,16 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
  * \endcode
  * or
  * \code
- * H0 uniform 0 1e-21
+ * H0 fermidirac 3.3e-26 9.16
  * PHI0 uniform 0 3.14159265359
- * IOTA predefined 0 3.14159265359
+ * IOTA uniform 0 3.14159265359
+ * PSI uniform -0.785398163397448 0.785398163397448
+ * \endcode
+ * or
+ * \code
+ * H0 gmm 3 1e-25 2e-24 1.5 2e-25 3e-24 2.5 1e-26 1e-25 0.2 0.0 1e-20
+ * PHI0 uniform 0 3.14159265359
+ * COSIOTA uniform -1 1
  * PSI uniform -0.785398163397448 0.785398163397448
  * \endcode
  *
@@ -546,12 +565,15 @@ void initialise_prior( LALInferenceRunState *runState )
   LALInferenceThreadState *threadState = runState->threads[0];
   ProcessParamsTable *ppt;
   ProcessParamsTable *commandLine = runState->commandLine;
-  FILE *fp=NULL;
 
-  CHAR tempPar[VARNAME_MAX] = "", tempPrior[VARNAME_MAX] = "";
+  CHAR *tempPar = NULL, *tempPrior = NULL;
   REAL8 low, high;
 
   LALInferenceIFOModel *ifo = threadState->model->ifo;
+
+  CHAR *filebuf =  NULL; /* buffer to store prior file */
+  TokenList *tlist = NULL;
+  UINT4 k = 0, nvals = 0;
 
   /* parameters in correlation matrix */
   LALStringVector *corParams = NULL;
@@ -571,44 +593,112 @@ void initialise_prior( LALInferenceRunState *runState )
     exit(0);
   }
 
-  /* open file */
-  if( (fp = fopen(propfile, "r")) == NULL ){
-    fprintf(stderr, "Error... Could not open prior file %s.\n", propfile);
-    exit(3);
+  /* read in prior file and separate lines */
+  filebuf = XLALFileLoad( propfile );
+  if ( XLALCreateTokenList( &tlist, filebuf, "\n" ) != XLAL_SUCCESS ){
+    XLAL_ERROR_VOID(XLAL_EINVAL, "Error... could not convert data into separate lines.\n");
   }
 
-  while(fscanf(fp, "%s %s %lf %lf", tempPar, tempPrior, &low, &high) != EOF){
-    INT4 isthere = 0, i = 0;
-
+  /* parse through priors */
+  for ( k = 0; k < tlist->nTokens; k++ ){
+    UINT4 isthere = 0, i = 0;
     LALInferenceParamVaryType varyType;
 
-    /* convert tempPar to all uppercase letters */
-    strtoupper( tempPar );
+    /* check for comment line starting with '#' or '%' */
+    if ( !strcmp(tlist->tokens[k], "#") || !strcmp(tlist->tokens[k], "%") ){ continue; }
 
-    if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "predefined") ){
-      if( high < low ){
-        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... In %s the %s parameters ranges are wrongly set.", propfile, tempPar );
-      }
+    /* check the number of values in the line by counting the whitespace separated values */
+    nvals = 0;
+    TokenList *tline = NULL;
+    XLALCreateTokenList( &tline, tlist->tokens[k], " \t" );
+    nvals = tline->nTokens;
+
+    if ( nvals < 2 ){
+      fprintf(stderr, "Warning... number of values ('%d') on line '%d' in prior file is different than expected:\n\t'%s'", nvals, k+1, tlist->tokens[k]);
+      XLALDestroyTokenList( tline );
+      continue;
     }
 
-    if ( strcmp(tempPrior, "uniform") && strcmp(tempPrior, "predefined") && strcmp(tempPrior, "gaussian") && strcmp(tempPrior, "fermidirac") ){
-      XLAL_ERROR_VOID( XLAL_EINVAL, "Error... prior type '%s' not recognised", tempPrior );
+    tempPar = XLALStringDuplicate( tline->tokens[0] );
+    strtoupper( tempPar ); /* convert tempPar to all uppercase letters */
+    tempPrior = XLALStringDuplicate( tline->tokens[1] );
+
+    /* gaussian, uniform, loguniform and fermi-dirac priors should all have four values to a line */
+    if ( nvals == 4 ){
+      low = atof(tline->tokens[2]);
+      high = atof(tline->tokens[3]);
+
+      if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "loguniform") ){
+        if( high < low ){
+          XLAL_ERROR_VOID( XLAL_EINVAL, "Error... In %s the %s parameters ranges are wrongly set.", propfile, tempPar );
+        }
+      }
+
+      if ( strcmp(tempPrior, "uniform") && strcmp(tempPrior, "loguniform") && strcmp(tempPrior, "gaussian") && strcmp(tempPrior, "fermidirac") ){
+        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... prior type '%s' not recognised", tempPrior );
+      }
+
+      /* Add the prior variables */
+      if ( !strcmp(tempPrior, "uniform") ){
+        LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
+      }
+      else if ( !strcmp(tempPrior, "loguniform") ){
+        LALInferenceAddLogUniformPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
+      }
+      else if( !strcmp(tempPrior, "gaussian") ){
+        LALInferenceAddGaussianPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
+      }
+      else if( !strcmp(tempPrior, "fermidirac") ){
+        LALInferenceAddFermiDiracPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
+      }
+    }
+    else if ( nvals > 4 ){
+      /* check if using a 1D Gaussian Mixture Model prior e.g.:
+       * iota gmm 2 0.5 0.01 1.0 1.5 0.01 1.0 0.0 3.14
+       * where the third value is the number of modes, followed by tuples of means, standard deviations and weights for each mode
+       * and finally (if required two values giving minimum and maximum limits for the prior).
+       */
+      if ( !strcmp(tempPrior, "gmm") ){
+        UINT4 nmodes = (UINT4)atoi( tline->tokens[2] );
+
+        if ( nvals - 2 < 3*nmodes ){
+          XLAL_ERROR_VOID( XLAL_EINVAL, "Error... GMM prior is not properly defined" );
+        }
+
+        /* get Gaussian mode means, standard deviations and weights */
+        REAL8Vector *gmmsigmas = NULL, *gmmmus = NULL, *gmmweights = NULL;
+        gmmsigmas = XLALCreateREAL8Vector( nmodes );
+        gmmmus = XLALCreateREAL8Vector( nmodes );
+        gmmweights = XLALCreateREAL8Vector( nmodes );
+        for ( i = 0; i < nmodes; i++ ){
+          gmmmus->data[i] = atof( tline->tokens[3+3*i] );
+          gmmsigmas->data[i] = atof( tline->tokens[3+3*i+1] );
+          gmmweights->data[i] = atof( tline->tokens[3+3*i+2] );
+        }
+
+        REAL8 minval = -INFINITY, maxval = INFINITY;
+        /* check if minimum and maximum bounds are specified */
+        if ( nvals > 3+3*nmodes ) { minval = atof(tline->tokens[3+3*nmodes]); }
+        if ( nvals > 3+3*nmodes+1 ) { maxval = atof(tline->tokens[3+3*nmodes+1]); }
+        if ( nvals > 3+3*nmodes+2 ){
+          fprintf(stderr, "Warning... additional unnecessary values given in GMM prior\n");
+        }
+
+        LALInferenceAdd1DGMMPrior( runState->priorArgs, tempPar, &gmmmus, &gmmsigmas, &gmmweights, &minval, &maxval );
+      }
+      else{
+         XLAL_ERROR_VOID( XLAL_EINVAL, "Error... prior type '%s' not recognised", tempPrior );
+      }
+    }
+    else{
+      fprintf(stderr, "Warning... number of values ('%d') on line '%d' in prior file is different than expected:\n\t'%s'\n", nvals, k+1, tlist->tokens[k]);
+      XLALDestroyTokenList( tline );
+      continue;
     }
 
     /* set variable type to LINEAR (as they are initialised as FIXED) */
     varyType = LALINFERENCE_PARAM_LINEAR;
     LALInferenceSetParamVaryType( threadState->currentParams, tempPar, varyType );
-
-    /* Add the prior variables */
-    if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "predefined") ){
-      LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
-    }
-    else if( !strcmp(tempPrior, "gaussian") ){
-      LALInferenceAddGaussianPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
-    }
-    else if( !strcmp(tempPrior, "fermidirac") ){
-      LALInferenceAddFermiDiracPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
-    }
 
     /* if there is a phase parameter defined in the proposal then set varyphase to 1 */
     for ( i = 0; i < NUMAMPPARS; i++ ){
@@ -634,7 +724,12 @@ void initialise_prior( LALInferenceRunState *runState )
         break;
       }
     }
+
+    XLALDestroyTokenList( tline );
   }
+
+  XLALDestroyTokenList( tlist );
+  XLALFree( filebuf );
 
   LALInferenceIFOModel *ifotemp = ifo;
   while( ifotemp ){

@@ -182,8 +182,14 @@ class Bank(object):
                     err_msg += "coarse-value-df value lower."
                     # FIXME: This could be dealt with dynamically??
                     raise ValueError(err_msg)
+
+                # record match and template params for highest match
+                if match > max_match:
+                    max_match = match
+                    template = tmplt
+
                 if (1 - match) > 0.05 + (1 - min_match):
-                    continue 
+                    continue
 
             while df >= df_end:
 
@@ -235,11 +241,12 @@ class Bank(object):
         df, ASD = get_neighborhood_ASD(tmpbank + [proposal], self.flow, self.noise_model)
 
         # compute matches
-        match, best_tmplt_ind = max((self.compute_match(tmplt, proposal, df, ASD=ASD), ind) for ind, tmplt in enumerate(tmpbank))
+        matches = [self.compute_match(tmplt, proposal, df, ASD=ASD) for tmplt in tmpbank]
+        best_tmplt_ind = np.argmax(matches)
         self._nmatch += len(tmpbank)
 
         # best_tmplt_ind indexes tmpbank; add low to get index of full bank
-        return match, best_tmplt_ind + low
+        return matches[best_tmplt_ind], best_tmplt_ind + low
 
     def clear(self):
         if hasattr(self, "_workspace_cache"):

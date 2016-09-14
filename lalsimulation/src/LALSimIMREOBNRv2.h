@@ -19,7 +19,7 @@
 
 
 /**
- * \author Craig Robinson
+ * \author Craig Robinson, Andrea Taracchini
  *
  * \brief File containing most of the structures and prototypes which are
  * used in the generation of the EOBNRv2 waveform. These structures and
@@ -47,6 +47,26 @@ extern "C"
  * The maximum possible l we have
  */
 #define LALEOB_MAX_MULTIPOLE 8
+
+/**
+ * Tidal parameters for EOB model of NS:
+ * mass - dimensionless ratio mass/M
+ * comp - compactness
+ * k2Tidal - adiabatic quadrupole Love number
+ * omega02Tidal - quadrupole f-mode freq
+ * k3Tidal - adiabatic octupole Love number
+ * omega03Tidal - octupole f-mode freq
+ */
+typedef struct tagTidalEOBParams
+{
+    REAL8 mass;
+    REAL8 comp;
+    REAL8 k2Tidal;
+    REAL8 k3Tidal;
+    REAL8 omega02Tidal;
+    REAL8 omega03Tidal;
+}
+TidalEOBParams;
 
 /**
  * Structure containing the coefficients for EOBNRv2 A potential function.
@@ -394,18 +414,8 @@ typedef struct tagFacWaveformCoeffs
   REAL8 rho82v2;
   REAL8 rho81v2;
 
-  REAL8 m1;
-  REAL8 m2;
-  REAL8 comp1;
-  REAL8 comp2;
-  REAL8 k2Tidal1;
-  REAL8 k2Tidal2;
-  REAL8 omega02Tidal1;
-  REAL8 omega02Tidal2;
-  REAL8 k3Tidal1;
-  REAL8 k3Tidal2;
-  REAL8 omega03Tidal1;
-  REAL8 omega03Tidal2;
+  TidalEOBParams *tidal1;
+  TidalEOBParams *tidal2;
 }
 FacWaveformCoeffs;
 

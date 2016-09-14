@@ -172,7 +172,7 @@ static void interpolation(void)
 
     for (int t = n / 4; t < (n * 3) / 4; ++t)
     {
-        if (fabs(XLALSkymapInterpolate(t, x) - sin(t)) != 0)
+        if (fabs(XLALSkymapInterpolate(t, x) - sin(t)) > LAL_REAL8_EPS)
         {
             fprintf(stderr, "Interpolation does not pass through data points\n");
             exit(1);

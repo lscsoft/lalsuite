@@ -668,13 +668,48 @@ int XLALSimBlackHoleRingdown(REAL8TimeSeries ** hplus,
     return 0;
 }
 
+REAL8 XLALSimRadiusKerrISCO ( REAL8 a ) {
+    REAL8 z1, z2;
+    if ( 1. - a * a < 0. || 1. + a < 0. || 1. - a < 0. ) {
+        XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    z1 = 1. + pow(1. - a * a, 1. / 3.) * (pow(1. + a, 1. / 3.) + pow(1. - a, 1. / 3.));
+    z2 = sqrt(3. * a * a + z1 * z1);
+    if ( (3. - z1) * (3. + z1 + 2. * z2) < 0. ) {
+        XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    return 3. + z2 - (a < 0. ? -1. : 1.) * sqrt((3. - z1) * (3. + z1 + 2. * z2));
+}
+
+REAL8 XLALSimEnergyKerrISCO ( REAL8 rISCO ) {
+    if ( 1. - 2. / (3. * rISCO) < 0. ) {
+        XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    return sqrt(1. - 2. / (3. * rISCO));
+}
+
+REAL8 XLALSimAngMomKerrISCO ( REAL8 rISCO ) {
+    if ( 3. * rISCO - 2. < 0. ) {
+        XLALPrintError("XLAL Error %s - Arguments of pow and sqrt functions should be nonnegative!\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    return 2. / (3. * sqrt(3.)) * (1. + 2. * sqrt(3. * rISCO - 2.));
+}
+
 /**
  * Computes the final mass and spin of the black hole resulting from merger.
  * They are given by fittings of NR simulations results. Specifically,
  * for EOBNR, Table I of Buonanno et al. PRD76, 104049;
  * for EOBNRv2 and EOBNRv2HM, Eqs. 29a and 29b of Pan et al. PRD84, 124052;
- * for SEOBNRv1, SEOBNRv2, Eq. 8 of Tichy and Marronetti PRD78, 081501 and
- * Eqs. 1 and 3 of Barausse and Rezzolla ApJ704, L40.
+ * for SEOBNRv1 Eq. 8 of Tichy and Marronetti PRD78, 081501 and
+ * Eqs. 1 and 3 of Barausse and Rezzolla ApJ704, L40;
+ * for SEOBNRv2 the formulas in Barausse and Rezzolla ApJ704, L40 were refitted 
+ * to the set of NR wfs used in the calibration of SEOBNRv2;
+ * for SEOBNRv4 same mass formula as for SEOBNRv2 and final spin
+ * formula from Astrophys.J. 825 (2016) no.2, L19
  */
 INT4 XLALSimIMREOBFinalMassSpin(REAL8 * finalMass,
                               /**<< OUTPUT, the final mass (scaled by original total mass) */
@@ -685,35 +720,18 @@ INT4 XLALSimIMREOBFinalMassSpin(REAL8 * finalMass,
     const REAL8 spin2[3],     /**<< The spin of the 2nd object; only needed for spin waveforms */
     Approximant approximant   /**<< The waveform approximant being used */
     ) {
+    if ( mass1 <= 0. || mass2 <= 0. ) {
+        XLALPrintError("XLAL Error %s - Masses should be positive numbers!\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+    static const INT4 Z_COORDINATE = 2;
     static const REAL8 root9ovr8minus1 = -0.057190958417936644;
     static const REAL8 root12 = 3.4641016151377544;
-
-    /* Constants used for the spinning EOB model */
-    static const REAL8 p0 = 0.04826;
-    static const REAL8 p1 = 0.01559;
-    static const REAL8 p2 = 0.00485;
-    static const REAL8 t0 = -2.8904;
-    static const REAL8 t2 = -3.5171;
-    static const REAL8 t3 = 2.5763;
-    static const REAL8 s4 = -0.1229;
-    static const REAL8 s5 = 0.4537;
-
-    static const REAL8 s9 = 2.763032781169752;
-    static const REAL8 s8 = -2.6081232221537394;
-    static const REAL8 s7 = 1.2657111864932808;
-    static const REAL8 s6 = -0.7835007857591175;
-    static const REAL8 s5v2 = -0.3264724801557159;
-    static const REAL8 s4v2 = -0.27506210736300474;
-    static const REAL8 t0v2 = -2.649826989941522;
-    static const REAL8 t3v2 = 3.910637513328723;
-    static const REAL8 t2v2 = -3.850983155206041;
 
     REAL8 totalMass;
     REAL8 eta, eta2, eta3;
     REAL8 a1, a2, chiS, q;
-    REAL8 z1, z2, rISCO, eISCO, LISCO, atl, tmpVar, csi, S1, S2, Seff, atot, aeff, physpart, fitpart;
-    REAL8 cosa, cosb, cosg, a1a2norm, a1a2L, lnorm;
-    REAL8 q2, chi1, chi2, theta1, theta2, phi1, phi2, swapvar;
+    REAL8 rISCO, eISCO, LISCO, atl, tmpVar, csi, S1, S2, Seff, atot, aeff, physpart, fitpart;
 
     /* get a local copy of the intrinsic parameters */
     totalMass = mass1 + mass2;
@@ -722,6 +740,7 @@ INT4 XLALSimIMREOBFinalMassSpin(REAL8 * finalMass,
     eta3 = eta2 * eta;
 //printf("Approximant: %d\n",approximant);
 
+    /* Coefficients entering the final mass formulas are defined in LALSimBlackHoleRingdown.h */
     switch (approximant) {
     case EOBNRv2:
     case EOBNRv2HM:
@@ -735,119 +754,77 @@ INT4 XLALSimIMREOBFinalMassSpin(REAL8 * finalMass,
         *finalMass = 1 - 0.057191 * eta - 0.498 * eta2;
         *finalSpin = 3.464102 * eta - 2.9 * eta2;
         break;
+    case SEOBNRv2:
     case SEOBNRv4:
-        /* See page 3 of the dcc document T1400476-v3, quantities MFinal and aFinal, for expressions below. */
-        a1 = spin1[2];
-        a2 = spin2[2];
+        /* See page 3 of the dcc document T1400476-v3, quantity MFinal, for expression below. */
+        a1 = spin1[Z_COORDINATE];
+        a2 = spin2[Z_COORDINATE];
         q = mass1 / mass2;
-        atl = (a1 + a2 / q / q) / (1. + 1. / q) / (1. + 1. / q);
-        tmpVar = (a1 + a2 / q / q) / (1. + 1. / q / q);
-        z1 = 1. + pow(1. - atl * atl, 1. / 3.) * (pow(1. + atl, 1. / 3.) + pow(1. - atl, 1. / 3.));
-        z2 = sqrt(3. * atl * atl + z1 * z1);
-        rISCO = 3. + z2 - (atl < 0. ? -1. : 1.) * sqrt((3. - z1) * (3. + z1 + 2. * z2));
-        eISCO = sqrt(1. - 2. / (3. * rISCO));
-        *finalMass = 1. - ((1. - eISCO) * eta + 16. * eta * eta * (0.00258 - 0.0773 / (1. / ((1. + 1 / q / q) / (1. + 1 / q) / (1. + 1 / q)) * atl - 1.6939) - 0.25 * (1. - eISCO)));
-
-        /* Final spin formula from Barausse+16 http://arxiv.org/pdf/1605.01938.pdf */
-        csi = 0.474046;
-        S1 = mass1 * mass1 * a1;
-        S2 = mass2 * mass2 * a2;
-        Seff = (1. + csi * mass2 / mass1) * S1 + (1. + csi * mass1 / mass2) * S2;
-        aeff = Seff / (mass1 + mass2) / (mass1 + mass2);
-        atot = (S1 + S2) / (mass1 + mass2) / (mass1 + mass2);
-        z1 = 1. + pow(1. - aeff * aeff, 1. / 3.) * (pow(1. + aeff, 1. / 3.) + pow(1. - aeff, 1. / 3.));
-        z2 = sqrt(3. * aeff * aeff + z1 * z1);
-        rISCO = 3. + z2 - (aeff < 0. ? -1. : 1.) * sqrt((3. - z1) * (3. + z1 + 2. * z2));
-        eISCO = sqrt(1. - 2. / (3. * rISCO));
-        LISCO = 2. / (3. * sqrt(3.)) * (1. + 2. * sqrt(3. * rISCO - 2.));
-        physpart = atot + eta * (LISCO - 2. * atot * (eISCO - 1.));
-        if (fabs(aeff) > 0.) {
-            fitpart = -5.977230835551017 * eta * eta + 3.39221 * aeff * eta * eta + 4.48865 * aeff * aeff * eta * eta - 5.77101 * aeff * aeff * aeff * eta * eta - 13.0459 * aeff * aeff * aeff * aeff * eta * eta + 35.1278 * eta * eta * eta - 72.9336 * aeff * eta * eta * eta - 86.0036 * aeff * aeff * eta * eta * eta + 93.7371 * aeff * aeff * aeff * eta * eta * eta + 200.975 * aeff * aeff * aeff * aeff * eta * eta * eta - 146.822 * eta * eta * eta * eta + 387.184 * aeff * eta * eta * eta * eta + 447.009 * aeff * aeff * eta * eta * eta * eta - 467.383 * aeff * aeff * aeff * eta * eta * eta * eta - 884.339 * aeff * aeff * aeff * aeff * eta * eta * eta * eta + 223.911 * eta * eta * eta * eta * eta - 648.502 * aeff * eta * eta * eta * eta * eta - 697.177 * aeff * aeff * eta * eta * eta * eta * eta + 753.738 * aeff * aeff * aeff * eta * eta * eta * eta * eta + 1166.89 * aeff * aeff * aeff * aeff * eta * eta * eta * eta * eta;
-        } else {
-            fitpart = -5.977230835551017 * eta * eta + 35.1278 * eta * eta * eta - 146.822 * eta * eta * eta * eta + 223.911 * eta * eta * eta * eta * eta;
+        REAL8 InvQ = 1./q;
+        REAL8 OnePlusInvQ = 1. + InvQ;
+        REAL8 InvQ2 = InvQ * InvQ;
+            
+        atl = (a1 + a2 * InvQ2) / (OnePlusInvQ * OnePlusInvQ);
+        tmpVar = (a1 + a2 * InvQ2) / (1. + InvQ2);
+        rISCO = XLALSimRadiusKerrISCO( atl );
+        eISCO = XLALSimEnergyKerrISCO( rISCO );
+        *finalMass = 1. - ((1. - eISCO) * eta + 16. * eta * eta * (0.00258 - 0.0773 / (1. / ((1. + InvQ2) / (OnePlusInvQ * OnePlusInvQ)) * atl - 1.6939) - 0.25 * (1. - eISCO)));
+        if ( approximant == SEOBNRv2 ) {
+            /* See page 3 of the dcc document T1400476-v3, quantity aFinal, for expression below. */
+            *finalSpin = tmpVar + tmpVar * eta * (s9coeff * eta * tmpVar * tmpVar + s8coeff * eta * eta * tmpVar + s7coeff * eta * tmpVar + s6coeff * tmpVar * tmpVar + s4v2coeff * tmpVar + s5v2coeff * eta + t0v2coeff)
+            + eta * (2. * sqrt(3.) + t2v2coeff * eta + t3v2coeff * eta * eta);
         }
-        *finalSpin = physpart + fitpart;
+        else {
+            /* Final spin formula from Barausse+16 http://arxiv.org/pdf/1605.01938.pdf */
+            csi = 0.474046;
+            S1 = mass1 * mass1 * a1;
+            S2 = mass2 * mass2 * a2;
+            Seff = (1. + csi * InvQ) * S1 + (1. + csi * q) * S2;
+            aeff = Seff / (totalMass * totalMass);
+            atot = (S1 + S2) / (totalMass * totalMass);
+            rISCO = XLALSimRadiusKerrISCO( aeff );
+            eISCO = XLALSimEnergyKerrISCO( rISCO );
+            LISCO = XLALSimAngMomKerrISCO( rISCO );
+            physpart = atot + eta * (LISCO - 2. * atot * (eISCO - 1.));
+
+            /* The k00, k01, ... coefficients are defined in LALSimBlackHoleRingdown.h */
+            REAL8 eta4 = eta * eta3;
+            REAL8 eta5 = eta * eta4;
+            if (fabs(aeff) > 0.) {
+                REAL8 aeff2 = aeff * aeff;
+                REAL8 aeff3 = aeff * aeff2;
+                REAL8 aeff4 = aeff * aeff3;
+                fitpart = k00 * eta2 + k01 * aeff * eta2 + k02 * aeff2 * eta2  + k03 * aeff3 * eta2 + k04 * aeff4 * eta2 +
+                k10 * eta3 + k11 * aeff * eta3 + k12 * aeff2 * eta3 + k13 * aeff3 * eta3 +  k14 * aeff4 * eta3 +
+                k20 * eta4 + k21 * aeff * eta4 + k22 * aeff2 * eta4 +  k23 * aeff3 * eta4 + k24 * aeff4 * eta4 +
+                k30 * eta5 +  k31 * aeff * eta5 + k32 * aeff2 * eta5 + k33 * aeff3 * eta5 + k34 * aeff4 * eta5;
+            } else {
+                fitpart = k00 * eta2 + k10 * eta3 + k20 * eta4 + k30 * eta5;
+            }
+            *finalSpin = physpart + fitpart;
 //          printf("aeff = %.16e, LISCO = %.16e, eISCO = %.16e, rISCO = %.16e\n",aeff,LISCO,eISCO,rISCO);
 //          printf("af = %.16e\n",*finalSpin);
-        break;
-    case SEOBNRv2:
-        /* See page 3 of the dcc document T1400476-v3, quantities MFinal and aFinal, for expressions below. */
-        a1 = spin1[2];
-        a2 = spin2[2];
-        q = mass1 / mass2;
-        atl = (a1 + a2 / q / q) / (1. + 1. / q) / (1. + 1. / q);
-        tmpVar = (a1 + a2 / q / q) / (1. + 1. / q / q);
-        z1 = 1. + pow(1. - atl * atl, 1. / 3.) * (pow(1. + atl, 1. / 3.) + pow(1. - atl, 1. / 3.));
-        z2 = sqrt(3. * atl * atl + z1 * z1);
-        rISCO = 3. + z2 - (atl < 0. ? -1. : 1.) * sqrt((3. - z1) * (3. + z1 + 2. * z2));
-        eISCO = sqrt(1. - 2. / (3. * rISCO));
-        *finalMass = 1. - ((1. - eISCO) * eta + 16. * eta * eta * (0.00258 - 0.0773 / (1. / ((1. + 1 / q / q) / (1. + 1 / q) / (1. + 1 / q)) * atl - 1.6939) - 0.25 * (1. - eISCO)));
-        *finalSpin = tmpVar + tmpVar * eta * (s9 * eta * tmpVar * tmpVar + s8 * eta * eta * tmpVar + s7 * eta * tmpVar + s6 * tmpVar * tmpVar + s4v2 * tmpVar + s5v2 * eta + t0v2)
-            + eta * (2. * sqrt(3.) + t2v2 * eta + t3v2 * eta * eta);
+        }
         break;
     case SEOBNRv1:
         /* Final mass/spin comes from Eq. 8 of Tichy and Marronetti PRD78, 081501
          * and from Eqs. 1 and 3 of Barausse and Rezzolla ApJ704, L40 */
-        a1 = spin1[2];
-        a2 = spin2[2];
+        a1 = spin1[Z_COORDINATE];
+        a2 = spin2[Z_COORDINATE];
 
         chiS = 0.5 * (a1 + a2);
         q = mass1 / mass2;
-        *finalMass = 1. - p0 + 2. * p1 * chiS + 4. * p2 * chiS * chiS;
+        *finalMass = 1. - p0coeff + 2. * p1coeff * chiS + 4. * p2coeff * chiS * chiS;
         *finalMass = 1. + (0.9515 - 1.0) * 4. * eta - 0.013 * 16. * eta2 * (a1 + a2);
         tmpVar = (a1 + a2 / q / q) / (1. + 1 / q / q);
-        *finalSpin = tmpVar + tmpVar * eta * (s4 * tmpVar + s5 * eta + t0) + eta * (2. * sqrt(3.) + t2 * eta + t3 * eta * eta);
-        break;
-    case SEOBNRv3:
-        //  Precessing spins (Barausse & Rezzolla 2009, Eqs (6-10))
-        chi1 = sqrt(spin1[0] * spin1[0] + spin1[1] * spin1[1] + spin1[2] * spin1[2]);
-        chi2 = sqrt(spin2[0] * spin2[0] + spin2[1] * spin2[1] + spin2[2] * spin2[2]);
-        if (chi1 < 1.0e-15) {
-            theta1 = 0.;
-        } else {
-            theta1 = acos(spin1[2] / chi1);
-        }
-        if (chi2 < 1.0e-15) {
-            theta2 = 0.;
-        } else {
-            theta2 = acos(spin2[2] / chi2);
-        }
-        phi1 = atan2(spin1[1], spin1[0]);
-        phi2 = atan2(spin2[1], spin2[0]);
-        if (mass1 > mass2) {
-            q = mass2 / mass1;
-        } else {
-            q = mass1 / mass2;
-            swapvar = chi1;
-            chi1 = chi2;
-            chi2 = swapvar;
-            swapvar = theta1;
-            theta1 = theta2;
-            theta2 = swapvar;
-            swapvar = phi1;
-            phi1 = phi2;
-            phi2 = swapvar;
-        }
-        q2 = q * q;
-        cosa = sin(theta1) * cos(phi1) * sin(theta2) * cos(phi2)
-            + sin(theta1) * sin(phi1) * sin(theta2) * sin(phi2)
-            + cos(theta1) * cos(theta2);
-        cosb = cos(theta1);
-        cosg = cos(theta2);
-        a1a2norm = chi1 * chi1 + chi2 * chi2 * q2 * q2 + 2 * chi1 * chi2 * q2 * cosa;
-        a1a2L = chi1 * cosb + chi2 * q2 * cosg;
-        lnorm = 2. * sqrt(3.) + t2 * eta + t3 * eta * eta + s4 / (1. + q2) / (1. + q2) * a1a2norm + (s5 * eta + t0 + 2.) / (1. + q2) * a1a2L;
-        *finalMass = 1. + (0.9515 - 1.0) * 4. * eta - 0.013 * 16. * eta2 * (chi1 + chi2);
-        *finalSpin = 1. / (1. + q) / (1. + q)
-            * sqrt(a1a2norm + 2. * a1a2L * lnorm * q + lnorm * lnorm * q2);
-        printf("final spin variables: %e, %e, %e, %e, %e, %e\n", chi1, chi2, theta1, theta2, phi1, phi2);
+        *finalSpin = tmpVar + tmpVar * eta * (s4coeff * tmpVar + s5coeff * eta + t0coeff) + eta * (2. * sqrt(3.) + t2coeff * eta + t3coeff * eta * eta);
         break;
     default:
         XLALPrintError("XLAL Error %s - Unsupported approximant.\n", __func__);
         XLAL_ERROR(XLAL_EINVAL);
     }
 
-    //printf( "Final mass = %e, Final spin = %e\n", *finalMass, *finalSpin );
+//    printf( "Final mass = %.16e, Final spin = %.16e\n", *finalMass, *finalSpin );
     return XLAL_SUCCESS;
 }
 

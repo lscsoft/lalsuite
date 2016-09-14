@@ -1,3 +1,19 @@
+# Copyright (C) 2016  Heather Fong, Kipp Cannon
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 '''
 For N templates in the uberbank, the overlaps form an NxN symmetric matrix. Currently, there are many subbank overlap files that comprise the uberbank, each of which is a rectangular section of the non-symmetric part of the overlap matrix. The subbanks are essentially arbitrary in size. Templates with overlaps < 0.25 are also not computed (this may need to change in the future).
 This code creates a database for locating the overlaps between templates in the uberbank. This database allows one to retrieve all the overlaps for a particular template. The overlaps are placed into a 1xN numpy array and are ordered.
@@ -10,7 +26,7 @@ import time
 from glue.text_progress_bar import ProgressBar
 import itertools
 import numpy as np
-import os
+import os, sys
 
 class Bank(object):
     def __init__(self, connection):
@@ -94,9 +110,13 @@ class Bank(object):
 #Cannot load h5py file: uberbank/bank_689_overlaps.hdf
 #Cannot load h5py file: uberbank/bank_739_overlaps.hdf
 #Cannot load h5py file: uberbank/bank_839_overlaps.hdf
-        
-start_time = time.time()
-#Bank.make_db("uberbank_database.sqlite",glob.glob("uberbank/*hdf")) # make sqlite file
-x = Bank(sqlite3.connect("uberbank_database.sqlite"))
-#x = Bank(Bank.make_db(":memory:", glob.glob("uberbank/*.hdf")) # in RAM version
-print "Seconds taken to create database:", time.time()-start_time
+
+if sys.argv[1] == "make_sqlite":
+    start_time = time.time()
+    Bank.make_db("uberbank_database.sqlite",glob.glob("uberbank/*hdf")) # make sqlite file
+    x = Bank(sqlite3.connect("uberbank_database.sqlite"))
+    print "Seconds taken to create database:", time.time()-start_time
+if sys.argv[1] == "make_ram":
+    start_time = time.time()
+    x = Bank(Bank.make_db(":memory:", glob.glob("uberbank/*.hdf")) # in RAM version
+    print "Seconds taken to create database:", time.time()-start_time

@@ -199,11 +199,11 @@ LALCreateTwoIFOCoincList(
   {
 
     /* calculate the time of the trigger */
-    currentTriggerNS[0] = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
+    currentTriggerNS[0] = XLALGPSToINT8NS( &(currentTrigger[0]->end) );
 
     /* set next trigger for comparison */
     currentTrigger[1] = currentTrigger[0]->next;
-    currentTriggerNS[1] = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
+    currentTriggerNS[1] = XLALGPSToINT8NS( &(currentTrigger[1]->end) );
 
     while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTimeDiff )
     {
@@ -248,7 +248,7 @@ LALCreateTwoIFOCoincList(
 
       if ( (currentTrigger[1] = currentTrigger[1]->next) )
       {
-        currentTriggerNS[1] = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
+        currentTriggerNS[1] = XLALGPSToINT8NS( &(currentTrigger[1]->end) );
       }
       else
       {
@@ -1397,8 +1397,8 @@ XLALGenerateCoherentBank(
 		unslideNS = -1000000000*slideStep[ifoNumber]*slideNumber;
 	      }
             /* Slide the trigger time in nanoseconds */
-            slideNS += 1e9 * thisCoinc->snglInspiral[ifoMax]->end_time.gpsSeconds
-	                + thisCoinc->snglInspiral[ifoMax]->end_time.gpsNanoSeconds;
+            slideNS += 1e9 * thisCoinc->snglInspiral[ifoMax]->end.gpsSeconds
+	                + thisCoinc->snglInspiral[ifoMax]->end.gpsNanoSeconds;
 	    slideNS = (slideNS - ringStartNS) % ringLengthNS;
 	    if( slideNS < 0 )
 	      slideNS += ringLengthNS;
@@ -1411,7 +1411,7 @@ XLALGenerateCoherentBank(
 	      unslideNS += ringLengthNS;
 	    unslideNSUnwrapped = ringStartNS + unslideNS;
 
-	    XLALINT8NSToGPS(&(currentTrigger->end_time), unslideNSUnwrapped);
+	    XLALINT8NSToGPS(&(currentTrigger->end), unslideNSUnwrapped);
            }
 	  }
 
@@ -1677,11 +1677,11 @@ LALInspiralDistanceCutCleaning(
       dH1 = 0;
       dH2 = 0;
       LALDistanceScanSummValueTable(status->statusPtr, summValueList,
-				    tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H1",  &dH1);
+				    tmpCoinc->snglInspiral[LAL_IFO_H1]->end, "H1",  &dH1);
       CHECKSTATUSPTR( status );
 
       LALDistanceScanSummValueTable(status->statusPtr, summValueList,
-				    tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time, "H2",  &dH2);
+				    tmpCoinc->snglInspiral[LAL_IFO_H1]->end, "H2",  &dH2);
       CHECKSTATUSPTR( status );
 
       /* iota =1 */
@@ -1690,7 +1690,7 @@ LALInspiralDistanceCutCleaning(
 	  if ( vetoSegsH2->initMagic == SEGMENTSH_INITMAGICVAL )
 	    {
 	      if (!XLALSegListSearch( vetoSegsH2,
-				      &(tmpCoinc->snglInspiral[LAL_IFO_H1]->end_time)))
+				      &(tmpCoinc->snglInspiral[LAL_IFO_H1]->end)))
 		{
 		  discardTrigger =1;
 		}
@@ -1708,10 +1708,10 @@ LALInspiralDistanceCutCleaning(
         dH1 = 0;
         dH2 = 0;
 	LALDistanceScanSummValueTable(status->statusPtr, summValueList,
-				      tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H1",  &dH1);
+				      tmpCoinc->snglInspiral[LAL_IFO_H2]->end, "H1",  &dH1);
 	CHECKSTATUSPTR( status );
 	LALDistanceScanSummValueTable(status->statusPtr, summValueList,
-				      tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time, "H2",  &dH2);
+				      tmpCoinc->snglInspiral[LAL_IFO_H2]->end, "H2",  &dH2);
 	CHECKSTATUSPTR( status );
 	/* iota = 1 */
 	if (dH1/dH2*snrH2 > snrThreshold *iotaCut)
@@ -1719,7 +1719,7 @@ LALInspiralDistanceCutCleaning(
 	    if ( vetoSegsH1->initMagic == SEGMENTSH_INITMAGICVAL )
 	      {
 		if (!XLALSegListSearch( vetoSegsH1,
-                     &(tmpCoinc->snglInspiral[LAL_IFO_H2]->end_time)))
+                     &(tmpCoinc->snglInspiral[LAL_IFO_H2]->end)))
 		  {
 		    discardTrigger =1;
 		  }
@@ -2025,7 +2025,7 @@ XLALCoincInspiralTimeNS (
     if ( coincInspiral->snglInspiral[ifoNumber] )
     {
       endTime = XLALGPSToINT8NS(
-          &(coincInspiral->snglInspiral[ifoNumber]->end_time) );
+          &(coincInspiral->snglInspiral[ifoNumber]->end) );
       return(endTime);
     }
   }
@@ -3208,7 +3208,7 @@ XLALCompleteCoincInspiral (
         /* obtain the end time */
         ifoNum = (InterferometerNumber) 0;
         while (!thisCoinc->snglInspiral[ifoNum]) ifoNum++;
-        thisSngl->end_time = thisCoinc->snglInspiral[ifoNum]->end_time;
+        thisSngl->end = thisCoinc->snglInspiral[ifoNum]->end;
 
         /* add sngl to coinc */
         thisCoinc = XLALAddSnglInspiralToCoinc( thisCoinc, thisSngl );

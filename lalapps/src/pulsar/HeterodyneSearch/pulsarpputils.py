@@ -1959,6 +1959,25 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
   detval = lal.CachedDetectors[detector]
   response = detval.response
 
+  # check if ra and dec are floats or strings (if strings in hh/dd:mm:ss.s format then convert to rads)
+  if not isinstance(ra, float):
+    if isinstance(ra, str):
+      if len(ra.split(':')) == 3:
+        ra = ra_to_rad(ra)
+      else:
+        raise ValueError, "Right ascension string '%s' not formatted properly" % ra
+    else:
+      raise ValueError, "Right ascension must be a 'float' in radians or a string of the format 'hh:mm:ss.s'"
+
+  if not isinstance(dec, float):
+    if isinstance(dec, str):
+      if len(dec.split(':')) == 3:
+        dec = dec_to_rad(dec)
+      else:
+        raise ValueError, "Declination string '%s' not formatted properly" % ra
+    else:
+      raise ValueError, "Declination must be a 'float' in radians or a string of the format 'dd:mm:ss.s'"
+
   # check if gpsTime is just a float or int, and if so convert into an array
   if isinstance(gpsTime, float) or isinstance(gpsTime, int):
     gpsTime = np.array([gpsTime])
@@ -2356,23 +2375,51 @@ def read_pulsar_mcmc_file(cf):
   return cfdata
 
 
-# Function to import a posterior sample file created by lalapps_nest2pos. The log(evidence ratio)
-# (signal versus Gaussian noise) is also returned.
-#
-# The input is a HDF5, or acsii text, or gzipped, posterior sample files.
-#
-# Any non-varying parameters in the files are removed from the posterior object. iota is converted
-# back into cos(iota), and if only C22 is varying then it is converted back into h0, and phi22
-# is converted back into phi0.
-def pulsar_nest_to_posterior(postfile):
+def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
+  """
+  This function will import a posterior sample file created by `lalapps_nest2pos` (or a nested
+  sample file). It will be returned as a Posterior class object from `bayespputils`. The
+  signal evidence and noise evidence are also returned.
+
+  Parameters
+  ----------
+  postfile : str, required
+      The file name of the posterior or nested sample file. In general this should be a HDF5 file with the extension
+      '.hdf' or '.h5', although older format ascii files are still supported at the moment.
+  nestedsamples : bool, default: False
+      If the file being input contains nested samples, rather than posterior samples, then this flag must be set to
+      True
+  removeuntrig : bool, default: True
+      If this is True then any parameters that are sines or cosines of a value will have the value removed if present
+      e.g. if cosiota and iota exist then iota will be removed.
+  """
+
   from pylal import bayespputils as bppu
+  from pylal.bayespputils import replace_column
 
   fe = os.path.splitext(postfile)[-1].lower() # file extension
 
   # combine multiple nested sample files for an IFO into a single posterior (copied from lalapps_nest2pos)
   if fe == '.h5' or fe == '.hdf': # HDF5 file
-    peparser = bppu.PEOutputParser('hdf5')
-    nsResultsObject = peparser.parse(postfile)
+    if nestedsamples:
+      # use functions from lalapps_nest2pos to read values from nested sample files i.e. not a posterior file created by lalapps_nest2pos
+      try:
+        from lalinference.io import read_samples
+        import lalinference
+
+        samples = read_samples(postfile, tablename=lalinference.LALInferenceHDF5NestedSamplesDatasetName)
+        params = samples.colnames
+
+        # make everything a float, since that's what's excected of a CommonResultsObj
+        for param in params:
+          replace_column(samples, param, samples[param].astype(float))
+
+        nsResultsObject = (samples.colnames, samples.as_array().view(float).reshape(-1, len(params)))
+      except:
+        raise IOError, "Could not import nested samples"
+    else: # assume posterior file has been created with lalapps_nest2pos
+      peparser = bppu.PEOutputParser('hdf5')
+      nsResultsObject = peparser.parse(postfile)
   elif fe == '.gz': # gzipped file
     import gzip
     peparser = bppu.PEOutputParser('common')
@@ -2409,7 +2456,8 @@ def pulsar_nest_to_posterior(postfile):
     cipos = None
     cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(posIota))
     pos.append(cipos)
-    pos.pop('iota')
+    if removeuntrig:
+      pos.pop('iota')
 
   # check whether sin(i) binary parameter has been used
   try:
@@ -2421,7 +2469,8 @@ def pulsar_nest_to_posterior(postfile):
     sinipos = None
     sinipos = bppu.PosteriorOneDPDF('sini', np.sin(posI))
     pos.append(sinipos)
-    pos.pop('i')
+    if removeuntrig:
+      pos.pop('i')
 
   # convert C22 back into h0, and phi22 back into phi0 if required
   try:
@@ -2569,6 +2618,59 @@ def get_chunk_lengths( ts, chunkMax ):
       j += 1
 
   return chunkLengths
+
+
+def pulsar_estimate_snr(source, det, tstart, tend, Sn):
+  """
+  A function to estimate the signal-to-noise ratio of a pulsar signal in a given detector over
+  a given time range, for a given one-sided power spectral density.
+
+  Inputs
+  ------
+      source - a dictionary containing 'h0', 'cosiota', 'psi', 'ra' (rads or string), 'dec' (rads or string)
+         det - the detector, e.g. 'H1'
+      tstart - a GPS start time
+        tend - a GPS end time
+          Sn - a one-sided power spectral density
+
+  Returns
+  -------
+  rho        - an estimate of the optimal matched filter SNR
+  """
+
+  T = tend-tstart; # get total time
+  dt = 1800 # a time step of half an hour
+
+  # if T is greater than a siderial day then just calculate the antenna pattern for 1 siderial day plus the remainder
+  sidday = 86164.0905 # one sidereal day in seconds
+  Ndays = T/sidday;
+  Nsamps = np.floor(sidday/dt) # number of time samples in 1 sidereal day
+
+  sFp = 0;
+  sFc = 0;
+
+  # get antenna pattern
+  if Ndays > 1:
+    tts = np.arange(tstart, tstart+sidday, dt)
+
+    # get antenna pattern over one sidereal day
+    Fp, Fc = antenna_response(tts, source['ra'], source['dec'], source['psi'], det );
+
+    sFp = np.floor(Ndays)*np.sum(Fp**2);
+    sFc = np.floor(Ndays)*np.sum(Fc**2);
+
+  # add on extra
+  tts = np.arange(tstart+sidday*np.floor(Ndays), tend, dt)
+
+  Fp, Fc = antenna_response(tts, source['ra'], source['dec'], source['psi'], det);
+
+  sFp += np.sum(Fp**2);
+  sFc += np.sum(Fc**2);
+
+  # get snr squared
+  snr2 = (source['h0']**2/Sn)*dt*(sFp*(0.5*(1+source['cosiota']**2))**2 + sFc*source['cosiota']**2);
+
+  return np.sqrt(snr2);
 
 
 def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, datachunks=30, chunkmin=5,

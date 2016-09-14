@@ -1572,7 +1572,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   /* Check if initial frequency is too high: we choose an initial minimum separation
    *  of 10M as a compromise between reliability of initial conditions and length
    *  of the waveform */
-  REAL8 NRPeakOmega22 = GetNRSpinPeakOmegav2(2, 2, eta, spinNQC) / mTScaled;
+  REAL8 NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmegav2(2, 2, eta, spinNQC) / mTScaled;
   REAL8 freqMinRad = pow(10.0, -1.5)/(LAL_PI*mTScaled);
   REAL8 signOfa = copysign(1., spinNQC);
   REAL8 spn2 = spinNQC*spinNQC;
@@ -1584,7 +1584,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   if (debugPK){
       XLAL_PRINT_INFO("Stas - spin = %4.10f \n", spinNQC);
-      XLAL_PRINT_INFO("Stas - NRPeakOmega22 =  %4.10f,   %4.10f \n",  GetNRSpinPeakOmegav2(2, 2, eta, spinNQC) / mTotal,  GetNRSpinPeakOmegav2(2, 2, eta, spinNQC));
+      XLAL_PRINT_INFO("Stas - NRPeakOmega22 =  %4.10f,   %4.10f \n",  XLALSimIMREOBGetNRSpinPeakOmegav2(2, 2, eta, spinNQC) / mTotal,  XLALSimIMREOBGetNRSpinPeakOmegav2(2, 2, eta, spinNQC));
       XLAL_PRINT_INFO("Stas ---- check for fmin NRPeakOmega22 = %4.10f, freqMinRad = %4.10f \n", NRPeakOmega22, freqMinRad);
       XLAL_PRINT_INFO("Stas -- minf freq is min( %4.10f, %4.10f )\n", NRPeakOmega22*0.1, freqMinRad);
       XLAL_PRINT_INFO("Stas -- initial radius (apr) %4.10f \n", pow(LAL_PI*fMin*mTScaled,-2./3.) );

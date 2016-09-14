@@ -59,6 +59,55 @@ INT4 XLALSimIMREOBFinalMassSpin(REAL8 *finalMass, REAL8 *finalSpin, const REAL8 
 INT4 XLALSimIMREOBGenerateQNMFreqV2(COMPLEX16Vector *modefreqs, const REAL8 mass1, const REAL8 mass2, const REAL8 spin1[3], const REAL8 spin2[3], UINT4 l, INT4 m, UINT4 nmodes, Approximant approximant);
 INT4 XLALSimIMREOBGenerateQNMFreqV2fromFinal(COMPLEX16Vector *modefreqs, const REAL8 finalMass, const REAL8 finalSpin, UINT4 l, INT4 m, UINT4 nmodes);
 
+REAL8 XLALSimRadiusKerrISCO ( REAL8 a );
+REAL8 XLALSimEnergyKerrISCO ( REAL8 rISCO );
+REAL8 XLALSimAngMomKerrISCO ( REAL8 rISCO );
+
+/* Constants entering the final mass formulas of SEOBNRv2,4 */
+/* See http://arxiv.org/pdf/1206.3803.pdf */
+static const REAL8 p0coeff = 0.04826;
+static const REAL8 p1coeff = 0.01559;
+static const REAL8 p2coeff = 0.00485;
+/* See http://arxiv.org/pdf/0904.2577.pdf */
+static const REAL8 t0coeff = -2.8904;
+static const REAL8 t2coeff = -3.5171;
+static const REAL8 t3coeff = 2.5763;
+static const REAL8 s4coeff = -0.1229;
+static const REAL8 s5coeff = 0.4537;
+/* See https://dcc.ligo.org/T1400476 */
+static const REAL8 s9coeff = 2.763032781169752;
+static const REAL8 s8coeff = -2.6081232221537394;
+static const REAL8 s7coeff = 1.2657111864932808;
+static const REAL8 s6coeff = -0.7835007857591175;
+static const REAL8 s5v2coeff = -0.3264724801557159;
+static const REAL8 s4v2coeff = -0.27506210736300474;
+static const REAL8 t0v2coeff = -2.649826989941522;
+static const REAL8 t3v2coeff = 3.910637513328723;
+static const REAL8 t2v2coeff = -3.850983155206041;
+
+/* Constants entering the final spin formulas of SEOBNRv4 */
+/* Table I of https://arxiv.org/pdf/1605.01938v2.pdf */
+static const REAL8 k00 = -5.977230835551017; // Solving Eq.(11) of https://arxiv.org/pdf/1605.01938v2.pdf
+static const REAL8 k01 = 3.39221;
+static const REAL8 k02 = 4.48865;
+static const REAL8 k03 = -5.77101;
+static const REAL8 k04 = -13.0459;
+static const REAL8 k10 = 35.1278;
+static const REAL8 k11 = -72.9336;
+static const REAL8 k12 = -86.0036;
+static const REAL8 k13 = 93.7371;
+static const REAL8 k14 = 200.975;
+static const REAL8 k20 = - 146.822;
+static const REAL8 k21 = 387.184;
+static const REAL8 k22 = 447.009;
+static const REAL8 k23 = -467.383;
+static const REAL8 k24 = -884.339;
+static const REAL8 k30 = 223.911;
+static const REAL8 k31 = -648.502;
+static const REAL8 k32 = -697.177;
+static const REAL8 k33 = 753.738;
+static const REAL8 k34 = 1166.89;
+
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)

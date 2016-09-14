@@ -128,9 +128,10 @@ void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *na
 void LALInferenceGetMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max);
 
 /**
- * Function to remove the mininum and maximum values for the uniform prior onto the \c priorArgs.
+ * Function to remove the minimum and maximum values for the uniform prior onto the \c priorArgs.
  */
 void LALInferenceRemoveMinMaxPrior(LALInferenceVariables *priorArgs, const char *name);
+
 
 /**
  * Function to add the mu and sigma values for the Gaussian prior onto the \c priorArgs.
@@ -150,6 +151,62 @@ void LALInferenceGetGaussianPrior(LALInferenceVariables *priorArgs,
  * Function to remove the mu and sigma values for the Gaussian prior onto the \c priorArgs.
  */
 void LALInferenceRemoveGaussianPrior(LALInferenceVariables *priorArgs, const char *name);
+
+
+/**
+ * \brief Add a one-dimensional Gaussian Mixture Model prior
+ *
+ * Add a Gaussian Mixture Model prior defined by a number of Gaussian modes, each with a
+ * specified mean, standard devaition and weight (where weights are the relative probabilities
+ * for each mode). This prior is only one-dimensional, so is not a multi-variate Gaussian
+ * mixture model. Currently this prior does not define any hyperparameters for the mixture
+ * model.
+ */
+void LALInferenceAdd1DGMMPrior( LALInferenceVariables *priorArgs, const char *name,
+                                REAL8Vector **sigmas, REAL8Vector **mus, REAL8Vector **weights,
+                                REAL8 *minrange, REAL8 *maxrange );
+
+/**
+ * Check for a 1D Gaussian Mixture Model prior
+ */
+int LALInferenceCheck1DGMMPrior(LALInferenceVariables *priorArgs, const char *name);
+
+/**
+ * Remove a 1D Gaussian Mixture Model prior
+ */
+void LALInferenceRemove1DGMMPrior( LALInferenceVariables *priorArgs, const char *name );
+
+/**
+ * Get the parameters defining a 1D Gaussian Mixture Model prior
+ */
+void LALInferenceGet1DGMMPrior( LALInferenceVariables *priorArgs, const char *name,
+                                REAL8Vector **sigmas, REAL8Vector **mus, REAL8Vector **weights,
+                                REAL8 *minrange, REAL8 *maxrange );
+
+/**
+ * \brief Add a log-uniform prior
+ *
+ * Add a prior uniform in the log, i.e. PDF(x)~1/x
+ * \f[p(h|h_{\rm min}, h_{\rm max}, I) = \frac{1/h}{\log{(h_{\rm max}/h_{\rm min})}},\f]
+ * where \f$h_{\rm min}\f$ and \f$h_{\rm max}\f$ limit the domain of the PDF.
+ * The function has no support outside this range.
+ *
+ * This function adds \c xmin  and \c xmax values for the Fermi-Dirac prior to the \c priorArgs.
+ */
+void LALInferenceAddLogUniformPrior(LALInferenceVariables *priorArgs,
+                                    const char *name, REAL8 *xmin, REAL8 *xmax,
+                                    LALInferenceVariableType type);
+
+/**
+ * Get the xmin and xmax values of the log-uniform prior from the \c priorArgs list, given a name.
+ */
+void LALInferenceGetLogUniformPrior(LALInferenceVariables *priorArgs,
+                                    const char *name, REAL8 *xmin, REAL8 *xmax);
+
+/**
+ * Function to remove the min and max values for the log-uniform prior from the \c priorArgs.
+ */
+void LALInferenceRemoveLogUniformPrior(LALInferenceVariables *priorArgs, const char *name);
 
 /**
  * \brief Add a Fermi-Dirac prior
@@ -177,10 +234,12 @@ void LALInferenceGetFermiDiracPrior(LALInferenceVariables *priorArgs,
 void LALInferenceRemoveFermiDiracPrior(LALInferenceVariables *priorArgs, const char *name);
 
 /** Check for types of standard prior */
-/** Check for a uniform prior (with mininum and maximum) */
+/** Check for a uniform prior (with minimum and maximum) */
 int LALInferenceCheckMinMaxPrior(LALInferenceVariables *priorArgs, const char *name);
 /** Check for a Gaussian prior (with a mean and variance) */
 int LALInferenceCheckGaussianPrior(LALInferenceVariables *priorArgs, const char *name);
+/** Check for a log-uniform prior (with xmin and xmax parameters) */
+int LALInferenceCheckLogUniformPrior(LALInferenceVariables *priorArgs, const char *name);
 /** Check for a Fermi-Dirac prior (with a r and sigma parameter) */
 int LALInferenceCheckFermiDiracPrior(LALInferenceVariables *priorArgs, const char *name);
 
@@ -295,7 +354,15 @@ REAL8 LALInferenceCubeToSinPrior(double r, double x1, double x2);
 REAL8 LALInferenceSineGaussianPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model);
 
 /* return the log of the Fermi-Dirac prior */
-REAL8 LALInferenceFermiDiracPrior(double x, double sigma, double r);
+REAL8 LALInferenceFermiDiracPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 value);
+
+/**
+ * \brief Calculate the log probability for the Gaussian Mixture Model prior
+ */
+REAL8 LALInference1DGMMPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 value);
+
+/* Return the log Prior for a parameter that has a prior that is uniform in log space */
+REAL8 LALInferenceLogUniformPrior( LALInferenceVariables *priorArgs, const char *name, REAL8 value );
 
 /*@}*/
 

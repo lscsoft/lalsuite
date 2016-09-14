@@ -477,7 +477,7 @@ MultiInspiralTable    * XLALMultiInspiralTableFromLIGOLw (
 int
 LALSnglInspiralTableFromLIGOLw (
     SnglInspiralTable **eventHead,
-    CHAR               *fileName,
+    const CHAR         *fileName,
     INT4                startEvent,
     INT4                stopEvent
     )
@@ -528,10 +528,10 @@ LALSnglInspiralTableFromLIGOLw (
     {"snr",                     -1, 35},
     {"chisq",                   -1, 36},
     {"chisq_dof",               -1, 37},
-    {"bank_chisq",                   -1, 38},
-    {"bank_chisq_dof",               -1, 39},
-    {"cont_chisq",                   -1, 40},
-    {"cont_chisq_dof",               -1, 41},
+    {"bank_chisq",              -1, 38},
+    {"bank_chisq_dof",          -1, 39},
+    {"cont_chisq",              -1, 40},
+    {"cont_chisq_dof",          -1, 41},
     {"sigmasq",                 -1, 42},
     {"rsqveto_duration",        -1, 43},
     {"event_id",                -1, 44},
@@ -553,6 +553,7 @@ LALSnglInspiralTableFromLIGOLw (
     {"spin2x",                  -1, 60},
     {"spin2y",                  -1, 61},
     {"spin2z",                  -1, 62},
+    {"process_id",              -1, 63},
     {NULL,                       0, 0}
   };
 
@@ -676,11 +677,11 @@ LALSnglInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 3 )
         {
-          thisEvent->end_time.gpsSeconds = i4colData;
+          thisEvent->end.gpsSeconds = i4colData;
         }
         else if ( tableDir[j].idx == 4 )
         {
-          thisEvent->end_time.gpsNanoSeconds = i4colData;
+          thisEvent->end.gpsNanoSeconds = i4colData;
         }
         else if ( tableDir[j].idx == 5 )
         {
@@ -930,6 +931,15 @@ LALSnglInspiralTableFromLIGOLw (
         else if ( tableDir[j].idx == 62 )
         {
           thisEvent->spin2z = r4colData;
+        }
+        else if ( tableDir[j].idx == 63 )
+        {
+          if ( tableDir[j].pos > 0 )
+          {
+            thisEvent->process_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "process", "process_id");
+            if ( thisEvent->process_id < 0 )
+              return -1;
+          }
         }
         else
         {

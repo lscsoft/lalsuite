@@ -499,7 +499,7 @@ static REAL8 XLALvrP4PN( const REAL8 r,    /**<< Orbital separation (in units of
  * The time returned is in units of M.
  */
 static REAL8
-GetRingdownAttachCombSize( 
+XLALSimIMREOBGetRingdownAttachCombSize(
                          INT4 l, /**<< Mode l */
                          INT4 m  /**<< Mode m */
                          )
@@ -1554,7 +1554,7 @@ XLALSimIMREOBNRv2Generator(
        XLAL_ERROR( XLAL_EFAILED );
      }
 
-     REAL8 combSize = GetRingdownAttachCombSize( modeL, modeM );
+     REAL8 combSize = XLALSimIMREOBGetRingdownAttachCombSize( modeL, modeM );
      REAL8 nrPeakDeltaT = XLALSimIMREOBGetNRPeakDeltaT( modeL, modeM, eta );
 
      if ( combSize > timePeak )

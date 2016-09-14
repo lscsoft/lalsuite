@@ -133,10 +133,9 @@ LALSUITE_ENABLE_MODULE([MPI])
 
 # link tests using libtool
 if test "${static_binaries}" = "true"; then
-  LALSUITE_USE_LIBTOOL([-all-static])
-else
-  LALSUITE_USE_LIBTOOL
+  lalsuite_libtool_flags="-all-static"
 fi
+LALSUITE_USE_LIBTOOL
 
 # checks for programs
 AC_PROG_INSTALL

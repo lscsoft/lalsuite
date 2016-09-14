@@ -178,9 +178,9 @@ LALFindChirpFilterOutputVeto(
   while ( event )
   {
     /* convert the time of the event into an index */
-    eventIndex = (UINT4) floor( ( (REAL8) ( event->end_time.gpsSeconds -
+    eventIndex = (UINT4) floor( ( (REAL8) ( event->end.gpsSeconds -
             segment->data->epoch.gpsSeconds ) +
-          (REAL8) ( event->end_time.gpsNanoSeconds + 1 ) * 1.0e-9 ) / deltaT );
+          (REAL8) ( event->end.gpsNanoSeconds + 1 ) * 1.0e-9 ) / deltaT );
 
     /* convert the window duration into an index */
     windowIndex =

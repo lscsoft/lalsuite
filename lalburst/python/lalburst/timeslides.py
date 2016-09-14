@@ -1,4 +1,4 @@
-# Copyright (C) 2006--2014  Kipp Cannon
+# Copyright (C) 2006--2016  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -153,6 +153,16 @@ def SlidesIter(slides):
 	>>> list(SlidesIter(slides))
 	[offsetvector({'H2': -1, 'H1': -1, 'L1': 0}), offsetvector({'H2': -1, 'H1': 0, 'L1': 0}), offsetvector({'H2': -1, 'H1': 1, 'L1': 0}), offsetvector({'H2': 0, 'H1': -1, 'L1': 0}), offsetvector({'H2': 0, 'H1': 0, 'L1': 0}), offsetvector({'H2': 0, 'H1': 1, 'L1': 0}), offsetvector({'H2': 1, 'H1': -1, 'L1': 0}), offsetvector({'H2': 1, 'H1': 0, 'L1': 0}), offsetvector({'H2': 1, 'H1': 1, 'L1': 0})]
 	"""
+	if not slides:
+		# things get a little odd in the even that no
+		# instrument/offset-list pairs are given. instead of
+		# yielding an empty sequence, itertools.product(*()) yields
+		# a sequence containing a single empty tuple, so instead of
+		# yielding no offsetvectors this function yields one empty
+		# one.  that's not what calling codes generally expect the
+		# response to be so we trap the case and return an empty
+		# sequence
+		return
 	instruments = slides.keys()
 	for slide in itertools.product(*slides.values()):
 		yield offsetvector.offsetvector(zip(instruments, slide))
