@@ -227,8 +227,8 @@ XLAL_FAIL:
 
 // This function is not required by WeaveCompare.c, but
 // must be defined since it is called from OutputResults.c
-int XLALWeaveFillOutputToplistItem(
-  WeaveOutputToplistItem UNUSED **item,
+int XLALWeaveFillOutputResultItem(
+  WeaveOutputResultItem UNUSED **item,
   BOOLEAN UNUSED *full_init,
   const WeaveSemiResults UNUSED *semi_res,
   const size_t UNUSED freq_idx

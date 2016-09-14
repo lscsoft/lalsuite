@@ -76,35 +76,35 @@ typedef int ( *WeavePhysicalToLattice )( gsl_vector *out_latt, const PulsarDoppl
 typedef int ( *WeaveLatticeToPhysical )( PulsarDopplerParams *out_phys, const gsl_vector *in_latt, const void *transf_data );
 
 ///
-/// Output toplist per-segment item
+/// Output per-segment result item
 ///
-typedef struct tagWeaveOutputToplistPerSegItem {
+typedef struct tagWeaveOutputPerSegResultItem {
   /// Physical coordinates of coherent template
   PulsarDopplerParams coh_phys;
   /// Coherent multi-detector F-statistic
   REAL4 twoF;
   /// Coherent per-detector F-statistic
   REAL4 twoF_per_det[PULSAR_MAX_DETECTORS];
-} WeaveOutputToplistPerSegItem;
+} WeaveOutputPerSegResultItem;
 
 ///
-/// Output toplist item
+/// Output result item
 ///
-typedef struct tagWeaveOutputToplistItem {
-  /// Per-segment items (optional)
-  WeaveOutputToplistPerSegItem *per_seg;
+typedef struct tagWeaveOutputResultItem {
+  /// Per-segment result items (optional)
+  WeaveOutputPerSegResultItem *per_seg;
   /// Physical coordinates of semicoherent template
   PulsarDopplerParams semi_phys;
   /// Mean multi-detector F-statistic
   REAL4 mean_twoF;
   /// Mean per-detector F-statistic
   REAL4 mean_twoF_per_det[PULSAR_MAX_DETECTORS];
-} WeaveOutputToplistItem;
+} WeaveOutputResultItem;
 
 ///
-/// Output various per-segment information
+/// Output miscellaneous per-segment information
 ///
-typedef struct tagWeaveOutputPerSegInfo {
+typedef struct tagWeaveOutputMiscPerSegInfo {
   /// Start time of segment
   LIGOTimeGPS segment_start;
   /// End time of segment
@@ -123,7 +123,7 @@ typedef struct tagWeaveOutputPerSegInfo {
   INT4 coh_total;
   /// Total number of recomputed coherent results
   INT4 coh_total_recomp;
-} WeaveOutputPerSegInfo;
+} WeaveOutputMiscPerSegInfo;
 
 #ifdef __cplusplus
 }

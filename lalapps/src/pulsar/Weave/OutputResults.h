@@ -41,16 +41,36 @@ extern "C" {
 typedef struct tagWeaveOutputResults WeaveOutputResults;
 
 ///
+/// Various varameters required to output results
+///
+typedef struct tagWeaveOutputParams {
+  /// Reference time at which search is conducted
+  LIGOTimeGPS ref_time;
+  /// Number of spindown parameters to output
+  size_t nspins;
+  /// If outputting per-detector quantities, list of detectors
+  LALStringVector *per_detectors;
+  /// Number of per-segment items to output (may be zero)
+  UINT4 per_nsegments;
+} WeaveOutputParams;
+
+///
 /// \name Routines which handle the output results
 ///
 /// @{
 
+WeaveOutputResultItem *XLALWeaveOutputResultItemCreate(
+  const WeaveOutputParams *par
+  );
+void XLALWeaveOutputResultItemDestroy(
+  WeaveOutputResultItem *item
+  );
 WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const LIGOTimeGPS *ref_time,
-  const int toplist_limit,
   const size_t nspins,
   const LALStringVector *per_detectors,
-  const UINT4 per_nsegments
+  const UINT4 per_nsegments,
+  const int toplist_limit
   );
 void XLALWeaveOutputResultsDestroy(
   WeaveOutputResults *out

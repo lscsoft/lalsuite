@@ -99,7 +99,7 @@ int XLALWeaveCacheRetrieve(
   const UINT4 query_index,
   const WeaveCohResults **coh_res,
   UINT4 *coh_offset,
-  WeaveOutputPerSegInfo *per_seg_info
+  WeaveOutputMiscPerSegInfo *per_seg_info
   );
 
 /// @}

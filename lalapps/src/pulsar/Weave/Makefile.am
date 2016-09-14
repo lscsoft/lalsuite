@@ -27,6 +27,8 @@ lalapps_Weave_SOURCES = \
 	ComputeResults.h \
 	OutputResults.c \
 	OutputResults.h \
+	ResultsBasket.c \
+	ResultsBasket.h \
 	SetupData.c \
 	SetupData.h \
 	Weave.c \
@@ -36,6 +38,8 @@ lalapps_Weave_SOURCES = \
 lalapps_WeaveCompare_SOURCES = \
 	OutputResults.c \
 	OutputResults.h \
+	ResultsBasket.c \
+	ResultsBasket.h \
 	SetupData.c \
 	SetupData.h \
 	Weave.h \

@@ -388,10 +388,10 @@ int XLALWeaveSemiResultsAdd(
 }
 
 ///
-/// Fill a toplist item, creating a new one if needed
+/// Fill a output result item, creating a new one if needed
 ///
-int XLALWeaveFillOutputToplistItem(
-  WeaveOutputToplistItem **item,
+int XLALWeaveFillOutputResultItem(
+  WeaveOutputResultItem **item,
   BOOLEAN *full_init,
   const WeaveSemiResults *semi_res,
   const size_t freq_idx
@@ -407,8 +407,8 @@ int XLALWeaveFillOutputToplistItem(
   const UINT4 per_nsegments = ( semi_res->coh_res != NULL ) ? semi_res->nsegments : 0;
   const UINT4 per_ndetectors = semi_res->ndetectors;
 
-  // Fully initialise all toplist item field, if requested
-  // - Otherwise only toplist item fields that change with 'freq_idx' are updated
+  // Fully initialise all output result item field, if requested
+  // - Otherwise only output result item fields that change with 'freq_idx' are updated
   if ( *full_init ) {
 
     // Set all semicoherent and coherent template parameters
@@ -417,7 +417,7 @@ int XLALWeaveFillOutputToplistItem(
       ( *item )->per_seg[s].coh_phys = semi_res->coh_res[s].coh_phys;
     }
 
-    // Next time, only toplist item fields that change with 'freq_idx' should need updating
+    // Next time, only output result item fields that change with 'freq_idx' should need updating
     *full_init = 0;
 
   }

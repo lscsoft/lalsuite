@@ -87,8 +87,8 @@ int XLALWeaveSemiResultsAdd(
   const WeaveCohResults *coh_res,
   const UINT4 coh_offset
   );
-int XLALWeaveFillOutputToplistItem(
-  WeaveOutputToplistItem **item,
+int XLALWeaveFillOutputResultItem(
+  WeaveOutputResultItem **item,
   BOOLEAN *full_init,
   const WeaveSemiResults *semi_res,
   const size_t freq_idx
