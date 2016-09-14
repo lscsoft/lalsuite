@@ -175,7 +175,7 @@ for header_name in headers:
             fail("enum '%s' in header '%s' has no tag-name" % (enum_name, header_name))
         for enumitem in enum.findall('enumitem'):
             enumitem_name = get_swig_attr(enumitem, 'name')
-            constants[enumitem_name] = cdecl
+            constants[enumitem_name] = enumitem
             constant_names[enumitem_name] = enumitem_name
 
 # function: build renaming map for symbols, using symbol prefix order
