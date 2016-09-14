@@ -733,13 +733,11 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   /* If Nyquist freq < 220 QNM freq, exit */
   if (deltaT > LAL_PI / creal (modeFreq))
     {
-//      XLALPrintError
-//	("XLAL Error - %s: Ringdown frequency > Nyquist frequency!\nAt present this situation is not supported.\n",
-//	 __func__);
-        XLAL_PRINT_WARNING("XLAL Warning - %s: Ringdown frequency > Nyquist frequency!\nAt present this situation is not supported.\n", __func__);
+      XLALPrintError
+	("XLAL Error - %s: Ringdown frequency > Nyquist frequency!\nAt present this situation is not supported.\n",
+	 __func__);
       XLALDestroyREAL8Vector (values);
-//      XLAL_ERROR (XLAL_EINVAL);
-      return XLAL_SUCCESS;
+      XLAL_ERROR (XLAL_EINVAL);
     }
 
   if (!(sigmaStar = XLALCreateREAL8Vector (3)))
