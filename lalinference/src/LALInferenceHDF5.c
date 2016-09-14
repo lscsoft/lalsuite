@@ -338,7 +338,7 @@ static int LALInferenceH5VariableToAttribute(LALH5Generic gdataset, LALInference
     default:
     {
       XLALPrintWarning("LALInferenceType %i for parameter %s not implemented for HDF5 attribute, ignoring\n",type,name);
-      break;
+      return(XLAL_SUCCESS);
     }
   } /* End switch */
   XLALH5AttributeAddScalar(gdataset, name, LALInferenceGetVariable(vars,name), laltype);
