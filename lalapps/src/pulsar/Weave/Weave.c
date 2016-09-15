@@ -979,6 +979,12 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALFITSFileWriteVCSInfo( file, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileWriteUVarCmdLine( file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+    // Write number of times output results were restored from a checkpoint
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "numckpt", ckpt_output_count, "number of checkpoints" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Write peak memory usage
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "peakmem [MB]", XLALGetPeakHeapUsageMB(), "peak memory usage" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
     // Write search results
     XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
