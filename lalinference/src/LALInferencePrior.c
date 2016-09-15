@@ -3006,11 +3006,12 @@ REAL8 LALInference1DGMMPrior(LALInferenceVariables *priorArgs, const char *name,
 
   if ( value < gmmlow || value > gmmhigh ){ return -INFINITY; }
 
-  REAL8 logPrior = 0.;
+  REAL8 logPrior = -INFINITY, thisGauss = 0.;
   UINT4 i = 0;
   for ( i = 0; i < gmmweights->length; i++ ){
-    logPrior += log(gmmweights->data[i]) - 0.5*(gmmmus->data[i] - value)*(gmmmus->data[i] - value)/(gmmsigmas->data[i]*gmmsigmas->data[i]);
-    logPrior -= 0.5*(LAL_LNPI + LAL_LN2 + log(gmmsigmas->data[i])); /* Gaussian normalisation */
+    thisGauss = log(gmmweights->data[i]) - 0.5*(gmmmus->data[i] - value)*(gmmmus->data[i] - value)/(gmmsigmas->data[i]*gmmsigmas->data[i]);
+    thisGauss -= (0.5*(LAL_LNPI + LAL_LN2) + log(gmmsigmas->data[i])); /* normalisation */
+    logPrior = logaddexp(logPrior, thisGauss); /* sum Gaussianians */
   }
   return logPrior;
 }
