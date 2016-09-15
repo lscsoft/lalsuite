@@ -50,7 +50,7 @@ int main( int argc, char *argv[] )
   struct uvar_type {
     BOOLEAN interpolation, output_per_detector, output_per_segment, output_info_per_seg;
     CHAR *setup_file, *lattice, *sft_files, *Fstat_method, *output_file, *ckpt_output_file;
-    INT4 sky_patch_count, sky_patch_index, freq_partitions, output_max_size;
+    INT4 sky_patch_count, sky_patch_index, freq_partitions, output_toplist_limit;
     INT4 sft_noise_rand_seed, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision;
     INT4 cache_max_size, cache_gc_limit;
     LALStringVector *sft_noise_psd, *sft_timestamps_files, *injections, *Fstat_assume_psd;
@@ -66,7 +66,7 @@ int main( int argc, char *argv[] )
     .freq_partitions = 1,
     .interpolation = 1,
     .lattice = XLALStringDuplicate( "An-star" ),
-    .output_max_size = 1000,
+    .output_toplist_limit = 1000,
     .sft_noise_rand_seed = Fstat_opt_args.randSeed,
   };
   struct uvar_type *const uvar = &uvar_struct;
@@ -237,7 +237,7 @@ int main( int argc, char *argv[] )
     "Output file which stores all quantities computed by the search, e.g. top-lists of averaged F-statistics. "
     );
   XLALRegisterUvarMember(
-    output_max_size, INT4, 'N', OPTIONAL,
+    output_toplist_limit, INT4, 'N', OPTIONAL,
     "Maximum number of candidates to return in an output top-list; if 0, all candidates are returned. "
     );
   XLALRegisterUvarMember(
@@ -350,8 +350,8 @@ int main( int argc, char *argv[] )
   // - Output
   //
   XLALUserVarCheck( &should_exit,
-                    uvar->output_max_size >= 0,
-                    UVAR_STR( output_max_size ) " must be positive" );
+                    uvar->output_toplist_limit >= 0,
+                    UVAR_STR( output_toplist_limit ) " must be positive" );
   //
   // - Checkpointing
   //
@@ -739,7 +739,7 @@ int main( int argc, char *argv[] )
   XLAL_CHECK_MAIN( semi_res != NULL, XLAL_EFUNC );
 
   // Create output results structure
-  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, per_detectors, per_nsegments, uvar->output_max_size );
+  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, per_detectors, per_nsegments, uvar->output_toplist_limit );
   XLAL_CHECK_MAIN( out != NULL, XLAL_EFUNC );
 
   // Count number of semicoherent frequency blocks

@@ -18,7 +18,7 @@ echo
 echo "=== Perform interpolating search without checkpointing ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOutNoCkpt.fits \
-    --output-max-size=5000 --output-per-detector --output-per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --output-toplist-limit=5000 --output-per-detector --output-per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --alpha=2.72/0.05 --delta=-0.38/0.05 --freq=50/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4 --Fstat-method=DemodBest
 set +x
 echo
@@ -28,19 +28,19 @@ echo "--- Start to first checkpoint ---"
 set -x
 rm -f WeaveCkpt.fits
 ${builddir}/lalapps_Weave --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-pc-exit=22 \
-    --output-max-size=5000 --output-per-detector --output-per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --output-toplist-limit=5000 --output-per-detector --output-per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --alpha=2.72/0.05 --delta=-0.38/0.05 --freq=50/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4 --Fstat-method=DemodBest
 set +x
 echo "--- First to second checkpoint ---"
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-pc=63 \
-    --output-max-size=5000 --output-per-detector --output-per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --output-toplist-limit=5000 --output-per-detector --output-per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --alpha=2.72/0.05 --delta=-0.38/0.05 --freq=50/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4 --Fstat-method=DemodBest
 set +x
 echo "--- Second checkpoint to end ---"
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits \
-    --output-max-size=5000 --output-per-detector --output-per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
+    --output-toplist-limit=5000 --output-per-detector --output-per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
     --alpha=2.72/0.05 --delta=-0.38/0.05 --freq=50/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4 --Fstat-method=DemodBest
 set +x
 echo
