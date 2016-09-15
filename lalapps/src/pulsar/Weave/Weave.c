@@ -215,21 +215,6 @@ int main( int argc, char *argv[] )
     SSBPREC_NEWTONIAN,	SSBPREC_RELATIVISTIC,  SSBPREC_RELATIVISTICOPT
     );
   //
-  // - Cache management options
-  //
-  XLALRegisterUvarMember(
-    cache_max_size, INT4, 0, DEVELOPER,
-    "Limit the size of the internal caches, used to store intermediate results, to this number of items per segment. "
-    "If zero, the caches will grow in size to store all items that are still required. "
-    "Has no effect when performing a fully-coherent single-segment search, or a non-interpolating search. "
-    );
-  XLALRegisterUvarMember(
-    cache_gc_limit, INT4, 0, DEVELOPER,
-    "By default, whenever an item is added to the internal caches, at most one item that is no longer required is removed. "
-    "If non-zero, try to remove at most this number of additional items, providing they are no longer required. "
-    "Has no effect when performing a fully-coherent single-segment search, or a non-interpolating search. "
-    );
-  //
   // - Output
   //
   XLALRegisterUvarMember(
@@ -269,6 +254,21 @@ int main( int argc, char *argv[] )
     ckpt_output_pc_exit, REAL8, 0, DEVELOPER,
     "Write a checkpoint of output results after this percentage of the search has been completed, then exit. "
     "(This option is only really useful for testing the checkpointing feature.) "
+    );
+  //
+  // - Advanced options
+  //
+  XLALRegisterUvarMember(
+    cache_max_size, INT4, 0, DEVELOPER,
+    "Limit the size of the internal caches, used to store intermediate results, to this number of items per segment. "
+    "If zero, the caches will grow in size to store all items that are still required. "
+    "Has no effect when performing a fully-coherent single-segment search, or a non-interpolating search. "
+    );
+  XLALRegisterUvarMember(
+    cache_gc_limit, INT4, 0, DEVELOPER,
+    "By default, whenever an item is added to the internal caches, at most one item that is no longer required is removed. "
+    "If non-zero, try to remove at most this number of additional items, providing they are no longer required. "
+    "Has no effect when performing a fully-coherent single-segment search, or a non-interpolating search. "
     );
 
   // Parse user input
@@ -338,15 +338,6 @@ int main( int argc, char *argv[] )
                     0 <= uvar->Fstat_SSB_precision && uvar->Fstat_SSB_precision < SSBPREC_LAST,
                     UVAR_STR( Fstat_SSB_precision ) " must be in range [0,%u)", SSBPREC_LAST );
   //
-  // - Cache management options
-  //
-  XLALUserVarCheck( &should_exit,
-                    uvar->cache_max_size >= 0,
-                    UVAR_STR( cache_max_size ) " must be positive" );
-  XLALUserVarCheck( &should_exit,
-                    uvar->cache_gc_limit >= 0,
-                    UVAR_STR( cache_gc_limit ) " must be positive" );
-  //
   // - Output
   //
   XLALUserVarCheck( &should_exit,
@@ -364,6 +355,15 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( ckpt_output_pc_exit ) || ( 0 <= uvar->ckpt_output_pc_exit && uvar->ckpt_output_pc_exit <= 100 ),
                     UVAR_STR( ckpt_output_pc_exit ) " must be in range [0,100]" );
+  //
+  // - Advanced options
+  //
+  XLALUserVarCheck( &should_exit,
+                    uvar->cache_max_size >= 0,
+                    UVAR_STR( cache_max_size ) " must be positive" );
+  XLALUserVarCheck( &should_exit,
+                    uvar->cache_gc_limit >= 0,
+                    UVAR_STR( cache_gc_limit ) " must be positive" );
 
   // Exit if required
   if ( should_exit ) {
