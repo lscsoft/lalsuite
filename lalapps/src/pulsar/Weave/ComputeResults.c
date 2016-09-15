@@ -368,7 +368,7 @@ int XLALWeaveSemiResultsAdd(
   XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
 
   // Check that offset does not overrun coherent results arrays
-  XLAL_CHECK( coh_offset + semi_res->nfreqs <= coh_res->nfreqs, XLAL_EFAILED );
+  XLAL_CHECK( coh_offset + semi_res->nfreqs <= coh_res->nfreqs, XLAL_EFAILED, "Coherent offset (%u) + number of semicoherent frequency bins (%u) > number of coherent frequency bins (%u)", coh_offset, semi_res->nfreqs, coh_res->nfreqs );
 
   // Store per-segment coherent template parameters and F-statistics per frequency
   if ( semi_res->coh_res != NULL ) {
