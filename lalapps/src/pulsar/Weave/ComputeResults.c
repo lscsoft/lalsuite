@@ -26,6 +26,9 @@
 
 #include <lal/VectorMath.h>
 
+// Aligned arrays use maximum required alignment, i.e. 32 bytes for AVX
+const UINT4 alignment = 32;
+
 ///
 /// Internal definition of input data required for computing coherent results
 ///
@@ -299,17 +302,16 @@ int XLALWeaveSemiResultsInit(
   semi_res->semi_phys = *semi_phys;
   semi_res->nfreqs = semi_nfreqs;
 
-  // Reallocate array of summed multi- and per-detector F-statistics per frequency
-  // - Aligned arrays use maximum required alignment, i.e. 32 bytes for AVX
+  // Reallocate arrays of summed multi- and per-detector F-statistics per frequency
   if ( semi_res->sum_twoF == NULL || semi_res->sum_twoF->length < semi_res->nfreqs ) {
     XLALDestroyREAL4VectorAligned( semi_res->sum_twoF );
-    semi_res->sum_twoF = XLALCreateREAL4VectorAligned( semi_res->nfreqs, 32 );
+    semi_res->sum_twoF = XLALCreateREAL4VectorAligned( semi_res->nfreqs, alignment );
     XLAL_CHECK( semi_res->sum_twoF != NULL, XLAL_ENOMEM );
   }
   for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
     if ( semi_res->sum_twoF_per_det[i] == NULL || semi_res->sum_twoF_per_det[i]->length < semi_res->nfreqs ) {
       XLALDestroyREAL4VectorAligned( semi_res->sum_twoF_per_det[i] );
-      semi_res->sum_twoF_per_det[i] = XLALCreateREAL4VectorAligned( semi_res->nfreqs, 32 );
+      semi_res->sum_twoF_per_det[i] = XLALCreateREAL4VectorAligned( semi_res->nfreqs, alignment );
       XLAL_CHECK( semi_res->sum_twoF_per_det[i] != NULL, XLAL_ENOMEM );
     }
   }
