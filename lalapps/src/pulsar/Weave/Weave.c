@@ -659,8 +659,8 @@ int main( int argc, char *argv[] )
     LIGOTimeGPS sft_start = sft_catalog_i.data[0].header.epoch;
     LIGOTimeGPS sft_end = sft_catalog_i.data[sft_catalog_i.length - 1].header.epoch;
     XLALGPSAdd( &sft_end, sft_timebase );
-    double min_cover_freq = 0, max_cover_freq = 0;
-    XLAL_CHECK_MAIN( XLALCWSignalCoveringBand( &min_cover_freq, &max_cover_freq, &sft_start, &sft_end, &spin_range, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    double sft_min_cover_freq = 0, sft_max_cover_freq = 0;
+    XLAL_CHECK_MAIN( XLALCWSignalCoveringBand( &sft_min_cover_freq, &sft_max_cover_freq, &sft_start, &sft_end, &spin_range, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Parse SFT noise PSD string vector
     MultiNoiseFloor sft_noise_psd;
@@ -677,7 +677,7 @@ int main( int argc, char *argv[] )
     }
 
     // Create F-statistic input data
-    FstatInput *Fstat_input = XLALCreateFstatInput( &sft_catalog_i, min_cover_freq, max_cover_freq, dfreq, setup.ephemerides, &Fstat_opt_args );
+    FstatInput *Fstat_input = XLALCreateFstatInput( &sft_catalog_i, sft_min_cover_freq, sft_max_cover_freq, dfreq, setup.ephemerides, &Fstat_opt_args );
     XLAL_CHECK_MAIN( Fstat_input != NULL, XLAL_EFUNC );
     Fstat_opt_args.prevInput = Fstat_input;
 
@@ -697,8 +697,8 @@ int main( int argc, char *argv[] )
       }
       XLALFree( det_name );
     }
-    per_seg_info[i].min_cover_freq = min_cover_freq;
-    per_seg_info[i].max_cover_freq = max_cover_freq;
+    per_seg_info[i].sft_min_cover_freq = sft_min_cover_freq;
+    per_seg_info[i].sft_max_cover_freq = sft_max_cover_freq;
 
     // Cleanup
     XLALDestroyMultiSFTCatalogView( sft_catalog_i_view );
@@ -1002,8 +1002,8 @@ int main( int argc, char *argv[] )
           snprintf( col_name, sizeof( col_name ), "sft_count_%s", setup.detectors->data[i] );
           XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, INT4, sft_count[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, min_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, max_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_min_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_max_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, coh_total ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, coh_total_recomp ) == XLAL_SUCCESS, XLAL_EFUNC );
       }

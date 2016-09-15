@@ -115,10 +115,10 @@ typedef struct tagWeaveOutputMiscPerSegInfo {
   LIGOTimeGPS sft_last[PULSAR_MAX_DETECTORS];
   /// Number of SFTs from each detector
   INT4 sft_count[PULSAR_MAX_DETECTORS];
-  /// Minimum of frequency covering range
-  REAL8 min_cover_freq;
-  /// Maximum of frequency covering range
-  REAL8 max_cover_freq;
+  /// Minimum of frequency range covered by SFTs
+  REAL8 sft_min_cover_freq;
+  /// Maximum of frequency range covered by SFTs
+  REAL8 sft_max_cover_freq;
   /// Total number of computed coherent results
   INT4 coh_total;
   /// Total number of recomputed coherent results
