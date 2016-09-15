@@ -178,36 +178,57 @@ int XLALWeaveCohResultsCompute(
     XLAL_CHECK( *coh_res != NULL, XLAL_ENOMEM );
   }
 
+  // Store coherent template parameters
+  ( *coh_res )->coh_phys = *coh_phys;
+
+  // Store number of coherent frequency bins
+  const UINT4 old_coh_res_nfreqs = ( *coh_res )->nfreqs;
+  ( *coh_res )->nfreqs = coh_nfreqs;
+
+  // Reallocate arrays if required
+  if ( old_coh_res_nfreqs < coh_nfreqs ) {
+
+    // Reallocate arrays of multi- and per-detector F-statistics per frequency
+    ( *coh_res )->twoF = XLALRealloc( ( *coh_res )->twoF, coh_nfreqs * sizeof( ( *coh_res )->twoF[0] ) );
+    XLAL_CHECK( ( *coh_res )->twoF != NULL, XLAL_ENOMEM );
+    for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
+      const size_t idx = coh_input->Fstat_res_idx[i];
+      ( *coh_res )->twoF_per_det[idx] = XLALRealloc( ( *coh_res )->twoF_per_det[idx], coh_nfreqs * sizeof( ( *coh_res )->twoF_per_det[idx][0] ) );
+      XLAL_CHECK( ( *coh_res )->twoF_per_det[idx] != NULL, XLAL_ENOMEM );
+    }
+
+  }
+
   // Use a local F-statistic results structure, since we supply our own memory
   // - The 'internalalloclen' field stores the memory size in elements of the results arrays (e.g. 'twoF'),
-  //   as opposed to 'numFreqBins' which stores how many elements of the result arrays are in use. By setting
-  //   'internalalloclen' to the length of memory we are supplying to XLALComputeFstat(), and passing the
-  //   number of elements we need computing as 'numFreqBins', XLALComputeFstat() should internally reallocate
-  //   the memory we supply in 'Fstat_res' if it is not long enough.
+  //   as opposed to 'numFreqBins' which stores how many elements of the result arrays are in use.
   FstatResults XLAL_INIT_DECL( Fstat_res_struct );
   FstatResults *Fstat_res = &Fstat_res_struct;
   Fstat_res->internalalloclen = ( *coh_res )->nfreqs;
   Fstat_res->twoF = ( *coh_res )->twoF;
   for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
-    Fstat_res->twoFPerDet[i] = ( *coh_res )->twoF_per_det[coh_input->Fstat_res_idx[i]];
+    const size_t idx = coh_input->Fstat_res_idx[i];
+    Fstat_res->twoFPerDet[i] = ( *coh_res )->twoF_per_det[idx];
   }
 
   // Compute the F-statistic starting at the point 'coh_phys', with 'nfreqs' frequency bins
   XLAL_CHECK( XLALComputeFstat( &Fstat_res, coh_input->Fstat_input, coh_phys, coh_nfreqs, coh_input->what_to_compute ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Double-check that F-statistic results detectors correctly match up with coherent results detectors
+  // Sanity check the F-statistic results structure
+  XLAL_CHECK( Fstat_res->internalalloclen == ( *coh_res )->nfreqs, XLAL_EFAILED );
+  XLAL_CHECK( Fstat_res->numFreqBins == ( *coh_res )->nfreqs, XLAL_EFAILED );
+  XLAL_CHECK( Fstat_res->twoF == ( *coh_res )->twoF, XLAL_EFAILED );
   for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
-    const char *Fstat_ndetector = Fstat_res->detectorNames[i];
-    const char *res_detector = coh_input->per_detectors->data[coh_input->Fstat_res_idx[i]];
-    XLAL_CHECK( strcmp( Fstat_ndetector, res_detector ) == 0, XLAL_EFAILED, "Detector #%zu in F-statistic results '%s' does not match detector #%zu in coherent results '%s'", i, Fstat_ndetector, coh_input->Fstat_res_idx[i], res_detector );
+    const size_t idx = coh_input->Fstat_res_idx[i];
+    XLAL_CHECK( Fstat_res->twoFPerDet[i] == ( *coh_res )->twoF_per_det[idx], XLAL_EFAILED );
   }
 
-  // Store computed coherent results
-  ( *coh_res )->coh_phys = *coh_phys;
-  ( *coh_res )->nfreqs = Fstat_res->numFreqBins;
-  ( *coh_res )->twoF = Fstat_res->twoF;
+  // Double-check that F-statistic results detectors correctly match up with coherent results detectors
   for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
-    ( *coh_res )->twoF_per_det[coh_input->Fstat_res_idx[i]] = Fstat_res->twoFPerDet[i];
+    const size_t idx = coh_input->Fstat_res_idx[i];
+    const char *Fstat_ndetector = Fstat_res->detectorNames[i];
+    const char *res_detector = coh_input->per_detectors->data[idx];
+    XLAL_CHECK( strcmp( Fstat_ndetector, res_detector ) == 0, XLAL_EFAILED, "Detector #%zu in F-statistic results '%s' does not match detector #%zu in coherent results '%s'", i, Fstat_ndetector, idx, res_detector );
   }
 
   return XLAL_SUCCESS;
