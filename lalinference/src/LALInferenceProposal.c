@@ -1477,8 +1477,6 @@ static void reflected_position_and_time(LALInferenceThreadState *thread, const R
     currentEqu.system = COORDINATESYSTEM_EQUATORIAL;
     currentGeo.system = COORDINATESYSTEM_GEOGRAPHIC;
 
-    LALInferenceVariables *args = thread->proposalArgs;
-
     epoch = thread->parent->data->epoch;
     get_detectors(thread->parent->data, &detectors);
 
