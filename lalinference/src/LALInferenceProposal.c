@@ -1525,6 +1525,8 @@ static void reflected_position_and_time(LALInferenceThreadState *thread, const R
     *newRA = newEqu.longitude;
     *newDec = newEqu.latitude;
     *newTime = oldTime + oldDt - newDt;
+
+    XLALFree(detectors);
 }
 
 static REAL8 evaluate_morlet_proposal(LALInferenceThreadState *thread,
@@ -1757,6 +1759,8 @@ REAL8 LALInferenceSkyRingProposal(LALInferenceThreadState *thread,
     gsl_matrix_free(IFO);
 
     logPropRatio = log(pReverse/pForward);
+
+    XLALFree(detectors);
 
     return logPropRatio;
 }
@@ -2765,6 +2769,8 @@ static void reflected_extrinsic_parameters(LALInferenceThreadState *thread, cons
     if (Fcross*cosIota*cosnewIota*newFcross[3]<0){
         (*newIota)=LAL_PI-(*newIota);
     }
+
+    XLALFree(detectors);
 }
 
 REAL8 LALInferenceDistanceLikelihoodProposal(LALInferenceThreadState *thread,
@@ -3894,6 +3900,8 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LAL
       LALInferenceSetREAL8Variable(proposedParams, phaseName, ph);
     }
   };
+
+  XLALFree(ifo_names);
 
   return 0.0;
 }
