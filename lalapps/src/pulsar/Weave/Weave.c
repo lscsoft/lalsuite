@@ -490,15 +490,15 @@ int main( int argc, char *argv[] )
   const size_t isemi = ntiles - 1;
 
   // Create parameter-space tilings
-  LatticeTiling *tiling[ntiles];
+  LatticeTiling *XLAL_INIT_ARRAY_DECL( tiling, ntiles );
   for ( size_t i = 0; i < ntiles; ++i ) {
     tiling[i] = XLALCreateLatticeTiling( ndim );
     XLAL_CHECK_MAIN( tiling[i] != NULL, XLAL_EFUNC );
   }
 
   // Create arrays to store the appropriate parameter-space metrics for each tiling
-  gsl_matrix *rssky_metric[nsegments];
-  gsl_matrix *rssky_transf[nsegments];
+  gsl_matrix *XLAL_INIT_ARRAY_DECL( rssky_metric, nsegments );
+  gsl_matrix *XLAL_INIT_ARRAY_DECL( rssky_transf, nsegments );
   for ( size_t i = 0; i < nsegments; ++i ) {
     rssky_metric[i] = setup.metrics->coh_rssky_metric[i];
     rssky_transf[i] = setup.metrics->coh_rssky_transf[i];
@@ -632,7 +632,7 @@ int main( int argc, char *argv[] )
   Fstat_opt_args.prevInput = NULL;
 
   // Create input data required for computing coherent results
-  WeaveCohInput *coh_input[nsegments];
+  WeaveCohInput *XLAL_INIT_ARRAY_DECL( coh_input, nsegments );
   for ( size_t i = 0; i < nsegments; ++i ) {
     const LIGOTimeGPS *segment_start = &setup.segments->segs[i].start;
     const LIGOTimeGPS *segment_end = &setup.segments->segs[i].end;
@@ -711,7 +711,7 @@ int main( int argc, char *argv[] )
 
   // Create caches to store intermediate results from coherent parameter-space tilings
   // - If no interpolation, caching is not required so reduce maximum cache size to 1
-  WeaveCache *coh_cache[nsegments];
+  WeaveCache *XLAL_INIT_ARRAY_DECL( coh_cache, nsegments );
   for ( size_t i = 0; i < nsegments; ++i ) {
     const size_t cache_max_size = interpolation ? uvar->cache_max_size : 1;
     const size_t cache_gc_limit = interpolation ? uvar->cache_gc_limit : 0;
