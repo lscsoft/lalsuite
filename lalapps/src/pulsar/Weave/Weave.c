@@ -48,7 +48,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN interpolation, output_per_detector, output_per_segment, output_info_per_seg;
+    BOOLEAN interpolation, output_per_detector, output_per_segment, output_misc_info;
     CHAR *setup_file, *lattice, *sft_files, *Fstat_method, *output_file, *ckpt_output_file;
     INT4 sky_patch_count, sky_patch_index, freq_partitions, output_toplist_limit;
     INT4 sft_noise_rand_seed, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision;
@@ -236,7 +236,7 @@ int main( int argc, char *argv[] )
     "May be combined with " UVAR_STR( output_per_detector ) ". "
     );
   XLALRegisterUvarMember(
-    output_info_per_seg, BOOLEAN, 0, DEVELOPER,
+    output_misc_info, BOOLEAN, 0, DEVELOPER,
     "If TRUE, output miscellaneous per-segment information: SFT properties, cache usage, etc. "
     );
   //
@@ -715,7 +715,7 @@ int main( int argc, char *argv[] )
   for ( size_t i = 0; i < nsegments; ++i ) {
     const size_t cache_max_size = interpolation ? uvar->cache_max_size : 1;
     const size_t cache_gc_limit = interpolation ? uvar->cache_gc_limit : 0;
-    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, setup.phys_to_latt, setup.latt_to_phys, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit, uvar->output_info_per_seg );
+    coh_cache[i] = XLALWeaveCacheCreate( tiling[i], interpolation, setup.phys_to_latt, setup.latt_to_phys, rssky_transf[i], rssky_transf[isemi], coh_input[i], cache_max_size, cache_gc_limit, uvar->output_misc_info );
     XLAL_CHECK_MAIN( coh_cache[i] != NULL, XLAL_EFUNC );
   }
 
@@ -989,10 +989,10 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write miscellaneous per-segment information
-    if ( uvar->output_info_per_seg ) {
+    if ( uvar->output_misc_info ) {
 
       // Begin FITS table
-      XLAL_CHECK( XLALFITSTableOpenWrite( file, "per_seg_info", "miscellaneous information per segment" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALFITSTableOpenWrite( file, "per_seg_info", "miscellaneous per-segment information" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Describe FITS table
       {
