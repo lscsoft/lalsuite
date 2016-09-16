@@ -522,7 +522,7 @@ class posteriors:
           sys.exit(1)
 
         if priorlinevals[1] in ['uniform', 'fermidirac', 'gaussian', 'loguniform']:
-          if len(prirolinevals) != 4:
+          if len(priorlinevals) != 4:
             print("Error... there must be four values on each line of the prior file '%s'." % self._priorfile, file=sys.stderr)
             sys.exit(1)
           ranges = np.array([float(priorlinevals[2]), float(priorlinevals[3])]) # set ranges
