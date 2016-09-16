@@ -365,7 +365,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
 }
 
 /**
- * This function generates spin-aligned SEOBNRv1 waveforms h+ and hx.
+ * This function generates spin-aligned SEOBNRv1,2,4 waveforms h+ and hx.
  * Currently, only the h22 harmonic is available.
  * STEP 0) Prepare parameters, including pre-computed coefficients
  * for EOB Hamiltonian, flux and waveform
@@ -379,6 +379,10 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
  * STEP 7) Generate full inspiral waveform using desired sampling frequency
  * STEP 8) Generate full IMR modes -- attaching ringdown to inspiral
  * STEP 9) Generate full IMR hp and hx waveforms
+ * Note that sanity checks on merger for SEOBNRv4 have revealed that for 
+ * eta<=0.15 and chi1>0.95 about 0.04% of the waveforms display either
+ * very shallow double amplitude peak or slightly negave time-derivative of
+ * the GW freq at merger. 
  */
 int
 XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
@@ -1474,8 +1478,8 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       sigReHi->data[i] = (REAL4) creal (hLM);
       sigImHi->data[i] = (REAL4) cimag (hLM);
       sigAmpSqHi = creal (hLM) * creal (hLM) + cimag (hLM) * cimag (hLM);
-      if (sigAmpSqHi < oldsigAmpSqHi && peakCount == 0
-	  && (i - 1) * deltaTHigh / mTScaled < timePeak - timewavePeak)
+      if ((SpinAlignedEOBversion==1 || SpinAlignedEOBversion==2) && (sigAmpSqHi < oldsigAmpSqHi && peakCount == 0
+	  && (i - 1) * deltaTHigh / mTScaled < timePeak - timewavePeak))
 	{
 	  timewavePeak = (i - 1) * deltaTHigh / mTScaled;
 	  peakCount += 1;
