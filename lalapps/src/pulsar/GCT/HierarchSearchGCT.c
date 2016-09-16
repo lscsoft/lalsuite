@@ -1082,6 +1082,7 @@ int MAIN( int argc, char *argv[]) {
     column_headings_string_length += 6 + 11 + numDetectors*9; /* 6 for " <2Fr>" and 9 per detector for " <2Fr_XY>" */
     if ( uvar_computeBSGL) {
       column_headings_string_length += 11; /* for " log10BSGLr" */
+      column_headings_string_length += 13; /* for " log10BSGLtLr" */
     }
     if (XLALUserVarWasSet(&uvar_f3dot)) {
       column_headings_string_length += 1;
@@ -1133,6 +1134,9 @@ int MAIN( int argc, char *argv[]) {
         snprintf ( headingX, sizeof(headingX), " 2Fl_%s", detectorIDs->data[X] );
         strcat ( column_headings_string, headingX );
       }
+    }
+    if ( uvar_computeBSGL) {
+      strcat ( column_headings_string, " log10BSGLtLr" );
     }
   }
   global_column_headings_stringp = column_headings_string;
@@ -2706,6 +2710,7 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
     line.numDetectors = in->numDetectors;
     line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFstatline_to_str if later overwritten in recalcToplistStats step */
     line.log10BSGLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
+    line.log10BSGLtLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
     line.loudestSeg = -1;
     line.twoFloudestSeg = -1.0;
     for (UINT4 X = 0; X < PULSAR_MAX_DETECTORS; X++) { /* initialise single-IFO F-stat arrays to zero */
