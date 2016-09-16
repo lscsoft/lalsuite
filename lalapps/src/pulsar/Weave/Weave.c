@@ -911,7 +911,8 @@ int main( int argc, char *argv[] )
       prog_time = prog_time_now;
 
       // Print progress in frequency blocks and partitions
-      LogPrintf( LOG_NORMAL, "Searched %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", prog_index, prog_total, prog_per_cent );
+      const char *verb = uvar->simulate_search ? "Simulated" : "Searched";
+      LogPrintf( LOG_NORMAL, "%s %" LAL_UINT8_FORMAT "/%" LAL_UINT8_FORMAT " frequency blocks (%.1f%%)", verb, prog_index, prog_total, prog_per_cent );
       if ( uvar->freq_partitions > 1 ) {
         LogPrintfVerbatim( LOG_NORMAL, ", partition %i/%i", partition_index, uvar->freq_partitions );
       }
