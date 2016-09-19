@@ -138,24 +138,24 @@ FRAMEC_AVAILABLE="no"
 FRAMEL_AVAILABLE="no"
 
 AS_IF([test "${framec}" = "true"], [
-	FRAMEC_AVAILABLE="yes"
-	PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= 2.0.0],[true],[false])
-	LALSUITE_ADD_FLAGS([C],[${FRAMECPPC_CFLAGS}],[${FRAMECPPC_LIBS}])
-	AC_CHECK_LIB([framecppc],[FrameCFileOpen],,[FRAMEC_AVAILABLE="no"])
-	AC_CHECK_HEADERS([framecppc/FrameC.h],,[FRAMEC_AVAILABLE="no"])
+       FRAMEC_AVAILABLE="yes"
+       PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= 2.0.0],[true],[false])
+       LALSUITE_ADD_FLAGS([C],[${FRAMECPPC_CFLAGS}],[${FRAMECPPC_LIBS}])
+       AC_CHECK_LIB([framecppc],[FrameCFileOpen],,[FRAMEC_AVAILABLE="no"])
+       AC_CHECK_HEADERS([framecppc/FrameC.h],,[FRAMEC_AVAILABLE="no"])
 ])
 
 AS_IF([test "${framel}" = "true"], [
-	FRAMEL_AVAILABLE="yes"
-	PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
-	LALSUITE_ADD_FLAGS([C],[${LIBFRAME_CFLAGS}],[${LIBFRAME_LIBS}])
-	AC_CHECK_LIB([Frame],[FrLibIni],,[FRAMEL_AVAILABLE="no"])
-	AC_CHECK_HEADERS([FrameL.h],,[FRAMEL_AVAILABLE="no"])
+       FRAMEL_AVAILABLE="yes"
+       PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
+       LALSUITE_ADD_FLAGS([C],[${LIBFRAME_CFLAGS}],[${LIBFRAME_LIBS}])
+       AC_CHECK_LIB([Frame],[FrLibIni],,[FRAMEL_AVAILABLE="no"])
+       AC_CHECK_HEADERS([FrameL.h],,[FRAMEL_AVAILABLE="no"])
 ])
 
 # make sure a frame library was found
 AS_IF([test "${FRAMEC_AVAILABLE}" = "no" -a "${FRAMEL_AVAILABLE}" = "no"], [
-	AC_MSG_ERROR([no frame library available])
+       AC_MSG_ERROR([no frame library available])
 ])
 
 AS_IF([test "${FRAMEC_AVAILABLE}" = "yes"],
