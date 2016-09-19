@@ -39,7 +39,7 @@ from matplotlib.ticker import Formatter, FixedLocator
 from matplotlib.projections import projection_registry
 from matplotlib.transforms import Transform, Affine2D
 from matplotlib.projections.geo import LambertAxes, MollweideAxes
-from mpl_toolkits.basemap import _geoslib as geos
+import _geoslib as geos
 from matplotlib import pyplot as plt
 import scipy.stats
 import numpy as np
