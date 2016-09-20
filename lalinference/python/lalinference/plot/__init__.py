@@ -54,8 +54,6 @@ elif mpl_version < '1.2.0':
         """Patched version of matplotlib's Mollweide projection that implements a
         correct inverse transform."""
 
-        name = 'fixed mollweide'
-
         class FixedMollweideTransform(MollweideAxes.MollweideTransform):
 
             def inverted(self):
@@ -85,12 +83,12 @@ elif mpl_version < '1.2.0':
 
         def _get_core_transform(self, resolution):
             return self.FixedMollweideTransform(resolution)
+
+    projection_registry.register(FixedMollweideAxes)
 else:
     class FixedMollweideAxes(MollweideAxes):
         """Patched version of matplotlib's Mollweide projection that implements a
         correct inverse transform."""
-
-        name = 'fixed mollweide'
 
         class FixedMollweideTransform(MollweideAxes.MollweideTransform):
 
@@ -119,6 +117,8 @@ else:
 
         def _get_core_transform(self, resolution):
             return self.FixedMollweideTransform(resolution)
+
+    projection_registry.register(FixedMollweideAxes)
 
 
 class AstroDegreesMollweideAxes(FixedMollweideAxes):
