@@ -96,26 +96,6 @@ static PyObject *premalloced_npy_double_array(double *data, int ndims, npy_intp 
 }
 
 
-static void
-my_gsl_error (const char * reason, const char * file, int line, int gsl_errno)
-{
-    PyObject *exception_type;
-    switch (gsl_errno)
-    {
-        case GSL_EINVAL:
-            exception_type = PyExc_ValueError;
-            break;
-        case GSL_ENOMEM:
-            exception_type = PyExc_MemoryError;
-            break;
-        default:
-            exception_type = PyExc_ArithmeticError;
-            break;
-    }
-    PyErr_Format(exception_type, "%s:%d: %s\n", file, line, reason);
-}
-
-
 #define INPUT_LIST_OF_ARRAYS(NAME, NPYTYPE, DEPTH, CHECK) \
 { \
     const Py_ssize_t n = PySequence_Length(NAME##_obj); \
@@ -264,7 +244,7 @@ static PyObject *sky_map_toa_phoa_snr(
     INPUT_VECTOR_DOUBLE_NIFOS(snrs)
 
     /* Call function */
-    gsl_error_handler_t *old_handler = gsl_set_error_handler(my_gsl_error);
+    gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     double (*ret)[4] = bayestar_sky_map_toa_phoa_snr(&npix, min_distance,
         max_distance, prior_distance_power, gmst, nifos, nsamples, sample_rate,
         acors, responses, locations, horizons, toas, phoas, snrs);
@@ -376,9 +356,11 @@ static PyObject *log_likelihood_toa_snr(
     INPUT_VECTOR_DOUBLE_NIFOS(snrs)
 
     /* Call function */
+    gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     const double ret = bayestar_log_likelihood_toa_snr(ra, sin_dec,
         distance, u, twopsi, t, gmst, nifos, nsamples, sample_rate, acors,
         responses, locations, horizons, toas, snrs);
+    gsl_set_error_handler(old_handler);
 
     /* Prepare output object */
     out = PyFloat_FromDouble(ret);
@@ -483,9 +465,11 @@ static PyObject *log_likelihood_toa_phoa_snr(
     INPUT_VECTOR_DOUBLE_NIFOS(snrs)
 
     /* Call function */
+    gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     const double ret = bayestar_log_likelihood_toa_phoa_snr(ra, sin_dec,
         distance, u, twopsi, t, gmst, nifos, nsamples, sample_rate, acors,
         responses, locations, horizons, toas, phoas, snrs);
+    gsl_set_error_handler(old_handler);
 
     /* Prepare output object */
     out = PyFloat_FromDouble(ret);
@@ -505,7 +489,10 @@ fail: /* Cleanup */
 static PyObject *test(
     PyObject *NPY_UNUSED(module), PyObject *NPY_UNUSED(arg))
 {
-    return PyLong_FromLong(bayestar_test());
+    gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
+    int ret = bayestar_test();
+    gsl_set_error_handler(old_handler);
+    return PyLong_FromLong(ret);
 }
 
 
@@ -547,7 +534,7 @@ static int LogRadialIntegrator_init(
             args, kwargs, "ddidi", keywords, &r1, &r2, &k, &pmax, &size))
         return -1;
 
-    gsl_error_handler_t *old_handler = gsl_set_error_handler(my_gsl_error);
+    gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     self->integrator = log_radial_integrator_init(r1, r2, k, pmax, size);
     gsl_set_error_handler(old_handler);
 
@@ -567,7 +554,7 @@ static PyObject *LogRadialIntegrator_call(
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "dd", keywords, &p, &b))
         return NULL;
 
-    gsl_error_handler_t *old_handler = gsl_set_error_handler(my_gsl_error);
+    gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
     result = log_radial_integrator_eval(self->integrator, p, b);
     gsl_set_error_handler(old_handler);
 
