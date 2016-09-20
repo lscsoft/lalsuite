@@ -586,11 +586,9 @@ void LALInferenceAdaptLadder(LALInferenceRunState *runState) {
         local_acceptance_ratios[t] = acc_ratio;
     }
 
-    if (MPIrank == 0) {
-        nsteps = XLALCalloc(ntemps, sizeof(INT4));
-        temperatures = XLALCalloc(ntemps, sizeof(REAL8));
-        acceptance_ratios = XLALCalloc(ntemps, sizeof(REAL8));
-    }
+    nsteps = XLALCalloc(ntemps, sizeof(INT4));
+    temperatures = XLALCalloc(ntemps, sizeof(REAL8));
+    acceptance_ratios = XLALCalloc(ntemps, sizeof(REAL8));
 
     MPI_Gather(local_nsteps, n_local_threads, MPI_INT,
                nsteps, n_local_threads, MPI_INT,
@@ -631,11 +629,10 @@ void LALInferenceAdaptLadder(LALInferenceRunState *runState) {
     for (t=0; t<n_local_threads; t++)
         runState->threads[t]->temperature = local_temperatures[t];
 
-    if (MPIrank == 0) {
-        XLALFree(nsteps);
-        XLALFree(temperatures);
-        XLALFree(acceptance_ratios);
-    }
+    XLALFree(nsteps);
+    XLALFree(temperatures);
+    XLALFree(acceptance_ratios);
+
     XLALFree(local_nsteps);
     XLALFree(local_temperatures);
     XLALFree(local_acceptance_ratios);
@@ -1349,10 +1346,10 @@ void LALInferenceReadMCMCCheckpoint(LALInferenceRunState *runState) {
         LALH5Dataset *chain_dataset = XLALH5DatasetRead(group, thread->name);
 
         LALInferenceVariables **input_array;
-        UINT4 i,N;
+        UINT4 j, N;
         LALInferenceH5DatasetToVariablesArray(chain_dataset, &input_array, &N);
-        for (i=0; i<N; i++)
-            LALInferenceLogSampleToArray(thread->algorithmParams, input_array[i]);
+        for (j=0; j<N; j++)
+            LALInferenceLogSampleToArray(thread->algorithmParams, input_array[j]);
 
         /* TODO: Write metadata */
         XLALH5DatasetFree(chain_dataset);
