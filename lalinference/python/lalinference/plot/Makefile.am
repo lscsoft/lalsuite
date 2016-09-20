@@ -9,6 +9,7 @@ pymoduledir = $(pkgpythondir)/plot
 
 pymodule_PYTHON = \
 	__init__.py \
+	backend_pdf_vcs_friendly.py \
 	cmap.py \
 	marker.py \
 	$(END_OF_LIST)
