@@ -19,17 +19,9 @@ lal_c_si = lal.C_SI
 lal_180_pi = lal.LAL_180_PI
 print("PASSED module load")
 
-# look up version of swig used to generate the bindings
 # FIXME: delete this when we can depend on swig >= 3.0.9,
 # which fixed https://github.com/swig/swig/pull/617
-import inspect
-import re
-import distutils.version
-swig_version = distutils.version.StrictVersion(re.search(
-    r'^# Version (\d+(?:\.\d+)*)$',
-    inspect.getsource(lal.lal),
-    re.MULTILINE).group(1))
-swig_division_coercion_works = sys.version_info.major <= 2 or swig_version >= '3.0.9'
+swig_division_coercion_works = sys.version_info.major <= 2 or lal.swig_version >= 0x030009
 
 # check memory allocation
 print("checking memory allocation ...")
