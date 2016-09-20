@@ -1013,8 +1013,6 @@ void LALInferenceCyclicReflectiveBound(LALInferenceVariables *parameter,
     if(paraHead->vary==LALINFERENCE_PARAM_CIRCULAR) {
       /* For cyclic boundaries, mod out by range. */
 
-      REAL8 val = *(REAL8 *)paraHead->value;
-
       if (val > max) {
         REAL8 offset = val - min;
         REAL8 delta = max-min;

@@ -601,7 +601,7 @@ REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread,
                                       LALInferenceVariables *currentParams,
                                       LALInferenceVariables *proposedParams) {
     INT4 dim, varNr;
-    REAL8 logPropRatio, sqrttemp, sigma;
+    REAL8 logPropRatio, sqrttemp, mu, sigma;
     char tmpname[MAX_STRLEN] = "";
     LALInferenceVariableItem *param = NULL;
 
@@ -642,7 +642,6 @@ REAL8 LALInferenceSingleAdaptProposal(LALInferenceThreadState *thread,
         /* If temperature is infinite, scale sigma to the prior width */
         if (sqrttemp == INFINITY) {
             if (LALInferenceCheckGaussianPrior(thread->priorArgs, param->name)) {
-                REAL8 mu, sigma;
                 LALInferenceGetGaussianPrior(thread->priorArgs, param->name, &mu, &sigma);
 
                 *((REAL8 *)param->value) += gsl_ran_ugaussian(rng) * sigma;
