@@ -17,6 +17,7 @@
 """
 Specialized markers
 """
+__all__ = ('earth', 'reticle')
 
 
 from matplotlib.path import Path
