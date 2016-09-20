@@ -39,11 +39,15 @@ $1 == "prepend" {
     for (i = 3; i <= NF; ++i) {
       if ( !( (name,$i) in set ) ) {
         set[name, $i] = 1
-        env[name] = env[name] $i ":"
+        if (name == "PATH") {
+            env[name] = env[name] $i " "
+        } else {
+            env[name] = env[name] $i ":"
+        }
         sed[name] = sed[name] "s|" $i ":||g;"
       }
     }
-    env[name] = env[name] "${" name "}"
+    env[name] = env[name] "$" name
   }
   next
 }
@@ -60,11 +64,15 @@ $1 == "append" {
     for (i = 3; i <= NF; ++i) {
       if ( !( (name,$i) in set ) ) {
         set[name, $i] = 1
-        env[name] = ":" env[name] $i
+        if (name == "PATH") {
+            env[name] = " " env[name] $i
+        } else {
+            env[name] = ":" env[name] $i
+        }
         sed[name] = sed[name] "s|:" $i "||g;"
       }
     }
-    env[name] = "${" name "}" env[name]
+    env[name] = "$" name env[name]
   }
   next
 }
@@ -88,6 +96,11 @@ END {
     }
     print "csh:setenv " name " \"" env[name] "\""
     print "sh:" name "=\"" env[name] "\""
+    if (name == "PATH") {
+        print "fish:" "set -xg " name " " env[name]
+    } else {
+        print "fish:" "set -xg " name " \"" env[name] "\""
+    }
   }
   if (envempty) {
     print "generate_user_env.awk: no user environment script was generated" >"/dev/stderr"

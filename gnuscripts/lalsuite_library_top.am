@@ -8,9 +8,9 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(SHELL) ./00boot
 endif # HAVE_GIT_REPO
 
-BUILT_SOURCES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh
-sysconf_DATA += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh
-MOSTLYCLEANFILES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.shell
+BUILT_SOURCES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish
+sysconf_DATA += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish
+MOSTLYCLEANFILES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish $(PACKAGE)-user-env.shell
 EXTRA_DIST += generate_user_env.awk
 
 $(PACKAGE)-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
@@ -20,7 +20,7 @@ $(PACKAGE)-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 		rm -f $@; \
 		exit 1; \
 	fi
-$(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh: $(PACKAGE)-user-env.shell
+$(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish: $(PACKAGE)-user-env.shell
 	$(AM_V_GEN)prefix=`echo "$@" | $(SED) -e 's|.*\.||'`; \
 	echo "# source this file to access $(PACKAGE_NAME)" >$@; \
 	$(SED) -n -e "s|[@]SED[@]|$(SED)|g;s|^$$prefix:||p" $< >>$@
@@ -56,5 +56,7 @@ print-install-success:
 	echo "to ~/.profile for Bourne shells (e.g. bash), or";\
 	echo "  source $(sysconfdir)/$(PACKAGE)-user-env.csh";\
 	echo "to ~/.login for C shells (e.g. tcsh).";\
+	echo "  source $(sysconfdir)/$(PACKAGE)-user-env.fish";\
+	echo "to ~/.login for fish shell.";\
 	echo "==================================================";\
 	echo ""

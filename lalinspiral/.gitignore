@@ -28,6 +28,7 @@ include/lal/header-link-stamp
 lalinspiral-*.tar.xz
 lalinspiral-user-env.csh
 lalinspiral-user-env.sh
+lalinspiral-user-env.fish
 lalinspiral-user-env.shell
 lalinspiral.spec
 libtool

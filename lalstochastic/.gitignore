@@ -28,6 +28,7 @@ include/lal/header-link-stamp
 lalstochastic-*.tar.xz
 lalstochastic-user-env.csh
 lalstochastic-user-env.sh
+lalstochastic-user-env.fish
 lalstochastic-user-env.shell
 lalstochastic.spec
 libtool
