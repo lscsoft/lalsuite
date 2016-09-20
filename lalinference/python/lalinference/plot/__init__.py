@@ -40,7 +40,6 @@ from matplotlib.projections import projection_registry
 from matplotlib.transforms import Transform, Affine2D
 from matplotlib.projections.geo import LambertAxes, MollweideAxes
 import _geoslib as geos
-from matplotlib import pyplot as plt
 import scipy.stats
 import numpy as np
 import healpy as hp
@@ -481,6 +480,7 @@ def make_rect_poly(width, height, theta, phi, subdivisions=10):
 
 def heatmap(func, *args, **kwargs):
     "Plot a function on the sphere using the current geographic projection."""
+    from matplotlib import pyplot as plt
 
     # Get current axis.
     ax = plt.gca()
@@ -522,6 +522,7 @@ def heatmap(func, *args, **kwargs):
 
 def contour(func, *args, **kwargs):
     "Plot a function on the sphere using the current geographic projection."""
+    from matplotlib import pyplot as plt
 
     # Get current axis.
     ax = plt.gca()
@@ -543,6 +544,7 @@ def contour(func, *args, **kwargs):
 
 def contourf(func, *args, **kwargs):
     "Plot a function on the sphere using the current geographic projection."""
+    from matplotlib import pyplot as plt
 
     # Get current axis.
     ax = plt.gca()
@@ -600,6 +602,8 @@ def healpix_contourf(map, *args, **kwargs):
 
 
 def colorbar():
+    from matplotlib import pyplot as plt
+
     usetex = matplotlib.rcParams['text.usetex']
     locator = ticker.AutoLocator()
     formatter = ticker.ScalarFormatter(useMathText=not usetex)
