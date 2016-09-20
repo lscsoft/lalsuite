@@ -109,7 +109,10 @@ static PyObject *rasterize(PyObject *NPY_UNUSED(module), PyObject *arg)
             goto done;
     }
 
-    void *out = moc_rasterize64(pixels, offset, itemsize, len, &npix);
+    void *out;
+    Py_BEGIN_ALLOW_THREADS
+    out = moc_rasterize64(pixels, offset, itemsize, len, &npix);
+    Py_END_ALLOW_THREADS
     if (!out)
         goto done;
 
@@ -221,6 +224,7 @@ PyMODINIT_FUNC PyInit__moc(void)
 {
     PyObject *module = NULL;
 
+    gsl_set_error_handler_off();
     import_array();
     import_umath();
 
