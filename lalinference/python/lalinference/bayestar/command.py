@@ -34,7 +34,7 @@ import shutil
 import sys
 import tempfile
 from matplotlib import cm
-from .. import cmap
+from ..plot import cmap
 
 
 
