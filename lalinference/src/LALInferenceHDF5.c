@@ -344,4 +344,3 @@ static int LALInferenceH5VariableToAttribute(LALH5Generic gdataset, LALInference
   XLALH5AttributeAddScalar(gdataset, name, LALInferenceGetVariable(vars,name), laltype);
   return(XLAL_SUCCESS);
 }
-
