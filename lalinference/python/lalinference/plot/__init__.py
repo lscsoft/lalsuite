@@ -638,8 +638,8 @@ def colorbar():
 
 
 def outline_text(ax):
-    """If we are using a new enough version of matplotlib, then
-    add a white outline to all text to make it stand out from the background."""
+    """Add a white outline to all text to make it stand out from the
+    background."""
     effects = [patheffects.withStroke(linewidth=2, foreground='w')]
     for artist in ax.findobj(text.Text):
         artist.set_path_effects(effects)
