@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 """Register some extra Matplotlib color maps"""
+__all__ = ()
+
 
 from matplotlib import cm
 from matplotlib import colors
