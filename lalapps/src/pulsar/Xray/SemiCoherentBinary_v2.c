@@ -620,6 +620,18 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   /* single loop over binary templates */
   while (getnext(&bintemp,bingrid,temppspace,r)) {
 
+    /** loop over segments **********************************************************************************/
+    for (i=0;i<power->length;i++) {
+
+      REAL8 tmid = XLALGPSGetREAL8(&(power->segment[i]->epoch)) + 0.5*pspace->tseg;
+      /* REAL8 norm = (REAL8)background->data[i]; */
+
+      /* compute instantaneous frequency derivitives corresponding to the current template for this segment */
+      XLALComputeBinaryFreqDerivitives(&fdots[i],bintemp,tmid);
+
+    } /* end loop over segments */
+    /*************************************************************************************/
+
     REAL8 logLratiosum = 0.0;                       /* initialise likelihood ratio */
 
     /** loop over segments **********************************************************************************/
@@ -627,12 +639,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
       REAL4DemodulatedPower *currentpower = power->segment[i];
       GridParameters *fdotgrid = fgrid->segment[i];
-      REAL8 tmid = XLALGPSGetREAL8(&(power->segment[i]->epoch)) + 0.5*pspace->tseg;
-      /* REAL8 norm = (REAL8)background->data[i]; */
       INT4 idx = 0;
-
-      /* compute instantaneous frequency derivitives corresponding to the current template for this segment */
-      XLALComputeBinaryFreqDerivitives(&fdots[i],bintemp,tmid);
 
       /* find indices corresponding to the spin derivitive values for the segment power */
       for (j=0;j<fdots[i].ndim;j++) {
