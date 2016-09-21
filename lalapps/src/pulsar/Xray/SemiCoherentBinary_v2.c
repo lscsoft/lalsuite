@@ -652,7 +652,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
       /* find indices corresponding to the spin derivitive values for the segment power */
       for (j=0;j<fdots[i].ndim;j++) {
-        UINT4 tempidx = 0.5 + (fdots[i].x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta;
+        UINT4 tempidx = lround( (fdots[i].x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta );
         idx += tempidx*fdotgrid->prod[j];
       }
 
