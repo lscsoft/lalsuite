@@ -36,12 +36,15 @@ print-install-success:
 	@echo "";\
 	echo "==================================================";\
 	echo "$(PACKAGE_NAME) has now been successfully installed.";\
-	echo "To set up your environment, please add the line";\
+	echo "Now you may want to set up your environment.";\
+	echo "For Bourne shells (e.g. bash), run this command:";\
 	echo "  . $(sysconfdir)/$(PACKAGE)-user-env.sh";\
-	echo "to ~/.profile for Bourne shells (e.g. bash), or";\
+	echo "or add it to ~/.profile.";\
+	echo "For C shells (e.g. tcsh), run this command:";\
 	echo "  source $(sysconfdir)/$(PACKAGE)-user-env.csh";\
-	echo "to ~/.login for C shells (e.g. tcsh), or";\
-	echo "  source $(sysconfdir)/$(PACKAGE)-user-env.fish";\
-	echo "to ~/.login for fish shell.";\
+	echo "or add it to ~/.login.";\
+	echo "For the fish shell, run this command:";\
+	echo "  . $(sysconfdir)/$(PACKAGE)-user-env.fish";\
+	echo "or add it to ~/.config/fish/config.fish.";\
 	echo "==================================================";\
 	echo ""
