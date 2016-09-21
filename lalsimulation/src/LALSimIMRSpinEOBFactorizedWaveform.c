@@ -1,4 +1,4 @@
-ƒ/*
+/*
 *  Copyright (C) 2010 Craig Robinson, Yi Pan, Prayush Kumar, Andrea Taracchini
 *
 *  This program is free software; you can redistribute it and/or modify
