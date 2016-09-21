@@ -101,20 +101,20 @@ END {
   for (name in env) {
     envempty = 0
     if (name == "PATH") {
-      fisharraysed = ";s|[: ]|\\n|g"
+      fisharraytranslate = "| tr ':' '\\n'"
     } else {
-      fisharraysed = ""
+      fisharraytranslate = ""
     }
     print "csh:if ( ! ${?" name "} ) setenv " name
     print "sh:export " name
     if (sed[name] != "") {
       print "csh:setenv " name " `echo \"$" name "\" | @SED@ -e '" sed[name] "'`"
       print "sh:" name "=`echo \"$" name "\" | @SED@ -e '" sed[name] "'`"
-      print "fish:set " name " (echo \"$" name "\" | @SED@ -e 's| |:|g;" sed[name] fisharraysed "')"
+      print "fish:set " name " (echo \"$" name "\" | @SED@ -e 's| |:|g;" sed[name] "'" fisharraytranslate ")"
     }
     print "csh:setenv " name " \"" env[name] "\""
     print "sh:" name "=\"" env[name] "\""
-    print "fish:set " name " (echo \"" env[name] "\" | @SED@ -e 's| |:|g;" fisharraysed "')"
+    print "fish:set " name " (echo \"" env[name] "\" | @SED@ -e 's| |:|g;'" fisharraytranslate ")"
   }
   if (envempty) {
     print "generate_user_env.awk: no user environment script was generated" >"/dev/stderr"
