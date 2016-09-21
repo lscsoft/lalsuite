@@ -1768,7 +1768,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   /*
    * STEP 9) Generate full IMR hp and hx waveforms
    */
-
+XLALGPSAdd (&tc, deltaT * (REAL8) kMin);
   /* For now, let us just try to create a waveform */
   REAL8TimeSeries *hPlusTS =
     XLALCreateREAL8TimeSeries ("H_PLUS", &tc, 0.0, deltaT, &lalStrainUnit,
