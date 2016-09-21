@@ -74,7 +74,7 @@ typedef struct {
   REAL8 freq;                       /**< the starting frequency */
   REAL8 freqband;                   /**< the band width */
   REAL8 highpassf;                  /**< the high pass filter frequency */
-  BOOLEAN outSingleSFT;	            /**< use to output a single concatenated SFT */
+  BOOLEAN outSingleSFT;             /**< use to output a single concatenated SFT */
   REAL8 amp_inj;                    /**< if set we inject a fake signal with this fractional amplitude */
   INT4 seed;
   REAL8 f_inj;
@@ -240,9 +240,9 @@ int main( int argc, char *argv[] )  {
  *
  */
 int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */
-		     char *argv[],        /**< [in] the command line arguments */
-		     UserInput_t *uvar    /**< [out] the user input structure */
-		     )
+                     char *argv[],        /**< [in] the command line arguments */
+                     UserInput_t *uvar    /**< [out] the user input structure */
+                     )
 {
 
 
@@ -265,21 +265,21 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->seed = 0;
 
   /* ---------- register all user-variables ---------- */
-  XLALRegisterUvarMember(outLabel, 	        STRING, 'n', REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
-  XLALRegisterUvarMember(outputdir, 	        STRING, 'o', REQUIRED, "The output directory name");
-  XLALRegisterUvarMember(cachefile, 	        STRING, 'i', REQUIRED, "The input binary file name");
+  XLALRegisterUvarMember(outLabel,              STRING, 'n', REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
+  XLALRegisterUvarMember(outputdir,             STRING, 'o', REQUIRED, "The output directory name");
+  XLALRegisterUvarMember(cachefile,             STRING, 'i', REQUIRED, "The input binary file name");
   XLALRegisterUvarMember(freq,                   REAL8, 'f', OPTIONAL, "The starting frequency (Hz)");
-  XLALRegisterUvarMember(freqband,   	        REAL8, 'b', OPTIONAL, "The frequency band (Hz)");
+  XLALRegisterUvarMember(freqband,              REAL8, 'b', OPTIONAL, "The frequency band (Hz)");
   XLALRegisterUvarMember(tsft,                    INT4, 't', OPTIONAL, "The length of SFTs (sec)");
-  XLALRegisterUvarMember(tsamp,           	REAL8, 's', OPTIONAL, "The sampling time (sec)");
-  XLALRegisterUvarMember(highpassf,           	REAL8, 'p', OPTIONAL, "The high pass filter frequency");
+  XLALRegisterUvarMember(tsamp,                 REAL8, 's', OPTIONAL, "The sampling time (sec)");
+  XLALRegisterUvarMember(highpassf,             REAL8, 'p', OPTIONAL, "The high pass filter frequency");
   XLALRegisterUvarMember(outSingleSFT,           BOOLEAN, 'S', OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
-  XLALRegisterUvarMember(amp_inj,          	REAL8, 'I', OPTIONAL, "Fractional amplitude of injected signal");
-  XLALRegisterUvarMember(f_inj,            	REAL8, 'A', OPTIONAL, "frequency of injected signal");
-  XLALRegisterUvarMember(asini_inj,          	REAL8, 'B', OPTIONAL, "projected semi-major axis of injected signal");
-  XLALRegisterUvarMember(tasc_inj,          	REAL8, 'C', OPTIONAL, "time of ascension of injected signal");
-  XLALRegisterUvarMember(P_inj,           	REAL8, 'D', OPTIONAL, "orbital period of injected signal");
-  XLALRegisterUvarMember(phi_inj,          	REAL8, 'E', OPTIONAL, "initial phase of injected signal");
+  XLALRegisterUvarMember(amp_inj,               REAL8, 'I', OPTIONAL, "Fractional amplitude of injected signal");
+  XLALRegisterUvarMember(f_inj,                 REAL8, 'A', OPTIONAL, "frequency of injected signal");
+  XLALRegisterUvarMember(asini_inj,             REAL8, 'B', OPTIONAL, "projected semi-major axis of injected signal");
+  XLALRegisterUvarMember(tasc_inj,              REAL8, 'C', OPTIONAL, "time of ascension of injected signal");
+  XLALRegisterUvarMember(P_inj,                 REAL8, 'D', OPTIONAL, "orbital period of injected signal");
+  XLALRegisterUvarMember(phi_inj,               REAL8, 'E', OPTIONAL, "initial phase of injected signal");
   XLALRegisterUvarMember(seed,                    INT4, 'r', OPTIONAL, "The random seed");
 
   /* do ALL cmdline and cfgfile handling */
