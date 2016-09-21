@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   Makefile \
   debian/Makefile \
+  debian/control \
   doxygen/Makefile \
   doxygen/doxygen.cfg \
   include/Makefile \
@@ -32,6 +33,12 @@ AM_INIT_AUTOMAKE([ \
   dist-xz \
   no-dist-gzip \
 ])
+
+# version requirements
+MIN_LAL_VERSION="6.16.1"
+MIN_LALXML_VERSION="1.2.2"
+AC_SUBST([MIN_LAL_VERSION])
+AC_SUBST([MIN_LALXML_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -180,16 +187,16 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.16.1],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[LALVersion],[lal/LALStdio.h])
 
 # check that lal was built with BOINC support, if required
 LALSUITE_CHECK_BOINC
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSupport],[6.16.1],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
 
 # check for lalxml
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.2],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[${MIN_LALXML_VERSION}],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # back to c mode
 if test "${boinc}" = "true" ; then
