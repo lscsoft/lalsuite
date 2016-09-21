@@ -609,6 +609,10 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
       XLAL_ERROR(XLAL_ENOMEM);
     }
+    if ((fdots[i].idx = XLALCalloc(fgrid->segment[0]->ndim,sizeof(INT4))) == NULL) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
+    }
     fdots[i].ndim = fgrid->segment[0]->ndim;
   }
 
@@ -652,8 +656,8 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
       /* find indices corresponding to the spin derivitive values for the segment power */
       for (j=0;j<fdots[i].ndim;j++) {
-        UINT4 tempidx = lround( (fdots[i].x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta );
-        idx += tempidx*fdotgrid->prod[j];
+        fdots[i].idx[j] = lround( (fdots[i].x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta );
+        idx += fdots[i].idx[j] * fdotgrid->prod[j];
       }
 
       /* define the power at this location in this segment */
@@ -699,6 +703,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   /* free template memory */
   for (i=0;i<power->length;i++) {
     XLALFree(fdots[i].x);
+    XLALFree(fdots[i].idx);
   }
   XLALFree(fdots);
   XLALFree(TL.data);
