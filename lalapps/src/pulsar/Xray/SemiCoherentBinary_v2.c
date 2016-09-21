@@ -543,7 +543,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
   toplist TL;                                         /* the results toplist */
   Template *bintemp = NULL;                           /* the binary parameter space template */
-  Template fdots;                                     /* the freq derivitive template for each segment */
+  Template *fdots = NULL;                             /* the freq derivitive template for each segment */
   UINT4 i,j;                                          /* counters */
   UINT4 percent = 0;                                  /* counter for status update */
   REAL8 mean = 0.0;
@@ -591,11 +591,15 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   TL.idx = 0;
 
   /* allocate memory for the fdots */
-  if ((fdots.x = XLALCalloc(fgrid->segment[0]->ndim,sizeof(REAL8))) == NULL) {
+  if ((fdots = XLALCalloc(1, sizeof(*fdots))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     XLAL_ERROR(XLAL_ENOMEM);
   }
-  fdots.ndim = fgrid->segment[0]->ndim;
+  if ((fdots->x = XLALCalloc(fgrid->segment[0]->ndim,sizeof(REAL8))) == NULL) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+    XLAL_ERROR(XLAL_ENOMEM);
+  }
+  fdots->ndim = fgrid->segment[0]->ndim;
 
   /* define the chi-squared threshold */
   /* REAL8 thr = gsl_cdf_chisq_Qinv(frac,2*power->length);
@@ -626,11 +630,11 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       INT4 idx = 0;
 
       /* compute instantaneous frequency derivitives corresponding to the current template for this segment */
-      XLALComputeBinaryFreqDerivitives(&fdots,bintemp,tmid);
+      XLALComputeBinaryFreqDerivitives(fdots,bintemp,tmid);
 
       /* find indices corresponding to the spin derivitive values for the segment power */
-      for (j=0;j<fdots.ndim;j++) {
-        UINT4 tempidx = 0.5 + (fdots.x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta;
+      for (j=0;j<fdots->ndim;j++) {
+        UINT4 tempidx = 0.5 + (fdots->x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta;
         idx += tempidx*fdotgrid->prod[j];
       }
 
@@ -675,7 +679,8 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   }
 
   /* free template memory */
-  XLALFree(fdots.x);
+  XLALFree(fdots->x);
+  XLALFree(fdots);
   XLALFree(TL.data);
   for (i=0;i<(UINT4)TL.n;i++) XLALFree(TL.params[i]);
   XLALFree(TL.params);
