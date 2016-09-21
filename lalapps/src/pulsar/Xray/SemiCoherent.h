@@ -23,7 +23,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/Date.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -52,7 +51,6 @@
 #include <lalapps.h>
 
 /* includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
