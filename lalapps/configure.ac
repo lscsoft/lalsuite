@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([\
   Makefile \
   debian/Makefile \
+  debian/control \
   doxygen/Makefile \
   doxygen/doxygen.cfg \
   lalapps.spec \
@@ -55,6 +56,29 @@ AM_INIT_AUTOMAKE([ \
   dist-xz \
   no-dist-gzip \
 ])
+
+# version requirements
+MIN_LAL_VERSION="6.16.1"
+MIN_LALFRAME_VERSION="1.4.1"
+MIN_LALMETAIO_VERSION="1.2.8"
+MIN_LALXML_VERSION="1.2.2"
+MIN_LALSIMULATION_VERSION="1.6.0"
+MIN_LALBURST_VERSION="1.4.2"
+MIN_LALINSPIRAL_VERSION="1.7.5"
+MIN_LALPULSAR_VERSION="1.14.0"
+MIN_LALINFERENCE_VERSION="1.7.0"
+MIN_LALSTOCHASTIC_VERSION="1.1.18"
+AC_SUBST([MIN_LAL_VERSION])
+AC_SUBST([MIN_LALFRAME_VERSION])
+AC_SUBST([MIN_LALMETAIO_VERSION])
+AC_SUBST([MIN_LALXML_VERSION])
+AC_SUBST([MIN_LALSIMULATION_VERSION])
+AC_SUBST([MIN_LALBURST_VERSION])
+AC_SUBST([MIN_LALINSPIRAL_VERSION])
+AC_SUBST([MIN_LALPULSAR_VERSION])
+AC_SUBST([MIN_LALINFERENCE_VERSION])
+AC_SUBST([MIN_LALSTOCHASTIC_VERSION])
+
 LT_INIT()
 
 AC_CANONICAL_HOST
@@ -348,17 +372,17 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libararies and headers
-LALSUITE_CHECK_LIB([LAL],[6.16.1],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.16.1],[XLALCacheImport],[lal/LALCache.h])
-LALSUITE_CHECK_OPT_LIB([LALFrame],[1.4.1],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.2.8],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.2],[XLALXMLFilePrintElements],[lal/LALXML.h])
-LALSUITE_CHECK_OPT_LIB([LALSimulation],[1.6.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
-LALSUITE_CHECK_OPT_LIB([LALBurst],[1.4.2],[XLALEPSearch],[lal/EPSearch.h])
-LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.7.5],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.14.0],[XLALComputeFstat],[lal/ComputeFstat.h])
-LALSUITE_CHECK_OPT_LIB([LALInference],[1.7.0],[LALInferenceAddVariable],[lal/LALInference.h])
-LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.18],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
+LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_OPT_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_OPT_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[${MIN_LALXML_VERSION}],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_OPT_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_OPT_LIB([LALBurst],[${MIN_LALBURST_VERSION}],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_OPT_LIB([LALInspiral],[${MIN_LALINSPIRAL_VERSION}],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat],[lal/ComputeFstat.h])
+LALSUITE_CHECK_OPT_LIB([LALInference],[${MIN_LALINFERENCE_VERSION}],[LALInferenceAddVariable],[lal/LALInference.h])
+LALSUITE_CHECK_OPT_LIB([LALStochastic],[${MIN_LALSTOCHASTIC_VERSION}],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 
 # check that lal was built with BOINC support, if required
 LALSUITE_CHECK_BOINC
