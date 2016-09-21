@@ -637,10 +637,16 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     for (i=0;i<power->length;i++) {
 
       REAL8 tmid = XLALGPSGetREAL8(&(power->segment[i]->epoch)) + 0.5*pspace->tseg;
+      GridParameters *fdotgrid = fgrid->segment[i];
       /* REAL8 norm = (REAL8)background->data[i]; */
 
       /* compute instantaneous frequency derivitives corresponding to the current template for this segment */
       XLALComputeBinaryFreqDerivitives(&fdots[i],bintemp,tmid);
+
+      /* find ndim-D indices corresponding to the spin derivitive values for the segment power */
+      for (j=0;j<fdots[i].ndim;j++) {
+        fdots[i].idx[j] = lround( (fdots[i].x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta );
+      }
 
     } /* end loop over segments */
     /*************************************************************************************/
@@ -652,11 +658,10 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
       REAL4DemodulatedPower *currentpower = power->segment[i];
       GridParameters *fdotgrid = fgrid->segment[i];
-      INT4 idx = 0;
 
-      /* find indices corresponding to the spin derivitive values for the segment power */
+      /* find 1-D index corresponding to the spin derivitive values for the segment power */
+      INT4 idx = 0;
       for (j=0;j<fdots[i].ndim;j++) {
-        fdots[i].idx[j] = lround( (fdots[i].x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta );
         idx += fdots[i].idx[j] * fdotgrid->prod[j];
       }
 
