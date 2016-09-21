@@ -571,6 +571,15 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     XLAL_ERROR(XLAL_EINVAL);
   }
 
+  /* check for same frequency spacing */
+  const REAL8 dfreq = fgrid->segment[0]->grid[0].delta;
+  for (i=0;i<power->length;i++) {
+    if ( dfreq != fgrid->segment[i]->grid[0].delta ) {
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent number of frequency bins %.10g != %.10g\n",__func__,fgrid->segment[i]->grid[0].delta,dfreq);
+      XLAL_ERROR(XLAL_EINVAL);
+    }
+  }
+
   /* allocate memory for the results toplist */
   TL.n = ntoplist;
   if ((TL.data = (REAL8 *)XLALCalloc(TL.n,sizeof(REAL8))) == NULL) {
