@@ -5,18 +5,18 @@ Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 9), pkg-config, dh-python, python-all-dev,
   libgsl-dev | libgsl0-dev (>= 1.9), libglib2.0-dev, swig (>= 3.0.7),
   octave3.2-headers | liboctave-dev,
-  lal-dev (>= 6.16.1~),
-  lal-python (>= 6.16.1~),
-  lal-octave (>= 6.16.1~),
-  lalmetaio-dev (>= 1.2.8~),
-  lalmetaio-python (>= 1.2.8~),
-  lalmetaio-octave (>= 1.2.8~),
-  lalsimulation-dev (>= 1.6.0~),
-  lalsimulation-python (>= 1.6.0~),
-  lalsimulation-octave (>= 1.6.0~),
-  lalburst-dev (>= 1.4.2~),
-  lalburst-python (>= 1.4.2~),
-  lalburst-octave (>= 1.4.2~)
+  lal-dev (>= @MIN_LAL_VERSION@~),
+  lal-python (>= @MIN_LAL_VERSION@~),
+  lal-octave (>= @MIN_LAL_VERSION@~),
+  lalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
+  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
+  lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~),
+  lalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
+  lalsimulation-python (>= @MIN_LALSIMULATION_VERSION@~),
+  lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
+  lalburst-dev (>= @MIN_LALBURST_VERSION@~),
+  lalburst-python (>= @MIN_LALBURST_VERSION@~),
+  lalburst-octave (>= @MIN_LALBURST_VERSION@~)
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
 Standards-Version: 3.9.8
@@ -25,10 +25,10 @@ Package: laldetchar
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
   libglib2.0-0,
-  lal (>= 6.16.1~),
-  lalmetaio (>= 1.2.8~),
-  lalsimulation (>= 1.6.0~),
-  lalburst (>= 1.4.2~)
+  lal (>= @MIN_LAL_VERSION@~),
+  lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
+  lalsimulation (>= @MIN_LALSIMULTION_VERSION@~),
+  lalburst (>= @MIN_LALBURST_VERSION@~)
 Description: LSC Algorithm Library Detector Characterisation
  The LSC Algorithm Detector Characterisation Library for gravitational
  wave data analysis. This package contains the shared-object libraries
@@ -39,10 +39,10 @@ Section: libdevel
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, libgsl-dev | libgsl0-dev (>= 1.9),
   libglib2.0-dev,
-  lal-dev (>= 6.16.1~),
-  lalmetaio-dev (>= 1.2.8~),
-  lalsimulation-dev (>= 1.6.0~),
-  lalburst-dev (>= 1.4.2~),
+  lal-dev (>= @MIN_LAL_VERSION@~),
+  lalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
+  lalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
+  lalburst-dev (>= @MIN_LALBURST_VERSION@~),
   laldetchar (= ${binary:Version})
 Description: LSC Algorithm Library Detector Characterisation Developers
  The LSC Algorithm Detector Characterisation Library for gravitational
@@ -54,10 +54,10 @@ Section: python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   laldetchar (= ${binary:Version}),
-  lal-python (>= 6.16.1~),
-  lalmetaio-python (>= 1.2.8~),
-  lalsimulation-python (>= 1.6.0~),
-  lalburst-python (>= 1.4.2~)
+  lal-python (>= @MIN_LAL_VERSION@~),
+  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
+  lalsimulation-python (>= @MIN_LALSIMULATION_VERSION@~),
+  lalburst-python (>= @MIN_LALBURST_VERSION@~)
 Description: Python bindings for LALDetChar
  The LSC Algorithm Detchar Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Detchar library.
@@ -66,10 +66,10 @@ Package: laldetchar-octave
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
   laldetchar (= ${binary:Version}),
-  lal-octave (>= 6.16.1~),
-  lalmetaio-python (>= 1.2.8~),
-  lalsimulation-octave (>= 1.6.0~),
-  lalburst-python (>= 1.4.2~)
+  lal-octave (>= @MIN_LAL_VERSION@~),
+  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
+  lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
+  lalburst-python (>= @MIN_LALBURST_VERSION@~)
 Description: Octave bindings for LALDetChar
  The LSC Algorithm Detchar Library for gravitational wave data analysis.
  This package contains Octave bindings for the LAL Detchar library.

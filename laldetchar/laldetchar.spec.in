@@ -19,26 +19,26 @@ BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: swig
-BuildRequires: lal-devel >= 6.16.1
-BuildRequires: lal-python >= 6.16.1
-BuildRequires: lal-octave >= 6.16.1
-BuildRequires: lalmetaio-devel >= 1.2.8
-BuildRequires: lalmetaio-python >= 1.2.8
-BuildRequires: lalmetaio-octave >= 1.2.8
-BuildRequires: lalsimulation-devel >= 1.6.0
-BuildRequires: lalsimulation-python >= 1.6.0
-BuildRequires: lalsimulation-octave >= 1.6.0
-BuildRequires: lalburst-devel >= 1.4.2
-BuildRequires: lalburst-python >= 1.4.2
-BuildRequires: lalburst-octave >= 1.4.2
+BuildRequires: lal-devel >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
+BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
+BuildRequires: lalburst-python >= @MIN_LALBURST_VERSION@
+BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
 Requires: glib2
 Requires: gsl
 Requires: libframe
 Requires: libmetaio
-Requires: lal >= 6.16.1
-Requires: lalmetaio >= 1.2.8
-Requires: lalsimulation >= 1.6.0
-Requires: lalburst >= 1.4.2
+Requires: lal >= @MIN_LAL_VERSION@
+Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: lalburst >= @MIN_LALBURST_VERSION@
 Prefix: %{_prefix}
 
 %description
@@ -53,10 +53,10 @@ Requires: %{name} = %{version}
 Requires: glib2-devel
 Requires: gsl-devel
 Requires: libmetaio-devel
-Requires: lal-devel >= 6.16.1
-Requires: lalmetaio-devel >= 1.2.8
-Requires: lalsimulation-devel >= 1.6.0
-Requires: lalburst-devel >= 1.4.2
+Requires: lal-devel >= @MIN_LAL_VERSION@
+Requires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+Requires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+Requires: lalburst-devel >= @MIN_LALBURST_VERSION@
 %description devel
 The LSC Algorithm DetChar Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL DetChar
@@ -68,10 +68,10 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
-Requires: lal-python >= 6.16.1
-Requires: lalmetaio-python >= 1.2.8
-Requires: lalsimulation-python >= 1.6.0
-Requires: lalburst-python >= 1.4.2
+Requires: lal-python >= @MIN_LAL_VERSION@
+Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
+Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+Requires: lalburst-python >= @MIN_LALBURST_VERSION@
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings for LALDetChar.
@@ -81,10 +81,10 @@ Summary: Octave Bindings for LALDetChar
 Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
-Requires: lal-octave >= 6.16.1
-Requires: lalmetaio-octave >= 1.2.8
-Requires: lalsimulation-octave >= 1.6.0
-Requires: lalburst-octave >= 1.4.2
+Requires: lal-octave >= @MIN_LAL_VERSION@
+Requires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+Requires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
+Requires: lalburst-octave >= @MIN_LALBURST_VERSION@
 %description octave
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALDetChar.
