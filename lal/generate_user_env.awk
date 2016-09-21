@@ -39,11 +39,7 @@ $1 == "prepend" {
     for (i = 3; i <= NF; ++i) {
       if ( !( (name,$i) in set ) ) {
         set[name, $i] = 1
-        if (name == "PATH") {
-            env[name] = env[name] $i " "
-        } else {
-            env[name] = env[name] $i ":"
-        }
+        env[name] = env[name] $i ":"
         sed[name] = sed[name] "s|" $i ":||g;"
       }
     }
@@ -64,11 +60,7 @@ $1 == "append" {
     for (i = 3; i <= NF; ++i) {
       if ( !( (name,$i) in set ) ) {
         set[name, $i] = 1
-        if (name == "PATH") {
-            env[name] = " " env[name] $i
-        } else {
-            env[name] = ":" env[name] $i
-        }
+        env[name] = ":" env[name] $i
         sed[name] = sed[name] "s|:" $i "||g;"
       }
     }
@@ -88,19 +80,21 @@ END {
   envempty = 1
   for (name in env) {
     envempty = 0
+    if (name == "PATH") {
+      fisharraysed = ";s|[: ]|\\n|g"
+    } else {
+      fisharraysed = ""
+    }
     print "csh:if ( ! ${?" name "} ) setenv " name
     print "sh:export " name
     if (sed[name] != "") {
-      print "csh:setenv " name " `echo \"${" name "}\" | @SED@ -e '" sed[name] "'`"
-      print "sh:" name "=`echo \"${" name "}\" | @SED@ -e '" sed[name] "'`"
+      print "csh:setenv " name " `echo \"$" name "\" | @SED@ -e '" sed[name] "'`"
+      print "sh:" name "=`echo \"$" name "\" | @SED@ -e '" sed[name] "'`"
+      print "fish:set " name " (echo \"$" name "\" | @SED@ -e 's| |:|g;" sed[name] fisharraysed "')"
     }
     print "csh:setenv " name " \"" env[name] "\""
     print "sh:" name "=\"" env[name] "\""
-    if (name == "PATH") {
-        print "fish:" "set -xg " name " " env[name]
-    } else {
-        print "fish:" "set -xg " name " \"" env[name] "\""
-    }
+    print "fish:set " name " (echo \"" env[name] "\" | @SED@ -e 's| |:|g;" fisharraysed "')"
   }
   if (envempty) {
     print "generate_user_env.awk: no user environment script was generated" >"/dev/stderr"
