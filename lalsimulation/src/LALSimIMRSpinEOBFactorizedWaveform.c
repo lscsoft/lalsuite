@@ -1,4 +1,4 @@
-/*
+ƒ/*
 *  Copyright (C) 2010 Craig Robinson, Yi Pan, Prayush Kumar, Andrea Taracchini
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -151,7 +151,7 @@ XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
   eta = params->eobParams->eta;
 
   /* Check our eta was sensible */
-   if (eta > 0.25 + 1e-4) {
+   if (eta > 0.25 && eta < 0.25 +1e-4) {
         eta = 0.25;
    }
   if (eta > 0.25)
@@ -1324,7 +1324,7 @@ XLALSimIMRSpinEOBGetSpinFactorizedWaveform (COMPLEX16 * restrict hlm,
   eta = params->eobParams->eta;
 
   /* Check our eta was sensible */
-  if (eta > 0.25 + 1e-4) {
+  if (eta > 0.25 && eta < 0.25 +1e-4) {
       eta = 0.25;
   }
   if (eta > 0.25)
