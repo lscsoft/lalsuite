@@ -591,15 +591,17 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   TL.idx = 0;
 
   /* allocate memory for the fdots */
-  if ((fdots = XLALCalloc(1, sizeof(*fdots))) == NULL) {
+  if ((fdots = XLALCalloc(power->length, sizeof(*fdots))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     XLAL_ERROR(XLAL_ENOMEM);
   }
-  if ((fdots->x = XLALCalloc(fgrid->segment[0]->ndim,sizeof(REAL8))) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
-    XLAL_ERROR(XLAL_ENOMEM);
+  for (i=0;i<power->length;i++) {
+    if ((fdots[i].x = XLALCalloc(fgrid->segment[0]->ndim,sizeof(REAL8))) == NULL) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
+    }
+    fdots[i].ndim = fgrid->segment[0]->ndim;
   }
-  fdots->ndim = fgrid->segment[0]->ndim;
 
   /* define the chi-squared threshold */
   /* REAL8 thr = gsl_cdf_chisq_Qinv(frac,2*power->length);
@@ -630,11 +632,11 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       INT4 idx = 0;
 
       /* compute instantaneous frequency derivitives corresponding to the current template for this segment */
-      XLALComputeBinaryFreqDerivitives(fdots,bintemp,tmid);
+      XLALComputeBinaryFreqDerivitives(&fdots[i],bintemp,tmid);
 
       /* find indices corresponding to the spin derivitive values for the segment power */
-      for (j=0;j<fdots->ndim;j++) {
-        UINT4 tempidx = 0.5 + (fdots->x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta;
+      for (j=0;j<fdots[i].ndim;j++) {
+        UINT4 tempidx = 0.5 + (fdots[i].x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta;
         idx += tempidx*fdotgrid->prod[j];
       }
 
@@ -679,7 +681,9 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   }
 
   /* free template memory */
-  XLALFree(fdots->x);
+  for (i=0;i<power->length;i++) {
+    XLALFree(fdots[i].x);
+  }
   XLALFree(fdots);
   XLALFree(TL.data);
   for (i=0;i<(UINT4)TL.n;i++) XLALFree(TL.params[i]);
