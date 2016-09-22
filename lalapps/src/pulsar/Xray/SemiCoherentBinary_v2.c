@@ -84,7 +84,6 @@ typedef struct {
   INT4 gpsend;                      /**< the max GPS time to include */
   INT4 seed;                        /**< fix the random number generator seed */
   REAL8 coverage;                   /**< random template bank coverage */
-  INT4 semi_ndim;                   /**< Dimensionality of semicoherent parameter space (0=auto) */
   INT4 blocksize;                  /**< the running median blocksize */
   INT4 ntoplist;                   /**< the number of results to record */
   INT4 tsft;                       /**< the length of the input sfts */
@@ -310,7 +309,7 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
 
   /* compute the fine grid on the binary parameters */
-  if (XLALComputeBinaryGridParams(&bingridparams,pspace.space,pspace.span,pspace.tseg,uvar.mismatch,uvar.coverage,uvar.semi_ndim)) {
+  if (XLALComputeBinaryGridParams(&bingridparams,pspace.space,pspace.span,pspace.tseg,uvar.mismatch,uvar.coverage)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryGridParams() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
@@ -454,7 +453,6 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->mismatch = 0.2;
   uvar->ntoplist = 10;
   uvar->coverage = -1;
-  uvar->semi_ndim = 0;
   uvar->blocksize = 100;
   uvar->tsft = 256;
   uvar->seed = 1;
@@ -484,7 +482,6 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(deltaorbphase,         REAL8, 'T', OPTIONAL, "The orbital phase uncertainty (cycles)");
   XLALRegisterUvarMember(mismatch,              REAL8, 'm', OPTIONAL, "The grid mismatch (0->1)");
   XLALRegisterUvarMember(coverage,              REAL8, 'c', OPTIONAL, "The random template coverage (0->1)");
-  XLALRegisterUvarMember(semi_ndim,             INT4, 'n', OPTIONAL, "Dimensionality of semicoherent parameter space (0=auto)");
   XLALRegisterUvarMember(blocksize,             INT4, 'r', OPTIONAL, "The running median block size");
   XLALRegisterUvarMember(tsft,                    INT4, 'S', OPTIONAL, "The length of the input SFTs in seconds");
   XLALRegisterUvarMember(ntoplist,                INT4, 'x', OPTIONAL, "output the top N results");
@@ -605,7 +602,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   LogPrintf(LOG_DEBUG,"%s : computed the threshold as %f\n",__func__,thr); */
 
   int (*getnext)(Template **temp,GridParameters *gridparams, ParameterSpace *space,void *);
-  UINT4 newmax = bingrid->max;
+  INT4 newmax = bingrid->max;
   ParameterSpace *temppspace = NULL;
   if (bingrid->Nr>0) {
     getnext = &XLALGetNextRandomBinaryTemplate;
@@ -657,7 +654,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     /* output status to screen */
     if ( (bintemp->currentidx == 0) || (floor(100.0*(REAL8)bintemp->currentidx/(REAL8)newmax) > (REAL8)percent) ) {
       percent = (UINT4)floor(100*(REAL8)bintemp->currentidx/(REAL8)newmax);
-      LogPrintf(LOG_NORMAL,"%s : completed %d%% (%u/%u)\n",__func__,percent,bintemp->currentidx,newmax);
+      LogPrintf(LOG_NORMAL,"%s : completed %d%% (%d/%d)\n",__func__,percent,bintemp->currentidx,newmax);
     }
 
   } /* end loop over templates */
