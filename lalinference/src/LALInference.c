@@ -112,6 +112,9 @@ LALInferenceThreadState *LALInferenceInitThread(void) {
     thread->temperature = 1.0;
     thread->creation_time = tv.tv_sec + tv.tv_usec/1E6;
     thread->currentPropDensity = -DBL_MAX;
+    thread->temp_swap_counter = 0;
+    thread->temp_swap_window = 50;
+    thread->temp_swap_accepts = XLALCalloc(thread->temp_swap_window, sizeof(INT4));
     thread->currentParams = XLALCalloc(1, sizeof(LALInferenceVariables));
     thread->algorithmParams = XLALCalloc(1, sizeof(LALInferenceVariables));
     thread->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));

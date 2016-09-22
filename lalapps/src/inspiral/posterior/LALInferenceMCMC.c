@@ -210,7 +210,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
         skip = atoi(ppt->value);
 
     /* Iterations between proposed temperature swaps */
-    INT4 Tskip = 500;
+    INT4 Tskip = 100;
     ppt = LALInferenceGetProcParamVal(command_line, "--temp-skip");
     if (ppt)
         Tskip = atoi(ppt->value);
@@ -227,6 +227,12 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
         ppt = LALInferenceGetProcParamVal(command_line, "--ntemps");
     if (ppt)
         ntemps = atoi(ppt->value);
+
+    /* Adapt temperature spacing to maintain uniform swap acceptance rate */
+    INT4 adapt_temps = 0;
+    ppt = LALInferenceGetProcParamVal(command_line, "--adapt-temps");
+    if (ppt)
+        adapt_temps = 1;
 
     /* Starting temperature of the ladder */
     REAL8 tempMin = 1.0;
@@ -283,6 +289,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     LALInferenceAddINT4Variable(algorithm_params, "mpirank", mpi_rank, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "mpisize", mpi_size, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "ntemps", ntemps, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddINT4Variable(algorithm_params, "adapt_temps", adapt_temps, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddREAL8Variable(algorithm_params, "temp_min", tempMin, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddREAL8Variable(algorithm_params, "temp_max", tempMax, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddINT4Variable(algorithm_params, "de_buffer_limit", de_buffer_limit, LALINFERENCE_PARAM_OUTPUT);
@@ -361,6 +368,7 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
     REAL8 trigSNR, networkSNRsqrd=0.0;
     REAL8 *ladder=NULL;
     INT4 flexible_tempmax=0;
+    INT4 adapt_temps;
     INT4 ntemps, ntemps_per_thread;
     INT4 mpi_rank, mpi_size;
     INT4 t;
@@ -369,6 +377,7 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
     mpi_rank = LALInferenceGetINT4Variable(runState->algorithmParams, "mpirank");
     mpi_size = LALInferenceGetINT4Variable(runState->algorithmParams, "mpisize");
 
+    adapt_temps = LALInferenceGetINT4Variable(runState->algorithmParams, "adapt_temps");
     ntemps = LALInferenceGetINT4Variable(runState->algorithmParams, "ntemps");
     tempMin = LALInferenceGetREAL8Variable(runState->algorithmParams, "temp_min");
     tempMax = LALInferenceGetREAL8Variable(runState->algorithmParams, "temp_max");
@@ -460,6 +469,11 @@ REAL8 *LALInferenceBuildHybridTempLadder(LALInferenceRunState *runState, INT4 nd
     ladder = XLALCalloc(ntemps, sizeof(REAL8));
     for (t=0; t<ntemps; ++t)
         ladder[t] = tempMin * pow(tempDelta, t);
+
+    /* If adapting temperatures and user didn't specify a max, set the hottest temperature
+     * to infinity */
+    if (adapt_temps && !LALInferenceGetProcParamVal(runState->commandLine, "--temp-max"))
+        ladder[ntemps-1] = INFINITY;
 
     return ladder;
 }

@@ -1,1 +1,0 @@
-../lal/generate_user_env.awk

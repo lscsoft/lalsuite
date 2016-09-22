@@ -28,6 +28,7 @@ include/lal/header-link-stamp
 lalinference-*.tar.xz
 lalinference-user-env.csh
 lalinference-user-env.sh
+lalinference-user-env.fish
 lalinference-user-env.shell
 lalinference.spec
 libtool

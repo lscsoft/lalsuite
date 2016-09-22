@@ -1,3 +1,5 @@
+include $(top_srcdir)/gnuscripts/lalsuite_top.am
+
 EXTRA_DIST += README
 
 if HAVE_GIT_REPO
@@ -7,23 +9,6 @@ if HAVE_GIT_REPO
 $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(SHELL) ./00boot
 endif # HAVE_GIT_REPO
-
-BUILT_SOURCES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh
-sysconf_DATA += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh
-MOSTLYCLEANFILES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.shell
-EXTRA_DIST += generate_user_env.awk
-
-$(PACKAGE)-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
-	$(AM_V_GEN)if echo "$(user_environment)" | $(AWK) -f $(srcdir)/generate_user_env.awk >$@; then \
-		exit 0; \
-	else \
-		rm -f $@; \
-		exit 1; \
-	fi
-$(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh: $(PACKAGE)-user-env.shell
-	$(AM_V_GEN)prefix=`echo "$@" | $(SED) -e 's|.*\.||'`; \
-	echo "# source this file to access $(PACKAGE_NAME)" >$@; \
-	$(SED) -n -e "s|[@]SED[@]|$(SED)|g;s|^$$prefix:||p" $< >>$@
 
 EXTRA_DIST += AUTHORS
 
@@ -35,26 +20,3 @@ AUTHORS: force-author-generation
 	$(AM_V_GEN)export LC_ALL=C; since=c31bce07b892efeab430bfe1ce2bf2c758107776; \
 	( cd $(srcdir) && cat .AUTHORS && git log --pretty="%aN" $${since}..HEAD -- . 2>/dev/null ) | $(SED) -e '/^UNKNOWN/d' | sort -f -u > $@
 endif # HAVE_GIT_REPO
-
-.PHONY: print-build-success
-all-local: print-build-success
-print-build-success:
-	@echo "";\
-	echo "==================================================";\
-	echo "$(PACKAGE_NAME) has now been successfully built.";\
-	echo "Now run 'make install' to install $(PACKAGE_NAME).";\
-	echo "==================================================";\
-	echo ""
-.PHONY: print-install-success
-install-exec-local: print-install-success
-print-install-success:
-	@echo "";\
-	echo "==================================================";\
-	echo "$(PACKAGE_NAME) has now been successfully installed.";\
-	echo "To set up your environment, please add the line";\
-	echo "  . $(sysconfdir)/$(PACKAGE)-user-env.sh";\
-	echo "to ~/.profile for Bourne shells (e.g. bash), or";\
-	echo "  source $(sysconfdir)/$(PACKAGE)-user-env.csh";\
-	echo "to ~/.login for C shells (e.g. tcsh).";\
-	echo "==================================================";\
-	echo ""

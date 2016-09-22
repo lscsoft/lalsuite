@@ -28,6 +28,7 @@ include/lal/header-link-stamp
 lalmetaio-*.tar.xz
 lalmetaio-user-env.csh
 lalmetaio-user-env.sh
+lalmetaio-user-env.fish
 lalmetaio-user-env.shell
 lalmetaio.spec
 libtool

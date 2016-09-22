@@ -1,3 +1,9 @@
+lalpulsar (1.14.0.1-1) UNRELEASED; urgency=medium
+
+  * Add python3 package
+
+ -- Leo Singer <leo.singer@ligo.org>  Fri, 15 Jul 2016 00:03:38 -0400
+
 lalpulsar (1.14.0-1) unstable; urgency=low
 
   * LALPulsar 1.14.0

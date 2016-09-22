@@ -1,4 +1,1 @@
-usr/lib/python*/dist-packages/lal/*.py
-usr/lib/python*/dist-packages/lal/spectrum/*.py
-usr/lib/python*/dist-packages/lal/utils/*.py
-usr/lib/python*/dist-packages/lal/_lal.so*
+usr/lib/python2*

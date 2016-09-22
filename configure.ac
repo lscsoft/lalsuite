@@ -21,6 +21,10 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 # use silent build rules
 AM_SILENT_RULES([yes])
 
+# check for programs
+AC_PROG_AWK
+AC_PROG_SED
+
 # provide LAL library enable/disable options
 LALSUITE_ENABLE_ALL_LAL
 lal=true
@@ -40,7 +44,6 @@ LALSUITE_ENABLE_LALAPPS
 LALSUITE_ENABLE_DOXYGEN
 LALSUITE_ENABLE_MODULE([DOXYGEN])
 AS_IF([test "x${doxygen}" = xtrue],[
-  AC_PROG_SED
   AC_CONFIG_FILES([index.html:gnuscripts/lalsuite_index.html.in])
   AC_SUBST([DOXYGEN_PACKAGE_LINKS],[])
   AM_SUBST_NOTMAKE([DOXYGEN_PACKAGE_LINKS])

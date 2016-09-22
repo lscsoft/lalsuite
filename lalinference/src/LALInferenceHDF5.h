@@ -17,27 +17,28 @@
  *  MA  02111-1307  USA
  */
 
-
 #ifndef LALInferenceHDF5_h
 #define LALInferenceHDF5_h
 
 #include <lal/LALInference.h>
 #include <lal/H5FileIO.h>
 
-int LALInferenceH5VariablesArrayToDataset(LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N, const char *TableName);
+int LALInferenceH5VariablesArrayToDataset(
+    LALH5File *h5file, LALInferenceVariables *const *const varsArray, UINT4 N,
+    const char *TableName);
 
-int LALInferenceH5DatasetToVariablesArray(LALH5Dataset *dataset, LALInferenceVariables ***varsArray, UINT4 *N);
-
+int LALInferenceH5DatasetToVariablesArray(
+    LALH5Dataset *dataset, LALInferenceVariables ***varsArray, UINT4 *N);
 
 /**
  * Create a HDF5 heirarchy in the given LALH5File reference
  * /codename/runID/
  * Returns a LALH5File pointer to the runID group.
  */
-LALH5File *LALInferenceH5CreateGroupStructure(LALH5File *h5file, const char *codename, const char *runID);
+LALH5File *LALInferenceH5CreateGroupStructure(
+    LALH5File *h5file, const char *codename, const char *runID);
 
 extern const char LALInferenceHDF5PosteriorSamplesDatasetName[];
 extern const char LALInferenceHDF5NestedSamplesDatasetName[];
-
 
 #endif /* LALInferenceHDF5_h */

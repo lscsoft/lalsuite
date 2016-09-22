@@ -25,6 +25,7 @@ doxygen/test_doxygen.*
 lalapps-*.tar.xz
 lalapps-user-env.csh
 lalapps-user-env.sh
+lalapps-user-env.fish
 lalapps-user-env.shell
 lalapps.spec
 libtool

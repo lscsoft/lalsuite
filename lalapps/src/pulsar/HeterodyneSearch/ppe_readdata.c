@@ -246,7 +246,7 @@ detectors specified (no. dets = %d)\n", ml, ml, numDets);
       REAL8 pfreq = 0.;
 
       /* putting in pulsar frequency at f here */
-      if ( PulsarCheckParam(pulsar, "F0") ) { pfreq = PulsarGetREAL8Param( pulsar, "F0" ); }
+      if ( PulsarCheckParam(pulsar, "F") ) { pfreq = PulsarGetREAL8VectorParamIndividual( pulsar, "F0" ); }
       else {
         XLAL_ERROR_VOID( XLAL_EINVAL, "No source frequency given in parameter file" );
       }

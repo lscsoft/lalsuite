@@ -28,6 +28,7 @@ include/lal/header-link-stamp
 lalpulsar-*.tar.xz
 lalpulsar-user-env.csh
 lalpulsar-user-env.sh
+lalpulsar-user-env.fish
 lalpulsar-user-env.shell
 lalpulsar.spec
 libtool

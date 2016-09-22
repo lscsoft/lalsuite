@@ -511,17 +511,30 @@ class posteriors:
 
       for line in pf.readlines(): # read in priors
         priorlinevals = line.split()
-        if len(priorlinevals) != 4:
-          print("Error... there must be four values on each line of the prior file '%s'." % self._priorfile, file=sys.stderr)
+        if len(priorlinevals) < 4:
+          print("Error... there must be at least four values on each line of the prior file '%s'." % self._priorfile, file=sys.stderr)
           sys.exit(1)
 
-        if priorlinevals[1] not in ['uniform', 'fermidirac', 'gaussian']:
-          print("Error... the prior for '%s' must be either 'uniform', 'fermidirac', or 'gaussian'." % priorlinevals[0], file=sys.stderr)
+        if priorlinevals[1] not in ['uniform', 'fermidirac', 'gaussian', 'gmm', 'loguniform']:
+          print("Error... the prior for '%s' must be either 'uniform', 'loguniform', 'gmm', 'fermidirac', or 'gaussian'." % priorlinevals[0], file=sys.stderr)
           sys.exit(1)
 
-        ranges = [float(priorlinevals[2]), float(priorlinevals[3])]
-        if self._usegwphase and priorlinevals[0].lower() == 'phi0': # adjust phi0 priors if using GW phase
-          ranges = [2.*ranges[0], 2.*ranges[1]]
+        if priorlinevals[1] in ['uniform', 'fermidirac', 'gaussian', 'loguniform']:
+          if len(prirolinevals) != 4:
+            print("Error... there must be four values on each line of the prior file '%s'." % self._priorfile, file=sys.stderr)
+            sys.exit(1)
+          ranges = np.array([float(priorlinevals[2]), float(priorlinevals[3])]) # set ranges
+
+          if self._usegwphase and priorlinevals[0].lower() == 'phi0': # adjust phi0 priors if using GW phase
+            ranges = 2.*ranges
+        elif priorlinevals[1] is 'gmm':
+          nmodes = priorlinevals[2]
+          if len(priorlinevals) < 3 + nmodes*3:
+            print("Error... for 'gmm' prior there must be a mean, standard deviation and weight for each %d mode." % nmodes, file=sys.stderr)
+            sys.exit(1)
+          ranges = np.array([float(rv) for rv in priorlinevals[2:]])
+          if self._usegwphase and priorlinevals[0].lower() == 'phi0': # adjust phi0 priors if using GW phase
+            ranges = 2.*ranges[1:]
 
         self._prior_parameters[priorlinevals[0]] = {priorlinevals[1]: ranges}
 
@@ -555,6 +568,33 @@ class posteriors:
             if param not in self._parameters:
               print("Error... parameter '%s' is not defined in posteriors samples for '%s'." % (param, ifo), file=sys.stderr)
               sys.exit(1)
+
+        # rotate phi0 and psi into the 0->pi and 0->pi/2 ranges respectively if required (see Eqn. 45 of http://arxiv.org/abs/1501.05832)
+        if modeltype == 'source':
+          phi0samples = None
+          psisamples = None
+          if 'phi0' in pos.names:
+            phi0samples = pos['phi0'].samples
+          if 'psi' in pos.names:
+            psisamples = pos['psi'].samples
+
+          # rotate psi values by pi/2 increments into the 0->pi/2 range
+          if psisamples is not None:
+            for i in range(len(psisamples)):
+              nrots = np.abs(np.floor(psisamples[i]/(np.pi/2.))) # number of rotations to return to range
+              psisamples[i] = np.mod(psisamples[i], np.pi/2.)
+              if phi0samples is not None: # rotate phi0 appropriately
+                phi0samples[i] += nrots*(np.pi/2.)
+            psisnew = bppu.PosteriorOneDPDF('psi', psisamples)
+            pos.pop('psi')
+            pos.append(psisnew)
+
+          # make sure phi0 values are between 0->pi
+          if phi0samples is not None:
+            phi0samples = np.mod(phi0samples, np.pi)
+            phi0new = bppu.PosteriorOneDPDF('phi0', phi0samples)
+            pos.pop('phi0')
+            pos.append(phi0new)
 
         if self._usegwphase: # try switching phi0 to 2*phi0 if working with l=m=2 gravitational wave initial phase (e.g. for hardware injections)
           if 'phi0' in pos.names:
@@ -851,7 +891,7 @@ class posteriors:
         histops = {'histtype': 'stepfilled', 'color': coldict[plotifos[0]], 'edgecolor': coldict[plotifos[0]], 'linewidth': 1.5}
         truthops = {'color': 'black', 'markeredgewidth': 2}
       else:
-        histops = {'histtype': 'step', 'color': coldict[plotifos[0]], 'linewidth': 1}
+        histops = {'histtype': 'step', 'color': coldict[plotifos[0]], 'edgecolor': coldict[plotifos[0]], 'linewidth': 1}
         if whichtruth == plotifos[0]:
           truthops = {'color': 'black', 'markeredgewidth': 2}
         elif whichtruth == 'all':
@@ -866,7 +906,7 @@ class posteriors:
     # now add the rest to the plots
     if len(plotifos) > 1:
       for k, ifo in enumerate(plotifos[1:]):
-        histops = {'histtype': 'step', 'color': coldict[ifo], 'linewidth': 1}
+        histops = {'histtype': 'step', 'color': coldict[ifo], 'edgecolor': coldict[ifo], 'linewidth': 1}
         x = self._posteriors[ifo][parameters[0]].samples
         for param in parameters[1:]:
           x = np.hstack((x, self._posteriors[ifo][param].samples))
@@ -895,9 +935,9 @@ class posteriors:
           vertaxrange = sc.histvert[-1].get_ylim()
           yl = thisax.get_ylim()
           if yl[0] == vertaxrange[0] and yl[1] == vertaxrange[1]: # vertical histogram
-            self.plot_prior(thisax, self._prior_parameters[priorparam], truth=atruth, orientation='vertical')
+            self.plot_prior(thisax, priorparam, self._prior_parameters, truth=atruth, orientation='vertical')
           else:
-            self.plot_prior(thisax, self._prior_parameters[priorparam], truth=atruth, orientation='horizontal')
+            self.plot_prior(thisax, priorparam, self._prior_parameters, truth=atruth, orientation='horizontal')
 
     # output the plots
     if 'png' not in figformats and 'svg' not in figformats:
@@ -923,12 +963,12 @@ class posteriors:
         sys.exit(1)
       outfiles.append(outfile)
 
-    return outfiles # list of output figure filenames
+    return outfiles # list of output figure file names
 
-  def plot_prior(self, ax, prior, orientation='horizontal', truth=0., npoints=100):
+  def plot_prior(self, ax, param, prior, orientation='horizontal', truth=0., npoints=100):
     # plot the prior distribution (with truth subtracted if non-zero)
-    priortype = prior.keys()[0]
-    priorrange = prior.values()[0]
+    priortype = prior[param].keys()[0]
+    priorrange = prior[param].values()[0]
 
     if truth is None:
       truth = 0.
@@ -945,12 +985,54 @@ class posteriors:
     if priortype == 'uniform':
       vals = stats.uniform.pdf(valrange, priorrange[0]-truth, priorrange[1]-priorrange[0])
     elif priortype == 'gaussian':
+      # crude (not taking account of wrap-around) shift of phi0 and psi into 0->pi and 0->pi/2 ranges)
+      if param.lower() == 'psi':
+        priorrange[0] = np.mod(priorrange[0], np.pi/2.)
+      if param.lower() == 'phi0':
+        if self._usegwphase:
+          priorrange[0] = np.mod(priorrange[0], 2.*pi)
+        else:
+          priorrange[0] = np.mod(priorrange[0], pi)
+
       vals = stats.norm.pdf(valrange, priorrange[0]-truth, priorrange[1])
     elif priortype == 'fermidirac': # don't subtract truth from Fermi-Dirac as it should only be use for amplitude parameters anyway
       sigma = priorrange[0]
       r = priorrange[1]
       mu = sigma*r
       vals = 1./((sigma*np.log(1.+np.exp(r)))*(np.exp((valrange-mu)/sigma)+1.))
+    elif priortype == 'loguniform':
+      vals = np.zeros(len(valrange))
+      indices = (valrange >= priorrange[0]) & (valrange <= priorrange[1])
+      vals[indices] = 1./(valrange[indices]*np.log(priorrange[1]/priorrange[0]))
+    elif priortype == 'gmm':
+      vals = np.zeros(len(valrange))
+      nmodes = priorrange[0]
+      mmeans = priorrange[1:(1+3*nmodes):3]
+      mstddevs = priorrange[2:(1+3*nmodes):3]
+      mweights = priorrange[3:(1+3*nmodes):3]
+      # check if bounds are given
+      bmin = -np.inf
+      bmax = np.inf
+      if len(priorrange) > 1 + 3*nmodes: # there is a least a lower bound
+        bmin = priorrange[1+3*nmodes]
+        if len(priorrange) > 2 + 3*nmodes: # there is also an upper bound
+          bmax = priorrange[2+3*nmodes]
+      indices = (valrange >= bmin) & (valrange <= bmax)
+
+      # crude (not taking account of wrap-around) shift of phi0 and psi into 0->pi and 0->pi/2 ranges)
+      if param.lower() == 'psi':
+        mmeans = np.mod(mmeans, np.pi/2.)
+      if param.lower() == 'phi0':
+        if self._usegwphase:
+          mmeans = np.mod(mmeans, 2.*pi)
+        else:
+          mmeans = np.mod(mmeans, pi)
+
+      # create Gaussian mixture model
+      for i in range(nmodes):
+        vals[indices] += mweights[i]*stats.norm.pdf(valrange[indices], mmeans[i]-truth, mstddevs[i])
+      # normalise
+      vals = vals/np.trapz(vals, valrange)
     else:
       print("Error... prior type '%s' not recognised." % priortype, file=sys.stderr)
       sys.exit(1)

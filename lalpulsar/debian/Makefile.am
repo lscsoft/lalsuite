@@ -4,11 +4,11 @@ EXTRA_DIST = \
 	control \
 	copyright \
 	docs \
-	lalpulsar-dev.dirs \
 	lalpulsar-dev.install \
 	lalpulsar-octave.install \
 	lalpulsar-python.install \
-	lalpulsar.dirs \
+	lalpulsar-python3.install \
 	lalpulsar.install \
 	rules \
+	lalsuite.mk \
 	source/format

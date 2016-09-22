@@ -1,0 +1,50 @@
+BUILT_SOURCES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish
+sysconf_DATA += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish
+MOSTLYCLEANFILES += $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish $(PACKAGE)-user-env.shell
+EXTRA_DIST += gnuscripts/generate_user_env.awk
+
+$(PACKAGE)-user-env.shell: Makefile $(srcdir)/gnuscripts/generate_user_env.awk
+	$(AM_V_GEN)if echo "$(user_environment)" | $(AWK) -f $(srcdir)/gnuscripts/generate_user_env.awk >$@; then \
+		exit 0; \
+	else \
+		rm -f $@; \
+		exit 1; \
+	fi
+$(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish: $(PACKAGE)-user-env.shell
+	$(AM_V_GEN)prefix=`echo "$@" | $(SED) -e 's|.*\.||'`; \
+	echo "# source this file to access $(PACKAGE_NAME)" >$@; \
+	$(SED) -n -e "s|[@]SED[@]|$(SED)|g;s|^$$prefix:||p" $< >>$@
+
+installcheck-local: $(PACKAGE)-user-env.csh $(PACKAGE)-user-env.sh $(PACKAGE)-user-env.fish
+	@echo "Testing $(PACKAGE_NAME) user environment scripts"
+	@test ! -x /bin/bash || /bin/bash -c '. ./$(PACKAGE)-user-env.sh'
+	@test ! -x /usr/bin/tcsh || /usr/bin/tcsh -c 'source ./$(PACKAGE)-user-env.csh'
+	@test ! -x /usr/bin/fish || /usr/bin/fish -c '. ./$(PACKAGE)-user-env.fish'
+
+.PHONY: print-build-success
+all-local: print-build-success
+print-build-success:
+	@echo "";\
+	echo "==================================================";\
+	echo "$(PACKAGE_NAME) has now been successfully built.";\
+	echo "Now run 'make install' to install $(PACKAGE_NAME).";\
+	echo "==================================================";\
+	echo ""
+.PHONY: print-install-success
+install-exec-local: print-install-success
+print-install-success:
+	@echo "";\
+	echo "==================================================";\
+	echo "$(PACKAGE_NAME) has now been successfully installed.";\
+	echo "Now you may want to set up your environment.";\
+	echo "For Bourne shells (e.g. bash), run this command:";\
+	echo "  . $(sysconfdir)/$(PACKAGE)-user-env.sh";\
+	echo "or add it to ~/.profile.";\
+	echo "For C shells (e.g. tcsh), run this command:";\
+	echo "  source $(sysconfdir)/$(PACKAGE)-user-env.csh";\
+	echo "or add it to ~/.login.";\
+	echo "For the fish shell, run this command:";\
+	echo "  . $(sysconfdir)/$(PACKAGE)-user-env.fish";\
+	echo "or add it to ~/.config/fish/config.fish.";\
+	echo "==================================================";\
+	echo ""

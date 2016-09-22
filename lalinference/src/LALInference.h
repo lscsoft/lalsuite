@@ -580,6 +580,9 @@ tagLALInferenceThreadState
     gsl_rng *GSLrandom;
     REAL8 creation_time;
     struct tagLALInferenceRunState *parent; /** Pointer to the parent RunState of the thread.  e.g., Useful for getting data */
+    INT4 *temp_swap_accepts;
+    INT4 temp_swap_window;
+    INT4 temp_swap_counter;
 } LALInferenceThreadState;
 
 

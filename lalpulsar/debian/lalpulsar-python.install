@@ -1,2 +1,1 @@
-usr/lib/python*/dist-packages/lalpulsar/*.py
-usr/lib/python*/dist-packages/lalpulsar/_lalpulsar.so*
+usr/lib/python2*

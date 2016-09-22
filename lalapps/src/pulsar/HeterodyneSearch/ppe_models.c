@@ -73,8 +73,9 @@ void get_pulsar_model( LALInferenceModel *model ){
     else if ( LALInferenceCheckVariableNonFixed( model->params, "Q22" ) && LALInferenceCheckVariableNonFixed( model->params, "H0" ) ) {
       XLAL_ERROR_VOID( XLAL_EINVAL, "Error... cannot have both h0 and Q22 as variables." );
     }
-
-    add_pulsar_parameter( model->params, pars, "H0" );
+    else if ( LALInferenceCheckVariableNonFixed( model->params, "H0" ) ){
+      add_pulsar_parameter( model->params, pars, "H0" );
+    }
 
     /* use parameterisation from Ian Jones's original model */
     add_pulsar_parameter( model->params, pars, "I21" );
