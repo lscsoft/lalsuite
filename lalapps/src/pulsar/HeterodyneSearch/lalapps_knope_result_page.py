@@ -39,6 +39,7 @@ import datetime
 import json
 from scipy import stats
 import h5py
+import itertools
 
 import matplotlib
 matplotlib.use("Agg")
@@ -752,18 +753,34 @@ class posteriors:
     return snr/len(snrfiles)
 
   def _get_bayes_factors(self):
-    # get the Bayes factors for the signal
-    incoherent = 0. # the incoherent evidence
+    # get the Bayes factors (actually odds ratios with equal priors for all hypotheses) for the signal
+    nifos = 0
+    ifosn = [] # list of signal and noise evidences for each detector
     for ifo in self._ifos:
       self._Bsn[ifo], self._signal_evidence[ifo], self._noise_evidence[ifo], self._maxL[ifo] = self.get_bayes_factor(self._postfiles[ifo])
 
       if ifo != 'Joint':
-        incoherent += self._signal_evidence[ifo]
+        nifos += 1
+        ifosn.append({'s': self._signal_evidence[ifo], 'n': self._noise_evidence[ifo]})
 
-    # get the coherent vs incoherent noise evidence
+    # get all combinations of (incoherent) noise and signal hypotheses
+    combs = [list(i) for i in itertools.product(['s', 'n'], repeat=nifos)] # see e.g. http://stackoverflow.com/q/14931769/1862861
+    incoherentcombs = -np.inf
+    incoherentsig = 0. # incoherent signal in all detectors
+    for comb in combs:
+      # don't include the all noise hypotheses (as we have that already as self._noise_evidence['Joint'])
+      if comb.count('n') != len(comb): # see e.g. http://stackoverflow.com/a/3844948/1862861
+        combsum = 0.
+        for i, cval in enumerate(comb):
+          combsum += ifosn[i][cval]
+        incoherentcombs = np.logaddexp(incoherentcombs, combsum)
+        if comb.count('s') == len(comb):
+          incoherentsig = combsum
+
+    # get the coherent vs incoherent noise odds ratio (assuming all hypotheses have equal priors)
     if len(self._ifos) > 2 and 'Joint' in self._ifos:
-      self._Bci = self._signal_evidence['Joint'] - incoherent
-      self._Bcin = self._signal_evidence['Joint'] - np.logaddexp(incoherent, self._noise_evidence['Joint'])
+      self._Bci = self._signal_evidence['Joint'] - incoherentsig
+      self._Bcin = self._signal_evidence['Joint'] - np.logaddexp(incoherentcombs, self._noise_evidence['Joint'])
 
   def get_bayes_factor(self, postfile):
     # return the Bayes factor extracted from a posterior file
