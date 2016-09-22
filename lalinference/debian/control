@@ -2,7 +2,7 @@ Source: lalinference
 Section: science
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 9), pkg-config, dh-python, python-all-dev,
+Build-Depends: debhelper (>= 9), help2man, pkg-config, dh-python, python-all-dev,
   libchealpix-dev,
   zlib1g-dev, libgsl0-dev (>= 1.15), libmetaio-dev (>= 8.2), python-healpy (>= 1.9.1), python-h5py,
   swig (>= 3.0.7), octave3.2-headers | liboctave-dev, python-numpy, python-scipy,
