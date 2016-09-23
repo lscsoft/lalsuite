@@ -3,7 +3,7 @@ Section: science
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 9), dh-python, python-all-dev, python3-all-dev, pkg-config,
-  zlib1g-dev, libgsl-dev | libgsl0-dev (>= 1.9), swig (>= 3.0.7), octave3.2-headers | liboctave-dev,
+  zlib1g-dev, libgsl-dev | libgsl0-dev (>= 1.9), swig (>= 3.0.7), liboctave-dev,
   python-numpy, python3-numpy, libframe-dev (>= 8.0), libmetaio-dev (>= 8.2),
   lal-dev (>= @MIN_LAL_VERSION@~),
   lal-python (>= @MIN_LAL_VERSION@~),
