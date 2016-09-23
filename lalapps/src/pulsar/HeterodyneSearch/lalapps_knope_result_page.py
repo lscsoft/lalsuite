@@ -442,7 +442,7 @@ class posteriors:
   """
   Get sample posteriors and created a set of functions for outputting tables, plots and posterior statistics
   """
-  def __init__(self, postfiles, outputdir, harmonics=[2], modeltype='waveform', biaxial=False, usegwphase=False, parfile=None, priorfile=None, subtracttruths=False):
+  def __init__(self, postfiles, outputdir, harmonics=[2], modeltype='waveform', biaxial=False, usegwphase=False, parfile=None, priorfile=None, subtracttruths=False, showcontours=False):
     """
     Initialise with a dictionary keyed in detector names containing paths to the equivalent posterior samples
     file for that detector.
@@ -476,6 +476,7 @@ class posteriors:
     self._biaxial = biaxial                # whether the source is a biaxial star (rather than triaxial)
     self._usegwphase = usegwphase          # whether to use GW phase rather than rotational phase
     self._subtract_truths = subtracttruths # set whether to subtract true/heterodyned values of phase parameters from the distributions (so true/heterodyned value is at zero)
+    self._showcontours = showcontours      # set whether to show probability contours on 2d posterior plots
 
     # check if parameter file has been given
     if self._parfile is not None:
@@ -894,14 +895,14 @@ class posteriors:
     if plotifos[0] == 'Joint':
       histops = {'histtype': 'stepfilled', 'color': 'darkslategrey', 'edgecolor': coldict['Joint'], 'linewidth': 1.5}
       contourops = {'colors': coldict[plotifos[0]]}
-      showcontours = True
+      showcontours = self._showcontours
       if whichtruth == 'Joint' or whichtruth == 'all':
         truthops = {'color': 'black', 'markeredgewidth': 2}
       else:
         truthops = {}
       showpoints = jointsamples
     else:
-      showcontours = True
+      showcontours = self._showcontours
       contourops = {'colors': 'dark'+coldict[plotifos[0]]}
       showpoints = True
       if len(plotifos) == 1: # if just one detector use a filled histogram
@@ -1443,7 +1444,7 @@ class create_background(posteriors):
   """
   Get information (evidence ratios and SNRs) from any the background analyses
   """
-  def __init__(self, backgrounddirs, snrs, Bsn, outputdir, Bci=None, Bcin=None):
+  def __init__(self, backgrounddirs, snrs, Bsn, outputdir, Bci=None, Bcin=None, showcontours=True):
     # initialise with a dictionary (keyed to detectors) of directories containing the background analyses,
     # a dictionary of signal vs noise Bayes factors, a coherent vs incoherent Bayes factor and a coherent
     # vs incoherent or noise Bayes factor (all created from the posterior class)
@@ -1728,6 +1729,7 @@ indexpage = 'path_to_index_page'       # an optional path (relative to the base 
 [plotting]
 all_posteriors = False  # a boolean stating whether to show joint posterior plots of all parameters (default: False)
 subtract_truths = False # a boolean stating whether to subtract the true/heterodyned value from any phase parameters to centre the plot at zero for that value
+show_contours = False   # a boolean stating whether to show probabilty contours on 2D posterior plots (default: False)
 eps_output = False      # a boolean stating whether to also output eps versions of figures (png figures will automatically be produced)
 pdf_output = False      # a boolean stating whether to also output pdf versions of figures (png figures will automatically be produced)
 
@@ -1904,6 +1906,12 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
   except:
     subtracttruths = False
 
+  # check whether to show probability contours on 2D posterior plots
+  try:
+    showcontours = cp.getboolean('plotting', 'show_contours')
+  except:
+    showcontours = False
+
   figformat = ['png'] # default to outputting png versions of figures
   # check whether to (also) output figures as eps
   try:
@@ -2019,7 +2027,8 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
   # get posterior class (containing samples, sample plots and posterior plots)
   postinfo = posteriors(postfiles, outdir, harmonics=harmonics, modeltype=modeltype,
                         biaxial=biaxial, parfile=parfile, usegwphase=usegwphase,
-                        subtracttruths=subtracttruths, priorfile=priorfile)
+                        subtracttruths=subtracttruths, priorfile=priorfile,
+                        showcontours=showcontours)
 
   # create table of upper limits, SNR and evidence ratios
   htmlinput['limitstable'] = postinfo.create_limits_table(f0 , sdlim=sdlim, dist=dist, ul=upperlim)
