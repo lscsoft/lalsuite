@@ -928,7 +928,7 @@ class posteriors:
         x = self._posteriors[ifo][parameters[0]].samples
         for param in parameters[1:]:
           x = np.hstack((x, self._posteriors[ifo][param].samples))
-        showcontours = True
+        showcontours = self._showcontours
         contourops = {'colors': 'dark'+coldict[plotifos[k+1]]}
         if whichtruth == plotifos[k+1]:
           truthops = {'color': 'black', 'markeredgewidth': 2}
