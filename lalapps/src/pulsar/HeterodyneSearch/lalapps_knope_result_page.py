@@ -173,7 +173,7 @@ function toggle(id) {{
 
 def get_atnf_info(psr):
   """
-  Get the pulsar (psr) distance (DIST in kpc), proper motion corrected age (AGE_I) and any association
+  Get the pulsar (psr) distance (DIST in kpc), proper motion corrected period derivative (P1_I) and any association
   (ASSOC e.g. GC) from the ATNF catalogue.
   """
 
@@ -181,7 +181,7 @@ def get_atnf_info(psr):
 
   atnfversion = '1.54' # the latest ATNF version
   atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + atnfversion
-  atnfurl += '&Dist=Dist&Assoc=Assoc&Age_i=Age_i' # set parameters to get
+  atnfurl += '&Dist=Dist&Assoc=Assoc&P1_i=P1_i' # set parameters to get
   atnfurl += '&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&sort_attr=jname&sort_order=asc&condition=&pulsar_names=' + psrname
   atnfurl += '&ephemeris=selected&submit_ephemeris=Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=&coords_2='
   atnfurl += '&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=query'
@@ -196,7 +196,7 @@ def get_atnf_info(psr):
 
   # check whether information could be found and get distance, age and association from data
   dist = None
-  age = None
+  p1_I = None
   assoc = None
   for line in pdat:
     if 'WARNING' in line or 'not in catalogue' in line:
@@ -204,23 +204,23 @@ def get_atnf_info(psr):
     vals = line.split()
     if 'DIST' in vals[0]:
       dist = float(vals[1])
-    if 'AGE_I' in vals[0]:
+    if 'P1_I' in vals[0]:
       age = float(vals[1])
     if 'ASSOC' in vals[0]:
       assoc = vals[1]
 
-  return (dist, age, assoc)
+  return (dist, p1_I, assoc)
 
 
-def set_spin_down(age, assoc, f0, f1):
+def set_spin_down(p1_I, assoc, f0, f1):
   """
-  Set the spin-down of the source based on the instrinsic age (age) corrected for any proper motion/
-  globular cluster accelation if available, or if not give AND the pulsar is in a globular cluster base the
+  Set the spin-down of the source based on the intrinsic period derivative (p1_I) corrected for any proper motion/
+  globular cluster acceleration if available, or if not give AND the pulsar is in a globular cluster base the
   spin-down on assuming an age of 10^9 years. Otherwise just return the unadjusted spin-down.
   """
 
-  if age != None and age > 0.:
-    return -f0/(2.* age * 365.25 * 86400.)
+  if p1_I != None and p1_I > 0.:
+    return -p1_I*f0**2 # convert period derivative into frequency derivative
   elif assoc != None:
     if 'GC' in assoc: # check if a globular cluster pulsar
       return -f0/(2. * 1.e9 * 365.25 * 86400.)
@@ -1814,12 +1814,12 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
     priorfile = None
 
   # attempt to get pulsar distance, proper motion corrected age and any association (e.g. GC from the ATNF catalogue)
-  dist = age = assoc = sdlim = f1sd = None
+  dist = p1_I = assoc = sdlim = f1sd = None
   atnfurl = None
   if not injection:
     pinfo = get_atnf_info(pname)
     if pinfo != None:
-      dist, age, assoc = pinfo # unpack values
+      dist, p1_I, assoc = pinfo # unpack values
       atnfversion = '1.54'
       atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + atnfversion
       atnfurl += '&startUserDefined=true&pulsar_names=' + re.sub('\+', '%2B', pname)
@@ -1829,8 +1829,8 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
     if par['DIST']:
       dist = par['DIST']
 
-    # set the corrected spin-down value (based on intrinsic age or using consverative value from GC pulsars)
-    f1sd = set_spin_down(age, assoc, f0, f1)
+    # set the corrected spin-down value (based on intrinsic period derivative or using conservative age (10^9) value from GC pulsars)
+    f1sd = set_spin_down(p1_I, assoc, f0, f1)
 
     # get spin-down limit
     if f1sd != None and dist != None:
@@ -2087,6 +2087,7 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
   info['Pulsar data']['F1ROT'] = f1
   info['Pulsar data']['F1GW'] = 2.*f1 # assuming l=m=2 mode emission
   info['Pulsar data']['F1SD'] = f1sd # acceleration corrected f1
+  info['Pulsar data']['P1_I'] = p1_I # intrinsic period derivative (corrected for proper motion/GC acceleration effects)
   info['Pulsar data']['DIST'] = dist
   info['Pulsar data']['RA'] = par['RA_RAD']   # right ascension in radians
   info['Pulsar data']['DEC'] = par['DEC_RAD'] # declination in radians
