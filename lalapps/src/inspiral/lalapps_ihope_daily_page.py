@@ -29,11 +29,7 @@ from glue.segments import segment, segmentlist
 
 from glue.segmentdb import segmentdb_utils
 
-try:
-    import sqlite3
-except ImportError:
-    # pre 2.5.x
-    from pysqlite2 import dbapi2 as sqlite3
+import sqlite3
 
 params = {'axes.labelsize'  : 12,
           'font.size'       : 12,

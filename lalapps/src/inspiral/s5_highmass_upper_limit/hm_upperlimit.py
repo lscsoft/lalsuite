@@ -2,11 +2,7 @@
 import scipy
 from scipy import interpolate
 import numpy
-try:
-        import sqlite3
-except ImportError:
-        # pre 2.5.x
-        from pysqlite2 import dbapi2 as sqlite3
+import sqlite3
 from math import *
 import sys
 import glob

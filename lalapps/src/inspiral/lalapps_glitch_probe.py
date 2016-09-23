@@ -1,13 +1,7 @@
 import sys
 import os
 import glob
-
-try:
-    import sqlite3
-except ImportError:
-    # pre 2.5.x
-    from pysqlite2 import dbapi2 as sqlite3
-
+import sqlite3
 from optparse import OptionParser
 
 from matplotlib import use
