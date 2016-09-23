@@ -266,7 +266,7 @@ static void PrintInfoStringAttribute(LALH5File *file, const char attribute[]) {
   int len = XLALH5FileQueryStringAttributeValue(NULL, 0, file, attribute) + 1;
   char *str = XLALMalloc(len);
   XLALH5FileQueryStringAttributeValue(str, len, file, attribute);
-  XLALPrintInfo("%s\n", str);
+  XLALPrintInfo("%s:\n%s\n", attribute, str);
   LALFree(str);
 }
 

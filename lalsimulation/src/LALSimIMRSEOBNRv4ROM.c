@@ -493,14 +493,15 @@ int SEOBNRROMdataDS_Init(
   snprintf(path, size, "%s/%s", dir, ROMDataHDF5);
   LALH5File *file = XLALH5FileOpen(path, "r");
 
-  ret = ROM_check_version_number(file, ROMDataHDF5_VERSION_MAJOR, ROMDataHDF5_VERSION_MINOR, ROMDataHDF5_VERSION_MICRO);
+  XLALPrintInfo("ROM metadata\n============\n");
   PrintInfoStringAttribute(file, "Email");
   PrintInfoStringAttribute(file, "Description");
+  ret = ROM_check_version_number(file, ROMDataHDF5_VERSION_MAJOR, ROMDataHDF5_VERSION_MINOR, ROMDataHDF5_VERSION_MICRO);
 
   XLALFree(path);
   XLALH5FileClose(file);
 
-  ret = SEOBNRROMdataDS_Init_submodel(&(romdata)->sub1, dir, "sub1");
+  ret |= SEOBNRROMdataDS_Init_submodel(&(romdata)->sub1, dir, "sub1");
   if (ret==XLAL_SUCCESS) XLALPrintInfo("%s : submodel 1 loaded sucessfully.\n", __func__);
 
   ret |= SEOBNRROMdataDS_Init_submodel(&(romdata)->sub2, dir, "sub2");
