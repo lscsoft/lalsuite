@@ -172,8 +172,15 @@ def read_samples(filename, path=None, tablename=POSTERIOR_SAMPLES):
         table = Table.read(table)
 
     # Restore vary types.
-    for i, column in enumerate(table.columns.values()):
-        column.meta['vary'] = table.meta['FIELD_{0}_VARY'.format(i)]
+    try:
+        for i, column in enumerate(table.columns.values()):
+            column.meta['vary'] = table.meta['FIELD_{0}_VARY'.format(i)]
+    except:
+        try: # try old method (for legacy files)
+            for column, vary in zip(table.columns.values(), table.meta.pop('vary')):
+                column.meta['vary'] = vary
+        except:
+            raise IOError, "Problem reading from hdf5 file"
 
     # Restore fixed columns from table attributes.
     for key, value in table.meta.items():
