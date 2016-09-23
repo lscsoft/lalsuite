@@ -587,6 +587,15 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     }
   }
 
+  /* check that coherent grids step by 1 in frequency */
+  for (i=0;i<power->length;i++) {
+    GridParameters *fdotgrid = fgrid->segment[i];
+    if ( fdotgrid->prod[0] != 1 ) {
+      LogPrintf(LOG_CRITICAL,"%s : coherent grid step does not equal 1\n",__func__);
+      XLAL_ERROR(XLAL_EINVAL);
+    }
+  }
+
   /* allocate memory for the results toplist */
   TL.n = ntoplist;
   if ((TL.data = (REAL8 *)XLALCalloc(TL.n,sizeof(REAL8))) == NULL) {
@@ -693,14 +702,14 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
         REAL4DemodulatedPower *currentpower = power->segment[i];
         GridParameters *fdotgrid = fgrid->segment[i];
 
-        /* find 1-D index corresponding to the spin derivitive values for the segment power */
-        INT4 idx = ( fdots[i].idx[0] + x ) * fdotgrid->prod[0];
+        /* find starting 1-D index corresponding to the spin derivitive values for the segment power */
+        INT4 idx0 = fdots[i].idx[0];
         for (j=1;j<fdots[i].ndim;j++) {
-          idx += fdots[i].idx[j] * fdotgrid->prod[j];
+          idx0 += fdots[i].idx[j] * fdotgrid->prod[j];
         }
 
         /* define the power at this location in this segment */
-        logLratiosum += currentpower->data->data[idx]; /* /norm; */
+        logLratiosum += currentpower->data->data[idx0 + x]; /* /norm; */
 
       } /* end loop over segments */
       /*************************************************************************************/
