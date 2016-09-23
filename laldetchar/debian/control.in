@@ -27,7 +27,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
   libglib2.0-0,
   lal (>= @MIN_LAL_VERSION@~),
   lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
-  lalsimulation (>= @MIN_LALSIMULTION_VERSION@~),
+  lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
   lalburst (>= @MIN_LALBURST_VERSION@~)
 Description: LSC Algorithm Library Detector Characterisation
  The LSC Algorithm Detector Characterisation Library for gravitational
