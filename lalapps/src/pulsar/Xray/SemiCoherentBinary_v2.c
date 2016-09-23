@@ -96,7 +96,7 @@ typedef struct {
 } UserInput_t;
 
 typedef struct {
-  REAL8 *data;
+  REAL4 *data;
   INT4 idx;
   INT4 n;
   REAL8 **params;
@@ -113,7 +113,7 @@ int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar, CHAR **clargs);
 int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_xbins);
 int XLALDefineBinaryParameterSpace(REAL8Space **, LIGOTimeGPS, REAL8, UserInput_t *);
 int XLALOpenSemiCoherentResultsFile(FILE **,CHAR *,ParameterSpace *,CHAR *,UserInput_t *);
-int XLALtoplist(REAL8 x,Template *params,toplist *TL);
+int XLALtoplist(REAL4 x,Template *params,toplist *TL);
 
 /***********************************************************************************************/
 /* empty initializers */
@@ -598,7 +598,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
   /* allocate memory for the results toplist */
   TL.n = ntoplist;
-  if ((TL.data = (REAL8 *)XLALCalloc(TL.n,sizeof(REAL8))) == NULL) {
+  if ((TL.data = (REAL4 *)XLALCalloc(TL.n,sizeof(REAL4))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     XLAL_ERROR(XLAL_ENOMEM);
   }
@@ -694,7 +694,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       /* set binary template frequency */
       bintemp->x[0] = nu0 + dfreq*x;
 
-      REAL8 logLratiosum = 0.0;                       /* initialise likelihood ratio */
+      REAL4 logLratiosum = 0.0;                       /* initialise likelihood ratio */
 
       /** loop over segments **********************************************************************************/
       for (i=0;i<power->length;i++) {
@@ -770,7 +770,7 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
 }
 
-int XLALtoplist(REAL8 x,		/**< [in] the data to add to the toplist */
+int XLALtoplist(REAL4 x,		/**< [in] the data to add to the toplist */
                 Template *params,       /**< [in] the parameters for this result */
                 toplist *TL             /**< [in/out] the toplist */
                 )
@@ -797,7 +797,7 @@ int XLALtoplist(REAL8 x,		/**< [in] the data to add to the toplist */
   if (TL->idx<TL->n-1) TL->idx++;
 
   /* find current lowest */
-  REAL8 lowest = TL->data[TL->n-1];
+  REAL4 lowest = TL->data[TL->n-1];
   INT4 li = TL->n-1;
   for (i=0;i<TL->n;i++) {
     if (TL->data[i]<lowest) {
@@ -812,7 +812,7 @@ int XLALtoplist(REAL8 x,		/**< [in] the data to add to the toplist */
     TL->params[TL->n-1][i] = TL->params[li][i];
     TL->params[li][i] = oldparam;
   }
-  REAL8 old = TL->data[TL->n-1];
+  REAL4 old = TL->data[TL->n-1];
   TL->data[TL->n-1] = lowest;
   TL->data[li] = old;
 
