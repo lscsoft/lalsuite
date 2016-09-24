@@ -3,7 +3,6 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
-	docs \
 	lalburst-dev.install \
 	lalburst.install \
 	lalburst-octave.install \

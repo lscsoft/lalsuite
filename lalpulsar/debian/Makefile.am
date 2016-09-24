@@ -3,7 +3,6 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
-	docs \
 	lalpulsar-dev.install \
 	lalpulsar-octave.install \
 	lalpulsar-python.install \

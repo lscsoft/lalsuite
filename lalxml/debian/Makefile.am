@@ -3,7 +3,6 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
-	docs \
 	lalxml-dev.install \
 	lalxml-octave.install \
 	lalxml-python.install \

@@ -3,7 +3,6 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
-	docs \
 	lal-dev.install \
 	lal.install \
 	lal-octave.install \
