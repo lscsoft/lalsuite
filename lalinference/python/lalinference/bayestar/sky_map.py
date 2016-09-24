@@ -87,6 +87,7 @@ def emcee_sky_map(
     # are ra, sin(dec).
     theta = np.arccos(chain[:, 1])
     phi = chain[:, 0]
+    dist = chain[:, 2]
 
     # Do adaptive histogram binning if the user has not selected the KDE,
     # or if the user has selected the KDE but we need to guess the resolution.
@@ -101,13 +102,13 @@ def emcee_sky_map(
         nside *= 2
 
     if kde:
-        from sky_area.sky_area_clustering import ClusteredSkyKDEPosterior
+        from sky_area.sky_area_clustering import Clustered3DKDEPosterior
         ra = phi
         dec = 0.5 * np.pi - theta
-        pts = np.column_stack((ra, dec))
+        pts = np.column_stack((ra, dec, dist))
         # Pass a random subset of 1000 points to the KDE, to save time.
         pts = np.random.permutation(pts)[:1000, :]
-        prob = ClusteredSkyKDEPosterior(pts).as_healpix(nside)
+        prob = Clustered3DKDEPosterior(pts).as_healpix(nside)
 
     # Optionally save posterior sample chain to file.
     # Read back in with np.load().
@@ -257,9 +258,6 @@ def ligolw_sky_map(
         prob = _sky_map.toa_phoa_snr(
             min_distance, max_distance, prior_distance_power, gmst, sample_rate,
             acors, responses, locations, horizons, toas, phoas, snrs, nside).T
-        prob[1] *= max_horizon * fudge
-        prob[2] *= max_horizon * fudge
-        prob[3] /= np.square(max_horizon * fudge)
     elif method == "toa_snr_mcmc":
         prob = emcee_sky_map(
             logl=_sky_map.log_likelihood_toa_snr,
@@ -286,6 +284,9 @@ def ligolw_sky_map(
             max_horizon=max_horizon)
     else:
         raise ValueError("Unrecognized method: %s" % method)
+    prob[1] *= max_horizon * fudge
+    prob[2] *= max_horizon * fudge
+    prob[3] /= np.square(max_horizon * fudge)
     end_time = time.time()
 
     # Find elapsed run time.
