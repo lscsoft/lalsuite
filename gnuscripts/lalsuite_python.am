@@ -66,7 +66,7 @@ $(pybin_scripts): Makefile pyscripts-all-local
 	echo "PYTHONPATH=\`echo \"\$${PYTHONPATH}\" | $(SED) -e \"s|\$${pypath}:||g;\"\`" >> $@.tmp; \
 	echo "PYTHONPATH=\"\$${pypath}:\$${PYTHONPATH}\"" >> $@.tmp; \
 	echo "export PYTHONPATH" >> $@.tmp; \
-	echo "exec $(SHELL) $(abs_top_builddir)/libtool --mode=execute $(patsubst %,-dlopen %,$(abspath $(LDADD))) $(PYTHON) \"\$${pyscript}\" \"\$$@\"" >> $@.tmp; \
+	echo "exec $(PYTHON) \"\$${pyscript}\" \"\$$@\"" >> $@.tmp; \
 	echo "exit 1" >> $@.tmp; \
 	chmod +x $@.tmp || exit 1; \
 	mv -f $@.tmp $@
