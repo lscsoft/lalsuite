@@ -648,6 +648,8 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
   INT4 max_tot_xbins = 0;
 
+  REAL4 *logLratiosumvec = NULL;
+
   /* single loop over binary templates */
   while (getnext(&bintemp,bingrid,temppspace,r)) {
 
@@ -684,7 +686,42 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     /*************************************************************************************/
 
     const INT4 tot_xbins = 1 + left_xbins + right_xbins;
-    max_tot_xbins = GSL_MAX( max_tot_xbins, tot_xbins );
+    if ( max_tot_xbins < tot_xbins ) {
+      max_tot_xbins = tot_xbins;
+
+      /* reallocate logLratiosumvec */
+      logLratiosumvec = XLALRealloc( logLratiosumvec, max_tot_xbins * sizeof( *logLratiosumvec ) );
+      XLAL_CHECK( logLratiosumvec != NULL, XLAL_ENOMEM );
+
+    }
+
+    /* initialise logLratiosumvec */
+    memset( logLratiosumvec, 0, tot_xbins * sizeof( *logLratiosumvec ) );
+
+    /** loop over segments **********************************************************************************/
+    for (i=0;i<power->length;i++) {
+
+      REAL4DemodulatedPower *currentpower = power->segment[i];
+      GridParameters *fdotgrid = fgrid->segment[i];
+
+      /* find starting 1-D index corresponding to the spin derivitive values for the segment power */
+      INT4 idx0 = fdots[i].idx[0] - left_xbins;
+      for (j=1;j<fdots[i].ndim;j++) {
+        idx0 += fdots[i].idx[j] * fdotgrid->prod[j];
+      }
+
+      /* define the power at this location in this segment */
+      for (INT4 k = 0; k < tot_xbins; ++k) {
+        logLratiosumvec[k] += currentpower->data->data[idx0 + k]; /* /norm; */
+      }
+
+    } /* end loop over segments */
+    /*************************************************************************************/
+
+    /* make it a true chi-squared variable */
+    for (INT4 k = 0; k < tot_xbins; ++k) {
+      logLratiosumvec[k] *= 2.0;
+    }
 
     /* save central binary template frequency */
     const REAL8 nu0 = bintemp->x[0];
@@ -694,28 +731,8 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       /* set binary template frequency */
       bintemp->x[0] = nu0 + dfreq*x;
 
-      REAL4 logLratiosum = 0.0;                       /* initialise likelihood ratio */
-
-      /** loop over segments **********************************************************************************/
-      for (i=0;i<power->length;i++) {
-
-        REAL4DemodulatedPower *currentpower = power->segment[i];
-        GridParameters *fdotgrid = fgrid->segment[i];
-
-        /* find starting 1-D index corresponding to the spin derivitive values for the segment power */
-        INT4 idx0 = fdots[i].idx[0];
-        for (j=1;j<fdots[i].ndim;j++) {
-          idx0 += fdots[i].idx[j] * fdotgrid->prod[j];
-        }
-
-        /* define the power at this location in this segment */
-        logLratiosum += currentpower->data->data[idx0 + x]; /* /norm; */
-
-      } /* end loop over segments */
-      /*************************************************************************************/
-
       /* output semi-coherent statistic for this template if it exceeds the threshold*/
-      logLratiosum *= 2.0;     /* make it a true chi-squared variable */
+      const REAL4 logLratiosum = logLratiosumvec[x + left_xbins];
       mean += logLratiosum;
       var += logLratiosum*logLratiosum;
       ++Ntemp;
@@ -764,6 +781,8 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   XLALFree(TL.data);
   for (i=0;i<(UINT4)TL.n;i++) XLALFree(TL.params[i]);
   XLALFree(TL.params);
+
+  XLALFree(logLratiosumvec);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
