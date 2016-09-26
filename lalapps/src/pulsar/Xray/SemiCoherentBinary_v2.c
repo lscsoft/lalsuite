@@ -61,6 +61,7 @@
 #include <lal/ComplexFFT.h>
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
+#include <lal/VectorMath.h>
 #include <lalapps.h>
 
 #include "SemiCoherent.h"
@@ -695,9 +696,6 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
 
     }
 
-    /* initialise logLratiosumvec */
-    memset( logLratiosumvec, 0, tot_xbins * sizeof( *logLratiosumvec ) );
-
     /** loop over segments **********************************************************************************/
     for (i=0;i<power->length;i++) {
 
@@ -711,17 +709,17 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       }
 
       /* define the power at this location in this segment */
-      for (INT4 k = 0; k < tot_xbins; ++k) {
-        logLratiosumvec[k] += currentpower->data->data[idx0 + k]; /* /norm; */
+      if (i==0) {
+        memcpy( logLratiosumvec, &currentpower->data->data[idx0], tot_xbins * sizeof( *logLratiosumvec ) );
+      } else {
+        XLAL_CHECK( XLALVectorAddREAL4( logLratiosumvec, logLratiosumvec, &currentpower->data->data[idx0], tot_xbins ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
     } /* end loop over segments */
     /*************************************************************************************/
 
     /* make it a true chi-squared variable */
-    for (INT4 k = 0; k < tot_xbins; ++k) {
-      logLratiosumvec[k] *= 2.0;
-    }
+    XLAL_CHECK( XLALVectorScaleREAL4( logLratiosumvec, 2.0, logLratiosumvec, tot_xbins ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     /* save central binary template frequency */
     const REAL8 nu0 = bintemp->x[0];
