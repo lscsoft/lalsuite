@@ -147,8 +147,8 @@ CoincDefToTableNames = {
 #
 
 IDQTableByName = {
-    table.StripTableName(IDQGlitchTable.tableName): IDQGlitchTable,
-    table.StripTableName(OVLDataTable.tableName): OVLDataTable
+    table.Table.TableName(IDQGlitchTable.tableName): IDQGlitchTable,
+    table.Table.TableName(OVLDataTable.tableName): OVLDataTable
 }
 
 TableByName = dict(lsctables.TableByName, **IDQTableByName)
@@ -176,7 +176,7 @@ def use_in(ContentHandler):
     ContentHandler = table.use_in(ContentHandler)
 
     def startTable(self, parent, attrs, __orig_startTable = ContentHandler.startTable):
-        name = table.StripTableName(attrs[u"Name"])
+        name = table.Table.TableName(attrs[u"Name"])
         if name in TableByName:
             return TableByName[name](attrs)
         return __orig_startTable(self, parent, attrs)
@@ -219,7 +219,7 @@ def use_in_db(ContentHandler):
         ContentHandler = use_in(ContentHandler)
 
         def startTable(self, parent, attrs):
-                name = table.StripTableName(attrs[u"Name"])
+                name = table.Table.TableName(attrs[u"Name"])
                 if name in dbtables.TableByName:
                         return dbtables.TableByName[name](attrs, connection = self.connection)
                 elif name in IDQTableByName:
@@ -279,8 +279,8 @@ def coinc_to_ovl_data(xmldoc):
         try: connected_events_dict[row.coinc_event_id].append(row)
         except: connected_events_dict[row.coinc_event_id] = [row]
     
-    glitch_table_name =  table.StripTableName(lsctables.IDQGlitchTable.tableName)
-    ovl_data_table_name = table.StripTableName(lsctables.OVLDataTable.tableName)
+    glitch_table_name =  table.Table.TableName(lsctables.IDQGlitchTable.tableName)
+    ovl_data_table_name = table.Table.TableName(lsctables.OVLDataTable.tableName)
      
     glitch_ovl_pairs = []
     for coinc_id in ovl_coinc_ids:
@@ -345,8 +345,8 @@ def coinc_to_triggers(xmldoc, trigger_types):
         try: connected_events_dict[row.coinc_event_id].append(row)
         except: connected_events_dict[row.coinc_event_id] = [row]
     
-    glitch_table_name = table.StripTableName(lsctables.IDQGlitchTable.tableName)
-    sngl_burst_table_name = table.StripTableName(lsctables.SnglBurstTable.tableName)
+    glitch_table_name = table.Table.TableName(lsctables.IDQGlitchTable.tableName)
+    sngl_burst_table_name = table.Table.TableName(lsctables.SnglBurstTable.tableName)
     
     glitch_trig_tuples = []
     for coinc_id in trig_coinc_ids:

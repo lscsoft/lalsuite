@@ -94,16 +94,16 @@ def remove_redundant_entries(connection, cursor, verbose = False):
         return 
 
     # clean up process  and process params tables
-    if (table.StripTableName(lsctables.ProcessTable.tableName) in tablenames) \
-        and (table.StripTableName(lsctables.ProcessParamsTable.tableName) in tablenames):
+    if (table.Table.TableName(lsctables.ProcessTable.tableName) in tablenames) \
+        and (table.Table.TableName(lsctables.ProcessParamsTable.tableName) in tablenames):
         if verbose:
             print "Removing redundant entries from process and process_params tables ..."
         # get the lowest process_id from process table
         min_process_id = cursor.execute('''SELECT MIN(process_id) FROM process''').fetchone()[0]
         # delete redundant rows from process and process_params table that corresponds to different process ids
-        cursor.execute('''DELETE FROM ''' + table.StripTableName(lsctables.ProcessParamsTable.tableName) + 
+        cursor.execute('''DELETE FROM ''' + table.Table.TableName(lsctables.ProcessParamsTable.tableName) +
             ''' WHERE process_id != ?''',(min_process_id,))
-        cursor.execute('''DELETE FROM ''' + table.StripTableName(lsctables.ProcessTable.tableName) + 
+        cursor.execute('''DELETE FROM ''' + table.Table.TableName(lsctables.ProcessTable.tableName) +
             ''' WHERE process_id != ?''',(min_process_id,))
 
         # get all tables that use process_id 
@@ -117,8 +117,8 @@ def remove_redundant_entries(connection, cursor, verbose = False):
         connection.commit()
             
     # clean up coinc_definer and coinc event tables  
-    if ( table.StripTableName(lsctables.CoincDefTable.tableName) in tablenames ) and \
-        (table.StripTableName(lsctables.CoincTable.tableName) in tablenames ):
+    if ( table.Table.TableName(lsctables.CoincDefTable.tableName) in tablenames ) and \
+        (table.Table.TableName(lsctables.CoincTable.tableName) in tablenames ):
         if verbose:
             print "Removing redundant entries from coinc_definer and coinc_event tables ..."
         # get lowest (coinc_def_ids, search_coinc_type, description ) from coinc_def table
@@ -130,20 +130,20 @@ def remove_redundant_entries(connection, cursor, verbose = False):
             print "Updating coinc_def_id(s) in coinc_event table ..."
         # loop over them and update coinc_event table replacing redundant coinc_def ids
         for (min_coinc_def_id, min_search_coinc_type, min_description) in min_coinc_def_ids:  
-                cursor.execute('''UPDATE ''' + table.StripTableName(lsctables.CoincTable.tableName) + 
+                cursor.execute('''UPDATE ''' + table.Table.TableName(lsctables.CoincTable.tableName) +
                     ''' SET coinc_def_id = ? 
                     WHERE coinc_def_id IN  
                     (  
-                    SELECT coinc_def_id FROM ''' + table.StripTableName(lsctables.CoincDefTable.tableName) + 
+                    SELECT coinc_def_id FROM ''' + table.Table.TableName(lsctables.CoincDefTable.tableName) +
                     ''' WHERE ( search_coinc_type = ? ) AND ( description = ? ) 
                     )''', (min_coinc_def_id, min_search_coinc_type, min_description, ))
         if verbose:
             print "Removing unused entries from coinc_definer table ..."
         # remove redundant and already unused records from coinc_def table
-        cursor.execute('''DELETE FROM ''' + table.StripTableName(lsctables.CoincDefTable.tableName) + 
+        cursor.execute('''DELETE FROM ''' + table.Table.TableName(lsctables.CoincDefTable.tableName) +
             ''' WHERE coinc_def_id NOT IN 
             ( 
-            SELECT MIN(coinc_def_id) FROM '''  + table.StripTableName(lsctables.CoincDefTable.tableName) +
+            SELECT MIN(coinc_def_id) FROM '''  + table.Table.TableName(lsctables.CoincDefTable.tableName) +
             ''' GROUP BY search_coinc_type, description 
             ) ''')
         connection.commit()
@@ -175,7 +175,7 @@ def delete_glitch_events_in_segment(connection, cursor, segment):
         print "No tables were found in the database. Nothing to do."
         return 
     # check if glitch table is present
-    if not table.StripTableName(idq_tables.IDQGlitchTable.tableName) in tablenames:
+    if not table.Table.TableName(idq_tables.IDQGlitchTable.tableName) in tablenames:
         print "No glitch table is found in database. Nothing to do"
         return 
     # create sqlite function for testing if glitch gos time is inside the segment("md5", 1, md5sum)
@@ -185,10 +185,10 @@ def delete_glitch_events_in_segment(connection, cursor, segment):
     segment_string = segmentsUtils.to_range_strings([segment])[0]
         
     # check if coinc_def table is present
-    if table.StripTableName(lsctables.CoincDefTable.tableName) in tablenames:
+    if table.Table.TableName(lsctables.CoincDefTable.tableName) in tablenames:
         # get all distinct coinc types from coinc_def table 
         coinc_descriptions = cursor.execute('''SELECT DISTINCT description FROM ''' + 
-            table.StripTableName(lsctables.CoincDefTable.tableName)).fetchall()
+            table.Table.TableName(lsctables.CoincDefTable.tableName)).fetchall()
         # loop over coinc descriptions
         for (description,)  in coinc_descriptions:
             tables_in_coinc = idq_tables.CoincDefToTableNames[description]
@@ -199,18 +199,18 @@ def delete_glitch_events_in_segment(connection, cursor, segment):
                 # loop over other tables in the coinc
                 for t in connected_tables:
                     # delete entries connected to glitch events that should be removed
-                    cursor.execute('''DELETE FROM ''' + table.StripTableName(t) + \
-                    ''' WHERE event_id IN (SELECT t.event_id FROM ''' + table.StripTableName(t) + \
+                    cursor.execute('''DELETE FROM ''' + table.Table.TableName(t) + \
+                    ''' WHERE event_id IN (SELECT t.event_id FROM ''' + table.Table.TableName(t) + \
                     ''' AS t JOIN coinc_event_map AS c1 ON t.event_id == c1.event_id''' + \
                     ''' JOIN coinc_event_map AS c2 ON c1.coinc_event_id == c2.coinc_event_id''' + \
-                    ''' JOIN ''' + table.StripTableName(idq_tables.IDQGlitchTable.tableName) + \
+                    ''' JOIN ''' + table.Table.TableName(idq_tables.IDQGlitchTable.tableName) + \
                     ''' AS g ON c2.event_id == g.event_id WHERE gpstime_inside_segment(g.gps, g.gps_ns, ?))''',\
                      (segment_string,))
                                         
     # delete entries from coinc_event table corresponding to deleted events
     cursor.execute('''DELETE FROM  coinc_event WHERE coinc_event_id IN''' + \
     ''' (SELECT c1.coinc_event_id FROM coinc_event_map AS c1 JOIN ''' + \
-    table.StripTableName(idq_tables.IDQGlitchTable.tableName) + \
+    table.Table.TableName(idq_tables.IDQGlitchTable.tableName) + \
     ''' AS g ON c1.event_id == g.event_id WHERE gpstime_inside_segment(g.gps, g.gps_ns, ?))''',\
     (segment_string,))
     
@@ -218,13 +218,13 @@ def delete_glitch_events_in_segment(connection, cursor, segment):
     cursor.execute('''DELETE FROM  coinc_event_map WHERE event_id IN''' + \
     ''' (SELECT c1.event_id FROM coinc_event_map AS c1''' + \
     ''' JOIN coinc_event_map AS c2 ON c1.coinc_event_id == c2.coinc_event_id ''' + \
-    ''' JOIN ''' + table.StripTableName(idq_tables.IDQGlitchTable.tableName) +\
+    ''' JOIN ''' + table.Table.TableName(idq_tables.IDQGlitchTable.tableName) +\
     ''' AS g ON c2.event_id == g.event_id WHERE gpstime_inside_segment(g.gps, g.gps_ns, ?))''',\
     (segment_string,))
     
                         
     # delete entries in glitch table
-    cursor.execute('''DELETE FROM ''' + table.StripTableName(idq_tables.IDQGlitchTable.tableName) + 
+    cursor.execute('''DELETE FROM ''' + table.Table.TableName(idq_tables.IDQGlitchTable.tableName) +
         ''' WHERE gpstime_inside_segment(gps, gps_ns, ?)''', (segment_string,))
     
     # commit everythings
@@ -261,8 +261,8 @@ def get_glitch_ovl_data(connection, cursor, glitch_columns, ovl_columns):
         print "No tables were found in the database."
         return []
     # check if glitch table and ovl tables are present
-    if not ( (table.StripTableName(idq_tables.IDQGlitchTable.tableName) in tablenames)\
-        and (table.StripTableName(idq_tables.OVLDataTable.tableName) in tablenames) ):
+    if not ( (table.Table.TableName(idq_tables.IDQGlitchTable.tableName) in tablenames)\
+        and (table.Table.TableName(idq_tables.OVLDataTable.tableName) in tablenames) ):
         print "No glitch or ovl table is found in database."
         print "Need both to perform requested query."
         return []
@@ -274,10 +274,10 @@ def get_glitch_ovl_data(connection, cursor, glitch_columns, ovl_columns):
     # do the query 
     
     data = cursor.execute('''SELECT ''' + features_string +  ''' FROM ''' + \
-        table.StripTableName(idq_tables.IDQGlitchTable.tableName) + \
+        table.Table.TableName(idq_tables.IDQGlitchTable.tableName) + \
         ''' AS g JOIN coinc_event_map AS c1 ON g.event_id == c1.event_id''' + \
         ''' JOIN coinc_event_map AS c2 ON c1.coinc_event_id == c2.coinc_event_id''' + \
-        ''' JOIN '''  + table.StripTableName(idq_tables.OVLDataTable.tableName) + \
+        ''' JOIN '''  + table.Table.TableName(idq_tables.OVLDataTable.tableName) + \
         ''' AS o ON o.event_id == c2.event_id''').fetchall()
     
     
@@ -300,8 +300,8 @@ def get_glitch_snglburst_data(connection, cursor, glitch_columns, snglburst_colu
         print "No tables were found in the database."
         return []
     # check if glitch table and ovl tables are present
-    if not ( (table.StripTableName(idq_tables.IDQGlitchTable.tableName) in tablenames)\
-        and (table.StripTableName(lsctables.SnglBurstTable.tableName) in tablenames) ):
+    if not ( (table.Table.TableName(idq_tables.IDQGlitchTable.tableName) in tablenames)\
+        and (table.Table.TableName(lsctables.SnglBurstTable.tableName) in tablenames) ):
         print "No glitch or snglburst table is found in database."
         print "Need both to perform requested query."
         return []
@@ -313,10 +313,10 @@ def get_glitch_snglburst_data(connection, cursor, glitch_columns, snglburst_colu
     # do the query 
     
     data = cursor.execute('''SELECT ''' + features_string +  ''' FROM ''' + \
-        table.StripTableName(idq_tables.IDQGlitchTable.tableName) + \
+        table.Table.TableName(idq_tables.IDQGlitchTable.tableName) + \
         ''' AS g JOIN coinc_event_map AS c1 ON g.event_id == c1.event_id''' + \
         ''' JOIN coinc_event_map AS c2 ON c1.coinc_event_id == c2.coinc_event_id''' + \
-        ''' JOIN '''  + table.StripTableName(lsctables.SnglBurstTable.tableName) + \
+        ''' JOIN '''  + table.Table.TableName(lsctables.SnglBurstTable.tableName) + \
         ''' AS b ON b.event_id == c2.event_id''').fetchall()
     
     return data
@@ -338,9 +338,9 @@ def get_get_glitch_ovl_sngburst_data(connection, cursor, glitch_columns, ovl_col
         print "No tables were found in the database."
         return []
     # check if glitch table, ovl and snglburst tables are present
-    if not ( (table.StripTableName(idq_tables.IDQGlitchTable.tableName) in tablenames)\
-        and (table.StripTableName(idq_tables.OVLDataTable.tableName) in tablenames)\
-        and (table.StripTableName(lsctables.SnglBurstTable.tableName) in tablenames) ):
+    if not ( (table.Table.TableName(idq_tables.IDQGlitchTable.tableName) in tablenames)\
+        and (table.Table.TableName(idq_tables.OVLDataTable.tableName) in tablenames)\
+        and (table.Table.TableName(lsctables.SnglBurstTable.tableName) in tablenames) ):
         print "Not all of glitch, ovl and snglburst tables are found in database."
         print "Need all three to perform requested query."
         return []
@@ -353,14 +353,14 @@ def get_get_glitch_ovl_sngburst_data(connection, cursor, glitch_columns, ovl_col
     # do the query 
      
     data = cursor.execute('''SELECT ''' + features_string +  ''' FROM ''' + \
-        table.StripTableName(idq_tables.IDQGlitchTable.tableName) + \
+        table.Table.TableName(idq_tables.IDQGlitchTable.tableName) + \
         ''' AS g JOIN coinc_event_map AS c1 ON g.event_id == c1.event_id''' + \
         ''' JOIN coinc_event_map AS c2 ON c1.coinc_event_id == c2.coinc_event_id''' + \
-        ''' JOIN '''  + table.StripTableName(idq_tables.OVLDataTable.tableName) + \
+        ''' JOIN '''  + table.Table.TableName(idq_tables.OVLDataTable.tableName) + \
         ''' AS o ON o.event_id == c2.event_id''' + \
         ''' JOIN coinc_event_map AS c3 ON g.event_id == c3.event_id''' + \
         ''' JOIN coinc_event_map AS c4 ON c4.coinc_event_id == c3.coinc_event_id''' + \
-        ''' JOIN '''  + table.StripTableName(lsctables.SnglBurstTable.tableName) + \
+        ''' JOIN '''  + table.Table.TableName(lsctables.SnglBurstTable.tableName) + \
         ''' AS b ON b.event_id == c4.event_id''').fetchall()
     
     return data

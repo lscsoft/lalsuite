@@ -105,11 +105,11 @@ def sim_coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
         sim_inspiral = None
         coinc = None
         for event_id, event in events_for_coinc_event_id(sim_coinc.coinc_event_id):
-            if event_id.table_name == ligolw_table.StripTableName(lsctables.SimInspiralTable.tableName):
+            if event_id.table_name == ligolw_table.Table.TableName(lsctables.SimInspiralTable.tableName):
                 if sim_inspiral is not None:
                     raise RuntimeError("Found more than one matching sim_inspiral entry")
                 sim_inspiral = event
-            elif event_id.table_name == ligolw_table.StripTableName(lsctables.CoincTable.tableName):
+            elif event_id.table_name == ligolw_table.Table.TableName(lsctables.CoincTable.tableName):
                 if coinc is not None:
                     raise RuntimeError("Found more than one matching coinc entry")
                 coinc = event
