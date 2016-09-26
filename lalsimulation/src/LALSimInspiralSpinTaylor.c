@@ -2819,6 +2819,10 @@ static int XLALSimInspiralSpinTaylorDriver(
                 deltaT, m1_SI, m2_SI, fS, fE, s1x, s1y, s1z, s2x, s2y,
                 s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
                 quadparam1, quadparam2, spinO, tideO, phaseO, approx);
+        if( n < 0 )
+        {
+            XLAL_ERROR(XLAL_EFUNC);
+        }
 
         /* Apply phase shift so orbital phase has desired value at fRef */
         phiShift = phiRef - Phi1->data->data[Phi1->data->length-1];
@@ -2836,6 +2840,10 @@ static int XLALSimInspiralSpinTaylorDriver(
                 deltaT, m1_SI, m2_SI, fS, fE, s1x, s1y, s1z, s2x, s2y,
                 s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
                 quadparam1, quadparam2, spinO, tideO, phaseO, approx);
+        if( n < 0 )
+        {
+            XLAL_ERROR(XLAL_EFUNC);
+        }
 
         /* Apply phase shift so orbital phase has desired value at fRef */
         phiShift = phiRef - Phi2->data->data[0];
@@ -3745,6 +3753,14 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     REAL8 norm, dtStart, dtEnd, lengths, wEnd, m1sec, m2sec, Msec, Mcsec, fTerm;
     LIGOTimeGPS tStart = LIGOTIMEGPSZERO;
 
+    if ( !V || !Phi || !S1x || !S1y || !S1z || !S2x || !S2y || !S2z
+            || !LNhatx || !LNhaty || !LNhatz || !E1x || !E1y || !E1z )
+    {
+        XLALPrintError("XLAL Error - %s: NULL(s) in output parameters\n",
+                       __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+
     /* Check start and end frequencies are positive */
     if( fStart <= 0. )
     {
@@ -3882,6 +3898,13 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     len = XLALAdaptiveRungeKutta4Hermite(integrator, params, yinit,
             0.0, lengths/Msec, sgn*deltaT/Msec, &yout);
 
+    if (!yout)
+    {
+        XLALPrintError("XLAL Error - %s: integration failed (yout == NULL)\n",
+                       __func__);
+        XLAL_ERROR(XLAL_EFUNC);
+    }
+
     intreturn = integrator->returncode;
     XLALAdaptiveRungeKutta4Free(integrator);
 
@@ -3967,8 +3990,8 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
             deltaT, &lalDimensionlessUnit, cutlen); 
     *E1z = XLALCreateREAL8TimeSeries( "E1_BASIS_Z_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, cutlen); 
-    if ( !V || !Phi || !S1x || !S1y || !S1z || !S2x || !S2y || !S2z 
-            || !LNhatx || !LNhaty || !LNhatz || !E1x || !E1y || !E1z )
+    if ( !*V || !*Phi || !*S1x || !*S1y || !*S1z || !*S2x || !*S2y || !*S2z
+             || !*LNhatx || !*LNhaty || !*LNhatz || !*E1x || !*E1y || !*E1z )
     {
         XLALDestroyREAL8Array(yout);
         XLAL_ERROR(XLAL_EFUNC);
