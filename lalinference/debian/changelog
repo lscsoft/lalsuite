@@ -1,9 +1,11 @@
-lalinference (1.7.0.1-1) UNRELEASED; urgency=medium
+lalinference (1.8.0-1) unstable; urgency=low
 
+  * LALInference 1.8.0
+  * ER10 release
   * Add some scaffolding for future python3 package.
     LALInference depends on glue, which does not support Python 3 yet.
 
- -- Leo Singer <leo.singer@ligo.org>  Fri, 15 Jul 2016 00:03:38 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 26 Sep 2016 14:26:35 -0500
 
 lalinference (1.7.0-1) unstable; urgency=low
 
