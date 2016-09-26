@@ -167,7 +167,6 @@ src/power/lalapps_power_likelihood_pipe
 src/power/lalapps_power_online_pipe
 src/power/lalapps_power_pipe
 src/power/lalapps_simburst_to_frame
-src/power/sense_compare
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
 src/pulsar/CrossCorr/gsldata.dat
