@@ -67,7 +67,7 @@ templates = None
 for filename in filenames:
     xmldoc = utils.load_filename(filename, verbose=options.verbose,
                                  contenthandler=ContentHandler)
-    curr_tmps = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+    curr_tmps = lsctables.SnglInspiralTable.get_table(xmldoc)
     if templates is None:
         templates = curr_tmps
     else:

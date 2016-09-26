@@ -52,9 +52,9 @@ x_vector=numpy.linspace(-0.85, 0.85, options.chi_n)
 
 for file in filenames:
 	xmldoc=utils.load_filename(file, gz=file.endswith(".gz"), verbose = options.verbose)
-	sngl_inspiral_table=lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
-	process_params_table = lsctables.table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
-	tmpltbank_process_ids = lsctables.table.get_table(xmldoc, lsctables.ProcessTable.tableName).get_ids_by_program("tmpltbank")
+	sngl_inspiral_table=lsctables.SnglInspiralTable.get_table(xmldoc)
+	process_params_table = lsctables.ProcessParamsTable.get_table(xmldoc)
+	tmpltbank_process_ids = lsctables.ProcessTable.get_table(xmldoc).get_ids_by_program("tmpltbank")
 	
 	for row in process_params_table:
         	if row.process_id in tmpltbank_process_ids and row.param=='--approximant':

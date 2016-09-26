@@ -459,7 +459,7 @@ def make_veto_files(engine, config, ifo, category, cluster, start_time, end_time
     for f in config['veto_definer_file'].split(','):
         xmldoc  = utils.load_url(f, contenthandler=DefaultContentHandler)
 
-        veto_definers += table.get_table(xmldoc, lsctables.VetoDefTable.tableName)
+        veto_definers += lsctables.VetoDefTable.get_table(xmldoc)
 
     cats = [make_segdef(row, overall) for row in veto_definers if row.category == category and row.ifo == ifo]
 

@@ -62,9 +62,9 @@ print options
 options_params=[("--filename","string",filenames),("--output_path","string", options.output_path), ("--max-symmetric-mass-ratio","int",options.max_symmetric_mass_ratio),("--n","int",options.n),("--sort-by","string",options.sort_by)]
 
 xmldoc=utils.load_filename(filenames[0], gz=filenames[0].endswith(".gz"), verbose = options.verbose)
-sngl_inspiral_table=lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
-process_params_table = lsctables.table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
-tmpltbank_process_ids = lsctables.table.get_table(xmldoc, lsctables.ProcessTable.tableName).get_ids_by_program("tmpltbank")
+sngl_inspiral_table=lsctables.SnglInspiralTable.get_table(xmldoc)
+process_params_table = lsctables.ProcessParamsTable.get_table(xmldoc)
+tmpltbank_process_ids = lsctables.ProcessTable.get_table(xmldoc).get_ids_by_program("tmpltbank")
 
 for row in process_params_table:
 	if row.process_id in tmpltbank_process_ids and row.param=='--approximant':

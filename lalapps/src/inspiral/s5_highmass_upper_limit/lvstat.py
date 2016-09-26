@@ -66,7 +66,7 @@ def get_injections(injfnames, zero_lag_segments, ifos="H1,H2,L1", FAR=1.0, verbo
     connection = sqlite3.connect(working_filename)
     connection.create_function("injection_was_made", 2, injection_was_made)
 
-    make_sim_inspiral = lsctables.table.get_table(dbtables.get_xml(connection), lsctables.SimInspiralTable.tableName)._row_from_cols
+    make_sim_inspiral = lsctables.SimInspiralTable.get_table(dbtables.get_xml(connection))._row_from_cols
 
     # FIXME may not be done correctly if injections are done in timeslides
     # FIXME may not be done correctly if injections aren't logarithmic in d
