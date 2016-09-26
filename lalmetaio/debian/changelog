@@ -1,8 +1,10 @@
-lalmetaio (1.2.8.1-1) UNRELEASED; urgency=medium
+lalmetaio (1.3.0-1) unstable; urgency=low
 
+  * LALMetaIO 1.3.0
+  * ER10 release
   * Add python3 package
 
- -- Leo Singer <leo.singer@ligo.org>  Fri, 15 Jul 2016 00:03:38 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 26 Sep 2016 11:33:46 -0500
 
 lalmetaio (1.2.8-1) unstable; urgency=low
 
