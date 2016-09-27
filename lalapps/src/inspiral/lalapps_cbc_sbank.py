@@ -188,6 +188,7 @@ def parse_command_line():
     #
     parser.add_option("--noise-model", choices=noise_models.keys(), metavar='|'.join(noise_models.keys()), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model.")
     parser.add_option("--reference-psd", help="Read PSD from an xml file instead of using analytical noise model. The PSD is assumed to be infinite beyond the maximum frequency contained in the file. This effectively sets the upper frequency cutoff to that frequency, unless a smaller frequency is given via --fhigh-max.", metavar="FILE")
+    parser.add_option("--instrument", metavar="IFO", help="Specify the instrument from input PSD file for which to generate a template bank.")
 
     #
     # match calculation options
@@ -208,11 +209,7 @@ def parse_command_line():
     #
     # output options
     #
-    parser.add_option("--instrument", metavar="IFO", help="Specify the instrument for which to generate a template bank. This option is used for naming of the output file but also for reading in PSDs or template bank seeds from file.")
-    parser.add_option("--gps-start-time", type="int", default=0, help="GPS time of start. Used only for naming of output file.", metavar="INT")
-    parser.add_option("--gps-end-time", type="int", default=999999999, help="GPS time of end. Used only for naming of output file", metavar="INT")
-    parser.add_option("--output-filename", default=None, help="Over-ride default filenaming and use this as the output filename.")
-    parser.add_option("--user-tag", default=None, help="Apply descriptive tag to output filename.")
+    parser.add_option("--output-filename", default=None, help="Required. Name for output template bank. May not clash with seed bank.")
     parser.add_option("--verbose", default=False,action="store_true", help="Be verbose and write diagnostic information out to file.")
 
     parser.add_option("--mchirp-boundaries-file", metavar="FILE", help="Deprecated. File containing chirp mass bin boundaries")
@@ -225,13 +222,17 @@ def parse_command_line():
     #
     # check for required arguments
     #
-    for opt in ("flow", "match_min", "mass1_min", "mass1_max", "instrument"):
+    for opt in ("flow", "match_min", "mass1_min", "mass1_max", "output_filename"):
         if getattr(opts, opt) is None:
             parser.error("--%s is required" % opt.replace("_", "-"))
 
     #
     # check for argument consistency
     #
+    for seed in opts.bank_seed:
+        if seed == opts.output_filename:
+            raise ValueError("Bank seed %s would be overwritten by output file. Choose a different output name." % seed)
+
     if opts.qmin < 1:
         parser.error("Mass ratio is assumed to be >= 1.")
 
@@ -306,16 +307,6 @@ def parse_command_line():
 opts, args = parse_command_line()
 
 #
-# determine output bank filename
-#
-if opts.output_filename:
-    fout = opts.output_filename
-elif opts.user_tag:
-    fout = "%s-SBANK_%s-%d-%d.xml.gz" % (opts.instrument, opts.user_tag, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
-else:
-    fout = "%s-SBANK-%d-%d.xml.gz" % (opts.instrument, opts.gps_start_time, opts.gps_end_time-opts.gps_start_time)
-
-#
 # choose waveform approximant
 #
 tmplt_class = waveforms[opts.approximant]
@@ -324,8 +315,26 @@ tmplt_class = waveforms[opts.approximant]
 # choose noise model
 #
 if opts.reference_psd is not None:
-    psd = read_psd(opts.reference_psd)[opts.instrument]
-    f_orig = psd.f0 + np.arange(len(psd.data.data)) * psd.deltaF
+
+    if opts.reference_psd.endswith(".txt") or opts.reference_psd.endswith(".txt.gz") or opts.reference_psd.endswith(".dat"):
+        # assume psd file is a two-column ASCII formatted file
+        data = np.loadtxt(opts.reference_psd)
+        f_orig, psddata = data[:,0], data[:,1]
+
+    elif opts.reference_psd.endswith(".xml") or opts.reference_psd.endswith(".xml.gz"):
+        # assume psd file is formatted as a LIGOLW XML
+        psddict = read_psd(opts.reference_psd)
+        if opts.instrument:
+            psd = psddict[opts.instrument]
+        elif len(psddict.keys()) == 1:
+            psd = psddict[psddict.keys()[0]]
+        else:
+            raise ValueError("More than one PSD found in file %s. Specify which you want with --instrument." % opts.reference_psd)
+        f_orig = psd.f0 + np.arange(len(psd.data.data)) * psd.deltaF
+        psddata = psd.data.data
+
+    # cut off upper frequency content as requested by user for better
+    # computational performance
     f_max_orig = max(f_orig)
     if opts.fhigh_max:
         if opts.fhigh_max > f_max_orig:
@@ -337,11 +346,12 @@ if opts.reference_psd is not None:
                 % f_max_orig
         opts.fhigh_max = float(f_max_orig)
 
-    interpolator = UnivariateSpline(f_orig, np.log(psd.data.data), s=0)
+    interpolator = UnivariateSpline(f_orig, np.log(psddata), s=0)
 
     # spline extrapolation may lead to unexpected results,
     # so set the PSD to infinity above the max original frequency
     noise_model = lambda g: np.where(g < f_max_orig, np.exp(interpolator(g)), np.inf)
+
 else:
     noise_model = noise_models[opts.noise_model]
 
@@ -379,18 +389,19 @@ if opts.verbose:
 #
 # check for saved work
 #
-if opts.checkpoint and os.path.exists( fout + "_checkpoint.gz" ):
 
-    xmldoc = utils.load_filename(fout + "_checkpoint.gz", contenthandler=ContentHandler)
+if opts.checkpoint and os.path.exists( opts.output_filename + "_checkpoint.gz" ):
+
+    xmldoc = utils.load_filename(opts.output_filename + "_checkpoint.gz", contenthandler=ContentHandler)
     tbl = lsctables.SnglInspiralTable.get_table(xmldoc)
     [bank.insort(t) for t in Bank.from_sngls(tbl, tmplt_class, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)]
 
     if opts.verbose:
-        print >>sys.stdout,"Found checkpoint file %s with %d precomputed templates." % (fout + "_checkpoint.gz", len(tbl))
+        print >>sys.stdout,"Found checkpoint file %s with %d precomputed templates." % (opts.output_filename + "_checkpoint.gz", len(tbl))
         print >>sys.stdout, "Resuming from checkpoint with %d total templates..." % len(bank)
 
     # reset rng state
-    rng_state = np.load(fout + "_checkpoint.rng.npz")
+    rng_state = np.load(opts.output_filename + "_checkpoint.rng.npz")
     rng1 = rng_state["state1"]
     rng2 = rng_state["state2"]
     rng3 = rng_state["state3"]
@@ -504,7 +515,7 @@ for tmplt in proposal:
             tbl.append(row)
 
         if opts.checkpoint and not len(bank) % opts.checkpoint:
-            checkpoint_save(xmldoc, fout, process)
+            checkpoint_save(xmldoc, opts.output_filename, process)
 
     # clear the proposal template if caching is not enabled
     if not opts.cache_waveforms:
@@ -520,4 +531,4 @@ bank.clear()  # clear caches
 
 # write out the document
 ligolw_process.set_process_end_time(process)
-utils.write_filename(xmldoc, fout,  gz=fout.endswith("gz"))
+utils.write_filename(xmldoc, opts.output_filename,  gz=opts.output_filename.endswith("gz"))
