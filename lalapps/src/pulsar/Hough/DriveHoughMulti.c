@@ -104,7 +104,7 @@
 
 
 /* boolean global variables for controlling output */
-BOOLEAN uvar_EnableExtraInfo, uvar_EnableChi2;
+BOOLEAN uvar_EnableExtraInfo, uvar_EnableChi2, uvar_EnableToplistPatch;
 
 /* #define EARTHEPHEMERIS "./earth05-09.dat" */
 /* #define SUNEPHEMERIS "./sun05-09.dat"    */
@@ -160,7 +160,7 @@ void SplitSFTs(LALStatus *status, REAL8Vector *weightsV, HoughParamsTest *chi2Pa
 
 void ComputeFoft_NM(LALStatus *status, REAL8Vector *foft, HoughTemplate *pulsarTemplate, REAL8Vector *timeDiffV, REAL8Cart3CoorVector *velV);
 
-void ComputeandPrintChi2 ( LALStatus *status, toplist_t *tl, REAL8Vector *timeDiffV, REAL8Cart3CoorVector *velV, INT4 p, REAL8 alphaPeak, MultiDetectorStateSeries *mdetStates, REAL8Vector *weightsNoise, UCHARPeakGramVector *upgV);
+void ComputeandPrintChi2 ( LALStatus *status, toplist_t *tl, REAL8Vector *timeDiffV, REAL8Cart3CoorVector *velV, INT4 skyCounter,INT4 nSkyPatches, INT4 p, REAL8 alphaPeak, MultiDetectorStateSeries *mdetStates, REAL8Vector *weightsNoise, UCHARPeakGramVector *upgV);
 
 void GetPeakGramFromMultSFTVector_NondestroyPg1(LALStatus *status, HOUGHPeakGramVector *out, UCHARPeakGramVector *upgV, MultiSFTVector *in, REAL8 thr) ;
 
@@ -377,6 +377,9 @@ int main(int argc, char *argv[]){
     uvar_EnableChi2=FALSE;
     uvar_chiSqBins = NBLOCKSTEST;
     uvar_spindownJump = SPINDOWNJUMP;
+
+    uvar_EnableToplistPatch = FALSE;
+
     
     
     uvar_earthEphemeris = (CHAR *)LALCalloc( HOUGHMAXFILENAMELENGTH , sizeof(CHAR));
@@ -429,6 +432,9 @@ int main(int argc, char *argv[]){
     LAL_CALL( LALRegisterINTUserVar(    &status, "partitionIndex",0,UVAR_OPTIONAL, "Index [0,numSkyPartitions-1] of sky-partition to generate", &uvar_partitionIndex), &status);
     LAL_CALL( LALRegisterREALUserVar( &status, "refTime",         0,  UVAR_OPTIONAL, "GPS reference time of observation", &uvar_refTime), &status);
     LAL_CALL( LALRegisterREALUserVar( &status, "deltaF1dot",         0,  UVAR_OPTIONAL, "(Step size for f1dot)*Tcoh [Default: 1/Tobs]", &uvar_deltaF1dot), &status);
+
+    LAL_CALL( LALRegisterBOOLUserVar(   &status, "EnableToplistPatch",0,UVAR_OPTIONAL, "Enables a toplist per Patch, requires to enableChi2", &uvar_EnableToplistPatch), &status);
+
     
     /* developer input variables */
     LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    0, UVAR_DEVELOPER, "Running Median block size", &uvar_blocksRngMed), &status);
@@ -756,7 +762,12 @@ int main(int argc, char *argv[]){
     maxSignificance = sqrt(mObsCohBest * (1-alphaPeak)/alphaPeak);
     
     
-    LogPrintf (LOG_NORMAL, "Starting loop over skypatches...");
+    
+    
+    if (uvar_EnableToplistPatch){
+          LogPrintf (LOG_NORMAL, "Starting loop over skypatches and chi-square follow-up of top candidates per patch: ");}
+    else {LogPrintf (LOG_NORMAL, "Starting loop over skypatches...");}
+
     /* loop over sky patches -- main Hough calculations */
     for (skyCounter = 0; skyCounter < nSkyPatches; skyCounter++)
     {
@@ -1045,6 +1056,16 @@ int main(int argc, char *argv[]){
             
         } /* closing while */
         
+        /* printing toplist per patch and free toplist memory */
+        if (uvar_EnableToplistPatch){
+            if (uvar_EnableChi2){
+                LAL_CALL(ComputeandPrintChi2(&status, toplist, timeDiffV, &velV, skyCounter, nSkyPatches, uvar_chiSqBins, alphaPeak, mdetStates, weightsNoise, &upgV), &status);
+                free_fstat_toplist(&toplist);
+                if ( create_fstat_toplist(&toplist, uvar_numCand) != 0) {
+                    LogPrintf(LOG_CRITICAL,"Unable to create toplist\n");
+                }
+            }
+        }
         
         /* printing total histogram */
         if ( uvar_EnableExtraInfo )
@@ -1086,9 +1107,10 @@ int main(int argc, char *argv[]){
     /* If we want to print Chi2 value */
     
     if (uvar_EnableChi2){
+    if (!uvar_EnableToplistPatch){
         LogPrintf (LOG_NORMAL, "Starting chi-square follow-up of top candidates...");
-        LAL_CALL(ComputeandPrintChi2(&status, toplist, timeDiffV, &velV, uvar_chiSqBins, alphaPeak, mdetStates, weightsNoise, &upgV), &status);
-        LogPrintfVerbatim (LOG_NORMAL, "done\n");
+        LAL_CALL(ComputeandPrintChi2(&status, toplist, timeDiffV, &velV, -1, 0, uvar_chiSqBins, alphaPeak, mdetStates, weightsNoise, &upgV), &status);
+        LogPrintfVerbatim (LOG_NORMAL, "done\n");}
     }
     else {
         
@@ -2649,6 +2671,8 @@ void ComputeandPrintChi2 ( LALStatus                *status,
                           toplist_t                *tl,
                           REAL8Vector              *timeDiffV,
                           REAL8Cart3CoorVector     *velV,
+                          INT4                     skyCounter,
+                          INT4                     nSkyPatches,
                           INT4                     p,
                           REAL8                    alphaPeak,
                           MultiDetectorStateSeries *mdetStates,
@@ -2726,6 +2750,10 @@ void ComputeandPrintChi2 ( LALStatus                *status,
     /* Open file to write the toplist with 2 new columns: significance and chi2 */
     
     fpChi2 = fopen("hough_top.dat", "w");
+    char path[512];
+    snprintf(path, sizeof(path), "houghtop_chi2_%d_%d.dat", skyCounter+1,nSkyPatches);
+    fpChi2 = fopen(path, "w");
+
     
     /* ----------------------------------------------------------------------------------*/
     /* Loop over all the elements in the TopList */
