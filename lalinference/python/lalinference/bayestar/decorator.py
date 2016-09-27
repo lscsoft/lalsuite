@@ -55,3 +55,18 @@ def memoized(func):
 
     # Return wrapped function.
     return memo
+
+
+def with_numpy_random_seed(func, seed=0):
+    """Decorate a function so that it is called with a pre-defined random seed.
+    The random seed is restored when the function returns."""
+    from functools import wraps
+    from astropy.utils.misc import NumpyRNGContext
+
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        with NumpyRNGContext(seed):
+            ret = func(*args, **kwargs)
+        return ret
+
+    return wrapped_func

@@ -27,6 +27,7 @@ import logging
 import time
 import numpy as np
 import healpy as hp
+from .decorator import with_numpy_random_seed
 from . import filter
 from . import postprocess
 from . import timing
@@ -56,6 +57,7 @@ def toa_phoa_snr_log_prior(
         else -np.inf)
 
 
+@with_numpy_random_seed
 def emcee_sky_map(
         logl, loglargs, logp, logpargs, xmin, xmax,
         nside=-1, kde=False, chain_dump=None, max_horizon=1.0):
