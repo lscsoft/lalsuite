@@ -1398,7 +1398,7 @@ int XLALSimIMRSEOBNRv4ROMTimeOfFrequency(
 
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   double t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI); // t_corr / M
-  XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
+  //XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
 
   double Mf = frequency * Mtot_sec;
   if (Mf < Mf_ROM_min || Mf > Mf_ROM_max) {
@@ -1464,14 +1464,14 @@ int XLALSimIMRSEOBNRv4ROMFrequencyOfTime(
 
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   double t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI); // t_corr / M
-  XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
+  //XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
 
   // Assume for now that we only care about f(t) *before* merger so that f(t) - f_ringdown >= 0.
   // Assume that we only need to cover the frequency range [f_min, f_ringdown/2].
   int N = 20;
   double log_f_pts[N];
   double log_t_pts[N];
-  double log_f_min   = log(Mf_ROM_min);
+  double log_f_min   = log(Mf_ROM_min * 1.000001); // raise minimum frequency slightly, so exp(log()) doesn't go below it
   double log_f_rng_2 = log(Mf_final/2.0);
   double dlog_f = (log_f_rng_2 - log_f_min) / (N-1);
 
