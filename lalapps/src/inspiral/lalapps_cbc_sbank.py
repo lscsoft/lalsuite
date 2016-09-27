@@ -61,12 +61,11 @@ Example command lines:
 inspiral-merger-ringdown binary black hole waveforms for use in an
 aLIGO search.
 
-lalapps_cbc_sbank --approximant IMRPhenomC --aligned-spin \\
+lalapps_cbc_sbank --approximant IMRPhenomD --aligned-spin \\
         --mass1-min 15.0 --mass1-max 25.0 \\
         --spin1-min 0.0 --spin1-max 0.5 \\
         --match-min 0.97 --flow 20.0 --noise-model aLIGOZeroDetHighPower \\
-        --instrument H1 --gps-start-time 961545543  --gps-end-time 962150343 \\
-        --user-tag BBH-IMRPhenomC-aLIGOZeroDetHighPower --verbose
+        --output-filename BBH-IMRPhenomD-aLIGOZeroDetHighPower.xml.gz --verbose
 
 
 ** Generate a template bank of mildly spinning neutron stars and
@@ -80,8 +79,7 @@ lalapps_cbc_sbank --approximant TaylorF2RedSpin --aligned-spin --use-metric \\
         --spin1-min 0.0 --spin1-max 0.05 \\
         --spin2-min 0.0 --spin2-max 0.5 \\
         --match-min 0.97 --flow 20.0 --noise-model aLIGOZeroDetHighPower \\
-        --instrument H1 --gps-start-time 961545543  --gps-end-time 962150343 \\
-        --user-tag NSBH-TaylorF2RedSpin-aLIGOZeroDetHighPower --verbose
+        --output-filename NSBH-TaylorF2RedSpin-aLIGOZeroDetHighPower.xml.gz --verbose
 
 
 ** Generate a template bank of mildly spinning binary neutron star
@@ -93,11 +91,10 @@ lalapps_cbc_sbank --approximant TaylorF2RedSpin --aligned-spin --use-metric \\
         --mass1-min 1.0 --mass1-max 2.0 \\
         --spin1-min 0.0 --spin1-max 0.05 \\
         --match-min 0.97 --flow 20.0 --noise-model aLIGOZeroDetHighPower \\
-        --instrument H1 --gps-start-time 961545543  --gps-end-time 962150343 \\
-        --user-tag BNS-TaylorF2RedSpin-aLIGOZeroDetHighPower --verbose
+        --output-filename BNS-TaylorF2RedSpin-aLIGOZeroDetHighPower.xml.gz --verbose
 
 
-** Example (not necessarily effectual ;) aligned-spin template bank covering
+** Example (not necessarily effectual) aligned-spin template bank covering
 BNS, NSBH and BBH systems. Objects lighter than 2 solar masses are considered
 neutron stars. Objects heavier than 2 solar masses are considered black holes.
 Use appropriate spin limits based on the type of the object.
@@ -110,8 +107,7 @@ lalapps_cbc_sbank --approximant TaylorF2RedSpin --aligned-spin --use-metric \\
         --bh-spin-min -0.98 --bh-spin-max 0.98 \\
         --ns-spin-min -0.4 --ns-spin-max 0.4 \\
         --match-min 0.97 --flow 30 --noise-model aLIGOZeroDetHighPower \\
-        --instrument H1 --gps-start-time 961545543 --gps-end-time 962150343 \\
-        --user-tag combined-TaylorF2RedSpin-aLIGOZeroDetHighPower --verbose
+        --output-filename combined-TaylorF2RedSpin-aLIGOZeroDetHighPower.xml.gz --verbose
 
 
 For large parameter spaces with many templates, it is recommended that
