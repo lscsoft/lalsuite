@@ -271,7 +271,7 @@ int XLALWeaveOutputResultsReadAppend(
     XLAL_CHECK( (size_t) nspins == ( *out )->par.nspins, XLAL_EIO, "Inconsistent number of spindowns: %i != %zu", nspins, ( *out )->par.nspins );
 
     // Check if outputting per-detector quantities, and list of detectors
-    XLAL_CHECK( !perdet == ( ( *out )->par.per_detectors == NULL ), XLAL_EIO, "Inconsistent output per detector flag vs list of detectors: %i != %i", perseg, ( *out )->par.per_detectors != NULL );
+    XLAL_CHECK( ( !perdet ) == ( ( *out )->par.per_detectors == NULL ), XLAL_EIO, "Inconsistent output per detector flag vs list of detectors: %i != %i", perseg, ( *out )->par.per_detectors != NULL );
     if ( perdet ) {
       XLAL_CHECK( per_detectors->length == ( *out )->par.per_detectors->length, XLAL_EIO, "Inconsistent number of detectors: %u != %u", per_detectors->length, ( *out )->par.per_detectors->length );
       for ( size_t i = 0; i < per_detectors->length; ++i ) {
@@ -280,7 +280,7 @@ int XLALWeaveOutputResultsReadAppend(
     }
 
     // Check if outputting per-segment quantities, and number of per-segment items
-    XLAL_CHECK( !perseg == ( ( *out )->par.per_nsegments == 0 ), XLAL_EIO, "Inconsistent output per segment flag vs number of segments: %i != %i", perseg, ( *out )->par.per_nsegments > 0 );
+    XLAL_CHECK( ( !perseg ) == ( ( *out )->par.per_nsegments == 0 ), XLAL_EIO, "Inconsistent output per segment flag vs number of segments: %i != %i", perseg, ( *out )->par.per_nsegments > 0 );
     if ( perseg ) {
       XLAL_CHECK( (size_t) per_nsegments == ( *out )->par.per_nsegments, XLAL_EIO, "Inconsistent number of segments: %i != %u", per_nsegments, ( *out )->par.per_nsegments );
     }
