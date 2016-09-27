@@ -1,6 +1,7 @@
 *.la
 *.lo
 *.log
+*.man
 *.o
 *.pc
 *.pyc
@@ -28,8 +29,8 @@ include/lal/*.i
 include/lal/header-link-stamp
 lalsimulation-*.tar.xz
 lalsimulation-user-env.csh
-lalsimulation-user-env.sh
 lalsimulation-user-env.fish
+lalsimulation-user-env.sh
 lalsimulation-user-env.shell
 lalsimulation.spec
 libtool
