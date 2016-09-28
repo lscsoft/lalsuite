@@ -1355,9 +1355,9 @@ static void test_eval_acor(void)
     {
         double result = eval_acor(x, nsamples, t);
         double expected = (fabs(t) < nsamples) ? (gsl_pow_2(t) + t*1.0j) : 0;
-        gsl_test_abs(creal(result), creal(expected), 0,
+        gsl_test_abs(creal(result), creal(expected), 1e4 * GSL_DBL_EPSILON,
             "testing real part of eval_acor(%g) for x(t) = t^2 + t j", t);
-        gsl_test_abs(cimag(result), cimag(expected), 0,
+        gsl_test_abs(cimag(result), cimag(expected), 1e4 * GSL_DBL_EPSILON,
             "testing imaginary part of eval_acor(%g) for x(t) = t^2 + t j", t);
     }
 }
