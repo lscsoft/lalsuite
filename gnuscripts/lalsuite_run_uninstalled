@@ -3,14 +3,16 @@
 # Run uninstalled scripts in a correctly set-up environment
 # Author: Karl Wette, 2014
 
-# print and parse command line
+# parse command line
 if test $# -lt 2; then
-    echo "$0: insufficient arguments" >&2
+    echo "usage: $0 [--verbose] \$(LIBTOOL) \$(LIBS) <command> <arguments...>" >&2
     exit 1
 fi
-printf "\nCommand line:\n%s" "$0"
-printf " '%s'" "$@"
-printf "\n\n"
+verbose=no
+if test "x$1" = "x--verbose"; then
+    verbose=yes
+    shift
+fi
 libtool="$1"
 shift
 libs="$1"
@@ -85,22 +87,14 @@ for lib in ${libs}; do
     ltcmd="${ltcmd} -dlopen ${lib}"
 done
 
-# print environment under libtool command
-echo "Environment:"
-eval "${ltcmd} ${SHELL} -c 'set'" 2>/dev/null | sed -n -e '/PATH=/p;/^LAL/p'
-echo
+# print verbose information
+if test "x${verbose}" = xyes; then
+    echo "========== $0 =========="
+    eval "${ltcmd} env" 2>/dev/null | sed -n -e '/^LAL/p;/PATH=/p' | sed -e 's/^/environment: /'
+    echo "command: ${ltcmd} ${cmd}"
+    echo "---------- $0 ----------"
+    echo
+fi
 
-# print test script command
-echo "Test script command:"
-echo "${ltcmd} ${cmd}"
-echo
-
-# run test script under libtool
-echo "Test script output:"
+# run command under libtool
 eval "${ltcmd} ${cmd}"
-exitval="$?"
-
-# print test script return status
-echo
-echo "Test script returned: ${exitval}"
-exit ${exitval}
