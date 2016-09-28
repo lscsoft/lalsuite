@@ -4,8 +4,8 @@
 # Author: Karl Wette, 2014
 
 # parse command line
-if test $# -lt 2; then
-    echo "usage: $0 [--verbose] \$(LIBTOOL) \$(LIBS) <command> <arguments...>" >&2
+if test $# -lt 3; then
+    echo "usage: $0 [--verbose] \$(abs_top_builddir) \$(abs_builddir) \$(LIBS) <command> <arguments...>" >&2
     exit 1
 fi
 verbose=no
@@ -13,7 +13,17 @@ if test "x$1" = "x--verbose"; then
     verbose=yes
     shift
 fi
-libtool="$1"
+if test ! -d "$1"; then
+    echo "$0: $1 is not a directory" >&2
+    exit 1
+fi
+abs_top_builddir="$1"
+shift
+if test ! -d "$1"; then
+    echo "$0: $1 is not a directory" >&2
+    exit 1
+fi
+abs_builddir="$1"
 shift
 libs="$1"
 shift
@@ -28,7 +38,32 @@ else
     done
 fi
 
-# recursively build unique list of all libtool libraries
+# build unique list of absolute paths to libtool libraries
+newlibs="${libs}"
+libs=
+for newlib in ${newlibs}; do
+    case ${newlib} in
+        ../*)
+            newlib="${abs_builddir}/${newlib}"
+    esac
+    dirpart=`expr "X${newlib}" : "^X\(.*\)/[^/]*"`
+    basepart=`expr "X${newlib}" : "^X.*/\([^/]*\)"`
+    if test ! -d "${dirpart}"; then
+        echo "$0: ${dirpart} is not a directory" >&2
+        exit 1
+    fi
+    newlib=`cd ${dirpart} && pwd`/${basepart}
+    case " ${libs} " in
+        *" ${newlib} "*)
+            :
+            ;;
+        *)
+            libs="${libs} ${newlib}"
+            ;;
+    esac
+done
+
+# recursively add all dependent libtool libraries
 oldlibs="${libs}"
 while :; do
 
@@ -43,19 +78,32 @@ while :; do
         fi
         oldlibdeps=`. ${oldlib}; echo ${dependency_libs}`
 
-        # add each dependency library to 'newlibs', excluding system libraries
+        # add absolute path of each dependency library to 'newlibs', excluding system libraries
         for newlib in ${oldlibdeps}; do
             case ${newlib} in
                 /lib/*|/usr/*|/opt/*)
+                    continue
+                    ;;
+                ../*.la)
+                    newlib="${abs_builddir}/${newlib}"
                     ;;
                 *.la)
-                    if test "x${newlibs}" = x; then
-                        newlibs="${newlib}"
-                    else
-                        newlibs="${newlibs} ${newlib}"
-                    fi
                     ;;
+                *)
+                    continue
             esac
+            dirpart=`expr "X${newlib}" : "^X\(.*\)/[^/]*"`
+            basepart=`expr "X${newlib}" : "^X.*/\([^/]*\)"`
+            if test ! -d "${dirpart}"; then
+                echo "$0: ${dirpart} is not a directory" >&2
+                exit 1
+            fi
+            newlib=`cd ${dirpart} && pwd`/${basepart}
+            if test "x${newlibs}" = x; then
+                newlibs="${newlib}"
+            else
+                newlibs="${newlibs} ${newlib}"
+            fi
         done
 
     done
@@ -82,13 +130,13 @@ while :; do
 done
 
 # build libtool command line
-ltcmd="${libtool} --mode=execute"
+ltcmd="${SHELL} ${abs_top_builddir}/libtool --mode=execute"
 for lib in ${libs}; do
     ltcmd="${ltcmd} -dlopen ${lib}"
 done
 
 # print verbose information
-if test "x${verbose}" = xyes; then
+if test "x${verbose}" = xyes || test "x${LALSUITE_RUN_UNINSTALLED_VERBOSE}" != x; then
     echo "========== $0 =========="
     eval "${ltcmd} env" 2>/dev/null | sed -n -e '/^LAL/p;/PATH=/p' | sed -e 's/^/environment: /'
     echo "command: ${ltcmd} ${cmd}"
