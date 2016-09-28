@@ -132,7 +132,6 @@ struct fvec *interpFromFile(char *filename, REAL8 squareinput){
             XLALPrintError("Error: read no records from %s\n",filename);
             exit(1);
     }
-    }
     return interp;
 }
 
