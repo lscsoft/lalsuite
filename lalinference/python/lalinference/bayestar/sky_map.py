@@ -126,7 +126,8 @@ def ligolw_sky_map(
         sngl_inspirals, waveform, f_low,
         min_distance=None, max_distance=None, prior_distance_power=None,
         method="toa_phoa_snr", psds=None, nside=-1, chain_dump=None,
-        phase_convention='antifindchirp', snr_series=None):
+        phase_convention='antifindchirp', snr_series=None,
+        enable_snr_series=False):
     """Convenience function to produce a sky map from LIGO-LW rows. Note that
     min_distance and max_distance should be in Mpc.
 
@@ -173,6 +174,11 @@ def ligolw_sky_map(
 
     # Center detector array.
     locations -= np.average(locations, weights=weights, axis=0)
+
+    if enable_snr_series:
+        log.warn('Enabling input of SNR time series. This feature is UNREVIEWED.')
+    else:
+        snr_series = None
 
     if snr_series is None:
         log.warn("No SNR time series found, so we are creating a zero-noise "
@@ -336,7 +342,8 @@ def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
         max_distance=None, prior_distance_power=None,
         method="toa_phoa_snr", nside=-1, chain_dump=None,
-        phase_convention='antifindchirp', f_high_truncate=1.0):
+        phase_convention='antifindchirp', f_high_truncate=1.0,
+        enable_snr_series=False):
     # Read input file.
     xmldoc, _ = ligolw_utils.load_fileobj(
         coinc_file, contenthandler=ligolw.LSCTablesAndSeriesContentHandler)
@@ -382,7 +389,8 @@ def gracedb_sky_map(
     prob, epoch, elapsed_time = ligolw_sky_map(sngl_inspirals, waveform, f_low,
         min_distance, max_distance, prior_distance_power, method=method,
         nside=nside, psds=psds, phase_convention=phase_convention,
-        chain_dump=chain_dump, snr_series=snrs)
+        chain_dump=chain_dump, snr_series=snrs,
+        enable_snr_series=enable_snr_series)
 
     return prob, epoch, elapsed_time, instruments
 

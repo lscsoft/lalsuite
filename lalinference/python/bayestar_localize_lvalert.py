@@ -156,7 +156,8 @@ try:
         opts.min_distance, opts.max_distance, opts.prior_distance_power,
         phase_convention=opts.phase_convention, nside=opts.nside,
         f_high_truncate=opts.f_high_truncate,
-        method=opts.method, chain_dump=chain_dump)
+        method=opts.method, chain_dump=chain_dump,
+        enable_snr_series=opts.enable_snr_series)
     prob, distmu, distsigma, _ = sky_map
     distmean, diststd = distance.parameters_to_marginal_moments(
         prob, distmu, distsigma)

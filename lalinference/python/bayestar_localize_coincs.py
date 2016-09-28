@@ -194,7 +194,8 @@ for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc
                 sngl_inspirals, opts.waveform, opts.f_low, opts.min_distance,
                 opts.max_distance, opts.prior_distance_power, psds=psds,
                 method=method, nside=opts.nside, chain_dump=chain_dump,
-                phase_convention=opts.phase_convention, snr_series=snrs)
+                phase_convention=opts.phase_convention, snr_series=snrs,
+                enable_snr_series=opts.enable_snr_series)
             prob, distmu, distsigma, _ = sky_map
             distmean, diststd = distance.parameters_to_marginal_moments(
                 prob, distmu, distsigma)
