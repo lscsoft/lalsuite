@@ -529,7 +529,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
     param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
     __slots__ = param_names + ("bank", "chieff", "chipre", "_dur","_mchirp","_tau0", "_wf_hp", "_wf_hc", "_hpsigmasq", "_hcsigmasq", "_hphccorr")
 
-    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, coa_phase, bank):
+    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, orb_phase, bank):
 
         AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank)
         self.spin1x = spin1x
@@ -541,7 +541,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         self.phi = phi
         self.iota = iota
         self.psi = psi
-        self.coa_phase = coa_phase
+        self.orb_phase = orb_phase
 
         self.chieff, self.chipre = lalsim.SimIMRPhenomPCalculateModelParameters(self.m1, self.m2, self.bank.flow, np.sin(iota), float(0), np.cos(iota), spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, 1)[:2]
 
@@ -558,7 +558,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
     def from_sim(cls, sim, bank):
         # theta = polar angle wrt overhead
         #       = pi/2 - latitude (which is 0 on the horizon)
-        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, sim.coa_phase, bank)
+        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, sim.orb_phase, bank)
 
     def _compute_waveform_comps(self, df, f_final):
         approx = lalsim.GetApproximantFromString( self.approximant )
@@ -568,7 +568,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
 
         if lalsim.SimInspiralImplementedFDApproximants(approx):
             hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
-                self.coa_phase, df, self.m1*MSUN_SI, self.m2*MSUN_SI,
+                self.orb_phase, df, self.m1*MSUN_SI, self.m2*MSUN_SI,
                 self.spin1x, self.spin1y, self.spin1z, self.spin2x,
                 self.spin2y, self.spin2z, self.bank.flow, f_final,
                 self.bank.flow, 1e6*PC_SI, self.iota,
@@ -577,7 +577,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
                 ampO, phaseO, approx)
         else:
             hplus_fd, hcross_fd = lalsim.SimInspiralFD(
-                self.coa_phase, df, self.m1*MSUN_SI, self.m2*MSUN_SI,
+                self.orb_phase, df, self.m1*MSUN_SI, self.m2*MSUN_SI,
                 self.spin1x, self.spin1y, self.spin1z,
                 self.spin2x, self.spin2y, self.spin2z, self.bank.flow,
                 f_final, self.bank.flow, 1e6*PC_SI, 0, self.iota,
@@ -679,7 +679,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         row.alpha2 = self.phi
         row.alpha3 = self.iota
         row.alpha4 = self.psi
-        row.alpha5 = self.coa_phase
+        row.alpha5 = self.orb_phase
         row.sigmasq = self.sigmasq
         return row
 
@@ -714,10 +714,10 @@ class InspiralPrecessingSpinTemplate(PrecessingSpinTemplate):
 class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
     approximant = "SpinTaylorF2"
     def __init__(self, m1, m2, spin1x, spin1y, spin1z,
-                 theta, phi, iota, psi, coa_phase, bank):
+                 theta, phi, iota, psi, orb_phase, bank):
         super(SpinTaylorF2Template,self).__init__(m1, m2,
                                     spin1x, spin1y, spin1z, 0, 0, 0,
-                                    theta, phi, iota, psi, coa_phase, bank)
+                                    theta, phi, iota, psi, orb_phase, bank)
 
     def _compute_waveform_comps(self, df, f_final):
         hplus_fd, hcross_fd = \
@@ -759,7 +759,7 @@ class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
         row.alpha2 = self.phi
         row.alpha3 = self.iota
         row.alpha4 = self.psi
-        row.alpha5 = self.coa_phase
+        row.alpha5 = self.orb_phase
         row.sigmasq = self.sigmasq
         return row
 
