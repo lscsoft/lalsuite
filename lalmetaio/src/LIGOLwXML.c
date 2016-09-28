@@ -347,9 +347,6 @@ LALBeginLIGOLwXMLTable (
     case ext_triggers_table:
       (void)myfprintf( xml->fp, LIGOLW_XML_EXT_TRIGGERS);
       break;
-    case filter_table:
-      (void)myfprintf( xml->fp, LIGOLW_XML_FILTER );
-      break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
   }
@@ -1033,21 +1030,6 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.extTriggerTable->event_status
 	    );
         tablePtr.extTriggerTable = tablePtr.extTriggerTable->next;
-        ++(xml->rowCount);
-      }
-      break;
-    case filter_table:
-      while( tablePtr.filterTable )
-      {
-        FIRST_TABLE_ROW
-          fprintf( xml->fp, FILTER_ROW,
-              tablePtr.filterTable->program,
-              tablePtr.filterTable->start_time,
-              tablePtr.filterTable->filter_name,
-              tablePtr.filterTable->comment,
-              xml->rowCount
-              );
-        tablePtr.filterTable = tablePtr.filterTable->next;
         ++(xml->rowCount);
       }
       break;
