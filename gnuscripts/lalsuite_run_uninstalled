@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Run Python, etc. test scripts in a correctly set-up environment
+# Run uninstalled scripts in a correctly set-up environment
 # Author: Karl Wette, 2014
 
 # print and parse command line
