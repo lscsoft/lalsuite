@@ -64,9 +64,7 @@ $(pybin_scripts): Makefile pyscripts-all-local
 		exit 1; \
 	fi; \
 	echo "$${shebang}/bin/sh" > $@.tmp; \
-	echo "pypath=\"$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH)\"" >> $@.tmp; \
-	echo "PYTHONPATH=\`echo \"\$${PYTHONPATH}\" | $(SED) -e \"s|\$${pypath}:||g;\"\`" >> $@.tmp; \
-	echo "PYTHONPATH=\"\$${pypath}:\$${PYTHONPATH}\"" >> $@.tmp; \
+	echo "PYTHONPATH=\"$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH):\$${PYTHONPATH}\"" >> $@.tmp; \
 	echo "export PYTHONPATH" >> $@.tmp; \
 	echo "exec $(uninstalled_compiler) $(PYTHON) \"$(abs_builddir)/$@.py\" \"\$$@\"" >> $@.tmp; \
 	echo "exit 1" >> $@.tmp; \
@@ -93,7 +91,7 @@ pybin-install-exec-local:
 				echo "$${shebang}$(PYTHON)" > $${file}.tmp; \
 				cat $(srcdir)/$${file}.py >> $${file}.tmp; \
 			else \
-				sed_regex="s|^pypath=.*$$|pypath=\"$${pypath}\"|;s|^exec .*$$|exec $(PYTHON) \"$(pkglibexecdir)/$${file}.py\" \"\$$@\"|"; \
+				sed_regex="s|^PYTHONPATH=.*$$|PYTHONPATH=\"$${pypath}:\$${PYTHONPATH}\"|;s|^exec .*$$|exec $(PYTHON) \"$(pkglibexecdir)/$${file}.py\" \"\$$@\"|"; \
 				$(SED) -e "$${sed_regex}" $${file} > $${file}.tmp || exit 1; \
 				echo " $(INSTALL_DATA) $(srcdir)/$${file}.py '$(DESTDIR)$(pkglibexecdir)/$${file}.py'"; \
 				$(INSTALL_DATA) $(srcdir)/$${file}.py "$(DESTDIR)$(pkglibexecdir)/$${file}.py" || exit 1; \
