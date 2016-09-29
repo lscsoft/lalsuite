@@ -13,4 +13,4 @@ endif
 	$(AM_V_GEN)$(HELP2MAN) --no-discard-stderr --no-info --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@ $(builddir)/$*
 
 %.man: %
-	$(AM_V_GEN)$(LIBTOOL) --mode=execute $(LDADD:%=-dlopen %) $(HELP2MAN) --no-discard-stderr --no-info --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@ $(builddir)/$*
+	$(AM_V_GEN)$(HELP2MAN) --no-discard-stderr --no-info --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@ $(builddir)/$*
