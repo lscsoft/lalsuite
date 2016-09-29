@@ -419,35 +419,8 @@ if test "${cuda}" = "true"; then
 fi
 
 # check for OpenMP
-AC_OPENMP
+LALSUITE_ENABLE_OPENMP
 
-# Disable OpenMP by default.
-# FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
-AS_IF(
-  [test "x$enable_openmp" = "x"],
-  [OPENMP_CFLAGS=]
-)
-# add compiler flags for OpenMP
-AS_IF(
-  [test "x$OPENMP_CFLAGS" = "x" -a "x$ac_cv_prog_[]_AC_LANG_ABBREV[]_openmp" != "xnone needed"],
-  [
-    OPENMP_ENABLE_VAL="DISABLED"
-    LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
-  ],
-  [
-    OPENMP_ENABLE_VAL="ENABLED"
-    LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
-  ]
-)
-
-# create Automake conditional so that we know whether we need to build
-# OpenMP-specific tests
-AM_CONDITIONAL([HAVE_OPENMP],[test "x$OPENMP_ENABLE_VAL" = "xENABLED"])
-
-# create Automake conditional so that we know whether we need to build
-# OpenMP-specific tests
-AM_CONDITIONAL([HAVE_OPENMP],[test "x$OPENMP_ENABLE_VAL" = "xENABLED"])
-# add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
 # link any executables against LALApps library
