@@ -89,7 +89,6 @@ from glue.ligolw import ligolw
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import search_summary as ligolw_search_summary
 from glue.ligolw import table as ligolw_table
-from pylal import ligolw_thinca
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw import lsctables
 
@@ -178,7 +177,7 @@ time_slide_id = time_slide_table.get_time_slide_id(
 # sngl_inspiral <-> sngl_inspiral coincidences.
 coinc_def_table = lsctables.New(lsctables.CoincDefTable)
 out_xmldoc.childNodes[0].appendChild(coinc_def_table)
-coinc_def = ligolw_thinca.InspiralCoincDef
+coinc_def = ligolw_bayestar.InspiralCoincDef
 coinc_def_id = coinc_def_table.get_next_id()
 coinc_def.coinc_def_id = coinc_def_id
 coinc_def_table.append(coinc_def)
