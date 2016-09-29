@@ -194,7 +194,7 @@ def parse_COMPLEX16TimeSeries(elem):
 #
 
 
-def make_psd_xmldoc(psddict, xmldoc = None):
+def make_psd_xmldoc(psddict, xmldoc = None, root_name = u"psd"):
     """
     Construct an XML document tree representation of a dictionary of
     frequency series objects containing PSDs.  See also read_psd_xmldoc()
@@ -203,38 +203,35 @@ def make_psd_xmldoc(psddict, xmldoc = None):
     If xmldoc is None (the default), then a new XML document is created and
     the PSD dictionary added to it inside a LIGO_LW element.  If xmldoc is
     not None then the PSD dictionary is appended to the children of that
-    element inside a new LIGO_LW element.  This will be looked for
+    element inside a new LIGO_LW element.  In both cases, the LIGO_LW
+    element's Name attribute is set to root_name.  This will be looked for
     by read_psd_xmldoc() when parsing the PSD document.
     """
     if xmldoc is None:
         xmldoc = ligolw.Document()
-    if isinstance(xmldoc, ligolw.Document):
-        lw = xmldoc.appendChild(ligolw.LIGO_LW())
-    elif isinstance(xmldoc, ligolw.LIGO_LW):
-        lw = xmldoc
-    else:
-        raise ValueError('xmldoc should be either an XML document or a LIGO_LW element')
+    lw = xmldoc.appendChild(ligolw.LIGO_LW(Attributes({u"Name": root_name})))
     for instrument, psd in psddict.items():
-        if psd.name.lower() != 'psd':
-            raise ValueError('All of the time series must have name set to "psd"')
         fs = lw.appendChild(build_REAL8FrequencySeries(psd))
         if instrument is not None:
             fs.appendChild(ligolw_param.Param.from_pyvalue(u"instrument", instrument))
     return xmldoc
 
 
-def read_psd_xmldoc(xmldoc):
+def read_psd_xmldoc(xmldoc, root_name = u"psd"):
     """
     Parse a dictionary of PSD frequency series objects from an XML
     document.  See also make_psd_xmldoc() for the construction of XML
     documents from a dictionary of PSDs.  Interprets an empty frequency
     series for an instrument as None.
+
+    The XML document tree is searched for a LIGO_LW element whose Name
+    attribute is root_name (default is "psd").  If root_name is None all
+    REAL8Frequency series objects below xmldoc are included in the return
+    value.
     """
-    result = {ligolw_param.get_pyvalue(elem, 'instrument'): parse_REAL8FrequencySeries(elem)
-              for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName)
-              if elem.hasAttribute('Name')
-              and elem.Name == lal.REAL8FrequencySeries.__name__
-              and elem.getElements(lambda e: (e.tagName == ligolw.Array.tagName) and (e.Name.lower() == 'psd'))}
+    if root_name is not None:
+        xmldoc, = (elem for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == root_name)
+    result = dict((ligolw_param.get_pyvalue(elem, u"instrument"), parse_REAL8FrequencySeries(elem)) for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == u"REAL8FrequencySeries")
     # interpret empty frequency series as None
     for instrument in result:
         if len(result[instrument].data.data) == 0:
