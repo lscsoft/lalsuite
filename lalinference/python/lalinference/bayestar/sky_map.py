@@ -187,7 +187,9 @@ def ligolw_sky_map(
                  "underestimated.")
 
         # Maximum barycentered arrival time error:
-        # |distance from array barycenter to furthest detector| / c + 5 ms
+        # |distance from array barycenter to furthest detector| / c + 5 ms.
+        # For LHO+LLO, this is 15.0 ms.
+        # For an arbitrary terrestrial detector network, the maximum is 26.3 ms.
         max_abs_t = np.max(
             np.sqrt(np.sum(np.square(locations / lal.C_SI), axis=1))) + 0.005
 
