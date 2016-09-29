@@ -90,7 +90,7 @@ double (*bayestar_sky_map_toa_phoa_snr(
     unsigned long nsamples,         /* Lengths of SNR series */
     double sample_rate,             /* Sample rate in seconds */
     const double *epochs,           /* Timestamps of SNR time series */
-    const double complex **snrs,    /* Complex SNR series */
+    const float complex **snrs,     /* Complex SNR series */
     const float (**responses)[3],   /* Detector responses */
     const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
     const double *horizons          /* SNR=1 horizon distances for each detector */
@@ -110,7 +110,7 @@ double bayestar_log_likelihood_toa_phoa_snr(
     unsigned long nsamples,         /* Length of SNR series */
     double sample_rate,             /* Sample rate in seconds */
     const double *epochs,           /* Timestamps of SNR time series */
-    const double complex **snrs,    /* Complex SNR series */
+    const float complex **snrs,     /* Complex SNR series */
     const float (**responses)[3],   /* Detector responses */
     const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
     const double *horizons          /* SNR=1 horizon distances for each detector */

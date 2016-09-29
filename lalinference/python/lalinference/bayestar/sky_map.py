@@ -204,7 +204,7 @@ def ligolw_sky_map(
 
         snr_series = []
         for acor, sngl in zip(acors, sngl_inspirals):
-            series = lal.CreateCOMPLEX16TimeSeries(
+            series = lal.CreateCOMPLEX8TimeSeries(
                 'fake SNR', 0, 0, deltaT, lal.StrainUnit, nsamples)
             series.epoch = sngl.end - 0.5 * (nsamples - 1) * deltaT
             acor = np.concatenate((np.conj(acor[:0:-1]), acor))

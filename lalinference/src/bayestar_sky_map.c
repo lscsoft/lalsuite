@@ -116,10 +116,10 @@ static double cabs2(double complex z) {
  *     t_3 = 2,  x_3 = x[3].
  */
 static double complex complex_catrom(
-    double complex x0,
-    double complex x1,
-    double complex x2,
-    double complex x3,
+    float complex x0,
+    float complex x1,
+    float complex x2,
+    float complex x3,
     double t
 ) {
     return x1
@@ -188,7 +188,7 @@ static double real_catrom(
  * that the vector x gives the samples of the time series at times
  * 0, 1, ..., nsamples-1. */
 static double complex eval_snr(
-    const double complex *x,
+    const float complex *x,
     size_t nsamples,
     double t
 ) {
@@ -820,7 +820,7 @@ double (*bayestar_sky_map_toa_phoa_snr(
     unsigned long nsamples,         /* Length of SNR series */
     double sample_rate,             /* Sample rate in seconds */
     const double *epochs,           /* Timestamps of SNR time series */
-    const double complex **snrs,    /* Complex SNR series */
+    const float complex **snrs,     /* Complex SNR series */
     const float (**responses)[3],   /* Detector responses */
     const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
     const double *horizons          /* SNR=1 horizon distances for each detector */
@@ -1009,7 +1009,7 @@ double bayestar_log_likelihood_toa_phoa_snr(
     unsigned long nsamples,         /* Lengths of SNR series */
     double sample_rate,             /* Sample rate in seconds */
     const double *epochs,           /* Timestamps of SNR time series */
-    const double complex **snrs,    /* Complex SNR series */
+    const float complex **snrs,     /* Complex SNR series */
     const float (**responses)[3],   /* Detector responses */
     const double **locations,       /* Barycentered Cartesian geographic detector positions (m) */
     const double *horizons          /* SNR=1 horizon distances for each detector */
@@ -1269,7 +1269,7 @@ static void test_real_catrom(void)
 static void test_eval_snr(void)
 {
     size_t nsamples = 64;
-    double complex x[nsamples];
+    float complex x[nsamples];
 
     /* Populate data with samples of x(t) = t^2 + t j */
     for (size_t i = 0; i < nsamples; i ++)

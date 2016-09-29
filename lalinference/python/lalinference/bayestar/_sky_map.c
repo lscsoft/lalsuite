@@ -203,13 +203,13 @@ static PyObject *sky_map_toa_phoa_snr(
     memset(locations_npy, 0, sizeof(locations_npy));
 
     /* Arrays of pointers for inputs with multiple dimensions */
-    const double complex *snrs[nifos];
+    const float complex *snrs[nifos];
     const float (*responses[nifos])[3];
     const double *locations[nifos];
 
     /* Gather C-aligned arrays from Numpy types */
     INPUT_VECTOR_DOUBLE_NIFOS(epochs)
-    INPUT_LIST_OF_ARRAYS(snrs, NPY_CDOUBLE, 1,
+    INPUT_LIST_OF_ARRAYS(snrs, NPY_CFLOAT, 1,
         npy_intp dim = PyArray_DIM(npy, 0);
         if (iifo == 0)
             nsamples = dim;
@@ -310,13 +310,13 @@ static PyObject *log_likelihood_toa_phoa_snr(
     memset(locations_npy, 0, sizeof(locations_npy));
 
     /* Arrays of pointers for inputs with multiple dimensions */
-    const double complex *snrs[nifos];
+    const float complex *snrs[nifos];
     const float (*responses[nifos])[3];
     const double *locations[nifos];
 
     /* Gather C-aligned arrays from Numpy types */
     INPUT_VECTOR_DOUBLE_NIFOS(epochs)
-    INPUT_LIST_OF_ARRAYS(snrs, NPY_CDOUBLE, 1,
+    INPUT_LIST_OF_ARRAYS(snrs, NPY_CFLOAT, 1,
         npy_intp dim = PyArray_DIM(npy, 0);
         if (iifo == 0)
             nsamples = dim;

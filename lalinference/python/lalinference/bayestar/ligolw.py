@@ -165,7 +165,7 @@ def psd_filenames_by_process_id_for_xmldoc(xmldoc):
 def _snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc):
     for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName):
         try:
-            if elem.Name != lal.COMPLEX16TimeSeries.__name__:
+            if elem.Name != lal.COMPLEX8TimeSeries.__name__:
                 continue
             array_elem = ligolw_array.get_array(elem, 'snr')
             event_id = ligolw_param.get_pyvalue(elem, 'event_id')
@@ -174,7 +174,7 @@ def _snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc):
         except (AttributeError, ValueError):
             continue
         else:
-            yield event_id, lal.series.parse_COMPLEX16TimeSeries(elem)
+            yield event_id, lal.series.parse_COMPLEX8TimeSeries(elem)
 
 
 def snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc):
