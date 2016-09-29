@@ -148,7 +148,7 @@ else:
     def reference_psds_for_filename(filename):
         xmldoc = ligolw_utils.load_filename(
             filename, contenthandler=lal.series.PSDContentHandler)
-        psds = lal.series.read_psd_xmldoc(xmldoc)
+        psds = lal.series.read_psd_xmldoc(xmldoc, root_name=None)
         return dict(
             (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
                 f_high_truncate=opts.f_high_truncate))

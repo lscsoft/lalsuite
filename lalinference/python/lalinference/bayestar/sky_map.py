@@ -377,7 +377,7 @@ def gracedb_sky_map(
     # Read PSDs.
     xmldoc, _ = ligolw_utils.load_fileobj(
         psd_file, contenthandler=lal.series.PSDContentHandler)
-    psds = lal.series.read_psd_xmldoc(xmldoc)
+    psds = lal.series.read_psd_xmldoc(xmldoc, root_name=None)
 
     # Rearrange PSDs into the same order as the sngl_inspirals.
     psds = [psds[sngl_inspiral.ifo] for sngl_inspiral in sngl_inspirals]
