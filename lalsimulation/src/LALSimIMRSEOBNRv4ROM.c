@@ -498,7 +498,9 @@ int SEOBNRROMdataDS_Init(
   XLALPrintInfo("ROM metadata\n============\n");
   PrintInfoStringAttribute(file, "Email");
   PrintInfoStringAttribute(file, "Description");
-  ret = ROM_check_version_number(file, ROMDataHDF5_VERSION_MAJOR, ROMDataHDF5_VERSION_MINOR, ROMDataHDF5_VERSION_MICRO);
+  ret = ROM_check_version_number(file, ROMDataHDF5_VERSION_MAJOR,
+                                 ROMDataHDF5_VERSION_MINOR,
+                                 ROMDataHDF5_VERSION_MICRO);
 
   XLALFree(path);
   XLALH5FileClose(file);
@@ -616,7 +618,8 @@ static void GlueAmplitude(
   *acc_amp = gsl_interp_accel_alloc();
   *spline_amp = gsl_spline_alloc(gsl_interp_cspline, nA);
   //gsl_spline_init(spline_amp, gAU->data, gsl_vector_const_ptr(amp_f,0), nA);
-  gsl_spline_init(*spline_amp, gsl_vector_const_ptr(gAU,0), gsl_vector_const_ptr(amp_f,0), nA);
+  gsl_spline_init(*spline_amp, gsl_vector_const_ptr(gAU,0),
+                  gsl_vector_const_ptr(amp_f,0), nA);
 
   gsl_vector_free(gAU);
   gsl_vector_free(amp_f);
@@ -676,7 +679,8 @@ static void GluePhasing(
   // submodel_lo, but this may be insignificant since the number of points is small anyway.
   gsl_interp_accel *acc_phi_lo = gsl_interp_accel_alloc();
   gsl_spline *spline_phi_lo = gsl_spline_alloc(gsl_interp_cspline, submodel_lo->nk_phi);
-  gsl_spline_init(spline_phi_lo, gsl_vector_const_ptr(submodel_lo->gPhi,0), gsl_vector_const_ptr(phi_f_lo,0), submodel_lo->nk_phi);
+  gsl_spline_init(spline_phi_lo, gsl_vector_const_ptr(submodel_lo->gPhi,0),
+                  gsl_vector_const_ptr(phi_f_lo,0), submodel_lo->nk_phi);
 
   const int nn = 15;
   gsl_vector_const_view gP_hi_data = gsl_vector_const_subvector(submodel_hi->gPhi, jP_hi - nn, 2*nn+1);
@@ -718,7 +722,8 @@ static void GluePhasing(
   *acc_phi = gsl_interp_accel_alloc();
   *spline_phi = gsl_spline_alloc(gsl_interp_cspline, nP);
   //gsl_spline_init(spline_phi, gPU->data, gsl_vector_const_ptr(phi_f,0), nP);
-  gsl_spline_init(*spline_phi, gsl_vector_const_ptr(gPU,0), gsl_vector_const_ptr(phi_f,0), nP);
+  gsl_spline_init(*spline_phi, gsl_vector_const_ptr(gPU,0),
+                  gsl_vector_const_ptr(phi_f,0), nP);
 
   /**** Finished gluing ****/
 
@@ -759,10 +764,16 @@ static int SEOBNRv4ROMCore(
   /* Check output arrays */
   if(!hptilde || !hctilde)
     XLAL_ERROR(XLAL_EFAULT);
+
   SEOBNRROMdataDS *romdata=&__lalsim_SEOBNRv4ROMDS_data;
-  if(*hptilde || *hctilde)
-  {
-    XLALPrintError("(*hptilde) and (*hctilde) are supposed to be NULL, but got %p and %p",(*hptilde),(*hctilde));
+  if (!SEOBNRv4ROM_IsSetup()) {
+    XLAL_ERROR(XLAL_EFAILED,
+               "Error setting up SEOBNRv4ROM data - check your $LAL_DATA_PATH\n");
+  }
+
+  if(*hptilde || *hctilde) {
+    XLALPrintError("(*hptilde) and (*hctilde) are supposed to be NULL, but got %p and %p",
+                   (*hptilde), (*hctilde));
     XLAL_ERROR(XLAL_EFAULT);
   }
   int retcode=0;
@@ -772,12 +783,16 @@ static int SEOBNRv4ROMCore(
   if (eta < 0.01)     nudge(&eta, 0.01, 1e-6);
 
   if ( chi1 < -1.0 || chi2 < -1.0 || chi1 > 1.0 || chi2 > 1.0) {
-    XLALPrintError( "XLAL Error - %s: chi1 or chi2 smaller than -1.0 or larger than 1.0!\nSEOBNRv4ROM is only available for spins in the range -1 <= a/M <= 1.0.\n", __func__);
+    XLALPrintError("XLAL Error - %s: chi1 or chi2 smaller than -1.0 or larger than 1.0!\n"
+                   "SEOBNRv4ROM is only available for spins in the range -1 <= a/M <= 1.0.\n",
+                   __func__);
     XLAL_ERROR( XLAL_EDOM );
   }
 
   if (eta<0.01 || eta > 0.25) {
-    XLALPrintError( "XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\nSEOBNRv4ROM is only available for eta in the range 0.01 <= eta <= 0.25.\n", __func__,eta);
+    XLALPrintError("XLAL Error - %s: eta (%f) smaller than 0.01 or unphysical!\n"
+                   "SEOBNRv4ROM is only available for eta in the range 0.01 <= eta <= 0.25.\n",
+                   __func__, eta);
     XLAL_ERROR( XLAL_EDOM );
   }
 
@@ -802,8 +817,12 @@ static int SEOBNRv4ROMCore(
     fRef=fLow;
 
   /* Convert to geometric units for frequency */
-  double Mf_ROM_min = fmax(gsl_vector_get(submodel_lo->gA, 0), gsl_vector_get(submodel_lo->gPhi,0));                                   // lowest allowed geometric frequency for ROM
-  double Mf_ROM_max = fmin(gsl_vector_get(submodel_hi->gA, submodel_hi->nk_amp-1), gsl_vector_get(submodel_hi->gPhi, submodel_hi->nk_phi-1)); // highest allowed geometric frequency for ROM
+  // lowest allowed geometric frequency for ROM
+  double Mf_ROM_min = fmax(gsl_vector_get(submodel_lo->gA, 0),
+                           gsl_vector_get(submodel_lo->gPhi,0));
+  // highest allowed geometric frequency for ROM
+  double Mf_ROM_max = fmin(gsl_vector_get(submodel_hi->gA, submodel_hi->nk_amp-1),
+                           gsl_vector_get(submodel_hi->gPhi, submodel_hi->nk_phi-1));
   double fLow_geom = fLow * Mtot_sec;
   double fHigh_geom = fHigh * Mtot_sec;
   double fRef_geom = fRef * Mtot_sec;
@@ -1001,7 +1020,8 @@ static int SEOBNRv4ROMCore(
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
 
   // Get SEOBNRv4 ringdown frequency for 22 mode
-  double Mf_final = SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(Mtot_sec, eta, chi1, chi2, SEOBNRv4);
+  double Mf_final = SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(Mtot_sec, eta, chi1,
+                                                        chi2, SEOBNRv4);
 
   UINT4 L = freqs->length;
   // prevent gsl interpolation errors
@@ -1136,12 +1156,16 @@ int XLALSimIMRSEOBNRv4ROMFrequencySequence(
   SEOBNRv4ROM_Init_LALDATA();
 #endif
 
-  if(!SEOBNRv4ROM_IsSetup()) XLAL_ERROR(XLAL_EFAILED,"Error setting up SEOBNRv4ROM data - check your $LAL_DATA_PATH\n");
+  if(!SEOBNRv4ROM_IsSetup()) {
+    XLAL_ERROR(XLAL_EFAILED,
+               "Error setting up SEOBNRv4ROM data - check your $LAL_DATA_PATH\n");
+  }
 
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
-  int retcode = SEOBNRv4ROMCore(hptilde,hctilde,
-            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, 0, nk_max);
+  int retcode = SEOBNRv4ROMCore(hptilde, hctilde, phiRef, fRef, distance,
+                                inclination, Mtot_sec, eta, chi1, chi2, freqs,
+                                0, nk_max);
 
   return(retcode);
 }
@@ -1204,8 +1228,9 @@ int XLALSimIMRSEOBNRv4ROM(
   freqs->data[0] = fLow;
   freqs->data[1] = fHigh;
 
-  int retcode = SEOBNRv4ROMCore(hptilde,hctilde,
-            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, deltaF, nk_max);
+  int retcode = SEOBNRv4ROMCore(hptilde, hctilde, phiRef, fRef, distance,
+                                inclination, Mtot_sec, eta, chi1, chi2, freqs,
+                                deltaF, nk_max);
 
   XLALDestroyREAL8Sequence(freqs);
 
@@ -1257,6 +1282,10 @@ static int SEOBNRv4ROMTimeFrequencySetup(
 #endif
 
   SEOBNRROMdataDS *romdata=&__lalsim_SEOBNRv4ROMDS_data;
+  if (!SEOBNRv4ROM_IsSetup()) {
+    XLAL_ERROR(XLAL_EFAILED,
+               "Error setting up SEOBNRv4ROM data - check your $LAL_DATA_PATH\n");
+  }
 
   /* We always need to glue two submodels together for this ROM */
   SEOBNRROMdataDS_submodel *submodel_hi; // high frequency ROM
@@ -1272,11 +1301,17 @@ static int SEOBNRv4ROMTimeFrequencySetup(
   /* Internal storage for waveform coefficiencts */
   SEOBNRROMdataDS_coeff *romdata_coeff_lo=NULL;
   SEOBNRROMdataDS_coeff *romdata_coeff_hi=NULL;
-  SEOBNRROMdataDS_coeff_Init(&romdata_coeff_lo, submodel_lo->nk_amp, submodel_lo->nk_phi);
-  SEOBNRROMdataDS_coeff_Init(&romdata_coeff_hi, submodel_hi->nk_amp, submodel_hi->nk_phi);
+  SEOBNRROMdataDS_coeff_Init(&romdata_coeff_lo, submodel_lo->nk_amp,
+                             submodel_lo->nk_phi);
+  SEOBNRROMdataDS_coeff_Init(&romdata_coeff_hi, submodel_hi->nk_amp,
+                             submodel_hi->nk_phi);
 
-  *Mf_ROM_min = fmax(gsl_vector_get(submodel_lo->gA, 0), gsl_vector_get(submodel_lo->gPhi,0));                                   // lowest allowed geometric frequency for ROM
-  *Mf_ROM_max = fmin(gsl_vector_get(submodel_hi->gA, submodel_hi->nk_amp-1), gsl_vector_get(submodel_hi->gPhi, submodel_hi->nk_phi-1)); // highest allowed geometric frequency for ROM
+  // lowest allowed geometric frequency for ROM
+  *Mf_ROM_min = fmax(gsl_vector_get(submodel_lo->gA, 0),
+                     gsl_vector_get(submodel_lo->gPhi,0));
+  // highest allowed geometric frequency for ROM
+  *Mf_ROM_max = fmin(gsl_vector_get(submodel_hi->gA, submodel_hi->nk_amp-1),
+                     gsl_vector_get(submodel_hi->gPhi, submodel_hi->nk_phi-1));
 
 
   /* Interpolate projection coefficients and evaluate them at (eta,chi1,chi2) */
@@ -1333,10 +1368,12 @@ static int SEOBNRv4ROMTimeFrequencySetup(
   // Compute function values of amplitude an phase on sparse frequency points by evaluating matrix vector products
   // phi_pts = B_phi^T . c_phi
   gsl_vector* phi_f_lo = gsl_vector_alloc(submodel_lo->nk_phi);
-  gsl_blas_dgemv(CblasTrans, 1.0, submodel_lo->Bphi, romdata_coeff_lo->c_phi, 0.0, phi_f_lo);
+  gsl_blas_dgemv(CblasTrans, 1.0, submodel_lo->Bphi, romdata_coeff_lo->c_phi,
+                 0.0, phi_f_lo);
 
   gsl_vector* phi_f_hi = gsl_vector_alloc(submodel_hi->nk_phi);
-  gsl_blas_dgemv(CblasTrans, 1.0, submodel_hi->Bphi, romdata_coeff_hi->c_phi, 0.0, phi_f_hi);
+  gsl_blas_dgemv(CblasTrans, 1.0, submodel_hi->Bphi, romdata_coeff_hi->c_phi,
+                 0.0, phi_f_hi);
 
   const double Mfm = 0.01; // Gluing frequency: the low and high frequency ROMs overlap here; this is used both for amplitude and phase.
 
@@ -1346,7 +1383,8 @@ static int SEOBNRv4ROMTimeFrequencySetup(
   );
 
   // Get SEOBNRv4 ringdown frequency for 22 mode
-  *Mf_final = SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(*Mtot_sec, eta, chi1, chi2, SEOBNRv4);
+  *Mf_final = SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(*Mtot_sec, eta, chi1, chi2,
+                                                  SEOBNRv4);
 
   SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff_lo);
   SEOBNRROMdataDS_coeff_Cleanup(romdata_coeff_hi);
@@ -1392,7 +1430,9 @@ int XLALSimIMRSEOBNRv4ROMTimeOfFrequency(
   gsl_interp_accel *acc_phi;
   double Mf_final, Mtot_sec;
   double Mf_ROM_min, Mf_ROM_max;
-  int ret = SEOBNRv4ROMTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final, &Mtot_sec, m1SI, m2SI, chi1, chi2, &Mf_ROM_min, &Mf_ROM_max);
+  int ret = SEOBNRv4ROMTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final,
+                                          &Mtot_sec, m1SI, m2SI, chi1, chi2,
+                                          &Mf_ROM_min, &Mf_ROM_max);
   if(ret != 0)
     XLAL_ERROR(ret);
 
@@ -1458,7 +1498,9 @@ int XLALSimIMRSEOBNRv4ROMFrequencyOfTime(
   gsl_interp_accel *acc_phi;
   double Mf_final, Mtot_sec;
   double Mf_ROM_min, Mf_ROM_max;
-  int ret = SEOBNRv4ROMTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final, &Mtot_sec, m1SI, m2SI, chi1, chi2, &Mf_ROM_min, &Mf_ROM_max);
+  int ret = SEOBNRv4ROMTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final,
+                                          &Mtot_sec, m1SI, m2SI, chi1, chi2,
+                                          &Mf_ROM_min, &Mf_ROM_max);
   if(ret != 0)
     XLAL_ERROR(ret);
 

@@ -1137,7 +1137,13 @@ static int SEOBNRv2ROMDoubleSpinCore(
   /* Check output arrays */
   if(!hptilde || !hctilde)
     XLAL_ERROR(XLAL_EFAULT);
+
   SEOBNRROMdataDS *romdata=&__lalsim_SEOBNRv2ROMDS_data;
+  if(!SEOBNRv2ROMDoubleSpin_IsSetup()) {
+    XLAL_ERROR(XLAL_EFAILED,
+               "Error setting up SEOBNRv2ROMDoubleSpinHI data - check your $LAL_DATA_PATH\n");
+  }
+
   if(*hptilde || *hctilde)
   {
     XLALPrintError("(*hptilde) and (*hctilde) are supposed to be NULL, but got %p and %p",(*hptilde),(*hctilde));
@@ -1517,7 +1523,10 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinHIFrequencySequence(
   SEOBNRv2ROMDoubleSpin_Init_LALDATA();
 #endif
 
-  if(!SEOBNRv2ROMDoubleSpin_IsSetup()) XLAL_ERROR(XLAL_EFAILED,"Error setting up SEOBNRv2ROMDoubleSpinHI data - check your $LAL_DATA_PATH\n");
+  if(!SEOBNRv2ROMDoubleSpin_IsSetup()) {
+    XLAL_ERROR(XLAL_EFAILED,
+               "Error setting up SEOBNRv2ROMDoubleSpinHI data - check your $LAL_DATA_PATH\n");
+  }
 
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
@@ -1640,6 +1649,10 @@ static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
 #endif
 
   SEOBNRROMdataDS *romdata=&__lalsim_SEOBNRv2ROMDS_data;
+  if(!SEOBNRv2ROMDoubleSpin_IsSetup()) {
+    XLAL_ERROR(XLAL_EFAILED,
+               "Error setting up SEOBNRv2ROMDoubleSpinHI data - check your $LAL_DATA_PATH\n");
+  }
 
   /* We always need to glue two submodels together for this ROM */
   SEOBNRROMdataDS_submodel *submodel_hi; // high frequency ROM
