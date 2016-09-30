@@ -2450,7 +2450,7 @@ REAL8 LALInferenceGlitchMorletReverseJump(LALInferenceThreadState *thread,
 
     /* Check that new dimension is allowed */
     if(ny<nmin || ny>=nmax) {
-        logPropRatio = -DBL_MAX;
+        logPropRatio = -INFINITY;
         return logPropRatio;
     }
 
@@ -3047,7 +3047,7 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInfe
     INT4 no_adapt, adapting;
     INT4 adaptTau, adaptableStep, adaptLength, adaptResetBuffer;
     REAL8 sigma, s_gamma;
-    REAL8 logLAtAdaptStart = -DBL_MAX;
+    REAL8 logLAtAdaptStart = -INFINITY;
 
     LALInferenceVariableItem *this;
 
@@ -3636,7 +3636,7 @@ REAL8 LALInferenceClusteredKDEProposal(LALInferenceThreadState *thread, LALInfer
  * @param      thread         The current LALInferenceThreadState.
  * @param      currentParams  The current parameters.
  * @param[out] proposedParams The proposed parameters.
- * @param      propDensity    If input is not NULL or >-DBL_MAX, assume this is the
+ * @param      propDensity    If input is not NULL or >-INFINITY, assume this is the
  *                              proposal density at \a currentParams, otherwise
  *                              calculate.  It is then replaced with the proposal
  *                              density at \a proposedParams.
@@ -3691,7 +3691,7 @@ REAL8 LALInferenceStoredClusteredKDEProposal(LALInferenceThreadState *thread, LA
 
     /* Calculate the proposal ratio */
     REAL8 logCurrentP;
-    if (propDensity == NULL || *propDensity == -DBL_MAX)
+    if (propDensity == NULL || *propDensity == -INFINITY)
         logCurrentP = LALInferenceKmeansPDF(kde->kmeans, current);
     else
         logCurrentP = *propDensity;

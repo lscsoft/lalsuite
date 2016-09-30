@@ -423,8 +423,8 @@ static NSintegralState *initNSintegralState(UINT4 Nruns, UINT4 Nlive)
 
   if(s->logZarray==NULL || s->Harray==NULL || s->oldZarray==NULL || s->logwarray==NULL)
   {fprintf(stderr,"Unable to allocate RAM\n"); exit(-1);}
-  for(UINT4 i=0;i<Nruns;i++)  {s->logwarray->data[i]=logw; s->logZarray->data[i]=-DBL_MAX;
-    s->oldZarray->data[i]=-DBL_MAX; s->Harray->data[i]=0.0;s->logtarray->data[i]=-1.0/Nlive;
+  for(UINT4 i=0;i<Nruns;i++)  {s->logwarray->data[i]=logw; s->logZarray->data[i]=-INFINITY;
+    s->oldZarray->data[i]=-INFINITY; s->Harray->data[i]=0.0;s->logtarray->data[i]=-1.0/Nlive;
     s->logt2array->data[i]=-1.0/Nlive;
   }
   return s;
@@ -774,10 +774,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
   UINT4 Nruns=100;
   REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*logtarray;
   REAL8 TOLERANCE=0.1;
-  REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,H,logZnoise,dZ=0;
+  REAL8 logZ,logZnew,logLmin,logLmax=-INFINITY,logLtmp,logw,H,logZnoise,dZ=0;
   LALInferenceVariables *temp;
   FILE *fpout=NULL;
-  REAL8 dblmax=-DBL_MAX;
+  REAL8 neginfty=-INFINITY;
   REAL8 zero=0.0;
   REAL8 *logLikelihoods=NULL;
   UINT4 verbose=0;
@@ -822,7 +822,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
   /* Check that necessary parameters are created */
   if(!LALInferenceCheckVariable(runState->algorithmParams,"logLmin"))
-    LALInferenceAddVariable(runState->algorithmParams,"logLmin",&dblmax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->algorithmParams,"logLmin",&neginfty,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
   if(!LALInferenceCheckVariable(runState->algorithmParams,"accept_rate"))
     LALInferenceAddVariable(runState->algorithmParams,"accept_rate",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
@@ -930,7 +930,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     if(LALInferenceGetProcParamVal(runState->commandLine,"--resume"))
         fprintf(stdout,"Unable to open resume file %s. Starting anew.\n",resumefilename);
     /* Sprinkle points */
-    LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
+    LALInferenceSetVariable(runState->algorithmParams,"logLmin",&neginfty);
     int sprinklewarning=0;
     for(i=0;i<Nlive;i++) {
 	    threadState->currentParams=runState->livePoints[i];
@@ -1004,7 +1004,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	minpos=i;
     }
     logLmin=logLikelihoods[minpos];
-    if(samplePrior) logLmin=-DBL_MAX;
+    if(samplePrior) logLmin=-INFINITY;
 
     logZnew=incrementEvidenceSamples(runState->GSLrandom, Nlive, logLikelihoods[minpos], s);
     //deltaZ=logZnew-logZ; - set but not used
@@ -1344,7 +1344,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     if(LALInferenceCheckVariable(runState->algorithmParams,"verbose")) fprintf(stderr,"Caching %i samples\n",Nnew);
 
     /* Copy independent samples */
-    REAL8 oldLogL=-DBL_MAX;
+    REAL8 oldLogL=-INFINITY;
     for(i=stride,j=*Ncache;j<Nnew+*Ncache&&i<max_iterations;i+=stride,j++)
     {
       REAL8 newlogL=*(REAL8 *)LALInferenceGetVariable(variables_array[i],"logL");
@@ -1392,7 +1392,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
     LALInferenceVariables proposedParams;
     memset(&proposedParams,0,sizeof(proposedParams));
     REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
-    REAL8 thislogL=-DBL_MAX;
+    REAL8 thislogL=-INFINITY;
     UINT4 accepted=0;
 
     REAL8 logPriorOld=*(REAL8 *)LALInferenceGetVariable(threadState->currentParams,"logPrior");
@@ -1405,7 +1405,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
 
     logProposalRatio = threadState->proposal(threadState,threadState->currentParams,&proposedParams);
     REAL8 logPriorNew=runState->prior(runState, &proposedParams, threadState->model);
-    if(logPriorNew==-DBL_MAX || isnan(logPriorNew) || logPriorNew==-INFINITY || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
+    if(isinf(logPriorNew) || isnan(logPriorNew) || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
     {
 	/* Reject - don't need to copy new params back to currentParams */
         /*LALInferenceCopyVariables(oldParams,runState->currentParams); */
@@ -1494,7 +1494,7 @@ INT4 LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState)
     Naccept = LALInferenceNestedSamplingSloppySample(runState);
     return Naccept;
   }
-  REAL8 logL=-DBL_MAX;
+  REAL8 logL=-INFINITY;
   REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
 
   /* Draw the last sample from the cache and reduce the size of the cache by one
@@ -1588,8 +1588,8 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
         tries=0;
         mcmc_iter++;
     	sub_iter+=subchain_length;
-        if(logLmin!=-DBL_MAX) logLnew=runState->likelihood(threadState->currentParams,runState->data,threadState->model);
-        if(logLnew>logLmin || logLmin==-DBL_MAX) /* Accept */
+        if(isfinite(logLmin)) logLnew=runState->likelihood(threadState->currentParams,runState->data,threadState->model);
+        if(logLnew>logLmin || isinf(logLmin)) /* Accept */
         {
             Naccepted++;
             /* Update information to pass back out */
@@ -1647,7 +1647,7 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceSetVariable(runState->algorithmParams,"accept_rate",&accept_rate);
     LALInferenceSetVariable(runState->algorithmParams,"sub_accept_rate",&sub_accept_rate);
     /* Adapt the sloppy fraction toward target acceptance of outer chain */
-    if(logLmin!=-DBL_MAX){
+    if(isfinite(logLmin)){
         if((REAL8)accept_rate>Target) { sloppyfraction+=5.0/(REAL8)Nmcmc;}
         else { sloppyfraction-=5.0/(REAL8)Nmcmc;}
         if(sloppyfraction>maxsloppyfraction) sloppyfraction=maxsloppyfraction;
@@ -1710,7 +1710,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	  do{
 	    LALInferenceDrawFromPrior( runState->livePoints[i], runState->priorArgs, runState->GSLrandom );
 	    logPrior=runState->prior(runState,runState->livePoints[i],threadState->model);
-	  }while(logPrior==-DBL_MAX || logPrior==-INFINITY || isnan(logPrior));
+	  }while(isinf(logPrior) || isnan(logPrior));
 	  /* Populate log likelihood */
 	  logLs->data[i]=runState->likelihood(runState->livePoints[i],runState->data,threadState->model);
 	  LALInferenceAddVariable(runState->livePoints[i],"logL",(void *)&(logLs->data[i]),LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
