@@ -1390,10 +1390,10 @@ void LALInferenceWriteMCMCSamples(LALInferenceRunState *runState) {
                 && LALInferenceCheckVariable(thread->algorithmParams, "N_outputarray") ) {
             output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(thread->algorithmParams,"outputarray");
             N_output_array=*(UINT4 *)LALInferenceGetVariable(thread->algorithmParams,"N_outputarray");
-        }
 
-        /* Create run identifier group */
-        LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, thread->name);
+            /* Create run identifier group */
+            LALInferenceH5VariablesArrayToDataset(group, output_array, N_output_array, thread->name);
+        }
 
         /* TODO: Write metadata */
     }
