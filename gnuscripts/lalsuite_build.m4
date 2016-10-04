@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 129
+# serial 130
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1158,7 +1158,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
       DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/^citelist/d'"]
     ])
     LALSUITE_VERSION_COMPARE([1.8.8],[<=],[${doxygen_version}],[
-      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<=],[9.9.9],[
+      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[1.8.11],[
         # https://bugzilla.gnome.org/show_bug.cgi?id=743604
         DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: Duplicate anchor/d'"]
         DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: multiple use of section label/d'"]
