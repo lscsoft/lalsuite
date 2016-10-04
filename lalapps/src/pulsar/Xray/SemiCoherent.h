@@ -27,6 +27,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <gsl/gsl_math.h>
 #include <gsl/gsl_interp.h>        /* needed for the gsl interpolation */
 #include <gsl/gsl_spline.h>        /* needed for the gsl interpolation */
 #include <gsl/gsl_rng.h>           /* for random number generation */

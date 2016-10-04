@@ -1,4 +1,6 @@
-/*  Copyright (C) 2010 Chris Messenger
+/*
+ *  Copyright (C) 2016 Karl Wette
+ *  Copyright (C) 2010 Chris Messenger
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,6 +61,7 @@
 #include <lal/ComplexFFT.h>
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
+#include <lal/VectorMath.h>
 #include <lalapps.h>
 
 #include "SemiCoherent.h"
@@ -89,11 +92,12 @@ typedef struct {
   INT4 tsft;                       /**< the length of the input sfts */
   CHAR *comment;
   CHAR *tempdir;                    /**< a temporary directory for keeping the results */
+  BOOLEAN with_xbins;               /**< enable fast summing of extra bins */
   BOOLEAN version;                  /**< output version-info */
 } UserInput_t;
 
 typedef struct {
-  REAL8 *data;
+  REAL4 *data;
   INT4 idx;
   INT4 n;
   REAL8 **params;
@@ -107,10 +111,10 @@ extern int vrbflg;              /**< defined in lalapps.c */
 /* define functions */
 int main(int argc,char *argv[]);
 int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar, CHAR **clargs);
-int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist);
+int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_xbins);
 int XLALDefineBinaryParameterSpace(REAL8Space **, LIGOTimeGPS, REAL8, UserInput_t *);
 int XLALOpenSemiCoherentResultsFile(FILE **,CHAR *,ParameterSpace *,CHAR *,UserInput_t *);
-int XLALtoplist(REAL8 x,Template *params,toplist *TL);
+int XLALtoplist(REAL4 x,Template *params,toplist *TL);
 
 /***********************************************************************************************/
 /* empty initializers */
@@ -363,7 +367,7 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
 
   /* compute the semi-coherent detection statistic on the fine grid */
-  if (XLALComputeSemiCoherentStat(sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist)) {
+  if (XLALComputeSemiCoherentStat(sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist,uvar.with_xbins)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeSemiCoherentStat() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
@@ -457,6 +461,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->tsft = 256;
   uvar->seed = 1;
   uvar->tempdir = NULL;
+  uvar->with_xbins = 1;
 
   /* initialise all parameter space ranges to zero */
   uvar->freqband = 0;
@@ -488,6 +493,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   XLALRegisterUvarMember(seed,                    INT4, 'X', OPTIONAL, "The random number seed (0 = clock)");
   XLALRegisterUvarMember(gpsstart,                INT4, 's', OPTIONAL, "The minimum start time (GPS sec)");
   XLALRegisterUvarMember(gpsend,                INT4, 'e', OPTIONAL, "The maximum end time (GPS sec)");
+  XLALRegisterUvarMember(with_xbins,             BOOLEAN, 0, DEVELOPER,  "Enable fast summing of extra bins");
   XLALRegisterUvarMember(version,                BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
@@ -537,17 +543,19 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
                                 ParameterSpace *pspace,                  /**< [in] the parameter space */
                                 GridParametersVector *fgrid,		/**< UNDOCUMENTED */
                                 GridParameters *bingrid,                 /**< [in] the grid parameters */
-                                INT4 ntoplist		/**< UNDOCUMENTED */
+                                INT4 ntoplist,		/**< UNDOCUMENTED */
+                                BOOLEAN with_xbins                       /**< enable fast summing of extra bins */
                                 )
 {
 
   toplist TL;                                         /* the results toplist */
   Template *bintemp = NULL;                           /* the binary parameter space template */
-  Template fdots;                                     /* the freq derivitive template for each segment */
+  Template *fdots = NULL;                             /* the freq derivitive template for each segment */
   UINT4 i,j;                                          /* counters */
   UINT4 percent = 0;                                  /* counter for status update */
   REAL8 mean = 0.0;
   REAL8 var = 0.0;
+  UINT4 Ntemp = 0;
 
   /* validate input parameters */
  /*  if ((*SemiCo) != NULL) { */
@@ -571,9 +579,27 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     XLAL_ERROR(XLAL_EINVAL);
   }
 
+  /* check for same frequency spacing */
+  const REAL8 dfreq = fgrid->segment[0]->grid[0].delta;
+  for (i=0;i<power->length;i++) {
+    if ( dfreq != fgrid->segment[i]->grid[0].delta ) {
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent number of frequency bins %.10g != %.10g\n",__func__,fgrid->segment[i]->grid[0].delta,dfreq);
+      XLAL_ERROR(XLAL_EINVAL);
+    }
+  }
+
+  /* check that coherent grids step by 1 in frequency */
+  for (i=0;i<power->length;i++) {
+    GridParameters *fdotgrid = fgrid->segment[i];
+    if ( fdotgrid->prod[0] != 1 ) {
+      LogPrintf(LOG_CRITICAL,"%s : coherent grid step does not equal 1\n",__func__);
+      XLAL_ERROR(XLAL_EINVAL);
+    }
+  }
+
   /* allocate memory for the results toplist */
   TL.n = ntoplist;
-  if ((TL.data = (REAL8 *)XLALCalloc(TL.n,sizeof(REAL8))) == NULL) {
+  if ((TL.data = (REAL4 *)XLALCalloc(TL.n,sizeof(REAL4))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     XLAL_ERROR(XLAL_ENOMEM);
   }
@@ -591,11 +617,21 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   TL.idx = 0;
 
   /* allocate memory for the fdots */
-  if ((fdots.x = XLALCalloc(fgrid->segment[0]->ndim,sizeof(REAL8))) == NULL) {
+  if ((fdots = XLALCalloc(power->length, sizeof(*fdots))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     XLAL_ERROR(XLAL_ENOMEM);
   }
-  fdots.ndim = fgrid->segment[0]->ndim;
+  for (i=0;i<power->length;i++) {
+    if ((fdots[i].x = XLALCalloc(fgrid->segment[0]->ndim,sizeof(REAL8))) == NULL) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
+    }
+    if ((fdots[i].idx = XLALCalloc(fgrid->segment[0]->ndim,sizeof(INT4))) == NULL) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
+    }
+    fdots[i].ndim = fgrid->segment[0]->ndim;
+  }
 
   /* define the chi-squared threshold */
   /* REAL8 thr = gsl_cdf_chisq_Qinv(frac,2*power->length);
@@ -611,40 +647,96 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   }
   else getnext = &XLALGetNextTemplate;
 
+  INT4 max_tot_xbins = 0;
+
+  REAL4 *logLratiosumvec = NULL;
+
   /* single loop over binary templates */
   while (getnext(&bintemp,bingrid,temppspace,r)) {
 
-    REAL8 logLratiosum = 0.0;                       /* initialise likelihood ratio */
+    const REAL8 asini = bintemp->x[1];           /* define asini */
+    const REAL8 omega = bintemp->x[3];           /* define omega */
+
+    /* maximum extra bins to sum in frequency at this template,
+       while keeping correct derivative bins (minus 10% for safety) */
+    const INT4 xbins = !with_xbins ? 0 :
+      (INT4) floor( 0.45 * dfreq / ( asini * omega ) );
+
+    INT4 left_xbins = xbins, right_xbins = xbins;
+
+    /** loop over segments **********************************************************************************/
+    for (i=0;i<power->length;i++) {
+
+      REAL8 tmid = XLALGPSGetREAL8(&(power->segment[i]->epoch)) + 0.5*pspace->tseg;
+      GridParameters *fdotgrid = fgrid->segment[i];
+      /* REAL8 norm = (REAL8)background->data[i]; */
+
+      /* compute instantaneous frequency derivitives corresponding to the current template for this segment */
+      XLALComputeBinaryFreqDerivitives(&fdots[i],bintemp,tmid);
+
+      /* find ndim-D indices corresponding to the spin derivitive values for the segment power */
+      for (j=0;j<fdots[i].ndim;j++) {
+        fdots[i].idx[j] = lround( (fdots[i].x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta );
+      }
+
+      /* ensure number of extra frequency bins do not go out of range of coherent grids */
+      left_xbins = GSL_MIN( left_xbins, (INT4)( fdots[i].idx[0] ) );
+      right_xbins = GSL_MIN( right_xbins, (INT4)( fdotgrid->grid[0].length - fdots[i].idx[0] - 1 ) );
+
+    } /* end loop over segments */
+    /*************************************************************************************/
+
+    const INT4 tot_xbins = 1 + left_xbins + right_xbins;
+    if ( max_tot_xbins < tot_xbins ) {
+      max_tot_xbins = tot_xbins;
+
+      /* reallocate logLratiosumvec */
+      logLratiosumvec = XLALRealloc( logLratiosumvec, max_tot_xbins * sizeof( *logLratiosumvec ) );
+      XLAL_CHECK( logLratiosumvec != NULL, XLAL_ENOMEM );
+
+    }
 
     /** loop over segments **********************************************************************************/
     for (i=0;i<power->length;i++) {
 
       REAL4DemodulatedPower *currentpower = power->segment[i];
       GridParameters *fdotgrid = fgrid->segment[i];
-      REAL8 tmid = XLALGPSGetREAL8(&(power->segment[i]->epoch)) + 0.5*pspace->tseg;
-      /* REAL8 norm = (REAL8)background->data[i]; */
-      INT4 idx = 0;
 
-      /* compute instantaneous frequency derivitives corresponding to the current template for this segment */
-      XLALComputeBinaryFreqDerivitives(&fdots,bintemp,tmid);
-
-      /* find indices corresponding to the spin derivitive values for the segment power */
-      for (j=0;j<fdots.ndim;j++) {
-        UINT4 tempidx = 0.5 + (fdots.x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta;
-        idx += tempidx*fdotgrid->prod[j];
+      /* find starting 1-D index corresponding to the spin derivitive values for the segment power */
+      INT4 idx0 = fdots[i].idx[0] - left_xbins;
+      for (j=1;j<fdots[i].ndim;j++) {
+        idx0 += fdots[i].idx[j] * fdotgrid->prod[j];
       }
 
       /* define the power at this location in this segment */
-      logLratiosum += currentpower->data->data[idx]; /* /norm; */
+      if (i==0) {
+        memcpy( logLratiosumvec, &currentpower->data->data[idx0], tot_xbins * sizeof( *logLratiosumvec ) );
+      } else {
+        XLAL_CHECK( XLALVectorAddREAL4( logLratiosumvec, logLratiosumvec, &currentpower->data->data[idx0], tot_xbins ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
 
     } /* end loop over segments */
     /*************************************************************************************/
 
-    /* output semi-coherent statistic for this template if it exceeds the threshold*/
-    logLratiosum *= 2.0;     /* make it a true chi-squared variable */
-    mean += logLratiosum;
-    var += logLratiosum*logLratiosum;
-    XLALtoplist(logLratiosum,bintemp,&TL);
+    /* make it a true chi-squared variable */
+    XLAL_CHECK( XLALVectorScaleREAL4( logLratiosumvec, 2.0, logLratiosumvec, tot_xbins ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    /* save central binary template frequency */
+    const REAL8 nu0 = bintemp->x[0];
+
+    for (INT4 x = -left_xbins; x <= right_xbins; ++x) {
+
+      /* set binary template frequency */
+      bintemp->x[0] = nu0 + dfreq*x;
+
+      /* output semi-coherent statistic for this template if it exceeds the threshold*/
+      const REAL4 logLratiosum = logLratiosumvec[x + left_xbins];
+      mean += logLratiosum;
+      var += logLratiosum*logLratiosum;
+      ++Ntemp;
+      XLALtoplist(logLratiosum,bintemp,&TL);
+
+    }
 
     /* if (logLratiosum>thr) {
       for (j=0;j<bingrid->ndim;j++) fprintf(fp,"%6.12f\t",bintemp->x[j]);
@@ -657,12 +749,16 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
       LogPrintf(LOG_NORMAL,"%s : completed %d%% (%d/%d)\n",__func__,percent,bintemp->currentidx,newmax);
     }
 
+    /* we've computed this number of extra templates */
+    bintemp->currentidx += left_xbins + right_xbins;
+
   } /* end loop over templates */
+  LogPrintf( LOG_NORMAL, "%s : summed up to %d frequency bins at a time\n", __func__, max_tot_xbins );
   /*************************************************************************************/
 
   /* compute mean and variance of results */
-  mean = mean/(REAL8)newmax;
-  var = var/(REAL8)(newmax-1);
+  mean = mean/(REAL8)Ntemp;
+  var = var/(REAL8)(Ntemp-1);
   var = (var - mean*mean);
 
   /* modify toplist to have correct mean and variance */
@@ -675,17 +771,23 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   }
 
   /* free template memory */
-  XLALFree(fdots.x);
+  for (i=0;i<power->length;i++) {
+    XLALFree(fdots[i].x);
+    XLALFree(fdots[i].idx);
+  }
+  XLALFree(fdots);
   XLALFree(TL.data);
   for (i=0;i<(UINT4)TL.n;i++) XLALFree(TL.params[i]);
   XLALFree(TL.params);
+
+  XLALFree(logLratiosumvec);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
 
-int XLALtoplist(REAL8 x,		/**< [in] the data to add to the toplist */
+int XLALtoplist(REAL4 x,		/**< [in] the data to add to the toplist */
                 Template *params,       /**< [in] the parameters for this result */
                 toplist *TL             /**< [in/out] the toplist */
                 )
@@ -712,7 +814,7 @@ int XLALtoplist(REAL8 x,		/**< [in] the data to add to the toplist */
   if (TL->idx<TL->n-1) TL->idx++;
 
   /* find current lowest */
-  REAL8 lowest = TL->data[TL->n-1];
+  REAL4 lowest = TL->data[TL->n-1];
   INT4 li = TL->n-1;
   for (i=0;i<TL->n;i++) {
     if (TL->data[i]<lowest) {
@@ -727,7 +829,7 @@ int XLALtoplist(REAL8 x,		/**< [in] the data to add to the toplist */
     TL->params[TL->n-1][i] = TL->params[li][i];
     TL->params[li][i] = oldparam;
   }
-  REAL8 old = TL->data[TL->n-1];
+  REAL4 old = TL->data[TL->n-1];
   TL->data[TL->n-1] = lowest;
   TL->data[li] = old;
 

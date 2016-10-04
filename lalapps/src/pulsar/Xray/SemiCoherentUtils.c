@@ -1,4 +1,6 @@
-/*  Copyright (C) 2010 Chris Messenger
+/*
+ *  Copyright (C) 2016 Karl Wette
+ *  Copyright (C) 2010 Chris Messenger
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -218,7 +220,7 @@ int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**<
     (*temp)->ndim = gridparams->ndim;
 
   }
-  else if ((*temp)->currentidx == (UINT4)gridparams->Nr - 1) {
+  else if ((*temp)->currentidx >= (UINT4)gridparams->Nr - 1) {
 
     /* free binary template memory */
     XLALFree((*temp)->x);
