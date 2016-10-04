@@ -106,7 +106,7 @@ def read_nested_from_hdf5(nested_path_list):
             if isinstance(metadata[level][key], list):
                 metadata[level][key] = mean(metadata[level][key])
 
-    log_noise_evidence = reduce(logaddexp, log_noise_evidences)
+    log_noise_evidence = reduce(logaddexp, log_noise_evidences) - log(len(log_noise_evidences))
     log_max_likelihood = max(log_max_likelihoods)
 
     return input_arrays, log_noise_evidence, log_max_likelihood, metadata, nlive, run_identifier
