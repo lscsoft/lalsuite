@@ -1,10 +1,5 @@
 import sys
-try:
-        import sqlite3
-except ImportError:
-        # pre 2.5.x
-        from pysqlite2 import dbapi2 as sqlite3
-
+import sqlite3
 from optparse import OptionParser
 from glue import segments
 from glue.ligolw import ligolw
@@ -55,7 +50,7 @@ class Summary(object):
 
 			# look for a sim table
 			try:
-				sim_inspiral_table = table.get_table(xmldoc, dbtables.lsctables.SimInspiralTable.tableName)
+				sim_inspiral_table = dbtables.lsctables.SimInspiralTable.get_table(xmldoc)
 				self.inj_fnames.append(f)
 				sim = True
 			except ValueError:
@@ -64,11 +59,11 @@ class Summary(object):
 
 			# FIGURE OUT IF IT IS A BURST OR INSPIRAL RUN
 			try:
-				self.multi_burst_table = table.get_table(xmldoc, dbtables.lsctables.MultiBurstTable.tableName)
+				self.multi_burst_table = dbtables.lsctables.MultiBurstTable.get_table(xmldoc)
 			except ValueError:
 				self.multi_burst_table = None
 			try:
-				self.coinc_inspiral_table = table.get_table(xmldoc, dbtables.lsctables.CoincInspiralTable.tableName)
+				self.coinc_inspiral_table = dbtables.lsctables.CoincInspiralTable.get_table(xmldoc)
 			except ValueError:
 				self.coinc_inspiral_table = None
 			if self.multi_burst_table and self.coinc_inspiral_table:
@@ -150,7 +145,7 @@ class Summary(object):
 				return lsctables.LIGOTimeGPS(geocent_end_time, geocent_end_time_ns) in zero_lag_segments
 
 			connection.create_function("injection_was_made", 2, injection_was_made)
-			make_sim_inspiral = lsctables.table.get_table(dbtables.get_xml(connection), lsctables.SimInspiralTable.tableName).row_from_cols
+			make_sim_inspiral = lsctables.SimInspiralTable.get_table(dbtables.get_xml(connection)).row_from_cols
 
 			# INSPIRAL
 			if self.coinc_inspiral_table:

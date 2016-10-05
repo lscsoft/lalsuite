@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   Makefile \
   debian/Makefile \
+  debian/control \
   doxygen/Makefile \
   doxygen/doxygen.cfg \
   include/Makefile \
@@ -33,6 +34,10 @@ AM_INIT_AUTOMAKE([ \
   dist-xz \
   no-dist-gzip \
 ])
+
+# version requirements
+MIN_LAL_VERSION="6.16.1"
+AC_SUBST([MIN_LAL_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -167,8 +172,8 @@ AM_CONDITIONAL([FRAMEC],[test "${FRAMEC_AVAILABLE}" = "yes"])
 AM_CONDITIONAL([FRAMEL],[test "${FRAMEL_AVAILABLE}" = "yes"])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.16.1],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.16.1],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
 
 # check for inotify
 if test "${inotify}" = "true"; then

@@ -40,9 +40,9 @@ options_params=[("--filename","string",filenames),("--output_path","string", opt
 
 for file in filenames:
 	xmldoc=utils.load_filename(filenames[0], gz=filenames[0].endswith(".gz"), verbose = options.verbose)
-	sngl_inspiral_table=lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
-	process_params_table = lsctables.table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
-	tmpltbank_process_ids = lsctables.table.get_table(xmldoc, lsctables.ProcessTable.tableName).get_ids_by_program("tmpltbank")
+	sngl_inspiral_table=lsctables.SnglInspiralTable.get_table(xmldoc)
+	process_params_table = lsctables.ProcessParamsTable.get_table(xmldoc)
+	tmpltbank_process_ids = lsctables.ProcessTable.get_table(xmldoc).get_ids_by_program("tmpltbank")
 
 	if options.add_f_final:
 		for row in process_params_table:

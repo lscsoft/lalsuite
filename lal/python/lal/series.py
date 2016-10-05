@@ -53,13 +53,13 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
     elem.appendChild(ligolw.Time.from_gps(series.epoch, u"epoch"))
-    elem.appendChild(ligolw_param.from_pyvalue(u"f0", series.f0, unit=u"s^-1"))
+    elem.appendChild(ligolw_param.Param.from_pyvalue(u"f0", series.f0, unit=u"s^-1"))
     delta = getattr(series, delta_name)
     if np.iscomplexobj(series.data.data):
         data = np.row_stack((np.arange(len(series.data.data)) * delta, series.data.data.real, series.data.data.imag))
     else:
         data = np.row_stack((np.arange(len(series.data.data)) * delta, series.data.data))
-    a = ligolw_array.from_array(series.name, data, dim_names=dim_names)
+    a = ligolw_array.Array.build(series.name, data, dim_names=dim_names)
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
@@ -213,7 +213,7 @@ def make_psd_xmldoc(psddict, xmldoc = None, root_name = u"psd"):
     for instrument, psd in psddict.items():
         fs = lw.appendChild(build_REAL8FrequencySeries(psd))
         if instrument is not None:
-            fs.appendChild(ligolw_param.from_pyvalue(u"instrument", instrument))
+            fs.appendChild(ligolw_param.Param.from_pyvalue(u"instrument", instrument))
     return xmldoc
 
 

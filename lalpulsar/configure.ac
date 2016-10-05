@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   Makefile \
   debian/Makefile \
+  debian/control \
   doxygen/Makefile \
   doxygen/doxygen.cfg \
   include/Makefile \
@@ -32,6 +33,12 @@ AM_INIT_AUTOMAKE([ \
   dist-xz \
   no-dist-gzip \
 ])
+
+# version requirements
+MIN_LAL_VERSION="6.16.1"
+MIN_LALXML_VERSION="1.2.2"
+AC_SUBST([MIN_LAL_VERSION])
+AC_SUBST([MIN_LALXML_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -117,32 +124,7 @@ AC_CHECK_HEADERS([unistd.h])
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for OpenMP
-AC_OPENMP
-
-# check that compiler supports C99 variable length arrays in OpenMP for loops.
-# Apple's llvm-gcc-4.2 is buggy and does not.
-AS_IF([test "x$OPENMP_CFLAGS" != "x"],
-  [
-    AC_MSG_CHECKING([if compiler supports C99 VLAs in OpenMP for loops])
-    LALSUITE_PUSH_UVARS
-    CFLAGS="$OPENMP_CFLAGS"
-    AC_LINK_IFELSE([
-        AC_LANG_PROGRAM(, [
-          int i, n = 10;
-          #pragma omp parallel for
-          for (i = 0; i < 10; i ++)
-          { int a@<:@n@:>@; }
-        ])
-      ],
-      [AC_MSG_RESULT([yes])],
-      [
-        AC_MSG_RESULT([no, disabling OpenMP])
-        OPENMP_CFLAGS=
-      ]
-    )
-    LALSUITE_POP_UVARS
-  ]
-)
+LALSUITE_ENABLE_OPENMP
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
@@ -180,16 +162,16 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.16.1],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[LALVersion],[lal/LALStdio.h])
 
 # check that lal was built with BOINC support, if required
 LALSUITE_CHECK_BOINC
 
 # check for lalsupport, needed for test suite
-LALSUITE_CHECK_LIB([LALSupport],[6.16.1],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
 
 # check for lalxml
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.2.2],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[${MIN_LALXML_VERSION}],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
 # back to c mode
 if test "${boinc}" = "true" ; then
@@ -201,25 +183,6 @@ LALSUITE_USE_SWIG
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
-
-# Disable OpenMP by default.
-# FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
-AS_IF(
-  [test "x$enable_openmp" = "x"],
-  [OPENMP_CFLAGS=]
-)
-# add compiler flags for OpenMP
-AS_IF(
-  [test "x$OPENMP_CFLAGS" = "x"],
-  [
-    OPENMP_ENABLE_VAL="DISABLED"
-    LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
-  ],
-  [
-    OPENMP_ENABLE_VAL="ENABLED"
-    LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
-  ]
-)
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS

@@ -3,6 +3,7 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
+include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 BURSTPROGS = lalapps_binj
 lalapps_binj_SOURCES = binj.c

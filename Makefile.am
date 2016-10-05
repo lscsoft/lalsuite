@@ -28,7 +28,7 @@ cscopelist-subdirs:
 	done
 
 user_environment = \
-	`for dir in $(SUBDIRS); do echo "source $(sysconfdir)/$${dir}-user-env;"; done` \
+	`for dir in $(SUBDIRS); do printf 'source %s; ' "$(sysconfdir)/$${dir}-user-env"; done` \
 	$(END_OF_LIST)
 
 BUILT_SOURCES += $(PACKAGE)rc

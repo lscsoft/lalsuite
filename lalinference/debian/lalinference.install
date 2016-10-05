@@ -5,3 +5,4 @@ usr/bin/lalinference_datadump
 usr/bin/lalinference_bench
 usr/lib/*/*.so.*
 usr/share/lalinference/*.csv
+usr/share/man/*

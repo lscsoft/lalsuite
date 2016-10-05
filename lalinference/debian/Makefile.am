@@ -3,7 +3,6 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
-	docs \
 	lalinference-dev.install \
 	lalinference-octave.install \
 	lalinference-python.install \

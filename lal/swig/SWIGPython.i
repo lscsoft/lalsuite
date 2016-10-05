@@ -20,7 +20,9 @@
 // SWIG interface code specific to Python.
 // Author: Karl Wette
 
-// # General SWIG directives and interface code
+//
+// General SWIG directives and interface code
+//
 
 // Call VCS information check function when module is loaded
 %init %{
@@ -85,7 +87,9 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 #define swiglal_append_output_if_empty(v) if (resultobj == Py_None) resultobj = SWIG_Python_AppendOutput(resultobj, v)
 %}
 
-// # SWIG directives for operators
+//
+// SWIG directives for operators
+//
 
 // These macros apply the correct python:slot directives to map Python __operator__ functions (which
 // may be defined in %extend) to the correct PyTypeObject slots.
@@ -174,7 +178,57 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 %swiglal_py_cmp_op(lt, Py_LT);
 %swiglal_py_cmp_op(ne, Py_NE);
 
-// # General fragments, typemaps, and macros
+//
+// Python-specific extensions to structs
+//
+
+// Extend a struct TAGNAME.
+%define %swiglal_struct_extend_specific(TAGNAME, OPAQUE, DTORFUNC)
+
+// Create shallow copy function __copy__() for the use of Python's copy.copy() function. It is
+// always defined but will fail for opaque structs, which cannot be copied.
+#if !OPAQUE
+%extend TAGNAME {
+  struct TAGNAME *__copy__() {
+    return %swiglal_new_copy(*$self, struct TAGNAME);
+  }
+}
+#else
+%extend TAGNAME {
+  struct TAGNAME *__copy__() {
+    XLALSetErrno(XLAL_ENOSYS); /* Silently signal an error to wrapper function */
+    return NULL;
+  }
+}
+#endif
+
+// Create deep copy function __deepcopy__() for the use of Python's copy.deepcopy() function. It is
+// always defined but will fail for opaque structs, which cannot be copied, and for structs with a
+// destructor, which presumably cannot be trivially copied with memcpy().
+#if !OPAQUE && #DTORFUNC == ""
+%extend TAGNAME {
+  %typemap(in, noblock=1) const void *memo "";
+  struct TAGNAME *__deepcopy__(const void *memo) {
+    return %swiglal_new_copy(*$self, struct TAGNAME);
+  }
+  %clear const void *memo;
+}
+#else
+%extend TAGNAME {
+  %typemap(in, noblock=1) const void *memo "";
+  struct TAGNAME *__deepcopy__(const void *memo) {
+    XLALSetErrno(XLAL_ENOSYS); /* Silently signal an error to wrapper function */
+    return NULL;
+  }
+  %clear const void *memo;
+}
+#endif
+
+%enddef // %swiglal_struct_extend_specific
+
+//
+// General fragments, typemaps, and macros
+//
 
 // SWIG conversion fragments and typemaps for GSL complex numbers.
 %swig_cplxflt_convn(gsl_complex_float, gsl_complex_float_rect, GSL_REAL, GSL_IMAG);
@@ -253,7 +307,9 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 
 }
 
-// # Interface code to track object parents
+//
+// Interface code to track object parents
+//
 
 // Interface code which tracks the parent structs of SWIG-wrapped struct members, so that the parent
 // struct is not destroyed as long as a SWIG-wrapped object containing any of its members exists.
@@ -371,7 +427,9 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 %} // %init
 
-// # Fragments and typemaps for arrays
+//
+// Fragments and typemaps for arrays
+//
 
 // This section implements array conversion functions for basic C array types, and custom NumPy
 // array descriptors for viewing C arrays of object, e.g. structs.

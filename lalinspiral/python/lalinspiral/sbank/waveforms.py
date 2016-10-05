@@ -23,7 +23,7 @@ np.seterr(all="ignore")
 import lal
 import lalsimulation as lalsim
 from lal import MSUN_SI, MTSUN_SI, PC_SI, PI, CreateREAL8Vector, CreateCOMPLEX8FrequencySeries
-from lalinspiral import InspiralSBankComputeMatch, InspiralSBankComputeMatchMaxSkyLoc
+from lalinspiral import InspiralSBankComputeMatch, InspiralSBankComputeRealMatch, InspiralSBankComputeMatchMaxSkyLoc, InspiralSBankComputeMatchMaxSkyLocNoPhase
 from lalinspiral.sbank.psds import get_neighborhood_PSD
 from lalinspiral.sbank.tau0tau3 import m1m2_to_tau0tau3
 
@@ -529,7 +529,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
     param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
     __slots__ = param_names + ("bank", "chieff", "chipre", "_dur","_mchirp","_tau0", "_wf_hp", "_wf_hc", "_hpsigmasq", "_hcsigmasq", "_hphccorr")
 
-    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, bank):
+    def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, orb_phase, bank):
 
         AlignedSpinTemplate.__init__(self, m1, m2, spin1z, spin2z, bank)
         self.spin1x = spin1x
@@ -541,6 +541,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         self.phi = phi
         self.iota = iota
         self.psi = psi
+        self.orb_phase = orb_phase
 
         self.chieff, self.chipre = lalsim.SimIMRPhenomPCalculateModelParameters(self.m1, self.m2, self.bank.flow, np.sin(iota), float(0), np.cos(iota), spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, 1)[:2]
 
@@ -557,29 +558,29 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
     def from_sim(cls, sim, bank):
         # theta = polar angle wrt overhead
         #       = pi/2 - latitude (which is 0 on the horizon)
-        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, bank)
+        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, np.pi/2 - sim.latitude, sim.longitude, sim.inclination, sim.polarization, sim.orb_phase, bank)
 
     def _compute_waveform_comps(self, df, f_final):
         approx = lalsim.GetApproximantFromString( self.approximant )
-        phi0 = 0  # This is a reference phase, and not an intrinsic parameter
         lmbda1 = lmbda2 = 0 # No tidal terms here
         ampO = -1 # Are these the correct values??
         phaseO = -1 # Are these the correct values??
 
         if lalsim.SimInspiralImplementedFDApproximants(approx):
             hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
-                phi0, df, self.m1*MSUN_SI, self.m2*MSUN_SI, self.spin1x,
-                self.spin1y, self.spin1z, self.spin2x, self.spin2y, self.spin2z,
-                self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, self.iota,
+                self.orb_phase, df, self.m1*MSUN_SI, self.m2*MSUN_SI,
+                self.spin1x, self.spin1y, self.spin1z, self.spin2x,
+                self.spin2y, self.spin2z, self.bank.flow, f_final,
+                self.bank.flow, 1e6*PC_SI, self.iota,
                 lmbda1, lmbda2, # irrelevant parameters for BBH
                 None, None, # non-GR parameters
                 ampO, phaseO, approx)
         else:
             hplus_fd, hcross_fd = lalsim.SimInspiralFD(
-                phi0, df, self.m1*MSUN_SI, self.m2*MSUN_SI,
+                self.orb_phase, df, self.m1*MSUN_SI, self.m2*MSUN_SI,
                 self.spin1x, self.spin1y, self.spin1z,
-                self.spin2x, self.spin2y, self.spin2z,
-                self.bank.flow, f_final, self.bank.flow, 1e6*PC_SI, 0, self.iota,
+                self.spin2x, self.spin2y, self.spin2z, self.bank.flow,
+                f_final, self.bank.flow, 1e6*PC_SI, 0, self.iota,
                 lmbda1, lmbda2, # irrelevant parameters for BBH
                 None, None, # non-GR parameters
                 ampO, phaseO, approx)
@@ -622,37 +623,40 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
             arr_view_hc[:int(self.bank.flow / df)] = 0.
             arr_view_hc[int(self.f_final/df) : hc.data.length] = 0.
 
-            # Get normalization factors
+            # Get normalization factors and normalize
             self._hpsigmasq[df] = compute_sigmasq(arr_view_hp, df)
             self._hcsigmasq[df] = compute_sigmasq(arr_view_hc, df)
+            arr_view_hp[:] /= self._hpsigmasq[df]**0.5
+            arr_view_hc[:] /= self._hcsigmasq[df]**0.5
+
             self._hphccorr[df] = compute_correlation(arr_view_hp, arr_view_hc, df)
 
             self._wf_hp[df] = FrequencySeries_to_COMPLEX8FrequencySeries(hp)
             self._wf_hc[df] = FrequencySeries_to_COMPLEX8FrequencySeries(hc)
 
 
-        return self._wf_hp[df], self._wf_hc[df], self._hpsigmasq[df],\
-               self._hcsigmasq[df], self._hphccorr[df]
+        return self._wf_hp[df], self._wf_hc[df], self._hphccorr[df]
 
     def brute_match(self, other, df, workspace_cache, **kwargs):
 
         # Template generates hp and hc
-        hp, hc, hpsigmasq, hcsigmasq, hphccorr =  self.get_whitened_normalized_comps(df, **kwargs)
+        hp, hc, hphccorr =  self.get_whitened_normalized_comps(df, **kwargs)
 
         # Proposal generates h(t), sky loc is later discarded.
         proposal = other.get_whitened_normalized(df, **kwargs)
 
         # maximize over sky position of template
-        return InspiralSBankComputeMatchMaxSkyLoc(hp, hc, hpsigmasq,
-                                        hcsigmasq, hphccorr, proposal,
-                                        workspace_cache[0], workspace_cache[1])
+        return InspiralSBankComputeMatchMaxSkyLoc(hp, hc, hphccorr,
+                                                  proposal, workspace_cache[0],
+                                                  workspace_cache[1])
 
     @classmethod
     def from_sngl(cls, sngl, bank):
         # FIXME: Using alpha columns to hold theta, phi, iota, psi
         return cls(sngl.mass1, sngl.mass2, sngl.spin1x, sngl.spin1y,
                    sngl.spin1z, sngl.spin2x, sngl.spin2y, sngl.spin2z,
-                   sngl.alpha1, sngl.alpha2, sngl.alpha3, sngl.alpha4, bank)
+                   sngl.alpha1, sngl.alpha2, sngl.alpha3, sngl.alpha4,
+                   sngl.alpha5, bank)
 
     def to_sngl(self):
         # All numerical values are initiated as 0 and all strings as ''
@@ -675,6 +679,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         row.alpha2 = self.phi
         row.alpha3 = self.iota
         row.alpha4 = self.psi
+        row.alpha5 = self.orb_phase
         row.sigmasq = self.sigmasq
         return row
 
@@ -709,10 +714,10 @@ class InspiralPrecessingSpinTemplate(PrecessingSpinTemplate):
 class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
     approximant = "SpinTaylorF2"
     def __init__(self, m1, m2, spin1x, spin1y, spin1z,
-                 theta, phi, iota, psi, bank):
+                 theta, phi, iota, psi, orb_phase, bank):
         super(SpinTaylorF2Template,self).__init__(m1, m2,
                                     spin1x, spin1y, spin1z, 0, 0, 0,
-                                    theta, phi, iota, psi, bank)
+                                    theta, phi, iota, psi, orb_phase, bank)
 
     def _compute_waveform_comps(self, df, f_final):
         hplus_fd, hcross_fd = \
@@ -730,7 +735,8 @@ class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
         # FIXME: Using alpha columns to hold theta, phi, iota, psi
         assert sngl.spin2x == sngl.spin2y == sngl.spin2z == 0
         return cls(sngl.mass1, sngl.mass2, sngl.spin1x, sngl.spin1y,
-                   sngl.spin1z, sngl.alpha1, sngl.alpha2, sngl.alpha3, sngl.alpha4, bank)
+                   sngl.spin1z, sngl.alpha1, sngl.alpha2, sngl.alpha3,
+                   sngl.alpha4, sngl.alpha5, bank)
 
     def to_sngl(self):
         # All numerical values are initiated as 0 and all strings as ''
@@ -753,6 +759,7 @@ class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
         row.alpha2 = self.phi
         row.alpha3 = self.iota
         row.alpha4 = self.psi
+        row.alpha5 = self.orb_phase
         row.sigmasq = self.sigmasq
         return row
 
@@ -776,6 +783,51 @@ class IMRPhenomPv2Template(IMRPrecessingSpinTemplate):
     approximant = "IMRPhenomPv2"
 
 
+class HigherOrderModeTemplate(PrecessingSpinTemplate):
+    """Class for higher order mode templates.
+
+    Uses maximization over sky-location and amplitude, but *not* phase.
+    """
+    def brute_match(self, other, df, workspace_cache, **kwargs):
+
+        # Template generates hp and hc
+        hp, hc, hphccorr =  self.get_whitened_normalized_comps(df, **kwargs)
+
+        # Proposal generates h(t), sky loc is later discarded.
+        proposal = other.get_whitened_normalized(df, **kwargs)
+
+
+        # maximize over sky position of template
+        return InspiralSBankComputeMatchMaxSkyLocNoPhase(hp, hc,
+                                                         hphccorr, proposal,
+                                                         workspace_cache[0],
+                                                         workspace_cache[1])
+
+
+class EOBNRHigherOrderModeTemplate(IMRPrecessingSpinTemplate,
+                                   HigherOrderModeTemplate):
+    """Class for EOBNRHM templates."""
+    approximant = "EOBNRv2HM_ROM"
+
+
+class EOBNRHigherOrderModeAmpMaxTemplate(IMRPrecessingSpinTemplate):
+    """Class for EOBNRHM templates."""
+    approximant = "EOBNRv2HM_ROM"
+    def brute_match(self, other, df, workspace_cache, **kwargs):
+
+        tmplt =  self.get_whitened_normalized(df, **kwargs)
+        proposal = other.get_whitened_normalized(df, **kwargs)
+
+        # maximize over amplitude of template only
+        return InspiralSBankComputeRealMatch(tmplt, proposal,
+                                             workspace_cache[0])
+
+
+class EOBNRHigherOrderModePhaseMaxTemplate(IMRPrecessingSpinTemplate):
+    """Class for EOBNRHM templates."""
+    approximant = "EOBNRv2HM_ROM"
+
+
 waveforms = {
     "TaylorF2RedSpin": TaylorF2RedSpinTemplate,
     "TaylorF2" : TaylorF2Template,
@@ -794,5 +846,8 @@ waveforms = {
     "SpinTaylorT5": SpinTaylorT5Template,
     "SpinTaylorF2": SpinTaylorF2Template,
     "SpinTaylorT2Fourier": SpinTaylorT2FourierTemplate,
-    "SEOBNRv3":SEOBNRv3Template
+    "SEOBNRv3":SEOBNRv3Template,
+    "EOBNRv2HM_ROM":EOBNRHigherOrderModeTemplate,
+    "EOBNRv2HM_ROM_AmpMax":EOBNRHigherOrderModeAmpMaxTemplate,
+    "EOBNRv2HM_ROM_PhaseMax":EOBNRHigherOrderModePhaseMaxTemplate
 }

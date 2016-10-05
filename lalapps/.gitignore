@@ -2,8 +2,10 @@
 *.la
 *.lo
 *.log
+*.man
 *.o
 *.pyc
+*.pyman
 *.pyo
 .deps
 .libs
@@ -14,6 +16,7 @@ AUTHORS
 Makefile
 Makefile.in
 config.lt
+debian/control
 doxygen/autogen.dox
 doxygen/doxygen.cfg
 doxygen/doxygen_objdb_*.tmp
@@ -24,8 +27,8 @@ doxygen/out/
 doxygen/test_doxygen.*
 lalapps-*.tar.xz
 lalapps-user-env.csh
-lalapps-user-env.sh
 lalapps-user-env.fish
+lalapps-user-env.sh
 lalapps-user-env.shell
 lalapps.spec
 libtool
@@ -159,14 +162,13 @@ src/lalapps/lalapps_tconvert
 src/lalapps/lalapps_version
 src/online/lalapps_online_datafind
 src/power/lalapps_binj
-src/power/lalapps_libbinj
 src/power/lalapps_gen_timeslides
+src/power/lalapps_libbinj
 src/power/lalapps_power
 src/power/lalapps_power_likelihood_pipe
 src/power/lalapps_power_online_pipe
 src/power/lalapps_power_pipe
 src/power/lalapps_simburst_to_frame
-src/power/sense_compare
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
 src/pulsar/CrossCorr/gsldata.dat

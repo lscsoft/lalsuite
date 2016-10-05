@@ -1,4 +1,6 @@
+MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
+include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 bin_PROGRAMS = lalapps_SemiCoherentBinary_v2 lalapps_binary2sfts lalapps_Intermittent
 

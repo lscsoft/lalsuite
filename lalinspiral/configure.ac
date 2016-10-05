@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([ \
   Makefile \
   debian/Makefile \
+  debian/control \
   doxygen/Makefile \
   doxygen/doxygen.cfg \
   include/Makefile \
@@ -33,6 +34,16 @@ AM_INIT_AUTOMAKE([ \
   dist-xz \
   no-dist-gzip \
 ])
+
+# version requirements
+MIN_LAL_VERSION="6.16.1"
+MIN_LALFRAME_VERSION="1.4.1"
+MIN_LALMETAIO_VERSION="1.2.8"
+MIN_LALSIMULATION_VERSION="1.6.0"
+AC_SUBST([MIN_LAL_VERSION])
+AC_SUBST([MIN_LALFRAME_VERSION])
+AC_SUBST([MIN_LALMETAIO_VERSION])
+AC_SUBST([MIN_LALSIMULATION_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -137,11 +148,11 @@ AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR([could not find the frame library
 AC_CHECK_HEADERS([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.16.1],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.16.1],[XLALCacheImport],[lal/LALCache.h])
-LALSUITE_CHECK_LIB([LALMetaIO],[1.2.8],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_LIB([LALSimulation],[1.6.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
-LALSUITE_CHECK_LIB([LALFrame],[1.4.1],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[LALFrOpen],[lal/LALFrameL.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG

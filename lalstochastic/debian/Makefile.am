@@ -3,7 +3,6 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
-	docs \
 	lalstochastic-dev.install \
 	lalstochastic-octave.install \
 	lalstochastic-python.install \

@@ -3,7 +3,6 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
-	docs \
 	lalmetaio-dev.install \
 	lalmetaio.install \
 	lalmetaio-octave.install \

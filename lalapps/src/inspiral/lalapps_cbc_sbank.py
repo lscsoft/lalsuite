@@ -366,7 +366,7 @@ for file_approx in opts.bank_seed:
 
     # add templates to bank
     tmpdoc = utils.load_filename(seed_file, contenthandler=ContentHandler)
-    sngl_inspiral = table.get_table(tmpdoc, lsctables.SnglInspiralTable.tableName)
+    sngl_inspiral = lsctables.SnglInspiralTable.get_table(tmpdoc)
     seed_waveform = waveforms[approx]
     bank.add_from_sngls(sngl_inspiral, seed_waveform)
 
@@ -386,7 +386,7 @@ if opts.verbose:
 if opts.checkpoint and os.path.exists( fout + "_checkpoint.gz" ):
 
     xmldoc = utils.load_filename(fout + "_checkpoint.gz", contenthandler=ContentHandler)
-    tbl = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+    tbl = lsctables.SnglInspiralTable.get_table(xmldoc)
     [bank.insort(t) for t in Bank.from_sngls(tbl, tmplt_class, noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)]
 
     if opts.verbose:
@@ -429,7 +429,7 @@ process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
 
 if opts.trial_waveforms:
     trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler, gz=opts.trial_waveforms.endswith('.gz'))
-    trial_sngls = table.get_table(trialdoc, lsctables.SnglInspiralTable.tableName)
+    trial_sngls = lsctables.SnglInspiralTable.get_table(trialdoc)
     proposal = [tmplt_class.from_sngl(t, bank=bank) for t in trial_sngls]
 
 else:

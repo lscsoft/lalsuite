@@ -2022,7 +2022,7 @@ def get_segments_tag(tag):
     # read segments from science segments xml file
     scifile          = datadir + '/segments/' + ifo + '-SCIENCE_SEGMENTS-' + opts.gps_start_time + '-' + opts.duration + '.xml'
     scifile_xmldoc, digest  = utils.load_fileobj(open(scifile, 'r'), contenthandler=ContentHandler)
-    scifile_segtable = table.get_table(scifile_xmldoc, lsctables.SegmentTable.tableName)
+    scifile_segtable = lsctables.SegmentTable.get_table(scifile_xmldoc)
     scifile_seglist  = segments.segmentlist()
     for seg in scifile_segtable:
       endtime   = seg.end_time + seg.end_time_ns * 10**(-9)
@@ -2032,7 +2032,7 @@ def get_segments_tag(tag):
     # read segments from tag xml file
     file                 = datadir + '/segments/' + ifo + this_tag
     file_xmldoc, digest  = utils.load_fileobj(open(file, 'r'), contenthandler=ContentHandler)
-    file_segtable        = table.get_table(file_xmldoc, lsctables.SegmentTable.tableName)
+    file_segtable        = lsctables.SegmentTable.get_table(file_xmldoc)
     file_seglist         = segments.segmentlist()
     for seg in file_segtable:
       endtime   = seg.end_time + seg.end_time_ns * 10**(-9)

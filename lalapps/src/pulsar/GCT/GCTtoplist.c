@@ -341,6 +341,13 @@ static int print_gctFstatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
         strcat ( recalcStr, buf0 );
         print_single_detector_quantities_to_str ( recalcStr, sizeof(recalcStr), fline.twoFXloudestSeg, fline.numDetectors );
       } /* if ( fline.twoFloudestSeg >= 0.0 ) */
+
+      if ( fline.log10BSGLtLrecalc > -LAL_REAL4_MAX*0.2 ) /* if --computeBSGL=FALSE, the log10BSGLtLrecalc field was initialised to -LAL_REAL4_MAX; if --computeBSGL=TRUE, it is at least -LAL_REAL4_MAX*0.1 */
+        {
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.log10BSGLtLrecalc );
+          strcat ( recalcStr, buf0 );
+        } /* if ( fline.log10BSGLtL > -LAL_REAL4_MAX*0.2 ) */
+
     } /* if avTwoFrecalc */
 
   int len;

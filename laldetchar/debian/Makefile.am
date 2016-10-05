@@ -3,7 +3,6 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
-	docs \
 	laldetchar-dev.install \
 	laldetchar-octave.install \
 	laldetchar-python.install \

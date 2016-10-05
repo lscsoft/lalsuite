@@ -114,15 +114,12 @@ int main( int argc, char *argv[] )  {
 
   /**********************************************************************************/
   /* read in the cache file */
-  FILE *cachefp = NULL;
-  if ((cachefp = fopen(uvar.cachefile,"r")) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,uvar.cachefile);
+  LALParsedDataFile *cache = NULL;
+  if ( XLALParseDataFile( &cache, uvar.cachefile ) != XLAL_SUCCESS ) {
+    LogPrintf(LOG_CRITICAL,"%s : failed to parse cache file %s\n",__func__,uvar.cachefile);
     return 1;
   }
-  i = 0;
-  while (fscanf(cachefp,"%*s %*d %*d%*s\n")!=EOF) i++;
-  INT4 Nfiles = i;
-  fclose(cachefp);
+  INT4 Nfiles = cache->lines->nTokens;
   LogPrintf(LOG_DEBUG,"%s : counted %d files listed in the cache file.\n",__func__,Nfiles);
 
   /* allocate memory */
@@ -131,15 +128,10 @@ int main( int argc, char *argv[] )  {
   fileStart.data = LALCalloc(Nfiles,sizeof(LIGOTimeGPS));
   for (i=0;i<Nfiles;i++) filenames[i] = LALCalloc(512,sizeof(char));
 
-  if ((cachefp = fopen(uvar.cachefile,"r")) == NULL) {
-    LogPrintf(LOG_CRITICAL,"%s : failed to open binary input file %s\n",__func__,uvar.cachefile);
-    return 1;
-  }
-
   for (i=0;i<Nfiles;i++) {
-    fscanf(cachefp,"%s %d %d%*s\n",filenames[i],&(fileStart.data[i].gpsSeconds),&(fileStart.data[i].gpsNanoSeconds));
+    sscanf(cache->lines->tokens[i],"%s %d %d",filenames[i],&(fileStart.data[i].gpsSeconds),&(fileStart.data[i].gpsNanoSeconds));
   }
-  fclose(cachefp);
+  XLALDestroyParsedDataFile( cache );
 
   /* initialise the random number generator */
   gsl_rng * r;

@@ -572,8 +572,9 @@ def double_spin_precessing_param_generator(flow, tmplt_class, bank, **kwargs):
         phi = uniform(0, 2*numpy.pi)
         psi = uniform(0, 2*numpy.pi)
         iota = uniform(0, numpy.pi)
+        orb_phase = uniform(0, 2*numpy.pi)
         yield tmplt_class(mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y,
-                          spin2z, theta, phi, iota, psi, bank=bank)
+                          spin2z, theta, phi, iota, psi, orb_phase, bank=bank)
 
 def single_spin_precessing_param_generator(flow, tmplt_class, bank, **kwargs):
     """
@@ -604,6 +605,26 @@ def SpinTaylorT4_param_generator(flow, tmplt_class, bank, **kwargs):
     # FIXME implement!
     raise NotImplementedError
 
+
+def nonspin_hom_param_generator(flow, tmplt_class, bank, **constraints):
+    """
+    Wrapper for urand_tau0tau3_generator() to remove spin options
+    for EOBNRv2 waveforms.
+    """
+    if constraints.has_key('spin1'):
+        constraints.pop('spin1')
+    if constraints.has_key('spin2'):
+        constraints.pop('spin2')
+    for mass1, mass2 in urand_tau0tau3_generator(flow, **constraints):
+        theta = uniform(0, numpy.pi)
+        phi = uniform(0, 2*numpy.pi)
+        psi = uniform(0, 2*numpy.pi)
+        iota = uniform(0, numpy.pi)
+        orb_phase = uniform(0, 2*numpy.pi)
+        yield tmplt_class(mass1, mass2, 0, 0, 0, 0, 0, 0,
+                          theta, phi, iota, psi, orb_phase, bank)
+
+
 proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
              "IMRPhenomC":IMRPhenomC_param_generator,
              "IMRPhenomD":aligned_spin_param_generator,
@@ -621,4 +642,7 @@ proposals = {"IMRPhenomB":IMRPhenomB_param_generator,
              "SpinTaylorT4":SpinTaylorT4_param_generator,
              "SpinTaylorF2":single_spin_precessing_param_generator,
              "SpinTaylorT2Fourier":double_spin_precessing_param_generator,
-             "SEOBNRv3":double_spin_precessing_param_generator}
+             "SEOBNRv3":double_spin_precessing_param_generator,
+             "EOBNRv2HM_ROM":nonspin_hom_param_generator,
+             "EOBNRv2HM_ROM_AmpMax":nonspin_hom_param_generator,
+             "EOBNRv2HM_ROM_PhaseMax":nonspin_hom_param_generator}

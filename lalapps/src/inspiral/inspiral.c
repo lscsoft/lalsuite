@@ -753,7 +753,6 @@ int main( int argc, char *argv[] )
   MetadataTable         siminspiral;
   MetadataTable         siminstparams;
   MetadataTable         summvalue;
-  MetadataTable         filtertable;
   SearchSummvarsTable  *this_search_summvar = NULL;
   SummValueTable       *this_summ_value = NULL;
   ProcessParamsTable   *this_proc_param = NULL;
@@ -844,10 +843,6 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(SearchSummaryTable) );
   searchsummvars.searchSummvarsTable = NULL;
 
-  /* create the filter table */
-  filtertable.filterTable = (FilterTable *)
-    calloc( 1, sizeof(FilterTable) );
-
   /* zero out the checkpoint and output paths */
   memset( ckptPath, 0, FILENAME_MAX * sizeof(CHAR) );
   memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
@@ -872,24 +867,14 @@ int main( int argc, char *argv[] )
 
   /* can use LALMalloc() and LALCalloc() from here onwards */
 
-  /* populate the filter table */
-  snprintf( filtertable.filterTable->program, LIGOMETA_PROGRAM_MAX, "%s",
-            PROGRAM_NAME );
-  filtertable.filterTable->start_time = gpsStartTime.gpsSeconds;
-  snprintf( filtertable.filterTable->filter_name, LIGOMETA_FILTER_NAME_MAX,
-      "%s%s", approximantName, orderName );
-
   /* fill the comment, if a user has specified on, or leave it blank */
   if ( ! *comment )
   {
     snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-    snprintf( filtertable.filterTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX, " " );
   }
   else
   {
     snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
-              "%s", comment );
-    snprintf( filtertable.filterTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
               "%s", comment );
   }
 
@@ -3760,15 +3745,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm,
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-
-  /* write the filter table */
-  if ( vrbflg ) fprintf( stdout, "  filter table...\n" );
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results,
-        filter_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, filtertable,
-        filter_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  free( filtertable.filterTable );
 
   /* write the search summvars table */
   if ( numTmplts )

@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 127
+# serial 130
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1158,7 +1158,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
       DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/^citelist/d'"]
     ])
     LALSUITE_VERSION_COMPARE([1.8.8],[<=],[${doxygen_version}],[
-      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<=],[9.9.9],[
+      LALSUITE_VERSION_COMPARE([${doxygen_version}],[<],[1.8.11],[
         # https://bugzilla.gnome.org/show_bug.cgi?id=743604
         DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: Duplicate anchor/d'"]
         DOXYGEN_WARNING_REGEX=["${DOXYGEN_WARNING_REGEX} -e '/warning: multiple use of section label/d'"]
@@ -1376,5 +1376,67 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
     AC_SUBST([PAGER_CPPFLAGS],["-DPAGER='\"\$(PAGER)\"'"])
     AC_CHECK_FUNCS([popen pclose])
   ])
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_ENABLE_HELP2MAN],[
+  # $0: check for help2man utility
+  AC_PATH_PROG([HELP2MAN], [help2man])
+  AC_SUBST([HELP2MAN], ["${HELP2MAN}"])
+  AS_IF([test -n "${HELP2MAN}"], [help2man=true], [help2man=false])
+  LALSUITE_ENABLE_MODULE([HELP2MAN])
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_ENABLE_OPENMP],[
+  # $0: check for OpenMP support
+  # check for OpenMP
+  AC_OPENMP
+
+  # check that compiler supports C99 variable length arrays in OpenMP for loops.
+  # Apple's llvm-gcc-4.2 is buggy and does not.
+  AS_IF([test "x$OPENMP_CFLAGS" != "x"],
+    [
+      AC_MSG_CHECKING([if compiler supports C99 VLAs in OpenMP for loops])
+      LALSUITE_PUSH_UVARS
+      CFLAGS="$OPENMP_CFLAGS"
+      AC_LINK_IFELSE([
+          AC_LANG_PROGRAM(, [
+            int i, n = 10;
+            #pragma omp parallel for
+            for (i = 0; i < 10; i ++)
+            { int a@<:@n@:>@; }
+          ])
+        ],
+        [AC_MSG_RESULT([yes])],
+        [
+          AC_MSG_RESULT([no, disabling OpenMP])
+          OPENMP_CFLAGS=
+        ]
+      )
+      LALSUITE_POP_UVARS
+    ]
+  )
+
+  # Disable OpenMP by default.
+  # FIXME: OpenMP should be on by default, but it breaks condor_compiling lalapps.
+  AS_IF(
+    [test "x$enable_openmp" = "x"],
+    [OPENMP_CFLAGS=]
+  )
+  # add compiler flags for OpenMP
+  AS_IF(
+    [test "x$OPENMP_CFLAGS" = "x" -a "x$ac_cv_prog_[]_AC_LANG_ABBREV[]_openmp" != "xnone needed"],
+    [
+      openmp="false"
+      LALSUITE_ADD_FLAGS([C],[-Wno-unknown-pragmas],[])
+    ],
+    [
+      openmp="true"
+      LALSUITE_ADD_FLAGS([C],[${OPENMP_CFLAGS}],[])
+    ]
+  )
+
+  LALSUITE_ENABLE_MODULE([OPENMP])
   # end $0
 ])

@@ -93,6 +93,11 @@ static void multiply_conjugate(COMPLEX8 * restrict out, COMPLEX8 *a, COMPLEX8 *b
     }
 }
 
+static double abs_real(const COMPLEX8 x) {
+    const REAL8 re = crealf(x);
+    return re;
+}
+
 static double abs2(const COMPLEX8 x) {
     const REAL8 re = crealf(x);
     const REAL8 im = cimagf(x);
@@ -107,7 +112,7 @@ static double vector_peak_interp(const double ym1, const double y, const double 
 }
 
 /*
- * Returns the match for whitened, normalized, positive-frequency
+ * Returns the match for two whitened, normalized, positive-frequency
  * COMPLEX8FrequencySeries inputs.
  */
 REAL8 XLALInspiralSBankComputeMatch(const COMPLEX8FrequencySeries *inj, const COMPLEX8FrequencySeries *tmplt, WS *workspace_cache) {
@@ -153,7 +158,129 @@ REAL8 XLALInspiralSBankComputeMatch(const COMPLEX8FrequencySeries *inj, const CO
     return 4. * inj->deltaF * sqrt(result);  /* Ajith, 2012-11-09: The division by n is inconsistent with the revised convention of the normalization in compute_sigmasq in SBank. I check this by computing the match of a normalized, whitened template with itself */
 }
 
-REAL8 XLALInspiralSBankComputeMatchMaxSkyLoc(const COMPLEX8FrequencySeries *hp, const COMPLEX8FrequencySeries *hc, const REAL8 hpsigmasq, const REAL8 hcsigmasq, const REAL8 hphccorr, const COMPLEX8FrequencySeries *proposal, WS *workspace_cache1, WS *workspace_cache2) {
+
+/*
+  Compute the overlap between a normalized template waveform h and a
+  normalized signal proposal maximizing over the template h's overall
+  amplitude. This is the most basic match function one can compute.
+*/
+REAL8 XLALInspiralSBankComputeRealMatch(const COMPLEX8FrequencySeries *inj, const COMPLEX8FrequencySeries *tmplt, WS *workspace_cache) {
+    size_t min_len = (inj->data->length <= tmplt->data->length) ? inj->data->length : tmplt->data->length;
+
+    /* get workspace for + and - frequencies */
+    size_t n = 2 * (min_len - 1);   /* no need to integrate implicit zeros */
+    WS *ws = get_workspace(workspace_cache, n);
+    if (!ws) {
+        XLALPrintError("out of space in the workspace_cache\n");
+	XLAL_ERROR_REAL8(XLAL_ENOMEM);
+    }
+
+    /* compute complex SNR time-series in freq-domain, then time-domain */
+    /* Note that findchirp paper eq 4.2 defines a positive-frequency integral,
+       so we should only fill the positive frequencies (first half of zf). */
+    multiply_conjugate(ws->zf->data, inj->data->data, tmplt->data->data, min_len);
+    XLALCOMPLEX8VectorFFT(ws->zt, ws->zf, ws->plan); /* plan is reverse */
+
+    /* maximize over |Re z(t)| */
+    COMPLEX8 *zdata = ws->zt->data;
+    size_t k = n;
+    REAL8 max = 0.;
+    for (;k--;) {
+	REAL8 temp = abs_real((zdata[k]));
+	if (temp > max) {
+	    max = temp;
+	}
+    }
+    return 4. * inj->deltaF * max;
+}
+
+
+/*
+  Compute the overlap between a template waveform h and a signal
+  proposal assuming only the (2,2) mode and maximizing over the
+  template h's coalescence phase, overall amplitude and effective
+  polarization / sky position. The function assumes that the plus and
+  cross polarization hp and hc are both normalized to unity and that
+  hphccorr is the correlation between these normalized components.
+ */
+REAL8 XLALInspiralSBankComputeMatchMaxSkyLoc(const COMPLEX8FrequencySeries *hp, const COMPLEX8FrequencySeries *hc, const REAL8 hphccorr, const COMPLEX8FrequencySeries *proposal, WS *workspace_cache1, WS *workspace_cache2) {
+
+    /* FIXME: Add sanity checking for consistency of lengths in input */
+    /* What does this do? */
+    size_t min_len = (hp->data->length <= proposal->data->length) ? hp->data->length : proposal->data->length;
+
+    /* get workspace for + and - frequencies */
+    size_t n = 2 * (min_len - 1);   /* no need to integrate implicit zeros */
+    WS *ws1 = get_workspace(workspace_cache1, n);
+    if (!ws1) {
+        XLALPrintError("out of space in the workspace_cache\n");
+        XLAL_ERROR_REAL8(XLAL_ENOMEM);
+    }
+    WS *ws2 = get_workspace(workspace_cache2, n);
+    if (!ws2) {
+        XLALPrintError("out of space in the workspace_cache\n");
+        XLAL_ERROR_REAL8(XLAL_ENOMEM);
+    }
+
+
+    /* compute complex SNR time-series in freq-domain, then time-domain */
+    /* Note that findchirp paper eq 4.2 defines a positive-frequency integral,
+       so we should only fill the positive frequencies (first half of zf). */
+    multiply_conjugate(ws1->zf->data, hp->data->data, proposal->data->data, min_len);
+    XLALCOMPLEX8VectorFFT(ws1->zt, ws1->zf, ws1->plan); /* plan is reverse */
+    multiply_conjugate(ws2->zf->data, hc->data->data, proposal->data->data, min_len);
+    XLALCOMPLEX8VectorFFT(ws2->zt, ws2->zf, ws2->plan);
+
+
+    /* COMPUTE DETECTION STATISTIC */
+
+    /* First start with constant values */
+    REAL8 delta = 2 * hphccorr;
+    REAL8 denom = 4 - delta * delta;
+    if (denom < 0)
+    {
+        fprintf(stderr, "DANGER WILL ROBINSON: CODE IS BROKEN!!\n");
+    }
+
+    /* Now the tricksy bit as we loop over time*/
+    COMPLEX8 *hpdata = ws1->zt->data;
+    COMPLEX8 *hcdata = ws2->zt->data;
+    size_t k = n;
+    /* FIXME: This is needed if we turn back on peak refinement. */
+    /*ssize_t argmax = -1;*/
+    REAL8 max = 0.;
+    for (;k--;) {
+        COMPLEX8 ratio = hcdata[k] / hpdata[k];
+        REAL8 ratio_real = creal(ratio);
+        REAL8 ratio_imag = cimag(ratio);
+        REAL8 beta = 2 * ratio_real;
+        REAL8 alpha = ratio_real * ratio_real + ratio_imag * ratio_imag;
+        REAL8 sqroot = alpha*alpha + alpha * (delta*delta - 2) + 1;
+        sqroot += beta * (beta - delta * (1 + alpha));
+        sqroot = sqrt(sqroot);
+        REAL8 brckt = 2*(alpha + 1) - beta*delta + 2*sqroot;
+        brckt = brckt / denom;
+        REAL8 det_stat_sq = abs2(hpdata[k]) * brckt;
+
+        if (det_stat_sq > max) {
+            /*argmax = k;*/
+            max = det_stat_sq;
+        }
+    }
+    if (max == 0.) return 0.;
+
+    /* FIXME: For now do *not* refine estimate of peak. */
+    /* REAL8 result;
+    if (argmax == 0 || argmax == (ssize_t) n - 1)
+        result = max;
+    else
+        result = vector_peak_interp(abs2(zdata[argmax - 1]), abs2(zdata[argmax]), abs2(zdata[argmax + 1])); */
+
+    /* Return match */
+    return 4. * proposal->deltaF * sqrt(max);
+}
+
+REAL8 XLALInspiralSBankComputeMatchMaxSkyLocNoPhase(const COMPLEX8FrequencySeries *hp, const COMPLEX8FrequencySeries *hc, const REAL8 hphccorr, const COMPLEX8FrequencySeries *proposal, WS *workspace_cache1, WS *workspace_cache2) {
     /* FIXME: Add sanity checking for consistency of lengths in input */
 
     /* What does this do? */
@@ -185,9 +312,7 @@ REAL8 XLALInspiralSBankComputeMatchMaxSkyLoc(const COMPLEX8FrequencySeries *hp, 
     /* COMPUTE DETECTION STATISTIC */
 
     /* First start with constant values */
-    REAL8 delta = 2 * (hphccorr) / hpsigmasq;
-    REAL8 gamma = hcsigmasq / hpsigmasq;
-    REAL8 denom = 4 * gamma - delta * delta;
+    REAL8 denom = 1. - (hphccorr*hphccorr);
     if (denom < 0)
     {
         fprintf(stderr, "DANGER WILL ROBINSON: CODE IS BROKEN!!\n");
@@ -200,18 +325,14 @@ REAL8 XLALInspiralSBankComputeMatchMaxSkyLoc(const COMPLEX8FrequencySeries *hp, 
     /* FIXME: This is needed if we turn back on peak refinement. */
     /*ssize_t argmax = -1;*/
     REAL8 max = 0.;
+    REAL8 det_stat_sq;
+
     for (;k--;) {
-        COMPLEX8 ratio = hcdata[k] / hpdata[k];
-        REAL8 ratio_real = creal(ratio);
-        REAL8 ratio_imag = cimag(ratio);
-        REAL8 beta = 2 * ratio_real;
-        REAL8 alpha = ratio_real * ratio_real + ratio_imag * ratio_imag;
-        REAL8 sqroot = alpha*alpha + alpha * (delta*delta - 2 * gamma) + gamma*gamma;
-        sqroot += beta * (beta * gamma - delta * (gamma + alpha));
-        sqroot = sqrt(sqroot);
-        REAL8 brckt = 2*alpha + 2*gamma - beta*delta + 2*sqroot;
-        brckt = brckt / denom;
-        REAL8 det_stat_sq = abs2(hpdata[k]) * brckt / hpsigmasq;
+        det_stat_sq = creal(hpdata[k])*creal(hpdata[k]);
+        det_stat_sq += creal(hcdata[k])*creal(hcdata[k]);
+        det_stat_sq -= 2*creal(hpdata[k])*creal(hcdata[k])*hphccorr;
+
+        det_stat_sq = det_stat_sq / denom;
 
         if (det_stat_sq > max) {
             /*argmax = k;*/
@@ -225,7 +346,8 @@ REAL8 XLALInspiralSBankComputeMatchMaxSkyLoc(const COMPLEX8FrequencySeries *hp, 
     if (argmax == 0 || argmax == (ssize_t) n - 1)
         result = max;
     else
-        result = vector_peak_interp(abs2(zdata[argmax - 1]), abs2(zdata[argmax]), abs2(zdata[argmax + 1])); */
+        result = vector_peak_interp(abs2(zdata[argmax - 1]), abs2(zdata[argmax])
+, abs2(zdata[argmax + 1])); */
 
     /* Return match */
     return 4. * proposal->deltaF * sqrt(max);

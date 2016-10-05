@@ -4,7 +4,6 @@ EXTRA_DIST = \
 	control \
 	copyright \
 	dirs \
-	docs \
 	install \
 	rules \
 	lalsuite.mk \

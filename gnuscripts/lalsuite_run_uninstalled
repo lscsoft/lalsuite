@@ -1,0 +1,148 @@
+#!/bin/sh
+
+# Run uninstalled scripts in a correctly set-up environment
+# Author: Karl Wette, 2014
+
+# parse command line
+if test $# -lt 3; then
+    echo "usage: $0 [--verbose] \$(abs_top_builddir) \$(abs_builddir) \$(LIBS) <command> <arguments...>" >&2
+    exit 1
+fi
+verbose=no
+if test "x$1" = "x--verbose"; then
+    verbose=yes
+    shift
+fi
+if test ! -d "$1"; then
+    echo "$0: $1 is not a directory" >&2
+    exit 1
+fi
+abs_top_builddir="$1"
+shift
+if test ! -d "$1"; then
+    echo "$0: $1 is not a directory" >&2
+    exit 1
+fi
+abs_builddir="$1"
+shift
+libs="$1"
+shift
+cmd="$1"
+if test "x$1" = x; then
+    cmd=false
+else
+    shift
+    while test "x$1" != x; do
+        cmd="${cmd} '$1'"
+        shift
+    done
+fi
+
+# build unique list of absolute paths to libtool libraries
+newlibs="${libs}"
+libs=
+for newlib in ${newlibs}; do
+    case ${newlib} in
+        ../*)
+            newlib="${abs_builddir}/${newlib}"
+    esac
+    dirpart=`expr "X${newlib}" : "^X\(.*\)/[^/]*"`
+    basepart=`expr "X${newlib}" : "^X.*/\([^/]*\)"`
+    if test ! -d "${dirpart}"; then
+        echo "$0: ${dirpart} is not a directory" >&2
+        exit 1
+    fi
+    newlib=`cd ${dirpart} && pwd`/${basepart}
+    case " ${libs} " in
+        *" ${newlib} "*)
+            :
+            ;;
+        *)
+            libs="${libs} ${newlib}"
+            ;;
+    esac
+done
+
+# recursively add all dependent libtool libraries
+oldlibs="${libs}"
+while :; do
+
+    # store the dependency libraries from 'oldlibs' in 'newlibs'
+    newlibs=
+    for oldlib in ${oldlibs}; do
+
+        # extract 'dependency_libs' value from 'oldlib'
+        if test ! -f "${oldlib}"; then
+            echo "$0: ${oldlib} is not a file" >&2
+            exit 1
+        fi
+        oldlibdeps=`. ${oldlib}; echo ${dependency_libs}`
+
+        # add absolute path of each dependency library to 'newlibs', excluding system libraries
+        for newlib in ${oldlibdeps}; do
+            case ${newlib} in
+                /lib/*|/usr/*|/opt/*)
+                    continue
+                    ;;
+                ../*.la)
+                    newlib="${abs_builddir}/${newlib}"
+                    ;;
+                *.la)
+                    ;;
+                *)
+                    continue
+            esac
+            dirpart=`expr "X${newlib}" : "^X\(.*\)/[^/]*"`
+            basepart=`expr "X${newlib}" : "^X.*/\([^/]*\)"`
+            if test ! -d "${dirpart}"; then
+                echo "$0: ${dirpart} is not a directory" >&2
+                exit 1
+            fi
+            newlib=`cd ${dirpart} && pwd`/${basepart}
+            if test "x${newlibs}" = x; then
+                newlibs="${newlib}"
+            else
+                newlibs="${newlibs} ${newlib}"
+            fi
+        done
+
+    done
+
+    # if 'newlibs' is empty, no more libraries, so break
+    if test "x${newlibs}" = x; then
+        break
+    fi
+
+    # otherwise, add any library in 'newlibs' to 'libs', ignoring duplicates
+    for newlib in ${newlibs}; do
+        case " ${libs} " in
+            *" ${newlib} "*)
+                ;;
+            *)
+                libs="${libs} ${newlib}"
+                ;;
+        esac
+    done
+
+    # start over by looking for the dependency libraries of 'newlibs'
+    oldlibs="${newlibs}"
+
+done
+
+# build libtool command line
+ltcmd="${SHELL} ${abs_top_builddir}/libtool --mode=execute"
+for lib in ${libs}; do
+    ltcmd="${ltcmd} -dlopen ${lib}"
+done
+
+# print verbose information
+if test "x${verbose}" = xyes || test "x${LALSUITE_RUN_UNINSTALLED_VERBOSE}" != x; then
+    echo "========== $0 =========="
+    eval "${ltcmd} env" 2>/dev/null | sed -n -e '/^LAL/p;/PATH=/p' | sed -e 's/^/environment: /'
+    echo "command: ${ltcmd} ${cmd}"
+    echo "---------- $0 ----------"
+    echo
+fi
+
+# run command under libtool
+eval "${ltcmd} ${cmd}"

@@ -27,6 +27,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <gsl/gsl_math.h>
 #include <gsl/gsl_interp.h>        /* needed for the gsl interpolation */
 #include <gsl/gsl_spline.h>        /* needed for the gsl interpolation */
 #include <gsl/gsl_rng.h>           /* for random number generation */
@@ -234,7 +235,7 @@ extern "C" {
   int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector**,COMPLEX8TimeSeriesArray*,GridParametersVector*,FILE *fp);
   int XLALApplyPhaseCorrection(COMPLEX8TimeSeries **outts, COMPLEX8TimeSeries *ints, Template *fn);
   /* int XLALNormaliseSFTs(SFTVector **sftvec,UINT4 blocksize); */
-  int XLALComputeBinaryGridParams(GridParameters **binarygridparams,REAL8Space *space,REAL8 T,REAL8 DT,REAL8 mu,REAL8 coverage,INT4 semi_ndim);
+  int XLALComputeBinaryGridParams(GridParameters **binarygridparams,REAL8Space *space,REAL8 T,REAL8 DT,REAL8 mu,REAL8 coverage);
   int XLALGetNextTemplate(Template **,GridParameters *, ParameterSpace *,UNUSED void *);
   int XLALGetNextRandomBinaryTemplate(Template **,GridParameters *, ParameterSpace *,void *);
   int XLALComputeBinaryFreqDerivitives(Template *fdots,Template *bintemp,REAL8 tmid);

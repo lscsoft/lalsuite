@@ -56,6 +56,7 @@ typedef struct tagRecalcStatsComponents {
   REAL4 avTwoFX[PULSAR_MAX_DETECTORS];		/**< fixed-size array of single-detector \f$ \mathcal{F} \f$-statistics, averaged over segments */
   UINT4 numDetectors;				/**< number of detectors, numDetectors=0 should make all code ignore the TwoFX field. */
   REAL4 log10BSGL;				/**< line-robust statistic \f$ \log_{10}B_{\mathrm{SGL}} \f$ */
+  REAL4 log10BSGLtL;
   INT4 loudestSeg;				/**< index of the segment with the highest multi-detector \f$ \mathcal{F} \f$-statistic */
   REAL4 twoFloudestSeg;				/**< loudest single-segment, multi-detector \f$ \mathcal{F} \f$-stat  */
   REAL4 twoFXloudestSeg[PULSAR_MAX_DETECTORS];	/**< single-IFO \f$ \mathcal{F}^X \f$-stat values from the loudest segment in multi-\f$ \mathcal{F} \f$ */

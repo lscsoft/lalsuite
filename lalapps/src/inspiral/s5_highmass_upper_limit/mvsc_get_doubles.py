@@ -1,9 +1,5 @@
 #!/usr/bin/python
-try:
-  import sqlite3
-except ImportError:
-  # pre 2.5.x
-  from pysqlite2 import dbapi2 as sqlite3
+import sqlite3
 from glue.ligolw import dbtables 
 from glue.ligolw import table
 from pylal import SnglInspiralUtils
@@ -56,7 +52,7 @@ for database in databases:
   cursor = connection.cursor()
   # to determine whether or not the database is full of timeslides/zerolag or injections, check if there exists a sim_inspiral table 
   try:
-    sim_inspiral_table = table.get_table(xmldoc, dbtables.lsctables.SimInspiralTable.tableName)
+    sim_inspiral_table = dbtables.lsctables.SimInspiralTable.get_table(xmldoc)
     is_injections = True
   except ValueError:
     is_injections = False
@@ -116,7 +112,7 @@ for database in databases:
 
   if not is_injections:  
     rings = db_thinca_rings.get_thinca_rings_by_available_instruments(connection)
-    offset_vectors = dbtables.lsctables.table.get_table(dbtables.get_xml(connection), dbtables.lsctables.TimeSlideTable.tableName).as_dict()
+    offset_vectors = dbtables.lsctables.TimeSlideTable.get_table(dbtables.get_xml(connection)).as_dict()
   
     def calc_delta_t(trigger1_ifo, trigger1_end_time, trigger1_end_time_ns, trigger2_ifo, trigger2_end_time, trigger2_end_time_ns, time_slide_id, rings = rings, offset_vectors = offset_vectors):
       print >>sys.stderr, "calculating delta_t"
