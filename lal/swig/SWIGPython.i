@@ -179,6 +179,54 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 %swiglal_py_cmp_op(ne, Py_NE);
 
 //
+// Python-specific extensions to structs
+//
+
+// Extend a struct TAGNAME.
+%define %swiglal_struct_extend_specific(TAGNAME, OPAQUE, DTORFUNC)
+
+// Create shallow copy function __copy__() for the use of Python's copy.copy() function. It is
+// always defined but will fail for opaque structs, which cannot be copied.
+#if !OPAQUE
+%extend TAGNAME {
+  struct TAGNAME *__copy__() {
+    return %swiglal_new_copy(*$self, struct TAGNAME);
+  }
+}
+#else
+%extend TAGNAME {
+  struct TAGNAME *__copy__() {
+    XLALSetErrno(XLAL_ENOSYS); /* Silently signal an error to wrapper function */
+    return NULL;
+  }
+}
+#endif
+
+// Create deep copy function __deepcopy__() for the use of Python's copy.deepcopy() function. It is
+// always defined but will fail for opaque structs, which cannot be copied, and for structs with a
+// destructor, which presumably cannot be trivially copied with memcpy().
+#if !OPAQUE && #DTORFUNC == ""
+%extend TAGNAME {
+  %typemap(in, noblock=1) const void *memo "";
+  struct TAGNAME *__deepcopy__(const void *memo) {
+    return %swiglal_new_copy(*$self, struct TAGNAME);
+  }
+  %clear const void *memo;
+}
+#else
+%extend TAGNAME {
+  %typemap(in, noblock=1) const void *memo "";
+  struct TAGNAME *__deepcopy__(const void *memo) {
+    XLALSetErrno(XLAL_ENOSYS); /* Silently signal an error to wrapper function */
+    return NULL;
+  }
+  %clear const void *memo;
+}
+#endif
+
+%enddef // %swiglal_struct_extend_specific
+
+//
 // General fragments, typemaps, and macros
 //
 

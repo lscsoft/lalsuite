@@ -130,6 +130,15 @@ extern "C++" {
 %typemap(in, numinputs=0, noblock=1) int SWIGLAL_CMP_OP_RETN_HACK "";
 
 //
+// Octave-specific extensions to structs
+//
+
+// Extend a struct TAGNAME.
+%define %swiglal_struct_extend_specific(TAGNAME, OPAQUE, DTORFUNC)
+
+%enddef // %swiglal_struct_extend_specific
+
+//
 // General fragments, typemaps, and macros
 //
 
