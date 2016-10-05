@@ -59,7 +59,7 @@ $(pybin_scripts): Makefile pyscripts-all-local
 		printf "\nERROR: $(srcdir)/$@.py must not be executable\n\n" >&2; \
 		exit 1; \
 	fi; \
-	if test "x`$(SED) -n -e '/^$${shebang}/p' $(srcdir)/$@.py`" != x; then \
+	if test "x`$(SED) -n -e /^$${shebang}/p $(srcdir)/$@.py`" != x; then \
 		printf "\nERROR: $(srcdir)/$@.py must not contain a $${shebang} command line\n\n" >&2; \
 		exit 1; \
 	fi; \
