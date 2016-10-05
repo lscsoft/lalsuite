@@ -109,20 +109,36 @@ static int compar( void *p, const void *a, const void *b )
 }
 
 
-static int check( int *data, int nobj, int ascend )
+static int check( int *data, int *sort, int nobj, int ascend )
 {
-  int i;
+  int i, j;
+  /* make sure result is in correct order */
   for ( i = 1; i < nobj; ++i )
     if ( ascend )
     {
-      if ( data[i] < data[i-1] )
+      if ( sort[i] < sort[i-1] )
         abort();
     }
     else
     {
-      if ( data[i] > data[i-1] )
+      if ( sort[i] > sort[i-1] )
         abort();
     }
+  /* make sure every element from the original data can be found somewhere
+   * in the result, and every element in the result can be found in the
+   * original data */
+  for ( i = 0; i < nobj; ++i )
+  {
+    for ( j = 0; j < nobj && sort[j] != data[i]; ++j );
+    if ( j == nobj )
+      abort();
+  }
+  for ( i = 0; i < nobj; ++i )
+  {
+    for ( j = 0; j < nobj && data[j] != sort[i]; ++j );
+    if ( j == nobj )
+      abort();
+  }
   return 0;
 }
 
@@ -159,7 +175,7 @@ int main(int argc, char **argv)
       if ( sort[i] != data[indx[i]] )
         abort();
 
-    check( sort, nobj, ascend );
+    check( data, sort, nobj, ascend );
 
     freedata( data, sort, indx, rank );
   }
@@ -168,7 +184,7 @@ int main(int argc, char **argv)
   {
     int nobj = rand() % 24;
     int ascend = rand() & 1;
-    int *data;	/* unused for these tests */
+    int *data;
     int *sort;
     int *indx;	/* unused for these tests */
     int *rank;	/* unused for these tests */
@@ -178,7 +194,7 @@ int main(int argc, char **argv)
     if ( XLALInsertionSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
       abort();
 
-    check( sort, nobj, ascend );
+    check( data, sort, nobj, ascend );
 
     freedata( data, sort, indx, rank );
   }
