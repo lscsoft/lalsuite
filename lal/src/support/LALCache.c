@@ -476,9 +476,7 @@ static int XLALCacheCompareEntryMetadata(void *p, const void *p1,
         return c;
     if ((c = XLALCacheCompareStartTime(p, p1, p2)))
         return c;
-    if ((c = XLALCacheCompareDuration(p, p1, p2)))
-        return c;
-    return 0;
+    return XLALCacheCompareDuration(p, p1, p2);
 }
 
 
