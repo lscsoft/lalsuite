@@ -1427,6 +1427,8 @@ if (strides[I-1] == 0) {
 %include <lal/SWIGOctave.i>
 #elif defined(SWIGPYTHON)
 %include <lal/SWIGPython.i>
+#else
+#error Unrecognised scripting language
 #endif
 
 ///
