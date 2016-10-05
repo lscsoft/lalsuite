@@ -340,7 +340,7 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 }
 
 ///
-/// # Create constructors and destructors for structs
+/// # Extensions to structs
 ///
 
 ///

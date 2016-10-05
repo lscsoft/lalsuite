@@ -20,7 +20,9 @@
 // SWIG interface code specific to Octave.
 // Author: Karl Wette
 
-// # General SWIG directives and interface code
+//
+// General SWIG directives and interface code
+//
 
 // Call VCS information check function when module is loaded
 %init %{
@@ -91,7 +93,9 @@ extern "C++" {
 #define swiglal_append_output_if_empty(v) if (_outp->length() == 0) _outp = SWIG_Octave_AppendOutput(_outp, v)
 %}
 
-// # SWIG directives for operators
+//
+// SWIG directives for operators
+//
 
 // Unary operators which return a new object, and thus require %newobject to be set.
 %define %swiglal_oct_urn_op(NAME, OCTNAME)
@@ -125,7 +129,9 @@ extern "C++" {
 // Comparison operators.
 %typemap(in, numinputs=0, noblock=1) int SWIGLAL_CMP_OP_RETN_HACK "";
 
-// # General fragments, typemaps, and macros
+//
+// General fragments, typemaps, and macros
+//
 
 // SWIG conversion fragments and typemaps for GSL complex numbers.
 %swig_cplxflt_convn(gsl_complex_float, gsl_complex_float_rect, GSL_REAL, GSL_IMAG);
@@ -200,7 +206,9 @@ extern "C++" {
 
 }
 
-// # Interface code to track object parents
+//
+// Interface code to track object parents
+//
 
 // Interface code which tracks the parent structs of SWIG-wrapped struct members, so that the parent
 // struct is not destroyed as long as a SWIG-wrapped object containing any of its members exists.
@@ -267,7 +275,9 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
 %} // %init
 
-// # Fragments and typemaps for arrays
+//
+// Fragments and typemaps for arrays
+//
 
 // This section implements a series of array view classes, through which arbitrary C array data can
 // be viewed as native Octave matrices, etc.
