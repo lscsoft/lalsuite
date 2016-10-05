@@ -145,6 +145,12 @@ int XLALHeapIndex( INT4 *indx, void *base, UINT4 nobj, UINT4 size, void *params,
 int XLALHeapRank( INT4 *rank, void *base, UINT4 nobj, UINT4 size, void *params,
     int (*compar)(void *, const void *, const void *) );
 
+/* ----- InsertionSort.c ----- */
+
+/** \see See \ref Sort_h for documentation */
+int XLALInsertionSort( void *base, size_t nobj, size_t size, void *params,
+    int (*compar)(void *, const void *, const void *) );
+
 /*@}*/
 
 #ifdef  __cplusplus

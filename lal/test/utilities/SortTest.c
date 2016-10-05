@@ -63,6 +63,29 @@
 #include <lal/Sort.h>
 
 
+static void makedata( int nobj, int **data, int **sort, int **indx, int **rank )
+{
+  int i;
+
+  *data = malloc(nobj*sizeof(**data));
+  *sort = malloc(nobj*sizeof(**data));
+  *indx = malloc(nobj*sizeof(**indx));
+  *rank = malloc(nobj*sizeof(**rank));
+
+  for ( i = 0; i < nobj; ++i )
+    (*sort)[i] = (*data)[i] = rand() % 100;
+}
+
+
+static void freedata( int *data, int *sort, int *indx, int *rank)
+{
+  free( data );
+  free( sort );
+  free( indx );
+  free( rank );
+}
+
+
 static int compar( void *p, const void *a, const void *b )
 {
   int x = *((const int *)a);
@@ -106,76 +129,60 @@ static int check( int *data, int nobj, int ascend )
 
 int main(int argc, char **argv)
 {
-
-  int  nobj = 9;
-  int *data;
-  int *sort;
-  int *indx;
-  int *rank;
-  int ascend;
-  int code;
-  int i;
+  int testnum;
 
   if (argc!=1)
       LALPrintError("%s: Incorrect arguments\n",argv[0]);
 
-  data = malloc(nobj*sizeof(*data));
-  sort = malloc(nobj*sizeof(*data));
-  indx = malloc(nobj*sizeof(*indx));
-  rank = malloc(nobj*sizeof(*rank));
-
   srand(time(NULL));
 
-  /* sort in ascending order */
+  for ( testnum = 0; testnum < 200; testnum++ )
+  {
+    int nobj = rand() % 24;
+    int ascend = rand() & 1;
+    int *data;
+    int *sort;
+    int *indx;
+    int *rank;
+    int i;
 
-  ascend = 1;
+    makedata( nobj, &data, &sort, &indx, &rank );
 
-  for ( i = 0; i < nobj; ++i )
-    sort[i] = data[i] = rand() % 100;
-
-  code = XLALHeapIndex( indx, data, nobj, sizeof(*data), &ascend, compar );
-  if ( code < 0 )
-    abort();
-  code = XLALHeapRank( rank, data, nobj, sizeof(*data), &ascend, compar );
-  if ( code < 0 )
-    abort();
-  code = XLALHeapSort( sort, nobj, sizeof(*data), &ascend, compar );
-  if ( code < 0 )
-    abort();
-
-  for ( i = 0; i < nobj; ++i )
-    if ( sort[i] != data[indx[i]] )
+    if ( XLALHeapIndex( indx, data, nobj, sizeof(*data), &ascend, compar ) < 0 )
+      abort();
+    if ( XLALHeapRank( rank, data, nobj, sizeof(*data), &ascend, compar ) < 0 )
+      abort();
+    if ( XLALHeapSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
       abort();
 
-  check( sort, nobj, ascend );
+    for ( i = 0; i < nobj; ++i )
+      if ( sort[i] != data[indx[i]] )
+        abort();
 
-  /* sort in descending order */
+    check( sort, nobj, ascend );
 
-  ascend = 0;
+    freedata( data, sort, indx, rank );
+  }
 
-  for ( i = 0; i < nobj; ++i )
-    sort[i] = data[i] = rand() % 100;
+  for ( testnum = 0; testnum < 200; testnum++ )
+  {
+    int nobj = rand() % 24;
+    int ascend = rand() & 1;
+    int *data;	/* unused for these tests */
+    int *sort;
+    int *indx;	/* unused for these tests */
+    int *rank;	/* unused for these tests */
 
-  code = XLALHeapIndex( indx, data, nobj, sizeof(*data), &ascend, compar );
-  if ( code < 0 )
-    abort();
-  code = XLALHeapRank( rank, data, nobj, sizeof(*data), &ascend, compar );
-  if ( code < 0 )
-    abort();
-  code = XLALHeapSort( sort, nobj, sizeof(*data), &ascend, compar );
-  if ( code < 0 )
-    abort();
+    makedata( nobj, &data, &sort, &indx, &rank );
 
-  for ( i = 0; i < nobj; ++i )
-    if ( sort[i] != data[indx[i]] )
+    if ( XLALInsertionSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
       abort();
 
-  check( sort, nobj, ascend );
+    check( sort, nobj, ascend );
 
-  free( data );
-  free( sort );
-  free( indx );
-  free( rank );
+    freedata( data, sort, indx, rank );
+  }
+
 
   return 0;
 }
