@@ -35,7 +35,7 @@
  * ### Usage ###
  *
  * \code
- * SortTest [-s seed]
+ * SortTest
  * \endcode
  *
  * ### Description ###
@@ -45,10 +45,6 @@
  * generated randomly, and the output is to \c stdout if <tt>-v</tt> is
  * specified (unless redirected).  \c SortTest returns 0 if it executes
  * successfully, and 1 if any of the subroutines fail.
- *
- * The <tt>-s</tt> option sets the seed for the random number generator; if
- * \c seed is set to zero (or if no <tt>-s</tt> option is given) then
- * the seed is taken from the processor clock.
  *
  * ### Exit codes ###
  *
@@ -64,124 +60,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <lal/LALStdlib.h>
-#include <lal/AVFactories.h>
-#include <lal/Random.h>
 #include <lal/Sort.h>
 
-#define NPTS 5
 
-#define SORTTEST_ESUB 1
-#define SORTTEST_MSGESUB "Subroutine returned error"
-
-void test_xlal_routines( void );
-
-int main(int argc, char **argv)
-{
-  static LALStatus stat;
-  INT4         i;
-  INT4         seed=0;
-  INT4         verbose=0;
-  INT4Vector   *lal_index=NULL;
-  REAL4Vector  *data=NULL;
-  RandomParams *params=NULL;
-
-  if(argc==2&&!strcmp(argv[1],"-s"))
-    seed=atoi(argv[1]);
-  else if (argc!=1)
-      LALPrintError("%s: Incorrect arguments\n",argv[0]);
-  test_xlal_routines();
-
-  /* Create vectors and random parameters. */
-  LALI4CreateVector(&stat,&lal_index,NPTS);
-  if(stat.statusCode){
-    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
-    REPORTSTATUS(&stat);
-    return SORTTEST_ESUB;
-  }
-  LALSCreateVector(&stat,&data,NPTS);
-  if(stat.statusCode){
-    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
-    REPORTSTATUS(&stat);
-    return SORTTEST_ESUB;
-  }
-  LALCreateRandomParams(&stat,&params,seed);
-  if(stat.statusCode){
-    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
-    REPORTSTATUS(&stat);
-    return SORTTEST_ESUB;
-  }
-
-  /* Initialize data. */
-  for(i=0;i<NPTS;i++){
-    LALUniformDeviate(&stat,data->data+i,params);
-    if(stat.statusCode){
-      LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
-      REPORTSTATUS(&stat);
-      return SORTTEST_ESUB;
-    }
-    data->data[i]*=9.99;
-  }
-
-  /* Rank data; print data and ranks. */
-  LALSHeapRank(&stat,lal_index,data);
-  if(stat.statusCode){
-    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
-    REPORTSTATUS(&stat);
-    return SORTTEST_ESUB;
-  }
-  if ( verbose )
-    fprintf(stdout,  " Data    Rank\n");
-  for(i=0;i<NPTS;i++)
-    if ( verbose )
-      fprintf(stdout," %4.2f     %2i\n",data->data[i],lal_index->data[i]);
-  if ( verbose )
-    fprintf(stdout,"\n");
-
-  /* Index and sort data; print sorted data and indecies. */
-  LALSHeapIndex(&stat,lal_index,data);
-  if(stat.statusCode){
-    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
-    REPORTSTATUS(&stat);
-    return SORTTEST_ESUB;
-  }
-  LALSHeapSort(&stat,data);
-  if(stat.statusCode){
-    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
-    REPORTSTATUS(&stat);
-    return SORTTEST_ESUB;
-  }
-  if ( verbose )
-    fprintf(stdout,  "Sorted  Index\n");
-  for(i=0;i<NPTS;i++)
-    if ( verbose )
-      fprintf(stdout," %4.2f     %2i\n",data->data[i],lal_index->data[i]);
-
-  /* Free and clear. */
-  LALI4DestroyVector(&stat,&lal_index);
-  if(stat.statusCode){
-    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
-    REPORTSTATUS(&stat);
-    return SORTTEST_ESUB;
-  }
-  LALSDestroyVector(&stat,&data);
-  if(stat.statusCode){
-    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
-    REPORTSTATUS(&stat);
-    return SORTTEST_ESUB;
-  }
-  LALDestroyRandomParams(&stat,&params);
-  if(stat.statusCode){
-    LALPrintError("%s: %s\n",argv[0],SORTTEST_MSGESUB);
-    REPORTSTATUS(&stat);
-    return SORTTEST_ESUB;
-  }
-  return 0;
-}
-
-
-int compar( void *p, const void *a, const void *b );
-int compar( void *p, const void *a, const void *b )
+static int compar( void *p, const void *a, const void *b )
 {
   int x = *((const int *)a);
   int y = *((const int *)b);
@@ -203,8 +85,8 @@ int compar( void *p, const void *a, const void *b )
   return 0;
 }
 
-int check( int *data, int nobj, int ascend );
-int check( int *data, int nobj, int ascend )
+
+static int check( int *data, int nobj, int ascend )
 {
   int i;
   for ( i = 1; i < nobj; ++i )
@@ -221,8 +103,10 @@ int check( int *data, int nobj, int ascend )
   return 0;
 }
 
-void test_xlal_routines( void )
+
+int main(int argc, char **argv)
 {
+
   int  nobj = 9;
   int *data;
   int *sort;
@@ -231,6 +115,9 @@ void test_xlal_routines( void )
   int ascend;
   int code;
   int i;
+
+  if (argc!=1)
+      LALPrintError("%s: Incorrect arguments\n",argv[0]);
 
   data = malloc(nobj*sizeof(*data));
   sort = malloc(nobj*sizeof(*data));
@@ -290,7 +177,7 @@ void test_xlal_routines( void )
   free( indx );
   free( rank );
 
-  return;
+  return 0;
 }
 
 /** \endcond */
