@@ -6,7 +6,7 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm XML Library
-License: GPL
+License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
