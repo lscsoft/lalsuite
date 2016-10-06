@@ -153,22 +153,22 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
+%{_bindir}/lalinference_*
+%{_datarootdir}/lalinference/*
 %{_libdir}/*.so*
 %{_sysconfdir}/*
-%{_datarootdir}/lalinference/*
-%{_bindir}/lalinference_*
 
 %files devel
 %defattr(-,root,root)
+%{_includedir}/lal
 %{_libdir}/*.a
 %{_libdir}/pkgconfig/*
-%{_includedir}/lal
 
 %files python
 %defattr(-,root,root)
 %{_bindir}/bayestar_*
-%{_bindir}/rapidpe_*
 %{_bindir}/imrtgr_*
+%{_bindir}/rapidpe_*
 %{_libdir}/python*
 
 %files octave
