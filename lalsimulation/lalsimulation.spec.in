@@ -88,13 +88,14 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_datarootdir}/lalsimulation/LALSimNeutronStarEOS_*
 %{_datarootdir}/lalsimulation/LIGO-P1200087-v18*
 %{_datarootdir}/lalsimulation/LIGO-T0900288-v3*
-%{_libdir}/*.so*
+%{_libdir}/*.so.*
 %{_sysconfdir}/*
 
 %files devel
 %defattr(-,root,root)
 %{_includedir}/lal
 %{_libdir}/*.a
+%{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
 %files python
