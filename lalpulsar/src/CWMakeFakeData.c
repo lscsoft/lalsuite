@@ -752,7 +752,7 @@ XLALDestroyPulsarParams ( PulsarParams *params )
  * defining the following required and optional parameters:
  *
  * REQUIRED:
- * Alpha, Delta, Freq, refTime
+ * Alpha, Delta, Freq, refTime (unless refTimeDef != NULL)
  *
  * OPTIONAL:
  * f1dot, f2dot, f3dot, f4dot, f5dot, f6dot
@@ -764,7 +764,8 @@ XLALDestroyPulsarParams ( PulsarParams *params )
 int
 XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters to fill in from config string
                        LALParsedDataFile *cfgdata,      ///< [in] pre-parsed "SourceParamsIO" config-file contents
-                       const CHAR *secName		///< [in] section-name to use from config-file string (can be NULL)
+                       const CHAR *secName,		///< [in] section-name to use from config-file string (can be NULL)
+                       const LIGOTimeGPS *refTimeDef	///< [in] default reference time if refTime is not given
                        )
 {
   XLAL_CHECK ( pulsarParams != NULL, XLAL_EINVAL );
@@ -822,8 +823,13 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   // ----- refTime
   LIGOTimeGPS refTime_GPS; BOOLEAN have_refTime;
   XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &refTime_GPS, cfgdata, secName, "refTime", &have_refTime ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( have_refTime, XLAL_EINVAL, "missing required value refTime" );
-  pulsarParams->Doppler.refTime = refTime_GPS;
+  if ( have_refTime ) {
+    pulsarParams->Doppler.refTime = refTime_GPS;
+  } else if ( refTimeDef != NULL ) {
+    pulsarParams->Doppler.refTime = *refTimeDef;
+  } else {
+    XLAL_ERROR ( XLAL_EINVAL, "missing value refTime, and no default is available" );
+  }
 
   // ----- Alpha
   REAL8 Alpha_Rad = 0; BOOLEAN have_Alpha;
@@ -944,7 +950,8 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
  * of all pulsar definitions found [using sections]
  */
 PulsarParamsVector *
-XLALPulsarParamsFromFile ( const char *fname 		///< [in] 'CWsources' config file name
+XLALPulsarParamsFromFile ( const char *fname, 			///< [in] 'CWsources' config file name
+                           const LIGOTimeGPS *refTimeDef	///< [in] default reference time if refTime is not given
                            )
 {
   XLAL_CHECK_NULL ( fname != NULL, XLAL_EINVAL );
@@ -967,7 +974,7 @@ XLALPulsarParamsFromFile ( const char *fname 		///< [in] 'CWsources' config file
       if ( strcmp ( sec_i, "default" ) == 0 ) {	// special handling of 'default' section
         sec_i = NULL;
       }
-      XLAL_CHECK_NULL ( XLALReadPulsarParams ( &sources->data[i], cfgdata, sec_i ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL ( XLALReadPulsarParams ( &sources->data[i], cfgdata, sec_i, refTimeDef ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // ----- source naming convention: 'filename:section'
       char *name;
@@ -993,7 +1000,8 @@ XLALPulsarParamsFromFile ( const char *fname 		///< [in] 'CWsources' config file
  * NOTE: when specifying file-contents, options can be separated by ';' and/or newlines)
  */
 PulsarParamsVector *
-XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput		///< [in] user-input CSV list defining 'CW sources'
+XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput,	///< [in] user-input CSV list defining 'CW sources'
+                                const LIGOTimeGPS *refTimeDef		///< [in] default reference time if refTime is not given
                                 )
 {
   XLAL_CHECK_NULL ( UserInput, XLAL_EINVAL );
@@ -1013,7 +1021,7 @@ XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput		///< [in] user
           for ( UINT4 i = 0; i < numFiles; i ++ )
             {
               PulsarParamsVector *sources_i;
-              XLAL_CHECK_NULL ( (sources_i = XLALPulsarParamsFromFile ( file_list->data[i] )) != NULL, XLAL_EFUNC );
+              XLAL_CHECK_NULL ( (sources_i = XLALPulsarParamsFromFile ( file_list->data[i], refTimeDef )) != NULL, XLAL_EFUNC );
 
               XLAL_CHECK_NULL ( (allSources = XLALPulsarParamsVectorAppend ( allSources, sources_i )) != NULL, XLAL_EFUNC );
               XLALDestroyPulsarParamsVector ( sources_i );
@@ -1038,7 +1046,7 @@ XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput		///< [in] user
           PulsarParamsVector *addSource;
           XLAL_CHECK_NULL ( (addSource = XLALCreatePulsarParamsVector ( 1 )) != NULL, XLAL_EFUNC );
 
-          XLAL_CHECK_NULL ( XLALReadPulsarParams ( &addSource->data[0], cfgdata, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK_NULL ( XLALReadPulsarParams ( &addSource->data[0], cfgdata, NULL, refTimeDef ) == XLAL_SUCCESS, XLAL_EFUNC );
           XLAL_CHECK_NULL ( (addSource->data[0].name = XLALStringDuplicate ( "direct-string-input" )) != NULL, XLAL_EFUNC );
           XLALDestroyParsedDataFile ( cfgdata );
 

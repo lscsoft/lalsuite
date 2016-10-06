@@ -184,7 +184,7 @@ main(int argc, char *argv[])
 
   PulsarParamsVector *injectionSources = NULL;
   if ( uvar.injectionSources ) {
-    XLAL_CHECK ( (injectionSources = XLALPulsarParamsFromUserInput ( uvar.injectionSources ) ) != NULL, XLAL_EFUNC );
+    XLAL_CHECK ( (injectionSources = XLALPulsarParamsFromUserInput ( uvar.injectionSources, NULL ) ) != NULL, XLAL_EFUNC );
   }
 
   CWMFDataParams XLAL_INIT_DECL(DataParams);

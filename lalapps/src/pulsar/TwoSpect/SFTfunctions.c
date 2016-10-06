@@ -1239,7 +1239,7 @@ MultiSFTVector * generateSFTdata(UserInput_t *uvar, const MultiLALDetector *dete
    PulsarParamsVector *injectionSources = NULL;
    //If injection sources then read them and make signal sfts
    if (XLALUserVarWasSet(&uvar->injectionSources)) {
-      XLAL_CHECK_NULL( (injectionSources =  XLALPulsarParamsFromUserInput(uvar->injectionSources)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK_NULL( (injectionSources =  XLALPulsarParamsFromUserInput(uvar->injectionSources, NULL)) != NULL, XLAL_EFUNC );
 
       fprintf(stderr, "Generating signal SFTs with %d signals... ", (INT4)injectionSources->length);
 
