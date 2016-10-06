@@ -1176,10 +1176,12 @@ int XLALFITSHeaderWriteGPSTime( FITSFile UNUSED *file, const CHAR UNUSED *key, c
   CALL_FITS( fits_time2str, utc.tm_year, utc.tm_mon, utc.tm_mday, utc.tm_hour, utc.tm_min, utc.tm_sec + ( gps.gpsNanoSeconds / XLAL_BILLION_REAL8 ), 9, utc_str );
   CALL_FITS( fits_write_key_str, file->ff, keyword, utc_str, comment );
 
-  // Write comment containing time in GPS seconds/nanoseconds format
-  CHAR buf[FLEN_COMMENT];
-  snprintf( buf, sizeof( buf ), "%s = GPS %" LAL_GPS_FORMAT, keyword, LAL_GPS_PRINT( gps ) );
-  CALL_FITS( fits_write_comment, file->ff, buf );
+  // Write time in GPS seconds/nanoseconds format
+  CHAR keyword_gps[FLEN_KEYWORD];
+  snprintf( keyword_gps, sizeof( keyword_gps ), "%s GPS", keyword );
+  CHAR gps_str[FLEN_VALUE];
+  XLAL_CHECK_FAIL( XLALGPSToStr( gps_str, &gps ) != NULL, XLAL_EFUNC );
+  CALL_FITS( fits_write_key_str, file->ff, keyword_gps, gps_str, "UTC value takes precedence" );
 
   return XLAL_SUCCESS;
 
