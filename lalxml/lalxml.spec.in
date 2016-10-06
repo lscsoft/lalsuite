@@ -87,15 +87,15 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
+%{_datarootdir}/lalxml/*
 %{_libdir}/*.so*
 %{_sysconfdir}/*
-%{_datarootdir}/lalxml/*
 
 %files devel
 %defattr(-,root,root)
+%{_includedir}/lal
 %{_libdir}/*.a
 %{_libdir}/pkgconfig/*
-%{_includedir}/lal
 
 %files python
 %defattr(-,root,root)
