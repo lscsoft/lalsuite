@@ -89,13 +89,14 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %defattr(-,root,root)
 %{_bindir}/lal-simd-detect
 %{_bindir}/lal-version
-%{_libdir}/*.so*
+%{_libdir}/*.so.*
 %{_sysconfdir}/lal-user-env.*
 
 %files devel
 %defattr(-,root,root)
 %{_includedir}/lal
 %{_libdir}/*.a
+%{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
 %files python
