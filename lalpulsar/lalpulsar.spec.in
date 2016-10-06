@@ -85,7 +85,7 @@ This package provides the Octave bindings for LALPulsar.
 
 %install
 %make_install
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
 ldconfig
@@ -111,10 +111,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files python
 %defattr(-,root,root)
-%{_libdir}/python*/site-packages/lalpulsar/*.py
-%{_libdir}/python*/site-packages/lalpulsar/*.pyc
-%{_libdir}/python*/site-packages/lalpulsar/_lalpulsar.so*
-%exclude %{_libdir}/python*/site-packages/lalpulsar/*.pyo
+%{_libdir}/python*
 
 %files octave
 %defattr(-,root,root)
