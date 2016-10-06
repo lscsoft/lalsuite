@@ -516,7 +516,7 @@ int LALInferenceInspiralPriorTest(void)
 	{
 		TEST_FAIL("Could not generate inspiral prior; XLAL error: %s", XLALErrorString(errnum));
 	}
-	else if (result == -DBL_MAX)
+	else if (isinf(result))
 	{
 		TEST_FAIL("Parameter configuration within specified min/max bounds for each parameter gave zero prior.");
 	}
@@ -530,7 +530,7 @@ int LALInferenceInspiralPriorTest(void)
 	{
 		TEST_FAIL("Could not generate inspiral prior; XLAL error: %s", XLALErrorString(errnum));
 	}
-	else if (result != -DBL_MAX)
+	else if (isfinite(result))
 	{
 		TEST_FAIL("Distance %f is outside [%f,%f] but prior is non-zero.", value, min, max);
 	}
@@ -553,7 +553,7 @@ int LALInferenceInspiralPriorTest(void)
 	{
 		TEST_FAIL("Could not generate inspiral prior; XLAL error: %s", XLALErrorString(errnum));
 	}
-	else if (result != -DBL_MAX)
+	else if (isfinite(result))
 	{
 		TEST_FAIL("Mass ratio %f and chirp mass %f define masses outside bounds [%f,%f], but prior is non-zero.", eta, Mc, min, max);
 	}
