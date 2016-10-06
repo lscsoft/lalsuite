@@ -73,7 +73,7 @@ This package provides the Octave bindings for LALMetaIO.
 
 %install
 %make_install
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
 ldconfig
@@ -98,10 +98,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files python
 %defattr(-,root,root)
-%{_libdir}/python*/site-packages/lalmetaio/*.py
-%{_libdir}/python*/site-packages/lalmetaio/*.pyc
-%{_libdir}/python*/site-packages/lalmetaio/_lalmetaio.so*
-%exclude %{_libdir}/python*/site-packages/lalmetaio/*.pyo
+%{_libdir}/python*
 
 %files octave
 %defattr(-,root,root)
