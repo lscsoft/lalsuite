@@ -38,12 +38,12 @@ echo
 
 echo "=== Check number of semicoherent templates are the same ==="
 set -x
-${fitsdir}/lalapps_fits_header_list "WeaveOutNoSim.fits[0]" > tmp
-semi_tot_no_sim=`cat tmp | sed -n "s|/.*$||;s|^SEMITOT = ||p" | xargs printf "%d"`
-${fitsdir}/lalapps_fits_header_list "WeaveOutSimFull.fits[0]" > tmp
-semi_tot_sim_full=`cat tmp | sed -n "s|/.*$||;s|^SEMITOT = ||p" | xargs printf "%d"`
-${fitsdir}/lalapps_fits_header_list "WeaveOutSimMin.fits[0]" > tmp
-semi_tot_sim_min=`cat tmp | sed -n "s|/.*$||;s|^SEMITOT = ||p" | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" SEMITOT > tmp
+semi_tot_no_sim=`cat tmp | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" SEMITOT > tmp
+semi_tot_sim_full=`cat tmp | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOutSimMin.fits[0]" SEMITOT > tmp
+semi_tot_sim_min=`cat tmp | xargs printf "%d"`
 [ ${semi_tot_no_sim} -eq ${semi_tot_sim_full} ]
 [ ${semi_tot_no_sim} -eq ${semi_tot_sim_min} ]
 set +x
@@ -51,12 +51,12 @@ echo
 
 echo "=== Check peak memory usage is consistent ==="
 set -x
-${fitsdir}/lalapps_fits_header_list "WeaveOutNoSim.fits[0]" > tmp
-peak_mem_no_sim=`cat tmp | sed -n "s|/.*$||;s|^PEAKMEM = ||p" | xargs printf "%.5g"`
-${fitsdir}/lalapps_fits_header_list "WeaveOutSimFull.fits[0]" > tmp
-peak_mem_sim_full=`cat tmp | sed -n "s|/.*$||;s|^PEAKMEM = ||p" | xargs printf "%.5g"`
-${fitsdir}/lalapps_fits_header_list "WeaveOutSimMin.fits[0]" > tmp
-peak_mem_sim_min=`cat tmp | sed -n "s|/.*$||;s|^PEAKMEM = ||p" | xargs printf "%.5g"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" PEAKMEM > tmp
+peak_mem_no_sim=`cat tmp | xargs printf "%.5g"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" PEAKMEM > tmp
+peak_mem_sim_full=`cat tmp | xargs printf "%.5g"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOutSimMin.fits[0]" PEAKMEM > tmp
+peak_mem_sim_min=`cat tmp | xargs printf "%.5g"`
 [ `echo ${peak_mem_no_sim} ${peak_mem_sim_full} | awk '{ print 0.95 < $2/$1 && $2/$1 < 1.05 }'` -eq 1 ]
 [ `echo ${peak_mem_no_sim} ${peak_mem_sim_min} | awk '{ print $2/$1 < 0.6 }'` -eq 1 ]
 set +x

@@ -47,11 +47,11 @@ echo
 
 echo "=== Check number of times output results have been restored from a checkpoint ==="
 set -x
-${fitsdir}/lalapps_fits_header_list "WeaveCkpt.fits[0]" > tmp
-ckpt_count=`cat tmp | sed -n "s|/.*$||;s|^CKPTCNT = ||p" | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveCkpt.fits[0]" CKPTCNT > tmp
+ckpt_count=`cat tmp | xargs printf "%d"`
 [ ${ckpt_count} -eq 2 ]
-${fitsdir}/lalapps_fits_header_list "WeaveOutCkpt.fits[0]" > tmp
-num_ckpt=`cat tmp | sed -n "s|/.*$||;s|^NUMCKPT = ||p" | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOutCkpt.fits[0]" NUMCKPT > tmp
+num_ckpt=`cat tmp | xargs printf "%d"`
 [ ${num_ckpt} -eq ${ckpt_count} ]
 set +x
 echo
