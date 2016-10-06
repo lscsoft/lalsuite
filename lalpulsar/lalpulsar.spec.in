@@ -101,7 +101,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %defattr(-,root,root)
 %{_libdir}/*.so*
 %{_sysconfdir}/*
-%{_prefix}/share/lalpulsar/*
+%{_datarootdir}/lalpulsar/*
 
 %files devel
 %defattr(-,root,root)
