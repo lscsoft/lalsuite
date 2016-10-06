@@ -163,9 +163,9 @@ void LALInferenceDrawThreads(LALInferenceRunState *run_state) {
         LALInferenceCopyUnsetREAL8Variables(priorDraw, thread->currentParams,
                                             run_state->commandLine);
 
-        while (run_state->prior(run_state,
-                                thread->currentParams,
-                                thread->model) <= -DBL_MAX) {
+        while(isinf(run_state->prior(run_state,
+                                     thread->currentParams,
+                                     thread->model))) {
             LALInferenceDrawApproxPrior(thread,
                                         thread->currentParams,
                                         thread->currentParams);

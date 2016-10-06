@@ -493,10 +493,10 @@ void mcmc_step(LALInferenceRunState *runState, LALInferenceThreadState *thread) 
 
     // compute prior & likelihood:
     logPriorProposed = runState->prior(runState, thread->proposedParams, thread->model);
-    if (logPriorProposed > -DBL_MAX)
+    if (isfinite(logPriorProposed))
         logLikelihoodProposed = runState->likelihood(thread->proposedParams, runState->data, thread->model);
     else
-        logLikelihoodProposed = -DBL_MAX;
+        logLikelihoodProposed = -INFINITY;
 
     if (propTrack)
         LALInferenceCopyVariables(thread->currentParams, thread->preProposalParams);

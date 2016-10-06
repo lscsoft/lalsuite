@@ -38,64 +38,46 @@ int main(int argc, char *argv[])
   char card[FLEN_CARD], newcard[FLEN_CARD];
   char oldvalue[FLEN_VALUE], comment[FLEN_COMMENT];
   int status = 0;   /*  CFITSIO status value MUST be initialized to zero!  */
-  int iomode = 0, keytype = 0;
+  int keytype = 0;
 
-  if (argc == 3) {
-    iomode = READONLY;
-  } else if (argc == 4) {
-    iomode = READWRITE;
-  } else {
+  if (argc != 4) {
     fprintf(stderr, "Usage:  %s filename[ext] keyword newvalue\n", argv[0]);
     fprintf(stderr, "\n");
-    fprintf(stderr, "Write or modify the value of a header keyword.\n");
-    fprintf(stderr, "If 'newvalue' is not specified then just print \n");
-    fprintf(stderr, "the current value. \n");
+    fprintf(stderr, "Modify the value of a header keyword.\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Examples: \n");
-    fprintf(stderr, "  %s file.fits dec      - list the DEC keyword \n", argv[0]);
     fprintf(stderr, "  %s file.fits dec 30.0 - set DEC = 30.0 \n", argv[0]);
     return (0);
   }
 
-  if (!fits_open_file(&fptr, argv[1], iomode, &status)) {
+  if (!fits_open_file(&fptr, argv[1], READWRITE, &status)) {
     if (fits_read_card(fptr,argv[2], card, &status)) {
       fprintf(stderr, "Keyword does not exist\n");
-      card[0] = '\0';
-      comment[0] = '\0';
-      status = 0;  /* reset status after error */
-    } else {
-      printf("%s\n",card);
+      return (1);
     }
 
-    if (argc == 4) { /* write or overwrite the keyword */
-      /* check if this is a protected keyword that must not be changed */
-      if (*card && fits_get_keyclass(card) == TYP_STRUC_KEY) {
-        fprintf(stderr, "Protected keyword cannot be modified.\n");
-      } else {
-        /* get the comment string */
-        if (*card) {
-          fits_parse_value(card, oldvalue, comment, &status);
-        }
+    if (fits_get_keyclass(card) == TYP_STRUC_KEY) {
+      fprintf(stderr, "Protected keyword cannot be modified\n");
+      return (1);
+    }
 
-        /* construct template for new keyword */
-        strcpy(newcard, argv[2]);     /* copy keyword name */
-        strcat(newcard, " = ");       /* '=' value delimiter */
-        strcat(newcard, argv[3]);     /* new value */
-        if (*comment) {
-          strcat(newcard, " / ");  /* comment delimiter */
-          strcat(newcard, comment);     /* append the comment */
-        }
+    fits_parse_value(card, oldvalue, comment, &status);
 
-        /* reformat the keyword string to conform to FITS rules */
-        fits_parse_template(newcard, card, &keytype, &status);
+    /* construct template for new keyword */
+    strcpy(newcard, argv[2]);     /* copy keyword name */
+    strcat(newcard, " = ");       /* '=' value delimiter */
+    strcat(newcard, argv[3]);     /* new value */
+    if (*comment) {
+      strcat(newcard, " / ");  /* comment delimiter */
+      strcat(newcard, comment);     /* append the comment */
+    }
 
-        /* overwrite the keyword with the new value */
-        fits_update_card(fptr, argv[2], card, &status);
+    /* reformat the keyword string to conform to FITS rules */
+    fits_parse_template(newcard, card, &keytype, &status);
 
-        printf("Keyword has been changed to:\n");
-        printf("%s\n",card);
-      }
-    }  /* if argc == 4 */
+    /* overwrite the keyword with the new value */
+    fits_update_card(fptr, argv[2], card, &status);
+
     fits_close_file(fptr, &status);
   }    /* open_file */
 

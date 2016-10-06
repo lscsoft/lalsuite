@@ -22,12 +22,17 @@ ${builddir}/lalapps_Weave --output-file=WeaveOut.fits --output-toplist-limit=500
 set +x
 echo
 
+echo "=== Extract reference time from WeaveSetup.fits ==="
+set -x
+${fitsdir}/lalapps_fits_header_getval "WeaveSetup.fits[0]" 'DATE-OBS GPS' > tmp
+ref_time=`cat tmp | xargs printf "%.9f"`
+set +x
+echo
+
 for seg in 1 2 3; do
 
-    echo "=== Segment #${seg}: Extract reference time and segment start/end times from WeaveSetup.fits ==="
+    echo "=== Segment #${seg}: Extract segment start/end times from WeaveSetup.fits ==="
     set -x
-    ${fitsdir}/lalapps_fits_header_list "WeaveSetup.fits[0]" > tmp
-    ref_time=`cat tmp | sed -n "s/COMMENT DATE-OBS = GPS //p"`
     ${fitsdir}/lalapps_fits_table_list "WeaveSetup.fits[segments][col start_s; start_ns][#row == ${seg}]" > tmp
     start_time=`cat tmp | sed "/^#/d" | xargs printf "%d.%09d"`
     ${fitsdir}/lalapps_fits_table_list "WeaveSetup.fits[segments][col end_s; end_ns][#row == ${seg}]" > tmp

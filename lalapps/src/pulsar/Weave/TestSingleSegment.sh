@@ -24,8 +24,8 @@ echo
 
 echo "=== Extract reference time and segment start/end times from WeaveSetup.fits ==="
 set -x
-${fitsdir}/lalapps_fits_header_list "WeaveSetup.fits[0]" > tmp
-ref_time=`cat tmp | sed -n "s/COMMENT DATE-OBS = GPS //p"`
+${fitsdir}/lalapps_fits_header_getval "WeaveSetup.fits[0]" 'DATE-OBS GPS' > tmp
+ref_time=`cat tmp | xargs printf "%.9f"`
 ${fitsdir}/lalapps_fits_table_list "WeaveSetup.fits[segments][col start_s; start_ns][#row == 1]" > tmp
 start_time=`cat tmp | sed "/^#/d" | xargs printf "%d.%09d"`
 ${fitsdir}/lalapps_fits_table_list "WeaveSetup.fits[segments][col end_s; end_ns][#row == 1]" > tmp

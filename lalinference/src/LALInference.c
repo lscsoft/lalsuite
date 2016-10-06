@@ -111,7 +111,7 @@ LALInferenceThreadState *LALInferenceInitThread(void) {
     thread->step = 0;
     thread->temperature = 1.0;
     thread->creation_time = tv.tv_sec + tv.tv_usec/1E6;
-    thread->currentPropDensity = -DBL_MAX;
+    thread->currentPropDensity = -INFINITY;
     thread->temp_swap_counter = 0;
     thread->temp_swap_window = 50;
     thread->temp_swap_accepts = XLALCalloc(thread->temp_swap_window, sizeof(INT4));
@@ -1470,6 +1470,13 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
 {
   /* Short-circuit for pointer equality */
   if (var1 == var2) return 0;
+
+  /* Short-circuit if passed NULL pointers */
+  if ((var1 == NULL) || (var2 == NULL))
+  {
+		  XLALPrintWarning("LALInferenceCompareVariables received a NULL input pointer\n");
+		  return 1;
+  }
 
   int result = 0;
   UINT4 i;
@@ -3568,15 +3575,22 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 int LALInferenceWriteVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N)
 {
   UINT4 i=0;
-  for(i=0;i<N;i++) LALInferenceWriteVariablesBinary(file, vars[i]);
+  int errnum;
+  for(i=0;i<N;i++)
+  {
+		  XLAL_TRY(LALInferenceWriteVariablesBinary(file, vars[i]),errnum);
+		  if(errnum!=XLAL_SUCCESS) XLAL_ERROR(XLAL_EIO,"Unable to write variables as binary\n");
+  }
   return N;
 }
 
 int LALInferenceReadVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N)
 {
   UINT4 i=0;
+  int errnum;
   for(i=0;i<N;i++){
-    vars[i]=LALInferenceReadVariablesBinary(file);
+		  XLAL_TRY(vars[i]=LALInferenceReadVariablesBinary(file),errnum);
+		  if(errnum!=XLAL_SUCCESS) XLAL_ERROR(XLAL_EIO,"Unable to read variables from binary file\n");
   }
   return N;
 }
