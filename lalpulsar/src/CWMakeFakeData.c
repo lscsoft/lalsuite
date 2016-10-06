@@ -822,13 +822,13 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   // ----- refTime
   LIGOTimeGPS refTime_GPS; BOOLEAN have_refTime;
   XLAL_CHECK ( XLALReadConfigEPOCHVariable ( &refTime_GPS, cfgdata, secName, "refTime", &have_refTime ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( have_refTime, XLAL_EINVAL );
+  XLAL_CHECK ( have_refTime, XLAL_EINVAL, "missing required value refTime" );
   pulsarParams->Doppler.refTime = refTime_GPS;
 
   // ----- Alpha
   REAL8 Alpha_Rad = 0; BOOLEAN have_Alpha;
   XLAL_CHECK ( XLALReadConfigRAJVariable ( &Alpha_Rad, cfgdata, secName, "Alpha", &have_Alpha ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( have_Alpha, XLAL_EINVAL );
+  XLAL_CHECK ( have_Alpha, XLAL_EINVAL, "missing required value Alpha" );
 
   XLAL_CHECK ( (Alpha_Rad >= 0) && (Alpha_Rad < LAL_TWOPI), XLAL_EDOM );
   pulsarParams->Doppler.Alpha = Alpha_Rad;
@@ -836,7 +836,7 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   // ----- Delta
   REAL8 Delta_Rad = 0; BOOLEAN have_Delta;
   XLAL_CHECK ( XLALReadConfigDECJVariable ( &Delta_Rad, cfgdata, secName, "Delta", &have_Delta ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( have_Delta, XLAL_EINVAL );
+  XLAL_CHECK ( have_Delta, XLAL_EINVAL, "missing required value Delta" );
 
   XLAL_CHECK ( (Delta_Rad >= -LAL_PI_2) && (Delta_Rad <= LAL_PI_2), XLAL_EDOM );
   pulsarParams->Doppler.Delta = Delta_Rad;
@@ -845,7 +845,7 @@ XLALReadPulsarParams ( PulsarParams *pulsarParams,	///< [out] pulsar parameters 
   // Freq
   REAL8 Freq = 0; BOOLEAN have_Freq;
   XLAL_CHECK ( XLALReadConfigREAL8Variable ( &Freq, cfgdata, secName, "Freq", &have_Freq ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( have_Freq, XLAL_EINVAL );
+  XLAL_CHECK ( have_Freq, XLAL_EINVAL, "missing required value Freq" );
 
   XLAL_CHECK ( Freq > 0, XLAL_EDOM );
   pulsarParams->Doppler.fkdot[0] = Freq;
