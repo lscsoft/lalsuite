@@ -32,11 +32,31 @@
 #error CFITSIO library is not available
 #endif
 
+#if defined(HAVE_LIBCFITSIO)
+
+#include <fitsio.h>
+
+// If fffree() is missing, use free() instead
+#if !defined(HAVE_FFFREE)
+#undef fits_free_memory
+#define fits_free_memory(ptr, status) free(ptr)
+
+// If ffree() is present but not declared, declare it
+#elif defined(HAVE_DECL_FFFREE) && !HAVE_DECL_FFFREE
+int fffree( void *, int * );
+#undef fits_free_memory
+#define fits_free_memory fffree
+
+#endif // ffree()
+
+#endif // defined(HAVE_LIBCFITSIO)
+
 int main(int argc, char *argv[])
 {
   fitsfile *fptr = 0;         /* FITS file pointer, defined in fitsio.h */
   char card[FLEN_CARD];
-  char oldvalue[FLEN_VALUE], comment[FLEN_COMMENT];
+  char value[FLEN_VALUE], comment[FLEN_COMMENT];
+  char *longvalue = 0;
   int status = 0;   /*  CFITSIO status value MUST be initialized to zero!  */
 
   if (argc != 3) {
@@ -55,8 +75,16 @@ int main(int argc, char *argv[])
       return (1);
     }
 
-    fits_parse_value(card, oldvalue, comment, &status);
-    printf("%s\n", oldvalue);
+    fits_parse_value(card, value, comment, &status);
+    if (value[0] != '\'') {
+      printf("%s\n", value);
+    } else {
+      fits_read_key_longstr(fptr, argv[2], &longvalue, comment, &status);
+      if (longvalue) {
+        printf("%s\n", longvalue);
+        fits_free_memory(longvalue, &status);
+      }
+    }
 
     fits_close_file(fptr, &status);
   }    /* open_file */
