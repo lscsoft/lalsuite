@@ -1472,7 +1472,11 @@ int LALInferenceCompareVariables(LALInferenceVariables *var1, LALInferenceVariab
   if (var1 == var2) return 0;
 
   /* Short-circuit if passed NULL pointers */
-  if ((var1 == NULL) || (var2 == NULL)) return 1;
+  if ((var1 == NULL) || (var2 == NULL))
+  {
+		  XLALPrintWarning("LALInferenceCompareVariables received a NULL input pointer\n");
+		  return 1;
+  }
 
   int result = 0;
   UINT4 i;
