@@ -41,6 +41,22 @@ def _check_mchi(m1,m2,chi1,chi2):
     _check_m(m1,m2)
     _check_chi(chi1,chi2)
 
+def _truncate_at_Kerr_limit(chif):
+    if np.any(abs(chif)>1.0):
+       if isinstance(chif,(list,np.ndarray)):
+          idx_over = np.where(abs(chif)>1.0)
+          chif_trunc = np.sign(chif[idx_over])*1.0
+          if np.size(idx_over)==1:
+             print "Truncating excessive chif of %f to Kerr limit of %f" % (chif[idx_over], chif_trunc)
+          else:
+             print "Truncating %d excessive chif values to Kerr limit of +-1" % np.size(idx_over)
+          chif[idx_over] = chif_trunc
+       else:
+          chif_trunc = np.sign(chif)*1.0
+          print "Truncating excessive chif of %f to Kerr limit of %f" % (chif, chif_trunc)
+          chif = chif_trunc
+    return chif
+
 # Final mass and spin functions
 
 def bbh_final_mass_non_spinning_Panetal(m1, m2):
@@ -345,9 +361,9 @@ def bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, ch
 
     return mf
 
-def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname):
+def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, truncate=True):
     """
-    Calculate the spin of the final BH resulting from the merger of two black holes,
+    Calculate the (signed) dimensionless spin parameter of the final BH resulting from the merger of two black holes,
     only using the projected spins along the total angular momentum
     and some aligned-spin fit from the literature
 
@@ -360,7 +376,7 @@ def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname):
 
     Returns
     -------
-    final spin, chif
+    (signed) dimensionless final spin parameter, chif
     """
 
     m1    = np.vectorize(float)(np.array(m1))
@@ -389,11 +405,14 @@ def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname):
     else:
        raise ValueError("Unrecognized fit name.")
 
+    if truncate:
+       chif = _truncate_at_Kerr_limit(chif)
+
     return chif
 
-def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname):
+def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname, truncate=True):
     """
-    Calculate the spin of the final BH resulting from the merger of two black holes,
+    Calculate the magnitude of the dimensionless spin parameter of the final BH resulting from the merger of two black holes,
     including the in-plane spin components;
     by either using a precessing fit from the literature;
     or by first projecting the spins along the angular momentum and using an aligned-spin fit from the literature,
@@ -411,7 +430,7 @@ def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname):
 
     Returns
     -------
-    final spin, chif
+    magnitude of the dimensionless final spin parameter, chif
     """
 
     m1    = np.vectorize(float)(np.array(m1))
@@ -445,11 +464,14 @@ def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname):
        # Combine together
        chif = (chifaligned*chifaligned + Sperpmag2/(m1+m2)**4.)**0.5
 
+    if truncate:
+       chif = _truncate_at_Kerr_limit(chif)
+
     return chif
 
-def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2): 
+def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2):
     """ 
-    Calculate the mass and spin of the final BH resulting from the 
+    Calculate the mass of the final BH resulting from the
     merger of two black holes with non-precessing spins using the fits
     used by IMRPhenomD, given in Eqs. (3.6) and (3.8) of Husa et al.
     arXiv:1508.07250. Note that Eq. (3.8) gives the radiated energy, not
@@ -489,9 +511,9 @@ def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2):
 
     return Mf
 
-def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2): 
+def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
     """ 
-    Calculate the mass and spin of the final BH resulting from the 
+    Calculate the spin of the final BH resulting from the
     merger of two black holes with non-precessing spins using the fits
     used by IMRPhenomD, given in Eqs. (3.6) and (3.8) of Husa et al.
     arXiv:1508.07250. Note that Eq. (3.8) gives the radiated energy, not
