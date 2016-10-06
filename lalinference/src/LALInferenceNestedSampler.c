@@ -210,6 +210,7 @@ static int _loadNSintegralState(FILE *fp, NSintegralState *s)
 static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
 {
   FILE *progfile=fopen(filename,"w");
+  int errnum;
   if(!progfile)
   {
     fprintf(stderr,"Unable to save resume file %s!\n",filename);
@@ -226,7 +227,13 @@ static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSi
       fclose(progfile);
       return 1;
     }
-    LALInferenceWriteVariablesArrayBinary(progfile,runState->livePoints, Nlive);
+    XLAL_TRY(LALInferenceWriteVariablesArrayBinary(progfile,runState->livePoints, Nlive),errnum);
+	if(errnum!=XLAL_SUCCESS)
+	{
+      fprintf(stderr,"Unable to write live points - will not be able to resume!\n");
+      fclose(progfile);
+      return 1;
+	}
     INT4 N_output_array=0;
     if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) N_output_array=LALInferenceGetINT4Variable(runState->algorithmParams,"N_outputarray");
     fwrite(&N_output_array,sizeof(INT4),1,progfile);
@@ -234,7 +241,13 @@ static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSi
     {
       LALInferenceVariables **output_array=NULL;
       output_array=*(LALInferenceVariables ***)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-      LALInferenceWriteVariablesArrayBinary(progfile,output_array, N_output_array);
+      XLAL_TRY(LALInferenceWriteVariablesArrayBinary(progfile,output_array, N_output_array),errnum);
+	  if(errnum!=XLAL_SUCCESS)
+	  {
+		      fprintf(stderr,"Unable to write past chain - will not be able to resume!\n");
+		      fclose(progfile);
+		      return 1;	
+	  }
       fprintf(stderr,"Resume --> wrote %d past chain samples\n\n",N_output_array);
     }
     fclose(progfile);
@@ -244,6 +257,7 @@ static int WriteNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSi
 
 static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSintegralState *s)
 {
+  int errnum;
   FILE *progfile=fopen(filename,"r");
   if(!progfile)
   {
@@ -260,14 +274,26 @@ static int ReadNSCheckPoint(CHAR *filename, LALInferenceRunState *runState, NSin
       return 1;
     }
     //if(retcode) return 1;
-    LALInferenceReadVariablesArrayBinary(progfile,runState->livePoints,Nlive);
+    XLAL_TRY(LALInferenceReadVariablesArrayBinary(progfile,runState->livePoints,Nlive),errnum);
+	if(errnum!=XLAL_SUCCESS)
+    {
+		fprintf(stderr,"Unable to read live points from resume file!\n");
+		fclose(progfile);
+		return(1);
+	}
     INT4 N_output_array;
     fread(&N_output_array,sizeof(INT4),1,progfile);
     LALInferenceVariables **output_array=NULL;
     if(N_output_array!=0){
       output_array=XLALCalloc(N_output_array,sizeof(LALInferenceVariables *));
       fprintf(stderr,"Resume --> read %d past chain samples\n",N_output_array);
-      LALInferenceReadVariablesArrayBinary(progfile,output_array,N_output_array);
+      XLAL_TRY(LALInferenceReadVariablesArrayBinary(progfile,output_array,N_output_array),errnum);
+	  if(errnum!=XLAL_SUCCESS)
+	  {
+		fprintf(stderr,"Unable to read past chain from resume file!\n");
+		fclose(progfile);
+		return(1);
+	  }
       if(LALInferenceCheckVariable(runState->algorithmParams,"N_outputarray")) LALInferenceRemoveVariable(runState->algorithmParams,"N_outputarray");
       if(LALInferenceCheckVariable(runState->algorithmParams,"outputarray")) LALInferenceRemoveVariable(runState->algorithmParams,"outputarray");
       LALInferenceAddVariable(runState->algorithmParams,"N_outputarray",&N_output_array,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);

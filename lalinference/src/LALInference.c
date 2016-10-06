@@ -3568,15 +3568,22 @@ LALInferenceVariables *LALInferenceReadVariablesBinary(FILE *stream)
 int LALInferenceWriteVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N)
 {
   UINT4 i=0;
-  for(i=0;i<N;i++) LALInferenceWriteVariablesBinary(file, vars[i]);
+  int errnum;
+  for(i=0;i<N;i++)
+  {
+		  XLAL_TRY(LALInferenceWriteVariablesBinary(file, vars[i]),errnum);
+		  if(errnum!=XLAL_SUCCESS) XLAL_ERROR(XLAL_EIO,"Unable to write variables as binary\n");
+  }
   return N;
 }
 
 int LALInferenceReadVariablesArrayBinary(FILE *file, LALInferenceVariables **vars, UINT4 N)
 {
   UINT4 i=0;
+  int errnum;
   for(i=0;i<N;i++){
-    vars[i]=LALInferenceReadVariablesBinary(file);
+		  XLAL_TRY(vars[i]=LALInferenceReadVariablesBinary(file),errnum);
+		  if(errnum!=XLAL_SUCCESS) XLAL_ERROR(XLAL_EIO,"Unable to read variables from binary file\n");
   }
   return N;
 }
