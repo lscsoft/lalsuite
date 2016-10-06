@@ -103,11 +103,10 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %files
 %defattr(-,root,root)
 %{_bindir}/*
-%{_pkgpythondir}/*
-%{_mandir}/man1/*
 %{_datadir}/lalapps/*
+%{_mandir}/man1/*
+%{_pkgpythondir}/*
 %{_sysconfdir}/lalapps-user-env.*
-
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
