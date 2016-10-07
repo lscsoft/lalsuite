@@ -6,7 +6,7 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm Inference Library
-License: GPL
+License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
@@ -139,7 +139,7 @@ This package provides the Octave bindings for LALInference.
 
 %install
 %make_install
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
 ldconfig
@@ -153,39 +153,24 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_libdir}/*.so*
-%{_sysconfdir}/*
-%{_datarootdir}/lalinference/*.csv
 %{_bindir}/lalinference_*
+%{_datarootdir}/lalinference/*
+%{_libdir}/*.so.*
+%{_sysconfdir}/*
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/*.a
-%{_libdir}/pkgconfig/*
 %{_includedir}/lal
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
 
 %files python
 %defattr(-,root,root)
 %{_bindir}/bayestar_*
+%{_bindir}/imrtgr_*
 %{_bindir}/rapidpe_*
-%{_libdir}/python*/site-packages/lalinference/*.py
-%{_libdir}/python*/site-packages/lalinference/*.pyc
-%{_libdir}/python*/site-packages/lalinference/bayestar/*.py
-%{_libdir}/python*/site-packages/lalinference/bayestar/*.pyc
-%{_libdir}/python*/site-packages/lalinference/bayestar/_distance.so*
-%{_libdir}/python*/site-packages/lalinference/bayestar/sky_map.so*
-%{_libdir}/python*/site-packages/lalinference/cylon.csv
-%{_libdir}/python*/site-packages/lalinference/imrtgr/*.py
-%{_libdir}/python*/site-packages/lalinference/imrtgr/*.pyc
-%{_libdir}/python*/site-packages/lalinference/ne_simplified_coastline.json
-%{_libdir}/python*/site-packages/lalinference/rapid_pe/*.py
-%{_libdir}/python*/site-packages/lalinference/rapid_pe/*.pyc
-%{_libdir}/python*/site-packages/lalinference/_lalinference.so*
-%exclude %{_libdir}/python*/site-packages/lalinference/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalinference/bayestar/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalinference/bayestar/*.la
-%exclude %{_libdir}/python*/site-packages/lalinference/imrtgr/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalinference/rapid_pe/*.pyo
+%{_libdir}/python*
 
 %files octave
 %defattr(-,root,root)

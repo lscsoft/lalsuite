@@ -639,7 +639,7 @@ int main( int argc, char *argv[] )
   // Parse signal injection string
   PulsarParamsVector *injections = NULL;
   if ( UVAR_SET( injections ) ) {
-    injections = XLALPulsarParamsFromUserInput( uvar->injections );
+    injections = XLALPulsarParamsFromUserInput( uvar->injections, NULL );
     XLAL_CHECK_MAIN( injections != NULL, XLAL_EFUNC );
   }
 

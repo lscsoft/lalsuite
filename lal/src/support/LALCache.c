@@ -444,28 +444,6 @@ static int XLALCacheCompareDuration(void UNUSED * p, const void *p1,
     return (t1 > t2) - (t1 < t2);
 }
 
-static int XLALCacheCompareURL(void UNUSED * p, const void *p1,
-                               const void *p2)
-{
-    const char *s1 = ((const struct tagLALCacheEntry *) p1)->url;
-    const char *s2 = ((const struct tagLALCacheEntry *) p2)->url;
-    return strcmp(s1 ? s1 : "", s2 ? s2 : "");
-}
-
-static int XLALCacheCompareEntries(void *p, const void *p1, const void *p2)
-{
-    int c;
-    if ((c = XLALCacheCompareSource(p, p1, p2)))
-        return c;
-    if ((c = XLALCacheCompareDescription(p, p1, p2)))
-        return c;
-    if ((c = XLALCacheCompareStartTime(p, p1, p2)))
-        return c;
-    if ((c = XLALCacheCompareDuration(p, p1, p2)))
-        return c;
-    return XLALCacheCompareURL(p, p1, p2);
-}
-
 static int XLALCacheCompareEntryMetadata(void *p, const void *p1,
                                          const void *p2)
 {
@@ -476,9 +454,7 @@ static int XLALCacheCompareEntryMetadata(void *p, const void *p1,
         return c;
     if ((c = XLALCacheCompareStartTime(p, p1, p2)))
         return c;
-    if ((c = XLALCacheCompareDuration(p, p1, p2)))
-        return c;
-    return 0;
+    return XLALCacheCompareDuration(p, p1, p2);
 }
 
 
@@ -486,8 +462,11 @@ int XLALCacheSort(LALCache * cache)
 {
     if (!cache)
         XLAL_ERROR(XLAL_EFAULT);
-    return XLALHeapSort(cache->list, cache->length, sizeof(*cache->list),
-                        NULL, XLALCacheCompareEntries);
+    /* insertion sort preserves original order in the event of a tie,
+     * allowing fail-over copies in the cache to be listed in order of
+     * preference */
+    return XLALInsertionSort(cache->list, cache->length, sizeof(*cache->list),
+                             NULL, XLALCacheCompareEntryMetadata);
 }
 
 int XLALCacheUniq(LALCache * cache)

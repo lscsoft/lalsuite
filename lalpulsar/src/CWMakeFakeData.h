@@ -103,9 +103,9 @@ XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *si
 SFTVector *
 XLALMakeSFTsFromREAL8TimeSeries ( const REAL8TimeSeries *timeseries, const LIGOTimeGPSVector *timestamps, const char *windowType, REAL8 windowBeta );
 
-int XLALReadPulsarParams ( PulsarParams *pulsarParams, LALParsedDataFile *cfgdata, const CHAR *secName );
-PulsarParamsVector *XLALPulsarParamsFromFile ( const char *fname );
-PulsarParamsVector *XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput );
+int XLALReadPulsarParams ( PulsarParams *pulsarParams, LALParsedDataFile *cfgdata, const CHAR *secName, const LIGOTimeGPS *refTimeDef );
+PulsarParamsVector *XLALPulsarParamsFromFile ( const char *fname, const LIGOTimeGPS *refTimeDef );
+PulsarParamsVector *XLALPulsarParamsFromUserInput ( const LALStringVector *UserInput, const LIGOTimeGPS *refTimeDef );
 
 PulsarParamsVector *XLALCreatePulsarParamsVector ( UINT4 numPulsars );
 PulsarParamsVector * XLALPulsarParamsVectorAppend ( PulsarParamsVector *list, const PulsarParamsVector *add );

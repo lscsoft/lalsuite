@@ -6,7 +6,7 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm Inspiral Library
-License: GPL
+License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
@@ -97,7 +97,7 @@ This package provides the Octave bindings for LALInspiral.
 
 %install
 %make_install
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
 ldconfig
@@ -111,24 +111,19 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_libdir}/*.so*
+%{_libdir}/*.so.*
 %{_sysconfdir}/*
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/*.a
-%{_libdir}/pkgconfig/*
 %{_includedir}/lal
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
 
 %files python
 %defattr(-,root,root)
-%{_libdir}/python*/site-packages/lalinspiral/*.py
-%{_libdir}/python*/site-packages/lalinspiral/*.pyc
-%{_libdir}/python*/site-packages/lalinspiral/_lalinspiral.so*
-%{_libdir}/python*/site-packages/lalinspiral/sbank/*.py
-%{_libdir}/python*/site-packages/lalinspiral/sbank/*.pyc
-%exclude %{_libdir}/python*/site-packages/lalinspiral/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalinspiral/sbank/*.pyo
+%{_libdir}/python*
 
 %files octave
 %defattr(-,root,root)

@@ -6,7 +6,7 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm Pulsar Library
-License: GPL
+License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
@@ -85,7 +85,7 @@ This package provides the Octave bindings for LALPulsar.
 
 %install
 %make_install
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
 ldconfig
@@ -99,22 +99,20 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_libdir}/*.so*
+%{_datarootdir}/lalpulsar/*
+%{_libdir}/*.so.*
 %{_sysconfdir}/*
-%{_prefix}/share/lalpulsar/*
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/*.a
-%{_libdir}/pkgconfig/*
 %{_includedir}/lal
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
 
 %files python
 %defattr(-,root,root)
-%{_libdir}/python*/site-packages/lalpulsar/*.py
-%{_libdir}/python*/site-packages/lalpulsar/*.pyc
-%{_libdir}/python*/site-packages/lalpulsar/_lalpulsar.so*
-%exclude %{_libdir}/python*/site-packages/lalpulsar/*.pyo
+%{_libdir}/python*
 
 %files octave
 %defattr(-,root,root)
