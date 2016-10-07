@@ -99,6 +99,7 @@ INT4 init_ptmcmc(LALInferenceRunState *runState) {
     ----------------------------------------------\n\
     --- Parallel Tempering Algorithm Parameters --\n\
     ----------------------------------------------\n\
+    (--adapt-temps)     Adapt the spacing between temperatures for uniform swap acceptance\n\
     (--temp-skip N)     Number of steps between temperature swap proposals (100)\n\
     (--tempKill N)      Iteration number to stop temperature swapping (Niter)\n\
     (--ntemps N)         Number of temperature chains in ladder (as many as needed)\n\
