@@ -50,15 +50,15 @@ struct tagWeaveCache {
   size_t gc_limit;
   /// Number of parameter-space dimensions
   size_t ndim;
-  // Half the coherent lattice tiling bounding box in dimension 0
+  /// Half the coherent lattice tiling bounding box in dimension 0
   double coh_half_bound_box_0;
   /// Physical to lattice coordinate transform
   WeavePhysicalToLattice phys_to_latt;
   /// Lattice to physical coordinate transform
   WeaveLatticeToPhysical latt_to_phys;
-  // Coordinate transform data for coherent lattice
+  /// Coordinate transform data for coherent lattice
   const void *coh_transf_data;
-  // Coordinate transform data for semicoherent lattice
+  /// Coordinate transform data for semicoherent lattice
   const void *semi_transf_data;
   /// Input data required for computing coherent results
   WeaveCohInput *coh_input;
@@ -80,35 +80,35 @@ struct tagWeaveCache {
 struct tagWeaveCacheQueries {
   /// Number of parameter-space dimensions
   size_t ndim;
-  // Half the semicoherent lattice tiling bounding box in dimension 0
+  /// Half the semicoherent lattice tiling bounding box in dimension 0
   double semi_half_bound_box_0;
   /// Physical to lattice coordinate transform
   WeavePhysicalToLattice phys_to_latt;
   /// Lattice to physical coordinate transform
   WeaveLatticeToPhysical latt_to_phys;
-  // Coordinate transform data for semicoherent lattice
+  /// Coordinate transform data for semicoherent lattice
   const void *semi_transf_data;
-  // Number of queries for which space is allocated
+  /// Number of queries for which space is allocated
   UINT4 nqueries;
-  // Sequential indexes for each queried coherent frequency block
+  /// Sequential indexes for each queried coherent frequency block
   UINT8 *coh_index;
-  // Physical points of each queried coherent frequency block
+  /// Physical points of each queried coherent frequency block
   PulsarDopplerParams *coh_phys;
-  // Indexes of left-most point in queried coherent frequency block
+  /// Indexes of left-most point in queried coherent frequency block
   INT4 *coh_left;
-  // Indexes of right-most point in queried coherent frequency block
+  /// Indexes of right-most point in queried coherent frequency block
   INT4 *coh_right;
-  // Number of partitions to divide semicoherent frequency block into
+  /// Number of partitions to divide semicoherent frequency block into
   UINT4 npartitions;
-  // Index to current partition of semicoherent frequency block
+  /// Index to current partition of semicoherent frequency block
   UINT4 partition_index;
-  // Relevance of the current semicoherent frequency block
+  /// Relevance of the current semicoherent frequency block
   REAL4 semi_relevance;
-  // Physical coordinates of the current semicoherent frequency block
+  /// Physical coordinates of the current semicoherent frequency block
   PulsarDopplerParams semi_phys;
-  // Index of left-most point in current semicoherent frequency block
+  /// Index of left-most point in current semicoherent frequency block
   INT4 semi_left;
-  // Index of right-most point in current semicoherent frequency block
+  /// Index of right-most point in current semicoherent frequency block
   INT4 semi_right;
 };
 
