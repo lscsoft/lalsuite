@@ -13,7 +13,7 @@ ${builddir}/lalapps_Weave --output-file=WeaveOutNoSim.fits \
     --sft-timebase=1800 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
-    --alpha=2.7/0.05 --delta=-0.4/0.05 --freq=50.5/1e-6 --f1dot=-1e-8,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3 --Fstat-method=DemodBest
+    --alpha=2.7/0.05 --delta=-0.4/0.05 --freq=50.5/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3
 set +x
 echo
 
@@ -24,7 +24,7 @@ ${builddir}/lalapps_Weave --simulate-search --output-file=WeaveOutSimFull.fits \
     --sft-timebase=1800 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
-    --alpha=2.7/0.05 --delta=-0.4/0.05 --freq=50.5/1e-6 --f1dot=-1e-8,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3 --Fstat-method=DemodBest
+    --alpha=2.7/0.05 --delta=-0.4/0.05 --freq=50.5/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3
 set +x
 echo
 
@@ -32,7 +32,7 @@ echo "=== Simulate interpolating search with minimal memory usage ==="
 set -x
 ${builddir}/lalapps_Weave --simulate-search --output-file=WeaveOutSimMin.fits \
     --output-toplist-limit=5000 --output-misc-info --setup-file=WeaveSetup.fits \
-    --alpha=2.7/0.05 --delta=-0.4/0.05 --freq=50.5/1e-6 --f1dot=-1e-8,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3 --Fstat-method=DemodBest
+    --alpha=2.7/0.05 --delta=-0.4/0.05 --freq=50.5/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3
 set +x
 echo
 
