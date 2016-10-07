@@ -80,6 +80,8 @@ struct tagWeaveCache {
 struct tagWeaveCacheQueries {
   /// Number of parameter-space dimensions
   size_t ndim;
+  /// Maximum number of bins in semicoherent frequency block
+  UINT4 max_semi_nfreqs;
   /// Half the semicoherent lattice tiling bounding box in dimension 0
   double semi_half_bound_box_0;
   /// Physical to lattice coordinate transform
@@ -110,6 +112,8 @@ struct tagWeaveCacheQueries {
   INT4 semi_left;
   /// Index of right-most point in current semicoherent frequency block
   INT4 semi_right;
+  /// Maximum number of bins per partition in semicoherent frequency block
+  UINT4 max_semi_part_nfreqs;
 };
 
 ///
@@ -318,7 +322,7 @@ void XLALWeaveCacheDestroy(
 /// Create storage for a series of cache queries
 ///
 WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
-  const LatticeTiling *semi_tiling,
+  LatticeTiling *semi_tiling,
   const WeavePhysicalToLattice phys_to_latt,
   const WeaveLatticeToPhysical latt_to_phys,
   const void *semi_transf_data,
@@ -354,6 +358,15 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
 
   // Get number of parameter-space dimensions
   queries->ndim = XLALTotalLatticeTilingDimensions( semi_tiling );
+
+  // Get maximum number of bins (per partition) in semicoherent frequency block
+  {
+    const LatticeTilingStats *semi_freq_stats = XLALLatticeTilingStatistics( semi_tiling, queries->ndim - 1 );
+    XLAL_CHECK_NULL( semi_freq_stats != NULL, XLAL_EFUNC );
+    queries->max_semi_nfreqs = semi_freq_stats->max_points;
+    XLAL_CHECK_NULL( queries->max_semi_nfreqs > 0, XLAL_EFAILED );
+    queries->max_semi_part_nfreqs = 1 + ( ( queries->max_semi_nfreqs - 1 ) / queries->npartitions );
+  }
 
   // Get half the semicoherent lattice tiling bounding box in dimension 0
   queries->semi_half_bound_box_0 = 0.5 * XLALLatticeTilingBoundingBox( semi_tiling, 0 );
@@ -490,44 +503,39 @@ int XLALWeaveCacheQueriesFinal(
 
   }
 
-  // Compute the number of points in the semicoherent frequency block
+  // Compute the total number of points in the semicoherent frequency block
   *semi_nfreqs = queries->semi_right - queries->semi_left + 1;
 
-  // Check that partition index is within number of frequency points
-  XLAL_CHECK( queries->npartitions <= *semi_nfreqs, XLAL_EFAILED, "Cannot partition a block of %u frequencies into %u > %u partitions", *semi_nfreqs, queries->npartitions, *semi_nfreqs );
+  // Adjust semicoherent left/right-most indexes to select the given partition.
+  // Shrinks the semicoherent frequency block from '*semi_nfreqs' points to
+  // (at most) 'queries->max_semi_part_nfreqs' points.
+  const INT4 semi_left_offset = queries->max_semi_part_nfreqs * queries->partition_index;
+  const INT4 semi_right_offset = GSL_MIN( 0, semi_left_offset + ( ( INT4 ) queries->max_semi_part_nfreqs ) - ( ( INT4 ) *semi_nfreqs ) );
+  queries->semi_left += semi_left_offset;
+  queries->semi_right += semi_right_offset;
 
-  // Minimum number of points in partition
-  UINT4 part_nfreqs = *semi_nfreqs / queries->npartitions;
-
-  // Number of partitions to which an extra point must be added
-  const UINT4 part_excess = *semi_nfreqs - part_nfreqs * queries->npartitions;
-
-  // Compute offsets of left/right-most point in partition
-  INT4 part_offset_left = part_nfreqs * partition_index;
-  if ( partition_index < part_excess ) {
-    part_offset_left += partition_index;
-    ++part_nfreqs;
-  } else {
-    part_offset_left += part_excess;
+  // Recompute the number of points in the selected semicoherent frequency block partition.
+  // This could now potentially be zero, as some semicoherent frequency blocks may not
+  // have enough points for all partitions - in which case skip computing results for the
+  // selected partition.
+  *semi_nfreqs = GSL_MAX( 0, queries->semi_right - queries->semi_left + 1 );
+  if ( *semi_nfreqs == 0 ) {
+    return XLAL_SUCCESS;
   }
-  INT4 part_offset_right = part_offset_left + part_nfreqs - *semi_nfreqs;
-  XLAL_CHECK( part_offset_left >= 0, XLAL_EFAILED );
-  XLAL_CHECK( part_offset_right <= 0, XLAL_EFAILED );
 
-  // Adjust coherent/semicoherent left/right-most indexes to select this partition
-  // - This effectively shrinks the whole frequency band from '*semi_nfreqs' points
-  //   to 'part_nfreqs' points, as if this was the frequency parameter space all
-  //   along. Importantly, any padding on the coherent frequency blocks from the
-  //   full frequency parameter space is preserved
+  // Adjust coherent left/right-most indexes to enclose the given partition.
+  // Shrinks each coherent frequency block by an amount independent of the current
+  // semicoherent frequency block, since coherent frequency blocks are likely to be
+  // queried by multiple semicoherent frequency blocks and therefore need to have
+  // enough points to satisfy each query.
+  const INT4 coh_left_offset = semi_left_offset;
+  const INT4 coh_right_offset = queries->max_semi_part_nfreqs * ( queries->npartitions - queries->partition_index - 1 );
+  XLAL_CHECK( coh_left_offset <= semi_left_offset, XLAL_EFAILED, "Adjustment to coherent left-most index (%i) exceeds adjustment to semicoherent left-must index (%i)", coh_left_offset, semi_left_offset );
+  XLAL_CHECK( semi_right_offset <= coh_right_offset, XLAL_EFAILED, "Adjustment to semicoherent right-most index (%i) exceeds adjustment to coherent right-must index (%i)", semi_right_offset, coh_right_offset );
   for ( size_t i = 0; i < queries->nqueries; ++i ) {
-    queries->coh_left[i] += part_offset_left;
-    queries->coh_right[i] += part_offset_right;
+    queries->coh_left[i] += coh_left_offset;
+    queries->coh_right[i] += coh_right_offset;
   }
-  queries->semi_left += part_offset_left;
-  queries->semi_right += part_offset_right;
-
-  // Recompute the number of points in the semicoherent frequency block
-  *semi_nfreqs = queries->semi_right - queries->semi_left + 1;
 
   // Shift physical frequencies to first point in coherent/semicoherent frequency blocks
   for ( size_t i = 0; i < queries->nqueries; ++i ) {

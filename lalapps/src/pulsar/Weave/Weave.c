@@ -889,26 +889,29 @@ int main( int argc, char *argv[] )
     PulsarDopplerParams XLAL_INIT_DECL( semi_phys );
     UINT4 semi_nfreqs = 0;
     XLAL_CHECK_MAIN( XLALWeaveCacheQueriesFinal( queries, partition_index, &semi_phys, dfreq, &semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( semi_nfreqs > 0 ) {
 
-    // Initialise semicoherent results
-    XLAL_CHECK_MAIN( XLALWeaveSemiResultsInit( semi_res, &semi_phys, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      // Initialise semicoherent results
+      XLAL_CHECK_MAIN( XLALWeaveSemiResultsInit( semi_res, &semi_phys, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Add coherent results from each segment
-    for ( size_t i = 0; i < nsegments; ++i ) {
+      // Add coherent results from each segment
+      for ( size_t i = 0; i < nsegments; ++i ) {
 
-      // Retrieve coherent results for this segment
-      const WeaveCohResults *coh_res = NULL;
-      UINT4 coh_offset = 0;
-      XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res, &coh_offset, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( coh_res != NULL, XLAL_EFUNC );
+        // Retrieve coherent results for this segment
+        const WeaveCohResults *coh_res = NULL;
+        UINT4 coh_offset = 0;
+        XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res, &coh_offset, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( coh_res != NULL, XLAL_EFUNC );
 
-      // Add coherent results to semicoherent results
-      XLAL_CHECK_MAIN( XLALWeaveSemiResultsAdd( semi_res, coh_res, coh_offset ) == XLAL_SUCCESS, XLAL_EFUNC );
+        // Add coherent results to semicoherent results
+        XLAL_CHECK_MAIN( XLALWeaveSemiResultsAdd( semi_res, coh_res, coh_offset ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      }
+
+      // Add semicoherent results to output
+      XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     }
-
-    // Add semicoherent results to output
-    XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Increment semicoherent template index
     ++semi_index;

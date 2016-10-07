@@ -65,7 +65,7 @@ void XLALWeaveCacheDestroy(
   WeaveCache *cache
   );
 WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
-  const LatticeTiling *semi_tiling,
+  LatticeTiling *semi_tiling,
   const WeavePhysicalToLattice phys_to_latt,
   const WeaveLatticeToPhysical latt_to_phys,
   const void *semi_transf_data,

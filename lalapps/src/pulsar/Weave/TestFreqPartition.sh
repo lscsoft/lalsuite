@@ -1,4 +1,4 @@
-# Perform a non-interpolating search without/with frequency partitions, and check for consistent results
+# Perform an interpolating search without/with frequency partitions, and check for consistent results
 
 echo "=== Create search setup with 3 segments ==="
 set -x
@@ -9,22 +9,22 @@ echo
 echo "=== Perform non-interpolating search without frequency partitions ==="
 set -x
 ${builddir}/lalapps_Weave --freq-partitions=1 --output-file=WeaveOutNoPart.fits \
-    --output-toplist-limit=0 --output-misc-info --setup-file=WeaveSetup.fits \
+    --output-toplist-limit=5000 --output-misc-info --setup-file=WeaveSetup.fits \
     --sft-timebase=1800 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
-    --alpha=2.72 --delta=-0.38 --freq=50/2e-2 --f1dot=-1e-9 --semi-max-mismatch=0.5 --interpolation=no
+    --alpha=2.72/0.05 --delta=-0.38/0.05 --freq=50/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4
 set +x
 echo
 
 echo "=== Perform non-interpolating search with frequency partitions ==="
 set -x
-${builddir}/lalapps_Weave --freq-partitions=11 --output-file=WeaveOutPart.fits \
-    --output-toplist-limit=0 --output-misc-info --setup-file=WeaveSetup.fits \
+${builddir}/lalapps_Weave --freq-partitions=5 --output-file=WeaveOutPart.fits \
+    --output-toplist-limit=5000 --output-misc-info --setup-file=WeaveSetup.fits \
     --sft-timebase=1800 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
-    --alpha=2.72 --delta=-0.38 --freq=50/2e-2 --f1dot=-1e-9 --semi-max-mismatch=0.5 --interpolation=no
+    --alpha=2.72/0.05 --delta=-0.38/0.05 --freq=50/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4
 set +x
 echo
 
