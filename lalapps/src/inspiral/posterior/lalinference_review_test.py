@@ -4,29 +4,36 @@ import shutil
 import distutils.spawn
 import os
 import subprocess
+import socket
 import glob
 import lalinference
 
-parser = argparse.ArgumentParser(description="Runs test runs of lalinference using lalinference_pipe_example.ini.")
+parser = argparse.ArgumentParser(description="Runs review tests of lalinference using lalinference_pipe_example.ini.")
 
 parser.add_argument('-i','--ini_file', type=str, nargs='?',
                     default='lalinference_pipe_example.ini',
                     help='lalinference_pipe ini file to process.')
 
-parser.add_argument('-x','--injection_file', type=str, nargs='?',
-                    default='fiducialBNS.xml',
-                    help='injection file.')
+parser.add_argument('--bns-injection', type=str, nargs='?',
+                    default=False,
+                    const='fiducialBNS.xml',
+                    help='injection file for BNS analysis.')
 
 parser.add_argument('--gracedb', action='store_true',
                     default=False,
                     help='Runs the analysis for the GraceDB test event T169545.')
 
+parser.add_argument('--pptest', action='store_true',
+                    default=False,
+                    help='Runs a P-P analysis.')
+
 parser.add_argument('--bbh-injection', type=str, nargs='?',
-                    default='',
-                    help='injection file for optional BBH analysis.')
+                    default=False,
+                    const='fiducialBBH.xml',
+                    help='injection file for BBH analysis.')
 
 parser.add_argument('-e','--engine', type=str, nargs='?',
-                    default='lalinferencemcmc',
+                    default='lalinferencemcmc,lalinferencenest',
                     help='lalinference engine to run with.')
 
 parser.add_argument('-o','--output', type=str, nargs='?',
@@ -43,15 +50,17 @@ args = parser.parse_args()
 if 'UNCLEAN' in lalinference.InferenceVCSId:
     default_outputdir=os.getenv('HOME')+'/lalinference_testrun/'+lalinference.InferenceVCSId+'_UNCLEAN/'+args.engine+'/'
 else:
-    default_outputdir=os.getenv('HOME')+'/lalinference_testrun/'+lalinference.InferenceVCSId+'/'+args.engine+'/'
-
+    default_outputdir=os.getenv('HOME')+'/lalinference_testrun/'+lalinference.InferenceVCSId+'/'+args.engine.replace(',','_')+'/'
 
 if args.output == None:
-    args.output=default_outputdir
+    web_outputdir=default_outputdir
+    args.output=os.path.abspath(default_outputdir)
 else:
+    web_outputdir=os.path.abspath(args.output)
     args.output=os.path.abspath(args.output)
 
-args.injection_file=os.path.abspath(args.injection_file)
+if args.bns_injection:
+    args.bns_injection=os.path.abspath(args.bns_injection)
 if args.bbh_injection:
     args.bbh_injection=os.path.abspath(args.bbh_injection)
 
@@ -85,7 +94,8 @@ path_keys = {'datafind': 'ligo_data_find',
             'mpiwrapper': 'lalinference_mpi_wrapper',
             'gracedb': 'gracedb',
             'ppanalysis': 'cbcBayesPPAnalysis.py',
-            'pos_to_sim_inspiral': 'cbcBayesPosToSimInspiral.py'}
+            'pos_to_sim_inspiral': 'cbcBayesPosToSimInspiral.py',
+            'processareas': 'process_areas'}
 
 def replace(line):
     if line[0]=='#':
@@ -112,21 +122,13 @@ with open(ini_file,'w') as fout:
         for line in fin:
             fout.write(replace(line))
 
-
 ############################################################
 
-os.makedirs(args.output+'/fiducialBNS/')
-os.chdir(args.output+'/fiducialBNS/')
-
-shutil.copy(args.injection_file,args.output+'/fiducialBNS/')
-shutil.copy(ini_file,args.output+'/fiducialBNS/'+os.path.basename(ini_file)+'.bak')
-shutil.copy(ini_file,args.output+'/fiducialBNS/')
-
-def replace_fiducial(line):
+def replace_fiducial_bns(line):
     if 'webdir=' in line:
-        return line.replace(line.split('=')[-1],os.getcwd()+'/webdir/')
+        return line.replace(line.split('=')[-1],web_outputdir+'/fiducialBNS/webdir/')
     if 'baseurl=' in line:
-        return line.replace(line.split('=')[-1],'file://'+os.getcwd()+'/webdir/')
+        return line.replace(line.split('=')[-1],'file://'+web_outputdir+'/fiducialBNS/webdir/')
     if 'fake-cache=' in line:
         return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     if 'ignore-science-segments=' in line:
@@ -143,33 +145,42 @@ def replace_fiducial(line):
         return line.replace('#','').strip()+'\n'
     return line
 
-with open(args.output+'/fiducialBNS/'+os.path.basename(ini_file),'w') as fout:
-    with open(args.output+'/fiducialBNS/'+os.path.basename(ini_file)+'.bak','r') as fin:
-        for line in fin:
-            fout.write(replace_fiducial(line))
+if args.bns_injection:
 
-lalinferenceargs = [ 'lalinference_pipe'
-		     , '-I'
-		     , args.injection_file
-		     , '-r'
-		     , './run'
-		     , '-p'
-		     , './daglog'
-		     , args.output+'/fiducialBNS/'+os.path.basename(ini_file)
-                     ]
+    os.makedirs(args.output+'/fiducialBNS/')
+    os.chdir(args.output+'/fiducialBNS/')
 
-if args.condor_submit:
-    lalinferenceargs.append('--condor-submit')
+    shutil.copy(args.bns_injection,args.output+'/fiducialBNS/')
+    shutil.copy(ini_file,args.output+'/fiducialBNS/'+os.path.basename(ini_file)+'.bak')
+    shutil.copy(ini_file,args.output+'/fiducialBNS/')
 
-subprocess.call(lalinferenceargs)
+    with open(args.output+'/fiducialBNS/'+os.path.basename(ini_file),'w') as fout:
+        with open(args.output+'/fiducialBNS/'+os.path.basename(ini_file)+'.bak','r') as fin:
+            for line in fin:
+                fout.write(replace_fiducial_bns(line))
+
+    lalinferenceargs = [ 'lalinference_pipe'
+    		     , '-I'
+    		     , args.bns_injection
+    		     , '-r'
+    		     , './run'
+    		     , '-p'
+    		     , './daglog'
+    		     , args.output+'/fiducialBNS/'+os.path.basename(ini_file)
+                         ]
+
+    if args.condor_submit:
+        lalinferenceargs.append('--condor-submit')
+
+    subprocess.call(lalinferenceargs)
 
 ###################################################
 
 def replace_GraceDB(line):
     if 'webdir=' in line:
-        return line.replace(line.split('=')[-1],os.getcwd()+'/webdir/')
+        return line.replace(line.split('=')[-1],web_outputdir+'/GraceDB/webdir/')
     if 'baseurl=' in line:
-        return line.replace(line.split('=')[-1],'file://'+os.getcwd()+'/webdir/')
+        return line.replace(line.split('=')[-1],'file://'+web_outputdir+'/GraceDB/webdir/')
     if 'ifos=' in line:
         return "ifos=['H1','L1']\n"
     if 'upload-to-gracedb=' in line:
@@ -225,9 +236,9 @@ if args.gracedb:
 
 def replace_fiducial_bbh(line):
     if 'webdir=' in line:
-        return line.replace(line.split('=')[-1],os.getcwd()+'/webdir/')
+        return line.replace(line.split('=')[-1],web_outputdir+'/fiducialBBH/webdir/')
     if 'baseurl=' in line:
-        return line.replace(line.split('=')[-1],'file://'+os.getcwd()+'/webdir/')
+        return line.replace(line.split('=')[-1],'file://'+web_outputdir+'/fiducialBBH/webdir/')
     if 'fake-cache=' in line:
         return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     if 'ignore-science-segments=' in line:
@@ -248,7 +259,7 @@ def replace_fiducial_bbh(line):
         return 'deltaLogL=7\n'
     return line
 
-if args.bbh_injection != '':
+if args.bbh_injection:
 
     os.makedirs(args.output+'/fiducialBBH/')
     os.chdir(args.output+'/fiducialBBH/')
@@ -276,3 +287,57 @@ if args.bbh_injection != '':
         lalinferenceargs.append('--condor-submit')
 
     subprocess.call(lalinferenceargs)
+
+############################################################
+
+def replace_pptest(line):
+    if 'webdir=' in line:
+        return line.replace(line.split('=')[-1],web_outputdir+'/pptest/webdir/')
+    if 'baseurl=' in line:
+        return line.replace(line.split('=')[-1],'file://'+web_outputdir+'/pptest/webdir/')
+    if 'fake-cache=' in line:
+        return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
+    if 'ignore-science-segments=' in line:
+        return 'ignore-science-segments=True\n'
+    if 'dataseed=' in line:
+        return line.replace('#','').strip()+'\n'
+    if 'disable-spin=' in line:
+        return '#disable-spin=\n'
+    if 'margphi=' in line:
+        return '#margphi=\n'
+    if 'margtime=' in line:
+        return line.replace('#','').strip()+'\n'
+    if 'amporder=' in line:
+        return 'amporder=-1\nfref=0\n'
+    if 'parname-max' in line:
+        return line+'distance-max=2000\n'
+    if 'deltaLogL=' in line:
+        return 'deltaLogL=7\n'
+    return line
+
+if args.pptest:
+
+    os.makedirs(args.output+'/pptest/')
+    os.chdir(args.output+'/pptest/')
+
+    shutil.copy(ini_file,args.output+'/pptest/'+os.path.basename(ini_file)+'.bak')
+    shutil.copy(ini_file,args.output+'/pptest/')
+
+    with open(args.output+'/pptest/'+os.path.basename(ini_file),'w') as fout:
+        with open(args.output+'/pptest/'+os.path.basename(ini_file)+'.bak','r') as fin:
+            for line in fin:
+                fout.write(replace_pptest(line))
+
+    lalinferenceargs = [ 'lalinference_pp_pipe'
+                         , '-r'
+                         , './run'
+                         , '-N'
+                         , '100'
+                         , args.output+'/pptest/'+os.path.basename(ini_file)
+                         ]
+
+    subprocess.call(lalinferenceargs)
+
+    if args.condor_submit:
+        condor_submit_dag = ['condor_submit_dag',args.output+'/pptest/run/priortest.dag']
+        subprocess.call(condor_submit_dag)

@@ -476,11 +476,11 @@ def get_trigger_chirpmass(gid=None,gracedb="gracedb"):
     for e in these_sngls:
       mass1.append(e.mass1)
       mass2.append(e.mass2)
-  # check that trigger masses are identical in each IFO    
+  # check that trigger masses are identical in each IFO
   assert len(set(mass1)) == 1
   assert len(set(mass2)) == 1
 
-  mchirp = (mass1[0]*mass2[0])**(3./5.) / ( (mass1[0] + mass2[0])**(1./5.) ) 
+  mchirp = (mass1[0]*mass2[0])**(3./5.) / ( (mass1[0] + mass2[0])**(1./5.) )
   os.remove("coinc.xml")
 
   return mchirp
@@ -515,7 +515,7 @@ def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp):
   mc_max = mc_priors['4s'][1]
   mc_min = mc_priors['128s'][0]
   scale_factor = 1
-  if trigger_mchirp >= mc_max: 
+  if trigger_mchirp >= mc_max:
   	scale_factor = 2**(floor(trigger_mchirp/mc_max))
   if trigger_mchirp <= mc_min:
 	scale_factor = 1./2**(ceil(trigger_mchirp/mc_min))
