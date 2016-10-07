@@ -131,9 +131,7 @@ test/tools/SkymapTest
 test/tools/TimeSeriesInterpTest
 test/tools/TimeSeriesTest
 test/tools/UnitsTest
-test/utilities/CCoarseGrainFrequencySeriesTest
 test/utilities/CSInterpolateTest
-test/utilities/DCoarseGrainFrequencySeriesTest
 test/utilities/DetInverseTest
 test/utilities/DirichletTest
 test/utilities/EigenTest
@@ -148,9 +146,7 @@ test/utilities/MersenneRandomTest
 test/utilities/ODETest
 test/utilities/RandomTest
 test/utilities/RngMedBiasTest
-test/utilities/SCoarseGrainFrequencySeriesTest
 test/utilities/SortTest
-test/utilities/ZCoarseGrainFrequencySeriesTest
 test/vectorops/VectorIndexRangeTest
 test/vectorops/VectorMathTest
 test/vectorops/VectorOpsTest
