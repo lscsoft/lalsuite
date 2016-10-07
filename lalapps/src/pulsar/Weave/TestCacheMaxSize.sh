@@ -19,7 +19,7 @@ echo
 
 echo "=== Perform interpolating search with a maximum cache size ==="
 set -x
-${builddir}/lalapps_Weave --cache-max-size=50 --output-file=WeaveOutMax.fits \
+${builddir}/lalapps_Weave --cache-max-size=10 --output-file=WeaveOutMax.fits \
     --output-toplist-limit=5000 --output-misc-info --setup-file=WeaveSetup.fits \
     --sft-timebase=1800 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \

@@ -551,6 +551,15 @@ int main( int argc, char *argv[] )
     }
   }
 
+  // Set parameter-space padding
+  {
+    const UINT4 semi_padding = 0;
+    for ( size_t i = 0; i < ncohtiles; ++i ) {
+      XLAL_CHECK_MAIN( XLALSetLatticeTilingPadding( tiling[i], semi_padding + 1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+    XLAL_CHECK_MAIN( XLALSetLatticeTilingPadding( tiling[isemi], semi_padding ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
   // Set parameter-space lattice and metric
   for ( size_t i = 0; i < ncohtiles; ++i ) {
     XLAL_CHECK_MAIN( XLALSetTilingLatticeAndMetric( tiling[i], uvar->lattice, rssky_metric[i], coh_max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );

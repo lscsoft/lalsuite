@@ -481,41 +481,10 @@ int XLALWeaveCacheQueriesFinal(
     // Check that 'coh_index' is at least 1, i.e. a query was made
     XLAL_CHECK( queries->coh_index[i] > 0, XLAL_EINVAL, "Missing query at index %zu", i );
 
-    // The offsets 'coh_left', 'coh_right', 'semi_left', and 'semi_right' are used to work out which
-    // frequency bins from each coherent tiling to combine together to form the semicoherent results,
-    // as follows:
-    //
-    //   :               :
-    //   :* * * C * * * *:  < C = nearest point in coherent tiling for segment #1
-    //   :,  \ \ \ \ \ \ :        points to left = coh_1_left = -3, to right = coh_1_right = 4
-    //    :,* * * S * * *:  < S = mid-point of current semicoherent frequency block;
-    //      :,| | | | | |:        points to left = semi_left = -3, to right = semi_right = 3
-    //      ?:* * C * * *:  < C = nearest point in coherent tiling for segment #2
-    //       :           :        points to left = coh_2_left = -2, to right = coh_2_right = 3
-    //       ^           ^
-    //       Parameter-space boundaries
-    //   ---> Frequency
-    //
-    // Because both semicoherent and coherent tilings cover the same parameter space (including
-    // boundary padding), the points at the beginning and end of a given semicoherent frequency block
-    // may not have nearest neighbours that exist within the nearest coherent frequency block in a
-    // particular segment. In the example above, the first point of the semicoherent frequency block
-    // has no nearest point in the coherent tiling for segment #2 (marked ?). The solution is to
-    // reduce the number of points in the semicoherent frequency block, so that every point matches a
-    // point in the coherent tilings for every segment:
-    //
-    //   semi_left = max(semi_left, coh_1_left, coh_2_left) = max(-3, -3, -2) = -2
-    //   semi_right = min(semi_right, coh_1_right, coh_2_right) = min(3, 4, 3) = 3
-    //
-    // Once the size of the semicoherent frequency block has been reduced, coherent results are
-    // combined as follows, e.g. for a summed F-statistic:
-    //
-    //   semi_len = semi_right - semi_left + 1 = 6
-    //   coh_1_offset = semi_left - coh_1_left = -2 - -3 = 1
-    //   coh_2_offset = semi_left - coh_2_left = -2 - -2 = 0
-    //   semi_sum_twoF[0:semi_len-1] = coh_1_twoF[coh_1_offset + (0:semi_len-1)]
-    //                              + coh_2_twoF[coh_2_offset + (0:semi_len-1)]
-    //
+    // Check that the semicoherent left/right-most indexes do not exceed the corresponding
+    // coherent left/right-most indexes, i.e. that the semicoherent parameter space is a
+    // subset of the coherent parameter spaces. This check is for safety as this should be
+    // taken care of by additional padding of the lattice tiling parameter spaces.
     queries->semi_left = GSL_MAX( queries->semi_left, queries->coh_left[i] );
     queries->semi_right = GSL_MIN( queries->semi_right, queries->coh_right[i] );
 
