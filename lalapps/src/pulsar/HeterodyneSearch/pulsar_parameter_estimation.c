@@ -32,6 +32,7 @@
 
 *******************************************************************************/
 
+#include "config.h"
 #include "pulsar_parameter_estimation.h"
 
 /* global variable */

@@ -2,6 +2,7 @@ BUILT_SOURCES =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
+include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 SUBDIRS = \
 	mathematica_codes \
@@ -99,6 +100,7 @@ noinst_HEADERS = \
 	LALSimIMRSpinAlignedEOBHcapDerivative.c \
 	LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c \
 	LALSimIMRSpinEOB.h \
+	LALSimIMRLackeyTidal2013.h \
 	LALSimIMRSpinEOBAuxFuncs.c \
 	LALSimIMRSpinEOBAuxFuncsPrec.c \
 	LALSimIMRSpinEOBComputeAmpPhasefromEOMSoln.c \
@@ -119,7 +121,8 @@ noinst_HEADERS = \
 	LALSimInspiralPNCoefficients.c \
 	LALSimInspiraldEnergyFlux.c \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
-	LALSimNeutronStarEOSTabular.c
+	LALSimNeutronStarEOSTabular.c \
+	LALSimIMRSpinEOBHamiltonian.h
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
@@ -135,7 +138,9 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv2ROMDoubleSpin.c \
 	LALSimIMRSEOBNRv2ROMDoubleSpinHI.c \
 	LALSimIMRSEOBNRv2ChirpTime.c \
+	LALSimIMRSEOBNRv4ROM.c \
 	LALSimIMREOBNRv2HMROM.c \
+	LALSimIMRLackeyTidal2013.c \
 	LALSimIMRPhenom.c \
 	LALSimIMRPhenomC.c \
 	LALSimIMRPhenomD.c \
@@ -166,7 +171,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTaylorLength.c \
 	LALSimInspiralWaveformCache.c \
 	LALSimInspiralWaveformTaper.c \
-        LALSimIMRNRWaveforms.c \
+	LALSimIMRNRWaveforms.c \
 	LALSimulation.c \
 	LALSimulationVCSInfo.c \
 	LALSimNeutronStarEOS.c \

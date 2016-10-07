@@ -6,7 +6,7 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm Pulsar Library
-License: GPL
+License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
@@ -19,17 +19,17 @@ BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: swig
-BuildRequires: lal-devel >= 6.16.0
-BuildRequires: lal-python >= 6.16.0
-BuildRequires: lal-octave >= 6.16.0
-BuildRequires: lalxml-devel >= 1.2.1
-BuildRequires: lalxml-python >= 1.2.1
-BuildRequires: lalxml-octave >= 1.2.1
+BuildRequires: lal-devel >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
+BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lalxml-devel >= @MIN_LALXML_VERSION@
+BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
+BuildRequires: lalxml-octave >= @MIN_LALXML_VERSION@
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
-Requires: lal >= 6.16.0
-Requires: lalxml >= 1.2.1
+Requires: lal >= @MIN_LAL_VERSION@
+Requires: lalxml >= @MIN_LALXML_VERSION@
 Prefix: %{_prefix}
 
 %description
@@ -45,8 +45,8 @@ Requires: cfitsio-devel
 Requires: fftw-devel
 Requires: fftw-static
 Requires: gsl-devel
-Requires: lal-devel >= 6.16.0
-Requires: lalxml-devel >= 1.2.1
+Requires: lal-devel >= @MIN_LAL_VERSION@
+Requires: lalxml-devel >= @MIN_LALXML_VERSION@
 %description devel
 The LSC Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
@@ -58,8 +58,8 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: numpy
 Requires: python
-Requires: lal-python >= 6.16.0
-Requires: lalxml-python >= 1.2.1
+Requires: lal-python >= @MIN_LAL_VERSION@
+Requires: lalxml-python >= @MIN_LALXML_VERSION@
 %description python
 This package provides the Python bindings for LALPulsar.
 
@@ -68,8 +68,8 @@ Summary: Octave bindings for LALPulsar
 Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
-Requires: lal-octave >= 6.16.0
-Requires: lalxml-octave >= 1.2.1
+Requires: lal-octave >= @MIN_LAL_VERSION@
+Requires: lalxml-octave >= @MIN_LALXML_VERSION@
 %description octave
 This package provides the Octave bindings for LALPulsar.
 
@@ -85,7 +85,7 @@ This package provides the Octave bindings for LALPulsar.
 
 %install
 %make_install
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
 ldconfig
@@ -99,22 +99,20 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_libdir}/*.so*
+%{_datarootdir}/lalpulsar/*
+%{_libdir}/*.so.*
 %{_sysconfdir}/*
-%{_prefix}/share/lalpulsar/*
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/*.a
-%{_libdir}/pkgconfig/*
 %{_includedir}/lal
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
 
 %files python
 %defattr(-,root,root)
-%{_libdir}/python*/site-packages/lalpulsar/*.py
-%{_libdir}/python*/site-packages/lalpulsar/*.pyc
-%{_libdir}/python*/site-packages/lalpulsar/_lalpulsar.so*
-%exclude %{_libdir}/python*/site-packages/lalpulsar/*.pyo
+%{_libdir}/python*
 
 %files octave
 %defattr(-,root,root)
@@ -122,5 +120,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 1.14.0-1
+- ER9 release
+
 * Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 1.13.0-1
 - Pre O2 packaging test release

@@ -187,17 +187,17 @@
 
 static INT8 end_time(const SnglInspiralTable *x)
 {
-	return(XLALGPSToINT8NS(&x->end_time));
+	return(XLALGPSToINT8NS(&x->end));
 }
 
 static INT4 end_time_sec(const SnglInspiralTable *x)
 {
-	return(x->end_time.gpsSeconds);
+	return(x->end.gpsSeconds);
 }
 
 static INT4 end_time_nsec(const SnglInspiralTable *x)
 {
-	return(x->end_time.gpsNanoSeconds);
+	return(x->end.gpsNanoSeconds);
 }
 
 
@@ -400,8 +400,8 @@ LALCompareSnglInspiralByTime (
   INT8 ta, tb;
 
   memset( &status, 0, sizeof(LALStatus) );
-  ta = XLALGPSToINT8NS( &(aPtr->end_time) );
-  tb = XLALGPSToINT8NS( &(bPtr->end_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->end) );
+  tb = XLALGPSToINT8NS( &(bPtr->end) );
 
   if ( ta > tb )
   {
@@ -475,8 +475,8 @@ LALCompareSnglInspiral (
     params->match = 0;
   }
 
-  ta = XLALGPSToINT8NS( &(aPtr->end_time) );
-  tb = XLALGPSToINT8NS( &(bPtr->end_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->end) );
+  tb = XLALGPSToINT8NS( &(bPtr->end) );
 
   /* compare on trigger time coincidence */
   if ( labs( ta - tb ) < params->dt && params->match)
@@ -626,8 +626,8 @@ XLALCompareInspirals (
   ifoaNum = (InterferometerNumber) XLALIFONumber( aPtr->ifo );
   ifobNum = (InterferometerNumber) XLALIFONumber( bPtr->ifo );
 
-  ta = XLALGPSToINT8NS( &(aPtr->end_time) );
-  tb = XLALGPSToINT8NS( &(bPtr->end_time) );
+  ta = XLALGPSToINT8NS( &(aPtr->end) );
+  tb = XLALGPSToINT8NS( &(bPtr->end) );
 
   /* compare on trigger time coincidence */
   aAcc = params->ifoAccuracy[ifoaNum];
@@ -842,8 +842,8 @@ XLALClusterSnglInspiralTable (
 
   while ( nextEvent )
   {
-    INT8 thisTime = XLALGPSToINT8NS( &(thisEvent->end_time) );
-    INT8 nextTime = XLALGPSToINT8NS( &(nextEvent->end_time) );;
+    INT8 thisTime = XLALGPSToINT8NS( &(thisEvent->end) );
+    INT8 nextTime = XLALGPSToINT8NS( &(nextEvent->end) );;
 
     /* find events within the cluster window */
     if ( (nextTime - thisTime) < dtimeNS )
@@ -927,7 +927,7 @@ int XLALCoincSegCutSnglInspiral(
   *inspiralList = NULL;
 
   while ( thisEvent ) {
-    fprintf(stdout, "This event's END TIME NS is %" LAL_INT4_FORMAT "\n",thisEvent->end_time.gpsNanoSeconds);
+    fprintf(stdout, "This event's END TIME NS is %" LAL_INT4_FORMAT "\n",thisEvent->end.gpsNanoSeconds);
     fprintf(stdout, "This event's id is %" LAL_UINT8_FORMAT "\n",thisEvent->event_id->id);
     timeCheck = floor(thisEvent->event_id->id/timeExtract);
     fprintf(stdout, "This event's gps-start time is %" LAL_INT4_FORMAT "\n",
@@ -1258,7 +1258,7 @@ XLALVetoSingleInspiral (
   while ( thisEvent )
   {
     /*-- Check the time of this event against the veto segment list --*/
-    if ( XLALSegListSearch( vetoSegs, &(thisEvent->end_time) )
+    if ( XLALSegListSearch( vetoSegs, &(thisEvent->end) )
 	&& (strcmp(thisEvent->ifo, ifo)==0) )
     {
       /*-- This event's end_time falls within one of the veto segments --*/
@@ -1697,7 +1697,7 @@ XLALTimeSlideSingleInspiral(
     /* calculate the slide time in nanoseconds */
     INT8 slideNS = XLALGPSToINT8NS( &slideTimes[XLALIFONumber(triggerList->ifo)] );
     /* and trigger time in nanoseconds */
-    INT8 trigTimeNS = XLALGPSToINT8NS( &triggerList->end_time );
+    INT8 trigTimeNS = XLALGPSToINT8NS( &triggerList->end );
 
     /* slide trigger time */
     trigTimeNS += slideNS;
@@ -1707,7 +1707,7 @@ XLALTimeSlideSingleInspiral(
       trigTimeNS = thinca_ring_wrap(trigTimeNS, ringStartNS, ringLengthNS);
 
     /* convert back to LIGOTimeGPS */
-    XLALINT8NSToGPS( &triggerList->end_time, trigTimeNS);
+    XLALINT8NSToGPS( &triggerList->end, trigTimeNS);
   }
 }
 
@@ -1740,7 +1740,7 @@ XLALPlayTestSingleInspiral(
       SnglInspiralTable *tmpEvent = thisEvent;
       thisEvent = thisEvent->next;
 
-      triggerTime = XLALGPSToINT8NS( &(tmpEvent->end_time) );
+      triggerTime = XLALGPSToINT8NS( &(tmpEvent->end) );
       isPlay = XLALINT8NanoSecIsPlayground( triggerTime );
 
       if ( ( (*dataType == playground_only)  && isPlay ) ||
@@ -1965,13 +1965,13 @@ LALIncaCoincidenceTest(
   for( currentTrigger[0]=ifoAInput; currentTrigger[0];
       currentTrigger[0] = currentTrigger[0]->next  )
   {
-    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
+    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end) );
 
     /* spin ifo b until the current trigger is within the coinicdence */
     /* window of the current ifo a trigger                            */
     while ( currentTrigger[1] )
     {
-      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
+      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end) );
 
       if ( tb > ta - errorParams->dt )
       {
@@ -1986,7 +1986,7 @@ LALIncaCoincidenceTest(
 
     while ( currentTrigger[1] )
     {
-      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
+      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end) );
 
       if (tb > ta + errorParams->dt )
       {
@@ -2085,17 +2085,17 @@ LALTamaCoincidenceTest(
   for( currentTrigger[0]=ifoAInput; currentTrigger[0];
       currentTrigger[0] = currentTrigger[0]->next  )
   {
-    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
+    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end) );
 
     LALInfo( status, printf("  using IFO A trigger at %d + %10.10f\n",
-          currentTrigger[0]->end_time.gpsSeconds,
-          ((REAL4) currentTrigger[0]->end_time.gpsNanoSeconds * 1e-9) ));
+          currentTrigger[0]->end.gpsSeconds,
+          ((REAL4) currentTrigger[0]->end.gpsNanoSeconds * 1e-9) ));
 
     /* spin ifo b until the current trigger is within the coinicdence */
     /* window of the current ifo a trigger                            */
     while ( currentTrigger[1] )
     {
-      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
+      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end) );
 
       if ( tb > ta - errorParams->dt )
       {
@@ -2111,7 +2111,7 @@ LALTamaCoincidenceTest(
 
     while ( currentTrigger[1] )
     {
-      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
+      tb = XLALGPSToINT8NS( &(currentTrigger[1]->end) );
 
       if (tb > ta + errorParams->dt )
       {

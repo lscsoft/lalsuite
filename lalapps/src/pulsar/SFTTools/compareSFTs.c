@@ -38,7 +38,6 @@ typedef struct
   CHAR *sftBname2;
   INT4 debug;
   BOOLEAN verbose;
-  BOOLEAN help;
   REAL8 relErrorMax;
 } UserInput_t;
 
@@ -66,10 +65,10 @@ main(int argc, char *argv[])
   XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
-  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if (uvar.help) { 	/* help requested: we're done */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit (1);
   }
 
   /* now read in the two complete sft-vectors */
@@ -203,7 +202,6 @@ initUserVars ( UserInput_t *uvar )
 
   /* now register all our user-variable */
 
-  XLALRegisterUvarMember( help,		BOOLEAN, 'h', HELP,     "Print this help/usage message");
   XLALRegisterUvarMember( sftBname1,	STRING, '1', REQUIRED, "Path and basefilename for SFTs1");
   XLALRegisterUvarMember( sftBname2,	STRING, '2', REQUIRED, "Path and basefilename for SFTs2");
   XLALRegisterUvarMember(  verbose,	BOOLEAN, 'v', OPTIONAL, "Verbose output of differences");

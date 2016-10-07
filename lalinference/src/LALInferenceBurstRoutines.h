@@ -50,7 +50,7 @@ int XLALCheckBurstApproximantFromString(const CHAR *inString);
 
 /** Enum that specifies the PN approximant to be used in computing the waveform.
 */
-typedef enum {
+typedef enum tagBurstApproximant {
    SineGaussianFFast,
    SineGaussianF,
    SineGaussian,

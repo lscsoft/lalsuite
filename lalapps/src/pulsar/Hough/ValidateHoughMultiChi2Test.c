@@ -146,7 +146,7 @@ int main(int argc, char *argv[]){
   REAL8  alphaPeak, meanN, sigmaN;
 
   /* user input variables */
-  BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise;
+  BOOLEAN  uvar_weighAM, uvar_weighNoise;
   INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_maxBinsClean;
   REAL8    uvar_startTime, uvar_endTime;
   REAL8    uvar_fStart, uvar_peakThreshold, uvar_fSearchBand;
@@ -166,7 +166,6 @@ int main(int argc, char *argv[]){
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
     
-  uvar_help = FALSE;
   uvar_weighAM = TRUE;
   uvar_weighNoise = TRUE;
   uvar_blocksRngMed = BLOCKSRNGMED;
@@ -207,7 +206,6 @@ int main(int argc, char *argv[]){
 
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                    &uvar_help),            &status);  
   LAL_CALL( LALRegisterREALUserVar(   &status, "fStart",          'f', UVAR_OPTIONAL, "Start search frequency",                &uvar_fStart),              &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",                 &uvar_fSearchBand),     &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "startTime",        0,  UVAR_OPTIONAL, "GPS start time of observation",         &uvar_startTime),        &status);
@@ -240,11 +238,10 @@ int main(int argc, char *argv[]){
 
 
   /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0); 
+  BOOLEAN should_exit = 0;
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
 
   /* very basic consistency checks on user input */
   if ( uvar_fStart < 0 ) {

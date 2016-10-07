@@ -198,7 +198,7 @@ int XLALSQTPNDerivator(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[],
 /**
  * Enumeration to index the dynamic variables in the LALSQTPNGenerator function.
  */
-typedef enum {
+typedef enum tagLALSQTPNGeneratorVariables {
 	LALSQTPN_PHASE,	///< index of the phase
 	LALSQTPN_OMEGA,	///< index of the \f$M\omega\f$
 	LALSQTPN_LNH_1,	///< index of the \f$\hat{L}_N\f$'s x component

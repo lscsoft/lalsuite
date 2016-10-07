@@ -43,8 +43,8 @@ from glue import segments
 from glue import segmentsUtils
 from glue.lal import CacheEntry
 from pylal import ligolw_cafe
-from pylal import ligolw_tisi
-from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+from lalburst import timeslides as ligolw_tisi
+from lal import LIGOTimeGPS
 from lalapps import power
 
 

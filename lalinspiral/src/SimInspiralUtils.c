@@ -880,7 +880,7 @@ XLALSnglSimInspiralTest (
       while ( thisEvent )
       {
         /* compute the time in nanosec for thisEvent */
-        inspiralTime = XLALGPSToINT8NS( &(thisEvent->end_time) );
+        inspiralTime = XLALGPSToINT8NS( &(thisEvent->end) );
 
         if( inspiralTime < (simGeocentTime - earthRadiusNS - injectWindowNS ) )
         {
@@ -908,7 +908,7 @@ XLALSnglSimInspiralTest (
       while ( thisEvent )
       {
         /* compute the time in nanosec for thisEvent */
-        inspiralTime = XLALGPSToINT8NS( &(thisEvent->end_time) );
+        inspiralTime = XLALGPSToINT8NS( &(thisEvent->end) );
 
         if( inspiralTime < (simGeocentTime + earthRadiusNS + injectWindowNS ) )
         {

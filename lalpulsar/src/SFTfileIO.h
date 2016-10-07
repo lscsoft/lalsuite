@@ -326,7 +326,8 @@ MultiSFTVector* XLALLoadMultiSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 
 MultiSFTVector *XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView, REAL8 fMin, REAL8 fMax );
 
 void XLALDestroySFTCatalog ( SFTCatalog *catalog );
-INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog);
+LALStringVector *XLALListIFOsInCatalog( const SFTCatalog *catalog );
+INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog );
 const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
 
 void XLALDestroyMultiSFTCatalogView ( MultiSFTCatalogView *multiView );

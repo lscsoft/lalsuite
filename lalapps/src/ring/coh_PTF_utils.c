@@ -1,3 +1,4 @@
+#include "config.h"
 #include "coh_PTF.h"
 
 INT4 coh_PTF_data_condition(
@@ -2927,8 +2928,8 @@ UINT8 coh_PTF_add_sngl_triggers(
           &eventId,pValues,bankVeto,autoVeto,chiSquare,PTFM,i);
 
       /* Check trigger against trig times */
-      if (coh_PTF_trig_time_check(params,currEvent->end_time,\
-                                         currEvent->end_time))
+      if (coh_PTF_trig_time_check(params,currEvent->end,\
+                                         currEvent->end))
       {
         if (currEvent->event_id)
         {
@@ -2999,9 +3000,9 @@ SnglInspiralTable* coh_PTF_create_sngl_event(
   /* Set end times */
   trigTime = cohSNR->epoch;
   XLALGPSAdd(&trigTime,currPos*cohSNR->deltaT);
-  thisEvent->end_time = trigTime;
+  thisEvent->end = trigTime;
   thisEvent->end_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
-      &thisEvent->end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI;     /* hours */
+      &thisEvent->end), LAL_TWOPI) * 24.0 / LAL_TWOPI;     /* hours */
 
   /* Set SNR, chisqs, sigmasq, eff_distance */
   REAL8 sigmasqCorrFac;
@@ -3045,7 +3046,7 @@ SnglInspiralTable* coh_PTF_create_sngl_event(
     }
   }
   /* FIXME: NOt sure about this one either, inspiral just copies end_time */
-  thisEvent->impulse_time = thisEvent->end_time;
+  thisEvent->impulse_time = thisEvent->end;
 
   /* copy the template into the event */
   thisEvent->mass1   = (REAL4) PTFTemplate.mass1;
@@ -3091,12 +3092,12 @@ UINT4 coh_PTF_accept_sngl_trig_check(
 
   /* for each trigger, find out whether a louder trigger is within the
  *    * clustering time */
-  time1.gpsSeconds=thisEvent.end_time.gpsSeconds;
-  time1.gpsNanoSeconds = thisEvent.end_time.gpsNanoSeconds;
+  time1.gpsSeconds=thisEvent.end.gpsSeconds;
+  time1.gpsNanoSeconds = thisEvent.end.gpsNanoSeconds;
   while (currEvent)
   {
-    time2.gpsSeconds=currEvent->end_time.gpsSeconds;
-    time2.gpsNanoSeconds=currEvent->end_time.gpsNanoSeconds;
+    time2.gpsSeconds=currEvent->end.gpsSeconds;
+    time2.gpsNanoSeconds=currEvent->end.gpsNanoSeconds;
     if (fabs(XLALGPSDiff(&time1,&time2)) < params->clusterWindow)
     {
       if (thisEvent.snr < currEvent->snr\

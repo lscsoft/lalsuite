@@ -100,7 +100,6 @@ int main( int argc, char *argv[]){
   INT4 mmP, mmT; /* for loop over mismatched templates */
 
   /* user input variables */
-  BOOLEAN uvar_help;
   INT4 uvar_ifo, uvar_blocksRngMed;
   REAL8 uvar_peakThreshold;
   REAL8 uvar_alpha, uvar_delta, uvar_h0, uvar_f0;
@@ -115,7 +114,6 @@ int main( int argc, char *argv[]){
   nfSizeCylinder = NFSIZE;
 
   /* set other user input variables */
-  uvar_help = FALSE;
   uvar_peakThreshold = THRESHOLD;
   uvar_ifo = IFO;
   uvar_blocksRngMed = BLOCKSRNGMED;
@@ -144,7 +142,6 @@ int main( int argc, char *argv[]){
   strcpy(uvar_fnameout, FILEOUT);
 
   /* register user input variables */
-  SUB( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
   SUB( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ),            &status);
   SUB( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
   SUB( LALRegisterREALUserVar(   &status, "peakThreshold",   't', UVAR_OPTIONAL, "Peak selection threshold",      &uvar_peakThreshold),   &status);
@@ -162,11 +159,10 @@ int main( int argc, char *argv[]){
   SUB( LALRegisterREALUserVar(   &status, "fdot",            'd', UVAR_OPTIONAL, "Spindown parameter",            &uvar_fdot),            &status);
 
   /* read all command line variables */
-  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0); 
+  BOOLEAN should_exit = 0;
+  SUB( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
   
   /* write the log file */
   fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));

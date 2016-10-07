@@ -79,7 +79,7 @@ LALFrFile *XLALFrFileOpenURL(const char *url)
     XLAL_CHECK_NULL(strlen(url) < FILENAME_MAX, XLAL_EBADLEN,
         "url %s is too long", url);
 
-    n = sscanf(url, "%[^:]://%[^/]%s", prot, host, path);
+    n = sscanf(url, "%[^:]://%[^/]%[^\t\n]", prot, host, path);
     if (n != 3) {       /* perhaps the hostname has been omitted */
         XLALStringCopy(host, "localhost", sizeof(host));
         if (n != 2) {   /* assume the whole thing is a file path */

@@ -75,8 +75,6 @@
 
 /** User-variables: can be set from config-file or command-line */
 typedef struct {
-  BOOLEAN help;		/**< trigger output of help string */
-
   /* amplitude parameters + ranges: 4 alternative ways to specify the h0-prior (set to < 0 to deactivate all but one!) */
   REAL8 fixedh0Nat;	/**< Alternative 1: if >=0 ==> fix the GW amplitude: h0/sqrt(Sn) */
   REAL8 fixedSNR;	/**< Alternative 2: if >=0 ==> fix the optimal SNR of the injected signals */
@@ -188,13 +186,13 @@ int main(int argc,char *argv[])
   }
 
   /* do ALL cmdline and cfgfile handling */
-  if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS ) {
+  BOOLEAN should_exit = 0;
+  if ( XLALUserVarReadAllInput ( &should_exit, argc, argv ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALUserVarReadAllInput() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
-
-  if (uvar.help)	/* if help was requested, we're done here */
-    return 0;
+  if ( should_exit )
+    return EXIT_FAILURE;
 
   if ( uvar.version ) {
     /* output verbose VCS version string if requested */
@@ -494,7 +492,6 @@ int
 XLALInitUserVars ( UserInput_t *uvar )
 {
   /* set a few defaults */
-  uvar->help = 0;
   uvar->outputStats = NULL;
 
   uvar->Alpha = -1;	/* Alpha < 0 indicates "allsky" */
@@ -549,8 +546,6 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->searchWindow_dtau = uvar->TAtom;
 
   /* register all our user-variables */
-  XLALRegisterUvarMember( help, 		BOOLEAN, 'h',     HELP, "Print this message");
-
   /* signal Doppler parameters */
   XLALRegisterUvarMember( Alpha, 		REAL8, 'a', OPTIONAL, "Sky position alpha (equatorial coordinates) in radians [Default:allsky]");
   XLALRegisterUvarMember( Delta, 		REAL8, 'd', OPTIONAL, "Sky position delta (equatorial coordinates) in radians [Default:allsky]");

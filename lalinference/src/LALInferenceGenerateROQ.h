@@ -39,67 +39,72 @@
 extern "C" {
 #endif
 
+
 /** A structure to hold a real (double precision) interpolant matrix and interpolation node indices */
 typedef struct tagLALInferenceREALROQInterpolant{
-  gsl_matrix *B;  /**< The interpolant matrix */
+  REAL8Array *B;  /**< The interpolant matrix */
   UINT4 *nodes;   /**< The nodes (indices) for the interpolation */
 }LALInferenceREALROQInterpolant;
 
 /** A structure to hold a complex (double precision) interpolant matrix and interpolation node indices */
 typedef struct tagLALInferenceCOMPLEXROQInterpolant{
-  gsl_matrix_complex *B;  /**< The interpolant matrix */
+  COMPLEX16Array *B;      /**< The interpolant matrix */
   UINT4 *nodes;           /**< The nodes (indices) for the interpolation */
 }LALInferenceCOMPLEXROQInterpolant;
 
-/* function to create a real orthonormal basis set from a training set of models */
-REAL8 *LALInferenceGenerateREAL8OrthonormalBasis(gsl_vector *delta,
-                                                 REAL8 tolerance,
-                                                 gsl_matrix *TS,
-                                                 size_t *nbases);
+/* function to create or enrich a real orthonormal basis set from a training set of models */
+REAL8 LALInferenceGenerateREAL8OrthonormalBasis(REAL8Array **RB,
+                                                REAL8Vector *delta,
+                                                REAL8 tolerance,
+                                                REAL8Array *TS);
 
-COMPLEX16 *LALInferenceGenerateCOMPLEX16OrthonormalBasis(gsl_vector *delta,
-                                                         REAL8 tolerance,
-                                                         gsl_matrix_complex *TS,
-                                                         size_t *nbases);
+REAL8 LALInferenceGenerateCOMPLEX16OrthonormalBasis(COMPLEX16Array **RB,
+                                                    REAL8Vector *delta,
+                                                    REAL8 tolerance,
+                                                    COMPLEX16Array *TS);
+
 
 /* functions to test the basis */
-INT4 LALInferenceTestREAL8OrthonormalBasis(gsl_vector *delta,
+INT4 LALInferenceTestREAL8OrthonormalBasis(REAL8Vector *delta,
                                            REAL8 tolerance,
-                                           gsl_matrix *RB,
-                                           gsl_matrix *testmodels);
+                                           REAL8Array *RB,
+                                           REAL8Array *testmodels);
 
-INT4 LALInferenceTestCOMPLEX16OrthonormalBasis(gsl_vector *delta,
+INT4 LALInferenceTestCOMPLEX16OrthonormalBasis(REAL8Vector *delta,
                                                REAL8 tolerance,
-                                               gsl_matrix_complex *RB,
-                                               gsl_matrix_complex *testmodels);
+                                               COMPLEX16Array *RB,
+                                               COMPLEX16Array *testmodels);
+
+/* functions to enrich the training model set and basis set */
+REAL8 LALInferenceEnrichREAL8Basis(REAL8Vector *delta,
+                                   REAL8 tolerance,
+                                   REAL8Array **RB,
+                                   REAL8Array **testmodels,
+                                   REAL8Array *testmodelsnew);
+
+REAL8 LALInferenceEnrichCOMPLEX16Basis(REAL8Vector *delta,
+                                       REAL8 tolerance,
+                                       COMPLEX16Array **RB,
+                                       COMPLEX16Array **testmodels,
+                                       COMPLEX16Array *testmodelsnew);
 
 /* function to create the empirical interpolant */
-LALInferenceREALROQInterpolant *LALInferenceGenerateREALROQInterpolant(gsl_matrix *RB);
+LALInferenceREALROQInterpolant *LALInferenceGenerateREALROQInterpolant(REAL8Array *RB);
 
-LALInferenceCOMPLEXROQInterpolant *LALInferenceGenerateCOMPLEXROQInterpolant(gsl_matrix_complex *RB);
+LALInferenceCOMPLEXROQInterpolant *LALInferenceGenerateCOMPLEXROQInterpolant(COMPLEX16Array *RB);
+
+/* create ROQ weights for interpolant to calculate the linear <d|h> terms */
+REAL8Vector *LALInferenceGenerateREAL8LinearWeights(REAL8Array *B, REAL8Vector *data, REAL8Vector *vars);
+
+/* create ROQ weights for interpolant to calculate the quadratic model terms real(<h|h>) */
+REAL8Vector *LALInferenceGenerateQuadraticWeights(REAL8Array *B, REAL8Vector *vars);
 
 /* create ROQ weights for interpolant to calculate the data dot model terms */
-gsl_vector *LALInferenceGenerateREAL8DataModelWeights(gsl_matrix *B, gsl_vector *data, gsl_vector *vars);
+COMPLEX16Vector *LALInferenceGenerateCOMPLEX16LinearWeights(COMPLEX16Array *B, COMPLEX16Vector *data, REAL8Vector *vars);
 
-/* create ROQ weights for interpolant to calculate the model dot model terms */
-gsl_matrix *LALInferenceGenerateREALModelModelWeights(gsl_matrix *B, gsl_vector *vars);
-
-/* create ROQ weights for interpolant to calculate the data dot model terms */
-gsl_vector_complex *LALInferenceGenerateCOMPLEX16DataModelWeights(gsl_matrix_complex *B, gsl_vector_complex *data, gsl_vector *vars);
-
-/* create ROQ weights for interpolant to calculate the model dot model terms */
-gsl_matrix_complex *LALInferenceGenerateCOMPLEXModelModelWeights(gsl_matrix_complex *B, gsl_vector *vars);
-
-/* calculate ROQ version of the data model dot product (where the model
-   vector is the model just computed at the interpolant points) */
-REAL8 LALInferenceROQREAL8DataDotModel(gsl_vector *weights, gsl_vector *model);
-
-/* calculate ROQ version of the model model dot product (where the model
-   vector is the model just computed at the interpolant points) */
-REAL8 LALInferenceROQREAL8ModelDotModel(gsl_matrix *weights, gsl_vector *model);
-
-COMPLEX16 LALInferenceROQCOMPLEX16DataDotModel(gsl_vector_complex *weights, gsl_vector_complex *model);
-COMPLEX16 LALInferenceROQCOMPLEX16ModelDotModel(gsl_matrix_complex *weights, gsl_vector_complex *model);
+/* calculate ROQ version of the dot product (where the model vector is the model just computed at the interpolant points) */
+REAL8 LALInferenceROQREAL8DotProduct(REAL8Vector *weights, REAL8Vector *model);
+COMPLEX16 LALInferenceROQCOMPLEX16DotProduct(COMPLEX16Vector *weights, COMPLEX16Vector *model);
 
 /* memory destruction */
 void LALInferenceRemoveREALROQInterpolant( LALInferenceREALROQInterpolant *a );

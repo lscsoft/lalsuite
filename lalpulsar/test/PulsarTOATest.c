@@ -13,6 +13,7 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALgetopt.h>
+#include <lal/AVFactories.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/LALConstants.h>
@@ -31,7 +32,7 @@
 " --verbose (-v)           display all error messages\n"\
 " --par-file (-p)          TEMPO2 parameter (.par) file\n"\
 " --tim-file (-t)          TEMPO2 TOA (.tim) file\n"\
-" --ephem (-e)             Ephemeris type (DE200 or [default] DE405)\n"\
+" --ephem (-e)             Ephemeris type (DE200, DE405 [default], or DE421)\n"\
 " --clock (-c)             Clock correction file (default is none)\n"\
 " --simulated (-s)         Set if the TOA file is from simulated data\n\
                           e.g. created with the TEMPO2 'fake' plugin:\n\
@@ -62,7 +63,7 @@ int main(int argc, char *argv[])
   double TOA[10000];
   double num1;
   int telescope;
-  int i=0, j=0, k=0, exceedPhaseErr=0;
+  int i=0, j=0, k=0, n = 0, exceedPhaseErr=0;
 
   double PPTime[10000]; /* Pulsar proper time - corrected for solar system and binary orbit delay times */
   const double D = 2.41e-4; /* dispersion constant from TEMPO */
@@ -84,8 +85,9 @@ int main(int argc, char *argv[])
   double MJD_tcorr[10000];
   double tcorr[10000];
 
-  double f0=0., f1=0., f2=0., f3=0., T=0.;
+  double T=0.;
   double DM;
+  double phase0=0.;
 
   long offset;
 
@@ -197,11 +199,16 @@ int main(int argc, char *argv[])
     earthFile = TEST_DATA_DIR "earth00-19-DE200.dat.gz";
     sunFile   = TEST_DATA_DIR "sun00-19-DE200.dat.gz";
   }
-  else if( strcmp(par.ephem, "DE405") ){
+  else if( strcmp(par.ephem, "DE405") == 0 ){
     earthFile = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
-    sunFile   = TEST_DATA_DIR "lalpulsar/sun00-19-DE405.dat.gz";
-  } else {
-    XLAL_ERROR_MAIN ( XLAL_EINVAL, "Invalid ephem='%s', allowed are 'DE200' or 'DE405'\n", par.ephem );
+    sunFile   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
+  }
+  else if( strcmp(par.ephem, "DE421") == 0 ){
+    earthFile = TEST_DATA_DIR "earth00-19-DE421.dat.gz";
+    sunFile   = TEST_DATA_DIR "sun00-19-DE421.dat.gz";
+  }
+  else {
+    XLAL_ERROR_MAIN ( XLAL_EINVAL, "Invalid ephem='%s', allowed are 'DE200', 'DE405' or 'DE421'\n", par.ephem );
   }
 
   edat = XLALInitBarycenter( earthFile, sunFile );
@@ -237,17 +244,71 @@ int main(int argc, char *argv[])
 
   tdat = XLALInitTimeCorrections( tcFile );
 
-  REAL8 f0p = PulsarGetREAL8ParamOrZero(params, "F0");
-  REAL8 f1p = PulsarGetREAL8ParamOrZero(params, "F1");
-  REAL8 f2p = PulsarGetREAL8ParamOrZero(params, "F2");
-  REAL8 f3p = PulsarGetREAL8ParamOrZero(params, "F3");
+  REAL8Vector *f0s = PulsarGetREAL8VectorParam(params, "F");
+  REAL8Vector *f0update = XLALCreateREAL8Vector( f0s->length );
+
+  /* check for glitch parameters */
+  REAL8 *glep = NULL, *glph = NULL, *glf0 = NULL, *glf1 = NULL, *glf2 = NULL, *glf0d = NULL, *gltd = NULL;
+  UINT4 glnum = 0;
+  if ( PulsarCheckParam( params, "GLEP" ) ){
+    REAL8Vector *glpars = NULL;
+    glpars = PulsarGetREAL8VectorParam( params, "GLEP" );
+    glnum = glpars->length;
+
+    /* get epochs */
+    glep = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    for ( j=0; j<(INT4)glpars->length; j++ ){ glep[j] = glpars->data[j]; }
+
+    /* get phase offsets */
+    glph = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLPH" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLPH" );
+      for ( j=0; j<(INT4)glpars->length; j++ ){ glph[j] = glpars->data[j]; }
+    }
+
+    /* get frequencies offsets */
+    glf0 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLF0" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLF0" );
+      for ( j=0; j<(INT4)glpars->length; j++ ){ glf0[j] = glpars->data[j]; }
+    }
+
+    /* get frequency derivative offsets */
+    glf1 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLF1" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLF1" );
+      for ( j=0; j<(INT4)glpars->length; j++ ){ glf1[j] = glpars->data[j]; }
+    }
+
+    /* get second frequency derivative offsets */
+    glf2 = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLF2" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLF2" );
+      for ( j=0; j<(INT4)glpars->length; j++ ){ glf2[j] = glpars->data[j]; }
+    }
+
+    /* get decaying frequency component offset derivative */
+    glf0d = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLF0D" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLF0D" );
+      for ( j=0; j<(INT4)glpars->length; j++ ){ glf0d[j] = glpars->data[j]; }
+    }
+
+    /* get decaying frequency component decay time constant */
+    gltd = XLALCalloc(glnum, sizeof(REAL8)); /* initialise to zeros */
+    if ( PulsarCheckParam( params, "GLTD" ) ){
+      glpars = PulsarGetREAL8VectorParam( params, "GLTD" );
+      for ( j=0; j<(INT4)glpars->length; j++ ){ gltd[j] = glpars->data[j]; }
+    }
+  }
 
   for(j=0;j<i;j++){
     double t; /* DM for current pulsar - make more general */
     double deltaD_f2;
     double phase;
     double tt0;
-    double phaseWave = 0., tWave = 0.;
+    double phaseWave = 0., tWave = 0., phaseGlitch = 0.;
+    double taylorcoeff = 1.;
 
     if (par.clock != NULL){
       while(MJD_tcorr[k] < TOA[j]){ k++; }
@@ -292,10 +353,16 @@ int main(int argc, char *argv[])
 
     if(j==0){
       T = PPTime[0] - PulsarGetREAL8ParamOrZero(params, "PEPOCH");
-      f0 = f0p + f1p*T + 0.5*f2p*T*T + (1./6.)*f3p*T*T*T;
-      f1 = f1p + f2p*T + 0.5*f3p*T*T;
-      f2 = f2p + f3p*T;
-      f3 = f3p;
+      for ( k=0; k<(INT4)f0s->length; k++ ) {
+        f0update->data[k] = f0s->data[k];
+        REAL8 Tupdate = T;
+        taylorcoeff = 1.;
+        for ( n = k+1; n<(INT4)f0s->length; n++ ) {
+          taylorcoeff /= (REAL8)(n-k);
+          f0update->data[k] += taylorcoeff*f0s->data[n]*Tupdate;
+          Tupdate *= T;
+        }
+      }
     }
 
     tt0 = PPTime[j] - PPTime[0];
@@ -310,22 +377,44 @@ int main(int argc, char *argv[])
       for( k = 0; k < (INT4)waveSin->length; k++ ){
         tWave += waveSin->data[k]*sin(om*(REAL8)(k+1.)*dtWave) + waveCos->data[k]*cos(om*(REAL8)(k+1.)*dtWave);
       }
-      phaseWave = f0p*tWave;
+      phaseWave = f0s->data[0]*tWave;
     }
 
-    phase = f0*tt0 + 0.5*f1*tt0*tt0 + f2*tt0*tt0*tt0/6.0 + f3*tt0*tt0*tt0*tt0/24.;
+    /* if glitches are present add on effects of glitch phase */
+    if ( glnum > 0 ){
+      for ( k = 0; k < (INT4)glnum; k++ ){
+        if ( PPTime[j] >= glep[k] ){
+          REAL8 dtg = 0, expd = 1.;
+          dtg = PPTime[j] - glep[k]; /* time since glitch */
+          if ( gltd[k] != 0. ) { expd = exp(-dtg/gltd[k]); } /* decaying part of glitch */
 
-    phase = fmod(phase+phaseWave+0.5, 1.0) - 0.5;
+          /* add glitch phase - based on equations in formResiduals.C of TEMPO2 from Eqn 1 of Yu et al (2013) http://ukads.nottingham.ac.uk/abs/2013MNRAS.429..688Y */
+          phaseGlitch += glph[k] + glf0[k]*dtg + 0.5*glf1[k]*dtg*dtg + (1./6.)*glf2[k]*dtg*dtg*dtg + glf0d[k]*gltd[k]*(1.-expd);
+        }
+      }
+    }
 
-    if ( verbose ) { fprintf(fpout, "%.9lf\t%lf\n", tt0, phase); }
+    phase = 0., taylorcoeff = 1.;
+    REAL8 tt0update = tt0;
+    for ( k=0; k<(INT4)f0update->length; k++ ){
+      taylorcoeff /= (REAL8)(k+1);
+      phase += taylorcoeff*f0update->data[k]*tt0update;
+      tt0update *= tt0;
+    }
+
+    phase = fmod(phase+phaseWave+phaseGlitch+0.5, 1.0) - 0.5;
+
+    if( j == 0 ){ phase0 = phase; } /* get first phase */
+
+    if ( verbose ) { fprintf(fpout, "%.9lf\t%lf\n", tt0, phase-phase0); }
 
     /* check the phase error (in degrees) */
-    if ( fabs(phase)*360. > MAX_PHASE_ERR_DEGS ) { exceedPhaseErr = 1; }
+    if ( fabs(phase-phase0)*360. > MAX_PHASE_ERR_DEGS ) { exceedPhaseErr = 1; }
   }
 
   if ( verbose ) { fclose(fpout); }
 
-  if ( exceedPhaseErr ) { return 1; } /* phase difference it too great, so fail */
+  if ( exceedPhaseErr ) { return 1; } /* phase difference is too great, so fail */
 
   // ----- clean up memory
   XLALDestroyEphemerisData ( edat );
@@ -334,6 +423,17 @@ int main(int argc, char *argv[])
   XLALFree ( par.timfile );
   XLALFree ( par.ephem );
   XLALFree ( par.clock );
+  XLALDestroyREAL8Vector( f0update );
+
+  if( glnum > 0 ){
+    XLALFree(glph);
+    XLALFree(glep);
+    XLALFree(glf0);
+    XLALFree(glf1);
+    XLALFree(glf2);
+    XLALFree(glf0d);
+    XLALFree(gltd);
+  }
 
   PulsarFreeParams( params );
 

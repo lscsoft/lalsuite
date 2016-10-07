@@ -53,15 +53,8 @@ struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * comma
  */
 void LALInferenceInjectInspiralSignal(struct tagLALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 
-/**
- * \brief Function to set up the ROQ structure
- * Sets up the ROQ sturtucture into a pre-existing \c IFOdata structure,
- * based on command line arguments (see --help for details).
- * \param commandLine [in] Pointer to a ProcessParamsTable containing command line arguments
- * \param IFOdata [in] Pointer to an already existing IFOdata structure.
- * \param model UNDOCUMENTED
- */
-void LALInferenceSetupROQ(LALInferenceIFOData *IFOdata, LALInferenceModel *model, ProcessParamsTable *commandLine);
+void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
+void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *commandLine);
 
 /**
  * \brief Fills the variable in vars with the injection values from theEventTable. Destroys contents of

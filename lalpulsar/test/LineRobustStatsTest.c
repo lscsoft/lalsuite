@@ -21,7 +21,6 @@
 #include <lal/AVFactories.h>
 #include <lal/LineRobustStats.h>
 #include <lal/LogPrintf.h>
-#include <lal/UserInput.h>
 
 /******************************************************
  *  Error codes and messages.
@@ -31,40 +30,49 @@
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+/**
+ * Enum for LR-statistic variants
+ */
+typedef enum {
+  LRS_BSGL  = 0,
+  LRS_BSGLtL = 1,
+  LRS_BtSGLtL = 2,
+  LRS_BStSGLtL = 3
+} LRstat_variant_t;
+
+
 /*---------- internal prototypes ----------*/
 int
 XLALCompareBSGLComputations ( const REAL4 TwoF,
-			     const UINT4 numDetectors,
-			     const REAL4Vector *TwoFX,
-			     const REAL4 Fstar0,
-			     const REAL4 *oLGX,
-			     const REAL4 tolerance
+			      const UINT4 numDetectors,
+			      const REAL4Vector *TwoFX,
+			      const REAL4 cohFstar0,
+			      const REAL4 *oLtLGX,
+			      const UINT4 numSegs,
+			      const REAL4 tolerance,
+			      const LRstat_variant_t LRstat_variant,
+			      const REAL4 maxTwoF,
+			      const REAL4Vector *maxTwoFX
+			   );
+
+REAL4
+XLALComputePedestrianLRStat ( const REAL4 TwoF,
+			      const UINT4 numDetectors,
+			      const REAL4Vector *TwoFX,
+			      const REAL4 cohFstar0,
+			      const REAL4 *oLtLGX,
+			      const BOOLEAN useLogCorrection,
+			      const LRstat_variant_t LRstat_variant,
+			      const REAL4 maxTwoF,
+			      const REAL4Vector *maxTwoFX,
+			      const UINT4 numSegs
 			   );
 
 int
 XLALCheckBSGLDifferences ( const REAL4 diff,
-			  const REAL4 tolerance,
-			  const CHAR *casestring
+			   const REAL4 tolerance,
+			   const CHAR *casestring
 			);
-
-// ----- deprecated API, kept here locally for comparisob -----
-
-REAL4
-XLALComputeLineVeto ( const REAL4 TwoF,
-		      const REAL4Vector *TwoFX,
-		      const REAL8 rhomaxline,
-		      const REAL8Vector *lX,
-		      const BOOLEAN useAllTerms
-);
-
-REAL4
-XLALComputeLineVetoArray ( const REAL4 TwoF,
-			   const UINT4 numDetectors,
-			   const REAL4 *TwoFX,
-			   const REAL8 logRhoTerm,
-			   const REAL8 *loglX,
-			   const BOOLEAN useAllTerms
-);
 
 /* ###################################  MAIN  ################################### */
 
@@ -73,7 +81,8 @@ int main( int argc, char *argv[]) {
   /* sanity check for input arguments */
   XLAL_CHECK ( argc == 1, XLAL_EINVAL, "The executable '%s' doesn't support any input arguments right now.\n", argv[0] );
 
-  printf ("Starting test...\n");
+  printf ("Starting coherent test...\n");
+  UINT4 numSegs = 1;
 
   /* set up single- and multi-IFO F-stat input */
   REAL4 TwoF = 7.0;
@@ -85,24 +94,79 @@ int main( int argc, char *argv[]) {
   /* maximum allowed difference between recalculated and XLAL result */
   REAL4 tolerance = 1e-06;
 
-  /* compute and compare the results for one set of Fstar0, oLGX values */
-  REAL4 Fstar0 = -LAL_REAL4_MAX; /* prior from BSGL derivation, -Inf means pure line veto, +Inf means pure multi-Fstat */
-  REAL4 *oLGX = NULL; /* per-IFO prior odds ratio for line vs. Gaussian noise, NULL is interpreted as oLG[X]=1 for all X */
-  printf ("Computing BSGL for TwoF_multi=%f, TwoFX=(%f,%f), priors F*0=%f and oLGX=NULL...\n", TwoF, TwoFX->data[0], TwoFX->data[1], Fstar0 );
-  XLAL_CHECK ( XLALCompareBSGLComputations( TwoF, numDetectors, TwoFX, Fstar0, oLGX, tolerance ) == XLAL_SUCCESS, XLAL_EFUNC );
+  /* compute and compare the results for one set of Fstar0, oLtLGX values */
+  REAL4 cohFstar0 = -LAL_REAL4_MAX; /* prior from BSGL derivation, -Inf means pure line veto, +Inf means pure multi-Fstat */
+  REAL4 oLtLGXarray[numDetectors]; /* per-IFO prior odds ratio for line vs. Gaussian noise */
+  oLtLGXarray[0] = 0.5; /* pick some arbitrary values first */
+  oLtLGXarray[1] = 0.8;
+  REAL4 *oLtLGX = oLtLGXarray;
+  printf ("Computing BSGL for TwoF_multi=%f, TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=(%f,%f)...\n", TwoF, TwoFX->data[0], TwoFX->data[1], cohFstar0, oLtLGX[0], oLtLGX[1] );
+  XLAL_CHECK ( XLALCompareBSGLComputations( TwoF, numDetectors, TwoFX, cohFstar0, oLtLGX, numSegs, tolerance, LRS_BSGL, 0.0, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* change the priors to catch more possible problems */
-  Fstar0 = 10.0;
-  REAL4 oLGXarray[numDetectors];
-  oLGXarray[0] = 0.5;
-  oLGXarray[1] = 0.8;
-  oLGX = oLGXarray;
+  cohFstar0 = 10.0;
+  oLtLGX = NULL; /* NULL is interpreted as oLtLGX[X]=1 for all X (in most general case includes both L and tL) */
 
-  printf ("Computing BSGL for TwoF_multi=%f, TwoFX=(%f,%f), priors F*0=%f and oLGX=(%f,%f)...\n", TwoF, TwoFX->data[0], TwoFX->data[1], Fstar0, oLGX[0], oLGX[1] );
-  XLAL_CHECK ( XLALCompareBSGLComputations( TwoF, numDetectors, TwoFX, Fstar0, oLGX, tolerance ) == XLAL_SUCCESS, XLAL_EFUNC );
+  printf ("Computing BSGL for TwoF_multi=%f, TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=NULL...\n", TwoF, TwoFX->data[0], TwoFX->data[1], cohFstar0 );
+  XLAL_CHECK ( XLALCompareBSGLComputations( TwoF, numDetectors, TwoFX, cohFstar0, oLtLGX, numSegs, tolerance, LRS_BSGL, 0.0, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLALDestroyREAL4Vector(TwoFX);
+
+  printf ("Starting semi-coherent test...\n");
+  numSegs = 3;
+
+  /* initialize some per-segment F-stats */
+  REAL4Vector *TwoFl = NULL;
+  REAL4Vector *TwoFXl = NULL;
+  XLAL_CHECK ( (TwoFl = XLALCreateREAL4Vector ( numSegs )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (TwoFXl = XLALCreateREAL4Vector ( numSegs*numDetectors )) != NULL, XLAL_EFUNC );
+  TwoFl->data[0] = 4.0;
+  TwoFl->data[1] = 8.0;
+  TwoFl->data[2] = 4.0;
+  for ( UINT4 X = 0; X < numDetectors; X++ ) {
+    for ( UINT4 l = 0; l < numSegs; l++ ) {
+      TwoFXl->data[X*numSegs+l] = TwoFl->data[l]/sqrt(numDetectors);
+    }
+  }
+  TwoFXl->data[0+1] = 32.0;
+
+  REAL4 sumTwoF = 0.0;
+  REAL4Vector *sumTwoFX = NULL;
+  XLAL_CHECK ( (sumTwoFX = XLALCreateREAL4Vector ( numDetectors )) != NULL, XLAL_EFUNC );
+  for ( UINT4 l = 0; l < numSegs; l++ ) {
+    sumTwoF += TwoFl->data[l];
+    for ( UINT4 X = 0; X < numDetectors; X++ ) {
+      sumTwoFX->data[X] += TwoFXl->data[X*numSegs+l];
+    }
+  }
+
+  printf ("Computing semi-coherent BSGL for sum_TwoF_multi=%f, sum_TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=NULL...\n", sumTwoF, sumTwoFX->data[0], sumTwoFX->data[1], cohFstar0 );
+  XLAL_CHECK ( XLALCompareBSGLComputations( sumTwoF, numDetectors, sumTwoFX, cohFstar0, oLtLGX, numSegs, tolerance, LRS_BSGL, 0.0, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  REAL4 maxTwoF = 0.0;
+  REAL4Vector *maxTwoFX = NULL;
+  XLAL_CHECK ( (maxTwoFX = XLALCreateREAL4Vector ( numDetectors )) != NULL, XLAL_EFUNC );
+  for ( UINT4 l = 0; l < numSegs; l++ ) {
+    maxTwoF = fmax(maxTwoF,TwoFl->data[l]);
+    for ( UINT4 X = 0; X < numDetectors; X++ ) {
+      maxTwoFX->data[X] = fmax(maxTwoFX->data[X],TwoFXl->data[X*numSegs+l]);
+    }
+  }
+
+  printf ("Computing semi-coherent BSGLtL for sum_TwoF_multi=%f, sum_TwoFX=(%f,%f), max_TwoF_multi=%f, max_TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=NULL...\n", sumTwoF, sumTwoFX->data[0], sumTwoFX->data[1], maxTwoF, maxTwoFX->data[0], maxTwoFX->data[1], cohFstar0 );
+  XLAL_CHECK ( XLALCompareBSGLComputations( sumTwoF, numDetectors, sumTwoFX, cohFstar0, oLtLGX, numSegs, tolerance, LRS_BSGLtL, maxTwoF, maxTwoFX  ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  printf ("Computing semi-coherent BtSGLtL for sum_TwoF_multi=%f, sum_TwoFX=(%f,%f), max_TwoF_multi=%f, max_TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=NULL...\n", sumTwoF, sumTwoFX->data[0], sumTwoFX->data[1], maxTwoF, maxTwoFX->data[0], maxTwoFX->data[1], cohFstar0 );
+  XLAL_CHECK ( XLALCompareBSGLComputations( sumTwoF, numDetectors, sumTwoFX, cohFstar0, oLtLGX, numSegs, tolerance, LRS_BtSGLtL, maxTwoF, maxTwoFX  ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  printf ("Computing semi-coherent BStSGLtL for sum_TwoF_multi=%f, sum_TwoFX=(%f,%f), max_TwoF_multi=%f, max_TwoFX=(%f,%f), priors cohF*0=%f and oLtLGX=NULL...\n", sumTwoF, sumTwoFX->data[0], sumTwoFX->data[1], maxTwoF, maxTwoFX->data[0], maxTwoFX->data[1], cohFstar0 );
+  XLAL_CHECK ( XLALCompareBSGLComputations( sumTwoF, numDetectors, sumTwoFX, cohFstar0, oLtLGX, numSegs, tolerance, LRS_BStSGLtL, maxTwoF, maxTwoFX  ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* free memory */
-  XLALDestroyREAL4Vector(TwoFX);
+  XLALDestroyREAL4Vector(TwoFl);
+  XLALDestroyREAL4Vector(TwoFXl);
+  XLALDestroyREAL4Vector(sumTwoFX);
+  XLALDestroyREAL4Vector(maxTwoFX);
 
   LALCheckMemoryLeaks();
 
@@ -112,157 +176,197 @@ int main( int argc, char *argv[]) {
 
 
 /**
- * Test function to compute BSGL values from:
- * XLALComputeBSGL, from scratch
- * and from deprecated XLALComputeLineVeto and XLALComputeLineVetoArray
+ * Test function to compute BSGL values from XLALComputeBSGL
+ * against those recomputed from scratch ("pedestrian" formula);
  * compare the results and exit if tolerance is violated.
  */
 int
 XLALCompareBSGLComputations ( const REAL4 TwoF,			/**< multi-detector  Fstat */
 			     const UINT4 numDetectors,		/**< number of detectors */
 			     const REAL4Vector *TwoFX,		/**< vector of single-detector Fstats */
-			     const REAL4 Fstar0,		/**< amplitude prior normalization for lines */
-			     const REAL4 *oLGX,			/**< array of single-detector prior line odds ratio, can be NULL */
-			     const REAL4 tolerance		/**< tolerance for comparisons */
+			     const REAL4 cohFstar0,		/**< amplitude prior normalization for lines */
+			     const REAL4 *oLtLGX,		/**< array of single-detector prior line odds ratio, can be NULL */
+			     const UINT4 numSegs,		/**< number of segments */
+			     const REAL4 tolerance,		/**< tolerance for comparisons */
+			     const LRstat_variant_t LRstat_variant, /**< which statistic variant to use */
+			     const REAL4 maxTwoF,		/**< multi-detector maximum Fstat over segments*/
+			     const REAL4Vector *maxTwoFX	/**< vector of single-detector maximum Fstats over segments*/
                           )
 {
 
-  /* conversions between old (rho) and new (F*) notation, REAL4 and REAL8 */
-  REAL8 LVrho = exp( 0.25 * ( Fstar0 + log(70.0) ) );
-  REAL4 oLG = 0.0;
-  REAL8Vector *oLGXREAL8 = NULL;
-  XLAL_CHECK ( (oLGXREAL8 = XLALCreateREAL8Vector ( numDetectors )) != NULL, XLAL_EFUNC );
-
-  if ( oLGX ) {
-    for ( UINT4 X = 0; X < numDetectors; X++ ) {
-      oLGXREAL8->data[X] = (REAL8)oLGX[X];
-      oLG += oLGX[X];
-    }
-  }
-  else { /* if oLGX == NULL, assume oLGX=1/numDetectors for all X  ==> oLG = sumX oLGX = 1*/
-    oLG = 1.0;
-    for (UINT4 X = 0; X < numDetectors; X++) {
-      oLGXREAL8->data[X] = 1.0/numDetectors; /* need to set this manually, as old functions still assume oLGX=1 instead */
-    }
-  } // if ( oLGX == NULL )
-
-  /* further parameter pre-conversions for XLALComputeLineVetoArray() */
-  REAL8 logRhoTerm = Fstar0;
-  REAL8 logoLGX[numDetectors];
-  for (UINT4 X = 0; X < numDetectors; X++) {
-    logoLGX[X] = log(oLGXREAL8->data[X]);
-  }
-
-  /* compute BSGL "the pedestrian way", from Eq. (40) of Keitel, Prix, Papa, Leaci, Siddiqi, PR D 89, 064023 (2014),
-   * explicit formula for numDet=2:
-   * log10 BSGL = F - log ( e^F* + e^{F1}*oLG1/oLG + e^{F2}*oLG2/oLG )
-   */
-  REAL8 BSGL_extcomp_terms[3];
-  BSGL_extcomp_terms[0] = exp(Fstar0)/oLG;
-  REAL8 BSGL_extcomp_maxterm = BSGL_extcomp_terms[0];
-  for (UINT4 X = 0; X < numDetectors; X++) {
-    BSGL_extcomp_terms[1+X] = exp(0.5*TwoFX->data[X]);
-    if ( oLGX ) {
-      BSGL_extcomp_terms[1+X] *= oLGX[X]/oLG;
-    }
-    else {  /* oLGX=NULL is interpreted as oLGX[X]=1/numDetectors=0.5 for all X ==> oLG=1 */
-      BSGL_extcomp_terms[1+X] *= 0.5/oLG;
-    }
-    if ( BSGL_extcomp_terms[1+X] > BSGL_extcomp_maxterm ) {
-      BSGL_extcomp_maxterm = BSGL_extcomp_terms[1+X];
-    }
-  }
-  REAL4 log10BSGL_extcomp_notallterms = 0.5*TwoF - log(BSGL_extcomp_maxterm);
-  REAL8 BSGL_extcomp_denom = 0.0;
-  for (UINT4 X = 0; X < 1+numDetectors; X++) {
-    BSGL_extcomp_denom += BSGL_extcomp_terms[X];
-  }
-  REAL4 log10BSGL_extcomp_allterms = 0.5*TwoF - log( BSGL_extcomp_denom );
-
-  /* these are not the log-Bayes-factor, as computed by XLALComputeBSGL(), so need to correct by log(1+1/oLG) */
-  log10BSGL_extcomp_allterms    += log(1+1/oLG);
-  log10BSGL_extcomp_notallterms += log(1+1/oLG);
-  /* and actually switch to log10 */
-  log10BSGL_extcomp_allterms    *= LAL_LOG10E;
-  log10BSGL_extcomp_notallterms *= LAL_LOG10E;
+  /* pedestrian version, with and without log corrections */
+  REAL4 log10LRS_extcomp_notallterms = XLALComputePedestrianLRStat ( TwoF, numDetectors, TwoFX, cohFstar0, oLtLGX, FALSE, LRstat_variant, maxTwoF, maxTwoFX, numSegs );
+  REAL4 log10LRS_extcomp_allterms    = XLALComputePedestrianLRStat ( TwoF, numDetectors, TwoFX, cohFstar0, oLtLGX, TRUE, LRstat_variant, maxTwoF, maxTwoFX, numSegs );
 
   /* faster version: use only the leading term of the BSGL denominator sum */
   BSGLSetup *setup_noLogCorrection;
-  XLAL_CHECK ( (setup_noLogCorrection = XLALCreateBSGLSetup ( numDetectors, Fstar0, oLGX, FALSE )) != NULL, XLAL_EFUNC );
-  REAL4 log10BSGL_XLAL_notallterms = XLALComputeBSGL ( TwoF, TwoFX->data, setup_noLogCorrection );
+  XLAL_CHECK ( (setup_noLogCorrection = XLALCreateBSGLSetup ( numDetectors, numSegs*cohFstar0, oLtLGX, FALSE, numSegs )) != NULL, XLAL_EFUNC );
+  REAL4 log10_LRS_XLAL_notallterms = 0.0;
+  char funcname[64] = "";
+  switch ( LRstat_variant ) {
+    case LRS_BSGL :
+      log10_LRS_XLAL_notallterms = XLALComputeBSGL ( TwoF, TwoFX->data, setup_noLogCorrection );
+      snprintf(funcname, sizeof(funcname), "%s", "XLALComputeBSGL");
+      break;
+    case LRS_BSGLtL  :
+      log10_LRS_XLAL_notallterms = XLALComputeBSGLtL ( TwoF, TwoFX->data, maxTwoFX->data, setup_noLogCorrection );
+      snprintf(funcname, sizeof(funcname), "%s", "XLALComputeBSGLtL");
+      break;
+    case LRS_BtSGLtL  :
+      log10_LRS_XLAL_notallterms = XLALComputeBtSGLtL ( maxTwoF, TwoFX->data, maxTwoFX->data, setup_noLogCorrection );
+      snprintf(funcname, sizeof(funcname), "%s", "XLALComputeBtSGLtL");
+      break;
+    case LRS_BStSGLtL  :
+      log10_LRS_XLAL_notallterms = XLALComputeBStSGLtL ( TwoF, maxTwoF, TwoFX->data, maxTwoFX->data, setup_noLogCorrection );
+      snprintf(funcname, sizeof(funcname), "%s", "XLALComputeBStSGLtL");
+      break;
+  }
   XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
   XLALFree ( setup_noLogCorrection ); setup_noLogCorrection = NULL;
 
   /* more precise version: use all terms of the BSGL denominator sum */
   BSGLSetup *setup_withLogCorrection;
-  XLAL_CHECK ( (setup_withLogCorrection = XLALCreateBSGLSetup ( numDetectors, Fstar0, oLGX, TRUE )) != NULL, XLAL_EFUNC );
-  REAL4 log10BSGL_XLAL_allterms = XLALComputeBSGL ( TwoF, TwoFX->data, setup_withLogCorrection );
-  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
+  XLAL_CHECK ( (setup_withLogCorrection = XLALCreateBSGLSetup ( numDetectors, numSegs*cohFstar0, oLtLGX, TRUE, numSegs )) != NULL, XLAL_EFUNC );
+  REAL4 log10_LRS_XLAL_allterms = 0.0;
+  switch ( LRstat_variant ) {
+    case LRS_BSGL :
+      log10_LRS_XLAL_allterms = XLALComputeBSGL ( TwoF, TwoFX->data, setup_withLogCorrection );
+      break;
+//     case LRS_BSGLtL  :
+//       log10_LRS_XLAL_allterms = XLALComputeBSGLtL ( TwoF, TwoFX->data, maxTwoFX->data, setup_withLogCorrection );
+//       break;
+//     case LRS_BtSGLtL  :
+//       log10_LRS_XLAL_allterms = XLALComputeBtSGLtL ( maxTwoF, TwoFX->data, maxTwoFX->data, setup_withLogCorrection );
+//       break;
+//     case LRS_BStSGLtL  :
+//       log10_LRS_XLAL_allterms = XLALComputeBStSGLtL ( TwoF, maxTwoF, TwoFX->data, maxTwoFX->data, setup_withLogCorrection );
+//       break;
+      default :
+        printf("log correction not implemented for GLtL denominator, skipping full-precision test for this LRS variant.\n");
+  }
+  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "%s() failed with xlalErrno = %d\n", funcname, xlalErrno );
   XLALFree ( setup_withLogCorrection ); setup_withLogCorrection = NULL;
 
   /* compute relative deviations */
-  REAL4 diff_allterms    = fabs( log10BSGL_XLAL_allterms    - log10BSGL_extcomp_allterms    ) / ( 0.5 * ( log10BSGL_XLAL_allterms    + log10BSGL_extcomp_allterms    ));
-  REAL4 diff_notallterms = fabs( log10BSGL_XLAL_notallterms - log10BSGL_extcomp_notallterms ) / ( 0.5 * ( log10BSGL_XLAL_notallterms + log10BSGL_extcomp_notallterms ));
+  REAL4 diff_allterms = 0.0;
+  if ( LRstat_variant == 0 ) {
+    diff_allterms    = fabs( log10_LRS_XLAL_allterms    - log10LRS_extcomp_allterms    ) / ( 0.5 * ( log10_LRS_XLAL_allterms    + log10LRS_extcomp_allterms    ));
+  }
+  REAL4 diff_notallterms = fabs( log10_LRS_XLAL_notallterms - log10LRS_extcomp_notallterms ) / ( 0.5 * ( log10_LRS_XLAL_notallterms + log10LRS_extcomp_notallterms ));
 
   /* output results and deviations and return with error when tolerances are violated */
-  printf ( "Externally recomputed     with  allterms: log10BSGL=%f\n",               log10BSGL_extcomp_allterms );
-  printf ( "Externally recomputed     with !allterms: log10BSGL=%f\n",               log10BSGL_extcomp_notallterms );
-  printf ( "XLALComputeBSGL()         with  allterms: log10BSGL=%f (rel. dev.: %f)", log10BSGL_XLAL_allterms,    diff_allterms );
-  XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_allterms,    tolerance, "XLALComputeBSGL() with useAllTerms=TRUE" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  printf ( "XLALComputeBSGL()         with !allterms: log10BSGL=%f (rel. dev.: %f)", log10BSGL_XLAL_notallterms, diff_notallterms );
-  XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_notallterms, tolerance, "XLALComputeBSGL() with useAllTerms=TRUE" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  /* also test against deprecated rho-notation functions for consistency
-   * need to correct for different prior parametrization,
-   * log(BSGL_new)=LV_old+log(1+oLG)
-   */
-  REAL4 old_LV_corr = log(1+oLG);
-
-  xlalErrno = 0;
-  REAL4 log10BSGL_XLAL_rho_notallterms      = XLALComputeLineVeto      ( TwoF, TwoFX, LVrho, oLGXREAL8, FALSE );
-  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLineVeto() failed with xlalErrno = %d\n", xlalErrno );
-  log10BSGL_XLAL_rho_notallterms += old_LV_corr;
-  log10BSGL_XLAL_rho_notallterms *= LAL_LOG10E;
-
-  xlalErrno = 0;
-  REAL4 log10BSGL_XLAL_rhoarray_notallterms = XLALComputeLineVetoArray ( TwoF, numDetectors, TwoFX->data, logRhoTerm, logoLGX, FALSE );
-  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLineVetoArray() failed with xlalErrno = %d\n", xlalErrno );
-  log10BSGL_XLAL_rhoarray_notallterms += old_LV_corr;
-  log10BSGL_XLAL_rhoarray_notallterms *= LAL_LOG10E;
-
-  xlalErrno = 0;
-  REAL4 log10BSGL_XLAL_rho_allterms         = XLALComputeLineVeto      ( TwoF, TwoFX, LVrho, oLGXREAL8, TRUE );
-  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLineVeto() failed with xlalErrno = %d\n", xlalErrno );
-  log10BSGL_XLAL_rho_allterms += old_LV_corr;
-  log10BSGL_XLAL_rho_allterms *= LAL_LOG10E;
-
-  xlalErrno = 0;
-  REAL4 log10BSGL_XLAL_rhoarray_allterms    = XLALComputeLineVetoArray ( TwoF, numDetectors, TwoFX->data, logRhoTerm, logoLGX, TRUE );
-  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeLineVetoArray() failed with xlalErrno = %d\n", xlalErrno );
-  log10BSGL_XLAL_rhoarray_allterms += old_LV_corr;
-  log10BSGL_XLAL_rhoarray_allterms *= LAL_LOG10E;
-
-  REAL4 diff_rho_allterms         = fabs( log10BSGL_XLAL_rho_allterms         - log10BSGL_extcomp_allterms    ) / ( 0.5 * ( log10BSGL_XLAL_rho_allterms         + log10BSGL_extcomp_allterms ));
-  REAL4 diff_rhoarray_allterms    = fabs( log10BSGL_XLAL_rhoarray_allterms    - log10BSGL_extcomp_allterms    ) / ( 0.5 * ( log10BSGL_XLAL_rhoarray_allterms    + log10BSGL_extcomp_allterms ));
-  REAL4 diff_rho_notallterms      = fabs( log10BSGL_XLAL_rho_notallterms      - log10BSGL_extcomp_notallterms ) / ( 0.5 * ( log10BSGL_XLAL_rho_notallterms      + log10BSGL_extcomp_notallterms ));
-  REAL4 diff_rhoarray_notallterms = fabs( log10BSGL_XLAL_rhoarray_notallterms - log10BSGL_extcomp_notallterms ) / ( 0.5 * ( log10BSGL_XLAL_rhoarray_notallterms + log10BSGL_extcomp_notallterms ));
-
-  printf( "Legacy functions with rho-notation, corrected as BSGL_new=LV_old+log(1+oLG)=LV_old+%f:\n", old_LV_corr );
-  printf ( "XLALComputeLineVeto()       with  allterms: BSGL=%f (rel. dev.: %f)", log10BSGL_XLAL_rho_allterms,         diff_rho_allterms );
-  XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_rho_allterms,         tolerance, "XLALComputeLineVeto()       with useAllTerms=TRUE" )  == XLAL_SUCCESS, XLAL_EFUNC );
-  printf ( "XLALComputeLineVetoArray()  with  allterms: BSGL=%f (rel. dev.: %f)", log10BSGL_XLAL_rhoarray_allterms,    diff_rhoarray_allterms );
-  XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_rhoarray_allterms,    tolerance, "XLALComputeLineVetoArray()  with useAllTerms=TRUE" )  == XLAL_SUCCESS, XLAL_EFUNC );
-  printf ( "XLALComputeLineVeto()       with !allterms: BSGL=%f (rel. dev.: %f)", log10BSGL_XLAL_rho_notallterms,      diff_rho_notallterms );
-  XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_rho_notallterms,      tolerance, "XLALComputeLineVeto()       with useAllTerms=FALSE" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  printf ( "XLALComputeLineVetoArray()  with !allterms: BSGL=%f (rel. dev.: %f)", log10BSGL_XLAL_rhoarray_notallterms, diff_rhoarray_notallterms );
-  XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_rhoarray_notallterms, tolerance, "XLALComputeLineVetoArray()  with useAllTerms=FALSE" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  XLALDestroyREAL8Vector(oLGXREAL8);
+  printf ( "Externally recomputed     with  allterms: log10LRS=%f\n",               log10LRS_extcomp_allterms );
+  printf ( "Externally recomputed     with !allterms: log10LRS=%f\n",               log10LRS_extcomp_notallterms );
+  char casestring[256] = "";
+  if ( LRstat_variant == 0 ) {
+    printf ( "%s()         with  allterms: log10LRS=%f (rel. dev.: %f)", funcname, log10_LRS_XLAL_allterms,    diff_allterms );
+    snprintf(casestring, sizeof(casestring), "%s() with useAllTerms=TRUE", funcname);
+    XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_allterms,    tolerance, casestring ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+  printf ( "%s()         with !allterms: log10LRS=%f (rel. dev.: %f)", funcname, log10_LRS_XLAL_notallterms, diff_notallterms );
+  snprintf(casestring, sizeof(casestring), "%s() with useAllTerms=FALSE", funcname);
+  XLAL_CHECK ( XLALCheckBSGLDifferences ( diff_notallterms, tolerance, casestring ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
 } /* XLALCompareBSGLComputations() */
 
+/**
+ * compute BSGL "the pedestrian way", from Eq. (40) of Keitel, Prix, Papa, Leaci, Siddiqi, PR D 89, 064023 (2014),
+ * explicit formula for numDet=2:
+ * log10 BSGL = F - log ( e^F* + e^{F1}*oLtLG1/oLtLG + e^{F2}*oLtLG2/oLtLG )
+ */
+REAL4
+XLALComputePedestrianLRStat ( const REAL4 TwoF,				/**< multi-detector  Fstat */
+			      const UINT4 numDetectors,			/**< number of detectors */
+			      const REAL4Vector *TwoFX,			/**< vector of single-detector Fstats */
+			      const REAL4 cohFstar0,			/**< amplitude prior normalization for lines */
+			      const REAL4 *oLtLGX,			/**< array of single-detector prior line odds ratio, can be NULL (in most general case includes both L and tL) */
+			      const BOOLEAN useLogCorrection,		/**< include log-term correction or not */
+			      const LRstat_variant_t LRstat_variant, 	/**< which statistic variant to compute */
+			      const REAL4 maxTwoF,			/**< multi-detector maximum Fstat over segments*/
+			      const REAL4Vector *maxTwoFX,		/**< vector of single-detector maximum Fstats over segments*/
+			      const UINT4 numSegs			/**< number of segments */
+                          )
+{
+
+  REAL4 log10LRS_extcomp = 0;
+
+  /* sum up overall prior odds */
+  REAL4 oLtLGXarray[numDetectors];
+  REAL4 oLtLG = 0.0;
+  if ( oLtLGX ) {
+    for ( UINT4 X = 0; X < numDetectors; X++ ) {
+      oLtLG += oLtLGX[X];
+    }
+  }
+  else { /* if oLtLGX == NULL, assume oLtLGX=1/numDetectors for all X  ==> oLtLG = sumX oLtLGX = 1*/
+    oLtLG = 1.0;
+    for ( UINT4 X = 0; X < numDetectors; X++ ) {
+      oLtLGXarray[X] = 1.0/numDetectors;
+    }
+    oLtLGX = oLtLGXarray;
+  } // if ( oLtLGX == NULL )
+
+  REAL4 numerator = 0.0;
+  if ( LRstat_variant != LRS_BtSGLtL ) {
+    numerator += exp(0.5*TwoF);
+  }
+  if ( ( LRstat_variant == LRS_BtSGLtL ) || ( LRstat_variant == LRS_BStSGLtL ) ) {
+    numerator += exp(0.5*maxTwoF+(numSegs-1)*cohFstar0)/numSegs; /* extra 1/numSegs frome qual splitting of prior odds over segments */
+  }
+
+  if ( LRstat_variant == LRS_BStSGLtL ) {
+    numerator *= 0.5; /* assume equal splitting of prior odds between S and tS */
+  }
+
+  log10LRS_extcomp = log(numerator);
+
+  REAL4 *denomterms = NULL;
+  REAL4 denomterms_GL[1+numDetectors];
+  REAL4 denomterms_GLtL[1+2*numDetectors];
+  if ( LRstat_variant == LRS_BSGL ) {
+   denomterms = denomterms_GL;
+  }
+  else {
+   denomterms = denomterms_GLtL;
+  }
+
+  denomterms[0] = exp(numSegs*cohFstar0)/oLtLG;
+  REAL4 maxterm = denomterms[0];
+  for (UINT4 X = 0; X < numDetectors; X++) {
+    denomterms[1+X] = oLtLGX[X]*exp(0.5*TwoFX->data[X])/oLtLG;
+    if ( LRstat_variant != LRS_BSGL ) {
+     denomterms[1+X] *= 0.5; /* assume equal splitting of prior odds between L and tL */
+    }
+    maxterm = fmax(maxterm,denomterms[1+X]);
+  }
+  if ( LRstat_variant != LRS_BSGL ) { /* NOTE: this is the loudest-only (per detector) version only! */
+    for (UINT4 X = 0; X < numDetectors; X++) {
+      denomterms[1+numDetectors+X] = 0.5*oLtLGX[X]*exp(0.5*maxTwoFX->data[X]+(numSegs-1)*cohFstar0)/(oLtLG*numSegs); /* 0.5 from assuming equal splitting of prior odds between L and tL and 1/numSegs from equal splitting over segments */
+      maxterm = fmax(maxterm,denomterms[1+numDetectors+X]);
+    }
+  }
+
+  if ( !useLogCorrection ) {
+    log10LRS_extcomp -= log(maxterm);
+  }
+  else {
+    REAL4 BSGL_extcomp_denom = 0.0;
+    for (UINT4 X = 0; X < 1+numDetectors; X++) {
+      BSGL_extcomp_denom += denomterms[X];
+    }
+    log10LRS_extcomp -= log( BSGL_extcomp_denom );
+  }
+
+  /* this is not yet the log-Bayes-factor, as computed by XLALComputeBSGL(), so need to correct by log(1+1/oLtLG) */
+  log10LRS_extcomp += log(1+1/oLtLG);
+  /* and actually switch to log10 */
+  log10LRS_extcomp *= LAL_LOG10E;
+
+  return log10LRS_extcomp;
+
+} /* XLALComputePedestrianLRStat() */
 
 int
 XLALCheckBSGLDifferences ( const REAL4 diff,
@@ -283,138 +387,3 @@ XLALCheckBSGLDifferences ( const REAL4 diff,
   return XLAL_SUCCESS;
 
 } /* XLALCheckBSGLDifferences() */
-
-// ---------- OLD API functions - deprecated, but kept here locally for comparison ------------------------------
-
-/**
- * Deprecated function to compute Line Veto statistics from multi- and single-detector \f$ \mathcal{F} \f$-stats,
- * using outdated \f$ \rho \f$ notation and prior normalization.
- * This is not the log-Bayes-factor!
- * \f$ \mathrm{LV} = \mathcal{F} - \log \left( \frac{\rho_{\mathrm{max,line}}^4}{70} + \sum_X l^X e^{\mathcal{F}^X} \right) \f$
- *
- * \deprecated use XLALComputeBSGL() instead.
- *
- * Also this is just a wrapper for XLALComputeLineVetoArray, which is faster for many LV values at identical priors.
- * This function here just translates REAL4Vectors to fixed REAL4 arrays,
- * and linear priors rhomaxline and lX to logarithmic values.
- */
-REAL4 XLALComputeLineVeto ( const REAL4 TwoF,			/**< multi-detector  \f$ \mathcal{F} \f$-stat */
-                            const REAL4Vector *TwoFXvec,	/**< vector of single-detector \f$ \mathcal{F} \f$-stats */
-                            const REAL8 rhomaxline,		/**< amplitude prior normalization for lines */
-                            const REAL8Vector *lXvec,		/**< vector of single-detector prior line odds ratio, default to \f$ l^X=1 \f$ for all \f$ X \f$ if NULL */
-                            const BOOLEAN useAllTerms		/**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
-                          )
-{
-
-  /* check input parameters and report errors */
-  XLAL_CHECK_REAL4 ( TwoF && TwoFXvec && TwoFXvec->data, XLAL_EFAULT, "Empty TwoF or TwoFX pointer as input parameter." );
-  UINT4 numDetectors = TwoFXvec->length;
-  XLAL_CHECK_REAL4 ( !lXvec || ( lXvec->length == numDetectors ), XLAL_EBADLEN, "Input lX (%d) and TwoFX (%d) vectors have different lengths.", lXvec->length, numDetectors );
-
-  XLAL_CHECK_REAL4 ( rhomaxline >= 0, XLAL_EDOM, "Negative prior range 'rhomaxline' = %g. Must be >= 0!", rhomaxline );
-  REAL8 logRhoTerm = 0.0;
-  if ( rhomaxline > 0.0 ) {
-   logRhoTerm = 4.0 * log(rhomaxline) - log(70.0);
-  }
-  else { /* if rhomaxline == 0.0, logRhoTerm should become irrelevant in summation */
-    logRhoTerm = - LAL_REAL8_MAX;
-  }
-
-  REAL8 *loglX = NULL;
-  REAL8 loglXtemp[numDetectors];
-  if ( lXvec ) {
-    for (UINT4 X = 0; X < numDetectors; X++) {
-      if ( lXvec->data[X] > 0 ) {
-        loglXtemp[X] = log(lXvec->data[X]);
-      }
-      else if ( lXvec->data[X] == 0 ) { /* if zero prior ratio, approximate log(0)=-inf by -LAL_REAL4_MAX to avoid raising underflow exceptions */
-        loglXtemp[X] = - LAL_REAL8_MAX;
-      }
-      else { /* negative prior ratio is a mistake! */
-       XLAL_ERROR_REAL4 ( XLAL_EDOM, "Negative input prior-ratio for detector X=%d: lX[X]=%g\n", X, lXvec->data[X] );
-      }
-    }  /* for X < numDetectors */
-    loglX = loglXtemp;
-  } /* if lXvec */
-
-  REAL4 LV = XLALComputeLineVetoArray ( TwoF, numDetectors, TwoFXvec->data, logRhoTerm, loglX, useAllTerms );
-
-  return LV;
-
-} /* XLALComputeLineVeto() */
-
-
-/**
- * Deprecated function to compute Line Veto statistics from multi- and single-detector \f$ \mathcal{F} \f$-stats,
- * using outdated \f$ \rho \f$ notation and prior normalization.
- * This is not the log-Bayes-factor!
- * \f$ \mathrm{LV} = \mathcal{F} - \log \left( \frac{\rho_{\mathrm{max,line}}^4}{70} + \sum_X l^X e^{\mathcal{F}^X} \right) \f$
- *
- * \deprecated use XLALComputeBSGL() instead.
- *
- * Implemented by log sum exp formula:
- * \f$ \mathrm{LV} = \mathcal{F} - \max(\mathrm{denom. terms}) - \log \left( \sum e^{\mathrm{denom. terms}-\max} \right) \f$.
- *
- * From the analytical derivation, there should be an extra term \f$ + o_{SN} + 4 \log \left( \frac{\rho_{\mathrm{max,line}}}{\rho_{\mathrm{max,sig}}} \right) \f$,
- * but this is irrelevant for toplist sorting, only a normalization which can be replaced arbitrarily.
- *
- * NOTE: priors logRhoTerm, loglX have to be logarithmized already.
- */
-REAL4
-XLALComputeLineVetoArray ( const REAL4 TwoF,		/**< multi-detector \f$ \mathcal{F} \f$-stat */
-                           const UINT4 numDetectors,	/**< number of detectors */
-                           const REAL4 *TwoFX,		/**< array of single-detector \f$ \mathcal{F} \f$-stats */
-                           const REAL8 logRhoTerm,	/**< extra term coming from prior normalization: \f$ \log \left( \frac{\rho_{\mathrm{max,line}}^4}{70} \right) \f$ */
-                           const REAL8 *loglX,		/**< array of logs of single-detector prior line odds ratios, default to \f$ \log(l^X)=\log(1)=0 \f$ for all \f$ X \f$ if NULL */
-                           const BOOLEAN useAllTerms	/**< only use leading term (FALSE) or all terms (TRUE) in log sum exp formula? */
-                         )
-{
-
-  /* check input parameters and report errors */
-  XLAL_CHECK_REAL4 ( TwoF && TwoFX, XLAL_EFAULT, "Empty TwoF or TwoFX pointer as input parameter." );
-
-  /* set up temporary variables and structs */
-  REAL4 log0  = - LAL_REAL4_MAX;	/* approximates -inf */
-
-  REAL4 maxInSum = log0;           /* keep track of largest summand in denominator, for logsumexp formula below */
-  REAL4 FXprior[numDetectors];     /* FXprior equiv log(lX * e^(FX)) = FX + loglX */
-
-  for (UINT4 X = 0; X < numDetectors; X++) {
-    FXprior[X] = 0.5 * TwoFX[X];
-    if (loglX) { /* if no priors given, just use lX=1 => loglX=0 for all X => do not add anything */
-      FXprior[X] += loglX[X];
-    }
-    /* keep track of maximum value in denominator sum  */
-    if ( FXprior[X] > maxInSum ) {
-      maxInSum = FXprior[X];
-    }
-  } /* for X < numDetectors */
-
-  /* special treatment for additional denominator term 'rho^4/70' */
-  if ( logRhoTerm > maxInSum ) {
-    maxInSum = logRhoTerm;
-  }
-
-  REAL4 LV = 0.0;	/* output variable for Line Veto statistics */
-
-  LV = 0.5 * TwoF - maxInSum;	/* dominant term to LV-statistic */
-
-  if ( useAllTerms ) { /* optionally add logsumexp term (possibly negligible in many cases) */
-
-    REAL4 extraSum=0;	/* will be:  e^[-(maxInSum - logRhoTerm)] + sum_X e^[ -(maxInSum - FXprior) ] >= 1 */
-
-    /* need to treat (rho^4/70) term separately */
-    extraSum += exp ( logRhoTerm - maxInSum );
-
-    /* now add all FX-contributions */
-    for (UINT4 X = 0; X < numDetectors; X++) {
-      extraSum += exp ( FXprior[X] - maxInSum );
-    }
-
-    LV -= log ( extraSum );
-
-  } /* if useAllTerms */
-
-  return LV;
-
-} /* XLALComputeLineVetoArray() */

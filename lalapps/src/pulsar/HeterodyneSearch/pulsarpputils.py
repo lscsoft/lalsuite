@@ -33,10 +33,12 @@ import os
 import numpy as np
 import struct
 import re
+import h5py
 
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 from scipy.stats import hmean
+from scipy.misc import logsumexp
 
 from types import StringType, FloatType
 
@@ -67,32 +69,6 @@ G           = float('6.673e-11')      # m^3/s^2/kg
 C           = SOL
 KPC         = float('3.0856776e19')   # kiloparsec in metres
 I38         = float('1e38')           # moment of inertia kg m^2
-
-# some parameter names for special LaTeX treatment in figures
-paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', \
-             'PSI': '$\psi$ (rad)', 'PHI0': '$\phi_0$ (rad)', \
-             'RA': '$\\alpha$ (rad)', 'DEC': '$\delta$ (rad)', \
-             'F0': '$f_0$ (Hz)', 'F1': '$\dot{f}$ (Hz/s)', 'F2':
-             '$\\ddot{f}$ (Hz/s$^2$)', \
-             'F3': '$f_3$ (Hz/s$^3$)', \
-             'F4': '$f_4$ (Hz/s$^4$)', \
-             'F5': '$f_5$ (Hz/s$^5$)', 'LOGL': '$\log{L}$', \
-             'PMRA': 'proper motion $\\alpha$ (rad/s)', \
-             'PMDEC': 'proper motion $\delta$ (rad/s)', \
-             'PMDC': 'proper motion $\delta$ (rad/s)', \
-             'X': '$a \sin{i}$ (lt s)', 'PB': 'Period (days)', \
-             'T0': '$T_0$ (s)', 'TASC': '$T_{\\textrm{asc}}$ (s)', \
-             'OM': '$\omega_0$ (deg)', 'PBDT': '$\dot{P}$ (s/s)', \
-             'PBDOT': '$\dot{P}$ (s/s)', \
-             'GAMMA': '$\gamma$', \
-             'E': 'eccentricity', \
-             'ELL': '$\\varepsilon$', 'H95': '$h_0^{95\%}$', \
-             'Q22': '$Q_{22}$\,(kg\,m$^2$)', \
-             'SDRAT': 'spin-down ratio', \
-             'OMDT': '$\dot{\omega}$', \
-             'EPS1': '$\\epsilon_1$', 'EPS2': '$\\epsilon_2$', \
-             'C22': '$C_{22}$', 'C21': '$C_{21}$', \
-             'PHI22': '$\phi_{22}$', 'PHI21': '$\phi_{21}$'}
 
 # some angle conversion functions taken from psr_utils.py in PRESTO
 def rad_to_dms(rad):
@@ -256,22 +232,28 @@ def pferrs(porf, porferr, pdorfd=None, pdorfderr=None):
 
 # class to read in a pulsar par file - this is heavily based on the function
 # in parfile.py in PRESTO
-float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6",
-              "P", "P0", "P1", "P2", "P3", "P4", "P5", "P6",
+float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10",
               "PEPOCH", "POSEPOCH", "DM", "START", "FINISH", "NTOA",
               "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS",
               "A1", "XDOT", "E", "ECC", "EDOT", "T0", "PB", "PBDOT", "OM",
               "OMDOT", "EPS1", "EPS2", "EPS1DOT", "EPS2DOT", "TASC", "LAMBDA",
               "BETA", "RA_RAD", "DEC_RAD", "GAMMA", "SINI", "M2", "MTOT",
               "FB0", "FB1", "FB2", "ELAT", "ELONG", "PMRA", "PMDEC", "DIST",
+              "PB_2", "PB_3", "T0_2", "T0_3", "A1_2", "A1_3", "OM_2", "OM_3",
+              "ECC_2", "ECC_3", "DIST", "PX", "KIN", "KOM", "A0", "B0", "D_AOP",
               # GW PARAMETERS
               "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31", "C22",
-              "C21", "PHI22", "PHI21", "SNR", "COSTHETA", "IOTA"]
+              "C21", "PHI22", "PHI21", "SNR", "COSTHETA", "IOTA", "Q22"]
 str_keys = ["FILE", "PSR", "PSRJ", "NAME", "RAJ", "DECJ", "RA", "DEC", "EPHEM",
             "CLK", "BINARY", "UNITS"]
 
 class psr_par:
   def __init__(self, parfilenm):
+    """
+    This class parses a TEMPO(2)-style pulsar parameter file. If possible all parameters
+    are converted into SI units and angles are in radians. Epochs will be converted from
+    MJD values into GPS times.
+    """
     self.FILE = parfilenm
     pf = open(parfilenm)
     for line in pf.readlines():
@@ -301,8 +283,13 @@ class psr_par:
       if len(splitline)==3: # Some parfiles don't have flags, but do have errors
         if splitline[2] not in ['0', '1']:
           setattr(self, key+'_ERR', float(splitline[2]))
+          setattr(self, key+'_FIT', 0) # parameter was not fit
 
       if len(splitline)==4:
+        if splitline[2] == '1': # parameter was fit
+          setattr(self, key+'_FIT', 1)
+        else:
+          setattr(self, key+'_FIT', 0)
         setattr(self, key+'_ERR', float(splitline[3]))
 
     # sky position
@@ -312,12 +299,28 @@ class psr_par:
       # set RA error in rads (rather than secs)
       if hasattr(self, 'RAJ_ERR'):
         setattr(self, 'RA_RAD_ERR', hms_to_rad(0, 0, self.RAJ_ERR))
+
+        if hasattr(self, 'RAJ_FIT'):
+          setattr(self, 'RA_RAD_FIT', self['RAJ_FIT'])
     if hasattr(self, 'DECJ'):
       setattr(self, 'DEC_RAD', dec_to_rad(self.DECJ))
 
       # set DEC error in rads (rather than arcsecs)
       if hasattr(self, 'DECJ_ERR'):
         setattr(self, 'DEC_RAD_ERR', dms_to_rad(0, 0, self.DECJ_ERR))
+
+        if hasattr(self, 'DECJ_FIT'):
+          setattr(self, 'DEC_RAD_FIT', self['DECJ_FIT'])
+
+    # convert proper motions to rads/sec from mas/year
+    for pv in ['RA', 'DEC']:
+      if hasattr(self, 'PM'+pv):
+        pmv = self['PM'+pv]
+        setattr(self, 'PM'+pv , pmv*np.pi/(180.*3600.e3*365.25*86400.))
+
+        if hasattr(self, 'PM'+pv+'_ERR'):
+          pmve = self['PM'+pv+'_ERR']
+          setattr(self, 'PM'+pv+'_ERR' , pmve*np.pi/(180.*3600.e3*365.25*86400.))
 
     # periods and frequencies
     if hasattr(self, 'P'):
@@ -353,18 +356,83 @@ class psr_par:
           setattr(self, 'P0_ERR', self.F0_ERR/(self.F0*self.F0))
           setattr(self, 'P1', pd)
 
+    # convert epochs (including binary epochs) to GPS if possible
+    try:
+      import lalpulsar
+      for epoch in ['PEPOCH', 'POSEPOCH', 'DMEPOCH', 'T0', 'TASC', 'T0_2', 'T0_3']:
+        if hasattr(self, epoch):
+          setattr(self, epoch, lalpulsar.TTMJDtoGPS(self[epoch]))
+
+          if hasattr(self, epoch+'_ERR'): # convert errors from days to seconds
+            setattr(self, epoch+'_ERR', self[epoch+'_ERR'] * SECPERDAY)
+    except:
+      print("Could not convert epochs to GPS times. They are all still MJD values.")
+
+    # distance and parallax (distance: kpc -> metres, parallax: mas -> rads)
+    convfacs = {'DIST': KPC, 'PX': 1e-3*ARCSECTORAD}
+    for item in convfacs:
+      if hasattr(self, item): # convert kpc to metres
+        setattr(self, item, self[item] * convfacs[item])
+
+      if hasattr(self, item+'_ERR'):
+        setattr(self, item+'_ERR', self[item+'_ERR'] * convfacs[item])
+
     # binary parameters
+    # omega (angle of periastron) parameters (or others requiring conversion from degs to rads)
+    for om in ['OM', 'OM_2', 'OM_3', 'KIN', 'KOM']:
+      if hasattr(self, om): # convert OM from degs to rads
+        setattr(self, om, self[om] / RADTODEG )
+
+        if hasattr(self, om+'_ERR'):
+          setattr(self, om+'_ERR', self[om+'_ERR'] / RADTODEG )
+
+    # period
+    for pb in ['PB', 'PB_2', 'PB_3']:
+      if hasattr(self, pb): # convert PB from days to seconds
+        setattr(self, pb, self[pb] * SECPERDAY)
+
+        if hasattr(self, pb+'_ERR'):
+          setattr(self, pb+'_ERR', self[pb+'_ERR'] * SECPERDAY)
+
+    # OMDOT
+    if hasattr(self, 'OMDOT'): # convert from deg/year to rad/sec
+      setattr(self, 'OMDOT', self['OMDOT'] / (RADTODEG * 365.25 * SECPERDAY))
+
+      if hasattr(self, 'OMDOT_ERR'):
+        setattr(self, 'OMDOT_ERR', self['OMDOT_ERR'] / (RADTODEG * 365.25 * SECPERDAY))
+
     if hasattr(self, 'EPS1') and hasattr(self, 'EPS2'):
       ecc = math.sqrt(self.EPS1 * self.EPS1 + self.EPS2 * self.EPS2)
       omega = math.atan2(self.EPS1, self.EPS2)
       setattr(self, 'E', ecc)
-      setattr(self, 'OM', omega * RADTODEG)
+      setattr(self, 'OM', omega) # omega in rads
       setattr(self, 'T0', self.TASC + self.PB * omega/TWOPI)
-    if hasattr(self, 'PB') and hasattr(self, 'A1') and not \
-       (hasattr(self, 'E') or hasattr(self, 'ECC')):
+    if hasattr(self, 'PB') and hasattr(self, 'A1') and not (hasattr(self, 'E') or hasattr(self, 'ECC')):
       setattr(self, 'E', 0.0)
     if hasattr(self, 'T0') and not hasattr(self, 'TASC') and hasattr(self, 'OM') and hasattr(self, 'PB'):
-      setattr(self, 'TASC', self.T0 - self.PB * self.OM/360.0)
+      setattr(self, 'TASC', self.T0 - self.PB * self.OM/TWOPI)
+
+    # binary unit conversion for small numbers (TEMPO2 checks if these are > 1e-7 and if so then the units are in 1e-12) - errors are not converted
+    for binu in ['XDOT', 'PBDOT', 'EDOT', 'EPS1DOT', 'EPS2DOT', 'XPBDOT']:
+      if hasattr(self, binu):
+        if np.abs(self[binu]) > 1e-7:
+          setattr(self, binu, self[binu] * 1.0e-12)
+
+          # check value is not extremely large due to ATNF catalogue error
+          if self[binu] > 10000.: # set to zero
+            setattr(self, binu, 0.0)
+
+    # masses
+    for mass in ['M2', 'MTOT']:
+      if hasattr(self, mass): # convert solar masses to kg
+        setattr(self, mass, self[mass]*MSUN)
+
+        if hasattr(self, mass+'_ERR'):
+          setattr(self, mass+'_ERR', self[mass+'_ERR'] * MSUN)
+
+    # D_AOP
+    if hasattr(self, 'D_AOP'): # convert from inverse arcsec to inverse radians
+      setattr(self, 'D_AOP', self['D_AOP'] * RADTODEG * 3600. )
 
     pf.close()
 
@@ -433,10 +501,7 @@ class psr_prior:
     out = ""
     for k, v in self.__dict__.items():
       if k[:2]!="__":
-        if type(self.__dict__[k]) is StringType:
-          out += "%10s = '%s'\n" % (k, v)
-        else:
-          out += "%10s = %-20.15g, %-20.15g\n" % (k, float(v[0]), float(v[1]))
+        out += "%10s = %-20.15g, %-20.15g\n" % (k, float(v[0]), float(v[1]))
 
     return out
 
@@ -513,6 +578,7 @@ def plot_posterior_hist(poslist, param, ifos,
                         parfile=None, mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
+  from lalapps.pulsarhtmlutils import paramlatexdict
 
   # create list of figures
   myfigs = []
@@ -538,7 +604,7 @@ def plot_posterior_hist(poslist, param, ifos,
 
   # param name for axis label
   try:
-    paraxis = paramdict[param.upper()]
+    paraxis = paramlatexdict[param.upper()]
   except:
     paraxis = param
 
@@ -670,10 +736,10 @@ def upper_limit_greedy(pos, upperlimit=0.95, nbins=100):
 # the Gelman-Rubins statistics for the given parameter for each IFO.
 # If withhist is set then it will also output a histgram, with withhist number
 # of bins
-def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
-                         mplparams=False):
+def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
+  from lalapps.pulsarhtmlutils import paramlatexdict
 
   try:
     from matplotlib import gridspec
@@ -687,13 +753,13 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
       'axes.linewidth': 0.5, # set axes linewidths to 0.5
       'axes.grid': True, # add a grid
       'grid.linewidth': 0.5,
-      'font.family': 'serif',
-      'font.size': 14 }
+      'font.family': 'sans-serif',
+      'font.sans-serif': 'Avant Garde, Helvetica, Computer Modern Sans serif',
+      'font.size': 15 }
 
   matplotlib.rcParams.update(mplparams)
 
-  coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', \
-             'Joint': 'k'}
+  coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', 'Joint': 'k'}
 
   # param name for axis label
   try:
@@ -702,7 +768,7 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
     else:
       p = param
 
-    paryaxis = paramdict[p.upper()]
+    paryaxis = paramlatexdict[p.upper()]
   except:
     paryaxis = param
 
@@ -741,7 +807,7 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
       ax1.hold(True)
       ax1.plot(pos_samps, '.', color=coldict[ifo], markersize=1)
 
-      n, binedges = np.histogram( pos_samps, withhist )
+      n, binedges = np.histogram( pos_samps, withhist, density=True )
       n = np.append(n, 0)
       ax2.hold(True)
       ax2.step(n, binedges, color=coldict[ifo])
@@ -777,7 +843,6 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
   if withhist:
     ax2.set_ylim(bounds[0], bounds[1])
     ax2.set_xlim(0, maxn+0.1*maxn)
-    ax2.set_xlabel(r'Count', fontsize=16, fontweight=100)
     ax2.set_yticklabels([])
     ax2.set_axis_bgcolor("#F2F1F0")
 
@@ -852,6 +917,7 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
                           mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
+  from lalapps.pulsarhtmlutils import paramlatexdict
 
   # read in 2D h0 vs cos(iota) binary prior file
   xbins, ybins, histarr = read_hist_from_file(histfile)
@@ -879,12 +945,12 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
 
   # param name for axis label
   try:
-    parxaxis = paramdict[ndimlabel.upper()]
+    parxaxis = paramlatexdict[ndimlabel.upper()]
   except:
     parxaxis = ndimlabel
 
   try:
-    paryaxis = paramdict[mdimlabel.upper()]
+    paryaxis = paramlatexdict[mdimlabel.upper()]
   except:
     paryaxis = mdimlabel
 
@@ -987,6 +1053,7 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
                           parfile=None, overplot=False, mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
+  from lalapps.pulsarhtmlutils import paramlatexdict
 
   if len(params) != 2:
     print >> sys.stderr, "Require 2 parameters"
@@ -1013,12 +1080,12 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
 
   # param name for axis label
   try:
-    parxaxis = paramdict[params[0].upper()]
+    parxaxis = paramlatexdict[params[0].upper()]
   except:
     parxaxis = params[0]
 
   try:
-    paryaxis = paramdict[params[1].upper()]
+    paryaxis = paramlatexdict[params[1].upper()]
   except:
     paryaxis = params[1]
 
@@ -1204,9 +1271,9 @@ def tukey_window(N, alpha=0.5):
 
 # create a function for plotting the absolute value of Bk data (read in from
 # data files) and an averaged 1 day "two-sided" amplitude spectral density
-# spectrogram for each IFO
-def plot_Bks_ASDs( Bkdata, ifos, delt=86400, plotpsds=True,
-                   plotfscan=False, removeoutlier=None, mplparams=False ):
+# spectrogram for each IFO. Bkdata should be a dictionary contains the files
+# keyed to the IFO
+def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeoutlier=None, mplparams=False ):
   import matplotlib
   from matplotlib.mlab import specgram
   from matplotlib import colors
@@ -1227,28 +1294,24 @@ def plot_Bks_ASDs( Bkdata, ifos, delt=86400, plotpsds=True,
       'axes.linewidth': 0.5, # set axes linewidths to 0.5
       'axes.grid': True, # add a grid
       'grid.linewidth': 0.5,
-      'font.family': 'serif',
-      'font.size': 12 }
-      #'text.latex.preamble': \usepackage{xfrac} }
+      'font.family': 'sans-serif',
+      'font.sans-serif': 'Avant Garde, Helvetica, Computer Modern Sans serif',
+      'font.size': 15 }
 
   matplotlib.rcParams.update(mplparams)
-  # xfrac causes problems when compiling an eps (option clashes with graphicx)
-  # so use nicefrac package instead
-  #matplotlib.rcParams['text.latex.preamble']=r'\usepackage{xfrac}'
-  matplotlib.rcParams['text.latex.preamble']=r'\usepackage{nicefrac}'
+  matplotlib.rcParams['text.latex.preamble']=r'\usepackage{xfrac}'
 
   # ifos line colour specs
   coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm'}
-  colmapdic = {'H1': 'Reds', 'H2': 'PuBu', 'L1': 'Greens', \
-    'V1': 'Blues', 'G1': 'PuRd'}
+  colmapdic = {'H1': 'Reds', 'H2': 'PuBu', 'L1': 'Greens', 'V1': 'Blues', 'G1': 'PuRd'}
 
   # there should be data for each ifo
-  for i, ifo in enumerate(ifos):
+  for ifo in Bkdata:
     # get data for given ifo
     try:
-      Bk = np.loadtxt(Bkdata[i])
+      Bk = np.loadtxt(Bkdata[ifo], comments=['#', '%'])
     except:
-      print "Could not open file ", Bkdata[i]
+      print "Could not open file ", Bkdata[ifo]
       sys.exit(-1)
 
     # should be three lines in file
@@ -1257,8 +1320,7 @@ def plot_Bks_ASDs( Bkdata, ifos, delt=86400, plotpsds=True,
     # remove outliers at Xsigma by working out sigma from the peak of the
     # distribution of the log absolute value
     if removeoutlier:
-      n, binedges = np.histogram(np.log(np.fabs(np.concatenate((Bk[:,1], \
-Bk[:,2])))), 50)
+      n, binedges = np.histogram(np.log(np.fabs(np.concatenate((Bk[:,1], Bk[:,2])))), 50)
       j = n.argmax(0)
 
       # standard devaition estimate
@@ -1306,7 +1368,7 @@ Bk[:,2])))), 50)
 
       count = 0
 
-      # zero pad the data and bin each point in the nearest 60s bin
+      # zero pad the data and bin each point in the nearest bin
       datazeropad = np.zeros(int(math.ceil(totlen/mindt))+1, dtype=complex)
 
       idx = map(lambda x: int(math.floor((x/mindt)+0.5)), tms)
@@ -1317,8 +1379,7 @@ Bk[:,2])))), 50)
 
       Fs = 1./mindt # sample rate in Hz
 
-      fscan, freqs, t = specgram(datazeropad, NFFT=int(math.floor(delt/mindt)), \
-Fs=Fs, window=win, noverlap=int(math.floor(delt/(2.*mindt))))
+      fscan, freqs, t = specgram(datazeropad, NFFT=int(math.floor(delt/mindt)), Fs=Fs, window=win, noverlap=int(math.floor(delt/(2.*mindt))))
 
       if plotpsds:
         fshape = fscan.shape
@@ -1356,9 +1417,9 @@ Fs=Fs, window=win, noverlap=int(math.floor(delt/(2.*mindt))))
             xl.append('0')
           else:
             if item < 0:
-              xl.append(r'$-\nicefrac{1}{%d}$' % (-1./item))
+              xl.append(r'$-\sfrac{1}{%d}$' % (-1./item))
             else:
-              xl.append(r'$\nicefrac{1}{%d}$' % (1./item))
+              xl.append(r'$\sfrac{1}{%d}$' % (1./item))
         ax.set_xticklabels(xl)
         #plt.setp(ax.get_xticklabels(), fontsize=16)  # increase font size
         plt.tick_params(axis='x', which='major', labelsize=14)
@@ -1385,11 +1446,10 @@ Fs=Fs, window=win, noverlap=int(math.floor(delt/(2.*mindt))))
             yl.append('0')
           else:
             if item < 0:
-              yl.append(r'$-\nicefrac{1}{%d}$' % (-1./item))
+              yl.append(r'$-\sfrac{1}{%d}$' % (-1./item))
             else:
-              yl.append(r'$\nicefrac{1}{%d}$' % (1./item))
+              yl.append(r'$\sfrac{1}{%d}$' % (1./item))
         ax.set_yticklabels(yl)
-        #plt.setp(ax.get_yticklabels(), fontsize=16)
         plt.tick_params(axis='y', which='major', labelsize=14)
 
         fscanfigs.append(fscanfig)
@@ -1403,6 +1463,7 @@ Fs=Fs, window=win, noverlap=int(math.floor(delt/(2.*mindt))))
 def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
+  from lalapps.pulsarhtmlutils import paramlatexdict
 
   if not mplparams:
     mplparams = { \
@@ -1422,7 +1483,7 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, 
   coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', 'Joint':'k'}
 
   try:
-    parxaxis = paramdict[param.upper()]
+    parxaxis = paramlatexdict[param.upper()]
   except:
     parxaxis = param
 
@@ -1898,6 +1959,25 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
   detval = lal.CachedDetectors[detector]
   response = detval.response
 
+  # check if ra and dec are floats or strings (if strings in hh/dd:mm:ss.s format then convert to rads)
+  if not isinstance(ra, float):
+    if isinstance(ra, str):
+      if len(ra.split(':')) == 3:
+        ra = ra_to_rad(ra)
+      else:
+        raise ValueError, "Right ascension string '%s' not formatted properly" % ra
+    else:
+      raise ValueError, "Right ascension must be a 'float' in radians or a string of the format 'hh:mm:ss.s'"
+
+  if not isinstance(dec, float):
+    if isinstance(dec, str):
+      if len(dec.split(':')) == 3:
+        dec = dec_to_rad(dec)
+      else:
+        raise ValueError, "Declination string '%s' not formatted properly" % ra
+    else:
+      raise ValueError, "Declination must be a 'float' in radians or a string of the format 'dd:mm:ss.s'"
+
   # check if gpsTime is just a float or int, and if so convert into an array
   if isinstance(gpsTime, float) or isinstance(gpsTime, int):
     gpsTime = np.array([gpsTime])
@@ -2137,7 +2217,7 @@ def pulsar_mcmc_to_posterior(chainfiles):
       mcmcChain = read_pulsar_mcmc_file(cfile)
 
       # if no chain found then exit with None's
-      if mcmcChain == None:
+      if mcmcChain is None:
         return None, None, None, None
 
       # find number of effective samples for the chain
@@ -2152,7 +2232,7 @@ def pulsar_mcmc_to_posterior(chainfiles):
       neffs.append(math.floor(np.mean(neffstmp)))
 
       #nskip = math.ceil(mcmcChain.shape[0]/min(neffstmp))
-      nskip = math.ceil(mcmcChain.shape[0]/np.mean(neffstmp))
+      nskip = int(math.ceil(mcmcChain.shape[0]/np.mean(neffstmp)))
 
       # output every nskip (independent) value
       mcmc.append(mcmcChain[::nskip,:])
@@ -2295,44 +2375,102 @@ def read_pulsar_mcmc_file(cf):
   return cfdata
 
 
-# Function to convert nested sample files output from pulsar_parameter_estimation_nested, and already
-# parsed through lalapps_nest2pos into a posterior object. The log(evidence ratio) (signal versus Gaussian
-# noise) is also returned.
-#
-# The inputs are a list of nested sample files and the number of live points used to produce them.
-#
-# Any non-varying parameters in the files are removed from the posterior object. iota is converted
-# back into cos(iota), and if only C22 is varying then it is converted back into h0, and phi22
-# is converted back into phi0.
-def pulsar_nest_to_posterior(nestfile):
+def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
+  """
+  This function will import a posterior sample file created by `lalapps_nest2pos` (or a nested
+  sample file). It will be returned as a Posterior class object from `bayespputils`. The
+  signal evidence and noise evidence are also returned.
+
+  Parameters
+  ----------
+  postfile : str, required
+      The file name of the posterior or nested sample file. In general this should be a HDF5 file with the extension
+      '.hdf' or '.h5', although older format ascii files are still supported at the moment.
+  nestedsamples : bool, default: False
+      If the file being input contains nested samples, rather than posterior samples, then this flag must be set to
+      True
+  removeuntrig : bool, default: True
+      If this is True then any parameters that are sines or cosines of a value will have the value removed if present
+      e.g. if cosiota and iota exist then iota will be removed.
+  """
+
   from pylal import bayespputils as bppu
+  from pylal.bayespputils import replace_column
+
+  fe = os.path.splitext(postfile)[-1].lower() # file extension
 
   # combine multiple nested sample files for an IFO into a single posterior (copied from lalapps_nest2pos)
-  peparser = bppu.PEOutputParser('common')
+  if fe == '.h5' or fe == '.hdf': # HDF5 file
+    if nestedsamples:
+      # use functions from lalapps_nest2pos to read values from nested sample files i.e. not a posterior file created by lalapps_nest2pos
+      try:
+        from lalinference.io import read_samples
+        import lalinference
 
-  if '.gz' in nestfile:
+        samples = read_samples(postfile, tablename=lalinference.LALInferenceHDF5NestedSamplesDatasetName)
+        params = samples.colnames
+
+        # make everything a float, since that's what's excected of a CommonResultsObj
+        for param in params:
+          replace_column(samples, param, samples[param].astype(float))
+
+        nsResultsObject = (samples.colnames, samples.as_array().view(float).reshape(-1, len(params)))
+      except:
+        raise IOError, "Could not import nested samples"
+    else: # assume posterior file has been created with lalapps_nest2pos
+      peparser = bppu.PEOutputParser('hdf5')
+      nsResultsObject = peparser.parse(postfile)
+  elif fe == '.gz': # gzipped file
     import gzip
-    nsResultsObject = peparser.parse(gzip.open(nestfile, 'r'))
-  else:
-    nsResultsObject = peparser.parse(open(nestfile, 'r'))
+    peparser = bppu.PEOutputParser('common')
+    nsResultsObject = peparser.parse(gzip.open(postfile, 'r'))
+  else: # assume an ascii text file
+    peparser = bppu.PEOutputParser('common')
+    nsResultsObject = peparser.parse(open(postfile, 'r'))
 
   pos = bppu.Posterior( nsResultsObject, SimInspiralTableEntry=None, votfile=None )
 
-  # convert iota back to cos(iota)
-  # create 1D posterior class of cos(iota) values
-  cipos = None
-  cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(pos['iota'].samples))
-
-  # add it back to posterior and remove iota samples
-  pos.append(cipos)
-  pos.pop('iota')
-
-  # remove any unchanging variables
+  # remove any unchanging variables and randomly shuffle the rest
   pnames = pos.names
+  nsamps = len(pos[pnames[0]].samples)
+  permarr = np.arange(nsamps)
+  np.random.shuffle(permarr)
   for pname in pnames:
     # check first and last samples are the same
     if pos[pname].samples[0] - pos[pname].samples[-1] == 0.:
       pos.pop(pname)
+    else:
+      # shuffle
+      shufpos = None
+      shufpos = bppu.PosteriorOneDPDF(pname, pos[pname].samples[permarr])
+      pos.pop(pname)
+      pos.append(shufpos)
+
+  # check whether iota has been used
+  try:
+    posIota = pos['iota'].samples
+  except:
+    posIota = None
+
+  if posIota is not None:
+    cipos = None
+    cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(posIota))
+    pos.append(cipos)
+    if removeuntrig:
+      pos.pop('iota')
+
+  # check whether sin(i) binary parameter has been used
+  try:
+    posI = pos['i'].samples
+  except:
+    posI = None
+
+  if posI is not None:
+    sinipos = None
+    sinipos = bppu.PosteriorOneDPDF('sini', np.sin(posI))
+    pos.append(sinipos)
+    if removeuntrig:
+      pos.pop('i')
 
   # convert C22 back into h0, and phi22 back into phi0 if required
   try:
@@ -2351,24 +2489,35 @@ def pulsar_nest_to_posterior(nestfile):
     posphi22 = None
 
   # convert C22 back into h0, and phi22 back into phi0 if required
-  if posC22 != None and posC22 == None:
+  if posC22 is not None and posC21 is None:
     h0pos = None
     h0pos = bppu.PosteriorOneDPDF('h0', 2.*pos['c22'].samples)
 
     pos.append(h0pos)
     pos.pop('c22')
 
-    if posphi22 != None:
+    if posphi22 is not None:
       phi0pos = None
       phi0pos = bppu.PosteriorOneDPDF('phi0', np.fmod(pos['phi22'].samples + math.pi, 2.*math.pi))
 
       pos.append(phi0pos)
       pos.pop('phi22')
 
-  # get evidence (as in lalapps_nest2pos) (assume evidence in files suffixed '_B.txt')
-  B = np.loadtxt(nestfile.replace('.gz', '')+'_B.txt')
+  # get evidence (as in lalapps_nest2pos)
+  if fe == '.h5' or fe == '.hdf':
+    # read evidence from HDF5 file
+    hdf = h5py.File(postfile, 'r')
+    a = hdf['lalinference']['lalinference_nest']
+    sigev = a.attrs['log_evidence']
+    noiseev = a.attrs['log_noise_evidence']
+    hdf.close()
+  else:
+    B = np.loadtxt(postfile.replace('.gz', '')+'_B.txt')
+    sigev = B[1]
+    noiseev = B[2]
 
-  return pos, B[0]
+  # return posterior samples, signal evidence (B[1]) and noise evidence (B[2])
+  return pos, sigev, noiseev
 
 
 # function to add two exponentiated log values and return the log of the result
@@ -2389,8 +2538,6 @@ def logtrapz(lnf, dx):
   -------
   The natural logarithm of the area under the function.
   """
-
-  from scipy.misc import logsumexp
 
   return np.log(dx/2.) + logsumexp([logsumexp(lnf[:-1]), logsumexp(lnf[1:])])
 
@@ -2473,9 +2620,121 @@ def get_chunk_lengths( ts, chunkMax ):
   return chunkLengths
 
 
+def pulsar_estimate_snr(source, det, tstart, duration, Sn, dt=1800):
+  """
+  A function to estimate the signal-to-noise ratio of a pulsar signal (for a triaxial neutron
+  star emitting at twice the rotation frequency from the l=m=2 quadrupole mode) in a given
+  detector over a given time range, for a given one-sided power spectral density.
+
+  Inputs
+  ------
+      source - a dictionary containing 'h0', 'cosiota', 'psi', 'ra' (rads or string), 'dec' (rads or string)
+         det - the detector, e.g. 'H1'
+      tstart - a GPS start time
+    duration - a signal duration (seconds)
+          Sn - a one-sided power spectral density
+          dt - timestep for antenna response calculation [default: 1800s]
+
+  Returns
+  -------
+  rho        - an estimate of the optimal matched filter SNR
+  """
+
+  # if duration is greater than a sidereal day then just calculate the antenna pattern for 1 sidereal day plus the remainder
+  sidday = 86164.0905 # one sidereal day in seconds
+  Ndays = duration/sidday
+  Nsamps = np.floor(sidday/dt) # number of time samples in 1 sidereal day
+  tend = tstart + duration
+
+  sFp = 0
+  sFc = 0
+
+  # get antenna pattern and sum over the square of it
+  if Ndays > 1:
+    tts = np.arange(tstart, tstart+sidday, dt)
+
+    # get antenna pattern over one sidereal day
+    Fp, Fc = antenna_response(tts, source['ra'], source['dec'], source['psi'], det )
+
+    sFp = np.floor(Ndays)*np.sum(Fp**2)
+    sFc = np.floor(Ndays)*np.sum(Fc**2)
+
+  # add on extra fractional part of a day
+  if np.floor(Ndays)*sidday > dt:
+    tts = np.arange(tstart+sidday*np.floor(Ndays), tend, dt)
+
+    Fp, Fc = antenna_response(tts, source['ra'], source['dec'], source['psi'], det)
+
+    sFp += np.sum(Fp**2)
+    sFc += np.sum(Fc**2)
+
+  # get snr squared
+  snr2 = (source['h0']**2/Sn)*dt*(sFp*(0.5*(1+source['cosiota']**2))**2 + sFc*source['cosiota']**2)
+
+  return np.sqrt(snr2)
+
+
+def pulsar_estimate_h0_from_snr(snr, source, det, tstart, duration, Sn, dt=600):
+  """
+  A function to estimate the signal amplitude of a pulsar signal (for a triaxial neutron star emitting at twice
+  the rotation frequency from the l=m=2 quadrupole mode) for a given SNR in a particular detector over
+  a given time range, for a given one-sided power spectral density.
+
+  Inputs
+  ------
+         snr - the optimal matched filter signal-to-noise ratio
+      source - a dictionary containing 'cosiota', 'psi', 'ra' (rads or string), 'dec' (rads or string)
+         det - the detector, e.g. 'H1'
+      tstart - a GPS start time for the signal
+    duration - a signal duration (seconds)
+          Sn - a one-sided power spectral density
+          dt - timestep for antenna response calculation [default: 600s]
+
+  Returns
+  -------
+  h0         - an estimate of signal amplitude required to give the input SNR
+  """
+
+  # if duration is greater than a sidereal day then just calculate the antenna pattern for 1 sidereal day plus the remainder
+  sidday = 86164.0905 # one sidereal day in seconds
+  Ndays = duration/sidday
+  Nsamps = np.floor(sidday/dt) # number of time samples in 1 sidereal day
+  tend = tstart + duration
+
+  sFp = 0
+  sFc = 0
+
+  # get antenna pattern and sum over the square of it
+  if Ndays > 1:
+    tts = np.arange(tstart, tstart+sidday, dt)
+
+    # get antenna pattern over one sidereal day
+    Fp, Fc = antenna_response(tts, source['ra'], source['dec'], source['psi'], det )
+
+    sFp = np.floor(Ndays)*np.sum(Fp**2)
+    sFc = np.floor(Ndays)*np.sum(Fc**2)
+
+  # add on extra fractional part of a day
+  if np.floor(Ndays)*sidday > dt:
+    tts = np.arange(tstart+sidday*np.floor(Ndays), tend, dt)
+
+    Fp, Fc = antenna_response(tts, source['ra'], source['dec'], source['psi'], det)
+
+    sFp += np.sum(Fp**2)
+    sFc += np.sum(Fc**2)
+
+  # get h0 squared
+  h02 = (snr**2*Sn)/(dt*(sFp*(0.5*(1+source['cosiota']**2))**2 + sFc*source['cosiota']**2))
+
+  return np.sqrt(h02)
+
+
 def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, datachunks=30, chunkmin=5,
                           ngrid=50):
   """
+  A function to calculate the 4-parameter posterior probability density for a continuous wave signal
+  given a set of processed data from a set of detectors.
+
   Inputs
   ------
          dets - a list of strings containing the detectors being used in the likelihood calculation

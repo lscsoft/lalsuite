@@ -208,7 +208,7 @@ int main(int argc, char *argv[]){
   UINT2  maxNBins, maxNBorders;
 
   /* user input variables */
-  BOOLEAN  uvar_help, uvar_weighAM, uvar_weighNoise;
+  BOOLEAN  uvar_weighAM, uvar_weighNoise;
   INT4     uvar_blocksRngMed, uvar_nfSizeCylinder, uvar_maxBinsClean;
   REAL8    uvar_f0, uvar_peakThreshold, uvar_houghFalseAlarm, uvar_fSearchBand;
   CHAR     *uvar_earthEphemeris=NULL;
@@ -234,7 +234,6 @@ int main(int argc, char *argv[]){
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
   
-  uvar_help = FALSE;
   uvar_weighAM = FALSE;
   uvar_weighNoise = FALSE;
   uvar_blocksRngMed = BLOCKSRNGMED;
@@ -268,7 +267,6 @@ int main(int argc, char *argv[]){
   strcpy(uvar_skyfile,SKYFILE);
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",             'h', UVAR_HELP,     "Print this message",                  &uvar_help),            &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo",              'i', UVAR_OPTIONAL, "Detector L1, H1, H2, G1",             &uvar_ifo ),            &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f0",               'f', UVAR_OPTIONAL, "Start search frequency",              &uvar_f0),              &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",      'b', UVAR_OPTIONAL, "Search frequency band",               &uvar_fSearchBand),     &status);
@@ -295,11 +293,10 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALRegisterINTUserVar(    &status, "maxBinsClean",      0, UVAR_DEVELOPER, "Maximum number of bins in cleaning",  &uvar_maxBinsClean),    &status);
 
   /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0); 
+  BOOLEAN should_exit = 0;
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
 
   /* very basic consistency checks on user input */
   if ( uvar_f0 < 0 ) {

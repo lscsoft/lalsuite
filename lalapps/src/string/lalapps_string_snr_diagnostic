@@ -33,11 +33,7 @@ except AttributeError:
 	# python < 2.6
 	from numpy import isinf
 from optparse import OptionParser
-try:
-	import sqlite3
-except ImportError:
-	# pre 2.5.x
-	from pysqlite2 import dbapi2 as sqlite3
+import sqlite3
 import sys
 
 

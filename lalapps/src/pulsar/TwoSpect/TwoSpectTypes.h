@@ -62,6 +62,8 @@ typedef struct {
    INT4 periodHarmToCheck;
    INT4 periodFracToCheck;
    BOOLEAN templateSearch;
+   BOOLEAN templateSearchFixedDf;
+   LALStringVector *templateSearchDf;
    REAL8 templateSearchP;
    REAL8 templateSearchAsini;
    REAL8 templateSearchAsiniSigma;

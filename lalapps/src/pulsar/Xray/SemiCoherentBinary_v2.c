@@ -1,4 +1,6 @@
-/*  Copyright (C) 2010 Chris Messenger
+/*
+ *  Copyright (C) 2016 Karl Wette
+ *  Copyright (C) 2010 Chris Messenger
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,7 +38,7 @@
 
 /***********************************************************************************************/
 /* includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include "config.h"
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -59,6 +61,7 @@
 #include <lal/ComplexFFT.h>
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
+#include <lal/VectorMath.h>
 #include <lalapps.h>
 
 #include "SemiCoherent.h"
@@ -69,7 +72,6 @@
 /** A structure that stores user input variables
  */
 typedef struct {
-  BOOLEAN help;		            /**< trigger output of help string */
   CHAR *sftbasename;                /**< basename of input SFT files */
   CHAR *outputdir;                  /**< the output directory */
   REAL8 freq;                       /**< the starting frequency */
@@ -87,14 +89,15 @@ typedef struct {
   REAL8 coverage;                   /**< random template bank coverage */
   INT4 blocksize;                  /**< the running median blocksize */
   INT4 ntoplist;                   /**< the number of results to record */
-  INT4 tsft;			   /**< the length of the input sfts */
+  INT4 tsft;                       /**< the length of the input sfts */
   CHAR *comment;
   CHAR *tempdir;                    /**< a temporary directory for keeping the results */
-  BOOLEAN version;	            /**< output version-info */
+  BOOLEAN with_xbins;               /**< enable fast summing of extra bins */
+  BOOLEAN version;                  /**< output version-info */
 } UserInput_t;
 
 typedef struct {
-  REAL8 *data;
+  REAL4 *data;
   INT4 idx;
   INT4 n;
   REAL8 **params;
@@ -102,16 +105,16 @@ typedef struct {
 
 /***********************************************************************************************/
 /* global variables */
-extern int vrbflg;	 	/**< defined in lalapps.c */
+extern int vrbflg;              /**< defined in lalapps.c */
 
 /***********************************************************************************************/
 /* define functions */
 int main(int argc,char *argv[]);
 int XLALReadUserVars(int argc,char *argv[],UserInput_t *uvar, CHAR **clargs);
-int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist);
+int XLALComputeSemiCoherentStat(FILE *fp,REAL4DemodulatedPowerVector *power,ParameterSpace *pspace,GridParametersVector *fgrid,GridParameters *bingrid,INT4 ntoplist,BOOLEAN with_xbins);
 int XLALDefineBinaryParameterSpace(REAL8Space **, LIGOTimeGPS, REAL8, UserInput_t *);
 int XLALOpenSemiCoherentResultsFile(FILE **,CHAR *,ParameterSpace *,CHAR *,UserInput_t *);
-int XLALtoplist(REAL8 x,Template *params,toplist *TL);
+int XLALtoplist(REAL4 x,Template *params,toplist *TL);
 
 /***********************************************************************************************/
 /* empty initializers */
@@ -140,7 +143,7 @@ int main( int argc, char *argv[] )  {
   FILE *sfp = NULL;
   /* FILE *cfp = NULL; */
 
-  vrbflg = 0;	                        /* verbose error-messages */
+  vrbflg = 0;                           /* verbose error-messages */
 
   /* turn off default GSL error handler */
   gsl_set_error_handler_off();
@@ -152,14 +155,34 @@ int main( int argc, char *argv[] )  {
   }
   LogPrintf(LOG_DEBUG,"%s : read in uservars\n",__func__);
 
+  /* initialise sin-cosine lookup table */
+  XLALSinCosLUTInit();
+
   /* initialise the random number generator */
   if (XLALInitgslrand(&r,uvar.seed)) {
     LogPrintf(LOG_CRITICAL,"%s: XLALinitgslrand() failed with error = %d\n",__func__,xlalErrno);
     XLAL_ERROR(XLAL_EFAULT);
   }
 
+  /* make output directory */
+  {
+    struct stat st;
+    if (stat(uvar.outputdir, &st)) {
+      if (mkdir(uvar.outputdir,0755) != 0 && errno != EEXIST) {
+        LogPrintf(LOG_DEBUG,"%s : Unable to make output directory %s.  Might be a problem.\n",__func__,uvar.outputdir);
+      }
+    }
+  }
+
   /* make temporary directory */
   if (uvar.tempdir) {
+
+    struct stat st;
+    if (stat(uvar.tempdir, &st)) {
+      if (mkdir(uvar.tempdir,0755) != 0 && errno != EEXIST) {
+        LogPrintf(LOG_DEBUG,"%s : Unable to make temporary directory %s.  Might be a problem.\n",__func__,uvar.tempdir);
+      }
+    }
 
     /* initialise the random number generator  - use the clock */
     gsl_rng * q;
@@ -171,14 +194,19 @@ int main( int argc, char *argv[] )  {
     CHAR newtemp[LONGSTRINGLENGTH];
     INT4 id = (INT4)(1e9*gsl_rng_uniform(q));
     sprintf(newtemp,"%s/%09d",uvar.tempdir,id);
-    if (mkdir(newtemp,0755)) {
+    if (mkdir(newtemp,0755) != 0 && errno != EEXIST) {
       LogPrintf(LOG_DEBUG,"%s : Unable to make temporary directory %s.  Might be a problem.\n",__func__,newtemp);
     }
     sprintf(newnewtemp,"%s/%.3f-%.3f",newtemp,uvar.freq,uvar.freq+uvar.freqband);
-    if (mkdir(newnewtemp,0755)) {
-      LogPrintf(LOG_CRITICAL,"%s : Unable to make temporary directory %s\n",__func__,newnewtemp);
-      return 1;
-    }
+
+  } else {
+    sprintf(newnewtemp,"%s/%.3f-%.3f",uvar.outputdir,uvar.freq,uvar.freq+uvar.freqband);
+  }
+
+  /* make frequency+band directory inside output/temporary directory */
+  if (mkdir(newnewtemp,0755) != 0 && errno != EEXIST) {
+    LogPrintf(LOG_CRITICAL,"%s : Unable to make frequency+band directory %s\n",__func__,newnewtemp);
+    return 1;
   }
 
   /* initialise the random number generator */
@@ -339,7 +367,7 @@ int main( int argc, char *argv[] )  {
   /**********************************************************************************/
 
   /* compute the semi-coherent detection statistic on the fine grid */
-  if (XLALComputeSemiCoherentStat(sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist)) {
+  if (XLALComputeSemiCoherentStat(sfp,dmpower,&pspace,freqgridparams,bingridparams,uvar.ntoplist,uvar.with_xbins)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALComputeSemiCoherentStat() failed with error = %d\n",__func__,xlalErrno);
     return 1;
   }
@@ -413,10 +441,10 @@ int main( int argc, char *argv[] )  {
  *
  */
 int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */
-		     char *argv[],        /**< [in] the command line arguments */
-		     UserInput_t *uvar,   /**< [out] the user input structure */
-		     CHAR **clargs        /**< [out] the command line args string */
-		     )
+                     char *argv[],        /**< [in] the command line arguments */
+                     UserInput_t *uvar,   /**< [out] the user input structure */
+                     CHAR **clargs        /**< [out] the command line args string */
+                     )
 {
   CHAR *version_string;
   INT4 i;
@@ -433,6 +461,7 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->tsft = 256;
   uvar->seed = 1;
   uvar->tempdir = NULL;
+  uvar->with_xbins = 1;
 
   /* initialise all parameter space ranges to zero */
   uvar->freqband = 0;
@@ -444,37 +473,36 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->deltaorbphase = 2.0*LAL_PI;
 
   /* ---------- register all user-variables ---------- */
-  XLALRegisterUvarMember(help, 		        BOOLEAN, 'h', HELP,     "Print this message");
-  XLALRegisterUvarMember(sftbasename, 	        STRING, 'i', REQUIRED, "The basename of the input SFT files");
-  XLALRegisterUvarMember(outputdir, 	        STRING, 'o', REQUIRED, "The output directory name");
-  XLALRegisterUvarMember(comment, 	        STRING, 'C', REQUIRED, "An analysis descriptor string");
+  XLALRegisterUvarMember(sftbasename,           STRING, 'i', REQUIRED, "The basename of the input SFT files");
+  XLALRegisterUvarMember(outputdir,             STRING, 'o', REQUIRED, "The output directory name");
+  XLALRegisterUvarMember(comment,               STRING, 'C', REQUIRED, "An analysis descriptor string");
   XLALRegisterUvarMember(tempdir,              STRING, 'z', OPTIONAL, "A temporary directory");
   XLALRegisterUvarMember(freq,                   REAL8, 'f', REQUIRED, "The starting frequency (Hz)");
-  XLALRegisterUvarMember(freqband,   	        REAL8, 'b', OPTIONAL, "The frequency band (Hz)");
+  XLALRegisterUvarMember(freqband,              REAL8, 'b', OPTIONAL, "The frequency band (Hz)");
   XLALRegisterUvarMember(minorbperiod,           REAL8, 'p', REQUIRED, "The minimum orbital period value (sec)");
-  XLALRegisterUvarMember(maxorbperiod,   	REAL8, 'P', OPTIONAL, "The maximum orbital period value (sec)");
+  XLALRegisterUvarMember(maxorbperiod,          REAL8, 'P', OPTIONAL, "The maximum orbital period value (sec)");
   XLALRegisterUvarMember(minasini,               REAL8, 'a', REQUIRED, "The minimum orbital semi-major axis (sec)");
-  XLALRegisterUvarMember(maxasini,       	REAL8, 'A', OPTIONAL, "The maximum orbital semi-major axis (sec)");
+  XLALRegisterUvarMember(maxasini,              REAL8, 'A', OPTIONAL, "The maximum orbital semi-major axis (sec)");
   XLALRegisterUvarMember(tasc,                   REAL8, 't', REQUIRED, "The best guess orbital time of ascension (rads)");
-  XLALRegisterUvarMember(deltaorbphase,      	REAL8, 'T', OPTIONAL, "The orbital phase uncertainty (cycles)");
-  XLALRegisterUvarMember(mismatch,        	REAL8, 'm', OPTIONAL, "The grid mismatch (0->1)");
-  XLALRegisterUvarMember(coverage,        	REAL8, 'c', OPTIONAL, "The random template coverage (0->1)");
-  XLALRegisterUvarMember(blocksize,        	INT4, 'r', OPTIONAL, "The running median block size");
+  XLALRegisterUvarMember(deltaorbphase,         REAL8, 'T', OPTIONAL, "The orbital phase uncertainty (cycles)");
+  XLALRegisterUvarMember(mismatch,              REAL8, 'm', OPTIONAL, "The grid mismatch (0->1)");
+  XLALRegisterUvarMember(coverage,              REAL8, 'c', OPTIONAL, "The random template coverage (0->1)");
+  XLALRegisterUvarMember(blocksize,             INT4, 'r', OPTIONAL, "The running median block size");
   XLALRegisterUvarMember(tsft,                    INT4, 'S', OPTIONAL, "The length of the input SFTs in seconds");
   XLALRegisterUvarMember(ntoplist,                INT4, 'x', OPTIONAL, "output the top N results");
   XLALRegisterUvarMember(seed,                    INT4, 'X', OPTIONAL, "The random number seed (0 = clock)");
   XLALRegisterUvarMember(gpsstart,                INT4, 's', OPTIONAL, "The minimum start time (GPS sec)");
-  XLALRegisterUvarMember(gpsend,          	INT4, 'e', OPTIONAL, "The maximum end time (GPS sec)");
+  XLALRegisterUvarMember(gpsend,                INT4, 'e', OPTIONAL, "The maximum end time (GPS sec)");
+  XLALRegisterUvarMember(with_xbins,             BOOLEAN, 0, DEVELOPER,  "Enable fast summing of extra bins");
   XLALRegisterUvarMember(version,                BOOLEAN, 'V', SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
-  if (XLALUserVarReadAllInput(argc, argv)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",__func__,xlalErrno);
-    XLAL_ERROR(XLAL_EINVAL);
+  BOOLEAN should_exit = 0;
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",__func__,xlalErrno);
+    return XLAL_EFAULT;
   }
-
-  /* if help was requested, we're done here */
-  if (uvar->help) exit(0);
+  if (should_exit) exit(1);
 
   if ((version_string = XLALGetVersionString(0)) == NULL) {
     XLALPrintError("XLALGetVersionString(0) failed.\n");
@@ -511,21 +539,23 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
  *
  */
 int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [in] the output file pointer */
-				REAL4DemodulatedPowerVector *power,      /**< [in] the input data in the form of power */
-				ParameterSpace *pspace,                  /**< [in] the parameter space */
-				GridParametersVector *fgrid,		/**< UNDOCUMENTED */
-				GridParameters *bingrid,                 /**< [in] the grid parameters */
-				INT4 ntoplist		/**< UNDOCUMENTED */
-				)
+                                REAL4DemodulatedPowerVector *power,      /**< [in] the input data in the form of power */
+                                ParameterSpace *pspace,                  /**< [in] the parameter space */
+                                GridParametersVector *fgrid,		/**< UNDOCUMENTED */
+                                GridParameters *bingrid,                 /**< [in] the grid parameters */
+                                INT4 ntoplist,		/**< UNDOCUMENTED */
+                                BOOLEAN with_xbins                       /**< enable fast summing of extra bins */
+                                )
 {
 
-  toplist TL;					      /* the results toplist */
+  toplist TL;                                         /* the results toplist */
   Template *bintemp = NULL;                           /* the binary parameter space template */
-  Template fdots;                                     /* the freq derivitive template for each segment */
+  Template *fdots = NULL;                             /* the freq derivitive template for each segment */
   UINT4 i,j;                                          /* counters */
   UINT4 percent = 0;                                  /* counter for status update */
   REAL8 mean = 0.0;
   REAL8 var = 0.0;
+  UINT4 Ntemp = 0;
 
   /* validate input parameters */
  /*  if ((*SemiCo) != NULL) { */
@@ -549,9 +579,27 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     XLAL_ERROR(XLAL_EINVAL);
   }
 
+  /* check for same frequency spacing */
+  const REAL8 dfreq = fgrid->segment[0]->grid[0].delta;
+  for (i=0;i<power->length;i++) {
+    if ( dfreq != fgrid->segment[i]->grid[0].delta ) {
+      LogPrintf(LOG_CRITICAL,"%s : inconsistent number of frequency bins %.10g != %.10g\n",__func__,fgrid->segment[i]->grid[0].delta,dfreq);
+      XLAL_ERROR(XLAL_EINVAL);
+    }
+  }
+
+  /* check that coherent grids step by 1 in frequency */
+  for (i=0;i<power->length;i++) {
+    GridParameters *fdotgrid = fgrid->segment[i];
+    if ( fdotgrid->prod[0] != 1 ) {
+      LogPrintf(LOG_CRITICAL,"%s : coherent grid step does not equal 1\n",__func__);
+      XLAL_ERROR(XLAL_EINVAL);
+    }
+  }
+
   /* allocate memory for the results toplist */
   TL.n = ntoplist;
-  if ((TL.data = (REAL8 *)XLALCalloc(TL.n,sizeof(REAL8))) == NULL) {
+  if ((TL.data = (REAL4 *)XLALCalloc(TL.n,sizeof(REAL4))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     XLAL_ERROR(XLAL_ENOMEM);
   }
@@ -569,11 +617,21 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   TL.idx = 0;
 
   /* allocate memory for the fdots */
-  if ((fdots.x = XLALCalloc(fgrid->segment[0]->ndim,sizeof(REAL8))) == NULL) {
+  if ((fdots = XLALCalloc(power->length, sizeof(*fdots))) == NULL) {
     LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
     XLAL_ERROR(XLAL_ENOMEM);
   }
-  fdots.ndim = fgrid->segment[0]->ndim;
+  for (i=0;i<power->length;i++) {
+    if ((fdots[i].x = XLALCalloc(fgrid->segment[0]->ndim,sizeof(REAL8))) == NULL) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
+    }
+    if ((fdots[i].idx = XLALCalloc(fgrid->segment[0]->ndim,sizeof(INT4))) == NULL) {
+      LogPrintf(LOG_CRITICAL,"%s : XLALCalloc() failed with error = %d\n",__func__,xlalErrno);
+      XLAL_ERROR(XLAL_ENOMEM);
+    }
+    fdots[i].ndim = fgrid->segment[0]->ndim;
+  }
 
   /* define the chi-squared threshold */
   /* REAL8 thr = gsl_cdf_chisq_Qinv(frac,2*power->length);
@@ -589,40 +647,96 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   }
   else getnext = &XLALGetNextTemplate;
 
+  INT4 max_tot_xbins = 0;
+
+  REAL4 *logLratiosumvec = NULL;
+
   /* single loop over binary templates */
   while (getnext(&bintemp,bingrid,temppspace,r)) {
 
-    REAL8 logLratiosum = 0.0;                       /* initialise likelihood ratio */
+    const REAL8 asini = bintemp->x[1];           /* define asini */
+    const REAL8 omega = bintemp->x[3];           /* define omega */
+
+    /* maximum extra bins to sum in frequency at this template,
+       while keeping correct derivative bins (minus 10% for safety) */
+    const INT4 xbins = !with_xbins ? 0 :
+      (INT4) floor( 0.45 * dfreq / ( asini * omega ) );
+
+    INT4 left_xbins = xbins, right_xbins = xbins;
+
+    /** loop over segments **********************************************************************************/
+    for (i=0;i<power->length;i++) {
+
+      REAL8 tmid = XLALGPSGetREAL8(&(power->segment[i]->epoch)) + 0.5*pspace->tseg;
+      GridParameters *fdotgrid = fgrid->segment[i];
+      /* REAL8 norm = (REAL8)background->data[i]; */
+
+      /* compute instantaneous frequency derivitives corresponding to the current template for this segment */
+      XLALComputeBinaryFreqDerivitives(&fdots[i],bintemp,tmid);
+
+      /* find ndim-D indices corresponding to the spin derivitive values for the segment power */
+      for (j=0;j<fdots[i].ndim;j++) {
+        fdots[i].idx[j] = lround( (fdots[i].x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta );
+      }
+
+      /* ensure number of extra frequency bins do not go out of range of coherent grids */
+      left_xbins = GSL_MIN( left_xbins, (INT4)( fdots[i].idx[0] ) );
+      right_xbins = GSL_MIN( right_xbins, (INT4)( fdotgrid->grid[0].length - fdots[i].idx[0] - 1 ) );
+
+    } /* end loop over segments */
+    /*************************************************************************************/
+
+    const INT4 tot_xbins = 1 + left_xbins + right_xbins;
+    if ( max_tot_xbins < tot_xbins ) {
+      max_tot_xbins = tot_xbins;
+
+      /* reallocate logLratiosumvec */
+      logLratiosumvec = XLALRealloc( logLratiosumvec, max_tot_xbins * sizeof( *logLratiosumvec ) );
+      XLAL_CHECK( logLratiosumvec != NULL, XLAL_ENOMEM );
+
+    }
 
     /** loop over segments **********************************************************************************/
     for (i=0;i<power->length;i++) {
 
       REAL4DemodulatedPower *currentpower = power->segment[i];
       GridParameters *fdotgrid = fgrid->segment[i];
-      REAL8 tmid = XLALGPSGetREAL8(&(power->segment[i]->epoch)) + 0.5*pspace->tseg;
-      /* REAL8 norm = (REAL8)background->data[i]; */
-      INT4 idx = 0;
 
-      /* compute instantaneous frequency derivitives corresponding to the current template for this segment */
-      XLALComputeBinaryFreqDerivitives(&fdots,bintemp,tmid);
-
-      /* find indices corresponding to the spin derivitive values for the segment power */
-      for (j=0;j<fdots.ndim;j++) {
-	UINT4 tempidx = 0.5 + (fdots.x[j] - fdotgrid->grid[j].min)*fdotgrid->grid[j].oneoverdelta;
-	idx += tempidx*fdotgrid->prod[j];
+      /* find starting 1-D index corresponding to the spin derivitive values for the segment power */
+      INT4 idx0 = fdots[i].idx[0] - left_xbins;
+      for (j=1;j<fdots[i].ndim;j++) {
+        idx0 += fdots[i].idx[j] * fdotgrid->prod[j];
       }
 
       /* define the power at this location in this segment */
-      logLratiosum += currentpower->data->data[idx]; /* /norm; */
+      if (i==0) {
+        memcpy( logLratiosumvec, &currentpower->data->data[idx0], tot_xbins * sizeof( *logLratiosumvec ) );
+      } else {
+        XLAL_CHECK( XLALVectorAddREAL4( logLratiosumvec, logLratiosumvec, &currentpower->data->data[idx0], tot_xbins ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
 
     } /* end loop over segments */
     /*************************************************************************************/
 
-    /* output semi-coherent statistic for this template if it exceeds the threshold*/
-    logLratiosum *= 2.0;     /* make it a true chi-squared variable */
-    mean += logLratiosum;
-    var += logLratiosum*logLratiosum;
-    XLALtoplist(logLratiosum,bintemp,&TL);
+    /* make it a true chi-squared variable */
+    XLAL_CHECK( XLALVectorScaleREAL4( logLratiosumvec, 2.0, logLratiosumvec, tot_xbins ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    /* save central binary template frequency */
+    const REAL8 nu0 = bintemp->x[0];
+
+    for (INT4 x = -left_xbins; x <= right_xbins; ++x) {
+
+      /* set binary template frequency */
+      bintemp->x[0] = nu0 + dfreq*x;
+
+      /* output semi-coherent statistic for this template if it exceeds the threshold*/
+      const REAL4 logLratiosum = logLratiosumvec[x + left_xbins];
+      mean += logLratiosum;
+      var += logLratiosum*logLratiosum;
+      ++Ntemp;
+      XLALtoplist(logLratiosum,bintemp,&TL);
+
+    }
 
     /* if (logLratiosum>thr) {
       for (j=0;j<bingrid->ndim;j++) fprintf(fp,"%6.12f\t",bintemp->x[j]);
@@ -630,17 +744,21 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
     } */
 
     /* output status to screen */
-    if (floor(100.0*(REAL8)bintemp->currentidx/(REAL8)newmax) > (REAL8)percent) {
+    if ( (bintemp->currentidx == 0) || (floor(100.0*(REAL8)bintemp->currentidx/(REAL8)newmax) > (REAL8)percent) ) {
       percent = (UINT4)floor(100*(REAL8)bintemp->currentidx/(REAL8)newmax);
-      LogPrintf(LOG_DEBUG,"%s : completed %d%% (%d/%d)\n",__func__,percent,bintemp->currentidx,newmax);
+      LogPrintf(LOG_NORMAL,"%s : completed %d%% (%d/%d)\n",__func__,percent,bintemp->currentidx,newmax);
     }
 
+    /* we've computed this number of extra templates */
+    bintemp->currentidx += left_xbins + right_xbins;
+
   } /* end loop over templates */
+  LogPrintf( LOG_NORMAL, "%s : summed up to %d frequency bins at a time\n", __func__, max_tot_xbins );
   /*************************************************************************************/
 
   /* compute mean and variance of results */
-  mean = mean/(REAL8)newmax;
-  var = var/(REAL8)(newmax-1);
+  mean = mean/(REAL8)Ntemp;
+  var = var/(REAL8)(Ntemp-1);
   var = (var - mean*mean);
 
   /* modify toplist to have correct mean and variance */
@@ -653,20 +771,26 @@ int XLALComputeSemiCoherentStat(FILE *fp,                                /**< [i
   }
 
   /* free template memory */
-  XLALFree(fdots.x);
+  for (i=0;i<power->length;i++) {
+    XLALFree(fdots[i].x);
+    XLALFree(fdots[i].idx);
+  }
+  XLALFree(fdots);
   XLALFree(TL.data);
   for (i=0;i<(UINT4)TL.n;i++) XLALFree(TL.params[i]);
   XLALFree(TL.params);
+
+  XLALFree(logLratiosumvec);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
 
 }
 
-int XLALtoplist(REAL8 x,		/**< [in] the data to add to the toplist */
-		Template *params,       /**< [in] the parameters for this result */
-		toplist *TL	        /**< [in/out] the toplist */
-		)
+int XLALtoplist(REAL4 x,		/**< [in] the data to add to the toplist */
+                Template *params,       /**< [in] the parameters for this result */
+                toplist *TL             /**< [in/out] the toplist */
+                )
 {
 
   INT4 i;
@@ -690,7 +814,7 @@ int XLALtoplist(REAL8 x,		/**< [in] the data to add to the toplist */
   if (TL->idx<TL->n-1) TL->idx++;
 
   /* find current lowest */
-  REAL8 lowest = TL->data[TL->n-1];
+  REAL4 lowest = TL->data[TL->n-1];
   INT4 li = TL->n-1;
   for (i=0;i<TL->n;i++) {
     if (TL->data[i]<lowest) {
@@ -705,7 +829,7 @@ int XLALtoplist(REAL8 x,		/**< [in] the data to add to the toplist */
     TL->params[TL->n-1][i] = TL->params[li][i];
     TL->params[li][i] = oldparam;
   }
-  REAL8 old = TL->data[TL->n-1];
+  REAL4 old = TL->data[TL->n-1];
   TL->data[TL->n-1] = lowest;
   TL->data[li] = old;
 
@@ -720,11 +844,11 @@ int XLALtoplist(REAL8 x,		/**< [in] the data to add to the toplist */
  *
  */
 int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepointer to output file */
-				    CHAR *outputdir,            /**< [in] the output directory name */
-				    ParameterSpace *pspace,     /**< [in] the parameter space */
-				    CHAR *clargs,               /**< [in] the command line args */
-				    UserInput_t *uvar		/**< UNDOCUMENTED */
-				    )
+                                    CHAR *outputdir,            /**< [in] the output directory name */
+                                    ParameterSpace *pspace,     /**< [in] the parameter space */
+                                    CHAR *clargs,               /**< [in] the command line args */
+                                    UserInput_t *uvar		/**< UNDOCUMENTED */
+                                    )
 {
   CHAR outputfile[LONGSTRINGLENGTH];    /* the output filename */
   time_t curtime = time(NULL);          /* get the current time */
@@ -751,10 +875,10 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
     UINT4 max_freq_mhz = (UINT4)floor(0.5 + (pspace->space->data[0].max - (REAL8)max_freq_int)*1e3);
     UINT4 end = (UINT4)ceil(XLALGPSGetREAL8(&(pspace->epoch)) + pspace->span);
     /* if (coherent) snprintf(outputfile,LONGSTRINGLENGTH,"%s/CoherentResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
-			   outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
+                           outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
     else */
     snprintf(outputfile,LONGSTRINGLENGTH,"%s/SemiCoherentResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt",
-		  outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
+                  outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
   }
   LogPrintf(LOG_DEBUG,"%s : output %s\n",__func__,outputfile);
 
@@ -821,8 +945,8 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
 
 /*       /\* output SFT to text file *\/ */
 /*       if ((fp = fopen("/Users/chrismessenger/temp/sft.txt","w"))==NULL) { */
-/* 	LogPrintf(LOG_CRITICAL,"%s: Couldn't open file. Failed with error = %d\n",__func__,xlalErrno); */
-/* 	return XLAL_EINVAL; */
+/*      LogPrintf(LOG_CRITICAL,"%s: Couldn't open file. Failed with error = %d\n",__func__,xlalErrno); */
+/*      return XLAL_EINVAL; */
 /*       } */
 /*       for (j=0;j<sftvec->data[0].data->length;j++) fprintf(fp,"%.12f %.12f %.12f\n",sftvec->data[0].f0 + j*sftvec->data[0].deltaF,crealf(sftvec->data[0].data->data[j]),cimagf(sftvec->data[0].data->data[j])); */
 /*       fclose(fp); */
@@ -830,15 +954,15 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
 
 /*       /\* convert single SFT to complex timeseries *\/ */
 /*       if (XLALSFTToCOMPLEX8TimeSeries(&ts,&(sftvec->data[0]),&plan)) { */
-/* 	LogPrintf(LOG_CRITICAL,"%s : XLALSFTtoCOMPLEX8Timeseries() failed with error = %d\n",__func__,xlalErrno); */
-/* 	return 1; */
+/*      LogPrintf(LOG_CRITICAL,"%s : XLALSFTtoCOMPLEX8Timeseries() failed with error = %d\n",__func__,xlalErrno); */
+/*      return 1; */
 /*       } */
 /*       LogPrintf(LOG_DEBUG,"%s : converted SFT to complext timeseries\n",__func__); */
 
 /*       /\* output timeseries to file *\/  */
 /*       if ((fp = fopen("/Users/chrismessenger/temp/complexts.txt","w"))==NULL) { */
-/* 	LogPrintf(LOG_CRITICAL,"%s: Couldn't open file. Failed with error = %d\n",__func__,xlalErrno); */
-/* 	return XLAL_EINVAL; */
+/*      LogPrintf(LOG_CRITICAL,"%s: Couldn't open file. Failed with error = %d\n",__func__,xlalErrno); */
+/*      return XLAL_EINVAL; */
 /*       } */
 /*       for (j=0;j<ts->data->length;j++) fprintf(fp,"%.12f %.12f %.12f\n",j*ts->deltaT,crealf(ts->data->data[j]),cimagf(ts->data->data[j])); */
 /*       fclose(fp); */
@@ -846,15 +970,15 @@ int XLALOpenSemiCoherentResultsFile(FILE **fp,                  /**< [in] filepo
 
 /*       /\* compute over-resolved frequency series *\/ */
 /*       if (XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(&fs,ts,&(freqgridparams->segment[0]))) { */
-/* 	LogPrintf(LOG_CRITICAL,"%s : XLALSFTCOMPLEX8TimeseriesToCOMPLEX8FrequencySeries() failed with error = %d\n",__func__,xlalErrno); */
-/* 	return 1; */
+/*      LogPrintf(LOG_CRITICAL,"%s : XLALSFTCOMPLEX8TimeseriesToCOMPLEX8FrequencySeries() failed with error = %d\n",__func__,xlalErrno); */
+/*      return 1; */
 /*       } */
 /*       LogPrintf(LOG_DEBUG,"%s : converted complext timeseries back to frequency domain\n",__func__); */
 
 /*       /\* output timeseries to file *\/  */
 /*       if ((fp = fopen("/Users/chrismessenger/temp/complexfs.txt","w"))==NULL) { */
-/* 	LogPrintf(LOG_CRITICAL,"%s: Couldn't open file. Failed with error = %d\n",__func__,xlalErrno); */
-/* 	return XLAL_EINVAL; */
+/*      LogPrintf(LOG_CRITICAL,"%s: Couldn't open file. Failed with error = %d\n",__func__,xlalErrno); */
+/*      return XLAL_EINVAL; */
 /*       } */
 /*       for (j=0;j<fs->data->length;j++) fprintf(fp,"%.12f %.12f %.12f\n",fs->f0 + j*fs->deltaF,crealf(fs->data->data[j]),cimagf(fs->data->data[j])); */
 /*       fclose(fp); */

@@ -154,6 +154,7 @@ static int compareDetNameCatalogs ( const void *ptr1, const void *ptr2 );
 
 static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
 static int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
+REAL8 TSFTfromDFreq ( REAL8 dFreq );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -241,7 +242,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
       /* merged SFTs need to satisfy stronger consistency-constraints (-> see spec) */
       BOOLEAN mfirst_block = TRUE;
       UINT4   mprev_version = 0;
-      SFTtype mprev_header;
+      SFTtype XLAL_INIT_DECL( mprev_header );
       REAL8   mprev_nsamples = 0;
 
       FILE *fp;
@@ -1214,7 +1215,7 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
   rawheader.version        		= 2;
   rawheader.gps_sec        		= sft->epoch.gpsSeconds;
   rawheader.gps_nsec       		= sft->epoch.gpsNanoSeconds;
-  rawheader.tbase          		= 1.0 / sft->deltaF;
+  rawheader.tbase          		= TSFTfromDFreq ( sft->deltaF );
   rawheader.first_frequency_index 	= lround ( sft->f0 / sft->deltaF );
   rawheader.nsamples       		= sft->data->length;
   rawheader.crc64          		= 0;	/* set to 0 for crc-calculation */
@@ -1491,46 +1492,39 @@ XLALshowSFTLocator ( const struct tagSFTLocator *locator )
 } /* XLALshowSFTLocator() */
 
 
-INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog)
+/**
+ * Return a sorted string vector listing the unique IFOs in the given catalog.
+ */
+LALStringVector *XLALListIFOsInCatalog( const SFTCatalog *catalog )
 {
-
-  UINT4 k, j, numifo=0, length;
-  CHAR  *name=NULL;
-  CHAR  **ifolist=NULL; /* list of ifo names */
-
-  length = catalog->length;
-
-  name = (CHAR *)LALCalloc(3, sizeof(CHAR));
-
-  ifolist = (CHAR **)LALCalloc( length, sizeof(CHAR *));
-  for ( k = 0; k < length; k++)
-    ifolist[k] = (CHAR *)LALCalloc( 3, sizeof(CHAR));
-
-  /* go through catalog and look at each ifo name */
-  for ( k = 0; k < length; k++)
+  XLAL_CHECK_NULL( catalog != NULL, XLAL_EFAULT );
+  LALStringVector *ifos = NULL;
+  for ( UINT4 k = 0; k < catalog->length; ++k )
     {
-      strncpy( name, catalog->data[k].header.name, 3 );
-
-      /* go through list of ifos till a match is found or list is exhausted */
-      for ( j = 0; ( j < numifo ) && strncmp( name, ifolist[j], 3); j++ )
-	;
-
-      if ( j >= numifo )
-	{
-	  /* add ifo to list of ifos */
-	  strncpy( ifolist[numifo], name, 3);
-	  numifo++;
-	}
-
+      char *name = XLALGetChannelPrefix( catalog->data[k].header.name );
+      if ( XLALFindStringInVector( name, ifos ) < 0 )
+        {
+          ifos = XLALAppendString2Vector( ifos, name );
+          XLAL_CHECK_NULL( ifos != NULL, XLAL_EFUNC );
+        }
+      XLALFree( name );
     }
+  XLAL_CHECK_NULL( XLALSortStringVector( ifos ) == XLAL_SUCCESS, XLAL_EFUNC );
+  return ifos;
+} // XLALListIFOsInCatalog()
 
-  LALFree(name);
-  for ( j = 0; j < catalog->length; j++)
-    LALFree(ifolist[j]);
-  LALFree(ifolist);
 
-  return numifo;
-
+/**
+ * Count the number of the unique IFOs in the given catalog.
+ */
+INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog )
+{
+  XLAL_CHECK( catalog != NULL, XLAL_EFAULT );
+  LALStringVector *ifos = XLALListIFOsInCatalog( catalog );
+  XLAL_CHECK( ifos != NULL, XLAL_EFUNC );
+  UINT4 nifos = ifos->length;
+  XLALDestroyStringVector( ifos );
+  return nifos;
 } // XLALCountIFOsInCatalog()
 
 

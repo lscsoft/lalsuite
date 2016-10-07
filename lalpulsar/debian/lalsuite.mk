@@ -1,0 +1,1 @@
+../../gnuscripts/debian/lalsuite.mk

@@ -114,32 +114,11 @@
     } \
   } while (0)
 
-#define CALL_GSL_VAL(val, call, ...) \
-  do { \
-    int GH_retn = 0; \
-    XLAL_CALLGSL(GH_retn = (call)); \
-    if (GH_retn != 0) { \
-      char GH_buf[1024]; \
-      snprintf(GH_buf, sizeof(GH_buf), "X" __VA_ARGS__); \
-      if (strlen(GH_buf) > 1) { \
-        XLAL_ERROR_VAL(val, XLAL_EFAILED, "%s", &GH_buf[1]); \
-      } else { \
-        XLAL_ERROR_VAL(val, XLAL_EFAILED, #call " failed: %s", gsl_strerror(GH_retn)); \
-      } \
-    } \
-  } while (0)
-
 #define GALLOC(name, call)		ALLOC_GSL_VAL(XLAL_FAILURE, name, call)
 #define GALLOC_NULL(type, name, n)	ALLOC_GSL_VAL(NULL, name, call)
 #define GALLOC_MAIN(type, name, n)	ALLOC_GSL_VAL(EXIT_FAILURE, name, call)
 #define GALLOC_REAL8(type, name, n)	ALLOC_GSL_VAL(XLAL_REAL8_FAIL_NAN, name, call)
 #define GALLOC_REAL4(type, name, n)	ALLOC_GSL_VAL(XLAL_REAL4_FAIL_NAN, name, call)
-
-#define GCALL(...)			CALL_GSL_VAL(XLAL_FAILURE, __VA_ARGS__)
-#define GCALL_NULL(...)			CALL_GSL_VAL(NULL, __VA_ARGS__)
-#define GCALL_MAIN(...)			CALL_GSL_VAL(EXIT_FAILURE, __VA_ARGS__)
-#define GCALL_REAL8(...)		CALL_GSL_VAL(XLAL_REAL8_FAIL_NAN, __VA_ARGS__)
-#define GCALL_REAL4(...)		CALL_GSL_VAL(XLAL_REAL4_FAIL_NAN, __VA_ARGS__)
 
 #define GAPERM(name, n)			ALLOC_GSL_1D_VAL(XLAL_FAILURE, permutation, name, n)
 #define GAPERM_NULL(name, n)		ALLOC_GSL_1D_VAL(NULL, permutation, name, n)

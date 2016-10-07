@@ -17,7 +17,6 @@
 from time import strftime
 from operator import attrgetter
 from optparse import OptionParser
-from pylal import spawaveform
 from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw import ligolw
@@ -59,8 +58,8 @@ opts_dict = dict((k, v) for k, v in options.__dict__.iteritems() if v is not Fal
 for fname in filenames:
 
     xmldoc=utils.load_filename(fname, gz=fname.endswith(".gz"), verbose = options.verbose, contenthandler=ContentHandler)
-    sngl_inspiral_table=lsctables.table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
-    process_params_table = lsctables.table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
+    sngl_inspiral_table=lsctables.SnglInspiralTable.get_table(xmldoc)
+    process_params_table = lsctables.ProcessParamsTable.get_table(xmldoc)
 
     # Prepare process table with information about the current program
     process = ligolw_process.register_to_xmldoc(xmldoc,

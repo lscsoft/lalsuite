@@ -377,7 +377,7 @@ extern "C" {
 #define LAL_SOL_SID 1.002737909350795 /**< Ratio of mean solar day to sidereal day, dimensionless */
 #define LAL_DAYJUL_SI 86400e0 /**< Julian day, s */
 #define LAL_YRJUL_SI 31557600e0 /**< Julian year, s */
-#define LAL_LYR_SI 9460730472580800 /**< (Julian) Lightyear, m */
+#define LAL_LYR_SI 9460730472580800e0 /**< (Julian) Lightyear, m */
 #define LAL_AU_SI 149597870700e0 /**< Astronomical unit, m */
 #define LAL_PC_SI 3.085677581491367278913937957796471611e16 /**< Parsec, m */
 /*@}*/

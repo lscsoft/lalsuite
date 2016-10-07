@@ -1,3 +1,22 @@
+/*
+*  Copyright (C) 2014 Matthew Pitkin
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
 /**
  * \file
  * \ingroup lalapps_pulsar_HeterodyneSearch
@@ -7,6 +26,7 @@
  * targeted pulsar searches.
  */
 
+#include "config.h"
 #include "ppe_testing.h"
 
 /* *****************************************************************************/
@@ -204,8 +224,7 @@ REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
  * \brief Output a number of prior samples based on the initial live points
  *
  * This function will output prior samples for variable parameters (as create by
- * the LALInferenceSetupLivePointsArray function) making sure to rescale the
- * values.
+ * the LALInferenceSetupLivePointsArray function).
  *
  * \param runState [in]
  */
@@ -252,7 +271,7 @@ void outputPriorSamples( LALInferenceRunState *runState ){
             item->vary == LALINFERENCE_PARAM_CIRCULAR ){
           REAL8 var = 0.;
           var = *(REAL8 *)item->value;
-          fprintf(fp, "%.8le\t", var);
+          fprintf(fp, "%.16le\t", var);
         }
 
         item = item->next;
@@ -262,6 +281,88 @@ void outputPriorSamples( LALInferenceRunState *runState ){
 
     fclose(fp);
   }
+}
+
+
+/**
+ * \brief Read in an ascii text file of nested samples and compare the log likelihoods
+ *
+ * This function reads in a file containing nested samples, including their log likelihoods, recomputes
+ * the full likelihood and compares it to the previously output value. This is useful for comparing
+ * outputs using ROQ to outputs using the full likelihood.
+ */
+void compare_likelihoods( LALInferenceRunState *rs ){
+  ProcessParamsTable *ppt = NULL;
+  CHAR *sampfile = NULL, *namefile = NULL;
+  CHAR *parambuf = NULL, *databuf = NULL;
+  LALInferenceVariables *curparams = NULL;
+  UINT4 j = 0, k = 0;
+  FILE *fp = NULL;
+  REAL8 logLnew = 0., logL = 0.;
+
+  /* allocate memory for nested samples */
+  curparams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+  LALInferenceCopyVariables( rs->threads[0]->currentParams, curparams );
+
+  /* read in parameter names from header file */
+  ppt = LALInferenceGetProcParamVal( rs->commandLine, "--sample-file-header" );
+  if ( ppt != NULL ){ namefile = ppt->value; }
+  else{ XLAL_ERROR_VOID(XLAL_EINVAL, "Error... no nested samples header file given.\n"); }
+  parambuf = XLALFileLoad( namefile );
+  TokenList *paramNames = NULL;
+  /* seperate parameter names */
+  if ( XLALCreateTokenList( &paramNames, parambuf, " \t" ) != XLAL_SUCCESS ){
+    XLAL_ERROR_VOID(XLAL_EINVAL, "Error... could not read in parameter names.\n");
+  }
+
+  /* get names of nested sample file columns */
+  ppt = LALInferenceGetProcParamVal( rs->commandLine, "--sample-file" );
+  if ( ppt != NULL ){ sampfile = ppt->value; }
+  else{ XLAL_ERROR_VOID(XLAL_EINVAL, "Error... no nested samples file given.\n"); }
+  databuf = XLALFileLoad( sampfile );
+  TokenList *sampsList = NULL;
+  /* seperate samples */
+  if ( XLALCreateTokenList( &sampsList, databuf, "\n" ) != XLAL_SUCCESS ){
+    XLAL_ERROR_VOID(XLAL_EINVAL, "Error... could not read in nested samples.\n");
+  }
+
+  fp = fopen("likelihoodComp.txt", "w");
+
+  /* loop over samples and calculate likelihoods */
+  for ( k = 0; k < sampsList->nTokens; k++){
+    /* remove "fixed variable" logL from curparams */
+    if ( LALInferenceCheckVariable(curparams, "logL" ) ){ LALInferenceRemoveVariable( curparams, "logL" ); }
+
+    /* split line */
+    TokenList *paramVals = NULL;
+    if ( XLALCreateTokenList( &paramVals, sampsList->tokens[k], " \t" ) != XLAL_SUCCESS ){
+      XLAL_ERROR_VOID(XLAL_EINVAL, "Error... could not separate parameter values.\n");
+    }
+
+    /* copy parameters into LALInferenceVariables structure */
+    for ( j = 0; j < paramNames->nTokens; j++ ){
+      REAL8 value = atof(paramVals->tokens[j]);
+      LALInferenceAddVariable( curparams, paramNames->tokens[j], &value, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+    }
+
+    if ( !LALInferenceCheckVariable(curparams, "logL" ) ){
+      XLAL_ERROR_VOID(XLAL_EINVAL, "Error... no log likelihood value present in nested samples file.\n");
+    }
+
+    logL = LALInferenceGetREAL8Variable( curparams, "logL" );
+    logLnew = rs->likelihood( curparams, rs->data, rs->threads[0]->model );
+    fprintf(stderr, "%.16le\t%.16le\t%.16le\n", logL, logLnew, logL-logLnew);
+    fprintf(fp, "%.16le\t%.16le\t%.16le\n", logL, logLnew, logL-logLnew);
+
+    XLALDestroyTokenList( paramVals );
+  }
+
+  fclose(fp);
+
+  XLALFree( parambuf );
+  XLALFree( databuf );
+  XLALDestroyTokenList( sampsList );
+  XLALDestroyTokenList( paramNames );
 }
 
 /*----------------------- END OF TESTING FUNCTIONS ---------------------------*/

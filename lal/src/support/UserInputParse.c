@@ -375,7 +375,7 @@ static void split_string_into_range(const char *str, char part[2][256], int T[2]
   } syntaxes[] = {
     { ',', { {1,  0}, {0, 1} } },   // --var=start,end
     { '/', { {1,  0}, {1, 1} } },   // --var=start/band
-    { '~', { {1, -1}, {1, 1} } },   // --var=centre~halfband
+    { '~', { {1, -1}, {1, 1} } },   // --var=start~plusminus
   };
 
   // Loop over possible syntaxes
@@ -406,7 +406,7 @@ static void split_string_into_range(const char *str, char part[2][256], int T[2]
 
 ///
 /// Parse a string representing a range of REAL8 values into a REAL8Range. Possible formats
-/// are <tt>point</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>centre~halfband</tt>.
+/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsREAL8Range(
@@ -443,7 +443,7 @@ int XLALParseStringValueAsREAL8Range(
 
 ///
 /// Parse a string representing a range of LIGOTimeGPS values into a LIGOTimeGPSRange. Possible formats
-/// are <tt>point</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>centre~halfband</tt>.
+/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsEPOCHRange(
@@ -480,7 +480,7 @@ int XLALParseStringValueAsEPOCHRange(
 
 ///
 /// Parse a string representing a range of RAJ values into a REAL8Range. Possible formats
-/// are <tt>point</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>centre~halfband</tt>.
+/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsRAJRange(
@@ -517,7 +517,7 @@ int XLALParseStringValueAsRAJRange(
 
 ///
 /// Parse a string representing a range of DECJ values into a REAL8Range. Possible formats
-/// are <tt>point</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>centre~halfband</tt>.
+/// are <tt>start</tt>, <tt>start,end</tt>, <tt>start/band</tt>, or <tt>start~plusminus</tt>.
 /// Output range is always <tt>low,high</tt> with <tt>range[0] = low; range[1] = high</tt>.
 ///
 int XLALParseStringValueAsDECJRange(

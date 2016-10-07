@@ -2,11 +2,10 @@ BUILT_SOURCES =
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
+include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 SUBDIRS = laldetchar
 
-dist_bin_SCRIPTS = \
-	laldetchar-idq-append-file-to-cache
 if HAVE_PYTHON
 
 pybin_scripts = \

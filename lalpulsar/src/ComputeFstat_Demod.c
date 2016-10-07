@@ -34,6 +34,20 @@
 // ========== Demod internals ==========
 
 // ----- local types ----------
+typedef struct tagDemodTimingInfo
+{ // NOTE: all times refer to a single-detector timing case
+  BOOLEAN collectTiming;	// turn on/off the collection of F-stat-method-specific timing-data (stored in method-data 'demod')
+
+  UINT4 numFreqBins;		// number of frequency bins to compute F-stat for
+  UINT4 numSFTs;		// total number of SFTs used
+  UINT4 numDetectors;		// number of detectors
+
+  REAL8 tauTotal;		// total time spent in XLALComputeFstatDemod()
+  REAL8 tauBary;		// time spent in barycentring
+  REAL8 tauF1Buf;		// Demod timing 'constant': Fstat time per template per detector for a 'buffered' case (same skypos, same numFreqBins)
+  REAL8 tauF1NoBuf;		// Demod timing 'constant': Fstat time per template per detector for an 'unbuffered' usage (different skypos and numFreqBins)
+} DemodTimingInfo;
+
 typedef struct {
   int (*computefafb_func) (			// XLALComputeFaFb_...() function for the selected Demod hotloop
     COMPLEX8 *, COMPLEX8 *, FstatAtomVector **, const SFTVector *, const PulsarSpins, const SSBtimes *, const AMCoeffs *, const UINT4 Dterms
@@ -44,6 +58,8 @@ typedef struct {
   LIGOTimeGPS prevRefTime;			// buffering: keep track of previous refTime for SSBtimes buffering
   MultiSSBtimes *prevMultiSSBtimes;		// buffering: previous multiSSB times, unique to skypos + SFTs
   MultiAMCoeffs *prevMultiAMcoef;		// buffering: previous AM-coeffs, unique to skypos + SFTs
+
+  DemodTimingInfo timingInfo;			// temporary storage for collecting timing data
 } DemodMethodData;
 
 // ----- local prototypes ----------
@@ -78,12 +94,10 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
   XLAL_CHECK(common != NULL, XLAL_EFAULT);
   XLAL_CHECK(method_data != NULL, XLAL_EFAULT);
 
-#if COLLECT_TIMING
-  // get internal timing info
-  REAL8 tic, toc, tauBary, tauTotal;
-#endif
-
   DemodMethodData *demod = (DemodMethodData*) method_data;
+  // get internal timing info
+  DemodTimingInfo *ti = &(demod->timingInfo);
+  REAL8 tic = 0, toc = 0;
 
   // Get which F-statistic quantities to compute
   const FstatQuantities whatToCompute = Fstats->whatWasComputed;
@@ -99,10 +113,24 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
   UINT4 numDetectors = multiSFTs->length;
   XLAL_CHECK ( multiDetStates->length == numDetectors, XLAL_EINVAL );
   XLAL_CHECK ( multiWeights==NULL || (multiWeights->length == numDetectors), XLAL_EINVAL );
+  UINT4 numSFTs = 0;
+  for ( UINT4 X = 0; X < numDetectors; X ++ ) {
+    numSFTs += multiDetStates->data[X]->length;
+  }
 
-#if COLLECT_TIMING
-  tic = XLALGetCPUTime();
-#endif
+  // initialize timing info struct
+  if ( ti->collectTiming )
+    {
+      XLAL_INIT_MEM ( (*ti) );
+      ti->collectTiming = 1;
+
+      ti->numDetectors = numDetectors;
+      ti->numFreqBins = Fstats->numFreqBins;
+      ti->numSFTs = numSFTs;
+
+      tic = XLALGetCPUTime();
+    }
+
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   // ----- check if we have buffered SSB+AMcoef for current sky-position
@@ -146,10 +174,11 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
     {
       multiSSBTotal = multiSSB;
     }
-#if COLLECT_TIMING
-  toc = XLALGetCPUTime();
-  tauBary = (toc - tic);
-#endif
+
+  if ( ti->collectTiming ) {
+    toc = XLALGetCPUTime();
+    ti->tauBary = (toc - tic);
+  }
 
   // ----- compute final Fstatistic-value -----
   REAL4 Ad = multiAMcoef->Mmunu.Ad;
@@ -248,12 +277,22 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
   // Return amplitude modulation coefficients
   Fstats->Mmunu = demod->prevMultiAMcoef->Mmunu;
 
-#if COLLECT_TIMING
-  toc = XLALGetCPUTime();
-  tauTotal = (toc - tic);
-  Fstat_tauF1NoBuf = tauTotal / ( Fstats->numFreqBins * numDetectors );
-  Fstat_tauF1Buf   = (tauTotal - tauBary) / ( Fstats->numFreqBins * numDetectors );
-#endif
+  // return per-detector antenna-pattern matrices
+  for ( UINT4 X=0; X < numDetectors; X ++ )
+    {
+      Fstats->MmunuX[X].Ad = multiAMcoef->data[X]->A;
+      Fstats->MmunuX[X].Bd = multiAMcoef->data[X]->B;
+      Fstats->MmunuX[X].Cd = multiAMcoef->data[X]->C;
+      Fstats->MmunuX[X].Dd = multiAMcoef->data[X]->D;
+      Fstats->MmunuX[X].Ed = 0;
+    }
+
+  if ( ti->collectTiming ) {
+    toc = XLALGetCPUTime();
+    ti->tauTotal = (toc - tic);
+    ti->tauF1NoBuf = ti->tauTotal / ( Fstats->numFreqBins * numDetectors );
+    ti->tauF1Buf   = (ti->tauTotal - ti->tauBary) / ( Fstats->numFreqBins * numDetectors );
+  }
 
   return XLAL_SUCCESS;
 
@@ -303,6 +342,9 @@ XLALSetupFstatDemod ( void **method_data,
   // Save Dterms
   demod->Dterms = optArgs->Dterms;
 
+  // Save flag about collecting timing data
+  demod->timingInfo.collectTiming = optArgs->collectTiming;
+
   // Select XLALComputeFaFb_...() function for the user-requested hotloop variant
   switch ( optArgs->FstatMethod ) {
   case  FMETHOD_DEMOD_GENERIC:
@@ -329,3 +371,42 @@ XLALSetupFstatDemod ( void **method_data,
   return XLAL_SUCCESS;
 
 } // XLALSetupFstatDemod()
+
+
+// export timing constants from internally-stored 'method data' struct
+int
+XLALGetFstatTiming_Demod ( const void* method_data, REAL8 *tauF1Buf, REAL8 *tauF1NoBuf )
+{
+  XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( (tauF1Buf != NULL) && (tauF1NoBuf != NULL), XLAL_EINVAL );
+
+  const DemodMethodData *demod = (const DemodMethodData *)method_data;
+
+  (*tauF1Buf) = demod->timingInfo.tauF1Buf;
+  (*tauF1NoBuf) = demod->timingInfo.tauF1NoBuf;
+
+  return XLAL_SUCCESS;
+
+} // XLALGetFstatTiming_Demod()
+
+// append detailed (method-specific) timing info to given file
+int
+AppendFstatTimingInfo2File_Demod ( const void* method_data, FILE *fp, BOOLEAN printHeader )
+{
+  XLAL_CHECK ( method_data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( fp != NULL, XLAL_EINVAL );
+
+  const DemodMethodData *demod = (const DemodMethodData *)method_data;
+  if ( printHeader ) {
+    fprintf (fp, "%%%%%8s %4s %10s ", "Nfreq", "Ndet", "Nsft" );
+    fprintf (fp, "%10s %10s %10s %10s %10s\n",
+             "tauTotal", "tauBary", "tauF1NoBuf", "tauF1Buf", "tauF0Demod" );
+  }
+
+  const DemodTimingInfo *ti = &(demod->timingInfo);
+  fprintf (fp, "%10d %4d %10d", ti->numFreqBins, ti->numDetectors, ti->numSFTs );
+  REAL8 numSFTsPerDet = ti->numSFTs / ti->numDetectors;
+  fprintf (fp, "%10.1e %10.1e %10.1e %10.1e %10.1e\n", ti->tauTotal, ti->tauBary, ti->tauF1NoBuf, ti->tauF1Buf, ti->tauF1Buf / numSFTsPerDet );
+
+  return XLAL_SUCCESS;
+} // AppendFstatTimingInfo2File_Demod()

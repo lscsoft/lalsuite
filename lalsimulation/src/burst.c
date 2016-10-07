@@ -192,7 +192,7 @@ static const char *waveform_long_names[NumWaveforms] = {
 };
 
 static const char *waveform_parameters[NumWaveforms] = {
-	[BLTWNB] = "duration, frequency, bandwidth, eccentricity, fluence",
+	[BLTWNB] = "duration, frequency, bandwidth, eccentricity, phase, fluence",
 	[StringCusp] = "amplitude, frequency",
 	[SineGaussian] = "quality-factor, frequency, hrss, eccentricity, phase",
 	[Gaussian] = "duration, hrss",
@@ -292,6 +292,10 @@ int main(int argc, char **argv)
 			fprintf(stderr, "error: must specify valid eccentricity in domain [0,1] for waveform `%s'\n", waveform_names[p.waveform]);
 			status = 1;
 		}
+		if (IS_INVALID_DOUBLE(p.phase)) {
+			fprintf(stderr, "error: must specify valid phase for waveform `%s'\n", waveform_names[p.waveform]);
+			status = 1;
+		}
 		if (IS_INVALID_DOUBLE(p.fluence) || p.fluence < 0.0) {
 			fprintf(stderr, "error: must specify valid fluence for waveform `%s'\n", waveform_names[p.waveform]);
 			status = 1;
@@ -319,7 +323,7 @@ int main(int argc, char **argv)
 			verbose_output("%-31s %g (s^-1)\n", "integral (dh/dt)^2 dt:", int_hdot_squared_dt);
 			verbose_output("%-31s GSL_RNG_TYPE=%s\n", "GSL random number generator:", gsl_rng_name(rng));
 			verbose_output("%-31s GSL_RNG_SEED=%lu\n", "GSL random number seed:", gsl_rng_default_seed);
-			status = XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(&hplus, &hcross, p.duration, p.frequency, p.bandwidth, p.eccentricity, int_hdot_squared_dt, 1.0/p.srate, rng);
+			status = XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(&hplus, &hcross, p.duration, p.frequency, p.bandwidth, p.eccentricity, p.phase, int_hdot_squared_dt, 1.0/p.srate, rng);
 		}
 		break;
 

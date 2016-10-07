@@ -37,7 +37,6 @@
 #include <gsl/gsl_matrix.h>
 
 
-#include <lal/UserInput.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include <lal/LALInitBarycenter.h>

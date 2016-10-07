@@ -33,7 +33,7 @@ parser.add_argument('-o','--output', type=str, nargs='?',
                     default=None,
                     help='output directory.')
 
-parser.add_argument('--pegasus-submit', action='store_true',
+parser.add_argument('--condor-submit', action='store_true',
                     default=False,
                     help='submits the test suite.')
 
@@ -52,6 +52,8 @@ else:
     args.output=os.path.abspath(args.output)
 
 args.injection_file=os.path.abspath(args.injection_file)
+if args.bbh_injection:
+    args.bbh_injection=os.path.abspath(args.bbh_injection)
 
 backup_file=args.output+'/'+os.path.basename(args.ini_file)+'.bak'
 ini_file=args.output+'/'+os.path.basename(args.ini_file)
@@ -78,7 +80,7 @@ path_keys = {'datafind': 'ligo_data_find',
             'lalinferencebambi': 'lalinference_bambi',
             'lalinferencedatadump': 'lalinference_datadump',
             'bayesline': 'BayesLine',
-            'skyarea': 'run_sky_area.py',
+            'skyarea': 'run_sky_area',
             'mpirun': 'mpirun',
             'mpiwrapper': 'lalinference_mpi_wrapper',
             'gracedb': 'gracedb',
@@ -86,6 +88,8 @@ path_keys = {'datafind': 'ligo_data_find',
             'pos_to_sim_inspiral': 'cbcBayesPosToSimInspiral.py'}
 
 def replace(line):
+    if line[0]=='#':
+        return line
     for key in path_keys.keys():
         if key+'=/' in line:
             albert_path=line.split('=')[-1]
@@ -152,13 +156,10 @@ lalinferenceargs = [ 'lalinference_pipe'
 		     , '-p'
 		     , './daglog'
 		     , args.output+'/fiducialBNS/'+os.path.basename(ini_file)
-		     , '--dax'
-		     , '--grid-site'
-		     , 'local'
                      ]
 
-if args.pegasus_submit:
-    lalinferenceargs.append('--pegasus-submit')
+if args.condor_submit:
+    lalinferenceargs.append('--condor-submit')
 
 subprocess.call(lalinferenceargs)
 
@@ -213,13 +214,10 @@ if args.gracedb:
                          , '-p'
                          , './daglog'
                          , args.output+'/GraceDB/'+os.path.basename(ini_file)
-                         , '--dax'
-                         , '--grid-site'
-                         , 'local'
                          ]
 
-    if args.pegasus_submit:
-        lalinferenceargs.append('--pegasus-submit')
+    if args.condor_submit:
+        lalinferenceargs.append('--condor-submit')
 
     subprocess.call(lalinferenceargs)
 
@@ -255,6 +253,7 @@ if args.bbh_injection != '':
     os.makedirs(args.output+'/fiducialBBH/')
     os.chdir(args.output+'/fiducialBBH/')
 
+    shutil.copy(args.bbh_injection,args.output+'/fiducialBBH/')
     shutil.copy(ini_file,args.output+'/fiducialBBH/'+os.path.basename(ini_file)+'.bak')
     shutil.copy(ini_file,args.output+'/fiducialBBH/')
 
@@ -271,12 +270,9 @@ if args.bbh_injection != '':
                          , '-p'
                          , './daglog'
                          , args.output+'/fiducialBBH/'+os.path.basename(ini_file)
-                         , '--dax'
-                         , '--grid-site'
-                         , 'local'
                          ]
 
-    if args.pegasus_submit:
-        lalinferenceargs.append('--pegasus-submit')
+    if args.condor_submit:
+        lalinferenceargs.append('--condor-submit')
 
     subprocess.call(lalinferenceargs)

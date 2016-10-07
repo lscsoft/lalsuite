@@ -656,6 +656,8 @@ int XLALFrameUFrChanVectorAlloc_FrameC_(LALFrameUFrChan * channel, int dtype, si
 }
 
 /* get the FrameC compression scheme for a particular compressLevel */
+/* UNUSED */
+/*
 static fr_vect_compression_schemes_t XLALFrVectCompressionScheme(int compressLevel)
 {
     switch (compressLevel) {
@@ -678,12 +680,21 @@ static fr_vect_compression_schemes_t XLALFrVectCompressionScheme(int compressLev
         return FR_VECT_COMPRESS_UNKNOWN;
     }
 }
+*/
 
 /* functions to compress and expand FrVect structures within a channel */
 
 int XLALFrameUFrChanVectorCompress_FrameC_(LALFrameUFrChan * channel, int compressLevel)
 {
+    /* Work around bug in FrameC FrameCFrChanVectorCompress() by disabling
+     * compression.  Revert this once FrameCFrChanVectorCompress() works. */
+    (void)channel;
+    (void)compressLevel;
+    XLAL_PRINT_WARNING("Compression not currently implemented with FrameC");
+    return 0;
+    /*
     TRY_FRAMEC_FUNCTION(FrameCFrChanVectorCompress, channel, XLALFrVectCompressionScheme(compressLevel));
+    */
 }
 
 int XLALFrameUFrChanVectorExpand_FrameC_(LALFrameUFrChan * channel)

@@ -420,6 +420,7 @@ extern int vrbflg;
 ProcessParamsTable *next_process_param( const char *name, const char *type,
     const char *fmt, ... );
 void read_mass_data( char *filename );
+void read_time_data( char *filename );
 void read_nr_data( char* filename );
 void read_source_data( char* filename );
 void sourceComplete(void);
@@ -475,6 +476,7 @@ char *massFileName = NULL;
 char *nrFileName = NULL;
 char *sourceFileName = NULL;
 char *outputFileName = NULL;
+char *injtimesFileName = NULL;
 char *exttrigFileName = NULL;
 char *IPNSkyPositionsFile = NULL;
 
@@ -573,6 +575,9 @@ struct {
   REAL8 mass1;
   REAL8 mass2;
 } *mass_data;
+
+int n_times;
+LIGOTimeGPS* inj_times;
 
 struct FakeGalaxy{
 char name[LIGOMETA_SOURCE_MAX];
@@ -1158,6 +1163,62 @@ read_mass_data( char* filename )
     n++;
   }
 
+  /* close the file */
+  fclose( fp );
+}
+
+void read_time_data( char* filename)
+{
+  char line[256];
+  FILE   *fp;
+  int n = 0;
+  INT4 this_time = 0;
+  
+  fp=fopen( filename, "r" );
+  if ( ! fp )
+    {
+      perror( "read_time_data" );
+      fprintf( stderr,
+	       "Error while trying to open file %s\n",
+	       filename );
+      exit( 1 );
+    }
+  
+  /* count the number of lines in the file */
+  n_times=0;
+  while ( fgets( line, sizeof( line ), fp ) )
+    ++n_times;
+  
+  /* alloc space for the data */
+  inj_times = LALCalloc( n_times, sizeof(*inj_times) );
+  if ( !inj_times )
+    {
+      fprintf( stderr, "Allocation error for inj_times\n" );
+      exit( 1 );
+    }
+  
+  /* 'rewind' the file */
+  rewind( fp );
+  
+  /* read the file finally */
+  while ( fgets( line, sizeof( line ), fp ) )
+    {
+      sscanf( line, "%d", &this_time);
+      if ( this_time < 441417609 )
+	{
+	  fprintf( stderr, "invalid injection time %d:\n"
+		   "GPS start time is prior to "
+		   "Jan 01, 1994  00:00:00 UTC:\n"
+		   "(%d specified)\n",
+		   n, this_time );
+	  exit( 1 );
+	}
+      inj_times[n].gpsSeconds = this_time;
+      inj_times[n].gpsNanoSeconds = 0;
+      // printf("%d Time: %d\t%d\n", n, inj_times[n].gpsSeconds, inj_times[n].gpsNanoSeconds);
+      n++;
+    }
+  
   /* close the file */
   fclose( fp );
 }
@@ -1882,6 +1943,7 @@ int main( int argc, char *argv[] )
     {"t-distr",                 required_argument, 0,                '('},
     {"time-step",               required_argument, 0,                't'},
     {"time-interval",           required_argument, 0,                'i'},
+    {"time-file",               required_argument, 0,               1035},
     {"seed",                    required_argument, 0,                's'},
     {"waveform",                required_argument, 0,                'w'},
     {"amp-order",               required_argument, 0,                'q'},
@@ -2044,6 +2106,15 @@ int main( int argc, char *argv[] )
               "%s", LALoptarg );
         break;
 
+      case 1035:
+        LALoptarg_len = strlen( LALoptarg ) + 1;
+        injtimesFileName = calloc( 1, LALoptarg_len * sizeof(char) );
+        memcpy( injtimesFileName, LALoptarg, LALoptarg_len * sizeof(char) );
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name, "string",
+              "%s", LALoptarg );
+        break;
+
       case 'E':
         LALoptarg_len = strlen( LALoptarg ) + 1;
         exttrigFileName = calloc( 1, LALoptarg_len * sizeof(char) );
@@ -2135,6 +2206,10 @@ int main( int argc, char *argv[] )
         else if (!strcmp(dummy, "exponential"))
         {
           tDistr=LALINSPIRAL_EXPONENTIAL_TIME_DIST;
+        }
+        else if (!strcmp(dummy, "file"))
+        {
+          tDistr=LALINSPIRAL_FILE_TIME_DIST;
         }
         else
         {
@@ -3141,7 +3216,7 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if (gpsStartTime.gpsSeconds==-1 || gpsEndTime.gpsSeconds==-1)
+  if ( (gpsStartTime.gpsSeconds==-1 || gpsEndTime.gpsSeconds==-1) && tDistr != LALINSPIRAL_FILE_TIME_DIST)
   {
     fprintf( stderr,
         "Must specify both --gps-start-time and --gps-end-time.\n");
@@ -3853,19 +3928,42 @@ int main( int argc, char *argv[] )
     meanTimeStep = mean_time_step_sfr(maxZ, localRate);
   }
 
-  if (meanTimeStep<=0)
+  if (meanTimeStep<=0 && tDistr != LALINSPIRAL_FILE_TIME_DIST)
   {
     fprintf( stderr,
              "Minimum time step value must be larger than zero\n" );
     exit( 1 );
   }
 
-  if (timeInterval > 0. && tDistr == LALINSPIRAL_EXPONENTIAL_TIME_DIST)
+  if (!injtimesFileName && tDistr == LALINSPIRAL_FILE_TIME_DIST)
+    {
+      fprintf(stderr, "No filename for injection GPStimes is given. Use --time-file.\n");
+    }
+  
+  if ( injtimesFileName && tDistr != LALINSPIRAL_FILE_TIME_DIST )
+    {
+      fprintf( stderr,
+	       "Cannot specify an injection times file for your choice of --t-distr.\n" );
+      exit( 1 );
+    }
+  
+  if (timeInterval > 0. && (tDistr == LALINSPIRAL_EXPONENTIAL_TIME_DIST || tDistr == LALINSPIRAL_FILE_TIME_DIST) )
   {
     fprintf( stderr,
          "time interval must be zero\n" );
     exit( 1 );
   }
+
+  if ( injtimesFileName && tDistr == LALINSPIRAL_FILE_TIME_DIST)
+    {
+      if (meanTimeStep > 0.)
+	{
+	  fprintf(stderr, "Minimum time step value must be larger than zero\n" );
+	  exit(1);
+	}
+      // printf("Reading injection times from file %s\n", injtimesFileName);
+      read_time_data(injtimesFileName);
+    }
 
   if ( userTag && outCompress )
   {
@@ -3935,6 +4033,11 @@ int main( int argc, char *argv[] )
   ninj = 0;
   ncount = 0;
   currentGpsTime = gpsStartTime;
+  if (tDistr == LALINSPIRAL_FILE_TIME_DIST){
+    currentGpsTime.gpsSeconds = inj_times[0].gpsSeconds;
+    currentGpsTime.gpsNanoSeconds = inj_times[0].gpsNanoSeconds;
+  }
+
   while ( 1 )
   {
     /* increase counter */
@@ -4381,12 +4484,19 @@ int main( int argc, char *argv[] )
     {
       XLALGPSAdd( &currentGpsTime, -(REAL8)meanTimeStep * log( XLALUniformDeviate(randParams) ) );
     }
+    else if (tDistr == LALINSPIRAL_FILE_TIME_DIST)
+    {
+      if (ninj >= (size_t) n_times)
+	break;
+      currentGpsTime.gpsSeconds = inj_times[ninj].gpsSeconds;
+      currentGpsTime.gpsNanoSeconds = inj_times[ninj].gpsNanoSeconds;
+    }
     else
     {
       currentGpsTime = gpsStartTime;
       XLALGPSAdd( &currentGpsTime, ninj * meanTimeStep );
     }
-    if ( XLALGPSCmp( &currentGpsTime, &gpsEndTime ) >= 0 )
+    if ( XLALGPSCmp( &currentGpsTime, &gpsEndTime ) >= 0 && tDistr!=LALINSPIRAL_FILE_TIME_DIST )
       break;
 
   /* allocate and go to next SimInspiralTable */

@@ -1,4 +1,6 @@
-/*  Copyright (C) 2010 Chris Messenger
+/*
+ *  Copyright (C) 2016 Karl Wette
+ *  Copyright (C) 2010 Chris Messenger
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,7 +33,7 @@
 
 /***********************************************************************************************/
 /* includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include "config.h"
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -76,8 +78,8 @@
  *
  */
 int XLALInitgslrand(gsl_rng **gslrnd,     /**< [out] the gsl random number generator */
-		    INT8 seed             /**< [in] the random number generator seed */
-		    )
+                    INT8 seed             /**< [in] the random number generator seed */
+                    )
 {
   FILE *devrandom = NULL;      /* pointer to the /dev/urandom file */
 
@@ -112,7 +114,7 @@ int XLALInitgslrand(gsl_rng **gslrnd,     /**< [out] the gsl random number gener
  *
  */
 int XLALFreeREAL4DemodulatedPowerVector(REAL4DemodulatedPowerVector *power            /**< [in] the data to be freed */
-					)
+                                        )
 {
   UINT4 i;                     /* counter */
 
@@ -133,7 +135,7 @@ int XLALFreeREAL4DemodulatedPowerVector(REAL4DemodulatedPowerVector *power      
  *
  */
 int XLALFreeParameterSpace(ParameterSpace *pspace            /**< [in] the parameter space to be freed */
-			   )
+                           )
 {
 
   /* free parameter space */
@@ -152,9 +154,9 @@ int XLALFreeParameterSpace(ParameterSpace *pspace            /**< [in] the param
  *
  */
 int XLALComputeBinaryFreqDerivitives(Template *fdots,                        /**< [out] the frequency derivitives */
-				     Template *bintemp,                      /**< [in] the binary template */
-				     REAL8 tmid                              /**< [in] the midpoint time of the segment */
-				     )
+                                     Template *bintemp,                      /**< [in] the binary template */
+                                     REAL8 tmid                              /**< [in] the midpoint time of the segment */
+                                     )
 {
   UINT4 n;                               /* counters */
   REAL8 nu = bintemp->x[0];              /* define nu */
@@ -167,13 +169,20 @@ int XLALComputeBinaryFreqDerivitives(Template *fdots,                        /**
   REAL8 orbphase = omega*(tmid-tasc);
   REAL8 omegan = 1;
 
+  /* compute sine and cosine of orbital phase */
+  REAL4 sin_orbphase, cos_orbphase;
+  XLALSinCosLUT( &sin_orbphase, &cos_orbphase, orbphase );
+
+  /* derivates of orbital phase */
+  REAL4 d_orbphase[4] = { cos_orbphase, -sin_orbphase, -cos_orbphase, sin_orbphase };
+
   /* the instantanous frequency is therefore f0 = nu - a*nu*W*cos(W*(t-tasc) ) */
-  fdots->x[0] = nu - nuasiniomega*cos(orbphase);
+  fdots->x[0] = nu - nuasiniomega*d_orbphase[0];
 
   /* the instantanous nth frequency derivitive is therefore fn = - a * nu * W^(n+1) * cos ( W*(t-tasc) + n*pi/2 ) */
   for (n=1;n<fdots->ndim;n++) {
     omegan *= omega;
-    fdots->x[n] = (-1.0)*nuasiniomega*omegan*cos(orbphase + 0.5*n*LAL_PI);
+    fdots->x[n] = (-1.0)*nuasiniomega*omegan*d_orbphase[n % 4];
   }
 
   return XLAL_SUCCESS;
@@ -187,10 +196,10 @@ int XLALComputeBinaryFreqDerivitives(Template *fdots,                        /**
  *
  */
 int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**< [out] the signal model template parameters */
-				    GridParameters *gridparams,             /**< [in] the parameter space grid params */
-				    ParameterSpace *space,		/**< UNDOCUMENTED */
-				    void *r		/**< UNDOCUMENTED */
-				    )
+                                    GridParameters *gridparams,             /**< [in] the parameter space grid params */
+                                    ParameterSpace *space,		/**< UNDOCUMENTED */
+                                    void *r		/**< UNDOCUMENTED */
+                                    )
 {
 
   /* if the input template is null then we allocate memory and assume we are on the first template */
@@ -199,11 +208,11 @@ int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**<
       LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
       XLAL_ERROR(XLAL_ENOMEM);
     }
-    if ( ((*temp)->x = XLALCalloc(gridparams->ndim,sizeof(REAL8))) == NULL) {
+    if ( ((*temp)->x = XLALCalloc(NBINMAX,sizeof(REAL8))) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
       XLAL_ERROR(XLAL_ENOMEM);
     }
-    if ( ((*temp)->idx = XLALCalloc(gridparams->ndim,sizeof(UINT4))) == NULL) {
+    if ( ((*temp)->idx = XLALCalloc(NBINMAX,sizeof(UINT4))) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
       XLAL_ERROR(XLAL_ENOMEM);
     }
@@ -211,7 +220,7 @@ int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**<
     (*temp)->ndim = gridparams->ndim;
 
   }
-  else if ((*temp)->currentidx == (UINT4)gridparams->Nr - 1) {
+  else if ((*temp)->currentidx >= (UINT4)gridparams->Nr - 1) {
 
     /* free binary template memory */
     XLALFree((*temp)->x);
@@ -271,10 +280,10 @@ int XLALGetNextRandomBinaryTemplate(Template **temp,                        /**<
  *
  */
 int XLALGetNextTemplate(Template **temp,                        /**< [out] the signal model template parameters */
-			GridParameters *gridparams,              /**< [in] the parameter space grid params */
-			ParameterSpace *space,		/**< UNDOCUMENTED */
-			UNUSED void *r		/**< UNDOCUMENTED */
-			)
+                        GridParameters *gridparams,              /**< [in] the parameter space grid params */
+                        ParameterSpace *space,		/**< UNDOCUMENTED */
+                        UNUSED void *r		/**< UNDOCUMENTED */
+                        )
 {
   UINT4 idx;                             /* the index variable */
   INT4 j;                                /* counters */
@@ -291,11 +300,11 @@ int XLALGetNextTemplate(Template **temp,                        /**< [out] the s
       LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
       XLAL_ERROR(XLAL_ENOMEM);
     }
-    if ( ((*temp)->x = XLALCalloc(gridparams->ndim,sizeof(REAL8))) == NULL) {
+    if ( ((*temp)->x = XLALCalloc(NBINMAX,sizeof(REAL8))) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
       XLAL_ERROR(XLAL_ENOMEM);
     }
-    if ( ((*temp)->idx = XLALCalloc(gridparams->ndim,sizeof(UINT4))) == NULL) {
+    if ( ((*temp)->idx = XLALCalloc(NBINMAX,sizeof(UINT4))) == NULL) {
       LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
       XLAL_ERROR(XLAL_ENOMEM);
     }
@@ -347,9 +356,9 @@ int XLALGetNextTemplate(Template **temp,                        /**< [out] the s
  *
  */
 int XLALApplyPhaseCorrection(COMPLEX8TimeSeries **outts,            /**< [out] the output complex time series */
-			     COMPLEX8TimeSeries *ints,          /**< [in] the input complex time series */
-			     Template *fn                       /**< [in] the spin derivitives */
-			     )
+                             COMPLEX8TimeSeries *ints,          /**< [in] the input complex time series */
+                             Template *fn                       /**< [in] the spin derivitives */
+                             )
 {
 
   UINT4 j,k;
@@ -403,9 +412,9 @@ int XLALApplyPhaseCorrection(COMPLEX8TimeSeries **outts,            /**< [out] t
  *
  */
 int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs,     /**< [out] the over-resolved frequency series */
-						    const COMPLEX8TimeSeries *ts,     /**< [in] the downsampled SFT data */
-						    GridParameters **gridparams        /**< [in/out] the spin derivitive gridding parameters */
-						    )
+                                                    const COMPLEX8TimeSeries *ts,     /**< [in] the downsampled SFT data */
+                                                    GridParameters **gridparams        /**< [in/out] the spin derivitive gridding parameters */
+                                                    )
 {
 
   COMPLEX8FFTPlan *plan = NULL;           /* plan for the inverse FFT */
@@ -508,10 +517,10 @@ int XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries **fs
  *
  */
 int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **power,     /**< [out] the spin derivitive demodulated power */
-						  COMPLEX8TimeSeriesArray *dsdata,         /**< [in] the downsampled SFT data */
-						  GridParametersVector *gridparams,        /**< [in/out] the spin derivitive gridding parameters */
-	                                          FILE *fp		/**< UNDOCUMENTED */
-						)
+                                                  COMPLEX8TimeSeriesArray *dsdata,         /**< [in] the downsampled SFT data */
+                                                  GridParametersVector *gridparams,        /**< [in/out] the spin derivitive gridding parameters */
+                                                  FILE *fp		/**< UNDOCUMENTED */
+                                                )
 {
   UINT4 i;
   REAL8 maxspintemp[NFREQMAX];
@@ -576,8 +585,8 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
     GridParameters tempgrid;
     Template *spintemp = NULL;
     tempgrid.ndim = gridparams->segment[i]->ndim - 1;
-    tempgrid.grid = XLALCalloc(tempgrid.ndim,sizeof(Grid));
-    tempgrid.prod = XLALCalloc(tempgrid.ndim,sizeof(UINT4));
+    tempgrid.grid = XLALCalloc(NBINMAX,sizeof(Grid));
+    tempgrid.prod = XLALCalloc(NBINMAX,sizeof(UINT4));
     tempgrid.max = 1;
     for (j=0;j<tempgrid.ndim;j++) {
       tempgrid.grid[j].min = gridparams->segment[i]->grid[j+1].min;
@@ -600,21 +609,20 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
 
       /* apply phase correction to complex timeseries */
       if (XLALApplyPhaseCorrection(&temp_ts,ts,spintemp)) {
-	LogPrintf(LOG_CRITICAL,"%s : XLALApplyPhseCorrection() failed with error = %d\n",__func__,xlalErrno);
-	XLAL_ERROR(XLAL_EINVAL);
+        LogPrintf(LOG_CRITICAL,"%s : XLALApplyPhseCorrection() failed with error = %d\n",__func__,xlalErrno);
+        XLAL_ERROR(XLAL_EINVAL);
       }
       LogPrintf(LOG_DEBUG,"%s : applied phase correction for template index %d/%d on segment %d/%d\n",__func__,spintemp->currentidx,tempgrid.max,i,dsdata->length);
 
       /* convert to the complex frequency domain - on the frequency grid specified */
       if (XLALCOMPLEX8TimeSeriesToCOMPLEX8FrequencySeries(&fs,temp_ts,&(gridparams->segment[i]))) {
-	LogPrintf(LOG_CRITICAL,"%s : XLALSFTCOMPLEX8TimeseriesToCOMPLEX8FrequencySeries() failed with error = %d\n",__func__,xlalErrno);
-	XLAL_ERROR(XLAL_EINVAL);
+        LogPrintf(LOG_CRITICAL,"%s : XLALSFTCOMPLEX8TimeseriesToCOMPLEX8FrequencySeries() failed with error = %d\n",__func__,xlalErrno);
+        XLAL_ERROR(XLAL_EINVAL);
       }
-      LogPrintf(LOG_DEBUG,"%s : computed demodulated frequency series for SFT %d/%d\n",__func__,i+1,dsdata->length);
 
       /* compute power and store it */
       for (j=0;j<fs->data->length;j++) {
-	(*power)->segment[i]->data->data[idx] = crealf(fs->data->data[j])*crealf(fs->data->data[j]) + cimagf(fs->data->data[j])*cimagf(fs->data->data[j]);
+        (*power)->segment[i]->data->data[idx] = crealf(fs->data->data[j])*crealf(fs->data->data[j]) + cimagf(fs->data->data[j])*cimagf(fs->data->data[j]);
 
         /* find maximum for this segment */
         if (fp!=NULL) {
@@ -626,7 +634,7 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
             for (k=0;k<spintemp->ndim;k++) maxspintemp[k+1] = spintemp->x[k];
           }
         }
-	idx++;
+        idx++;
       }
       (*power)->segment[i]->epoch.gpsSeconds = ts->epoch.gpsSeconds;
       (*power)->segment[i]->epoch.gpsNanoSeconds = ts->epoch.gpsNanoSeconds;
@@ -635,6 +643,7 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
       XLALDestroyCOMPLEX8FrequencySeries(fs);
 
     } /* end loop over spin derivitive templates */
+    LogPrintf(LOG_NORMAL,"%s : computed demodulated frequency series for SFT %d/%d\n",__func__,i+1,dsdata->length);
 
     /* output loudest segment candidate - normalise to be a chi-squared variable */
     if (fp!=NULL) {
@@ -664,11 +673,11 @@ int XLALCOMPLEX8TimeSeriesArrayToDemodPowerVector(REAL4DemodulatedPowerVector **
  *
  */
 int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [out] the gridding parameters */
-			      REAL8Space *space,                        /**< [in] the orbital parameter space */
-			      REAL8 tmid,                               /**< [in] the segment mid point */
-			      REAL8 Tseg,                               /**< [in] the segment length */
-			      REAL8 mu                                  /**< [in] the required mismatch */
-			      )
+                              REAL8Space *space,                        /**< [in] the orbital parameter space */
+                              REAL8 tmid,                               /**< [in] the segment mid point */
+                              REAL8 Tseg,                               /**< [in] the segment length */
+                              REAL8 mu                                  /**< [in] the required mismatch */
+                              )
 {
   UINT4 i,j,k,l;                         /* counters */
   INT4 n;                                /* counter */
@@ -736,23 +745,23 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
 
        /* tasc and omega are the problematic ones so we'll perform a fine grid search over them */
        for (k=0;k<ngrid;k++) {   /* tasc */
-	 bintemp.x[2] = space->data[2].min + k*(space->data[2].max-space->data[2].min)/(ngrid-1);
+         bintemp.x[2] = space->data[2].min + k*(space->data[2].max-space->data[2].min)/(ngrid-1);
 
-	 for (l=0;l<ngrid;l++) {  /* omega */
-	   bintemp.x[3] = space->data[3].min + l*(space->data[3].max-space->data[3].min)/(ngrid-1);
+         for (l=0;l<ngrid;l++) {  /* omega */
+           bintemp.x[3] = space->data[3].min + l*(space->data[3].max-space->data[3].min)/(ngrid-1);
 
-	   if (XLALComputeBinaryFreqDerivitives(&fdots,&bintemp,tmid)) {
-	     LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryFreqDerivitives() failed with error = %d\n",__func__,xlalErrno);
-	     XLAL_ERROR(XLAL_EFAULT);
-	   }
+           if (XLALComputeBinaryFreqDerivitives(&fdots,&bintemp,tmid)) {
+             LogPrintf(LOG_CRITICAL,"%s : XLALComputeBinaryFreqDerivitives() failed with error = %d\n",__func__,xlalErrno);
+             XLAL_ERROR(XLAL_EFAULT);
+           }
 
-	   /* find min and max values */
-	   for (n=0;n<NFREQMAX;n++) {
-	     if (fdots.x[n] < fnmin[n]) fnmin[n] = fdots.x[n];
-	     if (fdots.x[n] > fnmax[n]) fnmax[n] = fdots.x[n];
-	   }
+           /* find min and max values */
+           for (n=0;n<NFREQMAX;n++) {
+             if (fdots.x[n] < fnmin[n]) fnmin[n] = fdots.x[n];
+             if (fdots.x[n] > fnmax[n]) fnmax[n] = fdots.x[n];
+           }
 
-	 }
+         }
 
        }
 
@@ -787,10 +796,9 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
       LogPrintf(LOG_CRITICAL,"%s: dimensionality of frequency space < 0.  No templates required.\n",__func__);
       return XLAL_EINVAL;
    }
-   LogPrintf(LOG_DEBUG,"%s : determined dimensionality of frequency space = %d.\n",__func__,ndim);
 
    /* allocate memory to the output */
-   if ( ((*gridparams)->grid = XLALCalloc(ndim,sizeof(Grid))) == NULL) {
+   if ( ((*gridparams)->grid = XLALCalloc(NBINMAX,sizeof(Grid))) == NULL) {
      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for gridparams->grid.\n",__func__);
      return XLAL_ENOMEM;
    }
@@ -815,13 +823,13 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
      snprintf((*gridparams)->grid[n].name,LALNameLength,"f%d",n);
 
      LogPrintf(LOG_DEBUG,"%s : %s -> [%e - %e] (%e) %d grid points.\n",__func__,(*gridparams)->grid[n].name,(*gridparams)->grid[n].min,
-	       (*gridparams)->grid[n].min+((*gridparams)->grid[n].length-1)*(*gridparams)->grid[n].delta,
-	       (*gridparams)->grid[n].delta,(*gridparams)->grid[n].length);
+               (*gridparams)->grid[n].min+((*gridparams)->grid[n].length-1)*(*gridparams)->grid[n].delta,
+               (*gridparams)->grid[n].delta,(*gridparams)->grid[n].length);
    }
    LogPrintf(LOG_DEBUG,"%s : computed output grid parameters.\n",__func__);
 
    /* compute some internally required parameters for the grid */
-   if ( ((*gridparams)->prod = XLALCalloc(ndim,sizeof(UINT4))) == NULL) {
+   if ( ((*gridparams)->prod = XLALCalloc(NBINMAX,sizeof(UINT4))) == NULL) {
      LogPrintf(LOG_CRITICAL,"%s: unable to allocate memory for Template structure.\n",__func__);
      return XLAL_ENOMEM;
    }
@@ -845,10 +853,10 @@ int XLALComputeFreqGridParams(GridParameters **gridparams,              /**< [ou
  *
  */
 int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /**< [out] the gridding parameters */
-				    REAL8Space *space,                        /**< [in] the orbital parameter space */
-				    SFTVector *sftvec,                        /**< [in] the input SFTs */
-				    REAL8 mu                                  /**< [in] the required mismatch */
-				    )
+                                    REAL8Space *space,                        /**< [in] the orbital parameter space */
+                                    SFTVector *sftvec,                        /**< [in] the input SFTs */
+                                    REAL8 mu                                  /**< [in] the required mismatch */
+                                    )
 {
   UINT4 i;                              /* counter */
 
@@ -893,6 +901,7 @@ int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /*
       XLAL_ERROR(XLAL_EINVAL);
     }
     LogPrintf(LOG_DEBUG,"%s : computed frequency grid for SFT %d/%d\n",__func__,i+1,sftvec->length);
+    LogPrintf(LOG_NORMAL,"%s : determined dimensionality of frequency space = %d for SFT %d/%d\n",__func__,(*freqgridparams)->segment[i]->ndim,i+1,sftvec->length);
 
   }
 
@@ -909,9 +918,9 @@ int XLALComputeFreqGridParamsVector(GridParametersVector **freqgridparams,    /*
  *
  */
 int XLALSFTToCOMPLEX8TimeSeries(COMPLEX8TimeSeries **ts,           /**< [out] the downsampled timeseries */
-				COMPLEX8FrequencySeries *sft,      /**< [in] the input SFT vector */
-				COMPLEX8FFTPlan **plan             /**< [in/out] the FFT plan */
-				)
+                                COMPLEX8FrequencySeries *sft,      /**< [in] the input SFT vector */
+                                COMPLEX8FFTPlan **plan             /**< [in/out] the FFT plan */
+                                )
 {
 
   UINT4 N;                               /* the length of the SFTs */
@@ -983,8 +992,8 @@ int XLALSFTToCOMPLEX8TimeSeries(COMPLEX8TimeSeries **ts,           /**< [out] th
  *
  */
 int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec,      /**< [out] the downsampled timeseries */
-					   SFTVector *sftvec                         /**< [in] the input SFT vector */
-					   )
+                                           SFTVector *sftvec                         /**< [in] the input SFT vector */
+                                           )
 {
   INT4 i;                                /* counter */
   COMPLEX8FFTPlan *plan = NULL;          /* inverse FFT plan */
@@ -1036,13 +1045,13 @@ int XLALSFTVectorToCOMPLEX8TimeSeriesArray(COMPLEX8TimeSeriesArray **dstimevec, 
  *
  */
 int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
-		 CHAR *sftbasename,         /**< [in] the SFT file basename to read in */
-		 REAL8 freq,                /**< [in] the starting frequency to read in */
-		 REAL8 freqband,            /**< [in] the bandwidth to read */
-		 INT4 start,                /**< [in] the min GPS time of the input data */
-		 INT4 end,                  /**< [in] the max GPS time of the input data*/
-		 INT4 tsft		/**< UNDOCUMENTED */
-  		 )
+                 CHAR *sftbasename,         /**< [in] the SFT file basename to read in */
+                 REAL8 freq,                /**< [in] the starting frequency to read in */
+                 REAL8 freqband,            /**< [in] the bandwidth to read */
+                 INT4 start,                /**< [in] the min GPS time of the input data */
+                 INT4 end,                  /**< [in] the max GPS time of the input data*/
+                 INT4 tsft		/**< UNDOCUMENTED */
+                 )
 {
   static SFTConstraints constraints;
   SFTCatalog *catalog = NULL;
@@ -1140,12 +1149,12 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
  *
  */
 int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] the binary parameter grid */
-				REAL8Space *space,                  /**< [in] the signal parameter space */
-				REAL8 T,                            /**< [in] the duration of the observation */
-				REAL8 DT,                           /**< [in] the length of the coherent segments */
-				REAL8 mu,                           /**< [in] the mismatch */
-				REAL8 coverage		/**< UNDOCUMENTED */
-				)
+                                REAL8Space *space,                  /**< [in] the signal parameter space */
+                                REAL8 T,                            /**< [in] the duration of the observation */
+                                REAL8 DT,                           /**< [in] the length of the coherent segments */
+                                REAL8 mu,                           /**< [in] the mismatch */
+                                REAL8 coverage		/**< UNDOCUMENTED */
+                                )
 {
   REAL8 gnn[NBINMAX];                    /* stores the diagonal metric elements */
   INT4 ndim = 0;                         /* the number of actual search dimensions */
@@ -1207,8 +1216,8 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
   /* we need to determine the true number of searchable dimensions */
   /* we check the width of a 1-D template across each dimension span */
   for (n=0;n<NBINMAX;n++) {
-    REAL8 deltax = 2.0*sqrt(mu/gnn[n]);
-    if (space->data[n].span > deltax) ndim++;
+    /* REAL8 deltax = 2.0*sqrt(mu/gnn[n]); */
+    if (space->data[n].span > 0) ndim++;
   }
   LogPrintf(LOG_DEBUG,"%s : determined true dimensionality of binary space = %d.\n",__func__,ndim);
 
@@ -1246,8 +1255,8 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
     strncpy((*binarygridparams)->grid[n].name,space->data[n].name,LALNameLength*sizeof(CHAR));
 
     LogPrintf(LOG_DEBUG,"%s : %s -> [%e - %e] (%e) %d grid points.\n",__func__,(*binarygridparams)->grid[n].name,(*binarygridparams)->grid[n].min,
-	      (*binarygridparams)->grid[n].min+(*binarygridparams)->grid[n].length*(*binarygridparams)->grid[n].delta,
-	      (*binarygridparams)->grid[n].delta,(*binarygridparams)->grid[n].length);
+              (*binarygridparams)->grid[n].min+(*binarygridparams)->grid[n].length*(*binarygridparams)->grid[n].delta,
+              (*binarygridparams)->grid[n].delta,(*binarygridparams)->grid[n].length);
   }
   LogPrintf(LOG_DEBUG,"%s : computed output grid parameters.\n",__func__);
 
@@ -1286,8 +1295,8 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
 
 /** Append the given SFTtype to the SFT-vector (no SFT-specific checks are done!) */
 int XLALAppendSFT2Vector (SFTVector *vect,		/**< destinatino SFTVector to append to */
-			  const SFTtype *sft            /**< the SFT to append */
-			  )
+                          const SFTtype *sft            /**< the SFT to append */
+                          )
 {
   UINT4 oldlen = vect->length;
 
@@ -1308,13 +1317,13 @@ int XLALAppendSFT2Vector (SFTVector *vect,		/**< destinatino SFTVector to append
  *
  *
  */
-int XLALBinaryToSFTVector(SFTVector **SFTvect, 	   /**< [out] copied SFT (needs to be allocated already) */
-			  CHAR *filename,          /**< [in] the input filename */
-			  LIGOTimeGPS *fileStart,  /**< [in] the file start time */
- 			  BinaryToSFTparams *par,  /**< [in] the required parameters  */
-			  INT8Vector **np,         /**< [out] the number of photons in each SFT */
-			  REAL8Vector **R          /**< [out] the estimated photon rate per bin */
-			 )
+int XLALBinaryToSFTVector(SFTVector **SFTvect,     /**< [out] copied SFT (needs to be allocated already) */
+                          CHAR *filename,          /**< [in] the input filename */
+                          LIGOTimeGPS *fileStart,  /**< [in] the file start time */
+                          BinaryToSFTparams *par,  /**< [in] the required parameters  */
+                          INT8Vector **np,         /**< [out] the number of photons in each SFT */
+                          REAL8Vector **R          /**< [out] the estimated photon rate per bin */
+                         )
 {
 
   INT4 i,k;
@@ -1434,7 +1443,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	   /**< [out] copied SFT (needs 
         memcpy(&(timestamps.data[Nsft]),&(par->tstart),sizeof(LIGOTimeGPS));
         fprintf(stdout,"---> about to add %f to %d %d\n",(REAL8)(i*par->tsft),timestamps.data[Nsft].gpsSeconds,timestamps.data[Nsft].gpsNanoSeconds);
         XLALGPSAdd(&(timestamps.data[Nsft]),(REAL8)(i*par->tsft));
-	(*np)->data[Nsft] = sum;
+        (*np)->data[Nsft] = sum;
         fprintf(stdout,"np->data[%d] = %" LAL_INT8_FORMAT "\n",Nsft,(*np)->data[Nsft]);
         Nsft++;
       }
@@ -1514,7 +1523,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	   /**< [out] copied SFT (needs 
   XLALNormalizeSFTMedian (SFTtype *sft,           /**< SFT to be normalized */
                           REAL8 *mean,            /**< [out] the mean computed from the median */
                           INT4 flag               /**< [in] flag for normalising, 0 = no normalising */
-			)
+                        )
   {
     /* check input argments */
     XLAL_CHECK (sft && sft->data && sft->data->data && sft->data->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input in 'sft'" );
@@ -1560,8 +1569,8 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	   /**< [out] copied SFT (needs 
   int
   XLALNormalizeSFTVectMedian ( SFTVector  *sftVect,            /**< [in/out] pointer to a vector of SFTs which will be normalized */
                                REAL8Vector *mean,              /**< [out] a vector of mean estimates based on the median */
-			       INT4 flag                       /**< [in] flag for normalising, 0 = no normalising */
-			     )
+                               INT4 flag                       /**< [in] flag for normalising, 0 = no normalising */
+                             )
   {
     /* check input argments */
     XLAL_CHECK ( sftVect && sftVect->data && sftVect->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input in 'sftVect'");
@@ -1588,8 +1597,8 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	   /**< [out] copied SFT (needs 
   int
   XLALNormalizeSFTMean (SFTtype *sft,          /**< SFT to be normalized */
                         REAL8 *mean,           /**< [out] the mean power */
-			INT4 flag              /**< [in] flag for normalising, 0 = no normalising */
-		       )
+                        INT4 flag              /**< [in] flag for normalising, 0 = no normalising */
+                       )
   {
     /* check input argments */
     XLAL_CHECK (sft && sft->data && sft->data->data && sft->data->length > 0, XLAL_EINVAL, "Invalid NULL or zero-length input in 'sft'" );
@@ -1620,7 +1629,7 @@ int XLALBinaryToSFTVector(SFTVector **SFTvect, 	   /**< [out] copied SFT (needs 
   int
   XLALNormalizeSFTVectMean ( SFTVector  *sftVect,            /**< [in/out] pointer to a vector of SFTs which will be normalized */
                              REAL8Vector *mean,              /**< [out] a vector of means estimating the noise floor */
- 		             INT4 flag                       /**< [in] flag for normalising, 0 = no normalising */
+                             INT4 flag                       /**< [in] flag for normalising, 0 = no normalising */
                            )
   {
     /* check input argments */

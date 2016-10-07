@@ -127,8 +127,8 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
   /* and if not, sort the triggers */
   for ( thisTable = tableHead; thisTable->next; thisTable = thisTable->next )
   {
-    if ( XLALGPSToINT8NS( &(thisTable->end_time) )
-           > XLALGPSToINT8NS( &(thisTable->next->end_time) ) )
+    if ( XLALGPSToINT8NS( &(thisTable->end) )
+           > XLALGPSToINT8NS( &(thisTable->next->end) ) )
     {
       *table = tableHead = XLALSortSnglInspiral( tableHead, LALCompareSnglInspiralByTime );
       break;
@@ -331,7 +331,7 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
     INT8  endTimeB;
     REAL8 originalTimeB;
 
-    endTimeA = XLALGPSToINT8NS( &(thisClusterList->trigger->end_time) );
+    endTimeA = XLALGPSToINT8NS( &(thisClusterList->trigger->end) );
     XLAL_CALLGSL( originalTimeA = gsl_vector_get( thisClusterList->position, 0 ) );
 
     /* Reset the time to avoid precision problems */
@@ -343,7 +343,7 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
     while ( thisErrorList )
     {
 
-      endTimeB = XLALGPSToINT8NS( &(thisErrorList->trigger->end_time) );
+      endTimeB = XLALGPSToINT8NS( &(thisErrorList->trigger->end) );
       XLAL_CALLGSL( originalTimeB = gsl_vector_get( thisErrorList->position, 0 ) );
 
       /* If the triggers are more than twice the max time error apart, no need to proceed */

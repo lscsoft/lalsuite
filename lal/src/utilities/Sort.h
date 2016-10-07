@@ -145,34 +145,11 @@ int XLALHeapIndex( INT4 *indx, void *base, UINT4 nobj, UINT4 size, void *params,
 int XLALHeapRank( INT4 *rank, void *base, UINT4 nobj, UINT4 size, void *params,
     int (*compar)(void *, const void *, const void *) );
 
-/** \see See \ref Sort_h for documentation */
-void LALSHeapSort(LALStatus      *status,
-	       REAL4Vector *vector);
+/* ----- InsertionSort.c ----- */
 
 /** \see See \ref Sort_h for documentation */
-void LALSHeapIndex(LALStatus      *status,
-		INT4Vector  *indx,
-		REAL4Vector *vector);
-
-/** \see See \ref Sort_h for documentation */
-void LALSHeapRank(LALStatus      *status,
-	       INT4Vector  *rank,
-	       REAL4Vector *vector);
-
-/** \see See \ref Sort_h for documentation */
-void LALDHeapSort(LALStatus      *status,
-	       REAL8Vector *vector);
-
-/** \see See \ref Sort_h for documentation */
-void LALDHeapIndex(LALStatus      *status,
-		INT4Vector  *indx,
-		REAL8Vector *vector);
-
-/** \see See \ref Sort_h for documentation */
-void LALDHeapRank(LALStatus      *status,
-	       INT4Vector  *rank,
-	       REAL8Vector *vector);
-
+int XLALInsertionSort( void *base, size_t nobj, size_t size, void *params,
+    int (*compar)(void *, const void *, const void *) );
 
 /*@}*/
 

@@ -32,6 +32,17 @@ parser.add_option("-o","--outfile",default=None, help="Optional output file name
 
 (opts,args)=parser.parse_args()
 
+def get_metadata_hdf5(filename,key):
+    import h5py
+    with h5py.File(filename,'r') as hdf:
+        g=hdf['lalinference']
+        if(len(g.keys()))>1:
+            print('Error: multiple runs %s found in input file %s'%g.keys(),filename)
+            sys.exit(1)
+        # Descend into run group
+        g=g[g.keys()[0]]
+        return g.attrs[key]
+
 # Sanity check input arguments
 if len(args)==0:
 	print 'No input files specified'
@@ -56,23 +67,32 @@ def logadd(a,b):
     if(a>b): (a,b)=(b,a)
     return (b+log(1+exp(a-b)))
 
-def getBfile(Bfile):
-    Bfile=Bfile
+def get_metadata_old(Bfile,key):
     print 'Looking for '+Bfile
     if os.access(Bfile,os.R_OK):
         outstat = loadtxt(Bfile)
-        return outstat
+        if key=='log_evidence':
+            return outstat[1]
+        if key=='log_noise_evidence':
+            return outstat[2]
+        if key=='log_bayes_factor':
+            return outstat[0]
+        print 'Unknown key %s'%(key)
+        return None
     else:
         return None
 
-co=getBfile(cofile)
-incos=map(getBfile, incofiles)
+def get_metadata(filename,key):
+    if '.h5' in filename or '.hdf' in filename:
+        return get_metadata_hdf5(filename,key)
+    else:
+        return get_metadata_old(filename,key)
 
-Zco=co[1]
+Zco = get_metadata(cofile,'log_evidence')
 Zinco=0
-for inco in incos:
-	Zinco+=inco[1]
-Znoise=co[2]
+for inco in incofiles:
+	Zinco+=get_metadata(inco,'log_evidence')
+Znoise = get_metadata(cofile,'log_noise_evidence')
 
 if(opts.outfile is not None):
 	out=open(opts.outfile,'w')

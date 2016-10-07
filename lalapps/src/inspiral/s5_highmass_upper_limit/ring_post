@@ -12,7 +12,7 @@ from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import utils
-from pylal import ligolw_tisi
+from lalburst import timeslides as ligolw_tisi
 from pylal import llwapp
 from pylal import ligolw_cafe
 from glue import pipeline
@@ -68,7 +68,7 @@ class Tisi(object):
 	def make_doc(self, options):
 		while self.time_slides:
 			doc = self.new_doc()
-			timeslidetable = table.get_table(doc, lsctables.TimeSlideTable.tableName)
+			timeslidetable = lsctables.TimeSlideTable.get_table(doc)
 			process = ligolw_tisi.append_process(doc, **options.__dict__)
 			N = int(round(float(len(self.time_slides)) / len(self.filenames)))
 			while N:

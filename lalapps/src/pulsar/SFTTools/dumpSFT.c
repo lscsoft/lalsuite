@@ -45,7 +45,6 @@
 /* User variables */
 typedef struct
 {
-  BOOLEAN help;
   CHAR *SFTfiles;
   BOOLEAN headerOnly;
   BOOLEAN noHeader;
@@ -182,16 +181,15 @@ XLALprintData ( const SFTtype *sft )
 int
 XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar )
 {
-  XLALRegisterUvarMember( 	help,		BOOLEAN, 'h', HELP,     "Print this help/usage message");
   XLALRegisterUvarMember(	SFTfiles,	STRING, 'i', REQUIRED, "File-pattern for input SFTs");
   XLALRegisterUvarMember(	headerOnly,	BOOLEAN, 'H', OPTIONAL, "Output only header-info");
   XLALRegisterUvarMember(	noHeader,	BOOLEAN, 'n', OPTIONAL, "Output only data, no header");
 
   /* read cmdline & cfgfile  */
-  XLAL_CHECK ( XLALUserVarReadAllInput ( argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if (uvar->help) { 	/* help requested: we're done */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit (1);
   }
 
   XLAL_CHECK ( !(uvar->headerOnly && uvar->noHeader), XLAL_EINVAL, "Contradictory input --headerOnly --noHeader\n" );

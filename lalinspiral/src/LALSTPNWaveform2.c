@@ -144,7 +144,7 @@ static int XLALSTPNAdaptiveTest(double t,const double values[],double dvalues[],
 		return LALSTPN_TEST_ENERGY;
 	} else if (dvalues[1] < 0.0) { 									   /* omegadot < 0! */
 		return LALSTPN_TEST_OMEGADOT;
-	} else if isnan(omega) {													 /* omega is nan */
+	} else if (isnan(omega)) {													 /* omega is nan */
 		return LALSTPN_TEST_OMEGANAN;
 	} else {
 		return GSL_SUCCESS;

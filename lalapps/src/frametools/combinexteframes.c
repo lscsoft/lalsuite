@@ -164,7 +164,6 @@ typedef struct {
  * A structure that sores user input variables
  */
 typedef struct { 
-  BOOLEAN help;		            /**< trigger output of help string */
   CHAR *inputdir;                   /**< directory containing input frame files */
   CHAR *pattern;                    /**< the input frame file name pattern */
   CHAR *outputdir;                  /**< name of output directory */
@@ -375,7 +374,6 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
   uvar->goodxenon = 0;
 
   /* ---------- register all user-variables ---------- */
-  LALregBOOLUserStruct(status, 	help, 		'h', UVAR_HELP,     "Print this message");
   LALregSTRINGUserStruct(status,inputdir, 	'i', UVAR_REQUIRED, "The input frame directory"); 
   LALregSTRINGUserStruct(status,pattern, 	'p', UVAR_OPTIONAL, "The frame file name pattern"); 
   LALregSTRINGUserStruct(status,outputdir, 	'o', UVAR_REQUIRED, "The output frame file directory"); 
@@ -384,10 +382,9 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
   LALregBOOLUserStruct(status,	version,        'V', UVAR_SPECIAL,  "Output code version");
 
   /* do ALL cmdline and cfgfile handling */
-  LAL_CALL (LALUserVarReadAllInput(status->statusPtr, argc, argv), status->statusPtr);
- 
-  /* if help was requested, we're done here */
-  if (uvar->help) exit(0);
+  BOOLEAN should_exit = 0;
+  LAL_CALL (LALUserVarReadAllInput(status->statusPtr, &should_exit, argc, argv), status->statusPtr);
+  if (should_exit) exit(1);
 
   if ((version_string = XLALGetVersionString(0)) == NULL) {
     XLALPrintError("XLALGetVersionString(0) failed.\n");

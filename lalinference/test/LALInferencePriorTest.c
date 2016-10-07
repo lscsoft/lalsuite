@@ -386,23 +386,25 @@ int LALInferenceDrawFromPriorTest(void)
 		name = "correlated";
 		gsl_matrix *covariance = gsl_matrix_calloc(3, 3);
 		LALInferenceAddVariable(output, name, &correlated, type, vary);
-		LALInferenceRemoveCorrelatedPrior(priorArgs, name);
-		LALInferenceAddCorrelatedPrior(priorArgs, name, &covariance, &idx);
+		LALInferenceRemoveCorrelatedPrior(priorArgs);
 
-		// See what happens when we try to generate correlated values from a non-positive-definite
-		// covariance matrix.
-		gsl_matrix_set(covariance, 0, 0, -1);
-		XLAL_TRY(LALInferenceDrawFromPrior(output, priorArgs, rng), errnum);
-		if (errnum == XLAL_SUCCESS)
-			TEST_FAIL("%sNon-positive-definite covariance matrix was not rejected.", caseTag);
+		// See what happens when we try to add a non-positive-definite covariance matrix
+                gsl_matrix_set(covariance, 0, 0, -1);
+                XLAL_TRY(LALInferenceAddCorrelatedPrior(priorArgs, name, &covariance, &mu, &sigma, &idx), errnum);
+                if (errnum == XLAL_SUCCESS)
+                        TEST_FAIL("%sNon-positive-definite covariance matrix was not rejected.", caseTag);
+                LALInferenceRemoveCorrelatedPrior(priorArgs);
 
-		// Now try a positive-semi-definite matrix; this should be accepted (need only update matrix, not add it afresh).
-		gsl_matrix_set(covariance, 0, 0, 1);
-		XLAL_TRY(LALInferenceDrawFromPrior(output, priorArgs, rng), errnum);
-		if (errnum != XLAL_SUCCESS)
-			TEST_FAIL("%sCould not generate correlated variable from positive-semi-definite matrix; XLAL error: %s.", caseTag, XLALErrorString(errnum));
-		
+		// Now try a positive-semi-definite matrix; this should be accepted
+                covariance = gsl_matrix_calloc(3, 3);
+                gsl_matrix_set(covariance, 0, 0, 1);
+                XLAL_TRY(LALInferenceAddCorrelatedPrior(priorArgs, name, &covariance, &mu, &sigma, &idx), errnum);
+                if (errnum != XLAL_SUCCESS)
+                        TEST_FAIL("%sCould not add semi-positive-definite covariance matrix.", caseTag);
+		LALInferenceRemoveCorrelatedPrior(priorArgs);
+
 		// Try a legitimate positive-definite covariance matrix.
+                covariance = gsl_matrix_calloc(3, 3);
 		gsl_matrix_set(covariance, 0, 0, 2);
 		gsl_matrix_set(covariance, 0, 1, 1);
 		gsl_matrix_set(covariance, 0, 2, 0);
@@ -412,12 +414,15 @@ int LALInferenceDrawFromPriorTest(void)
 		gsl_matrix_set(covariance, 2, 0, 0);
 		gsl_matrix_set(covariance, 2, 1, 1);
 		gsl_matrix_set(covariance, 2, 2, 1);
-		XLAL_TRY(LALInferenceDrawFromPrior(output, priorArgs, rng), errnum);
+                XLAL_TRY(LALInferenceAddCorrelatedPrior(priorArgs, name, &covariance, &mu, &sigma, &idx), errnum);
+                if (errnum != XLAL_SUCCESS)
+                        TEST_FAIL("%sCould not add correlated prior.", caseTag);
+                XLAL_TRY(LALInferenceDrawFromPrior(output, priorArgs, rng), errnum);
 		if (errnum != XLAL_SUCCESS)
 			TEST_FAIL("%sCould not generate correlated variable from positive-definite matrix; XLAL error: %s.", caseTag, XLALErrorString(errnum));
 
 		LALInferenceRemoveVariable(output, name);
-		LALInferenceRemoveCorrelatedPrior(priorArgs, name);
+		LALInferenceRemoveCorrelatedPrior(priorArgs);
 
 		//gsl_matrix_free(covariance);
 		LALInferenceRemoveVariable(output, "gaussian");
@@ -511,7 +516,7 @@ int LALInferenceInspiralPriorTest(void)
 	{
 		TEST_FAIL("Could not generate inspiral prior; XLAL error: %s", XLALErrorString(errnum));
 	}
-	else if (result == -DBL_MAX)
+	else if (isinf(result))
 	{
 		TEST_FAIL("Parameter configuration within specified min/max bounds for each parameter gave zero prior.");
 	}
@@ -525,7 +530,7 @@ int LALInferenceInspiralPriorTest(void)
 	{
 		TEST_FAIL("Could not generate inspiral prior; XLAL error: %s", XLALErrorString(errnum));
 	}
-	else if (result != -DBL_MAX)
+	else if (isfinite(result))
 	{
 		TEST_FAIL("Distance %f is outside [%f,%f] but prior is non-zero.", value, min, max);
 	}
@@ -548,7 +553,7 @@ int LALInferenceInspiralPriorTest(void)
 	{
 		TEST_FAIL("Could not generate inspiral prior; XLAL error: %s", XLALErrorString(errnum));
 	}
-	else if (result != -DBL_MAX)
+	else if (isfinite(result))
 	{
 		TEST_FAIL("Mass ratio %f and chirp mass %f define masses outside bounds [%f,%f], but prior is non-zero.", eta, Mc, min, max);
 	}

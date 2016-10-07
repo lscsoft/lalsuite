@@ -22,7 +22,6 @@
 #define MAX_NUM_MODES 7
 
 
-
 struct
 SpinEOBModes
 {
@@ -49,6 +48,8 @@ SpinEOBModes
  * d1v2 - SO calibration parameter of SEOBNRv2
  * dheffSS - SS calibration parameter of SEOBNRv1
  * dheffSSv2 - SS calibration parameter of SEOBNRv2
+ * tidal1 - tidal params of body 1
+ * tidal2 - tidal params of body 2
  */
 
 typedef struct
@@ -70,6 +71,8 @@ tagSpinEOBHCoeffs
   double dheffSSv2;
   UINT4    SpinAlignedEOBversion;
   int      updateHCoeffs;
+  TidalEOBParams *tidal1;
+  TidalEOBParams *tidal2;
 }
 SpinEOBHCoeffs;
 

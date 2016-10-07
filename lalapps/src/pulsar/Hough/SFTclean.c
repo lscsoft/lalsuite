@@ -82,7 +82,6 @@ int main(int argc, char *argv[]){
   UINT4 k, j;  
 
   /* user input variables */
-  BOOLEAN uvar_help;
   LALStringVector *uvar_linefiles=NULL; /* files with harmonics info */
   CHAR *uvar_sftDir;    /* directory for unclean sfts */
   CHAR *uvar_outDir;   /* directory for cleaned sfts */
@@ -91,7 +90,6 @@ int main(int argc, char *argv[]){
 
   /* set defaults */
 
-  uvar_help = FALSE;
   uvar_sftDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
   strcpy(uvar_sftDir, INPUTSFTDIR);
 
@@ -104,7 +102,6 @@ int main(int argc, char *argv[]){
   uvar_maxBins = MAXBINS;
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",     'h',UVAR_HELP,     "Print this message",     &uvar_help),   &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",   'i',UVAR_OPTIONAL, "Input SFT file pattern", &uvar_sftDir), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outDir",   'o',UVAR_OPTIONAL, "Output SFT Directory",   &uvar_outDir), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fMin",      0, UVAR_OPTIONAL, "start Frequency",        &uvar_fMin),   &status);
@@ -116,11 +113,10 @@ int main(int argc, char *argv[]){
 
 
   /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0); 
+  BOOLEAN should_exit = 0;
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
   
   /* set detector constraint */
   constraints.detector = NULL;

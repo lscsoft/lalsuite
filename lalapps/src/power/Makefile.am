@@ -3,6 +3,7 @@ include $(top_srcdir)/gnuscripts/lalapps.am
 MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
+include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 BURSTPROGS = lalapps_binj
 lalapps_binj_SOURCES = binj.c
@@ -14,7 +15,7 @@ endif
 bin_PROGRAMS = $(BURSTPROGS) $(INSPPROGS)
 
 if HAVE_PYTHON
-pybin_scripts = lalapps_power_pipe lalapps_power_online_pipe lalapps_power_likelihood_pipe
+pybin_scripts = lalapps_gen_timeslides lalapps_power_pipe lalapps_power_online_pipe lalapps_power_likelihood_pipe
 pkgpython_PYTHON = power.py
 endif
 

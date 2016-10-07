@@ -86,7 +86,7 @@ extern "C" {
  * (\c TIMECORRECTION_TEMPO2 is so-called because the pulsar timing software
  * TEMPO2 uses the TCB time system by default).
  */
-typedef enum{
+typedef enum tagTimeCorrectionType {
   TIMECORRECTION_NONE = 0,
   TIMECORRECTION_TDB,
   TIMECORRECTION_TCB,
@@ -100,7 +100,7 @@ typedef enum{
  * \brief Enumerated type denoting the JPL solar system ephemeris to be used
  * in calculating barycentre time corrections.
  */
-typedef enum {
+typedef enum tagEphemerisType {
   EPHEM_NONE = 0,
   EPHEM_DE200,
   EPHEM_DE405,

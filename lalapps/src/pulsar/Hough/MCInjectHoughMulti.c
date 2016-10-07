@@ -174,7 +174,7 @@ int main(int argc, char *argv[]){
   /******************************************************************/ 
   /*    user input variables   */
   /******************************************************************/ 
-  BOOLEAN uvar_help, uvar_weighAM, uvar_weighNoise, uvar_printLog, uvar_fast;
+  BOOLEAN uvar_weighAM, uvar_weighNoise, uvar_printLog, uvar_fast;
   INT4    uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
   INT4    uvar_nfSizeCylinder, uvar_maxBinsClean, uvar_Dterms;
   REAL8   uvar_f0, uvar_fSearchBand, uvar_peakThreshold, uvar_h0Min, uvar_h0Max;
@@ -193,7 +193,6 @@ int main(int argc, char *argv[]){
   /* LAL error-handler */
   lal_errhandler   =   LAL_ERR_EXIT;
   
-  uvar_help = FALSE;
   uvar_AllSkyFlag = 1;
   
   uvar_weighAM = TRUE;
@@ -239,7 +238,6 @@ int main(int argc, char *argv[]){
   /******************************************************************/ 
   /*      register user input variables    */
   /******************************************************************/ 
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",            &uvar_help),            &status);  
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",             &uvar_blocksRngMed),    &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Start search frequency",        &uvar_f0),              &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "fSearchBand",     'b', UVAR_OPTIONAL, "Search frequency band",         &uvar_fSearchBand),     &status);
@@ -273,11 +271,10 @@ int main(int argc, char *argv[]){
   /******************************************************************/ 
   /* read all command line variables */
   /******************************************************************/ 
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0); 
+  BOOLEAN should_exit = 0;
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
 
 
   /* very basic consistency checks on user input */

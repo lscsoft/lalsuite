@@ -43,14 +43,22 @@ extern "C" {
 #endif
 
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(FUNCTION_POINTER(XLALSimNoisePSDiLIGOSRD, XLALSimNoisePSDiLIGOModel,
-	XLALSimNoisePSDeLIGOModel, XLALSimNoisePSDVirgo, XLALSimNoisePSDGEO,
-	XLALSimNoisePSDTAMA, XLALSimNoisePSDaLIGONoSRMLowPower,
-	XLALSimNoisePSDaLIGONoSRMHighPower,
-	XLALSimNoisePSDaLIGOZeroDetLowPower,
-	XLALSimNoisePSDaLIGOZeroDetHighPower, XLALSimNoisePSDaLIGONSNSOpt,
+SWIGLAL(FUNCTION_POINTER(aLIGOQuantumHighFrequency, XLALSimNoisePSDAdvVirgo,
 	XLALSimNoisePSDaLIGOBHBH20Deg, XLALSimNoisePSDaLIGOHighFrequency,
-	XLALSimNoisePSDKAGRA, XLALSimNoisePSDAdvVirgo));
+	XLALSimNoisePSDaLIGONoSRMHighPower, XLALSimNoisePSDaLIGONoSRMLowPower,
+	XLALSimNoisePSDaLIGONSNSOpt, XLALSimNoisePSDaLIGOQuantumBHBH20Deg,
+	XLALSimNoisePSDaLIGOQuantumHighFrequency,
+	XLALSimNoisePSDaLIGOQuantumNoSRMHighPower,
+	XLALSimNoisePSDaLIGOQuantumNoSRMLowPower,
+	XLALSimNoisePSDaLIGOQuantumNSNSOpt,
+	XLALSimNoisePSDaLIGOQuantumZeroDetHighPower,
+	XLALSimNoisePSDaLIGOQuantumZeroDetLowPower, XLALSimNoisePSDaLIGOThermal,
+	XLALSimNoisePSDaLIGOZeroDetHighPower, XLALSimNoisePSDaLIGOZeroDetLowPower,
+	XLALSimNoisePSDeLIGOModel, XLALSimNoisePSDeLIGOShot, XLALSimNoisePSDGEO,
+	XLALSimNoisePSDGEOHF, XLALSimNoisePSDiLIGOModel,
+	XLALSimNoisePSDiLIGOSeismic, XLALSimNoisePSDiLIGOShot,
+	XLALSimNoisePSDiLIGOSRD, XLALSimNoisePSDiLIGOThermal, XLALSimNoisePSDKAGRA,
+	XLALSimNoisePSDTAMA, XLALSimNoisePSDVirgo));
 #endif
 
 

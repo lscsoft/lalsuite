@@ -142,11 +142,11 @@ if 1:
 #
 
 
-def btlwnb_example(axes1, axes2, f0, dof, duration, e):
+def btlwnb_example(axes1, axes2, f0, dof, duration, e, pol):
 	axes1.grid(True)
 	axes2.grid(True)
 
-	# dof/2 = dof/polarization
+	# dof/2 = dof in each polarization
 	bandwidth = dof/2 * (2./math.pi) / duration
 
 	import lal
@@ -159,6 +159,7 @@ def btlwnb_example(axes1, axes2, f0, dof, duration, e):
 	simburst_row.frequency = f0
 	simburst_row.bandwidth = bandwidth
 	simburst_row.pol_ellipse_e = e
+	simburst_row.pol_ellipse_angle = pol
 	hp, hc = lalburst.GenerateSimBurst(simburst_row, 1./16384)
 
 	t = float(hp.epoch) + numpy.arange(0., len(hp.data.data)) * hp.deltaT
@@ -168,7 +169,7 @@ def btlwnb_example(axes1, axes2, f0, dof, duration, e):
 	axes1.set_ylim((-0.015, +0.015))
 	axes1.set_xlabel(r"Time (seconds)")
 	axes1.set_ylabel(r"Strain")
-	axes1.set_title(r"$\int(\dot{h}_{+}^{2} + \dot{h}_{\times}^{2})\,\mathrm{d}t = 1$, $f_{0} = %g\,\mathrm{Hz}$, $\Delta t = %g\,\mathrm{s}$, $%g\,\mathrm{DOF}$ ($\Delta f = %g\,\mathrm{Hz}$), $\epsilon = %g$" % (f0, duration, dof, bandwidth, e))
+	axes1.set_title(r"$\int(\dot{h}_{+}^{2} + \dot{h}_{\times}^{2})\,\mathrm{d}t = 1$, $f_{0} = %g\,\mathrm{Hz}$, $\Delta t = %g\,\mathrm{s}$, $%g\,\mathrm{DOF}$ ($\Delta f = %g\,\mathrm{Hz}$), $\epsilon = %g$, $\phi = %g \pi$" % (f0, duration, dof, bandwidth, e, pol / math.pi))
 	axes1.legend()
 	axes2.plot(hc.data.data, hp.data.data, color = "k")
 	axes2.set_xlim((-0.015, +0.015))
@@ -181,10 +182,17 @@ if 1:
 	fig = figure.Figure()
 	FigureCanvas(fig)
 	width = 200.
-	fig.set_size_inches(1.2 * width / 25.4, 2. * width / 25.4 / ((1 + math.sqrt(5)) / 2))
-	btlwnb_example(fig.add_subplot(3, 2,  1), fig.add_subplot(3, 2,  2), 250., 8., 0.008, 0.)
-	btlwnb_example(fig.add_subplot(3, 2,  3), fig.add_subplot(3, 2,  4), 250., 4., 0.008, 0.)
-	btlwnb_example(fig.add_subplot(3, 2,  5), fig.add_subplot(3, 2,  6), 250., 2., 0.008, 0.)
+	fig.set_size_inches(1.2 * width / 25.4, 7. * width / 25.4 / ((1 + math.sqrt(5)) / 2))
+	btlwnb_example(fig.add_subplot(10, 2,  1), fig.add_subplot(10, 2,  2), 250., 16., 0.016, 0., 0.)
+	btlwnb_example(fig.add_subplot(10, 2,  3), fig.add_subplot(10, 2,  4), 250.,  4., 0.008, 0., 0.)
+	btlwnb_example(fig.add_subplot(10, 2,  5), fig.add_subplot(10, 2,  6), 250.,  4., 0.008, 0.85, 0.)
+	btlwnb_example(fig.add_subplot(10, 2,  7), fig.add_subplot(10, 2,  8), 250.,  4., 0.008, 1., 0.)
+	btlwnb_example(fig.add_subplot(10, 2,  9), fig.add_subplot(10, 2, 10), 250.,  2., 0.008, 0., 0.)
+	btlwnb_example(fig.add_subplot(10, 2, 11), fig.add_subplot(10, 2, 12), 250.,  2., 0.008, 0., math.pi / 2.)
+	btlwnb_example(fig.add_subplot(10, 2, 13), fig.add_subplot(10, 2, 14), 250.,  2., 0.008, 0.85, 0.)
+	btlwnb_example(fig.add_subplot(10, 2, 15), fig.add_subplot(10, 2, 16), 250.,  2., 0.008, 1., 0.)
+	btlwnb_example(fig.add_subplot(10, 2, 17), fig.add_subplot(10, 2, 18),   0.,  2., 0.008, 0., 0.)
+	btlwnb_example(fig.add_subplot(10, 2, 19), fig.add_subplot(10, 2, 20),   0.,  2., 0.008, 1., 0.)
 	fig.tight_layout()
 	fig.savefig("lalsimburst_btlwnbexamples.svg")
 

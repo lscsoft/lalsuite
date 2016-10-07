@@ -115,6 +115,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,				/**< list of cancidate
             elem->avTwoFXrecalc[X] = recalcStats.avTwoFX[X];
           }
           elem->log10BSGLrecalc = recalcStats.log10BSGL;
+          elem->log10BSGLtLrecalc = recalcStats.log10BSGLtL;
           if ( recalcParams->loudestSegOutput ) {
             elem->loudestSeg      = recalcStats.loudestSeg;
             elem->twoFloudestSeg  = recalcStats.twoFloudestSeg;
@@ -178,6 +179,8 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
     recalcStats->twoFXloudestSeg[X] = 0.0;
   }
   recalcStats->twoFloudestSeg = 0.0;
+  REAL4 maxTwoFXl[PULSAR_MAX_DETECTORS]; // max single-IFO Fstat-value, maximized over all segments
+  XLAL_INIT_MEM ( maxTwoFXl );
 
   /* compute single- and multi-detector Fstats for each data segment and sum up */
   FstatResults* Fstat_res = NULL;
@@ -234,6 +237,8 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
             updated_twoFXloudestSeg[detid] = TRUE;
           }
 
+          maxTwoFXl[detid] = fmaxf ( maxTwoFXl[detid], Fstat_res->twoFPerDet[X][0] );
+
         } /* for X < numDetectorsSeg */
 
       /* need to overwrite the twoFXloudestSeg when not all detectors have data in the loudest segment */
@@ -252,7 +257,10 @@ int XLALComputeExtraStatsSemiCoherent ( RecalcStatsComponents *recalcStats,		/**
     {
       recalcStats->log10BSGL = XLALComputeBSGL ( sumTwoF, sumTwoFX, recalcParams->BSGLsetup );
       XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGL() failed with xlalErrno = %d\n", xlalErrno );
-    }
+
+      recalcStats->log10BSGLtL  = XLALComputeBSGLtL ( sumTwoF, sumTwoFX, maxTwoFXl, recalcParams->BSGLsetup );
+      XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALComputeBSGLtL() failed with xlalErrno = %d\n", xlalErrno );
+    } // if BSGLsetup != NULL
 
   /* get average stats over all segments */
   recalcStats->avTwoF = sumTwoF/numSegments;

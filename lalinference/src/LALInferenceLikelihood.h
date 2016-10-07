@@ -99,9 +99,6 @@ extern const REAL8 CM[15][15];
  ***************************************************************/
 REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, LALInferenceModel *model);
 
-REAL8 LALInferenceROQLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
-                              LALInferenceModel *model);
-
 /**
  * For testing purposes (for instance sampling the prior),
  * likelihood that returns 0.0 = log(1) every
@@ -111,10 +108,16 @@ REAL8 LALInferenceZeroLogLikelihood(LALInferenceVariables *currentParams, LALInf
 
 
 /**
- * Computes the <x|y> overlap in the Fourrier domain.
+ * Computes the <x|y> overlap in the Fourier domain.
  */
 REAL8 LALInferenceComputeFrequencyDomainOverlap(LALInferenceIFOData * data,
         COMPLEX16Vector * freqData1, COMPLEX16Vector * freqData2);
+/**
+ * Computes the complex <x|y> overlap
+ */
+COMPLEX16 LALInferenceComputeFrequencyDomainComplexOverlap(LALInferenceIFOData * dataPtr,
+                                                           COMPLEX16Vector * freqData1,
+                                                           COMPLEX16Vector * freqData2);
 
 /**
  * Identical to LALInferenceFreqDomainNullLogLikelihood, but returns the likelihood of a null template.

@@ -31,7 +31,7 @@ extern "C" {
  * \defgroup LALHashTbl_h Header LALHashTbl.h
  * \ingroup lal_utilities
  * \author Karl Wette
- * \brief Implementation of a generic hash table, following Chapter 5.2 of \cite open-data-structs
+ * \brief Implementation of a generic hash table, following Chapter 5.2 of \cite open-data-structs .
  */
 /*@{*/
 
@@ -69,20 +69,20 @@ typedef int ( *LALHashTblCmpParamFcn )( void *param, const void *x, const void *
  * Create a hash table
  */
 LALHashTbl *XLALHashTblCreate(
-  LALHashTblDtorFcn dtor,	/**< [in] Function to free memory of elements of hash, if required */
-  LALHashTblHashFcn hash,	/**< [in] Hash function for hash table elements */
-  LALHashTblCmpFcn cmp		/**< [in] Hash table element comparison function */
+  LALHashTblDtorFcn dtor,       /**< [in] Function to free memory of elements of hash, if required */
+  LALHashTblHashFcn hash,       /**< [in] Hash function for hash table elements */
+  LALHashTblCmpFcn cmp          /**< [in] Hash table element comparison function */
   );
 
 /**
  * Create a hash table with parameterised hash and comparison functions
  */
 LALHashTbl *XLALHashTblCreate2(
-  LALHashTblDtorFcn dtor,	/**< [in] Function to free memory of elements of hash, if required */
-  LALHashTblHashParamFcn hash,	/**< [in] Parameterised hash function for hash table elements */
-  void *hash_param,		/**< [in] Parameter to pass to hash function */
-  LALHashTblCmpParamFcn cmp,	/**< [in] Parameterised hash table element comparison function */
-  void *cmp_param		/**< [in] Parameter to pass to comparison function */
+  LALHashTblDtorFcn dtor,       /**< [in] Function to free memory of elements of hash, if required */
+  LALHashTblHashParamFcn hash,  /**< [in] Parameterised hash function for hash table elements */
+  void *hash_param,             /**< [in] Parameter to pass to hash function */
+  LALHashTblCmpParamFcn cmp,    /**< [in] Parameterised hash table element comparison function */
+  void *cmp_param               /**< [in] Parameter to pass to comparison function */
   );
 
 /**
@@ -96,33 +96,33 @@ void XLALHashTblDestroy(
  * Return the size of a hash table
  */
 int XLALHashTblSize(
-  const LALHashTbl *ht		/**< [in] Pointer to hash table */
+  const LALHashTbl *ht          /**< [in] Pointer to hash table */
   );
 
 /**
  * Find the element matching <tt>x</tt> in a hash table; if found, return in <tt>*y</tt>
  */
 int XLALHashTblFind(
-  const LALHashTbl *ht,		/**< [in] Pointer to hash table */
-  const void *x,		/**< [in] Hash element to match */
-  const void **y		/**< [out] Pointer to matched hash element, or NULL if not found */
+  const LALHashTbl *ht,         /**< [in] Pointer to hash table */
+  const void *x,                /**< [in] Hash element to match */
+  const void **y                /**< [out] Pointer to matched hash element, or NULL if not found */
   );
 
 /**
  * Add an element to a hash table
  */
 int XLALHashTblAdd(
-  LALHashTbl *ht,		/**< [in] Pointer to hash table */
-  void *x			/**< [in] Hash element to add */
+  LALHashTbl *ht,               /**< [in] Pointer to hash table */
+  void *x                       /**< [in] Hash element to add */
   );
 
 /**
  * Find the element matching <tt>x</tt> in a hash table; if found, remove it and return in <tt>*y</tt>
  */
 int XLALHashTblExtract(
-  LALHashTbl *ht,		/**< [in] Pointer to hash table */
-  const void *x,		/**< [in] Hash element to match */
-  void **y			/**< [out] Pointer to matched hash element, which has been removed from
+  LALHashTbl *ht,               /**< [in] Pointer to hash table */
+  const void *x,                /**< [in] Hash element to match */
+  void **y                      /**< [out] Pointer to matched hash element, which has been removed from
                                    the hash table, or NULL if not found */
   );
 
@@ -130,8 +130,8 @@ int XLALHashTblExtract(
  * Find the element matching <tt>x</tt> in a hash table; if found, remove and destroy it
  */
 int XLALHashTblRemove(
-  LALHashTbl *ht,		/**< [in] Pointer to hash table */
-  const void *x			/**< [in] Hash element to match */
+  LALHashTbl *ht,               /**< [in] Pointer to hash table */
+  const void *x                 /**< [in] Hash element to match */
   );
 
 /*@}*/

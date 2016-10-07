@@ -72,8 +72,6 @@ extern int vrbflg;		/**< defined in lalapps.c */
 
 /* ----- User-variables: can be set from config-file or command-line */
 typedef struct {
-  BOOLEAN help;		/**< trigger output of help string */
-
   CHAR *inputSFTs;	/**< SFT input-files to use */
   CHAR *outputLFT;	/**< output ('Long Fourier Transform') file to write total-time Fourier transform into */
   INT4 minStartTime;	/**< limit start-time of input SFTs to use */
@@ -119,10 +117,10 @@ int main(int argc, char *argv[])
   LAL_CALL ( LALInitUserVars(&status, &uvar), &status);
 
   /* do ALL cmdline and cfgfile handling */
-  LAL_CALL (LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  if (uvar.help)	/* if help was requested, we're done here */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  LAL_CALL (LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit (1);
 
   if ( uvar.version )
     {
@@ -233,16 +231,12 @@ LALInitUserVars ( LALStatus *status, UserInput_t *uvar )
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  uvar->help = 0;
-
   uvar->minStartTime = 0;
   uvar->maxEndTime = LAL_INT4_MAX;
 
   uvar->upsampling = 1;
 
   /* register all our user-variables */
-  LALregBOOLUserStruct(status,	help, 		'h', UVAR_HELP,     "Print this message");
-
   LALregSTRINGUserStruct(status,inputSFTs, 	'D', UVAR_OPTIONAL, "File-pattern specifying input SFT-files");
   LALregSTRINGUserStruct(status,outputLFT,      'o', UVAR_OPTIONAL, "Output 'Long Fourier Transform' (LFT) file" );
 

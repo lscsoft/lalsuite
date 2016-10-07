@@ -31,19 +31,14 @@
  * where the constants \f$t,\f$ \f$t_0,\f$ \f$v_0,\f$ and functions in the integrand
  * \f$E'(v)\f$ and \f${\cal F}(v)\f$ are defined in the \c void structure <tt>params.</tt>
  *
- * ### Uses ###
- *
- * \code
- * XLALDRombergIntegrate()
- * \endcode
- *
  */
 
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALSimInspiral.h>
-#include <lal/Integrate.h>
+#include <lal/XLALGSL.h>
+#include <gsl/gsl_integration.h>
 
 #include "LALSimInspiraldEnergyFlux.c"
 #include "LALSimInspiralPNCoefficients.c"
@@ -79,10 +74,9 @@ XLALSimInspiralTofV (
    void *funcParams;
    REAL8 (*funcToIntegrate)(REAL8, void *);
    REAL8 xmin, xmax;
-   IntegralType type;
    TofVIntegrandIn in2;
    TofVIn *in1;
-   REAL8 answer;
+   REAL8 answer, error;
    REAL8 sign;
 
 
@@ -101,8 +95,6 @@ XLALSimInspiralTofV (
    funcToIntegrate = XLALSimInspiralTofVIntegrand;
    xmin = in1->v0;
    xmax = v;
-   type = ClosedInterval;
-
 
    in2.dEnergy = in1->dEnergy;
    in2.flux = in1->flux;
@@ -122,8 +114,16 @@ XLALSimInspiralTofV (
       sign = -1.0;
    }
 
-   answer = XLALREAL8RombergIntegrate (funcToIntegrate, funcParams, xmin, xmax, type);
-   if (XLAL_IS_REAL8_FAIL_NAN(answer))
+   gsl_function F;
+   F.function = funcToIntegrate;
+   F.params = funcParams;
+   const INT4 N=1000;
+   const REAL8 eps=1.e-7;
+   INT4 gslStatus;
+   gsl_integration_workspace * w = gsl_integration_workspace_alloc (N);
+   XLAL_CALLGSL(gslStatus = gsl_integration_qags(&F, xmin, xmax, 0, eps, N, w, &answer, &error));
+
+   if (XLAL_IS_REAL8_FAIL_NAN(answer)||(gslStatus!=0))
       XLAL_ERROR_REAL8(XLAL_EFUNC);
 
    return in1->t - in1->t0 + in1->totalmass*answer*sign;

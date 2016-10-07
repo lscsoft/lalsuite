@@ -6,7 +6,7 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm Inference Library
-License: GPL
+License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
@@ -14,7 +14,9 @@ Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: chealpix-devel
 BuildRequires: gsl-devel
-BuildRequires: healpy
+BuildRequires: hdf5-devel
+BuildRequires: healpy >= 1.9.1
+BuildRequires: python-basemap
 BuildRequires: libmetaio-devel
 BuildRequires: libxml2-devel
 BuildRequires: numpy
@@ -25,38 +27,39 @@ BuildRequires: swig
 BuildRequires: glue >= 1.49.1
 BuildRequires: glue-common >= 1.49.1
 BuildRequires: glue-segments >= 1.49.1
-BuildRequires: lal-devel >= 6.16.0
-BuildRequires: lal-python >= 6.16.0
-BuildRequires: lal-octave >= 6.16.0
-BuildRequires: lalmetaio-devel >= 1.2.7
-BuildRequires: lalmetaio-python >= 1.2.7
-BuildRequires: lalmetaio-octave >= 1.2.7
-BuildRequires: lalxml-devel >= 1.2.1
-BuildRequires: lalxml-python >= 1.2.1
-BuildRequires: lalxml-octave >= 1.2.1
-BuildRequires: lalsimulation-devel >= 1.5.0
-BuildRequires: lalsimulation-python >= 1.5.0
-BuildRequires: lalsimulation-octave >= 1.5.0
-BuildRequires: lalburst-devel >= 1.4.1
-BuildRequires: lalburst-python >= 1.4.1
-BuildRequires: lalburst-octave >= 1.4.1
-BuildRequires: lalinspiral-devel >= 1.7.4
-BuildRequires: lalinspiral-python >= 1.7.4
-BuildRequires: lalinspiral-octave >= 1.7.4
-BuildRequires: lalpulsar-devel >= 1.13.0
-BuildRequires: lalpulsar-python >= 1.13.0
-BuildRequires: lalpulsar-octave >= 1.13.0
+BuildRequires: lal-devel >= @MIN_LAL_VERSION@
+BuildRequires: lal-python >= @MIN_LAL_VERSION@
+BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+BuildRequires: lalxml-devel >= @MIN_LALXML_VERSION@
+BuildRequires: lalxml-python >= @MIN_LALXML_VERSION@
+BuildRequires: lalxml-octave >= @MIN_LALXML_VERSION@
+BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
+BuildRequires: lalburst-python >= @MIN_LALBURST_VERSION@
+BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
+BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: lalinspiral-octave >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
+BuildRequires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
+BuildRequires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
 Requires: chealpix
 Requires: gsl >= 1.15
+Requires: hdf5
 Requires: libmetaio
 Requires: libxml2
-Requires: lal >= 6.16.0
-Requires: lalmetaio >= 1.2.7
-Requires: lalxml >= 1.2.1
-Requires: lalsimulation >= 1.5.0
-Requires: lalburst >= 1.4.1
-Requires: lalinspiral >= 1.7.4
-Requires: lalpulsar >= 1.13.0
+Requires: lal >= @MIN_LAL_VERSION@
+Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: lalxml >= @MIN_LALXML_VERSION@
+Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: lalburst >= @MIN_LALBURST_VERSION@
+Requires: lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
 Prefix: %{_prefix}
 
 %description
@@ -72,13 +75,13 @@ Requires: chealpix-devel
 Requires: gsl-devel >= 1.15
 Requires: libmetaio-devel
 Requires: libxml2-devel
-Requires: lal-devel >= 6.16.0
-Requires: lalmetaio-devel >= 1.2.7
-Requires: lalxml-devel >= 1.2.1
-Requires: lalsimulation-devel >= 1.5.0
-Requires: lalburst-devel >= 1.4.1
-Requires: lalinspiral-devel >= 1.7.4
-Requires: lalpulsar-devel >= 1.13.0
+Requires: lal-devel >= @MIN_LAL_VERSION@
+Requires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+Requires: lalxml-devel >= @MIN_LALXML_VERSION@
+Requires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+Requires: lalburst-devel >= @MIN_LALBURST_VERSION@
+Requires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
+Requires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 %description devel
 The LSC Algorithm Inference Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inference
@@ -88,20 +91,22 @@ library.
 Summary: Python Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: healpy
+Requires: healpy >= 1.9.1
+Requires: python-basemap
 Requires: numpy
 Requires: python
 Requires: scipy
+Requires: python-six
 Requires: glue >= 1.49.1
 Requires: glue-common >= 1.49.1
 Requires: glue-segments >= 1.49.1
-Requires: lal-python >= 6.16.0
-Requires: lalmetaio-python >= 1.2.7
-Requires: lalxml-python >= 1.2.1
-Requires: lalsimulation-python >= 1.5.0
-Requires: lalburst-python >= 1.4.1
-Requires: lalinspiral-python >= 1.7.4
-Requires: lalpulsar-python >= 1.13.0
+Requires: lal-python >= @MIN_LAL_VERSION@
+Requires: lalmetaio-python >= @MIN_LALMETAIO_VERSION@
+Requires: lalxml-python >= @MIN_LALXML_VERSION@
+Requires: lalsimulation-python >= @MIN_LALSIMULATION_VERSION@
+Requires: lalburst-python >= @MIN_LALBURST_VERSION@
+Requires: lalinspiral-python >= @MIN_LALINSPIRAL_VERSION@
+Requires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
 %description python
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python bindings for LALInference.
@@ -111,13 +116,13 @@ Summary: Octave Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
-Requires: lal-octave >= 6.16.0
-Requires: lalmetaio-octave >= 1.2.7
-Requires: lalxml-octave >= 1.2.1
-Requires: lalsimulation-octave >= 1.5.0
-Requires: lalburst-octave >= 1.4.1
-Requires: lalinspiral-octave >= 1.7.4
-Requires: lalpulsar-octave >= 1.13.0
+Requires: lal-octave >= @MIN_LAL_VERSION@
+Requires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
+Requires: lalxml-octave >= @MIN_LALXML_VERSION@
+Requires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
+Requires: lalburst-octave >= @MIN_LALBURST_VERSION@
+Requires: lalinspiral-octave >= @MIN_LALINSPIRAL_VERSION@
+Requires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
 %description octave
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALInference.
@@ -134,7 +139,7 @@ This package provides the Octave bindings for LALInference.
 
 %install
 %make_install
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
 ldconfig
@@ -148,37 +153,24 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_libdir}/*.so*
+%{_bindir}/lalinference_*
+%{_datarootdir}/lalinference/*
+%{_libdir}/*.so.*
 %{_sysconfdir}/*
-%{_datarootdir}/lalinference/*.csv
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/*.a
-%{_libdir}/pkgconfig/*
 %{_includedir}/lal
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
 
 %files python
 %defattr(-,root,root)
 %{_bindir}/bayestar_*
+%{_bindir}/imrtgr_*
 %{_bindir}/rapidpe_*
-%{_libdir}/python*/site-packages/lalinference/*.py
-%{_libdir}/python*/site-packages/lalinference/*.pyc
-%{_libdir}/python*/site-packages/lalinference/bayestar/*.py
-%{_libdir}/python*/site-packages/lalinference/bayestar/*.pyc
-%{_libdir}/python*/site-packages/lalinference/bayestar/sky_map.so*
-%{_libdir}/python*/site-packages/lalinference/cylon.csv
-%{_libdir}/python*/site-packages/lalinference/imrtgr/*.py
-%{_libdir}/python*/site-packages/lalinference/imrtgr/*.pyc
-%{_libdir}/python*/site-packages/lalinference/ne_simplified_coastline.json
-%{_libdir}/python*/site-packages/lalinference/rapid_pe/*.py
-%{_libdir}/python*/site-packages/lalinference/rapid_pe/*.pyc
-%{_libdir}/python*/site-packages/lalinference/_lalinference.so*
-%exclude %{_libdir}/python*/site-packages/lalinference/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalinference/bayestar/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalinference/bayestar/*.la
-%exclude %{_libdir}/python*/site-packages/lalinference/imrtgr/*.pyo
-%exclude %{_libdir}/python*/site-packages/lalinference/rapid_pe/*.pyo
+%{_libdir}/python*
 
 %files octave
 %defattr(-,root,root)
@@ -186,5 +178,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 1.7.0-1
+- ER9 release
+
 * Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 1.6.0-1
 - Pre O2 packaging test release

@@ -661,7 +661,7 @@ XLALFindChirpTagTemplateAndSegment (
     {
         REAL8    g11, g12, g22;
 
-        tc = XLALGPSToINT8NS( &thisEvent->end_time );
+        tc = XLALGPSToINT8NS( &thisEvent->end );
         flag = 0;
 
         /* Loop over segments */
@@ -781,7 +781,7 @@ XLALFindChirpSetFollowUpSegment (
     thisEvent = *events;
     while (thisEvent)
     {
-      INT8 ta = XLALGPSToINT8NS( &thisEvent->end_time );
+      INT8 ta = XLALGPSToINT8NS( &thisEvent->end );
 
       if ( ta > chanStartTime && ta <= chanEndTime )
       {

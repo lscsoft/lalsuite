@@ -157,7 +157,7 @@ typedef struct tagAntennaPatternMatrix {
   REAL4 Bd; 		//!<  \f$\Bd\f$
   REAL4 Cd; 		//!<  \f$\Cd\f$
   REAL4 Ed; 		//!<  \f$\Ed\f$
-  REAL4 Dd; 		//!<  determinant factor \f$\Dd \equiv \Ad \Bd - \Cd^2 - \Ed^2 \f$
+  REAL4 Dd; 		//!<  determinant factor \f$\Dd \equiv \Ad \Bd - \Cd^2 - \Ed^2 \f$, such that \f$\det\M = \Dd^2\f$
   REAL8 Sinv_Tsft;	//!< normalization-factor \f$\S^{-1}\,\Tsft\f$ (using single-sided PSD!)
 } AntennaPatternMatrix;
 

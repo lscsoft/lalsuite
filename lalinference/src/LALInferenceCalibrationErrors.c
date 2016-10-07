@@ -583,7 +583,7 @@ void LALInferenceApplyCalibrationErrors(LALInferenceIFOData *IFOdata, ProcessPar
     while (tmpdata!=NULL){
       PrintCEtoFile(ampCoeffs[this_ifo],phaseCoeffs[this_ifo],tmpdata, commandLine);
       ApplyBothPhaseAmplitudeErrors(tmpdata->freqData,ampCoeffs[this_ifo],phaseCoeffs[this_ifo]);
-      ApplyBothPhaseAmplitudeErrors(tmpdata->whiteFreqData,ampCoeffs[this_ifo],phaseCoeffs[this_ifo]);
+      ApplyPhaseCalibrationErrors(tmpdata->whiteFreqData,phaseCoeffs[this_ifo]);
       ApplySquaredAmplitudeErrors(tmpdata->oneSidedNoisePowerSpectrum,ampCoeffs[this_ifo]);
       this_ifo++;
       tmpdata=tmpdata->next;

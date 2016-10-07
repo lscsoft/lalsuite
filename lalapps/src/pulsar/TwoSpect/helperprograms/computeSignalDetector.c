@@ -8,7 +8,6 @@
 
 typedef struct
 {
-   BOOLEAN help;		/**< Print this help/usage message */
    REAL8 Tsft;
    REAL8 SFToverlap;
    REAL8 t0;
@@ -271,7 +270,6 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    uvar->unrestrictedCosi = 0;
    uvar->rectWindow = 0;
 
-   XLALRegisterUvarMember(  help,            BOOLEAN, 'h', HELP     , "Print this help/usage message");
    XLALRegisterUvarMember(  Tsft,             REAL8, 0 , OPTIONAL , "SFT coherence time");
    XLALRegisterUvarMember(  SFToverlap,       REAL8, 0 , OPTIONAL , "SFT overlap in seconds, usually Tsft/2");
    XLALRegisterUvarMember(  t0,               REAL8, 0 , OPTIONAL , "GPS start time of the search");
@@ -288,9 +286,9 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    XLALRegisterUvarMember(  unrestrictedCosi, BOOLEAN, 0 , OPTIONAL , "Marginalize over cos(iota) from -1 to 1");
    XLALRegisterUvarMember(  rectWindow,       BOOLEAN, 0 , OPTIONAL , "Use rectangular window function instead of Hann windowing");
 
-   XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
-
-   if ( uvar->help ) exit (0);
+   BOOLEAN should_exit = 0;
+   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+   if ( should_exit ) exit (1);
 
    return XLAL_SUCCESS;
 }

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LAL],[6.16.0.1],[lal-discuss@ligo.org])
+AC_INIT([LAL],[6.16.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h src/LALConfig.h])
 AC_CONFIG_SRCDIR([src/std/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -82,7 +82,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[12])
-AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -100,7 +100,7 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT_SUPPORT],[8])
+AC_SUBST([LIBCURRENT_SUPPORT],[9])
 AC_SUBST([LIBREVISION_SUPPORT],[0])
 AC_SUBST([LIBAGE_SUPPORT],[0])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
@@ -287,7 +287,14 @@ fi
 
 # check for hdf5 support
 HDF5_ENABLE_VAL="DISABLED"
+# Note that AX_LIB_HDF5 uses h5cc to determine compiler for configure tests.
+# Make sure that it uses the same compiler as we are using.
+# Otherwise the configure tests may fail if we are using icc.
+HDF5_CC="${CC}"; export HDF5_CC
+HDF5_CLINKER="${CC}"; export HDF5_CLINKER
 AX_LIB_HDF5()
+unset HDF5_CC
+unset HDF5_CLINKER
 if test "${with_hdf5}" = "yes"; then
   AC_DEFINE([LAL_HDF5_ENABLED],[1],[Define if using HDF5 library])
   HDF5_ENABLE_VAL="ENABLED"
@@ -309,6 +316,21 @@ AC_HEADER_TIME
 
 # checks for library functions
 AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace clock_gettime])
+
+# check for pager programs
+LALSUITE_CHECK_PAGER
+
+# check for functions used to determine terminal size
+AC_CHECK_HEADERS([sys/ioctl.h])
+m4_pushdef([includes],[AC_INCLUDES_DEFAULT
+#ifdef HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+])
+AC_CHECK_FUNCS([isatty fileno ioctl],,,includes)
+AC_CHECK_DECLS([TIOCGWINSZ],,,includes)
+AC_CHECK_MEMBERS([struct winsize.ws_col],,,includes)
+m4_popdef([includes])
 
 # set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])

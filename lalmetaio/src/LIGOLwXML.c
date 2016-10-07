@@ -347,9 +347,6 @@ LALBeginLIGOLwXMLTable (
     case ext_triggers_table:
       (void)myfprintf( xml->fp, LIGOLW_XML_EXT_TRIGGERS);
       break;
-    case filter_table:
-      (void)myfprintf( xml->fp, LIGOLW_XML_FILTER );
-      break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
   }
@@ -505,8 +502,8 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->ifo,
               tablePtr.snglInspiralTable->search,
               tablePtr.snglInspiralTable->channel,
-              tablePtr.snglInspiralTable->end_time.gpsSeconds,
-              tablePtr.snglInspiralTable->end_time.gpsNanoSeconds,
+              tablePtr.snglInspiralTable->end.gpsSeconds,
+              tablePtr.snglInspiralTable->end.gpsNanoSeconds,
               tablePtr.snglInspiralTable->end_time_gmst,
               tablePtr.snglInspiralTable->impulse_time.gpsSeconds,
               tablePtr.snglInspiralTable->impulse_time.gpsNanoSeconds,
@@ -577,8 +574,8 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->ifo,
               tablePtr.snglInspiralTable->search,
               tablePtr.snglInspiralTable->channel,
-              tablePtr.snglInspiralTable->end_time.gpsSeconds,
-              tablePtr.snglInspiralTable->end_time.gpsNanoSeconds,
+              tablePtr.snglInspiralTable->end.gpsSeconds,
+              tablePtr.snglInspiralTable->end.gpsNanoSeconds,
               tablePtr.snglInspiralTable->end_time_gmst,
               tablePtr.snglInspiralTable->template_duration,
               tablePtr.snglInspiralTable->eff_distance,
@@ -613,8 +610,8 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->ifo,
               tablePtr.snglInspiralTable->search,
               tablePtr.snglInspiralTable->channel,
-              tablePtr.snglInspiralTable->end_time.gpsSeconds,
-              tablePtr.snglInspiralTable->end_time.gpsNanoSeconds,
+              tablePtr.snglInspiralTable->end.gpsSeconds,
+              tablePtr.snglInspiralTable->end.gpsNanoSeconds,
               tablePtr.snglInspiralTable->end_time_gmst,
               tablePtr.snglInspiralTable->template_duration,
               tablePtr.snglInspiralTable->eff_distance,
@@ -1036,21 +1033,6 @@ LALWriteLIGOLwXMLTable (
         ++(xml->rowCount);
       }
       break;
-    case filter_table:
-      while( tablePtr.filterTable )
-      {
-        FIRST_TABLE_ROW
-          fprintf( xml->fp, FILTER_ROW,
-              tablePtr.filterTable->program,
-              tablePtr.filterTable->start_time,
-              tablePtr.filterTable->filter_name,
-              tablePtr.filterTable->comment,
-              xml->rowCount
-              );
-        tablePtr.filterTable = tablePtr.filterTable->next;
-        ++(xml->rowCount);
-      }
-      break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
   }
@@ -1434,13 +1416,14 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 	/* rows */
 
 	for(; sngl_inspiral; sngl_inspiral = sngl_inspiral->next) {
-		if( fprintf(xml->fp,"%s\"process:process_id:0\",\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_inspiral:event_id:0\"",
+		if( fprintf(xml->fp,"%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_inspiral:event_id:0\"",
 			   row_head,
+			   sngl_inspiral->process_id,
 			   sngl_inspiral->ifo,
 			   sngl_inspiral->search,
 			   sngl_inspiral->channel,
-			   sngl_inspiral->end_time.gpsSeconds,
-			   sngl_inspiral->end_time.gpsNanoSeconds,
+			   sngl_inspiral->end.gpsSeconds,
+			   sngl_inspiral->end.gpsNanoSeconds,
 			   sngl_inspiral->end_time_gmst,
 			   sngl_inspiral->impulse_time.gpsSeconds,
 			   sngl_inspiral->impulse_time.gpsNanoSeconds,

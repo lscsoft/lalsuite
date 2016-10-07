@@ -6,3 +6,5 @@ TDW.dat
 conv_test
 time_domain_overlap_test
 lalinference_burst_pp_pipe
+lalinference_multi_pipe
+lalinference_tiger_pipe

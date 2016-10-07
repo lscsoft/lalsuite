@@ -178,12 +178,12 @@ LALCreateTwoIFOCoincListEllipsoid(
 
     /* calculate the time of the trigger */
     currentTriggerNS[0] = XLALGPSToINT8NS(
-                 &(currentError[0]->trigger->end_time) );
+                 &(currentError[0]->trigger->end) );
 
     /* set next trigger for comparison */
     currentError[1] = currentError[0]->next;
     currentTriggerNS[1] = XLALGPSToINT8NS(
-                 &(currentError[1]->trigger->end_time) );
+                 &(currentError[1]->trigger->end) );
 
     while ( (currentTriggerNS[1] - currentTriggerNS[0]) < maxTimeDiff )
     {
@@ -247,7 +247,7 @@ LALCreateTwoIFOCoincListEllipsoid(
 
       if ( (currentError[1] = currentError[1]->next) )
       {
-        currentTriggerNS[1] = XLALGPSToINT8NS( &(currentError[1]->trigger->end_time) );
+        currentTriggerNS[1] = XLALGPSToINT8NS( &(currentError[1]->trigger->end) );
       }
       else
       {
@@ -437,7 +437,7 @@ REAL8 XLALCalculateEThincaParameter(
   }
 
   /* Set up the trigger lists */
-  if ( XLALGPSToINT8NS( &(table1->end_time) ) < XLALGPSToINT8NS( &(table2->end_time )) )
+  if ( XLALGPSToINT8NS( &(table1->end) ) < XLALGPSToINT8NS( &(table2->end)) )
   {
      errorList[0]->trigger = table1;
      errorList[1]->trigger = table2;
@@ -558,7 +558,7 @@ REAL8 XLALEThincaParameterForInjection(
   /* Get the GPS time from the injection*/
   injEndTime = XLALReturnSimInspiralEndTime( injection, trigger->ifo );
 
-  dtC = ( injEndTime - XLALGPSToINT8NS( &(trigger->end_time) ) ) * 1.0e-9;
+  dtC = ( injEndTime - XLALGPSToINT8NS( &(trigger->end) ) ) * 1.0e-9;
   dt0 = injTmplt.t0 - trigger->tau0;
   dt3 = injTmplt.t3 - trigger->tau3;
 
@@ -720,8 +720,8 @@ static REAL8 minimizeEThincaParameterOverTimeDiff( REAL8 timeShift,
   originalTimeA = gsl_vector_get( params->aPtr->position, 0 );
   originalTimeB = gsl_vector_get( params->bPtr->position, 0 );
 
-  curTimeANS = XLALGPSToINT8NS( &(params->aPtr->trigger->end_time) );
-  curTimeBNS = XLALGPSToINT8NS( &(params->bPtr->trigger->end_time) );
+  curTimeANS = XLALGPSToINT8NS( &(params->aPtr->trigger->end) );
+  curTimeBNS = XLALGPSToINT8NS( &(params->bPtr->trigger->end) );
 
   /* Reset the times to avoid any precision problems */
   XLALSetTimeInPositionVector( params->aPtr->position, timeShift );

@@ -56,6 +56,14 @@ extern void free_toplist(toplist_t**list);
    Returns 1 if the element was actually inserted, 0 if not. */
 extern int insert_into_toplist(toplist_t*list, void *element);
 
+/* return non-zero value iff the passed element would be inserted into 
+   the toplist by calling insert_into_toplist, but no actual insertion is done.
+   Can be called with a partially filled element to decide whether 
+   further processing of a candidate is even necessary. The field(s) used
+   for sorting the toplist must be filled */ 
+
+#define TEST_FSTAT_TOPLIST_INCLUSION(list, element) \
+ ( ( (list)->elems < (list)->length ||( ((list)->smaller)  ((const void *)(element),((list)->heap)[0]) < 0) ) )
 
 /* clears an existing toplist of all elements inserted so far */
 extern void clear_toplist(toplist_t*list);

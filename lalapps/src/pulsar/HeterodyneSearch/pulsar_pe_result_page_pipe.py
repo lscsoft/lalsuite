@@ -46,7 +46,7 @@ import matplotlib
 matplotlib.use("Agg")
 
 from lalapps import pulsarpputils as pppu
-from lalapps import pulsar_pipeline_utils as ppu
+from lalapps import knope_utils as ppu
 from glue import pipeline
 from pylal import git_version
 

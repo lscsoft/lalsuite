@@ -26,7 +26,7 @@
 
 /***********************************************************************************************/
 /* includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include "config.h"
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -66,7 +66,6 @@
 /** A structure that stores user input variables
  */
 typedef struct {
-  BOOLEAN help;		            /**< trigger output of help string */
   CHAR *outLabel;                   /**< 'misc' entry in SFT-filenames or 'description' entry of frame filenames */
   CHAR *outputdir;                  /**< the output directory */
   CHAR *cachefile;                  /**< the name of the input cache file */
@@ -87,7 +86,7 @@ typedef struct {
   INT4 blocksize;                   /**< the running median blocksize */
   REAL8 thresh;                     /**< the number of results to output */
   CHAR *tempdir;                    /**< a temporary directory for keeping the results */
-  BOOLEAN verbose;	            /**< flag for status outputs */
+  BOOLEAN verbose;                  /**< flag for status outputs */
 } UserInput_t;
 
 /***********************************************************************************************/
@@ -103,7 +102,7 @@ int XLALOpenIntermittentResultsFile(FILE **,CHAR *,CHAR *,CHAR *,UserInput_t *uv
 
 /***********************************************************************************************/
 /* global variables */
-extern int vrbflg;	 	/**< defined in lalapps.c */
+extern int vrbflg;              /**< defined in lalapps.c */
 
 /***********************************************************************************************/
 /* empty initializers */
@@ -274,8 +273,8 @@ int main( int argc, char *argv[] )  {
         memcpy(&(pspace.epoch),&(sftvec->data[0].epoch),sizeof(LIGOTimeGPS));
         pspace.span = XLALGPSDiff(&(sftvec->data[sftvec->length-1].epoch),&(sftvec->data[0].epoch)) + pspace.tseg;
         if (uvar.verbose) {
-	  fprintf(stdout,"%s : SFT length = %f seconds\n",__func__,pspace.tseg);
- 	  fprintf(stdout,"%s : entire dataset starts at GPS time %d contains %d SFTS and spans %.0f seconds\n",__func__,pspace.epoch.gpsSeconds,sftvec->length,pspace.span);
+          fprintf(stdout,"%s : SFT length = %f seconds\n",__func__,pspace.tseg);
+          fprintf(stdout,"%s : entire dataset starts at GPS time %d contains %d SFTS and spans %.0f seconds\n",__func__,pspace.epoch.gpsSeconds,sftvec->length,pspace.span);
         }
 
         /**********************************************************************************/
@@ -284,7 +283,7 @@ int main( int argc, char *argv[] )  {
 
         /* compute the background noise using the sfts - this routine uses the running median at the edges to normalise the wings */
         if (XLALNormalizeSFTVect(sftvec,uvar.blocksize, 0)) {
-    	  LogPrintf(LOG_CRITICAL,"%s : XLALNormaliseSFTVect() failed with error = %d\n",__func__,xlalErrno);
+          LogPrintf(LOG_CRITICAL,"%s : XLALNormaliseSFTVect() failed with error = %d\n",__func__,xlalErrno);
           return 1;
         }
         if (uvar.verbose) fprintf(stdout,"%s : normalised the SFTs\n",__func__);
@@ -340,7 +339,7 @@ int main( int argc, char *argv[] )  {
         XLALFreeParameterSpace(&pspace);
         XLALFreeREAL4DemodulatedPowerVector(dmpower);
         for (m=0;m<(INT4)dstimevec->length;m++) {
- 	  XLALDestroyCOMPLEX8TimeSeries(dstimevec->data[m]);
+          XLALDestroyCOMPLEX8TimeSeries(dstimevec->data[m]);
         }
         XLALFree(dstimevec->data);
         XLALFree(dstimevec);
@@ -393,9 +392,9 @@ int main( int argc, char *argv[] )  {
  *
  */
 int XLALReadUserVars(int argc,            /**< [in] the command line argument counter */
-		     char *argv[],        /**< [in] the command line arguments */
-		     UserInput_t *uvar    /**< [out] the user input structure */
-		     )
+                     char *argv[],        /**< [in] the command line arguments */
+                     UserInput_t *uvar    /**< [out] the user input structure */
+                     )
 {
 
 
@@ -417,37 +416,35 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
   uvar->verbose = 0;
 
   /* ---------- register all user-variables ---------- */
-  XLALRegisterUvarMember(help, 		        BOOLEAN, 'h', HELP,     "Print this message");
-  XLALRegisterUvarMember(outLabel, 	        STRING, 'n', REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
-  XLALRegisterUvarMember(outputdir, 	        STRING, 'o', REQUIRED, "The output directory name");
-  XLALRegisterUvarMember(binfile, 	        STRING, 'i', REQUIRED, "The input binary file name");
+  XLALRegisterUvarMember(outLabel,              STRING, 'n', REQUIRED, "'misc' entry in SFT-filenames or 'description' entry of frame filenames");
+  XLALRegisterUvarMember(outputdir,             STRING, 'o', REQUIRED, "The output directory name");
+  XLALRegisterUvarMember(binfile,               STRING, 'i', REQUIRED, "The input binary file name");
   XLALRegisterUvarMember(cachefile,            STRING, 'e', REQUIRED, "The input cache file name");
-  XLALRegisterUvarMember(tempdir, 	        STRING, 'x', OPTIONAL, "The temporary directory");
+  XLALRegisterUvarMember(tempdir,               STRING, 'x', OPTIONAL, "The temporary directory");
   XLALRegisterUvarMember(freq,                   REAL8, 'f', REQUIRED, "The starting frequency (Hz)");
-  XLALRegisterUvarMember(freqband,   	        REAL8, 'b', REQUIRED, "The frequency band (Hz)");
+  XLALRegisterUvarMember(freqband,              REAL8, 'b', REQUIRED, "The frequency band (Hz)");
   XLALRegisterUvarMember(Tmin,                    INT4, 't', OPTIONAL, "The min length of segemnts (sec)");
   XLALRegisterUvarMember(Tmax,                    INT4, 'T', OPTIONAL, "The max length of segments (sec)");
-  XLALRegisterUvarMember(tsamp,           	REAL8, 's', REQUIRED, "The sampling time (sec)");
-  XLALRegisterUvarMember(highpassf,           	REAL8, 'H', OPTIONAL, "The high pass filter frequency");
-  XLALRegisterUvarMember(minorbperiod,          	REAL8, 'p', REQUIRED, "The minimum orbital period (sec)");
-  XLALRegisterUvarMember(maxorbperiod,          	REAL8, 'P', REQUIRED, "The maximum orbital period (sec)");
-  XLALRegisterUvarMember(minasini,          	REAL8, 'a', REQUIRED, "The minimum projected orbital radius (sec)");
-  XLALRegisterUvarMember(maxasini,          	REAL8, 'A', REQUIRED, "The maximum projected orbital radius (sec)");
+  XLALRegisterUvarMember(tsamp,                 REAL8, 's', REQUIRED, "The sampling time (sec)");
+  XLALRegisterUvarMember(highpassf,             REAL8, 'H', OPTIONAL, "The high pass filter frequency");
+  XLALRegisterUvarMember(minorbperiod,                  REAL8, 'p', REQUIRED, "The minimum orbital period (sec)");
+  XLALRegisterUvarMember(maxorbperiod,                  REAL8, 'P', REQUIRED, "The maximum orbital period (sec)");
+  XLALRegisterUvarMember(minasini,              REAL8, 'a', REQUIRED, "The minimum projected orbital radius (sec)");
+  XLALRegisterUvarMember(maxasini,              REAL8, 'A', REQUIRED, "The maximum projected orbital radius (sec)");
   XLALRegisterUvarMember(tasc,                   REAL8, 'c', REQUIRED, "The best guess orbital time of ascension (rads)");
-  XLALRegisterUvarMember(deltaorbphase,      	REAL8, 'C', OPTIONAL, "The orbital phase uncertainty (cycles)");
-  XLALRegisterUvarMember(mismatch,        	REAL8, 'm', OPTIONAL, "The grid mismatch (0->1)");
-  XLALRegisterUvarMember(thresh,         	REAL8, 'z', OPTIONAL, "The threshold on Leahy power");
+  XLALRegisterUvarMember(deltaorbphase,         REAL8, 'C', OPTIONAL, "The orbital phase uncertainty (cycles)");
+  XLALRegisterUvarMember(mismatch,              REAL8, 'm', OPTIONAL, "The grid mismatch (0->1)");
+  XLALRegisterUvarMember(thresh,                REAL8, 'z', OPTIONAL, "The threshold on Leahy power");
   XLALRegisterUvarMember(blocksize,               INT4, 'B', OPTIONAL, "The running median block size");
   XLALRegisterUvarMember(verbose,                   BOOLEAN, 'v', OPTIONAL, "Output status to standard out");
 
   /* do ALL cmdline and cfgfile handling */
-  if (XLALUserVarReadAllInput(argc, argv)) {
-    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput() failed with error = %d\n",__func__,xlalErrno);
-    XLAL_ERROR(XLAL_EINVAL);
+  BOOLEAN should_exit = 0;
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv)) {
+    LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",__func__,xlalErrno);
+    return XLAL_EFAULT;
   }
-
-  /* if help was requested, we're done here */
-  if (uvar->help) exit(0);
+  if (should_exit) exit(1);
 
   LogPrintf(LOG_DEBUG,"%s : leaving.\n",__func__);
   return XLAL_SUCCESS;
@@ -461,12 +458,12 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 /*  * */
 /*  *\/ */
 /* int XLALOpenIntermittentResultsFile(FILE **fp,                  /\**< [in] filepointer to output file *\/ */
-/* 				    CHAR *outputdir,            /\**< [in] the output directory name *\/ */
-/* 				    ParameterSpace *pspace,     /\**< [in] the parameter space *\/ */
-/* 				    CHAR *clargs,               /\**< [in] the command line args *\/ */
-/* 				    UserInput_t *uvar, */
-/* 				    INT4 coherent               /\**< [in] flag for outputting coherent results *\/ */
-/* 				    ) */
+/*                                  CHAR *outputdir,            /\**< [in] the output directory name *\/ */
+/*                                  ParameterSpace *pspace,     /\**< [in] the parameter space *\/ */
+/*                                  CHAR *clargs,               /\**< [in] the command line args *\/ */
+/*                                  UserInput_t *uvar, */
+/*                                  INT4 coherent               /\**< [in] flag for outputting coherent results *\/ */
+/*                                  ) */
 /* { */
 /*   CHAR outputfile[LONGSTRINGLENGTH];    /\* the output filename *\/ */
 /*   time_t curtime = time(NULL);          /\* get the current time *\/ */
@@ -493,9 +490,9 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
 /*     UINT4 max_freq_mhz = (UINT4)floor(0.5 + (pspace->space->data[0].max - (REAL8)max_freq_int)*1e3); */
 /*     UINT4 end = (UINT4)ceil(XLALGPSGetREAL8(&(pspace->epoch)) + pspace->span); */
 /*     if (coherent) snprintf(outputfile,LONGSTRINGLENGTH,"%s/CoherentResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt", */
-/* 			   outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz); */
+/*                         outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz); */
 /*     else snprintf(outputfile,LONGSTRINGLENGTH,"%s/SemiCoherentResults-%s-%d_%d-%04d_%03d_%04d_%03d.txt", */
-/* 		  outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz); */
+/*                outputdir,(CHAR*)uvar->comment,pspace->epoch.gpsSeconds,end,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz); */
 /*   } */
 /*   LogPrintf(LOG_DEBUG,"%s : output %s\n",__func__,outputfile); */
 
@@ -554,12 +551,12 @@ int XLALReadUserVars(int argc,            /**< [in] the command line argument co
  *
  */
 int XLALOpenIntermittentResultsFile(FILE **fp,                  /**< [in] filepointer to output file */
-				    CHAR *outputfile,           /**< [out] the name of the output file */
-				    CHAR *outputdir,            /**< [in] the output directory name */
-				    CHAR *clargs,               /**< [in] the command line args */
-				    UserInput_t *uvar,		/**< UNDOCUMENTED */
-				    LIGOTimeGPS *start		/**< UNDOCUMENTED */
-				    )
+                                    CHAR *outputfile,           /**< [out] the name of the output file */
+                                    CHAR *outputdir,            /**< [in] the output directory name */
+                                    CHAR *clargs,               /**< [in] the command line args */
+                                    UserInput_t *uvar,		/**< UNDOCUMENTED */
+                                    LIGOTimeGPS *start		/**< UNDOCUMENTED */
+                                    )
 {
   time_t curtime = time(NULL);          /* get the current time */
   CHAR *time_string = NULL;             /* stores the current time */
@@ -579,7 +576,7 @@ int XLALOpenIntermittentResultsFile(FILE **fp,                  /**< [in] filepo
     UINT4 min_freq_mhz = (UINT4)floor(0.5 + (uvar->freq - (REAL8)min_freq_int)*1e3);
     UINT4 max_freq_mhz = (UINT4)floor(0.5 + (uvar->freq + uvar->freqband - (REAL8)max_freq_int)*1e3);
     snprintf(outputfile,LONGSTRINGLENGTH,"%s/IntermittentResults-%s-%d-%04d_%03d_%04d_%03d.txt",
-			   outputdir,(CHAR*)uvar->outLabel,start->gpsSeconds,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
+                           outputdir,(CHAR*)uvar->outLabel,start->gpsSeconds,min_freq_int,min_freq_mhz,max_freq_int,max_freq_mhz);
 
   }
   LogPrintf(LOG_DEBUG,"%s : output %s\n",__func__, outputfile);

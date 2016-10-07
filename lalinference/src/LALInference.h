@@ -44,6 +44,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
 
 #define VARNAME_MAX 128
 #define VARVALSTRINGSIZE_MAX 128
@@ -102,7 +104,7 @@ struct tagLALInferenceModel;
  * An enumerated type for denoting the type of a variable. Several LAL
  * types are supported as well as others.
  */
-typedef enum {
+typedef enum tagLALInferenceVariableType {
   LALINFERENCE_INT4_t,
   LALINFERENCE_INT8_t,
   LALINFERENCE_UINT4_t,
@@ -125,7 +127,7 @@ typedef enum {
  * This information is used by the sampling routines when deciding
  * what to vary in a proposal, etc.
  */
-typedef enum {
+typedef enum tagLALInferenceParamVaryType {
 	LALINFERENCE_PARAM_LINEAR,   /** A parameter that simply has a maximum and a minimum */
 	LALINFERENCE_PARAM_CIRCULAR, /** A parameter that is cyclic, such as an angle between 0 and 2pi */
 	LALINFERENCE_PARAM_FIXED,    /** A parameter that never changes, functions should respect this */
@@ -178,7 +180,7 @@ tagLALInferenceVariables
  * Phase of MCMC run (depending on burn-in status, different actions
  * are performed during the run, and this tag controls the activity).
  */
-typedef enum {
+typedef enum tagLALInferenceMCMCRunPhase {
 	LALINFERENCE_ONLY_PT,          /** Run only parallel tempers. */
 	LALINFERENCE_TEMP_PT,          /** In the parallel tempering phase of an annealed run */
 	LALINFERENCE_ANNEALING,        /** In the annealing phase of an annealed run */
@@ -354,6 +356,20 @@ int LALInferenceSplineCalibrationFactor(REAL8Vector *freqs,
 					REAL8Vector *deltaPhases,
 					COMPLEX16FrequencySeries *calFactor);
 
+ /** Modified version of LALInferenceSplineCalibrationFactor to compute the 
+ *	calibration factors for the specific frequency nodes used for 
+ *	Reduced Order Quadrature likelihoods.
+ */
+
+int LALInferenceSplineCalibrationFactorROQ(REAL8Vector *logfreqs,
+					REAL8Vector *deltaAmps,
+					REAL8Vector *deltaPhases,
+					REAL8Sequence *freqNodesLin,
+					COMPLEX16Sequence **calFactorROQLin,
+					REAL8Sequence *freqNodesQuad,
+					COMPLEX16Sequence **calFactorROQQuad);
+
+
 //Wrapper for template computation
 //(relies on LAL libraries for implementation) <- could be a #DEFINE ?
 //typedef void (LALTemplateFunction) (LALInferenceVariables *currentParams, struct tagLALInferenceIFOData *data); //Parameter Set is modelParams of LALInferenceIFOData
@@ -441,6 +457,7 @@ typedef struct tagLALInferenceModel
 
   REAL8TimeSeries             *timehPlus, *timehCross; /** Time series model buffers */
   COMPLEX16FrequencySeries    *freqhPlus, *freqhCross; /** Freq series model buffers */
+  COMPLEX16FrequencySeries    **freqhs; /** Projected freq series model buffers */
 
   LALSimInspiralWaveformFlags *waveFlags;   /** A pointer to the WF flag. Will store here tide and spin order, as well as frame */
   LALSimInspiralWaveformCache *waveformCache;   /** Waveform cache */
@@ -449,6 +466,8 @@ typedef struct tagLALInferenceModel
   REAL8Window                 *window;        /** A window */
   REAL8                        padding; /** The padding of the above window */
   struct tagLALInferenceROQModel *roq; /** ROQ data */
+  int roq_flag;
+
 } LALInferenceModel;
 
 
@@ -486,7 +505,7 @@ typedef void (*LALInferenceSwapRoutine) (struct tagLALInferenceRunState *runStat
 typedef void (*LALInferenceAlgorithm) (struct tagLALInferenceRunState *runState);
 
 /** Type declaration for output logging function, can be user-declared */
-typedef void (*LALInferenceLogFunction) (struct tagLALInferenceRunState *runState, LALInferenceVariables *vars);
+typedef void (*LALInferenceLogFunction) (LALInferenceVariables *algorithmParams, LALInferenceVariables *vars);
 
 
 /**
@@ -525,13 +544,16 @@ typedef struct
 tagLALInferenceThreadState
 {
     INT4 id; /** Unique integer ID of this thread.  Handy of I/O. */
+    char name[VARNAME_MAX];
     INT4 step; /** Step counter for this thread.  Negative numbers indicate burnin*/
+    INT4 effective_sample_size; /** Step counter for this thread.  Negative numbers indicate burnin*/
     LALInferenceProposalFunction proposal; /** The proposal cycle */
     LALInferenceProposalCycle *cycle; /** Cycle of proposals to call */
     LALInferenceModel *model; /** Stucture containing model buffers and parameters */
     REAL8 currentPropDensity; /** Array containing multiple proposal densities */
     REAL8 temperature;
     LALInferenceVariables *proposalArgs, /** Arguments needed by proposals */
+                          *algorithmParams, /** Stope things such as output arrays */
                           *priorArgs; /** Prior boundaries, etc.  This is
                                           stored at the thread level because proposals
                                           often need to know about prior boundaries */
@@ -558,6 +580,9 @@ tagLALInferenceThreadState
     gsl_rng *GSLrandom;
     REAL8 creation_time;
     struct tagLALInferenceRunState *parent; /** Pointer to the parent RunState of the thread.  e.g., Useful for getting data */
+    INT4 *temp_swap_accepts;
+    INT4 temp_swap_window;
+    INT4 temp_swap_counter;
 } LALInferenceThreadState;
 
 
@@ -586,6 +611,9 @@ tagLALInferenceRunState
   INT4 nthreads; /** Number of threads stored in ``threads``. */
   LALInferenceSwapRoutine  parallelSwap;
   gsl_rng *GSLrandom;
+  char *outFileName; /** Name for thread's output file */
+  char *resumeOutFileName; /** Name for thread's resume file */
+  char runID[VARNAME_MAX];
 } LALInferenceRunState;
 
 
@@ -635,33 +663,80 @@ tagLALInferenceIFOData
   struct tagLALInferenceIFOData      *next;     /** A pointer to the next set of data for linked list */
 } LALInferenceIFOData;
 
-/**
- * Structure to contain data-related Reduced Order Quadrature quantities
- */
 typedef struct
 tagLALInferenceROQData
 {
+  COMPLEX16 *weightsLinear; /** weights for <d|h>: NOTE: needs to be stored from data read from command line */
+  REAL8 *weightsQuadratic; /** weights for calculating <h|h>*/
+  REAL8 time_weights_width;
+  REAL8 time_step_size;
+  int n_time_steps;
+  FILE *weightsFileLinear;
+  FILE *weightsFileQuadratic;
+
+
+  struct tagLALInferenceROQSplineWeightsLinear *weights_linear;
+
+ 
+  /* Deprecated functions that should be removed at some point */ 
   gsl_matrix_complex *weights; /** weights for the likelihood: NOTE: needs to be stored from data read from command line */
   gsl_matrix_complex *mmweights; /** weights for calculating <h|h> if not using analytical formula */
   double int_f_7_over_3; /** /int_{fmin}^{fmax} df f^(-7/3)/psd...for <h|h> part of the likelihood */
-  REAL8 time_weights_width;
+  /* end deprecated function */
+
 } LALInferenceROQData;
 
-
 /**
- * Structure to contain model-related Reduced Order Quadrature quantities
- */
+ *  *  * Structure to contain spline of ROQ weights as a function of tc
+ *   *   */
+
+typedef struct
+tagLALInferenceROQSplineWeightsLinear
+{
+  
+ 
+  gsl_spline *spline_real_weight_linear;
+  gsl_spline *spline_imag_weight_linear; 
+  gsl_interp_accel *acc_real_weight_linear;
+  gsl_interp_accel *acc_imag_weight_linear;
+
+} LALInferenceROQSplineWeights;
+/**
+ *  * Structure to contain model-related Reduced Order Quadrature quantities
+ *   */
 typedef struct
 tagLALInferenceROQModel
 {
+  COMPLEX16FrequencySeries *hptildeLinear;
+  COMPLEX16FrequencySeries *hctildeLinear;
+  COMPLEX16FrequencySeries *hptildeQuadratic;
+  COMPLEX16FrequencySeries *hctildeQuadratic;
+
+  COMPLEX16Sequence *calFactorLinear;
+
+  COMPLEX16Sequence *calFactorQuadratic;
+
+  REAL8Sequence  * frequencyNodesLinear; /** empirical frequency nodes for the likelihood. NOTE: needs to be stored from data read from command line */
+  REAL8Sequence * frequencyNodesQuadratic;
+  REAL8 trigtime;
+  REAL8 ROQnullLikelihood;
+  
+  FILE *nodesFileLinear;
+  FILE *nodesFileQuadratic;
+   
+  /* Deprecated functions that should be removed at some point */
   gsl_vector_complex *hplus; /** waveform at frequency nodes. */
   gsl_vector_complex *hcross;
   gsl_vector_complex *hstrain;
   gsl_vector         *frequencyNodes; /** empirical frequency nodes for the likelihood. NOTE: needs to be stored from data read from command line */
   REAL8* amp_squared;
-  REAL8 trigtime;
+  /* end Deprecated functions */
+
 } LALInferenceROQModel;
 
+/**
+ * Structure to contain data-related Reduced Order Quadrature quantities
+ */
 /* Initialize an empty thread, saving a timestamp for benchmarking */
 LALInferenceThreadState *LALInferenceInitThread(void);
 
@@ -778,7 +853,7 @@ void LALInferenceCopyArrayToVariables(REAL8 *origin, LALInferenceVariables *targ
  * Caller is responsible for opening and closing file.
  * Variables are alphabetically sorted before being written
  */
-void LALInferenceLogSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);
+void LALInferenceLogSampleToFile(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars);
 
 /**
  * Append the sample to an array which can be later processed by the user.
@@ -788,7 +863,7 @@ void LALInferenceLogSampleToFile(LALInferenceRunState *state, LALInferenceVariab
  * DOES NOT FREE ARRAY, user must clean up after use.
  * Also outputs sample to disk if possible using LALInferenceLogSampleToFile()
  */
-void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);
+void LALInferenceLogSampleToArray(LALInferenceVariables *algorithmParams, LALInferenceVariables *vars);
 
 /** Convert from Mc, eta space to m1, m2 space (note m1 > m2).*/
 void LALInferenceMcEta2Masses(double mc, double eta, double *m1, double *m2);
@@ -1087,9 +1162,19 @@ void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name,
  */
 void LALInferenceFprintSplineCalibrationHeader(FILE *output, LALInferenceThreadState *thread);
 
+/**
+ * Conversion routines between Equatorial (RA,DEC) and detector-based coordinate systems, where
+ * new "north pole" points along vector from det0 to det1.
+ * theta - azimuth angle about vector joining det0 and det1
+ * alpha - co-latitude (0,pi) relative to det0-det1 vector
+ */
 void LALInferenceDetFrameToEquatorial(LALDetector *det0, LALDetector *det1,
                                       REAL8 t0, REAL8 alpha, REAL8 theta,
                                       REAL8 *tg, REAL8 *ra, REAL8 *dec);
+
+void LALInferenceEquatorialToDetFrame(LALDetector *det0, LALDetector *det1,
+                                 REAL8 tg, REAL8 ra, REAL8 dec,
+                                 REAL8 *t0, REAL8 *alpha, REAL8 *theta);
 
 /*@}*/
 

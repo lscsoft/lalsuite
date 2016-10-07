@@ -64,15 +64,15 @@ extern "C" {
 /* the difference between TDT/TT and the GPS epoch */
 #define GPS_TDT (TDT_TAI + XLAL_EPOCH_GPS_TAI_UTC)
 
+
 /** An enumerated type for denoting the type of a variable. Several LAL types are supported. */
-typedef enum {
+typedef enum tagPulsarParamType {
   PULSARTYPE_UINT4_t = 0,
   PULSARTYPE_REAL8_t,
   PULSARTYPE_REAL8Vector_t,
   PULSARTYPE_string_t,
   PULSARTYPE_void_ptr_t
 } PulsarParamType;
-
 
 extern size_t PulsarTypeSize[5];
 
@@ -133,6 +133,7 @@ tagBinaryPulsarParams
   REAL8 f7;     /**< frequency seventh derivative (Hz/s^7) */
   REAL8 f8;     /**< frequency eighth derivative (Hz/s^8) */
   REAL8 f9;     /**< frequency ninth derivative (Hz/s^9) */
+  REAL8 f10;    /**< frequency tenth derivative (Hz/s^10) */
 
   REAL8 ra;     /**< right ascension (rads) */
   REAL8 dec;    /**< declination (rads) */
@@ -275,6 +276,7 @@ tagBinaryPulsarParams
   REAL8 f7Err;
   REAL8 f8Err;
   REAL8 f9Err;
+  REAL8 f10Err;
 
   REAL8 pepochErr;
   REAL8 posepochErr;

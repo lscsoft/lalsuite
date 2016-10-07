@@ -19,22 +19,29 @@ AC_DEFUN([LALAPPS_ENABLE_CONDOR], [
   AM_CONDITIONAL([CONDOR_ENABLED],[test "x$condor" = "xtrue"])
 ])
 
-AC_DEFUN([LALAPPS_ENABLE_STATIC_BINARIES],
-[AC_ARG_ENABLE(
-  [static_binaries],
-  AC_HELP_STRING([--enable-static-binaries],[build static binaries [default=no]]),
-  [ case "${enableval}" in
-      yes) static_binaries=true;;
-      no)  static_binaries=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-static-binaries) ;;
-    esac
-  ], [ static_binaries=false ] )
-if test "$condor" = "true"; then
-  static_binaries=false
-fi
-if test "$boinc" = "true"; then
-  static_binaries=false
-fi
+AC_DEFUN([LALAPPS_ENABLE_STATIC_BINARIES], [
+  AC_REQUIRE([LALAPPS_ENABLE_CONDOR])
+  AC_REQUIRE([LALSUITE_ENABLE_BOINC])
+  AC_ARG_ENABLE(
+    [static_binaries],
+    AS_HELP_STRING([--enable-static-binaries],[build static binaries @<:@default=no, forced on for condor and boinc builds@:>@]),
+    AS_CASE(["${enableval}"],
+      [yes],[static_binaries=true],
+      [no],[static_binaries=false],
+      AC_MSG_ERROR([bad value ${enableval} for --enable-static-binaries])
+    ),
+    [static_binaries=false]
+  )
+  # force on if condor or boinc build is enabled
+  AS_IF([test "x$static_binaries" != "xtrue" -a \( "x$condor" = "xtrue" -o "x$boinc" = "xtrue" \)], [
+    AC_MSG_WARN([building static binaries (forced by condor and/or boinc)])
+    static_binaries=true
+  ])
+  # the consequences
+  AS_IF([test "x$static_binaries" = "xtrue"], [
+    AC_DISABLE_SHARED
+    AC_ENABLE_STATIC
+  ])
 ])
 
 AC_DEFUN([LALAPPS_ENABLE_MPI],

@@ -74,7 +74,6 @@ int main(int argc, char **argv)
     REAL8 NumBinsAvg =0;
     REAL8 timebaseline =0;
     
-    BOOLEAN help = 0;
     CHAR *SFTpatt = NULL;
     CHAR *IFO = NULL;
     INT4 startGPS = 0;
@@ -99,7 +98,6 @@ int main(int argc, char **argv)
   /*========================================================================================================================*/
     
     
-    LAL_CALL(LALRegisterBOOLUserVar  (&status, "help",         'h', UVAR_HELP,     "Print this help message",     &help        ), &status);
     LAL_CALL(LALRegisterSTRINGUserVar(&status, "SFTs",         'p', UVAR_REQUIRED, "SFT location/pattern",        &SFTpatt     ), &status);
     LAL_CALL(LALRegisterSTRINGUserVar(&status, "IFO",          'I', UVAR_REQUIRED, "Detector",                    &IFO         ), &status);
     LAL_CALL(LALRegisterINTUserVar   (&status, "startGPS",     's', UVAR_REQUIRED, "Starting GPS time",           &startGPS    ), &status);
@@ -115,9 +113,10 @@ int main(int argc, char **argv)
     LAL_CALL(LALRegisterSTRINGUserVar(&status, "earthFile",  'y', UVAR_OPTIONAL, "earth .dat file",   &earthFile ), &status);
     LAL_CALL(LALRegisterSTRINGUserVar(&status, "sunFile",   'z', UVAR_OPTIONAL, "sun .dat file",   &sunFile ), &status);
     
-    LAL_CALL(LALUserVarReadAllInput(&status, argc, argv), &status);
-    if (help)
-    return(0);
+    BOOLEAN should_exit = 0;
+    LAL_CALL(LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+    if (should_exit)
+      return(1);
     
     startTime.gpsSeconds = startGPS;/*cg; startTime is a structure, and gpsSeconds is a member of that structure*/
     startTime.gpsNanoSeconds = 0;/*cg; gps NanoSeconds is also a member of the startTime structure */

@@ -13,6 +13,7 @@ pymoduledir = $(pkgpythondir)
 pymodule_PYTHON = \
 	__init__.py \
 	git_version.py \
+	timeslides.py \
 	$(END_OF_LIST)
 
 endif

@@ -52,19 +52,26 @@ def parse_command_line():
     if options.nbanks <= 0:
         parser.error("--nbanks argument must be positive")
 
-    if len(filenames) != 1:
+    if len(filenames) == 0:
         parser.error("must provide input file")
 
     if options.mchirp_min and options.mchirp_max and options.mchirp_max <= options.mchirp_min:
         parser.error("--mchirp-max argument must be greater than --mchirp-min")
 
-    return options, filenames[0]
+    return options, filenames
 
-options, filename = parse_command_line()
+options, filenames = parse_command_line()
 
 # read input document
-xmldoc = utils.load_filename(filename, verbose=options.verbose, contenthandler=ContentHandler)
-templates = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
+templates = None
+for filename in filenames:
+    xmldoc = utils.load_filename(filename, verbose=options.verbose,
+                                 contenthandler=ContentHandler)
+    curr_tmps = lsctables.SnglInspiralTable.get_table(xmldoc)
+    if templates is None:
+        templates = curr_tmps
+    else:
+        templates = templates + curr_tmps
 if len(templates) < options.nbanks:
     raise ValueError("len(templates) < opts.nbanks; coarse bank too coarse")
 

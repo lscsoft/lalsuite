@@ -87,8 +87,6 @@ int main(int argc, char *argv[]){
   EphemerisData    *edat=NULL;
 
   /* user input variables */
-  BOOLEAN  uvar_help; 
-
   CHAR     *uvar_earthEphemeris=NULL;
   CHAR     *uvar_sunEphemeris=NULL;
   CHAR     *uvar_sftDir=NULL;
@@ -98,8 +96,6 @@ int main(int argc, char *argv[]){
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
   
-  uvar_help = FALSE;
-
   uvar_earthEphemeris = (CHAR *)LALCalloc( 512 , sizeof(CHAR));
   strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
 
@@ -107,17 +103,15 @@ int main(int argc, char *argv[]){
   strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
 
   /* register user input variables */
-  LAL_CALL( LALRegisterBOOLUserVar( &status, "help",             'h',  UVAR_HELP,     "Print this message", &uvar_help), &status);  
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_REQUIRED, "Earth Ephemeris file",  &uvar_earthEphemeris),  &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_REQUIRED, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_REQUIRED, "SFT filename pattern", &uvar_sftDir), &status);
 
   /* read all command line variables */
-  LAL_CALL( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0); 
+  BOOLEAN should_exit = 0;
+  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
 
   /*  get ephemeris  */
   edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));

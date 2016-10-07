@@ -51,6 +51,8 @@
  * <DD>print a help message and exit</DD>
  * <DT>`-v`, `--verbose`
  * <DD>verbose output</DD>
+ * <DT>`-C`, `--radians`</DT>
+ * <DD>use radians rather than decimal degrees</DD>
  * <DT>`-F`, `--frequency-domain`
  * <DD>output data in frequency domain</DD>
  * <DT>`-c`, `--condition-waveform`
@@ -643,7 +645,7 @@ int print_params(struct params p)
             fprintf(stderr, "amplitude post-Newtonian order:               highest available\n");
         else
             fprintf(stderr, "twice amplitude post-Newtonian order:         %d (%g pN)\n", p.ampO, 0.5 * p.ampO);
-        fprintf(stderr, "reference phase:                              %g deg\n", p.phiRef / LAL_PI_180);
+        fprintf(stderr, "reference phase:                              %g deg, %g rad\n", p.phiRef / LAL_PI_180, p.phiRef);
         fprintf(stderr, "sample rate:                                  %g Hz\n", p.srate);
         fprintf(stderr, "primary mass:                                 %g Msun\n", p.m1 / LAL_MSUN_SI);
         fprintf(stderr, "secondary mass:                               %g Msun\n", p.m2 / LAL_MSUN_SI);
@@ -652,7 +654,7 @@ int print_params(struct params p)
         fprintf(stderr, "starting frequency:                           %g Hz\n", p.f_min);
         fprintf(stderr, "reference frequency:                          %g Hz\n", p.fRef);
         fprintf(stderr, "distance:                                     %g Mpc\n", p.distance / (1e6 * LAL_PC_SI));
-        fprintf(stderr, "inclination:                                  %g deg\n", p.inclination / LAL_PI_180);
+        fprintf(stderr, "inclination:                                  %g deg, %g rad\n", p.inclination / LAL_PI_180, p.inclination);
         fprintf(stderr, "primary dimensionless tidal deformability:    %g\n", p.lambda1);
         fprintf(stderr, "secondary dimensionless tidal deformability:  %g\n", p.lambda2);
         if (spinO == -1)
@@ -682,6 +684,7 @@ int usage(const char *program)
     fprintf(stderr, "options [default values in brackets]:\n");
     fprintf(stderr, "\t-h, --help               \tprint this message and exit\n");
     fprintf(stderr, "\t-v, --verbose            \tverbose output\n");
+    fprintf(stderr, "\t-C, --radians            \tuse radians rather than decimal degrees\n");
     fprintf(stderr, "\t-F, --frequency-domain   \toutput data in frequency domain\n");
     fprintf(stderr, "\t-c, --condition-waveform \tapply waveform conditioning\n");
     fprintf(stderr, "\t-Q, --amp-phase          \toutput data as amplitude and phase\n");
@@ -738,6 +741,9 @@ int usage(const char *program)
 /* sets params to default values and parses the command line arguments */
 struct params parseargs(int argc, char **argv)
 {
+    int degrees = 1;
+    char *inclination_string = NULL;
+    char *phiRef_string = NULL;
     char *kv;
     struct params p = {
         .verbose = 0,
@@ -770,6 +776,7 @@ struct params parseargs(int argc, char **argv)
     struct LALoption long_options[] = {
         {"help", no_argument, 0, 'h'},
         {"verbose", no_argument, 0, 'v'},
+        {"radians", no_argument, 0, 'C'},
         {"frequency-domain", no_argument, 0, 'F'},
         {"condition-waveform", no_argument, 0, 'c'},
         {"amp-phase", no_argument, 0, 'Q'},
@@ -802,7 +809,7 @@ struct params parseargs(int argc, char **argv)
         {"nonGRpar", required_argument, 0, 'p'},
         {0, 0, 0, 0}
     };
-    char args[] = "hvFcQa:w:D:O:o:q:r:R:M:m:X:x:Y:y:Z:z:L:l:s:t:f:d:i:A:n:p:";
+    char args[] = "hvCFcQa:w:D:O:o:q:r:R:M:m:X:x:Y:y:Z:z:L:l:s:t:f:d:i:A:n:p:";
 
     while (1) {
         int option_index = 0;
@@ -825,6 +832,9 @@ struct params parseargs(int argc, char **argv)
             exit(0);
         case 'v':      /* verbose */
             p.verbose = 1;
+            break;
+        case 'C':      /* radians */
+            degrees = 0;
             break;
         case 'F':      /* frequency-domain */
             p.freq_dom = 1;
@@ -875,7 +885,7 @@ struct params parseargs(int argc, char **argv)
             p.ampO = atoi(LALoptarg);
             break;
         case 'q':      /* phiRef */
-            p.phiRef = atof(LALoptarg) * LAL_PI_180;
+            phiRef_string = LALoptarg;
             break;
         case 'r':      /* fRef */
             p.fRef = atof(LALoptarg);
@@ -930,7 +940,7 @@ struct params parseargs(int argc, char **argv)
             p.distance = atof(LALoptarg) * 1e6 * LAL_PC_SI;
             break;
         case 'i':      /* inclination */
-            p.inclination = atof(LALoptarg) * LAL_PI_180;
+            inclination_string = LALoptarg;
             break;
         case 'A':      /* axis */
             if (p.waveFlags == NULL)
@@ -975,5 +985,18 @@ struct params parseargs(int argc, char **argv)
             fprintf(stderr, "%s\n", argv[LALoptind++]);
         exit(1);
     }
+
+    /* set angles, converting to degrees to radians if needed */
+    if (phiRef_string) {
+        p.phiRef = atof(phiRef_string);
+        if (degrees)
+            p.phiRef *= LAL_PI_180;
+    }
+    if (inclination_string) {
+        p.inclination = atof(inclination_string);
+        if (degrees)
+            p.inclination *= LAL_PI_180;
+    }
+
     return p;
 }

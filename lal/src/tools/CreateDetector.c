@@ -591,7 +591,8 @@ const LALDetector lalCachedDetectors[LAL_NUM_DETECTORS] = {
   LAL_DETECTOR_STRUCT( ET2, IFODIFF ),
   LAL_DETECTOR_STRUCT( ET3, IFODIFF ),
   LAL_DETECTOR_STRUCT( ET0, IFODIFF ),
-  LAL_DETECTOR_STRUCT( KAGRA, IFODIFF )
+  LAL_DETECTOR_STRUCT( KAGRA, IFODIFF ),
+  LAL_DETECTOR_STRUCT( LIO_4K, IFODIFF ),
 };
 
 
@@ -684,7 +685,6 @@ LALDetector * XLALCreateDetector( LALDetector *detector,
 #if LALDETECTORSH_PRINTF
   printf("cos(LON) = %g, sin(LON) = %g\n", cosLon, sinLon);
 #endif
-
   ellipsoidalDenominator = sqrt( (LAL_AWGS84_SI * LAL_AWGS84_SI)
                             * (cosLat * cosLat)
                             + (LAL_BWGS84_SI * LAL_BWGS84_SI)

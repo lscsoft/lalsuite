@@ -90,10 +90,10 @@ static int frEvent2snglInspiral(SnglInspiralTable **snglInspiralEvent,
     /* read data from the frEvt */
     snprintf(snglEvt->search, LIGOMETA_SEARCH_MAX, "%s", frEvt->name);
     snglEvt->snr = frEvt->amplitude;
-    snglEvt->end_time.gpsSeconds = frEvt->GTimeS;
-    snglEvt->end_time.gpsNanoSeconds = frEvt->GTimeN;
+    snglEvt->end.gpsSeconds = frEvt->GTimeS;
+    snglEvt->end.gpsNanoSeconds = frEvt->GTimeN;
     timeAfter = frEvt->timeAfter;
-    XLALGPSAdd(&snglEvt->end_time,timeAfter);
+    XLALGPSAdd(&snglEvt->end,timeAfter);
     snglEvt->eff_distance = FrEventGetParam ( frEvt, ignore_const("distance (Mpc)") );
     snglEvt->mass1 = FrEventGetParam ( frEvt, ignore_const("mass1") );
     snglEvt->mass2 = FrEventGetParam ( frEvt, ignore_const("mass2") );

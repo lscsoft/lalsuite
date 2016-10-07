@@ -32,8 +32,8 @@ from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw.utils import segments as ligolwsegments
 from glue import offsetvector
-from pylal import ligolw_tisi
-from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+from lalburst import timeslides as ligolw_tisi
+from lal import LIGOTimeGPS
 from lalapps import cosmicstring
 from lalapps import power
 

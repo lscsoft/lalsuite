@@ -20,7 +20,7 @@
 
 /**
  * \defgroup LineRobustStats_h Header LineRobustStats.h
- * \ingroup lalpulsar_coh
+ * \ingroup lalpulsar_LR
  * \author David Keitel, Reinhard Prix
  *
  * \brief Functions to compute line-robust CW statistics
@@ -57,9 +57,10 @@ typedef struct tagBSGLSetup BSGLSetup;	///< internal storage for setup and pre-c
 
 BSGLSetup *
 XLALCreateBSGLSetup ( const UINT4 numDetectors,
-                      const REAL4 Fstar0,
+                      const REAL4 Fstar0sc,
                       const REAL4 oLGX[PULSAR_MAX_DETECTORS],
-                      const BOOLEAN useLogCorrection
+                      const BOOLEAN useLogCorrection,
+                      const UINT4 numSegments
 );
 
 void
@@ -71,6 +72,33 @@ XLALComputeBSGL ( const REAL4 twoF,
                   const BSGLSetup *setup
 );
 
+REAL4
+XLALComputeGLtLDenominator ( const REAL4 twoFX[PULSAR_MAX_DETECTORS],
+                    const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],
+                    const BSGLSetup *setup
+);
+
+REAL4
+XLALComputeBSGLtL ( const REAL4 twoF,
+                    const REAL4 twoFX[PULSAR_MAX_DETECTORS],
+                    const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],
+                    const BSGLSetup *setup
+);
+
+REAL4
+XLALComputeBtSGLtL ( const REAL4 maxtwoFl,
+                     const REAL4 twoFX[PULSAR_MAX_DETECTORS],
+                     const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],
+                     const BSGLSetup *setup
+);
+
+REAL4
+XLALComputeBStSGLtL ( const REAL4 twoF,
+                      const REAL4 maxtwoFl,
+                      const REAL4 twoFX[PULSAR_MAX_DETECTORS],
+                      const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],
+                      const BSGLSetup *setup
+);
 
 int
 XLALParseLinePriors ( REAL4 oLGX[PULSAR_MAX_DETECTORS],

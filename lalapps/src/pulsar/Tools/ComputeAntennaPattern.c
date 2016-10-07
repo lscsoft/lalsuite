@@ -67,8 +67,6 @@ typedef struct
 
 typedef struct
 {
-  BOOLEAN help;
-
   LALStringVector* IFOs; /**< list of detector-names "H1,H2,L1,.." or single detector*/
 
   REAL8 Alpha;		/**< a single skyposition Alpha: radians, equatorial coords. */
@@ -117,10 +115,10 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALInitUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
-  XLAL_CHECK ( XLALUserVarReadAllInput ( argc,argv ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if (uvar.help) { 	/* help requested: we're done */
-    exit(0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit(1);
   }
 
   if ( uvar.version )
@@ -286,8 +284,6 @@ XLALInitUserVars ( UserVariables_t *uvar )
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
 
   /* set a few defaults */
-  uvar->help = 0;
-
   XLAL_CHECK ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) != NULL, XLAL_ENOMEM, "Call to XLALCreateStringVector() failed." );
 
   uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
@@ -307,7 +303,6 @@ XLALInitUserVars ( UserVariables_t *uvar )
   uvar->noiseSqrtShX = NULL;
 
   /* register all user-variables */
-  XLALRegisterUvarMember(	help,		BOOLEAN, 'h', HELP,		"Print this help/usage message");
   XLALRegisterUvarMember( IFOs,                  STRINGVector, 'I', OPTIONAL, "Comma-separated list of detectors, eg. \"H1,H2,L1,G1, ...\" [only 1 detector supported at the moment] ");
 
   XLALRegisterUvarMember(	Alpha,		REAL8, 'a', OPTIONAL,	"single skyposition Alpha in radians, equatorial coords.");

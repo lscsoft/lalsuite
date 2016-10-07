@@ -235,7 +235,7 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
 
         /*  Eq. 19 of PRD 89, 084006 (2014) */
         /*  Also unwrap the two angles */
-        if (fabs(LN_x->data[i]) <= 1.e-7 && fabs(LN_y->data[i]) <=1.e-7){
+        if (fabs(LN_x->data[i]) <= 1.e-10 && fabs(LN_y->data[i]) <=1.e-10){
             Alpha->data[i] = 0.0;
             inGamma = 0.0;
         } else {
@@ -264,7 +264,15 @@ static int EulerAnglesI2P(REAL8Vector *Alpha, /**<< output: alpha Euler angle */
             Alpha->data[i] -= (Alpha->data[0] - InitialAlpha);
         }
 
-        Beta->data[i] = acos( LN_z->data[i] );
+        if (fabs(1.0 - LN_z->data[i]) < 1.e-12){
+            REAL8 LN_xy;
+            LN_xy = sqrt(LN_x->data[i]*LN_x->data[i] + LN_y->data[i]*LN_y->data[i]);
+            //LN_z->data[i] = sqrt(1.0 - LN_xy*LN_xy);
+            Beta->data[i] = atan2(LN_xy, LN_z->data[i]);
+            //printf("here   ");
+        }else{
+            Beta->data[i] = acos( LN_z->data[i] );
+        }
         if( i>0 && Beta->data[i] > Beta->data[i-1] ) {
             *phaseCounterB = *phaseCounterB - 1;
         }
@@ -335,9 +343,17 @@ static void EulerAnglesP2J(
     LframeEz[0] =  LNhx;
     LframeEz[1] =  LNhy;
     LframeEz[2] =  LNhz;
+    REAL8 normJ, normLz;
+    normJ = JframeEz[0]*JframeEz[0]+JframeEz[1]*JframeEz[1]+JframeEz[2]*JframeEz[2];
+    normLz = LframeEz[0]*LframeEz[0]+LframeEz[1]*LframeEz[1]+LframeEz[2]*LframeEz[2];
     *aP2J = atan2(JframeEz[0]*LframeEy[0]+JframeEz[1]*LframeEy[1]+JframeEz[2]*LframeEy[2],
                  JframeEz[0]*LframeEx[0]+JframeEz[1]*LframeEx[1]+JframeEz[2]*LframeEx[2]);
     *bP2J = acos( JframeEz[0]*LframeEz[0]+JframeEz[1]*LframeEz[1]+JframeEz[2]*LframeEz[2]);
+    if (*bP2J < 1.e-4){
+        *bP2J = acos((JframeEz[0]*LframeEz[0]+JframeEz[1]*LframeEz[1]+JframeEz[2]*LframeEz[2])/sqrt(normJ*normLz));
+
+    }
+
     *gP2J = atan2(  JframeEy[0]*LframeEz[0]+JframeEy[1]*LframeEz[1]+JframeEy[2]*LframeEz[2],
                  -(JframeEx[0]*LframeEz[0]+JframeEx[1]*LframeEz[1]+JframeEx[2]*LframeEz[2]));
     
@@ -599,7 +615,7 @@ XLALSpinPrecAlignedHiSRStopCondition(double UNUSED t,  /**< UNUSED */
         XLAL_PRINT_INFO("values[0], values[1], values[2], values[3], dvalues[0], dvalues[1], dvalues[2], dvalues[3] = %e %e %e %e %e %e %e %e\n", values[0], values[1], values[2], values[3], dvalues[0], dvalues[1], dvalues[2], dvalues[3]);
     }
 
-  if ( dvalues[2] >= 0. || isnan( dvalues[3] ) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) )
+  if ( dvalues[0] >= 0. || dvalues[2] >= 0. || isnan( dvalues[3] ) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) )
   {
       return 1;
   }
@@ -1154,6 +1170,11 @@ int XLALSimIMRSpinEOBWaveformAll(
   mTScaled = mTotal * LAL_MTSUN_SI;
   eta      = m1 * m2 / (mTotal*mTotal);
 
+  if (eta > 0.25){
+      m2=m1;
+      eta = 0.25;
+  }
+
   /* Initialize amplitude scaling parameter */
   amp0 = mTotal * LAL_MRSUN_SI / r;
 
@@ -1551,7 +1572,7 @@ int XLALSimIMRSpinEOBWaveformAll(
   /* Check if initial frequency is too high: we choose an initial minimum separation
    *  of 10M as a compromise between reliability of initial conditions and length
    *  of the waveform */
-  REAL8 NRPeakOmega22 = GetNRSpinPeakOmegav2(2, 2, eta, spinNQC) / mTScaled;
+  REAL8 NRPeakOmega22 = XLALSimIMREOBGetNRSpinPeakOmegav2(2, 2, eta, spinNQC) / mTScaled;
   REAL8 freqMinRad = pow(10.0, -1.5)/(LAL_PI*mTScaled);
   REAL8 signOfa = copysign(1., spinNQC);
   REAL8 spn2 = spinNQC*spinNQC;
@@ -1563,7 +1584,7 @@ int XLALSimIMRSpinEOBWaveformAll(
 
   if (debugPK){
       XLAL_PRINT_INFO("Stas - spin = %4.10f \n", spinNQC);
-      XLAL_PRINT_INFO("Stas - NRPeakOmega22 =  %4.10f,   %4.10f \n",  GetNRSpinPeakOmegav2(2, 2, eta, spinNQC) / mTotal,  GetNRSpinPeakOmegav2(2, 2, eta, spinNQC));
+      XLAL_PRINT_INFO("Stas - NRPeakOmega22 =  %4.10f,   %4.10f \n",  XLALSimIMREOBGetNRSpinPeakOmegav2(2, 2, eta, spinNQC) / mTotal,  XLALSimIMREOBGetNRSpinPeakOmegav2(2, 2, eta, spinNQC));
       XLAL_PRINT_INFO("Stas ---- check for fmin NRPeakOmega22 = %4.10f, freqMinRad = %4.10f \n", NRPeakOmega22, freqMinRad);
       XLAL_PRINT_INFO("Stas -- minf freq is min( %4.10f, %4.10f )\n", NRPeakOmega22*0.1, freqMinRad);
       XLAL_PRINT_INFO("Stas -- initial radius (apr) %4.10f \n", pow(LAL_PI*fMin*mTScaled,-2./3.) );
@@ -3545,11 +3566,11 @@ int XLALSimIMRSpinEOBWaveformAll(
      * the azimuthal phase of the observer in the source (I-)frame. Together with inclination angle it defines 
      * the position of the observer in the (I-)frame associated with the source at t=0 */
 
-    Y22 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, 2 );
-    Y2m2 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, -2 );
-    Y21 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, 1 );
-    Y2m1 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, -1 );
-    Y20 = XLALSpinWeightedSphericalHarmonic( inc, phiC, -2, 2, 0 );
+    Y22 = XLALSpinWeightedSphericalHarmonic( inc, -phiC, -2, 2, 2 );
+    Y2m2 = XLALSpinWeightedSphericalHarmonic( inc, -phiC, -2, 2, -2 );
+    Y21 = XLALSpinWeightedSphericalHarmonic( inc, -phiC, -2, 2, 1 );
+    Y2m1 = XLALSpinWeightedSphericalHarmonic( inc, -phiC, -2, 2, -1 );
+    Y20 = XLALSpinWeightedSphericalHarmonic( inc, -phiC, -2, 2, 0 );
     /*if ( SpinsAlmostAligned ) {
         Y22 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, 2 );
         Y2m2 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, -2 );

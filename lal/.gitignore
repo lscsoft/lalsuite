@@ -32,6 +32,7 @@ include/lal/header-link-stamp
 lal-*.tar.xz
 lal-user-env.csh
 lal-user-env.sh
+lal-user-env.fish
 lal-user-env.shell
 lal.spec
 libtool

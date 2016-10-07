@@ -124,6 +124,9 @@ extern "C" {
 " --binary-input (-B)      read in input data from binary file (for fine and\n\
                           update heterodynes only)\n"\
 " --binary-output (-b)     output data to a binary file\n"\
+" --legacy-input (-L)      if input heterodyned file is a legacy files produced\n\
+                          before the introduction of headers, then set this\n\
+                          flag\n"\
 " --gzip-output (-Z)       if not outputting in binary format then gzip the\n\
                           output file. This will be done by default if the\n\
                           --output-file specified has the \".gz\" suffix, but\n\
@@ -196,11 +199,13 @@ typedef struct tagInputParams{
   INT4 binaryinput;
   INT4 binaryoutput;
   INT4 gzipoutput;
+  INT4 legacyinput;
 }InputParams;
 
 typedef struct tagHeterodyneParams{
-  BinaryPulsarParams het;
-  BinaryPulsarParams hetUpdate;
+  PulsarParameters *het;
+  PulsarParameters *hetUpdate;
+
   INT4 heterodyneflag;
 
   LALDetector detector;

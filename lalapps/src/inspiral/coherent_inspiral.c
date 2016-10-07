@@ -608,9 +608,9 @@ int main( int argc, char *argv[] )
                 temp_mass2 = floor( thisCoinc->snglInspiral[k]->mass2 * 10000.0 );
                 snprintf( nameArrayCData[k], LALNameLength*sizeof(CHAR),
 		  "%s:CBC-CData_%d_%d_%d_%d", caseIDChars[k],
-		  thisCoinc->snglInspiral[k]->end_time.gpsSeconds,
-                  (thisCoinc->snglInspiral[k]->end_time.gpsNanoSeconds -
-                  (thisCoinc->snglInspiral[k]->end_time.gpsNanoSeconds % 1000000))/1000000,
+		  thisCoinc->snglInspiral[k]->end.gpsSeconds,
+                  (thisCoinc->snglInspiral[k]->end.gpsNanoSeconds -
+                  (thisCoinc->snglInspiral[k]->end.gpsNanoSeconds % 1000000))/1000000,
                   temp_mass1, temp_mass2 );
 
                 /* slideSign=0 is the same as a positive time slide */

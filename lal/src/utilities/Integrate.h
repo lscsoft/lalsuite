@@ -147,6 +147,7 @@ extern "C" {
  * integrand should vanish exponentially for large \f$x\f$.
  */
 typedef enum
+tagIntegralType
 {
   ClosedInterval,     /**< evaluate integral on a closed interval             */
   OpenInterval,       /**< evaluate integral on an open interval              */

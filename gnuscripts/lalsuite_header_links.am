@@ -1,4 +1,4 @@
-.PHONY: header-links
+.PHONY: header-links header-links-local
 header-links: $(pkginclude_HEADERS) $(nodist_pkginclude_HEADERS)
 	$(AM_V_at)for dir in $(SUBDIRS); do \
 		if test "x$$dir" != "x."; then \
@@ -9,6 +9,7 @@ header-links: $(pkginclude_HEADERS) $(nodist_pkginclude_HEADERS)
 		echo "Making header-links in $(subdir)"; \
 		for file in $^; do \
 			case $$file in \
+				header-links-local) continue;; \
 				/*) targetfile="$$file";; \
 				*) targetfile="$(abs_builddir)/$$file";; \
 			esac; \

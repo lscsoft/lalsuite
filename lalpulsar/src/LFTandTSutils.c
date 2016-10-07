@@ -25,7 +25,6 @@
 
 /* LAL-includes */
 #include <lal/LFTandTSutils.h>
-#include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/LogPrintf.h>
 #include <lal/TimeSeries.h>

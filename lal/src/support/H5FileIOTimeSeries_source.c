@@ -21,11 +21,11 @@ int FILEWRITEFUNC(LALH5File *file, const char *name, STYPE *series)
 	dset = DSETALLOCFUNC(file, name, series->data);
 	if (!dset)
 		XLAL_ERROR(XLAL_EFUNC);
-	if (XLALH5DatasetAddStringAttribute(dset, "name", series->name) < 0) {
+	if (XLALH5AttributeAddString((LALH5Generic)dset, "name", series->name) < 0) {
 		XLALH5DatasetFree(dset);
 		XLAL_ERROR(XLAL_EFUNC, "Could not set name attribute");
 	}
-	if (XLALH5DatasetAddLIGOTimeGPSAttribute(dset, "epoch", &series->epoch) < 0) {
+	if (XLALH5AttributeAddLIGOTimeGPS((LALH5Generic)dset, "epoch", &series->epoch) < 0) {
 		XLALH5DatasetFree(dset);
 		XLAL_ERROR(XLAL_EFUNC, "Could not set epoch attribute");
 	}
@@ -42,7 +42,7 @@ int FILEWRITEFUNC(LALH5File *file, const char *name, STYPE *series)
 		XLALH5DatasetFree(dset);
 		XLAL_ERROR(XLAL_EFUNC);
 	}
-	if (XLALH5DatasetAddStringAttribute(dset, "sampleUnits", sampleUnits) < 0) {
+	if (XLALH5AttributeAddString((LALH5Generic)dset, "sampleUnits", sampleUnits) < 0) {
 		XLALH5DatasetFree(dset);
 		XLAL_ERROR(XLAL_EFUNC, "Could not set sampleUnits attribute");
 	}
@@ -72,7 +72,7 @@ STYPE *FILEREADFUNC(LALH5File *file, const char *name)
 
 	/* read metadata */
 
-	n = XLALH5DatasetQueryStringAttributeValue(series->name, sizeof(series->name), dset, "name");
+	n = XLALH5AttributeQueryStringValue(series->name, sizeof(series->name), (LALH5Generic)dset, "name");
 	if (n < 0) {
 		LALFree(series);
 		XLALH5DatasetFree(dset);
@@ -81,7 +81,7 @@ STYPE *FILEREADFUNC(LALH5File *file, const char *name)
 	if ((size_t)n >= sizeof(series->name))
 		XLAL_PRINT_WARNING("Name of frequency series was truncated");
 
-	n = XLALH5DatasetQueryStringAttributeValue(sampleUnits, sizeof(sampleUnits), dset, "sampleUnits");
+	n = XLALH5AttributeQueryStringValue(sampleUnits, sizeof(sampleUnits), (LALH5Generic)dset, "sampleUnits");
 	if (n < 0) {
 		LALFree(series);
 		XLALH5DatasetFree(dset);
@@ -93,7 +93,7 @@ STYPE *FILEREADFUNC(LALH5File *file, const char *name)
 		series->sampleUnits = lalDimensionlessUnit;
 	}
 
-	if (XLALH5DatasetQueryLIGOTimeGPSAttributeValue(&series->epoch, dset, "epoch") == NULL) {
+	if (XLALH5AttributeQueryLIGOTimeGPSValue(&series->epoch, (LALH5Generic)dset, "epoch") == NULL) {
 		LALFree(series);
 		XLALH5DatasetFree(dset);
 		XLAL_ERROR_NULL(XLAL_EFUNC);

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2015  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -22,8 +22,10 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 
 import argparse
+import contextlib
+from distutils.dir_util import mkpath
+from distutils.errors import DistutilsFileError
 import errno
-from optparse import IndentedHelpFormatter
 import glob
 import inspect
 import itertools
@@ -32,40 +34,18 @@ import shutil
 import sys
 import tempfile
 from matplotlib import cm
-from .. import cmap
+from ..plot import cmap
 
 
 
-class NewlinePreservingHelpFormatter(IndentedHelpFormatter):
-    """A help formatter for optparse that preserves paragraphs and bulleted
-    lists whose lines start with a whitespace character."""
-
-    def _format_text(self, text):
-        __doc__ = IndentedHelpFormatter._format_text
-        return "\n\n".join(
-            t if len(t) == 0 or t[0].isspace()
-            else IndentedHelpFormatter._format_text(self, t)
-            for t in text.strip().split("\n\n")
-        )
-
-
-def check_required_arguments(parser, opts, *keys):
-    """Raise an error if any of the specified command-line arguments are missing."""
-    for key in keys:
-        if getattr(opts, key) is None:
-            parser.error("Missing required argument: --" + key.replace("_", "-"))
-
-
-def get_input_filename(parser, args):
-    """Determine name of input: either the sole positional command line argument,
-    or /dev/stdin."""
-    if len(args) == 0:
-        infilename = '/dev/stdin'
-    elif len(args) == 1:
-        infilename = args[0]
-    else:
-        parser.error("Too many command line arguments.")
-    return infilename
+@contextlib.contextmanager
+def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
+    try:
+        dir = tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+        yield dir
+    finally:
+        if delete:
+            shutil.rmtree(dir)
 
 
 def chainglob(patterns):
@@ -104,6 +84,8 @@ group.add_argument('--max-distance', type=float, metavar='Mpc',
 group.add_argument('--prior-distance-power', type=int, metavar='-1|2',
     default=2, help='Distance prior '
     '[-1 for uniform in log, 2 for uniform in volume, default: %(default)s]')
+group.add_argument('--enable-snr-series', default=False, action='store_true',
+    help='Enable input of SNR time series (WARNING: UNREVIEWED!) [default: no]')
 del group
 
 
@@ -136,8 +118,8 @@ class MatplotlibFigureType(argparse.FileType):
         else:
             with super(MatplotlibFigureType, self).__call__(string):
                 pass
-            import matplotlib
-            matplotlib.use('agg')
+            from matplotlib import pyplot as plt
+            plt.switch_backend('agg')
             self.string = string
             return self.__save
 
@@ -178,19 +160,19 @@ def colormap(value):
     rcParams['image.cmap'] = value
 
 @type_with_sideeffect(float)
-def figwith(value):
+def figwidth(value):
     from matplotlib import rcParams
-    rcParams['figure.figsize'][0] = value
+    rcParams['figure.figsize'][0] = float(value)
 
 @type_with_sideeffect(float)
 def figheight(value):
     from matplotlib import rcParams
-    rcParams['figure.figsize'][1] = value
+    rcParams['figure.figsize'][1] = float(value)
 
 @type_with_sideeffect(int)
 def dpi(value):
     from matplotlib import rcParams
-    rcParams['figure.dpi'] = rcParams['savefig.dpi'] = value
+    rcParams['figure.dpi'] = rcParams['savefig.dpi'] = float(value)
 
 figure_parser = argparse.ArgumentParser(add_help=False)
 colormap_choices = sorted(cm.cmap_d.keys())
@@ -207,10 +189,10 @@ group.add_argument(
 group.add_argument(
     '--help-colormap', action=HelpChoicesAction, choices=colormap_choices)
 group.add_argument(
-    '--figure-width', metavar='INCHES', type=figwith, default=8.,
+    '--figure-width', metavar='INCHES', type=figwidth, default='8',
     help='width of figure in inches [default: %(default)s]')
 group.add_argument(
-    '--figure-height', metavar='INCHES', type=figheight, default=6.,
+    '--figure-height', metavar='INCHES', type=figheight, default='6',
     help='height of figure in inches [default: %(default)s]')
 group.add_argument(
     '--dpi', metavar='PIXELS', type=dpi, default=300,
@@ -263,7 +245,7 @@ class ArgumentParser(argparse.ArgumentParser):
             if formatter_class is None:
                 formatter_class = argparse.RawDescriptionHelpFormatter
         if formatter_class is None:
-            formatter_class = HelpFormatter
+            formatter_class = argparse.HelpFormatter
         super(ArgumentParser, self).__init__(
                  prog=prog,
                  usage=usage,
@@ -277,6 +259,26 @@ class ArgumentParser(argparse.ArgumentParser):
                  conflict_handler=conflict_handler,
                  add_help=add_help)
         self.add_argument('--version', action=VersionAction)
+
+
+class DirType(object):
+    """Factory for directory arguments."""
+
+    def __init__(self, create=False):
+        self._create = create
+
+    def __call__(self, string):
+        if self._create:
+            try:
+                mkpath(string)
+            except DistutilsFileError as e:
+                raise argparse.ArgumentTypeError(e.message)
+        else:
+            try:
+                os.listdir(string)
+            except OSError as e:
+                raise argparse.ArgumentTypeError(e)
+        return string
 
 
 class SQLiteType(argparse.FileType):
@@ -308,8 +310,7 @@ def sqlite_get_filename(connection):
 
 def rename(src, dst):
     """Like os.rename(src, dst), but works across different devices because it
-    catches and handles EXDEV ('Invalid cross-device link') errors. This
-    operation is atomic, even if src and dst are on different devices."""
+    catches and handles EXDEV ('Invalid cross-device link') errors."""
     try:
         os.rename(src, dst)
     except OSError as e:
@@ -325,3 +326,11 @@ def rename(src, dst):
                 raise
         else:
             raise
+
+
+def register_to_xmldoc(xmldoc, parser, opts, **kwargs):
+    from glue.ligolw.utils import process
+    return process.register_to_xmldoc(
+        xmldoc, parser.prog,
+        {key: (value.name if hasattr(value, 'read') else value)
+        for key, value in opts.__dict__.items()})

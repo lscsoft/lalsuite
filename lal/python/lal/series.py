@@ -32,8 +32,6 @@ the DMT to store time- and frequency-series data in XML files,
 from glue.ligolw import ligolw
 from glue.ligolw import array as ligolw_array
 from glue.ligolw import param as ligolw_param
-from glue.ligolw import table as ligolw_table
-from glue.ligolw import types as ligolw_types
 import lal
 import numpy as np
 
@@ -54,16 +52,14 @@ def _build_series(series, dim_names, comment, delta_name, delta_unit):
     elem = ligolw.LIGO_LW(Attributes({u"Name": unicode(series.__class__.__name__)}))
     if comment is not None:
         elem.appendChild(ligolw.Comment()).pcdata = comment
-    # FIXME:  make Time class smart so we don't have to build it by
-    # hand
-    elem.appendChild(ligolw.Time(Attributes({u"Name": u"epoch", u"Type": u"GPS"}))).pcdata = unicode(series.epoch)
-    elem.appendChild(ligolw_param.from_pyvalue(u"f0", series.f0, unit=u"s^-1"))
+    elem.appendChild(ligolw.Time.from_gps(series.epoch, u"epoch"))
+    elem.appendChild(ligolw_param.Param.from_pyvalue(u"f0", series.f0, unit=u"s^-1"))
     delta = getattr(series, delta_name)
     if np.iscomplexobj(series.data.data):
         data = np.row_stack((np.arange(len(series.data.data)) * delta, series.data.data.real, series.data.data.imag))
     else:
         data = np.row_stack((np.arange(len(series.data.data)) * delta, series.data.data))
-    a = ligolw_array.from_array(series.name, data, dim_names=dim_names)
+    a = ligolw_array.Array.build(series.name, data, dim_names=dim_names)
     a.Unit = str(series.sampleUnits)
     dim0 = a.getElementsByTagName(ligolw.Dim.tagName)[0]
     dim0.Unit = delta_unit
@@ -79,7 +75,9 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
     dims = a.getElementsByTagName(ligolw.Dim.tagName)
     f0 = ligolw_param.get_param(elem, u"f0")
 
-    epoch = lal.LIGOTimeGPS(str(t.pcdata))
+    if t.Type != u"GPS":
+        raise ValueError("epoch Type must be GPS")
+    epoch = t.pcdata
 
     # Target units: inverse seconds
     inverse_seconds_unit = lal.Unit("s^-1")
@@ -99,8 +97,8 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
     series = creatorfunc(
         str(a.Name),
         epoch,
-        float(f0.pcdata) * float(f0_unit / inverse_seconds_unit),
-        float(dims[0].Scale) * float(delta_unit / delta_target_unit),
+        f0.pcdata * float(f0_unit / inverse_seconds_unit),
+        dims[0].Scale * float(delta_unit / delta_target_unit),
         sample_unit,
         len(a.array.T)
     )
@@ -117,7 +115,7 @@ def _parse_series(elem, creatorfunc, delta_target_unit_string):
 
 def build_REAL4FrequencySeries(series, comment=None):
     assert isinstance(series, lal.REAL4FrequencySeries)
-    return _build_series(series, (u"Frequency", u"Frequency,Real"), comment, 'deltaF', 's^-1')
+    return _build_series(series, (u"Frequency,Real", u"Frequency"), comment, 'deltaF', 's^-1')
 
 
 def parse_REAL4FrequencySeries(elem):
@@ -126,7 +124,7 @@ def parse_REAL4FrequencySeries(elem):
 
 def build_REAL8FrequencySeries(series, comment=None):
     assert isinstance(series, lal.REAL8FrequencySeries)
-    return _build_series(series, (u"Frequency", u"Frequency,Real"), comment, 'deltaF', 's^-1')
+    return _build_series(series, (u"Frequency,Real", u"Frequency"), comment, 'deltaF', 's^-1')
 
 
 def parse_REAL8FrequencySeries(elem):
@@ -135,7 +133,7 @@ def parse_REAL8FrequencySeries(elem):
 
 def build_COMPLEX8FrequencySeries(series, comment=None):
     assert isinstance(series, lal.COMPLEX8FrequencySeries)
-    return _build_series(series, (u"Frequency", u"Frequency,Real,Imaginary"), comment, 'deltaF', 's^-1')
+    return _build_series(series, (u"Frequency,Real,Imaginary", u"Frequency"), comment, 'deltaF', 's^-1')
 
 
 def parse_COMPLEX8FrequencySeries(elem):
@@ -144,7 +142,7 @@ def parse_COMPLEX8FrequencySeries(elem):
 
 def build_COMPLEX16FrequencySeries(series, comment=None):
     assert isinstance(series, lal.COMPLEX16FrequencySeries)
-    return _build_series(series, (u"Frequency", u"Frequency,Real,Imaginary"), comment, 'deltaF', 's^-1')
+    return _build_series(series, (u"Frequency,Real,Imaginary", u"Frequency"), comment, 'deltaF', 's^-1')
 
 
 def parse_COMPLEX16FrequencySeries(elem):
@@ -153,7 +151,7 @@ def parse_COMPLEX16FrequencySeries(elem):
 
 def build_REAL4TimeSeries(series, comment=None):
     assert isinstance(series, lal.REAL4TimeSeries)
-    return _build_series(series, (u"Time", u"Time,Real"), comment, 'deltaT', 's')
+    return _build_series(series, (u"Time,Real", u"Time"), comment, 'deltaT', 's')
 
 
 def parse_REAL4TimeSeries(elem):
@@ -162,7 +160,7 @@ def parse_REAL4TimeSeries(elem):
 
 def build_REAL8TimeSeries(series, comment=None):
     assert isinstance(series, lal.REAL8TimeSeries)
-    return _build_series(series, (u"Time", u"Time,Real"), comment, 'deltaT', 's')
+    return _build_series(series, (u"Time,Real", u"Time"), comment, 'deltaT', 's')
 
 
 def parse_REAL8TimeSeries(elem):
@@ -171,7 +169,7 @@ def parse_REAL8TimeSeries(elem):
 
 def build_COMPLEX8TimeSeries(series, comment=None):
     assert isinstance(series, lal.COMPLEX8TimeSeries)
-    return _build_series(series, (u"Time", u"Time,Real,Imaginary"), comment, 'deltaT', 's')
+    return _build_series(series, (u"Time,Real,Imaginary", u"Time"), comment, 'deltaT', 's')
 
 
 def parse_COMPLEX8TimeSeries(elem):
@@ -180,7 +178,7 @@ def parse_COMPLEX8TimeSeries(elem):
 
 def build_COMPLEX16TimeSeries(series, comment=None):
     assert isinstance(series, lal.COMPLEX16TimeSeries)
-    return _build_series(series, (u"Time", u"Time,Real,Imaginary"), comment, 'deltaT', 's')
+    return _build_series(series, (u"Time,Real,Imaginary", u"Time"), comment, 'deltaT', 's')
 
 
 def parse_COMPLEX16TimeSeries(elem):
@@ -196,46 +194,49 @@ def parse_COMPLEX16TimeSeries(elem):
 #
 
 
-def make_psd_xmldoc(psddict, xmldoc = None):
+def make_psd_xmldoc(psddict, xmldoc = None, root_name = u"psd"):
     """
     Construct an XML document tree representation of a dictionary of
-    frequency series objects containing PSDs.  See also
-    read_psd_xmldoc() for a function to parse the resulting XML
-    documents.
+    frequency series objects containing PSDs.  See also read_psd_xmldoc()
+    for a function to parse the resulting XML documents.
 
-    If xmldoc is None (the default), then a new XML document is created
-    and the PSD dictionary added to it.  If xmldoc is not None then the
-    PSD dictionary is appended to the children of that element inside a
-    new LIGO_LW element.
+    If xmldoc is None (the default), then a new XML document is created and
+    the PSD dictionary added to it inside a LIGO_LW element.  If xmldoc is
+    not None then the PSD dictionary is appended to the children of that
+    element inside a new LIGO_LW element.  In both cases, the LIGO_LW
+    element's Name attribute is set to root_name.  This will be looked for
+    by read_psd_xmldoc() when parsing the PSD document.
     """
     if xmldoc is None:
         xmldoc = ligolw.Document()
-    lw = xmldoc.appendChild(ligolw.LIGO_LW())
+    lw = xmldoc.appendChild(ligolw.LIGO_LW(Attributes({u"Name": root_name})))
     for instrument, psd in psddict.items():
         fs = lw.appendChild(build_REAL8FrequencySeries(psd))
         if instrument is not None:
-            fs.appendChild(ligolw_param.from_pyvalue(u"instrument", instrument))
+            fs.appendChild(ligolw_param.Param.from_pyvalue(u"instrument", instrument))
     return xmldoc
 
 
-def read_psd_xmldoc(xmldoc):
+def read_psd_xmldoc(xmldoc, root_name = u"psd"):
     """
     Parse a dictionary of PSD frequency series objects from an XML
-    document.  See also make_psd_xmldoc() for the construction of XML documents
-    from a dictionary of PSDs.  Interprets an empty freuency series for an
-    instrument as None.
+    document.  See also make_psd_xmldoc() for the construction of XML
+    documents from a dictionary of PSDs.  Interprets an empty frequency
+    series for an instrument as None.
+
+    The XML document tree is searched for a LIGO_LW element whose Name
+    attribute is root_name (default is "psd").  If root_name is None all
+    REAL8Frequency series objects below xmldoc are included in the return
+    value.
     """
-    out = dict(
-        (ligolw_param.get_pyvalue(elem, u"instrument"),
-        parse_REAL8FrequencySeries(elem))
-        for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName)
-        if elem.hasAttribute(u"Name")
-        and elem.Name == u"REAL8FrequencySeries")
-    # Interpret empty frequency series as None
-    for k in out:
-        if len(out[k].data.data) == 0:
-            out[k] = None
-    return out
+    if root_name is not None:
+        xmldoc, = (elem for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == root_name)
+    result = dict((ligolw_param.get_pyvalue(elem, u"instrument"), parse_REAL8FrequencySeries(elem)) for elem in xmldoc.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == u"REAL8FrequencySeries")
+    # interpret empty frequency series as None
+    for instrument in result:
+        if len(result[instrument].data.data) == 0:
+            result[instrument] = None
+    return result
 
 
 @ligolw_array.use_in

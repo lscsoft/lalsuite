@@ -547,12 +547,10 @@ transformed to the time domain for injection into the strain data.
 
 ### Details
 
-The algorithm described here yields a single time series containing a band-
-and time-limited white noise burst waveform.  The injection generator
-produces both \f$h_{+}\f$ and \f$h_{\times}\f$ waveforms.  These are
-independent waveforms constructed by simply applying the time series
-construction algorithm twice.  The injection code uses a time series whose
-length is \f$21 \Delta t\f$ rounded to the nearest odd integer,
+This function produces both \f$h_{+}\f$ and \f$h_{\times}\f$ waveforms.
+These are independent waveforms constructed by applying the time series
+construction algorithm twice.  The length of the result is \f$21 \Delta
+t\f$ rounded to the nearest odd integer,
 \f{equation}{
 L
    = 2 \left\lfloor \frac{1}{2} \frac{21 \Delta t}{\delta t} \right\rfloor
@@ -638,7 +636,7 @@ To ensure no discontinuities in the strain time series when the injection
 is added to it, a final Tukey window is applied to the injection in the
 time domain.  The Tukey window is constructed with a call to
 <tt>XLALCreateTukeyREAL8Window()</tt> with a shape parameter of \f$\beta =
-0.5\f$ so that the tapers span a total of 50\
+0.5\f$ so that the tapers span a total of 50\% of the time series.
 Because the Tukey window is flat with unit amplitude in the middle, it has
 no effect on the injection time series where the bulk of the energy is
 concentrated, and the large tapers ensure the Tukey window induces
@@ -656,14 +654,14 @@ how the initial time series of independent Gaussian random numbers is to be
 constructed.  This is done by specifying the seed to be used with the
 random number generator.  The random number generator is not specified, so
 the same seed may produce different injections with different versions of
-the code, but a seed and CVS tag combination should be guaranteed to
+the code, but a seed and revision tag combination should be guaranteed to
 produce the same injection.  Note also that changing the length of the
 injection time series changes the number of random numbers used to
 construct it, so the injection waveform also depends on the time series'
 sample rate.  One has to be careful when constructing injection waveforms
 for instruments with different sample rates (e.g., LIGO and VIRGO).  The
 injection must be constructed at the same sample rate for both instruments
-and then up- or down-sampled as needed when injected into the instrument's
+and then up- or down-sampled as needed when injected into each instrument's
 time series.
 
 \anchor xlalsimburstbtlwnb_examples
@@ -700,6 +698,12 @@ of freedom.
  * (linearly polarized).  Note that this controls the relationship between
  * the expected amplitudes, not the realized amplitudes.
  *
+ * @param[in] phase The phase, \f$\phi\f$, of the sinusoidal oscillations
+ * that get multiplied by the Gaussian envelope.  With \f$\phi=0\f$,
+ * \f$h_{+}\f$ is cosine-like and \f$h_{\times}\f$ is sine-like.  With
+ * \f$\phi=\pi/2\f$, \f$h_{+}\f$ is sine-like and \f$h_{\times}\f$ is
+ * cosine-like.
+ *
  * @param[in] int_hdot_squared The output is normalized so that \f$\int
  * (\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) \diff t\f$
  * equals this.  Note that the normalization is not on the expected
@@ -724,18 +728,16 @@ of freedom.
  * is a need to reproduce a waveform exactly then it will be necessary to
  * tag the code before making such changes.
  *
- * @warning
- * The current algorithm's low degree-of-freedom limit yields
- * cosine-Gaussians in both \f$h_{+}\f$ and \f$h_{\times}\f$.  This makes
- * the ellipticity parameter nonsensical in this limit and one of the two
- * (total) degrees of freedom degenerate with the \f$\psi\f$ parameter
- * giving the orientation of the polarization axes about the light-of-sight
- * to the source.  Expect this behaviour to change:  expect the
- * construction to be modified to yield a sine-like component in the
- * \f$h_{\times}\f$ polarization in the low degree-of-freedom limit, and a
- * phase angle parameter to be added at that time as well.  Then this
- * function will then yield exactly the same waveforms as
- * XLALSimBurstSineGaussian() in the low degree-of-freedom limit.
+ * @note
+ * The algorithm's low degree-of-freedom limit is equivalent to
+ * XLALSimBurstSineGaussian() but instead of Q and centre frequency the
+ * duration and centre frequency are the degrees of freedom, which allows
+ * the algorithm to also be evaluated in the low-frequency limit where
+ * (when eccentricity = 1) it yields output equivalent to
+ * XLALSimBurstGaussian().  If 2-degree-of-freedom waveforms or Gaussian
+ * waveforms are required, the other functions are substantially more
+ * efficient ways to generate them, but this function provides an interface
+ * that yields sine-Gaussian family waveforms that is valid in all regimes.
  */
 
 
@@ -746,6 +748,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	REAL8 frequency,
 	REAL8 bandwidth,
 	REAL8 eccentricity,
+	REAL8 phase,
 	REAL8 int_hdot_squared,
 	REAL8 delta_t,
 	gsl_rng *rng
@@ -864,6 +867,11 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 		double w = f == 0. ? 1. : exp(f * f * beta);
 		tilde_hplus->data->data[i] *= a * w;
 		tilde_hcross->data->data[i] *= b * w;
+		/* rotate phases of non-DC components */
+		if(i != 0) {
+			tilde_hplus->data->data[i] *= cexp(-I * phase);
+			tilde_hcross->data->data[i] *= I * cexp(-I * phase);
+		}
 	}
 	}
 
@@ -1147,9 +1155,9 @@ int XLALSimBurstSineGaussian(
 	for(i = 0; i < (*hplus)->data->length; i++) {
 		const double t = ((int) i - (length - 1) / 2) * delta_t;
 		const double phi = twopif0 * t;
-		const double fac = exp(phi * phi / negative2Qsquared);
-		hp[i]  = h0plus * fac * cos(phi - phase) * w[i];
-		hc[i] = h0cross * fac * sin(phi - phase) * w[i];
+		const complex double fac = cexp(phi * phi / negative2Qsquared + I * (phi - phase)) * w[i];
+		hp[i] = h0plus * creal(fac);
+		hc[i] = h0cross * cimag(fac);
 	}
 	XLALDestroyREAL8Window(window);
 

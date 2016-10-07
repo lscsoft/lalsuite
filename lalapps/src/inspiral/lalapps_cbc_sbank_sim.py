@@ -67,8 +67,8 @@ def ligolw_copy_process(xmldoc_src, xmldoc_dest):
     We want to copy over process and process_params tables to eventually
     merge them.
     """
-    proc = table.get_table(xmldoc_src, lsctables.ProcessTable.tableName)
-    pp = table.get_table(xmldoc_src, lsctables.ProcessParamsTable.tableName)
+    proc = lsctables.ProcessTable.get_table(xmldoc_src)
+    pp = lsctables.ProcessParamsTable.get_table(xmldoc_src)
 
     xmldoc_dest.appendChild(ligolw.LIGO_LW())
     xmldoc_dest.childNodes[-1].appendChild(proc)
@@ -83,8 +83,8 @@ def parse_command_line():
     parser.add_option("--mratio-max",default = float('inf'), type="float", help="Cull injections based on mass ratio")
     parser.add_option("--mtotal-min",default = 0, type="float", help="Cull injections based on total mass")
     parser.add_option("--mtotal-max",default = float('inf'), type="float", help="Cull injections based on total mass")
-    parser.add_option("--template-bank",default = None)
-    parser.add_option("--template-approx",default = None)
+    parser.add_option("--template-bank",default = [], action="append", metavar="FILE[:APPROX]")
+    parser.add_option("--template-approx",default = None, help="Approximant to be used for templates when not specified with file.")
     parser.add_option("--noise-model", choices=noise_models.keys(), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model")
     parser.add_option("--reference-psd", help="Read PSD from xml instead of using analytical noise model.")
     parser.add_option("--instrument", metavar="IFO", help="Specify the instrument for which to generate a template bank.")
@@ -108,17 +108,15 @@ opts, args = parse_command_line()
 # Choose noise model
 if opts.reference_psd is not None:
     psd = read_psd(opts.reference_psd)[opts.instrument]
-    f_orig = psd.f0 + np.arange(len(psd.data)) * psd.deltaF
-    interpolator = UnivariateSpline(f_orig, np.log(psd.data), s=0)
+    f_orig = psd.f0 + np.arange(len(psd.data.data)) * psd.deltaF
+    interpolator = UnivariateSpline(f_orig, np.log(psd.data.data), s=0)
     noise_model = lambda g: np.exp(interpolator(g))
 else:
     noise_model = noise_models[opts.noise_model]
 
 usertag = opts.user_tag  # use to label output
 inj_file = opts.injection_file # pre-sorted by mchirp
-tmplt_file = opts.template_bank
 inj_approx = waveforms[opts.injection_approx]
-tmplt_approx = waveforms[opts.template_approx]
 flow = opts.flow
 verbose = opts.verbose
 if opts.use_gpu_match:
@@ -141,10 +139,35 @@ process = ligolw_process.register_to_xmldoc(fake_xmldoc, "lalapps_cbc_sbank_sim"
 h5file = H5File("%s.h5" % usertag, "w")
 
 # load templates
-xmldoc = utils.load_filename(tmplt_file, contenthandler=ContentHandler)
-ligolw_copy_process(xmldoc, fake_xmldoc)
-sngls = table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
-bank = Bank.from_sngls(sngls, tmplt_approx, noise_model, flow, use_metric=False, cache_waveforms=opts.cache_waveforms, nhood_size=opts.neighborhood_size, nhood_param=opts.neighborhood_param)
+#
+# initialize the bank
+#
+bank = Bank(noise_model, flow, use_metric=False, cache_waveforms=opts.cache_waveforms, nhood_size=opts.neighborhood_size, nhood_param=opts.neighborhood_param)
+for file_approx in opts.template_bank:
+
+    # if no approximant specified, take from opts.template_approx
+    if len(file_approx.split(":")) == 1:
+        seed_file = file_approx
+        approx = opts.template_approx
+    else:
+        # if this fails, you have an input error
+        seed_file, approx = file_approx.split(":")
+
+    # add templates to bank
+    tmpdoc = utils.load_filename(seed_file, contenthandler=ContentHandler)
+    sngl_inspiral = lsctables.SnglInspiralTable.get_table(tmpdoc)
+    seed_waveform = waveforms[approx]
+    bank.add_from_sngls(sngl_inspiral, seed_waveform)
+
+    if opts.verbose:
+        print "Added %d %s templates from %s to bank." % (len(sngl_inspiral), approx, seed_file)
+
+    tmpdoc.unlink()
+    del sngl_inspiral, tmpdoc
+
+if opts.verbose:
+    print "Initialized the template bank with %d templates." % len(bank)
+
 # write bank to h5 file, but note that from_sngls() has resorted the
 # bank by neighborhood_param
 sngls = lsctables.SnglInspiralTable()
@@ -152,15 +175,12 @@ for s in bank._templates:
     sngls.append(s.to_sngl())
 h5file.create_dataset("/sngl_inspiral", data=ligolw_table_to_array(sngls), compression='gzip', compression_opts=1)
 h5file.flush()
-del xmldoc, sngls[:]
-if verbose:
-    print "Loaded %d templates" % len(bank)
-    tmplt_format = "".join("%s: %s   " % name_format for name_format in zip(tmplt_approx.param_names, tmplt_approx.param_formats))
+del sngls[:]
 
 # pick injection parameters
 xmldoc2 = utils.load_filename(inj_file, contenthandler=ContentHandler)
 ligolw_copy_process(xmldoc2, fake_xmldoc)
-sims = table.get_table(xmldoc2, lsctables.SimInspiralTable.tableName)
+sims = lsctables.SimInspiralTable.get_table(xmldoc2)
 
 #
 # sometime inspinj doesn't give us everything we want, so we give the
@@ -194,7 +214,7 @@ for inj_ind, inj_wf in enumerate(inj_wfs):
 
     if verbose:
         print "\tbest matching template:  ",
-        print tmplt_format % bank._templates[match_tup[1]].params
+        print bank._templates[match_tup[1]].params
         print "\tbest match:  %f\n" % match_tup[0]
 
     match_map[inj_ind] = (inj_ind, inj_wf.sigmasq) + match_tup
@@ -213,11 +233,11 @@ ligolw_process.set_process_end_time(process)
 
 # output
 h5file.create_dataset("/match_map", data=match_map, compression='gzip', compression_opts=1)
-proc = table.get_table(fake_xmldoc, lsctables.ProcessTable.tableName)
+proc = lsctables.ProcessTable.get_table(fake_xmldoc)
 for p in proc:
     p.cvs_entry_time = 0
     p.end_time = 0
 h5file.create_dataset("/process", data=ligolw_table_to_array(proc))
-pp = table.get_table(fake_xmldoc, lsctables.ProcessParamsTable.tableName)
+pp = lsctables.ProcessParamsTable.get_table(fake_xmldoc)
 h5file.create_dataset("/process_params", data=ligolw_table_to_array(pp))
 h5file.close()

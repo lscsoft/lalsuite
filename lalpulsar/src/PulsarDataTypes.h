@@ -96,7 +96,7 @@ typedef struct tagPulsarDopplerParams {
 
 // ---------- transient-CW related types ----------
 /** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
-typedef enum {
+typedef enum tagtransientWindowType_t {
   TRANSIENT_NONE = 0,		/**< Note: in this case the window-parameters will be ignored, and treated as rect={data},
                                  * i.e. a simple rectangular window covering all the data => this should always reproduce the
                                  * standard F-statistic computation. */

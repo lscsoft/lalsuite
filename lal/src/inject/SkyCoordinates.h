@@ -53,7 +53,7 @@ extern "C" {
  * This enumerated type is used to identify data as being in one of the
  * coordinate systems discussed in \ref SkyCoordinates_h.
  */
-typedef enum {
+typedef enum tagCoordinateSystem {
   COORDINATESYSTEM_HORIZON,	/**< A horizon coordinate system. */
   COORDINATESYSTEM_GEOGRAPHIC,	/**< The Earth-fixed geographic coordinate system. */
   COORDINATESYSTEM_EQUATORIAL,	/**< The sky-fixed equatorial coordinate system. */

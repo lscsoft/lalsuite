@@ -49,6 +49,7 @@ __date__ = git_version.date
 description = \
 """ 
 an executable that knows how to discover idq FAP frames based on an iDQ config file and converts them into segments.
+outputs an xml document with ligolw segment tables and supporting metadata
 """
 
 #===================================================================================================
@@ -70,8 +71,7 @@ parser.add_option('-l', '--log-file', default='idq_frames_to_segments.log',
 
 parser.add_option('', '--ignore-science-segments',
     default=False, action="store_true",
-    help='analyze strides regardless of the science segment content. \
-    This is NOT passed on to training job, which always uses science segments'
+    help='generate segments regardless of the science segment content.'    
     )
 
 parser.add_option("", "--no-robot-cert",
@@ -80,7 +80,7 @@ parser.add_option("", "--no-robot-cert",
     )
 
 parser.add_option('-C', '--classifier', default=[], action='append', type='string', \
-    help='generate segments for this classifier. Can generate segments \
+    help='generate segments for this classifier. Can generate segments. \
     for more than one classifier by repeating this option'
     )
 
@@ -99,10 +99,6 @@ parser.add_option('-L', '--left-padding', default=0, type='float', \
 parser.add_option('-T', '--t-lag', default=0, type='float', \
     help="transform all segments from [start, end] -> [start+t_lag, end+t_lag]"
     )
-#parser.add_option('-w', '--widen', default=1, type='float', \
-#    help="transform all segments from [t-dt, t+dt] -> [t-w*dt, t+w*dt]. \
-#    If supplied, this transformation is applied before right-padding, left-padding and t-lag"
-#    )
 
 parser.add_option('-t', '--tag', default="", type="string")
 parser.add_option('-o', '--output-dir', default=".", type="string", \
@@ -114,6 +110,9 @@ parser.add_option('-o', '--output-dir', default=".", type="string", \
 ### ensure output directory exists
 if not os.path.exists(opts.output_dir):
     os.makedirs(opts.output_dir)
+
+if opts.tag:
+    opts.tag="_"+opts.tag
 
 ### parser gps times from arguments
 if len(args) != 2:
@@ -279,6 +278,29 @@ for key in fapsD.keys():
 #========================
 # iterate through classifiers -> generate segments
 #========================
+
+### set up xml document
+from glue.ligolw import ligolw
+from glue.ligolw import utils as ligolw_utils
+from glue.ligolw import lsctables
+
+from glue.ligolw.utils import process
+
+xmldoc = ligolw.Document()
+xml_element = ligolw.LIGO_LW()
+xmldoc.appendChild( xml_element )
+
+proc_id = process.register_to_xmldoc( xmldoc, __prog__, opts.__dict__, version=__version__ ).process_id
+
+segdef = lsctables.New( lsctables.SegmentDefTable, columns=["process_id", "segment_def_id", "ifos", "name", "version", "comment"] )
+segsum = lsctables.New( lsctables.SegmentSumTable, columns=["process_id", "segment_sum_id", "start_time", "start_time_ns", "end_time", "end_time_ns", "comment", "segment_def_id"] )
+segtab = lsctables.New( lsctables.SegmentTable, columns=["process_id", "segment_def_id", "segment_id", "start_time", "start_time_ns", "end_time", "end_time_ns"] )
+
+xml_element.appendChild( segdef )
+xml_element.appendChild( segsum )
+xml_element.appendChild( segtab )
+
+### iterate through classifiers
 for classifier in opts.classifier:
     logger.info('Begin: generating segments for %s'%classifier)
 
@@ -286,35 +308,68 @@ for classifier in opts.classifier:
     logger.info('  found %d files'%(len(faps)))
 
     ### need to load in time-series from frames here!
-    ### write a function similar to the npy.gz one in idq.py and use that!
-
     chan = idq.channame(ifo, classifier, "%s_fap"%usertag)
     t, ts = idq.combine_gwf(faps, [chan]) ### loads in the data from frames
    
     logger.info('  found %d continous segments'%(len(t)))
  
+    ### set up segdef row
+    fap2segdef_id = {}
+    for FAPthr in opts.FAPthr:
+        segdef_id = segdef.get_next_id()
+        
+        segdef_row = lsctables.SegmentDef()
+        segdef_row.process_id = proc_id
+        segdef_row.segment_def_id = segdef_id
+        segdef_row.ifos = ifo
+        segdef_row.name = classifier
+        segdef_row.version = 1
+        segdef_row.comment = 'FAPthr=%.9e'%FAPthr
+
+        segdef.append( segdef_row )
+
+        fap2segdef_id[FAPthr] = segdef_id
+
     ### iterate through contiguous segments:
     for T, TS in zip(t, ts):
         if not len(T):
             logger.info('len(T)=0, skipping...')
             continue
 
+        dT = T[1]-T[0] ### assumes we have more than one sample...
+        start = max(scisegs[0][0], T[0]+opts.t_lag)
+        end = min(scisegs[-1][-1], T[-1]+dT+opts.t_lag)
+
+        start_time = int(start)
+        start_time_ns = (start-start_time)*1e9
+        end_time = int(end)
+        end_time_ns = (end-end_time)*1e9
+
+        dur = end_time - start_time
+
         ### iterate through FAPthr
         for FAPthr in opts.FAPthr:
             print "    FAPthr : %.6e"%(FAPthr)
-       
+
+            segdef_id = fap2segdef_id[FAPthr]
+            ### set up segment summary row
+            segsum_row = lsctables.SegmentSum()
+
+            segsum_row.segment_sum_id = segsum.get_next_id()
+
+            segsum_row.comment = ''
+            segsum_row.process_id = proc_id
+            segsum_row.segment_def_id = segdef_id
+            segsum_row.start_time    = start_time
+            segsum_row.start_time_ns = start_time_ns
+            segsum_row.end_time      = end_time
+            segsum_row.end_time_ns   = end_time_ns
+
+            segsum.append( segsum_row )
+
             ### generate segments for this threshold
-#            T, TS = idq.timeseries_in_segments( T, TS, modified_scisegs )
             segs, min_TS = idq.timeseries_to_segments(T[:], -TS[:], -FAPthr)
 
-            ### transform segments if requested
-#            if opts.widen != 1: ### transform all segments from [t-dt, t+dt] -> [t-w*dt, t+w*dt
-#                logger.info('      widening segments: w = %.3f'%(opts.widen))
-#                for ind, (s, e) in enumerate(segs):
-#                    dt = 0.5*(e-s) * opts.widen ### apply the transformation
-#                    to = 0.5*(e+s)
-#                    segs[ind] = [to-dt, to+dt] 
-        
             if opts.right_padding != 0: ### transform all segments from [start, end] -> [start, end+right_padding]
                 logger.info('      moving right edge of segments: end->end+%.6f'%(opts.right_padding))
                 for ind, (s, e) in enumerate(segs):
@@ -340,17 +395,25 @@ for classifier in opts.classifier:
             logger.info('taking intersection of vetosegs and scisegs')
             segs = event.andsegments( [scisegs, segs] )
 
-            this_start = max( scisegs[0][0], int(T[0]+opts.t_lag) )
-            this_end = min( scisegs[-1][1], int(round(T[-1]+opts.t_lag, 0)))
-            this_dur = this_end - this_start
-#            filename = idq.frame2segment( opts.output_dir, classifier, ifo, FAPthr, usertag, opts.right_padding, opts.left_padding, opts.t_lag, opts.widen, this_start, this_dur )
-            filename = idq.frame2segment( opts.output_dir, classifier, ifo, FAPthr, usertag, opts.right_padding, opts.left_padding, opts.t_lag, this_start, this_dur )
-            logger.info('    writing segments -> %s'%(filename))
-            file_obj = open(filename, "w")
+            logger.info('    writing segments to SegmentTable')
+            ### add segments to table 
             for s, e in segs:
-               print >> file_obj, "%.9f %.9f"%(s, e)
-            file_obj.close()
+                seg_row = lsctables.Segment()
+
+                seg_row.segment_id = segtab.get_next_id()
+                
+                seg_row.process_id = proc_id
+                seg_row.segment_def_id = segdef_id
+                seg_row.start_time = int(s)
+                seg_row.start_time_ns = (s-seg_row.start_time)*1e9
+                seg_row.end_time = int(e)
+                seg_row.end_time_ns = (e-seg_row.end_time)*1e9
+
+                segtab.append( seg_row )
 
     logger.info('Done: generating segments for %s'%classifier)
 
-
+### write to disk
+filename = idq.frame2segmentxml( opts.output_dir, opts.tag, startgps, endgps-startgps )
+logger.info('writing segments to : %s'%filename)
+ligolw_utils.write_filename( xmldoc, filename, gz=filename.endswith('.gz') )

@@ -92,7 +92,7 @@ int XLALGenerateSimBurst(
 		gsl_rng_set(rng, sim_burst->waveform_number);
 
 		XLALPrintInfo("%s(): BTLWNB @ %9d.%09u s (GPS): f = %.16g Hz, df = %.16g Hz, dt = %.16g s, hdot^2 = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->bandwidth, sim_burst->duration, int_hdot_squared_dt);
-		if(XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(hplus, hcross, sim_burst->duration, sim_burst->frequency, sim_burst->bandwidth, sim_burst->pol_ellipse_e, int_hdot_squared_dt, delta_t, rng)) {
+		if(XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(hplus, hcross, sim_burst->duration, sim_burst->frequency, sim_burst->bandwidth, sim_burst->pol_ellipse_e, sim_burst->pol_ellipse_angle, int_hdot_squared_dt, delta_t, rng)) {
 			gsl_rng_free(rng);
 			XLAL_ERROR(XLAL_EFUNC);
 		}

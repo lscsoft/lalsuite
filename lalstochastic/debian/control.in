@@ -1,0 +1,74 @@
+Source: lalstochastic
+Section: science
+Priority: optional
+Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
+Build-Depends: debhelper (>= 9), pkg-config, dh-python, python-all-dev, python3-all-dev,
+  zlib1g-dev, libmetaio-dev (>= 8.2), swig (>= 3.0.7),
+  liboctave-dev, python-numpy, python3-numpy,
+  lal-dev (>= @MIN_LAL_VERSION@~),
+  lal-python (>= @MIN_LAL_VERSION@~),
+  lal-python3 (>= @MIN_LAL_VERSION@~),
+  lal-octave (>= @MIN_LAL_VERSION@~),
+  lalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
+  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~),
+  lalmetaio-python3 (>= @MIN_LALMETAIO_VERSION@~),
+  lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~)
+X-Python-Version: >= 2.7
+X-Python3-Version: >= 3.4
+Standards-Version: 3.9.8
+
+Package: lalstochastic
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+  libmetaio1 (>= 8.2),
+  lal (>= @MIN_LAL_VERSION@~),
+  lalmetaio (>= @MIN_LALMETAIO_VERSION@~)
+Description: LSC Algorithm Library Stochastic
+ The LSC Algorithm Stochastic Library for gravitational wave data analysis.
+ This package contains the shared-object libraries needed to run applications
+ that use the LAL Stochastic library.
+
+Package: lalstochastic-dev
+Section: libdevel
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g-dev,
+  libmetaio-dev (>= 8.2),
+  lal-dev (>= @MIN_LAL_VERSION@~),
+  lalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
+  lalstochastic (= ${binary:Version})
+Description: LSC Algorithm Library Stochastic Developers
+ The LSC Algorithm Stochastic Library for gravitational wave data analysis.
+ This package contains files needed build applications that use the LAL
+ Stochastic library.
+
+Package: lalstochastic-python
+Section: python
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
+  lalstochastic (= ${binary:Version}),
+  lal-python (>= @MIN_LAL_VERSION@~),
+  lalmetaio-python (>= @MIN_LALMETAIO_VERSION@~)
+Description: Python bindings for LALStochastic
+ The LSC Algorithm Stochastic Library for gravitational wave data analysis.
+ This package contains Python bindings for the LAL Stochastic library.
+
+Package: lalstochastic-python3
+Section: python
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends},
+  lalstochastic (= ${binary:Version}),
+  lal-python3 (>= @MIN_LAL_VERSION@~),
+  lalmetaio-python3 (>= @MIN_LALMETAIO_VERSION@~)
+Description: Python 3 bindings for LALStochastic
+ The LSC Algorithm Stochastic Library for gravitational wave data analysis.
+ This package contains Python 3 bindings for the LAL Stochastic library.
+
+Package: lalstochastic-octave
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, octave,
+  lalstochastic (= ${binary:Version}),
+  lal-octave (>= @MIN_LAL_VERSION@~),
+  lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~)
+Description: Octave bindings for LALStochastic
+ The LSC Algorithm Stochastic Library for gravitational wave data analysis.
+ This package contains Octave bindings for the LAL Stochastic library.

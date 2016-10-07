@@ -263,10 +263,11 @@ static int ReadHDF5RealMatrixDataset(LALH5File *file, const char *name, gsl_matr
 }
 
 static void PrintInfoStringAttribute(LALH5File *file, const char attribute[]) {
-  int len = XLALH5FileQueryStringAttributeValue(NULL, 0, file, attribute) + 1;
+  LALH5Generic gfile = {.file = file};
+  int len = XLALH5AttributeQueryStringValue(NULL, 0, gfile, attribute) + 1;
   char *str = XLALMalloc(len);
   XLALH5FileQueryStringAttributeValue(str, len, file, attribute);
-  XLALPrintInfo("%s\n", str);
+  XLALPrintInfo("%s:\n%s\n", attribute, str);
   LALFree(str);
 }
 
@@ -275,9 +276,10 @@ static int ROM_check_version_number(LALH5File *file, 	INT4 version_major_in, INT
   INT4 version_minor;
   INT4 version_micro;
 
-  XLALH5FileQueryScalarAttributeValue(&version_major, file, "version_major");
-  XLALH5FileQueryScalarAttributeValue(&version_minor, file, "version_minor");
-  XLALH5FileQueryScalarAttributeValue(&version_micro, file, "version_micro");
+  LALH5Generic gfile = {.file = file};
+  XLALH5AttributeQueryScalarValue(&version_major, gfile, "version_major");
+  XLALH5AttributeQueryScalarValue(&version_minor, gfile, "version_minor");
+  XLALH5AttributeQueryScalarValue(&version_micro, gfile, "version_micro");
 
   if ((version_major_in != version_major) || (version_minor_in != version_minor) || (version_micro_in != version_micro)) {
     XLAL_ERROR(XLAL_EIO, "Expected ROM data version %d.%d.%d, but got version %d.%d.%d.",

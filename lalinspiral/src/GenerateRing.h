@@ -67,7 +67,7 @@ extern "C" {
 /** \endcond */
 
 /** UNDOCUMENTED */
-typedef enum{
+typedef enum tagSimRingType {
   Ringdown
 } SimRingType;
 

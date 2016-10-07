@@ -49,7 +49,7 @@ from pylal import git_version
 from lalapps import pulsarpputils as pppu
 
 import urllib2
-from BeautifulSoup import BeautifulSoup as bs
+#from BeautifulSoup import BeautifulSoup as bs
 
 __author__="Matthew Pitkin <matthew.pitkin@ligo.org>"
 __version__= "git id %s"%git_version.id
@@ -317,30 +317,29 @@ def get_atnf_info(par):
         if i+1 > len(trynames)/2:
           psrname = psrname + '*'
 
-        atnfurl = \
-'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=1.53&Dist=Dist&Assoc=\
-Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&\
-sort_attr=&sort_order=asc&condition=&pulsar_names=' + psrname + \
-'&ephemeris=selected&submit_ephemeris=\
-Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=\
-&coords_2=&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=\
-linear&y_axis=&y_scale=linear&state=query'
+#        atnfurl = \
+#'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=1.54&Dist=Dist&Assoc=\
+#Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&\
+#sort_attr=&sort_order=asc&condition=&pulsar_names=' + psrname + \
+#'&ephemeris=selected&submit_ephemeris=\
+#Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=\
+#&coords_2=&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=\
+#linear&y_axis=&y_scale=linear&state=query'
+
+        atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=1.54&Dist=Dist&Assoc=Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&sort_attr=jname&sort_order=asc&condition=&pulsar_names=%s&ephemeris=selected&submit_ephemeris=Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=&coords_2=&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=query' % psrname
 
         soup = None
         pdat = None
 
-        soup = bs(urllib2.urlopen(atnfurl).read())
-        pdat = soup.pre # data exists in the pre html environment
+        #soup = bs(urllib2.urlopen(atnfurl).read())
+        #pdat = soup.pre # data exists in the pre html environment
+        urldat = urllib2.urlopen(atnfurl).read()
+        predat = re.search(r'<pre[^>]*>([^<]+)</pre>', urldat) # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
+        pdat = predat.group(1).strip().split('\n') # remove preceeding and trailing new lines and split lines
 
         for line in pdat:
-          vals = line.split('\n') # split at any new lines
-
-          for row in vals:
-            if 'WARNING' in row or 'not in catalogue' in row:
-              badurl = True
-              break
-
-          if badurl:
+          if 'WARNING' in line or 'not in catalogue' in line:
+            badurl = True
             break
 
         if badurl:
@@ -803,17 +802,14 @@ include one posterior sample file for each IFO.")
       pnameurl = atnfinfo[1]
 
       for line in pdat:
-        vals = line.split('\n') # split at any new lines
+        vals = line.split() # split at any new lines
 
-        for row in vals:
-          if 'DIST' in row:
-            dists = row.split() # split row at whitespace
-
-          if 'AGE_I' in row:
-            ages = row.split()
-
-          if 'ASSOC' in row:
-            assoc = row.split()
+        if 'DIST' in vals[0]:
+          dists = vals[1]
+        if 'AGE_I' in vals[0]:
+          ages = vals[1]
+        if 'ASSOC' in vals[0]:
+          assoc = vals[1]
     else:
       notinatnf = True
       atnfurl = None
@@ -1061,8 +1057,8 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=50 )
       mcmcgr.append(grr)
 
     if usenested:
-      pos, ev = pppu.pulsar_nest_to_posterior(nestedfiles[i])
-      evidence.append(ev)
+      pos, sigev, noiseev = pppu.pulsar_nest_to_posterior(nestedfiles[i])
+      evidence.append(ev-noiseev)
       mcmcgr = None
     else:
       evidence.append(None)
@@ -1615,7 +1611,7 @@ pdisp) )
         poststatstext.append('<td rowspan="%d">%s</td>' % (len(ifosNew), \
  dispfunc(str(par[param.upper()]))))
       except:
-        poststatstext.append('<td rowspan="%d">*</td>' % len(ifosNew))    
+        poststatstext.append('<td rowspan="%d">*</td>' % len(ifosNew))
 
     for i, ifo in enumerate(ifosNew):
       poststatstext.append('<td class="%s">%s</td>' % (ifo, ifo) )

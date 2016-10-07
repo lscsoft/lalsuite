@@ -75,6 +75,7 @@
 
 #include <lal/LALSimulation.h>
 #include <lal/LALSimNoise.h>
+#include <lal/LALInspiral.h>
 
 #include "inspiral.h"
 
@@ -1143,7 +1144,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   s2y=inj->spin2y;
   s2z=inj->spin2z;
   iota=inj->inclination;
-  f_min=start_freq;
+  f_min=XLALSimInspiralfLow2fStart(inj->f_lower,amporder,XLALGetApproximantFromString(inj->waveform));
   phi0=inj->coa_phase;
   polarization=inj->polarization;
   REAL8 latitude=inj->latitude;
@@ -1325,7 +1326,7 @@ REAL8 calculate_lalsim_snr(SimInspiralTable *inj, char *IFOname, REAL8FrequencyS
   REAL8 timeshift =  timedelay;
   REAL8 twopit    = LAL_TWOPI * timeshift;
 
-  UINT4 lower = (UINT4)ceil(f_min / deltaF);
+  UINT4 lower = (UINT4)ceil(start_freq / deltaF);
   UINT4 upper = (UINT4)floor(f_max / deltaF);
   REAL8 re = cos(twopit*deltaF*lower);
   REAL8 im = -sin(twopit*deltaF*lower);

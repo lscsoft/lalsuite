@@ -183,11 +183,69 @@ double XLALUniformComovingVolumeDensity(
     LALCosmologicalParameters *p = (LALCosmologicalParameters *)omega;
 
     double x = 1.0+z;
-    double dm = XLALComovingTransverseDistance(omega,z);
-    double E = XLALHubbleParameter(z,omega);
-    double unnorm_density = 4.0*M_PI*dm*dm*E*XLALHubbleDistance(p)/x;
+    double unnorm_density = XLALComovingVolumeElement(z,p)/x;
     return unnorm_density;
 }
+/**
+ * This function computes the comoving volume between 0 and z
+ */
+double XLALComovingVolume(
+                         LALCosmologicalParameters *omega,
+                         double z)
+{
+    double V = XLALIntegrateComovingVolume(omega, z);
+    return V;
+}
+
+/**
+ * This function computes the comoving volume element (a 4&pi shell) between redshift z and z+dz.
+ */
+
+double XLALComovingVolumeElement(
+                                double z,
+                                void *omega)
+{
+    
+    LALCosmologicalParameters *p = (LALCosmologicalParameters *)omega;
+    
+    double dm = XLALComovingTransverseDistance(omega,z);
+    double E = XLALHubbleParameter(z,omega);
+    double dVdz = 4.0*M_PI*dm*dm*E*XLALHubbleDistance(p);
+    return dVdz;
+}
+
+/**
+ * Function that integrates the comoving volume element.
+ * The integration is performed using gsl_integration_qagiu from the gsl library (see http://www.gnu.org/software/gsl/manual/html_node/QAGI-adaptive-integration-on-infinite-intervals.html )
+ */
+double XLALIntegrateComovingVolume(LALCosmologicalParameters *omega, double z)
+{
+    double result = 0.0;
+    double error;
+    double epsabs = 5e-5;
+    double epsrel = 1e-5;
+    size_t limit = 1024;
+    int key = 1;
+    
+    gsl_function F;
+    F.function = &XLALComovingVolumeElement;
+    F.params  = omega;
+    
+    gsl_integration_workspace * w
+    = gsl_integration_workspace_alloc (1024);
+    
+    if (z<0.0) gsl_integration_qagiu (&F, 0.0, epsabs, epsrel,
+                                      limit, w, &result, &error);
+    
+    else gsl_integration_qag (&F, 0.0, z, epsabs, epsrel,
+                              limit, key, w, &result, &error);
+    
+    gsl_integration_workspace_free (w);
+    
+    return result;
+}
+
+
 /**
  * Function that integrates the uniform in comoving volume density to compute the normalisation factor.
  * Consistently with Coward, Burman 2005 ( http://arxiv.org/abs/astro-ph/0505181 ) the integral should be always performed up to infinity.

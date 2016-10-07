@@ -47,7 +47,7 @@ opts = parser.parse_args()
 
 # Late imports.
 import numpy as np
-import lalinference.fits
+from lalinference.io import fits
 import lalinference.bayestar.postprocess
 
 samples = np.recfromtxt(opts.input, names=True)
@@ -59,6 +59,6 @@ p = lalinference.bayestar.postprocess.adaptive_healpix_histogram(
     nside=opts.nside, max_nside=opts.max_nside)
 
 # Write output to FITS file.
-lalinference.fits.write_sky_map(opts.output, p,
+fits.write_sky_map(opts.output, p,
     creator=parser.prog, objid=opts.objid,
     gps_time=samples['time'].mean())

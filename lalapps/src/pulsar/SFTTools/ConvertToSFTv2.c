@@ -50,7 +50,6 @@
 /* User variables */
 typedef struct
 {
-  BOOLEAN help;
   CHAR *inputSFTs;
   CHAR *outputDir;
   CHAR *outputSingleSFT;
@@ -92,10 +91,10 @@ main(int argc, char *argv[])
   XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
-  XLAL_CHECK_MAIN ( XLALUserVarReadAllInput (argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  if (uvar.help) {	/* help requested: we're done */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit (1);
   }
 
   /* ----- make sure output directory exists ---------- */
@@ -259,7 +258,6 @@ initUserVars ( UserInput_t *uvar )
   uvar->timestampsFile = NULL;
 
   /* now register all our user-variable */
-  XLALRegisterUvarMember(   help,		BOOLEAN, 'h', HELP,     "Print this help/usage message");
   XLALRegisterUvarMember( inputSFTs,	STRING, 'i', REQUIRED, "File-pattern for input SFTs");
   XLALRegisterUvarMember( IFO,		STRING, 'I', OPTIONAL, "IFO of input SFTs: 'G1', 'H1', 'H2', ...(required for v1-SFTs)");
 

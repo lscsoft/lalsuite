@@ -1383,9 +1383,9 @@ int main( int argc, char *argv[] )
               if ( slideDataNS && j == 1 )
               {
                 INT8 trigTimeNS = 0;
-                trigTimeNS = XLALGPSToINT8NS( &(currentTrigger[j]->end_time) );
+                trigTimeNS = XLALGPSToINT8NS( &(currentTrigger[j]->end) );
                 trigTimeNS += slideDataNS;
-                XLALINT8NSToGPS( &(currentTrigger[j]->end_time), trigTimeNS );
+                XLALINT8NSToGPS( &(currentTrigger[j]->end), trigTimeNS );
               }     
               currentTrigger[j] = currentTrigger[j]->next;
             }
@@ -1394,9 +1394,9 @@ int main( int argc, char *argv[] )
             if ( slideDataNS && j == 1)
             {
               INT8 trigTimeNS = 0;
-              trigTimeNS = XLALGPSToINT8NS( &(currentTrigger[j]->end_time) );
+              trigTimeNS = XLALGPSToINT8NS( &(currentTrigger[j]->end) );
               trigTimeNS += slideDataNS;
-              XLALINT8NSToGPS( &(currentTrigger[j]->end_time), trigTimeNS );
+              XLALINT8NSToGPS( &(currentTrigger[j]->end), trigTimeNS );
             }
 
             /* store number of triggers from ifo a for trigtotmplt algorithm */
@@ -1479,8 +1479,8 @@ int main( int argc, char *argv[] )
       SnglInspiralTable *tmpEvent = thisEvent;
       thisEvent = thisEvent->next;
 
-      if ( tmpEvent->end_time.gpsSeconds >= startCoincidence &&
-          tmpEvent->end_time.gpsSeconds < endCoincidence )
+      if ( tmpEvent->end.gpsSeconds >= startCoincidence &&
+          tmpEvent->end.gpsSeconds < endCoincidence )
       {
         /* keep this template */
         if ( ! inspiralEventList[0] )
@@ -1658,7 +1658,7 @@ int main( int argc, char *argv[] )
   }
 
   while ( currentTrigger[0] && 
-      ( currentTrigger[0]->end_time.gpsSeconds < startCoincidence ) )
+      ( currentTrigger[0]->end.gpsSeconds < startCoincidence ) )
   {
     currentTrigger[0] = currentTrigger[0]->next;
   }
@@ -1682,13 +1682,13 @@ int main( int argc, char *argv[] )
   if ( vrbflg ) fprintf( stdout, "start loop over ifo A\n" );
 
   while ( (currentTrigger[0] ) && 
-      (currentTrigger[0]->end_time.gpsSeconds < endCoincidence) )
+      (currentTrigger[0]->end.gpsSeconds < endCoincidence) )
   {
     if ( vrbflg ) fprintf( stdout, "  using IFO A trigger at %d + %10.10f\n",
-        currentTrigger[0]->end_time.gpsSeconds, 
-        ((REAL4) currentTrigger[0]->end_time.gpsNanoSeconds * 1e-9) );
+        currentTrigger[0]->end.gpsSeconds, 
+        ((REAL4) currentTrigger[0]->end.gpsNanoSeconds * 1e-9) );
 
-    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end_time) );
+    ta = XLALGPSToINT8NS( &(currentTrigger[0]->end) );
 
     isPlay = XLALINT8NanoSecIsPlayground( ta );
 
@@ -1737,7 +1737,7 @@ int main( int argc, char *argv[] )
       /* window of the current ifo a trigger                            */
       while ( currentTrigger[1] )
       {
-        tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
+        tb = XLALGPSToINT8NS( &(currentTrigger[1]->end) );
 
         if ( tb > ta - errorParams.dt )
         {
@@ -1838,15 +1838,15 @@ int main( int argc, char *argv[] )
         {
           if ( vrbflg && currentTrigger[1] ) fprintf( stdout, 
               "  start loop over IFO B trigger at %d + %10.10f\n",
-              currentTrigger[1]->end_time.gpsSeconds, 
-              ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
+              currentTrigger[1]->end.gpsSeconds, 
+              ((REAL4)currentTrigger[1]->end.gpsNanoSeconds * 1e-9) );
 
           /* look for coincident events in B within the time window */
           currentEvent = currentTrigger[1];
 
           while ( currentTrigger[1] )
           {
-            tb = XLALGPSToINT8NS( &(currentTrigger[1]->end_time) );
+            tb = XLALGPSToINT8NS( &(currentTrigger[1]->end) );
 
             if (tb > ta + errorParams.dt )
             {
@@ -1860,8 +1860,8 @@ int main( int argc, char *argv[] )
               /* call the LAL function which compares events parameters */
               if ( vrbflg ) fprintf( stdout, 
                   "    comparing IFO B trigger at %d + %10.10f\n",
-                  currentTrigger[1]->end_time.gpsSeconds, 
-                  ((REAL4)currentTrigger[1]->end_time.gpsNanoSeconds * 1e-9) );
+                  currentTrigger[1]->end.gpsSeconds, 
+                  ((REAL4)currentTrigger[1]->end.gpsNanoSeconds * 1e-9) );
 
               LAL_CALL( LALCompareSnglInspiral( &status, currentTrigger[0],
                     currentTrigger[1], &errorParams ), &status );

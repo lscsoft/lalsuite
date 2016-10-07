@@ -30,7 +30,6 @@
 
 typedef struct
 {
-   BOOLEAN help;		/**< Print this help/usage message */
    REAL8 Tsft;
    REAL8 SFToverlap;
    REAL8 t0;
@@ -135,7 +134,6 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    uvar->SFToverlap = 900;
    uvar->fspan = 0.25;
 
-   XLALRegisterUvarMember(  help,       BOOLEAN, 'h', HELP     , "Print this help/usage message");
    XLALRegisterUvarMember(  Tsft,        REAL8, 0 , OPTIONAL , "SFT coherence time");
    XLALRegisterUvarMember(  SFToverlap,  REAL8, 0 , OPTIONAL , "SFT overlap in seconds, usually Tsft/2");
    XLALRegisterUvarMember(  t0,          REAL8, 0 , OPTIONAL , "GPS start time of the search; not needed if --v1 is specified");
@@ -149,9 +147,9 @@ INT4 InitUserVars(UserVariables_t *uvar, int argc, char *argv[])
    XLALRegisterUvarMember(skyRegion,   STRING, 0 , OPTIONAL , "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky");
    XLALRegisterUvarMember(  v1,          BOOLEAN, 0 , DEVELOPER, "Flag to use older style of CompDetectorVmax (for S6/VSR2-3 analysis)");
 
-   XLAL_CHECK( XLALUserVarReadAllInput(argc, argv) == XLAL_SUCCESS, XLAL_EFUNC );
-
-   if ( uvar->help ) exit (0);
+   BOOLEAN should_exit = 0;
+   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+   if ( should_exit ) exit (1);
 
    if (!uvar->v1 && !XLALUserVarWasSet(&uvar->t0)) XLAL_ERROR( XLAL_EINVAL, "Must set t0" );
    if (!uvar->v1 && !XLALUserVarWasSet(&uvar->Tobs)) XLAL_ERROR( XLAL_EINVAL, "Must set Tobs" );

@@ -65,7 +65,7 @@ int XLALSimBurstImg(
 			double t = floor(col * dt / deltaT) * deltaT;
 			double f = fstart + (nrow - row) * df;
 			double Y = image->data[row * ncol + col];
-			if (XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(&hp, &hc, dt, f, df, 0., Y, deltaT, rng) < 0) {
+			if (XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(&hp, &hc, dt, f, df, 0., 0., Y, deltaT, rng) < 0) {
 				XLALDestroyREAL8TimeSeries(hc);
 				XLALDestroyREAL8TimeSeries(hp);
 				XLAL_ERROR(XLAL_EFUNC);

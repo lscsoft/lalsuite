@@ -49,7 +49,7 @@ extern "C" {
 /*---------- TYPES ----------*/
 
 /** Argument-type for LogPrintf(): determines log-level of this message */
-typedef enum
+typedef enum tagLogLevel_t
   {
     LOG_NONE = 0,	/**< internal: don't use */
     LOG_CRITICAL,	/**< log-level for critical errors */
@@ -62,6 +62,8 @@ typedef enum
 /*---------- GLOBALs ----------*/
 
 /*---------- PROTOTYPES [API] ----------*/
+LogLevel_t LogLevel(void);
+
 void LogPrintf (LogLevel_t, const char* format, ...) _LAL_GCC_PRINTF_FORMAT_(2,3);
 void LogPrintfVerbatim (LogLevel_t, const char* format, ...) _LAL_GCC_PRINTF_FORMAT_(2,3);
 

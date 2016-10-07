@@ -913,13 +913,13 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
   REAL8 lal_gamma; /* time dilation and grav redshift */
   REAL8 dr, dth;
   REAL8 shapmax; /* Shapiro max parameter for DDS model */
-  REAL8 a0, b0;	/* abberation parameters */
+  REAL8 a0, b0;  /* abberation parameters */
   REAL8 pmra, pmdec; /* proper motion parameters */
 
   REAL8 m2;
   const REAL8 c3 = (REAL8)LAL_C_SI*(REAL8)LAL_C_SI*(REAL8)LAL_C_SI;
 
-  CHAR *model = XLALStringDuplicate(PulsarGetStringParam(params, "BINARY"));
+  CHAR *model = PulsarGetStringParam(params, "BINARY");
 
   /* Check input arguments */
   if( input == (BinaryPulsarInput *)NULL ){
@@ -979,7 +979,7 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
   m2 = PulsarGetREAL8ParamOrZero(params, "M2");
 
   pmra = PulsarGetREAL8ParamOrZero(params, "PMRA");
-  pmdec = PulsarGetREAL8ParamOrZero(params, "PMDEC"); 
+  pmdec = PulsarGetREAL8ParamOrZero(params, "PMDEC");
 
   /* Shapiro range parameter r defined as Gm2/c^3 (secs) */
   r = LAL_G_SI*m2/c3;
@@ -1026,8 +1026,7 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
       REAL8 alpha, beta;*/
       /*REAL8 q, r, s;*/
 
-      /*fprintf(stderr, "You are using the Blandford-Teukolsky (BT) binary
-        model.\n");*/
+      /*fprintf(stderr, "You are using the Blandford-Teukolsky (BT) binary model.\n");*/
 
       if(i==2){
         T0 = PulsarGetREAL8ParamOrZero(params, "T0_2");
@@ -1382,6 +1381,5 @@ this isn't defined for either of the two pulsars currently using this model */
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENAN );
   }
 
-  XLALFree(model);
 }
 

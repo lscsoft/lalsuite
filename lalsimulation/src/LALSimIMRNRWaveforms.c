@@ -58,6 +58,52 @@
 #include "LALSimIMRSEOBNRROMUtilities.c"
 
 /* Everything needs to be declared as unused in case HDF is not enabled. */
+UNUSED static UINT4 XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(
+  UNUSED REAL8 *S1x,           /**< [out] Dimensionless spin1x in LAL frame */
+  UNUSED REAL8 *S1y,           /**< [out] Dimensionless spin1y in LAL frame */
+  UNUSED REAL8 *S1z,           /**< [out] Dimensionless spin1z in LAL frame */
+  UNUSED REAL8 *S2x,           /**< [out] Dimensionless spin2x in LAL frame */
+  UNUSED REAL8 *S2y,           /**< [out] Dimensionless spin2y in LAL frame */
+  UNUSED REAL8 *S2z,           /**< [out] Dimensionless spin2z in LAL frame */
+  UNUSED LALH5File* file       /**< Pointer to HDF5 file */
+)
+{
+  #ifndef LAL_HDF5_ENABLED
+  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+  #else
+  REAL8 nrSpin1x, nrSpin1y, nrSpin1z, nrSpin2x, nrSpin2y, nrSpin2z;
+  REAL8 ln_hat_x, ln_hat_y, ln_hat_z, n_hat_x, n_hat_y, n_hat_z;
+  XLALH5FileQueryScalarAttributeValue(&nrSpin1x, file, "spin1x");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin1y, file, "spin1y");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin1z, file, "spin1z");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin2x, file, "spin2x");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin2y, file, "spin2y");
+  XLALH5FileQueryScalarAttributeValue(&nrSpin2z, file, "spin2z");
+
+  XLALH5FileQueryScalarAttributeValue(&ln_hat_x , file, "LNhatx");
+  XLALH5FileQueryScalarAttributeValue(&ln_hat_y , file, "LNhaty");
+  XLALH5FileQueryScalarAttributeValue(&ln_hat_z , file, "LNhatz");
+
+  XLALH5FileQueryScalarAttributeValue(&n_hat_x , file, "nhatx");
+  XLALH5FileQueryScalarAttributeValue(&n_hat_y , file, "nhaty");
+  XLALH5FileQueryScalarAttributeValue(&n_hat_z , file, "nhatz");
+
+  *S1x = nrSpin1x * n_hat_x + nrSpin1y * n_hat_y + nrSpin1z * n_hat_z;
+  *S1y = nrSpin1x * (-ln_hat_z * n_hat_y + ln_hat_y * n_hat_z)
+        + nrSpin1y * (ln_hat_z * n_hat_x - ln_hat_x * n_hat_z)
+        + nrSpin1z * (-ln_hat_y * n_hat_x + ln_hat_x * n_hat_y) ;
+  *S1z = nrSpin1x * ln_hat_x + nrSpin1y * ln_hat_y + nrSpin1z * ln_hat_z;
+
+  *S2x = nrSpin2x * n_hat_x + nrSpin2y * n_hat_y + nrSpin2z * n_hat_z;
+  *S2y = nrSpin2x * (-ln_hat_z * n_hat_y + ln_hat_y * n_hat_z)
+        + nrSpin2y * (ln_hat_z * n_hat_x - ln_hat_x * n_hat_z)
+        + nrSpin2z * (-ln_hat_y * n_hat_x + ln_hat_x * n_hat_y);
+  *S2z = nrSpin2x * ln_hat_x + nrSpin2y * ln_hat_y + nrSpin2z * ln_hat_z;
+
+  return XLAL_SUCCESS;
+  #endif
+}
+
 UNUSED static UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File(
   UNUSED REAL8Vector** output,            /**< Returned vector uncompressed */
   UNUSED LALH5File* pointer,              /**< Pointer to HDF5 file */
@@ -107,6 +153,207 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File(
   #endif
 }
 
+UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
+  UNUSED REAL8 *theta,            /**< Returned inclination angle of source */
+  UNUSED REAL8 *psi,              /**< Returned azimuth angle of source */
+  UNUSED REAL8 *calpha,           /**< Returned cosine of the polarisation angle */
+  UNUSED REAL8 *salpha,           /**< Returned sine of the polarisation angle */
+  UNUSED LALH5File* filepointer,  /**< Pointer to NR HDF5 file */
+  UNUSED const REAL8 inclination, /**< Inclination of source */
+  UNUSED const REAL8 phi_ref      /**< Orbital reference phase*/
+  )
+{
+  #ifndef LAL_HDF5_ENABLED
+  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+  #else
+
+  /* Compute the angles necessary to rotate from the intrinsic NR source frame
+   * into the LAL frame. See DCC-T1600045 for details.
+   */
+
+  /* Attribute declarations go in here */
+  /* Declarations */
+  REAL8 orb_phase, ln_hat_x, ln_hat_y, ln_hat_z, ln_hat_norm;
+  REAL8 n_hat_x, n_hat_y, n_hat_z, n_hat_norm;
+  REAL8 corb_phase, sorb_phase, sinclination, cinclination;
+  REAL8 ln_cross_n_x, ln_cross_n_y, ln_cross_n_z;
+  REAL8 z_wave_x, z_wave_y, z_wave_z;
+  REAL8 stheta, ctheta, spsi, cpsi, theta_hat_x, theta_hat_y, theta_hat_z;
+  REAL8 psi_hat_x, psi_hat_y, psi_hat_z;
+  REAL8 n_dot_theta, ln_cross_n_dot_theta, n_dot_psi, ln_cross_n_dot_psi;
+  REAL8 y_val;
+
+  /* Following section IV of DCC-T1600045
+   * Step 1: Define Phi = phiref/2 ... I'm ignoring this, I think it is wrong
+   */
+
+  orb_phase = phi_ref;
+
+  /* Step 2: Compute Zref
+   * 2.1: Compute LN_hat from file. LN_hat = direction of orbital ang. mom.
+   */
+
+  XLALH5FileQueryScalarAttributeValue(&ln_hat_x , filepointer, "LNhatx");
+  XLALH5FileQueryScalarAttributeValue(&ln_hat_y , filepointer, "LNhaty");
+  XLALH5FileQueryScalarAttributeValue(&ln_hat_z , filepointer, "LNhatz");
+
+  ln_hat_norm = sqrt(ln_hat_x * ln_hat_x + ln_hat_y * ln_hat_y + ln_hat_z * ln_hat_z);
+
+  ln_hat_x = ln_hat_x / ln_hat_norm;
+  ln_hat_y = ln_hat_y / ln_hat_norm;
+  ln_hat_z = ln_hat_z / ln_hat_norm;
+
+  /* 2.2: Compute n_hat from file.
+   * n_hat = direction from object 2 to object 1
+   */
+
+  XLALH5FileQueryScalarAttributeValue(&n_hat_x , filepointer, "nhatx");
+  XLALH5FileQueryScalarAttributeValue(&n_hat_y , filepointer, "nhaty");
+  XLALH5FileQueryScalarAttributeValue(&n_hat_z , filepointer, "nhatz");
+
+  n_hat_norm = sqrt(n_hat_x * n_hat_x + n_hat_y * n_hat_y + n_hat_z * n_hat_z);
+
+  n_hat_x = n_hat_x / n_hat_norm;
+  n_hat_y = n_hat_y / n_hat_norm;
+  n_hat_z = n_hat_z / n_hat_norm;
+
+  /* 2.3: Compute Z in the lal wave frame */
+
+  corb_phase = cos(orb_phase);
+  sorb_phase = sin(orb_phase);
+  sinclination = sin(inclination);
+  cinclination = cos(inclination);
+
+  ln_cross_n_x = ln_hat_y * n_hat_z - ln_hat_z * n_hat_y;
+  ln_cross_n_y = ln_hat_z * n_hat_x - ln_hat_x * n_hat_z;
+  ln_cross_n_z = ln_hat_x * n_hat_y - ln_hat_y * n_hat_x;
+
+  z_wave_x = sinclination * (sorb_phase * n_hat_x + corb_phase * ln_cross_n_x);
+  z_wave_y = sinclination * (sorb_phase * n_hat_y + corb_phase * ln_cross_n_y);
+  z_wave_z = sinclination * (sorb_phase * n_hat_z + corb_phase * ln_cross_n_z);
+
+  z_wave_x += cinclination * ln_hat_x;
+  z_wave_y += cinclination * ln_hat_y;
+  z_wave_z += cinclination * ln_hat_z;
+
+  /* Step 3.1: Extract theta and psi from Z in the lal wave frame
+   * NOTE: Theta can only run between 0 and pi, so no problem with arccos here
+   */
+
+  *theta = acos(z_wave_z);
+
+  /* Degenerate if Z_wave[2] == 1. In this case just choose psi randomly,
+   * the choice will be cancelled out by alpha correction (I hope!)
+   */
+
+  if(fabs(z_wave_z - 1.0 ) < 0.000001)
+  {
+    *psi = 0.5;
+  }
+  else
+  {
+    /* psi can run between 0 and 2pi, but only one solution works for x and y */
+    /* Possible numerical issues if z_wave_x = sin(theta) */
+    if(fabs(z_wave_x / sin(*theta)) > 1.)
+    {
+      if(fabs(z_wave_x / sin(*theta)) < 1.00001)
+      {
+        if((z_wave_x * sin(*theta)) < 0.)
+        {
+          *psi = LAL_PI;
+        }
+        else
+        {
+          *psi = 0.;
+        }
+      }
+    }
+    else
+    {
+      *psi = acos(z_wave_x / sin(*theta));
+    }
+    y_val = sin(*psi) * sin(*theta);
+    /*  If z_wave[1] is negative, flip psi so that sin(psi) goes negative
+     *  while preserving cos(psi) */
+    if( z_wave_y < 0.)
+    {
+      *psi = 2 * LAL_PI - *psi;
+      y_val = sin(*psi) * sin(*theta);
+    }
+    if( fabs(y_val - z_wave_y) > 0.0001)
+    {
+      XLAL_ERROR(XLAL_EDOM, "Something's wrong in Ian's math. Tell him he's an idiot!");
+    }
+  }
+
+  /* 3.2: Compute the vectors theta_hat and psi_hat */
+
+  stheta = sin(*theta);
+  ctheta = cos(*theta);
+  spsi = sin(*psi);
+  cpsi = cos(*psi);
+
+  theta_hat_x = cpsi * ctheta;
+  theta_hat_y = spsi * ctheta;
+  theta_hat_z = - stheta;
+
+  psi_hat_x = -spsi;
+  psi_hat_y = cpsi;
+  psi_hat_z = 0.0;
+
+  /* Step 4: Compute sin(alpha) and cos(alpha) */
+
+  n_dot_theta = n_hat_x * theta_hat_x + n_hat_y * theta_hat_y + n_hat_z * theta_hat_z;
+  ln_cross_n_dot_theta = ln_cross_n_x * theta_hat_x + ln_cross_n_y * theta_hat_y + ln_cross_n_z * theta_hat_z;
+  n_dot_psi = n_hat_x * psi_hat_x + n_hat_y * psi_hat_y + n_hat_z * psi_hat_z;
+  ln_cross_n_dot_psi = ln_cross_n_x * psi_hat_x + ln_cross_n_y * psi_hat_y + ln_cross_n_z * psi_hat_z;
+
+  *salpha = corb_phase * n_dot_theta - sorb_phase * ln_cross_n_dot_theta;
+  *calpha = corb_phase * n_dot_psi - sorb_phase * ln_cross_n_dot_psi;
+
+  /*  Step 5: Also useful to keep the source frame vectors as defined in
+   *  equation 16 of Harald's document.
+   */
+
+  /*
+   * x_source_hat[0] = corb_phase * n_hat_x - sorb_phase * ln_cross_n_x;
+   * x_source_hat[1] = corb_phase * n_hat_y - sorb_phase * ln_cross_n_y;
+   * x_source_hat[2] = corb_phase * n_hat_z - sorb_phase * ln_cross_n_z;
+   * y_source_hat[0] = sorb_phase * n_hat_x + corb_phase * ln_cross_n_x;
+   * y_source_hat[1] = sorb_phase * n_hat_y + corb_phase * ln_cross_n_y;
+   * y_source_hat[2] = sorb_phase * n_hat_z + corb_phase * ln_cross_n_z;
+   * z_source_hat[0] = ln_hat_x;
+   * z_source_hat[1] = ln_hat_y;
+   * z_source_hat[2] = ln_hat_z;
+   */
+
+  return XLAL_SUCCESS;
+  #endif
+}
+
+int XLALSimInspiralNRWaveformGetSpinsFromHDF5File(
+  UNUSED REAL8 *S1x,             /**< [out] Dimensionless spin1x in LAL frame */
+  UNUSED REAL8 *S1y,             /**< [out] Dimensionless spin1y in LAL frame */
+  UNUSED REAL8 *S1z,             /**< [out] Dimensionless spin1z in LAL frame */
+  UNUSED REAL8 *S2x,             /**< [out] Dimensionless spin2x in LAL frame */
+  UNUSED REAL8 *S2y,             /**< [out] Dimensionless spin2y in LAL frame */
+  UNUSED REAL8 *S2z,             /**< [out] Dimensionless spin2z in LAL frame */
+  UNUSED const char *NRDataFile  /**< Location of NR HDF file */
+)
+{
+  #ifndef LAL_HDF5_ENABLED
+  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+  #else
+  LALH5File *file;
+  file = XLALH5FileOpen(NRDataFile, "r");
+  XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(S1x, S1y, S1z, S2x, S2y,
+                                                       S2z, file);
+
+  return XLAL_SUCCESS;
+  #endif
+}
+
+
 /* Everything needs to be declared as unused in case HDF is not enabled. */
 int XLALSimInspiralNRWaveformGetHplusHcross(
         UNUSED REAL8TimeSeries **hplus,        /**< Output h_+ vector */
@@ -135,11 +382,16 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
   UINT4 curr_idx;
   INT4 model, modem;
   size_t array_length;
-  REAL8 nrEta, nrSpin1x, nrSpin1y, nrSpin1z, nrSpin2x, nrSpin2y, nrSpin2z;
+  REAL8 nrEta;
+  REAL8 S1x, S1y, S1z, S2x, S2y, S2z;
   REAL8 Mflower, time_start_M, time_start_s, time_end_M, time_end_s;
-  REAL8 chi, est_start_time, nrPhiRef, phi, curr_h_real, curr_h_imag;
+  REAL8 chi, est_start_time, curr_h_real, curr_h_imag;
+  REAL8 theta, psi, calpha, salpha;
   REAL8 distance_scale_fac;
   COMPLEX16 curr_ylm;
+  REAL8TimeSeries *hplus_corr;
+  REAL8TimeSeries *hcross_corr;
+
   /* These keys follow a strict formulation and cannot be longer than 11
    * characters */
   char amp_key[20];
@@ -166,45 +418,49 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
      XLAL_ERROR(XLAL_EDOM, "MASSES ARE INCONSISTENT WITH THE MASS RATIO OF THE NR SIMULATION.\n");
   }
 
-  XLALH5FileQueryScalarAttributeValue(&nrSpin1x, file, "spin1x");
-  if (fabs(nrSpin1x - s1x) > 1E-3)
+  /* Read spin metadata, L_hat, n_hat from HDF5 metadata and make sure
+   * the ChooseTDWaveform() input values are consistent with the data
+   * recorded in the metadata of the HDF5 file.
+   * PS: This assumes that the input spins are in the LAL frame!
+   */
+  XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(&S1x, &S1y, &S1z,
+                                                       &S2x, &S2y, &S2z, file);
+
+  if (fabs(S1x - s1x) > 1E-3)
   {
      XLAL_ERROR(XLAL_EDOM, "SPIN1X IS INCONSISTENT WITH THE NR SIMULATION.\n");
   }
 
-  XLALH5FileQueryScalarAttributeValue(&nrSpin1y, file, "spin1y");
-  if (fabs(nrSpin1y - s1y) > 1E-3)
+  if (fabs(S1y - s1y) > 1E-3)
   {
      XLAL_ERROR(XLAL_EDOM, "SPIN1Y IS INCONSISTENT WITH THE NR SIMULATION.\n");
   }
 
-  XLALH5FileQueryScalarAttributeValue(&nrSpin1z, file, "spin1z");
-  if (fabs(nrSpin1z - s1z) > 1E-3)
+  if (fabs(S1z - s1z) > 1E-3)
   {
      XLAL_ERROR(XLAL_EDOM, "SPIN1Z IS INCONSISTENT WITH THE NR SIMULATION.\n");
   }
 
-  XLALH5FileQueryScalarAttributeValue(&nrSpin2x, file, "spin2x");
-  if (fabs(nrSpin2x - s2x) > 1E-3)
+  if (fabs(S2x - s2x) > 1E-3)
   {
      XLAL_ERROR(XLAL_EDOM, "SPIN2X IS INCONSISTENT WITH THE NR SIMULATION.\n");
   }
 
-  XLALH5FileQueryScalarAttributeValue(&nrSpin2y, file, "spin2y");
-  if (fabs(nrSpin2y - s2y) > 1E-3)
+  if (fabs(S2y - s2y) > 1E-3)
   {
      XLAL_ERROR(XLAL_EDOM, "SPIN2Y IS INCONSISTENT WITH THE NR SIMULATION.\n");
   }
 
-  XLALH5FileQueryScalarAttributeValue(&nrSpin2z, file, "spin2z");
-  if (fabs(nrSpin2z - s2z) > 1E-3)
+  if (fabs(S2z - s2z) > 1E-3)
   {
      XLAL_ERROR(XLAL_EDOM, "SPIN2Z IS INCONSISTENT WITH THE NR SIMULATION.\n");
   }
 
+
   /* First estimate the length of time series that is needed.
    * Demand that 22 mode that is present and use that to figure this out
    */
+
   XLALH5FileQueryScalarAttributeValue(&Mflower, file, "f_lower_at_1MSUN");
   /* Figure out start time of data */
   group = XLALH5GroupOpen(file, "amp_l2_m2");
@@ -220,6 +476,7 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
    * the SEOBNR_ROM function and add 10% for safety.
    * FIXME: Is this correct for precessing waveforms?
    */
+
   chi = XLALSimIMRPhenomBComputeChi(m1, m2, s1z, s2z);
   est_start_time = XLALSimIMRSEOBNRv2ChirpTimeSingleSpin(m1 * LAL_MSUN_SI,
                                                 m2 * LAL_MSUN_SI, chi, fStart);
@@ -238,17 +495,29 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
 
   array_length = (UINT4)(ceil( (time_end_s - time_start_s) / deltaT));
 
+  /* Compute correct angles for hplus and hcross following LAL convention. */
+
+  theta = psi = calpha = salpha = 0.;
+  XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(&theta, &psi, &calpha,
+                       &salpha, file, inclination, phiRef);
+
   /* Create the return time series, use arbitrary epoch here. We set this
    * properly later. */
   XLALGPSAdd(&tmpEpoch, time_start_s);
+
   *hplus  = XLALCreateREAL8TimeSeries("H_PLUS", &tmpEpoch, 0.0, deltaT,
                                       &lalStrainUnit, array_length );
   *hcross = XLALCreateREAL8TimeSeries("H_CROSS", &tmpEpoch, 0.0, deltaT,
                                       &lalStrainUnit, array_length );
+
+  hplus_corr = XLALCreateREAL8TimeSeries("H_PLUS", &tmpEpoch, 0.0, deltaT,
+                                      &lalStrainUnit, array_length );
+  hcross_corr = XLALCreateREAL8TimeSeries("H_CROSS", &tmpEpoch, 0.0, deltaT,
+                                      &lalStrainUnit, array_length );
   for (curr_idx = 0; curr_idx < array_length; curr_idx++)
   {
-    (*hplus)->data->data[curr_idx] = 0.;
-    (*hcross)->data->data[curr_idx] = 0.;
+    hplus_corr->data->data[curr_idx] = 0.0;
+    hcross_corr->data->data[curr_idx] = 0.0;
   }
 
   /* Create the distance scale factor */
@@ -278,26 +547,49 @@ int XLALSimInspiralNRWaveformGetHplusHcross(
       XLALSimInspiralNRWaveformGetDataFromHDF5File(&curr_phase, file, (m1 + m2),
                                 time_start_s, array_length, deltaT, phase_key);
 
-      XLALH5FileQueryScalarAttributeValue(&nrPhiRef, file, "coa_phase");
-      phi = nrPhiRef + phiRef;
-      curr_ylm = XLALSpinWeightedSphericalHarmonic(inclination, phi, -2,
+      curr_ylm = XLALSpinWeightedSphericalHarmonic(theta, psi, -2,
                                                    model, modem);
+
       for (curr_idx = 0; curr_idx < array_length; curr_idx++)
       {
         curr_h_real = curr_amp->data[curr_idx]
                     * cos(curr_phase->data[curr_idx]) * distance_scale_fac;
         curr_h_imag = curr_amp->data[curr_idx]
                     * sin(curr_phase->data[curr_idx]) * distance_scale_fac;
-        (*hplus)->data->data[curr_idx] = (*hplus)->data->data[curr_idx]
-               + curr_h_real * creal(curr_ylm) + curr_h_imag * cimag(curr_ylm);
-        (*hcross)->data->data[curr_idx] = (*hcross)->data->data[curr_idx]
-               + curr_h_real * cimag(curr_ylm) - curr_h_imag * creal(curr_ylm);
+
+        hplus_corr->data->data[curr_idx] = hplus_corr->data->data[curr_idx]
+               + curr_h_real * creal(curr_ylm) - curr_h_imag * cimag(curr_ylm);
+
+        hcross_corr->data->data[curr_idx] = hcross_corr->data->data[curr_idx]
+               - curr_h_real * cimag(curr_ylm) - curr_h_imag * creal(curr_ylm);
+
       }
+
       XLALDestroyREAL8Vector(curr_amp);
       XLALDestroyREAL8Vector(curr_phase);
+
     }
+
   }
 
+ /* Correct for the "alpha" angle as given in T1600045 to translate
+  * from the NR wave frame to LAL wave-frame
+  * Helper time series needed.
+  */
+
+  for (curr_idx = 0; curr_idx < array_length; curr_idx++)
+  {
+    (*hplus)->data->data[curr_idx] =
+          (calpha*calpha - salpha*salpha) * hplus_corr->data->data[curr_idx]
+          - 2.0*calpha*salpha * hcross_corr->data->data[curr_idx];
+
+    (*hcross)->data->data[curr_idx] =
+          + 2.0*calpha*salpha * hplus_corr->data->data[curr_idx]
+        + (calpha*calpha - salpha*salpha) * hcross_corr->data->data[curr_idx];
+  }
+
+  XLALDestroyREAL8TimeSeries(hplus_corr);
+  XLALDestroyREAL8TimeSeries(hcross_corr);
   XLALH5FileClose(file);
 
   return XLAL_SUCCESS;

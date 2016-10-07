@@ -85,6 +85,7 @@ extern "C" {
 
 /** UNDOCUMENTED */
 typedef enum
+tagComputeMoments
 {
   disable,
   enable
@@ -108,6 +109,7 @@ ComputeMoments;
  * space (intrinsic and extrinsic parameters).
  */
 typedef enum
+tagCoordinateSpace
 {
   Tau0Tau2,	/**< \f$(\tau_0, \tau_2)\f$ space of chirptimes */
   Tau0Tau3,	/**< \f$(\tau_0, \tau_3)\f$ space of chirptimes */
@@ -127,6 +129,7 @@ CoordinateSpace;
  * which should be used for future searches.
  */
 typedef enum
+tagGridSpacing
 {
   SquareNotOriented,	/**< UNDOCUMENTED */
   Square,		/**< UNDOCUMENTED */
@@ -144,6 +147,7 @@ GridSpacing;
  * covers two boundaries(upper and lower).
  */
 typedef enum
+tagPosition
 {
   In,		/**< UNDOCUMENTED */
   Above,	/**< UNDOCUMENTED */
@@ -158,6 +162,7 @@ Position;
  * purpose of BCV placement but can be used in an other context.
  */
 typedef enum
+tagInsidePolygonEnum
 {
   False,
   True
@@ -169,6 +174,7 @@ InsidePolygonEnum;
  * by the Hexagonal placement.
  */
 typedef enum
+tagGeneration
 {
   Sterile,
   Fertile
@@ -187,6 +193,7 @@ Generation;
  * \c InspiralCoarseIn structure below.
  */
 typedef enum
+tagInspiralBankMassRange
 {
   MinComponentMassMaxTotalMass,
   MinMaxComponentMass,
@@ -200,6 +207,7 @@ InspiralBankMassRange;
  * frequency cutoff.
  */
 typedef enum
+tagFreqCut
 {
   FreqCut_SchwarzISCO,	/**<     the innermost stable circular orbit (ISCO) for a test particle orbiting a Schwarzschild black hole */
   FreqCut_BKLISCO,	/**<     a mass ratio dependent ISCO derived from estimates of the final spin of a merged black found in a

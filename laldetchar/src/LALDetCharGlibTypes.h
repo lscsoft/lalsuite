@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-typedef enum {
+typedef enum tagLALGType {
   LALGTYPE_NONE = 0,
   LALGTYPE_INT,
   LALGTYPE_DBL,

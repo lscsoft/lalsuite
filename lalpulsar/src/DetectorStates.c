@@ -789,6 +789,59 @@ XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor,	/**< [out] parsed m
 
 
 /**
+ * Parse string-vectors (typically input by user) of N detector noise-floors \f$\sqrt{S_X}\f$
+ * for detectors \f$X=1\ldots N\f$, where here we assume equal number of SFTs per detector
+ * such that \f$S^{-1} = \frac{1}{N}\sum_{X=0}^{N-1} S_X^{-1}\f$.
+ *
+ * The detectors corresponding to each noise-floor may be a subset of the input string-vectors,
+ * e.g. if parsing noise-floors for a segment where SFTs from some detectors are missing.
+ * The vector \p
+ */
+int
+XLALParseMultiNoiseFloorMapped ( MultiNoiseFloor *multiNoiseFloor,			/**< [out] parsed multi-IFO noise floor info */
+                                 const LALStringVector *multiNoiseFloorDetNames,	/**< [in] detector names for entries in \p multiNoiseFloor */
+                                 const LALStringVector *sqrtSX,				/**< [in] string-list of \f$\sqrt{S_X}\f$ for detectors \f$X\f$ */
+                                 const LALStringVector *sqrtSXDetNames			/**< [in] detector names for entries in \p sqrtSX */
+  )
+{
+  XLAL_CHECK ( multiNoiseFloor != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( multiNoiseFloorDetNames != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sqrtSX != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sqrtSXDetNames != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( multiNoiseFloorDetNames->length <= sqrtSXDetNames->length, XLAL_EINVAL );
+  XLAL_CHECK ( sqrtSX->length == sqrtSXDetNames->length, XLAL_EINVAL );
+
+  /* parse input strings */
+  REAL8 sqrtSn[PULSAR_MAX_DETECTORS];
+  for ( UINT4 Y = 0; Y < sqrtSX->length; Y ++ )
+    {
+      XLAL_CHECK ( XLALParseStringValueAsREAL8 ( &sqrtSn[Y], sqrtSX->data[Y] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( sqrtSn[Y] >= 0, XLAL_EDOM );
+    }
+
+  /* initialize empty return struct */
+  multiNoiseFloor->length = multiNoiseFloorDetNames->length;
+
+  /* fill multiNoiseFloor with correctly mapped values */
+  for ( UINT4 X = 0; X < multiNoiseFloor->length; X ++ )
+    {
+      const INT4 Y = XLALFindStringInVector( multiNoiseFloorDetNames->data[X], sqrtSXDetNames );
+      if ( Y < 0 )
+        {
+          char *sqrtSXDet = XLALConcatStringVector( sqrtSXDetNames, "," );
+          XLAL_PRINT_ERROR ( "Noise-floor detector '%s' not found in list of sqrtSX detectors '%s'", multiNoiseFloorDetNames->data[X], sqrtSXDet );
+          XLALFree ( sqrtSXDet );
+          XLAL_ERROR ( XLAL_EINVAL );
+        }
+      multiNoiseFloor->sqrtSn[X] = sqrtSn[Y];
+    }
+
+  return XLAL_SUCCESS;
+
+} /* XLALParseMultiNoiseFloorMapped() */
+
+
+/**
  * Parse string-vectors (typically input by user) of N detector-names
  * for detectors \f$X=1\ldots N\f$, returns a MultiLALDetector struct
  *

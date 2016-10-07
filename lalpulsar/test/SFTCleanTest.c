@@ -128,7 +128,6 @@ int main(int argc, char *argv[]){
   CHAR   *logstr=NULL;
 
   /* user input variables */
-  BOOLEAN uvar_help;
   CHAR *uvar_harmonicfname;        /* file with harmonics info */
   CHAR *uvar_inputSFTDir;    /* directory for unclean sfts */
   CHAR *uvar_outputSFTDir;   /* directory for cleaned sfts */
@@ -145,8 +144,6 @@ int main(int argc, char *argv[]){
   /* LALDebugLevel must be called before anything else */
   SUB( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
-  uvar_help = FALSE;
-
   uvar_harmonicfname = (CHAR *)LALMalloc(256 * sizeof(CHAR));
   strcpy(uvar_harmonicfname,HARMONICFILE);
 
@@ -162,7 +159,6 @@ int main(int argc, char *argv[]){
   uvar_maxBins = MAXBINS;
 
   /* register user input variables */
-  SUB( LALRegisterBOOLUserVar(   &status, "help",            'h', UVAR_HELP,     "Print this message",                          &uvar_help),            &status);
   SUB( LALRegisterSTRINGUserVar( &status, "inputSFTDir",     'i', UVAR_OPTIONAL, "Input SFT Directory",                         &uvar_inputSFTDir),     &status);
   SUB( LALRegisterSTRINGUserVar( &status, "outputSFTDir",    'o', UVAR_OPTIONAL, "Output SFT Directory",                        &uvar_outputSFTDir),    &status);
   SUB( LALRegisterSTRINGUserVar( &status, "harmonicfname",   'H', UVAR_OPTIONAL, "File with list of lines",                     &uvar_harmonicfname),   &status);
@@ -172,11 +168,10 @@ int main(int argc, char *argv[]){
   SUB( LALRegisterINTUserVar(    &status, "maxBins",         'm', UVAR_OPTIONAL, "Max. No. of bins to clean",                   &uvar_maxBins),         &status);
 
   /* read all command line variables */
-  SUB( LALUserVarReadAllInput(&status, argc, argv), &status);
-
-  /* exit if help was required */
-  if (uvar_help)
-    exit(0);
+  BOOLEAN should_exit = 0;
+  SUB( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  if (should_exit)
+    exit(1);
 
   /* 09/09/05 gam; randPar now a parameter for LALCleanCOMPLEX8SFT */
   fp=fopen("/dev/urandom", "r");

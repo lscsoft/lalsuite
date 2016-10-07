@@ -212,6 +212,8 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
     earth_etype = EPHEM_DE405;
   else if ( strstr( earthEphemerisFile, "DE414" ) )
     earth_etype = EPHEM_DE414;
+  else if ( strstr( earthEphemerisFile, "DE421" ) )
+    earth_etype = EPHEM_DE421;
   else
     earth_etype = EPHEM_DE405;
 
@@ -222,12 +224,14 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
     sun_etype = EPHEM_DE405;
   else if ( strstr( sunEphemerisFile, "DE414" ) )
     sun_etype = EPHEM_DE414;
+  else if ( strstr( sunEphemerisFile, "DE421" ) )
+    sun_etype = EPHEM_DE421;
   else
     sun_etype = EPHEM_DE405;
 
   // check consistency
   if ( earth_etype != sun_etype )
-    XLAL_ERROR_NULL (XLAL_EINVAL, "Earth '%s' and Sun '%s' ephermis-files have inconsistent coordinate-types %d != %d\n",
+    XLAL_ERROR_NULL (XLAL_EINVAL, "Earth '%s' and Sun '%s' ephemeris-files have inconsistent coordinate-types %d != %d\n",
                      earthEphemerisFile, sunEphemerisFile, earth_etype, sun_etype );
   else
     etype = earth_etype;

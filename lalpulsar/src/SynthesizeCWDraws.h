@@ -59,7 +59,7 @@ extern "C" {
 /**
  * Enumeration of allowed amplitude-prior types
  */
-typedef enum {
+typedef enum tagAmpPriorType_t {
   AMP_PRIOR_TYPE_PHYSICAL = 0,	/**< 'physical' priors: isotropic pdf{cosi,psi,phi0} AND flat pdf(h0) */
   AMP_PRIOR_TYPE_CANONICAL,	/**< 'canonical' priors: uniform in A^mu up to h_max */
   AMP_PRIOR_TYPE_LAST

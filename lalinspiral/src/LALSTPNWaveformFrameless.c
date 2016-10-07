@@ -164,7 +164,7 @@ static int XLALSTPNAdaptiveTest(double t, const double values[],
   {
     return LALSTPN_TEST_OMEGADOT;
   } 
-  else if isnan(omega) /* omega is nan! */
+  else if (isnan(omega)) /* omega is nan! */
   {
     return LALSTPN_TEST_OMEGANAN;
   } 

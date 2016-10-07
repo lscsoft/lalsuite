@@ -54,8 +54,8 @@ logfileName = logfilePattern % (args.jobNum,args.numJobs)
 program_args = ['--%s=%s' % a for a in cp.items('raw-program-arguments')]
 
 # Add calculated frequency band
-program_args += ['--fStart=%f' % fStart]
-program_args += ['--fBand=%f' % fBand]
+program_args += ['--fStart=%.11f' % fStart]
+program_args += ['--fBand=%.11f' % fBand]
 program_args += ['--toplistFilename=%s' % toplistName]
 program_args += ['--logFilename=%s' % logfileName]
 

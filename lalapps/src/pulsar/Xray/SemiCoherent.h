@@ -23,11 +23,11 @@
 #include <lal/LALDatatypes.h>
 #include <lal/Date.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <gsl/gsl_math.h>
 #include <gsl/gsl_interp.h>        /* needed for the gsl interpolation */
 #include <gsl/gsl_spline.h>        /* needed for the gsl interpolation */
 #include <gsl/gsl_rng.h>           /* for random number generation */
@@ -52,7 +52,6 @@
 #include <lalapps.h>
 
 /* includes */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -84,6 +83,8 @@
 #include <lal/LALString.h>
 #include <lal/StringVector.h>
 #include <lal/NormalizeSFTRngMed.h>
+
+#include <lal/SinCosLUT.h>
 
 #include <gsl/gsl_rng.h>           /* for random number generation */
 #include <gsl/gsl_randist.h>       /* for random number generation */

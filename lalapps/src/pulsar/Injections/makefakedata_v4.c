@@ -107,8 +107,6 @@ typedef enum
 // ----- User variables
 typedef struct
 {
-  BOOLEAN help;		/**< Print this help/usage message */
-
   /* output */
   CHAR *outSFTbname;		/**< Path and basefilename of output SFT files */
   BOOLEAN outSFTv1;		/**< use v1-spec for output-SFTs */
@@ -1198,7 +1196,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 int
 XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 {
-  int ret, len;
+  int len;
 
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL, "Invalid NULL input 'argv'\n");
@@ -1222,8 +1220,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   strcpy ( uvar->transientWindowType, DEFAULT_TRANSIENT );
 
   // ---------- register all our user-variable ----------
-  XLALRegisterUvarMember(  help,                BOOLEAN, 'h', HELP    , "Print this help/usage message");
-
   /* output options */
   XLALRegisterUvarMember(   outSingleSFT,       BOOLEAN, 's', OPTIONAL, "Write a single concatenated SFT (name given by --outSFTbname)" );
   XLALRegisterUvarMember( outSFTbname,        STRING, 'n', OPTIONAL, "Output SFTs: target Directory (if --outSingleSFT=false) or filename (if --outSingleSFT=true)");
@@ -1322,11 +1318,10 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember ( orbitTpSSBMJD, STRING,0, DEFUNCT, "Obsolete, use --orbitTp instead");
 
   /* read cmdline & cfgfile  */
-  ret = XLALUserVarReadAllInput ( argc, argv );
-  XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "Failed to parse user-input\n");
-
-  if ( uvar->help ) 	/* if help was requested, we're done */
-    exit (0);
+  BOOLEAN should_exit = 0;
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit )
+    exit (1);
 
   return XLAL_SUCCESS;
 

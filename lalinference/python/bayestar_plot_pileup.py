@@ -39,13 +39,12 @@ opts = parser.parse_args()
 
 # Late imports
 
-import functools
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import healpy as hp
 import lal
-from lalinference import fits
+from lalinference.io import fits
 from lalinference import plot
 from glue.text_progress_bar import ProgressBar
 

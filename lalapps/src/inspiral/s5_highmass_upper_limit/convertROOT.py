@@ -92,7 +92,7 @@ def create_tables(xmldoc, rootfiles):
   xmldoc.childNodes[0].appendChild(coinc_event_map_table)
 
   do_process_table(xmldoc, sim_tree, liv_tree)
-  process_index = dict((int(row.process_id), row) for row in table.get_table(xmldoc, lsctables.ProcessTable.tableName))
+  process_index = dict((int(row.process_id), row) for row in lsctables.ProcessTable.get_table(xmldoc))
 
   do_summary_table(xmldoc, sim_tree, liv_tree)
 
@@ -181,7 +181,7 @@ def get_multi_burst_row(multi_burst_table, sim_tree):
 
 def do_process_table(xmldoc, sim_tree, liv_tree):
   try: 
-    process_table = table.get_table(xmldoc, lsctables.ProcessTable.tableName)
+    process_table = lsctables.ProcessTable.get_table(xmldoc)
   except ValueError:
     process_table = lsctables.New(lsctables.ProcessTable,
     ["process_id", "ifos", "comment", "program", "start_time", "jobid", 
@@ -216,7 +216,7 @@ def do_process_table(xmldoc, sim_tree, liv_tree):
 
 def do_summary_table(xmldoc, sim_tree, liv_tree):
   try: 
-    search_summary = table.get_table(xmldoc, lsctables.SearchSummaryTable.tableName)
+    search_summary = lsctables.SearchSummaryTable.get_table(xmldoc)
   except ValueError:
     search_summary = lsctables.New(lsctables.SearchSummaryTable,
     ["process_id", "nevents", "ifos", "comment", "in_start_time",
@@ -224,7 +224,7 @@ def do_summary_table(xmldoc, sim_tree, liv_tree):
     "in_end_time", "in_end_time_ns", "out_end_time", "out_end_time_ns"])
     xmldoc.childNodes[0].appendChild(search_summary)
 
-  process_id_type = type(table.get_table(xmldoc, lsctables.ProcessTable.tableName).next_id)
+  process_id_type = lsctables.ProcessID
 
   runids = set()
   for i in range(0, sim_tree.GetEntries()) :

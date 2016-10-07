@@ -46,7 +46,7 @@ extern "C" {
 
 /*---------- exported types ----------*/
 /** Translate TDI arm indices to C-indexing */
-typedef enum {
+typedef enum tagLISAarmT {
   LISA_ARM1 = 0,
   LISA_ARM2,
   LISA_ARM3

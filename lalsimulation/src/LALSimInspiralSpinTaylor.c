@@ -2231,7 +2231,7 @@ static int XLALSimInspiralSpinTaylorStoppingTest(
         return LALSIMINSPIRAL_ST_TEST_FREQBOUND;
     else if (test < 0.0) /* energy test fails! */
         return LALSIMINSPIRAL_ST_TEST_ENERGY;
-    else if isnan(omega) /* omega is nan! */
+    else if (isnan(omega)) /* omega is nan! */
         return LALSIMINSPIRAL_ST_TEST_OMEGANAN;
     else if (v >= 1.) // v/c >= 1!
         return LALSIMINSPIRAL_ST_TEST_LARGEV;
@@ -2819,6 +2819,10 @@ static int XLALSimInspiralSpinTaylorDriver(
                 deltaT, m1_SI, m2_SI, fS, fE, s1x, s1y, s1z, s2x, s2y,
                 s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
                 quadparam1, quadparam2, spinO, tideO, phaseO, approx);
+        if( n < 0 )
+        {
+            XLAL_ERROR(XLAL_EFUNC);
+        }
 
         /* Apply phase shift so orbital phase has desired value at fRef */
         phiShift = phiRef - Phi1->data->data[Phi1->data->length-1];
@@ -2836,6 +2840,10 @@ static int XLALSimInspiralSpinTaylorDriver(
                 deltaT, m1_SI, m2_SI, fS, fE, s1x, s1y, s1z, s2x, s2y,
                 s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
                 quadparam1, quadparam2, spinO, tideO, phaseO, approx);
+        if( n < 0 )
+        {
+            XLAL_ERROR(XLAL_EFUNC);
+        }
 
         /* Apply phase shift so orbital phase has desired value at fRef */
         phiShift = phiRef - Phi2->data->data[0];
@@ -3317,7 +3325,7 @@ int XLALSimInspiralTransformPrecessingObsoleteInitialConditions(
  * they are needed to compute the magnitude of L_N, and thus J.
  *
  * Output:
- * incl - inclination angle of L_N relative to N
+ * incl - inclination angle of L_N relative to N (N=(-sin(incl),0,cos(incl)))
  * x, y, z components S1 and S2 (unit spin vectors times their
  * dimensionless spin magnitudes - i.e. they have unit magnitude for
  * extremal BHs and smaller magnitude for slower spins).
@@ -3412,7 +3420,7 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
 	Jy = s1y + s2y;
 	Jz = Lmag * LNhz + s1z + s2z;
 
-	/* Normalize J to Jhat, find it's angles in starting frame */
+	/* Normalize J to Jhat, find its angles in starting frame */
 	Jnorm = sqrt( Jx*Jx + Jy*Jy + Jz*Jz);
 	Jhatx = Jx / Jnorm;
 	Jhaty = Jy / Jnorm;
@@ -3467,8 +3475,8 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
 	 * in the x-z plane.
 	 */
 	REAL8 phiN = atan2(Ny, Nx);
-	ROTATEZ(-phiN, s1hatx, s1haty, s1hatz);
-	ROTATEZ(-phiN, s2hatx, s2haty, s2hatz);
+	ROTATEZ(LAL_PI-phiN, s1hatx, s1haty, s1hatz);
+	ROTATEZ(LAL_PI-phiN, s2hatx, s2haty, s2hatz);
 
 	/* Set pointers to rotated spin vectors */
 	*S1x = s1hatx*chi1;
@@ -3482,13 +3490,14 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
 	/*printf("LNhat should be along z, N in the x-z plane\n");
 	ROTATEZ(-phiL,    LNhx, LNhy, LNhz);
 	ROTATEY(-thetaLJ, LNhx, LNhy, LNhz);
-	ROTATEZ(-phiN,    LNhx, LNhy, LNhz);
-	ROTATEZ(-phiN,    Nx, Ny, LNz);
+	ROTATEZ(LAL_PI-phiN,    LNhx, LNhy, LNhz);
+	ROTATEZ(LAL_PI-phiN,    Nx, Ny, LNz);
 	ROTATEZ(-phi0, Jhatx, Jhaty, Jhatz);
 	ROTATEY(-theta0, Jhatx, Jhaty, Jhatz);
 	ROTATEZ(phiJL - LAL_PI, Jhatx, Jhaty, Jhatz);
 	ROTATEZ(-phiL, Jhatx, Jhaty, Jhatz);
 	ROTATEY(-thetaLJ, Jhatx, Jhaty, Jhatz);
+	ROTATEZ(LAL_PI-phiN, Jhatx, Jhaty, Jhatz);
 	printf("LNhat: %12.4e  %12.4e  %12.4e\n",LNhx,LNhy,LNhz);
 	printf("       %12.4e  %12.4e  %12.4e\n",0.,0.,1.);
 	printf("N:     %12.4e  %12.4e  %12.4e\n",Nx,Ny,Nz);
@@ -3496,7 +3505,11 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
 	printf("J.Lhat  i: %12.4e f: %12.4e\n",Jz,Jnorm*Jhatz);
 	printf("S1.L    i: %12.4e f: %12.4e\n",chi1*cos(theta1),*S1z);
 	printf("S2.L    i: %12.4e f: %12.4e\n",chi2*cos(theta2),*S2z);
-	printf("S1.S2   i: %12.4e f: %12.4e\n",chi1*chi2*(sin(theta1)*sin(theta2)*cos(phi12)+cos(theta1)*cos(theta2)),(*S1x)*(*S2x)+(*S1y)*(*S2y)+(*S1z)*(*S2z));*/
+	printf("S1.S2   i: %12.4e f: %12.4e\n",chi1*chi2*(sin(theta1)*sin(theta2)*cos(phi12)+cos(theta1)*cos(theta2)),(*S1x)*(*S2x)+(*S1y)*(*S2y)+(*S1z)*(*S2z));
+	printf("S1.J i: %12.4e f: %12.4e\n",chi1*(sin(theta1)*Jx+cos(theta1)*Jz),Jnorm*((*S1x)*Jhatx+(*S1y)*Jhaty+(*S1z)*Jhatz));
+	printf("S2.J i: %12.4e f: %12.4e\n",chi2*(sin(theta2)*cos(phi12)*Jx+sin(theta2)*sin(phi12)*Jy+cos(theta2)*Jz),Jnorm*((*S2x)*Jhatx+(*S2y)*Jhaty+(*S2z)*Jhatz));
+	printf("Jhat.Nhat i: %12.4e f: %12.4e\n",cos(thetaJN),Jhatx*Nx+Jhaty*Ny+Jhatz*Nz);
+	printf("Norm Jhat: %12.4e  norm N: %12.4e\n",Jhatx*Jhatx+Jhaty*Jhaty+Jhatz*Jhatz,Nx*Nx+Ny*Ny+Nz*Nz);*/
 
 	return XLAL_SUCCESS;
 }
@@ -3511,9 +3524,9 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
  * * reference L for axisChoice    = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L (default)
  * * view direction for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW
  * incl is the angle between
- * * J and N (Jx \f$\propto sin(inc)\f$, Jy=0) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J
- * * L and N (Nx \f$\propto sin(inc)\f$, Ly=0) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L (default)
- * * L and N (Lx \f$\propto sin(inc)\f$, Ly=0) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW
+ * * J and N (Nz = cos(inc)) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J
+ * * L and N (Nx = -sin(inc), Ny=0, Nz=cos(inc)) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L (default)
+ * * L and N (Lx = sin(inc), Ly=0, Lz=cos(inc)) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW
  * m1, m2, f_ref are the component masses and reference GW frequency,
  * they are needed to compute the magnitude of L_N
  *
@@ -3740,6 +3753,14 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     REAL8 norm, dtStart, dtEnd, lengths, wEnd, m1sec, m2sec, Msec, Mcsec, fTerm;
     LIGOTimeGPS tStart = LIGOTIMEGPSZERO;
 
+    if ( !V || !Phi || !S1x || !S1y || !S1z || !S2x || !S2y || !S2z
+            || !LNhatx || !LNhaty || !LNhatz || !E1x || !E1y || !E1z )
+    {
+        XLALPrintError("XLAL Error - %s: NULL(s) in output parameters\n",
+                       __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
+
     /* Check start and end frequencies are positive */
     if( fStart <= 0. )
     {
@@ -3877,6 +3898,13 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
     len = XLALAdaptiveRungeKutta4Hermite(integrator, params, yinit,
             0.0, lengths/Msec, sgn*deltaT/Msec, &yout);
 
+    if (!yout)
+    {
+        XLALPrintError("XLAL Error - %s: integration failed (yout == NULL)\n",
+                       __func__);
+        XLAL_ERROR(XLAL_EFUNC);
+    }
+
     intreturn = integrator->returncode;
     XLALAdaptiveRungeKutta4Free(integrator);
 
@@ -3962,8 +3990,8 @@ int XLALSimInspiralSpinTaylorPNEvolveOrbit(
             deltaT, &lalDimensionlessUnit, cutlen); 
     *E1z = XLALCreateREAL8TimeSeries( "E1_BASIS_Z_COMPONENT", &tStart, 0., 
             deltaT, &lalDimensionlessUnit, cutlen); 
-    if ( !V || !Phi || !S1x || !S1y || !S1z || !S2x || !S2y || !S2z 
-            || !LNhatx || !LNhaty || !LNhatz || !E1x || !E1y || !E1z )
+    if ( !*V || !*Phi || !*S1x || !*S1y || !*S1z || !*S2x || !*S2y || !*S2z
+             || !*LNhatx || !*LNhaty || !*LNhatz || !*E1x || !*E1y || !*E1z )
     {
         XLALDestroyREAL8Array(yout);
         XLAL_ERROR(XLAL_EFUNC);

@@ -51,7 +51,7 @@ opts = parser.parse_args()
 
 # Late imports
 
-from lalinference import fits
+from lalinference.io import fits
 from lalinference.bayestar import postprocess
 import healpy as hp
 import numpy as np

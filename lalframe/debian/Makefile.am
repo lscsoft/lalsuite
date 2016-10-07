@@ -3,12 +3,11 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
-	docs \
-	lalframe-dev.dirs \
 	lalframe-dev.install \
 	lalframe-octave.install \
 	lalframe-python.install \
-	lalframe.dirs \
+	lalframe-python3.install \
 	lalframe.install \
 	rules \
+	lalsuite.mk \
 	source/format

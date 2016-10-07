@@ -101,20 +101,13 @@ def element_filter(name, attrs):
 	Return True if name & attrs describe a search summary table or a
 	process table.
 	"""
-	return lsctables.IsTableProperties(lsctables.SearchSummaryTable, name, attrs) or lsctables.IsTableProperties(lsctables.ProcessTable, name, attrs)
+	return lsctables.SearchSummaryTable.CheckProperties(name, attrs) or lsctables.ProcessTable.CheckProperties(name, attrs)
 
 
+@lsctables.use_in
 class ContentHandler(ligolw.PartialLIGOLWContentHandler):
 	def __init__(self, xmldoc):
 		ligolw.PartialLIGOLWContentHandler.__init__(self, xmldoc, element_filter)
-
-
-try:
-	lsctables.use_in(ContentHandler)
-except AttributeError:
-	# old glue did not allow .use_in().
-	# FIXME:  remove when we can require the latest version of glue
-	pass
 
 
 #
@@ -134,11 +127,11 @@ for n, filename in enumerate(filenames):
 	if options.verbose:
 		print >>sys.stderr, "%d/%d:" % (n + 1, len(filenames)),
 	xmldoc = utils.load_filename(filename, verbose = options.verbose, contenthandler = ContentHandler)
-	searchsumm = table.get_table(xmldoc, lsctables.SearchSummaryTable.tableName)
+	searchsumm = lsctables.SearchSummaryTable.get_table(xmldoc)
 
 	# extract process_ids for the requested program
 	if options.program is not None:
-		process_table = table.get_table(xmldoc, lsctables.ProcessTable.tableName)
+		process_table = lsctables.ProcessTable.get_table(xmldoc)
 		process_ids = reduce(lambda a, b: a | b, map(process_table.get_ids_by_program, options.program))
 	else:
 		process_ids = None

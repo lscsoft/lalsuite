@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013-2015  Leo Singer
+# Copyright (C) 2013-2016  Leo Singer
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -28,219 +28,7 @@ import collections
 import itertools
 import lal
 import lalsimulation
-
-
-_max_order = 29
-
-
-def nside2order(nside):
-    """Convert lateral HEALPix resolution to order.
-    FIXME: see https://github.com/healpy/healpy/issues/163"""
-    order = np.log2(nside)
-    int_order = int(order)
-    if order != int_order:
-        raise ValueError('not a valid value for nside: {0}'.format(nside))
-    return int_order
-
-
-def order2nside(order):
-    return 1 << order
-
-
-class _HEALPixNode(object):
-    """Data structure used internally by the function
-    adaptive_healpix_histogram()."""
-
-    def __init__(self, samples, max_samples_per_pixel, max_order, order=0, needs_sort=True):
-        if needs_sort:
-            samples = np.sort(samples)
-        if len(samples) > max_samples_per_pixel and order < max_order:
-            # All nodes have 4 children, except for the root node, which has 12.
-            nchildren = 12 if order == 0 else 4
-            self.samples = None
-            self.children = [_HEALPixNode([], max_samples_per_pixel,
-                max_order, order=order + 1) for i in range(nchildren)]
-            for ipix, samples in itertools.groupby(samples,
-                    self.key_for_order(order)):
-                self.children[np.uint64(ipix % nchildren)] = _HEALPixNode(
-                    list(samples), max_samples_per_pixel, max_order,
-                    order=order + 1, needs_sort=False)
-        else:
-            # There are few enough samples that we can make this cell a leaf.
-            self.samples = list(samples)
-            self.children = None
-
-    @staticmethod
-    def key_for_order(order):
-        """Create a function that downsamples full-resolution pixel indices."""
-        return lambda ipix: ipix >> np.uint64(2 * (_max_order - order))
-
-    @property
-    def order(self):
-        """Return the maximum HEALPix order required to represent this tree,
-        which is the same as the tree depth."""
-        if self.children is None:
-            return 0
-        else:
-            return 1 + max(child.order for child in self.children)
-
-    def _flat_bitmap(self, order, full_order, ipix, m):
-        if self.children is None:
-            nside = 1 << order
-            ipix0 = ipix << 2 * (full_order - order)
-            ipix1 = (ipix + 1) << 2 * (full_order - order)
-            m[ipix0:ipix1] = len(self.samples) / hp.nside2pixarea(nside)
-        else:
-            for i, child in enumerate(self.children):
-                child._flat_bitmap(order + 1, full_order, (ipix << 2) + i, m)
-
-    @property
-    def flat_bitmap(self):
-        """Return flattened HEALPix representation."""
-        order = self.order
-        nside = 1 << order
-        npix = hp.nside2npix(nside)
-        m = np.empty(npix)
-        for ipix, child in enumerate(self.children):
-            child._flat_bitmap(0, order, ipix, m)
-        return m
-
-
-def adaptive_healpix_histogram(theta, phi, max_samples_per_pixel, nside=-1, max_nside=-1, nest=False):
-    """Adaptively histogram the posterior samples represented by the
-    (theta, phi) points using a recursively subdivided HEALPix tree. Nodes are
-    subdivided until each leaf contains no more than max_samples_per_pixel
-    samples. Finally, the tree is flattened to a fixed-resolution HEALPix image
-    with a resolution appropriate for the depth of the tree. If nside is
-    specified, the result is resampled to another desired HEALPix resolution."""
-    # Calculate pixel index of every sample, at the maximum 64-bit resolution.
-    #
-    # At this resolution, each pixel is only 0.2 mas across; we'll use the
-    # 64-bit pixel indices as a proxy for the true sample coordinates so that
-    # we don't have to do any trigonometry (aside from the initial hp.ang2pix
-    # call).
-    #
-    # FIXME: Cast to uint64 needed because Healpy returns signed indices.
-    ipix = hp.ang2pix(1 << _max_order, theta, phi, nest=True).astype(np.uint64)
-
-    # Build tree structure.
-    if nside == -1 and max_nside == -1:
-        max_order = _max_order
-    elif nside == -1:
-        max_order = nside2order(max_nside)
-    elif max_nside == -1:
-        max_order = nside2order(nside)
-    else:
-        max_order = nside2order(min(nside, max_nside))
-    tree = _HEALPixNode(ipix, max_samples_per_pixel, max_order)
-
-    # Compute a flattened bitmap representation of the tree.
-    p = tree.flat_bitmap
-
-    # If requested, resample the tree to the output resolution.
-    if nside != -1:
-        p = hp.ud_grade(p, nside, order_in='NESTED', order_out='NESTED')
-
-    # Normalize.
-    p /= np.sum(p)
-
-    if not nest:
-        p = hp.reorder(p, n2r=True)
-
-    # Done!
-    return p
-
-
-def _interpolate_level(m):
-    """Recursive multi-resolution interpolation. Modifies `m` in place."""
-    # Determine resolution.
-    npix = len(m)
-
-    if npix > 12:
-        # Determine which pixels comprise multi-pixel tiles.
-        ipix = np.flatnonzero(
-            (m[0::4] == m[1::4]) &
-            (m[0::4] == m[2::4]) &
-            (m[0::4] == m[3::4]))
-
-        if len(ipix):
-            ipix = (4 * ipix +
-                np.expand_dims(np.arange(4, dtype=np.intp), 1)).T.ravel()
-
-            nside = hp.npix2nside(npix)
-
-            # Downsample.
-            m_lores = hp.ud_grade(
-                m, nside // 2, order_in='NESTED', order_out='NESTED')
-
-            # Interpolate recursively.
-            _interpolate_level(m_lores)
-
-            # Record interpolated multi-pixel tiles.
-            m[ipix] = hp.get_interp_val(
-                m_lores, *hp.pix2ang(nside, ipix, nest=True), nest=True)
-
-
-def interpolate_nested(m, nest=False):
-    """
-    Apply bilinear interpolation to a multiresolution HEALPix map, assuming
-    that runs of pixels containing identical values are nodes of the tree. This
-    smooths out the stair-step effect that may be noticeable in contour plots.
-
-    Here is how it works. Consider a coarse tile surrounded by base tiles, like
-    this:
-
-                +---+---+
-                |   |   |
-                +-------+
-                |   |   |
-        +---+---+---+---+---+---+
-        |   |   |       |   |   |
-        +-------+       +-------+
-        |   |   |       |   |   |
-        +---+---+---+---+---+---+
-                |   |   |
-                +-------+
-                |   |   |
-                +---+---+
-
-    The value within the central coarse tile is computed by downsampling the
-    sky map (averaging the fine tiles), upsampling again (with bilinear
-    interpolation), and then finally copying the interpolated values within the
-    coarse tile back to the full-resolution sky map. This process is applied
-    recursively at all successive HEALPix resolutions.
-
-    Note that this method suffers from a minor discontinuity artifact at the
-    edges of regions of coarse tiles, because it temporarily treats the
-    bordering fine tiles as constant. However, this artifact seems to have only
-    a minor effect on generating contour plots.
-
-    Parameters
-    ----------
-
-    m: `~numpy.ndarray`
-        a HEALPix array
-
-    nest: bool, default: False
-        Whether the input array is stored in the `NESTED` indexing scheme (True)
-        or the `RING` indexing scheme (False).
-
-    """
-    # Convert to nest indexing if necessary, and make sure that we are working
-    # on a copy.
-    if nest:
-        m = m.copy()
-    else:
-        m = hp.reorder(m, r2n=True)
-
-    _interpolate_level(m)
-
-    # Convert to back ring indexing if necessary
-    if not nest:
-        m = hp.reorder(m, n2r=True)
-
-    # Done!
-    return m
+from ..healpix_tree import *
 
 
 def flood_fill(nside, ipix, m, nest=False):
@@ -273,7 +61,7 @@ def count_modes(m, nest=False):
     WARNING: The input array is clobbered in the process."""
     npix = len(m)
     nside = hp.npix2nside(npix)
-    for nmodes in xrange(npix):
+    for nmodes in range(npix):
         nonzeroipix = np.flatnonzero(m)
         if len(nonzeroipix):
             flood_fill(nside, nonzeroipix[0], m, nest=nest)
@@ -339,7 +127,7 @@ def find_injection(sky_map, true_ra, true_dec, contours=(), areas=(), modes=Fals
     cum_sky_map = np.cumsum(sky_map[indices])
 
     # Find the index of the true location in the cumulative distribution.
-    idx = (i for i, pix in enumerate(indices) if pix == true_pix).next()
+    idx = next((i for i, pix in enumerate(indices) if pix == true_pix))
 
     # Find the smallest area that would have to be searched to find
     # the true location. Note that 1 is added to the index because we want
@@ -419,11 +207,6 @@ def _vec2radec(vertices, degrees=False):
 
 
 def contour(m, levels, nest=False, degrees=False, simplify=True):
-    import pkg_resources
-    try:
-        pkg_resources.require('healpy >= 1.9.0')
-    except:
-        raise RuntimeError('This function requires healpy >= 1.9.0.')
     try:
         import networkx as nx
     except:
@@ -496,7 +279,7 @@ def contour(m, levels, nest=False, degrees=False, simplify=True):
     return paths
 
 
-def find_greedy_credible_levels(p):
+def find_greedy_credible_levels(p, ranking=None):
     """Find the greedy credible levels of a (possibly multi-dimensional) array.
 
     Parameters
@@ -504,6 +287,10 @@ def find_greedy_credible_levels(p):
 
     p : np.ndarray
         The input array, typically a HEALPix image.
+
+    ranking : np.ndarray, optional
+        The array to rank in order to determine the greedy order.
+        The default is `p` itself.
 
     Returns
     -------
@@ -513,8 +300,13 @@ def find_greedy_credible_levels(p):
         to `p.sum()`, representing the greedy credible level to which each
         entry in the array belongs.
     """
+    p = np.asarray(p)
     pflat = p.ravel()
-    i = np.flipud(np.argsort(pflat))
+    if ranking is None:
+        ranking = pflat
+    else:
+        ranking = np.ravel(ranking)
+    i = np.flipud(np.argsort(ranking))
     cs = np.cumsum(pflat[i])
     cls = np.empty_like(pflat)
     cls[i] = cs
@@ -558,7 +350,7 @@ def get_detector_pair_axis(ifo1, ifo2, gmst):
 
     # Get location of detectors if ifo1, ifo2 are LAL detector structs
     try:
-        ifo1 = lalsimulation.lalsimulation.DetectorPrefixToLALDetector(ifo1)
+        ifo1 = lalsimulation.DetectorPrefixToLALDetector(ifo1)
     except TypeError:
         pass
     try:
@@ -566,7 +358,7 @@ def get_detector_pair_axis(ifo1, ifo2, gmst):
     except AttributeError:
         pass
     try:
-        ifo2 = lalsimulation.lalsimulation.DetectorPrefixToLALDetector(ifo2)
+        ifo2 = lalsimulation.DetectorPrefixToLALDetector(ifo2)
     except TypeError:
         pass
     try:

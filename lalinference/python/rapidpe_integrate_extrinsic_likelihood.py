@@ -21,7 +21,7 @@ Integrate the extrinsic parameters of the prefactored likelihood function.
 # Basic stuff
 import sys
 import functools
-from optparse import OptionParser, OptionGroup
+from argparse import ArgumentParser
 
 # analysis stuff
 import numpy
@@ -38,33 +38,33 @@ import pylal
 from lalinference.rapid_pe import lalsimutils, factored_likelihood, mcsampler, xmlutils, common_cl
 from lalinference.rapid_pe.common_cl import param_limits
 
-from lalinference import fits as bfits
+from lalinference.io import fits as bfits
 
 __author__ = "Evan Ochsner <evano@gravity.phys.uwm.edu>, Chris Pankow <pankow@gravity.phys.uwm.edu>, R. O'Shaughnessy"
 
 #
 # Option parsing
 #
-optp = OptionParser()
-common_cl.add_datasource_params(optp)
-common_cl.add_output_params(optp)
+argp = ArgumentParser()
+common_cl.add_datasource_params(argp)
+common_cl.add_output_params(argp)
 
 #
 # Add the integration options
 #
-common_cl.add_integration_params(optp)
+common_cl.add_integration_params(argp)
 
 #
 # Add the intrinsic parameters
 #
-common_cl.add_intrinsic_params(optp)
+common_cl.add_intrinsic_params(argp)
 
 #
 # Add the pinnable parameters
 #
-common_cl.add_pinnable_params(optp)
+common_cl.add_pinnable_params(argp)
 
-opts, args = optp.parse_args()
+opts = argp.parse_args()
 
 # Check both or neither of --data-start/end-time given
 if opts.data_start_time is None and opts.data_end_time is not None:

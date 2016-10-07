@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2014
 #
-# serial 83
+# serial 88
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -35,11 +35,33 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
       swig_build_all=
     ]
   )
-  swig_build_any=false
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[LALSUITE_REQUIRE_CXX])
-  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[LALSUITE_REQUIRE_PYTHON([2.6])])
-  # Python is required to run generate_swig_iface.py
-  LALSUITE_REQUIRE_PYTHON([2.6])
+  AC_ARG_ENABLE(
+    [swig_iface],
+    AC_HELP_STRING(
+      [--enable-swig-iface],
+      [generate SWIG interface only]
+    ),[
+      AS_CASE(["${enableval}"],
+        [yes],[swig_build_iface=true],
+        [no],[swig_build_iface=false],
+        [AC_MSG_ERROR([invalid value "${enableval}" for --enable-swig-iface])]
+      )
+    ],[
+      swig_build_iface=false
+    ]
+  )
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[
+    # C++ is required to build Octave wrappings
+    LALSUITE_REQUIRE_CXX
+  ])
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false],[
+    # Python is required to configure Python wrappings
+    LALSUITE_REQUIRE_PYTHON([2.6])
+  ])
+  AS_IF([test "${swig_build_iface}" = true],[
+    # Python is required to run generate_swig_iface.py
+    LALSUITE_REQUIRE_PYTHON([2.6])
+  ])
   # end $0
 ])
 
@@ -63,7 +85,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
     ]
   )
   AS_IF([test "${swig_build_]lowercase[}" = true],[
-    swig_build_any=true
+    swig_build_iface=true
     SWIG_BUILD_]uppercase[_ENABLE_VAL=ENABLED
     $3
   ],[
@@ -77,7 +99,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
 
 AC_DEFUN([LALSUITE_USE_SWIG],[
   # $0: configure enabled SWIG bindings
-  AS_IF([test "${swig_build_any}" = true],[
+  AS_IF([test "${swig_build_iface}" = true],[
 
     # configure SWIG binding languages
     swig_min_version=2.0.11
@@ -115,6 +137,18 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
       SWIG="env CCACHE_DISABLE=1 ${ac_cv_path_SWIG}"
     ])
 
+    # determine SWIG Python flags
+    AC_SUBST([SWIG_PYTHON_FLAGS],[])
+    SWIG_PYTHON_FLAGS="-O -builtin -globals globalvar"
+    AC_MSG_CHECKING([if SWIG supports relative Python imports])
+    LALSUITE_VERSION_COMPARE([${swig_version}],[<],[3.0.0],
+      [AC_MSG_RESULT([no])],
+      [
+        AC_MSG_RESULT([yes])
+        SWIG_PYTHON_FLAGS="-py3 -relativeimport ${SWIG_PYTHON_FLAGS}"
+      ]
+    )
+
     # extract -I and -D flags from LALSuite library preprocessor flags
     AC_SUBST([SWIG_CPPFLAGS],[])
     for flag in ${CPPFLAGS}; do
@@ -151,7 +185,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     ])
 
   ])
-  AM_CONDITIONAL([SWIG_BUILD],[test "${swig_build_any}" = true])
+  AM_CONDITIONAL([SWIG_BUILD],[test "${swig_build_iface}" = true])
   # end $0
 ])
 
@@ -214,12 +248,16 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
       AC_MSG_ERROR([Octave version ${octave_min_version} or later is required])
     ])
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[3.8.0],[
-      swig_min_version=2.0.12
-      swig_min_version_info="for Octave version ${octave_version}"
+      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[2.0.12],[
+        swig_min_version=2.0.12
+        swig_min_version_info="for Octave version ${octave_version}"
+      ])
     ])
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.0.0],[
-      swig_min_version=3.0.7
-      swig_min_version_info="for Octave version ${octave_version}"
+      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.7],[
+        swig_min_version=3.0.7
+        swig_min_version_info="for Octave version ${octave_version}"
+      ])
     ])
 
     # determine where to install Octave bindings: take versioned site .oct file
@@ -237,18 +275,48 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     AC_MSG_RESULT([${octexecdir}])
     AC_SUBST([octexecdir])
 
-    # check that wrappings are being compiled with the
-    # same C++ compiler used to compile Octave itself
+    # determine C++ compiler used to compile Octave itself
     AC_MSG_CHECKING([C++ compiler used for building ${OCTAVE}])
     octave_CXX=`${mkoctfile} -p CXX 2>/dev/null`
     AC_MSG_RESULT([${octave_CXX}])
-    CXX_version_regex=['s|([^)]*) *||g;s|^ *||g;s| *$||g']
-    octave_CXX_version=`${octave_CXX} --version 2>/dev/null | ${SED} -n -e '1p' | ${SED} -e "${CXX_version_regex}"`
-    _AS_ECHO_LOG([octave_CXX_version: '${octave_CXX_version}'])
-    lalsuite_CXX_version=`${CXX} --version 2>/dev/null | ${SED} -n -e '1p' | ${SED} -e "${CXX_version_regex}"`
-    _AS_ECHO_LOG([lalsuite_CXX_version: '${lalsuite_CXX_version}'])
-    AS_IF([test "x${lalsuite_CXX_version}" != "x${octave_CXX_version}"],[
-      AC_MSG_ERROR([configured C++ compiler "${CXX}" differs from ${OCTAVE} C++ compiler "${octave_CXX}"])
+
+    # check that configured C++ compiler is compatible with C++ compiler used to
+    # compile Octave itself, i.e. that both compilers link against compatible C++
+    # libraries (e.g. libstdc++ vs libc++).
+    AC_MSG_CHECKING([configured C++ compiler "${CXX}" is compatible with ${OCTAVE} C++ compiler "${octave_CXX}"])
+    AS_IF([test "x${build_vendor}" = xapple && otool --version >/dev/null 2>&1],[
+      print_shared_libs="otool -L"
+    ],[ldd --version >/dev/null 2>&1],[
+      print_shared_libs="ldd"
+    ],[
+      AC_MSG_ERROR([could not determine tool to print shared library dependencies])
+    ])
+    swig_save_CXX=${CXX}
+    LALSUITE_PUSH_UVARS
+    LALSUITE_CLEAR_UVARS
+    m4_foreach([cxxloop],[CXX,octave_CXX],[
+      CXX=${cxxloop}
+      AC_LINK_IFELSE([
+        AC_LANG_SOURCE([[
+#include <string>
+int main() { std::string s = "a"; return 0; }
+        ]])
+      ],[
+        print_shared_libs_regex=["\|conftest${EXEEXT}|d;"'s|(0x[^)]*)||g;s|^ *||g;s| *$||g']
+        ${print_shared_libs} conftest${EXEEXT} | ${SED} -e "${print_shared_libs_regex}" | sort > conftest_lalsuite_swig_[]cxxloop[]_shared_libs
+        echo "${as_me}:${as_lineno-$LINENO}:${CXX} shared libraries:" >&AS_MESSAGE_LOG_FD
+        ${SED} -e ["s/^/${as_me}:${as_lineno-$LINENO}:/"] conftest_lalsuite_swig_[]cxxloop[]_shared_libs >&AS_MESSAGE_LOG_FD
+      ],[
+        AC_MSG_ERROR([could not link using ${CXX}])
+      ])
+    ])
+    LALSUITE_POP_UVARS
+    CXX=${swig_save_CXX}
+    AS_IF([diff conftest_lalsuite_swig_CXX_shared_libs conftest_lalsuite_swig_octave_CXX_shared_libs >/dev/null 2>&1],[
+      AC_MSG_RESULT([yes])
+    ],[
+      AC_MSG_RESULT([no])
+      AC_MSG_ERROR([configured C++ compiler "${CXX}" is incompatible with ${OCTAVE} C++ compiler "${octave_CXX}"])
     ])
 
     # determine Octave preprocessor flags
@@ -387,7 +455,7 @@ EOD`]
     python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
 import sys, os
 import distutils.sysconfig as cfg
-sys.stdout.write(cfg.get_config_var('LINKFORSHARED'))
+sys.stdout.write(cfg.get_config_var('LDFLAGS'))
 sys.stdout.write(' -L' + cfg.get_python_lib())
 sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
 sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1))

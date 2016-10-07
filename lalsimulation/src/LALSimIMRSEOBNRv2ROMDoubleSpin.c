@@ -896,8 +896,10 @@ static int SEOBNRv2ROMDoubleSpinCore(
     *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, npts);
 
     // Recreate freqs using only the lower and upper bounds
-    UINT4 iStart = (UINT4) ceil(fLow_geom / deltaF_geom);
-    UINT4 iStop = (UINT4) ceil(fHigh_geom / deltaF_geom);
+    // Use fLow, fHigh and deltaF rather than geometric frequencies for numerical accuracy
+    double fHigh_temp = fHigh_geom / Mtot_sec;
+    UINT4 iStart = (UINT4) ceil(fLow / deltaF);
+    UINT4 iStop = (UINT4) ceil(fHigh_temp / deltaF);
     freqs = XLALCreateREAL8Sequence(iStop - iStart);
     if (!freqs) {
       XLAL_ERROR(XLAL_EFUNC, "Frequency array allocation failed.");
@@ -1020,7 +1022,8 @@ static int SEOBNRv2ROMDoubleSpinCore(
  * @author Michael Puerrer, John Veitch
  *
  * @brief C code for SEOBNRv2 reduced order model (double spin version).
- * See CQG 31 195010, 2014, arXiv:1402.4146 for details.
+ * See CQG 31 195010, 2014, arXiv:1402.4146 for the basic approach.
+ * Further details in PRD 93, 064041, 2016, arXiv:1512.02248.
  *
  * This is a frequency domain model that approximates the time domain SEOBNRv2 model.
  *

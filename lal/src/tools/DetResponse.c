@@ -172,11 +172,12 @@ void XLALComputeDetAMResponseExtraModes(
 		*fplus += X[i] * DX - Y[i] * DY;
 		*fcross += X[i] * DY + Y[i] * DX;
 
-		/* scalar and vector modes from [Nishizawa2009] */
+		/* scalar and vector modes from [Nishizawa2009] 
+     * note that Omega in that paper equals -Z here */
 		*fb += X[i] * DX + Y[i] * DY;
 		*fl += LAL_SQRT2 * Z[i] * DZ;
-		*fx += X[i] * DZ + Z[i] * DX;
-		*fy += Y[i] * DZ + Z[i] * DY;
+		*fx += -X[i] * DZ - Z[i] * DX;
+		*fy += -Y[i] * DZ - Z[i] * DY;
 	}
 }
 

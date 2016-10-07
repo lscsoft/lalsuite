@@ -6,21 +6,23 @@ Name: @PACKAGE@
 Version: @VERSION@
 Release: 1%{?dist}
 Summary: LSC Algorithm Library
-License: GPL
+License: GPLv2+
 Group: LAL
 Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: swig
-BuildRequires: python-devel
-BuildRequires: octave-devel
-BuildRequires: gsl-devel
-BuildRequires: fftw-devel
-BuildRequires: numpy
 BuildRequires: bc
-Requires: gsl
+BuildRequires: fftw-devel
+BuildRequires: gsl-devel
+BuildRequires: hdf5-devel
+BuildRequires: numpy
+BuildRequires: octave-devel
+BuildRequires: python-devel
+BuildRequires: swig
 Requires: fftw
+Requires: gsl
+Requires: hdf5
 Prefix: %{_prefix}
 
 %description
@@ -33,8 +35,8 @@ Summary: Files and documentation needed for compiling programs that use LAL
 Group: LAL
 Requires: %{name} = %{version}
 Requires: fftw-devel
-Requires: fftw-static
 Requires: gsl-devel
+Requires: hdf5-devel
 %description devel
 The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library
@@ -71,7 +73,7 @@ This package provides the Octave bindings.
 
 %install
 %make_install
-rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
 ldconfig
@@ -85,29 +87,21 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_bindir}/lal-version
 %{_bindir}/lal-simd-detect
-%{_libdir}/*.so*
+%{_bindir}/lal-version
+%{_libdir}/*.so.*
 %{_sysconfdir}/lal-user-env.*
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/*.a
-%{_libdir}/pkgconfig/*
 %{_includedir}/lal
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
 
 %files python
 %defattr(-,root,root)
-%{_libdir}/python*/site-packages/lal/*.py
-%{_libdir}/python*/site-packages/lal/*.pyc
-%{_libdir}/python*/site-packages/lal/_lal.so*
-%{_libdir}/python*/site-packages/lal/spectrum/*.py
-%{_libdir}/python*/site-packages/lal/spectrum/*.pyc
-%{_libdir}/python*/site-packages/lal/utils/*.py
-%{_libdir}/python*/site-packages/lal/utils/*.pyc
-%exclude %{_libdir}/python*/site-packages/lal/*.pyo
-%exclude %{_libdir}/python*/site-packages/lal/spectrum/*.pyo
-%exclude %{_libdir}/python*/site-packages/lal/utils/*.pyo
+%{_libdir}/python*
 
 %files octave
 %defattr(-,root,root)
@@ -115,5 +109,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Tue Jun 21 2016 Adam Mercer <adam.mercer@ligo.org> 6.16.1-1
+- ER9 Release
+
 * Fri Mar 25 2016 Adam Mercer <adam.mercer@ligo.org> 6.16.0-1
 - Pre O2 packaging test release

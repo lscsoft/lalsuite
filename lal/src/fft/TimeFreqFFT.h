@@ -215,6 +215,7 @@ extern "C" {
  * spectra and computes the average using one of the following methods.
  */
 typedef enum
+tagAvgSpecMethod
 {
   useUnity,	/**< A constant PSD of value unity will be returned independent of the input data given; this is used for testing purposes */
   useMean,	/**< The arithmetic mean of the individual power spectra computed will be used to compute the output power spectrum */

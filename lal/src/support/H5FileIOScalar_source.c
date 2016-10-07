@@ -12,7 +12,7 @@ int ADDFUNC(LALH5Dataset *dset, const char *key, TYPE value)
 {
 	if (!dset || !key)
 		XLAL_ERROR(XLAL_EFAULT);
-	return XLALH5DatasetAddScalarAttribute(dset, key, &value, TCODE);
+	return XLALH5AttributeAddScalar((LALH5Generic)dset, key, &value, TCODE);
 }
 
 TYPE QUERYFUNC(LALH5Dataset *dset, const char *key)
@@ -21,10 +21,10 @@ TYPE QUERYFUNC(LALH5Dataset *dset, const char *key)
 	TYPE value;
 	if (!dset || !key)
 		XLAL_ERROR_VAL(FAILVAL, XLAL_EFAULT);
-	type = XLALH5DatasetQueryScalarAttributeType(dset, key);
+	type = XLALH5AttributeQueryScalarType((LALH5Generic)dset, key);
 	if (type != TCODE)
 		XLAL_ERROR_VAL(FAILVAL, XLAL_ETYPE);
-	if (XLALH5DatasetQueryScalarAttributeValue(&value, dset, key) < 0)
+	if (XLALH5AttributeQueryScalarValue(&value, (LALH5Generic)dset, key) < 0)
 		XLAL_ERROR_VAL(FAILVAL, XLAL_EFUNC);
 	return value;
 }

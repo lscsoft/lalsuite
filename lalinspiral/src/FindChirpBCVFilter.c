@@ -668,34 +668,34 @@ LALFindChirpBCVFilterSegment (
           }
 
           /* record the data that we need for the clustering algorithm */
-          thisEvent->end_time.gpsSeconds = j;
+          thisEvent->end.gpsSeconds = j;
           thisEvent->snr = newmodqsq;
         }
         else if ( !(params->clusterMethod == FindChirpClustering_none) &&
-            j <= thisEvent->end_time.gpsSeconds + deltaEventIndex &&
+            j <= thisEvent->end.gpsSeconds + deltaEventIndex &&
             newmodqsq > thisEvent->snr )
         {
           /* if this is the same event, update the maximum */
-          thisEvent->end_time.gpsSeconds = j;
+          thisEvent->end.gpsSeconds = j;
           thisEvent->snr = newmodqsq;
         }
-        else if (j > thisEvent->end_time.gpsSeconds + deltaEventIndex ||
+        else if (j > thisEvent->end.gpsSeconds + deltaEventIndex ||
               params->clusterMethod == FindChirpClustering_none )
         {
           /* clean up this event */
           SnglInspiralTable *lastEvent;
           INT8               timeNS;
-          INT4               timeIndex = thisEvent->end_time.gpsSeconds;
+          INT4               timeIndex = thisEvent->end.gpsSeconds;
 
           /* set the event LIGO GPS time of the event */
           timeNS = 1000000000L *
             (INT8) (input->segment->data->epoch.gpsSeconds);
           timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
           timeNS += (INT8) (1e9 * timeIndex * deltaT);
-          thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
-          thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+          thisEvent->end.gpsSeconds = (INT4) (timeNS/1000000000L);
+          thisEvent->end.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
           thisEvent->end_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
-	      &thisEvent->end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI;	/* hours */
+	      &thisEvent->end), LAL_TWOPI) * 24.0 / LAL_TWOPI;	/* hours */
           ASSERT( !XLAL_IS_REAL8_FAIL_NAN(thisEvent->end_time_gmst), status, LAL_FAIL_ERR, LAL_FAIL_MSG );
 
           /* set the impuse time for the event */
@@ -706,7 +706,7 @@ LALFindChirpBCVFilterSegment (
               2 * sizeof(CHAR) );
           strncpy( thisEvent->channel, input->segment->data->name + 3,
               (LALNameLength - 3) * sizeof(CHAR) );
-          thisEvent->impulse_time = thisEvent->end_time;
+          thisEvent->impulse_time = thisEvent->end;
 
           /* record coalescence phase and alpha */
 
@@ -784,7 +784,7 @@ LALFindChirpBCVFilterSegment (
           }
 
           /* stick minimal data into the event */
-          thisEvent->end_time.gpsSeconds = j;
+          thisEvent->end.gpsSeconds = j;
           thisEvent->snr = newmodqsq;
         }
       }
@@ -802,17 +802,17 @@ LALFindChirpBCVFilterSegment (
   if ( thisEvent )
   {
     INT8           timeNS;
-    INT4           timeIndex = thisEvent->end_time.gpsSeconds;
+    INT4           timeIndex = thisEvent->end.gpsSeconds;
 
     /* set the event LIGO GPS time of the event */
     timeNS = 1000000000L *
       (INT8) (input->segment->data->epoch.gpsSeconds);
     timeNS += (INT8) (input->segment->data->epoch.gpsNanoSeconds);
     timeNS += (INT8) (1e9 * timeIndex * deltaT);
-    thisEvent->end_time.gpsSeconds = (INT4) (timeNS/1000000000L);
-    thisEvent->end_time.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
+    thisEvent->end.gpsSeconds = (INT4) (timeNS/1000000000L);
+    thisEvent->end.gpsNanoSeconds = (INT4) (timeNS%1000000000L);
     thisEvent->end_time_gmst = fmod(XLALGreenwichMeanSiderealTime(
-        &thisEvent->end_time), LAL_TWOPI) * 24.0 / LAL_TWOPI;	/* hours */
+        &thisEvent->end), LAL_TWOPI) * 24.0 / LAL_TWOPI;	/* hours */
     ASSERT( !XLAL_IS_REAL8_FAIL_NAN(thisEvent->end_time_gmst), status, LAL_FAIL_ERR, LAL_FAIL_MSG );
 
     /* set the impuse time for the event */
@@ -823,7 +823,7 @@ LALFindChirpBCVFilterSegment (
         2 * sizeof(CHAR) );
     strncpy( thisEvent->channel, input->segment->data->name + 3,
         (LALNameLength - 3) * sizeof(CHAR) );
-    thisEvent->impulse_time = thisEvent->end_time;
+    thisEvent->impulse_time = thisEvent->end;
 
     /* record coalescence phase and alpha */
 
