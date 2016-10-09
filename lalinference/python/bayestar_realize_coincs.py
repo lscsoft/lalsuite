@@ -135,9 +135,9 @@ progress.update(-1, 'reading ' + opts.reference_psd.name)
 xmldoc, _ = ligolw_utils.load_fileobj(
     opts.reference_psd, contenthandler=lal.series.PSDContentHandler)
 psds = lal.series.read_psd_xmldoc(xmldoc)
-psds = dict(
-    (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data))
-    for key, psd in psds.items() if psd is not None)
+psds = {
+    key: timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data)
+    for key, psd in psds.items() if psd is not None}
 
 # Read injection file.
 progress.update(-1, 'reading ' + opts.input.name)
@@ -157,7 +157,7 @@ sngl_inspiral_table.set_next_id(lsctables.SnglInspiralID(0))
 time_slide_table = lsctables.New(lsctables.TimeSlideTable)
 out_xmldoc.childNodes[0].appendChild(time_slide_table)
 time_slide_id = time_slide_table.get_time_slide_id(
-    dict((ifo, 0) for ifo in opts.detector), create_new=process)
+    {ifo: 0 for ifo in opts.detector}, create_new=process)
 
 # Create a CoincDef table and record a CoincDef row for
 # sngl_inspiral <-> sngl_inspiral coincidences.

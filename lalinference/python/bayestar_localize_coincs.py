@@ -149,10 +149,10 @@ else:
         xmldoc = ligolw_utils.load_filename(
             filename, contenthandler=lal.series.PSDContentHandler)
         psds = lal.series.read_psd_xmldoc(xmldoc, root_name=None)
-        return dict(
-            (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
-                f_high_truncate=opts.f_high_truncate))
-            for key, psd in psds.items() if psd is not None)
+        return {
+            key: timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
+                f_high_truncate=opts.f_high_truncate)
+            for key, psd in psds.items() if psd is not None}
 
     def reference_psd_for_ifo_and_filename(ifo, filename):
         return reference_psds_for_filename(filename)[ifo]

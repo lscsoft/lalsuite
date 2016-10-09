@@ -140,11 +140,11 @@ def coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
 
     # Indices to speed up lookups by ID.
     key = operator.attrgetter('coinc_event_id')
-    coinc_maps_by_coinc_event_id = dict((coinc_event_id, tuple(coinc_maps))
+    coinc_maps_by_coinc_event_id = {coinc_event_id: tuple(coinc_maps)
         for coinc_event_id, coinc_maps
-        in itertools.groupby(sorted(coinc_map_table, key=key), key=key))
-    sngl_inspirals_by_event_id = dict((sngl_inspiral.event_id, sngl_inspiral)
-        for sngl_inspiral in sngl_inspiral_table)
+        in itertools.groupby(sorted(coinc_map_table, key=key), key=key)}
+    sngl_inspirals_by_event_id = {sngl_inspiral.event_id: sngl_inspiral
+        for sngl_inspiral in sngl_inspiral_table}
 
     # Loop over all sngl_inspiral <-> sngl_inspiral coincs.
     for coinc in coinc_table:
@@ -156,10 +156,10 @@ def coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
 
 def psd_filenames_by_process_id_for_xmldoc(xmldoc):
     """Retrieve a dictionary mapping process_ids to reference PSD filenames."""
-    return dict((process_param.process_id, process_param.value)
+    return {process_param.process_id: process_param.value
         for process_param
         in ligolw_table.get_table(xmldoc, lsctables.ProcessParamsTable.tableName)
-        if process_param.param == '--reference-psd')
+        if process_param.param == '--reference-psd'}
 
 
 def _snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc):
