@@ -27,24 +27,21 @@
 
 
 import math
-try:
-	isinf = math.isinf
-except AttributeError:
-	# python < 2.6
-	from numpy import isinf
 from optparse import OptionParser
 import sqlite3
 import sys
 
 
+imporr lal
+
+
 from glue import iterutils
-from glue import lal
-from pylal import git_version
-from pylal import ligolw_burca2
+from glue.lal import CacheEntry
+from lalburst import git_version
+from lalburst import ligolw_burca2
 from pylal import rate
-from pylal import SnglBurstUtils
-from pylal import stringutils
-from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+from lalburst import SnglBurstUtils
+from lalburst import stringutils
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -85,12 +82,12 @@ def parse_command_line():
 	for cache in options.input_cache:
 		if options.verbose:
 			print >>sys.stderr, "reading '%s' ..." % cache
-		filenames += [lal.CacheEntry(line).path for line in file(cache)]
+		filenames += [CacheEntry(line).path for line in file(cache)]
 	if not filenames:
 		raise ValueError, "Nothing to do!"
 	if options.likelihood_cache is None:
 		raise ValueError, "must set --likelihood-cache"
-	options.likelihood_filenames = [lal.CacheEntry(line).path for line in file(options.likelihood_cache)]
+	options.likelihood_filenames = [CacheEntry(line).path for line in file(options.likelihood_cache)]
 
 	return options, filenames
 
@@ -164,7 +161,7 @@ FROM
 WHERE
 	coinc_event.coinc_def_id == ?
 		""", (contents.bb_definer_id,)):
-			peak_time = LIGOTimeGPS(peak_time, peak_time_ns)
+			peak_time = lal.LIGOTimeGPS(peak_time, peak_time_ns)
 			# ignore vetoed triggers, and coincs that haven't
 			# had likelihoods assigned to them (too many
 			# triggers vetoed)
@@ -275,8 +272,8 @@ WHERE
 						else:
 							# noise with, not noise without
 							data.injection_ratio_buffer.append((0, event.snr))
-					elif isinf(likelihood):
-						if isinf(alt_likelihood):
+					elif math.isinf(likelihood):
+						if math.isinf(alt_likelihood):
 							# injection with or without
 							data.injection_ratio_buffer.append((1, event.snr))
 						else:
@@ -382,7 +379,6 @@ plots = [
 
 
 from glue.ligolw import dbtables
-dbtables.lsctables.LIGOTimeGPS = LIGOTimeGPS
 
 for n, filename in enumerate(filenames):
 	if options.verbose:

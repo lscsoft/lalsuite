@@ -36,6 +36,7 @@ import sys
 import time
 
 
+import lal
 import lalburst
 
 
@@ -44,24 +45,11 @@ from glue import segmentsUtils
 from glue import pipeline
 from glue.lal import CacheEntry
 from pylal import ligolw_cafe
-from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
 
 
 __author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>"
 __date__ = "$Date$"
 __version__ = "$Revision$"
-
-
-#
-# =============================================================================
-#
-#                                 Speed Hacks
-#
-# =============================================================================
-#
-
-
-ligolw_cafe.lsctables.LIGOTimeGPS = LIGOTimeGPS
 
 
 #
@@ -343,7 +331,7 @@ class BurstInjNode(pipeline.AnalysisNode):
 		"""
 		if not self.output_cache:
 			# FIXME:  instruments hardcoded to "everything"
-			self.output_cache = [CacheEntry(u"G1+H1+H2+L1+T1+V1", self.__usertag, segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
+			self.output_cache = [CacheEntry(u"G1+H1+H2+L1+T1+V1", self.__usertag, segments.segment(lal.LIGOTimeGPS(self.get_start()), lal.LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
 		return self.output_cache
 
 	def get_output_files(self):
@@ -353,7 +341,7 @@ class BurstInjNode(pipeline.AnalysisNode):
 		if self._AnalysisNode__output is None:
 			if None in (self.get_start(), self.get_end(), self.__usertag):
 				raise ValueError, "start time, end time, ifo, or user tag has not been set"
-			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
+			seg = segments.segment(lal.LIGOTimeGPS(self.get_start()), lal.LIGOTimeGPS(self.get_end()))
 			self.set_output(os.path.join(self.output_dir, "G1+H1+H2+L1+T1+V1-INJECTIONS_%s-%d-%d.xml.gz" % (self.__usertag, int(self.get_start()), int(self.get_end() - self.get_start()))))
 		return self._AnalysisNode__output
 
@@ -418,7 +406,7 @@ class PowerNode(pipeline.AnalysisNode):
 		be at least once.
 		"""
 		if not self.output_cache:
-			self.output_cache = [CacheEntry(self.get_ifo(), self.__usertag, segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
+			self.output_cache = [CacheEntry(self.get_ifo(), self.__usertag, segments.segment(lal.LIGOTimeGPS(self.get_start()), lal.LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
 		return self.output_cache
 
 	def get_output_files(self):
@@ -428,7 +416,7 @@ class PowerNode(pipeline.AnalysisNode):
 		if self._AnalysisNode__output is None:
 			if None in (self.get_start(), self.get_end(), self.get_ifo(), self.__usertag):
 				raise ValueError, "start time, end time, ifo, or user tag has not been set"
-			seg = segments.segment(LIGOTimeGPS(self.get_start()), LIGOTimeGPS(self.get_end()))
+			seg = segments.segment(lal.LIGOTimeGPS(self.get_start()), lal.LIGOTimeGPS(self.get_end()))
 			self.set_output(os.path.join(self.output_dir, "%s-POWER_%s-%d-%d.xml.gz" % (self.get_ifo(), self.__usertag, int(self.get_start()), int(self.get_end()) - int(self.get_start()))))
 		return self._AnalysisNode__output
 

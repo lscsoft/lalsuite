@@ -32,10 +32,10 @@ import sys
 
 from glue import lal
 from glue import segments
-from glue.ligolw import utils
-from pylal import git_version
-from pylal import ligolw_burca_tailor
-from pylal import stringutils
+from glue.ligolw import utils as ligolw_utils
+from lalburst import git_version
+from lalburst import ligolw_burca_tailor
+from lalburst import stringutils
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -109,4 +109,4 @@ coincparamsdistributions.finish(filters = stringutils.DistributionsStats.filters
 #
 
 
-utils.write_filename(ligolw_burca_tailor.gen_likelihood_control(coincparamsdistributions, seglists, name = u"string_cusp_likelihood"), options.output, verbose = options.verbose, gz = (options.output or "stdout").endswith(".gz"))
+ligolw_utils.write_filename(ligolw_burca_tailor.gen_likelihood_control(coincparamsdistributions, seglists, name = u"string_cusp_likelihood"), options.output, verbose = options.verbose, gz = (options.output or "stdout").endswith(".gz"))

@@ -36,11 +36,11 @@ import os
 import sys
 import tempfile
 
+import lal
 
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
-from pylal.date import LIGOTimeGPS
 from lalapps import power
 
 
@@ -79,14 +79,14 @@ def parse_command_line():
 	options, extra_args = parser.parse_args()
 
 	# data segment
-	options.data_seg = segments.segment(LIGOTimeGPS(options.data_start), LIGOTimeGPS(options.data_end))
+	options.data_seg = segments.segment(lal.LIGOTimeGPS(options.data_start), lal.LIGOTimeGPS(options.data_end))
 	try:
 		options.data_seglists = segments.segmentlistdict({options.instrument: segments.segmentlist([options.data_seg])})
 	except:
 		raise ValueError, "failure parsing -s and/or -e; try --help"
 
 	# trigger segment
-	options.trig_seg = segments.segment(LIGOTimeGPS(options.trig_start), LIGOTimeGPS(options.trig_end))
+	options.trig_seg = segments.segment(lal.LIGOTimeGPS(options.trig_start), lal.LIGOTimeGPS(options.trig_end))
 	try:
 		options.trig_seglists = segments.segmentlistdict({options.instrument: segments.segmentlist([options.trig_seg])})
 	except:

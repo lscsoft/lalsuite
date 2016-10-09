@@ -13,6 +13,14 @@ pymoduledir = $(pkgpythondir)
 pymodule_PYTHON = \
 	__init__.py \
 	git_version.py \
+	ligolw_binjfind.py \
+	ligolw_bucluster.py \
+	ligolw_burca.py \
+	ligolw_burca2.py \
+	ligolw_burca_tailor.py \
+	SimBurstUtils.py \
+	SnglBurstUtils.py \
+	stringutils.py \
 	timeslides.py \
 	$(END_OF_LIST)
 
