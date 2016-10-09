@@ -134,9 +134,9 @@ def coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
     sngl_inspiral_table = ligolw_table.get_table(xmldoc, lsctables.SnglInspiralTable.tableName)
 
     # Look up coinc_def id.
-    sngl_sngl_coinc_def_ids = set(row.coinc_def_id for row in coinc_def_table
+    sngl_sngl_coinc_def_ids = {row.coinc_def_id for row in coinc_def_table
         if (row.search, row.search_coinc_type) ==
-        (InspiralCoincDef.search, InspiralCoincDef.search_coinc_type))
+        (InspiralCoincDef.search, InspiralCoincDef.search_coinc_type)}
 
     # Indices to speed up lookups by ID.
     key = operator.attrgetter('coinc_event_id')

@@ -365,7 +365,7 @@ def gracedb_sky_map(
         if coinc_map.coinc_event_id == coinc_event_id]
     sngl_inspirals = [next((sngl_inspiral for sngl_inspiral in sngl_inspiral_table
         if sngl_inspiral.event_id == event_id)) for event_id in event_ids]
-    instruments = set(sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
+    instruments = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
 
     # Try to load complex SNR time series.
     snrs = ligolw.snr_series_by_sngl_inspiral_id_for_xmldoc(xmldoc)

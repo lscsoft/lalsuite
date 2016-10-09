@@ -170,7 +170,7 @@ count_sky_maps_failed = 0
 # Loop over all coinc_event <-> sim_inspiral coincs.
 for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
 
-    instruments = set(sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
+    instruments = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
 
     # Look up PSDs
     log.info('%s:reading PSDs', coinc.coinc_event_id)

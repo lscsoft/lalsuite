@@ -301,7 +301,7 @@ def read_sky_map(filename, nest=False, distances=False):
     except KeyError:
         pass
     else:
-        value = set(str(ifo) for ifo in lsctables.instrument_set_from_ifos(value))
+        value = {str(ifo) for ifo in lsctables.instrument_set_from_ifos(value)}
         metadata['instruments'] = value
 
     try:
