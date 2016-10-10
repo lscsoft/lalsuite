@@ -1846,7 +1846,7 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
 
     # if distance is in the par file use that instead
     if par['DIST']:
-      dist = par['DIST']
+      dist = par['DIST']/KPC # convert back into kpc
 
     # set the corrected spin-down value (based on intrinsic period derivative or using conservative age (10^9) value from GC pulsars)
     f1sd = set_spin_down(p1_I, assoc, f0, f1)
