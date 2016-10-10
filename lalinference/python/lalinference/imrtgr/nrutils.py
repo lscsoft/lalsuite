@@ -373,7 +373,6 @@ def bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, ch
     elif fitname==bbh_final_state_fits.uib2016:
        if chif is not None:
           print "Note: Precomputed chif not used by this fit."
-       raise ValueError("UIB2016 fit not yet implemented.")
        mf = bbh_final_mass_non_precessing_UIB2016(m1, m2, chi1proj, chi2proj)
     else:
        raise ValueError("Unrecognized fit name.")
@@ -419,7 +418,6 @@ def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, tr
     elif fitname==bbh_final_state_fits.phenD:
        chif = bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1proj, chi2proj)
     elif fitname==bbh_final_state_fits.uib2016:
-       raise ValueError("UIB2016 fit not yet implemented.")
        chif = bbh_final_spin_non_precessing_UIB2016(m1, m2, chi1proj, chi2proj)
     else:
        raise ValueError("Unrecognized fit name.")
@@ -571,6 +569,164 @@ def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
     # Expressions copied from LALSimIMRPhenomD_internals.c (except with two notation differences: S is capitalized in chif and s -> Sh in Mf, in addition to the "m*(1. - ...)" to obtain the final mass from the radiated mass in m = 1 units which is calculated in the LAL code)
 
     chif = 3.4641016151377544*eta - 4.399247300629289*eta2 + 9.397292189321194*eta3 - 13.180949901606242*eta4 + (1 - 0.0850917821418767*eta - 5.837029316602263*eta2)*S + (0.1014665242971878*eta - 2.0967746996832157*eta2)*Ssq + (-1.3546806617824356*eta + 4.108962025369336*eta2)*Scu + (-0.8676969352555539*eta + 2.064046835273906*eta2)*Squ 
+
+    return chif
+
+def bbh_UIBfits_setup(m1, m2, chi1, chi2):
+    """
+    common setup function for UIB final-state and luminosity fit functions
+    """
+
+    # Vectorize the function if arrays are provided as input
+    m1   = np.vectorize(float)(np.array(m1))
+    m2   = np.vectorize(float)(np.array(m2))
+    chi1 = np.vectorize(float)(np.array(chi1))
+    chi2 = np.vectorize(float)(np.array(chi2))
+
+    if np.any(m1<0):
+      raise ValueError("m1 must not be negative")
+    if np.any(m2<0):
+      raise ValueError("m2 must not be negative")
+
+    if np.any(abs(chi1)>1):
+      raise ValueError("chi1 has to be in [-1, 1]")
+    if np.any(abs(chi2)>1):
+      raise ValueError("chi2 has to be in [-1, 1]")
+
+    # binary masses
+    m    = m1+m2
+    if np.any(m<=0):
+      raise ValueError("m1+m2 must be positive")
+    msq  = m*m
+    m1sq = m1*m1
+    m2sq = m2*m2
+
+    # symmetric mass ratio
+    eta  = m1*m2/msq
+    if np.any(eta>0.25):
+      print "Truncating eta from above to 0.25. This should only be necessary in some rounding corner cases, but better check your m1 and m2 inputs..."
+      eta = np.minimum(eta,0.25)
+    if np.any(eta<0.0):
+      print "Truncating negative eta to 0.0. This should only be necessary in some rounding corner cases, but better check your m1 and m2 inputs..."
+      eta = np.maximum(eta,0.0)
+    eta2 = eta*eta
+    eta3 = eta2*eta
+    eta4 = eta2*eta2
+
+    # spin variables (in m = 1 units)
+    S1    = chi1*m1sq/msq # spin angular momentum 1
+    S2    = chi2*m2sq/msq # spin angular momentum 2
+    Stot  = S1+S2         # total spin
+    Shat  = (chi1*m1sq+chi2*m2sq)/(m1sq+m2sq) # effective spin, = msq*Stot/(m1sq+m2sq)
+    Shat2 = Shat*Shat
+    Shat3 = Shat2*Shat
+    Shat4 = Shat2*Shat2
+
+    # spin difference, assuming m1>m2
+    chidiff  = chi1 - chi2
+    if np.any(m2>m1): # fit assumes m1>m2
+      chidiff = np.sign(m1-m2)*chidiff
+    chidiff2 = chidiff*chidiff
+
+    # typical squareroots and functions of eta
+    sqrt2 = 2.**0.5
+    sqrt3 = 3.**0.5
+    sqrt1m4eta = (1. - 4.*eta)**0.5
+
+    return m, eta, eta2, eta3, eta4, Stot, Shat, Shat2, Shat3, Shat4, chidiff, chidiff2, sqrt2, sqrt3, sqrt1m4eta
+
+def bbh_final_mass_non_precessing_UIB2016(m1, m2, chi1, chi2):
+    """
+    Calculate the final mass with the aligned-spin NR fit
+    by Xisco Jimenez Forteza, David Keitel, Sascha Husa et al.
+    [LIGO-P1600270] [https://arxiv.org/abs/1611.00332]
+
+    m1, m2: component masses
+    chi1, chi2: dimensionless spins of two BHs
+    Note: Here it is assumed that m1>m2.
+    """
+
+    m, eta, eta2, eta3, eta4, Stot, Shat, Shat2, Shat3, Shat4, chidiff, chidiff2, sqrt2, sqrt3, sqrt1m4eta = bbh_UIBfits_setup(m1, m2, chi1, chi2)
+
+    # fit coefficients from Tables VII-X of 1611.00332v1
+    # exact expressions copied from https://gravity.astro.cf.ac.uk/cgit/cardiff_uib_share/tree/Luminosity_and_Radiated_Energy/UIBfits/LALInference/EradUIB2016_pyform_coeffs.txt
+    # git commit 636e5a71462ecc448060926890aa7811948d5a53
+    a2 = 0.5635376058169299
+    a3 = -0.8661680065959881
+    a4 = 3.181941595301782
+    b1 = -0.15800074104558132
+    b2 = -0.15815904609933157
+    b3 = -0.14299315232521553
+    b5 = 8.908772171776285
+    f20 = 3.8071100104582234
+    f30 = 25.99956516423936
+    f50 = 1.552929335555098
+    f10 = 1.7004558922558886
+    f21 = 0.
+    d10 = -0.12282040108157262
+    d11 = -3.499874245551208
+    d20 = 0.014200035799803777
+    d30 = -0.01873720734635449
+    d31 = -5.1830734185518725
+    f11 = 14.39323998088354
+    f31 = -232.25752840151296
+    f51 = -0.8427987782523847
+
+    # Calculate the radiated-energy fit from Eq. (27) of 1611.00332v1
+    # exact expression copied from https://gravity.astro.cf.ac.uk/cgit/cardiff_uib_share/tree/Luminosity_and_Radiated_Energy/UIBfits/LALInference/EradUIB2016_pyform_ansatz.txt
+    # git commit 636e5a71462ecc448060926890aa7811948d5a53
+    Erad = (((1. + -2.0/3.0*sqrt2)*eta + a2*eta2 + a3*eta3 + a4*eta4)*(1. + 0.487*b1*Shat*(f10 + f11*eta + (16. - 16.*f10 - 4.*f11)*eta2) + 0.295*b2*Shat2*(f20 + f21*eta + (16. - 16.*f20 - 4.*f21)*eta2) + 0.17*b3*Shat3*(f30 + f31*eta + (16. - 16.*f30 - 4.*f31)*eta2)))/(1. - 0.0717*b5*Shat*(f50 + f51*eta + (16. - 16.*f50 - 4.*f51)*eta2)) + d10*sqrt1m4eta*eta2*(1. + d11*eta)*chidiff + d30*Shat*sqrt1m4eta*eta*(1. + d31*eta)*chidiff + d20*eta3*chidiff2
+
+    # Convert to actual final mass
+    Mf = m*(1.-Erad)
+
+    return Mf
+
+def bbh_final_spin_non_precessing_UIB2016(m1, m2, chi1, chi2):
+    """
+    Calculate the final spin with the aligned-spin NR fit
+    by Xisco Jimenez Forteza, David Keitel, Sascha Husa et al.
+    [LIGO-P1600270] [https://arxiv.org/abs/1611.00332]
+
+    m1, m2: component masses
+    chi1, chi2: dimensionless spins of two BHs
+    Note: Here it is assumed that m1>m2.
+    """
+
+    m, eta, eta2, eta3, eta4, Stot, Shat, Shat2, Shat3, Shat4, chidiff, chidiff2, sqrt2, sqrt3, sqrt1m4eta = bbh_UIBfits_setup(m1, m2, chi1, chi2)
+
+    # fit coefficients from Tables I-IV of 1611.00332v1
+    # exact expressions copied from https://gravity.astro.cf.ac.uk/cgit/cardiff_uib_share/tree/Luminosity_and_Radiated_Energy/UIBfits/LALInference/FinalSpinUIB2016_pyform_coeffs.txt
+    # git commit 636e5a71462ecc448060926890aa7811948d5a53
+    a2 = 3.772362507208651
+    a3 = -9.627812453422376
+    a5 = 2.487406038123681
+    b1 = 1.0005294518146604
+    b2 = 0.8823439288807416
+    b3 = 0.7612809461506448
+    b5 = 0.9139185906568779
+    f21 = 8.887933111404559
+    f31 = 23.927104476660883
+    f50 = 1.8981657997557002
+    f11 = 4.411041530972546
+    f52 = 0.
+    d10 = 0.2762804043166152
+    d11 = 11.56198469592321
+    d20 = -0.05975750218477118
+    d30 = 2.7296903488918436
+    d31 = -3.388285154747212
+    f12 = 0.3642180211450878
+    f22 = -40.35359764942015
+    f32 = -178.7813942566548
+    f51 = -5.556957394513334
+
+    # Calculate the fit for the Lorb' quantity from Eq. (16) of 1611.00332v1
+    # exact expression copied from https://gravity.astro.cf.ac.uk/cgit/cardiff_uib_share/tree/Luminosity_and_Radiated_Energy/UIBfits/LALInference/FinalSpinUIB2016_pyform_ansatz.txt
+    # git commit 636e5a71462ecc448060926890aa7811948d5a53
+    Lorb = (2.*sqrt3*eta + 5.28*a2*eta2 + 1.27*a3*eta3)/(1. + 2.89*a5*eta) + (-0.194*b1*Shat*(f11*eta + f12*eta2 + (64. - 16.*f11 - 4.*f12)*eta3) + 0.075*b2*Shat2*(f21*eta + f22*eta2 + (64. - 16.*f21 - 4.*f22)*eta3) + 0.00782*b3*Shat3*(f31*eta + f32*eta2 + (64. - 16.*f31 - 4.*f32)*eta3))/(1. - 0.527*b5*Shat*(f50 + f51*eta + f52*eta2 + (64. - 64.*f50 - 16.*f51 - 4.*f52)*eta3)) + d10*sqrt1m4eta*eta2*(1. + d11*eta)*chidiff + d30*Shat*sqrt1m4eta*eta3*(1. + d31*eta)*chidiff + d20*eta3*chidiff2
+
+    # Convert to actual final spin
+    chif = Lorb + Stot
 
     return chif
 
