@@ -1277,12 +1277,26 @@ INT4 XLALFindBadBins
 
   for ( INT4 badBin = firstBadBin ; badBin <= lastBadBin ; badBin++ ){
     /* printf ("%d %d %d\n", badBin, firstBadBin, lastBadBin); */
-    if (newBinCount >= (INT4) length) {
+    if (newBinCount > (INT4) length) {
       LogPrintf ( LOG_CRITICAL, "%s: requested bin %d longer than series length %d\n", __func__, newBinCount, length);
       XLAL_ERROR( XLAL_EINVAL );
     }
-    badBinData->data[newBinCount] = badBin;
-    newBinCount++;
+    UINT4 checkIfBinAppeared = 0;
+    for (INT4 checkExistBadBin = 0; checkExistBadBin < binCount; checkExistBadBin++)
+      {
+	if (badBin < 0)
+	  {
+	    LogPrintf ( LOG_CRITICAL, "badBin %d negative", badBin);
+	    XLAL_ERROR(XLAL_ETYPE);
+	  }
+	if (badBinData->data[checkExistBadBin] == (UINT4) badBin)
+	  checkIfBinAppeared++;
+      }
+    if (checkIfBinAppeared == 0)
+      {
+	badBinData->data[newBinCount] = badBin;
+	newBinCount++;
+      }
   }
 
   return newBinCount;
