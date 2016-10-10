@@ -58,10 +58,9 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   lalinference-python (>= @MIN_LALINFERENCE_VERSION@~),
   python-skyarea
 Recommends: python (>= 2.7)
-Breaks: pylal (<< 0.12.0-1)
 Provides: python-bayestar-localization, python-bayestar
 Conflicts: python-bayestar-localization, python-bayestar
-Replaces: python-bayestar-localization, python-bayestar, pylal (<< 0.12.0-1)
+Replaces: python-bayestar-localization, python-bayestar
 Description: LSC Algorithm Library Applications
  The LSC Algorithm Library Applications for gravitational wave data analysis.
  This package contains applications that are built on tools in the
