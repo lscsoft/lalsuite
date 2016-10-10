@@ -485,9 +485,15 @@ def get_trigger_chirpmass(gid=None,gracedb="gracedb"):
 
   return mchirp
 
-def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid):
+def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspiral=None):
 
+  ## XML and GID cannot be given at the same time
+  ## sim_inspiral must already point at the right row
   mc_priors = {}
+ 
+  if gid is not None and sim_inspiral is not None:
+    print "Error in get_roq_mchirp_priors, cannot use both gid and sim_inspiral\n"
+    sys.exit(1)
 
   for roq in roq_paths:
     params=os.path.join(path,roq,'params.dat')
@@ -506,6 +512,8 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid):
     i+=1'''
   if gid is not None:
   	trigger_mchirp = get_trigger_chirpmass(gid)
+  elif sim_inspiral is not None:
+        trigger_mchirp = sim_inspiral.mchirp
   else:
 	trigger_mchirp = None
 
