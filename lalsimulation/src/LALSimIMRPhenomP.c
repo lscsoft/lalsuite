@@ -711,6 +711,12 @@ static int PhenomPCore(
     goto cleanup;
   }
 
+  if (L_fCut<=5){ // prevent spline interpolation failing in phase correction below
+    XLALPrintError("XLAL Error - %s: PhenomP waveform is too short: L_fcut is too small.", __func__);
+    errcode = XLAL_EDOM;
+    goto cleanup;
+   }
+
   /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
   REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
   /* Now correct phase */
@@ -735,10 +741,14 @@ static int PhenomPCore(
   if(freqs) XLALDestroyREAL8Sequence(freqs);
 
   if( errcode != XLAL_SUCCESS ) {
-    if(*hptilde)
+    if(*hptilde) {
       XLALDestroyCOMPLEX16FrequencySeries(*hptilde);
-    if(*hctilde)
+      *hptilde=NULL;
+    }
+    if(*hctilde) {
       XLALDestroyCOMPLEX16FrequencySeries(*hctilde);
+      *hctilde=NULL;
+    }
     XLAL_ERROR(errcode);
   }
   else {
