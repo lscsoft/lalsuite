@@ -5,7 +5,7 @@ Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 9), help2man, pkg-config, dh-python, python-all-dev,
   libchealpix-dev,
   zlib1g-dev, libgsl0-dev (>= 1.15), libmetaio-dev (>= 8.2), python-healpy (>= 1.9.1), python-h5py,
-  swig (>= 3.0.7), liboctave-dev, python-numpy, python-scipy, python-mpltoolkits.basemap,
+  swig (>= 3.0.7), liboctave-dev, python-numpy (>= 1.7), python-scipy, python-mpltoolkits.basemap,
   libhdf5-dev,
   python-glue (>= 1.49.1~),
   python-glue-common (>= 1.49.1~),

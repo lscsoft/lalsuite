@@ -80,17 +80,11 @@ static PyObject *premalloced_npy_double_array(double *data, int ndims, npy_intp 
         return NULL;
     }
 
-#ifdef PyArray_BASE
-    /* FIXME: PyArray_BASE changed from a macro to a getter function in
-     * Numpy 1.7. When we drop Numpy 1.6 support, remove this #ifdef block. */
-    PyArray_BASE(out) = premalloced;
-#else
     if (PyArray_SetBaseObject(out, premalloced))
     {
         Py_DECREF(out);
         return NULL;
     }
-#endif
 
     return (PyObject *)out;
 }
