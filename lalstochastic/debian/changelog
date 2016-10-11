@@ -1,8 +1,10 @@
-lalstochastic (1.1.18.1-1) UNRELEASED; urgency=medium
+lalstochastic (1.1.19-1) unstable; urgency=low
 
+  * LALStochastic 1.1.19
+  * ER10 release
   * Add python3 package
 
- -- Leo Singer <leo.singer@ligo.org>  Fri, 15 Jul 2016 00:03:38 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 26 Sep 2016 14:32:33 -0500
 
 lalstochastic (1.1.18-1) unstable; urgency=low
 
