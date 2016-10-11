@@ -925,7 +925,7 @@ static void worker (void) {
     }
 
     /* don't boinc_resolve a 'content' skygrid file */
-    else if (MATCH_START("--skyGridFile={",argv[arg],l)) {
+    else if (MATCH_START("--skyGridFile={.",argv[arg],l)) {
       if (argv[arg][strlen(argv[arg])-1] != '}' && argv[arg+1]) {
 	if(argv[arg+1][strlen(argv[arg+1])-1] == '}') {
 	  rargv[rarg] = (char*) malloc (strlen(argv[arg]) + strlen(argv[arg+1]) + 2);
