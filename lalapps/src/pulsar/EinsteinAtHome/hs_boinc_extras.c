@@ -924,6 +924,11 @@ static void worker (void) {
       }
     }
 
+    /* don't boinc_resolve a 'content' skygrid file */
+    else if (MATCH_START("--skyGridFile={",argv[arg],l)) {
+      rargv[rarg] = argv[arg];
+    }
+
     /* boinc_resolve and unzip skygrid file */
     else if (MATCH_START("--skyGridFile=",argv[arg],l)) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
