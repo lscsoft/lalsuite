@@ -926,7 +926,22 @@ static void worker (void) {
 
     /* don't boinc_resolve a 'content' skygrid file */
     else if (MATCH_START("--skyGridFile={",argv[arg],l)) {
-      rargv[rarg] = argv[arg];
+      if (argv[arg][strlen(argv[arg])-1] != '}' && argv[arg+1]) {
+	if(argv[arg+1][strlen(argv[arg+1])-1] == '}') {
+	  rargv[rarg] = (char*) malloc (strlen(argv[arg]) + strlen(argv[arg+1]) + 2);
+	  if(!rargv[rarg]) {
+	    LogPrintf(LOG_CRITICAL, "Out of memory\n");
+	    boinc_finish(boinc_finish_status=HS_BOINC_EXIT_MEM);
+	  }
+	  strcpy(rargv[rarg],argv[arg]);
+	  strcat(rargv[rarg]," ");
+	  arg++;
+	  strcat(rargv[rarg],argv[arg]);
+	  rargc--;
+	}
+      } else {
+	rargv[rarg] = argv[arg];
+      }
     }
 
     /* boinc_resolve and unzip skygrid file */
