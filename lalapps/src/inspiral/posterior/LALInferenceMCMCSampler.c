@@ -1151,9 +1151,9 @@ void LALInferenceNameOutputs(LALInferenceRunState *runState) {
     }
 
     if((ppt=LALInferenceGetProcParamVal(runState->commandLine, "--runid")))
-        snprintf(runState->runID, 255, "%s_%s", "lalinference_mcmc",ppt->value);
+        snprintf(runState->runID, sizeof(runState->runID), "%s_%s", "lalinference_mcmc",ppt->value);
     else
-        snprintf(runState->runID, 255, "lalinference_mcmc");
+        snprintf(runState->runID, sizeof(runState->runID), "lalinference_mcmc");
 }
 
 
