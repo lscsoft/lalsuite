@@ -50,8 +50,8 @@ extern "C" {
  * The general approach consists of the following steps:
  * <ol>
  * <li> set default-values for optional user-variables as appropriate</li>
- * <li> \c register all user-variables using calls to \c XLALRegister<TYPE>UserVar(), or more conveniently, using the shortcut-macros
- * XLALreg<TYPE>UserStruct() that assume a pointer named 'uvar' to a struct containing all user-variables in the form 'uvar->UserVariable'.</li>
+ * <li> \c register all user-variables using calls to \c XLALRegisterUvarMember(), which assumes a
+ * pointer named 'uvar' to a struct containing all user-variables in the form 'uvar->UserVariable'.</li>
  * <li> parse user-input using XLALUserVarReadAllInput()</li>
  * </ol>
  *
@@ -151,13 +151,21 @@ someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
 /*@{*/
 
 /**
- * Shortcut Macro for registering new user variables, which are assumed
- * to be accessible via the \e struct-pointer '*uvar'
+ * Shortcut macro for registering new user variables, which are accessed via the \e struct-pointer '*uvar'
  */
 #define XLALRegisterUvarMember(name,type,option,category,...)             \
   XLALRegister ##type## UserVar( &(uvar-> name), #name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
 
-/// (mutually exclusive) UserVariable categories: optional, required, help, developer, ...
+/**
+ * Shortcut macro for registering new user variables, named 'name' and accessed via the \e variable-pointer '*cvar'
+ * \note This style of user variable is deprecated; XLALRegisterUvarMember() is preferred
+ */
+#define XLALRegisterNamedUvar(cvar,name,type,option,category,...)         \
+  XLALRegister ##type## UserVar( cvar, name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
+
+/**
+ * Mutually-exclusive user variable categories: optional, required, help, developer, ...
+ */
 typedef enum tagUserVarCategory {
   UVAR_CATEGORY_START = 0,	///< internal start marker for range checking
 
@@ -170,13 +178,6 @@ typedef enum tagUserVarCategory {
   UVAR_CATEGORY_NODEFAULT,	///< optional and supresses printing the default value in the help, where it doesn't make sense
   UVAR_CATEGORY_END		///< internal end marker for range checking
 } UserVarCategory;
-
-// ***** the following are provided only for backwards compatibility until full transition to new XLAL interface *****
-#define UVAR_OPTIONAL  	UVAR_CATEGORY_OPTIONAL
-#define UVAR_REQUIRED  	UVAR_CATEGORY_REQUIRED
-#define UVAR_DEVELOPER	UVAR_CATEGORY_DEVELOPER
-#define UVAR_SPECIAL	UVAR_CATEGORY_SPECIAL
-// **********
 
 /**
  * Format for logging User-input: configFile- or cmdLine-style.
@@ -277,28 +278,6 @@ DECL_REGISTER_UVAR(DECJRange,REAL8Range);
 DECL_REGISTER_UVAR(STRINGVector,LALStringVector*);
 DECL_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
 DECL_REGISTER_UVAR(INT4Vector,INT4Vector*);
-
-/* ========== Deprecated LAL interface wrappers ========== */
-
-/**
- * \name Deprecated LAL-interface
- * These functions and macros are deprecated, and you should user their XLAL-equivalents instead.
- */
-/*@{*/
-
-void LALRegisterREALUserVar(LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, REAL8 *cvar);
-void LALRegisterINTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, INT4 *cvar);
-void LALRegisterBOOLUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, BOOLEAN *cvar);
-void LALRegisterSTRINGUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, CHAR **cvar);
-void LALRegisterLISTUserVar (LALStatus *, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *helpstr, LALStringVector **cvar);
-void LALDestroyUserVars (LALStatus *);
-void LALUserVarReadAllInput(LALStatus *, BOOLEAN *should_exit, int argc, char *argv[]);
-void LALUserVarReadCmdline (LALStatus *, BOOLEAN *should_exit, int argc, char *argv[]);
-void LALUserVarReadCfgfile (LALStatus *, BOOLEAN *should_exit, const CHAR *cfgfile);
-INT4 LALUserVarWasSet (const void *cvar);
-void LALUserVarGetLog (LALStatus *, CHAR **logstr,  UserVarLogFormat format);
-
-/*@}*/
 
 /*@}*/
 

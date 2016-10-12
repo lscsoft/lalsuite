@@ -138,7 +138,7 @@ int main(int argc,char *argv[])
 
   /* read cmdline & cfgfile  */	
   BOOLEAN should_exit = 0;
-  LAL_CALL (LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  XLAL_CHECK_MAIN (XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     return EXIT_FAILURE;
   LAL_CALL ( CheckUserInput (&status, &CommandLineArgs), &status);
@@ -152,7 +152,7 @@ int main(int argc,char *argv[])
   /* Free remaining memory */
   LAL_CALL ( LALSDestroyVector(&status, &(amc.a) ), &status);
   LAL_CALL ( LALSDestroyVector(&status, &(amc.b) ), &status);
-  LAL_CALL ( LALDestroyUserVars(&status), &status);
+  XLALDestroyUserVars();
 
   LALCheckMemoryLeaks();
 
@@ -227,74 +227,42 @@ InitUserVars (LALStatus *status, struct CommandLineArgsTag *CLA)
   CLA->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
   
   /* ---------- register all our user-variable ---------- */
-  TRY( LALRegisterREALUserVar(status->statusPtr, "Alpha", 'a', UVAR_OPTIONAL, 
-			      "Sky position Alpha (equatorial coordinates) in radians", 
-			      &(CLA->Alpha)), status);
-  TRY( LALRegisterREALUserVar(status->statusPtr, "longitude",  0, UVAR_DEVELOPER, 
-			      "[DEPRECATED] Use --Alpha instead!",  
-			      &(CLA->Alpha)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->Alpha),      "Alpha",          REAL8,  'a', OPTIONAL,  "Sky position Alpha (equatorial coordinates) in radians") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->Alpha),      "longitude",      REAL8,  0,   DEVELOPER, "[DEPRECATED] Use --Alpha instead!") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  TRY( LALRegisterREALUserVar(status->statusPtr, "Delta", 'd', UVAR_OPTIONAL, 
-			      "Sky position Delta (equatorial coordinates) in radians", 
-			      &(CLA->Delta)), status);
-  TRY( LALRegisterREALUserVar(status->statusPtr, "latitude", 0, UVAR_DEVELOPER, 
-			      "[DEPRECATED] Use --Delta instead!", 
-			      &(CLA->Delta)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->Delta),      "Delta",          REAL8,  'd', OPTIONAL,  "Sky position Delta (equatorial coordinates) in radians") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->Delta),      "latitude",       REAL8,  0,   DEVELOPER, "[DEPRECATED] Use --Delta instead!") == XLAL_SUCCESS, XLAL_EFUNC);
  
-  TRY( LALRegisterREALUserVar(status->statusPtr, "phi0",   'Q', UVAR_OPTIONAL, 
-			     "Phi_0: Initial phase in radians", &(CLA->phi0)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->phi0),       "phi0",           REAL8,  'Q', OPTIONAL,  "Phi_0: Initial phase in radians") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  TRY( LALRegisterREALUserVar(status->statusPtr, "psi",    'Y', UVAR_OPTIONAL, 
-			     "Polarisation in radians", &(CLA->psi)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->psi),        "psi",            REAL8,  'Y', OPTIONAL,  "Polarisation in radians") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  TRY( LALRegisterREALUserVar(status->statusPtr, "cosi",   'i', UVAR_OPTIONAL, 
-			      "Cos(iota)", &(CLA->cosi)), status);
-  TRY( LALRegisterREALUserVar(status->statusPtr, "cosiota", 0, UVAR_DEVELOPER, 
-			      "[DEPRECATED] Use --cosi instead", &(CLA->cosiota)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->cosi),       "cosi",           REAL8,  'i', OPTIONAL,  "Cos(iota)") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->cosiota),    "cosiota",        REAL8,  0,   DEVELOPER, "[DEPRECATED] Use --cosi instead") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  TRY( LALRegisterREALUserVar(status->statusPtr, "h0", 's', UVAR_OPTIONAL, 
-			      "Strain amplitude h_0", &(CLA->h0)), status);
-  TRY( LALRegisterREALUserVar(status->statusPtr, "sqrtSh", 'N', UVAR_OPTIONAL, 
-			      "Noise floor: one-sided sqrt(Sh) in 1/sqrt(Hz)", &(CLA->sqrtSh)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->h0),         "h0",             REAL8,  's', OPTIONAL,  "Strain amplitude h_0") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->sqrtSh),     "sqrtSh",         REAL8,  'N', OPTIONAL,  "Noise floor: one-sided sqrt(Sh) in 1/sqrt(Hz)") == XLAL_SUCCESS, XLAL_EFUNC);
   
-  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "timestampsFile", 'T', UVAR_OPTIONAL, 
-				"Name of timestamps file", &(CLA->timestamps)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->timestamps), "timestampsFile", STRING, 'T', OPTIONAL,  "Name of timestamps file") == XLAL_SUCCESS, XLAL_EFUNC);
   
-  TRY( LALRegisterINTUserVar(status->statusPtr, "startTime", 'S', UVAR_OPTIONAL, 
-			     "GPS start time of continuous observation", &(CLA->gpsStart)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->gpsStart),   "startTime",      INT4,   'S', OPTIONAL,  "GPS start time of continuous observation") == XLAL_SUCCESS, XLAL_EFUNC);
   
-  TRY( LALRegisterREALUserVar(status->statusPtr, "Tsft", 't', UVAR_OPTIONAL, 
-			      "Length of an SFT in seconds", &(CLA->Tsft)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->Tsft),       "Tsft",           REAL8,  't', OPTIONAL,  "Length of an SFT in seconds") == XLAL_SUCCESS, XLAL_EFUNC);
   
-  TRY( LALRegisterINTUserVar(status->statusPtr, "nTsft", 'n', UVAR_OPTIONAL, 
-			     "Number of SFTs", &(CLA->nTsft)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->nTsft),      "nTsft",          INT4,   'n', OPTIONAL,  "Number of SFTs") == XLAL_SUCCESS, XLAL_EFUNC);
   
-  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "IFO", 'D', UVAR_OPTIONAL, 
-				"Detector: H1, H2, L1, G1, ... ",
-				&(CLA->IFO)), status);
-  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "detector",  0, UVAR_DEVELOPER, 
-				"[DEPRECATED] Use --IFO instead!",
-				&(CLA->detector)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->IFO),        "IFO",            STRING, 'D', OPTIONAL,  "Detector: H1, H2, L1, G1, ... ") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->detector),   "detector",       STRING, 0,   DEVELOPER, "[DEPRECATED] Use --IFO instead!") == XLAL_SUCCESS, XLAL_EFUNC);
   
-  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "ephemEarth", 0, UVAR_OPTIONAL, 
-				"Earth ephemeris file to use", 
-				&(CLA->ephemEarth)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->ephemEarth), "ephemEarth",     STRING, 0,   OPTIONAL,  "Earth ephemeris file to use") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  TRY( LALRegisterSTRINGUserVar(status->statusPtr, "ephemSun", 0, UVAR_OPTIONAL, 
-				"Sun ephemeris file to use", 
-				&(CLA->ephemSun)), status);
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar(&(CLA->ephemSun),   "ephemSun",       STRING, 0,   OPTIONAL,  "Sun ephemeris file to use") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* ----- added for mfd_v4 compatibility ---------- */
-  TRY ( LALRegisterREALUserVar(status->statusPtr, "duration", 0, UVAR_OPTIONAL,
-			       "Duration of requested signal in seconds", 
-			       &(CLA->duration)), status); 
+  XLAL_CHECK_LAL ( status, XLALRegisterNamedUvar(&(CLA->duration),  "duration",       REAL8, 0,    OPTIONAL,  "Duration of requested signal in seconds") == XLAL_SUCCESS, XLAL_EFUNC);
   
-  TRY ( LALRegisterREALUserVar(status->statusPtr, "aPlus", 0, UVAR_OPTIONAL, 
-			       "Plus polarization amplitude aPlus", 
-			       &(CLA->aPlus)), status);
-  TRY ( LALRegisterREALUserVar(status->statusPtr, "aCross", 0, UVAR_OPTIONAL, 
-			       "Cross polarization amplitude aCross", 
-			       &(CLA->aCross)), status);
+  XLAL_CHECK_LAL ( status, XLALRegisterNamedUvar(&(CLA->aPlus),     "aPlus",          REAL8, 0,    OPTIONAL,  "Plus polarization amplitude aPlus") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL ( status, XLALRegisterNamedUvar(&(CLA->aCross),    "aCross",         REAL8, 0,    OPTIONAL,  "Cross polarization amplitude aCross") == XLAL_SUCCESS, XLAL_EFUNC);
 
 
   DETATCHSTATUSPTR (status);
@@ -319,11 +287,11 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  if ( LALUserVarWasSet ( &(CLA->nTsft) ) )
+  if ( XLALUserVarWasSet ( &(CLA->nTsft) ) )
     CLA->duration = 1.0 * CLA->nTsft * CLA->Tsft;
 
   /* read or generate SFT timestamps */
-  if ( LALUserVarWasSet(&(CLA->timestamps)) ) 
+  if ( XLALUserVarWasSet(&(CLA->timestamps)) ) 
     { 
       TRY ( LALReadTimestampsFile (status->statusPtr, &timestamps, CLA->timestamps ), status );
       if ( (CLA->nTsft > 0) && ( (UINT4)CLA->nTsft < timestamps->length ) )	/* truncate if required */
@@ -344,8 +312,8 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
 
   /*---------- initialize detector ---------- */
   {
-    BOOLEAN have_IFO       = LALUserVarWasSet ( &CLA->IFO );
-    BOOLEAN have_detector  = LALUserVarWasSet ( &CLA->detector );
+    BOOLEAN have_IFO       = XLALUserVarWasSet ( &CLA->IFO );
+    BOOLEAN have_detector  = XLALUserVarWasSet ( &CLA->detector );
     CHAR *IFO;
 
     if ( !have_IFO  && !have_detector ) {
@@ -449,10 +417,10 @@ CheckUserInput (LALStatus *status,  struct CommandLineArgsTag *CLA )
 {
 
   /* set a few abbreviations */
-  BOOLEAN have_timestamps= LALUserVarWasSet (&(CLA->timestamps));
-  BOOLEAN have_gpsStart = LALUserVarWasSet  (&(CLA->gpsStart));
-  BOOLEAN have_duration  = LALUserVarWasSet (&(CLA->duration));
-  BOOLEAN have_nTsft     = LALUserVarWasSet (&(CLA->nTsft));
+  BOOLEAN have_timestamps= XLALUserVarWasSet (&(CLA->timestamps));
+  BOOLEAN have_gpsStart = XLALUserVarWasSet  (&(CLA->gpsStart));
+  BOOLEAN have_duration  = XLALUserVarWasSet (&(CLA->duration));
+  BOOLEAN have_nTsft     = XLALUserVarWasSet (&(CLA->nTsft));
   
   INITSTATUS(status);
   
@@ -483,10 +451,10 @@ CheckUserInput (LALStatus *status,  struct CommandLineArgsTag *CLA )
 
   /* now one can either specify {h0, cosiota} OR {aPlus, aCross} */
   {
-    BOOLEAN have_h0 = LALUserVarWasSet (&(CLA->h0));
-    BOOLEAN have_cosi = LALUserVarWasSet (&(CLA->cosi));
-    BOOLEAN have_aPlus = LALUserVarWasSet (&(CLA->aPlus));
-    BOOLEAN have_aCross = LALUserVarWasSet (&(CLA->aCross));
+    BOOLEAN have_h0 = XLALUserVarWasSet (&(CLA->h0));
+    BOOLEAN have_cosi = XLALUserVarWasSet (&(CLA->cosi));
+    BOOLEAN have_aPlus = XLALUserVarWasSet (&(CLA->aPlus));
+    BOOLEAN have_aCross = XLALUserVarWasSet (&(CLA->aCross));
     
     if ( (have_h0 || have_cosi) && (have_aPlus || have_aCross) ) 
       {

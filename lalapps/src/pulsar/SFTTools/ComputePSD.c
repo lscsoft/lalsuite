@@ -458,7 +458,7 @@ main(int argc, char *argv[])
   LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multiPSD), &status);
   LAL_CALL ( LALDestroyMultiSFTVector  (&status, &inputSFTs), &status);
 
-  LAL_CALL (LALDestroyUserVars(&status), &status);
+  XLALDestroyUserVars();
 
   XLALDestroyREAL8Vector ( overSFTs );
   XLALDestroyREAL8Vector ( overIFOs );

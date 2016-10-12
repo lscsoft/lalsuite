@@ -144,18 +144,18 @@ int main(int argc, char *argv[]){
   uvar_blocksRngMed = BLOCKSRNGMED;
 
   /* register user input variables */
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "ifo", 'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)", &uvar_ifo ), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris", 'E', UVAR_OPTIONAL, "Earth Ephemeris file", &uvar_earthEphemeris), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris", 'S', UVAR_OPTIONAL, "Sun Ephemeris file", &uvar_sunEphemeris), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir", 'D', UVAR_OPTIONAL, "SFT Directory", &uvar_sftDir), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameIn", 'T', UVAR_OPTIONAL, "Input template file", &uvar_fnameIn), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameOut", 'o', UVAR_OPTIONAL, "Output filename", &uvar_fnameOut), &status);
-  LAL_CALL( LALRegisterINTUserVar( &status, "blocksRngMed", 'w', UVAR_OPTIONAL, "RngMed block size", &uvar_blocksRngMed), &status);
-  LAL_CALL( LALRegisterREALUserVar( &status, "peakThreshold", 't', UVAR_OPTIONAL, "Peak selection threshold", &uvar_peakThreshold), &status);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_ifo,            "ifo",            STRING, 'i', OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)" ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris, "earthEphemeris", STRING, 'E', OPTIONAL, "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,   "sunEphemeris",   STRING, 'S', OPTIONAL, "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,         "sftDir",         STRING, 'D', OPTIONAL, "SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fnameIn,        "fnameIn",        STRING, 'T', OPTIONAL, "Input template file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fnameOut,       "fnameOut",       STRING, 'o', OPTIONAL, "Output filename") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,   "blocksRngMed",   INT4,   'w', OPTIONAL, "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_peakThreshold,  "peakThreshold",  REAL8,  't', OPTIONAL, "Peak selection threshold") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
  
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]){
   }
   
   /* get the log string */
-  LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+  XLAL_CHECK_MAIN( ( logstr = XLALUserVarGetLog(UVAR_LOGFMT_CFGFILE) ) != NULL, XLAL_EFUNC);  
 
   fprintf( fpLog, "## Log file for HoughValidate\n\n");
   fprintf( fpLog, "# User Input:\n");
@@ -266,7 +266,7 @@ int main(int argc, char *argv[]){
 
     /* set detector constraint */
     constraints.detector = NULL;
-    if ( LALUserVarWasSet( &uvar_ifo ) )    
+    if ( XLALUserVarWasSet( &uvar_ifo ) )    
       constraints.detector = XLALGetChannelPrefix ( uvar_ifo );
 
     /* get sft catalog */
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]){
 
     LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
 
-    if ( LALUserVarWasSet( &uvar_ifo ) )    
+    if ( XLALUserVarWasSet( &uvar_ifo ) )    
       LALFree( constraints.detector );
     LALFree( tempDir);
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
@@ -567,7 +567,7 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemS);
   LALFree(edat);
   
-  LAL_CALL (LALDestroyUserVars(&status), &status);
+  XLALDestroyUserVars();
 
   LALCheckMemoryLeaks();
     

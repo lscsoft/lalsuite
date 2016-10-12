@@ -98,23 +98,23 @@ int main(int argc, char **argv)
   /*========================================================================================================================*/
     
     
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "SFTs",         'p', UVAR_REQUIRED, "SFT location/pattern",        &SFTpatt     ), &status);
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "IFO",          'I', UVAR_REQUIRED, "Detector",                    &IFO         ), &status);
-    LAL_CALL(LALRegisterINTUserVar   (&status, "startGPS",     's', UVAR_REQUIRED, "Starting GPS time",           &startGPS    ), &status);
-    LAL_CALL(LALRegisterINTUserVar   (&status, "endGPS",       'e', UVAR_REQUIRED, "Ending GPS time",             &endGPS      ), &status);
-    LAL_CALL(LALRegisterREALUserVar  (&status, "fMin",         'f', UVAR_REQUIRED, "Minimum frequency",           &f_min       ), &status);
-    LAL_CALL(LALRegisterREALUserVar  (&status, "fMax",         'F', UVAR_REQUIRED, "Maximum frequency",           &f_max       ), &status);
-    LAL_CALL(LALRegisterINTUserVar   (&status, "blocksRngMed", 'w', UVAR_OPTIONAL, "Running Median window size",  &blocksRngMed), &status);
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "outputBname",  'o', UVAR_OPTIONAL, "Base name of output files",   &outputBname ), &status);
-    LAL_CALL(LALRegisterREALUserVar  (&status, "freqRes",      'r', UVAR_REQUIRED, "Spectrogram freq resolution", &freqres     ), &status);
-    LAL_CALL(LALRegisterREALUserVar  (&status, "timeBaseline", 't', UVAR_REQUIRED, "The time baseline of sfts",   &timebaseline), &status);
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "psrInput",     'P', UVAR_OPTIONAL, "name of tempo pulsar file",   &psrInput ), &status);
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "psrEphemeris", 'S', UVAR_OPTIONAL, "pulsar ephemeris file",   &psrEphemeris ), &status);
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "earthFile",  'y', UVAR_OPTIONAL, "earth .dat file",   &earthFile ), &status);
-    LAL_CALL(LALRegisterSTRINGUserVar(&status, "sunFile",   'z', UVAR_OPTIONAL, "sun .dat file",   &sunFile ), &status);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&SFTpatt,      "SFTs",         STRING, 'p', REQUIRED, "SFT location/pattern" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&IFO,          "IFO",          STRING, 'I', REQUIRED, "Detector" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&startGPS,     "startGPS",     INT4,   's', REQUIRED, "Starting GPS time" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&endGPS,       "endGPS",       INT4,   'e', REQUIRED, "Ending GPS time" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&f_min,        "fMin",         REAL8,  'f', REQUIRED, "Minimum frequency" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&f_max,        "fMax",         REAL8,  'F', REQUIRED, "Maximum frequency" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&blocksRngMed, "blocksRngMed", INT4,   'w', OPTIONAL, "Running Median window size") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&outputBname,  "outputBname",  STRING, 'o', OPTIONAL, "Base name of output files" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&freqres,      "freqRes",      REAL8,  'r', REQUIRED, "Spectrogram freq resolution" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&timebaseline, "timeBaseline", REAL8,  't', REQUIRED, "The time baseline of sfts") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&psrInput,     "psrInput",     STRING, 'P', OPTIONAL, "name of tempo pulsar file" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&psrEphemeris, "psrEphemeris", STRING, 'S', OPTIONAL, "pulsar ephemeris file" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&earthFile,    "earthFile",    STRING, 'y', OPTIONAL, "earth .dat file" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&sunFile,      "sunFile",      STRING, 'z', OPTIONAL, "sun .dat file" ) == XLAL_SUCCESS, XLAL_EFUNC);
     
     BOOLEAN should_exit = 0;
-    LAL_CALL(LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+    XLAL_CHECK_MAIN(XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
     if (should_exit)
       return(1);
     
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
     nSFT = sft_vect->length;/* the number of sfts.*/
     
     fprintf(stderr, "nSFT = %d\tnumBins = %d\tf0 = %f\n", nSFT, numBins,sft_vect->data->f0);/*print->logs/spectrumAverage_testcg_0.err */
-    if (LALUserVarWasSet(&outputBname))
+    if (XLALUserVarWasSet(&outputBname))
     strcpy(outbase, outputBname);
     else
     sprintf(outbase, "spec_%.2f_%.2f_%s_%d_%d", f_min,f_max,constraints.detector,startTime.gpsSeconds,endTime.gpsSeconds);/*cg; this is the default name for producing the output files, the different suffixes are just added to this*/
@@ -503,7 +503,7 @@ int main(int argc, char **argv)
 
     /*fprintf(stderr,"end of spec_avg 3\n");*/
 
-    LAL_CALL(LALDestroyUserVars(&status), &status);
+    XLALDestroyUserVars();
 
     /*fprintf(stderr,"end of spec_avg 4\n");*/
     /*close all the files, spec_avg.c is done, all info written to the files.*/

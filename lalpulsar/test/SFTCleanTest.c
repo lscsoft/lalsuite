@@ -159,17 +159,17 @@ int main(int argc, char *argv[]){
   uvar_maxBins = MAXBINS;
 
   /* register user input variables */
-  SUB( LALRegisterSTRINGUserVar( &status, "inputSFTDir",     'i', UVAR_OPTIONAL, "Input SFT Directory",                         &uvar_inputSFTDir),     &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "outputSFTDir",    'o', UVAR_OPTIONAL, "Output SFT Directory",                        &uvar_outputSFTDir),    &status);
-  SUB( LALRegisterSTRINGUserVar( &status, "harmonicfname",   'H', UVAR_OPTIONAL, "File with list of lines",                     &uvar_harmonicfname),   &status);
-  SUB( LALRegisterREALUserVar(   &status, "fStart",          'f', UVAR_OPTIONAL, "Frequency to start cleaning",                 &uvar_fStart),          &status);
-  SUB( LALRegisterREALUserVar(   &status, "fBand",           'b', UVAR_OPTIONAL, "Frequency Band",                              &uvar_fBand),           &status);
-  SUB( LALRegisterINTUserVar(    &status, "window",          'w', UVAR_OPTIONAL, "No. of bins for generating random numbers",   &uvar_window),          &status);
-  SUB( LALRegisterINTUserVar(    &status, "maxBins",         'm', UVAR_OPTIONAL, "Max. No. of bins to clean",                   &uvar_maxBins),         &status);
+  XLAL_CHECK_LAL( &status, XLALRegisterNamedUvar( &uvar_inputSFTDir,   "inputSFTDir",   STRING, 'i', OPTIONAL, "Input SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( &status, XLALRegisterNamedUvar( &uvar_outputSFTDir,  "outputSFTDir",  STRING, 'o', OPTIONAL, "Output SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( &status, XLALRegisterNamedUvar( &uvar_harmonicfname, "harmonicfname", STRING, 'H', OPTIONAL, "File with list of lines") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( &status, XLALRegisterNamedUvar( &uvar_fStart,        "fStart",        REAL8,  'f', OPTIONAL, "Frequency to start cleaning") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( &status, XLALRegisterNamedUvar( &uvar_fBand,         "fBand",         REAL8,  'b', OPTIONAL, "Frequency Band") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( &status, XLALRegisterNamedUvar( &uvar_window,        "window",        INT4,   'w', OPTIONAL, "No. of bins for generating random numbers") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( &status, XLALRegisterNamedUvar( &uvar_maxBins,       "maxBins",       INT4,   'm', OPTIONAL, "Max. No. of bins to clean") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  SUB( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  XLAL_CHECK_LAL( &status, XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
 
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]){
   }
 
   /* get the log string */
-  SUB( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);
+  XLAL_CHECK_LAL( &status, XLALUserVarGetLog(&logstr, UVAR_LOGFMT_CFGFILE) != NULL, XLAL_EFUNC);
 
   fprintf( fpLog, "## LOG FILE FOR SFT Cleaning\n\n");
   fprintf( fpLog, "# User Input:\n");
@@ -352,7 +352,7 @@ int main(int argc, char *argv[]){
   /* 09/09/05 gam; randPar now a parameter for LALCleanCOMPLEX8SFT */
   SUB ( LALDestroyRandomParams (&status, &randPar), &status);
 
-  SUB (LALDestroyUserVars(&status), &status);
+  XLALDestroyUserVars();
 
   LALCheckMemoryLeaks();
 

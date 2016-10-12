@@ -159,27 +159,27 @@ int main( int argc, char *argv[]){
 
   /* *********************************************************************** */
   /* register user input variables */
-  LAL_CALL( LALRegisterINTUserVar(    &status, "ifo",             'i', UVAR_OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)",  &uvar_ifo ),            &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed",    'w', UVAR_OPTIONAL, "RngMed block size",              &uvar_blocksRngMed),    &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "peakThreshold",   't', UVAR_OPTIONAL, "Peak selection threshold",       &uvar_peakThreshold),   &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "houghFalseAlarm",  0,  UVAR_OPTIONAL, "Overall Hough False alarm",      &uvar_houghFalseAlarm), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "earthEphemeris",  'E', UVAR_OPTIONAL, "Earth Ephemeris file",           &uvar_earthEphemeris),  &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sunEphemeris",    'S', UVAR_OPTIONAL, "Sun Ephemeris file",             &uvar_sunEphemeris),    &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",          'D', UVAR_OPTIONAL, "SFT Directory",                  &uvar_sftDir),          &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "fnameout",        'o', UVAR_OPTIONAL, "Output file prefix",             &uvar_fnameout),        &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "alpha",           'r', UVAR_OPTIONAL, "Right ascension",                &uvar_alpha),           &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "delta",           'l', UVAR_OPTIONAL, "Declination",                    &uvar_delta),           &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "h0",              'm', UVAR_OPTIONAL, "h0 to inject",                   &uvar_h0),              &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "f0",              'f', UVAR_OPTIONAL, "Signal frequency",               &uvar_f0),              &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "psi",             'p', UVAR_OPTIONAL, "Polarization angle",             &uvar_psi),             &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "phi0",            'P', UVAR_OPTIONAL, "Initial phase",                  &uvar_phi0),            &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "cosiota",         'c', UVAR_OPTIONAL, "Cosine of iota",                 &uvar_cosiota),         &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fdot",            'd', UVAR_OPTIONAL, "Spindown parameter",             &uvar_fdot),            &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch",        'M', UVAR_OPTIONAL, "Mismatch in weight calculation", &uvar_mismatchW),       &status);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_ifo,             "ifo",             INT4,   'i', OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)" ) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,    "blocksRngMed",    INT4,   'w', OPTIONAL, "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_peakThreshold,   "peakThreshold",   REAL8,  't', OPTIONAL, "Peak selection threshold") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_houghFalseAlarm, "houghFalseAlarm", REAL8,  0,   OPTIONAL, "Overall Hough False alarm") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris,  "earthEphemeris",  STRING, 'E', OPTIONAL, "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,    "sunEphemeris",    STRING, 'S', OPTIONAL, "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,          "sftDir",          STRING, 'D', OPTIONAL, "SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fnameout,        "fnameout",        STRING, 'o', OPTIONAL, "Output file prefix") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_alpha,           "alpha",           REAL8,  'r', OPTIONAL, "Right ascension") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_delta,           "delta",           REAL8,  'l', OPTIONAL, "Declination") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_h0,              "h0",              REAL8,  'm', OPTIONAL, "h0 to inject") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f0,              "f0",              REAL8,  'f', OPTIONAL, "Signal frequency") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_psi,             "psi",             REAL8,  'p', OPTIONAL, "Polarization angle") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_phi0,            "phi0",            REAL8,  'P', OPTIONAL, "Initial phase") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_cosiota,         "cosiota",         REAL8,  'c', OPTIONAL, "Cosine of iota") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fdot,            "fdot",            REAL8,  'd', OPTIONAL, "Spindown parameter") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_mismatchW,       "mismatch",        REAL8,  'M', OPTIONAL, "Mismatch in weight calculation") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
   
@@ -196,7 +196,7 @@ int main( int argc, char *argv[]){
   }
 
   /* get the log string */
-  LAL_CALL( LALUserVarGetLog(&status, &logstr, UVAR_LOGFMT_CFGFILE), &status);  
+  XLAL_CHECK_MAIN( ( logstr = XLALUserVarGetLog(UVAR_LOGFMT_CFGFILE) ) != NULL, XLAL_EFUNC);  
 
   fprintf( fpLog, "## Log file for HoughValidateAM \n\n");
   fprintf( fpLog, "# User Input:\n");
@@ -633,7 +633,7 @@ int main( int argc, char *argv[]){
   /*   LAL(amc.a->data); */
   /*   LALFree(amc.b->data); */
 
-  LAL_CALL (LALDestroyUserVars(&status), &status);  
+  XLALDestroyUserVars();  
   LALCheckMemoryLeaks();
   
   INFO( DRIVEHOUGHCOLOR_MSGENORM );

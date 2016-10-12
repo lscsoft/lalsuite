@@ -212,7 +212,7 @@ int main(int argc, char *argv[]){
   /* tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase; */
 
   /* /\*set pulsar reference time *\/ */
-  /* if (LALUserVarWasSet ( &uvar_refTime )) { */
+  /* if (XLALUserVarWasSet ( &uvar_refTime )) { */
   /*   XLALGPSSetREAL8(&refTime, uvar_refTime); */
   /* }  */
   /* else {	/\*if refTime is not set, set it to midpoint of sfts*\/ */
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]){
   /* } */
 
   /* /\* set frequency resolution defaults if not set by user *\/ */
-  /* if (!(LALUserVarWasSet (&uvar_fResolution))) { */
+  /* if (!(XLALUserVarWasSet (&uvar_fResolution))) { */
   /*   uvar_fResolution = 1/tObs; */
   /* } */
 

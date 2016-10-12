@@ -118,40 +118,38 @@ int main(int argc, char *argv[]) {
   lal_errhandler = LAL_ERR_EXIT;
   
   /* Register command line arguments */
-  LAL_CALL(LALRegisterREALUserVar  (&status, "alpha",            'a', UVAR_REQUIRED, "Right ascension in radians", &alpha), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "alpha-band",       'z', UVAR_OPTIONAL, "Right ascension band", &alpha), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "delta",            'd', UVAR_REQUIRED, "Declination in radians", &delta), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "delta-band",       'c', UVAR_OPTIONAL, "Declination band", &delta), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "freq",             'f', UVAR_REQUIRED, "Starting frequency", &freq), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "freq-band",        'b', UVAR_REQUIRED, "Frequency band", &freq_band), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "loudest-2F",       'F', UVAR_REQUIRED, "Loudest 2F value in this band", &twoFs), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "mism-hist-file",   'M', UVAR_OPTIONAL, "File containing the mismatch PDF histogram", &mism_hist_file), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "max-mismatch",     'm', UVAR_OPTIONAL, "Maximum mismatch to scale histogram to", &max_mismatch), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "sft-patt",         'D', UVAR_REQUIRED, "File pattern of the input SFTs", &sft_pattern), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-dir",        'E', UVAR_OPTIONAL, "Directory containing ephemeris files", &ephem_dir), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "ephem-year",       'y', UVAR_REQUIRED, "Year suffix for ephemeris files", &ephem_year), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "rng-med-win",      'k', UVAR_OPTIONAL, "Size of the running median window", &rng_med_win), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "max-rel-err",      'e', UVAR_OPTIONAL, "Maximum error in h0 relative to previous value", &max_rel_err), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "h0-brake",         'r', UVAR_OPTIONAL, "h0 cannot change by more than this fraction of itself", &h0_brake), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "init-MC-tri",      'I', UVAR_OPTIONAL, "Initial number of MC int. trials", &MC_trials_init), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "MC-tri-incr",      'i', UVAR_OPTIONAL, "Multiply number of MC int. trials by this after each step", &MC_trials_incr), &status);
-  LAL_CALL(LALRegisterINTUserVar   (&status, "MC-tri-reset",     'Z', UVAR_OPTIONAL, "Reset if no convergence after this "
-				                                                     "ratio of initial MC int. trials", &MC_trials_reset_fac), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "false-dism",       'R', UVAR_OPTIONAL, "Target false dismissal rate", &FDR), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "output-file",      'o', UVAR_OPTIONAL, "Output file for the upper limit and other info (defaults to stdout)", &output_file), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "2F-pdf-hist-binw", 'B', UVAR_OPTIONAL, "Bin width of the histogram of the non-central 2F distribution", &twoF_pdf_hist_binw), &status);
-  LAL_CALL(LALRegisterSTRINGUserVar(&status, "2F-pdf-hist-file", 'H', UVAR_OPTIONAL, "Output file for the histogram of the "
-				                                                     "non-central 2F distribution", &twoF_pdf_hist_file), &status);
-  LAL_CALL(LALRegisterREALUserVar  (&status, "initial-h0",        0 , UVAR_DEVELOPER,"Initial guess of h0 (default: automatic)", &initial_h0), &status);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &alpha,               "alpha",            REAL8,  'a', REQUIRED,  "Right ascension in radians") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &alpha,               "alpha-band",       REAL8,  'z', OPTIONAL,  "Right ascension band") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &delta,               "delta",            REAL8,  'd', REQUIRED,  "Declination in radians") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &delta,               "delta-band",       REAL8,  'c', OPTIONAL,  "Declination band") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &freq,                "freq",             REAL8,  'f', REQUIRED,  "Starting frequency") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &freq_band,           "freq-band",        REAL8,  'b', REQUIRED,  "Frequency band") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &twoFs,               "loudest-2F",       REAL8,  'F', REQUIRED,  "Loudest 2F value in this band") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &mism_hist_file,      "mism-hist-file",   STRING, 'M', OPTIONAL,  "File containing the mismatch PDF histogram") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &max_mismatch,        "max-mismatch",     REAL8,  'm', OPTIONAL,  "Maximum mismatch to scale histogram to") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &sft_pattern,         "sft-patt",         STRING, 'D', REQUIRED,  "File pattern of the input SFTs") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &ephem_dir,           "ephem-dir",        STRING, 'E', OPTIONAL,  "Directory containing ephemeris files") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &ephem_year,          "ephem-year",       STRING, 'y', REQUIRED,  "Year suffix for ephemeris files") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &rng_med_win,         "rng-med-win",      INT4,   'k', OPTIONAL,  "Size of the running median window") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &max_rel_err,         "max-rel-err",      REAL8,  'e', OPTIONAL,  "Maximum error in h0 relative to previous value") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &h0_brake,            "h0-brake",         REAL8,  'r', OPTIONAL,  "h0 cannot change by more than this fraction of itself") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &MC_trials_init,      "init-MC-tri",      INT4,   'I', OPTIONAL,  "Initial number of MC int. trials") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &MC_trials_incr,      "MC-tri-incr",      REAL8,  'i', OPTIONAL,  "Multiply number of MC int. trials by this after each step") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &MC_trials_reset_fac, "MC-tri-reset",     INT4,   'Z', OPTIONAL,  "Reset if no convergence after this ratio of initial MC int. trials") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &FDR,                 "false-dism",       REAL8,  'R', OPTIONAL,  "Target false dismissal rate") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &output_file,         "output-file",      STRING, 'o', OPTIONAL,  "Output file for the upper limit and other info (defaults to stdout)") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &twoF_pdf_hist_binw,  "2F-pdf-hist-binw", REAL8,  'B', OPTIONAL,  "Bin width of the histogram of the non-central 2F distribution") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &twoF_pdf_hist_file,  "2F-pdf-hist-file", STRING, 'H', OPTIONAL,  "Output file for the histogram of the non-central 2F distribution") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &initial_h0,          "initial-h0",       REAL8,  0 ,  DEVELOPER, "Initial guess of h0 (default: automatic)") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* Get command line arguments */
   BOOLEAN should_exit = 0;
-  LAL_CALL(LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  XLAL_CHECK_MAIN(XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     return EXIT_FAILURE;
 
   /* Load the mismatch PDF histogram if available */
-  if (LALUserVarWasSet(&mism_hist_file)) {
+  if (XLALUserVarWasSet(&mism_hist_file)) {
 
     size_t i;
     LALParsedDataFile *file = NULL;
@@ -328,7 +326,7 @@ int main(int argc, char *argv[]) {
   do {
     
     /* Open the output file */
-    if (LALUserVarWasSet(&output_file)) {
+    if (XLALUserVarWasSet(&output_file)) {
       if ((fp = fopen(output_file, "wb")) == NULL) {
 	XLALPrintError("Couldn't open output file '%s'\n", output_file);
 	return EXIT_FAILURE;
@@ -337,7 +335,7 @@ int main(int argc, char *argv[]) {
     else {
       fp = stdout;
     }
-    LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
+    XLAL_CHECK_MAIN( ( cmdline = XLALUserVarGetLog(UVAR_LOGFMT_CMDLINE) ) != NULL, XLAL_EFUNC);
     /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
      *  It should be modified to use git version information. */
     fprintf(fp, "%%%% %s\n%%%% %s\n", "$Id$", cmdline);
@@ -432,7 +430,7 @@ int main(int argc, char *argv[]) {
 		A3 * A4 * C_coeff + A4 * A3 * C_coeff);
 
 	/* Generate random mismatch */
-	if (LALUserVarWasSet(&mism_hist_file)) {
+	if (XLALUserVarWasSet(&mism_hist_file)) {
 
 	  mismatch = gsl_ran_flat(rng, 0.0, max_mismatch);
 
@@ -459,7 +457,7 @@ int main(int argc, char *argv[]) {
 	  break;
 	
 	/* Draw a random mismatch from the mismatch histogram */
-	if (LALUserVarWasSet(&mism_hist_file)) {
+	if (XLALUserVarWasSet(&mism_hist_file)) {
 
 	  REAL8 mism_pdf_cumul_prob_bin = gsl_ran_flat(rng, 0.0, 1.0);
 
@@ -486,7 +484,7 @@ int main(int argc, char *argv[]) {
 	  ++twoF_pdf_FD;
 	
 	/* Add 2F to histogram if needed */
-	if (LALUserVarWasSet(&twoF_pdf_hist_file)) {
+	if (XLALUserVarWasSet(&twoF_pdf_hist_file)) {
 	  
 	  /* Compute bin */
 	  const size_t bin = twoF_from_pdf / twoF_pdf_hist_binw;
@@ -518,7 +516,7 @@ int main(int argc, char *argv[]) {
       /* Monte Carlo normalisation: integrate over 2F,mismatch but average cosi,psi; divide by number of trials */
       {
 	REAL8 MC_norm = twoFs / MC_trials;
-	if (LALUserVarWasSet(&mism_hist_file))
+	if (XLALUserVarWasSet(&mism_hist_file))
 	  MC_norm *= max_mismatch;
 
 	J  *= MC_norm;
@@ -555,7 +553,7 @@ int main(int argc, char *argv[]) {
 #undef H0_ERROR
   
     /* Close the output file */
-    if (LALUserVarWasSet(&output_file)) {
+    if (XLALUserVarWasSet(&output_file)) {
       fprintf(fp, "%%DONE\n");
       fclose(fp);
     }
@@ -567,7 +565,7 @@ int main(int argc, char *argv[]) {
   } while (MC_trials >= MC_trials_reset);
   
   /* Write 2F histogram if needed */
-  if (LALUserVarWasSet(&twoF_pdf_hist_file)) {
+  if (XLALUserVarWasSet(&twoF_pdf_hist_file)) {
 
     size_t i;
     FILE *fpH;
@@ -576,7 +574,7 @@ int main(int argc, char *argv[]) {
       XLALPrintError("Couldn't open histogram file '%s'\n", twoF_pdf_hist_file);
       return EXIT_FAILURE;
     }
-    LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
+    XLAL_CHECK_MAIN( ( cmdline = XLALUserVarGetLog(UVAR_LOGFMT_CMDLINE) ) != NULL, XLAL_EFUNC);
     /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
      *  It should be modified to use git version information. */
     fprintf(fpH, "%%%% %s\n%%%% %s\n", "$Id$", cmdline);
@@ -595,7 +593,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* Cleanup */
-  LAL_CALL(LALDestroyUserVars(&status), &status);
+  XLALDestroyUserVars();
   if (mism_hist)
     gsl_matrix_free(mism_hist);
   XLALDestroyMultiDetectorStateSeries(detector_states);
