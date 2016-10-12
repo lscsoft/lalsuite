@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright (C) 2012-2016  Leo Singer
 #
@@ -287,160 +288,117 @@ def subdivide_vertices(vertices, subdivisions):
     return subvertices
 
 
-# FIXME: Remove this after all Matplotlib monkeypatches are obsolete.
 def cut_dateline(vertices):
     """Cut a polygon across the dateline, possibly splitting it into multiple
-    polygons.  Vertices consist of (longitude, latitude) pairs where longitude
-    is always given in terms of a reference angle (between -pi and pi).
+    polygons. Vertices consist of (longitude, latitude) pairs where longitude
+    is always given in terms of a reference angle (between -π and π).
 
-    This routine is not meant to cover all possible cases; it will only work for
-    convex polygons that extend over less than a hemisphere."""
-
-    out_vertices = []
-
-    # Ensure that the list of vertices does not contain a repeated endpoint.
-    if (vertices[0, :] == vertices[-1, :]).all():
-        vertices = vertices[:-1, :]
-
-    def count_dateline_crossings(phis):
-        n = 0
-        for i in range(len(phis)):
-            if crosses_dateline(phis[i - 1], phis[i]):
-                n += 1
-        return n
-
-    def crosses_dateline(phi0, phi1):
-        """Test if the segment consisting of v0 and v1 croses the meridian."""
-        phi0, phi1 = sorted((phi0, phi1))
-        return phi1 - phi0 > np.pi
-
-    dateline_crossings = count_dateline_crossings(vertices[:, 0])
-    if dateline_crossings % 2:
-        # FIXME: Use this simple heuristic to decide which pole to enclose.
-        sign_lat = np.sign(np.sum(vertices[:, 1]))
-
-        # Determine index of the (unique) line segment that crosses the dateline.
-        for i in range(len(vertices)):
-            v0 = vertices[i - 1, :]
-            v1 = vertices[i, :]
-            if crosses_dateline(v0[0], v1[0]):
-                delta_lat = abs(reference_angle(v1[0] - v0[0]))
-                lat = (np.pi - abs(v0[0])) / delta_lat * v0[1] + (np.pi - abs(v1[0])) / delta_lat * v1[1]
-                out_vertices += [np.vstack((vertices[:i, :], [
-                    [np.sign(v0[0]) * np.pi, lat],
-                    [np.sign(v0[0]) * np.pi, sign_lat * np.pi / 2],
-                    [-np.sign(v0[0]) * np.pi, sign_lat * np.pi / 2],
-                    [-np.sign(v0[0]) * np.pi, lat],
-                ], vertices[i:, :]))]
-                break
-    elif dateline_crossings:
-        frame_poly = geos.Polygon(np.asarray([[-np.pi, np.pi/2], [-np.pi, -np.pi/2], [np.pi, -np.pi/2], [np.pi, np.pi/2]]))
-        poly = geos.Polygon(np.column_stack((vertices[:, 0] % (2 * np.pi), vertices[:, 1])))
-        if poly.intersects(frame_poly):
-            out_vertices += [p.get_coords() for p in poly.intersection(frame_poly)]
-        poly = geos.Polygon(np.column_stack((vertices[:, 0] % (-2 * np.pi), vertices[:, 1])))
-        if poly.intersects(frame_poly):
-            out_vertices += [p.get_coords() for p in poly.intersection(frame_poly)]
-    else:
-        out_vertices += [vertices]
-
-    return out_vertices
+    This routine is not meant to cover all possible cases; it will only work
+    for convex polygons that extend over less than a hemisphere."""
+    vertices = vertices.copy()
+    vertices[:, 0] += np.pi
+    vertices = cut_prime_meridian(vertices)
+    for v in vertices:
+        v[:, 0] -= np.pi
+    return vertices
 
 
 def cut_prime_meridian(vertices):
-    """Cut a polygon across the prime meridian, possibly splitting it into multiple
-    polygons.  Vertices consist of (longitude, latitude) pairs where longitude
-    is always given in terms of a wrapped angle (between 0 and 2*pi).
+    """Cut a polygon across the prime meridian, possibly splitting it into
+    multiple polygons. Vertices consist of (longitude, latitude) pairs where
+    longitude is always given in terms of a wrapped angle (between 0 and 2π).
 
-    This routine is not meant to cover all possible cases; it will only work for
-    convex polygons that extend over less than a hemisphere."""
-
-    out_vertices = []
+    This routine is not meant to cover all possible cases; it will only work
+    for convex polygons that extend over less than a hemisphere."""
 
     # Ensure that the list of vertices does not contain a repeated endpoint.
     if (vertices[0, :] == vertices[-1, :]).all():
         vertices = vertices[:-1, :]
 
-    # Ensure that the longitudes are wrapped from 0 to 2*pi.
+    # Ensure that the longitudes are wrapped from 0 to 2π.
     vertices = np.column_stack((wrapped_angle(vertices[:, 0]), vertices[:, 1]))
 
-    def count_meridian_crossings(phis):
-        n = 0
-        for i in range(len(phis)):
-            if crosses_meridian(phis[i - 1], phis[i]):
-                n += 1
-        return n
-
-    def crosses_meridian(phi0, phi1):
-        """Test if the segment consisting of v0 and v1 croses the meridian."""
-        # If the two angles are in [0, 2pi), then the shortest arc connecting
-        # them crosses the meridian if the difference of the angles is greater
-        # than pi.
-        phi0, phi1 = sorted((phi0, phi1))
-        return phi1 - phi0 > np.pi
+    # Test if the segment consisting of points i-1 and i croses the meridian.
+    #
+    # If the two longitudes are in [0, 2π), then the shortest arc connecting
+    # them crosses the meridian if the difference of the angles is greater
+    # than π.
+    phis = vertices[:, 0]
+    phi0, phi1 = np.sort(np.row_stack((np.roll(phis, 1), phis)), axis=0)
+    crosses_meridian = (phi1 - phi0 > np.pi)
 
     # Count the number of times that the polygon crosses the meridian.
-    meridian_crossings = count_meridian_crossings(vertices[:, 0])
+    meridian_crossings = np.sum(crosses_meridian)
 
-    if meridian_crossings % 2:
+    if meridian_crossings == 0:
+        # There were zero meridian crossings, so we can use the
+        # original vertices as is.
+        out_vertices = [vertices]
+    elif meridian_crossings == 1:
+        # There was one meridian crossing, so the polygon encloses the pole.
+        # Any meridian-crossing edge has to be extended
+        # into a curve following the nearest polar edge of the map.
+        i = np.flatnonzero(crosses_meridian)
+        v0 = vertices[i - 1, :]
+        v1 = vertices[i, :]
+
+        # Find the latitude at which the meridian crossing occurs by
+        # linear interpolation.
+        delta_lon = abs(reference_angle(v1[0] - v0[0]))
+        lat = abs(reference_angle(v0[0])) / delta_lon * v0[1] + \
+              abs(reference_angle(v1[0])) / delta_lon * v1[1]
+
         # FIXME: Use this simple heuristic to decide which pole to enclose.
         sign_lat = np.sign(np.sum(vertices[:, 1]))
 
-        # If there are an odd number of meridian crossings, then the polygon
-        # encloses the pole. Any meridian-crossing edge has to be extended
-        # into a curve following the nearest polar edge of the map.
-        for i in range(len(vertices)):
-            v0 = vertices[i - 1, :]
-            v1 = vertices[i, :]
-            # Loop through the edges until we find one that crosses the meridian.
-            if crosses_meridian(v0[0], v1[0]):
-                # If this segment crosses the meridian, then fill it to
-                # the edge of the map by inserting new line segments.
+        # Find the closer of the left or the right map boundary for
+        # each vertex in the line segment.
+        lon_0 = 0. if v0[0] < np.pi else 2*np.pi
+        lon_1 = 0. if v1[0] < np.pi else 2*np.pi
 
-                # Find the latitude at which the meridian crossing occurs by
-                # linear interpolation.
-                delta_lon = abs(reference_angle(v1[0] - v0[0]))
-                lat = abs(reference_angle(v0[0])) / delta_lon * v0[1] + abs(reference_angle(v1[0])) / delta_lon * v1[1]
-
-                # Find the closer of the left or the right map boundary for
-                # each vertex in the line segment.
-                lon_0 = 0. if v0[0] < np.pi else 2*np.pi
-                lon_1 = 0. if v1[0] < np.pi else 2*np.pi
-
-                # Set the output vertices to the polar cap plus the original
-                # vertices.
-                out_vertices += [np.vstack((vertices[:i, :], [
-                    [lon_0, lat],
-                    [lon_0, sign_lat * np.pi / 2],
-                    [lon_1, sign_lat * np.pi / 2],
-                    [lon_1, lat],
-                ], vertices[i:, :]))]
-
-                # Since the polygon is assumed to be convex, the only possible
-                # odd number of meridian crossings is 1, so we are now done.
-                break
-    elif meridian_crossings:
+        # Set the output vertices to the polar cap plus the original
+        # vertices.
+        out_vertices = [
+            np.vstack((
+                vertices[:i, :],
+                [[lon_0, lat],
+                 [lon_0, sign_lat * np.pi / 2],
+                 [lon_1, sign_lat * np.pi / 2],
+                 [lon_1, lat]],
+                vertices[i:, :]))]
+    elif meridian_crossings == 2:
         # Since the polygon is assumed to be convex, if there is an even number
         # of meridian crossings, we know that the polygon does not enclose
         # either pole. Then we can use ordinary Euclidean polygon intersection
         # algorithms.
 
-        # Construct polygon representing map boundaries in longitude and latitude.
-        frame_poly = geos.Polygon(np.asarray([[0., np.pi/2], [0., -np.pi/2], [2*np.pi, -np.pi/2], [2*np.pi, np.pi/2]]))
+        out_vertices = []
 
-        # Intersect with polygon re-wrapped to lie in [pi, 3*pi).
-        poly = geos.Polygon(np.column_stack((reference_angle(vertices[:, 0]) + 2 * np.pi, vertices[:, 1])))
-        if poly.intersects(frame_poly):
-            out_vertices += [p.get_coords() for p in poly.intersection(frame_poly)]
+        # Construct polygon representing map boundaries.
+        frame_poly = geos.Polygon(np.asarray([
+            [0., np.pi/2],
+            [0., -np.pi/2],
+            [2*np.pi, -np.pi/2],
+            [2*np.pi, np.pi/2]]))
 
-        # Intersect with polygon re-wrapped to lie in [-pi, pi).
-        poly = geos.Polygon(np.column_stack((reference_angle(vertices[:, 0]), vertices[:, 1])))
+        # Intersect with polygon re-wrapped to lie in [π, 3π).
+        poly = geos.Polygon(np.column_stack((
+            reference_angle(vertices[:, 0]) + 2 * np.pi, vertices[:, 1])))
         if poly.intersects(frame_poly):
-            out_vertices += [p.get_coords() for p in poly.intersection(frame_poly)]
+            out_vertices += [
+                p.get_coords() for p in poly.intersection(frame_poly)]
+
+        # Intersect with polygon re-wrapped to lie in [-π, π).
+        poly = geos.Polygon(np.column_stack((
+            reference_angle(vertices[:, 0]), vertices[:, 1])))
+        if poly.intersects(frame_poly):
+            out_vertices += [
+                p.get_coords() for p in poly.intersection(frame_poly)]
     else:
-        # Otherwise, there were zero meridian crossings, so we can use the
-        # original vertices as is.
-        out_vertices += [vertices]
+        # There were more than two intersections. Not implemented!
+        raise NotImplemented('The polygon intersected the map boundaries two '
+                             'or more times, so it is probably not simple and '
+                             'convex.')
 
     # Done!
     return out_vertices
