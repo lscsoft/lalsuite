@@ -27,7 +27,7 @@ Build-Depends: debhelper (>= 9), help2man, pkg-config, dh-python, python-all-dev
   lalinference-python (>= @MIN_LALINFERENCE_VERSION@~),
   bc
 X-Python-Version: >= 2.7
-X-Python3-Version: >= 3.4
+X-Python3-Version: <= 3.0
 Standards-Version: 3.9.8
 
 Package: lalapps
