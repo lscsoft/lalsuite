@@ -2,11 +2,12 @@
 # Author: Karl Wette, 2016
 
 use strict;
+use Text::ParseWords;
 
 if (@ARGV < 2) {
     print stderr <<"EOF";
 
-usage: $0 'return-type' 'xlal-functions'... < 'file-names'...
+usage: $0 'return-type' 'xlal-function'... < 'file-names'...
 
 Read in 'file-names' from standard input, one per line, and
 in every *.c file convert function calls to old LALStatus-style
@@ -14,29 +15,40 @@ LAL functions to modern XLAL functions. The XLAL function names
 'xlal-functions' and their common return type 'return-type' are
 given as command-line arguments. Options for 'return-type' are:
 
-- 'int': XLAL function returning int (XLAL_SUCCESS on success)
-- 'ptr': XLAL function returning a pointer (non-NULL on success)
-- 'REAL[48]': XLAL function returning a REAL[48] (non-NAN on success)
-- 'void': XLAL void function, always successful (e.g. destructor)
-- 'voiderr': XLAL void function, check xlalErrno is non-zero for success
+- 'int': XLAL function returning int (XLAL_SUCCESS on success).
+- 'ptr': XLAL function returning a pointer (non-NULL on success).
+         The return value is assigned to the second argument of
+         the old LAL function (i.e. the argument following LALStatus).
+- 'REAL[48]': XLAL function returning a REAL[48] (non-NAN on success).
+         The return value is assigned to the second argument of
+         the old LAL function (i.e. the argument following LALStatus).
+- 'void': XLAL void function, always successful (e.g. destructor).
+- 'voiderr': XLAL void function, check xlalErrno is non-zero for success.
 
 EOF
     exit(1);
 }
-my ($xlal_return_type, @xlal_functions) = @ARGV;
+my $xlal_return_type = shift @ARGV;
 
-my %xlal_return_test = (
-    'int'     => ' == XLAL_SUCCESS',
-    'ptr'     => ' != NULL',
-    'REAL4'   => ' != XLAL_REAL4_FAIL_NAN',
-    'REAL8'   => ' != XLAL_REAL8_FAIL_NAN',
-    'void'    => 'none',
-    'voiderr' => ', xlalErrno != 0',
-);
-die "$0: invalid XLAL return type '$xlal_return_type'" if !defined($xlal_return_test{$xlal_return_type});
+my $xlal_return_test = undef;
+my $xlal_assign_arg = 0;
+if ($xlal_return_type eq "int") {
+    $xlal_return_test = " == XLAL_SUCCESS";
+} elsif ($xlal_return_type eq "ptr") {
+    $xlal_return_test = " != NULL";
+    $xlal_assign_arg = 1;
+} elsif ($xlal_return_type =~ /^REAL([48])$/) {
+    $xlal_return_test = " != XLAL_REAL$1_FAIL_NAN";
+} elsif ($xlal_return_type eq "void") {
+    $xlal_return_test = undef;
+} elsif ($xlal_return_type eq "voiderr") {
+    $xlal_return_test = ", xlalErrno != 0";
+} else {
+    die "$0: invalid XLAL return type '$xlal_return_type'";
+}
 
 my %lal_functions;
-for my $xlal_function (@xlal_functions) {
+for my $xlal_function (@ARGV) {
     die "$0: invalid XLAL function name '$xlal_function'" if $xlal_function !~ /^X/;
     $lal_functions{$xlal_function} = $xlal_function;
     $lal_functions{$xlal_function} =~ s/^X//;
@@ -58,32 +70,61 @@ while (my $filename = <STDIN>) {
 
     my $matches = 0;
 
-    for my $xlal_function (@xlal_functions) {
+    sub build_replacement {
+        my ($call, $spcall, $spfunc, $func, $funcsp, $args, $status, $spend) = @_;
+        my @args = parse_line(',', 0, $args);
+        shift @args;
+        my $r;
+        if (!defined($xlal_return_test)) {
+            $r .= $func . $funcsp . '(' . join(',', @args) . ');';
+        } else {
+            if ($call eq 'LAL_CALL') {
+                $r .= 'XLAL_CHECK_MAIN' . $spcall . '(' . $spfunc;
+            } else {
+                $r .= 'XLAL_CHECK_LAL' . $spcall . '(' . $spfunc . $status . ', ';
+            }
+            if ($xlal_assign_arg) {
+                my $arg = shift @args;
+                $arg =~ s/^\s*//;
+                if ($arg =~ /^&/p) {
+                    $arg = ${^POSTMATCH};
+                } else {
+                    $arg = "*($arg)";
+                }
+                $r .= '( ' . $arg . ' = ';
+            }
+            $r .= $func . $funcsp . '(' . join(',', @args) . ')';
+            if ($xlal_assign_arg) {
+                $r .= ' )';
+            }
+            $r .= $xlal_return_test . ', XLAL_EFUNC' . $spend . ');'
+        }
+        $r
+    }
+
+    for my $xlal_function (keys %lal_functions) {
 
         ++$matches if $file =~ s{
-            \b ( LAL_CALL | TRY | SUB ) (\s*) \(
-                (\s*) $lal_functions{$xlal_function} (\s*) \(
-                    (\s*) (?: [^(),]+) ,? \s*
-                    (
-                        (?: [^()]* ( \( (?: (?> [^()]+? ) | (?-1) )*? \) ) )*?
-                        [^()]*
-                    )?
-                \)
-                \s* , \s* (\S+) (\s*)
+            \b (?<call> LAL_CALL | TRY | SUB | SHOULD_WORK ) (?<spcall>\s*) \(
+                (?<spfunc>\s*) $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
+                    (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
+                \) )
+                \s* , \s* (?<status>\S+) (?<spend>\s*)
             \);
         }{
-            my $r;
-            if ($xlal_return_test{$xlal_return_type} eq 'none') {
-                $r = $xlal_function . $4 . '(' . $5 . $6 . ');';
-            } else {
-                if ($1 eq 'LAL_CALL') {
-                    $r = 'XLAL_CHECK_MAIN' . $2 . '(' . $3;
-                } else {
-                    $r = 'XLAL_CHECK_LAL' . $2 . '(' . $3 . $8 . ', ';
-                }
-                $r .= $xlal_function . $4 . '(' . $5 . $6 . ')' . $xlal_return_test{$xlal_return_type} . ', XLAL_EFUNC' . $9 . ');'
-            }
-            $r
+           build_replacement($+{call}, $+{spcall}, $+{spfunc}, $xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spend})
+        }egsx;
+
+        ++$matches if $file =~ s{
+            \b $lal_functions{$xlal_function} (?<funcsp>\s*) ( \(
+                (?<args> (?: (?> [^()]+ ) | (?2) )* )
+            \) );
+            \s*?
+            (?<call> CHECKSTATUSPTR ) (?<spcall>\s*) \(
+                (?<spfunc>\s*) (?<status>\S+) (?<spend>\s*)
+            \);
+        }{
+           build_replacement($+{call}, $+{spcall}, $+{spfunc}, $xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spend})
         }egsx;
 
     }
