@@ -1,0 +1,102 @@
+#!/usr/bin/perl
+# Author: Karl Wette, 2016
+
+use strict;
+
+if (@ARGV < 2) {
+    print stderr <<"EOF";
+
+usage: $0 'return-type' 'xlal-functions'... < 'file-names'...
+
+Read in 'file-names' from standard input, one per line, and
+in every *.c file convert function calls to old LALStatus-style
+LAL functions to modern XLAL functions. The XLAL function names
+'xlal-functions' and their common return type 'return-type' are
+given as command-line arguments. Options for 'return-type' are:
+
+- 'int': XLAL function returning int (XLAL_SUCCESS on success)
+- 'ptr': XLAL function returning a pointer (non-NULL on success)
+- 'REAL[48]': XLAL function returning a REAL[48] (non-NAN on success)
+- 'void': XLAL void function, always successful (e.g. destructor)
+- 'voiderr': XLAL void function, check xlalErrno is non-zero for success
+
+EOF
+    exit(1);
+}
+my ($xlal_return_type, @xlal_functions) = @ARGV;
+
+my %xlal_return_test = (
+    'int'     => ' == XLAL_SUCCESS',
+    'ptr'     => ' != NULL',
+    'REAL4'   => ' != XLAL_REAL4_FAIL_NAN',
+    'REAL8'   => ' != XLAL_REAL8_FAIL_NAN',
+    'void'    => 'none',
+    'voiderr' => ', xlalErrno != 0',
+);
+die "$0: invalid XLAL return type '$xlal_return_type'" if !defined($xlal_return_test{$xlal_return_type});
+
+my %lal_functions;
+for my $xlal_function (@xlal_functions) {
+    die "$0: invalid XLAL function name '$xlal_function'" if $xlal_function !~ /^X/;
+    $lal_functions{$xlal_function} = $xlal_function;
+    $lal_functions{$xlal_function} =~ s/^X//;
+}
+
+my $allmatches = 0;
+while (my $filename = <STDIN>) {
+
+    chomp $filename;
+    next if $filename !~ /\.c$/;
+
+    my $file;
+    {
+        open(FILE, "$filename") or die "$0: cannot open $filename: $!";
+        local $/ = undef;
+        $file = <FILE>;
+        close(FILE);
+    }
+
+    my $matches = 0;
+
+    for my $xlal_function (@xlal_functions) {
+
+        ++$matches if $file =~ s{
+            \b ( LAL_CALL | TRY | SUB ) (\s*) \(
+                (\s*) $lal_functions{$xlal_function} (\s*) \(
+                    (\s*) (?: [^(),]+) ,? \s*
+                    (
+                        (?: [^()]* ( \( (?: (?> [^()]+? ) | (?-1) )*? \) ) )*?
+                        [^()]*
+                    )?
+                \)
+                \s* , \s* (\S+) (\s*)
+            \);
+        }{
+            my $r;
+            if ($xlal_return_test{$xlal_return_type} eq 'none') {
+                $r = $xlal_function . $4 . '(' . $5 . $6 . ');';
+            } else {
+                if ($1 eq 'LAL_CALL') {
+                    $r = 'XLAL_CHECK_MAIN' . $2 . '(' . $3;
+                } else {
+                    $r = 'XLAL_CHECK_LAL' . $2 . '(' . $3 . $8 . ', ';
+                }
+                $r .= $xlal_function . $4 . '(' . $5 . $6 . ')' . $xlal_return_test{$xlal_return_type} . ', XLAL_EFUNC' . $9 . ');'
+            }
+            $r
+        }egsx;
+
+    }
+
+    if ($matches > 0) {
+        open(FILE, ">$filename") or die "Cannot open $filename: $!";
+        print FILE $file;
+        close(FILE);
+        print "$0: $matches matches in $filename\n";
+    }
+
+    $allmatches += $matches;
+
+}
+
+print "$0: $allmatches matches in total\n";
