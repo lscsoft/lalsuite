@@ -26,7 +26,7 @@ export PYBUILD_TEST_ARGS = $(MAKE) $(MAKEARGS) check
 
 %:
 	dh $@ \
-	$(if $(HAVE_PYTHON2),--with=python2) $(if $(HAVE_PYTHON2),--with=python3) \
+	$(if $(HAVE_PYTHON2),--with=python2) $(if $(HAVE_PYTHON3),--with=python3) \
 	--buildsystem=pybuild
 
 override_dh_fixperms:
