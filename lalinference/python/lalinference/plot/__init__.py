@@ -312,8 +312,8 @@ def cut_prime_meridian(vertices):
     for convex polygons that extend over less than a hemisphere."""
 
     # Ensure that the list of vertices does not contain a repeated endpoint.
-    if (vertices[0, :] == vertices[-1, :]).all():
-        vertices = vertices[:-1, :]
+    if (vertices[0] == vertices[-1]).all():
+        vertices = vertices[:-1]
 
     # Ensure that the longitudes are wrapped from 0 to 2π.
     vertices = np.column_stack((wrapped_angle(vertices[:, 0]), vertices[:, 1]))
@@ -339,8 +339,8 @@ def cut_prime_meridian(vertices):
         # Any meridian-crossing edge has to be extended
         # into a curve following the nearest polar edge of the map.
         i = np.flatnonzero(crosses_meridian)
-        v0 = vertices[i - 1, :]
-        v1 = vertices[i, :]
+        v0 = vertices[i - 1]
+        v1 = vertices[i]
 
         # Find the latitude at which the meridian crossing occurs by
         # linear interpolation.
@@ -360,12 +360,12 @@ def cut_prime_meridian(vertices):
         # vertices.
         out_vertices = [
             np.vstack((
-                vertices[:i, :],
+                vertices[:i],
                 [[lon_0, lat],
                  [lon_0, sign_lat * np.pi / 2],
                  [lon_1, sign_lat * np.pi / 2],
                  [lon_1, lat]],
-                vertices[i:, :]))]
+                vertices[i:]))]
     elif meridian_crossings == 2:
         # Since the polygon is assumed to be convex, if there is an even number
         # of meridian crossings, we know that the polygon does not enclose
