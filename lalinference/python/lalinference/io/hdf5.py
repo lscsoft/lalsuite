@@ -104,7 +104,7 @@ def _find_table(group, tablename):
     ...         _find_table(f, 'bat')
     Traceback (most recent call last):
         ...
-    KeyError: 'Multiple tables called bat exist: foo/xyzzy/bat, foo/bat'
+    KeyError: 'Multiple tables called bat exist: foo/bat, foo/xyzzy/bat'
     """
     results = {}
 
@@ -120,7 +120,7 @@ def _find_table(group, tablename):
 
     if len(results) > 1:
         raise KeyError('Multiple tables called {0} exist: {1}'.format(
-            tablename, ', '.join(results.keys())))
+            tablename, ', '.join(sorted(results.keys()))))
 
     table, = results.values()
     return table
