@@ -338,7 +338,7 @@ def cut_prime_meridian(vertices):
         # There was one meridian crossing, so the polygon encloses the pole.
         # Any meridian-crossing edge has to be extended
         # into a curve following the nearest polar edge of the map.
-        i = np.flatnonzero(crosses_meridian)
+        i, = np.flatnonzero(crosses_meridian)
         v0 = vertices[i - 1]
         v1 = vertices[i]
 
