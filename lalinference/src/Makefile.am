@@ -73,6 +73,7 @@ liblalinference_la_SOURCES = \
 	$(BAYESTARSRC) \
 	$(XMLSRC)
 nodist_liblalinference_la_SOURCES = LALInferenceBuildInfo.c
+noinst_HEADERS = six.h
 
 liblalinference_la_LDFLAGS = $(AM_LDFLAGS) $(HDF5_LDFLAGS) -version-info $(LIBVERSION)
 liblalinference_la_LIBADD = $(HDF5_LIBS)

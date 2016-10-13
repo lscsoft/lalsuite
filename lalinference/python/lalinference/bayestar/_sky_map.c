@@ -25,6 +25,7 @@
 #include <gsl/gsl_nan.h>
 #include <lal/bayestar_sky_map.h>
 #include <assert.h>
+#include "six.h"
 
 
 /**
@@ -476,59 +477,38 @@ static PyTypeObject LogRadialIntegrator_type = {
 };
 
 
-static const char modulename[] = "_sky_map";
-
-
-#if PY_MAJOR_VERSION >= 3
 static PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    modulename, NULL, -1, methods
+    "_sky_map", NULL, -1, methods
 };
-#endif
 
 
-#if PY_MAJOR_VERSION < 3
-PyMODINIT_FUNC init_sky_map(void); /* Silence -Wmissing-prototypes */
-PyMODINIT_FUNC init_sky_map(void)
-#else
 PyMODINIT_FUNC PyInit__sky_map(void); /* Silence -Wmissing-prototypes */
 PyMODINIT_FUNC PyInit__sky_map(void)
-#endif
 {
-    PyObject *module;
+    PyObject *module = NULL;
+
     import_array();
 
     premalloced_type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&premalloced_type) < 0)
-    {
-#if PY_MAJOR_VERSION < 3
-        return;
-#else
-        return NULL;
-#endif
-    }
+        goto done;
 
     LogRadialIntegrator_type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&LogRadialIntegrator_type) < 0)
-    {
-#if PY_MAJOR_VERSION < 3
-        return;
-#else
-        return NULL;
-#endif
-    }
+        goto done;
 
-#if PY_MAJOR_VERSION < 3
-    module = Py_InitModule(modulename, methods);
-#else
     module = PyModule_Create(&moduledef);
-#endif
+    if (!module)
+        goto done;
 
     Py_INCREF((PyObject *)&LogRadialIntegrator_type);
     PyModule_AddObject(
         module, "LogRadialIntegrator", (PyObject *)&LogRadialIntegrator_type);
 
-#if PY_MAJOR_VERSION >= 3
+done:
     return module;
-#endif
 }
+
+
+SIX_COMPAT_MODULE(_sky_map)

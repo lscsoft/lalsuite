@@ -24,6 +24,7 @@
 #include <numpy/arrayobject.h>
 #include <numpy/ufuncobject.h>
 #include <lal/bayestar_distance.h>
+#include "six.h"
 
 
 static void conditional_pdf_loop(
@@ -209,31 +210,23 @@ static const void *no_ufunc_data[] = {NULL};
 static const char modulename[] = "_distance";
 
 
-#if PY_MAJOR_VERSION >= 3
 static PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     modulename, NULL, -1, NULL
 };
-#endif
 
 
-#if PY_MAJOR_VERSION < 3
-PyMODINIT_FUNC init_distance(void); /* Silence -Wmissing-prototypes */
-PyMODINIT_FUNC init_distance(void)
-#else
 PyMODINIT_FUNC PyInit__distance(void); /* Silence -Wmissing-prototypes */
 PyMODINIT_FUNC PyInit__distance(void)
-#endif
 {
-    PyObject *module;
+    PyObject *module = NULL;
+
     import_array();
     import_umath();
 
-#if PY_MAJOR_VERSION < 3
-    module = Py_InitModule(modulename, NULL);
-#else
     module = PyModule_Create(&moduledef);
-#endif
+    if (!module)
+        goto done;
 
     PyModule_AddObject(
         module, "conditional_pdf", PyUFunc_FromFuncAndData(
@@ -279,7 +272,9 @@ PyMODINIT_FUNC PyInit__distance(void)
             "marginal_pdf", NULL, 0,
             "(),(n),(n),(n),(n)->()"));
 
-#if PY_MAJOR_VERSION >= 3
+done:
     return module;
-#endif
 }
+
+
+SIX_COMPAT_MODULE(_distance)
