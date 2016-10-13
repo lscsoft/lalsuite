@@ -97,7 +97,7 @@ class SBankJob(inspiral.InspiralAnalysisJob):
 
 
 class SBankNode(pipeline.CondorDAGNode):
-    def __init__(self, job, dag, tag=None, seed=0, bank_seed=None, mchirp_boundaries_file=None, mchirp_boundaries_index=None, p_node=[]):
+    def __init__(self, job, dag, tag="SBANK", seed=0, bank_seed=None, mchirp_boundaries_file=None, mchirp_boundaries_index=None, p_node=[]):
         pipeline.CondorDAGNode.__init__(self,job)
         if (mchirp_boundaries_file is None) ^ (mchirp_boundaries_index is None):
             raise ValueError("must supply both mchirp_boundaries_file and mchirp_boundaries_index or neither")
@@ -107,11 +107,9 @@ class SBankNode(pipeline.CondorDAGNode):
             self.add_var_arg("--bank-seed %s" % bank_seed)
         self.add_var_opt("seed", seed)
 
-        if tag:
-            self.add_var_opt("user-tag", tag)
-            self.add_output_file("%s-SBANK_%s-%d-%d.xml.gz" % (job.get_opt("instrument"), tag, int(job.get_opt("gps-start-time")), int(job.get_opt("gps-end-time")) - int(job.get_opt("gps-start-time"))))
-        else:
-            self.add_output_file("%s-SBANK-%d-%d.xml.gz" % (job.get_opt("instrument"), int(job.get_opt("gps-start-time")), int(job.get_opt("gps-end-time")) - int(job.get_opt("gps-start-time"))))
+        fout = "%s.xml.gz" % tag
+        self.add_var_opt("output-filename", fout)
+        self.add_output_file(fout)
 
         for p in p_node:
             self.add_parent(p)
@@ -248,7 +246,7 @@ class LWAddJob(pipeline.CondorDAGJob):
     A ligolw_add node. This node is used to combine the split template banks
     into one aggregate bank.
     """
-    def __init__(self, executable=which('ligolw_add'), tag_base='ligolw_add'):
+    def __init__(self, cp, executable=which('ligolw_add'), tag_base='ligolw_add'):
         """
         """
         self.__prog__ = 'ligolw_add'
@@ -256,6 +254,8 @@ class LWAddJob(pipeline.CondorDAGJob):
         self.__universe = 'vanilla'
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
         self.add_condor_cmd('getenv','True')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         self.tag_base = tag_base
         self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
         self.set_sub_file(tag_base+'.sub')
@@ -559,7 +559,7 @@ else:
         bank_nodes.append(None)
     else:
         # set up sole coarse node to plan out the mini-sbank nodes
-        coarse_sbank_node = SBankNode(sbankJob, dag, "COARSE")
+        coarse_sbank_node = SBankNode(sbankJob, dag, "SBANK_COARSE")
         coarse_mm = cp.get("coarse-sbank", "match-min")
         coarse_sbank_node.add_var_opt("match-min", coarse_mm)
         coarse_thresh = cp.get("coarse-sbank", "convergence-threshold")
@@ -584,7 +584,7 @@ else:
 
     # generate a bank for each mchirp region
     for j in xrange(nbanks):
-        bank_node = SBankNode(sbankJob, dag, "%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode], bank_seed=xmlCoarse)
+        bank_node = SBankNode(sbankJob, dag, "SBANK_SPLIT_BANK_%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode], bank_seed=xmlCoarse)
         bank_node.add_var_opt("match-min", mm)
         bank_node.set_priority(1)  # want complete bank before sims
         bank_nodes.append(bank_node)
@@ -593,8 +593,8 @@ else:
 
 # recombine bank fragments under a common name
 if not options.template_bank:
-    lwaddJob = LWAddJob(tag_base=options.user_tag + "_lwadd")
-    lwaddNode = LWAddNode(lwaddJob, dag, bank_names, "H1-SBANK_COMBINED-%s.xml.gz"%options.user_tag,bank_nodes)
+    lwaddJob = LWAddJob(cp, tag_base=options.user_tag + "_lwadd")
+    lwaddNode = LWAddNode(lwaddJob, dag, bank_names, "SBANK_COMBINED-%s.xml.gz" % options.user_tag, bank_nodes)
 
 # set up banksim parameters according to sbank parameters (if not provided)
 if not cp.has_option("banksim","flow"):
@@ -648,10 +648,9 @@ for inj_run in cp.options("injections"):
     sim_nodes = []
     for bank_node in bank_nodes:
         for bank_name in bank_node.get_output_files():
-            ind = bank_name.index("-", 3)  # start searching for hyphens after ind 3
             base, _ = os.path.splitext(bank_name)
-            sim_name = "%s_%s-%s" % (base[:ind], "SIM_%s"%inj_run.upper(), base[ind + 1:])
-            sim_nodes.append(BankSimNode(banksimJob, dag, inj_name, waveform, bank_name, sim_name.replace(".h5",""), [inj_node, bank_node]))
+            sim_name = base.replace("SBANK", "SBANK_SIM")
+            sim_nodes.append(BankSimNode(banksimJob, dag, inj_name, waveform, bank_name, sim_name, [inj_node, bank_node]))
 
     # merge and plot the partial sims
     sim_names = [node.get_output_files()[0] for node in sim_nodes]
