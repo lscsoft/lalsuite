@@ -60,6 +60,9 @@ typedef struct tagLT_Bound {
   char data_upper[LT_DATA_MAX_SIZE];    ///< Arbitrary data describing upper parameter-space bound
 } LT_Bound;
 
+///
+/// FITS record for for saving and restoring a lattice tiling iterator.
+///
 typedef struct tagLT_FITSRecord {
   BOOLEAN is_tiled;                     ///< True if the dimension is tiled, false if it is a single point
   INT4 data_hash;                       ///< Checksum of arbitrary data describing parameter-space bounds
