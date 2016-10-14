@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2007, 2008, 2012, 2014, 2015 Karl Wette
+// Copyright (C) 2007, 2008, 2012, 2014, 2015, 2016 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -62,7 +62,6 @@ typedef struct tagLatticeTilingLocator LatticeTilingLocator;
 typedef struct tagLatticeTilingStats {
   UINT8 total_points;                   ///< Total number of points up to this dimension
   UINT4 min_points;                     ///< Minimum number of points in this dimension
-  double avg_points;                    ///< Average number of points in this dimension
   UINT4 max_points;                     ///< Maximum number of points in this dimension
   double min_value;                     ///< Minimum value of points in this dimension
   double max_value;                     ///< Maximum value of points in this dimension
@@ -177,7 +176,7 @@ REAL8 XLALLatticeTilingBoundingBox(
 /// Return statistics related to the number/value of lattice tiling points in a dimension.
 ///
 const LatticeTilingStats *XLALLatticeTilingStatistics(
-  LatticeTiling *tiling,                ///< [in] Lattice tiling
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
   const size_t dim                      ///< [in] Dimension in which to return statistics
   );
 
@@ -269,7 +268,7 @@ int XLALNextLatticeTilingPoints(
 /// Return the total number of points covered by the lattice tiling iterator.
 ///
 UINT8 XLALTotalLatticeTilingPoints(
-  LatticeTilingIterator *itr            ///< [in] Lattice tiling iterator
+  const LatticeTilingIterator *itr      ///< [in] Lattice tiling iterator
   );
 
 ///
