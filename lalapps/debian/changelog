@@ -1,3 +1,9 @@
+lalapps (6.20.0.1-1) UNRELEASED; urgency=medium
+
+  * Back to development
+
+ -- Leo Singer <leo@lalsuitedev>  Thu, 13 Oct 2016 20:02:49 -0400
+
 lalapps (6.20.0-1) unstable; urgency=medium
 
   * LALApps 6.20.0
