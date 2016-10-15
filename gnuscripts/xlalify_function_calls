@@ -80,21 +80,27 @@ while (my $filename = <STDIN>) {
     my $matches = 0;
 
     sub build_function {
+
         my ($func, $funcsp, $args) = @_;
-        my @args = parse_line(',', 0, $args);
+        my $r;
+
+        my @args = parse_line(',', 1, $args);
         shift @args;
         $args[0] =~ s/^\s*//;
-        my $r;
         $r = $func . $funcsp . '(' . join(',', @args) . ');';
+
         $r
+
     }
 
     sub build_assertion {
+
         my ($negate, $func, $funcsp, $args) = @_;
-        my @args = parse_line(',', 0, $args);
+        my $r;
+
+        my @args = parse_line(',', 1, $args);
         shift @args;
         $args[0] =~ s/^\s*//;
-        my $r;
         if ($xlal_assign_arg) {
             my $arg = shift @args;
             $arg =~ s/^\s*//;
@@ -109,6 +115,7 @@ while (my $filename = <STDIN>) {
         if ($xlal_assign_arg) {
             $r .= ' )';
         }
+
         my $test = $xlal_return_test;
         if ($negate eq '!') {
             if ($test =~ /==/p) {
@@ -120,49 +127,63 @@ while (my $filename = <STDIN>) {
             }
         }
         $r .= $test;
+
         $r
+
     }
 
     sub build_check_macro {
-        my ($call, $callsp, $spfunc, $assertion, $status, $spend) = @_;
+
+        my ($call, $callsp, $spfunc, $func, $funcsp, $args, $status, $spend) = @_;
         my $r;
+
         if ($call eq 'LAL_CALL') {
             $r .= 'XLAL_CHECK_MAIN' . $callsp . '(' . $spfunc;
         } else {
             $r .= 'XLAL_CHECK_LAL' . $callsp . '(' . $spfunc . $status . ', ';
         }
+        my $negate = ( $call =~ /^SHOULD_FAIL/ ) ? '!' : '';
+        my $assertion = build_assertion($negate, $func, $funcsp, $args);
         $r .= $assertion . ', XLAL_EFUNC' . $spend . ');';
+
         $r
+
     }
 
     sub build_fail_block {
-        my ($notassertion, $status, $spblock, $block, $blocksp) = @_;
+
+        my ($func, $funcsp, $args, $status, $spblock, $block, $blocksp) = @_;
         my $r;
+
+        my $notassertion = build_assertion('!', $func, $funcsp, $args);
         $r .= 'if ( ' . $notassertion . ' ) {';
         $r .= $spblock . $block;
         $r .= $spblock . 'ABORTXLAL( ' . $status . ' );';
         $r .= $blocksp . '}';
+
         $r
+
     }
 
     for my $xlal_function (keys %lal_functions) {
 
-        ++$matches if $file =~ s{
-            \b (?<call> LAL_CALL | TRY | SUB | SHOULD_WORK ) (?<callsp>\s*) \(
+        $file =~ s{
+            \b (?<call> LAL_CALL | TRY | SUB | SHOULD_WORK | SHOULD_FAIL(?:_WITH_CODE)? ) (?<callsp>\s*) \(
                 (?<spfunc>\s*) $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
                     (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
                 \) )
                 \s* , \s* (?<status>\S+) (?<spend>\s*)
             \);
         }{
+            ++$matches;
             if (defined($xlal_return_test)) {
-                build_check_macro($+{call}, $+{callsp}, $+{spfunc}, build_assertion('', $xlal_function, $+{funcsp}, $+{args}), $+{status}, $+{spend})
+                build_check_macro($+{call}, $+{callsp}, $+{spfunc}, $xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spend})
             } else {
                 build_function($xlal_function, $+{funcsp}, $+{args})
             }
         }egsx;
 
-        ++$matches if $file =~ s{
+        $file =~ s{
             \b $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
                 (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
             \) );
@@ -171,8 +192,9 @@ while (my $filename = <STDIN>) {
                 (?<spfunc>\s*) (?<status>\S+) (?<spend>\s*)
             \);
         }{
+            ++$matches;
             if (defined($xlal_return_test)) {
-                build_check_macro($+{call}, $+{callsp}, $+{spfunc}, build_assertion('', $xlal_function, $+{funcsp}, $+{args}), $+{status}, $+{spend})
+                build_check_macro($+{call}, $+{callsp}, $+{spfunc}, $xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spend})
             } else {
                 build_function($xlal_function, $+{funcsp}, $+{args})
             }
@@ -180,7 +202,7 @@ while (my $filename = <STDIN>) {
 
         if (defined($xlal_return_test)) {
 
-            ++$matches if $file =~ s{
+            $file =~ s{
                 \b $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
                     (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
                 \) );
@@ -195,7 +217,8 @@ while (my $filename = <STDIN>) {
                     \s* (?&status) \s*
                 \);
             }{
-                build_fail_block(build_assertion('!', $xlal_function, $+{funcsp}, $+{args}), $+{status}, $+{spblock}, $+{block}, $+{blocksp})
+                ++$matches;
+                build_fail_block($xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spblock}, $+{block}, $+{blocksp})
             }egsx;
 
         }
@@ -207,10 +230,18 @@ while (my $filename = <STDIN>) {
                     (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
                 \) );
             }{
+               ++$matches;
                build_function($xlal_function, $+{funcsp}, $+{args})
             }egsx;
 
         }
+
+        $file =~ s{
+            ("[^"\n]*) \b $lal_functions{$xlal_function} ([^"\n]*")
+        }{
+            ++$matches;
+            $1 . $xlal_function . $2
+        }egsx;
 
     }
 
