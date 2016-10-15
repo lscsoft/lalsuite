@@ -462,7 +462,7 @@ int main(int argc, char *argv[]){
     tempDir = (CHAR *)LALCalloc( MAXFILENAMELENGTH , sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*");
-    LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+    XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( tempDir, &constraints) ) != NULL, XLAL_EFUNC);
 
 
     /* get some sft parameters */
@@ -481,7 +481,7 @@ int main(int argc, char *argv[]){
     tSamplingRate = 2.0*deltaF*(sftlength -1.);
 
     /* get SFT timestamps */
-    LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
+    XLAL_CHECK_MAIN( ( timeV = XLALTimestampsFromSFTCatalog( catalog ) ) != NULL, XLAL_EFUNC);  	
 
     /* add wings for Doppler modulation and running median block size*/
     doppWings = (uvar_f0 + uvar_fSearchBand) * VTOT;    
@@ -490,7 +490,7 @@ int main(int argc, char *argv[]){
 
     /* read sfts */
     /* read sft files making sure to add extra bins for running median */
-    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
+    XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadSFTs ( catalog, f_min, f_max) ) != NULL, XLAL_EFUNC);
 
 
     /* calculation of weights comes here */
@@ -503,7 +503,7 @@ int main(int argc, char *argv[]){
     if ( XLALUserVarWasSet( &uvar_ifo ) )    
       LALFree( constraints.detector );
     LALFree( tempDir);
-    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	 
+    XLALDestroySFTCatalog(catalog );  	 
 
   } 
    

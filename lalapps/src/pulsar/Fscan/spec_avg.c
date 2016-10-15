@@ -126,11 +126,11 @@ int main(int argc, char **argv)
     endTime.gpsNanoSeconds = 0;
     constraints.maxStartTime = &endTime;/*cg; This line puts the end time into the structure constraints*/
     constraints.detector = IFO;/*cg; this adds the interferometer into the contraints structure*/
-    LALSFTdataFind ( &status, &catalog, SFTpatt, &constraints );/*cg; creates SFT catalog, uses the constraints structure*/
+    catalog = XLALSFTdataFind ( SFTpatt, &constraints );/*cg; creates SFT catalog, uses the constraints structure*/
 
     if (catalog == NULL)/*need to check for a NULL pointer, and print info about circumstances if it is null*/
     {
-        fprintf(stderr, "SFT catalog pointer is NULL!  There has been an error with LALSFTdataFind\n");
+        fprintf(stderr, "SFT catalog pointer is NULL!  There has been an error with XLALSFTdataFind\n");
         fprintf(stderr, "LALStatus info.... status code: %d, message: %s, offending function: %s\n", status.statusCode, status.statusDescription, status.function);
         exit(0);
     }
@@ -140,16 +140,16 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    LALLoadSFTs ( &status, &sft_vect, catalog, f_min,f_max);/*cg;reads the SFT data into the structure sft_vect*/
+    sft_vect = XLALLoadSFTs ( catalog, f_min,f_max);/*cg;reads the SFT data into the structure sft_vect*/
 
     if (sft_vect == NULL)
     {
-        fprintf(stderr, "SFT vector pointer is NULL!  There has been an error with LALLoadSFTs\n");
+        fprintf(stderr, "SFT vector pointer is NULL!  There has been an error with XLALLoadSFTs\n");
         fprintf(stderr, "LALStatus info.... status code: %d, message: %s, offending function: %s\n", status.statusCode, status.statusDescription, status.function);
         exit(0);
     }
 
-    LALDestroySFTCatalog( &status, &catalog);/*cg; desctroys the SFT catalogue*/
+    XLALDestroySFTCatalog(catalog);/*cg; desctroys the SFT catalogue*/
     numBins = sft_vect->data->data->length;/*the number of bins in the freq_range*/
     nSFT = sft_vect->length;/* the number of sfts.*/
     

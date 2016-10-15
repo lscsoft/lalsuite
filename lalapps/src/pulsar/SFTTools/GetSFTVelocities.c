@@ -131,7 +131,7 @@ int main(int argc, char *argv[]){
     constraints.detector = NULL;
     
     /* get sft catalog */
-    LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
+    XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( uvar_sftDir, &constraints) ) != NULL, XLAL_EFUNC);
     if ( (catalog == NULL) || (catalog->length == 0) ) {
       fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
       exit(1);
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]){
 
     }   /* end loop over sfts */
 
-    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
+    XLALDestroySFTCatalog(catalog );  	
 
   } /* end of sft reading block */
 

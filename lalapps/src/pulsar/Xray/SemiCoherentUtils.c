@@ -1105,9 +1105,9 @@ int XLALReadSFTs(SFTVector **sftvec,        /**< [out] the input SFT data */
   freqmax = freqmin + freqband;
 
   /* check CRC sums of SFTs */
-  /* LAL_CALL ( LALCheckSFTCatalog ( &status, &sft_check_result, catalog ), &status );
+  /* XLAL_CHECK_MAIN ( XLALCheckCRCSFTCatalog (&sft_check_result, catalog ) == XLAL_SUCCESS, XLAL_EFUNC );
   if (sft_check_result) {
-    LogPrintf(LOG_CRITICAL,"%s : LALCheckSFTCatalogSFT() validity check failed with error = %d\n", sft_check_result);
+    LogPrintf(LOG_CRITICAL,"%s : XLALCheckCRCSFTCatalogSFT() validity check failed with error = %d\n", sft_check_result);
     return 1;
   }
   LogPrintf(LOG_DEBUG,"%s : checked the SFTs\n",__func__); */

@@ -389,7 +389,7 @@ int main(int argc, char *argv[]){
     tempDir = (CHAR *)LALCalloc(512, sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*");
-    LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+    XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( tempDir, &constraints) ) != NULL, XLAL_EFUNC);
 
     /* exit if catalog has multi ifos and no detector constraint has been set */
     if ( ( XLALCountIFOsInCatalog(catalog) > 1) && !(XLALUserVarWasSet( &uvar_ifo ))) {
@@ -416,7 +416,7 @@ int main(int argc, char *argv[]){
     memset( nStarEventVec.event, 0, length+1);
     
     /* get SFT timestamps */
-    LAL_CALL( LALSFTtimestampsFromCatalog(  &status, &timeV, catalog ), &status);  	
+    XLAL_CHECK_MAIN( ( timeV = XLALTimestampsFromSFTCatalog( catalog ) ) != NULL, XLAL_EFUNC);  	
 
     /* total observation time = last timestamp - first timestamp + timeBase*/
     tObs = XLALGPSDiff( timeV->data + mObsCoh - 1, timeV->data ) + timeBase;
@@ -428,7 +428,7 @@ int main(int argc, char *argv[]){
 
     /* read sft files making sure to add extra bins for running median */
     /* read the sfts */
-    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
+    XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadSFTs ( catalog, f_min, f_max) ) != NULL, XLAL_EFUNC);
 
     /* clean sfts if required */
     if ( XLALUserVarWasSet( &uvar_linefile ) )
@@ -460,7 +460,7 @@ int main(int argc, char *argv[]){
     if ( XLALUserVarWasSet( &uvar_ifo ) )    
       LALFree( constraints.detector );
     LALFree( tempDir);
-    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
+    XLALDestroySFTCatalog(catalog );  	
 
     /* set up weights -- this should be done before normalizing the sfts */
     weightsV.length = mObsCoh;

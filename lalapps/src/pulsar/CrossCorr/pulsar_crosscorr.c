@@ -369,12 +369,11 @@ int main(int argc, char *argv[]){
 
   /* get sft catalog */
   /* note that this code depends very heavily on the fact that the catalog
-     returned by LALSFTdataFind is time sorted */
+     returned by XLALSFTdataFind is time sorted */
 
   time(&t1);
 
-  LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints),
-	    &status);
+  XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( uvar_sftDir, &constraints) ) != NULL, XLAL_EFUNC);
   if ( (catalog == NULL) || (catalog->length == 0) ) {
     fprintf (stderr, "Unable to match any SFTs with pattern '%s'\n",
 	     uvar_sftDir );
@@ -1047,7 +1046,7 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
      fclose (fpdebug);
 
   }
-  LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
+  XLALDestroySFTCatalog(catalog );
 
   XLALDestroyEphemerisData(edat);
 
@@ -1443,8 +1442,8 @@ void CopySFTFromCatalog(LALStatus *status,
   desc->version = catalog->data[sftindex].version;
   desc->crc64 = catalog->data[sftindex].crc64;
 
-  LALLoadSFTs(status->statusPtr, sft, slidingcat, fMin, fMax); 
-  /* LALDestroySFTCatalog ( status->statusPtr, &slidingcat );*/
+  *sft = XLALLoadSFTs(slidingcat, fMin, fMax);
+  /* XLALDestroySFTCatalog (slidingcat );*/
   XLALFree(slidingcat->data);
   LALFree(slidingcat);
 

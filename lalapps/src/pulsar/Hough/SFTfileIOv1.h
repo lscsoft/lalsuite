@@ -1,7 +1,40 @@
-#ifdef _SFTFILEIO_H /* Only include via SFTfileIO.h */
-#ifndef SWIG /* exclude from SWIG interface */
+/*
+ * Copyright (C) 2010 Karl Wette
+ * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+ *  MA  02111-1307  USA
+ */
 #ifndef _SFTFILEIOLAL_H
 #define _SFTFILEIOLAL_H
+
+#ifdef  __cplusplus   /* C++ protection. */
+extern "C" {
+#endif
+
+/* includes */
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+
 /** \cond DONT_DOXYGEN */
 
 /** \name Error codes */
@@ -50,23 +83,6 @@
 /*@}*/
 
 /*================================================================================
- * DEPRECATED LAL-API [use XLAL-API whenever available]
- *================================================================================*/
-void LALReadTimestampsFile (LALStatus* , LIGOTimeGPSVector **timestamps, const CHAR *fname); /* use XLALReadTimestampsFile() instead! */
-void LALSFTdataFind (LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern, SFTConstraints *constraints);
-void LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
-void LALLoadMultiSFTs ( LALStatus *status, MultiSFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
-void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
-void LALWriteSFTVector2Dir (LALStatus *, const SFTVector *sftVect, const CHAR *basename, const CHAR *SFTcomment, const CHAR *description);
-
-void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fname);
-void LALCheckSFTs ( LALStatus *, INT4 *check_result, const CHAR *file_pattern, SFTConstraints *constraints );
-void LALCheckSFTCatalog ( LALStatus *status, INT4 *check_result, SFTCatalog *catalog );
-
-void LALDestroySFTCatalog ( LALStatus *status, SFTCatalog **catalog );
-void LALSFTtimestampsFromCatalog (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTCatalog *catalog );
-
-/*================================================================================
  * OBSOLETE v1-only API [DEPRECATED!]
  *================================================================================*/
 
@@ -83,11 +99,8 @@ typedef struct tagSFTHeader {
   INT4   length;                /**< number of frequency bins */
 } SFTHeader;
 
-
-
 void LALReadSFTheader (LALStatus *, SFTHeader *header, const CHAR *fname);
 void LALReadSFTdata (LALStatus *, SFTtype *sft, const CHAR *fname, INT4 fminBinIndex);
-void LALWriteSFTfile (LALStatus *, const SFTtype *sft, const CHAR *outfname);
 void LALReadSFTfile (LALStatus *, SFTtype **sft, REAL8 fMin, REAL8 fMax, const CHAR *fname);
 
 void LALReadSFTfiles (LALStatus *,
@@ -97,14 +110,10 @@ void LALReadSFTfiles (LALStatus *,
                       UINT4 wingBins,
                       const CHAR *fpattern);
 
-void
-LALGetSFTheaders (LALStatus *,
-                  SFTVector **headers,
-                  const CHAR *fpattern,
-                  const LIGOTimeGPS *startTime,
-                  const LIGOTimeGPS *endTime);
-
 /** \endcond */
+
+#ifdef  __cplusplus
+}                /* Close C++ protection */
+#endif
+
 #endif /* _SFTFILEIOLAL_H */
-#endif /* SWIG */
-#endif /* _SFTFILEIO_H */

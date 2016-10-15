@@ -122,7 +122,7 @@ int main(int argc, char *argv[]){
   constraints.detector = NULL;
 
   /* get sft catalog */
-  LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
+  XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( uvar_sftDir, &constraints) ) != NULL, XLAL_EFUNC);
   if ( (catalog == NULL) || (catalog->length == 0) ) {
     fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
     exit(1);
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]){
     thisCatalog.data = catalog->data + j;
   
     /* read the sfts */
-    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, &thisCatalog, uvar_fMin, uvar_fMax), &status);    
+    XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadMultiSFTs ( &thisCatalog, uvar_fMin, uvar_fMax) ) != NULL, XLAL_EFUNC);    
     
     /* clean  lines */
     if ( XLALUserVarWasSet( &uvar_linefiles ) ) {
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]){
     
     /* write output */
     for (k = 0; k < inputSFTs->length; k++) {
-      LAL_CALL( LALWriteSFTVector2Dir ( &status, inputSFTs->data[k], uvar_outDir, "cleaned", "cleaned"), &status);
+      XLAL_CHECK_MAIN( XLALWriteSFTVector2Dir (inputSFTs->data[k], uvar_outDir, "cleaned", "cleaned") == XLAL_SUCCESS, XLAL_EFUNC);
     }
 
     XLALDestroyMultiSFTVector( inputSFTs);
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]){
   } /* end loop over sfts */
 
   /* Free memory */
-  LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
+  XLALDestroySFTCatalog(catalog );
   XLALDestroyUserVars();
   LAL_CALL( LALDestroyRandomParams (&status, &randPar), &status);
 

@@ -58,6 +58,7 @@ Input shoud be from
 
 #include "./MCInjectComputeHough.h" /* proper path*/
 
+#include "SFTfileIOv1.h"
 
 #define VALIDATEOUT "./outHM1/skypatch_1/HM1validate"
 #define VALIDATEIN  "./outHM1/skypatch_1/HM1templates"
@@ -273,21 +274,21 @@ int main(int argc, char *argv[]){
     tempDir = (CHAR *)LALCalloc(512, sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*");
-    LAL_CALL( LALSFTdataFind( &status, &catalog, tempDir, &constraints), &status);
+    XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( tempDir, &constraints) ) != NULL, XLAL_EFUNC);
     
     detector = XLALGetSiteInfo( catalog->data[0].header.name);
 
     mObsCoh = catalog->length;
     timeBase = 1.0 / catalog->data->header.deltaF;
 
-    LAL_CALL( LALLoadSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
+    XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadSFTs ( catalog, f_min, f_max) ) != NULL, XLAL_EFUNC);
 
     LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
 
     if ( XLALUserVarWasSet( &uvar_ifo ) )    
       LALFree( constraints.detector );
     LALFree( tempDir);
-    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
+    XLALDestroySFTCatalog(catalog );  	
 
   }
 

@@ -289,12 +289,12 @@ int main(int argc, char *argv[]){
     }
 
     if ( XLALUserVarWasSet( &uvar_timeStampsFile ) ) {
-      LAL_CALL ( LALReadTimestampsFile ( &status, &inputTimeStampsVector, uvar_timeStampsFile), &status);
+      XLAL_CHECK_MAIN ( ( inputTimeStampsVector = XLALReadTimestampsFile ( uvar_timeStampsFile) ) != NULL, XLAL_EFUNC);
       constraints.timestamps = inputTimeStampsVector;
     }
     
     /* get sft catalog */
-    LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
+    XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( uvar_sftDir, &constraints) ) != NULL, XLAL_EFUNC);
     if ( (catalog == NULL) || (catalog->length == 0) ) {
       fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
       exit(1);
@@ -338,7 +338,7 @@ int main(int argc, char *argv[]){
 
     /* read sft files making sure to add extra bins for running median */
     /* read the sfts */
-    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
+    XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadMultiSFTs ( catalog, f_min, f_max) ) != NULL, XLAL_EFUNC);
 
 
     /* clean sfts if required */
@@ -373,7 +373,7 @@ int main(int argc, char *argv[]){
     sftFminBin = (INT4) floor(inputSFTs->data[0]->data[0].f0 * timeBase + 0.5);    
 
 
-    LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
+    XLALDestroySFTCatalog(catalog );  	
 
   } /* end of sft reading block */
 

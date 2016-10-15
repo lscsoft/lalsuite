@@ -987,10 +987,8 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
 
   /* get sft catalog */
   LogPrintf ( LOG_DEBUG, "Finding all SFTs to load ... ");
-  LALStatus status = blank_status;
-  LALSFTdataFind ( &status, &catalog, uvar->inputData, &constraints);
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ("%s: LALSFTdataFind() failed with statusCode = %d\n", __func__, status.statusCode );
+  if ( ( catalog = XLALSFTdataFind ( uvar->inputData, &constraints) ) == NULL ) {
+    XLALPrintError ("%s: XLALSFTdataFind() failed with xlalErrno = %d\n", __func__, xlalErrno );
     XLAL_ERROR_NULL ( XLAL_EFAILED );
   }
   if ( (catalog == NULL) || (catalog->length == 0) ) {

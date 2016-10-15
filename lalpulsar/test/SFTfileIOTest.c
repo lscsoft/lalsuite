@@ -36,87 +36,7 @@
  *
  */
 
-/** \name Error codes */
-/*@{*/
-#define SFTFILEIOTESTC_ENORM 	0
-#define SFTFILEIOTESTC_ESUB  	1
-#define SFTFILEIOTESTC_EARG  	2
-#define SFTFILEIOTESTC_EBAD  	3
-#define SFTFILEIOTESTC_EFILE 	4
-#define SFTFILEIOTESTC_ESFTDIFF 5
-
-#define SFTFILEIOTESTC_MSGENORM "Normal exit"
-#define SFTFILEIOTESTC_MSGESUB  "Subroutine failed"
-#define SFTFILEIOTESTC_MSGEARG  "Error parsing arguments"
-#define SFTFILEIOTESTC_MSGEBAD  "Bad argument values"
-#define SFTFILEIOTESTC_MSGEFILE "Could not create output file"
-#define SFTFILEIOTESTC_MSGESFTDIFF "initial and final SFTs differ"
-/*@}*/
-
-
 /** \cond DONT_DOXYGEN */
-/* Default parameters. */
-
-/*********************************************************************/
-/* Macros for printing errors & testing subroutines (from Creighton) */
-/*********************************************************************/
-
-#define ERROR( code, msg, statement )					\
-  do {									\
-  if ( lalDebugLevel & LALERROR )					\
-    XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"	\
-		    "        %s %s\n", (code), *argv, __FILE__,		\
-		    __LINE__, "$Id$", statement ? statement :	\
-		    "", (msg) );					\
-} while (0)
-
-#define INFO( statement )					      \
-  do {								      \
-    if ( lalDebugLevel & LALINFO )				      \
-      XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"   \
-		      "        %s\n", *argv, __FILE__, __LINE__,      \
-		      "$Id$", (statement) );		      \
-  } while (0)
-
-#define SUB( func, statusptr )                                       \
-do {                                                                 \
-  if ( (func), (statusptr)->statusCode ) {                           \
-    ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,		     \
-           "Function call \"" #func "\" failed:" );                  \
-    return SFTFILEIOTESTC_ESUB;					     \
-  }								     \
-} while (0)
-
-
-#define SHOULD_FAIL( func, statusptr )							\
-do { 											\
-  if ( func, ! (statusptr)->statusCode ) {						\
-    ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,      				\
-          "Function call '" #func "' should have failed for this SFT but didn't!\n");	\
-    return SFTFILEIOTESTC_ESUB;   			                               	\
-   }											\
-  else   xlalErrno = 0;							                \
-} while(0)
-
-#define SHOULD_FAIL_WITH_CODE( func, statusptr, code )					\
-do { 											\
-  if ( func, (statusptr)->statusCode != code) {						\
-    XLALPrintError( "Function call '" #func "' should have failed with code " #code ", but returned %d instead.\n",	\
-		   (statusptr)->statusCode );						\
-    return SFTFILEIOTESTC_ESUB;   			                               	\
-   }											\
-  else   xlalErrno = 0;							                \
-} while(0)
-
-
-#define SHOULD_WORK( func, statusptr )							\
-do { 											\
-  if ( func, (statusptr)->statusCode ) {						\
-    ERROR( SFTFILEIOTESTC_ESUB, SFTFILEIOTESTC_MSGESUB,      				\
-          "Function call '" #func "' failed but should have worked for this SFT!");	\
-    return SFTFILEIOTESTC_ESUB;   			                               	\
-   }											\
-} while(0)
 
 #define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
 
@@ -180,10 +100,9 @@ static int CompareSFTVectors(SFTVector *sft_vect, SFTVector *sft_vect2)
   return(0);
 }
 
-int main(int argc, char *argv[])
+int main( void )
 {
   const char *fn = __func__;
-  LALStatus XLAL_INIT_DECL(status);
 
   SFTCatalog *catalog = NULL;
   SFTConstraints XLAL_INIT_DECL(constraints);
@@ -192,94 +111,95 @@ int main(int argc, char *argv[])
   MultiSFTVector *multsft_vect = NULL;
   MultiSFTVector *multsft_vect2 = NULL;
   CHAR detector[2] = "H1";
-  INT4 crc_check;
+  BOOLEAN crc_check;
 
   /* band to read from infile.* SFTs */
   REAL8 fMin = 1008.5;
   REAL8 fMax = 1009.1;
 
 
-  if ( argc == 1)	/* avoid warning */
-    argc = 1;
-
   /* check that mal-formated SFTs are properly detected */
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad1", NULL ), &status);
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad2", NULL ), &status);
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad3", NULL ), &status);
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad4", NULL ), &status);
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad5", NULL ), &status);
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad1", NULL ) ) == NULL, XLAL_EFUNC); XLALClearErrno();
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad2", NULL ) ) == NULL, XLAL_EFUNC); XLALClearErrno();
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad3", NULL ) ) == NULL, XLAL_EFUNC); XLALClearErrno();
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad4", NULL ) ) == NULL, XLAL_EFUNC); XLALClearErrno();
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad5", NULL ) ) == NULL, XLAL_EFUNC); XLALClearErrno();
 
   /* the following (SFT-bad6) has a wrong CRC64 checksum. However, this is
-   * not checked in LALSFTdataFind, so it should succeed! */
-  SHOULD_WORK( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad6", NULL ), &status );
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+   * not checked in XLALSFTdataFind, so it should succeed! */
+  XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad6", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
+  XLALDestroySFTCatalog(catalog);
 
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad7", NULL ), &status);
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad8", NULL ), &status);
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad9", NULL ), &status);
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad10", NULL ), &status );
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad11", NULL ), &status );
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad12", NULL ), &status );
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad13", NULL ), &status );
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-bad14", NULL ), &status );
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad7", NULL ) ) == NULL, XLAL_EFUNC); XLALClearErrno();
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad8", NULL ) ) == NULL, XLAL_EFUNC); XLALClearErrno();
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad9", NULL ) ) == NULL, XLAL_EFUNC); XLALClearErrno();
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad10", NULL ) ) == NULL, XLAL_EFUNC ); XLALClearErrno();
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad11", NULL ) ) == NULL, XLAL_EFUNC ); XLALClearErrno();
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad12", NULL ) ) == NULL, XLAL_EFUNC ); XLALClearErrno();
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad13", NULL ) ) == NULL, XLAL_EFUNC ); XLALClearErrno();
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad14", NULL ) ) == NULL, XLAL_EFUNC ); XLALClearErrno();
 
   /* now check some crc-checksums */
-  SHOULD_WORK( LALCheckSFTs ( &status, &crc_check, TEST_DATA_DIR "SFT-test1", NULL ), &status );
-  if ( crc_check != 0 )
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test1", NULL ) ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALCheckCRCSFTCatalog (&crc_check, catalog ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALDestroySFTCatalog(catalog);
+  if ( !crc_check )
     {
       XLALPrintError ("\nLALCheckSFTs(): SFT-test1 has correct checksum but LALCheckSFTs claimed it hasn't.\n\n");
-      return crc_check;
+      return EXIT_FAILURE;
     }
-  SHOULD_WORK( LALCheckSFTs ( &status, &crc_check, TEST_DATA_DIR "SFT-bad6", NULL ), &status );
-  if ( crc_check != SFTFILEIO_ECRC64 )
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-bad6", NULL ) ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALCheckCRCSFTCatalog (&crc_check, catalog ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLALDestroySFTCatalog(catalog);
+  if ( crc_check )
     {
       XLALPrintError ( "\nLALCheckSFTs() failed to catch invalid CRC checksum in SFT-bad6 \n\n");
-      return SFTFILEIOTESTC_ESUB;
+      return EXIT_FAILURE;
     }
 
   /* check that proper v2-SFTs are read-in properly */
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-test1", NULL ), &status );
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-test2", NULL ), &status );
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-test3", NULL ), &status );
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-test4", NULL ), &status );
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-test5", NULL ), &status );
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-test6", NULL ), &status );
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-test7", NULL ), &status );
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test1", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
+  XLALDestroySFTCatalog(catalog);
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test2", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
+  XLALDestroySFTCatalog(catalog);
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test3", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
+  XLALDestroySFTCatalog(catalog);
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test4", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
+  XLALDestroySFTCatalog(catalog);
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test5", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
+  XLALDestroySFTCatalog(catalog);
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test6", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
+  XLALDestroySFTCatalog(catalog);
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test7", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
+  XLALDestroySFTCatalog(catalog);
 
   /* now completely read-in a v2 merged-SFT */
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-test*", NULL ), &status );
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test*", NULL ) ) == NULL, XLAL_EFUNC ); XLALClearErrno();
   /* skip sft nr 4 with has Tsft=50 instead of Tsft=60 */
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-test[123567]*", NULL ), &status );
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test[123567]*", NULL ) ) != NULL, XLAL_EFUNC );
+  XLALDestroySFTCatalog(catalog);
   /* try the same with a ";" separated list of files and of patterns */
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog,
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind (
 				 TEST_DATA_DIR "SFT-test1;"
 				 TEST_DATA_DIR "SFT-test2;"
 				 TEST_DATA_DIR "SFT-test3;"
 				 TEST_DATA_DIR "SFT-test5;"
 				 TEST_DATA_DIR "SFT-test6;"
-				 TEST_DATA_DIR "SFT-test7", NULL ), &status );
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-  SHOULD_WORK ( LALSFTdataFind ( &status, &catalog, TEST_DATA_DIR "SFT-test[123]*;" TEST_DATA_DIR "SFT-test[5]*", NULL ), &status );
+				 TEST_DATA_DIR "SFT-test7", NULL ) ) != NULL, XLAL_EFUNC );
+  XLALDestroySFTCatalog(catalog);
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test[123]*;" TEST_DATA_DIR "SFT-test[5]*", NULL ) ) != NULL, XLAL_EFUNC );
 
   /* load once as a single SFT-vector (mix of detectors) */
-  SHOULD_WORK ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
+  XLAL_CHECK_MAIN ( ( sft_vect = XLALLoadSFTs ( catalog, -1, -1 ) ) != NULL, XLAL_EFUNC );
 
   /* load once as a multi-SFT vector */
-  SHOULD_WORK ( LALLoadMultiSFTs ( &status, &multsft_vect, catalog, -1, -1 ), &status );
+  XLAL_CHECK_MAIN ( ( multsft_vect = XLALLoadMultiSFTs ( catalog, -1, -1 ) ) != NULL, XLAL_EFUNC );
   /* load again, using XLAL API */
   if ( ( multsft_vect2 = XLALLoadMultiSFTs ( catalog, -1, -1 )) == NULL ) {
     XLALPrintError ("%s: XLALLoadMultiSFTs (cat, -1, -1) failed with xlalErrno = %d\n", fn, xlalErrno );
-    return SFTFILEIOTESTC_ESUB;
+    return EXIT_FAILURE;
   }
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  XLALDestroySFTCatalog(catalog);
 
   /* 6 SFTs from 2 IFOs should have been read */
   if ( (sft_vect->length != 4) 	/* either as a single SFTVector */
@@ -287,7 +207,7 @@ int main(int argc, char *argv[])
        || (multsft_vect->data[0]->length != 3) || ( multsft_vect->data[1]->length != 1 ) )
     {
       XLALPrintError ( "\nFailed to read in multi-SFT from 2 IFOs 'SFT-test*'!\n\n");
-      return SFTFILEIOTESTC_ESUB;
+      return EXIT_FAILURE;
     }
 
   /* compare results from LALLoadMultiSFTs() and XLALLoadMultiSFTs() */
@@ -297,17 +217,16 @@ int main(int argc, char *argv[])
     for ( X=0; X < numIFOs; X ++ )
       {
         if( CompareSFTVectors ( multsft_vect->data[X], multsft_vect2->data[X] ) ) {
-          XLALPrintError ("%s: comparing (X)LALLoadMultiSFTs(): sft-vectors differ for X=%d\n", fn, X );
-          return SFTFILEIOTESTC_ESUB;
+          XLALPrintError ("%s: comparing (X)XLALLoadMultiSFTs(): sft-vectors differ for X=%d\n", fn, X );
+          return EXIT_FAILURE;
         }
       } /* for X < numIFOs */
   } /* ------ */
 
   /* ----- v2 SFT writing ----- */
   /* write v2-SFT to disk */
-  SHOULD_WORK ( LALWriteSFT2file( &status, &(multsft_vect->data[0]->data[0]), "outputsftv2_v2.sft", "A v2-SFT file for testing!"), &status );
-
-  SHOULD_WORK ( LALWriteSFTVector2Dir( &status, multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test"), &status);
+  XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(multsft_vect->data[0]->data[0]), "outputsftv2_r1.sft", "A v2-SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALWriteSFTVector2Dir(multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* write v2-SFT to single file */
   {
@@ -319,7 +238,7 @@ int main(int argc, char *argv[])
     xlalErrno = 0;
     if (XLAL_SUCCESS != XLALWriteSFTVector2File ( multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test_concat" )) {
       LALPrintError ( "\n XLALWriteSFTVector2File failed to write multi-SFT vector to file!\n\n");
-      return SFTFILEIOTESTC_ESUB;
+      return EXIT_FAILURE;
     }
     /* check that the single file SFT is the same as the single SFTs */
     const UINT4 numSingleSFTs = 3;
@@ -333,7 +252,7 @@ int main(int argc, char *argv[])
     const CHAR *concatSFT = "H-3_H1_60SFT_test_concat-000012345-302.sft";
     if ( ( fpConcat = fopen(concatSFT, "rb" ) ) == NULL ) {
       LALPrintError ( "\n Cound not open SFT '%s'!\n\n", concatSFT);
-      return SFTFILEIOTESTC_ESUB;
+      return EXIT_FAILURE;
     }
     /* do loop while concat. SFT has data */
     while (!feof(fpConcat)) {
@@ -341,7 +260,7 @@ int main(int argc, char *argv[])
       concat = fgetc(fpConcat);
       if ( ferror(fpConcat) ) {
 	LALPrintError ( "\n IO error reading '%s'!\n\n", concatSFT);
-	return SFTFILEIOTESTC_ESUB;
+	return EXIT_FAILURE;
       }
       /* get character from single SFT */
       while (1) {
@@ -353,7 +272,7 @@ int main(int argc, char *argv[])
 	  /* try to open single SFT */
 	  if ( ( fpSingle = fopen(singleSFTs[i], "rb" ) ) == NULL ) {
 	    LALPrintError ( "\n Cound not open SFT '%s'!\n\n", singleSFTs[i]);
-	    return SFTFILEIOTESTC_ESUB;
+	    return EXIT_FAILURE;
 	  }
 	  currSingleSFT = singleSFTs[i];
 	}
@@ -361,7 +280,7 @@ int main(int argc, char *argv[])
 	single = fgetc(fpSingle);
 	if ( ferror(fpSingle) ) {
 	  LALPrintError ( "\n IO error reading '%s'!\n\n", singleSFTs[i]);
-	  return SFTFILEIOTESTC_ESUB;
+	  return EXIT_FAILURE;
 	}
 	/* if single SFT is out of data, close it (open next one at beginning of loop) */
 	if (feof(fpSingle)) {
@@ -377,16 +296,16 @@ int main(int argc, char *argv[])
       if ( concat != single ) {
 	LALPrintError ( "\n Comparison failed between '%s'(last char = %i) and '%s'(last char = %i)!!\n\n",
 			concatSFT, concat, currSingleSFT, single );
-	return SFTFILEIOTESTC_ESFTDIFF;
+	return EXIT_FAILURE;
       }
     }
     fclose(fpConcat);
     printf( "*** Comparing was successful!!! ***\n");
   }
 
-  /* write v2-SFt as a v1-SFT to disk (correct normalization) */
-  multsft_vect->data[0]->data[0].epoch.gpsSeconds += 60;	/* shift start-time so they don't look like segmented SFTs! */
-  SHOULD_WORK ( LALWrite_v2SFT_to_v1file( &status, &(multsft_vect->data[0]->data[0]), "outputsftv2_v1.sft"), &status );
+  /* write v2-SFT again */
+  multsft_vect->data[0]->data[0].epoch.gpsSeconds += 60;       /* shift start-time so they don't look like segmented SFTs! */
+  XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(multsft_vect->data[0]->data[0]), "outputsftv2_r2.sft", "A v2-SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroySFTVector ( sft_vect );
   sft_vect = NULL;
@@ -395,63 +314,43 @@ int main(int argc, char *argv[])
   XLALDestroyMultiSFTVector ( multsft_vect2 );
   multsft_vect2 = NULL;
 
-  /* ----- read the previous two SFTs back */
-  SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", NULL ), &status );
-  /* need to set proper detector! */
+  /* ----- read the previous SFTs back */
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( "outputsftv2_r*.sft", NULL ) ) != NULL, XLAL_EFUNC );
+  XLALDestroySFTCatalog(catalog);
   constraints.detector = detector;
-  SUB ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", &constraints ), &status);
-  SUB ( LALLoadSFTs ( &status, &sft_vect, catalog, -1, -1 ), &status );
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( "outputsftv2_r*.sft", &constraints ) ) != NULL, XLAL_EFUNC);
+  XLAL_CHECK_MAIN ( ( sft_vect = XLALLoadSFTs ( catalog, -1, -1 ) ) != NULL, XLAL_EFUNC );
 
   if ( sft_vect->length != 2 )
     {
-      if ( lalDebugLevel ) XLALPrintError ("\nFailed to read back in 'outputsftv2_*.sft'\n\n");
-      return SFTFILEIOTESTC_ESUB;
+      if ( lalDebugLevel ) XLALPrintError ("\nFailed to read back in 'outputsftv2_r*.sft'\n\n");
+      return EXIT_FAILURE;
     }
 
   sft_vect2 = XLALLoadSFTs ( catalog, -1, -1 );
   if (!sft_vect2)
     {
       XLALPrintError ( "\nXLALLoadSFTs() call failed (where it should have succeeded)!\n\n");
-      return SFTFILEIOTESTC_ESUB;
+      return EXIT_FAILURE;
     }
 
   /* compare the SFT vectors just read */
   if(CompareSFTVectors(sft_vect, sft_vect2))
-    return SFTFILEIOTESTC_ESUB;
+    return EXIT_FAILURE;
 
-  /* the data of 'outputsftv2_v2.sft' and 'outputsftv2_v1.sft' should agree, as the normalization
-   * should be corrected again when reading-in
-   */
-  {
-    UINT4 i;
-    UINT4 numBins = sft_vect->data[0].data->length;
-    for ( i=0; i < numBins; i++)
-      {
-	COMPLEX8 *data1 = &(sft_vect->data[0].data->data[i]);
-	COMPLEX8 *data2 = &(sft_vect->data[1].data->data[i]);
-
-	if ( (crealf(*data1) != crealf(*data2)) || (cimagf(*data1) != cimagf(*data2)) )
-	  {
-	    XLALPrintError ("\nv1- and v2- SFT differ after writing/reading\n\n");
-	    return SFTFILEIOTESTC_ESFTDIFF;
-	  }
-      } /* for i < numBins */
-  }
   XLALDestroySFTVector ( sft_vect2 );
   sft_vect2 = NULL;
   XLALDestroySFTVector ( sft_vect );
   sft_vect = NULL;
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
-
-  /* `----- v1 SFT writing */
+  XLALDestroySFTCatalog(catalog);
 
   /* read v1-SFTs: 'inputsft.0' and 'inputsft.1' (one is big-endian, the other little-endian!) */
-  SUB ( LALSFTdataFind (&status, &catalog, TEST_DATA_DIR "inputsft.?", &constraints ), &status );
-  SUB ( LALLoadSFTs ( &status, &sft_vect, catalog, fMin, fMax ), &status );
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "inputsft.?", &constraints ) ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( ( sft_vect = XLALLoadSFTs ( catalog, fMin, fMax ) ) != NULL, XLAL_EFUNC );
   if ( sft_vect->length != 2 )
     {
       if ( lalDebugLevel ) XLALPrintError ("\nFailed to read in v1-SFTs 'inputsft.0' and 'inputsft.1'\n\n");
-      return SFTFILEIOTESTC_ESUB;
+      return EXIT_FAILURE;
     }
 
   /* read with XLALLoadSFTs() */
@@ -459,61 +358,51 @@ int main(int argc, char *argv[])
   if (!sft_vect2)
     {
       XLALPrintError ( "\nXLALLoadSFTs() call failed (where it should have succeeded)!\n\n");
-      return SFTFILEIOTESTC_ESUB;
+      return EXIT_FAILURE;
     }
 
   /* compare the SFT vectors just read */
   if(CompareSFTVectors(sft_vect, sft_vect2))
-    return SFTFILEIOTESTC_ESUB;
-
-  /* write v1-SFT to disk */
-  SUB ( LALWriteSFTfile (&status, &(sft_vect->data[0]), "outputsft_v1.sft"), &status);
+    return EXIT_FAILURE;
 
   /* try to write this v1-SFTs as v2: should fail without detector-info ! */
   strncpy( sft_vect->data[0].name, "??", 2 );
-  SHOULD_FAIL (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );
+  XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!") != XLAL_SUCCESS, XLAL_EFUNC ); XLALClearErrno();
 
   /* put detector there */
   strcpy ( sft_vect->data[0].name, "H1" );
-  SHOULD_WORK (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );
+  XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroySFTVector ( sft_vect2 );
   sft_vect2 = NULL;
   XLALDestroySFTVector ( sft_vect );
   sft_vect = NULL;
-  SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
+  XLALDestroySFTCatalog(catalog);
 
   /* ---------- test timestamps-reading functions by comparing LAL- and XLAL-versions against each other ---------- */
   {
 #define TS_FNAME "testTimestamps.dat"
 #define TS_FNAME_NEW "testTimestampsNew.dat"
-    LIGOTimeGPSVector *ts1 = NULL, *ts2 = NULL, *ts3 = NULL;
+    LIGOTimeGPSVector *ts2 = NULL, *ts3 = NULL;
 
-    /* ----- load timestamps with deprecated LAL function  */
-    SUB ( LALReadTimestampsFile ( &status, &ts1, TEST_DATA_DIR TS_FNAME ), &status );
     /* ----- load timestamps w new XLAL function */
     XLAL_CHECK_MAIN ( (ts2 = XLALReadTimestampsFile ( TEST_DATA_DIR TS_FNAME )) != NULL, XLAL_EFUNC );
     XLAL_CHECK_MAIN ( (ts3 = XLALReadTimestampsFile ( TEST_DATA_DIR TS_FNAME_NEW )) != NULL, XLAL_EFUNC );
 
     /* ----- compare the 3 */
-    XLAL_CHECK_MAIN ( ts1->length == ts2->length, XLAL_EFAILED, "Read timestamps-lists differ in length %d != %d\n", ts1->length, ts2->length );
     XLAL_CHECK_MAIN ( ts2->length == ts3->length, XLAL_EFAILED, "Read timestamps-lists differ in length %d != %d\n", ts2->length, ts3->length );
 
-    XLAL_CHECK_MAIN ( ts1->deltaT == ts2->deltaT, XLAL_EFAILED, "Read timestamps-lists differ in deltaT %g != %g\n", ts1->deltaT, ts2->deltaT );
     XLAL_CHECK_MAIN ( ts2->deltaT == ts3->deltaT, XLAL_EFAILED, "Read timestamps-lists differ in deltaT %g != %g\n", ts2->deltaT, ts3->deltaT );
 
-    UINT4 numTS = ts1->length;
+    UINT4 numTS = ts2->length;
     char buf1[256], buf2[256];
     for ( UINT4 i = 0; i < numTS; i ++ )
       {
-        XLAL_CHECK_MAIN ( XLALGPSDiff( &ts1->data[i], &ts2->data[i]) == 0, XLAL_EFAILED,
-                          "Timestamps-lists differ in entry %" LAL_UINT4_FORMAT ": %s != %s\n", i + 1, XLALGPSToStr ( buf1, &ts1->data[i] ), XLALGPSToStr ( buf2, &ts2->data[i] ) );
         XLAL_CHECK_MAIN ( XLALGPSDiff( &ts2->data[i], &ts3->data[i]) == 0, XLAL_EFAILED,
                           "Timestamps-lists differ in entry %" LAL_UINT4_FORMAT ": %s != %s\n", i + 1, XLALGPSToStr ( buf1, &ts2->data[i] ), XLALGPSToStr ( buf2, &ts3->data[i] ) );
       } /* for i < numTS */
 
     /* free mem */
-    XLALDestroyTimestampVector ( ts1 );
     XLALDestroyTimestampVector ( ts2 );
     XLALDestroyTimestampVector ( ts3 );
   }
@@ -526,6 +415,6 @@ int main(int argc, char *argv[])
   XLALPrintError ("\n--------------------------------------------------------------------------------\n");
 
 
-  return XLAL_SUCCESS;
+  return EXIT_SUCCESS;
 }
 /** \endcond */

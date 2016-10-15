@@ -537,7 +537,7 @@ int main(int argc, char *argv[]){
         }
         
         /* get sft catalog */
-        LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftData, &constraints), &status);
+        XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( uvar_sftData, &constraints) ) != NULL, XLAL_EFUNC);
         if ( (catalog == NULL) || (catalog->length == 0) ) {
             LogPrintf (LOG_CRITICAL,"Unable to match any SFTs with pattern '%s'\n", uvar_sftData );
             exit(1);
@@ -565,7 +565,7 @@ int main(int argc, char *argv[]){
         f_max = uvar_f0 + uvar_freqBand + doppWings + (uvar_blocksRngMed + uvar_nfSizeCylinder) * deltaF;
         
         /* read the sfts */
-        LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, catalog, f_min, f_max), &status);
+        XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadMultiSFTs ( catalog, f_min, f_max) ) != NULL, XLAL_EFUNC);
         numifo = inputSFTs->length;
         
         /* find number of sfts */
@@ -637,7 +637,7 @@ int main(int argc, char *argv[]){
         } /* end cleaning */
         
         
-        LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
+        XLALDestroySFTCatalog(catalog );
         
     } /* end of sft reading block */
     LogPrintfVerbatim (LOG_NORMAL, "done\n");

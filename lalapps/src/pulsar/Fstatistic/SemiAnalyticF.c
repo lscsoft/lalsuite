@@ -293,7 +293,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   /* read or generate SFT timestamps */
   if ( XLALUserVarWasSet(&(CLA->timestamps)) ) 
     { 
-      TRY ( LALReadTimestampsFile (status->statusPtr, &timestamps, CLA->timestamps ), status );
+      XLAL_CHECK_LAL ( status, ( timestamps = XLALReadTimestampsFile ( CLA->timestamps ) ) != NULL, XLAL_EFUNC );
       if ( (CLA->nTsft > 0) && ( (UINT4)CLA->nTsft < timestamps->length ) )	/* truncate if required */
 	timestamps->length = CLA->nTsft;
       

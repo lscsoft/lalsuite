@@ -46,7 +46,6 @@ pkginclude_HEADERS = \
 	PulsarTimes.h \
 	ReadPulsarParFile.h \
 	SFTClean.h \
-	SFTfileIO-LAL.h \
 	SFTfileIO.h \
 	SFTutils.h \
 	SSBtimes.h \
@@ -166,7 +165,6 @@ EXTRA_liblalpulsar_la_SOURCES = \
 	ComputeFstat_DemodHL_SSE.i \
 	ComputeFstat_Demod_ComputeFaFb.c \
 	ComputeFstat_internal.h \
-	SFTfileIO-LAL.c \
 	SinCosLUT.i \
 	$(END_OF_LIST)
 

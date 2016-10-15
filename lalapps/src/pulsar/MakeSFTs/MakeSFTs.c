@@ -2146,8 +2146,7 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   }  
 
   /* write the SFT */
-  LALWriteSFT2file(&status, oneSFT, sftname, CLA.commentField);
-  TESTSTATUS( &status );
+  XLAL_CHECK( XLALWriteSFT2file(oneSFT, sftname, CLA.commentField) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* 01/09/06 gam; sftname is temporary; move to sftnameFinal. */
   if(CLA.makeTmpFile) {  

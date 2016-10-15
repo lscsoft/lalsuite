@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
     
     /* Load the catalog */
     LogPrintf(LOG_DEBUG, "Loading SFT catalog ... ");
-    LAL_CALL(LALSFTdataFind(&status, &catalog, sft_pattern, &constraints), &status);
+    XLAL_CHECK_MAIN(( catalog = XLALSFTdataFind( sft_pattern, &constraints) ) != NULL, XLAL_EFUNC);
     if (!catalog || catalog->length == 0) {
       XLALPrintError("Couldn't find SFTs matching '%s'\n", sft_pattern);
       return EXIT_FAILURE;
@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
     
     /* Load the SFTs */
     LogPrintf(LOG_DEBUG, "Loading SFTs (%f to %f) ... ", f_min, f_max);
-    LAL_CALL(LALLoadMultiSFTs(&status, &sfts, catalog, f_min, f_max), &status);
+    XLAL_CHECK_MAIN(( sfts = XLALLoadMultiSFTs( catalog, f_min, f_max) ) != NULL, XLAL_EFUNC);
     LogPrintfVerbatim(LOG_DEBUG, "done\n");
   }
   
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
   LogPrintfVerbatim(LOG_DEBUG, "done\n");
 
   /* Cleanup */
-  LAL_CALL(LALDestroySFTCatalog(&status, &catalog), &status);
+  XLALDestroySFTCatalog(catalog);
   XLALDestroyMultiSFTVector( sfts);
   XLALFree(ephemeris.ephiles.earthEphemeris);
   XLALFree(ephemeris.ephiles.sunEphemeris);

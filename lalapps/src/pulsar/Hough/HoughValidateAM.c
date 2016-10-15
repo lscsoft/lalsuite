@@ -30,6 +30,7 @@
 #include <lal/ComputeSky.h>
 #include <gsl/gsl_cdf.h>
 
+#include "SFTfileIOv1.h"
 
 /* defaults */
 #define EARTHEPHEMERIS ".earth00-19-DE405.dat"

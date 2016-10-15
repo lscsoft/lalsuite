@@ -69,6 +69,9 @@
 /***************************************************/
 #define SQ(x) ( (x) * (x) )
 
+#define TRUE    1
+#define FALSE   0
+
 /*----------------------------------------------------------------------*/
 /** configuration-variables derived from user-variables */
 typedef struct
@@ -218,6 +221,10 @@ int XLALFreeMem ( ConfigVars_t *cfg );
 
 BOOLEAN is_directory ( const CHAR *fname );
 int XLALIsValidDescriptionField ( const char *desc );
+
+static BOOLEAN is_valid_detector (const char *channel);
+void LALWriteSFTfile (LALStatus *, const SFTtype *sft, const CHAR *outfname);
+void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fname);
 
 /*----------------------------------------------------------------------
  * main function
@@ -1501,3 +1508,212 @@ is_directory ( const CHAR *fname )
     return 1;
 
 } /* is_directory() */
+
+/*================================================================================
+ * OBSOLETE v1-only API [DEPRECATED!]
+ *================================================================================*/
+
+#define SFTFILEIO_ENULL         1
+#define SFTFILEIO_EFILE         2
+#define SFTFILEIO_EVAL          5
+#define SFTFILEIO_EMEM          14
+
+#define SFTFILEIO_MSGENULL      "Null pointer"
+#define SFTFILEIO_MSGEFILE      "Error in file-IO"
+#define SFTFILEIO_MSGEVAL       "Invalid value"
+#define SFTFILEIO_MSGEMEM       "Out of memory"
+
+/* check that channel-prefix defines a valid 'known' detector.
+ * This is just a convenience wrapper to XLALGetCWDetectorPrefix(), which defines all valid 'CW detectors'
+ *
+ * returns TRUE if valid, FALSE otherwise */
+static BOOLEAN
+is_valid_detector (const char *channel)
+{
+
+  char *prefix = XLALGetCWDetectorPrefix ( NULL, channel );
+  if ( prefix == NULL ) {
+    return FALSE;
+  }
+  XLALFree ( prefix );
+  return TRUE;
+
+} /* is_valid_detector() */
+
+/**
+ * [OBSOLETE] Write a *v1-normalized* (i.e. raw DFT) SFTtype to a SFT-v1 file.
+ *
+ * \note:only SFT-spec v1.0 is supported, and the SFTtype must follow the
+ * *obsolete* v1-normalization. => Use LALWriteSFT2file() to write v2 SFTs !
+ *
+ */
+void
+LALWriteSFTfile (LALStatus  *status,			/**< pointer to LALStatus structure */
+		 const SFTtype *sft,		/**< SFT to write to disk */
+		 const CHAR *outfname)		/**< filename */
+{
+
+  /**
+   * [DEPRECATED] This structure contains the header-info contained in an SFT-file of specification
+   * version v1.0.
+   */
+  typedef struct tagSFTHeader {
+    REAL8  version;		/**< SFT version-number (currently only 1.0 allowed )*/
+    INT4   gpsSeconds;		/**< gps start-time (seconds)*/
+    INT4   gpsNanoSeconds;	/**< gps start-time (nanoseconds) */
+    REAL8  timeBase;		/**< length of data-stretch in seconds */
+    INT4   fminBinIndex;		/**< first frequency-index contained in SFT */
+    INT4   length;                /**< number of frequency bins */
+  } SFTHeader;
+
+  FILE  *fp = NULL;
+  COMPLEX8  *inData;
+  INT4  i;
+  UINT4 datalen;
+  REAL4  *rawdata;
+  CHAR *rawheader, *ptr;
+  SFTHeader header;
+
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
+  /*   Make sure the arguments are not NULL and perform basic checks*/
+  ASSERT (sft,   status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+  ASSERT (sft->data,  status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (sft->deltaF > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (outfname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+
+  /* fill in the header information */
+  header.version = 1.0;
+  header.gpsSeconds = sft->epoch.gpsSeconds;
+  header.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
+  header.timeBase = 1.0 / sft->deltaF;
+  header.fminBinIndex = lround (sft->f0 / sft->deltaF );
+  header.length = sft->data->length;
+
+  /* build raw header for writing to disk */
+  rawheader = LALCalloc (1, sizeof(SFTHeader) );
+  if (rawheader == NULL) {
+    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+  }
+  ptr = rawheader;
+  memcpy( ptr, &header.version, sizeof(REAL8) );
+  ptr += sizeof (REAL8);
+  memcpy( ptr, &header.gpsSeconds, sizeof(INT4) );
+  ptr += sizeof (INT4);
+  memcpy( ptr, &header.gpsNanoSeconds, sizeof(INT4) );
+  ptr += sizeof (INT4);
+  memcpy( ptr, &header.timeBase, sizeof(REAL8) );
+  ptr += sizeof (REAL8);
+  memcpy( ptr, &header.fminBinIndex, sizeof(INT4) );
+  ptr += sizeof (INT4);
+  memcpy( ptr, &header.length, sizeof(INT4) );
+
+  /* write data into a contiguous REAL4-array */
+  datalen = 2 * header.length * sizeof(REAL4);	/* amount of bytes for SFT-data */
+
+  rawdata = LALCalloc (1, datalen);
+  if (rawdata == NULL) {
+    LALFree (rawheader);
+    ABORT (status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM);
+  }
+
+  inData = sft->data->data;
+  for ( i = 0; i < header.length; i++)
+    {
+      rawdata[2 * i]     = crealf(inData[i]);
+      rawdata[2 * i + 1] = cimagf(inData[i]);
+    } /* for i < length */
+
+
+  /* open the file for writing */
+  fp = LALFopen(outfname, "wb");
+  if (fp == NULL) {
+    LALFree (rawheader);
+    LALFree (rawdata);
+    XLALPrintError ("\nFailed to open file '%s' for writing!\n\n", outfname );
+    ABORT (status, SFTFILEIO_EFILE,  SFTFILEIO_MSGEFILE);
+  }
+
+  /* write the header*/
+  if( fwrite( rawheader, sizeof(SFTHeader), 1, fp) != 1) {
+    LALFree (rawheader);
+    LALFree (rawdata);
+    fclose (fp);
+    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
+  }
+
+  /* write the data */
+  if (fwrite( rawdata, datalen, 1, fp) != 1) {
+    LALFree (rawheader);
+    LALFree (rawdata);
+    fclose (fp);
+    ABORT (status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE);
+  }
+
+  /* done */
+  fclose(fp);
+  LALFree (rawheader);
+  LALFree (rawdata);
+
+
+  DETATCHSTATUSPTR (status);
+  RETURN (status);
+
+} /* WriteSFTtoFile() */
+
+/**
+ * For backwards-compatibility: write a *v2-normalized* (ie dt x DFT) SFTtype
+ * to a v1-SFT file.
+ *
+ * NOTE: the only difference to WriteSFTfile() is that the data-normalization
+ * is changed back to v1-type 'DFT', by dividing the dt corresponding to the
+ * frequency-band contained in the SFTtype.
+ */
+void
+LALWrite_v2SFT_to_v1file (LALStatus *status,			/**< pointer to LALStatus structure */
+			  const SFTtype *sft,		/**< SFT to write to disk */
+			  const CHAR *fname)		/**< filename */
+{
+  UINT4 i, numBins;
+  REAL8 Band, dt;
+  SFTtype v1SFT;
+
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
+  /*   Make sure the arguments are not NULL and perform basic checks*/
+  ASSERT (sft,   status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+  ASSERT (sft->data,  status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (sft->deltaF > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (sft->f0 >= 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT ( (sft->epoch.gpsSeconds >= 0) && (sft->epoch.gpsNanoSeconds >= 0), status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT ( sft->epoch.gpsNanoSeconds < 1000000000, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+  ASSERT (sft->data->length > 0, status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL);
+
+  ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL);
+
+  if ( !is_valid_detector(sft->name) ) {
+    ABORT ( status, SFTFILEIO_EVAL, SFTFILEIO_MSGEVAL );
+  }
+
+  numBins = sft->data->length;
+  Band = sft->deltaF * numBins ;
+  dt = 1.0 / (2.0 * Band);
+
+  v1SFT.data = NULL;
+  XLAL_CHECK_LAL ( status, XLALCopySFT ( &v1SFT, sft ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  for ( i=0; i < numBins; i ++ )
+    {
+      v1SFT.data->data[i] = crectf( (REAL4) ( (REAL8)crealf(v1SFT.data->data[i]) / dt ), (REAL4) ( (REAL8)cimagf(v1SFT.data->data[i]) / dt ) );
+    }
+
+  TRY ( LALWriteSFTfile (status->statusPtr, &v1SFT, fname ), status );
+
+  XLALDestroyCOMPLEX8Vector ( v1SFT.data );
+
+  DETATCHSTATUSPTR ( status );
+  RETURN ( status );
+
+} /* LALWrite_v2SFT_to_v1file() */

@@ -1285,7 +1285,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   REAL8 endTime_freqLo, endTime_freqHi;
   REAL8 freqLo, freqHi;
 
-  INT4 sft_check_result = 0;
+  BOOLEAN crc_check;
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -1293,12 +1293,12 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   /* get sft catalog */
   constraints.minStartTime = &(in->minStartTimeGPS);
   constraints.maxStartTime = &(in->maxStartTimeGPS);
-  TRY( LALSFTdataFind( status->statusPtr, &catalog, in->sftbasename, &constraints), status);
+  XLAL_CHECK_LAL( status, ( catalog = XLALSFTdataFind( in->sftbasename, &constraints) ) != NULL, XLAL_EFUNC);
 
   /* check CRC sums of SFTs */
-  TRY ( LALCheckSFTCatalog ( status->statusPtr, &sft_check_result, catalog ), status );
-  if (sft_check_result) {
-    LogPrintf(LOG_CRITICAL,"SFT validity check failed (%d)\n", sft_check_result);
+  XLAL_CHECK_LAL ( status, XLALCheckCRCSFTCatalog ( &crc_check, catalog ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if (!crc_check) {
+    LogPrintf(LOG_CRITICAL,"SFT validity check failed\n");
     ABORT ( status, HIERARCHICALSEARCH_ESFT, HIERARCHICALSEARCH_MSGESFT );
   }
 
@@ -1480,7 +1480,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   /*   }  */
 
   /* we don't need the original catalog anymore*/
-  TRY( LALDestroySFTCatalog( status->statusPtr, &catalog ), status);
+  XLALDestroySFTCatalog(catalog );
 
   /* free catalog sequence */
   for (k = 0; k < in->nStacks; k++)
