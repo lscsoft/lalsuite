@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
       numSFTs->data[X] = inputData.multiSFTs->data[X]->length;		/* number of sfts for IFO X */
     }
 
-    LAL_CALL ( LALCreateMultiSFTVector ( &status, &SSBmultiSFTs, inputData.numBins, numSFTs ), &status );
+    XLAL_CHECK_MAIN ( ( SSBmultiSFTs = XLALCreateMultiSFTVector ( inputData.numBins, numSFTs ) ) != NULL, XLAL_EFUNC );
 
     XLALDestroyUINT4Vector ( numSFTs );
 
@@ -208,9 +208,9 @@ int main(int argc, char *argv[])
   LAL_CALL (LALDestroyUserVars (&status), &status);
 
   LALFree ( inputData.dataSummary );
-  LAL_CALL ( LALDestroyMultiSFTVector (&status, &inputData.multiSFTs), &status );
-  LAL_CALL ( LALDestroySFTtype ( &status, &outputLFT ), &status );
-  LAL_CALL ( LALDestroyMultiSFTVector (&status, &SSBmultiSFTs), &status);
+  XLALDestroyMultiSFTVector ( inputData.multiSFTs);
+  XLALDestroySFT ( outputLFT );
+  XLALDestroyMultiSFTVector ( SSBmultiSFTs);
 
   /* did we forget anything ? */
   LALCheckMemoryLeaks();

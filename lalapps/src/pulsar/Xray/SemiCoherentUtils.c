@@ -1293,26 +1293,6 @@ int XLALComputeBinaryGridParams(GridParameters **binarygridparams,  /**< [out] t
 
 }
 
-/** Append the given SFTtype to the SFT-vector (no SFT-specific checks are done!) */
-int XLALAppendSFT2Vector (SFTVector *vect,		/**< destinatino SFTVector to append to */
-                          const SFTtype *sft            /**< the SFT to append */
-                          )
-{
-  UINT4 oldlen = vect->length;
-
-  if ( (vect->data = LALRealloc ( vect->data, (oldlen + 1)*sizeof( *vect->data ) )) == NULL ) {
-     LogPrintf(LOG_CRITICAL,"%s: Error, unable to allocate memory\n",__func__);
-     XLAL_ERROR(XLAL_EINVAL);
-  }
-  memset ( &(vect->data[oldlen]), 0, sizeof( vect->data[0] ) );
-  vect->length ++;
-
-  XLALCopySFT(&vect->data[oldlen], sft );
-
-  return XLAL_SUCCESS;
-
-} /* XLALAppendSFT2Vector() */
-
 /** Convert an input binary file into an SFTVector
  *
  *

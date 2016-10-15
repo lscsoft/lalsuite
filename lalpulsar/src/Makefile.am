@@ -48,7 +48,6 @@ pkginclude_HEADERS = \
 	SFTClean.h \
 	SFTfileIO-LAL.h \
 	SFTfileIO.h \
-	SFTutils-LAL.h \
 	SFTutils.h \
 	SSBtimes.h \
 	SimulatePulsarSignal.h \
@@ -168,7 +167,6 @@ EXTRA_liblalpulsar_la_SOURCES = \
 	ComputeFstat_Demod_ComputeFaFb.c \
 	ComputeFstat_internal.h \
 	SFTfileIO-LAL.c \
-	SFTutils-LAL.c \
 	SinCosLUT.i \
 	$(END_OF_LIST)
 

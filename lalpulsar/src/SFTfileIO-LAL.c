@@ -179,7 +179,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
       /* allocate space for the frequency bins */
       sftbins = XLALCreateCOMPLEX8Vector(lastbin-firstbin+1);
       if (!sftbins) {
-	LALDestroySFTVector (status->statusPtr, &sfts);
+	XLALDestroySFTVector ( sfts);
 	ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
       }
       /* add a new SFT to the output SFTVector */
@@ -205,7 +205,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	    XLALPrintError ( "Frequency spacing dosn't match in SFT '%s (%f %f)\n",
 			    XLALshowSFTLocator ( catalog->data[catFile].locator ),
 			    deltaF, catalog->data[catFile].header.deltaF );
-	    LALDestroySFTVector (status->statusPtr, &sfts);
+	    XLALDestroySFTVector ( sfts);
 	    ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	  }
 
@@ -228,7 +228,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	      XLALPrintError ( "Starting frequency %f not contained in SFT '%s'\n"
 			      "   (or sequence broken at this last file)\n",
 			      fMin, XLALshowSFTLocator ( catalog->data[catFile].locator ) );
-	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      XLALDestroySFTVector ( sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
 
@@ -236,7 +236,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	    if ( (fp = fopen_SFTLocator ( catalog->data[catFile].locator )) == NULL ) {
 	      XLALPrintError ( "Failed to open locator '%s'\n",
 			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
-	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      XLALDestroySFTVector ( sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
 	    lal_read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, nextbin, lastbin, fp);
@@ -244,13 +244,14 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	    if ( status->statusPtr->statusCode ) {
 	      XLALPrintError ( "Failed to read from locator '%s'\n",
 			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
-	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      XLALDestroySFTVector ( sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
 	    /* insert read bins into the sft vector to retun */
 	    for(i=0; i < binsread; i++)
 	      sftbins->data[nextbin - firstbin + i] = onesft->data->data[i];
-	    LALDestroySFTtype(status->statusPtr,&onesft);
+	    XLALDestroySFT(onesft);
+	    onesft = NULL;
 
 	    /* skip remaining catalog files with same timestamp (must have higher frequency) */
 	    while ((catFile < catalog->length) &&
@@ -266,7 +267,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	    if ( (fp = fopen_SFTLocator ( catalog->data[catFile].locator )) == NULL ) {
 	      XLALPrintError ( "Failed to open locator '%s'\n",
 			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
-	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      XLALDestroySFTVector ( sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
 	    lal_read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, firstbin, lastbin, fp);
@@ -274,13 +275,14 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	    if ( status->statusPtr->statusCode ) {
 	      XLALPrintError ( "Failed to read from locator '%s'\n",
 			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
-	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      XLALDestroySFTVector ( sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
 	    /* insert read bins into the sft vector to retun */
 	    for(i=0; i < binsread; i++)
 	      sftbins->data[i] = onesft->data->data[i];
-	    LALDestroySFTtype(status->statusPtr,&onesft);
+	    XLALDestroySFT(onesft);
+	    onesft = NULL;
 
 	    /* read from nextbin on in next file */
 	    nextbin += binsread;
@@ -294,7 +296,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	    if ( (fp = fopen_SFTLocator ( catalog->data[catFile].locator )) == NULL ) {
 	      XLALPrintError ( "Failed to open locator '%s'\n",
 			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
-	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      XLALDestroySFTVector ( sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
 	    lal_read_sft_bins_from_fp (status->statusPtr, &onesft, &binsread, nextbin, lastbin, fp);
@@ -303,13 +305,14 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
 	    if ( status->statusPtr->statusCode ) {
 	      XLALPrintError ( "Failed to read from locator '%s'\n",
 			      XLALshowSFTLocator ( catalog->data[catFile].locator ) );
-	      LALDestroySFTVector (status->statusPtr, &sfts);
+	      XLALDestroySFTVector ( sfts);
 	      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
 	    }
 	    /* insert read bins into the sft vector to retun */
 	    for(i=0; i < binsread; i++)
 	      sftbins->data[nextbin - firstbin + i] = onesft->data->data[i];
-	    LALDestroySFTtype(status->statusPtr,&onesft);
+	    XLALDestroySFT(onesft);
+	    onesft = NULL;
 
 	    /* read from nextbin on in next file */
 	    nextbin += binsread;
@@ -521,7 +524,7 @@ void LALLoadMultiSFTs ( LALStatus *status,		/**< pointer to LALStatus structure 
     {
       /* free sft vectors created previously in loop */
       for ( i = 0; (INT4)i < (INT4)j-1; i++)
-	LALDestroySFTVector ( status->statusPtr, multSFTVec->data + i);
+	XLALDestroySFTVector ( multSFTVec->data[i] );
       LALFree(multSFTVec->data);
       LALFree(multSFTVec);
 
@@ -654,7 +657,7 @@ LALWrite_v2SFT_to_v1file (LALStatus *status,			/**< pointer to LALStatus structu
   dt = 1.0 / (2.0 * Band);
 
   v1SFT.data = NULL;
-  TRY ( LALCopySFT (status->statusPtr, &v1SFT, sft ), status );
+  XLAL_CHECK_LAL ( status, XLALCopySFT ( &v1SFT, sft ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   for ( i=0; i < numBins; i ++ )
     {
@@ -867,7 +870,7 @@ LALSFTtimestampsFromCatalog (LALStatus *status,			/**< pointer to LALStatus stru
   Tsft = 1.0 / catalog->data[0].header.deltaF;
 
   /* large enough for all timestamps, but we might have fewer than that */
-  TRY ( LALCreateTimestampVector ( status->statusPtr, &ret, numSFTs ), status );
+  XLAL_CHECK_LAL ( status, ( ret = XLALCreateTimestampVector ( numSFTs ) ) != NULL, XLAL_EFUNC );
 
   numTS = 0;
   for ( i=0; i < numSFTs; i ++ )
@@ -1340,13 +1343,13 @@ LALReadSFTfile (LALStatus *status,			/**< pointer to LALStatus structure */
   readlen = (UINT4)(fmaxBinIndex - fminBinIndex) + 1;	/* number of bins to read */
 
   /* allocate the final SFT to be returned */
-  TRY ( LALCreateSFTtype (status->statusPtr, &outputSFT, readlen), status);
+  XLAL_CHECK_LAL ( status, ( outputSFT = XLALCreateSFT ( readlen) ) != NULL, XLAL_EFUNC);
 
 
   /* and read it, using the lower-level function: */
   LALReadSFTdata (status->statusPtr, outputSFT, fname, fminBinIndex);
   BEGINFAIL (status) {
-    LALDestroySFTtype (status->statusPtr, &outputSFT);
+    XLALDestroySFT ( outputSFT);
   } ENDFAIL (status);
 
 
@@ -1445,8 +1448,8 @@ LALReadSFTfiles (LALStatus *status,			/**< pointer to LALStatus structure */
       LALReadSFTfile (status->statusPtr, &oneSFT, fMin-fWing, fMax+fWing, fnames->data[i]);
       BEGINFAIL (status) {
 	XLALDestroyStringVector (fnames);
-	LALDestroySFTtype (status->statusPtr, &oneSFT);
-	if (out) LALDestroySFTVector (status->statusPtr, &out);
+	XLALDestroySFT ( oneSFT);
+	if (out) XLALDestroySFTVector ( out);
       } ENDFAIL (status);
 
       if ( !firstlen )
@@ -1455,19 +1458,19 @@ LALReadSFTfiles (LALStatus *status,			/**< pointer to LALStatus structure */
       if ( oneSFT->data->length != firstlen )
 	{
 	  XLALDestroyStringVector (fnames);
-	  LALDestroySFTtype (status->statusPtr, &oneSFT);
-	  LALDestroySFTVector (status->statusPtr, &out);
+	  XLALDestroySFT ( oneSFT);
+	  XLALDestroySFTVector ( out);
 	  ABORT (status, SFTFILEIO_EDIFFLENGTH, SFTFILEIO_MSGEDIFFLENGTH);
 	} /* if length(thisSFT) != common length */
 
-      LALAppendSFT2Vector ( status->statusPtr, out, oneSFT );
-      BEGINFAIL(status) {
+      if ( XLALAppendSFT2Vector ( out, oneSFT ) != XLAL_SUCCESS ) {
 	XLALDestroyStringVector (fnames);
-	LALDestroySFTtype (status->statusPtr, &oneSFT);
-	LALDestroySFTVector (status->statusPtr, &out);
-      } ENDFAIL(status);
+	XLALDestroySFT ( oneSFT);
+	XLALDestroySFTVector ( out);
+	ABORTXLAL( status );
+      }
 
-      LALDestroySFTtype (status->statusPtr, &oneSFT);
+      XLALDestroySFT ( oneSFT);
       oneSFT = NULL;	/* important for next call of LALReadSFTfile()! */
 
     } /* for i < numSFTs */
@@ -1622,12 +1625,12 @@ lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, U
   ASSERT ( sft, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
   ASSERT ( *sft == NULL, status, SFTFILEIO_ENONULL, SFTFILEIO_MSGENONULL );
 
-  TRY ( LALCreateSFTtype ( status->statusPtr, &ret, 0 ), status );
+  XLAL_CHECK_LAL ( status, ( ret = XLALCreateSFT ( 0 ) ) != NULL, XLAL_EFUNC );
 
   if ( read_sft_header_from_fp (fp, ret, &version, &crc64, &swapEndian, NULL, &numSFTbins ) != 0 )
     {
       XLALPrintError ("\nFailed to read SFT-header!\n\n");
-      LALDestroySFTtype ( status->statusPtr, &ret );
+      XLALDestroySFT ( ret );
       ABORT ( status, SFTFILEIO_EHEADER, SFTFILEIO_MSGEHEADER );
     }
 
@@ -1649,7 +1652,7 @@ lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, U
       if ( lalDebugLevel )
 	XLALPrintError ( "\nRequested bin is not contained in SFT! (%d < %d)\n\n",
 			firstBin2read, firstSFTbin );
-      LALDestroySFTtype ( status->statusPtr, &ret );
+      XLALDestroySFT ( ret );
       ABORT ( status, SFTFILEIO_EFREQBAND, SFTFILEIO_MSGEFREQBAND );
     }
   if ( lastBin2read > lastSFTbin )
@@ -1665,19 +1668,19 @@ lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, U
       if ( lalDebugLevel )
 	XLALPrintError ( "\nFailed to fseek() to first frequency-bin %d: %s\n\n",
 			firstBin2read, strerror(errno) );
-      LALDestroySFTtype ( status->statusPtr, &ret );
+      XLALDestroySFT ( ret );
       ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
     }
 
   if ( (ret->data = XLALCreateCOMPLEX8Vector ( numBins2read )) == NULL ) {
-    LALDestroySFTtype ( status->statusPtr, &ret );
+    XLALDestroySFT ( ret );
     ABORT ( status, SFTFILEIO_EMEM, SFTFILEIO_MSGEMEM );
   }
 
   if ( numBins2read != fread ( ret->data->data, 2*sizeof( REAL4 ), numBins2read, fp ) )
     {
       if (lalDebugLevel) XLALPrintError ("\nFailed to read %d bins from SFT!\n\n", numBins2read );
-      LALDestroySFTtype ( status->statusPtr, &ret );
+      XLALDestroySFT ( ret );
       ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
     }
 

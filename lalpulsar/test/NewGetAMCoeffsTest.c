@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
   SUB ( LALInitBarycenter(&status, &edat), &status);
 
   /* ----- get timestamps ----- */
-  SUB ( LALMakeTimestamps ( &status, &timestamps, startTime, duration, Tsft ), &status );
+  XLAL_CHECK_MAIN ( ( timestamps = XLALMakeTimestamps ( startTime, duration, Tsft, 0 ) ) != NULL, XLAL_EFUNC );
 
   /* ----- allocate memory for AM-coeffs ----- */
   AMold.a = XLALCreateREAL4Vector ( timestamps->length );

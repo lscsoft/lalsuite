@@ -139,6 +139,8 @@ void PrintHoughEvents (LALStatus *status, FILE *fpEvents, INT4 houghThreshold, H
 
 void PrintnStarFile (LALStatus *status, HoughSignificantEventVector *eventVec, CHAR *dirname, CHAR *basename);
 
+void ComputeNoiseWeights (LALStatus *status, REAL8Vector *weightV, const SFTVector *sftVect, INT4 blkSize, UINT4 excludePercentile);
+
 /***********************************************/
 
 int main(int argc, char *argv[]){
@@ -473,7 +475,7 @@ int main(int argc, char *argv[]){
 
     /* calculate sft noise weights if required by user */
     if (uvar_weighNoise ) {
-      LAL_CALL( LALComputeNoiseWeights( &status, &weightsNoise, inputSFTs, uvar_blocksRngMed, 0), &status); 
+      LAL_CALL( ComputeNoiseWeights( &status, &weightsNoise, inputSFTs, uvar_blocksRngMed, 0), &status); 
       LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsNoise), &status);
     }
 
@@ -517,7 +519,7 @@ int main(int argc, char *argv[]){
     } /* end loop over sfts */
 
     /* we are done with the sfts and ucharpeakgram now */
-    LAL_CALL (LALDestroySFTVector(&status, &inputSFTs), &status );
+    XLALDestroySFTVector( inputSFTs);
     LALFree(pg1.data);
 
   }/* end block for selecting peaks */
@@ -1053,7 +1055,7 @@ int main(int argc, char *argv[]){
   }
   LALFree(pgV.pg);
 
-  LAL_CALL(LALDestroyTimestampVector ( &status, &timeV), &status); 
+  XLALDestroyTimestampVector (timeV); 
   
   LALFree(timeDiffV.data);
 
@@ -1427,3 +1429,113 @@ void PrintnStarFile (LALStatus                   *status,
   /* normal exit */
   RETURN (status);
 }    
+
+
+/**
+ * Computes weight factors arising from SFTs with different noise
+ * floors -- it multiplies an existing weight vector
+ */
+void
+ComputeNoiseWeights  (LALStatus        *status,
+                          REAL8Vector      *weightV,
+                          const SFTVector  *sftVect,
+                          INT4             blkSize,
+                          UINT4            excludePercentile)
+{
+
+  UINT4 lengthVect, lengthSFT, lengthPSD, halfLengthPSD;
+  UINT4 j, excludeIndex;
+  SFTtype *sft;
+  REAL8FrequencySeries periodo;
+  REAL8Sequence mediansV, inputV;
+  LALRunningMedianPar rngMedPar;
+
+  /* --------------------------------------------- */
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+
+  /*   Make sure the arguments are not NULL: */
+  ASSERT (weightV, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (sftVect, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (blkSize > 0, status,  DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG);
+  ASSERT (weightV->data,status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (sftVect->data,status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+  ASSERT (excludePercentile <= 100, status, DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG);
+  /* -------------------------------------------   */
+
+  /* Make sure there is no size mismatch */
+  ASSERT (weightV->length == sftVect->length, status, DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG);
+  /* -------------------------------------------   */
+
+  /* Make sure there are elements to be computed*/
+  ASSERT (sftVect->length, status, DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG);
+
+
+  /* set various lengths */
+  lengthVect = sftVect->length;
+  lengthSFT = sftVect->data->data->length;
+  ASSERT( lengthSFT > 0, status,  DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG);
+  lengthPSD = lengthSFT - blkSize + 1;
+
+  /* make sure blksize is not too big */
+  ASSERT(lengthPSD > 0, status, DRIVEHOUGHCOLOR_EARG, DRIVEHOUGHCOLOR_MSGEARG);
+
+  halfLengthPSD = lengthPSD/2; /* integer division */
+
+  /* allocate memory for periodogram */
+  periodo.data = NULL;
+  periodo.data = (REAL8Sequence *)LALMalloc(sizeof(REAL8Sequence));
+  periodo.data->length = lengthSFT;
+  periodo.data->data = (REAL8 *)LALMalloc( lengthSFT * sizeof(REAL8));
+
+  /* allocate memory for vector of medians */
+  mediansV.length = lengthPSD;
+  mediansV.data = (REAL8 *)LALMalloc(lengthPSD * sizeof(REAL8));
+
+  /* rng med block size */
+  rngMedPar.blocksize = blkSize;
+
+  /* calculate index in psd medians vector from which to calculate mean */
+  excludeIndex =  (excludePercentile * halfLengthPSD) ; /* integer arithmetic */
+  excludeIndex /= 100; /* integer arithmetic */
+
+  /* loop over sfts and calculate weights */
+  for (j=0; j<lengthVect; j++) {
+    REAL8 sumMed = 0.0;
+    UINT4 k;
+
+    sft = sftVect->data + j;
+
+    /* calculate the periodogram */
+    TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
+
+    /* calculate the running median */
+    inputV.length = lengthSFT;
+    inputV.data = periodo.data->data;
+    TRY( LALDRunningMedian2(status->statusPtr, &mediansV, &inputV, rngMedPar), status);
+
+    /* now sort the mediansV.data vector and exclude the top and last percentiles */
+    gsl_sort(mediansV.data, 1, mediansV.length);
+
+    /* sum median excluding appropriate elements */
+    for (k = excludeIndex; k < lengthPSD - excludeIndex; k++) {
+      sumMed += mediansV.data[k];
+    }
+
+    /* weight is proportional to 1/sumMed */
+    weightV->data[j] /= sumMed;
+
+  } /* end of loop over sfts */
+
+  /* remember to normalize weights immediately after leaving this function */
+
+  /* free memory */
+  LALFree(mediansV.data);
+  LALFree(periodo.data->data);
+  LALFree(periodo.data);
+
+  DETATCHSTATUSPTR (status);
+   /* normal exit */
+  RETURN (status);
+
+} /* ComputeNoiseWeights() */

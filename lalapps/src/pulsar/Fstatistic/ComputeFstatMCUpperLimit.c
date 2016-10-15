@@ -281,17 +281,17 @@ int main(int argc, char *argv[]) {
   /* Normalise SFTs and compute noise weights */
   LogPrintf(LOG_DEBUG, "Normalising SFTs and computing noise weights ... ");
   LAL_CALL(LALNormalizeMultiSFTVect(&status, &rng_med, sfts, rng_med_win), &status);
-  LAL_CALL(LALComputeMultiNoiseWeights(&status, &noise_weights, rng_med, rng_med_win, 0), &status);
+  XLAL_CHECK_MAIN(( noise_weights = XLALComputeMultiNoiseWeights( rng_med, rng_med_win, 0) ) != NULL, XLAL_EFUNC);
   LogPrintfVerbatim(LOG_DEBUG, "done\n");
 
   /* Cleanup */
   LAL_CALL(LALDestroySFTCatalog(&status, &catalog), &status);
-  LAL_CALL(LALDestroyMultiSFTVector(&status, &sfts), &status);
+  XLALDestroyMultiSFTVector( sfts);
   XLALFree(ephemeris.ephiles.earthEphemeris);
   XLALFree(ephemeris.ephiles.sunEphemeris);
   LALFree(ephemeris.ephemE);
   LALFree(ephemeris.ephemS);
-  LAL_CALL(LALDestroyMultiPSDVector(&status, &rng_med), &status);
+  XLALDestroyMultiPSDVector( rng_med);
     
   /* Initialise the random number generator */
   {
@@ -597,7 +597,7 @@ int main(int argc, char *argv[]) {
   if (mism_hist)
     gsl_matrix_free(mism_hist);
   XLALDestroyMultiDetectorStateSeries(detector_states);
-  LAL_CALL(LALDestroyMultiNoiseWeights(&status, &noise_weights), &status);
+  XLALDestroyMultiNoiseWeights(noise_weights);
   gsl_rng_free(rng);
   if (twoF_pdf_hist)
     gsl_vector_int_free(twoF_pdf_hist);

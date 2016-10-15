@@ -1087,10 +1087,10 @@ printf("%g %g\n", sigmasq->data[i] * ualpha->data[i].re, sigmasq->data[i] * ualp
   if(sftHead) {
     if (sftHead != sftTail) {
       tmpSFT = &(sftTail->sft);
-      LAL_CALL(LALDestroySFTtype(&status, &tmpSFT),&status);
+      XLALDestroySFT( tmpSFT);
     }
     tmpSFT = &(sftHead->sft);
-    LAL_CALL(LALDestroySFTtype(&status, &tmpSFT),&status);
+    XLALDestroySFT( tmpSFT);
   } 
   if (psdHead) {
     if (psdHead != psdTail) {
@@ -1467,7 +1467,7 @@ void AddSFTtoList(LALStatus *status,
 
   sftList = (SFTListElement *)LALCalloc(1, sizeof(SFTListElement));
 
-  LALCopySFT(status->statusPtr, &(sftList->sft), sft);
+  XLAL_CHECK_LAL( status, XLALCopySFT(&(sftList->sft), sft) == XLAL_SUCCESS, XLAL_EFUNC );
 
   sftList->nextSFT = NULL;
   if (!(*sftHead)) { 
@@ -1582,7 +1582,7 @@ void DeleteSFTHead (LALStatus *status,
   *sftHead = (SFTListElement *)(*sftHead)->nextSFT;
 
   tmpSFT = &(sftList->sft);
-  LALDestroySFTtype(status->statusPtr, &tmpSFT);
+  XLALDestroySFT( tmpSFT);
   sftList = NULL;
 
   DETATCHSTATUSPTR (status);

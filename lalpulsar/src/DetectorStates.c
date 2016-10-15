@@ -489,7 +489,7 @@ void LALGetMultiDetectorVelTimePos(LALStatus                *status,
   /* allocate memory for vectors */
   velV =  XLALCreateREAL8VectorSequence ( len, 3 );
   posV =  XLALCreateREAL8VectorSequence ( len, 3 );
-  TRY (LALCreateTimestampVector ( status->statusPtr, &timeV,  len), status);
+  XLAL_CHECK_LAL (status, ( timeV = XLALCreateTimestampVector (  len) ) != NULL, XLAL_EFUNC);
 
   /* copy the timestamps, weights, and velocity vector */
   for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {

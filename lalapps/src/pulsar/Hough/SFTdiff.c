@@ -133,10 +133,10 @@ int main(int argc, char *argv[]){
       }
   }
 
-  LALDestroySFTtype (&status, &sft1);
+  XLALDestroySFT ( sft1);
   /*REPORTSTATUS( &status);*/
 
-  LALDestroySFTtype (&status, &sft2);
+  XLALDestroySFT ( sft2);
   /*REPORTSTATUS( &status);*/
 
   LALCheckMemoryLeaks(); 

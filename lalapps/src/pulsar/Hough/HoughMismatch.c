@@ -446,10 +446,10 @@ int main( int argc, char *argv[]){
   LALFree(signalTseries->data);
   LALFree(signalTseries);
   signalTseries =NULL;
-  SUB(LALDestroySFTVector(&status, &outputSFTs),&status );
+  XLALDestroySFTVector( outputSFTs);
 
   /* destroy input sfts */
-  SUB(LALDestroySFTVector(&status, &inputSFTs),&status );
+  XLALDestroySFTVector( inputSFTs);
 
   /* free other structures */
   LALFree(foft.data);  

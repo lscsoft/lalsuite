@@ -324,7 +324,7 @@ int main(int argc, char *argv[]){
 
 
   /* having calculated the peakgrams we don't need the sfts anymore */
-  LAL_CALL(LALDestroySFTVector(&status, &inputSFTs),&status );
+  XLALDestroySFTVector( inputSFTs);
 
 
   

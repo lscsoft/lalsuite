@@ -388,9 +388,12 @@ int main(int argc, char *argv[])
   multsft_vect->data[0]->data[0].epoch.gpsSeconds += 60;	/* shift start-time so they don't look like segmented SFTs! */
   SHOULD_WORK ( LALWrite_v2SFT_to_v1file( &status, &(multsft_vect->data[0]->data[0]), "outputsftv2_v1.sft"), &status );
 
-  SUB ( LALDestroySFTVector ( &status, &sft_vect ), &status );
-  SUB ( LALDestroyMultiSFTVector (&status, &multsft_vect ), &status );
-  SUB ( LALDestroyMultiSFTVector (&status, &multsft_vect2 ), &status );
+  XLALDestroySFTVector ( sft_vect );
+  sft_vect = NULL;
+  XLALDestroyMultiSFTVector ( multsft_vect );
+  multsft_vect = NULL;
+  XLALDestroyMultiSFTVector ( multsft_vect2 );
+  multsft_vect2 = NULL;
 
   /* ----- read the previous two SFTs back */
   SHOULD_FAIL ( LALSFTdataFind ( &status, &catalog, "outputsftv2_*.sft", NULL ), &status );
@@ -434,8 +437,10 @@ int main(int argc, char *argv[])
 	  }
       } /* for i < numBins */
   }
-  SUB ( LALDestroySFTVector (&status, &sft_vect2 ), &status );
-  SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
+  XLALDestroySFTVector ( sft_vect2 );
+  sft_vect2 = NULL;
+  XLALDestroySFTVector ( sft_vect );
+  sft_vect = NULL;
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   /* `----- v1 SFT writing */
@@ -472,8 +477,10 @@ int main(int argc, char *argv[])
   strcpy ( sft_vect->data[0].name, "H1" );
   SHOULD_WORK (LALWriteSFT2file( &status, &(sft_vect->data[0]), "outputsft_v2.sft", "Another v2-SFT file for testing!"), &status );
 
-  SUB ( LALDestroySFTVector (&status, &sft_vect2 ), &status );
-  SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
+  XLALDestroySFTVector ( sft_vect2 );
+  sft_vect2 = NULL;
+  XLALDestroySFTVector ( sft_vect );
+  sft_vect = NULL;
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
 
   /* ---------- test timestamps-reading functions by comparing LAL- and XLAL-versions against each other ---------- */

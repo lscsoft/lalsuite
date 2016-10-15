@@ -652,7 +652,7 @@ LALFastGeneratePulsarSFTs (LALStatus *status,
 
   /* prepare SFT-vector for return */
   if (*outputSFTs == NULL) {
-    TRY (LALCreateSFTVector (status->statusPtr, &sftvect, numSFTs, SFTlen), status);
+    XLAL_CHECK_LAL (status, ( sftvect = XLALCreateSFTVector ( numSFTs, SFTlen) ) != NULL, XLAL_EFUNC);
     setToZero = 1; /* 09/07/05 gam; allocated memory for the output SFTs, zero bins not within the Dterms loop */
   } else {
     sftvect = *outputSFTs;  /* Assume memory already allocated for SFTs */

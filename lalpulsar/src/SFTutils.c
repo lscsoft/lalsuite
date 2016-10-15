@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Karl Wette
+ * Copyright (C) 2010 Chris Messenger
  * Copyright (C) 2005 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -53,10 +54,6 @@ REAL8 TSFTfromDFreq ( REAL8 dFreq );
 int compareSFTdesc(const void *ptr1, const void *ptr2);     // defined in SFTfileIO.c
 
 /*==================== FUNCTION DEFINITIONS ====================*/
-
-// ---------- obsolete LAL-API was moved into external file
-#include "SFTutils-LAL.c"
-// ------------------------------
 
 /**
  * XLAL function to create one SFT-struct.
@@ -152,6 +149,26 @@ XLALCreateSFTVector ( UINT4 numSFTs, 	/**< number of SFTs */
 } /* XLALCreateSFTVector() */
 
 
+/** Append the given SFTtype to the SFT-vector (no SFT-specific checks are done!) */
+int XLALAppendSFT2Vector (SFTVector *vect,		/**< destinatino SFTVector to append to */
+                          const SFTtype *sft            /**< the SFT to append */
+                          )
+{
+  UINT4 oldlen = vect->length;
+
+  if ( (vect->data = LALRealloc ( vect->data, (oldlen + 1)*sizeof( *vect->data ) )) == NULL ) {
+     XLAL_ERROR(XLAL_ENOMEM);
+  }
+  memset ( &(vect->data[oldlen]), 0, sizeof( vect->data[0] ) );
+  vect->length ++;
+
+  XLALCopySFT(&vect->data[oldlen], sft );
+
+  return XLAL_SUCCESS;
+
+} /* XLALAppendSFT2Vector() */
+
+
 /**
  * XLAL interface to destroy an SFTVector
  */
@@ -206,6 +223,38 @@ XLALDestroyPSDVector ( PSDVector *vect )	/**< the PSD-vector to free */
   return;
 
 } /* XLALDestroyPSDVector() */
+
+
+/**
+ * Create an empty multi-IFO SFT vector for given number of IFOs and number of SFTs per IFO
+ */
+MultiSFTVector *XLALCreateMultiSFTVector (
+  UINT4 length,          /**< number of sft data points */
+  UINT4Vector *numsft    /**< number of sfts in each sftvect */
+  )
+{
+
+  XLAL_CHECK_NULL( length > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( numsft != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( numsft->length > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( numsft->data != NULL, XLAL_EFAULT );
+
+  MultiSFTVector *multSFTVec = NULL;
+
+  XLAL_CHECK_NULL( ( multSFTVec = XLALCalloc( 1, sizeof(*multSFTVec) ) ) != NULL, XLAL_ENOMEM );
+
+  const UINT4 numifo = numsft->length;
+  multSFTVec->length = numifo;
+
+  XLAL_CHECK_NULL( ( multSFTVec->data = XLALCalloc( numifo, sizeof(*multSFTVec->data) ) ) != NULL, XLAL_ENOMEM );
+
+  for ( UINT4 k = 0; k < numifo; k++) {
+    XLAL_CHECK_NULL( ( multSFTVec->data[k] = XLALCreateSFTVector( numsft->data[k], length ) ) != NULL, XLAL_ENOMEM );
+  } /* loop over ifos */
+
+  return multSFTVec;
+
+} /* XLALCreateMultiSFTVector() */
 
 
 /**

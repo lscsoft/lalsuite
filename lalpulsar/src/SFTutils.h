@@ -98,9 +98,13 @@ typedef struct tagMultiNoiseWeights {
  *----------------------------------------------------------------------*/
 SFTtype* XLALCreateSFT ( UINT4 numBins );
 SFTVector* XLALCreateSFTVector (UINT4 numSFTs, UINT4 numBins );
+MultiSFTVector *XLALCreateMultiSFTVector ( UINT4 length, UINT4Vector *numsft );
+
+int XLALAppendSFT2Vector (SFTVector *vect, const SFTtype *sft );
 
 void XLALDestroySFT (SFTtype *sft);
 void XLALDestroySFTVector (SFTVector *vect);
+void XLALDestroyMultiSFTVector ( MultiSFTVector *multvect );
 
 SFTVector *XLALDuplicateSFTVector ( const SFTVector *sftsIn );
 
@@ -150,7 +154,6 @@ int XLALSFTResizeBand ( SFTtype *SFT, REAL8 f0, REAL8 Band );
 
 // destructors
 void XLALDestroyPSDVector ( PSDVector *vect );
-void XLALDestroyMultiSFTVector ( MultiSFTVector *multvect );
 void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
 
 MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, UINT4 blocksRngMed, UINT4 excludePercentile);
@@ -170,10 +173,6 @@ SFTVector *XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts, const LIG
 MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVector *multiSFTs, const MultiLIGOTimeGPSVector *multiTimestamps );
 
 /*@}*/
-
-// ---------- obsolete LAL-API was moved into external file
-#include <lal/SFTutils-LAL.h>
-// ------------------------------
 
 #ifdef  __cplusplus
 }

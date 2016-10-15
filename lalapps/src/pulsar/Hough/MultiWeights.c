@@ -231,7 +231,7 @@ int main(int argc, char *argv[]){
     
     /* now we can free the inputTimeStampsVector */
     if ( XLALUserVarWasSet( &uvar_timeStampsFile ) ) {
-      LALDestroyTimestampVector( &status, &inputTimeStampsVector );
+      XLALDestroyTimestampVector(inputTimeStampsVector );
     }
     
     /* catalog is ordered in time so we can get start, end time and tObs*/
@@ -318,7 +318,7 @@ int main(int argc, char *argv[]){
 
     if ( uvar_weighNoise ) {      
       /* compute multi noise weights if required */ 
-      LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, multPSD, uvar_blocksRngMed, 0), &status);
+      XLAL_CHECK_MAIN ( ( multweight = XLALComputeMultiNoiseWeights ( multPSD, uvar_blocksRngMed, 0) ) != NULL, XLAL_EFUNC);
       /* copy the weights */
       for (j = 0, iIFO = 0; iIFO < numifo; iIFO++ ) {
         numsft = mdetStates->data[iIFO]->length;     
@@ -328,7 +328,7 @@ int main(int argc, char *argv[]){
       } /* loop over IFOs */
 
       LAL_CALL( LALHOUGHNormalizeWeights( &status, &weightsV), &status);     
-      LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
+      XLALDestroyMultiNoiseWeights (multweight);
     }
  
     if (uvar_dumpNoise)  { 
@@ -360,7 +360,7 @@ int main(int argc, char *argv[]){
     } /* end block for Sn-weights calculation */
 
     /* we are now done with the psd */
-    LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
+    XLALDestroyMultiPSDVector  ( multPSD);
 
   } /* end block for noise weights, velocity and time */
   
@@ -446,7 +446,7 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemS);
   LALFree(edat);
     
-  LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
+  XLALDestroyMultiSFTVector( inputSFTs);
 
   XLALDestroyUserVars();
 

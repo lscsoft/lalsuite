@@ -685,8 +685,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
           }
        }
 
-       LALDestroySFTVector(status->statusPtr, &outputSFTs);
-       CHECKSTATUSPTR (status);
+       XLALDestroySFTVector( outputSFTs);
 
        LALFree(signalvec->data->data);
        LALFree(signalvec->data);
@@ -734,8 +733,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   LALFree(pPulsarSignalParams);
 
   /* deallocate memory for structs needed by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs */
-  LALDestroySFTVector(status->statusPtr, &fastOutputSFTs);
-  CHECKSTATUSPTR (status);
+  XLALDestroySFTVector( fastOutputSFTs);
   LALFree(pSkyConstAndZeroPsiAMResponse->fCrossZeroPsi);
   LALFree(pSkyConstAndZeroPsiAMResponse->fPlusZeroPsi);
   LALFree(pSkyConstAndZeroPsiAMResponse->skyConst);

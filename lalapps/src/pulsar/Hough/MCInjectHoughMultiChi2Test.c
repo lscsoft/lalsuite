@@ -482,8 +482,8 @@ int main(int argc, char *argv[]){
       numsft.data[iIFO] = inputSFTs->data[iIFO]->length;     
     }
     
-    LAL_CALL( LALCreateMultiSFTVector(&status, &sumSFTs, binsSFT, &numsft), &status);
-    LAL_CALL( LALCreateMultiSFTVector(&status, &signalSFTs, binsSFT, &numsft), &status);
+    XLAL_CHECK_MAIN( ( sumSFTs = XLALCreateMultiSFTVector( binsSFT, &numsft) ) != NULL, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( ( signalSFTs = XLALCreateMultiSFTVector( binsSFT, &numsft) ) != NULL, XLAL_EFUNC);
     LALFree( numsft.data);
      
   }
@@ -544,8 +544,8 @@ int main(int argc, char *argv[]){
       } /* loop over SFTs */
       
       multiIniTimeV->data[iIFO]=NULL;
-      LAL_CALL( LALGetSFTtimestamps(&status, &multiIniTimeV->data[iIFO],
-                                     inputSFTs->data[iIFO] ), &status);
+      XLAL_CHECK_MAIN( ( multiIniTimeV->data[iIFO] = XLALExtractTimestampsFromSFTs(
+                                     inputSFTs->data[iIFO] ) ) != NULL, XLAL_EFUNC);
     
     } /* loop over IFOs */
     
@@ -763,7 +763,7 @@ int main(int argc, char *argv[]){
          params.site = &(mdetStates->data[iIFO]->detector);
          sftParams.timestamps = multiIniTimeV->data[iIFO];
 	 
-         LAL_CALL(LALDestroySFTVector(&status, &signalSFTs->data[iIFO]),&status );
+         XLALDestroySFTVector( signalSFTs->data[iIFO]);
          signalSFTs->data[iIFO] = NULL;
 	 
          LAL_CALL( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
@@ -911,11 +911,11 @@ int main(int argc, char *argv[]){
 	
 	/* compute multi noise weights */ 
 	if ( uvar_weighNoise ) {
- 	  LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, multPSD, uvar_blocksRngMed, 0), &status);
+ 	  XLAL_CHECK_MAIN ( ( multweight = XLALComputeMultiNoiseWeights ( multPSD, uvar_blocksRngMed, 0) ) != NULL, XLAL_EFUNC);
 	}
 	
 	/* we are now done with the psd */
-	LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
+	XLALDestroyMultiPSDVector  ( multPSD);
 	
 	/* copy  weights */
         if ( uvar_weighNoise ) {
@@ -926,7 +926,7 @@ int main(int argc, char *argv[]){
 	    } /* loop over SFTs */
 	  } /* loop over IFOs */
       
-	  LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
+	  XLALDestroyMultiNoiseWeights (multweight);
 	  memcpy(weightsV.data, weightsNoise.data, mObsCoh * sizeof(REAL8));
         }
 	
@@ -1089,7 +1089,7 @@ int main(int argc, char *argv[]){
      UINT4 iIFO;
       
      for(iIFO = 0; iIFO<numifo; iIFO++){
-        LAL_CALL(LALDestroyTimestampVector(&status, &multiIniTimeV->data[iIFO]),&status );
+        XLALDestroyTimestampVector(multiIniTimeV->data[iIFO]);
 	LALFree(pSkyConstAndZeroPsiAMResponse[iIFO].skyConst);
 	LALFree(pSkyConstAndZeroPsiAMResponse[iIFO].fPlusZeroPsi);
 	LALFree(pSkyConstAndZeroPsiAMResponse[iIFO].fCrossZeroPsi);
@@ -1127,9 +1127,9 @@ int main(int argc, char *argv[]){
   LALFree(chi2Params.sumWeightSquare);
   LALFree(numberCountVec.data);
 
-  LAL_CALL(LALDestroyMultiSFTVector(&status, &inputSFTs),&status );
-  LAL_CALL(LALDestroyMultiSFTVector(&status, &sumSFTs),&status );
-  LAL_CALL(LALDestroyMultiSFTVector(&status, &signalSFTs),&status );
+  XLALDestroyMultiSFTVector( inputSFTs);
+  XLALDestroyMultiSFTVector( sumSFTs);
+  XLALDestroyMultiSFTVector( signalSFTs);
  
   XLALDestroyUserVars();  
 

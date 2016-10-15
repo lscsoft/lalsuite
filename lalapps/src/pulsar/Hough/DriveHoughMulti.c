@@ -680,11 +680,11 @@ int main(int argc, char *argv[]){
         
         /* compute multi noise weights */
         if ( uvar_weighNoise ) {
-            LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, multPSD, uvar_blocksRngMed, 0), &status);
+            XLAL_CHECK_MAIN ( ( multweight = XLALComputeMultiNoiseWeights ( multPSD, uvar_blocksRngMed, 0) ) != NULL, XLAL_EFUNC);
         }
         
         /* we are now done with the psd */
-        LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
+        XLALDestroyMultiPSDVector  ( multPSD);
         
         /* get information about all detectors including velocity and timestamps */
         /* note that this function returns the velocity at the
@@ -698,7 +698,7 @@ int main(int argc, char *argv[]){
             
             LAL_CALL ( GetSFTNoiseWeights( &status, weightsNoise, multweight), &status);
             
-            LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
+            XLALDestroyMultiNoiseWeights (multweight);
         }
         
         /* compute the time difference relative to startTime for all SFTs */
@@ -738,7 +738,7 @@ int main(int argc, char *argv[]){
     
     
     /* we are done with the sfts and ucharpeakgram now */
-    LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
+    XLALDestroyMultiSFTVector( inputSFTs);
     LogPrintfVerbatim (LOG_NORMAL, "done\n");
     
     /* if we want to print expected sigma for each skypatch */

@@ -302,7 +302,7 @@ int main(int argc, char *argv[]){
 
     /* now we can free the inputTimeStampsVector */
     if ( XLALUserVarWasSet( &uvar_timeStampsFile ) ) {
-      LALDestroyTimestampVector ( &status, &inputTimeStampsVector);
+      XLALDestroyTimestampVector (inputTimeStampsVector);
     }
 
     /* get some sft parameters */
@@ -404,11 +404,11 @@ int main(int argc, char *argv[]){
    
     /* compute multi noise weights if required */
     if ( uvar_weighNoise ) {
-      LAL_CALL ( LALComputeMultiNoiseWeights ( &status, &multweight, multPSD, uvar_blocksRngMed, 0), &status);
+      XLAL_CHECK_MAIN ( ( multweight = XLALComputeMultiNoiseWeights ( multPSD, uvar_blocksRngMed, 0) ) != NULL, XLAL_EFUNC);
     }
     
     /* we are now done with the psd */
-    LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multPSD), &status);
+    XLALDestroyMultiPSDVector  ( multPSD);
 
     /* get information about all detectors including velocity and timestamps */
     /* note that this function returns the velocity at the 
@@ -446,7 +446,7 @@ int main(int argc, char *argv[]){
       timeDiffV.data[j] = XLALGPSDiff( timeV.data + j, &firstTimeStamp );
 
     if ( uvar_weighNoise ) {    
-      LAL_CALL ( LALDestroyMultiNoiseWeights ( &status, &multweight), &status);
+      XLALDestroyMultiNoiseWeights (multweight);
     }
 
   } /* end block for noise weights, velocity and time */
@@ -636,7 +636,7 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemS);
   LALFree(edat);
 
-  LAL_CALL (LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
+  XLALDestroyMultiSFTVector( inputSFTs);
   LALFree(pg1.data);
   
   LALFree(numberCountV.data);

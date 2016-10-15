@@ -495,7 +495,7 @@ int main(int argc, char **argv)
     /*release a;; the allocaeted memory*/
     LALCHARDestroyVector(&status, &timestamp);
     LALCHARDestroyVector(&status, &year_date);
-    LALDestroySFTVector (&status, &sft_vect );
+    XLALDestroySFTVector ( sft_vect );
 
     /*fprintf(stderr,"end of spec_avg 2\n");*/
 

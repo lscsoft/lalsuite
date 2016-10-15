@@ -833,7 +833,7 @@ int main(int argc, char *argv[]){
     LALFree(signalTseries->data);
     LALFree(signalTseries);
     signalTseries =NULL;
-    LAL_CALL(LALDestroySFTVector(&status, &outputSFTs),&status );
+    XLALDestroySFTVector( outputSFTs);
     outputSFTs = NULL;
     
   } /* Closing MC loop */
@@ -855,7 +855,7 @@ int main(int argc, char *argv[]){
   LALFree(periPSD.psd.data);
   LALFree(pg1.data);
 
-  LAL_CALL(LALDestroyTimestampVector ( &status, &timeV), &status); 
+  XLALDestroyTimestampVector (timeV); 
   
   LALFree(timeDiffV.data);
   LALFree(velV.data);
@@ -877,7 +877,7 @@ int main(int argc, char *argv[]){
   LALFree(edat->ephemS);
   LALFree(edat);
   
-  LAL_CALL(LALDestroySFTVector(&status, &inputSFTs),&status );
+  XLALDestroySFTVector( inputSFTs);
 
   if (nLines > 0)
     {

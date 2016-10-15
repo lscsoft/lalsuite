@@ -165,7 +165,7 @@ int main(int argc, char *argv[]){
       LAL_CALL( LALWriteSFTVector2Dir ( &status, inputSFTs->data[k], uvar_outDir, "cleaned", "cleaned"), &status);
     }
 
-    LAL_CALL( LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
+    XLALDestroyMultiSFTVector( inputSFTs);
 
   } /* end loop over sfts */
 

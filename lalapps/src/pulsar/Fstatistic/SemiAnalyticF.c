@@ -305,7 +305,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
       tStart.gpsSeconds = CLA->gpsStart;
       tStart.gpsNanoSeconds = 0;
 
-      TRY ( LALMakeTimestamps(status->statusPtr, &timestamps, tStart, CLA->duration, CLA->Tsft ), status );
+      XLAL_CHECK_LAL ( status, ( timestamps = XLALMakeTimestamps( tStart, CLA->duration, CLA->Tsft, 0 ) ) != NULL, XLAL_EFUNC );
       CLA->nTsft = timestamps->length;
 
     } /* no timestamps */
@@ -392,7 +392,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   TRY ( LALComputeAM(status->statusPtr, &amc, midTS, amParams), status);
 
   /* Free memory */
-  TRY ( LALDestroyTimestampVector (status->statusPtr, &timestamps), status );
+  XLALDestroyTimestampVector ( timestamps);
 
   LALFree(midTS);
   LALFree(Detector);

@@ -22,7 +22,6 @@
 #include <sys/times.h>
 
 #include <lal/SFTutils.h>
-#include <lal/SFTutils-LAL.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/SFTfileIO.h>
 
@@ -55,7 +54,6 @@ main (  void )
   MultiSFTVector *multiSFTs = NULL;
   MultiPSDVector *multiPSDs = NULL;
   MultiNoiseWeights *multiWeightsXLAL = NULL;
-  MultiNoiseWeights *multiWeightsLAL = NULL;
   MultiNoiseWeights *multiWeightsCorrect = NULL;
   UINT4 rngmedBins = 11;
   REAL8 tolerance = 2e-6;	/* same algorithm, should be basically identical results */
@@ -85,23 +83,15 @@ main (  void )
   /* calculate the psd and normalize the SFTs */
   XLAL_CHECK ( ( multiPSDs = XLALNormalizeMultiSFTVect ( multiSFTs, rngmedBins, NULL ) ) != NULL, XLAL_EFUNC, " XLALNormalizeMultiSFTVect failed\n" );
 
-  /* Get weights using LAL function */
-  LALComputeMultiNoiseWeights ( &status, &(multiWeightsLAL), multiPSDs, rngmedBins, 0 );
-  XLAL_CHECK ( status.statusCode == 0, XLAL_EFAILED, "LALComputeMultiNoiseWeights() failed with status = %d : '%s'\n", status.statusCode, status.statusDescription );
-
   /* Get weights using XLAL function */
   XLAL_CHECK ( ( multiWeightsXLAL = XLALComputeMultiNoiseWeights ( multiPSDs, rngmedBins, 0 ) ) != NULL, XLAL_EFUNC, " XLALComputeMultiNoiseWeights failed\n" );
 
   /* Compare XLAL weights to reference */
   XLAL_CHECK ( XLALCompareMultiNoiseWeights ( multiWeightsXLAL, multiWeightsCorrect, tolerance ) == XLAL_SUCCESS, XLAL_EFAILED, "Comparison between XLAL and reference MultiNoiseWeights failed\n" );
 
-  /* Compare LAL weights to reference */
-  XLAL_CHECK ( XLALCompareMultiNoiseWeights ( multiWeightsLAL, multiWeightsCorrect, tolerance ) == XLAL_SUCCESS, XLAL_EFAILED, "Comparison between LAL and reference MultiNoiseWeights failed\n" );
-
   /* Clean up memory */
   XLALDestroyMultiNoiseWeights ( multiWeightsCorrect );
   XLALDestroyMultiNoiseWeights ( multiWeightsXLAL );
-  XLALDestroyMultiNoiseWeights ( multiWeightsLAL );
   XLALDestroyMultiPSDVector ( multiPSDs );
   XLALDestroyMultiSFTVector ( multiSFTs );
   XLALDestroySFTCatalog ( catalog );

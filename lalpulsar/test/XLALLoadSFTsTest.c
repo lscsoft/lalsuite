@@ -216,8 +216,8 @@ int main(int argc, char *argv[])
   if(CompareSFTVectors(sft_vect, sft_vect2))
     return SFTFILEIOTESTC_ESUB;
   LogPrintf(LOG_DEBUG, "Freeing Memory ...\n");
-  SUB ( LALDestroySFTVector (&status, &sft_vect2 ), &status );
-  SUB ( LALDestroySFTVector (&status, &sft_vect ), &status );
+  XLALDestroySFTVector ( sft_vect2 );
+  XLALDestroySFTVector ( sft_vect );
   SUB ( LALDestroySFTCatalog( &status, &catalog), &status );
   LALCheckMemoryLeaks();
   LogPrintf(LOG_DEBUG, "... all ok\n");

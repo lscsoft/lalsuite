@@ -323,7 +323,7 @@ int main(int argc, char *argv[]){
       /* write the sft */
       SUB( LALWriteSFTfile( &status, sft, tempstr2),  &status );
 
-      LALDestroySFTtype (&status, &sft);
+      XLALDestroySFT ( sft);
     }
 
 

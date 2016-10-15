@@ -605,10 +605,10 @@ int main( int argc, char *argv[]){
   LALFree(signalTseries->data);
   LALFree(signalTseries);
   signalTseries =NULL;
-  LAL_CALL(LALDestroySFTVector(&status, &outputSFTs),&status );
+  XLALDestroySFTVector( outputSFTs);
 
   /* destroy input sfts */
-  LAL_CALL(LALDestroySFTVector(&status, &inputSFTs),&status );
+  XLALDestroySFTVector( inputSFTs);
 
   /* free other structures */
   LALFree(foft.data);  

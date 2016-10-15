@@ -455,8 +455,8 @@ main(int argc, char *argv[])
   }
 
   /* we are now done with the psd */
-  LAL_CALL ( LALDestroyMultiPSDVector  ( &status, &multiPSD), &status);
-  LAL_CALL ( LALDestroyMultiSFTVector  (&status, &inputSFTs), &status);
+  XLALDestroyMultiPSDVector  ( multiPSD);
+  XLALDestroyMultiSFTVector  ( inputSFTs);
 
   XLALDestroyUserVars();
 

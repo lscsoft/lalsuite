@@ -1,5 +1,3 @@
-#ifdef _SFTUTILS_H  /* Only include via SFTutils.h */
-#ifndef SWIG /* exclude from SWIG interface */
 #ifndef _SFTUTILSLAL_H
 #define _SFTUTILSLAL_H
 /** \cond DONT_DOXYGEN */
@@ -18,35 +16,8 @@
 #define SFTUTILS_MSGEINPUT	"Invald input parameter"
 #define SFTUTILS_MSGEFUNC	"Sub-routine failed"
 
-void LALCreateSFTtype (LALStatus *status, SFTtype **sft, UINT4 SFTlen);
-void LALCreateSFTVector (LALStatus *status, SFTVector **sftvect, UINT4 numSFTs, UINT4 SFTlen);
-void LALCreateMultiSFTVector ( LALStatus *status, MultiSFTVector **out, UINT4 length, UINT4Vector *numsft );
-
 void upsampleMultiSFTVector (LALStatus *, MultiSFTVector *inout, UINT4 upsample, UINT4 Dterms);
 void upsampleSFTVector (LALStatus *, SFTVector *inout, UINT4 upsample, UINT4 Dterms);
 
-void LALDestroySFTtype (LALStatus *status, SFTtype **sft);
-void LALDestroySFTVector (LALStatus *status, SFTVector **sftvect);
-void LALDestroyPSDVector (LALStatus *status, PSDVector **vect);
-void LALDestroyMultiSFTVector (LALStatus *status, MultiSFTVector **multvect);
-void LALDestroyMultiPSDVector (LALStatus *status, MultiPSDVector **multvect);
-
-void LALCopySFT (LALStatus *status, SFTtype *dest, const SFTtype *src);
-
-void LALAppendSFT2Vector (LALStatus *, SFTVector *vect, const SFTtype *sft );
-
-void LALCreateTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect, UINT4 len);
-void LALDestroyTimestampVector (LALStatus *status, LIGOTimeGPSVector **vect);
-
-void LALMakeTimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const LIGOTimeGPS tStart, REAL8 duration, REAL8 Tsft);
-
-void LALComputeNoiseWeights  (LALStatus *status, REAL8Vector *weightV, const SFTVector *sftVect, INT4 blkSize, UINT4 excludePercentile);
-void LALComputeMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weightsV, const MultiPSDVector *multipsd, UINT4 blocksRngMed, UINT4 excludePercentile);
-void LALDestroyMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weights);
-
-void LALGetSFTtimestamps (LALStatus *, LIGOTimeGPSVector **timestamps, const SFTVector *sfts );
-
 /** \endcond */
 #endif /* _SFTUTILSLAL_H */
-#endif /* SWIG */
-#endif /* _SFTUTILS_H */
