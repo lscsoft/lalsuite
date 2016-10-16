@@ -48,7 +48,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN interpolation, output_per_detector, output_per_segment, output_misc_info, simulate_search;
+    BOOLEAN interpolation, sft_files_check_crc, output_per_detector, output_per_segment, output_misc_info, simulate_search;
     CHAR *setup_file, *lattice, *sft_files, *Fstat_method, *output_file, *ckpt_output_file;
     LALStringVector *sft_noise_psd, *sft_timestamps_files, *injections, *Fstat_assume_psd;
     REAL8 semi_max_mismatch, coh_max_mismatch, sft_timebase, ckpt_output_period, ckpt_output_pc_exit;
@@ -86,6 +86,10 @@ int main( int argc, char *argv[] )
     sft_files, STRING, 'D', OPTIONAL,
     "Pattern matching the SFT files to be analysed. Possibilities are:\n"
     " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'"
+    );
+  XLALRegisterUvarMember(
+    sft_files_check_crc, BOOLEAN, 'C', OPTIONAL,
+    "Validate the checksums of the SFTs matched by " UVAR_STR( sft_files ) " before loading."
     );
   XLALRegisterUvarMember(
     sft_timebase, REAL8, 't', OPTIONAL,
@@ -294,6 +298,9 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( sft_files ) || !UVAR_ALLSET4( sft_timebase, sft_timestamps_files, sft_noise_psd, sft_noise_rand_seed ),
                     UVAR_STR( sft_files ) " are mutually exclusive with " UVAR_STR4AND( sft_timebase, sft_timestamps_files, sft_noise_psd, sft_noise_rand_seed ) );
+  XLALUserVarCheck( &should_exit,
+                    !UVAR_SET( sft_files_check_crc ) || UVAR_SET( sft_files ),
+                    UVAR_STR( sft_files_check_crc ) " requires " UVAR_STR( sft_files ) );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( sft_timebase ) || uvar->sft_timebase > 0,
                     UVAR_STR( sft_timebase ) " must be strictly positive" );
@@ -562,6 +569,14 @@ int main( int argc, char *argv[] )
     sft_catalog = XLALSFTdataFind( uvar->sft_files, NULL );
     XLAL_CHECK_MAIN( sft_catalog != NULL, XLAL_EFUNC );
     LogPrintf( LOG_NORMAL, "Loaded SFT catalog from SFTs matching '%s'\n", uvar->sft_files );
+
+    // Validate checksums of SFTs, if requested
+    if ( uvar->sft_files_check_crc ) {
+      BOOLEAN crc_check = 0;
+      XLAL_CHECK_MAIN( XLALCheckCRCSFTCatalog( &crc_check, sft_catalog ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( crc_check, XLAL_EFUNC, "Failed to validate checksums of SFTs matching '%s'\n", uvar->sft_files );
+      LogPrintf( LOG_NORMAL, "Validated checksums of SFTs matching '%s'\n", uvar->sft_files );
+    }
 
   } else if ( UVAR_SET( sft_timebase ) ) {
 
