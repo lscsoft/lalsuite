@@ -390,7 +390,7 @@ int XLALWeaveResultsBasketWrite(
     XLAL_CHECK( XLALHeapVisit( basket->toplist, toplist_fits_table_write_visitor, file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write maximum size of toplist to FITS header
-    XLAL_CHECK( XLALFITSHeaderWriteINT8( file, "toplimit", XLALHeapMaxSize( basket->toplist ), "maximum size of toplist" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "toplimit", XLALHeapMaxSize( basket->toplist ), "maximum size of toplist" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   }
 
@@ -424,8 +424,8 @@ int XLALWeaveResultsBasketReadAppend(
     XLAL_CHECK( toplist_fits_table_init( file, basket->par ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Read maximum size of toplist from FITS header
-    INT8 toplist_limit = 0;
-    XLAL_CHECK( XLALFITSHeaderReadINT8( file, "toplimit", &toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
+    INT4 toplist_limit = 0;
+    XLAL_CHECK( XLALFITSHeaderReadINT4( file, "toplimit", &toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Maximize size of toplist
     if ( toplist_limit > XLALHeapSize( basket->toplist ) ) {

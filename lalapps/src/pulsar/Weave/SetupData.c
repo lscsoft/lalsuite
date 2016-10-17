@@ -116,7 +116,7 @@ int XLALWeaveSetupDataWrite(
         XLAL_CHECK( XLALFITSTableWriteRow( file, &setup->ephemerides->ephemE[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
       XLAL_CHECK( XLALFITSHeaderWriteString( file, "filename", setup->ephemerides->filenameE, "ephemeris filename" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "etype", setup->ephemerides->etype, "ephemeris type" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "etype", setup->ephemerides->etype, "ephemeris type" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLALFITSHeaderWriteREAL8( file, "dttable", setup->ephemerides->dtEtable, "spacing in seconds" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     }
@@ -129,7 +129,7 @@ int XLALWeaveSetupDataWrite(
         XLAL_CHECK( XLALFITSTableWriteRow( file, &setup->ephemerides->ephemS[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
       XLAL_CHECK( XLALFITSHeaderWriteString( file, "filename", setup->ephemerides->filenameS, "ephemeris filename" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "etype", setup->ephemerides->etype, "ephemeris type" )  == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "etype", setup->ephemerides->etype, "ephemeris type" )  == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLALFITSHeaderWriteREAL8( file, "dttable", setup->ephemerides->dtStable, "spacing in seconds" )  == XLAL_SUCCESS, XLAL_EFUNC );
     }
   }
@@ -233,8 +233,8 @@ int XLALWeaveSetupDataRead(
         XLAL_CHECK( XLALFITSTableReadRow( file, &setup->ephemerides->ephemE[i], NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
       XLAL_CHECK( XLALFITSHeaderReadString( file, "filename", &setup->ephemerides->filenameE ) == XLAL_SUCCESS, XLAL_EFUNC );
-      INT4 etype = 0;
-      XLAL_CHECK( XLALFITSHeaderReadINT4( file, "etype", &etype ) == XLAL_SUCCESS, XLAL_EFUNC );
+      UINT4 etype = 0;
+      XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "etype", &etype ) == XLAL_SUCCESS, XLAL_EFUNC );
       setup->ephemerides->etype = etype;
       XLAL_CHECK( XLALFITSHeaderReadREAL8( file, "dttable", &setup->ephemerides->dtEtable ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
@@ -251,8 +251,8 @@ int XLALWeaveSetupDataRead(
         XLAL_CHECK( XLALFITSTableReadRow( file, &setup->ephemerides->ephemS[i], NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
       XLAL_CHECK( XLALFITSHeaderReadString( file, "filename", &setup->ephemerides->filenameS ) == XLAL_SUCCESS, XLAL_EFUNC );
-      INT4 etype = 0;
-      XLAL_CHECK( XLALFITSHeaderReadINT4( file, "etype", &etype ) == XLAL_SUCCESS, XLAL_EFUNC );
+      UINT4 etype = 0;
+      XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "etype", &etype ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( setup->ephemerides->etype == ( EphemerisType ) etype, XLAL_EIO );
       XLAL_CHECK( XLALFITSHeaderReadREAL8( file, "dttable", &setup->ephemerides->dtStable ) == XLAL_SUCCESS, XLAL_EFUNC );
     }

@@ -50,12 +50,12 @@ int main( int argc, char *argv[] )
   struct uvar_type {
     BOOLEAN interpolation, output_per_detector, output_per_segment, output_misc_info, simulate_search;
     CHAR *setup_file, *lattice, *sft_files, *Fstat_method, *output_file, *ckpt_output_file;
-    INT4 sky_patch_count, sky_patch_index, freq_partitions, output_toplist_limit;
-    INT4 sft_noise_rand_seed, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision;
-    INT4 cache_max_size, cache_gc_limit;
     LALStringVector *sft_noise_psd, *sft_timestamps_files, *injections, *Fstat_assume_psd;
     REAL8 semi_max_mismatch, coh_max_mismatch, sft_timebase, ckpt_output_period, ckpt_output_pc_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
+    UINT4 sft_noise_rand_seed, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision;
+    UINT4 sky_patch_count, sky_patch_index, freq_partitions, output_toplist_limit;
+    UINT4 cache_max_size, cache_gc_limit;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
@@ -104,7 +104,7 @@ int main( int argc, char *argv[] )
     "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file ) ". "
     );
   XLALRegisterUvarMember(
-    sft_noise_rand_seed, INT4, 0, OPTIONAL,
+    sft_noise_rand_seed, UINT4, 0, OPTIONAL,
     "Random seed used to generate fake Gaussian noise for generated SFTs. "
     );
   XLALRegisterUvarMember(
@@ -130,12 +130,12 @@ int main( int argc, char *argv[] )
     "If not specified, an all-sky search is performed; otherwise " UVAR_STR( alpha ) " must also be specified. "
     );
   XLALRegisterUvarMember(
-    sky_patch_count, INT4, 'K', DEVELOPER,
+    sky_patch_count, UINT4, 'K', DEVELOPER,
     "Divide the entire sky into this number of ~equal-template-count patches. "
     "Requires " UVAR_STR( sky_patch_index ) ", mutually exclusive with " UVAR_STR2AND( alpha, delta ) ". "
     );
   XLALRegisterUvarMember(
-    sky_patch_index, INT4, 'k', DEVELOPER,
+    sky_patch_index, UINT4, 'k', DEVELOPER,
     "Search the sky patch given by this index, from zero to one less than " UVAR_STR( sky_patch_count ) ". "
     "Requires " UVAR_STR( sky_patch_count ) ", mutually exclusive with " UVAR_STR2AND( alpha, delta ) ". "
     );
@@ -144,7 +144,7 @@ int main( int argc, char *argv[] )
     "Search parameter space in frequency, in Hertz. "
     );
   XLALRegisterUvarMember(
-    freq_partitions, INT4, 0, DEVELOPER,
+    freq_partitions, UINT4, 0, DEVELOPER,
     "Internally divide the frequency parameter space into this number of ~equal-width partitions. "
     );
   XLALRegisterUvarMember(
@@ -197,7 +197,7 @@ int main( int argc, char *argv[] )
     "Method used to calculate coherent F-statistics. Available methods:\n  %s", XLALFstatMethodHelpString()
     );
   XLALRegisterUvarMember(
-    Fstat_run_med_window, INT4, 0, DEVELOPER,
+    Fstat_run_med_window, UINT4, 0, DEVELOPER,
     "Size of the running median window used to normalise SFTs and compute noise weight. "
     );
   XLALRegisterUvarMember(
@@ -205,11 +205,11 @@ int main( int argc, char *argv[] )
     "Normalise SFTs using the specified assumed noise spectral densities, instead of computing them from the SFTs themselves. "
     );
   XLALRegisterUvarMember(
-    Fstat_Dterms, INT4, 0, DEVELOPER,
+    Fstat_Dterms, UINT4, 0, DEVELOPER,
     "Number of Dirichlet kernel terms to use in computing the F-statistic. May not be available for all F-statistic methods. "
     );
   XLALRegisterUvarMember(
-    Fstat_SSB_precision, INT4, 0, DEVELOPER,
+    Fstat_SSB_precision, UINT4, 0, DEVELOPER,
     "Precision in calculating the barycentric transformation. Options are:\n"
     " - %i: Newtonian\n"
     " - %i: relativistic\n"
@@ -224,7 +224,7 @@ int main( int argc, char *argv[] )
     "Output file which stores all quantities computed by the search, e.g. top-lists of averaged F-statistics. "
     );
   XLALRegisterUvarMember(
-    output_toplist_limit, INT4, 'N', OPTIONAL,
+    output_toplist_limit, UINT4, 'N', OPTIONAL,
     "Maximum number of candidates to return in an output top-list; if 0, all candidates are returned. "
     );
   XLALRegisterUvarMember(
@@ -267,13 +267,13 @@ int main( int argc, char *argv[] )
     "Otherwise, perform search with minimal memory usage, i.e. do not allocate memory for any data or results. "
     );
   XLALRegisterUvarMember(
-    cache_max_size, INT4, 0, DEVELOPER,
+    cache_max_size, UINT4, 0, DEVELOPER,
     "Limit the size of the internal caches, used to store intermediate results, to this number of items per segment. "
     "If zero, the caches will grow in size to store all items that are still required. "
     "Has no effect when performing a fully-coherent single-segment search, or a non-interpolating search. "
     );
   XLALRegisterUvarMember(
-    cache_gc_limit, INT4, 0, DEVELOPER,
+    cache_gc_limit, UINT4, 0, DEVELOPER,
     "By default, whenever an item is added to the internal caches, at most one item that is no longer required is removed. "
     "If non-zero, try to remove at most this number of additional items, providing they are no longer required. "
     "Has no effect when performing a fully-coherent single-segment search, or a non-interpolating search. "
@@ -337,20 +337,8 @@ int main( int argc, char *argv[] )
   // - F-statistic computation options
   //
   XLALUserVarCheck( &should_exit,
-                    uvar->Fstat_run_med_window >= 0,
-                    UVAR_STR( Fstat_run_med_window ) " must be positive" );
-  XLALUserVarCheck( &should_exit,
-                    uvar->Fstat_Dterms >= 0,
-                    UVAR_STR( Fstat_Dterms ) " must be positive" );
-  XLALUserVarCheck( &should_exit,
-                    0 <= uvar->Fstat_SSB_precision && uvar->Fstat_SSB_precision < SSBPREC_LAST,
+                    uvar->Fstat_SSB_precision < SSBPREC_LAST,
                     UVAR_STR( Fstat_SSB_precision ) " must be in range [0,%u)", SSBPREC_LAST );
-  //
-  // - Output
-  //
-  XLALUserVarCheck( &should_exit,
-                    uvar->output_toplist_limit >= 0,
-                    UVAR_STR( output_toplist_limit ) " must be positive" );
   //
   // - Checkpointing
   //
@@ -363,15 +351,6 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( ckpt_output_pc_exit ) || ( 0 <= uvar->ckpt_output_pc_exit && uvar->ckpt_output_pc_exit <= 100 ),
                     UVAR_STR( ckpt_output_pc_exit ) " must be in range [0,100]" );
-  //
-  // - Advanced options
-  //
-  XLALUserVarCheck( &should_exit,
-                    uvar->cache_max_size >= 0,
-                    UVAR_STR( cache_max_size ) " must be positive" );
-  XLALUserVarCheck( &should_exit,
-                    uvar->cache_gc_limit >= 0,
-                    UVAR_STR( cache_gc_limit ) " must be positive" );
 
   // Exit if required
   if ( should_exit ) {
@@ -790,10 +769,10 @@ int main( int argc, char *argv[] )
 
   // Semicoherent template and partition indexes
   UINT8 semi_index = 0;
-  INT4 partition_index = 0;
+  UINT4 partition_index = 0;
 
   // Number of times output results have been restored from a checkpoint
-  INT4 ckpt_output_count = 0;
+  UINT4 ckpt_output_count = 0;
 
   // Try to restore output results from a checkpoint file, if given
   if ( UVAR_SET( ckpt_output_file ) ) {
@@ -810,7 +789,7 @@ int main( int argc, char *argv[] )
       LogPrintf( LOG_NORMAL, "Output checkpoint file '%s' exists; checkpoint will be loaded\n", uvar->ckpt_output_file );
 
       // Read number of times output results have been restored from a checkpoint
-      XLAL_CHECK_MAIN( XLALFITSHeaderReadINT4( file, "ckptcnt", &ckpt_output_count ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT4( file, "ckptcnt", &ckpt_output_count ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( ckpt_output_count > 0, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Read output results
@@ -822,8 +801,8 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( semi_index < semi_total, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Read partition index
-      XLAL_CHECK_MAIN( XLALFITSHeaderReadINT4( file, "partindx", &partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( 0 <= partition_index && partition_index < uvar->freq_partitions, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT4( file, "partindx", &partition_index ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( partition_index < uvar->freq_partitions, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Close output checkpoint file
       XLALFITSFileClose( file );
@@ -964,7 +943,7 @@ int main( int argc, char *argv[] )
 
         // Write number of times output results have been restored from a checkpoint
         ++ckpt_output_count;
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "ckptcnt", ckpt_output_count, "number of checkpoints" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "ckptcnt", ckpt_output_count, "number of checkpoints" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         // Write output results
         XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -973,7 +952,7 @@ int main( int argc, char *argv[] )
         XLAL_CHECK_MAIN( XLALSaveLatticeTilingIterator( semi_itr, file, "semi_itr" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         // Write partition index
-        XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "partindx", partition_index, "partition index" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "partindx", partition_index, "partition index" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
         // Close output checkpoint file
         XLALFITSFileClose( file );
@@ -1024,7 +1003,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALFITSFileWriteUVarCmdLine( file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write number of times output results were restored from a checkpoint
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "numckpt", ckpt_output_count, "number of checkpoints" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "numckpt", ckpt_output_count, "number of checkpoints" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Write peak memory usage
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL8( file, "peakmem [MB]", XLALGetPeakHeapUsageMB(), "peak memory usage" ) == XLAL_SUCCESS, XLAL_EFUNC );

@@ -195,7 +195,7 @@ int XLALWeaveOutputResultsWrite(
   XLAL_CHECK( XLALFITSHeaderWriteGPSTime( file, "date-obs", &out->par.ref_time, "reference time" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write number of spindowns
-  XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "nspins", out->par.nspins, "number of spindowns" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "nspins", out->par.nspins, "number of spindowns" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write if outputting per-detector quantities
   XLAL_CHECK( XLALFITSHeaderWriteBOOLEAN( file, "perdet", out->par.per_detectors != NULL, "output per detector?" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -206,11 +206,11 @@ int XLALWeaveOutputResultsWrite(
   // Write if outputting per-segment quantities
   XLAL_CHECK( XLALFITSHeaderWriteBOOLEAN( file, "perseg", out->par.per_nsegments > 0, "output per segment?" ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( out->par.per_nsegments > 0 ) {
-    XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "nsegment", out->par.per_nsegments, "number of segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "nsegment", out->par.per_nsegments, "number of segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Write total number of semicoherent results added to output
-  XLAL_CHECK( XLALFITSHeaderWriteINT8( file, "semitot", out->semi_total, "total semicoherent templates searched" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteUINT8( file, "semitot", out->semi_total, "total semicoherent templates searched" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write basket ranked by mean multi-detector F-statistic
   XLAL_CHECK( XLALWeaveResultsBasketWrite( file, out->mean_twoF_basket ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -237,8 +237,8 @@ int XLALWeaveOutputResultsReadAppend(
   XLAL_CHECK( XLALFITSHeaderReadGPSTime( file, "date-obs", &ref_time ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Read number of spindowns
-  INT4 nspins = 0;
-  XLAL_CHECK( XLALFITSHeaderReadINT4( file, "nspins", &nspins ) == XLAL_SUCCESS, XLAL_EFUNC );
+  UINT4 nspins = 0;
+  XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "nspins", &nspins ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Read if outputting per-detector quantities, and list of detectors
   BOOLEAN perdet = 0;
@@ -250,10 +250,10 @@ int XLALWeaveOutputResultsReadAppend(
 
   // Read if outputting per-segment quantities, and number of per-segment items
   BOOLEAN perseg = 0;
-  INT4 per_nsegments = 0;
+  UINT4 per_nsegments = 0;
   XLAL_CHECK( XLALFITSHeaderReadBOOLEAN( file, "perseg", &perseg ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( perseg ) {
-    XLAL_CHECK( XLALFITSHeaderReadINT4( file, "nsegment", &per_nsegments ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "nsegment", &per_nsegments ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   if ( *out == NULL ) {
@@ -289,8 +289,8 @@ int XLALWeaveOutputResultsReadAppend(
 
   // Read and increment total number of semicoherent results added to output
   {
-    INT8 semi_total = 0;
-    XLAL_CHECK( XLALFITSHeaderReadINT8( file, "semitot", &semi_total ) == XLAL_SUCCESS, XLAL_EFUNC );
+    UINT8 semi_total = 0;
+    XLAL_CHECK( XLALFITSHeaderReadUINT8( file, "semitot", &semi_total ) == XLAL_SUCCESS, XLAL_EFUNC );
     ( *out )->semi_total += semi_total;
   }
 
