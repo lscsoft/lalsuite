@@ -405,6 +405,8 @@ checkpoint = 500
 ; if jobs use too much memory, they will swap and run forever
 coarse-match-df = 4.0
 iterative-match-df-max= 1.0
+; If you want to add precomputed banks to the workflow
+;bank-seed = FILENAME[:APPROX]
 
 [coarse-sbank]
 ; This section is for planning the splitting of the parameter
@@ -505,7 +507,6 @@ def parse_command_line():
     parser.add_option("--config-file", default=None, help="Read options for generating template bank placement pipeline from configuration ini file..")
     parser.add_option("--user-tag", default="SBANK", help="Make your results feel special and give them a unique name.")
     parser.add_option("--template-bank", default=None, help="Skip the template bank generation stage. Use given template bank for bank sim.")
-    parser.add_option("--bank-seed", default=None, help="Use the provided template bank as a start bank. sBank will fill in any holes in this bank.")
     options, filenames = parser.parse_args()
 
     return options, filenames
@@ -550,30 +551,24 @@ if options.template_bank:
     bank_names = sbankSplitNode.get_output_files()
     bank_nodes = [sbankSplitNode]
 else:
-    if options.bank_seed:
-        xmlCoarse = options.bank_seed
-        pnode = []
-        bank_names.append(options.bank_seed)
-        bank_nodes.append(None)
+    # set up sole coarse node to plan out the mini-sbank nodes
+    coarse_sbank_node = SBankNode(sbankJob, dag, "SBANK_COARSE")
+    coarse_mm = cp.get("coarse-sbank", "match-min")
+    coarse_sbank_node.add_var_opt("match-min", coarse_mm)
+    coarse_thresh = cp.get("coarse-sbank", "convergence-threshold")
+    coarse_sbank_node.add_var_arg("--convergence-threshold %s" % coarse_thresh)
+
+    if cp.has_option("coarse-sbank", "max-new-templates"):
+        templates_max = cp.get("coarse-sbank", "max-new-templates")
+        assert templates_max >= 3*nbanks # you need at least a few templates per bank
     else:
-        # set up sole coarse node to plan out the mini-sbank nodes
-        coarse_sbank_node = SBankNode(sbankJob, dag, "SBANK_COARSE")
-        coarse_mm = cp.get("coarse-sbank", "match-min")
-        coarse_sbank_node.add_var_opt("match-min", coarse_mm)
-        coarse_thresh = cp.get("coarse-sbank", "convergence-threshold")
-        coarse_sbank_node.add_var_arg("--convergence-threshold %s" % coarse_thresh)
+        templates_max = 15*nbanks  # to prevent the coarse bank from running forever
+    coarse_sbank_node.add_var_arg("--max-new-templates %s" % templates_max)
 
-        if cp.has_option("coarse-sbank", "max-new-templates"):
-            templates_max = cp.get("coarse-sbank", "max-new-templates")
-            assert templates_max >= 3*nbanks # you need at least a few templates per bank
-        else:
-            templates_max = 15*nbanks  # to prevent the coarse bank from running forever
-        coarse_sbank_node.add_var_arg("--max-new-templates %s" % templates_max)
-
-        xmlCoarse, = coarse_sbank_node.get_output_files()
-        pnode = [coarse_sbank_node]
-        bank_names.append(xmlCoarse)
-        bank_nodes.append(coarse_sbank_node)
+    xmlCoarse, = coarse_sbank_node.get_output_files()
+    pnode = [coarse_sbank_node]
+    bank_names.append(xmlCoarse)
+    bank_nodes.append(coarse_sbank_node)
 
     # use coarse bank to choose mchirp regions of roughly equal template number
     sbankChooseMchirpBoundariesJob = SBankChooseMchirpBoundariesJob(cp)
