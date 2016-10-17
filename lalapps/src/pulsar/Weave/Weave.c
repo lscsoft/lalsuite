@@ -1028,37 +1028,7 @@ int main( int argc, char *argv[] )
 
     // Write miscellaneous per-segment information
     if ( uvar->output_misc_info ) {
-
-      // Begin FITS table
-      XLAL_CHECK( XLALFITSTableOpenWrite( file, "per_seg_info", "miscellaneous per-segment information" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // Describe FITS table
-      {
-        char col_name[32];
-        XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveOutputMiscPerSegInfo );
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_start ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, GPSTime, segment_end ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( sft_catalog != NULL ) {
-          for ( size_t i = 0; i < setup.detectors->length; ++i ) {
-            snprintf( col_name, sizeof( col_name ), "sft_first_%s", setup.detectors->data[i] );
-            XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_first[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-            snprintf( col_name, sizeof( col_name ), "sft_last_%s", setup.detectors->data[i] );
-            XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, sft_last[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-            snprintf( col_name, sizeof( col_name ), "sft_count_%s", setup.detectors->data[i] );
-            XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, INT4, sft_count[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-          }
-          XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_min_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
-          XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_max_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
-        }
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, coh_total ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, coh_total_recomp ) == XLAL_SUCCESS, XLAL_EFUNC );
-      }
-
-      // Write FITS table
-      for ( size_t i = 0; i < nsegments; ++i ) {
-        XLAL_CHECK( XLALFITSTableWriteRow( file, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
-      }
-
+      XLAL_CHECK_MAIN( XLALWeaveOutputMiscPerSegInfoWrite( file, &setup, sft_catalog != NULL, nsegments, per_seg_info ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
     // Close output file

@@ -96,6 +96,13 @@ int XLALWeaveOutputResultsCompare(
   const WeaveOutputResults *out_1,
   const WeaveOutputResults *out_2
   );
+int XLALWeaveOutputMiscPerSegInfoWrite(
+  FITSFile *file,
+  const WeaveSetupData *setup,
+  const BOOLEAN write_SFT_info,
+  const UINT4 nsegments,
+  const WeaveOutputMiscPerSegInfo *per_seg_info
+  );
 
 /// @}
 
