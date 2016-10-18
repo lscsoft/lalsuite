@@ -107,6 +107,35 @@ test_ParseStringValue ( void )
   XLAL_TRY_SILENT( XLALParseStringValueAsINT4 ( &valINT4, valString ), errnum );
   XLAL_CHECK( errnum != 0, XLAL_EFAILED, "XLALParseStringValueAsINT4() failed to catch out-of-range conversion\n" );
 
+  // ---------- XLALParseStringValueAsUINT8() ----------
+  UINT8 valUINT8, valUINT8Ref;
+  valString = "18446744073709551615"; // LAL_UINT8_MAX
+  valUINT8Ref = LAL_UINT8_C(18446744073709551615);
+  XLAL_CHECK ( XLALParseStringValueAsUINT8 ( &valUINT8, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( valUINT8 == valUINT8Ref, XLAL_ETOL, "XLALParseStringValueAsUINT8(%s) failed, return = %" LAL_UINT8_FORMAT "\n", valString, valUINT8 );
+
+  valString = "4294967294"; // 2 * LAL_UINT4_MAX
+  valUINT8Ref = 4294967294;
+  XLAL_CHECK ( XLALParseStringValueAsUINT8 ( &valUINT8, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( valUINT8 == valUINT8Ref, XLAL_ETOL, "XLALParseStringValueAsUINT8(%s) failed, return = %" LAL_UINT8_FORMAT "\n", valString, valUINT8 );
+
+  // this one needs to fail!
+  valString = "-4294967294"; // -2 * LAL_UINT4_MAX
+  XLAL_TRY_SILENT( XLALParseStringValueAsUINT8 ( &valUINT8, valString ), errnum );
+  XLAL_CHECK( errnum != 0, XLAL_EFAILED, "XLALParseStringValueAsUINT8() failed to catch out-of-range conversion\n" );
+
+  // ---------- XLALParseStringValueAsUINT4() ----------
+  UINT4 valUINT4, valUINT4Ref;
+  valString = "4294967295"; // LAL_UINT4_MAX
+  valUINT4Ref = 4294967295;
+  XLAL_CHECK ( XLALParseStringValueAsUINT4 ( &valUINT4, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( valUINT4 == valUINT4Ref, XLAL_ETOL, "XLALParseStringValueAsUINT4(%s) failed, return = %d\n", valString, valUINT4 );
+
+  // this one needs to fail!
+  valString = "-1000000";
+  XLAL_TRY_SILENT( XLALParseStringValueAsUINT4 ( &valUINT4, valString ), errnum );
+  XLAL_CHECK( errnum != 0, XLAL_EFAILED, "XLALParseStringValueAsUINT4() failed to catch out-of-range conversion\n" );
+
   // ---------- XLALParseStringValueAsREAL8() ----------
   REAL8 valREAL8, valREAL8Ref;
   valString = "2147483647";
