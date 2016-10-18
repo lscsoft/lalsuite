@@ -37,9 +37,7 @@ AM_INIT_AUTOMAKE([ \
 
 # version requirements
 MIN_LAL_VERSION="6.17.0"
-MIN_LDAS_TOOLS_FRAMECPP_VERSION="2.5.3"
 AC_SUBST([MIN_LAL_VERSION])
-AC_SUBST([MIN_LDAS_TOOLS_FRAMECPP_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -141,7 +139,7 @@ FRAMEL_AVAILABLE="no"
 
 AS_IF([test "${framec}" = "true"], [
        FRAMEC_AVAILABLE="yes"
-       PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= ${MIN_LDAS_FRAMECPP_VERSION}],[true],[false])
+       PKG_CHECK_MODULES([FRAMECPPC],[framecppc >= 2.0.0],[true],[false])
        LALSUITE_ADD_FLAGS([C],[${FRAMECPPC_CFLAGS}],[${FRAMECPPC_LIBS}])
        AC_CHECK_LIB([framecppc],[FrameCFileOpen],,[FRAMEC_AVAILABLE="no"])
        AC_CHECK_HEADERS([framecppc/FrameC.h],,[FRAMEC_AVAILABLE="no"])

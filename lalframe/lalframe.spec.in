@@ -12,7 +12,7 @@ Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: ldas-tools-framecpp-c-devel >= @MIN_LDAS_TOOLS_FRAMECPP_VERSION@
+BuildRequires: ldas-tools-framecpp-c-devel
 BuildRequires: libframe-devel
 BuildRequires: numpy
 BuildRequires: octave-devel
@@ -21,7 +21,7 @@ BuildRequires: swig
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: lal-python >= @MIN_LAL_VERSION@
-Requires: ldas-tools-framecpp-c >= @MIN_LDAS_TOOLS_FRAMECPP_VERSION@
+Requires: ldas-tools-framecpp-c
 Requires: libframe
 Requires: lal >= @MIN_LAL_VERSION@
 Prefix: %{_prefix}
@@ -35,7 +35,7 @@ that use the LAL Frame library.
 Summary: Files and documentation needed for compiling programs that use LAL Frame
 Group: LAL
 Requires: %{name} = %{version}
-Requires: ldas-tools-framecpp-c-devel >= @MIN_LDAS_TOOLS_FRAMECPP_VERSION@
+Requires: ldas-tools-framecpp-c-devel
 Requires: libframe-devel
 Requires: lal-devel >= @MIN_LAL_VERSION@
 %description devel
