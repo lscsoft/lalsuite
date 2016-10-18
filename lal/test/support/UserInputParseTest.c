@@ -66,6 +66,7 @@ int
 test_ParseStringValue ( void )
 {
   const char *valString;
+  int errnum;
 
   // ---------- XLALParseStringValueAsINT8() ----------
   INT8 valINT8, valINT8Ref;
@@ -85,9 +86,9 @@ test_ParseStringValue ( void )
   XLAL_CHECK ( valINT8 == valINT8Ref, XLAL_ETOL, "XLALParseStringValueAsINT8(%s) failed, return = %" LAL_INT8_FORMAT "\n", valString, valINT8 );
 
   // this one needs to fail!
-  //valString = "18446744073709551616"; // 2 * LAL_INT8_MAX
-  //XLAL_CHECK ( XLAL_SUCCESS != XLALParseStringValueAsINT8 ( &valINT8, valString ), XLAL_EFAILED, "XLALParseStringValueAsINT8() failed to catch out-of-range conversion\n" );
-  //XLALPrintError ("---------- Not to worry, the above failure was on purpose: ----------\n\n");
+  valString = "18446744073709551616"; // 2 * LAL_INT8_MAX
+  XLAL_TRY_SILENT( XLALParseStringValueAsINT8 ( &valINT8, valString ), errnum );
+  XLAL_CHECK( errnum != 0, XLAL_EFAILED, "XLALParseStringValueAsINT8() failed to catch out-of-range conversion\n" );
 
   // ---------- XLALParseStringValueAsINT4() ----------
   INT4 valINT4, valINT4Ref;
@@ -102,9 +103,9 @@ test_ParseStringValue ( void )
   XLAL_CHECK ( valINT4 == valINT4Ref, XLAL_ETOL, "XLALParseStringValueAsINT4(%s) failed, return = %d\n", valString, valINT4 );
 
   // this one needs to fail!
-  //valString = "4294967294"; // 2 * LAL_INT4_MAX
-  //XLAL_CHECK ( XLAL_SUCCESS != XLALParseStringValueAsINT4 ( &valINT4, valString ), XLAL_EFAILED, "XLALParseStringValueAsINT4() failed to catch out-of-range conversion\n" );
-  //XLALPrintError ("---------- Not to worry, the above failure was on purpose: ----------\n\n");
+  valString = "4294967294"; // 2 * LAL_INT4_MAX
+  XLAL_TRY_SILENT( XLALParseStringValueAsINT4 ( &valINT4, valString ), errnum );
+  XLAL_CHECK( errnum != 0, XLAL_EFAILED, "XLALParseStringValueAsINT4() failed to catch out-of-range conversion\n" );
 
   // ---------- XLALParseStringValueAsREAL8() ----------
   REAL8 valREAL8, valREAL8Ref;
