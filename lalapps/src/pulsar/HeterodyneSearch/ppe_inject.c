@@ -386,9 +386,6 @@ void inject_signal( LALInferenceRunState *runState ){
       UINT4 nonGRval = 1;
       while ( ifo_model ){
         LALInferenceAddVariable( ifo_model->params, "nonGR", &nonGRval, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-        if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
-        if ( !varyskypos ){ LALInferenceRemoveVariable( ifo_model->params, "varyskypos" ); }
-        if ( !varybinary ){ LALInferenceRemoveVariable( ifo_model->params, "varybinary" ); }
         ifo_model = ifo_model->next;
       }
       ifo_model = runState->threads[0]->model->ifo;
@@ -397,13 +394,18 @@ void inject_signal( LALInferenceRunState *runState ){
   else {
     while ( ifo_model ){
       LALInferenceRemoveVariable(ifo_model->params, "nonGR");
-      if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
-      if ( !varyskypos ){ LALInferenceRemoveVariable( ifo_model->params, "varyskypos" ); }
-      if ( !varybinary ){ LALInferenceRemoveVariable( ifo_model->params, "varybinary" ); }
       ifo_model = ifo_model->next;
     }
     ifo_model = runState->threads[0]->model->ifo;
   }
+  
+  while ( ifo_model ){
+    if ( !varyphase ){ LALInferenceRemoveVariable( ifo_model->params, "varyphase" ); }
+    if ( !varyskypos ){ LALInferenceRemoveVariable( ifo_model->params, "varyskypos" ); }
+    if ( !varybinary ){ LALInferenceRemoveVariable( ifo_model->params, "varybinary" ); }
+    ifo_model = ifo_model->next;
+  }
+  ifo_model = runState->threads[0]->model->ifo;
 
   PulsarFreeParams( injpars ); /* free memory */
 }
