@@ -37,6 +37,14 @@ echo
 
 for seg in 1 2 3; do
 
+    echo "=== Segment #${seg}: Check that no results were recomputed ==="
+    set -x
+    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[per_seg_info][col coh_total_recomp][#row == ${seg}]" > tmp
+    coh_total_recomp=`cat tmp | sed "/^#/d" | xargs printf "%d"`
+    [ ${coh_total_recomp} -eq 0 ]
+    set +x
+    echo
+
     echo "=== Segment #${seg}: Extract segment start/end times from WeaveSetup.fits ==="
     set -x
     ${fitsdir}/lalapps_fits_table_list "WeaveSetup.fits[segments][col start_s; start_ns][#row == ${seg}]" > tmp

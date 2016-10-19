@@ -28,23 +28,35 @@ ${builddir}/lalapps_Weave --cache-max-size=10 --output-file=WeaveOutMax.fits \
 set +x
 echo
 
-echo "=== Check that coherent template counts are equal, and that WeaveOut{NoMax|Max}.fits {did not|did} recompute results ==="
-set -x
 for seg in 1 2 3; do
+
+    echo "=== Segment #${seg}: Check that coherent template counts are equal, and that WeaveOut{NoMax|Max}.fits {did not|did} recompute results ==="
+    set -x
     ${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[per_seg_info][col coh_total][#row == ${seg}]" > tmp
     coh_total_no_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[per_seg_info][col coh_total_recomp][#row == ${seg}]" > tmp
-    coh_total_recomp_no_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
     ${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[per_seg_info][col coh_total][#row == ${seg}]" > tmp
     coh_total_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
+    [ ${coh_total_no_max} -eq ${coh_total_max} ]
+    set +x
+    echo
+
+    echo "=== Segment #${seg}: Check that search without a maximum cache size did not recompute results ==="
+    set -x
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[per_seg_info][col coh_total_recomp][#row == ${seg}]" > tmp
+    coh_total_recomp_no_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
+    [ ${coh_total_recomp_no_max} -eq 0 ]
+    set +x
+    echo
+
+    echo "=== Segment #${seg}: Check that search with a maximum cache size did recompute results ==="
+    set -x
     ${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[per_seg_info][col coh_total_recomp][#row == ${seg}]" > tmp
     coh_total_recomp_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    [ ${coh_total_no_max} -eq ${coh_total_no_max} ]
-    [ ${coh_total_recomp_no_max} -eq 0 ]
     [ ${coh_total_recomp_max} -gt 0 ]
+    set +x
+    echo
+
 done
-set +x
-echo
 
 echo "=== Compare F-statistics from lalapps_Weave without/with frequency partitions ==="
 set -x

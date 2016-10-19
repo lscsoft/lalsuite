@@ -28,6 +28,21 @@ ${builddir}/lalapps_Weave --freq-partitions=5 --output-file=WeaveOutPart.fits \
 set +x
 echo
 
+for seg in 1 2 3; do
+
+    echo "=== Check that no results were recomputed ==="
+    set -x
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoPart.fits[per_seg_info][col coh_total_recomp][#row == ${seg}]" > tmp
+    coh_total_recomp_no_part=`cat tmp | sed "/^#/d" | xargs printf "%d"`
+    [ ${coh_total_recomp_no_part} -eq 0 ]
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutPart.fits[per_seg_info][col coh_total_recomp][#row == ${seg}]" > tmp
+    coh_nrecomp_part=`cat tmp | sed "/^#/d" | xargs printf "%d"`
+    [ ${coh_nrecomp_part} -eq 0 ]
+    set +x
+    echo
+
+done
+
 echo "=== Compare F-statistics from lalapps_Weave without/with frequency partitions ==="
 set -x
 LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info"

@@ -17,8 +17,16 @@ echo
 
 echo "=== Perform fully-coherent search ==="
 set -x
-${builddir}/lalapps_Weave --output-file=WeaveOut.fits --output-toplist-limit=0 --output-per-detector --setup-file=WeaveSetup.fits \
-    --sft-files='*.sft' --freq=100.5 --f1dot=-1e-8,0 --semi-max-mismatch=0.3 --Fstat-method=DemodBest
+${builddir}/lalapps_Weave --output-file=WeaveOut.fits --output-toplist-limit=0 --output-per-detector --output-misc-info \
+    --setup-file=WeaveSetup.fits --sft-files='*.sft' --freq=100.5 --f1dot=-1e-8,0 --semi-max-mismatch=0.3 --Fstat-method=DemodBest
+set +x
+echo
+
+echo "=== Check that no results were recomputed ==="
+set -x
+${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[per_seg_info][col coh_total_recomp]" > tmp
+coh_total_recomp=`cat tmp | sed "/^#/d" | xargs printf "%d"`
+[ ${coh_total_recomp} -eq 0 ]
 set +x
 echo
 

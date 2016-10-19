@@ -620,6 +620,9 @@ int XLALWeaveCacheRetrieve(
     // Compute coherent results for the new cache item
     XLAL_CHECK( XLALWeaveCohResultsCompute( &new_item->coh_res, cache->coh_input, &queries->coh_phys[query_index], coh_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+    // Add new cache item to the index hash table
+    XLAL_CHECK( XLALHashTblAdd( cache->coh_index_hash, new_item ) == XLAL_SUCCESS, XLAL_EFUNC );
+
     // Stage new cache item into 'saved_item', ready to be added to the cache
     cache->saved_item = new_item;
 
@@ -666,11 +669,7 @@ int XLALWeaveCacheRetrieve(
 
     } else {
 
-      // Add new cache item to the index hash table
-      XLAL_CHECK( XLALHashTblAdd( cache->coh_index_hash, new_item ) == XLAL_SUCCESS, XLAL_EFUNC );
-
       // Add new cache item to the relevance heap; 'saved_item' many now contains an item removed from the heap
-      cache->saved_item = new_item;
       XLAL_CHECK( XLALHeapAdd( cache->relevance_heap, ( void ** ) &cache->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // If 'saved_item' contains an item removed from the heap, also remove it from the index hash table
