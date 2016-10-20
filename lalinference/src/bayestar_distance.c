@@ -28,6 +28,7 @@
 #include <gsl/gsl_sf_erf.h>
 #include <gsl/gsl_sf_exp.h>
 #include <gsl/gsl_cdf.h>
+#include <gsl/gsl_statistics.h>
 
 #include <chealpix.h>
 
@@ -80,7 +81,7 @@ double bayestar_distance_conditional_cdf(
 }
 
 
-static double ppf_f(double r, void *params)
+static double conditional_ppf_f(double r, void *params)
 {
     const double p = ((double*) params)[0];
     const double mu = ((double *) params)[1];
@@ -89,7 +90,7 @@ static double ppf_f(double r, void *params)
 }
 
 
-static double ppf_df(double r, void *params)
+static double conditional_ppf_df(double r, void *params)
 {
     const double mu = ((double *) params)[1];
     const double norm = ((double *) params)[2];
@@ -97,7 +98,7 @@ static double ppf_df(double r, void *params)
 }
 
 
-static void ppf_fdf(double r, void *params, double *f, double *df)
+static void conditional_ppf_fdf(double r, void *params, double *f, double *df)
 {
     const double p = ((double*) params)[0];
     const double mu = ((double *) params)[1];
@@ -133,7 +134,9 @@ double bayestar_distance_conditional_ppf(
     const gsl_root_fdfsolver_type *algo = gsl_root_fdfsolver_steffenson;
     char state[algo->size];
     gsl_root_fdfsolver solver = {algo, NULL, 0, state};
-    gsl_function_fdf fun = {ppf_f, ppf_df, ppf_fdf, &params};
+    gsl_function_fdf fun = {
+        conditional_ppf_f, conditional_ppf_df, conditional_ppf_fdf,
+        &params};
     gsl_root_fdfsolver_set(&solver, &fun, z);
 
     do
@@ -347,6 +350,7 @@ double bayestar_distance_marginal_pdf(
     const double *sigma, const double *norm)
 {
     double sum = 0;
+    #pragma omp parallel for reduction(+:sum)
     for (long i = 0; i < npix; i ++)
         sum += prob[i] * bayestar_distance_conditional_pdf(
             r, mu[i], sigma[i], norm[i]);
@@ -360,8 +364,89 @@ double bayestar_distance_marginal_cdf(
     const double *sigma, const double *norm)
 {
     double sum = 0;
+    #pragma omp parallel for reduction(+:sum)
     for (long i = 0; i < npix; i ++)
         sum += prob[i] * bayestar_distance_conditional_cdf(
             r, mu[i], sigma[i], norm[i]);
     return sum;
+}
+
+
+typedef struct {
+    double p;
+    long npix;
+    const double *prob;
+    const double *mu;
+    const double *sigma;
+    const double *norm;
+} marginal_ppf_params;
+
+
+static double marginal_ppf_f(double r, void *params)
+{
+    marginal_ppf_params *p = (marginal_ppf_params *)params;
+    return bayestar_distance_marginal_cdf(
+        r, p->npix, p->prob, p->mu, p->sigma, p->norm) - p->p;
+}
+
+
+static double marginal_ppf_df(double r, void *params)
+{
+    marginal_ppf_params *p = (marginal_ppf_params *)params;
+    return bayestar_distance_marginal_pdf(
+        r, p->npix, p->prob, p->mu, p->sigma, p->norm);
+}
+
+
+static void marginal_ppf_fdf(double r, void *params, double *f, double *df)
+{
+    marginal_ppf_params *p = (marginal_ppf_params *)params;
+    *f = bayestar_distance_marginal_cdf(
+        r, p->npix, p->prob, p->mu, p->sigma, p->norm) - p->p;
+    *df = bayestar_distance_marginal_pdf(
+        r, p->npix, p->prob, p->mu, p->sigma, p->norm);
+}
+
+
+double bayestar_distance_marginal_ppf(
+    double p, long npix,
+    const double *prob, const double *mu,
+    const double *sigma, const double *norm)
+{
+    if (p <= 0)
+        return 0;
+    else if (p >= 1)
+        return GSL_POSINF;
+    else if (!isfinite(p))
+        return GSL_NAN;
+
+    /* Set up variables for tracking progress toward the solution. */
+    static const int max_iter = 50;
+    marginal_ppf_params params = {p, npix, prob, mu, sigma, norm};
+    int iter = 0;
+    size_t max_ipix = gsl_stats_max_index(prob, 1, npix);
+    double r = bayestar_distance_conditional_ppf(
+        p, mu[max_ipix], sigma[max_ipix], norm[max_ipix]);
+    int status;
+
+    /* Set up solver (on stack). */
+    const gsl_root_fdfsolver_type *algo = gsl_root_fdfsolver_steffenson;
+    char state[algo->size];
+    gsl_root_fdfsolver solver = {algo, NULL, 0, state};
+    gsl_function_fdf fun = {
+        marginal_ppf_f, marginal_ppf_df, marginal_ppf_fdf,
+        &params};
+    gsl_root_fdfsolver_set(&solver, &fun, r);
+
+    do
+    {
+        const double rold = r;
+        status = gsl_root_fdfsolver_iterate(&solver);
+        r = gsl_root_fdfsolver_root(&solver);
+        status = gsl_root_test_delta (r, rold, 0, GSL_SQRT_DBL_EPSILON);
+        iter++;
+    } while (status == GSL_CONTINUE && iter < max_iter);
+    /* FIXME: do something with status? */
+
+    return r;
 }
