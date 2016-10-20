@@ -262,7 +262,7 @@ distnorm : `numpy.ndarray`
 Returns
 -------
 pdf : `numpy.ndarray`
-    Conditional probability density according to ansatz.
+    Marginal probability density according to ansatz.
 """)
 
 
