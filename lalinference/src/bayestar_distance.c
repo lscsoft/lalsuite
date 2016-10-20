@@ -173,7 +173,8 @@ static void integrals(
 }
 
 
-static void fdf(double z, void *params, double *fval, double *dfval)
+static void moments_to_parameters_fdf(
+    double z, void *params, double *fval, double *dfval)
 {
     const double mean_std = *(double *)params;
     const double target = 1 / gsl_pow_2(mean_std) + 1;
@@ -184,18 +185,18 @@ static void fdf(double z, void *params, double *fval, double *dfval)
 }
 
 
-static double f(double z, void *params)
+static double moments_to_parameters_f(double z, void *params)
 {
     double fval, dfval;
-    fdf(z, params, &fval, &dfval);
+    moments_to_parameters_fdf(z, params, &fval, &dfval);
     return fval;
 }
 
 
-static double df(double z, void *params)
+static double moments_to_parameters_df(double z, void *params)
 {
     double fval, dfval;
-    fdf(z, params, &fval, &dfval);
+    moments_to_parameters_fdf(z, params, &fval, &dfval);
     return dfval;
 }
 
@@ -212,7 +213,11 @@ static int solve_z(double mean_std, double *result)
     const gsl_root_fdfsolver_type *algo = gsl_root_fdfsolver_steffenson;
     char state[algo->size];
     gsl_root_fdfsolver solver = {algo, NULL, 0, state};
-    gsl_function_fdf fun = {f, df, fdf, &mean_std};
+    gsl_function_fdf fun = {
+        moments_to_parameters_f,
+        moments_to_parameters_df,
+        moments_to_parameters_fdf,
+        &mean_std};
     gsl_root_fdfsolver_set(&solver, &fun, z);
 
     do
