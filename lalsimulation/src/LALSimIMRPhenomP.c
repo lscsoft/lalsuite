@@ -643,7 +643,6 @@ static int PhenomPCore(
     errcode = XLAL_ENOMEM;
     goto cleanup;
   }
-  REAL8 phasing = 0;
 
   AmpInsPrefactors amp_prefactors;
   PhiInsPrefactors phi_prefactors;
@@ -664,6 +663,7 @@ static int PhenomPCore(
   for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
     COMPLEX16 hp_val = 0.0;
     COMPLEX16 hc_val = 0.0;
+    REAL8 phasing = 0;
     double f = freqs->data[i];
     int j = i + offset; // shift index for frequency series if needed
 
