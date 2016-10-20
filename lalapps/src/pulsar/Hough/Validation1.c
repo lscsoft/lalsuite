@@ -66,11 +66,6 @@
 #define VALIDATION1_MSGEFILE "Could not create output file"
 
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
-
 /* ************************************************************
  * Usage format string. 
  */

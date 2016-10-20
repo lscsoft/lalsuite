@@ -100,11 +100,6 @@ do {                                                                 \
 } while (0)
 /******************************************************************/
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
-
 #define TRUE (1==1)
 #define FALSE (1==0)
 

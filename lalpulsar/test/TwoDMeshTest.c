@@ -314,11 +314,6 @@ if ( (func), (statusptr)->statusCode )                               \
 }                                                                    \
 else (void)(0)
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
-
 /* Local prototypes. */
 void
 LALRangeTest( LALStatus *stat, REAL4 range[2], REAL4 x, void *params );

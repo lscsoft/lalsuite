@@ -273,11 +273,6 @@ if ( ( (val) <= (lower) ) || ( (val) > (upper) ) )                   \
 }                                                                    \
 while (0)
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
-
 /* Prototype for a routine to print floating-point numbers with
    uncertainties. */
 int

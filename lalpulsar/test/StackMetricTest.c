@@ -163,11 +163,6 @@ if ( ( (val) <= (lower) ) || ( (val) > (upper) ) )                   \
 }                                                                    \
 while (0)
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
-
 #include <lal/LALStdio.h>
 #define MAXLEN 1024
 int
