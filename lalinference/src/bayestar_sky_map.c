@@ -715,9 +715,9 @@ static adaptive_sky_map *adaptive_sky_map_refine(
 
 static adaptive_sky_map *adaptive_sky_map_alloc(unsigned char order)
 {
-    unsigned long nside = (unsigned long)1 << order;
-    unsigned long npix = nside2npix(nside);
-    size_t size = sizeof(adaptive_sky_map)
+    const unsigned long nside = (unsigned long)1 << order;
+    const unsigned long npix = nside2npix(nside);
+    const size_t size = sizeof(adaptive_sky_map)
         + npix * sizeof(adaptive_sky_map_pixel);
 
     adaptive_sky_map *map = malloc(size);
@@ -1055,8 +1055,8 @@ double bayestar_log_likelihood_toa_phoa_snr(
 
 static void test_cabs2(double complex z)
 {
-    double result = cabs2(z);
-    double expected = gsl_pow_2(cabs(z));
+    const double result = cabs2(z);
+    const double expected = gsl_pow_2(cabs(z));
     gsl_test_abs(result, expected, 2 * GSL_DBL_EPSILON,
         "testing cabs2(%g + %g j)", creal(z), cimag(z));
 }
@@ -1066,8 +1066,8 @@ static void test_complex_catrom(void)
 {
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double complex result = complex_catrom(0, 0, 0, 0, t);
-        double complex expected = 0;
+        const double complex result = complex_catrom(0, 0, 0, 0, t);
+        const double complex expected = 0;
         gsl_test_abs(creal(result), creal(expected), 0,
             "testing complex Catmull-rom interpolant for zero input");
         gsl_test_abs(cimag(result), cimag(expected), 0,
@@ -1076,8 +1076,8 @@ static void test_complex_catrom(void)
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double complex result = complex_catrom(1, 1, 1, 1, t);
-        double complex expected = 1;
+        const double complex result = complex_catrom(1, 1, 1, 1, t);
+        const double complex expected = 1;
         gsl_test_abs(creal(result), creal(expected), 0,
             "testing complex Catmull-rom interpolant for unit input");
         gsl_test_abs(cimag(result), cimag(expected), 0,
@@ -1086,8 +1086,8 @@ static void test_complex_catrom(void)
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double complex result = complex_catrom(1.0j, 1.0j, 1.0j, 1.0j, t);
-        double complex expected = 1.0j;
+        const double complex result = complex_catrom(1.0j, 1.0j, 1.0j, 1.0j, t);
+        const double complex expected = 1.0j;
         gsl_test_abs(creal(result), creal(expected), 0,
             "testing complex Catmull-rom interpolant for unit imaginary input");
         gsl_test_abs(cimag(result), cimag(expected), 1,
@@ -1096,8 +1096,8 @@ static void test_complex_catrom(void)
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double complex result = complex_catrom(1.0+1.0j, 1.0+1.0j, 1.0+1.0j, 1.0+1.0j, t);
-        double complex expected = 1.0+1.0j;
+        const double complex result = complex_catrom(1.0+1.0j, 1.0+1.0j, 1.0+1.0j, 1.0+1.0j, t);
+        const double complex expected = 1.0+1.0j;
         gsl_test_abs(creal(result), creal(expected), 0,
             "testing complex Catmull-rom interpolant for unit real + imaginary input");
         gsl_test_abs(cimag(result), cimag(expected), 0,
@@ -1106,8 +1106,8 @@ static void test_complex_catrom(void)
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double complex result = complex_catrom(1, 0, 1, 4, t);
-        double complex expected = gsl_pow_2(t);
+        const double complex result = complex_catrom(1, 0, 1, 4, t);
+        const double complex expected = gsl_pow_2(t);
         gsl_test_abs(creal(result), creal(expected), 0,
             "testing complex Catmull-rom interpolant for quadratic real input");
         gsl_test_abs(cimag(result), cimag(expected), 0,
@@ -1120,146 +1120,146 @@ static void test_real_catrom(void)
 {
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double result = real_catrom(0, 0, 0, 0, t);
-        double expected = 0;
+        const double result = real_catrom(0, 0, 0, 0, t);
+        const double expected = 0;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for zero input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double result = real_catrom(1, 1, 1, 1, t);
-        double expected = 1;
+        const double result = real_catrom(1, 1, 1, 1, t);
+        const double expected = 1;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for unit input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double result = real_catrom(1, 0, 1, 4, t);
-        double expected = gsl_pow_2(t);
+        const double result = real_catrom(1, 0, 1, 4, t);
+        const double expected = gsl_pow_2(t);
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for quadratic input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             GSL_POSINF, GSL_POSINF, GSL_POSINF, GSL_POSINF, t);
-        double expected = GSL_POSINF;
+        const double expected = GSL_POSINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for +inf input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             0, GSL_POSINF, GSL_POSINF, GSL_POSINF, t);
-        double expected = GSL_POSINF;
+        const double expected = GSL_POSINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for +inf input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             GSL_POSINF, GSL_POSINF, GSL_POSINF, 0, t);
-        double expected = GSL_POSINF;
+        const double expected = GSL_POSINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for +inf input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             0, GSL_POSINF, GSL_POSINF, 0, t);
-        double expected = GSL_POSINF;
+        const double expected = GSL_POSINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for +inf input");
     }
 
     for (double t = 0.01; t <= 1; t += 0.01)
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             0, 0, GSL_POSINF, 0, t);
-        double expected = GSL_POSINF;
+        const double expected = GSL_POSINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for +inf input");
     }
 
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             0, GSL_NEGINF, GSL_POSINF, 0, 1);
-        double expected = GSL_POSINF;
+        const double expected = GSL_POSINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for +inf input");
     }
 
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             0, GSL_POSINF, GSL_NEGINF, 0, 0);
-        double expected = GSL_POSINF;
+        const double expected = GSL_POSINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for +inf input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             0, GSL_NEGINF, GSL_NEGINF, GSL_NEGINF, t);
-        double expected = GSL_NEGINF;
+        const double expected = GSL_NEGINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for -inf input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             GSL_NEGINF, GSL_NEGINF, GSL_NEGINF, 0, t);
-        double expected = GSL_NEGINF;
+        const double expected = GSL_NEGINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for -inf input");
     }
 
     for (double t = 0; t <= 1; t += 0.01)
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             0, GSL_NEGINF, GSL_NEGINF, 0, t);
-        double expected = GSL_NEGINF;
+        const double expected = GSL_NEGINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for -inf input");
     }
 
     for (double t = 0.01; t <= 1; t += 0.01)
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             0, 0, GSL_NEGINF, 0, t);
-        double expected = GSL_NEGINF;
+        const double expected = GSL_NEGINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for -inf input");
     }
 
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             0, GSL_NEGINF, GSL_POSINF, 0, 0);
-        double expected = GSL_NEGINF;
+        const double expected = GSL_NEGINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for -inf input");
     }
 
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             0, GSL_POSINF, GSL_NEGINF, 0, 1);
-        double expected = GSL_NEGINF;
+        const double expected = GSL_NEGINF;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for -inf input");
     }
 
     for (double t = 0.01; t < 1; t += 0.01)
     {
-        double result = real_catrom(
+        const double result = real_catrom(
             0, GSL_NEGINF, GSL_POSINF, 0, t);
-        double expected = GSL_NAN;
+        const double expected = GSL_NAN;
         gsl_test_abs(result, expected, 0,
             "testing Catmull-rom interpolant for indeterminate input");
     }
@@ -1268,7 +1268,7 @@ static void test_real_catrom(void)
 
 static void test_eval_snr(void)
 {
-    size_t nsamples = 64;
+    static const size_t nsamples = 64;
     float complex x[nsamples];
 
     /* Populate data with samples of x(t) = t^2 + t j */
@@ -1277,8 +1277,8 @@ static void test_eval_snr(void)
 
     for (double t = 0; t <= nsamples; t += 0.1)
     {
-        double result = eval_snr(x, nsamples, t);
-        double expected = (t > 1 && t < nsamples - 2) ? (gsl_pow_2(t) + t*1.0j) : 0;
+        const double result = eval_snr(x, nsamples, t);
+        const double expected = (t > 1 && t < nsamples - 2) ? (gsl_pow_2(t) + t*1.0j) : 0;
         gsl_test_abs(creal(result), creal(expected), 1e4 * GSL_DBL_EPSILON,
             "testing real part of eval_snr(%g) for x(t) = t^2 + t j", t);
         gsl_test_abs(cimag(result), cimag(expected), 1e4 * GSL_DBL_EPSILON,

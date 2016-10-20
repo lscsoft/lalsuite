@@ -307,11 +307,11 @@ double bayestar_volume_render(
      * spatial origin to the plane of the screen. */
 
     /* Transverse distance from origin to point on screen */
-    double a = sqrt(gsl_pow_2(x) + gsl_pow_2(y));
+    const double a = sqrt(gsl_pow_2(x) + gsl_pow_2(y));
 
     /* Maximum value of theta (at edge of screen-aligned cube) */
-    double theta_max = atan2(max_distance, a);
-    double dtheta = 0.5 * M_PI / nside / 4;
+    const double theta_max = atan2(max_distance, a);
+    const double dtheta = 0.5 * M_PI / nside / 4;
 
     /* Construct regular grid from -theta_max to +theta_max */
     double ret = 0;
@@ -320,8 +320,8 @@ double bayestar_volume_render(
         /* Differential z = a tan(theta),
          * dz = dz/dtheta dtheta = a tan'(theta) dtheta = a sec^2(theta) dtheta,
          * and dtheta = const */
-        double dz_dtheta = a / gsl_pow_2(cos(theta));
-        double z = a * tan(theta);
+        const double dz_dtheta = a / gsl_pow_2(cos(theta));
+        const double z = a * tan(theta);
         double xyz[3];
         xyz[axis0] = x;
         xyz[axis1] = y;
@@ -429,7 +429,7 @@ double bayestar_distance_marginal_ppf(
     static const int max_iter = 50;
     marginal_ppf_params params = {p, npix, prob, mu, sigma, norm};
     int iter = 0;
-    size_t max_ipix = gsl_stats_max_index(prob, 1, npix);
+    const size_t max_ipix = gsl_stats_max_index(prob, 1, npix);
     double r = bayestar_distance_conditional_ppf(
         p, mu[max_ipix], sigma[max_ipix], norm[max_ipix]);
     int status;
