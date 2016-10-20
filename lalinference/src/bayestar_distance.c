@@ -352,3 +352,16 @@ double bayestar_distance_marginal_pdf(
             r, mu[i], sigma[i], norm[i]);
     return sum;
 }
+
+
+double bayestar_distance_marginal_cdf(
+    double r, long npix,
+    const double *prob, const double *mu,
+    const double *sigma, const double *norm)
+{
+    double sum = 0;
+    for (long i = 0; i < npix; i ++)
+        sum += prob[i] * bayestar_distance_conditional_cdf(
+            r, mu[i], sigma[i], norm[i]);
+    return sum;
+}

@@ -51,6 +51,11 @@ double bayestar_distance_marginal_pdf(
     const double *prob, const double *mu,
     const double *sigma, const double *norm);
 
+double bayestar_distance_marginal_cdf(
+    double r, long npix,
+    const double *prob, const double *mu,
+    const double *sigma, const double *norm);
+
 #endif /* !defined(SWIG) && !defined(__cplusplus) */
 
 #endif /* BAYESTAR_DISTANCE_H */
