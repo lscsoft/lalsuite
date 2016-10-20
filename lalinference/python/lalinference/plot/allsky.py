@@ -29,6 +29,7 @@ import matplotlib
 import distutils.version
 mpl_version = distutils.version.LooseVersion(matplotlib.__version__)
 
+from matplotlib.axes import Axes
 from matplotlib import text
 from matplotlib import ticker
 from matplotlib import patheffects
