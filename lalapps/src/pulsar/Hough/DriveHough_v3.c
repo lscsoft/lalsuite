@@ -480,7 +480,7 @@ int main(int argc, char *argv[]){
     }
 
     /* normalize sfts */
-    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
+    XLAL_CHECK_MAIN( XLALNormalizeSFTVect( inputSFTs, uvar_blocksRngMed, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC);
 
   } /* end of sft reading block */
   
@@ -1500,7 +1500,7 @@ ComputeNoiseWeights  (LALStatus        *status,
     sft = sftVect->data + j;
 
     /* calculate the periodogram */
-    TRY (LALSFTtoPeriodogram (status->statusPtr, &periodo, sft), status);
+    XLAL_CHECK_LAL (status, XLALSFTtoPeriodogram (&periodo, sft) == XLAL_SUCCESS, XLAL_EFUNC);
 
     /* calculate the running median */
     inputV.length = lengthSFT;

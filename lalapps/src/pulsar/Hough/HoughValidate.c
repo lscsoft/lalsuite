@@ -283,7 +283,7 @@ int main(int argc, char *argv[]){
 
     XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadSFTs ( catalog, f_min, f_max) ) != NULL, XLAL_EFUNC);
 
-    LAL_CALL( LALNormalizeSFTVect (&status, inputSFTs, uvar_blocksRngMed), &status);
+    XLAL_CHECK_MAIN( XLALNormalizeSFTVect( inputSFTs, uvar_blocksRngMed, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC);
 
     if ( XLALUserVarWasSet( &uvar_ifo ) )    
       LALFree( constraints.detector );

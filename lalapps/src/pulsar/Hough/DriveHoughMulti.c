@@ -673,7 +673,7 @@ int main(int argc, char *argv[]){
         
         
         /* normalize sfts */
-        LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, inputSFTs, uvar_blocksRngMed), &status);
+        XLAL_CHECK_MAIN( ( multPSD = XLALNormalizeMultiSFTVect(  inputSFTs, uvar_blocksRngMed, NULL ) ) != NULL, XLAL_EFUNC);
         
         /* compute multi noise weights */
         if ( uvar_weighNoise ) {

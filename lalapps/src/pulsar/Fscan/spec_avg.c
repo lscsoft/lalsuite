@@ -233,8 +233,8 @@ int main(int argc, char **argv)
 /*cg;  Create the third and final file, called   blah_blah_blah.txt.  This file will contain the data used in the matlab plot script to plot the normalised average power vs the frequency.*/
 
     /* Find time average of normalized SFTs */
-    LALNormalizeSFTVect(&status, sft_vect, blocksRngMed);   
-    LALNormalizeSFTVect(&status, sft_vect, blocksRngMed);   
+    XLALNormalizeSFTVect(sft_vect, blocksRngMed, 0.0);
+    XLALNormalizeSFTVect(sft_vect, blocksRngMed, 0.0);
     timeavg = XLALMalloc(numBins*sizeof(REAL4));
     if (timeavg == NULL) fprintf(stderr,"Timeavg memory not allocated\n");
 

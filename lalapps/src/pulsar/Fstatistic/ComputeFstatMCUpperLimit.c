@@ -260,7 +260,7 @@ int main(int argc, char *argv[]) {
 
   /* Normalise SFTs and compute noise weights */
   LogPrintf(LOG_DEBUG, "Normalising SFTs and computing noise weights ... ");
-  LAL_CALL(LALNormalizeMultiSFTVect(&status, &rng_med, sfts, rng_med_win), &status);
+  XLAL_CHECK_MAIN(( rng_med = XLALNormalizeMultiSFTVect( sfts, rng_med_win, NULL ) ) != NULL, XLAL_EFUNC);
   XLAL_CHECK_MAIN(( noise_weights = XLALComputeMultiNoiseWeights( rng_med, rng_med_win, 0) ) != NULL, XLAL_EFUNC);
   LogPrintfVerbatim(LOG_DEBUG, "done\n");
 

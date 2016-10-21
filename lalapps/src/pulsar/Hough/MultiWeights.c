@@ -311,7 +311,7 @@ int main(int argc, char *argv[]){
     LAL_CALL ( LALGetMultiDetectorStates ( &status, &mdetStates, inputSFTs, edat), &status);
 
     /* normalize sfts and get power running-median rngmed[ |data|^2] from SFTs */
-    LAL_CALL( LALNormalizeMultiSFTVect (&status, &multPSD, inputSFTs, uvar_blocksRngMed), &status); 
+    XLAL_CHECK_MAIN( ( multPSD = XLALNormalizeMultiSFTVect(  inputSFTs, uvar_blocksRngMed, NULL ) ) != NULL, XLAL_EFUNC); 
 
     if ( uvar_weighNoise ) {      
       /* compute multi noise weights if required */ 

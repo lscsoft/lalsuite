@@ -690,8 +690,8 @@ int main(int argc, char *argv[]){
       tmpSFT = &(sftTail->sft);
       tmpPSD = &(psdTail->psd);
     
-      LAL_CALL( LALNormalizeSFT (&status, tmpPSD,
-				 tmpSFT, uvar_blocksRngMed),	&status);
+      XLAL_CHECK_MAIN( XLALNormalizeSFT (tmpPSD,
+                                         tmpSFT, uvar_blocksRngMed, 0.0) == XLAL_SUCCESS, XLAL_EFUNC);
 
       LAL_CALL( AddREAL8toList(&status, &freqHead, &freqTail), &status);
 
