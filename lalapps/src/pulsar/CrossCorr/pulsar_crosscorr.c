@@ -608,8 +608,8 @@ int main(int argc, char *argv[]){
       spinRange_refTime.fkdotBand[2] = uvar_fddotBand;
     }
 
-    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_startTime, firstTimeStamp, &spinRange_refTime), &status); 
-    LAL_CALL( LALExtrapolatePulsarSpinRange( &status, &spinRange_endTime, lastTimeStamp, &spinRange_refTime), &status); 
+    XLAL_CHECK_MAIN( XLALExtrapolatePulsarSpinRange( &spinRange_startTime, &spinRange_refTime, XLALGPSDiff( &firstTimeStamp, &spinRange_refTime.refTime ) ) == XLAL_SUCCESS, XLAL_EFUNC); 
+    XLAL_CHECK_MAIN( XLALExtrapolatePulsarSpinRange( &spinRange_endTime, &spinRange_refTime, XLALGPSDiff( &lastTimeStamp, &spinRange_refTime.refTime ) ) == XLAL_SUCCESS, XLAL_EFUNC); 
 
     startTime_freqLo = spinRange_startTime.fkdot[0]; /* lowest search freq at start time */
     startTime_freqHi = startTime_freqLo + spinRange_startTime.fkdotBand[0]; /* highest search freq. at start time*/
