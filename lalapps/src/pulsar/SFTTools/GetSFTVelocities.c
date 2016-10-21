@@ -33,11 +33,6 @@
 
 
 /* boolean global variables for controlling output */
-
-#define EARTHEPHEMERIS "/home/badkri/lscsoft/share/lal/earth05-09.dat"
-#define SUNEPHEMERIS "/home/badkri/lscsoft/share/lal/sun05-09.dat"
-
-
 #define TRUE (1==1)
 #define FALSE (1==0)
 
@@ -54,6 +49,7 @@
 #include <errno.h> 
 
 #include <lal/Date.h>
+#include <lal/LALString.h>
 #include <lal/DetectorSite.h>
 #include <lal/DetectorStates.h>
 #include <lal/LALDatatypes.h>
@@ -96,15 +92,12 @@ int main(int argc, char *argv[]){
   /* LAL error-handler */
   lal_errhandler = LAL_ERR_EXIT;
   
-  uvar_earthEphemeris = (CHAR *)LALCalloc( 512 , sizeof(CHAR));
-  strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
-
-  uvar_sunEphemeris = (CHAR *)LALCalloc( 512 , sizeof(CHAR));
-  strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
+  uvar_earthEphemeris = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  uvar_sunEphemeris = XLALStringDuplicate("sun00-19-DE405.dat.gz");
 
   /* register user input variables */
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris, "earthEphemeris", STRING, 'E', REQUIRED, "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,   "sunEphemeris",   STRING, 'S', REQUIRED, "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris, "earthEphemeris", STRING, 'E', OPTIONAL, "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,   "sunEphemeris",   STRING, 'S', OPTIONAL, "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,         "sftDir",         STRING, 'D', REQUIRED, "SFT filename pattern") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* read all command line variables */
@@ -114,11 +107,7 @@ int main(int argc, char *argv[]){
     exit(1);
 
   /*  get ephemeris  */
-  edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-
-  LAL_CALL( LALInitBarycenter( &status, edat), &status);
+  XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);
   
   /* read sft Files and set up weights and nstar vector */
   {
@@ -161,9 +150,7 @@ int main(int argc, char *argv[]){
 
   } /* end of sft reading block */
 
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
 
   XLALDestroyUserVars();
   

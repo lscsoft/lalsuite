@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
   LIGOTimeGPSVector *timestamps = NULL;
   DetectorStateSeries *detStates = NULL;
   SkyPosition XLAL_INIT_DECL(skypos);
-  EphemerisData XLAL_INIT_DECL(edat);
+  EphemerisData *edat = NULL;
   BarycenterInput XLAL_INIT_DECL(baryinput);
   LALDetector *det = NULL;
   AMCoeffs XLAL_INIT_DECL(AMold);
@@ -119,9 +119,7 @@ int main(int argc, char *argv[])
   srand ( times(&buf) );
 
   /* ----- init ephemeris ----- */
-  edat.ephiles.earthEphemeris = earthEphem;
-  edat.ephiles.sunEphemeris = sunEphem;
-  SUB ( LALInitBarycenter(&status, &edat), &status);
+  XLAL_CHECK_MAIN ( ( edat = XLALInitBarycenter( earthEphem, sunEphem ) ) != NULL, XLAL_EFUNC);
 
   /* ----- get timestamps ----- */
   XLAL_CHECK_MAIN( ( timestamps = XLALMakeTimestamps ( startTime, duration, Tsft, 0 ) ) != NULL, XLAL_EFUNC );
@@ -158,7 +156,7 @@ int main(int argc, char *argv[])
   amParams.das->pSource = (LALSource *)LALMalloc(sizeof(LALSource));
   amParams.baryinput = &baryinput;
   amParams.earth = &earth;
-  amParams.edat = &edat;
+  amParams.edat = edat;
   amParams.das->pDetector = det;
   amParams.das->pSource->equatorialCoords.longitude = alpha;
   amParams.das->pSource->equatorialCoords.latitude = delta;
@@ -171,7 +169,7 @@ int main(int argc, char *argv[])
   /* ===== compute AM-coeffs the 'new way' using LALGetAMCoeffs() */
 
   /* ----- get detector-state series ----- */
-  SUB ( LALGetDetectorStates (&status, &detStates, timestamps, det, &edat, 0 ), &status );
+  SUB ( LALGetDetectorStates (&status, &detStates, timestamps, det, edat, 0 ), &status );
 
   skypos.system = COORDINATESYSTEM_EQUATORIAL;
   skypos.longitude = alpha;
@@ -223,9 +221,7 @@ int main(int argc, char *argv[])
   LALFree ( amParams.das->pSource );
   LALFree ( amParams.das );
 
-  LALFree(edat.ephemE);
-  LALFree(edat.ephemS);
-
+  XLALDestroyEphemerisData(edat);
 
   LALCheckMemoryLeaks();
 

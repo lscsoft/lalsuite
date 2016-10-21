@@ -102,7 +102,7 @@
  * lalDebugLevel                LALDCreateVector()
  * LALCheckMemoryLeaks()        LALDDestroyVector()
  * LALProjectMetric()           LALGetEarthTimes()
- * LALPtoleMetric()             LALInitBarycenter()
+ * LALPtoleMetric()             XLALInitBarycenter()
  * LALCreateTwoDMesh()          LALDestroyTwoDMesh()
  * LALFree()                    LALCoherentMetric()
  * \endcode
@@ -366,11 +366,7 @@ int main( int argc, char **argv )
   LALGetEarthTimes( &stat, &tevpulse );
 
   /* Read in ephemeris data from files: */
-  eph = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  eph->ephiles.earthEphemeris = earth;
-  eph->ephiles.sunEphemeris = sun;
-
-  LALInitBarycenter( &stat, eph );
+  XLAL_CHECK_MAIN( ( eph = XLALInitBarycenter( earth, sun ) ) != NULL, XLAL_EFUNC);
 
   tevpulse.ephemeris = eph;
 
@@ -423,28 +419,7 @@ int main( int argc, char **argv )
 
   LALDDestroyVector( &stat, &tevlambda );
 
-  LALFree( eph->ephemE );
-  if( stat.statusCode )
-  {
-    printf( "%s line %d: %s\n", __FILE__, __LINE__,
-            GENERALMESHTESTC_MSGEMEM );
-    return GENERALMESHTESTC_EMEM;
-  }
-  LALFree( eph->ephemS );
-  if( stat.statusCode )
-  {
-    printf( "%s line %d: %s\n", __FILE__, __LINE__,
-            GENERALMESHTESTC_MSGEMEM );
-    return GENERALMESHTESTC_EMEM;
-  }
-  LALFree( eph );
- if( stat.statusCode )
-  {
-    printf( "%s line %d: %s\n", __FILE__, __LINE__,
-            GENERALMESHTESTC_MSGEMEM );
-    return GENERALMESHTESTC_EMEM;
-  }
-
+  XLALDestroyEphemerisData( eph );
 
   LALCheckMemoryLeaks();
   return 0;

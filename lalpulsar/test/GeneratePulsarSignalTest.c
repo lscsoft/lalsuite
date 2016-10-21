@@ -325,16 +325,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   }  /* END if (numSpinDown > 0) ELSE ... */
 
   /* Initialize ephemeris data */
-  edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
-  /* edat->ephiles.sunEphemeris = "../../pulsar/test/sun00-04.dat";
-  edat->ephiles.earthEphemeris = "../../pulsar/test/earth00-04.dat"; */
-  /* 07/30/04 gam; added this line to Makefile.am: TESTS_ENVIRONMENT = LAL_DATA_PATH=$(top_srcdir)/packages/pulsar/test */
-  /* edat->ephiles.sunEphemeris = "sun00-04.dat";
-  edat->ephiles.earthEphemeris = "earth00-04.dat"; */
-  edat->ephiles.sunEphemeris = sunFile;     /* 02/02/05 gam */
-  edat->ephiles.earthEphemeris = earthFile; /* 02/02/05 gam */
-  LALInitBarycenter(status->statusPtr, edat);
-  CHECKSTATUSPTR (status);
+  XLAL_CHECK_LAL (status, ( edat = XLALInitBarycenter( earthFile, sunFile ) ) != NULL, XLAL_EFUNC);
 
   /* Allocate memory for PulsarSignalParams and initialize */
   pPulsarSignalParams = (PulsarSignalParams *)LALMalloc(sizeof(PulsarSignalParams));
@@ -765,9 +756,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   LALFree(timeStamps->data);
   LALFree(timeStamps);
 
-  LALFree ( edat->ephemE );
-  LALFree ( edat->ephemS );
-  LALFree ( edat);
+  XLALDestroyEphemerisData(edat);
 
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);

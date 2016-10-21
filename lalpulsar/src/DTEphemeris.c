@@ -58,7 +58,7 @@
  * ### Uses ###
  *
  * \code
- * lalDebugLevel                LALBarycenterEarth()
+ * lalDebugLevel                XLALBarycenterEarth()
  * LALBarycenter()
  * \endcode
  *
@@ -112,7 +112,7 @@ LALDTEphemeris( LALStatus             *status,
   /* Set the ephemeris data: */
   eph = tev->ephemeris;
 
-  TRY( LALBarycenterEarth( status->statusPtr, &earth, &tGPS, eph ), status );
+  XLAL_CHECK_LAL( status, XLALBarycenterEarth(&earth, &tGPS, eph ) == XLAL_SUCCESS, XLAL_EFUNC );
   /* Now "earth" contains position of center of Earth. */
 
   /* Now do the barycentering.  Set the input parameters: */
@@ -134,7 +134,7 @@ LALDTEphemeris( LALStatus             *status,
   /* Set 1/distance to zero: */
   baryin.dInv = 0.e0;
 
-  TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
+  XLAL_CHECK_LAL( status, XLALBarycenter(&emit, &baryin, &earth ) == XLAL_SUCCESS, XLAL_EFUNC );
   /* Now "emit" contains detector position, velocity, time, tdot. */
 
   /* Now assemble output: */
@@ -166,11 +166,11 @@ LALDTEphemeris( LALStatus             *status,
 	upper = var->data[1];
       /* Evaluate emit at upper value: */
       baryin.alpha = upper;
-      TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
+      XLAL_CHECK_LAL( status, XLALBarycenter(&emit, &baryin, &earth ) == XLAL_SUCCESS, XLAL_EFUNC );
       drv->data[2] = emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds;
       /* Evaluate emit at lower value: */
       baryin.alpha = lower;
-      TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
+      XLAL_CHECK_LAL( status, XLALBarycenter(&emit, &baryin, &earth ) == XLAL_SUCCESS, XLAL_EFUNC );
       drv->data[2] -= emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds;
       /* Divide by alpha interval: */
       drv->data[2] /= (upper-lower);
@@ -190,11 +190,11 @@ LALDTEphemeris( LALStatus             *status,
 	upper = var->data[2];
       /* Evaluate emit at upper value: */
       baryin.delta = upper;
-      TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
+      XLAL_CHECK_LAL( status, XLALBarycenter(&emit, &baryin, &earth ) == XLAL_SUCCESS, XLAL_EFUNC );
       drv->data[3] = emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds;
       /* Evaluate emit at lower value: */
       baryin.delta = lower;
-      TRY( LALBarycenter( status->statusPtr, &emit, &baryin, &earth ), status );
+      XLAL_CHECK_LAL( status, XLALBarycenter(&emit, &baryin, &earth ) == XLAL_SUCCESS, XLAL_EFUNC );
       drv->data[3] -= emit.te.gpsSeconds + 1e-9*emit.te.gpsNanoSeconds;
       /* Divide by delta interval: */
       drv->data[3] /= (upper-lower);
@@ -240,7 +240,7 @@ LALTEphemeris( LALStatus   *status,
   eph=tev->ephemeris;
 
   /* journey to the center of the Earth */
-  TRY(LALBarycenterEarth(status->statusPtr,&earth,&tGPS,eph),status);
+  XLAL_CHECK_LAL(status, XLALBarycenterEarth(&earth,&tGPS,eph) == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* time delay for detector vertex */
   baryin.tgps.gpsSeconds=tGPS.gpsSeconds;
@@ -262,7 +262,7 @@ LALTEphemeris( LALStatus   *status,
   baryin.dInv=0.e0;
 
   /* this gives emit the position, velocity, time etc */
-  TRY(LALBarycenter(status->statusPtr,&emit,&baryin,&earth),status);
+  XLAL_CHECK_LAL(status, XLALBarycenter(&emit,&baryin,&earth) == XLAL_SUCCESS, XLAL_EFUNC);
 
   *tBary = emit.te.gpsSeconds+1.0e-9*emit.te.gpsNanoSeconds;
   *tBary -= tev->epoch.gpsSeconds+1.0e-9*tev->epoch.gpsNanoSeconds;

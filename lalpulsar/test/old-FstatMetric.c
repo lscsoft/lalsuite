@@ -132,7 +132,7 @@ typedef struct {
 
 typedef struct
 {
-  const EphemerisData *edat;		/**< ephemeris data (from LALInitBarycenter()) */
+  const EphemerisData *edat;		/**< ephemeris data (from XLALInitBarycenter()) */
   LIGOTimeGPS startTime;		/**< start time of observation */
   LIGOTimeGPS refTime;			/**< reference time for spin-parameters  */
   DopplerPoint dopplerPoint;		/**< sky-position and spins */

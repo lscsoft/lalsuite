@@ -383,11 +383,7 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
     XLAL_ERROR( XLAL_EINVAL );
   }
 
-  LALBarycenterEarth (&status, &earth, tGPS, edat );
-  if ( status.statusCode ) {
-    XLALPrintError ("%s: Call to LALBarycenterEarth() failed. statusCode=%d\n", __func__, status.statusCode );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+  XLAL_CHECK( XLALBarycenterEarth (&earth, tGPS, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- compute the detector tensor ---------- */
   REAL8 sinG, cosG, sinGcosG, sinGsinG, cosGcosG;

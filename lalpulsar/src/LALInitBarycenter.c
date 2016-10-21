@@ -290,8 +290,8 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   ephemV = NULL;
 
   // store *copy* of ephemeris-file names in output structure
-  edat->ephiles.earthEphemeris = XLALStringDuplicate( earthEphemerisFile );
-  edat->ephiles.sunEphemeris   = XLALStringDuplicate( sunEphemerisFile );
+  edat->filenameE = XLALStringDuplicate( earthEphemerisFile );
+  edat->filenameS = XLALStringDuplicate( sunEphemerisFile );
 
   /* return resulting ephemeris-data */
   return edat;
@@ -309,11 +309,11 @@ XLALDestroyEphemerisData ( EphemerisData *edat )
   if ( !edat )
     return;
 
-  if ( edat->ephiles.earthEphemeris )
-    XLALFree ( edat->ephiles.earthEphemeris );
+  if ( edat->filenameE )
+    XLALFree ( edat->filenameE );
 
-  if ( edat->ephiles.sunEphemeris )
-    XLALFree ( edat->ephiles.sunEphemeris );
+  if ( edat->filenameS )
+    XLALFree ( edat->filenameS );
 
   if ( edat->ephemE )
     XLALFree ( edat->ephemE );
@@ -628,53 +628,3 @@ XLALCheckEphemerisRanges ( const EphemerisVector *ephemV, REAL8 avg[3], REAL8 ra
   return XLAL_SUCCESS;
 
 } /* XLALCheckEphemerisRanges() */
-
-/* ============================= deprecated LAL interface ============================== */
-
-/**
- * \ingroup LALBarycenter_h
- * \brief [DEPRECATED] Reads Earth and Sun ephemeris files. Simple wrapper around XLALInitBarycenter()
- * \deprecated Use XLALInitBarycenter() instead.
- */
-void
-LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
-                    EphemerisData *edat	/**< [in/out] initialized ephemeris-data */
-                    )
-{
-    INITSTATUS(stat);
-
-    if( edat == NULL )
-      ABORT( stat, LALINITBARYCENTERH_EOPEN, "Ephemeris structure is NULL" );
-
-    if( edat->ephiles.earthEphemeris == NULL )
-      ABORT( stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN );
-
-    if( edat->ephiles.sunEphemeris == NULL )
-      ABORT( stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN );
-
-    /* use XLALInitBarycenter */
-    EphemerisData *edattmp = XLALInitBarycenter( edat->ephiles.earthEphemeris, edat->ephiles.sunEphemeris );
-    if( edattmp == NULL ){
-      ABORT( stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN );
-    }
-
-    // We need to be careful about returning this, due to the unfortunate input/output method
-    // of this deprecated LAL function: 'edat' is both used as input and output, where only
-    // the 'ephiles' entry is supposed to be initialized in the input data, and so we need to
-    // preserve that entry:
-    EphemerisFilenames tmp;
-    memcpy ( &tmp, &edat->ephiles, sizeof(edat->ephiles) );
-    // now copy new ephemeris-struct over the input one:
-    memcpy ( edat, edattmp, sizeof(*edat) );
-    // restore the original 'ephiles' pointer entries
-    memcpy ( &edat->ephiles, &tmp, sizeof(edat->ephiles) );
-    // free the new 'ephiles' strings (allocated in XLALInitBarycenter())
-    XLALFree ( edattmp->ephiles.earthEphemeris );
-    XLALFree ( edattmp->ephiles.sunEphemeris );
-    // and free the interal 'edattmp' container (but *not* the ephemE/ephemS arrays, which we return in 'edat' !)
-    XLALFree ( edattmp );
-
-    /* successful return */
-    RETURN(stat);
-
-} /* LALInitBarycenter() */

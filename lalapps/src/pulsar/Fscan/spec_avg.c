@@ -376,11 +376,6 @@ int main(int argc, char **argv)
     fprintf(stderr,"crabOutput:\tf0= %f\tf1= %e\tf2= %e\n", crabOutput.f0->data[0], crabOutput.f1->data[0], crabOutput.f2->data[0]);/*need to change the type of printf for F1 and f2 to exponentials.*/
     fprintf(stderr,"--------------------\n");
 
-    /*Allocate memory for edat, no need to do in the loop*/
-    edat = XLALMalloc(sizeof(*edat));
-    (*edat).ephiles.earthEphemeris = earthFile; /*"/archive/home/colingill/lalsuite/lal/packages/pulsar/test/earth05-09.dat";*/
-    (*edat).ephiles.sunEphemeris = sunFile;/*"/archive/home/colingill/lalsuite/lal/packages/pulsar/test/sun05-09.dat";*/
-
     /*work out the eclitptic lattitude of the source, used in max freq calc.*/
     ecliptic_lat=asin(cos(e_tilt)*sin(pulsarParams.dec)-sin(pulsarParams.ra)*cos(pulsarParams.dec)*sin(e_tilt));
     fprintf(stderr,"eqcliptic_lat: %e\t", ecliptic_lat);
@@ -429,7 +424,7 @@ int main(int argc, char **argv)
         /*now I have the freq, I need to add the doppler shift for the earths motion around the sun */
         baryinput.dInv = 0.;/*I can always set this to zero, as Matt said so, I must ask him why*/
 
-        LAL_CALL( LALInitBarycenter(&status, edat), &status );/*  */
+        XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( earthFile, sunFile ) ) != NULL, XLAL_EFUNC );/*  */
     
         /*this lines take position of detector which are in xyz coords in meters from earths centre and converts them into seconds (time)*/
         baryinput.site.location[0] = det.location[0]/LAL_C_SI;
@@ -439,7 +434,7 @@ int main(int argc, char **argv)
         /*dtpos should be the time between the entry in the ephemeris and the point in time for which doppler shifts are being calc.ed*/
         dtpos = cur_epoch - pulsarParams.posepoch;
     
-        /* set up RA, DEC, and distance variables for LALBarycenter*/
+        /* set up RA, DEC, and distance variables for XLALBarycenter*/
         baryinput.delta = pulsarParams.dec + dtpos*pulsarParams.pmdec;
         baryinput.alpha = pulsarParams.ra + dtpos*pulsarParams.pmra/cos(baryinput.delta);
         
@@ -454,11 +449,11 @@ int main(int argc, char **argv)
         baryinput2.tgps.gpsNanoSeconds = (INT4)floor((fmod(t2,1.0)*1.e9));
     
         /*the barycentre functions are needed to calc the inputs for the correction to fcoarse, namely emit, earth and baryinput*/
-        LAL_CALL( LALBarycenterEarth(&status, &earth, &baryinput.tgps, edat), &status );
-        LAL_CALL( LALBarycenter(&status, &emit, &baryinput, &earth), &status );
+        XLAL_CHECK_MAIN( XLALBarycenterEarth(&earth, &baryinput.tgps, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALBarycenter(&emit, &baryinput, &earth) == XLAL_SUCCESS, XLAL_EFUNC );
         
-        LAL_CALL( LALBarycenterEarth(&status, &earth2, &baryinput2.tgps, edat), &status );
-        LAL_CALL( LALBarycenter(&status, &emit2, &baryinput2, &earth2), &status );
+        XLAL_CHECK_MAIN( XLALBarycenterEarth(&earth2, &baryinput2.tgps, edat) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALBarycenter(&emit2, &baryinput2, &earth2) == XLAL_SUCCESS, XLAL_EFUNC );
     
         /* I need to calc the correction to the freq for the doppler shifts, the correction is df, from line 1074 heterdyne_pulsar.  deltaT is T_emission in TDB - T_arrrival in GPS + light travel time to SSB.  we are working out delta(delatT) over 1 second, so do not bother with the divide by one bit.*/
         df = freq*(emit2.deltaT - emit.deltaT);
@@ -481,7 +476,7 @@ int main(int argc, char **argv)
     fprintf(stderr,"end of crab stuff\n");
     
     /*Free up any memory allocated in crab section*/
-    XLALFree(edat);
+    XLALDestroyEphemerisData(edat);
     
     }
     #endif

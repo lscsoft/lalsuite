@@ -541,13 +541,8 @@ int main(int argc, char *argv[]){
     velPar.vTol = ACCURACY; /* irrelevant */
     velPar.edat = NULL; 
 
-    /*  ephemeris info */
-    edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
-   (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-   (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-
     /* read in ephemeris data */
-    LAL_CALL( LALInitBarycenter( &status, edat), &status);
+    XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);
     velPar.edat = edat;
 
     /* calculate average velocity for each SFT duration */    
@@ -1064,9 +1059,7 @@ int main(int argc, char *argv[]){
   LALFree(weightsV.data);
   LALFree(weightsNoise.data);  
 
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
 
   LALFree(skyAlpha);
   LALFree(skyDelta);

@@ -552,11 +552,11 @@ XLALCreateDetectorStateSeries ( UINT4 length )		/**< number of entries */
  * Get the 'detector state' (ie detector-tensor, position, velocity, etc) for the given
  * vector of timestamps, shifted by a common time-shift \a tOffset.
  *
- * This function just calls LALBarycenterEarth() and LALBarycenter() for the
+ * This function just calls XLALBarycenterEarth() and XLALBarycenter() for the
  * given vector of timestamps (shifted by tOffset) and returns the positions,
  * velocities and LMSTs of the detector, stored in a DetectorStateSeries.
  * There is also an entry containing the EarthState at each timestamp, which
- * can be used as input for subsequent calls to LALBarycenter().
+ * can be used as input for subsequent calls to XLALBarycenter().
  *
  * \a tOffset allows one to easily use the midpoints of SFT-timestamps, for example.
  *

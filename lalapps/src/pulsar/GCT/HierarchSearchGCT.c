@@ -132,7 +132,7 @@ typedef struct {
   PulsarSpinRange spinRange_endTime;   /**< freq and fdot range at end-time of observation */
   PulsarSpinRange spinRange_refTime;   /**< freq and fdot range at the reference time */
   PulsarSpinRange spinRange_midTime;   /**< freq and fdot range at mid-time of observation */
-  EphemerisData *edat;             /**< ephemeris data for LALBarycenter */
+  EphemerisData *edat;             /**< ephemeris data for XLALBarycenter */
   LIGOTimeGPSVector *midTstack;    /**< timestamps vector for mid time of each stack */
   LIGOTimeGPSVector *startTstack;  /**< timestamps vector for start time of each stack */
   LIGOTimeGPSVector *endTstack;    /**< timestamps vector for end time of each stack */

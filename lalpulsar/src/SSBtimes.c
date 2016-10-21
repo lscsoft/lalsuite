@@ -574,7 +574,7 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
 
       break;
 
-    case SSBPREC_RELATIVISTIC:	/* use LALBarycenter() to get SSB-times and derivative */
+    case SSBPREC_RELATIVISTIC:	/* use XLALBarycenter() to get SSB-times and derivative */
 
       baryinput.site = DetectorStates->detector;
       baryinput.site.location[0] /= LAL_C_SI;

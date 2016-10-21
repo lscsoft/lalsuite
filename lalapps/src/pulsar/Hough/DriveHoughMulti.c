@@ -669,10 +669,7 @@ int main(int argc, char *argv[]){
         UINT4 j;
         
         /*  get ephemeris  */
-        edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
-        (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-        (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-        LAL_CALL( LALInitBarycenter( &status, edat), &status);
+        XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);
         
         
         /* normalize sfts */
@@ -1160,9 +1157,7 @@ int main(int argc, char *argv[]){
     
     XLALDestroyMultiDetectorStateSeries ( mdetStates );
     
-    LALFree(edat->ephemE);
-    LALFree(edat->ephemS);
-    LALFree(edat);
+    XLALDestroyEphemerisData(edat);
     
     LALFree(skyAlpha);
     LALFree(skyDelta);

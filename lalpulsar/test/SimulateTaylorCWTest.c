@@ -538,16 +538,7 @@ main(int argc, char **argv)
     *(lsite) = lalCachedDetectors[i];
 
     /* Read ephemerides. */
-    lephem = (EphemerisData *)
-      LALMalloc( sizeof(EphemerisData) );
-    if ( !(lephem) ) {
-      ERROR( SIMULATETAYLORCWTESTC_EMEM,
-	     SIMULATETAYLORCWTESTC_MSGEMEM, 0 );
-      return SIMULATETAYLORCWTESTC_EMEM;
-    }
-    lephem->ephiles.earthEphemeris = earthfile;
-    lephem->ephiles.sunEphemeris = sunfile;
-    SUB( LALInitBarycenter( &stat, lephem ), &stat );
+    XLAL_CHECK_MAIN( ( lephem = XLALInitBarycenter( earthfile, sunfile ) ) != NULL, XLAL_EFUNC );
   }
 
 
@@ -746,9 +737,7 @@ main(int argc, char **argv)
        &stat );
   LALFree( transfer );
   if ( site ) {
-    LALFree( lephem->ephemE );
-    LALFree( lephem->ephemS );
-    LALFree( lephem );
+    XLALDestroyEphemerisData( lephem );
     LALFree( lsite );
   }
 

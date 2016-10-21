@@ -39,6 +39,7 @@
 #include <gsl/gsl_matrix.h>
 
 #include <lal/LALStdlib.h>
+#include <lal/LALString.h>
 #include <lal/LALError.h>
 #include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
@@ -77,8 +78,8 @@ int main(int argc, char *argv[]) {
   CHAR *mism_hist_file = NULL;
   REAL8 max_mismatch = 0.0;
   CHAR *sft_pattern = NULL;
-  CHAR *ephem_dir = NULL;
-  CHAR *ephem_year = NULL;
+  CHAR *ephem_earth = NULL;
+  CHAR *ephem_sun = NULL;
   INT4 rng_med_win = 50;
   REAL8 max_rel_err = 1.0e-3;
   REAL8 h0_brake = 0.75;
@@ -96,7 +97,7 @@ int main(int argc, char *argv[]) {
   gsl_matrix *mism_hist = NULL;
   SFTCatalog *catalog = NULL;
   MultiSFTVector *sfts = NULL;
-  EphemerisData XLAL_INIT_DECL(ephemeris);
+  EphemerisData *ephemeris = NULL;
   MultiDetectorStateSeries *detector_states = NULL;
   MultiPSDVector *rng_med = NULL;
   MultiNoiseWeights *noise_weights = NULL;
@@ -114,6 +115,9 @@ int main(int argc, char *argv[]) {
   INT8 MC_trials_reset;
   gsl_vector_int *twoF_pdf_hist = NULL;
 
+  ephem_earth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
+  ephem_sun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+
   /* Initialise LAL error handler */
   lal_errhandler = LAL_ERR_EXIT;
 
@@ -128,8 +132,8 @@ int main(int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &mism_hist_file,      "mism-hist-file",   STRING, 'M', OPTIONAL,  "File containing the mismatch PDF histogram") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &max_mismatch,        "max-mismatch",     REAL8,  'm', OPTIONAL,  "Maximum mismatch to scale histogram to") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &sft_pattern,         "sft-patt",         STRING, 'D', REQUIRED,  "File pattern of the input SFTs") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &ephem_dir,           "ephem-dir",        STRING, 'E', OPTIONAL,  "Directory containing ephemeris files") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &ephem_year,          "ephem-year",       STRING, 'y', REQUIRED,  "Year suffix for ephemeris files") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &ephem_earth,         "ephem-earth",      STRING, 'E', OPTIONAL,  "Earth ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &ephem_sun,           "ephem-sun",        STRING, 'S', OPTIONAL,  "Sun ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &rng_med_win,         "rng-med-win",      INT4,   'k', OPTIONAL,  "Size of the running median window") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &max_rel_err,         "max-rel-err",      REAL8,  'e', OPTIONAL,  "Maximum error in h0 relative to previous value") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &h0_brake,            "h0-brake",         REAL8,  'r', OPTIONAL,  "h0 cannot change by more than this fraction of itself") == XLAL_SUCCESS, XLAL_EFUNC);
@@ -245,37 +249,13 @@ int main(int argc, char *argv[]) {
   }
 
   /* Load the ephemeris data */
-  {
-    size_t buf = strlen(ephem_year) + 32;
-    if (ephem_dir)
-      buf += strlen(ephem_dir);
-
-    /* Allocate memory */
-    if ((ephemeris.ephiles.earthEphemeris = (CHAR*)XLALCalloc(buf, sizeof(CHAR))) == NULL ||
-        (ephemeris.ephiles.sunEphemeris   = (CHAR*)XLALCalloc(buf, sizeof(CHAR))) == NULL) {
-      XLALPrintError("Couldn't allocate memory\n");
-      return EXIT_FAILURE;
-    }
-
-    /* Create the file names */
-    if (ephem_dir) {
-      snprintf(ephemeris.ephiles.earthEphemeris, buf, "%s/earth%s.dat", ephem_dir, ephem_year);
-      snprintf(ephemeris.ephiles.sunEphemeris, buf, "%s/sun%s.dat", ephem_dir, ephem_year);
-    }
-    else {
-      snprintf(ephemeris.ephiles.earthEphemeris, buf, "earth%s.dat", ephem_year);
-      snprintf(ephemeris.ephiles.sunEphemeris, buf, "sun%s.dat", ephem_year);
-    }
-
-    /* Load ephemeris */
-    LogPrintf(LOG_DEBUG, "Loading ephemeris ... ");
-    LAL_CALL(LALInitBarycenter(&status, &ephemeris), &status);
-    LogPrintfVerbatim(LOG_DEBUG, "done\n");
-  }
+  LogPrintf(LOG_DEBUG, "Loading ephemeris ... ");
+  XLAL_CHECK_MAIN(( ephemeris = XLALInitBarycenter( ephem_earth, ephem_sun ) ) != NULL, XLAL_EFUNC);
+  LogPrintfVerbatim(LOG_DEBUG, "done\n");
 
   /* Get the detector states */
   LogPrintf(LOG_DEBUG, "Calculating detector states ... ");
-  LAL_CALL(LALGetMultiDetectorStates(&status, &detector_states, sfts, &ephemeris), &status);
+  LAL_CALL(LALGetMultiDetectorStates(&status, &detector_states, sfts, ephemeris), &status);
   LogPrintfVerbatim(LOG_DEBUG, "done\n");
 
   /* Normalise SFTs and compute noise weights */
@@ -287,10 +267,7 @@ int main(int argc, char *argv[]) {
   /* Cleanup */
   XLALDestroySFTCatalog(catalog);
   XLALDestroyMultiSFTVector( sfts);
-  XLALFree(ephemeris.ephiles.earthEphemeris);
-  XLALFree(ephemeris.ephiles.sunEphemeris);
-  LALFree(ephemeris.ephemE);
-  LALFree(ephemeris.ephemS);
+  XLALDestroyEphemerisData(ephemeris);
   XLALDestroyMultiPSDVector( rng_med);
 
   /* Initialise the random number generator */

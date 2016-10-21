@@ -343,16 +343,7 @@ int main( int argc, char *argv[] ) {
     }
 
    /* Read in ephemeris data from files: */
-   eph = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-   eph->ephiles.earthEphemeris = earth;
-   eph->ephiles.sunEphemeris = sun;
-   LALInitBarycenter( &status, eph );
-   if( status.statusCode )
-    {
-      printf( "%s line %d: %s\n", __FILE__, __LINE__,
-              GENERALMETRICTESTC_MSGESUB );
-      return GENERALMETRICTESTC_ESUB;
-    }
+   XLAL_CHECK_MAIN( ( eph = XLALInitBarycenter( earth, sun ) ) != NULL, XLAL_EFUNC);
    tevpulse.ephemeris = eph;
 
    /* Choose CoherentMetric timing function */
@@ -583,27 +574,7 @@ int main( int argc, char *argv[] ) {
 
   printf("\nCleaning up and leaving...\n");
 
-  LALFree( eph->ephemE );
-  if( status.statusCode )
-  {
-    printf( "%s line %d: %s\n", __FILE__, __LINE__,
-            GENERALMETRICTESTC_MSGEMEM );
-    return GENERALMETRICTESTC_EMEM;
-  }
-  LALFree( eph->ephemS );
-  if( status.statusCode )
-  {
-    printf( "%s line %d: %s\n", __FILE__, __LINE__,
-            GENERALMETRICTESTC_MSGEMEM );
-    return GENERALMETRICTESTC_EMEM;
-  }
- LALFree( eph );
- if( status.statusCode )
-  {
-    printf( "%s line %d: %s\n", __FILE__, __LINE__,
-            GENERALMETRICTESTC_MSGEMEM );
-    return GENERALMETRICTESTC_EMEM;
-  }
+  XLALDestroyEphemerisData( eph );
 
   LALDDestroyVector( &status, &metric );
   if( status.statusCode )

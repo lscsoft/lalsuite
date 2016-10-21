@@ -102,7 +102,7 @@ typedef struct tagAMCoeffs
 typedef struct tagAMCoeffsParams
 {
   BarycenterInput      *baryinput;  /**< data from Barycentring routine */
-  EarthState           *earth;      /**< from LALBarycenter()           */
+  EarthState           *earth;      /**< from XLALBarycenter()           */
   EphemerisData        *edat;       /**< the ephemerides                */
   LALDetAndSource      *das;        /**< det and source information     */
   LALFrDetector        *det;        /**< detector geometry              */

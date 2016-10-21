@@ -129,7 +129,7 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
   Detector1.type = LALDETECTORTYPE_ABSENT;
 
   /* however: need to be careful to put some non-zero numbers for location
-   * otherwise LALBarycenter() will spit out NaNs ...
+   * otherwise XLALBarycenter() will spit out NaNs ...
    */
   Detector1.location[0] = 1;
   Detector1.location[1] = 1;

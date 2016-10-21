@@ -368,13 +368,6 @@ int main(int argc, char *argv[]){
     }  
   }
 
-  /******************************************************************/ 
-  /*   setting of ephemeris info */ 
-  /******************************************************************/ 
-  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-  
   /******************************************************************/
   /* compute detector velocity for those time stamps                */
   /******************************************************************/
@@ -393,7 +386,7 @@ int main(int argc, char *argv[]){
     velPar.edat = NULL;
 
     /* read in ephemeris data */
-    LAL_CALL( LALInitBarycenter( &status, edat), &status);
+    XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);
     velPar.edat = edat;
 
     /* now calculate average velocity */    
@@ -564,9 +557,7 @@ int main(int argc, char *argv[]){
   
   LALFree(pulsarTemplate.spindown.data);
    
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
   
   XLALDestroyUserVars();
 

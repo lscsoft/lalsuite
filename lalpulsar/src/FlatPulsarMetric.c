@@ -165,7 +165,7 @@ Phi_i ( double tt, void *params )
       REAL8 Rorb = LAL_AU_SI / LAL_C_SI;
 
       XLALGPSSetREAL8( &tGPS, ti );
-      LALBarycenterEarth( &status, &earth, &tGPS, par->edat );
+      XLALBarycenterEarth( &earth, &tGPS, par->edat );
 
       rX = earth.posNow[0]  / Rorb;
       rY = ( coseps * earth.posNow[1] + sineps * earth.posNow[2] ) / Rorb ;

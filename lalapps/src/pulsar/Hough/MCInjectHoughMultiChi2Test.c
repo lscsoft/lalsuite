@@ -515,15 +515,10 @@ int main(int argc, char *argv[]){
   /* get detector velocities and timestamps */
   /******************************************************************/ 
   
-    /*  setting of ephemeris info */ 
-  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-  (*edat).ephiles.earthEphemeris = uvar_earthEphemeris;
-  (*edat).ephiles.sunEphemeris = uvar_sunEphemeris;
-  
   {
     UINT4   iIFO, iSFT, numsft, j;
 
-    LAL_CALL( LALInitBarycenter( &status, edat), &status);
+    XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);
     
     /* get information about all detectors including velocity and timestamps */
     /* note that this function returns the velocity at the 
@@ -1118,9 +1113,7 @@ int main(int argc, char *argv[]){
   LALFree(pulsarTemplate.spindown.data);
   
    
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  XLALDestroyEphemerisData(edat);
   
   LALFree(chi2Params.numberSFTp);
   LALFree(chi2Params.sumWeight);

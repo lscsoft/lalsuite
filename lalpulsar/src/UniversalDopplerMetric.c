@@ -2421,7 +2421,7 @@ XLALmatrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in )
  * Compute time-derivatives up to 'maxorder' of the Earths' orbital position vector
  * \f$r_{\mathrm{orb}}(t)\f$.
  *
- * Algorithm: using 5-point differentiation expressions on r_orb(t) returned from LALBarycenterEarth().
+ * Algorithm: using 5-point differentiation expressions on r_orb(t) returned from XLALBarycenterEarth().
  *
  * Returns a vector of derivatives \f$\frac{d^n\,r_{\mathrm{orb}}}{d\,t^n}\f$ at the given
  * GPS time. Note, the return vector includes the zeroth-order derivative, so we return
