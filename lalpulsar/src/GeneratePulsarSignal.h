@@ -64,7 +64,7 @@ extern "C" {
  *
  * This module also contains a few more general-purpose helper-functions:
  *
- * - Namely, LALConvertSSB2GPS() and LALConvertGPS2SSB()
+ * - Namely, XLALConvertSSB2GPS() and XLALConvertGPS2SSB()
  * which convert arrival times for a given source (not necessarily a
  * pulsar!) the detector ("GPS") and the solar-system barycenter ("SSB").
  * NOTE: only the source-location (<tt>params-\>pulsar.position</tt>), the

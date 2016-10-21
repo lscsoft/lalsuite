@@ -31,8 +31,6 @@
  * \ingroup SFTutils_h
  * \brief Tests for XLALComputeMultiNoiseWeights()
  *
- * We compare the results to the old+obsolete LAL function LALComputeMultiNoiseWeights()
- *
  * PSDs are calculated using the test SFTs created for
  * SFTfileIOTest.c
  *

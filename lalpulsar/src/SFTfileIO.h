@@ -124,7 +124,7 @@ extern "C" {
  *
  * The function XLALLoadSFTs() takes an ::SFTCatalog and reads the smallest frequency-band containing <tt>[fMin, fMax]</tt>
  * from the SFTs, returning the resulting ::SFTVector. Note that this function will return an error if the
- * SFTCatalog contains SFTs from different detectors, for which LALLoadMultiSFTs() must be used.
+ * SFTCatalog contains SFTs from different detectors, for which XLALLoadMultiSFTs() must be used.
  *
  * The frequency-bounds are optional and \c -1 can be used to specify an 'open bound', i.e.<br>
  * <tt>[-1, fMax]</tt>: read from first frequency-bin in the SFT up to \c fMax.<br>
@@ -136,14 +136,9 @@ extern "C" {
  *
  * <p><h2>Usage: Writing of SFT-files</h2>
  *
- * For <b>writing SFTs</b> there are two functions, depending on the desired output-format (v1 or v2  SFTs):
- * - LALWriteSFT2file(): write a single SFT (::SFTtype) into an SFT-file following the specification v2
+ * For <b>writing SFTs</b>:
+ * - XLALWriteSFT2file(): write a single SFT (::SFTtype) into an SFT-file following the specification v2
  * (<tt>LIGO-T040164-01-Z</tt>).
- *
- * Note: in addition to these two function which take properly normalized SFTs as input, there is a DEPRECATED
- * legacy-function, LALWriteSFTfile(), which writes an v1-SFT file, but *without* changing the data-normalization,
- * i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
- *
  */
 
 /*@{*/
@@ -254,7 +249,7 @@ typedef struct tagSFTDescriptor
 } SFTDescriptor;
 
 
-/** An "SFT-catalogue": a vector of SFTdescriptors, as returned by LALSFTdataFind() */
+/** An "SFT-catalogue": a vector of SFTdescriptors, as returned by XLALSFTdataFind() */
 typedef struct tagSFTCatalog
 {
 #ifdef SWIG /* SWIG interface directives */

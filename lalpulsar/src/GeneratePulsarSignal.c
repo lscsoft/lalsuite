@@ -84,7 +84,7 @@ XLALGeneratePulsarSignal ( const PulsarSignalParams *params /**< input params */
       /*------------------------------------------------------------ */
       /* temporary fix for comparison with Chris' code */
       /*
-	TRY (LALConvertGPS2SSB (status->statusPtr, &tmpTime, params->orbit->orbitEpoch, params), status);
+	TRY (XLALConvertGPS2SSB (status->statusPtr, &tmpTime, params->orbit->orbitEpoch, params), status);
 	sourceParams.orbitEpoch = tmpTime;
       */
       sourceParams.orbitEpoch =  params->orbit.tp;

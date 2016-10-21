@@ -210,7 +210,7 @@ int main( void )
       return EXIT_FAILURE;
     }
 
-  /* compare results from LALLoadMultiSFTs() and XLALLoadMultiSFTs() */
+  /* compare results from XLALLoadMultiSFTs() and XLALLoadMultiSFTs() */
   {
     UINT4 numIFOs = multsft_vect->length;
     UINT4 X;

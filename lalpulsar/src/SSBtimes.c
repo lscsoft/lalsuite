@@ -643,7 +643,7 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
 
 } /* XLALGetSSBtimes() */
 
-/** Multi-IFO version of LALGetSSBtimes().
+/** Multi-IFO version of XLALGetSSBtimes().
  * Get all SSB-timings for all input detector-series.
  *
  * NOTE: this functions *allocates* the output-vector,

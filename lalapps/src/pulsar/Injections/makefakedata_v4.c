@@ -1544,7 +1544,7 @@ is_valid_detector (const char *channel)
  * [OBSOLETE] Write a *v1-normalized* (i.e. raw DFT) SFTtype to a SFT-v1 file.
  *
  * \note:only SFT-spec v1.0 is supported, and the SFTtype must follow the
- * *obsolete* v1-normalization. => Use LALWriteSFT2file() to write v2 SFTs !
+ * *obsolete* v1-normalization. => Use XLALWriteSFT2file() to write v2 SFTs !
  *
  */
 void

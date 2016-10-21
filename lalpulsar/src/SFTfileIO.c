@@ -973,10 +973,10 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
 /**
  * Function to load a catalog of SFTs from possibly different detectors.
- * This is similar to LALLoadSFTs except that the input SFT catalog is
+ * This is similar to XLALLoadSFTs except that the input SFT catalog is
  * allowed to contain multiple ifos. The output is the structure
  * MultiSFTVector which is a vector of (pointers to) SFTVectors, one for
- * each ifo found in the catalog. As in LALLoadSFTs, fMin and fMax can be
+ * each ifo found in the catalog. As in XLALLoadSFTs, fMin and fMax can be
  * set to -1 to get the full SFT from the lowest to the highest frequency
  * bin found in the SFT.
  *
