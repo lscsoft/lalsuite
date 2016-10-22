@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
   /* ===== compute AM-coeffs the 'new way' using LALNewGetAMCoeffs() */
 
   /* ----- get detector-state series ----- */
-  SUB ( LALGetDetectorStates (&status, &detStates, timestamps, det, edat, 0 ), &status );
+  XLAL_CHECK_MAIN ( ( detStates = XLALGetDetectorStates ( timestamps, det, edat, 0 ) ) != NULL, XLAL_EFUNC );
 
   skypos.system = COORDINATESYSTEM_EQUATORIAL;
   skypos.longitude = alpha;

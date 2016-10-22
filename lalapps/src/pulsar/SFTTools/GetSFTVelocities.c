@@ -135,13 +135,13 @@ int main(int argc, char *argv[]){
       timeV.deltaT = timeBase;
       timeV.data = &(catalog->data[k].header.epoch);
 
-      LAL_CALL( LALGetDetectorStates ( &status, &detStates, &timeV, det, edat, 0.5*timeBase), &status);
+      XLAL_CHECK_MAIN( ( detStates = XLALGetDetectorStates ( &timeV, det, edat, 0.5*timeBase) ) != NULL, XLAL_EFUNC);
 
 
       fprintf(stdout, "%g  %g   %g\n", detStates->data[0].vDetector[0], detStates->data[0].vDetector[1],
 	      detStates->data[0].vDetector[2]);
       
-      LALDestroyDetectorStateSeries (&status, &detStates );
+      XLALDestroyDetectorStateSeries (detStates );
       LALFree (det);
 
     }   /* end loop over sfts */

@@ -308,7 +308,8 @@ int main(int argc, char *argv[]){
     /* get information about all detectors including velocity and timestamps */
     /* note that this function returns the velocity at the 
        mid-time of the SFTs -- should not make any difference */
-    LAL_CALL ( LALGetMultiDetectorStates ( &status, &mdetStates, inputSFTs, edat), &status);
+    const REAL8 tOffset = 0.5 / inputSFTs->data[0]->data[0].deltaF;
+    XLAL_CHECK_MAIN ( ( mdetStates = XLALGetMultiDetectorStatesFromMultiSFTs ( inputSFTs, edat, tOffset ) ) != NULL, XLAL_EFUNC);
 
     /* normalize sfts and get power running-median rngmed[ |data|^2] from SFTs */
     XLAL_CHECK_MAIN( ( multPSD = XLALNormalizeMultiSFTVect(  inputSFTs, uvar_blocksRngMed, NULL ) ) != NULL, XLAL_EFUNC); 

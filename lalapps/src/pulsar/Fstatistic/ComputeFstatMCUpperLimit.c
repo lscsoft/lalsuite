@@ -255,7 +255,8 @@ int main(int argc, char *argv[]) {
 
   /* Get the detector states */
   LogPrintf(LOG_DEBUG, "Calculating detector states ... ");
-  LAL_CALL(LALGetMultiDetectorStates(&status, &detector_states, sfts, ephemeris), &status);
+  const REAL8 tOffset = 0.5 / sfts->data[0]->data[0].deltaF;
+  XLAL_CHECK_MAIN(( detector_states = XLALGetMultiDetectorStatesFromMultiSFTs( sfts, ephemeris, tOffset ) ) != NULL, XLAL_EFUNC);
   LogPrintfVerbatim(LOG_DEBUG, "done\n");
 
   /* Normalise SFTs and compute noise weights */

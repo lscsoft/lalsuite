@@ -45,7 +45,7 @@
  *
  * \code
  * XLALSFTtoPeriodogram ()
- * LALPeriodoToRngmed ()
+ * XLALPeriodoToRngmed ()
  * XLALNormalizeSFT ()
  * XLALNormalizeSFTVect ()
  * XLALNormalizeMultiSFTVect ()

@@ -1349,8 +1349,7 @@ void GetBeamInfo(LALStatus *status,
        mid-time of the SFTs -- should not make any 
        difference */
 
-    LALGetDetectorStates ( status->statusPtr, &detState, ts, det,
-			   edat, tOffs);
+    detState = XLALGetDetectorStates ( ts, det, edat, tOffs );
 
     detState->detector = *det;
 
