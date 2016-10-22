@@ -6,7 +6,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 pkginclude_HEADERS = \
 	BinaryPulsarTiming.h \
 	CWMakeFakeData.h \
-	ComplexAM.h \
 	ComputeFstat.h \
 	ComputeSky.h \
 	DetectorStates.h \
@@ -62,7 +61,6 @@ lib_LTLIBRARIES = liblalpulsar.la
 liblalpulsar_la_SOURCES = \
 	BinaryPulsarTiming.c \
 	CWMakeFakeData.c \
-	ComplexAM.c \
 	ComputeFstat.c \
 	ComputeFstat_Demod.c \
 	ComputeFstat_DemodHL_Generic.c \

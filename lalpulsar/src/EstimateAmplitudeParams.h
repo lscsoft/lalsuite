@@ -24,7 +24,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/LALComputeAM.h>
-#include <lal/ComplexAM.h>
+#include <lal/LALComputeAM.h>
 #include <lal/SSBtimes.h>
 
 #ifdef  __cplusplus

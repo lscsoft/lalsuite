@@ -88,3 +88,5 @@ git commit --amend
 # 2016-10-22 lalpulsar/src/FlatMesh.c
 # 2016-10-22 lalpulsar/src/FlatMesh.h
 # 2016-10-22 lalpulsar/test/FlatMeshTest.c
+# 2016-10-22 lalpulsar/src/ComplexAM.c
+# 2016-10-22 lalpulsar/src/ComplexAM.h
