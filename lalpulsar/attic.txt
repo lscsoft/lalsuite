@@ -84,3 +84,7 @@ git commit --amend
 # 2016-10-22 lalpulsar/src/TBaryPtolemaic.c
 # 2016-10-22 lalpulsar/src/TComp.c
 # 2016-10-22 lalpulsar/src/TSpin.c
+# 2016-10-22 lalinspiral/test/BCVTemplatesFlatMesh.c
+# 2016-10-22 lalpulsar/src/FlatMesh.c
+# 2016-10-22 lalpulsar/src/FlatMesh.h
+# 2016-10-22 lalpulsar/test/FlatMeshTest.c

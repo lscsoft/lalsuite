@@ -52,8 +52,6 @@ src/stamp-h2
 swig/swiglal*
 test/BCVTemplates
 test/BCVTemplates.out
-test/BCVTemplatesFlatMesh
-test/BCVTemplatesFlatMesh.out
 test/BasicInjectTest
 test/ChirpSpace.out
 test/CoarseTest

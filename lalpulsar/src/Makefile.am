@@ -15,7 +15,6 @@ pkginclude_HEADERS = \
 	EstimateAmplitudeParams.h \
 	ExtrapolatePulsarSpins.h \
 	FITSFileIO.h \
-	FlatMesh.h \
 	GSLHelpers.h \
 	GeneratePulsarSignal.h \
 	GenerateSpinOrbitCW.h \
@@ -78,7 +77,6 @@ liblalpulsar_la_SOURCES = \
 	EstimateAmplitudeParams.c \
 	ExtrapolatePulsarSpins.c \
 	FITSFileIO.c \
-	FlatMesh.c \
 	GenerateEllipticSpinOrbitCW.c \
 	GenerateHyperbolicSpinOrbitCW.c \
 	GenerateParabolicSpinOrbitCW.c \

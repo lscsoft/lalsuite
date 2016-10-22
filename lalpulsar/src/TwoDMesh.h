@@ -49,8 +49,8 @@ extern "C" {
  * search points over a parameter space, in order to detect signals with
  * unknown parameters.  The formalism for defining a proper distance
  * metric on the parameter space is defined in
- * \ref FlatMesh_h.  However, whereas the routines under
- * \ref FlatMesh_h require the metric \f$\mathsf{g}_{ab}\f$ to be constant
+ * FlatMesh.h.  However, whereas the routines under
+ * FlatMesh.h require the metric \f$\mathsf{g}_{ab}\f$ to be constant
  * over the parameter space, the routines under this header only treat
  * \f$\mathsf{g}_{ab}\f$ as constant over distances \f$\lesssim m_\mathrm{thresh}\f$.
  *

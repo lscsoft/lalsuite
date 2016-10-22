@@ -11,7 +11,6 @@ test_programs += DriveNDHoughTest
 test_programs += ExtrapolatePulsarSpinsTest
 test_programs += FITSFileIOTest
 test_programs += FileIOTest
-test_programs += FlatMeshTest
 test_programs += GeneralMeshTest
 test_programs += GeneralMetricTest
 test_programs += GeneratePulsarSignalTest
