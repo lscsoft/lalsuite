@@ -230,22 +230,6 @@ LALTwoDNodeCopy( LALStatus    *status,
 		 TwoDMeshNode **new_,
 		 TwoDMeshNode *old );
 
-
-void
-LALGetNearestMetric( LALStatus *status, REAL4 metric[3], REAL4 position[2], void *params );
-
-void
-LALInterpolateMetricGrid( LALStatus *status, REAL4 metric[3], REAL4 position[2], void *params );
-
-
-
-
-void
-LALInterpolateRangePolygon( LALStatus *status, REAL4 range[2], REAL4 x, void *params );
-
-void
-LALInterpolateRangeGrid( LALStatus *status, REAL4 range[2], REAL4 x, void *params );
-
 /*@}*/
 
 #if 0

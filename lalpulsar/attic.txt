@@ -68,3 +68,5 @@ git commit --amend
 # 2016-10-22 lalpulsar/test/StackMetricTest.c
 # 2016-10-22 lalpulsar/src/FlatPulsarMetric.c
 # 2016-10-22 lalpulsar/src/FlatPulsarMetric.h
+# 2016-10-22 lalpulsar/src/TwoDMeshMetrics.c
+# 2016-10-22 lalpulsar/src/TwoDMeshRanges.c

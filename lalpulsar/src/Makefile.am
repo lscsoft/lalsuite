@@ -124,8 +124,6 @@ liblalpulsar_la_SOURCES = \
 	TransientCW_utils.c \
 	TwoDMesh.c \
 	TwoDMeshInternal.c \
-	TwoDMeshMetrics.c \
-	TwoDMeshRanges.c \
 	UniversalDopplerMetric.c \
 	Velocity.c \
 	$(END_OF_LIST)
