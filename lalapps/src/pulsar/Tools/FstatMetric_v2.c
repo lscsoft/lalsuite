@@ -54,7 +54,6 @@
 #include <lal/LogPrintf.h>
 #include <lal/StringVector.h>
 
-#include <lal/FlatPulsarMetric.h>
 #include <lal/UniversalDopplerMetric.h>
 #include <lal/MetricUtils.h>
 

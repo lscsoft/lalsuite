@@ -33,7 +33,6 @@
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_eigen.h>
 
-#include <lal/FlatPulsarMetric.h>
 #include <lal/PulsarTimes.h>
 #include <lal/ComputeFstat.h>
 #include <lal/XLALGSL.h>

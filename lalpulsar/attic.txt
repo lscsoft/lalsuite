@@ -66,3 +66,5 @@ git commit --amend
 # 2016-10-22 lalpulsar/src/StackMetric.h
 # 2016-10-22 lalpulsar/test/SkyMetricTest.c
 # 2016-10-22 lalpulsar/test/StackMetricTest.c
+# 2016-10-22 lalpulsar/src/FlatPulsarMetric.c
+# 2016-10-22 lalpulsar/src/FlatPulsarMetric.h

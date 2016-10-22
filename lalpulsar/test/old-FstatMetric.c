@@ -46,7 +46,6 @@
 #include <lal/PulsarTimes.h>
 #include <lal/SFTutils.h>
 
-#include <lal/FlatPulsarMetric.h>
 #include <lal/ComputeFstat.h>
 #include <lal/UniversalDopplerMetric.h>
 
@@ -204,10 +203,6 @@ XLALOldDopplerFstatMetric ( const OldMetricType_t metricType,		/**< type of metr
 
   XLAL_CHECK_NULL ( metricType < OLDMETRIC_TYPE_LAST, XLAL_EDOM );
 
-  LIGOTimeGPS *startTime = &(metricParams->segmentList.segs[0].start);
-  LIGOTimeGPS *endTime   = &(metricParams->segmentList.segs[0].end);
-  REAL8 duration = XLALGPSDiff( endTime, startTime );
-
   const DopplerCoordinateSystem *coordSys = &(metricParams->coordSys);
   XLAL_CHECK_NULL ( coordSys->dim == METRIC_DIM, XLAL_EINVAL );
   XLAL_CHECK_NULL ( coordSys->coordIDs[0] == DOPPLERCOORD_FREQ, XLAL_EDOM );
@@ -240,15 +235,8 @@ XLALOldDopplerFstatMetric ( const OldMetricType_t metricType,		/**< type of metr
     }
   if ( (metricType == OLDMETRIC_TYPE_PHASE) || (metricType == OLDMETRIC_TYPE_ALL) )
     {
-      if ( metricParams->detMotionType == (DETMOTION_SPINXY | DETMOTION_ORBIT) )
-        {
-          XLAL_CHECK_NULL ( XLALFlatMetricCW ( metric->g_ij, config.refTime, config.startTime, duration, edat ) == XLAL_SUCCESS, XLAL_EFUNC );
-        }
-      else
-        {
-          XLAL_CHECK_NULL ( config.multidPhi->length == 1, XLAL_EFAILED, "%s: computePhaseMetric() can only handle a single detector!", __func__ );
-          XLAL_CHECK_NULL ( computePhaseMetric ( metric->g_ij, config.multidPhi->data[0], config.GLweights) == XLAL_SUCCESS, XLAL_EFUNC );
-        }
+      XLAL_CHECK_NULL ( config.multidPhi->length == 1, XLAL_EFAILED, "%s: computePhaseMetric() can only handle a single detector!", __func__ );
+      XLAL_CHECK_NULL ( computePhaseMetric ( metric->g_ij, config.multidPhi->data[0], config.GLweights) == XLAL_SUCCESS, XLAL_EFUNC );
     } // endif metricType==PHASE || ALL
 
   // ----- Free internal memory
