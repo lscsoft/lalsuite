@@ -42,8 +42,6 @@ test_programs += XLALComputeAMTest
 test_programs += XLALMultiNoiseWeightsTest
 test_programs += ComputeFstatBenchmark
 
-#test_programs += SFTCleanTest
-
 if LALXML
 test_programs += LALPulsarXMLTest
 endif

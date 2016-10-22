@@ -70,3 +70,12 @@ git commit --amend
 # 2016-10-22 lalpulsar/src/FlatPulsarMetric.h
 # 2016-10-22 lalpulsar/src/TwoDMeshMetrics.c
 # 2016-10-22 lalpulsar/src/TwoDMeshRanges.c
+# 2016-10-22 lalpulsar/test/DirectedMeshTest.c
+# 2016-10-22 lalpulsar/test/ExtrapolatePulsarSpins.m
+# 2016-10-22 lalpulsar/test/MC_AMCoeffsTest.m
+# 2016-10-22 lalpulsar/test/SFTCleanTest.c
+# 2016-10-22 lalpulsar/test/eigenInv_Tf0-1e8_n-2.dat
+# 2016-10-22 lalpulsar/test/eigen_Tf0-1e8_n-2.dat
+# 2016-10-22 lalpulsar/test/ephemtoilwd.sh
+# 2016-10-22 lalpulsar/test/in.data
+# 2016-10-22 lalpulsar/test/range_tauOverT-1e5_n-2.dat
