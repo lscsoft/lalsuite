@@ -334,7 +334,7 @@ else
 		WITH_SSL="--with-ssl=$ssldir"
 	    fi
 	    if [ ".$release" = ".true" ]; then
-		CPPFLAGS="-DDLOPEN_LIBGCC -DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
+		CPPFLAGS="-DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
 		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a"
 		export RELEASE_LDADD="$RELEASE_LDADD erp_execinfo_plus.o -lbfd -liberty -ldl"
 		build_zlib=true
