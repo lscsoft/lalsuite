@@ -22,7 +22,6 @@
 #include <lal/AVFactories.h>
 #include <lal/LALBarycenter.h>
 #include <lal/PtoleMetric.h>
-#include <lal/StackMetric.h>
 #include <lal/Date.h>
 
 #include "PulsarTimes.h"

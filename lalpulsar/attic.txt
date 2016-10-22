@@ -60,3 +60,9 @@ git commit --amend
 # 2016-04-08 lalpulsar/test/HeterodynePulsarTest.c
 # 2016-10-15 lalpulsar/src/SFTutils-LAL.c
 # 2016-10-15 lalpulsar/src/SFTutils-LAL.h
+# 2016-10-22 lalpulsar/src/CoherentMetric.c
+# 2016-10-22 lalpulsar/src/ProjectMetric.c
+# 2016-10-22 lalpulsar/src/StackMetric.c
+# 2016-10-22 lalpulsar/src/StackMetric.h
+# 2016-10-22 lalpulsar/test/SkyMetricTest.c
+# 2016-10-22 lalpulsar/test/StackMetricTest.c

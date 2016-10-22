@@ -51,7 +51,6 @@ pkginclude_HEADERS = \
 	SSBtimes.h \
 	SimulatePulsarSignal.h \
 	SinCosLUT.h \
-	StackMetric.h \
 	Statistics.h \
 	SuperskyMetrics.h \
 	SynthesizeCWDraws.h \
@@ -65,7 +64,6 @@ lib_LTLIBRARIES = liblalpulsar.la
 liblalpulsar_la_SOURCES = \
 	BinaryPulsarTiming.c \
 	CWMakeFakeData.c \
-	CoherentMetric.c \
 	ComplexAM.c \
 	ComputeFstat.c \
 	ComputeFstat_Demod.c \
@@ -107,7 +105,6 @@ liblalpulsar_la_SOURCES = \
 	PatchGrid.c \
 	Peak2PHMD.c \
 	ProbabilityDensity.c \
-	ProjectMetric.c \
 	PtoleMetric.c \
 	PulsarCrossCorr.c \
 	PulsarCrossCorr_v2.c \
@@ -119,7 +116,6 @@ liblalpulsar_la_SOURCES = \
 	SSBtimes.c \
 	SimulatePulsarSignal.c \
 	SinCosLUT.c \
-	StackMetric.c \
 	Statistics.c \
 	Stereographic.c \
 	SuperskyMetrics.c \

@@ -186,7 +186,6 @@
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/MatrixUtils.h>
-#include <lal/StackMetric.h>
 #include <lal/PulsarTimes.h>
 #include <lal/FlatMesh.h>
 

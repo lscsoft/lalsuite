@@ -45,32 +45,10 @@
  * With no options, this program displays metric components for a single point
  * in parameter space for the default parameter values.
  *
- * The <b>-a</b> option determines which LAL metric code is used.  The
- * options are:
- * <ul>
- * <li>1 = LALPtoleMetric() (default),
- * <li>2 = (LALCoherentMetric() \& LALDTBaryPtolemaic()),
- * <li>3 = (LALCoherentMetric() \& LALDTEphemeris()).
- * </ul>
- * The <b>-b</b> option sets the beginning GPS time of integration to
- * the option argument. (Default is \f$731265908\f$ seconds, chosen to lie
- * within the S2 run).
- *
  * The <b>-c</b> option determines the point on the sky where the metric
  * is evaluated.  This option is hard-coded to use equatorial coordinates
  * and the argument should be given in hh:mm:ss:dd:mm:ss format.
  * (Default is the center of the globular cluster 47 Tuc).
- *
- * The <b>-d</b> option sets the detector to the option argument. The
- * options are:
- * <ul>
- * <li> 1 = LIGO Hanford
- * <li> 2 = LIGO Livingston
- * <li> 3 = VIRGO
- * <li> 4 = GEO600 (default)
- * <li> 5 = TAMA300
- * </ul>
- * The <b>-e</b> option sets the LAL debug level to 1.  (The default is 0).
  *
  * The <b>-f</b> option sets the maximum frequency (in Hz) to search. (The
  * default is 1000.)
@@ -154,7 +132,6 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALStdlib.h>
 #include <lal/PtoleMetric.h>
-#include <lal/StackMetric.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 
@@ -177,18 +154,6 @@ int main( int argc, char *argv[] ) {
   int              ra, dec, i;      /* Loop variables for xmgrace option */
   FILE            *pvc = NULL;      /* Temporary file for xmgrace option */
   FILE            *fnongrace = NULL;/* File contaning ellipse coordinates */
-  int              metric_code;     /* Which metric code to use: */
-                                    /* 1 = Ptolemetric */
-                                    /* 2 = CoherentMetric + DTBarycenter */
-                                    /* 3 = CoherentMetric + DTEphemeris  */
-  REAL8Vector     *tevlambda;       /* (f, a, d, ...) for CoherentMetric */
-  MetricParamStruc tevparam;        /* Input structure for CoherentMetric */
-  PulsarTimesParamStruc tevpulse;   /* Input structure for CoherentMetric */
-                                    /* (this is a member of tevparam) */
-  EphemerisData   *eph;             /* To store ephemeris data */
-  int             detector;         /* Which detector to use: */
-                                    /* 1 = Hanford,  2 = Livingston,  */
-                                    /* 3 = Virgo,  4 = GEO,  5 = TAMA */
   REAL8           ra_point;         /* RA at which metric is evaluated */
   REAL8           dec_point;        /* dec at which metric is evaluated */
   float           a,b,c,d,e,f;      /* To input point in standard format */
@@ -200,19 +165,13 @@ int main( int argc, char *argv[] ) {
   REAL4           f0;               /* carrier frequency */
   UINT2           numSpindown;      /* Number of spindowns */
 
-  char earth[] = TEST_DATA_DIR "earth00-19-DE405.dat.gz";
-  char sun[]   = TEST_DATA_DIR "sun00-19-DE405.dat.gz";
-
-
   /* Defaults that can be overwritten: */
-  metric_code = 1;
-  in.epoch.gpsSeconds = tevpulse.epoch.gpsSeconds = 731265908;
-  in.epoch.gpsNanoSeconds = tevpulse.epoch.gpsNanoSeconds = 0.0;
+  in.epoch.gpsSeconds = 731265908;
+  in.epoch.gpsNanoSeconds = 0.0;
   mismatch = 0.02;
   nongrace = 0;
-  in.duration = tevparam.deltaT = DEFAULT_DURATION;
+  in.duration = DEFAULT_DURATION;
   grace = 0;
-  detector = 4;
   ra_point  = (24.1/60)*LAL_PI_180;     /* 47 Tuc */
   dec_point = -(72+5./60)*LAL_PI_180;
   ra_min = 0;
@@ -225,11 +184,8 @@ int main( int argc, char *argv[] ) {
   /* Parse options. */
   while ((opt = LALgetopt( argc, argv, "a:b:c:d:ef:l:m:n:pt:s:x" )) != -1) {
     switch (opt) {
-    case 'a':
-      metric_code = atoi( LALoptarg );
-      break;
     case 'b':
-      in.epoch.gpsSeconds = tevpulse.epoch.gpsSeconds = atoi( LALoptarg );
+      in.epoch.gpsSeconds = atoi( LALoptarg );
       break;
     case 'c':
       if( sscanf( LALoptarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
@@ -238,11 +194,6 @@ int main( int argc, char *argv[] ) {
 	}
       ra_point = (15*a+b/4+c/240)*LAL_PI_180;
       dec_point = (d+e/60+f/3600)*LAL_PI_180;
-      break;
-    case 'd':
-      detector = atoi( LALoptarg );
-      break;
-    case 'e':
       break;
     case 'f':
       f0 = atof( LALoptarg );
@@ -265,9 +216,6 @@ int main( int argc, char *argv[] ) {
       break;
     case 's':
       break;
-    case 't':
-      in.duration = tevparam.deltaT = atof( LALoptarg );
-      break;
     case 'x':
       grace = 1;
       break;
@@ -283,20 +231,12 @@ int main( int argc, char *argv[] ) {
               GENERALMETRICTESTC_MSGEMEM );
       return GENERALMETRICTESTC_EMEM;
     }
-  tevlambda = NULL;
-  LALDCreateVector( &status, &tevlambda, 3+numSpindown );
-  if( status.statusCode )
-    {
-      printf( "%s line %d: %s\n", __FILE__, __LINE__,
-              GENERALMETRICTESTC_MSGEMEM );
-      return GENERALMETRICTESTC_EMEM;
-    }
 
   /* Position in parameter space (sky, frequency, spindowns) */
   in.position.system = COORDINATESYSTEM_EQUATORIAL;
-  in.position.longitude = tevlambda->data[1] = ra_point;
-  in.position.latitude = tevlambda->data[2] = dec_point;
-  in.maxFreq = tevlambda->data[0] = f0;
+  in.position.longitude = ra_point;
+  in.position.latitude = dec_point;
+  in.maxFreq = f0;
   in.spindown = NULL;
   if( numSpindown > 0 ) {
     LALCreateVector( &status, &(in.spindown), numSpindown );
@@ -307,89 +247,19 @@ int main( int argc, char *argv[] ) {
     }
     for( i=0; i<numSpindown; i++ ) {
       in.spindown->data[i] = 0;
-      tevlambda->data[i+3] = 0;
     }
   }
 
   /* Detector site */
-  if(detector==1)
-    tevpulse.site = &lalCachedDetectors[LALDetectorIndexLHODIFF];
-  if(detector==2)
-    tevpulse.site = &lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if(detector==3)
-    tevpulse.site = &lalCachedDetectors[LALDetectorIndexVIRGODIFF];
-  if(detector==4)
-    tevpulse.site = &lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if(detector==5)
-    tevpulse.site = &lalCachedDetectors[LALDetectorIndexTAMA300DIFF];
-  in.site = tevpulse.site;
-  tevpulse.latitude = in.site->frDetector.vertexLatitudeRadians;
-  tevpulse.longitude = in.site->frDetector.vertexLongitudeRadians;
-
-  /* CoherentMetric constants */
-  tevparam.constants = &tevpulse;
-  tevparam.n = 1;
-  tevparam.errors = 0;
-  tevparam.start = 0; /* start time relative to epoch */
-  tevpulse.t0 = 0.0;  /* spindown definition time relative to epoch */
-
-  /* Fill in the fields tevpulse.tMidnight & tevpulse.tAutumn: */
-  LALGetEarthTimes( &status, &tevpulse );
-  if( status.statusCode )
-    {
-      printf( "%s line %d: %s\n", __FILE__, __LINE__,
-              GENERALMETRICTESTC_MSGESUB );
-      return GENERALMETRICTESTC_ESUB;
-    }
-
-   /* Read in ephemeris data from files: */
-   XLAL_CHECK_MAIN( ( eph = XLALInitBarycenter( earth, sun ) ) != NULL, XLAL_EFUNC);
-   tevpulse.ephemeris = eph;
-
-   /* Choose CoherentMetric timing function */
-   if( metric_code == 2 ) {
-     tevpulse.t1 = LALTBaryPtolemaic;
-     tevpulse.dt1 = LALDTBaryPtolemaic;
-   }
-   if( metric_code == 3 ) {
-     tevpulse.t1 = LALTEphemeris;
-     tevpulse.dt1 = LALDTEphemeris;
-   }
-   tevpulse.t2 = LALTSpin;
-   tevpulse.dt2 = LALDTSpin;
-   tevpulse.constants1 = &tevpulse;
-   tevpulse.constants2 = &tevpulse;
-   tevpulse.nArgs = 2;
-   if( numSpindown > 0 ) {
-     tevparam.dtCanon = LALDTComp;
-   }
-   else {
-     if( metric_code == 2 )
-       tevparam.dtCanon = LALDTBaryPtolemaic;
-     if( metric_code == 3 )
-       tevparam.dtCanon = LALDTEphemeris;
-   }
+  in.site = &lalCachedDetectors[LALDetectorIndexGEO600DIFF];
 
    /* Evaluate metric components. */
-   if(metric_code==1)
+   LALPtoleMetric( &status, metric, &in );
+   if( status.statusCode )
      {
-       LALPtoleMetric( &status, metric, &in );
-       if( status.statusCode )
-	 {
-	   printf( "%s line %d: %s\n", __FILE__, __LINE__,
-		   GENERALMETRICTESTC_MSGESUB );
-	   return GENERALMETRICTESTC_ESUB;
-	 }
-     }
-   if(metric_code==2  || metric_code==3)
-     {
-       LALCoherentMetric( &status, metric, tevlambda, &tevparam );
-       if( status.statusCode )
-	 {
-	   printf( "%s line %d: %s\n", __FILE__, __LINE__,
-		   GENERALMETRICTESTC_MSGESUB );
-	   return GENERALMETRICTESTC_ESUB;
-	 }
+       printf( "%s line %d: %s\n", __FILE__, __LINE__,
+               GENERALMETRICTESTC_MSGESUB );
+       return GENERALMETRICTESTC_ESUB;
      }
 
    /* Print metric. */
@@ -478,30 +348,17 @@ int main( int argc, char *argv[] ) {
         REAL8 gaa, gad, gdd, angle, smaj, smin;
 
         /* Get the metric at this ra, dec. */
-        in.position.longitude = tevlambda->data[1] = ra*LAL_PI_180;
-        in.position.latitude  = tevlambda->data[2] = dec*LAL_PI_180;
+        in.position.longitude = ra*LAL_PI_180;
+        in.position.latitude  = dec*LAL_PI_180;
 
 	/* Evaluate metric: */
-	if(metric_code==1)
-	  {
-	    LALPtoleMetric( &status, metric, &in );
-	    if( status.statusCode )
-	      {
-		printf( "%s line %d: %s\n", __FILE__, __LINE__,
-			GENERALMETRICTESTC_MSGESUB );
-		return GENERALMETRICTESTC_ESUB;
-	      }
-	  }
-	if(metric_code==2  || metric_code==3)
-	  {
-	    LALCoherentMetric( &status, metric, tevlambda, &tevparam );
-	    if( status.statusCode )
-	      {
-		printf( "%s line %d: %s\n", __FILE__, __LINE__,
-			GENERALMETRICTESTC_MSGESUB );
-		return GENERALMETRICTESTC_ESUB;
-	      }
-	  }
+        LALPtoleMetric( &status, metric, &in );
+        if( status.statusCode )
+          {
+            printf( "%s line %d: %s\n", __FILE__, __LINE__,
+                    GENERALMETRICTESTC_MSGESUB );
+            return GENERALMETRICTESTC_ESUB;
+          }
 
 	/*  Project metric: */
 	LALProjectMetric( &status, metric, 0 );
@@ -574,16 +431,7 @@ int main( int argc, char *argv[] ) {
 
   printf("\nCleaning up and leaving...\n");
 
-  XLALDestroyEphemerisData( eph );
-
   LALDDestroyVector( &status, &metric );
-  if( status.statusCode )
-  {
-    printf( "%s line %d: %s\n", __FILE__, __LINE__,
-            GENERALMETRICTESTC_MSGEMEM );
-    return GENERALMETRICTESTC_EMEM;
-  }
-  LALDDestroyVector( &status, &tevlambda );
   if( status.statusCode )
   {
     printf( "%s line %d: %s\n", __FILE__, __LINE__,
