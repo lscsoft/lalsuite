@@ -46,7 +46,7 @@
 #include <lal/AVFactories.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/ComputeFstat.h>
-#include <lal/PulsarTimes.h>
+#include <lal/GetEarthTimes.h>
 #include <lal/SFTutils.h>
 #include <lal/LALString.h>
 

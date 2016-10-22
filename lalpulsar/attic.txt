@@ -79,3 +79,8 @@ git commit --amend
 # 2016-10-22 lalpulsar/test/ephemtoilwd.sh
 # 2016-10-22 lalpulsar/test/in.data
 # 2016-10-22 lalpulsar/test/range_tauOverT-1e5_n-2.dat
+# 2016-10-22 lalpulsar/src/DTEphemeris.c
+# 2016-10-22 lalpulsar/src/PulsarTimes.h
+# 2016-10-22 lalpulsar/src/TBaryPtolemaic.c
+# 2016-10-22 lalpulsar/src/TComp.c
+# 2016-10-22 lalpulsar/src/TSpin.c

@@ -20,6 +20,7 @@ pkginclude_HEADERS = \
 	GeneratePulsarSignal.h \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
+	GetEarthTimes.h \
 	HoughMap.h \
 	LALBarycenter.h \
 	LALComputeAM.h \
@@ -42,7 +43,6 @@ pkginclude_HEADERS = \
 	PulsarCrossCorr_v2.h \
 	PulsarDataTypes.h \
 	PulsarSimulateCoherentGW.h \
-	PulsarTimes.h \
 	ReadPulsarParFile.h \
 	SFTClean.h \
 	SFTfileIO.h \
@@ -71,7 +71,6 @@ liblalpulsar_la_SOURCES = \
 	ComputeFstat_Resamp.c \
 	ComputeSky.c \
 	ConstructPLUT.c \
-	DTEphemeris.c \
 	DetectorStates.c \
 	DopplerFullScan.c \
 	DopplerScan.c \
@@ -118,9 +117,6 @@ liblalpulsar_la_SOURCES = \
 	Stereographic.c \
 	SuperskyMetrics.c \
 	SynthesizeCWDraws.c \
-	TBaryPtolemaic.c \
-	TComp.c \
-	TSpin.c \
 	TransientCW_utils.c \
 	TwoDMesh.c \
 	TwoDMeshInternal.c \

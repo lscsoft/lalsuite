@@ -24,7 +24,7 @@
 #include <lal/DetectorSite.h>
 #include <lal/LALStdlib.h>
 #include <lal/PtoleMetric.h>
-#include <lal/PulsarTimes.h>
+#include <lal/GetEarthTimes.h>
 #include <lal/Factorial.h>
 
 /* Bounds on acceptable parameters, may be somewhat arbitrary */
@@ -61,7 +61,7 @@
  * docs/S2/FDS/Isolated/ptolemetric.tex.  Jones, Owen, and Whitbeck will write
  * up the calculation and some tests as a journal article.
  *
- * The function LALGetEarthTimes() is used to calculate the spin and
+ * The function XLALGetEarthTimes() is used to calculate the spin and
  * rotational phase of the Earth at the beginning of the observation.
  *
  * On output, the \a metric->data is arranged with the same indexing
@@ -109,7 +109,7 @@ void LALPtoleMetric( LALStatus *status,
   REAL8 B[10];     /* Array of intermediate quantities */
   REAL8 Is[5];      /* Array of integrals needed for spindown.*/
   UINT2 dim;         /* Dimension of parameter space */
-  PulsarTimesParamStruc zero_phases; /* Needed to calculate phases of spin*/
+  REAL8 tMidnight, tAutumn; /* Needed to calculate phases of spin*/
   /* and orbit at t_gps =0             */
   REAL8Vector *big_metric; /* 10-dim metric in (phi,f,a,d,f1) for internal use */
   REAL8 T;  /* Duration of observation */
@@ -226,11 +226,9 @@ void LALPtoleMetric( LALStatus *status,
   sin_2d = sin(2*(input->position.latitude));
 
   /* Calculation of phases of spin and orbit at start: */
-  zero_phases.epoch.gpsSeconds = input->epoch.gpsSeconds;
-  zero_phases.epoch.gpsNanoSeconds = input->epoch.gpsNanoSeconds;
-  LALGetEarthTimes( status, &zero_phases);
-  phi_o_i = -zero_phases.tAutumn/LAL_YRSID_SI*LAL_TWOPI;
-  phi_s_i = -zero_phases.tMidnight/LAL_DAYSID_SI*LAL_TWOPI + lon;
+  XLAL_CHECK_LAL( status, XLALGetEarthTimes(&input->epoch, &tMidnight, &tAutumn) == XLAL_SUCCESS, XLAL_EFUNC );
+  phi_o_i = -tAutumn/LAL_YRSID_SI*LAL_TWOPI;
+  phi_s_i = -tMidnight/LAL_DAYSID_SI*LAL_TWOPI + lon;
 
 
   /* Quantities involving the orbital phase: */
@@ -630,9 +628,6 @@ void LALPulsarMetric ( LALStatus *stat,
 		       REAL8Vector **metric,
 		       PtoleMetricIn *input )
 {
-  PulsarTimesParamStruc XLAL_INIT_DECL(spinParams);
-  PulsarTimesParamStruc XLAL_INIT_DECL(baryParams);
-  PulsarTimesParamStruc XLAL_INIT_DECL(compParams);
   UINT4 nSpin, dim;
 
   INITSTATUS(stat);

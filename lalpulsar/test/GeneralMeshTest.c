@@ -81,7 +81,7 @@
  * \code
  * lalDebugLevel                LALDCreateVector()
  * LALCheckMemoryLeaks()        LALDDestroyVector()
- * LALProjectMetric()           LALGetEarthTimes()
+ * LALProjectMetric()           XLALGetEarthTimes()
  * LALPtoleMetric()             XLALInitBarycenter()
  * LALCreateTwoDMesh()          LALDestroyTwoDMesh()
  * \endcode

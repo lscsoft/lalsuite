@@ -43,7 +43,7 @@
 #include <lal/AVFactories.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/ComputeFstat.h>
-#include <lal/PulsarTimes.h>
+#include <lal/GetEarthTimes.h>
 #include <lal/SFTutils.h>
 
 #include <lal/ComputeFstat.h>
@@ -928,9 +928,8 @@ getMultiPhaseDerivs ( const MultiDetectorStateSeries *multiDetStates,
   REAL8 refTime = XLALGPSGetREAL8 ( &refTimeGPS );
 
   /* get tAutumn */
-  PulsarTimesParamStruc XLAL_INIT_DECL(times);
-  times.epoch = refTimeGPS;
-  XLAL_CHECK_NULL ( XLALGetEarthTimes ( &(times.epoch), &(times.tMidnight), &(times.tAutumn) ) == XLAL_SUCCESS, XLAL_EFUNC );
+  REAL8 tMidnight, tAutumn;
+  XLAL_CHECK_NULL ( XLALGetEarthTimes ( &refTimeGPS, &tMidnight, &tAutumn ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   MultiPhaseDerivs *mdPhi = NULL;
   XLAL_CHECK_NULL( (mdPhi = XLALCalloc ( 1, sizeof( *mdPhi ))) != NULL, XLAL_ENOMEM );
@@ -980,7 +979,7 @@ getMultiPhaseDerivs ( const MultiDetectorStateSeries *multiDetStates,
 	      COPY_VECT ( rX, rDet );
 	      break;
 	    case PHASE_PTOLE: /* use Ptolemaic orbital approximation */
-	      getPtolePosVel( &posvel, ti, times.tAutumn );
+	      getPtolePosVel( &posvel, ti, tAutumn );
 	      COPY_VECT ( rX, posvel.pos );
 	      /* add on the detector-motion due to the Earth's spin */
 
