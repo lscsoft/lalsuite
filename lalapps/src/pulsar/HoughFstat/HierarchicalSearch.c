@@ -3355,7 +3355,7 @@ void ComputeStackNoiseAndAMWeights( LALStatus *status,
     out->data[iStack] = 0;
 
     multiAMcoef = NULL;
-    TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multDetStates, skypos), status);
+    XLAL_CHECK_LAL ( status, ( multiAMcoef = XLALComputeMultiAMCoeffs ( multDetStates, NULL, skypos) ) != NULL, XLAL_EFUNC);
 
 
     for ( iIFO = 0; iIFO < numifo; iIFO++) {

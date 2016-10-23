@@ -51,7 +51,7 @@
 #include <lal/ConfigFile.h>
 #include <lalapps.h>
 
-BOOLEAN calc_AM_coeffs(LALStatus*, gsl_rng*, REAL8, REAL8, REAL8, REAL8, MultiDetectorStateSeries*, MultiNoiseWeights*, REAL8*, REAL8*, REAL8*);
+BOOLEAN calc_AM_coeffs(gsl_rng*, REAL8, REAL8, REAL8, REAL8, MultiDetectorStateSeries*, MultiNoiseWeights*, REAL8*, REAL8*, REAL8*);
 REAL8 pdf_ncx2_4(REAL8, REAL8);
 REAL8 d_pdf_ncx2_4(REAL8, REAL8);
 REAL8 ran_ncx2_4(const gsl_rng*, REAL8);
@@ -67,7 +67,6 @@ const REAL8 max_psi  =  LAL_PI_4;
 
 int main(int argc, char *argv[]) {
 
-  LALStatus status = blank_status;
   REAL8 alpha = 0.0;
   REAL8 alpha_band = 0.0;
   REAL8 delta = 0.0;
@@ -293,7 +292,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* Calculate the AM coefficients at least once */
-  calc_ABC_coeffs = calc_AM_coeffs(&status, rng,
+  calc_ABC_coeffs = calc_AM_coeffs(rng,
                                    alpha, alpha_band,
                                    delta, delta_band,
                                    detector_states, noise_weights,
@@ -389,7 +388,7 @@ int main(int argc, char *argv[]) {
 
         /* Calculate the AM coefficients if needed */
         if (calc_ABC_coeffs)
-          calc_ABC_coeffs = calc_AM_coeffs(&status, rng,
+          calc_ABC_coeffs = calc_AM_coeffs(rng,
                                            alpha, alpha_band,
                                            delta, delta_band,
                                            detector_states, noise_weights,
@@ -587,7 +586,6 @@ int main(int argc, char *argv[]) {
 
 /* Compute the AM coefficients */
 BOOLEAN calc_AM_coeffs(
-  LALStatus *status,
   gsl_rng *rng,
   REAL8 alpha,
   REAL8 alpha_band,
@@ -609,11 +607,7 @@ BOOLEAN calc_AM_coeffs(
   sky.latitude  = gsl_ran_flat(rng, delta, delta + delta_band);
 
   /* Calculate and noise-weigh the AM coefficients */
-  LAL_CALL(LALGetMultiAMCoeffs(status, &AM_coeffs, detector_states, sky), status);
-  if (XLALWeightMultiAMCoeffs(AM_coeffs, noise_weights) != XLAL_SUCCESS) {
-    XLALPrintError("XLALWeightMultiAMCoeffs failed\n");
-    return EXIT_FAILURE;
-  }
+  XLAL_CHECK_MAIN(( AM_coeffs = XLALComputeMultiAMCoeffs( detector_states, noise_weights, sky ) ) != NULL, XLAL_EFUNC);
   *A_coeff = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;
   *B_coeff = AM_coeffs->Mmunu.Bd * AM_coeffs->Mmunu.Sinv_Tsft;
   *C_coeff = AM_coeffs->Mmunu.Cd * AM_coeffs->Mmunu.Sinv_Tsft;

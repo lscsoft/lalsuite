@@ -90,7 +90,6 @@ int XLALDestroyConfig ( ConfigVariables *cfg );
 int
 main(int argc, char *argv[])
 {
-  LALStatus status = blank_status;
 
   ConfigVariables XLAL_INIT_DECL(config);
   UserVariables_t XLAL_INIT_DECL(uvar);
@@ -115,17 +114,6 @@ main(int argc, char *argv[])
   /* basic setup and initializations */
   XLAL_CHECK ( XLALInitCode( &config, &uvar, argv[0] ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  /* ----- allocate memory for AM-coeffs ----- */
-  AMCoeffs AMold, AMnew1, AMnew2;	/**< containers holding AM-coefs computed by 3 different AM functions */
-  AMold.a = XLALCreateREAL4Vector ( 1 );
-  AMold.b = XLALCreateREAL4Vector ( 1 );
-  AMnew1.a = XLALCreateREAL4Vector ( 1 );
-  AMnew1.b = XLALCreateREAL4Vector ( 1 );
-  AMnew2.a = XLALCreateREAL4Vector ( 1 );
-  AMnew2.b = XLALCreateREAL4Vector ( 1 );
-
-  XLAL_CHECK ( AMold.a && AMold.b && AMnew1.a && AMnew1.b && AMnew2.a && AMnew2.a, XLAL_ENOMEM, "Failed to XLALCreateREAL4Vector ( 1 )\n" );
-
   /* ----- get detector-state series ----- */
   DetectorStateSeries *detStates = NULL;
   XLAL_CHECK ( (detStates = XLALGetDetectorStates ( config.timestamps, config.det, config.edat, 0 )) != NULL, XLAL_EFUNC );
@@ -134,52 +122,7 @@ main(int argc, char *argv[])
   SSBtimes *tSSB = XLALGetSSBtimes ( detStates, config.skypos, config.timeGPS, SSBPREC_RELATIVISTIC );
   XLAL_CHECK ( tSSB != NULL, XLAL_EFUNC, "XLALGetSSBtimes() failed with xlalErrno = %d\n", xlalErrno );
 
-  /* ===== 1) compute AM-coeffs the 'old way': [used in CFSv1] ===== */
-  BarycenterInput XLAL_INIT_DECL(baryinput);
-  AMCoeffsParams XLAL_INIT_DECL(amParams);
-  EarthState earth;
-
-  baryinput.site.location[0] = config.det->location[0]/LAL_C_SI;
-  baryinput.site.location[1] = config.det->location[1]/LAL_C_SI;
-  baryinput.site.location[2] = config.det->location[2]/LAL_C_SI;
-  baryinput.alpha = config.skypos.longitude;
-  baryinput.delta = config.skypos.latitude;
-  baryinput.dInv = 0.e0;
-
-  /* amParams structure to compute a(t) and b(t) */
-  amParams.das = XLALMalloc(sizeof(*amParams.das));
-  amParams.das->pSource = XLALMalloc(sizeof(*amParams.das->pSource));
-  amParams.baryinput = &baryinput;
-  amParams.earth = &earth;
-  amParams.edat = config.edat;
-  amParams.das->pDetector = config.det;
-  amParams.das->pSource->equatorialCoords.longitude = config.skypos.longitude;
-  amParams.das->pSource->equatorialCoords.latitude = config.skypos.latitude;
-  amParams.das->pSource->orientation = 0.0;
-  amParams.das->pSource->equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
-  amParams.polAngle = 0;
-
-  LAL_CALL ( LALComputeAM ( &status, &AMold, config.timestamps->data, &amParams), &status);
-
-  XLALFree ( amParams.das->pSource );
-  XLALFree ( amParams.das );
-
-
-  /* ===== 2) compute AM-coeffs the 'new way' using LALNewGetAMCoeffs() */
-  LALGetAMCoeffs ( &status, &AMnew1, detStates, config.skypos );
-  if ( status.statusCode ) {
-    XLALPrintError ("%s: call to LALGetAMCoeffs() failed, status = %d\n\n", __func__, status.statusCode );
-    XLAL_ERROR (  status.statusCode & XLAL_EFUNC );
-  }
-
-  /* ===== 3) compute AM-coeffs the 'newer way' using LALNewGetAMCoeffs() [used in CFSv2] */
-  LALNewGetAMCoeffs ( &status, &AMnew2, detStates, config.skypos );
-  if ( status.statusCode ) {
-    XLALPrintError ("%s: call to LALNewGetAMCoeffs() failed, status = %d\n\n", __func__, status.statusCode );
-    XLAL_ERROR (  status.statusCode & XLAL_EFUNC );
-  }
-
-  /* ===== 4) use standalone version of the above [used in FstatMetric_v2] */
+  /* ===== compute AM-coeffs ===== */
   REAL8 a0,b0;
   if ( XLALComputeAntennaPatternCoeffs ( &a0, &b0, &config.skypos, &config.timeGPS, config.det, config.edat ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALComputeAntennaPatternCoeffs() failed.\n", __func__ );
@@ -195,11 +138,8 @@ main(int argc, char *argv[])
   printf ("Sky position: longitude = %g rad, latitude = %g rad [equatorial coordinates]\n", config.skypos.longitude, config.skypos.latitude );
   printf ("\n");
 
-  printf ("----- Antenna pattern functions (a,b):\n");
-  printf ("LALComputeAM:                    ( %-12.8g, %-12.8g)  [REAL4]\n", AMold.a->data[0], AMold.b->data[0] );
-  printf ("LALGetAMCoeffs:                  ( %-12.8g, %-12.8g)  [REAL4]\n", AMnew1.a->data[0], AMnew1.b->data[0] );
-  printf ("LALNewGetAMCoeffs:               ( %-12.8g, %-12.8g)  [REAL4]\n", AMnew2.a->data[0]/config.sinzeta, AMnew2.b->data[0]/config.sinzeta );
-  printf ("XLALComputeAntennaPatternCoeffs: ( %-12.8g, %-12.8g)  [REAL8]\n", a0/config.sinzeta, b0/config.sinzeta );
+  printf ("----- Antenna pattern functions:\n");
+  printf ("a = %.8g\nb = %.8g\n", a0/config.sinzeta, b0/config.sinzeta );
   printf ("\n");
 
   printf ("----- Detector & Earth state:\n");
@@ -219,13 +159,6 @@ main(int argc, char *argv[])
   XLAL_CHECK ( XLALDestroyConfig( &config ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroyDetectorStateSeries ( detStates );
-
-  XLALDestroyREAL4Vector ( AMold.a );
-  XLALDestroyREAL4Vector ( AMold.b );
-  XLALDestroyREAL4Vector ( AMnew1.a );
-  XLALDestroyREAL4Vector ( AMnew1.b );
-  XLALDestroyREAL4Vector ( AMnew2.a );
-  XLALDestroyREAL4Vector ( AMnew2.b );
 
   XLALDestroyREAL8Vector ( tSSB->DeltaT );
   XLALDestroyREAL8Vector ( tSSB->Tdot );
@@ -288,9 +221,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
-  /* set up dummy timestamps vector containing just this one timestamps
-   * (used to interface with LALComputeAM(), LALGetAMCoeffs() and LALNewGetAMCoeffs())
-   */
+  /* set up dummy timestamps vector containing just this one timestamps */
   if ( (cfg->timestamps = XLALCreateTimestampVector( 1 )) == NULL ) {
     XLALPrintError ("%s: XLALCreateTimestampVector( 1 ) failed.", __func__ );
     XLAL_ERROR ( XLAL_EFUNC );
@@ -304,7 +235,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
       XLAL_ERROR ( XLAL_EFUNC );
     }
 
-  /* NOTE: contrary to ComputeAM() and LALGetAMCoffs(), the new function LALNewGetAMCoeffs()
+  /* NOTE: the new function XLALComputeAMCoeffs()
    * computes 'a * sinzeta' and 'b * sinzeta': for the comparison we therefore need to correct
    * for GEO's opening-angle of 94.33degrees [JKS98]: */
   if ( ! strcmp ( cfg->det->frDetector.name, "GEO_600" ) )

@@ -66,6 +66,10 @@ Input shoud be from
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+#define SQ(x) ((x)*(x))
+
+static void LALComputeAM (LALStatus *, AMCoeffs *coe, LIGOTimeGPS *ts, AMCoeffsParams *params);
+
 /*************************************/
 
 int main(int argc, char *argv[]){
@@ -405,7 +409,7 @@ int main(int argc, char *argv[]){
   
   /* amplitude modulation stuff */
   {
-    AMCoeffs amc; 
+    AMCoeffs XLAL_INIT_DECL(amc);
     AMCoeffsParams *amParams;
     EarthState earth;
     BarycenterInput baryinput;  /* Stores detector location and other barycentering data */
@@ -567,5 +571,80 @@ int main(int argc, char *argv[]){
 }
 
 
- 
+/**
+ * Original antenna-pattern function by S Berukoff
+ */
+void LALComputeAM (LALStatus          *status,
+		   AMCoeffs           *coe,
+		   LIGOTimeGPS        *ts,
+		   AMCoeffsParams     *params)
+{
 
+  REAL4 zeta;                  /* sine of angle between detector arms        */
+  INT4 i;                      /* temporary loop index                       */
+  LALDetAMResponse response;   /* output of LALComputeDetAMResponse          */
+
+  REAL4 sumA2=0.0;
+  REAL4 sumB2=0.0;
+  REAL4 sumAB=0.0;             /* variables to store scalar products         */
+  INT4 length=coe->a->length;  /* length of input time series                */
+
+  REAL4 cos2psi;
+  REAL4 sin2psi;               /* temp variables                             */
+
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR(status);
+
+  /* Must put an ASSERT checking that ts vec and coe vec are same length */
+
+  /* Compute the angle between detector arms, then the reciprocal */
+  {
+    LALFrDetector det = params->das->pDetector->frDetector;
+    zeta = 1.0/(sin(det.xArmAzimuthRadians - det.yArmAzimuthRadians));
+    if(params->das->pDetector->type == LALDETECTORTYPE_CYLBAR) zeta=1.0;
+  }
+
+  cos2psi = cos(2.0 * params->polAngle);
+  sin2psi = sin(2.0 * params->polAngle);
+
+  /* Note the length is the same for the b vector */
+  for(i=0; i<length; ++i)
+    {
+      REAL4 *a = coe->a->data;
+      REAL4 *b = coe->b->data;
+
+      /* Compute F_plus, F_cross */
+      LALComputeDetAMResponse(status->statusPtr, &response, params->das, &ts[i]);
+
+      /*  Compute a, b from JKS eq 10,11
+       *  a = zeta * (F_plus*cos(2\psi)-F_cross*sin(2\psi))
+       *  b = zeta * (F_cross*cos(2\psi)+Fplus*sin(2\psi))
+       */
+      a[i] = zeta * (response.plus*cos2psi-response.cross*sin2psi);
+      b[i] = zeta * (response.cross*cos2psi+response.plus*sin2psi);
+
+      /* Compute scalar products */
+      sumA2 += SQ(a[i]);                       /*  A  */
+      sumB2 += SQ(b[i]);                       /*  B  */
+      sumAB += (a[i]) * (b[i]);                /*  C  */
+    }
+
+  {
+    /* Normalization factor */
+    REAL8 L = 2.0/(REAL8)length;
+
+    /* Assign output values and normalise */
+    coe->A = L*sumA2;
+    coe->B = L*sumB2;
+    coe->C = L*sumAB;
+    coe->D = ( coe->A * coe->B - SQ(coe->C) );
+    /* protection against case when AB=C^2 */
+    if(coe->D == 0) coe->D=1.0e-9;
+  }
+
+  /* Normal exit */
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+} /* LALComputeAM() */

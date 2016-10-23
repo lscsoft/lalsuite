@@ -804,7 +804,7 @@ int main(int argc, char *argv[]){
     
     skypos.longitude = pulsarInject.longitude;
     skypos.latitude  = pulsarInject.latitude;
-    LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
+    XLAL_CHECK_MAIN ( ( multiAMcoef = XLALComputeMultiAMCoeffs ( mdetStates, NULL, skypos) ) != NULL, XLAL_EFUNC);
       
     /* loop over the weights and set them by the appropriate AM coefficients */
     for ( k = 0, iIFO = 0; iIFO < numifo; iIFO++) {	  

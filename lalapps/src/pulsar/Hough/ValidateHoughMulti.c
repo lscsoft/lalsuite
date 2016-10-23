@@ -410,7 +410,7 @@ int main(int argc, char *argv[]){
       skypos.longitude = uvar_AlphaWeight;
       skypos.latitude = uvar_DeltaWeight;
       skypos.system = COORDINATESYSTEM_EQUATORIAL;
-      LAL_CALL ( LALGetMultiAMCoeffs ( &status, &multiAMcoef, mdetStates, skypos), &status);
+      XLAL_CHECK_MAIN ( ( multiAMcoef = XLALComputeMultiAMCoeffs ( mdetStates, NULL, skypos) ) != NULL, XLAL_EFUNC);
       
       /* loop over the weights and multiply them by the appropriate
 	 AM coefficients */

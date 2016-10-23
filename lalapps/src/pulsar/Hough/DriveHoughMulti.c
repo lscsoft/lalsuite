@@ -1886,7 +1886,7 @@ void GetAMWeights(LALStatus                *status,
     skypos.longitude = alpha;
     skypos.latitude = delta;
     skypos.system = COORDINATESYSTEM_EQUATORIAL;
-    TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, mdetStates, skypos), status);
+    XLAL_CHECK_LAL ( status, ( multiAMcoef = XLALComputeMultiAMCoeffs ( mdetStates, NULL, skypos) ) != NULL, XLAL_EFUNC);
     
     numifo = mdetStates->length;
     

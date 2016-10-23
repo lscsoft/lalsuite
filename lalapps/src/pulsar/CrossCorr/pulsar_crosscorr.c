@@ -1334,9 +1334,6 @@ void GetBeamInfo(LALStatus *status,
   while (sft) {
 
     DetectorStateSeries *detState = NULL;
-    AMcoef = (AMCoeffs *)LALCalloc(1, sizeof(AMCoeffs));
-    AMcoef->a = XLALCreateREAL4Vector(1);
-    AMcoef->b = XLALCreateREAL4Vector(1);
 
     /* get midpoint of sft */
     tgps = sft->sft.epoch;
@@ -1353,7 +1350,7 @@ void GetBeamInfo(LALStatus *status,
 
     detState->detector = *det;
 
-    LALNewGetAMCoeffs ( status->statusPtr, AMcoef, detState, skypos);
+    AMcoef = XLALComputeAMCoeffs ( detState, skypos);
     thisVel.data = detState->data[0].vDetector;
     thisPos.data = detState->data[0].rDetector;
 
