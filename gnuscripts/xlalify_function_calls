@@ -1,0 +1,328 @@
+#!/usr/bin/perl
+# Author: Karl Wette, 2016
+
+use strict;
+use Text::ParseWords;
+
+if (@ARGV < 3) {
+    print stderr <<"EOF";
+
+usage: $0 'base-directory' 'return-type' 'xlal-function[:lal-function]'...
+
+Loop over files committed in Git under 'base-directory', and in every *.c
+file convert function calls from old LALStatus-style LAL functions to
+modern XLAL functions. The XLAL function names 'xlal-functions' and their
+common return type 'return-type' are given as command-line
+arguments. Options for 'return-type' are:
+
+- 'int':        XLAL function returning int (XLAL_SUCCESS on success).
+- 'ptr':        XLAL function returning a pointer (non-NULL on success).
+                The return value is assigned to the second argument of the
+                old LAL function (i.e. the argument following LALStatus).
+- 'REAL[48]':   XLAL function returning a REAL[48] (non-NAN on success).
+                The return value is assigned to the second argument of the
+                old LAL function (i.e. the argument following LALStatus).
+- 'void':       XLAL void function, always successful (e.g. destructor).
+- 'void-deref': Same as 'void', but dereference the second argument of the
+                old LAL function (i.e. the argument following LALStatus).
+- 'void-error': XLAL void function, check xlalErrno is non-zero for success.
+
+Optionally, an alternative name for the old LAL function name can be given
+as 'xlal-function:lal-function'; by default 'lal-function' is determined
+from 'xlal-function' by stripping the initial 'X'.
+
+EOF
+    exit(1);
+}
+
+my $base_dir = shift @ARGV;
+die "$0: '$base_dir' is not a directory" unless -d $base_dir;
+chdir $base_dir;
+
+my $xlal_return_type = shift @ARGV;
+
+my $xlal_return_test = undef;
+my $xlal_assign_arg = 0;
+my $xlal_deref_arg = 0;
+if ($xlal_return_type eq "int") {
+    $xlal_return_test = " == XLAL_SUCCESS";
+} elsif ($xlal_return_type eq "ptr") {
+    $xlal_return_test = " != NULL";
+    $xlal_assign_arg = 1;
+} elsif ($xlal_return_type =~ /^REAL([48])$/) {
+    $xlal_return_test = " != XLAL_REAL$1_FAIL_NAN";
+} elsif ($xlal_return_type eq "void") {
+    $xlal_return_test = undef;
+} elsif ($xlal_return_type eq "void-deref") {
+    $xlal_return_test = undef;
+    $xlal_deref_arg = 1;
+} elsif ($xlal_return_type eq "void-error") {
+    $xlal_return_test = ", xlalErrno != 0";
+} else {
+    die "$0: invalid XLAL return type '$xlal_return_type'";
+}
+
+my %lal_functions;
+for my $xlal_function (@ARGV) {
+    die "$0: invalid XLAL function name '$xlal_function'" if $xlal_function !~ /^X/;
+    if ($xlal_function =~ /:/p) {
+        $xlal_function = ${^PREMATCH};
+        $lal_functions{$xlal_function} = ${^POSTMATCH};
+    } else {
+        $lal_functions{$xlal_function} = $xlal_function;
+        $lal_functions{$xlal_function} =~ s/^X//;
+    }
+}
+
+my $allmatches = 0;
+foreach my $filename (`git ls-files .`) {
+
+    chomp $filename;
+
+    next if $filename !~ /\.[ch]$/;
+
+    next if $filename =~ m|/PowerFlux/|;
+    next if $filename =~ m|/loosely_coherent/|;
+
+    my $file;
+    {
+        open(FILE, "$filename") or die "$0: cannot open $filename: $!";
+        local $/ = undef;
+        $file = <FILE>;
+        close(FILE);
+    }
+
+    my $matches = 0;
+
+    sub deref_argument {
+
+        my ($arg) = @_;
+
+        $arg =~ s/^\s*//;
+        if ($arg =~ /^&/p) {
+            $arg = ${^POSTMATCH};
+        } else {
+            $arg = "*($arg)";
+        }
+
+        $arg
+
+    }
+
+    sub build_function {
+
+        my ($func, $funcsp, $args) = @_;
+        my $r;
+
+        my @args = parse_line(",", 1, $args);
+        shift @args;
+        $args[0] =~ s/^\s*//;
+        if ($xlal_deref_arg) {
+            $args[0] = deref_argument($args[0]);
+        }
+        $r = $func . $funcsp . "(" . join(",", @args) . ");";
+
+        $r
+
+    }
+
+    sub build_assertion {
+
+        my ($negate, $func, $funcsp, $args) = @_;
+        my $r;
+
+        my @args = parse_line(",", 1, $args);
+        shift @args;
+        $args[0] =~ s/^\s*//;
+        if ($xlal_assign_arg) {
+            my $arg = shift @args;
+            $arg = deref_argument($arg);
+            $r .= "( " . $arg . " = ";
+        }
+        $r .= $func . $funcsp . "(" . join(",", @args) . ")";
+        if ($xlal_assign_arg) {
+            $r .= " )";
+        }
+
+        my $test = $xlal_return_test;
+        if ($negate eq "!") {
+            if ($test =~ /==/p) {
+                $test = ${^PREMATCH} . "!=" . ${^POSTMATCH};
+            } elsif ($test =~ /!=/p) {
+                $test = ${^PREMATCH} . "==" . ${^POSTMATCH};
+            } else {
+                die "$0: cannot negate test '$test'";
+            }
+        }
+        $r .= $test;
+
+        $r
+
+    }
+
+    sub build_check_macro {
+
+        my ($call, $callsp, $spfunc, $func, $funcsp, $args, $status, $spend) = @_;
+        my $r;
+
+        if ($call =~ s/^XLAL_ERROR/XLAL_CHECK/) {
+            $r .= $call . $callsp . "(" . $spfunc;
+        } elsif ($call eq "LAL_CALL") {
+            $r .= "XLAL_CHECK_MAIN" . $callsp . "(" . $spfunc;
+        } else {
+            $r .= "XLAL_CHECK_LAL" . $callsp . "(" . $spfunc . $status . ", ";
+        }
+        my $negate = ( $call =~ /^SHOULD_FAIL/ ) ? "!" : "";
+        my $assertion = build_assertion($negate, $func, $funcsp, $args);
+        $r .= $assertion . ", XLAL_EFUNC" . $spend . ");";
+
+        $r
+
+    }
+
+    sub build_fail_block {
+
+        my ($func, $funcsp, $args, $status, $spblock, $block, $blocksp) = @_;
+        my $r;
+
+        $spblock =~ s/^\n*//;
+        $blocksp =~ s/\n*$//;
+
+        my $notassertion = build_assertion("!", $func, $funcsp, $args);
+        $r .= "if ( " . $notassertion . " ) {\n";
+        $r .= $spblock . $block . "\n";
+        $r .= $spblock . "ABORTXLAL( " . $status . " );";
+        $r .= $blocksp . "}";
+
+        $r
+
+    }
+
+    for my $xlal_function (keys %lal_functions) {
+
+        if ($filename =~ /\.c$/) {
+
+            $file =~ s{
+                \b (?<call> LAL_CALL | TRY | SUB | SHOULD_WORK | SHOULD_FAIL(?:_WITH_CODE)? ) (?<callsp>\s*) \(
+                    (?<spfunc>\s*) $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
+                        (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
+                    \) )
+                    \s* , \s* (?<status>\S+) (?<spend>\s*)
+                \);
+            }{
+                ++$matches;
+                if (defined($xlal_return_test)) {
+                    build_check_macro($+{call}, $+{callsp}, $+{spfunc}, $xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spend})
+                } else {
+                    build_function($xlal_function, $+{funcsp}, $+{args})
+                }
+            }egsx;
+
+            $file =~ s{
+                \b $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
+                    (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
+                \) );
+                \s*?
+                (?<call> CHECKSTATUSPTR | TESTSTATUS ) (?<callsp>\s*) \(
+                    (?<spfunc>\s*) (?<status>\S+) (?<spend>\s*)
+                \);
+            }{
+                ++$matches;
+                if (defined($xlal_return_test)) {
+                    build_check_macro($+{call}, $+{callsp}, $+{spfunc}, $xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spend})
+                } else {
+                    build_function($xlal_function, $+{funcsp}, $+{args})
+                }
+            }egsx;
+
+            if (defined($xlal_return_test)) {
+
+                $file =~ s{
+                    \b $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
+                        (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
+                    \) );
+                    \s*?
+                    BEGINFAIL \s* \(
+                        \s* (?<status>\S+) \s*
+                    \) (?: \s* \{ )?
+                        (?<spblock>\s*) (?<block>.*?) (?<blocksp>\s*)
+                    (?: \} \s*?)?
+                    ENDFAIL \s* \(
+                        \s* (?&status) \s*
+                    \);
+                }{
+                    ++$matches;
+                    build_fail_block($xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spblock}, $+{block}, $+{blocksp})
+                }egsx;
+
+                $file =~ s{
+                    \b $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
+                        (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
+                    \) );
+                    \s*?
+                    if \s* \(
+                        \s* (?: status ) .statusCode \s*
+                    \) \s* \{
+                        \s* XLALPrintError \s* (?<paren2> \(
+                            (?: (?> [^()]+ ) | (?&paren2) )*
+                        \) );
+                        \s* (?<call> XLAL_ERROR [_A-Z0-9]* ) (?<callsp>\s*) \( (?<spfunc>\s*) \S+ (?<spend>\s*) \);
+                        .*?
+                    \s* \}
+                }{
+                    ++$matches;
+                    build_check_macro($+{call}, $+{callsp}, $+{spfunc}, $xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spend})
+                }egsx;
+
+            }
+
+            if (!defined($xlal_return_test)) {
+
+                ++$matches if $file =~ s{
+                    \b $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
+                        (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
+                    \) );
+                }{
+                   ++$matches;
+                   build_function($xlal_function, $+{funcsp}, $+{args})
+                }egsx;
+
+            }
+
+        }
+
+        $file =~ s{
+            ( " [^"\n]* \b ) $lal_functions{$xlal_function} (?: \s | [(),] )
+        }{
+            ++$matches;
+            $1 . $xlal_function . $2
+        }egsx;
+
+        $file =~ s{
+            ( /\* (?: [^*] | \s | \n | (?: \*+ (?: [^*/] | \s | \n ) ) )* \b ) $lal_functions{$xlal_function} ( \s | [(),*] )
+        }{
+            ++$matches;
+            $1 . $xlal_function . $2
+        }egsx;
+
+        $file =~ s{
+            ( // [^\n]* \b ) $lal_functions{$xlal_function} ( \s | [(),*] )
+        }{
+            ++$matches;
+            $1 . $xlal_function . $2
+        }egsx;
+
+    }
+
+    if ($matches > 0) {
+        open(FILE, ">$filename") or die "Cannot open $filename: $!";
+        print FILE $file;
+        close(FILE);
+        print "$0: $matches matches in $filename\n";
+    }
+
+    $allmatches += $matches;
+
+}
+
+print "$0: $allmatches matches in total\n";

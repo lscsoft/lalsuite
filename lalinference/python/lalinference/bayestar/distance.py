@@ -262,7 +262,56 @@ distnorm : `numpy.ndarray`
 Returns
 -------
 pdf : `numpy.ndarray`
-    Conditional probability density according to ansatz.
+    Marginal probability density according to ansatz.
+""")
+
+
+_add_newdoc_ufunc(marginal_cdf, """\
+Calculate all-sky marginal cdf (ansatz).
+
+Parameters
+----------
+r : `numpy.ndarray`
+    Distance (Mpc)
+prob : `numpy.ndarray`
+    Marginal probability (pix^-2)
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+
+Returns
+-------
+cdf : `numpy.ndarray`
+    Marginal cumulative probability according to ansatz.
+""")
+
+
+_add_newdoc_ufunc(marginal_ppf, """\
+Point percent function (inverse cdf) of marginal distribution of distance
+(ansatz).
+
+Parameters
+----------
+p : `numpy.ndarray`
+    The cumulative distribution function
+prob : `numpy.ndarray`
+    Marginal probability (pix^-2)
+distmu : `numpy.ndarray`
+    Distance location parameter (Mpc)
+distsigma : `numpy.ndarray`
+    Distance scale parameter (Mpc)
+distnorm : `numpy.ndarray`
+    Distance normalization factor (Mpc^-2)
+r : `numpy.ndarray`
+    Distance at which the cdf is equal to `p`.
+
+Returns
+-------
+cdf : `numpy.ndarray`
+    Marginal cumulative probability according to ansatz.
 """)
 
 

@@ -51,8 +51,11 @@ src/stamp-h2
 swig/swiglal*
 test/??_714382918*.dat
 test/AstroOmegaTest
+test/CCoarseGrainFrequencySeriesTest
 test/CZeroPadAndFFTTest
+test/DCoarseGrainFrequencySeriesTest
 test/OverlapReductionFunctionTest
+test/SCoarseGrainFrequencySeriesTest
 test/SZeroPadAndFFTTest
 test/SimulatePopcornTest
 test/SimulateSBTest
@@ -63,4 +66,5 @@ test/StochasticInverseNoiseTest
 test/StochasticOmegaGWTest
 test/StochasticOptimalFilterNormalizationTest
 test/StochasticOptimalFilterTest
+test/ZCoarseGrainFrequencySeriesTest
 test/WHITENED-SB?

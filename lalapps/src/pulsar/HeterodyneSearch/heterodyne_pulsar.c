@@ -1255,10 +1255,10 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     }
     /* if doing one single heterodyne i.e. het flag = 3 then just calc phaseCoarse at all times */
     else if(hetParams.heterodyneflag == 3 || hetParams.heterodyneflag == 4 ){
-      /* set up LALBarycenter */
+      /* set up XLALBarycenter */
       dtpos = hetParams.timestamp - posepoch;
 
-      /* set up RA, DEC, and distance variables for LALBarycenter*/
+      /* set up RA, DEC, and distance variables for XLALBarycenter*/
       baryinput.delta = dec + dtpos*pmdec;
       baryinput.alpha = ra + dtpos*pmra/cos(baryinput.delta);
 
@@ -1370,7 +1370,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       REAL8 tWave1 = 0., tWave2 = 0.;
       phaseWave = 0.;
 
-      /* set up LALBarycenter */
+      /* set up XLALBarycenter */
       dtpos = hetParams.timestamp - posepochu;
 
       baryinput.delta = decu + dtpos*pmdecu;

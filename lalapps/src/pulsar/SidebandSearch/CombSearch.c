@@ -673,7 +673,7 @@ int OutputCstats(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat
   INT4 i;					/* initialise counters */  
 
   /* open output file - also check it is good */
-  if (LALUserVarWasSet(&uvar->outputCstat)) 	{
+  if (XLALUserVarWasSet(&uvar->outputCstat)) 	{
     if ((Cstat_out = fopen(uvar->outputCstat, "wb")) == NULL) 	{
       LogPrintf (LOG_CRITICAL, "%s: Error opening file '%s' for reading.. Error %d\n",fn,uvar->outputCstat,xlalErrno);
       return XLAL_EIO;

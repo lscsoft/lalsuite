@@ -138,7 +138,6 @@ i = np.column_stack((i0.ravel(), i1.ravel()))
 skip = 10
 theta0_theta3 = np.dot(i, skip * delta_theta0_theta3.T) + initial_theta0_theta3
 
-print(theta0_theta3.shape)
 for th0, th3 in ProgressBar(theta0_theta3.tolist()):
 
     th3S = 0

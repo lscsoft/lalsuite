@@ -846,6 +846,9 @@ static int SEOBNRv4ROMCore(
     fRef_geom = Mf_ROM_min;
   }
 
+  if (Mtot_sec/LAL_MTSUN_SI > 500.0)
+    XLALPrintWarning("Total mass=%gMsun > 500Msun. SEOBNRv4ROM disagrees with SEOBNRv4 for high total masses.\n", Mtot_sec/LAL_MTSUN_SI);
+
   /* Internal storage for waveform coefficiencts */
   SEOBNRROMdataDS_coeff *romdata_coeff_lo=NULL;
   SEOBNRROMdataDS_coeff *romdata_coeff_hi=NULL;
@@ -1084,15 +1087,15 @@ static int SEOBNRv4ROMCore(
  *
  * @note Parameter ranges:
  *   * 0.01 <= eta <= 0.25
- *   * -1 <= chi_i <= 0.99
- *   * Mtot >= 3 Msun
+ *   * -1 <= chi_i <= 1.0
+ *   * 2Msun (@ flow=20Hz) <= Mtot < 500Msun
  *
  *  Aligned component spins chi1, chi2.
  *  Symmetric mass-ratio eta = m1*m2/(m1+m2)^2.
  *  Total mass Mtot.
  *
  * This ROM consists of three submodels and glues together one low-mass and 2 high-mass models
- * These submodels and theor boundaries are not explicit in the source, just in the HDF5 data file.
+ * These submodels and their boundaries are not explicit in the source, just in the HDF5 data file.
  *
  * @{
  */

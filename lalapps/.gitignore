@@ -141,7 +141,7 @@ src/inspiral/posterior/lalapps_merge_nested_sampling_runs
 src/inspiral/posterior/lalapps_merge_posteriors
 src/inspiral/posterior/lalapps_nest2pos
 src/inspiral/posterior/lalapps_nest_pipe
-src/inspiral/posterior/lalapps_test_run_lalinference_pipe_example
+src/inspiral/posterior/lalinference_review_test
 src/inspiral/posterior/lalapps_vo_nest2pos
 src/inspiral/posterior/lalinference_bambi
 src/inspiral/posterior/lalinference_bench

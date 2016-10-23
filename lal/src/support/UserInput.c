@@ -70,8 +70,10 @@ typedef enum {
   UVAR_TYPE_START=0, 		// internal start marker for range checking
 
   UVAR_TYPE_BOOLEAN, 		// boolean
-  UVAR_TYPE_INT4,    		// 4-byte integer
-  UVAR_TYPE_INT8,    		// 8-byte integer
+  UVAR_TYPE_INT4,    		// 4-byte signed integer
+  UVAR_TYPE_INT8,    		// 8-byte signed integer
+  UVAR_TYPE_UINT4,    		// 4-byte unsigned integer
+  UVAR_TYPE_UINT8,    		// 8-byte unsigned integer
   UVAR_TYPE_REAL8,   		// 8-byte float
   UVAR_TYPE_EPOCH,   		// time 'epoch', specified in either GPS or MJD(TT) format, translated into GPS
   UVAR_TYPE_RAJ,     		// sky equatorial longitude (aka right-ascencion or RA), in either radians or hours:minutes:seconds format, translated into radians
@@ -83,9 +85,10 @@ typedef enum {
   UVAR_TYPE_RAJRange,		// range of RAJ values
   UVAR_TYPE_DECJRange,		// range of DECJ values
 
-  UVAR_TYPE_STRINGVector,	// list of comma-separated strings
-  UVAR_TYPE_REAL8Vector,	// list of comma-separated REAL8's
   UVAR_TYPE_INT4Vector,		// list of comma-separated INT4's
+  UVAR_TYPE_UINT4Vector,	// list of comma-separated UINT4's
+  UVAR_TYPE_REAL8Vector,	// list of comma-separated REAL8's
+  UVAR_TYPE_STRINGVector,	// list of comma-separated strings
 
   UVAR_TYPE_END      	// internal end marker for range checking
 } UserVarType;
@@ -115,6 +118,8 @@ static void fprint_wrapped( FILE *f, int line_width, const char *prefix, char *t
 DEFN_REGISTER_UVAR(BOOLEAN,BOOLEAN);
 DEFN_REGISTER_UVAR(INT4,INT4);
 DEFN_REGISTER_UVAR(INT8,INT8);
+DEFN_REGISTER_UVAR(UINT4,UINT4);
+DEFN_REGISTER_UVAR(UINT8,UINT8);
 DEFN_REGISTER_UVAR(REAL8,REAL8);
 DEFN_REGISTER_UVAR(RAJ,REAL8);
 DEFN_REGISTER_UVAR(DECJ,REAL8);
@@ -126,9 +131,10 @@ DEFN_REGISTER_UVAR(EPOCHRange,LIGOTimeGPSRange);
 DEFN_REGISTER_UVAR(RAJRange,REAL8Range);
 DEFN_REGISTER_UVAR(DECJRange,REAL8Range);
 
-DEFN_REGISTER_UVAR(STRINGVector,LALStringVector*);
-DEFN_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
 DEFN_REGISTER_UVAR(INT4Vector,INT4Vector*);
+DEFN_REGISTER_UVAR(UINT4Vector,UINT4Vector*);
+DEFN_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
+DEFN_REGISTER_UVAR(STRINGVector,LALStringVector*);
 
 // ----- define helper types for casting
 typedef int (*parserT)(void*, const char*);
@@ -173,8 +179,10 @@ static const struct
   // or the convenience macro for cases using 'standard' function names and API
   // REGULAR_MAP_ENTRY ( \<UTYPE\>, XLALDestroy\<UTYPE\> ),
   REGULAR_MAP_ENTRY ( BOOLEAN, NULL, "[TRUE|FALSE | YES|NO | 1|0]" ),
-  REGULAR_MAP_ENTRY ( INT4, NULL, "<4-byte integer>" ),
-  REGULAR_MAP_ENTRY ( INT8, NULL, "<8-byte integer>" ),
+  REGULAR_MAP_ENTRY ( INT4, NULL, "<4-byte signed integer>" ),
+  REGULAR_MAP_ENTRY ( INT8, NULL, "<8-byte signed integer>" ),
+  REGULAR_MAP_ENTRY ( UINT4, NULL, "<4-byte unsigned integer>" ),
+  REGULAR_MAP_ENTRY ( UINT8, NULL, "<8-byte unsigned integer>" ),
   REGULAR_MAP_ENTRY ( REAL8, NULL, "<8-byte real>" ),
   REGULAR_MAP_ENTRY ( STRING, XLALFree, "<string>" ),
   REGULAR_MAP_ENTRY ( EPOCH, NULL, "<seconds>[.<nano-seconds>][GPS|MJD]" ),
@@ -186,9 +194,10 @@ static const struct
   REGULAR_MAP_ENTRY ( RAJRange, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<hours>:<minutes>:<seconds>" ),
   REGULAR_MAP_ENTRY ( DECJRange, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<degrees>:<minutes>:<seconds>" ),
 
-  REGULAR_MAP_ENTRY ( STRINGVector, XLALDestroyStringVector, "<string>,..." ),
+  REGULAR_MAP_ENTRY ( INT4Vector, XLALDestroyINT4Vector, "<4-byte signed integer>,..." ),
+  REGULAR_MAP_ENTRY ( UINT4Vector, XLALDestroyUINT4Vector, "<4-byte unsigned integer>,..." ),
   REGULAR_MAP_ENTRY ( REAL8Vector, XLALDestroyREAL8Vector, "<8-byte real>,..." ),
-  REGULAR_MAP_ENTRY ( INT4Vector, XLALDestroyINT4Vector, "<4-byte integer>,..." )
+  REGULAR_MAP_ENTRY ( STRINGVector, XLALDestroyStringVector, "<string>,..." ),
 };
 
 
@@ -1064,161 +1073,3 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
   return record;
 
 } // XLALUserVarGetLog()
-
-/* ========== DEPRECATED LAL INTERFACE FUNCTIONS, which have been replaced by XLAL functions,
- * These functions are just wrappers around the XLAL functions
- */
-#define USERINPUTH_EXLAL        1
-#define USERINPUTH_MSGEXLAL	"Failure in XLAL function"
-
-/** \deprecated us XLALDestroyUserVars() instead */
-void
-LALDestroyUserVars (LALStatus *status)
-{
-  INITSTATUS(status);
-  XLALDestroyUserVars();
-  RETURN (status);
-} // LALDestroyUserVars()
-
-
-/** \deprecated use XLALUserVarReadCmdline() instead */
-void
-LALUserVarReadCmdline (LALStatus *status, BOOLEAN *should_exit, int argc, char *argv[])
-{
-  INITSTATUS(status);
-  if ( XLALUserVarReadCmdline(should_exit, argc, argv) != XLAL_SUCCESS ) {
-    XLALPrintError ("Call to XLALUserVarReadCmdline() failed with code %d\n", xlalErrno );
-    ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
-  }
-  RETURN (status);
-} // LALUserVarReadCmdline()
-
-/** \deprecated use XLALUserVarReadAllInput() instead */
-void
-LALUserVarReadAllInput (LALStatus *status, BOOLEAN *should_exit, int argc, char *argv[])
-{
-  INITSTATUS(status);
-  if ( XLALUserVarReadAllInput ( should_exit, argc, argv ) != XLAL_SUCCESS ) {
-    XLALPrintError ( "XLALUserVarReadAllInput() failed with code %d\n", xlalErrno );
-    ABORT ( status,  USERINPUTH_EXLAL,  USERINPUTH_MSGEXLAL );
-  }
-  RETURN (status);
-} // LALReadUserInput()
-
-/** \deprecated use XLALUserVarWasSet() instead */
-INT4
-LALUserVarWasSet (const void *cvar)
-{
-  return (XLALUserVarWasSet(cvar));
-}
-
-/** \deprecated use XLALUserVarGetLog() instead */
-void
-LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
-{
-  INITSTATUS(status);
-  if ( ((*logstr) = XLALUserVarGetLog ( format )) == NULL ) {
-    XLALPrintError ("UserVarLogFormat() failed.\n" );
-    ABORT (status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL);
-  }
-  RETURN (status);
-} /* LALUserVarGetLog() */
-
-/** \deprecated use XLALRegisterREALUserVar() instead */
-void
-LALRegisterREALUserVar (LALStatus *status,
-			const CHAR *name,
-			CHAR optchar,
-			UserVarCategory category,
-			const CHAR *helpstr,
-			REAL8 *cvar)
-{
-  INITSTATUS(status);
-  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_REAL8, optchar, category, helpstr ) != XLAL_SUCCESS ) {
-    XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
-    ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
-  }
-  RETURN(status);
-}
-
-/** \deprecated use XLALRegisterINTUserVar() instead */
-void
-LALRegisterINTUserVar (LALStatus *status,
-		       const CHAR *name,
-		       CHAR optchar,
-		       UserVarCategory category,
-		       const CHAR *helpstr,
-		       INT4 *cvar)
-{
-  INITSTATUS(status);
-  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_INT4, optchar, category, helpstr ) != XLAL_SUCCESS ) {
-    XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
-    ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
-  }
-  RETURN(status);
-}
-
-/** \deprecated use XLALRegisterBOOLUserVar() instead */
-void
-LALRegisterBOOLUserVar (LALStatus *status,
-			const CHAR *name,
-			CHAR optchar,
-			UserVarCategory category,
-			const CHAR *helpstr,
-			BOOLEAN *cvar)
-{
-  INITSTATUS(status);
-  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_BOOLEAN, optchar, category, helpstr ) != XLAL_SUCCESS ) {
-    XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
-    ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
-  }
-  RETURN(status);
-}
-
-/** \deprecated use XLALRegisterSTRINGUserVar() instead */
-void
-LALRegisterSTRINGUserVar (LALStatus *status,
-			  const CHAR *name,
-			  CHAR optchar,
-			  UserVarCategory category,
-			  const CHAR *helpstr,
-			  CHAR **cvar)
-{
-  INITSTATUS(status);
-  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_STRING, optchar, category, helpstr ) != XLAL_SUCCESS ) {
-    XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
-    ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
-  }
-  RETURN(status);
-}
-
-/** \deprecated use XLALRegisterSTRINGVectorUserVar() instead */
-void
-LALRegisterLISTUserVar (LALStatus *status,
-			const CHAR *name,
-			CHAR optchar,
-			UserVarCategory category,
-			const CHAR *helpstr,
-			LALStringVector **cvar)
-{
-  INITSTATUS(status);
-  if ( XLALRegisterUserVar ( cvar, name, UVAR_TYPE_STRINGVector, optchar, category, helpstr ) != XLAL_SUCCESS ) {
-    XLALPrintError ("Call to XLALRegisterUserVar() failed: %d\n", xlalErrno );
-    ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
-  }
-  RETURN(status);
-}
-
-/** \deprecated use XLALUserVarReadCfgfile() instead */
-void
-LALUserVarReadCfgfile (LALStatus *status,
-		       BOOLEAN *should_exit,
-		       const CHAR *cfgfile) 	   /* name of config-file */
-{
-
-  INITSTATUS(status);
-  if ( XLALUserVarReadCfgfile ( should_exit, cfgfile ) != XLAL_SUCCESS ) {
-    ABORT ( status, USERINPUTH_EXLAL, USERINPUTH_MSGEXLAL );
-  }
-  RETURN (status);
-} // LALUserVarReadCfgfile()

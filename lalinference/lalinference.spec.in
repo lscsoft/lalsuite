@@ -19,7 +19,7 @@ BuildRequires: healpy >= 1.9.1
 BuildRequires: python-basemap
 BuildRequires: libmetaio-devel
 BuildRequires: libxml2-devel
-BuildRequires: numpy
+BuildRequires: numpy >= 1.7
 BuildRequires: octave-devel
 BuildRequires: python-devel
 BuildRequires: scipy
@@ -93,7 +93,7 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: healpy >= 1.9.1
 Requires: python-basemap
-Requires: numpy
+Requires: numpy >= 1.7
 Requires: python
 Requires: scipy
 Requires: python-six
@@ -178,6 +178,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Sep 26 2016 Adam Mercer <adam.mercer@ligo.org> 1.8.0-1
+- ER10 release
+
 * Thu Jun 23 2016 Adam Mercer <adam.mercer@ligo.org> 1.7.0-1
 - ER9 release
 

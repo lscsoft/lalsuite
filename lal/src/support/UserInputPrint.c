@@ -50,6 +50,26 @@ XLALPrintStringValueOfINT4 ( const INT4 *valINT4 )
   return XLALStringDuplicate ( buf );
 }
 
+/// Return 'string value' (allocated here) of an UINT8
+char *
+XLALPrintStringValueOfUINT8 ( const UINT8 *valUINT8 )
+{
+  XLAL_CHECK_NULL ( valUINT8 != NULL, XLAL_EINVAL );
+  char buf[256];
+  sprintf ( buf, "%" LAL_UINT8_FORMAT, (*valUINT8) );
+  return XLALStringDuplicate ( buf );
+}
+
+/// Return 'string value' (allocated here) of an UINT4
+char *
+XLALPrintStringValueOfUINT4 ( const UINT4 *valUINT4 )
+{
+  XLAL_CHECK_NULL ( valUINT4 != NULL, XLAL_EINVAL );
+  char buf[256];
+  sprintf ( buf, "%" LAL_UINT4_FORMAT, (*valUINT4) );
+  return XLALStringDuplicate ( buf );
+}
+
 /// Return 'string value' (allocated here) of a REAL8 (printed at full precision)
 char *
 XLALPrintStringValueOfREAL8 ( const REAL8 *valREAL8 )
@@ -214,6 +234,6 @@ DECL_XLALPrintStringValueOfVector(CTYPE)                                \
                                                                         \
 } /* XLALPrintStringValueOf<CYPTE>Vector() */
 
-DEFN_XLALPrintStringValueOfVector(REAL8);
 DEFN_XLALPrintStringValueOfVector(INT4);
-
+DEFN_XLALPrintStringValueOfVector(UINT4);
+DEFN_XLALPrintStringValueOfVector(REAL8);

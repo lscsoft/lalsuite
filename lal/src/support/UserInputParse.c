@@ -96,6 +96,62 @@ XLALParseStringValueAsINT4 ( INT4 *valINT4,         ///< [out] return INT4 value
 } // XLALParseStringValueAsINT4()
 
 
+/// Parse a string into an UINT8
+/// This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
+int
+XLALParseStringValueAsUINT8 ( UINT8 *valUINT8,       ///< [out] return UINT8 value
+                              const char *valString  ///< [in]  input string value
+                             )
+{
+  XLAL_CHECK ( (valUINT8 != NULL) && (valString != NULL ), XLAL_EINVAL );
+
+  errno = 0;
+  char *endptr;
+  int base10 = 10;
+  unsigned long long valULLong = strtoull ( valString, &endptr, base10 );
+  XLAL_CHECK ( errno == 0, XLAL_EFAILED, "strtoll() failed to convert '%s' into long long!\n", valString );
+  XLAL_CHECK ( (*endptr) == '\0', XLAL_EFAILED, "strtoll(): trailing garbage '%s' found after int-conversion of '%s'\n", endptr, valString );
+
+  //  check range and convert unsigned long-int into UINT8
+  long long valLLong = strtoll ( valString, &endptr, base10 );   // This is to check for negative numbers, which strtoull() accepts
+  errno = 0;   // Do not need to check error code
+  XLAL_CHECK ( (valLLong >= 0), XLAL_EDOM, "String-conversion '%s' --> '%lli' exceeds UINT8 range of [0,%"LAL_UINT8_FORMAT"]\n",
+               valString, valLLong, LAL_UINT8_MAX );
+  if ( sizeof(valULLong) > sizeof(UINT8) ) { // avoid warning about trivial check
+    XLAL_CHECK ( (valULLong <= LAL_UINT8_MAX), XLAL_EDOM, "String-conversion '%s' --> '%llu' exceeds UINT8 range of [0,%"LAL_UINT8_FORMAT"]\n",
+                 valString, valULLong, LAL_UINT8_MAX );
+  }
+
+  (*valUINT8) = (UINT8)valULLong;
+
+  return XLAL_SUCCESS;
+
+} // XLALParseStringValueAsUINT8()
+
+
+/// Parse a string into an UINT4
+/// This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
+int
+XLALParseStringValueAsUINT4 ( UINT4 *valUINT4,       ///< [out] return UINT4 value
+                              const char *valString  ///< [in]  input string value
+                             )
+{
+  XLAL_CHECK ( (valUINT4 != NULL) && (valString != NULL ), XLAL_EINVAL );
+
+  UINT8 valUINT8;
+  XLAL_CHECK ( XLALParseStringValueAsUINT8 ( &valUINT8, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // check range and convert UINT8 into UINT4
+  XLAL_CHECK ( (valUINT8 <= LAL_UINT4_MAX), XLAL_EDOM, "String-conversion '%s' --> '%"LAL_UINT8_FORMAT"' exceeds UINT4 range of [0,%"LAL_UINT8_FORMAT"]\n",
+               valString, valUINT8, LAL_UINT4_MAX );
+
+  (*valUINT4) = (UINT4)valUINT8;
+
+  return XLAL_SUCCESS;
+
+} // XLALParseStringValueAsUINT4()
+
+
 /// Parse a string into a REAL8
 /// This ignores initial whitespace, but throws an error on _any_ non-converted trailing characters (including whitespace)
 int
@@ -704,5 +760,6 @@ DECL_XLALParseStringValueAsVector(CTYPE)                                \
                                                                         \
 } /* XLALParseStringValueAs\<CTYPE\>Vector() */
 
-DEFN_XLALParseStringValueAsVector(REAL8);
 DEFN_XLALParseStringValueAsVector(INT4);
+DEFN_XLALParseStringValueAsVector(UINT4);
+DEFN_XLALParseStringValueAsVector(REAL8);

@@ -149,10 +149,10 @@ else:
         xmldoc = ligolw_utils.load_filename(
             filename, contenthandler=lal.series.PSDContentHandler)
         psds = lal.series.read_psd_xmldoc(xmldoc, root_name=None)
-        return dict(
-            (key, timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
-                f_high_truncate=opts.f_high_truncate))
-            for key, psd in psds.items() if psd is not None)
+        return {
+            key: timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
+                f_high_truncate=opts.f_high_truncate)
+            for key, psd in psds.items() if psd is not None}
 
     def reference_psd_for_ifo_and_filename(ifo, filename):
         return reference_psds_for_filename(filename)[ifo]
@@ -170,7 +170,7 @@ count_sky_maps_failed = 0
 # Loop over all coinc_event <-> sim_inspiral coincs.
 for coinc, sngl_inspirals in ligolw_bayestar.coinc_and_sngl_inspirals_for_xmldoc(xmldoc):
 
-    instruments = set(sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals)
+    instruments = {sngl_inspiral.ifo for sngl_inspiral in sngl_inspirals}
 
     # Look up PSDs
     log.info('%s:reading PSDs', coinc.coinc_event_id)

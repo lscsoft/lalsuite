@@ -27,7 +27,7 @@
  *
  * \code
  * TwoDMeshTest [-o outfile] [-p psfile flags] [-d debug] [-m mismatch nmax cmax]
- * [-i metricfile rangefile] [-b x1 y1 x2 y2 ] [-e a b c]
+ * [-b x1 y1 x2 y2 ] [-e a b c]
  * [-x dadx dbdx dcdx] [-y dady dbdy dcdy]
  * \endcode
  *
@@ -50,13 +50,6 @@
  * range (0,1], it is taken to be 1.  If \c nmax or \c cmax is
  * non-positive, it is ignored (no maximum).  If this option is not
  * given, <b>-m 1 0 0</b> is assumed.</li>
- * <li><b>-i</b> Determines the metric and the parameter space
- * boundary from \c REAL4Grid structures stored in the files
- * \c metricfile and \c rangefile, read using the generic parser
- * LALSReadGrid().  The formats for these grids are discussed
- * below.  If present, this option \e overrides the <b>-b</b>,
- * <b>-e</b>, <b>-x</b>, and <b>-y</b> options, below.  If absent, these
- * options, or their defaults, will be used.</li>
  * <li><b>-b</b> Sets the parameter space boundary to be a
  * parallelogram defined by the vectors (\c x1,\c y1) and
  * (\c x2,\c y2) from the origin.  If absent, the region is
@@ -85,33 +78,6 @@
  * requested, it is generated using LALPlotTwoDMesh(), using the
  * value of the command-line number \c flags to set the plotting
  * parameters.  Each of these functions is discussed below.
- *
- * \par Metric and range grid files:
- * If the <b>-i</b> option was
- * given, the metric and parameter ranges are read from the files named
- * by the \c metricfile and \c rangefile arguments.  These two
- * files must be in a format parseable by LALSReadGrid(); see the
- * documentation of that routine for more details.
- *
- * The \c REAL4Grid extracted from \c metricfile must
- * have grid dimension 2 and data dimension 3: the grid dimensions refer
- * to the \f$(x,y)\f$ coordinates of the points where the metric is
- * evaluated, while the third dimension must have length 3, storing the
- * metric components \f$g_{xx}\f$, \f$g_{yy}\f$, and \f$g_{xy}\f$ (in that order) at
- * each point.  Within the \ref TwoDMesh_h routines, this metric grid
- * is interpolated using LALInterpolateMetricGrid().
- *
- * The \c REAL4Grid extracted from \c rangefile must have grid
- * dimension 1 and data dimension 2: the grid dimension refers to an \f$x\f$
- * coordinate, and the second dimension must have length 3, storing the
- * lower and upper boundaries \f$y_1(x)\f$ and \f$y_2(x)\f$ at each sampled value
- * of \f$x\f$.  Within the \ref TwoDMesh_h routines, this range grid is
- * interpolated using LALInterpolateRangeGrid().
- *
- * If the <b>-i</b> option is \e not given, then the parameter
- * boundary and metric are determined by internal routines, with default
- * settings that can be overridden using command-line options <b>-p</b>,
- * <b>-e</b>, <b>-x</b>, and <b>-y</b>.
  *
  * \par Parameter ranges:
  * The parameter space boundary can be
@@ -225,7 +191,6 @@
  * lalDebugLevel
  * LALPrintError()                 LALCheckMemoryLeaks()
  * LALCreateTwoDMesh()             LALDestroyTwoDMesh()
- * LALSReadGrid()                  LALSDestroyGrid()
  * LALPlotTwoDMesh()
  * \endcode
  *
@@ -257,7 +222,6 @@
 #include <lal/FileIO.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
-#include <lal/Grid.h>
 #include <lal/StreamInput.h>
 #include <lal/TwoDMesh.h>
 #include "TwoDMeshPlot.h"
@@ -283,7 +247,7 @@
 /* Usage format string. */
 #define USAGE "Usage: %s [-o outfile] [-p psfile flags] [-d debug]\n" \
 "\t[-m mismatch nmax cmax] [-b x1 y1 x2 y2 ] [-e a b c]\n"        \
-"\t[-x dadx dbdx dcdx] [-y dady dbdy dcdy] [-i metricfile rangefile]\n"
+"\t[-x dadx dbdx dcdx] [-y dady dbdy dcdy]\n"
 
 /* Macros for printing errors and testing subroutines. */
 #define ERROR( code, msg, statement )                                \
@@ -314,11 +278,6 @@ if ( (func), (statusptr)->statusCode )                               \
 }                                                                    \
 else (void)(0)
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
-
 /* Local prototypes. */
 void
 LALRangeTest( LALStatus *stat, REAL4 range[2], REAL4 x, void *params );
@@ -336,8 +295,6 @@ main(int argc, char **argv)
   static LALStatus stat;        /* top-level status structure */
   REAL4 rangeParams[4];         /* LALRangeTest() params. */
   REAL4 metricParams[9];        /* LALMetricTest() params. */
-  REAL4Grid *metricGrid = NULL; /* LALInterpolateMetric() params. */
-  REAL4Grid *rangeGrid = NULL;  /* LALInterpolateRangeGrid() params. */
   TwoDMeshParamStruc params;    /* LALCreateTwoDMesh() params. */
   TwoDMeshNode *mesh = NULL;    /* head of mesh list */
 
@@ -345,7 +302,6 @@ main(int argc, char **argv)
   CHAR *outfile = NULL;                       /* output filename */
   CHAR *psfile = NULL;                        /* PostScript filename */
   UINT2 flags = 0;                            /* PostScript flags */
-  CHAR *metricfile = NULL, *rangefile = NULL; /* input filenames */
   REAL4 mismatch = MISMATCH;                  /* maximum mismatch */
   UINT4 nmax = 0, cmax = 0;                   /* maximum nodes/columns */
   REAL4 x_1 = X1, y_1 = Y1, x_2 = X2, y_2 = Y2;   /* boundary params. */
@@ -460,18 +416,6 @@ main(int argc, char **argv)
         return TWODMESHTESTC_EARG;
       }
     }
-    /* Parse metric and range grid input option. */
-    else if ( !strcmp( argv[arg], "-i" ) ) {
-      if ( argc > arg + 2 ) {
-	arg++;
-	metricfile = argv[arg++];
-	rangefile = argv[arg++];
-      } else {
-	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
-        XLALPrintError( USAGE, *argv );
-        return TWODMESHTESTC_EARG;
-      }
-    }
     /* Check for unrecognized options. */
     else if ( argv[arg][0] == '-' ) {
       ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
@@ -484,7 +428,7 @@ main(int argc, char **argv)
    * SETUP (INTERNAL METRIC/RANGE FUNCTIONS)                        *
    ******************************************************************/
 
-  if ( !metricfile ) {
+  {
     REAL4 axisMin, axisTemp; /* Min. ellipse size, and a temp value */
 
     /* Set up range function and parameters. */
@@ -566,37 +510,6 @@ main(int argc, char **argv)
   }
 
   /******************************************************************
-   * SETUP (METRIC/RANGE GRID)                                      *
-   ******************************************************************/
-
-  else {
-    FILE *fp = fopen( metricfile, "r" ); /* input file pointer */
-    if ( !fp ) {
-      ERROR( TWODMESHTESTC_EFILE, "- " TWODMESHTESTC_MSGEFILE,
-	     metricfile );
-      return TWODMESHTESTC_EFILE;
-    }
-    SUB( LALSReadGrid( &stat, &metricGrid, fp ), &stat );
-    fclose( fp );
-    fp = fopen( rangefile, "r" );
-    if ( !fp ) {
-      ERROR( TWODMESHTESTC_EFILE, "- " TWODMESHTESTC_MSGEFILE,
-	     rangefile );
-      return TWODMESHTESTC_EFILE;
-    }
-    SUB( LALSReadGrid( &stat, &rangeGrid, fp ), &stat );
-    fclose( fp );
-    params.getMetric = LALInterpolateMetricGrid;
-    params.metricParams = (void *)( metricGrid );
-    params.getRange = LALInterpolateRangeGrid;
-    params.rangeParams = (void *)( rangeGrid );
-    params.domain[0] = rangeGrid->offset->data[0];
-    params.domain[1] = rangeGrid->offset->data[0]
-      + rangeGrid->interval->data[0]
-      *( rangeGrid->data->dimLength->data[0] - 1 );
-  }
-
-  /******************************************************************
    * MESH CREATION AND OUTPUT                                       *
    ******************************************************************/
 
@@ -643,7 +556,7 @@ main(int argc, char **argv)
     /* For a parallelogram region specified on the command line, find
        the rotation angle for best fit.  Otherwise, just plot it
        straight. */
-    if ( !metricfile ) {
+    {
       REAL4 theta1, theta2;
       REAL4 xSum = x_1 + x_2, xDiff = x_2 - x_1;
       REAL4 ySum = y_1 + y_2, yDiff = y_2 - y_1;
@@ -668,8 +581,7 @@ main(int argc, char **argv)
       else if ( ( -90.0 < theta2 ) && ( theta2 < 0.0 ) )
 	theta1 -= theta2 + 90.0;
       plotParams.theta = theta1;
-    } else
-      plotParams.theta = 0.0;
+    }
 
     /* Set remaining parameters, and make the plot. */
     plotParams.xScale = plotParams.yScale = 100.0;
@@ -694,10 +606,6 @@ main(int argc, char **argv)
   }
 
   /* Free memory, and exit. */
-  if ( metricfile ) {
-    SUB( LALSDestroyGrid( &stat, &metricGrid ), &stat );
-    SUB( LALSDestroyGrid( &stat, &rangeGrid ), &stat );
-  }
   SUB( LALDestroyTwoDMesh( &stat, &mesh, NULL ), &stat );
   LALCheckMemoryLeaks();
   INFO( TWODMESHTESTC_MSGENORM );

@@ -1,8 +1,16 @@
-lalinspiral (1.7.5.1-1) UNRELEASED; urgency=medium
+lalinspiral (1.7.6.1-1) UNRELEASED; urgency=medium
 
+  * Back to development
+
+ -- Leo Singer <leo@lalsuitedev>  Thu, 13 Oct 2016 20:04:05 -0400
+
+lalinspiral (1.7.6-1) unstable; urgency=low
+
+  * LALInspiral 1.7.6
+  * ER10 release
   * Add python3 package
 
- -- Leo Singer <leo.singer@ligo.org>  Fri, 15 Jul 2016 00:03:38 -0400
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 26 Sep 2016 13:53:05 -0500
 
 lalinspiral (1.7.5-1) unstable; urgency=low
 

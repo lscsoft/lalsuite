@@ -107,11 +107,17 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteBOOLEAN( file, "testbool", 1, "This is a test BOOLEAN" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a BOOLEAN\n" );
 
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "testint [s]", 2345, "This is a test INT4" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "testint [s]", -2345, "This is a test INT4" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a INT4\n" );
 
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT8( file, "testint2", LAL_INT4_MAX + 6789, "This is a test INT8" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a INT8\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "testuint [m]", 34567, "This is a test UINT4" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fprintf( stderr, "PASSED: wrote a UINT4\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "testuint2", LAL_UINT8_MAX >> 1, "This is a test UINT8" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fprintf( stderr, "PASSED: wrote a UINT8\n" );
 
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL4( file, "testflt", LAL_PI, "This is a test REAL4" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a REAL4\n" );
@@ -372,7 +378,7 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "PASSED: read and verified a BOOLEAN\n" );
 
     {
-      const INT4 testint_ref = 2345;
+      const INT4 testint_ref = -2345;
       INT4 testint;
       XLAL_CHECK_MAIN( XLALFITSHeaderReadINT4( file, "testint", &testint ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( testint == testint_ref, XLAL_EFAILED, "testint = %i != %i", testint, testint_ref );
@@ -392,6 +398,28 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( testint2 == testint2_ref, XLAL_EFAILED, "testint = %" LAL_INT8_FORMAT " != %" LAL_INT8_FORMAT, testint2, testint2_ref );
     }
     fprintf( stderr, "PASSED: read and verified a INT8\n" );
+
+    {
+      const UINT4 testuint_ref = 34567;
+      UINT4 testuint;
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT4( file, "testuint", &testuint ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( testuint == testuint_ref, XLAL_EFAILED, "testuint = %i != %i", testuint, testuint_ref );
+    }
+    fprintf( stderr, "PASSED: read and verified a UINT4\n" );
+
+    {
+      UINT4 testuint2_too_small;
+      int errnum = 0;
+      XLAL_TRY_SILENT( XLALFITSHeaderReadUINT4( file, "testuint2", &testuint2_too_small ), errnum );
+      XLAL_CHECK_MAIN( errnum = XLAL_ERANGE, XLAL_EFAILED );
+    }
+    {
+      const UINT8 testuint2_ref = LAL_UINT8_MAX >> 1;
+      UINT8 testuint2;
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT8( file, "testuint2", &testuint2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( testuint2 == testuint2_ref, XLAL_EFAILED, "testuint = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT, testuint2, testuint2_ref );
+    }
+    fprintf( stderr, "PASSED: read and verified a UINT8\n" );
 
     {
       const REAL4 testflt_ref = LAL_PI;

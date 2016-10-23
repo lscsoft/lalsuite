@@ -135,7 +135,7 @@ INT4 test=0;
 
 UINT4 ARRAY_SIZE=0;
 
-/* function to convert a GPS time in JD to TDB (similar to my routine LALTDBMJDtoGPS) */
+/* function to convert a GPS time in JD to TDB (similar to my routine XLALTDBMJDtoGPS) */
 void convert(REAL8 *gps_JD, REAL8 *time);
 
 /* function to read the record length of the binary file - this differs for

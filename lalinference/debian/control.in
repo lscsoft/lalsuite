@@ -5,7 +5,7 @@ Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 9), help2man, pkg-config, dh-python, python-all-dev,
   libchealpix-dev,
   zlib1g-dev, libgsl0-dev (>= 1.15), libmetaio-dev (>= 8.2), python-healpy (>= 1.9.1), python-h5py,
-  swig (>= 3.0.7), liboctave-dev, python-numpy, python-scipy, python-mpltoolkits.basemap,
+  swig (>= 3.0.7), liboctave-dev, python-numpy (>= 1.7), python-scipy, python-mpltoolkits.basemap,
   libhdf5-dev,
   python-glue (>= 1.49.1~),
   python-glue-common (>= 1.49.1~),
@@ -35,7 +35,7 @@ Build-Depends: debhelper (>= 9), help2man, pkg-config, dh-python, python-all-dev
   lalpulsar-python (>= @MIN_LALPULSAR_VERSION@~),
   lalpulsar-octave (>= @MIN_LALPULSAR_VERSION@~)
 X-Python-Version: >= 2.7
-X-Python3-Version: >= 3.4
+X-Python3-Version: <= 3.0
 Standards-Version: 3.9.8
 
 Package: lalinference
@@ -80,6 +80,7 @@ Section: python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   python-scipy, python-six, python-h5py, python-mpltoolkits.basemap,
+  python-pkg-resources,
   python-glue (>= 1.49.1~),
   python-glue-common (>= 1.49.1~),
   python-glue-segments (>= 1.49.1~),

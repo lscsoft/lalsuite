@@ -180,11 +180,6 @@ do {                                                                 \
 
 
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
-
 /* A function to convert INT8 nanoseconds to LIGOTimeGPS. */
 void
 I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input );

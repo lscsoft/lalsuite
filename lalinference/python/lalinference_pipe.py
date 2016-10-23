@@ -97,9 +97,22 @@ if cp.has_option('paths','roq_b_matrix_directory'):
     return float(item[1]['seglen'])
 
   print "WARNING: Overwriting user choice of flow, srate, seglen,mc_min, mc_max and q-min"
+  if opts.gid is not None:
+    mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=opts.gid)
+  elif opts.injections is not None or cp.has_option('input','injection-file'):
+    print "Only 0-th event in the XML table will be considered while running with ROQ\n"
+    # Read event 0 from  Siminspiral Table
+    from pylal import SimInspiralUtils
+    if opts.injections is not None:
+      inxml=opts.injections
+    else:
+      inxml=cp.get('input','injection-file')
+    injTable=SimInspiralUtils.ReadSimInspiralFromFiles([inxml])
+    row=injTable[0] 
 
-  if opts.gid is not None: 
-  	mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, opts.gid)
+    mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, sim_inspiral=row)
+
+  if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')): 
         roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp)
 
 	for mc_prior in mc_priors:

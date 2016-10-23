@@ -24,6 +24,7 @@
 #include <numpy/arrayobject.h>
 #include <numpy/ufuncobject.h>
 #include <lal/bayestar_distance.h>
+#include "six.h"
 
 
 static void conditional_pdf_loop(
@@ -188,6 +189,58 @@ static void marginal_pdf_loop(
 }
 
 
+static void marginal_cdf_loop(
+    char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
+{
+    gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
+    const npy_intp n = dimensions[0];
+    const long npix = dimensions[1];
+
+    /* Assert that array arguments are stored contiguously */
+    assert(steps[6] == sizeof(double));
+
+    #pragma omp parallel for
+    for (npy_intp i = 0; i < n; i ++)
+    {
+        *(double *) &args[5][i * steps[5]] =
+            bayestar_distance_marginal_cdf(
+            *(double *) &args[0][i * steps[0]], npix,
+             (double *) &args[1][i * steps[1]],
+             (double *) &args[2][i * steps[2]],
+             (double *) &args[3][i * steps[3]],
+             (double *) &args[4][i * steps[4]]);
+    }
+
+    gsl_set_error_handler(old_handler);
+}
+
+
+static void marginal_ppf_loop(
+    char **args, npy_intp *dimensions, npy_intp *steps, void *NPY_UNUSED(data))
+{
+    gsl_error_handler_t *old_handler = gsl_set_error_handler_off();
+    const npy_intp n = dimensions[0];
+    const long npix = dimensions[1];
+
+    /* Assert that array arguments are stored contiguously */
+    assert(steps[6] == sizeof(double));
+
+    #pragma omp parallel for
+    for (npy_intp i = 0; i < n; i ++)
+    {
+        *(double *) &args[5][i * steps[5]] =
+            bayestar_distance_marginal_ppf(
+            *(double *) &args[0][i * steps[0]], npix,
+             (double *) &args[1][i * steps[1]],
+             (double *) &args[2][i * steps[2]],
+             (double *) &args[3][i * steps[3]],
+             (double *) &args[4][i * steps[4]]);
+    }
+
+    gsl_set_error_handler(old_handler);
+}
+
+
 static const PyUFuncGenericFunction
     conditional_pdf_loops[] = {conditional_pdf_loop},
     conditional_cdf_loops[] = {conditional_cdf_loop},
@@ -195,7 +248,9 @@ static const PyUFuncGenericFunction
     moments_to_parameters_loops[] = {moments_to_parameters_loop},
     parameters_to_moments_loops[] = {parameters_to_moments_loop},
     volume_render_loops[] = {volume_render_loop},
-    marginal_pdf_loops[] = {marginal_pdf_loop};
+    marginal_pdf_loops[] = {marginal_pdf_loop},
+    marginal_cdf_loops[] = {marginal_cdf_loop},
+    marginal_ppf_loops[] = {marginal_ppf_loop};
 
 static const char volume_render_ufunc_types[] = {
     NPY_DOUBLE, NPY_DOUBLE, NPY_DOUBLE, NPY_INT, NPY_INT, NPY_DOUBLE, NPY_BOOL,
@@ -209,31 +264,23 @@ static const void *no_ufunc_data[] = {NULL};
 static const char modulename[] = "_distance";
 
 
-#if PY_MAJOR_VERSION >= 3
 static PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     modulename, NULL, -1, NULL
 };
-#endif
 
 
-#if PY_MAJOR_VERSION < 3
-PyMODINIT_FUNC init_distance(void); /* Silence -Wmissing-prototypes */
-PyMODINIT_FUNC init_distance(void)
-#else
 PyMODINIT_FUNC PyInit__distance(void); /* Silence -Wmissing-prototypes */
 PyMODINIT_FUNC PyInit__distance(void)
-#endif
 {
-    PyObject *module;
+    PyObject *module = NULL;
+
     import_array();
     import_umath();
 
-#if PY_MAJOR_VERSION < 3
-    module = Py_InitModule(modulename, NULL);
-#else
     module = PyModule_Create(&moduledef);
-#endif
+    if (!module)
+        goto done;
 
     PyModule_AddObject(
         module, "conditional_pdf", PyUFunc_FromFuncAndData(
@@ -279,7 +326,23 @@ PyMODINIT_FUNC PyInit__distance(void)
             "marginal_pdf", NULL, 0,
             "(),(n),(n),(n),(n)->()"));
 
-#if PY_MAJOR_VERSION >= 3
+    PyModule_AddObject(
+        module, "marginal_cdf", PyUFunc_FromFuncAndDataAndSignature(
+            marginal_cdf_loops, no_ufunc_data,
+            double_ufunc_types, 1, 5, 1, PyUFunc_None,
+            "marginal_cdf", NULL, 0,
+            "(),(n),(n),(n),(n)->()"));
+
+    PyModule_AddObject(
+        module, "marginal_ppf", PyUFunc_FromFuncAndDataAndSignature(
+            marginal_ppf_loops, no_ufunc_data,
+            double_ufunc_types, 1, 5, 1, PyUFunc_None,
+            "marginal_ppf", NULL, 0,
+            "(),(n),(n),(n),(n)->()"));
+
+done:
     return module;
-#endif
 }
+
+
+SIX_COMPAT_MODULE(_distance)

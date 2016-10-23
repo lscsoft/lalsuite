@@ -164,7 +164,7 @@ typedef struct {
   DopplerRegion searchRegion;		    /**< parameter-space region to search over */
   DopplerFullScanState *scanState;          /**< current state of the Doppler-scan */
   PulsarDopplerParams stepSizes;	    /**< user-preferences on Doppler-param step-sizes */
-  EphemerisData *ephemeris;		    /**< ephemeris data (from LALInitBarycenter()) */
+  EphemerisData *ephemeris;		    /**< ephemeris data (from XLALInitBarycenter()) */
   UINT4 NSFTs;				    /**< total number of all SFTs used */
   UINT4Vector *numSFTsPerDet;		    /**< number of SFTs per detector, for log strings, etc. */
   LALStringVector *detectorIDs;		    /**< detector ID names, for column headings string */

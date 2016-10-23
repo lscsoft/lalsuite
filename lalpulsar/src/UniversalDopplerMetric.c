@@ -33,8 +33,7 @@
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_eigen.h>
 
-#include <lal/FlatPulsarMetric.h>
-#include <lal/PulsarTimes.h>
+#include <lal/GetEarthTimes.h>
 #include <lal/ComputeFstat.h>
 #include <lal/XLALGSL.h>
 #include <lal/Factorial.h>
@@ -861,24 +860,18 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 		      const LIGOTimeGPS *tGPS		/**< [in] GPS time */
 		      )
 {
-  PulsarTimesParamStruc XLAL_INIT_DECL(times);
+  REAL8 tMidnight, tAutumn;
   REAL8 phiOrb;   /* Earth orbital revolution angle, in radians. */
   REAL8 sinOrb, cosOrb;
-  LALStatus XLAL_INIT_DECL(status);
 
   if ( !posvel || !tGPS ) {
     XLALPrintError ( "%s: Illegal NULL pointer passed!\n", __func__);
     XLAL_ERROR( XLAL_EINVAL );
   }
 
-  times.epoch = (*tGPS);	/* get tAutumn */
-  LALGetEarthTimes ( &status, &times );
-  if ( status.statusCode ) {
-    XLALPrintError ( "%s: call to LALGetEarthTimes() failed!\n\n", __func__);
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+  XLAL_CHECK( XLALGetEarthTimes ( tGPS, &tMidnight, &tAutumn) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  phiOrb = - LAL_TWOPI * times.tAutumn / LAL_YRSID_SI;
+  phiOrb = - LAL_TWOPI * tAutumn / LAL_YRSID_SI;
   sinOrb = sin(phiOrb);
   cosOrb = cos(phiOrb);
 
@@ -2421,7 +2414,7 @@ XLALmatrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in )
  * Compute time-derivatives up to 'maxorder' of the Earths' orbital position vector
  * \f$r_{\mathrm{orb}}(t)\f$.
  *
- * Algorithm: using 5-point differentiation expressions on r_orb(t) returned from LALBarycenterEarth().
+ * Algorithm: using 5-point differentiation expressions on r_orb(t) returned from XLALBarycenterEarth().
  *
  * Returns a vector of derivatives \f$\frac{d^n\,r_{\mathrm{orb}}}{d\,t^n}\f$ at the given
  * GPS time. Note, the return vector includes the zeroth-order derivative, so we return

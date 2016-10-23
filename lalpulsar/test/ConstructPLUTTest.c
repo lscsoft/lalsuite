@@ -148,11 +148,6 @@ do {                                                                 \
 } while (0)
 /******************************************************************/
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
-
 #define PIXELFACTOR 2
 
 /* the Hough Map derivative pixel type */

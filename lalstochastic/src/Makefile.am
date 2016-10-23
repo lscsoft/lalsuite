@@ -5,6 +5,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
 pkginclude_HEADERS = \
 	AstroOmega.h \
+	CoarseGrainFrequencySeries.h \
 	LALStochasticConfig.h \
 	LALStochasticVCSInfo.h \
 	LALStochasticVCSInfoHeader.h \
@@ -17,6 +18,7 @@ pkginclude_HEADERS = \
 lib_LTLIBRARIES = liblalstochastic.la
 liblalstochastic_la_SOURCES = \
 	AstroOmega.c \
+	CoarseGrainFrequencySeries.c \
 	LALStochasticVCSInfo.c \
 	LIGOLwXMLStochasticRead.c \
 	OverlapReductionFunction.c \
@@ -42,4 +44,5 @@ EXTRA_DIST = \
 	LALStochasticConfig.h.in \
 	config.h.in \
 	stochastic_CrossCorrFlowchart.png \
+	utilitiesCoarseGrain.png \
 	$(END_OF_LIST)

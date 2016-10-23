@@ -57,11 +57,6 @@
 #define WINDOWSIZE 100
 #define MAXBINS 20
 
-/* A global pointer for debugging. */
-#ifndef NDEBUG
-char *lalWatch;
-#endif
-
 #define TRUE (1==1)
 #define FALSE (1==0)
 
@@ -102,19 +97,19 @@ int main(int argc, char *argv[]){
   uvar_maxBins = MAXBINS;
 
   /* register user input variables */
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "sftDir",   'i',UVAR_OPTIONAL, "Input SFT file pattern", &uvar_sftDir), &status);
-  LAL_CALL( LALRegisterSTRINGUserVar( &status, "outDir",   'o',UVAR_OPTIONAL, "Output SFT Directory",   &uvar_outDir), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fMin",      0, UVAR_OPTIONAL, "start Frequency",        &uvar_fMin),   &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "fMax",      0, UVAR_OPTIONAL, "Max Frequency Band",     &uvar_fMax),   &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "window",   'w',UVAR_OPTIONAL, "Window size",            &uvar_window), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "maxBins",  'm',UVAR_OPTIONAL, "Max. bins to clean",     &uvar_maxBins),&status);
-  LAL_CALL( LALRegisterLISTUserVar(   &status, "linefiles", 0, UVAR_OPTIONAL, "List of linefiles (filenames must contain IFO name)", &uvar_linefiles),  &status);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,    "sftDir",    STRING,       'i',OPTIONAL,  "Input SFT file pattern") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outDir,    "outDir",    STRING,       'o',OPTIONAL,  "Output SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMin,      "fMin",      REAL8,        0,   OPTIONAL, "start Frequency") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMax,      "fMax",      REAL8,        0,   OPTIONAL, "Max Frequency Band") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_window,    "window",    INT4,         'w',OPTIONAL,  "Window size") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxBins,   "maxBins",   INT4,         'm',OPTIONAL,  "Max. bins to clean") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_linefiles, "linefiles", STRINGVector, 0,   OPTIONAL, "List of linefiles (filenames must contain IFO name)") == XLAL_SUCCESS, XLAL_EFUNC);
 
 
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  LAL_CALL( LALUserVarReadAllInput(&status, &should_exit, argc, argv), &status);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
   
@@ -122,7 +117,7 @@ int main(int argc, char *argv[]){
   constraints.detector = NULL;
 
   /* get sft catalog */
-  LAL_CALL( LALSFTdataFind( &status, &catalog, uvar_sftDir, &constraints), &status);
+  XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( uvar_sftDir, &constraints) ) != NULL, XLAL_EFUNC);
   if ( (catalog == NULL) || (catalog->length == 0) ) {
     fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
     exit(1);
@@ -152,26 +147,26 @@ int main(int argc, char *argv[]){
     thisCatalog.data = catalog->data + j;
   
     /* read the sfts */
-    LAL_CALL( LALLoadMultiSFTs ( &status, &inputSFTs, &thisCatalog, uvar_fMin, uvar_fMax), &status);    
+    XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadMultiSFTs ( &thisCatalog, uvar_fMin, uvar_fMax) ) != NULL, XLAL_EFUNC);    
     
     /* clean  lines */
-    if ( LALUserVarWasSet( &uvar_linefiles ) ) {
+    if ( XLALUserVarWasSet( &uvar_linefiles ) ) {
       LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar_maxBins, 
 						      uvar_window, uvar_linefiles, randPar), &status);
     }
     
     /* write output */
     for (k = 0; k < inputSFTs->length; k++) {
-      LAL_CALL( LALWriteSFTVector2Dir ( &status, inputSFTs->data[k], uvar_outDir, "cleaned", "cleaned"), &status);
+      XLAL_CHECK_MAIN( XLALWriteSFTVector2Dir (inputSFTs->data[k], uvar_outDir, "cleaned", "cleaned") == XLAL_SUCCESS, XLAL_EFUNC);
     }
 
-    LAL_CALL( LALDestroyMultiSFTVector(&status, &inputSFTs), &status );
+    XLALDestroyMultiSFTVector( inputSFTs);
 
   } /* end loop over sfts */
 
   /* Free memory */
-  LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);
-  LAL_CALL( LALDestroyUserVars(&status), &status);
+  XLALDestroySFTCatalog(catalog );
+  XLALDestroyUserVars();
   LAL_CALL( LALDestroyRandomParams (&status, &randPar), &status);
 
   LALCheckMemoryLeaks(); 

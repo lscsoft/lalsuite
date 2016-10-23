@@ -190,10 +190,10 @@ void LALAvgDetectorPos( LALStatus *status,
 
 /**
  * This function finds the velocity of a given detector at a
- * given time. It is basically a wrapper for LALBarycenter().
+ * given time. It is basically a wrapper for XLALBarycenter().
  * The output is of the form REAL8 vector v[3] and the input is a
  * time LIGOTimeGPS , the detector LALDetector,
- * and the ephemeris EphemerisData from LALInitBarycenter().
+ * and the ephemeris EphemerisData from XLALInitBarycenter().
  */
 void LALDetectorVel(LALStatus    *status,
 		    REAL8        v[3],
@@ -235,8 +235,8 @@ void LALDetectorVel(LALStatus    *status,
   baryinput.delta = 0.0;
 
   /* call barycentering routines to calculate velocities */
-  TRY( LALBarycenterEarth( status->statusPtr, earth, time0, edat), status);
-  TRY( LALBarycenter( status->statusPtr, emit, &baryinput, earth), status);
+  XLAL_CHECK_LAL( status, XLALBarycenterEarth(earth, time0, edat) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( status, XLALBarycenter(emit, &baryinput, earth) == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* set values of velocity for all the SFT's */
   for (i=0; i < 3; i++) { v[i] = emit->vDetector[i]; }
@@ -291,8 +291,8 @@ void LALDetectorPos(LALStatus    *status,
   baryinput.delta = 0.0;
 
   /* call barycentering routines to calculate velocities */
-  TRY( LALBarycenterEarth( status->statusPtr, earth, time0, edat), status);
-  TRY( LALBarycenter( status->statusPtr, emit, &baryinput, earth), status);
+  XLAL_CHECK_LAL( status, XLALBarycenterEarth(earth, time0, edat) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_LAL( status, XLALBarycenter(emit, &baryinput, earth) == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* set values of velocity for all the SFT's */
   for (i=0; i < 3; i++) { x[i] = emit->rDetector[i]; }

@@ -3,7 +3,7 @@ clear
 
 grup_min=50; %f0_grup=grup;
 grup_Band=50;
-grup_max=800; %f0_grup_max=grup+grup_Band;
+grup_max=850; %f0_grup_max=grup+grup_Band;
 
 BandNo=1;
 BandNf=500;
@@ -11,7 +11,8 @@ BandNf=500;
 f0_rang_grup_band=10;
 f0_band=0.1;
 
-Ntop=1000;
+Npatch=999;
+Ntop=999;
 
 PixelFactor=2;
 p = 16; %degeneration
@@ -20,17 +21,14 @@ p = 16; %degeneration
 sig=0;
 sigma_veto_toplist= @(x) sig+0.*x;
 
-r_W=6;
-r_W_cl=6;
+r_W=sqrt(14);
+r_W_cl=sqrt(14);
 
-chisquare_STD_veto = 8;
+chisquare_STD_veto = 5;
 
-population_cluster_veto=9;
+population_cluster_veto=10;
 
 sigma_veto_cluster=1.15;
-
-A1 = 0.135112; A2 = 1.429798; B1 = 0.088325; B2 = 1.622022;
-chi2_STD = @(x,y,p) (y-(p-1)-A1*x.^A2)./(sqrt(2*p-2)+B1*x.^B2);
 
 %Detector == 'L':
 x_tref = 1126034147;
@@ -47,8 +45,8 @@ Tobs=[x_tend,y_tend]-[x_tref,y_tref];
 df0=(1/Tcoh);
 df1=(df0./Tobs);
 
-Y_input='/Users/wave/Archive/injected_out/L1_2/Pulsar_%g/Pulsar_%g.dat';
-X_input='/Users/wave/Archive/injected_out/H1_2/Pulsar_%g/Pulsar_%g.dat';
+Y_input='/home/miquel.oliver/O1/Collected/H1/H1_Collected_%g_%g.dat';
+X_input='/home/miquel.oliver/O1/Collected/L1/L1_Collected_%g_%g.dat';
 
 for grup=grup_min:grup_Band:grup_max;
     
@@ -62,13 +60,40 @@ for grup=grup_min:grup_Band:grup_max;
     ymissing=[];
     
     follow_up=[];
-    Cluster=[];
+	Cluster=[];
+	I_partial_cluster=[];
+
+if f0_grup>=50;
+A1=0.4902
+A2=1.414
+B1=0.3581
+B2=1.484
+end
+
+if f0_grup>=100;
+A1=0.2168
+A2=1.428 
+B1=0.1902
+B2=1.499
+chisquare_STD_veto = 6;
+end	
+
+if f0_grup>=200;
+A1 = 0.1187;
+A2 = 1.470;
+B1 = 0.06784;
+B2 = 1.697;
+chisquare_STD_veto = 5.3;
+end
+	
+	chi2_STD = @(x,y,p) (y-(p-1)-A1*x.^A2)./(sqrt(2*p-2)+B1*x.^B2);
+
 
     
     for BandN=BandNo:BandNf;
         
-        y_filename=sprintf(Y_input,BandN,BandN);
-        x_filename=sprintf(X_input,BandN,BandN);
+        y_filename=sprintf(Y_input,grup,BandN);
+        x_filename=sprintf(X_input,grup,BandN);
         
         if (BandN / 10) == fix(BandN / 10)
             BandN
@@ -323,12 +348,15 @@ for grup=grup_min:grup_Band:grup_max;
         for j=1:max(N_Cluster);
             
             I_Cluster_i=find(N_Cluster==j);
-            s=x(I_Cluster_i,5);
+            s=x(I_Cluster_i,6);
             
-            Cluster.sign_mean{j} =mean(s);
+            Cluster.sign_mean{j} =mean(x(I_Cluster_i,5));
             Cluster.ind{j}       =I_Cluster_i;
-            Cluster.sign_sum{j}  =sum(s);
-            Cluster.f0{j}        =sum(x(I_Cluster_i,1).*s)/Cluster.sign_sum{j};
+            Cluster.s_old{j}  =mean(s);
+	    Cluster.sign_sum{j}  =sum(s);
+            Cluster.deg_x{j}  =length(unique(x(I_Cluster_i,7)));
+            Cluster.deg_y{j}  =length(unique(x(I_Cluster_i,8)));
+	    Cluster.f0{j}        =sum(x(I_Cluster_i,1).*s)/Cluster.sign_sum{j};
             
             n0=sum(s*[1,1,1].*[cos(x(I_Cluster_i,3)).*cos(x(I_Cluster_i,2)),cos(x(I_Cluster_i,3)).*sin(x(I_Cluster_i,2)),sin(x(I_Cluster_i,3))],1);
             n0=n0./sqrt(sum(n0.^2));
@@ -341,31 +369,11 @@ for grup=grup_min:grup_Band:grup_max;
             
             Cluster.sign_max{j}  =max(s);
             
-            %Cluster.selection{j}=0;
-            
             if length(I_Cluster_i)<2; Cluster.noise{j}=1; else Cluster.noise{j}=0; end
         end
         
-        a=[];
-        b=[Cluster.f0{:}];
-        
-        for i=1:length([Cluster.delta{:}]'); Cluster.errorT{i}=0; end
-        for I=1:length(b);
-            [~,BandN]=min(abs(b(I)-F0));
-            Cluster.selection{(I)}=BandN;
-            errorf = distance_d(Cluster.f0{(I)},Cluster.alpha{(I)},Cluster.delta{(I)},Cluster.f1{(I)},F0(BandN),RAD(BandN),DECD(BandN),F1(BandN),df0,df1(2),PixelFactor);
-            a=[a;Cluster.f0{(I)},errorf,BandN];
-            Cluster.errorf0{(I)}=errorf(1);
-            Cluster.errorsky{(I)}=errorf(2);
-            Cluster.errorf1{(I)}=errorf(3);
-            Cluster.errorT{(I)}=errorf(4);
-        end
-        
-        follow_up=[[Cluster.f0{:}]',[Cluster.alpha{:}]',[Cluster.delta{:}]',[Cluster.f1{:}]',[Cluster.sign_mean{:}]',[Cluster.sign_sum{:}]',[Cluster.length{:}]'];
-        error=[[Cluster.errorf0{:}]',[Cluster.errorsky{:}]',[Cluster.errorf1{:}]',[Cluster.errorT{:}]'];
-        follow_up=[follow_up,error];
-        
-        %    follow_up=[[Cluster.f0{:}]',[Cluster.alpha{:}]',[Cluster.delta{:}]',[Cluster.f1{:}]',[Cluster.sign_mean{:}]',[Cluster.sign_sum{:}]',[Cluster.length{:}]'];
+        follow_up=[[Cluster.f0{:}]',[Cluster.alpha{:}]',[Cluster.delta{:}]',[Cluster.f1{:}]',[Cluster.sign_mean{:}]',[Cluster.s_old{:}]',[Cluster.sign_sum{:}]',[Cluster.length{:}]',[Cluster.deg_x{:}]',[Cluster.deg_y{:}]'];        
+    
     end
     % veto population
     if ~isempty(follow_up)
@@ -391,3 +399,4 @@ for grup=grup_min:grup_Band:grup_max;
     File_cn=sprintf('follow_up_%g.mat',grup);
     save (File_cn,'follow_up','Cluster','param')
 end
+

@@ -39,19 +39,6 @@ void XLALDestroyTimeCorrectionData( TimeCorrectionData *tcd );
 
 char *XLALPulsarFileResolvePath ( const char *fname );
 
-
-/* ==================== deprecated LAL interface  ==================================================*/
-
-#define LALINITBARYCENTERH_EOPEN    1
-#define LALINITBARYCENTERH_EMEM     2
-#define LALINITBARYCENTERH_EEPHFILE 32
-
-#define LALINITBARYCENTERH_MSGEOPEN    "Could not open ephemeris file"
-#define LALINITBARYCENTERH_MSGEMEM     "Out of memory"
-#define LALINITBARYCENTERH_MSGEEPHFILE "Error in reading an ephemeris file"
-
-void LALInitBarycenter(LALStatus *, EphemerisData *);
-
 /** \endcond */
 
 #ifdef  __cplusplus

@@ -3047,7 +3047,7 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInfe
     INT4 no_adapt, adapting;
     INT4 adaptTau, adaptableStep, adaptLength, adaptResetBuffer;
     REAL8 sigma, s_gamma;
-    REAL8 logLAtAdaptStart = -INFINITY;
+    REAL8 logPAtAdaptStart = -INFINITY;
 
     LALInferenceVariableItem *this;
 
@@ -3094,7 +3094,7 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceVariables *propArgs, LALInfe
     LALInferenceAddINT4Variable(propArgs, "adaptLength", adaptLength, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddINT4Variable(propArgs, "adaptResetBuffer", adaptResetBuffer, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddREAL8Variable(propArgs, "s_gamma", s_gamma, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddREAL8Variable(propArgs, "logLAtAdaptStart", logLAtAdaptStart, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddREAL8Variable(propArgs, "logPAtAdaptStart", logPAtAdaptStart, LALINFERENCE_PARAM_LINEAR);
 
     return;
 }

@@ -60,7 +60,6 @@ test/ExtrapolatePulsarSpinsTest
 test/FITSFileIOTest
 test/FITSFileIOTest.fits
 test/FileIOTest
-test/FlatMeshTest
 test/GeneralMeshTest
 test/GeneralMetricTest
 test/GeneratePulsarSignalTest

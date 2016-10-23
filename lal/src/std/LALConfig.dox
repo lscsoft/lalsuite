@@ -40,8 +40,8 @@ long integer.</dd>
 long long integer.</dd>
 <dt>LAL_SIZEOF_SHORT</dt><dd> Integer representing the size of a
 short integer.</dd>
-<dt>LAL_NDEBUG</dt><dd> Defined to set default lalDebugLevel to zero (use the
-configure argument <tt>--disable-debug</tt> to do this).</dd>
+<dt>LAL_NDEBUG</dt><dd> Defined to disable various LAL features,
+generally should not be used.</dd>
 <dt>NOLALMACROS</dt><dd> Defined if status macros are replaced by functions
 (where possible) (use the configure argument <tt>--disable-macros</tt> to do
 this).</dd>
