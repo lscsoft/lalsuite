@@ -634,6 +634,16 @@ static int SuperskyTest(
   printf( "Lattice type: %s\n", lattice_name );
   XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, metrics->semi_rssky_metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Print bound names
+  printf( "Bound names:" );
+  for ( size_t i = 0; i < XLALTotalLatticeTilingDimensions( tiling ); ++i ) {
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, i );
+    XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+    XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
+    printf( " %s", stats->name );
+  }
+  printf( "\n" );
+
   // Perform mismatch test
   XLAL_CHECK( MismatchTest( tiling, metrics->semi_rssky_metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
