@@ -33,8 +33,8 @@ const UINT4 alignment = 32;
 /// Internal definition of input data required for computing coherent results
 ///
 struct tagWeaveCohInput {
-  /// Whether to simulate computing coherent results, and at what level
-  UINT4 simulation_level;
+  /// Whether to shortcut computing coherent results
+  BOOLEAN shortcut_compute;
   /// F-statistic input data
   FstatInput *Fstat_input;
   /// If computing per-detector quantities, list of detectors
@@ -65,8 +65,8 @@ struct tagWeaveCohResults {
 /// Internal definition of results of a semicoherent computation over many segments
 ///
 struct tagWeaveSemiResults {
-  /// Whether to simulate computing semicoherent results, and at what level
-  UINT4 simulation_level;
+  /// Whether to shortcut computing semicoherent results
+  BOOLEAN shortcut_compute;
   /// Per-segment coherent results (optional)
   WeaveCohResults *coh_res;
   /// Semicoherent template parameters of the first frequency bin
@@ -100,21 +100,18 @@ static int semi_results_add_REAL4( const size_t nsum, REAL4 *sum, const REAL4 *x
 /// Create coherent input data
 ///
 WeaveCohInput *XLALWeaveCohInputCreate(
-  const UINT4 simulation_level,
+  const BOOLEAN shortcut_compute,
   FstatInput *Fstat_input,
   const LALStringVector *per_detectors
   )
 {
-
-  // Check input
-  XLAL_CHECK_NULL( simulation_level > 0 || Fstat_input != NULL, XLAL_EFAULT );
 
   // Allocate memory
   WeaveCohInput *coh_input = XLALCalloc( 1, sizeof( *coh_input ) );
   XLAL_CHECK_NULL( coh_input != NULL, XLAL_ENOMEM );
 
   // Set fields
-  coh_input->simulation_level = simulation_level;
+  coh_input->shortcut_compute = shortcut_compute;
   coh_input->Fstat_input = Fstat_input;
   coh_input->per_detectors = per_detectors;
 
@@ -191,14 +188,6 @@ int XLALWeaveCohResultsCompute(
   const UINT4 old_coh_res_nfreqs = ( *coh_res )->nfreqs;
   ( *coh_res )->nfreqs = coh_nfreqs;
 
-  // Handle simulation of computation of coherent results:
-  // - 0: no simulation
-  // - 1: allocate the same amount of memory, but do not compute results
-  // - 2: do not allocate memory and do not compute results
-  if ( coh_input->simulation_level > 1 ) {
-    return XLAL_SUCCESS;
-  }
-
   // Reallocate arrays if required
   if ( old_coh_res_nfreqs < coh_nfreqs ) {
 
@@ -213,11 +202,8 @@ int XLALWeaveCohResultsCompute(
 
   }
 
-  // Handle simulation of computation of coherent results:
-  // - 0: no simulation
-  // - 1: allocate the same amount of memory, but do not compute results
-  // - 2: do not allocate memory and do not compute results
-  if ( coh_input->simulation_level > 0 ) {
+  // Return now if computation shortcut is in place
+  if ( coh_input->shortcut_compute ) {
     return XLAL_SUCCESS;
   }
 
@@ -277,7 +263,7 @@ void XLALWeaveCohResultsDestroy(
 /// Create storage for semicoherent results
 ///
 WeaveSemiResults *XLALWeaveSemiResultsCreate(
-  const UINT4 simulation_level,
+  const BOOLEAN shortcut_compute,
   const LALStringVector *per_detectors,
   const UINT4 per_nsegments,
   const double dfreq
@@ -296,7 +282,7 @@ WeaveSemiResults *XLALWeaveSemiResultsCreate(
   }
 
   // Set fields
-  semi_res->simulation_level = simulation_level;
+  semi_res->shortcut_compute = shortcut_compute;
   semi_res->dfreq = dfreq;
 
   // Initialise number of detectors for per-detector results
@@ -346,14 +332,6 @@ int XLALWeaveSemiResultsInit(
   // Copy start point of the current semicoherent frequency block and number of frequency points
   semi_res->semi_phys = *semi_phys;
   semi_res->nfreqs = semi_nfreqs;
-
-  // Handle simulation of computation of semicoherent results:
-  // - 0: no simulation
-  // - 1: allocate the same amount of memory, but do not compute results
-  // - 2: do not allocate memory and do not compute results
-  if ( semi_res->simulation_level > 1 ) {
-    return XLAL_SUCCESS;
-  }
 
   // Reallocate arrays of summed multi- and per-detector F-statistics per frequency
   if ( semi_res->sum_twoF == NULL || semi_res->sum_twoF->length < semi_res->nfreqs ) {
@@ -420,11 +398,8 @@ int XLALWeaveSemiResultsAdd(
 
   }
 
-  // Handle simulation of computation of semicoherent results:
-  // - 0: no simulation
-  // - 1: allocate the same amount of memory, but do not compute results
-  // - 2: do not allocate memory and do not compute results
-  if ( semi_res->simulation_level > 0 ) {
+  // Return now if computation shortcut is in place
+  if ( semi_res->shortcut_compute ) {
     return XLAL_SUCCESS;
   }
 
@@ -492,11 +467,8 @@ int XLALWeaveFillOutputResultItem(
     ( *item )->per_seg[s].coh_phys.fkdot[0] = semi_res->coh_res[s].coh_phys.fkdot[0] + foffset;
   }
 
-  // Handle simulation of computation of semicoherent results:
-  // - 0: no simulation
-  // - 1: allocate the same amount of memory, but do not compute results
-  // - 2: do not allocate memory and do not compute results
-  if ( semi_res->simulation_level > 0 ) {
+  // Return now if computation shortcut is in place
+  if ( semi_res->shortcut_compute ) {
     return XLAL_SUCCESS;
   }
 

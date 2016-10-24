@@ -24,6 +24,26 @@ ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
 set +x
 echo
 
+echo "=== Check approximate/computed number of semicoherent templates"
+set -x
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'SEMIAPPX' > tmp
+semi_ntmpl=`cat tmp | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'SEMICOMP' > tmp
+semi_ncomp=`cat tmp | xargs printf "%d"`
+expr ${semi_ncomp} '=' ${semi_ntmpl}
+set +x
+echo
+
+echo "=== Check computed number of coherent results"
+set -x
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'NSEGMENT' > tmp
+nsegments=`cat tmp | xargs printf "%d"`
+${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'TCOHCOMP' > tmp
+tot_coh_ncomp=`cat tmp | xargs printf "%d"`
+expr ${tot_coh_ncomp} '=' ${semi_ntmpl} '*' ${nsegments}
+set +x
+echo
+
 echo "=== Extract semicoherent template bank from WeaveOut.fits as ASCII table ==="
 set -x
 ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=freq; c2=alpha; c3=delta; c4=f1dot; c5=0; c6=0]" > WeaveSemiBank.txt
@@ -41,9 +61,9 @@ for seg in 1 2 3; do
 
     echo "=== Segment #${seg}: Check that no results were recomputed ==="
     set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[per_seg_info][col coh_total_recomp][#row == ${seg}]" > tmp
-    coh_total_recomp=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    [ ${coh_total_recomp} -eq 0 ]
+    ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[per_seg_info][col coh_nrecomp][#row == ${seg}]" > tmp
+    coh_nrecomp=`cat tmp | sed "/^#/d" | xargs printf "%d"`
+    [ ${coh_nrecomp} -eq 0 ]
     set +x
     echo
 

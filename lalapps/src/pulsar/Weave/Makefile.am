@@ -53,7 +53,7 @@ TESTS = \
 	TestFreqPartition.sh \
 	TestCacheMaxSize.sh \
 	TestCheckpointing.sh \
-	TestSimulateSearch.sh \
+	TestSearchShortcuts.sh \
 	$(END_OF_LIST)
 
 EXTRA_DIST = \

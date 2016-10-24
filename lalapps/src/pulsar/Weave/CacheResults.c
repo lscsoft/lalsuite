@@ -559,6 +559,7 @@ int XLALWeaveCacheRetrieve(
   const UINT4 query_index,
   const WeaveCohResults **coh_res,
   UINT4 *coh_offset,
+  UINT8 *tot_coh_ncomp,
   WeaveOutputMiscPerSegInfo *per_seg_info
   )
 {
@@ -570,6 +571,7 @@ int XLALWeaveCacheRetrieve(
   XLAL_CHECK( query_index < queries->nqueries, XLAL_EINVAL );
   XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( coh_offset != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tot_coh_ncomp != NULL, XLAL_EFAULT );
 
   // See if coherent results are already cached
   const cache_item key = { .partition_index = queries->partition_index, .coh_index = queries->coh_index[query_index] };
@@ -619,6 +621,9 @@ int XLALWeaveCacheRetrieve(
 
     // Compute coherent results for the new cache item
     XLAL_CHECK( XLALWeaveCohResultsCompute( &new_item->coh_res, cache->coh_input, &queries->coh_phys[query_index], coh_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Increase the total number of computed results, including results that may have been recomputed
+    *tot_coh_ncomp += coh_nfreqs;
 
     // Add new cache item to the index hash table
     XLAL_CHECK( XLALHashTblAdd( cache->coh_index_hash, new_item ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -687,8 +692,8 @@ int XLALWeaveCacheRetrieve(
       XLAL_CHECK( XLALHashTblFind( cache->coh_computed_hash, &key, &computed ) == XLAL_SUCCESS, XLAL_EFUNC );
       if ( computed == NULL ) {
 
-        // Coherent results have not been computed before: increase the total count
-        per_seg_info->coh_total += coh_nfreqs;
+        // Coherent results have not been computed before: increment the number of results computed once
+        per_seg_info->coh_n1comp += coh_nfreqs;
 
         // Create a copy of the cache item key, and add it to the hash
         // table to indicate these coherent results have been computed
@@ -699,8 +704,8 @@ int XLALWeaveCacheRetrieve(
 
       } else {
 
-        // Coherent results have been computed previously: increase the total recomputed count
-        per_seg_info->coh_total_recomp += coh_nfreqs;
+        // Coherent results have been computed previously: increment the number of recomputed results
+        per_seg_info->coh_nrecomp += coh_nfreqs;
 
       }
 

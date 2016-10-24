@@ -32,27 +32,27 @@ for seg in 1 2 3; do
 
     echo "=== Segment #${seg}: Check that number of computed coherent results are equal ==="
     set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[per_seg_info][col coh_total][#row == ${seg}]" > tmp
-    coh_total_no_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[per_seg_info][col coh_total][#row == ${seg}]" > tmp
-    coh_total_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    [ ${coh_total_no_max} -eq ${coh_total_max} ]
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[per_seg_info][col coh_n1comp][#row == ${seg}]" > tmp
+    coh_n1comp_no_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[per_seg_info][col coh_n1comp][#row == ${seg}]" > tmp
+    coh_n1comp_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
+    [ ${coh_n1comp_no_max} -eq ${coh_n1comp_max} ]
     set +x
     echo
 
     echo "=== Segment #${seg}: Check that search without a maximum cache size did not recompute results ==="
     set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[per_seg_info][col coh_total_recomp][#row == ${seg}]" > tmp
-    coh_total_recomp_no_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    [ ${coh_total_recomp_no_max} -eq 0 ]
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[per_seg_info][col coh_nrecomp][#row == ${seg}]" > tmp
+    coh_nrecomp_no_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
+    [ ${coh_nrecomp_no_max} -eq 0 ]
     set +x
     echo
 
     echo "=== Segment #${seg}: Check that search with a maximum cache size did recompute results ==="
     set -x
-    ${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[per_seg_info][col coh_total_recomp][#row == ${seg}]" > tmp
-    coh_total_recomp_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    [ ${coh_total_recomp_max} -gt 0 ]
+    ${fitsdir}/lalapps_fits_table_list "WeaveOutMax.fits[per_seg_info][col coh_nrecomp][#row == ${seg}]" > tmp
+    coh_nrecomp_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`
+    [ ${coh_nrecomp_max} -gt 0 ]
     set +x
     echo
 

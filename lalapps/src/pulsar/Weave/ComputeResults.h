@@ -54,7 +54,7 @@ typedef struct tagWeaveSemiResults WeaveSemiResults;
 /// @{
 
 WeaveCohInput *XLALWeaveCohInputCreate(
-  const UINT4 simulation_level,
+  const BOOLEAN shortcut_compute,
   FstatInput *Fstat_input,
   const LALStringVector *per_detectors
   );
@@ -71,7 +71,7 @@ void XLALWeaveCohResultsDestroy(
   WeaveCohResults *coh_res
   );
 WeaveSemiResults *XLALWeaveSemiResultsCreate(
-  const UINT4 simulation_level,
+  const BOOLEAN shortcut_compute,
   const LALStringVector *per_detectors,
   const UINT4 per_nsegments,
   const double dfreq

@@ -119,10 +119,10 @@ typedef struct tagWeaveOutputMiscPerSegInfo {
   REAL8 sft_min_cover_freq;
   /// Maximum of frequency range covered by SFTs
   REAL8 sft_max_cover_freq;
-  /// Total number of computed coherent results
-  INT4 coh_total;
-  /// Total number of recomputed coherent results
-  INT4 coh_total_recomp;
+  /// Number of coherent results computed once
+  INT4 coh_n1comp;
+  /// Number of recomputed coherent results
+  INT4 coh_nrecomp;
 } WeaveOutputMiscPerSegInfo;
 
 #ifdef __cplusplus

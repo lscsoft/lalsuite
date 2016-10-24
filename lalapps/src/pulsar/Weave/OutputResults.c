@@ -31,8 +31,8 @@
 struct tagWeaveOutputResults {
   /// Various varameters required to output results
   WeaveOutputParams par;
-  /// Total number of semicoherent results added to output
-  INT8 semi_total;
+  /// Number of computed semicoherent results
+  INT8 semi_ncomp;
   /// Basket of output results ranked by mean multi-detector F-statistic
   WeaveResultsBasket *mean_twoF_basket;
 };
@@ -168,8 +168,8 @@ int XLALWeaveOutputResultsAdd(
   XLAL_CHECK( out != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
 
-  // Increment total number of semicoherent results
-  out->semi_total += semi_nfreqs;
+  // Increment number of computed semicoherent results
+  out->semi_ncomp += semi_nfreqs;
 
   // Add results to basket ranked by mean multi-detector F-statistic
   XLAL_CHECK( XLALWeaveResultsBasketAdd( out->mean_twoF_basket, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -209,8 +209,8 @@ int XLALWeaveOutputResultsWrite(
     XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "nsegment", out->par.per_nsegments, "number of segments" ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  // Write total number of semicoherent results added to output
-  XLAL_CHECK( XLALFITSHeaderWriteUINT8( file, "semitot", out->semi_total, "total semicoherent templates searched" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Write number of computed semicoherent results
+  XLAL_CHECK( XLALFITSHeaderWriteUINT8( file, "semicomp", out->semi_ncomp, "number of computed semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write basket ranked by mean multi-detector F-statistic
   XLAL_CHECK( XLALWeaveResultsBasketWrite( file, out->mean_twoF_basket ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -287,11 +287,11 @@ int XLALWeaveOutputResultsReadAppend(
 
   }
 
-  // Read and increment total number of semicoherent results added to output
+  // Read and increment number of computed semicoherent results
   {
-    UINT8 semi_total = 0;
-    XLAL_CHECK( XLALFITSHeaderReadUINT8( file, "semitot", &semi_total ) == XLAL_SUCCESS, XLAL_EFUNC );
-    ( *out )->semi_total += semi_total;
+    UINT8 semi_ncomp = 0;
+    XLAL_CHECK( XLALFITSHeaderReadUINT8( file, "semicomp", &semi_ncomp ) == XLAL_SUCCESS, XLAL_EFUNC );
+    ( *out )->semi_ncomp += semi_ncomp;
   }
 
   // Read and append to basket ranked by mean multi-detector F-statistic
@@ -373,10 +373,10 @@ int XLALWeaveOutputResultsCompare(
     return XLAL_SUCCESS;
   }
 
-  // Compare total number of semicoherent results
-  if ( out_1->semi_total != out_2->semi_total ) {
+  // Compare number of computed semicoherent results
+  if ( out_1->semi_ncomp != out_2->semi_ncomp ) {
     *equal = 0;
-    XLALPrintInfo( "%s: unequal total number of semicoherent results: %" LAL_INT8_FORMAT " != %" LAL_INT8_FORMAT "\n", __func__, out_1->semi_total, out_2->semi_total );
+    XLALPrintInfo( "%s: unequal number of computed semicoherent results: %" LAL_INT8_FORMAT " != %" LAL_INT8_FORMAT "\n", __func__, out_1->semi_ncomp, out_2->semi_ncomp );
     return XLAL_SUCCESS;
   }
 
@@ -429,8 +429,8 @@ int XLALWeaveOutputMiscPerSegInfoWrite(
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_min_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, sft_max_cover_freq ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, coh_total ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, coh_total_recomp ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, coh_n1comp ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, INT4, coh_nrecomp ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Write FITS table
