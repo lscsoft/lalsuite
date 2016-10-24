@@ -282,7 +282,7 @@ int main( int argc, char *argv[] )
         }
       }
       TestRecord XLAL_INIT_DECL( record );
-      TestSubRecord XLAL_INIT_ARRAY_DECL( record_sub, 2 );
+      TestSubRecord XLAL_INIT_DECL( record_sub, [2] );
       record.sub = record_sub;
       size_t i = 0;
       while ( nrows > 0 ) {

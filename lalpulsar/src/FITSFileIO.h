@@ -227,7 +227,7 @@ int XLALFITSTableColumnAddGPSTime( FITSFile *file, const CHAR *col_name, const s
   XLALFITSTableColumnAdd ## type (file, #field, 1, _xlal_fits_offsets_, &_xlal_fits_record_, sizeof(_xlal_fits_record_), &(_xlal_fits_record_.field[0]), sizeof(_xlal_fits_record_.field))
 /// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_PTR_BEGIN(field, ptr_record_type, length) \
-  ptr_record_type XLAL_INIT_ARRAY_DECL(_xlal_fits_ptr_record_, length); \
+  ptr_record_type XLAL_INIT_DECL(_xlal_fits_ptr_record_, [length]); \
   _xlal_fits_record_.field = &_xlal_fits_ptr_record_[0]; \
   _xlal_fits_offsets_[0] = (size_t)(((intptr_t) &(_xlal_fits_record_.field)) - ((intptr_t) &_xlal_fits_record_));
 /// \hideinitializer
