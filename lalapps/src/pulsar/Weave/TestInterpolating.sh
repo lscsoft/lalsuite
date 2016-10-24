@@ -48,7 +48,7 @@ for seg in 1 2 3; do
     set +x
     echo
 
-    echo "=== Extract coherent template bank from WeaveOut.fits as ASCII table ==="
+    echo "=== Segment #${seg}: Extract coherent template bank from WeaveOut.fits as ASCII table ==="
     set -x
     ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=seg${seg}_freq; c2=seg${seg}_alpha; c3=seg${seg}_delta; c4=seg${seg}_f1dot; c5=0; c6=0]" > WeaveSeg${seg}CohBank.txt
     set +x
@@ -75,7 +75,7 @@ for seg in 1 2 3; do
     set +x
     echo
 
-    echo "=== Compare coherent F-statistics from lalapps_Weave to lalapps_ComputeFstatistic_v2 ==="
+    echo "=== Segment #${seg}: Compare coherent F-statistics from lalapps_Weave to lalapps_ComputeFstatistic_v2 ==="
     set -x
     ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}CohBankCohFstats.txt --Fname2=CFSv2Seg${seg}Fstats.txt
     ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}CohBankCohFstatsH1.txt --Fname2=CFSv2Seg${seg}FstatsH1.txt

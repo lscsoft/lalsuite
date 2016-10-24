@@ -30,7 +30,7 @@ echo
 
 for seg in 1 2 3; do
 
-    echo "=== Check that no results were recomputed ==="
+    echo "=== Segment #${seg}: Check that no results were recomputed ==="
     set -x
     ${fitsdir}/lalapps_fits_table_list "WeaveOutNoPart.fits[per_seg_info][col coh_total_recomp][#row == ${seg}]" > tmp
     coh_total_recomp_no_part=`cat tmp | sed "/^#/d" | xargs printf "%d"`

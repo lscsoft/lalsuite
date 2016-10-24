@@ -30,7 +30,7 @@ echo
 
 for seg in 1 2 3; do
 
-    echo "=== Segment #${seg}: Check that coherent template counts are equal, and that WeaveOut{NoMax|Max}.fits {did not|did} recompute results ==="
+    echo "=== Segment #${seg}: Check that number of computed coherent results are equal ==="
     set -x
     ${fitsdir}/lalapps_fits_table_list "WeaveOutNoMax.fits[per_seg_info][col coh_total][#row == ${seg}]" > tmp
     coh_total_no_max=`cat tmp | sed "/^#/d" | xargs printf "%d"`

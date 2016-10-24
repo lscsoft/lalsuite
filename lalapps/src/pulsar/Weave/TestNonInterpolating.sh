@@ -93,7 +93,7 @@ for seg in 1 2 3; do
     set +x
     echo
 
-    echo "=== Compare coherent F-statistics from lalapps_Weave to lalapps_ComputeFstatistic_v2 ==="
+    echo "=== Segment #${seg}: Compare coherent F-statistics from lalapps_Weave to lalapps_ComputeFstatistic_v2 ==="
     set -x
     ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}SemiBankCohFstats.txt --Fname2=CFSv2Seg${seg}Fstats.txt
     ${fstatdir}/lalapps_compareFstats --Fname1=WeaveSeg${seg}SemiBankCohFstatsH1.txt --Fname2=CFSv2Seg${seg}FstatsH1.txt
