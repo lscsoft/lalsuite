@@ -59,7 +59,11 @@ typedef struct tagLatticeTilingLocator LatticeTilingLocator;
 ///
 /// Statistics related to the number/value of lattice tiling points in a dimension.
 ///
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagLatticeTilingStats, name));
+#endif /* SWIG */
 typedef struct tagLatticeTilingStats {
+  const char *name;                     ///< Name of parameter-space dimension
   UINT8 total_points;                   ///< Total number of points up to this dimension
   UINT4 min_points;                     ///< Minimum number of points in this dimension
   UINT4 max_points;                     ///< Maximum number of points in this dimension
@@ -105,6 +109,16 @@ int XLALSetLatticeTilingBound(
   const void *data_lower,               ///< [in] Arbitrary data describing lower parameter space bound
   const void *data_upper                ///< [in] Arbitrary data describing upper parameter space bound
   );
+
+///
+/// Set the name of a lattice tiling parameter-space dimension.
+///
+int XLALSetLatticeTilingBoundName(
+  LatticeTiling *tiling,                ///< [in] Lattice tiling
+  const size_t dim,                     ///< [in] Dimension to which name applies
+  const char *fmt,                      ///< [in] Name format string
+  ...                                   ///< [in] Arguments to format string
+  ) _LAL_GCC_PRINTF_FORMAT_(3,4);
 
 ///
 /// Set a constant lattice tiling parameter-space bound, given by the minimum and maximum of the two

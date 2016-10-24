@@ -242,12 +242,14 @@ static int BasicTest(
     for ( size_t j = 0; j < n; ++j ) {
       const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, j );
       XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+      XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
       XLAL_CHECK( imaxabs( stats->total_points - total_ref[j] ) <= 1, XLAL_EFAILED, "\n  "
                   "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", j, stats->total_points, total_ref[j] );
       XLAL_CHECK( stats->min_points <= stats->max_points, XLAL_EFAILED, "\n  "
                   "ERROR: min_points = %" LAL_INT4_FORMAT " > %" LAL_INT4_FORMAT " = max_points", stats->min_points, stats->max_points );
       XLAL_CHECK( stats->min_value <= stats->max_value, XLAL_EFAILED, "\n  "
                   "ERROR: min_value = %g > %g = max_value", stats->min_value, stats->max_value );
+      printf( " %s ...", stats->name );
     }
     printf( " done\n" );
 

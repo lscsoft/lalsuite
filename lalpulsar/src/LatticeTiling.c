@@ -53,6 +53,8 @@ typedef enum tagLT_Lattice {
 /// Lattice tiling parameter-space bound for one dimension.
 ///
 typedef struct tagLT_Bound {
+  char name[32];                        ///< Name of the parameter-space dimension
+  bool name_set;                        ///< True if the name of the parameter-space dimension has been set
   bool is_tiled;                        ///< True if the dimension is tiled, false if it is a single point
   LatticeTilingBound func;              ///< Parameter space bound function
   size_t data_len;                      ///< Length of arbitrary data describing parameter-space bounds
@@ -812,6 +814,11 @@ LatticeTiling *XLALCreateLatticeTiling(
   tiling->stats_cntnr->stats = XLALCalloc( ndim, sizeof( *tiling->stats_cntnr->stats ) );
   XLAL_CHECK_NULL( tiling->stats_cntnr->stats != NULL, XLAL_ENOMEM );
 
+  // Point 'name' field in statistics struct to internal buffer in bounds struct
+  for ( size_t i = 0; i < ndim; ++i ) {
+    tiling->stats_cntnr->stats[i].name = tiling->bounds[i].name;
+  }
+
   // Initialise fields
   tiling->ndim = ndim;
   tiling->padding = 1;
@@ -868,6 +875,39 @@ int XLALSetLatticeTilingBound(
   tiling->bounds[dim].data_len = data_len;
   memcpy( tiling->bounds[dim].data_lower, data_lower, data_len );
   memcpy( tiling->bounds[dim].data_upper, data_upper, data_len );
+
+  // Set a default parameter-space bound name, if none has yet been set
+  if ( !tiling->bounds[dim].name_set ) {
+    XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, dim, "dimension #%zu", dim ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSetLatticeTilingBoundName(
+  LatticeTiling *tiling,
+  const size_t dim,
+  const char *fmt,
+  ...
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling->lattice == LT_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
+
+  // Check that bound has not already been named
+  XLAL_CHECK( !tiling->bounds[dim].name_set, XLAL_EINVAL, "Lattice tiling dimension #%zu is already named", dim );
+
+  // Set the parameter-space bound name
+  va_list ap;
+  va_start( ap, fmt );
+  const int retn = vsnprintf( tiling->bounds[dim].name, sizeof( tiling->bounds[dim].name ), fmt, ap );
+  va_end( ap );
+  XLAL_CHECK( retn < ( int ) sizeof( tiling->bounds[dim].name ), XLAL_EINVAL, "Name '%s' for lattice tiling dimension #%zu was truncated", tiling->bounds[dim].name, dim );
+  tiling->bounds[dim].name_set = true;
 
   return XLAL_SUCCESS;
 
