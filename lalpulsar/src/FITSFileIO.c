@@ -1818,7 +1818,7 @@ int XLALFITSArrayWriteGSLMatrix( FITSFile UNUSED *file, const size_t UNUSED idx[
   XLAL_CHECK_FAIL( elems->size2 == ( size_t ) file->array.naxes[1], XLAL_EINVAL, "Number of 'elems' rows (%zu) does not match array dimension 1 (%li)", elems->size2, file->array.naxes[1] );
 
   // Copy index vector, if given
-  size_t XLAL_INIT_ARRAY_DECL( i, FFIO_MAX );
+  size_t XLAL_INIT_DECL( i, [FFIO_MAX] );
   if ( idx != NULL ) {
     memcpy( i, idx, file->array.naxis * sizeof( i[0] ) );
   }
@@ -1868,7 +1868,7 @@ int XLALFITSArrayReadGSLMatrix( FITSFile UNUSED *file, const size_t UNUSED idx[]
   GAMAT( *elems, file->array.naxes[0], file->array.naxes[1] );
 
   // Copy index vector, if given
-  size_t XLAL_INIT_ARRAY_DECL( i, FFIO_MAX );
+  size_t XLAL_INIT_DECL( i, [FFIO_MAX] );
   if ( idx != NULL ) {
     memcpy( i, idx, file->array.naxis * sizeof( i[0] ) );
   }
