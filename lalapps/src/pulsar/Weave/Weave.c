@@ -83,12 +83,12 @@ int main( int argc, char *argv[] )
   // - SFT input/generation and signal generation
   //
   XLALRegisterUvarMember(
-    sft_files, STRING, 'D', OPTIONAL,
+    sft_files, STRING, 'I', OPTIONAL,
     "Pattern matching the SFT files to be analysed. Possibilities are:\n"
     " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'"
     );
   XLALRegisterUvarMember(
-    sft_files_check_crc, BOOLEAN, 'C', OPTIONAL,
+    sft_files_check_crc, BOOLEAN, 'V', OPTIONAL,
     "Validate the checksums of the SFTs matched by " UVAR_STR( sft_files ) " before loading."
     );
   XLALRegisterUvarMember(
@@ -108,7 +108,7 @@ int main( int argc, char *argv[] )
     "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file ) ". "
     );
   XLALRegisterUvarMember(
-    sft_noise_rand_seed, UINT4, 0, OPTIONAL,
+    sft_noise_rand_seed, UINT4, 'e', OPTIONAL,
     "Random seed used to generate fake Gaussian noise for generated SFTs. "
     );
   XLALRegisterUvarMember(
@@ -148,7 +148,7 @@ int main( int argc, char *argv[] )
     "Search parameter space in frequency, in Hertz. "
     );
   XLALRegisterUvarMember(
-    freq_partitions, UINT4, 0, DEVELOPER,
+    freq_partitions, UINT4, 'r', DEVELOPER,
     "Internally divide the frequency parameter space into this number of ~equal-width partitions. "
     );
   XLALRegisterUvarMember(
@@ -197,15 +197,15 @@ int main( int argc, char *argv[] )
   // - F-statistic computation options
   //
   XLALRegisterUvarMember(
-    Fstat_method, STRING, 'F', DEVELOPER,
+    Fstat_method, STRING, 'm', DEVELOPER,
     "Method used to calculate coherent F-statistics. Available methods:\n  %s", XLALFstatMethodHelpString()
     );
   XLALRegisterUvarMember(
-    Fstat_run_med_window, UINT4, 0, DEVELOPER,
+    Fstat_run_med_window, UINT4, 'w', DEVELOPER,
     "Size of the running median window used to normalise SFTs and compute noise weight. "
     );
   XLALRegisterUvarMember(
-    Fstat_assume_psd, STRINGVector, 0, DEVELOPER,
+    Fstat_assume_psd, STRINGVector, 'q', DEVELOPER,
     "Normalise SFTs using the specified assumed noise spectral densities, instead of computing them from the SFTs themselves. "
     );
   XLALRegisterUvarMember(
@@ -228,32 +228,32 @@ int main( int argc, char *argv[] )
     "Output file which stores all quantities computed by the search, e.g. top-lists of averaged F-statistics. "
     );
   XLALRegisterUvarMember(
-    output_toplist_limit, UINT4, 'N', OPTIONAL,
+    output_toplist_limit, UINT4, 'n', OPTIONAL,
     "Maximum number of candidates to return in an output top-list; if 0, all candidates are returned. "
     );
   XLALRegisterUvarMember(
-    output_per_detector, BOOLEAN, 'X', DEVELOPER,
+    output_per_detector, BOOLEAN, 'D', DEVELOPER,
     "If TRUE, compute and output per-detector quantities, e.g. single-detector F-statistics. "
     "May be combined with " UVAR_STR( output_per_segment ) ". "
     );
   XLALRegisterUvarMember(
-    output_per_segment, BOOLEAN, 'G', DEVELOPER,
+    output_per_segment, BOOLEAN, 'N', DEVELOPER,
     "If TRUE, compute and output per-segment quantities, e.g. coherent F-statistics in each segment. "
     "May be combined with " UVAR_STR( output_per_detector ) ". "
     );
   XLALRegisterUvarMember(
-    output_misc_info, BOOLEAN, 0, DEVELOPER,
+    output_misc_info, BOOLEAN, 'M', DEVELOPER,
     "If TRUE, output miscellaneous per-segment information: SFT properties, cache usage, etc. "
     );
   //
   // - Checkpointing
   //
   XLALRegisterUvarMember(
-    ckpt_output_file, STRING, 0, DEVELOPER,
+    ckpt_output_file, STRING, 'C', DEVELOPER,
     "File to which to periodically write checkpoints of output results. "
     );
   XLALRegisterUvarMember(
-    ckpt_output_period, REAL8, 0, DEVELOPER,
+    ckpt_output_period, REAL8, 'z', DEVELOPER,
     "Write checkpoints of output results after this CPU time period, in seconds, has elapsed. "
     );
   XLALRegisterUvarMember(

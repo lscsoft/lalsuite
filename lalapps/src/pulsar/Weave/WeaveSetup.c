@@ -89,7 +89,7 @@ int main( int argc, char *argv[] )
     "If omitted, the mid-point between the start of the first segment and the end of the last segment is used. "
     );
   XLALRegisterUvarMember(
-    detectors, STRINGVector, 'I', REQUIRED,
+    detectors, STRINGVector, 'd', REQUIRED,
     "Comma-separated list of 2-character detector names (e.g. H1,L1,...) for which the parameter-space metrics are computed. "
     );
   XLALRegisterUvarMember(
