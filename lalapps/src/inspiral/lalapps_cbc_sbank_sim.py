@@ -31,6 +31,8 @@ from glue.ligolw import utils
 from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import ligolw_add
 
+import lalsimulation as lalsim
+from lal import MSUN_SI
 from lalinspiral.sbank.bank import Bank
 #from sbank import git_version FIXME
 from lalinspiral.sbank.waveforms import waveforms
@@ -83,6 +85,7 @@ def parse_command_line():
     parser.add_option("--mratio-max",default = float('inf'), type="float", help="Cull injections based on mass ratio")
     parser.add_option("--mtotal-min",default = 0, type="float", help="Cull injections based on total mass")
     parser.add_option("--mtotal-max",default = float('inf'), type="float", help="Cull injections based on total mass")
+    parser.add_option("--duration-min",default = 0, type="float", help="Cull injections based on duration")
     parser.add_option("--template-bank",default = [], action="append", metavar="FILE[:APPROX]")
     parser.add_option("--template-approx",default = None, help="Approximant to be used for templates when not specified with file.")
     parser.add_option("--noise-model", choices=noise_models.keys(), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model")
@@ -188,7 +191,7 @@ sims = lsctables.SimInspiralTable.get_table(xmldoc2)
 #
 newtbl = lsctables.SimInspiralTable()
 for s in sims:
-    if 1./opts.mratio_max <= s.mass1/s.mass2 <= opts.mratio_max and opts.mtotal_min <= s.mass1 + s.mass2 <= opts.mtotal_max:
+    if 1./opts.mratio_max <= s.mass1/s.mass2 <= opts.mratio_max and opts.mtotal_min <= s.mass1 + s.mass2 <= opts.mtotal_max and lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(opts.flow, s.mass1 * MSUN_SI, s.mass2* MSUN_SI, s.spin1z, s.spin2z) > opts.duration_min:
         s.polarization = np.random.uniform(0, 2*np.pi)
         newtbl.append(s)
 sims = newtbl
