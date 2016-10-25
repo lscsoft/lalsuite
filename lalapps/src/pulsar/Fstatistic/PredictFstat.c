@@ -298,7 +298,7 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( maxStartTime, 	 INT4, 0,  OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
 
   XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
-  XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEVELOPER,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
+  XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");
 
   XLALRegisterUvarMember( version,        BOOLEAN, 'V', SPECIAL,  "Output code version");
 

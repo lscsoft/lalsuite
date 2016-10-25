@@ -140,7 +140,8 @@ typedef struct {
   LIGOTimeGPS maxStartTimeGPS;       /**< all sft timestamps must be before this GPS time */
   UINT4 blocksRngMed;              /**< blocksize for running median noise floor estimation */
   UINT4 Dterms;                    /**< size of Dirichlet kernel for Fstat calculation */
-  BOOLEAN SignalOnly;              /**< FALSE: estimate noise-floor from data, TRUE: assume Sh=1 */
+  LALStringVector* assumeSqrtSX;   /**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
+  BOOLEAN SignalOnly;              /**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
   /* parameters describing the coherent data-segments */
   REAL8 tStack;                    /**< duration of stacks */
   UINT4 nStacks;                   /**< number of stacks */
@@ -375,7 +376,9 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_printCand1 = FALSE;      /* if 1st stage candidates are to be printed */
   BOOLEAN uvar_printFstat1 = FALSE;
   BOOLEAN uvar_semiCohToplist = TRUE; /* if overall first stage candidates are to be output */
-  BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
+
+  LALStringVector* uvar_assumeSqrtSX = NULL;    /* Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
+  BOOLEAN uvar_SignalOnly = FALSE;              /* DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
 
   BOOLEAN uvar_recalcToplistStats = FALSE; 	/* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
   BOOLEAN uvar_loudestSegOutput = FALSE; 	/* output extra info about loudest segment; requires recalcToplistStats */
@@ -518,7 +521,9 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_minStartTime1,       "minStartTime1",       REAL8,        0,   OPTIONAL,   "1st stage: Only use SFTs with timestamps starting from (including) this GPS time") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxStartTime1,       "maxStartTime1",       REAL8,        0,   OPTIONAL,   "1st stage: Only use SFTs with timestamps up to (excluding) this GPS time") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printFstat1,         "printFstat1",         BOOLEAN,      0,   OPTIONAL,   "Print 1st stage Fstat vectors") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SignalOnly,          "SignalOnly",          BOOLEAN,      'S', OPTIONAL,   "Signal only flag") == XLAL_SUCCESS, XLAL_EFUNC);
+
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_assumeSqrtSX,        "assumeSqrtSX",        STRINGVector, 0,   OPTIONAL,   "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_SignalOnly,          "SignalOnly",          BOOLEAN,      'S', DEPRECATED, "DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead") == XLAL_SUCCESS, XLAL_EFUNC);
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_nStacksMax,          "nStacksMax",          INT4,         0,   OPTIONAL,   "Maximum No. of segments" ) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_tStack,              "tStack",              REAL8,        'T', OPTIONAL,   "Duration of segments (sec)" ) == XLAL_SUCCESS, XLAL_EFUNC);
@@ -608,6 +613,9 @@ int MAIN( int argc, char *argv[]) {
 	fprintf(stderr, "Search over 3rd spindown is available only with gammaRefine AND gamma2Refine manually set to 1!\n");
 	return( HIERARCHICALSEARCH_EVAL );
   }
+
+  /* check SignalOnly and assumeSqrtSX */
+  XLAL_CHECK_MAIN ( !uvar_SignalOnly || (uvar_assumeSqrtSX == NULL), XLAL_EINVAL, "Cannot pass --SignalOnly AND --assumeSqrtSX at the same time!\n");
 
   /* 2F threshold for semicoherent stage */
 #ifndef EXP_NO_NUM_COUNT
@@ -801,6 +809,7 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.maxStartTimeGPS = maxStartTimeGPS;
   usefulParams.blocksRngMed = uvar_blocksRngMed;
   usefulParams.Dterms = uvar_Dterms;
+  usefulParams.assumeSqrtSX = uvar_assumeSqrtSX;
   usefulParams.SignalOnly = uvar_SignalOnly;
   usefulParams.SSBprec = uvar_SSBprecision;
 
@@ -2242,11 +2251,8 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   REAL8 freqmax = maxCoverFreq + in->extraBinsFstat * in->dFreqStack;
 
   /* fill detector name vector with all detectors present in any data sements */
-  in->detectorIDs = NULL;
-  for (k = 0; k < in->nStacks; k++) {
-    if ( ( in->detectorIDs = XLALGetDetectorIDsFromSFTCatalog ( in->detectorIDs, catalogSeq.data + k ) ) == NULL ) {
-      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-    }
+  if ( ( in->detectorIDs = XLALListIFOsInCatalog( catalog ) ) == NULL ) {
+    ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   }
   const UINT4 numDetectors = in->detectorIDs->length;
 
@@ -2290,6 +2296,18 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
         s_assumeSqrtSX.sqrtSn[X] = 1.0;
       }
       optionalArgs.assumeSqrtSX = &s_assumeSqrtSX;
+    } else if ( in->assumeSqrtSX != NULL ) {
+      const SFTCatalog *catalog_k = &(catalogSeq.data[k]);
+      LALStringVector *detectorIDs_k = NULL;
+      if ( ( detectorIDs_k = XLALListIFOsInCatalog( catalog_k ) ) == NULL ) {
+        ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+      }
+      if ( XLALParseMultiNoiseFloorMapped( &s_assumeSqrtSX, detectorIDs_k, in->assumeSqrtSX, in->detectorIDs ) != XLAL_SUCCESS ) {
+        XLALPrintError("%s: XLALParseMultiNoiseFloorMapped() failed with errno=%d", __func__, xlalErrno);
+        ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
+      }
+      optionalArgs.assumeSqrtSX = &s_assumeSqrtSX;
+      XLALDestroyStringVector( detectorIDs_k );
     } else {
       optionalArgs.assumeSqrtSX = NULL;
     }
