@@ -17,8 +17,10 @@ echo
 
 echo "=== Perform non-interpolating search ==="
 set -x
-${builddir}/lalapps_Weave --output-file=WeaveOut.fits --output-toplist-limit=5000 --output-per-detector --output-per-segment --output-misc-info --setup-file=WeaveSetup.fits \
-    --sft-files='*.sft' --alpha=1.2/0.05 --delta=0.3/0.05 --freq=50.5/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.6 --interpolation=no --Fstat-method=DemodBest
+${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
+    --output-toplist-limit=5000 --output-per-detector --output-per-segment --output-misc-info \
+    --setup-file=WeaveSetup.fits --sft-files='*.sft' --Fstat-method=DemodBest \
+    --alpha=1.2/0.05 --delta=0.3/0.05 --freq=50.5/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.6 --interpolation=no
 set +x
 echo
 
