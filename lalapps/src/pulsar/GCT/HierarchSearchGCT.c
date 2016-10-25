@@ -370,7 +370,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* user variables */
   BOOLEAN uvar_log = FALSE;     /* logging done if true */
-  INT4 uvar_loglevel = 0;       /* DEPRECATED; used to set logLevel, now set by LAL_DEBUG_LEVEL */
+  INT4 uvar_loglevel = 0;       /* DEFUNCT; used to set logLevel, now set by LAL_DEBUG_LEVEL */
 
   BOOLEAN uvar_printCand1 = FALSE;      /* if 1st stage candidates are to be printed */
   BOOLEAN uvar_printFstat1 = FALSE;
@@ -548,7 +548,7 @@ int MAIN( int argc, char *argv[]) {
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_version,             "version",             BOOLEAN,      'V', SPECIAL,    "Output version information") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_loglevel,            "logLevel",            INT4,         0,   DEPRECATED, "DEPRECATED; used to set logLevel, now set by LAL_DEBUG_LEVEL") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_loglevel,            "logLevel",            INT4,         0,   DEFUNCT,    "DEFUNCT; used to set logLevel, now set by LAL_DEBUG_LEVEL") == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
