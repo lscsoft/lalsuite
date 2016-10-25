@@ -91,6 +91,7 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     detectors, STRINGVector, 'd', REQUIRED,
     "Comma-separated list of 2-character detector names (e.g. H1,L1,...) for which the parameter-space metrics are computed. "
+    "Note that the detector names are always sorted, since their order impacts the interpretation of some options to lalapps_Weave. "
     );
   XLALRegisterUvarMember(
     detector_motion, STRING, 'm', DEVELOPER,

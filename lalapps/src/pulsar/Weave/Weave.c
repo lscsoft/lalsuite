@@ -97,15 +97,18 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     sft_timestamps_files, STRINGVector, 'T', DEVELOPER,
-    "Files containing timestamps for the generated SFTs. "
-    "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file ) ". "
-    "Timebase of the generated SFTs is specified by " UVAR_STR( sft_timebase ) ". "
-    "If not given, SFTs with contiguous timestamps are generated. "
+    "Files containing timestamps for the generated SFTs; if not given, SFTs with contiguous timestamps are generated. "
+    "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file )
+    "; for example, if the setup file was created with " UVAR_STR( detectors ) " set to 'H1,L1', then an argument of "
+    "'t1.txt,t2.txt' to this option will read H1 timestamps from the file 't1.txt', and L1 timestamps from the file 't2.txt'. "
+    "The timebase of the generated SFTs is specified by " UVAR_STR( sft_timebase ) ". "
     );
   XLALRegisterUvarMember(
     sft_noise_psd, STRINGVector, 'p', OPTIONAL,
-    "Inject fake Gaussian noise with these power spectral densities into the generated SFTs. "
-    "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file ) ". "
+    "Inject fake Gaussian noise with these power spectral densities (PSDs) into the generated SFTs. "
+    "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file )
+    "; for example, if the setup file was created with " UVAR_STR( detectors ) " set to 'H1,L1', then an argument of "
+    "'1.2,3.4' to this option will generate H1 SFTs with a noise PSD of 1.2, and L1 SFTs with a noise PSD of 3.4. "
     );
   XLALRegisterUvarMember(
     sft_noise_rand_seed, UINT4, 'e', OPTIONAL,
@@ -206,7 +209,12 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     Fstat_assume_psd, STRINGVector, 'q', DEVELOPER,
-    "Normalise SFTs using the specified assumed noise spectral densities, instead of computing them from the SFTs themselves. "
+    "Assume that the noise in the SFTs have known power spectral densities (PSDs), which are given by the arguments to "
+    "this option, and normalise the SFTs by these given PSDs. "
+    "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file )
+    "; for example, if the setup file was created with " UVAR_STR( detectors ) " set to 'H1,L1', then an argument of "
+    "'3.2,4.3' to this option will assume that H1 SFTs contain noise with a PSD of 3.2, and L1 SFTs contain noise with a PSD of 4.3. "
+    "If this option is not given, the SFTs are normalised using noise PSDs estimated from the SFTs themselves. "
     );
   XLALRegisterUvarMember(
     Fstat_Dterms, UINT4, 0, DEVELOPER,
