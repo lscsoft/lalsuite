@@ -91,7 +91,7 @@ class SBankJob(inspiral.InspiralAnalysisJob):
         if cp.has_section("accounting"):
             self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
         self.add_condor_cmd('getenv','True')
-        self.add_condor_cmd('request_memory', '1999')
+        self.add_condor_cmd('request_memory', '3999')
         if "OMP_NUM_THREADS" in os.environ:
             self.add_condor_cmd('request_cpus', os.environ["OMP_NUM_THREADS"])
 
@@ -216,7 +216,7 @@ class BankSimJob(inspiral.InspiralAnalysisJob):
         extension = 'xml'
         sections = ['banksim']
         inspiral.InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-        self.add_condor_cmd('request_memory', '1999')
+        self.add_condor_cmd('request_memory', '3999')
         self.tag_base = tag_base
         self.add_condor_cmd('getenv','True')
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
@@ -253,6 +253,7 @@ class LWAddJob(pipeline.CondorDAGJob):
         self.__executable = executable
         self.__universe = 'vanilla'
         pipeline.CondorDAGJob.__init__(self,self.__universe,self.__executable)
+        self.add_condor_cmd('request_memory', '3999')
         self.add_condor_cmd('getenv','True')
         if cp.has_section("accounting"):
             self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
@@ -292,7 +293,7 @@ class MergeSimsJob(inspiral.InspiralAnalysisJob):
         self.add_condor_cmd('getenv','True')
         if cp.has_section("accounting"):
             self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
-        self.add_condor_cmd('request_memory', '1999')
+        self.add_condor_cmd('request_memory', '3999')
 
 
 class MergeSimsNode(pipeline.CondorDAGNode):
@@ -322,7 +323,7 @@ class PlotSimJob(inspiral.InspiralAnalysisJob):
         self.add_condor_cmd('getenv','True')
         if cp.has_section("accounting"):
             self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
-        self.add_condor_cmd('request_memory', '1999')
+        self.add_condor_cmd('request_memory', '3999')
 
 
 class PlotSimNode(pipeline.CondorDAGNode):
