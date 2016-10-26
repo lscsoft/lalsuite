@@ -69,7 +69,7 @@ for fname in filenames:
 
     # sort template rows
     sngl_inspiral_table.sort(key=attrgetter(options.sort_by))
-    sngl_inspiral_table_split = lsctables.table.new_from_template(sngl_inspiral_table)
+    sngl_inspiral_table_split = lsctables.New(lsctables.SnglInspiralTable)
     sngl_inspiral_table.parentNode.replaceChild(sngl_inspiral_table_split, sngl_inspiral_table)
 
     if len(sngl_inspiral_table) < options.nbanks:
