@@ -33,6 +33,7 @@ import os
 import shutil
 import sys
 import tempfile
+import matplotlib
 from matplotlib import cm
 from ..plot import cmap
 
@@ -113,12 +114,13 @@ class MatplotlibFigureType(argparse.FileType):
         return plt.savefig(self.string)
 
     def __call__(self, string):
+        from matplotlib import pyplot as plt
         if string == '-':
+            plt.switch_backend(matplotlib.rcParamsOrig['backend'])
             return self.__show
         else:
             with super(MatplotlibFigureType, self).__call__(string):
                 pass
-            from matplotlib import pyplot as plt
             plt.switch_backend('agg')
             self.string = string
             return self.__save
