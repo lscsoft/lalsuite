@@ -1687,43 +1687,6 @@ XLALLatestMultiSFTsample ( LIGOTimeGPS *out,              /**< [out] latest GPS 
 
 } /* XLALLatestMultiSFTsample() */
 
-
-/**
- * XLAL function to get a sorted list of unique 2-character detector IDs (prefixes) from a SFTcatalog
- * IFOList can be either
- * (1) NULL, in which case it will be allocated and filled from the IDs in the SFTcatalog
- * (2) or a pre-allocated and filled list, then it appends any new detectors and resorts the list
- */
-LALStringVector *
-XLALGetDetectorIDsFromSFTCatalog ( LALStringVector *IFOList,		/**< [in/out] IFO string vector for (appending and) returning */
-                                   const SFTCatalog *SFTcatalog		/**< [in] SFT catalog which carries the detector prefixes */
-                                   )
-{
-
-  XLAL_CHECK_NULL( SFTcatalog != NULL, XLAL_EFAULT );
-
-  for (UINT4 n = 0; n < SFTcatalog->length; n++) {
-
-    /* get only the official 2-character prefix, not any longer name that might be in the SFT header */
-    char *thisIFO = NULL;
-    XLAL_CHECK_NULL ( ( thisIFO =  XLALGetChannelPrefix(SFTcatalog->data[n].header.name) ) != NULL, XLAL_EFUNC );
-
-    if ( XLALFindStringInVector ( thisIFO, IFOList ) == -1 ) { /* only append to IFOList if not a duplicate */
-      XLAL_CHECK_NULL ( (IFOList = XLALAppendString2Vector ( IFOList, thisIFO )) != NULL, XLAL_EFUNC );
-    }
-
-    XLALFree ( thisIFO );
-
-  } /* for n < SFTcatalog->length */
-
-  /* sort final list alphabetically by detector-name */
-  XLAL_CHECK_NULL ( XLALSortStringVector ( IFOList ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  return IFOList;
-
-} /* XLALGetDetectorIDsFromSFTCatalog() */
-
-
 /**
  * Create a 'fake' SFT catalog which contains only detector and timestamp information.
  */
