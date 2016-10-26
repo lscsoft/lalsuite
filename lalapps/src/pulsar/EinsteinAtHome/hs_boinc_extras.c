@@ -66,6 +66,7 @@
 #include <math.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <limits.h>
 
 /* our own win_lib includes patches for chdir() and sleep() */
 #ifdef _WIN32
@@ -80,11 +81,6 @@
 
 #ifdef HAVE_BUILD_INFO_H
 #include "build_info.h"
-#endif
-
-/* try to dlopen("libgcc_s.so.1") */
-#ifdef DLOPEN_LIBGCC
-#include <dlfcn.h>
 #endif
 
 /* our own exception handler / runtime debugger */
@@ -302,12 +298,11 @@ static UINT4 last_count, last_total;      /**< last template count, see last_rac
 static BOOLEAN do_sync = -1;              /**< sync checkpoint file to disk, default: yes */
 
 
-/** record whether loading libgcc_s.so.1 succeeded */
-static int libgcc_s_loaded = 0;
-
-
-/** record the status of the last boinc_finish call in case boinc_finish() throws a signal */
-static int boinc_finish_status = 0;
+/**
+ * record the status of the last boinc_finish call in case boinc_finish() throws a signal
+ * Using INT_MAX as magic value to check if boinc_finish was called in the first place
+ */
+static int boinc_finish_status = INT_MAX;
 
 
 /*^* LOCAL FUNCTION PROTOTYPES *^*/
@@ -503,10 +498,12 @@ static void sighandler(int sig)
   /* A SIGABRT most likely came from a failure to load libgcc_s.so.1,
      which is required for boinc_finish() (calling pthread_exit() calling
      pthread_cancel()) to work properly. In this case take the "emergency
-     exit" with exit status 0 - the worst that can happen is that
-     the tasks ends up with "too many exits" error. */
-  if ( ( libgcc_s_loaded == -1 ) && ( sig == 6 ) ) {
-    fputs("Program received SIGABRT probably because libgcc_s.so.1 wasn't loaded - trying exit(0)\n", stderr);
+     exit" with exit(boinc_finish_status). */
+  if ( ( boinc_finish_status != INT_MAX ) && ( sig == 6 ) ) {
+    fputs("Program received SIGABRT probably because pthread_exit() failed in boinc_finish()- trying exit(", stderr);
+    sprintf(buf, "%d", boinc_finish_status);
+    fputs(buf, stderr);
+    fputs(")\n", stderr);
     /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
     sleep(5);
     exit(boinc_finish_status);
@@ -1699,19 +1696,6 @@ int main(int argc, char**argv) {
       boinc_set_signal_handler(SIGFPE, boinc_catch_signal);
   } /* if !skipsighandler */
 #endif /* WIN32 */
-
-#ifdef DLOPEN_LIBGCC
-  {
-    void *lib_handle = dlopen("libgcc_s.so.1", RTLD_LAZY);
-    if(lib_handle) {
-      LogPrintf (LOG_DEBUG, "Successfully loaded libgcc_s.so.1\n");
-      libgcc_s_loaded = 1;
-    } else {
-      LogPrintf (LOG_DEBUG, "Couldn't load libgcc_s.so.1: %s\n", dlerror());
-      libgcc_s_loaded = -1;
-    }
-  }
-#endif
 
 #ifdef _NO_MSC_VER
   if (try_load_dlls(delayload_dlls, "ERROR: Failed to load %s - terminating\n")) {
