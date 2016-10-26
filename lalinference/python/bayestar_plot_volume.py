@@ -23,6 +23,9 @@ __author__ = "Leo Singer <leo.singer@ligo.org>"
 
 # Command line interface
 
+# Set no-op backend, because seaborn imports pyplot and we must not load X11
+import matplotlib
+matplotlib.use('Template')
 # Set seaborn style (overwrites rcParams, so has to be before argparse)
 import seaborn
 seaborn.set_style("white")
