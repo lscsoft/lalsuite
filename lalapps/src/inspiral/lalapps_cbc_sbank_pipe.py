@@ -528,11 +528,6 @@ sbankJob = SBankJob(cp)
 mm = cp.get("sbank", "match-min")
 cp.remove_option("sbank", "match-min")  # don't want it entering via add_ini_opts
 
-# using the bank-seed option in the ini file can only ever lead to
-# problems, so don't let the user do it
-if cp.has_option("sbank", "bank-seed"):
-    raise ValueError("You have indicated a bank seed in the sbank section of the ini file. Please specify instead via the command line option --bank-seed.")
-
 # set up bank generation
 # Two modes:
 #   1. generate coarse, partition mchirp space, generate sub-banks, ligolw_add
