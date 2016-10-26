@@ -143,7 +143,7 @@ class SBankSplitNode(pipeline.CondorDAGNode):
             self.add_parent(p)
         nbanks = int(self.job().get_opts()["nbanks"])
         for i in xrange(nbanks):
-            self.add_output_file("H1-SBANK_SPLIT_%04d-%s.xml" % (i+1, tag))
+            self.add_output_file("SBANK_SPLIT_%04d-%s.xml" % (i+1, tag))
         dag.add_node(self)
 
 
@@ -541,7 +541,6 @@ if options.template_bank:
     if not os.path.isfile(xmlCoarse):
         shutil.copy(options.template_bank, xmlCoarse)
 
-    cp.set("split", "instrument", cp.get("sbank", "instrument")) # these parameters need to agree or the DAG will crash
     sbankSplitJob = SBankSplitJob(cp)
     sbankSplitNode = SBankSplitNode(sbankSplitJob, dag, xmlCoarse, options.user_tag)
 

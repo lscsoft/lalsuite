@@ -34,7 +34,6 @@ def parse_command_line():
     parser.add_option("-t", "--user-tag", metavar = "tag", default = ".", help = "Make me feel special with a custom tag.")
     parser.add_option("-n", "--nbanks", metavar = "count", type = "int", help = "Set the number of subbanks to split the input bank. All output banks will have the same number of templates (within 1, with the excess templates are spread evenly across the banks).")
     parser.add_option("-s", "--sort-by", default="mchirp", metavar = "{mchirp|ffinal|chirptime|chi}", help = "Select the template sort order.")
-    parser.add_option("-i", "--instrument", metavar = "ifo", type="string", help = "override the instrument")
     parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
     options, filenames = parser.parse_args()
 
@@ -75,15 +74,6 @@ for fname in filenames:
     if len(sngl_inspiral_table) < options.nbanks:
         raise ValueError, "Not enough templates to create the requested number of subbanks."
 
-    # override/read instrument column
-    if options.instrument:
-        for row in sngl_inspiral_table:
-            row.ifo = options.instrument
-    else:
-	for row in process_params_table:
-	    if row.param=='--ifos':
-	        options.instrument = row.value
-
     # split into disjoint sub-banks
     if min([row.f_final for row in sngl_inspiral_table]) > 0:
         # check that this column is actually populated...
@@ -100,4 +90,4 @@ for fname in filenames:
         first_row = last_row
 
 	ligolw_process.set_process_end_time(process)
-	utils.write_filename(xmldoc, "%s-SBANK_SPLIT_%04d-%s.xml"%(options.instrument,bank+1,options.user_tag), gz = False, verbose = options.verbose)
+	utils.write_filename(xmldoc, "SBANK_SPLIT_%04d-%s.xml"%(bank+1,options.user_tag), gz = False, verbose = options.verbose)
