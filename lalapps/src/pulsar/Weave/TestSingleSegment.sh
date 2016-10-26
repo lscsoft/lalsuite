@@ -20,7 +20,7 @@ set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --output-toplist-limit=0 --output-per-detector --output-misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' --sft-files-check-crc --Fstat-method=DemodBest \
-    --freq=100.5 --f1dot=-1e-8,0 --semi-max-mismatch=0.3
+    --freq=100.5/2e-5 --f1dot=-2e-9,0 --semi-max-mismatch=0.3
 set +x
 echo
 
@@ -31,6 +31,16 @@ semi_ntmpl=`cat tmp | xargs printf "%d"`
 ${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'SEMICOMP' > tmp
 semi_ncomp=`cat tmp | xargs printf "%d"`
 expr ${semi_ncomp} '=' ${semi_ntmpl}
+set +x
+echo
+
+echo "=== Check average number of semicoherent templates per dimension is more than one"
+set -x
+for dim in SSKYA SSKYB NU0DOT NU1DOT; do
+    ${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" "SEMIAVG ${dim}" > tmp
+    semi_avg_ntmpl_dim=`cat tmp | xargs printf "%d"`
+    expr ${semi_avg_ntmpl_dim} '>' 1
+done
 set +x
 echo
 

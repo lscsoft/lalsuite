@@ -19,7 +19,17 @@ echo "=== Perform interpolating search without checkpointing ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOutNoCkpt.fits \
     --output-toplist-limit=5000 --output-per-detector --output-per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-    --alpha=2.72/0.05 --delta=-0.38/0.05 --freq=50/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4
+    --sky-patch-count=3 --sky-patch-index=1 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4
+set +x
+echo
+
+echo "=== Check average number of semicoherent templates per dimension is more than one"
+set -x
+for dim in SSKYA SSKYB NU0DOT NU1DOT; do
+    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoCkpt.fits[0]" "SEMIAVG ${dim}" > tmp
+    semi_avg_ntmpl_dim=`cat tmp | xargs printf "%d"`
+    expr ${semi_avg_ntmpl_dim} '>' 1
+done
 set +x
 echo
 
@@ -29,19 +39,19 @@ set -x
 rm -f WeaveCkpt.fits
 ${builddir}/lalapps_Weave --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-pc-exit=22 \
     --output-toplist-limit=5000 --output-per-detector --output-per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-    --alpha=2.72/0.05 --delta=-0.38/0.05 --freq=50/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4
+    --sky-patch-count=3 --sky-patch-index=1 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4
 set +x
 echo "--- First to second checkpoint ---"
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-pc=63 \
     --output-toplist-limit=5000 --output-per-detector --output-per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-    --alpha=2.72/0.05 --delta=-0.38/0.05 --freq=50/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4
+    --sky-patch-count=3 --sky-patch-index=1 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4
 set +x
 echo "--- Second checkpoint to end ---"
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits \
     --output-toplist-limit=5000 --output-per-detector --output-per-segment --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-    --alpha=2.72/0.05 --delta=-0.38/0.05 --freq=50/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4
+    --sky-patch-count=3 --sky-patch-index=1 --freq=50/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=0.5 --coh-max-mismatch=0.4
 set +x
 echo
 

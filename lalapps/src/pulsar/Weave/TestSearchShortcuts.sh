@@ -13,7 +13,17 @@ ${builddir}/lalapps_Weave --output-file=WeaveOutNoShort.fits \
     --sft-timebase=1800 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
-    --alpha=2.7/0.05 --delta=-0.4/0.05 --freq=50.5/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3
+    --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3
+set +x
+echo
+
+echo "=== Check average number of semicoherent templates per dimension is more than one"
+set -x
+for dim in SSKYA SSKYB NU0DOT NU1DOT; do
+    ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoShort.fits[0]" "SEMIAVG ${dim}" > tmp
+    semi_avg_ntmpl_dim=`cat tmp | xargs printf "%d"`
+    expr ${semi_avg_ntmpl_dim} '>' 1
+done
 set +x
 echo
 
@@ -24,7 +34,7 @@ ${builddir}/lalapps_Weave --shortcut-compute --output-file=WeaveOutShortComp.fit
     --sft-timebase=1800 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
-    --alpha=2.7/0.05 --delta=-0.4/0.05 --freq=50.5/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3
+    --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3
 set +x
 echo
 
@@ -35,7 +45,7 @@ ${builddir}/lalapps_Weave --shortcut-search --output-file=WeaveOutShortSearch.fi
     --sft-timebase=1800 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
-    --alpha=2.7/0.05 --delta=-0.4/0.05 --freq=50.5/1e-4 --f1dot=-1e-8,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3
+    --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=55.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3
 set +x
 echo
 
