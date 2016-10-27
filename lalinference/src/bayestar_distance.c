@@ -389,7 +389,7 @@ typedef struct {
 
 static double marginal_ppf_f(double r, void *params)
 {
-    marginal_ppf_params *p = (marginal_ppf_params *)params;
+    const marginal_ppf_params *p = (marginal_ppf_params *)params;
     return bayestar_distance_marginal_cdf(
         r, p->npix, p->prob, p->mu, p->sigma, p->norm) - p->p;
 }
@@ -397,7 +397,7 @@ static double marginal_ppf_f(double r, void *params)
 
 static double marginal_ppf_df(double r, void *params)
 {
-    marginal_ppf_params *p = (marginal_ppf_params *)params;
+    const marginal_ppf_params *p = (marginal_ppf_params *)params;
     return bayestar_distance_marginal_pdf(
         r, p->npix, p->prob, p->mu, p->sigma, p->norm);
 }
@@ -405,7 +405,7 @@ static double marginal_ppf_df(double r, void *params)
 
 static void marginal_ppf_fdf(double r, void *params, double *f, double *df)
 {
-    marginal_ppf_params *p = (marginal_ppf_params *)params;
+    const marginal_ppf_params *p = (marginal_ppf_params *)params;
     *f = bayestar_distance_marginal_cdf(
         r, p->npix, p->prob, p->mu, p->sigma, p->norm) - p->p;
     *df = bayestar_distance_marginal_pdf(
