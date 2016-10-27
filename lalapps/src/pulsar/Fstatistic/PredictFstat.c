@@ -109,6 +109,8 @@ typedef struct {
   REAL8 Alpha;		/**< sky-position angle 'alpha', which is right ascencion in equatorial coordinates */
   REAL8 Delta;		/**< sky-position angle 'delta', which is declination in equatorial coordinates */
 
+  BOOLEAN PureSignal;   /**< If true, calculate 2F for pure signal, i.e. E[2F] = 2F = rho^2 */
+
   LALStringVector* assumeSqrtSX;/**< Assume stationary Gaussian noise with detector noise-floors sqrt{SX}" */
   BOOLEAN SignalOnly;	/**< DEPRECATED: ALTERNATIVE switch to assume Sh=1 instead of estimating noise-floors from SFTs */
 
@@ -194,8 +196,13 @@ int main(int argc,char *argv[])
     rho2 = GV.Mmunu.Sinv_Tsft * (GV.Mmunu.Ad * al1 + GV.Mmunu.Bd * al2 + 2.0 * GV.Mmunu.Cd * al3 );
   }
 
+  /* F-statistic expected mean and standard deviation */
+  const REAL8 twoF_expected = uvar.PureSignal ? ( rho2 ) : ( 4.0 + rho2 );
+  const REAL8 twoF_sigma    = uvar.PureSignal ? (    0 ) : ( sqrt( 8.0 + 4.0 * rho2 ) );
+
+  /* output predicted Fstat-value, if requested */
   if (uvar.printFstat) {
-    fprintf(stdout, "\n%.1f\n", 4.0 + rho2);
+    fprintf(stdout, "\n%.1f\n", twoF_expected);
   }
 
   /* output predicted Fstat-value into file, if requested */
@@ -217,8 +224,8 @@ int main(int argc,char *argv[])
       /* append 'dataSummary' */
       fprintf (fpFstat, "%s", GV.dataSummary );
       /* output E[2F] and std[2F] */
-      fprintf (fpFstat, "twoF_expected = %g;\n", 4.0 + rho2);
-      fprintf (fpFstat, "twoF_sigma    = %g;\n", sqrt( 4.0 * ( 2.0 + rho2 ) ) );
+      fprintf (fpFstat, "twoF_expected = %g;\n", twoF_expected);
+      fprintf (fpFstat, "twoF_sigma    = %g;\n", twoF_sigma);
 
       /* output antenna-pattern matrix MNat_mu_nu = matrix(A, B, C) */
       {
@@ -268,6 +275,8 @@ initUserVars ( UserInput_t *uvar )
   uvar->minStartTime = 0;
   uvar->maxStartTime = LAL_INT4_MAX;
 
+  uvar->PureSignal = 0;
+
   uvar->assumeSqrtSX = NULL;
   uvar->SignalOnly = 0;
 
@@ -296,6 +305,8 @@ initUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarMember( minStartTime, 	 INT4, 0,  OPTIONAL, "Only use SFTs with timestamps starting from (including) this GPS time");
   XLALRegisterUvarMember( maxStartTime, 	 INT4, 0,  OPTIONAL, "Only use SFTs with timestamps up to (excluding) this GPS time");
+
+  XLALRegisterUvarMember( PureSignal,	BOOLEAN, 'P', OPTIONAL, "If true, calculate 2F for pure signal, i.e. E[2F] = 2F = rho^2. If false, calculate 2F for signal+noise, i.e. E[2F] = 4 + rho^2.");
 
   XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs)");
   XLALRegisterUvarMember( SignalOnly,	BOOLEAN, 'S', DEPRECATED,"DEPRECATED ALTERNATIVE: Don't estimate noise-floors but assume sqrtSX=1 instead");

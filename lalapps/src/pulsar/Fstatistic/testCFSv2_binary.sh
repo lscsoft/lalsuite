@@ -82,7 +82,7 @@ fi
 echo "done."
 
 ## ---------- predict F-stat value 'PFS'
-cmdline="${pfs_code} --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --IFO=$IFO --DataFiles='$SFTdir/*.sft' --assumeSqrtSX=1"
+cmdline="${pfs_code} --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --IFO=$IFO --DataFiles='$SFTdir/*.sft' --PureSignal --assumeSqrtSX=1"
 if [ "$DEBUG" ]; then echo $cmdline; fi
 echo -n "Running $cmdline ... "
 resPFS0=`$cmdline`
