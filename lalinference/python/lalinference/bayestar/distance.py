@@ -506,11 +506,11 @@ def cartesian_kde_to_moments(n, datasets, inverse_covariances, weights):
 def principal_axes(prob, distmu, distsigma, nest=False):
     npix = len(prob)
     nside = hp.npix2nside(npix)
-    bad = ~(np.isfinite(prob) & np.isfinite(distmu) & np.isfinite(distsigma))
-    distmean, diststd, _ = parameters_to_moments(distmu, distsigma)
-    mass = prob * (np.square(diststd) + np.square(distmean))
-    mass[bad] = 0.0
-    xyz = np.asarray(hp.pix2vec(nside, np.arange(npix), nest=nest))
+    good = np.isfinite(prob) & np.isfinite(distmu) & np.isfinite(distsigma)
+    ipix = np.flatnonzero(good)
+    distmean, diststd, _ = parameters_to_moments(distmu[good], distsigma[good])
+    mass = prob[good] * (np.square(diststd) + np.square(distmean))
+    xyz = np.asarray(hp.pix2vec(nside, ipix, nest=nest))
     cov = np.dot(xyz * mass, xyz.T)
     L, V = np.linalg.eigh(cov)
     if np.linalg.det(V) < 0:
