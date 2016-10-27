@@ -185,12 +185,12 @@ static const struct
   REGULAR_MAP_ENTRY ( UINT8, NULL, "<8-byte unsigned integer>" ),
   REGULAR_MAP_ENTRY ( REAL8, NULL, "<8-byte real>" ),
   REGULAR_MAP_ENTRY ( STRING, XLALFree, "<string>" ),
-  REGULAR_MAP_ENTRY ( EPOCH, NULL, "<seconds>[.<nano-seconds>][GPS|MJD]" ),
+  REGULAR_MAP_ENTRY ( EPOCH, NULL, "<seconds>[.<frac-seconds>][GPS] | <days>[.<frac-days>]MJD" ),
   REGULAR_MAP_ENTRY ( RAJ, NULL, "<radians>|<hours>:<minutes>:<seconds>" ),
   REGULAR_MAP_ENTRY ( DECJ, NULL, "<radians>|<degrees>:<minutes>:<seconds>" ),
 
   REGULAR_MAP_ENTRY ( REAL8Range, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<8-byte real>" ),
-  REGULAR_MAP_ENTRY ( EPOCHRange, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<seconds>[.<nano-seconds>][GPS|MJD]" ),
+  REGULAR_MAP_ENTRY ( EPOCHRange, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<seconds>[.<frac-seconds>][GPS] | <days>[.<frac-days>]MJD" ),
   REGULAR_MAP_ENTRY ( RAJRange, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<hours>:<minutes>:<seconds>" ),
   REGULAR_MAP_ENTRY ( DECJRange, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<degrees>:<minutes>:<seconds>" ),
 
