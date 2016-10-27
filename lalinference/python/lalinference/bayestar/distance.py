@@ -100,7 +100,7 @@ Test against numerical integral of pdf:
 """)
 
 
-_add_newdoc_ufunc(conditional_ppf, """\
+_add_newdoc_ufunc(conditional_cdf, """\
 Point percent function (inverse cdf) of distribution of distance (ansatz).
 
 Parameters
@@ -305,13 +305,11 @@ distsigma : `numpy.ndarray`
     Distance scale parameter (Mpc)
 distnorm : `numpy.ndarray`
     Distance normalization factor (Mpc^-2)
-r : `numpy.ndarray`
-    Distance at which the cdf is equal to `p`.
 
 Returns
 -------
-cdf : `numpy.ndarray`
-    Marginal cumulative probability according to ansatz.
+r : `numpy.ndarray`
+    Distance at which the cdf is equal to `p`.
 """)
 
 
