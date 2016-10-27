@@ -85,7 +85,7 @@ nside = hp.npix2nside(npix)
 
 progress.update(-1, 'Preparing projection')
 
-if opts.align_to is None:
+if opts.align_to is None or opts.input.name == opts.align_to.name:
     prob2, mu2, sigma2 = prob, mu, sigma
 else:
     (prob2, mu2, sigma2, norm2), _ = fits.read_sky_map(
