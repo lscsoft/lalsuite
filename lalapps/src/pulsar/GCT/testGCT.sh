@@ -87,6 +87,7 @@ gct_dF2dot=0
 gct_nCands=10
 
 sqrtSh=1
+assumeSqrtSh=1
 
 ## --------- Generate fake data set time stamps -------------
 echo "----------------------------------------------------------------------"
@@ -192,7 +193,8 @@ if [ ! -r "$outfile_cfs" ]; then
     tmpfile_cfs="${testDir}/__tmp_CFS.dat";
     cfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --f1dot=$f1dot --f2dot=$f2dot --outputLoudest=$tmpfile_cfs --refTime=$refTime --Dterms=$Dterms --RngMedWindow=$RngMedWindow --outputSingleFstats"
     if [ "$sqrtSh" = "0" ]; then
-        cfs_CL_common="$cfs_CL_common --SignalOnly";
+        # assume sqrtS=${assumeSqrtSh} in all detectors, regardless of how many detectors are in segment
+        cfs_CL_common="$cfs_CL_common --assumeSqrtSX=${assumeSqrtSh}";
     fi
 
     TwoFsum=0
@@ -254,7 +256,8 @@ echo "==>   Average <2F_multi>=$TwoFAvg, <2F_H1>=$TwoFAvg_H1, <2F_L1>=$TwoFAvg_L
 
 gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand  --df2dot=$gct_dF2dot --f2dot=$f2dot --f2dotBand=$gct_F2dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --Dterms=$Dterms --blocksRngMed=$RngMedWindow"
 if [ "$sqrtSh" = "0" ]; then
-    gct_CL_common="$gct_CL_common --SignalOnly";
+    # assume sqrtS=${assumeSqrtSh} in both H1 and L1 detectors
+    gct_CL_common="$gct_CL_common --assumeSqrtSX=${assumeSqrtSh},${assumeSqrtSh}";
 fi
 
 BSGL_flags="--computeBSGL --Fstar0=10 --oLGX='0.5,0.5' --recalcToplistStats"

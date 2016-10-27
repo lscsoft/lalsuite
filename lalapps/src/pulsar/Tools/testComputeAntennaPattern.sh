@@ -287,7 +287,7 @@ if ! eval $mfd_cmdline; then
     exit 1
 fi
 
-pfs_cmdline="${pfs_code} --IFO=H1 --h0=1e-24 --cosi=0 --psi=0 --phi0=0 --Freq=60 --Alpha=$alpha --Delta=$delta --DataFiles=$sftfile_H1 --outputFstat=$outPFS --SignalOnly --printFstat=0"
+pfs_cmdline="${pfs_code} --IFO=H1 --h0=1e-24 --cosi=0 --psi=0 --phi0=0 --Freq=60 --Alpha=$alpha --Delta=$delta --DataFiles=$sftfile_H1 --outputFstat=$outPFS --assumeSqrtSX=1.0 --printFstat=0"
 echo $pfs_cmdline;
 if ! eval $pfs_cmdline; then
     echo "Error.. something failed when running '$pfs_code' ..."

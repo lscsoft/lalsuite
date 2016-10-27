@@ -47,12 +47,12 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	$(MKDIR_P) out/; \
 	$(DOXYGEN) doxygen.cfg $(doxygen_redir) 2>&1; \
 	$(PYTHON) $(abs_srcdir)/check_tags.py $(abs_builddir)/out/$(PACKAGE).tag >> warnings.log; \
+	rm -rf in/; \
 	$(SED) -e 's|^$(abs_top_builddir)/doxygen/in|$(abs_top_srcdir)|g' warnings.log > warnings-tmp.log; \
 	mv -f warnings-tmp.log warnings.log; \
 	$(SED) $(DOXYGEN_WARNING_REGEX) warnings.log > errors.log; \
 	cat errors.log >&2; \
 	test `cat errors.log | wc -l` -eq 0; \
-	rm -rf in/; \
 	echo "$(subdir)/Makefile: Doxygen documentation was built successfully!"; \
 	echo "$(subdir)/Makefile: $(PACKAGE_NAME) main page is at file://$(abs_builddir)/out/index.html"
 

@@ -1251,6 +1251,10 @@ int XLALSetSuperskyPhysicalSkyBounds(
                 "If |alpha1 - alpha2| does not cover the whole sky, then -PI/2 <= delta2 <= PI/2 is required" );
   }
 
+  // Set parameter-space bound names
+  XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, 0, "sskyA" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, 1, "sskyB" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // If parameter space is a single point:
   if ( alpha1 == alpha2 && delta1 == delta2 ) {
 
@@ -1892,6 +1896,9 @@ int XLALSetSuperskyPhysicalSpinBound(
   DECOMPOSE_CONST_RSSKY_TRANSF( rssky_transf );
   XLAL_CHECK( s <= smax, XLAL_ESIZE );
 
+  // Set parameter-space bound name
+  XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, RSSKY_FKDOT_DIM( s ), "nu%zudot", s ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Copy the sky offset vector to bounds data
   double data_lower[4], data_upper[4];
   for ( size_t j = 0; j < 3; ++j ) {
@@ -1925,6 +1932,9 @@ int XLALSetSuperskyCoordinateSpinBound(
   // Decompose coordinate transform data
   DECOMPOSE_CONST_RSSKY_TRANSF( rssky_transf );
   XLAL_CHECK( s <= smax, XLAL_ESIZE );
+
+  // Set parameter-space bound name
+  XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, RSSKY_FKDOT_DIM( s ), "nu%zudot", s ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set the parameter-space bound on reduced supersky frequency/spindown coordinate
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, RSSKY_FKDOT_DIM( s ), bound1, bound2 ) == XLAL_SUCCESS, XLAL_EFUNC );

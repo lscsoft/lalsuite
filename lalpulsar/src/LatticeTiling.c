@@ -53,6 +53,8 @@ typedef enum tagLT_Lattice {
 /// Lattice tiling parameter-space bound for one dimension.
 ///
 typedef struct tagLT_Bound {
+  char name[32];                        ///< Name of the parameter-space dimension
+  bool name_set;                        ///< True if the name of the parameter-space dimension has been set
   bool is_tiled;                        ///< True if the dimension is tiled, false if it is a single point
   LatticeTilingBound func;              ///< Parameter space bound function
   size_t data_len;                      ///< Length of arbitrary data describing parameter-space bounds
@@ -108,7 +110,7 @@ struct tagLatticeTiling {
   gsl_matrix *int_from_phys;            ///< Transform to generating integers from physical coordinates
   gsl_matrix *phys_from_int;            ///< Transform to physical coordinates from generating integers
   gsl_matrix *tiled_generator;          ///< Lattice generator matrix in tiled dimensions
-  LT_StatsContainer *stats_contr;       ///< Lattice tiling parameter-space statistics container
+  LT_StatsContainer *stats_cntnr;       ///< Lattice tiling parameter-space statistics container
 };
 
 struct tagLatticeTilingIterator {
@@ -332,8 +334,8 @@ static INT4 LT_FastForwardIterator(
   itr->index += ff_total_points;
 
   // Compute lattice tiling statistics
-  if ( itr->tiling->stats_contr->itr == itr && !itr->tiling->stats_contr->complete ) {
-    LatticeTilingStats *stats = itr->tiling->stats_contr->stats;
+  if ( itr->tiling->stats_cntnr->itr == itr && !itr->tiling->stats_cntnr->complete ) {
+    LatticeTilingStats *stats = itr->tiling->stats_cntnr->stats;
     for ( size_t j = i; j < itr->tiling->ndim; ++j ) {
       stats[j].total_points += ff_total_points;
     }
@@ -807,10 +809,15 @@ LatticeTiling *XLALCreateLatticeTiling(
   XLAL_CHECK_NULL( tiling != NULL, XLAL_ENOMEM );
   tiling->bounds = XLALCalloc( ndim, sizeof( *tiling->bounds ) );
   XLAL_CHECK_NULL( tiling->bounds != NULL, XLAL_ENOMEM );
-  tiling->stats_contr = XLALCalloc( 1, sizeof( *tiling->stats_contr ) );
-  XLAL_CHECK_NULL( tiling->stats_contr != NULL, XLAL_ENOMEM );
-  tiling->stats_contr->stats = XLALCalloc( ndim, sizeof( *tiling->stats_contr->stats ) );
-  XLAL_CHECK_NULL( tiling->stats_contr->stats != NULL, XLAL_ENOMEM );
+  tiling->stats_cntnr = XLALCalloc( 1, sizeof( *tiling->stats_cntnr ) );
+  XLAL_CHECK_NULL( tiling->stats_cntnr != NULL, XLAL_ENOMEM );
+  tiling->stats_cntnr->stats = XLALCalloc( ndim, sizeof( *tiling->stats_cntnr->stats ) );
+  XLAL_CHECK_NULL( tiling->stats_cntnr->stats != NULL, XLAL_ENOMEM );
+
+  // Point 'name' field in statistics struct to internal buffer in bounds struct
+  for ( size_t i = 0; i < ndim; ++i ) {
+    tiling->stats_cntnr->stats[i].name = tiling->bounds[i].name;
+  }
 
   // Initialise fields
   tiling->ndim = ndim;
@@ -828,8 +835,8 @@ void XLALDestroyLatticeTiling(
   if ( tiling != NULL ) {
     XLALFree( tiling->bounds );
     XLALFree( tiling->tiled_idx );
-    XLALFree( tiling->stats_contr->stats );
-    XLALFree( tiling->stats_contr );
+    XLALFree( tiling->stats_cntnr->stats );
+    XLALFree( tiling->stats_cntnr );
     GFMAT( tiling->int_from_phys, tiling->phys_from_int, tiling->tiled_generator );
     GFVEC( tiling->phys_bbox, tiling->phys_origin );
     XLALFree( tiling );
@@ -868,6 +875,39 @@ int XLALSetLatticeTilingBound(
   tiling->bounds[dim].data_len = data_len;
   memcpy( tiling->bounds[dim].data_lower, data_lower, data_len );
   memcpy( tiling->bounds[dim].data_upper, data_upper, data_len );
+
+  // Set a default parameter-space bound name, if none has yet been set
+  if ( !tiling->bounds[dim].name_set ) {
+    XLAL_CHECK( XLALSetLatticeTilingBoundName( tiling, dim, "dimension #%zu", dim ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSetLatticeTilingBoundName(
+  LatticeTiling *tiling,
+  const size_t dim,
+  const char *fmt,
+  ...
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling->lattice == LT_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
+
+  // Check that bound has not already been named
+  XLAL_CHECK( !tiling->bounds[dim].name_set, XLAL_EINVAL, "Lattice tiling dimension #%zu is already named", dim );
+
+  // Set the parameter-space bound name
+  va_list ap;
+  va_start( ap, fmt );
+  const int retn = vsnprintf( tiling->bounds[dim].name, sizeof( tiling->bounds[dim].name ), fmt, ap );
+  va_end( ap );
+  XLAL_CHECK( retn < ( int ) sizeof( tiling->bounds[dim].name ), XLAL_EINVAL, "Name '%s' for lattice tiling dimension #%zu was truncated", tiling->bounds[dim].name, dim );
+  tiling->bounds[dim].name_set = true;
 
   return XLAL_SUCCESS;
 
@@ -1286,10 +1326,10 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
   XLAL_CHECK_NULL( dim < tiling->ndim, XLAL_ESIZE );
 
   // Ensure lattice tiling statistics have been computed up to the required dimension
-  if ( !tiling->stats_contr->complete || dim >= tiling->stats_contr->ndim ) {
+  if ( !tiling->stats_cntnr->complete || dim >= tiling->stats_cntnr->ndim ) {
 
     // Clear any previous iterator which may have volunteered to compute statistics
-    tiling->stats_contr->itr = NULL;
+    tiling->stats_cntnr->itr = NULL;
 
     // Create iterator over tiling
     LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, tiling->ndim );
@@ -1301,14 +1341,14 @@ const LatticeTilingStats *XLALLatticeTilingStatistics(
       LT_FastForwardIterator( itr );
     }
     XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFAILED );
-    XLAL_CHECK_NULL( tiling->stats_contr->complete, XLAL_EFAILED );
+    XLAL_CHECK_NULL( tiling->stats_cntnr->complete, XLAL_EFAILED );
 
     // Cleanup
     XLALDestroyLatticeTilingIterator( itr );
 
   }
 
-  return &tiling->stats_contr->stats[dim];
+  return &tiling->stats_cntnr->stats[dim];
 
 }
 
@@ -1432,10 +1472,10 @@ LatticeTilingIterator *XLALCreateLatticeTilingIterator(
   itr->tiling = tiling;
 
   // Volunteer to compute statistics, if no other iterator is doing so
-  if ( itr->tiling->stats_contr->itr == NULL ) {
-    itr->tiling->stats_contr->itr = itr;
-    itr->tiling->stats_contr->complete = false;
-    itr->tiling->stats_contr->ndim = itr_ndim;
+  if ( itr->tiling->stats_cntnr->itr == NULL ) {
+    itr->tiling->stats_cntnr->itr = itr;
+    itr->tiling->stats_cntnr->complete = false;
+    itr->tiling->stats_cntnr->ndim = itr_ndim;
   }
 
   // Set fields
@@ -1579,8 +1619,8 @@ int XLALNextLatticeTilingPoint(
       if ( ti == 0 ) {
 
         // Computation of lattice tiling statistics is now complete
-        if ( itr->tiling->stats_contr->itr == itr ) {
-          itr->tiling->stats_contr->complete = true;
+        if ( itr->tiling->stats_cntnr->itr == itr ) {
+          itr->tiling->stats_cntnr->complete = true;
         }
 
         // Iterator is now finished
@@ -1710,9 +1750,9 @@ int XLALNextLatticeTilingPoint(
   }
 
   // Compute lattice tiling statistics
-  if ( itr->tiling->stats_contr->itr == itr && !itr->tiling->stats_contr->complete ) {
+  if ( itr->tiling->stats_cntnr->itr == itr && !itr->tiling->stats_cntnr->complete ) {
 
-    LatticeTilingStats *stats = itr->tiling->stats_contr->stats;
+    LatticeTilingStats *stats = itr->tiling->stats_cntnr->stats;
 
     if ( itr->state == 0 ) {      // Iterator has been initialised
 
@@ -1961,7 +2001,7 @@ int XLALRestoreLatticeTilingIterator(
   const size_t n = itr->tiling->ndim;
 
   // A restored iterator cannot compute lattice tiling statistics
-  itr->tiling->stats_contr->itr = NULL;
+  itr->tiling->stats_cntnr->itr = NULL;
 
     // Open FITS table for reading
   UINT8 nrows = 0;
