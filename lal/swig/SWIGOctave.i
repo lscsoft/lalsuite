@@ -82,8 +82,7 @@ extern "C++" {
 #define swiglal_1starg()  (args.length() > 0 ? args(0) : octave_value())
 %}
 
-// Return a reference to the supplied octave_value; since Octave handles reference counting, just
-// return it.
+// Return a reference to the supplied octave_value; since Octave handles reference counting, just return it.
 %header %{
 #define swiglal_get_reference(v) (v)
 %}
