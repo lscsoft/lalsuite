@@ -973,7 +973,7 @@ disp("PASSED dynamic array of pointers access");
 ## check typemaps for strings and double pointers
 disp("checking typemaps for strings and double pointers ...");
 sts = new_swig_lal_test_struct();
-[ptr_ptr, ptr_null_ptr, null_ptr_ptr] = swig_lal_test_typemaps_string_ptrptr("abcde", "", sts, 0, []);
+[ptr_ptr, ptr_null_ptr, null_ptr_ptr] = swig_lal_test_typemaps_string_ptrptr("abcde", "", [], sts, 0, []);
 assert(swig_this(ptr_ptr) == swig_this(sts));
 assert(swig_this(ptr_null_ptr) == swig_this(sts));
 assert(swig_this(null_ptr_ptr) == 0);

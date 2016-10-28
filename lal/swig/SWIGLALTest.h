@@ -336,7 +336,7 @@ void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs* ap);
 SWIGLAL(INOUT_STRUCTS(const swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
 #endif // SWIG
 int swig_lal_test_typemaps_string_ptrptr(
-  const char *str, const char *empty_str,
+  const char *str, const char *empty_str, const char *null_str,
   const swig_lal_test_struct** ptr_ptr, const swig_lal_test_struct** ptr_null_ptr, const swig_lal_test_struct** null_ptr_ptr
   );
 #ifdef SWIG

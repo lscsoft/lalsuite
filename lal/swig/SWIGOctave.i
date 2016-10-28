@@ -92,6 +92,11 @@ extern "C++" {
 #define swiglal_append_output_if_empty(v) if (_outp->length() == 0) _outp = SWIG_Octave_AppendOutput(_outp, v)
 %}
 
+// Evaluates true if an octave_value represents a null pointer, false otherwise.
+%header %{
+#define swiglal_null_ptr(v)  (!(v).is_string() && (v).is_matrix_type() && (v).rows() == 0 && (v).columns() == 0)
+%}
+
 //
 // SWIG directives for operators
 //

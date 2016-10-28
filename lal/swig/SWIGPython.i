@@ -87,6 +87,11 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 #define swiglal_append_output_if_empty(v) if (resultobj == Py_None) resultobj = SWIG_Python_AppendOutput(resultobj, v)
 %}
 
+// Evaluates true if a PyObject represents a null pointer, false otherwise.
+%header %{
+#define swiglal_null_ptr(v)  ((v) == Py_None)
+%}
+
 //
 // SWIG directives for operators
 //
