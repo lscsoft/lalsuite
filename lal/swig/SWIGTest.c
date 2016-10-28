@@ -555,6 +555,21 @@ void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs* ap) {
   }
 }
 
+// Test typemaps for strings and double pointers
+int swig_lal_test_typemaps_string_ptrptr(
+  const char *str, const char *empty_str,
+  const swig_lal_test_struct** ptr_ptr, const swig_lal_test_struct** ptr_null_ptr, const swig_lal_test_struct** null_ptr_ptr
+  )
+{
+  XLAL_CHECK( str != NULL && strcmp( str, "abcde" ) == 0, XLAL_EFAILED );
+  XLAL_CHECK( empty_str != NULL && strlen( empty_str ) == 0, XLAL_EFAILED );
+  XLAL_CHECK( ptr_ptr != NULL && *ptr_ptr != NULL, XLAL_EFAILED );
+  XLAL_CHECK( ptr_null_ptr != NULL && *ptr_null_ptr == NULL, XLAL_EFAILED );
+  XLAL_CHECK( null_ptr_ptr == NULL, XLAL_EFAILED );
+  *ptr_null_ptr = *ptr_ptr;
+  return XLAL_SUCCESS;
+}
+
 // Test LIGOTimeGPS operations.
 REAL8 swig_lal_test_noptrgps(const LIGOTimeGPS gps) {
   return XLALGPSGetREAL8(&gps);
