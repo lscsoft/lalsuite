@@ -75,6 +75,8 @@ src/LALDetCharVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/laldetchar-hveto
+src/laldetchar_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*

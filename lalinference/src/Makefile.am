@@ -4,13 +4,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-LDADD = liblalinference.la
-
-lalinference_nest_SOURCES = LALInferenceNest.c
-lalinference_burst_SOURCES = LALInferenceBurst.c
-lalinference_datadump_SOURCES = LALInferenceDataDump.c
-lalinference_bench_SOURCES = LALInferenceBench.c
-
 if HAVE_CHEALPIX
 BAYESTARHDR = bayestar_sky_map.h bayestar_distance.h
 BAYESTARSRC = bayestar_sky_map.c bayestar_distance.c
@@ -80,11 +73,21 @@ liblalinference_la_LIBADD = $(HDF5_LIBS)
 liblalinference_la_CFLAGS = $(AM_CFLAGS) $(HDF5_CFLAGS)
 liblalinference_la_CPPFLAGS = $(AM_CPPFLAGS) $(HDF5_CPPFLAGS)
 
+LDADD = liblalinference.la
+
 bin_PROGRAMS = \
 	lalinference_nest \
 	lalinference_burst \
 	lalinference_datadump \
-	lalinference_bench
+	lalinference_bench \
+	lalinference_version \
+	$(END_OF_LIST)
+
+lalinference_nest_SOURCES = LALInferenceNest.c
+lalinference_burst_SOURCES = LALInferenceBurst.c
+lalinference_datadump_SOURCES = LALInferenceDataDump.c
+lalinference_bench_SOURCES = LALInferenceBench.c
+lalinference_version_SOURCES = version.c
 
 EXTRA_DIST = \
 	LALInferenceConfig.h.in \
@@ -97,3 +100,7 @@ vcs_build_info_source = LALInferenceVCSInfo.c
 vcs_info_sources = LALInferenceVCSInfoHeader.h
 build_info_source = LALInferenceBuildInfoHeader.h
 build_info_dependencies = $(liblalinference_la_DEPENDENCIES)
+
+TESTS = \
+	lalinference_version \
+	$(END_OF_LIST)

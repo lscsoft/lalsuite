@@ -59,8 +59,10 @@ src/lalsim-ns-mass-radius
 src/lalsim-ns-params
 src/lalsim-sgwb
 src/lalsim-unicorn
+src/lalsimulation_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*
 test/EOBNRv2Test
 test/GRFlagsTest

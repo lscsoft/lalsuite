@@ -46,6 +46,8 @@ src/LALMetaIOVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version
+src/lalmetaio_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*

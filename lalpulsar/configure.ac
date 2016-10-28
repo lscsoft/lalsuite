@@ -20,6 +20,7 @@ AC_CONFIG_FILES([ \
   src/LALPulsarVCSInfo.c \
   src/LALPulsarVCSInfo.h \
   src/Makefile \
+  src/version.c \
   swig/Makefile \
   test/Makefile \
 ])
@@ -162,7 +163,7 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 
 # check that lal was built with BOINC support, if required
 LALSUITE_CHECK_BOINC

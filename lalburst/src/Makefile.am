@@ -34,6 +34,18 @@ vcs_info_sources = LALBurstVCSInfoHeader.h
 build_info_source = LALBurstBuildInfoHeader.h
 build_info_dependencies = $(liblalburst_la_DEPENDENCIES)
 
+LIBADD = liblalburst.la
+
+bin_PROGRAMS = \
+	lalburst_version \
+	$(END_OF_LIST)
+
+lalburst_version_SOURCES = version.c
+
+TESTS = \
+	lalburst_version \
+	$(END_OF_LIST)
+
 EXTRA_DIST = \
 	LALBurstConfig.h.in \
 	TFR.dox \

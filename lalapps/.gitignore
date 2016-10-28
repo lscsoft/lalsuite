@@ -153,6 +153,7 @@ src/lalapps/LALAppsBuildInfoHeader.h
 src/lalapps/LALAppsVCSInfo.c
 src/lalapps/LALAppsVCSInfo.h
 src/lalapps/LALAppsVCSInfoHeader.h
+src/lalapps/version2.c
 src/lalapps/git_version.py
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_fftw*_wisdom

@@ -47,8 +47,10 @@ src/LALInspiralVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version
+src/lalinspiral_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*
 test/BCVTemplates
 test/BCVTemplates.out

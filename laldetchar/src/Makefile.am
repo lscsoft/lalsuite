@@ -3,8 +3,6 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
-LDADD = liblaldetchar.la
-
 pkginclude_HEADERS = \
 	LALDetChar.h \
 	LALDetCharConfig.h \
@@ -30,10 +28,19 @@ liblaldetchar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 dist_bin_SCRIPTS = \
 	laldetchar-idq-append-file-to-cache
 
-#bin_PROGRAMS = \
-	#laldetchar-hveto
+LDADD = liblaldetchar.la
+
+bin_PROGRAMS = \
+	laldetchar_version \
+	$(END_OF_LIST)
+#	laldetchar-hveto
 
 #laldetchar_hveto_SOURCES = hveto.c
+laldetchar_version_SOURCES = version.c
+
+TESTS = \
+	laldetchar_version \
+	$(END_OF_LIST)
 
 EXTRA_DIST = \
 	LALDetCharConfig.h.in \
