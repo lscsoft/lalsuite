@@ -81,23 +81,6 @@ double bayestar_distance_conditional_cdf(
 }
 
 
-static double conditional_ppf_f(double r, void *params)
-{
-    const double p = ((double*) params)[0];
-    const double mu = ((double *) params)[1];
-    const double norm = ((double *) params)[2];
-    return bayestar_distance_conditional_cdf(r, mu, 1, norm) - p;
-}
-
-
-static double conditional_ppf_df(double r, void *params)
-{
-    const double mu = ((double *) params)[1];
-    const double norm = ((double *) params)[2];
-    return bayestar_distance_conditional_pdf(r, mu, 1, norm);
-}
-
-
 static void conditional_ppf_fdf(double r, void *params, double *f, double *df)
 {
     const double p = ((double*) params)[0];
@@ -105,6 +88,22 @@ static void conditional_ppf_fdf(double r, void *params, double *f, double *df)
     const double norm = ((double *) params)[2];
     *f = bayestar_distance_conditional_cdf(r, mu, 1, norm) - p;
     *df = bayestar_distance_conditional_pdf(r, mu, 1, norm);
+}
+
+
+static double conditional_ppf_f(double r, void *params)
+{
+    double f, df;
+    conditional_ppf_fdf(r, params, &f, &df);
+    return f;
+}
+
+
+static double conditional_ppf_df(double r, void *params)
+{
+    double f, df;
+    conditional_ppf_fdf(r, params, &f, &df);
+    return df;
 }
 
 
@@ -387,36 +386,6 @@ typedef struct {
 } marginal_ppf_params;
 
 
-static double marginal_ppf_f(double r, void *params)
-{
-    const marginal_ppf_params *p = (marginal_ppf_params *)params;
-    const double _f = bayestar_distance_marginal_cdf(
-        r, p->npix, p->prob, p->mu, p->sigma, p->norm);
-    if (p->p > 0.5)
-    {
-        return log(1 - _f) - log(1 - p->p);
-    } else {
-        return log(_f) - log(p->p);
-    }
-}
-
-
-static double marginal_ppf_df(double r, void *params)
-{
-    const marginal_ppf_params *p = (marginal_ppf_params *)params;
-    const double _f = bayestar_distance_marginal_cdf(
-        r, p->npix, p->prob, p->mu, p->sigma, p->norm);
-    const double _df = bayestar_distance_marginal_pdf(
-        r, p->npix, p->prob, p->mu, p->sigma, p->norm);
-    if (p->p > 0.5)
-    {
-        return -_df / (1 - _f);
-    } else {
-        return _df / _f;
-    }
-}
-
-
 static void marginal_ppf_fdf(double r, void *params, double *f, double *df)
 {
     const marginal_ppf_params *p = (marginal_ppf_params *)params;
@@ -432,6 +401,22 @@ static void marginal_ppf_fdf(double r, void *params, double *f, double *df)
         *f = log(_f) - log(p->p);
         *df = _df / _f;
     }
+}
+
+
+static double marginal_ppf_f(double r, void *params)
+{
+    double f, df;
+    marginal_ppf_fdf(r, params, &f, &df);
+    return f;
+}
+
+
+static double marginal_ppf_df(double r, void *params)
+{
+    double f, df;
+    marginal_ppf_fdf(r, params, &f, &df);
+    return df;
 }
 
 
