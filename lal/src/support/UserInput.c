@@ -447,9 +447,15 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[] )
 	  if ( LALoptarg == NULL ) { // if no argument given, defaults to TRUE
             *(BOOLEAN*)(ptr->varp) = TRUE;
           } else {
+            if ( LALoptarg == NULL || strlen(LALoptarg) == 0 )
+              {
+                XLALPrintError( "\n%s: no value given to option " UVAR_FMT "\n\n", program_name, ptr->name );
+                *should_exit = 1;
+                return XLAL_SUCCESS;
+              }
             if ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, LALoptarg ) != XLAL_SUCCESS )
               {
-                XLALPrintError( "\n%s: could not parse value given to option " UVAR_FMT "\n\n", program_name, ptr->name );
+                XLALPrintError( "\n%s: could not parse value '%s' given to option " UVAR_FMT "\n\n", program_name, LALoptarg, ptr->name );
                 *should_exit = 1;
                 return XLAL_SUCCESS;
               }
@@ -463,9 +469,15 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[] )
               UserVarTypeMap [ ptr->type ].destructor( *(char**)ptr->varp );
               *(char**)ptr->varp = NULL;
             } // if a destructor was registered
+          if ( LALoptarg == NULL || strlen(LALoptarg) == 0 )
+            {
+              XLALPrintError( "\n%s: no value given to option " UVAR_FMT "\n\n", program_name, ptr->name );
+              *should_exit = 1;
+              return XLAL_SUCCESS;
+            }
           if ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, LALoptarg ) != XLAL_SUCCESS )
             {
-              XLALPrintError( "\n%s: could not parse value given to option " UVAR_FMT "\n\n", program_name, ptr->name );
+              XLALPrintError( "\n%s: could not parse value '%s' given to option " UVAR_FMT "\n\n", program_name, LALoptarg, ptr->name );
               *should_exit = 1;
               return XLAL_SUCCESS;
             }
@@ -549,9 +561,15 @@ XLALUserVarReadCfgfile ( BOOLEAN *should_exit, const CHAR *cfgfile )
               UserVarTypeMap [ ptr->type ].destructor( *(char**)ptr->varp );
               *(char**)ptr->varp = NULL;
             } // if a destructor was registered
+          if ( valString == NULL || strlen(valString) == 0 )
+            {
+              XLALPrintError( "\n%s: no value given to option " UVAR_FMT "\n\n", program_name, ptr->name );
+              *should_exit = 1;
+              return XLAL_SUCCESS;
+            }
           if ( UserVarTypeMap [ ptr->type ].parser( ptr->varp, valString ) != XLAL_SUCCESS )
             {
-              XLALPrintError( "\n%s: could not parse value given to option " UVAR_FMT "\n\n", program_name, ptr->name );
+              XLALPrintError( "\n%s: could not parse value '%s' given to option " UVAR_FMT "\n\n", program_name, valString, ptr->name );
               *should_exit = 1;
               return XLAL_SUCCESS;
             }
