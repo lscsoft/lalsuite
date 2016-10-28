@@ -390,26 +390,48 @@ typedef struct {
 static double marginal_ppf_f(double r, void *params)
 {
     const marginal_ppf_params *p = (marginal_ppf_params *)params;
-    return bayestar_distance_marginal_cdf(
-        r, p->npix, p->prob, p->mu, p->sigma, p->norm) - p->p;
+    const double _f = bayestar_distance_marginal_cdf(
+        r, p->npix, p->prob, p->mu, p->sigma, p->norm);
+    if (p->p > 0.5)
+    {
+        return log(1 - _f) - log(1 - p->p);
+    } else {
+        return log(_f) - log(p->p);
+    }
 }
 
 
 static double marginal_ppf_df(double r, void *params)
 {
     const marginal_ppf_params *p = (marginal_ppf_params *)params;
-    return bayestar_distance_marginal_pdf(
+    const double _f = bayestar_distance_marginal_cdf(
         r, p->npix, p->prob, p->mu, p->sigma, p->norm);
+    const double _df = bayestar_distance_marginal_pdf(
+        r, p->npix, p->prob, p->mu, p->sigma, p->norm);
+    if (p->p > 0.5)
+    {
+        return -_df / (1 - _f);
+    } else {
+        return _df / _f;
+    }
 }
 
 
 static void marginal_ppf_fdf(double r, void *params, double *f, double *df)
 {
     const marginal_ppf_params *p = (marginal_ppf_params *)params;
-    *f = bayestar_distance_marginal_cdf(
-        r, p->npix, p->prob, p->mu, p->sigma, p->norm) - p->p;
-    *df = bayestar_distance_marginal_pdf(
+    const double _f = bayestar_distance_marginal_cdf(
         r, p->npix, p->prob, p->mu, p->sigma, p->norm);
+    const double _df = bayestar_distance_marginal_pdf(
+        r, p->npix, p->prob, p->mu, p->sigma, p->norm);
+    if (p->p > 0.5)
+    {
+        *f = log(1 - _f) - log(1 - p->p);
+        *df = -_df / (1 - _f);
+    } else {
+        *f = log(_f) - log(p->p);
+        *df = _df / _f;
+    }
 }
 
 
