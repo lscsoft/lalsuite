@@ -215,12 +215,12 @@ else:
         # FIXME: How to handle multiple PSDs
         for inst in insts:
             psd = series.read_psd_xmldoc(xmldoc)[inst]
-            psd_f_high = len(psd.data)*psd.deltaF
+            psd_f_high = len(psd.data.data)*psd.deltaF
             f = np.arange(0, psd_f_high, psd.deltaF)
             fvals = np.arange(0, psd_f_high, PSIG.deltaF)
 
             def anon_interp(newf):
-                return np.interp(newf, f, psd.data)
+                return np.interp(newf, f, psd.data.data)
             eff_fisher_psd = np.array(map(anon_interp, fvals))
 
     analyticPSD_Q = False
