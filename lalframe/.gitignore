@@ -46,8 +46,10 @@ src/LALFrameVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/lalfr-*[!1]
+src/lalframe_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*
 test/AggregationTest
 test/H1:LSC-AS_Q.???

@@ -34,6 +34,7 @@ AC_CONFIG_FILES([ \
   src/tools/Makefile \
   src/utilities/Makefile \
   src/vectorops/Makefile \
+  src/version.c \
   src/window/Makefile \
   swig/Makefile \
   test/Makefile \

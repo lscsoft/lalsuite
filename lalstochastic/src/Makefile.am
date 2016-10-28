@@ -47,6 +47,17 @@ vcs_info_sources = LALStochasticVCSInfoHeader.h
 build_info_source = LALStochasticBuildInfoHeader.h
 build_info_dependencies = $(liblalstochastic_la_DEPENDENCIES)
 
+bin_PROGRAMS = \
+	lalstochastic_version \
+	$(END_OF_LIST)
+
+lalstochastic_version_SOURCES = version.c
+lalstochastic_version_LDADD = liblalstochastic.la
+
+TESTS = \
+	lalstochastic_version \
+	$(END_OF_LIST)
+
 EXTRA_DIST = \
 	LALStochasticConfig.h.in \
 	config.h.in \

@@ -21,6 +21,7 @@ AC_CONFIG_FILES([ \
   src/LALFrameVCSInfo.c \
   src/LALFrameVCSInfo.h \
   src/Makefile \
+  src/version.c \
   swig/Makefile \
   test/Makefile \
 ])
@@ -172,7 +173,7 @@ AM_CONDITIONAL([FRAMEC],[test "${FRAMEC_AVAILABLE}" = "yes"])
 AM_CONDITIONAL([FRAMEL],[test "${FRAMEL_AVAILABLE}" = "yes"])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
 
 # check for inotify

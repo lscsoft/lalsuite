@@ -42,3 +42,15 @@ vcs_build_info_source = LALMetaIOVCSInfo.c
 vcs_info_sources = LALMetaIOVCSInfoHeader.h
 build_info_source = LALMetaIOBuildInfoHeader.h
 build_info_dependencies = $(liblalmetaio_la_DEPENDENCIES)
+
+LDADD = liblalmetaio.la
+
+bin_PROGRAMS = \
+	lalmetaio_version \
+	$(END_OF_LIST)
+
+lalmetaio_version_SOURCES = version.c
+
+TESTS = \
+	lalmetaio_version \
+	$(END_OF_LIST)

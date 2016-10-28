@@ -46,7 +46,9 @@ src/LALXMLVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version
+src/lalxml_version
 src/stamp-h1
 src/stamp-h2
+src/version.c
 swig/swiglal*
 test/LALXMLTest

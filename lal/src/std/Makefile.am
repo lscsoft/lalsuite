@@ -16,7 +16,6 @@ pkginclude_HEADERS = \
 	LALStdlib.h \
 	LALString.h \
 	LALVCSInfoType.h \
-	LALVersion.h \
 	StringInput.h \
 	XLALError.h \
 	XLALGSL.h \
@@ -33,7 +32,6 @@ libstd_la_SOURCES = \
 	LALSIMD.c \
 	LALString.c \
 	LALVCSInfoType.c \
-	LALVersion.c \
 	StringConvert.c \
 	StringToken.c \
 	XLALError.c \
