@@ -225,6 +225,7 @@ if not opts.projection:
     ax.set_xticks([0, max_distance])
     ax.set_xticklabels(['0', "{0:d}\nMpc".format(int(np.round(max_distance)))], fontsize=9)
     ax.set_yticks([])
+    ax.set_xlim(0, max_distance)
     ax.set_ylim(0, ax.get_ylim()[1])
 
 progress.update(-1, 'Saving')
