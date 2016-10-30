@@ -8,10 +8,10 @@ bin_PROGRAMS = \
 	lalapps_PredictFstat \
 	lalapps_ComputeFstatistic_v2 \
 	lalapps_ComputeFstatMCUpperLimit \
+	lalapps_ComputeFstatLatticeCount \
 	lalapps_synthesizeBstatMC \
 	lalapps_synthesizeTransientStats \
 	lalapps_synthesizeLVStats \
-	lalapps_LatticeTilingCount \
 	$(END_OF_LIST)
 
 EXTRA_PROGRAMS = \
@@ -48,13 +48,13 @@ eah_ComputeFstatistic_v2_CPPFLAGS = \
 
 lalapps_ComputeFstatMCUpperLimit_SOURCES = ComputeFstatMCUpperLimit.c
 
+lalapps_ComputeFstatLatticeCount_SOURCES = ComputeFstatLatticeCount.c
+
 lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
 
 lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c
 
 lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c
-
-lalapps_LatticeTilingCount_SOURCES = LatticeTilingCount.c
 
 lalapps_CFSv3_SOURCES = CFSv3.c
 
