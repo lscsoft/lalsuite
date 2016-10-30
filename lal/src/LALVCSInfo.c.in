@@ -24,7 +24,6 @@
 #include <config.h>
 
 #include <lal/LALVCSInfoType.h>
-#include <lal/XLALError.h>
 
 #if defined(HAVE_LIBLAL)
 #include <lal/LALVCSInfoHeader.h>
@@ -131,58 +130,6 @@ const LALVCSInfo *const lal@PACKAGE_NAME_NOLAL@VCSInfoList[32] = {
   &lal@PACKAGE_NAME_NOLAL@VCSInfo,
   NULL
 };
-
-int X@PACKAGE_NAME@VCSInfoCheck(void)
-{
-#define VCS_INFO_CHECK(vcsinfo) \
-  do { \
-    if (XLALVCSInfoCompare(&vcsinfo##Header, &vcsinfo) != 0) { \
-      XLALPrintError("%s: FATAL: version mismatch between compile-time (%s) and run-time (%s) %s library\n", \
-                     __func__, vcsinfo##Header.vcsId, vcsinfo.vcsId, vcsinfo.name); \
-      XLALPrintError("This indicates a potential compilation problem: ensure your setup is consistent and recompile.\n"); \
-      XLAL_ERROR(XLAL_EERR); \
-    } \
-  } while (0)
-
-#if defined(HAVE_LIBLAL) && (LAL_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
-  VCS_INFO_CHECK(lalVCSInfo);
-#endif
-#if defined(HAVE_LIBLALFRAME) && (LALFRAME_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
-  VCS_INFO_CHECK(lalFrameVCSInfo);
-#endif
-#if defined(HAVE_LIBLALMETAIO) && (LALMETAIO_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
-  VCS_INFO_CHECK(lalMetaIOVCSInfo);
-#endif
-#if defined(HAVE_LIBLALXML) && (LALXML_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
-  VCS_INFO_CHECK(lalXMLVCSInfo);
-#endif
-#if defined(HAVE_LIBLALSIMULATION) && (LALSIMULATION_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
-  VCS_INFO_CHECK(lalSimulationVCSInfo);
-#endif
-#if defined(HAVE_LIBLALBURST) && (LALBURST_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
-  VCS_INFO_CHECK(lalBurstVCSInfo);
-#endif
-#if defined(HAVE_LIBLALDETCHAR) && (LALDETCHAR_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
-  VCS_INFO_CHECK(lalDetCharVCSInfo);
-#endif
-#if defined(HAVE_LIBLALINSPIRAL) && (LALINSPIRAL_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
-  VCS_INFO_CHECK(lalInspiralVCSInfo);
-#endif
-#if defined(HAVE_LIBLALPULSAR) && (LALPULSAR_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
-  VCS_INFO_CHECK(lalPulsarVCSInfo);
-#endif
-#if defined(HAVE_LIBLALINFERENCE) && (LALINFERENCE_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
-  VCS_INFO_CHECK(lalInferenceVCSInfo);
-#endif
-#if defined(HAVE_LIBLALSTOCHASTIC) && (LALSTOCHASTIC_VERSION_DEVEL != 0 || @PACKAGE_NAME@_VERSION_DEVEL != 0)
-  VCS_INFO_CHECK(lalStochasticVCSInfo);
-#endif
-  VCS_INFO_CHECK(lal@PACKAGE_NAME_NOLAL@VCSInfo);
-
-#undef VCS_INFO_CHECK
-
-  return XLAL_SUCCESS;
-}
 
 /*
  * vim: tw=0 ts=2 et

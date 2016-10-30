@@ -52,9 +52,6 @@ typedef struct {
 int main(int argc, char *argv[])
 {
 
-  // Check VCS information
-  XLALAppsVCSInfoCheck();
-
   // Initialise user variables
   UserVariables uvar_struct = {
     .lattice = XLALStringDuplicate("an-star"),
