@@ -24,14 +24,6 @@
 // General SWIG directives and interface code
 //
 
-// Call VCS information check function when module is loaded
-%init %{
-  if (VCS_INFO_CHECK() != XLAL_SUCCESS) {
-    SWIG_Error(SWIG_RuntimeError, "Could not load SWIG module");
-    return false;
-  }
-%}
-
 // In SWIG Octave modules, only variables are namespaced, everything else
 // is inserted in the global symbol table, so we rename only variables
 #define SWIGLAL_MODULE_RENAME_VARIABLES
