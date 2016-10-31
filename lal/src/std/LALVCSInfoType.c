@@ -24,26 +24,6 @@
 #include <lal/LALString.h>
 #include <lal/LALVCSInfoType.h>
 
-int XLALVCSInfoCompare(const LALVCSInfo *vcs1, const LALVCSInfo *vcs2)
-{
-  if (strcmp(vcs1->name, vcs2->name) || \
-      strcmp(vcs1->version, vcs2->version) || \
-      strcmp(vcs1->vcsId, vcs2->vcsId) || \
-      strcmp(vcs1->vcsDate, vcs2->vcsDate) || \
-      strcmp(vcs1->vcsBranch, vcs2->vcsBranch) || \
-      strcmp(vcs1->vcsTag, vcs2->vcsTag) || \
-      strcmp(vcs1->vcsAuthor, vcs2->vcsAuthor) || \
-      strcmp(vcs1->vcsCommitter, vcs2->vcsCommitter) || \
-      strcmp(vcs1->vcsStatus, vcs2->vcsStatus))
-  {
-    /* vcs1 != vcs2 */
-    return 1;
-  }
-
-  /* vcs1 == vcs2 */
-  return 0;
-}
-
 char *XLALVCSInfoString(const LALVCSInfoList vcs_list, const int verbose, const char *prefix)
 {
 
