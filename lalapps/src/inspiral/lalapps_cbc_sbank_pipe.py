@@ -425,7 +425,6 @@ convergence-threshold = 1000
 ; splits (in chirp mass) you want. You can crank it to infinity at the
 ; cost of overcoverage.
 nbanks = 15
-template-weight = equal
 
 ;
 ; FOR BANK SIMS ONLY
@@ -540,6 +539,10 @@ if options.template_bank:
     xmlCoarse = os.path.basename(options.template_bank)
     if not os.path.isfile(xmlCoarse):
         shutil.copy(options.template_bank, xmlCoarse)
+
+    # this option only applies to choose_mchirp_boundaries
+    if cp.has_option("split", "template-weight"):
+        cp.remove_option("split", "template-weight")
 
     sbankSplitJob = SBankSplitJob(cp)
     sbankSplitNode = SBankSplitNode(sbankSplitJob, dag, xmlCoarse, options.user_tag)
