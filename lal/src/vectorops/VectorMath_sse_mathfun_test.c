@@ -411,14 +411,14 @@ void check_special_values() {
   }
 
 #ifdef __GNUC__
-#define HAVE_SINCOS_X86_FPU
-void sincos_x86_fpu(double t, double *st, double *ct) {
+#define HAVE_SINCOS_X86_GEN
+void sincos_x86_gen(double t, double *st, double *ct) {
   asm ("fsincos;" : "=t" (*ct), "=u" (*st) : "0" (t));
   //*st = sin(t); *ct = cos(t);
 }
 #elif defined(_MSC_VER) && !defined(_WIN64)
-#define HAVE_SINCOS_X86_FPU
-void sincos_x86_fpu(double t, double *st_, double *ct_) {
+#define HAVE_SINCOS_X86_GEN
+void sincos_x86_gen(double t, double *st_, double *ct_) {
   _asm {
     fld QWORD PTR [t]
     fsincos
@@ -430,10 +430,10 @@ void sincos_x86_fpu(double t, double *st_, double *ct_) {
 }
 #endif
 
-#ifdef HAVE_SINCOS_X86_FPU
-float stupid_sincos_x86_fpu(float x) {
+#ifdef HAVE_SINCOS_X86_GEN
+float stupid_sincos_x86_gen(float x) {
   double s, c;
-  sincos_x86_fpu(x, &s, &c);
+  sincos_x86_gen(x, &s, &c);
   return s+c;
 }
 #endif
@@ -446,8 +446,8 @@ v4sf stupid_sincos_ps(v4sf x) {
 
 DECL_SCALAR_FN_BENCH(sinf);
 DECL_SCALAR_FN_BENCH(cosf);
-#ifdef HAVE_SINCOS_X86_FPU
-DECL_SCALAR_FN_BENCH(stupid_sincos_x86_fpu);
+#ifdef HAVE_SINCOS_X86_GEN
+DECL_SCALAR_FN_BENCH(stupid_sincos_x86_gen);
 #endif
 DECL_SCALAR_FN_BENCH(logf);
 DECL_SCALAR_FN_BENCH(expf);
@@ -558,8 +558,8 @@ int main() {
   check_special_values();
   run_bench("sinf", bench_sinf);
   run_bench("cosf", bench_cosf);
-#ifdef HAVE_SINCOS_X86_FPU
-  run_bench("sincos (x87)", bench_stupid_sincos_x86_fpu);
+#ifdef HAVE_SINCOS_X86_GEN
+  run_bench("sincos (x87)", bench_stupid_sincos_x86_gen);
 #endif
   run_bench("expf", bench_expf);
   run_bench("logf", bench_logf);

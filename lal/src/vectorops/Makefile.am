@@ -9,7 +9,7 @@ noinst_LTLIBRARIES = libvectorops.la
 
 libvectorops_la_SOURCES = \
 	VectorMath.c \
-	VectorMath_FPU.c \
+	VectorMath_GEN.c \
 	VectorMultiply.c \
 	VectorPolar.c \
 	$(END_OF_LIST)
