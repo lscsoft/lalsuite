@@ -44,7 +44,12 @@ typedef struct tagWeaveCohInput WeaveCohInput;
 typedef struct tagWeaveCohResults WeaveCohResults;
 
 ///
-/// Results of a semicoherent computation over many segments
+/// Partial results of a semicoherent computation in progress
+///
+typedef struct tagWeaveSemiPartials WeaveSemiPartials;
+
+///
+/// Final results of a semicoherent computation over many segments
 ///
 typedef struct tagWeaveSemiResults WeaveSemiResults;
 
@@ -70,24 +75,29 @@ int XLALWeaveCohResultsCompute(
 void XLALWeaveCohResultsDestroy(
   WeaveCohResults *coh_res
   );
-WeaveSemiResults *XLALWeaveSemiResultsCreate(
+int XLALWeaveSemiPartialsInit(
+  WeaveSemiPartials **semi_parts,
   const BOOLEAN shortcut_compute,
   const LALStringVector *per_detectors,
   const UINT4 per_nsegments,
-  const double dfreq
+  const PulsarDopplerParams *semi_phys,
+  const double dfreq,
+  const UINT4 semi_nfreqs
+  );
+void XLALWeaveSemiPartialsDestroy(
+  WeaveSemiPartials *semi_parts
+  );
+int XLALWeaveSemiPartialsAdd(
+  WeaveSemiPartials *semi_parts,
+  const WeaveCohResults *coh_res,
+  const UINT4 coh_offset
+  );
+int XLALWeaveSemiResultsCompute(
+  WeaveSemiResults **semi_res,
+  const WeaveSemiPartials *semi_parts
   );
 void XLALWeaveSemiResultsDestroy(
   WeaveSemiResults *semi_res
-  );
-int XLALWeaveSemiResultsInit(
-  WeaveSemiResults *semi_res,
-  const PulsarDopplerParams *semi_phys,
-  const UINT4 semi_nfreqs
-  );
-int XLALWeaveSemiResultsAdd(
-  WeaveSemiResults *semi_res,
-  const WeaveCohResults *coh_res,
-  const UINT4 coh_offset
   );
 int XLALWeaveFillOutputResultItem(
   WeaveOutputResultItem **item,

@@ -774,9 +774,9 @@ int main( int argc, char *argv[] )
   WeaveCacheQueries *queries = XLALWeaveCacheQueriesCreate( tiling[isemi], setup.phys_to_latt, setup.latt_to_phys, rssky_transf[isemi], nsegments, uvar->freq_partitions );
   XLAL_CHECK_MAIN( queries != NULL, XLAL_EFUNC );
 
-  // Create storage for semicoherent results
-  WeaveSemiResults *semi_res = XLALWeaveSemiResultsCreate( uvar->shortcut_compute, per_detectors, per_nsegments, dfreq );
-  XLAL_CHECK_MAIN( semi_res != NULL, XLAL_EFUNC );
+  // Pointer to partial and final semicoherent results
+  WeaveSemiPartials *semi_parts = NULL;
+  WeaveSemiResults *semi_res = NULL;
 
   // Create output results structure
   WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, per_detectors, per_nsegments, uvar->output_toplist_limit );
@@ -903,8 +903,8 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALWeaveCacheQueriesFinal( queries, partition_index, &semi_phys, dfreq, &semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( semi_nfreqs > 0 ) {
 
-      // Initialise semicoherent results
-      XLAL_CHECK_MAIN( XLALWeaveSemiResultsInit( semi_res, &semi_phys, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      // Initialise partial semicoherent results
+      XLAL_CHECK_MAIN( XLALWeaveSemiPartialsInit( &semi_parts, uvar->shortcut_compute, per_detectors, per_nsegments, &semi_phys, dfreq, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Add coherent results from each segment
       for ( size_t i = 0; i < nsegments; ++i ) {
@@ -915,10 +915,13 @@ int main( int argc, char *argv[] )
         XLAL_CHECK_MAIN( XLALWeaveCacheRetrieve( coh_cache[i], queries, i, &coh_res, &coh_offset, &tot_coh_ncomp, &per_seg_info[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( coh_res != NULL, XLAL_EFUNC );
 
-        // Add coherent results to semicoherent results
-        XLAL_CHECK_MAIN( XLALWeaveSemiResultsAdd( semi_res, coh_res, coh_offset ) == XLAL_SUCCESS, XLAL_EFUNC );
+        // Add coherent results to partial semicoherent results
+        XLAL_CHECK_MAIN( XLALWeaveSemiPartialsAdd( semi_parts, coh_res, coh_offset ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       }
+
+      // Compute final semicoherent results
+      XLAL_CHECK_MAIN( XLALWeaveSemiResultsCompute( &semi_res, semi_parts ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // Add semicoherent results to output
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsAdd( out, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1085,9 +1088,12 @@ int main( int argc, char *argv[] )
   // Cleanup memory from output results
   XLALWeaveOutputResultsDestroy( out );
 
+  // Cleanup memory from semicoherent results
+  XLALWeaveSemiPartialsDestroy( semi_parts );
+  XLALWeaveSemiResultsDestroy( semi_res );
+
   // Cleanup memory from parameter-space iteration
   XLALDestroyLatticeTilingIterator( semi_itr );
-  XLALWeaveSemiResultsDestroy( semi_res );
 
   // Cleanup memory from computing coherent results
   XLALWeaveCacheQueriesDestroy( queries );
