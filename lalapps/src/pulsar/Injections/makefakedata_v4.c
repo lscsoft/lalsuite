@@ -1219,7 +1219,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   // per default we now generate a timeseries per SFT: slower, but avoids potential confusion about sft-"nudging"
   uvar->generationMode = GENERATE_PER_SFT;
 
-  uvar->actuationScale = - 1.0;	/* seems to be the LIGO-default */
+  uvar->actuationScale = + 1.0;
 
 #define DEFAULT_TRANSIENT "none"
   uvar->transientWindowType = XLALCalloc ( 1, len = strlen(DEFAULT_TRANSIENT)+1 );
