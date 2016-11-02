@@ -186,14 +186,8 @@ int XLALWeaveCohResultsCompute(
   // Store coherent template parameters
   ( *coh_res )->coh_phys = *coh_phys;
 
-  // Store number of coherent frequency bins
-  const UINT4 old_coh_res_nfreqs = ( *coh_res )->nfreqs;
-  ( *coh_res )->nfreqs = coh_nfreqs;
-
-  // Reallocate arrays if required
-  if ( old_coh_res_nfreqs < coh_nfreqs ) {
-
-    // Reallocate arrays of multi- and per-detector F-statistics per frequency
+  // Reallocate arrays of multi- and per-detector F-statistics per frequency
+  if ( ( *coh_res )->nfreqs < coh_nfreqs ) {
     ( *coh_res )->twoF = XLALRealloc( ( *coh_res )->twoF, coh_nfreqs * sizeof( ( *coh_res )->twoF[0] ) );
     XLAL_CHECK( ( *coh_res )->twoF != NULL, XLAL_ENOMEM );
     for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
@@ -201,8 +195,10 @@ int XLALWeaveCohResultsCompute(
       ( *coh_res )->twoF_per_det[idx] = XLALRealloc( ( *coh_res )->twoF_per_det[idx], coh_nfreqs * sizeof( ( *coh_res )->twoF_per_det[idx][0] ) );
       XLAL_CHECK( ( *coh_res )->twoF_per_det[idx] != NULL, XLAL_ENOMEM );
     }
-
   }
+
+  // Store number of coherent frequency bins
+  ( *coh_res )->nfreqs = coh_nfreqs;
 
   // Return now if computation shortcut is in place
   if ( coh_input->shortcut_compute ) {
