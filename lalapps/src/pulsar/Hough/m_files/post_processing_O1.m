@@ -1,9 +1,9 @@
-format long
 clear
+format long
 
 grup_min=50; %f0_grup=grup;
 grup_Band=50;
-grup_max=850; %f0_grup_max=grup+grup_Band;
+grup_max=450; %f0_grup_max=grup+grup_Band;
 
 BandNo=1;
 BandNf=500;
@@ -11,13 +11,11 @@ BandNf=500;
 f0_rang_grup_band=10;
 f0_band=0.1;
 
-Npatch=999;
 Ntop=999;
 
 PixelFactor=2;
 p = 16; %degeneration
 
-%sigma_veto_toplist= @(x) ((4.399-4.085)/(1005-117)*x+4.085);
 sig=0;
 sigma_veto_toplist= @(x) sig+0.*x;
 
@@ -48,6 +46,10 @@ df1=(df0./Tobs);
 Y_input='/home/miquel.oliver/O1/Collected/H1/H1_Collected_%g_%g.dat';
 X_input='/home/miquel.oliver/O1/Collected/L1/L1_Collected_%g_%g.dat';
 
+
+
+
+
 for grup=grup_min:grup_Band:grup_max;
     
     f0_grup=grup;
@@ -64,18 +66,17 @@ for grup=grup_min:grup_Band:grup_max;
 	I_partial_cluster=[];
 
 if f0_grup>=50;
-A1=0.4902
-A2=1.414
-B1=0.3581
-B2=1.484
+A1=0.4902;
+A2=1.414;
+B1=0.3581;
+B2=1.484;
 end
 
 if f0_grup>=100;
-A1=0.2168
-A2=1.428 
-B1=0.1902
-B2=1.499
-chisquare_STD_veto = 6;
+A1=0.2168;
+A2=1.428;
+B1=0.1902;
+B2=1.499;
 end	
 
 if f0_grup>=200;
@@ -83,24 +84,15 @@ A1 = 0.1187;
 A2 = 1.470;
 B1 = 0.06784;
 B2 = 1.697;
-chisquare_STD_veto = 5.3;
 end
 	
 	chi2_STD = @(x,y,p) (y-(p-1)-A1*x.^A2)./(sqrt(2*p-2)+B1*x.^B2);
-
-
-    
+ 
     for BandN=BandNo:BandNf;
         
         y_filename=sprintf(Y_input,grup,BandN);
         x_filename=sprintf(X_input,grup,BandN);
-        
-        if (BandN / 10) == fix(BandN / 10)
-            BandN
-        end
-        %----------------------------------------------------
-        % Import injections & prepare matrix
-        %----------------------------------------------------
+
         x = [];
         y = [];
         
@@ -139,9 +131,8 @@ end
     if ~isempty(x_Toplist) && ~isempty(y_Toplist)
         for k=1:kmax;
             if (k/(f0_rang_grup_band/f0_band)) == fix(k/(f0_rang_grup_band/f0_band)) || k==1;
-                f0_grup + k0*f0_rang_grup_band
                 I_rang_grup_band_x= find( f0_grup + k0*f0_rang_grup_band - r_W/Tcoh <= x_Toplist(:,1) & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= x_Toplist(:,1));
-                I_rang_grup_band_y= find( f0_grup + k0*f0_rang_grup_band                 <= y_Toplist(:,1) & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= y_Toplist(:,1));
+                I_rang_grup_band_y= find( f0_grup + k0*f0_rang_grup_band <= y_Toplist(:,1) & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= y_Toplist(:,1));
                 k0=k0+1;
             end
             
@@ -150,18 +141,10 @@ end
             
             if sum(L_band_x) && sum(L_band_y)
                 
-                x=x_Toplist(I_rang_grup_band_x(L_band_x),:);  y=y_Toplist(I_rang_grup_band_y(L_band_y),:);
-                
-                %----------------------------------------------------
-                % Coincidence Block
-                %----------------------------------------------------
+                x=x_Toplist(I_rang_grup_band_x(L_band_x),:);  y=y_Toplist(I_rang_grup_band_y(L_band_y),:);               
                 
                 I_sigchi2_x=1:length(x(:,1));
                 I_sigchi2_y=1:length(y(:,1));
-                
-                %----------------------------------------------------
-                % Significance Threshold & k-square Veto
-                %----------------------------------------------------
                 
                 chi2_STD_x=chi2_STD(x(:,5),x(:,7),p);
                 chi2_STD_y=chi2_STD(y(:,5),y(:,7),p);
@@ -173,66 +156,35 @@ end
                     
                     x=x(I_sigchi2_x,:);  y=y(I_sigchi2_y,:);
                     
-                    %----------------------------------------------------
-                    % Translate Freq from 1st set into a Freq on 2nd set
-                    %----------------------------------------------------
-                    
                     x1_y = x(:,1) - x(:,4) * (x_tref - y_tref);
-                    
-                    %-----------------------------------------------------
-                    % Building bins matrix
-                    %-----------------------------------------------------
-                    
-                    ones_x = ones(1, length(x(:,1)));
-                    ones_y = ones(length(y(:,1)),1);
-                    
-                    m_W1 = df0;
-                    m_W2 = ((1./y(:,1))*ones_x + ones_y*(1./x(:,1))')/(Tcoh*1e-4)/PixelFactor/2;
+
+                    m_W1 = df0;          
                     m_W4 = sum(df1)/2;
                     
-                    %-----------------------------------------------------
-                    % Building diviation matrix for freq , spin & sky
-                    %-----------------------------------------------------
+                    [X,Y]=meshgrid(x(:,1),y(:,1));
+                    m_D1 = (X-Y)/m_W1;
+                    m_W2 = (1./Y + 1./X)/(Tcoh*1e-4)/PixelFactor/2;                    
                     
-                    m_D1 = ((y(:,1)*ones_x) - ones_y*x1_y')./m_W1;
-                    m_D4 = ((y(:,4)*ones_x) - ones_y*x(:,4)')./m_W4;
+                    [X,Y]=meshgrid(x(:,4),y(:,4));
+                    m_D4 = (X-Y)/m_W1;
                     
                     n0=[cos(y(:,3)).*cos(y(:,2)),cos(y(:,3)).*sin(y(:,2)),sin(y(:,3))];
                     n1=[cos(x(:,3)).*cos(x(:,2)),cos(x(:,3)).*sin(x(:,2)),sin(x(:,3))];
-                    n0n1=n0(:,1)*n1(:,1)'+n0(:,2)*n1(:,2)'+n0(:,3)*n1(:,3)';
                     
-                    D2_matrix = real(acos(n0n1)./m_W2);
+                    b=sqrt((n0(:,2)*n1(:,3)'-n0(:,3)*n1(:,2)').^2+(n0(:,3)*n1(:,1)'-n0(:,1)*n1(:,3)').^2+(n0(:,1)*n1(:,2)'-n0(:,2)*n1(:,1)').^2);
+                    a=n0(:,1)*n1(:,1)'+n0(:,2)*n1(:,2)'+n0(:,3)*n1(:,3)';
                     
-                    %-----------------------------------------------------
-                    % Building modulus diviation matrix
-                    %-----------------------------------------------------
-                    
-                    Dyx = sqrt(m_D1.^2+D2_matrix.^2+m_D4.^2);
-                    
-                    %----------------------------------------------------
-                    % Find coincident candidates
-                    %----------------------------------------------------
-                    
-                    m_D= Dyx;
-                    
-                    %Dels=unique(reshape(matrix_dist.' ,1,numel(matrix_dist)));
-                    
+                    m_D2 = atan2(b,a)./m_W2;   
+                                        
+                    m_D = sqrt(m_D1.^2+m_D2.^2+m_D4.^2);
                     [I_sigchi2_y_cn,I_sigchi2_x_cn]=find(m_D<r_W);
                     
                     if ~isempty(I_sigchi2_x_cn) && ~isempty(I_sigchi2_y_cn)
                         
-                        %---------------------------------------------------------------------------------------
-                        % Construction of a new toplist based on the coincident candidates
-                        %---------------------------------------------------------------------------------------
+                        s_harm=2*(x(I_sigchi2_x_cn,5).*y(I_sigchi2_y_cn,5)./(x(I_sigchi2_x_cn,5)+y(I_sigchi2_y_cn,5)));
+                        s=(x(I_sigchi2_x_cn,5)+y(I_sigchi2_y_cn,5))/2;
                         
-                        
-                        %s=(2./(exp(x(I_sigchi2_x_cn,12))./exp(x(I_sigchi2_x_cn,5))+exp(y(I_sigchi2_y_cn,12))./(exp(y(I_sigchi2_y_cn,5)))));
-                        s_old=(2./(1./x(I_sigchi2_x_cn,5)+1./y(I_sigchi2_y_cn,5)));
-                        s=(2./(exp(chi2_STD_x(I_sigchi2_x_cn,1))./(x(I_sigchi2_x_cn,5))+exp(chi2_STD_y(I_sigchi2_y_cn,1))./((y(I_sigchi2_y_cn,5)))));
-                        s=1./(1./s_old+1./s);
-                        %s=sqrt(s_old.*s);
-                        
-                        [~,I]=sort(s,'descend');  if length(I)>Ntop; I=I(1:Ntop,:); end;
+                        [~,I]=sort(s_harm,'descend');  if length(I)>Ntop; I=I(1:Ntop,:); end;
                         
                         I_sigchi2_x_cn=I_sigchi2_x_cn(I); I_sigchi2_x_cn=reshape(I_sigchi2_x_cn,1, numel(I_sigchi2_x_cn))';
                         I_sigchi2_y_cn=I_sigchi2_y_cn(I); I_sigchi2_y_cn=reshape(I_sigchi2_y_cn,1, numel(I_sigchi2_y_cn))';
@@ -247,8 +199,8 @@ end
                         
                         gf1=(x(I_sigchi2_x_cn,5).*x(I_sigchi2_x_cn,4)+y(I_sigchi2_y_cn,5).*y(I_sigchi2_y_cn,4))./(x(I_sigchi2_x_cn,5)+y(I_sigchi2_y_cn,5));
                         
-                        s_old=2*(x(I_sigchi2_x_cn,5).*y(I_sigchi2_y_cn,5)./(x(I_sigchi2_x_cn,5)+y(I_sigchi2_y_cn,5)));
-                        g_cn_data0 = [gf0,galpha,gdelta,gf1,s(I),s_old,I_sigchi2_x_cn,I_sigchi2_y_cn];
+                        s_harm=2*(x(I_sigchi2_x_cn,5).*y(I_sigchi2_y_cn,5)./(x(I_sigchi2_x_cn,5)+y(I_sigchi2_y_cn,5)));
+                        g_cn_data0 = [gf0,galpha,gdelta,gf1,s(I),s_harm,I_sigchi2_x_cn,I_sigchi2_y_cn];
                         g_Toplist=cat(1,g_Toplist,g_cn_data0);
                         g_cn_data0=[];
                     end
@@ -284,10 +236,6 @@ end
                 m_W2 = ((1./x(I_band))*ones_x + ones_y*(1./x(I_band))')/(Tcoh*1e-4)/PixelFactor/2;
                 m_W4 = sum(df1)/2;
                 
-                %-----------------------------------------------------
-                % Building diviation matrix for freq , spin & sky
-                %-----------------------------------------------------
-                
                 m_D1 = ((x(I_band,1)*ones_x) - ones_y*x(I_band,1)')./m_W1;
                 m_D4 = ((x(I_band,4)*ones_x) - ones_y*x(I_band,4)')./m_W4;
                 
@@ -296,9 +244,7 @@ end
                 m_D2 = real(acos(n0n0)./m_W2);
                 
                 m_D= sqrt(m_D1.^2+m_D2.^2+m_D4.^2);
-                
-                %Dels=unique(reshape(m_D.' ,1,numel(m_D)));
-                
+                                
                 L_m_D=m_D<r_W_cl;
                 I_m = ones_y * (1:1:size(ones_x,2)).*L_m_D;
                 i0=[];
@@ -327,7 +273,7 @@ end
         I_Ci=[];
         A=I_partial_cluster{1};
         if I_N_Cluster>2;
-            for i=1:(I_N_Cluster-2);
+            for i=1:(I_N_Cluster-1);
                 if isempty(I_Ci);
                     N_Cluster(A)=N;
                     N=N+1;
@@ -336,9 +282,11 @@ end
                     B = ismember(N_Cluster,N_Cluster_i(I_Ci));
                     N_Cluster(B)=N_Cluster_i(I_Ci(1));
                 end
-                A=I_partial_cluster{i+1};
-                N_Cluster_i=unique(N_Cluster(A));
-                I_Ci = find(N_Cluster_i~=0);
+                if i<I_N_Cluster-1;
+                    A=I_partial_cluster{i+1};
+                    N_Cluster_i=unique(N_Cluster(A));
+                    I_Ci = find(N_Cluster_i~=0);
+                end
             end
         else
             N_Cluster(A)=1;
@@ -352,11 +300,11 @@ end
             
             Cluster.sign_mean{j} =mean(x(I_Cluster_i,5));
             Cluster.ind{j}       =I_Cluster_i;
-            Cluster.s_old{j}  =mean(s);
-	    Cluster.sign_sum{j}  =sum(s);
-            Cluster.deg_x{j}  =length(unique(x(I_Cluster_i,7)));
-            Cluster.deg_y{j}  =length(unique(x(I_Cluster_i,8)));
-	    Cluster.f0{j}        =sum(x(I_Cluster_i,1).*s)/Cluster.sign_sum{j};
+            Cluster.s_harm{j}     =mean(s);
+            Cluster.sign_sum{j}  =sum(s);
+            Cluster.deg_x{j}     =length(unique(x(I_Cluster_i,7)));
+            Cluster.deg_y{j}     =length(unique(x(I_Cluster_i,8)));
+            Cluster.f0{j}        =sum(x(I_Cluster_i,1).*s)/Cluster.sign_sum{j};
             
             n0=sum(s*[1,1,1].*[cos(x(I_Cluster_i,3)).*cos(x(I_Cluster_i,2)),cos(x(I_Cluster_i,3)).*sin(x(I_Cluster_i,2)),sin(x(I_Cluster_i,3))],1);
             n0=n0./sqrt(sum(n0.^2));
@@ -371,32 +319,35 @@ end
             
             if length(I_Cluster_i)<2; Cluster.noise{j}=1; else Cluster.noise{j}=0; end
         end
-        
-        follow_up=[[Cluster.f0{:}]',[Cluster.alpha{:}]',[Cluster.delta{:}]',[Cluster.f1{:}]',[Cluster.sign_mean{:}]',[Cluster.s_old{:}]',[Cluster.sign_sum{:}]',[Cluster.length{:}]',[Cluster.deg_x{:}]',[Cluster.deg_y{:}]'];        
+        follow_up=[[Cluster.f0{:}]',[Cluster.alpha{:}]',[Cluster.delta{:}]',[Cluster.f1{:}]',[Cluster.sign_mean{:}]',[Cluster.s_harm{:}]',...
+            [Cluster.sign_sum{:}]',[Cluster.length{:}]',[Cluster.deg_x{:}]',[Cluster.deg_y{:}]'];           
+    end  
     
-    end
-    % veto population
     if ~isempty(follow_up)
-        follow_up=follow_up(follow_up(:,7)>population_cluster_veto,:);
+        follow_up=follow_up(follow_up(:,7)>0,:);
         
         [~,I]=sort(follow_up(:,1)); follow_up=follow_up(I,:);
         if ~isempty(follow_up)
-            % only one per f0_band
             I_band_cumsum = cumsum([true; sum(abs(diff(follow_up(:,1),1,1)),2) > f0_band]);
             I_band=[];
             for i=1:max(I_band_cumsum);
                 I_1=find(I_band_cumsum==i);
-                [~,I]=max(follow_up(I_1,5));
+                [~,I]=max(follow_up(I_1,6)); %%%%%%%%%%%%
                 I_band=cat(1,I_band,I_1(I));
             end
             follow_up=follow_up(I_band,:);
         end
-        % sigma veto cluster
-        follow_up=follow_up(follow_up(:,5)>sigma_veto_cluster,:);
-        param=[sig,chisquare_STD_veto,r_W,r_W_cl,population_cluster_veto,sigma_veto_cluster];
+        follow_up=follow_up(follow_up(:,5)>0,:);
+        param=[sig,chisquare_STD_veto,r_W,r_W_cl,0,0];
     end
     
     File_cn=sprintf('follow_up_%g.mat',grup);
     save (File_cn,'follow_up','Cluster','param')
 end
 
+
+
+%                    [X,Y]=meshgrid(x(:,5),y(:,5));                    
+%                     m_W5 = max(X,Y);
+%                     m_D5 = abs((y(:,5)*ones_x) - ones_y*x(:,5)')./m_W5;                                         
+%                     [I_sigchi2_y_cn,I_sigchi2_x_cn]=find(m_D<r_W & m_D5<0.4);
