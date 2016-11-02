@@ -38,6 +38,11 @@ from matplotlib import cm
 from ..plot import cmap
 
 
+# Set no-op Matplotlib backend to defer importing anything that requires a GUI
+# until we have determined that it is necessary based on the command line
+# arguments.
+matplotlib.use('Template')
+
 
 @contextlib.contextmanager
 def TemporaryDirectory(suffix='', prefix='tmp', dir=None, delete=True):
