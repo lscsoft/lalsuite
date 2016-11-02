@@ -93,6 +93,7 @@ if cp.has_option('paths','roq_b_matrix_directory'):
   use_roq=True
   roq_paths=os.listdir(path)
   roq_params={}
+  roq_force_flow = None
   def key(item): # to order the ROQ bases
     return float(item[1]['seglen'])
 
@@ -112,8 +113,12 @@ if cp.has_option('paths','roq_b_matrix_directory'):
 
     mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, sim_inspiral=row)
 
+  if cp.has_option('lalinference','roq_force_flow'):
+     roq_force_flow = cp.getfloat('lalinference','roq_force_flow')
+     print "WARNING: Forcing the f_low to", str(roq_force_flow), "Hz"
+
   if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')): 
-        roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp)
+        roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, roq_force_flow)
 
 	for mc_prior in mc_priors:
 		mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
@@ -127,7 +132,9 @@ if cp.has_option('paths','roq_b_matrix_directory'):
 	roq_paths = [trigger_bin]
   else:
 	mc_priors, trigger_mchirp = pipe_utils.get_roq_mchirp_priors(path, roq_paths, roq_params, key, None)
-  	roq_mass_freq_scale_factor = 1
+       roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, roq_force_flow)
+       for mc_prior in mc_priors:
+		mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
  
 else:
   roq_paths=[None]
@@ -201,6 +208,8 @@ for sampler in samps:
         cp.set('engine','chirpmass-min',str(mc_min))
         cp.set('engine','chirpmass-max',str(mc_max))
         cp.set('engine','q-min',str(q_min))
+        cp.set('engine','comp-min', str(np.max(roq_params[roq]['compmin'] * roq_mass_freq_scale_factor, mc_min * np.power(1+q_min, 1./5.) * np.power(q_min, 2./5.)))
+        cp.set('engine','comp-max', str(mc_max * np.power(1+q_min, 1./5.) * np.power(q_min, -3./5.)))
 
       if opts.run_path is not None:
         cp.set('paths','basedir',os.path.abspath(opts.run_path))
