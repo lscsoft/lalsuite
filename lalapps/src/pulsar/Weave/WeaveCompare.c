@@ -225,8 +225,11 @@ XLAL_FAIL:
 
 }
 
-// This function is not required by WeaveCompare.c, but
-// must be defined since it is called from OutputResults.c
+/// \cond DONT_DOXYGEN
+
+// This function is not required by lalapps_WeaveCompare, but
+// must be defined since it is referenced in OutputResults.o,
+// which lalapps_WeaveCompare then links against
 int XLALWeaveFillOutputResultItem(
   WeaveOutputResultItem UNUSED **item,
   BOOLEAN UNUSED *full_init,
@@ -236,3 +239,5 @@ int XLALWeaveFillOutputResultItem(
 {
   XLAL_ERROR( XLAL_EFAILED, "Implementation error" );
 }
+
+/// \endcond
