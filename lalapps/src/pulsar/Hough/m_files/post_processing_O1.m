@@ -131,19 +131,22 @@ end
     kmax=ceil((f0_grup_max-f0_grup)/f0_band-1);
     k0=0;
     if ~isempty(x_Toplist) && ~isempty(y_Toplist)
+        
+        x1_y = x_Toplist(:,1) - x_Toplist(:,4) * (x_tref - y_tref);
+       
         for k=1:kmax;
             if (k/(f0_rang_grup_band/f0_band)) == fix(k/(f0_rang_grup_band/f0_band)) || k==1;
-                I_rang_grup_band_x= find( f0_grup + k0*f0_rang_grup_band - r_W/Tcoh <= x_Toplist(:,1) & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= x_Toplist(:,1));
+                I_rang_grup_band_x= find( f0_grup + k0*f0_rang_grup_band - r_W/Tcoh <= x1_y & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= x1_y);
                 I_rang_grup_band_y= find( f0_grup + k0*f0_rang_grup_band <= y_Toplist(:,1) & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= y_Toplist(:,1));
                 k0=k0+1;
             end
             
-            L_band_x= ( f0_grup + k*f0_band - r_W/Tcoh <= x_Toplist(I_rang_grup_band_x,1)) &  (f0_grup + (k+1)*f0_band +  r_W/Tcoh >= x_Toplist(I_rang_grup_band_x,1));
-            L_band_y= ( f0_grup + k*f0_band                 <= y_Toplist(I_rang_grup_band_y,1)) &  (f0_grup + (k+1)*f0_band                  >= y_Toplist(I_rang_grup_band_y,1));
+            L_band_x= ( f0_grup + k*f0_band - r_W/Tcoh <= x1_y(I_rang_grup_band_x,1)) &  (f0_grup + (k+1)*f0_band +  r_W/Tcoh >= x1_y(I_rang_grup_band_x,1));
+            L_band_y= ( f0_grup + k*f0_band            <= y_Toplist(I_rang_grup_band_y,1)) &  (f0_grup + (k+1)*f0_band        >= y_Toplist(I_rang_grup_band_y,1));
             
             if sum(L_band_x) && sum(L_band_y)
                 
-                x=x_Toplist(I_rang_grup_band_x(L_band_x),:);  y=y_Toplist(I_rang_grup_band_y(L_band_y),:);               
+                x=[x1_y(I_rang_grup_band_x(L_band_x)),x_Toplist(I_rang_grup_band_x(L_band_x),2:end)];  y=y_Toplist(I_rang_grup_band_y(L_band_y),:);               
                 
                 I_sigchi2_x=1:length(x(:,1));
                 I_sigchi2_y=1:length(y(:,1));
@@ -158,17 +161,16 @@ end
                     
                     x=x(I_sigchi2_x,:);  y=y(I_sigchi2_y,:);
                     
-                    x1_y = x(:,1) - x(:,4) * (x_tref - y_tref);
 
                     m_W1 = df0;          
                     m_W4 = sum(df1)/2;
                     
                     [X,Y]=meshgrid(x(:,1),y(:,1));
                     m_D1 = (X-Y)/m_W1;
-                    m_W2 = (1./Y + 1./X)/(Tcoh*1e-4)/PixelFactor/2;                    
+                    m_W2 = (2./(Y + X))/(Tcoh*1e-4)/PixelFactor;                    
                     
                     [X,Y]=meshgrid(x(:,4),y(:,4));
-                    m_D4 = (X-Y)/m_W1;
+                    m_D4 = (X-Y)/m_W4;
                     
                     n0=[cos(y(:,3)).*cos(y(:,2)),cos(y(:,3)).*sin(y(:,2)),sin(y(:,3))];
                     n1=[cos(x(:,3)).*cos(x(:,2)),cos(x(:,3)).*sin(x(:,2)),sin(x(:,3))];
