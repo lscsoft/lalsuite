@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 134
+# serial 135
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -640,24 +640,46 @@ AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
 
 AC_DEFUN([LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK],[
   # $0: check for version mismatch between library $1 and its headers
+  m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
+  m4_pushdef([withoutlal],m4_bpatsubst([$1], [^LAL], []))
   AC_MSG_CHECKING([whether $1 headers match the library])
-  lib_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfo
-  header_structure=`echo $1 | sed 's/LAL/lal/'`VCSInfoHeader
-  AC_RUN_IFELSE([
+  AC_LINK_IFELSE([
     AC_LANG_SOURCE([[
-#include <string.h>
-#include <stdlib.h>
 #include <lal/$1VCSInfoHeader.h>
-int main(void) { exit(XLALVCSInfoCompare(&$lib_structure, &$header_structure) ? 1 : 0); }
+int main(void) {
+#if ]uppercase[_VERSION_DEVEL != 0
+  ]uppercase[_VCS_LINK_CHECK();
+#endif
+  return 0;
+}
     ]])
   ],[
-    AC_MSG_RESULT(yes)
+    AC_MSG_RESULT([yes])
   ],[
-    AC_MSG_RESULT(no)
+    AC_MSG_RESULT([no])
+    AC_LINK_IFELSE([
+      AC_LANG_SOURCE([[
+#include <stdio.h>
+#include <lal/$1VCSInfoHeader.h>
+int main(void) {
+  printf("$1 headers: %s %s %s\n", ]uppercase[_VERSION, ]uppercase[_VCS_ID, ]uppercase[_VCS_STATUS);
+  printf("$1 library: %s %s %s\n", lal]withoutlal[VCSInfo.version, lal]withoutlal[VCSInfo.vcsId, lal]withoutlal[VCSInfo.vcsStatus);
+  return 0;
+}
+      ]])
+    ],[
+      AS_IF([test ${cross_compiling} != yes],[
+        ./conftest${EXEEXT} | ${SED} -e "s/^/${as_me}:${as_lineno-$LINENO}: /" >&AS_MESSAGE_LOG_FD
+      ])
+    ],[
+      _AS_ECHO_LOG([could not determine further details of $1 header-library mismatch (compile/link error)])
+    ],[
+      _AS_ECHO_LOG([could not determine further details of $1 header-library mismatch (cross compiling)])
+    ])
     AC_MSG_ERROR([Your $1 headers do not match your library. Check config.log for details.])
-  ],[
-    AC_MSG_WARN([cross compiling: not checking])
   ])
+  m4_popdef([uppercase])
+  m4_popdef([withoutlal])
   # end $0
 ])
 

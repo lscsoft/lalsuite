@@ -136,3 +136,50 @@ const LALVCSInfoList lal@PACKAGE_NAME_NOLAL@VCSInfoList = {
   &lal@PACKAGE_NAME_NOLAL@VCSInfo,
   NULL
 };
+
+/*
+ * VCS header/library mismatch link check function:
+ * This function will successfully link only if the link check functions defined
+ * in the included LAL VCS info headers (e.g. LAL_VCS_LINK_CHECK() defined in
+ * <lal/LALVCSInfoHeader.h>) are present in the LAL libraries being linked
+ * against. A successful link ensures that the LAL headers included by this
+ * library are consistent with the LAL libraries linked against by this library.
+ */
+void @PACKAGE_NAME_UCASE@_VCS_LINK_CHECK(void)
+{
+#if @PACKAGE_NAME_UCASE@_VERSION_DEVEL != 0
+#if defined(HAVE_LIBLAL) && LAL_VERSION_DEVEL != 0
+  LAL_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALFRAME) && LALFRAME_VERSION_DEVEL != 0
+  LALFRAME_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALMETAIO) && LALMETAIO_VERSION_DEVEL != 0
+  LALMETAIO_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALXML) && LALXML_VERSION_DEVEL != 0
+  LALXML_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALSIMULATION) && LALSIMULATION_VERSION_DEVEL != 0
+  LALSIMULATION_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALBURST) && LALBURST_VERSION_DEVEL != 0
+  LALBURST_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALDETCHAR) && LALDETCHAR_VERSION_DEVEL != 0
+  LALDETCHAR_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALINSPIRAL) && LALINSPIRAL_VERSION_DEVEL != 0
+  LALINSPIRAL_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALPULSAR) && LALPULSAR_VERSION_DEVEL != 0
+  LALPULSAR_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALINFERENCE) && LALINFERENCE_VERSION_DEVEL != 0
+  LALINFERENCE_VCS_LINK_CHECK();
+#endif
+#if defined(HAVE_LIBLALSTOCHASTIC) && LALSTOCHASTIC_VERSION_DEVEL != 0
+  LALSTOCHASTIC_VCS_LINK_CHECK();
+#endif
+#endif
+}
