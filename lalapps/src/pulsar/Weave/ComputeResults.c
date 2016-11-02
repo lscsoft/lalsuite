@@ -26,7 +26,9 @@
 
 #include <lal/VectorMath.h>
 
-// Aligned arrays use maximum required alignment, i.e. 32 bytes for AVX
+///
+/// Aligned arrays use maximum required alignment, i.e.\ 32 bytes for AVX
+///
 const UINT4 alignment = 32;
 
 ///
