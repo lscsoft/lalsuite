@@ -102,31 +102,21 @@ def readLValert(threshold_snr=None,gid=None,flow=40.0,gracedb="gracedb",basepath
   coinc_events = [event for event in coinctable]
   sngltable = lsctables.SnglInspiralTable.get_table(xmldoc)
   sngl_events = [event for event in sngltable]
-  #Issues to identify IFO with good data that did not produce a trigger
-  #search_summary = lsctables.getTablesByType(xmldoc, lsctables.SearchSummaryTable)[0]
-  #ifos = search_summary[0].ifos.split(",")
-  #coinc_table = lsctables.getTablesByType(xmldoc, lsctables.CoincTable)[0]
-  #ifos = coinc_table[0].instruments.split(",")
-  trigSNR = 2.0*coinctable[0].snr #The factor of 2.0 is because detection pipelines recover SNR lower than PE can recover.
+  ifos = coinctable[0].ifos.split(",")
+  trigSNR = coinctable[0].snr
   # Parse PSD
   srate_psdfile=16384
-  ifos=None
+  fhigh=None
   if downloadpsd:
     print "gracedb download %s psd.xml.gz" % gid
     subprocess.call([gracedb,"download", gid ,"psd.xml.gz"])
     xmlpsd = lalseries.read_psd_xmldoc(utils.load_filename('psd.xml.gz',contenthandler = lalseries.PSDContentHandler))
-    # Note: This finds the active IFOs by looking for available PSDs
-    # Is there another way of getting this info?
-    ifos = xmlpsd.keys()
-  psdasciidic=None
-  fhigh=None
-  if os.path.exists("psd.xml.gz"):
-    psdasciidic=get_xml_psds(os.path.realpath("./psd.xml.gz"),ifos,os.path.realpath('./PSDs'),end_time=None)
-    combine=np.loadtxt(psdasciidic[psdasciidic.keys()[0]])
-    srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) ) * 2
-  else:
-    print "Failed to gracedb download %s psd.xml.gz. lalinference will estimate the psd itself." % gid
-  # Logic for template duration and sample rate disabled
+    if os.path.exists("psd.xml.gz"):
+      psdasciidic=get_xml_psds(os.path.realpath("./psd.xml.gz"),ifos,os.path.realpath('./PSDs'),end_time=None)
+      combine=np.loadtxt(psdasciidic[psdasciidic.keys()[0]])
+      srate_psdfile = pow(2.0, ceil( log(float(combine[-1][0]), 2) ) ) * 2
+    else:
+      print "Failed to gracedb download %s psd.xml.gz. lalinference will estimate the psd itself." % gid
   coinc_map = lsctables.CoincMapTable.get_table(xmldoc)
   for coinc in coinc_events:
     these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
@@ -150,7 +140,8 @@ def readLValert(threshold_snr=None,gid=None,flow=40.0,gracedb="gracedb",basepath
       srate = max(srate)
     else:
       srate = srate_psdfile
-      fhigh = srate_psdfile/2.0 * 0.95 # Because of the drop-off near Nyquist of the PSD from gstlal
+      if downloadpsd:
+        fhigh = srate_psdfile/2.0 * 0.95 # Because of the drop-off near Nyquist of the PSD from gstlal
     horizon_distance = max(horizon_distance) if len(horizon_distance) > 0 else None
     ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = max(dur), srate = srate,
              trigSNR = trigSNR, fhigh = fhigh, horizon_distance=horizon_distance)
@@ -545,15 +536,18 @@ def get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=None,sim
   return m1_priors, m2_priors, trigger_mchirp
 
 def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, force_flow=None):
-  mc_max = mc_priors['4s'][1]
-  mc_min = mc_priors['128s'][0]
+  mc_priors_keys_int = map(lambda k : int(k[:-1]), mc_priors.keys())
+  roq_min = mc_priors.keys()[np.argmin(mc_priors_keys_int)]
+  roq_max = mc_priors.keys()[np.argmax(mc_priors_keys_int)]
+  mc_max = mc_priors[roq_min][1]
+  mc_min = mc_priors[roq_max][0]
   scale_factor = 1.
-  if force_flow == None:
+  if force_flow == None and trigger_mchirp != None:
      if trigger_mchirp >= mc_max:
         scale_factor = 2.**(floor(trigger_mchirp/mc_max))
      if trigger_mchirp <= mc_min:
         scale_factor = (2./3.)**(ceil(trigger_mchirp/mc_min))
-  else:
+  elif force_flow != None:
      scale_factor = 20./force_flow
   return scale_factor
 
@@ -768,14 +762,23 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if self.config.has_option('lalinference','seglen'):
         seglen = self.config.getint('lalinference','seglen')
 
-      if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')):
+      if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')) or self.config.has_option('condor','bayesline') or self.config.has_option('condor','bayeswave'):
         psdlength = 0
+        padding = 0
+        self.config.set('input','padding',str(padding))
+        if (np.log2(seglen)%1):
+          seglen = np.power(2., np.ceil(np.log2(seglen)))
+
       else:
         psdlength = 32*seglen
     else:
       seglen = max(e.duration for e in self.events)
-      if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')):
+      if os.path.isfile(os.path.join(self.basepath,'psd.xml.gz')) or self.config.has_option('condor','bayesline') or self.config.has_option('condor','bayeswave'):
         psdlength = 0
+        padding = 0
+        self.config.set('input','padding',str(padding))
+        if (np.log2(seglen)%1):
+          seglen = np.power(2., np.ceil(np.log2(seglen)))
       else:
         psdlength = 32*seglen
     # Assume that the data interval is (end_time - seglen -padding , end_time + psdlength +padding )
@@ -848,7 +851,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # No input file given, analyse the entire time stretch between gpsstart and gpsend
     if self.config.has_option('input','analyse-all-time') and self.config.getboolean('input','analyse-all-time')==True:
         print 'Setting up for analysis of continuous time stretch %f - %f'%(gpsstart,gpsend)
-        seglen=self.config.getfloat('engine','seglen')
+        if self.config.has_option('engine','seglen'):
+          seglen=self.config.getfloat('engine','seglen')
+        else:
+          print 'ERROR: seglen must be specified in [engine] section when running without input file'
+          sys.exit(1)
         if(self.config.has_option('input','segment-overlap')):
           overlap=self.config.getfloat('input','segment-overlap')
         else:
@@ -1216,7 +1223,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if ifos is None:
       ifos=self.ifos
     end_time=event.trig_time
-    seglen=self.config.getfloat('engine','seglen')
+    if self.config.has_option('lalinference','seglen'):
+      seglen=self.config.getfloat('lalinference','seglen')
+    elif self.config.has_option('engine','seglen'):
+      seglen=self.config.getfloat('engine','seglen')
+    else:
+      seglen=event.duration
     segstart=end_time+2-seglen
     segend=segstart+seglen
     myifos=set([])
@@ -1351,6 +1363,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                   bayeswavepsdnode[ifo].add_output_file(os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat'))
                   bayeswavepsdnode[ifo].set_trig_time(end_time)
                   bayeswavepsdnode[ifo].set_seglen(bw_seglen)
+                  bayeswavepsdnode[ifo].set_psdlength(bw_seglen)
                   bayeswavepsdnode[ifo].set_srate(bw_srate)
                   if event.timeslides.has_key(ifo):
                      slide=event.timeslides[ifo]
@@ -1451,6 +1464,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       node.set_seglen(self.config.getfloat('engine','seglen'))
     else:
       node.set_seglen(event.duration)
+    if self.config.has_option('condor','bayeswave') and bayeswavepsdnode:
+      node.set_psdlength(0.0)
     if self.config.has_option('input','psd-length'):
       node.set_psdlength(self.config.getint('input','psd-length'))
       if self.config.has_option('condor','bayeswave') and bayeswavepsdnode:
@@ -1593,7 +1608,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     #node=self.computeroqweightsnodes[ifo]
         #except KeyError:
     node=ROMNode(self.computeroqweights_job,ifo,parent.seglen,parent.flows[ifo])
-    self.computeroqweightsnodes[ifo]=node
+    self.computeroqweightsnode[ifo]=node
     if parent is not None:
       node.add_parent(parent)
     self.add_node(node)
@@ -2373,6 +2388,7 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       + 3*((params['fhigh']-params['flow'])*params['seglen'])*(float(dt+0.05)*2/float(time_step))*2*8/(1024*1024)
       + os.path.getsize(str(cp.get('paths','roq_b_matrix_directory')+'/B_quadratic.npy'))/(1024*1024)
       ) + 4096) # add 4gb of memory due to how matrix-copying is handled in lalapps_compute_roq_weights.py/numpy
+      print 'Requesting '+computeroqweights_memory+' of memory for computeroqweights.'
     self.add_condor_cmd('request_memory',computeroqweights_memory)
 
 class ROMNode(pipeline.CondorDAGNode):

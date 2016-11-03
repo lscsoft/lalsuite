@@ -134,7 +134,11 @@ if cp.has_option('paths','roq_b_matrix_directory'):
     for (roq,m1_prior), (roq2,m2_prior) in zip(m1_priors.items(), m2_priors.items()):
       mc_priors[roq] = sorted([pipe_utils.mchirp_from_components(m1_prior[1], m2_prior[0]), pipe_utils.mchirp_from_components(m1_prior[0], m2_prior[1])])
 
+  if cp.has_option('lalinference','trigger_mchirp'):
+      trigger_mchirp=cp.get('lalinference','trigger_mchirp')
   roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, roq_force_flow)
+  if roq_mass_freq_scale_factor != 1.:
+    print 'WARNING: Rescaling ROQ basis, please ensure it is allowed with the model used.'
 
   if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')):
 
@@ -143,9 +147,9 @@ if cp.has_option('paths','roq_b_matrix_directory'):
     # find mass bin containing the trigger
     trigger_bin = None
     for roq in roq_paths:
-      print
-      if mc_priors[roq][0] <= trigger_mchirp <= mc_priors[roq][1]:
+      if mc_priors[roq][0]*roq_mass_freq_scale_factor <= trigger_mchirp <= mc_priors[roq][1]*roq_mass_freq_scale_factor:
         trigger_bin = roq
+        print 'Prior in Mchirp will be ['+str(mc_priors[roq][0]*roq_mass_freq_scale_factor)+','+str(mc_priors[roq][1]*roq_mass_freq_scale_factor)+'] to contain the trigger Mchirp '+str(trigger_mchirp)
         break
     roq_paths = [trigger_bin]
   else:
@@ -211,12 +215,16 @@ for sampler in samps:
 
         seglen=int(roq_params[roq]['seglen'] * roq_mass_freq_scale_factor)
         # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
-        q_min=1./float(roq_params[roq]['qmax'])
         cp.set('engine','srate',str(srate))
         cp.set('engine','seglen',str(seglen))
-        tmp=cp.get('lalinference','flow')
-        tmp=eval(tmp)
-        for i in tmp.keys():
+        if cp.has_option('lalinference','flow'):
+          tmp=cp.get('lalinference','flow')
+          tmp=eval(tmp)
+          ifos=tmp.keys()
+        else:
+          tmp={}
+          ifos=eval(cp.get('analysis','ifos'))
+        for i in ifos:
           tmp[i]=flow
         cp.set('lalinference','flow',str(tmp))
         if roq_bounds == 'chirp_mass_q':
@@ -227,8 +235,8 @@ for sampler in samps:
           cp.set('engine','chirpmass-min',str(mc_min))
           cp.set('engine','chirpmass-max',str(mc_max))
           cp.set('engine','q-min',str(q_min))
-          cp.set('engine','comp-min', str(np.max(roq_params[roq]['compmin'] * roq_mass_freq_scale_factor, mc_min * np.power(1+q_min, 1./5.) * np.power(q_min, 2./5.)))
-          cp.set('engine','comp-max', str(mc_max * np.power(1+q_min, 1./5.) * np.power(q_min, -3./5.)))
+          cp.set('engine','comp-min', str(max(roq_params[roq]['compmin'] * roq_mass_freq_scale_factor, mc_min * pow(1+q_min, 1./5.) * pow(q_min, 2./5.))))
+          cp.set('engine','comp-max', str(mc_max * pow(1+q_min, 1./5.) * pow(q_min, -3./5.)))
         elif roq_bounds == 'component_mass':
           m1_min = m1_priors[roq][0]
           m1_max = m1_priors[roq][1]
