@@ -363,8 +363,8 @@ int main( int argc, char *argv[] )
   // - Checkpointing
   //
   XLALUserVarCheck( &should_exit,
-                    !UVAR_ALLSET2( ckpt_output_period, ckpt_output_pc_exit ),
-                    UVAR_STR2AND( ckpt_output_period, ckpt_output_pc_exit ) " are mutually exclusive" );
+                    !UVAR_ALLSET3( shortcut_search, ckpt_output_period, ckpt_output_pc_exit ),
+                    UVAR_STR3AND( shortcut_search, ckpt_output_period, ckpt_output_pc_exit ) " are mutually exclusive" );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( ckpt_output_period ) || uvar->ckpt_output_period > 0,
                     UVAR_STR( ckpt_output_period ) " must be strictly positive" );
