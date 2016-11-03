@@ -647,7 +647,7 @@ for inj_run in cp.options("injections"):
     for bank_node in bank_nodes:
         for bank_name in bank_node.get_output_files():
             base, _ = os.path.splitext(bank_name)
-            sim_name = base.replace("SBANK", "SBANK_SIM")
+            sim_name = base.replace("SBANK", "SBANK_SIM_" + inj_run.upper(), 1)
             sim_nodes.append(BankSimNode(banksimJob, dag, inj_name, waveform, bank_name, sim_name, [inj_node, bank_node]))
 
     # merge and plot the partial sims
