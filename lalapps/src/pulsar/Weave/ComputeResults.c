@@ -211,6 +211,9 @@ int XLALWeaveCohResultsCompute(
   FstatResults XLAL_INIT_DECL( Fstat_res_struct );
   FstatResults *Fstat_res = &Fstat_res_struct;
   Fstat_res->internalalloclen = ( *coh_res )->nfreqs;
+  if ( coh_input->what_to_compute & FSTATQ_2F_PER_DET ) {
+    Fstat_res->numDetectors = coh_input->Fstat_ndetectors;
+  }
   Fstat_res->twoF = ( *coh_res )->twoF;
   for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
     const size_t idx = coh_input->Fstat_res_idx[i];
@@ -223,6 +226,7 @@ int XLALWeaveCohResultsCompute(
   // Sanity check the F-statistic results structure
   XLAL_CHECK( Fstat_res->internalalloclen == ( *coh_res )->nfreqs, XLAL_EFAILED );
   XLAL_CHECK( Fstat_res->numFreqBins == ( *coh_res )->nfreqs, XLAL_EFAILED );
+  XLAL_CHECK( !( coh_input->what_to_compute & FSTATQ_2F_PER_DET ) || ( Fstat_res->numDetectors == coh_input->Fstat_ndetectors ), XLAL_EFAILED );
   XLAL_CHECK( Fstat_res->twoF == ( *coh_res )->twoF, XLAL_EFAILED );
   for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
     const size_t idx = coh_input->Fstat_res_idx[i];
