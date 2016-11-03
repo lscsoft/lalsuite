@@ -489,7 +489,7 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspira
   ## XML and GID cannot be given at the same time
   ## sim_inspiral must already point at the right row
   mc_priors = {}
- 
+
   if gid is not None and sim_inspiral is not None:
     print "Error in get_roq_mchirp_priors, cannot use both gid and sim_inspiral\n"
     sys.exit(1)
@@ -518,6 +518,32 @@ def get_roq_mchirp_priors(path, roq_paths, roq_params, key, gid=None,sim_inspira
 
   return mc_priors, trigger_mchirp
 
+def get_roq_component_mass_priors(path, roq_paths, roq_params, key, gid=None,sim_inspiral=None):
+
+  ## XML and GID cannot be given at the same time
+  ## sim_inspiral must already point at the right row
+  m1_priors = {}
+  m2_priors = {}
+
+  if gid is not None and sim_inspiral is not None:
+    print "Error in get_roq_mchirp_priors, cannot use both gid and sim_inspiral\n"
+    sys.exit(1)
+
+  for roq in roq_paths:
+    params=os.path.join(path,roq,'params.dat')
+    roq_params[roq]=np.genfromtxt(params,names=True)
+    m1_priors[roq]=[float(roq_params[roq]['mass1min']),float(roq_params[roq]['mass1max'])]
+    m2_priors[roq]=[float(roq_params[roq]['mass2min']),float(roq_params[roq]['mass2max'])]
+
+  if gid is not None:
+    trigger_mchirp = get_trigger_chirpmass(gid)
+  elif sim_inspiral is not None:
+    trigger_mchirp = sim_inspiral.mchirp
+  else:
+    trigger_mchirp = None
+
+  return m1_priors, m2_priors, trigger_mchirp
+
 def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, force_flow=None):
   mc_max = mc_priors['4s'][1]
   mc_min = mc_priors['128s'][0]
@@ -533,6 +559,27 @@ def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, force_flow=None):
 
 def create_pfn_tuple(filename,protocol='file://',site='local'):
     return( (os.path.basename(filename),protocol+os.path.abspath(filename),site) )
+
+def mchirp_from_components(m1, m2):
+  return (m1*m2)**(3.0/5.0) / (m1+m2)**(1.0/5.0)
+
+def Query_ROQ_Bounds_Type(path, roq_paths):
+  # Assume that parametrization of ROQ bounds is independent of seglen; just look at first one
+  import numpy as np
+  roq = roq_paths[0]
+  params = os.path.join(path,roq,'params.dat')
+  roq_params0 = np.genfromtxt(params,names=True)
+  roq_names_set = set(roq_params0.dtype.names)
+  component_mass_bounds_set = set(['mass1min', 'mass1max', 'mass2min', 'mass2max'])
+  chirp_mass_q_bounds_set = set(['chirpmassmin', 'chirpmassmax', 'qmin', 'qmax'])
+  if roq_names_set.issuperset(component_mass_bounds_set):
+    roq_bounds = 'component_mass'
+  elif roq_names_set.issuperset(chirp_mass_q_bounds_set):
+    roq_bounds = 'chirp_mass_q'
+  else:
+    print 'Invalid bounds for ROQ. Ether (m1,m2) or (mc,q) bounds are supported.'
+    sys.exit(1)
+  return roq_bounds
 
 class LALInferencePipelineDAG(pipeline.CondorDAG):
   def __init__(self,cp,dax=False,first_dag=True,previous_dag=None,site='local'):
