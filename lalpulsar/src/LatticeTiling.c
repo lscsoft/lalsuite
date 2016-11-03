@@ -273,7 +273,7 @@ static void LT_GetBounds(
   // Get parameter-space bounds in dimension 'dim'
   LT_CallBoundFunc( tiling, dim, phys_point, phys_lower, phys_upper );
 
-  if ( bound->is_tiled && padding > 0 ) {
+  if ( bound->is_tiled ) {
 
     if ( dim > 0 ) {
 
@@ -956,6 +956,7 @@ int XLALSetLatticeTilingPadding(
   // Check input
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
   XLAL_CHECK( tiling->lattice == LT_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( padding > 0, XLAL_EINVAL );
 
   // Set level of padding added to parameter space bounds
   tiling->padding = padding;
@@ -1407,6 +1408,7 @@ int XLALLatticeTilingDimensionBounds(
 
   // Check input
   XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( padding > 0, XLAL_EINVAL );
   XLAL_CHECK( point != NULL, XLAL_EFAULT );
   XLAL_CHECK( point->size == tiling->ndim, XLAL_ESIZE );
   XLAL_CHECK( 0 < y_dim && y_dim < tiling->ndim, XLAL_EINVAL );

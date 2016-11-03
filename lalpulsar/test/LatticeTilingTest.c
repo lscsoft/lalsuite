@@ -797,8 +797,6 @@ int main( void )
   XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 0, 1, "Ans",    6,   27,  151,  151 ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 1, "Ans",    6,   30,  145,  897 ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 1, "Zn" ,    7,   46,  287, 2543 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 0, "Ans",    4,   13,   39,  160 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 0, "Zn" ,    5,   21,   81,  474 ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 2, "Ans",    8,   54,  336, 2804 ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( BasicTest( 4, 1, 1, 1, 1, 2, "Zn" ,    9,   77,  661, 7822 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
