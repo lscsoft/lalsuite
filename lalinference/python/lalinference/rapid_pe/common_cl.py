@@ -140,6 +140,32 @@ def add_intrinsic_params(argp):
     intrinsic_params.add_argument("--deff-lambda", type=float, help="Value of second effective tidal parameter. Optional, ignored if not given.")
     return argp
 
+def parse_param(popts):
+    """
+    Parse out the specification of the intrinsic space. Examples:
+
+    >>> parse_param(["mass1=1.4", "mass2", "spin1z=-1.0,10"])
+    {'mass1': 1.4, 'mass2': None, 'spin1z': (-1.0, 10.0)}
+    """
+    if popts is None:
+        return {}, {}
+    intr_prms, expand_prms = {}, {}
+    for popt in popts:
+        popt = popt.split("=")
+        if len(popt) == 1:
+            # Implicit expand in full parameter space -- not yet completely
+            # implemented
+            intr_prms[popt[0]] = None
+        elif len(popt) == 2:
+            popt[1] = popt[1].split(",")
+            if len(popt[1]) == 1:
+                # Fix intrinsic point
+                intr_prms[popt[0]] = float(popt[1][0])
+            else:
+                expand_prms[popt[0]] = tuple(map(float, popt[1]))
+    return intr_prms, expand_prms
+
+
 #
 # DAG workflow related dictionaries
 #
