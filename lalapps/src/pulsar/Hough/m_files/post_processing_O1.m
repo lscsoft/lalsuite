@@ -24,9 +24,9 @@ r_W_cl=sqrt(14);
 
 chisquare_STD_veto = 5;
 
-population_cluster_veto=10;
+population_cluster_veto=0;
 
-sigma_veto_cluster=1.15;
+sigma_veto_cluster=0;
 
 %Detector == 'L':
 x_tref = 1126034147;
@@ -217,7 +217,7 @@ end
     end
     if ~isempty(g_Toplist)
         k0=0;
-        I_N_Cluster=1;
+        I_N_Cluster=0;
         I_partial_cluster=[];
         I_partial_cluster{1}=[];
         for k=1:kmax;
@@ -232,26 +232,29 @@ end
             I_band =  find( f0_grup + k*f0_band - r_W_cl/Tcoh <= x(:,1) &  f0_grup + (k+1)*f0_band +  r_W_cl/Tcoh >= x(:,1));
             
             if ~isempty(I_band)
-                
-                ones_x = ones(1,length(x(I_band,1)));
-                ones_y = ones(length(x(I_band,1)),1);
-                
-                m_W1 = df0;
-                m_W2 = ((1./x(I_band))*ones_x + ones_y*(1./x(I_band))')/(Tcoh*1e-4)/PixelFactor/2;
-                m_W4 = sum(df1)/2;
-                
-                m_D1 = ((x(I_band,1)*ones_x) - ones_y*x(I_band,1)')./m_W1;
-                m_D4 = ((x(I_band,4)*ones_x) - ones_y*x(I_band,4)')./m_W4;
+
+                [X,Y]=meshgrid(x(I_band,1),x(I_band,1));
+                m_D1 = (X-Y)/m_W1;
+                m_W2 = (2./(Y + X))/(Tcoh*1e-4)/PixelFactor/2;
+
+                [X,Y]=meshgrid(x(I_band,4),x(I_band,4));
+                m_D4 = (X-Y)/m_W4;
                 
                 n0=[cos(x(I_band,3)).*cos(x(I_band,2)),cos(x(I_band,3)).*sin(x(I_band,2)),sin(x(I_band,3))];
-                n0n0=n0(:,1)*n0(:,1)'+n0(:,2)*n0(:,2)'+n0(:,3)*n0(:,3)';
-                m_D2 = real(acos(n0n0)./m_W2);
+
+                b=sqrt((n0(:,2)*n0(:,3)'-n0(:,3)*n0(:,2)').^2+(n0(:,3)*n0(:,1)'-n0(:,1)*n0(:,3)').^2+(n0(:,1)*n0(:,2)'-n0(:,2)*n0(:,1)').^2);
+                a=n0(:,1)*n0(:,1)'+n0(:,2)*n0(:,2)'+n0(:,3)*n0(:,3)';
+                m_D2 = atan2(b,a)./m_W2;
                 
                 m_D= sqrt(m_D1.^2+m_D2.^2+m_D4.^2);
-                                
+                
+                %Dels=unique(reshape(m_D.' ,1,numel(m_D)));
+                
                 L_m_D=m_D<r_W_cl;
-                I_m = ones_y * (1:1:size(ones_x,2)).*L_m_D;
+                ones_x = ones(length(x(I_band,1)),1);                
+                I_m = ones_x * (1:1:size(ones_x,1)).*L_m_D;
                 i0=[];
+                
                 for j=1:length(I_m(:,1))
                     I_v_ji_0=[]; I_v_ji=[];
                     if ~ismember(j,i0)
@@ -264,8 +267,8 @@ end
                             I_v_ji(I_v_ji==0)=[];
                         end
                         i0=cat(2,i0,I_v_ji);
-                        I_partial_cluster{I_N_Cluster}=I_rang_grup_band_x(I_band(I_v_ji))';
-                        I_N_Cluster=I_N_Cluster+1;
+                        I_N_Cluster=I_N_Cluster+1;                        
+                        I_partial_cluster{I_N_Cluster}=(I_band(I_v_ji))';
                     end
                 end
             end
@@ -276,8 +279,8 @@ end
         N_Cluster=zeros(length(x(:,1)),1);
         I_Ci=[];
         A=I_partial_cluster{1};
-        if I_N_Cluster>2;
-            for i=1:(I_N_Cluster-1);
+        if I_N_Cluster>1;
+            for i=1:I_N_Cluster;
                 if isempty(I_Ci);
                     N_Cluster(A)=N;
                     N=N+1;
@@ -286,7 +289,7 @@ end
                     B = ismember(N_Cluster,N_Cluster_i(I_Ci));
                     N_Cluster(B)=N_Cluster_i(I_Ci(1));
                 end
-                if i<I_N_Cluster-1;
+                if i<I_N_Cluster;
                     A=I_partial_cluster{i+1};
                     N_Cluster_i=unique(N_Cluster(A));
                     I_Ci = find(N_Cluster_i~=0);
