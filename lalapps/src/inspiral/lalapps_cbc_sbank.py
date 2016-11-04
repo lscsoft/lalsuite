@@ -465,7 +465,7 @@ else:
 # the last len(ks) proposals have been rejected by SBank.
 ks = deque(10*[1], maxlen=10)
 k = 0 # k is nprop per iteration
-nprop = 1  # count total number of proposed templates
+nprop = 0  # count total number of proposed templates
 status_format = "\t".join("%s: %s" % name_format for name_format in zip(tmplt_class.param_names, tmplt_class.param_formats))
 
 #
@@ -492,7 +492,7 @@ for tmplt in proposal:
         bank.insort(tmplt)
         ks.append(k)
         if opts.verbose:
-            print "\nbank size: %d\t\tproposed: %d\trejection rate: %.6f / (%.6f)" % (len(bank), k, 1 - float(len(ks))/float(sum(ks)), 1 - 1./opts.convergence_threshold )
+            print "\nbank size: %d\t\tproposed: %d\trejection rate: %.6f / (%.6f)" % (len(bank), nprop, 1 - float(len(ks))/float(sum(ks)), 1 - 1./opts.convergence_threshold )
             print >>sys.stdout, "accepted:\t\t", tmplt
             if matcher is not None:
                 print >>sys.stdout, "max match (%.4f):\t" % match, matcher
