@@ -19,6 +19,14 @@ class bbh_final_state_fits:
     uib2016 = "UIB2016" # Jimenez-Forteza et al. [LIGO-P1600270 (2016)]         (mass+spin, aligned)
     hbr2016 = "HBR2016" # Hofmann et al.         [ApJL 825:L19 (2016)]          (spin only, precessing)
 
+# list of Kerr truncation behaviours
+class bbh_Kerr_trunc_opts:
+    trunc        = "TRUNCATE"       # truncate fit value to 1.0, with an info message
+    trunc_silent = "TRUNCATESILENT" # truncate fit value to 1.0, without info message
+    keep         = "KEEP"           # keep fit value, even if superextremal, but still give the info message
+    ign          = "IGNORE"         # keep fit value, even if superextremal, without info message
+    err          = "ERROR"          # abort with an error if fit value is superextremal
+
 # Functions to check that input values are physical
 
 def _check_m(m1,m2):
@@ -41,20 +49,31 @@ def _check_mchi(m1,m2,chi1,chi2):
     _check_m(m1,m2)
     _check_chi(chi1,chi2)
 
-def _truncate_at_Kerr_limit(chif):
-    if np.any(abs(chif)>1.0):
-       if isinstance(chif,(list,np.ndarray)):
-          idx_over = np.where(abs(chif)>1.0)
+def _truncate_at_Kerr_limit(chif, behavior, fitname="this"):
+    if behavior not in bbh_Kerr_trunc_opts.__dict__.values():
+      raise ValueError("Unknown user option '%s' for Kerr truncation behavior." % behavior)
+    if behavior!=bbh_Kerr_trunc_opts.ign and np.any(abs(chif)>1.0):
+      if isinstance(chif,(list,np.ndarray)):
+        idx_over = np.where(abs(chif)>1.0)
+        if behavior==bbh_Kerr_trunc_opts.trunc or behavior==bbh_Kerr_trunc_opts.trunc_silent:
           chif_trunc = np.sign(chif[idx_over])*1.0
-          if np.size(idx_over)==1:
-             print "Truncating excessive chif of %f to Kerr limit of %f" % (chif[idx_over], chif_trunc)
-          else:
-             print "Truncating %d excessive chif values to Kerr limit of +-1" % np.size(idx_over)
+          if behavior==bbh_Kerr_trunc_opts.trunc:
+            print "Truncating %d excessive chif values from %s fit to Kerr limit of +-1.0" % (np.size(idx_over), fitname)
           chif[idx_over] = chif_trunc
-       else:
+        elif behavior==bbh_Kerr_trunc_opts.keep:
+          print "Note: %s fit predicts %d chif values in excess of the Kerr limit." % (fitname, np.size(idx_over))
+        elif behavior==bbh_Kerr_trunc_opts.err:
+          raise ValueError("%s fit predicts %d chif values in excess of the Kerr limit." % (fitname, np.size(idx_over)))
+      else:
+        if behavior==bbh_Kerr_trunc_opts.trunc or behavior==bbh_Kerr_trunc_opts.trunc_silent:
           chif_trunc = np.sign(chif)*1.0
-          print "Truncating excessive chif of %f to Kerr limit of %f" % (chif, chif_trunc)
+          if behavior==bbh_Kerr_trunc_opts.trunc:
+            print "Truncating excessive chif of %f from %s fit to Kerr limit of %f" % (chif, fitname, chif_trunc)
           chif = chif_trunc
+        elif behavior==bbh_Kerr_trunc_opts.keep:
+          print "Note: %s fit predicts chif of %f in excess of the Kerr limit." % (fitname, chif)
+        elif behavior==bbh_Kerr_trunc_opts.err:
+          raise ValueError("%s fit predicts chif of %f in excess of the Kerr limit." % (fitname, chif))
     return chif
 
 # Final mass and spin functions
@@ -361,7 +380,7 @@ def bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, ch
 
     return mf
 
-def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, truncate=True):
+def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, truncate=bbh_Kerr_trunc_opts.trunc):
     """
     Calculate the (signed) dimensionless spin parameter of the final BH resulting from the merger of two black holes,
     only using the projected spins along the total angular momentum
@@ -405,12 +424,11 @@ def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, tr
     else:
        raise ValueError("Unrecognized fit name.")
 
-    if truncate:
-       chif = _truncate_at_Kerr_limit(chif)
+    chif = _truncate_at_Kerr_limit(chif, truncate, fitname) # optionally truncate and/or warn at Kerr limit, depending on user option
 
     return chif
 
-def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname, truncate=True):
+def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname, truncate=bbh_Kerr_trunc_opts.trunc):
     """
     Calculate the magnitude of the dimensionless spin parameter of the final BH resulting from the merger of two black holes,
     including the in-plane spin components;
@@ -454,7 +472,7 @@ def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname, 
 
     if not precfit:
        # First compute the final mass and parallel component of the final spin using the aligned components of the initial spins
-       chifaligned = bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname)
+       chifaligned = bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, truncate)
 
        # Now compute the squared magnitude of the in-plane dimensionful spin, first computing the magnitudes of the initial in-plane spins
        S1perpmag = m1*m1*chi1*np.sin(tilt1)
@@ -464,8 +482,7 @@ def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname, 
        # Combine together
        chif = (chifaligned*chifaligned + Sperpmag2/(m1+m2)**4.)**0.5
 
-    if truncate:
-       chif = _truncate_at_Kerr_limit(chif)
+    chif = _truncate_at_Kerr_limit(chif, truncate, "augmented "+fitname) # optionally truncate and/or warn at Kerr limit, depending on user option
 
     return chif
 
