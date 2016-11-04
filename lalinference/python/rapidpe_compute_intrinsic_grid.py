@@ -162,35 +162,6 @@ def plot_grid_cells(cells, color, axis1=0, axis2=1):
 
         ax.add_patch(Rectangle((cell._bounds[axis1][0], cell._bounds[axis2][0]), ext1, ext2, edgecolor = color, facecolor='none'))
 
-#
-# Option parsing
-#
-
-def parse_param(popts):
-    """
-    Parse out the specification of the intrinsic space. Examples:
-
-    >>> parse_param(["mass1=1.4", "mass2", "spin1z=-1.0,10"])
-    {'mass1': 1.4, 'mass2': None, 'spin1z': (-1.0, 10.0)}
-    """
-    if popts is None:
-        return {}, {}
-    intr_prms, expand_prms = {}, {}
-    for popt in popts:
-        popt = popt.split("=")
-        if len(popt) == 1:
-            # Implicit expand in full parameter space -- not yet completely
-            # implemented
-            intr_prms[popt[0]] = None
-        elif len(popt) == 2:
-            popt[1] = popt[1].split(",")
-            if len(popt[1]) == 1:
-                # Fix intrinsic point
-                intr_prms[popt[0]] = float(popt[1][0])
-            else:
-                expand_prms[popt[0]] = tuple(map(float, popt[1]))
-    return intr_prms, expand_prms
-
 argp = ArgumentParser()
 
 argp.add_argument("-d", "--distance-coordinates", default="tau0_tau3", help="Coordinate system in which to calculate 'closeness'. Default is tau0_tau3.")
@@ -241,8 +212,8 @@ if opts.use_overlap is not None:
 # could incur an overlap calculation, or suffer from the effects of being close
 # only in Euclidean terms
 
-intr_prms, expand_prms = parse_param(opts.intrinsic_param)
-pin_prms, _ = parse_param(opts.pin_param)
+intr_prms, expand_prms = common_cl.parse_param(opts.intrinsic_param)
+pin_prms, _ = common_cl.parse_param(opts.pin_param)
 intr_pt = numpy.array([intr_prms[k] for k in intr_prms])
 # This keeps the list of parameters consistent across runs
 intr_prms = sorted(intr_prms.keys())
