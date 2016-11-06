@@ -1,11 +1,10 @@
 # Driver script for Weave tests
-
-# Exit as soon as any error occurs
 set -e
+echo "--- Test compiler is $0 ---"
 
 # Skip test if requested
 if test "x$1" = xskip; then
-    echo "$0: skipping test '$2'"
+    echo "--- Skipping test $2 ---"
     exit 77;
 fi
 
@@ -18,33 +17,34 @@ script="${scriptdir}/${scriptname}.sh"
 # Source and build directories
 [ "X${LAL_TEST_SRCDIR}" != X ]
 [ "X${LAL_TEST_BUILDDIR}" != X ]
-srcdir=$(cd ${LAL_TEST_SRCDIR} && pwd)
-builddir=$(cd ${LAL_TEST_BUILDDIR} && pwd)
+export srcdir=$(cd ${LAL_TEST_SRCDIR} && pwd)
+export builddir=$(cd ${LAL_TEST_BUILDDIR} && pwd)
 
 # Build directories containing required tools
-injdir=$(cd ${builddir}/../Injections && pwd)
-sftdir=$(cd ${builddir}/../SFTTools && pwd)
-fitsdir=$(cd ${builddir}/../FITSTools && pwd)
-fstatdir=$(cd ${builddir}/../Fstatistic && pwd)
+export injdir=$(cd ${builddir}/../Injections && pwd)
+export sftdir=$(cd ${builddir}/../SFTTools && pwd)
+export fitsdir=$(cd ${builddir}/../FITSTools && pwd)
+export fstatdir=$(cd ${builddir}/../Fstatistic && pwd)
 
 # Create directory for test
 testdir="${builddir}/${scriptname}.testdir"
 if [ -d "${testdir}" ]; then
-    echo "$0: removing contents of directory '${testdir}'"
+    echo "--- Removing contents of directory ${testdir} ---"
     rm -rf "${testdir}/*"
 else
     mkdir -p "${testdir}"
 fi
 
 # Run test in test directory
+echo "--- Running test in directory ${testdir} ---"
 cd "${testdir}"
-echo "$0: running test '${script}' in directory '${testdir}'"
+echo "--- Running test ${script} ---"
 echo
-source "${script}"
+time -p ${SHELL} -c "set -e; source ${script}; echo '--- Successfully ran test ${script} ---'"
 cd "${builddir}"
 
 # Remove test directory, unless NOCLEANUP is set
 if [ "X${NOCLEANUP}" = X ]; then
-    echo "$0: removing directory '${testdir}'"
+    echo "--- Removing directory ${testdir} ---"
     rm -rf "${testdir}"
 fi
