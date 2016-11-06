@@ -135,7 +135,7 @@ if cp.has_option('paths','roq_b_matrix_directory'):
       mc_priors[roq] = sorted([pipe_utils.mchirp_from_components(m1_prior[1], m2_prior[0]), pipe_utils.mchirp_from_components(m1_prior[0], m2_prior[1])])
 
   if cp.has_option('lalinference','trigger_mchirp'):
-      trigger_mchirp=cp.get('lalinference','trigger_mchirp')
+      trigger_mchirp=float(cp.get('lalinference','trigger_mchirp'))
   roq_mass_freq_scale_factor = pipe_utils.get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, roq_force_flow)
   if roq_mass_freq_scale_factor != 1.:
     print 'WARNING: Rescaling ROQ basis, please ensure it is allowed with the model used.'
