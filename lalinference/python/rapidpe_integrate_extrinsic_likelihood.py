@@ -248,11 +248,7 @@ for inst, psdf in map(lambda c: c.split("="), opts.psd_file):
 
     deltaF = data_dict[inst].deltaF
     # Highest freq. at which PSD is defined
-    if isinstance(psd_dict[inst],
-            pylal.xlal.datatypes.real8frequencyseries.REAL8FrequencySeries):
-        fmax = psd_dict[inst].f0 + psd_dict[inst].deltaF * (len(psd_dict[inst].data) - 1)
-    elif isinstance(psd_dict[inst], lal.REAL8FrequencySeries):
-        fmax = psd_dict[inst].f0 + psd_dict[inst].deltaF * (psd_dict[inst].data.length - 1)
+    fmax = psd_dict[inst].f0 + psd_dict[inst].deltaF * (psd_dict[inst].data.length - 1)
 
     # Assert upper limit of IP integral does not go past where PSD defined
     assert opts.fmax is None or opts.fmax<= fmax

@@ -1480,11 +1480,8 @@ def get_intp_psd_series_from_xmldoc(fname, inst):
     return intp_psd_series(psd)
 
 def resample_psd_series(psd, df=None, fmin=None, fmax=None):
-    # handle pylal REAL8FrequencySeries
-    if isinstance(psd, pylal.xlal.datatypes.real8frequencyseries.REAL8FrequencySeries):
-        psd_fmin, psd_fmax, psd_df, data = psd.f0, psd.f0 + psd.deltaF*len(psd.data), psd.deltaF, psd.data
     # handle SWIG REAL8FrequencySeries
-    elif isinstance(psd, lal.REAL8FrequencySeries):
+    if isinstance(psd, lal.REAL8FrequencySeries):
         psd_fmin, psd_fmax, psd_df, data = psd.f0, psd.f0 + psd.deltaF*len(psd.data.data), psd.deltaF, psd.data.data
     # die horribly
     else:
