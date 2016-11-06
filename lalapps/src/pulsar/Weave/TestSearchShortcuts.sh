@@ -57,23 +57,23 @@ ${fitsdir}/lalapps_fits_header_getval "WeaveOutShortComp.fits[0]" 'SEMIAPPX' > t
 semi_ntmpl_short_comp=`cat tmp | xargs printf "%d"`
 ${fitsdir}/lalapps_fits_header_getval "WeaveOutShortSearch.fits[0]" 'SEMIAPPX' > tmp
 semi_ntmpl_short_search=`cat tmp | xargs printf "%d"`
-[ ${semi_ntmpl_no_short} -eq ${semi_ntmpl_short_comp} ]
-[ ${semi_ntmpl_no_short} -eq ${semi_ntmpl_short_search} ]
+expr ${semi_ntmpl_no_short} '=' ${semi_ntmpl_short_comp}
+expr ${semi_ntmpl_no_short} '=' ${semi_ntmpl_short_search}
 ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoShort.fits[0]" 'SEMICOMP' > tmp
 semi_ncomp_no_short=`cat tmp | xargs printf "%d"`
 ${fitsdir}/lalapps_fits_header_getval "WeaveOutShortComp.fits[0]" 'SEMICOMP' > tmp
 semi_ncomp_short_comp=`cat tmp | xargs printf "%d"`
-[ ${semi_ncomp_no_short} -eq ${semi_ncomp_short_comp} ]
+expr ${semi_ncomp_no_short} '=' ${semi_ncomp_short_comp}
 set +x
 echo
 
 echo "=== Check peak memory usage is consistent ==="
 set -x
 ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoShort.fits[0]" 'PEAKMEM' > tmp
-peak_mem_no_short=`cat tmp | xargs printf "%.5g"`
+peak_mem_no_short=`cat tmp | xargs printf "%g"`
 ${fitsdir}/lalapps_fits_header_getval "WeaveOutShortComp.fits[0]" 'PEAKMEM' > tmp
-peak_mem_short_comp=`cat tmp | xargs printf "%.5g"`
-[ `echo ${peak_mem_no_short} ${peak_mem_short_comp} | awk '{ print 0.95 < $2/$1 && $2/$1 < 1.05 }'` -eq 1 ]
+peak_mem_short_comp=`cat tmp | xargs printf "%g"`
+[ `echo "scale = 5; x = ${peak_mem_short_comp} / ${peak_mem_no_short}; 0.95 < x && x < 1.05" | bc` -eq 1 ]
 set +x
 echo
 

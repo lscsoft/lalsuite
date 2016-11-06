@@ -59,10 +59,10 @@ echo "=== Check number of times output results have been restored from a checkpo
 set -x
 ${fitsdir}/lalapps_fits_header_getval "WeaveCkpt.fits[0]" CKPTCNT > tmp
 ckpt_count=`cat tmp | xargs printf "%d"`
-[ ${ckpt_count} -eq 2 ]
+expr ${ckpt_count} '=' 2
 ${fitsdir}/lalapps_fits_header_getval "WeaveOutCkpt.fits[0]" NUMCKPT > tmp
 num_ckpt=`cat tmp | xargs printf "%d"`
-[ ${num_ckpt} -eq ${ckpt_count} ]
+expr ${num_ckpt} '=' ${ckpt_count}
 set +x
 echo
 

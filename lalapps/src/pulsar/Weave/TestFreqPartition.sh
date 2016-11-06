@@ -44,10 +44,10 @@ for seg in 1 2 3; do
     set -x
     ${fitsdir}/lalapps_fits_table_list "WeaveOutNoPart.fits[per_seg_info][col coh_nrecomp][#row == ${seg}]" > tmp
     coh_nrecomp_no_part=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    [ ${coh_nrecomp_no_part} -eq 0 ]
+    expr ${coh_nrecomp_no_part} '=' 0
     ${fitsdir}/lalapps_fits_table_list "WeaveOutPart.fits[per_seg_info][col coh_nrecomp][#row == ${seg}]" > tmp
     coh_nrecomp_part=`cat tmp | sed "/^#/d" | xargs printf "%d"`
-    [ ${coh_nrecomp_part} -eq 0 ]
+    expr ${coh_nrecomp_part} '=' 0
     set +x
     echo
 
