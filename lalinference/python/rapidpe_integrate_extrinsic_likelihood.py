@@ -153,7 +153,7 @@ print "Performing integration for intrinsic parameters mass 1: %f, mass 2 %f, la
 # Template descriptors
 #
 
-fiducial_epoch = lal.LIGOTimeGPS(event_time.seconds, event_time.nanoseconds)
+fiducial_epoch = lal.LIGOTimeGPS(event_time.gpsSeconds, event_time.gpsNanoSeconds)
 
 # Struct to hold template parameters
 P = lalsimutils.ChooseWaveformParams(
