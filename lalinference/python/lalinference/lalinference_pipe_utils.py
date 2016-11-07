@@ -766,8 +766,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         psdlength = 0
         padding = 0
         self.config.set('input','padding',str(padding))
-        if (np.log2(seglen)%1):
-          seglen = np.power(2., np.ceil(np.log2(seglen)))
+        if self.config.has_option('condor','bayeswave'):
+          if (np.log2(seglen)%1):
+            seglen = np.power(2., np.ceil(np.log2(seglen)))
 
       else:
         psdlength = 32*seglen
@@ -777,8 +778,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         psdlength = 0
         padding = 0
         self.config.set('input','padding',str(padding))
-        if (np.log2(seglen)%1):
-          seglen = np.power(2., np.ceil(np.log2(seglen)))
+        if self.config.has_option('condor','bayeswave'):
+          if (np.log2(seglen)%1):
+            seglen = np.power(2., np.ceil(np.log2(seglen)))
       else:
         psdlength = 32*seglen
     # Assume that the data interval is (end_time - seglen -padding , end_time + psdlength +padding )
@@ -1322,12 +1324,14 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     prenode.add_var_arg('--outfile '+roqeventpath+'data-dump')
     prenode.add_var_arg('--data-dump')
     if self.config.has_option('lalinference','seglen'):
-      prenode.set_seglen(self.config.getfloat('lalinference','seglen'))
+      p_seglen=self.config.getfloat('lalinference','seglen')
     elif self.config.has_option('engine','seglen'):
-      prenode.set_seglen(self.config.getfloat('engine','seglen'))
+      p_seglen=self.config.getfloat('engine','seglen')
     else:
-      prenode.set_seglen(event.duration)
+      p_seglen=event.duration
+    prenode.set_seglen(p_seglen)
     if self.config.has_option('condor','bayeswave'):
+      prenode.set_psdlength(p_seglen)
       if self.config.has_option('lalinference','seglen'):
         bw_seglen = self.config.getfloat('lalinference','seglen')
       elif self.config.has_option('engine','seglen'):
