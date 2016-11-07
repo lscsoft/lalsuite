@@ -1,4 +1,4 @@
-function post_processing_O1(X_input,Y_input,grup_Band,BandNo,BandNf,Ntop,PixelFactor,p,sig_veto,rp_sig,r_W,r_W_cl,CHI_V,chisquare_STD_veto,population_cluster_veto,significance_veto_cluster,x_tref,x_tend,y_tref,y_tend,Extract_S,min_band)
+function post_processing_O1(X_input,Y_input,grup,grup_Band,BandNo,BandNf,Ntop,PixelFactor,p,sig_veto,rp_sig,r_W,r_W_cl,CHI_V,chisquare_STD_veto,population_cluster_veto,significance_veto_cluster,x_tref,x_tend,y_tref,y_tend,Extract_S,min_band)
 
 format long
 
@@ -58,7 +58,7 @@ format long
  df1=(df0./Tobs);
  
  f0_band=r_W*df0; %%% size of the Band to extract and analyse
- f0_rang_grup_band=10; %%% size of the Band to extract before analysis
+ f0_rang_grup_band=5000; %%% size of the Band to extract before analysis
  
  sigma_veto_toplist= @(x) sig_veto+0.*x;
 
@@ -129,8 +129,8 @@ format long
         % (We add a wings considering r_W/Tcoh the maximum possible distance in frequency)
         
         for k=1:kmax;
-            if (k/(f0_rang_grup_band/f0_band)) == fix(k/(f0_rang_grup_band/f0_band)) || k==1;
-                f0_rang_grup_band/f0_band
+            if (k/(f0_rang_grup_band)) == fix(k/(f0_rang_grup_band)) || k==1;
+                [1,grup+f0_band*k]
                 I_rang_grup_band_x= find( f0_grup + k0*f0_rang_grup_band - r_W/Tcoh <= x1_y & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= x1_y);
                 I_rang_grup_band_y= find( f0_grup + k0*f0_rang_grup_band <= y_Toplist(:,1) & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= y_Toplist(:,1));
                 k0=k0+1;
@@ -224,7 +224,7 @@ format long
             % (We add a wings considering r_W/Tcoh the maximum possible distance in frequency)
             
             if (k/(f0_rang_grup_band/f0_band)) == fix(k/(f0_rang_grup_band/f0_band)) || k==1;
-                f0_grup + k0*f0_rang_grup_band;
+                [2,grup+f0_band*k]
                 I_rang_grup_band_x= find( f0_grup + k0*f0_rang_grup_band - r_W/Tcoh <= g_Toplist(:,1) & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= g_Toplist(:,1));
                 k0=k0+1;
             end
@@ -239,7 +239,6 @@ format long
             if ~isempty(I_band)
                 
                 x = gx_Toplist(I_band,:);
-                min(x(:,1))
                 % Calculate the distace between candidates
                 [m_D,m_D5,~,~]=Distance_candidates(x,x,df0,df1,Tcoh,PixelFactor);
                 
@@ -295,7 +294,6 @@ format long
                     % Set the cluster id N to partition A
                     N_Cluster(A)=N;
                     N=N+1;
-                    N_Cluster(A)
                 else
                     % Set a common id to partition A and any possible
                     % connection with different id assigned.
@@ -325,11 +323,13 @@ format long
             
             I_Cluster_i=find(N_Cluster==j);
             s_mean=x(I_Cluster_i,6); % from the harmonic significance generated
-            
+            Cluster.id{j} = j;
             Cluster.sign_mean{j} =mean(x(I_Cluster_i,5));
             Cluster.ind{j}       =I_Cluster_i;
             Cluster.s_harm{j}    =mean(s_mean);
             Cluster.sign_sum{j}  =sum(s_mean);
+            A_max=max(s_mean); if isempty(A_max); A_max=NaN; end;
+            Cluster.sign_max{j}  = A_max;           
             Cluster.parent_x{j}  =length(unique(x(I_Cluster_i,7)));
             Cluster.parent_y{j}  =length(unique(x(I_Cluster_i,8)));
             Cluster.f0{j}        =sum(x(I_Cluster_i,1).*s_mean)/Cluster.sign_sum{j};
@@ -343,16 +343,14 @@ format long
             Cluster.f1{j}        =sum(x(I_Cluster_i,4).*s_mean)/Cluster.sign_sum{j};
             Cluster.length{j}    =length(I_Cluster_i);
             
-            Cluster.sign_max{j}  =max(s_mean);
             
             if length(I_Cluster_i)<2; Cluster.noise{j}=1; else Cluster.noise{j}=0; end
         end
-        follow_up=[[Cluster.f0{:}]',[Cluster.alpha{:}]',[Cluster.delta{:}]',[Cluster.f1{:}]',[Cluster.sign_mean{:}]',[Cluster.s_harm{:}]',...
-            [Cluster.sign_sum{:}]',[Cluster.length{:}]',[Cluster.parent_x{:}]',[Cluster.parent_y{:}]'];
+
+            follow_up=[[Cluster.f0{:}]',[Cluster.alpha{:}]',[Cluster.delta{:}]',[Cluster.f1{:}]',[Cluster.sign_mean{:}]',[Cluster.s_harm{:}]',...
+        [Cluster.sign_sum{:}]',[Cluster.length{:}]',[Cluster.parent_x{:}]',[Cluster.parent_y{:}]',[Cluster.id{:}]'];
+        
     end
-    
-    follow_up=[[Cluster.f0{:}]',[Cluster.alpha{:}]',[Cluster.delta{:}]',[Cluster.f1{:}]',[Cluster.sign_mean{:}]',[Cluster.s_harm{:}]',...
-        [Cluster.sign_sum{:}]',[Cluster.length{:}]',[Cluster.parent_x{:}]',[Cluster.parent_y{:}]'];
     
     %% FOLLOW UP ASSIGMENT
     % veto population
@@ -362,7 +360,7 @@ format long
         
         f0=min(follow_up(:,1)):0.1:max(follow_up(:,1));
         follow_up0=[];
-        for i=Extract_S;min_band
+        for i=Extract_S;
             Is=[];
             [~,Iz]=sort(follow_up(:,i),'descend'); follow_up=follow_up(Iz,:);
             for BandN=1:length(f0);
