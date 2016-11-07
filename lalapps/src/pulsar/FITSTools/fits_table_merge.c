@@ -40,7 +40,9 @@ int main(int argc, char *argv[])
   long inrep = 0, outrep = 0, width = 0, inrows = 0, outrows = 0, ii = 0, jj = 0;
   unsigned char *buffer = 0;
 
-  if (argc != 3) {
+  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+
+  if (printhelp || argc != 3) {
     fprintf(stderr, "Usage:  %s infile1[ext][filter] outfile[ext]\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Merge 2 tables by copying all the rows from the 1st table\n");

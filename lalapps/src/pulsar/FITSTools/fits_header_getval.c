@@ -59,7 +59,9 @@ int main(int argc, char *argv[])
   char *longvalue = 0;
   int status = 0;   /*  CFITSIO status value MUST be initialized to zero!  */
 
-  if (argc != 3) {
+  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+
+  if (printhelp || argc != 3) {
     fprintf(stderr, "Usage:  %s filename[ext] keyword\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Print the current value of a header keyword.\n");

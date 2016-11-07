@@ -40,7 +40,9 @@ int main(int argc, char *argv[])
   int status = 0;   /*  CFITSIO status value MUST be initialized to zero!  */
   int keytype = 0;
 
-  if (argc != 4) {
+  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+
+  if (printhelp || argc != 4) {
     fprintf(stderr, "Usage:  %s filename[ext] keyword newvalue\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Modify the value of a header keyword.\n");

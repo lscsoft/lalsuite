@@ -46,12 +46,14 @@ int main(int argc, char *argv[])
   int hdunum = 0, hdutype = 0, ncols = 0, ii = 0, anynul = 0, dispwidth[1000];
   long jj = 0, nrows = 0;
 
+  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+
   char *argfile;
   int printhdr;
-  if (argc == 3 && strcmp(argv[1], "-n") == 0) {
+  if (!printhelp && argc == 3 && strcmp(argv[1], "-n") == 0) {
     printhdr = 0;
     argfile = argv[2];
-  } else if (argc == 2) {
+  } else if (!printhelp && argc == 2) {
     printhdr = 1;
     argfile = argv[1];
   } else {
