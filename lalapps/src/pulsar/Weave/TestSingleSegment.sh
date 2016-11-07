@@ -1,17 +1,25 @@
 # Perform a fully-coherent search of a single segment, and compare F-statistics to lalapps_ComputeFstatistic_v2
 
-echo "=== Generate SFTs ==="
-set -x
-${injdir}/lalapps_Makefakedata_v5 --randSeed=1234 --fmin=70.0 --Band=1.0 \
-    --injectionSources="{refTime=1122332211; h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=5.4; Delta=1.1; Freq=100.5; f1dot=-1e-9}" \
-    --Tsft=1800 --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
-    --timestampsFiles=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt
-set +x
-echo
-
 echo "=== Create single-segment search setup ==="
 set -x
 ${builddir}/lalapps_WeaveSetup --first-segment=1122332211/90000 --detectors=H1,L1 --output-file=WeaveSetup.fits
+set +x
+echo
+
+echo "=== Extract reference time from WeaveSetup.fits ==="
+set -x
+${fitsdir}/lalapps_fits_header_getval "WeaveSetup.fits[0]" 'DATE-OBS GPS' > tmp
+ref_time=`cat tmp | xargs printf "%.9f"`
+set +x
+echo
+
+echo "=== Generate SFTs with injected signal ==="
+set -x
+inject_params="Alpha=5.4; Delta=1.1; Freq=70.5; f1dot=-1e-9"
+${injdir}/lalapps_Makefakedata_v5 --randSeed=1234 --fmin=70.0 --Band=1.0 \
+    --injectionSources="{refTime=${ref_time}; h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; ${inject_params}}" \
+    --Tsft=1800 --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
+    --timestampsFiles=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt
 set +x
 echo
 
@@ -20,7 +28,7 @@ set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --output-toplist-limit=0 --output-per-detector --output-misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' --sft-files-check-crc --Fstat-method=DemodBest \
-    --freq=70.5/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=11
+    --freq=70.5~1e-4 --f1dot=-2e-9,0 --semi-max-mismatch=11
 set +x
 echo
 
@@ -60,10 +68,8 @@ expr ${coh_nrecomp} '=' 0
 set +x
 echo
 
-echo "=== Extract reference time and segment start/end times from WeaveSetup.fits ==="
+echo "=== Extract segment start/end times from WeaveSetup.fits ==="
 set -x
-${fitsdir}/lalapps_fits_header_getval "WeaveSetup.fits[0]" 'DATE-OBS GPS' > tmp
-ref_time=`cat tmp | xargs printf "%.9f"`
 ${fitsdir}/lalapps_fits_table_list "WeaveSetup.fits[segments][col start_s; start_ns][#row == 1]" > tmp
 start_time=`cat tmp | sed "/^#/d" | xargs printf "%d.%09d"`
 ${fitsdir}/lalapps_fits_table_list "WeaveSetup.fits[segments][col end_s; end_ns][#row == 1]" > tmp
@@ -96,5 +102,22 @@ set -x
 ${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstats.txt --Fname2=CFSv2Fstats.txt
 ${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstatsH1.txt --Fname2=CFSv2FstatsH1.txt
 ${fstatdir}/lalapps_compareFstats --Fname1=WeaveFstatsL1.txt --Fname2=CFSv2FstatsL1.txt
+set +x
+echo
+
+echo "=== Compute F-statistic at exact injected signal parameters using lalapps_ComputeFstatistic_v2 ==="
+set -x
+${fstatdir}/lalapps_ComputeFstatistic_v2 --outputFstat=CFSv2Exact.txt --outputSingleFstats --refTime=${ref_time} \
+    --minStartTime=${start_time} --maxStartTime=${end_time} --DataFiles='*.sft' \
+    --TwoFthreshold=0 --FstatMethod=ResampBest `echo "${inject_params}" | sed 's/^/--/;s/; / --/g'`
+set +x
+echo
+
+echo "=== Compare F-statistic at exact injected signal parameters with loudest F-statistic found by lalapps_Weave ==="
+set -x
+twoF_exact=`cat CFSv2Exact.txt | sed -n '/^[^%]/{p;q}' | awk '{print $7}'`
+${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=mean_twoF][#row == 1]" > tmp
+twoF_loud=`cat tmp | sed "/^#/d" | xargs printf "%g"`
+[ `echo "scale = 5; m = ( ${twoF_exact} - ${twoF_loud} ) / ${twoF_exact}; m < 0.3" | bc` -eq 1 ]
 set +x
 echo

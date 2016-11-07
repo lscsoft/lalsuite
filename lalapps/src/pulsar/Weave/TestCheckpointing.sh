@@ -1,17 +1,16 @@
 # Perform an interpolating search without/with checkpointing, and check for consistent results
 
-echo "=== Generate SFTs ==="
-set -x
-${injdir}/lalapps_Makefakedata_v5 --randSeed=3456 --fmin=49.5 --Band=2.0 --Tsft=1800 \
-    --injectionSources="{refTime=1122332211; h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
-    --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
-    --timestampsFiles=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt
-set +x
-echo
-
 echo "=== Create search setup with 3 segments ==="
 set -x
 ${builddir}/lalapps_WeaveSetup --first-segment=1122332211/90000 --segment-count=3 --detectors=H1,L1 --output-file=WeaveSetup.fits
+set +x
+echo
+
+echo "=== Generate SFTs ==="
+set -x
+${injdir}/lalapps_Makefakedata_v5 --randSeed=3456 --fmin=49.5 --Band=2.0 --Tsft=1800 \
+    --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
+    --timestampsFiles=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt
 set +x
 echo
 
