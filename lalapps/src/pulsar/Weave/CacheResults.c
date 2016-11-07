@@ -48,8 +48,8 @@ typedef struct {
 struct tagWeaveCache {
   /// Number of parameter-space dimensions
   size_t ndim;
-  /// Half the coherent lattice tiling bounding box in dimension 0
-  double coh_half_bound_box_0;
+  /// Coherent lattice tiling bounding box in dimension 0
+  double coh_bound_box_0;
   /// Physical to lattice coordinate transform
   WeavePhysicalToLattice phys_to_latt;
   /// Lattice to physical coordinate transform
@@ -80,8 +80,8 @@ struct tagWeaveCache {
 struct tagWeaveCacheQueries {
   /// Number of parameter-space dimensions
   size_t ndim;
-  /// Half the semicoherent lattice tiling bounding box in dimension 0
-  double semi_half_bound_box_0;
+  /// Semicoherent lattice tiling bounding box in dimension 0
+  double semi_bound_box_0;
   /// Physical to lattice coordinate transform
   WeavePhysicalToLattice phys_to_latt;
   /// Lattice to physical coordinate transform
@@ -98,6 +98,8 @@ struct tagWeaveCacheQueries {
   INT4 *coh_left;
   /// Indexes of right-most point in queried coherent frequency block
   INT4 *coh_right;
+  /// Relevance of each queried coherent frequency block
+  REAL4 *coh_relevance;
   /// Number of partitions to divide semicoherent frequency block into
   UINT4 npartitions;
   /// Index to current partition of semicoherent frequency block
@@ -223,8 +225,8 @@ WeaveCache *XLALWeaveCacheCreate(
   cache->ndim = XLALTotalLatticeTilingDimensions( coh_tiling );
   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
-  // Get half the coherent lattice tiling bounding box in dimension 0
-  cache->coh_half_bound_box_0 = 0.5 * XLALLatticeTilingBoundingBox( coh_tiling, 0 );
+  // Get coherent lattice tiling bounding box in dimension 0
+  cache->coh_bound_box_0 = XLALLatticeTilingBoundingBox( coh_tiling, 0 );
   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
   // If this is an interpolating search, create a lattice tiling locator
@@ -349,6 +351,8 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   XLAL_CHECK_NULL( queries->coh_left != NULL, XLAL_ENOMEM );
   queries->coh_right = XLALCalloc( nqueries, sizeof( *queries->coh_right ) );
   XLAL_CHECK_NULL( queries->coh_right != NULL, XLAL_ENOMEM );
+  queries->coh_relevance = XLALCalloc( nqueries, sizeof( *queries->coh_relevance ) );
+  XLAL_CHECK_NULL( queries->coh_relevance != NULL, XLAL_ENOMEM );
 
   // Set fields
   queries->phys_to_latt = phys_to_latt;
@@ -361,8 +365,8 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   queries->ndim = XLALTotalLatticeTilingDimensions( semi_tiling );
   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
-  // Get half the semicoherent lattice tiling bounding box in dimension 0
-  queries->semi_half_bound_box_0 = 0.5 * XLALLatticeTilingBoundingBox( semi_tiling, 0 );
+  // Get semicoherent lattice tiling bounding box in dimension 0
+  queries->semi_bound_box_0 = XLALLatticeTilingBoundingBox( semi_tiling, 0 );
   XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
   // Get maximum number of bins (per partition) in semicoherent frequency block
@@ -389,6 +393,7 @@ void XLALWeaveCacheQueriesDestroy(
     XLALFree( queries->coh_phys );
     XLALFree( queries->coh_left );
     XLALFree( queries->coh_right );
+    XLALFree( queries->coh_relevance );
     XLALFree( queries );
   }
 }
@@ -411,7 +416,8 @@ int XLALWeaveCacheQueriesInit(
   memset( queries->coh_index, 0, queries->nqueries * sizeof( queries->coh_index[0] ) );
 
   // Compute the relevance of the current semicoherent frequency block
-  queries->semi_relevance = gsl_vector_get( semi_point, 0 ) - queries->semi_half_bound_box_0;
+  // - Subtract half the semicoherent lattice tiling bounding box in dimension 0
+  queries->semi_relevance = gsl_vector_get( semi_point, 0 ) - 0.5 * queries->semi_bound_box_0;
 
   // Convert semicoherent point to physical coordinates
   XLAL_CHECK( ( queries->latt_to_phys )( &queries->semi_phys, semi_point, queries->semi_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -464,6 +470,21 @@ int XLALWeaveCacheQuery(
   // Convert nearest coherent point to physical coordinates
   XLAL_INIT_MEM( queries->coh_phys[query_index] );
   XLAL_CHECK( ( cache->latt_to_phys )( &queries->coh_phys[query_index], &coh_point_view.vector, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Compute the relevance of the current coherent frequency block
+  // - Add half the coherent lattice tiling bounding box in dimension 0
+  // - Convert coherent point to semicoherent lattice tiling coordinates
+  // - Relevance is semicoherent point coordinate in dimension 0
+  {
+    double tmp_point_array[cache->ndim];
+    gsl_vector_view tmp_point_view = gsl_vector_view_array( tmp_point_array, cache->ndim );
+    gsl_vector_memcpy( &tmp_point_view.vector, &coh_point_view.vector );
+    *gsl_vector_ptr( &tmp_point_view.vector, 0 ) += 0.5 * cache->coh_bound_box_0;
+    PulsarDopplerParams XLAL_INIT_DECL( tmp_phys );
+    XLAL_CHECK( ( cache->latt_to_phys )( &tmp_phys, &tmp_point_view.vector, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EINVAL );
+    XLAL_CHECK( ( cache->phys_to_latt )( &tmp_point_view.vector, &tmp_phys, cache->semi_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+    queries->coh_relevance[query_index] = gsl_vector_get( &tmp_point_view.vector, 0 );
+  }
 
   return XLAL_SUCCESS;
 
@@ -595,28 +616,8 @@ int XLALWeaveCacheRetrieve(
     new_item->partition_index = key.partition_index;
     new_item->coh_index = key.coh_index;
 
-    // Compute the relevance of the coherent frequency block associated with the new cache item:
-    {
-
-      // Convert coherent physical point to coherent lattice tiling coordinates
-      double coh_point_array[cache->ndim];
-      gsl_vector_view coh_point_view = gsl_vector_view_array( coh_point_array, cache->ndim );
-      XLAL_CHECK( ( cache->phys_to_latt )( &coh_point_view.vector, &queries->coh_phys[query_index], cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // Add half the coherent lattice tiling bounding box in dimension 0
-      *gsl_vector_ptr( &coh_point_view.vector, 0 ) += cache->coh_half_bound_box_0;
-
-      // Convert coherent point to semicoherent lattice tiling coordinates
-      PulsarDopplerParams XLAL_INIT_DECL( tmp_phys );
-      XLAL_CHECK( ( cache->latt_to_phys )( &tmp_phys, &coh_point_view.vector, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EINVAL );
-      double semi_point_array[cache->ndim];
-      gsl_vector_view semi_point_view = gsl_vector_view_array( semi_point_array, cache->ndim );
-      XLAL_CHECK( ( cache->phys_to_latt )( &semi_point_view.vector, &tmp_phys, cache->semi_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      // Relevance is semicoherent point coordinate in dimension 0
-      new_item->relevance = gsl_vector_get( &semi_point_view.vector, 0 );
-
-    }
+    // Set the relevance of the coherent frequency block associated with the new cache item
+    new_item->relevance = queries->coh_relevance[query_index];
 
     // Determine the number of points in the coherent frequency block
     const UINT4 coh_nfreqs = queries->coh_right[query_index] - queries->coh_left[query_index] + 1;
