@@ -246,7 +246,12 @@ pts = amrlib.apply_transform(pts, intr_prms, opts.distance_coordinates)
 
 # FIXME: Can probably be moved to point index identification function -- it's
 # not used again
-tree = BallTree(pts)
+# The slicing here is a slight hack to work around uberbank overlaps where the
+# overlap matrix is non square. This can be slightly dangerous because it
+# assumes the first N points are from the bank in question. That's okay for now
+# but we're getting increasingly complex in how we do construction, so we should
+# be more sophisticated by matching template IDs instead.
+tree = BallTree(pts[:,:ovrlp.shape[0]))
 
 #
 # Step 3: Get the row of the overlap matrix to work with
