@@ -2618,7 +2618,7 @@ void PrintStackInfo( LALStatus  *status,
 
 /**
  * Get SemiCoh candidates into toplist(s)
- * This function allows for inserting candidates into up to 2 toplists at once, which might be sorted differently!
+ * This function allows for inserting candidates into up to 3 toplists at once, which might be sorted differently!
  */
 void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
                              toplist_t *list1,
@@ -2756,7 +2756,7 @@ void UpdateSemiCohToplistsOptimTriple ( LALStatus *status,
 
 /**
  * Get SemiCoh candidates into toplist(s)
- * This function allows for inserting candidates into up to 2 toplists at once, which might be sorted differently!
+ * This function allows for inserting candidates into up to 3 toplists at once, which might be sorted differently!
  */
 void UpdateSemiCohToplists ( LALStatus *status,
                              toplist_t *list1,
@@ -2812,6 +2812,7 @@ void UpdateSemiCohToplists ( LALStatus *status,
     }
     line.avTwoFrecalc = -1.0; /* initialise this to -1.0, so that it only gets written out by print_gctFstatline_to_str if later overwritten in recalcToplistStats step */
     line.log10BSGLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
+    line.log10BSGLtLrecalc = -LAL_REAL4_MAX; /* for now, block field with minimal value, needed for output checking in print_gctFstatline_to_str() */
     line.have_f3dot = have_f3dot;
     line.loudestSeg = -1;
     line.twoFloudestSeg = -1.0;

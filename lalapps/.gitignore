@@ -189,9 +189,9 @@ src/pulsar/FITSTools/lalapps_fits_table_list
 src/pulsar/FITSTools/lalapps_fits_table_merge
 src/pulsar/FITSTools/lalapps_fits_table_select
 src/pulsar/Fscan/lalapps_spec_avg
+src/pulsar/Fstatistic/lalapps_ComputeFstatLatticeCount
 src/pulsar/Fstatistic/lalapps_ComputeFstatMCUpperLimit
 src/pulsar/Fstatistic/lalapps_ComputeFstatistic_v2
-src/pulsar/Fstatistic/lalapps_LatticeTilingCount
 src/pulsar/Fstatistic/lalapps_PredictFstat
 src/pulsar/Fstatistic/lalapps_SemiAnalyticF
 src/pulsar/Fstatistic/lalapps_compareFstats

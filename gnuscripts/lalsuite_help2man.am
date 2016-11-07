@@ -5,7 +5,7 @@ if HAVE_PYTHON
 man1_MANS += $(pybin_scripts:=.pyman)
 endif
 
-MOSTLYCLEANFILES += $(man1_MANS)
+MOSTLYCLEANFILES += $(man1_MANS) $(man1_MANS:.man=.man.tmp)
 
 endif
 
@@ -13,4 +13,5 @@ endif
 	$(AM_V_GEN)$(HELP2MAN) --no-discard-stderr --no-info --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@ $(builddir)/$*
 
 %.man: %
-	$(AM_V_GEN)$(HELP2MAN) --no-discard-stderr --no-info --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@ $(builddir)/$*
+	$(AM_V_GEN)$(HELP2MAN) --no-discard-stderr --no-info --source=$(PACKAGE_NAME) --version-string=$(PACKAGE_VERSION) -o $@.tmp $(builddir)/$* && \
+	$(SED) -e 's|lt\\\-||g;s|$(abs_builddir)/.libs/||g' $@.tmp > $@ && rm -f $@.tmp

@@ -28,7 +28,7 @@
 
 #include "VectorMath_internal.h"
 
-#define SIMD_INSTRSET FPU
+#define SIMD_INSTRSET GEN
 
 // ---------- local math functions ----------
 
@@ -50,11 +50,11 @@ static inline REAL4 local_mulf ( REAL4 x, REAL4 y ) {
   return x * y;
 }
 
-// ========== internal generic FPU functions ==========
+// ========== internal generic functions ==========
 
-// ---------- generic FPU operator with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
+// ---------- generic operator with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
 static inline int
-XLALVectorMath_S2S_FPU ( REAL4 *out, const REAL4 *in, const UINT4 len, REAL4 (*op)(REAL4) )
+XLALVectorMath_S2S_GEN ( REAL4 *out, const REAL4 *in, const UINT4 len, REAL4 (*op)(REAL4) )
 {
   for ( UINT4 i = 0; i < len; i ++ )
     {
@@ -63,9 +63,9 @@ XLALVectorMath_S2S_FPU ( REAL4 *out, const REAL4 *in, const UINT4 len, REAL4 (*o
   return XLAL_SUCCESS;
 }
 
-// ---------- generic FPU operator with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) ----------
+// ---------- generic operator with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) ----------
 static inline int
-XLALVectorMath_S2SS_FPU ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len, void (*op)(REAL4, REAL4*, REAL4*) )
+XLALVectorMath_S2SS_GEN ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len, void (*op)(REAL4, REAL4*, REAL4*) )
 {
   for ( UINT4 i = 0; i < len; i ++ )
     {
@@ -74,9 +74,9 @@ XLALVectorMath_S2SS_FPU ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4
   return XLAL_SUCCESS;
 }
 
-// ---------- generic FPU operator with 2 REAL4 vector inputs to 1 REAL4 vector output (SS2S) ----------
+// ---------- generic operator with 2 REAL4 vector inputs to 1 REAL4 vector output (SS2S) ----------
 static inline int
-XLALVectorMath_SS2S_FPU ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len, REAL4 (*op)(REAL4, REAL4) )
+XLALVectorMath_SS2S_GEN ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len, REAL4 (*op)(REAL4, REAL4) )
 {
   for ( UINT4 i = 0; i < len; i ++ )
     {
@@ -85,9 +85,9 @@ XLALVectorMath_SS2S_FPU ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const 
   return XLAL_SUCCESS;
 }
 
-// ---------- generic FPU operator with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
+// ---------- generic operator with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
 static inline int
-XLALVectorMath_sS2S_FPU ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len, REAL4 (*op)(REAL4, REAL4) )
+XLALVectorMath_sS2S_GEN ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len, REAL4 (*op)(REAL4, REAL4) )
 {
   for ( UINT4 i = 0; i < len; i ++ )
     {
@@ -96,11 +96,11 @@ XLALVectorMath_sS2S_FPU ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4
   return XLAL_SUCCESS;
 }
 
-// ========== internal FPU vector math functions ==========
+// ========== internal vector math functions ==========
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
-#define DEFINE_VECTORMATH_S2S(NAME, FPU_OP)                             \
-  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2S_FPU, NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, FPU_OP ) )
+#define DEFINE_VECTORMATH_S2S(NAME, GEN_OP)                             \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2S_GEN, NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_S2S(Sin, sinf)
 DEFINE_VECTORMATH_S2S(Cos, cosf)
@@ -108,22 +108,22 @@ DEFINE_VECTORMATH_S2S(Exp, expf)
 DEFINE_VECTORMATH_S2S(Log, logf)
 
 // ---------- define vector math functions with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) ----------
-#define DEFINE_VECTORMATH_S2SS(NAME, FPU_OP)                            \
-  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2SS_FPU, NAME ## REAL4, ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len ), ( (out1 != NULL) && (out2 != NULL) && (in != NULL) ), ( out1, out2, in, len, FPU_OP ) )
+#define DEFINE_VECTORMATH_S2SS(NAME, GEN_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2SS_GEN, NAME ## REAL4, ( REAL4 *out1, REAL4 *out2, const REAL4 *in, const UINT4 len ), ( (out1 != NULL) && (out2 != NULL) && (in != NULL) ), ( out1, out2, in, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_S2SS(SinCos, local_sincosf)
 DEFINE_VECTORMATH_S2SS(SinCos2Pi, local_sincosf_2pi)
 
 // ---------- define vector math functions with 2 REAL4 vector inputs to 1 REAL4 vector output (SS2S) ----------
-#define DEFINE_VECTORMATH_SS2S(NAME, FPU_OP)                            \
-  DEFINE_VECTORMATH_ANY( XLALVectorMath_SS2S_FPU, NAME ## REAL4, ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, FPU_OP ) )
+#define DEFINE_VECTORMATH_SS2S(NAME, GEN_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_SS2S_GEN, NAME ## REAL4, ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, in1, in2, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_SS2S(Add, local_addf)
 DEFINE_VECTORMATH_SS2S(Multiply, local_mulf)
 
 // ---------- define vector math functions with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
-#define DEFINE_VECTORMATH_sS2S(NAME, FPU_OP)                            \
-  DEFINE_VECTORMATH_ANY( XLALVectorMath_sS2S_FPU, NAME ## REAL4, ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, FPU_OP ) )
+#define DEFINE_VECTORMATH_sS2S(NAME, GEN_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_sS2S_GEN, NAME ## REAL4, ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_sS2S(Shift, local_addf)
 DEFINE_VECTORMATH_sS2S(Scale, local_mulf)

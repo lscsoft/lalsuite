@@ -45,7 +45,9 @@ int main(int argc, char *argv[])
   int single = 0, hdupos = 0, hdutype = 0, bitpix = 0, naxis = 0, ncols = 0, ii = 0;
   long naxes[10], nrows = 0;
 
-  if (argc != 2) {
+  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+
+  if (printhelp || argc != 2) {
     fprintf(stderr, "Usage:  %s filename[ext] \n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "List the structure of a single extension, or, if ext is \n");

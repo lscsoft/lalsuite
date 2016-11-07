@@ -22,24 +22,13 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 
-from lalsimulation import SimInspiralTaylorF2ReducedSpinComputeChi, SimIMRPhenomBComputeChi
+from lalsimulation import SimInspiralTaylorF2ReducedSpinComputeChi, SimIMRPhenomBComputeChi, SimIMRSEOBNRv4ROMTimeOfFrequency
 
+from lal import MSUN_SI
 from lalinspiral.sbank.waveforms import compute_mchirp
 from lalinspiral.sbank.tau0tau3 import m1m2_to_tau0tau3
 
 from h5py import File as H5File
-
-matplotlib.rcParams.update({
-    "text.usetex": True,
-    "text.verticalalignment": "center",
-    "font.size": 18,
-    "axes.titlesize": 22,
-    "axes.labelsize": 22,
-    "xtick.labelsize": 18,
-    "ytick.labelsize": 18,
-    "legend.fontsize": 16,
-    "figure.figsize": [12,9],
-   })
 
 fname = sys.argv[1]
 
@@ -101,6 +90,9 @@ if tmplt_approx == "TaylorF2RedSpin":
 else: # default to effective spin
     tmplt_chi_label = "\chi_\mathrm{eff}"
     tmplt_chi = [SimIMRPhenomBComputeChi(float(row["mass1"]), float(row["mass2"]), float(row["spin1z"]), float(row["spin2z"])) for row in tmplt_arr]
+
+# FIXME hack
+inj_dur = [SimIMRSEOBNRv4ROMTimeOfFrequency(flow, float(row["mass1"]) * MSUN_SI, float(row["mass2"]) * MSUN_SI, float(row["spin1z"]), float(row["spin2z"])) for row in inj_arr]
 
 
 #
@@ -252,6 +244,16 @@ ax.set_ylabel("Fitting Factor Between Injection and Template Bank")
 ax.grid(True)
 canvas = FigureCanvas(fig)
 fig.savefig(name+"_match_vs_injMc.png")
+
+fig = Figure()
+ax = fig.add_subplot(111)
+ax.plot(inj_dur, match, marker = ".", linestyle="None")
+ax.axvline(x=0.2, linewidth=2, color='k')
+ax.set_xlabel("Injection Duration (s)")
+ax.set_ylabel("Fitting Factor Between Injection and Template Bank")
+ax.grid(True)
+canvas = FigureCanvas(fig)
+fig.savefig(name+"_match_vs_injdur.png")
 
 fig = Figure()
 ax = fig.add_subplot(111)

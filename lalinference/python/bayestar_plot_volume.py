@@ -85,16 +85,15 @@ nside = hp.npix2nside(npix)
 
 progress.update(-1, 'Preparing projection')
 
+if opts.align_to is None or opts.input.name == opts.align_to.name:
+    prob2, mu2, sigma2, norm2 = prob, mu, sigma, norm
+else:
+    (prob2, mu2, sigma2, norm2), _ = fits.read_sky_map(
+        opts.align_to.name, distances=True)
 if opts.max_distance is None:
-    max_distance = marginal_ppf(0.99, prob, mu, sigma, norm)
+    max_distance = marginal_ppf(0.99, prob2, mu2, sigma2, norm2)
 else:
     max_distance = opts.max_distance
-
-if opts.align_to is None:
-    prob2, mu2, sigma2 = prob, mu, sigma
-else:
-    (prob2, mu2, sigma2, _), _ = fits.read_sky_map(
-        opts.align_to.name, distances=True)
 R = np.ascontiguousarray(principal_axes(prob2, mu2, sigma2))
 
 if opts.chain:
@@ -226,6 +225,7 @@ if not opts.projection:
     ax.set_xticks([0, max_distance])
     ax.set_xticklabels(['0', "{0:d}\nMpc".format(int(np.round(max_distance)))], fontsize=9)
     ax.set_yticks([])
+    ax.set_xlim(0, max_distance)
     ax.set_ylim(0, ax.get_ylim()[1])
 
 progress.update(-1, 'Saving')

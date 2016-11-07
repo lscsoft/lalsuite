@@ -16,8 +16,8 @@ parser.add_argument('-i','--ini_file', type=str, nargs='?',
 
 parser.add_argument('--bns-injection', type=str, nargs='?',
                     default=False,
-                    const='fiducialBNS.xml',
-                    help='injection file for BNS analysis.')
+                    const='O2_fiducial_BNS.xml',
+                    help='injection file for O2 (and onwards) BNS analysis.')
 
 parser.add_argument('--gracedb', action='store_true',
                     default=False,
@@ -29,8 +29,8 @@ parser.add_argument('--pptest', action='store_true',
 
 parser.add_argument('--bbh-injection', type=str, nargs='?',
                     default=False,
-                    const='fiducialBBH.xml',
-                    help='injection file for BBH analysis.')
+                    const='O2_fiducial_BBH.xml',
+                    help='injection file for O2 (and onwards) BBH analysis.')
 
 parser.add_argument('-e','--engine', type=str, nargs='?',
                     default='lalinferencemcmc,lalinferencenest',
@@ -139,10 +139,20 @@ def replace_fiducial_bns(line):
         return line.replace('#','').strip()+'\n'
     if 'amporder=' in line:
         return 'amporder=0\n'
+    if 'disable-spin=' in line:
+        return '#disable-spin=\n'
     if 'parname-max' in line:
-        return line+'distance-max=500\n'
-    if 'deltaLogL=' in line:
+        return line+'\ndistance-max=500\n'
+    if 'deltaLogP=' in line:
         return line.replace('#','').strip()+'\n'
+    if 'approx=' in line:
+        return line.replace(line,"approx=SEOBNRv2_ROM_DoubleSpin_HIpseudoFourPN")
+    if 'srate=' in line:
+        return line.replace(line,"srate=4096")
+    if 'comp-max=' in line:
+        return line.replace(line,"comp-max=3.5")
+    if 'comp-min=' in line:
+        return line.replace(line,"comp-min=0.5")
     return line
 
 if args.bns_injection:
@@ -187,8 +197,6 @@ def replace_GraceDB(line):
         return 'upload-to-gracedb=True\npegasus.transfer.links=false\n'
     if 'ignore-science-segments=' in line:
         return 'ignore-science-segments=True\n'
-    if 'bayesline=' in line:
-        return line.replace('#','').strip()+'\n'
     if 'skyarea=' in line:
         return line.replace('#','').strip()+'\n'
     if 'types=' in line:
@@ -249,14 +257,18 @@ def replace_fiducial_bbh(line):
         return '#disable-spin=\n'
     if 'margphi=' in line:
         return '#margphi=\n'
-    if 'margtime=' in line:
+    if 'flow=' in line:
         return line.replace('#','').strip()+'\n'
-    if 'amporder=' in line:
-        return 'amporder=-1\nfref=0\n'
+    if 'roq_b_matrix_directory=' in line:
+        return line.replace('#','').strip()+'\n'
+    if 'computeroqweights=' in line:
+        return line.replace('#','').strip()+'\n'
+    if 'approx=' in line:
+        return line.replace(line,"approx=IMRPhenomPv2pseudoFourPN")
     if 'parname-max' in line:
-        return line+'distance-max=2000\n'
-    if 'deltaLogL=' in line:
-        return 'deltaLogL=7\n'
+        return line+'\ndistance-max=2000\n'
+    if 'deltaLogP=' in line:
+        return 'deltaLogP=6.0\n'
     return line
 
 if args.bbh_injection:

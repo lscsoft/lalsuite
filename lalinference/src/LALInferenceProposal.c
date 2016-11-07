@@ -1447,20 +1447,6 @@ static void get_detectors(LALInferenceIFOData *data, LALDetector **detectors) {
         *detectors[i] = *(ifo->detector);
 }
 
-static void get_detector_names(LALInferenceIFOData *data, char ***ifo_names) {
-    INT4 i;
-    INT4 nDet = 0;
-    LALInferenceIFOData *ifo;
-    for (i=0,ifo=data; ifo; i++,ifo=ifo->next)
-        nDet++;
-
-    *ifo_names = XLALCalloc(nDet, sizeof(char*));
-    for(ifo=data,i=0;ifo;ifo=ifo->next,i++) {
-        (*ifo_names)[i] = XLALCalloc(DETNAMELEN, sizeof(char));
-        strcpy((*ifo_names)[i], ifo->name);
-    }
-}
-
 static void sph_to_cart(REAL8 cart[3], const REAL8 lat, const REAL8 longi) {
     cart[0] = cos(longi)*cos(lat);
     cart[1] = sin(longi)*cos(lat);
@@ -3879,14 +3865,12 @@ void LALInferencePrintProposalTracking(FILE *fp, LALInferenceProposalCycle *cycl
 }
 
 REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LALInferenceVariables *currentParams, LALInferenceVariables *proposedParams) {
-  char **ifo_names;
-  INT4 ifo;
   INT4 nifo = LALInferenceGetINT4Variable(thread->proposalArgs, "nDet");
-
+  LALInferenceIFOData *det=NULL;
   LALInferenceCopyVariables(currentParams, proposedParams);
 
-  get_detector_names(thread->parent->data, &ifo_names);
-  for (ifo=0; ifo<nifo; ifo++) {
+  for(det=thread->parent->data;det;det=det->next)
+  {
     UINT4 i;
 
     char ampName[VARNAME_MAX];
@@ -3897,8 +3881,8 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LAL
     REAL8 phaseWidth;
     UINT4 nspl = LALInferenceGetUINT4Variable(proposedParams, "spcal_npts");
     for (i = 0; i < nspl; i++) {
-      snprintf(ampName, VARNAME_MAX, "%s_spcal_amp_%i", ifo_names[ifo], i);
-      snprintf(phaseName, VARNAME_MAX, "%s_spcal_phase_%i", ifo_names[ifo], i);
+      snprintf(ampName, VARNAME_MAX, "%s_spcal_amp_%i", det->name, i);
+      snprintf(phaseName, VARNAME_MAX, "%s_spcal_phase_%i", det->name, i);
 
       LALInferenceGetGaussianPrior(thread->priorArgs, ampName, &dummy, &ampWidth);
       REAL8 amp = LALInferenceGetREAL8Variable(proposedParams, ampName);
@@ -3911,8 +3895,6 @@ REAL8 LALInferenceSplineCalibrationProposal(LALInferenceThreadState *thread, LAL
       LALInferenceSetREAL8Variable(proposedParams, phaseName, ph);
     }
   };
-
-  XLALFree(ifo_names);
 
   return 0.0;
 }

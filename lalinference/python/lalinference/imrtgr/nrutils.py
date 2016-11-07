@@ -11,6 +11,22 @@ try:
 except ImportError:
     print('Cannot import lal SWIG bindings')
 
+# list of final mass and spin fit names
+class bbh_final_state_fits:
+    pan2011 = "Pan2011" # Pan et al.             [Phys Rev D 84, 124052 (2011)] (mass+spin, non-spinning)
+    hlz2014 = "HLZ2014" # Healy et al.           [Phys Rev D 90, 104004 (2014)] (mass+spin, aligned)
+    phenD   = "PhenomD" # Husa et al.            [Phys Rev D 93, 044006 (2016)] (mass+spin, aligned)
+    uib2016 = "UIB2016" # Jimenez-Forteza et al. [LIGO-P1600270 (2016)]         (mass+spin, aligned)
+    hbr2016 = "HBR2016" # Hofmann et al.         [ApJL 825:L19 (2016)]          (spin only, precessing)
+
+# list of Kerr truncation behaviours
+class bbh_Kerr_trunc_opts:
+    trunc        = "TRUNCATE"       # truncate fit value to 1.0, with an info message
+    trunc_silent = "TRUNCATESILENT" # truncate fit value to 1.0, without info message
+    keep         = "KEEP"           # keep fit value, even if superextremal, but still give the info message
+    ign          = "IGNORE"         # keep fit value, even if superextremal, without info message
+    err          = "ERROR"          # abort with an error if fit value is superextremal
+
 # Functions to check that input values are physical
 
 def _check_m(m1,m2):
@@ -32,6 +48,33 @@ def _check_chi(chi1, chi2):
 def _check_mchi(m1,m2,chi1,chi2):
     _check_m(m1,m2)
     _check_chi(chi1,chi2)
+
+def _truncate_at_Kerr_limit(chif, behavior, fitname="this"):
+    if behavior not in bbh_Kerr_trunc_opts.__dict__.values():
+      raise ValueError("Unknown user option '%s' for Kerr truncation behavior." % behavior)
+    if behavior!=bbh_Kerr_trunc_opts.ign and np.any(abs(chif)>1.0):
+      if isinstance(chif,(list,np.ndarray)):
+        idx_over = np.where(abs(chif)>1.0)
+        if behavior==bbh_Kerr_trunc_opts.trunc or behavior==bbh_Kerr_trunc_opts.trunc_silent:
+          chif_trunc = np.sign(chif[idx_over])*1.0
+          if behavior==bbh_Kerr_trunc_opts.trunc:
+            print "Truncating %d excessive chif values from %s fit to Kerr limit of +-1.0" % (np.size(idx_over), fitname)
+          chif[idx_over] = chif_trunc
+        elif behavior==bbh_Kerr_trunc_opts.keep:
+          print "Note: %s fit predicts %d chif values in excess of the Kerr limit." % (fitname, np.size(idx_over))
+        elif behavior==bbh_Kerr_trunc_opts.err:
+          raise ValueError("%s fit predicts %d chif values in excess of the Kerr limit." % (fitname, np.size(idx_over)))
+      else:
+        if behavior==bbh_Kerr_trunc_opts.trunc or behavior==bbh_Kerr_trunc_opts.trunc_silent:
+          chif_trunc = np.sign(chif)*1.0
+          if behavior==bbh_Kerr_trunc_opts.trunc:
+            print "Truncating excessive chif of %f from %s fit to Kerr limit of %f" % (chif, fitname, chif_trunc)
+          chif = chif_trunc
+        elif behavior==bbh_Kerr_trunc_opts.keep:
+          print "Note: %s fit predicts chif of %f in excess of the Kerr limit." % (fitname, chif)
+        elif behavior==bbh_Kerr_trunc_opts.err:
+          raise ValueError("%s fit predicts chif of %f in excess of the Kerr limit." % (fitname, chif))
+    return chif
 
 # Final mass and spin functions
 
@@ -266,40 +309,132 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, chif=None):
 
 def bbh_final_spin_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2):
     """
-    Calculate the spin of the final BH resulting from the merger of two black holes projecting spin along angular momentum and using fit from Healy et al Phys Rev D 90, 104004 (2014)
-    
-    Parameters
-    ----------
-    m1, m2 : component masses
-    chi1, chi2 : dimensionless spins of two BHs
-    tilt1, tilt2 : tilts (in radians) in the new spin convention
-    
-    Returns
-    -------
-    final spin, chif
+    wrapper to bbh_final_spin_projected_spins() for backwards compatibility
     """
-    return bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1*np.cos(tilt1), chi2*np.cos(tilt2))
+    return bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, "HLZ2014")
 
 def bbh_final_mass_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2, chif=None):
     """
-    Calculate the mass of the final BH resulting from the merger of two black holes projecting spin along angular momentum and using fit from Healy et al Phys Rev D 90, 104004 (2014)
-    
+    wrapper to bbh_final_mass_projected_spins() for backwards compatibility
+    """
+    return bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, "HLZ2014", chif)
+
+def bbh_final_spin_precessing_Healyetal_extension_Minit(m1, m2, chi1, chi2, tilt1, tilt2, phi12):
+   """
+   wrapper to bbh_final_spin_precessing() for backwards compatibility
+   """
+   return bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, "HLZ2014")
+
+def bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, chif=None):
+    """
+    Calculate the mass of the final BH resulting from the merger of two black holes,
+    only using the projected spins along the total angular momentum
+    and some aligned-spin fit from the literature
+
     Parameters
     ----------
     m1, m2 : component masses
     chi1, chi2 : dimensionless spins of two BHs
     tilt1, tilt2 : tilts (in radians) in the new spin convention
-    chif: final spin (optional), if already calculated
-    
+    fitname: fit selection currently supports Pan2011 (non-spinning), HLZ2014, PhenomD, UIB2016
+    chif: final spin (optional, only used for HLZ2014), if already calculated
+
     Returns
     -------
     final mass, mf
     """
-    return bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1*np.cos(tilt1), chi2*np.cos(tilt2), chif=chif)
 
-def bbh_final_spin_precessing_Healyetal_extension_Minit(m1, m2, chi1, chi2, tilt1, tilt2, phi12):
+    m1    = np.vectorize(float)(np.array(m1))
+    m2    = np.vectorize(float)(np.array(m2))
+    chi1  = np.vectorize(float)(np.array(chi1))
+    chi2  = np.vectorize(float)(np.array(chi2))
+    tilt1 = np.vectorize(float)(np.array(tilt1))
+    tilt2 = np.vectorize(float)(np.array(tilt2))
+    if chif is not None:
+       chif = np.vectorize(float)(np.array(chif))
+
+    _check_mchi(m1,m2,chi1,chi2) # Check that inputs are physical
+
+    chi1proj = chi1*np.cos(tilt1)
+    chi2proj = chi2*np.cos(tilt2)
+
+    if fitname==bbh_final_state_fits.pan2011:
+       if np.any(chi1!=0) or np.any(chi2!=0) or np.any(tilt1!=0) or np.any(tilt2!=0):
+          print "Note: Pan2011 fit does not use spins."
+       if chif is not None:
+          print "Note: Precomputed chif not used by this fit."
+       mf = bbh_final_mass_non_spinning_Panetal(m1, m2)
+    elif fitname==bbh_final_state_fits.hlz2014:
+       mf = bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1proj, chi2proj, chif=chif)
+    elif fitname==bbh_final_state_fits.phenD:
+       if chif is not None:
+          print "Note: Precomputed chif not used by this fit."
+       mf = bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1proj, chi2proj)
+    elif fitname==bbh_final_state_fits.uib2016:
+       if chif is not None:
+          print "Note: Precomputed chif not used by this fit."
+       raise ValueError("UIB2016 fit not yet implemented.")
+       mf = bbh_final_mass_non_precessing_UIB2016(m1, m2, chi1proj, chi2proj)
+    else:
+       raise ValueError("Unrecognized fit name.")
+
+    return mf
+
+def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, truncate=bbh_Kerr_trunc_opts.trunc):
     """
-    Calculate the spin of the final BH resulting from the merger of two black holes including the in-plane spine by projecting the spins along the angular momentum and using fit from Healy et al Phys Rev D 90, 104004 (2014) and then adding in quadrature the in-plane dimensionful spin scaled by the initial mass squared.
+    Calculate the (signed) dimensionless spin parameter of the final BH resulting from the merger of two black holes,
+    only using the projected spins along the total angular momentum
+    and some aligned-spin fit from the literature
+
+    Parameters
+    ----------
+    m1, m2 : component masses
+    chi1, chi2 : dimensionless spins of two BHs
+    tilt1, tilt2 : tilts (in radians) in the new spin convention
+    fitname: fit selection currently supports Pan2011 (non-spinning), HLZ2014, PhenomD, UIB2016
+
+    Returns
+    -------
+    (signed) dimensionless final spin parameter, chif
+    """
+
+    m1    = np.vectorize(float)(np.array(m1))
+    m2    = np.vectorize(float)(np.array(m2))
+    chi1  = np.vectorize(float)(np.array(chi1))
+    chi2  = np.vectorize(float)(np.array(chi2))
+    tilt1 = np.vectorize(float)(np.array(tilt1))
+    tilt2 = np.vectorize(float)(np.array(tilt2))
+
+    _check_mchi(m1,m2,chi1,chi2) # Check that inputs are physical
+
+    chi1proj = chi1*np.cos(tilt1)
+    chi2proj = chi2*np.cos(tilt2)
+
+    if fitname==bbh_final_state_fits.pan2011:
+       if np.any(chi1!=0) or np.any(chi2!=0) or np.any(tilt1!=0) or np.any(tilt2!=0):
+          print "Note: Pan2011 fit does not use spins."
+       chif = bbh_final_spin_non_spinning_Panetal(m1, m2)
+    elif fitname==bbh_final_state_fits.hlz2014:
+       chif = bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1proj, chi2proj)
+    elif fitname==bbh_final_state_fits.phenD:
+       chif = bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1proj, chi2proj)
+    elif fitname==bbh_final_state_fits.uib2016:
+       raise ValueError("UIB2016 fit not yet implemented.")
+       chif = bbh_final_spin_non_precessing_UIB2016(m1, m2, chi1proj, chi2proj)
+    else:
+       raise ValueError("Unrecognized fit name.")
+
+    chif = _truncate_at_Kerr_limit(chif, truncate, fitname) # optionally truncate and/or warn at Kerr limit, depending on user option
+
+    return chif
+
+def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname, truncate=bbh_Kerr_trunc_opts.trunc):
+    """
+    Calculate the magnitude of the dimensionless spin parameter of the final BH resulting from the merger of two black holes,
+    including the in-plane spin components;
+    by either using a precessing fit from the literature;
+    or by first projecting the spins along the angular momentum and using an aligned-spin fit from the literature,
+    then adding in quadrature the in-plane dimensionful spin scaled by the initial mass squared.
 
     Parameters
     ----------
@@ -307,39 +442,53 @@ def bbh_final_spin_precessing_Healyetal_extension_Minit(m1, m2, chi1, chi2, tilt
     chi1, chi2 : dimensionless spins of two BHs
     tilt1, tilt2 : tilts (in radians) in the new spin convention
     phi12: angle (in radians) between in-plane spin components
+    fitname: fit selection currently supports Pan2011 (non-spinning), HLZ2014 (aligned+augmentation),
+                                              PhenomD (aligned+augmentation), UIB2016 (aligned+augmentation),
+                                              HBR2016 (precessing)
 
     Returns
     -------
-    final spin, chif
+    magnitude of the dimensionless final spin parameter, chif
     """
 
-    m1 = np.vectorize(float)(np.array(m1))
-    m2 = np.vectorize(float)(np.array(m2))
-    chi1 = np.vectorize(float)(np.array(chi1))
-    chi2 = np.vectorize(float)(np.array(chi2))
+    m1    = np.vectorize(float)(np.array(m1))
+    m2    = np.vectorize(float)(np.array(m2))
+    chi1  = np.vectorize(float)(np.array(chi1))
+    chi2  = np.vectorize(float)(np.array(chi2))
     tilt1 = np.vectorize(float)(np.array(tilt1))
     tilt2 = np.vectorize(float)(np.array(tilt2))
     phi12 = np.vectorize(float)(np.array(phi12))
 
     _check_mchi(m1,m2,chi1,chi2) # Check that inputs are physical
 
-    # First compute the final mass and parallel component of the final spin using the aligned components of the initial spins
-    chifpara = bbh_final_spin_projected_spin_Healyetal(m1, m2, chi1, chi2, tilt1, tilt2)
+    if fitname==bbh_final_state_fits.pan2011 or fitname==bbh_final_state_fits.hlz2014 or fitname==bbh_final_state_fits.phenD or fitname==bbh_final_state_fits.uib2016:
+       precfit = False
+    elif fitname==bbh_final_state_fits.hbr2016:
+       precfit = True
+       raise ValueError("HBR2016 fit not yet implemented.")
+       chif = bbh_final_spin_precessing_HBR2016(m1, m2, chi1, chi2, tilt1, tilt2, phi12)
+    else:
+       raise ValueError("Unrecognized fit name.")
 
-    # Now compute the squared magnitude of the in-plane dimensionful spin, first computing the magnitudes of the initial in-plane spins
+    if not precfit:
+       # First compute the final mass and parallel component of the final spin using the aligned components of the initial spins
+       chifaligned = bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, truncate)
 
-    S1perpmag = m1*m1*chi1*np.sin(tilt1)
-    S2perpmag = m2*m2*chi2*np.sin(tilt2)
+       # Now compute the squared magnitude of the in-plane dimensionful spin, first computing the magnitudes of the initial in-plane spins
+       S1perpmag = m1*m1*chi1*np.sin(tilt1)
+       S2perpmag = m2*m2*chi2*np.sin(tilt2)
+       Sperpmag2 = S1perpmag*S1perpmag + S2perpmag*S2perpmag + 2.*S1perpmag*S2perpmag*np.cos(phi12)
 
-    Sperpmag2 = S1perpmag*S1perpmag + S2perpmag*S2perpmag + 2.*S1perpmag*S2perpmag*np.cos(phi12)
+       # Combine together
+       chif = (chifaligned*chifaligned + Sperpmag2/(m1+m2)**4.)**0.5
 
-    # Combine together and return
+    chif = _truncate_at_Kerr_limit(chif, truncate, "augmented "+fitname) # optionally truncate and/or warn at Kerr limit, depending on user option
 
-    return (chifpara*chifpara + Sperpmag2/(m1+m2)**4.)**0.5
+    return chif
 
-def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2): 
+def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2):
     """ 
-    Calculate the mass and spin of the final BH resulting from the 
+    Calculate the mass of the final BH resulting from the
     merger of two black holes with non-precessing spins using the fits
     used by IMRPhenomD, given in Eqs. (3.6) and (3.8) of Husa et al.
     arXiv:1508.07250. Note that Eq. (3.8) gives the radiated energy, not
@@ -379,9 +528,9 @@ def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2):
 
     return Mf
 
-def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2): 
+def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
     """ 
-    Calculate the mass and spin of the final BH resulting from the 
+    Calculate the spin of the final BH resulting from the
     merger of two black holes with non-precessing spins using the fits
     used by IMRPhenomD, given in Eqs. (3.6) and (3.8) of Husa et al.
     arXiv:1508.07250. Note that Eq. (3.8) gives the radiated energy, not

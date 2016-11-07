@@ -32,9 +32,6 @@
 int main( int argc, char *argv[] )
 {
 
-  // Check VCS information
-  XLAL_CHECK_FAIL( XLALAppsVCSInfoCheck() == XLAL_SUCCESS, XLAL_EFUNC );
-
   // Set help information
   lalUserVarHelpBrief = "compare output files produced by lalapps_Weave";
 

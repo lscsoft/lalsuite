@@ -1424,6 +1424,7 @@ XLALSimIMREOBNRv2Generator(
      /* If we have an equal mass system, some modes will be zero */
      if ( eta == 0.25 && modeM % 2 )
      {
+       XLALDestroyCOMPLEX16TimeSeries( sigMode );
        continue;
      }
 

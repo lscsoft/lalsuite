@@ -40,15 +40,17 @@ int main(int argc, char *argv[])
   long naxes[2], totpix = 0, fpixel[2];
   double *pix, sum = 0., meanval = 0., minval = 1.E33, maxval = -1.E33;
 
-  if (argc != 2) {
+  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+
+  if (printhelp || argc != 2) {
     fprintf(stderr, "Usage: %s array \n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Compute statistics of pixels in the input array\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Examples: \n");
-    fprintf(stderr, "  imarith array.fits                    - the whole array\n");
-    fprintf(stderr, "  imarith 'array.fits[200:210,300:310]' - array section\n");
-    fprintf(stderr, "  imarith 'table.fits+1[bin (X,Y) = 4]' - array constructed\n");
+    fprintf(stderr, "  %s array.fits                    - the whole array\n", argv[0]);
+    fprintf(stderr, "  %s 'array.fits[200:210,300:310]' - array section\n", argv[0]);
+    fprintf(stderr, "  %s 'table.fits+1[bin (X,Y) = 4]' - array constructed\n", argv[0]);
     fprintf(stderr, "     from X and Y columns of a table, with 4-pixel bin size\n");
     return (0);
   }

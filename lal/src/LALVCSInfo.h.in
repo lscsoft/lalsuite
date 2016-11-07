@@ -74,12 +74,6 @@ extern const char *const lal@PACKAGE_NAME_NOLAL@ConfigureDate;
 /** @PACKAGE_NAME@ build date */
 extern const char *const lal@PACKAGE_NAME_NOLAL@BuildDate;
 
-/** Check @PACKAGE_NAME@ VCS information for compile-time/run-time version mismatch */
-#ifndef SWIG /* exclude from SWIG interface */
-int X@PACKAGE_NAME@VCSInfoCheck(void);
-#endif /* SWIG */
-
-
 /*@}*/
 
 #ifdef __cplusplus

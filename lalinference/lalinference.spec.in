@@ -16,7 +16,7 @@ BuildRequires: chealpix-devel
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: healpy >= 1.9.1
-BuildRequires: python-basemap
+BuildRequires: python-shapely
 BuildRequires: libmetaio-devel
 BuildRequires: libxml2-devel
 BuildRequires: numpy >= 1.7
@@ -92,7 +92,7 @@ Summary: Python Bindings for LALInference
 Group: LAL
 Requires: %{name} = %{version}
 Requires: healpy >= 1.9.1
-Requires: python-basemap
+Requires: python-shapely
 Requires: numpy >= 1.7
 Requires: python
 Requires: scipy

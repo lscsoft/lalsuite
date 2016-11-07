@@ -24,7 +24,8 @@ __all__ = ('wrapped_angle', 'wrapped_angle_deg', 'reference_angle',
            'cut_prime_meridian', 'make_rect_poly')
 
 
-import _geoslib as geos
+# FIXME: should be a module-level import
+# from shapely import geometry
 import numpy as np
 
 
@@ -82,6 +83,9 @@ def cut_prime_meridian(vertices):
 
     This routine is not meant to cover all possible cases; it will only work
     for convex polygons that extend over less than a hemisphere."""
+
+    # FIXME: should be a module-level import
+    from shapely import geometry
 
     # Ensure that the list of vertices does not contain a repeated endpoint.
     if (vertices[0] == vertices[-1]).all():
@@ -147,25 +151,21 @@ def cut_prime_meridian(vertices):
         out_vertices = []
 
         # Construct polygon representing map boundaries.
-        frame_poly = geos.Polygon(np.asarray([
+        frame_poly = geometry.Polygon(np.asarray([
             [0., np.pi/2],
             [0., -np.pi/2],
             [2*np.pi, -np.pi/2],
             [2*np.pi, np.pi/2]]))
 
-        # Intersect with polygon re-wrapped to lie in [π, 3π).
-        poly = geos.Polygon(np.column_stack((
-            reference_angle(vertices[:, 0]) + 2 * np.pi, vertices[:, 1])))
-        if poly.intersects(frame_poly):
-            out_vertices += [
-                p.get_coords() for p in poly.intersection(frame_poly)]
-
-        # Intersect with polygon re-wrapped to lie in [-π, π).
-        poly = geos.Polygon(np.column_stack((
-            reference_angle(vertices[:, 0]), vertices[:, 1])))
-        if poly.intersects(frame_poly):
-            out_vertices += [
-                p.get_coords() for p in poly.intersection(frame_poly)]
+        # Intersect with polygon re-wrapped to lie in [-π, π) or [π, 3π).
+        for shift in [0, 2 * np.pi]:
+            poly = geometry.Polygon(np.column_stack((
+                reference_angle(vertices[:, 0]) + shift, vertices[:, 1])))
+            intersection = poly.intersection(frame_poly)
+            if intersection:
+                assert isinstance(intersection, geometry.Polygon)
+                assert intersection.is_simple
+                out_vertices += [np.asarray(intersection.exterior)]
     else:
         # There were more than two intersections. Not implemented!
         raise NotImplemented('The polygon intersected the map boundaries two '

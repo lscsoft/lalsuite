@@ -35,9 +35,6 @@
 int main( int argc, char *argv[] )
 {
 
-  // Check VCS information
-  XLAL_CHECK_MAIN( XLALAppsVCSInfoCheck() == XLAL_SUCCESS, XLAL_EFUNC );
-
   // Set help information
   lalUserVarHelpBrief = "search for gravitational-wave pulsars";
 

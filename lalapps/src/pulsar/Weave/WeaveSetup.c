@@ -32,9 +32,6 @@
 int main( int argc, char *argv[] )
 {
 
-  // Check VCS information
-  XLAL_CHECK_MAIN( XLALAppsVCSInfoCheck() == XLAL_SUCCESS, XLAL_EFUNC );
-
   // Set help information
   lalUserVarHelpBrief = "create setup file for use with lalapps_Weave";
 

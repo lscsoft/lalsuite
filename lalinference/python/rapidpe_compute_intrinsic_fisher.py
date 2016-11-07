@@ -38,7 +38,7 @@ lsctables.use_in(ligolw.LIGOLWContentHandler)
 from glue.ligolw.utils import process
 from glue import pipeline
 
-from pylal import series
+from lal import series
 
 from lalinference.rapid_pe import lalsimutils as lsu
 from lalinference.rapid_pe import effectiveFisher as eff
@@ -211,16 +211,16 @@ else:
         del psd_map[inst]
 
     for psdf, insts in psd_map.iteritems():
-        xmldoc = utils.load_filename(psdf, contenthandler=series.LIGOLWContentHandler)
+        xmldoc = utils.load_filename(psdf, contenthandler=series.PSDContentHandler)
         # FIXME: How to handle multiple PSDs
         for inst in insts:
             psd = series.read_psd_xmldoc(xmldoc)[inst]
-            psd_f_high = len(psd.data)*psd.deltaF
+            psd_f_high = len(psd.data.data)*psd.deltaF
             f = np.arange(0, psd_f_high, psd.deltaF)
             fvals = np.arange(0, psd_f_high, PSIG.deltaF)
 
             def anon_interp(newf):
-                return np.interp(newf, f, psd.data)
+                return np.interp(newf, f, psd.data.data)
             eff_fisher_psd = np.array(map(anon_interp, fvals))
 
     analyticPSD_Q = False

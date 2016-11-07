@@ -261,12 +261,16 @@ tmplt_bank = lsctables.SnglInspiralTable.get_table(xmldoc)
 # Step 2: Set up metric space
 #
 
-# NOTE: We use the template bank here because the overlap results might not have
-# all the intrinsic information stored (e.g.: no spins, even though the bank is
-# aligned-spin).
-# FIXME: This is an oversight in the overlap calculator that should be
-# rectified.
-pts = numpy.array([tuple(getattr(t, a) for a in intr_prms) for t in tmplt_bank])
+if ovrlp.shape[1] != len(tmplt_bank):
+    pts = numpy.array([odata[a] for a in intr_prms]).T
+else:
+    # NOTE: We use the template bank here because the overlap results might not
+    # have all the intrinsic information stored (e.g.: no spins, even though the
+    # bank is aligned-spin).
+    # FIXME: This is an oversight in the overlap calculator which was rectified
+    # but this remains for legacy banks
+    pts = numpy.array([tuple(getattr(t, a) for a in intr_prms) for t in tmplt_bank])
+
 pts = amrlib.apply_transform(pts, intr_prms, opts.distance_coordinates)
 
 # FIXME: Can probably be moved to point index identification function -- it's
@@ -372,7 +376,8 @@ else:
 # FIXME: We just need to be consistent from the beginning
 reindex = numpy.array([list(region_labels).index(l) for l in intr_prms])
 intr_prms = list(region_labels)
-res_pts = res_pts[:,reindex]
+if opts.refine or opts.prerefine:
+    res_pts = res_pts[:,reindex]
 
 extent_str = " ".join("(%f, %f)" % bnd for bnd in map(tuple, init_region._bounds))
 center_str = " ".join(map(str, init_region._center))

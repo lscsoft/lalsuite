@@ -437,7 +437,7 @@ process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
 if opts.trial_waveforms:
     trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler, gz=opts.trial_waveforms.endswith('.gz'))
     trial_sngls = lsctables.SnglInspiralTable.get_table(trialdoc)
-    proposal = [tmplt_class.from_sngl(t, bank=bank) for t in trial_sngls]
+    proposal = (tmplt_class.from_sngl(t, bank=bank) for t in trial_sngls)
 
 else:
     params = {'mass1': (opts.mass1_min, opts.mass1_max),

@@ -97,7 +97,7 @@ XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in )
     DISPATCH_SELECT_AVX( XLALVector##NAME##_ptr = XLALVector##NAME##_AVX,  XLALVector##NAME##_name = "XLALVector"#NAME"_AVX" ); \
     DISPATCH_SELECT_SSE2(XLALVector##NAME##_ptr = XLALVector##NAME##_SSE2, XLALVector##NAME##_name = "XLALVector"#NAME"_SSE2"); \
     DISPATCH_SELECT_SSE( XLALVector##NAME##_ptr = XLALVector##NAME##_SSE,  XLALVector##NAME##_name = "XLALVector"#NAME"_SSE" ); \
-    DISPATCH_SELECT_END( XLALVector##NAME##_ptr = XLALVector##NAME##_FPU,  XLALVector##NAME##_name = "XLALVector"#NAME"_FPU" ); \
+    DISPATCH_SELECT_END( XLALVector##NAME##_ptr = XLALVector##NAME##_GEN,  XLALVector##NAME##_name = "XLALVector"#NAME"_GEN" ); \
     \
     return XLALVector##NAME ARG_CALL; \
     \

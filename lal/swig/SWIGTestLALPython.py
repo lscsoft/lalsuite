@@ -991,6 +991,20 @@ del ap
 lal.CheckMemoryLeaks()
 print("PASSED dynamic array of pointers access")
 
+## check typemaps for strings and double pointers
+print("checking typemaps for strings and double pointers ...")
+sts = lal.swig_lal_test_struct()
+ptr_ptr, ptr_null_ptr, null_ptr_ptr = lal.swig_lal_test_typemaps_string_ptrptr("abcde", "", None, sts, 0, None)
+assert(ptr_ptr == sts)
+assert(ptr_null_ptr == sts)
+assert(null_ptr_ptr == None)
+del sts
+del ptr_ptr
+del ptr_null_ptr
+del null_ptr_ptr
+lal.CheckMemoryLeaks()
+print("PASSED typemaps for strings and double pointers")
+
 # check 'tm' struct conversions
 print("checking 'tm' struct conversions ...")
 gps0 = 989168284

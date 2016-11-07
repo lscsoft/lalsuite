@@ -43,7 +43,9 @@ int main(int argc, char *argv[])
   double *array = 0, bscale = 1.0, bzero = 0.0, nulval = 0.;
   char card[81];
 
-  if (argc != 3) {
+  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+
+  if (printhelp || argc != 3) {
     fprintf(stderr, "\n");
     fprintf(stderr, "Usage:  %s inputArray outputArray[compress]\n", argv[0]);
     fprintf(stderr, "\n");

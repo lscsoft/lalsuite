@@ -27,7 +27,7 @@ mfdv4_code="${injectdir}lalapps_Makefakedata_v4"
 mfdv5_code="${injectdir}lalapps_Makefakedata_v5"
 cfsv2_code="${builddir}lalapps_ComputeFstatistic_v2"
 cmp_code="${builddir}lalapps_compareFstats"
-LTC_code="${builddir}lalapps_LatticeTilingCount"
+LTC_code="${builddir}lalapps_ComputeFstatLatticeCount"
 
 # ---------- fixed parameter of our test-signal
 Tsft=1800;

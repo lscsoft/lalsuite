@@ -24,14 +24,6 @@
 // General SWIG directives and interface code
 //
 
-// Call VCS information check function when module is loaded
-%init %{
-  if (VCS_INFO_CHECK() != XLAL_SUCCESS) {
-    SWIG_Error(SWIG_RuntimeError, "Could not load SWIG module");
-    return false;
-  }
-%}
-
 // In SWIG Octave modules, only variables are namespaced, everything else
 // is inserted in the global symbol table, so we rename only variables
 #define SWIGLAL_MODULE_RENAME_VARIABLES
@@ -82,8 +74,7 @@ extern "C++" {
 #define swiglal_1starg()  (args.length() > 0 ? args(0) : octave_value())
 %}
 
-// Return a reference to the supplied octave_value; since Octave handles reference counting, just
-// return it.
+// Return a reference to the supplied octave_value; since Octave handles reference counting, just return it.
 %header %{
 #define swiglal_get_reference(v) (v)
 %}
@@ -91,6 +82,11 @@ extern "C++" {
 // Append an argument to the output argument list of an Octave SWIG-wrapped function, if the list is empty.
 %header %{
 #define swiglal_append_output_if_empty(v) if (_outp->length() == 0) _outp = SWIG_Octave_AppendOutput(_outp, v)
+%}
+
+// Evaluates true if an octave_value represents a null pointer, false otherwise.
+%header %{
+#define swiglal_null_ptr(v)  (!(v).is_string() && (v).is_matrix_type() && (v).rows() == 0 && (v).columns() == 0)
 %}
 
 //
