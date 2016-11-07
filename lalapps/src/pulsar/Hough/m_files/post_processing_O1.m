@@ -1,5 +1,5 @@
-function post_processing_O1(X_input,Y_input,grup,grup_Band,BandNo,BandNf,Ntop,PixelFactor,p,sig_veto,rp_sig,r_W,r_W_cl,CHI_V,chisquare_STD_veto,population_cluster_veto,significance_veto_cluster,x_tref,x_tend,y_tref,y_tend,Extract_S,min_band)
-
+function post_processing_O1(X_input,Y_input,grup,grup_Band,BandNo,BandNf,Ntop,PixelFactor,p,sig_veto,rp_sig,r_W,r_W_cl,CHI_V,chisquare_STD_veto,population_cluster_veto,significance_veto_cluster,x_tref,x_tend,y_tref,y_tend,Extract_S,min_band,Clean_lines_I,Clean_lines_II,load_data)
+                
 format long
 
 %% SETUP
@@ -87,36 +87,42 @@ format long
     chi2_STD = @(x,y,p) (y-(p-1)-A1*x.^A2)./(sqrt(2*p-2)+B1*x.^B2);
     
     %% READING TOPLISTS
-    for BandN=BandNo:BandNf;
-
-        y_filename=sprintf(Y_input,grup,BandN);
-        x_filename=sprintf(X_input,grup,BandN);
-        
-        x = [];
-        y = [];
-        
-        x=load(x_filename);
-        if ~isempty(x)
-            x = [x,BandN*ones(length(x(:,1)),1)];
-            [~,I]=sort(x(:,5),'descend'); x=x(I(1:Ntop),:); %Reduce toplist
-            x_Toplist=cat(1,x_Toplist,x);
-        else
-            xmissing=cat(1,xmissing,BandN); %Safetycheck
+    if isempty(load_data)
+        for BandN=BandNo:BandNf;
+            if ((BandN/10) == fix(BandN/10)) || BandN==1;
+                BandN
+            end
+            
+            y_filename=sprintf(Y_input,grup,BandN);
+            x_filename=sprintf(X_input,grup,BandN);
+            
+            x = [];
+            y = [];
+            
+            x=load(x_filename);
+            if ~isempty(x)
+                x = [x,BandN*ones(length(x(:,1)),1)];
+                [~,I]=sort(x(:,5),'descend'); x=x(I(1:Ntop),:); %Reduce toplist
+                x_Toplist=cat(1,x_Toplist,x);
+            else
+                xmissing=cat(1,xmissing,BandN); %Safetycheck
+            end
+            
+            y=load(y_filename);
+            if ~isempty(y)
+                y = [y,BandN*ones(length(y(:,1)),1)];
+                [~,I]=sort(y(:,5),'descend'); y=y(I(1:Ntop),:); %Reduce toplist
+                y_Toplist=cat(1,y_Toplist,y);
+            else
+                ymissing=cat(1,ymissing,BandN); %Safetycheck
+            end
+            
         end
-        
-        y=load(y_filename);
-        if ~isempty(y)
-            y = [y,BandN*ones(length(y(:,1)),1)];
-            [~,I]=sort(y(:,5),'descend'); y=y(I(1:Ntop),:); %Reduce toplist
-            y_Toplist=cat(1,y_Toplist,y);
-        else
-            ymissing=cat(1,ymissing,BandN); %Safetycheck
-        end
-        
+        File_cn=sprintf('data_top_%g.mat',grup);
+        save (File_cn,'x_Toplist','y_Toplist','xmissing','ymissing') % Save full group
+    else
+        load(load_data)
     end
-    File_cn=sprintf('data_top_%g.mat',grup);
-    save (File_cn,'x_Toplist','y_Toplist','xmissing','ymissing') % Save full group
-    
     %% COINCIDENCES & GENERATED CENTRE LOOP
     g_Toplist=[];
     kmax=ceil((f0_grup_max-f0_grup)/f0_band-1);
@@ -196,7 +202,7 @@ format long
                         % Array containing the results and the coincidental index, adding the results for each iteration
                         g_cn_data0 = [gf0,galpha,gdelta,gf1,s_mean,s_harm(I),I_sigchi2_x_cn,I_sigchi2_y_cn];
                         g_Toplist=cat(1,g_Toplist,g_cn_data0);
-                        
+                        1
                         g_cn_data0=[];
                     end
                 end
@@ -319,66 +325,110 @@ format long
         
         %% CLUSTER CENTRE CALCULATION
         j=1;
+        id_clust=1;
         for j=1:max(N_Cluster);
             
             I_Cluster_i=find(N_Cluster==j);
-            s_mean=x(I_Cluster_i,6); % from the harmonic significance generated
-            Cluster.id{j} = j;
-            Cluster.sign_mean{j} =mean(x(I_Cluster_i,5));
-            Cluster.ind{j}       =I_Cluster_i;
-            Cluster.s_harm{j}    =mean(s_mean);
-            Cluster.sign_sum{j}  =sum(s_mean);
-            A_max=max(s_mean); if isempty(A_max); A_max=NaN; end;
-            Cluster.sign_max{j}  = A_max;           
-            Cluster.parent_x{j}  =length(unique(x(I_Cluster_i,7)));
-            Cluster.parent_y{j}  =length(unique(x(I_Cluster_i,8)));
-            Cluster.f0{j}        =sum(x(I_Cluster_i,1).*s_mean)/Cluster.sign_sum{j};
-            
-            n0=sum(s_mean*[1,1,1].*[cos(x(I_Cluster_i,3)).*cos(x(I_Cluster_i,2)),cos(x(I_Cluster_i,3)).*sin(x(I_Cluster_i,2)),sin(x(I_Cluster_i,3))],1);
-            n0=n0./sqrt(sum(n0.^2));
-            
-            Cluster.alpha{j}     =real(atan2(n0(:,2),n0(:,1)));
-            Cluster.delta{j}     =real(asin(n0(:,3)));
-            
-            Cluster.f1{j}        =sum(x(I_Cluster_i,4).*s_mean)/Cluster.sign_sum{j};
-            Cluster.length{j}    =length(I_Cluster_i);
-            
-            
-            if length(I_Cluster_i)<2; Cluster.noise{j}=1; else Cluster.noise{j}=0; end
+            if ~isempty(I_Cluster_i)
+                
+                s_mean=x(I_Cluster_i,6); % from the harmonic significance generated
+                Cluster.id{j} = id_clust;
+                Cluster.sign_mean{j} =mean(x(I_Cluster_i,5));
+                Cluster.ind{j}       =I_Cluster_i;
+                Cluster.s_harm{j}    =mean(s_mean);
+                Cluster.sign_sum{j}  =sum(s_mean);
+                A_max=max(s_mean); if isempty(A_max); A_max=NaN; end;
+                Cluster.sign_max{j}  = A_max;
+                Cluster.parent_x{j}  =length(unique(x(I_Cluster_i,7)));
+                Cluster.parent_y{j}  =length(unique(x(I_Cluster_i,8)));
+                Cluster.f0{j}        =sum(x(I_Cluster_i,1).*s_mean)/Cluster.sign_sum{j};
+                
+                n0=sum(s_mean*[1,1,1].*[cos(x(I_Cluster_i,3)).*cos(x(I_Cluster_i,2)),cos(x(I_Cluster_i,3)).*sin(x(I_Cluster_i,2)),sin(x(I_Cluster_i,3))],1);
+                n0=n0./sqrt(sum(n0.^2));
+                
+                Cluster.alpha{j}     =real(atan2(n0(:,2),n0(:,1)));
+                Cluster.delta{j}     =real(asin(n0(:,3)));
+                
+                Cluster.f1{j}        =sum(x(I_Cluster_i,4).*s_mean)/Cluster.sign_sum{j};
+                Cluster.length{j}    =length(I_Cluster_i);
+                                
+                if length(I_Cluster_i)<2; Cluster.noise{j}=1; else Cluster.noise{j}=0; end
+            else
+                id_clust=id_clust-1;
+            end
+                id_clust=id_clust+1;
         end
 
             follow_up=[[Cluster.f0{:}]',[Cluster.alpha{:}]',[Cluster.delta{:}]',[Cluster.f1{:}]',[Cluster.sign_mean{:}]',[Cluster.s_harm{:}]',...
         [Cluster.sign_sum{:}]',[Cluster.length{:}]',[Cluster.parent_x{:}]',[Cluster.parent_y{:}]',[Cluster.id{:}]'];
-        
     end
     
     %% FOLLOW UP ASSIGMENT
     % veto population
-    if ~isempty(follow_up)
+        File_cn=sprintf('follow_up_%g.mat',grup);
+        param=[sig_veto,chisquare_STD_veto,r_W,r_W_cl,population_cluster_veto,significance_veto_cluster,min_band];
+        
+    if ~isempty(follow_up)    
+    %% WITH LINE CLEANUP
+    follow_up_clean=[];
+    try
+        F_list=[];
+        for j=1:2;
+            A=load(Clean_lines_II);
+            for i=1:size(A,1);
+                f0=(A(i,1)*[A(i,4):A(i,5)]'+A(i,3));
+                F_list=[F_list;f0-A(i,6),f0-A(i,7)];
+            end
+            A=load(Clean_lines_I);
+        end
+        follow_up_clean=follow_up;
+        for i=1:size(follow_up_clean,1)
+            if sum(follow_up_clean(i,1) >= F_list(:,1) & follow_up_clean(i,1) <= F_list(:,2));
+                follow_up_clean(i,:) = [];
+            end
+        end
+        follow_up=follow_up(follow_up(:,7)>population_cluster_veto,:);
+        follow_up=follow_up(follow_up(:,5)>significance_veto_cluster,:);       
+        follow_up_clean = follow_up_selection(follow_up_clean,Extract_S,min_band);
+        follow_up_clean
+    catch
+        %'no lines file'
+    end
+    
+    %% WITHOUT LINE CLEANUP
         follow_up=follow_up(follow_up(:,7)>population_cluster_veto,:);
         follow_up=follow_up(follow_up(:,5)>significance_veto_cluster,:);
         
-        f0=min(follow_up(:,1)):0.1:max(follow_up(:,1));
+        follow_up = follow_up_selection(follow_up,Extract_S,min_band);
+        % sigma veto cluster
+        
+   	follow_up
+    File_cn=sprintf('follow_up_%g.mat',grup);
+    save (File_cn,'follow_up','follow_up_clean','Cluster','param')
+    else 
+    save (File_cn,'Cluster','param')
+   
+    end
+    exit
+end
+
+%% FOLLOW UP ASSIGMENT FUNCTION
+function x = follow_up_selection(x,Extract_S,min_band)
+        
+        f0_ext=(min(x(:,1))-0.1):0.1:(max(x(:,1))+0.1);
         follow_up0=[];
         for i=Extract_S;
             Is=[];
-            [~,Iz]=sort(follow_up(:,i),'descend'); follow_up=follow_up(Iz,:);
-            for BandN=1:length(f0);
-                I=find(abs(f0(BandN)-follow_up(:,1))<min_band);
+            [~,Iz]=sort(x(:,i),'descend'); x=x(Iz,:);
+            for BandN=1:length(f0_ext);
+                I=find(abs(f0_ext(BandN)-x(:,1))<min_band);
                 Is=[Is,min(I)];
             end
-            follow_up0=[follow_up0;[follow_up(Is,:),i*ones(length(Is),1)]];
+            Is=unique(Is);
+            follow_up0=[follow_up0;[x(Is,:),i*ones(length(Is),1)]];
         end
-        [~,I]=sort(follow_up0(:,1)); follow_up=follow_up0(I,:);
-        
-        % sigma veto cluster
-        
-        param=[sig_veto,chisquare_STD_veto,r_W,r_W_cl,population_cluster_veto,significance_veto_cluster,min_band];
-    end
-    follow_up
-    File_cn=sprintf('follow_up_%g.mat',grup);
-    save (File_cn,'follow_up','Cluster','param')
-end
+        [~,I]=sort(follow_up0(:,1)); x=follow_up0(I,:);
+end        
 
 %% DISTACE FUCTION
 function [m_D,m_D5,n0,n1] = Distance_candidates(x,y,df0,df1,Tcoh,PixelFactor)
