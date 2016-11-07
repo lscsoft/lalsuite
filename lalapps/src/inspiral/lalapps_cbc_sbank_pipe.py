@@ -97,14 +97,14 @@ class SBankJob(inspiral.InspiralAnalysisJob):
 
 
 class SBankNode(pipeline.CondorDAGNode):
-    def __init__(self, job, dag, tag="SBANK", seed=0, bank_seed=None, mchirp_boundaries_file=None, mchirp_boundaries_index=None, p_node=[]):
+    def __init__(self, job, dag, tag="SBANK", seed=0, bank_seed=[], mchirp_boundaries_file=None, mchirp_boundaries_index=None, p_node=[]):
         pipeline.CondorDAGNode.__init__(self,job)
         if (mchirp_boundaries_file is None) ^ (mchirp_boundaries_index is None):
             raise ValueError("must supply both mchirp_boundaries_file and mchirp_boundaries_index or neither")
         if mchirp_boundaries_file is not None:
             self.add_var_arg("--mchirp-boundaries-file %s --mchirp-boundaries-index %s" % (mchirp_boundaries_file, mchirp_boundaries_index))
-        if bank_seed is not None:
-            self.add_var_arg("--bank-seed %s" % bank_seed)
+        for bseed in bank_seed:
+            self.add_var_arg("--bank-seed %s" % bseed)
         self.add_var_opt("seed", seed)
 
         fout = "%s.xml.gz" % tag
@@ -533,6 +533,13 @@ cp.remove_option("sbank", "match-min")  # don't want it entering via add_ini_opt
 #   1. generate coarse, partition mchirp space, generate sub-banks, ligolw_add
 #   2. take given bank, split it, and sim it
 nbanks = int(cp.get("split","nbanks"))
+
+# for layering, we prefer nbanks to be odd so that no second-stage job
+# works on the bank boundary
+if not (nbanks % 2):
+    nbanks += 1
+    cp.set("split", "nbanks", str(nbanks))
+
 bank_names = []
 bank_nodes = []
 if options.template_bank:
@@ -576,8 +583,27 @@ else:
     mchirp_boundaries_fname, = sbankChooseMchirpBoundariesNode.get_output_files()
 
     # generate a bank for each mchirp region
-    for j in xrange(nbanks):
-        bank_node = SBankNode(sbankJob, dag, "SBANK_SPLIT_BANK_%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode], bank_seed=xmlCoarse)
+    # first compute even numbered split banks
+    for j in xrange(0, nbanks, 2):
+
+        bank_node = SBankNode(sbankJob, dag, "SBANK_SPLIT_BANK_%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=[sbankChooseMchirpBoundariesNode], bank_seed=[xmlCoarse])
+        bank_node.add_var_opt("match-min", mm)
+        bank_node.set_priority(1)  # want complete bank before sims
+        bank_nodes.append(bank_node)
+        bank_name, = bank_node.get_output_files()
+        bank_names.append(bank_name)
+
+    # then compute odd numbered split banks using even banks as seeds
+    for j in xrange(1, nbanks, 2):
+
+        if j < nbanks - 1:
+            p_node = [bank_nodes[(j+1)/2], bank_nodes[(j+3)/2]]
+            bank_seed = [xmlCoarse, bank_names[(j+1)/2], bank_names[(j+3)/2]]
+        else:
+            p_node = [bank_nodes[(j+1)/2]]
+            bank_seed = [xmlCoarse, bank_names[(j+1)/2]]
+
+        bank_node = SBankNode(sbankJob, dag, "SBANK_SPLIT_BANK_%04d"%j, seed="%d" % (j*nbanks+1), mchirp_boundaries_file=mchirp_boundaries_fname, mchirp_boundaries_index=str(j), p_node=p_node, bank_seed=bank_seed)
         bank_node.add_var_opt("match-min", mm)
         bank_node.set_priority(1)  # want complete bank before sims
         bank_nodes.append(bank_node)
