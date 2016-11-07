@@ -46,8 +46,6 @@ typedef struct {
 /// Internal definition of cache
 ///
 struct tagWeaveCache {
-  /// Cache garbage collection limit
-  size_t gc_limit;
   /// Number of parameter-space dimensions
   size_t ndim;
   /// Half the coherent lattice tiling bounding box in dimension 0
@@ -72,6 +70,8 @@ struct tagWeaveCache {
   cache_item *saved_item;
   /// Hash table which records whether an item has been computed
   LALHashTbl *coh_computed_hash;
+  /// Cache garbage collection limit
+  size_t gc_limit;
 };
 
 ///
@@ -80,8 +80,6 @@ struct tagWeaveCache {
 struct tagWeaveCacheQueries {
   /// Number of parameter-space dimensions
   size_t ndim;
-  /// Maximum number of bins in semicoherent frequency block
-  UINT4 max_semi_nfreqs;
   /// Half the semicoherent lattice tiling bounding box in dimension 0
   double semi_half_bound_box_0;
   /// Physical to lattice coordinate transform
@@ -104,14 +102,14 @@ struct tagWeaveCacheQueries {
   UINT4 npartitions;
   /// Index to current partition of semicoherent frequency block
   UINT4 partition_index;
-  /// Relevance of the current semicoherent frequency block
-  REAL4 semi_relevance;
   /// Physical coordinates of the current semicoherent frequency block
   PulsarDopplerParams semi_phys;
   /// Index of left-most point in current semicoherent frequency block
   INT4 semi_left;
   /// Index of right-most point in current semicoherent frequency block
   INT4 semi_right;
+  /// Relevance of the current semicoherent frequency block
+  REAL4 semi_relevance;
   /// Maximum number of bins per partition in semicoherent frequency block
   UINT4 max_semi_part_nfreqs;
 };
@@ -214,18 +212,20 @@ WeaveCache *XLALWeaveCacheCreate(
   XLAL_CHECK_NULL( cache != NULL, XLAL_ENOMEM );
 
   // Set fields
-  cache->gc_limit = gc_limit;
   cache->phys_to_latt = phys_to_latt;
   cache->latt_to_phys = latt_to_phys;
   cache->coh_transf_data = coh_transf_data;
   cache->semi_transf_data = semi_transf_data;
   cache->coh_input = coh_input;
+  cache->gc_limit = gc_limit;
 
   // Get number of parameter-space dimensions
   cache->ndim = XLALTotalLatticeTilingDimensions( coh_tiling );
+  XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
   // Get half the coherent lattice tiling bounding box in dimension 0
   cache->coh_half_bound_box_0 = 0.5 * XLALLatticeTilingBoundingBox( coh_tiling, 0 );
+  XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
   // If this is an interpolating search, create a lattice tiling locator
   if ( interpolation ) {
@@ -322,7 +322,7 @@ void XLALWeaveCacheDestroy(
 /// Create storage for a series of cache queries
 ///
 WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
-  LatticeTiling *semi_tiling,
+  const LatticeTiling *semi_tiling,
   const WeavePhysicalToLattice phys_to_latt,
   const WeaveLatticeToPhysical latt_to_phys,
   const void *semi_transf_data,
@@ -336,6 +336,7 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   XLAL_CHECK_NULL( phys_to_latt != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( latt_to_phys != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( nqueries > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( npartitions > 0, XLAL_EINVAL );
 
   // Allocate memory
   WeaveCacheQueries *queries = XLALCalloc( 1, sizeof( *queries ) );
@@ -358,18 +359,19 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
 
   // Get number of parameter-space dimensions
   queries->ndim = XLALTotalLatticeTilingDimensions( semi_tiling );
+  XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
+
+  // Get half the semicoherent lattice tiling bounding box in dimension 0
+  queries->semi_half_bound_box_0 = 0.5 * XLALLatticeTilingBoundingBox( semi_tiling, 0 );
+  XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
 
   // Get maximum number of bins (per partition) in semicoherent frequency block
   {
     const LatticeTilingStats *semi_freq_stats = XLALLatticeTilingStatistics( semi_tiling, queries->ndim - 1 );
     XLAL_CHECK_NULL( semi_freq_stats != NULL, XLAL_EFUNC );
-    queries->max_semi_nfreqs = semi_freq_stats->max_points;
-    XLAL_CHECK_NULL( queries->max_semi_nfreqs > 0, XLAL_EFAILED );
-    queries->max_semi_part_nfreqs = 1 + ( ( queries->max_semi_nfreqs - 1 ) / queries->npartitions );
+    XLAL_CHECK_NULL( semi_freq_stats->max_points > 0, XLAL_EFAILED );
+    queries->max_semi_part_nfreqs = 1 + ( ( semi_freq_stats->max_points - 1 ) / queries->npartitions );
   }
-
-  // Get half the semicoherent lattice tiling bounding box in dimension 0
-  queries->semi_half_bound_box_0 = 0.5 * XLALLatticeTilingBoundingBox( semi_tiling, 0 );
 
   return queries;
 
