@@ -13,7 +13,7 @@ ${builddir}/lalapps_Weave --freq-partitions=1 --output-file=WeaveOutNoPart.fits 
     --sft-timebase=1800 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
-    --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=49.5/1e-3 --f1dot=-1e-9,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3
+    --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=49.5/1e-3 --f1dot=-1e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3
 set +x
 echo
 
@@ -34,7 +34,7 @@ ${builddir}/lalapps_Weave --freq-partitions=5 --output-file=WeaveOutPart.fits \
     --sft-timebase=1800 --sft-noise-psd=1,1 --sft-noise-rand-seed=3456 \
     --sft-timestamps-files=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt \
     --injections="{h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
-    --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=49.5/1e-3 --f1dot=-1e-9,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3
+    --alpha=0.9/1.4 --delta=-1.2/2.3 --freq=49.5/1e-3 --f1dot=-1e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3
 set +x
 echo
 

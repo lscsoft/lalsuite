@@ -2,7 +2,7 @@
 
 echo "=== Generate SFTs ==="
 set -x
-${injdir}/lalapps_Makefakedata_v5 --randSeed=3456 --fmin=50 --Band=1.0 --Tsft=1800 \
+${injdir}/lalapps_Makefakedata_v5 --randSeed=3456 --fmin=50.0 --Band=1.0 --Tsft=1800 \
     --injectionSources="{refTime=1122332211; h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=2.72; Delta=-0.38; Freq=50.5; f1dot=-1e-9}" \
     --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
     --timestampsFiles=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt
@@ -18,9 +18,9 @@ echo
 echo "=== Perform interpolating search ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
-    --output-toplist-limit=5000 --output-per-detector --output-per-segment --output-misc-info \
+    --output-toplist-limit=3000 --output-per-detector --output-per-segment --output-misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' --Fstat-method=DemodBest \
-    --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=50.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=0.6 --coh-max-mismatch=0.3
+    --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=50.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=6 --coh-max-mismatch=0.3
 set +x
 echo
 
@@ -30,7 +30,7 @@ ${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'SEMIAPPX' > tmp
 semi_ntmpl=`cat tmp | xargs printf "%d"`
 ${fitsdir}/lalapps_fits_header_getval "WeaveOut.fits[0]" 'SEMICOMP' > tmp
 semi_ncomp=`cat tmp | xargs printf "%d"`
-expr ${semi_ncomp} '=' ${semi_ntmpl}
+expr ${semi_ncomp} '<=' ${semi_ntmpl}
 set +x
 echo
 

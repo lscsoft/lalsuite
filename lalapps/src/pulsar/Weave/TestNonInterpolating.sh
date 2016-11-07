@@ -2,7 +2,7 @@
 
 echo "=== Generate SFTs ==="
 set -x
-${injdir}/lalapps_Makefakedata_v5 --randSeed=2345 --fmin=50 --Band=1.0 \
+${injdir}/lalapps_Makefakedata_v5 --randSeed=2345 --fmin=50.0 --Band=1.0 \
     --injectionSources="{refTime=1122332211; h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=1.22; Delta=0.32; Freq=50.5; f1dot=-1e-9}" \
     --Tsft=1800 --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
     --timestampsFiles=${srcdir}/timestamps-regular.txt,${srcdir}/timestamps-irregular.txt
@@ -18,9 +18,9 @@ echo
 echo "=== Perform non-interpolating search ==="
 set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
-    --output-toplist-limit=5000 --output-per-detector --output-per-segment --output-misc-info \
+    --output-toplist-limit=3000 --output-per-detector --output-per-segment --output-misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' --Fstat-method=DemodBest \
-    --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=50.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=0.6 --interpolation=no
+    --alpha=2.3/0.9 --delta=-1.2/2.3 --freq=50.5/1e-4 --f1dot=-1.5e-9,0 --semi-max-mismatch=6 --interpolation=no
 set +x
 echo
 

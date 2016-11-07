@@ -2,7 +2,7 @@
 
 echo "=== Generate SFTs ==="
 set -x
-${injdir}/lalapps_Makefakedata_v5 --randSeed=1234 --fmin=100 --Band=1.0 \
+${injdir}/lalapps_Makefakedata_v5 --randSeed=1234 --fmin=70.0 --Band=1.0 \
     --injectionSources="{refTime=1122332211; h0=0.5; cosi=0.2; psi=0.4; phi0=0.1; Alpha=5.4; Delta=1.1; Freq=100.5; f1dot=-1e-9}" \
     --Tsft=1800 --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
     --timestampsFiles=${srcdir}/timestamps-irregular.txt,${srcdir}/timestamps-regular.txt
@@ -20,7 +20,7 @@ set -x
 ${builddir}/lalapps_Weave --output-file=WeaveOut.fits \
     --output-toplist-limit=0 --output-per-detector --output-misc-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' --sft-files-check-crc --Fstat-method=DemodBest \
-    --freq=100.5/2e-5 --f1dot=-2e-9,0 --semi-max-mismatch=0.3
+    --freq=70.5/1e-4 --f1dot=-1e-9,0 --semi-max-mismatch=11
 set +x
 echo
 
