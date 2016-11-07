@@ -442,7 +442,7 @@ class posteriors:
   """
   Get sample posteriors and created a set of functions for outputting tables, plots and posterior statistics
   """
-  def __init__(self, postfiles, outputdir, harmonics=[2], modeltype='waveform', biaxial=False, usegwphase=False, parfile=None, priorfile=None, subtracttruths=False, showcontours=False):
+  def __init__(self, postfiles, outputdir, ifos=None, harmonics=[2], modeltype='waveform', biaxial=False, usegwphase=False, parfile=None, priorfile=None, subtracttruths=False, showcontours=False):
     """
     Initialise with a dictionary keyed in detector names containing paths to the equivalent posterior samples
     file for that detector.
@@ -452,7 +452,19 @@ class posteriors:
       print("Error... output path '%s' for data plots does not exist" % self._outputdir, file=sys.stderr)
       sys.exit(1)
 
-    self._ifos = list(postfiles.keys())    # get list of detectors
+    if ifos is None: # get list of detectors from postfiles dictionary
+      self._ifos = list(postfiles.keys())    # get list of detectors
+    else:
+      if isinstance(ifos, list):
+        self._ifos = ifos
+      else:
+        self._ifos = [ifos]
+      # check ifos are in postfiles dictionary
+      for ifo in self._ifos:
+        if ifo not in postfiles:
+          print("Error... posterior files for detector '%s' not given" % ifo, file=sys.stderr)
+          sys.exit(1)
+
     self._postfiles = postfiles
     self._posteriors = {}                  # dictionary of posterior objects
     self._posterior_stats = {}             # dictionary if posteriors statistics
@@ -2025,7 +2037,7 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
   htmlinput['pulsartable'] = psrtable
 
   # get posterior class (containing samples, sample plots and posterior plots)
-  postinfo = posteriors(postfiles, outdir, harmonics=harmonics, modeltype=modeltype,
+  postinfo = posteriors(postfiles, outdir, ifos=ifos, harmonics=harmonics, modeltype=modeltype,
                         biaxial=biaxial, parfile=parfile, usegwphase=usegwphase,
                         subtracttruths=subtracttruths, priorfile=priorfile,
                         showcontours=showcontours)
