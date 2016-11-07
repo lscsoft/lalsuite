@@ -46,7 +46,15 @@ int main(int argc, char *argv[])
   int hdunum = 0, hdutype = 0, ncols = 0, ii = 0, anynul = 0, dispwidth[1000];
   long jj = 0, nrows = 0;
 
-  if (argc != 2) {
+  char *argfile;
+  int printhdr;
+  if (argc == 3 && strcmp(argv[1], "-n") == 0) {
+    printhdr = 0;
+    argfile = argv[2];
+  } else if (argc == 2) {
+    printhdr = 1;
+    argfile = argv[1];
+  } else {
     fprintf(stderr, "Usage:  %s filename[ext][col filter][row filter] \n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "List the contents of a FITS table \n");
@@ -57,6 +65,7 @@ int main(int argc, char *argv[])
     fprintf(stderr, "  %s tab.fits[1][col X;Y]    - list X and Y cols only\n", argv[0]);
     fprintf(stderr, "  %s tab.fits[1][col -PI]    - list all but the PI col\n", argv[0]);
     fprintf(stderr, "  %s tab.fits[1][col -PI][#row < 101]  - combined case\n", argv[0]);
+    fprintf(stderr, "  %s -n ...                  - list without table header\n", argv[0]);
     fprintf(stderr, "\n");
     fprintf(stderr, "Display formats can be modified with the TDISPn keywords.\n");
     return (0);
@@ -68,7 +77,7 @@ int main(int argc, char *argv[])
     return (1);
   }
 
-  if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
+  if (!fits_open_file(&fptr, argfile, READONLY, &status)) {
     if (fits_get_hdu_num(fptr, &hdunum) == 1)
       /* This is the primary array;  try to move to the */
       /* first extension and see if it is a table */
@@ -94,11 +103,13 @@ int main(int argc, char *argv[])
       }
 
       /* print column names as column headers */
-      fprintf(fout, "##\n## ");
-      for (ii = 1; ii <= ncols; ii++) {
-        fprintf(fout, "%*s ",dispwidth[ii], colname[ii]);
+      if (printhdr) {
+        fprintf(fout, "##\n## ");
+        for (ii = 1; ii <= ncols; ii++) {
+          fprintf(fout, "%*s ",dispwidth[ii], colname[ii]);
+        }
+        fprintf(fout, "\n");  /* terminate header line */
       }
-      fprintf(fout, "\n");  /* terminate header line */
 
       /* print each column, row by row (there are faster ways to do this) */
       val = value;
