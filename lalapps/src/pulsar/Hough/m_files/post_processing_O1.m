@@ -121,7 +121,7 @@ if ~exist(sprintf('data_top_%g.mat',grup)) || load_data==0;
         end
         
     end
-    File_cn=sprintf('data_top_%g.mat',grup);
+    File_cn=sprintf('data_top_%g.mat',grup); disp(['Save: ',File_cn,'   ',datestr(now)])
     save (File_cn,'x_Toplist','y_Toplist','xmissing','ymissing') % Save full group
 else
     load(sprintf('data_top_%g.mat',grup))
@@ -143,8 +143,8 @@ if ~isempty(x_Toplist) && ~isempty(y_Toplist)
         
         if (k/(f0_rang_grup_band)) == fix(k/(f0_rang_grup_band)) || k==1;
             disp(['COINCIDENCES: ',num2str(k),'/',num2str([kmax,grup+f0_band*k]),'(Hz)   ',datestr(now)])
-            I_rang_grup_band_x= find( f0_grup + k0*f0_rang_grup_band - r_W/Tcoh <= x1_y & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= x1_y);
-            I_rang_grup_band_y= find( f0_grup + k0*f0_rang_grup_band <= y_Toplist(:,1) & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= y_Toplist(:,1));
+            I_rang_grup_band_x= find( f0_grup + k0*floor(f0_rang_grup_band*f0_band) - f0_band <= x1_y & f0_grup + (k0+1)*ceil(f0_rang_grup_band*f0_band) + f0_band >= x1_y);
+            I_rang_grup_band_y= find( f0_grup + k0*floor(f0_rang_grup_band*f0_band) <= y_Toplist(:,1) & f0_grup + (k0+1)*ceil(f0_rang_grup_band*f0_band) >= y_Toplist(:,1));
             k0=k0+1;
         end
         
@@ -152,8 +152,8 @@ if ~isempty(x_Toplist) && ~isempty(y_Toplist)
         % (We add wings considering r_W/Tcoh the maximum possible distance in frequency)
         
         L_band_x= ( f0_grup + k*f0_band - r_W/Tcoh <= x1_y(I_rang_grup_band_x,1)) &  (f0_grup + (k+1)*f0_band +  r_W/Tcoh >= x1_y(I_rang_grup_band_x,1));
-        L_band_y= ( f0_grup + k*f0_band            <= y_Toplist(I_rang_grup_band_y,1)) &  (f0_grup + (k+1)*f0_band        >= y_Toplist(I_rang_grup_band_y,1));
-        
+        L_band_y= ( f0_grup + k*f0_band            <= y_Toplist(I_rang_grup_band_y,1)) &  (f0_grup + (k+1)*f0_band        >= y_Toplist(I_rang_grup_band_y,1)); 
+
         if sum(L_band_x) && sum(L_band_y)
             
             % We generate two toplist from the extracion
@@ -222,7 +222,7 @@ if ~isempty(g_Toplist)
     
     % Sort by frequency the results of the full group and save the generated Toplist
     [~,I]=sort(g_Toplist(:,1));  g_Toplist=g_Toplist(I,:);
-    File_cn=sprintf('g_Toplist_%g.mat',grup);
+    File_cn=sprintf('g_Toplist_%g.mat',grup); disp(['Save: ',File_cn,'   ',datestr(now)])
     save (File_cn,'g_Toplist')
     
     k0=0;
@@ -235,12 +235,12 @@ if ~isempty(g_Toplist)
         % to reduce the height of the toplist on the following step.
         % (We add a wings considering r_W/Tcoh the maximum possible distance in frequency)
         
-        if (k/(f0_rang_grup_band/f0_band)) == fix(k/(f0_rang_grup_band/f0_band)) || k==1;
+        if (k/(f0_rang_grup_band)) == fix(k/(f0_rang_grup_band)) || k==1;
             disp(['CLUSTER: ',num2str(k),'/',num2str([kmax,grup+f0_band*k]),'(Hz)   ',datestr(now)])
-            I_rang_grup_band_x= find( f0_grup + k0*f0_rang_grup_band - r_W_cl/Tcoh <= g_Toplist(:,1) & f0_grup + (k0+1)*f0_rang_grup_band + r_W_cl/Tcoh >= g_Toplist(:,1));
+            I_rang_grup_band_x= find( f0_grup + k0*floor(f0_rang_grup_band*f0_band) - r_W_cl/Tcoh <= g_Toplist(:,1) & f0_grup + (k0+1)*ceil(f0_rang_grup_band*f0_band) + r_W_cl/Tcoh >= g_Toplist(:,1));
             k0=k0+1;
         end
-        
+
         gx_Toplist=g_Toplist(I_rang_grup_band_x,:);
         
         % Extract a f0_band from the f0_rang_grup_band extraction to compute the coincidences
@@ -365,7 +365,7 @@ end
 
 %% FOLLOW UP ASSIGMENT
 % veto population
-File_cn=sprintf('follow_up_%g.mat',grup);
+File_cn=sprintf('follow_up_%g.mat',grup); disp(['Save: ',File_cn,'   ',datestr(now)])
 param=[sig_veto,chisquare_STD_veto,r_W,r_W_cl,population_cluster_veto,significance_veto_cluster,min_band];
 
 if ~isempty(follow_up)
@@ -407,7 +407,7 @@ else
     save (File_cn,'Cluster','param')
     
 end
-exit
+%exit
 end
 
 %% FOLLOW UP ASSIGMENT FUNCTION
