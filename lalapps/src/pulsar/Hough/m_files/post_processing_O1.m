@@ -7,14 +7,14 @@ format long
 % X_input='/Users/wave/Collected/L1_Collected_%g_%g.dat';
 % Y_input='/Users/wave/Collected/H1_Collected_%g_%g.dat';
 %
-% grup_min=350; % initial group to be analysed and saved
+% grup=350; % initial group to be analysed and saved 
 % grup_Band=50;
-% grup_max=350; % last group
+% 
 %
 % BandNo=50;   %%% first band to analyse
 % BandNf=66; %%% last band to analyse
 %
-% Ntop=999; % Number of candidate per toplist
+% Ntop=10000; % Number of candidate per toplist
 %
 % PixelFactor=2;
 % p = 16; % degeneration
@@ -25,8 +25,8 @@ format long
 % r_W=sqrt(14);    % Coincidence radious
 % r_W_cl=sqrt(14); % Cluster radious
 %
-% CHI_V=[[0,0.4902,1.414,0.3581,1.484];[100,0.2168,1.428,0.1902,1.499];[200,0.1187,1.470,0.06784,1.697]];
-% %SETUP CHI2 VETO vector [Fin,A1,A2,B1,B2,Fend]
+% CHI_V=[[50,0.4902,1.414,0.3581,1.484];[100,0.2168,1.428,0.1902,1.499];[200,0.1187,1.470,0.06784,1.697]];
+% %SETUP CHI2 VETO vector [Actuation frequency,A1,A2,B1,B2]
 % chisquare_STD_veto = 5; % Number of STD we allow a candidate before vetoing
 %
 % population_cluster_veto=0; % Minimum population of a cluster
@@ -36,6 +36,7 @@ format long
 % min_band = 0.1 only one candidate per band
 %
 % Extract_S=[5,6,7]; select candidate per band per
+%
 % 5 = cluster mean significance of the mean
 % 6 = cluster mean significance of the hagmonic
 % 7 = cluster integrated significance of the hagmonic
@@ -73,7 +74,7 @@ Cluster=[];
 I_partial_cluster=[];
 
 %% SETUP CHI2 VETO
-[I,~]=find(CHI_V(:,1) < f0_grup);
+[I,~]=find(CHI_V(:,1) <= f0_grup);
 I=max(I);
 A1=CHI_V(I,2);
 A2=CHI_V(I,3);
@@ -82,41 +83,48 @@ B2=CHI_V(I,5);
 chi2_STD = @(x,y,p) (y-(p-1)-A1*x.^A2)./(sqrt(2*p-2)+B1*x.^B2);
 
 %% READING TOPLISTS
-if isempty(load_data)
+if ~exist(sprintf('data_top_%g.mat',grup)) || load_data==0;
     for BandN=BandNo:BandNf;
         if ((BandN/10) == fix(BandN/10)) || BandN==1;
-            BandN
+            disp(['READING: ',num2str(BandN),'/',num2str(BandNf),'   ',datestr(now)])
         end
         
         y_filename=sprintf(Y_input,grup,BandN);
         x_filename=sprintf(X_input,grup,BandN);
-        
         x = [];
         y = [];
         
-        x=load(x_filename);
-        if ~isempty(x)
-            x = [x,BandN*ones(length(x(:,1)),1)];
-            [~,I]=sort(x(:,5),'descend'); x=x(I(1:Ntop),:); %Reduce toplist
-            x_Toplist=cat(1,x_Toplist,x);
+        if exist(x_filename, 'file')
+            x=load(x_filename);
+            if ~isempty(x)
+                x = [x,BandN*ones(length(x(:,1)),1)];
+                [~,I]=sort(x(:,5),'descend'); x=x(I(1:Ntop),:);
+                x_Toplist=cat(1,x_Toplist,x);
+            else
+                xmissing=cat(1,xmissing,BandN);
+            end
         else
-            xmissing=cat(1,xmissing,BandN); %Safetycheck
+            xmissing=cat(1,xmissing,BandN);
         end
         
-        y=load(y_filename);
-        if ~isempty(y)
-            y = [y,BandN*ones(length(y(:,1)),1)];
-            [~,I]=sort(y(:,5),'descend'); y=y(I(1:Ntop),:); %Reduce toplist
-            y_Toplist=cat(1,y_Toplist,y);
+        if exist(y_filename, 'file')
+            y=load(y_filename);
+            if ~isempty(y)
+                y = [y,BandN*ones(length(y(:,1)),1)];
+                [~,I]=sort(y(:,5),'descend'); y=y(I(1:Ntop),:);
+                y_Toplist=cat(1,y_Toplist,y);
+            else
+                ymissing=cat(1,ymissing,BandN);
+            end
         else
-            ymissing=cat(1,ymissing,BandN); %Safetycheck
+            ymissing=cat(1,ymissing,BandN);
         end
         
     end
     File_cn=sprintf('data_top_%g.mat',grup);
     save (File_cn,'x_Toplist','y_Toplist','xmissing','ymissing') % Save full group
 else
-    load(load_data)
+    load(sprintf('data_top_%g.mat',grup))
 end
 
 
@@ -132,8 +140,9 @@ if ~isempty(x_Toplist) && ~isempty(y_Toplist)
     % (We add a wings considering r_W/Tcoh the maximum possible distance in frequency)
     
     for k=1:kmax;
+        
         if (k/(f0_rang_grup_band)) == fix(k/(f0_rang_grup_band)) || k==1;
-            [1,grup+f0_band*k]
+            disp(['COINCIDENCES: ',num2str(k),'/',num2str([kmax,grup+f0_band*k]),'(Hz)   ',datestr(now)])
             I_rang_grup_band_x= find( f0_grup + k0*f0_rang_grup_band - r_W/Tcoh <= x1_y & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= x1_y);
             I_rang_grup_band_y= find( f0_grup + k0*f0_rang_grup_band <= y_Toplist(:,1) & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= y_Toplist(:,1));
             k0=k0+1;
@@ -199,7 +208,7 @@ if ~isempty(x_Toplist) && ~isempty(y_Toplist)
                     % Array containing the results and the coincidental index, adding the results for each iteration
                     g_cn_data0 = [gf0,galpha,gdelta,gf1,s_mean,s_harm(I),I_sigchi2_x_cn,I_sigchi2_y_cn];
                     g_Toplist=cat(1,g_Toplist,g_cn_data0);
-                    1
+                    
                     g_cn_data0=[];
                 end
             end
@@ -227,8 +236,8 @@ if ~isempty(g_Toplist)
         % (We add a wings considering r_W/Tcoh the maximum possible distance in frequency)
         
         if (k/(f0_rang_grup_band/f0_band)) == fix(k/(f0_rang_grup_band/f0_band)) || k==1;
-            [2,grup+f0_band*k]
-            I_rang_grup_band_x= find( f0_grup + k0*f0_rang_grup_band - r_W/Tcoh <= g_Toplist(:,1) & f0_grup + (k0+1)*f0_rang_grup_band + f0_band >= g_Toplist(:,1));
+            disp(['CLUSTER: ',num2str(k),'/',num2str([kmax,grup+f0_band*k]),'(Hz)   ',datestr(now)])
+            I_rang_grup_band_x= find( f0_grup + k0*f0_rang_grup_band - r_W_cl/Tcoh <= g_Toplist(:,1) & f0_grup + (k0+1)*f0_rang_grup_band + r_W_cl/Tcoh >= g_Toplist(:,1));
             k0=k0+1;
         end
         
@@ -368,27 +377,25 @@ if ~isempty(follow_up)
             A=load(Clean_lines_II);
             for i=1:size(A,1);
                 f0=(A(i,1)*[A(i,4):A(i,5)]'+A(i,3));
-                F_list=[F_list;f0-A(i,6),f0-A(i,7)];
+                F_list=[F_list;f0-A(i,6)-20*df0,f0+A(i,7)+20*df0];
             end
             A=load(Clean_lines_I);
         end
         follow_up_clean=follow_up;
         for i=1:size(follow_up_clean,1)
             if sum(follow_up_clean(i,1) >= F_list(:,1) & follow_up_clean(i,1) <= F_list(:,2));
-                follow_up_clean(i,:) = [];
+                follow_up_clean(i,:) = NaN;
             end
         end
-        follow_up=follow_up(follow_up(:,7)>population_cluster_veto,:);
-        follow_up=follow_up(follow_up(:,5)>significance_veto_cluster,:);
+        follow_up=follow_up(follow_up(:,8)>population_cluster_veto(1) & follow_up(:,9)>population_cluster_veto(2) & follow_up(:,10)>population_cluster_veto(3) ,:);
+        follow_up=follow_up(follow_up(:,6)>significance_veto_cluster,:);
         follow_up_clean = follow_up_selection(follow_up_clean,Extract_S,min_band);
         follow_up_clean
     catch
         %'no lines file'
     end
     
-    %% WITHOUT LINE CLEANUP
-    follow_up=follow_up(follow_up(:,7)>population_cluster_veto,:);
-    follow_up=follow_up(follow_up(:,5)>significance_veto_cluster,:);
+    %% WITHOUT CLEANUP
     
     follow_up = follow_up_selection(follow_up,Extract_S,min_band);
     % sigma veto cluster
