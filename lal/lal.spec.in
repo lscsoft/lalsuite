@@ -16,6 +16,7 @@ BuildRequires: bc
 BuildRequires: fftw-devel
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
+BuildRequires: less
 BuildRequires: numpy
 BuildRequires: octave-devel
 BuildRequires: python-devel
@@ -23,6 +24,7 @@ BuildRequires: swig
 Requires: fftw
 Requires: gsl
 Requires: hdf5
+Requires: less
 Prefix: %{_prefix}
 
 %description

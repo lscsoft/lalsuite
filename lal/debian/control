@@ -4,14 +4,14 @@ Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Build-Depends: debhelper (>= 9), pkg-config, dh-python, python-all-dev, python3-all-dev, zlib1g-dev,
   libgsl-dev | libgsl0-dev (>= 1.9), libfftw3-dev, swig (>= 3.0.7),
-  liboctave-dev, python-numpy, python3-numpy, bc, libhdf5-dev
+  liboctave-dev, python-numpy, python3-numpy, bc, libhdf5-dev, less
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.4
 Standards-Version: 3.9.8
 
 Package: lal
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, less
 Description: LSC Algorithm Library
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains the shared-object libraries needed to run applications
