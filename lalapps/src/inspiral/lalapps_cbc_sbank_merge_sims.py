@@ -24,6 +24,7 @@ from h5py import File as H5File
 def parse_command_line():
     parser = OptionParser(description="Merge banksim .h5 files together, maximizing match for each injection over bank fragments as necessary. We assume that all banksims were given the identical HL-INJECTIONS file and disjoint bank fragments.")
     parser.add_option("-o", "--output", help="Write output to hdf5 output")
+    parser.add_option("-v", "--verbose", default=False, action="store_true", help="Tell me everything you know.")
 
     opts, args = parser.parse_args()
 
@@ -56,11 +57,20 @@ out_sngls = []
 # build sngls and match map
 for f in args[:]:
     with H5File(f, "r") as infile:
+
+        if opts.verbose:
+            print "Merging %s ..." % f
+
         # sanity check that we're probably using the same injection set
         assert len(infile["/sim_inspiral"]) == len(out_sims)
 
         # sanity check that the sim has one match_map entry per inj
         assert len(infile["/match_map"]) == len(out_sims)
+
+        # sometimes injections are spead too thin and this check speeds
+        # up the merging
+        if max(infile["/match_map"]["match"]) <= min(out_map["match"]):
+            continue
 
         # tabulate best match per injection
         # NB: inj_ids have the same meaning across files, but best_tmplt_ids
@@ -68,6 +78,8 @@ for f in args[:]:
         for inj_id2, (inj_id, inj_sigmasq, match, best_tmplt_id) in enumerate(infile["/match_map"]):
             assert inj_id == inj_id2  # we assume that the ids are in order
             if match > out_map[inj_id]["match"]:
+                if opts.verbose:
+                    print "Found better match for injection %04d" % inj_id, match, out_map[inj_id]["match"]
                 out_map[inj_id] = (inj_id, inj_sigmasq, match, best_tmplt_id + len(out_sngls))
 
         # and copy in the templates represented here
