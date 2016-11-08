@@ -267,13 +267,13 @@ static double bicubic_interp_eval(const bicubic_interp *interp, double x, double
 }
 
 
-struct log_radial_integrator_t {
+typedef struct {
     bicubic_interp *region0;
     cubic_interp *region1;
     cubic_interp *region2;
     double xmax, ymax, vmax, r1, r2;
     int k;
-};
+} log_radial_integrator;
 
 
 typedef struct {
@@ -418,7 +418,7 @@ static double log_radial_integral(double r1, double r2, double p, double b, int 
 static const size_t default_log_radial_integrator_size = 400;
 
 
-log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, double pmax, size_t size)
+static log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, double pmax, size_t size)
 {
     if (size <= 1)
         XLAL_ERROR_NULL(XLAL_EINVAL, "size must be > 1");
@@ -499,7 +499,7 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, d
 }
 
 
-void log_radial_integrator_free(log_radial_integrator *integrator)
+static void log_radial_integrator_free(log_radial_integrator *integrator)
 {
     if (integrator)
     {
@@ -514,7 +514,7 @@ void log_radial_integrator_free(log_radial_integrator *integrator)
 }
 
 
-double log_radial_integrator_eval(const log_radial_integrator *integrator, double p, double b)
+static double log_radial_integrator_eval(const log_radial_integrator *integrator, double p, double b)
 {
     const double r0 = 2 * gsl_pow_2(p) / b;
     const double x = log(p);
