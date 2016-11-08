@@ -501,7 +501,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   /* For now we stick to only analysing half of each segment */
   localparams.strideDuration = 0.5 * localparams.segmentDuration;
 
-  /* FIXME: Hardcoded to 1s */
+  /* When shifting data from interferometers to 'point' at a sky location, */
+  /* we don't want to let possibly corrupted data to leak in at start/end. */
+  /* This buffer ensures that doesn't happen. Hardcoded to 1s */
   localparams.numBufferPoints = floor(localparams.sampleRate + 0.5);
 
   /* Choose the start and end point of each segment for analysis */
