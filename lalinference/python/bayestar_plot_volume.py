@@ -45,7 +45,7 @@ parser.add_argument(
     help='right ascension (deg), declination (deg), and distance to mark'
     ' [may be specified multiple times, default: none]')
 parser.add_argument(
-    '--chain', metavar='CHAIN.dat', type=argparse.FileType('r'),
+    '--chain', metavar='CHAIN.hdf5', type=argparse.FileType('rb'),
     help='optionally plot a posterior sample chain [default: none]')
 parser.add_argument(
     '--projection', type=int, choices=list(range(4)), default=0,
@@ -68,7 +68,7 @@ progress.update(-1, 'Starting up')
 from matplotlib import pyplot as plt
 from matplotlib import gridspec
 from matplotlib import transforms
-from lalinference.io import fits
+from lalinference import io
 from lalinference.plot import marker
 from lalinference.bayestar.distance import (
     principal_axes, volume_render, marginal_pdf, marginal_ppf)
@@ -78,7 +78,7 @@ import scipy.stats
 
 # Read input, determine input resolution.
 progress.update(-1, 'Loading FITS file')
-(prob, mu, sigma, norm), metadata = fits.read_sky_map(
+(prob, mu, sigma, norm), metadata = io.read_sky_map(
     opts.input.name, distances=True)
 npix = len(prob)
 nside = hp.npix2nside(npix)
@@ -88,7 +88,7 @@ progress.update(-1, 'Preparing projection')
 if opts.align_to is None or opts.input.name == opts.align_to.name:
     prob2, mu2, sigma2, norm2 = prob, mu, sigma, norm
 else:
-    (prob2, mu2, sigma2, norm2), _ = fits.read_sky_map(
+    (prob2, mu2, sigma2, norm2), _ = io.read_sky_map(
         opts.align_to.name, distances=True)
 if opts.max_distance is None:
     max_distance = marginal_ppf(0.99, prob2, mu2, sigma2, norm2)
@@ -97,7 +97,7 @@ else:
 R = np.ascontiguousarray(principal_axes(prob2, mu2, sigma2))
 
 if opts.chain:
-    chain = np.recfromtxt(opts.chain, names=True)
+    chain = io.read_samples(opts.chain.name)
     chain = np.dot(R.T, (hp.ang2vec(
         0.5 * np.pi - chain['dec'], chain['ra'])
         * np.atleast_2d(chain['dist']).T).T)
