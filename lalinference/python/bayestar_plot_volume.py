@@ -46,7 +46,7 @@ parser.add_argument(
     ' [may be specified multiple times, default: none]')
 parser.add_argument(
     '--chain', metavar='CHAIN.dat', type=argparse.FileType('r'),
-    help='parser.add_argumentally plot a posterior sample chain [default: none]')
+    help='optionally plot a posterior sample chain [default: none]')
 parser.add_argument(
     '--projection', type=int, choices=list(range(4)), default=0,
     help='Plot one specific projection [default: plot all projections]')
