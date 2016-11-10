@@ -1373,6 +1373,7 @@ static void test_signal_amplitude_model(
             &Htemplate, &Hcross, 1.4 * LAL_MSUN_SI, 1.4 * LAL_MSUN_SI,
             0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 100, 101, 100, params,
             TaylorF2);
+        XLALDestroyDict(params);
         assert(ret == XLAL_SUCCESS);
 
         /* Discard any non-quadrature phase component of "template" */
@@ -1413,7 +1414,6 @@ static void test_signal_amplitude_model(
         XLALDestroyCOMPLEX16FrequencySeries(Hsignal);
         XLALDestroyCOMPLEX16FrequencySeries(Htemplate);
         Hsignal = Htemplate = NULL;
-        XLALDestroyDict(params);
     }
 
     /* Test to nearly float (32-bit) precision because
