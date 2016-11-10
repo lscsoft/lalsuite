@@ -137,18 +137,18 @@ DEFN_REGISTER_UVAR(REAL8Vector,REAL8Vector*);
 DEFN_REGISTER_UVAR(STRINGVector,LALStringVector*);
 
 // ----- define helper types for casting
-typedef int (*parserT)(void*, const char*);
-typedef void (*destructorT)(void*);
-typedef char *(*printerT)(const void*);
+typedef void (*destructorT)(void *cvar);
+typedef int (*parserT)(void *cvar, const char *valstr);
+typedef char *(*printerT)(const void *cvar);
 
 // ----- handy macro to simplify adding 'regular' entries for new UTYPES into UserVarTypeMap
 #define REGULAR_MAP_ENTRY(UTYPE,DESTRUCTOR,FORMATHELP) \
   [UVAR_TYPE_##UTYPE] = { \
     .name = #UTYPE, \
-    .format_help = FORMATHELP, \
+    .destructor = (destructorT)DESTRUCTOR, \
     .parser = (parserT)XLALParseStringValueAs##UTYPE, \
     .printer = (printerT)XLALPrintStringValueOf##UTYPE, \
-    .destructor = (destructorT)DESTRUCTOR \
+    .format_help_str = FORMATHELP, \
   }
 
 // ---------- HOWTO add new UserInput variable types ----------
@@ -168,36 +168,40 @@ typedef char *(*printerT)(const void*);
 static const struct
 {
   const char *const name;			///< type name
-  const char *const format_help;		///< help string describing format of user variable
-  int (*parser)(void*, const char*);		///< parser function to parse string as this type
-  char *(*printer)(const void *);		///< 'printer' function returning string value for given type
-  void (*destructor)(void*);			///< destructor for this variable type, NULL if none required
+  destructorT destructor;			///< destructor for this variable type, NULL if none required
+  parserT parser;				///< parser function to parse string as this type
+  printerT printer;				///< 'printer' function returning string value for given type
+  const char *const format_help_str;   		///< help string describing format of user variable
 } UserVarTypeMap[UVAR_TYPE_END]
 = {
   // either use 'manual' entries of the form
-  // [UVAR_TYPE_\<UTYPE\>] = { "\<UTYPE\>",	(parserT)XLALParseStringValueAs\<UTYPE\>, (printerT)XLALPrintStringValueOf\<UTYPE\>, (destructorT)XLALDestroy\<UTYPE\> },
+  //   [UVAR_TYPE_\<UTYPE\>] = {
+  //     .name = "\<UTYPE\>", .destructor = (destructorT)XLALDestroy\<UTYPE\>, .format_help_str = "=help string for \<UTYPE\>",
+  //     .parser = (parserT)XLALParseStringValueAs\<UTYPE\>, .printer = (printerT)XLALPrintStringValueOf\<UTYPE\>,
+  //   },
   // or the convenience macro for cases using 'standard' function names and API
-  // REGULAR_MAP_ENTRY ( \<UTYPE\>, XLALDestroy\<UTYPE\> ),
-  REGULAR_MAP_ENTRY ( BOOLEAN, NULL, "[TRUE|FALSE | YES|NO | 1|0]" ),
-  REGULAR_MAP_ENTRY ( INT4, NULL, "<4-byte signed integer>" ),
-  REGULAR_MAP_ENTRY ( INT8, NULL, "<8-byte signed integer>" ),
-  REGULAR_MAP_ENTRY ( UINT4, NULL, "<4-byte unsigned integer>" ),
-  REGULAR_MAP_ENTRY ( UINT8, NULL, "<8-byte unsigned integer>" ),
-  REGULAR_MAP_ENTRY ( REAL8, NULL, "<8-byte real>" ),
-  REGULAR_MAP_ENTRY ( STRING, XLALFree, "<string>" ),
-  REGULAR_MAP_ENTRY ( EPOCH, NULL, "<seconds>[.<frac-seconds>][GPS] | <days>[.<frac-days>]MJD" ),
-  REGULAR_MAP_ENTRY ( RAJ, NULL, "<radians>|<hours>:<minutes>:<seconds>" ),
-  REGULAR_MAP_ENTRY ( DECJ, NULL, "<radians>|<degrees>:<minutes>:<seconds>" ),
+  //   REGULAR_MAP_ENTRY ( \<UTYPE\>, XLALDestroy\<UTYPE\>, "=help string for \<UTYPE\>" ),
 
-  REGULAR_MAP_ENTRY ( REAL8Range, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<8-byte real>" ),
-  REGULAR_MAP_ENTRY ( EPOCHRange, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<seconds>[.<frac-seconds>][GPS] | <days>[.<frac-days>]MJD" ),
-  REGULAR_MAP_ENTRY ( RAJRange, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<hours>:<minutes>:<seconds>" ),
-  REGULAR_MAP_ENTRY ( DECJRange, NULL, "<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<degrees>:<minutes>:<seconds>" ),
+  REGULAR_MAP_ENTRY ( BOOLEAN, NULL, "[=(TRUE|FALSE)|(YES|NO)|(1|0)]" ),
+  REGULAR_MAP_ENTRY ( INT4, NULL, "=<4-byte signed integer>" ),
+  REGULAR_MAP_ENTRY ( INT8, NULL, "=<8-byte signed integer>" ),
+  REGULAR_MAP_ENTRY ( UINT4, NULL, "=<4-byte unsigned integer>" ),
+  REGULAR_MAP_ENTRY ( UINT8, NULL, "=<8-byte unsigned integer>" ),
+  REGULAR_MAP_ENTRY ( REAL8, NULL, "=<8-byte real>" ),
+  REGULAR_MAP_ENTRY ( STRING, XLALFree, "=<string>" ),
+  REGULAR_MAP_ENTRY ( EPOCH, NULL, "=<seconds>[.<frac-seconds>][GPS] | <days>[.<frac-days>]MJD" ),
+  REGULAR_MAP_ENTRY ( RAJ, NULL, "=<radians>|<hours>:<minutes>:<seconds>" ),
+  REGULAR_MAP_ENTRY ( DECJ, NULL, "=<radians>|<degrees>:<minutes>:<seconds>" ),
 
-  REGULAR_MAP_ENTRY ( INT4Vector, XLALDestroyINT4Vector, "<4-byte signed integer>,..." ),
-  REGULAR_MAP_ENTRY ( UINT4Vector, XLALDestroyUINT4Vector, "<4-byte unsigned integer>,..." ),
-  REGULAR_MAP_ENTRY ( REAL8Vector, XLALDestroyREAL8Vector, "<8-byte real>,..." ),
-  REGULAR_MAP_ENTRY ( STRINGVector, XLALDestroyStringVector, "<string>,..." ),
+  REGULAR_MAP_ENTRY ( REAL8Range, NULL, "=<start>[,<end>|/<band>|~<plus-minus>] where <>=<8-byte real>" ),
+  REGULAR_MAP_ENTRY ( EPOCHRange, NULL, "=<start>[,<end>|/<band>|~<plus-minus>] where <>=<seconds>[.<frac-seconds>][GPS] | <days>[.<frac-days>]MJD" ),
+  REGULAR_MAP_ENTRY ( RAJRange, NULL, "=<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<hours>:<minutes>:<seconds>" ),
+  REGULAR_MAP_ENTRY ( DECJRange, NULL, "=<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<degrees>:<minutes>:<seconds>" ),
+
+  REGULAR_MAP_ENTRY ( INT4Vector, XLALDestroyINT4Vector, "=<4-byte signed integer>,..." ),
+  REGULAR_MAP_ENTRY ( UINT4Vector, XLALDestroyUINT4Vector, "=<4-byte unsigned integer>,..." ),
+  REGULAR_MAP_ENTRY ( REAL8Vector, XLALDestroyREAL8Vector, "=<8-byte real>,..." ),
+  REGULAR_MAP_ENTRY ( STRINGVector, XLALDestroyStringVector, "=<string>,..." ),
 };
 
 
@@ -817,7 +821,7 @@ XLALUserVarPrintHelp ( FILE *file )
               fprintf( f, "--%s", ptr->name );
               if ( print_format_help )
                 {
-                  fprintf( f, "=%s", UserVarTypeMap [ ptr->type ].format_help );
+                  fprintf( f, "%s", UserVarTypeMap [ ptr->type ].format_help_str );
                 }
               if ( print_default_value )
                 {
