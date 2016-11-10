@@ -3566,11 +3566,11 @@ int XLALSimIMRSpinEOBWaveformAll(
      * the azimuthal phase of the observer in the source (I-)frame. Together with inclination angle it defines 
      * the position of the observer in the (I-)frame associated with the source at t=0 */
 
-    Y22 = XLALSpinWeightedSphericalHarmonic( inc, -phiC, -2, 2, 2 );
-    Y2m2 = XLALSpinWeightedSphericalHarmonic( inc, -phiC, -2, 2, -2 );
-    Y21 = XLALSpinWeightedSphericalHarmonic( inc, -phiC, -2, 2, 1 );
-    Y2m1 = XLALSpinWeightedSphericalHarmonic( inc, -phiC, -2, 2, -1 );
-    Y20 = XLALSpinWeightedSphericalHarmonic( inc, -phiC, -2, 2, 0 );
+    Y22 =  XLALSpinWeightedSphericalHarmonic( inc, LAL_PI/2.-phiC, -2, 2, 2 );
+    Y2m2 = XLALSpinWeightedSphericalHarmonic( inc, LAL_PI/2.-phiC, -2, 2, -2 );
+    Y21 =  XLALSpinWeightedSphericalHarmonic( inc, LAL_PI/2.-phiC, -2, 2, 1 );
+    Y2m1 = XLALSpinWeightedSphericalHarmonic( inc, LAL_PI/2.-phiC, -2, 2, -1 );
+    Y20 =  XLALSpinWeightedSphericalHarmonic( inc, LAL_PI/2.-phiC, -2, 2, 0 );
     /*if ( SpinsAlmostAligned ) {
         Y22 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, 2 );
         Y2m2 = XLALSpinWeightedSphericalHarmonic( inc, coa_phase_offset, -2, 2, -2 );

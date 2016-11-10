@@ -266,30 +266,25 @@ class AlignedSpinTemplate(object):
 
     def _compute_waveform(self, df, f_final):
 
-        flags = lalsim.SimInspiralCreateWaveformFlags()
-        phi0 = 0  # This is a reference phase, and not an intrinsic parameter
-        lmbda1 = lmbda2 = 0 # No tidal terms here
-        ampO = -1 # Are these the correct values??
-        phaseO = -1 # Are these the correct values??
         approx = lalsim.GetApproximantFromString( self.approximant )
 
         if lalsim.SimInspiralImplementedFDApproximants(approx):
             hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
-                0, df,
                 self.m1 * MSUN_SI, self.m2 * MSUN_SI,
                 0., 0., self.spin1z, 0., 0., self.spin2z,
-                self.bank.flow, f_final, self.bank.flow,
-                1e6*PC_SI, 0., 0., 0., flags, None, ampO, phaseO, approx)
+                1e6*PC_SI, 0., 0.,
+                0., 0., 0.,
+                df, self.bank.flow, f_final, self.bank.flow,
+                None, approx)
 
         else:
             hplus_fd, hcross_fd = lalsim.SimInspiralFD(
                 phi0, df, self.m1*MSUN_SI, self.m2*MSUN_SI, 0,
                 0, self.spin1z, 0, 0, self.spin2z,
-                self.bank.flow, f_final, 40.0, 1e6*PC_SI, 0, 0,
-                lmbda1, lmbda2, # irrelevant parameters for BBH
-                None, None, # non-GR parameters
-                ampO, phaseO, approx)
-
+                1.e6*PC_SI, 0., 0.,
+                0., 0., 0.,
+                df, self.bank.flow, f_final, 40.,
+                None, approx)
         return hplus_fd
 
 
@@ -497,19 +492,20 @@ class TaylorF2Template(InspiralAlignedSpinTemplate):
 
     def _compute_waveform(self, df, f_final):
         phi0 = 0  # This is a reference phase, and not an intrinsic parameter
-        lmbda1 = lmbda2 = 0 # No tidal terms here
-        ampO = 0
-        phaseO = 7
+        LALpars=lal.CreateDict()
+        lalsim.SimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars, 0)
+        lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(LALpars, 7)
+        lalsim.SimInspiralWaveformParamsInsertPNSpinOrder(LALpars, 5)
         approx = lalsim.GetApproximantFromString( self.approx_name )
-        wave_flags = lalsim.SimInspiralCreateWaveformFlags()
-        lalsim.SimInspiralSetSpinOrder(wave_flags, 5)
-
         hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
-                0, df, self.m1*MSUN_SI, self.m2*MSUN_SI, 0, 0, self.spin1z,
-                0, 0, self.spin2z, self.bank.flow, f_final, 40.0, 1e6*PC_SI, 0,
-                lmbda1, lmbda2, # irrelevant parameters for BBH
-                wave_flags, None, # non-GR parameters
-                ampO, phaseO, approx)
+                self.m1*MSUN_SI, self.m2*MSUN_SI,
+                0., 0., self.spin1z,
+                0., 0., self.spin2z,
+                1.e6*PC_SI, 0., phi0,
+                0., 0., 0.,
+                df, self.bank.flow, f_final, self.bank.flow,
+                LALpars, approx)
+        lal.DestroyDict(LALpars)
 
         # Must set values greater than _get_f_final to 0
         act_f_max = self._get_f_final()
@@ -562,28 +558,24 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
 
     def _compute_waveform_comps(self, df, f_final):
         approx = lalsim.GetApproximantFromString( self.approximant )
-        lmbda1 = lmbda2 = 0 # No tidal terms here
-        ampO = -1 # Are these the correct values??
-        phaseO = -1 # Are these the correct values??
-
         if lalsim.SimInspiralImplementedFDApproximants(approx):
             hplus_fd, hcross_fd = lalsim.SimInspiralChooseFDWaveform(
-                self.orb_phase, df, self.m1*MSUN_SI, self.m2*MSUN_SI,
-                self.spin1x, self.spin1y, self.spin1z, self.spin2x,
-                self.spin2y, self.spin2z, self.bank.flow, f_final,
-                self.bank.flow, 1e6*PC_SI, self.iota,
-                lmbda1, lmbda2, # irrelevant parameters for BBH
-                None, None, # non-GR parameters
-                ampO, phaseO, approx)
+                self.m1*MSUN_SI, self.m2*MSUN_SI,
+                self.spin1x, self.spin1y, self.spin1z,
+                self.spin2x, self.spin2y, self.spin2z,
+                1.e6*PC_SI, self.iota, self.orb_phase,
+                0., 0., 0.,
+                df, self.bank.flow, f_final, self.bank.flow,
+                None, approx)
         else:
             hplus_fd, hcross_fd = lalsim.SimInspiralFD(
-                self.orb_phase, df, self.m1*MSUN_SI, self.m2*MSUN_SI,
+                self.m1*MSUN_SI, self.m2*MSUN_SI,
                 self.spin1x, self.spin1y, self.spin1z,
-                self.spin2x, self.spin2y, self.spin2z, self.bank.flow,
-                f_final, self.bank.flow, 1e6*PC_SI, 0, self.iota,
-                lmbda1, lmbda2, # irrelevant parameters for BBH
-                None, None, # non-GR parameters
-                ampO, phaseO, approx)
+                self.spin2x, self.spin2y, self.spin2z,
+                1.e6*PC_SI, self.iota, self.orb_phase,
+                0., 0., 0.,
+                df, self.bank.flow, f_final, self.bank.flow,
+                None, approx)
 
         return hplus_fd, hcross_fd
 

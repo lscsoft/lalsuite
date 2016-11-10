@@ -459,7 +459,7 @@ typedef struct tagLALInferenceModel
   COMPLEX16FrequencySeries    *freqhPlus, *freqhCross; /** Freq series model buffers */
   COMPLEX16FrequencySeries    **freqhs; /** Projected freq series model buffers */
 
-  LALSimInspiralWaveformFlags *waveFlags;   /** A pointer to the WF flag. Will store here tide and spin order, as well as frame */
+  LALDict *LALpars;
   LALSimInspiralWaveformCache *waveformCache;   /** Waveform cache */
   LALSimBurstWaveformCache    *burstWaveformCache;   /** Burst Waveform cache for LIB*/
   REAL8FFTPlan                *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */

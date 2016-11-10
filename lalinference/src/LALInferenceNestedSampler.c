@@ -1717,7 +1717,6 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	}
 	threadState->currentParams=curParsBackup;
 	if(!threadState->currentParams) threadState->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-
 }
 
 

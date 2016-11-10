@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <lal/LALString.h>
 #include <lal/LALSimInspiralWaveformFlags.h>
+#include <lal/LALSimInspiralWaveformParams.h>
 
 /**
  * Struct containing several enumerated flags that control specialized behavior
@@ -29,6 +30,7 @@
  *
  * Developers: Do not add anything but enumerated flags to this struct. Avoid
  * adding extra flags whenever possible.
+ * DEPRECATED, use LALDict instead.
  */
 struct tagLALSimInspiralWaveformFlags
 {
@@ -91,7 +93,21 @@ void XLALSimInspiralDestroyWaveformFlags(
  * Returns true if waveFlags is non-NULL and all of its fields have default
  * value; returns false otherwise.
  */
-bool XLALSimInspiralWaveformFlagsIsDefault(
+bool XLALSimInspiralWaveformParamsFlagsAreDefault(LALDict *params)
+{
+    /* Check every field of WaveformFlags, each returns 1/0 for true/false.
+     * Return true iff waveFlags is non-NULL and all checks are true. */
+  return ( XLALSimInspiralWaveformParamsPNSpinOrderIsDefault(params) &&
+	   XLALSimInspiralWaveformParamsPNTidalOrderIsDefault(params) &&
+	   XLALSimInspiralWaveformParamsFrameAxisIsDefault(params) &&
+	   XLALSimInspiralWaveformParamsModesChoiceIsDefault(params));
+}
+
+/**
+ * Returns true if waveFlags is non-NULL and all of its fields have default
+ * value; returns false otherwise.
+ */
+bool XLALSimInspiralWaveformFlagsIsDefaultOLD(
         LALSimInspiralWaveformFlags *waveFlags
         )
 {
@@ -108,7 +124,7 @@ bool XLALSimInspiralWaveformFlagsIsDefault(
  * Checks if all flags in two LALSimInspiralWaveformFlags structs are equal.
  * Returns true if all flags are equal. Returns false if one or more differ.
  */
-bool XLALSimInspiralWaveformFlagsEqual(
+bool XLALSimInspiralWaveformFlagsEqualOLD(
         LALSimInspiralWaveformFlags *waveFlags1,
         LALSimInspiralWaveformFlags *waveFlags2
         )
@@ -126,6 +142,33 @@ bool XLALSimInspiralWaveformFlagsEqual(
     axisChoice2 = XLALSimInspiralGetFrameAxis(waveFlags2);
     modesChoice1 = XLALSimInspiralGetModesChoice(waveFlags1);
     modesChoice2 = XLALSimInspiralGetModesChoice(waveFlags2);
+
+    return ( (spinO1==spinO2) && (tideO1==tideO2) && (axisChoice1==axisChoice2)
+            && (modesChoice1==modesChoice2) );
+}
+
+/**
+ * Checks if all flags in two LALSimInspiralWaveformFlags structs are equal.
+ * Returns true if all flags are equal. Returns false if one or more differ.
+ */
+bool XLALSimInspiralWaveformFlagsEqual(
+        LALDict *LALpars1,
+        LALDict *LALpars2
+        )
+{
+    LALSimInspiralSpinOrder spinO1, spinO2;
+    LALSimInspiralTidalOrder tideO1, tideO2;
+    LALSimInspiralFrameAxis axisChoice1, axisChoice2;
+    LALSimInspiralModesChoice modesChoice1, modesChoice2;
+
+    spinO1 = XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALpars1);
+    spinO2 = XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALpars2);
+    tideO1 = XLALSimInspiralWaveformParamsLookupPNTidalOrder(LALpars1);
+    tideO2 = XLALSimInspiralWaveformParamsLookupPNTidalOrder(LALpars2);
+    axisChoice1 = XLALSimInspiralWaveformParamsLookupFrameAxis(LALpars1);
+    axisChoice2 = XLALSimInspiralWaveformParamsLookupFrameAxis(LALpars2);
+    modesChoice1 = XLALSimInspiralWaveformParamsLookupModesChoice(LALpars1);
+    modesChoice2 = XLALSimInspiralWaveformParamsLookupModesChoice(LALpars2);
 
     return ( (spinO1==spinO2) && (tideO1==tideO2) && (axisChoice1==axisChoice2)
             && (modesChoice1==modesChoice2) );
@@ -296,7 +339,7 @@ bool XLALSimInspiralModesChoiceIsDefault(
 /**
  * Set the numreldata string within a LALSimInspiralWaveformFlags struct
  */
-void XLALSimInspiralSetNumrelData(
+void XLALSimInspiralSetNumrelDataOLD(
         LALSimInspiralWaveformFlags *waveFlags, /**< Struct whose value will be set */
         const char* numreldata /**< value to set numreldata to */
         )
@@ -311,7 +354,7 @@ void XLALSimInspiralSetNumrelData(
  * The returned value is independent of the waveFlags structure and will
  * need to be LALFree-d.
  */
-char* XLALSimInspiralGetNumrelData(
+char* XLALSimInspiralGetNumrelDataOLD(
         LALSimInspiralWaveformFlags *waveFlags
         )
 {

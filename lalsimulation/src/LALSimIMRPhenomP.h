@@ -40,7 +40,7 @@ static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
   const REAL8 m2,   /**< Mass of companion 2 (solar masses) */
   const REAL8 chi,  /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
   const REAL8 chip,  /**< Dimensionless spin in the orbital plane */
-  const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
+  LALDict *extraParams /**< linked list containing the extra testing GR parameters */
 );
 
 typedef struct tagNNLOanglecoeffs {
@@ -88,7 +88,7 @@ static int PhenomPCore(
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
-  const LALSimInspiralTestGRParam *extraParams /**< linked list containing the extra testing GR parameters */
+  LALDict *extraParams /**< linked list containing the extra testing GR parameters */
 );
 
 /* Internal core function to calculate PhenomP polarizations for a single frequency. */

@@ -279,7 +279,7 @@ LALInferenceTemplateFunction LALInferenceInitCBCTemplate(LALInferenceRunState *r
   if(ppt) {
     if(!strcmp("LALSim",ppt->value))
       templt=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
-	else if(!strcmp("null",ppt->value))
+    else if(!strcmp("null",ppt->value))
         templt=&LALInferenceTemplateNullFreqdomain;
 	else if(!strcmp("multiband",ppt->value)){
         templt=&LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated;
@@ -1241,16 +1241,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
    * assumes the LALSimulations default frame */
   LALSimInspiralFrameAxis frameAxis = LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT;
 
-  model->waveFlags = XLALSimInspiralCreateWaveformFlags();
-  XLALSimInspiralSetSpinOrder(model->waveFlags,  spinO);
-  XLALSimInspiralSetTidalOrder(model->waveFlags, tideO);
-  XLALSimInspiralSetFrameAxis(model->waveFlags,frameAxis);
+  model->LALpars = XLALCreateDict();
+  XLALSimInspiralWaveformParamsInsertPNSpinOrder(model->LALpars,  spinO);
+  XLALSimInspiralWaveformParamsInsertPNTidalOrder(model->LALpars, tideO);
+  XLALSimInspiralWaveformParamsInsertFrameAxis(model->LALpars,frameAxis);
   if((ppt=LALInferenceGetProcParamVal(commandLine,"--numreldata"))) {
-    XLALSimInspiralSetNumrelData(model->waveFlags, ppt->value);
+    XLALSimInspiralWaveformParamsInsertNumRelData(model->LALpars, ppt->value);
     fprintf(stdout,"Template will use %s.\n",ppt->value);
   }
-
-
 
   fprintf(stdout,"\n\n---\t\t ---\n");
   LALInferenceInitSpinVariables(state, model);
