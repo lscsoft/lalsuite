@@ -28,8 +28,8 @@ include/lal/*.i
 include/lal/header-link-stamp
 lalburst-*.tar.xz
 lalburst-user-env.csh
-lalburst-user-env.sh
 lalburst-user-env.fish
+lalburst-user-env.sh
 lalburst-user-env.shell
 lalburst.spec
 libtool

@@ -28,8 +28,8 @@ include/lal/*.i
 include/lal/header-link-stamp
 lalframe-*.tar.xz
 lalframe-user-env.csh
-lalframe-user-env.sh
 lalframe-user-env.fish
+lalframe-user-env.sh
 lalframe-user-env.shell
 lalframe.spec
 libtool
