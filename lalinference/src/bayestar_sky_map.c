@@ -1339,9 +1339,12 @@ static void test_signal_amplitude_model(
     {
         COMPLEX16FrequencySeries
             *Htemplate = NULL, *Hsignal = NULL, *Hcross = NULL;
-        LALDict *params;
         double h = 0, Fplus, Fcross;
         int ret;
+        LALDict *params = XLALCreateDict();
+        assert(params);
+        XLALSimInspiralWaveformParamsInsertPNPhaseOrder(params, LAL_PNORDER_NEWTONIAN);
+        XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(params, LAL_PNORDER_NEWTONIAN);
 
         /* Calculate antenna factors */
         XLALComputeDetAMResponse(
@@ -1366,14 +1369,10 @@ static void test_signal_amplitude_model(
         }
 
         /* "Template" waveform with inclination angle of zero */
-        params = XLALCreateDict();
-        XLALSimInspiralWaveformParamsInsertPNPhaseOrder(params, LAL_PNORDER_NEWTONIAN);
-        XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(params, LAL_PNORDER_NEWTONIAN);
         ret = XLALSimInspiralFD(
             &Htemplate, &Hcross, 1.4 * LAL_MSUN_SI, 1.4 * LAL_MSUN_SI,
             0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 100, 101, 100, params,
             TaylorF2);
-        XLALDestroyDict(params);
         assert(ret == XLAL_SUCCESS);
 
         /* Discard any non-quadrature phase component of "template" */
@@ -1411,6 +1410,7 @@ static void test_signal_amplitude_model(
         for (size_t i = 0; i < Htemplate->data->length; i ++)
             expected += conj(Htemplate->data->data[i]) * Hsignal->data->data[i];
 
+        XLALDestroyDict(params);
         XLALDestroyCOMPLEX16FrequencySeries(Hsignal);
         XLALDestroyCOMPLEX16FrequencySeries(Htemplate);
         Hsignal = Htemplate = NULL;
