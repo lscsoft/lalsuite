@@ -902,12 +902,12 @@ int XLALSimInspiralChooseFDWaveform(
     int phaseO =XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALparams);
 
     /* Support variables for precessing wfs*/
-    REAL8 incl;
     REAL8 spin1x,spin1y,spin1z;
     REAL8 spin2x,spin2y,spin2z;
 
     /* Variables for IMRPhenomP and IMRPhenomPv2 */
-    REAL8 chi1_l, chi2_l, chip, thetaJ, alpha0;
+    REAL8 chi1_l, chi2_l, chip, thetaJN, alpha0, phi_aligned, zeta_polariz;
+    COMPLEX16 PhPpolp,PhPpolc;
 
     /* General sanity checks that will abort
      *
@@ -1303,54 +1303,60 @@ int XLALSimInspiralChooseFDWaveform(
 
         case IMRPhenomP:
             /* Waveform-specific sanity checks */
-            XLALSimInspiralInitialConditionsPrecessingApproxs(&incl,&spin1x,&spin1y,&spin1z,&spin2x,&spin2y,&spin2z,inclination,S1x,S1y,S1z,S2x,S2y,S2z,m1,m2,f_ref,phiRef,XLALSimInspiralWaveformParamsLookupFrameAxis(LALparams));
+            if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALparams) )
+                ABORT_NONDEFAULT_FRAME_AXIS(LALparams);/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
             if(!XLALSimInspiralWaveformParamsModesChoiceIsDefault(          /* Default is (2,2) or l=2 modes. */LALparams))
                 ABORT_NONDEFAULT_MODES_CHOICE(LALparams);
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(LALparams);
-            LNhatx = sin(incl);
-            LNhaty = 0.;
-            LNhatz = cos(incl);
             /* Tranform to model parameters */
             if(f_ref==0.0)
                 f_ref = f_min; /* Default reference frequency is minimum frequency */
-            XLALSimIMRPhenomPCalculateModelParameters(
-                &chi1_l, &chi2_l, &chip, &thetaJ, &alpha0,
-                m1, m2, f_ref,
-                LNhatx, LNhaty, LNhatz,
-		spin1x, spin1y, spin1z,
-		spin2x, spin2y, spin2z, IMRPhenomPv1_V);
+            XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame(
+                &chi1_l, &chi2_l, &chip, &thetaJN, &alpha0, &phi_aligned, &zeta_polariz,
+                m1, m2, f_ref, phiRef, inclination,
+                S1x, S1y, S1z,
+                S2x, S2y, S2z, IMRPhenomPv1_V);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
-              chi1_l, chi2_l, chip, thetaJ,
-              m1, m2, distance, alpha0, phiRef, deltaF, f_min, f_max, f_ref, IMRPhenomPv1_V, LALparams);
+              chi1_l, chi2_l, chip, thetaJN,
+              m1, m2, distance, alpha0, phi_aligned, deltaF, f_min, f_max, f_ref, IMRPhenomPv1_V, LALparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            for (UINT4 idx=0;idx<(*hptilde)->data->length;idx++) {
+                PhPpolp=(*hptilde)->data->data[idx];
+                PhPpolc=(*hctilde)->data->data[idx];
+                (*hptilde)->data->data[idx] =cos(2.*zeta_polariz)*PhPpolp+sin(2.*zeta_polariz)*PhPpolc;
+                (*hctilde)->data->data[idx]=cos(2.*zeta_polariz)*PhPpolc-sin(2.*zeta_polariz)*PhPpolp;
+            }
             break;
 
         case IMRPhenomPv2:
             /* Waveform-specific sanity checks */
-	  XLALSimInspiralInitialConditionsPrecessingApproxs(&incl,&spin1x,&spin1y,&spin1z,&spin2x,&spin2y,&spin2z,inclination,S1x,S1y,S1z,S2x,S2y,S2z,m1,m2,f_ref,phiRef,XLALSimInspiralWaveformParamsLookupFrameAxis(LALparams));
+            if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALparams) )
+                ABORT_NONDEFAULT_FRAME_AXIS(LALparams);/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
             if(!XLALSimInspiralWaveformParamsModesChoiceIsDefault(          /* Default is (2,2) or l=2 modes. */LALparams) )
                 ABORT_NONDEFAULT_MODES_CHOICE(LALparams);
             if( !checkTidesZero(lambda1, lambda2) )
                 ABORT_NONZERO_TIDES(LALparams);
-            LNhatx = sin(incl);
-            LNhaty = 0.;
-            LNhatz = cos(incl);
             /* Tranform to model parameters */
             if(f_ref==0.0)
                 f_ref = f_min; /* Default reference frequency is minimum frequency */
-            XLALSimIMRPhenomPCalculateModelParameters(
-                &chi1_l, &chi2_l, &chip, &thetaJ, &alpha0,
-                m1, m2, f_ref,
-                LNhatx, LNhaty, LNhatz,
-                spin1x, spin1y, spin1z,
-                spin2x, spin2y, spin2z, IMRPhenomPv2_V);
+            XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame(
+                &chi1_l, &chi2_l, &chip, &thetaJN, &alpha0, &phi_aligned, &zeta_polariz,
+                m1, m2, f_ref, phiRef, inclination,
+                S1x, S1y, S1z,
+                S2x, S2y, S2z, IMRPhenomPv2_V);
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomP(hptilde, hctilde,
-              chi1_l, chi2_l, chip, thetaJ,
-              m1, m2, distance, alpha0, phiRef, deltaF, f_min, f_max, f_ref, IMRPhenomPv2_V, LALparams);
+              chi1_l, chi2_l, chip, thetaJN,
+              m1, m2, distance, alpha0, phi_aligned, deltaF, f_min, f_max, f_ref, IMRPhenomPv2_V, LALparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+            for (UINT4 idx=0;idx<(*hptilde)->data->length;idx++) {
+                PhPpolp=(*hptilde)->data->data[idx];
+                PhPpolc=(*hctilde)->data->data[idx];
+                (*hptilde)->data->data[idx] =cos(2.*zeta_polariz)*PhPpolp+sin(2.*zeta_polariz)*PhPpolc;
+                (*hctilde)->data->data[idx]=cos(2.*zeta_polariz)*PhPpolc-sin(2.*zeta_polariz)*PhPpolp;
+            }
             break;
 
         case SpinTaylorT4Fourier:
@@ -6589,7 +6595,7 @@ int XLALSimInspiralChooseFDWaveformOLD(
             /* Tranform to model parameters */
             if(f_ref==0.0)
                 f_ref = f_min; /* Default reference frequency is minimum frequency */
-            XLALSimIMRPhenomPCalculateModelParameters(
+            XLALSimIMRPhenomPCalculateModelParametersOld(
                 &chi1_l, &chi2_l, &chip, &thetaJ, &alpha0,
                 m1, m2, f_ref,
                 LNhatx, LNhaty, LNhatz,
@@ -6616,7 +6622,7 @@ int XLALSimInspiralChooseFDWaveformOLD(
             /* Tranform to model parameters */
             if(f_ref==0.0)
                 f_ref = f_min; /* Default reference frequency is minimum frequency */
-            XLALSimIMRPhenomPCalculateModelParameters(
+            XLALSimIMRPhenomPCalculateModelParametersOld(
                 &chi1_l, &chi2_l, &chip, &thetaJ, &alpha0,
                 m1, m2, f_ref,
                 LNhatx, LNhaty, LNhatz,
