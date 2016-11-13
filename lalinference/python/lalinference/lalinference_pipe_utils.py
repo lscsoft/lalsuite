@@ -1677,9 +1677,16 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       hostname=socket.gethostbyaddr(socket.gethostname())[0]
     except:
       hostname='Unknown'
+    requirements=''
     if cp.has_option('condor','queue'):
       self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
-      self.add_condor_cmd('Requirements','(TARGET.'+cp.get('condor','queue')+' =?= True)')
+      requirements='(TARGET.'+cp.get('condor','queue')+' =?= True)'
+    if cp.has_option('condor','Requirements'):
+      if requirements!='':
+        requirements=requirements+' && '
+      requirements=requirements+cp.get('condor','Requirements')
+    if requirements!='':
+      self.add_condor_cmd('Requirements',requirements)
     # Set grid site if needed
     if cp.has_option('engine','resume'):
         self.resume=True
@@ -2085,6 +2092,16 @@ class BayesWavePSDJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
     if cp.has_option('analysis','accounting_group_user'):
       self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+    requirements=''
+    if cp.has_option('condor','queue'):
+      self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
+      requirements='(TARGET.'+cp.get('condor','queue')+' =?= True)'
+    if cp.has_option('condor','Requirements'):
+      if requirements!='':
+        requirements=requirements+' && '
+      requirements=requirements+cp.get('condor','Requirements')
+    if requirements!='':
+      self.add_condor_cmd('Requirements',requirements)
     self.set_sub_file(submitFile)
     self.set_stdout_file(os.path.join(logdir,'bayeswavepsd-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'bayeswavepsd-$(cluster)-$(process).err'))
@@ -2109,6 +2126,16 @@ class ResultsPageJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
     if cp.has_option('analysis','accounting_group_user'):
       self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+    requirements=''
+    if cp.has_option('condor','queue'):
+      self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
+      requirements='(TARGET.'+cp.get('condor','queue')+' =?= True)'
+    if cp.has_option('condor','Requirements'):
+      if requirements!='':
+        requirements=requirements+' && '
+      requirements=requirements+cp.get('condor','Requirements')
+    if requirements!='':
+      self.add_condor_cmd('Requirements',requirements)
     self.set_sub_file(os.path.abspath(submitFile))
     self.set_stdout_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).err'))
@@ -2202,6 +2229,16 @@ class CoherenceTestJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
       if cp.has_option('analysis','accounting_group_user'):
         self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+      requirements=''
+      if cp.has_option('condor','queue'):
+        self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
+        requirements='(TARGET.'+cp.get('condor','queue')+' =?= True)'
+      if cp.has_option('condor','Requirements'):
+        if requirements!='':
+          requirements=requirements+' && '
+        requirements=requirements+cp.get('condor','Requirements')
+      if requirements!='':
+        self.add_condor_cmd('Requirements',requirements)
       self.add_opt('coherent-incoherent','')
       self.add_condor_cmd('getenv','True')
       self.set_stdout_file(os.path.join(logdir,'coherencetest-$(cluster)-$(process).out'))
@@ -2258,6 +2295,16 @@ class MergeNSJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
       if cp.has_option('analysis','accounting_group_user'):
         self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+      requirements=''
+      if cp.has_option('condor','queue'):
+        self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
+        requirements='(TARGET.'+cp.get('condor','queue')+' =?= True)'
+      if cp.has_option('condor','Requirements'):
+        if requirements!='':
+          requirements=requirements+' && '
+        requirements=requirements+cp.get('condor','Requirements')
+      if requirements!='':
+        self.add_condor_cmd('Requirements',requirements)
       self.set_sub_file(os.path.abspath(submitFile))
       self.set_stdout_file(os.path.join(logdir,'merge-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'merge-$(cluster)-$(process).err'))
@@ -2372,6 +2419,16 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
     if cp.has_option('analysis','accounting_group_user'):
       self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+    requirements=''
+    if cp.has_option('condor','queue'):
+      self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
+      requirements='(TARGET.'+cp.get('condor','queue')+' =?= True)'
+    if cp.has_option('condor','Requirements'):
+      if requirements!='':
+        requirements=requirements+' && '
+      requirements=requirements+cp.get('condor','Requirements')
+    if requirements!='':
+      self.add_condor_cmd('Requirements',requirements)
     self.set_sub_file(submitFile)
     self.set_stdout_file(os.path.join(logdir,'computeroqweights-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'computeroqweights-$(cluster)-$(process).err'))
@@ -2423,6 +2480,16 @@ class BayesLineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
     if cp.has_option('analysis','accounting_group_user'):
       self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+    requirements=''
+    if cp.has_option('condor','queue'):
+      self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
+      requirements='(TARGET.'+cp.get('condor','queue')+' =?= True)'
+    if cp.has_option('condor','Requirements'):
+      if requirements!='':
+        requirements=requirements+' && '
+      requirements=requirements+cp.get('condor','Requirements')
+    if requirements!='':
+      self.add_condor_cmd('Requirements',requirements)
     self.set_sub_file(submitFile)
     self.set_stdout_file(os.path.join(logdir,'bayesline-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'bayesline-$(cluster)-$(process).err'))
@@ -2496,6 +2563,16 @@ class SkyAreaJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
         self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
       if cp.has_option('analysis','accounting_group_user'):
         self.add_condor_cmd('accounting_group_user',cp.get('analysis','accounting_group_user'))
+      requirements=''
+      if cp.has_option('condor','queue'):
+        self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
+        requirements='(TARGET.'+cp.get('condor','queue')+' =?= True)'
+      if cp.has_option('condor','Requirements'):
+        if requirements!='':
+          requirements=requirements+' && '
+        requirements=requirements+cp.get('condor','Requirements')
+      if requirements!='':
+        self.add_condor_cmd('Requirements',requirements)
       self.set_sub_file(submitFile)
       self.set_stdout_file(os.path.join(logdir,'skyarea-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'skyarea-$(cluster)-$(process).err'))
