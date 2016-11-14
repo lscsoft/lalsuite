@@ -141,6 +141,7 @@ def compute_chirptimes(mchirp, eta, chi, flow):
     return theta0, theta3, theta3s
 
 def compute_tau0(mc, flow):
+    flow = 40
     return 5. * mc * MTSUN_SI / (256 * (PI * flow * mc * MTSUN_SI)**(8./3))
 
 
