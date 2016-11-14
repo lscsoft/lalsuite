@@ -715,7 +715,7 @@ int main( int argc, char *argv[] )
       MultiNoiseFloor Fstat_assume_psd;
       if ( UVAR_SET( Fstat_assume_psd ) ) {
         XLAL_CHECK_MAIN( XLALParseMultiNoiseFloorMapped( &Fstat_assume_psd, sft_catalog_i_detectors, uvar->Fstat_assume_psd, setup.detectors ) == XLAL_SUCCESS, XLAL_EFUNC );
-        Fstat_opt_args.injectSqrtSX = &Fstat_assume_psd;
+        Fstat_opt_args.assumeSqrtSX = &Fstat_assume_psd;
       }
 
       // Create F-statistic input data
