@@ -20,6 +20,7 @@ from time import strftime
 from collections import deque
 import numpy as np
 import sys, os
+import h5py
 
 from scipy.interpolate import UnivariateSpline
 from glue.ligolw import ligolw
@@ -39,6 +40,7 @@ from lalinspiral.sbank.psds import noise_models, read_psd, get_PSD
 from lalinspiral.sbank.waveforms import waveforms, SnglInspiralTable
 
 import lal
+import lalsimulation as lalsim
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -303,8 +305,14 @@ def parse_command_line():
     if opts.optimize_flow is not None:
         if opts.optimize_flow >= 1 or opts.optimize_flow <= 0:
             parser.error('--optimize-flow takes a value between 0 and 1, excluded')
-        if opts.flow_column is None:
+        if opts.flow_column is None and \
+                opts.output_filename.endswith(('.xml', '.xml.gz')):
             parser.error('--flow-column is required when using --optimize-flow')
+
+    if opts.checkpoint and not opts.output_filename.endswith(('.xml',
+                                                              '.xml.gz')):
+        err_msg = "Checkpointing currently only supported for XML format."
+        raise ValueError(err_msg)
 
     return opts, args
 
@@ -379,16 +387,22 @@ for file_approx in opts.bank_seed:
         seed_file, approx = file_approx.split(":")
 
     # add templates to bank
-    tmpdoc = utils.load_filename(seed_file, contenthandler=ContentHandler)
-    sngl_inspiral = lsctables.SnglInspiralTable.get_table(tmpdoc)
-    seed_waveform = waveforms[approx]
-    bank.add_from_sngls(sngl_inspiral, seed_waveform)
+    if opts.output_filename.endswith(('.xml', '.xml.gz')):
+        tmpdoc = utils.load_filename(seed_file, contenthandler=ContentHandler)
+        sngl_inspiral = lsctables.SnglInspiralTable.get_table(tmpdoc)
+        seed_waveform = waveforms[approx]
+        bank.add_from_sngls(sngl_inspiral, seed_waveform)
 
-    if opts.verbose:
-        print>>sys.stdout,"Added %d %s seed templates from %s to initial bank." % (len(sngl_inspiral), approx, seed_file)
+        if opts.verbose:
+            print>>sys.stdout,"Added %d %s seed templates from %s to initial bank." % (len(sngl_inspiral), approx, seed_file)
 
-    tmpdoc.unlink()
-    del sngl_inspiral, tmpdoc
+        tmpdoc.unlink()
+        del sngl_inspiral, tmpdoc
+
+    elif opts.output_filename.endswith(('.hdf', '.h5', '.hdf5')):
+        hdf_fp = h5py.File(seed_file, 'r')
+        bank.add_from_hdf(hdf_fp)
+        hdf_fp.close()
 
 if opts.verbose:
     print>>sys.stdout,"Initialized the template bank to seed with %d precomputed templates." % len(bank)
@@ -417,13 +431,20 @@ if opts.checkpoint and os.path.exists( opts.output_filename + "_checkpoint.gz" )
     np.random.mtrand.set_state( ("MT19937", rng1, rng2, rng3, rng4) )
 
 else:
-
-    # prepare a new XML document
-    xmldoc = ligolw.Document()
-    xmldoc.appendChild(ligolw.LIGO_LW())
-    lsctables.SnglInspiralTable.RowType = SnglInspiralTable
-    tbl = lsctables.New(lsctables.SnglInspiralTable)
-    xmldoc.childNodes[-1].appendChild(tbl)
+    if opts.output_filename.endswith(('.xml', '.xml.gz')):
+        # prepare a new XML document
+        xmldoc = ligolw.Document()
+        xmldoc.appendChild(ligolw.LIGO_LW())
+        lsctables.SnglInspiralTable.RowType = SnglInspiralTable
+        tbl = lsctables.New(lsctables.SnglInspiralTable)
+        xmldoc.childNodes[-1].appendChild(tbl)
+    elif opts.output_filename.endswith(('.hdf', '.h5', '.hdf5')):
+        # No setup is required for HDF files
+        tbl = []
+    else:
+        err_msg = "File extension is unrecognized. Sbank supports xml and "
+        err_msg += "HDF5 file formats. {}".format(opts.output_filename)
+        raise ValueError(err_msg)
 
     # initialize random seed
     np.random.mtrand.seed(opts.seed)
@@ -433,9 +454,10 @@ else:
 # prepare process table with information about the current program
 #
 opts_dict = dict((k, v) for k, v in opts.__dict__.iteritems() if v is not False and v is not None)
-process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
-    opts_dict, version="no version",
-    cvs_repository="sbank", cvs_entry_time=strftime('%Y/%m/%d %H:%M:%S'))
+if opts.output_filename.endswith(('.xml', '.xml.gz')):
+    process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
+        opts_dict, version="no version",
+        cvs_repository="sbank", cvs_entry_time=strftime('%Y/%m/%d %H:%M:%S'))
 
 
 #
@@ -443,9 +465,28 @@ process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
 #
 
 if opts.trial_waveforms:
-    trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler, gz=opts.trial_waveforms.endswith('.gz'))
-    trial_sngls = lsctables.SnglInspiralTable.get_table(trialdoc)
-    proposal = (tmplt_class.from_sngl(t, bank=bank) for t in trial_sngls)
+    if opts.trial_waveforms.endswith(('.xml', '.xml.gz')):
+        trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler, gz=opts.trial_waveforms.endswith('.gz'))
+        trial_sngls = lsctables.SnglInspiralTable.get_table(trialdoc)
+        proposal = (tmplt_class.from_sngl(t, bank=bank) for t in trial_sngls)
+    elif opts.trial_waveforms.endswith(('.hdf', '.h5', '.hdf5')):
+        hdf_fp = h5py.File(opts.trial_waveforms, 'r')
+        num_points = len(hdf_fp['mass1'])
+        proposal=[]
+        for idx in xrange(num_points):
+            # Reading one point in at a time from HDF for 2 million points can
+            # be slow. Better to read in groups of points at a time and process
+            # from there. 100000 points seems a reasonable setting to hard-code
+            if not idx % 100000:
+                tmp = {}
+                end_idx = min(idx+100000, num_points)
+                for name in hdf_fp:
+                    tmp[name] = hdf_fp[name][idx:end_idx]
+            c_idx = idx % 100000
+            approx = hdf_fp['approximant'][c_idx]
+            tmplt_class = waveforms[approx]
+            proposal.append(tmplt_class.from_dict(tmp, c_idx, bank))
+        hdf_fp.close()
 
 else:
     params = {'mass1': (opts.mass1_min, opts.mass1_max),
@@ -509,18 +550,27 @@ for tmplt in proposal:
         # Add to single inspiral table. Do not store templates that
         # were in the original bank, only store the additions.
         if not hasattr(tmplt, 'is_seed_point'):
-            row = tmplt.to_sngl()
-            # Event ids must be unique, or the table isn't valid, SQL needs this
-            row.event_id = ilwd.ilwdchar('sngl_inspiral:event_id:%d' %(len(bank),))
-            # If we figure out how to use metaio's SnglInspiralTable the
-            # following change then defines the event_id
-            #curr_id = EventIDColumn()
-            #curr_id.id = len(bank)
-            #curr_id.snglInspiralTable = row
-            #row.event_id = curr_id
-            row.ifo = opts.instrument
-            row.process_id = process.process_id
-            tbl.append(row)
+            if opts.output_filename.endswith(('.xml', '.xml.gz')):
+                row = tmplt.to_sngl()
+                # Event ids must be unique, or the table isn't valid,
+                # SQL needs this
+                row.event_id = ilwd.ilwdchar('sngl_inspiral:event_id:%d' %
+                                             (len(bank), ))
+                # If we figure out how to use metaio's SnglInspiralTable the
+                # following change then defines the event_id
+                #curr_id = EventIDColumn()
+                #curr_id.id = len(bank)
+                #curr_id.snglInspiralTable = row
+                #row.event_id = curr_id
+                row.ifo = opts.instrument
+                row.process_id = process.process_id
+                tbl.append(row)
+            if opts.output_filename.endswith(('.hdf', '.h5', '.hdf5')):
+                row = tmplt.to_storage_arr()
+                if len(tbl) == 0:
+                    tbl = row
+                else:
+                    tbl = np.append(tbl, row)
 
         if opts.checkpoint and not len(bank) % opts.checkpoint:
             checkpoint_save(xmldoc, opts.output_filename, process)
@@ -538,5 +588,16 @@ if opts.verbose:
 bank.clear()  # clear caches
 
 # write out the document
-ligolw_process.set_process_end_time(process)
-utils.write_filename(xmldoc, opts.output_filename,  gz=opts.output_filename.endswith("gz"))
+if opts.output_filename.endswith(('.xml', '.xml.gz')):
+    ligolw_process.set_process_end_time(process)
+    utils.write_filename(xmldoc, opts.output_filename,
+                         gz=opts.output_filename.endswith("gz"))
+elif opts.output_filename.endswith(('.hdf', '.h5', '.hdf5')):
+    hdf_fp = h5py.File(opts.output_filename, 'w')
+    if len(tbl) == 0:
+        hdf_fp.attrs['empty_file'] = True
+    else:
+        params = tbl.dtype.names
+        hdf_fp.attrs['parameters'] = params
+        for param in params:
+            hdf_fp[param] = tbl[param]
