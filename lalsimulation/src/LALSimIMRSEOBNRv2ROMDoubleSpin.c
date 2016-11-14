@@ -361,22 +361,22 @@ static void SEOBNRROMdataDS_Cleanup_submodel(SEOBNRROMdataDS_submodel *submodel)
  * Compute strain waveform from amplitude and phase.
 */
 static int SEOBNRv2ROMDoubleSpinCore(
-  COMPLEX16FrequencySeries **hptilde,
-  COMPLEX16FrequencySeries **hctilde,
-  double phiRef,
-  double fRef,
-  double distance,
-  double inclination,
-  double Mtot_sec,
-  double eta,
-  double chi1,
-  double chi2,
-  const REAL8Sequence *freqs, /* Frequency points at which to evaluate the waveform (Hz) */
-  double deltaF,
-  /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
+  COMPLEX16FrequencySeries **hptilde, /**< Output: plus waveform */
+  COMPLEX16FrequencySeries **hctilde, /**< Output: cross waveform */
+  double phiRef, /**< Input: Reference phase */
+  double fRef, /**< Input: Reference frequency */
+  double distance, /**< Input: distance (meters) */
+  double inclination, /**< Input: inclination (radians) */
+  double Mtot_sec, /**< Input: Total Mass (seconds) */
+  double eta, /**< Input: Symmetric mass ratio */
+  double chi1, /**< Input: Dimensionless spin of body 1 */
+  double chi2, /**< Input: Dimensionless spin of body 2 */
+  const REAL8Sequence *freqs_in, /**< Input: Frequency points at which to evaluate the waveform (Hz) */
+  double deltaF, /**< Input: Frequency spacing if freqs_in==NULL. If deltaF==0, will generate a freq series */
+  /* If deltaF > 0, the frequency points given in freqs_in are uniformly spaced with
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
-  int return_af_interpolants,
+  int return_af_interpolants, /**< Input: Flag to return amplitude and phase interpolants if true */
   REAL8Vector **amplitude_interp,     /**< Output: amplitude interpolants */
   REAL8Vector **amplitude_freq_points,/**< Output: frequencies of amp interpolants */
   REAL8Vector **phase_interp,         /**< Output: phase interpolants */
