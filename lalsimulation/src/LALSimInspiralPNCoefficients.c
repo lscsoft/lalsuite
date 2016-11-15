@@ -457,10 +457,7 @@ XLALSimInspiralPNPhasing_F2(
 	const REAL8 chi1sq,/**< Magnitude of dimensionless spin 1 */
 	const REAL8 chi2sq, /**< Magnitude of dimensionless spin 2 */
 	const REAL8 chi1dotchi2, /**< Dot product of dimensionles spin 1 and spin 2 */
-	const REAL8 qm_def1, /**< Quadrupole deformation parameter of body 1 (dimensionless) */
-	const REAL8 qm_def2, /**< Quadrupole deformation parameter of body 2 (dimensionless) */
-	const LALSimInspiralSpinOrder spinO, /**< Enums specifying spin order are in LALSimInspiralWaveformFlags.h */
-    const LALSimInspiralTestGRParam *p /**< Linked list containing the extra testing GR parameters >**/
+	LALDict *p /**< LAL dictionary containing accessory parameters */
 	)
 {
     const REAL8 mtot = m1 + m2;
@@ -501,19 +498,18 @@ XLALSimInspiralPNPhasing_F2(
                      + 378515.L/1512.L * eta - 74045.L/756.L * eta*eta);
 
     /* modify the PN coefficients if a non null LALSimInspiralTestGRParam structure is passed */
-    if (p!=NULL)
-    {
-      if (XLALSimInspiralTestGRParamExists(p,"dchi0")) pfa->v[0]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi0"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi1")) pfa->v[1] = XLALSimInspiralGetTestGRParam(p,"dchi1");
-      if (XLALSimInspiralTestGRParamExists(p,"dchi2")) pfa->v[2]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi2"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi3")) pfa->v[3]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi3"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi4")) pfa->v[4]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi4"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi5")) pfa->v[5]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi5"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi5l")) pfa->vlogv[5]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi5l"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi6")) pfa->v[6]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi6"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi6l")) pfa->vlogv[6]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi6l"));
-      if (XLALSimInspiralTestGRParamExists(p,"dchi7")) pfa->v[7]*=(1.0+XLALSimInspiralGetTestGRParam(p,"dchi7"));
-    }
+    pfa->v[0]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi0(p));
+    pfa->v[1] = XLALSimInspiralWaveformParamsLookupNonGRDChi1(p);
+    pfa->v[2]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi2(p));
+    pfa->v[3]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi3(p));
+    pfa->v[4]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi4(p));
+    pfa->v[5]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi5(p));
+    pfa->vlogv[5]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi5L(p));
+    pfa->v[6]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi6(p));
+    pfa->vlogv[6]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi6L(p));
+    pfa->v[7]*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi7(p));
+    REAL8 qm_def1=1.+XLALSimInspiralWaveformParamsLookupdQuadMon1(p);
+    REAL8 qm_def2=1.+XLALSimInspiralWaveformParamsLookupdQuadMon2(p);
     
     /* Compute 2.0PN SS, QM, and self-spin */
     // See Eq. (6.24) in arXiv:0810.5336
@@ -530,7 +526,7 @@ XLALSimInspiralPNPhasing_F2(
 
     /* Spin-orbit terms - can be derived from arXiv:1303.7412, Eq. 3.15-16 */
     const REAL8 pn_gamma = (554345.L/1134.L + 110.L*eta/9.L)*SL + (13915.L/84.L - 10.L*eta/3.L)*dSigmaL;
-    switch( spinO )
+    switch( XLALSimInspiralWaveformParamsLookupPNSpinOrder(p) )
     {
         case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
         case LAL_SIM_INSPIRAL_SPIN_ORDER_35PN:
@@ -550,7 +546,7 @@ XLALSimInspiralPNPhasing_F2(
             break;
         default:
             XLALPrintError("XLAL Error - %s: Invalid spin PN order %i\n",
-                    __func__, spinO );
+			   __func__, XLALSimInspiralWaveformParamsLookupPNSpinOrder(p) );
             XLAL_ERROR_VOID(XLAL_EINVAL);
             break;
     }

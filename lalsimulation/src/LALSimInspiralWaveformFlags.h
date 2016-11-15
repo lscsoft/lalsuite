@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALError.h>
+#include <lal/LALDict.h>
 
 /**
  * @addtogroup LALSimInspiral_h
@@ -122,8 +123,10 @@ typedef struct tagLALSimInspiralWaveformFlags LALSimInspiralWaveformFlags;
 
 LALSimInspiralWaveformFlags *XLALSimInspiralCreateWaveformFlags(void);
 void XLALSimInspiralDestroyWaveformFlags(LALSimInspiralWaveformFlags *waveFlags);
-bool XLALSimInspiralWaveformFlagsIsDefault(LALSimInspiralWaveformFlags *waveFlags);
-bool XLALSimInspiralWaveformFlagsEqual(LALSimInspiralWaveformFlags *waveFlags1, LALSimInspiralWaveformFlags *waveFlags2);
+bool XLALSimInspiralWaveformParamsFlagsAreDefault(LALDict *params);
+bool XLALSimInspiralWaveformFlagsIsDefaultOLD(LALSimInspiralWaveformFlags *waveFlags);
+bool XLALSimInspiralWaveformFlagsEqualOLD(LALSimInspiralWaveformFlags *waveFlags1, LALSimInspiralWaveformFlags *waveFlags2);
+bool XLALSimInspiralWaveformFlagsEqual(LALDict *LALpars1, LALDict *LALpars2);
 void XLALSimInspiralSetSpinOrder(LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralSpinOrder spinO);
 LALSimInspiralSpinOrder XLALSimInspiralGetSpinOrder(LALSimInspiralWaveformFlags *waveFlags);
 bool XLALSimInspiralSpinOrderIsDefault(LALSimInspiralSpinOrder spinO);
@@ -136,7 +139,7 @@ bool XLALSimInspiralFrameAxisIsDefault(LALSimInspiralFrameAxis axisChoice);
 void XLALSimInspiralSetModesChoice(LALSimInspiralWaveformFlags *waveFlags, LALSimInspiralModesChoice modesChoice);
 LALSimInspiralModesChoice XLALSimInspiralGetModesChoice(LALSimInspiralWaveformFlags *waveFlags);
 bool XLALSimInspiralModesChoiceIsDefault(LALSimInspiralModesChoice modesChoice);
-void XLALSimInspiralSetNumrelData(LALSimInspiralWaveformFlags *waveFlags, const char* numreldata);
-char* XLALSimInspiralGetNumrelData(LALSimInspiralWaveformFlags *waveFlags);
+void XLALSimInspiralSetNumrelDataOLD(LALSimInspiralWaveformFlags *waveFlags, const char* numreldata);
+char* XLALSimInspiralGetNumrelDataOLD(LALSimInspiralWaveformFlags *waveFlags);
 
 #endif /* _LALSIMINSPIRALWAVEFORMFLAGS_H */

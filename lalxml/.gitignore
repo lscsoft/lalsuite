@@ -28,8 +28,8 @@ include/lal/*.i
 include/lal/header-link-stamp
 lalxml-*.tar.xz
 lalxml-user-env.csh
-lalxml-user-env.sh
 lalxml-user-env.fish
+lalxml-user-env.sh
 lalxml-user-env.shell
 lalxml.spec
 libtool

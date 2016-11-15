@@ -1231,7 +1231,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceCopyVariables(oldAlgParams,&myAlgParams);
   if(LALInferenceCheckVariable(&myAlgParams,"outputarray")) LALInferenceRemoveVariable(&myAlgParams,"outputarray");
   if(LALInferenceCheckVariable(&myAlgParams,"N_outputarray")) LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
-  LALInferenceRemoveVariable(&myAlgParams,"outfile");
+  if(LALInferenceCheckVariable(&myAlgParams,"outfile")) LALInferenceRemoveVariable(&myAlgParams,"outfile");
   LALInferenceRemoveVariable(&myAlgParams,"Nmcmc");
   LALInferenceAddVariable(&myAlgParams,"Nmcmc",&thinning,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
 
@@ -1717,7 +1717,6 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	}
 	threadState->currentParams=curParsBackup;
 	if(!threadState->currentParams) threadState->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
-
 }
 
 

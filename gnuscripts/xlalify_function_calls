@@ -4,28 +4,291 @@
 use strict;
 use Text::ParseWords;
 
-if (@ARGV < 3) {
+sub deref_argument {
+
+    my ($rep, $arg) = @_;
+
+    $arg =~ s/^\s*//;
+    if ($arg =~ /^&/p) {
+        $arg = ${^POSTMATCH};
+    } else {
+        $arg = "*($arg)";
+    }
+
+    $arg
+
+}
+
+sub build_function {
+
+    my ($rep, $funcsp, $args) = @_;
+    my $r;
+
+    $args =~ s/^(\s*)//;
+    my $spargs = $1;
+
+    my @args = parse_line(",", 1, $args);
+
+    shift @args;
+    if (defined($rep->{return_type}->{assign_arg})) {
+        my $arg = shift @args;
+        $arg = deref_argument($rep, $arg);
+        if (defined($rep->{return_type}->{keep_arg})) {
+            unshift @args, $arg;
+        }
+        $arg =~ s/^\s*//;
+        $r .= $arg . " = ";
+    } elsif (defined($rep->{return_type}->{deref_arg})) {
+        my $arg = shift @args;
+        $arg = deref_argument($rep, $arg);
+        unshift @args, $arg;
+    }
+
+    $args[0] =~ s/^\s*//;
+    $r .= $rep->{xlal_function} . $funcsp . "(" . $spargs . join(",", @args) . ")";
+
+    $r
+
+}
+
+sub build_assertion {
+
+    my ($rep, $negate, $funcsp, $args) = @_;
+    my $r;
+
+    my $function = build_function($rep, $funcsp, $args);
+    if (defined($rep->{return_type}->{assign_arg})) {
+        $r .= "( " . $function . " )";
+    } else {
+        $r .= $function;
+    }
+
+    my $test = $rep->{return_type}->{return_test};
+    if ($negate eq "!") {
+        if ($test =~ /==/p) {
+            $test = ${^PREMATCH} . "!=" . ${^POSTMATCH};
+        } elsif ($test =~ /!=/p) {
+            $test = ${^PREMATCH} . "==" . ${^POSTMATCH};
+        } else {
+            die "$0: cannot negate test '$test'";
+        }
+    }
+    $r .= $test;
+
+    $r
+
+}
+
+sub build_check_macro {
+
+    my ($rep, $ismain, $call, $callsp, $spfunc, $funcsp, $args, $status, $spend) = @_;
+    my $r;
+
+    if ($call =~ s/^XLAL_ERROR/XLAL_CHECK/) {
+        $r .= $call . $callsp . "(" . $spfunc;
+    } elsif ($ismain || $call eq "LAL_CALL") {
+        $r .= "XLAL_CHECK_MAIN" . $callsp . "(" . $spfunc;
+    } else {
+        $r .= "XLAL_CHECK_LAL" . $callsp . "(" . $spfunc . $status . ", ";
+    }
+    my $negate = ( $call =~ /^SHOULD_FAIL/ ) ? "!" : "";
+    my $assertion = build_assertion($rep, $negate, $funcsp, $args);
+    $r .= $assertion . ", XLAL_EFUNC" . $spend . ")";
+
+    $r
+
+}
+
+sub build_fail_block {
+
+    my ($rep, $funcsp, $args, $status, $spblock, $block, $blocksp) = @_;
+    my $r;
+
+    $spblock =~ s/^\n*//;
+    $blocksp =~ s/\n*$//;
+
+    my $notassertion = build_assertion($rep, "!", $funcsp, $args);
+    $r .= "if ( " . $notassertion . " ) {\n";
+    $r .= $spblock . $block . "\n";
+    $r .= $spblock . "ABORTXLAL( " . $status . " );";
+    $r .= $blocksp . "}";
+
+    $r
+
+}
+
+sub do_replacements {
+
+    my ($filename, $ismain, $r_file, $r_matches, $r_reps) = @_;
+
+    foreach my $rep (@$r_reps) {
+
+        if ($filename =~ /\.c$/) {
+
+            $$r_file =~ s{
+                \b (?<call> LAL_CALL | TRY | SUB | SHOULD_WORK | SHOULD_FAIL(?:_WITH_CODE)? ) (?<callsp>\s*) \(
+                    (?<spfunc>\s*) $rep->{lal_function} (?<funcsp>\s*) (?<paren> \(
+                        (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
+                    \) )
+                    \s* , \s* (?<status>\S+) (?<spend>\s*)
+                \);
+            }{
+                ++$$r_matches;
+                if (defined($rep->{return_type}->{return_test})) {
+                    build_check_macro($rep, $ismain, $+{call}, $+{callsp}, $+{spfunc}, $+{funcsp}, $+{args}, $+{status}, $+{spend}) . ";"
+                } else {
+                    build_function($rep, $+{funcsp}, $+{args}) . ";"
+                }
+            }egsx;
+
+            $$r_file =~ s{
+                \b $rep->{lal_function} (?<funcsp>\s*) (?<paren> \(
+                    (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
+                \) );
+                \s*?
+                (?<call> CHECKSTATUSPTR | TESTSTATUS | TestStatus ) (?<callsp>\s*) \(
+                    (?<spfunc>\s*) (?<status>\S+) (?: \s* , \s* CODES \s* \( \s* \d+ \s* \) \s* , \s* \d ) (?<spend>\s*)
+                \);
+            }{
+                ++$$r_matches;
+                if (defined($rep->{return_type}->{return_test})) {
+                    build_check_macro($rep, $ismain, $+{call}, $+{callsp}, $+{spfunc}, $+{funcsp}, $+{args}, $+{status}, $+{spend}) . ";"
+                } else {
+                    build_function($rep, $+{funcsp}, $+{args}) . ";"
+                }
+            }egsx;
+
+            if (defined($rep->{return_type}->{return_test})) {
+
+                $$r_file =~ s{
+                    \b $rep->{lal_function} (?<funcsp>\s*) (?<paren> \(
+                        (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
+                    \) );
+                    \s*?
+                    BEGINFAIL \s* \(
+                        \s* (?<status>\S+) \s*
+                    \) (?: \s* \{ )?
+                        (?<spblock>\s*) (?<block>.*?) (?<blocksp>\s*)
+                    (?: \} \s*?)?
+                    ENDFAIL \s* \(
+                        \s* (?&status) \s*
+                    \);
+                }{
+                    ++$$r_matches;
+                    build_fail_block($rep, $+{funcsp}, $+{args}, $+{status}, $+{spblock}, $+{block}, $+{blocksp})
+                }egsx;
+
+            }
+
+            $$r_file =~ s{
+                \b $rep->{lal_function} (?<funcsp>\s*) (?<paren> \(
+                    (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
+                \) );
+                \s*?
+                if \s* \(
+                    \s* (?<status> status | stat ) (?<statusptr> -> | \. ) statusCode \s*
+                \) \s* \{
+                    (?: \s* (?: printf | XLALPrintError ) \s* (?<paren2> \(
+                        (?: (?> [^()]+ ) | (?&paren2) )*
+                    \) ); )?
+                    \s* (?<call> XLAL_ERROR [_A-Z0-9]* | EXIT ) (?<callsp>\s*) (?<paren3> \(
+                        (?: (?> [^()]+ ) | (?&paren3) )*
+                    \) );
+                    .*?
+                \s* \}
+            }{
+                ++$$r_matches;
+                my $status = $+{status};
+                if ($+{statusptr} eq ".") {
+                    $status = "&" . $status;
+                }
+                if (defined($rep->{return_type}->{return_test})) {
+                    build_check_macro($rep, $ismain, $+{call}, $+{callsp}, $+{spfunc}, $+{funcsp}, $+{args}, $status, $+{spend}) . ";"
+                } else {
+                    build_function($rep, $+{funcsp}, $+{args}) . ";"
+                }
+            }egsx;
+
+            $$r_file =~ s{
+                \b $rep->{lal_function} (?<funcsp>\s*) (?<paren> \(
+                    (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
+                \) );
+                \s*?
+                if \s* \(
+                    \s* \( \s* code \s* = \s* CheckStatus \s* \( \s* (?<status> &status ) \s* , [^()]+ \) \s* \) \s*
+                \) \s* \{
+                    \s* return \s+ code;
+                \s* \}
+            }{
+                ++$$r_matches;
+                if (defined($rep->{return_type}->{return_test})) {
+                    build_check_macro($rep, $ismain, $+{call}, $+{callsp}, $+{spfunc}, $+{funcsp}, $+{args}, $+{status}, $+{spend}) . ";"
+                } else {
+                    build_function($rep, $+{funcsp}, $+{args}) . ";"
+                }
+            }egsx;
+
+            ++$$r_matches if $$r_file =~ s{
+                \b $rep->{lal_function} (?<funcsp>\s*) (?<paren> \(
+                    (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
+                \) );
+            }{
+               ++$$r_matches;
+               build_function($rep, $+{funcsp}, $+{args}) . ";"
+            }egsx;
+
+        }
+
+        $$r_file =~ s{
+            ( " [^"\n]* \b ) $rep->{lal_function} (?: \s | [(),] )
+        }{
+            ++$$r_matches;
+            $1 . $rep->{xlal_function} . $2
+        }egsx;
+
+        $$r_file =~ s{
+            ( /\* (?: [^*] | \s | \n | (?: \*+ (?: [^*/] | \s | \n ) ) )* \b ) $rep->{lal_function} ( \s | [(),*] )
+        }{
+            ++$$r_matches;
+            $1 . $rep->{xlal_function} . $2
+        }egsx;
+
+        $$r_file =~ s{
+            ( // [^\n]* \b ) $rep->{lal_function} ( \s | [(),*] )
+        }{
+            ++$$r_matches;
+            $1 . $rep->{xlal_function} . $2
+        }egsx;
+
+    }
+
+}
+
+if (@ARGV < 2) {
     print stderr <<"EOF";
 
-usage: $0 'base-directory' 'return-type' 'xlal-function[:lal-function]'...
+usage: $0 'pattern' 'return-type'='xlal-function'[:'lal-function'] ...
 
-Loop over files committed in Git under 'base-directory', and in every *.c
+Loop over files committed in Git matching 'pattern', and in every *.c
 file convert function calls from old LALStatus-style LAL functions to
-modern XLAL functions. The XLAL function names 'xlal-functions' and their
-common return type 'return-type' are given as command-line
+modern XLAL functions. The XLAL function names 'xlal-functions' and
+their common return type 'return-type' are given as command-line
 arguments. Options for 'return-type' are:
 
 - 'int':        XLAL function returning int (XLAL_SUCCESS on success).
 - 'ptr':        XLAL function returning a pointer (non-NULL on success).
                 The return value is assigned to the second argument of the
-                old LAL function (i.e. the argument following LALStatus).
+                old LAL function (i.e. the argument following LALStatus),
+                which is removed from the argument list.
+- 'ptr-deref':  Save as 'ptr', except that the second argument of the old
+                LAL function is dereferenced and kept in the argument list.
 - 'REAL[48]':   XLAL function returning a REAL[48] (non-NAN on success).
                 The return value is assigned to the second argument of the
                 old LAL function (i.e. the argument following LALStatus).
 - 'void':       XLAL void function, always successful (e.g. destructor).
 - 'void-deref': Same as 'void', but dereference the second argument of the
                 old LAL function (i.e. the argument following LALStatus).
-- 'void-error': XLAL void function, check xlalErrno is non-zero for success.
+- 'void-error': Same as 'void', but check xlalErrno is non-zero for success.
 
 Optionally, an alternative name for the old LAL function name can be given
 as 'xlal-function:lal-function'; by default 'lal-function' is determined
@@ -35,52 +298,45 @@ EOF
     exit(1);
 }
 
-my $base_dir = shift @ARGV;
-die "$0: '$base_dir' is not a directory" unless -d $base_dir;
-chdir $base_dir;
+my $pattern = shift @ARGV;
 
-my $xlal_return_type = shift @ARGV;
+my %return_types = (
+    'int'        => { return_test => " == XLAL_SUCCESS" },
+    'ptr'        => { assign_arg => 1, return_test => " != NULL" },
+    'ptr-deref'  => { assign_arg => 1, keep_arg => 1, return_test => " != NULL" },
+    'REAL4'      => { return_test => " != XLAL_REAL4_FAIL_NAN" },
+    'REAL8'      => { return_test => " != XLAL_REAL8_FAIL_NAN" },
+    'void'       => { return_test => undef },
+    'void-deref' => { deref_arg => 1, return_test => undef },
+    'void-error' => { return_test => ", xlalErrno != 0" },
+    );
 
-my $xlal_return_test = undef;
-my $xlal_assign_arg = 0;
-my $xlal_deref_arg = 0;
-if ($xlal_return_type eq "int") {
-    $xlal_return_test = " == XLAL_SUCCESS";
-} elsif ($xlal_return_type eq "ptr") {
-    $xlal_return_test = " != NULL";
-    $xlal_assign_arg = 1;
-} elsif ($xlal_return_type =~ /^REAL([48])$/) {
-    $xlal_return_test = " != XLAL_REAL$1_FAIL_NAN";
-} elsif ($xlal_return_type eq "void") {
-    $xlal_return_test = undef;
-} elsif ($xlal_return_type eq "void-deref") {
-    $xlal_return_test = undef;
-    $xlal_deref_arg = 1;
-} elsif ($xlal_return_type eq "void-error") {
-    $xlal_return_test = ", xlalErrno != 0";
-} else {
-    die "$0: invalid XLAL return type '$xlal_return_type'";
-}
+my @reps;
+foreach (@ARGV) {
 
-my %lal_functions;
-for my $xlal_function (@ARGV) {
+    /^(.*?)=(.*?)(?::(.*?))?$/;
+    my $return_type = $1;
+    my $xlal_function = $2;
+    my $lal_function = $3;
+
+    die "$0: invalid XLAL return type '$return_type'" if !defined($return_types{$return_type});
     die "$0: invalid XLAL function name '$xlal_function'" if $xlal_function !~ /^X/;
-    if ($xlal_function =~ /:/p) {
-        $xlal_function = ${^PREMATCH};
-        $lal_functions{$xlal_function} = ${^POSTMATCH};
-    } else {
-        $lal_functions{$xlal_function} = $xlal_function;
-        $lal_functions{$xlal_function} =~ s/^X//;
+
+    if (!defined($lal_function)) {
+        $lal_function = $xlal_function;
+        $lal_function =~ s/^X//;
     }
+
+    push @reps, { return_type => $return_types{$return_type}, xlal_function => $xlal_function, lal_function => $lal_function };
+
 }
 
 my $allmatches = 0;
-foreach my $filename (`git ls-files .`) {
+foreach my $filename (`git ls-files $pattern`) {
 
     chomp $filename;
 
     next if $filename !~ /\.[ch]$/;
-
     next if $filename =~ m|/PowerFlux/|;
     next if $filename =~ m|/loosely_coherent/|;
 
@@ -94,224 +350,22 @@ foreach my $filename (`git ls-files .`) {
 
     my $matches = 0;
 
-    sub deref_argument {
-
-        my ($arg) = @_;
-
-        $arg =~ s/^\s*//;
-        if ($arg =~ /^&/p) {
-            $arg = ${^POSTMATCH};
-        } else {
-            $arg = "*($arg)";
-        }
-
-        $arg
-
-    }
-
-    sub build_function {
-
-        my ($func, $funcsp, $args) = @_;
-        my $r;
-
-        my @args = parse_line(",", 1, $args);
-        shift @args;
-        $args[0] =~ s/^\s*//;
-        if ($xlal_deref_arg) {
-            $args[0] = deref_argument($args[0]);
-        }
-        $r = $func . $funcsp . "(" . join(",", @args) . ");";
-
-        $r
-
-    }
-
-    sub build_assertion {
-
-        my ($negate, $func, $funcsp, $args) = @_;
-        my $r;
-
-        my @args = parse_line(",", 1, $args);
-        shift @args;
-        $args[0] =~ s/^\s*//;
-        if ($xlal_assign_arg) {
-            my $arg = shift @args;
-            $arg = deref_argument($arg);
-            $r .= "( " . $arg . " = ";
-        }
-        $r .= $func . $funcsp . "(" . join(",", @args) . ")";
-        if ($xlal_assign_arg) {
-            $r .= " )";
-        }
-
-        my $test = $xlal_return_test;
-        if ($negate eq "!") {
-            if ($test =~ /==/p) {
-                $test = ${^PREMATCH} . "!=" . ${^POSTMATCH};
-            } elsif ($test =~ /!=/p) {
-                $test = ${^PREMATCH} . "==" . ${^POSTMATCH};
-            } else {
-                die "$0: cannot negate test '$test'";
-            }
-        }
-        $r .= $test;
-
-        $r
-
-    }
-
-    sub build_check_macro {
-
-        my ($call, $callsp, $spfunc, $func, $funcsp, $args, $status, $spend) = @_;
-        my $r;
-
-        if ($call =~ s/^XLAL_ERROR/XLAL_CHECK/) {
-            $r .= $call . $callsp . "(" . $spfunc;
-        } elsif ($call eq "LAL_CALL") {
-            $r .= "XLAL_CHECK_MAIN" . $callsp . "(" . $spfunc;
-        } else {
-            $r .= "XLAL_CHECK_LAL" . $callsp . "(" . $spfunc . $status . ", ";
-        }
-        my $negate = ( $call =~ /^SHOULD_FAIL/ ) ? "!" : "";
-        my $assertion = build_assertion($negate, $func, $funcsp, $args);
-        $r .= $assertion . ", XLAL_EFUNC" . $spend . ");";
-
-        $r
-
-    }
-
-    sub build_fail_block {
-
-        my ($func, $funcsp, $args, $status, $spblock, $block, $blocksp) = @_;
-        my $r;
-
-        $spblock =~ s/^\n*//;
-        $blocksp =~ s/\n*$//;
-
-        my $notassertion = build_assertion("!", $func, $funcsp, $args);
-        $r .= "if ( " . $notassertion . " ) {\n";
-        $r .= $spblock . $block . "\n";
-        $r .= $spblock . "ABORTXLAL( " . $status . " );";
-        $r .= $blocksp . "}";
-
-        $r
-
-    }
-
-    for my $xlal_function (keys %lal_functions) {
-
-        if ($filename =~ /\.c$/) {
-
-            $file =~ s{
-                \b (?<call> LAL_CALL | TRY | SUB | SHOULD_WORK | SHOULD_FAIL(?:_WITH_CODE)? ) (?<callsp>\s*) \(
-                    (?<spfunc>\s*) $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
-                        (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
-                    \) )
-                    \s* , \s* (?<status>\S+) (?<spend>\s*)
-                \);
-            }{
-                ++$matches;
-                if (defined($xlal_return_test)) {
-                    build_check_macro($+{call}, $+{callsp}, $+{spfunc}, $xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spend})
-                } else {
-                    build_function($xlal_function, $+{funcsp}, $+{args})
-                }
-            }egsx;
-
-            $file =~ s{
-                \b $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
-                    (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
-                \) );
-                \s*?
-                (?<call> CHECKSTATUSPTR | TESTSTATUS ) (?<callsp>\s*) \(
-                    (?<spfunc>\s*) (?<status>\S+) (?<spend>\s*)
-                \);
-            }{
-                ++$matches;
-                if (defined($xlal_return_test)) {
-                    build_check_macro($+{call}, $+{callsp}, $+{spfunc}, $xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spend})
-                } else {
-                    build_function($xlal_function, $+{funcsp}, $+{args})
-                }
-            }egsx;
-
-            if (defined($xlal_return_test)) {
-
-                $file =~ s{
-                    \b $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
-                        (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
-                    \) );
-                    \s*?
-                    BEGINFAIL \s* \(
-                        \s* (?<status>\S+) \s*
-                    \) (?: \s* \{ )?
-                        (?<spblock>\s*) (?<block>.*?) (?<blocksp>\s*)
-                    (?: \} \s*?)?
-                    ENDFAIL \s* \(
-                        \s* (?&status) \s*
-                    \);
-                }{
-                    ++$matches;
-                    build_fail_block($xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spblock}, $+{block}, $+{blocksp})
-                }egsx;
-
-                $file =~ s{
-                    \b $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
-                        (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
-                    \) );
-                    \s*?
-                    if \s* \(
-                        \s* (?: status ) .statusCode \s*
-                    \) \s* \{
-                        \s* XLALPrintError \s* (?<paren2> \(
-                            (?: (?> [^()]+ ) | (?&paren2) )*
-                        \) );
-                        \s* (?<call> XLAL_ERROR [_A-Z0-9]* ) (?<callsp>\s*) \( (?<spfunc>\s*) \S+ (?<spend>\s*) \);
-                        .*?
-                    \s* \}
-                }{
-                    ++$matches;
-                    build_check_macro($+{call}, $+{callsp}, $+{spfunc}, $xlal_function, $+{funcsp}, $+{args}, $+{status}, $+{spend})
-                }egsx;
-
-            }
-
-            if (!defined($xlal_return_test)) {
-
-                ++$matches if $file =~ s{
-                    \b $lal_functions{$xlal_function} (?<funcsp>\s*) (?<paren> \(
-                        (?<args> (?: (?> [^()]+ ) | (?&paren) )* )
-                    \) );
-                }{
-                   ++$matches;
-                   build_function($xlal_function, $+{funcsp}, $+{args})
-                }egsx;
-
-            }
-
-        }
-
-        $file =~ s{
-            ( " [^"\n]* \b ) $lal_functions{$xlal_function} (?: \s | [(),] )
-        }{
-            ++$matches;
-            $1 . $xlal_function . $2
-        }egsx;
-
-        $file =~ s{
-            ( /\* (?: [^*] | \s | \n | (?: \*+ (?: [^*/] | \s | \n ) ) )* \b ) $lal_functions{$xlal_function} ( \s | [(),*] )
-        }{
-            ++$matches;
-            $1 . $xlal_function . $2
-        }egsx;
-
-        $file =~ s{
-            ( // [^\n]* \b ) $lal_functions{$xlal_function} ( \s | [(),*] )
-        }{
-            ++$matches;
-            $1 . $xlal_function . $2
-        }egsx;
-
+    if ($file =~ m{
+            (?<main>int \s+ main \s* \( [^()]* \) \s* ) (?<paren> \{
+                (?<args> (?: (?> [^{}]+ ) | (?&paren) )* )
+            \} )
+        }spx)
+    {
+        my $before = ${^PREMATCH};
+        my $main = $+{main} . $+{paren};
+        my $after = ${^POSTMATCH};
+        die if $file ne $before . $main . $after;
+        do_replacements($filename, 0, \$before, \$matches, \@reps);
+        do_replacements($filename, 1, \$main, \$matches, \@reps);
+        do_replacements($filename, 0, \$after, \$matches, \@reps);
+        $file = $before . $main . $after;
+    } else {
+        do_replacements($filename, 0, \$file, \$matches, \@reps);
     }
 
     if ($matches > 0) {

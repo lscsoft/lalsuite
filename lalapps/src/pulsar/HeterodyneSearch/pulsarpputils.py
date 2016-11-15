@@ -2436,8 +2436,8 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
   permarr = np.arange(nsamps)
   np.random.shuffle(permarr)
   for pname in pnames:
-    # check first and last samples are the same
-    if pos[pname].samples[0] - pos[pname].samples[-1] == 0.:
+    # check if all samples are the same
+    if pos[pname].samples.tolist().count(pos[pname].samples[0]) == len(pos[pname].samples):
       pos.pop(pname)
     else:
       # shuffle

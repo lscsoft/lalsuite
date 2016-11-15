@@ -267,13 +267,13 @@ static double bicubic_interp_eval(const bicubic_interp *interp, double x, double
 }
 
 
-struct log_radial_integrator_t {
+typedef struct {
     bicubic_interp *region0;
     cubic_interp *region1;
     cubic_interp *region2;
     double xmax, ymax, vmax, r1, r2;
     int k;
-};
+} log_radial_integrator;
 
 
 typedef struct {
@@ -418,7 +418,7 @@ static double log_radial_integral(double r1, double r2, double p, double b, int 
 static const size_t default_log_radial_integrator_size = 400;
 
 
-log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, double pmax, size_t size)
+static log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, double pmax, size_t size)
 {
     if (size <= 1)
         XLAL_ERROR_NULL(XLAL_EINVAL, "size must be > 1");
@@ -499,7 +499,7 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, d
 }
 
 
-void log_radial_integrator_free(log_radial_integrator *integrator)
+static void log_radial_integrator_free(log_radial_integrator *integrator)
 {
     if (integrator)
     {
@@ -514,7 +514,7 @@ void log_radial_integrator_free(log_radial_integrator *integrator)
 }
 
 
-double log_radial_integrator_eval(const log_radial_integrator *integrator, double p, double b)
+static double log_radial_integrator_eval(const log_radial_integrator *integrator, double p, double b)
 {
     const double r0 = 2 * gsl_pow_2(p) / b;
     const double x = log(p);
@@ -1341,6 +1341,10 @@ static void test_signal_amplitude_model(
             *Htemplate = NULL, *Hsignal = NULL, *Hcross = NULL;
         double h = 0, Fplus, Fcross;
         int ret;
+        LALDict *params = XLALCreateDict();
+        assert(params);
+        XLALSimInspiralWaveformParamsInsertPNPhaseOrder(params, LAL_PNORDER_NEWTONIAN);
+        XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(params, LAL_PNORDER_NEWTONIAN);
 
         /* Calculate antenna factors */
         XLALComputeDetAMResponse(
@@ -1366,9 +1370,9 @@ static void test_signal_amplitude_model(
 
         /* "Template" waveform with inclination angle of zero */
         ret = XLALSimInspiralFD(
-            &Htemplate, &Hcross, 0, 1, 1.4 * LAL_MSUN_SI, 1.4 * LAL_MSUN_SI,
-            0, 0, 0, 0, 0, 0, 100, 101, 100, 1, 0, 0, 0, 0,
-            NULL, NULL, LAL_PNORDER_NEWTONIAN, LAL_PNORDER_NEWTONIAN, TaylorF2);
+            &Htemplate, &Hcross, 1.4 * LAL_MSUN_SI, 1.4 * LAL_MSUN_SI,
+            0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 100, 101, 100, params,
+            TaylorF2);
         assert(ret == XLAL_SUCCESS);
 
         /* Discard any non-quadrature phase component of "template" */
@@ -1388,9 +1392,9 @@ static void test_signal_amplitude_model(
 
         /* "Signal" waveform with requested inclination angle */
         ret = XLALSimInspiralFD(
-            &Hsignal, &Hcross, 0, 1, 1.4 * LAL_MSUN_SI, 1.4 * LAL_MSUN_SI,
-            0, 0, 0, 0, 0, 0, 100, 101, 100, 1, 0, inclination, 0, 0,
-            NULL, NULL, LAL_PNORDER_NEWTONIAN, LAL_PNORDER_NEWTONIAN, TaylorF2);
+            &Hsignal, &Hcross, 1.4 * LAL_MSUN_SI, 1.4 * LAL_MSUN_SI,
+            0, 0, 0, 0, 0, 0, 1, inclination, 0, 0, 0, 0, 1, 100, 101, 100,
+            params, TaylorF2);
         assert(ret == XLAL_SUCCESS);
 
         /* Project "signal" using antenna factors */
@@ -1406,6 +1410,7 @@ static void test_signal_amplitude_model(
         for (size_t i = 0; i < Htemplate->data->length; i ++)
             expected += conj(Htemplate->data->data[i]) * Hsignal->data->data[i];
 
+        XLALDestroyDict(params);
         XLALDestroyCOMPLEX16FrequencySeries(Hsignal);
         XLALDestroyCOMPLEX16FrequencySeries(Htemplate);
         Hsignal = Htemplate = NULL;

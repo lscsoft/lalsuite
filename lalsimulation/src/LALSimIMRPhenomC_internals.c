@@ -39,7 +39,7 @@ static BBHPhenomCParams *ComputeIMRPhenomCParamsSPA(
     const REAL8 m1, /**< mass of companion 1 (solar masses) */
     const REAL8 m2, /**< mass of companion 2 (solar masses) */
     const REAL8 chi, /**< Reduced spin of the binary, defined in the main paper */
-    const LALSimInspiralTestGRParam *extraParams) /**< linked list containing the extra testing GR parameters */
+    LALDict *extraParams) /**< linked list containing the extra testing GR parameters */
 {
 
   BBHPhenomCParams *p = (BBHPhenomCParams *) XLALMalloc(sizeof(BBHPhenomCParams));
@@ -85,18 +85,15 @@ static BBHPhenomCParams *ComputeIMRPhenomCParamsSPA(
         560.*LAL_PI*chi2 + 20.*LAL_PI*eta*chiprod +
         chi2*chi*(945.55/1.68 - 85.*eta) + chi*chiprod*(396.65*eta/1.68 + 255.*eta2);
 
-  if (extraParams!=NULL)
-  {
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dchi0")) p->pfaN*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dchi0"));
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dchi1")) p->pfa1 = XLALSimInspiralGetTestGRParam(extraParams,"dchi1");
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dchi2")) p->pfa2*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dchi2"));
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dchi3")) p->pfa3*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dchi3"));
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dchi4")) p->pfa4*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dchi4"));
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dchi5")) p->pfa5*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dchi5"));
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dchi6")) p->pfa6*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dchi6"));
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dchi6l")) p->pfa6log*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dchi6l"));
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dchi7")) p->pfa7*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dchi7"));
-  }        
+  p->pfaN*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRPhi1(extraParams));
+  p->pfa1 = XLALSimInspiralWaveformParamsLookupNonGRDChi1(extraParams);
+  p->pfa2*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi2(extraParams));
+  p->pfa3*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi3(extraParams));
+  p->pfa4*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi4(extraParams));
+  p->pfa5*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi5(extraParams));
+  p->pfa6*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi6(extraParams));
+  p->pfa6log*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi6L(extraParams));
+  p->pfa7*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDChi7(extraParams));
         
   /* Coefficients to calculate xdot, that comes in the fourier amplitude */
   p->xdotaN = 64.*eta/5.;
@@ -156,7 +153,7 @@ static BBHPhenomCParams *ComputeIMRPhenomCParams(
     const REAL8 m1, /**< mass of companion 1 (solar masses) */
     const REAL8 m2, /**< mass of companion 2 (solar masses) */
     const REAL8 chi, /**< Reduced spin of the binary, defined in the main paper */
-    const LALSimInspiralTestGRParam *extraParams) /**< linked list containing the extra testing GR parameters */
+    LALDict *extraParams) /**< linked list containing the extra testing GR parameters */
 {
   BBHPhenomCParams *p = NULL;
   p = ComputeIMRPhenomCParamsSPA( m1, m2, chi, extraParams );
@@ -239,12 +236,12 @@ static BBHPhenomCParams *ComputeIMRPhenomCParams(
 
   if (extraParams!=NULL)
   {
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dxi1")) p->a1*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dxi1"));
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dxi2")) p->a2*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dxi2"));
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dxi3")) p->a3*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dxi3"));
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dxi4")) p->a4*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dxi4"));
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dxi5")) p->a5*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dxi5"));
-    if (XLALSimInspiralTestGRParamExists(extraParams,"dxi6")) p->a6*=(1.0+XLALSimInspiralGetTestGRParam(extraParams,"dxi6"));
+    p->a1*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDXi1(extraParams));
+    p->a2*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDXi2(extraParams));
+    p->a3*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDXi3(extraParams));
+    p->a4*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDXi4(extraParams));
+    p->a5*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDXi5(extraParams));
+    p->a6*=(1.0+XLALSimInspiralWaveformParamsLookupNonGRDXi6(extraParams));
   }  
   
   /* Get the Spin of the final BH */

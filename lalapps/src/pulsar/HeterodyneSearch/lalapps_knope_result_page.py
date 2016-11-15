@@ -1157,7 +1157,7 @@ class posteriors:
           contourlimits.append(limits[p])
           figlimits.append(limits[p])
       if notpresent: break
-      # contourlimits = None # temporary for testing
+
       pf = self.create_joint_posterior_plot(parampairs, figformats=['png'], ratio=2, figlimits=figlimits, contourlimits=contourlimits, jointsamples=False)
       if allparams:
         tagclass = 'jointplot'

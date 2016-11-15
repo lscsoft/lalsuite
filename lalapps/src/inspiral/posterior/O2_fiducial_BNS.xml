@@ -61,7 +61,7 @@
 		<Column Type="real_4" Name="sim_inspiral:psi0"/>
 		<Column Type="real_4" Name="sim_inspiral:psi3"/>
 		<Stream Delimiter="," Type="Local" Name="sim_inspiral:table">
-			0,0,0,0,2,1.1750885,0,0,"0",0.5,"",1170720018,-1.2246468e-18,1.4997598e-34,-0.01,"process:process_id:0",0,224.29971,0,"TAPER_NONE",1,0,0,0,0,0,0,0,0,0.04,0,0,0,0,0,0,0,0,0,0,2,"SEOBNRv2_ROM_DoubleSpin_HIpseudoFourPN",0,0.1,"sim_inspiral:simulation_id:0",40,0,0,0,0,0,0,1.37,1.33,0,0.24994513,0,0
+			0,0,0,0,2,1.1750885,0,0,"0",0.5,"",1170720018,0,0,-0.01,"process:process_id:0",0,224.29971,0,"TAPER_NONE",1,0,0,0,0,0,0,0,0,0.04,0,0,0,0,0,0,0,0,0,0,2,"SEOBNRv4_ROMpseudoFourPN",0,0.1,"sim_inspiral:simulation_id:0",40,0,0,0,0,0,0,1.37,1.33,0,0.24994513,0,0
 		</Stream>
 	</Table>
 </LIGO_LW>

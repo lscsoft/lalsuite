@@ -279,7 +279,7 @@ if not opts.skip_gracedb_upload:
     message = "iDQ calibration sanity check for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
         print "    "+message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=idq.tagnames )
 
 ### plot calibration check
 fig = isp.plt.figure()
@@ -314,7 +314,7 @@ if not opts.skip_gracedb_upload:
     message = "iDQ calibration sanity check figure for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
         print "    "+message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=figname, tagname=['data_quality'] )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=figname, tagname=idq.tagnames+['data_quality'] )
 
 ### discover KW triggers, compute efficiencies, plot ROC curves
 if opts.verbose:
@@ -398,10 +398,10 @@ fig.savefig(figname)
 isp.plt.close(fig)
 
 if not opts.skip_gracedb_upload:
-    message = "iDQ local ROC figure for %s at %s within [%.3f, %.3f]"%(ifo, opts.classifier, opts.start, opts.end)
+    message = "iDQ local ROC figure for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
         print "    "+message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=figname, tagname=['data_quality'] )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=figname, tagname=idq.tagnames+['data_quality'] )
 
 jsonfilename = idq.gdb_roc_json(  gdbdir, opts.classifier, ifo, filetag, opts.start, opts.end-opts.start )
 if opts.verbose:
@@ -414,7 +414,7 @@ if not opts.skip_gracedb_upload:
     message = "iDQ local ROC curves for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
         print "    "+message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=idq.tagnames )
 
 #=================================================
 
@@ -476,7 +476,7 @@ if not opts.skip_gracedb_upload:
     message = "iDQ local calibration vital statistics for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
         print "    "+message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=idq.tagnames+['data_quality'] )
 
 
 ### repeat for training
@@ -533,7 +533,7 @@ if not opts.skip_gracedb_upload:
     message = "iDQ local training vital statistics for %s at %s within [%.3f, %.3f]"%(opts.classifier, ifo, opts.start, opts.end)
     if opts.verbose:
         print "    "+message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=idq.tagnames+['data_quality'] )
 
 
 #=================================================

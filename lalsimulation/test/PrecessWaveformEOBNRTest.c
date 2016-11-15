@@ -40,12 +40,10 @@ int main(void){
   // Waveform parameters
   REAL8 m1 = 2.0*LAL_MSUN_SI, m2 = 5.0*LAL_MSUN_SI;
   REAL8 f_min = 40.0, f_ref = 0., dist = 1e6*LAL_PC_SI;
-  REAL8 lambda1 = 0.0, lambda2 = 0.0;
   REAL8 phi = 0.0, dt = 1/16384.0;
   REAL8 inclination = LAL_PI_4, psi = 0.;
-  LALSimInspiralWaveformFlags *waveFlags = NULL;
-  LALSimInspiralTestGRParam *nonGRparams = NULL;
-  int Lmax = 5, amplitudeOrder = -1, phaseOrder = -1;
+  int Lmax = 5;
+  LALDict *LALpars=XLALCreateDict();
   Approximant approximant = EOBNRv2HM;
 
   // Parameters define a constant precession cone
@@ -62,10 +60,7 @@ int main(void){
     m1, m2,
     f_min, f_ref,
     dist,
-    lambda1, lambda2,
-    waveFlags,
-    nonGRparams,
-    amplitudeOrder, phaseOrder,
+    LALpars,
     Lmax,
     approximant
     );
@@ -98,6 +93,7 @@ int main(void){
              hp->data->data[i], hx->data->data[i] );
 
   // We're done.
+  XLALDestroyDict(LALpars);
   XLALDestroyREAL8TimeSeries( hp );
   XLALDestroyREAL8TimeSeries( hx );
 

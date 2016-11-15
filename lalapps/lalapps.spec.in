@@ -14,12 +14,13 @@ Source: %{name}-%{version}.tar.xz
 URL: https://wiki.ligo.org/DASWG/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: openmpi-devel
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
 BuildRequires: gsl-devel
+BuildRequires: less
 BuildRequires: libframe-devel
 BuildRequires: libmetaio-devel
+BuildRequires: openmpi-devel
 BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: lal-python >= @MIN_LAL_VERSION@
 BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
@@ -40,13 +41,14 @@ BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 BuildRequires: lalpulsar-python >= @MIN_LALPULSAR_VERSION@
 BuildRequires: lalinference-devel >= @MIN_LALINFERENCE_VERSION@
 BuildRequires: lalinference-python >= @MIN_LALINFERENCE_VERSION@
-Requires: openmpi
 Requires: cfitsio
 Requires: fftw
 Requires: gsl
 Requires: healpy
+Requires: less
 Requires: libframe
 Requires: libmetaio
+Requires: openmpi
 Requires: python
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lal-python >= @MIN_LAL_VERSION@

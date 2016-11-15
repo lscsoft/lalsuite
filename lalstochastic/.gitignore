@@ -28,8 +28,8 @@ include/lal/*.i
 include/lal/header-link-stamp
 lalstochastic-*.tar.xz
 lalstochastic-user-env.csh
-lalstochastic-user-env.sh
 lalstochastic-user-env.fish
+lalstochastic-user-env.sh
 lalstochastic-user-env.shell
 lalstochastic.spec
 libtool
@@ -66,5 +66,5 @@ test/StochasticInverseNoiseTest
 test/StochasticOmegaGWTest
 test/StochasticOptimalFilterNormalizationTest
 test/StochasticOptimalFilterTest
-test/ZCoarseGrainFrequencySeriesTest
 test/WHITENED-SB?
+test/ZCoarseGrainFrequencySeriesTest

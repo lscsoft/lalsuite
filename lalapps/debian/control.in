@@ -3,7 +3,7 @@ Section: science
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Build-Depends: debhelper (>= 9), help2man, pkg-config, dh-python, python-all-dev, libopenmpi-dev,
-  libgsl-dev | libgsl0-dev (>= 1.9), libfftw3-dev, libcfitsio3-dev, zlib1g-dev,
+  libgsl-dev | libgsl0-dev (>= 1.9), libfftw3-dev, libcfitsio3-dev, zlib1g-dev, less,
   libframe-dev (>= 8.0), libmetaio-dev (>= 8.2),
   lal-dev (>= @MIN_LAL_VERSION@~),
   lal-python (>= @MIN_LAL_VERSION@~),
@@ -34,7 +34,7 @@ Package: lalapps
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   python-healpy,
-  zlib1g,
+  zlib1g, less,
   libframe1 (>= 8.0), libmetaio1 (>= 8.2),
   lal (>= @MIN_LAL_VERSION@~),
   lal-python (>= @MIN_LAL_VERSION@~),

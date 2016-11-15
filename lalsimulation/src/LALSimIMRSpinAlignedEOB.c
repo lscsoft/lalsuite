@@ -1349,7 +1349,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
   /* Having located the peak of orbital frequency, we set time and phase of coalescence */
   XLALGPSAdd (&tc, -mTScaled * (dynamics->data[hiSRndx] + timePeak));
   gsl_spline_init (spline, dynamicsHi->data, phiHi.data, retLen);
-  sSub = gsl_spline_eval (spline, timePeak, acc) - phiC;
+  sSub = 0*gsl_spline_eval (spline, timePeak, acc) - phiC;
   gsl_spline_free (spline);
   gsl_interp_accel_free (acc);
   /* Apply phiC to hi-sampling waveforms */

@@ -167,7 +167,7 @@ gchxml_filenames = sorted([filename for filename in
 if not gchxml_filenames:
     # no files found, print the message, and exit
     if not opts.skip_gracedb_upload:
-        gracedb.writeLog(opts.gracedb_id, message="No iDQ glitch tables data from "+opts.classifier+" available for the candidate  at "+ifo)
+        gracedb.writeLog(opts.gracedb_id, message="No iDQ glitch tables data from "+opts.classifier+" available for the candidate  at "+ifo, tagname=idq.tagnames)
     print "No glitch files found, exiting."
     sys.exit(0)
 
@@ -220,4 +220,4 @@ ligolw_sqlite.extract(connection, merged_xmldoc_filename , verbose = opts.verbos
 connection.close()
 if not opts.skip_gracedb_upload:
     #write log message to gracedb and upload file
-    gracedb.writeLog(opts.gracedb_id, message="iDQ glitch tables " + ifo + ":", filename=merged_xmldoc_filename)
+    gracedb.writeLog(opts.gracedb_id, message="iDQ glitch tables " + ifo + ":", filename=merged_xmldoc_filename, tagname=idq.tagnames)

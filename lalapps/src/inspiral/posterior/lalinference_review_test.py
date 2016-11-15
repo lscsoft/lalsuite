@@ -146,7 +146,7 @@ def replace_fiducial_bns(line):
     if 'deltaLogP=' in line:
         return line.replace('#','').strip()+'\n'
     if 'approx=' in line:
-        return line.replace(line,"approx=SEOBNRv2_ROM_DoubleSpin_HIpseudoFourPN")
+        return line.replace(line,"approx=SEOBNRv4_ROMpseudoFourPN")
     if 'srate=' in line:
         return line.replace(line,"srate=4096")
     if 'comp-max=' in line:

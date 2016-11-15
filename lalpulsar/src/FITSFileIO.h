@@ -46,7 +46,7 @@ extern "C" {
 ///
 /// Maximum possible number of FITS array dimensions, and FITS table columns
 ///
-#define FFIO_MAX 1000
+#define FFIO_MAX 999
 
 ///
 /// Representation of a FITS file

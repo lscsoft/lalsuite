@@ -100,8 +100,7 @@ static int XLALSimInspiralSpinTaylorDriver(REAL8TimeSeries **hplus,
     REAL8 s1x, REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z,
     REAL8 lnhatx, REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z,
     REAL8 lambda1, REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2,
-    LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO,
-    int phaseO, int amplitudeO, Approximant approx);
+    LALDict *LALparams, int phaseO, int amplitudeO, Approximant approx);
 static int XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(
     REAL8Array **yout, REAL8 m1, REAL8 m2, REAL8 fStart, REAL8 fEnd, REAL8 s1x,
     REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx,
@@ -116,8 +115,7 @@ static int XLALSimInspiralSpinTaylorDriverFourier(
     REAL8 s1y, REAL8 s1z, REAL8 s2x, REAL8 s2y, REAL8 s2z, REAL8 lnhatx,
     REAL8 lnhaty, REAL8 lnhatz, REAL8 e1x, REAL8 e1y, REAL8 e1z, REAL8 lambda1,
     REAL8 lambda2, REAL8 quadparam1, REAL8 quadparam2,
-    LALSimInspiralSpinOrder spinO, LALSimInspiralTidalOrder tideO, INT4 phaseO,
-    INT4 amplitudeO, Approximant approx, INT4 phiRefAtEnd);
+    LALDict *LALparams, INT4 phaseO, INT4 amplitudeO, Approximant approx, INT4 phiRefAtEnd);
 
 
 /* Appends the start and end time series together. Frees start and end before
@@ -1203,8 +1201,7 @@ static int XLALSimInspiralSpinTaylorDriverFourier(
         REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
         REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
         REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
-        LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
-        LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+	LALDict *LALparams,             /**< LAL dictionary containing accessory parameters */
         INT4 phaseO,                    /**< twice PN phase order */
         INT4 amplitudeO,                /**< twice PN amplitude order */
         Approximant approx,             /**< PN approximant (SpinTaylorT1/T2/T4) */
@@ -1219,6 +1216,8 @@ static int XLALSimInspiralSpinTaylorDriverFourier(
     /* The Schwarzschild ISCO frequency - for sanity checking fRef, and default maximum frequency */
     REAL8 fISCO = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_G_SI);
 
+    int spinO=XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALparams);
+    int tideO=XLALSimInspiralWaveformParamsLookupPNTidalOrder(LALparams);
 
     if(kMax < 0)
     {
@@ -2724,8 +2723,7 @@ static int XLALSimInspiralSpinTaylorDriver(
 	REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
 	REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
 	REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
-	LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
-	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+	LALDict *LALparams,             /**< LAL dictionary containing accessory parameters */
 	int phaseO,                     /**< twice PN phase order */
 	int amplitudeO,                 /**< twice PN amplitude order */
     Approximant approx              /**< PN approximant (SpinTaylorT1/T2/T4) */
@@ -2738,6 +2736,9 @@ static int XLALSimInspiralSpinTaylorDriver(
     REAL8 fS, fE, phiShift;
     /* The Schwarzschild ISCO frequency - for sanity checking fRef */
     REAL8 fISCO = 1./(pow(6.,3./2.)*LAL_PI*(m1_SI+m2_SI)/LAL_MSUN_SI*LAL_MTSUN_SI);
+
+    int spinO=XLALSimInspiralWaveformParamsLookupPNSpinOrder(LALparams);
+    int tideO=XLALSimInspiralWaveformParamsLookupPNTidalOrder(LALparams);
 
     /* Sanity check fRef value */
     if( fRef < 0. )
@@ -3120,6 +3121,7 @@ static int XLALSimInspiralSpinTaylorPNEvolveOrbitIrregularIntervals(
 }
 
 /**
+ * @deprecated Use XLALSimInspiralChooseTDWaveform() instead
  * @addtogroup LALSimInspiralSpinTaylor_c
  * @brief Routines for generating spin precessing Taylor waveforms
  * @{
@@ -3306,234 +3308,39 @@ int XLALSimInspiralTransformPrecessingObsoleteInitialConditions(
 	return XLAL_SUCCESS;
 }
 
-
-/**
- * Function to specify the desired orientation of a precessing binary in terms
- * of several angles and then compute the vector components with respect to
- * orbital angular momentum as needed to specify binary configuration for
- * ChooseTDWaveform.
- *
- * Input:
- * thetaJN is the inclination between total angular momentum (J) and the
- * direction of propagation (N)
- * theta1 and theta2 are the inclinations of S1 and S2
- * measured from the Newtonian orbital angular momentum (L_N)
- * phi12 is the difference in azimuthal angles of S1 and S2.
- * chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$)
- * phiJL is the azimuthal angle of L_N on its cone about J.
- * m1, m2, f_ref are the component masses and reference GW frequency,
- * they are needed to compute the magnitude of L_N, and thus J.
- *
- * Output:
- * incl - inclination angle of L_N relative to N (N=(-sin(incl),0,cos(incl)))
- * x, y, z components S1 and S2 (unit spin vectors times their
- * dimensionless spin magnitudes - i.e. they have unit magnitude for
- * extremal BHs and smaller magnitude for slower spins).
- *
- * NOTE: Here the \"total\" angular momentum is computed as
- * J = L_N(1+l1PN) + S1 + S2
- * where L_N is the Newtonian orbital angular momentum and l1PN its
- * relative 1PN corrections. In fact, there are
- * PN corrections to L which contribute to J that are NOT ACCOUNTED FOR
- * in this function. This is done so to avoid complications with spin-orbit
- * contributions to L, which would require the full knowledge fo the orbital motion,
- * not just the evolution of L (see e.g.  eq.2.9c of arXiv:gr-qc/9506022).
- * Also, it is believed that the difference in Jhat
- * with or without these PN corrections to L is quite small.
- *
- * NOTE: fRef = 0 is not a valid choice. If you will pass fRef=0 into
- * ChooseWaveform, then here pass in f_min, the starting GW frequency
- *
- * Reviewed completed on git hash ...
- */
-int XLALSimInspiralTransformPrecessingNewInitialConditions(
-		REAL8 *incl,	/**< Inclination angle of L_N (returned) */
-		REAL8 *S1x,	/**< S1 x component (returned) */
-		REAL8 *S1y,	/**< S1 y component (returned) */
-		REAL8 *S1z,	/**< S1 z component (returned) */
-		REAL8 *S2x,	/**< S2 x component (returned) */
-		REAL8 *S2y,	/**< S2 y component (returned) */
-		REAL8 *S2z,	/**< S2 z component (returned) */
-		const REAL8 thetaJN, 	/**< zenith angle between J and N (rad) */
-		const REAL8 phiJL,  	/**< azimuthal angle of L_N on its cone about J (rad) */
-		const REAL8 theta1,  	/**< zenith angle between S1 and LNhat (rad) */
-		const REAL8 theta2,  	/**< zenith angle between S2 and LNhat (rad) */
-		const REAL8 phi12,  	/**< difference in azimuthal angle btwn S1, S2 (rad) */
-		const REAL8 chi1,	/**< dimensionless spin of body 1 */
-		const REAL8 chi2,	/**< dimensionless spin of body 2 */
-		const REAL8 m1_SI,	/**< mass of body 1 (kg) */
-		const REAL8 m2_SI,	/**< mass of body 2 (kg) */
-		const REAL8 fRef	/**< reference GW frequency (Hz) */
-		)
-{
-	/* Check that fRef is sane */
-	if( fRef == 0. )
-	{
-		XLALPrintError("XLAL Error - %s: fRef=0 is invalid. Please pass in the starting GW frequency instead.\n", __func__);
-		XLAL_ERROR(XLAL_EINVAL);
-	}
-	if( (chi1<0.) || (chi1>1.) || (chi2<0.) || (chi2>1.) )
-	{
-	  XLALPrintError("XLAL Error - %s: chi1,2=0  must be between 0 and 1, values %8.4f -- %8.4f passed.\n", __func__,chi1,chi2);
-		XLAL_ERROR(XLAL_EINVAL);
-	}
-
-	REAL8 m1, m2, eta, v0, theta0, phi0, Jnorm, tmp1, tmp2;
-	REAL8 Jhatx, Jhaty, Jhatz, LNhx, LNhy, LNhz, Jx, Jy, Jz, Lmag;
-	REAL8 s1hatx,s1haty,s1hatz,s2hatx,s2haty,s2hatz;
-	REAL8 s1x, s1y, s1z, s2x, s2y, s2z;
-
-	/* Starting frame: LNhat is along the z-axis and the unit
-	 * spin vectors are defined from the angles relative to LNhat.
-	 * Note that we put s1hat in the x-z plane, and phi12
-	 * sets the azimuthal angle of s2hat measured from the x-axis.
-	 */
-	LNhx = 0.;
-	LNhy = 0.;
-	LNhz = 1.;
-	/* Spins are given wrt to L, but still we cannot fill the spin as we do not know
-	 * what will be the relative orientation of L and N.
-	 */
-	s1hatx = sin(theta1);
-	s1haty = 0.;
-	s1hatz = cos(theta1);
-	s2hatx = sin(theta2) * cos(phi12);
-	s2haty = sin(theta2) * sin(phi12);
-	s2hatz = cos(theta2);
-
-	/* Define several internal variables needed for magnitudes */
-	m1 = m1_SI/LAL_MSUN_SI;
-	m2 = m2_SI/LAL_MSUN_SI;
-	eta=m1*m2/(m1+m2)/(m1+m2);
-	// v parameter at reference point
-	v0 = cbrt( (m1+m2) * LAL_MTSUN_SI *LAL_PI * fRef );
-
-	/* Define S1, S2, J with proper magnitudes */
-	Lmag = XLALSimInspiralLN(m1+m2,eta,v0)*(1+v0*v0*XLALSimInspiralL_2PN(eta));
-	s1x = m1 * m1 * chi1 * s1hatx;
-	s1y = m1 * m1 * chi1 * s1haty;
-	s1z = m1 * m1 * chi1 * s1hatz;
-	s2x = m2 * m2 * chi2 * s2hatx;
-	s2y = m2 * m2 * chi2 * s2haty;
-	s2z = m2 * m2 * chi2 * s2hatz;
-	Jx = s1x + s2x;
-	Jy = s1y + s2y;
-	Jz = Lmag * LNhz + s1z + s2z;
-
-	/* Normalize J to Jhat, find its angles in starting frame */
-	Jnorm = sqrt( Jx*Jx + Jy*Jy + Jz*Jz);
-	Jhatx = Jx / Jnorm;
-	Jhaty = Jy / Jnorm;
-	Jhatz = Jz / Jnorm;
-	theta0 = acos(Jhatz);
-	phi0 = atan2(Jhaty, Jhatx);
-
-	/* Rotation 1: Rotate about z-axis by -phi0 to put Jhat in x-z plane */
-	ROTATEZ(-phi0, LNhx, LNhy, LNhz);
-	ROTATEZ(-phi0, s1hatx, s1haty, s1hatz);
-	ROTATEZ(-phi0, s2hatx, s2haty, s2hatz);
-
-	/* Rotation 2: Rotate about new y-axis by -theta0
-	 * to put Jhat along z-axis
-	 */
-	ROTATEY(-theta0, LNhx, LNhy, LNhz);
-	ROTATEY(-theta0, s1hatx, s1haty, s1hatz);
-	ROTATEY(-theta0, s2hatx, s2haty, s2hatz);
-
-	/* Rotation 3: Rotate about new z-axis by phiJL to put L at desired
-	 * azimuth about J. Note that is currently in x-z plane towards -x
-	 * (i.e. azimuth=pi). Hence we rotate about z by phiJL - LAL_PI
-	 */
-	ROTATEZ(phiJL - LAL_PI, LNhx, LNhy, LNhz);
-	ROTATEZ(phiJL - LAL_PI, s1hatx, s1haty, s1hatz);
-	ROTATEZ(phiJL - LAL_PI, s2hatx, s2haty, s2hatz);
-
-	/* The cosinus of the angle between L and N is the scalar
-         * product of the two vectors. We do need to perform additional
-         * rotation to compute it
-         */
-	*incl=acos(-sin(thetaJN)*LNhx+cos(thetaJN)*LNhz); //output
-
-	/* Rotation 4-5: Now J is along z and N in x-z plane, inclined from J
-         * by thetaJN. Now we bring L into the z axis to get
-         * spin components.
-	 */
-	REAL8 Nx=-sin(thetaJN);
-	REAL8 Ny=0.;
-	REAL8 Nz=cos(thetaJN);
-	REAL8 thetaLJ = acos(LNhz);
-	REAL8 phiL    = atan2(LNhy, LNhx);
-
-	ROTATEZ(-phiL, Nx, Ny, Nz);
-	ROTATEZ(-phiL, s1hatx, s1haty, s1hatz);
-	ROTATEZ(-phiL, s2hatx, s2haty, s2hatz);
-	ROTATEY(-thetaLJ, Nx, Ny, Nz);
-	ROTATEY(-thetaLJ, s1hatx, s1haty, s1hatz);
-	ROTATEY(-thetaLJ, s2hatx, s2haty, s2hatz);
-
-	/* Rotation 6: Now L is along z and we have to bring N
-	 * in the x-z plane.
-	 */
-	REAL8 phiN = atan2(Ny, Nx);
-	ROTATEZ(LAL_PI-phiN, s1hatx, s1haty, s1hatz);
-	ROTATEZ(LAL_PI-phiN, s2hatx, s2haty, s2hatz);
-
-	/* Set pointers to rotated spin vectors */
-	*S1x = s1hatx*chi1;
-	*S1y = s1haty*chi1;
-	*S1z = s1hatz*chi1;
-	*S2x = s2hatx*chi2;
-	*S2y = s2haty*chi2;
-	*S2z = s2hatz*chi2;
-
-	//Uncomment the following lines for a check of the rotation
-	/*printf("LNhat should be along z, N in the x-z plane\n");
-	ROTATEZ(-phiL,    LNhx, LNhy, LNhz);
-	ROTATEY(-thetaLJ, LNhx, LNhy, LNhz);
-	ROTATEZ(LAL_PI-phiN,    LNhx, LNhy, LNhz);
-	ROTATEZ(LAL_PI-phiN,    Nx, Ny, LNz);
-	ROTATEZ(-phi0, Jhatx, Jhaty, Jhatz);
-	ROTATEY(-theta0, Jhatx, Jhaty, Jhatz);
-	ROTATEZ(phiJL - LAL_PI, Jhatx, Jhaty, Jhatz);
-	ROTATEZ(-phiL, Jhatx, Jhaty, Jhatz);
-	ROTATEY(-thetaLJ, Jhatx, Jhaty, Jhatz);
-	ROTATEZ(LAL_PI-phiN, Jhatx, Jhaty, Jhatz);
-	printf("LNhat: %12.4e  %12.4e  %12.4e\n",LNhx,LNhy,LNhz);
-	printf("       %12.4e  %12.4e  %12.4e\n",0.,0.,1.);
-	printf("N:     %12.4e  %12.4e  %12.4e\n",Nx,Ny,Nz);
-	printf("       %12.4e  %12.4e  %12.4e\n",-sin(*incl),0.,cos(*incl));
-	printf("J.Lhat  i: %12.4e f: %12.4e\n",Jz,Jnorm*Jhatz);
-	printf("S1.L    i: %12.4e f: %12.4e\n",chi1*cos(theta1),*S1z);
-	printf("S2.L    i: %12.4e f: %12.4e\n",chi2*cos(theta2),*S2z);
-	printf("S1.S2   i: %12.4e f: %12.4e\n",chi1*chi2*(sin(theta1)*sin(theta2)*cos(phi12)+cos(theta1)*cos(theta2)),(*S1x)*(*S2x)+(*S1y)*(*S2y)+(*S1z)*(*S2z));
-	printf("S1.J i: %12.4e f: %12.4e\n",chi1*(sin(theta1)*Jx+cos(theta1)*Jz),Jnorm*((*S1x)*Jhatx+(*S1y)*Jhaty+(*S1z)*Jhatz));
-	printf("S2.J i: %12.4e f: %12.4e\n",chi2*(sin(theta2)*cos(phi12)*Jx+sin(theta2)*sin(phi12)*Jy+cos(theta2)*Jz),Jnorm*((*S2x)*Jhatx+(*S2y)*Jhaty+(*S2z)*Jhatz));
-	printf("Jhat.Nhat i: %12.4e f: %12.4e\n",cos(thetaJN),Jhatx*Nx+Jhaty*Ny+Jhatz*Nz);
-	printf("Norm Jhat: %12.4e  norm N: %12.4e\n",Jhatx*Jhatx+Jhaty*Jhaty+Jhatz*Jhatz,Nx*Nx+Ny*Ny+Nz*Nz);*/
-
-	return XLAL_SUCCESS;
-}
-
 /**
  * Function to specify the desired orientation of the spin components of
  * a precessing binary.
  *
  * Input:
- * x, y, z components S1 and S2 wrt
- * * total J for axisChoice        = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J
- * * reference L for axisChoice    = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L (default)
- * * view direction for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW
- * incl is the angle between
- * * J and N (Nz = cos(inc)) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J
- * * L and N (Nx = -sin(inc), Ny=0, Nz=cos(inc)) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L (default)
- * * L and N (Lx = sin(inc), Ly=0, Lz=cos(inc)) for axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW
+ * Depending on the values of the variable frameChoice
+ * input parameters may represent different quantities.
+ * incl is the angle between in the X-Y-Z frame specified by
+ * * frameChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J
+ *   J // Z, N = (0, sin(inc), cos(inc))
+ * * frameChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L (default)
+ *   L // Z, N = (0, sin(inc), cos(inc))
+ * * frameChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW
+ * * N // Z, L = (sin(inc), 0, cos(inc))
+ *
+ * Cartesian components of S1 and S2 are given wrt to wrt axes x-y-Z (ORBITAL_L and VIEW cases),
+ * being x the vector pointing from body 2 to body 1.
+ * x-y axes are rotated wrt to X-Y by phiRef counterclockwise, i.e. if
+ * S1=(a,b,0) in fame x-y-Z, in frame X-Y-Z it will have components
+ * S1'=(a cos(phiRef) - b sin(phiRef), a sin(phiRef) + b cos(phiRef), 0).
+ * In the TOTAL_J case spin components are given wrt to J, with the x-Z plane
+ * spanned by the line connecting the two bodies and J.
+ *
  * m1, m2, f_ref are the component masses and reference GW frequency,
- * they are needed to compute the magnitude of L_N
+ * they are needed to compute the magnitude of L_N and.
+ * phi_ref is needed since the spin components in the plane of the orbit
+ * are defined wrt assuming the x axis is parallel to the line joining the binary consistuents,
+ * from body 2 to body 1.
  *
  * Output:
  * x, y, z components S1 and S2 wrt N
- * inc angle between L and N
- * as required by precessing waveforms routines.
+ * inc angle between L and N, i.e. N=(0,0,1), LN=(sin(inc),0,cos(inc))
+ * as required by precessing waveforms routines in SpinTaylor and IRMPhenomP codes.
  *
  * NOTE: Here the \"total\" angular momentum is computed as
  * J = L_N(1+l_1PN) + S1 + S2
@@ -3544,12 +3351,12 @@ int XLALSimInspiralTransformPrecessingNewInitialConditions(
  */
 int XLALSimInspiralInitialConditionsPrecessingApproxs(
 		REAL8 *inc,	/**< inclination angle (returned) */
-		REAL8 *S1x,	/**< S1 x component (returned) */
-		REAL8 *S1y,	/**< S1 y component (returned) */
-		REAL8 *S1z,	/**< S1 z component (returned) */
-		REAL8 *S2x,	/**< S2 x component (returned) */
-		REAL8 *S2y,	/**< S2 y component (returned) */
-		REAL8 *S2z,	/**< S2 z component (returned) */
+		REAL8 *S1x,	/**< S1x component (returned) */
+		REAL8 *S1y,	/**< S1y component (returned) */
+		REAL8 *S1z,	/**< S1z component (returned) */
+		REAL8 *S2x,	/**< S2x components (returned) */
+		REAL8 *S2y,	/**< S2y components (returned) */
+		REAL8 *S2z,	/**< S2z components (returned) */
 		const REAL8 inclIn, /**< Inclination angle in input */
 		const REAL8 S1xIn,  /**< S1 x component */
 		const REAL8 S1yIn,  /**< S1 y component */
@@ -3560,41 +3367,44 @@ int XLALSimInspiralInitialConditionsPrecessingApproxs(
 		const REAL8 m1,	    /**< mass of body 1 (kg) */
 		const REAL8 m2,	    /**< mass of body 2 (kg) */
 		const REAL8 fRef,   /**< reference GW frequency (Hz) */
-		LALSimInspiralFrameAxis axisChoice  /**< Flag to identify axis wrt which spin components are given. Pass in NULL (or None in python) for default (OrbitalL) */)
+		const REAL8 phiRef, /**< reference GW phase */
+		LALSimInspiralFrameAxis frameChoice  /**< Flag to identify axis wrt which spin components are given. Pass in NULL (or None in python) for default (OrbitalL) */)
 {
-  REAL8 Lmag=0.;
-  REAL8 Lx,Ly,Lxy2,Lz;
-  REAL8 LNhx,LNhy,LNhz,phiLN;
-  REAL8 v0,mass1,mass2,eta;
-  REAL8 tmp1,tmp2;
   *S1x=S1xIn;
   *S1y=S1yIn;
   *S1z=S1zIn;
   *S2x=S2xIn;
   *S2y=S2yIn;
   *S2z=S2zIn;
-  switch (axisChoice) {
+
+  REAL8 Lmag=0.;
+  REAL8 Lx,Ly,Lxy2,Lz;
+  REAL8 LNhx,LNhy,LNhz;
+  REAL8 v0,mass1,mass2,eta;
+  REAL8 tmp1,tmp2;
+  //Uncomment the following line to perform tests
+  REAL8 Nhx,Nhy,Nhz;
+  switch (frameChoice) {
   /* FRAME_AXIS_TOTAL_J
    * (spins wrt to J, inclIn is the angle between J and N: if
-   * J=(0,0,1) N=(-sin(inclIn),0,cos(inclIn)))
+   * J=(0,0,1) N=(0,sin(inclIn),cos(inclIn)))
    */
   case LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J:
-    mass1=m1*LAL_MSUN_SI;
-    mass2=m2*LAL_MSUN_SI;
+    mass1=m1/LAL_MSUN_SI;
+    mass2=m2/LAL_MSUN_SI;
     eta=mass1*mass2/(mass1+mass2)/(mass1+mass2);
-    v0=cbrt(LAL_PI*fRef*(m1+m2)*LAL_MTSUN_SI);
+    v0=cbrt(LAL_PI*fRef*(mass1+mass2)*LAL_MTSUN_SI);
     Lmag = XLALSimInspiralLN(mass1+mass2,eta,v0)*(1.+v0*v0*XLALSimInspiralL_2PN(eta));
-    Lx  = -S1xIn*mass1*mass1-S2xIn*mass2*mass2;
-    Ly  = -S1yIn*mass2*mass2-S2yIn*mass2*mass2;
+    Lx  = -(*S1x)*mass1*mass1-(*S2x)*mass2*mass2;
+    Ly  = -(*S1y)*mass1*mass1-(*S2y)*mass2*mass2;
     Lxy2= Lx*Lx+Ly*Ly;
-    Lz=0.;
     if (Lmag*Lmag>=Lxy2) {
       Lz=sqrt(Lmag*Lmag-Lxy2);
       if ( Lz<(S1zIn*mass1*mass1+S2zIn*mass2*mass2) ) {
 	XLALPrintError("** XLALSimInspiralInitialConditionsPrecessingApproxs ERROR *** for s1 (%12.4e  %12.4e  %12.4e)\n",S1xIn,S1yIn,S1zIn);
 	XLALPrintError("                                                                   s2 (%12.4e  %12.4e  %12.4e)\n",S2xIn,S2yIn,S2zIn);
 	XLALPrintError(" wrt to J for m: (%12.4e  %12.4e) and v= %12.4e\n",mass1,mass2,v0);
-	XLALPrintError(" it is impossible to determine the sign of LNhz\n");
+	XLALPrintError(" it is impossible to determine the sign of Lhz\n");
 	XLAL_ERROR(XLAL_EDOM);
       }
     }
@@ -3605,69 +3415,168 @@ int XLALSimInspiralInitialConditionsPrecessingApproxs(
       XLAL_ERROR(XLAL_EDOM);
     }
     // 1PN corrections to L are collinear with LN
-    // Rotation1: send N to z
+    // Rotation1: rotate N into z
     LNhx=Lx/Lmag;
     LNhy=Ly/Lmag;
     LNhz=Lz/Lmag;
-    ROTATEY(inclIn,*S1x,*S1y,*S1z);
-    ROTATEY(inclIn,*S2x,*S2y,*S2z);
-    ROTATEY(inclIn,LNhx,LNhy,LNhz);
+    Nhx=0.;
+    Nhy=sin(inclIn);
+    Nhz=cos(inclIn);
+    //Rotate to the orbital plane to rotate spin by phiRef there
+    // R1:
+    REAL8 phiLJ=atan2(LNhy,LNhx);
+    ROTATEZ(-phiLJ,*S1x,*S1y,*S1z);
+    ROTATEZ(-phiLJ,*S2x,*S2y,*S2z);
+    ROTATEZ(-phiLJ,Nhx,Nhy,Nhz);
+    ROTATEZ(-phiLJ,LNhx,LNhy,LNhz);
+    // R2:
+    REAL8 thetaLJ=acos(LNhz);
+    ROTATEY(-thetaLJ,*S1x,*S1y,*S1z);
+    ROTATEY(-thetaLJ,*S2x,*S2y,*S2z);
+    ROTATEY(-thetaLJ,Nhx,Nhy,Nhz);
+    ROTATEY(-thetaLJ,LNhx,LNhy,LNhz);
+    // R3: (spins only)
+    ROTATEZ(phiRef,*S1x,*S1y,*S1z);
+    ROTATEZ(phiRef,*S2x,*S2y,*S2z);
+    //Now let's go to the radiation frame
+    // R4:
+    REAL8 phiN=atan2(Nhy,Nhx);
+    ROTATEZ(-phiN,*S1x,*S1y,*S1z);
+    ROTATEZ(-phiN,*S2x,*S2y,*S2z);
+    ROTATEZ(-phiN,LNhx,LNhy,LNhz);
+    ROTATEZ(-phiN,Nhx,Nhy,Nhz);
+    // R5:
+    REAL8 thetaN=acos(Nhz);
+    ROTATEY(-thetaN,*S1x,*S1y,*S1z);
+    ROTATEY(-thetaN,*S2x,*S2y,*S2z);
+    ROTATEY(-thetaN,LNhx,LNhy,LNhz);
+    ROTATEY(-thetaN,Nhx,Nhy,Nhz);
+    // Now rotating LNh into the x,z plane
+    // R6:
+    REAL8 phiL=atan2(LNhy,LNhx);
+    ROTATEZ(-phiL,*S1x,*S1y,*S1z);
+    ROTATEZ(-phiL,*S2x,*S2y,*S2z);
+    ROTATEZ(-phiL,LNhx,LNhy,LNhz);
+    ROTATEZ(-phiL,Nhx,Nhy,Nhz);
     *inc=acos(LNhz);
-    //Rotation 2: send L into the x-z plane.
-    phiLN=atan2(LNhy,LNhx);
-    ROTATEZ(-phiLN,*S1x,*S1y,*S1z);
-    ROTATEZ(-phiLN,*S2x,*S2y,*S2z);
-    //It follows that in the frame in which N=(0,0,1), LNhat=(sin(inc),0,cos(inc))
+    //It follows that in the frame in which N=(0,0,1), LNhat=(sin(*inc),0,cos(*inc))
     //For a check uncomment the following lines
-    /*printf(" Check of LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J\n");
-    REAL8 Nx=-sin(inclIn);
-    REAL8 Ny=0.;
-    REAL8 Nz=cos(inclIn);
-    ROTATEY(inclIn,Nx,Ny,Nz);
-    ROTATEZ(-phiLN,Nx,Ny,Nz);
-    ROTATEZ(-phiLN,LNhx,LNhy,LNhz);
-    printf("N:  %12.4e  %12.4e  %12.4e  norm: %12.4e\n",Nx,Ny,Nz,sqrt(Nx*Nx+Ny*Ny+Nz*Nz));
+    //Anyway there is an automatic check at build in
+    // lalsimulation/test/InitialSpinRotationTest
+    /*printf("**************************************************\n");
+    printf("** Check of LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J **\n");
+    printf("**************************************************\n");
+    printf("N:   %12.4e  %12.4e  %12.4e  norm: %12.4e\n",Nhx,Nhy,Nhz,sqrt(Nhx*Nhx+Nhy*Nhy+Nhz*Nhz));
     printf("     %12.4e  %12.4e  %12.4e\n",0.,0.,1.);
     printf("LNh: %12.4e  %12.4e  %12.4e  norm: %12.4e\n",LNhx,LNhy,LNhz,sqrt(LNhx*LNhx+LNhy*LNhy+LNhz*LNhz));
     printf("     %12.4e  %12.4e  %12.4e\n",sin(*inc),0.,cos(*inc));
-    printf("S1.L     %12.4e  %12.4e\n",(*S1x)*LNhx+(*S1y)*LNhy+(*S1z)*LNhz,S1zIn);
-    printf("S2.L     %12.4e  %12.4e\n",(*S2x)*LNhx+(*S2y)*LNhy+(*S2z)*LNhz,S2zIn);
-    printf("S1.S2    %12.4e  %12.4e\n",(*S1x)*(*S2x)+(*S1y)*(*S2y)+(*S1z)*(*S2z),S1xIn*S2xIn+S1yIn*S2yIn+S1zIn*S2zIn);*/
+    printf("S1.L     %12.4e  %12.4e\n",(*S1x)*LNhx+(*S1y)*LNhy+(*S1z)*LNhz,(S1xIn*Lx+S1yIn*Ly+S1zIn*Lz)/Lmag);
+    printf("S2.L     %12.4e  %12.4e\n",(*S2x)*LNhx+(*S2y)*LNhy+(*S2z)*LNhz,(S2xIn*Lx+S2yIn*Ly+S2zIn*Lz)/Lmag);
+    printf("S1.S2    %12.4e  %12.4e\n",(*S1x)*(*S2x)+(*S1y)*(*S2y)+(*S1z)*(*S2z),S1xIn*S2xIn+S1yIn*S2yIn+S1zIn*S2zIn);
+    printf("**************************************************\n");*/
     break;
 
-  /* FRAME_AXIS_VIEW (OLD default)
-   * (spins wrt to view direction, inclIn is the angle between L and N: if
-   * N=(0,0,1) LNhat=(sin(inclIn),0,cos(inclIn)) )
-   */
   case LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW:
+    /* FRAME_AXIS_VIEW
+     * Spins at phiRef=0 are given wrt to view direction
+     * inclIn is the angle between L and N: if
+     * N=(0,0,1) LNhat=(sin(inclIn),0,cos(inclIn))
+     * We need to perform the rotation by phiRef around LNhat on the spins only.
+     */
     *inc=inclIn;
-    break;
-  /* FRAME_AXIS_ORBITAL_L (default)
-   * (spins wrt to L, inclIn is the angle between L and N: if
-   * LNhat=(0,0,1) N=(-sin(inclIn),0,cos(inclIn)) )
-   */
-  case LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L:
-  default:
+    ROTATEY(-inclIn,*S1x,*S1y,*S1z);
+    ROTATEY(-inclIn,*S2x,*S2y,*S2z);
+    ROTATEZ(phiRef,*S1x,*S1y,*S1z);
+    ROTATEZ(phiRef,*S2x,*S2y,*S2z);
     ROTATEY(inclIn,*S1x,*S1y,*S1z);
     ROTATEY(inclIn,*S2x,*S2y,*S2z);
+    //For a check uncomment the following lines
+    //Anyway there is an automatic check at build in
+    // lalsimulation/test/InitialSpinRotationTest
+    /*printf("***********************************************\n");
+    printf("** Check of LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW **\n");
+    printf("***********************************************\n");
+    LNhx=sin(inclIn);
+    LNhy=0.;
+    LNhz=cos(inclIn);
+    ROTATEY(-inclIn, LNhx, LNhy, LNhz);
+    ROTATEZ(phiRef, LNhx, LNhy, LNhz);
+    ROTATEY(inclIn, LNhx, LNhy, LNhz);
+    printf("LNh: %12.4e  %12.4e  %12.4e  norm: %12.4e\n",LNhx,LNhy,LNhz,sqrt(LNhx*LNhx+LNhy*LNhy+LNhz*LNhz));
+    printf("     %12.4e  %12.4e  %12.4e\n",sin(*inc),0.,cos(*inc));
+    printf("S1.L     %12.4e  %12.4e\n",(*S1x)*LNhx+(*S1y)*LNhy+(*S1z)*LNhz,S1xIn*LNhx+S1yIn*LNhy+S1zIn*LNhz);
+    printf("S2.L     %12.4e  %12.4e\n",(*S2x)*LNhx+(*S2y)*LNhy+(*S2z)*LNhz,S2xIn*LNhx+S2yIn*LNhy+S2zIn*LNhz);
+    printf("S1.S2    %12.4e  %12.4e\n",(*S1x)*(*S2x)+(*S1y)*(*S2y)+(*S1z)*(*S2z),S1xIn*S2xIn+S1yIn*S2yIn+S1zIn*S2zIn);
+    printf("***********************************************\n");*/
+    break;
+
+  case LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L:
+    /* FRAME_AXIS_ORBITAL_L (default)
+     * (spins wrt to L//z and x// body 2->1,
+     * inclIn is the angle between L and N: if
+     * LNhat=(0,0,1) N=(0,sin(inclIn),cos(inclIn)) in the Y-z plane,
+     * where x is rotated by phiRef wrt X around z.
+     */
+  default:
+    //We need to set N into the (0,0,1) axis and L into (sin(inc),0,cos(inc))
+    //We can first rotate by phiRef-pi/2 around the angular momentum,
+    //which brings the line of sight into the new xz plane and leaves the ang momentum as the z axis
+    ROTATEZ(phiRef-LAL_PI/2.,*S1x,*S1y,*S1z);
+    ROTATEZ(phiRef-LAL_PI/2.,*S2x,*S2y,*S2z);
+    //We can then rotate by -inclIn around the y axis to bring the line of sight to the z axis.
+    ROTATEY(-inclIn,*S1x,*S1y,*S1z);
+    ROTATEY(-inclIn,*S2x,*S2y,*S2z);
+    //The ang momentum is now in the xz plane but with negative projection on x
+    //Now we rotate by Pi around z to bring L to the positive x half plane
+    ROTATEZ(LAL_PI,*S1x,*S1y,*S1z);
+    ROTATEZ(LAL_PI,*S2x,*S2y,*S2z);
     *inc=inclIn;
     //For a check uncomment the following lines
-    /*printf(" Check of LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L\n");
-    REAL8 Nnx=-sin(inclIn);
-    REAL8 Nny=0.;
-    REAL8 Nnz=cos(inclIn);
+    //Anyway there is an automatic check at build in
+    // lalsimulation/test/InitialSpinRotationTest
+    /*printf("****************************************************\n");
+    printf("** Check of LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L **\n");
+    printf("****************************************************\n");
+    Nhx=0.;
+    Nhy=sin(inclIn);
+    Nhz=cos(inclIn);
     LNhx=0.;
     LNhy=0.;
     LNhz=1.;
-    ROTATEY(inclIn,Nnx,Nny,Nnz);
-    ROTATEY(inclIn,LNhx,LNhy,LNhz);
-    printf("N:   %12.4e  %12.4e  %12.4e  norm: %12.4e\n",Nnx,Nny,Nnz,sqrt(Nnx*Nnx+Nny*Nny+Nnz*Nnz));
-    printf("     %12.4e  %12.4e  %12.4e\n",0.,0.,1.);
+    REAL8 nnx=1.;
+    REAL8 nny=0.;
+    REAL8 nnz=0.;
+    REAL8 llx=0.;
+    REAL8 lly=1.;
+    REAL8 llz=0.;
+    ROTATEZ(-LAL_PI/2.,Nhx,Nhy,Nhz);
+    ROTATEZ(phiRef-LAL_PI/2.,nnx,nny,nnz);
+    ROTATEZ(phiRef-LAL_PI/2.,llx,lly,llz);
+    ROTATEY(-inclIn,Nhx,Nhy,Nhz);
+    ROTATEY(-inclIn,LNhx,LNhy,LNhz);
+    ROTATEY(-inclIn,nnx,nny,nnz);
+    ROTATEY(-inclIn,llx,lly,llz);
+    ROTATEZ(LAL_PI,Nhx,Nhy,Nhz);
+    ROTATEZ(LAL_PI,LNhx,LNhy,LNhz);
+    ROTATEZ(LAL_PI,nnx,nny,nnz);
+    ROTATEZ(LAL_PI,llx,lly,llz);
+    printf("N:   %12.4e  %12.4e  %12.4e  norm: %12.4e\n",Nhx,Nhy,Nhz,sqrt(Nhx*Nhx+Nhy*Nhy+Nhz*Nhz));
+    printf("     0.   0.  1.\n");
     printf("LNh: %12.4e  %12.4e  %12.4e  norm: %12.4e\n",LNhx,LNhy,LNhz,sqrt(LNhx*LNhx+LNhy*LNhy+LNhz*LNhz));
     printf("     %12.4e  %12.4e  %12.4e\n",sin(*inc),0.,cos(*inc));
     printf("S1.L     %12.4e  %12.4e\n",(*S1x)*LNhx+(*S1y)*LNhy+(*S1z)*LNhz,S1zIn);
     printf("S2.L     %12.4e  %12.4e\n",(*S2x)*LNhx+(*S2y)*LNhy+(*S2z)*LNhz,S2zIn);
-    printf("S1.S2    %12.4e  %12.4e\n",(*S1x)*(*S2x)+(*S1y)*(*S2y)+(*S1z)*(*S2z),S1xIn*S2xIn+S1yIn*S2yIn+S1zIn*S2zIn);*/
+    printf("S1.S2    %12.4e  %12.4e\n",(*S1x)*(*S2x)+(*S1y)*(*S2y)+(*S1z)*(*S2z),S1xIn*S2xIn+S1yIn*S2yIn+S1zIn*S2zIn);
+    printf("S1.n    %12.4e  %12.4e\n",S1xIn,(*S1x)*nnx+(*S1y)*nny+(*S1z)*nnz);
+    printf("S2.n    %12.4e  %12.4e\n",S2xIn,(*S2x)*nnx+(*S2y)*nny+(*S2z)*nnz);
+    printf("S1.l    %12.4e  %12.4e\n",S1yIn,(*S1x)*llx+(*S1y)*lly+(*S1z)*llz);
+    printf("S2.l    %12.4e  %12.4e\n",S2yIn,(*S2x)*llx+(*S2y)*lly+(*S2z)*llz);
+    printf("L.n     0.      %12.4e\n",nnx*sin(*inc)+nnz*cos(*inc));
+    printf("L.l     0.      %12.4e\n",llx*sin(*inc)+llz*cos(*inc));
+    printf("N.n     %12.4e  %12.4e\n",sin(inclIn)*sin(phiRef),Nhx*nnx+Nhy*nny+Nhz*nnz);
+    printf("N.l     %12.4e  %12.4e\n",sin(inclIn)*cos(phiRef),Nhx*llx+Nhy*lly+Nhz*llz);
+    printf("n.l     0.  %12.4e\n",nnx*llx+nny*lly+nnz*llz);
+    printf("****************************************************\n");*/
     break;
   }
 
@@ -4089,8 +3998,7 @@ int XLALSimInspiralSpinTaylorT4(
 	REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
 	REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
 	REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
-	LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
-	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+	LALDict *LALparams,             /**< LAL dictionary containing accessory parameters */
 	int phaseO,                     /**< twice PN phase order */
 	int amplitudeO                  /**< twice PN amplitude order */
 	)
@@ -4099,7 +4007,7 @@ int XLALSimInspiralSpinTaylorT4(
     int n = XLALSimInspiralSpinTaylorDriver(hplus, hcross, phiRef, v0, deltaT,
             m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z,
             lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
-            quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO, approx);
+            quadparam1, quadparam2, LALparams, phaseO, amplitudeO, approx);
 
     return n;
 }
@@ -4160,8 +4068,7 @@ int XLALSimInspiralSpinTaylorT1(
 	REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
 	REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
 	REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
-	LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
-	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+	LALDict *LALparams,             /**< LAL dictionary containing accessory parameters */
 	int phaseO,                     /**< twice PN phase order */
 	int amplitudeO                  /**< twice PN amplitude order */
 	)
@@ -4170,7 +4077,7 @@ int XLALSimInspiralSpinTaylorT1(
     int n = XLALSimInspiralSpinTaylorDriver(hplus, hcross, phiRef, v0, deltaT,
             m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z,
             lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
-            quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO, approx);
+            quadparam1, quadparam2, LALparams, phaseO, amplitudeO, approx);
 
     return n;
 }
@@ -4231,8 +4138,7 @@ int XLALSimInspiralSpinTaylorT2(
 	REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
 	REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
 	REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
-	LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
-	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+	LALDict *LALparams,             /**< LAL dictionary containing accessory parameters */
 	int phaseO,                     /**< twice PN phase order */
 	int amplitudeO                  /**< twice PN amplitude order */
 	)
@@ -4241,7 +4147,7 @@ int XLALSimInspiralSpinTaylorT2(
     int n = XLALSimInspiralSpinTaylorDriver(hplus, hcross, phiRef, v0, deltaT,
             m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z,
             lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
-            quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO, approx);
+	    quadparam1, quadparam2, LALparams, phaseO, amplitudeO, approx);
 
     return n;
 }
@@ -4553,8 +4459,7 @@ int XLALSimInspiralSpinTaylorT4Fourier(
         REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
         REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
         REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
-        LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
-        LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+	LALDict *LALparams,             /**< LAL dictionary containing accessory parameters */
         INT4 phaseO,                     /**< twice PN phase order */
         INT4 amplitudeO,                /**< twice PN amplitude order */
         INT4 phiRefAtEnd                /**< whether phiRef corresponds to the end of the inspiral */
@@ -4565,7 +4470,7 @@ int XLALSimInspiralSpinTaylorT4Fourier(
             deltaF, kMax, phiRef, v0,
             m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z,
             lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
-            quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO, approx, phiRefAtEnd);
+            quadparam1, quadparam2, LALparams, phaseO, amplitudeO, approx, phiRefAtEnd);
 
     return n;
 }
@@ -4634,8 +4539,7 @@ int XLALSimInspiralSpinTaylorT2Fourier(
         REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
         REAL8 quadparam1,               /**< phenom. parameter describing induced quad. moment of body 1 (=1 for BHs, ~2-12 for NSs) */
         REAL8 quadparam2,               /**< phenom. parameter describing induced quad. moment of body 2 (=1 for BHs, ~2-12 for NSs) */
-        LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
-        LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+	LALDict *LALparams,             /**< LAL dictionary containing accessory parameters */
         INT4 phaseO,                     /**< twice PN phase order */
         INT4 amplitudeO,                /**< twice PN amplitude order */
         INT4 phiRefAtEnd                /**< whether phiRef corresponds to the end of the inspiral */
@@ -4646,7 +4550,7 @@ int XLALSimInspiralSpinTaylorT2Fourier(
             fMax, deltaF, kMax, phiRef, v0,
             m1, m2, fStart, fRef, r, s1x, s1y, s1z, s2x, s2y, s2z,
             lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2,
-            quadparam1, quadparam2, spinO, tideO, phaseO, amplitudeO, approx, phiRefAtEnd);
+            quadparam1, quadparam2, LALparams, phaseO, amplitudeO, approx, phiRefAtEnd);
 
     return n;
 }

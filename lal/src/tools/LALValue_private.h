@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Bernd Machenschalk
+*  Copyright (C) 2016 Jolien Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -17,41 +17,25 @@
 *  MA  02111-1307  USA
 */
 
-/* C++ -> C interface for BOINC_OPTION handling etc.
-*/
-
-#define EAH_SHMEM_APP_NAME "EinsteinHS"
-#define EAH_SHMEM_SIZE 1024
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct {
-  double skypos_rac;
-  double skypos_dec;
-  double frequency;
-  double bandwidth;
-  double cand_frequency;
-  double cand_spindown;
-  double cand_rac;
-  double cand_dec;
-  double cand_hough_sign;
-} t_progress;
-
-extern t_progress boincv6_progress;
-
-#ifdef BOINC_APIV6
-extern int setup_shmem(void);
-#endif
-
-extern void set_boinc_options(void);
-
-extern int eah_userid, eah_hostid;
-extern char*eah_hostcpid, *eah_username;
-
-extern int eah_temporary_exit(int delay, const char* reason);
-
-#ifdef __cplusplus
-}
-#endif
+#ifndef _LAL_VALUE_PRIVATE_H
+#define _LAL_VALUE_PRIVATE_H
+#include <lal/LALDatatypes.h>
+struct tagLALValue {
+	LALTYPECODE type;
+	size_t size;
+	union { /* align for any type of data */
+		CHAR i1;
+		INT2 i2;
+		INT4 i4;
+		INT8 i8;
+		UCHAR u1;
+		UINT2 u2;
+		UINT4 u4;
+		UINT8 u8;
+		REAL4 s;
+		REAL8 d;
+		COMPLEX8 c;
+		COMPLEX16 z;
+	} data[];
+};
+#endif /* _LAL_VALUE_PRIVATE_H */

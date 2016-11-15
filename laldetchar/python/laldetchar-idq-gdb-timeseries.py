@@ -200,7 +200,7 @@ if (not rank_filenames) or (not fap_filenames): # we couldn't find either rank o
     if opts.verbose:
         print "no iDQ timeseries for %s at %s"%(opts.classifier, ifo)
     if not opts.skip_gracedb_upload:
-        gracedb.writeLog(opts.gracedb_id, message="No iDQ timeseries for %s at %s"%(opts.classifier, ifo))
+        gracedb.writeLog(opts.gracedb_id, message="No iDQ timeseries for %s at %s"%(opts.classifier, ifo), tagname=idq.tagnames)
     sys.exit(0)
 
 #===================================================================================================
@@ -254,7 +254,7 @@ if config.get('calibration','mode')=='dat':
             message = "iDQ fap timeseries for %s at %s within [%d, %d] :"%(opts.classifier, ifo, start, start+dur)
             if opts.verbose:
                 print "    %s"%message
-            gracedb.writeLog( opts.gracedb_id, message=message, filename=fapfr ) #, tagname=['data_quality'] )
+            gracedb.writeLog( opts.gracedb_id, message=message, filename=fapfr, tagname=idq.tagnames ) #+['data_quality'] )
 
     ### post min-fap value
     if opts.verbose:
@@ -284,7 +284,7 @@ if config.get('calibration','mode')=='dat':
         message = "minimum glitch-FAP for %s at %s within [%.3f, %.3f] is %.3e"%(opts.classifier, ifo, opts.start, opts.end, min_fap)
         if opts.verbose:
             print "    %s"%message
-        gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
+        gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=idq.tagnames+['data_quality'] )
 
 #    ### compute statistics
 #    if opts.verbose:
@@ -325,7 +325,7 @@ else:
             message = "iDQ fap frame for %s at %s within [%d, %d] :"%(opts.classifier, ifo, start, start+dur)
             if opts.verbose:
                 print "    %s"%message
-            gracedb.writeLog( opts.gracedb_id, message=message, filename=fapfr ) #, tagname=['data_quality'] )
+            gracedb.writeLog( opts.gracedb_id, message=message, filename=fapfr, tagname=idq.tagnames ) #+['data_quality'] )
 
     ### post min-fap value
     if opts.verbose:
@@ -355,7 +355,7 @@ else:
         message = "minimum glitch-FAP for %s at %s within [%.3f, %.3f] is %.3e"%(opts.classifier, ifo, opts.start, opts.end, min_fap)
         if opts.verbose:
             print "    %s"%message
-        gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
+        gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=idq.tagnames+['data_quality'] )
 
 #    ### compute statistics
 #    if opts.verbose:
@@ -400,7 +400,7 @@ for t, ts in zip(r_times, r_timeseries):
         message = "iDQ glitch-rank frame for %s at %s within [%d, %d] :"%(opts.classifier, ifo, start, start+dur)
         if opts.verbose:
             print "    %s"%message
-        gracedb.writeLog( opts.gracedb_id, message=message, filename=rnkfr ) #, tagname=['data_quality'] )
+        gracedb.writeLog( opts.gracedb_id, message=message, filename=rnkfr, tagname=idq.tagnames ) #+['data_quality'] )
 
 ### post max-rank value
 if opts.verbose:
@@ -430,7 +430,7 @@ if not opts.skip_gracedb_upload:
     message = "maximum glitch-RANK for %s at %s within [%.3f, %.3f] is %.3e"%(opts.classifier, ifo, opts.start, opts.end, max_rnk)
     if opts.verbose:
         print "    %s"%message
-    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=['data_quality'] )
+    gracedb.writeLog( opts.gracedb_id, message=message, filename=jsonfilename, tagname=idq.tagnames+['data_quality'] )
 
 #### compute statistics
 #if opts.verbose:
@@ -475,7 +475,7 @@ if config.has_section(opts.classifier) and config.has_option(opts.classifier, 'f
             message = "iDQ channel strip chart for %s at %s between [%.3f, %.3f]"%(opts.classifier, ifo, opts.plotting_gps_start, opts.plotting_gps_end)
             if opts.verbose:
                 print "  %s"%message
-            gracedb.writeLog(opts.gracedb_id, message=message, filename=figname, tagname='data_quality')
+            gracedb.writeLog(opts.gracedb_id, message=message, filename=figname, tagname=idq.tagnames+['data_quality'])
             
         ### json file containing segments
         json_cov = []
@@ -494,7 +494,7 @@ if config.has_section(opts.classifier) and config.has_option(opts.classifier, 'f
             message = "iDQ (possible) active channels for %s at %s between [%.3f, %.3f]"%(opts.classifier, ifo, opts.plotting_gps_start, opts.plotting_gps_end)
             if opts.verbose:
                 print "  %s"%message
-            gracedb.writeLog(opts.gracedb_id, message=message, filename=jsonfilename, tagname='data_quality')
+            gracedb.writeLog(opts.gracedb_id, message=message, filename=jsonfilename, tagname=idq.tagnames+['data_quality'])
 
     elif opts.verbose:
         print "flavor=%s does not require any special extra data"%flavor
@@ -570,7 +570,7 @@ if not opts.skip_gracedb_upload:
     message = "iDQ fap and glitch-rank timeseries plot for " + opts.classifier + " at "+ifo+":"
     if opts.verbose:
         print "  %s"%message
-    gracedb.writeLog(opts.gracedb_id, message=message, filename=figname, tagname='data_quality')
+    gracedb.writeLog(opts.gracedb_id, message=message, filename=figname, tagname=idq.tagnames+['data_quality'])
 
 if opts.verbose:
     print "Done"
@@ -674,5 +674,5 @@ summary_file.close()
 if not opts.skip_gracedb_upload:
     ### write log message to gracedb and upload file
     gracedb.writeLog(opts.gracedb_id, message="iDQ timeseries summary for " + opts.classifier +\
-                    " at "+opts.ifo+":", filename=summary_filename)
+                    " at "+opts.ifo+":", filename=summary_filename, tagname=idq.tagnames)
 '''
