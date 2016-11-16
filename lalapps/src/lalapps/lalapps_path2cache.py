@@ -127,6 +127,11 @@ for line in src:
 		seglists |= cache_entry.segmentlistdict.coalesce()
 
 
+#
+# Summary
+#
+
+
 if options.verbose:
 	print >>sys.stderr, "Size of cache: %d URLs" % path_count
 	for instrument, seglist in seglists.items():
