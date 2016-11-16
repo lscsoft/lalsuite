@@ -135,6 +135,10 @@ for line in src:
 if options.verbose:
 	print >>sys.stderr, "Size of cache: %d URLs" % path_count
 	for instrument, seglist in seglists.items():
-		print >>sys.stderr, "Interval spanned by %s: [%s s ... %s s) (%s s total)" % (instrument, str(seglist[0][0]), str(seglist[-1][1]), str(abs(seglist)))
+		ext = seglist.extent()
+		dur = abs(seglist)
+		print >>sys.stderr, "Interval spanned by %s: %s (%s s total, %.4g%% duty cycle)" % (instrument, str(ext), str(dur), 100.0 * float(dur) / float(abs(ext)))
 	span = seglists.union(seglists)
-	print >>sys.stderr, "Interval spanned by union: [%s s ... %s s) (%s s total)" % (str(span[0][0]), str(span[-1][1]), str(abs(span)))
+	ext = span.extent()
+	dur = abs(span)
+	print >>sys.stderr, "Interval spanned by union: %s (%s s total, %.4g%% duty cycle)" % (str(ext), str(dur), 100.0 * float(dur) / float(abs(ext)))
