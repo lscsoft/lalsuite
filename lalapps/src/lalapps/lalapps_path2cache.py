@@ -114,7 +114,7 @@ for line in src:
 	url = "file://localhost%s" % os.path.abspath(os.path.join(path, filename))
 	try:
 		cache_entry = lal.CacheEntry.from_T050017(url)
-	except ValueError, e:
+	except ValueError as e:
 		if options.include_all:
 			cache_entry = lal.CacheEntry(None, None, None, url)
 		elif options.force:
