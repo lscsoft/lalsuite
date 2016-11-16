@@ -86,14 +86,14 @@ options = parse_command_line()
 
 
 if options.input is not None:
-	input = open(options.input)
+	src = open(options.input)
 else:
-	input = sys.stdin
+	src = sys.stdin
 
 if options.output is not None:
-	output = open(options.output, "w")
+	dst = open(options.output, "w")
 else:
-	output = sys.stdout
+	dst = sys.stdout
 
 #
 # Other initializations
@@ -109,9 +109,9 @@ seglists = segments.segmentlistdict()
 #
 
 
-for line in input:
-	path, file = os.path.split(line.strip())
-	url = "file://localhost%s" % os.path.abspath(os.path.join(path, file))
+for line in src:
+	path, filename = os.path.split(line.strip())
+	url = "file://localhost%s" % os.path.abspath(os.path.join(path, filename))
 	try:
 		cache_entry = lal.CacheEntry.from_T050017(url)
 	except ValueError, e:
@@ -121,7 +121,7 @@ for line in input:
 			continue
 		else:
 			raise e
-	print >>output, str(cache_entry)
+	print >>dst, str(cache_entry)
 	path_count += 1
 	if cache_entry.segment is not None:
 		seglists |= cache_entry.segmentlistdict.coalesce()
