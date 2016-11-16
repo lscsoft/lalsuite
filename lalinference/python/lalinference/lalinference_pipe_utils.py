@@ -2413,7 +2413,7 @@ class ROMJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
     #and aLIGO_ZDHP PSD
     dt=0.1
     exe=cp.get('condor','computeroqweights')
-    pipeline.CondorDAGJob.__init__(self,"local",exe)
+    pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
     pipeline.AnalysisJob.__init__(self,cp,dax=dax)
     if cp.has_option('analysis','accounting_group'):
       self.add_condor_cmd('accounting_group',cp.get('analysis','accounting_group'))
