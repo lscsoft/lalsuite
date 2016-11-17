@@ -2251,6 +2251,54 @@ int XLALFITSTableColumnAddBOOLEAN( FITSFile UNUSED *file, const CHAR UNUSED *col
 #endif // !defined(HAVE_LIBCFITSIO)
 }
 
+int XLALFITSTableColumnAddUINT2( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const UINT2 UNUSED *field, const size_t UNUSED field_size )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
+  XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( UINT2 ), 'U', TUSHORT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
+int XLALFITSTableColumnAddUINT4( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const UINT4 UNUSED *field, const size_t UNUSED field_size )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
+  XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( UINT4 ), 'V', TULONG ) == XLAL_SUCCESS, XLAL_EFUNC );
+  return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
+int XLALFITSTableColumnAddUINT8( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const UINT8 UNUSED *field, const size_t UNUSED field_size )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
+  XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( UINT8 ), 'K', TLONGLONG ) == XLAL_SUCCESS, XLAL_EFUNC );
+  return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
 int XLALFITSTableColumnAddINT2( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const INT2 UNUSED *field, const size_t UNUSED field_size )
 {
 #if !defined(HAVE_LIBCFITSIO)
@@ -2277,7 +2325,23 @@ int XLALFITSTableColumnAddINT4( FITSFile UNUSED *file, const CHAR UNUSED *col_na
   XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
   CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
   XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
-  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( INT4 ), 'J', TINT32BIT ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( INT4 ), 'J', TLONG ) == XLAL_SUCCESS, XLAL_EFUNC );
+  return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
+int XLALFITSTableColumnAddINT8( FITSFile UNUSED *file, const CHAR UNUSED *col_name, const size_t UNUSED noffsets, const size_t UNUSED offsets[2], const void UNUSED *record, const size_t UNUSED record_size, const INT8 UNUSED *field, const size_t UNUSED field_size )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  XLAL_CHECK( col_name != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strlen( col_name ) < FLEN_VALUE, XLAL_EINVAL, "Column name '%s' is too long", col_name );
+  CHAR name[FLEN_VALUE], unit[FLEN_VALUE];
+  XLAL_CHECK( ExtractUnit( col_name, name, unit ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALFITSTableColumnAdd( file, name, unit, noffsets, offsets, record, record_size, field, field_size, sizeof( INT8 ), 'K', TLONGLONG ) == XLAL_SUCCESS, XLAL_EFUNC );
   return XLAL_SUCCESS;
 
 #endif // !defined(HAVE_LIBCFITSIO)

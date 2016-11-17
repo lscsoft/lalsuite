@@ -54,6 +54,7 @@ typedef struct {
   INT4 n;
   REAL4 v;
   CHAR desc[4];
+  UINT8 idx;
 } TestSubRecord;
 
 typedef struct {
@@ -73,9 +74,9 @@ typedef struct {
 } TestRecord;
 
 const TestSubRecord testsub[3][2] = {
-  { { .n=0, .v=1.23, .desc="A1" }, { .n=1, .v=2.34, .desc="X9" } },
-  { { .n=0, .v=3.45, .desc="B3" }, { .n=1, .v=4.56, .desc="Y7" } },
-  { { .n=0, .v=5.67, .desc="C5" }, { .n=1, .v=6.78, .desc="Z5" } },
+  { { .n=0, .v=1.23, .desc="A1", .idx =  3 }, { .n=1, .v=2.34, .desc="X9", .idx = LAL_UINT8_MAX >> 0 } },
+  { { .n=0, .v=3.45, .desc="B3", .idx =  7 }, { .n=1, .v=4.56, .desc="Y7", .idx = LAL_UINT8_MAX >> 1 } },
+  { { .n=0, .v=5.67, .desc="C5", .idx = 11 }, { .n=1, .v=6.78, .desc="Z5", .idx = LAL_UINT8_MAX >> 5 } },
 };
 
 const TestRecord testtable[3] = {
@@ -222,9 +223,11 @@ int main( int argc, char *argv[] )
         XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 0, INT4, n, "n1" );
         XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 0, REAL4, v, "v1" );
         XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, 0, CHAR, desc, "desc1" );
+        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 0, UINT8, idx, "idx1" );
         XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 1, INT4, n, "n2" );
         XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 1, REAL4, v, "v2" );
         XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, 1, CHAR, desc, "desc2" );
+        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 1, UINT8, idx, "idx2" );
       }
     }
     for ( size_t i = 0; i < XLAL_NUM_ELEM( testtable ); ++i ) {
@@ -294,6 +297,8 @@ int main( int argc, char *argv[] )
             XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL4, v, col_name );
             snprintf( col_name, sizeof( col_name ), "desc%zu", s + 1 );
             XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, s, CHAR, desc, col_name );
+            snprintf( col_name, sizeof( col_name ), "idx%zu", s + 1 );
+            XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, UINT8, idx, col_name );
           }
         }
       }
@@ -322,6 +327,7 @@ int main( int argc, char *argv[] )
           XLAL_CHECK_MAIN( record.sub[s].n == testtable[i].sub[s].n, XLAL_EFAILED );
           XLAL_CHECK_MAIN( record.sub[s].v == testtable[i].sub[s].v, XLAL_EFAILED );
           XLAL_CHECK_MAIN( strcmp( record.sub[s].desc, testtable[i].sub[s].desc ) == 0, XLAL_EFAILED );
+          XLAL_CHECK_MAIN( record.sub[s].idx == testtable[i].sub[s].idx, XLAL_EFAILED );
         }
         ++i;
       }
