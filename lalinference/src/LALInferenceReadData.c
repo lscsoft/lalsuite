@@ -497,7 +497,7 @@ void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, ProcessPar
         fprintf(out, "%10.10g %10.10g %10.10g\n", f, dre, dim);
       }
       fclose(out);
-      
+
     }
 
   }
@@ -2700,7 +2700,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
   SimInspiralTable *injTable=NULL;
   FILE *tempfp;
   unsigned int n_basis_linear=0, n_basis_quadratic=0, n_samples=0, time_steps=0;
- 
+
   LIGOTimeGPS GPStrig;
   REAL8 endtime=0.0;
 
@@ -2759,7 +2759,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 
 	  model->roq->frequencyNodesLinear = XLALCreateREAL8Sequence(n_basis_linear);
 	  model->roq->frequencyNodesQuadratic = XLALCreateREAL8Sequence(n_basis_quadratic);
-	  
+
 	  model->roq->trigtime = endtime;
 
           model->roq->frequencyNodesLinear = XLALCreateREAL8Sequence(n_basis_linear);
@@ -2898,10 +2898,10 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 
 	for(unsigned int gg=0;gg < time_steps; gg++){
 
-		fread(&(tmp_tcs[gg]), sizeof(double), 1, tcFile); 
+		fread(&(tmp_tcs[gg]), sizeof(double), 1, tcFile);
 	}
 
-	
+
       for(unsigned int ii=0; ii<n_basis_linear;ii++){
 		for(unsigned int jj=0; jj<time_steps;jj++){
 
@@ -2910,13 +2910,14 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 		tmp_imag_weight[jj] = cimag(thisData->roq->weightsLinear[ii*time_steps + jj]);
 
       		}
-
-	thisData->roq->weights_linear[ii].acc_real_weight_linear = gsl_interp_accel_alloc ();
- 	thisData->roq->weights_linear[ii].acc_imag_weight_linear = gsl_interp_accel_alloc ();
+  //gsl_interp_accel is not thread-safe, and each OpenMP thread will need its
+  //own gsl_interp_accel object.
+	thisData->roq->weights_linear[ii].acc_real_weight_linear = NULL;
+ 	thisData->roq->weights_linear[ii].acc_imag_weight_linear = NULL;
 
 	thisData->roq->weights_linear[ii].spline_real_weight_linear = gsl_spline_alloc (gsl_interp_linear, time_steps);
         gsl_spline_init(thisData->roq->weights_linear[ii].spline_real_weight_linear, tmp_tcs, tmp_real_weight, time_steps);
-      
+
         thisData->roq->weights_linear[ii].spline_imag_weight_linear = gsl_spline_alloc (gsl_interp_linear, time_steps);
         gsl_spline_init(thisData->roq->weights_linear[ii].spline_imag_weight_linear, tmp_tcs, tmp_imag_weight, time_steps);
 
@@ -2936,10 +2937,10 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
       for(unsigned int ii=0; ii<n_basis_quadratic;ii++){
 
 		fread(&(thisData->roq->weightsQuadratic[ii]), sizeof(double), 1, thisData->roq->weightsFileQuadratic);
-      }	
+      }
 
 
-      
+
       fprintf(stderr, "loaded %s ROQ weights\n", thisData->name);
       thisData = thisData->next;
     }
