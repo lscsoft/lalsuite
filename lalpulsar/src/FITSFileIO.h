@@ -136,7 +136,7 @@ int XLALFITSHeaderReadGPSTime( FITSFile *file, const CHAR *key, LIGOTimeGPS *val
 /// <tt>XLALFITSArrayOpenWrite<i>N</i>()</tt> and <tt>XLALFITSArrayOpenRead<i>N</i>()</tt> are
 /// convenience functions for 1- and 2-dimensional arrays. The functions
 /// <tt>XLALFITSArrayWrite<i>TYPE</i>()</tt> and <tt>XLALFITSArrayRead<i>TYPE</i>()</tt> are then
-/// used to write scalar #UINT2, #UINT4, #INT2, #INT4, #REAL4, and #REAL8 values to the array
+/// used to write scalar #UINT2, #UINT4, #UINT8, #INT2, #INT4, #INT8, #REAL4, and #REAL8 values to the array
 /// element indexed by \p idx. For the convenience the functions XLALFITSArrayWriteGSLMatrix() and
 /// XLALFITSArrayReadGSLMatrix() exist for writing/reading elements to/from a <tt>gsl_matrix</tt>.
 ///
@@ -151,10 +151,14 @@ int XLALFITSArrayWriteUINT2( FITSFile *file, const size_t idx[], const UINT2 ele
 int XLALFITSArrayReadUINT2( FITSFile *file, const size_t idx[], UINT2 *elem );
 int XLALFITSArrayWriteUINT4( FITSFile *file, const size_t idx[], const UINT4 elem );
 int XLALFITSArrayReadUINT4( FITSFile *file, const size_t idx[], UINT4 *elem );
+int XLALFITSArrayWriteUINT8( FITSFile *file, const size_t idx[], const UINT8 elem );
+int XLALFITSArrayReadUINT8( FITSFile *file, const size_t idx[], UINT8 *elem );
 int XLALFITSArrayWriteINT2( FITSFile *file, const size_t idx[], const INT2 elem );
 int XLALFITSArrayReadINT2( FITSFile *file, const size_t idx[], INT2 *elem );
 int XLALFITSArrayWriteINT4( FITSFile *file, const size_t idx[], const INT4 elem );
 int XLALFITSArrayReadINT4( FITSFile *file, const size_t idx[], INT4 *elem );
+int XLALFITSArrayWriteINT8( FITSFile *file, const size_t idx[], const INT8 elem );
+int XLALFITSArrayReadINT8( FITSFile *file, const size_t idx[], INT8 *elem );
 int XLALFITSArrayWriteREAL4( FITSFile *file, const size_t idx[], const REAL4 elem );
 int XLALFITSArrayReadREAL4( FITSFile *file, const size_t idx[], REAL4 *elem );
 int XLALFITSArrayWriteREAL8( FITSFile *file, const size_t idx[], const REAL8 elem );

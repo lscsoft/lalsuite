@@ -1820,6 +1820,35 @@ int XLALFITSArrayReadUINT4( FITSFile UNUSED *file, const size_t UNUSED idx[], UI
 #endif // !defined(HAVE_LIBCFITSIO)
 }
 
+int XLALFITSArrayWriteUINT8( FITSFile UNUSED *file, const size_t UNUSED idx[], const UINT8 UNUSED elem )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  XLAL_CHECK( elem <= LONGLONG_MAX, XLAL_ERANGE );
+  const LONGLONG e = elem;
+  XLAL_CHECK( XLALFITSArrayWrite( file, idx, LONGLONG_IMG, TLONGLONG, &e ) == XLAL_SUCCESS, XLAL_EFUNC );
+  return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
+int XLALFITSArrayReadUINT8( FITSFile UNUSED *file, const size_t UNUSED idx[], UINT8 UNUSED *elem )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  LONGLONG e = 0, ne = 0;
+  XLAL_CHECK( XLALFITSArrayRead( file, idx, LONGLONG_IMG, TLONGLONG, &e, &ne ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( 0 <= e && ( (UINT8) e ) <= UINT64_MAX, XLAL_ERANGE );
+  *elem = e;
+  return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
 int XLALFITSArrayWriteINT2( FITSFile UNUSED *file, const size_t UNUSED idx[], const INT2 UNUSED elem )
 {
 #if !defined(HAVE_LIBCFITSIO)
@@ -1868,6 +1897,33 @@ int XLALFITSArrayReadINT4( FITSFile UNUSED *file, const size_t UNUSED idx[], INT
 
   long e = 0, ne = 0;
   XLAL_CHECK( XLALFITSArrayRead( file, idx, LONG_IMG, TLONG, &e, &ne ) == XLAL_SUCCESS, XLAL_EFUNC );
+  *elem = e;
+  return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
+int XLALFITSArrayWriteINT8( FITSFile UNUSED *file, const size_t UNUSED idx[], const INT8 UNUSED elem )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  const LONGLONG e = elem;
+  XLAL_CHECK( XLALFITSArrayWrite( file, idx, LONGLONG_IMG, TLONGLONG, &e ) == XLAL_SUCCESS, XLAL_EFUNC );
+  return XLAL_SUCCESS;
+
+#endif // !defined(HAVE_LIBCFITSIO)
+}
+
+int XLALFITSArrayReadINT8( FITSFile UNUSED *file, const size_t UNUSED idx[], INT8 UNUSED *elem )
+{
+#if !defined(HAVE_LIBCFITSIO)
+  XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );
+#else // defined(HAVE_LIBCFITSIO)
+
+  LONGLONG e = 0, ne = 0;
+  XLAL_CHECK( XLALFITSArrayRead( file, idx, LONGLONG_IMG, TLONGLONG, &e, &ne ) == XLAL_SUCCESS, XLAL_EFUNC );
   *elem = e;
   return XLAL_SUCCESS;
 

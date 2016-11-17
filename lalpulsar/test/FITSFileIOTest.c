@@ -170,7 +170,17 @@ int main( int argc, char *argv[] )
     }
     fprintf( stderr, "PASSED: wrote a INT4 array\n" );
 
-    XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite1( file, "array2", 14, "This is a test REAL4 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite2( file, "array2", 2, 2, "This is a test UINT8 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    for ( size_t i = 0; i < 2; ++i ) {
+      for ( size_t j = 0; j < 2; ++j ) {
+        const size_t idx[] = { i, j };
+        const UINT8 value = LAL_UINT8_MAX >> ( 1 + i + j );
+        XLAL_CHECK_MAIN( XLALFITSArrayWriteUINT8( file, idx, value ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+    }
+    fprintf( stderr, "PASSED: wrote a UINT8 array\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite1( file, "array3", 14, "This is a test REAL4 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
     for ( size_t i = 0; i < 14; ++i ) {
       const size_t idx[] = { i };
       const REAL4 value = 21 + 0.5*i;
@@ -187,7 +197,7 @@ int main( int argc, char *argv[] )
           gsl_matrix_set( elems, i, j, value );
         }
       }
-      XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite2( file, "array3", m, n, "This is a test REAL8 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite2( file, "array4", m, n, "This is a test REAL8 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLALFITSArrayWriteGSLMatrix( file, NULL, elems ) == XLAL_SUCCESS, XLAL_EFUNC );
       GFMAT( elems );
     }
@@ -224,7 +234,7 @@ int main( int argc, char *argv[] )
 
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteComment( file, "%s", "This is another test comment" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "table1" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array4" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array1" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileWriteHistory( file, "%s\n%s", "This is a test history", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: HDU seeking in write mode\n" );
@@ -324,7 +334,7 @@ int main( int argc, char *argv[] )
 
     {
       size_t m = 0, n = 0;
-      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead2( file, "array3", &m, &n ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead2( file, "array4", &m, &n ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( m == 2, XLAL_EFAILED );
       XLAL_CHECK_MAIN( n == 3, XLAL_EFAILED );
       gsl_matrix *elems = NULL;
@@ -342,7 +352,7 @@ int main( int argc, char *argv[] )
 
     {
       size_t dim = 0;
-      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead1( file, "array2", &dim ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead1( file, "array3", &dim ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( dim == 14, XLAL_EFAILED );
       for ( size_t i = 0; i < dim; ++i ) {
         const size_t idx[] = { i };
@@ -353,6 +363,23 @@ int main( int argc, char *argv[] )
       }
     }
     fprintf( stderr, "PASSED: read and verified a REAL4 array\n" );
+
+    {
+      size_t dim_i = 0, dim_j = 0;
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead2( file, "array2", &dim_i, &dim_j ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( dim_i == 2, XLAL_EFAILED );
+      XLAL_CHECK_MAIN( dim_j == 2, XLAL_EFAILED );
+      for ( size_t i = 0; i < dim_i; ++i ) {
+        for ( size_t j = 0; j < dim_j; ++j ) {
+          const size_t idx[] = { i, j };
+          const UINT8 value_ref = LAL_UINT8_MAX >> ( 1 + i + j );
+          UINT8 value = 0;
+          XLAL_CHECK_MAIN( XLALFITSArrayReadUINT8( file, idx, &value ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu,%zu] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT, i, j, value, value_ref );
+        }
+      }
+    }
+    fprintf( stderr, "PASSED: read and verified a UINT8 array\n" );
 
     {
       size_t ndim, dims[FFIO_MAX];
@@ -520,7 +547,7 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "PASSED: read and verified a GPS time\n" );
 
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "table1" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array3" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array1" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: HDU seeking in read mode\n" );
 
