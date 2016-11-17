@@ -77,8 +77,8 @@ int XLALFITSFileWriteUVarCmdLine( FITSFile *file );
 ///
 /// \name Write/Read Key-Value Pairs To/From FITS Header-Data Unit
 ///
-/// These functions write/read key-value pairs (\p key, \p value) to/from a FITS header-data unit
-/// (HDU).  Scalar #BOOLEAN, #INT4, #INT8, #REAL4, #REAL8, #COMPLEX8, and #COMPLEX16 values,
+/// These functions write/read key-value pairs (\p key, \p value) to/from a FITS header-data unit (HDU).
+/// Scalar #BOOLEAN, #UINT2, #UINT4, #UINT8, #INT2, #INT4, #INT8, #REAL4, #REAL8, #COMPLEX8, and #COMPLEX16 values,
 /// strings, string vectors (#LALStringVector) and GPS times (#LIGOTimeGPS) can be written and read.
 /// A \p comment string describing the value is required when writing to an HDU, and an arbitrary
 /// formatted comment string can also be written. Units for numeric header values may be specified
@@ -99,14 +99,18 @@ int XLALFITSFileWriteUVarCmdLine( FITSFile *file );
 int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
 int XLALFITSHeaderWriteBOOLEAN( FITSFile *file, const CHAR *key, const BOOLEAN value, const CHAR *comment );
 int XLALFITSHeaderReadBOOLEAN( FITSFile *file, const CHAR *key, BOOLEAN *value );
-int XLALFITSHeaderWriteINT4( FITSFile *file, const CHAR *key, const INT4 value, const CHAR *comment );
-int XLALFITSHeaderReadINT4( FITSFile *file, const CHAR *key, INT4 *value );
-int XLALFITSHeaderWriteINT8( FITSFile *file, const CHAR *key, const INT8 value, const CHAR *comment );
-int XLALFITSHeaderReadINT8( FITSFile *file, const CHAR *key, INT8 *value );
+int XLALFITSHeaderWriteUINT2( FITSFile *file, const CHAR *key, const UINT2 value, const CHAR *comment );
+int XLALFITSHeaderReadUINT2( FITSFile *file, const CHAR *key, UINT2 *value );
 int XLALFITSHeaderWriteUINT4( FITSFile *file, const CHAR *key, const UINT4 value, const CHAR *comment );
 int XLALFITSHeaderReadUINT4( FITSFile *file, const CHAR *key, UINT4 *value );
 int XLALFITSHeaderWriteUINT8( FITSFile *file, const CHAR *key, const UINT8 value, const CHAR *comment );
 int XLALFITSHeaderReadUINT8( FITSFile *file, const CHAR *key, UINT8 *value );
+int XLALFITSHeaderWriteINT2( FITSFile *file, const CHAR *key, const INT2 value, const CHAR *comment );
+int XLALFITSHeaderReadINT2( FITSFile *file, const CHAR *key, INT2 *value );
+int XLALFITSHeaderWriteINT4( FITSFile *file, const CHAR *key, const INT4 value, const CHAR *comment );
+int XLALFITSHeaderReadINT4( FITSFile *file, const CHAR *key, INT4 *value );
+int XLALFITSHeaderWriteINT8( FITSFile *file, const CHAR *key, const INT8 value, const CHAR *comment );
+int XLALFITSHeaderReadINT8( FITSFile *file, const CHAR *key, INT8 *value );
 int XLALFITSHeaderWriteREAL4( FITSFile *file, const CHAR *key, const REAL4 value, const CHAR *comment );
 int XLALFITSHeaderReadREAL4( FITSFile *file, const CHAR *key, REAL4 *value );
 int XLALFITSHeaderWriteREAL8( FITSFile *file, const CHAR *key, const REAL8 value, const CHAR *comment );
