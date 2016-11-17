@@ -86,7 +86,6 @@ if args.command == 'start':
 
     server = config.get("lvalert_listener", "server")
     username = config.get("lvalert_listener", "username")
-    password = config.get("lvalert_listener", "password")
     lvalert_config = config.get("lvalert_listener", "lvalert_config")
 
     ### write lvalert_config file based on information from config
@@ -112,8 +111,6 @@ if args.command == 'start':
                 'lvalert_listen',
                 '--username',
                 username,
-                '--password',
-                password,
                 '--config-file',
                 lvalert_config,
                 '--server',
