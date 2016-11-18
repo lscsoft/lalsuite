@@ -215,19 +215,19 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL8, pos.freq ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[0], "f1dot [Hz/s]" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, pos.fkdot[1], "f2dot [Hz/s^2]" ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, values ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY_NAMED( file, REAL8, values, "values [g]" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX8, phasef ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX16, phase ) == XLAL_SUCCESS, XLAL_EFUNC );
       {
-        XLAL_FITS_TABLE_COLUMN_PTR_BEGIN( sub, TestSubRecord, 2 );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 0, INT4, n, "n1" );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 0, REAL4, v, "v1" );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, 0, CHAR, desc, "desc1" );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 0, UINT8, idx, "idx1" );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 1, INT4, n, "n2" );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 1, REAL4, v, "v2" );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, 1, CHAR, desc, "desc2" );
-        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 1, UINT8, idx, "idx2" );
+        XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_BEGIN( sub, TestSubRecord, 2 );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 0, INT4, n, "n1" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 0, REAL4, v, "v1" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_ARRAY_NAMED( file, 0, CHAR, desc, "desc1" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 0, UINT8, idx, "idx1" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 1, INT4, n, "n2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 1, REAL4, v, "v2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_ARRAY_NAMED( file, 1, CHAR, desc, "desc2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 1, UINT8, idx, "idx2" ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     }
     for ( size_t i = 0; i < XLAL_NUM_ELEM( testtable ); ++i ) {
@@ -288,17 +288,17 @@ int main( int argc, char *argv[] )
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX8, phasef ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX16, phase ) == XLAL_SUCCESS, XLAL_EFUNC );
         {
-          XLAL_FITS_TABLE_COLUMN_PTR_BEGIN( sub, TestSubRecord, 2 );
+          XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_BEGIN( sub, TestSubRecord, 2 );
           for ( size_t s = 0; s < 2; ++s ) {
             char col_name[32];
             snprintf( col_name, sizeof( col_name ), "n%zu", s + 1 );
-            XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, INT4, n, col_name );
+            XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, s, INT4, n, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
             snprintf( col_name, sizeof( col_name ), "v%zu", s + 1 );
-            XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL4, v, col_name );
+            XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, s, REAL4, v, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
             snprintf( col_name, sizeof( col_name ), "desc%zu", s + 1 );
-            XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, s, CHAR, desc, col_name );
+            XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_ARRAY_NAMED( file, s, CHAR, desc, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
             snprintf( col_name, sizeof( col_name ), "idx%zu", s + 1 );
-            XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, UINT8, idx, col_name );
+            XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, s, UINT8, idx, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
         }
       }
