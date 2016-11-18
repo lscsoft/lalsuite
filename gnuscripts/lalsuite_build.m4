@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 132
+# serial 133
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -602,9 +602,9 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   else
     AC_CHECK_LIB(lowercase,[$3],,[AC_MSG_ERROR([could not find the $1 library])])
     AC_CHECK_HEADERS([$4],,[AC_MSG_ERROR([could not find the $4 header])])
-    if test "$1" != "LALSupport"; then
+    m4_if(lowercase,[lalsupport],[],[
       LALSUITE_HEADER_LIBRARY_MISMATCH_CHECK([$1])
-    fi
+    ])
   fi
   AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
   # add $1 to list of LALSuite libraries
