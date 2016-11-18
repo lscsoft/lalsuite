@@ -516,6 +516,7 @@ int XLALWeaveFillOutputResultItem(
   WeaveOutputResultItem **item,
   BOOLEAN *full_init,
   const WeaveSemiResults *semi_res,
+  const size_t nspins,
   const size_t freq_idx
   )
 {
@@ -530,10 +531,20 @@ int XLALWeaveFillOutputResultItem(
   // - Otherwise only output result item fields that change with 'freq_idx' are updated
   if ( *full_init ) {
 
-    // Set all semicoherent and coherent template parameters
-    ( *item )->semi_phys = semi_res->semi_phys;
+    // Set all semicoherent template parameters
+    ( *item )->semi_alpha = semi_res->semi_phys.Alpha;
+    ( *item )->semi_delta = semi_res->semi_phys.Delta;
+    for ( size_t k = 0; k <= nspins; ++k ) {
+      ( *item )->semi_fkdot[k] = semi_res->semi_phys.fkdot[k];
+    }
+
+    // Set all coherent template parameters
     for ( size_t j = 0; j < semi_res->ncoh_off_res; ++j ) {
-      ( *item )->per_seg[j].coh_phys = semi_res->coh_off_res[j].res->coh_phys;
+      ( *item )->coh_alpha[j] = semi_res->coh_off_res[j].res->coh_phys.Alpha;
+      ( *item )->coh_delta[j] = semi_res->coh_off_res[j].res->coh_phys.Delta;
+      for ( size_t k = 0; k <= nspins; ++k ) {
+        ( *item )->coh_fkdot[k][j] = semi_res->coh_off_res[j].res->coh_phys.fkdot[k];
+      }
     }
 
     // Next time, only output result item fields that change with 'freq_idx' should need updating
@@ -542,17 +553,17 @@ int XLALWeaveFillOutputResultItem(
   }
 
   // Update semicoherent and coherent template frequency
-  ( *item )->semi_phys.fkdot[0] = semi_res->semi_phys.fkdot[0] + freq_idx * semi_res->dfreq;
+  ( *item )->semi_fkdot[0] = semi_res->semi_phys.fkdot[0] + freq_idx * semi_res->dfreq;
   for ( size_t j = 0; j < semi_res->ncoh_off_res; ++j ) {
     const coh_offset_results *coh_off_res = &semi_res->coh_off_res[j];
-    ( *item )->per_seg[j].coh_phys.fkdot[0] = coh_off_res->res->coh_phys.fkdot[0] + ( coh_off_res->offset + freq_idx ) * semi_res->dfreq;
+    ( *item )->coh_fkdot[0][j] = coh_off_res->res->coh_phys.fkdot[0] + ( coh_off_res->offset + freq_idx ) * semi_res->dfreq;
   }
 
   // Update multi-detector F-statistics
   ( *item )->mean_twoF = semi_res->mean_twoF->data[freq_idx];
   for ( size_t j = 0; j < semi_res->ncoh_off_res; ++j ) {
     const coh_offset_results *coh_off_res = &semi_res->coh_off_res[j];
-    ( *item )->per_seg[j].twoF = coh_off_res->res->twoF->data[coh_off_res->offset + freq_idx];
+    ( *item )->twoF[j] = coh_off_res->res->twoF->data[coh_off_res->offset + freq_idx];
   }
 
   // Update per-detector F-statistics
@@ -561,11 +572,11 @@ int XLALWeaveFillOutputResultItem(
     for ( size_t j = 0; j < semi_res->ncoh_off_res; ++j ) {
       const coh_offset_results *coh_off_res = &semi_res->coh_off_res[j];
       if ( coh_off_res->res->twoF_per_det[i] != NULL ) {
-        ( *item )->per_seg[j].twoF_per_det[i] = coh_off_res->res->twoF_per_det[i]->data[coh_off_res->offset + freq_idx];
+        ( *item )->twoF_per_det[i][j] = coh_off_res->res->twoF_per_det[i]->data[coh_off_res->offset + freq_idx];
       } else {
         // There is not per-detector F-statistic for this segment, usually because this segment contains
         // no data from this detector. In this case we output a clearly invalid F-statistic value.
-        ( *item )->per_seg[j].twoF_per_det[i] = NAN;
+        ( *item )->twoF_per_det[i][j] = NAN;
       }
     }
   }

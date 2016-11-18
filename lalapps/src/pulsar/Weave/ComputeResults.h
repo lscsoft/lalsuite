@@ -103,6 +103,7 @@ int XLALWeaveFillOutputResultItem(
   WeaveOutputResultItem **item,
   BOOLEAN *full_init,
   const WeaveSemiResults *semi_res,
+  const size_t nspins,
   const size_t freq_idx
   );
 

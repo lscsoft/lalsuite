@@ -71,18 +71,30 @@ WeaveOutputResultItem *XLALWeaveOutputResultItemCreate(
   // Check input
   XLAL_CHECK_NULL( par != NULL, XLAL_EFAULT );
 
-  // Allocate memory
+  // Allocate memory for item
   WeaveOutputResultItem *item = XLALCalloc( 1, sizeof( *item ) );
   XLAL_CHECK_NULL( item != NULL, XLAL_ENOMEM );
+
+  // Allocate memory for per-segment output results
   if ( par->per_nsegments > 0 ) {
-    item->per_seg = XLALCalloc( par->per_nsegments, sizeof( *item->per_seg ) );
-    XLAL_CHECK_NULL( item->per_seg != NULL, XLAL_ENOMEM );
+    item->coh_alpha = XLALCalloc( par->per_nsegments, sizeof( *item->coh_alpha ) );
+    XLAL_CHECK_NULL( item->coh_alpha != NULL, XLAL_ENOMEM );
+    item->coh_delta = XLALCalloc( par->per_nsegments, sizeof( *item->coh_delta ) );
+    XLAL_CHECK_NULL( item->coh_delta != NULL, XLAL_ENOMEM );
+    for ( size_t k = 0; k <= par->nspins; ++k ) {
+      item->coh_fkdot[k] = XLALCalloc( par->per_nsegments, sizeof( *item->coh_fkdot[k] ) );
+      XLAL_CHECK_NULL( item->coh_fkdot[k] != NULL, XLAL_ENOMEM );
+    }
+    item->twoF = XLALCalloc( par->per_nsegments, sizeof( *item->twoF ) );
+    XLAL_CHECK_NULL( item->twoF != NULL, XLAL_ENOMEM );
   }
 
-  // Set reference time of physical coordinates
-  item->semi_phys.refTime = par->ref_time;
-  for ( size_t j = 0; j < par->per_nsegments; ++j ) {
-    item->per_seg[j].coh_phys.refTime = par->ref_time;
+  // Allocate memory for per-detector and per-segment output results
+  if ( par->per_detectors != NULL && par->per_nsegments > 0 ) {
+    for ( size_t i = 0; i < par->per_detectors->length; ++i ) {
+      item->twoF_per_det[i] = XLALCalloc( par->per_nsegments, sizeof( *item->twoF_per_det[i] ) );
+      XLAL_CHECK_NULL( item->twoF_per_det[i] != NULL, XLAL_ENOMEM );
+    }
   }
 
   return item;
@@ -97,7 +109,15 @@ void XLALWeaveOutputResultItemDestroy(
   )
 {
   if ( item != NULL ) {
-    XLALFree( item->per_seg );
+    XLALFree( item->coh_alpha );
+    XLALFree( item->coh_delta );
+    for ( size_t k = 0; k < PULSAR_MAX_SPINS; ++k ) {
+      XLALFree( item->coh_fkdot[k] );
+    }
+    XLALFree( item->twoF );
+    for ( size_t i = 0; i < PULSAR_MAX_DETECTORS; ++i ) {
+      XLALFree( item->twoF_per_det[i] );
+    }
     XLALFree( item );
   }
 }

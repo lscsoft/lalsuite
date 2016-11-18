@@ -231,6 +231,7 @@ int XLALWeaveFillOutputResultItem(
   WeaveOutputResultItem UNUSED **item,
   BOOLEAN UNUSED *full_init,
   const WeaveSemiResults UNUSED *semi_res,
+  const size_t UNUSED nspins,
   const size_t UNUSED freq_idx
   )
 {

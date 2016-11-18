@@ -76,29 +76,29 @@ typedef int ( *WeavePhysicalToLattice )( gsl_vector *out_latt, const PulsarDoppl
 typedef int ( *WeaveLatticeToPhysical )( PulsarDopplerParams *out_phys, const gsl_vector *in_latt, const void *transf_data );
 
 ///
-/// Output per-segment result item
-///
-typedef struct tagWeaveOutputPerSegResultItem {
-  /// Physical coordinates of coherent template
-  PulsarDopplerParams coh_phys;
-  /// Coherent multi-detector F-statistic
-  REAL4 twoF;
-  /// Coherent per-detector F-statistic
-  REAL4 twoF_per_det[PULSAR_MAX_DETECTORS];
-} WeaveOutputPerSegResultItem;
-
-///
 /// Output result item
 ///
 typedef struct tagWeaveOutputResultItem {
-  /// Per-segment result items (optional)
-  WeaveOutputPerSegResultItem *per_seg;
-  /// Physical coordinates of semicoherent template
-  PulsarDopplerParams semi_phys;
+  /// Physical right ascension of semicoherent template
+  REAL8 semi_alpha;
+  /// Physical right ascension of coherent templates (only needed for per-segment output)
+  REAL8 *coh_alpha;
+  /// Physical declination of semicoherent template
+  REAL8 semi_delta;
+  /// Physical declination of coherent templates (only needed for per-segment output)
+  REAL8 *coh_delta;
+  /// Physical frequency and spindowns of semicoherent template
+  REAL8 semi_fkdot[PULSAR_MAX_SPINS];
+  /// Physical frequency and spindowns of coherent templates (only needed for per-segment output)
+  REAL8 *coh_fkdot[PULSAR_MAX_SPINS];
   /// Mean multi-detector F-statistic
   REAL4 mean_twoF;
-  /// Mean per-detector F-statistic
+  /// Coherent multi-detector F-statistics (only needed for per-segment output)
+  REAL4 *twoF;
+  /// Mean per-detector F-statistic (only needed for per-detector output)
   REAL4 mean_twoF_per_det[PULSAR_MAX_DETECTORS];
+  /// Coherent per-detector F-statistics (only needed for per-detector and per-segment output)
+  REAL4 *twoF_per_det[PULSAR_MAX_DETECTORS];
 } WeaveOutputResultItem;
 
 ///
