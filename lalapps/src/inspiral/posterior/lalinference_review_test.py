@@ -95,11 +95,10 @@ path_keys = {'datafind': 'ligo_data_find',
             'gracedb': 'gracedb',
             'ppanalysis': 'cbcBayesPPAnalysis.py',
             'pos_to_sim_inspiral': 'cbcBayesPosToSimInspiral.py',
-            'processareas': 'process_areas'}
+            'processareas': 'process_areas',
+            'computeroqweights': 'lalapps_compute_roq_weights'}
 
 def replace(line):
-    if line[0]=='#':
-        return line
     for key in path_keys.keys():
         if key+'=/' in line:
             albert_path=line.split('=')[-1]
@@ -110,7 +109,7 @@ def replace(line):
             new_path=exec_path+'\n'
             return line.replace(albert_path,new_path)
     if 'engine=' in line:
-        return line.replace(line.split('=')[-1],args.engine)
+        return line.replace(line.split('=')[-1],args.engine)+'\n'
     if 'nparallel=' in line:
         return '# '+line
     if 'accounting_group=' in line:
@@ -129,6 +128,8 @@ def replace_fiducial_bns(line):
         return line.replace(line.split('=')[-1],web_outputdir+'/fiducialBNS/webdir/')
     if 'baseurl=' in line:
         return line.replace(line.split('=')[-1],'file://'+web_outputdir+'/fiducialBNS/webdir/')
+    if 'ifos=' in line:
+        return "ifos=['H1','L1']\n"
     if 'fake-cache=' in line:
         return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     if 'ignore-science-segments=' in line:
@@ -146,13 +147,13 @@ def replace_fiducial_bns(line):
     if 'deltaLogP=' in line:
         return line.replace('#','').strip()+'\n'
     if 'approx=' in line:
-        return line.replace(line,"approx=SEOBNRv4_ROMpseudoFourPN")
+        return line.replace(line,"approx=SEOBNRv4_ROMpseudoFourPN")+'\n'
     if 'srate=' in line:
-        return line.replace(line,"srate=4096")
+        return line.replace(line,"srate=4096")+'\n'
     if 'comp-max=' in line:
-        return line.replace(line,"comp-max=3.5")
+        return line.replace(line,"comp-max=3.5")+'\n'
     if 'comp-min=' in line:
-        return line.replace(line,"comp-min=0.5")
+        return line.replace(line,"comp-min=0.5")+'\n'
     return line
 
 if args.bns_injection:
@@ -247,6 +248,8 @@ def replace_fiducial_bbh(line):
         return line.replace(line.split('=')[-1],web_outputdir+'/fiducialBBH/webdir/')
     if 'baseurl=' in line:
         return line.replace(line.split('=')[-1],'file://'+web_outputdir+'/fiducialBBH/webdir/')
+    if 'ifos=' in line:
+        return "ifos=['H1','L1']\n"
     if 'fake-cache=' in line:
         return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     if 'ignore-science-segments=' in line:
@@ -264,7 +267,7 @@ def replace_fiducial_bbh(line):
     if 'computeroqweights=' in line:
         return line.replace('#','').strip()+'\n'
     if 'approx=' in line:
-        return line.replace(line,"approx=IMRPhenomPv2pseudoFourPN")
+        return line.replace(line,"approx=IMRPhenomPv2pseudoFourPN")+'\n'
     if 'parname-max' in line:
         return line+'\ndistance-max=2000\n'
     if 'deltaLogP=' in line:

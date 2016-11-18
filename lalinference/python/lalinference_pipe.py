@@ -143,7 +143,7 @@ if cp.has_option('paths','roq_b_matrix_directory'):
   if opts.gid is not None or (opts.injections is not None or cp.has_option('input','injection-file')):
 
     for mc_prior in mc_priors:
-      mc_priors[mc_prior] = array(mc_priors[mc_prior])*roq_mass_freq_scale_factor
+      mc_priors[mc_prior] = array(mc_priors[mc_prior])
     # find mass bin containing the trigger
     trigger_bin = None
     for roq in roq_paths:
@@ -232,8 +232,8 @@ for sampler in samps:
           mc_max=mc_priors[roq][1]
           # params.dat uses the convention q>1 so our q_min is the inverse of their qmax
           q_min=1./float(roq_params[roq]['qmax'])
-          cp.set('engine','chirpmass-min',str(mc_min))
-          cp.set('engine','chirpmass-max',str(mc_max))
+          cp.set('engine','chirpmass-min',str(mc_min*roq_mass_freq_scale_factor))
+          cp.set('engine','chirpmass-max',str(mc_max*roq_mass_freq_scale_factor))
           cp.set('engine','q-min',str(q_min))
           cp.set('engine','comp-min', str(max(roq_params[roq]['compmin'] * roq_mass_freq_scale_factor, mc_min * pow(1+q_min, 1./5.) * pow(q_min, 2./5.))))
           cp.set('engine','comp-max', str(mc_max * pow(1+q_min, 1./5.) * pow(q_min, -3./5.)))

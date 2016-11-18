@@ -54,6 +54,7 @@ typedef struct {
   INT4 n;
   REAL4 v;
   CHAR desc[4];
+  UINT8 idx;
 } TestSubRecord;
 
 typedef struct {
@@ -73,9 +74,9 @@ typedef struct {
 } TestRecord;
 
 const TestSubRecord testsub[3][2] = {
-  { { .n=0, .v=1.23, .desc="A1" }, { .n=1, .v=2.34, .desc="X9" } },
-  { { .n=0, .v=3.45, .desc="B3" }, { .n=1, .v=4.56, .desc="Y7" } },
-  { { .n=0, .v=5.67, .desc="C5" }, { .n=1, .v=6.78, .desc="Z5" } },
+  { { .n=0, .v=1.23, .desc="A1", .idx =  3 }, { .n=1, .v=2.34, .desc="X9", .idx = LAL_UINT8_MAX >> 0 } },
+  { { .n=0, .v=3.45, .desc="B3", .idx =  7 }, { .n=1, .v=4.56, .desc="Y7", .idx = LAL_UINT8_MAX >> 1 } },
+  { { .n=0, .v=5.67, .desc="C5", .idx = 11 }, { .n=1, .v=6.78, .desc="Z5", .idx = LAL_UINT8_MAX >> 5 } },
 };
 
 const TestRecord testtable[3] = {
@@ -107,17 +108,23 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteBOOLEAN( file, "testbool", 1, "This is a test BOOLEAN" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a BOOLEAN\n" );
 
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "testint [s]", -2345, "This is a test INT4" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    fprintf( stderr, "PASSED: wrote a INT4\n" );
-
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT8( file, "testint2", LAL_INT4_MAX + 6789, "This is a test INT8" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    fprintf( stderr, "PASSED: wrote a INT8\n" );
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT2( file, "testushrt", 1234, "This is a test UINT2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fprintf( stderr, "PASSED: wrote a UINT2\n" );
 
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "testuint [m]", 34567, "This is a test UINT4" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a UINT4\n" );
 
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT8( file, "testuint2", LAL_UINT8_MAX >> 1, "This is a test UINT8" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a UINT8\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT2( file, "testshrt", -1234, "This is a test INT2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fprintf( stderr, "PASSED: wrote a INT2\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT4( file, "testint [s]", -2345, "This is a test INT4" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fprintf( stderr, "PASSED: wrote a INT4\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSHeaderWriteINT8( file, "testint2", LAL_INT4_MAX + 6789, "This is a test INT8" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    fprintf( stderr, "PASSED: wrote a INT8\n" );
 
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteREAL4( file, "testflt", LAL_PI, "This is a test REAL4" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: wrote a REAL4\n" );
@@ -164,7 +171,17 @@ int main( int argc, char *argv[] )
     }
     fprintf( stderr, "PASSED: wrote a INT4 array\n" );
 
-    XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite1( file, "array2", 14, "This is a test REAL4 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite2( file, "array2", 2, 2, "This is a test UINT8 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    for ( size_t i = 0; i < 2; ++i ) {
+      for ( size_t j = 0; j < 2; ++j ) {
+        const size_t idx[] = { i, j };
+        const UINT8 value = LAL_UINT8_MAX >> ( 1 + i + j );
+        XLAL_CHECK_MAIN( XLALFITSArrayWriteUINT8( file, idx, value ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+    }
+    fprintf( stderr, "PASSED: wrote a UINT8 array\n" );
+
+    XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite1( file, "array3", 14, "This is a test REAL4 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
     for ( size_t i = 0; i < 14; ++i ) {
       const size_t idx[] = { i };
       const REAL4 value = 21 + 0.5*i;
@@ -181,7 +198,7 @@ int main( int argc, char *argv[] )
           gsl_matrix_set( elems, i, j, value );
         }
       }
-      XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite2( file, "array3", m, n, "This is a test REAL8 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite2( file, "array4", m, n, "This is a test REAL8 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLALFITSArrayWriteGSLMatrix( file, NULL, elems ) == XLAL_SUCCESS, XLAL_EFUNC );
       GFMAT( elems );
     }
@@ -206,9 +223,11 @@ int main( int argc, char *argv[] )
         XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 0, INT4, n, "n1" );
         XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 0, REAL4, v, "v1" );
         XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, 0, CHAR, desc, "desc1" );
+        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 0, UINT8, idx, "idx1" );
         XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 1, INT4, n, "n2" );
         XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 1, REAL4, v, "v2" );
         XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, 1, CHAR, desc, "desc2" );
+        XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, 1, UINT8, idx, "idx2" );
       }
     }
     for ( size_t i = 0; i < XLAL_NUM_ELEM( testtable ); ++i ) {
@@ -218,7 +237,7 @@ int main( int argc, char *argv[] )
 
     XLAL_CHECK_MAIN( XLALFITSHeaderWriteComment( file, "%s", "This is another test comment" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "table1" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array4" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array1" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileWriteHistory( file, "%s\n%s", "This is a test history", longstring_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: HDU seeking in write mode\n" );
@@ -278,6 +297,8 @@ int main( int argc, char *argv[] )
             XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL4, v, col_name );
             snprintf( col_name, sizeof( col_name ), "desc%zu", s + 1 );
             XLAL_FITS_TABLE_COLUMN_PTR_ADD_ARRAY_NAMED( file, s, CHAR, desc, col_name );
+            snprintf( col_name, sizeof( col_name ), "idx%zu", s + 1 );
+            XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, UINT8, idx, col_name );
           }
         }
       }
@@ -306,6 +327,7 @@ int main( int argc, char *argv[] )
           XLAL_CHECK_MAIN( record.sub[s].n == testtable[i].sub[s].n, XLAL_EFAILED );
           XLAL_CHECK_MAIN( record.sub[s].v == testtable[i].sub[s].v, XLAL_EFAILED );
           XLAL_CHECK_MAIN( strcmp( record.sub[s].desc, testtable[i].sub[s].desc ) == 0, XLAL_EFAILED );
+          XLAL_CHECK_MAIN( record.sub[s].idx == testtable[i].sub[s].idx, XLAL_EFAILED );
         }
         ++i;
       }
@@ -318,7 +340,7 @@ int main( int argc, char *argv[] )
 
     {
       size_t m = 0, n = 0;
-      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead2( file, "array3", &m, &n ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead2( file, "array4", &m, &n ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( m == 2, XLAL_EFAILED );
       XLAL_CHECK_MAIN( n == 3, XLAL_EFAILED );
       gsl_matrix *elems = NULL;
@@ -336,7 +358,7 @@ int main( int argc, char *argv[] )
 
     {
       size_t dim = 0;
-      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead1( file, "array2", &dim ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead1( file, "array3", &dim ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( dim == 14, XLAL_EFAILED );
       for ( size_t i = 0; i < dim; ++i ) {
         const size_t idx[] = { i };
@@ -347,6 +369,23 @@ int main( int argc, char *argv[] )
       }
     }
     fprintf( stderr, "PASSED: read and verified a REAL4 array\n" );
+
+    {
+      size_t dim_i = 0, dim_j = 0;
+      XLAL_CHECK_MAIN( XLALFITSArrayOpenRead2( file, "array2", &dim_i, &dim_j ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( dim_i == 2, XLAL_EFAILED );
+      XLAL_CHECK_MAIN( dim_j == 2, XLAL_EFAILED );
+      for ( size_t i = 0; i < dim_i; ++i ) {
+        for ( size_t j = 0; j < dim_j; ++j ) {
+          const size_t idx[] = { i, j };
+          const UINT8 value_ref = LAL_UINT8_MAX >> ( 1 + i + j );
+          UINT8 value = 0;
+          XLAL_CHECK_MAIN( XLALFITSArrayReadUINT8( file, idx, &value ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu,%zu] = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT, i, j, value, value_ref );
+        }
+      }
+    }
+    fprintf( stderr, "PASSED: read and verified a UINT8 array\n" );
 
     {
       size_t ndim, dims[FFIO_MAX];
@@ -378,26 +417,12 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "PASSED: read and verified a BOOLEAN\n" );
 
     {
-      const INT4 testint_ref = -2345;
-      INT4 testint;
-      XLAL_CHECK_MAIN( XLALFITSHeaderReadINT4( file, "testint", &testint ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( testint == testint_ref, XLAL_EFAILED, "testint = %i != %i", testint, testint_ref );
+      const UINT2 testushrt_ref = 1234;
+      UINT2 testushrt;
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT2( file, "testushrt", &testushrt ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( testushrt == testushrt_ref, XLAL_EFAILED, "testushrt = %i != %i", testushrt, testushrt_ref );
     }
-    fprintf( stderr, "PASSED: read and verified a INT4\n" );
-
-    {
-      INT4 testint2_too_small;
-      int errnum = 0;
-      XLAL_TRY_SILENT( XLALFITSHeaderReadINT4( file, "testint2", &testint2_too_small ), errnum );
-      XLAL_CHECK_MAIN( errnum = XLAL_ERANGE, XLAL_EFAILED );
-    }
-    {
-      const INT8 testint2_ref = LAL_INT4_MAX + 6789;
-      INT8 testint2;
-      XLAL_CHECK_MAIN( XLALFITSHeaderReadINT8( file, "testint2", &testint2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( testint2 == testint2_ref, XLAL_EFAILED, "testint = %" LAL_INT8_FORMAT " != %" LAL_INT8_FORMAT, testint2, testint2_ref );
-    }
-    fprintf( stderr, "PASSED: read and verified a INT8\n" );
+    fprintf( stderr, "PASSED: read and verified a UINT2\n" );
 
     {
       const UINT4 testuint_ref = 34567;
@@ -420,6 +445,36 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( testuint2 == testuint2_ref, XLAL_EFAILED, "testuint = %" LAL_UINT8_FORMAT " != %" LAL_UINT8_FORMAT, testuint2, testuint2_ref );
     }
     fprintf( stderr, "PASSED: read and verified a UINT8\n" );
+
+    {
+      const INT2 testshrt_ref = -1234;
+      INT2 testshrt;
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadINT2( file, "testshrt", &testshrt ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( testshrt == testshrt_ref, XLAL_EFAILED, "testshrt = %i != %i", testshrt, testshrt_ref );
+    }
+    fprintf( stderr, "PASSED: read and verified a INT2\n" );
+
+    {
+      const INT4 testint_ref = -2345;
+      INT4 testint;
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadINT4( file, "testint", &testint ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( testint == testint_ref, XLAL_EFAILED, "testint = %i != %i", testint, testint_ref );
+    }
+    fprintf( stderr, "PASSED: read and verified a INT4\n" );
+
+    {
+      INT4 testint2_too_small;
+      int errnum = 0;
+      XLAL_TRY_SILENT( XLALFITSHeaderReadINT4( file, "testint2", &testint2_too_small ), errnum );
+      XLAL_CHECK_MAIN( errnum = XLAL_ERANGE, XLAL_EFAILED );
+    }
+    {
+      const INT8 testint2_ref = LAL_INT4_MAX + 6789;
+      INT8 testint2;
+      XLAL_CHECK_MAIN( XLALFITSHeaderReadINT8( file, "testint2", &testint2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( testint2 == testint2_ref, XLAL_EFAILED, "testint = %" LAL_INT8_FORMAT " != %" LAL_INT8_FORMAT, testint2, testint2_ref );
+    }
+    fprintf( stderr, "PASSED: read and verified a INT8\n" );
 
     {
       const REAL4 testflt_ref = LAL_PI;
@@ -498,7 +553,7 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "PASSED: read and verified a GPS time\n" );
 
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "table1" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array2" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array3" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALFITSFileSeekNamedHDU( file, "array1" ) == XLAL_SUCCESS, XLAL_EFUNC );
     fprintf( stderr, "PASSED: HDU seeking in read mode\n" );
 

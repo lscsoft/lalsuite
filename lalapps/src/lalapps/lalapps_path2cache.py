@@ -86,14 +86,14 @@ options = parse_command_line()
 
 
 if options.input is not None:
-	input = open(options.input)
+	src = open(options.input)
 else:
-	input = sys.stdin
+	src = sys.stdin
 
 if options.output is not None:
-	output = open(options.output, "w")
+	dst = open(options.output, "w")
 else:
-	output = sys.stdout
+	dst = sys.stdout
 
 #
 # Other initializations
@@ -109,27 +109,36 @@ seglists = segments.segmentlistdict()
 #
 
 
-for line in input:
-	path, file = os.path.split(line.strip())
-	url = "file://localhost%s" % os.path.abspath(os.path.join(path, file))
+for line in src:
+	path, filename = os.path.split(line.strip())
+	url = "file://localhost%s" % os.path.abspath(os.path.join(path, filename))
 	try:
 		cache_entry = lal.CacheEntry.from_T050017(url)
-	except ValueError, e:
+	except ValueError as e:
 		if options.include_all:
 			cache_entry = lal.CacheEntry(None, None, None, url)
 		elif options.force:
 			continue
 		else:
 			raise e
-	print >>output, str(cache_entry)
+	print >>dst, str(cache_entry)
 	path_count += 1
 	if cache_entry.segment is not None:
 		seglists |= cache_entry.segmentlistdict.coalesce()
 
 
+#
+# Summary
+#
+
+
 if options.verbose:
 	print >>sys.stderr, "Size of cache: %d URLs" % path_count
 	for instrument, seglist in seglists.items():
-		print >>sys.stderr, "Interval spanned by %s: [%s s ... %s s) (%s s total)" % (instrument, str(seglist[0][0]), str(seglist[-1][1]), str(abs(seglist)))
+		ext = seglist.extent()
+		dur = abs(seglist)
+		print >>sys.stderr, "Interval spanned by %s: %s (%s s total, %.4g%% duty cycle)" % (instrument, str(ext), str(dur), 100.0 * float(dur) / float(abs(ext)))
 	span = seglists.union(seglists)
-	print >>sys.stderr, "Interval spanned by union: [%s s ... %s s) (%s s total)" % (str(span[0][0]), str(span[-1][1]), str(abs(span)))
+	ext = span.extent()
+	dur = abs(span)
+	print >>sys.stderr, "Interval spanned by union: %s (%s s total, %.4g%% duty cycle)" % (str(ext), str(dur), 100.0 * float(dur) / float(abs(ext)))
