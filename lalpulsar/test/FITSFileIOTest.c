@@ -70,8 +70,15 @@ typedef struct {
   REAL8 values[2];
   COMPLEX8 phasef;
   COMPLEX16 phase;
+  const REAL4 *array;
   const TestSubRecord *sub;
 } TestRecord;
+
+const REAL4 testarray[3][6] = {
+  { -0.905489,  0.399911,  0.046436, -0.135751,  0.057699, -1.028705 },
+  {  2.087924, -0.626705, -0.523903, -0.181746,  0.416006,  0.799295 },
+  { -2.197421, -0.228232,  0.438404, -0.398470, -0.170811,  0.413948 },
+};
 
 const TestSubRecord testsub[3][2] = {
   { { .n=0, .v=1.23, .desc="A1", .idx =  3 }, { .n=1, .v=2.34, .desc="X9", .idx = LAL_UINT8_MAX >> 0 } },
@@ -80,9 +87,18 @@ const TestSubRecord testsub[3][2] = {
 };
 
 const TestRecord testtable[3] = {
-  { .index=3, .flag=1, .name="CasA", .epoch={123456789, 5}, .pos={.sky=5.4321, .freq=100.999, .fkdot={1e-9, 5e-20}}, .values={13.24, 43.234}, .phasef=crectf( 1.2, 3.4 ), .phase=crect( 4.5, 0.2 ), .sub=testsub[0] },
-  { .index=2, .flag=0, .name="Vela", .epoch={452456245, 9}, .pos={.sky=34.454, .freq=1345.34, .fkdot={2e-8, 6e-21}}, .values={14.35, 94.128}, .phasef=crectf( 3.6, 9.3 ), .phase=crect( 8.3, 4.0 ), .sub=testsub[1] },
-  { .index=1, .flag=1, .name="Crab", .epoch={467846774, 4}, .pos={.sky=64.244, .freq=15.6463, .fkdot={4e-6,     0}}, .values={153.4, 3.0900}, .phasef=crectf( 6.7, 4.4 ), .phase=crect( 5.6, 6.3 ), .sub=testsub[2] },
+  {
+    .index=3, .flag=1, .name="CasA", .epoch={123456789, 5}, .pos={.sky=5.4321, .freq=100.999, .fkdot={1e-9, 5e-20}}, .values={13.24, 43.234},
+    .phasef=crectf( 1.2, 3.4 ), .phase=crect( 4.5, 0.2 ), .array=testarray[0], .sub=testsub[0]
+  },
+  {
+    .index=2, .flag=0, .name="Vela", .epoch={452456245, 9}, .pos={.sky=34.454, .freq=1345.34, .fkdot={2e-8, 6e-21}}, .values={14.35, 94.128},
+    .phasef=crectf( 3.6, 9.3 ), .phase=crect( 8.3, 4.0 ), .array=testarray[1], .sub=testsub[1]
+  },
+  {
+    .index=1, .flag=1, .name="Crab", .epoch={467846774, 4}, .pos={.sky=64.244, .freq=15.6463, .fkdot={4e-6,     0}}, .values={153.4, 3.0900},
+    .phasef=crectf( 6.7, 4.4 ), .phase=crect( 5.6, 6.3 ), .array=testarray[2], .sub=testsub[2]
+  },
 };
 
 int main( int argc, char *argv[] )
@@ -218,6 +234,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY_NAMED( file, REAL8, values, "values [g]" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX8, phasef ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX16, phase ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, 6, array, "array [m]" ) == XLAL_SUCCESS, XLAL_EFUNC );
       {
         XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_BEGIN( sub, TestSubRecord, 2 );
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 0, INT4, n, "n1" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -287,6 +304,7 @@ int main( int argc, char *argv[] )
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, values ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX8, phasef ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX16, phase ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY( file, REAL4, 6, array ) == XLAL_SUCCESS, XLAL_EFUNC );
         {
           XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_BEGIN( sub, TestSubRecord, 2 );
           for ( size_t s = 0; s < 2; ++s ) {
@@ -303,6 +321,8 @@ int main( int argc, char *argv[] )
         }
       }
       TestRecord XLAL_INIT_DECL( record );
+      REAL4 XLAL_INIT_DECL( record_array, [6] );
+      record.array = record_array;
       TestSubRecord XLAL_INIT_DECL( record_sub, [2] );
       record.sub = record_sub;
       size_t i = 0;

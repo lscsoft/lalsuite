@@ -197,7 +197,8 @@ int XLALFITSArrayReadGSLMatrix( FITSFile *file, const size_t idx[], gsl_matrix *
 /// XLAL_FITS_TABLE_COLUMN_ADD_NAMED(file, REAL4, x, "value");
 /// \endcode
 ///
-/// The <tt>XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_...()</tt> macros are for more complicated C structures
+/// The <tt>XLAL_FITS_TABLE_COLUMN_PTR_ARRAY_...()</tt> macros are for pointers to C arrays, and the
+/// <tt>XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_...()</tt> macros are for more complicated C structures
 /// which contain pointers to other C structures. Units for numeric columns may be specified in
 /// square brackets after the column name, e.g. "freq [Hz]".
 ///
@@ -240,6 +241,12 @@ int XLALFITSTableColumnAddGPSTime( FITSFile *file, const CHAR *col_name, const s
 /// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_ADD_ARRAY_NAMED(file, type, field, col_name) \
   XLALFITSTableColumnAdd ## type (file, col_name, 1, _xlal_fits_offsets_, &_xlal_fits_record_, sizeof(_xlal_fits_record_), &(_xlal_fits_record_.field[0]), sizeof(_xlal_fits_record_.field))
+/// \hideinitializer
+#define XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY(file, type, length, field) \
+  ( _xlal_fits_record_.field = (void*) &(_xlal_fits_record_.field), _xlal_fits_offsets_[0] = (size_t)(((intptr_t) &(_xlal_fits_record_.field)) - ((intptr_t) &_xlal_fits_record_)), XLALFITSTableColumnAdd ## type (file, #field, 2, _xlal_fits_offsets_, _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0]), _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0])) )
+/// \hideinitializer
+#define XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED(file, type, length, field, col_name) \
+  ( _xlal_fits_record_.field = (void*) &(_xlal_fits_record_.field), _xlal_fits_offsets_[0] = (size_t)(((intptr_t) &(_xlal_fits_record_.field)) - ((intptr_t) &_xlal_fits_record_)), XLALFITSTableColumnAdd ## type (file, col_name, 2, _xlal_fits_offsets_, _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0]), _xlal_fits_record_.field, ( length ) * sizeof(_xlal_fits_record_.field[0])) )
 /// \hideinitializer
 #define XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_BEGIN(field, ptr_record_type, length) \
   ptr_record_type XLAL_INIT_DECL(_xlal_fits_ptr_record_, [length]); \
