@@ -1363,7 +1363,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                   bayeswavepsdnode[ifo].add_var_arg('--bayesLine')
                   bayeswavepsdnode[ifo].add_var_arg('--cleanOnly')
                   bayeswavepsdnode[ifo].add_var_arg('--outputDir '+roqeventpath)
-                  bayeswavepsdnode[ifo].add_var_arg('--runName BayesWave_PSD_'+ifo+'_')
+                  bayeswavepsdnode[ifo].add_var_arg('--runName BayesWave_PSD_'+ifo)
                   bayeswavepsdnode[ifo].add_output_file(os.path.join(roqeventpath,'BayesWave_PSD_'+ifo+'_IFO0_psd.dat'))
                   bayeswavepsdnode[ifo].set_trig_time(end_time)
                   bayeswavepsdnode[ifo].set_seglen(bw_seglen)
