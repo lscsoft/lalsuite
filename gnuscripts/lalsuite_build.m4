@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 131
+# serial 132
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1366,9 +1366,11 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
     AS_CASE([${PAGER}],
       [''],[:],
       [*/less],[
-        AS_IF([echo | ${PAGER} -FRX >/dev/null 2>&1],[
-          PAGER="${PAGER} -FRX"
-        ])
+        for pager_arg in -F -R -S -X; do
+          AS_IF([echo | ${PAGER} ${pager_arg} >/dev/null 2>&1],[
+            PAGER="${PAGER} ${pager_arg}"
+          ])
+        done
       ]
     )
   ])
