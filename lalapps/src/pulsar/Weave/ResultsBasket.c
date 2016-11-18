@@ -90,28 +90,28 @@ int toplist_fits_table_init(
 
   // Begin FITS table description for per-segment items (optional)
   if ( par->per_nsegments > 0 ) {
-    XLAL_FITS_TABLE_COLUMN_PTR_BEGIN( per_seg, WeaveOutputPerSegResultItem, par->per_nsegments );
+    XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_BEGIN( per_seg, WeaveOutputPerSegResultItem, par->per_nsegments );
     for ( size_t s = 0; s < par->per_nsegments; ++s ) {
 
       // Add columns for coherent template parameters
       snprintf( col_name, sizeof( col_name ), "seg%zu_alpha [rad]", s + 1 );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL8, coh_phys.Alpha, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, s, REAL8, coh_phys.Alpha, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
       snprintf( col_name, sizeof( col_name ), "seg%zu_delta [rad]", s + 1 );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL8, coh_phys.Delta, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, s, REAL8, coh_phys.Delta, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
       snprintf( col_name, sizeof( col_name ), "seg%zu_freq [Hz]", s + 1 );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL8, coh_phys.fkdot[0], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, s, REAL8, coh_phys.fkdot[0], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
       for ( size_t k = 1; k <= par->nspins; ++k ) {
         snprintf( col_name, sizeof( col_name ), "seg%zu_f%zudot [Hz/s^%zu]", s + 1, k, k );
-        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL8, coh_phys.fkdot[k], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, s, REAL8, coh_phys.fkdot[k], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
       // Add columns for coherent multi- and per-detector F-statistic
       snprintf( col_name, sizeof( col_name ), "seg%zu_twoF", s + 1 );
-      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL4, twoF, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, s, REAL4, twoF, col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
       if ( par->per_detectors != NULL ) {
         for ( size_t i = 0; i < par->per_detectors->length; ++i ) {
           snprintf( col_name, sizeof( col_name ), "seg%zu_twoF_%s", s + 1, par->per_detectors->data[i] );
-          XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_PTR_ADD_NAMED( file, s, REAL4, twoF_per_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, s, REAL4, twoF_per_det[i], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
       }
 
