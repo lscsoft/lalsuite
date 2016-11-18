@@ -546,7 +546,7 @@ def get_roq_mass_freq_scale_factor(mc_priors, trigger_mchirp, force_flow=None):
      if trigger_mchirp >= mc_max:
         scale_factor = 2.**(floor(trigger_mchirp/mc_max))
      if trigger_mchirp <= mc_min:
-        scale_factor = (2./3.)**(ceil(trigger_mchirp/mc_min))
+        scale_factor = (2./3.2)**(ceil(trigger_mchirp/mc_min))
   elif force_flow != None:
      scale_factor = 20./force_flow
   return scale_factor
