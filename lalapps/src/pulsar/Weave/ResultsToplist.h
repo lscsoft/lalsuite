@@ -17,8 +17,8 @@
 // MA 02111-1307 USA
 //
 
-#ifndef _RESULTS_BASKET_H
-#define _RESULTS_BASKET_H
+#ifndef _RESULTS_TOPLIST_H
+#define _RESULTS_TOPLIST_H
 
 ///
 /// \file
@@ -38,45 +38,45 @@ extern "C" {
 #endif
 
 ///
-/// Basket of output results
+/// Toplist of output results
 ///
-typedef struct tagWeaveResultsBasket WeaveResultsBasket;
+typedef struct tagWeaveResultsToplist WeaveResultsToplist;
 
 ///
-/// \name Routines which handle baskets of results
+/// \name Routines which handle toplists of results
 ///
 /// @{
 
-WeaveResultsBasket *XLALWeaveResultsBasketCreate(
+WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const WeaveOutputParams *par,
   const char *stat_name,
   const char *stat_desc,
   const int toplist_limit,
   LALHeapCmpFcn toplist_result_item_compare_fcn
   );
-void XLALWeaveResultsBasketDestroy(
-  WeaveResultsBasket *basket
+void XLALWeaveResultsToplistDestroy(
+  WeaveResultsToplist *toplist
   );
-int XLALWeaveResultsBasketAdd(
-  WeaveResultsBasket *basket,
+int XLALWeaveResultsToplistAdd(
+  WeaveResultsToplist *toplist,
   const WeaveSemiResults *semi_res,
   const UINT4 semi_nfreqs
   );
-int XLALWeaveResultsBasketWrite(
+int XLALWeaveResultsToplistWrite(
   FITSFile *file,
-  const WeaveResultsBasket *basket
+  const WeaveResultsToplist *toplist
   );
-int XLALWeaveResultsBasketReadAppend(
+int XLALWeaveResultsToplistReadAppend(
   FITSFile *file,
-  WeaveResultsBasket *basket
+  WeaveResultsToplist *toplist
   );
-int XLALWeaveResultsBasketCompare(
+int XLALWeaveResultsToplistCompare(
   BOOLEAN *equal,
   const WeaveSetupData *setup,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
-  const WeaveResultsBasket *basket_1,
-  const WeaveResultsBasket *basket_2
+  const WeaveResultsToplist *toplist_1,
+  const WeaveResultsToplist *toplist_2
   );
 
 /// @}
@@ -85,4 +85,4 @@ int XLALWeaveResultsBasketCompare(
 }
 #endif
 
-#endif // _RESULTS_BASKET_H
+#endif // _RESULTS_TOPLIST_H

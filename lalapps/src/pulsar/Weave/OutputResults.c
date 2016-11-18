@@ -23,7 +23,7 @@
 ///
 
 #include "OutputResults.h"
-#include "ResultsBasket.h"
+#include "ResultsToplist.h"
 
 ///
 /// Internal definition of output results from a search
@@ -33,8 +33,8 @@ struct tagWeaveOutputResults {
   WeaveOutputParams par;
   /// Number of computed semicoherent results
   INT8 semi_ncomp;
-  /// Basket of output results ranked by mean multi-detector F-statistic
-  WeaveResultsBasket *mean_twoF_basket;
+  /// Toplist of output results ranked by mean multi-detector F-statistic
+  WeaveResultsToplist *mean_twoF_toplist;
 };
 
 ///
@@ -132,9 +132,9 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
     XLAL_CHECK_NULL( out->par.per_detectors != NULL, XLAL_EFUNC );
   }
 
-  // Create a basket which ranks results by mean multi-detector F-statistic
-  out->mean_twoF_basket = XLALWeaveResultsBasketCreate( &out->par, "mean_twoF", "mean multi-detector F-statistic", toplist_limit, result_item_compare_by_mean_twoF );
-  XLAL_CHECK_NULL( out->mean_twoF_basket != NULL, XLAL_EFUNC );
+  // Create a toplist which ranks results by mean multi-detector F-statistic
+  out->mean_twoF_toplist = XLALWeaveResultsToplistCreate( &out->par, "mean_twoF", "mean multi-detector F-statistic", toplist_limit, result_item_compare_by_mean_twoF );
+  XLAL_CHECK_NULL( out->mean_twoF_toplist != NULL, XLAL_EFUNC );
 
   return out;
 
@@ -149,7 +149,7 @@ void XLALWeaveOutputResultsDestroy(
 {
   if ( out != NULL ) {
     XLALDestroyStringVector( out->par.per_detectors );
-    XLALWeaveResultsBasketDestroy( out->mean_twoF_basket );
+    XLALWeaveResultsToplistDestroy( out->mean_twoF_toplist );
     XLALFree( out );
   }
 }
@@ -171,8 +171,8 @@ int XLALWeaveOutputResultsAdd(
   // Increment number of computed semicoherent results
   out->semi_ncomp += semi_nfreqs;
 
-  // Add results to basket ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALWeaveResultsBasketAdd( out->mean_twoF_basket, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Add results to toplist ranked by mean multi-detector F-statistic
+  XLAL_CHECK( XLALWeaveResultsToplistAdd( out->mean_twoF_toplist, semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -212,8 +212,8 @@ int XLALWeaveOutputResultsWrite(
   // Write number of computed semicoherent results
   XLAL_CHECK( XLALFITSHeaderWriteUINT8( file, "semicomp", out->semi_ncomp, "number of computed semicoherent results" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Write basket ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALWeaveResultsBasketWrite( file, out->mean_twoF_basket ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Write toplist ranked by mean multi-detector F-statistic
+  XLAL_CHECK( XLALWeaveResultsToplistWrite( file, out->mean_twoF_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -294,8 +294,8 @@ int XLALWeaveOutputResultsReadAppend(
     ( *out )->semi_ncomp += semi_ncomp;
   }
 
-  // Read and append to basket ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALWeaveResultsBasketReadAppend( file, ( *out )->mean_twoF_basket ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Read and append to toplist ranked by mean multi-detector F-statistic
+  XLAL_CHECK( XLALWeaveResultsToplistReadAppend( file, ( *out )->mean_twoF_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyStringVector( per_detectors );
@@ -380,8 +380,8 @@ int XLALWeaveOutputResultsCompare(
     return XLAL_SUCCESS;
   }
 
-  // Compare baskets ranked by mean multi-detector F-statistic
-  XLAL_CHECK( XLALWeaveResultsBasketCompare( equal, setup, param_tol_mism, result_tol, out_1->mean_twoF_basket, out_2->mean_twoF_basket ) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Compare toplists ranked by mean multi-detector F-statistic
+  XLAL_CHECK( XLALWeaveResultsToplistCompare( equal, setup, param_tol_mism, result_tol, out_1->mean_twoF_toplist, out_2->mean_twoF_toplist ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( !*equal ) {
     return XLAL_SUCCESS;
   }

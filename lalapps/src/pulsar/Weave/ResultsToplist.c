@@ -22,20 +22,20 @@
 /// \ingroup lalapps_pulsar_Weave
 ///
 
-#include "ResultsBasket.h"
+#include "ResultsToplist.h"
 
 ///
-/// Internal definition of basket of output results
+/// Internal definition of toplist of output results
 ///
-struct tagWeaveResultsBasket {
+struct tagWeaveResultsToplist {
   /// Various varameters required to output results
   const WeaveOutputParams *par;
   /// Name of ranking statistic
   const char *stat_name;
   /// Description of ranking statistic
   const char *stat_desc;
-  /// Toplist which ranks output results by a particular statistic
-  LALHeap *toplist;
+  /// Heap which ranks output results by a particular statistic
+  LALHeap *heap;
   /// Save a no-longer-used output result item for re-use
   WeaveOutputResultItem *saved_item;
 };
@@ -265,9 +265,9 @@ int compare_vectors(
 }
 
 ///
-/// Create results basket
+/// Create results toplist
 ///
-WeaveResultsBasket *XLALWeaveResultsBasketCreate(
+WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const WeaveOutputParams *par,
   const char *stat_name,
   const char *stat_desc,
@@ -283,48 +283,48 @@ WeaveResultsBasket *XLALWeaveResultsBasketCreate(
   XLAL_CHECK_NULL( toplist_limit >= 0, XLAL_EINVAL );
 
   // Allocate memory
-  WeaveResultsBasket *basket = XLALCalloc( 1, sizeof( *basket ) );
-  XLAL_CHECK_NULL( basket != NULL, XLAL_ENOMEM );
+  WeaveResultsToplist *toplist = XLALCalloc( 1, sizeof( *toplist ) );
+  XLAL_CHECK_NULL( toplist != NULL, XLAL_ENOMEM );
 
   // Set fields
-  basket->par = par;
-  basket->stat_name = stat_name;
-  basket->stat_desc = stat_desc;
+  toplist->par = par;
+  toplist->stat_name = stat_name;
+  toplist->stat_desc = stat_desc;
 
-  // Create toplist which ranks output results using the given comparison function
-  basket->toplist = XLALHeapCreate( ( LALHeapDtorFcn ) XLALWeaveOutputResultItemDestroy, toplist_limit, +1, toplist_result_item_compare_fcn );
-  XLAL_CHECK_NULL( basket->toplist != NULL, XLAL_EFUNC );
+  // Create heap which ranks output results using the given comparison function
+  toplist->heap = XLALHeapCreate( ( LALHeapDtorFcn ) XLALWeaveOutputResultItemDestroy, toplist_limit, +1, toplist_result_item_compare_fcn );
+  XLAL_CHECK_NULL( toplist->heap != NULL, XLAL_EFUNC );
 
-  return basket;
+  return toplist;
 
 }
 
 ///
-/// Free results basket
+/// Free results toplist
 ///
-void XLALWeaveResultsBasketDestroy(
-  WeaveResultsBasket *basket
+void XLALWeaveResultsToplistDestroy(
+  WeaveResultsToplist *toplist
   )
 {
-  if ( basket != NULL ) {
-    XLALHeapDestroy( basket->toplist );
-    XLALWeaveOutputResultItemDestroy( basket->saved_item );
-    XLALFree( basket );
+  if ( toplist != NULL ) {
+    XLALHeapDestroy( toplist->heap );
+    XLALWeaveOutputResultItemDestroy( toplist->saved_item );
+    XLALFree( toplist );
   }
 }
 
 ///
-/// Add semicoherent results to basket
+/// Add semicoherent results to toplist
 ///
-int XLALWeaveResultsBasketAdd(
-  WeaveResultsBasket *basket,
+int XLALWeaveResultsToplistAdd(
+  WeaveResultsToplist *toplist,
   const WeaveSemiResults *semi_res,
   const UINT4 semi_nfreqs
   )
 {
 
   // Check input
-  XLAL_CHECK( basket != NULL, XLAL_EFAULT );
+  XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
 
   // Must initialise all output result item fields the first time
@@ -334,9 +334,9 @@ int XLALWeaveResultsBasketAdd(
   for ( size_t i = 0; i < semi_nfreqs; ++i ) {
 
     // Create a new output result item if needed
-    if ( basket->saved_item == NULL ) {
-      basket->saved_item = XLALWeaveOutputResultItemCreate( basket->par );
-      XLAL_CHECK( basket->saved_item != NULL, XLAL_ENOMEM );
+    if ( toplist->saved_item == NULL ) {
+      toplist->saved_item = XLALWeaveOutputResultItemCreate( toplist->par );
+      XLAL_CHECK( toplist->saved_item != NULL, XLAL_ENOMEM );
 
       // Output result item must be fully initialised
       full_init = 1;
@@ -344,15 +344,15 @@ int XLALWeaveResultsBasketAdd(
     }
 
     // Fill output result item, creating a new one if needed
-    XLAL_CHECK( XLALWeaveFillOutputResultItem( &basket->saved_item, &full_init, semi_res, i ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALWeaveFillOutputResultItem( &toplist->saved_item, &full_init, semi_res, i ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Add item to toplist
-    const WeaveOutputResultItem *prev_item = basket->saved_item;
-    XLAL_CHECK( XLALHeapAdd( basket->toplist, ( void ** ) &basket->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Add item to heap
+    const WeaveOutputResultItem *prev_item = toplist->saved_item;
+    XLAL_CHECK( XLALHeapAdd( toplist->heap, ( void ** ) &toplist->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // If toplist added item and returned a different, now-unused item,
+    // If heap added item and returned a different, now-unused item,
     // that item will have to be fully initialised at the next call
-    full_init = ( basket->saved_item != prev_item );
+    full_init = ( toplist->saved_item != prev_item );
 
   }
 
@@ -361,36 +361,36 @@ int XLALWeaveResultsBasketAdd(
 }
 
 ///
-/// Write results basket to a FITS file
+/// Write results toplist to a FITS file
 ///
-int XLALWeaveResultsBasketWrite(
+int XLALWeaveResultsToplistWrite(
   FITSFile *file,
-  const WeaveResultsBasket *basket
+  const WeaveResultsToplist *toplist
   )
 {
 
   // Check input
   XLAL_CHECK( file != NULL, XLAL_EFAULT );
-  XLAL_CHECK( basket != NULL, XLAL_EFAULT );
+  XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
 
   // Write toplist
   {
 
     // Format name and description of statistic
     char name[256];
-    snprintf( name, sizeof( name ), "%s_toplist", basket->stat_name );
+    snprintf( name, sizeof( name ), "%s_toplist", toplist->stat_name );
     char desc[256];
-    snprintf( desc, sizeof( desc ), "toplist ranked by %s", basket->stat_desc );
+    snprintf( desc, sizeof( desc ), "toplist ranked by %s", toplist->stat_desc );
 
     // Open FITS table for writing and initialise
     XLAL_CHECK( XLALFITSTableOpenWrite( file, name, desc ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( toplist_fits_table_init( file, basket->par ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( toplist_fits_table_init( file, toplist->par ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Write all toplist items to FITS table
-    XLAL_CHECK( XLALHeapVisit( basket->toplist, toplist_fits_table_write_visitor, file ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Write all heap items to FITS table
+    XLAL_CHECK( XLALHeapVisit( toplist->heap, toplist_fits_table_write_visitor, file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Write maximum size of toplist to FITS header
-    XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "toplimit", XLALHeapMaxSize( basket->toplist ), "maximum size of toplist" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Write maximum size of heap to FITS header
+    XLAL_CHECK( XLALFITSHeaderWriteINT4( file, "toplimit", XLALHeapMaxSize( toplist->heap ), "maximum size of toplist" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   }
 
@@ -399,53 +399,53 @@ int XLALWeaveResultsBasketWrite(
 }
 
 ///
-/// Read results from a FITS file and append to existing results basket
+/// Read results from a FITS file and append to existing results toplist
 ///
-int XLALWeaveResultsBasketReadAppend(
+int XLALWeaveResultsToplistReadAppend(
   FITSFile *file,
-  WeaveResultsBasket *basket
+  WeaveResultsToplist *toplist
   )
 {
 
   // Check input
   XLAL_CHECK( file != NULL, XLAL_EFAULT );
-  XLAL_CHECK( basket != NULL, XLAL_EFAULT );
+  XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
 
   // Read and append to toplist
   {
 
     // Format name of statistic
     char name[256];
-    snprintf( name, sizeof( name ), "%s_toplist", basket->stat_name );
+    snprintf( name, sizeof( name ), "%s_toplist", toplist->stat_name );
 
     // Open FITS table for reading and initialise
     UINT8 nrows = 0;
     XLAL_CHECK( XLALFITSTableOpenRead( file, name, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( toplist_fits_table_init( file, basket->par ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( toplist_fits_table_init( file, toplist->par ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Read maximum size of toplist from FITS header
+    // Read maximum size of heap from FITS header
     INT4 toplist_limit = 0;
     XLAL_CHECK( XLALFITSHeaderReadINT4( file, "toplimit", &toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // Maximize size of toplist
-    if ( toplist_limit > XLALHeapSize( basket->toplist ) ) {
-      XLAL_CHECK( XLALHeapResize( basket->toplist, toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
+    // Maximize size of heap
+    if ( toplist_limit > XLALHeapSize( toplist->heap ) ) {
+      XLAL_CHECK( XLALHeapResize( toplist->heap, toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
     // Read all items from FITS table
     while ( nrows > 0 ) {
 
       // Create a new output result item if needed
-      if ( basket->saved_item == NULL ) {
-        basket->saved_item = XLALWeaveOutputResultItemCreate( basket->par );
-        XLAL_CHECK( basket->saved_item != NULL, XLAL_ENOMEM );
+      if ( toplist->saved_item == NULL ) {
+        toplist->saved_item = XLALWeaveOutputResultItemCreate( toplist->par );
+        XLAL_CHECK( toplist->saved_item != NULL, XLAL_ENOMEM );
       }
 
       // Read item from FITS table
-      XLAL_CHECK( XLALFITSTableReadRow( file, basket->saved_item, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALFITSTableReadRow( file, toplist->saved_item, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      // Add item to toplist
-      XLAL_CHECK( XLALHeapAdd( basket->toplist, ( void ** ) &basket->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
+      // Add item to heap
+      XLAL_CHECK( XLALHeapAdd( toplist->heap, ( void ** ) &toplist->saved_item ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     }
 
@@ -456,15 +456,15 @@ int XLALWeaveResultsBasketReadAppend(
 }
 
 ///
-/// Compare two results baskets and return whether they are equal
+/// Compare two results toplists and return whether they are equal
 ///
-int XLALWeaveResultsBasketCompare(
+int XLALWeaveResultsToplistCompare(
   BOOLEAN *equal,
   const WeaveSetupData *setup,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
-  const WeaveResultsBasket *basket_1,
-  const WeaveResultsBasket *basket_2
+  const WeaveResultsToplist *toplist_1,
+  const WeaveResultsToplist *toplist_2
   )
 {
 
@@ -473,25 +473,25 @@ int XLALWeaveResultsBasketCompare(
   XLAL_CHECK( setup != NULL, XLAL_EFAULT );
   XLAL_CHECK( param_tol_mism > 0, XLAL_EINVAL );
   XLAL_CHECK( result_tol != NULL, XLAL_EFAULT );
-  XLAL_CHECK( basket_1 != NULL, XLAL_EFAULT );
-  XLAL_CHECK( basket_2 != NULL, XLAL_EFAULT );
-  XLAL_CHECK( strcmp( basket_1->stat_name, basket_2->stat_name ) == 0, XLAL_EINVAL );
-  XLAL_CHECK( strcmp( basket_1->stat_desc, basket_2->stat_desc ) == 0, XLAL_EINVAL );
+  XLAL_CHECK( toplist_1 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( toplist_2 != NULL, XLAL_EFAULT );
+  XLAL_CHECK( strcmp( toplist_1->stat_name, toplist_2->stat_name ) == 0, XLAL_EINVAL );
+  XLAL_CHECK( strcmp( toplist_1->stat_desc, toplist_2->stat_desc ) == 0, XLAL_EINVAL );
 
-  const WeaveOutputParams *par = basket_1->par;
-  const char *stat_desc = basket_1->stat_desc;
+  const WeaveOutputParams *par = toplist_1->par;
+  const char *stat_desc = toplist_1->stat_desc;
 
-  // Results baskets are assumed equal until we find otherwise
+  // Results toplists are assumed equal until we find otherwise
   *equal = 1;
 
   // Compare toplists
   XLALPrintInfo( "%s: comparing toplists ranked by %s ...\n", __func__, stat_desc );
   {
 
-    // Compare lengths of toplists
-    const size_t n = XLALHeapSize( basket_1->toplist );
+    // Compare lengths of heaps
+    const size_t n = XLALHeapSize( toplist_1->heap );
     {
-      const size_t n_2 = XLALHeapSize( basket_2->toplist );
+      const size_t n_2 = XLALHeapSize( toplist_2->heap );
       if ( n != n_2 ) {
         *equal = 0;
         XLALPrintInfo( "%s: unequal size %s toplists: %zu != %zu\n", __func__, stat_desc, n, n_2 );
@@ -500,10 +500,10 @@ int XLALWeaveResultsBasketCompare(
     }
 
     // Get lists of output result items
-    const WeaveOutputResultItem **items_1 = ( const WeaveOutputResultItem ** ) XLALHeapElements( basket_1->toplist );
+    const WeaveOutputResultItem **items_1 = ( const WeaveOutputResultItem ** ) XLALHeapElements( toplist_1->heap );
     XLAL_CHECK( items_1 != NULL, XLAL_EFUNC );
     XLAL_CHECK( par->per_nsegments == 0 || items_1[0]->per_seg != NULL, XLAL_EINVAL );
-    const WeaveOutputResultItem **items_2 = ( const WeaveOutputResultItem ** ) XLALHeapElements( basket_2->toplist );
+    const WeaveOutputResultItem **items_2 = ( const WeaveOutputResultItem ** ) XLALHeapElements( toplist_2->heap );
     XLAL_CHECK( items_2 != NULL, XLAL_EFUNC );
     XLAL_CHECK( par->per_nsegments == 0 || items_2[0]->per_seg != NULL, XLAL_EINVAL );
 
