@@ -2171,7 +2171,6 @@ static int UNUSED XLALFITSTableColumnAdd( FITSFile UNUSED *file, const CHAR UNUS
   XLAL_CHECK_FAIL( record_size > 0, XLAL_EINVAL );
   XLAL_CHECK_FAIL( field != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( field_size > 0, XLAL_EINVAL );
-  XLAL_CHECK_FAIL( field_size < 128, XLAL_EINVAL, "Record field is too long" );
   XLAL_CHECK_FAIL( ( ( intptr_t ) field ) >= ( ( intptr_t ) record ), XLAL_EINVAL, "Invalid field pointer" );
   XLAL_CHECK_FAIL( ( ( intptr_t ) field ) + field_size <= ( ( intptr_t ) record ) + record_size, XLAL_EINVAL, "Invalid field pointer" );
   XLAL_CHECK_FAIL( elem_size > 0, XLAL_EINVAL );

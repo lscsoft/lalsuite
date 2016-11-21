@@ -70,15 +70,11 @@ typedef struct {
   REAL8 values[2];
   COMPLEX8 phasef;
   COMPLEX16 phase;
-  const REAL4 *array;
+  REAL4 *array;
   const TestSubRecord *sub;
 } TestRecord;
 
-const REAL4 testarray[3][6] = {
-  { -0.905489,  0.399911,  0.046436, -0.135751,  0.057699, -1.028705 },
-  {  2.087924, -0.626705, -0.523903, -0.181746,  0.416006,  0.799295 },
-  { -2.197421, -0.228232,  0.438404, -0.398470, -0.170811,  0.413948 },
-};
+REAL4 testarray[3][1824] = { { 0 }, { 0 }, { 0 } };
 
 const TestSubRecord testsub[3][2] = {
   { { .n=0, .v=1.23, .desc="A1", .idx =  3 }, { .n=1, .v=2.34, .desc="X9", .idx = LAL_UINT8_MAX >> 0 } },
@@ -103,6 +99,13 @@ const TestRecord testtable[3] = {
 
 int main( int argc, char *argv[] )
 {
+
+  // Initialise test array data
+  for ( size_t i = 0; i < XLAL_NUM_ELEM( testarray ); ++i ) {
+    for ( size_t j = 0; j < XLAL_NUM_ELEM( testarray[0] ); ++j ) {
+      testarray[i][j] = LAL_PI*i - LAL_E*j;
+    }
+  }
 
   // Create a dummy user enviroment, for testing XLALFITSFileWriteUVarCmdLine()
   struct uvar_type { INT4 dummy; } uvar_struct = { .dummy = 0 };
@@ -234,7 +237,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY_NAMED( file, REAL8, values, "values [g]" ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX8, phasef ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX16, phase ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, 6, array, "array [m]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY_NAMED( file, REAL4, XLAL_NUM_ELEM( testarray[0] ), array, "array [m]" ) == XLAL_SUCCESS, XLAL_EFUNC );
       {
         XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_BEGIN( sub, TestSubRecord, 2 );
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_STRUCT_NAMED( file, 0, INT4, n, "n1" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -304,7 +307,7 @@ int main( int argc, char *argv[] )
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, REAL8, values ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX8, phasef ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD( file, COMPLEX16, phase ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY( file, REAL4, 6, array ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLAL_FITS_TABLE_COLUMN_ADD_PTR_ARRAY( file, REAL4, XLAL_NUM_ELEM( testarray[0] ), array ) == XLAL_SUCCESS, XLAL_EFUNC );
         {
           XLAL_FITS_TABLE_COLUMN_PTR_STRUCT_BEGIN( sub, TestSubRecord, 2 );
           for ( size_t s = 0; s < 2; ++s ) {
@@ -321,7 +324,7 @@ int main( int argc, char *argv[] )
         }
       }
       TestRecord XLAL_INIT_DECL( record );
-      REAL4 XLAL_INIT_DECL( record_array, [6] );
+      REAL4 XLAL_INIT_DECL( record_array, [XLAL_NUM_ELEM( testarray[0] )] );
       record.array = record_array;
       TestSubRecord XLAL_INIT_DECL( record_sub, [2] );
       record.sub = record_sub;
@@ -343,6 +346,9 @@ int main( int argc, char *argv[] )
         }
         XLAL_CHECK_MAIN( record.phasef == testtable[i].phasef, XLAL_EFAILED );
         XLAL_CHECK_MAIN( record.phase == testtable[i].phase, XLAL_EFAILED );
+        for ( size_t j = 0; j < XLAL_NUM_ELEM( testarray[0] ); ++j ) {
+          XLAL_CHECK_MAIN( record.array[j] == testtable[i].array[j], XLAL_EFAILED );
+        }
         for ( size_t s = 0; s < 2; ++s ) {
           XLAL_CHECK_MAIN( record.sub[s].n == testtable[i].sub[s].n, XLAL_EFAILED );
           XLAL_CHECK_MAIN( record.sub[s].v == testtable[i].sub[s].v, XLAL_EFAILED );
@@ -534,7 +540,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( err < err_tol, XLAL_EFAILED, "|testdblcmp - testdblcmp_ref| = |(%0.*g,%0.*g) - (%0.*g,%0.*g)| = %0.*g >= %0.*g",
                        DBL_DIG, creal( testdblcmp ), DBL_DIG, cimag( testdblcmp ), DBL_DIG, creal( testdblcmp_ref ), DBL_DIG, cimag( testdblcmp_ref ), DBL_DIG, err, DBL_DIG, err_tol );
     }
-    fprintf( stderr, "PASSED: read and verified a COMPLEX16\n" );
+   fprintf( stderr, "PASSED: read and verified a COMPLEX16\n" );
 
     {
       const CHAR *teststr_ref = "This is a short string";
