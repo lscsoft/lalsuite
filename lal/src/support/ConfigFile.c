@@ -44,6 +44,7 @@
 
 // ---------- local prototypes ----------
 static void cleanConfig ( char *text );
+static CHAR *XLALGetSectionName ( const CHAR *line );
 
 // ==================== function definitions ==========
 /**
@@ -163,37 +164,41 @@ XLALDestroyParsedDataFile (LALParsedDataFile *cfgdata)  /**< [in] config-file da
  *
  * \note: this function tolerates NULL input as secName, cfgdata, or cfgdata->lines,
  * in which case the answer is simply 'FALSE'.
+ *
+ * NOTE2: quite inefficient implementation, re-creates table of content each time it's called
+ * however this function also doesn't seem to be used right now and should probably be removed?
  */
 int
 XLALConfigSectionExists ( const LALParsedDataFile *cfgdata,     /**< [in] pre-parsed config-data */
                           const CHAR *secName)                  /**< [in] section-name to read */
 {
-  UINT4 i;
-  size_t sec_searchlen = 0;
-
   /* If there's no config file, or no section, then   */
   /* the section isn;t in the config file, return 0   */
   if ( secName == NULL || cfgdata == NULL || cfgdata->lines == NULL )
     {
-      return FALSE;
+      return 0;
     }
 
-  sec_searchlen = strlen(secName);
+  CHAR *secName_cleaned;
+  XLAL_CHECK ( (secName_cleaned = XLALDeblankString ( secName, strlen(secName) )) != NULL, XLAL_EFUNC );
 
-  for (i = 0; i < cfgdata->lines->nTokens; i++)
+  LALStringVector *toc;
+  XLAL_CHECK ( (toc = XLALListConfigFileSections ( cfgdata )) != NULL, XLAL_EFUNC );
+
+  int foundit = 0;
+  for ( UINT4 i = 0; i < toc->length; i ++ )
     {
-      /* Is this the start of a new section? */
-      if (cfgdata->lines->tokens[i][0] == '[')
+      if ( strcmp ( secName_cleaned, toc->data[i] ) == 0 )
         {
-          /* If we're looking for a particular section, is this it? */
-          if (strncmp(cfgdata->lines->tokens[i] + 1, secName, sec_searchlen) == 0)
-            {
-              return TRUE;
-            }
-         }
+          foundit = 1;
+          break;
+        }
     }
 
-  return FALSE;
+  XLALDestroyStringVector ( toc );
+  XLALFree ( secName_cleaned );
+
+  return foundit;
 
 } /* XLALConfigSectionExists() */
 
@@ -227,12 +232,8 @@ XLALListConfigFileSections ( const LALParsedDataFile *cfgdata )    /**< [in] pre
       /* Is this the start of a new section? */
       if ( thisLine[0] == '[' )
         {
-          UINT4 len = strlen ( thisLine );
-          XLAL_CHECK_NULL ( thisLine[len-1] == ']', XLAL_EINVAL, "Invalid section start '%s'\n", thisLine );
-
-          const char *secName0 = thisLine + 1;  // skip '['
-          char *secName;
-          XLAL_CHECK_NULL ( (secName = XLALDeblankString ( secName0, len - 2 )) != NULL, XLAL_EFUNC );
+          CHAR *secName;
+          XLAL_CHECK_NULL ( (secName = XLALGetSectionName ( thisLine )) != NULL, XLAL_EFUNC );
           XLAL_CHECK_NULL ( (sections = XLALAppendString2Vector ( sections, secName )) != NULL, XLAL_EFUNC );
           XLALFree ( secName );
         } // if section found
@@ -244,6 +245,27 @@ XLALListConfigFileSections ( const LALParsedDataFile *cfgdata )    /**< [in] pre
 } // XLALListConfigFileSections()
 
 
+// local helper function: check section syntax '[...]' and extract de-blanked section name
+static CHAR *
+XLALGetSectionName ( const CHAR *line )
+{
+  XLAL_CHECK_NULL ( line != NULL, XLAL_EINVAL );
+
+  CHAR *lineCleaned = XLALDeblankString ( line, strlen(line) );
+  size_t lenLine = strlen ( lineCleaned );
+  if ( lineCleaned[0] != '[' || lineCleaned[lenLine-1] != ']' ) {
+    XLALPrintError ( "Invalid input line '%s' is not of the form '[...]' specifying a section name\n", lineCleaned );
+    XLALFree ( lineCleaned );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
+  }
+
+  CHAR *secName;
+  XLAL_CHECK_NULL ( (secName = XLALDeblankString ( lineCleaned+1, lenLine - 2 )) != NULL, XLAL_EFUNC );
+  XLALFree ( lineCleaned );
+
+  return secName;
+
+} // XLALGetSectionName()
 
 /**
  * String parser for config-file: can read config-variables of the form VARIABLE [=:] VALUE.
@@ -272,9 +294,14 @@ XLALReadConfigSTRINGVariable ( CHAR **varp,                     //!< [out] retur
 
   // If we haven't been asked for a section then we want the
   // "default" section, which starts at the top of the file without any section heading
+  CHAR *secName_cleaned = NULL;
   if ( secName == NULL )
     {
       inRightSection = TRUE;
+    }
+  else
+    {
+      XLAL_CHECK ( (secName_cleaned = XLALDeblankString ( secName, strlen(secName) )) != NULL, XLAL_EFUNC );
     }
 
   /* find the variable-name in the token-list (and in the right section, if given) */
@@ -291,10 +318,13 @@ XLALReadConfigSTRINGVariable ( CHAR **varp,                     //!< [out] retur
             return XLAL_SUCCESS;
           }
 
-          if ( (secName != NULL) && ( strncmp ( cfgdata->lines->tokens[i] + 1, secName, strlen(secName)) == 0) )
+          CHAR *thisSec = XLALGetSectionName ( cfgdata->lines->tokens[i] );
+          XLAL_CHECK ( thisSec != NULL, XLAL_EFUNC );
+          if ( (secName_cleaned != NULL) && ( strcmp ( secName_cleaned, thisSec ) == 0 ) )
             {
               inRightSection = TRUE;
             }
+          XLALFree ( thisSec );
         } // end: if start of new section found
       else
         {
@@ -324,6 +354,8 @@ XLALReadConfigSTRINGVariable ( CHAR **varp,                     //!< [out] retur
         } // end: if in right section
 
     } // end: for i < num_lines
+
+  XLALFree ( secName_cleaned );
 
   return XLAL_SUCCESS;
 
