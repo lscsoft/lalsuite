@@ -70,7 +70,6 @@ const double A3s_mism_hist[MISM_HIST_BINS] = {
 };
 
 static int SerialisationTest(
-  const size_t UNUSED n,
   const LatticeTiling UNUSED *tiling,
   const UINT8 UNUSED total_ref,
   const UINT8 UNUSED total_ckpt_0,
@@ -84,6 +83,8 @@ static int SerialisationTest(
   printf( "Skipping serialisation test (CFITSIO library is not available)\n" );
 #else // defined(HAVE_LIBCFITSIO)
   printf( "Performing serialisation test ..." );
+
+  const size_t n = XLALTotalLatticeTilingDimensions( tiling );
 
   const UINT8 total_ckpt[4] = {total_ckpt_0, total_ckpt_1, total_ckpt_2, total_ckpt_3};
 
@@ -328,14 +329,13 @@ static int BasicTest(
   }
 
   // Perform serialisation test
-  XLAL_CHECK( SerialisationTest( n, tiling, total_ref[n-1], total_ref_0, total_ref_1, total_ref_2, total_ref_3 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( SerialisationTest( tiling, total_ref[n-1], total_ref_0, total_ref_1, total_ref_2, total_ref_3 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
   XLALDestroyLatticeTilingLocator( loc );
   LALCheckMemoryLeaks();
   printf( "\n" );
-  fflush( stdout );
 
   return XLAL_SUCCESS;
 
@@ -472,15 +472,10 @@ static int MismatchTest(
 
   }
 
-  // Perform serialisation test
-  XLAL_CHECK( SerialisationTest( n, tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
-
   // Cleanup
   XLALDestroyLatticeTilingIterator( itr );
   XLALDestroyLatticeTilingLocator( loc );
   GFMAT( points );
-  printf( "\n" );
-  fflush( stdout );
 
   return XLAL_SUCCESS;
 
@@ -526,10 +521,14 @@ static int MismatchSquareTest(
   // Perform mismatch test
   XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Perform serialisation test
+  XLAL_CHECK( SerialisationTest( tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
   GFMAT( metric );
   LALCheckMemoryLeaks();
+  printf( "\n" );
 
   return XLAL_SUCCESS;
 
@@ -572,10 +571,14 @@ static int MismatchAgeBrakeTest(
   // Perform mismatch test
   XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Perform serialisation test
+  XLAL_CHECK( SerialisationTest( tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
   GFMAT( metric );
   LALCheckMemoryLeaks();
+  printf( "\n" );
 
   return XLAL_SUCCESS;
 
@@ -647,10 +650,14 @@ static int SuperskyTest(
   // Perform mismatch test
   XLAL_CHECK( MismatchTest( tiling, metrics->semi_rssky_metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Perform serialisation test
+  XLAL_CHECK( SerialisationTest( tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
   XLALDestroySuperskyMetrics( metrics );
   LALCheckMemoryLeaks();
+  printf( "\n" );
 
   return XLAL_SUCCESS;
 
