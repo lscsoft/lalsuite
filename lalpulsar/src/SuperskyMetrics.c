@@ -792,27 +792,41 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   DECOMPOSE_RSSKY_TRANSF( metrics->semi_rssky_transf );
   const size_t ifreq = RSSKY_FKDOT_DIM( 0 );
 
-  // Find the maximum, over both coherent and semicoherent metrics, of 'g_{ff} / mu',
+  // Find the maximum, over both semicoherent and coherent metrics, of 'g_{ff} / mu',
   // where 'g_{ff}' is the frequency-frequency metric element, and mu is the mismatch
-  double max_rssky_metric_ff_d_mu = 0;
+  double max_gff_d_mu = gsl_matrix_get( metrics->semi_rssky_metric, ifreq, ifreq ) / semi_max_mismatch;
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
-    const double coh_rssky_metric_ff_d_mu = gsl_matrix_get( metrics->coh_rssky_metric[n], ifreq, ifreq ) / coh_max_mismatch;
-    max_rssky_metric_ff_d_mu = GSL_MAX( max_rssky_metric_ff_d_mu, coh_rssky_metric_ff_d_mu );
-  }
-  {
-    const double semi_rssky_metric_ff_d_mu = gsl_matrix_get( metrics->semi_rssky_metric, ifreq, ifreq ) / semi_max_mismatch;
-    max_rssky_metric_ff_d_mu = GSL_MAX( max_rssky_metric_ff_d_mu, semi_rssky_metric_ff_d_mu );
+    const double coh_gff_d_mu = gsl_matrix_get( metrics->coh_rssky_metric[n], ifreq, ifreq ) / coh_max_mismatch;
+    if ( max_gff_d_mu < coh_gff_d_mu ) {
+      max_gff_d_mu = coh_gff_d_mu;
+    }
   }
 
-  // Project all metrics in the frequency dimension, and set frequency-frequency
-  // metric element to 'max_rssky_metric_ff_d_mu' * 'mu', where mu is the mismatch
-  for ( size_t n = 0; n < metrics->num_segments; ++n ) {
-    XLAL_CHECK( XLALProjectMetric( &metrics->coh_rssky_metric[n], metrics->coh_rssky_metric[n], ifreq ) == XLAL_SUCCESS, XLAL_EFUNC );
-    gsl_matrix_set( metrics->coh_rssky_metric[n], ifreq, ifreq, max_rssky_metric_ff_d_mu * coh_max_mismatch );
-  }
+  // Rescale rows 'g_{f*}' and columns 'g_{*f}' of both semicoherent and coherent metrics by
+  // 'sqrt( max{ g_{ff} / mu } / ( g_{ff} / mu ) )'; this scales the frequency coordinate such
+  // that 'g_{ff}' will give the same frequency spacing for all metrics, while also scaling the
+  // off-diagonal frequency terms (e.g. frequency-spindown correlations) correctly.
   {
-    XLAL_CHECK( XLALProjectMetric( &metrics->semi_rssky_metric, metrics->semi_rssky_metric, ifreq ) == XLAL_SUCCESS, XLAL_EFUNC );
-    gsl_matrix_set( metrics->semi_rssky_metric, ifreq, ifreq, max_rssky_metric_ff_d_mu * semi_max_mismatch );
+    const double semi_gff_d_mu = gsl_matrix_get( metrics->semi_rssky_metric, ifreq, ifreq ) / semi_max_mismatch;
+    const double scale = sqrt( max_gff_d_mu / semi_gff_d_mu );
+    {
+      gsl_vector_view rssky_metric_f_row = gsl_matrix_row( metrics->semi_rssky_metric, ifreq );
+      gsl_vector_scale( &rssky_metric_f_row.vector, scale );
+    } {
+      gsl_vector_view rssky_metric_f_col = gsl_matrix_column( metrics->semi_rssky_metric, ifreq );
+      gsl_vector_scale( &rssky_metric_f_col.vector, scale );
+    }
+  }
+  for ( size_t n = 0; n < metrics->num_segments; ++n ) {
+    const double coh_gff_d_mu = gsl_matrix_get( metrics->coh_rssky_metric[n], ifreq, ifreq ) / coh_max_mismatch;
+    const double scale = sqrt( max_gff_d_mu / coh_gff_d_mu );
+    {
+      gsl_vector_view rssky_metric_f_row = gsl_matrix_row( metrics->coh_rssky_metric[n], ifreq );
+      gsl_vector_scale( &rssky_metric_f_row.vector, scale );
+    } {
+      gsl_vector_view rssky_metric_f_col = gsl_matrix_column( metrics->coh_rssky_metric[n], ifreq );
+      gsl_vector_scale( &rssky_metric_f_col.vector, scale );
+    }
   }
 
   return XLAL_SUCCESS;
