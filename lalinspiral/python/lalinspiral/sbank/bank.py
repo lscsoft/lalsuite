@@ -41,7 +41,7 @@ class lazy_nhoods(object):
 
 class Bank(object):
 
-    def __init__(self, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0", coarse_match_df=None, iterative_match_df_max=None, fhigh_max=None):
+    def __init__(self, noise_model, flow, use_metric=False, cache_waveforms=False, nhood_size=1.0, nhood_param="tau0", coarse_match_df=None, iterative_match_df_max=None, fhigh_max=None, optimize_flow=None, flow_column=None):
 
         self.noise_model = noise_model
         self.flow = flow
@@ -49,6 +49,8 @@ class Bank(object):
         self.cache_waveforms = cache_waveforms
         self.coarse_match_df = coarse_match_df
         self.iterative_match_df_max = iterative_match_df_max
+        self.optimize_flow = optimize_flow
+        self.flow_column = flow_column
 
         if self.coarse_match_df and self.iterative_match_df_max and self.coarse_match_df < self.iterative_match_df_max:
             # If this case occurs coarse_match_df offers no improvement, turn off

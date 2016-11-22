@@ -24,7 +24,7 @@ import lal
 import lalsimulation as lalsim
 from lal import MSUN_SI, MTSUN_SI, PC_SI, PI, CreateREAL8Vector, CreateCOMPLEX8FrequencySeries
 from lalinspiral import InspiralSBankComputeMatch, InspiralSBankComputeRealMatch, InspiralSBankComputeMatchMaxSkyLoc, InspiralSBankComputeMatchMaxSkyLocNoPhase
-from lalinspiral.sbank.psds import get_neighborhood_PSD
+from lalinspiral.sbank.psds import get_neighborhood_PSD, get_ASD
 from lalinspiral.sbank.tau0tau3 import m1m2_to_tau0tau3
 
 # I wanted to use lalmetaio here, but the class has issues with python as the
@@ -177,6 +177,9 @@ class AlignedSpinTemplate(object):
         self.bank = bank
 
         self.flow = bank.flow
+        if bank.optimize_flow is not None:
+            self.optimize_flow(bank.flow, bank.fhigh_max, bank.noise_model,
+                               sigma_frac=bank.optimize_flow)
 
         self._wf = {}
         self._metric = None
@@ -186,6 +189,31 @@ class AlignedSpinTemplate(object):
         self._dur = None
         self._f_final = None
         self._fhigh_max = bank.fhigh_max
+
+    def optimize_flow(self, flow_min, fhigh_max, noise_model, df=0.1,
+                      sigma_frac=0.99):
+        """Set the template's flow as high as possible but still recovering
+        at least the given fraction of the template's sigma when calculated
+        from the minimum allowed flow. This avoids having unnecessarily long
+        templates.
+        """
+        # compute the whitened waveform
+        asd = get_ASD(df, flow_min, fhigh_max, noise_model)
+        wf = self._compute_waveform(df, fhigh_max)
+        if wf.data.length > len(asd):
+            asd2 = np.ones(wf.data.length) * np.inf
+            asd2[:len(asd)] = asd
+        elif wf.data.length < len(asd):
+            asd2 = asd[:wf.data.length]
+        else:
+            asd2 = asd
+        wwf = wf.data.data / asd2
+        # sum the power cumulatively from high to low frequencies
+        integral = np.cumsum(np.flipud(wwf * wwf.conj()))
+        ref_sigmasq = integral[-1]
+        # find the frequency bin corresponding to the target loss
+        i = np.searchsorted(integral, ref_sigmasq * sigma_frac ** 2)
+        self.flow = (len(integral) - i) * df
 
     @property
     def params(self):
@@ -262,6 +290,8 @@ class AlignedSpinTemplate(object):
         row.spin1z = self.spin1z
         row.spin2z = self.spin2z
         row.sigmasq = self.sigmasq
+        if self.bank.flow_column:
+            setattr(row, self.bank.flow_column, self.flow)
 
         return row
 
@@ -686,6 +716,8 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         row.alpha4 = self.psi
         row.alpha5 = self.orb_phase
         row.sigmasq = self.sigmasq
+        if self.bank.flow_column:
+            setattr(row, self.bank.flow_column, self.flow)
         return row
 
 
@@ -766,6 +798,8 @@ class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
         row.alpha4 = self.psi
         row.alpha5 = self.orb_phase
         row.sigmasq = self.sigmasq
+        if self.bank.flow_column:
+            setattr(row, self.bank.flow_column, self.flow)
         return row
 
 
