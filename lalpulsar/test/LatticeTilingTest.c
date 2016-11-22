@@ -345,6 +345,9 @@ static int MismatchTest(
   const LatticeTiling *tiling,
   const gsl_matrix *metric,
   const double max_mismatch,
+  const size_t injs_per_point,
+  const double mism_hist_error_tol,
+  const double mism_out_of_range_tol,
   const UINT8 total_ref,
   const double mism_hist_ref[MISM_HIST_BINS]
   )
@@ -373,14 +376,15 @@ static int MismatchTest(
   double mism_hist[MISM_HIST_BINS] = {0};
   double mism_hist_total = 0, mism_hist_out_of_range = 0;
 
-  // Perform 10 injections for every template
+  // Perform 'injs_per_point' injections for every template
+  printf( "Injections per point: %zu\n", injs_per_point );
   {
-    gsl_matrix *GAMAT( injections, 3, total );
-    gsl_matrix *GAMAT( nearest, 3, total );
-    gsl_matrix *GAMAT( temp, 3, total );
+    gsl_matrix *GAMAT( injections, n, total );
+    gsl_matrix *GAMAT( nearest, n, total );
+    gsl_matrix *GAMAT( temp, n, total );
     RandomParams *rng = XLALCreateRandomParams( total );
     XLAL_CHECK( rng != NULL, XLAL_EFUNC );
-    for ( size_t i = 0; i < 10; ++i ) {
+    for ( size_t i = 0; i < injs_per_point; ++i ) {
 
       // Generate random injection points
       XLAL_CHECK( XLALRandomLatticeTilingPoints( tiling, 0.0, rng, injections ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -439,23 +443,21 @@ static int MismatchTest(
     mism_hist_error += fabs( mism_hist[i] - mism_hist_ref[i] );
   }
   mism_hist_error /= MISM_HIST_BINS;
-  printf( "Mismatch histogram error: %0.3e\n", mism_hist_error );
-  const double mism_hist_error_tol = 5e-2;
+  printf( "Mismatch histogram error: %0.3e (tolerance %0.3e)\n", mism_hist_error, mism_hist_error_tol );
   if ( mism_hist_error >= mism_hist_error_tol ) {
-    XLAL_ERROR( XLAL_EFAILED, "ERROR: mismatch histogram error exceeds %0.3e\n", mism_hist_error_tol );
+    XLAL_ERROR( XLAL_EFAILED, "ERROR: mismatch histogram error exceeds tolerance\n" );
   }
 
   // Check fraction of injections out of histogram range
   const double mism_out_of_range = mism_hist_out_of_range / mism_hist_total;
-  printf( "Fraction of points out of histogram range: %0.3e\n", mism_out_of_range );
-  const double mism_out_of_range_tol = 2e-3;
+  printf( "Fraction of points out of histogram range: %0.3e (tolerance %0.3e)\n", mism_out_of_range, mism_out_of_range_tol );
   if ( mism_out_of_range > mism_out_of_range_tol ) {
-    XLAL_ERROR( XLAL_EFAILED, "ERROR: fraction of points out of histogram range exceeds %0.3e\n", mism_out_of_range_tol );
+    XLAL_ERROR( XLAL_EFAILED, "ERROR: fraction of points out of histogram range exceeds tolerance\n" );
   }
 
   // Perform 10 injections outside parameter space
   {
-    gsl_matrix *GAMAT( injections, 3, 10 );
+    gsl_matrix *GAMAT( injections, n, 10 );
     gsl_matrix *GAMAT( nearest, n, total );
     RandomParams *rng = XLALCreateRandomParams( total );
     XLAL_CHECK( rng != NULL, XLAL_EFUNC );
@@ -519,7 +521,7 @@ static int MismatchSquareTest(
   XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch test
-  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, 10, 5e-2, 2e-3, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform serialisation test
   XLAL_CHECK( SerialisationTest( tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -569,7 +571,7 @@ static int MismatchAgeBrakeTest(
   XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch test
-  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, 10, 5e-2, 2e-3, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform serialisation test
   XLAL_CHECK( SerialisationTest( tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -648,7 +650,7 @@ static int SuperskyTest(
   printf( "\n" );
 
   // Perform mismatch test
-  XLAL_CHECK( MismatchTest( tiling, metrics->semi_rssky_metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( tiling, metrics->semi_rssky_metric, max_mismatch, 10, 5e-2, 2e-3, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform serialisation test
   XLAL_CHECK( SerialisationTest( tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
