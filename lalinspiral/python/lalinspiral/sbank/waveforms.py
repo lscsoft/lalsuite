@@ -285,7 +285,6 @@ class AlignedSpinTemplate(object):
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.flow)
-        row.f_final = self.f_final
         row.template_duration = self.dur
         row.spin1z = self.spin1z
         row.spin2z = self.spin2z
@@ -702,7 +701,6 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.flow)
-        row.f_final = self.f_final
         row.template_duration = self._dur
         row.spin1x = self.spin1x
         row.spin1y = self.spin1y
@@ -784,7 +782,6 @@ class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.flow)
-        row.f_final = self.f_final
         row.template_duration = self._dur
         row.spin1x = self.spin1x
         row.spin1y = self.spin1y
