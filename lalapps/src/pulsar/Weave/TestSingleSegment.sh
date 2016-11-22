@@ -118,6 +118,9 @@ set -x
 twoF_exact=`cat CFSv2Exact.txt | sed -n '/^[^%]/{p;q}' | awk '{print $7}'`
 ${fitsdir}/lalapps_fits_table_list "WeaveOut.fits[mean_twoF_toplist][col c1=mean_twoF][#row == 1]" > tmp
 twoF_loud=`cat tmp | sed "/^#/d" | xargs printf "%g"`
-[ `echo "scale = 5; m = ( ${twoF_exact} - ${twoF_loud} ) / ${twoF_exact}; m < 0.3" | bc` -eq 1 ]
+# Value of 'mean_mu' was calculated by:
+#   octapps_run WeaveFstatMismatch --setup-file=TestSingleSegment.testdir/WeaveSetup.fits --spindowns=1 --semi-max-mismatch=11 --coh-max-mismatch=0 --output=mean
+mean_mu=0.6102
+awk "BEGIN { print mu = ( ${twoF_exact} - ${twoF_loud} ) / ${twoF_exact}; exit ( mu < ${mean_mu} ? 0 : 1 ) }"
 set +x
 echo
