@@ -591,85 +591,6 @@ static int MismatchAgeBrakeTest(
 
 }
 
-static int OLD_SuperskyTest(
-  const double T,
-  const double max_mismatch,
-  const char *lattice_name,
-  const UINT8 patch_count,
-  const double freq,
-  const double freqband,
-  const UINT8 total_ref,
-  const double mism_hist_ref[MISM_HIST_BINS]
-  )
-{
-
-  // Create lattice tiling
-  LatticeTiling *tiling = XLALCreateLatticeTiling( 3 );
-  XLAL_CHECK( tiling != NULL, XLAL_EFUNC );
-
-  // Compute reduced supersky metric
-  const double Tspan = T * 86400;
-  LIGOTimeGPS ref_time;
-  XLALGPSSetREAL8( &ref_time, 900100100 );
-  LALSegList segments;
-  {
-    XLAL_CHECK( XLALSegListInit( &segments ) == XLAL_SUCCESS, XLAL_EFUNC );
-    LALSeg segment;
-    LIGOTimeGPS start_time = ref_time, end_time = ref_time;
-    XLALGPSAdd( &start_time, -0.5 * Tspan );
-    XLALGPSAdd( &end_time, 0.5 * Tspan );
-    XLAL_CHECK( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-  MultiLALDetector detectors = {
-    .length = 1,
-    .sites = { lalCachedDetectors[LAL_LLO_4K_DETECTOR] }
-  };
-  EphemerisData *edat = XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
-                                            TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
-  XLAL_CHECK( edat != NULL, XLAL_EFUNC );
-  SuperskyMetrics *metrics = XLALComputeSuperskyMetrics( 0, &ref_time, &segments, freq, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
-  XLAL_CHECK( metrics != NULL, XLAL_EFUNC );
-  XLALSegListClear( &segments );
-  XLALDestroyEphemerisData( edat );
-
-  // Add bounds
-  printf( "Bounds: supersky, sky patch 0/%" LAL_UINT8_FORMAT ", freq=%0.3g, freqband=%0.3g\n", patch_count, freq, freqband );
-  double alpha1 = 0, alpha2 = 0, delta1 = 0, delta2 = 0;
-  XLAL_CHECK( XLALComputePhysicalSkyEqualAreaPatch( &alpha1, &alpha2, &delta1, &delta2, patch_count, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( tiling, metrics->semi_rssky_metric, metrics->semi_rssky_transf, alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( tiling, metrics->semi_rssky_transf, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Set metric
-  printf( "Lattice type: %s\n", lattice_name );
-  XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, metrics->semi_rssky_metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Print bound names
-  printf( "Bound names:" );
-  for ( size_t i = 0; i < XLALTotalLatticeTilingDimensions( tiling ); ++i ) {
-    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, i );
-    XLAL_CHECK( stats != NULL, XLAL_EFUNC );
-    XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
-    printf( " %s", stats->name );
-  }
-  printf( "\n" );
-
-  // Perform mismatch test
-  XLAL_CHECK( MismatchTest( tiling, metrics->semi_rssky_metric, max_mismatch, 10, 5e-2, 2e-3, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Perform serialisation test
-  XLAL_CHECK( SerialisationTest( tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Cleanup
-  XLALDestroyLatticeTiling( tiling );
-  XLALDestroySuperskyMetrics( metrics );
-  LALCheckMemoryLeaks();
-  printf( "\n" );
-
-  return XLAL_SUCCESS;
-
-}
-
 static int SuperskyTests(
   const UINT8 coh_total_ref_0,
   const UINT8 coh_total_ref_1,
@@ -869,9 +790,6 @@ int main( void )
   XLAL_CHECK_MAIN( MismatchAgeBrakeTest( "Ans", 300, 1.0e-5, 37022, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform a variety of tests with the reduced supersky parameter space and metric
-  XLAL_CHECK_MAIN( OLD_SuperskyTest( 1.1, 0.8, "Ans",  1, 50, 2.0e-5, 20548, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( OLD_SuperskyTest( 1.5, 0.8, "Ans",  3, 50, 2.0e-5, 20202, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( OLD_SuperskyTest( 2.5, 0.8, "Ans", 17, 50, 2.0e-5, 29147, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( SuperskyTests( 99376, 80817, 63091, 482182 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return EXIT_SUCCESS;
