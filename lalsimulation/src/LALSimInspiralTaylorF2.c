@@ -382,12 +382,6 @@ int XLALSimInspiralTaylorF2(
         const REAL8 fEnd,                      /**< highest GW frequency (Hz) of waveform generation - if 0, end at Schwarzschild ISCO */
         const REAL8 f_ref,                     /**< Reference GW frequency (Hz) - if 0 reference point is coalescence */
         const REAL8 r,                         /**< distance of source (m) */
-        const REAL8 quadparam1,                /**< quadrupole deformation parameter of body 1 (dimensionless, 1 for BH) */
-        const REAL8 quadparam2,                /**< quadrupole deformation parameter of body 2 (dimensionless, 1 for BH) */
-        const REAL8 lambda1,                   /**< (tidal deformation of body 1)/(mass of body 1)^5 */
-        const REAL8 lambda2,                   /**< (tidal deformation of body 2)/(mass of body 2)^5 */
-        const INT4 phaseO,                     /**< twice PN phase order */
-        const INT4 amplitudeO,                  /**< twice PN amplitude order */
         LALDict *p /**< Linked list containing the extra testing GR parameters >**/
         )
 {
@@ -447,12 +441,6 @@ int XLALSimInspiralTaylorF2(
     for (i = iStart; i < n; i++) {
         freqs->data[i-iStart] = i * deltaF;
     }
-    XLALSimInspiralWaveformParamsInsertTidalLambda1(p,lambda1);
-    XLALSimInspiralWaveformParamsInsertTidalLambda2(p,lambda2);
-    XLALSimInspiralWaveformParamsInsertdQuadMon1(p,quadparam1-1.);
-    XLALSimInspiralWaveformParamsInsertdQuadMon2(p,quadparam2-1.);
-    XLALSimInspiralWaveformParamsInsertPNPhaseOrder(p,phaseO);
-    XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(p,amplitudeO);
     ret = XLALSimInspiralTaylorF2Core(&htilde, freqs, phi_ref, m1_SI, m2_SI,
                                       S1z, S2z, f_ref, shft, r, p);
 

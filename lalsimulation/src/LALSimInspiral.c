@@ -993,12 +993,10 @@ int XLALSimInspiralChooseFDWaveform(
                 ABORT_NONDEFAULT_MODES_CHOICE(LALparams);
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
                 ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
-
             /* Call the waveform driver routine */
             ret = XLALSimInspiralTaylorF2(hptilde, phiRef, deltaF, m1, m2,
                     S1z, S2z, f_min, f_max, f_ref, distance,
-                    quadparam1, quadparam2, lambda1, lambda2,
-                    phaseO, amplitudeO, LALparams);
+                    LALparams);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
@@ -1594,7 +1592,8 @@ static int XLALSimInspiralTDFromTD(
     }
     /* set redshift to zero so we don't accidentally apply it again later */
     z=0.;
-    XLALSimInspiralWaveformParamsInsertRedshift(LALparams,z);
+    if (LALparams)
+      XLALSimInspiralWaveformParamsInsertRedshift(LALparams,z);
 
     /* if the requested low frequency is below the lowest Kerr ISCO
      * frequency then change it to that frequency */
@@ -1698,7 +1697,8 @@ static int XLALSimInspiralTDFromFD(
     }
     /* set redshift to zero so we don't accidentally apply it again later */
     z=0.;
-    XLALSimInspiralWaveformParamsInsertRedshift(LALparams,z);
+    if (LALparams)
+      XLALSimInspiralWaveformParamsInsertRedshift(LALparams,z);
 
     /* if the requested low frequency is below the lowest Kerr ISCO
      * frequency then change it to that frequency */
@@ -1933,7 +1933,8 @@ int XLALSimInspiralFD(
     }
     /* set redshift to zero so we don't accidentally apply it again later */
     z = 0.0;
-    XLALSimInspiralWaveformParamsInsertRedshift(LALparams,z);
+    if (LALparams)
+      XLALSimInspiralWaveformParamsInsertRedshift(LALparams,z);
 
     /* FIXME: assume that f_max is the Nyquist frequency, and use it
      * to compute the requested deltaT */
@@ -6272,12 +6273,11 @@ int XLALSimInspiralChooseFDWaveformOLD(
                 ABORT_NONDEFAULT_MODES_CHOICE_OLD(waveFlags);
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
                 ABORT_NONZERO_TRANSVERSE_SPINS_OLD(waveFlags);
-
+	    XLAL_PRINT_DEPRECATION_WARNING("Calling TF2 via old interface, setting to default values tidal lambdas, quad-monopole pars, amplitude and phase order");
             /* Call the waveform driver routine */
             ret = XLALSimInspiralTaylorF2(hptilde, phiRef, deltaF, m1, m2,
                     S1z, S2z, f_min, f_max, f_ref, distance,
-                    quadparam1, quadparam2, lambda1, lambda2,
-		    phaseO, amplitudeO, NULL);
+                    NULL);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
