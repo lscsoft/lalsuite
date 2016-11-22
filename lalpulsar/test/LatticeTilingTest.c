@@ -69,6 +69,11 @@ const double A3s_mism_hist[MISM_HIST_BINS] = {
   1.590473, 1.664510, 1.595423, 1.391209, 1.194340, 1.004085, 0.729054, 0.371869, 0.098727, 0.011236
 };
 
+const double A4s_mism_hist[MISM_HIST_BINS] = {
+  0.088295, 0.264916, 0.441209, 0.617937, 0.794537, 0.971005, 1.147715, 1.324035, 1.500356, 1.677569,
+  1.806866, 1.816272, 1.757854, 1.653638, 1.513900, 1.268203, 0.833153, 0.417934, 0.100320, 0.004287
+};
+
 static int SerialisationTest(
   const LatticeTiling UNUSED *tiling,
   const UINT8 UNUSED total_ref,
@@ -586,7 +591,7 @@ static int MismatchAgeBrakeTest(
 
 }
 
-static int SuperskyTest(
+static int OLD_SuperskyTest(
   const double T,
   const double max_mismatch,
   const char *lattice_name,
@@ -665,12 +670,20 @@ static int SuperskyTest(
 
 }
 
-static int MultiSegSuperskyTest( void )
+static int SuperskyTests(
+  const UINT8 coh_total_ref_0,
+  const UINT8 coh_total_ref_1,
+  const UINT8 coh_total_ref_2,
+  const UINT8 semi_total_ref
+  )
 {
-  printf( "Performing multiple-segment tests ...\n" );
+
+  const UINT8 coh_total_ref[3] = {coh_total_ref_0, coh_total_ref_1, coh_total_ref_2};
+
+  printf( "Performing super-sky metric tests ...\n\n" );
 
   // Compute reduced supersky metrics
-  const double Tspan = 86400;
+  const double Tspan = 90000;
   LIGOTimeGPS ref_time;
   XLALGPSSetREAL8( &ref_time, 900100100 );
   LALSegList segments;
@@ -679,8 +692,8 @@ static int MultiSegSuperskyTest( void )
     LALSeg segment;
     {
       LIGOTimeGPS start_time = ref_time, end_time = ref_time;
-      XLALGPSAdd( &start_time, -4 * Tspan );
-      XLALGPSAdd( &end_time, -3 * Tspan );
+      XLALGPSAdd( &start_time, -3 * Tspan );
+      XLALGPSAdd( &end_time, -2 * Tspan );
       XLAL_CHECK( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
@@ -693,11 +706,12 @@ static int MultiSegSuperskyTest( void )
     }
     {
       LIGOTimeGPS start_time = ref_time, end_time = ref_time;
-      XLALGPSAdd( &start_time, 3.5 * Tspan );
-      XLALGPSAdd( &end_time, 4.5 * Tspan );
+      XLALGPSAdd( &start_time, 2.5 * Tspan );
+      XLALGPSAdd( &end_time, 3.5 * Tspan );
       XLAL_CHECK( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
+    XLAL_CHECK( segments.length == XLAL_NUM_ELEM( coh_total_ref ), XLAL_EFAILED );
   }
   MultiLALDetector detectors = {
     .length = 1,
@@ -706,11 +720,13 @@ static int MultiSegSuperskyTest( void )
   EphemerisData *edat = XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
                                             TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
   XLAL_CHECK( edat != NULL, XLAL_EFUNC );
-  SuperskyMetrics *metrics = XLALComputeSuperskyMetrics( 1, &ref_time, &segments, 50, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
+  const double freq_max = 40.0;
+  SuperskyMetrics *metrics = XLALComputeSuperskyMetrics( 1, &ref_time, &segments, freq_max, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
   XLAL_CHECK( metrics != NULL, XLAL_EFUNC );
+  XLAL_CHECK( metrics->num_segments == segments.length, XLAL_EFAILED );
 
   // Project and rescale semicoherent metric to give equal frequency spacings
-  const double coh_max_mismatch = 0.2, semi_max_mismatch = 0.4;
+  const double coh_max_mismatch = 1.4, semi_max_mismatch = 4.9;
   XLAL_CHECK( XLALEqualizeReducedSuperskyMetricsFreqSpacing( metrics, coh_max_mismatch, semi_max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Create lattice tilings
@@ -724,15 +740,16 @@ static int MultiSegSuperskyTest( void )
 
   // Add bounds
   double alpha1 = 0, alpha2 = 0, delta1 = 0, delta2 = 0;
-  XLAL_CHECK( XLALComputePhysicalSkyEqualAreaPatch( &alpha1, &alpha2, &delta1, &delta2, 1, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  const double freq_min = freq_max - 5e-5, f1dot = -5e-9;
+  XLAL_CHECK( XLALComputePhysicalSkyEqualAreaPatch( &alpha1, &alpha2, &delta1, &delta2, 2, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( coh_tiling[n], metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n], alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 0, 50, 50 + 1e-4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 1, 0, -5e-10 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 0, freq_min, freq_max ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 1, f1dot, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( semi_tiling, metrics->semi_rssky_metric, metrics->semi_rssky_transf, alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( semi_tiling, metrics->semi_rssky_transf, 0, 50, 50 + 1e-4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( semi_tiling, metrics->semi_rssky_transf, 1, 0, -5e-10 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( semi_tiling, metrics->semi_rssky_transf, 0, freq_min, freq_max ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( semi_tiling, metrics->semi_rssky_transf, 1, f1dot, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set metric
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
@@ -747,14 +764,43 @@ static int MultiSegSuperskyTest( void )
     const double coh_dfreq = XLALLatticeTilingStepSizes( coh_tiling[n], ifreq );
     const double tol = 1e-8;
     XLAL_CHECK( fabs( coh_dfreq - semi_dfreq ) < tol * semi_dfreq, XLAL_EFAILED,
-                "  ERROR: semi_dfreq=%0.15e, coh_dfreq[%zu]=%0.15e, |coh_dfreq - semi_dfreq| >= %g * semi_dfreq", semi_dfreq, n, coh_dfreq, tol );
+                "  ERROR: semi_dfreq=%0.15e, coh_dfreq[%zu]=%0.15e, |coh_dfreq - semi_dfreq| >= %0.5g * semi_dfreq", semi_dfreq, n, coh_dfreq, tol );
   }
+
+  // Print information on bounds
+  for ( size_t n = 0; n < metrics->num_segments; ++n ) {
+    for ( size_t i = 0; i < XLALTotalLatticeTilingDimensions( coh_tiling[n] ); ++i ) {
+      const LatticeTilingStats *stats = XLALLatticeTilingStatistics( coh_tiling[n], i );
+      XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+      XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
+      printf( "Coherent #%zu  bound #%zu: name=%6s, points=[%4u,%4u]\n", n, i, stats->name, stats->min_points, stats->max_points );
+    }
+  }
+  for ( size_t i = 0; i < XLALTotalLatticeTilingDimensions( semi_tiling ); ++i ) {
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( semi_tiling, i );
+    XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+    XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
+    printf( "Semicoherent bound #%zu: name=%6s, points=[%4u,%4u]\n", i, stats->name, stats->min_points, stats->max_points );
+  }
+  printf( "\n" );
 
   // Check computation of spindown range for coherent tilings
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     PulsarSpinRange spin_range;
     XLAL_CHECK( XLALSuperskyLatticePulsarSpinRange( &spin_range, coh_tiling[n], metrics->coh_rssky_transf[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    printf( "Coherent #%zu spindown range: freq=[%0.5g,%0.5g], f1dot=[%0.5g,%0.5g]\n", n, spin_range.fkdot[0], spin_range.fkdot[0] + spin_range.fkdotBand[0], spin_range.fkdot[1], spin_range.fkdot[1] + spin_range.fkdotBand[1] );
   }
+  printf( "\n" );
+
+  // Perform mismatch test of coherent and semicoherent tilings
+  for ( size_t n = 0; n < metrics->num_segments; ++n ) {
+    printf( "Coherent #%zu mismatch tests:\n", n );
+    XLAL_CHECK( MismatchTest( coh_tiling[n], metrics->coh_rssky_metric[n], coh_max_mismatch, 1, 5e-2, 4e-3, coh_total_ref[n], A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+    printf( "\n" );
+  }
+  printf( "Semicoherent mismatch tests:\n" );
+  XLAL_CHECK( MismatchTest( semi_tiling, metrics->semi_rssky_metric, semi_max_mismatch, 1, 5e-2, 1e-2, semi_total_ref, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  printf( "\n" );
 
   // Cleanup
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
@@ -765,8 +811,8 @@ static int MultiSegSuperskyTest( void )
   XLALSegListClear( &segments );
   XLALDestroyEphemerisData( edat );
   LALCheckMemoryLeaks();
-  printf( "\n" );
-  fflush( stdout );
+
+  printf( "Finished super-sky metric tests\n" );
 
   return XLAL_SUCCESS;
 
@@ -822,13 +868,11 @@ int main( void )
   XLAL_CHECK_MAIN( MismatchAgeBrakeTest( "Ans", 200, 1.5e-5, 37232, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( MismatchAgeBrakeTest( "Ans", 300, 1.0e-5, 37022, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Perform mismatch tests with the reduced supersky parameter space and metric
-  XLAL_CHECK_MAIN( SuperskyTest( 1.1, 0.8, "Ans",  1, 50, 2.0e-5, 20548, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( SuperskyTest( 1.5, 0.8, "Ans",  3, 50, 2.0e-5, 20202, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( SuperskyTest( 2.5, 0.8, "Ans", 17, 50, 2.0e-5, 29147, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Perform tests with the reduced supersky parameter space metric and multiple segments
-  XLAL_CHECK_MAIN( MultiSegSuperskyTest() == XLAL_SUCCESS, XLAL_EFUNC );
+  // Perform a variety of tests with the reduced supersky parameter space and metric
+  XLAL_CHECK_MAIN( OLD_SuperskyTest( 1.1, 0.8, "Ans",  1, 50, 2.0e-5, 20548, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( OLD_SuperskyTest( 1.5, 0.8, "Ans",  3, 50, 2.0e-5, 20202, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( OLD_SuperskyTest( 2.5, 0.8, "Ans", 17, 50, 2.0e-5, 29147, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( SuperskyTests( 99376, 80817, 63091, 482182 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return EXIT_SUCCESS;
 
