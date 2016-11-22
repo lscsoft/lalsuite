@@ -181,7 +181,7 @@ class AlignedSpinTemplate(object):
         self.sigmasq = 0.
         self._mchirp = compute_mchirp(m1, m2)
         self._tau0 = compute_tau0( self._mchirp, bank.flow)
-        self._dur = self._get_dur()
+        self._dur = None
         self._f_final = None
         self._fhigh_max = bank.fhigh_max
 
@@ -199,6 +199,17 @@ class AlignedSpinTemplate(object):
             self._f_final = ceil_pow_2(f_final)
 
         return self._f_final
+
+    @property
+    def dur(self):
+
+        if self._dur is None:
+            self._dur = self._get_dur()
+        return self._dur
+
+    @dur.setter
+    def dur(self, new_val):
+        self._dur = new_val
 
     def _get_isco_f_final(self):
         return 6**-1.5 / (PI * (self.m1 + self.m2) * MTSUN_SI)  # ISCO
@@ -245,7 +256,7 @@ class AlignedSpinTemplate(object):
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
         row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
         row.f_final = self.f_final
-        row.template_duration = self._dur
+        row.template_duration = self.dur
         row.spin1z = self.spin1z
         row.spin2z = self.spin2z
         row.sigmasq = self.sigmasq
