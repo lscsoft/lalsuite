@@ -77,6 +77,7 @@ const double A4s_mism_hist[MISM_HIST_BINS] = {
 static int SerialisationTest(
   const LatticeTiling UNUSED *tiling,
   const UINT8 UNUSED total_ref,
+  const int UNUSED total_tol,
   const UINT8 UNUSED total_ckpt_0,
   const UINT8 UNUSED total_ckpt_1,
   const UINT8 UNUSED total_ckpt_2,
@@ -101,7 +102,7 @@ static int SerialisationTest(
   // Count number of points
   const UINT8 total = XLALTotalLatticeTilingPoints( itr );
   XLAL_CHECK( total > 0, XLAL_EFUNC );
-  XLAL_CHECK( imaxabs( total - total_ref ) <= 1, XLAL_EFUNC, "\nERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", total, total_ref );
+  XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "\nERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
 
   // Get all points
   gsl_matrix *GAMAT( points, n, total );
@@ -182,6 +183,8 @@ static int BasicTest(
   )
 {
 
+  const int total_tol = 1;
+
   const int bound_on[4] = {bound_on_0, bound_on_1, bound_on_2, bound_on_3};
   const UINT8 total_ref[4] = {total_ref_0, total_ref_1, total_ref_2, total_ref_3};
 
@@ -233,9 +236,9 @@ static int BasicTest(
     // Count number of points
     const UINT8 total = XLALTotalLatticeTilingPoints( itr );
     XLAL_CHECK( total > 0, XLAL_EFUNC );
-    printf( "Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT "\n", i+1, total );
-    XLAL_CHECK( imaxabs( total - total_ref[i] ) <= 1, XLAL_EFUNC,
-                "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", i, total, total_ref[i] );
+    printf( "Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT " (vs %" LAL_UINT8_FORMAT ", tolerance = %i)\n", i+1, total, total_ref[i], total_tol );
+    XLAL_CHECK( imaxabs( total - total_ref[i] ) <= total_tol, XLAL_EFUNC,
+                "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total, total_ref[i], total_tol );
     for ( UINT8 k = 0; XLALNextLatticeTilingPoint( itr, NULL ) > 0; ++k ) {
       const UINT8 itr_index = XLALCurrentLatticeTilingIndex( itr );
       XLAL_CHECK( k == itr_index, XLAL_EFUNC,
@@ -249,8 +252,8 @@ static int BasicTest(
       const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, j );
       XLAL_CHECK( stats != NULL, XLAL_EFUNC );
       XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
-      XLAL_CHECK( imaxabs( stats->total_points - total_ref[j] ) <= 1, XLAL_EFAILED, "\n  "
-                  "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", j, stats->total_points, total_ref[j] );
+      XLAL_CHECK( imaxabs( stats->total_points - total_ref[j] ) <= total_tol, XLAL_EFAILED, "\n  "
+                  "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", j, stats->total_points, total_ref[j], total_tol );
       XLAL_CHECK( stats->min_points <= stats->max_points, XLAL_EFAILED, "\n  "
                   "ERROR: min_points = %" LAL_INT4_FORMAT " > %" LAL_INT4_FORMAT " = max_points", stats->min_points, stats->max_points );
       XLAL_CHECK( stats->min_value <= stats->max_value, XLAL_EFAILED, "\n  "
@@ -325,7 +328,7 @@ static int BasicTest(
     while ( XLALNextLatticeTilingPoint( itr_alt, NULL ) > 0 ) {
       ++total_alt;
     }
-    XLAL_CHECK( imaxabs( total_alt - total_ref[i] ) <= 1, XLAL_EFUNC, "ERROR: alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", i, total_alt, total_ref[i] );
+    XLAL_CHECK( imaxabs( total_alt - total_ref[i] ) <= total_tol, XLAL_EFUNC, "ERROR: alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total_alt, total_ref[i], total_tol );
     printf( " done\n" );
 
     // Cleanup
@@ -334,7 +337,7 @@ static int BasicTest(
   }
 
   // Perform serialisation test
-  XLAL_CHECK( SerialisationTest( tiling, total_ref[n-1], total_ref_0, total_ref_1, total_ref_2, total_ref_3 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( SerialisationTest( tiling, total_ref[n-1], total_tol, total_ref_0, total_ref_1, total_ref_2, total_ref_3 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
@@ -354,6 +357,7 @@ static int MismatchTest(
   const double mism_hist_error_tol,
   const double mism_out_of_range_tol,
   const UINT8 total_ref,
+  const int total_tol,
   const double mism_hist_ref[MISM_HIST_BINS]
   )
 {
@@ -369,8 +373,8 @@ static int MismatchTest(
   // Count number of points
   const UINT8 total = XLALTotalLatticeTilingPoints( itr );
   XLAL_CHECK( total > 0, XLAL_EFUNC );
-  printf( "Number of lattice points: %" LAL_UINT8_FORMAT "\n", total );
-  XLAL_CHECK( imaxabs( total - total_ref ) <= 1, XLAL_EFUNC, "ERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", total, total_ref );
+  printf( "Number of lattice points: %" LAL_UINT8_FORMAT " (vs %" LAL_UINT8_FORMAT ", tolerance = %i)\n", total, total_ref, total_tol );
+  XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "ERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
 
   // Get all points
   gsl_matrix *GAMAT( points, n, total );
@@ -498,6 +502,8 @@ static int MismatchSquareTest(
   )
 {
 
+  const int total_tol = 1;
+
   // Create lattice tiling
   LatticeTiling *tiling = XLALCreateLatticeTiling( 3 );
   XLAL_CHECK( tiling != NULL, XLAL_EFUNC );
@@ -526,10 +532,10 @@ static int MismatchSquareTest(
   XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch test
-  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, 10, 5e-2, 2e-3, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, 10, 5e-2, 2e-3, total_ref, total_tol, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform serialisation test
-  XLAL_CHECK( SerialisationTest( tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( SerialisationTest( tiling, total_ref, total_tol, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
@@ -549,6 +555,8 @@ static int MismatchAgeBrakeTest(
   const double mism_hist_ref[MISM_HIST_BINS]
   )
 {
+
+  const int total_tol = 1;
 
   // Create lattice tiling
   LatticeTiling *tiling = XLALCreateLatticeTiling( 3 );
@@ -576,10 +584,10 @@ static int MismatchAgeBrakeTest(
   XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch test
-  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, 10, 5e-2, 2e-3, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, 10, 5e-2, 2e-3, total_ref, total_tol, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform serialisation test
-  XLAL_CHECK( SerialisationTest( tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( SerialisationTest( tiling, total_ref, total_tol, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
@@ -598,6 +606,8 @@ static int SuperskyTests(
   const UINT8 semi_total_ref
   )
 {
+
+  const int total_tol = 15;
 
   const UINT8 coh_total_ref[3] = {coh_total_ref_0, coh_total_ref_1, coh_total_ref_2};
 
@@ -716,11 +726,11 @@ static int SuperskyTests(
   // Perform mismatch test of coherent and semicoherent tilings
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     printf( "Coherent #%zu mismatch tests:\n", n );
-    XLAL_CHECK( MismatchTest( coh_tiling[n], metrics->coh_rssky_metric[n], coh_max_mismatch, 1, 5e-2, 4e-3, coh_total_ref[n], A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( MismatchTest( coh_tiling[n], metrics->coh_rssky_metric[n], coh_max_mismatch, 1, 5e-2, 4e-3, coh_total_ref[n], total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
     printf( "\n" );
   }
   printf( "Semicoherent mismatch tests:\n" );
-  XLAL_CHECK( MismatchTest( semi_tiling, metrics->semi_rssky_metric, semi_max_mismatch, 1, 5e-2, 1e-2, semi_total_ref, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( semi_tiling, metrics->semi_rssky_metric, semi_max_mismatch, 1, 5e-2, 1e-2, semi_total_ref, total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
   printf( "\n" );
 
   // Cleanup
