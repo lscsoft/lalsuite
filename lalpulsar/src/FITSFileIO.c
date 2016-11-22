@@ -275,6 +275,9 @@ FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name )
   CALL_FITS( fits_create_img, file->ff, SHORT_IMG, 0, NULL );
   file->hdutype = INT_MAX;
 
+  // Write warning for FITS long string keyword convention
+  CALL_FITS( fits_write_key_longwarn, file->ff );
+
   // Write the current system date to the FITS file
   CALL_FITS( fits_write_date, file->ff );
 
@@ -1268,9 +1271,6 @@ int XLALFITSHeaderWriteString( FITSFile UNUSED *file, const CHAR UNUSED *key, co
   XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
-
-  // Write warning for FITS long string keyword convention
-  CALL_FITS( fits_write_key_longwarn, file->ff );
 
   // Write string value to current header
   union {
