@@ -176,11 +176,13 @@ class AlignedSpinTemplate(object):
         self.chieff = lalsim.SimIMRPhenomBComputeChi(m1, m2, spin1z, spin2z)
         self.bank = bank
 
+        self.flow = bank.flow
+
         self._wf = {}
         self._metric = None
         self.sigmasq = 0.
         self._mchirp = compute_mchirp(m1, m2)
-        self.tau0 = compute_tau0( self._mchirp, bank.flow)
+        self.tau0 = compute_tau0( self._mchirp, self.flow)
         self._dur = None
         self._f_final = None
         self._fhigh_max = bank.fhigh_max
@@ -215,7 +217,7 @@ class AlignedSpinTemplate(object):
         return 6**-1.5 / (PI * (self.m1 + self.m2) * MTSUN_SI)  # ISCO
 
     def _get_chirp_dur(self):
-        return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.bank.flow,
+        return lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(self.flow,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI, self.chieff, 7)
 
     def _get_imr_dur(self):
@@ -254,7 +256,7 @@ class AlignedSpinTemplate(object):
         row.mtotal = self.m1 + self.m2
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
-        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
+        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.flow)
         row.f_final = self.f_final
         row.template_duration = self.dur
         row.spin1z = self.spin1z
@@ -285,7 +287,7 @@ class AlignedSpinTemplate(object):
                 0., 0., self.spin1z, 0., 0., self.spin2z,
                 1e6*PC_SI, 0., 0.,
                 0., 0., 0.,
-                df, self.bank.flow, f_final, self.bank.flow,
+                df, self.flow, f_final, self.flow,
                 None, approx)
 
         else:
@@ -294,7 +296,7 @@ class AlignedSpinTemplate(object):
                 0, self.spin1z, 0, 0, self.spin2z,
                 1.e6*PC_SI, 0., 0.,
                 0., 0., 0.,
-                df, self.bank.flow, f_final, 40.,
+                df, self.flow, f_final, 40.,
                 None, approx)
         return hplus_fd
 
@@ -318,7 +320,7 @@ class AlignedSpinTemplate(object):
 
             # whiten
             arr_view[:] /= ASD[:wf.data.length]
-            arr_view[:int(self.bank.flow / df)] = 0.
+            arr_view[:int(self.flow / df)] = 0.
             arr_view[int(self.f_final/df) : wf.data.length] = 0.
 
             # normalize
@@ -381,7 +383,7 @@ class IMRPhenomBTemplate(IMRAlignedSpinTemplate):
     def _compute_waveform(self, df, f_final):
         return lalsim.SimIMRPhenomBGenerateFD(0, df,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
-            self.chieff, self.bank.flow, f_final, 1000000 * PC_SI)
+            self.chieff, self.flow, f_final, 1000000 * PC_SI)
 
 
 class IMRPhenomCTemplate(IMRPhenomBTemplate):
@@ -390,7 +392,7 @@ class IMRPhenomCTemplate(IMRPhenomBTemplate):
         return lalsim.SimIMRPhenomCGenerateFD(
             0, df,
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
-            self.chieff, self.bank.flow, f_final, 1000000 * PC_SI)
+            self.chieff, self.flow, f_final, 1000000 * PC_SI)
 
 class IMRPhenomDTemplate(IMRAlignedSpinTemplate):
     approximant = "IMRPhenomD"
@@ -399,12 +401,12 @@ class IMRPhenomDTemplate(IMRAlignedSpinTemplate):
             0, 0, df, # ref phase, ref frequency, df
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
             self.spin1z, self.spin2z,
-            self.bank.flow, f_final, 1000000 * PC_SI, None)
+            self.flow, f_final, 1000000 * PC_SI, None)
 
     def _get_dur(self):
         dur = lalsim.SimIMRPhenomDChirpTime(self.m1 * MSUN_SI,
                                             self.m2 * MSUN_SI, self.spin1z,
-                                            self.spin2z, self.bank.flow)
+                                            self.spin2z, self.flow)
         # add a 10% to be consistent with PyCBC's duration estimate,
         # may want to FIXME if that changes
         return dur * 1.1
@@ -416,7 +418,7 @@ class SEOBNRv2Template(IMRAlignedSpinTemplate):
         seff = lalsim.SimIMRPhenomBComputeChi(self.m1, self.m2,
                                               self.spin1z, self.spin2z)
         dur = lalsim.SimIMRSEOBNRv2ChirpTimeSingleSpin(
-                self.m1 * MSUN_SI, self.m2 * MSUN_SI, seff, self.bank.flow)
+                self.m1 * MSUN_SI, self.m2 * MSUN_SI, seff, self.flow)
         # add a 10% to be consistent with PyCBC's duration estimate,
         # may want to FIXME if that changes
         return dur * 1.1
@@ -432,7 +434,7 @@ class SEOBNRv4Template(IMRAlignedSpinTemplate):
 
     def _get_dur(self):
         dur = lalsim.SimIMRSEOBNRv4ROMTimeOfFrequency(
-                self.bank.flow, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
+                self.flow, self.m1 * MSUN_SI, self.m2 * MSUN_SI,
                 self.spin1z, self.spin2z)
         # Allow a 10% margin of error
         return dur * 1.1
@@ -464,20 +466,20 @@ class TaylorF2RedSpinTemplate(InspiralAlignedSpinTemplate):
         self.chired = lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(m1, m2, spin1z, spin2z)
         self._dur = self._get_dur()
         self._eta = m1*m2/(m1+m2)**2
-        self._theta0, self._theta3, self._theta3s = compute_chirptimes(self._mchirp, self._eta, self.chired, self.bank.flow)
+        self._theta0, self._theta3, self._theta3s = compute_chirptimes(self._mchirp, self._eta, self.chired, self.flow)
 
     def finalize_as_template(self):
         if not self.bank.use_metric: return
 
-        df, PSD = get_neighborhood_PSD([self], self.bank.flow, self.bank.noise_model)
+        df, PSD = get_neighborhood_PSD([self], self.flow, self.bank.noise_model)
 
-        if df not in self.bank._moments or len(PSD) - self.bank.flow // df > self.bank._moments[df][0].length:
+        if df not in self.bank._moments or len(PSD) - self.flow // df > self.bank._moments[df][0].length:
             real8vector_psd = CreateREAL8Vector(len(PSD))
             real8vector_psd.data[:] = PSD
-            self.bank._moments[df] = create_moments(df, self.bank.flow, len(PSD))
-            lalsim.SimInspiralTaylorF2RedSpinComputeNoiseMoments(*(self.bank._moments[df] + (real8vector_psd, self.bank.flow, df)))
+            self.bank._moments[df] = create_moments(df, self.flow, len(PSD))
+            lalsim.SimInspiralTaylorF2RedSpinComputeNoiseMoments(*(self.bank._moments[df] + (real8vector_psd, self.flow, df)))
 
-        self._metric = lalsim.SimInspiralTaylorF2RedSpinMetricChirpTimes(self._theta0, self._theta3, self._theta3s, self.bank.flow, df, *self.bank._moments[df])
+        self._metric = lalsim.SimInspiralTaylorF2RedSpinMetricChirpTimes(self._theta0, self._theta3, self._theta3s, self.flow, df, *self.bank._moments[df])
         if isnan(self._metric[0]):
             raise ValueError("g00 is nan")
 
@@ -514,7 +516,7 @@ class TaylorF2Template(InspiralAlignedSpinTemplate):
                 0., 0., self.spin2z,
                 1.e6*PC_SI, 0., phi0,
                 0., 0., 0.,
-                df, self.bank.flow, f_final, self.bank.flow,
+                df, self.flow, f_final, self.flow,
                 LALpars, approx)
         lal.DestroyDict(LALpars)
 
@@ -550,7 +552,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         self.psi = psi
         self.orb_phase = orb_phase
 
-        self.chieff, self.chipre = lalsim.SimIMRPhenomPCalculateModelParameters(self.m1, self.m2, self.bank.flow, np.sin(iota), float(0), np.cos(iota), spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, 1)[:2]
+        self.chieff, self.chipre = lalsim.SimIMRPhenomPCalculateModelParameters(self.m1, self.m2, self.flow, np.sin(iota), float(0), np.cos(iota), spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, 1)[:2]
 
         self._wf = {}
         self._metric = None
@@ -576,7 +578,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
                 self.spin2x, self.spin2y, self.spin2z,
                 1.e6*PC_SI, self.iota, self.orb_phase,
                 0., 0., 0.,
-                df, self.bank.flow, f_final, self.bank.flow,
+                df, self.flow, f_final, self.flow,
                 None, approx)
         else:
             hplus_fd, hcross_fd = lalsim.SimInspiralFD(
@@ -585,7 +587,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
                 self.spin2x, self.spin2y, self.spin2z,
                 1.e6*PC_SI, self.iota, self.orb_phase,
                 0., 0., 0.,
-                df, self.bank.flow, f_final, self.bank.flow,
+                df, self.flow, f_final, self.flow,
                 None, approx)
 
         return hplus_fd, hcross_fd
@@ -619,11 +621,11 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
 
             # Whiten
             arr_view_hp[:] /= ASD[:hp.data.length]
-            arr_view_hp[:int(self.bank.flow / df)] = 0.
+            arr_view_hp[:int(self.flow / df)] = 0.
             arr_view_hp[int(self.f_final/df) : hp.data.length] = 0.
 
             arr_view_hc[:] /= ASD[:hc.data.length]
-            arr_view_hc[:int(self.bank.flow / df)] = 0.
+            arr_view_hc[:int(self.flow / df)] = 0.
             arr_view_hc[int(self.f_final/df) : hc.data.length] = 0.
 
             # Get normalization factors and normalize
@@ -669,7 +671,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         row.mtotal = self.m1 + self.m2
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
-        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
+        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.flow)
         row.f_final = self.f_final
         row.template_duration = self._dur
         row.spin1x = self.spin1x
@@ -749,7 +751,7 @@ class SpinTaylorF2Template(InspiralPrecessingSpinTemplate):
         row.mtotal = self.m1 + self.m2
         row.mchirp = self._mchirp
         row.eta = row.mass1 * row.mass2 / (row.mtotal * row.mtotal)
-        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.bank.flow)
+        row.tau0, row.tau3 = m1m2_to_tau0tau3(self.m1, self.m2, self.flow)
         row.f_final = self.f_final
         row.template_duration = self._dur
         row.spin1x = self.spin1x
