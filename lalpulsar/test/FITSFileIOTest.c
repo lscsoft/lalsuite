@@ -28,7 +28,6 @@
 
 #include <lal/FITSFileIO.h>
 #include <lal/LALPulsarVCSInfo.h>
-#include <lal/LALString.h>
 #include <lal/StringVector.h>
 #include <lal/Date.h>
 #include <lal/UserInput.h>
@@ -108,16 +107,13 @@ int main( int argc, char *argv[] )
     }
   }
 
-  // Create a dummy user enviroment and command line, for testing XLALFITSFileWriteUVarCmdLine()
+  // Create a dummy user enviroment, for testing XLALFITSFileWriteUVarCmdLine()
   struct uvar_type { INT4 dummy; } uvar_struct = { .dummy = 0 };
   struct uvar_type *const uvar = &uvar_struct;
   XLAL_CHECK_MAIN( XLALRegisterUvarMember( dummy, INT4, 0, OPTIONAL, "Dummy option" ) == XLAL_SUCCESS, XLAL_EFUNC );
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( argc > 0, XLAL_ESYS );
-  char *my_argv[] = { argv[0], XLALStringDuplicate( "--dummy=3" ) };
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, XLAL_NUM_ELEM( my_argv ), my_argv ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( !should_exit, XLAL_EFAILED );
-  XLALFree( my_argv[1] );
 
   // Write an example FITS file
   {
