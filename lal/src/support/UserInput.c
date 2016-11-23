@@ -87,9 +87,6 @@ typedef enum {
   UVAR_TYPE_RAJRange,		// range of RAJ values
   UVAR_TYPE_DECJRange,		// range of DECJ values
 
-  UVAR_TYPE_UserEnum,		// user selection of an enumeration value
-  UVAR_TYPE_UserFlag,		// user selection of a set of bitflags
-
   UVAR_TYPE_INT4Vector,		// list of comma-separated INT4's
   UVAR_TYPE_UINT4Vector,	// list of comma-separated UINT4's
   UVAR_TYPE_REAL8Vector,	// list of comma-separated REAL8's
@@ -136,9 +133,6 @@ DEFN_REGISTER_UVAR(REAL8Range,REAL8Range);
 DEFN_REGISTER_UVAR(EPOCHRange,LIGOTimeGPSRange);
 DEFN_REGISTER_UVAR(RAJRange,REAL8Range);
 DEFN_REGISTER_UVAR(DECJRange,REAL8Range);
-
-DEFN_REGISTER_UVAR_AUX_DATA(UserEnum,int,UserChoices);
-DEFN_REGISTER_UVAR_AUX_DATA(UserFlag,int,UserChoices);
 
 DEFN_REGISTER_UVAR(INT4Vector,INT4Vector*);
 DEFN_REGISTER_UVAR(UINT4Vector,UINT4Vector*);
@@ -221,9 +215,6 @@ static const struct
   REGULAR_MAP_ENTRY ( EPOCHRange, NULL, "=<start>[,<end>|/<band>|~<plus-minus>] where <>=<seconds>[.<frac-seconds>][GPS] | <days>[.<frac-days>]MJD" ),
   REGULAR_MAP_ENTRY ( RAJRange, NULL, "=<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<hours>:<minutes>:<seconds>" ),
   REGULAR_MAP_ENTRY ( DECJRange, NULL, "=<start>[,<end>|/<band>|~<plus-minus>] where <>=<radians>|<degrees>:<minutes>:<seconds>" ),
-
-  REGULAR_MAP_ENTRY_AUX_DATA ( UserEnum, NULL, UserChoices ),
-  REGULAR_MAP_ENTRY_AUX_DATA ( UserFlag, NULL, UserChoices ),
 
   REGULAR_MAP_ENTRY ( INT4Vector, XLALDestroyINT4Vector, "=<4-byte signed integer>,..." ),
   REGULAR_MAP_ENTRY ( UINT4Vector, XLALDestroyUINT4Vector, "=<4-byte unsigned integer>,..." ),

@@ -48,14 +48,6 @@ typedef REAL8 REAL8Range[2];
 ///
 typedef LIGOTimeGPS LIGOTimeGPSRange[2];
 
-///
-/// Possible choices the user may select for an enumeration or bitflag
-///
-#ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagUserChoice, name));
-#endif /* SWIG */
-typedef struct tagUserChoice { int val; const char *name; } UserChoices[32];
-
 // ---------- Function prototypes ----------
 int XLALParseStringValueAsINT4PlusFrac ( INT4 *valINT4, REAL8 *valFrac, const char *valString );
 
@@ -76,9 +68,6 @@ int XLALParseStringValueAsREAL8Range ( REAL8Range *real8Range, const char *valSt
 int XLALParseStringValueAsEPOCHRange ( LIGOTimeGPSRange *gpsRange, const char *valString );
 int XLALParseStringValueAsRAJRange ( REAL8Range *rajRange, const char *valString );
 int XLALParseStringValueAsDECJRange ( REAL8Range *decjRange, const char *valString );
-
-int XLALParseStringValueAsUserEnum ( int *valEnum, const UserChoices *enumData, const char *valString );
-int XLALParseStringValueAsUserFlag ( int *valFlag, const UserChoices *flagData, const char *valString );
 
 int XLALParseStringValueAsSTRING ( CHAR **valOut, const char *valString );
 int XLALParseStringValueAsSTRINGVector ( LALStringVector **valSTRINGVector, const CHAR *valString );
