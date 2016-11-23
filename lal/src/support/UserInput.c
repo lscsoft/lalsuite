@@ -53,16 +53,14 @@
 
 // ----- macro template for defining registration functions for UserInput variables
 #define DEFN_REGISTER_UVAR(UTYPE,CTYPE)                     \
-  DEFN_REGISTER_UVAR_AUX_DATA(UTYPE,CTYPE,void)
-#define DEFN_REGISTER_UVAR_AUX_DATA(UTYPE,CTYPE,DTYPE)      \
-int XLALRegister ##UTYPE## UserVar ( CTYPE *cvar, const DTYPE *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) \
+int XLALRegister ##UTYPE## UserVar ( CTYPE *cvar, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) \
 {                                                           \
   char helpstr[2048];                                       \
   va_list ap;                                               \
   va_start(ap, fmt);                                        \
   vsnprintf(helpstr, sizeof(helpstr), fmt, ap);             \
   va_end(ap);                                               \
-  return XLALRegisterUserVar (cvar, (const void*)cdata, name, UVAR_TYPE_ ## UTYPE, optchar, category, helpstr); \
+  return XLALRegisterUserVar (cvar, name, UVAR_TYPE_ ## UTYPE, optchar, category, helpstr); \
 }
 
 // ---------- local type definitions ----------
@@ -104,14 +102,13 @@ typedef struct tagLALUserVariable {
   CHAR optchar;				// cmd-line character
   CHAR help[2048];			// help-string
   void *cvar;				// pointer to the actual C-variable
-  const void *cdata;			// pointer to auxilliary data needed to parse the C-variable
   UserVarCategory category;		// category (optional, required, developer, ... )
   BOOLEAN was_set;			// was this set by the user: 0=no, 1=via cfg-file, 2=via cmdline
   struct tagLALUserVariable *next; 	// linked list
 } LALUserVariable;
 
 // ---------- local prototypes ----------
-int XLALRegisterUserVar (void *cvar, const void *cdata, const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *help);
+int XLALRegisterUserVar (void *cvar, const CHAR *name, UserVarType type, CHAR optchar, UserVarCategory category, const CHAR *help);
 int XLALUserVarPrintUsage ( FILE *file );
 int XLALUserVarPrintHelp ( FILE *file );
 static void format_user_var_names( char *s );
@@ -143,9 +140,6 @@ DEFN_REGISTER_UVAR(STRINGVector,LALStringVector*);
 typedef void (*destructorT)(void *cvar);
 typedef int (*parserT)(void *cvar, const char *valstr);
 typedef char *(*printerT)(const void *cvar);
-typedef int (*parser_cdataT)(void *cvar, const void *cdata, const char *valstr);
-typedef char *(*printer_cdataT)(const void *cvar, const void *cdata);
-typedef char *(*format_help_cdataT)(const void *cdata);
 
 // ----- handy macro to simplify adding 'regular' entries for new UTYPES into UserVarTypeMap
 #define REGULAR_MAP_ENTRY(UTYPE,DESTRUCTOR,FORMATHELP) \
@@ -155,14 +149,6 @@ typedef char *(*format_help_cdataT)(const void *cdata);
     .parser = (parserT)XLALParseStringValueAs##UTYPE, \
     .printer = (printerT)XLALPrintStringValueOf##UTYPE, \
     .format_help_str = FORMATHELP, \
-  }
-#define REGULAR_MAP_ENTRY_AUX_DATA(UTYPE,DESTRUCTOR,DTYPE) \
-  [UVAR_TYPE_##UTYPE] = { \
-    .name = #UTYPE, \
-    .destructor = (destructorT)DESTRUCTOR, \
-    .parser_cdata = (parser_cdataT)XLALParseStringValueAs##UTYPE, \
-    .printer_cdata = (printer_cdataT)XLALPrintStringValueOf##UTYPE, \
-    .format_help_cdata = (format_help_cdataT)XLALFormatHelpStringOf##UTYPE, \
   }
 
 // ---------- HOWTO add new UserInput variable types ----------
@@ -186,9 +172,6 @@ static const struct
   parserT parser;				///< parser function to parse string as this type
   printerT printer;				///< 'printer' function returning string value for given type
   const char *const format_help_str;   		///< help string describing format of user variable
-  parser_cdataT parser_cdata;			///< parser function (with auxilliary data) to parse string as this type
-  printer_cdataT printer_cdata;			///< 'printer' function (with auxilliary data) returning string value for given type
-  format_help_cdataT format_help_cdata;		///< function returning describing format of user variable (with auxilliary data)
 } UserVarTypeMap[UVAR_TYPE_END]
 = {
   // either use 'manual' entries of the form
@@ -198,7 +181,6 @@ static const struct
   //   },
   // or the convenience macro for cases using 'standard' function names and API
   //   REGULAR_MAP_ENTRY ( \<UTYPE\>, XLALDestroy\<UTYPE\>, "=help string for \<UTYPE\>" ),
-  //   REGULAR_MAP_ENTRY_AUX_DATA ( \<UTYPE\>, XLALDestroy\<UTYPE\>, XLALFormatHelpStringOf\<UTYPE\> ),
 
   REGULAR_MAP_ENTRY ( BOOLEAN, NULL, "[=(TRUE|FALSE)|(YES|NO)|(1|0)]" ),
   REGULAR_MAP_ENTRY ( INT4, NULL, "=<4-byte signed integer>" ),
@@ -249,8 +231,7 @@ const char *lalUserVarHelpBrief = NULL;
  * ==> use the type-safe macro XLALRegisterUvarMember(name,type,option,category,help) instead!
  */
 int
-XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variable to link to this user-variable */
-                      const void *cdata,        /**< pointer to auxilliary data needed to parse the C-variable */
+XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variabe to link to this user-variable */
                       const CHAR *name,		/**< name of user-variable to register */
                       UserVarType type,		/**< variable type (int,bool,string,real) */
                       CHAR optchar,		/**< optional short-option character */
@@ -264,11 +245,6 @@ XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variable to link
   XLAL_CHECK ( (category > UVAR_CATEGORY_START) && (category < UVAR_CATEGORY_END), XLAL_EINVAL );
   XLAL_CHECK ( help != NULL, XLAL_EINVAL );
   XLAL_CHECK ( strlen(help) < sizeof(UVAR_vars.help), XLAL_EINVAL, "User-variable help '%s' is too long", help );
-
-  // check that UserVarTypeMap entry is correct
-  XLAL_CHECK ( ( cdata != NULL ? (const void*)UserVarTypeMap [ type ].parser_cdata : (const void*)UserVarTypeMap [ type ].parser ) != NULL, XLAL_EERR );
-  XLAL_CHECK ( ( cdata != NULL ? (const void*)UserVarTypeMap [ type ].printer_cdata : (const void*)UserVarTypeMap [ type ].printer ) != NULL, XLAL_EERR );
-  XLAL_CHECK ( ( cdata != NULL ? (const void*)UserVarTypeMap [ type ].format_help_cdata : (const void*)UserVarTypeMap [ type ].format_help_str ) != NULL, XLAL_EERR );
 
   // check that neither short- nor long-option are used by help
   XLAL_CHECK ( strcmp ( name, "help" ) != 0, XLAL_EINVAL, "Long-option name '--%s' is reserved for help!\n", name );
@@ -305,7 +281,6 @@ XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variable to link
   ptr->type 	= type;
   ptr->optchar 	= optchar;
   ptr->cvar 	= cvar;
-  ptr->cdata 	= cdata;
   ptr->category = category;
 
   return XLAL_SUCCESS;
@@ -482,8 +457,7 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[] )
                 *should_exit = 1;
                 return XLAL_SUCCESS;
               }
-            int retn = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].parser_cdata( ptr->cvar, ptr->cdata, LALoptarg ) : UserVarTypeMap [ ptr->type ].parser( ptr->cvar, LALoptarg );
-            if ( retn != XLAL_SUCCESS )
+            if ( UserVarTypeMap [ ptr->type ].parser( ptr->cvar, LALoptarg ) != XLAL_SUCCESS )
               {
                 XLALPrintError( "\n%s: could not parse value '%s' given to option " UVAR_FMT "\n\n", program_name, LALoptarg, ptr->name );
                 *should_exit = 1;
@@ -505,8 +479,7 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[] )
               *should_exit = 1;
               return XLAL_SUCCESS;
             }
-          int retn = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].parser_cdata( ptr->cvar, ptr->cdata, LALoptarg ) : UserVarTypeMap [ ptr->type ].parser( ptr->cvar, LALoptarg );
-          if ( retn != XLAL_SUCCESS )
+          if ( UserVarTypeMap [ ptr->type ].parser( ptr->cvar, LALoptarg ) != XLAL_SUCCESS )
             {
               XLALPrintError( "\n%s: could not parse value '%s' given to option " UVAR_FMT "\n\n", program_name, LALoptarg, ptr->name );
               *should_exit = 1;
@@ -598,8 +571,7 @@ XLALUserVarReadCfgfile ( BOOLEAN *should_exit, const CHAR *cfgfile )
               *should_exit = 1;
               return XLAL_SUCCESS;
             }
-          int retn = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].parser_cdata( ptr->cvar, ptr->cdata, valString ) : UserVarTypeMap [ ptr->type ].parser( ptr->cvar, valString );
-          if ( retn != XLAL_SUCCESS )
+          if ( UserVarTypeMap [ ptr->type ].parser( ptr->cvar, valString ) != XLAL_SUCCESS )
             {
               XLALPrintError( "\n%s: could not parse value '%s' given to option " UVAR_FMT "\n\n", program_name, valString, ptr->name );
               *should_exit = 1;
@@ -849,17 +821,7 @@ XLALUserVarPrintHelp ( FILE *file )
               fprintf( f, "--%s", ptr->name );
               if ( print_format_help )
                 {
-                  if ( ptr->cdata != NULL )
-                    {
-                      CHAR *format_help_str = UserVarTypeMap [ ptr->type ].format_help_cdata( ptr->cdata );
-                      XLAL_CHECK( format_help_str != NULL, XLAL_EFUNC );
-                      fprintf( f, "%s", format_help_str );
-                      XLALFree( format_help_str );
-                    }
-                  else
-                    {
-                      fprintf( f, "%s", UserVarTypeMap [ ptr->type ].format_help_str );
-                    }
+                  fprintf( f, "%s", UserVarTypeMap [ ptr->type ].format_help_str );
                 }
               if ( print_default_value )
                 {
@@ -873,8 +835,8 @@ XLALUserVarPrintHelp ( FILE *file )
                     }
                   else
                     {
-                      CHAR *valstr = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].printer_cdata( ptr->cvar, ptr->cdata ) : UserVarTypeMap [ ptr->type ].printer( ptr->cvar );
-                      XLAL_CHECK( valstr != NULL, XLAL_EFUNC );
+                      char *valstr;
+                      XLAL_CHECK( (valstr = UserVarTypeMap [ ptr->type ].printer( ptr->cvar )) != NULL, XLAL_EFUNC );
                       fprintf( f, " [default: %s]",  valstr );
                       XLALFree( valstr );
                     }
@@ -1101,8 +1063,8 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
 	continue;
       }
 
-      CHAR *valstr = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].printer_cdata( ptr->cvar, ptr->cdata ) : UserVarTypeMap [ ptr->type ].printer( ptr->cvar );
-      XLAL_CHECK_NULL ( valstr != NULL, XLAL_EFUNC );
+      CHAR *valstr;
+      XLAL_CHECK_NULL ( (valstr = UserVarTypeMap [ ptr->type ].printer( ptr->cvar )) != NULL, XLAL_EFUNC );
 
       char append[256];
       switch (format)
