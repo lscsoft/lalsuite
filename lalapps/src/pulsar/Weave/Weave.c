@@ -45,7 +45,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN sft_files_check_crc, interpolation, output_per_detector, output_per_segment, output_misc_info, shortcut_compute, shortcut_search;
+    BOOLEAN sft_files_check_crc, sft_files_check_count, interpolation, output_per_detector, output_per_segment, output_misc_info, shortcut_compute, shortcut_search;
     CHAR *setup_file, *sft_files, *lattice, *Fstat_method, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_pc_exit;
@@ -85,6 +85,10 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     sft_files_check_crc, BOOLEAN, 'V', OPTIONAL,
     "Validate the checksums of the SFTs matched by " UVAR_STR( sft_files ) " before loading."
+    );
+  XLALRegisterUvarMember(
+    sft_files_check_count, BOOLEAN, 'L', OPTIONAL,
+    "Check that the number of SFTs in each segment matches the number provided by the segment list in the setup file given by " UVAR_STR( setup_file ) "."
     );
   XLALRegisterUvarMember(
     sft_timebase, REAL8, 't', OPTIONAL,
@@ -308,6 +312,9 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( sft_files_check_crc ) || UVAR_SET( sft_files ),
                     UVAR_STR( sft_files_check_crc ) " requires " UVAR_STR( sft_files ) );
+  XLALUserVarCheck( &should_exit,
+                    !UVAR_SET( sft_files_check_count ) || UVAR_SET( sft_files ),
+                    UVAR_STR( sft_files_check_count ) " requires " UVAR_STR( sft_files ) );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( sft_timebase ) || uvar->sft_timebase > 0,
                     UVAR_STR( sft_timebase ) " must be strictly positive" );
@@ -655,6 +662,7 @@ int main( int argc, char *argv[] )
 
     const LIGOTimeGPS *segment_start = &setup.segments->segs[i].start;
     const LIGOTimeGPS *segment_end = &setup.segments->segs[i].end;
+    const UINT4 sft_count = ( UINT4 ) setup.segments->segs[i].id;
 
     // Create F-statistic input data for 'i'th segment
     FstatInput *Fstat_input = NULL;
@@ -668,6 +676,12 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( sft_catalog_i_view != NULL, XLAL_EINVAL );
       for ( size_t j = 0; j < sft_catalog_i_view->length; ++j ) {
         XLAL_CHECK_MAIN( sft_catalog_i_view->data[j].length > 0, XLAL_EINVAL, "No SFTs found for segment %zu, detector %zu", i, j );
+      }
+
+      // Check that the number of SFTs in each segment matches the number provided by the segment list in the setup file, if requested
+      if ( uvar->sft_files_check_count ) {
+        XLAL_CHECK_MAIN( sft_count > 0, XLAL_EFAILED, "No number of SFTs given for segment %zu in setup file '%s'", i, uvar->setup_file );
+        XLAL_CHECK_MAIN( sft_catalog_i.length == sft_count, XLAL_EFAILED, "Number of SFTs found for segment %zu (%u) is inconsistent with expected number of SFTs given by segment list (%u) in setup file '%s'", i, sft_catalog_i.length, sft_count, uvar->setup_file );
       }
 
       // Get list of detectors of SFT catalog in 'i'th segment
