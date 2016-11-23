@@ -135,14 +135,9 @@ main(void)
   fflush( stdout );
 
   /* ---------- test log-generation */
-  printf( "=== Begin log generation test ===\n" );
-  for ( int i = UVAR_LOGFMT_RAWFORM; i < UVAR_LOGFMT_LAST; ++i ) {
-    CHAR *logstr;
-    XLAL_CHECK ( ( logstr = XLALUserVarGetLog ( i )) != NULL, XLAL_EFUNC );
-    printf( "Log format #%i: >>>%s<<<\n", i, logstr );
-    XLALFree ( logstr );
-  }
-  printf( "--- End log generation test ---\n" );
+  CHAR *logstr;
+  XLAL_CHECK ( ( logstr = XLALUserVarGetLog (   UVAR_LOGFMT_CFGFILE )) != NULL, XLAL_EFUNC );
+  XLALFree ( logstr );
 
   /* ---------- test values were read in correctly ---------- */
   XLAL_CHECK ( uvar->argNum == 1, XLAL_EFAILED, "Failed to read in argNum\n" );
