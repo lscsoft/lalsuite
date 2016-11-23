@@ -70,7 +70,7 @@ ${fitsdir}/lalapps_fits_header_getval "WeaveOutNoShort.fits[0]" 'PEAKMEM' > tmp
 peak_mem_no_short=`cat tmp | xargs printf "%g"`
 ${fitsdir}/lalapps_fits_header_getval "WeaveOutShortComp.fits[0]" 'PEAKMEM' > tmp
 peak_mem_short_comp=`cat tmp | xargs printf "%g"`
-[ `echo "scale = 5; x = ${peak_mem_short_comp} / ${peak_mem_no_short}; 0.95 < x && x < 1.05" | bc` -eq 1 ]
+awk "BEGIN { print x = ${peak_mem_short_comp} / ${peak_mem_no_short}; exit ( ( 0.95 < x && x < 1.05 ) ? 0 : 1 ) }"
 set +x
 echo
 
