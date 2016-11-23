@@ -38,7 +38,7 @@ python/lalframe/__init__.py
 python/lalframe/_lalframe*
 python/lalframe/git_version.py
 python/lalframe/lalframe.py
-src/LALFrameBuildInfo.c
+src/LALFrameBuildInfoHeader.h
 src/LALFrameConfig.h
 src/LALFrameVCSInfo.c
 src/LALFrameVCSInfo.h

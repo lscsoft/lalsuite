@@ -31,14 +31,15 @@ liblalstochastic_la_SOURCES = \
 	StochasticOptimalFilter.c \
 	StochasticOptimalFilterNormalization.c \
 	ZeroPadAndFFT.c
-nodist_liblalstochastic_la_SOURCES = LALStochasticBuildInfo.c
+nodist_liblalstochastic_la_SOURCES = LALStochasticBuildInfoHeader.h
 liblalstochastic_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 DISTCLEANFILES = config.h
 
+vcs_build_info_source = LALStochasticVCSInfo.c
 vcs_info_sources = LALStochasticVCSInfoHeader.h
-build_info_source = LALStochasticBuildInfo.c
-$(build_info_source): $(liblalstochastic_la_DEPENDENCIES)
+build_info_source = LALStochasticBuildInfoHeader.h
+build_info_dependencies = $(liblalstochastic_la_DEPENDENCIES)
 
 EXTRA_DIST = \
 	LALStochasticConfig.h.in \

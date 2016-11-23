@@ -63,8 +63,8 @@ LALVersion(LALStatus * status, CHAR * message, UINT4 size, INT4 verbose)
                  "Configure Date:      %s\n"
                  "Configure Arguments: %s\n",
                  lalVersion, lalVCSInfo.vcsId,
-                 lalVCSInfo.vcsTag, lalBuildDate, lalConfigureDate,
-                 lalConfigureArgs) : snprintf(message, size,
+                 lalVCSInfo.vcsTag, lalVCSInfo.buildDate, lalVCSInfo.configureDate,
+                 lalVCSInfo.configureArgs) : snprintf(message, size,
                                               "LAL Version: %s\n",
                                               lalVersion);
 

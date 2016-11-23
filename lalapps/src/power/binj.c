@@ -1110,7 +1110,7 @@ int main(int argc, char *argv[])
 
 
 	process_table_head = process = XLALCreateProcessTableRow();
-	if(XLALPopulateProcessTable(process, PROGRAM_NAME, lalAppsVCSIdentId, lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0))
+	if(XLALPopulateProcessTable(process, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0))
 		exit(1);
 	XLALGPSTimeNow(&process->start_time);
 

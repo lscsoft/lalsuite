@@ -324,12 +324,12 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
   /* Add lalapps info */
   snprintf( lalappsconfargs, sizeof( lalappsconfargs), "LALApps Info:\n                          LALApps Version: %s\n                          Git Tag: %s\n                          Git ID: %s\n                          Configure Date: %s\n                          Configure Arguments: %s",
-            LALAPPS_VERSION , lalAppsVCSInfo.vcsTag, lalAppsVCSInfo.vcsId, lalAppsConfigureDate, lalAppsConfigureArgs );
+            LALAPPS_VERSION , lalAppsVCSInfo.vcsTag, lalAppsVCSInfo.vcsId, lalAppsVCSInfo.configureDate, lalAppsVCSInfo.configureArgs );
   XLALFrameAddFrHistory( frame, __FILE__, lalappsconfargs);
 
   /* Add lal info */
   snprintf( lalconfargs, sizeof( lalconfargs), "LAL Info:\n                          LAL Version: %s\n                          Git Tag: %s\n                          Git ID: %s\n                          Configure Date: %s\n                          Configure Arguments: %s",
-	       LAL_VERSION , lalVCSInfo.vcsTag, lalVCSInfo.vcsId, lalAppsConfigureDate, lalAppsConfigureArgs );
+	       LAL_VERSION , lalVCSInfo.vcsTag, lalVCSInfo.vcsId, lalAppsVCSInfo.configureDate, lalAppsVCSInfo.configureArgs );
   XLALFrameAddFrHistory( frame, __FILE__, lalconfargs);
 
   /* Create string with all command line arguments and add it to history */

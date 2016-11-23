@@ -23,7 +23,7 @@ liblaldetchar_la_SOURCES = \
 	LALDetCharHvetoUtils.c \
 	LALDetCharHveto.c \
 	LALDetCharVCSInfo.c
-nodist_liblaldetchar_la_SOURCES = LALDetCharBuildInfo.c
+nodist_liblaldetchar_la_SOURCES = LALDetCharBuildInfoHeader.h
 
 liblaldetchar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
@@ -41,6 +41,7 @@ EXTRA_DIST = \
 
 DISTCLEANFILES = config.h
 
+vcs_build_info_source = LALDetCharVCSInfo.c
 vcs_info_sources = LALDetCharVCSInfoHeader.h
-build_info_source = LALDetCharBuildInfo.c
-$(build_info_source): $(liblaldetchar_la_DEPENDENCIES)
+build_info_source = LALDetCharBuildInfoHeader.h
+build_info_dependencies = $(liblaldetchar_la_DEPENDENCIES)

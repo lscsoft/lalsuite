@@ -72,7 +72,7 @@ liblalinference_la_SOURCES = \
 	logaddexp.h \
 	$(BAYESTARSRC) \
 	$(XMLSRC)
-nodist_liblalinference_la_SOURCES = LALInferenceBuildInfo.c
+nodist_liblalinference_la_SOURCES = LALInferenceBuildInfoHeader.h
 noinst_HEADERS = six.h
 
 liblalinference_la_LDFLAGS = $(AM_LDFLAGS) $(HDF5_LDFLAGS) -version-info $(LIBVERSION)
@@ -93,6 +93,7 @@ EXTRA_DIST = \
 
 DISTCLEANFILES = config.h
 
+vcs_build_info_source = LALInferenceVCSInfo.c
 vcs_info_sources = LALInferenceVCSInfoHeader.h
-build_info_source = LALInferenceBuildInfo.c
-$(build_info_source): $(liblalinference_la_DEPENDENCIES)
+build_info_source = LALInferenceBuildInfoHeader.h
+build_info_dependencies = $(liblalinference_la_DEPENDENCIES)

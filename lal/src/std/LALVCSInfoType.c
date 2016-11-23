@@ -1,5 +1,6 @@
 /*
- * LALVCSInfoType.c - LAL VCS Information Type
+ * Copyright (C) 2014, 2016 Karl Wette
+ * Copyright (C) 2009-2013 Adam Mercer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,8 +16,6 @@
  * along with with program; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
- *
- * Copyright (C) 2009-2013 Adam Mercer
  */
 
 #include <string.h>
@@ -41,7 +40,3 @@ int XLALVCSInfoCompare(const LALVCSInfo *vcs1, const LALVCSInfo *vcs2)
   /* vcs1 == vcs2 */
   return 0;
 }
-
-/*
- * vim: tw=0 ts=2 et
- */

@@ -641,11 +641,11 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->PSSCleanExt = 1;      /* by default, extend the timeseries */
 
   strcat(allargs, "\nMakeSFTs ");
-  strcat(allargs, lalVCSIdentId);
-  strcat(allargs, lalVCSIdentStatus);
+  strcat(allargs, lalVCSIdentInfo.vcsId);
+  strcat(allargs, lalVCSIdentInfo.vcsStatus);
   strcat(allargs, "\nMakeSFTs ");
-  strcat(allargs, lalAppsVCSIdentId);
-  strcat(allargs, lalAppsVCSIdentStatus);
+  strcat(allargs, lalAppsVCSIdentInfo.vcsId);
+  strcat(allargs, lalAppsVCSIdentInfo.vcsStatus);
   strcat(allargs, "\nMakeSFTs command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
   for(i = 0; i < argc; i++)
   {
@@ -839,8 +839,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       exit(0);
     case 'V':
       /* print version */
-      fprintf(stdout,"MakeSFTs %s %s\n", lalVCSIdentId, lalVCSIdentStatus);
-      fprintf(stdout,"MakeSFTs %s %s\n", lalAppsVCSIdentId, lalAppsVCSIdentStatus);
+      fprintf(stdout,"MakeSFTs %s %s\n", lalVCSIdentInfo.vcsId, lalVCSIdentInfo.vcsStatus);
+      fprintf(stdout,"MakeSFTs %s %s\n", lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus);
       exit(0);
     default:
       /* unrecognized option */

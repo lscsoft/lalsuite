@@ -38,7 +38,7 @@ python/lalmetaio/__init__.py
 python/lalmetaio/_lalmetaio*
 python/lalmetaio/git_version.py
 python/lalmetaio/lalmetaio.py
-src/LALMetaIOBuildInfo.c
+src/LALMetaIOBuildInfoHeader.h
 src/LALMetaIOConfig.h
 src/LALMetaIOVCSInfo.c
 src/LALMetaIOVCSInfo.h
