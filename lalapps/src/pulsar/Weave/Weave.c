@@ -45,15 +45,12 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN interpolation, sft_files_check_crc, output_per_detector, output_per_segment, output_misc_info;
-    BOOLEAN shortcut_compute, shortcut_search;
-    CHAR *setup_file, *lattice, *sft_files, *Fstat_method, *output_file, *ckpt_output_file;
-    LALStringVector *sft_noise_psd, *sft_timestamps_files, *injections, *Fstat_assume_psd;
-    REAL8 semi_max_mismatch, coh_max_mismatch, sft_timebase, ckpt_output_period, ckpt_output_pc_exit;
+    BOOLEAN sft_files_check_crc, interpolation, output_per_detector, output_per_segment, output_misc_info, shortcut_compute, shortcut_search;
+    CHAR *setup_file, *sft_files, *lattice, *Fstat_method, *output_file, *ckpt_output_file;
+    LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
+    REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_pc_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
-    UINT4 sft_noise_rand_seed, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision;
-    UINT4 sky_patch_count, sky_patch_index, freq_partitions, output_toplist_limit;
-    UINT4 cache_max_size, cache_gc_limit;
+    UINT4 sft_noise_rand_seed, sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision, output_toplist_limit, cache_max_size, cache_gc_limit;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
