@@ -1731,8 +1731,7 @@ class EngineJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
       if not ispreengine:
         self.add_ini_opts(cp,self.engine)
     if  cp.has_section('engine'):
-      if not ispreengine:
-        self.add_ini_opts(cp,'engine')
+      self.add_ini_opts(cp,'engine')
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
     # For LALInferenceNest demand only 1 thread (to be tuned later)

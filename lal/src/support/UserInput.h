@@ -154,14 +154,21 @@ someEpoch = {2147483596 s, 816000000 ns}, RA = 2.727813 rad, DEC = -0.523599 rad
  * Shortcut macro for registering new user variables, which are accessed via the \e struct-pointer '*uvar'
  */
 #define XLALRegisterUvarMember(name,type,option,category,...)             \
-  XLALRegister ##type## UserVar( &(uvar-> name), #name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
+  XLALRegister ##type## UserVar( &(uvar-> name), NULL, #name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
+
+/**
+ * Shortcut macro for registering new user variables, which are accessed via the \e struct-pointer '*uvar',
+ * and which acquire some auxilliary data in order to be parsed
+ */
+#define XLALRegisterUvarAuxDataMember(name,type,cdata,option,category,...)  \
+  XLALRegister ##type## UserVar( &(uvar-> name), cdata, #name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
 
 /**
  * Shortcut macro for registering new user variables, named 'name' and accessed via the \e variable-pointer '*cvar'
  * \note This style of user variable is deprecated; XLALRegisterUvarMember() is preferred
  */
 #define XLALRegisterNamedUvar(cvar,name,type,option,category,...)         \
-  XLALRegister ##type## UserVar( cvar, name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
+  XLALRegister ##type## UserVar( cvar, NULL, name, option, UVAR_CATEGORY_ ## category, __VA_ARGS__)
 
 /**
  * Mutually-exclusive user variable categories: optional, required, help, developer, ...
@@ -184,6 +191,7 @@ typedef enum tagUserVarCategory {
  * This determines the format of the string returned from XLALUserVarGetLog().
  */
 typedef enum tagUserVarLogFormat {
+  UVAR_LOGFMT_RAWFORM,		/**< return UserVars in a raw format suitable for further parsing */
   UVAR_LOGFMT_CFGFILE,		/**< return UserVars as a config-file */
   UVAR_LOGFMT_CMDLINE,		/**< return UserVars as a command-line */
   UVAR_LOGFMT_PROCPARAMS, 	/**< return UserVars suitable for filling in process-params struct */
@@ -258,7 +266,9 @@ CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
 
 // declare type-specific wrappers to XLALRegisterUserVar() to allow for strict C type-checking!
 #define DECL_REGISTER_UVAR(UTYPE,CTYPE)                                 \
-  int XLALRegister ##UTYPE## UserVar ( CTYPE *cvar, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(5,6)
+  DECL_REGISTER_UVAR_AUX_DATA(UTYPE,CTYPE,void)
+#define DECL_REGISTER_UVAR_AUX_DATA(UTYPE,CTYPE,DTYPE)                  \
+  int XLALRegister ##UTYPE## UserVar ( CTYPE *cvar, const DTYPE *cdata, const CHAR *name, CHAR optchar, UserVarCategory category, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(6,7)
 
 // ------ declare registration functions
 DECL_REGISTER_UVAR(BOOLEAN,BOOLEAN);
@@ -276,6 +286,9 @@ DECL_REGISTER_UVAR(REAL8Range,REAL8Range);
 DECL_REGISTER_UVAR(EPOCHRange,LIGOTimeGPSRange);
 DECL_REGISTER_UVAR(RAJRange,REAL8Range);
 DECL_REGISTER_UVAR(DECJRange,REAL8Range);
+
+DECL_REGISTER_UVAR_AUX_DATA(UserEnum,int,UserChoices);
+DECL_REGISTER_UVAR_AUX_DATA(UserFlag,int,UserChoices);
 
 DECL_REGISTER_UVAR(INT4Vector,INT4Vector*);
 DECL_REGISTER_UVAR(UINT4Vector,UINT4Vector*);

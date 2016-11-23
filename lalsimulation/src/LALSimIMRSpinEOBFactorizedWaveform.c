@@ -742,7 +742,7 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
     {
       coeffs->rho22v5 =
 	(-34. / 21. + 49. * eta / 18. + 209. * eta2 / 126.) * chiS +
-	(-34. / 21. - 196. * eta / 42.) * dM * chiA;
+	(-34. / 21. - 19. * eta / 42.) * dM * chiA;
     }
   coeffs->rho22v6 =
     1556919113. / 122245200. + (89. * a2) / 252. -
@@ -920,9 +920,7 @@ static int XLALSimIMREOBCalcSpinFacWaveformCoefficients (FacWaveformCoeffs * con
   coeffs->delta32vh9 = -9112. / 405. + (208. * LAL_PI * LAL_PI) / 63.;
 
   coeffs->rho32v = (4. * chiS * eta) / (-3. * m1Plus3eta);
-  /** TODO The term proportional to eta^2 a^2 in coeffs->rho32v2 is wrong, but it was used in the calibration of SEOBNRv2 */
-  coeffs->rho32v2 =
-    (-4. * a2 * eta2) / (9. * m1Plus3eta2) + (328. - 1115. * eta +
+  coeffs->rho32v2 = (328. - 1115. * eta +
 					      320. * eta2) / (270. *
 							      m1Plus3eta);
   coeffs->rho32v3 =

@@ -69,10 +69,15 @@ const double A3s_mism_hist[MISM_HIST_BINS] = {
   1.590473, 1.664510, 1.595423, 1.391209, 1.194340, 1.004085, 0.729054, 0.371869, 0.098727, 0.011236
 };
 
+const double A4s_mism_hist[MISM_HIST_BINS] = {
+  0.088295, 0.264916, 0.441209, 0.617937, 0.794537, 0.971005, 1.147715, 1.324035, 1.500356, 1.677569,
+  1.806866, 1.816272, 1.757854, 1.653638, 1.513900, 1.268203, 0.833153, 0.417934, 0.100320, 0.004287
+};
+
 static int SerialisationTest(
-  const size_t UNUSED n,
   const LatticeTiling UNUSED *tiling,
   const UINT8 UNUSED total_ref,
+  const int UNUSED total_tol,
   const UINT8 UNUSED total_ckpt_0,
   const UINT8 UNUSED total_ckpt_1,
   const UINT8 UNUSED total_ckpt_2,
@@ -85,6 +90,8 @@ static int SerialisationTest(
 #else // defined(HAVE_LIBCFITSIO)
   printf( "Performing serialisation test ..." );
 
+  const size_t n = XLALTotalLatticeTilingDimensions( tiling );
+
   const UINT8 total_ckpt[4] = {total_ckpt_0, total_ckpt_1, total_ckpt_2, total_ckpt_3};
 
   // Create lattice tiling iterator
@@ -95,7 +102,7 @@ static int SerialisationTest(
   // Count number of points
   const UINT8 total = XLALTotalLatticeTilingPoints( itr );
   XLAL_CHECK( total > 0, XLAL_EFUNC );
-  XLAL_CHECK( imaxabs( total - total_ref ) <= 1, XLAL_EFUNC, "\nERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", total, total_ref );
+  XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "\nERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
 
   // Get all points
   gsl_matrix *GAMAT( points, n, total );
@@ -176,6 +183,8 @@ static int BasicTest(
   )
 {
 
+  const int total_tol = 1;
+
   const int bound_on[4] = {bound_on_0, bound_on_1, bound_on_2, bound_on_3};
   const UINT8 total_ref[4] = {total_ref_0, total_ref_1, total_ref_2, total_ref_3};
 
@@ -227,9 +236,9 @@ static int BasicTest(
     // Count number of points
     const UINT8 total = XLALTotalLatticeTilingPoints( itr );
     XLAL_CHECK( total > 0, XLAL_EFUNC );
-    printf( "Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT "\n", i+1, total );
-    XLAL_CHECK( imaxabs( total - total_ref[i] ) <= 1, XLAL_EFUNC,
-                "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", i, total, total_ref[i] );
+    printf( "Number of lattice points in %zu dimensions: %" LAL_UINT8_FORMAT " (vs %" LAL_UINT8_FORMAT ", tolerance = %i)\n", i+1, total, total_ref[i], total_tol );
+    XLAL_CHECK( imaxabs( total - total_ref[i] ) <= total_tol, XLAL_EFUNC,
+                "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total, total_ref[i], total_tol );
     for ( UINT8 k = 0; XLALNextLatticeTilingPoint( itr, NULL ) > 0; ++k ) {
       const UINT8 itr_index = XLALCurrentLatticeTilingIndex( itr );
       XLAL_CHECK( k == itr_index, XLAL_EFUNC,
@@ -243,8 +252,8 @@ static int BasicTest(
       const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, j );
       XLAL_CHECK( stats != NULL, XLAL_EFUNC );
       XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
-      XLAL_CHECK( imaxabs( stats->total_points - total_ref[j] ) <= 1, XLAL_EFAILED, "\n  "
-                  "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", j, stats->total_points, total_ref[j] );
+      XLAL_CHECK( imaxabs( stats->total_points - total_ref[j] ) <= total_tol, XLAL_EFAILED, "\n  "
+                  "ERROR: |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", j, stats->total_points, total_ref[j], total_tol );
       XLAL_CHECK( stats->min_points <= stats->max_points, XLAL_EFAILED, "\n  "
                   "ERROR: min_points = %" LAL_INT4_FORMAT " > %" LAL_INT4_FORMAT " = max_points", stats->min_points, stats->max_points );
       XLAL_CHECK( stats->min_value <= stats->max_value, XLAL_EFAILED, "\n  "
@@ -319,7 +328,7 @@ static int BasicTest(
     while ( XLALNextLatticeTilingPoint( itr_alt, NULL ) > 0 ) {
       ++total_alt;
     }
-    XLAL_CHECK( imaxabs( total_alt - total_ref[i] ) <= 1, XLAL_EFUNC, "ERROR: alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", i, total_alt, total_ref[i] );
+    XLAL_CHECK( imaxabs( total_alt - total_ref[i] ) <= total_tol, XLAL_EFUNC, "ERROR: alternating |total - total_ref[%zu]| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", i, total_alt, total_ref[i], total_tol );
     printf( " done\n" );
 
     // Cleanup
@@ -328,14 +337,13 @@ static int BasicTest(
   }
 
   // Perform serialisation test
-  XLAL_CHECK( SerialisationTest( n, tiling, total_ref[n-1], total_ref_0, total_ref_1, total_ref_2, total_ref_3 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( SerialisationTest( tiling, total_ref[n-1], total_tol, total_ref_0, total_ref_1, total_ref_2, total_ref_3 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
   XLALDestroyLatticeTilingLocator( loc );
   LALCheckMemoryLeaks();
   printf( "\n" );
-  fflush( stdout );
 
   return XLAL_SUCCESS;
 
@@ -345,7 +353,11 @@ static int MismatchTest(
   const LatticeTiling *tiling,
   const gsl_matrix *metric,
   const double max_mismatch,
+  const size_t injs_per_point,
+  const double mism_hist_error_tol,
+  const double mism_out_of_range_tol,
   const UINT8 total_ref,
+  const int total_tol,
   const double mism_hist_ref[MISM_HIST_BINS]
   )
 {
@@ -361,8 +373,8 @@ static int MismatchTest(
   // Count number of points
   const UINT8 total = XLALTotalLatticeTilingPoints( itr );
   XLAL_CHECK( total > 0, XLAL_EFUNC );
-  printf( "Number of lattice points: %" LAL_UINT8_FORMAT "\n", total );
-  XLAL_CHECK( imaxabs( total - total_ref ) <= 1, XLAL_EFUNC, "ERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > 1", total, total_ref );
+  printf( "Number of lattice points: %" LAL_UINT8_FORMAT " (vs %" LAL_UINT8_FORMAT ", tolerance = %i)\n", total, total_ref, total_tol );
+  XLAL_CHECK( imaxabs( total - total_ref ) <= total_tol, XLAL_EFUNC, "ERROR: |total - total_ref| = |%" LAL_UINT8_FORMAT " - %" LAL_UINT8_FORMAT "| > %i", total, total_ref, total_tol );
 
   // Get all points
   gsl_matrix *GAMAT( points, n, total );
@@ -373,14 +385,15 @@ static int MismatchTest(
   double mism_hist[MISM_HIST_BINS] = {0};
   double mism_hist_total = 0, mism_hist_out_of_range = 0;
 
-  // Perform 10 injections for every template
+  // Perform 'injs_per_point' injections for every template
+  printf( "Injections per point: %zu\n", injs_per_point );
   {
-    gsl_matrix *GAMAT( injections, 3, total );
-    gsl_matrix *GAMAT( nearest, 3, total );
-    gsl_matrix *GAMAT( temp, 3, total );
+    gsl_matrix *GAMAT( injections, n, total );
+    gsl_matrix *GAMAT( nearest, n, total );
+    gsl_matrix *GAMAT( temp, n, total );
     RandomParams *rng = XLALCreateRandomParams( total );
     XLAL_CHECK( rng != NULL, XLAL_EFUNC );
-    for ( size_t i = 0; i < 10; ++i ) {
+    for ( size_t i = 0; i < injs_per_point; ++i ) {
 
       // Generate random injection points
       XLAL_CHECK( XLALRandomLatticeTilingPoints( tiling, 0.0, rng, injections ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -439,23 +452,21 @@ static int MismatchTest(
     mism_hist_error += fabs( mism_hist[i] - mism_hist_ref[i] );
   }
   mism_hist_error /= MISM_HIST_BINS;
-  printf( "Mismatch histogram error: %0.3e\n", mism_hist_error );
-  const double mism_hist_error_tol = 5e-2;
+  printf( "Mismatch histogram error: %0.3e (tolerance %0.3e)\n", mism_hist_error, mism_hist_error_tol );
   if ( mism_hist_error >= mism_hist_error_tol ) {
-    XLAL_ERROR( XLAL_EFAILED, "ERROR: mismatch histogram error exceeds %0.3e\n", mism_hist_error_tol );
+    XLAL_ERROR( XLAL_EFAILED, "ERROR: mismatch histogram error exceeds tolerance\n" );
   }
 
   // Check fraction of injections out of histogram range
   const double mism_out_of_range = mism_hist_out_of_range / mism_hist_total;
-  printf( "Fraction of points out of histogram range: %0.3e\n", mism_out_of_range );
-  const double mism_out_of_range_tol = 2e-3;
+  printf( "Fraction of points out of histogram range: %0.3e (tolerance %0.3e)\n", mism_out_of_range, mism_out_of_range_tol );
   if ( mism_out_of_range > mism_out_of_range_tol ) {
-    XLAL_ERROR( XLAL_EFAILED, "ERROR: fraction of points out of histogram range exceeds %0.3e\n", mism_out_of_range_tol );
+    XLAL_ERROR( XLAL_EFAILED, "ERROR: fraction of points out of histogram range exceeds tolerance\n" );
   }
 
   // Perform 10 injections outside parameter space
   {
-    gsl_matrix *GAMAT( injections, 3, 10 );
+    gsl_matrix *GAMAT( injections, n, 10 );
     gsl_matrix *GAMAT( nearest, n, total );
     RandomParams *rng = XLALCreateRandomParams( total );
     XLAL_CHECK( rng != NULL, XLAL_EFUNC );
@@ -472,15 +483,10 @@ static int MismatchTest(
 
   }
 
-  // Perform serialisation test
-  XLAL_CHECK( SerialisationTest( n, tiling, total_ref, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
-
   // Cleanup
   XLALDestroyLatticeTilingIterator( itr );
   XLALDestroyLatticeTilingLocator( loc );
   GFMAT( points );
-  printf( "\n" );
-  fflush( stdout );
 
   return XLAL_SUCCESS;
 
@@ -495,6 +501,8 @@ static int MismatchSquareTest(
   const double mism_hist_ref[MISM_HIST_BINS]
   )
 {
+
+  const int total_tol = 1;
 
   // Create lattice tiling
   LatticeTiling *tiling = XLALCreateLatticeTiling( 3 );
@@ -524,12 +532,16 @@ static int MismatchSquareTest(
   XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch test
-  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, 10, 5e-2, 2e-3, total_ref, total_tol, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Perform serialisation test
+  XLAL_CHECK( SerialisationTest( tiling, total_ref, total_tol, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
   GFMAT( metric );
   LALCheckMemoryLeaks();
+  printf( "\n" );
 
   return XLAL_SUCCESS;
 
@@ -543,6 +555,8 @@ static int MismatchAgeBrakeTest(
   const double mism_hist_ref[MISM_HIST_BINS]
   )
 {
+
+  const int total_tol = 1;
 
   // Create lattice tiling
   LatticeTiling *tiling = XLALCreateLatticeTiling( 3 );
@@ -570,98 +584,37 @@ static int MismatchAgeBrakeTest(
   XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Perform mismatch test
-  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( MismatchTest( tiling, metric, max_mismatch, 10, 5e-2, 2e-3, total_ref, total_tol, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Perform serialisation test
+  XLAL_CHECK( SerialisationTest( tiling, total_ref, total_tol, 1, 0.2*total_ref, 0.6*total_ref, 0.9*total_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Cleanup
   XLALDestroyLatticeTiling( tiling );
   GFMAT( metric );
   LALCheckMemoryLeaks();
+  printf( "\n" );
 
   return XLAL_SUCCESS;
 
 }
 
-static int SuperskyTest(
-  const double T,
-  const double max_mismatch,
-  const char *lattice_name,
-  const UINT8 patch_count,
-  const double freq,
-  const double freqband,
-  const UINT8 total_ref,
-  const double mism_hist_ref[MISM_HIST_BINS]
+static int SuperskyTests(
+  const UINT8 coh_total_ref_0,
+  const UINT8 coh_total_ref_1,
+  const UINT8 coh_total_ref_2,
+  const UINT8 semi_total_ref
   )
 {
 
-  // Create lattice tiling
-  LatticeTiling *tiling = XLALCreateLatticeTiling( 3 );
-  XLAL_CHECK( tiling != NULL, XLAL_EFUNC );
+  const int total_tol = 15;
 
-  // Compute reduced supersky metric
-  const double Tspan = T * 86400;
-  LIGOTimeGPS ref_time;
-  XLALGPSSetREAL8( &ref_time, 900100100 );
-  LALSegList segments;
-  {
-    XLAL_CHECK( XLALSegListInit( &segments ) == XLAL_SUCCESS, XLAL_EFUNC );
-    LALSeg segment;
-    LIGOTimeGPS start_time = ref_time, end_time = ref_time;
-    XLALGPSAdd( &start_time, -0.5 * Tspan );
-    XLALGPSAdd( &end_time, 0.5 * Tspan );
-    XLAL_CHECK( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-  MultiLALDetector detectors = {
-    .length = 1,
-    .sites = { lalCachedDetectors[LAL_LLO_4K_DETECTOR] }
-  };
-  EphemerisData *edat = XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
-                                            TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
-  XLAL_CHECK( edat != NULL, XLAL_EFUNC );
-  SuperskyMetrics *metrics = XLALComputeSuperskyMetrics( 0, &ref_time, &segments, freq, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
-  XLAL_CHECK( metrics != NULL, XLAL_EFUNC );
-  XLALSegListClear( &segments );
-  XLALDestroyEphemerisData( edat );
+  const UINT8 coh_total_ref[3] = {coh_total_ref_0, coh_total_ref_1, coh_total_ref_2};
 
-  // Add bounds
-  printf( "Bounds: supersky, sky patch 0/%" LAL_UINT8_FORMAT ", freq=%0.3g, freqband=%0.3g\n", patch_count, freq, freqband );
-  double alpha1 = 0, alpha2 = 0, delta1 = 0, delta2 = 0;
-  XLAL_CHECK( XLALComputePhysicalSkyEqualAreaPatch( &alpha1, &alpha2, &delta1, &delta2, patch_count, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( tiling, metrics->semi_rssky_metric, metrics->semi_rssky_transf, alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( tiling, metrics->semi_rssky_transf, 0, freq, freq + freqband ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Set metric
-  printf( "Lattice type: %s\n", lattice_name );
-  XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, lattice_name, metrics->semi_rssky_metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Print bound names
-  printf( "Bound names:" );
-  for ( size_t i = 0; i < XLALTotalLatticeTilingDimensions( tiling ); ++i ) {
-    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( tiling, i );
-    XLAL_CHECK( stats != NULL, XLAL_EFUNC );
-    XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
-    printf( " %s", stats->name );
-  }
-  printf( "\n" );
-
-  // Perform mismatch test
-  XLAL_CHECK( MismatchTest( tiling, metrics->semi_rssky_metric, max_mismatch, total_ref, mism_hist_ref ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Cleanup
-  XLALDestroyLatticeTiling( tiling );
-  XLALDestroySuperskyMetrics( metrics );
-  LALCheckMemoryLeaks();
-
-  return XLAL_SUCCESS;
-
-}
-
-static int MultiSegSuperskyTest( void )
-{
-  printf( "Performing multiple-segment tests ...\n" );
+  printf( "Performing super-sky metric tests ...\n\n" );
 
   // Compute reduced supersky metrics
-  const double Tspan = 86400;
+  const double Tspan = 90000;
   LIGOTimeGPS ref_time;
   XLALGPSSetREAL8( &ref_time, 900100100 );
   LALSegList segments;
@@ -670,8 +623,8 @@ static int MultiSegSuperskyTest( void )
     LALSeg segment;
     {
       LIGOTimeGPS start_time = ref_time, end_time = ref_time;
-      XLALGPSAdd( &start_time, -4 * Tspan );
-      XLALGPSAdd( &end_time, -3 * Tspan );
+      XLALGPSAdd( &start_time, -3 * Tspan );
+      XLALGPSAdd( &end_time, -2 * Tspan );
       XLAL_CHECK( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
@@ -684,11 +637,12 @@ static int MultiSegSuperskyTest( void )
     }
     {
       LIGOTimeGPS start_time = ref_time, end_time = ref_time;
-      XLALGPSAdd( &start_time, 3.5 * Tspan );
-      XLALGPSAdd( &end_time, 4.5 * Tspan );
+      XLALGPSAdd( &start_time, 2.5 * Tspan );
+      XLALGPSAdd( &end_time, 3.5 * Tspan );
       XLAL_CHECK( XLALSegSet( &segment, &start_time, &end_time, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( XLALSegListAppend( &segments, &segment ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
+    XLAL_CHECK( segments.length == XLAL_NUM_ELEM( coh_total_ref ), XLAL_EFAILED );
   }
   MultiLALDetector detectors = {
     .length = 1,
@@ -697,11 +651,13 @@ static int MultiSegSuperskyTest( void )
   EphemerisData *edat = XLALInitBarycenter( TEST_DATA_DIR "earth00-19-DE405.dat.gz",
                                             TEST_DATA_DIR "sun00-19-DE405.dat.gz" );
   XLAL_CHECK( edat != NULL, XLAL_EFUNC );
-  SuperskyMetrics *metrics = XLALComputeSuperskyMetrics( 1, &ref_time, &segments, 50, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
+  const double freq_max = 40.0;
+  SuperskyMetrics *metrics = XLALComputeSuperskyMetrics( 1, &ref_time, &segments, freq_max, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
   XLAL_CHECK( metrics != NULL, XLAL_EFUNC );
+  XLAL_CHECK( metrics->num_segments == segments.length, XLAL_EFAILED );
 
   // Project and rescale semicoherent metric to give equal frequency spacings
-  const double coh_max_mismatch = 0.2, semi_max_mismatch = 0.4;
+  const double coh_max_mismatch = 1.4, semi_max_mismatch = 4.9;
   XLAL_CHECK( XLALEqualizeReducedSuperskyMetricsFreqSpacing( metrics, coh_max_mismatch, semi_max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Create lattice tilings
@@ -715,15 +671,16 @@ static int MultiSegSuperskyTest( void )
 
   // Add bounds
   double alpha1 = 0, alpha2 = 0, delta1 = 0, delta2 = 0;
-  XLAL_CHECK( XLALComputePhysicalSkyEqualAreaPatch( &alpha1, &alpha2, &delta1, &delta2, 1, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  const double freq_min = freq_max - 5e-5, f1dot = -5e-9;
+  XLAL_CHECK( XLALComputePhysicalSkyEqualAreaPatch( &alpha1, &alpha2, &delta1, &delta2, 2, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( coh_tiling[n], metrics->coh_rssky_metric[n], metrics->coh_rssky_transf[n], alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 0, 50, 50 + 1e-4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 1, 0, -5e-10 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 0, freq_min, freq_max ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( coh_tiling[n], metrics->coh_rssky_transf[n], 1, f1dot, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   XLAL_CHECK( XLALSetSuperskyPhysicalSkyBounds( semi_tiling, metrics->semi_rssky_metric, metrics->semi_rssky_transf, alpha1, alpha2, delta1, delta2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( semi_tiling, metrics->semi_rssky_transf, 0, 50, 50 + 1e-4 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( semi_tiling, metrics->semi_rssky_transf, 1, 0, -5e-10 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( semi_tiling, metrics->semi_rssky_transf, 0, freq_min, freq_max ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetSuperskyPhysicalSpinBound( semi_tiling, metrics->semi_rssky_transf, 1, f1dot, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set metric
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
@@ -738,14 +695,43 @@ static int MultiSegSuperskyTest( void )
     const double coh_dfreq = XLALLatticeTilingStepSizes( coh_tiling[n], ifreq );
     const double tol = 1e-8;
     XLAL_CHECK( fabs( coh_dfreq - semi_dfreq ) < tol * semi_dfreq, XLAL_EFAILED,
-                "  ERROR: semi_dfreq=%0.15e, coh_dfreq[%zu]=%0.15e, |coh_dfreq - semi_dfreq| >= %g * semi_dfreq", semi_dfreq, n, coh_dfreq, tol );
+                "  ERROR: semi_dfreq=%0.15e, coh_dfreq[%zu]=%0.15e, |coh_dfreq - semi_dfreq| >= %0.5g * semi_dfreq", semi_dfreq, n, coh_dfreq, tol );
   }
+
+  // Print information on bounds
+  for ( size_t n = 0; n < metrics->num_segments; ++n ) {
+    for ( size_t i = 0; i < XLALTotalLatticeTilingDimensions( coh_tiling[n] ); ++i ) {
+      const LatticeTilingStats *stats = XLALLatticeTilingStatistics( coh_tiling[n], i );
+      XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+      XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
+      printf( "Coherent #%zu  bound #%zu: name=%6s, points=[%4u,%4u]\n", n, i, stats->name, stats->min_points, stats->max_points );
+    }
+  }
+  for ( size_t i = 0; i < XLALTotalLatticeTilingDimensions( semi_tiling ); ++i ) {
+    const LatticeTilingStats *stats = XLALLatticeTilingStatistics( semi_tiling, i );
+    XLAL_CHECK( stats != NULL, XLAL_EFUNC );
+    XLAL_CHECK( stats->name != NULL, XLAL_EFUNC );
+    printf( "Semicoherent bound #%zu: name=%6s, points=[%4u,%4u]\n", i, stats->name, stats->min_points, stats->max_points );
+  }
+  printf( "\n" );
 
   // Check computation of spindown range for coherent tilings
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
     PulsarSpinRange spin_range;
     XLAL_CHECK( XLALSuperskyLatticePulsarSpinRange( &spin_range, coh_tiling[n], metrics->coh_rssky_transf[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    printf( "Coherent #%zu spindown range: freq=[%0.5g,%0.5g], f1dot=[%0.5g,%0.5g]\n", n, spin_range.fkdot[0], spin_range.fkdot[0] + spin_range.fkdotBand[0], spin_range.fkdot[1], spin_range.fkdot[1] + spin_range.fkdotBand[1] );
   }
+  printf( "\n" );
+
+  // Perform mismatch test of coherent and semicoherent tilings
+  for ( size_t n = 0; n < metrics->num_segments; ++n ) {
+    printf( "Coherent #%zu mismatch tests:\n", n );
+    XLAL_CHECK( MismatchTest( coh_tiling[n], metrics->coh_rssky_metric[n], coh_max_mismatch, 1, 5e-2, 4e-3, coh_total_ref[n], total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+    printf( "\n" );
+  }
+  printf( "Semicoherent mismatch tests:\n" );
+  XLAL_CHECK( MismatchTest( semi_tiling, metrics->semi_rssky_metric, semi_max_mismatch, 1, 5e-2, 1e-2, semi_total_ref, total_tol, A4s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
+  printf( "\n" );
 
   // Cleanup
   for ( size_t n = 0; n < metrics->num_segments; ++n ) {
@@ -756,8 +742,8 @@ static int MultiSegSuperskyTest( void )
   XLALSegListClear( &segments );
   XLALDestroyEphemerisData( edat );
   LALCheckMemoryLeaks();
-  printf( "\n" );
-  fflush( stdout );
+
+  printf( "Finished super-sky metric tests\n" );
 
   return XLAL_SUCCESS;
 
@@ -813,13 +799,8 @@ int main( void )
   XLAL_CHECK_MAIN( MismatchAgeBrakeTest( "Ans", 200, 1.5e-5, 37232, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( MismatchAgeBrakeTest( "Ans", 300, 1.0e-5, 37022, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Perform mismatch tests with the reduced supersky parameter space and metric
-  XLAL_CHECK_MAIN( SuperskyTest( 1.1, 0.8, "Ans",  1, 50, 2.0e-5, 20548, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( SuperskyTest( 1.5, 0.8, "Ans",  3, 50, 2.0e-5, 20202, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( SuperskyTest( 2.5, 0.8, "Ans", 17, 50, 2.0e-5, 29147, A3s_mism_hist ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Perform tests with the reduced supersky parameter space metric and multiple segments
-  XLAL_CHECK_MAIN( MultiSegSuperskyTest() == XLAL_SUCCESS, XLAL_EFUNC );
+  // Perform a variety of tests with the reduced supersky parameter space and metric
+  XLAL_CHECK_MAIN( SuperskyTests( 99376, 80817, 63091, 482182 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return EXIT_SUCCESS;
 

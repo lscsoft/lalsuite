@@ -134,6 +134,8 @@ def replace_fiducial_bns(line):
         return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
     if 'ignore-science-segments=' in line:
         return 'ignore-science-segments=True\n'
+    if 'flow=' in line:
+        return line.replace('#','').replace('40','50').strip()+'\n'
     if 'dataseed=' in line:
         return line.replace('#','').strip()+'\n'
     if 'margphi=' in line:
@@ -143,17 +145,27 @@ def replace_fiducial_bns(line):
     if 'disable-spin=' in line:
         return '#disable-spin=\n'
     if 'parname-max' in line:
-        return line+'\ndistance-max=500\n'
+        return line+'\ndistance-max=400\n'
     if 'deltaLogP=' in line:
-        return line.replace('#','').strip()+'\n'
+        return 'deltaLogP=5.0\n'
     if 'approx=' in line:
         return line.replace(line,"approx=SEOBNRv4_ROMpseudoFourPN")+'\n'
     if 'srate=' in line:
-        return line.replace(line,"srate=4096")+'\n'
+        return line.replace(line,"srate=2048")+'\n'
+    if 'seglen=' in line:
+        return line.replace(line,"seglen=18")
     if 'comp-max=' in line:
         return line.replace(line,"comp-max=3.5")+'\n'
     if 'comp-min=' in line:
         return line.replace(line,"comp-min=0.5")+'\n'
+    if '0noise=' in line:
+        return line.replace('#','').strip()+'\n'
+    if 'neff=' in line:
+        return line.replace(line,"neff=500")
+    if 'nlive=' in line:
+        return line.replace(line,"nlive=256")
+    if 'maxmcmc=' in line:
+        return line.replace(line,"#maxmcmc=3000")
     return line
 
 if args.bns_injection:
@@ -272,6 +284,16 @@ def replace_fiducial_bbh(line):
         return line+'\ndistance-max=2000\n'
     if 'deltaLogP=' in line:
         return 'deltaLogP=6.0\n'
+    if '0noise=' in line:
+        return line.replace('#','').strip()+'\n'
+    if 'neff=' in line:
+        return line.replace(line,"neff=500")
+    if 'nlive=' in line:
+        return line.replace(line,"nlive=256")
+    if 'maxmcmc=' in line:
+        return line.replace(line,"#maxmcmc=3000")
+    if 'fref=' in line:
+        return line.replace('#','').replace('100','20').strip()+'\n')
     return line
 
 if args.bbh_injection:

@@ -275,6 +275,9 @@ FITSFile *XLALFITSFileOpenWrite( const CHAR UNUSED *file_name )
   CALL_FITS( fits_create_img, file->ff, SHORT_IMG, 0, NULL );
   file->hdutype = INT_MAX;
 
+  // Write warning for FITS long string keyword convention
+  CALL_FITS( fits_write_key_longwarn, file->ff );
+
   // Write the current system date to the FITS file
   CALL_FITS( fits_write_date, file->ff );
 
@@ -456,13 +459,18 @@ int XLALFITSFileWriteVCSInfo( FITSFile UNUSED *file, const LALVCSInfo UNUSED *co
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
   XLAL_CHECK_FAIL( vcs_list != NULL, XLAL_EFAULT );
 
-  // Write VCS information to history
+  // Seek primary HDU
+  CALL_FITS( fits_movabs_hdu, file->ff, 1, NULL );
+
+  // Write VCS information to primary header
   for ( size_t i = 0; vcs_list[i] != NULL; ++i ) {
-    XLAL_CHECK_FAIL( XLALFITSFileWriteHistory( file, "%s version: %s\n%s commit : %s\n%s status : %s",
-                                               vcs_list[i]->name, vcs_list[i]->version,
-                                               vcs_list[i]->name, vcs_list[i]->vcsId,
-                                               vcs_list[i]->name, vcs_list[i]->vcsStatus
-                       ) == XLAL_SUCCESS, XLAL_EFUNC );
+    CHAR keyword[FLEN_KEYWORD];
+    snprintf( keyword, sizeof( keyword ), "%s version", vcs_list[i]->name );
+    XLAL_CHECK_FAIL( XLALFITSHeaderWriteString( file, keyword, vcs_list[i]->version, "version" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    snprintf( keyword, sizeof( keyword ), "%s commit", vcs_list[i]->name );
+    XLAL_CHECK_FAIL( XLALFITSHeaderWriteString( file, keyword, vcs_list[i]->vcsId, "commit ID" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    snprintf( keyword, sizeof( keyword ), "%s status", vcs_list[i]->name );
+    XLAL_CHECK_FAIL( XLALFITSHeaderWriteString( file, keyword, vcs_list[i]->vcsStatus, "repo status" ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
@@ -493,10 +501,30 @@ int XLALFITSFileWriteUVarCmdLine( FITSFile UNUSED *file )
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
 
-  // Write command line to history
-  cmd_line = XLALUserVarGetLog( UVAR_LOGFMT_CMDLINE );
+  // Seek primary HDU
+  CALL_FITS( fits_movabs_hdu, file->ff, 1, NULL );
+
+  // Get UserVar command line in a parseable form
+  cmd_line = XLALUserVarGetLog( UVAR_LOGFMT_RAWFORM );
   XLAL_CHECK_FAIL( cmd_line != NULL, XLAL_EFUNC );
-  XLAL_CHECK_FAIL( XLALFITSFileWriteHistory( file, "Command line: %s", cmd_line ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Extract and write program name to primary header
+  CHAR *p = cmd_line;
+  CHAR *t = XLALStringToken( &p, "\n", 0 );
+  XLAL_CHECK_FAIL( t != NULL && strlen( t ) > 0, XLAL_EFUNC );
+  CALL_FITS( fits_write_key_longstr, file->ff, "PROGNAME", t, "name of program which created this file" );
+
+  // Extract and write program arguments to primary header
+  t = XLALStringToken( &p, "\n", 0 );
+  while ( t != NULL ) {
+    CHAR *v = strchr( t, '\t' );
+    XLAL_CHECK_FAIL( v != NULL, XLAL_EFAILED );
+    *v++ = '\0';
+    CHAR keyword[FLEN_KEYWORD];
+    snprintf( keyword, sizeof( keyword ), "PROGARG %s", t );
+    CALL_FITS( fits_write_key_longstr, file->ff, keyword, v, "argument to program" );
+    t = XLALStringToken( &p, "\n", 0 );
+  }
 
   XLALFree( cmd_line );
   return XLAL_SUCCESS;
@@ -1268,9 +1296,6 @@ int XLALFITSHeaderWriteString( FITSFile UNUSED *file, const CHAR UNUSED *key, co
   XLAL_CHECK_FAIL( CheckFITSKeyword( key, keyword, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_FAIL( value != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
-
-  // Write warning for FITS long string keyword convention
-  CALL_FITS( fits_write_key_longwarn, file->ff );
 
   // Write string value to current header
   union {
@@ -2171,7 +2196,6 @@ static int UNUSED XLALFITSTableColumnAdd( FITSFile UNUSED *file, const CHAR UNUS
   XLAL_CHECK_FAIL( record_size > 0, XLAL_EINVAL );
   XLAL_CHECK_FAIL( field != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( field_size > 0, XLAL_EINVAL );
-  XLAL_CHECK_FAIL( field_size < 128, XLAL_EINVAL, "Record field is too long" );
   XLAL_CHECK_FAIL( ( ( intptr_t ) field ) >= ( ( intptr_t ) record ), XLAL_EINVAL, "Invalid field pointer" );
   XLAL_CHECK_FAIL( ( ( intptr_t ) field ) + field_size <= ( ( intptr_t ) record ) + record_size, XLAL_EINVAL, "Invalid field pointer" );
   XLAL_CHECK_FAIL( elem_size > 0, XLAL_EINVAL );
