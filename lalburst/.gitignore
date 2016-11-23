@@ -38,7 +38,7 @@ python/lalburst/__init__.py
 python/lalburst/_lalburst*
 python/lalburst/git_version.py
 python/lalburst/lalburst.py
-src/LALBurstBuildInfo.c
+src/LALBurstBuildInfoHeader.h
 src/LALBurstConfig.h
 src/LALBurstVCSInfo.c
 src/LALBurstVCSInfo.h

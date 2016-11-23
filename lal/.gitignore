@@ -41,7 +41,7 @@ python/lal/__init__.py
 python/lal/_lal*
 python/lal/git_version.py
 python/lal/lal.py
-src/LALBuildInfo.c
+src/LALBuildInfoHeader.h
 src/LALConfig.h
 src/LALVCSInfo.c
 src/LALVCSInfo.h

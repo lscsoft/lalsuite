@@ -39,7 +39,7 @@ python/lalinspiral/_lalinspiral*
 python/lalinspiral/git_version.py
 python/lalinspiral/lalinspiral.py
 src/Chisq_GPU.cpp
-src/LALInspiralBuildInfo.c
+src/LALInspiralBuildInfoHeader.h
 src/LALInspiralConfig.h
 src/LALInspiralVCSInfo.c
 src/LALInspiralVCSInfo.h

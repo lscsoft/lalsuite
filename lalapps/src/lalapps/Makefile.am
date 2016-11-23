@@ -32,17 +32,19 @@ FFTWPROGS = \
 endif
 
 noinst_LTLIBRARIES = liblalapps.la
+
 liblalapps_la_SOURCES = \
+	LALAppsVCSInfo.h \
+	LALAppsVCSInfoHeader.h \
 	lalapps.c \
 	lalapps.h \
-	LALAppsVCSInfo.c \
-	LALAppsVCSInfo.h \
 	$(FRAMESRCS) \
 	$(LALMETAIOSRCS)
-nodist_liblalapps_la_SOURCES = LALAppsBuildInfo.c
 
-noinst_HEADERS = \
-	LALAppsVCSInfoHeader.h
+nodist_liblalapps_la_SOURCES = \
+	LALAppsBuildInfoHeader.h \
+	LALAppsVCSInfo.c \
+	$(END_OF_LIST)
 
 bin_PROGRAMS = \
 	lalapps_version \
@@ -74,9 +76,10 @@ endif
 
 TESTS = lalapps_version
 
+vcs_build_info_source = LALAppsVCSInfo.c
 vcs_info_sources = LALAppsVCSInfoHeader.h git_version.py
-build_info_source = LALAppsBuildInfo.c
-$(build_info_source): $(liblalapps_la_DEPENDENCIES)
+build_info_source = LALAppsBuildInfoHeader.h
+build_info_dependencies = $(liblalapps_la_DEPENDENCIES)
 
 EXTRA_DIST += \
 	__init__.py \

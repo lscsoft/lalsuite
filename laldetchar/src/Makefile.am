@@ -17,13 +17,18 @@ pkginclude_HEADERS = \
 	LALDetCharVCSInfoHeader.h
 
 lib_LTLIBRARIES = liblaldetchar.la
+
 liblaldetchar_la_SOURCES = \
 	LALDetCharGlibTypes.c \
 	LALDetCharInspiralRange.c \
 	LALDetCharHvetoUtils.c \
 	LALDetCharHveto.c \
-	LALDetCharVCSInfo.c
-nodist_liblaldetchar_la_SOURCES = LALDetCharBuildInfo.c
+	$(END_OF_LIST)
+
+nodist_liblaldetchar_la_SOURCES = \
+	LALDetCharBuildInfoHeader.h \
+	LALDetCharVCSInfo.c \
+	$(END_OF_LIST)
 
 liblaldetchar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
@@ -41,6 +46,7 @@ EXTRA_DIST = \
 
 DISTCLEANFILES = config.h
 
+vcs_build_info_source = LALDetCharVCSInfo.c
 vcs_info_sources = LALDetCharVCSInfoHeader.h
-build_info_source = LALDetCharBuildInfo.c
-$(build_info_source): $(liblaldetchar_la_DEPENDENCIES)
+build_info_source = LALDetCharBuildInfoHeader.h
+build_info_dependencies = $(liblaldetchar_la_DEPENDENCIES)

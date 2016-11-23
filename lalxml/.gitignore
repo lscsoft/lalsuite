@@ -38,7 +38,7 @@ python/lalxml/__init__.py
 python/lalxml/_lalxml*
 python/lalxml/git_version.py
 python/lalxml/lalxml.py
-src/LALXMLBuildInfo.c
+src/LALXMLBuildInfoHeader.h
 src/LALXMLConfig.h
 src/LALXMLVCSInfo.c
 src/LALXMLVCSInfo.h

@@ -12,12 +12,17 @@ pkginclude_HEADERS = \
 	LALXMLVOTableSerializers.h
 
 lib_LTLIBRARIES = liblalxml.la
+
 liblalxml_la_SOURCES = \
 	LALXML.c \
-	LALXMLVCSInfo.c \
 	LALXMLVOTableCommon.c \
 	LALXMLVOTableSerializers.c
-nodist_liblalxml_la_SOURCES = LALXMLBuildInfo.c
+
+nodist_liblalxml_la_SOURCES = \
+	LALXMLBuildInfoHeader.h \
+	LALXMLVCSInfo.c \
+	$(END_OF_LIST)
+
 liblalxml_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 DISTCLEANFILES = \
@@ -27,6 +32,7 @@ EXTRA_DIST = \
 	config.h.in \
 	LALXMLConfig.h.in
 
+vcs_build_info_source = LALXMLVCSInfo.c
 vcs_info_sources = LALXMLVCSInfoHeader.h
-build_info_source = LALXMLBuildInfo.c
-$(build_info_source): $(liblalxml_la_DEPENDENCIES)
+build_info_source = LALXMLBuildInfoHeader.h
+build_info_dependencies = $(liblalxml_la_DEPENDENCIES)

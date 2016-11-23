@@ -126,6 +126,7 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBHamiltonian.h
 
 lib_LTLIBRARIES = liblalsimulation.la
+
 liblalsimulation_la_SOURCES = \
 	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \
@@ -175,7 +176,6 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralWaveformTaper.c \
 	LALSimIMRNRWaveforms.c \
 	LALSimulation.c \
-	LALSimulationVCSInfo.c \
 	LALSimNeutronStarEOS.c \
 	LALSimNeutronStarFamily.c \
 	LALSimNeutronStarTOV.c \
@@ -194,7 +194,10 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralHGimri.c \
 	LALSimFindAttachTime.c
 
-nodist_liblalsimulation_la_SOURCES = LALSimulationBuildInfo.c
+nodist_liblalsimulation_la_SOURCES = \
+	LALSimulationBuildInfoHeader.h \
+	LALSimulationVCSInfo.c \
+	$(END_OF_LIST)
 
 liblalsimulation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
@@ -230,6 +233,7 @@ EXTRA_DIST = \
 
 DISTCLEANFILES = config.h
 
+vcs_build_info_source = LALSimulationVCSInfo.c
 vcs_info_sources = LALSimulationVCSInfoHeader.h
-build_info_source = LALSimulationBuildInfo.c
-$(build_info_source): $(liblalsimulation_la_DEPENDENCIES)
+build_info_source = LALSimulationBuildInfoHeader.h
+build_info_dependencies = $(liblalsimulation_la_DEPENDENCIES)

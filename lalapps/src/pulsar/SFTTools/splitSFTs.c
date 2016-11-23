@@ -211,10 +211,10 @@ int main(int argc, char**argv) {
   }
 
   /* record VCS ID and command-line for the comment */
-  TRY((cmdline = (char*)malloc(strlen(lalAppsVCSIdentId)+strlen(lalAppsVCSIdentStatus)+2)) == NULL,
+  TRY((cmdline = (char*)malloc(strlen(lalAppsVCSIdentInfo.vcsId)+strlen(lalAppsVCSIdentInfo.vcsStatus)+2)) == NULL,
       "out of memory allocating cmdline",1);
-  strcpy(cmdline,lalAppsVCSIdentId);
-  strcat(cmdline,lalAppsVCSIdentStatus);
+  strcpy(cmdline,lalAppsVCSIdentInfo.vcsId);
+  strcat(cmdline,lalAppsVCSIdentInfo.vcsStatus);
   strcat(cmdline, "\n");
   for(arg = 0; arg < argc; arg++) {
     if (strcmp(argv[arg], "-m") == 0) {

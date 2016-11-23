@@ -30,10 +30,12 @@ pkginclude_HEADERS = \
 
 liblal_la_SOURCES = \
 	LALMisc.c \
-	LALVCSInfo.c \
 	$(END_OF_LIST)
 
-nodist_liblal_la_SOURCES = LALBuildInfo.c
+nodist_liblal_la_SOURCES = \
+	LALBuildInfoHeader.h \
+	LALVCSInfo.c \
+	$(END_OF_LIST)
 
 liblal_la_DEPENDENCIES = \
 	std/libstd.la \
@@ -60,9 +62,10 @@ EXTRA_DIST = \
 
 DISTCLEANFILES = config.h
 
+vcs_build_info_source = LALVCSInfo.c
 vcs_info_sources = LALVCSInfoHeader.h
-build_info_source = LALBuildInfo.c
-$(build_info_source): $(liblal_la_DEPENDENCIES)
+build_info_source = LALBuildInfoHeader.h
+build_info_dependencies = $(liblal_la_DEPENDENCIES)
 
 LDADD = liblal.la
 

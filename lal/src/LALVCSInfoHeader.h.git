@@ -1,5 +1,6 @@
 /*
- * @PACKAGE_NAME@VCSInfo.h - @PACKAGE_NAME@ VCS Information Header
+ * Copyright (C) 2014, 2016 Karl Wette
+ * Copyright (C) 2009-2013 Adam Mercer
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,9 +16,10 @@
  * along with with program; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
- *
- * Copyright (C) 2009-2013 Adam Mercer
- * Copyright (C) 2014 Karl Wette
+ */
+
+/*
+ * @PACKAGE_NAME@VCSInfo.h - @PACKAGE_NAME@ VCS Information Header
  */
 
 /** \cond DONT_DOXYGEN */
@@ -33,7 +35,7 @@
 extern "C" {
 #endif
 
-/* VCS information defines */
+/* VCS information */
 #define @PACKAGE_NAME_UCASE@_NAME "@PACKAGE_NAME@"
 #define @PACKAGE_NAME_UCASE@_VCS_ID "@ID@"
 #define @PACKAGE_NAME_UCASE@_VCS_DATE "@DATE@"
@@ -41,16 +43,8 @@ extern "C" {
 #define @PACKAGE_NAME_UCASE@_VCS_TAG "@TAG@"
 #define @PACKAGE_NAME_UCASE@_VCS_AUTHOR "@AUTHOR@"
 #define @PACKAGE_NAME_UCASE@_VCS_COMMITTER "@COMMITTER@"
+#define @PACKAGE_NAME_UCASE@_VCS_CLEAN "@CLEAN@"
 #define @PACKAGE_NAME_UCASE@_VCS_STATUS "@STATUS@"
-
-/* Identable VCS information defines */
-#define @PACKAGE_NAME_UCASE@_VCS_IDENT_ID "$" "@PACKAGE_NAME@Id: @ID@ " "$"
-#define @PACKAGE_NAME_UCASE@_VCS_IDENT_DATE "$" "@PACKAGE_NAME@Date: @DATE@ " "$"
-#define @PACKAGE_NAME_UCASE@_VCS_IDENT_BRANCH "$" "@PACKAGE_NAME@Branch: @BRANCH@ " "$"
-#define @PACKAGE_NAME_UCASE@_VCS_IDENT_TAG "$" "@PACKAGE_NAME@Tag: @TAG@ " "$"
-#define @PACKAGE_NAME_UCASE@_VCS_IDENT_AUTHOR "$" "@PACKAGE_NAME@Author: @AUTHOR@ " "$"
-#define @PACKAGE_NAME_UCASE@_VCS_IDENT_COMMITTER "$" "@PACKAGE_NAME@Committer: @COMMITTER@ " "$"
-#define @PACKAGE_NAME_UCASE@_VCS_IDENT_STATUS "$" "@PACKAGE_NAME@Status: @STATUS@ " "$"
 
 /* Header VCS information structure */
 static const LALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfoHeader = { \
@@ -62,7 +56,9 @@ static const LALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfoHeader = { \
   @PACKAGE_NAME_UCASE@_VCS_TAG, \
   @PACKAGE_NAME_UCASE@_VCS_AUTHOR, \
   @PACKAGE_NAME_UCASE@_VCS_COMMITTER, \
-  @PACKAGE_NAME_UCASE@_VCS_STATUS \
+  @PACKAGE_NAME_UCASE@_VCS_CLEAN, \
+  @PACKAGE_NAME_UCASE@_VCS_STATUS, \
+  NULL, NULL, NULL, \
 };
 
 #ifdef __cplusplus
@@ -72,7 +68,3 @@ static const LALVCSInfo lal@PACKAGE_NAME_NOLAL@VCSInfoHeader = { \
 #endif /* _@PACKAGE_NAME_UCASE@VCSINFOHEADER_H */
 
 /** \endcond */
-
-/*
- * vim: tw=0 ts=2 et
- */
