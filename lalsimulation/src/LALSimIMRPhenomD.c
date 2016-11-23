@@ -474,6 +474,8 @@ double XLALSimIMRPhenomDChirpTime(
             XLAL_PRINT_WARNING("Final spin (Mf=%g) and ISCO frequency of this system are small, \
                             the model might misbehave here.", finspin);
     LALDict *extraParams = NULL;
+    if (extraParams == NULL)
+      extraParams = XLALCreateDict();
     XLALSimInspiralWaveformParamsInsertPNSpinOrder(extraParams, LAL_SIM_INSPIRAL_SPIN_ORDER_35PN);
     IMRPhenomDPhaseCoefficients *pPhi = ComputeIMRPhenomDPhaseCoefficients(eta, chi1, chi2, finspin, extraParams);
     if (!pPhi) XLAL_ERROR(XLAL_EFUNC);
