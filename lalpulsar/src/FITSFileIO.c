@@ -459,18 +459,13 @@ int XLALFITSFileWriteVCSInfo( FITSFile UNUSED *file, const LALVCSInfo UNUSED *co
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
   XLAL_CHECK_FAIL( vcs_list != NULL, XLAL_EFAULT );
 
-  // Seek primary HDU
-  CALL_FITS( fits_movabs_hdu, file->ff, 1, NULL );
-
-  // Write VCS information to primary header
+  // Write VCS information to history
   for ( size_t i = 0; vcs_list[i] != NULL; ++i ) {
-    CHAR keyword[FLEN_KEYWORD];
-    snprintf( keyword, sizeof( keyword ), "%s version", vcs_list[i]->name );
-    XLAL_CHECK_FAIL( XLALFITSHeaderWriteString( file, keyword, vcs_list[i]->version, "version" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    snprintf( keyword, sizeof( keyword ), "%s commit", vcs_list[i]->name );
-    XLAL_CHECK_FAIL( XLALFITSHeaderWriteString( file, keyword, vcs_list[i]->vcsId, "commit ID" ) == XLAL_SUCCESS, XLAL_EFUNC );
-    snprintf( keyword, sizeof( keyword ), "%s status", vcs_list[i]->name );
-    XLAL_CHECK_FAIL( XLALFITSHeaderWriteString( file, keyword, vcs_list[i]->vcsStatus, "repo status" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_FAIL( XLALFITSFileWriteHistory( file, "%s version: %s\n%s commit : %s\n%s status : %s",
+                                               vcs_list[i]->name, vcs_list[i]->version,
+                                               vcs_list[i]->name, vcs_list[i]->vcsId,
+                                               vcs_list[i]->name, vcs_list[i]->vcsStatus
+                       ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   return XLAL_SUCCESS;
