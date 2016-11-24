@@ -293,7 +293,7 @@ def replace_fiducial_bbh(line):
     if 'maxmcmc=' in line:
         return line.replace(line,"#maxmcmc=3000")
     if 'fref=' in line:
-        return line.replace('#','').replace('100','20').strip()+'\n')
+        return line.replace('#','').replace('100','20').strip()+'\n'
     return line
 
 if args.bbh_injection:
