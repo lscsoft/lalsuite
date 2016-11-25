@@ -1388,15 +1388,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                   if self.dataseed:
                      bayeswavepsdnode[ifo].set_dataseed(self.dataseed+event.event_id)
                   if self.config.has_option('bayeswave','BayesWave_Niter'):
-                     bayeswavepsdnode[ifo].add_var_arg('--Niter '+self.config.getint('bayeswave','BayesWave_Niter'))
+                     bayeswavepsdnode[ifo].add_var_arg('--Niter '+str(self.config.getint('bayeswave','BayesWave_Niter')))
                   if self.config.has_option('bayeswave','BayesWave_Nchain'):
-                     bayeswavepsdnode[ifo].add_var_arg('--Nchain '+self.config.getint('bayeswave','BayesWave_Nchain'))
+                     bayeswavepsdnode[ifo].add_var_arg('--Nchain '+str(self.config.getint('bayeswave','BayesWave_Nchain')))
                   if self.config.has_option('bayeswave','BayesWave_Ncycle'):
-                     bayeswavepsdnode[ifo].add_var_arg('--Ncycle '+self.config.getint('bayeswave','BayesWave_Ncycle'))
+                     bayeswavepsdnode[ifo].add_var_arg('--Ncycle '+str(self.config.getint('bayeswave','BayesWave_Ncycle')))
                   if self.config.has_option('bayeswave','BayesWave_Nburnin'):
-                     bayeswavepsdnode[ifo].add_var_arg('--Nburnin '+self.config.getint('bayeswave','BayesWave_Nburnin'))
+                     bayeswavepsdnode[ifo].add_var_arg('--Nburnin '+str(self.config.getint('bayeswave','BayesWave_Nburnin')))
                   if self.config.has_option('bayeswave','BayesWave_Nbayesline'):
-                     bayeswavepsdnode[ifo].add_var_arg('--Nbayesline '+self.config.getint('bayeswave','BayesWave_Nbayesline'))
+                     bayeswavepsdnode[ifo].add_var_arg('--Nbayesline '+str(self.config.getint('bayeswave','BayesWave_Nbayesline')))
         if self.config.has_option('condor','bayesline') or self.config.has_option('condor','computeroqweights'):
           if gotdata and event.event_id not in self.prenodes.keys():
             if prenode not in self.get_nodes():
