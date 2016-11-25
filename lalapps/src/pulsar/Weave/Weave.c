@@ -50,7 +50,7 @@ int main( int argc, char *argv[] )
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
-    UINT4 sft_noise_rand_seed, sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision, output_toplist_limit, cache_max_size, cache_gc_limit;
+    UINT4 sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision, output_toplist_limit, rand_seed, cache_max_size, cache_gc_limit;
   } uvar_struct = {
     .Fstat_Dterms = Fstat_opt_args.Dterms,
     .Fstat_SSB_precision = Fstat_opt_args.SSBprec,
@@ -62,7 +62,6 @@ int main( int argc, char *argv[] )
     .interpolation = 1,
     .lattice = XLALStringDuplicate( "An-star" ),
     .output_toplist_limit = 1000,
-    .sft_noise_rand_seed = Fstat_opt_args.randSeed,
   };
   struct uvar_type *const uvar = &uvar_struct;
 
@@ -108,10 +107,6 @@ int main( int argc, char *argv[] )
     "Arguments correspond to the detectors in the setup file given by " UVAR_STR( setup_file )
     "; for example, if the setup file was created with " UVAR_STR( detectors ) " set to 'H1,L1', then an argument of "
     "'1.2,3.4' to this option will generate H1 SFTs with a noise PSD of 1.2, and L1 SFTs with a noise PSD of 3.4. "
-    );
-  XLALRegisterUvarMember(
-    sft_noise_rand_seed, UINT4, 'e', OPTIONAL,
-    "Random seed used to generate fake Gaussian noise for generated SFTs. "
     );
   XLALRegisterUvarMember(
     injections, STRINGVector, 'J', OPTIONAL,
@@ -272,6 +267,10 @@ int main( int argc, char *argv[] )
   // - Advanced options
   //
   XLALRegisterUvarMember(
+    rand_seed, UINT4, 'e', OPTIONAL,
+    "Random seed used to initialise random number generators. "
+    );
+  XLALRegisterUvarMember(
     shortcut_compute, BOOLEAN, 'X', DEVELOPER,
     "Perform all setup and search actions, but shortcut all computations. "
     "This option can be used to gain some information of the performance of the code, e.g. total memory usage. "
@@ -307,8 +306,8 @@ int main( int argc, char *argv[] )
                     uvar->shortcut_search || UVAR_SET2( sft_files, sft_timebase ) == 1,
                     "Exactly one of " UVAR_STR2OR( sft_files, sft_timebase ) " must be specified" );
   XLALUserVarCheck( &should_exit,
-                    !UVAR_SET( sft_files ) || !UVAR_ALLSET4( sft_timebase, sft_timestamps_files, sft_noise_psd, sft_noise_rand_seed ),
-                    UVAR_STR( sft_files ) " are mutually exclusive with " UVAR_STR4AND( sft_timebase, sft_timestamps_files, sft_noise_psd, sft_noise_rand_seed ) );
+                    !UVAR_SET( sft_files ) || !UVAR_ALLSET3( sft_timebase, sft_timestamps_files, sft_noise_psd ),
+                    UVAR_STR( sft_files ) " are mutually exclusive with " UVAR_STR3AND( sft_timebase, sft_timestamps_files, sft_noise_psd ) );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( sft_files_check_crc ) || UVAR_SET( sft_files ),
                     UVAR_STR( sft_files_check_crc ) " requires " UVAR_STR( sft_files ) );
@@ -648,7 +647,7 @@ int main( int argc, char *argv[] )
   XLAL_CHECK_MAIN( XLALParseFstatMethodString( &Fstat_method, uvar->Fstat_method ) == XLAL_SUCCESS, XLAL_EINVAL, "Invalid value '%s' for F-statistic method", uvar->Fstat_method );
 
   // Set F-statistic optional arguments
-  Fstat_opt_args.randSeed = uvar->sft_noise_rand_seed;
+  Fstat_opt_args.randSeed = uvar->rand_seed;
   Fstat_opt_args.SSBprec = uvar->Fstat_SSB_precision;
   Fstat_opt_args.Dterms = uvar->Fstat_Dterms;
   Fstat_opt_args.runningMedianWindow = uvar->Fstat_run_med_window;
