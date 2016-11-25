@@ -151,16 +151,19 @@ main ( int argc, char *argv[] )
   optionalArgs.assumeSqrtSX = &assumeSqrtSX;
 
   // ----- prepare input data with injection for all available methods
-  FstatInput *input[FMETHOD_END];
-  FstatResults *results[FMETHOD_END];
+  FstatInput *input_seg1[FMETHOD_END], *input_seg2[FMETHOD_END];
+  FstatResults *results_seg1[FMETHOD_END], *results_seg2[FMETHOD_END];
   for ( UINT4 iMethod = FMETHOD_START; iMethod < FMETHOD_END; iMethod ++ )
     {
-      results[iMethod] = NULL;
+      results_seg1[iMethod] = results_seg2[iMethod] = NULL;
       if ( !XLALFstatMethodIsAvailable(iMethod) ) {
         continue;
       }
       optionalArgs.FstatMethod = iMethod;
-      XLAL_CHECK ( (input[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
+      optionalArgs.prevInput = NULL;
+      XLAL_CHECK ( (input_seg1[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq, maxCoverFreq, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
+      optionalArgs.prevInput = input_seg1[iMethod];
+      XLAL_CHECK ( (input_seg2[iMethod] = XLALCreateFstatInput ( catalog, minCoverFreq - 0.01, maxCoverFreq + 0.01, dFreq, ephem, &optionalArgs )) != NULL, XLAL_EFUNC );
     }
 
   FstatQuantities whatToCompute = (FSTATQ_2F | FSTATQ_FAFB);
@@ -185,27 +188,28 @@ main ( int argc, char *argv[] )
                     continue;	// avoid re-running comparisons for same method because labelled 'best'
                   }
 
-                  XLAL_CHECK ( XLALComputeFstat ( &results[iMethod], input[iMethod], &Doppler, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK ( XLALComputeFstat ( &results_seg1[iMethod], input_seg1[iMethod], &Doppler, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
+                  XLAL_CHECK ( XLALComputeFstat ( &results_seg2[iMethod], input_seg2[iMethod], &Doppler, numFreqBins, whatToCompute ) == XLAL_SUCCESS, XLAL_EFUNC );
 
                   if ( lalDebugLevel & LALINFOBIT )
                     {
                       FILE *fp;
                       char fname[1024]; XLAL_INIT_MEM ( fname );
-                      snprintf ( fname, sizeof(fname)-1, "twoF%s-iSky%02d-if1dot%02d-iPeriod%02d.dat", XLALGetFstatInputMethodName(input[iMethod]), iSky, if1dot, iPeriod );
+                      snprintf ( fname, sizeof(fname)-1, "twoF%s-iSky%02d-if1dot%02d-iPeriod%02d.dat", XLALGetFstatInputMethodName(input_seg1[iMethod]), iSky, if1dot, iPeriod );
                       XLAL_CHECK ( (fp = fopen ( fname, "wb" )) != NULL, XLAL_EFUNC );
-                      for ( UINT4 k = 0; k < results[iMethod]->numFreqBins; k ++ )
+                      for ( UINT4 k = 0; k < results_seg1[iMethod]->numFreqBins; k ++ )
                         {
-                          REAL8 Freq0 = results[iMethod]->doppler.fkdot[0];
-                          REAL8 Freq_k = Freq0 + k * results[iMethod]->dFreq;
+                          REAL8 Freq0 = results_seg1[iMethod]->doppler.fkdot[0];
+                          REAL8 Freq_k = Freq0 + k * results_seg1[iMethod]->dFreq;
                           if ( whatToCompute & FSTATQ_FAFB ) {
                             fprintf ( fp, "%20.16g %10.4g   %10.4g %10.4g   %10.4g %10.4g\n",
-                                      Freq_k, results[iMethod]->twoF[k],
-                                      crealf(results[iMethod]->Fa[k]), cimagf(results[iMethod]->Fa[k]),
-                                      crealf(results[iMethod]->Fb[k]), cimagf(results[iMethod]->Fb[k])
+                                      Freq_k, results_seg1[iMethod]->twoF[k],
+                                      crealf(results_seg1[iMethod]->Fa[k]), cimagf(results_seg1[iMethod]->Fa[k]),
+                                      crealf(results_seg1[iMethod]->Fb[k]), cimagf(results_seg1[iMethod]->Fb[k])
                                       );
                           } else {
                             fprintf ( fp, "%20.16g %10.4g\n",
-                                      Freq_k, results[iMethod]->twoF[k] );
+                                      Freq_k, results_seg1[iMethod]->twoF[k] );
                           }
                         } // for k < numFreqBins
                       fclose(fp);
@@ -214,10 +218,15 @@ main ( int argc, char *argv[] )
                   // compare to first result
                   if ( iMethod != firstMethod )
                     {
-                      XLALPrintInfo ("Comparing results between method '%s' and '%s'\n", XLALGetFstatInputMethodName(input[firstMethod]), XLALGetFstatInputMethodName(input[iMethod]) );
-                      if ( compareFstatResults ( results[firstMethod], results[iMethod] ) != XLAL_SUCCESS )
+                      XLALPrintInfo ("Comparing results between method '%s' and '%s'\n", XLALGetFstatInputMethodName(input_seg1[firstMethod]), XLALGetFstatInputMethodName(input_seg1[iMethod]) );
+                      if ( compareFstatResults ( results_seg1[firstMethod], results_seg1[iMethod] ) != XLAL_SUCCESS )
                         {
-                          XLALPrintError ("Comparison between method '%s' and '%s' failed\n", XLALGetFstatInputMethodName(input[firstMethod]), XLALGetFstatInputMethodName(input[iMethod]) );
+                          XLALPrintError ("Comparison between method '%s' and '%s' failed on 'seg1'\n", XLALGetFstatInputMethodName(input_seg1[firstMethod]), XLALGetFstatInputMethodName(input_seg1[iMethod]) );
+                          XLAL_ERROR ( XLAL_EFUNC );
+                        }
+                      if ( compareFstatResults ( results_seg2[firstMethod], results_seg2[iMethod] ) != XLAL_SUCCESS )
+                        {
+                          XLALPrintError ("Comparison between method '%s' and '%s' failed on 'seg2'\n", XLALGetFstatInputMethodName(input_seg1[firstMethod]), XLALGetFstatInputMethodName(input_seg1[iMethod]) );
                           XLAL_ERROR ( XLAL_EFUNC );
                         }
                     }
@@ -242,8 +251,10 @@ main ( int argc, char *argv[] )
       if ( !XLALFstatMethodIsAvailable(iMethod) ) {
         continue;
       }
-      XLALDestroyFstatInput ( input[iMethod] );
-      XLALDestroyFstatResults ( results[iMethod] );
+      XLALDestroyFstatInput ( input_seg1[iMethod] );
+      XLALDestroyFstatInput ( input_seg2[iMethod] );
+      XLALDestroyFstatResults ( results_seg1[iMethod] );
+      XLALDestroyFstatResults ( results_seg2[iMethod] );
     } // for i < FMETHOD_END
 
   XLALDestroyPulsarParamsVector ( injectSources );
