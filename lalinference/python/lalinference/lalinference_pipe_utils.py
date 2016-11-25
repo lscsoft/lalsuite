@@ -1388,7 +1388,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                   if self.dataseed:
                      bayeswavepsdnode[ifo].set_dataseed(self.dataseed+event.event_id)
                   if self.config.has_option('bayeswave','BayesWave_Niter'):
-                     bayeswavepsdnode[ifo].add_var_arg('--Niter '+self.config.getint('bayeswave'','BayesWave_Niter'))
+                     bayeswavepsdnode[ifo].add_var_arg('--Niter '+self.config.getint('bayeswave','BayesWave_Niter'))
                   if self.config.has_option('bayeswave','BayesWave_Nchain'):
                      bayeswavepsdnode[ifo].add_var_arg('--Nchain '+self.config.getint('bayeswave','BayesWave_Nchain'))
                   if self.config.has_option('bayeswave','BayesWave_Ncycle'):
