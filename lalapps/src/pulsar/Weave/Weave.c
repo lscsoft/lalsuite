@@ -48,7 +48,7 @@ int main( int argc, char *argv[] )
     BOOLEAN sft_files_check_crc, sft_files_check_count, interpolation, output_per_detector, output_per_segment, output_misc_info, shortcut_compute, shortcut_search;
     CHAR *setup_file, *sft_files, *lattice, *Fstat_method, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_psd, *injections, *Fstat_assume_psd;
-    REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_pc_exit;
+    REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
     UINT4 sft_noise_rand_seed, sky_patch_count, sky_patch_index, freq_partitions, Fstat_run_med_window, Fstat_Dterms, Fstat_SSB_precision, output_toplist_limit, cache_max_size, cache_gc_limit;
   } uvar_struct = {
@@ -264,8 +264,8 @@ int main( int argc, char *argv[] )
     "Write checkpoints of output results after this CPU time period, in seconds, has elapsed. "
     );
   XLALRegisterUvarMember(
-    ckpt_output_pc_exit, REAL8, 0, DEVELOPER,
-    "Write a checkpoint of output results after this percentage of the search has been completed, then exit. "
+    ckpt_output_exit, REAL8, 0, DEVELOPER,
+    "Write a checkpoint of output results after this fraction of the search has been completed, then exit. "
     "(This option is only really useful for testing the checkpointing feature.) "
     );
   //
@@ -364,14 +364,14 @@ int main( int argc, char *argv[] )
   // - Checkpointing
   //
   XLALUserVarCheck( &should_exit,
-                    !UVAR_ALLSET3( shortcut_search, ckpt_output_period, ckpt_output_pc_exit ),
-                    UVAR_STR3AND( shortcut_search, ckpt_output_period, ckpt_output_pc_exit ) " are mutually exclusive" );
+                    !UVAR_ALLSET3( shortcut_search, ckpt_output_period, ckpt_output_exit ),
+                    UVAR_STR3AND( shortcut_search, ckpt_output_period, ckpt_output_exit ) " are mutually exclusive" );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( ckpt_output_period ) || uvar->ckpt_output_period > 0,
                     UVAR_STR( ckpt_output_period ) " must be strictly positive" );
   XLALUserVarCheck( &should_exit,
-                    !UVAR_SET( ckpt_output_pc_exit ) || ( 0 <= uvar->ckpt_output_pc_exit && uvar->ckpt_output_pc_exit <= 100 ),
-                    UVAR_STR( ckpt_output_pc_exit ) " must be in range [0,100]" );
+                    !UVAR_SET( ckpt_output_exit ) || ( 0 <= uvar->ckpt_output_exit && uvar->ckpt_output_exit <= 1 ),
+                    UVAR_STR( ckpt_output_exit ) " must be in range [0,1]" );
   //
   // - Advanced options
   //
@@ -972,8 +972,8 @@ int main( int argc, char *argv[] )
       const double ckpt_output_time_now = XLALGetCPUTime();
       const double ckpt_output_time_elapsed = ckpt_output_time_now - ckpt_output_time;
       const BOOLEAN do_ckpt_output_period = UVAR_SET( ckpt_output_period ) && ckpt_output_time_elapsed >= uvar->ckpt_output_period;
-      const BOOLEAN do_ckpt_output_pc_exit = UVAR_SET( ckpt_output_pc_exit ) && prog_per_cent >= uvar->ckpt_output_pc_exit;
-      if ( do_ckpt_output_period || do_ckpt_output_pc_exit ) {
+      const BOOLEAN do_ckpt_output_exit = UVAR_SET( ckpt_output_exit ) && prog_per_cent >= 100.0 * uvar->ckpt_output_exit;
+      if ( do_ckpt_output_period || do_ckpt_output_exit ) {
 
         // Open output checkpoint file
         FITSFile *file = XLALFITSFileOpenWrite( uvar->ckpt_output_file );
@@ -1010,8 +1010,8 @@ int main( int argc, char *argv[] )
         ckpt_output_time = ckpt_output_time_now;
       }
 
-      // Exit main search loop, if checkpointing was triggered by 'do_ckpt_output_pc_exit'
-      if ( do_ckpt_output_pc_exit ) {
+      // Exit main search loop, if checkpointing was triggered by 'do_ckpt_output_exit'
+      if ( do_ckpt_output_exit ) {
         LogPrintf( LOG_NORMAL, "Exiting main seach loop after writing output checkpoint\n" );
         break;
       }
