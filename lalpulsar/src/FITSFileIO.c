@@ -202,7 +202,7 @@ static int CheckFITSKeyword( const CHAR *key, CHAR *keyword, CHAR *unit )
   // Force keyword to upper case
   XLALStringToUpperCase( keyword );
 
-  if ( strlen( keyword ) <= 8 ) {
+  if ( strlen( keyword ) <= 8 && strchr( keyword, ' ' ) == NULL ) {
 
     // Test for compliant FITS keyword
     CALL_FITS( fits_test_keyword, keyword );
