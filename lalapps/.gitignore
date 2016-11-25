@@ -180,6 +180,7 @@ src/pulsar/FITSTools/lalapps_fits_array_imarith
 src/pulsar/FITSTools/lalapps_fits_array_list
 src/pulsar/FITSTools/lalapps_fits_array_stat
 src/pulsar/FITSTools/lalapps_fits_copy
+src/pulsar/FITSTools/lalapps_fits_header_delval
 src/pulsar/FITSTools/lalapps_fits_header_getval
 src/pulsar/FITSTools/lalapps_fits_header_list
 src/pulsar/FITSTools/lalapps_fits_header_setval
