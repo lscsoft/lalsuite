@@ -157,7 +157,7 @@ class CacheEntry(object):
 	order.  When parsing a single line of text from a LAL cache, an
 	optional key-word argument "coltype" can be provided to set the
 	type the start and durations are parsed as.  The default is
-	glue.lal.LIGOTimeGPS.
+	lal.LIGOTimeGPS.
 
         Example:
 
