@@ -17,13 +17,13 @@ the standalone ring code on LIGO data
 """
 
 
+import itertools
 import sys, os
 import tempfile
 import ConfigParser
 from optparse import OptionParser
 
 
-from glue import iterutils
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
@@ -452,11 +452,9 @@ if options.verbose:
 	print >>sys.stderr, "building lalapps_string_calc_likelihood jobs ..."
 
 def round_robin_and_flatten(injection_coinc_node_groups, injection_likelihood_node_groups):
-	# see the documentation for glue.iterutils.choices() for an
-	# explanation of the procedure used here to round-robin the node
-	# lists
-	A = list(iterutils.choices(injection_coinc_node_groups, 1))
-	B = list(iterutils.choices(injection_likelihood_node_groups, len(injection_likelihood_node_groups) - 1))
+	# round-robin the node lists
+	A = list(itertools.combinations(injection_coinc_node_groups, 1))
+	B = list(itertools.combinations(injection_likelihood_node_groups, len(injection_likelihood_node_groups) - 1))
 	B.reverse()
 	A = [flatten_node_groups(node_groups) for node_groups in A]
 	B = [flatten_node_groups(node_groups) for node_groups in B]

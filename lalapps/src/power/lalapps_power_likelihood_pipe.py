@@ -32,12 +32,12 @@ Excess power offline pipeline's likelihood stage construction script.
 
 import ConfigParser
 import glob
+import itertools
 from optparse import OptionParser
 import sys
 import tempfile
 
 
-from glue import iterutils
 from glue import pipeline
 from glue import segmentsUtils
 import lal
@@ -194,10 +194,10 @@ nodes = power.make_burca2_fragment(dag, options.input_cache, parents, "LIKELIHOO
 
 
 def round_robin(round_robin_cache_nodes, round_robin_cache):
-	parents = list(iterutils.choices(round_robin_cache_nodes, len(round_robin_cache_nodes) - 1))
+	parents = list(itertools.combinations(round_robin_cache_nodes, len(round_robin_cache_nodes) - 1))
 	parents.reverse()
 	parents = [reduce(lambda a, b: a | b, seq) for seq in parents]
-	return zip(parents, [cache for (cache,) in iterutils.choices(round_robin_cache, 1)])
+	return zip(parents, [cache for (cache,) in itertools.combinations(round_robin_cache, 1)])
 
 for i, (parents, apply_to_cache) in enumerate(round_robin(round_robin_cache_nodes, options.round_robin_cache)):
 	if options.verbose:
