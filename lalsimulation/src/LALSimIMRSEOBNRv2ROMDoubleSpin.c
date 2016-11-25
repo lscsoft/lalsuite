@@ -1154,7 +1154,7 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = SEOBNRv2ROMDoubleSpinCore(hptilde,hctilde,
-            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, 0, 
+            phiRef, fRef, distance, inclination, Mtot_sec, eta, chi1, chi2, freqs, 0,
             0, NULL, NULL, NULL, NULL);
 
 
@@ -1357,7 +1357,7 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinTimeOfFrequency(
   XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
 
   double Mf = frequency * Mtot_sec;
-  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max)
+  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max || Mf > Mf_final)
   {
       gsl_spline_free(spline_phi);
       gsl_interp_accel_free(acc_phi);

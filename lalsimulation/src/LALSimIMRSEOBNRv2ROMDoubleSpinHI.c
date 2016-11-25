@@ -1800,7 +1800,7 @@ int XLALSimIMRSEOBNRv2ROMDoubleSpinHITimeOfFrequency(
   XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
 
   double Mf = frequency * Mtot_sec;
-  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max) {
+  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max || Mf > Mf_final) {
     gsl_spline_free(spline_phi);
     gsl_interp_accel_free(acc_phi);
     XLAL_ERROR(XLAL_EDOM, "Frequency %g is outside allowed frequency range.\n", frequency);
