@@ -150,14 +150,14 @@ class CacheEntry(object):
 
     def __init__(self, *args, **kwargs):
         """
-	Intialize a CacheEntry object.  The arguments can take two forms:
-	a single string argument, which is interpreted and parsed as a line
-	from a LAL cache file, or four arguments used to explicitly
-	initialize the observatory, description, segment and URL in that
-	order.  When parsing a single line of text from a LAL cache, an
-	optional key-word argument "coltype" can be provided to set the
-	type the start and durations are parsed as.  The default is
-	lal.LIGOTimeGPS.
+        Intialize a CacheEntry object.  The arguments can take two forms:
+        a single string argument, which is interpreted and parsed as a line
+        from a LAL cache file, or four arguments used to explicitly
+        initialize the observatory, description, segment and URL in that
+        order.  When parsing a single line of text from a LAL cache, an
+        optional key-word argument "coltype" can be provided to set the
+        type the start and durations are parsed as.  The default is
+        lal.LIGOTimeGPS.
 
         Example:
 
@@ -214,8 +214,8 @@ class CacheEntry(object):
 
     def __str__(self):
         """
-	Convert the CacheEntry to a string in the format of a line in a LAL
-	cache.  Used to write the CacheEntry to a file.
+        Convert the CacheEntry to a string in the format of a line in a LAL
+        cache.  Used to write the CacheEntry to a file.
 
         Example:
 
@@ -233,16 +233,16 @@ class CacheEntry(object):
 
     def __cmp__(self, other):
         """
-	Compare two CacheEntry objects by observatory, then description,
-	then segment.  CacheEntry objects that have different URLs but for
-	which all other metadata are the same are considered to be
-	equivalent.  If two entries differ only by their URL, they are
-	considered to be redundant copies of the same data, and by
-	comparing them as equal the Python sort operation (which is a
-	stable sort) will preserve their relative order.  By preserving the
-	order of redundant copies, we allow the preference for the order in
-	which redundant copies are to be attempted to be conveyed by their
-	order in the list, and preserved.
+        Compare two CacheEntry objects by observatory, then description,
+        then segment.  CacheEntry objects that have different URLs but for
+        which all other metadata are the same are considered to be
+        equivalent.  If two entries differ only by their URL, they are
+        considered to be redundant copies of the same data, and by
+        comparing them as equal the Python sort operation (which is a
+        stable sort) will preserve their relative order.  By preserving the
+        order of redundant copies, we allow the preference for the order in
+        which redundant copies are to be attempted to be conveyed by their
+        order in the list, and preserved.
         """
         if not isinstance(other, CacheEntry):
             raise TypeError("can only compare CacheEntry to CacheEntry")
@@ -250,18 +250,18 @@ class CacheEntry(object):
 
     def __hash__(self):
         """
-	CacheEntry objects are hashed by the tuple (observatory,
-	description, segment), i.e., the URL is disregarded.
+        CacheEntry objects are hashed by the tuple (observatory,
+        description, segment), i.e., the URL is disregarded.
         """
         return hash((self.observatory, self.description, self.segment))
 
     @property
     def url(self):
         """
-	The cache entry's URL.  The URL is constructed from the values of
-	the scheme, host, and path attributes.  Assigning a value to the
-	URL attribute causes the value to be parsed and the scheme, host
-	and path attributes updated.
+        The cache entry's URL.  The URL is constructed from the values of
+        the scheme, host, and path attributes.  Assigning a value to the
+        URL attribute causes the value to be parsed and the scheme, host
+        and path attributes updated.
         """
         return urllib.parse.urlunparse((self.scheme, self.host, self.path, None, None, None))
 
@@ -272,12 +272,12 @@ class CacheEntry(object):
     @property
     def segmentlistdict(self):
         """
-	A segmentlistdict object describing the instruments and time
-	spanned by this CacheEntry.  A new object is constructed each time
-	this attribute is accessed (segments are immutable so there is no
-	reason to try to share a reference to the CacheEntry's internal
-	segment; modifications of one would not be reflected in the other
-	anyway).
+        A segmentlistdict object describing the instruments and time
+        spanned by this CacheEntry.  A new object is constructed each time
+        this attribute is accessed (segments are immutable so there is no
+        reason to try to share a reference to the CacheEntry's internal
+        segment; modifications of one would not be reflected in the other
+        anyway).
 
         Example:
 
@@ -285,10 +285,10 @@ class CacheEntry(object):
         >>> c.segmentlistdict
         {u'H1': [segment(LIGOTimeGPS(815901601, 0), LIGOTimeGPS(815902177, 500000000))]}
 
-	The \"observatory\" column of the cache entry, which is frequently
-	used to store instrument names, is parsed into instrument names for
-	the dictionary keys using the same rules as
-	glue.ligolw.lsctables.instrument_set_from_ifos().
+        The \"observatory\" column of the cache entry, which is frequently
+        used to store instrument names, is parsed into instrument names for
+        the dictionary keys using the same rules as
+        glue.ligolw.lsctables.instrument_set_from_ifos().
 
         Example:
 
@@ -305,8 +305,8 @@ class CacheEntry(object):
     @classmethod
     def from_T050017(cls, url, coltype = LIGOTimeGPS):
         """
-	Parse a URL in the style of T050017-00 into a CacheEntry.  The
-	T050017-00 file name format is, essentially,
+        Parse a URL in the style of T050017-00 into a CacheEntry.  The
+        T050017-00 file name format is, essentially,
 
         observatory-description-start-duration.extension
 
