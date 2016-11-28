@@ -184,8 +184,9 @@ class CacheEntry(object):
                 raise ValueError("could not convert %s to CacheEntry" % repr(args[0]))
             self.observatory = match["obs"]
             self.description = match["dsc"]
-            start = match["strt"]
-            duration = match["dur"]
+            # FIXME:  remove typecasts when LIGOTimeGPS can be passed a unicode
+            start = str(match["strt"])
+            duration = str(match["dur"])
             coltype = kwargs.pop("coltype", LIGOTimeGPS)
             if start == "-" and duration == "-":
                 # no segment information
@@ -325,8 +326,9 @@ class CacheEntry(object):
             raise ValueError("could not convert %s to CacheEntry" % repr(url))
         observatory = match.group("obs")
         description = match.group("dsc")
-        start = match.group("strt")
-        duration = match.group("dur")
+        # FIXME:  remove typecasts when LIGOTimeGPS can be passed a unicode
+        start = str(match.group("strt"))
+        duration = str(match.group("dur"))
         if start == "-" and duration == "-":
             # no segment information
             segment = None
