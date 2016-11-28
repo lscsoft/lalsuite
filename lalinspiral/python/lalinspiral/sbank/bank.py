@@ -60,7 +60,7 @@ class Bank(object):
             self.fhigh_max = fhigh_max
 
         self.nhood_size = nhood_size
-        self.nhood_param = "_" + nhood_param
+        self.nhood_param = nhood_param
 
         self._templates = []
         self._nmatch = 0

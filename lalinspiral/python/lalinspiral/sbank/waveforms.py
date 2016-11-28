@@ -163,7 +163,7 @@ class AlignedSpinTemplate(object):
       a sim_inspiral object.
     """
     approximant = None
-    __slots__ = ("m1", "m2", "spin1z", "spin2z", "chieff", "bank", "_dur", "_mchirp", "_tau0", "_wf", "_metric", "sigmasq", "is_seed_point", "_f_final", "_fhigh_max")
+    __slots__ = ("m1", "m2", "spin1z", "spin2z", "chieff", "bank", "tau0", "_dur", "_mchirp", "_wf", "_metric", "sigmasq", "is_seed_point", "_f_final", "_fhigh_max")
     param_names = ("m1", "m2", "spin1z", "spin2z")
     param_formats = ("%.2f", "%.2f", "%.2f", "%.2f")
 
@@ -180,7 +180,7 @@ class AlignedSpinTemplate(object):
         self._metric = None
         self.sigmasq = 0.
         self._mchirp = compute_mchirp(m1, m2)
-        self._tau0 = compute_tau0( self._mchirp, bank.flow)
+        self.tau0 = compute_tau0( self._mchirp, bank.flow)
         self._dur = None
         self._f_final = None
         self._fhigh_max = bank.fhigh_max
@@ -456,7 +456,7 @@ class TaylorF2RedSpinTemplate(InspiralAlignedSpinTemplate):
     param_names = ("m1", "m2", "chired")
     param_formats = ("%.5f", "%.5f", "%+.4f")
 
-    __slots__ = ("chired", "_dur", "_mchirp", "_tau0", "_eta", "_theta0", "_theta3", "_theta3s")
+    __slots__ = ("chired", "tau0", "_dur", "_mchirp", "_eta", "_theta0", "_theta3", "_theta3s")
 
     def __init__(self, m1, m2, spin1z, spin2z, bank):
 
@@ -534,7 +534,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
     """
     param_names = ("m1", "m2", "spin1x", "spin1y", "spin1z", "spin2x", "spin2y", "spin2z", "theta", "phi", "iota", "psi")
     param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
-    __slots__ = param_names + ("bank", "chieff", "chipre", "_dur","_mchirp","_tau0", "_wf_hp", "_wf_hc", "_hpsigmasq", "_hcsigmasq", "_hphccorr")
+    __slots__ = param_names + ("bank", "chieff", "chipre", "tau0", "_dur","_mchirp", "_wf_hp", "_wf_hc", "_hpsigmasq", "_hcsigmasq", "_hphccorr")
 
     def __init__(self, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, theta, phi, iota, psi, orb_phase, bank):
 
