@@ -284,7 +284,7 @@ class CacheEntry(object):
 
         >>> c = CacheEntry(u"H1 S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1-815901601-576.xml")
         >>> c.segmentlistdict
-        {u'H1': [segment(LIGOTimeGPS(815901601, 0), LIGOTimeGPS(815902177, 500000000))]}
+        {u'H1': [segment(815901601, 815902177.5)]}
 
         The \"observatory\" column of the cache entry, which is frequently
         used to store instrument names, is parsed into instrument names for
@@ -295,7 +295,7 @@ class CacheEntry(object):
 
         >>> c = CacheEntry(u"H1H2, S5 815901601 576.5 file://localhost/home/kipp/tmp/1/H1H2-815901601-576.xml")
         >>> c.segmentlistdict
-        {u'H1H2': [segment(LIGOTimeGPS(815901601, 0), LIGOTimeGPS(815902177, 500000000))]}
+        {u'H1H2': [segment(815901601, 815902177.5)]}
         """
         # the import has to be done here to break the cyclic
         # dependancy

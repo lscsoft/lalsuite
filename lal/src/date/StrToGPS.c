@@ -270,6 +270,7 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
  */
 char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 {
+	char *end;
 	/* so we can play with it */
 	LIGOTimeGPS copy = *t;
 
@@ -311,10 +312,19 @@ char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 
 	if(copy.gpsSeconds < 0 || copy.gpsNanoSeconds < 0)
 		/* number is negative */
-		sprintf(s, "-%ld.%09ld", labs(copy.gpsSeconds), labs(copy.gpsNanoSeconds));
+		end = s + sprintf(s, "-%ld.%09ld", labs(copy.gpsSeconds), labs(copy.gpsNanoSeconds));
 	else
 		/* number is non-negative */
-		sprintf(s, "%ld.%09ld", (long) copy.gpsSeconds, (long) copy.gpsNanoSeconds);
+		end = s + sprintf(s, "%ld.%09ld", (long) copy.gpsSeconds, (long) copy.gpsNanoSeconds);
+
+	/* remove trailing 0s and decimal point */
+
+	while(*(--end) == '0')
+		*end = 0;
+	if(*end == '.')
+		*end = 0;
+
+	/* done */
 
 	return s;
 }

@@ -1070,7 +1070,7 @@ assert(LIGOTimeGPS("-6542354.389038577") == 7.1502318572066237 * LIGOTimeGPS("-9
 if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
     assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.1502318572066237)
 t1 += 812345667.75
-assert(str(t1) == "812345678.250000000")
+assert(str(t1) == "812345678.25")
 assert(LIGOTimeGPS(repr(t1)) == t1)
 assert(int(t1) == 812345678)
 assert(t1.ns() == 812345678250000000)

@@ -1034,7 +1034,7 @@ assert(LIGOTimeGPS("-6542354.389038577") == LIGOTimeGPS("-914984.929117316") * 7
 assert(LIGOTimeGPS("-6542354.389038577") == 7.1502318572066237 * LIGOTimeGPS("-914984.929117316"));
 assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.1502318572066237);
 t1 += 812345667.75;
-assert(strcmp(t1.__str__(), "812345678.250000000"));
+assert(strcmp(t1.__str__(), "812345678.25"));
 assert(new_LIGOTimeGPS(t1.__repr__()) == t1);
 assert(t1.ns() == 812345678250000000);
 t4struct = new_swig_lal_test_gps;
