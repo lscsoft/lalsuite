@@ -42,6 +42,7 @@ AC_CONFIG_FILES([ \
   test/fft/Makefile \
   test/inject/Makefile \
   test/noisemodels/Makefile \
+  test/python/Makefile \
   test/stats/Makefile \
   test/std/Makefile \
   test/support/Makefile \

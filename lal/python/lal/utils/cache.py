@@ -107,8 +107,11 @@ class CacheEntry(object):
 
     Example (one-liners to read and write a cache file):
 
+    >>> import os
     >>> filename = "874000000-20000.cache"
-    >>> cache = map(CacheEntry, open(filename))
+    >>> # adjustment for doctest in out-of-tree builds
+    >>> inname = os.path.join(os.environ.get("LAL_TEST_SRCDIR", "."), filename)
+    >>> cache = map(CacheEntry, open(inname))
     >>> f = open(filename + ".new", "w")
     >>> for cacheentry in cache: print >>f, str(cacheentry)
 
