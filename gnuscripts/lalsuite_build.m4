@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 133
+# serial 134
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1384,6 +1384,24 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
 AC_DEFUN([LALSUITE_ENABLE_HELP2MAN],[
   # $0: check for help2man utility
   AC_PATH_PROG([HELP2MAN], [help2man])
+  # Require a minimum version of help2man to support the
+  # --version-string and --no-discard-stderr flags.
+  AS_IF(
+    [test -n "${HELP2MAN}"],
+    [
+      HELP2MAN_MIN_VERSION="1.37"
+      AC_MSG_CHECKING([for help2man >= ${HELP2MAN_MIN_VERSION}])
+      HELP2MAN_VERSION=`${HELP2MAN} --version --version | head -n 1 | cut -d ' ' -f 3`
+      AX_COMPARE_VERSION(
+        [${HELP2MAN_VERSION}], [ge], [${HELP2MAN_MIN_VERSION}],
+        [AC_MSG_RESULT([yes])],
+        [
+          AC_MSG_RESULT([no])
+          HELP2MAN=
+        ]
+      )
+    ]
+  )
   AC_ARG_ENABLE(
     [help2man],
     AC_HELP_STRING([--enable-help2man],[automatically generate man pages with help2man @<:@default=yes@:>@]),
