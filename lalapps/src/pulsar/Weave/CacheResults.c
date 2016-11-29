@@ -450,17 +450,22 @@ int XLALWeaveCacheQuery(
   gsl_vector_view coh_point_view = gsl_vector_view_array( coh_point_array, cache->ndim );
   XLAL_CHECK( ( cache->phys_to_latt )( &coh_point_view.vector, &queries->semi_phys, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Initialise nearest point to semicoherent point in coherent lattice tiling coordinates
+  double coh_near_point_array[cache->ndim];
+  gsl_vector_view coh_near_point_view = gsl_vector_view_array( coh_near_point_array, cache->ndim );
+  gsl_vector_memcpy( &coh_near_point_view.vector, &coh_point_view.vector );
+
   // Initialise values for a non-interpolating search
   queries->coh_index[query_index] = semi_index;
   queries->coh_left[query_index] = queries->semi_left;
   queries->coh_right[query_index] = queries->semi_right;
 
   // If performing an interpolating search, find the nearest coherent frequency pass in this segment
-  // - 'coh_point' is updated to the nearest point to the mid-point of the semicoherent frequency block
+  // - 'coh_near_point' is set to the nearest point to the mid-point of the semicoherent frequency block
   // - 'coh_index' is set to the index of this coherent frequency block, used for cache lookup
   // - 'coh_left' and 'coh_right' are set of number of points to the left/right of 'coh_point'
   if ( cache->coh_locator != NULL ) {
-    XLAL_CHECK( XLALNearestLatticeTilingBlock( cache->coh_locator, &coh_point_view.vector, cache->ndim - 1, &coh_point_view.vector, &queries->coh_index[query_index], &queries->coh_left[query_index], &queries->coh_right[query_index] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALNearestLatticeTilingBlock( cache->coh_locator, &coh_point_view.vector, cache->ndim - 1, &coh_near_point_view.vector, &queries->coh_index[query_index], &queries->coh_left[query_index], &queries->coh_right[query_index] ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK( queries->coh_left[query_index] <= queries->coh_right[query_index], XLAL_EINVAL );
   }
 
@@ -469,7 +474,7 @@ int XLALWeaveCacheQuery(
 
   // Convert nearest coherent point to physical coordinates
   XLAL_INIT_MEM( queries->coh_phys[query_index] );
-  XLAL_CHECK( ( cache->latt_to_phys )( &queries->coh_phys[query_index], &coh_point_view.vector, NULL, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( ( cache->latt_to_phys )( &queries->coh_phys[query_index], &coh_near_point_view.vector, &coh_point_view.vector, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Compute the relevance of the current coherent frequency block
   // - Add half the coherent lattice tiling bounding box in dimension 0
@@ -478,7 +483,7 @@ int XLALWeaveCacheQuery(
   {
     double tmp_point_array[cache->ndim];
     gsl_vector_view tmp_point_view = gsl_vector_view_array( tmp_point_array, cache->ndim );
-    gsl_vector_memcpy( &tmp_point_view.vector, &coh_point_view.vector );
+    gsl_vector_memcpy( &tmp_point_view.vector, &coh_near_point_view.vector );
     *gsl_vector_ptr( &tmp_point_view.vector, 0 ) += 0.5 * cache->coh_bound_box_0;
     PulsarDopplerParams XLAL_INIT_DECL( tmp_phys );
     XLAL_CHECK( ( cache->latt_to_phys )( &tmp_phys, &tmp_point_view.vector, NULL, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EINVAL );
