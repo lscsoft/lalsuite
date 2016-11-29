@@ -191,6 +191,7 @@ typedef enum tagUserVarCategory {
  * This determines the format of the string returned from XLALUserVarGetLog().
  */
 typedef enum tagUserVarLogFormat {
+  UVAR_LOGFMT_RAWFORM,		/**< return UserVars in a raw format suitable for further parsing */
   UVAR_LOGFMT_CFGFILE,		/**< return UserVars as a config-file */
   UVAR_LOGFMT_CMDLINE,		/**< return UserVars as a command-line */
   UVAR_LOGFMT_PROCPARAMS, 	/**< return UserVars suitable for filling in process-params struct */
