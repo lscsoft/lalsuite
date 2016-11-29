@@ -23,6 +23,14 @@ parser.add_argument('--gracedb', action='store_true',
                     default=False,
                     help='Runs the analysis for the GraceDB test event T169545.')
 
+parser.add_argument('--analytic-tests', action='store_true',
+                    default=False,
+                    help='Run on the unmodal and bimodial Gaussian and Rosenbrock test functions.')
+
+parser.add_argument('--analytic-csv-dir', type=str,
+                    default='./',
+                    help='Directory containing the CSVs describing the analytic tests.')
+
 parser.add_argument('--pptest', action='store_true',
                     default=False,
                     help='Runs a P-P analysis.')
@@ -75,6 +83,12 @@ try:
     shutil.copy(args.ini_file,ini_file)
 except:
     print ini_file+' will be modified.'
+
+analytic_csv_dir = os.path.abspath(args.analytic_csv_dir)
+if args.analytic_tests:
+    csvs = glob.glob(analytic_csv_dir+"/*csv")
+    for csv in csvs:
+        shutil.copy(csv,args.output+'/'+os.path.basename(csv))
 
 os.chdir(args.output)
 
@@ -324,6 +338,84 @@ if args.bbh_injection:
         lalinferenceargs.append('--condor-submit')
 
     subprocess.call(lalinferenceargs)
+
+############################################################
+def replace_analytic_test(line, test_func):
+    if 'webdir=' in line:
+        return line.replace(line.split('=')[-1],web_outputdir+'/'+test_func+'/webdir/')
+    if 'baseurl=' in line:
+        return line.replace(line.split('=')[-1],'file://'+web_outputdir+'/'+test_func+'/webdir/')
+    if 'fake-cache=' in line:
+        return line.replace(line,"fake-cache={'H1':'LALSimAdLIGO','L1':'LALSimAdLIGO','V1':'LALSimAdVirgo'}")
+    if 'dataseed=' in line:
+        return line.replace('#','').strip()+'\n'
+    if 'analyse-all-time' in line:
+        return 'analyse-all-time=True\n'
+    if 'ignore-science-segments=' in line:
+        return 'ignore-science-segments=True\n'
+    if 'seglen=' in line:
+        return 'seglen=1\n'
+    if 'gps-start-time=' in line:
+        return 'gps-start-time=0\n'
+    if 'gps-end-time=' in line:
+        return 'gps-end-time=2\n'
+    if 'segment-overlap=' in line:
+        return 'segment-overlap=0\n'
+    if ' psd-length=' in line:
+        return 'psd-length=1\n'
+    if 'dataseed=' in line:
+        return line.replace('#','').strip()+'\n'
+    if 'disable-spin=' in line:
+        return '#disable-spin=\n'
+    if 'approx=' in line:
+        return line.replace(line,"approx=SpinTaylorT4")+'\n'
+    if test_func+'=' in line:
+        return test_func+'=\n'
+    if 'deltaLogP=' in line:
+        return 'deltaLogP=7\n'
+    if 'neff=' in line:
+        return line.replace(line,"neff=10000")
+    if 'nlive=' in line:
+        return line.replace(line,"nlive=256")
+    if 'maxmcmc=' in line:
+        return line.replace(line,"#maxmcmc=3000")
+    if test_func != "rosenbrockLikelihood":
+        if 'meanVectors=' in line:
+            csv = args.output+'/'+test_func+'_means.csv'
+            if os.path.isfile(csv):
+                return 'meanVectors='+csv+'\n'
+        if 'covarianceMatrix=' in line:
+            csv = args.output+'/'+'test_correlation_matrix.csv'
+            if os.path.isfile(csv):
+                return 'covarianceMatrix='+csv+'\n'
+    return line
+
+if args.analytic_tests:
+    test_funcs = ['correlatedGaussianLikelihood', 'bimodalGaussianLikelihood', 'rosenbrockLikelihood']
+    for test_func in test_funcs:
+        os.makedirs(args.output+'/' + test_func + '/')
+        os.chdir(args.output+'/' + test_func + '/')
+
+        shutil.copy(ini_file,args.output+'/'+test_func+'/'+os.path.basename(ini_file)+'.bak')
+        shutil.copy(ini_file,args.output+'/'+test_func+'/')
+
+        with open(args.output+'/'+test_func+'/'+os.path.basename(ini_file),'w') as fout:
+            with open(args.output+'/'+test_func+'/'+os.path.basename(ini_file)+'.bak','r') as fin:
+                for line in fin:
+                    fout.write(replace_analytic_test(line, test_func))
+
+        lalinferenceargs = [ 'lalinference_pipe'
+                             , '-r'
+                             , './run'
+                             , '-p'
+                             , './daglog'
+                             , args.output+'/'+test_func+'/'+os.path.basename(ini_file)
+                             ]
+
+        if args.condor_submit:
+            lalinferenceargs.append('--condor-submit')
+
+        subprocess.call(lalinferenceargs)
 
 ############################################################
 
