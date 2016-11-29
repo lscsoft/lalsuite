@@ -73,7 +73,7 @@ typedef int ( *WeavePhysicalToLattice )( gsl_vector *out_latt, const PulsarDoppl
 ///
 /// Function which transforms a point from lattice tiling coordinates to physical coordinates
 ///
-typedef int ( *WeaveLatticeToPhysical )( PulsarDopplerParams *out_phys, const gsl_vector *in_latt, const void *transf_data );
+typedef int ( *WeaveLatticeToPhysical )( PulsarDopplerParams *out_phys, const gsl_vector *in_latt, const gsl_vector *ref_latt, const void *transf_data );
 
 ///
 /// Output result item

@@ -194,6 +194,7 @@ def parse_command_line():
     # match calculation options
     #
     parser.add_option("--flow", type="float", help="Required. Set the low-frequency cutoff to use for the match caluclation.")
+    parser.add_option("--optimize-flow", type=float, metavar="FRACTION", help="Increase the low-frequency cutoff by a variable amount so as to make each waveform as short as possible, but recovering at least FRACTION of the range as calculated using the original cutoff. The resulting frequency is stored according to the --flow-column option.")
     parser.add_option("--match-min",help="Set minimum match of the bank. Note that since this is a stochastic process, the requested minimal match may not be strictly guaranteed but should be fulfilled on a statistical basis. Default: 0.95.", type="float", default=0.95)
     parser.add_option("--convergence-threshold", metavar="N", help="Set the criterion for convergence of the stochastic bank. The code terminates when there are N rejected proposals for each accepted proposal, averaged over the last ten acceptances. Default 1000.", type="int", default=1000)
     parser.add_option("--max-new-templates", metavar="N", help="Use this option to force the code to exit after accepting a specified number N of new templates. Note that the code may exit with fewer than N templates if the convergence criterion is met first.", type="int", default=float('inf'))
@@ -211,6 +212,7 @@ def parse_command_line():
     #
     parser.add_option("--output-filename", default=None, help="Required. Name for output template bank. May not clash with seed bank.")
     parser.add_option("--verbose", default=False,action="store_true", help="Be verbose and write diagnostic information out to file.")
+    parser.add_option("--flow-column", type=str, metavar="NAME", help="If given, store the low-frequency cutoff for each template in column NAME of the single-inspiral table.")
 
     parser.add_option("--mchirp-boundaries-file", metavar="FILE", help="Deprecated. File containing chirp mass bin boundaries")
     parser.add_option("--mchirp-boundaries-index", metavar="INDEX", type="int", help="Deprecated. Integer index into --mchirp-boundaries-file line number such that boundaries[INDEX] is taken as --mchirp-min and boundaries[INDEX + 1] is taken as --mchirp-max")
@@ -298,6 +300,12 @@ def parse_command_line():
             if opts.mchirp_max is None or opts.mchirp_max > boundary_mchirp_max:
                 opts.mchirp_max = boundary_mchirp_max
 
+    if opts.optimize_flow is not None:
+        if opts.optimize_flow >= 1 or opts.optimize_flow <= 0:
+            parser.error('--optimize-flow takes a value between 0 and 1, excluded')
+        if opts.flow_column is None:
+            parser.error('--flow-column is required when using --optimize-flow')
+
     return opts, args
 
 
@@ -358,7 +366,7 @@ else:
 #
 # initialize the bank
 #
-bank = Bank(noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max)
+bank = Bank(noise_model, opts.flow, opts.use_metric, opts.cache_waveforms, opts.neighborhood_size, opts.neighborhood_param, coarse_match_df=opts.coarse_match_df, iterative_match_df_max=opts.iterative_match_df_max, fhigh_max=opts.fhigh_max, optimize_flow=opts.optimize_flow, flow_column=opts.flow_column)
 for file_approx in opts.bank_seed:
 
     # if no approximant specified, use same approximant as the

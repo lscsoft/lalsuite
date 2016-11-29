@@ -420,7 +420,7 @@ int XLALWeaveCacheQueriesInit(
   queries->semi_relevance = gsl_vector_get( semi_point, 0 ) - 0.5 * queries->semi_bound_box_0;
 
   // Convert semicoherent point to physical coordinates
-  XLAL_CHECK( ( queries->latt_to_phys )( &queries->semi_phys, semi_point, queries->semi_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( ( queries->latt_to_phys )( &queries->semi_phys, semi_point, NULL, queries->semi_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Get indexes of left/right-most point in current semicoherent frequency block
   XLAL_CHECK( XLALCurrentLatticeTilingBlock( semi_itr, queries->ndim - 1, &queries->semi_left, &queries->semi_right ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -469,7 +469,7 @@ int XLALWeaveCacheQuery(
 
   // Convert nearest coherent point to physical coordinates
   XLAL_INIT_MEM( queries->coh_phys[query_index] );
-  XLAL_CHECK( ( cache->latt_to_phys )( &queries->coh_phys[query_index], &coh_point_view.vector, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( ( cache->latt_to_phys )( &queries->coh_phys[query_index], &coh_point_view.vector, NULL, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Compute the relevance of the current coherent frequency block
   // - Add half the coherent lattice tiling bounding box in dimension 0
@@ -481,7 +481,7 @@ int XLALWeaveCacheQuery(
     gsl_vector_memcpy( &tmp_point_view.vector, &coh_point_view.vector );
     *gsl_vector_ptr( &tmp_point_view.vector, 0 ) += 0.5 * cache->coh_bound_box_0;
     PulsarDopplerParams XLAL_INIT_DECL( tmp_phys );
-    XLAL_CHECK( ( cache->latt_to_phys )( &tmp_phys, &tmp_point_view.vector, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EINVAL );
+    XLAL_CHECK( ( cache->latt_to_phys )( &tmp_phys, &tmp_point_view.vector, NULL, cache->coh_transf_data ) == XLAL_SUCCESS, XLAL_EINVAL );
     XLAL_CHECK( ( cache->phys_to_latt )( &tmp_point_view.vector, &tmp_phys, cache->semi_transf_data ) == XLAL_SUCCESS, XLAL_EFUNC );
     queries->coh_relevance[query_index] = gsl_vector_get( &tmp_point_view.vector, 0 );
   }
