@@ -1,4 +1,4 @@
-# Copyright (C) 2015  Surabhi Sachdev, Tjonnie Li
+# Copyright (C) 2015  Surabhi Sachdev, Tjonnie Li, Stephen Privitera
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -127,33 +127,6 @@ class BankSimNode(pipeline.CondorDAGNode):
                 self.add_parent(p)
         dag.add_node(self)
 
-class MergeSimsJob(inspiral.InspiralAnalysisJob):
-    def __init__(self,cp,dax=False, tag_base="lalapps_cbc_sbank_merge_sims"):
-        exec_name = 'lalapps_cbc_sbank_merge_sims'
-        extension = 'h5'
-        sections = []
-        inspiral.InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-        self.tag_base = tag_base
-        self.set_universe("local")
-        self.set_sub_file(tag_base+'.sub')
-        self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
-        self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
-        self.add_condor_cmd('getenv','True')
-        self.add_condor_cmd('request_memory', '1999')
-
-
-class MergeSimsNode(pipeline.CondorDAGNode):
-    def __init__(self,job, dag, tag='sbank_merge_sims', h5files=[], p_node=[]):
-        pipeline.CondorDAGNode.__init__(self,job)
-        output_fname = "SBANK_MERGED_SIMS_%s.h5" % tag
-        self.add_var_opt("independent", "")
-        self.add_var_opt("output", output_fname)
-        for f in h5files:
-            self.add_file_arg(f)
-        for p in p_node:
-            self.add_parent(p)
-        self.add_output_file(output_fname)
-        dag.add_node(self)
 
 class PlotSimJob(inspiral.InspiralAnalysisJob):
     def __init__(self,cp,dax=False, tag_base="lalapps_cbc_sbank_plot_sim"):
@@ -167,18 +140,20 @@ class PlotSimJob(inspiral.InspiralAnalysisJob):
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
         self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
         self.add_condor_cmd('getenv','True')
-        self.add_condor_cmd('request_memory', '1999')
+        if cp.has_section("accounting"):
+            self.add_condor_cmd('accounting_group', cp.get("accounting", "accounting-group"))
+        self.add_condor_cmd('request_memory', '3999')
 
 
 class PlotSimNode(pipeline.CondorDAGNode):
     def __init__(self,job, dag, h5files=[],p_node=[]):
         pipeline.CondorDAGNode.__init__(self,job)
-        if len(h5files) != 1:
-            raise ValueError("Can only plot one h5 file at a time")
-        self.add_file_arg(h5files[0])
+        [self.add_file_arg(h5f) for h5f in h5files]
         for p in p_node:
             self.add_parent(p)
         dag.add_node(self)
+
+
 ###############################################################################
 #
 # OPTION PARSER
@@ -217,7 +192,6 @@ nsplit = int(cp.get("injsplitter","nsplit"));
 dag = bank_DAG(usertag)
 injsplitJob = InjSplitJob(cp);
 banksimJob = BankSimJob(cp)
-merge_simsJob = MergeSimsJob(cp)
 plotsimJob = PlotSimJob(cp)
 
 # SETUP SPLIT INJECTION JOB
@@ -228,12 +202,9 @@ sim_nodes = [BankSimNode(banksimJob, dag, f, inj_approx, bank_name, "%s_BANKSIM_
 
 # SETUP MERGESIM NODE
 sim_names = [node.get_output_files()[0] for node in sim_nodes]
-merge_sims_node = MergeSimsNode(merge_simsJob, dag, usertag, sim_names, sim_nodes)
 
-#SETUP PLOTSIM JOB
-
-#SETUP PLOTSIM NODE
-PlotSimNode(plotsimJob, dag, merge_sims_node.get_output_files(), [merge_sims_node])
+# SETUP PLOTSIM NODE
+PlotSimNode(plotsimJob, dag, sim_names, sim_nodes)
 
 # CREATE DAG
 dag.write_sub_files()

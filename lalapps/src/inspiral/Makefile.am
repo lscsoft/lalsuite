@@ -150,7 +150,6 @@ pybin_scripts = \
 	lalapps_cbc_sbank \
 	lalapps_cbc_sbank_choose_mchirp_boundaries \
 	lalapps_cbc_sbank_splitter \
-	lalapps_cbc_sbank_merge_sims \
 	lalapps_cbc_sbank_pipe \
 	lalapps_cbc_sbank_plot_sim \
 	lalapps_cbc_sbank_sim \
