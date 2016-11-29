@@ -202,7 +202,7 @@ typedef struct {
   %newobject __repr__;
   %typemap(newfree) char* __repr__ "XLALFree($1);";
   char* __repr__() {
-    return XLALGPSToStr(NULL, $self);
+    return XLALStringAppendFmt(NULL, "LIGOTimeGPS(%d, %d)", $self->gpsSeconds, $self->gpsNanoSeconds);
   }
 
   /// </li><li>

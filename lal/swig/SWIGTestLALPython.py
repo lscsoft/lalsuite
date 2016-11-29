@@ -1071,7 +1071,8 @@ if swig_division_coercion_works: # FIXME: https://github.com/swig/swig/pull/617
     assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.1502318572066237)
 t1 += 812345667.75
 assert(str(t1) == "812345678.25")
-assert(LIGOTimeGPS(repr(t1)) == t1)
+assert(type(eval(repr(t1))) is type(t1))
+assert(eval(repr(t1)) == t1)
 assert(int(t1) == 812345678)
 assert(t1.ns() == 812345678250000000)
 assert(hash(t1) == 1049484238)

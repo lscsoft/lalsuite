@@ -259,6 +259,7 @@ SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
 %header %{
 #include <lal/LALDatatypes.h>
 #include <lal/LALMalloc.h>
+#include <lal/LALString.h>
 #include <lal/XLALError.h>
 #include <lal/Date.h>
 %}
