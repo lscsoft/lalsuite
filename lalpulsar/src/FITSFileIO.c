@@ -501,10 +501,30 @@ int XLALFITSFileWriteUVarCmdLine( FITSFile UNUSED *file )
   XLAL_CHECK_FAIL( file != NULL, XLAL_EFAULT );
   XLAL_CHECK_FAIL( file->write, XLAL_EINVAL, "FITS file is not open for writing" );
 
-  // Write command line to history
-  cmd_line = XLALUserVarGetLog( UVAR_LOGFMT_CMDLINE );
+  // Seek primary HDU
+  CALL_FITS( fits_movabs_hdu, file->ff, 1, NULL );
+
+  // Get UserVar command line in a parseable form
+  cmd_line = XLALUserVarGetLog( UVAR_LOGFMT_RAWFORM );
   XLAL_CHECK_FAIL( cmd_line != NULL, XLAL_EFUNC );
-  XLAL_CHECK_FAIL( XLALFITSFileWriteHistory( file, "Command line: %s", cmd_line ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Extract and write program name to primary header
+  CHAR *p = cmd_line;
+  CHAR *t = XLALStringToken( &p, "\n", 0 );
+  XLAL_CHECK_FAIL( t != NULL && strlen( t ) > 0, XLAL_EFUNC );
+  CALL_FITS( fits_write_key_longstr, file->ff, "PROGNAME", t, "name of program which created this file" );
+
+  // Extract and write program arguments to primary header
+  t = XLALStringToken( &p, "\n", 0 );
+  while ( t != NULL ) {
+    CHAR *v = strchr( t, '\t' );
+    XLAL_CHECK_FAIL( v != NULL, XLAL_EFAILED );
+    *v++ = '\0';
+    CHAR keyword[FLEN_KEYWORD];
+    snprintf( keyword, sizeof( keyword ), "PROGARG %s", t );
+    CALL_FITS( fits_write_key_longstr, file->ff, keyword, v, "argument to program" );
+    t = XLALStringToken( &p, "\n", 0 );
+  }
 
   XLALFree( cmd_line );
   return XLAL_SUCCESS;
