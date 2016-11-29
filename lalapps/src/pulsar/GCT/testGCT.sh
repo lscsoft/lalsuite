@@ -147,7 +147,7 @@ done
 
 echo
 echo "----------------------------------------------------------------------"
-echo " STEP 1: Generate Fake Signal"
+echo " STEP 1: Generate Fake Signal with MFDv5"
 echo "----------------------------------------------------------------------"
 echo
 
@@ -264,7 +264,7 @@ BSGL_flags="--computeBSGL --Fstar0=10 --oLGX='0.5,0.5' --recalcToplistStats"
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match) and segment-list file and --recalcToplistStats"
+echo " STEP 3: run HierarchSearchGCT using Resampling and default 2F toplist"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -294,7 +294,7 @@ resGCT_RSr_L1=$(echo $topline  | awk '{print $14}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 4: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --recalcToplistStats"
+echo " STEP 4: run HierarchSearchGCT using LALDemod and default 2F toplist"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -326,7 +326,7 @@ resGCT_DMr_L1=$(echo $topline  | awk '{print $14}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 5: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --computeBSGL"
+echo " STEP 5: run HierarchSearchGCT using LALDemod and BSGL toplist"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -355,7 +355,7 @@ freqGCT_DM_BSGL=$(echo $topline | awk '{print $1}')
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 6: run HierarchSearchGCT using LALDemod (perfect match) with 'dual' toplist: 1st=F, 2nd=BSGL"
+echo " STEP 6: run HierarchSearchGCT using LALDemod and dual toplist: 1st=F, 2nd=BSGL"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
@@ -385,7 +385,8 @@ fi
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 7: run HierarchSearchGCT using Resampling (perfect match), triple toplist and recalc "
+echo " STEP 7: run HierarchSearchGCT using Resampling and triple toplist (BSGL, BSGLtL and BtSGLtL), "
+echo "         compared with separate runs for each of these 3 toplist rankings"
 echo "----------------------------------------------------------------------------------------------------"
 echo
 
