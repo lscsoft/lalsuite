@@ -149,12 +149,10 @@ pybin_scripts = \
 	lalapps_coh_PTF_post_processing \
 	lalapps_cbc_sbank \
 	lalapps_cbc_sbank_choose_mchirp_boundaries \
-	lalapps_cbc_sbank_splitter \
 	lalapps_cbc_sbank_pipe \
 	lalapps_cbc_sbank_plot_sim \
 	lalapps_cbc_sbank_sim \
 	lalapps_cbc_sbank_sim_pipe \
-	lalapps_cbc_sbank_injsplitter \
 	lalapps_bank_plotter
 
 pkgpython_PYTHON = \
