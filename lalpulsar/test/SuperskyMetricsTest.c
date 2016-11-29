@@ -214,7 +214,7 @@ static int CheckSuperskyMetrics(
       gsl_vector_view rssky_point = gsl_matrix_column( rssky_points, j );
       PulsarDopplerParams XLAL_INIT_DECL( new_phys_point );
       XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( &rssky_point.vector, &phys_points[j], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &new_phys_point, &rssky_point.vector, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &new_phys_point, &rssky_point.vector, NULL, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK( CompareDoppler( &phys_points[j], &new_phys_point ) == EXIT_SUCCESS, XLAL_EFUNC );
     }
     gsl_matrix *intm_phys_points = NULL;

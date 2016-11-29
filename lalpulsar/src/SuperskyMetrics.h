@@ -140,6 +140,7 @@ int XLALConvertPhysicalToSuperskyPoint(
 int XLALConvertSuperskyToPhysicalPoint(
   PulsarDopplerParams *out_phys,                ///< [out] Output point in physical coordinates
   const gsl_vector *in_rssky,                   ///< [in] Input point in supersky coordinates
+  const gsl_vector *ref_rssky,                  ///< [in,optional] Reference point in supersky coordinates
   const gsl_matrix *rssky_transf                ///< [in] Reduced supersky coordinate transform data
   );
 
