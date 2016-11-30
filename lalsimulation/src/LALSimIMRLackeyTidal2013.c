@@ -204,9 +204,9 @@ int LackeyTidal2013SEOBNRv2ROMCore(
 
   // Impose sanity checks and cutoffs on mass-ratio, and BH spins
   if (mBH < mNS) XLAL_ERROR(XLAL_EDOM, "mBH = %g < mNS = %g ! ", mBH, mNS);
-  if (eta < 6./49.) XLAL_ERROR(XLAL_EDOM, "eta = %g < 6/49!", eta);
-  if (chi_BH > 0.75) XLAL_ERROR(XLAL_EDOM, "BH spin = %g > 0.75!", chi_BH);
-  if (chi_BH < -0.75) XLAL_ERROR(XLAL_EDOM, "BH spin = %g < -0.75!", chi_BH);
+  if ((eta < 6./49.) || (eta > 0.222222222222222)) XLAL_ERROR(XLAL_EDOM, "eta = %g is not in allowed range 6/49 < eta < 0.222222222222222!", eta);
+  if (chi_BH > 0.5) XLAL_ERROR(XLAL_EDOM, "BH spin = %g > 0.5!", chi_BH);
+  if (chi_BH < -0.5) XLAL_ERROR(XLAL_EDOM, "BH spin = %g < -0.5!", chi_BH);
 
   // Call the high-resolution SEOBNRv2 ROM that can go to very low total mass
   // We call either the FrequencySequence version or the regular LAL version depending on how we've been called.
@@ -290,7 +290,7 @@ int LackeyTidal2013SEOBNRv2ROMCore(
  *
  * @note Parameter ranges:
  *   * 6/49 <= eta <= 0.25
- *   * -0.75 <= chi_BH <= 0.75
+ *   * -0.5 <= chi_BH <= 0.5 [calibration region]
  *   * Mtot >= 2 Msun @ 10 Hz (inherited from the ROM)
  *
  *  Aligned component spin on black hole chi_BH. The NS is assumed to be non-spinning.
@@ -382,4 +382,3 @@ int XLALSimIMRLackeyTidal2013(
 
 /** @} */
 /** @} */
-
