@@ -868,17 +868,17 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
  */
 static void SM_ReducedToAligned(
   double as[3],                                 ///< [out] 3-dimensional aligned sky coordinates
-  const gsl_vector *rss                         ///< [in] 2-dimensional reduced supersky coordinates
+  const gsl_vector *rss,                        ///< [in] 2-dimensional reduced supersky coordinates
+  const double hemi                             ///< [in] Supersky coordinate hemisphere; only sign is used
   )
 {
-  const double A = gsl_vector_get( rss, 0 );
+  const double A = GSL_SIGN( hemi ) * gsl_vector_get( rss, 0 ) - 1;
   const double B = gsl_vector_get( rss, 1 );
-  const double dA = fabs( A ) - 1.0;
-  const double R = sqrt( SQR( dA ) + SQR( B ) );
+  const double R = sqrt( SQR( A ) + SQR( B ) );
   const double Rmax = GSL_MAX( 1.0, R );
-  as[0] = dA / Rmax;
+  as[0] = A / Rmax;
   as[1] = B / Rmax;
-  as[2] = GSL_SIGN( A ) * RE_SQRT( 1.0 - DOT2( as, as ) );
+  as[2] = GSL_SIGN( hemi ) * RE_SQRT( 1.0 - DOT2( as, as ) );
 }
 
 ///
@@ -970,6 +970,7 @@ int XLALConvertPhysicalToSuperskyPoint(
 int XLALConvertSuperskyToPhysicalPoint(
   PulsarDopplerParams *out_phys,
   const gsl_vector *in_rssky,
+  const gsl_vector *ref_rssky,
   const gsl_matrix *rssky_transf
   )
 {
@@ -983,6 +984,7 @@ int XLALConvertSuperskyToPhysicalPoint(
   DECOMPOSE_CONST_RSSKY_TRANSF( rssky_transf );
   XLAL_CHECK( ref_time != NULL, XLAL_EFAULT );
   XLAL_CHECK( in_rssky->size == ndim, XLAL_ESIZE );
+  XLAL_CHECK( ref_rssky == NULL || in_rssky->size == ndim, XLAL_ESIZE );
 
   // Set output physical point reference time to that of of coordinate transform data
   out_phys->refTime = *ref_time;
@@ -1002,8 +1004,9 @@ int XLALConvertSuperskyToPhysicalPoint(
   }
 
   // Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky coordinates
+  const double A = gsl_vector_get( ref_rssky != NULL ? ref_rssky : in_rssky, 0 );
   double asky[3];
-  SM_ReducedToAligned( asky, &intm_sky3.vector );
+  SM_ReducedToAligned( asky, &intm_sky3.vector, A );
   gsl_vector_view asky_v = gsl_vector_view_array( asky, 3 );
 
   // Subtract the inner product of the sky offsets with the aligned sky position
@@ -1046,7 +1049,7 @@ int XLALConvertSuperskyToSuperskyPoint(
 
   // Convert input reduced supersky point to physical coordinates
   PulsarDopplerParams XLAL_INIT_DECL( phys );
-  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &phys, in_rssky, in_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
+  XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &phys, in_rssky, NULL, in_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
 
   // Convert physical point to output reduced supersky coordinates
   XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( out_rssky, &phys, out_rssky_transf ) == XLAL_SUCCESS, XLAL_EINVAL );
@@ -1139,7 +1142,7 @@ int XLALConvertSuperskyToPhysicalPoints(
     // Convert point from supersky to physical coordinates
     gsl_vector_const_view in_rssky_j = gsl_matrix_const_column( in_rssky, j );
     PulsarDopplerParams XLAL_INIT_DECL( out_phys_j );
-    XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &out_phys_j, &in_rssky_j.vector, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &out_phys_j, &in_rssky_j.vector, NULL, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Fill output point from PulsarDopplerParams struct
     gsl_matrix_set( *out_phys, 0, j, out_phys_j.Alpha );
@@ -1189,7 +1192,7 @@ static double PhysicalSkyBound(
   const double rssky[2] = { A, 0 };
   gsl_vector_const_view rssky_view = gsl_vector_const_view_array( rssky, 2 );
   double as[3];
-  SM_ReducedToAligned( as, &rssky_view.vector );
+  SM_ReducedToAligned( as, &rssky_view.vector, A );
   const double na = as[0];
 
   // Absolute limiting bound on 'nb = +/- sqrt(1 - na^2)'
@@ -1891,8 +1894,9 @@ static double PhysicalSpinBound(
 
   // Add the inner product of the sky offsets with the aligned sky
   // position to the physical bound to get the reduced supersky bound
+  const double A = gsl_vector_get( point, 0 );
   double as[3];
-  SM_ReducedToAligned( as, point );
+  SM_ReducedToAligned( as, point, A );
   bound += DOT3( sky_offsets, as );
 
   return bound;
@@ -2003,7 +2007,7 @@ int XLALSuperskyLatticePulsarSpinRange(
   while ( XLALNextLatticeTilingPoint( itr, in_rssky ) > 0 ) {
 
     // Convert reduced supersky point to physical coordinates
-    XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &out_phys, in_rssky, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALConvertSuperskyToPhysicalPoint( &out_phys, in_rssky, NULL, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Get indexes of left/right-most point in current frequency block
     INT4 left = 0, right = 0;
