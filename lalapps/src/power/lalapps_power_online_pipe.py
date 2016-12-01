@@ -185,23 +185,6 @@ else:
 #
 
 
-class Burst2MonJob(pipeline.CondorDAGJob):
-	def __init__(self, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", power.get_executable(config_parser, "ligolw_burst2mon"))
-		self.set_sub_file("ligolw_burst2mon.sub")
-		self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "ligolw_burst2mon-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "ligolw_burst2mon-$(cluster)-$(process).err"))
-		self.add_condor_cmd("getenv", "True")
-		self.add_ini_opts(config_parser, "ligolw_burst2mon")
-
-
-class Burst2MonNode(pipeline.AnalysisNode):
-	def __init__(self, job):
-		# FIXME: this shouldn't be needed.
-		pipeline.CondorDAGNode.__init__(self, job)
-		pipeline.AnalysisNode.__init__(self)
-
-
 class PublishJob(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
 		pipeline.CondorDAGJob.__init__(self, "vanilla", power.get_executable(config_parser, "publish"))
@@ -271,7 +254,6 @@ class GsiScpNode(pipeline.CondorDAGNode):
 power.init_job_types(config_parser, types = ["datafind", "binj", "power", "lladd", "binjfind", "bucluster", "bucut"])
 
 
-llb2mjob = Burst2MonJob(config_parser)
 publishjob = PublishJob(config_parser)
 gsiscpjob = GsiScpJob(config_parser)
 
@@ -303,34 +285,6 @@ def make_publish_fragment(dag, parents, segment, tag, destination):
 	dag.add_node(node)
 
 	return [node]
-
-
-#
-# =============================================================================
-#
-#                       DMT Monitor Output DAG Fragment
-#
-# =============================================================================
-#
-
-
-# FIXME: still broken
-def make_burst2mon_fragment(dag, parent, instrument, seg, tag):
-	cluster_output = "%s-POWERMON_%s-%s-%s.xml" % (instrument, tag, int(seg[0]), int(abs(seg)))
-	cluster = power.make_bucluster_fragment(dag, [], instrument, seg, "POWERMON_%s" % tag)
-	cluster.add_parent(parent)
-	cluster.set_pre_script("/bin/cp %s %s" % (parent.get_output_files()[0], cluster_output))
-	cluster.add_file_arg(cluster_output)
-
-	node = Burst2MonNode(llb2mjob)
-	node.set_name("ligolw_burst2mon")
-	node.add_parent(cluster)
-	node.set_input(cluster.get_output_files()[0])
-	node.set_output(os.path.join(options.dmtmon_dest, cluster.get_output_files()[0]))
-	node.add_macro("macrocomment", tag)
-	dag.add_node(node)
-
-	return node
 
 
 #
