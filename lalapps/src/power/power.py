@@ -36,6 +36,7 @@ import sys
 import time
 
 
+from glue import iterutils
 from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
