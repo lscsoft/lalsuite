@@ -315,7 +315,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		coinc_nodes.append(set())
 
 		#
-		# ligolw_cafe & ligolw_add
+		# lalapps_cafe & ligolw_add
 		#
 
 		tisi_cache = set([time_slides_cache_entry])
@@ -357,7 +357,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 				lladd_nodes |= these_lladd_nodes
 
 		#
-		# ligolw_burca pool.  these are the burca jobs that don't
+		# lalapps_burca pool.  these are the burca jobs that don't
 		# require special clipping command line options, and so can
 		# bulk-process many files with each job
 		#
@@ -369,7 +369,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 			print >>sys.stderr, "done %s %d/%d" % (tag, n + 1, len(time_slides))
 
 	#
-	# ligolw_binjfind
+	# lalapps_binjfind
 	#
 
 	if do_injections:

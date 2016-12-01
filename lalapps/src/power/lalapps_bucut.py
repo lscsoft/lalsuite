@@ -206,7 +206,7 @@ class DocContents(object):
 #
 
 
-process_program_name = "ligolw_bucut"
+process_program_name = "lalapps_bucut"
 
 
 def append_process(doc, options):

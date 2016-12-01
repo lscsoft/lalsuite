@@ -789,7 +789,7 @@ def process_file(filename, products, live_time_program, tmp_path = None, veto_se
 
 	contents.filename = filename
 
-	contents.coincidence_segments = ligolwprocess.get_process_params(contents.xmldoc, "ligolw_burca", "--coincidence-segments")
+	contents.coincidence_segments = ligolwprocess.get_process_params(contents.xmldoc, "lalapps_burca", "--coincidence-segments")
 	if contents.coincidence_segments:
 		# as a side-effect, this enforces the rule that
 		# burca has been run on the input file exactly once

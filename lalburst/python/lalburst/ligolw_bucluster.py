@@ -50,7 +50,7 @@ __date__ = git_version.date
 #
 
 
-process_program_name = "ligolw_bucluster"
+process_program_name = "lalapps_bucluster"
 
 
 def append_process(xmldoc, cluster_algorithm, comment):

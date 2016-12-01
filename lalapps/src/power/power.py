@@ -497,13 +497,13 @@ class LigolwAddNode(pipeline.LigolwAddNode):
 
 class BucutJob(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_bucut"))
-		self.set_sub_file("ligolw_bucut.sub")
-		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_bucut-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_bucut-$(cluster)-$(process).err"))
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "lalapps_bucut"))
+		self.set_sub_file("lalapps_bucut.sub")
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_bucut-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_bucut-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
 		self.add_condor_cmd("Requirements", "Memory > 1100")
-		self.add_ini_opts(config_parser, "ligolw_bucut")
+		self.add_ini_opts(config_parser, "lalapps_bucut")
 
 		self.files_per_bucut = get_files_per_bucut(config_parser)
 		if self.files_per_bucut < 1:
@@ -542,13 +542,13 @@ class BucutNode(pipeline.CondorDAGNode):
 
 class BuclusterJob(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_bucluster"))
-		self.set_sub_file("ligolw_bucluster.sub")
-		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_bucluster-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_bucluster-$(cluster)-$(process).err"))
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "lalapps_bucluster"))
+		self.set_sub_file("lalapps_bucluster.sub")
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_bucluster-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_bucluster-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
 		self.add_condor_cmd("Requirements", "Memory > 1100")
-		self.add_ini_opts(config_parser, "ligolw_bucluster")
+		self.add_ini_opts(config_parser, "lalapps_bucluster")
 
 		self.cache_dir = get_cache_dir(config_parser)
 
@@ -597,12 +597,12 @@ class BuclusterNode(pipeline.CondorDAGNode):
 
 class BinjfindJob(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_binjfind"))
-		self.set_sub_file("ligolw_binjfind.sub")
-		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_binjfind-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_binjfind-$(cluster)-$(process).err"))
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "lalapps_binjfind"))
+		self.set_sub_file("lalapps_binjfind.sub")
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_binjfind-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_binjfind-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
-		self.add_ini_opts(config_parser, "ligolw_binjfind")
+		self.add_ini_opts(config_parser, "lalapps_binjfind")
 
 		self.files_per_binjfind = get_files_per_binjfind(config_parser)
 		if self.files_per_binjfind < 1:
@@ -641,13 +641,13 @@ class BinjfindNode(pipeline.CondorDAGNode):
 
 class BurcaJob(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_burca"))
-		self.set_sub_file("ligolw_burca.sub")
-		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_burca-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_burca-$(cluster)-$(process).err"))
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "lalapps_burca"))
+		self.set_sub_file("lalapps_burca.sub")
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_burca-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_burca-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
 		self.add_condor_cmd("Requirements", "Memory >= $(macrominram)")
-		self.add_ini_opts(config_parser, "ligolw_burca")
+		self.add_ini_opts(config_parser, "lalapps_burca")
 
 		self.files_per_burca = get_files_per_burca(config_parser)
 		if self.files_per_burca < 1:
@@ -656,12 +656,12 @@ class BurcaJob(pipeline.CondorDAGJob):
 
 class Burca2Job(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_burca"))
-		self.set_sub_file("ligolw_burca2.sub")
-		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_burca2-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_burca2-$(cluster)-$(process).err"))
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "lalapps_burca"))
+		self.set_sub_file("lalapps_burca2.sub")
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_burca2-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_burca2-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
-		self.add_ini_opts(config_parser, "ligolw_burca2")
+		self.add_ini_opts(config_parser, "lalapps_burca2")
 
 		self.cache_dir = get_cache_dir(config_parser)
 
@@ -760,12 +760,12 @@ class SQLiteNode(pipeline.CondorDAGNode):
 
 class BurcaTailorJob(pipeline.CondorDAGJob):
 	def __init__(self, config_parser):
-		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "ligolw_burca_tailor"))
-		self.set_sub_file("ligolw_burca_tailor.sub")
-		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "ligolw_burca_tailor-$(cluster)-$(process).out"))
-		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "ligolw_burca_tailor-$(cluster)-$(process).err"))
+		pipeline.CondorDAGJob.__init__(self, "vanilla", get_executable(config_parser, "lalapps_burca_tailor"))
+		self.set_sub_file("lalapps_burca_tailor.sub")
+		self.set_stdout_file(os.path.join(get_out_dir(config_parser), "lalapps_burca_tailor-$(cluster)-$(process).out"))
+		self.set_stderr_file(os.path.join(get_out_dir(config_parser), "lalapps_burca_tailor-$(cluster)-$(process).err"))
 		self.add_condor_cmd("getenv", "True")
-		self.add_ini_opts(config_parser, "ligolw_burca_tailor")
+		self.add_ini_opts(config_parser, "lalapps_burca_tailor")
 
 		self.cache_dir = get_cache_dir(config_parser)
 		self.output_dir = "."
@@ -886,23 +886,23 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 		lladdjob = pipeline.LigolwAddJob(os.path.join(get_out_dir(config_parser)), config_parser)
 		lladdjob.cache_dir = get_cache_dir(config_parser)
 
-	# ligolw_binjfind
+	# lalapps_binjfind
 	if "binjfind" in job_types:
 		binjfindjob = BinjfindJob(config_parser)
 
-	# ligolw_bucut
+	# lalapps_bucut
 	if "bucut" in job_types:
 		bucutjob = BucutJob(config_parser)
 
-	# ligolw_bucluster
+	# lalapps_bucluster
 	if "bucluster" in job_types:
 		buclusterjob = BuclusterJob(config_parser)
 
-	# ligolw_burca
+	# lalapps_burca
 	if "burca" in job_types:
 		burcajob = BurcaJob(config_parser)
 
-	# ligolw_burca
+	# lalapps_burca2
 	if "burca2" in job_types:
 		burca2job = Burca2Job(config_parser)
 
@@ -910,7 +910,7 @@ def init_job_types(config_parser, job_types = ("datafind", "rm", "binj", "power"
 	if "sqlite" in job_types:
 		sqlitejob = SQLiteJob(config_parser)
 
-	# ligolw_burca_tailor
+	# lalapps_burca_tailor
 	if "burcatailor" in job_types:
 		burcatailorjob = BurcaTailorJob(config_parser)
 
@@ -1110,7 +1110,7 @@ def make_binjfind_fragment(dag, parents, tag, verbose = False):
 			node.add_parent(parent)
 		del input_cache[:binjfindjob.files_per_binjfind]
 		seg = cache_span(node.get_input_cache())
-		node.set_name("ligolw_binjfind_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+		node.set_name("lalapps_binjfind_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
 		node.add_macro("macrocomment", tag)
 		dag.add_node(node)
 		nodes.add(node)
@@ -1127,7 +1127,7 @@ def make_bucluster_fragment(dag, parents, tag, verbose = False):
 			node.add_parent(parent)
 		del input_cache[:buclusterjob.files_per_bucluster]
 		seg = cache_span(node.get_input_cache())
-		node.set_name("ligolw_bucluster_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+		node.set_name("lalapps_bucluster_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
 		node.add_macro("macrocomment", tag)
 		node.set_retry(3)
 		dag.add_node(node)
@@ -1145,7 +1145,7 @@ def make_bucut_fragment(dag, parents, tag, verbose = False):
 			node.add_parent(parent)
 		del input_cache[:bucutjob.files_per_bucut]
 		seg = cache_span(node.get_input_cache())
-		node.set_name("ligolw_bucut_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+		node.set_name("lalapps_bucut_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
 		node.add_macro("macrocomment", tag)
 		dag.add_node(node)
 		nodes.add(node)
@@ -1166,7 +1166,7 @@ def make_burca_fragment(dag, parents, tag, coincidence_segments = None, verbose 
 			node.add_parent(parent)
 		del input_cache[:burcajob.files_per_burca]
 		seg = cache_span(node.get_input_cache())
-		node.set_name("ligolw_burca_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+		node.set_name("lalapps_burca_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
 		if coincidence_segments is not None:
 			node.set_coincidence_segments(coincidence_segments)
 		node.add_macro("macrocomment", tag)
@@ -1203,12 +1203,12 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 			cost += (float(abs(cache[-1].segment)) / 10000.0)**2
 		node = BurcaTailorNode(burcatailorjob)
 		node.add_input_cache(cache)
-		node.set_name("ligolw_burca_tailor_%s_%d_%d_%d" % (tag, int(seg[0]), int(abs(seg)), len(nodes)))
+		node.set_name("lalapps_burca_tailor_%s_%d_%d_%d" % (tag, int(seg[0]), int(abs(seg)), len(nodes)))
 		node.set_output("%s_%d" % (tag, len(nodes)))
 		dag.add_node(node)
 		nodes.add(node)
 	node = BurcaTailorNode(burcatailorjob)
-	node.set_name("ligolw_burca_tailor_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+	node.set_name("lalapps_burca_tailor_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
 	for parent in nodes:
 		node.add_parent(parent)
 		node.add_input_cache(parent.get_output_cache())
@@ -1219,7 +1219,7 @@ def make_burca_tailor_fragment(dag, input_cache, seg, tag):
 	delete_cache = set(node.get_input_cache()) - set(node.get_output_cache())
 	if delete_cache:
 		rmnode = RMNode(rmjob)
-		rmnode.set_name("ligolw_burca_tailor_rm_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
+		rmnode.set_name("lalapps_burca_tailor_rm_%s_%d_%d" % (tag, int(seg[0]), int(abs(seg))))
 		rmnode.add_parent(node)
 		rmnode.add_input_cache(delete_cache)
 		dag.add_node(rmnode)
@@ -1247,7 +1247,7 @@ def make_burca2_fragment(dag, coinc_cache, likelihood_parents, tag):
 			# cost porportional to segment duration squared
 			cost += (float(abs(cache[-1].segment)) / 10000.0)**2
 		node = BurcaNode(burca2job)
-		node.set_name("ligolw_burca2_%s_%d" % (tag, len(nodes)))
+		node.set_name("lalapps_burca2_%s_%d" % (tag, len(nodes)))
 		node.add_macro("macrocomment", tag)
 		node.add_var_arg("--likelihood-data-cache %s" % likelihood_data_cache_filename)
 		node.add_input_cache(cache)

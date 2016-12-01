@@ -395,7 +395,7 @@ WHERE
 #
 
 
-process_program_name = "ligolw_burca_tailor"
+process_program_name = "lalapps_burca_tailor"
 
 
 def gen_likelihood_control(coinc_params_distributions, seglists, name = u"ligolw_burca_tailor", comment = u""):

@@ -94,7 +94,7 @@ def new_doc(comment = None, **kwargs):
 	doc.appendChild(ligolw.LIGO_LW())
 	process = ligolw_process.register_to_xmldoc(
 		doc,
-		program = u"ligolw_tisi",
+		program = u"lalapps_gen_timeslides",
 		paramdict = kwargs,
 		version = __version__,
 		cvs_repository = u"lscsoft",

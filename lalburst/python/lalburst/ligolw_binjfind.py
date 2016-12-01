@@ -365,7 +365,7 @@ class DocContents(object):
 #
 
 
-process_program_name = "ligolw_binjfind"
+process_program_name = "lalapps_binjfind"
 
 
 def append_process(xmldoc, match_algorithm, comment):

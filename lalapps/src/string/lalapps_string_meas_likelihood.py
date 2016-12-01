@@ -66,7 +66,7 @@ def parse_command_line():
 	parser = OptionParser(
 		version = "Name: %%prog\n%s" % git_version.verbose_msg,
 		usage = "%prog [options] [filename ...]",
-		description = "%prog analyzes a collection of sqlite3 database files containing ligolw_burca outputs of string-cusp coincidence events, and measures probability distributions for a variety of parameters computed from those coincidences.  The distributions are written to a likelihood data file in XML format, which can later be used by to assign likelihoods to the coincidences.  The files to be processed can be named on the command line and/or provided by a LAL cache file."
+		description = "%prog analyzes a collection of sqlite3 database files containing lalapps_burca outputs of string-cusp coincidence events, and measures probability distributions for a variety of parameters computed from those coincidences.  The distributions are written to a likelihood data file in XML format, which can later be used by to assign likelihoods to the coincidences.  The files to be processed can be named on the command line and/or provided by a LAL cache file."
 	)
 	parser.add_option("-o", "--output", metavar = "filename", default = None, help = "Set the name of the likelihood data file to write (default = stdout).")
 	parser.add_option("-c", "--input-cache", metavar = "filename", help = "Also process the files named in this LAL cache.  See lalapps_path2cache for information on how to produce a LAL cache file.")
