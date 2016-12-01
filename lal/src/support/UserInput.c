@@ -1102,9 +1102,16 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
 
   CHAR *record = NULL;
 
-  if ( format == UVAR_LOGFMT_CMDLINE ) {
-    XLAL_CHECK_NULL ( (record = XLALStringAppend ( record, program_path)) != NULL, XLAL_EFUNC );
-  }
+  switch (format)
+    {
+    case UVAR_LOGFMT_RAWFORM:
+    case UVAR_LOGFMT_CMDLINE:
+      XLAL_CHECK_NULL ( ( record = XLALStringAppend ( record, program_path ) ) != NULL, XLAL_EFUNC );
+      break;
+
+    default:
+      break;
+    }
 
   LALUserVariable *ptr = &UVAR_vars;
   while ( (ptr = ptr->next) )
@@ -1116,28 +1123,28 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
       CHAR *valstr = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].printer_cdata( ptr->cvar, ptr->cdata ) : UserVarTypeMap [ ptr->type ].printer( ptr->cvar );
       XLAL_CHECK_NULL ( valstr != NULL, XLAL_EFUNC );
 
-      char append[256];
       switch (format)
 	{
+	case UVAR_LOGFMT_RAWFORM:
+	  XLAL_CHECK_NULL ( ( record = XLALStringAppendFmt ( record, "\n%s\t%s", ptr->name, valstr ) ) != NULL, XLAL_EFUNC );
+	  break;
+
 	case UVAR_LOGFMT_CFGFILE:
-	  snprintf (append, sizeof(append), "%s = %s;\n", ptr->name, valstr);
+	  XLAL_CHECK_NULL ( ( record = XLALStringAppendFmt ( record, "%s = %s;\n", ptr->name, valstr ) ) != NULL, XLAL_EFUNC );
 	  break;
 
 	case UVAR_LOGFMT_CMDLINE:
-	  snprintf (append, sizeof(append), " --%s=%s", ptr->name, valstr);
+	  XLAL_CHECK_NULL ( ( record = XLALStringAppendFmt ( record, " --%s=%s", ptr->name, valstr ) ) != NULL, XLAL_EFUNC );
 	  break;
 
 	case UVAR_LOGFMT_PROCPARAMS:
-	  snprintf (append, sizeof(append), "--%s = %s :%s;", ptr->name, valstr, UserVarTypeMap[ptr->type].name );
+	  XLAL_CHECK_NULL ( ( record = XLALStringAppendFmt ( record, "--%s = %s :%s;", ptr->name, valstr, UserVarTypeMap[ptr->type].name ) ) != NULL, XLAL_EFUNC );
 	  break;
 
 	default:
           XLAL_ERROR_NULL ( XLAL_EINVAL, "Unknown format for recording user-input: '%i'\n", format );
 	  break;
 	} // switch (format)
-      XLAL_LAST_ELEM(append) = 0;
-
-      XLAL_CHECK_NULL ( (record = XLALStringAppend (record, append)) != NULL, XLAL_EFUNC );
 
       XLALFree (valstr);
     } // while ptr=ptr->next
