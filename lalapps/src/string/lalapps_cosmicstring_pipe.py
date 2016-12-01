@@ -33,7 +33,7 @@ from glue.ligolw.utils import segments as ligolwsegments
 from glue import offsetvector
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
-from lalburst import timeslides as ligolw_tisi
+from lalburst import timeslides
 from lalapps import cosmicstring
 from lalapps import power
 
@@ -198,19 +198,19 @@ background_time_slides = {}
 background_seglists = segments.segmentlistdict()
 for filename in options.background_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-	background_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+	background_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
 	for i in range(len(background_time_slides[cache_entry])):
 		background_time_slides[cache_entry][i] = offsetvector.offsetvector((instrument, LIGOTimeGPS(offset)) for instrument, offset in background_time_slides[cache_entry][i].items())
-	background_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(background_time_slides[cache_entry], 2), min_segment_length, pad)
+	background_seglists |= cosmicstring.compute_segment_lists(seglists, timeslides.time_slide_component_vectors(background_time_slides[cache_entry], 2), min_segment_length, pad)
 
 injection_time_slides = {}
 injection_seglists = segments.segmentlistdict()
 for filename in options.injection_time_slides:
 	cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-	injection_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+	injection_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
 	for i in range(len(injection_time_slides[cache_entry])):
 		injection_time_slides[cache_entry][i] = offsetvector.offsetvector((instrument, LIGOTimeGPS(offset)) for instrument, offset in injection_time_slides[cache_entry][i].items())
-	injection_seglists |= cosmicstring.compute_segment_lists(seglists, ligolw_tisi.time_slide_component_vectors(injection_time_slides[cache_entry], 2), min_segment_length, pad)
+	injection_seglists |= cosmicstring.compute_segment_lists(seglists, timeslides.time_slide_component_vectors(injection_time_slides[cache_entry], 2), min_segment_length, pad)
 
 
 #

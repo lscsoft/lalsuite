@@ -36,7 +36,7 @@ from glue.ligolw.utils import process as ligolw_process
 from glue.ligolw.utils import time_slide as ligolw_time_slide
 from glue import offsetvector
 from lalapps import git_version
-from lalburst import timeslides as ligolw_tisi
+from lalburst import timeslides
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -153,10 +153,10 @@ if options.verbose:
 
 # dictionary mapping time_slide_id --> (dictionary mapping insrument --> offset)
 
-for offsetvect in ligolw_tisi.SlidesIter(ligolw_tisi.parse_slides(options.instrument)):
+for offsetvect in timeslides.SlidesIter(timeslides.parse_slides(options.instrument)):
 	time_slides[lsctables.TimeSlideTable.get_next_id()] = offsetvect
 for inspiral_slidespec in options.inspiral_num_slides:
-	for offsetvect in ligolw_tisi.Inspiral_Num_Slides_Iter(*ligolw_tisi.parse_inspiral_num_slides_slidespec(inspiral_slidespec)):
+	for offsetvect in timeslides.Inspiral_Num_Slides_Iter(*timeslides.parse_inspiral_num_slides_slidespec(inspiral_slidespec)):
 		time_slides[lsctables.TimeSlideTable.get_next_id()] = offsetvect
 
 if options.verbose:

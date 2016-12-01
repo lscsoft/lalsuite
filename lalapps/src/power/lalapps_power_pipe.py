@@ -44,7 +44,7 @@ from glue import segmentsUtils
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
 from lalburst import cafe
-from lalburst import timeslides as ligolw_tisi
+from lalburst import timeslides
 from lalapps import power
 
 
@@ -260,7 +260,7 @@ background_seglistdict = segments.segmentlistdict()
 if options.do_noninjections:
 	for filename in options.background_time_slides:
 		cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-		background_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+		background_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
 		background_seglistdict |= compute_segment_lists(seglistdict, background_time_slides[cache_entry], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
 
 
@@ -269,7 +269,7 @@ injection_seglistdict = segments.segmentlistdict()
 if options.do_injections:
 	for filename in options.injection_time_slides:
 		cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-		injection_time_slides[cache_entry] = ligolw_tisi.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+		injection_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
 		injection_seglistdict |= compute_segment_lists(seglistdict, injection_time_slides[cache_entry], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
 
 
