@@ -161,18 +161,6 @@ vcs_info_sources = LALPulsarVCSInfoHeader.h
 build_info_source = LALPulsarBuildInfoHeader.h
 build_info_dependencies = $(liblalpulsar_la_DEPENDENCIES)
 
-LIBADD = liblalpulsar.la
-
-bin_PROGRAMS = \
-	lalpulsar_version \
-	$(END_OF_LIST)
-
-lalpulsar_version_SOURCES = version.c
-
-TESTS = \
-	lalpulsar_version \
-	$(END_OF_LIST)
-
 EXTRA_DIST = \
 	Eccentric_and_true_anomaly.png \
 	LALPulsarConfig.h.in \

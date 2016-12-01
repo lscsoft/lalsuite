@@ -89,8 +89,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files
 %defattr(-,root,root)
-%{_bindir}/lal_simd_detect
-%{_bindir}/lal_version
+%{_bindir}/lal-simd-detect
+%{_bindir}/lal-version
 %{_libdir}/*.so.*
 %{_sysconfdir}/lal-user-env.*
 

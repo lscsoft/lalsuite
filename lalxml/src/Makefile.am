@@ -31,15 +31,3 @@ vcs_build_info_source = LALXMLVCSInfo.c
 vcs_info_sources = LALXMLVCSInfoHeader.h
 build_info_source = LALXMLBuildInfoHeader.h
 build_info_dependencies = $(liblalxml_la_DEPENDENCIES)
-
-LIBADD = liblalxml.la
-
-bin_PROGRAMS = \
-	lalxml_version \
-	$(END_OF_LIST)
-
-lalxml_version_SOURCES = version.c
-
-TESTS = \
-	lalxml_version \
-	$(END_OF_LIST)

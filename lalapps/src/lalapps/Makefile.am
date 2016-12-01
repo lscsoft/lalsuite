@@ -50,13 +50,14 @@ bin_PROGRAMS = \
 	lalapps_cache \
 	$(FFTWPROGS)
 
-lalapps_version_SOURCES = version2.c
-
+lalapps_version_SOURCES = \
+	version.c \
+	lalapps.h \
+	LALAppsVCSInfo.h
 lalapps_tconvert_SOURCES = \
 	tconvert.c \
 	getdate.c \
 	getdate.h
-
 lalapps_cache_SOURCES = \
 	cache.c
 
@@ -71,9 +72,7 @@ pybin_scripts = \
 	lalapps_searchsum2cache
 endif
 
-TESTS = \
-	lalapps_version
-	$(END_OF_LIST)
+TESTS = lalapps_version
 
 vcs_build_info_source = LALAppsVCSInfo.c
 vcs_info_sources = LALAppsVCSInfoHeader.h git_version.py

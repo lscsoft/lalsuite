@@ -46,10 +46,8 @@ src/LALPulsarVCSInfoHeader.h
 src/config.h
 src/config.h.in
 src/git_version
-src/lalpulsar_version
 src/stamp-h1
 src/stamp-h2
-src/version.c
 swig/swiglal*
 test/BinarySSBTimesTest
 test/ComputeFstatBenchmark

@@ -8,6 +8,8 @@ SUBDIRS = \
 	mathematica_codes \
 	$(END_OF_LIST)
 
+LDADD = liblalsimulation.la
+
 NOISEPSDFILES = \
 	LIGO-P1200087-v18-AdV_BNS_OPTIMIZED.txt \
 	LIGO-P1200087-v18-AdV_DESIGN.txt \
@@ -37,8 +39,6 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_FPS.dat \
 	LALSimNeutronStarEOS_SLY4.dat
 
-LDADD = liblalsimulation.la
-
 bin_PROGRAMS = \
 	lalsim-bh-qnmode \
 	lalsim-bh-ringdown \
@@ -52,9 +52,7 @@ bin_PROGRAMS = \
 	lalsim-ns-mass-radius \
 	lalsim-ns-params \
 	lalsim-sgwb \
-	lalsim-unicorn \
-	lalsimulation_version \
-	$(END_OF_LIST)
+	lalsim-unicorn
 
 pkginclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
@@ -213,7 +211,6 @@ lalsim_detector_noise_SOURCES = detector_noise.c
 lalsim_detector_strain_SOURCES = detector_strain.c
 lalsim_inspiral_SOURCES = inspiral.c
 lalsim_inject_SOURCES = inject.c
-lalsimulation_version_SOURCES = version.c
 
 pkgdata_DATA = \
 	$(NOISEPSDFILES) \
@@ -237,7 +234,3 @@ vcs_build_info_source = LALSimulationVCSInfo.c
 vcs_info_sources = LALSimulationVCSInfoHeader.h
 build_info_source = LALSimulationBuildInfoHeader.h
 build_info_dependencies = $(liblalsimulation_la_DEPENDENCIES)
-
-TESTS = \
-	lalsimulation_version \
-	$(END_OF_LIST)
