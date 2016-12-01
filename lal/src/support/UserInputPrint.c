@@ -173,6 +173,135 @@ XLALPrintStringValueOfEPOCHRange(const LIGOTimeGPSRange *gpsRange) {
 }
 
 
+/// Return 'string value' (allocated here) of a user selection of an enumeration value.
+/// The output is parseable by XLALParseStringValueOfUserEnum().
+char*
+XLALPrintStringValueOfUserEnum ( const int *valEnum, const UserChoices *enumData )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(valEnum != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(*valEnum >= 0, XLAL_EINVAL);
+  XLAL_CHECK_NULL(enumData != NULL, XLAL_EFAULT);
+
+  // Select name of enumeration value
+  for ( size_t i = 0; i < XLAL_NUM_ELEM(*enumData); ++i ) {
+    if ((*enumData)[i].val >= 0 && (*enumData)[i].name != NULL) {
+      if (*valEnum == (*enumData)[i].val) {
+        return XLALStringDuplicate((*enumData)[i].name);
+      }
+    }
+  }
+
+  XLAL_ERROR_NULL( XLAL_EINVAL, "Value '%i' is not a valid enumeration value", *valEnum );
+
+}
+
+
+/// Return format help string (allocated here) for a user selection of an enumeration value.
+char*
+XLALFormatHelpStringOfUserEnum ( const UserChoices *enumData )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(enumData != NULL, XLAL_EFAULT);
+
+  // Generate format help string
+  CHAR *str = NULL;
+  int prev_val = -1;
+  const char *prev_name = NULL;
+  for ( size_t i = 0; i < XLAL_NUM_ELEM(*enumData); ++i ) {
+    if ((*enumData)[i].val >= 0 && (*enumData)[i].name != NULL) {
+      if (prev_name != NULL && strcmp(prev_name, (*enumData)[i].name) == 0) {
+        continue;
+      }
+      if (str == NULL) {
+        str = XLALStringAppendFmt( str, "=(%s", (*enumData)[i].name);
+      } else if (prev_val >= 0 && prev_val == (*enumData)[i].val) {
+        str = XLALStringAppendFmt( str, "=%s", (*enumData)[i].name);
+      } else {
+        str = XLALStringAppendFmt( str, "|%s", (*enumData)[i].name);
+      }
+      XLAL_CHECK_NULL(str != NULL, XLAL_EFUNC);
+      prev_val = (*enumData)[i].val;
+      prev_name = (*enumData)[i].name;
+    }
+  }
+  str = XLALStringAppendFmt( str, ")");
+  XLAL_CHECK_NULL(str != NULL, XLAL_EFUNC);
+
+  return str;
+
+}
+
+
+/// Return 'string value' (allocated here) of a user selection of an bitflag value.
+/// The output is parseable by XLALParseStringValueOfUserFlag().
+char*
+XLALPrintStringValueOfUserFlag ( const int *valFlag, const UserChoices *flagData )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(valFlag != NULL, XLAL_EFAULT);
+  XLAL_CHECK_NULL(*valFlag > 0, XLAL_EINVAL);
+  XLAL_CHECK_NULL(flagData != NULL, XLAL_EFAULT);
+
+  // Deduce bitflag value
+  int val = *valFlag;
+  CHAR *str = NULL;
+  for ( size_t i = 0; i < XLAL_NUM_ELEM(*flagData); ++i ) {
+    if ((*flagData)[i].val > 0 && (*flagData)[i].name != NULL) {
+      if (val & (*flagData)[i].val) {
+        val &= ~(*flagData)[i].val;
+        str = XLALStringAppendFmt( str, "%s%s", ( str == NULL ? "" : "," ), (*flagData)[i].name);
+        XLAL_CHECK_NULL(str != NULL, XLAL_EFUNC);
+      }
+    }
+  }
+  XLAL_CHECK_NULL( val == 0, XLAL_EINVAL, "Value '%i' is not a valid bitflag value", *valFlag );
+
+  return str;
+
+}
+
+
+/// Return format help string (allocated here) for a user selection of an bitflag value.
+char*
+XLALFormatHelpStringOfUserFlag ( const UserChoices *flagData )
+{
+
+  // Check input
+  XLAL_CHECK_NULL(flagData != NULL, XLAL_EFAULT);
+
+  // Generate format help string
+  CHAR *str = NULL;
+  int prev_val = 0;
+  const char *prev_name = NULL;
+  for ( size_t i = 0; i < XLAL_NUM_ELEM(*flagData); ++i ) {
+    if ((*flagData)[i].val > 0 && (*flagData)[i].name != NULL) {
+      if (prev_name != NULL && strcmp(prev_name, (*flagData)[i].name) == 0) {
+        continue;
+      }
+      if (str == NULL) {
+        str = XLALStringAppendFmt( str, "=[%s", (*flagData)[i].name);
+      } else if (prev_val > 0 && prev_val == (*flagData)[i].val ) {
+        str = XLALStringAppendFmt( str, "=%s", (*flagData)[i].name);
+      } else {
+        str = XLALStringAppendFmt( str, "|%s", (*flagData)[i].name);
+      }
+      XLAL_CHECK_NULL(str != NULL, XLAL_EFUNC);
+      prev_val = (*flagData)[i].val;
+      prev_name = (*flagData)[i].name;
+    }
+  }
+  str = XLALStringAppendFmt( str, "],...");
+  XLAL_CHECK_NULL(str != NULL, XLAL_EFUNC);
+
+  return str;
+
+}
+
+
 /// Return 'string value' (allocated here) of a STRINGVector, by turning into comma-separated list of strings, each surrounded by single quotes.
 /// The output is parseable by XLALParseStringValueAsSTRINGVector().
 /// In case of a NULL or empty vector (data==NULL|length==0), generate the string 'NULL'.

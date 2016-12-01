@@ -45,6 +45,8 @@ typedef struct
   REAL8 latDMS;
   REAL8 latRad;
   INT8 longInt;
+  int argEnum;
+  int argFlag;
   BOOLEAN long_help;
 } UserInput_t;
 
@@ -56,7 +58,18 @@ int
 main(void)
 {
 
-  const char *argv_in[] = { "progname", "--argNum=1", "--argStr=xyz", "--argBool=true", "-a", "-1", "-A", "7", "-b", "@" TEST_DATA_DIR "ConfigFileSample.cfg" };
+  const char *argv_in[] = {
+    "progname",
+    "--argNum=1",
+    "--argStr=xyz",
+    "--argBool=true",
+    "-a", "-1",
+    "-A", "7",
+    "-b",
+    "--argEnum=enum2",
+    "--argFlag=flagA,flagC",
+    "@" TEST_DATA_DIR "ConfigFileSample.cfg"
+  };
 
   const int my_argc = XLAL_NUM_ELEM( argv_in );
   char **my_argv = XLALCalloc ( my_argc, sizeof(char*) );
@@ -70,6 +83,11 @@ main(void)
   UserInput_t XLAL_INIT_DECL(my_uvars);
   UserInput_t *uvar = &my_uvars;
   uvar->string2 = XLALStringDuplicate ( "this is the default value");
+  uvar->argEnum = 0;
+  uvar->argFlag = 0;
+
+  const UserChoices enumData = { { -1, "noenum" }, { 1, "enum1" }, { 2, "enum2" }, { 2, "enumB" }, { 0, "enum0" } };
+  const UserChoices flagData = { { -1, "noflag" }, { 1, "flagA" }, { 2, "flagB" }, { 4, "flagC" }, { 5, "flagAC" } };
 
   XLAL_CHECK ( XLALRegisterUvarMember( argNum, REAL8, 0, REQUIRED, "Testing float argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( argStr, STRING, 0, REQUIRED, "Testing string argument") == XLAL_SUCCESS, XLAL_EFUNC );
@@ -86,6 +104,8 @@ main(void)
   XLAL_CHECK ( XLALRegisterUvarMember( latDMS, DECJ, 0, REQUIRED, "Testing DECJ(DMS) argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( latRad, DECJ, 0, REQUIRED, "Testing DECJ(rad) argument") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( longInt, INT8, 0, REQUIRED, "Testing INT8 argument") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarAuxDataMember( argEnum, UserEnum, &enumData, 0, REQUIRED, "Testing user enumeration") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarAuxDataMember( argFlag, UserFlag, &flagData, 0, REQUIRED, "Testing user bitflag") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( long_help, BOOLEAN, 0, NODEFAULT,
                                        "This option is here to test the help page wrapping of long strings. "
                                        "This option is here to test the help page wrapping of long strings. "
@@ -127,6 +147,8 @@ main(void)
   XLAL_CHECK ( uvar->argUInt == 7, XLAL_EFAILED, "Failed to read in argUInt\n" );
   XLAL_CHECK ( uvar->argB2, XLAL_EFAILED, "Failed to read in argB2\n" );
   XLAL_CHECK ( strcmp ( uvar->string2, "this is also possible, and # here does nothing; and neither does semi-colon " ) == 0, XLAL_EFAILED, "Failed to read in string2\n" );
+  XLAL_CHECK ( uvar->argEnum == 2, XLAL_EFAILED, "Failed to read in argEnum\n" );
+  XLAL_CHECK ( uvar->argFlag == 5, XLAL_EFAILED, "Failed to read in argFlag\n" );
 
   char buf1[256], buf2[256];
   XLAL_CHECK ( XLALGPSCmp ( &uvar->epochGPS, &uvar->epochMJDTT ) == 0, XLAL_EFAILED, "GPS epoch %s differs from MJD(TT) epoch %s\n",
