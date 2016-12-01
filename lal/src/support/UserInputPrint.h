@@ -65,6 +65,11 @@ char *XLALPrintStringValueOfINT4Range ( const INT4Range *int4Range );
 char *XLALPrintStringValueOfREAL8Range ( const REAL8Range *real8Range );
 char *XLALPrintStringValueOfEPOCHRange ( const LIGOTimeGPSRange *gpsRange );
 
+char *XLALPrintStringValueOfUserEnum ( const int *valEnum, const UserChoices *enumData );
+char *XLALFormatHelpStringOfUserEnum ( const UserChoices *enumData );
+char *XLALPrintStringValueOfUserFlag ( const int *valFlag, const UserChoices *flagData );
+char *XLALFormatHelpStringOfUserFlag ( const UserChoices *flagData );
+
 char *XLALPrintStringValueOfSTRING ( char **valSTRING );
 char *XLALPrintStringValueOfSTRINGVector ( LALStringVector **valSTRINGVector );
 
