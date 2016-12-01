@@ -19,9 +19,6 @@
  */
 
 #include <string.h>
-
-#include <lal/LALStdlib.h>
-#include <lal/LALString.h>
 #include <lal/LALVCSInfoType.h>
 
 int XLALVCSInfoCompare(const LALVCSInfo *vcs1, const LALVCSInfo *vcs2)
@@ -42,64 +39,4 @@ int XLALVCSInfoCompare(const LALVCSInfo *vcs1, const LALVCSInfo *vcs2)
 
   /* vcs1 == vcs2 */
   return 0;
-}
-
-char *XLALVCSInfoString(const LALVCSInfoList vcs_list, const int verbose, const char *prefix)
-{
-
-  /* check input */
-  XLAL_CHECK_NULL( vcs_list != NULL, XLAL_EFAULT );
-
-  /* generate VCS and build information string */
-  char *str = NULL;
-  for ( size_t i = 0; vcs_list[i] != NULL; ++i ) {
-    if ( verbose ) {
-      str = XLALStringAppendFmt( str,
-                                 "%s-Version: %s\n"
-                                 "%s-Id: %s\n"
-                                 "%s-Date: %s\n"
-                                 "%s-Branch: %s\n"
-                                 "%s-Tag: %s\n"
-                                 "%s-Status: %s\n"
-                                 "%s-Configure-Args: %s\n"
-                                 "%s-Configure-Date: %s\n"
-                                 "%s-Build-Date: %s\n",
-                                 vcs_list[i]->name, vcs_list[i]->version,
-                                 vcs_list[i]->name, vcs_list[i]->vcsId,
-                                 vcs_list[i]->name, vcs_list[i]->vcsDate,
-                                 vcs_list[i]->name, vcs_list[i]->vcsBranch,
-                                 vcs_list[i]->name, vcs_list[i]->vcsTag,
-                                 vcs_list[i]->name, vcs_list[i]->vcsStatus,
-                                 vcs_list[i]->name, vcs_list[i]->configureArgs,
-                                 vcs_list[i]->name, vcs_list[i]->configureDate,
-                                 vcs_list[i]->name, vcs_list[i]->buildDate
-        );
-    } else {
-      str = XLALStringAppendFmt( str,
-                                 "%s: %s (%s %s)\n",
-                                 vcs_list[i]->name,
-                                 vcs_list[i]->version,
-                                 vcs_list[i]->vcsClean,
-                                 vcs_list[i]->vcsId
-        );
-    }
-    XLAL_CHECK_NULL( str != NULL, XLAL_EFUNC );
-  }
-
-  /* add prefix */
-  if ( prefix != NULL ) {
-    char *new_str = NULL;
-    char *ptr = str;
-    char *line = XLALStringToken( &ptr, "\n", 0 );
-    while ( line != NULL ) {
-      new_str = XLALStringAppendFmt( new_str, "%s%s\n", prefix, line );
-      XLAL_CHECK_NULL( new_str != NULL, XLAL_EFUNC );
-      line = XLALStringToken( &ptr, "\n", 0 );
-    }
-    XLALFree( str );
-    str = new_str;
-  }
-
-  return str;
-
 }

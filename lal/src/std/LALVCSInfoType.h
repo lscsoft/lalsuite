@@ -64,13 +64,6 @@ typedef const LALVCSInfo *const LALVCSInfoList[16];
  */
 int XLALVCSInfoCompare(const LALVCSInfo *vcs1, const LALVCSInfo *vcs2);
 
-/**
- * Generate a multi-line string containing VCS and build information for a library and
- * its dependencies, as given in \p vcs_list. The verbosity of information contained in
- * the string is controlled by \p verbose. The string \p prefix is prepended to each line.
- */
-char *XLALVCSInfoString(const LALVCSInfoList vcs_list, const int verbose, const char *prefix);
-
 /*@}*/
 
 #ifdef __cplusplus
