@@ -59,6 +59,12 @@ typedef struct tagLALVCSInfo
 typedef const LALVCSInfo *const LALVCSInfoList[16];
 
 /**
+ * Compare two VCS information structures \p vcs1 and \p vcs2
+ * \returns Zero if the structures are identical, non-zero otherwise
+ */
+int XLALVCSInfoCompare(const LALVCSInfo *vcs1, const LALVCSInfo *vcs2);
+
+/**
  * Generate a multi-line string containing VCS and build information for a library and
  * its dependencies, as given in \p vcs_list. The verbosity of information contained in
  * the string is controlled by \p verbose. The string \p prefix is prepended to each line.
