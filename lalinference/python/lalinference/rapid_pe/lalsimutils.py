@@ -1492,7 +1492,7 @@ def resample_psd_series(psd, df=None, fmin=None, fmax=None):
 
     f = np.arange(psd_fmin, psd_fmax, psd_df)
     ifunc = interpolate.interp1d(f, data, fill_value=float("inf"), bounds_error=False)
-    psd_intp = np.zeros(np.ceil((fmax - fmin) / df))
+    psd_intp = np.zeros(int(np.ceil((fmax - fmin) / df)))
     newf = np.arange(fmin, psd_fmax, df)
     psd_intp = ifunc(newf)
     psd_intp[psd_intp == 0.0] = float("inf")
