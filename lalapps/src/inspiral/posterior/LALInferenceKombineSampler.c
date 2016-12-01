@@ -595,8 +595,8 @@ FILE *print_ensemble_header(LALInferenceRunState *run_state, INT4 rank) {
     /* Write the header information to file */
     fprintf(output,
             "  LALInference version:%s,%s,%s,%s,%s\n",
-            lalAppsVCSId, lalAppsVCSDate, lalAppsVCSBranch,
-            lalAppsVCSAuthor, lalAppsVCSStatus);
+            lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsDate, lalAppsVCSInfo.vcsBranch,
+            lalAppsVCSInfo.vcsAuthor, lalAppsVCSInfo.vcsStatus);
 
     fprintf(output, "  %s\n", cmd_str);
 
