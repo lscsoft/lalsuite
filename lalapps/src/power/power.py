@@ -36,15 +36,13 @@ import sys
 import time
 
 
-import lal
-import lalburst
-
-
 from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
 from glue.lal import CacheEntry
-from pylal import ligolw_cafe
+import lal
+import lalburst
+from lalburst import cafe
 
 
 __author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>"
@@ -1387,7 +1385,7 @@ def group_coinc_parents(parents, offset_vectors, extentlimit = None, verbose = F
 	# need to be combined to perform the coincidence analysis
 	#
 
-	seglists, bins = ligolw_cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], offset_vectors, extentlimit = extentlimit, verbose = verbose)
+	seglists, bins = cafe.ligolw_cafe([cache_entry for parent in parents for cache_entry in parent.get_output_cache()], offset_vectors, extentlimit = extentlimit, verbose = verbose)
 
 	#
 	# retrieve the file caches and segments.  note that ligolw_cafe

@@ -42,7 +42,7 @@ from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
 from glue.lal import CacheEntry
-from pylal import ligolw_cafe
+from lalburst import cafe
 from lalburst import timeslides as ligolw_tisi
 from lal import LIGOTimeGPS
 from lalapps import power
@@ -155,7 +155,7 @@ def compute_segment_lists(seglistdict, time_slides, minimum_gap, timing_params, 
 
 		# extract the segments that are coincident under the time
 		# slides
-		new = ligolw_cafe.get_coincident_segmentlistdict(seglistdict, time_slides)
+		new = cafe.get_coincident_segmentlistdict(seglistdict, time_slides)
 
 		# adjust surviving segment lengths up to the next integer
 		# number of PSDs
