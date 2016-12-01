@@ -64,15 +64,14 @@ vcs_info_sources = LALVCSInfoHeader.h
 build_info_source = LALBuildInfo.c
 $(build_info_source): $(liblal_la_DEPENDENCIES)
 
+LDADD = liblal.la
+
 bin_PROGRAMS = \
 	lal-simd-detect \
 	lal-version \
 	$(END_OF_LIST)
 
-lal_version_SOURCES = lal-version.c
-lal_version_LDADD = liblal.la
-
 lal_simd_detect_SOURCES = lal-simd-detect.c
-lal_simd_detect_LDADD = liblal.la
+lal_version_SOURCES = lal-version.c
 
 TESTS = $(bin_PROGRAMS)
