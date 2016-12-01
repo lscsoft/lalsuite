@@ -28,6 +28,7 @@
 /*Modified June 2010 by Andrew Mergl for use with Python*/
 
 #include <Python.h>
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 #include <math.h>
 #include <stdlib.h>
@@ -81,7 +82,7 @@ static PyObject *cs_gamma_finddRdz(PyObject *self, PyObject *args)
   npy_intp dims[1] = {Namp};
   Numpy_dRdz = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
   }
-  dRdz = PyArray_DATA(Numpy_dRdz);
+  dRdz = PyArray_DATA((PyArrayObject *) Numpy_dRdz);
 
   cosmofns = XLALCSCosmoFunctions( zofA, Namp);
 
@@ -150,7 +151,7 @@ static PyObject *cs_gamma_findzofA(PyObject *self, PyObject *args)
   npy_intp dims[1] = {Namp};
   Numpy_zofA = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
   }
-  zofA = PyArray_DATA(Numpy_zofA);
+  zofA = PyArray_DATA((PyArrayObject *) Numpy_zofA);
 
   cosmofns = XLALCSCosmoFunctionsAlloc( z_min, dlnz, numz );
 
