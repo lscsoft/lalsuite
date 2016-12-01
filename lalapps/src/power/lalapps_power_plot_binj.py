@@ -32,16 +32,14 @@ import sqlite3
 import sys
 
 
-from lal.utils import CacheEntry
-
-
 from glue import segments
 from glue.ligolw import dbtables
 from glue.ligolw import utils
+from lal.utils import CacheEntry
 from lalburst import git_version
-from pylal import rate
 from lalburst import SimBurstUtils
 from lalburst import SnglBurstUtils
+from pylal import rate
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"

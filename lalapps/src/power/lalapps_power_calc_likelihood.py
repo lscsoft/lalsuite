@@ -29,9 +29,9 @@ from optparse import OptionParser
 import sys
 import sqlite3
 
-from lal.utils import CacheEntry
 
 from glue.ligolw import dbtables
+from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import ligolw_burca_tailor
 from lalburst import ligolw_burca2
@@ -78,7 +78,7 @@ def parse_command_line():
 	if options.likelihood_data and (options.likelihood_data_cache is not None):
 		raise ValueError("cannot set both --likelihood-data and --likelihood-data-cache")
 	if options.likelihood_data_cache:
-		options.likelihood_data_cache = set([CacheEntry(line, coltype = dbtables.lsctables.LIGOTimeGPS) for line in file(options.likelihood_data_cache)])
+		options.likelihood_data_cache = set([CacheEntry(line) for line in file(options.likelihood_data_cache)])
 	else:
 		options.likelihood_data_cache = set()
 	if options.program is None:

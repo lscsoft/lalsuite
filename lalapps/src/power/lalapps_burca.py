@@ -30,9 +30,6 @@ from optparse import OptionParser
 import sys
 
 
-from lal.utils import CacheEntry
-
-
 from glue import segmentsUtils
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables

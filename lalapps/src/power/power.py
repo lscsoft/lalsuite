@@ -39,8 +39,8 @@ import time
 from glue import segments
 from glue import segmentsUtils
 from glue import pipeline
-from glue.lal import CacheEntry
 import lal
+from lal.utils import CacheEntry
 import lalburst
 from lalburst import cafe
 

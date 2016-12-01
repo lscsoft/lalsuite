@@ -36,16 +36,14 @@ import sys
 import time
 
 
-import lal
-from lal.utils import CacheEntry
-
-
 from glue import segments
 from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw.utils import ligolw_add
 from pylal import rate
+import lal
+from lal.utils import CacheEntry
 from lalburst import date
 from lalburst import git_version
 

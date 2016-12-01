@@ -41,10 +41,10 @@ import tempfile
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
-from glue.lal import CacheEntry
+from lal import LIGOTimeGPS
+from lal.utils import CacheEntry
 from lalburst import cafe
 from lalburst import timeslides as ligolw_tisi
-from lal import LIGOTimeGPS
 from lalapps import power
 
 

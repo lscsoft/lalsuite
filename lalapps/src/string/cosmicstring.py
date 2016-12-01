@@ -20,7 +20,8 @@ import sys
 from glue import iterutils
 from glue import pipeline
 from glue import segments
-from glue.lal import CacheEntry, LIGOTimeGPS
+from lal import LIGOTimeGPS
+from lal.utils import CacheEntry
 from lalburst import cafe
 from lalapps import power
 

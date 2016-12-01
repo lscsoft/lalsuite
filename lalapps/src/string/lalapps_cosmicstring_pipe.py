@@ -27,13 +27,13 @@ from glue import iterutils
 from glue import pipeline
 from glue import segments
 from glue import segmentsUtils
-from glue.lal import CacheEntry
 from glue.ligolw import lsctables
 from glue.ligolw import utils
 from glue.ligolw.utils import segments as ligolwsegments
 from glue import offsetvector
-from lalburst import timeslides as ligolw_tisi
 from lal import LIGOTimeGPS
+from lal.utils import CacheEntry
+from lalburst import timeslides as ligolw_tisi
 from lalapps import cosmicstring
 from lalapps import power
 

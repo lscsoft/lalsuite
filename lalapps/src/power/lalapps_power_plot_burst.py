@@ -31,17 +31,15 @@ import numpy
 import sys
 
 
-from lal.utils import CacheEntry
-
-
 from glue import segments
 from glue.ligolw import ligolw
 from glue.ligolw import lsctables
 from glue.ligolw import utils as ligolw_utils
 from glue.ligolw.utils import search_summary as ligolw_search_summary
+from lal.utils import CacheEntry
 from lalburst import git_version
-from pylal import rate
 from lalburst import SnglBurstUtils
+from pylal import rate
 
 
 lsctables.use_in(ligolw.LIGOLWContentHandler)

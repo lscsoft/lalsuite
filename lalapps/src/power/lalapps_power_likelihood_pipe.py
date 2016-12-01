@@ -36,12 +36,12 @@ from optparse import OptionParser
 import sys
 import tempfile
 
-import lal
 
 from glue import iterutils
 from glue import pipeline
 from glue import segmentsUtils
-from glue.lal import CacheEntry
+import lal
+from lal.utils import CacheEntry
 from lalapps import power
 
 

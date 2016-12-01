@@ -36,10 +36,10 @@ imporr lal
 
 
 from glue import iterutils
-from glue.lal import CacheEntry
+from pylal import rate
+from lal.utils import CacheEntry
 from lalburst import git_version
 from lalburst import ligolw_burca2
-from pylal import rate
 from lalburst import SnglBurstUtils
 from lalburst import stringutils
 
