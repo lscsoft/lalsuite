@@ -39,7 +39,7 @@ python/lalsimulation/__init__.py
 python/lalsimulation/_lalsimulation*
 python/lalsimulation/git_version.py
 python/lalsimulation/lalsimulation.py
-src/LALSimulationBuildInfoHeader.h
+src/LALSimulationBuildInfo.c
 src/LALSimulationConfig.h
 src/LALSimulationVCSInfo.c
 src/LALSimulationVCSInfo.h

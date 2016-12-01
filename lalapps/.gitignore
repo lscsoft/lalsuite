@@ -149,7 +149,7 @@ src/inspiral/posterior/lalinference_pipe
 src/inspiral/posterior/lalinference_pipe_roq
 src/inspiral/posterior/lalinference_pp_pipe
 src/inspiral/posterior/lalinference_review_test
-src/lalapps/LALAppsBuildInfoHeader.h
+src/lalapps/LALAppsBuildInfo.c
 src/lalapps/LALAppsVCSInfo.c
 src/lalapps/LALAppsVCSInfo.h
 src/lalapps/LALAppsVCSInfoHeader.h

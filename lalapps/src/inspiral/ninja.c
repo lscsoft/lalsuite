@@ -322,8 +322,8 @@ int main(INT4 argc, CHAR *argv[])
   proctable.processTable = (ProcessTable *)LALCalloc(1, sizeof(ProcessTable));
   XLALGPSTimeNow(&(proctable.processTable->start_time));
 
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
-      lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
+  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentId,
+      lalAppsVCSIdentStatus, lalAppsVCSIdentDate, 0);
   snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " ");
 
   memset(&xmlfp, 0, sizeof(LIGOLwXMLStream));

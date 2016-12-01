@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2014, 2016 Karl Wette
- * Copyright (C) 2009-2013 Adam Mercer
+ * LALVCSInfoType.h - LAL VCS Information Type
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,6 +15,8 @@
  * along with with program; see the file COPYING. If not, write to the
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
+ *
+ * Copyright (C) 2009-2013 Adam Mercer
  */
 
 #ifndef _LALVCSINFOTYPE_H
@@ -28,13 +29,13 @@ extern "C" {
 /**
  * \defgroup LALVCSInfoType_h Header LALVCSInfoType.h
  * \ingroup lal_std
- * \author Adam Mercer, Karl Wette
- * \brief Contains routines for dealing with VCS and build information
+ * \author Adam Mercer
+ * \brief Contains routines for dealing with VCS information
  */
 /*@{*/
 
 /**
- * VCS and build information structure
+ * VCS information structure
  */
 typedef struct tagLALVCSInfo
 {
@@ -46,17 +47,8 @@ typedef struct tagLALVCSInfo
   const char *const vcsTag;		/**< Tag of last commit */
   const char *const vcsAuthor;		/**< Author of last commit */
   const char *const vcsCommitter;	/**< Committer of last commit */
-  const char *const vcsClean;		/**< (UN)CLEAN */
   const char *const vcsStatus;		/**< (UN)CLEAN: Status message */
-  const char *const configureArgs;	/**< <tt>configure</tt> arguments */
-  const char *const configureDate;	/**< <tt>configure</tt> date */
-  const char *const buildDate;		/**< Build date */
 } LALVCSInfo;
-
-/**
- * <tt>NULL</tt>-terminated list of VCS and build information structures
- */
-typedef const LALVCSInfo *const LALVCSInfoList[16];
 
 /**
  * Compare two VCS information structures \p vcs1 and \p vcs2
@@ -71,3 +63,7 @@ int XLALVCSInfoCompare(const LALVCSInfo *vcs1, const LALVCSInfo *vcs2);
 #endif
 
 #endif /* _LALVCSINFOTYPE_H */
+
+/*
+ * vim: tw=0 ts=2 et
+ */

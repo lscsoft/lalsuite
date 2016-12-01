@@ -217,7 +217,7 @@ liblalinspiral_la_SOURCES = \
 	SnglInspiralUtils.c \
 	SnglRingdownUtils.c \
 	TrigScanEThincaCommon.c
-nodist_liblalinspiral_la_SOURCES = LALInspiralBuildInfoHeader.h
+nodist_liblalinspiral_la_SOURCES = LALInspiralBuildInfo.c
 
 if CUDA
 INSPCXXSRC =
@@ -241,10 +241,9 @@ CLEANFILES = \
 
 DISTCLEANFILES = config.h
 
-vcs_build_info_source = LALInspiralVCSInfo.c
 vcs_info_sources = LALInspiralVCSInfoHeader.h
-build_info_source = LALInspiralBuildInfoHeader.h
-build_info_dependencies = $(liblalinspiral_la_DEPENDENCIES)
+build_info_source = LALInspiralBuildInfo.c
+$(build_info_source): $(liblalinspiral_la_DEPENDENCIES)
 
 EXTRA_DIST = \
 	Chisq_GPU.cu \

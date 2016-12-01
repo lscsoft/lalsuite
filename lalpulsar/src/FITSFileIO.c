@@ -446,7 +446,7 @@ XLAL_FAIL:
 #endif // !defined(HAVE_LIBCFITSIO)
 }
 
-int XLALFITSFileWriteVCSInfo( FITSFile UNUSED *file, const LALVCSInfoList UNUSED vcs_list )
+int XLALFITSFileWriteVCSInfo( FITSFile UNUSED *file, const LALVCSInfo UNUSED *const vcs_list[] )
 {
 #if !defined(HAVE_LIBCFITSIO)
   XLAL_ERROR( XLAL_EFAILED, "CFITSIO is not available" );

@@ -75,7 +75,7 @@ liblalframe_la_SOURCES = \
 	LALFrameVCSInfo.c \
 	FrameCalibration.c \
 	Aggregation.c
-nodist_liblalframe_la_SOURCES = LALFrameBuildInfoHeader.h
+nodist_liblalframe_la_SOURCES = LALFrameBuildInfo.c
 
 noinst_HEADERS = \
 	LALFrStreamReadTS_source.c \
@@ -95,7 +95,6 @@ EXTRA_DIST = \
 
 DISTCLEANFILES = config.h
 
-vcs_build_info_source = LALFrameVCSInfo.c
 vcs_info_sources = LALFrameVCSInfoHeader.h
-build_info_source = LALFrameBuildInfoHeader.h
-build_info_dependencies = $(liblalframe_la_DEPENDENCIES)
+build_info_source = LALFrameBuildInfo.c
+$(build_info_source): $(liblalframe_la_DEPENDENCIES)

@@ -119,7 +119,7 @@ liblalpulsar_la_SOURCES = \
 	UniversalDopplerMetric.c \
 	Velocity.c \
 	$(END_OF_LIST)
-nodist_liblalpulsar_la_SOURCES = LALPulsarBuildInfoHeader.h
+nodist_liblalpulsar_la_SOURCES = LALPulsarBuildInfo.c
 
 if LALXML
 pkginclude_HEADERS += LALXMLVOTableSerializersPulsar.h
@@ -156,10 +156,9 @@ liblalpulsar_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
 DISTCLEANFILES = config.h
 
-vcs_build_info_source = LALPulsarVCSInfo.c
 vcs_info_sources = LALPulsarVCSInfoHeader.h
-build_info_source = LALPulsarBuildInfoHeader.h
-build_info_dependencies = $(liblalpulsar_la_DEPENDENCIES)
+build_info_source = LALPulsarBuildInfo.c
+$(build_info_source): $(liblalpulsar_la_DEPENDENCIES)
 
 EXTRA_DIST = \
 	Eccentric_and_true_anomaly.png \
