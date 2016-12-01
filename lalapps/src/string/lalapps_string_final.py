@@ -31,6 +31,8 @@ String cusp search final output rendering tool.
 
 
 import bisect
+import heapq
+import itertools
 from optparse import OptionParser
 import math
 from matplotlib import patches
@@ -50,7 +52,6 @@ import traceback
 from lal.utils import CacheEntry
 
 
-from glue import iterutils
 from glue import segments
 from glue import segmentsUtils
 from glue.ligolw import dbtables
@@ -184,18 +185,22 @@ def compress_ratevsthresh_curve(x, y, yerr):
 class RateVsThreshold(object):
 	def __init__(self, open_box, record_background, record_candidates):
 		self.zero_lag = []
-		self.background = iterutils.Highest(max = record_background)
-		self.most_significant_background = iterutils.Highest(max = record_candidates)
-		self.candidates = iterutils.Highest(max = record_candidates)
+		self.background = []
+		self.n_background = 0
+		self.record_background = record_background
+		self.most_significant_background = []
+		self.candidates = []
+		self.record_candidates = record_candidates
 		self.zero_lag_time = 0.0
 		self.background_time = 0.0
 		self.open_box = open_box
 
 	def __iadd__(self, other):
 		self.zero_lag += other.zero_lag
-		self.background += other.background
-		self.most_significant_background += other.most_significant_background
-		self.candidates += other.candidates
+		self.n_background += other.n_background
+		self.background[:] = heapq.nlargest(itertools.chain(self.background, other.background), self.record_background)
+		self.most_significant_background[:] = heapq.nlargest(itertools.chain(self.most_significant_background, other.most_significant_background), self.record_candidates)
+		self.candidates[:] = heapq.nlargest(itertools.chain(self.candidates, other.candidates), self.record_candidates)
 		self.zero_lag_time += other.zero_lag_time
 		self.background_time += other.background_time
 		return self
@@ -226,9 +231,6 @@ class RateVsThreshold(object):
 		# count events
 		#
 
-		background = []
-		most_significant_background = []
-		candidates = []
 		for likelihood_ratio, instruments, coinc_event_id, peak_time, is_background in contents.connection.cursor().execute("""
 SELECT
 	coinc_event.likelihood,
@@ -259,36 +261,40 @@ FROM
 WHERE
 	coinc_event.coinc_def_id == ?
 		""", (contents.bb_definer_id,)):
+			# likelihood ratio must be listed first to
+			# act as the sort key
+			record = (likelihood_ratio, contents.filename, coinc_event_id, dbtables.lsctables.instrument_set_from_ifos(instruments), peak_time)
 			if likelihood_ratio is None:
 				# coinc got vetoed (unable to compute
 				# likelihood)
 				pass
 			elif is_background:
 				# non-vetoed background
-				background.append(likelihood_ratio)
-				# likelihood ratio must be listed first to
-				# act as the sort key
-				most_significant_background.append((likelihood_ratio, contents.filename, coinc_event_id, dbtables.lsctables.instrument_set_from_ifos(instruments), peak_time))
-				if len(most_significant_background) > 10 * self.most_significant_background.max:
-					self.most_significant_background.extend(most_significant_background)
-					del most_significant_background[:]
+				self.n_background += 1
+				if len(self.background) < self.record_background:
+					heapq.heappush(self.background, likelihood_ratio)
+				else:
+					heapq.heappushpop(self.background, likelihood_ratio)
+				if len(self.most_significant_background) < self.record_candidates:
+					heapq.heappush(self.most_significant_background, record)
+				else:
+					heapq.heappushpop(self.most_significant_background, record)
 			else:
 				# non-vetoed zero lag
 				self.zero_lag.append(likelihood_ratio)
-				# likelihood ratio must be listed first to
-				# act as the sort key
-				candidates.append((likelihood_ratio, contents.filename, coinc_event_id, dbtables.lsctables.instrument_set_from_ifos(instruments), peak_time))
-		# this is much faster than appending each element into the
-		# Highest object one-by-one
-		self.background.extend(background)
-		self.most_significant_background.extend(most_significant_background)
-		self.candidates.extend(candidates)
+				if len(self.candidates) < self.record_candidates:
+					heapq.heappush(self.candidates, record)
+				else:
+					heapq.heappushpop(self.candidates, record)
 
 	def finish(self):
 		#
 		# dump info about highest-ranked zero-lag and background
 		# events
 		#
+
+		self.most_significant_background.sort()
+		self.candidates.sort()
 
 		f = file("string_most_significant_background.txt", "w")
 		print >>f, "Highest-Ranked Background Events"
@@ -315,25 +321,13 @@ WHERE
 			print >>f, "List suppressed:  box is closed"
 
 		#
-		# sort the ranking statistics and convert to arrays.  note
-		# the slice is required not only to reverse the contents of
-		# self.background (which are stored in decreasing order)
-		# but also to avoid confusing numpy.array() with the fake
-		# length returned by self.background.
-		#
-		# FIXME:  the following segfaults and should probably be
-		# reported to numpy maintainers
-		#
-		# x = Highest(max = 5)
-		# x.extend(range(100))
-		# numpy.array(x)
-		#
-		# Note that tuple(x) does not segfault.
+		# sort the ranking statistics and convert to arrays.
 		#
 
+		self.background.sort()
 		self.zero_lag.sort()
 		self.zero_lag = numpy.array(self.zero_lag, dtype = "double")
-		background_x = numpy.array(self.background[::-1], dtype = "double")
+		background_x = numpy.array(self.background, dtype = "double")
 
 		#
 		# convert counts to rates and their uncertainties
@@ -536,8 +530,9 @@ class Efficiency(object):
 		self.seglists = segments.segmentlistdict()
 		self.vetoseglists = segments.segmentlistdict()
 		self.found = []
-		self.loudest_missed = iterutils.Highest(max = 100)	# keep 100 loudest missed injections
-		self.quietest_found = iterutils.Highest(max = 100)	# keep 100 quietest found injections
+		self.n_diagnostics = 100	# keep 100 loudest missed and quietest found injections
+		self.loudest_missed = []
+		self.quietest_found = []
 		self.all = []
 		self.open_box = open_box
 
@@ -547,8 +542,8 @@ class Efficiency(object):
 		self.seglists |= other.seglists
 		self.vetoseglists |= other.vetoseglists
 		self.found += other.found
-		self.loudest_missed += other.loudest_missed
-		self.quietest_found += other.quietest_found
+		self.loudest_missed[:] = heapq.nlargest(itertools.chain(self.loudest_missed, other.loudest_missed), self.n_diagnostics)
+		self.quietest_found[:] = heapq.nlargest(itertools.chain(self.quietest_found, other.quietest_found), self.n_diagnostics)
 		self.all += other.all
 		return self
 
@@ -571,8 +566,6 @@ class Efficiency(object):
 		# injection
 		offsetvectors = contents.time_slide_table.as_dict()
 		stringutils.create_recovered_likelihood_table(contents.connection, contents.bb_definer_id)
-		loudest_missed = []
-		quietest_found = []
 		for values in contents.connection.cursor().execute("""
 SELECT
 	sim_burst.*,
@@ -595,18 +588,22 @@ FROM
 					self.found.append(sim)
 					# 1/amplitude needs to be first so
 					# that it acts as the sort key
-					quietest_found.append((1.0 / sim.amplitude, sim, offsetvectors[sim.time_slide_id], contents.filename, likelihood_ratio))
+					record = (1.0 / sim.amplitude, sim, offsetvectors[sim.time_slide_id], contents.filename, likelihood_ratio)
+					if len(self.quietest_found) < self.n_diagnostics):
+						heapq.heappush(self.quietest_found, record)
+					else:
+						heapq.heappushpop(self.quietest_found, record)
 				else:
 					# amplitude needs to be first so
 					# that it acts as the sort key
-					loudest_missed.append((sim.amplitude, sim, offsetvectors[sim.time_slide_id], contents.filename, likelihood_ratio))
+					record = (sim.amplitude, sim, offsetvectors[sim.time_slide_id], contents.filename, likelihood_ratio)
+					if len(self.loudest_missed) < self.n_diagnostics:
+						heapq.heappush(self.loudest_missed, record)
+					else:
+						heapq.heappushpop(self.loudest_missed, record)
 			elif found:
 				# no, but it was found anyway
 				print >>sys.stderr, "%s: odd, injection %s was found but not injected ..." % (contents.filename, sim.simulation_id)
-		# this is much faster than appending each element into the
-		# Highest object one-by-one
-		self.loudest_missed.extend(loudest_missed)
-		self.quietest_found.extend(quietest_found)
 
 	def finish(self):
 		fig, axes = SnglBurstUtils.make_burst_plot(r"Injection Amplitude (\(\mathrm{s}^{-\frac{1}{3}}\))", "Detection Efficiency", width = 108.0)
@@ -659,6 +656,9 @@ FROM
 		# dump some information about the highest-amplitude missed
 		# and quietest-amplitude found injections
 		#
+
+		self.loudest_missed.sort(reverse = True)
+		self.quietest_found.sort(reverse = True)
 
 		f = file("string_loud_missed_injections.txt", "w")
 		print >>f, "Highest Amplitude Missed Injections"
@@ -963,12 +963,7 @@ if options.detection_threshold is None:
 			# FIXME:  remove when we can rely on python >= 2.5
 			print >>sys.stderr, "Zero-lag events: %d" % rate_vs_threshold.zero_lag.n
 	print >>sys.stderr, "Total time in zero-lag segments: %s s" % str(rate_vs_threshold.zero_lag_time)
-	try:
-		print >>sys.stderr, "Time-slide events: %d" % len(rate_vs_threshold.background)
-	except OverflowError:
-		# python < 2.5 can't handle list-like things with more than 2**31 elements
-		# FIXME:  remove when we can rely on python >= 2.5
-		print >>sys.stderr, "Time-slide events: %d" % rate_vs_threshold.background.n
+	print >>sys.stderr, "Time-slide events: %d" % rate_vs_threshold.n_background
 	print >>sys.stderr, "Total time in time-slide segments: %s s" % str(rate_vs_threshold.background_time)
 	if options.open_box:
 		detection_threshold = rate_vs_threshold.zero_lag[-1]

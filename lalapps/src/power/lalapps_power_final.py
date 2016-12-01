@@ -70,6 +70,7 @@ except ImportError:
 	PosInf = float("+inf")
 	NegInf = float("-inf")
 import glob
+import heapq
 import math
 from matplotlib import patches
 import numpy
@@ -244,9 +245,9 @@ def dump_confidence_likelihood_scatter_data(globs, live_time_program = "lalapps_
 	# Initialize storage.
 	#
 
-	injections = iterutils.Highest(max = 1e6)
-	background = iterutils.Highest(max = 1e6)
-	zero_lag = iterutils.Highest(max = 1e6)
+	injections = []
+	background = []
+	zero_lag = []
 
 	#
 	# Iterate over files.
@@ -274,18 +275,20 @@ def dump_confidence_likelihood_scatter_data(globs, live_time_program = "lalapps_
 
 		if database.sim_burst_table is None:
 			# non-injections
-			background_buffer = []
-			zero_lag_buffer = []
 			for id, l, c, is_background in bb_id_likelihood_confidence_background(database):
+				record = (coinc_detection_statistic(l, c), l, c)
 				if is_background:
-					background_buffer.append((coinc_detection_statistic(l, c), l, c))
+					if len(background) < 1e6:
+						heapq.heappush(background, record)
+					else:
+						heapq.heappushpop(background, record)
 				else:
-					zero_lag_buffer.append((coinc_detection_statistic(l, c), l, c))
-			background.extend(background_buffer)
-			zero_lag.extend(zero_lag_buffer)
+					if len(zero_lag) < 1e6:
+						heapq.heappush(zero_lag, record)
+					else:
+						heapq.heappushpop(zero_ag, record)
 		else:
 			# injections
-			injections_buffer = []
 			create_sim_coinc_map_view(database.connection)
 			for a, l, c in database.connection.cursor().execute("""
 SELECT
@@ -297,8 +300,11 @@ FROM
 WHERE
 	sim_coinc_def_id == ?
 			""", (database.sce_definer_id,)):
-				injections_buffer.append((-a, l, c))
-			injections.extend(injections_buffer)
+				record = (-a, l, c)
+				if len(injections) < 1e6:
+					heapq.heappush(injections, record)
+				else:
+					heapq.heappushpop(injections, record)
 
 		#
 		# Done with this file.
@@ -432,7 +438,8 @@ def plot_confidence_likelihood_scatter_data(slope, verbose = False):
 
 class RateVsThresholdData(object):
 	def __init__(self):
-		self.background_amplitudes = iterutils.Highest(max = 1e7)
+		self.n_background_amplitudes = 0
+		self.background_amplitudes = []
 		self.zero_lag_amplitudes = []
 		self.zero_lag_live_time = 0.0
 		self.background_live_time = 0.0
@@ -451,27 +458,31 @@ class RateVsThresholdData(object):
 
 		#
 		# Iterate over burst<-->burst coincidences.  Assume there
-		# are no injections in this file.  Accumulate confidences
-		# in a separate buffer to avoid slow calls to the Highest
-		# class' append() method.
+		# are no injections in this file.
 		#
 
 		if verbose:
 			print >>sys.stderr, "retrieving sngl_burst<-->sngl_burst coincs ..."
-		buffer = []
 		for id, likelihood, confidence, is_background in bb_id_likelihood_confidence_background(contents):
+			record = coinc_detection_statistic(likelihood, confidence)
 			if is_background:
-				buffer.append(coinc_detection_statistic(likelihood, confidence))
+				# remember the total number, but only keep
+				# the highest ranked
+				self.n_background_amplitudes += 1
+				if len(self.background_amplitudes) < 1e7:
+					heapq.heappush(self.background_amplitudes, record)
+				else:
+					heapq.heappushpop(self.background_amplitudes, record)
 			else:
-				self.zero_lag_amplitudes.append((coinc_detection_statistic(likelihood, confidence), filename, id))
+				self.zero_lag_amplitudes.append((record, filename, id))
 		if verbose:
-			print >>sys.stderr, "sorting background coincs ..."
-		self.background_amplitudes.extend(buffer)
+			print >>sys.stderr, "done"
 
 
 	def finish(self, zero_lag_survivors, open_box = False, verbose = False):
-		# sort the zero lag amplitudes from highest to lowest.
+		# sort the amplitudes from highest to lowest.
 
+		self.background_amplitudes.sort(reverse = True)
 		if not open_box:
 			# just forget them for safety
 			self.zero_lag_amplitudes = []
@@ -481,16 +492,11 @@ class RateVsThresholdData(object):
 		# compute the mean event rate vs. amplitude threshold as
 		# observed in the time slides.  xcoords are the background
 		# event amplitudes, ycoords are the are the corresponding
-		# rates.  have to not trick array() with the Highest class'
-		# fake element count.  this is \mu_{0}(x) in the Brady et
-		# al. paper, but the actual value at threshold is extracted
-		# from a smoothed approximation below.  note that because
-		# the Highest class's contents are sorted in decreasing
-		# order, the x co-ordinates come out in decreasing order,
-		# but it's more convenient for them to be in increasing
-		# order so we have to reverse the two arrays.
+		# rates.  this is \mu_{0}(x) in the Brady et al. paper, but
+		# the actual value at threshold is extracted from a
+		# smoothed approximation below.
 
-		self.background_rate_x = numpy.fromiter(self.background_amplitudes, dtype = "double", count = list.__len__(self.background_amplitudes))
+		self.background_rate_x = numpy.array(self.background_amplitudes, dtype = "double")
 		self.background_rate_y = numpy.arange(1, len(self.background_rate_x) + 1, dtype = "double") / self.background_live_time
 		self.background_rate_x = self.background_rate_x[::-1]
 		self.background_rate_y = self.background_rate_y[::-1]
@@ -519,7 +525,7 @@ class RateVsThresholdData(object):
 			self.amplitude_threshold = self.background_rate_x[-1 - bisect.bisect(self.background_rate_y[::-1], 1.0 / self.zero_lag_live_time)]
 
 		# compute cubic spline approximation of background event
-		# rate curve in the vacinity of the amplitude threshold.
+		# rate curve in the vicinity of the amplitude threshold.
 		# this is used to obtain a smoothed approximation of the
 		# background event rate and its first derivative, which are
 		# \mu_{0}(x) and \mu_{0}'(x) in the Brady et al. paper.
@@ -643,8 +649,8 @@ def print_rate_vs_threshold_data(rate_vs_threshold_data, confidence_contour_slop
 	print >>sys.stderr, "threshold definition:  ln likelihood > %.16g ln confidence + %.16g" % (confidence_contour_slope, rate_vs_threshold_data.amplitude_threshold)
 	print >>sys.stderr, "total live time in background = %.16g s" % rate_vs_threshold_data.background_live_time
 	print >>sys.stderr, "total live time at zero lag = %.16g s" % rate_vs_threshold_data.zero_lag_live_time
-	print >>sys.stderr, "number of coincs in background = %d" % len(rate_vs_threshold_data.background_amplitudes)
-	print >>sys.stderr, "average number of background coincs per zero lag live time = %.16g" % (len(rate_vs_threshold_data.background_amplitudes) / rate_vs_threshold_data.background_live_time * rate_vs_threshold_data.zero_lag_live_time)
+	print >>sys.stderr, "number of coincs in background = %d" % rate_vs_threshold_data.n_background_amplitudes
+	print >>sys.stderr, "average number of background coincs per zero lag live time = %.16g" % (rate_vs_threshold_data.n_background_amplitudes / rate_vs_threshold_data.background_live_time * rate_vs_threshold_data.zero_lag_live_time)
 	print >>sys.stderr, "number of coincs at zero lag = %d" % len(rate_vs_threshold_data.zero_lag_amplitudes)
 	print >>sys.stderr, "at threshold, \\mu_{0} = %.16g Hz +/- %.16g Hz" % (rate_vs_threshold_data.mu_0, rate_vs_threshold_data.dmu_0)
 	print >>sys.stderr, "at threshold, \\mu_{0}' = %.16g Hz / unit of amplitude" % rate_vs_threshold_data.mu_0primed

@@ -26,6 +26,7 @@
 #
 
 
+import heapq
 import math
 from optparse import OptionParser
 import sqlite3
@@ -35,7 +36,6 @@ import sys
 imporr lal
 
 
-from glue import iterutils
 from pylal import rate
 from lal.utils import CacheEntry
 from lalburst import git_version
@@ -117,14 +117,11 @@ def find_nth_percentile(yx_pairs, xbins, percentile = 50.0):
 class LikelihoodVsSNR(object):
 	class Data(object):
 		def __init__(self):
-			self.zero_lag = iterutils.Highest(max = 1000000)
-			self.zero_lag_buffer = []
-			self.background = iterutils.Highest(max = 1000000)
-			self.background_buffer = []
+			self.keep = 1000000
+			self.zero_lag = []
+			self.background = []
 			self.injection = []
-			self.injection_buffer = []
 			self.injection_ratio = []
-			self.injection_ratio_buffer = []
 			self.lowest_surviving_snr = float("+inf")
 
 	def __init__(self, detection_threshold, likelihood_ratio):
@@ -171,15 +168,17 @@ WHERE
 				except KeyError:
 					data = self.data[instrument] = self.Data()
 
+				record = (likelihood, snr)
 				if is_background:
-					data.background_buffer.append((likelihood, snr))
+					if len(data.background) < data.keep:
+						heapq.heappush(data.background, record)
+					else:
+						heapq.heappushpop(data.background, record)
 				else:
-					data.zero_lag_buffer.append((likelihood, snr))
-		for data in self.data.values():
-			data.background.extend(data.background_buffer)
-			del data.background_buffer[:]
-			data.zero_lag.extend(data.zero_lag_buffer)
-			del data.zero_lag_buffer[:]
+					if len(data.zero_lag) < data.keep:
+						heapq.heappush(data.zero_lag, record)
+					else:
+						heapq.heappushpop(data.zero_lag, record)
 
 	def add_injections(self, contents):
 		offset_vectors = contents.time_slide_table.as_dict()
@@ -247,7 +246,7 @@ WHERE
 						data = self.data[event.ifo]
 					except KeyError:
 						data = self.data[event.ifo] = self.Data()
-					data.injection_buffer.append((likelihood, event.snr))
+					data.injection.append((likelihood, event.snr))
 			else:
 				# if nevents > 2, for each even compute the
 				# likelihood ratio that would've been
@@ -268,28 +267,23 @@ WHERE
 					if likelihood == 0:
 						if alt_likelihood == 0:
 							# noise with or without
-							data.injection_ratio_buffer.append((1, event.snr))
+							data.injection_ratio.append((1, event.snr))
 						else:
 							# noise with, not noise without
-							data.injection_ratio_buffer.append((0, event.snr))
+							data.injection_ratio.append((0, event.snr))
 					elif math.isinf(likelihood):
 						if math.isinf(alt_likelihood):
 							# injection with or without
-							data.injection_ratio_buffer.append((1, event.snr))
+							data.injection_ratio.append((1, event.snr))
 						else:
 							# injection with, not without
-							data.injection_ratio_buffer.append((float("inf"), event.snr))
+							data.injection_ratio.append((float("inf"), event.snr))
 					else:
 						assert alt_likelihood != 0
-						data.injection_ratio_buffer.append((likelihood / alt_likelihood, event.snr))
+						data.injection_ratio.append((likelihood / alt_likelihood, event.snr))
 					# also record the likelihood itself
-					data.injection_buffer.append((likelihood, event.snr))
+					data.injection.append((likelihood, event.snr))
 
-		for data in self.data.values():
-			data.injection.extend(data.injection_buffer)
-			del data.injection_buffer[:]
-			data.injection_ratio.extend(data.injection_ratio_buffer)
-			del data.injection_ratio_buffer[:]
 		cursor.close()
 
 	def finish(self):
