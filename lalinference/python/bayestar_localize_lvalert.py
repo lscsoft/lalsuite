@@ -176,6 +176,7 @@ try:
         if not opts.dry_run:
             gracedb.writeLog(graceid, "INFO:BAYESTAR:uploaded sky map",
                 filename=fitspath, tagname=("sky_loc", "lvem"))
+            log.debug('uploaded sky map')
         else:
             command.rename(fitspath, os.path.join('.', opts.output))
     finally:
