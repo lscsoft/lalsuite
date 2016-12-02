@@ -1274,6 +1274,21 @@ size_t XLALTiledLatticeTilingDimensions(
 
 }
 
+int XLALIsTiledLatticeTilingDimension(
+  const LatticeTiling *tiling,
+  const size_t dim
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
+  XLAL_CHECK( tiling->bounds[dim].func != NULL, XLAL_EINVAL, "Lattice tiling dimension #%zu is not bounded", dim );
+
+  return tiling->bounds[dim].is_tiled ? 1 : 0;
+
+}
+
 REAL8 XLALLatticeTilingStepSizes(
   const LatticeTiling *tiling,
   const size_t dim
