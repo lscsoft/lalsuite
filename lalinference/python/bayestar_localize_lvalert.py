@@ -164,8 +164,7 @@ try:
     log.info("sky localization complete")
 
     # upload FITS file
-    fitsdir = tempfile.mkdtemp()
-    try:
+    with command.TemporaryDirectory() as fitsdir:
         fitspath = os.path.join(fitsdir, opts.output)
         fits.write_sky_map(fitspath, sky_map, gps_time=float(epoch),
             creator=parser.prog, objid=str(graceid),
@@ -179,8 +178,6 @@ try:
         else:
             command.rename(fitspath, os.path.join('.', opts.output))
         log.debug('uploaded sky map')
-    finally:
-        shutil.rmtree(fitsdir)
 except:
     # Produce log message for any otherwise uncaught exception
     log.exception("sky localization failed")
