@@ -114,13 +114,15 @@ typedef enum tagDopplerCoordinateID {
   DOPPLERCOORD_F1DOT,		/**< First spindown [Units: Hz/s]. */
   DOPPLERCOORD_F2DOT,		/**< Second spindown [Units: Hz/s^2]. */
   DOPPLERCOORD_F3DOT,		/**< Third spindown [Units: Hz/s^3]. */
+  DOPPLERCOORD_F4DOT,		/**< Fourth spindown [Units: Hz/s^4]. */
 
-  DOPPLERCOORD_LASTFDOT = DOPPLERCOORD_F3DOT,
+  DOPPLERCOORD_LASTFDOT = DOPPLERCOORD_F4DOT,
 
   DOPPLERCOORD_GC_NU0,		/**< Global correlation frequency [Units: Hz]. Activates 'reduced' detector position. */
   DOPPLERCOORD_GC_NU1,		/**< Global correlation first spindown [Units: Hz/s]. Activates 'reduced' detector position. */
   DOPPLERCOORD_GC_NU2,		/**< Global correlation second spindown [Units: Hz/s^2]. Activates 'reduced' detector position. */
   DOPPLERCOORD_GC_NU3,		/**< Global correlation third spindown [Units: Hz/s^3]. Activates 'reduced' detector position. */
+  DOPPLERCOORD_GC_NU4,		/**< Global correlation fourth spindown [Units: Hz/s^4]. Activates 'reduced' detector position. */
 
   DOPPLERCOORD_ALPHA,		/**< Right ascension [Units: radians]. Uses 'reduced' detector position. */
   DOPPLERCOORD_DELTA,		/**< Declination [Units: radians]. Uses 'reduced' detector position. */

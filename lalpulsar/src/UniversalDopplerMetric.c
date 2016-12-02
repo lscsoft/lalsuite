@@ -104,11 +104,13 @@ static const struct {
   [DOPPLERCOORD_F1DOT]    = {"f1dot",   POW2(SCALE_T),    "First spindown [Units: Hz/s]."},
   [DOPPLERCOORD_F2DOT]    = {"f2dot",   POW3(SCALE_T),    "Second spindown [Units: Hz/s^2]."},
   [DOPPLERCOORD_F3DOT]    = {"f3dot",   POW4(SCALE_T),    "Third spindown [Units: Hz/s^3]."},
+  [DOPPLERCOORD_F4DOT]    = {"f4dot",   POW5(SCALE_T),    "Fourth spindown [Units: Hz/s^4]."},
 
   [DOPPLERCOORD_GC_NU0]   = {"gc_nu0",  SCALE_T,          "Global correlation frequency [Units: Hz]."},
   [DOPPLERCOORD_GC_NU1]   = {"gc_nu1",  POW2(SCALE_T),    "Global correlation first spindown [Units: Hz/s]."},
   [DOPPLERCOORD_GC_NU2]   = {"gc_nu2",  POW3(SCALE_T),    "Global correlation second spindown [Units: Hz/s^2]."},
   [DOPPLERCOORD_GC_NU3]   = {"gc_nu3",  POW4(SCALE_T),    "Global correlation third spindown [Units: Hz/s^3]."},
+  [DOPPLERCOORD_GC_NU4]   = {"gc_nu4",  POW5(SCALE_T),    "Global correlation fourth spindown [Units: Hz/s^4]."},
 
   [DOPPLERCOORD_ALPHA]    = {"alpha",   SCALE_R/LAL_C_SI, "Right ascension [Units: radians]."},
   [DOPPLERCOORD_DELTA]    = {"delta",   SCALE_R/LAL_C_SI, "Declination [Units: radians]."},
@@ -635,6 +637,10 @@ CW_Phi_i ( double tt, void *params )
     case DOPPLERCOORD_F3DOT:		/**< Third spindown [Units: Hz/s^3]. */
     case DOPPLERCOORD_GC_NU3:		/**< Global correlation third spindown [Units: Hz/s^3]. Activates 'reduced' detector position. */
       ret = LAL_TWOPI * POW4(tau) * LAL_FACT_INV[4];
+      break;
+    case DOPPLERCOORD_F4DOT:		/**< Fourth spindown [Units: Hz/s^4]. */
+    case DOPPLERCOORD_GC_NU4:		/**< Global correlation fourth spindown [Units: Hz/s^4]. Activates 'reduced' detector position. */
+      ret = LAL_TWOPI * POW5(tau) * LAL_FACT_INV[5];
       break;
 
     case DOPPLERCOORD_ALPHA:		/**< Right ascension [Units: radians]. Uses 'reduced' detector position. */
@@ -2582,6 +2588,7 @@ findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
       if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_GC_NU1 ) order = 2;
       if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_GC_NU2 ) order = 3;
       if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_GC_NU3 ) order = 4;
+      if ( coordSys->coordIDs[i] ==  DOPPLERCOORD_GC_NU4 ) order = 5;
       maxorder = MYMAX ( maxorder, order );
     }
 
