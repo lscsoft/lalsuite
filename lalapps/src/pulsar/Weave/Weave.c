@@ -165,7 +165,7 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     f4dot, REAL8Range, '4', DEVELOPER,
     "Search parameter space in fourth spindown, in Hertz/second^4. "
-    "(Unlikely ever to be useful - unless a nearby supernova just went off!) "
+    "(Just in case a nearby supernova goes off!) "
     );
   XLALRegisterUvarMember(
     param_rand_offset, REAL8, 'b', DEVELOPER,
@@ -344,6 +344,9 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     uvar->freq_partitions > 0,
                     UVAR_STR( freq_partitions ) " must be strictly positive" );
+  XLALUserVarCheck( &should_exit,
+                    !UVAR_SET( f1dot ) || UVAR_SET( freq ),
+                    UVAR_STR( freq ) " must be specified if " UVAR_STR( f1dot ) " is specified" );
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( f2dot ) || UVAR_SET( f1dot ),
                     UVAR_STR( f1dot ) " must be specified if " UVAR_STR( f2dot ) " is specified" );

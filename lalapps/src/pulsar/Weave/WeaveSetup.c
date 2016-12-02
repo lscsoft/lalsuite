@@ -39,12 +39,12 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    CHAR *segment_list, *ephem_earth, *ephem_sun, *detector_motion, *output_file;
-    INT4 segment_count, spindowns;
+    CHAR *segment_list, *detector_motion, *ephem_earth, *ephem_sun, *output_file;
     LALStringVector *detectors;
     LIGOTimeGPS ref_time;
     LIGOTimeGPSRange first_segment;
     REAL8 segment_gap;
+    UINT4 segment_count, spindowns;
   } uvar_struct = {
     .detector_motion = XLALStringDuplicate( "spin+orbit" ),
     .ephem_earth = XLALStringDuplicate( "earth00-19-DE405.dat.gz" ),
@@ -69,8 +69,9 @@ int main( int argc, char *argv[] )
     "Generate segments; the range of the first segment is specified by this option. "
     );
   XLALRegisterUvarMember(
-    segment_count, INT4, 'n', OPTIONAL,
+    segment_count, UINT4, 'n', OPTIONAL,
     "Generate this many segments by translating the first segment in time by its span, i.e. so that segments are contiguous and non-overlapping. "
+    "Must be at least 1. "
     );
   XLALRegisterUvarMember(
     segment_gap, REAL8, 'g', DEVELOPER,
@@ -106,9 +107,10 @@ int main( int argc, char *argv[] )
     "Sun ephemeris file, used to compute the parameter-space metrics and by lalapps_Weave. "
     );
   XLALRegisterUvarMember(
-    spindowns, INT4, 's', OPTIONAL,
-    "Maximum number of spindowns for which the parameter-space metrics are computed; must be at least 1. "
-    "This option limits the size of the spindown parameter space give to lalapps_Weave. "
+    spindowns, UINT4, 's', OPTIONAL,
+    "Maximum number of spindowns for which the parameter-space metrics are computed. "
+    "Must be at least 1. "
+    "This option limits the size of the spindown parameter space given to lalapps_Weave. "
     );
   //
   // - Output
@@ -143,8 +145,8 @@ int main( int argc, char *argv[] )
   // - Parameter-space metric computation
   //
   XLALUserVarCheck( &should_exit,
-                    uvar->spindowns >= 0,
-                    UVAR_STR( spindowns ) " must be positive" );
+                    uvar->spindowns > 0,
+                    UVAR_STR( spindowns ) " must be strictly positive" );
 
   // Exit if required
   if ( should_exit ) {
@@ -190,7 +192,7 @@ int main( int argc, char *argv[] )
     const REAL8 dt = XLALGPSDiff( &seg.end, &seg.start ) + uvar->segment_gap;
 
     // Create segments
-    for ( INT4 n = 0; n < uvar->segment_count; ++n ) {
+    for ( UINT4 n = 0; n < uvar->segment_count; ++n ) {
       XLAL_CHECK_MAIN( XLALSegListAppend( setup.segments, &seg ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLALGPSAdd( &seg.start, dt );
       XLALGPSAdd( &seg.end, dt );
