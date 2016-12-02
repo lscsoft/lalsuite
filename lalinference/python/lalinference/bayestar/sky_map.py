@@ -309,6 +309,7 @@ def ligolw_sky_map(
         kde = False
 
     # Time and run sky localization.
+    log.debug('starting computationally-intensive section')
     start_time = time.time()
     if method == "toa_phoa_snr":
         prob = _sky_map.toa_phoa_snr(
@@ -332,6 +333,7 @@ def ligolw_sky_map(
     prob[2] *= max_horizon * fudge
     prob[3] /= np.square(max_horizon * fudge)
     end_time = time.time()
+    log.debug('finished computationally-intensive section')
 
     # Find elapsed run time.
     elapsed_time = end_time - start_time
