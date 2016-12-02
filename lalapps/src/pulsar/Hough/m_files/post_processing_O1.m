@@ -249,7 +249,6 @@ if ~isempty(g_Toplist)
         I_band =  find( f0_grup + k*f0_band - r_W_cl/Tcoh <= gx_Toplist(:,1) &  f0_grup + (k+1)*f0_band +  r_W_cl/Tcoh >= gx_Toplist(:,1));
         
         if ~isempty(I_band)
-            
             x = gx_Toplist(I_band,:);
             % Calculate the distace between candidates
             [m_D,m_D5,~,~]=Distance_candidates(x,x,df0,df1,Tcoh,PixelFactor);
@@ -285,7 +284,7 @@ if ~isempty(g_Toplist)
                     % COUNT the # of partial clusters we have analyses per group
                     I_N_Cluster=I_N_Cluster+1;
                     % We translate the I_v_ji neighbours list to the generated toplist index.
-                    I_partial_cluster{I_N_Cluster}=(I_band(I_v_ji))';
+                    I_partial_cluster{I_N_Cluster}=(I_rang_grup_band_x(I_band(I_v_ji)))';
                 end
             end
         end
@@ -407,7 +406,7 @@ else
     save (File_cn,'Cluster','param')
     
 end
-%exit
+exit
 end
 
 %% FOLLOW UP ASSIGMENT FUNCTION
