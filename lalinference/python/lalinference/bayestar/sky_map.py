@@ -350,8 +350,7 @@ def gracedb_sky_map(
         coinc_file, psd_file, waveform, f_low, min_distance=None,
         max_distance=None, prior_distance_power=None,
         method="toa_phoa_snr", nside=-1, chain_dump=None,
-        phase_convention='antifindchirp', f_high_truncate=1.0,
-        enable_snr_series=False):
+        f_high_truncate=1.0, enable_snr_series=False):
     # Read input file.
     log.debug('reading coinc file')
     xmldoc, _ = ligolw_utils.load_fileobj(
@@ -364,6 +363,19 @@ def gracedb_sky_map(
         lsctables.CoincMapTable.tableName)
     sngl_inspiral_table = ligolw_table.get_table(xmldoc,
         lsctables.SnglInspiralTable.tableName)
+
+    # Attempt to determine phase convention from process table.
+    try:
+        process_table = ligolw_table.get_table(xmldoc,
+            lsctables.ProcessTable.tableName)
+        process, = process_table
+        process_name = process.program.lower()
+    except ValueError:
+        process_name = ''
+    if 'pycbc' in process_name:
+        phase_convention = 'findchirp'
+    else:
+        phase_convention = 'antifindchirp'
 
     # Locate the sngl_inspiral rows that we need.
     coinc_inspiral = coinc_inspiral_table[0]

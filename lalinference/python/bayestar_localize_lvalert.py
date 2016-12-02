@@ -154,8 +154,7 @@ try:
     sky_map, epoch, elapsed_time, instruments = gracedb_sky_map(
         coinc_file, psd_file, opts.waveform, opts.f_low,
         opts.min_distance, opts.max_distance, opts.prior_distance_power,
-        phase_convention=opts.phase_convention, nside=opts.nside,
-        f_high_truncate=opts.f_high_truncate,
+        nside=opts.nside, f_high_truncate=opts.f_high_truncate,
         method=opts.method, chain_dump=chain_dump,
         enable_snr_series=opts.enable_snr_series)
     prob, distmu, distsigma, _ = sky_map
