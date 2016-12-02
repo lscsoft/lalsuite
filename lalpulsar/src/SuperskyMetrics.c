@@ -579,7 +579,7 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
 {
 
   // Check input
-  XLAL_CHECK_NULL( spindowns <= 3, XLAL_EINVAL );
+  XLAL_CHECK_NULL( spindowns <= 4, XLAL_EINVAL );
   XLAL_CHECK_NULL( ref_time != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( segments != NULL, XLAL_EFAULT );
   XLAL_CHECK_NULL( XLALSegListIsInitialized( segments ), XLAL_EINVAL );
@@ -615,6 +615,10 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   if ( spindowns >= 3 ) {
     ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_F3DOT;
     ocoords.coordIDs[ocoords.dim++] = DOPPLERCOORD_F3DOT;
+  }
+  if ( spindowns >= 4 ) {
+    ucoords.coordIDs[ucoords.dim++] = DOPPLERCOORD_F4DOT;
+    ocoords.coordIDs[ocoords.dim++] = DOPPLERCOORD_F4DOT;
   }
 
   // Allocate memory for output struct
