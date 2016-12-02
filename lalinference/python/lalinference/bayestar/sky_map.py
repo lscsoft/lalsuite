@@ -159,10 +159,14 @@ def ligolw_sky_map(
     if psds is None:
         psds = [timing.get_noise_psd_func(ifo) for ifo in ifos]
 
+    log.debug('calculating templates')
     H = filter.sngl_inspiral_psd(sngl_inspirals[0], waveform, f_min=f_low)
+
+    log.debug('calculating noise PSDs')
     HS = [filter.signal_psd_series(H, S) for S in psds]
 
     # Signal models for each detector.
+    log.debug('calculating Fisher matrix elements')
     signal_models = [timing.SignalModel(_) for _ in HS]
 
     # Get SNR=1 horizon distances for each detector.
