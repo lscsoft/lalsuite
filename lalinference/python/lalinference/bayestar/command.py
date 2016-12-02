@@ -30,7 +30,9 @@ import glob
 import inspect
 import itertools
 import os
+from select import select
 import shutil
+import stat
 import sys
 import tempfile
 import matplotlib
@@ -341,3 +343,35 @@ def register_to_xmldoc(xmldoc, parser, opts, **kwargs):
         xmldoc, parser.prog,
         {key: (value.name if hasattr(value, 'read') else value)
         for key, value in opts.__dict__.items()})
+
+
+def iterlines(file):
+    """Safely iterate over non-emtpy lines in a file. Works around buffering
+    issues with `for line in sys.stdin`. Also works around early closing of
+    fifos (named pipes)."""
+    fd = file.fileno()
+    # Determine if the file is a FIFO (named pipe).
+    is_fifo = stat.S_ISFIFO(os.fstat(fd).st_mode)
+
+    while True:
+        # Wait until some data is available for reading.
+        rlist, _, _ = select([fd], [], [])
+        assert len(rlist) == 1 and rlist[0] == fd
+
+        # Read a line.
+        line = file.readline()
+
+        if not line:
+            if is_fifo:
+                # If we reached EOF, and this is a FIFO, then just keep reading.
+                continue
+            else:
+                # If we reached EOF, and this is not a FIFO, then exit.
+                break
+
+        # Strip off the trailing newline and any whitespace.
+        line = line.strip()
+
+        # Emit the line if it is not empty.
+        if line:
+            yield line
