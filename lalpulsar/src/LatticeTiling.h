@@ -170,6 +170,14 @@ size_t XLALTiledLatticeTilingDimensions(
   );
 
 ///
+/// Return >0 if a lattice tiling dimension is tiled (i.e. not a single point), and 0 otherwise.
+///
+int XLALIsTiledLatticeTilingDimension(
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const size_t dim                      ///< [in] Dimension of which to return tiling status
+  );
+
+///
 /// Return the step size of the lattice tiling in a given dimension, or 0 for non-tiled dimensions.
 ///
 REAL8 XLALLatticeTilingStepSizes(
