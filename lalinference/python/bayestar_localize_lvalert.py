@@ -63,7 +63,7 @@ import ligo.lvalert.utils
 import sys
 import os
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 log = logging.getLogger('BAYESTAR')
 
 methods = '''
