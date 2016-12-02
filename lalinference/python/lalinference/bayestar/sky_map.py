@@ -353,6 +353,7 @@ def gracedb_sky_map(
         phase_convention='antifindchirp', f_high_truncate=1.0,
         enable_snr_series=False):
     # Read input file.
+    log.debug('reading coinc file')
     xmldoc, _ = ligolw_utils.load_fileobj(
         coinc_file, contenthandler=ligolw.LSCTablesAndSeriesContentHandler)
 
@@ -381,6 +382,7 @@ def gracedb_sky_map(
         snrs = None
 
     # Read PSDs.
+    log.debug('reading PSDs time series')
     xmldoc, _ = ligolw_utils.load_fileobj(
         psd_file, contenthandler=lal.series.PSDContentHandler)
     psds = lal.series.read_psd_xmldoc(xmldoc, root_name=None)
@@ -389,6 +391,7 @@ def gracedb_sky_map(
     psds = [psds[sngl_inspiral.ifo] for sngl_inspiral in sngl_inspirals]
 
     # Interpolate PSDs.
+    log.debug('constructing PSD interpolants')
     psds = [timing.InterpolatedPSD(filter.abscissa(psd), psd.data.data,
             f_high_truncate=f_high_truncate)
         for psd in psds]
