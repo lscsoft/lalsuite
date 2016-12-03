@@ -93,7 +93,6 @@ gracedb = ligo.gracedb.rest.GraceDb(
     ligo.gracedb.rest.DEFAULT_SERVICE_URL))
 
 for graceid in graceids:
-    graceid = graceid.strip()
 
     # Send log messages to GraceDb too
     if not opts.dry_run:
