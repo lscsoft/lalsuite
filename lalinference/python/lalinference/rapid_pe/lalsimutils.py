@@ -102,6 +102,13 @@ class ChooseWaveformParams:
         self.fmax=fmax
         self.taper = taper
 
+    _LAL_DICT_PARAMS = ("Lambda1", "Lambda2", "ampO", "phaseO")
+    def to_lal_dict(self):
+        extra_params = lal.CreateDict()
+        for p in _LAL_DICT_PARAMS:
+            lal.DictAddREAL8Value(extra_params, p, getattr(P, p))
+        return extra_params
+
     def copy(self):
         """
         Create a deep copy, so copy and original can be changed separately
