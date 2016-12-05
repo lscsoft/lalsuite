@@ -264,8 +264,12 @@ for t, ts in zip(t, ts):
             segs[fapThr][1] = min(segs[fapThr][1], -minFAP)
 if opts.verbose:
     print "computing associated deadtimes"
-dt = [event.livetime(segs[fapThr][0])/T for fapThr in opts.FAPthr]
-maxFAP = [segs[fapThr][1] for fapThr in opts.FAPthr]
+if T: ### nonzero livetime
+    dt = [event.livetime(segs[fapThr][0])/T for fapThr in opts.FAPthr]
+    maxFAP = [segs[fapThr][1] for fapThr in opts.FAPthr]
+else: ### zero livetime, meaning there can be no deadtime
+    dt = [0.0 for fapThr in opts.FAPthr]
+    maxFAP = [1.0 for fapThr in opts.FAPthr]
 
 ### write json for calibration check
 jsonfilename = idq.gdb_calib_json( gdbdir, ifo, opts.classifier, filetag, opts.start, opts.end-opts.start )
@@ -375,7 +379,12 @@ jsonD['dat'] = {'rank':list(r), 'cumulative cleans':list(c), 'cumulative glitche
 ax.set_xlabel('Deadtime (FAP)')
 ax.set_ylabel('Efficiency')
 
-ax.set_xscale('log')
+try:
+    ax.set_xscale('log') ### may not have any positive values, so we have to try/except
+
+except ValueError:
+    ax.set_xscale('linear')
+
 ax.set_yscale('linear')
 
 ax.grid(True)

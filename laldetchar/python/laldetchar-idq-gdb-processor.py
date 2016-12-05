@@ -33,7 +33,7 @@ __date__ = git_version.date
 
 
 def getProcessData():
-    ps = subprocess.Popen(['ps', 'aux', '-ww'], stdout=subprocess.PIPE).communicate()[0]
+    ps = idq.fork(['ps', 'aux', '-ww'], stdout=subprocess.PIPE).communicate()[0]
     processes = ps.split('\n')
     # this specifies the number of splits, so the splitted lines
     # will have (nfields+1) elements
@@ -121,7 +121,7 @@ if args.command == 'start':
     if config.has_option("lvalert_listener","resource_name"):
         lvalert_launch_command += ["-r", config.get("lvalert_listener","resource_name")]
 
-    pid = subprocess.Popen(lvalert_launch_command, stdout=open('lvalert_listen.out', 'a')).pid
+    pid = idq.fork(lvalert_launch_command, stdout=open('lvalert_listen.out', 'a')).pid
 
     print "lvalert_listen is launched with process id " + str(pid)
     sys.exit(0)

@@ -23,8 +23,6 @@ import logging
 import traceback
 import ConfigParser
 
-import subprocess
-
 from ligo.gracedb.rest import GraceDb
 
 from laldetchar.idq import idq
@@ -326,7 +324,7 @@ for classifier in classifiers+combiners:
 
     tables_out_file = open(tables_out, 'a')
     tables_err_file = open(tables_err, 'a')
-    proc = subprocess.Popen(tables_cmd.split(), stdout=tables_out_file, stderr=tables_err_file, cwd=cwd)
+    proc = idq.fork(tables_cmd.split(), stdout=tables_out_file, stderr=tables_err_file, cwd=cwd)
     tables_out_file.close()
     tables_err_file.close()
     exit_status = proc.wait() # block!
@@ -361,7 +359,7 @@ for classifier in classifiers+combiners:
 
     timeseries_out_file = open(timeseries_out, 'a')
     timeseries_err_file = open(timeseries_err, 'a')
-    proc = subprocess.Popen(timeseries_cmd.split(), stdout=timeseries_out_file, stderr=timeseries_err_file, cwd=cwd)
+    proc = idq.fork(timeseries_cmd.split(), stdout=timeseries_out_file, stderr=timeseries_err_file, cwd=cwd)
     timeseries_out_file.close()
     timeseries_err_file.close()
     exit_status = proc.wait() # block !
@@ -393,7 +391,7 @@ for classifier in classifiers+combiners:
 
     performance_out_file = open(performance_out, 'a')
     performance_err_file = open(performance_err, 'a')
-    proc = subprocess.Popen(performance_cmd.split(), stdout=performance_out_file, stderr=performance_err_file, cwd=cwd)
+    proc = idq.fork(performance_cmd.split(), stdout=performance_out_file, stderr=performance_err_file, cwd=cwd)
     performance_out_file.close()
     performance_err_file.close()
     exit_status = proc.wait() # block !
