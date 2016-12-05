@@ -90,6 +90,11 @@ class ChooseWaveformParams:
         self.theta = theta     # DEC.  DEC =0 on the equator; the south pole has DEC = - pi/2
         self.phi = phi         # RA.   
         self.psi = psi
+        # FIXME: make into property
+        self.longAscNodes = self.psi
+        # FIXME: Allow to be a value at some point
+        self.eccentricity = 0.0
+        self.meanPerAno = 0.0
         self.tref = tref
         self.radec = radec
         self.detector = "H1"
