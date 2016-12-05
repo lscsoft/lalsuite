@@ -1281,7 +1281,7 @@ REAL8 phiRef /**< Reference phase at the Reference Frequency */
 
         if (JxNxNdotNxLxN - 1.0 > 0 && JxNxNdotNxLxN - 1.0 < 1.0e-12){
             polarizationangle = acos(1.0);
-        } else if (JxNxNdotNxLxN + 1.0 < 0 && abs(JxNxNdotNxLxN + 1.0) < 1.0e-12){
+        } else if (JxNxNdotNxLxN + 1.0 < 0 && fabs(JxNxNdotNxLxN + 1.0) < 1.0e-12){
             polarizationangle = acos(-1.0);
         }
         else {
